@@ -1,0 +1,13 @@
+.idea/
+.vagrant/
+*.conf
+*.mprof
+*.cert
+*.key
+*.pem
+*.csr
+*.prof
+*.pdf
+._*
+*.csv
+tyk-pump
