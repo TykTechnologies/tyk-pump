@@ -36,7 +36,7 @@ Create a `pump.conf` file:
             "name": "mongo",
             "meta": {
                 "collection_name": "tyk_analytics",
-                "mongo_url": "mongodb://username:password@{hostname:port},c353.{hostname:port}/{db_name}"
+                "mongo_url": "mongodb://username:password@{hostname:port},{hostname:port}/{db_name}"
             }
         },
         "csv": {
