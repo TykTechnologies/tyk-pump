@@ -2,8 +2,10 @@ package pumps
 
 import (
 	"github.com/Sirupsen/logrus"
+	"github.com/lonelycode/tyk-pump/analytics"
 	"github.com/mitchellh/mapstructure"
 	"gopkg.in/mgo.v2"
+	"gopkg.in/vmihailenco/msgpack.v2"
 	"strings"
 	"time"
 )
@@ -55,7 +57,9 @@ func (m *MongoPump) connect() {
 	var err error
 	m.dbSession, err = mgo.Dial(m.dbConf.MongoURL)
 	if err != nil {
-		log.Error("Mongo connection failed:", err)
+		log.WithFields(logrus.Fields{
+			"prefix": mongoPrefix,
+		}).Error("Mongo connection failed:", err)
 		time.Sleep(5)
 		m.connect()
 	}
@@ -92,4 +96,58 @@ func (m *MongoPump) WriteData(data []interface{}) error {
 	}
 
 	return nil
+}
+
+// WriteUptimeData will pull the data from the in-memory store and drop it into the specified MongoDB collection
+func (m *MongoPump) WriteUptimeData(data []interface{}) {
+	if m.dbSession == nil {
+		log.Debug("Connecting to mongoDB store")
+		m.connect()
+		m.WriteUptimeData(data)
+	} else {
+		collectionName := "tyk_uptime_analytics"
+		analyticsCollection := m.dbSession.DB("").C(collectionName)
+
+		log.WithFields(logrus.Fields{
+			"prefix": mongoPrefix,
+		}).Debug("Uptime Data: ", len(data))
+
+		if len(data) > 0 {
+			keys := make([]interface{}, len(data), len(data))
+
+			for i, v := range data {
+				decoded := analytics.UptimeReportData{}
+				err := msgpack.Unmarshal(v.([]byte), &decoded)
+				log.WithFields(logrus.Fields{
+					"prefix": mongoPrefix,
+				}).Debug("Decoded Record: ", decoded)
+				if err != nil {
+					log.WithFields(logrus.Fields{
+						"prefix": mongoPrefix,
+					}).Error("Couldn't unmarshal analytics data:", err)
+
+				} else {
+					keys[i] = interface{}(decoded)
+				}
+			}
+
+			err := analyticsCollection.Insert(keys...)
+			log.WithFields(logrus.Fields{
+				"prefix": mongoPrefix,
+			}).Debug("Wrote data to ", collectionName)
+
+			if err != nil {
+				log.WithFields(logrus.Fields{
+					"prefix": mongoPrefix,
+				}).Error("Problem inserting to mongo collection: ", err)
+				if strings.Contains(err.Error(), "Closed explicitly") {
+					log.WithFields(logrus.Fields{
+						"prefix": mongoPrefix,
+					}).Warning("--> Detected connection failure, reconnecting")
+					m.connect()
+				}
+			}
+		}
+	}
+
 }

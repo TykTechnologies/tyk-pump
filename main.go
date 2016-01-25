@@ -14,7 +14,9 @@ import (
 
 var SystemConfig TykPumpConfiguration
 var AnalyticsStore storage.AnalyticsStorage
+var UptimeStorage storage.AnalyticsStorage
 var Pumps []pumps.Pump
+var UptimePump pumps.MongoPump
 
 var log = logger.GetLogger()
 
@@ -38,11 +40,20 @@ func setupAnalyticsStore() {
 	switch SystemConfig.AnalyticsStorageType {
 	case "redis":
 		AnalyticsStore = &storage.RedisClusterStorageManager{}
+		UptimeStorage = &storage.RedisClusterStorageManager{}
 	default:
 		AnalyticsStore = &storage.RedisClusterStorageManager{}
+		UptimeStorage = &storage.RedisClusterStorageManager{}
 	}
 
 	AnalyticsStore.Init(SystemConfig.AnalyticsStorageConfig)
+
+	// Copy across the redis configuration
+	uptimeConf := SystemConfig.AnalyticsStorageConfig
+
+	// Swap key prefixes for uptime purger
+	uptimeConf.(map[string]interface{})["redis_key_prefix"] = "host-checker:"
+	UptimeStorage.Init(uptimeConf)
 }
 
 func initialisePumps() {
@@ -68,6 +79,15 @@ func initialisePumps() {
 		}
 		i++
 	}
+
+	if !SystemConfig.DontPurgeUptimeData {
+		UptimePump = pumps.MongoPump{}
+		UptimePump.Init(SystemConfig.UptimePumpConfig)
+		log.WithFields(logrus.Fields{
+			"prefix": mainPrefix,
+		}).Info("Init Uptime Pump: ", UptimePump.GetName())
+	}
+
 }
 
 func StartPurgeLoop(nextCount int) {
@@ -108,6 +128,11 @@ func StartPurgeLoop(nextCount int) {
 			}).Warning("No pumps defined!")
 		}
 
+	}
+
+	if !SystemConfig.DontPurgeUptimeData {
+		UptimeValues := UptimeStorage.GetAndDeleteSet(storage.UptimeAnalytics_KEYNAME)
+		UptimePump.WriteUptimeData(UptimeValues)
 	}
 
 	StartPurgeLoop(nextCount)

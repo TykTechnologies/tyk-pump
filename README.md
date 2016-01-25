@@ -26,7 +26,7 @@ Create a `pump.conf` file:
         "optimisation_max_active": 0,
         "enable_cluster": false
     },
-    "purge_delay": 2,
+    "purge_delay": 10,
     "pumps": {
     	"dummy": {
     		"name": "dummy",
@@ -45,7 +45,12 @@ Create a `pump.conf` file:
                 "csv_dir": "./"
             }
         }
-    }
+    },
+    "uptime_pump_config": {
+        "collection_name": "tyk_uptime_analytics",
+        "mongo_url": "mongodb://username:password@{hostname:port},{hostname:port}/{db_name}"
+    },
+    "dont_purge_uptime_data": false
 }
 ```
 

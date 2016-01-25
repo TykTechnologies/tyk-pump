@@ -15,16 +15,17 @@ var redisClusterSingleton *rediscluster.RedisCluster
 var redisLogPrefix = "redis"
 
 type RedisStorageConfig struct {
-	Type          string            `json:"type",mapstructure:"type"`
-	Host          string            `json:"host",mapstructure:"host"`
-	Port          int               `json:"port",mapstructure:"port"`
-	Hosts         map[string]string `json:"hosts",mapstructure:"hosts"`
-	Username      string            `json:"username",mapstructure:"username"`
-	Password      string            `json:"password",mapstructure:"password"`
-	Database      int               `json:"database",mapstructure:"database"`
-	MaxIdle       int               `json:"optimisation_max_idle",mapstructure:"optimisation_max_idle"`
-	MaxActive     int               `json:"optimisation_max_active",mapstructure:"optimisation_max_active"`
-	EnableCluster bool              `json:"enable_cluster",mapstructure:"enable_cluster"`
+	Type           string            `mapstructure:"type"`
+	Host           string            `mapstructure:"host"`
+	Port           int               `mapstructure:"port"`
+	Hosts          map[string]string `mapstructure:"hosts"`
+	Username       string            `mapstructure:"username"`
+	Password       string            `mapstructure:"password"`
+	Database       int               `mapstructure:"database"`
+	MaxIdle        int               `mapstructure:"optimisation_max_idle"`
+	MaxActive      int               `mapstructure:"optimisation_max_active"`
+	EnableCluster  bool              `mapstructure:"enable_cluster"`
+	RedisKeyPrefix string            `mapstructure:"redis_key_prefix"`
 }
 
 // RedisClusterStorageManager is a storage manager that uses the redis database.
@@ -108,7 +109,11 @@ func (r *RedisClusterStorageManager) Init(config interface{}) error {
 		}).Fatal("Failed to decode configuration: ", err)
 	}
 
-	r.KeyPrefix = RedisKeyPrefix
+	if r.Config.RedisKeyPrefix == "" {
+		r.KeyPrefix = RedisKeyPrefix
+	} else {
+		r.KeyPrefix = r.Config.RedisKeyPrefix
+	}
 	return nil
 }
 
@@ -163,7 +168,9 @@ func (r *RedisClusterStorageManager) GetAndDeleteSet(keyName string) []interface
 		log.WithFields(logrus.Fields{
 			"prefix": redisLogPrefix,
 		}).Debug("keyName is: ", keyName)
+
 		fixedKey := r.fixKey(keyName)
+
 		log.WithFields(logrus.Fields{
 			"prefix": redisLogPrefix,
 		}).Debug("Fixed keyname is: ", fixedKey)

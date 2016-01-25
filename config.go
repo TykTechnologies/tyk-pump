@@ -12,6 +12,8 @@ type PumpConfig struct {
 
 type TykPumpConfiguration struct {
 	PurgeDelay             int                   `json:"purge_delay"`
+	DontPurgeUptimeData    bool                  `json:"dont_purge_uptime_data"`
+	UptimePumpConfig       interface{}           `json:"uptime_pump_config"`
 	Pumps                  map[string]PumpConfig `json:"pumps"`
 	AnalyticsStorageType   string                `json:"analytics_storage_type"`
 	AnalyticsStorageConfig interface{}           `json:"analytics_storage_config"`
