@@ -3,8 +3,8 @@ package main
 import (
 	"flag"
 	"github.com/Sirupsen/logrus"
+	logger "github.com/TykTechnologies/tykcommon-logger"
 	"github.com/lonelycode/tyk-pump/analytics"
-	"github.com/lonelycode/tyk-pump/logger"
 	"github.com/lonelycode/tyk-pump/pumps"
 	"github.com/lonelycode/tyk-pump/storage"
 	prefixed "github.com/x-cray/logrus-prefixed-formatter"
