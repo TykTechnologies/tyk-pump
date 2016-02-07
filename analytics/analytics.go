@@ -32,8 +32,26 @@ type AnalyticsRecord struct {
 	RawRequest    string
 	RawResponse   string
 	IPAddress     string
+	Geo           GeoData
 	Tags          []string
 	ExpireAt      time.Time `bson:"expireAt" json:"expireAt"`
+}
+
+type GeoData struct {
+	Country struct {
+		ISOCode string `maxminddb:"iso_code"`
+	} `maxminddb:"country"`
+
+	City struct {
+		GeoNameID uint              `maxminddb:"geoname_id"`
+		Names     map[string]string `maxminddb:"names"`
+	} `maxminddb:"city"`
+
+	Location struct {
+		Latitude  float64 `maxminddb:"latitude"`
+		Longitude float64 `maxminddb:"longitude"`
+		TimeZone  string  `maxminddb:"time_zone"`
+	} `maxminddb:"location"`
 }
 
 func (a *AnalyticsRecord) GetFieldNames() []string {
