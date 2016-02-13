@@ -2,7 +2,7 @@ package pumps
 
 import (
 	"github.com/Sirupsen/logrus"
-	"github.com/lonelycode/tyk-pump/analytics"
+	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/mitchellh/mapstructure"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/vmihailenco/msgpack.v2"
