@@ -17,6 +17,8 @@ func GetPumpByName(name string) (Pump, error) {
 		return AvailablePumps["dummy"], nil
 	case "mongo":
 		return AvailablePumps["mongo"], nil
+	case "elasticsearch":
+		return AvailablePumps["elasticsearch"], nil
 	case "csv":
 		return AvailablePumps["csv"], nil
 	}
