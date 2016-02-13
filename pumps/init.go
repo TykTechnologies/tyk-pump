@@ -14,4 +14,5 @@ func init() {
 	AvailablePumps["dummy"] = &DummyPump{}
 	AvailablePumps["mongo"] = &MongoPump{}
 	AvailablePumps["csv"] = &CSVPump{}
+	AvailablePumps["elasticsearch"] = &ElasticsearchPump{}
 }
