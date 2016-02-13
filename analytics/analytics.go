@@ -1,7 +1,8 @@
+
 package analytics
 
 import (
-	"github.com/lonelycode/tyk-pump/logger"
+	"github.com/TykTechnologies/tyk-pump/logger"
 	"reflect"
 	"strconv"
 	"strings"

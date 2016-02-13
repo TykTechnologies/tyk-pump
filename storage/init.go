@@ -1,7 +1,7 @@
 package storage
 
 import (
-	"github.com/lonelycode/tyk-pump/logger"
+	"github.com/TykTechnologies/tyk-pump/logger"
 )
 
 var log = logger.GetLogger()

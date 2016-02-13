@@ -4,7 +4,7 @@ import (
 	"encoding/csv"
 	"fmt"
 	"github.com/Sirupsen/logrus"
-	"github.com/lonelycode/tyk-pump/analytics"
+	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/mitchellh/mapstructure"
 	"os"
 	"path"
