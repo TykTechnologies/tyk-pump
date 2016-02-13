@@ -40,6 +40,18 @@ func (e *ElasticsearchPump) Init(config interface{}) error {
 		}).Fatal("Failed to decode configuration: ", loadConfigErr)
 	}
 
+	if "" == e.esConf.IndexName {
+		e.esConf.IndexName = "tyk_analytics"
+	}
+
+	if "" == e.esConf.ElasticsearchURL {
+		e.esConf.ElasticsearchURL = "http://localhost:9200"
+	}
+
+	if "" == e.esConf.DocumentType {
+		e.esConf.DocumentType = "tyk_analytics"
+	}
+
 	log.WithFields(logrus.Fields{
 		"prefix": elasticsearchPrefix,
 	}).Info("Elasticsearch URL: ", e.esConf.ElasticsearchURL)
@@ -100,12 +112,7 @@ func (e *ElasticsearchPump) WriteData(data []interface{}) error {
 			var index = e.esClient.Index().Index(e.esConf.IndexName)
 
 			for dataIndex := range data {
-				var documentType = e.esConf.DocumentType
-				if "" == documentType {
-					documentType = "tyk_analytics"
-				}
-
-				var _, err = index.BodyJson(data[dataIndex]).Type(documentType).Do()
+				var _, err = index.BodyJson(data[dataIndex]).Type(e.esConf.DocumentType).Do()
 				if err != nil {
 					log.WithFields(logrus.Fields{
 					"prefix": elasticsearchPrefix,
