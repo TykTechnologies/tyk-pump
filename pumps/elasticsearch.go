@@ -36,7 +36,7 @@ func (e *ElasticsearchPump) Init(config interface{}) error {
 
 	if loadConfigErr != nil {
 		log.WithFields(logrus.Fields{
-			"prefix": mongoPrefix,
+			"prefix": elasticsearchPrefix,
 		}).Fatal("Failed to decode configuration: ", loadConfigErr)
 	}
 
