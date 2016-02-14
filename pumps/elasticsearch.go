@@ -19,6 +19,7 @@ type ElasticsearchConf struct {
 	ElasticsearchURL    string `mapstructure:"elasticsearch_url"`
 	EnableSniffing      bool   `mapstructure:"use_sniffing"`
 	DocumentType        string `mapstructure:"document_type"`
+	RollingIndex        bool   `mapstructure:"rolling_index"`
 }
 
 func (e *ElasticsearchPump) New() Pump {
@@ -58,26 +59,13 @@ func (e *ElasticsearchPump) Init(config interface{}) error {
 	log.WithFields(logrus.Fields{
 		"prefix": elasticsearchPrefix,
 	}).Info("Elasticsearch Index: ", e.esConf.IndexName)
+	if e.esConf.RollingIndex {
+		log.WithFields(logrus.Fields{
+			"prefix": elasticsearchPrefix,
+		}).Info("Index will have date appended to it in the format ",e.esConf.IndexName,"-YYYY.MM.DD")
+	}
 
 	e.connect()
-
-	var indexExists, existsError = e.esClient.IndexExists(e.esConf.IndexName).Do()
-	if existsError != nil {
-		log.WithFields(logrus.Fields{
-		"prefix": elasticsearchPrefix,
-		}).Error("Error while checking if index exists", existsError)
-	} else if indexExists == false {
-	    log.WithFields(logrus.Fields{
-		"prefix": elasticsearchPrefix,
-		}).Info("Creating index: ", e.esConf.IndexName)
-
-		var _, createErr = e.esClient.CreateIndex(e.esConf.IndexName).Do()
-		if createErr != nil {
-			log.WithFields(logrus.Fields{
-			"prefix": elasticsearchPrefix,
-			}).Error("Elasticsearch Index faied to create", createErr)
-		}
-	}
 
 	return nil
 }
@@ -109,7 +97,16 @@ func (e *ElasticsearchPump) WriteData(data []interface{}) error {
 	} else {
 		if len(data) > 0 {
 
-			var index = e.esClient.Index().Index(e.esConf.IndexName)
+			var indexName = e.esConf.IndexName
+
+			var currentTime = time.Now()
+
+			if e.esConf.RollingIndex {
+				//This formats the date to be YYYY.MM.DD but Golang makes you use a specific date for its date formatting
+				indexName = indexName + "-" + currentTime.Format("2006.01.02") 
+			}
+
+			var index = e.esClient.Index().Index(indexName)
 
 			for dataIndex := range data {
 				var _, err = index.BodyJson(data[dataIndex]).Type(e.esConf.DocumentType).Do()
