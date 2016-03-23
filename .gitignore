@@ -1,5 +1,7 @@
 .idea/
 .vagrant/
+build/
+utils/
 *.conf
 *.mprof
 *.cert
