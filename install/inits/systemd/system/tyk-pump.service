@@ -5,7 +5,7 @@ Description=Tyk Pump
 Type=simple
 User=root
 Group=root
-ExecStart=/opt/tyk-pump/tyk-pump
+ExecStart=/opt/tyk-pump/tyk-pump -c /opt/tyk-pump/pump.conf
 Restart=always
 
 [Install]

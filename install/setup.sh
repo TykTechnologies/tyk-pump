@@ -47,10 +47,10 @@ TEMPLATE_FILE="pump.template.conf"
 cp $DIR/data/$TEMPLATE_FILE $DIR/pump.conf
 
 # Update variables
-sed -i 's/REDIS_HOST/'$REDIS_HOST'/g' $DIR/tyk.conf
-sed -i 's/REDIS_PORT/'$REDIS_PORT'/g' $DIR/tyk.conf
-sed -i 's/REDIS_PASSWORD/'$REDIS_PASSWORD'/g' $DIR/tyk.conf
-sed -i 's#MONGO_URL#'$MONGO_URL'#g' $DIR/tyk.conf
+sed -i 's/REDIS_HOST/'$REDIS_HOST'/g' $DIR/pump.conf
+sed -i 's/REDIS_PORT/'$REDIS_PORT'/g' $DIR/pump.conf
+sed -i 's/REDIS_PASSWORD/'$REDIS_PASSWORD'/g' $DIR/pump.conf
+sed -i 's#MONGO_URL#'$MONGO_URL'#g' $DIR/pump.conf
 
 echo "==> File written to ./pump.conf"
 sudo cp $DIR/pump.conf $DIR/../pump.conf
