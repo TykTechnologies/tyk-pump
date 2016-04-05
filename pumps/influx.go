@@ -34,7 +34,7 @@ func (i *InfluxPump) New() Pump {
 }
 
 func (i *InfluxPump) GetName() string {
-	return "InfluxDB pump"
+	return "InfluxDB Pump"
 }
 
 func (i *InfluxPump) Init(config interface{}) error {

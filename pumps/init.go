@@ -1,8 +1,6 @@
 package pumps
 
-import (
-	"github.com/TykTechnologies/tyk-pump/logger"
-)
+import "github.com/TykTechnologies/tyk-pump/logger"
 
 var log = logger.GetLogger()
 var AvailablePumps map[string]Pump
@@ -15,5 +13,5 @@ func init() {
 	AvailablePumps["mongo"] = &MongoPump{}
 	AvailablePumps["csv"] = &CSVPump{}
 	AvailablePumps["elasticsearch"] = &ElasticsearchPump{}
-	AvailablePumps["inlfux"] = &InfluxPump{}
+	AvailablePumps["influx"] = &InfluxPump{}
 }
