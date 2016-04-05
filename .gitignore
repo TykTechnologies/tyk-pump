@@ -13,3 +13,4 @@ utils/
 ._*
 *.csv
 tyk-pump
+.DS_Store
