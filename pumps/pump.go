@@ -25,6 +25,8 @@ func GetPumpByName(name string) (Pump, error) {
 		return AvailablePumps["csv"], nil
 	case "influx":
 		return AvailablePumps["influx"], nil
+	case "statsd":
+		return AvailablePumps["statsd"], nil
 	}
 
 	return nil, errors.New("Not found")
