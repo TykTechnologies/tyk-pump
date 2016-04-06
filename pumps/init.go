@@ -11,6 +11,7 @@ func init() {
 	// Register all the storage handlers here
 	AvailablePumps["dummy"] = &DummyPump{}
 	AvailablePumps["mongo"] = &MongoPump{}
+	AvailablePumps["mongo-pump-selective"] = &MongoSelectivePump{}
 	AvailablePumps["csv"] = &CSVPump{}
 	AvailablePumps["elasticsearch"] = &ElasticsearchPump{}
 	AvailablePumps["influx"] = &InfluxPump{}
