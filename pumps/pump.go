@@ -21,6 +21,8 @@ func GetPumpByName(name string) (Pump, error) {
 		return AvailablePumps["elasticsearch"], nil
 	case "csv":
 		return AvailablePumps["csv"], nil
+	case "segment":
+		return AvailablePumps["segment"], nil
 	}
 
 	return nil, errors.New("Not found")
