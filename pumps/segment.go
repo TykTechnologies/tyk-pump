@@ -48,17 +48,8 @@ func (s *SegmentPump) WriteData(data []interface{}) error {
 		"prefix": segmentPrefix,
 	}).Info("Writing ", len(data), " records")
 
-	for i, v := range data {
-		analyticsRecord := AnalyticsRecord{}
-		err := msgpack.Unmarshal(v.([]byte), &analyticsRecord)
-		log.Debug("Decoded record: ", analyticsRecord)
-		if err != nil {
-			log.WithFields(logrus.Fields{
-				"prefix": segmentPrefix,
-			}).Error("Couldn't unmarshal analytics data:", err)
-		} else {
-			s.WriteDataRecord(analyticsRecord)
-		}
+	for _, v := range data {
+		s.WriteDataRecord(v.(AnalyticsRecord))
 	}
 
 	return nil
