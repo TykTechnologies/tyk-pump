@@ -1,7 +1,6 @@
 .idea/
 .vagrant/
 build/
-*.conf
 *.mprof
 *.cert
 *.key
@@ -11,6 +10,7 @@ build/
 *.pdf
 ._*
 *.csv
+pump.conf
 tyk-pump
 .DS_Store
 migrate.js
