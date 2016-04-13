@@ -16,4 +16,5 @@ func init() {
 	AvailablePumps["elasticsearch"] = &ElasticsearchPump{}
 	AvailablePumps["influx"] = &InfluxPump{}
 	AvailablePumps["statsd"] = &StatsdPump{}
+	AvailablePumps["segment"] = &SegmentPump{}
 }
