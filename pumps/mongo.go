@@ -85,6 +85,10 @@ func (m *MongoPump) WriteData(data []interface{}) error {
 		}
 		analyticsCollection := m.dbSession.DB("").C(collectionName)
 
+		log.WithFields(logrus.Fields{
+			"prefix": mongoPrefix,
+		}).Info("Purging ", len(data), " records")
+
 		err := analyticsCollection.Insert(data...)
 		if err != nil {
 			log.Error("Problem inserting to mongo collection: ", err)
