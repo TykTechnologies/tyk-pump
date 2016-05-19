@@ -12,6 +12,7 @@ func init() {
 	AvailablePumps["dummy"] = &DummyPump{}
 	AvailablePumps["mongo"] = &MongoPump{}
 	AvailablePumps["mongo-pump-selective"] = &MongoSelectivePump{}
+	AvailablePumps["mongo-pump-aggregate"] = &MongoAggregatePump{}
 	AvailablePumps["csv"] = &CSVPump{}
 	AvailablePumps["elasticsearch"] = &ElasticsearchPump{}
 	AvailablePumps["influx"] = &InfluxPump{}

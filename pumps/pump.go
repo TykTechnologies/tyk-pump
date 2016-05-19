@@ -19,6 +19,8 @@ func GetPumpByName(name string) (Pump, error) {
 		return AvailablePumps["mongo"], nil
 	case "mongo-pump-selective":
 		return AvailablePumps["mongo-pump-selective"], nil
+	case "mongo-pump-aggregate":
+		return AvailablePumps["mongo-pump-aggregate"], nil
 	case "elasticsearch":
 		return AvailablePumps["elasticsearch"], nil
 	case "csv":
