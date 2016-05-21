@@ -46,9 +46,19 @@ type AnalyticsRecordAggregate struct {
 	OauthIDs map[string]*Counter
 	Geo      map[string]*Counter
 	Tags     map[string]*Counter
-	Total    Counter
+
+	Lists struct {
+		APIKeys  []Counter
+		APIID    []Counter
+		OauthIDs []Counter
+		Geo      []Counter
+		Tags     []Counter
+	}
+
+	Total Counter
 
 	ExpireAt time.Time `bson:"expireAt" json:"expireAt"`
+	LastTime time.Time
 }
 
 func (f AnalyticsRecordAggregate) New() AnalyticsRecordAggregate {
@@ -135,6 +145,7 @@ func (f *AnalyticsRecordAggregate) AsChange() bson.M {
 	newUpdate["$set"].(bson.M)["timeid.month"] = newTime.Month()
 	newUpdate["$set"].(bson.M)["timeid.day"] = newTime.Day()
 	newUpdate["$set"].(bson.M)["timeid.hour"] = newTime.Hour()
+	newUpdate["$set"].(bson.M)["lasttime"] = f.LastTime
 
 	return newUpdate
 }
@@ -144,40 +155,68 @@ func (f *AnalyticsRecordAggregate) AsTimeUpdate() bson.M {
 		"$set": bson.M{},
 	}
 
+	apis := make([]Counter, 0)
+	newUpdate["$set"].(bson.M)["lists.apiid"] = make([]interface{}, 0)
 	for thisUnit, incVal := range f.APIID {
 		newTime := incVal.TotalRequestTime / float64(incVal.Hits)
 		newUpdate = f.generateSetterForTime("apiid", thisUnit, newTime, newUpdate)
+		apis = append(apis, *incVal)
 	}
+	newUpdate["$set"].(bson.M)["lists.apiid"] = apis
 
+	errors := make([]Counter, 0)
+	newUpdate["$set"].(bson.M)["lists.errors"] = make([]interface{}, 0)
 	for thisUnit, incVal := range f.Errors {
 		newTime := incVal.TotalRequestTime / float64(incVal.Hits)
 		newUpdate = f.generateSetterForTime("errors", thisUnit, newTime, newUpdate)
+		errors = append(errors, *incVal)
 	}
+	newUpdate["$set"].(bson.M)["lists.errors"] = errors
 
+	versions := make([]Counter, 0)
+	newUpdate["$set"].(bson.M)["lists.versions"] = make([]interface{}, 0)
 	for thisUnit, incVal := range f.Versions {
 		newTime := incVal.TotalRequestTime / float64(incVal.Hits)
 		newUpdate = f.generateSetterForTime("versions", thisUnit, newTime, newUpdate)
+		versions = append(versions, *incVal)
 	}
+	newUpdate["$set"].(bson.M)["lists.versions"] = versions
 
+	apikeys := make([]Counter, 0)
+	newUpdate["$set"].(bson.M)["lists.apikeys"] = make([]interface{}, 0)
 	for thisUnit, incVal := range f.APIKeys {
 		newTime := incVal.TotalRequestTime / float64(incVal.Hits)
 		newUpdate = f.generateSetterForTime("apikeys", thisUnit, newTime, newUpdate)
+		apikeys = append(apikeys, *incVal)
 	}
+	newUpdate["$set"].(bson.M)["lists.apikeys"] = apikeys
 
+	oauthids := make([]Counter, 0)
+	newUpdate["$set"].(bson.M)["lists.oauthids"] = make([]interface{}, 0)
 	for thisUnit, incVal := range f.OauthIDs {
 		newTime := incVal.TotalRequestTime / float64(incVal.Hits)
 		newUpdate = f.generateSetterForTime("oauthids", thisUnit, newTime, newUpdate)
+		oauthids = append(oauthids, *incVal)
 	}
+	newUpdate["$set"].(bson.M)["lists.oauthids"] = oauthids
 
+	geo := make([]Counter, 0)
+	newUpdate["$set"].(bson.M)["lists.geo"] = make([]interface{}, 0)
 	for thisUnit, incVal := range f.Geo {
 		newTime := incVal.TotalRequestTime / float64(incVal.Hits)
 		newUpdate = f.generateSetterForTime("geo", thisUnit, newTime, newUpdate)
+		geo = append(geo, *incVal)
 	}
+	newUpdate["$set"].(bson.M)["lists.geo"] = geo
 
+	tags := make([]Counter, 0)
+	newUpdate["$set"].(bson.M)["lists.tags"] = make([]interface{}, 0)
 	for thisUnit, incVal := range f.Tags {
 		newTime := incVal.TotalRequestTime / float64(incVal.Hits)
 		newUpdate = f.generateSetterForTime("tags", thisUnit, newTime, newUpdate)
+		tags = append(tags, *incVal)
 	}
+	newUpdate["$set"].(bson.M)["lists.tags"] = tags
 
 	newTime := f.Total.TotalRequestTime / float64(f.Total.Hits)
 	newUpdate = f.generateSetterForTime("", "total", newTime, newUpdate)
@@ -329,6 +368,9 @@ func (m *MongoAggregatePump) WriteData(data []interface{}) error {
 					thisAggregate.OrgID = orgID
 				}
 
+				// Always update the last timestamp
+				thisAggregate.LastTime = thisV.TimeStamp
+
 				// Create the counter for this record
 				thisCounter := Counter{
 					Hits:             1,
@@ -380,7 +422,7 @@ func (m *MongoAggregatePump) WriteData(data []interface{}) error {
 						c := IncrementOrSetUnit(thisAggregate.APIID[value.(string)])
 						if value.(string) != "" {
 							thisAggregate.APIID[value.(string)] = c
-							thisAggregate.APIID[value.(string)].Identifier = thisV.APIName
+							thisAggregate.APIID[value.(string)].Identifier = thisV.APIID
 						}
 						break
 					case "ResponseCode":
