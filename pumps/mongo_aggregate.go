@@ -10,10 +10,13 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
-	"gopkg.in/vmihailenco/msgpack.v2"
 	"strconv"
 	"strings"
 	"time"
+)
+
+const (
+	AgggregateMixedCollectionName string = "tyk_analytics_aggregates"
 )
 
 type Counter struct {
@@ -28,6 +31,12 @@ type Counter struct {
 type AnalyticsRecordAggregate struct {
 	TimeStamp time.Time
 	OrgID     string
+	TimeID    struct {
+		Year  int
+		Month int
+		Day   int
+		Hour  int
+	}
 
 	APIKeys map[string]*Counter
 	Errors  map[string]*Counter
@@ -55,6 +64,127 @@ func (f AnalyticsRecordAggregate) New() AnalyticsRecordAggregate {
 	return thisF
 }
 
+func (f *AnalyticsRecordAggregate) generateBSONFromProperty(parent, thisUnit string, incVal *Counter, newUpdate bson.M) bson.M {
+
+	constructor := parent + "." + thisUnit + "."
+	if parent == "" {
+		constructor = thisUnit + "."
+	}
+
+	newUpdate["$inc"].(bson.M)[constructor+"hits"] = incVal.Hits
+	newUpdate["$inc"].(bson.M)[constructor+"success"] = incVal.Success
+	newUpdate["$inc"].(bson.M)[constructor+"errortotal"] = incVal.ErrorTotal
+	newUpdate["$inc"].(bson.M)[constructor+"totalrequesttime"] = incVal.TotalRequestTime
+	newUpdate["$set"].(bson.M)[constructor+"identifier"] = incVal.Identifier
+
+	return newUpdate
+}
+
+func (f *AnalyticsRecordAggregate) generateSetterForTime(parent, thisUnit string, realTime float64, newUpdate bson.M) bson.M {
+
+	constructor := parent + "." + thisUnit + "."
+	if parent == "" {
+		constructor = thisUnit + "."
+	}
+	newUpdate["$set"].(bson.M)[constructor+"requesttime"] = realTime
+
+	return newUpdate
+}
+
+func (f *AnalyticsRecordAggregate) AsChange() bson.M {
+	newUpdate := bson.M{
+		"$inc": bson.M{},
+		"$set": bson.M{},
+	}
+
+	for thisUnit, incVal := range f.APIID {
+		newUpdate = f.generateBSONFromProperty("apiid", thisUnit, incVal, newUpdate)
+	}
+
+	for thisUnit, incVal := range f.Errors {
+		newUpdate = f.generateBSONFromProperty("errors", thisUnit, incVal, newUpdate)
+	}
+
+	for thisUnit, incVal := range f.Versions {
+		newUpdate = f.generateBSONFromProperty("versions", thisUnit, incVal, newUpdate)
+	}
+
+	for thisUnit, incVal := range f.APIKeys {
+		newUpdate = f.generateBSONFromProperty("apikeys", thisUnit, incVal, newUpdate)
+	}
+
+	for thisUnit, incVal := range f.OauthIDs {
+		newUpdate = f.generateBSONFromProperty("oauthids", thisUnit, incVal, newUpdate)
+	}
+
+	for thisUnit, incVal := range f.Geo {
+		newUpdate = f.generateBSONFromProperty("geo", thisUnit, incVal, newUpdate)
+	}
+
+	for thisUnit, incVal := range f.Tags {
+		newUpdate = f.generateBSONFromProperty("tags", thisUnit, incVal, newUpdate)
+	}
+
+	newUpdate = f.generateBSONFromProperty("", "total", &f.Total, newUpdate)
+
+	asTime := f.TimeStamp
+	newTime := time.Date(asTime.Year(), asTime.Month(), asTime.Day(), asTime.Hour(), 0, 0, 0, asTime.Location())
+	newUpdate["$set"].(bson.M)["timestamp"] = newTime
+	newUpdate["$set"].(bson.M)["expireAt"] = f.ExpireAt
+	newUpdate["$set"].(bson.M)["timeid.year"] = newTime.Year()
+	newUpdate["$set"].(bson.M)["timeid.month"] = newTime.Month()
+	newUpdate["$set"].(bson.M)["timeid.day"] = newTime.Day()
+	newUpdate["$set"].(bson.M)["timeid.hour"] = newTime.Hour()
+
+	return newUpdate
+}
+
+func (f *AnalyticsRecordAggregate) AsTimeUpdate() bson.M {
+	newUpdate := bson.M{
+		"$set": bson.M{},
+	}
+
+	for thisUnit, incVal := range f.APIID {
+		newTime := incVal.TotalRequestTime / float64(incVal.Hits)
+		newUpdate = f.generateSetterForTime("apiid", thisUnit, newTime, newUpdate)
+	}
+
+	for thisUnit, incVal := range f.Errors {
+		newTime := incVal.TotalRequestTime / float64(incVal.Hits)
+		newUpdate = f.generateSetterForTime("errors", thisUnit, newTime, newUpdate)
+	}
+
+	for thisUnit, incVal := range f.Versions {
+		newTime := incVal.TotalRequestTime / float64(incVal.Hits)
+		newUpdate = f.generateSetterForTime("versions", thisUnit, newTime, newUpdate)
+	}
+
+	for thisUnit, incVal := range f.APIKeys {
+		newTime := incVal.TotalRequestTime / float64(incVal.Hits)
+		newUpdate = f.generateSetterForTime("apikeys", thisUnit, newTime, newUpdate)
+	}
+
+	for thisUnit, incVal := range f.OauthIDs {
+		newTime := incVal.TotalRequestTime / float64(incVal.Hits)
+		newUpdate = f.generateSetterForTime("oauthids", thisUnit, newTime, newUpdate)
+	}
+
+	for thisUnit, incVal := range f.Geo {
+		newTime := incVal.TotalRequestTime / float64(incVal.Hits)
+		newUpdate = f.generateSetterForTime("geo", thisUnit, newTime, newUpdate)
+	}
+
+	for thisUnit, incVal := range f.Tags {
+		newTime := incVal.TotalRequestTime / float64(incVal.Hits)
+		newUpdate = f.generateSetterForTime("tags", thisUnit, newTime, newUpdate)
+	}
+
+	newTime := f.Total.TotalRequestTime / float64(f.Total.Hits)
+	newUpdate = f.generateSetterForTime("", "total", newTime, newUpdate)
+
+	return newUpdate
+}
+
 type MongoAggregatePump struct {
 	dbSession *mgo.Session
 	dbConf    *MongoAggregateConf
@@ -63,7 +193,8 @@ type MongoAggregatePump struct {
 var mongoAggregatePrefix string = "mongo-pump-aggregate"
 
 type MongoAggregateConf struct {
-	MongoURL string `mapstructure:"mongo_url"`
+	MongoURL           string `mapstructure:"mongo_url"`
+	UseMixedCollection bool   `mapstructure:"use_mixed_collection"`
 }
 
 func (m *MongoAggregatePump) New() Pump {
@@ -83,6 +214,7 @@ func (m *MongoAggregatePump) GetCollectionName(orgid string) (string, error) {
 	if orgid == "" {
 		return "", errors.New("OrgID cannot be empty")
 	}
+
 	return "z_tyk_analyticz_aggregate_" + orgid, nil
 }
 
@@ -190,6 +322,10 @@ func (m *MongoAggregatePump) WriteData(data []interface{}) error {
 					asTime := thisV.TimeStamp
 					thisAggregate.TimeStamp = time.Date(asTime.Year(), asTime.Month(), asTime.Day(), asTime.Hour(), 0, 0, 0, asTime.Location())
 					thisAggregate.ExpireAt = thisV.ExpireAt
+					thisAggregate.TimeID.Year = asTime.Year()
+					thisAggregate.TimeID.Month = int(asTime.Month())
+					thisAggregate.TimeID.Day = asTime.Day()
+					thisAggregate.TimeID.Hour = asTime.Hour()
 					thisAggregate.OrgID = orgID
 				}
 
@@ -304,8 +440,8 @@ func (m *MongoAggregatePump) WriteData(data []interface{}) error {
 
 		for col_name, filtered_data := range analyticsPerOrg {
 			analyticsCollection := m.dbSession.DB("").C(col_name)
-
 			indexCreateErr := m.ensureIndexes(analyticsCollection)
+
 			if indexCreateErr != nil {
 				log.WithFields(logrus.Fields{
 					"prefix": mongoAggregatePrefix,
@@ -317,23 +453,43 @@ func (m *MongoAggregatePump) WriteData(data []interface{}) error {
 				"timestamp": filtered_data.TimeStamp,
 			}
 
-			existingAgg := AnalyticsRecordAggregate{}
-			fErr := analyticsCollection.Find(query).One(&existingAgg)
-			if fErr != nil {
-				insertErr := analyticsCollection.Insert(filtered_data)
-				if insertErr != nil {
-					return m.HandleWriteErr(insertErr)
-				}
-				return nil
+			updateDoc := filtered_data.AsChange()
+
+			change := mgo.Change{
+				Update:    updateDoc,
+				ReturnNew: true,
+				Upsert:    true,
 			}
 
-			// Not a new record, lets increment fields and update
-			updatedAggregate := m.UpdateExistingMgoRecord(filtered_data, existingAgg)
-			updateErr := analyticsCollection.Update(query, updatedAggregate)
-			if updateErr != nil {
-				return m.HandleWriteErr(updateErr)
+			doc := AnalyticsRecordAggregate{}
+			_, err := analyticsCollection.Find(query).Apply(change, &doc)
+
+			if err != nil {
+				log.WithFields(logrus.Fields{
+					"prefix": mongoAggregatePrefix,
+				}).Error("UPSERT Failure: ", err)
+				return m.HandleWriteErr(err)
 			}
 
+			// We have the new doc back, lets fix the averages
+			avgUpdateDoc := doc.AsTimeUpdate()
+			avgChange := mgo.Change{
+				Update:    avgUpdateDoc,
+				ReturnNew: true,
+			}
+			withTimeUpdate := AnalyticsRecordAggregate{}
+			_, avgErr := analyticsCollection.Find(query).Apply(avgChange, &withTimeUpdate)
+
+			if avgErr != nil {
+				log.WithFields(logrus.Fields{
+					"prefix": mongoAggregatePrefix,
+				}).Error("AvgUpdate Failure: ", avgErr)
+				return m.HandleWriteErr(avgErr)
+			}
+
+			if m.dbConf.UseMixedCollection {
+				m.doMixedWrite(withTimeUpdate, query)
+			}
 		}
 
 	}
@@ -341,98 +497,25 @@ func (m *MongoAggregatePump) WriteData(data []interface{}) error {
 	return nil
 }
 
-func (m *MongoAggregatePump) UpdateExistingMgoRecord(newAgg, existingAgg AnalyticsRecordAggregate) AnalyticsRecordAggregate {
-	for k, v := range newAgg.APIKeys {
-		if existingAgg.APIKeys[k] == nil {
-			existingAgg.APIKeys[k] = v
-		} else {
-			existingAgg.APIKeys[k].Hits += v.Hits
-			existingAgg.APIKeys[k].Success += v.Success
-			existingAgg.APIKeys[k].ErrorTotal += v.ErrorTotal
-			existingAgg.APIKeys[k].TotalRequestTime += v.TotalRequestTime
-			existingAgg.APIKeys[k].RequestTime = existingAgg.APIKeys[k].TotalRequestTime / float64(existingAgg.APIKeys[k].Hits)
-		}
+func (m *MongoAggregatePump) doMixedWrite(changeDoc AnalyticsRecordAggregate, query bson.M) {
+	analyticsCollection := m.dbSession.DB("").C(AgggregateMixedCollectionName)
+	m.ensureIndexes(analyticsCollection)
+
+	avgChange := mgo.Change{
+		Update:    changeDoc,
+		ReturnNew: true,
+		Upsert:    true,
 	}
 
-	for k, v := range newAgg.Errors {
-		if existingAgg.Errors[k] == nil {
-			existingAgg.Errors[k] = v
-		} else {
-			existingAgg.Errors[k].Hits += v.Hits
-			existingAgg.Errors[k].Success += v.Success
-			existingAgg.Errors[k].ErrorTotal += v.ErrorTotal
-			existingAgg.Errors[k].TotalRequestTime += v.TotalRequestTime
-			existingAgg.Errors[k].RequestTime = existingAgg.Errors[k].TotalRequestTime / float64(existingAgg.Errors[k].Hits)
-		}
+	final := AnalyticsRecordAggregate{}
+	_, avgErr := analyticsCollection.Find(query).Apply(avgChange, &final)
+
+	if avgErr != nil {
+		log.WithFields(logrus.Fields{
+			"prefix": mongoAggregatePrefix,
+		}).Error("Mixed coll upsert failure: ", avgErr)
+		m.HandleWriteErr(avgErr)
 	}
-
-	for k, v := range newAgg.Versions {
-		if existingAgg.Versions[k] == nil {
-			existingAgg.Versions[k] = v
-		} else {
-			existingAgg.Versions[k].Hits += v.Hits
-			existingAgg.Versions[k].Success += v.Success
-			existingAgg.Versions[k].ErrorTotal += v.ErrorTotal
-			existingAgg.Versions[k].TotalRequestTime += v.TotalRequestTime
-			existingAgg.Versions[k].RequestTime = existingAgg.Versions[k].TotalRequestTime / float64(existingAgg.Versions[k].Hits)
-		}
-	}
-
-	for k, v := range newAgg.APIID {
-		if existingAgg.APIID[k] == nil {
-			existingAgg.APIID[k] = v
-		} else {
-			existingAgg.APIID[k].Hits += v.Hits
-			existingAgg.APIID[k].Success += v.Success
-			existingAgg.APIID[k].ErrorTotal += v.ErrorTotal
-			existingAgg.APIID[k].TotalRequestTime += v.TotalRequestTime
-			existingAgg.APIID[k].RequestTime = existingAgg.APIID[k].TotalRequestTime / float64(existingAgg.APIID[k].Hits)
-		}
-	}
-
-	for k, v := range newAgg.OauthIDs {
-		if existingAgg.OauthIDs[k] == nil {
-			existingAgg.OauthIDs[k] = v
-		} else {
-			existingAgg.OauthIDs[k].Hits += v.Hits
-			existingAgg.OauthIDs[k].Success += v.Success
-			existingAgg.OauthIDs[k].ErrorTotal += v.ErrorTotal
-			existingAgg.OauthIDs[k].TotalRequestTime += v.TotalRequestTime
-			existingAgg.OauthIDs[k].RequestTime = existingAgg.OauthIDs[k].TotalRequestTime / float64(existingAgg.OauthIDs[k].Hits)
-		}
-	}
-
-	for k, v := range newAgg.Geo {
-		if existingAgg.Geo[k] == nil {
-			existingAgg.Geo[k] = v
-		} else {
-			existingAgg.Geo[k].Hits += v.Hits
-			existingAgg.Geo[k].Success += v.Success
-			existingAgg.Geo[k].ErrorTotal += v.ErrorTotal
-			existingAgg.Geo[k].TotalRequestTime += v.TotalRequestTime
-			existingAgg.Geo[k].RequestTime = existingAgg.Geo[k].TotalRequestTime / float64(existingAgg.Geo[k].Hits)
-		}
-	}
-
-	for k, v := range newAgg.Tags {
-		if existingAgg.Tags[k] == nil {
-			existingAgg.Tags[k] = v
-		} else {
-			existingAgg.Tags[k].Hits += v.Hits
-			existingAgg.Tags[k].Success += v.Success
-			existingAgg.Tags[k].ErrorTotal += v.ErrorTotal
-			existingAgg.Tags[k].TotalRequestTime += v.TotalRequestTime
-			existingAgg.Tags[k].RequestTime = existingAgg.Tags[k].TotalRequestTime / float64(existingAgg.Tags[k].Hits)
-		}
-	}
-
-	existingAgg.Total.Hits += newAgg.Total.Hits
-	existingAgg.Total.Success += newAgg.Total.Success
-	existingAgg.Total.ErrorTotal += newAgg.Total.ErrorTotal
-	existingAgg.Total.TotalRequestTime += newAgg.Total.TotalRequestTime
-	existingAgg.Total.RequestTime = existingAgg.Total.TotalRequestTime / float64(existingAgg.Total.Hits)
-
-	return existingAgg
 }
 
 func (m *MongoAggregatePump) HandleWriteErr(err error) error {
@@ -452,55 +535,7 @@ func (m *MongoAggregatePump) HandleWriteErr(err error) error {
 
 // WriteUptimeData will pull the data from the in-memory store and drop it into the specified MongoDB collection
 func (m *MongoAggregatePump) WriteUptimeData(data []interface{}) {
-	if m.dbSession == nil {
-		log.Debug("Connecting to mongoDB store")
-		m.connect()
-		m.WriteUptimeData(data)
-	} else {
-		log.Info("MONGO Aggregate Should not be writing uptime data!")
-		collectionName := "tyk_uptime_analytics"
-		analyticsCollection := m.dbSession.DB("").C(collectionName)
-
-		log.WithFields(logrus.Fields{
-			"prefix": mongoAggregatePrefix,
-		}).Debug("Uptime Data: ", len(data))
-
-		if len(data) > 0 {
-			keys := make([]interface{}, len(data), len(data))
-
-			for i, v := range data {
-				decoded := analytics.UptimeReportData{}
-				err := msgpack.Unmarshal(v.([]byte), &decoded)
-				log.WithFields(logrus.Fields{
-					"prefix": mongoAggregatePrefix,
-				}).Debug("Decoded Record: ", decoded)
-				if err != nil {
-					log.WithFields(logrus.Fields{
-						"prefix": mongoAggregatePrefix,
-					}).Error("Couldn't unmarshal analytics data:", err)
-
-				} else {
-					keys[i] = interface{}(decoded)
-				}
-			}
-
-			err := analyticsCollection.Insert(keys...)
-			log.WithFields(logrus.Fields{
-				"prefix": mongoAggregatePrefix,
-			}).Debug("Wrote data to ", collectionName)
-
-			if err != nil {
-				log.WithFields(logrus.Fields{
-					"prefix": mongoAggregatePrefix,
-				}).Error("Problem inserting to mongo collection: ", err)
-				if strings.Contains(err.Error(), "Closed explicitly") {
-					log.WithFields(logrus.Fields{
-						"prefix": mongoAggregatePrefix,
-					}).Warning("--> Detected connection failure, reconnecting")
-					m.connect()
-				}
-			}
-		}
-	}
-
+	log.WithFields(logrus.Fields{
+		"prefix": mongoAggregatePrefix,
+	}).Warning("Mongo Aggregate should not be writing uptime data!")
 }
