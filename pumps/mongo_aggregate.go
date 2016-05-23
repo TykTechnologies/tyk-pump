@@ -438,10 +438,12 @@ func (m *MongoAggregatePump) WriteData(data []interface{}) error {
 						break
 					case "ResponseCode":
 						errAsStr := strconv.Itoa(value.(int))
-						c := IncrementOrSetUnit(thisAggregate.Errors[errAsStr])
 						if errAsStr != "" {
-							thisAggregate.Errors[errAsStr] = c
-							thisAggregate.Errors[errAsStr].Identifier = errAsStr
+							c := IncrementOrSetUnit(thisAggregate.Errors[errAsStr])
+							if c.ErrorTotal > 0 {
+								thisAggregate.Errors[errAsStr] = c
+								thisAggregate.Errors[errAsStr].Identifier = errAsStr
+							}
 						}
 						break
 					case "APIVersion":
@@ -543,7 +545,7 @@ func (m *MongoAggregatePump) WriteData(data []interface{}) error {
 			}
 
 			if m.dbConf.UseMixedCollection {
-				m.doMixedWrite(withTimeUpdate, query)
+				m.doMixedWrite(avgUpdateDoc, query)
 			}
 		}
 
@@ -552,7 +554,7 @@ func (m *MongoAggregatePump) WriteData(data []interface{}) error {
 	return nil
 }
 
-func (m *MongoAggregatePump) doMixedWrite(changeDoc AnalyticsRecordAggregate, query bson.M) {
+func (m *MongoAggregatePump) doMixedWrite(changeDoc bson.M, query bson.M) {
 	analyticsCollection := m.dbSession.DB("").C(AgggregateMixedCollectionName)
 	m.ensureIndexes(analyticsCollection)
 
