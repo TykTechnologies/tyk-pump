@@ -20,12 +20,14 @@ const (
 )
 
 type Counter struct {
-	Hits             int     `json:"hits"`
-	Success          int     `json:"success"`
-	ErrorTotal       int     `json:"error"`
-	RequestTime      float64 `json:"request_time"`
-	TotalRequestTime float64 `json:"total_request_time"`
-	Identifier       string  `json:"identifier"`
+	Hits             int       `json:"hits"`
+	Success          int       `json:"success"`
+	ErrorTotal       int       `json:"error"`
+	RequestTime      float64   `json:"request_time"`
+	TotalRequestTime float64   `json:"total_request_time"`
+	Identifier       string    `json:"identifier"`
+	HumanIdentifier  string    `json:"human_identifier"`
+	LastTime         time.Time `json:"last_time"`
 }
 
 type AnalyticsRecordAggregate struct {
@@ -86,6 +88,8 @@ func (f *AnalyticsRecordAggregate) generateBSONFromProperty(parent, thisUnit str
 	newUpdate["$inc"].(bson.M)[constructor+"errortotal"] = incVal.ErrorTotal
 	newUpdate["$inc"].(bson.M)[constructor+"totalrequesttime"] = incVal.TotalRequestTime
 	newUpdate["$set"].(bson.M)[constructor+"identifier"] = incVal.Identifier
+	newUpdate["$set"].(bson.M)[constructor+"humanidentifier"] = incVal.HumanIdentifier
+	newUpdate["$set"].(bson.M)[constructor+"lasttime"] = incVal.LastTime
 
 	return newUpdate
 }
@@ -155,6 +159,8 @@ func (f *AnalyticsRecordAggregate) AsTimeUpdate() bson.M {
 		"$set": bson.M{},
 	}
 
+	// We need to create lists of API data so that we can aggregate across the list
+	// in order to present top-20 style lists of APIs, Tokens etc.
 	apis := make([]Counter, 0)
 	newUpdate["$set"].(bson.M)["lists.apiid"] = make([]interface{}, 0)
 	for thisUnit, incVal := range f.APIID {
@@ -242,7 +248,9 @@ func (m *MongoAggregatePump) New() Pump {
 }
 
 func (m *MongoAggregatePump) doHash(in string) string {
-	return b64.StdEncoding.EncodeToString([]byte(in))
+	sEnc := b64.StdEncoding.EncodeToString([]byte(in))
+	search := strings.TrimRight(sEnc, "=")
+	return search
 }
 
 func (m *MongoAggregatePump) GetName() string {
@@ -366,6 +374,7 @@ func (m *MongoAggregatePump) WriteData(data []interface{}) error {
 					thisAggregate.TimeID.Day = asTime.Day()
 					thisAggregate.TimeID.Hour = asTime.Hour()
 					thisAggregate.OrgID = orgID
+					thisAggregate.LastTime = thisV.TimeStamp
 				}
 
 				// Always update the last timestamp
@@ -378,6 +387,7 @@ func (m *MongoAggregatePump) WriteData(data []interface{}) error {
 					ErrorTotal:       0,
 					RequestTime:      float64(thisV.RequestTime),
 					TotalRequestTime: float64(thisV.RequestTime),
+					LastTime:         thisV.TimeStamp,
 				}
 
 				thisAggregate.Total.Hits += 1
@@ -423,6 +433,7 @@ func (m *MongoAggregatePump) WriteData(data []interface{}) error {
 						if value.(string) != "" {
 							thisAggregate.APIID[value.(string)] = c
 							thisAggregate.APIID[value.(string)].Identifier = thisV.APIID
+							thisAggregate.APIID[value.(string)].HumanIdentifier = thisV.APIName
 						}
 						break
 					case "ResponseCode":
@@ -439,6 +450,7 @@ func (m *MongoAggregatePump) WriteData(data []interface{}) error {
 						if value.(string) != "" {
 							thisAggregate.Versions[versionStr] = c
 							thisAggregate.Versions[versionStr].Identifier = value.(string)
+							thisAggregate.Versions[versionStr].HumanIdentifier = value.(string)
 						}
 						break
 					case "APIKey":
@@ -446,9 +458,8 @@ func (m *MongoAggregatePump) WriteData(data []interface{}) error {
 						if value.(string) != "" {
 							thisAggregate.APIKeys[value.(string)] = c
 							thisAggregate.APIKeys[value.(string)].Identifier = value.(string)
-							if thisV.Alias != "" {
-								thisAggregate.APIKeys[value.(string)].Identifier += " (" + thisV.Alias + ")"
-							}
+							thisAggregate.APIKeys[value.(string)].HumanIdentifier = thisV.Alias
+
 						}
 						break
 					case "OauthID":
@@ -463,6 +474,7 @@ func (m *MongoAggregatePump) WriteData(data []interface{}) error {
 						if thisV.Geo.Country.ISOCode != "" {
 							thisAggregate.Geo[thisV.Geo.Country.ISOCode] = c
 							thisAggregate.Geo[thisV.Geo.Country.ISOCode].Identifier = thisV.Geo.Country.ISOCode
+							thisAggregate.Geo[thisV.Geo.Country.ISOCode].HumanIdentifier = thisV.Geo.Country.ISOCode
 						}
 						break
 					case "Tags":
@@ -470,6 +482,7 @@ func (m *MongoAggregatePump) WriteData(data []interface{}) error {
 							c := IncrementOrSetUnit(thisAggregate.Tags[thisTag])
 							thisAggregate.Tags[thisTag] = c
 							thisAggregate.Tags[thisTag].Identifier = thisTag
+							thisAggregate.Tags[thisTag].HumanIdentifier = thisTag
 						}
 						break
 					}
