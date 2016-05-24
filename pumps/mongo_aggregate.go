@@ -55,6 +55,7 @@ type AnalyticsRecordAggregate struct {
 		OauthIDs []Counter
 		Geo      []Counter
 		Tags     []Counter
+		Errors   []Counter
 	}
 
 	Total Counter
@@ -422,6 +423,7 @@ func (m *MongoAggregatePump) WriteData(data []interface{}) error {
 							c.ErrorTotal += thisCounter.ErrorTotal
 							c.TotalRequestTime += thisCounter.TotalRequestTime
 							c.RequestTime = c.TotalRequestTime / float64(c.Hits)
+
 						}
 
 						return c
@@ -545,7 +547,14 @@ func (m *MongoAggregatePump) WriteData(data []interface{}) error {
 			}
 
 			if m.dbConf.UseMixedCollection {
-				m.doMixedWrite(avgUpdateDoc, query)
+				thisData := AnalyticsRecordAggregate{}
+				err := analyticsCollection.Find(query).One(&thisData)
+				if err != nil {
+					log.Error("Couldn't find query doc!")
+				} else {
+					m.doMixedWrite(thisData, query)
+				}
+
 			}
 		}
 
@@ -554,7 +563,7 @@ func (m *MongoAggregatePump) WriteData(data []interface{}) error {
 	return nil
 }
 
-func (m *MongoAggregatePump) doMixedWrite(changeDoc bson.M, query bson.M) {
+func (m *MongoAggregatePump) doMixedWrite(changeDoc AnalyticsRecordAggregate, query bson.M) {
 	analyticsCollection := m.dbSession.DB("").C(AgggregateMixedCollectionName)
 	m.ensureIndexes(analyticsCollection)
 
