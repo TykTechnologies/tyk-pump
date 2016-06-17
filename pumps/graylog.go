@@ -7,7 +7,6 @@ import (
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/mitchellh/mapstructure"
 	"github.com/robertkowalski/graylog-golang"
-	"strconv"
 )
 
 type GraylogPump struct {
@@ -97,7 +96,7 @@ func (p *GraylogPump) WriteData(data []interface{}) error {
 		mapping := map[string]interface{}{
 			"method":        record.Method,
 			"path":          record.Path,
-			"response_code": strconv.Itoa(record.ResponseCode),
+			"response_code": record.ResponseCode,
 			"api_key":       record.APIKey,
 			"api_version":   record.APIVersion,
 			"api_name":      record.APIName,
@@ -105,15 +104,15 @@ func (p *GraylogPump) WriteData(data []interface{}) error {
 			"org_id":        record.OrgID,
 			"oauth_id":      record.OauthID,
 			"raw_request":   string(rReq),
-			"request_time":  strconv.Itoa(int(record.RequestTime)),
+			"request_time":  record.RequestTime,
 			"raw_response":  string(rResp),
 		}
 
-		messageMap := map[string]string{}
+		messageMap := map[string]interface{}{}
 
 		for _, key := range p.conf.Tags {
 			if value, ok := mapping[key]; ok {
-				messageMap[key] = value.(string)
+				messageMap[key] = value
 			}
 		}
 
