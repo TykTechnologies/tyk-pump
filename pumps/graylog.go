@@ -68,7 +68,7 @@ func (p *GraylogPump) connect() {
 func (p *GraylogPump) WriteData(data []interface{}) error {
 	log.WithFields(logrus.Fields{
 		"prefix": graylogPrefix,
-	}).Info("Writing ", len(data), " records")
+	}).Debug("Writing ", len(data), " records")
 
 	if p.client == nil {
 		p.connect()
@@ -140,7 +140,7 @@ func (p *GraylogPump) WriteData(data []interface{}) error {
 
 		log.WithFields(logrus.Fields{
 			"prefix": graylogPrefix,
-		}).Info("Writing ", string(message))
+		}).Debug("Writing ", string(message))
 
 		p.client.Log(string(gelfString))
 	}
