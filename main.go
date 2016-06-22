@@ -31,7 +31,7 @@ func init() {
 
 	log.WithFields(logrus.Fields{
 		"prefix": mainPrefix,
-	}).Info("## Tyk Analytics Pump, ", version, " ##")
+	}).Info("## Tyk Analytics Pump, ", VERSION, " ##")
 
 	LoadConfig(confFile, &SystemConfig)
 }
