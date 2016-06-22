@@ -94,6 +94,27 @@ Create a `pump.conf` file:
                         "org_id",
                         "oauth_id"]
             }
+        },
+        "graylog": {
+          "name": "graylog",
+          "meta": {
+            "host": "10.60.6.15",
+            "port": 12216,
+            "tags": [
+              "method",
+              "path",
+              "response_code",
+              "api_key",
+              "api_version",
+              "api_name",
+              "api_id",
+              "org_id",
+              "oauth_id",
+              "raw_request",
+              "request_time",
+              "raw_response"
+            ]
+          }
         }
     },
     "uptime_pump_config": {
@@ -117,3 +138,4 @@ Settings are the same as for the original `tyk.conf` for redis and for mongoDB.
 `"document_type"` - The type of the document that is created in ES. Defaults to "tyk_analytics"
 
 `"rolling_index"` - Appends the date to the end of the index name, so each days data is split into a different index name. E.g. tyk_analytics-2016.02.28 Defaults to false
+

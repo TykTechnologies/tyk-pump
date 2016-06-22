@@ -29,6 +29,8 @@ func GetPumpByName(name string) (Pump, error) {
 		return AvailablePumps["statsd"], nil
 	case "segment":
 		return AvailablePumps["segment"], nil
+	case "graylog":
+		return AvailablePumps["graylog"], nil
 	}
 
 	return nil, errors.New("Not found")
