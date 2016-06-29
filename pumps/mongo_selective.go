@@ -4,12 +4,12 @@ import (
 	"errors"
 	"github.com/Sirupsen/logrus"
 	"github.com/TykTechnologies/tyk-pump/analytics"
+	"github.com/lonelycode/mgohacks"
 	"github.com/mitchellh/mapstructure"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/vmihailenco/msgpack.v2"
 	"strings"
 	"time"
-	"github.com/lonelycode/mgohacks"
 )
 
 type MongoSelectivePump struct {
@@ -77,57 +77,57 @@ func (m *MongoSelectivePump) ensureIndexes(c *mgo.Collection) error {
 		ExpireAfter: 0,
 		Background:  true,
 	}
-	
+
 	err = mgohacks.EnsureTTLIndex(c, ttlIndex)
 	if err != nil {
 		return err
 	}
 
 	apiIndex := mgo.Index{
-		Key:         []string{"apiid"},
-		Background:  true,
+		Key:        []string{"apiid"},
+		Background: true,
 	}
-	
+
 	err = c.EnsureIndex(apiIndex)
 	if err != nil {
 		return err
 	}
 
 	orgIndex := mgo.Index{
-		Key:         []string{"orgid"},
-		Background:  true,
+		Key:        []string{"orgid"},
+		Background: true,
 	}
-	
+
 	err = c.EnsureIndex(orgIndex)
 	if err != nil {
 		return err
 	}
 
 	idOrgIndex := mgo.Index{
-		Key:         []string{"_id", "orgid"},
-		Background:  true,
+		Key:        []string{"_id", "orgid"},
+		Background: true,
 	}
-	
+
 	err = c.EnsureIndex(idOrgIndex)
 	if err != nil {
 		return err
 	}
 
 	idOrgApiIndex := mgo.Index{
-		Key:         []string{"_id", "orgid", "apiid"},
-		Background:  true,
+		Key:        []string{"_id", "orgid", "apiid"},
+		Background: true,
 	}
-	
+
 	err = c.EnsureIndex(idOrgApiIndex)
 	if err != nil {
 		return err
 	}
 
 	idOrgErrIndex := mgo.Index{
-		Key:         []string{"_id", "orgid", "responsecode"},
-		Background:  true,
+		Key:        []string{"_id", "orgid", "responsecode"},
+		Background: true,
 	}
-	
+
 	err = c.EnsureIndex(idOrgErrIndex)
 	if err != nil {
 		return err
@@ -150,7 +150,6 @@ func (m *MongoSelectivePump) WriteData(data []interface{}) error {
 	} else {
 		analyticsPerOrg := make(map[string][]interface{})
 
-		
 		for _, v := range data {
 			orgID := v.(analytics.AnalyticsRecord).OrgID
 			collectionName, collErr := m.GetCollectionName(orgID)
@@ -244,7 +243,7 @@ func (m *MongoSelectivePump) WriteUptimeData(data []interface{}) {
 				log.WithFields(logrus.Fields{
 					"prefix": mongoSelectivePrefix,
 				}).Error("Problem inserting to mongo collection: ", err)
-				if strings.Contains(err.Error(), "Closed explicitly") {
+				if strings.Contains(err.Error(), "Closed explicitly") || strings.Contains(err.Error(), "EOF") {
 					log.WithFields(logrus.Fields{
 						"prefix": mongoSelectivePrefix,
 					}).Warning("--> Detected connection failure, reconnecting")

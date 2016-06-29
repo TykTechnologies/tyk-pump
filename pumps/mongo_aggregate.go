@@ -589,7 +589,7 @@ func (m *MongoAggregatePump) HandleWriteErr(err error) error {
 		log.WithFields(logrus.Fields{
 			"prefix": mongoAggregatePrefix,
 		}).Error("Problem inserting or updating to mongo collection: ", err)
-		if strings.Contains(strings.ToLower(err.Error()), "closed explicitly") {
+		if strings.Contains(err.Error(), "Closed explicitly") || strings.Contains(err.Error(), "EOF") {
 			log.WithFields(logrus.Fields{
 				"prefix": mongoAggregatePrefix,
 			}).Warning("--> Detected connection failure, reconnecting")

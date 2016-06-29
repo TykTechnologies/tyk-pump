@@ -14,3 +14,4 @@ pump.conf
 tyk-pump
 .DS_Store
 migrate.js
+utils/release_rc.sh

@@ -144,7 +144,7 @@ func (m *MongoPump) WriteUptimeData(data []interface{}) {
 				log.WithFields(logrus.Fields{
 					"prefix": mongoPrefix,
 				}).Error("Problem inserting to mongo collection: ", err)
-				if strings.Contains(err.Error(), "Closed explicitly") {
+				if strings.Contains(err.Error(), "Closed explicitly") || strings.Contains(err.Error(), "EOF") {
 					log.WithFields(logrus.Fields{
 						"prefix": mongoPrefix,
 					}).Warning("--> Detected connection failure, reconnecting")
