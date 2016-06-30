@@ -83,7 +83,10 @@ func (m *MongoPump) WriteData(data []interface{}) error {
 				"prefix": mongoPrefix,
 			}).Fatal("No collection name!")
 		}
-		analyticsCollection := m.dbSession.DB("").C(collectionName)
+
+		thisSession := m.dbSession.Copy()
+		defer thisSession.Close()
+		analyticsCollection := thisSession.DB("").C(collectionName)
 
 		log.WithFields(logrus.Fields{
 			"prefix": mongoPrefix,
@@ -110,7 +113,9 @@ func (m *MongoPump) WriteUptimeData(data []interface{}) {
 		m.WriteUptimeData(data)
 	} else {
 		collectionName := "tyk_uptime_analytics"
-		analyticsCollection := m.dbSession.DB("").C(collectionName)
+		thisSession := m.dbSession.Copy()
+		defer thisSession.Close()
+		analyticsCollection := thisSession.DB("").C(collectionName)
 
 		log.WithFields(logrus.Fields{
 			"prefix": mongoPrefix,

@@ -172,7 +172,10 @@ func (m *MongoSelectivePump) WriteData(data []interface{}) error {
 		}
 
 		for col_name, filtered_data := range analyticsPerOrg {
-			analyticsCollection := m.dbSession.DB("").C(col_name)
+
+			thisSession := m.dbSession.Copy()
+			defer thisSession.Close()
+			analyticsCollection := thisSession.DB("").C(col_name)
 
 			indexCreateErr := m.ensureIndexes(analyticsCollection)
 			if indexCreateErr != nil {
@@ -209,7 +212,9 @@ func (m *MongoSelectivePump) WriteUptimeData(data []interface{}) {
 	} else {
 		log.Info("MONGO SAelective Should not be writing uptime data!")
 		collectionName := "tyk_uptime_analytics"
-		analyticsCollection := m.dbSession.DB("").C(collectionName)
+		thisSession := m.dbSession.Copy()
+		defer thisSession.Close()
+		analyticsCollection := thisSession.DB("").C(collectionName)
 
 		log.WithFields(logrus.Fields{
 			"prefix": mongoSelectivePrefix,

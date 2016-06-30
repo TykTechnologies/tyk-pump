@@ -498,7 +498,9 @@ func (m *MongoAggregatePump) WriteData(data []interface{}) error {
 		}
 
 		for col_name, filtered_data := range analyticsPerOrg {
-			analyticsCollection := m.dbSession.DB("").C(col_name)
+			thisSession := m.dbSession.Copy()
+			defer thisSession.Close()
+			analyticsCollection := thisSession.DB("").C(col_name)
 			indexCreateErr := m.ensureIndexes(analyticsCollection)
 
 			if indexCreateErr != nil {
@@ -564,7 +566,9 @@ func (m *MongoAggregatePump) WriteData(data []interface{}) error {
 }
 
 func (m *MongoAggregatePump) doMixedWrite(changeDoc AnalyticsRecordAggregate, query bson.M) {
-	analyticsCollection := m.dbSession.DB("").C(AgggregateMixedCollectionName)
+	thisSession := m.dbSession.Copy()
+	defer thisSession.Close()
+	analyticsCollection := thisSession.DB("").C(AgggregateMixedCollectionName)
 	m.ensureIndexes(analyticsCollection)
 
 	avgChange := mgo.Change{
