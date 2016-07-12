@@ -114,8 +114,8 @@ func (e *ElasticsearchPump) WriteData(data []interface{}) error {
 
 				mapping := map[string]interface{}{
 					"@timestamp":      record.TimeStamp,
-					"method":          record.Method,
-					"path":            record.Path,
+					"http_method":     record.Method,
+					"request_uri":     record.Path,
 					"response_code":   record.ResponseCode,
 					"ip_address":      record.IPAddress,
 					"api_key":         record.APIKey,
