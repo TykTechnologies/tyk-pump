@@ -113,18 +113,18 @@ func (e *ElasticsearchPump) WriteData(data []interface{}) error {
 				var record, _ = data[dataIndex].(analytics.AnalyticsRecord)
 
 				mapping := map[string]interface{}{
-					"@timestamp":    record.TimeStamp,
-					"method":        record.Method,
-					"path":          record.Path,
-					"response_code": record.ResponseCode,
-					"ip_address":    record.IPAddress,
-					"api_key":       record.APIKey,
-					"api_version":   record.APIVersion,
-					"api_name":      record.APIName,
-					"api_id":        record.APIID,
-					"org_id":        record.OrgID,
-					"oauth_id":      record.OauthID,
-					"request_time":  record.RequestTime,
+					"@timestamp":      record.TimeStamp,
+					"method":          record.Method,
+					"path":            record.Path,
+					"response_code":   record.ResponseCode,
+					"ip_address":      record.IPAddress,
+					"api_key":         record.APIKey,
+					"api_version":     record.APIVersion,
+					"api_name":        record.APIName,
+					"api_id":          record.APIID,
+					"org_id":          record.OrgID,
+					"oauth_id":        record.OauthID,
+					"request_time_ms": record.RequestTime,
 				}
 
 				var _, err = index.BodyJson(mapping).Type(e.esConf.DocumentType).Do()
