@@ -117,6 +117,7 @@ func (e *ElasticsearchPump) WriteData(data []interface{}) error {
 					"method":        record.Method,
 					"path":          record.Path,
 					"response_code": record.ResponseCode,
+					"ip_address":    record.IPAddress,
 					"api_key":       record.APIKey,
 					"api_version":   record.APIVersion,
 					"api_name":      record.APIName,
