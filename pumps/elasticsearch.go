@@ -2,24 +2,25 @@ package pumps
 
 import (
 	"github.com/Sirupsen/logrus"
+	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/mitchellh/mapstructure"
 	"gopkg.in/olivere/elastic.v3"
 	"time"
 )
 
 type ElasticsearchPump struct {
-	esClient  *elastic.Client
-	esConf    *ElasticsearchConf
+	esClient *elastic.Client
+	esConf   *ElasticsearchConf
 }
 
 var elasticsearchPrefix string = "elasticsearch-pump"
 
 type ElasticsearchConf struct {
-	IndexName           string `mapstructure:"index_name"`
-	ElasticsearchURL    string `mapstructure:"elasticsearch_url"`
-	EnableSniffing      bool   `mapstructure:"use_sniffing"`
-	DocumentType        string `mapstructure:"document_type"`
-	RollingIndex        bool   `mapstructure:"rolling_index"`
+	IndexName        string `mapstructure:"index_name"`
+	ElasticsearchURL string `mapstructure:"elasticsearch_url"`
+	EnableSniffing   bool   `mapstructure:"use_sniffing"`
+	DocumentType     string `mapstructure:"document_type"`
+	RollingIndex     bool   `mapstructure:"rolling_index"`
 }
 
 func (e *ElasticsearchPump) New() Pump {
@@ -62,7 +63,7 @@ func (e *ElasticsearchPump) Init(config interface{}) error {
 	if e.esConf.RollingIndex {
 		log.WithFields(logrus.Fields{
 			"prefix": elasticsearchPrefix,
-		}).Info("Index will have date appended to it in the format ",e.esConf.IndexName,"-YYYY.MM.DD")
+		}).Info("Index will have date appended to it in the format ", e.esConf.IndexName, "-YYYY.MM.DD")
 	}
 
 	e.connect()
@@ -77,7 +78,7 @@ func (e *ElasticsearchPump) connect() {
 	if err != nil {
 		log.WithFields(logrus.Fields{
 			"prefix": elasticsearchPrefix,
-		}).Error("Elasticsearch connection failed:", err)
+		}).Error("Elasticsearch connection failed: ", err)
 		time.Sleep(5)
 		e.connect()
 	}
@@ -103,16 +104,32 @@ func (e *ElasticsearchPump) WriteData(data []interface{}) error {
 
 			if e.esConf.RollingIndex {
 				//This formats the date to be YYYY.MM.DD but Golang makes you use a specific date for its date formatting
-				indexName = indexName + "-" + currentTime.Format("2006.01.02") 
+				indexName = indexName + "-" + currentTime.Format("2006.01.02")
 			}
 
 			var index = e.esClient.Index().Index(indexName)
 
 			for dataIndex := range data {
-				var _, err = index.BodyJson(data[dataIndex]).Type(e.esConf.DocumentType).Do()
+				var record, _ = data[dataIndex].(analytics.AnalyticsRecord)
+
+				mapping := map[string]interface{}{
+					"@timestamp":    record.TimeStamp,
+					"method":        record.Method,
+					"path":          record.Path,
+					"response_code": record.ResponseCode,
+					"api_key":       record.APIKey,
+					"api_version":   record.APIVersion,
+					"api_name":      record.APIName,
+					"api_id":        record.APIID,
+					"org_id":        record.OrgID,
+					"oauth_id":      record.OauthID,
+					"request_time":  record.RequestTime,
+				}
+
+				var _, err = index.BodyJson(mapping).Type(e.esConf.DocumentType).Do()
 				if err != nil {
 					log.WithFields(logrus.Fields{
-					"prefix": elasticsearchPrefix,
+						"prefix": elasticsearchPrefix,
 					}).Error("Error while writing ", data[dataIndex], err)
 				}
 			}
