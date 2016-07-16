@@ -85,7 +85,7 @@ func (p *GraylogPump) WriteData(data []interface{}) error {
 			}).Fatal(err)
 		}
 
-		rResp, err := base64.StdEncoding.DecodeString(record.RawRequest)
+		rResp, err := base64.StdEncoding.DecodeString(record.RawResponse)
 
 		if err != nil {
 			log.WithFields(logrus.Fields{
