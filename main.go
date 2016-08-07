@@ -95,6 +95,7 @@ func StartPurgeLoop(nextCount int) {
 	time.Sleep(time.Duration(nextCount) * time.Second)
 
 	AnalyticsValues := AnalyticsStore.GetAndDeleteSet(storage.ANALYTICS_KEYNAME)
+
 	if len(AnalyticsValues) > 0 {
 		// Convert to something clean
 		keys := make([]interface{}, len(AnalyticsValues), len(AnalyticsValues))

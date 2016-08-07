@@ -1,4 +1,3 @@
-
 package analytics
 
 import (
@@ -15,6 +14,7 @@ var log = logger.GetLogger()
 type AnalyticsRecord struct {
 	Method        string
 	Path          string
+	RawPath       string
 	ContentLength int64
 	UserAgent     string
 	Day           int

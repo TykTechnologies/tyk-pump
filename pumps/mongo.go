@@ -10,6 +10,8 @@ import (
 	"time"
 )
 
+const tenMB int = 10485760
+
 type MongoPump struct {
 	dbSession *mgo.Session
 	dbConf    *MongoConf
@@ -18,8 +20,10 @@ type MongoPump struct {
 var mongoPrefix string = "mongo-pump"
 
 type MongoConf struct {
-	CollectionName string `mapstructure:"collection_name"`
-	MongoURL       string `mapstructure:"mongo_url"`
+	CollectionName          string `mapstructure:"collection_name"`
+	MongoURL                string `mapstructure:"mongo_url"`
+	MaxInsertBatchSizeBytes int    `mapstructure:"max_insert_batch_size_bytes"`
+	MaxDocumentSizeBytes    int    `mapstructure:"max_document_size_bytes"`
 }
 
 func (m *MongoPump) New() Pump {
@@ -39,6 +43,20 @@ func (m *MongoPump) Init(config interface{}) error {
 		log.WithFields(logrus.Fields{
 			"prefix": mongoPrefix,
 		}).Fatal("Failed to decode configuration: ", err)
+	}
+
+	if m.dbConf.MaxInsertBatchSizeBytes == 0 {
+		log.WithFields(logrus.Fields{
+			"prefix": mongoPrefix,
+		}).Info("-- No max batch size set, defaulting to 10MB")
+		m.dbConf.MaxInsertBatchSizeBytes = tenMB
+	}
+
+	if m.dbConf.MaxDocumentSizeBytes == 0 {
+		log.WithFields(logrus.Fields{
+			"prefix": mongoPrefix,
+		}).Info("-- No max document size set, defaulting to 10MB")
+		m.dbConf.MaxDocumentSizeBytes = tenMB
 	}
 
 	m.connect()
@@ -84,25 +102,75 @@ func (m *MongoPump) WriteData(data []interface{}) error {
 			}).Fatal("No collection name!")
 		}
 
-		thisSession := m.dbSession.Copy()
-		defer thisSession.Close()
-		analyticsCollection := thisSession.DB("").C(collectionName)
+		for _, dataSet := range m.AccumulateSet(data) {
+			thisSession := m.dbSession.Copy()
+			defer thisSession.Close()
+			analyticsCollection := thisSession.DB("").C(collectionName)
 
-		log.WithFields(logrus.Fields{
-			"prefix": mongoPrefix,
-		}).Info("Purging ", len(data), " records")
+			log.WithFields(logrus.Fields{
+				"prefix": mongoPrefix,
+			}).Info("Purging ", len(dataSet), " records")
 
-		err := analyticsCollection.Insert(data...)
-		if err != nil {
-			log.Error("Problem inserting to mongo collection: ", err)
-			if strings.Contains(strings.ToLower(err.Error()), "closed explicitly") {
-				log.Warning("--> Detected connection failure, reconnecting")
-				m.connect()
+			err := analyticsCollection.Insert(dataSet...)
+			if err != nil {
+				log.Error("Problem inserting to mongo collection: ", err)
+				if strings.Contains(strings.ToLower(err.Error()), "closed explicitly") {
+					log.Warning("--> Detected connection failure, reconnecting")
+					m.connect()
+				}
 			}
 		}
+
 	}
 
 	return nil
+}
+
+func (m *MongoPump) AccumulateSet(data []interface{}) [][]interface{} {
+	var accumulatorTotal int
+	accumulatorTotal = 0
+	returnArray := make([][]interface{}, 0)
+
+	thisResultSet := make([]interface{}, 0)
+	for i, item := range data {
+		thisItem := item.(analytics.AnalyticsRecord)
+		sizeBytes := len([]byte(thisItem.RawRequest)) + len([]byte(thisItem.RawRequest))
+
+		skip := false
+		if sizeBytes > m.dbConf.MaxDocumentSizeBytes {
+			log.WithFields(logrus.Fields{
+				"prefix": mongoPrefix,
+			}).Warning("Document too large, skipping!")
+			skip = true
+		}
+
+		log.Debug("Size is: ", sizeBytes)
+
+		if !skip {
+			if (accumulatorTotal + sizeBytes) < m.dbConf.MaxInsertBatchSizeBytes {
+				accumulatorTotal += sizeBytes
+			} else {
+				log.Debug("Created new chunk entry")
+				if len(thisResultSet) > 0 {
+					returnArray = append(returnArray, thisResultSet)
+				}
+
+				thisResultSet = make([]interface{}, 0)
+				accumulatorTotal = sizeBytes
+			}
+			thisResultSet = append(thisResultSet, thisItem)
+
+			log.Debug(accumulatorTotal, " of ", m.dbConf.MaxInsertBatchSizeBytes)
+			// Append the last element if the loop is about to end
+			if i == (len(data) - 1) {
+				log.Debug("Appending last entry")
+				returnArray = append(returnArray, thisResultSet)
+			}
+		}
+
+	}
+
+	return returnArray
 }
 
 // WriteUptimeData will pull the data from the in-memory store and drop it into the specified MongoDB collection
