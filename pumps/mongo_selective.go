@@ -129,15 +129,15 @@ func (m *MongoSelectivePump) ensureIndexes(c *mgo.Collection) error {
 		return err
 	}
 
-	// idOrgApiIndex := mgo.Index{
-	// 	Key:        []string{"_id", "orgid", "apiid"},
-	// 	Background: true,
-	// }
+	idOrgApiIndex := mgo.Index{
+		Key:        []string{"_id", "orgid", "apiid"},
+		Background: true,
+	}
 
-	// err = c.EnsureIndex(idOrgApiIndex)
-	// if err != nil {
-	// 	return err
-	// }
+	err = c.EnsureIndex(idOrgApiIndex)
+	if err != nil {
+		return err
+	}
 
 	idOrgErrIndex := mgo.Index{
 		Key:        []string{"_id", "orgid", "responsecode"},

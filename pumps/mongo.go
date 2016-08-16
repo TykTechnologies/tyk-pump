@@ -103,22 +103,26 @@ func (m *MongoPump) WriteData(data []interface{}) error {
 		}
 
 		for _, dataSet := range m.AccumulateSet(data) {
-			thisSession := m.dbSession.Copy()
-			defer thisSession.Close()
-			analyticsCollection := thisSession.DB("").C(collectionName)
 
-			log.WithFields(logrus.Fields{
-				"prefix": mongoPrefix,
-			}).Info("Purging ", len(dataSet), " records")
+			go func() {
+				thisSession := m.dbSession.Copy()
+				defer thisSession.Close()
+				analyticsCollection := thisSession.DB("").C(collectionName)
 
-			err := analyticsCollection.Insert(dataSet...)
-			if err != nil {
-				log.Error("Problem inserting to mongo collection: ", err)
-				if strings.Contains(strings.ToLower(err.Error()), "closed explicitly") {
-					log.Warning("--> Detected connection failure, reconnecting")
-					m.connect()
+				log.WithFields(logrus.Fields{
+					"prefix": mongoPrefix,
+				}).Info("Purging ", len(dataSet), " records")
+
+				err := analyticsCollection.Insert(dataSet...)
+				if err != nil {
+					log.Error("Problem inserting to mongo collection: ", err)
+					if strings.Contains(strings.ToLower(err.Error()), "closed explicitly") {
+						log.Warning("--> Detected connection failure!")
+						//m.connect()
+					}
 				}
-			}
+			}()
+
 		}
 
 	}
@@ -144,13 +148,13 @@ func (m *MongoPump) AccumulateSet(data []interface{}) [][]interface{} {
 			skip = true
 		}
 
-		log.Debug("Size is: ", sizeBytes)
+		log.Info("Size is: ", sizeBytes)
 
 		if !skip {
 			if (accumulatorTotal + sizeBytes) < m.dbConf.MaxInsertBatchSizeBytes {
 				accumulatorTotal += sizeBytes
 			} else {
-				log.Debug("Created new chunk entry")
+				log.Info("Created new chunk entry")
 				if len(thisResultSet) > 0 {
 					returnArray = append(returnArray, thisResultSet)
 				}
@@ -158,6 +162,7 @@ func (m *MongoPump) AccumulateSet(data []interface{}) [][]interface{} {
 				thisResultSet = make([]interface{}, 0)
 				accumulatorTotal = sizeBytes
 			}
+			log.Info("Accumulator is: ", accumulatorTotal)
 			thisResultSet = append(thisResultSet, thisItem)
 
 			log.Debug(accumulatorTotal, " of ", m.dbConf.MaxInsertBatchSizeBytes)
