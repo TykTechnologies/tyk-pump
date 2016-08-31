@@ -2,8 +2,11 @@ package main
 
 import (
 	"encoding/json"
+	"github.com/kelseyhightower/envconfig"
 	"io/ioutil"
 )
+
+const ENV_PREVIX string = "TYK_PMP"
 
 type PumpConfig struct {
 	Name string                 `json:"name"`
@@ -29,5 +32,10 @@ func LoadConfig(filePath *string, configStruct *TykPumpConfiguration) {
 	marshalErr := json.Unmarshal(configuration, &configStruct)
 	if marshalErr != nil {
 		log.Fatal("Couldn't unmarshal configuration: ", marshalErr)
+	}
+
+	overrideErr := envconfig.Process(ENV_PREVIX, configStruct)
+	if overrideErr != nil {
+		log.Error("Failed to process environment variables after file load: ", overrideErr)
 	}
 }
