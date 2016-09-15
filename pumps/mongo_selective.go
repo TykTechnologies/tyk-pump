@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/Sirupsen/logrus"
 	"github.com/TykTechnologies/tyk-pump/analytics"
+	"github.com/kelseyhightower/envconfig"
 	"github.com/lonelycode/mgohacks"
 	"github.com/mitchellh/mapstructure"
 	"gopkg.in/mgo.v2"
@@ -18,6 +19,7 @@ type MongoSelectivePump struct {
 }
 
 var mongoSelectivePrefix string = "mongo-pump-selective"
+var mongoSelectivePumpPrefix string = "PMP_MONGOSEL"
 
 type MongoSelectiveConf struct {
 	MongoURL                string `mapstructure:"mongo_url"`
@@ -49,6 +51,11 @@ func (m *MongoSelectivePump) Init(config interface{}) error {
 		log.WithFields(logrus.Fields{
 			"prefix": mongoSelectivePrefix,
 		}).Fatal("Failed to decode configuration: ", err)
+	}
+
+	overrideErr := envconfig.Process(mongoSelectivePumpPrefix, m.dbConf)
+	if overrideErr != nil {
+		log.Error("Failed to process environment variables for mongo selective pump: ", overrideErr)
 	}
 
 	if m.dbConf.MaxInsertBatchSizeBytes == 0 {

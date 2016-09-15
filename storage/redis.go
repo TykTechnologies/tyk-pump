@@ -3,6 +3,7 @@ package storage
 import (
 	"github.com/Sirupsen/logrus"
 	"github.com/garyburd/redigo/redis"
+	"github.com/kelseyhightower/envconfig"
 	"github.com/lonelycode/redigocluster/rediscluster"
 	"github.com/mitchellh/mapstructure"
 	"strconv"
@@ -13,6 +14,7 @@ import (
 
 var redisClusterSingleton *rediscluster.RedisCluster
 var redisLogPrefix = "redis"
+var ENV_REDIS_PREFIX = "TYK_PMP_REDIS"
 
 type RedisStorageConfig struct {
 	Type           string            `mapstructure:"type"`
@@ -107,6 +109,11 @@ func (r *RedisClusterStorageManager) Init(config interface{}) error {
 		log.WithFields(logrus.Fields{
 			"prefix": redisLogPrefix,
 		}).Fatal("Failed to decode configuration: ", err)
+	}
+
+	overrideErr := envconfig.Process(ENV_REDIS_PREFIX, &r.Config)
+	if overrideErr != nil {
+		log.Error("Failed to process environment variables for redis: ", overrideErr)
 	}
 
 	if r.Config.RedisKeyPrefix == "" {

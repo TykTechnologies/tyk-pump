@@ -3,6 +3,7 @@ package pumps
 import (
 	"github.com/Sirupsen/logrus"
 	"github.com/TykTechnologies/tyk-pump/analytics"
+	"github.com/kelseyhightower/envconfig"
 	"github.com/mitchellh/mapstructure"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/vmihailenco/msgpack.v2"
@@ -18,6 +19,7 @@ type MongoPump struct {
 }
 
 var mongoPrefix string = "mongo-pump"
+var mongoPumpPrefix string = "PMP_MONGO"
 
 type MongoConf struct {
 	CollectionName          string `mapstructure:"collection_name"`
@@ -43,6 +45,11 @@ func (m *MongoPump) Init(config interface{}) error {
 		log.WithFields(logrus.Fields{
 			"prefix": mongoPrefix,
 		}).Fatal("Failed to decode configuration: ", err)
+	}
+
+	overrideErr := envconfig.Process(mongoPumpPrefix, m.dbConf)
+	if overrideErr != nil {
+		log.Error("Failed to process environment variables for mongo pump: ", overrideErr)
 	}
 
 	if m.dbConf.MaxInsertBatchSizeBytes == 0 {

@@ -6,6 +6,7 @@ import (
 	"github.com/Sirupsen/logrus"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/fatih/structs"
+	"github.com/kelseyhightower/envconfig"
 	"github.com/lonelycode/mgohacks"
 	"github.com/mitchellh/mapstructure"
 	"gopkg.in/mgo.v2"
@@ -18,6 +19,8 @@ import (
 const (
 	AgggregateMixedCollectionName string = "tyk_analytics_aggregates"
 )
+
+var mongoAggregatePumpPrefix string = "PMP_MONGOAGG"
 
 type Counter struct {
 	Hits             int       `json:"hits"`
@@ -274,6 +277,11 @@ func (m *MongoAggregatePump) Init(config interface{}) error {
 		log.WithFields(logrus.Fields{
 			"prefix": mongoAggregatePrefix,
 		}).Fatal("Failed to decode configuration: ", err)
+	}
+
+	overrideErr := envconfig.Process(mongoAggregatePumpPrefix, m.dbConf)
+	if overrideErr != nil {
+		log.Error("Failed to process environment variables for mongo aggregate pump: ", overrideErr)
 	}
 
 	m.connect()
