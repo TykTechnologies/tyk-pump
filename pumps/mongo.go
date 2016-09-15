@@ -155,13 +155,13 @@ func (m *MongoPump) AccumulateSet(data []interface{}) [][]interface{} {
 			skip = true
 		}
 
-		log.Info("Size is: ", sizeBytes)
+		log.Debug("Size is: ", sizeBytes)
 
 		if !skip {
 			if (accumulatorTotal + sizeBytes) < m.dbConf.MaxInsertBatchSizeBytes {
 				accumulatorTotal += sizeBytes
 			} else {
-				log.Info("Created new chunk entry")
+				log.Debug("Created new chunk entry")
 				if len(thisResultSet) > 0 {
 					returnArray = append(returnArray, thisResultSet)
 				}
@@ -169,7 +169,7 @@ func (m *MongoPump) AccumulateSet(data []interface{}) [][]interface{} {
 				thisResultSet = make([]interface{}, 0)
 				accumulatorTotal = sizeBytes
 			}
-			log.Info("Accumulator is: ", accumulatorTotal)
+			log.Debug("Accumulator is: ", accumulatorTotal)
 			thisResultSet = append(thisResultSet, thisItem)
 
 			log.Debug(accumulatorTotal, " of ", m.dbConf.MaxInsertBatchSizeBytes)
