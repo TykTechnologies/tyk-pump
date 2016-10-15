@@ -15,6 +15,7 @@ var log = logger.GetLogger()
 type AnalyticsRecord struct {
 	Method        string
 	Path          string
+	RawPath       string
 	ContentLength int64
 	UserAgent     string
 	Day           int
@@ -36,6 +37,7 @@ type AnalyticsRecord struct {
 	Geo           GeoData
 	Tags          []string
 	Alias         string
+	TrackPath     bool
 	ExpireAt      time.Time `bson:"expireAt" json:"expireAt"`
 }
 
