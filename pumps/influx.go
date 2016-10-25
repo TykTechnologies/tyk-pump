@@ -2,6 +2,7 @@ package pumps
 
 import (
 	"encoding/json"
+	"strings"
 	"time"
 
 	"github.com/Sirupsen/logrus"
@@ -107,8 +108,8 @@ func (i *InfluxPump) WriteData(data []interface{}) error {
 			"ip_address":    decoded.IPAddress,
 		}
 
-		var tags map[string]string
-		var fields map[string]interface{}
+		tags := make(map[string]string)
+		fields := make(map[string]interface{})
 
 		// Select tags from config
 		for _, t := range i.dbConf.Tags {
@@ -118,7 +119,9 @@ func (i *InfluxPump) WriteData(data []interface{}) error {
 			if err != nil {
 				tag = ""
 			} else {
-				tag = string(b)
+
+				// convert and remove surrounding quotes from tag value
+				tag = strings.Trim(string(b),"\"")
 			}
 			tags[t] = tag
 		}
