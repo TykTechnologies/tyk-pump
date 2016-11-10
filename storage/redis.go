@@ -8,6 +8,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"strconv"
 	"time"
+	"strings"
 )
 
 // ------------------- REDIS CLUSTER STORAGE MANAGER -------------------------------
@@ -16,11 +17,27 @@ var redisClusterSingleton *rediscluster.RedisCluster
 var redisLogPrefix = "redis"
 var ENV_REDIS_PREFIX = "TYK_PMP_REDIS"
 
+type EnvMapString map[string]string
+func (e *EnvMapString) Decode(value string) error {
+    units := strings.Split(value, ",")
+    m := make(map[string]string)
+    for _, unit := range(units) {
+    	kvArr := strings.Split(unit, ":")
+    	if len(kvArr) > 1 {
+    		m[kvArr[0]] = kvArr[1]
+    	}
+    }
+
+    *e = m
+
+    return nil
+}
+
 type RedisStorageConfig struct {
 	Type           string            `mapstructure:"type"`
 	Host           string            `mapstructure:"host"`
 	Port           int               `mapstructure:"port"`
-	Hosts          map[string]string `mapstructure:"hosts"`
+	Hosts          EnvMapString      `mapstructure:"hosts"`
 	Username       string            `mapstructure:"username"`
 	Password       string            `mapstructure:"password"`
 	Database       int               `mapstructure:"database"`

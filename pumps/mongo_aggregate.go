@@ -52,13 +52,16 @@ type AnalyticsRecordAggregate struct {
 	Geo      map[string]*Counter
 	Tags     map[string]*Counter
 
+	Endpoints map[string]*Counter
+
 	Lists struct {
-		APIKeys  []Counter
-		APIID    []Counter
-		OauthIDs []Counter
-		Geo      []Counter
-		Tags     []Counter
-		Errors   []Counter
+		APIKeys   []Counter
+		APIID     []Counter
+		OauthIDs  []Counter
+		Geo       []Counter
+		Tags      []Counter
+		Errors    []Counter
+		Endpoints []Counter
 	}
 
 	Total Counter
@@ -76,6 +79,7 @@ func (f AnalyticsRecordAggregate) New() AnalyticsRecordAggregate {
 	thisF.OauthIDs = make(map[string]*Counter)
 	thisF.Geo = make(map[string]*Counter)
 	thisF.Tags = make(map[string]*Counter)
+	thisF.Endpoints = make(map[string]*Counter)
 
 	return thisF
 }
@@ -141,6 +145,10 @@ func (f *AnalyticsRecordAggregate) AsChange() bson.M {
 
 	for thisUnit, incVal := range f.Tags {
 		newUpdate = f.generateBSONFromProperty("tags", thisUnit, incVal, newUpdate)
+	}
+
+	for thisUnit, incVal := range f.Endpoints {
+		newUpdate = f.generateBSONFromProperty("endpoints", thisUnit, incVal, newUpdate)
 	}
 
 	newUpdate = f.generateBSONFromProperty("", "total", &f.Total, newUpdate)
@@ -227,6 +235,15 @@ func (f *AnalyticsRecordAggregate) AsTimeUpdate() bson.M {
 		tags = append(tags, *incVal)
 	}
 	newUpdate["$set"].(bson.M)["lists.tags"] = tags
+
+	endpoints := make([]Counter, 0)
+	newUpdate["$set"].(bson.M)["lists.endpoints"] = make([]interface{}, 0)
+	for thisUnit, incVal := range f.Endpoints {
+		newTime := incVal.TotalRequestTime / float64(incVal.Hits)
+		newUpdate = f.generateSetterForTime("endpoints", thisUnit, newTime, newUpdate)
+		endpoints = append(endpoints, *incVal)
+	}
+	newUpdate["$set"].(bson.M)["lists.endpoints"] = endpoints
 
 	newTime := f.Total.TotalRequestTime / float64(f.Total.Hits)
 	newUpdate = f.generateSetterForTime("", "total", newTime, newUpdate)
@@ -497,11 +514,21 @@ func (m *MongoAggregatePump) WriteData(data []interface{}) error {
 							thisAggregate.Tags[thisTag].HumanIdentifier = thisTag
 						}
 						break
+					
+					case "TrackPath":
+						if value.(bool) == true {
+							c := IncrementOrSetUnit(thisAggregate.Endpoints[thisV.Path])	
+							thisAggregate.Endpoints[thisV.Path] = c
+							thisAggregate.Endpoints[thisV.Path].Identifier = thisV.Path
+							thisAggregate.Endpoints[thisV.Path].HumanIdentifier = thisV.Path
+						}
+						break
 					}
-
-					analyticsPerOrg[collectionName] = thisAggregate
-
 				}
+
+				analyticsPerOrg[collectionName] = thisAggregate
+
+				
 			}
 		}
 
