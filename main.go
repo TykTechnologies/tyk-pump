@@ -52,7 +52,7 @@ func setupAnalyticsStore() {
 	uptimeConf := SystemConfig.AnalyticsStorageConfig
 
 	// Swap key prefixes for uptime purger
-	uptimeConf.(map[string]interface{})["redis_key_prefix"] = "host-checker:"
+	uptimeConf.RedisKeyPrefix = "host-checker:"
 	UptimeStorage.Init(uptimeConf)
 }
 

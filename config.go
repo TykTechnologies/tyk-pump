@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/kelseyhightower/envconfig"
 	"io/ioutil"
+	"github.com/TykTechnologies/tyk-pump/storage"
 )
 
 const ENV_PREVIX string = "TYK_PMP"
@@ -14,12 +15,12 @@ type PumpConfig struct {
 }
 
 type TykPumpConfiguration struct {
-	PurgeDelay             int                   `json:"purge_delay"`
-	DontPurgeUptimeData    bool                  `json:"dont_purge_uptime_data"`
-	UptimePumpConfig       interface{}           `json:"uptime_pump_config"`
-	Pumps                  map[string]PumpConfig `json:"pumps"`
-	AnalyticsStorageType   string                `json:"analytics_storage_type"`
-	AnalyticsStorageConfig interface{}           `json:"analytics_storage_config"`
+	PurgeDelay             int                                  `json:"purge_delay"`
+	DontPurgeUptimeData    bool                                 `json:"dont_purge_uptime_data"`
+	UptimePumpConfig       interface{}                          `json:"uptime_pump_config"`
+	Pumps                  map[string]PumpConfig                `json:"pumps"`
+	AnalyticsStorageType   string                               `json:"analytics_storage_type"`
+	AnalyticsStorageConfig storage.RedisStorageConfig           `json:"analytics_storage_config"`
 }
 
 func LoadConfig(filePath *string, configStruct *TykPumpConfiguration) {
