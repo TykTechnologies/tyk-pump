@@ -69,6 +69,9 @@ fpm -n tyk-pump -v $VERSION  --after-install $amd64TGZDIR/install/post_install.s
 AMDDEBNAME="tyk-pump_"$VERSION"_amd64.deb"
 AMDRPMNAME="tyk-pump-"$VERSION"-1.x86_64.rpm"
 
+echo "Signing AMD RPM"
+~/build_tools/rpm-sign.exp $amd64TGZDIR/$AMDRPMNAME
+
 package_cloud push tyk/$PACKAGECLOUDREPO/ubuntu/precise $AMDDEBNAME
 package_cloud push tyk/$PACKAGECLOUDREPO/ubuntu/trusty $AMDDEBNAME
 package_cloud push tyk/$PACKAGECLOUDREPO/debian/jessie $AMDDEBNAME
@@ -84,6 +87,9 @@ fpm -n tyk-pump -v $VERSION --after-install $amd64TGZDIR/install/post_install.sh
 i386DEBNAME="tyk-pump_"$VERSION"_i386.deb"
 i386RPMNAME="tyk-pump-"$VERSION"-1.i386.rpm"
 
+echo "Signing i386 RPM"
+~/build_tools/rpm-sign.exp $i386TGZDIR/$i386RPMNAME
+
 package_cloud push tyk/$PACKAGECLOUDREPO/ubuntu/precise $i386DEBNAME
 package_cloud push tyk/$PACKAGECLOUDREPO/ubuntu/trusty $i386DEBNAME
 package_cloud push tyk/$PACKAGECLOUDREPO/debian/jessie $i386DEBNAME
@@ -97,6 +103,9 @@ fpm -n tyk-pump -v $VERSION --after-install $amd64TGZDIR/install/post_install.sh
 
 ARMDEBNAME="tyk-pump_"$VERSION"_arm64.deb"
 ARMRPMNAME="tyk-pump-"$VERSION"-1.arm64.rpm"
+
+echo "Signing Arm RPM"
+~/build_tools/rpm-sign.exp $armTGZDIR/$ARMRPMNAME
 
 package_cloud push tyk/$PACKAGECLOUDREPO/ubuntu/precise $ARMDEBNAME
 package_cloud push tyk/$PACKAGECLOUDREPO/ubuntu/trusty $ARMDEBNAME
