@@ -49,7 +49,7 @@ cp -R $i386TGZDIR/* $armTGZDIR
 
 cp tyk-pump_linux_386 $i386TGZDIR/$SOURCEBIN
 cp tyk-pump_linux_amd64 $amd64TGZDIR/$SOURCEBIN
-cp tyk-pump_linux_arm $armTGZDIR/$SOURCEBIN
+cp tyk-pump_linux_arm64 $armTGZDIR/$SOURCEBIN
 
 echo "Compressing"
 cd $i386TGZDIR/../
