@@ -3,7 +3,7 @@ package pumps
 import (
 	"encoding/csv"
 	"fmt"
-	"github.com/Sirupsen/logrus"
+	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/mitchellh/mapstructure"
 	"os"

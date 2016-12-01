@@ -1,10 +1,11 @@
 package logger
 
 import (
-	"github.com/Sirupsen/logrus"
-	prefixed "github.com/x-cray/logrus-prefixed-formatter"
 	"os"
 	"strings"
+
+	"github.com/TykTechnologies/logrus"
+	prefixed "github.com/TykTechnologies/logrus-prefixed-formatter"
 )
 
 var log = logrus.New()

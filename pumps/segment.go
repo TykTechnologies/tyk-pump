@@ -2,7 +2,7 @@ package pumps
 
 import (
   "encoding/json"
-  "github.com/Sirupsen/logrus"
+  "github.com/TykTechnologies/logrus"
   "github.com/TykTechnologies/tyk-pump/analytics"
   "github.com/mitchellh/mapstructure"
   segment "github.com/segmentio/analytics-go"

@@ -3,7 +3,7 @@ package pumps
 import (
 	b64 "encoding/base64"
 	"errors"
-	"github.com/Sirupsen/logrus"
+	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/fatih/structs"
 	"github.com/kelseyhightower/envconfig"

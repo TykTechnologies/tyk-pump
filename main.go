@@ -2,14 +2,15 @@ package main
 
 import (
 	"flag"
-	"github.com/Sirupsen/logrus"
+	"time"
+
+	"github.com/TykTechnologies/logrus"
+	prefixed "github.com/TykTechnologies/logrus-prefixed-formatter"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/TykTechnologies/tyk-pump/pumps"
 	"github.com/TykTechnologies/tyk-pump/storage"
 	logger "github.com/TykTechnologies/tykcommon-logger"
-	prefixed "github.com/x-cray/logrus-prefixed-formatter"
 	"gopkg.in/vmihailenco/msgpack.v2"
-	"time"
 )
 
 var SystemConfig TykPumpConfiguration
