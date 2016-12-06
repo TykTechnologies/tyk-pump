@@ -19,7 +19,7 @@ armBINDIR=$SOURCEBINPATH/build/arm/tyk-pump.linux.arm64-$VERSION
 i386TGZDIR=$SOURCEBINPATH/build/i386/tgz/tyk-pump.linux.i386-$VERSION
 amd64TGZDIR=$SOURCEBINPATH/build/amd64/tgz/tyk-pump.linux.amd64-$VERSION
 armTGZDIR=$SOURCEBINPATH/build/arm/tgz/tyk-pump.linux.arm64-$VERSION
-export PACKAGECLOUDREPO=tyk-pump-auto
+export PACKAGECLOUDREPO=$PC_TARGET
 
 cd $SOURCEBINPATH
 
