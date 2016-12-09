@@ -43,10 +43,10 @@ type RedisStorageConfig struct {
 	Username       string       `mapstructure:"username"`
 	Password       string       `mapstructure:"password"`
 	Database       int          `mapstructure:"database"`
-	MaxIdle        int          `mapstructure:"optimisation_max_idle"`
-	MaxActive      int          `mapstructure:"optimisation_max_active"`
-	EnableCluster  bool         `mapstructure:"enable_cluster"`
-	RedisKeyPrefix string       `mapstructure:"redis_key_prefix"`
+	MaxIdle        int          `mapstructure:"optimisation_max_idle" json:"optimisation_max_idle"`
+	MaxActive      int          `mapstructure:"optimisation_max_active" json:"optimisation_max_active"`
+	EnableCluster  bool         `mapstructure:"enable_cluster" json:"enable_cluster"`
+	RedisKeyPrefix string       `mapstructure:"redis_key_prefix" json:"redis_key_prefix"`
 }
 
 // RedisClusterStorageManager is a storage manager that uses the redis database.
