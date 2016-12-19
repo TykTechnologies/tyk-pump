@@ -1,0 +1,224 @@
+{
+	"comment": "",
+	"ignore": "test",
+	"package": [
+		{
+			"checksumSHA1": "j5NnY7tyNCx+Y5VrAMxKFqPPGWc=",
+			"path": "github.com/TykTechnologies/concurrent-map",
+			"revision": "7de59d53fd5c30afb681bfcfe58842d2e14136bd",
+			"revisionTime": "2016-09-08T20:14:09Z"
+		},
+		{
+			"checksumSHA1": "C7gtyz3E3AqJVC3vGJP7v2Q33Hg=",
+			"path": "github.com/TykTechnologies/logrus",
+			"revision": "55ff0f4b9b3de929d99bad783723811ff7add9b6",
+			"revisionTime": "2016-12-01T17:12:39Z"
+		},
+		{
+			"checksumSHA1": "xIq5uj5CzOoqr2MXhoq+Le4iaY8=",
+			"path": "github.com/TykTechnologies/logrus-prefixed-formatter",
+			"revision": "85209afb73a644d3e53cf08a6d0d101f349004a9",
+			"revisionTime": "2016-12-01T17:11:21Z"
+		},
+		{
+			"checksumSHA1": "GvjUf4roQySScpjXIPpg7RsqE4k=",
+			"path": "github.com/TykTechnologies/tykcommon-logger",
+			"revision": "7bae07354ebad4c0feff3617b9f530af9b0c3aa9",
+			"revisionTime": "2016-12-01T17:11:51Z"
+		},
+		{
+			"checksumSHA1": "KCWVxG+J8SxHGlGiUghe0KBGsa8=",
+			"path": "github.com/fatih/structs",
+			"revision": "dc3312cb1a4513a366c4c9e622ad55c32df12ed3",
+			"revisionTime": "2016-08-07T23:55:29Z"
+		},
+		{
+			"checksumSHA1": "2UmMbNHc8FBr98mJFN1k8ISOIHk=",
+			"path": "github.com/garyburd/redigo/internal",
+			"revision": "80f7de34463b0ed3d7c61303e5619efe1b227f92",
+			"revisionTime": "2016-10-24T01:47:02Z"
+		},
+		{
+			"checksumSHA1": "qqi0xwKRUSRkYMFZcqWSS/4YAjA=",
+			"path": "github.com/garyburd/redigo/redis",
+			"revision": "80f7de34463b0ed3d7c61303e5619efe1b227f92",
+			"revisionTime": "2016-10-24T01:47:02Z"
+		},
+		{
+			"checksumSHA1": "VDlpbh8lu2c+OtaInlqnlyx6550=",
+			"path": "github.com/influxdata/influxdb/client/v2",
+			"revision": "b765a4b8c7d0c80deb6114d689c14024a7025623",
+			"revisionTime": "2016-11-18T01:02:01Z"
+		},
+		{
+			"checksumSHA1": "F0QWwfaZMoHZ385+EM+82Cg8JPg=",
+			"path": "github.com/influxdata/influxdb/models",
+			"revision": "b765a4b8c7d0c80deb6114d689c14024a7025623",
+			"revisionTime": "2016-11-18T01:02:01Z"
+		},
+		{
+			"checksumSHA1": "k4DPMyVAqsaoTQX40tP2fb4hDMs=",
+			"path": "github.com/influxdata/influxdb/pkg/escape",
+			"revision": "b765a4b8c7d0c80deb6114d689c14024a7025623",
+			"revisionTime": "2016-11-18T01:02:01Z"
+		},
+		{
+			"checksumSHA1": "bXHP00GWjyGEna9Gh5lAhxE6dLA=",
+			"path": "github.com/jehiah/go-strftime",
+			"revision": "2efbe75097a505e2789f7e39cb9da067b5be8e3e",
+			"revisionTime": "2015-12-06T19:48:10Z"
+		},
+		{
+			"checksumSHA1": "6I9mImOHbYFvZm9pdOsQVO6yEcI=",
+			"path": "github.com/kelseyhightower/envconfig",
+			"revision": "9aca109c9aec4633fced9717c4a09ecab3d33111",
+			"revisionTime": "2016-10-19T16:24:55Z"
+		},
+		{
+			"checksumSHA1": "AnC8rmtcY6KOHUZBdpcAFfjmxg0=",
+			"path": "github.com/lonelycode/mgohacks",
+			"revision": "f9c291f7e57e106e7dc4559b1de969f025ce39ca",
+			"revisionTime": "2015-08-20T02:40:25Z"
+		},
+		{
+			"checksumSHA1": "waE6Z3VT1RUBZ7RkkMajlVeOHjM=",
+			"path": "github.com/lonelycode/redigocluster/rediscluster",
+			"revision": "1284ae4700d04c162cd1fc7966f1a5aff43887f0",
+			"revisionTime": "2016-12-09T09:21:43Z"
+		},
+		{
+			"checksumSHA1": "hBgLmZ/4mCxmnH88mqFKBkpJFUY=",
+			"path": "github.com/mgutz/ansi",
+			"revision": "c286dcecd19ff979eeb73ea444e479b903f2cfcb",
+			"revisionTime": "2015-09-14T16:22:38Z"
+		},
+		{
+			"checksumSHA1": "UuXgD2dDojfS8AViUEe15gLIWZE=",
+			"path": "github.com/mitchellh/mapstructure",
+			"revision": "f3009df150dadf309fdee4a54ed65c124afad715",
+			"revisionTime": "2016-10-20T16:18:36Z"
+		},
+		{
+			"checksumSHA1": "Opg5ihMhafgqLXQT0MqyWv5ZE3E=",
+			"path": "github.com/quipo/statsd",
+			"revision": "75b7afedf0d2810e897fd5a010dbf896b20f535d",
+			"revisionTime": "2016-09-23T16:06:12Z"
+		},
+		{
+			"checksumSHA1": "08QvqIFShxjHn3mTWwXVCq+aqY8=",
+			"path": "github.com/quipo/statsd/event",
+			"revision": "75b7afedf0d2810e897fd5a010dbf896b20f535d",
+			"revisionTime": "2016-09-23T16:06:12Z"
+		},
+		{
+			"checksumSHA1": "1XJ7vBh9WiFoBQIvQmXwaKvxn70=",
+			"path": "github.com/robertkowalski/graylog-golang",
+			"revision": "e5295cfa28272ada50cb9b5d97696ee06e49ed42",
+			"revisionTime": "2015-11-21T03:10:40Z"
+		},
+		{
+			"checksumSHA1": "2I0GZtkkA6L4okm5CMXDDMA5kjE=",
+			"path": "github.com/segmentio/analytics-go",
+			"revision": "bdb0aeca8a993b292b85c9ec17b5ce0ff81848c8",
+			"revisionTime": "2016-07-11T22:59:31Z"
+		},
+		{
+			"checksumSHA1": "jK8cjKr2eA3JiQP+T4HLjQRV5ak=",
+			"path": "github.com/segmentio/backo-go",
+			"revision": "204274ad699c0983a70203a566887f17a717fef4",
+			"revisionTime": "2016-04-24T05:23:52Z"
+		},
+		{
+			"checksumSHA1": "KoefD9A3V8xGM+RpcQRyt5kK0XY=",
+			"origin": "github.com/lonelycode/redigocluster/rediscluster/vendor/github.com/streamrail/concurrent-map",
+			"path": "github.com/streamrail/concurrent-map",
+			"revision": "1284ae4700d04c162cd1fc7966f1a5aff43887f0",
+			"revisionTime": "2016-12-09T09:21:43Z"
+		},
+		{
+			"checksumSHA1": "LAL/r7KfCdqp4M6MM13+7NWsUNc=",
+			"path": "github.com/xtgo/uuid",
+			"revision": "a0b114877d4caeffbd7f87e3757c17fce570fea7",
+			"revisionTime": "2014-08-04T02:12:11Z"
+		},
+		{
+			"checksumSHA1": "9jjO5GjLa0XF/nfWihF02RoH4qc=",
+			"path": "golang.org/x/net/context",
+			"revision": "4971afdc2f162e82d185353533d3cf16188a9f4e",
+			"revisionTime": "2016-11-15T21:05:04Z"
+		},
+		{
+			"checksumSHA1": "WHc3uByvGaMcnSoI21fhzYgbOgg=",
+			"path": "golang.org/x/net/context/ctxhttp",
+			"revision": "4971afdc2f162e82d185353533d3cf16188a9f4e",
+			"revisionTime": "2016-11-15T21:05:04Z"
+		},
+		{
+			"checksumSHA1": "KqecwXo3OO+p4N+E9RhlHvl9I+w=",
+			"path": "golang.org/x/sys/unix",
+			"revision": "b699b7032584f0953262cb2788a0ca19bb494703",
+			"revisionTime": "2016-11-10T11:58:56Z"
+		},
+		{
+			"checksumSHA1": "1D8GzeoFGUs5FZOoyC2DpQg8c5Y=",
+			"path": "gopkg.in/mgo.v2",
+			"revision": "3f83fa5005286a7fe593b055f0d7771a7dce4655",
+			"revisionTime": "2016-08-18T02:01:20Z"
+		},
+		{
+			"checksumSHA1": "YsB2DChSV9HxdzHaKATllAUKWSI=",
+			"path": "gopkg.in/mgo.v2/bson",
+			"revision": "3f83fa5005286a7fe593b055f0d7771a7dce4655",
+			"revisionTime": "2016-08-18T02:01:20Z"
+		},
+		{
+			"checksumSHA1": "XQsrqoNT1U0KzLxOFcAZVvqhLfk=",
+			"path": "gopkg.in/mgo.v2/internal/json",
+			"revision": "3f83fa5005286a7fe593b055f0d7771a7dce4655",
+			"revisionTime": "2016-08-18T02:01:20Z"
+		},
+		{
+			"checksumSHA1": "LEvMCnprte47qdAxWvQ/zRxVF1U=",
+			"path": "gopkg.in/mgo.v2/internal/sasl",
+			"revision": "3f83fa5005286a7fe593b055f0d7771a7dce4655",
+			"revisionTime": "2016-08-18T02:01:20Z"
+		},
+		{
+			"checksumSHA1": "+1WDRPaOphSCmRMxVPIPBV4aubc=",
+			"path": "gopkg.in/mgo.v2/internal/scram",
+			"revision": "3f83fa5005286a7fe593b055f0d7771a7dce4655",
+			"revisionTime": "2016-08-18T02:01:20Z"
+		},
+		{
+			"checksumSHA1": "hmsF/4lK/blnq1B59gFN1lNYnFk=",
+			"path": "gopkg.in/olivere/elastic.v3",
+			"revision": "1ad75b5396674e9c783400e89106bc0c8da9d786",
+			"revisionTime": "2016-10-16T10:21:59Z"
+		},
+		{
+			"checksumSHA1": "lLdKOn9RPtFoTtPUNq5+sIInAiE=",
+			"path": "gopkg.in/olivere/elastic.v3/backoff",
+			"revision": "1ad75b5396674e9c783400e89106bc0c8da9d786",
+			"revisionTime": "2016-10-16T10:21:59Z"
+		},
+		{
+			"checksumSHA1": "XQg6xG6l15Ke43KolthYYnVDCYo=",
+			"path": "gopkg.in/olivere/elastic.v3/uritemplates",
+			"revision": "1ad75b5396674e9c783400e89106bc0c8da9d786",
+			"revisionTime": "2016-10-16T10:21:59Z"
+		},
+		{
+			"checksumSHA1": "auzS48O3vpr/7Yr2GEZZPQKjfhU=",
+			"path": "gopkg.in/vmihailenco/msgpack.v2",
+			"revision": "200315d5c8aab339f5a5cd44219f4b50ad0782df",
+			"revisionTime": "2016-11-14T09:30:20Z"
+		},
+		{
+			"checksumSHA1": "KqVHe5SB85yaDcseNq2CogozjRk=",
+			"path": "gopkg.in/vmihailenco/msgpack.v2/codes",
+			"revision": "200315d5c8aab339f5a5cd44219f4b50ad0782df",
+			"revisionTime": "2016-11-14T09:30:20Z"
+		}
+	],
+	"rootPath": "github.com/TykTechnologies/tyk-pump"
+}
