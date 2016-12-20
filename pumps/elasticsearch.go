@@ -16,11 +16,12 @@ type ElasticsearchPump struct {
 var elasticsearchPrefix string = "elasticsearch-pump"
 
 type ElasticsearchConf struct {
-	IndexName        string `mapstructure:"index_name"`
-	ElasticsearchURL string `mapstructure:"elasticsearch_url"`
-	EnableSniffing   bool   `mapstructure:"use_sniffing"`
-	DocumentType     string `mapstructure:"document_type"`
-	RollingIndex     bool   `mapstructure:"rolling_index"`
+	IndexName          string `mapstructure:"index_name"`
+	ElasticsearchURL   string `mapstructure:"elasticsearch_url"`
+	EnableSniffing     bool   `mapstructure:"use_sniffing"`
+	DocumentType       string `mapstructure:"document_type"`
+	RollingIndex       bool   `mapstructure:"rolling_index"`
+	ExtendedStatistics bool   `mapstructure:"extended_stats"`
 }
 
 func (e *ElasticsearchPump) New() Pump {
@@ -125,6 +126,12 @@ func (e *ElasticsearchPump) WriteData(data []interface{}) error {
 					"org_id":          record.OrgID,
 					"oauth_id":        record.OauthID,
 					"request_time_ms": record.RequestTime,
+				}
+
+				if e.esConf.ExtendedStatistics {
+					mapping["raw_request"] := record.RawRequest
+					mapping["raw_response"] := record.RawResponse
+					mapping["user_agent"] := record.UserAgent
 				}
 
 				var _, err = index.BodyJson(mapping).Type(e.esConf.DocumentType).Do()
