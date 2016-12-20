@@ -129,9 +129,9 @@ func (e *ElasticsearchPump) WriteData(data []interface{}) error {
 				}
 
 				if e.esConf.ExtendedStatistics {
-					mapping["raw_request"] := record.RawRequest
-					mapping["raw_response"] := record.RawResponse
-					mapping["user_agent"] := record.UserAgent
+					mapping["raw_request"] = record.RawRequest
+					mapping["raw_response"] = record.RawResponse
+					mapping["user_agent"] = record.UserAgent
 				}
 
 				var _, err = index.BodyJson(mapping).Type(e.esConf.DocumentType).Do()
