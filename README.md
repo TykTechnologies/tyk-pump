@@ -56,6 +56,7 @@ Create a `pump.conf` file:
                 "enable_sniffing": false,
                 "document_type": "tyk_analytics",
                 "rolling_index": false,
+                "extended_stats": false
             }
         },
         "influx": {

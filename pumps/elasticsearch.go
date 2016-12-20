@@ -128,6 +128,11 @@ func (e *ElasticsearchPump) WriteData(data []interface{}) error {
 					"request_time_ms": record.RequestTime,
 				}
 
+				if e.esConf.ExtendedStatistics {
+					mapping["raw_request"] := record.RawRequest
+					mapping["raw_response"] := record.RawResponse
+					mapping["user_agent"] := record.UserAgent
+				}
 
 				var _, err = index.BodyJson(mapping).Type(e.esConf.DocumentType).Do()
 				if err != nil {
