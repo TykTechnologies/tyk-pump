@@ -116,10 +116,9 @@ func StartPurgeLoop(nextCount int) {
 				}).Error("Couldn't unmarshal analytics data:", err)
 			} else {
 				keys[i] = interface{}(decoded)
+				job.Event("record")
 			}
 		}
-
-		job.Gauge("records", float64(len(keys)))
 
 		// Send to pumps
 		if Pumps != nil {
@@ -139,8 +138,6 @@ func StartPurgeLoop(nextCount int) {
 
 		job.Timing("purge_time_all", time.Since(startTime).Nanoseconds())
 
-	} else {
-		job.Gauge("records", float64(0))
 	}
 
 	if !SystemConfig.DontPurgeUptimeData {
