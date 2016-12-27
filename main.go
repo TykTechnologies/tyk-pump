@@ -139,6 +139,8 @@ func StartPurgeLoop(nextCount int) {
 
 		job.Timing("purge_time_all", time.Since(startTime).Nanoseconds())
 
+	} else {
+		job.Gauge("records", 0)
 	}
 
 	if !SystemConfig.DontPurgeUptimeData {
