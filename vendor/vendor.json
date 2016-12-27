@@ -45,6 +45,18 @@
 			"revisionTime": "2016-10-24T01:47:02Z"
 		},
 		{
+			"checksumSHA1": "YhswBYH9lPkmLN5kVz3nqlu6K5Q=",
+			"path": "github.com/gocraft/health",
+			"revision": "25b40f8580168c1f905a6dba35d471cdc51ca629",
+			"revisionTime": "2016-07-11T12:47:28Z"
+		},
+		{
+			"checksumSHA1": "AGGHyqsM4MN/lfBGXguLtb6xd38=",
+			"path": "github.com/gocraft/health/stack",
+			"revision": "25b40f8580168c1f905a6dba35d471cdc51ca629",
+			"revisionTime": "2016-07-11T12:47:28Z"
+		},
+		{
 			"checksumSHA1": "VDlpbh8lu2c+OtaInlqnlyx6550=",
 			"path": "github.com/influxdata/influxdb/client/v2",
 			"revision": "b765a4b8c7d0c80deb6114d689c14024a7025623",

@@ -92,12 +92,16 @@ func initialisePumps() {
 }
 
 func StartPurgeLoop(nextCount int) {
+	job := instrument.NewJob("PumpRecordsPurge")
 
 	time.Sleep(time.Duration(nextCount) * time.Second)
 
 	AnalyticsValues := AnalyticsStore.GetAndDeleteSet(storage.ANALYTICS_KEYNAME)
 
+	job.Gauge("records", float64(len(AnalyticsValues)))
 	if len(AnalyticsValues) > 0 {
+		startTime := time.Now()
+
 		// Convert to something clean
 		keys := make([]interface{}, len(AnalyticsValues), len(AnalyticsValues))
 
@@ -123,12 +127,16 @@ func StartPurgeLoop(nextCount int) {
 					"prefix": mainPrefix,
 				}).Debug("Writing to: ", pmp.GetName())
 				pmp.WriteData(keys)
+				job.Timing("purge_time_"+pmp.GetName(), time.Since(startTime).Nanoseconds())
+
 			}
 		} else {
 			log.WithFields(logrus.Fields{
 				"prefix": mainPrefix,
 			}).Warning("No pumps defined!")
 		}
+
+		job.Timing("purge_time_all", time.Since(startTime).Nanoseconds())
 
 	}
 
@@ -151,5 +159,7 @@ func main() {
 	log.WithFields(logrus.Fields{
 		"prefix": mainPrefix,
 	}).Info("Starting purge loop @", SystemConfig.PurgeDelay, "(s)")
+
+	SetupInstrumentation()
 	StartPurgeLoop(SystemConfig.PurgeDelay)
 }
