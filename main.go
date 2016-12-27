@@ -98,7 +98,6 @@ func StartPurgeLoop(nextCount int) {
 
 	AnalyticsValues := AnalyticsStore.GetAndDeleteSet(storage.ANALYTICS_KEYNAME)
 
-	job.Gauge("records", float64(len(AnalyticsValues)))
 	if len(AnalyticsValues) > 0 {
 		startTime := time.Now()
 
@@ -119,6 +118,8 @@ func StartPurgeLoop(nextCount int) {
 				keys[i] = interface{}(decoded)
 			}
 		}
+
+		job.Gauge("records", float64(len(keys)))
 
 		// Send to pumps
 		if Pumps != nil {
