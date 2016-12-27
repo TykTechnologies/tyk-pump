@@ -119,8 +119,6 @@ func StartPurgeLoop(nextCount int) {
 			}
 		}
 
-		job.Gauge("records", float64(len(keys)))
-
 		// Send to pumps
 		if Pumps != nil {
 			for _, pmp := range Pumps {
@@ -137,10 +135,9 @@ func StartPurgeLoop(nextCount int) {
 			}).Warning("No pumps defined!")
 		}
 
+		job.Gauge("records", float64(len(keys)))
 		job.Timing("purge_time_all", time.Since(startTime).Nanoseconds())
 
-	} else {
-		job.Gauge("records", 0)
 	}
 
 	if !SystemConfig.DontPurgeUptimeData {
