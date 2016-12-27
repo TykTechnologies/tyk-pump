@@ -55,7 +55,8 @@ Create a `pump.conf` file:
                 "elasticsearch_url": "localhost:9200",
                 "enable_sniffing": false,
                 "document_type": "tyk_analytics",
-                "rolling_index": false
+                "rolling_index": false,
+                "extended_stats": false
             }
         },
         "influx": {
@@ -139,3 +140,24 @@ Settings are the same as for the original `tyk.conf` for redis and for mongoDB.
 
 `"rolling_index"` - Appends the date to the end of the index name, so each days data is split into a different index name. E.g. tyk_analytics-2016.02.28 Defaults to false
 
+`"extended_stats"` - If set to true will include the following additional fields: Raw Request, Raw Response and User Agent.
+
+## Compiling & Testing
+
+1. Download dependent packages:
+
+  ```
+  go get -t -d -v ./...
+  ```
+
+2. Compile:
+
+  ```
+  go build -v ./...
+  ```
+
+3. Test
+
+  ```
+  go test -v ./...
+  ```
