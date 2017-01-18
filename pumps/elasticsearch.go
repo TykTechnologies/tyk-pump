@@ -4,12 +4,15 @@ import (
 	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/mitchellh/mapstructure"
-	"gopkg.in/olivere/elastic.v3"
 	"time"
+	elasticv3 "gopkg.in/olivere/elastic.v3"
+	elasticv5 "gopkg.in/olivere/elastic.v5"
+	"errors"
+	"context"
 )
 
 type ElasticsearchPump struct {
-	esClient *elastic.Client
+	operator ElasticsearchOperator
 	esConf   *ElasticsearchConf
 }
 
@@ -22,6 +25,40 @@ type ElasticsearchConf struct {
 	DocumentType       string `mapstructure:"document_type"`
 	RollingIndex       bool   `mapstructure:"rolling_index"`
 	ExtendedStatistics bool   `mapstructure:"extended_stats"`
+	Version            string   `mapstructure:"version"`
+}
+
+type ElasticsearchOperator interface {
+	processData(data []interface{}, esConf *ElasticsearchConf) error
+}
+
+
+type Elasticsearch3Operator struct {
+	esClient *elasticv3.Client
+}
+
+type Elasticsearch5Operator struct {
+	esClient *elasticv5.Client
+}
+
+func GetOperator(version string, url string, setSniff bool) (ElasticsearchOperator, error) {
+	var err error
+
+	if version == "3" {
+		var e = new(Elasticsearch3Operator)
+		e.esClient, err = elasticv3.NewClient(elasticv3.SetURL(url), elasticv3.SetSniff(setSniff))
+		return e, err
+	} else if version == "5" {
+		var e = new(Elasticsearch5Operator)
+		e.esClient, err = elasticv5.NewClient(elasticv5.SetURL(url), elasticv5.SetSniff(setSniff))
+		return e, err
+	} else {
+		// shouldn't get this far, but hey never hurts to check assumptions
+		log.WithFields(logrus.Fields{
+			"prefix": elasticsearchPrefix,
+		}).Fatal("Invalid version: ")
+	}
+	return nil, err
 }
 
 func (e *ElasticsearchPump) New() Pump {
@@ -55,6 +92,20 @@ func (e *ElasticsearchPump) Init(config interface{}) error {
 		e.esConf.DocumentType = "tyk_analytics"
 	}
 
+	if "" == e.esConf.Version {
+		e.esConf.Version = "5"
+		log.WithFields(logrus.Fields{
+			"prefix": elasticsearchPrefix,
+		}).Info("Version not specified, defaulting to 5. If you are using an earlier version of Elasticsearch, please specify \"version\" = \"3\"")
+	}
+
+	if !("3" == e.esConf.Version || "5" == e.esConf.Version) {
+		var err error = errors.New("Only 3 or 5 are valid values for this field")
+		log.WithFields(logrus.Fields{
+			"prefix": elasticsearchPrefix,
+		}).Fatal("Invalid version: ", err)
+	}
+
 	log.WithFields(logrus.Fields{
 		"prefix": elasticsearchPrefix,
 	}).Info("Elasticsearch URL: ", e.esConf.ElasticsearchURL)
@@ -75,7 +126,7 @@ func (e *ElasticsearchPump) Init(config interface{}) error {
 func (e *ElasticsearchPump) connect() {
 	var err error
 
-	e.esClient, err = elastic.NewClient(elastic.SetURL(e.esConf.ElasticsearchURL), elastic.SetSniff(e.esConf.EnableSniffing))
+	e.operator, err = GetOperator(e.esConf.Version, e.esConf.ElasticsearchURL, e.esConf.EnableSniffing)
 	if err != nil {
 		log.WithFields(logrus.Fields{
 			"prefix": elasticsearchPrefix,
@@ -90,7 +141,7 @@ func (e *ElasticsearchPump) WriteData(data []interface{}) error {
 		"prefix": elasticsearchPrefix,
 	}).Info("Writing ", len(data), " records")
 
-	if e.esClient == nil {
+	if e.operator == nil {
 		log.WithFields(logrus.Fields{
 			"prefix": elasticsearchPrefix,
 		}).Debug("Connecting to analytics store")
@@ -98,49 +149,78 @@ func (e *ElasticsearchPump) WriteData(data []interface{}) error {
 		e.WriteData(data)
 	} else {
 		if len(data) > 0 {
+			e.operator.processData(data, e.esConf)
+		}
+	}
+	return nil
+}
 
-			var indexName = e.esConf.IndexName
 
-			var currentTime = time.Now()
+func GetIndexName(esConf *ElasticsearchConf) string {
+	var indexName = esConf.IndexName
 
-			if e.esConf.RollingIndex {
-				//This formats the date to be YYYY.MM.DD but Golang makes you use a specific date for its date formatting
-				indexName = indexName + "-" + currentTime.Format("2006.01.02")
-			}
+	if esConf.RollingIndex {
+		var currentTime = time.Now()
+		//This formats the date to be YYYY.MM.DD but Golang makes you use a specific date for its date formatting
+		indexName = indexName + "-" + currentTime.Format("2006.01.02")
+	}
+	return indexName
+}
 
-			var index = e.esClient.Index().Index(indexName)
+func GetMapping(datum interface{}, extendedStatistics bool) map[string]interface{} {
+	var record, _ = datum.(analytics.AnalyticsRecord)
 
-			for dataIndex := range data {
-				var record, _ = data[dataIndex].(analytics.AnalyticsRecord)
+	mapping := map[string]interface{}{
+		"@timestamp":      record.TimeStamp,
+		"http_method":     record.Method,
+		"request_uri":     record.Path,
+		"response_code":   record.ResponseCode,
+		"ip_address":      record.IPAddress,
+		"api_key":         record.APIKey,
+		"api_version":     record.APIVersion,
+		"api_name":        record.APIName,
+		"api_id":          record.APIID,
+		"org_id":          record.OrgID,
+		"oauth_id":        record.OauthID,
+		"request_time_ms": record.RequestTime,
+	}
 
-				mapping := map[string]interface{}{
-					"@timestamp":      record.TimeStamp,
-					"http_method":     record.Method,
-					"request_uri":     record.Path,
-					"response_code":   record.ResponseCode,
-					"ip_address":      record.IPAddress,
-					"api_key":         record.APIKey,
-					"api_version":     record.APIVersion,
-					"api_name":        record.APIName,
-					"api_id":          record.APIID,
-					"org_id":          record.OrgID,
-					"oauth_id":        record.OauthID,
-					"request_time_ms": record.RequestTime,
-				}
+	if extendedStatistics {
+		mapping["raw_request"] = record.RawRequest
+		mapping["raw_response"] = record.RawResponse
+		mapping["user_agent"] = record.UserAgent
+	}
+	return mapping
+}
 
-				if e.esConf.ExtendedStatistics {
-					mapping["raw_request"] = record.RawRequest
-					mapping["raw_response"] = record.RawResponse
-					mapping["user_agent"] = record.UserAgent
-				}
+func(e Elasticsearch3Operator) processData(data []interface{}, esConf *ElasticsearchConf) error {
+	var index = e.esClient.Index().Index(GetIndexName(esConf))
 
-				var _, err = index.BodyJson(mapping).Type(e.esConf.DocumentType).Do()
-				if err != nil {
-					log.WithFields(logrus.Fields{
-						"prefix": elasticsearchPrefix,
-					}).Error("Error while writing ", data[dataIndex], err)
-				}
-			}
+	for dataIndex := range data {
+		var mapping = GetMapping(data[dataIndex], esConf.ExtendedStatistics)
+
+		var _, err = index.BodyJson(mapping).Type(esConf.DocumentType).Do()
+		if err != nil {
+			log.WithFields(logrus.Fields{
+				"prefix": elasticsearchPrefix,
+			}).Error("Error while writing ", data[dataIndex], err)
+		}
+	}
+
+	return nil
+}
+
+func(e Elasticsearch5Operator) processData(data []interface{}, esConf *ElasticsearchConf) error {
+	var index = e.esClient.Index().Index(GetIndexName(esConf))
+
+	for dataIndex := range data {
+		var mapping = GetMapping(data[dataIndex], esConf.ExtendedStatistics)
+
+		var _, err = index.BodyJson(mapping).Type(esConf.DocumentType).Do(context.TODO())
+		if err != nil {
+			log.WithFields(logrus.Fields{
+				"prefix": elasticsearchPrefix,
+			}).Error("Error while writing ", data[dataIndex], err)
 		}
 	}
 
