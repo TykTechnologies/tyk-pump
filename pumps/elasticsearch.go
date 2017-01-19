@@ -4,8 +4,9 @@ import (
 	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/mitchellh/mapstructure"
-	"gopkg.in/olivere/elastic.v3"
+	"gopkg.in/olivere/elastic.v5"
 	"time"
+	"context"
 )
 
 type ElasticsearchPump struct {
@@ -134,7 +135,7 @@ func (e *ElasticsearchPump) WriteData(data []interface{}) error {
 					mapping["user_agent"] = record.UserAgent
 				}
 
-				var _, err = index.BodyJson(mapping).Type(e.esConf.DocumentType).Do()
+				var _, err = index.BodyJson(mapping).Type(e.esConf.DocumentType).Do(context.Background())
 				if err != nil {
 					log.WithFields(logrus.Fields{
 						"prefix": elasticsearchPrefix,
