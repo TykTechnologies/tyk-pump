@@ -56,7 +56,8 @@ Create a `pump.conf` file:
                 "enable_sniffing": false,
                 "document_type": "tyk_analytics",
                 "rolling_index": false,
-                "extended_stats": false
+                "extended_stats": false,
+                "version": "5"
             }
         },
         "influx": {
@@ -141,6 +142,8 @@ Settings are the same as for the original `tyk.conf` for redis and for mongoDB.
 `"rolling_index"` - Appends the date to the end of the index name, so each days data is split into a different index name. E.g. tyk_analytics-2016.02.28 Defaults to false
 
 `"extended_stats"` - If set to true will include the following additional fields: Raw Request, Raw Response and User Agent.
+
+`"version"` - Specifies the ES version. Use "3" for ES 2.x, and "5" for ES 5.0. Defaults to "3".
 
 ## Compiling & Testing
 
