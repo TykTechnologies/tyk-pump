@@ -1,6 +1,8 @@
 package pumps
 
 import (
+	"crypto/tls"
+	"net"
 	"strings"
 	"time"
 
@@ -29,6 +31,25 @@ type MongoConf struct {
 	MongoSSLSkipVerify      bool   `mapstructure:"mongo_ssl_skip_verify"`
 	MaxInsertBatchSizeBytes int    `mapstructure:"max_insert_batch_size_bytes"`
 	MaxDocumentSizeBytes    int    `mapstructure:"max_document_size_bytes"`
+}
+
+func mongoDialInfo(mongoURL string, useSSL bool, SSLSkipVerify bool) (dialInfo *mgo.DialInfo, err error) {
+	dialInfo, err = mgo.ParseURL(mongoURL)
+	if err != nil {
+		return dialInfo, err
+	}
+
+	if useSSL {
+		dialInfo.DialServer = func(addr *mgo.ServerAddr) (net.Conn, error) {
+			tlsConfig := &tls.Config{}
+			if SSLSkipVerify {
+				tlsConfig.InsecureSkipVerify = true
+			}
+			return tls.Dial("tcp", addr.String(), tlsConfig)
+		}
+	}
+
+	return dialInfo, err
 }
 
 func (m *MongoPump) New() Pump {
@@ -83,7 +104,16 @@ func (m *MongoPump) Init(config interface{}) error {
 
 func (m *MongoPump) connect() {
 	var err error
-	m.dbSession, err = mgo.Dial(m.dbConf.MongoURL)
+	var dialInfo *mgo.DialInfo
+
+	dialInfo, err = mongoDialInfo(m.dbConf.MongoURL, m.dbConf.MongoUseSSL, m.dbConf.MongoSSLSkipVerify)
+	if err != nil {
+		log.WithFields(logrus.Fields{
+			"prefix": mongoPrefix,
+		}).Panic("Mongo URL is invalid: ", err)
+	}
+
+	m.dbSession, err = mgo.DialWithInfo(dialInfo)
 	if err != nil {
 		log.WithFields(logrus.Fields{
 			"prefix": mongoPrefix,
