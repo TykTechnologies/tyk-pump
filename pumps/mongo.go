@@ -106,7 +106,7 @@ func (m *MongoPump) connect() {
 	var err error
 	var dialInfo *mgo.DialInfo
 
-	dialInfo, err = mongoDialInfo(m.dbConf.MongoURL, m.dbConf.MongoUseSSL, m.dbConf.MongoSSLSkipVerify)
+	dialInfo, err = mongoDialInfo(m.dbConf.MongoURL, m.dbConf.MongoUseSSL, m.dbConf.MongoSSLInsecureSkipVerify)
 	if err != nil {
 		log.WithFields(logrus.Fields{
 			"prefix": mongoPrefix,
