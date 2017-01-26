@@ -1,14 +1,15 @@
 package pumps
 
 import (
+	"strings"
+	"time"
+
 	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/mitchellh/mapstructure"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/vmihailenco/msgpack.v2"
-	"strings"
-	"time"
 )
 
 const tenMB int = 10485760
@@ -24,6 +25,8 @@ var mongoPumpPrefix string = "PMP_MONGO"
 type MongoConf struct {
 	CollectionName          string `mapstructure:"collection_name"`
 	MongoURL                string `mapstructure:"mongo_url"`
+	MongoUseSSL             bool   `mapstructure:"mongo_use_ssl"`
+	MongoSSLSkipVerify      bool   `mapstructure:"mongo_ssl_skip_verify"`
 	MaxInsertBatchSizeBytes int    `mapstructure:"max_insert_batch_size_bytes"`
 	MaxDocumentSizeBytes    int    `mapstructure:"max_document_size_bytes"`
 }
