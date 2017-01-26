@@ -2,6 +2,9 @@ package pumps
 
 import (
 	"errors"
+	"strings"
+	"time"
+
 	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/kelseyhightower/envconfig"
@@ -9,8 +12,6 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/vmihailenco/msgpack.v2"
-	"strings"
-	"time"
 )
 
 type MongoSelectivePump struct {
@@ -23,6 +24,8 @@ var mongoSelectivePumpPrefix string = "PMP_MONGOSEL"
 
 type MongoSelectiveConf struct {
 	MongoURL                string `mapstructure:"mongo_url"`
+	MongoUseSSL             bool   `mapstructure:"mongo_use_ssl"`
+	MongoSSLSkipVerify      bool   `mapstructure:"mongo_ssl_skip_verify"`
 	MaxInsertBatchSizeBytes int    `mapstructure:"max_insert_batch_size_bytes"`
 	MaxDocumentSizeBytes    int    `mapstructure:"max_document_size_bytes"`
 }
