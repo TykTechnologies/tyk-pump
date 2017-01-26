@@ -25,15 +25,15 @@ var mongoPrefix string = "mongo-pump"
 var mongoPumpPrefix string = "PMP_MONGO"
 
 type MongoConf struct {
-	CollectionName          string `mapstructure:"collection_name"`
-	MongoURL                string `mapstructure:"mongo_url"`
-	MongoUseSSL             bool   `mapstructure:"mongo_use_ssl"`
-	MongoSSLSkipVerify      bool   `mapstructure:"mongo_ssl_skip_verify"`
-	MaxInsertBatchSizeBytes int    `mapstructure:"max_insert_batch_size_bytes"`
-	MaxDocumentSizeBytes    int    `mapstructure:"max_document_size_bytes"`
+	CollectionName             string `mapstructure:"collection_name"`
+	MongoURL                   string `mapstructure:"mongo_url"`
+	MongoUseSSL                bool   `mapstructure:"mongo_use_ssl"`
+	MongoSSLInsecureSkipVerify bool   `mapstructure:"mongo_ssl_insecure_skip_verify"`
+	MaxInsertBatchSizeBytes    int    `mapstructure:"max_insert_batch_size_bytes"`
+	MaxDocumentSizeBytes       int    `mapstructure:"max_document_size_bytes"`
 }
 
-func mongoDialInfo(mongoURL string, useSSL bool, SSLSkipVerify bool) (dialInfo *mgo.DialInfo, err error) {
+func mongoDialInfo(mongoURL string, useSSL bool, SSLInsecureSkipVerify bool) (dialInfo *mgo.DialInfo, err error) {
 	dialInfo, err = mgo.ParseURL(mongoURL)
 	if err != nil {
 		return dialInfo, err
@@ -42,7 +42,7 @@ func mongoDialInfo(mongoURL string, useSSL bool, SSLSkipVerify bool) (dialInfo *
 	if useSSL {
 		dialInfo.DialServer = func(addr *mgo.ServerAddr) (net.Conn, error) {
 			tlsConfig := &tls.Config{}
-			if SSLSkipVerify {
+			if SSLInsecureSkipVerify {
 				tlsConfig.InsecureSkipVerify = true
 			}
 			return tls.Dial("tcp", addr.String(), tlsConfig)
