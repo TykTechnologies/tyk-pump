@@ -79,6 +79,12 @@ Create a `pump.conf` file:
                           "oauth_id"]
             }
         },
+        "moesif": {
+          "name": "moesif",
+          "meta": {
+            "application_id": ""
+          }
+        },
         "statsd": {
             "name": "statsd",
             "meta": {
@@ -141,6 +147,10 @@ Settings are the same as for the original `tyk.conf` for redis and for mongoDB.
 `"rolling_index"` - Appends the date to the end of the index name, so each days data is split into a different index name. E.g. tyk_analytics-2016.02.28 Defaults to false
 
 `"extended_stats"` - If set to true will include the following additional fields: Raw Request, Raw Response and User Agent.
+
+### Moesif Config
+
+`"application_id"` - Moesif App Id JWT. Multiple api_id's will go under the same app id. 
 
 ## Compiling & Testing
 
