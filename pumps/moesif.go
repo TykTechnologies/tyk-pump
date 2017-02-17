@@ -60,79 +60,80 @@ func (p *MoesifPump) WriteData(data []interface{}) error {
 		"prefix": moesifPrefix,
 	}).Info("Writing ", len(data), " records")
 
-	if len(data) > 0 {
+	if len(data) == 0 {
+		return nil
+	}
 
-		transferEncoding := "base64"
-		for dataIndex := range data {
-			var record, _ = data[dataIndex].(analytics.AnalyticsRecord)
+	transferEncoding := "base64"
+	for dataIndex := range data {
+		var record, _ = data[dataIndex].(analytics.AnalyticsRecord)
 
-			rawReq, err := base64.StdEncoding.DecodeString(record.RawRequest)
-			if err != nil {
-				log.WithFields(logrus.Fields{
-					"prefix": moesifPrefix,
-				}).Fatal(err)
-			}
+		rawReq, err := base64.StdEncoding.DecodeString(record.RawRequest)
+		if err != nil {
+			log.WithFields(logrus.Fields{
+				"prefix": moesifPrefix,
+			}).Fatal(err)
+		}
 
-			decodedReqBody, err := decodeRawData(string(rawReq))
+		decodedReqBody, err := decodeRawData(string(rawReq))
 
-			if err != nil {
-				log.WithFields(logrus.Fields{
-					"prefix": moesifPrefix,
-				}).Fatal(err)
-			}
+		if err != nil {
+			log.WithFields(logrus.Fields{
+				"prefix": moesifPrefix,
+			}).Fatal(err)
+		}
 
-			req := models.EventRequestModel{
-				Time:             &record.TimeStamp,
-				Uri:              record.Path,
-				Verb:             record.Method,
-				ApiVersion:       &record.APIVersion,
-				IpAddress:        &record.IPAddress,
-				Headers:          decodedReqBody.headers,
-				Body:             &decodedReqBody.body,
-				TransferEncoding: &transferEncoding,
-			}
+		req := models.EventRequestModel{
+			Time:             &record.TimeStamp,
+			Uri:              record.Path,
+			Verb:             record.Method,
+			ApiVersion:       &record.APIVersion,
+			IpAddress:        &record.IPAddress,
+			Headers:          decodedReqBody.headers,
+			Body:             &decodedReqBody.body,
+			TransferEncoding: &transferEncoding,
+		}
 
-			rawRsp, err := base64.StdEncoding.DecodeString(record.RawResponse)
+		rawRsp, err := base64.StdEncoding.DecodeString(record.RawResponse)
 
-			if err != nil {
-				log.WithFields(logrus.Fields{
-					"prefix": moesifPrefix,
-				}).Fatal(err)
-			}
+		if err != nil {
+			log.WithFields(logrus.Fields{
+				"prefix": moesifPrefix,
+			}).Fatal(err)
+		}
 
-			decodedRspBody, err := decodeRawData(string(rawRsp))
+		decodedRspBody, err := decodeRawData(string(rawRsp))
 
-			if err != nil {
-				log.WithFields(logrus.Fields{
-					"prefix": moesifPrefix,
-				}).Fatal(err)
-			}
+		if err != nil {
+			log.WithFields(logrus.Fields{
+				"prefix": moesifPrefix,
+			}).Fatal(err)
+		}
 
-			rspTime := record.TimeStamp.Add(time.Duration(record.RequestTime) * time.Millisecond)
+		rspTime := record.TimeStamp.Add(time.Duration(record.RequestTime) * time.Millisecond)
 
-			rsp := models.EventResponseModel{
-				Time:             &rspTime,
-				Status:           record.ResponseCode,
-				IpAddress:        nil,
-				Headers:          decodedRspBody.headers,
-				Body:             decodedRspBody.body,
-				TransferEncoding: &transferEncoding,
-			}
+		rsp := models.EventResponseModel{
+			Time:             &rspTime,
+			Status:           record.ResponseCode,
+			IpAddress:        nil,
+			Headers:          decodedRspBody.headers,
+			Body:             decodedRspBody.body,
+			TransferEncoding: &transferEncoding,
+		}
 
-			event := models.EventModel{
-				Request:      req,
-				Response:     rsp,
-				SessionToken: &record.APIKey,
-				Tags:         nil,
-				UserId:       nil,
-			}
+		event := models.EventModel{
+			Request:      req,
+			Response:     rsp,
+			SessionToken: &record.APIKey,
+			Tags:         nil,
+			UserId:       nil,
+		}
 
-			err = p.moesifApi.QueueEvent(&event)
-			if err != nil {
-				log.WithFields(logrus.Fields{
-					"prefix": moesifPrefix,
-				}).Error("Error while writing ", data[dataIndex], err)
-			}
+		err = p.moesifApi.QueueEvent(&event)
+		if err != nil {
+			log.WithFields(logrus.Fields{
+				"prefix": moesifPrefix,
+			}).Error("Error while writing ", data[dataIndex], err)
 		}
 	}
 
@@ -146,13 +147,11 @@ func decodeRawData(raw string) (*RawDecoded, error) {
 		return nil, fmt.Errorf("Error while splitting raw data")
 	}
 
-	headers := decodeHeaders(&headersBody[0])
+	headers := decodeHeaders(headersBody[0])
 
 	var body interface{}
 	if len(headersBody) == 2 {
 		body = base64.StdEncoding.EncodeToString([]byte(headersBody[1]))
-	} else {
-		body = nil
 	}
 
 	ret := &RawDecoded{
@@ -163,10 +162,10 @@ func decodeRawData(raw string) (*RawDecoded, error) {
 	return ret, nil
 }
 
-func decodeHeaders(headers *string) map[string]interface{} {
+func decodeHeaders(headers string) map[string]interface{} {
 
-	scanner := bufio.NewScanner(strings.NewReader(*headers))
-	ret := make(map[string]interface{}, strings.Count(*headers, "\r\n"))
+	scanner := bufio.NewScanner(strings.NewReader(headers))
+	ret := make(map[string]interface{}, strings.Count(headers, "\r\n"))
 
 	// Remove Request Line or Status Line
 	scanner.Scan()
