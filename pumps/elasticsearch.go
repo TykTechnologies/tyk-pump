@@ -167,8 +167,8 @@ func getIndexName(esConf *ElasticsearchConf) string {
 	return indexName
 }
 
-func getMapping(datum interface{}, extendedStatistics bool) map[string]interface{} {
-	record, _ := datum.(analytics.AnalyticsRecord)
+func getMapping(datum analytics.AnalyticsRecord, extendedStatistics bool) (map[string]interface{}) {
+	record := datum
 
 	mapping := map[string]interface{}{
 		"@timestamp":      record.TimeStamp,
@@ -197,7 +197,15 @@ func (e Elasticsearch3Operator) processData(data []interface{}, esConf *Elastics
 	index := e.esClient.Index().Index(getIndexName(esConf))
 
 	for dataIndex := range data {
-		mapping := getMapping(data[dataIndex], esConf.ExtendedStatistics)
+		d, ok := data[dataIndex].(analytics.AnalyticsRecord)
+		if !ok {
+			log.WithFields(logrus.Fields{
+				"prefix": elasticsearchPrefix,
+			}).Error("Error while writing ", data[dataIndex], ": data not of type analytics.AnalyticsRecord")
+			continue
+		}
+
+		mapping := getMapping(d, esConf.ExtendedStatistics)
 
 		_, err := index.BodyJson(mapping).Type(esConf.DocumentType).Do()
 		if err != nil {
@@ -214,7 +222,15 @@ func (e Elasticsearch5Operator) processData(data []interface{}, esConf *Elastics
 	index := e.esClient.Index().Index(getIndexName(esConf))
 
 	for dataIndex := range data {
-		mapping := getMapping(data[dataIndex], esConf.ExtendedStatistics)
+		d, ok := data[dataIndex].(analytics.AnalyticsRecord)
+		if !ok {
+			log.WithFields(logrus.Fields{
+				"prefix": elasticsearchPrefix,
+			}).Error("Error while writing ", data[dataIndex], ": data not of type analytics.AnalyticsRecord")
+			continue
+		}
+
+		mapping := getMapping(d, esConf.ExtendedStatistics)
 
 		_, err := index.BodyJson(mapping).Type(esConf.DocumentType).Do(context.TODO())
 		if err != nil {
