@@ -43,20 +43,22 @@ type Elasticsearch5Operator struct {
 func GetOperator(version string, url string, setSniff bool) (ElasticsearchOperator, error) {
 	var err error
 
-	if version == "3" {
+	switch version {
+	case "3":
 		var e = new(Elasticsearch3Operator)
 		e.esClient, err = elasticv3.NewClient(elasticv3.SetURL(url), elasticv3.SetSniff(setSniff))
 		return e, err
-	} else if version == "5" {
+	case "5":
 		var e = new(Elasticsearch5Operator)
 		e.esClient, err = elasticv5.NewClient(elasticv5.SetURL(url), elasticv5.SetSniff(setSniff))
 		return e, err
-	} else {
+	default:
 		// shouldn't get this far, but hey never hurts to check assumptions
 		log.WithFields(logrus.Fields{
 			"prefix": elasticsearchPrefix,
 		}).Fatal("Invalid version: ")
 	}
+
 	return nil, err
 }
 
@@ -91,14 +93,15 @@ func (e *ElasticsearchPump) Init(config interface{}) error {
 		e.esConf.DocumentType = "tyk_analytics"
 	}
 
-	if "" == e.esConf.Version {
+	switch e.esConf.Version {
+	case "":
 		e.esConf.Version = "5"
 		log.WithFields(logrus.Fields{
 			"prefix": elasticsearchPrefix,
 		}).Info("Version not specified, defaulting to 3. If you are importing to Elasticsearch 5, please specify \"version\" = \"5\"")
-	}
-
-	if !("3" == e.esConf.Version || "5" == e.esConf.Version) {
+	case "3":
+	case "5":
+	default:
 		var err error = errors.New("Only 3 or 5 are valid values for this field")
 		log.WithFields(logrus.Fields{
 			"prefix": elasticsearchPrefix,
