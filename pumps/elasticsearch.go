@@ -40,7 +40,7 @@ type Elasticsearch5Operator struct {
 	esClient *elasticv5.Client
 }
 
-func GetOperator(version string, url string, setSniff bool) (ElasticsearchOperator, error) {
+func getOperator(version string, url string, setSniff bool) (ElasticsearchOperator, error) {
 	var err error
 
 	switch version {
@@ -99,8 +99,7 @@ func (e *ElasticsearchPump) Init(config interface{}) error {
 		log.WithFields(logrus.Fields{
 			"prefix": elasticsearchPrefix,
 		}).Info("Version not specified, defaulting to 3. If you are importing to Elasticsearch 5, please specify \"version\" = \"5\"")
-	case "3":
-	case "5":
+	case "3", "5":
 	default:
 		err := errors.New("Only 3 or 5 are valid values for this field")
 		log.WithFields(logrus.Fields{
@@ -128,7 +127,7 @@ func (e *ElasticsearchPump) Init(config interface{}) error {
 func (e *ElasticsearchPump) connect() {
 	var err error
 
-	e.operator, err = GetOperator(e.esConf.Version, e.esConf.ElasticsearchURL, e.esConf.EnableSniffing)
+	e.operator, err = getOperator(e.esConf.Version, e.esConf.ElasticsearchURL, e.esConf.EnableSniffing)
 	if err != nil {
 		log.WithFields(logrus.Fields{
 			"prefix": elasticsearchPrefix,
@@ -157,7 +156,7 @@ func (e *ElasticsearchPump) WriteData(data []interface{}) error {
 	return nil
 }
 
-func GetIndexName(esConf *ElasticsearchConf) string {
+func getIndexName(esConf *ElasticsearchConf) string {
 	indexName := esConf.IndexName
 
 	if esConf.RollingIndex {
@@ -168,7 +167,7 @@ func GetIndexName(esConf *ElasticsearchConf) string {
 	return indexName
 }
 
-func GetMapping(datum interface{}, extendedStatistics bool) map[string]interface{} {
+func getMapping(datum interface{}, extendedStatistics bool) map[string]interface{} {
 	record, _ := datum.(analytics.AnalyticsRecord)
 
 	mapping := map[string]interface{}{
@@ -195,10 +194,10 @@ func GetMapping(datum interface{}, extendedStatistics bool) map[string]interface
 }
 
 func (e Elasticsearch3Operator) processData(data []interface{}, esConf *ElasticsearchConf) error {
-	index := e.esClient.Index().Index(GetIndexName(esConf))
+	index := e.esClient.Index().Index(getIndexName(esConf))
 
 	for dataIndex := range data {
-		mapping := GetMapping(data[dataIndex], esConf.ExtendedStatistics)
+		mapping := getMapping(data[dataIndex], esConf.ExtendedStatistics)
 
 		_, err := index.BodyJson(mapping).Type(esConf.DocumentType).Do()
 		if err != nil {
@@ -212,10 +211,10 @@ func (e Elasticsearch3Operator) processData(data []interface{}, esConf *Elastics
 }
 
 func (e Elasticsearch5Operator) processData(data []interface{}, esConf *ElasticsearchConf) error {
-	index := e.esClient.Index().Index(GetIndexName(esConf))
+	index := e.esClient.Index().Index(getIndexName(esConf))
 
 	for dataIndex := range data {
-		mapping := GetMapping(data[dataIndex], esConf.ExtendedStatistics)
+		mapping := getMapping(data[dataIndex], esConf.ExtendedStatistics)
 
 		_, err := index.BodyJson(mapping).Type(esConf.DocumentType).Do(context.TODO())
 		if err != nil {
