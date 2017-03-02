@@ -163,7 +163,7 @@ func GetIndexName(esConf *ElasticsearchConf) string {
 	if esConf.RollingIndex {
 		var currentTime = time.Now()
 		//This formats the date to be YYYY.MM.DD but Golang makes you use a specific date for its date formatting
-		indexName = indexName + "-" + currentTime.Format("2006.01.02")
+		indexName += "-" + currentTime.Format("2006.01.02")
 	}
 	return indexName
 }
