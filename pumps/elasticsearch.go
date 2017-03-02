@@ -45,11 +45,11 @@ func GetOperator(version string, url string, setSniff bool) (ElasticsearchOperat
 
 	switch version {
 	case "3":
-		var e = new(Elasticsearch3Operator)
+		e := new(Elasticsearch3Operator)
 		e.esClient, err = elasticv3.NewClient(elasticv3.SetURL(url), elasticv3.SetSniff(setSniff))
 		return e, err
 	case "5":
-		var e = new(Elasticsearch5Operator)
+		e := new(Elasticsearch5Operator)
 		e.esClient, err = elasticv5.NewClient(elasticv5.SetURL(url), elasticv5.SetSniff(setSniff))
 		return e, err
 	default:
@@ -102,7 +102,7 @@ func (e *ElasticsearchPump) Init(config interface{}) error {
 	case "3":
 	case "5":
 	default:
-		var err error = errors.New("Only 3 or 5 are valid values for this field")
+		err := errors.New("Only 3 or 5 are valid values for this field")
 		log.WithFields(logrus.Fields{
 			"prefix": elasticsearchPrefix,
 		}).Fatal("Invalid version: ", err)
@@ -158,10 +158,10 @@ func (e *ElasticsearchPump) WriteData(data []interface{}) error {
 }
 
 func GetIndexName(esConf *ElasticsearchConf) string {
-	var indexName = esConf.IndexName
+	indexName := esConf.IndexName
 
 	if esConf.RollingIndex {
-		var currentTime = time.Now()
+		currentTime := time.Now()
 		//This formats the date to be YYYY.MM.DD but Golang makes you use a specific date for its date formatting
 		indexName += "-" + currentTime.Format("2006.01.02")
 	}
@@ -169,7 +169,7 @@ func GetIndexName(esConf *ElasticsearchConf) string {
 }
 
 func GetMapping(datum interface{}, extendedStatistics bool) map[string]interface{} {
-	var record, _ = datum.(analytics.AnalyticsRecord)
+	record, _ := datum.(analytics.AnalyticsRecord)
 
 	mapping := map[string]interface{}{
 		"@timestamp":      record.TimeStamp,
@@ -195,12 +195,12 @@ func GetMapping(datum interface{}, extendedStatistics bool) map[string]interface
 }
 
 func (e Elasticsearch3Operator) processData(data []interface{}, esConf *ElasticsearchConf) error {
-	var index = e.esClient.Index().Index(GetIndexName(esConf))
+	index := e.esClient.Index().Index(GetIndexName(esConf))
 
 	for dataIndex := range data {
-		var mapping = GetMapping(data[dataIndex], esConf.ExtendedStatistics)
+		mapping := GetMapping(data[dataIndex], esConf.ExtendedStatistics)
 
-		var _, err = index.BodyJson(mapping).Type(esConf.DocumentType).Do()
+		_, err := index.BodyJson(mapping).Type(esConf.DocumentType).Do()
 		if err != nil {
 			log.WithFields(logrus.Fields{
 				"prefix": elasticsearchPrefix,
@@ -212,12 +212,12 @@ func (e Elasticsearch3Operator) processData(data []interface{}, esConf *Elastics
 }
 
 func (e Elasticsearch5Operator) processData(data []interface{}, esConf *ElasticsearchConf) error {
-	var index = e.esClient.Index().Index(GetIndexName(esConf))
+	index := e.esClient.Index().Index(GetIndexName(esConf))
 
 	for dataIndex := range data {
-		var mapping = GetMapping(data[dataIndex], esConf.ExtendedStatistics)
+		mapping := GetMapping(data[dataIndex], esConf.ExtendedStatistics)
 
-		var _, err = index.BodyJson(mapping).Type(esConf.DocumentType).Do(context.TODO())
+		_, err := index.BodyJson(mapping).Type(esConf.DocumentType).Do(context.TODO())
 		if err != nil {
 			log.WithFields(logrus.Fields{
 				"prefix": elasticsearchPrefix,
