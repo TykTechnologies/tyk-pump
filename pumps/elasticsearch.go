@@ -1,14 +1,14 @@
 package pumps
 
 import (
+	"context"
+	"errors"
 	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/mitchellh/mapstructure"
-	"time"
 	elasticv3 "gopkg.in/olivere/elastic.v3"
 	elasticv5 "gopkg.in/olivere/elastic.v5"
-	"errors"
-	"context"
+	"time"
 )
 
 type ElasticsearchPump struct {
@@ -25,13 +25,12 @@ type ElasticsearchConf struct {
 	DocumentType       string `mapstructure:"document_type"`
 	RollingIndex       bool   `mapstructure:"rolling_index"`
 	ExtendedStatistics bool   `mapstructure:"extended_stats"`
-	Version            string   `mapstructure:"version"`
+	Version            string `mapstructure:"version"`
 }
 
 type ElasticsearchOperator interface {
 	processData(data []interface{}, esConf *ElasticsearchConf) error
 }
-
 
 type Elasticsearch3Operator struct {
 	esClient *elasticv3.Client
@@ -155,7 +154,6 @@ func (e *ElasticsearchPump) WriteData(data []interface{}) error {
 	return nil
 }
 
-
 func GetIndexName(esConf *ElasticsearchConf) string {
 	var indexName = esConf.IndexName
 
@@ -193,7 +191,7 @@ func GetMapping(datum interface{}, extendedStatistics bool) map[string]interface
 	return mapping
 }
 
-func(e Elasticsearch3Operator) processData(data []interface{}, esConf *ElasticsearchConf) error {
+func (e Elasticsearch3Operator) processData(data []interface{}, esConf *ElasticsearchConf) error {
 	var index = e.esClient.Index().Index(GetIndexName(esConf))
 
 	for dataIndex := range data {
@@ -210,7 +208,7 @@ func(e Elasticsearch3Operator) processData(data []interface{}, esConf *Elasticse
 	return nil
 }
 
-func(e Elasticsearch5Operator) processData(data []interface{}, esConf *ElasticsearchConf) error {
+func (e Elasticsearch5Operator) processData(data []interface{}, esConf *ElasticsearchConf) error {
 	var index = e.esClient.Index().Index(GetIndexName(esConf))
 
 	for dataIndex := range data {
