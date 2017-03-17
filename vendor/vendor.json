@@ -111,6 +111,18 @@
 			"revisionTime": "2016-10-20T16:18:36Z"
 		},
 		{
+			"checksumSHA1": "ddFDosthJx9zI6fE6jldauJ4+tI=",
+			"path": "github.com/moesif/moesifapi-go",
+			"revision": "69242ec5159a2f32b455138682d394ccfb27d102",
+			"revisionTime": "2017-02-16T23:33:25Z"
+		},
+		{
+			"checksumSHA1": "5yDvQpQT3yCIDBTWtki+OY4IppE=",
+			"path": "github.com/moesif/moesifapi-go/models",
+			"revision": "69242ec5159a2f32b455138682d394ccfb27d102",
+			"revisionTime": "2017-02-16T23:33:25Z"
+		},
+		{
 			"checksumSHA1": "Opg5ihMhafgqLXQT0MqyWv5ZE3E=",
 			"path": "github.com/quipo/statsd",
 			"revision": "75b7afedf0d2810e897fd5a010dbf896b20f535d",
