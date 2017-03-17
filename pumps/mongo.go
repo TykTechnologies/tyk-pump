@@ -1,14 +1,17 @@
 package pumps
 
 import (
+	"crypto/tls"
+	"net"
+	"strings"
+	"time"
+
 	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/mitchellh/mapstructure"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/vmihailenco/msgpack.v2"
-	"strings"
-	"time"
 )
 
 const tenMB int = 10485760
@@ -22,10 +25,31 @@ var mongoPrefix string = "mongo-pump"
 var mongoPumpPrefix string = "PMP_MONGO"
 
 type MongoConf struct {
-	CollectionName          string `mapstructure:"collection_name"`
-	MongoURL                string `mapstructure:"mongo_url"`
-	MaxInsertBatchSizeBytes int    `mapstructure:"max_insert_batch_size_bytes"`
-	MaxDocumentSizeBytes    int    `mapstructure:"max_document_size_bytes"`
+	CollectionName             string `mapstructure:"collection_name"`
+	MongoURL                   string `mapstructure:"mongo_url"`
+	MongoUseSSL                bool   `mapstructure:"mongo_use_ssl"`
+	MongoSSLInsecureSkipVerify bool   `mapstructure:"mongo_ssl_insecure_skip_verify"`
+	MaxInsertBatchSizeBytes    int    `mapstructure:"max_insert_batch_size_bytes"`
+	MaxDocumentSizeBytes       int    `mapstructure:"max_document_size_bytes"`
+}
+
+func mongoDialInfo(mongoURL string, useSSL bool, SSLInsecureSkipVerify bool) (dialInfo *mgo.DialInfo, err error) {
+	dialInfo, err = mgo.ParseURL(mongoURL)
+	if err != nil {
+		return dialInfo, err
+	}
+
+	if useSSL {
+		dialInfo.DialServer = func(addr *mgo.ServerAddr) (net.Conn, error) {
+			tlsConfig := &tls.Config{}
+			if SSLInsecureSkipVerify {
+				tlsConfig.InsecureSkipVerify = true
+			}
+			return tls.Dial("tcp", addr.String(), tlsConfig)
+		}
+	}
+
+	return dialInfo, err
 }
 
 func (m *MongoPump) New() Pump {
@@ -80,7 +104,16 @@ func (m *MongoPump) Init(config interface{}) error {
 
 func (m *MongoPump) connect() {
 	var err error
-	m.dbSession, err = mgo.Dial(m.dbConf.MongoURL)
+	var dialInfo *mgo.DialInfo
+
+	dialInfo, err = mongoDialInfo(m.dbConf.MongoURL, m.dbConf.MongoUseSSL, m.dbConf.MongoSSLInsecureSkipVerify)
+	if err != nil {
+		log.WithFields(logrus.Fields{
+			"prefix": mongoPrefix,
+		}).Panic("Mongo URL is invalid: ", err)
+	}
+
+	m.dbSession, err = mgo.DialWithInfo(dialInfo)
 	if err != nil {
 		log.WithFields(logrus.Fields{
 			"prefix": mongoPrefix,

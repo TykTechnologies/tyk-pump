@@ -2,6 +2,9 @@ package pumps
 
 import (
 	"errors"
+	"strings"
+	"time"
+
 	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/kelseyhightower/envconfig"
@@ -9,8 +12,6 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/vmihailenco/msgpack.v2"
-	"strings"
-	"time"
 )
 
 type MongoSelectivePump struct {
@@ -22,9 +23,11 @@ var mongoSelectivePrefix string = "mongo-pump-selective"
 var mongoSelectivePumpPrefix string = "PMP_MONGOSEL"
 
 type MongoSelectiveConf struct {
-	MongoURL                string `mapstructure:"mongo_url"`
-	MaxInsertBatchSizeBytes int    `mapstructure:"max_insert_batch_size_bytes"`
-	MaxDocumentSizeBytes    int    `mapstructure:"max_document_size_bytes"`
+	MongoURL                   string `mapstructure:"mongo_url"`
+	MongoUseSSL                bool   `mapstructure:"mongo_use_ssl"`
+	MongoSSLInsecureSkipVerify bool   `mapstructure:"mongo_ssl_insecure_skip_verify"`
+	MaxInsertBatchSizeBytes    int    `mapstructure:"max_insert_batch_size_bytes"`
+	MaxDocumentSizeBytes       int    `mapstructure:"max_document_size_bytes"`
 }
 
 func (m *MongoSelectivePump) New() Pump {
@@ -83,7 +86,16 @@ func (m *MongoSelectivePump) Init(config interface{}) error {
 
 func (m *MongoSelectivePump) connect() {
 	var err error
-	m.dbSession, err = mgo.Dial(m.dbConf.MongoURL)
+	var dialInfo *mgo.DialInfo
+
+	dialInfo, err = mongoDialInfo(m.dbConf.MongoURL, m.dbConf.MongoUseSSL, m.dbConf.MongoSSLInsecureSkipVerify)
+	if err != nil {
+		log.WithFields(logrus.Fields{
+			"prefix": mongoPrefix,
+		}).Panic("Mongo URL is invalid: ", err)
+	}
+
+	m.dbSession, err = mgo.DialWithInfo(dialInfo)
 	if err != nil {
 		log.WithFields(logrus.Fields{
 			"prefix": mongoSelectivePrefix,
