@@ -26,8 +26,6 @@ type MongoConf struct {
 	MongoURL                string `mapstructure:"mongo_url"`
 	MaxInsertBatchSizeBytes int    `mapstructure:"max_insert_batch_size_bytes"`
 	MaxDocumentSizeBytes    int    `mapstructure:"max_document_size_bytes"`
-	DevMode 		bool   `mapstructure:"dev_mode"`
-	DevOrg 			string `mapstructure:"dev_org"`
 }
 
 func (m *MongoPump) New() Pump {
