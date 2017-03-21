@@ -95,7 +95,7 @@ func (e *ElasticsearchPump) Init(config interface{}) error {
 
 	switch e.esConf.Version {
 	case "":
-		e.esConf.Version = "5"
+		e.esConf.Version = "3"
 		log.WithFields(logrus.Fields{
 			"prefix": elasticsearchPrefix,
 		}).Info("Version not specified, defaulting to 3. If you are importing to Elasticsearch 5, please specify \"version\" = \"5\"")
