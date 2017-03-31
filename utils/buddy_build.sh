@@ -10,6 +10,7 @@ echo "Clearing build folder..."
 mkdir -p build/
 rm -rf build/*
 
+DESCRIPTION="Tyk Pump to move analytics data from Redis to any supported back end"
 SOURCEBIN=tyk-pump
 SOURCEBINPATH=/src/github.com/TykTechnologies/tyk-pump
 i386BINDIR=$SOURCEBINPATH/build/i386/tyk-pump.linux.i386-$VERSION
@@ -63,8 +64,8 @@ tar -pczf $armTGZDIR/../tyk-pump-linux-arm-$VERSION.tar.gz tyk-pump.linux.arm-$V
 
 echo "Creating Deb Package for AMD64"
 cd $amd64TGZDIR/
-fpm -n tyk-pump -v $VERSION  --after-install $amd64TGZDIR/install/post_install.sh --after-remove $amd64TGZDIR/install/post_remove.sh -a amd64 -s dir -t deb ./=/opt/tyk-pump
-fpm -n tyk-pump -v $VERSION  --after-install $amd64TGZDIR/install/post_install.sh --after-remove $amd64TGZDIR/install/post_remove.sh -a amd64 -s dir -t rpm ./=/opt/tyk-pump
+fpm -n tyk-pump --description "$DESCRIPTION" -v $VERSION  --after-install $amd64TGZDIR/install/post_install.sh --after-remove $amd64TGZDIR/install/post_remove.sh -a amd64 -s dir -t deb ./=/opt/tyk-pump
+fpm -n tyk-pump --description "$DESCRIPTION" -v $VERSION  --after-install $amd64TGZDIR/install/post_install.sh --after-remove $amd64TGZDIR/install/post_remove.sh -a amd64 -s dir -t rpm ./=/opt/tyk-pump
 
 AMDDEBNAME="tyk-pump_"$VERSION"_amd64.deb"
 AMDRPMNAME="tyk-pump-"$VERSION"-1.x86_64.rpm"
@@ -81,8 +82,8 @@ package_cloud push tyk/$PACKAGECLOUDREPO/el/7 $AMDRPMNAME
 
 # echo "Creating Deb Package for i386"
 cd $i386TGZDIR/
-fpm -n tyk-pump -v $VERSION --after-install $amd64TGZDIR/install/post_install.sh --after-remove $amd64TGZDIR/install/post_remove.sh -a i386 -s dir -t deb ./=/opt/tyk-pump
-fpm -n tyk-pump -v $VERSION --after-install $amd64TGZDIR/install/post_install.sh --after-remove $amd64TGZDIR/install/post_remove.sh -a i386 -s dir -t rpm ./=/opt/tyk-pump
+fpm -n tyk-pump --description "$DESCRIPTION" -v $VERSION --after-install $amd64TGZDIR/install/post_install.sh --after-remove $amd64TGZDIR/install/post_remove.sh -a i386 -s dir -t deb ./=/opt/tyk-pump
+fpm -n tyk-pump --description "$DESCRIPTION" -v $VERSION --after-install $amd64TGZDIR/install/post_install.sh --after-remove $amd64TGZDIR/install/post_remove.sh -a i386 -s dir -t rpm ./=/opt/tyk-pump
 
 i386DEBNAME="tyk-pump_"$VERSION"_i386.deb"
 i386RPMNAME="tyk-pump-"$VERSION"-1.i386.rpm"
@@ -98,8 +99,8 @@ package_cloud push tyk/$PACKAGECLOUDREPO/el/7 $i386RPMNAME
 
 echo "Creating Deb Package for ARM"
 cd $armTGZDIR/
-fpm -n tyk-pump -v $VERSION --after-install $amd64TGZDIR/install/post_install.sh --after-remove $amd64TGZDIR/install/post_remove.sh -a arm64 -s dir -t deb ./=/opt/tyk-pump
-fpm -n tyk-pump -v $VERSION --after-install $amd64TGZDIR/install/post_install.sh --after-remove $amd64TGZDIR/install/post_remove.sh -a arm64 -s dir -t rpm ./=/opt/tyk-pump
+fpm -n tyk-pump --description "$DESCRIPTION" -v $VERSION --after-install $amd64TGZDIR/install/post_install.sh --after-remove $amd64TGZDIR/install/post_remove.sh -a arm64 -s dir -t deb ./=/opt/tyk-pump
+fpm -n tyk-pump --description "$DESCRIPTION" -v $VERSION --after-install $amd64TGZDIR/install/post_install.sh --after-remove $amd64TGZDIR/install/post_remove.sh -a arm64 -s dir -t rpm ./=/opt/tyk-pump
 
 ARMDEBNAME="tyk-pump_"$VERSION"_arm64.deb"
 ARMRPMNAME="tyk-pump-"$VERSION"-1.arm64.rpm"

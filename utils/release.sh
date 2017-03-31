@@ -26,11 +26,12 @@ perl -pi -e 's/var VERSION string = \"(.*)\"/var VERSION string = \"'$NEWVERSION
 
 # Clear build folder:
 echo "Clearing build folder..."
-rm -rf ~/go/src/github.com/lonelycode/tyk-pump/build/*
+rm -rf $GOPATH/src/github.com/TykTechnologies/tyk-pump/build/*
 
 VERSION=$NEWVERSION_DHMAKE
+DESCRIPTION="Tyk Pump to move analytics data from Redis to any supported back end"
 SOURCEBIN=tyk-pump
-SOURCEBINPATH=~/go/src/github.com/lonelycode/tyk-pump
+SOURCEBINPATH=$GOPATH/src/github.com/TykTechnologies/tyk-pump
 i386BINDIR=$SOURCEBINPATH/build/i386/tyk-pump.linux.i386-$VERSION
 amd64BINDIR=$SOURCEBINPATH/build/amd64/tyk-pump.linux.amd64-$VERSION
 armBINDIR=$SOURCEBINPATH/build/arm/tyk-pump.linux.arm-$VERSION
@@ -81,8 +82,8 @@ tar -pczf $armTGZDIR/../tyk-pump-linux-arm-$VERSION.tar.gz tyk-pump.linux.arm-$V
 
 echo "Creating Deb Package for AMD64"
 cd $amd64TGZDIR/
-fpm -n tyk-pump -v $VERSION  --after-install $amd64TGZDIR/install/post_install.sh --after-remove $amd64TGZDIR/install/post_remove.sh -a amd64 -s dir -t deb ./=/opt/tyk-pump
-fpm -n tyk-pump -v $VERSION  --rpm-sign  --after-install $amd64TGZDIR/install/post_install.sh --after-remove $amd64TGZDIR/install/post_remove.sh -a amd64 -s dir -t rpm ./=/opt/tyk-pump
+fpm -n tyk-pump --description "$DESCRIPTION" -v $VERSION  --after-install $amd64TGZDIR/install/post_install.sh --after-remove $amd64TGZDIR/install/post_remove.sh -a amd64 -s dir -t deb ./=/opt/tyk-pump
+fpm -n tyk-pump --description "$DESCRIPTION" -v $VERSION  --rpm-sign  --after-install $amd64TGZDIR/install/post_install.sh --after-remove $amd64TGZDIR/install/post_remove.sh -a amd64 -s dir -t rpm ./=/opt/tyk-pump
 
 package_cloud yank tyk/tyk-pump/ubuntu/precise *.deb
 package_cloud yank tyk/tyk-pump/ubuntu/trusty *.deb
@@ -99,8 +100,8 @@ package_cloud push tyk/tyk-pump/el/7 *.rpm
 
 # echo "Creating Deb Package for i386"
 cd $i386TGZDIR/
-fpm -n tyk-pump -v $VERSION --after-install $amd64TGZDIR/install/post_install.sh --after-remove $amd64TGZDIR/install/post_remove.sh -a i386 -s dir -t deb ./=/opt/tyk-pump
-fpm -n tyk-pump -v $VERSION --rpm-sign --after-install $amd64TGZDIR/install/post_install.sh --after-remove $amd64TGZDIR/install/post_remove.sh -a i386 -s dir -t rpm ./=/opt/tyk-pump
+fpm -n tyk-pump --description "$DESCRIPTION" -v $VERSION --after-install $amd64TGZDIR/install/post_install.sh --after-remove $amd64TGZDIR/install/post_remove.sh -a i386 -s dir -t deb ./=/opt/tyk-pump
+fpm -n tyk-pump --description "$DESCRIPTION" -v $VERSION --rpm-sign --after-install $amd64TGZDIR/install/post_install.sh --after-remove $amd64TGZDIR/install/post_remove.sh -a i386 -s dir -t rpm ./=/opt/tyk-pump
 
 package_cloud yank tyk/tyk-pump/ubuntu/precise *.deb
 package_cloud yank tyk/tyk-pump/ubuntu/trusty *.deb
@@ -116,8 +117,8 @@ package_cloud push tyk/tyk-pump/el/7 *.rpm
 
 echo "Creating Deb Package for ARM"
 cd $armTGZDIR/
-fpm -n tyk-pump -v $VERSION --after-install $amd64TGZDIR/install/post_install.sh --after-remove $amd64TGZDIR/install/post_remove.sh -a arm -s dir -t deb ./=/opt/tyk-pump
-fpm -n tyk-pump -v $VERSION --rpm-sign --after-install $amd64TGZDIR/install/post_install.sh --after-remove $amd64TGZDIR/install/post_remove.sh -a arm -s dir -t rpm ./=/opt/tyk-pump
+fpm -n tyk-pump --description "$DESCRIPTION" -v $VERSION --after-install $amd64TGZDIR/install/post_install.sh --after-remove $amd64TGZDIR/install/post_remove.sh -a arm -s dir -t deb ./=/opt/tyk-pump
+fpm -n tyk-pump --description "$DESCRIPTION" -v $VERSION --rpm-sign --after-install $amd64TGZDIR/install/post_install.sh --after-remove $amd64TGZDIR/install/post_remove.sh -a arm -s dir -t rpm ./=/opt/tyk-pump
 
 package_cloud yank tyk/tyk-pump/ubuntu/precise *.deb
 package_cloud yank tyk/tyk-pump/ubuntu/trusty *.deb
