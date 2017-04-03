@@ -103,48 +103,46 @@ func initialisePumps() {
 
 }
 
-func StartPurgeLoop(nextCount int) {
-	job := instrument.NewJob("PumpRecordsPurge")
+func StartPurgeLoop(secInterval int) {
+	for range time.Tick(time.Duration(secInterval) * time.Second) {
+		job := instrument.NewJob("PumpRecordsPurge")
 
-	time.Sleep(time.Duration(nextCount) * time.Second)
+		AnalyticsValues := AnalyticsStore.GetAndDeleteSet(storage.ANALYTICS_KEYNAME)
 
-	AnalyticsValues := AnalyticsStore.GetAndDeleteSet(storage.ANALYTICS_KEYNAME)
+		if len(AnalyticsValues) > 0 {
+			startTime := time.Now()
 
-	if len(AnalyticsValues) > 0 {
-		startTime := time.Now()
+			// Convert to something clean
+			keys := make([]interface{}, len(AnalyticsValues), len(AnalyticsValues))
 
-		// Convert to something clean
-		keys := make([]interface{}, len(AnalyticsValues), len(AnalyticsValues))
-
-		for i, v := range AnalyticsValues {
-			decoded := analytics.AnalyticsRecord{}
-			err := msgpack.Unmarshal(v.([]byte), &decoded)
-			log.WithFields(logrus.Fields{
-				"prefix": mainPrefix,
-			}).Debug("Decoded Record: ", decoded)
-			if err != nil {
+			for i, v := range AnalyticsValues {
+				decoded := analytics.AnalyticsRecord{}
+				err := msgpack.Unmarshal(v.([]byte), &decoded)
 				log.WithFields(logrus.Fields{
 					"prefix": mainPrefix,
-				}).Error("Couldn't unmarshal analytics data:", err)
-			} else {
-				keys[i] = interface{}(decoded)
-				job.Event("record")
+				}).Debug("Decoded Record: ", decoded)
+				if err != nil {
+					log.WithFields(logrus.Fields{
+						"prefix": mainPrefix,
+					}).Error("Couldn't unmarshal analytics data:", err)
+				} else {
+					keys[i] = interface{}(decoded)
+					job.Event("record")
+				}
 			}
+
+			// Send to pumps
+			writeToPumps(keys, job, startTime)
+
+			job.Timing("purge_time_all", time.Since(startTime).Nanoseconds())
+
 		}
 
-		// Send to pumps
-		writeToPumps(keys, job, startTime)
-
-		job.Timing("purge_time_all", time.Since(startTime).Nanoseconds())
-
+		if !SystemConfig.DontPurgeUptimeData {
+			UptimeValues := UptimeStorage.GetAndDeleteSet(storage.UptimeAnalytics_KEYNAME)
+			UptimePump.WriteUptimeData(UptimeValues)
+		}
 	}
-
-	if !SystemConfig.DontPurgeUptimeData {
-		UptimeValues := UptimeStorage.GetAndDeleteSet(storage.UptimeAnalytics_KEYNAME)
-		UptimePump.WriteUptimeData(UptimeValues)
-	}
-
-	StartPurgeLoop(nextCount)
 }
 
 func writeToPumps(keys []interface{}, job *health.Job, startTime time.Time) {
