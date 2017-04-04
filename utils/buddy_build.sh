@@ -2,6 +2,9 @@
 echo Set version number
 export VERSION=$(perl -n -e'/v(\d+).(\d+).(\d+)/'' && print "$1\.$2\.$3"' version.go)
 
+echo VERSION: $VERSION
+
+exit
 echo Generating key
 [[ $(gpg --list-keys | grep -w 729EA673) ]] && echo "Key exists" || gpg --import build_key.key
 
@@ -60,7 +63,7 @@ cd $amd64TGZDIR/../
 tar -pczf $amd64TGZDIR/../tyk-pump-linux-amd64-$VERSION.tar.gz tyk-pump.linux.amd64-$VERSION/
 
 cd $armTGZDIR/../
-tar -pczf $armTGZDIR/../tyk-pump-linux-arm-$VERSION.tar.gz tyk-pump.linux.arm-$VERSION/
+tar -pczf $armTGZDIR/../tyk-pump-linux-arm-$VERSION.tar.gz tyk-pump.linux.arm64-$VERSION/
 
 echo "Creating Deb Package for AMD64"
 cd $amd64TGZDIR/
@@ -71,7 +74,7 @@ AMDDEBNAME="tyk-pump_"$VERSION"_amd64.deb"
 AMDRPMNAME="tyk-pump-"$VERSION"-1.x86_64.rpm"
 
 echo "Signing AMD RPM"
-~/build_tools/rpm-sign.exp $amd64TGZDIR/$AMDRPMNAME
+/src/github.com/TykTechnologies/tyk-pump/build_tools/rpm-sign.exp $amd64TGZDIR/$AMDRPMNAME
 
 package_cloud push tyk/$PACKAGECLOUDREPO/ubuntu/precise $AMDDEBNAME
 package_cloud push tyk/$PACKAGECLOUDREPO/ubuntu/trusty $AMDDEBNAME
@@ -89,7 +92,7 @@ i386DEBNAME="tyk-pump_"$VERSION"_i386.deb"
 i386RPMNAME="tyk-pump-"$VERSION"-1.i386.rpm"
 
 echo "Signing i386 RPM"
-~/build_tools/rpm-sign.exp $i386TGZDIR/$i386RPMNAME
+/src/github.com/TykTechnologies/tyk-pump/rpm-sign.exp $i386TGZDIR/$i386RPMNAME
 
 package_cloud push tyk/$PACKAGECLOUDREPO/ubuntu/precise $i386DEBNAME
 package_cloud push tyk/$PACKAGECLOUDREPO/ubuntu/trusty $i386DEBNAME
@@ -106,7 +109,7 @@ ARMDEBNAME="tyk-pump_"$VERSION"_arm64.deb"
 ARMRPMNAME="tyk-pump-"$VERSION"-1.arm64.rpm"
 
 echo "Signing Arm RPM"
-~/build_tools/rpm-sign.exp $armTGZDIR/$ARMRPMNAME
+/src/github.com/TykTechnologies/tyk-pump/rpm-sign.exp $armTGZDIR/$ARMRPMNAME
 
 package_cloud push tyk/$PACKAGECLOUDREPO/ubuntu/precise $ARMDEBNAME
 package_cloud push tyk/$PACKAGECLOUDREPO/ubuntu/trusty $ARMDEBNAME
