@@ -225,6 +225,22 @@
 			"revisionTime": "2016-10-16T10:21:59Z"
 		},
 		{
+			"checksumSHA1": "ji4KugVW5dIfKLoFr1fE+3mT90A=",
+			"path": "gopkg.in/olivere/elastic.v5",
+			"revision": "cf4e58efdcee2e8e7c18dad44d51ed166fb256c2",
+			"revisionTime": "2017-03-26T10:11:08Z",
+			"version": "v5.0.31",
+			"versionExact": "v5.0.31"
+		},
+		{
+			"checksumSHA1": "pCApZfp2CeDnWbNVsyzNO62ZUXA=",
+			"path": "gopkg.in/olivere/elastic.v5/uritemplates",
+			"revision": "cf4e58efdcee2e8e7c18dad44d51ed166fb256c2",
+			"revisionTime": "2017-03-26T10:11:08Z",
+			"version": "v5.0.31",
+			"versionExact": "v5.0.31"
+		},
+		{
 			"checksumSHA1": "auzS48O3vpr/7Yr2GEZZPQKjfhU=",
 			"path": "gopkg.in/vmihailenco/msgpack.v2",
 			"revision": "200315d5c8aab339f5a5cd44219f4b50ad0782df",
