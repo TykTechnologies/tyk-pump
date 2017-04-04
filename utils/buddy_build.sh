@@ -4,7 +4,6 @@ export VERSION=$(perl -n -e'/v(\d+).(\d+).(\d+)/'' && print "$1\.$2\.$3"' versio
 
 echo VERSION: $VERSION
 
-exit
 echo Generating key
 [[ $(gpg --list-keys | grep -w 729EA673) ]] && echo "Key exists" || gpg --import build_key.key
 
