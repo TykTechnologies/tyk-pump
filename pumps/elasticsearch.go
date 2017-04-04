@@ -3,12 +3,14 @@ package pumps
 import (
 	"context"
 	"errors"
-	"github.com/TykTechnologies/logrus"
-	"github.com/TykTechnologies/tyk-pump/analytics"
+	"time"
+
 	"github.com/mitchellh/mapstructure"
 	elasticv3 "gopkg.in/olivere/elastic.v3"
 	elasticv5 "gopkg.in/olivere/elastic.v5"
-	"time"
+
+	"github.com/TykTechnologies/logrus"
+	"github.com/TykTechnologies/tyk-pump/analytics"
 )
 
 type ElasticsearchPump struct {

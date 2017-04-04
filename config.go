@@ -4,8 +4,9 @@ import (
 	"encoding/json"
 	"io/ioutil"
 
-	"github.com/TykTechnologies/tyk-pump/storage"
 	"github.com/kelseyhightower/envconfig"
+
+	"github.com/TykTechnologies/tyk-pump/storage"
 )
 
 const ENV_PREVIX string = "TYK_PMP"

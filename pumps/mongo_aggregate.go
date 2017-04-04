@@ -7,14 +7,15 @@ import (
 	"strings"
 	"time"
 
-	"github.com/TykTechnologies/logrus"
-	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/fatih/structs"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/lonelycode/mgohacks"
 	"github.com/mitchellh/mapstructure"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
+
+	"github.com/TykTechnologies/logrus"
+	"github.com/TykTechnologies/tyk-pump/analytics"
 )
 
 const (

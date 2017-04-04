@@ -1,9 +1,10 @@
 package pumps
 
 import (
-	"github.com/TykTechnologies/tyk-pump/analytics"
 	"testing"
 	"time"
+
+	"github.com/TykTechnologies/tyk-pump/analytics"
 )
 
 func CreateAnalyticsRecord() analytics.AnalyticsRecord {

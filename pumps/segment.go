@@ -2,10 +2,12 @@ package pumps
 
 import (
 	"encoding/json"
-	"github.com/TykTechnologies/logrus"
-	"github.com/TykTechnologies/tyk-pump/analytics"
+
 	"github.com/mitchellh/mapstructure"
 	segment "github.com/segmentio/analytics-go"
+
+	"github.com/TykTechnologies/logrus"
+	"github.com/TykTechnologies/tyk-pump/analytics"
 )
 
 type SegmentPump struct {

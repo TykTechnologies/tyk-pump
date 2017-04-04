@@ -4,6 +4,11 @@ import (
 	"flag"
 	"time"
 
+	"os"
+
+	"github.com/gocraft/health"
+	"gopkg.in/vmihailenco/msgpack.v2"
+
 	"github.com/TykTechnologies/logrus"
 	prefixed "github.com/TykTechnologies/logrus-prefixed-formatter"
 	"github.com/TykTechnologies/tyk-pump/analytics"
@@ -11,9 +16,6 @@ import (
 	"github.com/TykTechnologies/tyk-pump/pumps"
 	"github.com/TykTechnologies/tyk-pump/storage"
 	logger "github.com/TykTechnologies/tykcommon-logger"
-	"github.com/gocraft/health"
-	"gopkg.in/vmihailenco/msgpack.v2"
-	"os"
 )
 
 var SystemConfig TykPumpConfiguration
