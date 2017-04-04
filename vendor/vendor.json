@@ -141,6 +141,12 @@
 			"revisionTime": "2015-11-21T03:10:40Z"
 		},
 		{
+			"checksumSHA1": "zmC8/3V4ls53DJlNTKDZwPSC/dA=",
+			"path": "github.com/satori/go.uuid",
+			"revision": "5bf94b69c6b68ee1b541973bb8e1144db23a194b",
+			"revisionTime": "2017-03-21T23:07:31Z"
+		},
+		{
 			"checksumSHA1": "2I0GZtkkA6L4okm5CMXDDMA5kjE=",
 			"path": "github.com/segmentio/analytics-go",
 			"revision": "bdb0aeca8a993b292b85c9ec17b5ce0ff81848c8",
