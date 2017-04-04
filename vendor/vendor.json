@@ -153,13 +153,6 @@
 			"revisionTime": "2016-04-24T05:23:52Z"
 		},
 		{
-			"checksumSHA1": "KoefD9A3V8xGM+RpcQRyt5kK0XY=",
-			"origin": "github.com/lonelycode/redigocluster/rediscluster/vendor/github.com/streamrail/concurrent-map",
-			"path": "github.com/streamrail/concurrent-map",
-			"revision": "1284ae4700d04c162cd1fc7966f1a5aff43887f0",
-			"revisionTime": "2016-12-09T09:21:43Z"
-		},
-		{
 			"checksumSHA1": "LAL/r7KfCdqp4M6MM13+7NWsUNc=",
 			"path": "github.com/xtgo/uuid",
 			"revision": "a0b114877d4caeffbd7f87e3757c17fce570fea7",
