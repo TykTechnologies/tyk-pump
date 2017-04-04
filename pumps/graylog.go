@@ -3,10 +3,12 @@ package pumps
 import (
 	"encoding/base64"
 	"encoding/json"
-	"github.com/TykTechnologies/logrus"
-	"github.com/TykTechnologies/tyk-pump/analytics"
+
 	"github.com/mitchellh/mapstructure"
 	"github.com/robertkowalski/graylog-golang"
+
+	"github.com/TykTechnologies/logrus"
+	"github.com/TykTechnologies/tyk-pump/analytics"
 )
 
 type GraylogPump struct {

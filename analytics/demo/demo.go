@@ -1,12 +1,14 @@
 package demo
 
 import (
-	"github.com/TykTechnologies/tyk-pump/analytics"
-	"github.com/gocraft/health"
-	"github.com/satori/go.uuid"
 	"math/rand"
 	"strings"
 	"time"
+
+	"github.com/gocraft/health"
+	"github.com/satori/go.uuid"
+
+	"github.com/TykTechnologies/tyk-pump/analytics"
 )
 
 var apiKeys []string
