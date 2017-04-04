@@ -166,7 +166,7 @@ func GenerateDemoData(start time.Time, days int, orgId string, writer func([]int
 
 			set = append(set, r)
 		}
-		count += 1
+		count++
 		writer(set, nil, time.Now())
 
 	}

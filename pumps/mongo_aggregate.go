@@ -363,12 +363,7 @@ func (m *MongoAggregatePump) ensureIndexes(c *mgo.Collection) error {
 		Background: true,
 	}
 
-	err = c.EnsureIndex(orgIndex)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return c.EnsureIndex(orgIndex)
 }
 
 func (m *MongoAggregatePump) WriteData(data []interface{}) error {
@@ -429,7 +424,7 @@ func (m *MongoAggregatePump) WriteData(data []interface{}) error {
 					LastTime:         thisV.TimeStamp,
 				}
 
-				thisAggregate.Total.Hits += 1
+				thisAggregate.Total.Hits++
 				thisAggregate.Total.TotalRequestTime += float64(thisV.RequestTime)
 
 				// We need an initial value
@@ -437,12 +432,12 @@ func (m *MongoAggregatePump) WriteData(data []interface{}) error {
 
 				if thisV.ResponseCode > 400 {
 					thisCounter.ErrorTotal = 1
-					thisAggregate.Total.ErrorTotal += 1
+					thisAggregate.Total.ErrorTotal++
 				}
 
 				if (thisV.ResponseCode < 300) && (thisV.ResponseCode >= 200) {
 					thisCounter.Success = 1
-					thisAggregate.Total.Success += 1
+					thisAggregate.Total.Success++
 				}
 
 				// Convert to a map (for easy iteration)
@@ -452,8 +447,7 @@ func (m *MongoAggregatePump) WriteData(data []interface{}) error {
 					// Mini function to handle incrementing a specific counter in our object
 					IncrementOrSetUnit := func(c *Counter) *Counter {
 						if c == nil {
-							var newCounter Counter
-							newCounter = thisCounter
+							newCounter := thisCounter
 							c = &newCounter
 						} else {
 							c.Hits += thisCounter.Hits
@@ -529,7 +523,7 @@ func (m *MongoAggregatePump) WriteData(data []interface{}) error {
 						break
 
 					case "TrackPath":
-						if value.(bool) == true {
+						if value.(bool) {
 							c := IncrementOrSetUnit(thisAggregate.Endpoints[thisV.Path])
 							thisAggregate.Endpoints[thisV.Path] = c
 							thisAggregate.Endpoints[thisV.Path].Identifier = thisV.Path

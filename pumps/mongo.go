@@ -170,8 +170,7 @@ func (m *MongoPump) WriteData(data []interface{}) error {
 }
 
 func (m *MongoPump) AccumulateSet(data []interface{}) [][]interface{} {
-	var accumulatorTotal int
-	accumulatorTotal = 0
+	accumulatorTotal := 0
 	returnArray := make([][]interface{}, 0)
 
 	thisResultSet := make([]interface{}, 0)
@@ -234,7 +233,7 @@ func (m *MongoPump) WriteUptimeData(data []interface{}) {
 		}).Debug("Uptime Data: ", len(data))
 
 		if len(data) > 0 {
-			keys := make([]interface{}, len(data), len(data))
+			keys := make([]interface{}, len(data))
 
 			for i, v := range data {
 				decoded := analytics.UptimeReportData{}
