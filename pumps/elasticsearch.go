@@ -167,7 +167,7 @@ func getIndexName(esConf *ElasticsearchConf) string {
 	return indexName
 }
 
-func getMapping(datum analytics.AnalyticsRecord, extendedStatistics bool) (map[string]interface{}) {
+func getMapping(datum analytics.AnalyticsRecord, extendedStatistics bool) map[string]interface{} {
 	record := datum
 
 	mapping := map[string]interface{}{
