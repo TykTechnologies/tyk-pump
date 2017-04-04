@@ -3,24 +3,26 @@ package pumps
 import (
 	b64 "encoding/base64"
 	"errors"
-	"github.com/TykTechnologies/logrus"
-	"github.com/TykTechnologies/tyk-pump/analytics"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/fatih/structs"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/lonelycode/mgohacks"
 	"github.com/mitchellh/mapstructure"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
-	"strconv"
-	"strings"
-	"time"
+
+	"github.com/TykTechnologies/logrus"
+	"github.com/TykTechnologies/tyk-pump/analytics"
 )
 
 const (
 	AgggregateMixedCollectionName string = "tyk_analytics_aggregates"
 )
 
-var mongoAggregatePumpPrefix string = "PMP_MONGOAGG"
+var mongoAggregatePumpPrefix = "PMP_MONGOAGG"
 
 type Counter struct {
 	Hits             int       `json:"hits"`
@@ -256,11 +258,13 @@ type MongoAggregatePump struct {
 	dbConf    *MongoAggregateConf
 }
 
-var mongoAggregatePrefix string = "mongo-pump-aggregate"
+var mongoAggregatePrefix = "mongo-pump-aggregate"
 
 type MongoAggregateConf struct {
-	MongoURL           string `mapstructure:"mongo_url"`
-	UseMixedCollection bool   `mapstructure:"use_mixed_collection"`
+	MongoURL                   string `mapstructure:"mongo_url"`
+	MongoUseSSL                bool   `mapstructure:"mongo_use_ssl"`
+	MongoSSLInsecureSkipVerify bool   `mapstructure:"mongo_ssl_insecure_skip_verify"`
+	UseMixedCollection         bool   `mapstructure:"use_mixed_collection"`
 }
 
 func (m *MongoAggregatePump) New() Pump {
@@ -312,7 +316,16 @@ func (m *MongoAggregatePump) Init(config interface{}) error {
 
 func (m *MongoAggregatePump) connect() {
 	var err error
-	m.dbSession, err = mgo.Dial(m.dbConf.MongoURL)
+	var dialInfo *mgo.DialInfo
+
+	dialInfo, err = mongoDialInfo(m.dbConf.MongoURL, m.dbConf.MongoUseSSL, m.dbConf.MongoSSLInsecureSkipVerify)
+	if err != nil {
+		log.WithFields(logrus.Fields{
+			"prefix": mongoPrefix,
+		}).Panic("Mongo URL is invalid: ", err)
+	}
+
+	m.dbSession, err = mgo.DialWithInfo(dialInfo)
 	if err != nil {
 		log.WithFields(logrus.Fields{
 			"prefix": mongoAggregatePrefix,
@@ -350,12 +363,7 @@ func (m *MongoAggregatePump) ensureIndexes(c *mgo.Collection) error {
 		Background: true,
 	}
 
-	err = c.EnsureIndex(orgIndex)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return c.EnsureIndex(orgIndex)
 }
 
 func (m *MongoAggregatePump) WriteData(data []interface{}) error {
@@ -416,7 +424,7 @@ func (m *MongoAggregatePump) WriteData(data []interface{}) error {
 					LastTime:         thisV.TimeStamp,
 				}
 
-				thisAggregate.Total.Hits += 1
+				thisAggregate.Total.Hits++
 				thisAggregate.Total.TotalRequestTime += float64(thisV.RequestTime)
 
 				// We need an initial value
@@ -424,12 +432,12 @@ func (m *MongoAggregatePump) WriteData(data []interface{}) error {
 
 				if thisV.ResponseCode > 400 {
 					thisCounter.ErrorTotal = 1
-					thisAggregate.Total.ErrorTotal += 1
+					thisAggregate.Total.ErrorTotal++
 				}
 
 				if (thisV.ResponseCode < 300) && (thisV.ResponseCode >= 200) {
 					thisCounter.Success = 1
-					thisAggregate.Total.Success += 1
+					thisAggregate.Total.Success++
 				}
 
 				// Convert to a map (for easy iteration)
@@ -439,8 +447,7 @@ func (m *MongoAggregatePump) WriteData(data []interface{}) error {
 					// Mini function to handle incrementing a specific counter in our object
 					IncrementOrSetUnit := func(c *Counter) *Counter {
 						if c == nil {
-							var newCounter Counter
-							newCounter = thisCounter
+							newCounter := thisCounter
 							c = &newCounter
 						} else {
 							c.Hits += thisCounter.Hits
@@ -514,10 +521,10 @@ func (m *MongoAggregatePump) WriteData(data []interface{}) error {
 							thisAggregate.Tags[thisTag].HumanIdentifier = thisTag
 						}
 						break
-					
+
 					case "TrackPath":
-						if value.(bool) == true {
-							c := IncrementOrSetUnit(thisAggregate.Endpoints[thisV.Path])	
+						if value.(bool) {
+							c := IncrementOrSetUnit(thisAggregate.Endpoints[thisV.Path])
 							thisAggregate.Endpoints[thisV.Path] = c
 							thisAggregate.Endpoints[thisV.Path].Identifier = thisV.Path
 							thisAggregate.Endpoints[thisV.Path].HumanIdentifier = thisV.Path
@@ -528,7 +535,6 @@ func (m *MongoAggregatePump) WriteData(data []interface{}) error {
 
 				analyticsPerOrg[collectionName] = thisAggregate
 
-				
 			}
 		}
 

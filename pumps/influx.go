@@ -5,10 +5,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/TykTechnologies/logrus"
-	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/influxdata/influxdb/client/v2"
 	"github.com/mitchellh/mapstructure"
+
+	"github.com/TykTechnologies/logrus"
+	"github.com/TykTechnologies/tyk-pump/analytics"
 )
 
 type InfluxPump struct {
@@ -16,8 +17,8 @@ type InfluxPump struct {
 }
 
 var (
-	influxPrefix string = "influx-pump"
-	table        string = "analytics"
+	influxPrefix = "influx-pump"
+	table        = "analytics"
 )
 
 type InfluxConf struct {
@@ -121,7 +122,7 @@ func (i *InfluxPump) WriteData(data []interface{}) error {
 			} else {
 
 				// convert and remove surrounding quotes from tag value
-				tag = strings.Trim(string(b),"\"")
+				tag = strings.Trim(string(b), "\"")
 			}
 			tags[t] = tag
 		}

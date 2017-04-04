@@ -111,6 +111,18 @@
 			"revisionTime": "2016-10-20T16:18:36Z"
 		},
 		{
+			"checksumSHA1": "ddFDosthJx9zI6fE6jldauJ4+tI=",
+			"path": "github.com/moesif/moesifapi-go",
+			"revision": "69242ec5159a2f32b455138682d394ccfb27d102",
+			"revisionTime": "2017-02-16T23:33:25Z"
+		},
+		{
+			"checksumSHA1": "5yDvQpQT3yCIDBTWtki+OY4IppE=",
+			"path": "github.com/moesif/moesifapi-go/models",
+			"revision": "69242ec5159a2f32b455138682d394ccfb27d102",
+			"revisionTime": "2017-02-16T23:33:25Z"
+		},
+		{
 			"checksumSHA1": "Opg5ihMhafgqLXQT0MqyWv5ZE3E=",
 			"path": "github.com/quipo/statsd",
 			"revision": "75b7afedf0d2810e897fd5a010dbf896b20f535d",
@@ -129,6 +141,12 @@
 			"revisionTime": "2015-11-21T03:10:40Z"
 		},
 		{
+			"checksumSHA1": "zmC8/3V4ls53DJlNTKDZwPSC/dA=",
+			"path": "github.com/satori/go.uuid",
+			"revision": "5bf94b69c6b68ee1b541973bb8e1144db23a194b",
+			"revisionTime": "2017-03-21T23:07:31Z"
+		},
+		{
 			"checksumSHA1": "2I0GZtkkA6L4okm5CMXDDMA5kjE=",
 			"path": "github.com/segmentio/analytics-go",
 			"revision": "bdb0aeca8a993b292b85c9ec17b5ce0ff81848c8",
@@ -139,13 +157,6 @@
 			"path": "github.com/segmentio/backo-go",
 			"revision": "204274ad699c0983a70203a566887f17a717fef4",
 			"revisionTime": "2016-04-24T05:23:52Z"
-		},
-		{
-			"checksumSHA1": "KoefD9A3V8xGM+RpcQRyt5kK0XY=",
-			"origin": "github.com/lonelycode/redigocluster/rediscluster/vendor/github.com/streamrail/concurrent-map",
-			"path": "github.com/streamrail/concurrent-map",
-			"revision": "1284ae4700d04c162cd1fc7966f1a5aff43887f0",
-			"revisionTime": "2016-12-09T09:21:43Z"
 		},
 		{
 			"checksumSHA1": "LAL/r7KfCdqp4M6MM13+7NWsUNc=",
@@ -170,6 +181,24 @@
 			"path": "golang.org/x/sys/unix",
 			"revision": "b699b7032584f0953262cb2788a0ca19bb494703",
 			"revisionTime": "2016-11-10T11:58:56Z"
+		},
+		{
+			"checksumSHA1": "6s9Iy/WNQNG/LVFOZ7YDb6BDBXY=",
+			"path": "golang.org/x/tools/cmd/goimports",
+			"revision": "37a1062ad0bb70f026cd45d6b92cb37eacd927bb",
+			"revisionTime": "2017-03-31T23:31:41Z"
+		},
+		{
+			"checksumSHA1": "ikor+YKJu2eKwyFteBWhsb8IGy8=",
+			"path": "golang.org/x/tools/go/ast/astutil",
+			"revision": "37a1062ad0bb70f026cd45d6b92cb37eacd927bb",
+			"revisionTime": "2017-03-31T23:31:41Z"
+		},
+		{
+			"checksumSHA1": "FN5a2wRrdvga//JY9lrnuC+uehk=",
+			"path": "golang.org/x/tools/imports",
+			"revision": "37a1062ad0bb70f026cd45d6b92cb37eacd927bb",
+			"revisionTime": "2017-03-31T23:31:41Z"
 		},
 		{
 			"checksumSHA1": "1D8GzeoFGUs5FZOoyC2DpQg8c5Y=",
@@ -218,6 +247,22 @@
 			"path": "gopkg.in/olivere/elastic.v3/uritemplates",
 			"revision": "1ad75b5396674e9c783400e89106bc0c8da9d786",
 			"revisionTime": "2016-10-16T10:21:59Z"
+		},
+		{
+			"checksumSHA1": "ji4KugVW5dIfKLoFr1fE+3mT90A=",
+			"path": "gopkg.in/olivere/elastic.v5",
+			"revision": "cf4e58efdcee2e8e7c18dad44d51ed166fb256c2",
+			"revisionTime": "2017-03-26T10:11:08Z",
+			"version": "v5.0.31",
+			"versionExact": "v5.0.31"
+		},
+		{
+			"checksumSHA1": "pCApZfp2CeDnWbNVsyzNO62ZUXA=",
+			"path": "gopkg.in/olivere/elastic.v5/uritemplates",
+			"revision": "cf4e58efdcee2e8e7c18dad44d51ed166fb256c2",
+			"revisionTime": "2017-03-26T10:11:08Z",
+			"version": "v5.0.31",
+			"versionExact": "v5.0.31"
 		},
 		{
 			"checksumSHA1": "auzS48O3vpr/7Yr2GEZZPQKjfhU=",

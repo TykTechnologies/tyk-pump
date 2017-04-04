@@ -6,7 +6,7 @@ import (
 
 type DummyPump struct{}
 
-var dummyPrefix string = "dummy-pump"
+var dummyPrefix = "dummy-pump"
 
 func (p *DummyPump) New() Pump {
 	newPump := DummyPump{}

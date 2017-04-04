@@ -1,14 +1,18 @@
 package pumps
 
 import (
-	"github.com/TykTechnologies/logrus"
-	"github.com/TykTechnologies/tyk-pump/analytics"
+	"crypto/tls"
+	"net"
+	"strings"
+	"time"
+
 	"github.com/kelseyhightower/envconfig"
 	"github.com/mitchellh/mapstructure"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/vmihailenco/msgpack.v2"
-	"strings"
-	"time"
+
+	"github.com/TykTechnologies/logrus"
+	"github.com/TykTechnologies/tyk-pump/analytics"
 )
 
 const tenMB int = 10485760
@@ -18,14 +22,35 @@ type MongoPump struct {
 	dbConf    *MongoConf
 }
 
-var mongoPrefix string = "mongo-pump"
-var mongoPumpPrefix string = "PMP_MONGO"
+var mongoPrefix = "mongo-pump"
+var mongoPumpPrefix = "PMP_MONGO"
 
 type MongoConf struct {
-	CollectionName          string `mapstructure:"collection_name"`
-	MongoURL                string `mapstructure:"mongo_url"`
-	MaxInsertBatchSizeBytes int    `mapstructure:"max_insert_batch_size_bytes"`
-	MaxDocumentSizeBytes    int    `mapstructure:"max_document_size_bytes"`
+	CollectionName             string `mapstructure:"collection_name"`
+	MongoURL                   string `mapstructure:"mongo_url"`
+	MongoUseSSL                bool   `mapstructure:"mongo_use_ssl"`
+	MongoSSLInsecureSkipVerify bool   `mapstructure:"mongo_ssl_insecure_skip_verify"`
+	MaxInsertBatchSizeBytes    int    `mapstructure:"max_insert_batch_size_bytes"`
+	MaxDocumentSizeBytes       int    `mapstructure:"max_document_size_bytes"`
+}
+
+func mongoDialInfo(mongoURL string, useSSL bool, SSLInsecureSkipVerify bool) (dialInfo *mgo.DialInfo, err error) {
+	dialInfo, err = mgo.ParseURL(mongoURL)
+	if err != nil {
+		return dialInfo, err
+	}
+
+	if useSSL {
+		dialInfo.DialServer = func(addr *mgo.ServerAddr) (net.Conn, error) {
+			tlsConfig := &tls.Config{}
+			if SSLInsecureSkipVerify {
+				tlsConfig.InsecureSkipVerify = true
+			}
+			return tls.Dial("tcp", addr.String(), tlsConfig)
+		}
+	}
+
+	return dialInfo, err
 }
 
 func (m *MongoPump) New() Pump {
@@ -80,7 +105,16 @@ func (m *MongoPump) Init(config interface{}) error {
 
 func (m *MongoPump) connect() {
 	var err error
-	m.dbSession, err = mgo.Dial(m.dbConf.MongoURL)
+	var dialInfo *mgo.DialInfo
+
+	dialInfo, err = mongoDialInfo(m.dbConf.MongoURL, m.dbConf.MongoUseSSL, m.dbConf.MongoSSLInsecureSkipVerify)
+	if err != nil {
+		log.WithFields(logrus.Fields{
+			"prefix": mongoPrefix,
+		}).Panic("Mongo URL is invalid: ", err)
+	}
+
+	m.dbSession, err = mgo.DialWithInfo(dialInfo)
 	if err != nil {
 		log.WithFields(logrus.Fields{
 			"prefix": mongoPrefix,
@@ -110,8 +144,7 @@ func (m *MongoPump) WriteData(data []interface{}) error {
 		}
 
 		for _, dataSet := range m.AccumulateSet(data) {
-
-			go func() {
+			go func(dataSet []interface{}) {
 				thisSession := m.dbSession.Copy()
 				defer thisSession.Close()
 				analyticsCollection := thisSession.DB("").C(collectionName)
@@ -128,8 +161,7 @@ func (m *MongoPump) WriteData(data []interface{}) error {
 						//m.connect()
 					}
 				}
-			}()
-
+			}(dataSet)
 		}
 
 	}
@@ -138,8 +170,7 @@ func (m *MongoPump) WriteData(data []interface{}) error {
 }
 
 func (m *MongoPump) AccumulateSet(data []interface{}) [][]interface{} {
-	var accumulatorTotal int
-	accumulatorTotal = 0
+	accumulatorTotal := 0
 	returnArray := make([][]interface{}, 0)
 
 	thisResultSet := make([]interface{}, 0)
@@ -202,7 +233,7 @@ func (m *MongoPump) WriteUptimeData(data []interface{}) {
 		}).Debug("Uptime Data: ", len(data))
 
 		if len(data) > 0 {
-			keys := make([]interface{}, len(data), len(data))
+			keys := make([]interface{}, len(data))
 
 			for i, v := range data {
 				decoded := analytics.UptimeReportData{}

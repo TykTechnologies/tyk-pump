@@ -5,17 +5,18 @@ import (
 	"strings"
 	"time"
 
-	"github.com/TykTechnologies/logrus"
-	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/mitchellh/mapstructure"
 	"github.com/quipo/statsd"
+
+	"github.com/TykTechnologies/logrus"
+	"github.com/TykTechnologies/tyk-pump/analytics"
 )
 
 type StatsdPump struct {
 	dbConf *StatsdConf
 }
 
-var statsdPrefix string = "statsd-pump"
+var statsdPrefix = "statsd-pump"
 
 type StatsdConf struct {
 	Address string   `mapstructure:"address"`
@@ -87,7 +88,7 @@ func (s *StatsdPump) WriteData(data []interface{}) error {
 
 		mapping := map[string]interface{}{
 			"path":          decoded.Method + decoded.Path,
-			"response_code": int(decoded.ResponseCode),
+			"response_code": decoded.ResponseCode,
 			"api_key":       decoded.APIKey,
 			"time_stamp":    sanitizedTime,
 			"api_version":   decoded.APIVersion,

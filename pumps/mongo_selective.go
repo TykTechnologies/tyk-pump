@@ -2,15 +2,17 @@ package pumps
 
 import (
 	"errors"
-	"github.com/TykTechnologies/logrus"
-	"github.com/TykTechnologies/tyk-pump/analytics"
+	"strings"
+	"time"
+
 	"github.com/kelseyhightower/envconfig"
 	"github.com/lonelycode/mgohacks"
 	"github.com/mitchellh/mapstructure"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/vmihailenco/msgpack.v2"
-	"strings"
-	"time"
+
+	"github.com/TykTechnologies/logrus"
+	"github.com/TykTechnologies/tyk-pump/analytics"
 )
 
 type MongoSelectivePump struct {
@@ -18,13 +20,15 @@ type MongoSelectivePump struct {
 	dbConf    *MongoSelectiveConf
 }
 
-var mongoSelectivePrefix string = "mongo-pump-selective"
-var mongoSelectivePumpPrefix string = "PMP_MONGOSEL"
+var mongoSelectivePrefix = "mongo-pump-selective"
+var mongoSelectivePumpPrefix = "PMP_MONGOSEL"
 
 type MongoSelectiveConf struct {
-	MongoURL                string `mapstructure:"mongo_url"`
-	MaxInsertBatchSizeBytes int    `mapstructure:"max_insert_batch_size_bytes"`
-	MaxDocumentSizeBytes    int    `mapstructure:"max_document_size_bytes"`
+	MongoURL                   string `mapstructure:"mongo_url"`
+	MongoUseSSL                bool   `mapstructure:"mongo_use_ssl"`
+	MongoSSLInsecureSkipVerify bool   `mapstructure:"mongo_ssl_insecure_skip_verify"`
+	MaxInsertBatchSizeBytes    int    `mapstructure:"max_insert_batch_size_bytes"`
+	MaxDocumentSizeBytes       int    `mapstructure:"max_document_size_bytes"`
 }
 
 func (m *MongoSelectivePump) New() Pump {
@@ -83,7 +87,16 @@ func (m *MongoSelectivePump) Init(config interface{}) error {
 
 func (m *MongoSelectivePump) connect() {
 	var err error
-	m.dbSession, err = mgo.Dial(m.dbConf.MongoURL)
+	var dialInfo *mgo.DialInfo
+
+	dialInfo, err = mongoDialInfo(m.dbConf.MongoURL, m.dbConf.MongoUseSSL, m.dbConf.MongoSSLInsecureSkipVerify)
+	if err != nil {
+		log.WithFields(logrus.Fields{
+			"prefix": mongoPrefix,
+		}).Panic("Mongo URL is invalid: ", err)
+	}
+
+	m.dbSession, err = mgo.DialWithInfo(dialInfo)
 	if err != nil {
 		log.WithFields(logrus.Fields{
 			"prefix": mongoSelectivePrefix,
@@ -151,12 +164,7 @@ func (m *MongoSelectivePump) ensureIndexes(c *mgo.Collection) error {
 		Background: true,
 	}
 
-	err = c.EnsureIndex(idOrgErrIndex)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return c.EnsureIndex(idOrgErrIndex)
 }
 
 func (m *MongoSelectivePump) WriteData(data []interface{}) error {
@@ -230,8 +238,7 @@ func (m *MongoSelectivePump) WriteData(data []interface{}) error {
 }
 
 func (m *MongoSelectivePump) AccumulateSet(data []interface{}) [][]interface{} {
-	var accumulatorTotal int
-	accumulatorTotal = 0
+	accumulatorTotal := 0
 	returnArray := make([][]interface{}, 0)
 
 	thisResultSet := make([]interface{}, 0)
@@ -294,7 +301,7 @@ func (m *MongoSelectivePump) WriteUptimeData(data []interface{}) {
 		}).Debug("Uptime Data: ", len(data))
 
 		if len(data) > 0 {
-			keys := make([]interface{}, len(data), len(data))
+			keys := make([]interface{}, len(data))
 
 			for i, v := range data {
 				decoded := analytics.UptimeReportData{}

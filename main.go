@@ -4,13 +4,18 @@ import (
 	"flag"
 	"time"
 
+	"os"
+
+	"github.com/gocraft/health"
+	"gopkg.in/vmihailenco/msgpack.v2"
+
 	"github.com/TykTechnologies/logrus"
 	prefixed "github.com/TykTechnologies/logrus-prefixed-formatter"
 	"github.com/TykTechnologies/tyk-pump/analytics"
+	"github.com/TykTechnologies/tyk-pump/analytics/demo"
 	"github.com/TykTechnologies/tyk-pump/pumps"
 	"github.com/TykTechnologies/tyk-pump/storage"
 	logger "github.com/TykTechnologies/tykcommon-logger"
-	"gopkg.in/vmihailenco/msgpack.v2"
 )
 
 var SystemConfig TykPumpConfiguration
@@ -21,14 +26,23 @@ var UptimePump pumps.MongoPump
 
 var log = logger.GetLogger()
 
-var mainPrefix string = "main"
+var mainPrefix = "main"
+var buildDemoData string
 
 func init() {
 	SystemConfig = TykPumpConfiguration{}
 	confFile := flag.String("c", "pump.conf", "Path to the config file")
+	demoMode := flag.String("demo", "", "Generate demo data")
 	flag.Parse()
 
 	log.Formatter = new(prefixed.TextFormatter)
+
+	buildDemoData = *demoMode
+	envDemo := os.Getenv("TYK_PMP_BUILDDEMODATA")
+	if envDemo != "" {
+		log.Warning("Demo mode active via environemnt variable")
+		buildDemoData = envDemo
+	}
 
 	log.WithFields(logrus.Fields{
 		"prefix": mainPrefix,
@@ -91,61 +105,66 @@ func initialisePumps() {
 
 }
 
-func StartPurgeLoop(nextCount int) {
-	job := instrument.NewJob("PumpRecordsPurge")
+func StartPurgeLoop(secInterval int) {
+	for range time.Tick(time.Duration(secInterval) * time.Second) {
+		job := instrument.NewJob("PumpRecordsPurge")
 
-	time.Sleep(time.Duration(nextCount) * time.Second)
+		AnalyticsValues := AnalyticsStore.GetAndDeleteSet(storage.ANALYTICS_KEYNAME)
 
-	AnalyticsValues := AnalyticsStore.GetAndDeleteSet(storage.ANALYTICS_KEYNAME)
+		if len(AnalyticsValues) > 0 {
+			startTime := time.Now()
 
-	if len(AnalyticsValues) > 0 {
-		startTime := time.Now()
+			// Convert to something clean
+			keys := make([]interface{}, len(AnalyticsValues))
 
-		// Convert to something clean
-		keys := make([]interface{}, len(AnalyticsValues), len(AnalyticsValues))
-
-		for i, v := range AnalyticsValues {
-			decoded := analytics.AnalyticsRecord{}
-			err := msgpack.Unmarshal(v.([]byte), &decoded)
-			log.WithFields(logrus.Fields{
-				"prefix": mainPrefix,
-			}).Debug("Decoded Record: ", decoded)
-			if err != nil {
+			for i, v := range AnalyticsValues {
+				decoded := analytics.AnalyticsRecord{}
+				err := msgpack.Unmarshal(v.([]byte), &decoded)
 				log.WithFields(logrus.Fields{
 					"prefix": mainPrefix,
-				}).Error("Couldn't unmarshal analytics data:", err)
-			} else {
-				keys[i] = interface{}(decoded)
-				job.Event("record")
+				}).Debug("Decoded Record: ", decoded)
+				if err != nil {
+					log.WithFields(logrus.Fields{
+						"prefix": mainPrefix,
+					}).Error("Couldn't unmarshal analytics data:", err)
+				} else {
+					keys[i] = interface{}(decoded)
+					job.Event("record")
+				}
 			}
+
+			// Send to pumps
+			writeToPumps(keys, job, startTime)
+
+			job.Timing("purge_time_all", time.Since(startTime).Nanoseconds())
+
 		}
 
-		// Send to pumps
-		if Pumps != nil {
-			for _, pmp := range Pumps {
-				log.WithFields(logrus.Fields{
-					"prefix": mainPrefix,
-				}).Debug("Writing to: ", pmp.GetName())
-				pmp.WriteData(keys)
+		if !SystemConfig.DontPurgeUptimeData {
+			UptimeValues := UptimeStorage.GetAndDeleteSet(storage.UptimeAnalytics_KEYNAME)
+			UptimePump.WriteUptimeData(UptimeValues)
+		}
+	}
+}
+
+func writeToPumps(keys []interface{}, job *health.Job, startTime time.Time) {
+	// Send to pumps
+	if Pumps != nil {
+		for _, pmp := range Pumps {
+			log.WithFields(logrus.Fields{
+				"prefix": mainPrefix,
+			}).Debug("Writing to: ", pmp.GetName())
+			pmp.WriteData(keys)
+			if job != nil {
 				job.Timing("purge_time_"+pmp.GetName(), time.Since(startTime).Nanoseconds())
-
 			}
-		} else {
-			log.WithFields(logrus.Fields{
-				"prefix": mainPrefix,
-			}).Warning("No pumps defined!")
+
 		}
-
-		job.Timing("purge_time_all", time.Since(startTime).Nanoseconds())
-
+	} else {
+		log.WithFields(logrus.Fields{
+			"prefix": mainPrefix,
+		}).Warning("No pumps defined!")
 	}
-
-	if !SystemConfig.DontPurgeUptimeData {
-		UptimeValues := UptimeStorage.GetAndDeleteSet(storage.UptimeAnalytics_KEYNAME)
-		UptimePump.WriteUptimeData(UptimeValues)
-	}
-
-	StartPurgeLoop(nextCount)
 }
 
 func main() {
@@ -154,6 +173,15 @@ func main() {
 
 	// prime the pumps
 	initialisePumps()
+
+	if buildDemoData != "" {
+		log.Warning("BUILDING DEMO DATA AND EXITING...")
+		log.Warning("Starting from date: ", time.Now().AddDate(0, 0, -30))
+		demo.DemoInit(buildDemoData)
+		demo.GenerateDemoData(time.Now().AddDate(0, 0, -30), 30, buildDemoData, writeToPumps)
+
+		return
+	}
 
 	// start the worker loop
 	log.WithFields(logrus.Fields{

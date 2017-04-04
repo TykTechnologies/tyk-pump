@@ -3,12 +3,14 @@ package pumps
 import (
 	"encoding/csv"
 	"fmt"
-	"github.com/TykTechnologies/logrus"
-	"github.com/TykTechnologies/tyk-pump/analytics"
-	"github.com/mitchellh/mapstructure"
 	"os"
 	"path"
 	"time"
+
+	"github.com/mitchellh/mapstructure"
+
+	"github.com/TykTechnologies/logrus"
+	"github.com/TykTechnologies/tyk-pump/analytics"
 )
 
 type CSVPump struct {
@@ -20,7 +22,7 @@ type CSVConf struct {
 	CSVDir string `mapstructure:"csv_dir"`
 }
 
-var csvPrefix string = "csv-pump"
+var csvPrefix = "csv-pump"
 
 func (c *CSVPump) New() Pump {
 	newPump := CSVPump{}

@@ -1,0 +1,18 @@
+sudo: false
+language: go
+
+notifications:
+  on_success: never
+  on_failure: always
+
+matrix:
+  include:
+    - go: 1.7.x
+    - go: 1.8.x
+      env: LATEST_GO=true # run linters and report coverage
+
+install:
+  - go install ./...
+
+script:
+  - ./utils/ci-test.sh

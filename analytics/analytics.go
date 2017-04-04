@@ -1,11 +1,12 @@
 package analytics
 
 import (
-	"github.com/TykTechnologies/tyk-pump/logger"
 	"reflect"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/TykTechnologies/tyk-pump/logger"
 )
 
 var log = logger.GetLogger()

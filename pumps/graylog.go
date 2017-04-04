@@ -3,10 +3,12 @@ package pumps
 import (
 	"encoding/base64"
 	"encoding/json"
-	"github.com/TykTechnologies/logrus"
-	"github.com/TykTechnologies/tyk-pump/analytics"
+
 	"github.com/mitchellh/mapstructure"
 	"github.com/robertkowalski/graylog-golang"
+
+	"github.com/TykTechnologies/logrus"
+	"github.com/TykTechnologies/tyk-pump/analytics"
 )
 
 type GraylogPump struct {
@@ -17,10 +19,10 @@ type GraylogPump struct {
 type GraylogConf struct {
 	GraylogHost string   `mapstructure:"host"`
 	GraylogPort int      `mapstructure:"port"`
-	Tags        []string `mapstructure: "tags"`
+	Tags        []string `mapstructure:"tags"`
 }
 
-var graylogPrefix string = "graylog-pump"
+var graylogPrefix = "graylog-pump"
 
 func (p *GraylogPump) New() Pump {
 	newPump := GraylogPump{}
