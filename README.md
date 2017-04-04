@@ -21,119 +21,119 @@ Create a `pump.conf` file:
 ```
 {
 	"analytics_storage_type": "redis",
-    "analytics_storage_config": {
-        "type": "redis",
-        "host": "localhost",
-        "port": 6379,
-        "hosts": null,
-        "username": "",
-        "password": "",
-        "database": 0,
-        "optimisation_max_idle": 100,
-        "optimisation_max_active": 0,
-        "enable_cluster": false
-    },
-    "purge_delay": 10,
-    "pumps": {
-    	"dummy": {
-    		"name": "dummy",
-    		"meta": {}
-    	},
-        "mongo": {
-            "name": "mongo",
-            "meta": {
-                "collection_name": "tyk_analytics",
-                "mongo_url": "mongodb://username:password@{hostname:port},{hostname:port}/{db_name}"
-            }
-        },
-        "csv": {
-            "name": "csv",
-            "meta": {
-                "csv_dir": "./"
-            }
-        },
-        "elasticsearch": {
-            "name": "elasticsearch",
-            "meta": {
-                "index_name": "tyk_analytics",
-                "elasticsearch_url": "localhost:9200",
-                "enable_sniffing": false,
-                "document_type": "tyk_analytics",
-                "rolling_index": false,
-                "extended_stats": false,
-                "version": "5"
-            }
-        },
-        "influx": {
-            "name": "influx",
-            "meta": {
-                "database_name": "tyk_analytics",
-                "address": "http//localhost:8086",
-                "username": "root",
-                "password": "root",
-                "fields": ["request_time"],
-                "tags":  ["path",
-                          "response_code",
-                          "api_key",
-                          "api_version",
-                          "api_name",
-                          "api_id",
-                          "raw_request",
-                          "ip_address",
-                          "org_id",
-                          "oauth_id"]
-            }
-        },
-        "moesif": {
-          "name": "moesif",
-          "meta": {
-            "application_id": ""
-          }
-        },
-        "statsd": {
-            "name": "statsd",
-            "meta": {
-                "address": "localhost:8125",
-                "fields": ["request_time"],
-                "tags":  ["path",
-                        "response_code",
-                        "api_key",
-                        "api_version",
-                        "api_name",
-                        "api_id",
-                        "raw_request",
-                        "ip_address",
-                        "org_id",
-                        "oauth_id"]
-            }
-        },
-        "graylog": {
-          "name": "graylog",
-          "meta": {
-            "host": "10.60.6.15",
-            "port": 12216,
-            "tags": [
-              "method",
-              "path",
-              "response_code",
-              "api_key",
-              "api_version",
-              "api_name",
-              "api_id",
-              "org_id",
-              "oauth_id",
-              "raw_request",
-              "request_time",
-              "raw_response"
-            ]
-          }
-        }
-    },
-    "uptime_pump_config": {
-        "collection_name": "tyk_uptime_analytics",
-        "mongo_url": "mongodb://username:password@{hostname:port},{hostname:port}/{db_name}"
-    },
-    "dont_purge_uptime_data": false
+	"analytics_storage_config": {
+		"type": "redis",
+		"host": "localhost",
+		"port": 6379,
+		"hosts": null,
+		"username": "",
+		"password": "",
+		"database": 0,
+		"optimisation_max_idle": 100,
+		"optimisation_max_active": 0,
+		"enable_cluster": false
+	},
+	"purge_delay": 10,
+	"pumps": {
+		"dummy": {
+			"name": "dummy",
+			"meta": {}
+		},
+		"mongo": {
+			"name": "mongo",
+			"meta": {
+				"collection_name": "tyk_analytics",
+				"mongo_url": "mongodb://username:password@{hostname:port},{hostname:port}/{db_name}"
+			}
+		},
+		"csv": {
+			"name": "csv",
+			"meta": {
+				"csv_dir": "./"
+			}
+		},
+		"elasticsearch": {
+			"name": "elasticsearch",
+			"meta": {
+				"index_name": "tyk_analytics",
+				"elasticsearch_url": "localhost:9200",
+				"enable_sniffing": false,
+				"document_type": "tyk_analytics",
+				"rolling_index": false,
+				"extended_stats": false,
+				"version": "5"
+			}
+		},
+		"influx": {
+			"name": "influx",
+			"meta": {
+				"database_name": "tyk_analytics",
+				"address": "http//localhost:8086",
+				"username": "root",
+				"password": "root",
+				"fields": ["request_time"],
+				"tags": ["path",
+					"response_code",
+					"api_key",
+					"api_version",
+					"api_name",
+					"api_id",
+					"raw_request",
+					"ip_address",
+					"org_id",
+					"oauth_id"]
+			}
+		},
+		"moesif": {
+			"name": "moesif",
+			"meta": {
+				"application_id": ""
+			}
+		},
+		"statsd": {
+			"name": "statsd",
+			"meta": {
+				"address": "localhost:8125",
+				"fields": ["request_time"],
+				"tags": ["path",
+						"response_code",
+						"api_key",
+						"api_version",
+						"api_name",
+						"api_id",
+						"raw_request",
+						"ip_address",
+						"org_id",
+						"oauth_id"]
+			}
+		},
+		"graylog": {
+			"name": "graylog",
+			"meta": {
+				"host": "10.60.6.15",
+				"port": 12216,
+				"tags": [
+					"method",
+					"path",
+					"response_code",
+					"api_key",
+					"api_version",
+					"api_name",
+					"api_id",
+					"org_id",
+					"oauth_id",
+					"raw_request",
+					"request_time",
+					"raw_response"
+				]
+			}
+		}
+	},
+	"uptime_pump_config": {
+		"collection_name": "tyk_uptime_analytics",
+		"mongo_url": "mongodb://username:password@{hostname:port},{hostname:port}/{db_name}"
+	},
+	"dont_purge_uptime_data": false
 }
 ```
 
@@ -165,18 +165,18 @@ move analytics data from Tyk to Moesif.
 
 1. Download dependent packages:
 
-  ```
-  go get -t -d -v ./...
-  ```
+```
+go get -t -d -v ./...
+```
 
 2. Compile:
 
-  ```
-  go build -v ./...
-  ```
+```
+go build -v ./...
+```
 
 3. Test
 
-  ```
-  go test -v ./...
-  ```
+```
+go test -v ./...
+```
