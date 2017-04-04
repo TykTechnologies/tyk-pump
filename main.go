@@ -26,7 +26,7 @@ var UptimePump pumps.MongoPump
 
 var log = logger.GetLogger()
 
-var mainPrefix string = "main"
+var mainPrefix = "main"
 var buildDemoData string
 
 func init() {

@@ -23,7 +23,7 @@ func randomInRange(min, max int) int {
 }
 
 func randomMethod() string {
-	var methods []string = []string{"GET", "PUT", "POST", "DELETE", "OPTIONS", "HEAD"}
+	var methods = []string{"GET", "PUT", "POST", "DELETE", "OPTIONS", "HEAD"}
 
 	rand.Seed(time.Now().Unix())
 	return methods[rand.Intn(len(methods))]

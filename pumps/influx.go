@@ -17,8 +17,8 @@ type InfluxPump struct {
 }
 
 var (
-	influxPrefix string = "influx-pump"
-	table        string = "analytics"
+	influxPrefix = "influx-pump"
+	table        = "analytics"
 )
 
 type InfluxConf struct {

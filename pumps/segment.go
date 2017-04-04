@@ -15,7 +15,7 @@ type SegmentPump struct {
 	segmentConf   *SegmentConf
 }
 
-var segmentPrefix string = "segment-pump"
+var segmentPrefix = "segment-pump"
 
 type SegmentConf struct {
 	WriteKey string `mapstructure:"segment_write_key"`

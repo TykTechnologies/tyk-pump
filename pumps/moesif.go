@@ -25,7 +25,7 @@ type RawDecoded struct {
 	body    interface{}
 }
 
-var moesifPrefix string = "moesif-pump"
+var moesifPrefix = "moesif-pump"
 
 type MoesifConf struct {
 	ApplicationId string `mapstructure:"application_id"`

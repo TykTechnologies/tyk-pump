@@ -22,7 +22,7 @@ const (
 	AgggregateMixedCollectionName string = "tyk_analytics_aggregates"
 )
 
-var mongoAggregatePumpPrefix string = "PMP_MONGOAGG"
+var mongoAggregatePumpPrefix = "PMP_MONGOAGG"
 
 type Counter struct {
 	Hits             int       `json:"hits"`
@@ -258,7 +258,7 @@ type MongoAggregatePump struct {
 	dbConf    *MongoAggregateConf
 }
 
-var mongoAggregatePrefix string = "mongo-pump-aggregate"
+var mongoAggregatePrefix = "mongo-pump-aggregate"
 
 type MongoAggregateConf struct {
 	MongoURL                   string `mapstructure:"mongo_url"`
