@@ -22,8 +22,8 @@ type MongoPump struct {
 	dbConf    *MongoConf
 }
 
-var mongoPrefix string = "mongo-pump"
-var mongoPumpPrefix string = "PMP_MONGO"
+var mongoPrefix = "mongo-pump"
+var mongoPumpPrefix = "PMP_MONGO"
 
 type MongoConf struct {
 	CollectionName             string `mapstructure:"collection_name"`

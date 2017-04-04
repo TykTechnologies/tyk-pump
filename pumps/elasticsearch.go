@@ -18,7 +18,7 @@ type ElasticsearchPump struct {
 	esConf   *ElasticsearchConf
 }
 
-var elasticsearchPrefix string = "elasticsearch-pump"
+var elasticsearchPrefix = "elasticsearch-pump"
 
 type ElasticsearchConf struct {
 	IndexName          string `mapstructure:"index_name"`

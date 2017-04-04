@@ -20,8 +20,8 @@ type MongoSelectivePump struct {
 	dbConf    *MongoSelectiveConf
 }
 
-var mongoSelectivePrefix string = "mongo-pump-selective"
-var mongoSelectivePumpPrefix string = "PMP_MONGOSEL"
+var mongoSelectivePrefix = "mongo-pump-selective"
+var mongoSelectivePumpPrefix = "PMP_MONGOSEL"
 
 type MongoSelectiveConf struct {
 	MongoURL                   string `mapstructure:"mongo_url"`

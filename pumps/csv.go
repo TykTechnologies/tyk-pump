@@ -22,7 +22,7 @@ type CSVConf struct {
 	CSVDir string `mapstructure:"csv_dir"`
 }
 
-var csvPrefix string = "csv-pump"
+var csvPrefix = "csv-pump"
 
 func (c *CSVPump) New() Pump {
 	newPump := CSVPump{}

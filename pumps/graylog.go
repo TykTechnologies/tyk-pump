@@ -22,7 +22,7 @@ type GraylogConf struct {
 	Tags        []string `mapstructure:"tags"`
 }
 
-var graylogPrefix string = "graylog-pump"
+var graylogPrefix = "graylog-pump"
 
 func (p *GraylogPump) New() Pump {
 	newPump := GraylogPump{}

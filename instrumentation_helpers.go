@@ -8,7 +8,7 @@ import (
 	"github.com/gocraft/health"
 )
 
-var applicationGCStats debug.GCStats = debug.GCStats{}
+var applicationGCStats = debug.GCStats{}
 var instrument = health.NewStream()
 
 // SetupInstrumentation handles all the intialisation of the instrumentation handler
