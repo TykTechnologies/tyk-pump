@@ -11,9 +11,9 @@ import (
 	"github.com/TykTechnologies/tyk-pump/pumps"
 	"github.com/TykTechnologies/tyk-pump/storage"
 	logger "github.com/TykTechnologies/tykcommon-logger"
+	"github.com/gocraft/health"
 	"gopkg.in/vmihailenco/msgpack.v2"
 	"os"
-	"github.com/gocraft/health"
 )
 
 var SystemConfig TykPumpConfiguration

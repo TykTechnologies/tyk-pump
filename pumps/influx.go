@@ -121,7 +121,7 @@ func (i *InfluxPump) WriteData(data []interface{}) error {
 			} else {
 
 				// convert and remove surrounding quotes from tag value
-				tag = strings.Trim(string(b),"\"")
+				tag = strings.Trim(string(b), "\"")
 			}
 			tags[t] = tag
 		}

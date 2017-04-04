@@ -1,12 +1,12 @@
 package demo
 
 import (
-	"time"
-	"math/rand"
-	"github.com/satori/go.uuid"
 	"github.com/TykTechnologies/tyk-pump/analytics"
-	"strings"
 	"github.com/gocraft/health"
+	"github.com/satori/go.uuid"
+	"math/rand"
+	"strings"
+	"time"
 )
 
 var apiKeys []string
@@ -17,7 +17,7 @@ func DemoInit(orgId string) {
 
 func randomInRange(min, max int) int {
 	rand.Seed(time.Now().UnixNano())
-	return rand.Intn(max - min) + min
+	return rand.Intn(max-min) + min
 }
 
 func randomMethod() string {
@@ -54,7 +54,7 @@ func randomPath() string {
 
 	depth := randomInRange(1, 3)
 	path := seedSet[rand.Intn(len(seedSet))]
-	for  i:=1; i <= depth; i++  {
+	for i := 1; i <= depth; i++ {
 		path += "/" + wordset[rand.Intn(len(wordset))]
 	}
 
@@ -131,38 +131,36 @@ func GenerateDemoData(start time.Time, days int, orgId string, writer func([]int
 
 		// Generate daily entries
 		volume := randomInRange(100, 500)
-		for i:= 0; i < volume; i++ {
+		for i := 0; i < volume; i++ {
 			p := randomPath()
 			api, apiID := randomAPI()
 			r := analytics.AnalyticsRecord{
-				Method: randomMethod(),
-				Path: p,
-				RawPath: p,
+				Method:        randomMethod(),
+				Path:          p,
+				RawPath:       p,
 				ContentLength: int64(randomInRange(0, 999)),
-				UserAgent: getUA(),
-				Day: d.Day(),
-				Month: d.Month(),
-				Year: d.Year(),
-				Hour: d.Hour(),
-				ResponseCode: responseCode(),
-				APIKey: getRandomKey(),
-				TimeStamp: d,
-				APIVersion: "Default",
-				APIName: api,
-				APIID: apiID,
-				OrgID: orgId,
-				OauthID: "",
-				RequestTime: int64(randomInRange(0, 10)),
-				RawRequest: "Qk9EWSBEQVRB",
-				RawResponse: "UkVTUE9OU0UgREFUQQ==",
-				IPAddress: "118.93.55.103",
-				Tags: []string{"orgid-"+orgId, "apiid-"+apiID},
-				Alias: "",
-				TrackPath: true,
-				ExpireAt: time.Now().Add(time.Hour * 8760),
+				UserAgent:     getUA(),
+				Day:           d.Day(),
+				Month:         d.Month(),
+				Year:          d.Year(),
+				Hour:          d.Hour(),
+				ResponseCode:  responseCode(),
+				APIKey:        getRandomKey(),
+				TimeStamp:     d,
+				APIVersion:    "Default",
+				APIName:       api,
+				APIID:         apiID,
+				OrgID:         orgId,
+				OauthID:       "",
+				RequestTime:   int64(randomInRange(0, 10)),
+				RawRequest:    "Qk9EWSBEQVRB",
+				RawResponse:   "UkVTUE9OU0UgREFUQQ==",
+				IPAddress:     "118.93.55.103",
+				Tags:          []string{"orgid-" + orgId, "apiid-" + apiID},
+				Alias:         "",
+				TrackPath:     true,
+				ExpireAt:      time.Now().Add(time.Hour * 8760),
 			}
-
-
 
 			set = append(set, r)
 		}
@@ -171,4 +169,3 @@ func GenerateDemoData(start time.Time, days int, orgId string, writer func([]int
 
 	}
 }
-
