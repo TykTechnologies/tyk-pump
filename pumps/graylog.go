@@ -19,7 +19,7 @@ type GraylogPump struct {
 type GraylogConf struct {
 	GraylogHost string   `mapstructure:"host"`
 	GraylogPort int      `mapstructure:"port"`
-	Tags        []string `mapstructure: "tags"`
+	Tags        []string `mapstructure:"tags"`
 }
 
 var graylogPrefix string = "graylog-pump"

@@ -144,8 +144,7 @@ func (m *MongoPump) WriteData(data []interface{}) error {
 		}
 
 		for _, dataSet := range m.AccumulateSet(data) {
-
-			go func() {
+			go func(dataSet []interface{}) {
 				thisSession := m.dbSession.Copy()
 				defer thisSession.Close()
 				analyticsCollection := thisSession.DB("").C(collectionName)
@@ -162,8 +161,7 @@ func (m *MongoPump) WriteData(data []interface{}) error {
 						//m.connect()
 					}
 				}
-			}()
-
+			}(dataSet)
 		}
 
 	}
