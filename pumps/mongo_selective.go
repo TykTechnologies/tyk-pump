@@ -164,12 +164,7 @@ func (m *MongoSelectivePump) ensureIndexes(c *mgo.Collection) error {
 		Background: true,
 	}
 
-	err = c.EnsureIndex(idOrgErrIndex)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return c.EnsureIndex(idOrgErrIndex)
 }
 
 func (m *MongoSelectivePump) WriteData(data []interface{}) error {
@@ -243,8 +238,7 @@ func (m *MongoSelectivePump) WriteData(data []interface{}) error {
 }
 
 func (m *MongoSelectivePump) AccumulateSet(data []interface{}) [][]interface{} {
-	var accumulatorTotal int
-	accumulatorTotal = 0
+	accumulatorTotal := 0
 	returnArray := make([][]interface{}, 0)
 
 	thisResultSet := make([]interface{}, 0)
@@ -307,7 +301,7 @@ func (m *MongoSelectivePump) WriteUptimeData(data []interface{}) {
 		}).Debug("Uptime Data: ", len(data))
 
 		if len(data) > 0 {
-			keys := make([]interface{}, len(data), len(data))
+			keys := make([]interface{}, len(data))
 
 			for i, v := range data {
 				decoded := analytics.UptimeReportData{}

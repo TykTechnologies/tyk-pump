@@ -115,7 +115,7 @@ func StartPurgeLoop(secInterval int) {
 			startTime := time.Now()
 
 			// Convert to something clean
-			keys := make([]interface{}, len(AnalyticsValues), len(AnalyticsValues))
+			keys := make([]interface{}, len(AnalyticsValues))
 
 			for i, v := range AnalyticsValues {
 				decoded := analytics.AnalyticsRecord{}
