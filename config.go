@@ -16,6 +16,11 @@ type PumpConfig struct {
 	Meta map[string]interface{} `json:"meta"`
 }
 
+type PollConfig struct {
+	Host   string `json:"host"`
+	Secret string `json:"secret"`
+}
+
 type TykPumpConfiguration struct {
 	PurgeDelay             int                        `json:"purge_delay"`
 	DontPurgeUptimeData    bool                       `json:"dont_purge_uptime_data"`
@@ -25,6 +30,8 @@ type TykPumpConfiguration struct {
 	AnalyticsStorageConfig storage.RedisStorageConfig `json:"analytics_storage_config"`
 	StatsdConnectionString string                     `json:"statsd_connection_string"`
 	StatsdPrefix           string                     `json:"statsd_prefix"`
+	Pollers                []PollConfig               `json:"pollers"`
+	PollFrequency          int                        `json:"poll_frequency"`
 }
 
 func LoadConfig(filePath *string, configStruct *TykPumpConfiguration) {

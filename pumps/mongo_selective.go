@@ -168,9 +168,11 @@ func (m *MongoSelectivePump) ensureIndexes(c *mgo.Collection) error {
 }
 
 func (m *MongoSelectivePump) WriteData(data []interface{}) error {
-	log.WithFields(logrus.Fields{
-		"prefix": mongoSelectivePrefix,
-	}).Debug("Writing ", len(data), " records")
+	if len(data) > 0 {
+		log.WithFields(logrus.Fields{
+			"prefix": mongoSelectivePrefix,
+		}).Debug("Writing ", len(data), " records")
+	}
 
 	if m.dbSession == nil {
 		log.WithFields(logrus.Fields{

@@ -149,9 +149,11 @@ func (m *MongoPump) WriteData(data []interface{}) error {
 				defer thisSession.Close()
 				analyticsCollection := thisSession.DB("").C(collectionName)
 
-				log.WithFields(logrus.Fields{
-					"prefix": mongoPrefix,
-				}).Info("Purging ", len(dataSet), " records")
+				if len(dataSet) > 0 {
+					log.WithFields(logrus.Fields{
+						"prefix": mongoPrefix,
+					}).Info("Purging ", len(dataSet), " records")
+				}
 
 				err := analyticsCollection.Insert(dataSet...)
 				if err != nil {

@@ -16,6 +16,9 @@ import (
 	"github.com/TykTechnologies/tyk-pump/pumps"
 	"github.com/TykTechnologies/tyk-pump/storage"
 	logger "github.com/TykTechnologies/tykcommon-logger"
+	"github.com/levigross/grequests"
+	"os/signal"
+	"fmt"
 )
 
 var SystemConfig TykPumpConfiguration
@@ -23,6 +26,8 @@ var AnalyticsStore storage.AnalyticsStorage
 var UptimeStorage storage.AnalyticsStorage
 var Pumps []pumps.Pump
 var UptimePump pumps.MongoPump
+var EmbeddedMode = false
+
 
 var log = logger.GetLogger()
 
@@ -54,8 +59,17 @@ func init() {
 func setupAnalyticsStore() {
 	switch SystemConfig.AnalyticsStorageType {
 	case "redis":
+		log.WithFields(logrus.Fields{
+			"prefix": mainPrefix,
+		}).Info("--> Redis mode enabled.")
 		AnalyticsStore = &storage.RedisClusterStorageManager{}
 		UptimeStorage = &storage.RedisClusterStorageManager{}
+	case "embedded":
+		log.WithFields(logrus.Fields{
+			"prefix": mainPrefix,
+		}).Info("--> Embedded mode enabled.")
+		EmbeddedMode = true
+		return
 	default:
 		AnalyticsStore = &storage.RedisClusterStorageManager{}
 		UptimeStorage = &storage.RedisClusterStorageManager{}
@@ -69,6 +83,69 @@ func setupAnalyticsStore() {
 	// Swap key prefixes for uptime purger
 	uptimeConf.RedisKeyPrefix = "host-checker:"
 	UptimeStorage.Init(uptimeConf)
+}
+
+type PollingData struct {
+	Data [][]byte
+}
+
+func initialisePollers() {
+	if len(SystemConfig.Pollers) == 0 {
+		return
+	}
+
+	if SystemConfig.PollFrequency == 0 {
+		SystemConfig.PollFrequency = 5
+	}
+
+	job := instrument.NewJob("PumpRecordsPurge")
+
+	go func() {
+		for {
+			for _, poller := range(SystemConfig.Pollers) {
+				startTime := time.Now()
+
+				ro := &grequests.RequestOptions{
+					Headers: map[string]string{"x-tyk-authorization": poller.Secret},
+				}
+
+				u := fmt.Sprintf("%v/tyk/analytics/purge", poller.Host)
+				resp, err := grequests.Get(u, ro)
+
+				if err != nil {
+					log.Error("Failed to poll host: ", err)
+				}
+
+				d := PollingData{}
+				if err := resp.JSON(&d); err != nil {
+					log.Error("Failed to decode response: ", err, "was: ", resp.RawResponse)
+				}
+
+				// Convert to something clean
+				keys := make([]interface{}, len(d.Data))
+
+				for i, v := range d.Data {
+					decoded := analytics.AnalyticsRecord{}
+					err := msgpack.Unmarshal(v, &decoded)
+					log.WithFields(logrus.Fields{
+						"prefix": mainPrefix,
+					}).Debug("Decoded Record: ", decoded)
+					if err != nil {
+						log.WithFields(logrus.Fields{
+							"prefix": mainPrefix,
+						}).Error("Couldn't unmarshal analytics data:", err)
+					} else {
+						keys[i] = interface{}(decoded)
+						job.Event("record")
+					}
+				}
+
+				// Send to pumps
+				writeToPumps(keys, job, startTime)
+			}
+			time.Sleep(time.Second * time.Duration(SystemConfig.PollFrequency))
+		}
+	}()
 }
 
 func initialisePumps() {
@@ -106,6 +183,16 @@ func initialisePumps() {
 }
 
 func StartPurgeLoop(secInterval int) {
+	if EmbeddedMode {
+		terminate := make(chan os.Signal, 1)
+		signal.Notify(terminate, os.Interrupt)
+		log.WithFields(logrus.Fields{
+			"prefix": mainPrefix,
+		}).Info("Embedded mode enabled, waiting for stop.")
+		<-terminate
+		return
+	}
+
 	for range time.Tick(time.Duration(secInterval) * time.Second) {
 		job := instrument.NewJob("PumpRecordsPurge")
 
@@ -173,6 +260,9 @@ func main() {
 
 	// prime the pumps
 	initialisePumps()
+
+	// Start the pollers
+	initialisePollers()
 
 	if buildDemoData != "" {
 		log.Warning("BUILDING DEMO DATA AND EXITING...")

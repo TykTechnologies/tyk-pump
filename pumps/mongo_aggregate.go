@@ -367,9 +367,11 @@ func (m *MongoAggregatePump) ensureIndexes(c *mgo.Collection) error {
 }
 
 func (m *MongoAggregatePump) WriteData(data []interface{}) error {
-	log.WithFields(logrus.Fields{
-		"prefix": mongoAggregatePrefix,
-	}).Info("Writing ", len(data), " records")
+	if len(data) > 0 {
+		log.WithFields(logrus.Fields{
+			"prefix": mongoAggregatePrefix,
+		}).Info("Writing ", len(data), " records")
+	}
 
 	if m.dbSession == nil {
 		log.WithFields(logrus.Fields{
