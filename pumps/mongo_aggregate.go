@@ -3,6 +3,7 @@ package pumps
 import (
 	b64 "encoding/base64"
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -265,6 +266,7 @@ type MongoAggregateConf struct {
 	MongoUseSSL                bool   `mapstructure:"mongo_use_ssl"`
 	MongoSSLInsecureSkipVerify bool   `mapstructure:"mongo_ssl_insecure_skip_verify"`
 	UseMixedCollection         bool   `mapstructure:"use_mixed_collection"`
+	FailFast                   bool   `mapstructure:"mongo_connect_fail_fast"`
 }
 
 func (m *MongoAggregatePump) New() Pump {
@@ -318,7 +320,7 @@ func (m *MongoAggregatePump) connect() {
 	var err error
 	var dialInfo *mgo.DialInfo
 
-	dialInfo, err = mongoDialInfo(m.dbConf.MongoURL, m.dbConf.MongoUseSSL, m.dbConf.MongoSSLInsecureSkipVerify)
+	dialInfo, err = mongoDialInfo(m.dbConf.MongoURL, m.dbConf.MongoUseSSL, m.dbConf.MongoSSLInsecureSkipVerify, m.dbConf.FailFast)
 	if err != nil {
 		log.WithFields(logrus.Fields{
 			"prefix": mongoPrefix,
@@ -327,9 +329,18 @@ func (m *MongoAggregatePump) connect() {
 
 	m.dbSession, err = mgo.DialWithInfo(dialInfo)
 	if err != nil {
+		var errorStr = fmt.Sprintf("Mongo connection failed: %q", err.Error())
+
+		if m.dbConf.FailFast {
+			log.WithFields(logrus.Fields{
+				"prefix": mongoPrefix,
+			}).Panic(errorStr)
+		}
+
 		log.WithFields(logrus.Fields{
-			"prefix": mongoAggregatePrefix,
-		}).Error("Mongo connection failed:", err)
+			"prefix": mongoPrefix,
+		}).Error(errorStr)
+
 		time.Sleep(5)
 		m.connect()
 	}
