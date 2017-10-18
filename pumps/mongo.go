@@ -35,8 +35,8 @@ type MongoConf struct {
 }
 
 func mongoDialInfo(mongoURL string, useSSL bool, SSLInsecureSkipVerify bool) (dialInfo *mgo.DialInfo, err error) {
-	dialInfo, err = mgo.ParseURL(mongoURL)
-	if err != nil {
+
+	if dialInfo, err = mgo.ParseURL(mongoURL); err != nil {
 		return dialInfo, err
 	}
 
