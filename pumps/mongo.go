@@ -115,12 +115,15 @@ func (m *MongoPump) connect() {
 	}
 
 	m.dbSession, err = mgo.DialWithInfo(dialInfo)
-	if err != nil {
+
+	// TODO - Should this not bail after a while?
+	for err != nil {
 		log.WithFields(logrus.Fields{
 			"prefix": mongoPrefix,
 		}).Error("Mongo connection failed:", err)
+
 		time.Sleep(5)
-		m.connect()
+		m.dbSession, err = mgo.DialWithInfo(dialInfo)
 	}
 }
 
