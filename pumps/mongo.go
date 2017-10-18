@@ -15,7 +15,7 @@ import (
 	"github.com/TykTechnologies/tyk-pump/analytics"
 )
 
-const tenMB int = 10485760
+const tenMB int = 10 << 20
 
 type MongoPump struct {
 	dbSession *mgo.Session
