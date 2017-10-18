@@ -170,47 +170,45 @@ func (m *MongoPump) WriteData(data []interface{}) error {
 }
 
 func (m *MongoPump) AccumulateSet(data []interface{}) [][]interface{} {
+
 	accumulatorTotal := 0
 	returnArray := make([][]interface{}, 0)
-
 	thisResultSet := make([]interface{}, 0)
+
 	for i, item := range data {
 		thisItem := item.(analytics.AnalyticsRecord)
 		sizeBytes := len([]byte(thisItem.RawRequest)) + len([]byte(thisItem.RawRequest))
 
-		skip := false
+		log.Debug("Size is: ", sizeBytes)
+
 		if sizeBytes > m.dbConf.MaxDocumentSizeBytes {
 			log.WithFields(logrus.Fields{
 				"prefix": mongoPrefix,
 			}).Warning("Document too large, skipping!")
-			skip = true
+			continue
 		}
 
-		log.Debug("Size is: ", sizeBytes)
-
-		if !skip {
-			if (accumulatorTotal + sizeBytes) < m.dbConf.MaxInsertBatchSizeBytes {
-				accumulatorTotal += sizeBytes
-			} else {
-				log.Debug("Created new chunk entry")
-				if len(thisResultSet) > 0 {
-					returnArray = append(returnArray, thisResultSet)
-				}
-
-				thisResultSet = make([]interface{}, 0)
-				accumulatorTotal = sizeBytes
-			}
-			log.Debug("Accumulator is: ", accumulatorTotal)
-			thisResultSet = append(thisResultSet, thisItem)
-
-			log.Debug(accumulatorTotal, " of ", m.dbConf.MaxInsertBatchSizeBytes)
-			// Append the last element if the loop is about to end
-			if i == (len(data) - 1) {
-				log.Debug("Appending last entry")
+		if (accumulatorTotal + sizeBytes) < m.dbConf.MaxInsertBatchSizeBytes {
+			accumulatorTotal += sizeBytes
+		} else {
+			log.Debug("Created new chunk entry")
+			if len(thisResultSet) > 0 {
 				returnArray = append(returnArray, thisResultSet)
 			}
+
+			thisResultSet = make([]interface{}, 0)
+			accumulatorTotal = sizeBytes
 		}
 
+		log.Debug("Accumulator is: ", accumulatorTotal)
+		thisResultSet = append(thisResultSet, thisItem)
+
+		log.Debug(accumulatorTotal, " of ", m.dbConf.MaxInsertBatchSizeBytes)
+		// Append the last element if the loop is about to end
+		if i == (len(data) - 1) {
+			log.Debug("Appending last entry")
+			returnArray = append(returnArray, thisResultSet)
+		}
 	}
 
 	return returnArray
@@ -227,10 +225,10 @@ func (m *MongoPump) WriteUptimeData(data []interface{}) {
 	}
 
 	collectionName := "tyk_uptime_analytics"
-	thisSession := m.dbSession.Copy()
-	defer thisSession.Close()
+	sess := m.dbSession.Copy()
+	defer sess.Close()
 
-	analyticsCollection := thisSession.DB("").C(collectionName)
+	analyticsCollection := sess.DB("").C(collectionName)
 
 	log.WithFields(logrus.Fields{
 		"prefix": mongoPrefix,
