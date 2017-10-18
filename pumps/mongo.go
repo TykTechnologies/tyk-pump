@@ -125,45 +125,44 @@ func (m *MongoPump) connect() {
 }
 
 func (m *MongoPump) WriteData(data []interface{}) error {
+
+	collectionName := m.dbConf.CollectionName
+	if collectionName == "" {
+		log.WithFields(logrus.Fields{
+			"prefix": mongoPrefix,
+		}).Fatal("No collection name!")
+	}
+
 	log.WithFields(logrus.Fields{
 		"prefix": mongoPrefix,
 	}).Debug("Writing ", len(data), " records")
 
-	if m.dbSession == nil {
+	for m.dbSession == nil {
 		log.WithFields(logrus.Fields{
 			"prefix": mongoPrefix,
 		}).Debug("Connecting to analytics store")
 		m.connect()
-		m.WriteData(data)
-	} else {
-		collectionName := m.dbConf.CollectionName
-		if m.dbConf.CollectionName == "" {
+	}
+
+	for _, dataSet := range m.AccumulateSet(data) {
+		go func(dataSet []interface{}) {
+			sess := m.dbSession.Copy()
+			defer sess.Close()
+
+			analyticsCollection := sess.DB("").C(collectionName)
+
 			log.WithFields(logrus.Fields{
 				"prefix": mongoPrefix,
-			}).Fatal("No collection name!")
-		}
+			}).Info("Purging ", len(dataSet), " records")
 
-		for _, dataSet := range m.AccumulateSet(data) {
-			go func(dataSet []interface{}) {
-				thisSession := m.dbSession.Copy()
-				defer thisSession.Close()
-				analyticsCollection := thisSession.DB("").C(collectionName)
-
-				log.WithFields(logrus.Fields{
-					"prefix": mongoPrefix,
-				}).Info("Purging ", len(dataSet), " records")
-
-				err := analyticsCollection.Insert(dataSet...)
-				if err != nil {
-					log.Error("Problem inserting to mongo collection: ", err)
-					if strings.Contains(strings.ToLower(err.Error()), "closed explicitly") {
-						log.Warning("--> Detected connection failure!")
-						//m.connect()
-					}
+			err := analyticsCollection.Insert(dataSet...)
+			if err != nil {
+				log.Error("Problem inserting to mongo collection: ", err)
+				if strings.Contains(strings.ToLower(err.Error()), "closed explicitly") {
+					log.Warning("--> Detected connection failure!")
 				}
-			}(dataSet)
-		}
-
+			}
+		}(dataSet)
 	}
 
 	return nil
