@@ -31,7 +31,6 @@ func LoadConfig(filePath *string, configStruct *TykPumpConfiguration) {
 	configuration, err := ioutil.ReadFile(*filePath)
 	if err != nil {
 		log.Fatal("Couldn't load configuration file: ", err)
-
 	}
 
 	marshalErr := json.Unmarshal(configuration, &configStruct)

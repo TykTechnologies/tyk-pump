@@ -222,52 +222,60 @@ func (m *MongoPump) WriteUptimeData(data []interface{}) {
 		log.Debug("Connecting to mongoDB store")
 		m.connect()
 		m.WriteUptimeData(data)
-	} else {
-		collectionName := "tyk_uptime_analytics"
-		thisSession := m.dbSession.Copy()
-		defer thisSession.Close()
-		analyticsCollection := thisSession.DB("").C(collectionName)
+
+		return
+	}
+
+	collectionName := "tyk_uptime_analytics"
+	thisSession := m.dbSession.Copy()
+	defer thisSession.Close()
+
+	analyticsCollection := thisSession.DB("").C(collectionName)
+
+	log.WithFields(logrus.Fields{
+		"prefix": mongoPrefix,
+	}).Debug("Uptime Data: ", len(data))
+
+	if len(data) == 0 {
+		return
+	}
+
+	keys := make([]interface{}, len(data))
+
+	for i, v := range data {
+		decoded := analytics.UptimeReportData{}
+
+		if err := msgpack.Unmarshal(v.([]byte), &decoded); err != nil {
+			log.WithFields(logrus.Fields{
+				"prefix": mongoPrefix,
+			}).Error("Couldn't unmarshal analytics data:", err)
+
+			continue
+		}
+
+		keys[i] = interface{}(decoded)
 
 		log.WithFields(logrus.Fields{
 			"prefix": mongoPrefix,
-		}).Debug("Uptime Data: ", len(data))
-
-		if len(data) > 0 {
-			keys := make([]interface{}, len(data))
-
-			for i, v := range data {
-				decoded := analytics.UptimeReportData{}
-				err := msgpack.Unmarshal(v.([]byte), &decoded)
-				log.WithFields(logrus.Fields{
-					"prefix": mongoPrefix,
-				}).Debug("Decoded Record: ", decoded)
-				if err != nil {
-					log.WithFields(logrus.Fields{
-						"prefix": mongoPrefix,
-					}).Error("Couldn't unmarshal analytics data:", err)
-
-				} else {
-					keys[i] = interface{}(decoded)
-				}
-			}
-
-			err := analyticsCollection.Insert(keys...)
-			log.WithFields(logrus.Fields{
-				"prefix": mongoPrefix,
-			}).Debug("Wrote data to ", collectionName)
-
-			if err != nil {
-				log.WithFields(logrus.Fields{
-					"prefix": mongoPrefix,
-				}).Error("Problem inserting to mongo collection: ", err)
-				if strings.Contains(err.Error(), "Closed explicitly") || strings.Contains(err.Error(), "EOF") {
-					log.WithFields(logrus.Fields{
-						"prefix": mongoPrefix,
-					}).Warning("--> Detected connection failure, reconnecting")
-					m.connect()
-				}
-			}
-		}
+		}).Debug("Decoded Record: ", decoded)
 	}
 
+	log.WithFields(logrus.Fields{
+		"prefix": mongoPrefix,
+	}).Debug("Writing data to ", collectionName)
+
+	if err := analyticsCollection.Insert(keys...); err != nil {
+
+		log.WithFields(logrus.Fields{
+			"prefix": mongoPrefix,
+		}).Error("Problem inserting to mongo collection: ", err)
+
+		if strings.Contains(err.Error(), "Closed explicitly") || strings.Contains(err.Error(), "EOF") {
+			log.WithFields(logrus.Fields{
+				"prefix": mongoPrefix,
+			}).Warning("--> Detected connection failure, reconnecting")
+
+			m.connect()
+		}
+	}
 }
