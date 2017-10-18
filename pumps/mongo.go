@@ -215,12 +215,10 @@ func (m *MongoPump) AccumulateSet(data []interface{}) [][]interface{} {
 
 // WriteUptimeData will pull the data from the in-memory store and drop it into the specified MongoDB collection
 func (m *MongoPump) WriteUptimeData(data []interface{}) {
-	if m.dbSession == nil {
+
+	for m.dbSession == nil {
 		log.Debug("Connecting to mongoDB store")
 		m.connect()
-		m.WriteUptimeData(data)
-
-		return
 	}
 
 	collectionName := "tyk_uptime_analytics"
