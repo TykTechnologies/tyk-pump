@@ -13,6 +13,7 @@ import (
 
 	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/tyk-pump/analytics"
+	"gopkg.in/mgo.v2/bson"
 )
 
 const tenMB int = 10 << 20
@@ -32,6 +33,7 @@ type MongoConf struct {
 	MongoSSLInsecureSkipVerify bool   `mapstructure:"mongo_ssl_insecure_skip_verify"`
 	MaxInsertBatchSizeBytes    int    `mapstructure:"max_insert_batch_size_bytes"`
 	MaxDocumentSizeBytes       int    `mapstructure:"max_document_size_bytes"`
+	CollectionCapMaxSizeBytes  int    `mapstructure:"collection_cap_max_size_bytes"`
 }
 
 func mongoDialInfo(mongoURL string, useSSL bool, SSLInsecureSkipVerify bool) (dialInfo *mgo.DialInfo, err error) {
@@ -93,6 +95,8 @@ func (m *MongoPump) Init(config interface{}) error {
 
 	m.connect()
 
+	m.capCollection()
+
 	log.WithFields(logrus.Fields{
 		"prefix": mongoPrefix,
 	}).Debug("MongoDB DB CS: ", m.dbConf.MongoURL)
@@ -101,6 +105,115 @@ func (m *MongoPump) Init(config interface{}) error {
 	}).Debug("MongoDB Col: ", m.dbConf.CollectionName)
 
 	return nil
+}
+
+func (m *MongoPump) capCollection() {
+
+	var colName = m.dbConf.CollectionName
+	var colCapMaxSizeBytes = m.dbConf.CollectionCapMaxSizeBytes
+
+	exists, err := m.collectionExists(colName)
+	if err != nil {
+		// TODO Handle Error
+
+		return
+	}
+
+	if !exists {
+		if err := m.createCappedCollection(colName, colCapMaxSizeBytes); err != nil {
+			// TODO handle error
+
+			return
+		}
+
+		return
+	}
+
+	// If colCapMaxSizeBytes == 0, uncap the collection and return
+	if colCapMaxSizeBytes == 0 {
+		m.uncapCollection(colName)
+
+		return
+	}
+
+	m.resizeCappedCollection(colName, colCapMaxSizeBytes)
+}
+
+// collectionExists checks to see if a collection name exists in the db.
+func (m *MongoPump) collectionExists(name string) (bool, error) {
+	sess := m.dbSession.Copy()
+	defer sess.Close()
+
+	colNames, err := sess.DB("").CollectionNames()
+	if err != nil {
+		log.WithFields(logrus.Fields{
+			"prefix": mongoPrefix,
+		}).Error("Unable to get column names: ", err)
+
+		return false, err
+	}
+
+	for _, coll := range colNames {
+		if coll == name {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+func (m *MongoPump) createCappedCollection(name string, maxBytes int) error {
+	sess := m.dbSession.Copy()
+	defer sess.Close()
+
+	// No need to create collection if MaxBytes are 0
+	if maxBytes == 0 {
+		return nil
+	}
+
+	return sess.DB("").C(name).Create(&mgo.CollectionInfo{Capped: true, MaxBytes: maxBytes})
+}
+
+func (m *MongoPump) uncapCollection(name string) {
+	// TODO - Check if capped
+
+	// If not capped, return
+
+	// If capped, do uncap logic:
+
+	// db.collection.copyTo("collection_temp")
+	// db.collection.drop()
+	// db.collection_temp.renameCollection("collection")
+}
+
+func (m *MongoPump) resizeCappedCollection(name string, maxBytes int) {
+	var collStats bson.M
+	sess := m.dbSession.Copy()
+	defer sess.Close()
+
+	if err := sess.DB("").Run(bson.D{{Name: "collStats", Value: name}}, &collStats); err != nil {
+		// TODO handle error
+
+		return
+	}
+
+	if maxBytes < collStats["size"] {
+		// TODO Write warning log advising that resizing collection ignored due to data loss
+
+		return
+	}
+
+	// Collection safe to resize
+	var doc bson.M
+	err := sess.DB("").Run(bson.D{
+		{Name: "convertToCapped", Value: name},
+		{Name: "size", Value: maxBytes},
+	}, &doc)
+	if err != nil {
+		// TODO - Handle Error
+
+		return
+	}
 }
 
 func (m *MongoPump) connect() {
