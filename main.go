@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"time"
 
 	"os"
@@ -16,6 +15,8 @@ import (
 	"github.com/TykTechnologies/tyk-pump/pumps"
 	"github.com/TykTechnologies/tyk-pump/storage"
 	logger "github.com/TykTechnologies/tykcommon-logger"
+
+	"gopkg.in/alecthomas/kingpin.v2"
 )
 
 var SystemConfig TykPumpConfiguration
@@ -29,11 +30,17 @@ var log = logger.GetLogger()
 var mainPrefix = "main"
 var buildDemoData string
 
+var (
+	help     = kingpin.CommandLine.HelpFlag.Short('h')
+	conf     = kingpin.Flag("conf", "path to the config file").Short('c').Default("pump.conf").String()
+	demoMode = kingpin.Flag("demo", "pass orgID string to generate demo data").Default("").String()
+	version  = kingpin.Version(VERSION)
+)
+
 func init() {
 	SystemConfig = TykPumpConfiguration{}
-	confFile := flag.String("c", "pump.conf", "Path to the config file")
-	demoMode := flag.String("demo", "", "Generate demo data")
-	flag.Parse()
+
+	kingpin.Parse()
 
 	log.Formatter = new(prefixed.TextFormatter)
 
@@ -48,7 +55,7 @@ func init() {
 		"prefix": mainPrefix,
 	}).Info("## Tyk Analytics Pump, ", VERSION, " ##")
 
-	LoadConfig(confFile, &SystemConfig)
+	LoadConfig(conf, &SystemConfig)
 }
 
 func setupAnalyticsStore() {
