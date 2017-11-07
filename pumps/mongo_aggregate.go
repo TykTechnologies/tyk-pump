@@ -330,7 +330,7 @@ func (m *MongoAggregatePump) connect() {
 		log.WithFields(logrus.Fields{
 			"prefix": mongoAggregatePrefix,
 		}).Error("Mongo connection failed:", err)
-		time.Sleep(5)
+		time.Sleep(5 * time.Second)
 		m.connect()
 	}
 }

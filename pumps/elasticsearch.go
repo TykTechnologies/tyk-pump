@@ -134,7 +134,7 @@ func (e *ElasticsearchPump) connect() {
 		log.WithFields(logrus.Fields{
 			"prefix": elasticsearchPrefix,
 		}).Error("Elasticsearch connection failed: ", err)
-		time.Sleep(5)
+		time.Sleep(5 * time.Second)
 		e.connect()
 	}
 }

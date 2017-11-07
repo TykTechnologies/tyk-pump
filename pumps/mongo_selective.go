@@ -101,7 +101,7 @@ func (m *MongoSelectivePump) connect() {
 		log.WithFields(logrus.Fields{
 			"prefix": mongoSelectivePrefix,
 		}).Error("Mongo connection failed:", err)
-		time.Sleep(5)
+		time.Sleep(5 * time.Second)
 		m.connect()
 	}
 }
