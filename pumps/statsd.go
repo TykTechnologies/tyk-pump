@@ -60,7 +60,7 @@ func (s *StatsdPump) connect() *statsd.StatsdClient {
 		log.WithFields(logrus.Fields{
 			"prefix": statsdPrefix,
 		}).Error("StatsD connection failed:", err)
-		time.Sleep(5)
+		time.Sleep(5 * time.Second)
 		s.connect()
 	}
 

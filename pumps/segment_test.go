@@ -58,5 +58,5 @@ func TestSegmentPump(t *testing.T) {
 
 	go s.WriteData(tData)
 
-	time.Sleep(1000 * time.Millisecond)
+	time.Sleep(time.Second)
 }

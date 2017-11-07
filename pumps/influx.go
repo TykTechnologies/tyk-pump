@@ -69,7 +69,7 @@ func (i *InfluxPump) connect() client.Client {
 		log.WithFields(logrus.Fields{
 			"prefix": influxPrefix,
 		}).Error("Influx connection failed:", err)
-		time.Sleep(5)
+		time.Sleep(5 * time.Second)
 		i.connect()
 	}
 
