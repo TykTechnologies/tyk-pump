@@ -66,14 +66,14 @@ func (m *MongoSelectivePump) Init(config interface{}) error {
 		log.WithFields(logrus.Fields{
 			"prefix": mongoSelectivePrefix,
 		}).Info("-- No max batch size set, defaulting to 10MB")
-		m.dbConf.MaxInsertBatchSizeBytes = tenMB
+		m.dbConf.MaxInsertBatchSizeBytes = 10 * MiB
 	}
 
 	if m.dbConf.MaxDocumentSizeBytes == 0 {
 		log.WithFields(logrus.Fields{
 			"prefix": mongoSelectivePrefix,
 		}).Info("-- No max document size set, defaulting to 10MB")
-		m.dbConf.MaxDocumentSizeBytes = tenMB
+		m.dbConf.MaxDocumentSizeBytes = 10 * MiB
 	}
 
 	m.connect()

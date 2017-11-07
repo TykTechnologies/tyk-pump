@@ -3,6 +3,7 @@ package pumps
 import (
 	"crypto/tls"
 	"net"
+	"strconv"
 	"strings"
 	"time"
 
@@ -15,7 +16,13 @@ import (
 	"github.com/TykTechnologies/tyk-pump/analytics"
 )
 
-const tenMB int = 10 << 20
+const (
+	_   = iota // ignore zero iota
+	KiB = 1 << (10 * iota)
+	MiB
+	GiB
+	TiB
+)
 
 type MongoPump struct {
 	dbSession *mgo.Session
@@ -32,6 +39,8 @@ type MongoConf struct {
 	MongoSSLInsecureSkipVerify bool   `mapstructure:"mongo_ssl_insecure_skip_verify"`
 	MaxInsertBatchSizeBytes    int    `mapstructure:"max_insert_batch_size_bytes"`
 	MaxDocumentSizeBytes       int    `mapstructure:"max_document_size_bytes"`
+	CollectionCapMaxSizeBytes  int    `mapstructure:"collection_cap_max_size_bytes"`
+	CollectionCapEnable        bool   `mapstructure:"collection_cap_enable"`
 }
 
 func mongoDialInfo(mongoURL string, useSSL bool, SSLInsecureSkipVerify bool) (dialInfo *mgo.DialInfo, err error) {
@@ -81,17 +90,19 @@ func (m *MongoPump) Init(config interface{}) error {
 		log.WithFields(logrus.Fields{
 			"prefix": mongoPrefix,
 		}).Info("-- No max batch size set, defaulting to 10MB")
-		m.dbConf.MaxInsertBatchSizeBytes = tenMB
+		m.dbConf.MaxInsertBatchSizeBytes = 10 * MiB
 	}
 
 	if m.dbConf.MaxDocumentSizeBytes == 0 {
 		log.WithFields(logrus.Fields{
 			"prefix": mongoPrefix,
 		}).Info("-- No max document size set, defaulting to 10MB")
-		m.dbConf.MaxDocumentSizeBytes = tenMB
+		m.dbConf.MaxDocumentSizeBytes = 10 * MiB
 	}
 
 	m.connect()
+
+	m.capCollection()
 
 	log.WithFields(logrus.Fields{
 		"prefix": mongoPrefix,
@@ -101,6 +112,92 @@ func (m *MongoPump) Init(config interface{}) error {
 	}).Debug("MongoDB Col: ", m.dbConf.CollectionName)
 
 	return nil
+}
+
+func (m *MongoPump) capCollection() (ok bool) {
+
+	var colName = m.dbConf.CollectionName
+	var colCapMaxSizeBytes = m.dbConf.CollectionCapMaxSizeBytes
+	var colCapEnable = m.dbConf.CollectionCapEnable
+
+	if !colCapEnable {
+		return false
+	}
+
+	exists, err := m.collectionExists(colName)
+	if err != nil {
+		log.WithFields(logrus.Fields{
+			"prefix": mongoPrefix,
+		}).Errorf("Unable to determine if collection (%s) exists. Not capping collection: %s", colName, err.Error())
+
+		return false
+	}
+
+	if exists {
+		log.WithFields(logrus.Fields{
+			"prefix": mongoPrefix,
+		}).Warnf("Collection (%s) already exists. Capping could result in data loss. Ignoring", colName)
+
+		return false
+	}
+
+	if strconv.IntSize < 64 {
+		log.WithFields(logrus.Fields{
+			"prefix": mongoPrefix,
+		}).Warn("Pump running < 64bit architecture. Not capping collection as max size would be 2gb")
+
+		return false
+	}
+
+	if colCapMaxSizeBytes == 0 {
+		defaultBytes := 5
+		colCapMaxSizeBytes = defaultBytes * GiB
+
+		log.WithFields(logrus.Fields{
+			"prefix": mongoPrefix,
+		}).Infof("-- No max collection size set for %s, defaulting to %d", colName, colCapMaxSizeBytes)
+	}
+
+	sess := m.dbSession.Copy()
+	defer sess.Close()
+
+	err = m.dbSession.DB("").C(colName).Create(&mgo.CollectionInfo{Capped: true, MaxBytes: colCapMaxSizeBytes})
+	if err != nil {
+		log.WithFields(logrus.Fields{
+			"prefix": mongoPrefix,
+		}).Errorf("Unable to create capped collection for (%s). %s", colName, err.Error())
+
+		return false
+	}
+
+	log.WithFields(logrus.Fields{
+		"prefix": mongoPrefix,
+	}).Infof("Capped collection (%s) created. %d bytes", colName, colCapMaxSizeBytes)
+
+	return true
+}
+
+// collectionExists checks to see if a collection name exists in the db.
+func (m *MongoPump) collectionExists(name string) (bool, error) {
+	sess := m.dbSession.Copy()
+	defer sess.Close()
+
+	colNames, err := sess.DB("").CollectionNames()
+	if err != nil {
+		log.WithFields(logrus.Fields{
+			"prefix": mongoPrefix,
+		}).Error("Unable to get column names: ", err)
+
+		return false, err
+	}
+
+	for _, coll := range colNames {
+		if coll == name {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }
 
 func (m *MongoPump) connect() {
@@ -122,7 +219,7 @@ func (m *MongoPump) connect() {
 			"prefix": mongoPrefix,
 		}).Error("Mongo connection failed:", err)
 
-		time.Sleep(5)
+		time.Sleep(5 * time.Second)
 		m.dbSession, err = mgo.DialWithInfo(dialInfo)
 	}
 }

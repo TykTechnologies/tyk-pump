@@ -21,6 +21,8 @@ func GetLogger() *logrus.Logger {
 	}
 
 	switch strings.ToLower(level) {
+	case "error":
+		log.Level = logrus.ErrorLevel
 	case "warn":
 		log.Level = logrus.WarnLevel
 	case "info":
