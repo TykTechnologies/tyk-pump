@@ -1,6 +1,7 @@
 .idea/
 .vagrant/
 build/
+build_tools/
 pumps/chunk.go
 *.mprof
 *.cert
