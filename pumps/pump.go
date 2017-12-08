@@ -35,6 +35,8 @@ func GetPumpByName(name string) (Pump, error) {
 		return AvailablePumps["segment"], nil
 	case "graylog":
 		return AvailablePumps["graylog"], nil
+	case "splunk":
+		return AvailablePumps["splunk"], nil
 	}
 
 	return nil, errors.New("Not found")
