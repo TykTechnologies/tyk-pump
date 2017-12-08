@@ -20,4 +20,5 @@ func init() {
 	AvailablePumps["statsd"] = &StatsdPump{}
 	AvailablePumps["segment"] = &SegmentPump{}
 	AvailablePumps["graylog"] = &GraylogPump{}
+	AvailablePumps["splunk"] = &SplunkPump{}
 }
