@@ -37,7 +37,7 @@ type SplunkClient struct {
 }
 
 // NewSplunkClient initializes a new SplunkClient.
-func NewSplunkClient(token string, collectorURL string, skipVerify bool) (c *SplunkClient, err error) {
+func NewSplunkClient(token string, collectorURL string, skipVerify bool, certFile string, keyFile string, serverName string) (c *SplunkClient, err error) {
 	if token == "" || collectorURL == "" {
 		return c, errInvalidSettings
 	}
@@ -45,18 +45,22 @@ func NewSplunkClient(token string, collectorURL string, skipVerify bool) (c *Spl
 	if err != nil {
 		return c, err
 	}
+	tlsConfig := &tls.Config{InsecureSkipVerify: skipVerify}
+	if !skipVerify {
+		// Load certificates:
+		cert, err := tls.LoadX509KeyPair(certFile, keyFile)
+		if err != nil {
+			return c, err
+		}
+		tlsConfig = &tls.Config{Certificates: []tls.Certificate{cert}, ServerName: serverName}
+	}
+	http.DefaultClient.Transport = &http.Transport{TLSClientConfig: tlsConfig}
 	// Append the default collector API path:
 	u.Path = defaultPath
 	c = &SplunkClient{
 		Token:        token,
 		CollectorURL: u.String(),
 		httpClient:   http.DefaultClient,
-	}
-	if skipVerify {
-		tr := &http.Transport{
-			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-		}
-		c.httpClient = &http.Client{Transport: tr}
 	}
 	return c, nil
 }
@@ -92,6 +96,9 @@ type SplunkPumpConfig struct {
 	CollectorToken        string `mapstructure:"collector_token"`
 	CollectorURL          string `mapstructure:"collector_url"`
 	SSLInsecureSkipVerify bool   `mapstructure:"ssl_insecure_skip_verify"`
+	SSLCertFile           string `mapstructure:"ssl_cert_file"`
+	SSLKeyFile            string `mapstructure:"ssl_key_file"`
+	SSLServerName         string `mapstructure:"ssl_server_name"`
 }
 
 // New initializes a new pump.
@@ -115,7 +122,7 @@ func (p *SplunkPump) Init(config interface{}) error {
 		"prefix": pumpPrefix,
 	}).Infof("%s Endpoint: %s", pumpName, p.config.CollectorURL)
 
-	p.client, err = NewSplunkClient(p.config.CollectorToken, p.config.CollectorURL, p.config.SSLInsecureSkipVerify)
+	p.client, err = NewSplunkClient(p.config.CollectorToken, p.config.CollectorURL, p.config.SSLInsecureSkipVerify, p.config.SSLCertFile, p.config.SSLKeyFile, p.config.SSLServerName)
 	if err != nil {
 		return err
 	}

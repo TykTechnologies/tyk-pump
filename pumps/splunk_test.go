@@ -50,15 +50,15 @@ func (h *testHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func TestSplunkInit(t *testing.T) {
-	_, err := NewSplunkClient("", testEndpointURL, true)
+	_, err := NewSplunkClient("", testEndpointURL, true, "", "", "")
 	if err == nil {
 		t.Fatal("A token needs to be present")
 	}
-	_, err = NewSplunkClient(testToken, "", true)
+	_, err = NewSplunkClient(testToken, "", true, "", "", "")
 	if err == nil {
-		t.Fatal("An endpoint needs to be present")
+		t.Fatal("An endpoint needs to be present", "", "")
 	}
-	_, err = NewSplunkClient("", "", true)
+	_, err = NewSplunkClient("", "", true, "", "", "")
 	if err == nil {
 		t.Fatal("Empty parameters should return an error")
 	}
@@ -68,7 +68,7 @@ func TestSplunkSend(t *testing.T) {
 	handler := &testHandler{t}
 	server := httptest.NewServer(handler)
 	defer server.Close()
-	client, _ := NewSplunkClient(testToken, server.URL, true)
+	client, _ := NewSplunkClient(testToken, server.URL, true, "", "", "")
 	e := map[string]interface{}{
 		"method": "POST",
 		"api_id": "123",
