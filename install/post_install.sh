@@ -1,7 +1,7 @@
 #!/bin/bash
 echo "Setting permissions"
 # Config file must not be world-readable due to sensitive data
-chown tyk:tyk /opt/tyk-pump/pump.conf
+chown -R tyk:tyk /opt/tyk-pump
 chmod 660 /opt/tyk-pump/pump.conf
 
 echo "Installing init scripts..."
@@ -12,7 +12,7 @@ SYSV1="/etc/init.d"
 SYSV2="/etc/rc.d/init.d/"
 DIR="/opt/tyk-pump/install"
 
-if [ -d "$SYSTEMD" -a -x "$(command -v systemctl)" ]; then
+if [ -d "$SYSTEMD" ] && systemctl status > /dev/null 2> /dev/null; then
 	echo "Found Systemd"
 	[ -f /etc/default/tyk-pump ] || cp $DIR/inits/systemd/default/tyk-pump /etc/default/
 	cp $DIR/inits/systemd/system/tyk-pump.service /lib/systemd/system/
