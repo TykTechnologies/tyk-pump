@@ -96,7 +96,10 @@ Create a `pump.conf` file:
 			"meta": {
 				"collector_token": "<token>",
 				"collector_url": "<url>",
-				"ssl_insecure_skip_verify": false
+				"ssl_insecure_skip_verify": false,
+				"ssl_cert_file": "<cert-path>",
+				"ssl_key_file": "<key-path>",
+				"ssl_server_name": "<server-name>"
 			}
 		},
 		"statsd": {
