@@ -1,6 +1,7 @@
 #!/bin/bash
 echo "Setting permissions"
 # Config file must not be world-readable due to sensitive data
+chown tyk:tyk /opt/tyk-pump/pump.conf
 chmod 660 /opt/tyk-pump/pump.conf
 
 echo "Installing init scripts..."
