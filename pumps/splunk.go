@@ -9,9 +9,10 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/mitchellh/mapstructure"
+
 	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/tyk-pump/analytics"
-	"github.com/mitchellh/mapstructure"
 )
 
 const (
@@ -88,9 +89,9 @@ type SplunkPump struct {
 
 // SplunkPumpConfig contains the driver configuration parameters.
 type SplunkPumpConfig struct {
-	CollectorToken string `mapstructure:"collector_token"`
-	CollectorURL   string `mapstructure:"collector_url"`
-	TLSSkipVerify  bool   `mapstructure:"tls_skip_verify"`
+	CollectorToken        string `mapstructure:"collector_token"`
+	CollectorURL          string `mapstructure:"collector_url"`
+	SSLInsecureSkipVerify bool   `mapstructure:"ssl_insecure_skip_verify"`
 }
 
 // New initializes a new pump.
@@ -114,7 +115,7 @@ func (p *SplunkPump) Init(config interface{}) error {
 		"prefix": pumpPrefix,
 	}).Infof("%s Endpoint: %s", pumpName, p.config.CollectorURL)
 
-	p.client, err = NewSplunkClient(p.config.CollectorToken, p.config.CollectorURL, p.config.TLSSkipVerify)
+	p.client, err = NewSplunkClient(p.config.CollectorToken, p.config.CollectorURL, p.config.SSLInsecureSkipVerify)
 	if err != nil {
 		return err
 	}
