@@ -19,7 +19,7 @@ fi
 if [ -f "/etc/init/tyk-pump.conf" ]; then
 	echo "Found upstart"
 	echo "Stopping the service"
-	service tyk-pump stop
+	stop tyk-pump
 	echo "Removing the service"
 	rm /etc/init/tyk-pump.conf
 fi
