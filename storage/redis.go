@@ -5,12 +5,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/redigocluster/rediscluster"
+
 	"github.com/garyburd/redigo/redis"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/mitchellh/mapstructure"
-
-	"github.com/TykTechnologies/logrus"
 )
 
 // ------------------- REDIS CLUSTER STORAGE MANAGER -------------------------------
