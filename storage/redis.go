@@ -5,12 +5,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/TykTechnologies/logrus"
+	"github.com/TykTechnologies/redigocluster/rediscluster"
+
 	"github.com/garyburd/redigo/redis"
 	"github.com/kelseyhightower/envconfig"
-	"github.com/lonelycode/redigocluster/rediscluster"
 	"github.com/mitchellh/mapstructure"
-
-	"github.com/TykTechnologies/logrus"
 )
 
 // ------------------- REDIS CLUSTER STORAGE MANAGER -------------------------------
@@ -37,17 +37,19 @@ func (e *EnvMapString) Decode(value string) error {
 }
 
 type RedisStorageConfig struct {
-	Type           string       `mapstructure:"type"`
-	Host           string       `mapstructure:"host"`
-	Port           int          `mapstructure:"port"`
-	Hosts          EnvMapString `mapstructure:"hosts"`
-	Username       string       `mapstructure:"username"`
-	Password       string       `mapstructure:"password"`
-	Database       int          `mapstructure:"database"`
-	MaxIdle        int          `mapstructure:"optimisation_max_idle" json:"optimisation_max_idle"`
-	MaxActive      int          `mapstructure:"optimisation_max_active" json:"optimisation_max_active"`
-	EnableCluster  bool         `mapstructure:"enable_cluster" json:"enable_cluster"`
-	RedisKeyPrefix string       `mapstructure:"redis_key_prefix" json:"redis_key_prefix"`
+	Type                       string       `mapstructure:"type"`
+	Host                       string       `mapstructure:"host"`
+	Port                       int          `mapstructure:"port"`
+	Hosts                      EnvMapString `mapstructure:"hosts"`
+	Username                   string       `mapstructure:"username"`
+	Password                   string       `mapstructure:"password"`
+	Database                   int          `mapstructure:"database"`
+	MaxIdle                    int          `mapstructure:"optimisation_max_idle" json:"optimisation_max_idle"`
+	MaxActive                  int          `mapstructure:"optimisation_max_active" json:"optimisation_max_active"`
+	EnableCluster              bool         `mapstructure:"enable_cluster" json:"enable_cluster"`
+	RedisKeyPrefix             string       `mapstructure:"redis_key_prefix" json:"redis_key_prefix"`
+	RedisUseSSL                bool         `mapstructure:"redis_use_ssl" json:"redis_use_ssl"`
+	RedisSSLInsecureSkipVerify bool         `mapstructure:"redis_ssl_insecure_skip_verify" json:"redis_ssl_insecure_skip_verify"`
 }
 
 // RedisClusterStorageManager is a storage manager that uses the redis database.
@@ -93,12 +95,14 @@ func NewRedisClusterPool(forceReconnect bool, config RedisStorageConfig) *redisc
 	}
 
 	thisPoolConf := rediscluster.PoolConfig{
-		MaxIdle:     maxIdle,
-		MaxActive:   maxActive,
-		IdleTimeout: 240 * time.Second,
-		Database:    config.Database,
-		Password:    config.Password,
-		IsCluster:   config.EnableCluster,
+		MaxIdle:       maxIdle,
+		MaxActive:     maxActive,
+		IdleTimeout:   240 * time.Second,
+		Database:      config.Database,
+		Password:      config.Password,
+		IsCluster:     config.EnableCluster,
+		UseTLS:        config.RedisUseSSL,
+		TLSSkipVerify: config.RedisSSLInsecureSkipVerify,
 	}
 
 	seed_redii := []map[string]string{}
