@@ -6,7 +6,7 @@ echo "Set version number"
 
 
 TYK_PUMP_SRC_DIR=$ORGDIR/tyk-pump
-RELEASE_DIR="$TYK_PUMP_SRC_DIR/releases"
+RELEASE_DIR="$TYK_PUMP_SRC_DIR/build"
 export PACKAGECLOUDREPO=$PC_TARGET
 
 cd $RELEASE_DIR/
