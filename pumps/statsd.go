@@ -53,23 +53,31 @@ func (s *StatsdPump) Init(config interface{}) error {
 }
 
 func (s *StatsdPump) connect() *statsd.StatsdClient {
+
 	client := statsd.NewStatsdClient(s.dbConf.Address, "")
 
-	err := client.CreateSocket()
-	if err != nil {
-		log.WithFields(logrus.Fields{
-			"prefix": statsdPrefix,
-		}).Error("StatsD connection failed:", err)
-		time.Sleep(5 * time.Second)
-		s.connect()
-	}
+	for {
+		log.WithField("prefix", statsdPrefix).Debug("connecting to statsD...")
 
-	return client
+		if err := client.CreateSocket(); err != nil {
+			log.WithField("prefix", statsdPrefix).Error("statsD connection failed retrying in 5 seconds:", err)
+			time.Sleep(5 * time.Second)
+
+			continue
+		}
+
+		log.WithField("prefix", statsdPrefix).Debug("statsD connection successful...")
+
+		return client
+	}
 }
 
 func (s *StatsdPump) WriteData(data []interface{}) error {
 
-	// Connect to statsd
+	if len(data) == 0 {
+		return nil
+	}
+
 	client := s.connect()
 	defer client.Close()
 
@@ -126,7 +134,7 @@ func (s *StatsdPump) WriteData(data []interface{}) error {
 		metricTags = strings.Replace(metricTags, "\"", "", -1)
 		metricTags = strings.Replace(metricTags, " ", "", -1)
 
-		// For each field, create metric caculation
+		// For each field, create metric calculation
 		// Everybody has their own implementation here
 		for _, f := range s.dbConf.Fields {
 			if f == "request_time" {
