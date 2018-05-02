@@ -53,25 +53,33 @@ func (s *StatsdPump) Init(config interface{}) error {
 }
 
 func (s *StatsdPump) connect() *statsd.StatsdClient {
+
 	client := statsd.NewStatsdClient(s.dbConf.Address, "")
 
-	err := client.CreateSocket()
-	if err != nil {
-		log.WithFields(logrus.Fields{
-			"prefix": statsdPrefix,
-		}).Error("StatsD connection failed:", err)
-		time.Sleep(5 * time.Second)
-		s.connect()
-	}
+	for {
+		log.WithField("prefix", statsdPrefix).Debug("connecting to statsD...")
 
-	return client
+		if err := client.CreateSocket(); err != nil {
+			log.WithField("prefix", statsdPrefix).Error("statsD connection failed retrying in 5 seconds:", err)
+			time.Sleep(5 * time.Second)
+
+			continue
+		}
+
+		log.WithField("prefix", statsdPrefix).Debug("statsD connection successful...")
+
+		return client
+	}
 }
 
 func (s *StatsdPump) WriteData(data []interface{}) error {
 
-	// Connect to statsd
-	client := s.connect()
-	defer client.Close()
+	var client *statsd.StatsdClient
+
+	if len(data) > 0 {
+		client = s.connect()
+		defer client.Close()
+	}
 
 	for _, v := range data {
 		// Convert to AnalyticsRecord
