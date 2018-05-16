@@ -104,6 +104,13 @@ func (m *MongoPump) Init(config interface{}) error {
 
 	m.capCollection()
 
+	indexCreateErr := m.ensureIndexes()
+	if indexCreateErr != nil {
+		log.WithFields(logrus.Fields{
+			"prefix": mongoPrefix,
+		}).Error(indexCreateErr)
+	}
+
 	log.WithFields(logrus.Fields{
 		"prefix": mongoPrefix,
 	}).Debug("MongoDB DB CS: ", m.dbConf.MongoURL)
@@ -198,6 +205,47 @@ func (m *MongoPump) collectionExists(name string) (bool, error) {
 	}
 
 	return false, nil
+}
+
+func (m *MongoPump) ensureIndexes() error {
+	var err error
+
+	sess := m.dbSession.Copy()
+	defer sess.Close()
+
+	c := sess.DB("").C(m.dbConf.CollectionName)
+
+	orgIndex := mgo.Index{
+		Key:        []string{"orgid"},
+		Background: true,
+	}
+
+	err = c.EnsureIndex(orgIndex)
+	if err != nil {
+		return err
+	}
+
+	apiIndex := mgo.Index{
+		Key:        []string{"apiid"},
+		Background: true,
+	}
+
+	err = c.EnsureIndex(apiIndex)
+	if err != nil {
+		return err
+	}
+
+	logBrowserIndex := mgo.Index{
+		Key:        []string{"-timestamp", "orgid", "apiid", "apikey", "responsecode"},
+		Background: true,
+	}
+
+	err = c.EnsureIndex(logBrowserIndex)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (m *MongoPump) connect() {

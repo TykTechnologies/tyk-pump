@@ -129,42 +129,17 @@ func (m *MongoSelectivePump) ensureIndexes(c *mgo.Collection) error {
 		return err
 	}
 
-	orgIndex := mgo.Index{
-		Key:        []string{"orgid"},
+	logBrowserIndex := mgo.Index{
+		Key:        []string{"-timestamp", "apiid", "apikey", "responsecode"},
 		Background: true,
 	}
 
-	err = c.EnsureIndex(orgIndex)
+	err = c.EnsureIndex(logBrowserIndex)
 	if err != nil {
 		return err
 	}
 
-	idOrgIndex := mgo.Index{
-		Key:        []string{"_id", "orgid"},
-		Background: true,
-	}
-
-	err = c.EnsureIndex(idOrgIndex)
-	if err != nil {
-		return err
-	}
-
-	idOrgApiIndex := mgo.Index{
-		Key:        []string{"_id", "orgid", "apiid"},
-		Background: true,
-	}
-
-	err = c.EnsureIndex(idOrgApiIndex)
-	if err != nil {
-		return err
-	}
-
-	idOrgErrIndex := mgo.Index{
-		Key:        []string{"_id", "orgid", "responsecode"},
-		Background: true,
-	}
-
-	return c.EnsureIndex(idOrgErrIndex)
+	return nil
 }
 
 func (m *MongoSelectivePump) WriteData(data []interface{}) error {
