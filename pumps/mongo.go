@@ -33,14 +33,14 @@ var mongoPrefix = "mongo-pump"
 var mongoPumpPrefix = "PMP_MONGO"
 
 type MongoConf struct {
-	CollectionName             string `mapstructure:"collection_name"`
-	MongoURL                   string `mapstructure:"mongo_url"`
-	MongoUseSSL                bool   `mapstructure:"mongo_use_ssl"`
-	MongoSSLInsecureSkipVerify bool   `mapstructure:"mongo_ssl_insecure_skip_verify"`
-	MaxInsertBatchSizeBytes    int    `mapstructure:"max_insert_batch_size_bytes"`
-	MaxDocumentSizeBytes       int    `mapstructure:"max_document_size_bytes"`
-	CollectionCapMaxSizeBytes  int    `mapstructure:"collection_cap_max_size_bytes"`
-	CollectionCapEnable        bool   `mapstructure:"collection_cap_enable"`
+	CollectionName             string `json:"collection_name" mapstructure:"collection_name"`
+	MongoURL                   string `json:"mongo_url" mapstructure:"mongo_url"`
+	MongoUseSSL                bool   `json:"mongo_use_ssl" mapstructure:"mongo_use_ssl"`
+	MongoSSLInsecureSkipVerify bool   `json:"mongo_ssl_insecure_skip_verify" mapstructure:"mongo_ssl_insecure_skip_verify"`
+	MaxInsertBatchSizeBytes    int    `json:"max_insert_batch_size_bytes" mapstructure:"max_insert_batch_size_bytes"`
+	MaxDocumentSizeBytes       int    `json:"max_document_size_bytes" mapstructure:"max_document_size_bytes"`
+	CollectionCapMaxSizeBytes  int    `json:"collection_cap_max_size_bytes" mapstructure:"collection_cap_max_size_bytes"`
+	CollectionCapEnable        bool   `json:"collection_cap_enable" mapstructure:"collection_cap_enable"`
 }
 
 func mongoDialInfo(mongoURL string, useSSL bool, SSLInsecureSkipVerify bool) (dialInfo *mgo.DialInfo, err error) {

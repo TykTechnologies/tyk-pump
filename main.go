@@ -9,12 +9,12 @@ import (
 	"gopkg.in/vmihailenco/msgpack.v2"
 
 	"github.com/TykTechnologies/logrus"
-	prefixed "github.com/TykTechnologies/logrus-prefixed-formatter"
+	"github.com/TykTechnologies/logrus-prefixed-formatter"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/TykTechnologies/tyk-pump/analytics/demo"
 	"github.com/TykTechnologies/tyk-pump/pumps"
 	"github.com/TykTechnologies/tyk-pump/storage"
-	logger "github.com/TykTechnologies/tykcommon-logger"
+	"github.com/TykTechnologies/tykcommon-logger"
 
 	"gopkg.in/alecthomas/kingpin.v2"
 )
