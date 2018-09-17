@@ -11,7 +11,6 @@ import (
 	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/logrus-prefixed-formatter"
 	"github.com/TykTechnologies/tyk-pump/analytics"
-	"github.com/TykTechnologies/tyk-pump/analytics/demo"
 	"github.com/TykTechnologies/tyk-pump/pumps"
 	"github.com/TykTechnologies/tyk-pump/storage"
 	"github.com/TykTechnologies/tykcommon-logger"
@@ -184,14 +183,14 @@ func main() {
 	// prime the pumps
 	initialisePumps()
 
-	if buildDemoData != "" {
-		log.Warning("BUILDING DEMO DATA AND EXITING...")
-		log.Warning("Starting from date: ", time.Now().AddDate(0, 0, -30))
-		demo.DemoInit(buildDemoData)
-		demo.GenerateDemoData(time.Now().AddDate(0, 0, -30), 30, buildDemoData, writeToPumps)
-
-		return
-	}
+	//if buildDemoData != "" {
+	//	log.Warning("BUILDING DEMO DATA AND EXITING...")
+	//	log.Warning("Starting from date: ", time.Now().AddDate(0, 0, -30))
+	//	demo.DemoInit(buildDemoData)
+	//	demo.GenerateDemoData(time.Now().AddDate(0, 0, -30), 30, buildDemoData, writeToPumps)
+	//
+	//	return
+	//}
 
 	// start the worker loop
 	log.WithFields(logrus.Fields{
