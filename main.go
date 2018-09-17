@@ -1,12 +1,12 @@
 package main
 
 import (
+	"fmt"
 	"time"
-
-	"os"
 
 	"github.com/gocraft/health"
 	"gopkg.in/vmihailenco/msgpack.v2"
+	"os"
 
 	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/logrus-prefixed-formatter"
@@ -117,6 +117,9 @@ func StartPurgeLoop(secInterval int) {
 		job := instrument.NewJob("PumpRecordsPurge")
 
 		AnalyticsValues := AnalyticsStore.GetAndDeleteSet(storage.ANALYTICS_KEYNAME)
+
+		// Print values to console
+		fmt.Println(AnalyticsValues)
 
 		if len(AnalyticsValues) > 0 {
 			startTime := time.Now()
