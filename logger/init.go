@@ -17,7 +17,7 @@ func init() {
 func GetLogger() *logrus.Logger {
 	level := os.Getenv("TYK_LOGLEVEL")
 	if level == "" {
-		level = "info"
+		level = "debug"
 	}
 
 	switch strings.ToLower(level) {
@@ -30,7 +30,7 @@ func GetLogger() *logrus.Logger {
 	case "debug":
 		log.Level = logrus.DebugLevel
 	default:
-		log.Level = logrus.InfoLevel
+		log.Level = logrus.DebugLevel
 	}
 
 	return log
