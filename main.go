@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/TykTechnologies/tyk-pump/analytics/ors"
 	"time"
 
 	"github.com/gocraft/health"
@@ -137,6 +138,7 @@ func StartPurgeLoop(secInterval int) {
 						"prefix": mainPrefix,
 					}).Error("Couldn't unmarshal analytics data:", err)
 				} else {
+					decoded = ors.CleanAnalyticsRecord(decoded)
 					keys[i] = interface{}(decoded)
 					job.Event("record")
 				}
@@ -177,6 +179,10 @@ func writeToPumps(keys []interface{}, job *health.Job, startTime time.Time) {
 }
 
 func main() {
+	//distance1 := ors.GetEuclideanDistance(52.51640, 13.37770, 38.69267, -9.177944)
+	//distance2 := ors.GetEuclideanDistance(49.99170, 8.413210, 50.00490, 8.421820)
+	//fmt.Println(distance1)
+	//fmt.Println(distance2)
 	// Create the store
 	setupAnalyticsStore()
 
