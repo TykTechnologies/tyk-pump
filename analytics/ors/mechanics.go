@@ -24,7 +24,6 @@ func getRequestContent(decodedRequestContent string) list.List {
 }
 
 func CleanDecodedRawRequest(decodedRawRequest []byte) []byte {
-
 	decodedRawRequest = decodedRawRequest
 	decodedRawRequestString := string(decodedRawRequest)
 	requestContentAsList := getRequestContent(decodedRawRequestString)
