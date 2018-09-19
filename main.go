@@ -112,6 +112,26 @@ func initialisePumps() {
 
 }
 
+func writeToPumps(keys []interface{}, job *health.Job, startTime time.Time) {
+	// Send to pumps
+	if Pumps != nil {
+		for _, pmp := range Pumps {
+			log.WithFields(logrus.Fields{
+				"prefix": mainPrefix,
+			}).Debug("Writing to: ", pmp.GetName())
+			pmp.WriteData(keys)
+			if job != nil {
+				job.Timing("purge_time_"+pmp.GetName(), time.Since(startTime).Nanoseconds())
+			}
+		}
+
+	} else {
+		log.WithFields(logrus.Fields{
+			"prefix": mainPrefix,
+		}).Warning("No pumps defined!")
+	}
+}
+
 func StartPurgeLoop(secInterval int) {
 	for range time.Tick(time.Duration(secInterval) * time.Second) {
 		job := instrument.NewJob("PumpRecordsPurge")
@@ -155,26 +175,6 @@ func StartPurgeLoop(secInterval int) {
 			UptimeValues := UptimeStorage.GetAndDeleteSet(storage.UptimeAnalytics_KEYNAME)
 			UptimePump.WriteUptimeData(UptimeValues)
 		}
-	}
-}
-
-func writeToPumps(keys []interface{}, job *health.Job, startTime time.Time) {
-	// Send to pumps
-	if Pumps != nil {
-		for _, pmp := range Pumps {
-			log.WithFields(logrus.Fields{
-				"prefix": mainPrefix,
-			}).Debug("Writing to: ", pmp.GetName())
-			pmp.WriteData(keys)
-			if job != nil {
-				job.Timing("purge_time_"+pmp.GetName(), time.Since(startTime).Nanoseconds())
-			}
-
-		}
-	} else {
-		log.WithFields(logrus.Fields{
-			"prefix": mainPrefix,
-		}).Warning("No pumps defined!")
 	}
 }
 
