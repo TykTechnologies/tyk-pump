@@ -1,49 +1,63 @@
 package ors
 
 import (
-	"container/list"
+	"bufio"
 	"encoding/base64"
-	"github.com/TykTechnologies/tyk-pump/analytics"
+	. "github.com/TykTechnologies/tyk-pump/analytics"
+	"net/http"
+	"strings"
 )
 
-func contentListToRawRequest(processedRequestContent list.List) string {
-	return ""
+func CalculateOrsStats(requestContentAsList map[string]interface{}) OrsRouteStats {
+	return OrsRouteStats{0}
 }
 
-func processRequestContent(requestContentAsList list.List) list.List {
-	return list.List{}
+func getRequestReferer(stringRequest string) string {
+	reader := bufio.NewReader(strings.NewReader(stringRequest))
+	request, _ := http.ReadRequest(reader)
+	referer := request.Header.Get("Referer")
+	return referer
 }
 
-func getRequestElements(stringRequest string) list.List {
-	return list.List{}
+//GetRequestRefererAsMap Split the request url here and return all the elements as a map
+// Use refererCoordinates
+func requestRefererToMap(s string) map[string]interface{} {
+	//viaCoords := list.New()
+	//viaCoords.PushBack(0.00)
+	//coordinates := refererCoordinates{0, 0, 0, 0, viaCoords}
+	//Interface to store any type in here!
+	m := make(map[string]interface{})
+	m["length"] = 0
+	return m
 }
 
-func getRequestContent(decodedRequestContent string) list.List {
-	elements := getRequestElements(decodedRequestContent)
-	return elements
+func GetRequestRefererAsMap(decodedRequestContent string) map[string]interface{} {
+	requestReferer := getRequestReferer(decodedRequestContent)
+	requestRefererAsMap := requestRefererToMap(requestReferer)
+	return requestRefererAsMap
 }
 
-func CleanDecodedRawRequest(decodedRawRequest []byte) []byte {
-	decodedRawRequest = decodedRawRequest
+func ProcessDecodedRawRequest(decodedRawRequest []byte) OrsRouteStats {
 	decodedRawRequestString := string(decodedRawRequest)
-	requestContentAsList := getRequestContent(decodedRawRequestString)
-	processedRequestContent := processRequestContent(requestContentAsList)
+	requestRefererAsMap := GetRequestRefererAsMap(decodedRawRequestString)
+	processedOrsStats := CalculateOrsStats(requestRefererAsMap)
 	// TODO Check if the return should be in json or as a request with the manipulated Request
-	processedRawRequest := contentListToRawRequest(processedRequestContent)
-	return []byte(processedRawRequest)
+	// I could add a new key value pair to the Analytics Record e.g. OrsStats, that holds all the desired values!#
+	// The rest of the request wouldnt be touched
+	// Maybe the ors_stats can be clean written in the output wo converting it to an array
+	return processedOrsStats
 }
 
-func ProcessRawRequest(rawEncodedRequest string) string {
+func ProcessRawRequestToOrsRouteStats(rawEncodedRequest string) OrsRouteStats {
 	decodedRawReq, _ := base64.StdEncoding.DecodeString(rawEncodedRequest)
-	cleanedDecodedRawReq := CleanDecodedRawRequest(decodedRawReq)
-	cleanedEncodedRawReq := base64.StdEncoding.EncodeToString(cleanedDecodedRawReq)
-	return cleanedEncodedRawReq
+	orsRouteStats := ProcessDecodedRawRequest(decodedRawReq)
+	return orsRouteStats
 }
 
-func CleanAnalyticsRecord(analyticsRecord analytics.AnalyticsRecord) analytics.AnalyticsRecord {
+func CalculateOrsRouteStats(analyticsRecord AnalyticsRecord) AnalyticsRecord {
 	analyticsRecord = analyticsRecord
 	rawRequest := analyticsRecord.RawRequest
-	cleanedEncodedRawRequest := ProcessRawRequest(rawRequest)
-	analyticsRecord.RawRequest = cleanedEncodedRawRequest
+	orsRouteStats := ProcessRawRequestToOrsRouteStats(rawRequest)
+	analyticsRecord.OrsRouteStats = orsRouteStats
 	return analyticsRecord
 }
