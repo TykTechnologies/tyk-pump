@@ -3,13 +3,23 @@ package ors
 import (
 	"bufio"
 	"encoding/base64"
+	"github.com/TykTechnologies/logrus"
+	"github.com/TykTechnologies/logrus-prefixed-formatter"
 	. "github.com/TykTechnologies/tyk-pump/analytics"
+	"github.com/TykTechnologies/tykcommon-logger"
 	"net/http"
 	"strings"
 )
 
+var mechanicsPrefix = "mechanics"
+var log = logger.GetLogger()
+
+func init() {
+	log.Formatter = new(prefixed.TextFormatter)
+}
+
 func CalculateOrsStats(requestContentAsList map[string]interface{}) OrsRouteStats {
-	return OrsRouteStats{0}
+	return OrsRouteStats{1, 0, 0, 0, 0}
 }
 
 func getRequestReferer(stringRequest string) string {
@@ -19,27 +29,15 @@ func getRequestReferer(stringRequest string) string {
 	return referer
 }
 
-//GetRequestRefererAsMap Split the request url here and return all the elements as a map
-// Use refererCoordinates
-func requestRefererToMap(s string) map[string]interface{} {
-	//viaCoords := list.New()
-	//viaCoords.PushBack(0.00)
-	//coordinates := refererCoordinates{0, 0, 0, 0, viaCoords}
-	//Interface to store any type in here!
-	m := make(map[string]interface{})
-	m["length"] = 0
-	return m
-}
-
-func GetRequestRefererAsMap(decodedRequestContent string) map[string]interface{} {
+func GetRequestRefererAsParameterMap(decodedRequestContent string) map[string]interface{} {
 	requestReferer := getRequestReferer(decodedRequestContent)
-	requestRefererAsMap := requestRefererToMap(requestReferer)
-	return requestRefererAsMap
+	requestRefererParameterMap := requestRefererToParameterMap(requestReferer)
+	return requestRefererParameterMap
 }
 
 func ProcessDecodedRawRequest(decodedRawRequest []byte) OrsRouteStats {
 	decodedRawRequestString := string(decodedRawRequest)
-	requestRefererAsMap := GetRequestRefererAsMap(decodedRawRequestString)
+	requestRefererAsMap := GetRequestRefererAsParameterMap(decodedRawRequestString)
 	processedOrsStats := CalculateOrsStats(requestRefererAsMap)
 	// TODO Check if the return should be in json or as a request with the manipulated Request
 	// I could add a new key value pair to the Analytics Record e.g. OrsStats, that holds all the desired values!#
@@ -55,9 +53,18 @@ func ProcessRawRequestToOrsRouteStats(rawEncodedRequest string) OrsRouteStats {
 }
 
 func CalculateOrsRouteStats(analyticsRecord AnalyticsRecord) AnalyticsRecord {
+
 	analyticsRecord = analyticsRecord
-	rawRequest := analyticsRecord.RawRequest
-	orsRouteStats := ProcessRawRequestToOrsRouteStats(rawRequest)
-	analyticsRecord.OrsRouteStats = orsRouteStats
+	method := analyticsRecord.Method
+	if method == "GET" {
+		rawRequest := analyticsRecord.RawRequest
+		orsRouteStats := ProcessRawRequestToOrsRouteStats(rawRequest)
+		analyticsRecord.OrsRouteStats = orsRouteStats
+	} else if method == "POST" {
+		log.WithFields(logrus.Fields{
+			"prefix": mechanicsPrefix,
+		}).Debug("Method not implemented: ", method)
+	}
+
 	return analyticsRecord
 }

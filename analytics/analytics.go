@@ -43,8 +43,11 @@ type AnalyticsRecord struct {
 }
 
 type OrsRouteStats struct {
-	Length float64
-	// Define more as needed
+	Length   float64
+	StartLng float64
+	StartLat float64
+	EndLng   float64
+	EndLat   float64
 }
 
 type GeoData struct {
