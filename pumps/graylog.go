@@ -108,6 +108,7 @@ func (p *GraylogPump) WriteData(data []interface{}) error {
 			"raw_request":   string(rReq),
 			"request_time":  record.RequestTime,
 			"raw_response":  string(rResp),
+			"length":        record.OrsRouteStats.Length,
 		}
 
 		messageMap := map[string]interface{}{}
