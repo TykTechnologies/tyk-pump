@@ -5,7 +5,11 @@ import (
 	"github.com/golang/geo/s2"
 )
 
-type refererCoordinates struct {
+type RefererCoordinates struct {
+	//viaCoords := list.New()
+	//viaCoords.PushBack(0.00)
+	//coordinates := refererCoordinates{0, 0, 0, 0, viaCoords}
+	//Interface to store any type in here!
 	startLong float64
 	startLat  float64
 	endLong   float64
@@ -24,4 +28,9 @@ func GetEuclideanDistance(fromLat float64, fromLng float64, toLat float64, toLng
 	distanceInRad := distanceInAngle.Radians()
 	distanceInKM := earthLength * distanceInRad
 	return distanceInKM
+}
+
+func GetLengthForRefererCoordinates(refererCoordinates RefererCoordinates) float64 {
+	// Include via logic from refererCoordinates here!s
+	return float64(0)
 }
