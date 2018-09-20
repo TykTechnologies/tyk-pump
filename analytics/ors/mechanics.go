@@ -20,19 +20,48 @@ func init() {
 	log.Formatter = new(prefixed.TextFormatter)
 }
 
+func processViaCoordinates(i map[string]interface{}) (map[string]interface{}, map[string]interface{}) {
+
+}
+
+func getCoordinatesFromReferer(referer string) (map[string]interface{}, map[string]interface{}, map[string]interface{}) {
+	coordinates := map[string]interface{}{}
+	viaCoordinates := map[string]interface{}{}
+	endCoordinates := map[string]interface{}{}
+	refererMap := requestRefererToParameterMap(referer)
+	if _, ok := refererMap["n1"]; ok {
+		if _, ok2 := refererMap["n2"]; ok2 {
+			coordinates["start_lat"] = refererMap["n1"]
+			coordinates["start_lng"] = refererMap["n2"]
+		}
+		if _, ok3 := refererMap["a"]; ok3 {
+			viaCoordinates, endCoordinates = processViaCoordinates(refererMap["a"])
+		}
+	}
+	return coordinates, viaCoordinates, endCoordinates
+}
+
 func GetRequestQueryValues(stringRequest string) url.Values {
 	// TODO Some requests have a insufficient rawQuery that doesnt represent everything
 	reader := bufio.NewReader(strings.NewReader(stringRequest))
 	request, _ := http.ReadRequest(reader)
 	query := request.URL.Query()
-	for key := range query {
-		check := key
-		if _, ok := ValueCollection[check]; !ok {
-			ValueCollection[key] = 0
+	queryMap := map[string]interface{}{}
+	referer := request.Referer()
+	for key, value := range query {
+		if key != "coordinates" {
+			queryMap[key] = value
 		}
-		if key == "options" {
-			println(key)
-		}
+		// check := key
+		// if _, ok := ValueCollection[check]; !ok {
+		// 	 ValueCollection[key] = 0
+		// }
+	}
+	if strings.ContainsAny(referer, "n1 & n2") {
+		startCoordinates, viaCoordinates, endCoordinates := getCoordinatesFromReferer(referer)
+		queryMap["start_coordinates"] = startCoordinates
+		queryMap["via_coordinates"] = viaCoordinates
+		queryMap["end_coordinates"] = endCoordinates
 	}
 	return query
 }
