@@ -2,6 +2,7 @@ package ors
 
 import (
 	"bufio"
+	"container/list"
 	"encoding/base64"
 	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/logrus-prefixed-formatter"
@@ -20,28 +21,44 @@ func init() {
 	log.Formatter = new(prefixed.TextFormatter)
 }
 
-func processViaCoordinates(i map[string]interface{}) (map[string]interface{}, map[string]interface{}) {
-
-}
-
-func getCoordinatesFromReferer(referer string) (map[string]interface{}, map[string]interface{}, map[string]interface{}) {
-	coordinates := map[string]interface{}{}
-	viaCoordinates := map[string]interface{}{}
-	endCoordinates := map[string]interface{}{}
-	refererMap := requestRefererToParameterMap(referer)
-	if _, ok := refererMap["n1"]; ok {
-		if _, ok2 := refererMap["n2"]; ok2 {
-			coordinates["start_lat"] = refererMap["n1"]
-			coordinates["start_lng"] = refererMap["n2"]
-		}
-		if _, ok3 := refererMap["a"]; ok3 {
-			viaCoordinates, endCoordinates = processViaCoordinates(refererMap["a"])
+func processViaCoordinates(viaCoordinates interface{}) interface{} {
+	// interface to string?
+	splittedCoordinates := strings.SplitAfter(viaCoordinates, ",")
+	viaCoords := list.New()
+	coordinatePair := map[string]interface{}{}
+	coordinateCounter := 0
+	for coordinate, _ := range splittedCoordinates {
+		cleanedCoordinate := strings.TrimRight(coordinate, ",")
+		if coordinateCounter%2 == 0 {
+			coordinatePair["lat"] = cleanedCoordinate
+		} else {
+			coordinatePair["lng"] = cleanedCoordinate
+			viaCoords.PushBack(coordinatePair)
+			coordinatePair = map[string]interface{}{}
 		}
 	}
-	return coordinates, viaCoordinates, endCoordinates
+	return viaCoords
 }
 
-func GetRequestQueryValues(stringRequest string) url.Values {
+func getCoordinatesFromReferer(referer string) RefererCoordinates {
+	refererMap := requestRefererToParameterMap(referer)
+	coordinates := RefererCoordinates{}
+	if _, ok := refererMap["n1"]; ok {
+		if _, ok2 := refererMap["n2"]; ok2 {
+			coordinates.startLat = refererMap["n1"]
+			coordinates.endLong = refererMap["n1"]
+		}
+		if _, ok3 := refererMap["a"]; ok3 {
+			viaCoordinatesString := refererMap["a"]
+			viaCoordinates := processViaCoordinates(viaCoordinatesString)
+			coordinates.viaCoords = viaCoordinates
+			endCoordinates := //last variable of viaCoordinates
+		}
+	}
+	return coordinates
+}
+
+func GetRequestQueryValues(stringRequest string) map[string]interface{} {
 	// TODO Some requests have a insufficient rawQuery that doesnt represent everything
 	reader := bufio.NewReader(strings.NewReader(stringRequest))
 	request, _ := http.ReadRequest(reader)
@@ -58,44 +75,43 @@ func GetRequestQueryValues(stringRequest string) url.Values {
 		// }
 	}
 	if strings.ContainsAny(referer, "n1 & n2") {
-		startCoordinates, viaCoordinates, endCoordinates := getCoordinatesFromReferer(referer)
-		queryMap["start_coordinates"] = startCoordinates
-		queryMap["via_coordinates"] = viaCoordinates
-		queryMap["end_coordinates"] = endCoordinates
+		coordinates := getCoordinatesFromReferer(referer)
+		queryMap["coordinates"] = coordinates
 	}
-	return query
+	return queryMap
 }
 
-func ProcessDecodedRawRequest(decodedRawRequest []byte) OrsRouteStats {
+func ProcessDecodedRawRequest(decodedRawRequest []byte) map[string]interface{} {
 	decodedRawRequestString := string(decodedRawRequest)
 	requestQueryValues := GetRequestQueryValues(decodedRawRequestString)
 	processedQueryValues := processQueryValues(requestQueryValues)
-	orsStats := CalculateOrsStats(processedQueryValues)
+	//orsStats := CalculateOrsStats(processedQueryValues)
 	// TODO Check if the return should be in json or as a request with the manipulated Request
 	// I could add a new key value pair to the Analytics Record e.g. OrsStats, that holds all the desired values!#
 	// The rest of the request wouldnt be touched
 	// Maybe the ors_stats can be clean written in the output wo converting it to an array
-	return orsStats
+	return processedQueryValues
 }
 
-func ProcessRawRequestToOrsRouteStats(rawEncodedRequest string) OrsRouteStats {
+func ProcessRawRequestToOrsRouteStats(rawEncodedRequest string) map[string]interface{} {
 	decodedRawReq, _ := base64.StdEncoding.DecodeString(rawEncodedRequest)
-	orsRouteStats := ProcessDecodedRawRequest(decodedRawReq)
-	return orsRouteStats
+	processedRequest := ProcessDecodedRawRequest(decodedRawReq)
+	return processedRequest
 }
 
-func CalculateOrsRouteStats(analyticsRecord AnalyticsRecord) AnalyticsRecord {
+func CalculateOrsRouteStats(analyticsRecord AnalyticsRecord) map[string]interface{} {
 	analyticsRecord = analyticsRecord
 	method := analyticsRecord.Method
+	var orsRouteStats map[string]interface{}{}
 	if method == "GET" {
 		rawRequest := analyticsRecord.RawRequest
-		orsRouteStats := ProcessRawRequestToOrsRouteStats(rawRequest)
-		analyticsRecord.OrsRouteStats = orsRouteStats
+		orsRouteStats = ProcessRawRequestToOrsRouteStats(rawRequest)
+		// analyticsRecord.OrsRouteStats = orsRouteStats
 	} else if method == "POST" {
 		log.WithFields(logrus.Fields{
 			"prefix": mechanicsPrefix,
 		}).Debug("Method not implemented: ", method)
 	}
 
-	return analyticsRecord
+	return orsRouteStats
 }

@@ -55,11 +55,20 @@ func processCoordinates(coordinates interface{}) map[string]interface{} {
 }
 
 // Processes e.g. unprocessed json values
-func processQueryValues(values url.Values) url.Values {
+// The question is, do i need to process coords here? analytics are already ready or analytics here?
+func processQueryValues(values map[string]interface{}) map[string]interface{} {
 	processedQueryValues := map[string]interface{}{}
+	// Coords are already processed here, calc length here?
 	if coordinates, present := ValueCollection["coordinates"]; present {
 		processedCoordinates := processCoordinates(coordinates)
 		processedQueryValues["coordinates"] = processedCoordinates
 	}
-	return values
+	if options, present := ValueCollection["options"]; present {
+		processedOptions := processOptions(options)
+	}
+	return processedQueryValues
+}
+func processOptions(options interface{}) map[string]interface{} {
+	processedOptions := map[string]interface{}{}
+	return processedOptions
 }
