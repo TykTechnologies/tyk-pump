@@ -39,7 +39,6 @@ var (
 
 func init() {
 	SystemConfig = TykPumpConfiguration{}
-
 	kingpin.Parse()
 
 	log.Formatter = new(prefixed.TextFormatter)
@@ -205,4 +204,7 @@ func main() {
 
 	SetupInstrumentation()
 	StartPurgeLoop(SystemConfig.PurgeDelay)
+	for parameter := range ors.ValueCollection {
+		fmt.Println(parameter)
+	}
 }

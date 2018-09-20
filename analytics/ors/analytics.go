@@ -2,7 +2,9 @@ package ors
 
 import (
 	"container/list"
+	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/golang/geo/s2"
+	"net/url"
 )
 
 type RefererCoordinates struct {
@@ -33,4 +35,8 @@ func GetEuclideanDistance(fromLat float64, fromLng float64, toLat float64, toLng
 func GetLengthForRefererCoordinates(refererCoordinates RefererCoordinates) float64 {
 	// Include via logic from refererCoordinates here!s
 	return float64(0)
+}
+
+func CalculateOrsStats(requestContentAsList url.Values) analytics.OrsRouteStats {
+	return analytics.OrsRouteStats{1, 0, 0, 0, 0}
 }

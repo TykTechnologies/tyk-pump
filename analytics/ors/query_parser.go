@@ -1,7 +1,7 @@
 package ors
 
 import (
-	"fmt"
+	"net/url"
 	"strings"
 )
 
@@ -22,10 +22,7 @@ func processOptions(encodedOptionsJsonString string, profile string) {
 func processRefererKeyValue(refererKeyValueObject map[string]interface{}) map[string]interface{} {
 	// Do all the magic here plus add the length parameter
 	var refererMap map[string]interface{}
-	for k, v := range refererKeyValueObject {
-		println(k)
-		fmt.Println(v)
-	}
+
 	return refererMap
 }
 
@@ -60,9 +57,14 @@ func splitAndCleanRefererToVariables(refererString string) []string {
 	return splittedRequestReferer
 }
 
+// Processes e.g. unprocessed json values
+func processQueryValues(values url.Values) url.Values {
+	return values
+}
+
 //GetRequestRefererAsMap Split the request url here and return all the elements as a map
 // Use refererCoordinates
-func requestRefererToParameterMap(requestReferer string) map[string]interface{} {
+func requestQueryToParameterMap(requestReferer string) map[string]interface{} {
 	refererVariables := splitAndCleanRefererToVariables(requestReferer)
 	refererKeyValueObject := splitVariablesToKeyValue(refererVariables)
 	processedRefererMap := processRefererKeyValue(refererKeyValueObject)
