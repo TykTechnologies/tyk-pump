@@ -2,14 +2,13 @@ package ors
 
 import (
 	"bufio"
-	"container/list"
 	"encoding/base64"
 	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/logrus-prefixed-formatter"
 	. "github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/TykTechnologies/tykcommon-logger"
+	"math"
 	"net/http"
-	"net/url"
 	"strings"
 )
 
@@ -21,23 +20,31 @@ func init() {
 	log.Formatter = new(prefixed.TextFormatter)
 }
 
-func processViaCoordinates(viaCoordinates interface{}) interface{} {
+func processViaCoordinates(viaCoordinates interface{}) []map[string]interface{} {
 	// interface to string?
-	splittedCoordinates := strings.SplitAfter(viaCoordinates, ",")
-	viaCoords := list.New()
+	splittedCoordinates := strings.SplitAfter(viaCoordinates.(string), ",")
+	viaCoords := make([]map[string]interface{}, len(splittedCoordinates))
 	coordinatePair := map[string]interface{}{}
-	coordinateCounter := 0
-	for coordinate, _ := range splittedCoordinates {
+	coordinateCounter := 0.0
+	for _, coordinate := range splittedCoordinates {
 		cleanedCoordinate := strings.TrimRight(coordinate, ",")
-		if coordinateCounter%2 == 0 {
+		if math.Mod(coordinateCounter, 2) == 0 {
 			coordinatePair["lat"] = cleanedCoordinate
 		} else {
 			coordinatePair["lng"] = cleanedCoordinate
-			viaCoords.PushBack(coordinatePair)
+			viaCoords = append(viaCoords, coordinatePair)
 			coordinatePair = map[string]interface{}{}
 		}
 	}
 	return viaCoords
+}
+
+func getEndCoordinatesFromViaCoords(viaCoordinates []map[string]interface{}) (float64, float64) {
+	endCoordinates := viaCoordinates[len(viaCoordinates)-1]
+	endLat := endCoordinates["lat"].(float64)
+	endLng := endCoordinates["lng"]
+	return endLat, endLng.(float64)
+
 }
 
 func getCoordinatesFromReferer(referer string) RefererCoordinates {
@@ -45,21 +52,23 @@ func getCoordinatesFromReferer(referer string) RefererCoordinates {
 	coordinates := RefererCoordinates{}
 	if _, ok := refererMap["n1"]; ok {
 		if _, ok2 := refererMap["n2"]; ok2 {
-			coordinates.startLat = refererMap["n1"]
-			coordinates.endLong = refererMap["n1"]
+			coordinates.startLat = refererMap["n1"].(float64)
+			coordinates.endLng = refererMap["n1"].(float64)
 		}
 		if _, ok3 := refererMap["a"]; ok3 {
 			viaCoordinatesString := refererMap["a"]
 			viaCoordinates := processViaCoordinates(viaCoordinatesString)
 			coordinates.viaCoords = viaCoordinates
-			endCoordinates := //last variable of viaCoordinates
+			endLat, endLng := getEndCoordinatesFromViaCoords(viaCoordinates)
+			coordinates.endLat = endLat
+			coordinates.endLng = endLng
 		}
 	}
 	return coordinates
 }
 
 func GetRequestQueryValues(stringRequest string) map[string]interface{} {
-	// TODO Some requests have a insufficient rawQuery that doesnt represent everything
+	// TODO Some requests have an insufficient rawQuery that doesnt represent everything
 	reader := bufio.NewReader(strings.NewReader(stringRequest))
 	request, _ := http.ReadRequest(reader)
 	query := request.URL.Query()
@@ -81,7 +90,7 @@ func GetRequestQueryValues(stringRequest string) map[string]interface{} {
 	return queryMap
 }
 
-func ProcessDecodedRawRequest(decodedRawRequest []byte) map[string]interface{} {
+func generateStatsFromDecodedRawRequest(decodedRawRequest []byte) map[string]interface{} {
 	decodedRawRequestString := string(decodedRawRequest)
 	requestQueryValues := GetRequestQueryValues(decodedRawRequestString)
 	processedQueryValues := processQueryValues(requestQueryValues)
@@ -95,23 +104,23 @@ func ProcessDecodedRawRequest(decodedRawRequest []byte) map[string]interface{} {
 
 func ProcessRawRequestToOrsRouteStats(rawEncodedRequest string) map[string]interface{} {
 	decodedRawReq, _ := base64.StdEncoding.DecodeString(rawEncodedRequest)
-	processedRequest := ProcessDecodedRawRequest(decodedRawReq)
-	return processedRequest
+	orsRouteStats := generateStatsFromDecodedRawRequest(decodedRawReq)
+	return orsRouteStats
 }
 
-func CalculateOrsRouteStats(analyticsRecord AnalyticsRecord) map[string]interface{} {
+func CalculateOrsRouteStats(analyticsRecord AnalyticsRecord) AnalyticsRecord {
 	analyticsRecord = analyticsRecord
 	method := analyticsRecord.Method
-	var orsRouteStats map[string]interface{}{}
+	var orsRouteStats OrsRouteStats
 	if method == "GET" {
 		rawRequest := analyticsRecord.RawRequest
-		orsRouteStats = ProcessRawRequestToOrsRouteStats(rawRequest)
+		orsRouteStats.Data = ProcessRawRequestToOrsRouteStats(rawRequest)
 		// analyticsRecord.OrsRouteStats = orsRouteStats
 	} else if method == "POST" {
 		log.WithFields(logrus.Fields{
 			"prefix": mechanicsPrefix,
 		}).Debug("Method not implemented: ", method)
 	}
-
-	return orsRouteStats
+	analyticsRecord.OrsRouteStats = orsRouteStats
+	return analyticsRecord
 }

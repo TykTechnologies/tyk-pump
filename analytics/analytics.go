@@ -43,11 +43,8 @@ type AnalyticsRecord struct {
 }
 
 type OrsRouteStats struct {
-	Length   float64
-	StartLng float64
-	StartLat float64
-	EndLng   float64
-	EndLat   float64
+	Length float64
+	Data   map[string]interface{}
 }
 
 type GeoData struct {

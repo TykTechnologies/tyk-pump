@@ -1,7 +1,6 @@
 package ors
 
 import (
-	"net/url"
 	"strings"
 )
 
@@ -65,6 +64,7 @@ func processQueryValues(values map[string]interface{}) map[string]interface{} {
 	}
 	if options, present := ValueCollection["options"]; present {
 		processedOptions := processOptions(options)
+		processedQueryValues["options"] = processedOptions
 	}
 	return processedQueryValues
 }
