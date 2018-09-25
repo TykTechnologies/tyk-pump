@@ -94,7 +94,7 @@ func (p *GraylogPump) WriteData(data []interface{}) error {
 				"prefix": graylogPrefix,
 			}).Fatal(err)
 		}
-
+		// Configure a dynamic mapping on the 'ors-data' key
 		mapping := map[string]interface{}{
 			"method":        record.Method,
 			"path":          record.Path,
@@ -108,7 +108,6 @@ func (p *GraylogPump) WriteData(data []interface{}) error {
 			"raw_request":   string(rReq),
 			"request_time":  record.RequestTime,
 			"raw_response":  string(rResp),
-			"length":        record.OrsRouteStats.Length,
 		}
 
 		messageMap := map[string]interface{}{}

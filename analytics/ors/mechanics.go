@@ -90,7 +90,7 @@ func GetRequestQueryValues(stringRequest string) map[string]interface{} {
 	return queryMap
 }
 
-func generateStatsFromDecodedRawRequest(decodedRawRequest []byte) map[string]interface{} {
+func generateStatsFromDecodedGetReq(decodedRawRequest []byte) OrsRouteStats {
 	decodedRawRequestString := string(decodedRawRequest)
 	requestQueryValues := GetRequestQueryValues(decodedRawRequestString)
 	processedQueryValues := processQueryValues(requestQueryValues)
@@ -102,25 +102,46 @@ func generateStatsFromDecodedRawRequest(decodedRawRequest []byte) map[string]int
 	return processedQueryValues
 }
 
-func ProcessRawRequestToOrsRouteStats(rawEncodedRequest string) map[string]interface{} {
-	decodedRawReq, _ := base64.StdEncoding.DecodeString(rawEncodedRequest)
-	orsRouteStats := generateStatsFromDecodedRawRequest(decodedRawReq)
-	return orsRouteStats
+func generateStatsFromDecodedPostReq(bytes []byte) {
+
 }
 
-func CalculateOrsRouteStats(analyticsRecord AnalyticsRecord) AnalyticsRecord {
-	analyticsRecord = analyticsRecord
-	method := analyticsRecord.Method
-	var orsRouteStats OrsRouteStats
+func ProcessDirectionsRecordOrsRouteStats(analyticsRecod AnalyticsRecord) OrsRouteStats {
+	method := analyticsRecod.Method
+	encodedRawRequest := analyticsRecod.RawRequest
+	decodedRawReq, _ := base64.StdEncoding.DecodeString(encodedRawRequest)
+	orsRouteStats := OrsRouteStats{}
 	if method == "GET" {
-		rawRequest := analyticsRecord.RawRequest
-		orsRouteStats.Data = ProcessRawRequestToOrsRouteStats(rawRequest)
-		// analyticsRecord.OrsRouteStats = orsRouteStats
+		orsRouteStats = generateStatsFromDecodedGetReq(decodedRawReq)
+		return orsRouteStats
+
 	} else if method == "POST" {
+		generateStatsFromDecodedPostReq(decodedRawReq)
 		log.WithFields(logrus.Fields{
 			"prefix": mechanicsPrefix,
 		}).Debug("Method not implemented: ", method)
+		return orsRouteStats
+	} else {
+		return orsRouteStats
 	}
-	analyticsRecord.OrsRouteStats = orsRouteStats
+}
+
+func CalculateDirectionsStats(analyticsRecod AnalyticsRecord) OrsRouteStats {
+
+}
+
+func CalculateOrsStats(analyticsRecord AnalyticsRecord) AnalyticsRecord {
+	analyticsRecord = analyticsRecord
+	endpoint := analyticsRecord.APIName
+	if endpoint == "Isochrones" {
+
+	} else if endpoint == "Matrix" {
+		return analyticsRecord
+	} else if endpoint == "Directions" {
+		analyticsRecord.OrsRouteStats = ProcessDirectionsRecordOrsRouteStats(analyticsRecord)
+		return analyticsRecord
+	} else if endpoint == "GeocodeReverseForPublic" {
+		return analyticsRecord
+	}
 	return analyticsRecord
 }

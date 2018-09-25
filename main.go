@@ -157,7 +157,7 @@ func StartPurgeLoop(secInterval int) {
 						"prefix": mainPrefix,
 					}).Error("Couldn't unmarshal analytics data:", err)
 				} else {
-					decoded = ors.CalculateOrsRouteStats(decoded)
+					decoded = ors.CalculateOrsStats(decoded)
 					keys[i] = interface{}(decoded)
 					job.Event("record")
 				}

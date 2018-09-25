@@ -1,6 +1,7 @@
-package ors
+package routes
 
 import (
+	"github.com/TykTechnologies/tyk-pump/analytics"
 	"strings"
 )
 
@@ -55,8 +56,9 @@ func processCoordinates(coordinates interface{}) map[string]interface{} {
 
 // Processes e.g. unprocessed json values
 // The question is, do i need to process coords here? analytics are already ready or analytics here?
-func processQueryValues(values map[string]interface{}) map[string]interface{} {
+func processQueryValues(values map[string]interface{}) analytics.OrsRouteStats {
 	processedQueryValues := map[string]interface{}{}
+	orsRouteStats := analytics.OrsRouteStats{}
 	// Coords are already processed here, calc length here?
 	if coordinates, present := ValueCollection["coordinates"]; present {
 		processedCoordinates := processCoordinates(coordinates)
@@ -66,7 +68,8 @@ func processQueryValues(values map[string]interface{}) map[string]interface{} {
 		processedOptions := processOptions(options)
 		processedQueryValues["options"] = processedOptions
 	}
-	return processedQueryValues
+	orsRouteStats.Data = processedQueryValues
+	return orsRouteStats
 }
 func processOptions(options interface{}) map[string]interface{} {
 	processedOptions := map[string]interface{}{}

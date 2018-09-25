@@ -1,4 +1,4 @@
-package ors
+package routes
 
 import (
 	"github.com/golang/geo/s2"
