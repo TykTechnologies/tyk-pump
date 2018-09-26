@@ -43,7 +43,8 @@ type AnalyticsRecord struct {
 }
 
 type OrsRouteStats struct {
-	Data map[string]interface{}
+	Length float64
+	Data   map[string]interface{}
 }
 
 type GeoData struct {

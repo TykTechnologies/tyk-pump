@@ -32,7 +32,7 @@ func processCoordinates(bareCoords string) RouteCoordinates {
 	// interface to string?
 	routeCoordinates := RouteCoordinates{}
 	splittedCoordinates := strings.SplitAfter(bareCoords, "|")
-	viaCoords := make([]map[string]interface{}, len(splittedCoordinates)-2)
+	viaCoords := make([]map[string]interface{}, len(splittedCoordinates))
 	for index, coordinate := range splittedCoordinates {
 		cleanedCoordinatePair := strings.TrimRight(coordinate, "|")
 		lat, lng := processBareCoordinatePair(cleanedCoordinatePair)
@@ -55,7 +55,8 @@ func processCoordinates(bareCoords string) RouteCoordinates {
 
 func processJsonFromString(potentialJson string) (map[string]interface{}, error) {
 	var unmarshalledJson map[string]interface{}
-	err := json.Unmarshal([]byte(potentialJson), &unmarshalledJson)
+	jsonReader := json.NewDecoder(strings.NewReader(potentialJson))
+	err := jsonReader.Decode(&unmarshalledJson)
 	if err != nil {
 		return map[string]interface{}{}, err
 	} else {
@@ -69,13 +70,15 @@ func GetRequestQueryValues(stringRequest string) map[string]interface{} {
 	query := request.URL.Query()
 	queryMap := map[string]interface{}{}
 	// TODO check how the complex map works in graylog when a json is unmarshaled into a map with multiple levels!
+	// Multiple Levels dont work. Try with putting every key in the first level. If that doesn't work,
+	// create manual types like the coordinate type! That seems to work. But before the one level solution
 	for key, value := range query {
 		if key == "coordinates" {
 			routeCoordinates := processCoordinates(value[0])
 			queryMap[key] = routeCoordinates
 		} else {
-			potentialJson, validJson := processJsonFromString(value[0])
-			if validJson == nil {
+			potentialJson, err := processJsonFromString(value[0])
+			if err == nil {
 				queryMap[key] = potentialJson
 			} else {
 				queryMap[key] = value
@@ -90,11 +93,6 @@ func generateStatsFromDecodedGetReq(decodedRawRequest []byte) OrsRouteStats {
 	decodedRawRequestString := string(decodedRawRequest)
 	requestQueryValues := GetRequestQueryValues(decodedRawRequestString)
 	processedQueryValues := ProcessQueryValues(requestQueryValues)
-	//orsStats := CalculateOrsStats(processedQueryValues)
-	// TODO Check if the return should be in json or as a request with the manipulated Request
-	// I could add a new key value pair to the Analytics Record e.g. OrsStats, that holds all the desired values!#
-	// The rest of the request wouldnt be touched
-	// Maybe the ors_stats can be clean written in the output wo converting it to an array
 	return processedQueryValues
 }
 

@@ -1,7 +1,6 @@
 package routes
 
 import (
-	"encoding/json"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"strings"
 )
@@ -63,19 +62,10 @@ func ProcessQueryValues(values map[string]interface{}) analytics.OrsRouteStats {
 	// Coords are already processed here, calc length here?
 	if coordinates, present := values["coordinates"]; present {
 		length := GetEuclideanDistance(coordinates.(RouteCoordinates))
-		processedQueryValues["length"] = length
+		orsRouteStats.Length = length
 		processedQueryValues["coordinates"] = coordinates
 	}
-	for _, value := range values {
-		var anyJson = map[string]interface{}{}
-
-		json.Unmarshal(value.([]byte), &anyJson)
-		//if options, present := values["options"]; present {
-		//	processedOptions := ProcessOptions(options)
-		//	processedQueryValues["options"] = processedOptions
-		//}
-		orsRouteStats.Data = processedQueryValues
-	}
+	orsRouteStats.Data = processedQueryValues
 	return orsRouteStats
 }
 func ProcessOptions(options interface{}) map[string]interface{} {
