@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"encoding/json"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"strings"
 )
@@ -10,7 +11,7 @@ var pipeHex string = "%7C"
 var jsonOpenHex string = "%7B"
 var jsonCloseHex string = "%7D"
 
-func splitVariablesToKeyValue(splittedCleanedReferer []string) map[string]interface{} {
+func SplitVariablesToKeyValue(splittedCleanedReferer []string) map[string]interface{} {
 	refererKeyValueMap := map[string]interface{}{}
 	for _, parameter := range splittedCleanedReferer {
 		splittedParameter := strings.SplitAfterN(parameter, "=", 2)
@@ -22,7 +23,7 @@ func splitVariablesToKeyValue(splittedCleanedReferer []string) map[string]interf
 	return refererKeyValueMap
 }
 
-func removeEndpointFromReferer(refererString string) string {
+func RemoveEndpointFromReferer(refererString string) string {
 	if strings.Contains(refererString, "directions?") {
 		refererStringWoEndpoint := strings.SplitAfterN(refererString, "?", 2)
 		return refererStringWoEndpoint[1]
@@ -31,8 +32,8 @@ func removeEndpointFromReferer(refererString string) string {
 	}
 }
 
-func splitAndCleanRefererToVariables(refererString string) []string {
-	refererStringWoEndpoint := removeEndpointFromReferer(refererString)
+func SplitAndCleanRefererToVariables(refererString string) []string {
+	refererStringWoEndpoint := RemoveEndpointFromReferer(refererString)
 	splittedRequestReferer := strings.SplitAfter(refererStringWoEndpoint, "&")
 	for index, parameter := range splittedRequestReferer {
 		parameter = strings.TrimRight(parameter, "&")
@@ -43,35 +44,41 @@ func splitAndCleanRefererToVariables(refererString string) []string {
 
 //GetRequestRefererAsMap Split the request url here and return all the elements as a map
 // Use refererCoordinates
-func requestRefererToParameterMap(requestReferer string) map[string]interface{} {
-	refererVariables := splitAndCleanRefererToVariables(requestReferer)
-	refererKeyValueObject := splitVariablesToKeyValue(refererVariables)
+func RequestRefererToParameterMap(requestReferer string) map[string]interface{} {
+	refererVariables := SplitAndCleanRefererToVariables(requestReferer)
+	refererKeyValueObject := SplitVariablesToKeyValue(refererVariables)
 	return refererKeyValueObject
 }
 
-func processCoordinates(coordinates interface{}) map[string]interface{} {
+func ProcessCoordinates(coordinates interface{}) map[string]interface{} {
 	processedCoordinates := map[string]interface{}{}
 	return processedCoordinates
 }
 
 // Processes e.g. unprocessed json values
 // The question is, do i need to process coords here? analytics are already ready or analytics here?
-func processQueryValues(values map[string]interface{}) analytics.OrsRouteStats {
+func ProcessQueryValues(values map[string]interface{}) analytics.OrsRouteStats {
 	processedQueryValues := map[string]interface{}{}
 	orsRouteStats := analytics.OrsRouteStats{}
 	// Coords are already processed here, calc length here?
-	if coordinates, present := ValueCollection["coordinates"]; present {
-		processedCoordinates := processCoordinates(coordinates)
-		processedQueryValues["coordinates"] = processedCoordinates
+	if coordinates, present := values["coordinates"]; present {
+		length := GetEuclideanDistance(coordinates.(RouteCoordinates))
+		processedQueryValues["length"] = length
+		processedQueryValues["coordinates"] = coordinates
 	}
-	if options, present := ValueCollection["options"]; present {
-		processedOptions := processOptions(options)
-		processedQueryValues["options"] = processedOptions
+	for _, value := range values {
+		var anyJson = map[string]interface{}{}
+
+		json.Unmarshal(value.([]byte), &anyJson)
+		//if options, present := values["options"]; present {
+		//	processedOptions := ProcessOptions(options)
+		//	processedQueryValues["options"] = processedOptions
+		//}
+		orsRouteStats.Data = processedQueryValues
 	}
-	orsRouteStats.Data = processedQueryValues
 	return orsRouteStats
 }
-func processOptions(options interface{}) map[string]interface{} {
+func ProcessOptions(options interface{}) map[string]interface{} {
 	processedOptions := map[string]interface{}{}
 	return processedOptions
 }

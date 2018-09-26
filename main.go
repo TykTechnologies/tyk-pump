@@ -204,7 +204,4 @@ func main() {
 
 	SetupInstrumentation()
 	StartPurgeLoop(SystemConfig.PurgeDelay)
-	for parameter := range ors.ValueCollection {
-		fmt.Println(parameter)
-	}
 }
