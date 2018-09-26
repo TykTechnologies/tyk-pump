@@ -3,6 +3,7 @@ package ors
 import (
 	"bufio"
 	"encoding/base64"
+	"encoding/json"
 	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/logrus-prefixed-formatter"
 	. "github.com/TykTechnologies/tyk-pump/analytics"
@@ -52,33 +53,36 @@ func processCoordinates(bareCoords string) RouteCoordinates {
 	return routeCoordinates
 }
 
-func getEndCoordinatesFromViaCoords(viaCoordinates []map[string]interface{}) (float64, float64) {
-	endCoordinates := viaCoordinates[len(viaCoordinates)-1]
-	endLat := endCoordinates["lat"].(float64)
-	endLng := endCoordinates["lng"]
-	return endLat, endLng.(float64)
-
+func processJsonFromString(potentialJson string) (map[string]interface{}, error) {
+	var unmarshalledJson map[string]interface{}
+	err := json.Unmarshal([]byte(potentialJson), &unmarshalledJson)
+	if err != nil {
+		return map[string]interface{}{}, err
+	} else {
+		return unmarshalledJson, err
+	}
 }
 
 func GetRequestQueryValues(stringRequest string) map[string]interface{} {
-	// TODO Some requests have an insufficient rawQuery that doesnt represent everything
 	reader := bufio.NewReader(strings.NewReader(stringRequest))
 	request, _ := http.ReadRequest(reader)
 	query := request.URL.Query()
 	queryMap := map[string]interface{}{}
+	// TODO check how the complex map works in graylog when a json is unmarshaled into a map with multiple levels!
 	for key, value := range query {
 		if key == "coordinates" {
 			routeCoordinates := processCoordinates(value[0])
 			queryMap[key] = routeCoordinates
 		} else {
-			queryMap[key] = value
+			potentialJson, validJson := processJsonFromString(value[0])
+			if validJson == nil {
+				queryMap[key] = potentialJson
+			} else {
+				queryMap[key] = value
+			}
 		}
-		// check := key
-		// if _, ok := ValueCollection[check]; !ok {
-		// 	 ValueCollection[key] = 0
-		// }
-	}
 
+	}
 	return queryMap
 }
 
