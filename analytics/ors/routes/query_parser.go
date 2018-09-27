@@ -57,15 +57,14 @@ func ProcessCoordinates(coordinates interface{}) map[string]interface{} {
 // Processes e.g. unprocessed json values
 // The question is, do i need to process coords here? analytics are already ready or analytics here?
 func ProcessQueryValues(values map[string]interface{}) analytics.OrsRouteStats {
-	processedQueryValues := map[string]interface{}{}
 	orsRouteStats := analytics.OrsRouteStats{}
 	// Coords are already processed here, calc length here?
 	if coordinates, present := values["coordinates"]; present {
-		length := GetEuclideanDistance(coordinates.(RouteCoordinates))
-		orsRouteStats.Length = length
-		processedQueryValues["coordinates"] = coordinates
+		distance := GetEuclideanDistance(coordinates.(RouteCoordinates), 2)
+		orsRouteStats.Distance = distance
 	}
-	orsRouteStats.Data = processedQueryValues
+
+	orsRouteStats.Data = values
 	return orsRouteStats
 }
 func ProcessOptions(options interface{}) map[string]interface{} {

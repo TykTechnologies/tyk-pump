@@ -10,6 +10,7 @@ import (
 	. "github.com/TykTechnologies/tyk-pump/analytics/ors/routes"
 	"github.com/TykTechnologies/tykcommon-logger"
 	"net/http"
+	"reflect"
 	"strings"
 )
 
@@ -18,6 +19,7 @@ var log = logger.GetLogger()
 
 func init() {
 	log.Formatter = new(prefixed.TextFormatter)
+
 }
 
 func processBareCoordinatePair(bareCoordsPair string) (string, string) {
@@ -32,11 +34,11 @@ func processCoordinates(bareCoords string) RouteCoordinates {
 	// interface to string?
 	routeCoordinates := RouteCoordinates{}
 	splittedCoordinates := strings.SplitAfter(bareCoords, "|")
-	viaCoords := make([]map[string]interface{}, len(splittedCoordinates))
+	var viaCoords []map[string]interface{}
 	for index, coordinate := range splittedCoordinates {
 		cleanedCoordinatePair := strings.TrimRight(coordinate, "|")
 		lat, lng := processBareCoordinatePair(cleanedCoordinatePair)
-		viaCoordPair := make(map[string]interface{}, 2)
+		viaCoordPair := map[string]interface{}{}
 		if index == 0 {
 			routeCoordinates.StartLat = lat
 			routeCoordinates.StartLng = lng
@@ -53,14 +55,43 @@ func processCoordinates(bareCoords string) RouteCoordinates {
 	return routeCoordinates
 }
 
-func processJsonFromString(potentialJson string) (map[string]interface{}, error) {
+var ExchangeMap = map[string]interface{}{}
+
+/*func complexMapToSimpleExchangeMap(jsonMap map[string]interface{}) map[string]interface{}{
+	returnMap := map[string]interface{}{}
+	for key, value := range jsonMap {
+		if reflect.TypeOf(value) == reflect.TypeOf(map[string]interface{}{}) {
+			returnMap[key] = complexMapToSimpleExchangeMap(value.(map[string]interface{}))
+		} else {
+			returnMap[key] = value
+		}
+	}
+	return returnMap
+}*/
+
+// TODO Change, so every next level will be returned with its prior level as prefix
+func complexMapToSimpleExchangeMap(jsonMap map[string]interface{}) {
+	for key, value := range jsonMap {
+		if reflect.TypeOf(value) == reflect.TypeOf(map[string]interface{}{}) {
+			complexMapToSimpleExchangeMap(value.(map[string]interface{}))
+			ExchangeMap[key] = true
+		} else {
+			ExchangeMap[key] = value
+		}
+	}
+}
+
+func parseJsonFromString(potentialJson string) (map[string]interface{}, error) {
 	var unmarshalledJson map[string]interface{}
 	jsonReader := json.NewDecoder(strings.NewReader(potentialJson))
 	err := jsonReader.Decode(&unmarshalledJson)
 	if err != nil {
 		return map[string]interface{}{}, err
 	} else {
-		return unmarshalledJson, err
+		complexMapToSimpleExchangeMap(unmarshalledJson)
+		finalReturnMap := ExchangeMap
+		ExchangeMap = map[string]interface{}{}
+		return finalReturnMap, err
 	}
 }
 
@@ -77,7 +108,7 @@ func GetRequestQueryValues(stringRequest string) map[string]interface{} {
 			routeCoordinates := processCoordinates(value[0])
 			queryMap[key] = routeCoordinates
 		} else {
-			potentialJson, err := processJsonFromString(value[0])
+			potentialJson, err := parseJsonFromString(value[0])
 			if err == nil {
 				queryMap[key] = potentialJson
 			} else {

@@ -2,19 +2,17 @@ package main
 
 import (
 	"fmt"
-	"github.com/TykTechnologies/tyk-pump/analytics/ors"
-	"time"
-
-	"github.com/gocraft/health"
-	"gopkg.in/vmihailenco/msgpack.v2"
-	"os"
-
 	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/logrus-prefixed-formatter"
 	"github.com/TykTechnologies/tyk-pump/analytics"
+	"github.com/TykTechnologies/tyk-pump/analytics/ors"
 	"github.com/TykTechnologies/tyk-pump/pumps"
 	"github.com/TykTechnologies/tyk-pump/storage"
 	"github.com/TykTechnologies/tykcommon-logger"
+	"github.com/gocraft/health"
+	"gopkg.in/vmihailenco/msgpack.v2"
+	"os"
+	"time"
 
 	"gopkg.in/alecthomas/kingpin.v2"
 )
