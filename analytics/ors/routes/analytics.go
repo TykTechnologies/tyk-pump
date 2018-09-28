@@ -7,10 +7,6 @@ import (
 )
 
 type RouteCoordinates struct {
-	//viaCoords := list.New()
-	//viaCoords.PushBack(0.00)
-	//coordinates := refererCoordinates{0, 0, 0, 0, viaCoords}
-	//Interface to store any type in here!
 	StartLng  string
 	StartLat  string
 	EndLng    string

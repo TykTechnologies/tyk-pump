@@ -10,16 +10,17 @@ import (
 	. "github.com/TykTechnologies/tyk-pump/analytics/ors/routes"
 	"github.com/TykTechnologies/tykcommon-logger"
 	"net/http"
-	"reflect"
 	"strings"
 )
 
 var mechanicsPrefix = "mechanics"
 var log = logger.GetLogger()
 
+var ExchangeMap map[string]interface{}
+
 func init() {
 	log.Formatter = new(prefixed.TextFormatter)
-
+	ExchangeMap = map[string]interface{}{}
 }
 
 func processBareCoordinatePair(bareCoordsPair string) (string, string) {
@@ -55,32 +56,6 @@ func processCoordinates(bareCoords string) RouteCoordinates {
 	return routeCoordinates
 }
 
-var ExchangeMap = map[string]interface{}{}
-
-/*func complexMapToSimpleExchangeMap(jsonMap map[string]interface{}) map[string]interface{}{
-	returnMap := map[string]interface{}{}
-	for key, value := range jsonMap {
-		if reflect.TypeOf(value) == reflect.TypeOf(map[string]interface{}{}) {
-			returnMap[key] = complexMapToSimpleExchangeMap(value.(map[string]interface{}))
-		} else {
-			returnMap[key] = value
-		}
-	}
-	return returnMap
-}*/
-
-// TODO Change, so every next level will be returned with its prior level as prefix
-func complexMapToSimpleExchangeMap(jsonMap map[string]interface{}) {
-	for key, value := range jsonMap {
-		if reflect.TypeOf(value) == reflect.TypeOf(map[string]interface{}{}) {
-			complexMapToSimpleExchangeMap(value.(map[string]interface{}))
-			ExchangeMap[key] = true
-		} else {
-			ExchangeMap[key] = value
-		}
-	}
-}
-
 func parseJsonFromString(potentialJson string) (map[string]interface{}, error) {
 	var unmarshalledJson map[string]interface{}
 	jsonReader := json.NewDecoder(strings.NewReader(potentialJson))
@@ -88,10 +63,7 @@ func parseJsonFromString(potentialJson string) (map[string]interface{}, error) {
 	if err != nil {
 		return map[string]interface{}{}, err
 	} else {
-		complexMapToSimpleExchangeMap(unmarshalledJson)
-		finalReturnMap := ExchangeMap
-		ExchangeMap = map[string]interface{}{}
-		return finalReturnMap, err
+		return unmarshalledJson, err
 	}
 }
 
@@ -100,9 +72,6 @@ func GetRequestQueryValues(stringRequest string) map[string]interface{} {
 	request, _ := http.ReadRequest(reader)
 	query := request.URL.Query()
 	queryMap := map[string]interface{}{}
-	// TODO check how the complex map works in graylog when a json is unmarshaled into a map with multiple levels!
-	// Multiple Levels dont work. Try with putting every key in the first level. If that doesn't work,
-	// create manual types like the coordinate type! That seems to work. But before the one level solution
 	for key, value := range query {
 		if key == "coordinates" {
 			routeCoordinates := processCoordinates(value[0])
@@ -120,46 +89,36 @@ func GetRequestQueryValues(stringRequest string) map[string]interface{} {
 	return queryMap
 }
 
-func generateStatsFromDecodedGetReq(decodedRawRequest []byte) OrsRouteStats {
-	decodedRawRequestString := string(decodedRawRequest)
+func generateStatsFromRawGetReq(rawRequest string) OrsRouteStats {
+	decodedRawReq, _ := base64.StdEncoding.DecodeString(rawRequest)
+	decodedRawRequestString := string(decodedRawReq)
 	requestQueryValues := GetRequestQueryValues(decodedRawRequestString)
 	processedQueryValues := ProcessQueryValues(requestQueryValues)
 	return processedQueryValues
 }
 
-func generateStatsFromDecodedPostReq(bytes []byte) {
-	// Example function for further endpoints
+func generateStatsFromRawPostReq(rawRequest string) {
 }
 
 func ProcessDirectionsRecordOrsRouteStats(analyticsRecod AnalyticsRecord) OrsRouteStats {
 	method := analyticsRecod.Method
-	encodedRawRequest := analyticsRecod.RawRequest
-	decodedRawReq, _ := base64.StdEncoding.DecodeString(encodedRawRequest)
+	rawRequest := analyticsRecod.RawRequest
 	orsRouteStats := OrsRouteStats{}
 	if method == "GET" {
-		orsRouteStats = generateStatsFromDecodedGetReq(decodedRawReq)
-		return orsRouteStats
-
+		orsRouteStats = generateStatsFromRawGetReq(rawRequest)
 	} else if method == "POST" {
-		generateStatsFromDecodedPostReq(decodedRawReq)
+		generateStatsFromRawPostReq(rawRequest)
 		log.WithFields(logrus.Fields{
 			"prefix": mechanicsPrefix,
 		}).Debug("Method not implemented: ", method)
-		return orsRouteStats
-	} else {
-		return orsRouteStats
 	}
-}
-
-func CalculateDirectionsStats(analyticsRecod AnalyticsRecord) {
-	// Example function for further endpoints
+	return orsRouteStats
 }
 
 func CalculateOrsStats(analyticsRecord AnalyticsRecord) AnalyticsRecord {
-	analyticsRecord = analyticsRecord
 	endpoint := analyticsRecord.APIName
 	if endpoint == "Isochrones" {
-
+		return analyticsRecord
 	} else if endpoint == "Matrix" {
 		return analyticsRecord
 	} else if endpoint == "Directions" {

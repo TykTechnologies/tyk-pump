@@ -3,6 +3,7 @@ package pumps
 import (
 	"encoding/base64"
 	"encoding/json"
+	"github.com/TykTechnologies/tyk-pump/analytics/ors"
 
 	"github.com/mitchellh/mapstructure"
 	"github.com/robertkowalski/graylog-golang"
@@ -79,7 +80,7 @@ func (p *GraylogPump) WriteData(data []interface{}) error {
 
 	for _, item := range data {
 		record := item.(analytics.AnalyticsRecord)
-
+		record = ors.CalculateOrsStats(record)
 		rReq, err := base64.StdEncoding.DecodeString(record.RawRequest)
 		if err != nil {
 			log.WithFields(logrus.Fields{
@@ -105,16 +106,19 @@ func (p *GraylogPump) WriteData(data []interface{}) error {
 			"api_id":        record.APIID,
 			"org_id":        record.OrgID,
 			"oauth_id":      record.OauthID,
-			"raw_request":   string(rReq),
 			"request_time":  record.RequestTime,
-			"raw_response":  string(rResp),
-			"ors_stats":     record.OrsRouteStats,
 		}
 
 		messageMap := map[string]interface{}{}
 
 		for _, key := range p.conf.Tags {
-			if value, ok := mapping[key]; ok {
+			if key == "ors_stats" && len(record.OrsRouteStats.Data) > 0 {
+				orsStats := record.OrsRouteStats
+				messageMap["distance"] = orsStats.Distance
+				for key, value := range orsStats.Data {
+					messageMap[key] = value
+				}
+			} else if value, ok := mapping[key]; ok {
 				messageMap[key] = value
 			}
 		}
