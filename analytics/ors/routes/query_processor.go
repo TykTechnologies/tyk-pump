@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"fmt"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"reflect"
 	"strings"
@@ -12,7 +13,7 @@ func complexToSimpleMap(complexMap map[string]interface{}, prefix string) map[st
 	for key, value := range complexMap {
 		combinedPrefix := strings.TrimLeft(strings.Join([]string{prefix, key}, "_"), "_")
 		if reflect.TypeOf(value) == reflect.TypeOf(map[string]interface{}{}) {
-			SimpleMapHolder[combinedPrefix] = "True"
+			SimpleMapHolder[combinedPrefix] = true
 			complexToSimpleMap(value.(map[string]interface{}), combinedPrefix)
 		} else if key == "coordinates" {
 			coordinates := value.(RouteCoordinates)
@@ -22,6 +23,17 @@ func complexToSimpleMap(complexMap map[string]interface{}, prefix string) map[st
 			if coordinates.ViaCoords != nil {
 				SimpleMapHolder["viaCoords"] = coordinates.ViaCoords
 			}
+		} else if strings.Contains(fmt.Sprint(value), "|") {
+			pipeStrings := strings.Split(fmt.Sprint(value), "|")
+			for _, pipeString := range pipeStrings {
+				bracketlessPipeString := strings.Trim(pipeString, "[ && ]")
+				spacelessPipeString := strings.TrimSpace(bracketlessPipeString)
+				combinedPrefixWithPipe := strings.TrimLeft(strings.Join([]string{combinedPrefix, spacelessPipeString}, "_"), "_")
+				SimpleMapHolder[combinedPrefixWithPipe] = true
+			}
+		} else if reflect.TypeOf(value) == reflect.TypeOf([]string{}) {
+			SimpleMapHolder[combinedPrefix] = value.([]string)[0]
+
 		} else {
 			SimpleMapHolder[combinedPrefix] = value
 		}
@@ -40,5 +52,6 @@ func ProcessQueryValues(values map[string]interface{}) analytics.OrsRouteStats {
 		orsRouteStats.Distance = distance
 	}
 	orsRouteStats.Data = complexToSimpleMap(values, "")
+	SimpleMapHolder = map[string]interface{}{}
 	return orsRouteStats
 }

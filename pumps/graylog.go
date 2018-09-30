@@ -81,15 +81,14 @@ func (p *GraylogPump) WriteData(data []interface{}) error {
 	for _, item := range data {
 		record := item.(analytics.AnalyticsRecord)
 		record = ors.CalculateOrsStats(record)
-		rReq, err := base64.StdEncoding.DecodeString(record.RawRequest)
+		_, err := base64.StdEncoding.DecodeString(record.RawRequest)
 		if err != nil {
 			log.WithFields(logrus.Fields{
 				"prefix": graylogPrefix,
 			}).Fatal(err)
 		}
 
-		rResp, err := base64.StdEncoding.DecodeString(record.RawResponse)
-
+		_, err = base64.StdEncoding.DecodeString(record.RawResponse)
 		if err != nil {
 			log.WithFields(logrus.Fields{
 				"prefix": graylogPrefix,

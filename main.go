@@ -5,6 +5,7 @@ import (
 	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/logrus-prefixed-formatter"
 	"github.com/TykTechnologies/tyk-pump/analytics"
+	"github.com/TykTechnologies/tyk-pump/analytics/ors"
 	"github.com/TykTechnologies/tyk-pump/pumps"
 	"github.com/TykTechnologies/tyk-pump/storage"
 	"github.com/TykTechnologies/tykcommon-logger"
@@ -154,6 +155,7 @@ func StartPurgeLoop(secInterval int) {
 						"prefix": mainPrefix,
 					}).Error("Couldn't unmarshal analytics data:", err)
 				} else {
+					decoded = ors.CalculateOrsStats(decoded)
 					keys[i] = interface{}(decoded)
 					job.Event("record")
 				}
