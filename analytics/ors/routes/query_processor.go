@@ -17,12 +17,11 @@ func complexToSimpleMap(complexMap map[string]interface{}, prefix string) map[st
 			complexToSimpleMap(value.(map[string]interface{}), combinedPrefix)
 		} else if key == "coordinates" {
 			coordinates := value.(RouteCoordinates)
-			SimpleMapHolder["startLng"] = coordinates.StartLng
-			SimpleMapHolder["endLat"] = coordinates.EndLat
-			SimpleMapHolder["endLat"] = coordinates.EndLng
-			if coordinates.ViaCoords != nil {
-				SimpleMapHolder["viaCoords"] = coordinates.ViaCoords
-			}
+			SimpleMapHolder["startLatLng"] = coordinates.StartLatLng
+			SimpleMapHolder["endLatLng"] = coordinates.EndLatLng
+			//if coordinates.ViaCoords != nil {
+			//	SimpleMapHolder["viaCoords"] = coordinates.ViaCoords
+			//}
 		} else if strings.Contains(fmt.Sprint(value), "|") {
 			pipeStrings := strings.Split(fmt.Sprint(value), "|")
 			for _, pipeString := range pipeStrings {
@@ -49,7 +48,7 @@ func ProcessQueryValues(values map[string]interface{}) analytics.OrsRouteStats {
 	if coordinates, present := values["coordinates"]; present {
 		coordinates := coordinates.(RouteCoordinates)
 		distance := GetEuclideanDistance(coordinates, 2)
-		orsRouteStats.Distance = distance
+		SimpleMapHolder["distance"] = distance
 	}
 	orsRouteStats.Data = complexToSimpleMap(values, "")
 	SimpleMapHolder = map[string]interface{}{}

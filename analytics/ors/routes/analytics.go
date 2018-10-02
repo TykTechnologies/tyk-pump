@@ -7,11 +7,13 @@ import (
 )
 
 type RouteCoordinates struct {
-	StartLng  string
-	StartLat  string
-	EndLng    string
-	EndLat    string
-	ViaCoords []map[string]interface{}
+	StartLatLng string
+	EndLatLng   string
+	StartLng    string
+	StartLat    string
+	EndLng      string
+	EndLat      string
+	ViaCoords   []map[string]interface{}
 }
 
 func RoundFloat64(val float64, roundOn float64, places int) (newVal float64) {

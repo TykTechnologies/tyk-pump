@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"github.com/TykTechnologies/tyk-pump/analytics/ors"
-
 	"github.com/mitchellh/mapstructure"
 	"github.com/robertkowalski/graylog-golang"
 
@@ -113,7 +112,6 @@ func (p *GraylogPump) WriteData(data []interface{}) error {
 		for _, key := range p.conf.Tags {
 			if key == "ors_stats" && len(record.OrsRouteStats.Data) > 0 {
 				orsStats := record.OrsRouteStats
-				messageMap["distance"] = orsStats.Distance
 				for key, value := range orsStats.Data {
 					messageMap[key] = value
 				}

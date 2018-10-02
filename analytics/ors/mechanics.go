@@ -41,9 +41,15 @@ func processCoordinates(bareCoords string) RouteCoordinates {
 		lat, lng := processBareCoordinatePair(cleanedCoordinatePair)
 		viaCoordPair := map[string]interface{}{}
 		if index == 0 {
+			var coordinates []string
+			coordinates = append(coordinates, lat, lng)
+			routeCoordinates.StartLatLng = strings.Join(coordinates, ",")
 			routeCoordinates.StartLat = lat
 			routeCoordinates.StartLng = lng
 		} else if index == len(splittedCoordinates)-1 {
+			var coordinates []string
+			coordinates = append(coordinates, lat, lng)
+			routeCoordinates.EndLatLng = strings.Join(coordinates, ",")
 			routeCoordinates.EndLat = lat
 			routeCoordinates.EndLng = lng
 		} else {
@@ -70,23 +76,26 @@ func parseJsonFromString(potentialJson string) (map[string]interface{}, error) {
 func GetRequestQueryValues(stringRequest string) map[string]interface{} {
 	reader := bufio.NewReader(strings.NewReader(stringRequest))
 	request, _ := http.ReadRequest(reader)
-	query := request.URL.Query()
-	queryMap := map[string]interface{}{}
-	for key, value := range query {
-		if key == "coordinates" {
-			routeCoordinates := processCoordinates(value[0])
-			queryMap[key] = routeCoordinates
-		} else {
-			potentialJson, err := parseJsonFromString(value[0])
-			if err == nil {
-				queryMap[key] = potentialJson
+	if request != nil {
+		query := request.URL.Query()
+		queryMap := map[string]interface{}{}
+		for key, value := range query {
+			if key == "coordinates" {
+				routeCoordinates := processCoordinates(value[0])
+				queryMap[key] = routeCoordinates
 			} else {
-				queryMap[key] = value
+				potentialJson, err := parseJsonFromString(value[0])
+				if err == nil {
+					queryMap[key] = potentialJson
+				} else {
+					queryMap[key] = value
+				}
 			}
-		}
 
+		}
+		return queryMap
 	}
-	return queryMap
+	return nil
 }
 
 func generateStatsFromRawGetReq(rawRequest string) OrsRouteStats {
@@ -116,15 +125,16 @@ func ProcessDirectionsRecordOrsRouteStats(analyticsRecod AnalyticsRecord) OrsRou
 }
 
 func CalculateOrsStats(analyticsRecord AnalyticsRecord) AnalyticsRecord {
-	endpoint := analyticsRecord.APIName
-	if endpoint == "Isochrones" {
+	path := strings.ToLower(analyticsRecord.Path)
+	apiName := strings.ToLower(analyticsRecord.APIName)
+	if path == "isochrones" || apiName == "isochrones" {
 		return analyticsRecord
-	} else if endpoint == "Matrix" {
+	} else if path == "matrix" || apiName == "matrix" {
 		return analyticsRecord
-	} else if endpoint == "Directions" {
+	} else if path == "directions" || apiName == "directions" {
 		analyticsRecord.OrsRouteStats = ProcessDirectionsRecordOrsRouteStats(analyticsRecord)
 		return analyticsRecord
-	} else if endpoint == "GeocodeReverseForPublic" {
+	} else if path == "geocodereverseforpublic" || apiName == "geocodereverseforpublic" {
 		return analyticsRecord
 	}
 	return analyticsRecord

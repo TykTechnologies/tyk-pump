@@ -214,7 +214,7 @@ func (r *RedisClusterStorageManager) GetAndDeleteSet(keyName string) []interface
 		delCmd.Cmd = "DEL"
 		delCmd.Args = []interface{}{fixedKey}
 
-		//Prevent deletion of record in Redis
+		//redVal, err := redis.Values(r.db.DoTransaction([]rediscluster.ClusterTransaction{lrange, delCmd}))
 		redVal, err := redis.Values(r.db.DoTransaction([]rediscluster.ClusterTransaction{lrange}))
 		if err != nil {
 			log.WithFields(logrus.Fields{
