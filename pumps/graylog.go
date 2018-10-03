@@ -3,6 +3,7 @@ package pumps
 import (
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"github.com/TykTechnologies/tyk-pump/analytics/ors"
 	"github.com/mitchellh/mapstructure"
 	"github.com/robertkowalski/graylog-golang"
@@ -135,7 +136,7 @@ func (p *GraylogPump) WriteData(data []interface{}) error {
 		}
 
 		gelfString, err := json.Marshal(gelfData)
-
+		fmt.Println(gelfData["message"])
 		if err != nil {
 			log.WithFields(logrus.Fields{
 				"prefix": graylogPrefix,
