@@ -30,6 +30,28 @@ func RoundFloat64(val float64, roundOn float64, places int) (newVal float64) {
 	return
 }
 
+func GetDistanceCategory(distance float64) string {
+	switch {
+	case distance >= 0 && distance < 10:
+		return "0-10km"
+	case distance >= 10 && distance < 20:
+		return "10-20km"
+	case distance >= 20 && distance < 50:
+		return "20-50km"
+	case distance >= 50 && distance < 100:
+		return "50-100km"
+	case distance >= 100 && distance < 500:
+		return "100-500km"
+	case distance >= 500 && distance < 1000:
+		return "500-1000km"
+	case distance >= 1000 && distance < 5000:
+		return "1000-5000km"
+	case distance >= 5000:
+		return "> 5000km"
+	}
+	return ""
+}
+
 func GetEuclideanDistance(coordinates RouteCoordinates, decimals int) float64 {
 	fromLat, ok1 := strconv.ParseFloat(coordinates.StartLat, 64)
 	fromLng, ok2 := strconv.ParseFloat(coordinates.StartLng, 64)

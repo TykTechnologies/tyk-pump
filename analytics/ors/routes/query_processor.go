@@ -48,7 +48,10 @@ func ProcessQueryValues(values map[string]interface{}) analytics.OrsRouteStats {
 	if coordinates, present := values["coordinates"]; present {
 		coordinates := coordinates.(RouteCoordinates)
 		distance := GetEuclideanDistance(coordinates, 2)
+		distanceCategory := GetDistanceCategory(distance)
 		SimpleMapHolder["distance"] = distance
+		SimpleMapHolder["distance_category"] = distanceCategory
+
 	}
 	orsRouteStats.Data = complexToSimpleMap(values, "")
 	SimpleMapHolder = map[string]interface{}{}
