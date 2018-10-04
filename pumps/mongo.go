@@ -324,8 +324,6 @@ func (m *MongoPump) AccumulateSet(data []interface{}) [][]interface{} {
 
 	for i, item := range data {
 		thisItem := item.(analytics.AnalyticsRecord)
-		// Empty the ors statistics
-		//thisItem.OrsRouteStats = analytics.OrsRouteStats{}
 		sizeBytes := len([]byte(thisItem.RawRequest)) + len([]byte(thisItem.RawRequest))
 
 		log.Debug("Size is: ", sizeBytes)
