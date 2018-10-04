@@ -1,20 +1,17 @@
 package main
 
 import (
-	"time"
-
-	"os"
-
-	"github.com/gocraft/health"
-	"gopkg.in/vmihailenco/msgpack.v2"
-
+	"fmt"
 	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/logrus-prefixed-formatter"
 	"github.com/TykTechnologies/tyk-pump/analytics"
-	"github.com/TykTechnologies/tyk-pump/analytics/demo"
 	"github.com/TykTechnologies/tyk-pump/pumps"
 	"github.com/TykTechnologies/tyk-pump/storage"
 	"github.com/TykTechnologies/tykcommon-logger"
+	"github.com/gocraft/health"
+	"gopkg.in/vmihailenco/msgpack.v2"
+	"os"
+	"time"
 
 	"gopkg.in/alecthomas/kingpin.v2"
 )
@@ -39,7 +36,6 @@ var (
 
 func init() {
 	SystemConfig = TykPumpConfiguration{}
-
 	kingpin.Parse()
 
 	log.Formatter = new(prefixed.TextFormatter)
@@ -112,11 +108,34 @@ func initialisePumps() {
 
 }
 
+func writeToPumps(keys []interface{}, job *health.Job, startTime time.Time) {
+	// Send to pumps
+	if Pumps != nil {
+		for _, pmp := range Pumps {
+			log.WithFields(logrus.Fields{
+				"prefix": mainPrefix,
+			}).Debug("Writing to: ", pmp.GetName())
+			pmp.WriteData(keys)
+			if job != nil {
+				job.Timing("purge_time_"+pmp.GetName(), time.Since(startTime).Nanoseconds())
+			}
+		}
+
+	} else {
+		log.WithFields(logrus.Fields{
+			"prefix": mainPrefix,
+		}).Warning("No pumps defined!")
+	}
+}
+
 func StartPurgeLoop(secInterval int) {
 	for range time.Tick(time.Duration(secInterval) * time.Second) {
 		job := instrument.NewJob("PumpRecordsPurge")
 
 		AnalyticsValues := AnalyticsStore.GetAndDeleteSet(storage.ANALYTICS_KEYNAME)
+
+		// Print values to console
+		fmt.Println(AnalyticsValues)
 
 		if len(AnalyticsValues) > 0 {
 			startTime := time.Now()
@@ -154,26 +173,6 @@ func StartPurgeLoop(secInterval int) {
 	}
 }
 
-func writeToPumps(keys []interface{}, job *health.Job, startTime time.Time) {
-	// Send to pumps
-	if Pumps != nil {
-		for _, pmp := range Pumps {
-			log.WithFields(logrus.Fields{
-				"prefix": mainPrefix,
-			}).Debug("Writing to: ", pmp.GetName())
-			pmp.WriteData(keys)
-			if job != nil {
-				job.Timing("purge_time_"+pmp.GetName(), time.Since(startTime).Nanoseconds())
-			}
-
-		}
-	} else {
-		log.WithFields(logrus.Fields{
-			"prefix": mainPrefix,
-		}).Warning("No pumps defined!")
-	}
-}
-
 func main() {
 	// Create the store
 	setupAnalyticsStore()
@@ -181,14 +180,14 @@ func main() {
 	// prime the pumps
 	initialisePumps()
 
-	if buildDemoData != "" {
-		log.Warning("BUILDING DEMO DATA AND EXITING...")
-		log.Warning("Starting from date: ", time.Now().AddDate(0, 0, -30))
-		demo.DemoInit(buildDemoData)
-		demo.GenerateDemoData(time.Now().AddDate(0, 0, -30), 30, buildDemoData, writeToPumps)
-
-		return
-	}
+	//if buildDemoData != "" {
+	//	log.Warning("BUILDING DEMO DATA AND EXITING...")
+	//	log.Warning("Starting from date: ", time.Now().AddDate(0, 0, -30))
+	//	demo.DemoInit(buildDemoData)
+	//	demo.GenerateDemoData(time.Now().AddDate(0, 0, -30), 30, buildDemoData, writeToPumps)
+	//
+	//	return
+	//}
 
 	// start the worker loop
 	log.WithFields(logrus.Fields{

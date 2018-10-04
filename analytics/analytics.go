@@ -39,6 +39,11 @@ type AnalyticsRecord struct {
 	Alias         string
 	TrackPath     bool
 	ExpireAt      time.Time `bson:"expireAt" json:"expireAt"`
+	OrsRouteStats OrsRouteStats
+}
+
+type OrsRouteStats struct {
+	Data map[string]interface{}
 }
 
 type GeoData struct {

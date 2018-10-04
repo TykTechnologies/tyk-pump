@@ -3,7 +3,7 @@ package pumps
 import (
 	"encoding/base64"
 	"encoding/json"
-
+	"github.com/TykTechnologies/tyk-pump/analytics/ors"
 	"github.com/mitchellh/mapstructure"
 	"github.com/robertkowalski/graylog-golang"
 
@@ -79,22 +79,21 @@ func (p *GraylogPump) WriteData(data []interface{}) error {
 
 	for _, item := range data {
 		record := item.(analytics.AnalyticsRecord)
-
-		rReq, err := base64.StdEncoding.DecodeString(record.RawRequest)
+		record = ors.CalculateOrsStats(record)
+		_, err := base64.StdEncoding.DecodeString(record.RawRequest)
 		if err != nil {
 			log.WithFields(logrus.Fields{
 				"prefix": graylogPrefix,
 			}).Fatal(err)
 		}
 
-		rResp, err := base64.StdEncoding.DecodeString(record.RawResponse)
-
+		_, err = base64.StdEncoding.DecodeString(record.RawResponse)
 		if err != nil {
 			log.WithFields(logrus.Fields{
 				"prefix": graylogPrefix,
 			}).Fatal(err)
 		}
-
+		// Configure a dynamic mapping on the 'ors-data' key
 		mapping := map[string]interface{}{
 			"method":        record.Method,
 			"path":          record.Path,
@@ -105,15 +104,18 @@ func (p *GraylogPump) WriteData(data []interface{}) error {
 			"api_id":        record.APIID,
 			"org_id":        record.OrgID,
 			"oauth_id":      record.OauthID,
-			"raw_request":   string(rReq),
 			"request_time":  record.RequestTime,
-			"raw_response":  string(rResp),
 		}
 
 		messageMap := map[string]interface{}{}
 
 		for _, key := range p.conf.Tags {
-			if value, ok := mapping[key]; ok {
+			if key == "ors_stats" && len(record.OrsRouteStats.Data) > 0 {
+				orsStats := record.OrsRouteStats
+				for key, value := range orsStats.Data {
+					messageMap[key] = value
+				}
+			} else if value, ok := mapping[key]; ok {
 				messageMap[key] = value
 			}
 		}

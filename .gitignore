@@ -12,7 +12,6 @@ pumps/chunk.go
 *.pdf
 ._*
 *.csv
-/pump.conf
 /tyk-pump
 .DS_Store
 migrate.js
