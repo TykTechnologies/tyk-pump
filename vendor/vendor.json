@@ -3,16 +3,16 @@
 	"ignore": "test",
 	"package": [
 		{
-			"checksumSHA1": "j5NnY7tyNCx+Y5VrAMxKFqPPGWc=",
-			"path": "github.com/TykTechnologies/concurrent-map",
-			"revision": "7de59d53fd5c30afb681bfcfe58842d2e14136bd",
-			"revisionTime": "2016-09-08T20:14:09Z"
-		},
-		{
 			"checksumSHA1": "NRonvQTe073YVead6//CQ5oVgK4=",
 			"path": "github.com/Sirupsen/logrus",
 			"revision": "1deb2db2a6fff8a35532079061b903c3a25eed52",
 			"revisionTime": "2017-03-08T20:36:35Z"
+		},
+		{
+			"checksumSHA1": "j5NnY7tyNCx+Y5VrAMxKFqPPGWc=",
+			"path": "github.com/TykTechnologies/concurrent-map",
+			"revision": "7de59d53fd5c30afb681bfcfe58842d2e14136bd",
+			"revisionTime": "2016-09-08T20:14:09Z"
 		},
 		{
 			"checksumSHA1": "wFnSvPbjvlEIoonJPA2AUxJnpHk=",
@@ -77,10 +77,10 @@
 			"revisionTime": "2018-10-04T16:58:12Z"
 		},
 		{
-			"checksumSHA1": "G/gQ1k7VtzPMkj4d+dEVmuAA3+U=",
+			"checksumSHA1": "3qnxItdJQzPp7rXY62LJ/zslffo=",
 			"path": "github.com/TykTechnologies/tyk/rpc",
-			"revision": "55617d918dddbc6b29ba992a5922f91dac19f44a",
-			"revisionTime": "2018-10-04T16:58:12Z"
+			"revision": "0988752baae9a01d9a474190e0ccef576a57b7e7",
+			"revisionTime": "2018-10-05T19:39:05Z"
 		},
 		{
 			"checksumSHA1": "1vM5ZbmHGO12Z4j2IZ0PEYU9Wws=",
