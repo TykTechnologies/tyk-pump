@@ -194,7 +194,7 @@ func (r *RedisClusterStorageManager) GetAndDeleteSet(keyName string) []interface
 			"prefix": redisLogPrefix,
 		}).Warning("Connection dropped, connecting..")
 		r.Connect()
-		r.GetAndDeleteSet(keyName)
+		return r.GetAndDeleteSet(keyName)
 	} else {
 		log.WithFields(logrus.Fields{
 			"prefix": redisLogPrefix,

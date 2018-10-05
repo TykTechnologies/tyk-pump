@@ -175,6 +175,8 @@ func writeToPumps(keys []interface{}, job *health.Job, startTime time.Time) {
 }
 
 func main() {
+	SetupInstrumentation()
+
 	// Create the store
 	setupAnalyticsStore()
 
@@ -195,6 +197,5 @@ func main() {
 		"prefix": mainPrefix,
 	}).Info("Starting purge loop @", SystemConfig.PurgeDelay, "(s)")
 
-	SetupInstrumentation()
 	StartPurgeLoop(SystemConfig.PurgeDelay)
 }

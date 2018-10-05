@@ -10,6 +10,7 @@ pumps/chunk.go
 *.csr
 *.prof
 *.pdf
+*.cov
 ._*
 *.csv
 /pump.conf

@@ -14,7 +14,7 @@ const ENV_PREVIX = "TYK_PMP"
 
 type PumpConfig struct {
 	Name string                 `json:"name"`
-	Meta map[string]interface{} `json:"meta"`
+	Meta map[string]interface{} `json:"meta"` // TODO: convert this to json.RawMessage and use regular json.Unmarshal
 }
 
 type TykPumpConfiguration struct {
