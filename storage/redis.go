@@ -185,57 +185,56 @@ func (r *RedisClusterStorageManager) fixKey(keyName string) string {
 }
 
 func (r *RedisClusterStorageManager) GetAndDeleteSet(keyName string) []interface{} {
-
 	log.WithFields(logrus.Fields{
 		"prefix": redisLogPrefix,
 	}).Debug("Getting raw key set: ", keyName)
+
 	if r.db == nil {
 		log.WithFields(logrus.Fields{
 			"prefix": redisLogPrefix,
 		}).Warning("Connection dropped, connecting..")
 		r.Connect()
-		r.GetAndDeleteSet(keyName)
-	} else {
-		log.WithFields(logrus.Fields{
-			"prefix": redisLogPrefix,
-		}).Debug("keyName is: ", keyName)
-
-		fixedKey := r.fixKey(keyName)
-
-		log.WithFields(logrus.Fields{
-			"prefix": redisLogPrefix,
-		}).Debug("Fixed keyname is: ", fixedKey)
-
-		lrange := rediscluster.ClusterTransaction{}
-		lrange.Cmd = "LRANGE"
-		lrange.Args = []interface{}{fixedKey, 0, -1}
-
-		delCmd := rediscluster.ClusterTransaction{}
-		delCmd.Cmd = "DEL"
-		delCmd.Args = []interface{}{fixedKey}
-
-		redVal, err := redis.Values(r.db.DoTransaction([]rediscluster.ClusterTransaction{lrange, delCmd}))
-		if err != nil {
-			log.WithFields(logrus.Fields{
-				"prefix": redisLogPrefix,
-			}).Error("Multi command failed: ", err)
-			r.Connect()
-		}
-
-		log.WithFields(logrus.Fields{
-			"prefix": redisLogPrefix,
-		}).Debug("Analytics returned: ", redVal)
-		if len(redVal) == 0 {
-			return []interface{}{}
-		}
-
-		vals := redVal[0].([]interface{})
-
-		log.WithFields(logrus.Fields{
-			"prefix": redisLogPrefix,
-		}).Debug("Unpacked vals: ", vals)
-
-		return vals
+		return r.GetAndDeleteSet(keyName)
 	}
-	return []interface{}{}
+
+	log.WithFields(logrus.Fields{
+		"prefix": redisLogPrefix,
+	}).Debug("keyName is: ", keyName)
+
+	fixedKey := r.fixKey(keyName)
+
+	log.WithFields(logrus.Fields{
+		"prefix": redisLogPrefix,
+	}).Debug("Fixed keyname is: ", fixedKey)
+
+	lrange := rediscluster.ClusterTransaction{}
+	lrange.Cmd = "LRANGE"
+	lrange.Args = []interface{}{fixedKey, 0, -1}
+
+	delCmd := rediscluster.ClusterTransaction{}
+	delCmd.Cmd = "DEL"
+	delCmd.Args = []interface{}{fixedKey}
+
+	redVal, err := redis.Values(r.db.DoTransaction([]rediscluster.ClusterTransaction{lrange, delCmd}))
+	if err != nil {
+		log.WithFields(logrus.Fields{
+			"prefix": redisLogPrefix,
+		}).Error("Multi command failed: ", err)
+		r.Connect()
+	}
+
+	log.WithFields(logrus.Fields{
+		"prefix": redisLogPrefix,
+	}).Debug("Analytics returned: ", redVal)
+	if len(redVal) == 0 {
+		return []interface{}{}
+	}
+
+	vals := redVal[0].([]interface{})
+
+	log.WithFields(logrus.Fields{
+		"prefix": redisLogPrefix,
+	}).Debug("Unpacked vals: ", vals)
+
+	return vals
 }
