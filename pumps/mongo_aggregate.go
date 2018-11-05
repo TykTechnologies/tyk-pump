@@ -564,13 +564,15 @@ func (m *MongoAggregatePump) WriteData(data []interface{}) error {
 			}
 
 			doc := AnalyticsRecordAggregate{}
-			_, err := analyticsCollection.Find(query).Apply(change, &doc)
-
-			if err != nil {
+			if _, err := analyticsCollection.Find(query).Apply(change, &doc); err != nil {
 				log.WithFields(logrus.Fields{
 					"prefix": mongoAggregatePrefix,
-				}).Error("UPSERT Failure: ", err)
-				return m.HandleWriteErr(err)
+				}).Error("UPSERT Failure (attempting recovery): ", err)
+
+				thisSession.Refresh()
+				if _, err = analyticsCollection.Find(query).Apply(change, &doc); err != nil {
+					return err
+				}
 			}
 
 			// We have the new doc back, lets fix the averages
@@ -579,14 +581,18 @@ func (m *MongoAggregatePump) WriteData(data []interface{}) error {
 				Update:    avgUpdateDoc,
 				ReturnNew: true,
 			}
-			withTimeUpdate := AnalyticsRecordAggregate{}
-			_, avgErr := analyticsCollection.Find(query).Apply(avgChange, &withTimeUpdate)
 
-			if avgErr != nil {
+			withTimeUpdate := AnalyticsRecordAggregate{}
+			if _, avgErr := analyticsCollection.Find(query).Apply(avgChange, &withTimeUpdate); avgErr != nil {
 				log.WithFields(logrus.Fields{
 					"prefix": mongoAggregatePrefix,
 				}).Error("AvgUpdate Failure: ", avgErr)
-				return m.HandleWriteErr(avgErr)
+
+				thisSession.Refresh()
+				if _, avgErr = analyticsCollection.Find(query).Apply(avgChange, &withTimeUpdate); avgErr != nil {
+					return avgErr
+				}
+
 			}
 
 			if m.dbConf.UseMixedCollection {
@@ -619,29 +625,17 @@ func (m *MongoAggregatePump) doMixedWrite(changeDoc AnalyticsRecordAggregate, qu
 	}
 
 	final := AnalyticsRecordAggregate{}
-	_, avgErr := analyticsCollection.Find(query).Apply(avgChange, &final)
-
-	if avgErr != nil {
+	if _, avgErr := analyticsCollection.Find(query).Apply(avgChange, &final); avgErr != nil {
+		thisSession.Refresh()
 		log.WithFields(logrus.Fields{
 			"prefix": mongoAggregatePrefix,
-		}).Error("Mixed coll upsert failure: ", avgErr)
-		m.HandleWriteErr(avgErr)
-	}
-}
-
-func (m *MongoAggregatePump) HandleWriteErr(err error) error {
-	if err != nil {
-		log.WithFields(logrus.Fields{
-			"prefix": mongoAggregatePrefix,
-		}).Error("Problem inserting or updating to mongo collection: ", err)
-		if strings.Contains(err.Error(), "Closed explicitly") || strings.Contains(err.Error(), "EOF") {
+		}).Error("Mixed coll upsert failure (attempting recovery): ", avgErr)
+		if _, avgErr = analyticsCollection.Find(query).Apply(avgChange, &final); avgErr != nil {
 			log.WithFields(logrus.Fields{
 				"prefix": mongoAggregatePrefix,
-			}).Warning("--> Detected connection failure, reconnecting")
-			m.connect()
+			}).Error("Recovery failed: ", avgErr)
 		}
 	}
-	return err
 }
 
 // WriteUptimeData will pull the data from the in-memory store and drop it into the specified MongoDB collection
