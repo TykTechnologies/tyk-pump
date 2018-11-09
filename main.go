@@ -1,12 +1,13 @@
 package main
 
 import (
+	"os"
 	"time"
 
-	"os"
-
 	"github.com/gocraft/health"
+	"gopkg.in/alecthomas/kingpin.v2"
 	"gopkg.in/vmihailenco/msgpack.v2"
+	msgpackV4 "gopkg.in/vmihailenco/msgpack.v4"
 
 	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/logrus-prefixed-formatter"
@@ -15,8 +16,6 @@ import (
 	"github.com/TykTechnologies/tyk-pump/pumps"
 	"github.com/TykTechnologies/tyk-pump/storage"
 	"github.com/TykTechnologies/tykcommon-logger"
-
-	"gopkg.in/alecthomas/kingpin.v2"
 )
 
 var SystemConfig TykPumpConfiguration
@@ -122,26 +121,36 @@ func StartPurgeLoop(secInterval int) {
 			startTime := time.Now()
 
 			// Convert to something clean
-			keys := make([]interface{}, len(AnalyticsValues))
+			keys := make([]interface{}, 0, len(AnalyticsValues))
 
-			for i, v := range AnalyticsValues {
+			for _, v := range AnalyticsValues {
 				decoded := analytics.AnalyticsRecord{}
-				err := msgpack.Unmarshal(v.([]byte), &decoded)
-				log.WithFields(logrus.Fields{
-					"prefix": mainPrefix,
-				}).Debug("Decoded Record: ", decoded)
+				recData := v.([]byte)
+				err := msgpack.Unmarshal(recData, &decoded)
+				if err != nil {
+					// try msgpack-v4
+					err = msgpackV4.Unmarshal(recData, &decoded)
+				}
 				if err != nil {
 					log.WithFields(logrus.Fields{
 						"prefix": mainPrefix,
 					}).Error("Couldn't unmarshal analytics data:", err)
 				} else {
-					keys[i] = interface{}(decoded)
+					log.WithFields(logrus.Fields{
+						"prefix": mainPrefix,
+					}).Debug("Decoded Record: ", decoded)
+					keys = append(keys, interface{}(decoded))
 					job.Event("record")
 				}
 			}
 
 			// Send to pumps
-			writeToPumps(keys, job, startTime)
+			if len(keys) > 0 {
+				writeToPumps(keys, job, startTime)
+			} else {
+				log.WithField("lenAnalyticsValues", len(AnalyticsValues)).
+					Warning("Received analytics records but 0 decoded to send to pumps")
+			}
 
 			job.Timing("purge_time_all", time.Since(startTime).Nanoseconds())
 
