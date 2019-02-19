@@ -14,7 +14,7 @@ type Pump interface {
 func GetPumpByName(name string) (Pump, error) {
 	if pump, ok := AvailablePumps[name]; ok {
 		return pump, nil
-	}
+    }
 
 	return nil, errors.New("Not found")
 }
