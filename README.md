@@ -209,13 +209,13 @@ Add the following section to expose "/metrics" endpoint:
 ```
 
 Tyk expose the following counters:
-- tyk_http_status{code, api_id}
+- tyk_http_status{code, api}
 - tyk_http_status_per_path{code, api, path, method}
 - tyk_http_status_per_key{code, key}
 - tyk_http_status_per_oauth_client{code, client_id}
 
 And the following Histogram for latencies:
-- tyk_latency{type, api_id}
+- tyk_latency{type, api}
 
 
 
