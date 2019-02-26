@@ -14,6 +14,7 @@ matrix:
       env: LATEST_GO=true # run linters and report coverage
 
 install:
+  - go get golang.org/x/tools/cmd/goimports
   - go get
 
 script:
