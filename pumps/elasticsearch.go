@@ -8,6 +8,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 	elasticv3 "gopkg.in/olivere/elastic.v3"
 	elasticv5 "gopkg.in/olivere/elastic.v5"
+	elasticv6 "gopkg.in/olivere/elastic.v6"
 
 	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/tyk-pump/analytics"
@@ -42,6 +43,10 @@ type Elasticsearch5Operator struct {
 	esClient *elasticv5.Client
 }
 
+type Elasticsearch6Operator struct {
+	esClient *elasticv6.Client
+}
+
 func getOperator(version string, url string, setSniff bool) (ElasticsearchOperator, error) {
 	var err error
 
@@ -53,6 +58,10 @@ func getOperator(version string, url string, setSniff bool) (ElasticsearchOperat
 	case "5":
 		e := new(Elasticsearch5Operator)
 		e.esClient, err = elasticv5.NewClient(elasticv5.SetURL(url), elasticv5.SetSniff(setSniff))
+		return e, err
+	case "6":
+		e := new(Elasticsearch6Operator)
+		e.esClient, err = elasticv6.NewClient(elasticv6.SetURL(url), elasticv6.SetSniff(setSniff))
 		return e, err
 	default:
 		// shouldn't get this far, but hey never hurts to check assumptions
@@ -235,6 +244,31 @@ func (e Elasticsearch5Operator) processData(data []interface{}, esConf *Elastics
 		mapping := getMapping(d, esConf.ExtendedStatistics)
 
 		_, err := index.BodyJson(mapping).Type(esConf.DocumentType).Do(context.TODO())
+		if err != nil {
+			log.WithFields(logrus.Fields{
+				"prefix": elasticsearchPrefix,
+			}).Error("Error while writing ", data[dataIndex], err)
+		}
+	}
+
+	return nil
+}
+
+func (e Elasticsearch6Operator) processData(data []interface{}, esConf *ElasticsearchConf) error {
+	index := e.esClient.Index().Index(getIndexName(esConf))
+
+	for dataIndex := range data {
+		d, ok := data[dataIndex].(analytics.AnalyticsRecord)
+		if !ok {
+			log.WithFields(logrus.Fields{
+				"prefix": elasticsearchPrefix,
+			}).Error("Error while writing ", data[dataIndex], ": data not of type analytics.AnalyticsRecord")
+			continue
+		}
+
+		mapping := getMapping(d, esConf.ExtendedStatistics)
+
+		_, err := index.BodyJson(mapping).Type(esConf.DocumentType).Do(context.Background())
 		if err != nil {
 			log.WithFields(logrus.Fields{
 				"prefix": elasticsearchPrefix,

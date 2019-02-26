@@ -188,7 +188,7 @@ Settings are the same as for the original `tyk.conf` for redis and for mongoDB.
 
 `"extended_stats"` - If set to true will include the following additional fields: Raw Request, Raw Response and User Agent.
 
-`"version"` - Specifies the ES version. Use "3" for ES 2.x, and "5" for ES 5.0. Defaults to "3".
+`"version"` - Specifies the ES version. Use "3" for ES 3.X, "5" for ES 5.X, "6" for ES 6.X. Defaults to "3".
 
 ### Moesif Config
 [Moesif](https://www.moesif.com) is a logging and analytics service for APIs. The Moesif pump will

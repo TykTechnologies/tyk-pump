@@ -10,12 +10,12 @@ services:
 
 matrix:
   include:
-    - go: 1.7.x
-    - go: 1.8.x
+    - go: 1.11.x
       env: LATEST_GO=true # run linters and report coverage
 
 install:
-  - go install ./...
+  - go get golang.org/x/tools/cmd/goimports
+  - go get
 
 script:
   - ./utils/ci-test.sh
