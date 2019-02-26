@@ -113,7 +113,7 @@ func (p *PrometheusPump) Init(conf interface{}) error {
 
 func (p *PrometheusPump) WriteData(data []interface{}) error {
 	log.WithFields(logrus.Fields{
-		"prefix": graylogPrefix,
+		"prefix": prometheusPrefix,
 	}).Debug("Writing ", len(data), " records")
 
 	for _, item := range data {
