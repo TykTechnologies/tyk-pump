@@ -36,27 +36,27 @@ Create a `pump.conf` file:
 		"optimisation_max_active": 0,
 		"enable_cluster": false
 	},
-	"purge_delay": 10,
+	"purge_delay": 1,
 	"pumps": {
 		"dummy": {
-			"name": "dummy",
+			"type": "dummy",
 			"meta": {}
 		},
 		"mongo": {
-			"name": "mongo",
+			"type": "mongo",
 			"meta": {
 				"collection_name": "tyk_analytics",
 				"mongo_url": "mongodb://username:password@{hostname:port},{hostname:port}/{db_name}"
 			}
 		},
 		"csv": {
-			"name": "csv",
+			"type": "csv",
 			"meta": {
 				"csv_dir": "./"
 			}
 		},
 		"elasticsearch": {
-			"name": "elasticsearch",
+			"type": "elasticsearch",
 			"meta": {
 				"index_name": "tyk_analytics",
 				"elasticsearch_url": "localhost:9200",
@@ -68,7 +68,7 @@ Create a `pump.conf` file:
 			}
 		},
 		"influx": {
-			"name": "influx",
+			"type": "influx",
 			"meta": {
 				"database_name": "tyk_analytics",
 				"address": "http//localhost:8086",
@@ -88,13 +88,13 @@ Create a `pump.conf` file:
 			}
 		},
 		"moesif": {
-			"name": "moesif",
+			"type": "moesif",
 			"meta": {
 				"application_id": ""
 			}
 		},
 		"splunk": {
-			"name": "splunk",
+			"type": "splunk",
 			"meta": {
 				"collector_token": "<token>",
 				"collector_url": "<url>",
@@ -105,7 +105,7 @@ Create a `pump.conf` file:
 			}
 		},
 		"statsd": {
-			"name": "statsd",
+			"type": "statsd",
 			"meta": {
 				"address": "localhost:8125",
 				"fields": ["request_time"],
@@ -122,13 +122,14 @@ Create a `pump.conf` file:
 			}
 		},
 		"prometheus": {
+            "type": "prometheus",
 			"meta": {
 				"listen_address": "localhost:9090",
 				"path": "/metrics"
 			}
 		},
 		"graylog": {
-			"name": "graylog",
+			"type": "graylog",
 			"meta": {
 				"host": "10.60.6.15",
 				"port": 12216,
@@ -149,7 +150,7 @@ Create a `pump.conf` file:
 			}
 		},
         "hybrid": {
-            "name": "hybrid",
+            "type": "hybrid",
             "meta": {
                 "rpc_key": "5b5fd341e6355b5eb194765e",
                 "api_key": "008d6d1525104ae77240f687bb866974",
@@ -201,6 +202,7 @@ Prometheus is an open-source monitoring system with a dimensional data model, fl
 Add the following section to expose "/metrics" endpoint:
 ```
 "prometheus": {
+    "type": "prometheus",
 	"meta": {
 		"listen_address": "localhost:9090",
 		"path": "/metrics"
