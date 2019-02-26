@@ -81,8 +81,13 @@ func setupAnalyticsStore() {
 func initialisePumps() {
 	Pumps = make([]pumps.Pump, len(SystemConfig.Pumps))
 	i := 0
-	for name, pmp := range SystemConfig.Pumps {
-		pmpType, err := pumps.GetPumpByName(name)
+	for key, pmp := range SystemConfig.Pumps {
+		pumpTypeName := pmp.Type
+		if pumpTypeName == "" {
+			pumpTypeName = key
+		}
+
+		pmpType, err := pumps.GetPumpByName(pumpTypeName)
 		if err != nil {
 			log.WithFields(logrus.Fields{
 				"prefix": mainPrefix,
