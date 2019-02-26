@@ -202,7 +202,7 @@ Prometheus is an open-source monitoring system with a dimensional data model, fl
 Add the following section to expose "/metrics" endpoint:
 ```
 "prometheus": {
-    "type": "prometheus",
+        "type": "prometheus",
 	"meta": {
 		"listen_address": "localhost:9090",
 		"path": "/metrics"
