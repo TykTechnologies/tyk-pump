@@ -167,7 +167,7 @@ Create a `pump.conf` file:
         "logzio": {
             "type": "logzio",
             "meta": {
-
+                "token": "<YOUR-LOGZ.IO-TOKEN>"
             }
         }
 	},
