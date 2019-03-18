@@ -18,15 +18,18 @@ const (
 	LogzioPumpPrefix       = "logzio-pump"
 	LogzioPumpName         = "Logzio Pump"
 
-	defaultCheckDiskSpace = true
-	defaultDiskThreshold  = 98.0 // represent % of the disk
-	defaultDrainDuration  = "3s"
-	defaultURL            = "https://listener.logz.io:8071"
+	defaultLogzioCheckDiskSpace = true
+	defaultLogzioDiskThreshold  = 98 // represent % of the disk
+	defaultLogzioDrainDuration  = "3s"
+	defaultLogzioURL            = "https://listener.logz.io:8071"
+
+	minDiskThreshold = 0
+	maxDiskThreshold = 100
 )
 
 type LogzioPumpConfig struct {
 	CheckDiskSpace bool   			`mapstructure:"check_disk_space"`
-	DiskThreshold  int    			`mapstructure:"disk_threshold"`
+	DiskThreshold  int    		    `mapstructure:"disk_threshold"`
 	DrainDuration  string			`mapstructure:"darin_duration"`
 	QueueDir	   string 			`mapstructure:"queue_dir"`
 	Token          string 			`mapstructure:"token"`
@@ -35,12 +38,12 @@ type LogzioPumpConfig struct {
 
 func NewLogzioPumpConfig() *LogzioPumpConfig {
 	return &LogzioPumpConfig{
-		CheckDiskSpace: defaultCheckDiskSpace,
-		DiskThreshold: defaultDiskThreshold,
-		DrainDuration: defaultDrainDuration,
+		CheckDiskSpace: defaultLogzioCheckDiskSpace,
+		DiskThreshold: defaultLogzioDiskThreshold,
+		DrainDuration: defaultLogzioDrainDuration,
 		QueueDir: fmt.Sprintf("%s%s%s%s%d", os.TempDir(), string(os.PathSeparator),
 		"logzio-buffer", string(os.PathSeparator), time.Now().UnixNano()),
-		URL: defaultURL,
+		URL: defaultLogzioURL,
 	}
 }
 
@@ -57,6 +60,11 @@ func NewLogzioClient(conf *LogzioPumpConfig) (*lg.LogzioSender, error) {
 	drainDuration, err := time.ParseDuration(conf.DrainDuration)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse drain_duration: %s", err)
+	}
+
+	diskThreshold := conf.DiskThreshold
+	if diskThreshold < minDiskThreshold || diskThreshold > maxDiskThreshold {
+		return nil, fmt.Errorf("threshold has to be between %d and %d", minDiskThreshold, maxDiskThreshold)
 	}
 
 	l, err := lg.New(
@@ -90,7 +98,7 @@ func (p *LogzioPump) Init(config interface{}) error {
 	if err != nil {
 		log.WithFields(logrus.Fields{
 			"prefix": LogzioPumpPrefix,
-		}).Fatalf("Failed to decode configuration: ", err)
+		}).Fatalf("Failed to decode configuration: %s", err)
 	}
 
 	log.WithFields(logrus.Fields{
@@ -129,12 +137,12 @@ func (p *LogzioPump) WriteData(data []interface{}) error {
 			"ip_address":    	decoded.IPAddress,
 		}
 
-		msg, err := json.Marshal(mapping)
+		event, err := json.Marshal(mapping)
 		if err != nil {
 			return fmt.Errorf("failed to marshal decoded data: %s", err)
 		}
 
-		p.sender.Send(msg)
+		p.sender.Send(event)
 	}
 	return nil
 }
