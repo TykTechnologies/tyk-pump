@@ -2,16 +2,14 @@ package pumps
 
 import (
 	"encoding/json"
+	"fmt"
+	"os"
 	"time"
 
 	lg "github.com/logzio/logzio-go"
-
 	"github.com/mitchellh/mapstructure"
-
 	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/tyk-pump/analytics"
-	"fmt"
-	"os"
 )
 
 const (
