@@ -72,7 +72,7 @@ func TestLogzioDecodeOverrideDefaults(t *testing.T) {
 
 	if pconfig.CheckDiskSpace != config["check_disk_space"] ||
 		pconfig.DiskThreshold != config["disk_threshold"] ||
-		pconfig.DrainDuration != config["darin_duration"] ||
+		pconfig.DrainDuration != config["drain_duration"] ||
 		pconfig.QueueDir != config["queue_dir"] ||
 		pconfig.URL != config["url"] {
 		t.Fatalf("Failed to override one of the default configurations: %+v", pconfig)
