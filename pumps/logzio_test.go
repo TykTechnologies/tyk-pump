@@ -56,7 +56,7 @@ func TestLogzioDecodeOverrideDefaults(t *testing.T) {
 		"token":            "123456789",
 		"check_disk_space": false,
 		"disk_threshold":   10,
-		"darin_duration":   "4s",
+		"drain_duration":   "4s",
 		"queue_dir":        "./my-logzio-queue",
 		"url":              "http://localhost:8088/",
 	}
