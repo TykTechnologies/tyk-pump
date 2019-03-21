@@ -28,7 +28,7 @@ const (
 type LogzioPumpConfig struct {
 	CheckDiskSpace bool   `mapstructure:"check_disk_space"`
 	DiskThreshold  int    `mapstructure:"disk_threshold"`
-	DrainDuration  string `mapstructure:"darin_duration"`
+	DrainDuration  string `mapstructure:"drain_duration"`
 	QueueDir       string `mapstructure:"queue_dir"`
 	Token          string `mapstructure:"token"`
 	URL            string `mapstructure:"url"`
