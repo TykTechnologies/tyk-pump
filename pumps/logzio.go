@@ -6,15 +6,15 @@ import (
 	"os"
 	"time"
 
-	lg "github.com/logzio/logzio-go"
-	"github.com/mitchellh/mapstructure"
 	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/tyk-pump/analytics"
+	lg "github.com/logzio/logzio-go"
+	"github.com/mitchellh/mapstructure"
 )
 
 const (
-	LogzioPumpPrefix       = "logzio-pump"
-	LogzioPumpName         = "Logzio Pump"
+	LogzioPumpPrefix = "logzio-pump"
+	LogzioPumpName   = "Logzio Pump"
 
 	defaultLogzioCheckDiskSpace = true
 	defaultLogzioDiskThreshold  = 98 // represent % of the disk
@@ -26,21 +26,21 @@ const (
 )
 
 type LogzioPumpConfig struct {
-	CheckDiskSpace bool   			`mapstructure:"check_disk_space"`
-	DiskThreshold  int    		    `mapstructure:"disk_threshold"`
-	DrainDuration  string			`mapstructure:"darin_duration"`
-	QueueDir	   string 			`mapstructure:"queue_dir"`
-	Token          string 			`mapstructure:"token"`
-	URL            string 			`mapstructure:"url"`
+	CheckDiskSpace bool   `mapstructure:"check_disk_space"`
+	DiskThreshold  int    `mapstructure:"disk_threshold"`
+	DrainDuration  string `mapstructure:"darin_duration"`
+	QueueDir       string `mapstructure:"queue_dir"`
+	Token          string `mapstructure:"token"`
+	URL            string `mapstructure:"url"`
 }
 
 func NewLogzioPumpConfig() *LogzioPumpConfig {
 	return &LogzioPumpConfig{
 		CheckDiskSpace: defaultLogzioCheckDiskSpace,
-		DiskThreshold: defaultLogzioDiskThreshold,
-		DrainDuration: defaultLogzioDrainDuration,
+		DiskThreshold:  defaultLogzioDiskThreshold,
+		DrainDuration:  defaultLogzioDrainDuration,
 		QueueDir: fmt.Sprintf("%s%s%s%s%d", os.TempDir(), string(os.PathSeparator),
-		"logzio-buffer", string(os.PathSeparator), time.Now().UnixNano()),
+			"logzio-buffer", string(os.PathSeparator), time.Now().UnixNano()),
 		URL: defaultLogzioURL,
 	}
 }
@@ -73,7 +73,7 @@ func NewLogzioClient(conf *LogzioPumpConfig) (*lg.LogzioSender, error) {
 		lg.SetDebug(os.Stderr),
 		lg.SetTempDirectory(conf.QueueDir),
 		lg.SetUrl(conf.URL),
-		)
+	)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to create new logzio sender: %s", err)
@@ -119,20 +119,20 @@ func (p *LogzioPump) WriteData(data []interface{}) error {
 	for _, v := range data {
 		decoded := v.(analytics.AnalyticsRecord)
 		mapping := map[string]interface{}{
-			"@timestamp":	 	decoded.TimeStamp,
-			"http_method":   	decoded.Method,
-			"request_uri":   	decoded.Path,
-			"response_code": 	decoded.ResponseCode,
-			"api_key":       	decoded.APIKey,
-			"api_version":   	decoded.APIVersion,
-			"api_name":      	decoded.APIName,
-			"api_id":        	decoded.APIID,
-			"org_id":        	decoded.OrgID,
-			"oauth_id":      	decoded.OauthID,
-			"raw_request":   	decoded.RawRequest,
-			"request_time_ms":  decoded.RequestTime,
-			"raw_response":  	decoded.RawResponse,
-			"ip_address":    	decoded.IPAddress,
+			"@timestamp":      decoded.TimeStamp,
+			"http_method":     decoded.Method,
+			"request_uri":     decoded.Path,
+			"response_code":   decoded.ResponseCode,
+			"api_key":         decoded.APIKey,
+			"api_version":     decoded.APIVersion,
+			"api_name":        decoded.APIName,
+			"api_id":          decoded.APIID,
+			"org_id":          decoded.OrgID,
+			"oauth_id":        decoded.OauthID,
+			"raw_request":     decoded.RawRequest,
+			"request_time_ms": decoded.RequestTime,
+			"raw_response":    decoded.RawResponse,
+			"ip_address":      decoded.IPAddress,
 		}
 
 		event, err := json.Marshal(mapping)

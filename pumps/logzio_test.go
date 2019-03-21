@@ -1,8 +1,8 @@
 package pumps
 
 import (
-	"testing"
 	"github.com/mitchellh/mapstructure"
+	"testing"
 )
 
 func TestLogzioInit(t *testing.T) {
@@ -53,12 +53,12 @@ func TestLogzioDecodeWithDefaults(t *testing.T) {
 
 func TestLogzioDecodeOverrideDefaults(t *testing.T) {
 	config := map[string]interface{}{
-		"token": "123456789",
+		"token":            "123456789",
 		"check_disk_space": false,
-		"disk_threshold": 10,
-		"darin_duration": "4s",
-		"queue_dir": "./my-logzio-queue",
-		"url": "http://localhost:8088/",
+		"disk_threshold":   10,
+		"darin_duration":   "4s",
+		"queue_dir":        "./my-logzio-queue",
+		"url":              "http://localhost:8088/",
 	}
 	pconfig := NewLogzioPumpConfig()
 	err := mapstructure.Decode(config, pconfig)
@@ -75,7 +75,6 @@ func TestLogzioDecodeOverrideDefaults(t *testing.T) {
 		pconfig.DrainDuration != config["darin_duration"] ||
 		pconfig.QueueDir != config["queue_dir"] ||
 		pconfig.URL != config["url"] {
-			t.Fatalf("Failed to override one of the default configurations: %+v", pconfig)
+		t.Fatalf("Failed to override one of the default configurations: %+v", pconfig)
 	}
 }
-
