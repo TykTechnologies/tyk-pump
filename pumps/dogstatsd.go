@@ -3,7 +3,6 @@ package pumps
 import (
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/DataDog/datadog-go/statsd"
 	"github.com/mitchellh/mapstructure"
@@ -89,21 +88,16 @@ func (s *DogStatsdPump) WriteData(data []interface{}) error {
 
 		decoded.Path = strings.TrimRight(decoded.Path, "/")
 
-		//analyticsJsBytes, _ := json.MarshalIndent(decoded, "", "  ")
-		//log.Infof("%s", analyticsJsBytes)
-
 		tags := []string{
 			"path:" + decoded.Path,
 			"method:" + decoded.Method,
 			fmt.Sprintf("response_code:%d", decoded.ResponseCode),
 			"api_key:" + decoded.APIKey,
-			fmt.Sprintf("time_stamp:%d", time.Unix(decoded.TimeStamp.Unix(), 0).Unix()),
 			"api_version:" + decoded.APIVersion,
 			"api_name:" + decoded.APIName,
 			"api_id:" + decoded.APIID,
 			"org_id:" + decoded.OrgID,
 			"oauth_id:" + decoded.OauthID,
-			fmt.Sprintf("request_time:%d", decoded.RequestTime),
 			"ip_address:" + decoded.IPAddress,
 		}
 
