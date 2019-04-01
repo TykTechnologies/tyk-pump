@@ -23,4 +23,5 @@ func init() {
 	AvailablePumps["splunk"] = &SplunkPump{}
 	AvailablePumps["hybrid"] = &HybridPump{}
 	AvailablePumps["prometheus"] = &PrometheusPump{}
+	AvailablePumps["logzio"] = &LogzioPump{}
 }
