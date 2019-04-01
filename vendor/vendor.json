@@ -211,6 +211,12 @@
 			"revisionTime": "2018-10-04T22:41:46Z"
 		},
 		{
+			"checksumSHA1": "Yhz9ldurKeGAb1PU4GNo6J3zStM=",
+			"path": "github.com/logzio/logzio-go",
+			"revision": "1138f714b3b673ecb3afec265088f65d45479079",
+			"revisionTime": "2019-03-31T10:01:43Z"
+		},
+		{
 			"checksumSHA1": "Zgi7LCXXiFQYL84rwInvfJHEOQM=",
 			"origin": "github.com/TykTechnologies/tyk/vendor/github.com/lonelycode/go-uuid/uuid",
 			"path": "github.com/lonelycode/go-uuid/uuid",
