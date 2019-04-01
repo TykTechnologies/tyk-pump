@@ -44,6 +44,7 @@ type RedisStorageConfig struct {
 	Username                   string       `mapstructure:"username"`
 	Password                   string       `mapstructure:"password"`
 	Database                   int          `mapstructure:"database"`
+	Timeout                    int          `mapstructure:"timeout"`
 	MaxIdle                    int          `mapstructure:"optimisation_max_idle" json:"optimisation_max_idle"`
 	MaxActive                  int          `mapstructure:"optimisation_max_active" json:"optimisation_max_active"`
 	EnableCluster              bool         `mapstructure:"enable_cluster" json:"enable_cluster"`
@@ -88,6 +89,12 @@ func NewRedisClusterPool(forceReconnect bool, config RedisStorageConfig) *redisc
 		maxActive = config.MaxActive
 	}
 
+	timeout := 5 * time.Second
+
+	if config.Timeout > 0 {
+		timeout = time.Duration(config.Timeout) * time.Second
+	}
+
 	if config.EnableCluster {
 		log.WithFields(logrus.Fields{
 			"prefix": redisLogPrefix,
@@ -95,14 +102,17 @@ func NewRedisClusterPool(forceReconnect bool, config RedisStorageConfig) *redisc
 	}
 
 	thisPoolConf := rediscluster.PoolConfig{
-		MaxIdle:       maxIdle,
-		MaxActive:     maxActive,
-		IdleTimeout:   240 * time.Second,
-		Database:      config.Database,
-		Password:      config.Password,
-		IsCluster:     config.EnableCluster,
-		UseTLS:        config.RedisUseSSL,
-		TLSSkipVerify: config.RedisSSLInsecureSkipVerify,
+		MaxIdle:        maxIdle,
+		MaxActive:      maxActive,
+		IdleTimeout:    240 * time.Second,
+		ConnectTimeout: timeout,
+		ReadTimeout:    timeout,
+		WriteTimeout:   timeout,
+		Database:       config.Database,
+		Password:       config.Password,
+		IsCluster:      config.EnableCluster,
+		UseTLS:         config.RedisUseSSL,
+		TLSSkipVerify:  config.RedisSSLInsecureSkipVerify,
 	}
 
 	seed_redii := []map[string]string{}

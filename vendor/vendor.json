@@ -47,10 +47,10 @@
 			"revisionTime": "2018-10-04T16:58:12Z"
 		},
 		{
-			"checksumSHA1": "tJULlRWQUYzfZry+j7PuYIt0/Qc=",
+			"checksumSHA1": "G694VwuGgNf28O9vhpI132LKy0A=",
 			"path": "github.com/TykTechnologies/redigocluster/rediscluster",
-			"revision": "2acc814701aff22e7583f242bbd5d32d70bd07eb",
-			"revisionTime": "2018-09-24T15:19:45Z"
+			"revision": "9814972a6f69c4045a22fe97777e8f3407bdcc7f",
+			"revisionTime": "2019-03-13T17:04:40Z"
 		},
 		{
 			"checksumSHA1": "aqCNtmplBjTce0W/nCc2T5z0A/8=",
@@ -179,6 +179,12 @@
 			"path": "github.com/golang/snappy",
 			"revision": "2a8bb927dd31d8daada140a5d09578521ce5c36a",
 			"revisionTime": "2019-02-18T23:22:22Z"
+    },
+    {
+			"checksumSHA1": "ym2VOnOPl3tJJdtmPtirwpHcYVM=",
+			"path": "github.com/gomodule/redigo/redis",
+			"revision": "b47395aa17662ff86cb5c52f3bf669bf842ec27a",
+			"revisionTime": "2019-02-26T17:44:33Z"
 		},
 		{
 			"checksumSHA1": "VDlpbh8lu2c+OtaInlqnlyx6550=",
