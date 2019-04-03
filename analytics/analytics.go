@@ -14,6 +14,7 @@ var log = logger.GetLogger()
 // AnalyticsRecord encodes the details of a request
 type AnalyticsRecord struct {
 	Method        string
+	Host          string
 	Path          string
 	RawPath       string
 	ContentLength int64
