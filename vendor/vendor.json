@@ -113,6 +113,12 @@
 			"revisionTime": "2015-10-22T06:55:26Z"
 		},
 		{
+			"checksumSHA1": "l8CHAH/SE2Qi80XWvU4dwlFbJ64=",
+			"path": "github.com/beeker1121/goque",
+			"revision": "4044bc29b28064db4f08e947c4972d5ca3e0f3c8",
+			"revisionTime": "2017-03-21T14:18:13Z"
+		},
+		{
 			"checksumSHA1": "0rido7hYHQtfq3UJzVT5LClLAWc=",
 			"path": "github.com/beorn7/perks/quantile",
 			"revision": "3a771d992973f24aa725d07868b467d1ddfceafb",
@@ -167,6 +173,12 @@
 			"path": "github.com/golang/protobuf/proto",
 			"revision": "347cf4a86c1cb8d262994d8ef5924d4576c5b331",
 			"revisionTime": "2019-01-09T07:22:47Z"
+		},
+		{
+			"checksumSHA1": "L3HoHVqp2EaBSOqBxB7l0PTyu7g=",
+			"path": "github.com/golang/snappy",
+			"revision": "2a8bb927dd31d8daada140a5d09578521ce5c36a",
+			"revisionTime": "2019-02-18T23:22:22Z"
 		},
 		{
 			"checksumSHA1": "ym2VOnOPl3tJJdtmPtirwpHcYVM=",
@@ -394,6 +406,12 @@
 			"revisionTime": "2016-09-23T16:06:12Z"
 		},
 		{
+			"checksumSHA1": "rbsRrZtv0mJvxL1h62orMZMAEsY=",
+			"path": "github.com/ricochet2200/go-disk-usage/du",
+			"revision": "f0d1b743428fc09792f93233d9412f89f88fa2ab",
+			"revisionTime": "2015-09-21T14:15:58Z"
+		},
+		{
 			"checksumSHA1": "1XJ7vBh9WiFoBQIvQmXwaKvxn70=",
 			"path": "github.com/robertkowalski/graylog-golang",
 			"revision": "e5295cfa28272ada50cb9b5d97696ee06e49ed42",
@@ -424,6 +442,78 @@
 			"revisionTime": "2018-05-15T14:38:44Z"
 		},
 		{
+			"checksumSHA1": "4NTmfUj7H5J59M2wCnp3/8FWt1I=",
+			"path": "github.com/syndtr/goleveldb/leveldb",
+			"revision": "c3a204f8e96543bb0cc090385c001078f184fc46",
+			"revisionTime": "2019-03-18T03:00:20Z"
+		},
+		{
+			"checksumSHA1": "mPNraL2edpk/2FYq26rSXfMHbJg=",
+			"path": "github.com/syndtr/goleveldb/leveldb/cache",
+			"revision": "c3a204f8e96543bb0cc090385c001078f184fc46",
+			"revisionTime": "2019-03-18T03:00:20Z"
+		},
+		{
+			"checksumSHA1": "UA+PKDKWlDnE2OZblh23W6wZwbY=",
+			"path": "github.com/syndtr/goleveldb/leveldb/comparer",
+			"revision": "c3a204f8e96543bb0cc090385c001078f184fc46",
+			"revisionTime": "2019-03-18T03:00:20Z"
+		},
+		{
+			"checksumSHA1": "1DRAxdlWzS4U0xKN/yQ/fdNN7f0=",
+			"path": "github.com/syndtr/goleveldb/leveldb/errors",
+			"revision": "c3a204f8e96543bb0cc090385c001078f184fc46",
+			"revisionTime": "2019-03-18T03:00:20Z"
+		},
+		{
+			"checksumSHA1": "iBorxU3FBbau81WSyVa8KwcutzA=",
+			"path": "github.com/syndtr/goleveldb/leveldb/filter",
+			"revision": "c3a204f8e96543bb0cc090385c001078f184fc46",
+			"revisionTime": "2019-03-18T03:00:20Z"
+		},
+		{
+			"checksumSHA1": "hPyFsMiqZ1OB7MX+6wIAA6nsdtc=",
+			"path": "github.com/syndtr/goleveldb/leveldb/iterator",
+			"revision": "c3a204f8e96543bb0cc090385c001078f184fc46",
+			"revisionTime": "2019-03-18T03:00:20Z"
+		},
+		{
+			"checksumSHA1": "gJY7bRpELtO0PJpZXgPQ2BYFJ88=",
+			"path": "github.com/syndtr/goleveldb/leveldb/journal",
+			"revision": "c3a204f8e96543bb0cc090385c001078f184fc46",
+			"revisionTime": "2019-03-18T03:00:20Z"
+		},
+		{
+			"checksumSHA1": "2ncG38FDk2thSlrHd7JFmiuvnxA=",
+			"path": "github.com/syndtr/goleveldb/leveldb/memdb",
+			"revision": "c3a204f8e96543bb0cc090385c001078f184fc46",
+			"revisionTime": "2019-03-18T03:00:20Z"
+		},
+		{
+			"checksumSHA1": "o2TorI3z+vc+EBMJ8XeFoUmXBtU=",
+			"path": "github.com/syndtr/goleveldb/leveldb/opt",
+			"revision": "c3a204f8e96543bb0cc090385c001078f184fc46",
+			"revisionTime": "2019-03-18T03:00:20Z"
+		},
+		{
+			"checksumSHA1": "ZnyuciM+R19NG8L5YS3TIJdo1e8=",
+			"path": "github.com/syndtr/goleveldb/leveldb/storage",
+			"revision": "c3a204f8e96543bb0cc090385c001078f184fc46",
+			"revisionTime": "2019-03-18T03:00:20Z"
+		},
+		{
+			"checksumSHA1": "DS0i9KReIeZn3T1Bpu31xPMtzio=",
+			"path": "github.com/syndtr/goleveldb/leveldb/table",
+			"revision": "c3a204f8e96543bb0cc090385c001078f184fc46",
+			"revisionTime": "2019-03-18T03:00:20Z"
+		},
+		{
+			"checksumSHA1": "V/Dh7NV0/fy/5jX1KaAjmGcNbzI=",
+			"path": "github.com/syndtr/goleveldb/leveldb/util",
+			"revision": "c3a204f8e96543bb0cc090385c001078f184fc46",
+			"revisionTime": "2019-03-18T03:00:20Z"
+		},
+		{
 			"checksumSHA1": "zwn9FlzQzF6L5lEeoV2ejtoLkIw=",
 			"origin": "github.com/TykTechnologies/tyk/vendor/github.com/x-cray/logrus-prefixed-formatter",
 			"path": "github.com/x-cray/logrus-prefixed-formatter",
@@ -449,6 +539,12 @@
 			"path": "github.com/xtgo/uuid",
 			"revision": "a0b114877d4caeffbd7f87e3757c17fce570fea7",
 			"revisionTime": "2014-08-04T02:12:11Z"
+		},
+		{
+			"checksumSHA1": "qFs0grHlbWDk8I7+1+wWvHfmWxA=",
+			"path": "go.uber.org/atomic",
+			"revision": "5328d69c76a98d1d21c773653a5a78fa28d89921",
+			"revisionTime": "2019-02-26T01:13:05Z"
 		},
 		{
 			"checksumSHA1": "BGm8lKZmvJbf/YOJLeL1rw2WVjA=",
