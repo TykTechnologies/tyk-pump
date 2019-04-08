@@ -3,6 +3,8 @@ package pumps
 import (
 	"encoding/json"
 
+	"github.com/TykTechnologies/tyk-pump/analytics"
+
 	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/tyk/rpc"
 )
@@ -28,11 +30,16 @@ var (
 		"Ping": func() bool {
 			return false
 		},
+		"PurgeAnalyticsDataAggregated": func(data string) error {
+			return nil
+		},
 	}
 )
 
 // HybridPump allows to send analytics to MDCB over RPC
-type HybridPump struct{}
+type HybridPump struct {
+	aggregated bool
+}
 
 func (p *HybridPump) GetName() string {
 	return "Hybrid pump"
@@ -98,6 +105,11 @@ func (p *HybridPump) Init(config interface{}) error {
 		}).Fatal("Failed to connect to RPC server")
 	}
 
+	// check if we need to send aggregated analytics
+	if aggregated, ok := meta["aggregated"]; ok {
+		p.aggregated = aggregated.(bool)
+	}
+
 	return nil
 }
 
@@ -113,21 +125,42 @@ func (p *HybridPump) WriteData(data []interface{}) error {
 		return err
 	}
 
-	// turn array with analytics records into JSON payload
-	jsonData, err := json.Marshal(data)
-	if err != nil {
-		log.WithFields(logrus.Fields{
-			"prefix": hybridPrefix,
-		}).WithError(err).Error("Failed to marshal analytics data")
-		return err
-	}
-
 	// do RPC call to server
-	if _, err := rpc.FuncClientSingleton("PurgeAnalyticsData", string(jsonData)); err != nil {
-		log.WithFields(logrus.Fields{
-			"prefix": hybridPrefix,
-		}).WithError(err).Error("Failed to call PurgeAnalyticsData")
-		return err
+	if !p.aggregated { // send analytics records as is
+		// turn array with analytics records into JSON payload
+		jsonData, err := json.Marshal(data)
+		if err != nil {
+			log.WithFields(logrus.Fields{
+				"prefix": hybridPrefix,
+			}).WithError(err).Error("Failed to marshal analytics data")
+			return err
+		}
+
+		if _, err := rpc.FuncClientSingleton("PurgeAnalyticsData", string(jsonData)); err != nil {
+			log.WithFields(logrus.Fields{
+				"prefix": hybridPrefix,
+			}).WithError(err).Error("Failed to call PurgeAnalyticsData")
+			return err
+		}
+	} else { // send aggregated data
+		// calculate aggregates
+		aggregates := analytics.AggregateData(data)
+
+		// turn map with analytics aggregates into JSON payload
+		jsonData, err := json.Marshal(aggregates)
+		if err != nil {
+			log.WithFields(logrus.Fields{
+				"prefix": hybridPrefix,
+			}).WithError(err).Error("Failed to marshal analytics aggregates data")
+			return err
+		}
+
+		if _, err := rpc.FuncClientSingleton("PurgeAnalyticsDataAggregated", string(jsonData)); err != nil {
+			log.WithFields(logrus.Fields{
+				"prefix": hybridPrefix,
+			}).WithError(err).Error("Failed to call PurgeAnalyticsDataAggregated")
+			return err
+		}
 	}
 
 	return nil
