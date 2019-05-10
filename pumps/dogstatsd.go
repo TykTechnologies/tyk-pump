@@ -98,16 +98,12 @@ func (s *DogStatsdPump) connect(options []statsd.Option) error {
 		return errors.Wrap(err, "unable to create new dogstatsd client")
 	}
 
-	// send tyk-pump tag with every metric
+	c.Namespace = s.conf.Namespace
 	c.Tags = append(c.Tags, "tyk-pump")
 
 	s.client = c
 
 	return nil
-}
-
-func (s *DogStatsdPump) disconnect() {
-	_ = s.client.Close()
 }
 
 func (s *DogStatsdPump) WriteData(data []interface{}) error {
@@ -121,25 +117,30 @@ func (s *DogStatsdPump) WriteData(data []interface{}) error {
 		decoded := v.(analytics.AnalyticsRecord)
 		decoded.Path = strings.TrimRight(decoded.Path, "/")
 
+		/*
+		 * From DataDog website:
+		 * Tags shouldn’t originate from unbounded sources, such as EPOCH timestamps, user IDs, or request IDs. Doing
+		 * so may infinitely increase the number of metrics for your organization and impact your billing.
+		 *
+		 * As such, we have significantly limited the available metrics which gets sent to datadog.
+		 */
 		tags := []string{
-			"path:" + decoded.Path,
-			"method:" + decoded.Method,
-			fmt.Sprintf("response_code:%d", decoded.ResponseCode),
-			"api_key:" + decoded.APIKey,
+			"path:" + decoded.Path,                                // request path
+			"method:" + decoded.Method,                            // request method
+			fmt.Sprintf("response_code:%d", decoded.ResponseCode), // http response code
 			"api_version:" + decoded.APIVersion,
 			"api_name:" + decoded.APIName,
 			"api_id:" + decoded.APIID,
 			"org_id:" + decoded.OrgID,
-			"oauth_id:" + decoded.OauthID,
-			"ip_address:" + decoded.IPAddress,
+			fmt.Sprintf("tracked:%t", decoded.TrackPath),
 		}
 
-		for _, v := range decoded.Tags {
-			tags = append(tags, strings.Replace(v, "-", ":", 1))
+		if decoded.OauthID != "" {
+			tags = append(tags, "oauth_id:"+decoded.OauthID)
 		}
 
-		if err := s.client.Histogram("request", float64(decoded.RequestTime), tags, s.conf.SampleRate); err != nil {
-			s.log.WithError(err).Error("unable to record TimeInMilliseconds, dropping analytics record")
+		if err := s.client.Histogram("request_time", float64(decoded.RequestTime), tags, s.conf.SampleRate); err != nil {
+			s.log.WithError(err).Error("unable to record Histogram, dropping analytics record")
 		}
 	}
 
