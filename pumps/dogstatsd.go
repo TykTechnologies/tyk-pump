@@ -14,6 +14,7 @@ import (
 )
 
 const (
+	defaultDogstatsdNamespace              = "default"
 	defaultDogstatsdSampleRate             = 1
 	defaultDogstatsdBufferedMaxMessages    = 16
 	defaultDogstatsdUDSWriteTimeoutSeconds = 1
@@ -52,26 +53,26 @@ func (s *DogStatsdPump) Init(conf interface{}) error {
 		return errors.Wrap(err, "unable to decode dogstatsd configuration")
 	}
 
+	if s.conf.Namespace == "" {
+		s.conf.Namespace = defaultDogstatsdNamespace
+	}
+	s.conf.Namespace += "."
+	s.log.Infof("namespace: %s", s.conf.Namespace)
+
 	if s.conf.SampleRate == 0 {
 		s.conf.SampleRate = defaultDogstatsdSampleRate
 	}
+	s.log.Infof("sample_rate: %d%%", int(s.conf.SampleRate*100))
 
-	if s.conf.BufferedMaxMessages == 0 {
+	if s.conf.Buffered && s.conf.BufferedMaxMessages == 0 {
 		s.conf.BufferedMaxMessages = defaultDogstatsdBufferedMaxMessages
 	}
+	s.log.Infof("buffered: %t, max_messages: %d", s.conf.Buffered, s.conf.BufferedMaxMessages)
 
 	if s.conf.AsyncUDSWriteTimeout == 0 {
 		s.conf.AsyncUDSWriteTimeout = defaultDogstatsdUDSWriteTimeoutSeconds
 	}
-
-	if err := s.connect(); err != nil {
-		return errors.Wrap(err, "unable to connect to dogstatsd client")
-	}
-
-	return nil
-}
-
-func (s *DogStatsdPump) connect() error {
+	s.log.Infof("async_uds: %t, write_timeout: %ds", s.conf.AsyncUDS, s.conf.AsyncUDSWriteTimeout)
 
 	var opts []statsd.Option
 	if s.conf.Buffered {
@@ -84,13 +85,18 @@ func (s *DogStatsdPump) connect() error {
 		opts = append(opts, statsd.WithWriteTimeoutUDS(time.Duration(s.conf.AsyncUDSWriteTimeout)*time.Second))
 	}
 
-	c, err := statsd.New(s.conf.Address, opts...)
+	if err := s.connect(opts); err != nil {
+		return errors.Wrap(err, "unable to connect to dogstatsd client")
+	}
 
+	return nil
+}
+
+func (s *DogStatsdPump) connect(options []statsd.Option) error {
+	c, err := statsd.New(s.conf.Address, options...)
 	if err != nil {
 		return errors.Wrap(err, "unable to create new dogstatsd client")
 	}
-
-	c.Namespace = s.conf.Namespace + "."
 
 	// send tyk-pump tag with every metric
 	c.Tags = append(c.Tags, "tyk-pump")
