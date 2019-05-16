@@ -3,6 +3,12 @@
 	"ignore": "test",
 	"package": [
 		{
+			"checksumSHA1": "VHX4EEzgZdU9ZMQkSZSh+q2hYHE=",
+			"path": "github.com/DataDog/datadog-go/statsd",
+			"revision": "40bafcb5f6c1d49df36deaf4ab019e44961d5e36",
+			"revisionTime": "2019-04-25T16:34:47Z"
+		},
+		{
 			"checksumSHA1": "NRonvQTe073YVead6//CQ5oVgK4=",
 			"path": "github.com/Sirupsen/logrus",
 			"revision": "1deb2db2a6fff8a35532079061b903c3a25eed52",
@@ -315,10 +321,10 @@
 			"revisionTime": "2019-01-17T07:50:39Z"
 		},
 		{
-			"checksumSHA1": "0H/VjT8w1CB702qWpbYMqr65Mf0=",
+			"checksumSHA1": "I7hloldMJZTqUx6hbVDp5nk9fZQ=",
 			"path": "github.com/pkg/errors",
-			"revision": "ffb6e22f01932bf7ac35e0bad9be11f01d1c8685",
-			"revisionTime": "2019-01-09T06:16:28Z"
+			"revision": "27936f6d90f9c8e1145f11ed52ffffbfdb9e0af7",
+			"revisionTime": "2019-02-27T00:00:51Z"
 		},
 		{
 			"checksumSHA1": "D+eX5lLgOgij1Hs7NO10OLdUVZo=",
