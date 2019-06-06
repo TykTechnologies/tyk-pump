@@ -110,9 +110,9 @@ func (e *ElasticsearchPump) Init(config interface{}) error {
 		log.WithFields(logrus.Fields{
 			"prefix": elasticsearchPrefix,
 		}).Info("Version not specified, defaulting to 3. If you are importing to Elasticsearch 5, please specify \"version\" = \"5\"")
-	case "3", "5":
+	case "3", "5", "6":
 	default:
-		err := errors.New("Only 3 or 5 are valid values for this field")
+		err := errors.New("Only 3, 5, 6 are valid values for this field")
 		log.WithFields(logrus.Fields{
 			"prefix": elasticsearchPrefix,
 		}).Fatal("Invalid version: ", err)
