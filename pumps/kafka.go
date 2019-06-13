@@ -82,6 +82,7 @@ func (k *KafkaPump) Init(config interface{}) error {
 func (k *KafkaPump) WriteData(data []interface{}) error {
 	startTime := time.Now()
 	k.log.Info("Writing ", len(data), " records...")
+	kafkaMessages := make([]kafka.Message, 0)
 	for _, v := range data {
 		//Build message format
 		decoded := v.(analytics.AnalyticsRecord)
@@ -118,12 +119,12 @@ func (k *KafkaPump) WriteData(data []interface{}) error {
 			Time:  time.Now(),
 			Value: json,
 		}
-
-		//Send kafka message
-		kafkaError := k.kafkaWriter.WriteMessages(context.Background(), kafkaMessage)
-		if kafkaError != nil {
-			k.log.WithError(kafkaError).Error("unable to write message")
-		}
+		kafkaMessages = append(kafkaMessages, kafkaMessage)
+	}
+	//Send kafka message
+	kafkaError := k.kafkaWriter.WriteMessages(context.Background(), kafkaMessages...)
+	if kafkaError != nil {
+		k.log.WithError(kafkaError).Error("unable to write message")
 	}
 	k.log.Debug("ElapsedTime in seconds for ", len(data), " records:", time.Now().Sub(startTime))
 	return nil
