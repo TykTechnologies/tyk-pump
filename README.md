@@ -178,6 +178,7 @@ Create a `pump.conf` file:
         "rpc_key": "5b5fd341e6355b5eb194765e",
         "api_key": "008d6d1525104ae77240f687bb866974",
         "connection_string": "localhost:9090",
+	"aggregated": false,
         "use_ssl": false,
         "ssl_insecure_skip_verify": false,
         "group_id": "",
