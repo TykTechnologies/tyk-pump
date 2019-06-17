@@ -10,7 +10,7 @@ echo "Set version number"
 
 if [ $BUILDPKGS == "1" ]; then
     echo "Importing signing key"
-    gpg --list-keys | grep -w $SIGNKEY && echo "Key exists" || gpg --import $BUILDTOOLSDIR/build_key.key
+    gpg --list-keys | grep -w $SIGNKEY && echo "Key exists" || gpg --import --batch $BUILDTOOLSDIR/build_key.key
 fi
 
 DESCRIPTION="Tyk Pump to move analytics data from Redis to any supported back end"
@@ -77,6 +77,6 @@ do
 
         rpmName="tyk-pump-$VERSION-1.${arch/amd64/x86_64}.rpm"
         echo "Signing $arch RPM"
-        $BUILDTOOLSDIR/rpm-sign.exp $rpmName
+        $BUILDTOOLSDIR/rpm-sign.sh $rpmName
     fi
 done
