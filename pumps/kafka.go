@@ -65,11 +65,7 @@ func (k *KafkaPump) Init(config interface{}) error {
 		k.writerConfig.CompressionCodec = snappy.NewCompressionCodec()
 	}
 
-	k.log.Debug("Broker: ", k.kafkaConf.Broker)
-	k.log.Debug("ClientId: ", k.kafkaConf.ClientId)
-	k.log.Debug("Topic: ", k.kafkaConf.Topic)
-	k.log.Debug("Timeout: ", k.kafkaConf.Timeout)
-	k.log.Debug("Compressed: ", k.kafkaConf.Compressed)
+	k.log.Info("Kafka config: ",k.writerConfig)
 	return nil
 }
 
