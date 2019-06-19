@@ -13,7 +13,7 @@ import (
 
 type KafkaPump struct {
 	kafkaConf   *KafkaConf
-	kafkaWriter *kafka.Writer
+	writerConfig kafka.WriterConfig
 	log         *logrus.Entry
 }
 
@@ -55,21 +55,15 @@ func (k *KafkaPump) Init(config interface{}) error {
 		ClientID: k.kafkaConf.ClientId,
 	}
 
-	kafkaConfig := kafka.WriterConfig{
-		Brokers:      k.kafkaConf.Broker,
-		Topic:        k.kafkaConf.Topic,
-		Balancer:     &kafka.LeastBytes{},
-		Dialer:       dialer,
-		WriteTimeout: k.kafkaConf.Timeout * time.Second,
-		ReadTimeout:  k.kafkaConf.Timeout * time.Second,
-		Async:        true, //Non blocking write operations
-	}
+	k.writerConfig.Brokers =k.kafkaConf.Broker
+	k.writerConfig.Topic =k.kafkaConf.Topic
+	k.writerConfig.Balancer =&kafka.LeastBytes{}
+	k.writerConfig.Dialer =dialer
+	k.writerConfig.WriteTimeout =k.kafkaConf.Timeout * time.Second
+	k.writerConfig.ReadTimeout =k.kafkaConf.Timeout * time.Second
 	if k.kafkaConf.Compressed {
-		kafkaConfig.CompressionCodec = snappy.NewCompressionCodec()
+		k.writerConfig.CompressionCodec = snappy.NewCompressionCodec()
 	}
-
-	//Create a new writer
-	k.kafkaWriter = kafka.NewWriter(kafkaConfig)
 
 	k.log.Debug("Broker: ", k.kafkaConf.Broker)
 	k.log.Debug("ClientId: ", k.kafkaConf.ClientId)
@@ -121,10 +115,16 @@ func (k *KafkaPump) WriteData(data []interface{}) error {
 		}
 	}
 	//Send kafka message
-	kafkaError := k.kafkaWriter.WriteMessages(context.Background(), kafkaMessages...)
+	kafkaError := k.write(kafkaMessages)
 	if kafkaError != nil {
 		k.log.WithError(kafkaError).Error("unable to write message")
 	}
 	k.log.Debug("ElapsedTime in seconds for ", len(data), " records:", time.Now().Sub(startTime))
 	return nil
+}
+
+func (k *KafkaPump) write(messages []kafka.Message) error{
+	kafkaWriter := kafka.NewWriter(k.writerConfig)
+	defer kafkaWriter.Close()
+	return kafkaWriter.WriteMessages(context.Background(), messages...)
 }
