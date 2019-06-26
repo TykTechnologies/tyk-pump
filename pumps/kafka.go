@@ -12,9 +12,9 @@ import (
 )
 
 type KafkaPump struct {
-	kafkaConf   *KafkaConf
+	kafkaConf    *KafkaConf
 	writerConfig kafka.WriterConfig
-	log         *logrus.Entry
+	log          *logrus.Entry
 }
 
 type Json map[string]interface{}
@@ -22,11 +22,12 @@ type Json map[string]interface{}
 var kafkaPrefix = "kafka-pump"
 
 type KafkaConf struct {
-	Broker     []string      `mapstructure:"broker"`
-	ClientId   string        `mapstructure:"client_id"`
-	Topic      string        `mapstructure:"topic"`
-	Timeout    time.Duration `mapstructure:"timeout"`
-	Compressed bool          `mapstructure:"compressed"`
+	Broker     []string          `mapstructure:"broker"`
+	ClientId   string            `mapstructure:"client_id"`
+	Topic      string            `mapstructure:"topic"`
+	Timeout    time.Duration     `mapstructure:"timeout"`
+	Compressed bool              `mapstructure:"compressed"`
+	MetaData   map[string]string `mapstructure:"meta_data"`
 }
 
 func (k *KafkaPump) New() Pump {
@@ -55,17 +56,17 @@ func (k *KafkaPump) Init(config interface{}) error {
 		ClientID: k.kafkaConf.ClientId,
 	}
 
-	k.writerConfig.Brokers =k.kafkaConf.Broker
-	k.writerConfig.Topic =k.kafkaConf.Topic
-	k.writerConfig.Balancer =&kafka.LeastBytes{}
-	k.writerConfig.Dialer =dialer
-	k.writerConfig.WriteTimeout =k.kafkaConf.Timeout * time.Second
-	k.writerConfig.ReadTimeout =k.kafkaConf.Timeout * time.Second
+	k.writerConfig.Brokers = k.kafkaConf.Broker
+	k.writerConfig.Topic = k.kafkaConf.Topic
+	k.writerConfig.Balancer = &kafka.LeastBytes{}
+	k.writerConfig.Dialer = dialer
+	k.writerConfig.WriteTimeout = k.kafkaConf.Timeout * time.Second
+	k.writerConfig.ReadTimeout = k.kafkaConf.Timeout * time.Second
 	if k.kafkaConf.Compressed {
 		k.writerConfig.CompressionCodec = snappy.NewCompressionCodec()
 	}
 
-	k.log.Info("Kafka config: ",k.writerConfig)
+	k.log.Info("Kafka config: ", k.writerConfig)
 	return nil
 }
 
@@ -97,6 +98,10 @@ func (k *KafkaPump) WriteData(data []interface{}) error {
 			"content_length":  decoded.ContentLength,
 			"user_agent":      decoded.UserAgent,
 		}
+		//Add static metadata to json
+		for key, value := range k.kafkaConf.MetaData {
+			message[key] = value
+		}
 
 		//Transform object to json string
 		json, jsonError := json.Marshal(message)
@@ -119,7 +124,7 @@ func (k *KafkaPump) WriteData(data []interface{}) error {
 	return nil
 }
 
-func (k *KafkaPump) write(messages []kafka.Message) error{
+func (k *KafkaPump) write(messages []kafka.Message) error {
 	kafkaWriter := kafka.NewWriter(k.writerConfig)
 	defer kafkaWriter.Close()
 	return kafkaWriter.WriteMessages(context.Background(), messages...)

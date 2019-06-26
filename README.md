@@ -202,7 +202,10 @@ Create a `pump.conf` file:
         "client_id": "tyk-pump",
         "topic": "tyk-pump",
         "timeout": 10,
-        "compressed": true
+        "compressed": true,
+        "meta_data": {
+            "key": "value"
+        }
       }
     }
   },
@@ -306,6 +309,8 @@ On startup, you should see the loaded configs when initializing the dogstatsd pu
 `"timeout"` - Timeout is the maximum amount of time will wait for a connect or write to complete. 
 
 `"compressed"` - Enable "github.com/golang/snappy" codec to be used to compress Kafka messages. By default is false
+
+`"meta_data"` - Can be used to set custom metadata inside the kafka message
 
 ## Compiling & Testing
 
