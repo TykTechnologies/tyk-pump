@@ -298,7 +298,7 @@ func AggregateData(data []interface{}) map[string]AnalyticsRecordAggregate {
 		// We need an initial value
 		thisAggregate.Total.RequestTime = thisAggregate.Total.TotalRequestTime / float64(thisAggregate.Total.Hits)
 
-		if thisV.ResponseCode > 400 {
+		if thisV.ResponseCode >= 400 {
 			thisCounter.ErrorTotal = 1
 			thisAggregate.Total.ErrorTotal++
 		}
