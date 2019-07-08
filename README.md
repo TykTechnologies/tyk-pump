@@ -213,7 +213,7 @@ Settings are the same as for the original `tyk.conf` for redis and for mongoDB.
 
 ### Tyk Dashboard
 
-The Tyk Dashboard uses the "mongo-pump-aggregate" collection to display analytics.  This is different than the standard "mongo" pump plugin that will store individual analytic items into mongo.  The aggregate functionality was built to be fast, as querying analytics can get expensive when queried in a non-aggregate fashion.
+The Tyk Dashboard uses the "mongo-pump-aggregate" collection to display analytics.  This is different than the standard "mongo" pump plugin that will store individual analytic items into mongo.  The aggregate functionality was built to be fast, as querying raw analytics is expensive in large data sets.
 
 ### Elasticsearch Config
 
