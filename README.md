@@ -53,6 +53,13 @@ Create a `pump.conf` file:
         "mongo_url": "mongodb://username:password@{hostname:port},{hostname:port}/{db_name}"
       }
     },
+    "mongo-pump-aggregate": {
+      "name": "mongo-pump-aggregate",
+      "meta": {
+	"mongo_url": "mongodb://username:password@{hostname:port},{hostname:port}/{db_name}",
+	"use_mixed_collection": true
+      }
+    },
     "csv": {
       "type": "csv",
       "meta": {
@@ -203,6 +210,10 @@ Create a `pump.conf` file:
 ```
 
 Settings are the same as for the original `tyk.conf` for redis and for mongoDB.
+
+### Tyk Dashboard
+
+The Tyk Dashboard uses the "mongo-pump-aggregate" collection to display analytics.  This is different than the standard "mongo" pump plugin that will store individual analytic items into mongo.  The aggregate functionality was built to be fast, as querying raw analytics is expensive in large data sets.
 
 ### Elasticsearch Config
 
