@@ -78,7 +78,7 @@ func (k *KafkaPump) WriteData(data []interface{}) error {
 		//Build message format
 		decoded := v.(analytics.AnalyticsRecord)
 		message := Json{
-			"timestamp":      decoded.TimeStamp,
+			"timestamp":       decoded.TimeStamp,
 			"method":          decoded.Method,
 			"path":            decoded.Path,
 			"raw_path":        decoded.RawPath,
