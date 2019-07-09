@@ -201,7 +201,7 @@ Create a `pump.conf` file:
         ],
         "client_id": "tyk-pump",
         "topic": "tyk-pump",
-        "timeout": 10,
+        "timeout": 60,
         "compressed": true,
         "meta_data": {
             "key": "value"
