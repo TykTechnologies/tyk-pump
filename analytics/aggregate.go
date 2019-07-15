@@ -388,18 +388,21 @@ func AggregateData(data []interface{}) map[string]AnalyticsRecordAggregate {
 					thisAggregate.APIKeys[value.(string)].Identifier = value.(string)
 					thisAggregate.APIKeys[value.(string)].HumanIdentifier = thisV.Alias
 
-					keyStr := doHash(thisV.APIID + ":" + thisV.Path)
-					data := thisAggregate.KeyEndpoint[value.(string)]
+					if thisV.TrackPath {
+						keyStr := doHash(thisV.APIID + ":" + thisV.Path)
+						data := thisAggregate.KeyEndpoint[value.(string)]
 
-					if data == nil {
-						data = make(map[string]*Counter)
+						if data == nil {
+							data = make(map[string]*Counter)
+						}
+
+						c = IncrementOrSetUnit(data[keyStr])
+						c.Identifier = keyStr
+						c.HumanIdentifier = keyStr
+						data[keyStr] = c
+						thisAggregate.KeyEndpoint[value.(string)] = data
+
 					}
-
-					c = IncrementOrSetUnit(data[keyStr])
-					c.Identifier = keyStr
-					c.HumanIdentifier = keyStr
-					data[keyStr] = c
-					thisAggregate.KeyEndpoint[value.(string)] = data
 				}
 				break
 			case "OauthID":
