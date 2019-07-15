@@ -47,18 +47,8 @@ type AnalyticsRecordAggregate struct {
 
 	Endpoints map[string]*Counter
 
-	KeyEndpoint map[string]map[string]*Counter `bson:"keyendpoints"`
-
-	Lists struct {
-		APIKeys      []Counter
-		APIID        []Counter
-		OauthIDs     []Counter
-		Geo          []Counter
-		Tags         []Counter
-		Errors       []Counter
-		Endpoints    []Counter
-		KeyEndpoints map[string][]Counter
-	}
+	KeyEndpoint   map[string]map[string]*Counter `bson:"keyendpoints"`
+	OauthEndpoint map[string]map[string]*Counter `bson:"oauthendpoints"`
 
 	Total Counter
 
@@ -77,6 +67,7 @@ func (f AnalyticsRecordAggregate) New() AnalyticsRecordAggregate {
 	thisF.Tags = make(map[string]*Counter)
 	thisF.Endpoints = make(map[string]*Counter)
 	thisF.KeyEndpoint = make(map[string]map[string]*Counter)
+	thisF.OauthEndpoint = make(map[string]map[string]*Counter)
 
 	return thisF
 }
@@ -150,6 +141,13 @@ func (f *AnalyticsRecordAggregate) AsChange() bson.M {
 
 	for thisUnit, incVal := range f.KeyEndpoint {
 		parent := "keyendpoints." + thisUnit
+		for k, v := range incVal {
+			newUpdate = f.generateBSONFromProperty(parent, k, v, newUpdate)
+		}
+	}
+
+	for thisUnit, incVal := range f.OauthEndpoint {
+		parent := "oauthendpoints." + thisUnit
 		for k, v := range incVal {
 			newUpdate = f.generateBSONFromProperty(parent, k, v, newUpdate)
 		}
@@ -260,6 +258,19 @@ func (f *AnalyticsRecordAggregate) AsTimeUpdate() bson.M {
 			keyendpoints = append(keyendpoints, *v)
 		}
 		newUpdate["$set"].(bson.M)[parent] = keyendpoints
+	}
+
+	for thisUnit, incVal := range f.OauthEndpoint {
+		parent := "lists.oauthendpoints." + thisUnit
+		oauthendpoints := make([]Counter, 0)
+
+		newUpdate["$set"].(bson.M)[parent] = make([]interface{}, 0)
+		for k, v := range incVal {
+			newTime := v.TotalRequestTime / float64(v.Hits)
+			newUpdate = f.generateSetterForTime("oauthendpoints."+thisUnit, k, newTime, newUpdate)
+			oauthendpoints = append(oauthendpoints, *v)
+		}
+		newUpdate["$set"].(bson.M)[parent] = oauthendpoints
 	}
 
 	newTime := f.Total.TotalRequestTime / float64(f.Total.Hits)
@@ -406,10 +417,25 @@ func AggregateData(data []interface{}) map[string]AnalyticsRecordAggregate {
 				}
 				break
 			case "OauthID":
-				c := IncrementOrSetUnit(thisAggregate.OauthIDs[value.(string)])
 				if value.(string) != "" {
+					c := IncrementOrSetUnit(thisAggregate.OauthIDs[value.(string)])
 					thisAggregate.OauthIDs[value.(string)] = c
 					thisAggregate.OauthIDs[value.(string)].Identifier = value.(string)
+
+					if thisV.TrackPath {
+						keyStr := doHash(thisV.APIID + ":" + thisV.Path)
+						data := thisAggregate.OauthEndpoint[value.(string)]
+
+						if data == nil {
+							data = make(map[string]*Counter)
+						}
+
+						c = IncrementOrSetUnit(data[keyStr])
+						c.Identifier = keyStr
+						c.HumanIdentifier = keyStr
+						data[keyStr] = c
+						thisAggregate.OauthEndpoint[value.(string)] = data
+					}
 				}
 				break
 			case "Geo":
