@@ -286,7 +286,7 @@ func doHash(in string) string {
 }
 
 // AggregateData calculates aggregated data, returns map orgID => aggregated analytics data
-func AggregateData(data []interface{}) map[string]AnalyticsRecordAggregate {
+func AggregateData(data []interface{}, trackAllPaths bool) map[string]AnalyticsRecordAggregate {
 	analyticsPerOrg := make(map[string]AnalyticsRecordAggregate)
 
 	for _, v := range data {
@@ -341,6 +341,10 @@ func AggregateData(data []interface{}) map[string]AnalyticsRecordAggregate {
 		if (thisV.ResponseCode < 300) && (thisV.ResponseCode >= 200) {
 			thisCounter.Success = 1
 			thisAggregate.Total.Success++
+		}
+
+		if trackAllPaths {
+			thisV.TrackPath = true
 		}
 
 		// Convert to a map (for easy iteration)
