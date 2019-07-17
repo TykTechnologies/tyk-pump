@@ -311,14 +311,14 @@
 		{
 			"checksumSHA1": "v/phfIsGFjsgpJqe4BEKbGmMYAY=",
 			"path": "github.com/olivere/elastic/config",
-			"revision": "0a907d7283f2fb93afeadf6d4e6f723a82117367",
-			"revisionTime": "2019-01-17T07:50:39Z"
+			"revision": "5062f56d636572a953ca37c3a359eaf0472473b6",
+			"revisionTime": "2019-06-30T14:43:25Z"
 		},
 		{
 			"checksumSHA1": "AmcqvKDAUGvVsrf8NDCQ/B8cMj4=",
 			"path": "github.com/olivere/elastic/uritemplates",
-			"revision": "0a907d7283f2fb93afeadf6d4e6f723a82117367",
-			"revisionTime": "2019-01-17T07:50:39Z"
+			"revision": "5062f56d636572a953ca37c3a359eaf0472473b6",
+			"revisionTime": "2019-06-30T14:43:25Z"
 		},
 		{
 			"checksumSHA1": "I7hloldMJZTqUx6hbVDp5nk9fZQ=",
