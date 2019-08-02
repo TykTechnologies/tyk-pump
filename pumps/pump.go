@@ -12,9 +12,10 @@ type Pump interface {
 }
 
 func GetPumpByName(name string) (Pump, error) {
-	if pump, ok := AvailablePumps[name]; ok {
+
+	if pump, ok := AvailablePumps[name]; ok && pump != nil {
 		return pump, nil
 	}
 
-	return nil, errors.New("Not found")
+	return nil, errors.New(name + " Not found")
 }
