@@ -55,7 +55,7 @@ Create a `pump.conf` file:
       }
     },
     "mongo-pump-aggregate": {
-      "name": "mongo-pump-aggregate",
+      "type": "mongo-pump-aggregate",
       "meta": {
 	"mongo_url": "mongodb://username:password@{hostname:port},{hostname:port}/{db_name}",
 	"use_mixed_collection": true
@@ -142,7 +142,7 @@ Create a `pump.conf` file:
       }
     },
     "dogstatsd": {
-      "name": "dogstatsd",
+      "type": "dogstatsd",
       "meta": {
         "address": "localhost:8125",
         "namespace": "pump",
@@ -259,7 +259,7 @@ Prometheus is an open-source monitoring system with a dimensional data model, fl
 Add the following section to expose "/metrics" endpoint:
 ```
 "prometheus": {
-        "type": "prometheus",
+  "type": "prometheus",
 	"meta": {
 		"listen_address": "localhost:9090",
 		"path": "/metrics"
@@ -286,9 +286,9 @@ And the following Histogram for latencies:
 - `buffered_max_messages`: Max messages in single datagram if `buffered: true`. Default 16
 - `sample_rate`: default 1 which equates to 100% of requests. To sample at 50%, set to 0.5
 
-```json
+```.json
 "dogstatsd": {
-  "name": "dogstatsd",
+  "type": "dogstatsd",
   "meta": {
     "address": "localhost:8125",
     "namespace": "pump",
