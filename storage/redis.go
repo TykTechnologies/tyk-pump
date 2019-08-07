@@ -248,3 +248,46 @@ func (r *RedisClusterStorageManager) GetAndDeleteSet(keyName string) []interface
 
 	return vals
 }
+
+// SetKey will create (or update) a key value in the store
+func (r *RedisClusterStorageManager) SetKey(keyName, session string, timeout int64) error {
+	log.Debug("[STORE] SET Raw key is: ", keyName)
+	log.Debug("[STORE] Setting key: ", r.fixKey(keyName))
+
+	r.ensureConnection()
+	_, err := r.db.Do("SET", r.fixKey(keyName), session)
+	if timeout > 0 {
+		if err := r.SetExp(keyName, timeout); err != nil {
+			return err
+		}
+	}
+	if err != nil {
+		log.Error("Error trying to set value: ", err)
+		return err
+	}
+	return nil
+}
+
+func (r *RedisClusterStorageManager) SetExp(keyName string, timeout int64) error {
+	_, err := r.db.Do("EXPIRE", r.fixKey(keyName), timeout)
+	if err != nil {
+		log.Error("Could not EXPIRE key: ", err)
+	}
+	return err
+}
+
+func (r *RedisClusterStorageManager) ensureConnection() {
+	if r.db != nil {
+		// already connected
+		return
+	}
+	log.Info("Connection dropped, reconnecting...")
+	for {
+		r.Connect()
+		if r.db != nil {
+			// reconnection worked
+			return
+		}
+		log.Info("Reconnecting again...")
+	}
+}
