@@ -47,6 +47,18 @@ type AnalyticsRecordAggregate struct {
 
 	Endpoints map[string]*Counter
 
+	Lists struct {
+		APIKeys       []Counter
+		APIID         []Counter
+		OauthIDs      []Counter
+		Geo           []Counter
+		Tags          []Counter
+		Errors        []Counter
+		Endpoints     []Counter
+		KeyEndpoint   map[string][]Counter `bson:"keyendpoints"`
+		OauthEndpoint map[string][]Counter `bson:"oauthendpoints"`
+	}
+
 	KeyEndpoint   map[string]map[string]*Counter `bson:"keyendpoints"`
 	OauthEndpoint map[string]map[string]*Counter `bson:"oauthendpoints"`
 
