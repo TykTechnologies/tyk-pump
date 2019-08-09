@@ -140,9 +140,10 @@ func (i *InfluxPump) WriteData(data []interface{}) error {
 
 		// Add point to batch point
 		bp.AddPoint(pt)
-		// Write the batch
-		c.Write(bp)
 	}
+
+	// Now that all points are added, write the batch
+	c.Write(bp)
 
 	return nil
 }
