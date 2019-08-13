@@ -267,6 +267,8 @@ Add the following section to expose "/metrics" endpoint:
 },
 ```
 
+`Note` - When run as docker image then `"listen_address": ":9090"`
+
 Tyk expose the following counters:
 - tyk_http_status{code, api}
 - tyk_http_status_per_path{code, api, path, method}
