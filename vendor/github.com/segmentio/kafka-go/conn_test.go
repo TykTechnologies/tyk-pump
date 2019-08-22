@@ -153,6 +153,11 @@ func TestConn(t *testing.T) {
 		},
 
 		{
+			scenario: "unchecked seeks allow the connection to be positionned outside the boundaries of the partition",
+			function: testConnSeekDontCheck,
+		},
+
+		{
 			scenario: "writing and reading messages sequentially should preserve the order",
 			function: testConnWriteReadSequentially,
 		},
@@ -439,6 +444,27 @@ func testConnSeekRandomOffset(t *testing.T, conn *Conn) {
 	}
 }
 
+func testConnSeekDontCheck(t *testing.T, conn *Conn) {
+	for i := 0; i != 10; i++ {
+		if _, err := conn.Write([]byte(strconv.Itoa(i))); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	offset, err := conn.Seek(42, SeekAbsolute|SeekDontCheck)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if offset != 42 {
+		t.Error("bad offset:", offset)
+	}
+
+	if _, err := conn.ReadMessage(1024); err != OffsetOutOfRange {
+		t.Error("unexpected error:", err)
+	}
+}
+
 func testConnWriteReadSequentially(t *testing.T, conn *Conn) {
 	for i := 0; i != 10; i++ {
 		if _, err := conn.Write([]byte(strconv.Itoa(i))); err != nil {
@@ -571,7 +597,7 @@ func createGroup(t *testing.T, conn *Conn, groupID string) (generationID int32, 
 	joinGroup := join()
 
 	// sync the group
-	_, err := conn.syncGroups(syncGroupRequestV0{
+	_, err := conn.syncGroup(syncGroupRequestV0{
 		GroupID:      groupID,
 		GenerationID: joinGroup.GenerationID,
 		MemberID:     joinGroup.MemberID,
@@ -583,7 +609,7 @@ func createGroup(t *testing.T, conn *Conn, groupID string) (generationID int32, 
 		},
 	})
 	if err != nil {
-		t.Fatalf("bad syncGroups: %s", err)
+		t.Fatalf("bad syncGroup: %s", err)
 	}
 
 	generationID = joinGroup.GenerationID
@@ -684,7 +710,7 @@ func testConnHeartbeatErr(t *testing.T, conn *Conn) {
 	groupID := makeGroupID()
 	createGroup(t, conn, groupID)
 
-	_, err := conn.syncGroups(syncGroupRequestV0{
+	_, err := conn.syncGroup(syncGroupRequestV0{
 		GroupID: groupID,
 	})
 	if err != UnknownMemberId && err != NotCoordinatorForGroup {
@@ -708,7 +734,7 @@ func testConnSyncGroupErr(t *testing.T, conn *Conn) {
 	groupID := makeGroupID()
 	waitForCoordinator(t, conn, groupID)
 
-	_, err := conn.syncGroups(syncGroupRequestV0{
+	_, err := conn.syncGroup(syncGroupRequestV0{
 		GroupID: groupID,
 	})
 	if err != UnknownMemberId && err != NotCoordinatorForGroup {
@@ -818,9 +844,11 @@ func testConnFetchAndCommitOffsets(t *testing.T, conn *Conn) {
 }
 
 func testConnWriteReadConcurrently(t *testing.T, conn *Conn) {
+
 	const N = 1000
 	var msgs = make([]string, N)
 	var done = make(chan struct{})
+	var written = make(chan struct{}, N/10)
 
 	for i := 0; i != N; i++ {
 		msgs[i] = strconv.Itoa(i)
@@ -832,12 +860,21 @@ func testConnWriteReadConcurrently(t *testing.T, conn *Conn) {
 			if _, err := conn.Write([]byte(msg)); err != nil {
 				t.Error(err)
 			}
+			written <- struct{}{}
 		}
 	}()
 
 	b := make([]byte, 128)
 
 	for i := 0; i != N; i++ {
+		// wait until at least one message has been written.  the reason for
+		// this synchronization is that we aren't using deadlines.  as such, if
+		// the read happens before a message is available, it will cause a
+		// deadlock because the read request will never hit the one byte minimum
+		// in order to return and release the lock on the conn.  by ensuring
+		// that there's at least one message produced, we don't hit that
+		// condition.
+		<-written
 		n, err := conn.Read(b)
 		if err != nil {
 			t.Error(err)
@@ -880,7 +917,7 @@ func testConnReadEmptyWithDeadline(t *testing.T, conn *Conn) {
 	b := make([]byte, 100)
 
 	start := time.Now()
-	deadline := start.Add(250 * time.Millisecond)
+	deadline := start.Add(time.Second)
 
 	conn.SetReadDeadline(deadline)
 	n, err := conn.Read(b)
