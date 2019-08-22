@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"errors"
 	"fmt"
+	"io"
 	"math"
 	"net"
 	"os"
@@ -54,6 +55,7 @@ type Conn struct {
 	// write buffer (synchronized on wlock)
 	wlock sync.Mutex
 	wbuf  bufio.Writer
+	wb    writeBuffer
 
 	// deadline management
 	wdeadline connDeadline
@@ -158,6 +160,8 @@ func NewConnWith(conn net.Conn, config ConnConfig) *Conn {
 		requiredAcks:    -1,
 		transactionalID: emptyToNullable(config.TransactionalID),
 	}
+
+	c.wb.w = &c.wbuf
 
 	// The fetch request needs to ask for a MaxBytes value that is at least
 	// enough to load the control data of the response. To avoid having to
@@ -492,10 +496,10 @@ func (c *Conn) offsetFetch(request offsetFetchRequestV1) (offsetFetchResponseV1,
 	return response, nil
 }
 
-// syncGroups completes the handshake to join a consumer group
+// syncGroup completes the handshake to join a consumer group
 //
 // See http://kafka.apache.org/protocol.html#The_Messages_SyncGroup
-func (c *Conn) syncGroups(request syncGroupRequestV0) (syncGroupResponseV0, error) {
+func (c *Conn) syncGroup(request syncGroupRequestV0) (syncGroupResponseV0, error) {
 	var response syncGroupResponseV0
 
 	err := c.readOperation(
@@ -595,6 +599,12 @@ const (
 	SeekAbsolute = 1 // Seek to an absolute offset.
 	SeekEnd      = 2 // Seek relative to the last offset available in the partition.
 	SeekCurrent  = 3 // Seek relative to the current offset.
+
+	// This flag may be combined to any of the SeekAbsolute and SeekCurrent
+	// constants to skip the bound check that the connection would do otherwise.
+	// Programs can use this flag to avoid making a metadata request to the kafka
+	// broker to read the current first and last offsets of the partition.
+	SeekDontCheck = 1 << 30
 )
 
 // Seek sets the offset for the next read or write operation according to whence, which
@@ -604,10 +614,30 @@ const (
 // as in lseek(2) or os.Seek.
 // The method returns the new absolute offset of the connection.
 func (c *Conn) Seek(offset int64, whence int) (int64, error) {
+	seekDontCheck := (whence & SeekDontCheck) != 0
+	whence &= ^SeekDontCheck
+
 	switch whence {
 	case SeekStart, SeekAbsolute, SeekEnd, SeekCurrent:
 	default:
 		return 0, fmt.Errorf("whence must be one of 0, 1, 2, or 3. (whence = %d)", whence)
+	}
+
+	if seekDontCheck {
+		if whence == SeekAbsolute {
+			c.mutex.Lock()
+			c.offset = offset
+			c.mutex.Unlock()
+			return offset, nil
+		}
+
+		if whence == SeekCurrent {
+			c.mutex.Lock()
+			c.offset += offset
+			offset = c.offset
+			c.mutex.Unlock()
+			return offset, nil
+		}
 	}
 
 	if whence == SeekAbsolute {
@@ -618,6 +648,7 @@ func (c *Conn) Seek(offset int64, whence int) (int64, error) {
 			return offset, nil
 		}
 	}
+
 	if whence == SeekCurrent {
 		c.mutex.Lock()
 		offset = c.offset + offset
@@ -726,7 +757,9 @@ func (c *Conn) ReadBatchWith(cfg ReadBatchConfig) *Batch {
 		return &Batch{err: fmt.Errorf("kafka.(*Conn).ReadBatch: minBytes (%d) > maxBytes (%d)", cfg.MinBytes, cfg.MaxBytes)}
 	}
 
-	offset, err := c.Seek(c.Offset())
+	offset, whence := c.Offset()
+
+	offset, err := c.Seek(offset, whence|SeekDontCheck)
 	if err != nil {
 		return &Batch{err: dontExpectEOF(err)}
 	}
@@ -734,11 +767,9 @@ func (c *Conn) ReadBatchWith(cfg ReadBatchConfig) *Batch {
 	id, err := c.doRequest(&c.rdeadline, func(deadline time.Time, id int32) error {
 		now := time.Now()
 		deadline = adjustDeadlineForRTT(deadline, now, defaultRTT)
-		adjustedDeadline = deadline
 		switch c.fetchVersion {
 		case v10:
-			return writeFetchRequestV10(
-				&c.wbuf,
+			return c.wb.writeFetchRequestV10(
 				id,
 				c.clientID,
 				c.topic,
@@ -750,8 +781,7 @@ func (c *Conn) ReadBatchWith(cfg ReadBatchConfig) *Batch {
 				int8(cfg.IsolationLevel),
 			)
 		case v5:
-			return writeFetchRequestV5(
-				&c.wbuf,
+			return c.wb.writeFetchRequestV5(
 				id,
 				c.clientID,
 				c.topic,
@@ -763,8 +793,7 @@ func (c *Conn) ReadBatchWith(cfg ReadBatchConfig) *Batch {
 				int8(cfg.IsolationLevel),
 			)
 		default:
-			return writeFetchRequestV2(
-				&c.wbuf,
+			return c.wb.writeFetchRequestV2(
 				id,
 				c.clientID,
 				c.topic,
@@ -861,7 +890,7 @@ func (c *Conn) ReadOffsets() (first, last int64, err error) {
 func (c *Conn) readOffset(t int64) (offset int64, err error) {
 	err = c.readOperation(
 		func(deadline time.Time, id int32) error {
-			return writeListOffsetRequestV1(&c.wbuf, id, c.clientID, c.topic, c.partition, t)
+			return c.wb.writeListOffsetRequestV1(id, c.clientID, c.topic, c.partition, t)
 		},
 		func(deadline time.Time, size int) error {
 			return expectZeroSize(readArrayWith(&c.rbuf, size, func(r *bufio.Reader, size int) (int, error) {
@@ -1028,8 +1057,7 @@ func (c *Conn) writeCompressedMessages(codec CompressionCodec, msgs ...Message) 
 			deadline = adjustDeadlineForRTT(deadline, now, defaultRTT)
 			switch version := c.apiVersions[produceRequest].MaxVersion; {
 			case version >= 7:
-				return writeProduceRequestV7(
-					&c.wbuf,
+				return c.wb.writeProduceRequestV7(
 					codec,
 					id,
 					c.clientID,
@@ -1041,8 +1069,7 @@ func (c *Conn) writeCompressedMessages(codec CompressionCodec, msgs ...Message) 
 					msgs...,
 				)
 			case version >= 3:
-				return writeProduceRequestV3(
-					&c.wbuf,
+				return c.wb.writeProduceRequestV3(
 					codec,
 					id,
 					c.clientID,
@@ -1054,8 +1081,7 @@ func (c *Conn) writeCompressedMessages(codec CompressionCodec, msgs ...Message) 
 					msgs...,
 				)
 			default:
-				return writeProduceRequestV2(
-					&c.wbuf,
+				return c.wb.writeProduceRequestV2(
 					codec,
 					id,
 					c.clientID,
@@ -1140,14 +1166,14 @@ func (c *Conn) SetRequiredAcks(n int) error {
 func (c *Conn) writeRequestHeader(apiKey apiKey, apiVersion apiVersion, correlationID int32, size int32) {
 	hdr := c.requestHeader(apiKey, apiVersion, correlationID)
 	hdr.Size = (hdr.size() + size) - 4
-	hdr.writeTo(&c.wbuf)
+	hdr.writeTo(&c.wb)
 }
 
 func (c *Conn) writeRequest(apiKey apiKey, apiVersion apiVersion, correlationID int32, req request) error {
 	hdr := c.requestHeader(apiKey, apiVersion, correlationID)
 	hdr.Size = (hdr.size() + req.size()) - 4
-	hdr.writeTo(&c.wbuf)
-	req.writeTo(&c.wbuf)
+	hdr.writeTo(&c.wb)
+	req.writeTo(&c.wb)
 	return c.wbuf.Flush()
 }
 
@@ -1235,7 +1261,18 @@ func (c *Conn) doRequest(d *connDeadline, write func(time.Time, int32) error) (i
 }
 
 func (c *Conn) waitResponse(d *connDeadline, id int32) (deadline time.Time, size int, lock *sync.Mutex, err error) {
-	for {
+	// I applied exactly zero scientific process to choose this value,
+	// it seemed to worked fine in practice tho.
+	//
+	// My guess is 100 iterations where the goroutine gets descheduled
+	// by calling runtime.Gosched() may end up on a wait of ~10ms to ~1s
+	// (if the programs is heavily CPU bound and has lots of goroutines),
+	// so it should allow for bailing quickly without taking too much risk
+	// to get false positives.
+	const maxAttempts = 100
+	var lastID int32
+
+	for attempt := 0; attempt < maxAttempts; {
 		var rsz int32
 		var rid int32
 
@@ -1259,7 +1296,26 @@ func (c *Conn) waitResponse(d *connDeadline, id int32) (deadline time.Time, size
 		// been received but the current operation is not the target for it.
 		c.rlock.Unlock()
 		runtime.Gosched()
+
+		// This check is a safety mechanism, if we make too many loop
+		// iterations and always draw the same id then we could be facing
+		// corrupted data on the wire, or the goroutine(s) sharing ownership
+		// of this connection may have panicked and therefore will not be able
+		// to participate in consuming bytes from the wire. To prevent entering
+		// an infinite loop which reads the same value over and over we bail
+		// with the uncommon io.ErrNoProgress error which should give a good
+		// enough signal about what is going wrong.
+		if rid != lastID {
+			attempt++
+		} else {
+			attempt = 0
+		}
+
+		lastID = rid
 	}
+
+	err = io.ErrNoProgress
+	return
 }
 
 func (c *Conn) requestHeader(apiKey apiKey, apiVersion apiVersion, correlationID int32) requestHeader {
@@ -1309,7 +1365,7 @@ func (c *Conn) ApiVersions() ([]ApiVersion, error) {
 		}
 		h.Size = (h.size() - 4)
 
-		h.writeTo(&c.wbuf)
+		h.writeTo(&c.wb)
 		return c.wbuf.Flush()
 	})
 	if err != nil {
@@ -1478,11 +1534,11 @@ func (c *Conn) saslAuthenticate(data []byte) ([]byte, error) {
 
 	// fall back to opaque bytes on the wire.  the broker is expecting these if
 	// it just processed a v0 sasl handshake.
-	writeInt32(&c.wbuf, int32(len(data)))
-	if _, err := c.wbuf.Write(data); err != nil {
+	c.wb.writeInt32(int32(len(data)))
+	if _, err := c.wb.Write(data); err != nil {
 		return nil, err
 	}
-	if err := c.wbuf.Flush(); err != nil {
+	if err := c.wb.Flush(); err != nil {
 		return nil, err
 	}
 
