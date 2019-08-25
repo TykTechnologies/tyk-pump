@@ -6,17 +6,17 @@ import (
 	"os"
 
 	"github.com/gocraft/health"
-	"gopkg.in/vmihailenco/msgpack.v2"
+	msgpack "gopkg.in/vmihailenco/msgpack.v2"
 
 	"github.com/TykTechnologies/logrus"
-	"github.com/TykTechnologies/logrus-prefixed-formatter"
+	prefixed "github.com/TykTechnologies/logrus-prefixed-formatter"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/TykTechnologies/tyk-pump/analytics/demo"
 	"github.com/TykTechnologies/tyk-pump/pumps"
 	"github.com/TykTechnologies/tyk-pump/storage"
-	"github.com/TykTechnologies/tykcommon-logger"
+	logger "github.com/TykTechnologies/tykcommon-logger"
 
-	"gopkg.in/alecthomas/kingpin.v2"
+	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
 var SystemConfig TykPumpConfiguration
@@ -76,6 +76,15 @@ func setupAnalyticsStore() {
 	// Swap key prefixes for uptime purger
 	uptimeConf.RedisKeyPrefix = "host-checker:"
 	UptimeStorage.Init(uptimeConf)
+}
+
+func storeVersion() {
+	var versionStore = &storage.RedisClusterStorageManager{}
+	versionConf := SystemConfig.AnalyticsStorageConfig
+	versionStore.KeyPrefix = "version-check-"
+	versionStore.Config = versionConf
+	versionStore.Connect()
+	versionStore.SetKey("pump", VERSION, 0)
 }
 
 func initialisePumps() {
@@ -181,6 +190,10 @@ func writeToPumps(keys []interface{}, job *health.Job, startTime time.Time) {
 
 func main() {
 	SetupInstrumentation()
+
+	// Store version which will be read by dashboard and sent to
+	// vclu(version check and licecnse utilisation) service
+	storeVersion()
 
 	// Create the store
 	setupAnalyticsStore()
