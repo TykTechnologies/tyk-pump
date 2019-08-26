@@ -16,14 +16,18 @@ const (
 )
 
 type Counter struct {
-	Hits             int       `json:"hits"`
-	Success          int       `json:"success"`
-	ErrorTotal       int       `json:"error"`
-	RequestTime      float64   `json:"request_time"`
-	TotalRequestTime float64   `json:"total_request_time"`
-	Identifier       string    `json:"identifier"`
-	HumanIdentifier  string    `json:"human_identifier"`
-	LastTime         time.Time `json:"last_time"`
+	Hits              int       `json:"hits"`
+	Success           int       `json:"success"`
+	ErrorTotal        int       `json:"error"`
+	RequestTime       float64   `json:"request_time"`
+	TotalRequestTime  float64   `json:"total_request_time"`
+	Identifier        string    `json:"identifier"`
+	HumanIdentifier   string    `json:"human_identifier"`
+	LastTime          time.Time `json:"last_time"`
+	OpenConnections   int64     `json:"open_connections"`
+	ClosedConnections int64     `json:"closed_connections"`
+	BytesIn           int64     `json:"bytes_in"`
+	BytesOut          int64     `json:"bytes_out"`
 }
 
 type AnalyticsRecordAggregate struct {
@@ -98,6 +102,10 @@ func (f *AnalyticsRecordAggregate) generateBSONFromProperty(parent, thisUnit str
 	newUpdate["$set"].(bson.M)[constructor+"identifier"] = incVal.Identifier
 	newUpdate["$set"].(bson.M)[constructor+"humanidentifier"] = incVal.HumanIdentifier
 	newUpdate["$set"].(bson.M)[constructor+"lasttime"] = incVal.LastTime
+	newUpdate["$set"].(bson.M)[constructor+"openconnections"] = incVal.OpenConnections
+	newUpdate["$set"].(bson.M)[constructor+"closedconnections"] = incVal.ClosedConnections
+	newUpdate["$set"].(bson.M)[constructor+"bytesin"] = incVal.BytesIn
+	newUpdate["$set"].(bson.M)[constructor+"bytesout"] = incVal.BytesOut
 
 	return newUpdate
 }
@@ -330,29 +338,42 @@ func AggregateData(data []interface{}, trackAllPaths bool) map[string]AnalyticsR
 		thisAggregate.LastTime = thisV.TimeStamp
 
 		// Create the counter for this record
-		thisCounter := Counter{
-			Hits:             1,
-			Success:          0,
-			ErrorTotal:       0,
-			RequestTime:      float64(thisV.RequestTime),
-			TotalRequestTime: float64(thisV.RequestTime),
-			LastTime:         thisV.TimeStamp,
-		}
+		var thisCounter Counter
+		if thisV.ResponseCode == -1 {
+			thisCounter = Counter{
+				LastTime:          thisV.TimeStamp,
+				OpenConnections:   thisV.Network.OpenConnections,
+				ClosedConnections: thisV.Network.ClosedConnection,
+				BytesIn:           thisV.Network.BytesIn,
+				BytesOut:          thisV.Network.BytesOut,
+			}
+			thisAggregate.Total.OpenConnections += thisCounter.OpenConnections
+			thisAggregate.Total.ClosedConnections += thisCounter.ClosedConnections
+			thisAggregate.Total.BytesIn += thisCounter.BytesIn
+			thisAggregate.Total.BytesOut += thisCounter.BytesOut
+		} else {
+			thisCounter = Counter{
+				Hits:             1,
+				Success:          0,
+				ErrorTotal:       0,
+				RequestTime:      float64(thisV.RequestTime),
+				TotalRequestTime: float64(thisV.RequestTime),
+				LastTime:         thisV.TimeStamp,
+			}
+			thisAggregate.Total.Hits++
+			thisAggregate.Total.TotalRequestTime += float64(thisV.RequestTime)
 
-		thisAggregate.Total.Hits++
-		thisAggregate.Total.TotalRequestTime += float64(thisV.RequestTime)
+			// We need an initial value
+			thisAggregate.Total.RequestTime = thisAggregate.Total.TotalRequestTime / float64(thisAggregate.Total.Hits)
+			if thisV.ResponseCode > 400 {
+				thisCounter.ErrorTotal = 1
+				thisAggregate.Total.ErrorTotal++
+			}
 
-		// We need an initial value
-		thisAggregate.Total.RequestTime = thisAggregate.Total.TotalRequestTime / float64(thisAggregate.Total.Hits)
-
-		if thisV.ResponseCode >= 400 {
-			thisCounter.ErrorTotal = 1
-			thisAggregate.Total.ErrorTotal++
-		}
-
-		if (thisV.ResponseCode < 300) && (thisV.ResponseCode >= 200) {
-			thisCounter.Success = 1
-			thisAggregate.Total.Success++
+			if (thisV.ResponseCode < 300) && (thisV.ResponseCode >= 200) {
+				thisCounter.Success = 1
+				thisAggregate.Total.Success++
+			}
 		}
 
 		if trackAllPaths {
