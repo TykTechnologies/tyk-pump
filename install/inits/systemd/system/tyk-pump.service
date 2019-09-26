@@ -1,5 +1,7 @@
 [Unit]
 Description=Tyk Pump to move analytics data from Redis to any supported back end
+Wants=network-online.target
+After=network-online.target
  
 [Service]
 Type=simple
