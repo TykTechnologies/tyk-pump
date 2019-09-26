@@ -11,6 +11,13 @@ import (
 
 var log = logger.GetLogger()
 
+type NetworkStats struct {
+	OpenConnections  int64
+	ClosedConnection int64
+	BytesIn          int64
+	BytesOut         int64
+}
+
 // AnalyticsRecord encodes the details of a request
 type AnalyticsRecord struct {
 	Method        string
@@ -36,6 +43,7 @@ type AnalyticsRecord struct {
 	RawResponse   string
 	IPAddress     string
 	Geo           GeoData
+	Network       NetworkStats
 	Tags          []string
 	Alias         string
 	TrackPath     bool

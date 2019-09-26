@@ -131,7 +131,6 @@ func StartPurgeLoop(secInterval int) {
 		job := instrument.NewJob("PumpRecordsPurge")
 
 		AnalyticsValues := AnalyticsStore.GetAndDeleteSet(storage.ANALYTICS_KEYNAME)
-
 		if len(AnalyticsValues) > 0 {
 			startTime := time.Now()
 

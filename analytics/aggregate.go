@@ -16,14 +16,18 @@ const (
 )
 
 type Counter struct {
-	Hits             int       `json:"hits"`
-	Success          int       `json:"success"`
-	ErrorTotal       int       `json:"error"`
-	RequestTime      float64   `json:"request_time"`
-	TotalRequestTime float64   `json:"total_request_time"`
-	Identifier       string    `json:"identifier"`
-	HumanIdentifier  string    `json:"human_identifier"`
-	LastTime         time.Time `json:"last_time"`
+	Hits              int       `json:"hits"`
+	Success           int       `json:"success"`
+	ErrorTotal        int       `json:"error"`
+	RequestTime       float64   `json:"request_time"`
+	TotalRequestTime  float64   `json:"total_request_time"`
+	Identifier        string    `json:"identifier"`
+	HumanIdentifier   string    `json:"human_identifier"`
+	LastTime          time.Time `json:"last_time"`
+	OpenConnections   int64     `json:"open_connections"`
+	ClosedConnections int64     `json:"closed_connections"`
+	BytesIn           int64     `json:"bytes_in"`
+	BytesOut          int64     `json:"bytes_out"`
 }
 
 type AnalyticsRecordAggregate struct {
@@ -98,6 +102,10 @@ func (f *AnalyticsRecordAggregate) generateBSONFromProperty(parent, thisUnit str
 	newUpdate["$set"].(bson.M)[constructor+"identifier"] = incVal.Identifier
 	newUpdate["$set"].(bson.M)[constructor+"humanidentifier"] = incVal.HumanIdentifier
 	newUpdate["$set"].(bson.M)[constructor+"lasttime"] = incVal.LastTime
+	newUpdate["$set"].(bson.M)[constructor+"openconnections"] = incVal.OpenConnections
+	newUpdate["$set"].(bson.M)[constructor+"closedconnections"] = incVal.ClosedConnections
+	newUpdate["$set"].(bson.M)[constructor+"bytesin"] = incVal.BytesIn
+	newUpdate["$set"].(bson.M)[constructor+"bytesout"] = incVal.BytesOut
 
 	return newUpdate
 }
@@ -330,156 +338,181 @@ func AggregateData(data []interface{}, trackAllPaths bool) map[string]AnalyticsR
 		thisAggregate.LastTime = thisV.TimeStamp
 
 		// Create the counter for this record
-		thisCounter := Counter{
-			Hits:             1,
-			Success:          0,
-			ErrorTotal:       0,
-			RequestTime:      float64(thisV.RequestTime),
-			TotalRequestTime: float64(thisV.RequestTime),
-			LastTime:         thisV.TimeStamp,
-		}
-
-		thisAggregate.Total.Hits++
-		thisAggregate.Total.TotalRequestTime += float64(thisV.RequestTime)
-
-		// We need an initial value
-		thisAggregate.Total.RequestTime = thisAggregate.Total.TotalRequestTime / float64(thisAggregate.Total.Hits)
-
-		if thisV.ResponseCode >= 400 {
-			thisCounter.ErrorTotal = 1
-			thisAggregate.Total.ErrorTotal++
-		}
-
-		if (thisV.ResponseCode < 300) && (thisV.ResponseCode >= 200) {
-			thisCounter.Success = 1
-			thisAggregate.Total.Success++
-		}
-
-		if trackAllPaths {
-			thisV.TrackPath = true
-		}
-
-		// Convert to a map (for easy iteration)
-		vAsMap := structs.Map(thisV)
-		for key, value := range vAsMap {
-
-			// Mini function to handle incrementing a specific counter in our object
-			IncrementOrSetUnit := func(c *Counter) *Counter {
+		var thisCounter Counter
+		if thisV.ResponseCode == -1 {
+			thisCounter = Counter{
+				LastTime:          thisV.TimeStamp,
+				OpenConnections:   thisV.Network.OpenConnections,
+				ClosedConnections: thisV.Network.ClosedConnection,
+				BytesIn:           thisV.Network.BytesIn,
+				BytesOut:          thisV.Network.BytesOut,
+			}
+			thisAggregate.Total.OpenConnections += thisCounter.OpenConnections
+			thisAggregate.Total.ClosedConnections += thisCounter.ClosedConnections
+			thisAggregate.Total.BytesIn += thisCounter.BytesIn
+			thisAggregate.Total.BytesOut += thisCounter.BytesOut
+			if thisV.APIID != "" {
+				c := thisAggregate.APIID[thisV.APIID]
 				if c == nil {
-					newCounter := thisCounter
-					c = &newCounter
-				} else {
-					c.Hits += thisCounter.Hits
-					c.Success += thisCounter.Success
-					c.ErrorTotal += thisCounter.ErrorTotal
-					c.TotalRequestTime += thisCounter.TotalRequestTime
-					c.RequestTime = c.TotalRequestTime / float64(c.Hits)
-
+					c = &Counter{
+						Identifier:      thisV.APIID,
+						HumanIdentifier: thisV.APIName,
+					}
+					thisAggregate.APIID[thisV.APIID] = c
 				}
+				c.BytesIn += thisCounter.BytesIn
+				c.BytesOut += thisCounter.BytesOut
+			}
+		} else {
+			thisCounter = Counter{
+				Hits:             1,
+				Success:          0,
+				ErrorTotal:       0,
+				RequestTime:      float64(thisV.RequestTime),
+				TotalRequestTime: float64(thisV.RequestTime),
+				LastTime:         thisV.TimeStamp,
+			}
+			thisAggregate.Total.Hits++
+			thisAggregate.Total.TotalRequestTime += float64(thisV.RequestTime)
 
-				return c
+			// We need an initial value
+			thisAggregate.Total.RequestTime = thisAggregate.Total.TotalRequestTime / float64(thisAggregate.Total.Hits)
+			if thisV.ResponseCode > 400 {
+				thisCounter.ErrorTotal = 1
+				thisAggregate.Total.ErrorTotal++
 			}
 
-			switch key {
-			case "APIID":
-				c := IncrementOrSetUnit(thisAggregate.APIID[value.(string)])
-				if value.(string) != "" {
-					thisAggregate.APIID[value.(string)] = c
-					thisAggregate.APIID[value.(string)].Identifier = thisV.APIID
-					thisAggregate.APIID[value.(string)].HumanIdentifier = thisV.APIName
-				}
-				break
-			case "ResponseCode":
-				errAsStr := strconv.Itoa(value.(int))
-				if errAsStr != "" {
-					c := IncrementOrSetUnit(thisAggregate.Errors[errAsStr])
-					if c.ErrorTotal > 0 {
-						thisAggregate.Errors[errAsStr] = c
-						thisAggregate.Errors[errAsStr].Identifier = errAsStr
-					}
-				}
-				break
-			case "APIVersion":
-				versionStr := doHash(thisV.APIID + ":" + value.(string))
-				c := IncrementOrSetUnit(thisAggregate.Versions[versionStr])
-				if value.(string) != "" {
-					thisAggregate.Versions[versionStr] = c
-					thisAggregate.Versions[versionStr].Identifier = value.(string)
-					thisAggregate.Versions[versionStr].HumanIdentifier = value.(string)
-				}
-				break
-			case "APIKey":
-				if value.(string) != "" {
-					c := IncrementOrSetUnit(thisAggregate.APIKeys[value.(string)])
-					thisAggregate.APIKeys[value.(string)] = c
-					thisAggregate.APIKeys[value.(string)].Identifier = value.(string)
-					thisAggregate.APIKeys[value.(string)].HumanIdentifier = thisV.Alias
-
-					if thisV.TrackPath {
-						keyStr := doHash(thisV.APIID + ":" + thisV.Path)
-						data := thisAggregate.KeyEndpoint[value.(string)]
-
-						if data == nil {
-							data = make(map[string]*Counter)
-						}
-
-						c = IncrementOrSetUnit(data[keyStr])
-						c.Identifier = keyStr
-						c.HumanIdentifier = keyStr
-						data[keyStr] = c
-						thisAggregate.KeyEndpoint[value.(string)] = data
-
-					}
-				}
-				break
-			case "OauthID":
-				if value.(string) != "" {
-					c := IncrementOrSetUnit(thisAggregate.OauthIDs[value.(string)])
-					thisAggregate.OauthIDs[value.(string)] = c
-					thisAggregate.OauthIDs[value.(string)].Identifier = value.(string)
-
-					if thisV.TrackPath {
-						keyStr := doHash(thisV.APIID + ":" + thisV.Path)
-						data := thisAggregate.OauthEndpoint[value.(string)]
-
-						if data == nil {
-							data = make(map[string]*Counter)
-						}
-
-						c = IncrementOrSetUnit(data[keyStr])
-						c.Identifier = keyStr
-						c.HumanIdentifier = keyStr
-						data[keyStr] = c
-						thisAggregate.OauthEndpoint[value.(string)] = data
-					}
-				}
-				break
-			case "Geo":
-				c := IncrementOrSetUnit(thisAggregate.Geo[thisV.Geo.Country.ISOCode])
-				if thisV.Geo.Country.ISOCode != "" {
-					thisAggregate.Geo[thisV.Geo.Country.ISOCode] = c
-					thisAggregate.Geo[thisV.Geo.Country.ISOCode].Identifier = thisV.Geo.Country.ISOCode
-					thisAggregate.Geo[thisV.Geo.Country.ISOCode].HumanIdentifier = thisV.Geo.Country.ISOCode
-				}
-				break
-			case "Tags":
-				for _, thisTag := range thisV.Tags {
-					c := IncrementOrSetUnit(thisAggregate.Tags[thisTag])
-					thisAggregate.Tags[thisTag] = c
-					thisAggregate.Tags[thisTag].Identifier = thisTag
-					thisAggregate.Tags[thisTag].HumanIdentifier = thisTag
-				}
-				break
-
-			case "TrackPath":
-				if value.(bool) {
-					c := IncrementOrSetUnit(thisAggregate.Endpoints[thisV.Path])
-					thisAggregate.Endpoints[thisV.Path] = c
-					thisAggregate.Endpoints[thisV.Path].Identifier = thisV.Path
-					thisAggregate.Endpoints[thisV.Path].HumanIdentifier = thisV.Path
-				}
-				break
+			if (thisV.ResponseCode < 300) && (thisV.ResponseCode >= 200) {
+				thisCounter.Success = 1
+				thisAggregate.Total.Success++
 			}
+			if trackAllPaths {
+				thisV.TrackPath = true
+			}
+
+			// Convert to a map (for easy iteration)
+			vAsMap := structs.Map(thisV)
+			for key, value := range vAsMap {
+
+				// Mini function to handle incrementing a specific counter in our object
+				IncrementOrSetUnit := func(c *Counter) *Counter {
+					if c == nil {
+						newCounter := thisCounter
+						c = &newCounter
+					} else {
+						c.Hits += thisCounter.Hits
+						c.Success += thisCounter.Success
+						c.ErrorTotal += thisCounter.ErrorTotal
+						c.TotalRequestTime += thisCounter.TotalRequestTime
+						c.RequestTime = c.TotalRequestTime / float64(c.Hits)
+
+					}
+
+					return c
+				}
+
+				switch key {
+				case "APIID":
+					c := IncrementOrSetUnit(thisAggregate.APIID[value.(string)])
+					if value.(string) != "" {
+						thisAggregate.APIID[value.(string)] = c
+						thisAggregate.APIID[value.(string)].Identifier = thisV.APIID
+						thisAggregate.APIID[value.(string)].HumanIdentifier = thisV.APIName
+					}
+					break
+				case "ResponseCode":
+					errAsStr := strconv.Itoa(value.(int))
+					if errAsStr != "" {
+						c := IncrementOrSetUnit(thisAggregate.Errors[errAsStr])
+						if c.ErrorTotal > 0 {
+							thisAggregate.Errors[errAsStr] = c
+							thisAggregate.Errors[errAsStr].Identifier = errAsStr
+						}
+					}
+					break
+				case "APIVersion":
+					versionStr := doHash(thisV.APIID + ":" + value.(string))
+					c := IncrementOrSetUnit(thisAggregate.Versions[versionStr])
+					if value.(string) != "" {
+						thisAggregate.Versions[versionStr] = c
+						thisAggregate.Versions[versionStr].Identifier = value.(string)
+						thisAggregate.Versions[versionStr].HumanIdentifier = value.(string)
+					}
+					break
+				case "APIKey":
+					if value.(string) != "" {
+						c := IncrementOrSetUnit(thisAggregate.APIKeys[value.(string)])
+						thisAggregate.APIKeys[value.(string)] = c
+						thisAggregate.APIKeys[value.(string)].Identifier = value.(string)
+						thisAggregate.APIKeys[value.(string)].HumanIdentifier = thisV.Alias
+
+						if thisV.TrackPath {
+							keyStr := doHash(thisV.APIID + ":" + thisV.Path)
+							data := thisAggregate.KeyEndpoint[value.(string)]
+
+							if data == nil {
+								data = make(map[string]*Counter)
+							}
+
+							c = IncrementOrSetUnit(data[keyStr])
+							c.Identifier = keyStr
+							c.HumanIdentifier = keyStr
+							data[keyStr] = c
+							thisAggregate.KeyEndpoint[value.(string)] = data
+
+						}
+					}
+					break
+				case "OauthID":
+					if value.(string) != "" {
+						c := IncrementOrSetUnit(thisAggregate.OauthIDs[value.(string)])
+						thisAggregate.OauthIDs[value.(string)] = c
+						thisAggregate.OauthIDs[value.(string)].Identifier = value.(string)
+
+						if thisV.TrackPath {
+							keyStr := doHash(thisV.APIID + ":" + thisV.Path)
+							data := thisAggregate.OauthEndpoint[value.(string)]
+
+							if data == nil {
+								data = make(map[string]*Counter)
+							}
+
+							c = IncrementOrSetUnit(data[keyStr])
+							c.Identifier = keyStr
+							c.HumanIdentifier = keyStr
+							data[keyStr] = c
+							thisAggregate.OauthEndpoint[value.(string)] = data
+						}
+					}
+					break
+				case "Geo":
+					c := IncrementOrSetUnit(thisAggregate.Geo[thisV.Geo.Country.ISOCode])
+					if thisV.Geo.Country.ISOCode != "" {
+						thisAggregate.Geo[thisV.Geo.Country.ISOCode] = c
+						thisAggregate.Geo[thisV.Geo.Country.ISOCode].Identifier = thisV.Geo.Country.ISOCode
+						thisAggregate.Geo[thisV.Geo.Country.ISOCode].HumanIdentifier = thisV.Geo.Country.ISOCode
+					}
+					break
+				case "Tags":
+					for _, thisTag := range thisV.Tags {
+						c := IncrementOrSetUnit(thisAggregate.Tags[thisTag])
+						thisAggregate.Tags[thisTag] = c
+						thisAggregate.Tags[thisTag].Identifier = thisTag
+						thisAggregate.Tags[thisTag].HumanIdentifier = thisTag
+					}
+					break
+
+				case "TrackPath":
+					if value.(bool) {
+						c := IncrementOrSetUnit(thisAggregate.Endpoints[thisV.Path])
+						thisAggregate.Endpoints[thisV.Path] = c
+						thisAggregate.Endpoints[thisV.Path].Identifier = thisV.Path
+						thisAggregate.Endpoints[thisV.Path].HumanIdentifier = thisV.Path
+					}
+					break
+				}
+			}
+
 		}
 
 		analyticsPerOrg[orgID] = thisAggregate
