@@ -135,9 +135,8 @@ func StartPurgeLoop(secInterval int) {
 			startTime := time.Now()
 
 			// Convert to something clean
-			keys := make([]interface{}, len(AnalyticsValues))
-
-			for i, v := range AnalyticsValues {
+			keys := []interface{}{}
+			for _, v := range AnalyticsValues {
 				decoded := analytics.AnalyticsRecord{}
 				err := msgpack.Unmarshal(v.([]byte), &decoded)
 				log.WithFields(logrus.Fields{
@@ -148,8 +147,10 @@ func StartPurgeLoop(secInterval int) {
 						"prefix": mainPrefix,
 					}).Error("Couldn't unmarshal analytics data:", err)
 				} else {
-					keys[i] = interface{}(decoded)
-					job.Event("record")
+					if decoded.ResponseCode != -1 {
+						keys = append(keys, decoded)
+						job.Event("record")
+					}
 				}
 			}
 
