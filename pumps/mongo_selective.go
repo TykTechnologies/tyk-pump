@@ -219,6 +219,9 @@ func (m *MongoSelectivePump) AccumulateSet(data []interface{}) [][]interface{} {
 	thisResultSet := make([]interface{}, 0)
 	for i, item := range data {
 		thisItem := item.(analytics.AnalyticsRecord)
+		if thisItem.ResponseCode == -1 {
+			continue
+		}
 		sizeBytes := len([]byte(thisItem.RawRequest)) + len([]byte(thisItem.RawRequest))
 
 		skip := false
