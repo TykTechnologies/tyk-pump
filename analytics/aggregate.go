@@ -28,6 +28,14 @@ type Counter struct {
 	ClosedConnections int64     `json:"closed_connections"`
 	BytesIn           int64     `json:"bytes_in"`
 	BytesOut          int64     `json:"bytes_out"`
+
+	MaxUpstreamLatency   int64 `json:"max_upstream_latency"`
+	MinUpstreamLatency   int64 `json:"min_upstream_latency"`
+	TotalUpstreamLatency int64 `json:"total_upstream_latency"`
+
+	MaxLatency   int64 `json:"max_latency"`
+	MinLatency   int64 `json:"min_latency"`
+	TotalLatency int64 `json:"total_latency"`
 }
 
 type AnalyticsRecordAggregate struct {
@@ -106,6 +114,12 @@ func (f *AnalyticsRecordAggregate) generateBSONFromProperty(parent, thisUnit str
 	newUpdate["$set"].(bson.M)[constructor+"closedconnections"] = incVal.ClosedConnections
 	newUpdate["$set"].(bson.M)[constructor+"bytesin"] = incVal.BytesIn
 	newUpdate["$set"].(bson.M)[constructor+"bytesout"] = incVal.BytesOut
+	newUpdate["$max"].(bson.M)[constructor+"max_latency"] = incVal.MaxLatency
+	newUpdate["$min"].(bson.M)[constructor+"min_latency"] = incVal.MinLatency
+	newUpdate["$max"].(bson.M)[constructor+"max_upstream_latency"] = incVal.MaxUpstreamLatency
+	newUpdate["$min"].(bson.M)[constructor+"min_upstream_latency"] = incVal.MinUpstreamLatency
+	newUpdate["$inc"].(bson.M)[constructor+"total_upstream_latency"] = incVal.TotalUpstreamLatency
+	newUpdate["$inc"].(bson.M)[constructor+"total_latency"] = incVal.TotalLatency
 
 	return newUpdate
 }
@@ -125,6 +139,8 @@ func (f *AnalyticsRecordAggregate) AsChange() bson.M {
 	newUpdate := bson.M{
 		"$inc": bson.M{},
 		"$set": bson.M{},
+		"$max": bson.M{},
+		"$min": bson.M{},
 	}
 
 	for thisUnit, incVal := range f.APIID {
@@ -371,6 +387,13 @@ func AggregateData(data []interface{}, trackAllPaths bool) map[string]AnalyticsR
 				RequestTime:      float64(thisV.RequestTime),
 				TotalRequestTime: float64(thisV.RequestTime),
 				LastTime:         thisV.TimeStamp,
+
+				MaxUpstreamLatency:   thisV.Latency.Upstream,
+				MinUpstreamLatency:   thisV.Latency.Upstream,
+				TotalUpstreamLatency: thisV.Latency.Upstream,
+				MaxLatency:           thisV.Latency.Total,
+				MinLatency:           thisV.Latency.Total,
+				TotalLatency:         thisV.Latency.Total,
 			}
 			thisAggregate.Total.Hits++
 			thisAggregate.Total.TotalRequestTime += float64(thisV.RequestTime)
@@ -386,6 +409,33 @@ func AggregateData(data []interface{}, trackAllPaths bool) map[string]AnalyticsR
 				thisCounter.Success = 1
 				thisAggregate.Total.Success++
 			}
+
+			thisAggregate.Total.TotalLatency += thisV.Latency.Total
+			thisAggregate.Total.TotalUpstreamLatency += thisV.Latency.Upstream
+
+			if thisAggregate.Total.MaxLatency < thisV.Latency.Total {
+				thisAggregate.Total.MaxLatency = thisV.Latency.Total
+			}
+
+			if thisAggregate.Total.MaxUpstreamLatency < thisV.Latency.Upstream {
+				thisAggregate.Total.MaxUpstreamLatency = thisV.Latency.Upstream
+			}
+
+			// by default, min_total_latency will have 0 value
+			// it should not be set to 0 always
+			if thisAggregate.Total.Hits == 1 {
+				thisAggregate.Total.MinLatency = thisV.Latency.Total
+				thisAggregate.Total.MinUpstreamLatency = thisV.Latency.Upstream
+			} else {
+				if thisAggregate.Total.MinLatency > thisV.Latency.Total {
+					thisAggregate.Total.MinLatency = thisV.Latency.Total
+				}
+
+				if thisAggregate.Total.MinUpstreamLatency > thisV.Latency.Upstream {
+					thisAggregate.Total.MinUpstreamLatency = thisV.Latency.Upstream
+				}
+			}
+
 			if trackAllPaths {
 				thisV.TrackPath = true
 			}
@@ -405,6 +455,25 @@ func AggregateData(data []interface{}, trackAllPaths bool) map[string]AnalyticsR
 						c.ErrorTotal += thisCounter.ErrorTotal
 						c.TotalRequestTime += thisCounter.TotalRequestTime
 						c.RequestTime = c.TotalRequestTime / float64(c.Hits)
+
+						if c.MaxLatency < thisCounter.MaxLatency {
+							c.MaxLatency = thisCounter.MaxLatency
+						}
+
+						if c.MinLatency > thisCounter.MinLatency {
+							c.MinLatency = thisCounter.MinLatency
+						}
+
+						if c.MaxUpstreamLatency < thisCounter.MaxUpstreamLatency {
+							c.MaxUpstreamLatency = thisCounter.MaxUpstreamLatency
+						}
+
+						if c.MinUpstreamLatency > thisCounter.MinUpstreamLatency {
+							c.MinUpstreamLatency = thisCounter.MinUpstreamLatency
+						}
+
+						c.TotalLatency += thisCounter.TotalLatency
+						c.TotalUpstreamLatency += thisCounter.TotalUpstreamLatency
 
 					}
 
