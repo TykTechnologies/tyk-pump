@@ -117,9 +117,13 @@ func (f *AnalyticsRecordAggregate) generateBSONFromProperty(parent, thisUnit str
 	newUpdate["$set"].(bson.M)[constructor+"bytesin"] = incVal.BytesIn
 	newUpdate["$set"].(bson.M)[constructor+"bytesout"] = incVal.BytesOut
 	newUpdate["$max"].(bson.M)[constructor+"maxlatency"] = incVal.MaxLatency
-	newUpdate["$min"].(bson.M)[constructor+"minlatency"] = incVal.MinLatency
+	// Don't update min latency in case of errors
+	if incVal.Hits != incVal.ErrorTotal {
+		newUpdate["$min"] = bson.M{}
+		newUpdate["$min"].(bson.M)[constructor+"minlatency"] = incVal.MinLatency
+		newUpdate["$min"].(bson.M)[constructor+"minupstreamlatency"] = incVal.MinUpstreamLatency
+	}
 	newUpdate["$max"].(bson.M)[constructor+"maxupstreamlatency"] = incVal.MaxUpstreamLatency
-	newUpdate["$min"].(bson.M)[constructor+"minupstreamlatency"] = incVal.MinUpstreamLatency
 	newUpdate["$inc"].(bson.M)[constructor+"totalupstreamlatency"] = incVal.TotalUpstreamLatency
 	newUpdate["$inc"].(bson.M)[constructor+"totallatency"] = incVal.TotalLatency
 
@@ -156,7 +160,6 @@ func (f *AnalyticsRecordAggregate) AsChange() bson.M {
 		"$inc": bson.M{},
 		"$set": bson.M{},
 		"$max": bson.M{},
-		"$min": bson.M{},
 	}
 
 	for thisUnit, incVal := range f.APIID {
@@ -454,11 +457,12 @@ func AggregateData(data []interface{}, trackAllPaths bool) map[string]AnalyticsR
 				thisAggregate.Total.MinLatency = thisV.Latency.Total
 				thisAggregate.Total.MinUpstreamLatency = thisV.Latency.Upstream
 			} else {
-				if thisAggregate.Total.MinLatency > thisV.Latency.Total {
+				// Don't update min latency in case of error
+				if thisAggregate.Total.MinLatency > thisV.Latency.Total && (thisV.ResponseCode < 300) && (thisV.ResponseCode >= 200) {
 					thisAggregate.Total.MinLatency = thisV.Latency.Total
 				}
-
-				if thisAggregate.Total.MinUpstreamLatency > thisV.Latency.Upstream {
+				// Don't update min latency in case of error
+				if thisAggregate.Total.MinUpstreamLatency > thisV.Latency.Upstream && (thisV.ResponseCode < 300) && (thisV.ResponseCode >= 200) {
 					thisAggregate.Total.MinUpstreamLatency = thisV.Latency.Upstream
 				}
 			}
@@ -487,7 +491,8 @@ func AggregateData(data []interface{}, trackAllPaths bool) map[string]AnalyticsR
 							c.MaxLatency = thisCounter.MaxLatency
 						}
 
-						if c.MinLatency > thisCounter.MinLatency {
+						// don't update min latency in case of errors
+						if c.MinLatency > thisCounter.MinLatency && thisCounter.ErrorTotal == 0 {
 							c.MinLatency = thisCounter.MinLatency
 						}
 
@@ -495,7 +500,8 @@ func AggregateData(data []interface{}, trackAllPaths bool) map[string]AnalyticsR
 							c.MaxUpstreamLatency = thisCounter.MaxUpstreamLatency
 						}
 
-						if c.MinUpstreamLatency > thisCounter.MinUpstreamLatency {
+						// don't update min latency in case of errors
+						if c.MinUpstreamLatency > thisCounter.MinUpstreamLatency && thisCounter.ErrorTotal == 0 {
 							c.MinUpstreamLatency = thisCounter.MinUpstreamLatency
 						}
 
