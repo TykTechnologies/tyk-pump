@@ -18,6 +18,11 @@ type NetworkStats struct {
 	BytesOut         int64
 }
 
+type Latency struct {
+	Total    int64
+	Upstream int64
+}
+
 // AnalyticsRecord encodes the details of a request
 type AnalyticsRecord struct {
 	Method        string
@@ -44,6 +49,7 @@ type AnalyticsRecord struct {
 	IPAddress     string
 	Geo           GeoData
 	Network       NetworkStats
+	Latency       Latency
 	Tags          []string
 	Alias         string
 	TrackPath     bool

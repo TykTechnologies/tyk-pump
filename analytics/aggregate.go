@@ -28,6 +28,16 @@ type Counter struct {
 	ClosedConnections int64     `json:"closed_connections"`
 	BytesIn           int64     `json:"bytes_in"`
 	BytesOut          int64     `json:"bytes_out"`
+
+	MaxUpstreamLatency   int64   `json:"max_upstream_latency"`
+	MinUpstreamLatency   int64   `json:"min_upstream_latency"`
+	TotalUpstreamLatency int64   `json:"total_upstream_latency"`
+	UpstreamLatency      float64 `json:"upstream_latency"`
+
+	MaxLatency   int64   `json:"max_latency"`
+	MinLatency   int64   `json:"min_latency"`
+	TotalLatency int64   `json:"total_latency"`
+	Latency      float64 `json:"latency"`
 }
 
 type AnalyticsRecordAggregate struct {
@@ -106,6 +116,16 @@ func (f *AnalyticsRecordAggregate) generateBSONFromProperty(parent, thisUnit str
 	newUpdate["$set"].(bson.M)[constructor+"closedconnections"] = incVal.ClosedConnections
 	newUpdate["$set"].(bson.M)[constructor+"bytesin"] = incVal.BytesIn
 	newUpdate["$set"].(bson.M)[constructor+"bytesout"] = incVal.BytesOut
+	newUpdate["$max"].(bson.M)[constructor+"maxlatency"] = incVal.MaxLatency
+	// Don't update min latency in case of errors
+	if incVal.Hits != incVal.ErrorTotal {
+		newUpdate["$min"] = bson.M{}
+		newUpdate["$min"].(bson.M)[constructor+"minlatency"] = incVal.MinLatency
+		newUpdate["$min"].(bson.M)[constructor+"minupstreamlatency"] = incVal.MinUpstreamLatency
+	}
+	newUpdate["$max"].(bson.M)[constructor+"maxupstreamlatency"] = incVal.MaxUpstreamLatency
+	newUpdate["$inc"].(bson.M)[constructor+"totalupstreamlatency"] = incVal.TotalUpstreamLatency
+	newUpdate["$inc"].(bson.M)[constructor+"totallatency"] = incVal.TotalLatency
 
 	return newUpdate
 }
@@ -121,10 +141,25 @@ func (f *AnalyticsRecordAggregate) generateSetterForTime(parent, thisUnit string
 	return newUpdate
 }
 
+func (f *AnalyticsRecordAggregate) latencySetter(parent, thisUnit string, newUpdate bson.M, counter *Counter) bson.M {
+	counter.Latency = float64(counter.TotalLatency) / float64(counter.Hits)
+	counter.UpstreamLatency = float64(counter.TotalUpstreamLatency) / float64(counter.Hits)
+
+	constructor := parent + "." + thisUnit + "."
+	if parent == "" {
+		constructor = thisUnit + "."
+	}
+	newUpdate["$set"].(bson.M)[constructor+"latency"] = counter.Latency
+	newUpdate["$set"].(bson.M)[constructor+"upstreamlatency"] = counter.UpstreamLatency
+
+	return newUpdate
+}
+
 func (f *AnalyticsRecordAggregate) AsChange() bson.M {
 	newUpdate := bson.M{
 		"$inc": bson.M{},
 		"$set": bson.M{},
+		"$max": bson.M{},
 	}
 
 	for thisUnit, incVal := range f.APIID {
@@ -200,6 +235,7 @@ func (f *AnalyticsRecordAggregate) AsTimeUpdate() bson.M {
 	for thisUnit, incVal := range f.APIID {
 		newTime := incVal.TotalRequestTime / float64(incVal.Hits)
 		newUpdate = f.generateSetterForTime("apiid", thisUnit, newTime, newUpdate)
+		newUpdate = f.latencySetter("apiid", thisUnit, newUpdate, incVal)
 		apis = append(apis, *incVal)
 	}
 	newUpdate["$set"].(bson.M)["lists.apiid"] = apis
@@ -209,6 +245,7 @@ func (f *AnalyticsRecordAggregate) AsTimeUpdate() bson.M {
 	for thisUnit, incVal := range f.Errors {
 		newTime := incVal.TotalRequestTime / float64(incVal.Hits)
 		newUpdate = f.generateSetterForTime("errors", thisUnit, newTime, newUpdate)
+		newUpdate = f.latencySetter("errors", thisUnit, newUpdate, incVal)
 		errors = append(errors, *incVal)
 	}
 	newUpdate["$set"].(bson.M)["lists.errors"] = errors
@@ -218,6 +255,7 @@ func (f *AnalyticsRecordAggregate) AsTimeUpdate() bson.M {
 	for thisUnit, incVal := range f.Versions {
 		newTime := incVal.TotalRequestTime / float64(incVal.Hits)
 		newUpdate = f.generateSetterForTime("versions", thisUnit, newTime, newUpdate)
+		newUpdate = f.latencySetter("versions", thisUnit, newUpdate, incVal)
 		versions = append(versions, *incVal)
 	}
 	newUpdate["$set"].(bson.M)["lists.versions"] = versions
@@ -227,6 +265,7 @@ func (f *AnalyticsRecordAggregate) AsTimeUpdate() bson.M {
 	for thisUnit, incVal := range f.APIKeys {
 		newTime := incVal.TotalRequestTime / float64(incVal.Hits)
 		newUpdate = f.generateSetterForTime("apikeys", thisUnit, newTime, newUpdate)
+		newUpdate = f.latencySetter("apikeys", thisUnit, newUpdate, incVal)
 		apikeys = append(apikeys, *incVal)
 	}
 	newUpdate["$set"].(bson.M)["lists.apikeys"] = apikeys
@@ -236,6 +275,7 @@ func (f *AnalyticsRecordAggregate) AsTimeUpdate() bson.M {
 	for thisUnit, incVal := range f.OauthIDs {
 		newTime := incVal.TotalRequestTime / float64(incVal.Hits)
 		newUpdate = f.generateSetterForTime("oauthids", thisUnit, newTime, newUpdate)
+		newUpdate = f.latencySetter("oauthids", thisUnit, newUpdate, incVal)
 		oauthids = append(oauthids, *incVal)
 	}
 	newUpdate["$set"].(bson.M)["lists.oauthids"] = oauthids
@@ -245,6 +285,7 @@ func (f *AnalyticsRecordAggregate) AsTimeUpdate() bson.M {
 	for thisUnit, incVal := range f.Geo {
 		newTime := incVal.TotalRequestTime / float64(incVal.Hits)
 		newUpdate = f.generateSetterForTime("geo", thisUnit, newTime, newUpdate)
+		newUpdate = f.latencySetter("geo", thisUnit, newUpdate, incVal)
 		geo = append(geo, *incVal)
 	}
 	newUpdate["$set"].(bson.M)["lists.geo"] = geo
@@ -254,6 +295,7 @@ func (f *AnalyticsRecordAggregate) AsTimeUpdate() bson.M {
 	for thisUnit, incVal := range f.Tags {
 		newTime := incVal.TotalRequestTime / float64(incVal.Hits)
 		newUpdate = f.generateSetterForTime("tags", thisUnit, newTime, newUpdate)
+		newUpdate = f.latencySetter("tags", thisUnit, newUpdate, incVal)
 		tags = append(tags, *incVal)
 	}
 	newUpdate["$set"].(bson.M)["lists.tags"] = tags
@@ -263,6 +305,7 @@ func (f *AnalyticsRecordAggregate) AsTimeUpdate() bson.M {
 	for thisUnit, incVal := range f.Endpoints {
 		newTime := incVal.TotalRequestTime / float64(incVal.Hits)
 		newUpdate = f.generateSetterForTime("endpoints", thisUnit, newTime, newUpdate)
+		newUpdate = f.latencySetter("endpoints", thisUnit, newUpdate, incVal)
 		endpoints = append(endpoints, *incVal)
 	}
 	newUpdate["$set"].(bson.M)["lists.endpoints"] = endpoints
@@ -275,6 +318,7 @@ func (f *AnalyticsRecordAggregate) AsTimeUpdate() bson.M {
 		for k, v := range incVal {
 			newTime := v.TotalRequestTime / float64(v.Hits)
 			newUpdate = f.generateSetterForTime("keyendpoints."+thisUnit, k, newTime, newUpdate)
+			newUpdate = f.latencySetter("keyendpoints."+thisUnit, k, newUpdate, v)
 			keyendpoints = append(keyendpoints, *v)
 		}
 		newUpdate["$set"].(bson.M)[parent] = keyendpoints
@@ -288,6 +332,7 @@ func (f *AnalyticsRecordAggregate) AsTimeUpdate() bson.M {
 		for k, v := range incVal {
 			newTime := v.TotalRequestTime / float64(v.Hits)
 			newUpdate = f.generateSetterForTime("oauthendpoints."+thisUnit, k, newTime, newUpdate)
+			newUpdate = f.latencySetter("oauthendpoints."+thisUnit, k, newUpdate, v)
 			oauthendpoints = append(oauthendpoints, *v)
 		}
 		newUpdate["$set"].(bson.M)[parent] = oauthendpoints
@@ -295,6 +340,7 @@ func (f *AnalyticsRecordAggregate) AsTimeUpdate() bson.M {
 
 	newTime := f.Total.TotalRequestTime / float64(f.Total.Hits)
 	newUpdate = f.generateSetterForTime("", "total", newTime, newUpdate)
+	newUpdate = f.latencySetter("", "total", newUpdate, &f.Total)
 
 	return newUpdate
 }
@@ -371,6 +417,13 @@ func AggregateData(data []interface{}, trackAllPaths bool) map[string]AnalyticsR
 				RequestTime:      float64(thisV.RequestTime),
 				TotalRequestTime: float64(thisV.RequestTime),
 				LastTime:         thisV.TimeStamp,
+
+				MaxUpstreamLatency:   thisV.Latency.Upstream,
+				MinUpstreamLatency:   thisV.Latency.Upstream,
+				TotalUpstreamLatency: thisV.Latency.Upstream,
+				MaxLatency:           thisV.Latency.Total,
+				MinLatency:           thisV.Latency.Total,
+				TotalLatency:         thisV.Latency.Total,
 			}
 			thisAggregate.Total.Hits++
 			thisAggregate.Total.TotalRequestTime += float64(thisV.RequestTime)
@@ -386,6 +439,34 @@ func AggregateData(data []interface{}, trackAllPaths bool) map[string]AnalyticsR
 				thisCounter.Success = 1
 				thisAggregate.Total.Success++
 			}
+
+			thisAggregate.Total.TotalLatency += thisV.Latency.Total
+			thisAggregate.Total.TotalUpstreamLatency += thisV.Latency.Upstream
+
+			if thisAggregate.Total.MaxLatency < thisV.Latency.Total {
+				thisAggregate.Total.MaxLatency = thisV.Latency.Total
+			}
+
+			if thisAggregate.Total.MaxUpstreamLatency < thisV.Latency.Upstream {
+				thisAggregate.Total.MaxUpstreamLatency = thisV.Latency.Upstream
+			}
+
+			// by default, min_total_latency will have 0 value
+			// it should not be set to 0 always
+			if thisAggregate.Total.Hits == 1 {
+				thisAggregate.Total.MinLatency = thisV.Latency.Total
+				thisAggregate.Total.MinUpstreamLatency = thisV.Latency.Upstream
+			} else {
+				// Don't update min latency in case of error
+				if thisAggregate.Total.MinLatency > thisV.Latency.Total && (thisV.ResponseCode < 300) && (thisV.ResponseCode >= 200) {
+					thisAggregate.Total.MinLatency = thisV.Latency.Total
+				}
+				// Don't update min latency in case of error
+				if thisAggregate.Total.MinUpstreamLatency > thisV.Latency.Upstream && (thisV.ResponseCode < 300) && (thisV.ResponseCode >= 200) {
+					thisAggregate.Total.MinUpstreamLatency = thisV.Latency.Upstream
+				}
+			}
+
 			if trackAllPaths {
 				thisV.TrackPath = true
 			}
@@ -405,6 +486,27 @@ func AggregateData(data []interface{}, trackAllPaths bool) map[string]AnalyticsR
 						c.ErrorTotal += thisCounter.ErrorTotal
 						c.TotalRequestTime += thisCounter.TotalRequestTime
 						c.RequestTime = c.TotalRequestTime / float64(c.Hits)
+
+						if c.MaxLatency < thisCounter.MaxLatency {
+							c.MaxLatency = thisCounter.MaxLatency
+						}
+
+						// don't update min latency in case of errors
+						if c.MinLatency > thisCounter.MinLatency && thisCounter.ErrorTotal == 0 {
+							c.MinLatency = thisCounter.MinLatency
+						}
+
+						if c.MaxUpstreamLatency < thisCounter.MaxUpstreamLatency {
+							c.MaxUpstreamLatency = thisCounter.MaxUpstreamLatency
+						}
+
+						// don't update min latency in case of errors
+						if c.MinUpstreamLatency > thisCounter.MinUpstreamLatency && thisCounter.ErrorTotal == 0 {
+							c.MinUpstreamLatency = thisCounter.MinUpstreamLatency
+						}
+
+						c.TotalLatency += thisCounter.TotalLatency
+						c.TotalUpstreamLatency += thisCounter.TotalUpstreamLatency
 
 					}
 
