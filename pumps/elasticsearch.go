@@ -182,22 +182,22 @@ func getMapping(datum analytics.AnalyticsRecord, extendedStatistics bool) map[st
 	record := datum
 
 	mapping := map[string]interface{}{
-		"@timestamp":        record.TimeStamp,
-      		"http_method":       record.Method,
-      		"request_uri":       record.Path,
-		"request_uri_full":  record.RawPath,
-	      	"response_code":     record.ResponseCode,
-	      	"ip_address":        record.IPAddress,
-	      	"api_key":           record.APIKey,
-	      	"api_version":       record.APIVersion,
-	      	"api_name":          record.APIName,
-	      	"api_id":            record.APIID,
-	      	"org_id":            record.OrgID,
-	      	"oauth_id":          record.OauthID,
-	      	"request_time_ms":   record.RequestTime,
-	      	"alias":             record.Alias,
-	      	"content_length":    record.ContentLength,
-	      	"tags":              record.Tags,
+		"@timestamp":       record.TimeStamp,
+		"http_method":      record.Method,
+		"request_uri":      record.Path,
+		"request_uri_full": record.RawPath,
+		"response_code":    record.ResponseCode,
+		"ip_address":       record.IPAddress,
+		"api_key":          record.APIKey,
+		"api_version":      record.APIVersion,
+		"api_name":         record.APIName,
+		"api_id":           record.APIID,
+		"org_id":           record.OrgID,
+		"oauth_id":         record.OauthID,
+		"request_time_ms":  record.RequestTime,
+		"alias":            record.Alias,
+		"content_length":   record.ContentLength,
+		"tags":             record.Tags,
 	}
 
 	if extendedStatistics {
