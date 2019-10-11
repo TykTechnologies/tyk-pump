@@ -119,7 +119,9 @@ func (f *AnalyticsRecordAggregate) generateBSONFromProperty(parent, thisUnit str
 	newUpdate["$max"].(bson.M)[constructor+"maxlatency"] = incVal.MaxLatency
 	// Don't update min latency in case of errors
 	if incVal.Hits != incVal.ErrorTotal {
-		newUpdate["$min"] = bson.M{}
+		if newUpdate["$min"] == nil {
+			newUpdate["$min"] = bson.M{}
+		}
 		newUpdate["$min"].(bson.M)[constructor+"minlatency"] = incVal.MinLatency
 		newUpdate["$min"].(bson.M)[constructor+"minupstreamlatency"] = incVal.MinUpstreamLatency
 	}
