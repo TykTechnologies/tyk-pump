@@ -3,12 +3,13 @@ package pumps
 import (
 	"context"
 	"encoding/json"
+	"time"
+
 	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/mitchellh/mapstructure"
 	"github.com/segmentio/kafka-go"
 	"github.com/segmentio/kafka-go/snappy"
-	"time"
 )
 
 type KafkaPump struct {
@@ -74,6 +75,7 @@ func (k *KafkaPump) WriteData(data []interface{}) error {
 	startTime := time.Now()
 	k.log.Info("Writing ", len(data), " records...")
 	kafkaMessages := make([]kafka.Message, len(data))
+
 	for i, v := range data {
 		//Build message format
 		decoded := v.(analytics.AnalyticsRecord)
@@ -104,23 +106,29 @@ func (k *KafkaPump) WriteData(data []interface{}) error {
 		}
 
 		//Transform object to json string
-		json, jsonError := json.Marshal(message)
-		if jsonError != nil {
-			k.log.WithError(jsonError).Error("unable to marshal message")
+		jsBytes, err := json.Marshal(message)
+		if err != nil {
+			k.log.WithError(err).Error("unable to marshal message")
 		}
 
 		//Kafka message structure
 		kafkaMessages[i] = kafka.Message{
 			Time:  time.Now(),
-			Value: json,
+			Value: jsBytes,
 		}
 	}
-	//Send kafka message
-	kafkaError := k.write(kafkaMessages)
-	if kafkaError != nil {
-		k.log.WithError(kafkaError).Error("unable to write message")
-	}
-	k.log.Debug("ElapsedTime in seconds for ", len(data), " records:", time.Now().Sub(startTime))
+
+	// send kafka message in separate go-routine so that will not block the next Redis purge in event of Kafka slowdown.
+	// should only create new go-routine every `config.purge_delay` seconds
+	go func(startTime time.Time, log *logrus.Entry) {
+		err := k.write(kafkaMessages)
+		if err != nil {
+			log.WithError(err).Error("unable to write message")
+		}
+
+		log.Infof("written %d records %s", len(data), time.Now().Sub(startTime).String())
+	}(startTime, k.log)
+
 	return nil
 }
 
