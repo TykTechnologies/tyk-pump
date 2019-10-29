@@ -8,7 +8,7 @@
 echo "Set version number"
 : ${VERSION:=$(perl -n -e'/v(\d+).(\d+).(\d+)/'' && print "$1\.$2\.$3"' version.go)}
 
-RELEASE_DIR="$TYK_PUMP_SRC_DIR/build"
+RELEASE_DIR="$SOURCEBINPATH/build"
 export PACKAGECLOUDREPO=$PC_TARGET
 
 cd $RELEASE_DIR/
