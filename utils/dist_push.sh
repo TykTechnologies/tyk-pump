@@ -17,10 +17,12 @@ do
     rpmName="tyk-pump-$VERSION-1.${arch/amd64/x86_64}.rpm"
 
     echo "Pushing $debName to PackageCloud"
-    package_cloud push tyk/$PACKAGECLOUDREPO/ubuntu/precise $debName
+    package_cloud push tyk/$PACKAGECLOUDREPO/ubuntu/buster $debName
     package_cloud push tyk/$PACKAGECLOUDREPO/ubuntu/trusty $debName
     package_cloud push tyk/$PACKAGECLOUDREPO/ubuntu/xenial $debName
     package_cloud push tyk/$PACKAGECLOUDREPO/debian/jessie $debName
+    package_cloud push tyk/$PACKAGECLOUDREPO/debian/stretch $debName
+    package_cloud push tyk/$PACKAGECLOUDREPO/debian/bionic $debName
 
     echo "Pushing $rpmName to PackageCloud"
     package_cloud push tyk/$PACKAGECLOUDREPO/el/6 $rpmName
