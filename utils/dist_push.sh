@@ -1,28 +1,32 @@
 #!/bin/bash
 : ${ORGDIR:="/src/github.com/TykTechnologies"}
+: ${SOURCEBINPATH:="${ORGDIR}/tyk-pump"}
+: ${DEBVERS:="ubuntu/trusty ubuntu/xenial ubuntu/bionic debian/jessie debian/stretch debian/buster"}
+: ${RPMVERS:="el/6 el/7"}
+: ${PKGNAME:="tyk-pump"}
 
 echo "Set version number"
 : ${VERSION:=$(perl -n -e'/v(\d+).(\d+).(\d+)/'' && print "$1\.$2\.$3"' version.go)}
 
-
-TYK_PUMP_SRC_DIR=$ORGDIR/tyk-pump
-RELEASE_DIR="$TYK_PUMP_SRC_DIR/build"
+RELEASE_DIR="$SOURCEBINPATH/build"
 export PACKAGECLOUDREPO=$PC_TARGET
 
 cd $RELEASE_DIR/
 
 for arch in i386 amd64 arm64
 do
-    debName="tyk-pump_${VERSION}_${arch}.deb"
-    rpmName="tyk-pump-$VERSION-1.${arch/amd64/x86_64}.rpm"
+    debName="${PKGNAME}_${VERSION}_${arch}.deb"
+    rpmName="${PKGNAME}-$VERSION-1.${arch/amd64/x86_64}.rpm"
 
-    echo "Pushing $debName to PackageCloud"
-    package_cloud push tyk/$PACKAGECLOUDREPO/ubuntu/precise $debName
-    package_cloud push tyk/$PACKAGECLOUDREPO/ubuntu/trusty $debName
-    package_cloud push tyk/$PACKAGECLOUDREPO/ubuntu/xenial $debName
-    package_cloud push tyk/$PACKAGECLOUDREPO/debian/jessie $debName
+    for ver in $DEBVERS
+    do
+        echo "Pushing $debName to PackageCloud $ver"
+        package_cloud push tyk/$PACKAGECLOUDREPO/$ver $debName
+    done
 
-    echo "Pushing $rpmName to PackageCloud"
-    package_cloud push tyk/$PACKAGECLOUDREPO/el/6 $rpmName
-    package_cloud push tyk/$PACKAGECLOUDREPO/el/7 $rpmName
+    for ver in $RPMVERS
+    do
+        echo "Pushing $rpmName to PackageCloud $ver"
+        package_cloud push tyk/$PACKAGECLOUDREPO/$ver $rpmName
+    done
 done
