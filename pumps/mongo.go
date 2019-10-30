@@ -2,18 +2,17 @@ package pumps
 
 import (
 	"crypto/tls"
-	"net"
-	"strconv"
-	"strings"
-	"time"
-
+	"encoding/base64"
+	"github.com/TykTechnologies/logrus"
+	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/mitchellh/mapstructure"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/vmihailenco/msgpack.v2"
-
-	"github.com/TykTechnologies/logrus"
-	"github.com/TykTechnologies/tyk-pump/analytics"
+	"net"
+	"strconv"
+	"strings"
+	"time"
 )
 
 const (
@@ -327,15 +326,19 @@ func (m *MongoPump) AccumulateSet(data []interface{}) [][]interface{} {
 		if thisItem.ResponseCode == -1 {
 			continue
 		}
-		sizeBytes := len([]byte(thisItem.RawRequest)) + len([]byte(thisItem.RawRequest))
+
+		// Add 1 KB for metadata as average
+		sizeBytes := len(thisItem.RawRequest) + len(thisItem.RawResponse) + 1024
 
 		log.Debug("Size is: ", sizeBytes)
 
 		if sizeBytes > m.dbConf.MaxDocumentSizeBytes {
 			log.WithFields(logrus.Fields{
 				"prefix": mongoPrefix,
-			}).Warning("Document too large, skipping!")
-			continue
+			}).Warning("Document too large, not writing raw request and raw response!")
+
+			thisItem.RawRequest = ""
+			thisItem.RawResponse = base64.StdEncoding.EncodeToString([]byte("Document too large, not writing raw request and raw response!"))
 		}
 
 		if (accumulatorTotal + sizeBytes) < m.dbConf.MaxInsertBatchSizeBytes {
