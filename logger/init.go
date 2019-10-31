@@ -1,11 +1,9 @@
 package logger
 
 import (
+	"github.com/sirupsen/logrus"
 	"os"
 	"strings"
-
-	"github.com/TykTechnologies/logrus"
-	prefixed "github.com/TykTechnologies/logrus-prefixed-formatter"
 )
 
 var log = logrus.New()
@@ -14,8 +12,11 @@ func init() {
 	log.Formatter = GetDefaultFormatter()
 }
 
-func GetDefaultFormatter() *prefixed.TextFormatter{
-	textFormatter := new(prefixed.TextFormatter)
+//GetDefaultFormatter returns a logrus.TextFormatter object
+//with the configs to show all the info even in
+//TTY-less logs displayer
+func GetDefaultFormatter() *logrus.TextFormatter{
+	textFormatter := new(logrus.TextFormatter)
 	textFormatter.ForceColors= true
 	textFormatter.TimestampFormat = `Jan 02 15:04:05`
 	return textFormatter
