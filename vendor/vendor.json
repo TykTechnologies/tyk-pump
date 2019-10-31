@@ -9,12 +9,6 @@
 			"revisionTime": "2019-04-25T16:34:47Z"
 		},
 		{
-			"checksumSHA1": "NRonvQTe073YVead6//CQ5oVgK4=",
-			"path": "github.com/Sirupsen/logrus",
-			"revision": "1deb2db2a6fff8a35532079061b903c3a25eed52",
-			"revisionTime": "2017-03-08T20:36:35Z"
-		},
-		{
 			"checksumSHA1": "j5NnY7tyNCx+Y5VrAMxKFqPPGWc=",
 			"path": "github.com/TykTechnologies/concurrent-map",
 			"revision": "7de59d53fd5c30afb681bfcfe58842d2e14136bd",
@@ -440,6 +434,13 @@
 			"path": "github.com/segmentio/backo-go",
 			"revision": "204274ad699c0983a70203a566887f17a717fef4",
 			"revisionTime": "2016-04-24T05:23:52Z"
+		},
+		{
+			"checksumSHA1": "DeFsq8nWjR+DQBo7mmAGf+9LqJk=",
+			"path": "github.com/sirupsen/logrus",
+			"revision": "67a7fdcf741f4d5cee82cb9800994ccfd4393ad0",
+			"revisionTime": "2019-10-26T11:39:18Z",
+			"tree": true
 		},
 		{
 			"checksumSHA1": "+FDdVX1IlqzH3tSuA95LH2XZoOU=",
