@@ -11,7 +11,14 @@ import (
 var log = logrus.New()
 
 func init() {
-	log.Formatter = new(prefixed.TextFormatter)
+	log.Formatter = GetDefaultFormatter()
+}
+
+func GetDefaultFormatter() *prefixed.TextFormatter{
+	textFormatter := new(prefixed.TextFormatter)
+	textFormatter.ForceColors= true
+	textFormatter.TimestampFormat = `Jan 02 15:04:05`
+	return textFormatter
 }
 
 func GetLogger() *logrus.Logger {
