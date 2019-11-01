@@ -1,8 +1,8 @@
 package logger
 
 import (
-	"github.com/sirupsen/logrus"
-	"github.com/sirupsen/logrus/hooks/test"
+	"github.com/TykTechnologies/logrus"
+	"github.com/TykTechnologies/logrus/hooks/test"
 	"io/ioutil"
 	"os"
 	"strings"
