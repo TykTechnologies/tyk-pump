@@ -12,11 +12,11 @@ import (
 //TestFileLogOutput check if the prefix is stored in not TTY outputs
 func TestFileLogOutput(t *testing.T) {
 
-	outputFile:= "test.log"
+	outputFile := "test.log"
 	var f *os.File
 	var err error
 	if f, err = os.Create(outputFile); err != nil {
-		t.Errorf("create log failed:"+ err.Error())
+		t.Errorf("create log failed:" + err.Error())
 		return
 	}
 
@@ -30,11 +30,11 @@ func TestFileLogOutput(t *testing.T) {
 
 	err = f.Sync()
 	if err != nil {
-		t.Error("Sync test logs file:"+err.Error())
+		t.Error("Sync test logs file:" + err.Error())
 	}
 	err = f.Close()
 	if err != nil {
-		t.Error("Closing test logs file:"+err.Error())
+		t.Error("Closing test logs file:" + err.Error())
 	}
 
 	//check the logs in the hook
@@ -48,12 +48,12 @@ func TestFileLogOutput(t *testing.T) {
 		t.Error("Reading test logs file")
 	}
 	fileContent := string(b)
-	if !strings.Contains(fileContent,"prefix"){
+	if !strings.Contains(fileContent, "prefix") {
 		t.Error("Prefix is not being added to logs information")
 	}
 
 	err = os.Remove(outputFile)
 	if err != nil {
-		t.Error("Error removing test logs file:"+err.Error())
+		t.Error("Error removing test logs file:" + err.Error())
 	}
 }
