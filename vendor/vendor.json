@@ -28,10 +28,11 @@
 			"revisionTime": "2018-09-28T16:00:09Z"
 		},
 		{
-			"checksumSHA1": "/PgwFK9SgexntkOdGKCgRP1fMvQ=",
+			"checksumSHA1": "2Ozj+974QGDcU3wZzDhdCoRipug=",
 			"path": "github.com/TykTechnologies/logrus",
 			"revision": "eb4982824fb8bf882257aaf67682038cd69b488c",
-			"revisionTime": "2019-10-31T21:13:25Z"
+			"revisionTime": "2019-10-31T21:13:25Z",
+			"tree": true
 		},
 		{
 			"checksumSHA1": "ddbfMiDEEe8MZ839vlCcNpf7vGU=",
