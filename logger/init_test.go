@@ -16,7 +16,7 @@ func TestFileLogOutput(t *testing.T) {
 	var f *os.File
 	var err error
 	if f, err = os.Create(outputFile); err != nil {
-		t.Errorf("create log failed:" + err.Error())
+		t.Errorf("create log test file failed")
 		return
 	}
 
