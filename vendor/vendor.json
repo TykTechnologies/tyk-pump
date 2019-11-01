@@ -28,6 +28,12 @@
 			"revisionTime": "2018-09-28T16:00:09Z"
 		},
 		{
+			"checksumSHA1": "/PgwFK9SgexntkOdGKCgRP1fMvQ=",
+			"path": "github.com/TykTechnologies/logrus",
+			"revision": "eb4982824fb8bf882257aaf67682038cd69b488c",
+			"revisionTime": "2019-10-31T21:13:25Z"
+		},
+		{
 			"checksumSHA1": "ddbfMiDEEe8MZ839vlCcNpf7vGU=",
 			"path": "github.com/TykTechnologies/logrus-prefixed-formatter",
 			"revision": "85209afb73a644d3e53cf08a6d0d101f349004a9",
