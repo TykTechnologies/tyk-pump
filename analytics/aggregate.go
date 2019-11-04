@@ -353,8 +353,18 @@ func doHash(in string) string {
 	return search
 }
 
+func ignoreTag(tag string, ignoreTagPrefixList []string) bool {
+	for _, prefix := range ignoreTagPrefixList {
+		if strings.HasPrefix(tag, prefix) {
+			return true
+		}
+	}
+
+	return false
+}
+
 // AggregateData calculates aggregated data, returns map orgID => aggregated analytics data
-func AggregateData(data []interface{}, trackAllPaths bool) map[string]AnalyticsRecordAggregate {
+func AggregateData(data []interface{}, trackAllPaths bool, ignoreTagPrefixList []string) map[string]AnalyticsRecordAggregate {
 	analyticsPerOrg := make(map[string]AnalyticsRecordAggregate)
 
 	for _, v := range data {
@@ -597,12 +607,15 @@ func AggregateData(data []interface{}, trackAllPaths bool) map[string]AnalyticsR
 						thisAggregate.Geo[thisV.Geo.Country.ISOCode].HumanIdentifier = thisV.Geo.Country.ISOCode
 					}
 					break
+
 				case "Tags":
 					for _, thisTag := range thisV.Tags {
-						c := IncrementOrSetUnit(thisAggregate.Tags[thisTag])
-						thisAggregate.Tags[thisTag] = c
-						thisAggregate.Tags[thisTag].Identifier = thisTag
-						thisAggregate.Tags[thisTag].HumanIdentifier = thisTag
+						if !ignoreTag(thisTag, ignoreTagPrefixList) {
+							c := IncrementOrSetUnit(thisAggregate.Tags[thisTag])
+							thisAggregate.Tags[thisTag] = c
+							thisAggregate.Tags[thisTag].Identifier = thisTag
+							thisAggregate.Tags[thisTag].HumanIdentifier = thisTag
+						}
 					}
 					break
 
