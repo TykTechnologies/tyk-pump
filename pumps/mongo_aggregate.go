@@ -271,7 +271,7 @@ func (m *MongoAggregatePump) WriteData(data []interface{}) error {
 			withTimeUpdate := analytics.AnalyticsRecordAggregate{}
 			_, avgErr := analyticsCollection.Find(query).Apply(avgChange, &withTimeUpdate)
 
-			if len(withTimeUpdate.Tags) > m.dbConf.ThresholdLenTagList {
+			if m.dbConf.ThresholdLenTagList != -1 && (len(withTimeUpdate.Tags) > m.dbConf.ThresholdLenTagList) {
 				printAlert(withTimeUpdate, m.dbConf.ThresholdLenTagList)
 			}
 
