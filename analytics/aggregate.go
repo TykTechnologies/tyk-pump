@@ -354,6 +354,11 @@ func doHash(in string) string {
 }
 
 func ignoreTag(tag string, ignoreTagPrefixList []string) bool {
+	// ignore tag added for key by gateway
+	if strings.HasPrefix(tag, "key-") {
+		return true
+	}
+
 	for _, prefix := range ignoreTagPrefixList {
 		if strings.HasPrefix(tag, prefix) {
 			return true
