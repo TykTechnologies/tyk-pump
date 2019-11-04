@@ -18,7 +18,7 @@ import (
 )
 
 var mongoAggregatePumpPrefix = "PMP_MONGOAGG"
-var MAX_TAGS_LEN = 1000
+var THRESHOLD_LEN_TAG_LIST = 1000
 var COMMON_TAGS_COUNT = 5
 
 type MongoAggregatePump struct {
@@ -33,6 +33,7 @@ type MongoAggregateConf struct {
 	UseMixedCollection         bool     `mapstructure:"use_mixed_collection"`
 	TrackAllPaths              bool     `mapstructure:"track_all_paths"`
 	IgnoreTagPrefixList        []string `mapstructure:"ignore_tag_prefix_list"`
+	ThresholdLenTagList        int      `mapstructure:"threshold_len_tag_list"`
 }
 
 func (m *MongoAggregatePump) New() Pump {
@@ -85,7 +86,7 @@ func getListOfCommonPrefix(list []string) []string {
 	return result
 }
 
-func printAlert(doc analytics.AnalyticsRecordAggregate) {
+func printAlert(doc analytics.AnalyticsRecordAggregate, thresholdLenTagList int) {
 	var listofTags []string
 
 	for k, _ := range doc.Tags {
@@ -100,7 +101,7 @@ func printAlert(doc analytics.AnalyticsRecordAggregate) {
 		l = COMMON_TAGS_COUNT
 	}
 
-	log.Warnf("WARNING: Found more that %v tag entries per document, which may cause performance issues with aggregate logs. List of most common tag-prefix: %v. You can ignore these tags using ignore_tag_prefix_list option", MAX_TAGS_LEN, listOfCommonPrefix[:l])
+	log.Warnf("WARNING: Found more that %v tag entries per document, which may cause performance issues with aggregate logs. List of most common tag-prefix: %v. You can ignore these tags using ignore_tag_prefix_list option", thresholdLenTagList, listOfCommonPrefix[:l])
 }
 
 func (m *MongoAggregatePump) doHash(in string) string {
@@ -134,6 +135,10 @@ func (m *MongoAggregatePump) Init(config interface{}) error {
 	overrideErr := envconfig.Process(mongoAggregatePumpPrefix, m.dbConf)
 	if overrideErr != nil {
 		log.Error("Failed to process environment variables for mongo aggregate pump: ", overrideErr)
+	}
+
+	if m.dbConf.ThresholdLenTagList == 0 {
+		m.dbConf.ThresholdLenTagList = THRESHOLD_LEN_TAG_LIST
 	}
 
 	m.connect()
@@ -266,8 +271,8 @@ func (m *MongoAggregatePump) WriteData(data []interface{}) error {
 			withTimeUpdate := analytics.AnalyticsRecordAggregate{}
 			_, avgErr := analyticsCollection.Find(query).Apply(avgChange, &withTimeUpdate)
 
-			if len(withTimeUpdate.Tags) > MAX_TAGS_LEN {
-				printAlert(withTimeUpdate)
+			if len(withTimeUpdate.Tags) > m.dbConf.ThresholdLenTagList {
+				printAlert(withTimeUpdate, m.dbConf.ThresholdLenTagList)
 			}
 
 			if avgErr != nil {
