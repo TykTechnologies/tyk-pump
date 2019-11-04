@@ -213,7 +213,7 @@ func (f *AnalyticsRecordAggregate) AsChange() bson.M {
 	newUpdate = f.generateBSONFromProperty("", "total", &f.Total, newUpdate)
 
 	asTime := f.TimeStamp
-	newTime := time.Date(asTime.Year(), asTime.Month(), asTime.Day(), asTime.Hour(), 0, 0, 0, asTime.Location())
+	newTime := time.Date(asTime.Year(), asTime.Month(), asTime.Day(), asTime.Hour(), asTime.Minute(), 0, 0, asTime.Location())
 	newUpdate["$set"].(bson.M)["timestamp"] = newTime
 	newUpdate["$set"].(bson.M)["expireAt"] = f.ExpireAt
 	newUpdate["$set"].(bson.M)["timeid.year"] = newTime.Year()
@@ -354,7 +354,7 @@ func doHash(in string) string {
 }
 
 // AggregateData calculates aggregated data, returns map orgID => aggregated analytics data
-func AggregateData(data []interface{}, trackAllPaths bool) map[string]AnalyticsRecordAggregate {
+func AggregateData(data []interface{}, trackAllPaths bool, storeAnalyticPerMinute bool) map[string]AnalyticsRecordAggregate {
 	analyticsPerOrg := make(map[string]AnalyticsRecordAggregate)
 
 	for _, v := range data {
@@ -372,7 +372,11 @@ func AggregateData(data []interface{}, trackAllPaths bool) map[string]AnalyticsR
 
 			// Set the hourly timestamp & expiry
 			asTime := thisV.TimeStamp
-			thisAggregate.TimeStamp = time.Date(asTime.Year(), asTime.Month(), asTime.Day(), asTime.Hour(), 0, 0, 0, asTime.Location())
+			if storeAnalyticPerMinute {
+				thisAggregate.TimeStamp = time.Date(asTime.Year(), asTime.Month(), asTime.Day(), asTime.Hour(), asTime.Minute(), 0, 0, asTime.Location())
+			} else {
+				thisAggregate.TimeStamp = time.Date(asTime.Year(), asTime.Month(), asTime.Day(), asTime.Hour(), 0, 0, 0, asTime.Location())
+			}
 			thisAggregate.ExpireAt = thisV.ExpireAt
 			thisAggregate.TimeID.Year = asTime.Year()
 			thisAggregate.TimeID.Month = int(asTime.Month())

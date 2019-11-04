@@ -29,6 +29,7 @@ type MongoAggregateConf struct {
 	MongoSSLInsecureSkipVerify bool   `mapstructure:"mongo_ssl_insecure_skip_verify"`
 	UseMixedCollection         bool   `mapstructure:"use_mixed_collection"`
 	TrackAllPaths              bool   `mapstructure:"track_all_paths"`
+	StoreAnalyticsPerMinute    bool   `mapstructure:"store_analytics_per_minute"`
 }
 
 func (m *MongoAggregatePump) New() Pump {
@@ -143,7 +144,7 @@ func (m *MongoAggregatePump) WriteData(data []interface{}) error {
 		m.WriteData(data)
 	} else {
 		// calculate aggregates
-		analyticsPerOrg := analytics.AggregateData(data, m.dbConf.TrackAllPaths)
+		analyticsPerOrg := analytics.AggregateData(data, m.dbConf.TrackAllPaths, m.dbConf.StoreAnalyticsPerMinute)
 
 		// put aggregated data into MongoDB
 		for orgID, filteredData := range analyticsPerOrg {
