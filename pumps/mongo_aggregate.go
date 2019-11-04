@@ -77,7 +77,7 @@ func getListOfCommonPrefix(list []string) []string {
 		}
 	}
 
-	for k, _ := range count {
+	for k := range count {
 		result = append(result, k)
 	}
 
@@ -89,7 +89,7 @@ func getListOfCommonPrefix(list []string) []string {
 func printAlert(doc analytics.AnalyticsRecordAggregate, thresholdLenTagList int) {
 	var listofTags []string
 
-	for k, _ := range doc.Tags {
+	for k := range doc.Tags {
 		listofTags = append(listofTags, k)
 	}
 
