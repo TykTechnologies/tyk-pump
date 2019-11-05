@@ -2,6 +2,7 @@ package pumps
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
 
@@ -116,6 +117,15 @@ func (p *HybridPump) Init(config interface{}) error {
 		if trackAllPaths, ok := meta["track_all_paths"]; ok {
 			p.trackAllPaths = trackAllPaths.(bool)
 		}
+
+		if list, ok := meta["ignore_tag_prefix_list"]; ok {
+			ignoreTagPrefixList := list.([]interface{})
+			p.ignoreTagPrefixList = make([]string, len(ignoreTagPrefixList))
+			for k, v := range ignoreTagPrefixList {
+				p.ignoreTagPrefixList[k] = fmt.Sprint(v)
+			}
+		}
+
 	}
 
 	return nil
