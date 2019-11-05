@@ -10,15 +10,12 @@ import (
 var log = logrus.New()
 
 func init() {
-	log.Formatter = GetDefaultFormatter()
+	log.Formatter = GetFormatterWithForcedPrefix()
 }
 
-//GetDefaultFormatter returns a logrus.TextFormatter object
-//with the configs to show all the info even in
-//TTY-less logs displayer
-func GetDefaultFormatter() *prefixed.TextFormatter{
+func GetFormatterWithForcedPrefix() *prefixed.TextFormatter {
 	textFormatter := new(prefixed.TextFormatter)
-	textFormatter.ForceColors= true
+	textFormatter.ForceColors = true
 	textFormatter.TimestampFormat = `Jan 02 15:04:05`
 	return textFormatter
 }

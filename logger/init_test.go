@@ -9,8 +9,8 @@ import (
 	"testing"
 )
 
-//TestFileLogOutput check if the prefix is stored in not TTY outputs
-func TestFileLogOutput(t *testing.T) {
+//TestFormatterWithForcedPrefixFileOutput check if the prefix is stored in not TTY outputs
+func TestFormatterWithForcedPrefixFileOutput(t *testing.T) {
 
 	outputFile := "test.log"
 	var f *os.File
@@ -21,7 +21,7 @@ func TestFileLogOutput(t *testing.T) {
 	}
 
 	logger, hook := test.NewNullLogger()
-	logger.Formatter = GetDefaultFormatter()
+	logger.Formatter = GetFormatterWithForcedPrefix()
 	logger.SetOutput(f)
 
 	logger.WithFields(logrus.Fields{
