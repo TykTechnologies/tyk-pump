@@ -39,9 +39,10 @@ var (
 
 // HybridPump allows to send analytics to MDCB over RPC
 type HybridPump struct {
-	aggregated          bool
-	trackAllPaths       bool
-	ignoreTagPrefixList []string
+	aggregated             bool
+	trackAllPaths          bool
+	storeAnalyticPerMinute bool
+	ignoreTagPrefixList    []string
 }
 
 func (p *HybridPump) GetName() string {
@@ -118,6 +119,10 @@ func (p *HybridPump) Init(config interface{}) error {
 			p.trackAllPaths = trackAllPaths.(bool)
 		}
 
+		if storeAnalyticPerMinute, ok := meta["store_analytics_per_minute"]; ok {
+			p.storeAnalyticPerMinute = storeAnalyticPerMinute.(bool)
+		}
+
 		if list, ok := meta["ignore_tag_prefix_list"]; ok {
 			ignoreTagPrefixList := list.([]interface{})
 			p.ignoreTagPrefixList = make([]string, len(ignoreTagPrefixList))
@@ -162,7 +167,7 @@ func (p *HybridPump) WriteData(data []interface{}) error {
 		}
 	} else { // send aggregated data
 		// calculate aggregates
-		aggregates := analytics.AggregateData(data, p.trackAllPaths, p.ignoreTagPrefixList)
+		aggregates := analytics.AggregateData(data, p.trackAllPaths, p.ignoreTagPrefixList, p.storeAnalyticPerMinute)
 
 		// turn map with analytics aggregates into JSON payload
 		jsonData, err := json.Marshal(aggregates)

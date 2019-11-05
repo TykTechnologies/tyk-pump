@@ -34,6 +34,7 @@ type MongoAggregateConf struct {
 	TrackAllPaths              bool     `mapstructure:"track_all_paths"`
 	IgnoreTagPrefixList        []string `mapstructure:"ignore_tag_prefix_list"`
 	ThresholdLenTagList        int      `mapstructure:"threshold_len_tag_list"`
+	StoreAnalyticsPerMinute    bool     `mapstructure:"store_analytics_per_minute"`
 }
 
 func (m *MongoAggregatePump) New() Pump {
@@ -215,7 +216,7 @@ func (m *MongoAggregatePump) WriteData(data []interface{}) error {
 		m.WriteData(data)
 	} else {
 		// calculate aggregates
-		analyticsPerOrg := analytics.AggregateData(data, m.dbConf.TrackAllPaths, m.dbConf.IgnoreTagPrefixList)
+		analyticsPerOrg := analytics.AggregateData(data, m.dbConf.TrackAllPaths, m.dbConf.IgnoreTagPrefixList, m.dbConf.StoreAnalyticsPerMinute)
 
 		// put aggregated data into MongoDB
 		for orgID, filteredData := range analyticsPerOrg {
