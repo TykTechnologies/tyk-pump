@@ -2,6 +2,7 @@ package pumps
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
 
@@ -38,8 +39,9 @@ var (
 
 // HybridPump allows to send analytics to MDCB over RPC
 type HybridPump struct {
-	aggregated    bool
-	trackAllPaths bool
+	aggregated          bool
+	trackAllPaths       bool
+	ignoreTagPrefixList []string
 }
 
 func (p *HybridPump) GetName() string {
@@ -115,6 +117,15 @@ func (p *HybridPump) Init(config interface{}) error {
 		if trackAllPaths, ok := meta["track_all_paths"]; ok {
 			p.trackAllPaths = trackAllPaths.(bool)
 		}
+
+		if list, ok := meta["ignore_tag_prefix_list"]; ok {
+			ignoreTagPrefixList := list.([]interface{})
+			p.ignoreTagPrefixList = make([]string, len(ignoreTagPrefixList))
+			for k, v := range ignoreTagPrefixList {
+				p.ignoreTagPrefixList[k] = fmt.Sprint(v)
+			}
+		}
+
 	}
 
 	return nil
@@ -151,7 +162,7 @@ func (p *HybridPump) WriteData(data []interface{}) error {
 		}
 	} else { // send aggregated data
 		// calculate aggregates
-		aggregates := analytics.AggregateData(data, p.trackAllPaths)
+		aggregates := analytics.AggregateData(data, p.trackAllPaths, p.ignoreTagPrefixList)
 
 		// turn map with analytics aggregates into JSON payload
 		jsonData, err := json.Marshal(aggregates)
