@@ -3,6 +3,7 @@ package pumps
 import (
 	b64 "encoding/base64"
 	"errors"
+	"sort"
 	"strings"
 	"time"
 
@@ -17,6 +18,8 @@ import (
 )
 
 var mongoAggregatePumpPrefix = "PMP_MONGOAGG"
+var THRESHOLD_LEN_TAG_LIST = 1000
+var COMMON_TAGS_COUNT = 5
 
 type MongoAggregatePump struct {
 	dbSession *mgo.Session
@@ -24,16 +27,82 @@ type MongoAggregatePump struct {
 }
 
 type MongoAggregateConf struct {
-	MongoURL                   string `mapstructure:"mongo_url"`
-	MongoUseSSL                bool   `mapstructure:"mongo_use_ssl"`
-	MongoSSLInsecureSkipVerify bool   `mapstructure:"mongo_ssl_insecure_skip_verify"`
-	UseMixedCollection         bool   `mapstructure:"use_mixed_collection"`
-	TrackAllPaths              bool   `mapstructure:"track_all_paths"`
+	MongoURL                   string   `mapstructure:"mongo_url"`
+	MongoUseSSL                bool     `mapstructure:"mongo_use_ssl"`
+	MongoSSLInsecureSkipVerify bool     `mapstructure:"mongo_ssl_insecure_skip_verify"`
+	UseMixedCollection         bool     `mapstructure:"use_mixed_collection"`
+	TrackAllPaths              bool     `mapstructure:"track_all_paths"`
+	IgnoreTagPrefixList        []string `mapstructure:"ignore_tag_prefix_list"`
+	ThresholdLenTagList        int      `mapstructure:"threshold_len_tag_list"`
+	StoreAnalyticsPerMinute    bool     `mapstructure:"store_analytics_per_minute"`
 }
 
 func (m *MongoAggregatePump) New() Pump {
 	newPump := MongoAggregatePump{}
 	return &newPump
+}
+
+func getListOfCommonPrefix(list []string) []string {
+	count := make(map[string]int)
+	result := make([]string, 0)
+	length := len(list)
+
+	if length == 0 || length == 1 {
+		return list
+	}
+
+	for i := 0; i < length-1; i++ {
+		for j := i + 1; j < length; j++ {
+			var prefLen int
+			str1 := list[i]
+			str2 := list[j]
+
+			if len(str1) > len(str2) {
+				prefLen = len(str2)
+			} else {
+				prefLen = len(str1)
+			}
+
+			k := 0
+			for k = 0; k < prefLen; k++ {
+				if str1[k] != str2[k] {
+					if k != 0 {
+						count[str1[:k]]++
+					}
+					break
+				}
+			}
+			if k == prefLen {
+				count[str1[:prefLen]]++
+			}
+		}
+	}
+
+	for k := range count {
+		result = append(result, k)
+	}
+
+	sort.Slice(result, func(i, j int) bool { return count[result[i]] > count[result[j]] })
+
+	return result
+}
+
+func printAlert(doc analytics.AnalyticsRecordAggregate, thresholdLenTagList int) {
+	var listofTags []string
+
+	for k := range doc.Tags {
+		listofTags = append(listofTags, k)
+	}
+
+	listOfCommonPrefix := getListOfCommonPrefix(listofTags)
+
+	// list 5 common tag prefix
+	l := len(listOfCommonPrefix)
+	if l > COMMON_TAGS_COUNT {
+		l = COMMON_TAGS_COUNT
+	}
+
+	log.Warnf("WARNING: Found more that %v tag entries per document, which may cause performance issues with aggregate logs. List of most common tag-prefix: %v. You can ignore these tags using ignore_tag_prefix_list option", thresholdLenTagList, listOfCommonPrefix[:l])
 }
 
 func (m *MongoAggregatePump) doHash(in string) string {
@@ -67,6 +136,10 @@ func (m *MongoAggregatePump) Init(config interface{}) error {
 	overrideErr := envconfig.Process(mongoAggregatePumpPrefix, m.dbConf)
 	if overrideErr != nil {
 		log.Error("Failed to process environment variables for mongo aggregate pump: ", overrideErr)
+	}
+
+	if m.dbConf.ThresholdLenTagList == 0 {
+		m.dbConf.ThresholdLenTagList = THRESHOLD_LEN_TAG_LIST
 	}
 
 	m.connect()
@@ -143,7 +216,7 @@ func (m *MongoAggregatePump) WriteData(data []interface{}) error {
 		m.WriteData(data)
 	} else {
 		// calculate aggregates
-		analyticsPerOrg := analytics.AggregateData(data, m.dbConf.TrackAllPaths)
+		analyticsPerOrg := analytics.AggregateData(data, m.dbConf.TrackAllPaths, m.dbConf.IgnoreTagPrefixList, m.dbConf.StoreAnalyticsPerMinute)
 
 		// put aggregated data into MongoDB
 		for orgID, filteredData := range analyticsPerOrg {
@@ -198,6 +271,10 @@ func (m *MongoAggregatePump) WriteData(data []interface{}) error {
 			}
 			withTimeUpdate := analytics.AnalyticsRecordAggregate{}
 			_, avgErr := analyticsCollection.Find(query).Apply(avgChange, &withTimeUpdate)
+
+			if m.dbConf.ThresholdLenTagList != -1 && (len(withTimeUpdate.Tags) > m.dbConf.ThresholdLenTagList) {
+				printAlert(withTimeUpdate, m.dbConf.ThresholdLenTagList)
+			}
 
 			if avgErr != nil {
 				log.WithFields(logrus.Fields{

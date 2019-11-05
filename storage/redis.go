@@ -235,7 +235,7 @@ func (r *RedisClusterStorageManager) GetAndDeleteSet(keyName string) []interface
 
 	log.WithFields(logrus.Fields{
 		"prefix": redisLogPrefix,
-	}).Debug("Analytics returned: ", redVal)
+	}).Debug("Analytics returned: ", len(redVal))
 	if len(redVal) == 0 {
 		return []interface{}{}
 	}
@@ -244,7 +244,7 @@ func (r *RedisClusterStorageManager) GetAndDeleteSet(keyName string) []interface
 
 	log.WithFields(logrus.Fields{
 		"prefix": redisLogPrefix,
-	}).Debug("Unpacked vals: ", vals)
+	}).Debug("Unpacked vals: ", len(vals))
 
 	return vals
 }

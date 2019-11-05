@@ -213,7 +213,7 @@ func (f *AnalyticsRecordAggregate) AsChange() bson.M {
 	newUpdate = f.generateBSONFromProperty("", "total", &f.Total, newUpdate)
 
 	asTime := f.TimeStamp
-	newTime := time.Date(asTime.Year(), asTime.Month(), asTime.Day(), asTime.Hour(), 0, 0, 0, asTime.Location())
+	newTime := time.Date(asTime.Year(), asTime.Month(), asTime.Day(), asTime.Hour(), asTime.Minute(), 0, 0, asTime.Location())
 	newUpdate["$set"].(bson.M)["timestamp"] = newTime
 	newUpdate["$set"].(bson.M)["expireAt"] = f.ExpireAt
 	newUpdate["$set"].(bson.M)["timeid.year"] = newTime.Year()
@@ -353,8 +353,23 @@ func doHash(in string) string {
 	return search
 }
 
+func ignoreTag(tag string, ignoreTagPrefixList []string) bool {
+	// ignore tag added for key by gateway
+	if strings.HasPrefix(tag, "key-") {
+		return true
+	}
+
+	for _, prefix := range ignoreTagPrefixList {
+		if strings.HasPrefix(tag, prefix) {
+			return true
+		}
+	}
+
+	return false
+}
+
 // AggregateData calculates aggregated data, returns map orgID => aggregated analytics data
-func AggregateData(data []interface{}, trackAllPaths bool) map[string]AnalyticsRecordAggregate {
+func AggregateData(data []interface{}, trackAllPaths bool, ignoreTagPrefixList []string, storeAnalyticPerMinute bool) map[string]AnalyticsRecordAggregate {
 	analyticsPerOrg := make(map[string]AnalyticsRecordAggregate)
 
 	for _, v := range data {
@@ -372,7 +387,11 @@ func AggregateData(data []interface{}, trackAllPaths bool) map[string]AnalyticsR
 
 			// Set the hourly timestamp & expiry
 			asTime := thisV.TimeStamp
-			thisAggregate.TimeStamp = time.Date(asTime.Year(), asTime.Month(), asTime.Day(), asTime.Hour(), 0, 0, 0, asTime.Location())
+			if storeAnalyticPerMinute {
+				thisAggregate.TimeStamp = time.Date(asTime.Year(), asTime.Month(), asTime.Day(), asTime.Hour(), asTime.Minute(), 0, 0, asTime.Location())
+			} else {
+				thisAggregate.TimeStamp = time.Date(asTime.Year(), asTime.Month(), asTime.Day(), asTime.Hour(), 0, 0, 0, asTime.Location())
+			}
 			thisAggregate.ExpireAt = thisV.ExpireAt
 			thisAggregate.TimeID.Year = asTime.Year()
 			thisAggregate.TimeID.Month = int(asTime.Month())
@@ -597,12 +616,15 @@ func AggregateData(data []interface{}, trackAllPaths bool) map[string]AnalyticsR
 						thisAggregate.Geo[thisV.Geo.Country.ISOCode].HumanIdentifier = thisV.Geo.Country.ISOCode
 					}
 					break
+
 				case "Tags":
 					for _, thisTag := range thisV.Tags {
-						c := IncrementOrSetUnit(thisAggregate.Tags[thisTag])
-						thisAggregate.Tags[thisTag] = c
-						thisAggregate.Tags[thisTag].Identifier = thisTag
-						thisAggregate.Tags[thisTag].HumanIdentifier = thisTag
+						if !ignoreTag(thisTag, ignoreTagPrefixList) {
+							c := IncrementOrSetUnit(thisAggregate.Tags[thisTag])
+							thisAggregate.Tags[thisTag] = c
+							thisAggregate.Tags[thisTag].Identifier = thisTag
+							thisAggregate.Tags[thisTag].HumanIdentifier = thisTag
+						}
 					}
 					break
 
