@@ -208,7 +208,7 @@ func getMapping(datum analytics.AnalyticsRecord, extendedStatistics bool, genera
 
 	if generateID {
 		hasher := murmur3.New64()
-		hasher.Write([]byte(fmt.Sprintf("%d%s%s%s%s%s%d%s", record.TimeStamp, record.Method, record.Path, record.IPAddress, record.APIID, record.OauthID, record.RequestTime, record.Alias)))
+		hasher.Write([]byte(fmt.Sprintf("%d%s%s%s%s%s%d%s", record.TimeStamp, record.Method, record.Path, record.IPAddress, record.APIID, record.OauthID, record.RequestTime.UnixNano(), record.Alias)))
 
 		return mapping, string(hasher.Sum(nil))
 	}
