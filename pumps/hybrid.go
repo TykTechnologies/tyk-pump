@@ -121,7 +121,7 @@ func (p *HybridPump) Init(config interface{}) error {
 
 		if storeAnalyticPerMinute, ok := meta["store_analytics_per_minute"]; ok {
 			p.storeAnalyticPerMinute = storeAnalyticPerMinute.(bool)
-    }
+		}
 
 		if list, ok := meta["ignore_tag_prefix_list"]; ok {
 			ignoreTagPrefixList := list.([]interface{})
