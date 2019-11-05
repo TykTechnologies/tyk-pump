@@ -116,6 +116,11 @@ func (p *HybridPump) Init(config interface{}) error {
 		if trackAllPaths, ok := meta["track_all_paths"]; ok {
 			p.trackAllPaths = trackAllPaths.(bool)
 		}
+
+		if storeAnalyticPerMinute, ok := meta["store_analytics_per_minute"]; ok {
+			p.storeAnalyticPerMinute = storeAnalyticPerMinute.(bool)
+		}
+
 	}
 
 	return nil
