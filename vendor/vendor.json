@@ -127,6 +127,12 @@
 			"revisionTime": "2015-10-22T06:55:26Z"
 		},
 		{
+			"checksumSHA1": "Ffhtm8iHH7l2ynVVOIGJE3eiuLA=",
+			"path": "github.com/apparentlymart/go-textseg/textseg",
+			"revision": "fb01f485ebef760e5ee06d55e1b07534dda2d295",
+			"revisionTime": "2018-08-15T02:43:44Z"
+		},
+		{
 			"checksumSHA1": "l8CHAH/SE2Qi80XWvU4dwlFbJ64=",
 			"path": "github.com/beeker1121/goque",
 			"revision": "4044bc29b28064db4f08e947c4972d5ca3e0f3c8",
