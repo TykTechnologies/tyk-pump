@@ -2,6 +2,7 @@ package analytics
 
 import (
 	b64 "encoding/base64"
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -368,6 +369,17 @@ func ignoreTag(tag string, ignoreTagPrefixList []string) bool {
 	return false
 }
 
+func replaceUnsupportedChars(path string) string {
+	result := path
+
+	if strings.Contains(path, ".") {
+		dotUnicode := fmt.Sprintf("\\u%x", ".")
+		result = strings.ReplaceAll(path, ".", dotUnicode)
+	}
+
+	return result
+}
+
 // AggregateData calculates aggregated data, returns map orgID => aggregated analytics data
 func AggregateData(data []interface{}, trackAllPaths bool, ignoreTagPrefixList []string, storeAnalyticPerMinute bool) map[string]AnalyticsRecordAggregate {
 	analyticsPerOrg := make(map[string]AnalyticsRecordAggregate)
@@ -630,10 +642,11 @@ func AggregateData(data []interface{}, trackAllPaths bool, ignoreTagPrefixList [
 
 				case "TrackPath":
 					if value.(bool) {
-						c := IncrementOrSetUnit(thisAggregate.Endpoints[thisV.Path])
-						thisAggregate.Endpoints[thisV.Path] = c
-						thisAggregate.Endpoints[thisV.Path].Identifier = thisV.Path
-						thisAggregate.Endpoints[thisV.Path].HumanIdentifier = thisV.Path
+						fixedPath := replaceUnsupportedChars(thisV.Path)
+						c := IncrementOrSetUnit(thisAggregate.Endpoints[fixedPath])
+						thisAggregate.Endpoints[fixedPath] = c
+						thisAggregate.Endpoints[fixedPath].Identifier = thisV.Path
+						thisAggregate.Endpoints[fixedPath].HumanIdentifier = thisV.Path
 					}
 					break
 				}
