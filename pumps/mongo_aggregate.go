@@ -102,7 +102,7 @@ func printAlert(doc analytics.AnalyticsRecordAggregate, thresholdLenTagList int)
 		l = COMMON_TAGS_COUNT
 	}
 
-	log.Warnf("WARNING: Found more that %v tag entries per document, which may cause performance issues with aggregate logs. List of most common tag-prefix: %v. You can ignore these tags using ignore_tag_prefix_list option", thresholdLenTagList, listOfCommonPrefix[:l])
+	log.Warnf("WARNING: Found more than %v tag entries per document, which may cause performance issues with aggregate logs. List of most common tag-prefix: [%v]. You can ignore these tags using ignore_tag_prefix_list option", thresholdLenTagList, strings.Join(listOfCommonPrefix[:l], ", "))
 }
 
 func (m *MongoAggregatePump) doHash(in string) string {
