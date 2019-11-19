@@ -374,7 +374,7 @@ func replaceUnsupportedChars(path string) string {
 
 	if strings.Contains(path, ".") {
 		dotUnicode := fmt.Sprintf("\\u%x", ".")
-		result = strings.ReplaceAll(path, ".", dotUnicode)
+		result = strings.Replace(path, ".", dotUnicode, -1)
 	}
 
 	return result
