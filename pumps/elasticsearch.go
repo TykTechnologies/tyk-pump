@@ -2,6 +2,7 @@ package pumps
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"strings"
@@ -32,6 +33,7 @@ type ElasticsearchConf struct {
 	RollingIndex       bool   `mapstructure:"rolling_index"`
 	ExtendedStatistics bool   `mapstructure:"extended_stats"`
 	GenerateID         bool   `mapstructure:"generate_id"`
+	DecodeBase64       bool   `mapstructure:"decode_base64"`
 	Version            string `mapstructure:"version"`
 }
 
@@ -184,7 +186,7 @@ func getIndexName(esConf *ElasticsearchConf) string {
 	return indexName
 }
 
-func getMapping(datum analytics.AnalyticsRecord, extendedStatistics bool, generateID bool) (map[string]interface{}, string) {
+func getMapping(datum analytics.AnalyticsRecord, extendedStatistics bool, generateID bool, decodeBase64 bool) (map[string]interface{}, string) {
 	record := datum
 
 	mapping := map[string]interface{}{
@@ -207,8 +209,13 @@ func getMapping(datum analytics.AnalyticsRecord, extendedStatistics bool, genera
 	}
 
 	if extendedStatistics {
-		mapping["raw_request"] = record.RawRequest
-		mapping["raw_response"] = record.RawResponse
+		if decodeBase64 {
+			mapping["raw_request"], _ = base64.StdEncoding.DecodeString(record.RawRequest)
+			mapping["raw_response"], _ = base64.StdEncoding.DecodeString(record.RawResponse)
+		} else {
+			mapping["raw_request"] = record.RawRequest
+			mapping["raw_response"] = record.RawResponse
+		}
 		mapping["user_agent"] = record.UserAgent
 	}
 
