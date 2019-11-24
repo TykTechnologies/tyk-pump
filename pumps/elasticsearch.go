@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/mitchellh/mapstructure"
@@ -53,18 +54,20 @@ type Elasticsearch6Operator struct {
 func getOperator(version string, url string, setSniff bool) (ElasticsearchOperator, error) {
 	var err error
 
+	urls := strings.Split(url, ",")
+
 	switch version {
 	case "3":
 		e := new(Elasticsearch3Operator)
-		e.esClient, err = elasticv3.NewClient(elasticv3.SetURL(url), elasticv3.SetSniff(setSniff))
+		e.esClient, err = elasticv3.NewClient(elasticv3.SetURL(urls...), elasticv3.SetSniff(setSniff))
 		return e, err
 	case "5":
 		e := new(Elasticsearch5Operator)
-		e.esClient, err = elasticv5.NewClient(elasticv5.SetURL(url), elasticv5.SetSniff(setSniff))
+		e.esClient, err = elasticv5.NewClient(elasticv5.SetURL(urls...), elasticv5.SetSniff(setSniff))
 		return e, err
 	case "6":
 		e := new(Elasticsearch6Operator)
-		e.esClient, err = elasticv6.NewClient(elasticv6.SetURL(url), elasticv6.SetSniff(setSniff))
+		e.esClient, err = elasticv6.NewClient(elasticv6.SetURL(urls...), elasticv6.SetSniff(setSniff))
 		return e, err
 	default:
 		// shouldn't get this far, but hey never hurts to check assumptions
