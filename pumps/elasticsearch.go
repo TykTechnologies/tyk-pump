@@ -53,7 +53,7 @@ type Elasticsearch6Operator struct {
 
 func getOperator(version string, url string, setSniff bool) (ElasticsearchOperator, error) {
 	var err error
-	
+
 	urls := strings.Split(url, ",")
 
 	switch version {
