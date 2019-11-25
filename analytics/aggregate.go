@@ -145,8 +145,13 @@ func (f *AnalyticsRecordAggregate) generateSetterForTime(parent, thisUnit string
 }
 
 func (f *AnalyticsRecordAggregate) latencySetter(parent, thisUnit string, newUpdate bson.M, counter *Counter) bson.M {
-	counter.Latency = float64(counter.TotalLatency) / float64(counter.Hits)
-	counter.UpstreamLatency = float64(counter.TotalUpstreamLatency) / float64(counter.Hits)
+	if counter.Hits > 0 {
+		counter.Latency = float64(counter.TotalLatency) / float64(counter.Hits)
+		counter.UpstreamLatency = float64(counter.TotalUpstreamLatency) / float64(counter.Hits)
+	} else {
+		counter.Latency = 0.0
+		counter.UpstreamLatency = 0.0
+	}
 
 	constructor := parent + "." + thisUnit + "."
 	if parent == "" {
@@ -236,7 +241,11 @@ func (f *AnalyticsRecordAggregate) AsTimeUpdate() bson.M {
 	apis := make([]Counter, 0)
 	newUpdate["$set"].(bson.M)["lists.apiid"] = make([]interface{}, 0)
 	for thisUnit, incVal := range f.APIID {
-		newTime := incVal.TotalRequestTime / float64(incVal.Hits)
+		var newTime float64
+
+		if incVal.Hits > 0 {
+			newTime = incVal.TotalRequestTime / float64(incVal.Hits)
+		}
 		newUpdate = f.generateSetterForTime("apiid", thisUnit, newTime, newUpdate)
 		newUpdate = f.latencySetter("apiid", thisUnit, newUpdate, incVal)
 		apis = append(apis, *incVal)
@@ -246,7 +255,11 @@ func (f *AnalyticsRecordAggregate) AsTimeUpdate() bson.M {
 	errors := make([]Counter, 0)
 	newUpdate["$set"].(bson.M)["lists.errors"] = make([]interface{}, 0)
 	for thisUnit, incVal := range f.Errors {
-		newTime := incVal.TotalRequestTime / float64(incVal.Hits)
+		var newTime float64
+
+		if incVal.Hits > 0 {
+			newTime = incVal.TotalRequestTime / float64(incVal.Hits)
+		}
 		newUpdate = f.generateSetterForTime("errors", thisUnit, newTime, newUpdate)
 		newUpdate = f.latencySetter("errors", thisUnit, newUpdate, incVal)
 		errors = append(errors, *incVal)
@@ -256,7 +269,11 @@ func (f *AnalyticsRecordAggregate) AsTimeUpdate() bson.M {
 	versions := make([]Counter, 0)
 	newUpdate["$set"].(bson.M)["lists.versions"] = make([]interface{}, 0)
 	for thisUnit, incVal := range f.Versions {
-		newTime := incVal.TotalRequestTime / float64(incVal.Hits)
+		var newTime float64
+
+		if incVal.Hits > 0 {
+			newTime = incVal.TotalRequestTime / float64(incVal.Hits)
+		}
 		newUpdate = f.generateSetterForTime("versions", thisUnit, newTime, newUpdate)
 		newUpdate = f.latencySetter("versions", thisUnit, newUpdate, incVal)
 		versions = append(versions, *incVal)
@@ -266,7 +283,11 @@ func (f *AnalyticsRecordAggregate) AsTimeUpdate() bson.M {
 	apikeys := make([]Counter, 0)
 	newUpdate["$set"].(bson.M)["lists.apikeys"] = make([]interface{}, 0)
 	for thisUnit, incVal := range f.APIKeys {
-		newTime := incVal.TotalRequestTime / float64(incVal.Hits)
+		var newTime float64
+
+		if incVal.Hits > 0 {
+			newTime = incVal.TotalRequestTime / float64(incVal.Hits)
+		}
 		newUpdate = f.generateSetterForTime("apikeys", thisUnit, newTime, newUpdate)
 		newUpdate = f.latencySetter("apikeys", thisUnit, newUpdate, incVal)
 		apikeys = append(apikeys, *incVal)
@@ -276,7 +297,11 @@ func (f *AnalyticsRecordAggregate) AsTimeUpdate() bson.M {
 	oauthids := make([]Counter, 0)
 	newUpdate["$set"].(bson.M)["lists.oauthids"] = make([]interface{}, 0)
 	for thisUnit, incVal := range f.OauthIDs {
-		newTime := incVal.TotalRequestTime / float64(incVal.Hits)
+		var newTime float64
+
+		if incVal.Hits > 0 {
+			newTime = incVal.TotalRequestTime / float64(incVal.Hits)
+		}
 		newUpdate = f.generateSetterForTime("oauthids", thisUnit, newTime, newUpdate)
 		newUpdate = f.latencySetter("oauthids", thisUnit, newUpdate, incVal)
 		oauthids = append(oauthids, *incVal)
@@ -286,7 +311,11 @@ func (f *AnalyticsRecordAggregate) AsTimeUpdate() bson.M {
 	geo := make([]Counter, 0)
 	newUpdate["$set"].(bson.M)["lists.geo"] = make([]interface{}, 0)
 	for thisUnit, incVal := range f.Geo {
-		newTime := incVal.TotalRequestTime / float64(incVal.Hits)
+		var newTime float64
+
+		if incVal.Hits > 0 {
+			newTime = incVal.TotalRequestTime / float64(incVal.Hits)
+		}
 		newUpdate = f.generateSetterForTime("geo", thisUnit, newTime, newUpdate)
 		newUpdate = f.latencySetter("geo", thisUnit, newUpdate, incVal)
 		geo = append(geo, *incVal)
@@ -296,7 +325,11 @@ func (f *AnalyticsRecordAggregate) AsTimeUpdate() bson.M {
 	tags := make([]Counter, 0)
 	newUpdate["$set"].(bson.M)["lists.tags"] = make([]interface{}, 0)
 	for thisUnit, incVal := range f.Tags {
-		newTime := incVal.TotalRequestTime / float64(incVal.Hits)
+		var newTime float64
+
+		if incVal.Hits > 0 {
+			newTime = incVal.TotalRequestTime / float64(incVal.Hits)
+		}
 		newUpdate = f.generateSetterForTime("tags", thisUnit, newTime, newUpdate)
 		newUpdate = f.latencySetter("tags", thisUnit, newUpdate, incVal)
 		tags = append(tags, *incVal)
@@ -306,7 +339,11 @@ func (f *AnalyticsRecordAggregate) AsTimeUpdate() bson.M {
 	endpoints := make([]Counter, 0)
 	newUpdate["$set"].(bson.M)["lists.endpoints"] = make([]interface{}, 0)
 	for thisUnit, incVal := range f.Endpoints {
-		newTime := incVal.TotalRequestTime / float64(incVal.Hits)
+		var newTime float64
+
+		if incVal.Hits > 0 {
+			newTime = incVal.TotalRequestTime / float64(incVal.Hits)
+		}
 		newUpdate = f.generateSetterForTime("endpoints", thisUnit, newTime, newUpdate)
 		newUpdate = f.latencySetter("endpoints", thisUnit, newUpdate, incVal)
 		endpoints = append(endpoints, *incVal)
@@ -319,7 +356,11 @@ func (f *AnalyticsRecordAggregate) AsTimeUpdate() bson.M {
 
 		newUpdate["$set"].(bson.M)[parent] = make([]interface{}, 0)
 		for k, v := range incVal {
-			newTime := v.TotalRequestTime / float64(v.Hits)
+			var newTime float64
+
+			if v.Hits > 0 {
+				newTime = v.TotalRequestTime / float64(v.Hits)
+			}
 			newUpdate = f.generateSetterForTime("keyendpoints."+thisUnit, k, newTime, newUpdate)
 			newUpdate = f.latencySetter("keyendpoints."+thisUnit, k, newUpdate, v)
 			keyendpoints = append(keyendpoints, *v)
@@ -333,7 +374,11 @@ func (f *AnalyticsRecordAggregate) AsTimeUpdate() bson.M {
 
 		newUpdate["$set"].(bson.M)[parent] = make([]interface{}, 0)
 		for k, v := range incVal {
-			newTime := v.TotalRequestTime / float64(v.Hits)
+			var newTime float64
+
+			if v.Hits > 0 {
+				newTime = v.TotalRequestTime / float64(v.Hits)
+			}
 			newUpdate = f.generateSetterForTime("oauthendpoints."+thisUnit, k, newTime, newUpdate)
 			newUpdate = f.latencySetter("oauthendpoints."+thisUnit, k, newUpdate, v)
 			oauthendpoints = append(oauthendpoints, *v)
@@ -341,7 +386,11 @@ func (f *AnalyticsRecordAggregate) AsTimeUpdate() bson.M {
 		newUpdate["$set"].(bson.M)[parent] = oauthendpoints
 	}
 
-	newTime := f.Total.TotalRequestTime / float64(f.Total.Hits)
+	var newTime float64
+
+	if f.Total.Hits > 0 {
+		newTime = f.Total.TotalRequestTime / float64(f.Total.Hits)
+	}
 	newUpdate = f.generateSetterForTime("", "total", newTime, newUpdate)
 	newUpdate = f.latencySetter("", "total", newUpdate, &f.Total)
 
