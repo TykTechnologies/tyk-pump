@@ -139,7 +139,7 @@ func StartPurgeLoop(secInterval int) {
 
 			for i, v := range AnalyticsValues {
 				decoded := analytics.AnalyticsRecord{}
-				err := msgpack.Unmarshal(v.([]byte), &decoded)
+				err := msgpack.Unmarshal([]byte(v.(string)), &decoded)
 				log.WithFields(logrus.Fields{
 					"prefix": mainPrefix,
 				}).Debug("Decoded Record: ", decoded)
