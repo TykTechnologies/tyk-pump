@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"github.com/buger/jsonparser"
-	"github.com/satori/go.uuid"
+	uuid "github.com/satori/go.uuid"
 
 	"github.com/TykTechnologies/murmur3"
 	"github.com/TykTechnologies/tyk/config"
@@ -26,6 +26,7 @@ var ErrKeyNotFound = errors.New("key not found")
 // AuthorisationManager to read and write key values to the backend
 type Handler interface {
 	GetKey(string) (string, error) // Returned string is expected to be a JSON object (user.SessionState)
+	GetMultiKey([]string) ([]string, error)
 	GetRawKey(string) (string, error)
 	SetKey(string, string, int64) error // Second input string is expected to be a JSON object (user.SessionState)
 	SetRawKey(string, string, int64) error
@@ -33,6 +34,7 @@ type Handler interface {
 	GetExp(string) (int64, error) // Returns expiry of a key
 	GetKeys(string) []string
 	DeleteKey(string) bool
+	DeleteAllKeys() bool
 	DeleteRawKey(string) bool
 	Connect() bool
 	GetKeysAndValues() map[string]string
@@ -41,10 +43,10 @@ type Handler interface {
 	Decrement(string)
 	IncrememntWithExpire(string, int64) int64
 	SetRollingWindow(key string, per int64, val string, pipeline bool) (int, []interface{})
+	GetRollingWindow(key string, per int64, pipeline bool) (int, []interface{})
 	GetSet(string) (map[string]string, error)
 	AddToSet(string, string)
 	AppendToSet(string, string)
-	AppendToSetPipelined(string, []string)
 	GetAndDeleteSet(string) []interface{}
 	RemoveFromSet(string, string)
 	DeleteScanMatch(string) bool
@@ -52,6 +54,12 @@ type Handler interface {
 	AddToSortedSet(string, string, float64)
 	GetSortedSetRange(string, string, string) ([]string, []float64, error)
 	RemoveSortedSetRange(string, string, string) error
+}
+
+type AnalyticsHandler interface {
+	Connect() bool
+	AppendToSetPipelined(string, [][]byte)
+	GetAndDeleteSet(string) []interface{}
 }
 
 const defaultHashAlgorithm = "murmur64"
