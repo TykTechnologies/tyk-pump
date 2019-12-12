@@ -1,21 +1,21 @@
 package storage
 
 import (
+	"crypto/tls"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/TykTechnologies/logrus"
-	"github.com/TykTechnologies/redigocluster/rediscluster"
+	"github.com/go-redis/redis"
 
-	"github.com/garyburd/redigo/redis"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/mitchellh/mapstructure"
 )
 
 // ------------------- REDIS CLUSTER STORAGE MANAGER -------------------------------
 
-var redisClusterSingleton *rediscluster.RedisCluster
+var redisClusterSingleton redis.UniversalClient
 var redisLogPrefix = "redis"
 var ENV_REDIS_PREFIX = "TYK_PMP_REDIS"
 
@@ -55,13 +55,13 @@ type RedisStorageConfig struct {
 
 // RedisClusterStorageManager is a storage manager that uses the redis database.
 type RedisClusterStorageManager struct {
-	db        *rediscluster.RedisCluster
+	db        redis.UniversalClient
 	KeyPrefix string
 	HashKeys  bool
 	Config    RedisStorageConfig
 }
 
-func NewRedisClusterPool(forceReconnect bool, config RedisStorageConfig) *rediscluster.RedisCluster {
+func NewRedisClusterPool(forceReconnect bool, config RedisStorageConfig) redis.UniversalClient {
 	if !forceReconnect {
 		if redisClusterSingleton != nil {
 			log.WithFields(logrus.Fields{
@@ -71,18 +71,13 @@ func NewRedisClusterPool(forceReconnect bool, config RedisStorageConfig) *redisc
 		}
 	} else {
 		if redisClusterSingleton != nil {
-			redisClusterSingleton.CloseConnection()
+			redisClusterSingleton.Close()
 		}
 	}
 
 	log.WithFields(logrus.Fields{
 		"prefix": redisLogPrefix,
 	}).Debug("Creating new Redis connection pool")
-
-	maxIdle := 100
-	if config.MaxIdle > 0 {
-		maxIdle = config.MaxIdle
-	}
 
 	maxActive := 500
 	if config.MaxActive > 0 {
@@ -101,35 +96,44 @@ func NewRedisClusterPool(forceReconnect bool, config RedisStorageConfig) *redisc
 		}).Info("--> Using clustered mode")
 	}
 
-	thisPoolConf := rediscluster.PoolConfig{
-		MaxIdle:        maxIdle,
-		MaxActive:      maxActive,
-		IdleTimeout:    240 * time.Second,
-		ConnectTimeout: timeout,
-		ReadTimeout:    timeout,
-		WriteTimeout:   timeout,
-		Database:       config.Database,
-		Password:       config.Password,
-		IsCluster:      config.EnableCluster,
-		UseTLS:         config.RedisUseSSL,
-		TLSSkipVerify:  config.RedisSSLInsecureSkipVerify,
-	}
-
-	seed_redii := []map[string]string{}
+	seed_redii := []string{}
 
 	if len(config.Hosts) > 0 {
 		for h, p := range config.Hosts {
-			seed_redii = append(seed_redii, map[string]string{h: p})
+			addr := h + ":" + p
+			seed_redii = append(seed_redii, addr)
 		}
 	} else {
-		seed_redii = append(seed_redii, map[string]string{config.Host: strconv.Itoa(config.Port)})
+		addr := config.Host + ":" + strconv.Itoa(config.Port)
+		seed_redii = append(seed_redii, addr)
 	}
 
-	thisInstance := rediscluster.NewRedisCluster(seed_redii, thisPoolConf, false)
+	if !config.EnableCluster {
+		seed_redii = seed_redii[:1]
+	}
 
-	redisClusterSingleton = &thisInstance
+	var tlsConfig *tls.Config
+	if config.RedisUseSSL {
+		tlsConfig = &tls.Config{
+			InsecureSkipVerify: config.RedisSSLInsecureSkipVerify,
+		}
+	}
 
-	return &thisInstance
+	thisInstance := redis.NewUniversalClient(&redis.UniversalOptions{
+		Addrs:        seed_redii,
+		DB:           config.Database,
+		Password:     config.Password,
+		PoolSize:     maxActive,
+		IdleTimeout:  240 * time.Second,
+		ReadTimeout:  timeout,
+		WriteTimeout: timeout,
+		DialTimeout:  timeout,
+		TLSConfig:    tlsConfig,
+	})
+
+	redisClusterSingleton = thisInstance
+
+	return thisInstance
 }
 
 func (r *RedisClusterStorageManager) GetName() string {
@@ -171,9 +175,6 @@ func (r *RedisClusterStorageManager) Connect() bool {
 	log.WithFields(logrus.Fields{
 		"prefix": redisLogPrefix,
 	}).Debug("Storage Engine already initialized...")
-	log.WithFields(logrus.Fields{
-		"prefix": redisLogPrefix,
-	}).Debug("Redis handles: ", len(r.db.Handles))
 
 	// Reset it just in case
 	r.db = redisClusterSingleton
@@ -217,15 +218,14 @@ func (r *RedisClusterStorageManager) GetAndDeleteSet(keyName string) []interface
 		"prefix": redisLogPrefix,
 	}).Debug("Fixed keyname is: ", fixedKey)
 
-	lrange := rediscluster.ClusterTransaction{}
-	lrange.Cmd = "LRANGE"
-	lrange.Args = []interface{}{fixedKey, 0, -1}
+	var lrange *redis.StringSliceCmd
+	_, err := r.db.TxPipelined(func(pipe redis.Pipeliner) error {
+		lrange = pipe.LRange(fixedKey, 0, -1)
+		pipe.Del(fixedKey)
 
-	delCmd := rediscluster.ClusterTransaction{}
-	delCmd.Cmd = "DEL"
-	delCmd.Args = []interface{}{fixedKey}
+		return nil
+	})
 
-	redVal, err := redis.Values(r.db.DoTransaction([]rediscluster.ClusterTransaction{lrange, delCmd}))
 	if err != nil {
 		log.WithFields(logrus.Fields{
 			"prefix": redisLogPrefix,
@@ -233,20 +233,18 @@ func (r *RedisClusterStorageManager) GetAndDeleteSet(keyName string) []interface
 		r.Connect()
 	}
 
-	log.WithFields(logrus.Fields{
-		"prefix": redisLogPrefix,
-	}).Debug("Analytics returned: ", len(redVal))
-	if len(redVal) == 0 {
-		return []interface{}{}
+	vals := lrange.Val()
+
+	result := make([]interface{}, len(vals))
+	for i, v := range vals {
+		result[i] = v
 	}
 
-	vals := redVal[0].([]interface{})
-
 	log.WithFields(logrus.Fields{
 		"prefix": redisLogPrefix,
-	}).Debug("Unpacked vals: ", len(vals))
+	}).Debug("Unpacked vals: ", len(result))
 
-	return vals
+	return result
 }
 
 // SetKey will create (or update) a key value in the store
@@ -255,7 +253,7 @@ func (r *RedisClusterStorageManager) SetKey(keyName, session string, timeout int
 	log.Debug("[STORE] Setting key: ", r.fixKey(keyName))
 
 	r.ensureConnection()
-	_, err := r.db.Do("SET", r.fixKey(keyName), session)
+	err := r.db.Set(r.fixKey(keyName), session, 0).Err()
 	if timeout > 0 {
 		if err := r.SetExp(keyName, timeout); err != nil {
 			return err
@@ -269,7 +267,7 @@ func (r *RedisClusterStorageManager) SetKey(keyName, session string, timeout int
 }
 
 func (r *RedisClusterStorageManager) SetExp(keyName string, timeout int64) error {
-	_, err := r.db.Do("EXPIRE", r.fixKey(keyName), timeout)
+	err := r.db.Expire(r.fixKey(keyName), time.Duration(timeout)*time.Second).Err()
 	if err != nil {
 		log.Error("Could not EXPIRE key: ", err)
 	}
