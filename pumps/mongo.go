@@ -261,10 +261,12 @@ func (m *MongoPump) connect() {
 	dialInfo.Timeout = time.Second * 5
 	m.dbSession, err = mgo.DialWithInfo(dialInfo)
 
-	if err != nil {
+	for err != nil {
 		log.WithFields(logrus.Fields{
 			"prefix": mongoPrefix,
-		}).Fatal("Mongo connection failed:", err)
+		}).Error("Mongo connection failed. Retrying. Err::", err)
+		time.Sleep(5 * time.Second)
+		m.dbSession, err = mgo.DialWithInfo(dialInfo)
 	}
 }
 
