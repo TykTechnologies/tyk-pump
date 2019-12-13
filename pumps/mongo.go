@@ -258,14 +258,13 @@ func (m *MongoPump) connect() {
 		}).Panic("Mongo URL is invalid: ", err)
 	}
 
+	dialInfo.Timeout = time.Second * 5
 	m.dbSession, err = mgo.DialWithInfo(dialInfo)
 
-	// TODO - Should this not bail after a while?
 	for err != nil {
 		log.WithFields(logrus.Fields{
 			"prefix": mongoPrefix,
-		}).Error("Mongo connection failed:", err)
-
+		}).Error("Mongo connection failed. Retrying. Err::", err)
 		time.Sleep(5 * time.Second)
 		m.dbSession, err = mgo.DialWithInfo(dialInfo)
 	}
