@@ -125,7 +125,7 @@ func initialisePumps() {
 		log.WithFields(logrus.Fields{
 			"prefix": mainPrefix,
 		}).Info("Init Uptime Pump: ", UptimePump.GetName())
-	}	
+	}
 
 }
 
