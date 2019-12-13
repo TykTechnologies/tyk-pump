@@ -252,6 +252,7 @@ func (m *MongoPump) connect() {
 	var dialInfo *mgo.DialInfo
 
 	dialInfo, err = mongoDialInfo(m.dbConf.MongoURL, m.dbConf.MongoUseSSL, m.dbConf.MongoSSLInsecureSkipVerify)
+	dialInfo.Timeout = time.Second * 5;
 	if err != nil {
 		log.WithFields(logrus.Fields{
 			"prefix": mongoPrefix,
@@ -260,14 +261,10 @@ func (m *MongoPump) connect() {
 
 	m.dbSession, err = mgo.DialWithInfo(dialInfo)
 
-	// TODO - Should this not bail after a while?
-	for err != nil {
+	if err != nil {
 		log.WithFields(logrus.Fields{
 			"prefix": mongoPrefix,
-		}).Error("Mongo connection failed:", err)
-
-		time.Sleep(5 * time.Second)
-		m.dbSession, err = mgo.DialWithInfo(dialInfo)
+		}).Fatal("Mongo connection failed:", err)
 	}
 }
 
