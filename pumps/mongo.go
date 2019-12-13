@@ -252,13 +252,13 @@ func (m *MongoPump) connect() {
 	var dialInfo *mgo.DialInfo
 
 	dialInfo, err = mongoDialInfo(m.dbConf.MongoURL, m.dbConf.MongoUseSSL, m.dbConf.MongoSSLInsecureSkipVerify)
-	dialInfo.Timeout = time.Second * 5;
 	if err != nil {
 		log.WithFields(logrus.Fields{
 			"prefix": mongoPrefix,
 		}).Panic("Mongo URL is invalid: ", err)
 	}
 
+	dialInfo.Timeout = time.Second * 5
 	m.dbSession, err = mgo.DialWithInfo(dialInfo)
 
 	if err != nil {
