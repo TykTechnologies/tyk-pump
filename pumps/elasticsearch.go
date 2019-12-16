@@ -241,7 +241,7 @@ func (e Elasticsearch3Operator) processData(data []interface{}, esConf *Elastics
 			continue
 		}
 
-		mapping, id := getMapping(d, esConf.ExtendedStatistics, esConf.GenerateID)
+		mapping, id := getMapping(d, esConf.ExtendedStatistics, esConf.GenerateID, esConf.DecodeBase64)
 
 		_, err := index.BodyJson(mapping).Type(esConf.DocumentType).Id(id).Do()
 		if err != nil {
@@ -266,7 +266,7 @@ func (e Elasticsearch5Operator) processData(data []interface{}, esConf *Elastics
 			continue
 		}
 
-		mapping, id := getMapping(d, esConf.ExtendedStatistics, esConf.GenerateID)
+		mapping, id := getMapping(d, esConf.ExtendedStatistics, esConf.GenerateID, esConf.DecodeBase64)
 
 		_, err := index.BodyJson(mapping).Type(esConf.DocumentType).Id(id).Do(context.TODO())
 		if err != nil {
@@ -291,7 +291,7 @@ func (e Elasticsearch6Operator) processData(data []interface{}, esConf *Elastics
 			continue
 		}
 
-		mapping, id := getMapping(d, esConf.ExtendedStatistics, esConf.GenerateID)
+		mapping, id := getMapping(d, esConf.ExtendedStatistics, esConf.GenerateID, esConf.DecodeBase64)
 
 		_, err := index.BodyJson(mapping).Type(esConf.DocumentType).Id(id).Do(context.Background())
 		if err != nil {
