@@ -27,6 +27,7 @@ type TykPumpConfiguration struct {
 	AnalyticsStorageConfig storage.RedisStorageConfig `json:"analytics_storage_config"`
 	StatsdConnectionString string                     `json:"statsd_connection_string"`
 	StatsdPrefix           string                     `json:"statsd_prefix"`
+	LogLevel               string                     `json:"log_level"`
 }
 
 func LoadConfig(filePath *string, configStruct *TykPumpConfiguration) {

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"strings"
 	"time"
 
 	"os"
@@ -12,9 +13,9 @@ import (
 	prefixed "github.com/TykTechnologies/logrus-prefixed-formatter"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/TykTechnologies/tyk-pump/analytics/demo"
+	logger "github.com/TykTechnologies/tyk-pump/logger"
 	"github.com/TykTechnologies/tyk-pump/pumps"
 	"github.com/TykTechnologies/tyk-pump/storage"
-	logger "github.com/TykTechnologies/tykcommon-logger"
 
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
@@ -31,10 +32,11 @@ var mainPrefix = "main"
 var buildDemoData string
 
 var (
-	help     = kingpin.CommandLine.HelpFlag.Short('h')
-	conf     = kingpin.Flag("conf", "path to the config file").Short('c').Default("pump.conf").String()
-	demoMode = kingpin.Flag("demo", "pass orgID string to generate demo data").Default("").String()
-	version  = kingpin.Version(VERSION)
+	help      = kingpin.CommandLine.HelpFlag.Short('h')
+	conf      = kingpin.Flag("conf", "path to the config file").Short('c').Default("pump.conf").String()
+	demoMode  = kingpin.Flag("demo", "pass orgID string to generate demo data").Default("").String()
+	debugMode = kingpin.Flag("debug", "enable debug mode").Bool()
+	version   = kingpin.Version(VERSION)
 )
 
 func init() {
@@ -56,6 +58,30 @@ func init() {
 	}).Info("## Tyk Analytics Pump, ", VERSION, " ##")
 
 	LoadConfig(conf, &SystemConfig)
+
+	// If no environment variable is set, check the configuration file:
+	if os.Getenv("TYK_LOGLEVEL") == "" {
+		level := strings.ToLower(SystemConfig.LogLevel)
+		switch level {
+		case "", "info":
+			// default, do nothing
+		case "error":
+			log.Level = logrus.ErrorLevel
+		case "warn":
+			log.Level = logrus.WarnLevel
+		case "debug":
+			log.Level = logrus.DebugLevel
+		default:
+			log.WithFields(logrus.Fields{
+				"prefix": "main",
+			}).Fatalf("Invalid log level %q specified in config, must be error, warn, debug or info. ", level)
+		}
+	}
+
+	// If debug mode flag is set, override previous log level parameter:
+	if *debugMode {
+		log.Level = logrus.DebugLevel
+	}
 }
 
 func setupAnalyticsStore() {

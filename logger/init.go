@@ -8,13 +8,18 @@ import (
 	prefixed "github.com/TykTechnologies/logrus-prefixed-formatter"
 )
 
-var log = logrus.New()
+var log *logrus.Logger
 
-func init() {
-	log.Formatter = new(prefixed.TextFormatter)
-}
-
+// GetLogger returns the default logger.
 func GetLogger() *logrus.Logger {
+	// Make sure the logger is only initialized once:
+	if log != nil {
+		return log
+	}
+
+	// First check the log level environment variable:
+	log = logrus.New()
+	log.Formatter = new(prefixed.TextFormatter)
 	level := os.Getenv("TYK_LOGLEVEL")
 	if level == "" {
 		level = "info"
