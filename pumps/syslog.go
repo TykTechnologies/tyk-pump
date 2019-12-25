@@ -10,7 +10,7 @@ import (
 
 type SyslogPump struct {
 	syslogConf *SyslogConf
-	Writer     *syslog.Writer
+	writer     *syslog.Writer
 }
 
 var (
@@ -46,7 +46,7 @@ func (s *SyslogPump) Init(config interface{}) error {
 	// Init the configs
 	initConfigs(s)
 
-	// Init the Syslog Writer
+	// Init the Syslog writer
 	initWriter(s)
 
 	log.Debug("Syslog Pump active")
@@ -66,7 +66,7 @@ func initWriter(s *SyslogPump) {
 		}).Fatal("failed to connect to Syslog Daemon: ", err)
 	}
 
-	s.Writer = syslogWriter
+	s.writer = syslogWriter
 }
 
 // Set default values if they are not explicitly given
@@ -133,7 +133,7 @@ func (s *SyslogPump) WriteData(data []interface{}) error {
 		}
 
 		// Print to Syslog
-		fmt.Fprintf(s.Writer, "%s", message)
+		fmt.Fprintf(s.writer, "%s", message)
 	}
 
 	return nil
