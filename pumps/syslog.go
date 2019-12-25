@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"log/syslog"
 
+	"github.com/mitchellh/mapstructure"
+
 	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/tyk-pump/analytics"
-
-	"github.com/mitchellh/mapstructure"
 )
 
 type SyslogPump struct {
