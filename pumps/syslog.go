@@ -2,13 +2,12 @@ package pumps
 
 import (
 	"fmt"
+	"log/syslog"
 
 	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 
 	"github.com/mitchellh/mapstructure"
-
-	"log/syslog"
 )
 
 type SyslogPump struct {
