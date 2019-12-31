@@ -42,6 +42,7 @@ type RedisStorageConfig struct {
 	Port                       int          `mapstructure:"port"`
 	Hosts                      EnvMapString `mapstructure:"hosts"` // Deprecated: Use Addrs instead.
 	Addrs                      []string     `mapstructure:"addrs"`
+	MasterName                 string       `mapstructure:"master_name"`
 	Username                   string       `mapstructure:"username"`
 	Password                   string       `mapstructure:"password"`
 	Database                   int          `mapstructure:"database"`
@@ -116,6 +117,7 @@ func NewRedisClusterPool(forceReconnect bool, config RedisStorageConfig) redis.U
 
 	var client redis.UniversalClient
 	opts := &RedisOpts{
+		MasterName:   config.MasterName,
 		Addrs:        addrs,
 		DB:           config.Database,
 		Password:     config.Password,
@@ -127,7 +129,10 @@ func NewRedisClusterPool(forceReconnect bool, config RedisStorageConfig) redis.U
 		TLSConfig:    tlsConfig,
 	}
 
-	if config.EnableCluster {
+	if opts.MasterName != "" {
+		log.Info("--> [REDIS] Creating sentinel-backed failover client")
+		client = redis.NewFailoverClient(opts.failover())
+	} else if config.EnableCluster {
 		log.Info("--> [REDIS] Creating cluster client")
 		client = redis.NewClusterClient(opts.cluster())
 	} else {
@@ -151,16 +156,20 @@ func (o *RedisOpts) cluster() *redis.ClusterOptions {
 	}
 
 	return &redis.ClusterOptions{
-		Addrs:              o.Addrs,
-		OnConnect:          o.OnConnect,
-		Password:           o.Password,
-		MaxRedirects:       o.MaxRedirects,
-		ReadOnly:           o.ReadOnly,
-		RouteByLatency:     o.RouteByLatency,
-		RouteRandomly:      o.RouteRandomly,
-		MaxRetries:         o.MaxRetries,
-		MinRetryBackoff:    o.MinRetryBackoff,
-		MaxRetryBackoff:    o.MaxRetryBackoff,
+		Addrs:     o.Addrs,
+		OnConnect: o.OnConnect,
+
+		Password: o.Password,
+
+		MaxRedirects:   o.MaxRedirects,
+		ReadOnly:       o.ReadOnly,
+		RouteByLatency: o.RouteByLatency,
+		RouteRandomly:  o.RouteRandomly,
+
+		MaxRetries:      o.MaxRetries,
+		MinRetryBackoff: o.MinRetryBackoff,
+		MaxRetryBackoff: o.MaxRetryBackoff,
+
 		DialTimeout:        o.DialTimeout,
 		ReadTimeout:        o.ReadTimeout,
 		WriteTimeout:       o.WriteTimeout,
@@ -182,23 +191,60 @@ func (o *RedisOpts) simple() *redis.Options {
 	}
 
 	return &redis.Options{
-		Addr:               addr,
-		OnConnect:          o.OnConnect,
-		DB:                 o.DB,
-		Password:           o.Password,
-		MaxRetries:         o.MaxRetries,
-		MinRetryBackoff:    o.MinRetryBackoff,
-		MaxRetryBackoff:    o.MaxRetryBackoff,
-		DialTimeout:        o.DialTimeout,
-		ReadTimeout:        o.ReadTimeout,
-		WriteTimeout:       o.WriteTimeout,
+		Addr:      addr,
+		OnConnect: o.OnConnect,
+
+		DB:       o.DB,
+		Password: o.Password,
+
+		MaxRetries:      o.MaxRetries,
+		MinRetryBackoff: o.MinRetryBackoff,
+		MaxRetryBackoff: o.MaxRetryBackoff,
+
+		DialTimeout:  o.DialTimeout,
+		ReadTimeout:  o.ReadTimeout,
+		WriteTimeout: o.WriteTimeout,
+
 		PoolSize:           o.PoolSize,
 		MinIdleConns:       o.MinIdleConns,
 		MaxConnAge:         o.MaxConnAge,
 		PoolTimeout:        o.PoolTimeout,
 		IdleTimeout:        o.IdleTimeout,
 		IdleCheckFrequency: o.IdleCheckFrequency,
-		TLSConfig:          o.TLSConfig,
+
+		TLSConfig: o.TLSConfig,
+	}
+}
+
+func (o *RedisOpts) failover() *redis.FailoverOptions {
+	if len(o.Addrs) == 0 {
+		o.Addrs = []string{"127.0.0.1:6379"}
+	}
+
+	return &redis.FailoverOptions{
+		SentinelAddrs: o.Addrs,
+		MasterName:    o.MasterName,
+		OnConnect:     o.OnConnect,
+
+		DB:       o.DB,
+		Password: o.Password,
+
+		MaxRetries:      o.MaxRetries,
+		MinRetryBackoff: o.MinRetryBackoff,
+		MaxRetryBackoff: o.MaxRetryBackoff,
+
+		DialTimeout:  o.DialTimeout,
+		ReadTimeout:  o.ReadTimeout,
+		WriteTimeout: o.WriteTimeout,
+
+		PoolSize:           o.PoolSize,
+		MinIdleConns:       o.MinIdleConns,
+		MaxConnAge:         o.MaxConnAge,
+		PoolTimeout:        o.PoolTimeout,
+		IdleTimeout:        o.IdleTimeout,
+		IdleCheckFrequency: o.IdleCheckFrequency,
+
+		TLSConfig: o.TLSConfig,
 	}
 }
 
