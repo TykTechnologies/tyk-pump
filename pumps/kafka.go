@@ -2,6 +2,7 @@ package pumps
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/tyk-pump/analytics"
@@ -22,12 +23,14 @@ type Json map[string]interface{}
 var kafkaPrefix = "kafka-pump"
 
 type KafkaConf struct {
-	Broker     []string          `mapstructure:"broker"`
-	ClientId   string            `mapstructure:"client_id"`
-	Topic      string            `mapstructure:"topic"`
-	Timeout    time.Duration     `mapstructure:"timeout"`
-	Compressed bool              `mapstructure:"compressed"`
-	MetaData   map[string]string `mapstructure:"meta_data"`
+	Broker                []string          `mapstructure:"broker"`
+	ClientId              string            `mapstructure:"client_id"`
+	Topic                 string            `mapstructure:"topic"`
+	Timeout               time.Duration     `mapstructure:"timeout"`
+	Compressed            bool              `mapstructure:"compressed"`
+	MetaData              map[string]string `mapstructure:"meta_data"`
+	UseSSL                bool              `mapstructure:"use_ssl"`
+	SSLInsecureSkipVerify bool              `mapstructure:"ssl_insecure_skip_verify"`
 }
 
 func (k *KafkaPump) New() Pump {
@@ -50,10 +53,18 @@ func (k *KafkaPump) Init(config interface{}) error {
 		k.log.Fatal("Failed to decode configuration: ", err)
 	}
 
+	var tlsConfig *tls.Config
+	if k.kafkaConf.UseSSL {
+		tlsConfig = &tls.Config{
+			InsecureSkipVerify: k.kafkaConf.SSLInsecureSkipVerify,
+		}
+	}
+
 	//Kafka writer connection config
 	dialer := &kafka.Dialer{
 		Timeout:  k.kafkaConf.Timeout * time.Second,
 		ClientID: k.kafkaConf.ClientId,
+		TLS:      tlsConfig,
 	}
 
 	k.writerConfig.Brokers = k.kafkaConf.Broker
