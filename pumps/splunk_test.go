@@ -1,6 +1,7 @@
 package pumps
 
 import (
+	"context"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
@@ -74,7 +75,7 @@ func TestSplunkSend(t *testing.T) {
 		"api_id": "123",
 		"path":   "/test-path",
 	}
-	res, err := client.Send(e, time.Now())
+	res, err := client.Send(context.TODO(), e, time.Now())
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		t.Fatal(err)
