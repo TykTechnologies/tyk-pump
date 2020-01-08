@@ -3,6 +3,8 @@ package pumps
 import (
 	"strconv"
 	"testing"
+
+	"github.com/TykTechnologies/tyk-pump/analytics"
 )
 
 func newPump() Pump {
@@ -140,5 +142,32 @@ func TestMongoPump_capCollection_OverrideSize(t *testing.T) {
 
 	if colStats["maxSize"].(int64) != int64(mPump.dbConf.CollectionCapMaxSizeBytes) {
 		t.Errorf("wrong sized capped collection created. Expected (%d), got (%d)", mPump.dbConf.CollectionCapMaxSizeBytes, colStats["maxSize"])
+	}
+}
+
+func TestMongoPump_AccumulateSet(t *testing.T) {
+	pump := newPump()
+	conf := defaultConf()
+	conf.MaxInsertBatchSizeBytes = 5120
+
+	numRecords := 100
+	// assumed from sizeBytes in AccumulateSet
+	const dataSize = 1024
+	totalData := dataSize * numRecords
+
+	mPump := pump.(*MongoPump)
+	mPump.dbConf = &conf
+
+	record := analytics.AnalyticsRecord{}
+	data := make([]interface{}, 0)
+
+	for i := 0; i < numRecords; i++ {
+		data = append(data, record)
+	}
+
+	set := mPump.AccumulateSet(data)
+
+	if len(set) != totalData/conf.MaxInsertBatchSizeBytes {
+		t.Errorf("expected accumulator chunks to equal %d, got %d", totalData/conf.MaxInsertBatchSizeBytes, len(set))
 	}
 }

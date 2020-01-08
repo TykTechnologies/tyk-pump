@@ -3,16 +3,17 @@ package pumps
 import (
 	"crypto/tls"
 	"encoding/base64"
+	"net"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/mitchellh/mapstructure"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/vmihailenco/msgpack.v2"
-	"net"
-	"strconv"
-	"strings"
-	"time"
 )
 
 const (
@@ -340,7 +341,7 @@ func (m *MongoPump) AccumulateSet(data []interface{}) [][]interface{} {
 			thisItem.RawResponse = base64.StdEncoding.EncodeToString([]byte("Document too large, not writing raw request and raw response!"))
 		}
 
-		if (accumulatorTotal + sizeBytes) < m.dbConf.MaxInsertBatchSizeBytes {
+		if (accumulatorTotal + sizeBytes) <= m.dbConf.MaxInsertBatchSizeBytes {
 			accumulatorTotal += sizeBytes
 		} else {
 			log.Debug("Created new chunk entry")
