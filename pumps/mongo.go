@@ -297,9 +297,10 @@ func (m *MongoPump) WriteData(data []interface{}) error {
 
 			analyticsCollection := sess.DB("").C(collectionName)
 
+			nonce := time.Now() //needed in case the flush to the log is out of sync
 			log.WithFields(logrus.Fields{
 				"prefix": mongoPrefix,
-			}).Info("Purging ", len(dataSet), " records")
+			}).Info("Purging ", len(dataSet), " chunks (for nonce: ", nonce, ").")
 
 			err := analyticsCollection.Insert(dataSet...)
 			if err != nil {
@@ -307,7 +308,11 @@ func (m *MongoPump) WriteData(data []interface{}) error {
 				if strings.Contains(strings.ToLower(err.Error()), "closed explicitly") {
 					log.Warning("--> Detected connection failure!")
 				}
+				return
 			}
+			log.WithFields(logrus.Fields{
+				"prefix": mongoPrefix,
+			}).Info("Have purged ", len(dataSet), " chunks (for nonce: ", nonce, ").")
 		}(dataSet)
 	}
 
