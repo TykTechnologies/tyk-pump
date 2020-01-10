@@ -23,14 +23,18 @@ type Json map[string]interface{}
 var kafkaPrefix = "kafka-pump"
 
 type KafkaConf struct {
-	Broker                []string          `mapstructure:"broker"`
-	ClientId              string            `mapstructure:"client_id"`
-	Topic                 string            `mapstructure:"topic"`
-	Timeout               time.Duration     `mapstructure:"timeout"`
-	Compressed            bool              `mapstructure:"compressed"`
-	MetaData              map[string]string `mapstructure:"meta_data"`
-	UseSSL                bool              `mapstructure:"use_ssl"`
-	SSLInsecureSkipVerify bool              `mapstructure:"ssl_insecure_skip_verify"`
+	Broker     []string          `mapstructure:"broker"`
+	ClientId   string            `mapstructure:"client_id"`
+	Topic      string            `mapstructure:"topic"`
+	Timeout    time.Duration     `mapstructure:"timeout"`
+	Compressed bool              `mapstructure:"compressed"`
+	MetaData   map[string]string `mapstructure:"meta_data"`
+	SSLConf    SSLConfig         `mapstructure:"ssl"`
+}
+
+type SSLConfig struct {
+	Enabled            bool `mapstructure:"enabled"`
+	InsecureSkipVerify bool `mapstructure:"insecure_skip_verify"`
 }
 
 func (k *KafkaPump) New() Pump {
@@ -54,9 +58,9 @@ func (k *KafkaPump) Init(config interface{}) error {
 	}
 
 	var tlsConfig *tls.Config
-	if k.kafkaConf.UseSSL {
+	if k.kafkaConf.SSLConf.Enabled {
 		tlsConfig = &tls.Config{
-			InsecureSkipVerify: k.kafkaConf.SSLInsecureSkipVerify,
+			InsecureSkipVerify: k.kafkaConf.SSLConf.InsecureSkipVerify,
 		}
 	}
 
