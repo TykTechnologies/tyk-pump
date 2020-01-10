@@ -314,17 +314,15 @@ On startup, you should see the loaded configs when initializing the dogstatsd pu
 
 ### Kafka Config
 
-`"broker"` - The list of brokers used to discover the partitions available on the kafka cluster. E.g. "localhost:9092"
-
-`"client_id"` - Unique identifier for client connections established with Kafka.
-
-`"topic"` - The topic that the writer will produce messages to.
-
-`"timeout"` - Timeout is the maximum amount of time will wait for a connect or write to complete. 
-
-`"compressed"` - Enable "github.com/golang/snappy" codec to be used to compress Kafka messages. By default is false
-
-`"meta_data"` - Can be used to set custom metadata inside the kafka message
+* `broker`: The list of brokers used to discover the partitions available on the kafka cluster. E.g. "localhost:9092"
+* `ssl`: SSL config object to make connection secure. It has the following fields:
+	* `enabled`: Enables SSL connection.
+	* `insecure_skip_verify`: Controls whether the pump client verifies the kafka server's certificate chain and host name.
+* `client_id`: Unique identifier for client connections established with Kafka.
+* `topic`: The topic that the writer will produce messages to.
+* `timeout`: Timeout is the maximum amount of time will wait for a connect or write to complete. 
+* `compressed`: Enable "github.com/golang/snappy" codec to be used to compress Kafka messages. By default is false
+* `meta_data`: Can be used to set custom metadata inside the kafka message
 
 ## Compiling & Testing
 
