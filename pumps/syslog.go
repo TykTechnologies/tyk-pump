@@ -135,7 +135,7 @@ func (s *SyslogPump) WriteData(data []interface{}) error {
 		}
 
 		// Print to Syslog
-		fmt.Fprintf(s.writer, "%s", message)
+		_, _ = fmt.Fprintf(s.writer, "%s", message)
 	}
 
 	return nil
