@@ -309,7 +309,7 @@ func (r *RedisClusterStorageManager) fixKey(keyName string) string {
 	return setKeyName
 }
 
-func (r *RedisClusterStorageManager) GetAndDeleteSet(keyName string) []interface{} {
+func (r *RedisClusterStorageManager) GetAndDeleteSet(keyName string, chunkSize int64) []interface{} {
 	log.WithFields(logrus.Fields{
 		"prefix": redisLogPrefix,
 	}).Debug("Getting raw key set: ", keyName)
@@ -319,7 +319,7 @@ func (r *RedisClusterStorageManager) GetAndDeleteSet(keyName string) []interface
 			"prefix": redisLogPrefix,
 		}).Warning("Connection dropped, connecting..")
 		r.Connect()
-		return r.GetAndDeleteSet(keyName)
+		return r.GetAndDeleteSet(keyName, chunkSize)
 	}
 
 	log.WithFields(logrus.Fields{
@@ -334,8 +334,8 @@ func (r *RedisClusterStorageManager) GetAndDeleteSet(keyName string) []interface
 
 	var lrange *redis.StringSliceCmd
 	_, err := r.db.TxPipelined(func(pipe redis.Pipeliner) error {
-		lrange = pipe.LRange(fixedKey, 0, -1)
-		pipe.Del(fixedKey)
+		lrange = pipe.LRange(fixedKey, 0, chunkSize-1)
+		pipe.LTrim(fixedKey, chunkSize, -1)
 
 		return nil
 	})

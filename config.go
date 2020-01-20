@@ -20,7 +20,8 @@ type PumpConfig struct {
 }
 
 type TykPumpConfiguration struct {
-	PurgeDelay             int                        `json:"purge_delay"`
+	PurgeDelay             int64                      `json:"purge_delay"`
+	PurgeChunk             int64                      `json:"purge_chunk"`
 	DontPurgeUptimeData    bool                       `json:"dont_purge_uptime_data"`
 	UptimePumpConfig       pumps.MongoConf            `json:"uptime_pump_config"`
 	Pumps                  map[string]PumpConfig      `json:"pumps"`

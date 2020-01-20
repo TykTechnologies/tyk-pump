@@ -4,7 +4,7 @@ type AnalyticsStorage interface {
 	Init(config interface{}) error
 	GetName() string
 	Connect() bool
-	GetAndDeleteSet(string) []interface{}
+	GetAndDeleteSet(setName string, chunkSize int64) []interface{}
 }
 
 const (

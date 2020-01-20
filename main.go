@@ -160,11 +160,11 @@ func initialisePumps() {
 
 }
 
-func StartPurgeLoop(secInterval int) {
+func StartPurgeLoop(secInterval, chunkSize int64) {
 	for range time.Tick(time.Duration(secInterval) * time.Second) {
 		job := instrument.NewJob("PumpRecordsPurge")
 
-		AnalyticsValues := AnalyticsStore.GetAndDeleteSet(storage.ANALYTICS_KEYNAME)
+		AnalyticsValues := AnalyticsStore.GetAndDeleteSet(storage.ANALYTICS_KEYNAME, chunkSize)
 		if len(AnalyticsValues) > 0 {
 			startTime := time.Now()
 
@@ -195,7 +195,7 @@ func StartPurgeLoop(secInterval int) {
 		}
 
 		if !SystemConfig.DontPurgeUptimeData {
-			UptimeValues := UptimeStorage.GetAndDeleteSet(storage.UptimeAnalytics_KEYNAME)
+			UptimeValues := UptimeStorage.GetAndDeleteSet(storage.UptimeAnalytics_KEYNAME, chunkSize)
 			UptimePump.WriteUptimeData(UptimeValues)
 		}
 	}
@@ -296,10 +296,16 @@ func main() {
 
 		return
 	}
+
+	// Don't enable chunking if zero value
+	if SystemConfig.PurgeChunk == 0 {
+		SystemConfig.PurgeChunk = -1
+	}
+
 	// start the worker loop
 	log.WithFields(logrus.Fields{
 		"prefix": mainPrefix,
-	}).Info("Starting purge loop @", SystemConfig.PurgeDelay, "(s)")
+	}).Infof("Starting purge loop @%d, chunk size %d", SystemConfig.PurgeDelay, SystemConfig.PurgeChunk)
 
-	StartPurgeLoop(SystemConfig.PurgeDelay)
+	StartPurgeLoop(SystemConfig.PurgeDelay, SystemConfig.PurgeChunk)
 }
