@@ -335,7 +335,12 @@ func (r *RedisClusterStorageManager) GetAndDeleteSet(keyName string, chunkSize i
 	var lrange *redis.StringSliceCmd
 	_, err := r.db.TxPipelined(func(pipe redis.Pipeliner) error {
 		lrange = pipe.LRange(fixedKey, 0, chunkSize-1)
-		pipe.LTrim(fixedKey, chunkSize, -1)
+
+		if chunkSize == 0 {
+			pipe.Del(fixedKey)
+		} else {
+			pipe.LTrim(fixedKey, chunkSize, -1)
+		}
 
 		return nil
 	})
