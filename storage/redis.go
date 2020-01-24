@@ -42,7 +42,7 @@ type RedisStorageConfig struct {
 	Port                       int          `mapstructure:"port"`
 	Hosts                      EnvMapString `mapstructure:"hosts"` // Deprecated: Use Addrs instead.
 	Addrs                      []string     `mapstructure:"addrs"`
-	MasterName                 string       `mapstructure:"master_name"`
+	MasterName                 string       `mapstructure:"master_name" json:"master_name"`
 	Username                   string       `mapstructure:"username"`
 	Password                   string       `mapstructure:"password"`
 	Database                   int          `mapstructure:"database"`
@@ -110,7 +110,7 @@ func NewRedisClusterPool(forceReconnect bool, config RedisStorageConfig) redis.U
 		}
 	}
 
-	if len(addrs) == 0 {
+	if len(addrs) == 0 && config.Port != 0 {
 		addr := config.Host + ":" + strconv.Itoa(config.Port)
 		addrs = append(addrs, addr)
 	}
@@ -218,7 +218,7 @@ func (o *RedisOpts) simple() *redis.Options {
 
 func (o *RedisOpts) failover() *redis.FailoverOptions {
 	if len(o.Addrs) == 0 {
-		o.Addrs = []string{"127.0.0.1:6379"}
+		o.Addrs = []string{"127.0.0.1:26379"}
 	}
 
 	return &redis.FailoverOptions{
