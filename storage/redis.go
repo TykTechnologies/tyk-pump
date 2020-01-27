@@ -99,26 +99,10 @@ func NewRedisClusterPool(forceReconnect bool, config RedisStorageConfig) redis.U
 		}
 	}
 
-	var addrs []string
-
-	if len(config.Addrs) != 0 {
-		addrs = config.Addrs
-	} else {
-		for h, p := range config.Hosts {
-			addr := h + ":" + p
-			addrs = append(addrs, addr)
-		}
-	}
-
-	if len(addrs) == 0 && config.Port != 0 {
-		addr := config.Host + ":" + strconv.Itoa(config.Port)
-		addrs = append(addrs, addr)
-	}
-
 	var client redis.UniversalClient
 	opts := &RedisOpts{
 		MasterName:   config.MasterName,
-		Addrs:        addrs,
+		Addrs:        getRedisAddrs(config),
 		DB:           config.Database,
 		Password:     config.Password,
 		PoolSize:     maxActive,
@@ -143,6 +127,24 @@ func NewRedisClusterPool(forceReconnect bool, config RedisStorageConfig) redis.U
 	redisClusterSingleton = client
 
 	return client
+}
+
+func getRedisAddrs(config RedisStorageConfig) (addrs []string) {
+	if len(config.Addrs) != 0 {
+		addrs = config.Addrs
+	} else {
+		for h, p := range config.Hosts {
+			addr := h + ":" + p
+			addrs = append(addrs, addr)
+		}
+	}
+
+	if len(addrs) == 0 && config.Port != 0 {
+		addr := config.Host + ":" + strconv.Itoa(config.Port)
+		addrs = append(addrs, addr)
+	}
+
+	return addrs
 }
 
 // RedisOpts is the overriden type of redis.UniversalOptions. simple() and cluster() functions are not public
