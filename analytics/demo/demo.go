@@ -16,7 +16,7 @@ var apiID string
 var apiVersion string
 
 func DemoInit(orgId, apiId, version string) {
-	apiID = apiID
+	apiID = apiId
 	apiKeys = generateAPIKeys(orgId)
 	apiVersion = version
 	if version == "" {
