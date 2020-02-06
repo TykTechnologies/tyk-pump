@@ -31,14 +31,15 @@ var UptimePump pumps.MongoPump
 var log = logger.GetLogger()
 
 var mainPrefix = "main"
-var buildDemoData string
 
 var (
-	help      = kingpin.CommandLine.HelpFlag.Short('h')
-	conf      = kingpin.Flag("conf", "path to the config file").Short('c').Default("pump.conf").String()
-	demoMode  = kingpin.Flag("demo", "pass orgID string to generate demo data").Default("").String()
-	debugMode = kingpin.Flag("debug", "enable debug mode").Bool()
-	version   = kingpin.Version(VERSION)
+	help               = kingpin.CommandLine.HelpFlag.Short('h')
+	conf               = kingpin.Flag("conf", "path to the config file").Short('c').Default("pump.conf").String()
+	demoMode           = kingpin.Flag("demo", "pass orgID string to generate demo data").Default("").String()
+	demoApiMode        = kingpin.Flag("demo-api", "pass apiID string to generate demo data").Default("").String()
+	demoApiVersionMode = kingpin.Flag("demo-api-version", "pass apiID string to generate demo data").Default("").String()
+	debugMode          = kingpin.Flag("debug", "enable debug mode").Bool()
+	version            = kingpin.Version(VERSION)
 )
 
 func init() {
@@ -48,11 +49,10 @@ func init() {
 
 	log.Formatter = new(prefixed.TextFormatter)
 
-	buildDemoData = *demoMode
 	envDemo := os.Getenv("TYK_PMP_BUILDDEMODATA")
 	if envDemo != "" {
 		log.Warning("Demo mode active via environemnt variable")
-		buildDemoData = envDemo
+		demoMode = &envDemo
 	}
 
 	log.WithFields(logrus.Fields{
@@ -280,11 +280,11 @@ func main() {
 	// prime the pumps
 	initialisePumps()
 
-	if buildDemoData != "" {
+	if *demoMode != "" {
 		log.Warning("BUILDING DEMO DATA AND EXITING...")
 		log.Warning("Starting from date: ", time.Now().AddDate(0, 0, -30))
-		demo.DemoInit(buildDemoData)
-		demo.GenerateDemoData(time.Now().AddDate(0, 0, -30), 30, buildDemoData, writeToPumps)
+		demo.DemoInit(*demoMode, *demoApiMode, *demoApiVersionMode)
+		demo.GenerateDemoData(time.Now().AddDate(0, 0, -30), 30, *demoMode, writeToPumps)
 
 		return
 	}

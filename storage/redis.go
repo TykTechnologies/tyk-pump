@@ -42,7 +42,7 @@ type RedisStorageConfig struct {
 	Port                       int          `mapstructure:"port"`
 	Hosts                      EnvMapString `mapstructure:"hosts"` // Deprecated: Use Addrs instead.
 	Addrs                      []string     `mapstructure:"addrs"`
-	MasterName                 string       `mapstructure:"master_name"`
+	MasterName                 string       `mapstructure:"master_name" json:"master_name"`
 	Username                   string       `mapstructure:"username"`
 	Password                   string       `mapstructure:"password"`
 	Database                   int          `mapstructure:"database"`
@@ -99,26 +99,10 @@ func NewRedisClusterPool(forceReconnect bool, config RedisStorageConfig) redis.U
 		}
 	}
 
-	var addrs []string
-
-	if len(config.Addrs) != 0 {
-		addrs = config.Addrs
-	} else {
-		for h, p := range config.Hosts {
-			addr := h + ":" + p
-			addrs = append(addrs, addr)
-		}
-	}
-
-	if len(addrs) == 0 {
-		addr := config.Host + ":" + strconv.Itoa(config.Port)
-		addrs = append(addrs, addr)
-	}
-
 	var client redis.UniversalClient
 	opts := &RedisOpts{
 		MasterName:   config.MasterName,
-		Addrs:        addrs,
+		Addrs:        getRedisAddrs(config),
 		DB:           config.Database,
 		Password:     config.Password,
 		PoolSize:     maxActive,
@@ -143,6 +127,24 @@ func NewRedisClusterPool(forceReconnect bool, config RedisStorageConfig) redis.U
 	redisClusterSingleton = client
 
 	return client
+}
+
+func getRedisAddrs(config RedisStorageConfig) (addrs []string) {
+	if len(config.Addrs) != 0 {
+		addrs = config.Addrs
+	} else {
+		for h, p := range config.Hosts {
+			addr := h + ":" + p
+			addrs = append(addrs, addr)
+		}
+	}
+
+	if len(addrs) == 0 && config.Port != 0 {
+		addr := config.Host + ":" + strconv.Itoa(config.Port)
+		addrs = append(addrs, addr)
+	}
+
+	return addrs
 }
 
 // RedisOpts is the overriden type of redis.UniversalOptions. simple() and cluster() functions are not public
@@ -218,7 +220,7 @@ func (o *RedisOpts) simple() *redis.Options {
 
 func (o *RedisOpts) failover() *redis.FailoverOptions {
 	if len(o.Addrs) == 0 {
-		o.Addrs = []string{"127.0.0.1:6379"}
+		o.Addrs = []string{"127.0.0.1:26379"}
 	}
 
 	return &redis.FailoverOptions{

@@ -12,9 +12,16 @@ import (
 )
 
 var apiKeys []string
+var apiID string
+var apiVersion string
 
-func DemoInit(orgId string) {
+func DemoInit(orgId, apiId, version string) {
+	apiID = apiId
 	apiKeys = generateAPIKeys(orgId)
+	apiVersion = version
+	if version == "" {
+		apiVersion = "Default"
+	}
 }
 
 func randomInRange(min, max int) int {
@@ -64,6 +71,9 @@ func randomPath() string {
 }
 
 func randomAPI() (string, string) {
+	if apiID != "" {
+		return "Foo Bar", apiID
+	}
 	names := [][]string{
 		{"Foo Bar Baz API", "de6e4d9ddde34d1657a6d93fab835abd"},
 		{"Wibble Wobble API", "de6e4d9ddde34d1657a6d92fab935aba"},
@@ -149,7 +159,7 @@ func GenerateDemoData(start time.Time, days int, orgId string, writer func([]int
 				ResponseCode:  responseCode(),
 				APIKey:        getRandomKey(),
 				TimeStamp:     d,
-				APIVersion:    "Default",
+				APIVersion:    apiVersion,
 				APIName:       api,
 				APIID:         apiID,
 				OrgID:         orgId,
