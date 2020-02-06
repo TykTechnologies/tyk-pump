@@ -16,6 +16,7 @@ import (
 type CSVPump struct {
 	csvConf      *CSVConf
 	wroteHeaders bool
+	filters      analytics.AnalyticsFilters
 }
 
 type CSVConf struct {
@@ -125,4 +126,12 @@ func (c *CSVPump) WriteData(data []interface{}) error {
 	}
 	writer.Flush()
 	return nil
+}
+
+func (c *CSVPump) SetFilters(filters analytics.AnalyticsFilters) {
+	c.filters = filters
+}
+
+func (c *CSVPump) GetFilters() analytics.AnalyticsFilters {
+	return c.filters
 }

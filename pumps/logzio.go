@@ -46,8 +46,9 @@ func NewLogzioPumpConfig() *LogzioPumpConfig {
 }
 
 type LogzioPump struct {
-	sender *lg.LogzioSender
-	config *LogzioPumpConfig
+	sender  *lg.LogzioSender
+	config  *LogzioPumpConfig
+	filters analytics.AnalyticsFilters
 }
 
 func NewLogzioClient(conf *LogzioPumpConfig) (*lg.LogzioSender, error) {
@@ -143,4 +144,11 @@ func (p *LogzioPump) WriteData(data []interface{}) error {
 		p.sender.Send(event)
 	}
 	return nil
+}
+
+func (p *LogzioPump) SetFilters(filters analytics.AnalyticsFilters) {
+	p.filters = filters
+}
+func (p *LogzioPump) GetFilters() analytics.AnalyticsFilters {
+	return p.filters
 }

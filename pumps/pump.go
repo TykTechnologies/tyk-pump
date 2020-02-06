@@ -2,6 +2,8 @@ package pumps
 
 import (
 	"errors"
+
+	"github.com/TykTechnologies/tyk-pump/analytics"
 )
 
 type Pump interface {
@@ -9,6 +11,8 @@ type Pump interface {
 	New() Pump
 	Init(interface{}) error
 	WriteData([]interface{}) error
+	SetFilters(analytics.AnalyticsFilters)
+	GetFilters() analytics.AnalyticsFilters
 }
 
 func GetPumpByName(name string) (Pump, error) {

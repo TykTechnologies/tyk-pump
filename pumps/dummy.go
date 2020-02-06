@@ -2,9 +2,12 @@ package pumps
 
 import (
 	"github.com/TykTechnologies/logrus"
+	"github.com/TykTechnologies/tyk-pump/analytics"
 )
 
-type DummyPump struct{}
+type DummyPump struct {
+	filters analytics.AnalyticsFilters
+}
 
 var dummyPrefix = "dummy-pump"
 
@@ -29,4 +32,11 @@ func (p *DummyPump) WriteData(data []interface{}) error {
 		"prefix": dummyPrefix,
 	}).Info("Writing ", len(data), " records")
 	return nil
+}
+
+func (p *DummyPump) SetFilters(filters analytics.AnalyticsFilters) {
+	p.filters = filters
+}
+func (p *DummyPump) GetFilters() analytics.AnalyticsFilters {
+	return p.filters
 }

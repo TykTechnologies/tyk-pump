@@ -24,6 +24,7 @@ var COMMON_TAGS_COUNT = 5
 type MongoAggregatePump struct {
 	dbSession *mgo.Session
 	dbConf    *MongoAggregateConf
+	filters   analytics.AnalyticsFilters
 }
 
 type MongoAggregateConf struct {
@@ -342,4 +343,11 @@ func (m *MongoAggregatePump) WriteUptimeData(data []interface{}) {
 	log.WithFields(logrus.Fields{
 		"prefix": analytics.MongoAggregatePrefix,
 	}).Warning("Mongo Aggregate should not be writing uptime data!")
+}
+
+func (m *MongoAggregatePump) SetFilters(filters analytics.AnalyticsFilters) {
+	m.filters = filters
+}
+func (m *MongoAggregatePump) GetFilters() analytics.AnalyticsFilters {
+	return m.filters
 }

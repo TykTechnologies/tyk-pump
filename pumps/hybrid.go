@@ -43,6 +43,7 @@ type HybridPump struct {
 	trackAllPaths          bool
 	storeAnalyticPerMinute bool
 	ignoreTagPrefixList    []string
+	filters                analytics.AnalyticsFilters
 }
 
 func (p *HybridPump) GetName() string {
@@ -187,4 +188,11 @@ func (p *HybridPump) WriteData(data []interface{}) error {
 	}
 
 	return nil
+}
+
+func (p *HybridPump) SetFilters(filters analytics.AnalyticsFilters) {
+	p.filters = filters
+}
+func (p *HybridPump) GetFilters() analytics.AnalyticsFilters {
+	return p.filters
 }

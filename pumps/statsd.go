@@ -13,7 +13,8 @@ import (
 )
 
 type StatsdPump struct {
-	dbConf *StatsdConf
+	dbConf  *StatsdConf
+	filters analytics.AnalyticsFilters
 }
 
 var statsdPrefix = "statsd-pump"
@@ -144,4 +145,11 @@ func (s *StatsdPump) WriteData(data []interface{}) error {
 		}
 	}
 	return nil
+}
+
+func (s *StatsdPump) SetFilters(filters analytics.AnalyticsFilters) {
+	s.filters = filters
+}
+func (s *StatsdPump) GetFilters() analytics.AnalyticsFilters {
+	return s.filters
 }

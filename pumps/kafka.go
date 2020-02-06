@@ -16,6 +16,7 @@ type KafkaPump struct {
 	kafkaConf    *KafkaConf
 	writerConfig kafka.WriterConfig
 	log          *logrus.Entry
+	filters      analytics.AnalyticsFilters
 }
 
 type Json map[string]interface{}
@@ -139,4 +140,11 @@ func (k *KafkaPump) write(messages []kafka.Message) error {
 	kafkaWriter := kafka.NewWriter(k.writerConfig)
 	defer kafkaWriter.Close()
 	return kafkaWriter.WriteMessages(context.Background(), messages...)
+}
+
+func (k *KafkaPump) SetFilters(filters analytics.AnalyticsFilters) {
+	k.filters = filters
+}
+func (k *KafkaPump) GetFilters() analytics.AnalyticsFilters {
+	return k.filters
 }

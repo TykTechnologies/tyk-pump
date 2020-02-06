@@ -87,8 +87,9 @@ func (c *SplunkClient) Send(event map[string]interface{}, ts time.Time) (*http.R
 
 // SplunkPump is a Tyk Pump driver for Splunk.
 type SplunkPump struct {
-	client *SplunkClient
-	config *SplunkPumpConfig
+	client  *SplunkClient
+	config  *SplunkPumpConfig
+	filters analytics.AnalyticsFilters
 }
 
 // SplunkPumpConfig contains the driver configuration parameters.
@@ -159,4 +160,11 @@ func (p *SplunkPump) WriteData(data []interface{}) error {
 		p.client.Send(event, decoded.TimeStamp)
 	}
 	return nil
+}
+
+func (p *SplunkPump) SetFilters(filters analytics.AnalyticsFilters) {
+	p.filters = filters
+}
+func (p *SplunkPump) GetFilters() analytics.AnalyticsFilters {
+	return p.filters
 }

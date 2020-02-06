@@ -5,15 +5,16 @@ import (
 	"encoding/json"
 
 	"github.com/mitchellh/mapstructure"
-	"github.com/robertkowalski/graylog-golang"
+	gelf "github.com/robertkowalski/graylog-golang"
 
 	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 )
 
 type GraylogPump struct {
-	client *gelf.Gelf
-	conf   *GraylogConf
+	client  *gelf.Gelf
+	conf    *GraylogConf
+	filters analytics.AnalyticsFilters
 }
 
 type GraylogConf struct {
@@ -147,4 +148,11 @@ func (p *GraylogPump) WriteData(data []interface{}) error {
 		p.client.Log(string(gelfString))
 	}
 	return nil
+}
+
+func (p *GraylogPump) SetFilters(filters analytics.AnalyticsFilters) {
+	p.filters = filters
+}
+func (p *GraylogPump) GetFilters() analytics.AnalyticsFilters {
+	return p.filters
 }

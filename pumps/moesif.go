@@ -18,6 +18,7 @@ import (
 type MoesifPump struct {
 	moesifApi  moesifapi.API
 	moesifConf *MoesifConf
+	filters    analytics.AnalyticsFilters
 }
 
 type RawDecoded struct {
@@ -182,4 +183,11 @@ func decodeHeaders(headers string) map[string]interface{} {
 	}
 
 	return ret
+}
+
+func (p *MoesifPump) SetFilters(filters analytics.AnalyticsFilters) {
+	p.filters = filters
+}
+func (p *MoesifPump) GetFilters() analytics.AnalyticsFilters {
+	return p.filters
 }

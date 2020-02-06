@@ -13,7 +13,8 @@ import (
 )
 
 type InfluxPump struct {
-	dbConf *InfluxConf
+	dbConf  *InfluxConf
+	filters analytics.AnalyticsFilters
 }
 
 var (
@@ -146,4 +147,11 @@ func (i *InfluxPump) WriteData(data []interface{}) error {
 	c.Write(bp)
 
 	return nil
+}
+
+func (i *InfluxPump) SetFilters(filters analytics.AnalyticsFilters) {
+	i.filters = filters
+}
+func (i *InfluxPump) GetFilters() analytics.AnalyticsFilters {
+	return i.filters
 }

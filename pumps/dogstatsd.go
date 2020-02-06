@@ -21,9 +21,10 @@ const (
 )
 
 type DogStatsdPump struct {
-	conf   *DogStatsdConf
-	client *statsd.Client
-	log    *logrus.Entry
+	conf    *DogStatsdConf
+	client  *statsd.Client
+	log     *logrus.Entry
+	filters analytics.AnalyticsFilters
 }
 
 type DogStatsdConf struct {
@@ -145,4 +146,11 @@ func (s *DogStatsdPump) WriteData(data []interface{}) error {
 	}
 
 	return nil
+}
+
+func (s *DogStatsdPump) SetFilters(filters analytics.AnalyticsFilters) {
+	s.filters = filters
+}
+func (s *DogStatsdPump) GetFilters() analytics.AnalyticsFilters {
+	return s.filters
 }

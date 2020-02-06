@@ -21,6 +21,8 @@ type PrometheusPump struct {
 	KeyStatusMetrics    *prometheus.CounterVec
 	OauthStatusMetrics  *prometheus.CounterVec
 	TotalLatencyMetrics *prometheus.HistogramVec
+
+	filters analytics.AnalyticsFilters
 }
 
 type PrometheusConf struct {
@@ -129,4 +131,11 @@ func (p *PrometheusPump) WriteData(data []interface{}) error {
 		p.TotalLatencyMetrics.WithLabelValues("total", record.APIID).Observe(float64(record.RequestTime))
 	}
 	return nil
+}
+
+func (p *PrometheusPump) SetFilters(filters analytics.AnalyticsFilters) {
+	p.filters = filters
+}
+func (p *PrometheusPump) GetFilters() analytics.AnalyticsFilters {
+	return p.filters
 }

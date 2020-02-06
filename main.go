@@ -136,6 +136,7 @@ func initialisePumps() {
 				log.WithFields(logrus.Fields{
 					"prefix": mainPrefix,
 				}).Info("Init Pump: ", thisPmp.GetName())
+				thisPmp.SetFilters(pmp.Filters)
 				Pumps[i] = thisPmp
 			}
 		}
@@ -203,7 +204,8 @@ func writeToPumps(keys []interface{}, job *health.Job, startTime time.Time) {
 			log.WithFields(logrus.Fields{
 				"prefix": mainPrefix,
 			}).Debug("Writing to: ", pmp.GetName())
-			pmp.WriteData(keys)
+			filteredKeys := filterData(pmp, keys)
+			pmp.WriteData(filteredKeys)
 			if job != nil {
 				job.Timing("purge_time_"+pmp.GetName(), time.Since(startTime).Nanoseconds())
 			}
@@ -214,6 +216,26 @@ func writeToPumps(keys []interface{}, job *health.Job, startTime time.Time) {
 			"prefix": mainPrefix,
 		}).Warning("No pumps defined!")
 	}
+}
+
+func filterData(pump pumps.Pump, keys []interface{}) []interface{} {
+	filters := pump.GetFilters()
+	if !filters.HasFilter() {
+		return keys
+	}
+	filteredKeys := keys[:]
+	newLenght := 0
+
+	for _, key := range filteredKeys {
+		decoded := key.(analytics.AnalyticsRecord)
+		if filters.ShouldFilter(decoded) {
+			continue
+		}
+		filteredKeys[newLenght] = key
+		newLenght++
+	}
+	filteredKeys = filteredKeys[:newLenght]
+	return filteredKeys
 }
 
 func main() {
