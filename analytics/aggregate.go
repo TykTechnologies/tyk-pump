@@ -2,6 +2,7 @@ package analytics
 
 import (
 	b64 "encoding/base64"
+	"encoding/hex"
 	"fmt"
 	"strconv"
 	"strings"
@@ -84,6 +85,7 @@ type AnalyticsRecordAggregate struct {
 
 	KeyEndpoint   map[string]map[string]*Counter `bson:"keyendpoints"`
 	OauthEndpoint map[string]map[string]*Counter `bson:"oauthendpoints"`
+	ApiEndpoint   map[string]*Counter            `bson:"apiendpoints"`
 
 	Total Counter
 
@@ -103,6 +105,7 @@ func (f AnalyticsRecordAggregate) New() AnalyticsRecordAggregate {
 	thisF.Endpoints = make(map[string]*Counter)
 	thisF.KeyEndpoint = make(map[string]map[string]*Counter)
 	thisF.OauthEndpoint = make(map[string]map[string]*Counter)
+	thisF.ApiEndpoint = make(map[string]*Counter)
 
 	return thisF
 }
@@ -225,6 +228,10 @@ func (f *AnalyticsRecordAggregate) AsChange() bson.M {
 		for k, v := range incVal {
 			newUpdate = f.generateBSONFromProperty(parent, k, v, newUpdate)
 		}
+	}
+
+	for thisUnit, incVal := range f.ApiEndpoint {
+		newUpdate = f.generateBSONFromProperty("apiendpoints", thisUnit, incVal, newUpdate)
 	}
 
 	newUpdate = f.generateBSONFromProperty("", "total", &f.Total, newUpdate)
@@ -744,12 +751,19 @@ func AggregateData(data []interface{}, trackAllPaths bool, ignoreTagPrefixList [
 					break
 
 				case "TrackPath":
+					log.Debug("TrackPath=", value.(bool))
 					if value.(bool) {
 						fixedPath := replaceUnsupportedChars(thisV.Path)
 						c := IncrementOrSetUnit(thisAggregate.Endpoints[fixedPath])
 						thisAggregate.Endpoints[fixedPath] = c
 						thisAggregate.Endpoints[fixedPath].Identifier = thisV.Path
 						thisAggregate.Endpoints[fixedPath].HumanIdentifier = thisV.Path
+
+						keyStr := hex.EncodeToString([]byte(thisV.APIID + ":" + thisV.APIVersion + ":" + thisV.Path))
+						c = IncrementOrSetUnit(thisAggregate.ApiEndpoint[keyStr])
+						thisAggregate.ApiEndpoint[keyStr] = c
+						thisAggregate.ApiEndpoint[keyStr].Identifier = keyStr
+						thisAggregate.ApiEndpoint[keyStr].HumanIdentifier = thisV.Path
 					}
 					break
 				}
