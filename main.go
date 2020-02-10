@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
@@ -41,47 +42,67 @@ var (
 )
 
 func init() {
+
 	SystemConfig = TykPumpConfiguration{}
+	if isTestEnv() {
+		//if it's test enviroment, remove the -test. flags to make it kingpin compatible.
+		newLenght := 0
+		for i, arg := range os.Args {
+			if strings.HasPrefix(os.Args[i], "-test.") {
+				continue
+			}
+			os.Args[newLenght] = arg
+			newLenght++
+		}
+		os.Args = os.Args[:newLenght]
+		kingpin.Parse()
+	} else {
+		kingpin.Parse()
+		log.Formatter = new(prefixed.TextFormatter)
 
-	kingpin.Parse()
+		envDemo := os.Getenv("TYK_PMP_BUILDDEMODATA")
+		if envDemo != "" {
+			log.Warning("Demo mode active via environemnt variable")
+			demoMode = &envDemo
+		}
 
-	log.Formatter = new(prefixed.TextFormatter)
+		log.WithFields(logrus.Fields{
+			"prefix": mainPrefix,
+		}).Info("## Tyk Analytics Pump, ", VERSION, " ##")
 
-	envDemo := os.Getenv("TYK_PMP_BUILDDEMODATA")
-	if envDemo != "" {
-		log.Warning("Demo mode active via environemnt variable")
-		demoMode = &envDemo
-	}
+		LoadConfig(conf, &SystemConfig)
 
-	log.WithFields(logrus.Fields{
-		"prefix": mainPrefix,
-	}).Info("## Tyk Analytics Pump, ", VERSION, " ##")
+		// If no environment variable is set, check the configuration file:
+		if os.Getenv("TYK_LOGLEVEL") == "" {
+			level := strings.ToLower(SystemConfig.LogLevel)
+			switch level {
+			case "", "info":
+				// default, do nothing
+			case "error":
+				log.Level = logrus.ErrorLevel
+			case "warn":
+				log.Level = logrus.WarnLevel
+			case "debug":
+				log.Level = logrus.DebugLevel
+			default:
+				log.WithFields(logrus.Fields{
+					"prefix": "main",
+				}).Fatalf("Invalid log level %q specified in config, must be error, warn, debug or info. ", level)
+			}
+		}
 
-	LoadConfig(conf, &SystemConfig)
-
-	// If no environment variable is set, check the configuration file:
-	if os.Getenv("TYK_LOGLEVEL") == "" {
-		level := strings.ToLower(SystemConfig.LogLevel)
-		switch level {
-		case "", "info":
-			// default, do nothing
-		case "error":
-			log.Level = logrus.ErrorLevel
-		case "warn":
-			log.Level = logrus.WarnLevel
-		case "debug":
+		// If debug mode flag is set, override previous log level parameter:
+		if *debugMode {
 			log.Level = logrus.DebugLevel
-		default:
-			log.WithFields(logrus.Fields{
-				"prefix": "main",
-			}).Fatalf("Invalid log level %q specified in config, must be error, warn, debug or info. ", level)
 		}
 	}
+}
 
-	// If debug mode flag is set, override previous log level parameter:
-	if *debugMode {
-		log.Level = logrus.DebugLevel
+func isTestEnv() bool {
+	if strings.HasSuffix(os.Args[0], ".test") {
+		return true
 	}
+	return false
 }
 
 func setupAnalyticsStore() {
@@ -239,6 +260,7 @@ func filterData(pump pumps.Pump, keys []interface{}) []interface{} {
 }
 
 func main() {
+	fmt.Println("running main")
 	SetupInstrumentation()
 
 	// Store version which will be read by dashboard and sent to
