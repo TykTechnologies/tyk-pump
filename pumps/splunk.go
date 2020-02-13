@@ -2,6 +2,7 @@ package pumps
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"encoding/json"
 	"errors"
@@ -66,7 +67,7 @@ func NewSplunkClient(token string, collectorURL string, skipVerify bool, certFil
 }
 
 // Send sends an event to the Splunk HTTP Event Collector interface.
-func (c *SplunkClient) Send(event map[string]interface{}, ts time.Time) (*http.Response, error) {
+func (c *SplunkClient) Send(ctx context.Context, event map[string]interface{}, ts time.Time) (*http.Response, error) {
 	eventWrap := struct {
 		Time  int64                  `json:"time"`
 		Event map[string]interface{} `json:"event"`
@@ -81,14 +82,16 @@ func (c *SplunkClient) Send(event map[string]interface{}, ts time.Time) (*http.R
 	if err != nil {
 		return nil, err
 	}
+	req = req.WithContext(ctx)
 	req.Header.Add(authHeaderName, authHeaderPrefix+c.Token)
 	return c.httpClient.Do(req)
 }
 
 // SplunkPump is a Tyk Pump driver for Splunk.
 type SplunkPump struct {
-	client *SplunkClient
-	config *SplunkPumpConfig
+	client  *SplunkClient
+	config  *SplunkPumpConfig
+	timeout int
 }
 
 // SplunkPumpConfig contains the driver configuration parameters.
@@ -134,7 +137,7 @@ func (p *SplunkPump) Init(config interface{}) error {
 }
 
 // WriteData prepares an appropriate data structure and sends it to the HTTP Event Collector.
-func (p *SplunkPump) WriteData(data []interface{}) error {
+func (p *SplunkPump) WriteData(ctx context.Context, data []interface{}) error {
 	log.WithFields(logrus.Fields{
 		"prefix": pumpPrefix,
 	}).Info("Writing ", len(data), " records")
@@ -156,7 +159,15 @@ func (p *SplunkPump) WriteData(data []interface{}) error {
 			"raw_response":  decoded.RawResponse,
 			"ip_address":    decoded.IPAddress,
 		}
-		p.client.Send(event, decoded.TimeStamp)
+		p.client.Send(ctx, event, decoded.TimeStamp)
 	}
 	return nil
+}
+
+func (s *SplunkPump) SetTimeout(timeout int) {
+	s.timeout = timeout
+}
+
+func (s *SplunkPump) GetTimeout() int {
+	return s.timeout
 }

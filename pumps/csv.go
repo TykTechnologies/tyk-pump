@@ -1,6 +1,7 @@
 package pumps
 
 import (
+	"context"
 	"encoding/csv"
 	"fmt"
 	"os"
@@ -16,6 +17,7 @@ import (
 type CSVPump struct {
 	csvConf      *CSVConf
 	wroteHeaders bool
+	timeout      int
 }
 
 type CSVConf struct {
@@ -56,7 +58,7 @@ func (c *CSVPump) Init(conf interface{}) error {
 	return nil
 }
 
-func (c *CSVPump) WriteData(data []interface{}) error {
+func (c *CSVPump) WriteData(ctx context.Context, data []interface{}) error {
 	curtime := time.Now()
 	fname := fmt.Sprintf("%d-%s-%d-%d.csv", curtime.Year(), curtime.Month().String(), curtime.Day(), curtime.Hour())
 	fname = path.Join(c.csvConf.CSVDir, fname)
@@ -125,4 +127,12 @@ func (c *CSVPump) WriteData(data []interface{}) error {
 	}
 	writer.Flush()
 	return nil
+}
+
+func (c *CSVPump) SetTimeout(timeout int) {
+	c.timeout = timeout
+}
+
+func (c *CSVPump) GetTimeout() int {
+	return c.timeout
 }

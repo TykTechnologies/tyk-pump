@@ -1,6 +1,7 @@
 package pumps
 
 import (
+	"context"
 	b64 "encoding/base64"
 	"errors"
 	"sort"
@@ -24,6 +25,7 @@ var COMMON_TAGS_COUNT = 5
 type MongoAggregatePump struct {
 	dbSession *mgo.Session
 	dbConf    *MongoAggregateConf
+	timeout   int
 }
 
 type MongoAggregateConf struct {
@@ -203,7 +205,7 @@ func (m *MongoAggregatePump) ensureIndexes(c *mgo.Collection) error {
 	return c.EnsureIndex(orgIndex)
 }
 
-func (m *MongoAggregatePump) WriteData(data []interface{}) error {
+func (m *MongoAggregatePump) WriteData(ctx context.Context, data []interface{}) error {
 	log.WithFields(logrus.Fields{
 		"prefix": analytics.MongoAggregatePrefix,
 	}).Debug("Writing ", len(data), " records")
@@ -213,7 +215,7 @@ func (m *MongoAggregatePump) WriteData(data []interface{}) error {
 			"prefix": analytics.MongoAggregatePrefix,
 		}).Debug("Connecting to analytics store")
 		m.connect()
-		m.WriteData(data)
+		m.WriteData(ctx, data)
 	} else {
 		// calculate aggregates
 		analyticsPerOrg := analytics.AggregateData(data, m.dbConf.TrackAllPaths, m.dbConf.IgnoreTagPrefixList, m.dbConf.StoreAnalyticsPerMinute)
@@ -342,4 +344,12 @@ func (m *MongoAggregatePump) WriteUptimeData(data []interface{}) {
 	log.WithFields(logrus.Fields{
 		"prefix": analytics.MongoAggregatePrefix,
 	}).Warning("Mongo Aggregate should not be writing uptime data!")
+}
+
+func (m *MongoAggregatePump) SetTimeout(timeout int) {
+	m.timeout = timeout
+}
+
+func (m *MongoAggregatePump) GetTimeout() int {
+	return m.timeout
 }
