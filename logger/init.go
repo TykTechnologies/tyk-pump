@@ -1,25 +1,26 @@
 package logger
 
 import (
-	"os"
-	"strings"
-
 	"github.com/TykTechnologies/logrus"
 	prefixed "github.com/TykTechnologies/logrus-prefixed-formatter"
+	"os"
+	"strings"
 )
 
-var log *logrus.Logger
+var log = logrus.New()
 
-// GetLogger returns the default logger.
+func init() {
+	log.Formatter = GetFormatterWithForcedPrefix()
+}
+
+func GetFormatterWithForcedPrefix() *prefixed.TextFormatter {
+	textFormatter := new(prefixed.TextFormatter)
+	textFormatter.ForceColors = true
+	textFormatter.TimestampFormat = `Jan 02 15:04:05`
+	return textFormatter
+}
+
 func GetLogger() *logrus.Logger {
-	// Make sure the logger is only initialized once:
-	if log != nil {
-		return log
-	}
-
-	// First check the log level environment variable:
-	log = logrus.New()
-	log.Formatter = new(prefixed.TextFormatter)
 	level := os.Getenv("TYK_LOGLEVEL")
 	if level == "" {
 		level = "info"
