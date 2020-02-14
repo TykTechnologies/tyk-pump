@@ -1,6 +1,7 @@
 package pumps
 
 import (
+	"context"
 	"encoding/json"
 	"strings"
 	"time"
@@ -15,6 +16,7 @@ import (
 type InfluxPump struct {
 	dbConf  *InfluxConf
 	filters analytics.AnalyticsFilters
+	timeout int
 }
 
 var (
@@ -77,7 +79,7 @@ func (i *InfluxPump) connect() client.Client {
 	return c
 }
 
-func (i *InfluxPump) WriteData(data []interface{}) error {
+func (i *InfluxPump) WriteData(ctx context.Context, data []interface{}) error {
 	c := i.connect()
 	defer c.Close()
 
@@ -154,4 +156,11 @@ func (i *InfluxPump) SetFilters(filters analytics.AnalyticsFilters) {
 }
 func (i *InfluxPump) GetFilters() analytics.AnalyticsFilters {
 	return i.filters
+}
+func (i *InfluxPump) SetTimeout(timeout int) {
+	i.timeout = timeout
+}
+
+func (i *InfluxPump) GetTimeout() int {
+	return i.timeout
 }

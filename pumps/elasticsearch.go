@@ -22,6 +22,7 @@ type ElasticsearchPump struct {
 	operator ElasticsearchOperator
 	esConf   *ElasticsearchConf
 	filters  analytics.AnalyticsFilters
+	timeout  int
 }
 
 var elasticsearchPrefix = "elasticsearch-pump"
@@ -39,7 +40,7 @@ type ElasticsearchConf struct {
 }
 
 type ElasticsearchOperator interface {
-	processData(data []interface{}, esConf *ElasticsearchConf) error
+	processData(ctx context.Context, data []interface{}, esConf *ElasticsearchConf) error
 }
 
 type Elasticsearch3Operator struct {
@@ -157,7 +158,7 @@ func (e *ElasticsearchPump) connect() {
 	}
 }
 
-func (e *ElasticsearchPump) WriteData(data []interface{}) error {
+func (e *ElasticsearchPump) WriteData(ctx context.Context, data []interface{}) error {
 	log.WithFields(logrus.Fields{
 		"prefix": elasticsearchPrefix,
 	}).Info("Writing ", len(data), " records")
@@ -167,13 +168,21 @@ func (e *ElasticsearchPump) WriteData(data []interface{}) error {
 			"prefix": elasticsearchPrefix,
 		}).Debug("Connecting to analytics store")
 		e.connect()
-		e.WriteData(data)
+		e.WriteData(ctx, data)
 	} else {
 		if len(data) > 0 {
-			e.operator.processData(data, e.esConf)
+			e.operator.processData(ctx, data, e.esConf)
 		}
 	}
 	return nil
+}
+
+func (e *ElasticsearchPump) SetTimeout(timeout int) {
+	e.timeout = timeout
+}
+
+func (e *ElasticsearchPump) GetTimeout() int {
+	return e.timeout
 }
 
 func getIndexName(esConf *ElasticsearchConf) string {
@@ -230,7 +239,7 @@ func getMapping(datum analytics.AnalyticsRecord, extendedStatistics bool, genera
 	return mapping, ""
 }
 
-func (e Elasticsearch3Operator) processData(data []interface{}, esConf *ElasticsearchConf) error {
+func (e Elasticsearch3Operator) processData(ctx context.Context, data []interface{}, esConf *ElasticsearchConf) error {
 	index := e.esClient.Index().Index(getIndexName(esConf))
 
 	for dataIndex := range data {
@@ -244,7 +253,7 @@ func (e Elasticsearch3Operator) processData(data []interface{}, esConf *Elastics
 
 		mapping, id := getMapping(d, esConf.ExtendedStatistics, esConf.GenerateID, esConf.DecodeBase64)
 
-		_, err := index.BodyJson(mapping).Type(esConf.DocumentType).Id(id).Do()
+		_, err := index.BodyJson(mapping).Type(esConf.DocumentType).Id(id).DoC(ctx)
 		if err != nil {
 			log.WithFields(logrus.Fields{
 				"prefix": elasticsearchPrefix,
@@ -255,7 +264,7 @@ func (e Elasticsearch3Operator) processData(data []interface{}, esConf *Elastics
 	return nil
 }
 
-func (e Elasticsearch5Operator) processData(data []interface{}, esConf *ElasticsearchConf) error {
+func (e Elasticsearch5Operator) processData(ctx context.Context, data []interface{}, esConf *ElasticsearchConf) error {
 	index := e.esClient.Index().Index(getIndexName(esConf))
 
 	for dataIndex := range data {
@@ -269,7 +278,7 @@ func (e Elasticsearch5Operator) processData(data []interface{}, esConf *Elastics
 
 		mapping, id := getMapping(d, esConf.ExtendedStatistics, esConf.GenerateID, esConf.DecodeBase64)
 
-		_, err := index.BodyJson(mapping).Type(esConf.DocumentType).Id(id).Do(context.TODO())
+		_, err := index.BodyJson(mapping).Type(esConf.DocumentType).Id(id).Do(ctx)
 		if err != nil {
 			log.WithFields(logrus.Fields{
 				"prefix": elasticsearchPrefix,
@@ -280,7 +289,7 @@ func (e Elasticsearch5Operator) processData(data []interface{}, esConf *Elastics
 	return nil
 }
 
-func (e Elasticsearch6Operator) processData(data []interface{}, esConf *ElasticsearchConf) error {
+func (e Elasticsearch6Operator) processData(ctx context.Context, data []interface{}, esConf *ElasticsearchConf) error {
 	index := e.esClient.Index().Index(getIndexName(esConf))
 
 	for dataIndex := range data {
@@ -294,7 +303,7 @@ func (e Elasticsearch6Operator) processData(data []interface{}, esConf *Elastics
 
 		mapping, id := getMapping(d, esConf.ExtendedStatistics, esConf.GenerateID, esConf.DecodeBase64)
 
-		_, err := index.BodyJson(mapping).Type(esConf.DocumentType).Id(id).Do(context.Background())
+		_, err := index.BodyJson(mapping).Type(esConf.DocumentType).Id(id).Do(ctx)
 		if err != nil {
 			log.WithFields(logrus.Fields{
 				"prefix": elasticsearchPrefix,

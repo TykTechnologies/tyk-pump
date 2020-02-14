@@ -1,6 +1,7 @@
 package pumps
 
 import (
+	"context"
 	"encoding/json"
 
 	"github.com/mitchellh/mapstructure"
@@ -14,6 +15,7 @@ type SegmentPump struct {
 	segmentClient *segment.Client
 	segmentConf   *SegmentConf
 	filters       analytics.AnalyticsFilters
+	timeout       int
 }
 
 var segmentPrefix = "segment-pump"
@@ -46,7 +48,7 @@ func (s *SegmentPump) Init(config interface{}) error {
 	return nil
 }
 
-func (s *SegmentPump) WriteData(data []interface{}) error {
+func (s *SegmentPump) WriteData(ctx context.Context, data []interface{}) error {
 	log.WithFields(logrus.Fields{
 		"prefix": segmentPrefix,
 	}).Info("Writing ", len(data), " records")
@@ -102,4 +104,11 @@ func (s *SegmentPump) SetFilters(filters analytics.AnalyticsFilters) {
 }
 func (s *SegmentPump) GetFilters() analytics.AnalyticsFilters {
 	return s.filters
+}
+func (s *SegmentPump) SetTimeout(timeout int) {
+	s.timeout = timeout
+}
+
+func (s *SegmentPump) GetTimeout() int {
+	return s.timeout
 }

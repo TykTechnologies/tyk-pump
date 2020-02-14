@@ -1,6 +1,7 @@
 package pumps
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"strconv"
@@ -23,6 +24,7 @@ type PrometheusPump struct {
 	TotalLatencyMetrics *prometheus.HistogramVec
 
 	filters analytics.AnalyticsFilters
+	timeout int
 }
 
 type PrometheusConf struct {
@@ -113,7 +115,7 @@ func (p *PrometheusPump) Init(conf interface{}) error {
 	return nil
 }
 
-func (p *PrometheusPump) WriteData(data []interface{}) error {
+func (p *PrometheusPump) WriteData(ctx context.Context, data []interface{}) error {
 	log.WithFields(logrus.Fields{
 		"prefix": prometheusPrefix,
 	}).Debug("Writing ", len(data), " records")
@@ -138,4 +140,12 @@ func (p *PrometheusPump) SetFilters(filters analytics.AnalyticsFilters) {
 }
 func (p *PrometheusPump) GetFilters() analytics.AnalyticsFilters {
 	return p.filters
+}
+
+func (p *PrometheusPump) SetTimeout(timeout int) {
+	p.timeout = timeout
+}
+
+func (p *PrometheusPump) GetTimeout() int {
+	return p.timeout
 }

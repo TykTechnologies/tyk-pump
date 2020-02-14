@@ -1,6 +1,7 @@
 package pumps
 
 import (
+	"context"
 	"errors"
 	"strings"
 	"time"
@@ -19,6 +20,7 @@ type MongoSelectivePump struct {
 	dbSession *mgo.Session
 	dbConf    *MongoSelectiveConf
 	filters   analytics.AnalyticsFilters
+	timeout   int
 }
 
 var mongoSelectivePrefix = "mongo-pump-selective"
@@ -143,7 +145,7 @@ func (m *MongoSelectivePump) ensureIndexes(c *mgo.Collection) error {
 	return nil
 }
 
-func (m *MongoSelectivePump) WriteData(data []interface{}) error {
+func (m *MongoSelectivePump) WriteData(ctx context.Context, data []interface{}) error {
 	log.WithFields(logrus.Fields{
 		"prefix": mongoSelectivePrefix,
 	}).Debug("Writing ", len(data), " records")
@@ -153,7 +155,7 @@ func (m *MongoSelectivePump) WriteData(data []interface{}) error {
 			"prefix": mongoSelectivePrefix,
 		}).Debug("Connecting to analytics store")
 		m.connect()
-		m.WriteData(data)
+		m.WriteData(ctx, data)
 	} else {
 		analyticsPerOrg := make(map[string][]interface{})
 
@@ -324,4 +326,12 @@ func (m *MongoSelectivePump) SetFilters(filters analytics.AnalyticsFilters) {
 }
 func (m *MongoSelectivePump) GetFilters() analytics.AnalyticsFilters {
 	return m.filters
+}
+
+func (m *MongoSelectivePump) SetTimeout(timeout int) {
+	m.timeout = timeout
+}
+
+func (m *MongoSelectivePump) GetTimeout() int {
+	return m.timeout
 }

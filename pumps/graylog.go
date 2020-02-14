@@ -1,6 +1,7 @@
 package pumps
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 
@@ -15,6 +16,7 @@ type GraylogPump struct {
 	client  *gelf.Gelf
 	conf    *GraylogConf
 	filters analytics.AnalyticsFilters
+	timeout int
 }
 
 type GraylogConf struct {
@@ -68,14 +70,14 @@ func (p *GraylogPump) connect() {
 	})
 }
 
-func (p *GraylogPump) WriteData(data []interface{}) error {
+func (p *GraylogPump) WriteData(ctx context.Context, data []interface{}) error {
 	log.WithFields(logrus.Fields{
 		"prefix": graylogPrefix,
 	}).Debug("Writing ", len(data), " records")
 
 	if p.client == nil {
 		p.connect()
-		p.WriteData(data)
+		p.WriteData(ctx, data)
 	}
 
 	for _, item := range data {
@@ -153,6 +155,15 @@ func (p *GraylogPump) WriteData(data []interface{}) error {
 func (p *GraylogPump) SetFilters(filters analytics.AnalyticsFilters) {
 	p.filters = filters
 }
+
 func (p *GraylogPump) GetFilters() analytics.AnalyticsFilters {
 	return p.filters
+}
+
+func (p *GraylogPump) SetTimeout(timeout int) {
+	p.timeout = timeout
+}
+
+func (p *GraylogPump) GetTimeout() int {
+	return p.timeout
 }

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -12,6 +13,7 @@ import (
 type MockedPump struct {
 	CounterRequest int
 	filters        analytics.AnalyticsFilters
+	timeout        int
 }
 
 func (p *MockedPump) GetName() string {
@@ -24,7 +26,7 @@ func (p *MockedPump) New() pumps.Pump {
 func (p *MockedPump) Init(config interface{}) error {
 	return nil
 }
-func (p *MockedPump) WriteData(keys []interface{}) error {
+func (p *MockedPump) WriteData(ctx context.Context, keys []interface{}) error {
 	for range keys {
 		p.CounterRequest++
 	}
@@ -35,6 +37,12 @@ func (p *MockedPump) SetFilters(filters analytics.AnalyticsFilters) {
 }
 func (p *MockedPump) GetFilters() analytics.AnalyticsFilters {
 	return p.filters
+}
+func (p *MockedPump) SetTimeout(timeout int) {
+	p.timeout = timeout
+}
+func (p *MockedPump) GetTimeout() int {
+	return p.timeout
 }
 
 func TestFilterData(t *testing.T) {
@@ -70,7 +78,7 @@ func TestWriteData(t *testing.T) {
 
 	job := instrument.NewJob("TestJob")
 
-	writeToPumps(keys, job, time.Now())
+	writeToPumps(keys, job, time.Now(), 2)
 
 	mockedPump = Pumps[0].(*MockedPump)
 
@@ -97,7 +105,7 @@ func TestWriteDataWithFilters(t *testing.T) {
 
 	job := instrument.NewJob("TestJob")
 
-	writeToPumps(keys, job, time.Now())
+	writeToPumps(keys, job, time.Now(), 2)
 
 	mockedPump = Pumps[0].(*MockedPump)
 

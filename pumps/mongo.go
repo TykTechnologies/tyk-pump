@@ -1,6 +1,7 @@
 package pumps
 
 import (
+	"context"
 	"crypto/tls"
 	"encoding/base64"
 	"net"
@@ -28,6 +29,7 @@ type MongoPump struct {
 	dbSession *mgo.Session
 	dbConf    *MongoConf
 	filters   analytics.AnalyticsFilters
+	timeout   int
 }
 
 var mongoPrefix = "mongo-pump"
@@ -272,7 +274,7 @@ func (m *MongoPump) connect() {
 	}
 }
 
-func (m *MongoPump) WriteData(data []interface{}) error {
+func (m *MongoPump) WriteData(ctx context.Context, data []interface{}) error {
 
 	collectionName := m.dbConf.CollectionName
 	if collectionName == "" {
@@ -435,4 +437,11 @@ func (m *MongoPump) SetFilters(filters analytics.AnalyticsFilters) {
 }
 func (m *MongoPump) GetFilters() analytics.AnalyticsFilters {
 	return m.filters
+}
+func (m *MongoPump) SetTimeout(timeout int) {
+	m.timeout = timeout
+}
+
+func (m *MongoPump) GetTimeout() int {
+	return m.timeout
 }

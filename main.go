@@ -1,7 +1,9 @@
 package main
 
 import (
+	"context"
 	"strings"
+	"sync"
 	"time"
 
 	"os"
@@ -137,6 +139,7 @@ func initialisePumps() {
 					"prefix": mainPrefix,
 				}).Info("Init Pump: ", thisPmp.GetName())
 				thisPmp.SetFilters(pmp.Filters)
+				thisPmp.SetTimeout(pmp.Timeout)
 				Pumps[i] = thisPmp
 			}
 		}
@@ -184,7 +187,7 @@ func StartPurgeLoop(secInterval int) {
 			}
 
 			// Send to pumps
-			writeToPumps(keys, job, startTime)
+			writeToPumps(keys, job, startTime, secInterval)
 
 			job.Timing("purge_time_all", time.Since(startTime).Nanoseconds())
 
@@ -197,20 +200,15 @@ func StartPurgeLoop(secInterval int) {
 	}
 }
 
-func writeToPumps(keys []interface{}, job *health.Job, startTime time.Time) {
+func writeToPumps(keys []interface{}, job *health.Job, startTime time.Time, purgeDelay int) {
 	// Send to pumps
 	if Pumps != nil {
+		var wg sync.WaitGroup
+		wg.Add(len(Pumps))
 		for _, pmp := range Pumps {
-			log.WithFields(logrus.Fields{
-				"prefix": mainPrefix,
-			}).Debug("Writing to: ", pmp.GetName())
-			filteredKeys := filterData(pmp, keys)
-			pmp.WriteData(filteredKeys)
-			if job != nil {
-				job.Timing("purge_time_"+pmp.GetName(), time.Since(startTime).Nanoseconds())
-			}
-
+			go execPumpWriting(&wg, pmp, &keys, purgeDelay, startTime, job)
 		}
+		wg.Wait()
 	} else {
 		log.WithFields(logrus.Fields{
 			"prefix": mainPrefix,
@@ -236,6 +234,69 @@ func filterData(pump pumps.Pump, keys []interface{}) []interface{} {
 	}
 	filteredKeys = filteredKeys[:newLenght]
 	return filteredKeys
+}
+
+func execPumpWriting(wg *sync.WaitGroup, pmp pumps.Pump, keys *[]interface{}, purgeDelay int, startTime time.Time, job *health.Job) {
+	timer := time.AfterFunc(time.Duration(purgeDelay)*time.Second, func() {
+		if pmp.GetTimeout() == 0 {
+			log.WithFields(logrus.Fields{
+				"prefix": mainPrefix,
+			}).Warning("Pump  ", pmp.GetName(), " is taking more time than the value configured of purge_delay. You should try to set a timeout for this pump.")
+		} else if pmp.GetTimeout() > purgeDelay {
+			log.WithFields(logrus.Fields{
+				"prefix": mainPrefix,
+			}).Warning("Pump  ", pmp.GetName(), " is taking more time than the value configured of purge_delay. You should try lowering the timeout configured for this pump.")
+		}
+	})
+	defer timer.Stop()
+	defer wg.Done()
+
+	log.WithFields(logrus.Fields{
+		"prefix": mainPrefix,
+	}).Debug("Writing to: ", pmp.GetName())
+
+	ch := make(chan error, 1)
+	//Load pump timeout
+	timeout := pmp.GetTimeout()
+	var ctx context.Context
+	var cancel context.CancelFunc
+	//Initialize context depending if the pump has a configured timeout
+	if timeout > 0 {
+		ctx, cancel = context.WithTimeout(context.Background(), time.Duration(timeout)*time.Second)
+	} else {
+		ctx, cancel = context.WithCancel(context.Background())
+	}
+
+	defer cancel()
+
+	go func(ch chan error, ctx context.Context, pmp pumps.Pump, keys *[]interface{}) {
+		filteredKeys := filterData(pmp, *keys)
+
+		ch <- pmp.WriteData(ctx, filteredKeys)
+	}(ch, ctx, pmp, keys)
+
+	select {
+	case err := <-ch:
+		if err != nil {
+			log.WithFields(logrus.Fields{
+				"prefix": mainPrefix,
+			}).Warning("Error Writing to: ", pmp.GetName(), " - Error:", err)
+		}
+	case <-ctx.Done():
+		switch ctx.Err() {
+		case context.Canceled:
+			log.WithFields(logrus.Fields{
+				"prefix": mainPrefix,
+			}).Warning("The writing to ", pmp.GetName(), " have got canceled.")
+		case context.DeadlineExceeded:
+			log.WithFields(logrus.Fields{
+				"prefix": mainPrefix,
+			}).Warning("Timeout Writing to: ", pmp.GetName())
+		}
+	}
+	if job != nil {
+		job.Timing("purge_time_"+pmp.GetName(), time.Since(startTime).Nanoseconds())
+	}
 }
 
 func main() {

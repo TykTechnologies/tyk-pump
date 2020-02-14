@@ -1,6 +1,7 @@
 package pumps
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -25,6 +26,7 @@ type DogStatsdPump struct {
 	client  *statsd.Client
 	log     *logrus.Entry
 	filters analytics.AnalyticsFilters
+	timeout int
 }
 
 type DogStatsdConf struct {
@@ -107,7 +109,7 @@ func (s *DogStatsdPump) connect(options []statsd.Option) error {
 	return nil
 }
 
-func (s *DogStatsdPump) WriteData(data []interface{}) error {
+func (s *DogStatsdPump) WriteData(ctx context.Context, data []interface{}) error {
 	if len(data) == 0 {
 		return nil
 	}
@@ -153,4 +155,11 @@ func (s *DogStatsdPump) SetFilters(filters analytics.AnalyticsFilters) {
 }
 func (s *DogStatsdPump) GetFilters() analytics.AnalyticsFilters {
 	return s.filters
+}
+func (s *DogStatsdPump) SetTimeout(timeout int) {
+	s.timeout = timeout
+}
+
+func (s *DogStatsdPump) GetTimeout() int {
+	return s.timeout
 }

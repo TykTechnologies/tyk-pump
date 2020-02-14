@@ -17,6 +17,7 @@ type PumpConfig struct {
 	Name    string                     `json:"name"` // Deprecated
 	Type    string                     `json:"type"`
 	Filters analytics.AnalyticsFilters `json:"filters"`
+	Timeout int                        `json:"timeout"`
 	Meta    map[string]interface{}     `json:"meta"` // TODO: convert this to json.RawMessage and use regular json.Unmarshal
 }
 

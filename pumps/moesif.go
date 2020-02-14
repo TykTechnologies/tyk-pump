@@ -2,6 +2,7 @@ package pumps
 
 import (
 	"bufio"
+	"context"
 	"encoding/base64"
 	"fmt"
 	"strings"
@@ -19,6 +20,7 @@ type MoesifPump struct {
 	moesifApi  moesifapi.API
 	moesifConf *MoesifConf
 	filters    analytics.AnalyticsFilters
+	timeout    int
 }
 
 type RawDecoded struct {
@@ -57,7 +59,7 @@ func (p *MoesifPump) Init(config interface{}) error {
 	return nil
 }
 
-func (p *MoesifPump) WriteData(data []interface{}) error {
+func (p *MoesifPump) WriteData(ctx context.Context, data []interface{}) error {
 	log.WithFields(logrus.Fields{
 		"prefix": moesifPrefix,
 	}).Info("Writing ", len(data), " records")
@@ -140,6 +142,14 @@ func (p *MoesifPump) WriteData(data []interface{}) error {
 	}
 
 	return nil
+}
+
+func (p *MoesifPump) SetTimeout(timeout int) {
+	p.timeout = timeout
+}
+
+func (p *MoesifPump) GetTimeout() int {
+	return p.timeout
 }
 
 func decodeRawData(raw string) (*RawDecoded, error) {

@@ -1,6 +1,7 @@
 package pumps
 
 import (
+	"context"
 	"encoding/json"
 	"strings"
 	"time"
@@ -15,6 +16,7 @@ import (
 type StatsdPump struct {
 	dbConf  *StatsdConf
 	filters analytics.AnalyticsFilters
+	timeout int
 }
 
 var statsdPrefix = "statsd-pump"
@@ -73,7 +75,7 @@ func (s *StatsdPump) connect() *statsd.StatsdClient {
 	}
 }
 
-func (s *StatsdPump) WriteData(data []interface{}) error {
+func (s *StatsdPump) WriteData(ctx context.Context, data []interface{}) error {
 
 	if len(data) == 0 {
 		return nil
@@ -152,4 +154,11 @@ func (s *StatsdPump) SetFilters(filters analytics.AnalyticsFilters) {
 }
 func (s *StatsdPump) GetFilters() analytics.AnalyticsFilters {
 	return s.filters
+}
+func (s *StatsdPump) SetTimeout(timeout int) {
+	s.timeout = timeout
+}
+
+func (s *StatsdPump) GetTimeout() int {
+	return s.timeout
 }

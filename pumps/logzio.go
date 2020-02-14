@@ -1,6 +1,7 @@
 package pumps
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -49,6 +50,7 @@ type LogzioPump struct {
 	sender  *lg.LogzioSender
 	config  *LogzioPumpConfig
 	filters analytics.AnalyticsFilters
+	timeout int
 }
 
 func NewLogzioClient(conf *LogzioPumpConfig) (*lg.LogzioSender, error) {
@@ -112,7 +114,7 @@ func (p *LogzioPump) Init(config interface{}) error {
 	return nil
 }
 
-func (p *LogzioPump) WriteData(data []interface{}) error {
+func (p *LogzioPump) WriteData(ctx context.Context, data []interface{}) error {
 	log.WithFields(logrus.Fields{
 		"prefix": pumpPrefix,
 	}).Info("Writing ", len(data), " records")
@@ -151,4 +153,11 @@ func (p *LogzioPump) SetFilters(filters analytics.AnalyticsFilters) {
 }
 func (p *LogzioPump) GetFilters() analytics.AnalyticsFilters {
 	return p.filters
+}
+func (p *LogzioPump) SetTimeout(timeout int) {
+	p.timeout = timeout
+}
+
+func (p *LogzioPump) GetTimeout() int {
+	return p.timeout
 }
