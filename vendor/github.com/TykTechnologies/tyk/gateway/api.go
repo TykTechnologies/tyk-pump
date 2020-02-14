@@ -157,7 +157,7 @@ func getSpecForOrg(orgID string) *APISpec {
 	return nil
 }
 
-func checkAndApplyTrialPeriod(keyName, apiId string, newSession *user.SessionState, isHashed bool) {
+func checkAndApplyTrialPeriod(keyName string, newSession *user.SessionState, isHashed bool) {
 	// Check the policies to see if we are forcing an expiry on the key
 	for _, polID := range newSession.PolicyIDs() {
 		policiesMu.RLock()
@@ -169,7 +169,7 @@ func checkAndApplyTrialPeriod(keyName, apiId string, newSession *user.SessionSta
 		// Are we foring an expiry?
 		if policy.KeyExpiresIn > 0 {
 			// We are, does the key exist?
-			_, found := getKeyDetail(keyName, apiId, isHashed)
+			_, found := GlobalSessionManager.SessionDetail(newSession.OrgID, keyName, isHashed)
 			if !found {
 				// this is a new key, lets expire it
 				newSession.Expires = time.Now().Unix() + policy.KeyExpiresIn
@@ -188,7 +188,7 @@ func applyPoliciesAndSave(keyName string, session *user.SessionState, spec *APIS
 	}
 
 	lifetime := session.Lifetime(spec.SessionLifetime)
-	if err := spec.SessionManager.UpdateSession(keyName, session, lifetime, isHashed); err != nil {
+	if err := GlobalSessionManager.UpdateSession(keyName, session, lifetime, isHashed); err != nil {
 		return err
 	}
 
@@ -231,13 +231,13 @@ func doAddOrUpdate(keyName string, newSession *user.SessionState, dontReset bool
 				}).Error("Could not add key for this API ID, API doesn't exist.")
 				return errors.New("API must be active to add keys")
 			}
-			checkAndApplyTrialPeriod(keyName, apiId, newSession, isHashed)
+			checkAndApplyTrialPeriod(keyName, newSession, isHashed)
 
 			// Lets reset keys if they are edited by admin
 			if !apiSpec.DontSetQuotasOnCreate {
 				// Reset quote by default
 				if !dontReset {
-					apiSpec.SessionManager.ResetQuota(keyName, newSession, isHashed)
+					GlobalSessionManager.ResetQuota(keyName, newSession, isHashed)
 					newSession.QuotaRenews = time.Now().Unix() + newSession.QuotaRenewalRate
 				}
 
@@ -258,10 +258,10 @@ func doAddOrUpdate(keyName string, newSession *user.SessionState, dontReset bool
 		defer apisMu.RUnlock()
 		for _, spec := range apisByID {
 			if !dontReset {
-				spec.SessionManager.ResetQuota(keyName, newSession, isHashed)
+				GlobalSessionManager.ResetQuota(keyName, newSession, isHashed)
 				newSession.QuotaRenews = time.Now().Unix() + newSession.QuotaRenewalRate
 			}
-			checkAndApplyTrialPeriod(keyName, spec.APIID, newSession, isHashed)
+			checkAndApplyTrialPeriod(keyName, newSession, isHashed)
 
 			// apply polices (if any) and save key
 			if err := applyPoliciesAndSave(keyName, newSession, spec, isHashed); err != nil {
@@ -301,15 +301,6 @@ func setSessionPassword(session *user.SessionState) {
 	session.BasicAuthData.Password = string(newPass)
 }
 
-func getKeyDetail(key, apiID string, hashed bool) (user.SessionState, bool) {
-	sessionManager := FallbackKeySesionManager
-	if spec := getApiSpec(apiID); spec != nil {
-		sessionManager = spec.SessionManager
-	}
-
-	return sessionManager.SessionDetail(key, hashed)
-}
-
 func handleAddOrUpdate(keyName string, r *http.Request, isHashed bool) (interface{}, int) {
 	suppressReset := r.URL.Query().Get("suppress_reset") == "1"
 
@@ -332,13 +323,7 @@ func handleAddOrUpdate(keyName string, r *http.Request, isHashed bool) (interfac
 	// get original session in case of update and preserve fields that SHOULD NOT be updated
 	originalKey := user.SessionState{}
 	if r.Method == http.MethodPut {
-		found := false
-		for apiID := range newSession.AccessRights {
-			originalKey, found = getKeyDetail(keyName, apiID, isHashed)
-			if found {
-				break
-			}
-		}
+		originalKey, found := GlobalSessionManager.SessionDetail(newSession.OrgID, keyName, isHashed)
 		if !found {
 			log.Error("Could not find key when updating")
 			return apiError("Key is not found"), http.StatusNotFound
@@ -441,15 +426,15 @@ func handleGetDetail(sessionKey, apiID string, byHash bool) (interface{}, int) {
 		return apiError("Key requested by hash but key hashing is not enabled"), http.StatusBadRequest
 	}
 
-	sessionManager := FallbackKeySesionManager
 	spec := getApiSpec(apiID)
+	orgID := ""
 	if spec != nil {
-		sessionManager = spec.SessionManager
+		orgID = spec.OrgID
 	}
 
 	var session user.SessionState
 	var ok bool
-	session, ok = sessionManager.SessionDetail(sessionKey, byHash)
+	session, ok = GlobalSessionManager.SessionDetail(orgID, sessionKey, byHash)
 
 	if !ok {
 		return apiError("Key not found"), http.StatusNotFound
@@ -463,7 +448,7 @@ func handleGetDetail(sessionKey, apiID string, byHash bool) (interface{}, int) {
 		quotaKey = QuotaKeyPrefix + sessionKey
 	}
 
-	if usedQuota, err := sessionManager.Store().GetRawKey(quotaKey); err == nil {
+	if usedQuota, err := GlobalSessionManager.Store().GetRawKey(quotaKey); err == nil {
 		qInt, _ := strconv.Atoi(usedQuota)
 		remaining := session.QuotaMax - int64(qInt)
 
@@ -497,7 +482,7 @@ func handleGetDetail(sessionKey, apiID string, byHash bool) (interface{}, int) {
 			limQuotaKey = QuotaKeyPrefix + quotaScope + sessionKey
 		}
 
-		if usedQuota, err := sessionManager.Store().GetRawKey(limQuotaKey); err == nil {
+		if usedQuota, err := GlobalSessionManager.Store().GetRawKey(limQuotaKey); err == nil {
 			qInt, _ := strconv.Atoi(usedQuota)
 			remaining := access.Limit.QuotaMax - int64(qInt)
 
@@ -535,18 +520,13 @@ type apiAllKeys struct {
 	APIKeys []string `json:"keys"`
 }
 
-func handleGetAllKeys(filter, apiID string) (interface{}, int) {
-	sessionManager := FallbackKeySesionManager
-	if spec := getApiSpec(apiID); spec != nil {
-		sessionManager = spec.SessionManager
-	}
-
-	sessions := sessionManager.Sessions(filter)
+func handleGetAllKeys(filter string) (interface{}, int) {
+	sessions := GlobalSessionManager.Sessions(filter)
 	if filter != "" {
 		filterB64 := base64.StdEncoding.WithPadding(base64.NoPadding).EncodeToString([]byte(fmt.Sprintf(`{"org":"%s"`, filter)))
 		// Remove last 2 digits to look exact match
 		filterB64 = filterB64[0 : len(filterB64)-2]
-		orgIDB64Sessions := sessionManager.Sessions(filterB64)
+		orgIDB64Sessions := GlobalSessionManager.Sessions(filterB64)
 		sessions = append(sessions, orgIDB64Sessions...)
 	}
 
@@ -568,19 +548,14 @@ func handleGetAllKeys(filter, apiID string) (interface{}, int) {
 }
 
 func handleAddKey(keyName, hashedName, sessionString, apiID string) {
-	mw := BaseMiddleware{
-		Spec: &APISpec{
-			SessionManager: FallbackKeySesionManager,
-		},
-	}
 	sess := user.SessionState{}
 	json.Unmarshal([]byte(sessionString), &sess)
 	sess.LastUpdated = strconv.Itoa(int(time.Now().Unix()))
 	var err error
 	if config.Global().HashKeys {
-		err = mw.Spec.SessionManager.UpdateSession(hashedName, &sess, 0, true)
+		err = GlobalSessionManager.UpdateSession(hashedName, &sess, 0, true)
 	} else {
-		err = mw.Spec.SessionManager.UpdateSession(keyName, &sess, 0, false)
+		err = GlobalSessionManager.UpdateSession(keyName, &sess, 0, false)
 	}
 	if err != nil {
 		log.WithFields(logrus.Fields{
@@ -598,16 +573,17 @@ func handleAddKey(keyName, hashedName, sessionString, apiID string) {
 }
 
 func handleDeleteKey(keyName, apiID string, resetQuota bool) (interface{}, int) {
+	orgID := ""
+	if spec := getApiSpec(apiID); spec != nil {
+		orgID = spec.OrgID
+	}
+
 	if apiID == "-1" {
 		// Go through ALL managed API's and delete the key
 		apisMu.RLock()
-		removed := false
-		for _, spec := range apisByID {
-			if spec.SessionManager.RemoveSession(keyName, false) {
-				removed = true
-			}
-			spec.SessionManager.ResetQuota(keyName, &user.SessionState{}, false)
-		}
+		removed := GlobalSessionManager.RemoveSession(orgID, keyName, false)
+		GlobalSessionManager.ResetQuota(keyName, &user.SessionState{}, false)
+
 		apisMu.RUnlock()
 
 		if !removed {
@@ -628,14 +604,7 @@ func handleDeleteKey(keyName, apiID string, resetQuota bool) (interface{}, int) 
 		return nil, http.StatusOK
 	}
 
-	orgID := ""
-	sessionManager := FallbackKeySesionManager
-	if spec := getApiSpec(apiID); spec != nil {
-		orgID = spec.OrgID
-		sessionManager = spec.SessionManager
-	}
-
-	if !sessionManager.RemoveSession(keyName, false) {
+	if !GlobalSessionManager.RemoveSession(orgID, keyName, false) {
 		log.WithFields(logrus.Fields{
 			"prefix": "api",
 			"key":    obfuscateKey(keyName),
@@ -645,7 +614,7 @@ func handleDeleteKey(keyName, apiID string, resetQuota bool) (interface{}, int) 
 	}
 
 	if resetQuota {
-		sessionManager.ResetQuota(keyName, &user.SessionState{}, false)
+		GlobalSessionManager.ResetQuota(keyName, &user.SessionState{}, false)
 	}
 
 	statusObj := apiModifyKeySuccess{
@@ -670,15 +639,15 @@ func handleDeleteKey(keyName, apiID string, resetQuota bool) (interface{}, int) 
 }
 
 func handleDeleteHashedKey(keyName, apiID string, resetQuota bool) (interface{}, int) {
+	orgID := ""
+	if spec := getApiSpec(apiID); spec != nil {
+		orgID = spec.OrgID
+	}
+
 	if apiID == "-1" {
 		// Go through ALL managed API's and delete the key
-		removed := false
 		apisMu.RLock()
-		for _, spec := range apisByID {
-			if spec.SessionManager.RemoveSession(keyName, true) {
-				removed = true
-			}
-		}
+		removed := GlobalSessionManager.RemoveSession(orgID, keyName, true)
 		apisMu.RUnlock()
 
 		if !removed {
@@ -699,12 +668,7 @@ func handleDeleteHashedKey(keyName, apiID string, resetQuota bool) (interface{},
 		return nil, http.StatusOK
 	}
 
-	sessionManager := FallbackKeySesionManager
-	if spec := getApiSpec(apiID); spec != nil {
-		sessionManager = spec.SessionManager
-	}
-
-	if !sessionManager.RemoveSession(keyName, true) {
+	if !GlobalSessionManager.RemoveSession(orgID, keyName, true) {
 		log.WithFields(logrus.Fields{
 			"prefix": "api",
 			"key":    obfuscateKey(keyName),
@@ -714,7 +678,7 @@ func handleDeleteHashedKey(keyName, apiID string, resetQuota bool) (interface{},
 	}
 
 	if resetQuota {
-		sessionManager.ResetQuota(keyName, &user.SessionState{}, true)
+		GlobalSessionManager.ResetQuota(keyName, &user.SessionState{}, true)
 	}
 
 	statusObj := apiModifyKeySuccess{
@@ -914,10 +878,10 @@ func keyHandler(w http.ResponseWriter, r *http.Request) {
 				}
 
 				// we don't use filter for hashed keys
-				obj, code = handleGetAllKeys("", apiID)
+				obj, code = handleGetAllKeys("")
 			} else {
 				filter := r.URL.Query().Get("filter")
-				obj, code = handleGetAllKeys(filter, apiID)
+				obj, code = handleGetAllKeys(filter)
 			}
 		}
 
@@ -966,9 +930,14 @@ func policyUpdateHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleUpdateHashedKey(keyName string, applyPolicies []string) (interface{}, int) {
-	sessionManager := FallbackKeySesionManager
+	var orgID string
+	if len(applyPolicies) != 0 {
+		policiesMu.RLock()
+		orgID = policiesByID[applyPolicies[0]].OrgID
+		policiesMu.RUnlock()
+	}
 
-	sess, ok := sessionManager.SessionDetail(keyName, true)
+	sess, ok := GlobalSessionManager.SessionDetail(orgID, keyName, true)
 	if !ok {
 		log.WithFields(logrus.Fields{
 			"prefix": "api",
@@ -983,7 +952,7 @@ func handleUpdateHashedKey(keyName string, applyPolicies []string) (interface{},
 	sess.LastUpdated = strconv.Itoa(int(time.Now().Unix()))
 	sess.SetPolicies(applyPolicies...)
 
-	err := sessionManager.UpdateSession(keyName, &sess, 0, true)
+	err := GlobalSessionManager.UpdateSession(keyName, &sess, 0, true)
 	if err != nil {
 		log.WithFields(logrus.Fields{
 			"prefix": "api",
@@ -1011,19 +980,19 @@ func handleUpdateHashedKey(keyName string, applyPolicies []string) (interface{},
 }
 
 func orgHandler(w http.ResponseWriter, r *http.Request) {
-	keyName := mux.Vars(r)["keyName"]
+	orgID := mux.Vars(r)["keyName"]
 	filter := r.URL.Query().Get("filter")
 	var obj interface{}
 	var code int
 
 	switch r.Method {
 	case "POST", "PUT":
-		obj, code = handleOrgAddOrUpdate(keyName, r)
+		obj, code = handleOrgAddOrUpdate(orgID, r)
 
 	case "GET":
-		if keyName != "" {
+		if orgID != "" {
 			// Return single org detail
-			obj, code = handleGetOrgDetail(keyName)
+			obj, code = handleGetOrgDetail(orgID)
 		} else {
 			// Return list of keys
 			obj, code = handleGetAllOrgKeys(filter)
@@ -1031,13 +1000,13 @@ func orgHandler(w http.ResponseWriter, r *http.Request) {
 
 	case "DELETE":
 		// Remove a key
-		obj, code = handleDeleteOrgKey(keyName)
+		obj, code = handleDeleteOrgKey(orgID)
 	}
 
 	doJSONWrite(w, code, obj)
 }
 
-func handleOrgAddOrUpdate(keyName string, r *http.Request) (interface{}, int) {
+func handleOrgAddOrUpdate(orgID string, r *http.Request) (interface{}, int) {
 	newSession := new(user.SessionState)
 
 	if err := json.NewDecoder(r.Body).Decode(newSession); err != nil {
@@ -1046,7 +1015,7 @@ func handleOrgAddOrUpdate(keyName string, r *http.Request) (interface{}, int) {
 	}
 	// Update our session object (create it)
 
-	spec := getSpecForOrg(keyName)
+	spec := getSpecForOrg(orgID)
 	var sessionManager SessionHandler
 
 	if spec == nil {
@@ -1060,15 +1029,15 @@ func handleOrgAddOrUpdate(keyName string, r *http.Request) (interface{}, int) {
 	}
 
 	if r.URL.Query().Get("reset_quota") == "1" {
-		sessionManager.ResetQuota(keyName, newSession, false)
+		sessionManager.ResetQuota(orgID, newSession, false)
 		newSession.QuotaRenews = time.Now().Unix() + newSession.QuotaRenewalRate
-		rawKey := QuotaKeyPrefix + storage.HashKey(keyName)
+		rawKey := QuotaKeyPrefix + storage.HashKey(orgID)
 
 		// manage quotas separately
-		DefaultQuotaStore.RemoveSession(rawKey, false)
+		DefaultQuotaStore.RemoveSession(orgID, rawKey, false)
 	}
 
-	err := sessionManager.UpdateSession(keyName, newSession, 0, false)
+	err := sessionManager.UpdateSession(orgID, newSession, 0, false)
 	if err != nil {
 		return apiError("Error writing to key store " + err.Error()), http.StatusInternalServerError
 	}
@@ -1082,7 +1051,7 @@ func handleOrgAddOrUpdate(keyName string, r *http.Request) (interface{}, int) {
 
 	log.WithFields(logrus.Fields{
 		"prefix": "api",
-		"org":    keyName,
+		"org":    orgID,
 		"status": "ok",
 	}).Info("New organization key added or updated.")
 
@@ -1092,7 +1061,7 @@ func handleOrgAddOrUpdate(keyName string, r *http.Request) (interface{}, int) {
 	}
 
 	response := apiModifyKeySuccess{
-		Key:    keyName,
+		Key:    orgID,
 		Status: "ok",
 		Action: action,
 	}
@@ -1106,7 +1075,7 @@ func handleGetOrgDetail(orgID string) (interface{}, int) {
 		return apiError("Org not found"), http.StatusNotFound
 	}
 
-	session, ok := spec.OrgSessionManager.SessionDetail(orgID, false)
+	session, ok := spec.OrgSessionManager.SessionDetail(orgID, orgID, false)
 	if !ok {
 		log.WithFields(logrus.Fields{
 			"prefix": "api",
@@ -1154,7 +1123,7 @@ func handleDeleteOrgKey(orgID string) (interface{}, int) {
 		return apiError("Org not found"), http.StatusNotFound
 	}
 
-	if !spec.OrgSessionManager.RemoveSession(orgID, false) {
+	if !spec.OrgSessionManager.RemoveSession(orgID, orgID, false) {
 		return apiError("Failed to remove the key"), http.StatusBadRequest
 	}
 
@@ -1239,7 +1208,7 @@ func createKeyHandler(w http.ResponseWriter, r *http.Request) {
 
 	if newSession.Certificate != "" {
 		newKey = generateToken(newSession.OrgID, newSession.Certificate)
-		_, ok := FallbackKeySesionManager.SessionDetail(newKey, false)
+		_, ok := GlobalSessionManager.SessionDetail(newSession.OrgID, newKey, false)
 		if ok {
 			doJSONWrite(w, http.StatusInternalServerError, apiError("Failed to create key - Key with given certificate already found:"+newKey))
 			return
@@ -1258,11 +1227,11 @@ func createKeyHandler(w http.ResponseWriter, r *http.Request) {
 		for apiID := range newSession.AccessRights {
 			apiSpec := getApiSpec(apiID)
 			if apiSpec != nil {
-				checkAndApplyTrialPeriod(newKey, apiID, newSession, false)
+				checkAndApplyTrialPeriod(newKey, newSession, false)
 				// If we have enabled HMAC checking for keys, we need to generate a secret for the client to use
 				if !apiSpec.DontSetQuotasOnCreate {
 					// Reset quota by default
-					apiSpec.SessionManager.ResetQuota(newKey, newSession, false)
+					GlobalSessionManager.ResetQuota(newKey, newSession, false)
 					newSession.QuotaRenews = time.Now().Unix() + newSession.QuotaRenewalRate
 				}
 				// apply polices (if any) and save key
@@ -1272,7 +1241,7 @@ func createKeyHandler(w http.ResponseWriter, r *http.Request) {
 				}
 			} else {
 				// Use fallback
-				sessionManager := FallbackKeySesionManager
+				sessionManager := GlobalSessionManager
 				newSession.QuotaRenews = time.Now().Unix() + newSession.QuotaRenewalRate
 				sessionManager.ResetQuota(newKey, newSession, false)
 				err := sessionManager.UpdateSession(newKey, newSession, -1, false)
@@ -1299,10 +1268,10 @@ func createKeyHandler(w http.ResponseWriter, r *http.Request) {
 			apisMu.RLock()
 			defer apisMu.RUnlock()
 			for _, spec := range apisByID {
-				checkAndApplyTrialPeriod(newKey, spec.APIID, newSession, false)
+				checkAndApplyTrialPeriod(newKey, newSession, false)
 				if !spec.DontSetQuotasOnCreate {
 					// Reset quote by default
-					spec.SessionManager.ResetQuota(newKey, newSession, false)
+					GlobalSessionManager.ResetQuota(newKey, newSession, false)
 					newSession.QuotaRenews = time.Now().Unix() + newSession.QuotaRenewalRate
 				}
 				// apply polices (if any) and save key
@@ -1423,8 +1392,7 @@ func createOauthClient(w http.ResponseWriter, r *http.Request) {
 	// Allow the secret to be set
 	secret := newOauthClient.ClientSecret
 	if newOauthClient.ClientSecret == "" {
-		u5Secret := uuid.NewV4()
-		secret = base64.StdEncoding.EncodeToString([]byte(u5Secret.String()))
+		secret = createOauthClientSecret()
 	}
 
 	newClient := OAuthClient{
@@ -1548,6 +1516,57 @@ func createOauthClient(w http.ResponseWriter, r *http.Request) {
 	doJSONWrite(w, http.StatusOK, clientData)
 }
 
+func rotateOauthClient(keyName, apiID string) (interface{}, int) {
+	// check API
+	apiSpec := getApiSpec(apiID)
+	if apiSpec == nil {
+		return apiError("API doesn't exist"), http.StatusNotFound
+	}
+
+	// get existing version of oauth-client
+	storageID := oauthClientStorageID(keyName)
+	client, err := apiSpec.OAuthManager.OsinServer.Storage.GetExtendedClientNoPrefix(storageID)
+	if err != nil {
+		return apiError("OAuth Client ID not found"), http.StatusNotFound
+	}
+
+	// update client
+	updatedClient := OAuthClient{
+		ClientID:          client.GetId(),
+		ClientSecret:      createOauthClientSecret(),
+		ClientRedirectURI: client.GetRedirectUri(),
+		PolicyID:          client.GetPolicyID(),
+		MetaData:          client.GetUserData(),
+		Description:       client.GetDescription(),
+	}
+
+	err = apiSpec.OAuthManager.OsinServer.Storage.SetClient(storageID, &updatedClient, true)
+	if err != nil {
+		log.WithFields(logrus.Fields{
+			"prefix": "api",
+			"apiID":  apiID,
+			"status": "fail",
+			"err":    err,
+		}).Error("Failed to update OAuth client")
+		return apiError("Failure in storing client data"), http.StatusInternalServerError
+	}
+
+	// invalidate tokens if we had a new policy
+	invalidateTokens(client, updatedClient, apiSpec.OAuthManager)
+
+	// convert to outbound format
+	replyData := NewClientRequest{
+		ClientID:          updatedClient.GetId(),
+		ClientSecret:      updatedClient.ClientSecret,
+		ClientRedirectURI: updatedClient.GetRedirectUri(),
+		PolicyID:          updatedClient.GetPolicyID(),
+		MetaData:          updatedClient.GetUserData(),
+		Description:       updatedClient.GetDescription(),
+	}
+
+	return replyData, http.StatusOK
+}
+
 // Update Client
 func updateOauthClient(keyName, apiID string, r *http.Request) (interface{}, int) {
 	// read payload
@@ -1591,7 +1610,6 @@ func updateOauthClient(keyName, apiID string, r *http.Request) (interface{}, int
 	// update client
 	updatedClient := OAuthClient{
 		ClientID:          client.GetId(),
-		ClientSecret:      client.GetSecret(),                 // DO NOT update
 		ClientRedirectURI: updateClientData.ClientRedirectURI, // update
 		PolicyID:          updateClientData.PolicyID,          // update
 		MetaData:          updateClientData.MetaData,          // update
@@ -1610,17 +1628,7 @@ func updateOauthClient(keyName, apiID string, r *http.Request) (interface{}, int
 	}
 
 	// invalidate tokens if we had a new policy
-	if prevPolicy := client.GetPolicyID(); prevPolicy != "" && prevPolicy != updatedClient.PolicyID {
-		tokenList, err := apiSpec.OAuthManager.OsinServer.Storage.GetClientTokens(updatedClient.ClientID)
-		if err != nil {
-			log.WithError(err).Warning("Could not get list of tokens for updated OAuth client")
-		}
-		for _, token := range tokenList {
-			if err := apiSpec.OAuthManager.OsinServer.Storage.RemoveAccess(token.Token); err != nil {
-				log.WithError(err).Warning("Could not remove token for updated OAuth client policy")
-			}
-		}
-	}
+	invalidateTokens(client, updatedClient, apiSpec.OAuthManager)
 
 	// convert to outbound format
 	replyData := NewClientRequest{
@@ -1700,6 +1708,16 @@ func invalidateOauthRefresh(w http.ResponseWriter, r *http.Request) {
 	}).Info("Invalidated refresh token")
 
 	doJSONWrite(w, http.StatusOK, success)
+}
+
+func rotateOauthClientHandler(w http.ResponseWriter, r *http.Request) {
+
+	apiID := mux.Vars(r)["apiID"]
+	keyName := mux.Vars(r)["keyName"]
+
+	obj, code := rotateOauthClient(keyName, apiID)
+
+	doJSONWrite(w, code, obj)
 }
 
 func oAuthClientHandler(w http.ResponseWriter, r *http.Request) {
@@ -2092,6 +2110,20 @@ func ctxGetOrigRequestURL(r *http.Request) *url.URL {
 	return nil
 }
 
+func ctxSetURLRewriteTarget(r *http.Request, url *url.URL) {
+	setCtxValue(r, ctx.UrlRewriteTarget, url)
+}
+
+func ctxGetURLRewriteTarget(r *http.Request) *url.URL {
+	if v := r.Context().Value(ctx.UrlRewriteTarget); v != nil {
+		if urlVal, ok := v.(*url.URL); ok {
+			return urlVal
+		}
+	}
+
+	return nil
+}
+
 func ctxSetUrlRewritePath(r *http.Request, path string) {
 	setCtxValue(r, ctx.UrlRewritePath, path)
 }
@@ -2129,6 +2161,19 @@ func ctxSetRequestMethod(r *http.Request, path string) {
 
 func ctxGetRequestMethod(r *http.Request) string {
 	if v := r.Context().Value(ctx.RequestMethod); v != nil {
+		if strVal, ok := v.(string); ok {
+			return strVal
+		}
+	}
+	return r.Method
+}
+
+func ctxSetTransformRequestMethod(r *http.Request, path string) {
+	setCtxValue(r, ctx.TransformedRequestMethod, path)
+}
+
+func ctxGetTransformRequestMethod(r *http.Request) string {
+	if v := r.Context().Value(ctx.TransformedRequestMethod); v != nil {
 		if strVal, ok := v.(string); ok {
 			return strVal
 		}
@@ -2226,4 +2271,37 @@ func ctxTraceEnabled(r *http.Request) bool {
 
 func ctxSetTrace(r *http.Request) {
 	setCtxValue(r, ctx.Trace, true)
+}
+
+func ctxSetRequestStatus(r *http.Request, stat RequestStatus) {
+	setCtxValue(r, ctx.RequestStatus, stat)
+}
+
+func ctxGetRequestStatus(r *http.Request) (stat RequestStatus) {
+	if v := r.Context().Value(ctx.RequestStatus); v != nil {
+		stat = v.(RequestStatus)
+	}
+	return
+}
+
+func createOauthClientSecret() string {
+	secret := uuid.NewV4()
+	return base64.StdEncoding.EncodeToString([]byte(secret.String()))
+}
+
+// invalidate tokens if we had a new policy
+func invalidateTokens(prevClient ExtendedOsinClientInterface, updatedClient OAuthClient, oauthManager *OAuthManager) {
+
+	if prevPolicy := prevClient.GetPolicyID(); prevPolicy != "" && prevPolicy != updatedClient.PolicyID {
+		tokenList, err := oauthManager.OsinServer.Storage.GetClientTokens(updatedClient.ClientID)
+		if err != nil {
+			log.WithError(err).Warning("Could not get list of tokens for updated OAuth client")
+		}
+
+		for _, token := range tokenList {
+			if err := oauthManager.OsinServer.Storage.RemoveAccess(token.Token); err != nil {
+				log.WithError(err).Warning("Could not remove token for updated OAuth client policy")
+			}
+		}
+	}
 }

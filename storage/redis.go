@@ -1,21 +1,21 @@
 package storage
 
 import (
+	"crypto/tls"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/TykTechnologies/logrus"
-	"github.com/TykTechnologies/redigocluster/rediscluster"
+	"github.com/go-redis/redis"
 
-	"github.com/garyburd/redigo/redis"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/mitchellh/mapstructure"
 )
 
 // ------------------- REDIS CLUSTER STORAGE MANAGER -------------------------------
 
-var redisClusterSingleton *rediscluster.RedisCluster
+var redisClusterSingleton redis.UniversalClient
 var redisLogPrefix = "redis"
 var ENV_REDIS_PREFIX = "TYK_PMP_REDIS"
 
@@ -40,7 +40,9 @@ type RedisStorageConfig struct {
 	Type                       string       `mapstructure:"type"`
 	Host                       string       `mapstructure:"host"`
 	Port                       int          `mapstructure:"port"`
-	Hosts                      EnvMapString `mapstructure:"hosts"`
+	Hosts                      EnvMapString `mapstructure:"hosts"` // Deprecated: Use Addrs instead.
+	Addrs                      []string     `mapstructure:"addrs"`
+	MasterName                 string       `mapstructure:"master_name" json:"master_name"`
 	Username                   string       `mapstructure:"username"`
 	Password                   string       `mapstructure:"password"`
 	Database                   int          `mapstructure:"database"`
@@ -55,13 +57,13 @@ type RedisStorageConfig struct {
 
 // RedisClusterStorageManager is a storage manager that uses the redis database.
 type RedisClusterStorageManager struct {
-	db        *rediscluster.RedisCluster
+	db        redis.UniversalClient
 	KeyPrefix string
 	HashKeys  bool
 	Config    RedisStorageConfig
 }
 
-func NewRedisClusterPool(forceReconnect bool, config RedisStorageConfig) *rediscluster.RedisCluster {
+func NewRedisClusterPool(forceReconnect bool, config RedisStorageConfig) redis.UniversalClient {
 	if !forceReconnect {
 		if redisClusterSingleton != nil {
 			log.WithFields(logrus.Fields{
@@ -71,18 +73,13 @@ func NewRedisClusterPool(forceReconnect bool, config RedisStorageConfig) *redisc
 		}
 	} else {
 		if redisClusterSingleton != nil {
-			redisClusterSingleton.CloseConnection()
+			redisClusterSingleton.Close()
 		}
 	}
 
 	log.WithFields(logrus.Fields{
 		"prefix": redisLogPrefix,
 	}).Debug("Creating new Redis connection pool")
-
-	maxIdle := 100
-	if config.MaxIdle > 0 {
-		maxIdle = config.MaxIdle
-	}
 
 	maxActive := 500
 	if config.MaxActive > 0 {
@@ -95,41 +92,162 @@ func NewRedisClusterPool(forceReconnect bool, config RedisStorageConfig) *redisc
 		timeout = time.Duration(config.Timeout) * time.Second
 	}
 
-	if config.EnableCluster {
-		log.WithFields(logrus.Fields{
-			"prefix": redisLogPrefix,
-		}).Info("--> Using clustered mode")
-	}
-
-	thisPoolConf := rediscluster.PoolConfig{
-		MaxIdle:        maxIdle,
-		MaxActive:      maxActive,
-		IdleTimeout:    240 * time.Second,
-		ConnectTimeout: timeout,
-		ReadTimeout:    timeout,
-		WriteTimeout:   timeout,
-		Database:       config.Database,
-		Password:       config.Password,
-		IsCluster:      config.EnableCluster,
-		UseTLS:         config.RedisUseSSL,
-		TLSSkipVerify:  config.RedisSSLInsecureSkipVerify,
-	}
-
-	seed_redii := []map[string]string{}
-
-	if len(config.Hosts) > 0 {
-		for h, p := range config.Hosts {
-			seed_redii = append(seed_redii, map[string]string{h: p})
+	var tlsConfig *tls.Config
+	if config.RedisUseSSL {
+		tlsConfig = &tls.Config{
+			InsecureSkipVerify: config.RedisSSLInsecureSkipVerify,
 		}
-	} else {
-		seed_redii = append(seed_redii, map[string]string{config.Host: strconv.Itoa(config.Port)})
 	}
 
-	thisInstance := rediscluster.NewRedisCluster(seed_redii, thisPoolConf, false)
+	var client redis.UniversalClient
+	opts := &RedisOpts{
+		MasterName:   config.MasterName,
+		Addrs:        getRedisAddrs(config),
+		DB:           config.Database,
+		Password:     config.Password,
+		PoolSize:     maxActive,
+		IdleTimeout:  240 * time.Second,
+		ReadTimeout:  timeout,
+		WriteTimeout: timeout,
+		DialTimeout:  timeout,
+		TLSConfig:    tlsConfig,
+	}
 
-	redisClusterSingleton = &thisInstance
+	if opts.MasterName != "" {
+		log.Info("--> [REDIS] Creating sentinel-backed failover client")
+		client = redis.NewFailoverClient(opts.failover())
+	} else if config.EnableCluster {
+		log.Info("--> [REDIS] Creating cluster client")
+		client = redis.NewClusterClient(opts.cluster())
+	} else {
+		log.Info("--> [REDIS] Creating single-node client")
+		client = redis.NewClient(opts.simple())
+	}
 
-	return &thisInstance
+	redisClusterSingleton = client
+
+	return client
+}
+
+func getRedisAddrs(config RedisStorageConfig) (addrs []string) {
+	if len(config.Addrs) != 0 {
+		addrs = config.Addrs
+	} else {
+		for h, p := range config.Hosts {
+			addr := h + ":" + p
+			addrs = append(addrs, addr)
+		}
+	}
+
+	if len(addrs) == 0 && config.Port != 0 {
+		addr := config.Host + ":" + strconv.Itoa(config.Port)
+		addrs = append(addrs, addr)
+	}
+
+	return addrs
+}
+
+// RedisOpts is the overriden type of redis.UniversalOptions. simple() and cluster() functions are not public
+// in redis library. Therefore, they are redefined in here to use in creation of new redis cluster logic.
+// We don't want to use redis.NewUniversalClient() logic.
+type RedisOpts redis.UniversalOptions
+
+func (o *RedisOpts) cluster() *redis.ClusterOptions {
+	if len(o.Addrs) == 0 {
+		o.Addrs = []string{"127.0.0.1:6379"}
+	}
+
+	return &redis.ClusterOptions{
+		Addrs:     o.Addrs,
+		OnConnect: o.OnConnect,
+
+		Password: o.Password,
+
+		MaxRedirects:   o.MaxRedirects,
+		ReadOnly:       o.ReadOnly,
+		RouteByLatency: o.RouteByLatency,
+		RouteRandomly:  o.RouteRandomly,
+
+		MaxRetries:      o.MaxRetries,
+		MinRetryBackoff: o.MinRetryBackoff,
+		MaxRetryBackoff: o.MaxRetryBackoff,
+
+		DialTimeout:        o.DialTimeout,
+		ReadTimeout:        o.ReadTimeout,
+		WriteTimeout:       o.WriteTimeout,
+		PoolSize:           o.PoolSize,
+		MinIdleConns:       o.MinIdleConns,
+		MaxConnAge:         o.MaxConnAge,
+		PoolTimeout:        o.PoolTimeout,
+		IdleTimeout:        o.IdleTimeout,
+		IdleCheckFrequency: o.IdleCheckFrequency,
+
+		TLSConfig: o.TLSConfig,
+	}
+}
+
+func (o *RedisOpts) simple() *redis.Options {
+	addr := "127.0.0.1:6379"
+	if len(o.Addrs) > 0 {
+		addr = o.Addrs[0]
+	}
+
+	return &redis.Options{
+		Addr:      addr,
+		OnConnect: o.OnConnect,
+
+		DB:       o.DB,
+		Password: o.Password,
+
+		MaxRetries:      o.MaxRetries,
+		MinRetryBackoff: o.MinRetryBackoff,
+		MaxRetryBackoff: o.MaxRetryBackoff,
+
+		DialTimeout:  o.DialTimeout,
+		ReadTimeout:  o.ReadTimeout,
+		WriteTimeout: o.WriteTimeout,
+
+		PoolSize:           o.PoolSize,
+		MinIdleConns:       o.MinIdleConns,
+		MaxConnAge:         o.MaxConnAge,
+		PoolTimeout:        o.PoolTimeout,
+		IdleTimeout:        o.IdleTimeout,
+		IdleCheckFrequency: o.IdleCheckFrequency,
+
+		TLSConfig: o.TLSConfig,
+	}
+}
+
+func (o *RedisOpts) failover() *redis.FailoverOptions {
+	if len(o.Addrs) == 0 {
+		o.Addrs = []string{"127.0.0.1:26379"}
+	}
+
+	return &redis.FailoverOptions{
+		SentinelAddrs: o.Addrs,
+		MasterName:    o.MasterName,
+		OnConnect:     o.OnConnect,
+
+		DB:       o.DB,
+		Password: o.Password,
+
+		MaxRetries:      o.MaxRetries,
+		MinRetryBackoff: o.MinRetryBackoff,
+		MaxRetryBackoff: o.MaxRetryBackoff,
+
+		DialTimeout:  o.DialTimeout,
+		ReadTimeout:  o.ReadTimeout,
+		WriteTimeout: o.WriteTimeout,
+
+		PoolSize:           o.PoolSize,
+		MinIdleConns:       o.MinIdleConns,
+		MaxConnAge:         o.MaxConnAge,
+		PoolTimeout:        o.PoolTimeout,
+		IdleTimeout:        o.IdleTimeout,
+		IdleCheckFrequency: o.IdleCheckFrequency,
+
+		TLSConfig: o.TLSConfig,
+	}
 }
 
 func (r *RedisClusterStorageManager) GetName() string {
@@ -171,9 +289,6 @@ func (r *RedisClusterStorageManager) Connect() bool {
 	log.WithFields(logrus.Fields{
 		"prefix": redisLogPrefix,
 	}).Debug("Storage Engine already initialized...")
-	log.WithFields(logrus.Fields{
-		"prefix": redisLogPrefix,
-	}).Debug("Redis handles: ", len(r.db.Handles))
 
 	// Reset it just in case
 	r.db = redisClusterSingleton
@@ -217,15 +332,14 @@ func (r *RedisClusterStorageManager) GetAndDeleteSet(keyName string) []interface
 		"prefix": redisLogPrefix,
 	}).Debug("Fixed keyname is: ", fixedKey)
 
-	lrange := rediscluster.ClusterTransaction{}
-	lrange.Cmd = "LRANGE"
-	lrange.Args = []interface{}{fixedKey, 0, -1}
+	var lrange *redis.StringSliceCmd
+	_, err := r.db.TxPipelined(func(pipe redis.Pipeliner) error {
+		lrange = pipe.LRange(fixedKey, 0, -1)
+		pipe.Del(fixedKey)
 
-	delCmd := rediscluster.ClusterTransaction{}
-	delCmd.Cmd = "DEL"
-	delCmd.Args = []interface{}{fixedKey}
+		return nil
+	})
 
-	redVal, err := redis.Values(r.db.DoTransaction([]rediscluster.ClusterTransaction{lrange, delCmd}))
 	if err != nil {
 		log.WithFields(logrus.Fields{
 			"prefix": redisLogPrefix,
@@ -233,20 +347,18 @@ func (r *RedisClusterStorageManager) GetAndDeleteSet(keyName string) []interface
 		r.Connect()
 	}
 
-	log.WithFields(logrus.Fields{
-		"prefix": redisLogPrefix,
-	}).Debug("Analytics returned: ", len(redVal))
-	if len(redVal) == 0 {
-		return []interface{}{}
+	vals := lrange.Val()
+
+	result := make([]interface{}, len(vals))
+	for i, v := range vals {
+		result[i] = v
 	}
 
-	vals := redVal[0].([]interface{})
-
 	log.WithFields(logrus.Fields{
 		"prefix": redisLogPrefix,
-	}).Debug("Unpacked vals: ", len(vals))
+	}).Debug("Unpacked vals: ", len(result))
 
-	return vals
+	return result
 }
 
 // SetKey will create (or update) a key value in the store
@@ -255,7 +367,7 @@ func (r *RedisClusterStorageManager) SetKey(keyName, session string, timeout int
 	log.Debug("[STORE] Setting key: ", r.fixKey(keyName))
 
 	r.ensureConnection()
-	_, err := r.db.Do("SET", r.fixKey(keyName), session)
+	err := r.db.Set(r.fixKey(keyName), session, 0).Err()
 	if timeout > 0 {
 		if err := r.SetExp(keyName, timeout); err != nil {
 			return err
@@ -269,7 +381,7 @@ func (r *RedisClusterStorageManager) SetKey(keyName, session string, timeout int
 }
 
 func (r *RedisClusterStorageManager) SetExp(keyName string, timeout int64) error {
-	_, err := r.db.Do("EXPIRE", r.fixKey(keyName), timeout)
+	err := r.db.Expire(r.fixKey(keyName), time.Duration(timeout)*time.Second).Err()
 	if err != nil {
 		log.Error("Could not EXPIRE key: ", err)
 	}

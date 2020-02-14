@@ -1,6 +1,7 @@
 package pumps
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -56,7 +57,7 @@ func TestSegmentPump(t *testing.T) {
 	s.segmentClient.Interval = 10 * time.Millisecond
 	s.segmentClient.Size = 1
 
-	go s.WriteData(tData)
+	go s.WriteData(context.TODO(), tData)
 
 	time.Sleep(time.Second)
 }

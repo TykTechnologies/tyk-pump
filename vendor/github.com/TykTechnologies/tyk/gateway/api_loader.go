@@ -39,7 +39,7 @@ func prepareStorage() generalStores {
 	gs.healthStore = &storage.RedisCluster{KeyPrefix: "apihealth."}
 	gs.rpcAuthStore = &RPCStorageHandler{KeyPrefix: "apikey-", HashKeys: config.Global().HashKeys}
 	gs.rpcOrgStore = &RPCStorageHandler{KeyPrefix: "orgkey."}
-	FallbackKeySesionManager.Init(gs.redisStore)
+	GlobalSessionManager.Init(gs.redisStore)
 	return gs
 }
 
@@ -55,6 +55,10 @@ func skipSpecBecauseInvalid(spec *APISpec, logger *logrus.Entry) bool {
 			logger.Error("Listen path contains spaces, is invalid")
 			return true
 		}
+	}
+
+	if val, err := kvStore(spec.Proxy.TargetURL); err == nil {
+		spec.Proxy.TargetURL = val
 	}
 
 	_, err := url.Parse(spec.Proxy.TargetURL)
@@ -136,6 +140,7 @@ func processSpec(spec *APISpec, apisByListen map[string]int,
 	pathModified := false
 	for {
 		hash := generateDomainPath(spec.Domain, spec.Proxy.ListenPath)
+
 		if apisByListen[hash] < 2 {
 			// not a duplicate
 			break
@@ -239,7 +244,7 @@ func processSpec(spec *APISpec, apisByListen map[string]int,
 
 	enableVersionOverrides := false
 	for _, versionData := range spec.VersionData.Versions {
-		if versionData.OverrideTarget != "" {
+		if versionData.OverrideTarget != "" && !spec.VersionData.NotVersioned {
 			enableVersionOverrides = true
 			break
 		}
@@ -251,9 +256,9 @@ func processSpec(spec *APISpec, apisByListen map[string]int,
 	var proxy ReturningHttpHandler
 	if enableVersionOverrides {
 		logger.Info("Multi target enabled")
-		proxy = NewMultiTargetProxy(spec)
+		proxy = NewMultiTargetProxy(spec, logger)
 	} else {
-		proxy = TykNewSingleHostReverseProxy(spec.target, spec)
+		proxy = TykNewSingleHostReverseProxy(spec.target, spec, logger)
 	}
 
 	// Create the response processors, pass all the loaded custom middleware response functions:
@@ -303,12 +308,12 @@ func processSpec(spec *APISpec, apisByListen map[string]int,
 		}
 	}
 
+	mwAppendEnabled(&chainArray, &VersionCheck{BaseMiddleware: baseMid})
 	mwAppendEnabled(&chainArray, &RateCheckMW{BaseMiddleware: baseMid})
 	mwAppendEnabled(&chainArray, &IPWhiteListMiddleware{BaseMiddleware: baseMid})
 	mwAppendEnabled(&chainArray, &IPBlackListMiddleware{BaseMiddleware: baseMid})
 	mwAppendEnabled(&chainArray, &CertificateCheckMW{BaseMiddleware: baseMid})
 	mwAppendEnabled(&chainArray, &OrganizationMonitor{BaseMiddleware: baseMid})
-	mwAppendEnabled(&chainArray, &VersionCheck{BaseMiddleware: baseMid})
 	mwAppendEnabled(&chainArray, &RequestSizeLimitMiddleware{baseMid})
 	mwAppendEnabled(&chainArray, &MiddlewareContextVars{BaseMiddleware: baseMid})
 	mwAppendEnabled(&chainArray, &TrackEndpointMiddleware{baseMid})
@@ -323,7 +328,7 @@ func processSpec(spec *APISpec, apisByListen map[string]int,
 			logger.Info("Checking security policy: Basic")
 		}
 
-		if mwAppendEnabled(&authArray, &HMACMiddleware{BaseMiddleware: baseMid}) {
+		if mwAppendEnabled(&authArray, &HTTPSignatureValidationMiddleware{BaseMiddleware: baseMid}) {
 			logger.Info("Checking security policy: HMAC")
 		}
 
@@ -401,7 +406,6 @@ func processSpec(spec *APISpec, apisByListen map[string]int,
 	mwAppendEnabled(&chainArray, &TransformHeaders{BaseMiddleware: baseMid})
 	mwAppendEnabled(&chainArray, &URLRewriteMiddleware{BaseMiddleware: baseMid})
 	mwAppendEnabled(&chainArray, &TransformMethod{BaseMiddleware: baseMid})
-	mwAppendEnabled(&chainArray, &RedisCacheMiddleware{BaseMiddleware: baseMid, CacheStore: &cacheStore})
 	mwAppendEnabled(&chainArray, &VirtualEndpoint{BaseMiddleware: baseMid})
 	mwAppendEnabled(&chainArray, &RequestSigning{BaseMiddleware: baseMid})
 
@@ -422,7 +426,9 @@ func processSpec(spec *APISpec, apisByListen map[string]int,
 			chainArray = append(chainArray, createDynamicMiddleware(obj.Name, false, obj.RequireSession, baseMid))
 		}
 	}
-
+	//Do not add middlewares after cache middleware.
+	//It will not get executed
+	mwAppendEnabled(&chainArray, &RedisCacheMiddleware{BaseMiddleware: baseMid, CacheStore: &cacheStore})
 	chain = alice.New(chainArray...).Then(&DummyProxyHandler{SH: SuccessHandler{baseMid}})
 
 	if !spec.UseKeylessAccess {
@@ -489,6 +495,14 @@ type DummyProxyHandler struct {
 }
 
 func (d *DummyProxyHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if newURL := ctxGetURLRewriteTarget(r); newURL != nil {
+		r.URL = newURL
+		ctxSetURLRewriteTarget(r, nil)
+	}
+	if newMethod := ctxGetTransformRequestMethod(r); newMethod != "" {
+		r.Method = newMethod
+		ctxSetTransformRequestMethod(r, "")
+	}
 	if found, err := isLoop(r); found {
 		if err != nil {
 			handler := ErrorHandler{*d.SH.Base()}
@@ -660,28 +674,43 @@ func loadApps(specs []*APISpec) {
 	// Create a new handler for each API spec
 	apisByListen := countApisByListenHash(specs)
 
-	muxer := &proxyMux{}
-
 	globalConf := config.Global()
-	r := mux.NewRouter()
-	muxer.setRouter(globalConf.ListenPort, "", r)
-	if globalConf.ControlAPIPort == 0 {
-		loadAPIEndpoints(r)
-	} else {
-		router := mux.NewRouter()
-		loadAPIEndpoints(router)
-		muxer.setRouter(globalConf.ControlAPIPort, "", router)
+	port := globalConf.ListenPort
+
+	if globalConf.ControlAPIPort != 0 {
+		port = globalConf.ControlAPIPort
 	}
+
+	muxer := &proxyMux{}
+	router := mux.NewRouter()
+	router.NotFoundHandler = http.HandlerFunc(muxer.handle404)
+	loadControlAPIEndpoints(router)
+	muxer.setRouter(port, "", router)
+
 	gs := prepareStorage()
+	shouldTrace := trace.IsEnabled()
 	for _, spec := range specs {
 		if spec.ListenPort != spec.GlobalConfig.ListenPort {
 			mainLog.Info("API bind on custom port:", spec.ListenPort)
+		}
+
+		if converted, err := kvStore(spec.Proxy.ListenPath); err == nil {
+			spec.Proxy.ListenPath = converted
 		}
 
 		tmpSpecRegister[spec.APIID] = spec
 
 		switch spec.Protocol {
 		case "", "http", "https":
+			if shouldTrace {
+				// opentracing works only with http services.
+				err := trace.AddTracer("", spec.Name)
+				if err != nil {
+					mainLog.Errorf("Failed to initialize tracer for %q error:%v", spec.Name, err)
+				} else {
+					mainLog.Infof("Intialized tracer  api_name=%q", spec.Name)
+				}
+			}
 			loadHTTPService(spec, apisByListen, &gs, muxer)
 		case "tcp", "tls":
 			loadTCPService(spec, &gs, muxer)

@@ -7,12 +7,16 @@ import (
 	"io/ioutil"
 	"net"
 	"net/http"
+	"strconv"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/TykTechnologies/tyk/certs"
 	"github.com/TykTechnologies/tyk/config"
 
 	"github.com/gorilla/mux"
+	cache "github.com/pmylund/go-cache"
 )
 
 type APICertificateStatusMessage struct {
@@ -132,8 +136,57 @@ func verifyPeerCertificatePinnedCheck(spec *APISpec, tlsConfig *tls.Config) func
 	}
 }
 
-func dialTLSPinnedCheck(spec *APISpec, tc *tls.Config) func(network, addr string) (net.Conn, error) {
-	if (spec == nil || len(spec.PinnedPublicKeys) == 0) && len(config.Global().Security.PinnedPublicKeys) == 0 {
+func validatePublicKeys(host string, conn *tls.Conn, spec *APISpec) bool {
+	certLog.Debug("Checking certificate public key for host:", host)
+
+	whitelist := getPinnedPublicKeys(host, spec)
+	if len(whitelist) == 0 {
+		return true
+	}
+
+	isValid := false
+
+	state := conn.ConnectionState()
+	for _, peercert := range state.PeerCertificates {
+		der, err := x509.MarshalPKIXPublicKey(peercert.PublicKey)
+		if err != nil {
+			continue
+		}
+		fingerprint := certs.HexSHA256(der)
+
+		for _, w := range whitelist {
+			if w == fingerprint {
+				isValid = true
+				break
+			}
+		}
+	}
+
+	return isValid
+}
+
+func validateCommonName(host string, cert *x509.Certificate) error {
+	certLog.Debug("Checking certificate CommonName for host :", host)
+
+	if cert.Subject.CommonName != host {
+		return errors.New("certificate had CN " + cert.Subject.CommonName + "expected " + host)
+	}
+
+	return nil
+}
+
+func customDialTLSCheck(spec *APISpec, tc *tls.Config) func(network, addr string) (net.Conn, error) {
+	var checkPinnedKeys, checkCommonName bool
+
+	if (spec != nil && len(spec.PinnedPublicKeys) != 0) || len(config.Global().Security.PinnedPublicKeys) != 0 {
+		checkPinnedKeys = true
+	}
+
+	if (spec != nil && spec.Proxy.Transport.SSLForceCommonNameCheck) || config.Global().SSLForceCommonNameCheck {
+		checkCommonName = true
+	}
+
+	if !checkCommonName && !checkPinnedKeys {
 		return nil
 	}
 
@@ -147,29 +200,24 @@ func dialTLSPinnedCheck(spec *APISpec, tc *tls.Config) func(network, addr string
 		}
 
 		host, _, _ := net.SplitHostPort(addr)
-		whitelist := getPinnedPublicKeys(host, spec)
-		if len(whitelist) == 0 {
-			return c, nil
+
+		if checkPinnedKeys {
+			isValid := validatePublicKeys(host, c, spec)
+			if !isValid {
+				return nil, errors.New("https://" + host + " certificate public key pinning error. Public keys do not match.")
+			}
 		}
 
-		certLog.Debug("Checking certificate public key for host:", host)
-
-		state := c.ConnectionState()
-		for _, peercert := range state.PeerCertificates {
-			der, err := x509.MarshalPKIXPublicKey(peercert.PublicKey)
+		if checkCommonName {
+			state := c.ConnectionState()
+			leafCert := state.PeerCertificates[0]
+			err := validateCommonName(host, leafCert)
 			if err != nil {
-				continue
-			}
-			fingerprint := certs.HexSHA256(der)
-
-			for _, w := range whitelist {
-				if w == fingerprint {
-					return c, nil
-				}
+				return nil, err
 			}
 		}
 
-		return nil, errors.New("https://" + host + " certificate public key pinning error. Public keys do not match.")
+		return c, nil
 	}
 }
 
@@ -217,8 +265,11 @@ func dummyGetCertificate(*tls.ClientHelloInfo) (*tls.Certificate, error) {
 	return nil, nil
 }
 
-func getTLSConfigForClient(baseConfig *tls.Config, listenPort int) func(hello *tls.ClientHelloInfo) (*tls.Config, error) {
+var tlsConfigCache = cache.New(60*time.Second, 60*time.Minute)
 
+var tlsConfigMu sync.Mutex
+
+func getTLSConfigForClient(baseConfig *tls.Config, listenPort int) func(hello *tls.ClientHelloInfo) (*tls.Config, error) {
 	// Supporting legacy certificate configuration
 	serverCerts := []tls.Certificate{}
 	certNameMap := map[string]*tls.Certificate{}
@@ -240,14 +291,30 @@ func getTLSConfigForClient(baseConfig *tls.Config, listenPort int) func(hello *t
 	}
 
 	baseConfig.Certificates = serverCerts
-
 	baseConfig.BuildNameToCertificate()
+
 	for name, cert := range certNameMap {
 		baseConfig.NameToCertificate[name] = cert
 	}
 
+	listenPortStr := strconv.Itoa(listenPort)
+
 	return func(hello *tls.ClientHelloInfo) (*tls.Config, error) {
+		if config, found := tlsConfigCache.Get(hello.ServerName + listenPortStr); found {
+			return config.(*tls.Config).Clone(), nil
+		}
+
 		newConfig := baseConfig.Clone()
+
+		// Avoiding Race
+		newConfig.Certificates = []tls.Certificate{}
+		for _, cert := range baseConfig.Certificates {
+			newConfig.Certificates = append(newConfig.Certificates, cert)
+		}
+		newConfig.BuildNameToCertificate()
+		for name, cert := range certNameMap {
+			newConfig.NameToCertificate[name] = cert
+		}
 
 		isControlAPI := (listenPort != 0 && config.Global().ControlAPIPort == listenPort) || (config.Global().ControlAPIHostname == hello.ServerName)
 
@@ -255,14 +322,53 @@ func getTLSConfigForClient(baseConfig *tls.Config, listenPort int) func(hello *t
 			newConfig.ClientAuth = tls.RequireAndVerifyClientCert
 			newConfig.ClientCAs = CertificateManager.CertPool(config.Global().Security.Certificates.ControlAPI)
 
+			tlsConfigCache.Set(hello.ServerName, newConfig, cache.DefaultExpiration)
 			return newConfig, nil
 		}
 
 		apisMu.RLock()
 		defer apisMu.RUnlock()
 
-		// Dynamically add API specific certificates
+		newConfig.ClientCAs = x509.NewCertPool()
+
+		domainRequireCert := map[string]tls.ClientAuthType{}
 		for _, spec := range apiSpecs {
+			switch {
+			case spec.UseMutualTLSAuth:
+				if domainRequireCert[spec.Domain] == 0 {
+					// Require verification only if there is a single known domain for TLS auth, otherwise use previous value
+					domainRequireCert[spec.Domain] = tls.RequireAndVerifyClientCert
+				} else if domainRequireCert[spec.Domain] != tls.RequireAndVerifyClientCert {
+					// If we have another API on this domain, which is not mutual tls enabled, just ask for cert
+					domainRequireCert[spec.Domain] = tls.RequestClientCert
+				}
+
+				// If current domain match or empty, whitelist client certificates
+				if spec.Domain == "" || spec.Domain == hello.ServerName {
+					certIDs := append(spec.ClientCertificates, config.Global().Security.Certificates.API...)
+
+					for _, cert := range CertificateManager.List(certIDs, certs.CertificatePublic) {
+						if cert != nil {
+							newConfig.ClientCAs.AddCert(cert.Leaf)
+						}
+					}
+				}
+			case spec.Auth.UseCertificate:
+				// Dynamic certificate check required, falling back to HTTP level check
+				// TODO: Change to VerifyPeerCertificate hook instead, when possible
+				if domainRequireCert[spec.Domain] < tls.RequestClientCert {
+					domainRequireCert[spec.Domain] = tls.RequestClientCert
+				}
+			default:
+				// For APIs which do not use certificates, indicate that there is API for such domain already
+				if domainRequireCert[spec.Domain] == 0 {
+					domainRequireCert[spec.Domain] = -1
+				} else {
+					domainRequireCert[spec.Domain] = tls.RequestClientCert
+				}
+			}
+
+			// Dynamically add API specific certificates
 			if len(spec.Certificates) != 0 {
 				for _, cert := range CertificateManager.List(spec.Certificates, certs.CertificatePrivate) {
 					if cert == nil {
@@ -282,26 +388,13 @@ func getTLSConfigForClient(baseConfig *tls.Config, listenPort int) func(hello *t
 			}
 		}
 
-		for _, spec := range apiSpecs {
-			if spec.UseMutualTLSAuth && spec.Domain != "" && spec.Domain == hello.ServerName {
-				newConfig.ClientAuth = tls.RequireAndVerifyClientCert
-				certIDs := append(spec.ClientCertificates, config.Global().Security.Certificates.API...)
-				newConfig.ClientCAs = CertificateManager.CertPool(certIDs)
-				break
-			}
+		newConfig.ClientAuth = domainRequireCert[hello.ServerName]
+		if newConfig.ClientAuth == 0 {
+			newConfig.ClientAuth = domainRequireCert[""]
 		}
 
-		// No mutual tls APIs with matched domain found
-		// Check if one of APIs without domain, require asking client cert
-		if newConfig.ClientAuth == tls.NoClientCert {
-			for _, spec := range apiSpecs {
-				if spec.Auth.UseCertificate || (spec.Domain == "" && spec.UseMutualTLSAuth) {
-					newConfig.ClientAuth = tls.RequestClientCert
-					break
-				}
-			}
-		}
-
+		// Cache the config
+		tlsConfigCache.Set(hello.ServerName+listenPortStr, newConfig, cache.DefaultExpiration)
 		return newConfig, nil
 	}
 }

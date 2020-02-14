@@ -4,12 +4,16 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/TykTechnologies/tyk/apidef"
+
 	"github.com/TykTechnologies/tyk/storage"
 	"github.com/TykTechnologies/tyk/user"
 )
 
+type Key uint
+
 const (
-	SessionData = iota
+	SessionData Key = iota
 	UpdateSession
 	AuthToken
 	HashedAuthToken
@@ -29,6 +33,10 @@ const (
 	ThrottleLevelLimit
 	Trace
 	CheckLoopLimits
+	UrlRewriteTarget
+	TransformedRequestMethod
+	Definition
+	RequestStatus
 )
 
 func setContext(r *http.Request, ctx context.Context) {
@@ -76,4 +84,17 @@ func GetSession(r *http.Request) *user.SessionState {
 
 func SetSession(r *http.Request, s *user.SessionState, token string, scheduleUpdate bool) {
 	ctxSetSession(r, s, token, scheduleUpdate)
+}
+
+func SetDefinition(r *http.Request, s *apidef.APIDefinition) {
+	ctx := r.Context()
+	ctx = context.WithValue(ctx, Definition, s)
+	setContext(r, ctx)
+}
+
+func GetDefinition(r *http.Request) *apidef.APIDefinition {
+	if v := r.Context().Value(Definition); v != nil {
+		return v.(*apidef.APIDefinition)
+	}
+	return nil
 }

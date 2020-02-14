@@ -25,7 +25,7 @@ import (
 	"time"
 
 	jwt "github.com/dgrijalva/jwt-go"
-	"github.com/garyburd/redigo/redis"
+	"github.com/go-redis/redis"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 	uuid "github.com/satori/go.uuid"
@@ -129,11 +129,11 @@ func InitTestMain(ctx context.Context, m *testing.M, genConf ...func(globalConf 
 	cli.Init(VERSION, confPaths)
 	initialiseSystem(ctx)
 	// Small part of start()
-	loadAPIEndpoints(mainRouter())
+	loadControlAPIEndpoints(mainRouter())
 	if analytics.GeoIPDB == nil {
 		panic("GeoIPDB was not initialized")
 	}
-
+	go storage.ConnectToRedis(ctx)
 	go startPubSubLoop()
 	go reloadLoop(ReloadTick)
 	go reloadQueueLoop()
@@ -149,16 +149,13 @@ func ResetTestConfig() {
 
 func emptyRedis() error {
 	addr := config.Global().Storage.Host + ":" + strconv.Itoa(config.Global().Storage.Port)
-	c, err := redis.Dial("tcp", addr)
-	if err != nil {
-		return fmt.Errorf("could not connect to redis: %v", err)
-	}
+	c := redis.NewClient(&redis.Options{Addr: addr})
 	defer c.Close()
 	dbName := strconv.Itoa(config.Global().Storage.Database)
-	if _, err := c.Do("SELECT", dbName); err != nil {
+	if err := c.Do("SELECT", dbName).Err(); err != nil {
 		return err
 	}
-	_, err = c.Do("FLUSHDB")
+	err := c.FlushDB().Err()
 	return err
 }
 
@@ -194,6 +191,15 @@ func RegisterBundle(name string, files map[string]string) string {
 	testBundles[bundleID] = files
 
 	return bundleID
+}
+
+func RegisterJSFileMiddleware(apiid string, files map[string]string) {
+	os.MkdirAll(config.Global().MiddlewarePath+"/"+apiid+"/post", 0755)
+	os.MkdirAll(config.Global().MiddlewarePath+"/"+apiid+"/pre", 0755)
+
+	for file, content := range files {
+		ioutil.WriteFile(config.Global().MiddlewarePath+"/"+apiid+"/"+file, []byte(content), 0755)
+	}
 }
 
 func bundleHandleFunc(w http.ResponseWriter, r *http.Request) {
@@ -365,6 +371,7 @@ func testHttpHandler() *mux.Router {
 	// use gorilla's mux as it allows to cancel URI cleaning
 	// (it is not configurable in standard http mux)
 	r := mux.NewRouter()
+
 	r.HandleFunc("/get", handleMethod("GET"))
 	r.HandleFunc("/post", handleMethod("POST"))
 	r.HandleFunc("/ws", wsHandler)
@@ -379,6 +386,10 @@ func testHttpHandler() *mux.Router {
 		gz.Close()
 	})
 	r.HandleFunc("/bundles/{rest:.*}", bundleHandleFunc)
+	r.HandleFunc("/errors/{status}", func(w http.ResponseWriter, r *http.Request) {
+		statusCode, _ := strconv.Atoi(mux.Vars(r)["status"])
+		httpError(w, statusCode)
+	})
 	r.HandleFunc("/{rest:.*}", handleMethod(""))
 
 	return r
@@ -414,7 +425,7 @@ func CreateSession(sGen ...func(s *user.SessionState)) string {
 		key = generateToken("default", session.Certificate)
 	}
 
-	FallbackKeySesionManager.UpdateSession(storage.HashKey(key), session, 60, config.Global().HashKeys)
+	GlobalSessionManager.UpdateSession(storage.HashKey(key), session, 60, config.Global().HashKeys)
 	return key
 }
 
@@ -533,14 +544,10 @@ func CreateDefinitionFromString(defStr string) *APISpec {
 	return spec
 }
 
-func CreateSpecTest(t testing.TB, def string) *APISpec {
-	spec := CreateDefinitionFromString(def)
-	tname := t.Name()
-	redisStore := &storage.RedisCluster{KeyPrefix: tname + "-apikey."}
-	healthStore := &storage.RedisCluster{KeyPrefix: tname + "-apihealth."}
-	orgStore := &storage.RedisCluster{KeyPrefix: tname + "-orgKey."}
-	spec.Init(redisStore, redisStore, healthStore, orgStore)
-	return spec
+func LoadSampleAPI(def string) (spec *APISpec) {
+	spec = CreateDefinitionFromString(def)
+	loadApps([]*APISpec{spec})
+	return
 }
 
 func firstVals(vals map[string][]string) map[string]string {
@@ -756,6 +763,7 @@ const sampleAPI = `{
         "auth_header_name": "authorization"
 	},
     "version_data": {
+		"default_version": "Default",
         "not_versioned": true,
         "versions": {
             "v1": {
@@ -984,3 +992,14 @@ YGivtXBGXk1hlVYlje1RB+W6RQuDAegI5h8vl8pYJS9JQH0wjatsDaE=
 `
 
 const jwtSecret = "9879879878787878"
+const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+func randStringBytes(n int) string {
+	b := make([]byte, n)
+
+	for i := range b {
+		b[i] = letters[rand.Intn(len(letters))]
+	}
+
+	return string(b)
+}

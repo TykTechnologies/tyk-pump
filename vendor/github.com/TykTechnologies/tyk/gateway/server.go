@@ -2,6 +2,7 @@ package gateway
 
 import (
 	"context"
+	"fmt"
 	"html/template"
 	"io/ioutil"
 	stdlog "log"
@@ -18,20 +19,6 @@ import (
 	"sync"
 	"time"
 
-	logstashHook "github.com/bshuster-repo/logrus-logstash-hook"
-	"github.com/evalphobia/logrus_sentry"
-	"github.com/facebookgo/pidfile"
-	graylogHook "github.com/gemnasium/logrus-graylog-hook"
-	"github.com/gorilla/mux"
-	"github.com/justinas/alice"
-	"github.com/lonelycode/osin"
-	newrelic "github.com/newrelic/go-agent"
-	"github.com/rs/cors"
-	uuid "github.com/satori/go.uuid"
-	"github.com/sirupsen/logrus"
-	logrus_syslog "github.com/sirupsen/logrus/hooks/syslog"
-	"rsc.io/letsencrypt"
-
 	"github.com/TykTechnologies/again"
 	gas "github.com/TykTechnologies/goautosocket"
 	"github.com/TykTechnologies/gorpc"
@@ -46,28 +33,42 @@ import (
 	"github.com/TykTechnologies/tyk/regexp"
 	"github.com/TykTechnologies/tyk/rpc"
 	"github.com/TykTechnologies/tyk/storage"
+	"github.com/TykTechnologies/tyk/storage/kv"
 	"github.com/TykTechnologies/tyk/trace"
 	"github.com/TykTechnologies/tyk/user"
+	logstashHook "github.com/bshuster-repo/logrus-logstash-hook"
+	"github.com/evalphobia/logrus_sentry"
+	"github.com/facebookgo/pidfile"
+	graylogHook "github.com/gemnasium/logrus-graylog-hook"
+	"github.com/gorilla/mux"
+	"github.com/justinas/alice"
+	"github.com/lonelycode/osin"
+	newrelic "github.com/newrelic/go-agent"
+	"github.com/rs/cors"
+	uuid "github.com/satori/go.uuid"
+	"github.com/sirupsen/logrus"
+	logrus_syslog "github.com/sirupsen/logrus/hooks/syslog"
+	"rsc.io/letsencrypt"
 )
 
 var (
-	log                      = logger.Get()
-	mainLog                  = log.WithField("prefix", "main")
-	pubSubLog                = log.WithField("prefix", "pub-sub")
-	rawLog                   = logger.GetRaw()
-	templates                *template.Template
-	analytics                RedisAnalyticsHandler
-	GlobalEventsJSVM         JSVM
-	memProfFile              *os.File
-	MainNotifier             RedisNotifier
-	DefaultOrgStore          DefaultSessionManager
-	DefaultQuotaStore        DefaultSessionManager
-	FallbackKeySesionManager = SessionHandler(&DefaultSessionManager{})
-	MonitoringHandler        config.TykEventHandler
-	RPCListener              RPCStorageHandler
-	DashService              DashboardServiceSender
-	CertificateManager       *certs.CertificateManager
-	NewRelicApplication      newrelic.Application
+	log                  = logger.Get()
+	mainLog              = log.WithField("prefix", "main")
+	pubSubLog            = log.WithField("prefix", "pub-sub")
+	rawLog               = logger.GetRaw()
+	templates            *template.Template
+	analytics            RedisAnalyticsHandler
+	GlobalEventsJSVM     JSVM
+	memProfFile          *os.File
+	MainNotifier         RedisNotifier
+	DefaultOrgStore      DefaultSessionManager
+	DefaultQuotaStore    DefaultSessionManager
+	GlobalSessionManager = SessionHandler(&DefaultSessionManager{})
+	MonitoringHandler    config.TykEventHandler
+	RPCListener          RPCStorageHandler
+	DashService          DashboardServiceSender
+	CertificateManager   *certs.CertificateManager
+	NewRelicApplication  newrelic.Application
 
 	apisMu   sync.RWMutex
 	apiSpecs []*APISpec
@@ -99,6 +100,9 @@ var (
 	}
 
 	dnsCacheManager dnscache.IDnsCacheManager
+
+	consulKVStore kv.Store
+	vaultKVStore  kv.Store
 )
 
 const (
@@ -152,9 +156,10 @@ var rpcPurgeOnce sync.Once
 
 // Create all globals and init connection handlers
 func setupGlobals(ctx context.Context) {
-
 	reloadMu.Lock()
 	defer reloadMu.Unlock()
+
+	checkup.Run(config.Global())
 
 	dnsCacheManager = dnscache.NewDnsCacheManager(config.Global().DnsCache.MultipleIPsHandleStrategy)
 	if config.Global().DnsCache.Enabled {
@@ -172,7 +177,7 @@ func setupGlobals(ctx context.Context) {
 	InitHostCheckManager(ctx, &healthCheckStore)
 
 	redisStore := storage.RedisCluster{KeyPrefix: "apikey-", HashKeys: config.Global().HashKeys}
-	FallbackKeySesionManager.Init(&redisStore)
+	GlobalSessionManager.Init(&redisStore)
 
 	versionStore := storage.RedisCluster{KeyPrefix: "version-check-"}
 	versionStore.Connect()
@@ -314,6 +319,9 @@ func syncAPISpecs() (int, error) {
 		filter = append(filter, v)
 	}
 	apiSpecs = filter
+
+	tlsConfigCache.Flush()
+
 	return len(apiSpecs), nil
 }
 
@@ -386,7 +394,8 @@ func controlAPICheckClientCertificate(certLevel string, next http.Handler) http.
 	})
 }
 
-func loadAPIEndpoints(muxer *mux.Router) {
+// loadControlAPIEndpoints loads the endpoints used for controlling the Gateway.
+func loadControlAPIEndpoints(muxer *mux.Router) {
 	hostname := config.Global().HostName
 	if config.Global().ControlAPIHostname != "" {
 		hostname = config.Global().ControlAPIHostname
@@ -436,6 +445,7 @@ func loadAPIEndpoints(muxer *mux.Router) {
 		r.HandleFunc("/health", healthCheckhandler).Methods("GET")
 		r.HandleFunc("/oauth/clients/create", createOauthClient).Methods("POST")
 		r.HandleFunc("/oauth/clients/{apiID}/{keyName:[^/]*}", oAuthClientHandler).Methods("PUT")
+		r.HandleFunc("/oauth/clients/{apiID}/{keyName:[^/]*}/rotate", rotateOauthClientHandler).Methods("PUT")
 		r.HandleFunc("/oauth/refresh/{keyName}", invalidateOauthRefresh).Methods("DELETE")
 		r.HandleFunc("/cache/{apiID}", invalidateCacheHandler).Methods("DELETE")
 	} else {
@@ -445,6 +455,7 @@ func loadAPIEndpoints(muxer *mux.Router) {
 	r.HandleFunc("/debug", traceHandler).Methods("POST")
 
 	r.HandleFunc("/keys", keyHandler).Methods("POST", "PUT", "GET", "DELETE")
+	r.HandleFunc("/keys/preview", previewKeyHandler).Methods("POST")
 	r.HandleFunc("/keys/{keyName:[^/]*}", keyHandler).Methods("POST", "PUT", "GET", "DELETE")
 	r.HandleFunc("/certs", certHandler).Methods("POST", "GET")
 	r.HandleFunc("/certs/{certID:[^/]*}", certHandler).Methods("POST", "GET", "DELETE")
@@ -485,7 +496,13 @@ func addOAuthHandlers(spec *APISpec, muxer *mux.Router) *OAuthManager {
 	clientAccessPath := spec.Proxy.ListenPath + "oauth/token{_:/?}"
 
 	serverConfig := osin.NewServerConfig()
-	serverConfig.ErrorStatusCode = http.StatusForbidden
+
+	if config.Global().OauthErrorStatusCode != 0 {
+		serverConfig.ErrorStatusCode = config.Global().OauthErrorStatusCode
+	} else {
+		serverConfig.ErrorStatusCode = http.StatusForbidden
+	}
+
 	serverConfig.AllowedAccessTypes = spec.Oauth2Meta.AllowedAccessTypes
 	serverConfig.AllowedAuthorizeTypes = spec.Oauth2Meta.AllowedAuthorizeTypes
 	serverConfig.RedirectUriSeparator = config.Global().OauthRedirectUriSeparator
@@ -493,7 +510,7 @@ func addOAuthHandlers(spec *APISpec, muxer *mux.Router) *OAuthManager {
 	prefix := generateOAuthPrefix(spec.APIID)
 	storageManager := getGlobalStorageHandler(prefix, false)
 	storageManager.Connect()
-	osinStorage := &RedisOsinStorageInterface{storageManager, spec.SessionManager} //TODO: Needs storage manager from APISpec
+	osinStorage := &RedisOsinStorageInterface{storageManager, GlobalSessionManager, spec.OrgID}
 
 	osinServer := TykOsinNewServer(serverConfig, osinStorage)
 
@@ -970,6 +987,109 @@ func afterConfSetup(conf *config.Config) {
 	if conf.HealthCheckEndpointName == "" {
 		conf.HealthCheckEndpointName = "hello"
 	}
+
+	var err error
+
+	conf.Secret, err = kvStore(conf.Secret)
+	if err != nil {
+		log.Fatalf("could not retrieve the secret key.. %v", err)
+	}
+
+	conf.NodeSecret, err = kvStore(conf.NodeSecret)
+	if err != nil {
+		log.Fatalf("could not retrieve the NodeSecret key.. %v", err)
+	}
+
+	conf.Storage.Password, err = kvStore(conf.Storage.Password)
+	if err != nil {
+		log.Fatalf("Could not retrieve redis password... %v", err)
+	}
+
+	conf.CacheStorage.Password, err = kvStore(conf.CacheStorage.Password)
+	if err != nil {
+		log.Fatalf("Could not retrieve cache storage password... %v", err)
+	}
+
+	conf.Security.PrivateCertificateEncodingSecret, err = kvStore(conf.Security.PrivateCertificateEncodingSecret)
+	if err != nil {
+		log.Fatalf("Could not retrieve the private certificate encoding secret... %v", err)
+	}
+
+	if conf.UseDBAppConfigs {
+		conf.DBAppConfOptions.ConnectionString, err = kvStore(conf.DBAppConfOptions.ConnectionString)
+		if err != nil {
+			log.Fatalf("Could not fetch dashboard connection string.. %v", err)
+		}
+	}
+
+	if conf.Policies.PolicySource == "service" {
+		conf.Policies.PolicyConnectionString, err = kvStore(conf.Policies.PolicyConnectionString)
+		if err != nil {
+			log.Fatalf("Could not fetch policy connection string... %v", err)
+		}
+	}
+}
+
+func kvStore(value string) (string, error) {
+
+	if strings.HasPrefix(value, "secrets://") {
+		key := strings.TrimPrefix(value, "secrets://")
+		log.Debugf("Retrieving %s from secret store in config", key)
+		val, ok := config.Global().Secrets[key]
+		if !ok {
+			return "", fmt.Errorf("secrets does not exist in config.. %s not found", key)
+		}
+
+		return val, nil
+	}
+
+	if strings.HasPrefix(value, "env://") {
+		key := strings.TrimPrefix(value, "env://")
+		log.Debugf("Retrieving %s from environment", key)
+		return os.Getenv(fmt.Sprintf("TYK_SECRET_%s", strings.ToUpper(key))), nil
+	}
+
+	if strings.HasPrefix(value, "consul://") {
+		key := strings.TrimPrefix(value, "consul://")
+		log.Debugf("Retrieving %s from consul", key)
+		setUpConsul()
+		return consulKVStore.Get(key)
+	}
+
+	if strings.HasPrefix(value, "vault://") {
+		key := strings.TrimPrefix(value, "vault://")
+		log.Debugf("Retrieving %s from vault", key)
+		setUpVault()
+		return vaultKVStore.Get(key)
+	}
+
+	return value, nil
+}
+
+func setUpVault() {
+	if vaultKVStore != nil {
+		return
+	}
+
+	var err error
+
+	vaultKVStore, err = kv.NewVault(config.Global().KV.Vault)
+	if err != nil {
+		log.Fatalf("an error occurred while setting up vault... %v", err)
+	}
+}
+
+func setUpConsul() {
+	if consulKVStore != nil {
+		return
+	}
+
+	var err error
+
+	consulKVStore, err = kv.NewConsul(config.Global().KV.Consul)
+	if err != nil {
+		log.Fatalf("an error occurred while setting up consul... %v", err)
+	}
 }
 
 var hostDetails struct {
@@ -1042,19 +1162,13 @@ func Start() {
 	if err != nil {
 		mainLog.Errorf("Initializing again %s", err)
 	}
-	checkup.Run(config.Global())
 	if tr := config.Global().Tracer; tr.Enabled {
 		trace.SetupTracing(tr.Name, tr.Options)
 		trace.SetLogger(mainLog)
 		defer trace.Close()
 	}
 	start()
-
-	// Wait while Redis connection pools are ready before start serving traffic
-	if !storage.IsConnected() {
-		mainLog.Fatal("Redis connection pools are not ready. Exiting...")
-	}
-	mainLog.Info("Redis connection pools are ready")
+	go storage.ConnectToRedis(ctx)
 
 	if *cli.MemProfile {
 		mainLog.Debug("Memory profiling active")
@@ -1247,7 +1361,7 @@ func startServer() {
 	muxer := &proxyMux{}
 
 	router := mux.NewRouter()
-	loadAPIEndpoints(router)
+	loadControlAPIEndpoints(router)
 	muxer.setRouter(config.Global().ControlAPIPort, "", router)
 
 	if muxer.router(config.Global().ListenPort, "") == nil {

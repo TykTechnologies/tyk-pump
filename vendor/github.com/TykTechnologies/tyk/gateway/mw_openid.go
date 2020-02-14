@@ -91,7 +91,20 @@ func (k *OpenIDMW) dummyErrorHandler(e error, w http.ResponseWriter, r *http.Req
 	return true
 }
 
+func (k *OpenIDMW) getAuthType() string {
+	return oidcType
+}
+
 func (k *OpenIDMW) ProcessRequest(w http.ResponseWriter, r *http.Request, _ interface{}) (error, int) {
+	if ctxGetRequestStatus(r) == StatusOkAndIgnore {
+		return nil, http.StatusOK
+	}
+
+	k.providerConfiguration.IDTokenGetter = func(r *http.Request) (token string, err error) {
+		token, _ = k.getAuthToken(k.getAuthType(), r)
+		return openid.CheckAndSplitHeader(token)
+	}
+
 	logger := k.Logger()
 	// 1. Validate the JWT
 	ouser, token, halt := openid.AuthenticateOIDWithUser(k.providerConfiguration, w, r)

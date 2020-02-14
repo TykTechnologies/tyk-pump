@@ -475,12 +475,12 @@ func (k *JWTMiddleware) processCentralisedJWT(r *http.Request, token *jwt.Token)
 	switch k.Spec.BaseIdentityProvidedBy {
 	case apidef.JWTClaim, apidef.UnsetAuth:
 		ctxSetSession(r, &session, sessionID, updateSession)
+
+		if updateSession {
+			SessionCache.Set(session.KeyHash(), session, cache.DefaultExpiration)
+		}
 	}
 	ctxSetJWTContextVars(k.Spec, r, token)
-
-	if updateSession {
-		SessionCache.Set(session.KeyHash(), session, cache.DefaultExpiration)
-	}
 
 	return nil, http.StatusOK
 }
@@ -514,26 +514,20 @@ func (k *JWTMiddleware) processOneToOneTokenMap(r *http.Request, token *jwt.Toke
 	return nil, http.StatusOK
 }
 
+// getAuthType overrides BaseMiddleware.getAuthType.
+func (k *JWTMiddleware) getAuthType() string {
+	return jwtType
+}
+
 func (k *JWTMiddleware) ProcessRequest(w http.ResponseWriter, r *http.Request, _ interface{}) (error, int) {
+	if ctxGetRequestStatus(r) == StatusOkAndIgnore {
+		return nil, http.StatusOK
+	}
+
 	logger := k.Logger()
-	config := k.Spec.Auth
 	var tykId string
 
-	// Get the token
-	rawJWT := r.Header.Get(config.AuthHeaderName)
-	if config.UseParam {
-		// Set hte header name
-		rawJWT = r.URL.Query().Get(config.AuthHeaderName)
-	}
-
-	if config.UseCookie {
-		authCookie, err := r.Cookie(config.AuthHeaderName)
-		if err != nil {
-			rawJWT = ""
-		} else {
-			rawJWT = authCookie.Value
-		}
-	}
+	rawJWT, config := k.getAuthToken(k.getAuthType(), r)
 
 	if rawJWT == "" {
 		// No header value, fail
@@ -706,6 +700,7 @@ func generateSessionFromPolicy(policyID, orgID string, enforceOrg bool) (user.Se
 		session.AccessRights[apiID] = access
 	}
 	session.HMACEnabled = policy.HMACEnabled
+	session.EnableHTTPSignatureValidation = policy.EnableHTTPSignatureValidation
 	session.IsInactive = policy.IsInactive
 	session.Tags = policy.Tags
 

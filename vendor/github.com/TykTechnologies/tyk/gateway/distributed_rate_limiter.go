@@ -83,12 +83,13 @@ func onServerStatusReceivedHandler(payload string) {
 	serverData := drl.Server{}
 	if err := json.Unmarshal([]byte(payload), &serverData); err != nil {
 		log.WithFields(logrus.Fields{
-			"prefix": "pub-sub",
+			"prefix":  "pub-sub",
+			"payload": string(payload),
 		}).Error("Failed unmarshal server data: ", err)
 		return
 	}
 
-	log.Debug("Received DRL data: ", serverData)
+	// log.Debug("Received DRL data: ", serverData)
 
 	if DRLManager.Ready {
 		if err := DRLManager.AddOrUpdateServer(serverData); err != nil {
@@ -97,7 +98,7 @@ func onServerStatusReceivedHandler(payload string) {
 				Debug("AddOrUpdateServer error. Seems like you running multiple segmented Tyk groups in same Redis.")
 			return
 		}
-		log.Debug(DRLManager.Report())
+		// log.Debug(DRLManager.Report())
 	} else {
 		log.Warning("DRL not ready, skipping this notification")
 	}

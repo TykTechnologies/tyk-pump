@@ -1,18 +1,20 @@
 package pumps
 
 import (
+	"context"
 	"crypto/tls"
 	"encoding/base64"
+	"net"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/mitchellh/mapstructure"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/vmihailenco/msgpack.v2"
-	"net"
-	"strconv"
-	"strings"
-	"time"
 )
 
 const (
@@ -26,6 +28,7 @@ const (
 type MongoPump struct {
 	dbSession *mgo.Session
 	dbConf    *MongoConf
+	timeout   int
 }
 
 var mongoPrefix = "mongo-pump"
@@ -258,20 +261,19 @@ func (m *MongoPump) connect() {
 		}).Panic("Mongo URL is invalid: ", err)
 	}
 
+	dialInfo.Timeout = time.Second * 5
 	m.dbSession, err = mgo.DialWithInfo(dialInfo)
 
-	// TODO - Should this not bail after a while?
 	for err != nil {
 		log.WithFields(logrus.Fields{
 			"prefix": mongoPrefix,
-		}).Error("Mongo connection failed:", err)
-
+		}).Error("Mongo connection failed. Retrying. Err::", err)
 		time.Sleep(5 * time.Second)
 		m.dbSession, err = mgo.DialWithInfo(dialInfo)
 	}
 }
 
-func (m *MongoPump) WriteData(data []interface{}) error {
+func (m *MongoPump) WriteData(ctx context.Context, data []interface{}) error {
 
 	collectionName := m.dbConf.CollectionName
 	if collectionName == "" {
@@ -341,7 +343,7 @@ func (m *MongoPump) AccumulateSet(data []interface{}) [][]interface{} {
 			thisItem.RawResponse = base64.StdEncoding.EncodeToString([]byte("Document too large, not writing raw request and raw response!"))
 		}
 
-		if (accumulatorTotal + sizeBytes) < m.dbConf.MaxInsertBatchSizeBytes {
+		if (accumulatorTotal + sizeBytes) <= m.dbConf.MaxInsertBatchSizeBytes {
 			accumulatorTotal += sizeBytes
 		} else {
 			log.Debug("Created new chunk entry")
@@ -427,4 +429,12 @@ func (m *MongoPump) WriteUptimeData(data []interface{}) {
 			m.connect()
 		}
 	}
+}
+
+func (m *MongoPump) SetTimeout(timeout int) {
+	m.timeout = timeout
+}
+
+func (m *MongoPump) GetTimeout() int {
+	return m.timeout
 }

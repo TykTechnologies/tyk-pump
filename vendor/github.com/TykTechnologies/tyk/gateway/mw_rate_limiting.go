@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/TykTechnologies/tyk/request"
 )
 
@@ -61,6 +63,10 @@ func (k *RateLimitAndQuotaCheck) handleQuotaFailure(r *http.Request, token strin
 
 // ProcessRequest will run any checks on the request on the way through the system, return an error to have the chain fail
 func (k *RateLimitAndQuotaCheck) ProcessRequest(w http.ResponseWriter, r *http.Request, _ interface{}) (error, int) {
+	if ctxGetRequestStatus(r) == StatusOkAndIgnore {
+		return nil, http.StatusOK
+	}
+
 	// Skip rate limiting and quotas for looping
 	if !ctxCheckLimits(r) {
 		return nil, http.StatusOK
@@ -69,7 +75,7 @@ func (k *RateLimitAndQuotaCheck) ProcessRequest(w http.ResponseWriter, r *http.R
 	session := ctxGetSession(r)
 	token := ctxGetAuthToken(r)
 
-	storeRef := k.Spec.SessionManager.Store()
+	storeRef := GlobalSessionManager.Store()
 	reason := sessionLimiter.ForwardMessage(
 		r,
 		session,
@@ -99,7 +105,7 @@ func (k *RateLimitAndQuotaCheck) ProcessRequest(w http.ResponseWriter, r *http.R
 	case sessionFailRateLimit:
 		err, errCode := k.handleRateLimitFailure(r, token)
 		if throttleRetryLimit > 0 {
-			for true {
+			for {
 				ctxIncThrottleLevel(r, throttleRetryLimit)
 				time.Sleep(time.Duration(throttleInterval * float64(time.Second)))
 
@@ -114,14 +120,19 @@ func (k *RateLimitAndQuotaCheck) ProcessRequest(w http.ResponseWriter, r *http.R
 					k.Spec.APIID,
 					true,
 				)
-				if reason == sessionFailNone {
-					return k.ProcessRequest(w, r, nil)
-				}
+
+				log.WithFields(logrus.Fields{
+					"middleware": "RateLimitAndQuotaCheck",
+					"func":       "ProcessRequest",
+				}).Debugf("after dry-run (reason: '%s')", reason)
 
 				if ctxThrottleLevel(r) > throttleRetryLimit {
 					break
 				}
 
+				if reason == sessionFailNone {
+					return k.ProcessRequest(w, r, nil)
+				}
 			}
 		}
 		return err, errCode

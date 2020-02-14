@@ -5,9 +5,11 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"math"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/lonelycode/osin"
@@ -114,11 +116,14 @@ func (o *OAuthHandlers) generateOAuthOutputFromOsinResponse(osinResponse *osin.R
 		osinResponse.Output["redirect_to"] = redirect
 	}
 
-	respData, err := json.Marshal(&osinResponse.Output)
+	buffer := &bytes.Buffer{}
+	encoder := json.NewEncoder(buffer)
+	encoder.SetEscapeHTML(false)
+	err = encoder.Encode(&osinResponse.Output)
 	if err != nil {
 		return nil
 	}
-	return respData
+	return buffer.Bytes()
 }
 
 func (o *OAuthHandlers) notifyClientOfNewOauth(notification NewOAuthNotification) {
@@ -158,15 +163,8 @@ func (o *OAuthHandlers) HandleAuthorizePassthrough(w http.ResponseWriter, r *htt
 		return
 	}
 	if r.Method == "GET" {
-		var buffer bytes.Buffer
-		buffer.WriteString(o.Manager.API.Oauth2Meta.AuthorizeLoginRedirect)
-		buffer.WriteString("?client_id=")
-		buffer.WriteString(r.FormValue("client_id"))
-		buffer.WriteString("&redirect_uri=")
-		buffer.WriteString(r.FormValue("redirect_uri"))
-		buffer.WriteString("&response_type=")
-		buffer.WriteString(r.FormValue("response_type"))
-		w.Header().Add("Location", buffer.String())
+		loginURL := fmt.Sprintf("%s?%s", o.Manager.API.Oauth2Meta.AuthorizeLoginRedirect, r.URL.RawQuery)
+		w.Header().Add("Location", loginURL)
 	} else {
 		w.Header().Add("Location", o.Manager.API.Oauth2Meta.AuthorizeLoginRedirect)
 	}
@@ -342,7 +340,7 @@ func (o *OAuthManager) HandleAccess(r *http.Request) *osin.Response {
 			if foundKey {
 				log.Info("Found old token, revoking: ", oldToken)
 
-				o.API.SessionManager.RemoveSession(oldToken, false)
+				GlobalSessionManager.RemoveSession(o.API.OrgID, oldToken, false)
 			}
 		}
 
@@ -379,7 +377,7 @@ func (o *OAuthManager) HandleAccess(r *http.Request) *osin.Response {
 			keyName := generateToken(o.API.OrgID, username)
 
 			log.Debug("Updating user:", keyName)
-			err := o.API.SessionManager.UpdateSession(keyName, session, session.Lifetime(o.API.SessionLifetime), false)
+			err := GlobalSessionManager.UpdateSession(keyName, session, session.Lifetime(o.API.SessionLifetime), false)
 			if err != nil {
 				log.Error(err)
 			}
@@ -476,6 +474,7 @@ func TykOsinNewServer(config *osin.ServerConfig, storage ExtendedOsinStorageInte
 type RedisOsinStorageInterface struct {
 	store          storage.Handler
 	sessionManager SessionHandler
+	orgID          string
 }
 
 func (r *RedisOsinStorageInterface) Clone() osin.Storage {
@@ -692,6 +691,15 @@ func (r *RedisOsinStorageInterface) SetClient(id string, client osin.Client, ign
 	log.Debug("Storing copy in set")
 
 	keyForSet := prefixClientset + prefixClient // Org ID
+
+	// In set, there is no option for update so the existing client should be removed before adding new one.
+	set, _ := r.store.GetSet(keyForSet)
+	for _, v := range set {
+		if strings.Contains(v, client.GetId()) {
+			r.store.RemoveFromSet(keyForSet, v)
+		}
+	}
+
 	r.store.AddToSet(keyForSet, string(clientDataJSON))
 	return nil
 }
@@ -817,6 +825,11 @@ func (r *RedisOsinStorageInterface) SaveAccess(accessData *osin.AccessData) erro
 	// Override timeouts so that we can be in sync with Osin
 	newSession.Expires = time.Now().Unix() + int64(accessData.ExpiresIn)
 
+	c, ok := accessData.Client.(*OAuthClient)
+	if ok && c.MetaData != nil {
+		newSession.MetaData = c.MetaData.(map[string]interface{})
+	}
+
 	// Use the default session expiry here as this is OAuth
 	r.sessionManager.UpdateSession(accessData.AccessToken, &newSession, int64(accessData.ExpiresIn), false)
 
@@ -872,7 +885,7 @@ func (r *RedisOsinStorageInterface) RemoveAccess(token string) error {
 	r.store.DeleteKey(key)
 
 	// remove the access token from central storage too
-	r.sessionManager.RemoveSession(token, false)
+	r.sessionManager.RemoveSession(r.orgID, token, false)
 
 	return nil
 }

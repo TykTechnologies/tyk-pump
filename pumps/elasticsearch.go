@@ -2,8 +2,10 @@ package pumps
 
 import (
 	"context"
+	"encoding/base64"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/mitchellh/mapstructure"
@@ -19,6 +21,7 @@ import (
 type ElasticsearchPump struct {
 	operator ElasticsearchOperator
 	esConf   *ElasticsearchConf
+	timeout  int
 }
 
 var elasticsearchPrefix = "elasticsearch-pump"
@@ -31,11 +34,12 @@ type ElasticsearchConf struct {
 	RollingIndex       bool   `mapstructure:"rolling_index"`
 	ExtendedStatistics bool   `mapstructure:"extended_stats"`
 	GenerateID         bool   `mapstructure:"generate_id"`
+	DecodeBase64       bool   `mapstructure:"decode_base64"`
 	Version            string `mapstructure:"version"`
 }
 
 type ElasticsearchOperator interface {
-	processData(data []interface{}, esConf *ElasticsearchConf) error
+	processData(ctx context.Context, data []interface{}, esConf *ElasticsearchConf) error
 }
 
 type Elasticsearch3Operator struct {
@@ -53,18 +57,20 @@ type Elasticsearch6Operator struct {
 func getOperator(version string, url string, setSniff bool) (ElasticsearchOperator, error) {
 	var err error
 
+	urls := strings.Split(url, ",")
+
 	switch version {
 	case "3":
 		e := new(Elasticsearch3Operator)
-		e.esClient, err = elasticv3.NewClient(elasticv3.SetURL(url), elasticv3.SetSniff(setSniff))
+		e.esClient, err = elasticv3.NewClient(elasticv3.SetURL(urls...), elasticv3.SetSniff(setSniff))
 		return e, err
 	case "5":
 		e := new(Elasticsearch5Operator)
-		e.esClient, err = elasticv5.NewClient(elasticv5.SetURL(url), elasticv5.SetSniff(setSniff))
+		e.esClient, err = elasticv5.NewClient(elasticv5.SetURL(urls...), elasticv5.SetSniff(setSniff))
 		return e, err
 	case "6":
 		e := new(Elasticsearch6Operator)
-		e.esClient, err = elasticv6.NewClient(elasticv6.SetURL(url), elasticv6.SetSniff(setSniff))
+		e.esClient, err = elasticv6.NewClient(elasticv6.SetURL(urls...), elasticv6.SetSniff(setSniff))
 		return e, err
 	default:
 		// shouldn't get this far, but hey never hurts to check assumptions
@@ -151,7 +157,7 @@ func (e *ElasticsearchPump) connect() {
 	}
 }
 
-func (e *ElasticsearchPump) WriteData(data []interface{}) error {
+func (e *ElasticsearchPump) WriteData(ctx context.Context, data []interface{}) error {
 	log.WithFields(logrus.Fields{
 		"prefix": elasticsearchPrefix,
 	}).Info("Writing ", len(data), " records")
@@ -161,13 +167,21 @@ func (e *ElasticsearchPump) WriteData(data []interface{}) error {
 			"prefix": elasticsearchPrefix,
 		}).Debug("Connecting to analytics store")
 		e.connect()
-		e.WriteData(data)
+		e.WriteData(ctx, data)
 	} else {
 		if len(data) > 0 {
-			e.operator.processData(data, e.esConf)
+			e.operator.processData(ctx, data, e.esConf)
 		}
 	}
 	return nil
+}
+
+func (e *ElasticsearchPump) SetTimeout(timeout int) {
+	e.timeout = timeout
+}
+
+func (e *ElasticsearchPump) GetTimeout() int {
+	return e.timeout
 }
 
 func getIndexName(esConf *ElasticsearchConf) string {
@@ -181,7 +195,7 @@ func getIndexName(esConf *ElasticsearchConf) string {
 	return indexName
 }
 
-func getMapping(datum analytics.AnalyticsRecord, extendedStatistics bool, generateID bool) (map[string]interface{}, string) {
+func getMapping(datum analytics.AnalyticsRecord, extendedStatistics bool, generateID bool, decodeBase64 bool) (map[string]interface{}, string) {
 	record := datum
 
 	mapping := map[string]interface{}{
@@ -204,8 +218,13 @@ func getMapping(datum analytics.AnalyticsRecord, extendedStatistics bool, genera
 	}
 
 	if extendedStatistics {
-		mapping["raw_request"] = record.RawRequest
-		mapping["raw_response"] = record.RawResponse
+		if decodeBase64 {
+			mapping["raw_request"], _ = base64.StdEncoding.DecodeString(record.RawRequest)
+			mapping["raw_response"], _ = base64.StdEncoding.DecodeString(record.RawResponse)
+		} else {
+			mapping["raw_request"] = record.RawRequest
+			mapping["raw_response"] = record.RawResponse
+		}
 		mapping["user_agent"] = record.UserAgent
 	}
 
@@ -219,7 +238,7 @@ func getMapping(datum analytics.AnalyticsRecord, extendedStatistics bool, genera
 	return mapping, ""
 }
 
-func (e Elasticsearch3Operator) processData(data []interface{}, esConf *ElasticsearchConf) error {
+func (e Elasticsearch3Operator) processData(ctx context.Context, data []interface{}, esConf *ElasticsearchConf) error {
 	index := e.esClient.Index().Index(getIndexName(esConf))
 
 	for dataIndex := range data {
@@ -231,9 +250,9 @@ func (e Elasticsearch3Operator) processData(data []interface{}, esConf *Elastics
 			continue
 		}
 
-		mapping, id := getMapping(d, esConf.ExtendedStatistics, esConf.GenerateID)
+		mapping, id := getMapping(d, esConf.ExtendedStatistics, esConf.GenerateID, esConf.DecodeBase64)
 
-		_, err := index.BodyJson(mapping).Type(esConf.DocumentType).Id(id).Do()
+		_, err := index.BodyJson(mapping).Type(esConf.DocumentType).Id(id).DoC(ctx)
 		if err != nil {
 			log.WithFields(logrus.Fields{
 				"prefix": elasticsearchPrefix,
@@ -244,7 +263,7 @@ func (e Elasticsearch3Operator) processData(data []interface{}, esConf *Elastics
 	return nil
 }
 
-func (e Elasticsearch5Operator) processData(data []interface{}, esConf *ElasticsearchConf) error {
+func (e Elasticsearch5Operator) processData(ctx context.Context, data []interface{}, esConf *ElasticsearchConf) error {
 	index := e.esClient.Index().Index(getIndexName(esConf))
 
 	for dataIndex := range data {
@@ -256,9 +275,9 @@ func (e Elasticsearch5Operator) processData(data []interface{}, esConf *Elastics
 			continue
 		}
 
-		mapping, id := getMapping(d, esConf.ExtendedStatistics, esConf.GenerateID)
+		mapping, id := getMapping(d, esConf.ExtendedStatistics, esConf.GenerateID, esConf.DecodeBase64)
 
-		_, err := index.BodyJson(mapping).Type(esConf.DocumentType).Id(id).Do(context.TODO())
+		_, err := index.BodyJson(mapping).Type(esConf.DocumentType).Id(id).Do(ctx)
 		if err != nil {
 			log.WithFields(logrus.Fields{
 				"prefix": elasticsearchPrefix,
@@ -269,7 +288,7 @@ func (e Elasticsearch5Operator) processData(data []interface{}, esConf *Elastics
 	return nil
 }
 
-func (e Elasticsearch6Operator) processData(data []interface{}, esConf *ElasticsearchConf) error {
+func (e Elasticsearch6Operator) processData(ctx context.Context, data []interface{}, esConf *ElasticsearchConf) error {
 	index := e.esClient.Index().Index(getIndexName(esConf))
 
 	for dataIndex := range data {
@@ -281,9 +300,9 @@ func (e Elasticsearch6Operator) processData(data []interface{}, esConf *Elastics
 			continue
 		}
 
-		mapping, id := getMapping(d, esConf.ExtendedStatistics, esConf.GenerateID)
+		mapping, id := getMapping(d, esConf.ExtendedStatistics, esConf.GenerateID, esConf.DecodeBase64)
 
-		_, err := index.BodyJson(mapping).Type(esConf.DocumentType).Id(id).Do(context.Background())
+		_, err := index.BodyJson(mapping).Type(esConf.DocumentType).Id(id).Do(ctx)
 		if err != nil {
 			log.WithFields(logrus.Fields{
 				"prefix": elasticsearchPrefix,
