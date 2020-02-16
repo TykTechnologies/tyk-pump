@@ -1,6 +1,7 @@
 package pumps
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 
@@ -43,6 +44,7 @@ type HybridPump struct {
 	trackAllPaths          bool
 	storeAnalyticPerMinute bool
 	ignoreTagPrefixList    []string
+	timeout                int
 }
 
 func (p *HybridPump) GetName() string {
@@ -136,7 +138,7 @@ func (p *HybridPump) Init(config interface{}) error {
 	return nil
 }
 
-func (p *HybridPump) WriteData(data []interface{}) error {
+func (p *HybridPump) WriteData(ctx context.Context, data []interface{}) error {
 	if len(data) == 0 {
 		return nil
 	}
@@ -187,4 +189,12 @@ func (p *HybridPump) WriteData(data []interface{}) error {
 	}
 
 	return nil
+}
+
+func (p *HybridPump) SetTimeout(timeout int) {
+	p.timeout = timeout
+}
+
+func (p *HybridPump) GetTimeout() int {
+	return p.timeout
 }

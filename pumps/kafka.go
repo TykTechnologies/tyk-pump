@@ -16,6 +16,7 @@ type KafkaPump struct {
 	kafkaConf    *KafkaConf
 	writerConfig kafka.WriterConfig
 	log          *logrus.Entry
+	timeout      int
 }
 
 type Json map[string]interface{}
@@ -81,7 +82,7 @@ func (k *KafkaPump) Init(config interface{}) error {
 	return nil
 }
 
-func (k *KafkaPump) WriteData(data []interface{}) error {
+func (k *KafkaPump) WriteData(ctx context.Context, data []interface{}) error {
 	startTime := time.Now()
 	k.log.Info("Writing ", len(data), " records...")
 	kafkaMessages := make([]kafka.Message, len(data))
@@ -127,7 +128,7 @@ func (k *KafkaPump) WriteData(data []interface{}) error {
 		}
 	}
 	//Send kafka message
-	kafkaError := k.write(kafkaMessages)
+	kafkaError := k.write(ctx, kafkaMessages)
 	if kafkaError != nil {
 		k.log.WithError(kafkaError).Error("unable to write message")
 	}
@@ -135,8 +136,16 @@ func (k *KafkaPump) WriteData(data []interface{}) error {
 	return nil
 }
 
-func (k *KafkaPump) write(messages []kafka.Message) error {
+func (k *KafkaPump) write(ctx context.Context, messages []kafka.Message) error {
 	kafkaWriter := kafka.NewWriter(k.writerConfig)
 	defer kafkaWriter.Close()
-	return kafkaWriter.WriteMessages(context.Background(), messages...)
+	return kafkaWriter.WriteMessages(ctx, messages...)
+}
+
+func (k *KafkaPump) SetTimeout(timeout int) {
+	k.timeout = timeout
+}
+
+func (k *KafkaPump) GetTimeout() int {
+	return k.timeout
 }
