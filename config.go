@@ -29,6 +29,8 @@ type TykPumpConfiguration struct {
 	StatsdConnectionString string                     `json:"statsd_connection_string"`
 	StatsdPrefix           string                     `json:"statsd_prefix"`
 	LogLevel               string                     `json:"log_level"`
+	HealthEndpoint         string                     `json:"health_endpoint"`
+	HealthPort             int                        `json:"health_port"`
 }
 
 func LoadConfig(filePath *string, configStruct *TykPumpConfiguration) {
