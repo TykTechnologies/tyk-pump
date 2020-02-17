@@ -76,7 +76,11 @@ Create a `pump.conf` file:
         "document_type": "tyk_analytics",
         "rolling_index": false,
         "extended_stats": false,
-        "version": "5"
+        "version": "5",
+        "bulk_config":{
+          "workers": 2,
+          "flush_interval": 60
+        }
       }
     },
     "influx": {
@@ -250,6 +254,14 @@ The Tyk Dashboard uses the "mongo-pump-aggregate" collection to display analytic
 `"extended_stats"` - If set to true will include the following additional fields: Raw Request, Raw Response and User Agent.
 
 `"version"` - Specifies the ES version. Use "3" for ES 3.X, "5" for ES 5.X, "6" for ES 6.X. Defaults to "3".
+
+`"disable_bulk"` - Disable batch writing. Defaults to false.
+
+`bulk_config`: Batch writing trigger configuration. Each option is an OR with eachother:
+  * `wokers`: Number of workers. Defaults to 1.
+  * `flush_interval`: Specifies the time in seconds to flush the data and send it to ES. Default disabled.
+  * `bulk_actions`: Specifies the number of requests needed to flush the data and send it to ES. Defaults to 1000 requests. If it is needed, can be disabled with -1.
+  * `bulk_size`: Specifies the size (in bytes) needed to flush the data and send it to ES. Defaults to 5MB. If it is needed, can be disabled with -1.
 
 ### Moesif Config
 [Moesif](https://www.moesif.com) is a logging and analytics service for APIs. The Moesif pump will
