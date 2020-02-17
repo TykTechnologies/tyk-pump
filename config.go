@@ -13,9 +13,10 @@ import (
 const ENV_PREVIX = "TYK_PMP"
 
 type PumpConfig struct {
-	Name string                 `json:"name"` // Deprecated
-	Type string                 `json:"type"`
-	Meta map[string]interface{} `json:"meta"` // TODO: convert this to json.RawMessage and use regular json.Unmarshal
+	Name    string                 `json:"name"` // Deprecated
+	Type    string                 `json:"type"`
+	Timeout int                    `json:"timeout"`
+	Meta    map[string]interface{} `json:"meta"` // TODO: convert this to json.RawMessage and use regular json.Unmarshal
 }
 
 type TykPumpConfiguration struct {
@@ -28,6 +29,8 @@ type TykPumpConfiguration struct {
 	StatsdConnectionString string                     `json:"statsd_connection_string"`
 	StatsdPrefix           string                     `json:"statsd_prefix"`
 	LogLevel               string                     `json:"log_level"`
+	HealthEndpoint         string                     `json:"health_endpoint"`
+	HealthPort             int                        `json:"health_port"`
 }
 
 func LoadConfig(filePath *string, configStruct *TykPumpConfiguration) {

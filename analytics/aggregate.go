@@ -16,6 +16,11 @@ const (
 	MongoAggregatePrefix          = "mongo-pump-aggregate"
 )
 
+type ErrorData struct {
+	Code  string
+	Count int
+}
+
 type Counter struct {
 	Hits              int       `json:"hits"`
 	Success           int       `json:"success"`
@@ -39,6 +44,9 @@ type Counter struct {
 	MinLatency   int64   `json:"min_latency"`
 	TotalLatency int64   `json:"total_latency"`
 	Latency      float64 `json:"latency"`
+
+	ErrorMap  map[string]int `json:"error_map"`
+	ErrorList []ErrorData    `json:"error_list"`
 }
 
 type AnalyticsRecordAggregate struct {
@@ -109,6 +117,9 @@ func (f *AnalyticsRecordAggregate) generateBSONFromProperty(parent, thisUnit str
 	newUpdate["$inc"].(bson.M)[constructor+"hits"] = incVal.Hits
 	newUpdate["$inc"].(bson.M)[constructor+"success"] = incVal.Success
 	newUpdate["$inc"].(bson.M)[constructor+"errortotal"] = incVal.ErrorTotal
+	for k, v := range incVal.ErrorMap {
+		newUpdate["$inc"].(bson.M)[constructor+"errormap."+k] = v
+	}
 	newUpdate["$inc"].(bson.M)[constructor+"totalrequesttime"] = incVal.TotalRequestTime
 	newUpdate["$set"].(bson.M)[constructor+"identifier"] = incVal.Identifier
 	newUpdate["$set"].(bson.M)[constructor+"humanidentifier"] = incVal.HumanIdentifier
@@ -231,6 +242,26 @@ func (f *AnalyticsRecordAggregate) AsChange() bson.M {
 	return newUpdate
 }
 
+func (f *AnalyticsRecordAggregate) SetErrorList(parent, thisUnit string, counter *Counter, newUpdate bson.M) {
+	constructor := parent + "." + thisUnit + "."
+	if parent == "" {
+		constructor = thisUnit + "."
+	}
+
+	errorlist := make([]ErrorData, 0)
+
+	for k, v := range counter.ErrorMap {
+		element := ErrorData{
+			Code:  k,
+			Count: v,
+		}
+		errorlist = append(errorlist, element)
+	}
+	counter.ErrorList = errorlist
+
+	newUpdate["$set"].(bson.M)[constructor+"errorlist"] = counter.ErrorList
+}
+
 func (f *AnalyticsRecordAggregate) AsTimeUpdate() bson.M {
 	newUpdate := bson.M{
 		"$set": bson.M{},
@@ -246,6 +277,8 @@ func (f *AnalyticsRecordAggregate) AsTimeUpdate() bson.M {
 		if incVal.Hits > 0 {
 			newTime = incVal.TotalRequestTime / float64(incVal.Hits)
 		}
+
+		f.SetErrorList("apiid", thisUnit, incVal, newUpdate)
 		newUpdate = f.generateSetterForTime("apiid", thisUnit, newTime, newUpdate)
 		newUpdate = f.latencySetter("apiid", thisUnit, newUpdate, incVal)
 		apis = append(apis, *incVal)
@@ -260,6 +293,7 @@ func (f *AnalyticsRecordAggregate) AsTimeUpdate() bson.M {
 		if incVal.Hits > 0 {
 			newTime = incVal.TotalRequestTime / float64(incVal.Hits)
 		}
+		f.SetErrorList("errors", thisUnit, incVal, newUpdate)
 		newUpdate = f.generateSetterForTime("errors", thisUnit, newTime, newUpdate)
 		newUpdate = f.latencySetter("errors", thisUnit, newUpdate, incVal)
 		errors = append(errors, *incVal)
@@ -274,6 +308,7 @@ func (f *AnalyticsRecordAggregate) AsTimeUpdate() bson.M {
 		if incVal.Hits > 0 {
 			newTime = incVal.TotalRequestTime / float64(incVal.Hits)
 		}
+		f.SetErrorList("versions", thisUnit, incVal, newUpdate)
 		newUpdate = f.generateSetterForTime("versions", thisUnit, newTime, newUpdate)
 		newUpdate = f.latencySetter("versions", thisUnit, newUpdate, incVal)
 		versions = append(versions, *incVal)
@@ -288,6 +323,7 @@ func (f *AnalyticsRecordAggregate) AsTimeUpdate() bson.M {
 		if incVal.Hits > 0 {
 			newTime = incVal.TotalRequestTime / float64(incVal.Hits)
 		}
+		f.SetErrorList("apikeys", thisUnit, incVal, newUpdate)
 		newUpdate = f.generateSetterForTime("apikeys", thisUnit, newTime, newUpdate)
 		newUpdate = f.latencySetter("apikeys", thisUnit, newUpdate, incVal)
 		apikeys = append(apikeys, *incVal)
@@ -302,6 +338,7 @@ func (f *AnalyticsRecordAggregate) AsTimeUpdate() bson.M {
 		if incVal.Hits > 0 {
 			newTime = incVal.TotalRequestTime / float64(incVal.Hits)
 		}
+		f.SetErrorList("oauthids", thisUnit, incVal, newUpdate)
 		newUpdate = f.generateSetterForTime("oauthids", thisUnit, newTime, newUpdate)
 		newUpdate = f.latencySetter("oauthids", thisUnit, newUpdate, incVal)
 		oauthids = append(oauthids, *incVal)
@@ -316,6 +353,7 @@ func (f *AnalyticsRecordAggregate) AsTimeUpdate() bson.M {
 		if incVal.Hits > 0 {
 			newTime = incVal.TotalRequestTime / float64(incVal.Hits)
 		}
+		f.SetErrorList("geo", thisUnit, incVal, newUpdate)
 		newUpdate = f.generateSetterForTime("geo", thisUnit, newTime, newUpdate)
 		newUpdate = f.latencySetter("geo", thisUnit, newUpdate, incVal)
 		geo = append(geo, *incVal)
@@ -330,6 +368,7 @@ func (f *AnalyticsRecordAggregate) AsTimeUpdate() bson.M {
 		if incVal.Hits > 0 {
 			newTime = incVal.TotalRequestTime / float64(incVal.Hits)
 		}
+		f.SetErrorList("tags", thisUnit, incVal, newUpdate)
 		newUpdate = f.generateSetterForTime("tags", thisUnit, newTime, newUpdate)
 		newUpdate = f.latencySetter("tags", thisUnit, newUpdate, incVal)
 		tags = append(tags, *incVal)
@@ -344,6 +383,7 @@ func (f *AnalyticsRecordAggregate) AsTimeUpdate() bson.M {
 		if incVal.Hits > 0 {
 			newTime = incVal.TotalRequestTime / float64(incVal.Hits)
 		}
+		f.SetErrorList("endpoints", thisUnit, incVal, newUpdate)
 		newUpdate = f.generateSetterForTime("endpoints", thisUnit, newTime, newUpdate)
 		newUpdate = f.latencySetter("endpoints", thisUnit, newUpdate, incVal)
 		endpoints = append(endpoints, *incVal)
@@ -361,6 +401,7 @@ func (f *AnalyticsRecordAggregate) AsTimeUpdate() bson.M {
 			if v.Hits > 0 {
 				newTime = v.TotalRequestTime / float64(v.Hits)
 			}
+			f.SetErrorList("keyendpoints."+thisUnit, thisUnit, v, newUpdate)
 			newUpdate = f.generateSetterForTime("keyendpoints."+thisUnit, k, newTime, newUpdate)
 			newUpdate = f.latencySetter("keyendpoints."+thisUnit, k, newUpdate, v)
 			keyendpoints = append(keyendpoints, *v)
@@ -379,6 +420,7 @@ func (f *AnalyticsRecordAggregate) AsTimeUpdate() bson.M {
 			if v.Hits > 0 {
 				newTime = v.TotalRequestTime / float64(v.Hits)
 			}
+			f.SetErrorList("oauthendpoints."+thisUnit, thisUnit, v, newUpdate)
 			newUpdate = f.generateSetterForTime("oauthendpoints."+thisUnit, k, newTime, newUpdate)
 			newUpdate = f.latencySetter("oauthendpoints."+thisUnit, k, newUpdate, v)
 			oauthendpoints = append(oauthendpoints, *v)
@@ -391,6 +433,7 @@ func (f *AnalyticsRecordAggregate) AsTimeUpdate() bson.M {
 	if f.Total.Hits > 0 {
 		newTime = f.Total.TotalRequestTime / float64(f.Total.Hits)
 	}
+	f.SetErrorList("", "total", &f.Total, newUpdate)
 	newUpdate = f.generateSetterForTime("", "total", newTime, newUpdate)
 	newUpdate = f.latencySetter("", "total", newUpdate, &f.Total)
 
@@ -460,6 +503,7 @@ func AggregateData(data []interface{}, trackAllPaths bool, ignoreTagPrefixList [
 			thisAggregate.TimeID.Hour = asTime.Hour()
 			thisAggregate.OrgID = orgID
 			thisAggregate.LastTime = thisV.TimeStamp
+			thisAggregate.Total.ErrorMap = make(map[string]int)
 		}
 
 		// Always update the last timestamp
@@ -506,6 +550,7 @@ func AggregateData(data []interface{}, trackAllPaths bool, ignoreTagPrefixList [
 				MaxLatency:           thisV.Latency.Total,
 				MinLatency:           thisV.Latency.Total,
 				TotalLatency:         thisV.Latency.Total,
+				ErrorMap:             make(map[string]int),
 			}
 			thisAggregate.Total.Hits++
 			thisAggregate.Total.TotalRequestTime += float64(thisV.RequestTime)
@@ -514,7 +559,9 @@ func AggregateData(data []interface{}, trackAllPaths bool, ignoreTagPrefixList [
 			thisAggregate.Total.RequestTime = thisAggregate.Total.TotalRequestTime / float64(thisAggregate.Total.Hits)
 			if thisV.ResponseCode > 400 {
 				thisCounter.ErrorTotal = 1
+				thisCounter.ErrorMap[strconv.Itoa(thisV.ResponseCode)]++
 				thisAggregate.Total.ErrorTotal++
+				thisAggregate.Total.ErrorMap[strconv.Itoa(thisV.ResponseCode)]++
 			}
 
 			if (thisV.ResponseCode < 300) && (thisV.ResponseCode >= 200) {
@@ -561,11 +608,18 @@ func AggregateData(data []interface{}, trackAllPaths bool, ignoreTagPrefixList [
 				IncrementOrSetUnit := func(c *Counter) *Counter {
 					if c == nil {
 						newCounter := thisCounter
+						newCounter.ErrorMap = make(map[string]int)
+						for k, v := range thisCounter.ErrorMap {
+							newCounter.ErrorMap[k] = v
+						}
 						c = &newCounter
 					} else {
 						c.Hits += thisCounter.Hits
 						c.Success += thisCounter.Success
 						c.ErrorTotal += thisCounter.ErrorTotal
+						for k, v := range thisCounter.ErrorMap {
+							c.ErrorMap[k] += v
+						}
 						c.TotalRequestTime += thisCounter.TotalRequestTime
 						c.RequestTime = c.TotalRequestTime / float64(c.Hits)
 
