@@ -2,8 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
-	"net/http"
 	"strings"
 	"sync"
 	"time"
@@ -11,7 +9,6 @@ import (
 	"os"
 
 	"github.com/gocraft/health"
-	"github.com/gocraft/web"
 
 	msgpack "gopkg.in/vmihailenco/msgpack.v2"
 
@@ -21,6 +18,7 @@ import (
 	"github.com/TykTechnologies/tyk-pump/analytics/demo"
 	logger "github.com/TykTechnologies/tyk-pump/logger"
 	"github.com/TykTechnologies/tyk-pump/pumps"
+	"github.com/TykTechnologies/tyk-pump/server"
 	"github.com/TykTechnologies/tyk-pump/storage"
 
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
@@ -35,8 +33,6 @@ var UptimePump pumps.MongoPump
 var log = logger.GetLogger()
 
 var mainPrefix = "main"
-var defaultHealthEndpoint = "/health"
-var defaultHealthPort = 8080
 
 var (
 	help               = kingpin.CommandLine.HelpFlag.Short('h')
@@ -280,7 +276,7 @@ func execPumpWriting(wg *sync.WaitGroup, pmp pumps.Pump, keys *[]interface{}, pu
 
 func main() {
 	SetupInstrumentation()
-	go ServeHealthCheck()
+	go server.ServeHealthCheck(SystemConfig.HealthEndpoint, SystemConfig.HealthPort)
 
 	// Store version which will be read by dashboard and sent to
 	// vclu(version check and licecnse utilisation) service
@@ -306,33 +302,4 @@ func main() {
 	}).Info("Starting purge loop @", SystemConfig.PurgeDelay, "(s)")
 
 	StartPurgeLoop(SystemConfig.PurgeDelay)
-
-}
-
-func ServeHealthCheck() {
-	healthEndpoint := SystemConfig.HealthEndpoint
-	if healthEndpoint == "" {
-		healthEndpoint = defaultHealthEndpoint
-	}
-	healthPort := SystemConfig.HealthPort
-	if healthPort == 0 {
-		healthPort = defaultHealthPort
-	}
-
-	router := web.New(Context{}).
-		Get(healthEndpoint, (*Context).Healthcheck)
-
-	log.WithFields(logrus.Fields{
-		"prefix": mainPrefix,
-	}).Info("Serving health check endpoint at http://localhost:", healthPort, healthEndpoint)
-
-	http.ListenAndServe("localhost:"+fmt.Sprint(healthPort), router)
-
-}
-
-type Context struct{}
-
-func (c *Context) Healthcheck(rw web.ResponseWriter, req *web.Request) {
-	rw.WriteHeader(http.StatusOK)
-	rw.Write([]byte(`{"status": "ok"}`))
 }
