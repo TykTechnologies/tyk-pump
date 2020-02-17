@@ -257,7 +257,6 @@ The Tyk Dashboard uses the "mongo-pump-aggregate" collection to display analytic
 `"version"` - Specifies the ES version. Use "3" for ES 3.X, "5" for ES 5.X, "6" for ES 6.X. Defaults to "3".
 
 `"enable_bulk"` - Enable batch writing. Defaults to false.
-certificate chain and host name.
 
 `bulk_config`: Batch writing trigger configuration. Each option is an OR with eachother:
   * `wokers`: Number of workers. Defaults to 1.
