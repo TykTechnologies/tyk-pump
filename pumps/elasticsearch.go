@@ -27,17 +27,17 @@ type ElasticsearchPump struct {
 var elasticsearchPrefix = "elasticsearch-pump"
 
 type ElasticsearchConf struct {
-	IndexName          string                   `mapstructure:"index_name"`
-	ElasticsearchURL   string                   `mapstructure:"elasticsearch_url"`
-	EnableSniffing     bool                     `mapstructure:"use_sniffing"`
-	DocumentType       string                   `mapstructure:"document_type"`
-	RollingIndex       bool                     `mapstructure:"rolling_index"`
-	ExtendedStatistics bool                     `mapstructure:"extended_stats"`
-	GenerateID         bool                     `mapstructure:"generate_id"`
-	DecodeBase64       bool                     `mapstructure:"decode_base64"`
-	Version            string                   `mapstructure:"version"`
-	EnableBulk         bool                     `mapstructure:"enable_bulk"`
-	BulkConfig         *ElasticsearchBulkConfig `mapstructure:"bulk_config"`
+	IndexName          string                  `mapstructure:"index_name"`
+	ElasticsearchURL   string                  `mapstructure:"elasticsearch_url"`
+	EnableSniffing     bool                    `mapstructure:"use_sniffing"`
+	DocumentType       string                  `mapstructure:"document_type"`
+	RollingIndex       bool                    `mapstructure:"rolling_index"`
+	ExtendedStatistics bool                    `mapstructure:"extended_stats"`
+	GenerateID         bool                    `mapstructure:"generate_id"`
+	DecodeBase64       bool                    `mapstructure:"decode_base64"`
+	Version            string                  `mapstructure:"version"`
+	EnableBulk         bool                    `mapstructure:"enable_bulk"`
+	BulkConfig         ElasticsearchBulkConfig `mapstructure:"bulk_config"`
 }
 
 type ElasticsearchBulkConfig struct {
@@ -66,7 +66,7 @@ type Elasticsearch6Operator struct {
 	bulkProcessor *elasticv6.BulkProcessor
 }
 
-func getOperator(version string, url string, setSniff bool, bulkConfig *ElasticsearchBulkConfig) (ElasticsearchOperator, error) {
+func getOperator(version string, url string, setSniff bool, bulkConfig ElasticsearchBulkConfig) (ElasticsearchOperator, error) {
 	var err error
 
 	urls := strings.Split(url, ",")
@@ -81,23 +81,22 @@ func getOperator(version string, url string, setSniff bool, bulkConfig *Elastics
 
 		// Setup a bulk processor
 		p := e.esClient.BulkProcessor().Name("TykPumpESv3BackgroundProcessor")
-		if bulkConfig != nil {
-			if bulkConfig.Workers != 0 {
-				p = p.Workers(bulkConfig.Workers)
-			}
-
-			if bulkConfig.FlushInterval != 0 {
-				p = p.FlushInterval(time.Duration(bulkConfig.FlushInterval) * time.Second)
-			}
-
-			if bulkConfig.BulkActions != 0 {
-				p = p.BulkActions(bulkConfig.BulkActions)
-			}
-
-			if bulkConfig.BulkSize != 0 {
-				p = p.BulkSize(bulkConfig.BulkSize)
-			}
+		if bulkConfig.Workers != 0 {
+			p = p.Workers(bulkConfig.Workers)
 		}
+
+		if bulkConfig.FlushInterval != 0 {
+			p = p.FlushInterval(time.Duration(bulkConfig.FlushInterval) * time.Second)
+		}
+
+		if bulkConfig.BulkActions != 0 {
+			p = p.BulkActions(bulkConfig.BulkActions)
+		}
+
+		if bulkConfig.BulkSize != 0 {
+			p = p.BulkSize(bulkConfig.BulkSize)
+		}
+
 		e.bulkProcessor, err = p.Do()
 
 		return e, err
@@ -109,23 +108,22 @@ func getOperator(version string, url string, setSniff bool, bulkConfig *Elastics
 		}
 		// Setup a bulk processor
 		p := e.esClient.BulkProcessor().Name("TykPumpESv5BackgroundProcessor")
-		if bulkConfig != nil {
-			if bulkConfig.Workers != 0 {
-				p = p.Workers(bulkConfig.Workers)
-			}
-
-			if bulkConfig.FlushInterval != 0 {
-				p = p.FlushInterval(time.Duration(bulkConfig.FlushInterval) * time.Second)
-			}
-
-			if bulkConfig.BulkActions != 0 {
-				p = p.BulkActions(bulkConfig.BulkActions)
-			}
-
-			if bulkConfig.BulkSize != 0 {
-				p = p.BulkSize(bulkConfig.BulkSize)
-			}
+		if bulkConfig.Workers != 0 {
+			p = p.Workers(bulkConfig.Workers)
 		}
+
+		if bulkConfig.FlushInterval != 0 {
+			p = p.FlushInterval(time.Duration(bulkConfig.FlushInterval) * time.Second)
+		}
+
+		if bulkConfig.BulkActions != 0 {
+			p = p.BulkActions(bulkConfig.BulkActions)
+		}
+
+		if bulkConfig.BulkSize != 0 {
+			p = p.BulkSize(bulkConfig.BulkSize)
+		}
+
 		e.bulkProcessor, err = p.Do(context.Background())
 
 		return e, err
@@ -137,23 +135,22 @@ func getOperator(version string, url string, setSniff bool, bulkConfig *Elastics
 		}
 		// Setup a bulk processor
 		p := e.esClient.BulkProcessor().Name("TykPumpESv6BackgroundProcessor")
-		if bulkConfig != nil {
-			if bulkConfig.Workers != 0 {
-				p = p.Workers(bulkConfig.Workers)
-			}
-
-			if bulkConfig.FlushInterval != 0 {
-				p = p.FlushInterval(time.Duration(bulkConfig.FlushInterval) * time.Second)
-			}
-
-			if bulkConfig.BulkActions != 0 {
-				p = p.BulkActions(bulkConfig.BulkActions)
-			}
-
-			if bulkConfig.BulkSize != 0 {
-				p = p.BulkSize(bulkConfig.BulkSize)
-			}
+		if bulkConfig.Workers != 0 {
+			p = p.Workers(bulkConfig.Workers)
 		}
+
+		if bulkConfig.FlushInterval != 0 {
+			p = p.FlushInterval(time.Duration(bulkConfig.FlushInterval) * time.Second)
+		}
+
+		if bulkConfig.BulkActions != 0 {
+			p = p.BulkActions(bulkConfig.BulkActions)
+		}
+
+		if bulkConfig.BulkSize != 0 {
+			p = p.BulkSize(bulkConfig.BulkSize)
+		}
+
 		e.bulkProcessor, err = p.Do(context.Background())
 
 		return e, err
