@@ -36,7 +36,7 @@ type ElasticsearchConf struct {
 	GenerateID         bool                    `mapstructure:"generate_id"`
 	DecodeBase64       bool                    `mapstructure:"decode_base64"`
 	Version            string                  `mapstructure:"version"`
-	EnableBulk         bool                    `mapstructure:"enable_bulk"`
+	DisableBulk        bool                    `mapstructure:"disable_bulk"`
 	BulkConfig         ElasticsearchBulkConfig `mapstructure:"bulk_config"`
 }
 
@@ -338,7 +338,7 @@ func (e Elasticsearch3Operator) processData(ctx context.Context, data []interfac
 
 		mapping, id := getMapping(d, esConf.ExtendedStatistics, esConf.GenerateID, esConf.DecodeBase64)
 
-		if esConf.EnableBulk {
+		if !esConf.DisableBulk {
 			r := elasticv3.NewBulkIndexRequest().Index(getIndexName(esConf)).Type(esConf.DocumentType).Id(id).Doc(mapping)
 			e.bulkProcessor.Add(r)
 		} else {
@@ -372,7 +372,7 @@ func (e Elasticsearch5Operator) processData(ctx context.Context, data []interfac
 
 		mapping, id := getMapping(d, esConf.ExtendedStatistics, esConf.GenerateID, esConf.DecodeBase64)
 
-		if esConf.EnableBulk {
+		if !esConf.DisableBulk {
 			r := elasticv5.NewBulkIndexRequest().Index(getIndexName(esConf)).Type(esConf.DocumentType).Id(id).Doc(mapping)
 			e.bulkProcessor.Add(r)
 		} else {
@@ -406,7 +406,7 @@ func (e Elasticsearch6Operator) processData(ctx context.Context, data []interfac
 
 		mapping, id := getMapping(d, esConf.ExtendedStatistics, esConf.GenerateID, esConf.DecodeBase64)
 
-		if esConf.EnableBulk {
+		if !esConf.DisableBulk {
 			r := elasticv6.NewBulkIndexRequest().Index(getIndexName(esConf)).Type(esConf.DocumentType).Id(id).Doc(mapping)
 			e.bulkProcessor.Add(r)
 		} else {
