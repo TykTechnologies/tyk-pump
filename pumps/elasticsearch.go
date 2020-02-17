@@ -81,7 +81,6 @@ func getOperator(version string, url string, setSniff bool, bulkConfig Elasticse
 
 		// Setup a bulk processor
 		p := e.esClient.BulkProcessor().Name("TykPumpESv3BackgroundProcessor")
-
 		if bulkConfig.Workers != 0 {
 			p = p.Workers(bulkConfig.Workers)
 		}
