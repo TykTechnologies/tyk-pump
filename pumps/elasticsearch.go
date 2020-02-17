@@ -421,10 +421,3 @@ func (e Elasticsearch6Operator) processData(ctx context.Context, data []interfac
 
 	return nil
 }
-
-func (config *ElasticsearchBulkConfig) hasConfiguration() bool {
-	if config.FlushInterval != 0 || config.BulkActions != 0 || config.BulkSize != 0 {
-		return true
-	}
-	return false
-}
