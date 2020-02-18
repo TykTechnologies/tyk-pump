@@ -30,7 +30,7 @@ func ServeHealthCheck(configHealthEndpoint string, configHealthPort int) {
 
 	log.WithFields(logrus.Fields{
 		"prefix": serverPrefix,
-	}).Info("Serving health check endpoint at http://localhost:", healthPort, healthEndpoint)
+	}).Info("Serving health check endpoint at http://localhost:", healthPort, "/", healthEndpoint)
 
 	http.ListenAndServe("localhost:"+fmt.Sprint(healthPort), router)
 }
