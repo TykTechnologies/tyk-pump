@@ -8,10 +8,6 @@ import (
 
 	"os"
 
-	"github.com/gocraft/health"
-
-	msgpack "gopkg.in/vmihailenco/msgpack.v2"
-
 	"github.com/TykTechnologies/logrus"
 	prefixed "github.com/TykTechnologies/logrus-prefixed-formatter"
 	"github.com/TykTechnologies/tyk-pump/analytics"
@@ -20,8 +16,9 @@ import (
 	"github.com/TykTechnologies/tyk-pump/pumps"
 	"github.com/TykTechnologies/tyk-pump/server"
 	"github.com/TykTechnologies/tyk-pump/storage"
-
+	"github.com/gocraft/health"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
+	msgpack "gopkg.in/vmihailenco/msgpack.v2"
 )
 
 var SystemConfig TykPumpConfiguration
@@ -160,11 +157,11 @@ func initialisePumps() {
 
 }
 
-func StartPurgeLoop(secInterval, chunkSize int64) {
+func StartPurgeLoop(secInterval, chunkSize int64, expire time.Duration) {
 	for range time.Tick(time.Duration(secInterval) * time.Second) {
 		job := instrument.NewJob("PumpRecordsPurge")
 
-		AnalyticsValues := AnalyticsStore.GetAndDeleteSet(storage.ANALYTICS_KEYNAME, chunkSize)
+		AnalyticsValues := AnalyticsStore.GetAndDeleteSet(storage.ANALYTICS_KEYNAME, chunkSize, expire)
 		if len(AnalyticsValues) > 0 {
 			startTime := time.Now()
 
@@ -188,14 +185,13 @@ func StartPurgeLoop(secInterval, chunkSize int64) {
 			}
 
 			// Send to pumps
-			writeToPumps(keys, job, startTime, secInterval)
+			writeToPumps(keys, job, startTime, int(secInterval))
 
 			job.Timing("purge_time_all", time.Since(startTime).Nanoseconds())
-
 		}
 
 		if !SystemConfig.DontPurgeUptimeData {
-			UptimeValues := UptimeStorage.GetAndDeleteSet(storage.UptimeAnalytics_KEYNAME, chunkSize)
+			UptimeValues := UptimeStorage.GetAndDeleteSet(storage.UptimeAnalytics_KEYNAME, chunkSize, expire)
 			UptimePump.WriteUptimeData(UptimeValues)
 		}
 	}
@@ -315,5 +311,5 @@ func main() {
 		"prefix": mainPrefix,
 	}).Infof("Starting purge loop @%d, chunk size %d", SystemConfig.PurgeDelay, SystemConfig.PurgeChunk)
 
-	StartPurgeLoop(SystemConfig.PurgeDelay, SystemConfig.PurgeChunk)
+	StartPurgeLoop(SystemConfig.PurgeDelay, SystemConfig.PurgeChunk, time.Duration(SystemConfig.StorageExpirationTime)*time.Second)
 }
