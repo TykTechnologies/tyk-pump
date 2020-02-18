@@ -10,7 +10,7 @@ import (
 	"github.com/gocraft/web"
 )
 
-var defaultHealthEndpoint = "/health"
+var defaultHealthEndpoint = "health"
 var defaultHealthPort = 8080
 var serverPrefix = "server"
 var log = logger.GetLogger()
@@ -26,11 +26,11 @@ func ServeHealthCheck(configHealthEndpoint string, configHealthPort int) {
 	}
 
 	router := web.New(Context{}).
-		Get(healthEndpoint, (*Context).Healthcheck)
+		Get("/"+healthEndpoint, (*Context).Healthcheck)
 
 	log.WithFields(logrus.Fields{
 		"prefix": serverPrefix,
-	}).Info("Serving health check endpoint at http://localhost:", healthPort, healthEndpoint)
+	}).Info("Serving health check endpoint at http://localhost:", healthPort, "/", healthEndpoint)
 
 	http.ListenAndServe("localhost:"+fmt.Sprint(healthPort), router)
 }
@@ -38,6 +38,7 @@ func ServeHealthCheck(configHealthEndpoint string, configHealthPort int) {
 type Context struct{}
 
 func (c *Context) Healthcheck(rw web.ResponseWriter, req *web.Request) {
+	rw.Header().Set("Content-type", "application/json")
 	rw.WriteHeader(http.StatusOK)
 	rw.Write([]byte(`{"status": "ok"}`))
 }
