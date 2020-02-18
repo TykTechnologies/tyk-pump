@@ -396,7 +396,7 @@ func (m *MongoPump) WriteUptimeData(data []interface{}) {
 	for i, v := range data {
 		decoded := analytics.UptimeReportData{}
 
-		if err := msgpack.Unmarshal(v.([]byte), &decoded); err != nil {
+		if err := msgpack.Unmarshal([]byte(v.(string)), &decoded); err != nil {
 			log.WithFields(logrus.Fields{
 				"prefix": mongoPrefix,
 			}).Error("Couldn't unmarshal analytics data:", err)
