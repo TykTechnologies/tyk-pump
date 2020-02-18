@@ -309,7 +309,7 @@ func (r *RedisClusterStorageManager) fixKey(keyName string) string {
 	return setKeyName
 }
 
-func (r *RedisClusterStorageManager) GetAndDeleteSet(keyName string, chunkSize int64) []interface{} {
+func (r *RedisClusterStorageManager) GetAndDeleteSet(keyName string, chunkSize int64, expire time.Duration) []interface{} {
 	log.WithFields(logrus.Fields{
 		"prefix": redisLogPrefix,
 	}).Debug("Getting raw key set: ", keyName)
@@ -319,7 +319,7 @@ func (r *RedisClusterStorageManager) GetAndDeleteSet(keyName string, chunkSize i
 			"prefix": redisLogPrefix,
 		}).Warning("Connection dropped, connecting..")
 		r.Connect()
-		return r.GetAndDeleteSet(keyName, chunkSize)
+		return r.GetAndDeleteSet(keyName, chunkSize, expire)
 	}
 
 	log.WithFields(logrus.Fields{
@@ -340,6 +340,9 @@ func (r *RedisClusterStorageManager) GetAndDeleteSet(keyName string, chunkSize i
 			pipe.Del(fixedKey)
 		} else {
 			pipe.LTrim(fixedKey, chunkSize, -1)
+
+			// extend expiry after successful LTRIM
+			pipe.Expire(fixedKey, expire)
 		}
 
 		return nil

@@ -1,8 +1,9 @@
 package storage
 
 import (
-<<<<<<< HEAD
+	"fmt"
 	"testing"
+	"time"
 )
 
 func TestRedisAddressConfiguration(t *testing.T) {
@@ -61,10 +62,7 @@ func TestRedisAddressConfiguration(t *testing.T) {
 			t.Fatal("Wrong default sentinel mode address")
 		}
 	})
-=======
-	"fmt"
-	"testing"
-)
+}
 
 var testData = []struct {
 	in    []string
@@ -126,7 +124,7 @@ func TestRedisClusterStorageManager_GetAndDeleteSet(t *testing.T) {
 
 			count := 0
 			for i := 0; i < iterations; i++ {
-				res := r.GetAndDeleteSet(mockKeyName, tt.chunk)
+				res := r.GetAndDeleteSet(mockKeyName, tt.chunk, 60*time.Second)
 
 				count += len(res)
 				t.Logf("---> %d: %v", i, res)
@@ -137,5 +135,4 @@ func TestRedisClusterStorageManager_GetAndDeleteSet(t *testing.T) {
 			}
 		})
 	}
->>>>>>> tests and checking edge cases
 }

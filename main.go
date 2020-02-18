@@ -302,6 +302,14 @@ func main() {
 		SystemConfig.PurgeChunk = -1
 	}
 
+	if SystemConfig.PurgeChunk > 0 {
+		log.WithField("PurgeChunk", SystemConfig.PurgeChunk).Info("PurgeChunk enabled")
+		if SystemConfig.StorageExpirationTime == 0 {
+			SystemConfig.StorageExpirationTime = 60
+			log.WithField("StorageExpirationTime", 60).Warn("StorageExpirationTime not set, but PurgeChunk enabled, overriding to 60s")
+		}
+	}
+
 	// start the worker loop
 	log.WithFields(logrus.Fields{
 		"prefix": mainPrefix,
