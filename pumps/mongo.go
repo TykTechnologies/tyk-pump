@@ -2,8 +2,15 @@ package pumps
 
 import (
 	"context"
+	"crypto"
+	"crypto/ecdsa"
+	"crypto/rsa"
 	"crypto/tls"
+	"crypto/x509"
 	"encoding/base64"
+	"encoding/pem"
+	"fmt"
+	"io/ioutil"
 	"net"
 	"strconv"
 	"strings"
@@ -34,29 +41,164 @@ type MongoPump struct {
 var mongoPrefix = "mongo-pump"
 var mongoPumpPrefix = "PMP_MONGO"
 
-type MongoConf struct {
-	CollectionName             string `json:"collection_name" mapstructure:"collection_name"`
-	MongoURL                   string `json:"mongo_url" mapstructure:"mongo_url"`
-	MongoUseSSL                bool   `json:"mongo_use_ssl" mapstructure:"mongo_use_ssl"`
-	MongoSSLInsecureSkipVerify bool   `json:"mongo_ssl_insecure_skip_verify" mapstructure:"mongo_ssl_insecure_skip_verify"`
-	MaxInsertBatchSizeBytes    int    `json:"max_insert_batch_size_bytes" mapstructure:"max_insert_batch_size_bytes"`
-	MaxDocumentSizeBytes       int    `json:"max_document_size_bytes" mapstructure:"max_document_size_bytes"`
-	CollectionCapMaxSizeBytes  int    `json:"collection_cap_max_size_bytes" mapstructure:"collection_cap_max_size_bytes"`
-	CollectionCapEnable        bool   `json:"collection_cap_enable" mapstructure:"collection_cap_enable"`
+type MongoType int
+
+const (
+	StandardMongo MongoType = iota
+	AWSDocumentDB
+)
+
+type BaseMongoConf struct {
+	MongoURL                      string    `json:"mongo_url" mapstructure:"mongo_url"`
+	MongoUseSSL                   bool      `json:"mongo_use_ssl" mapstructure:"mongo_use_ssl"`
+	MongoSSLInsecureSkipVerify    bool      `json:"mongo_ssl_insecure_skip_verify" mapstructure:"mongo_ssl_insecure_skip_verify"`
+	MongoSSLAllowInvalidHostnames bool      `json:"mongo_ssl_allow_invalid_hostnames" mapstructure:"mongo_ssl_allow_invalid_hostnames"`
+	MongoSSLCAFile                string    `json:"mongo_ssl_ca_file" mapstructure:"mongo_ssl_ca_file"`
+	MongoSSLPEMKeyfile            string    `json:"mongo_ssl_pem_keyfile" mapstructure:"mongo_ssl_pem_keyfile"`
+	MongoDBType                   MongoType `json:"mongo_db_type" mapstructure:"mongo_db_type"`
 }
 
-func mongoDialInfo(mongoURL string, useSSL bool, SSLInsecureSkipVerify bool) (dialInfo *mgo.DialInfo, err error) {
+type MongoConf struct {
+	BaseMongoConf
+	CollectionName            string `json:"collection_name" mapstructure:"collection_name"`
+	MaxInsertBatchSizeBytes   int    `json:"max_insert_batch_size_bytes" mapstructure:"max_insert_batch_size_bytes"`
+	MaxDocumentSizeBytes      int    `json:"max_document_size_bytes" mapstructure:"max_document_size_bytes"`
+	CollectionCapMaxSizeBytes int    `json:"collection_cap_max_size_bytes" mapstructure:"collection_cap_max_size_bytes"`
+	CollectionCapEnable       bool   `json:"collection_cap_enable" mapstructure:"collection_cap_enable"`
+}
 
-	if dialInfo, err = mgo.ParseURL(mongoURL); err != nil {
+func loadCertficateAndKeyFromFile(path string) (*tls.Certificate, error) {
+	raw, err := ioutil.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+
+	var cert tls.Certificate
+	for {
+		block, rest := pem.Decode(raw)
+		if block == nil {
+			break
+		}
+		if block.Type == "CERTIFICATE" {
+			cert.Certificate = append(cert.Certificate, block.Bytes)
+		} else {
+			cert.PrivateKey, err = parsePrivateKey(block.Bytes)
+			if err != nil {
+				return nil, fmt.Errorf("Failure reading private key from \"%s\": %s", path, err)
+			}
+		}
+		raw = rest
+	}
+
+	if len(cert.Certificate) == 0 {
+		return nil, fmt.Errorf("No certificate found in \"%s\"", path)
+	} else if cert.PrivateKey == nil {
+		return nil, fmt.Errorf("No private key found in \"%s\"", path)
+	}
+
+	return &cert, nil
+}
+
+func parsePrivateKey(der []byte) (crypto.PrivateKey, error) {
+	if key, err := x509.ParsePKCS1PrivateKey(der); err == nil {
+		return key, nil
+	}
+	if key, err := x509.ParsePKCS8PrivateKey(der); err == nil {
+		switch key := key.(type) {
+		case *rsa.PrivateKey, *ecdsa.PrivateKey:
+			return key, nil
+		default:
+			return nil, fmt.Errorf("Found unknown private key type in PKCS#8 wrapping")
+		}
+	}
+	if key, err := x509.ParseECPrivateKey(der); err == nil {
+		return key, nil
+	}
+	return nil, fmt.Errorf("Failed to parse private key")
+}
+
+func mongoType(session *mgo.Session) MongoType {
+	// Querying for the features which 100% not supported by AWS DocumentDB
+	var result struct {
+		Code int `bson:"code"`
+	}
+	session.Run("features", &result)
+
+	if result.Code == 303 {
+		return AWSDocumentDB
+	} else {
+		return StandardMongo
+	}
+}
+
+func mongoDialInfo(conf BaseMongoConf) (dialInfo *mgo.DialInfo, err error) {
+	if dialInfo, err = mgo.ParseURL(conf.MongoURL); err != nil {
 		return dialInfo, err
 	}
 
-	if useSSL {
+	if conf.MongoUseSSL {
 		dialInfo.DialServer = func(addr *mgo.ServerAddr) (net.Conn, error) {
 			tlsConfig := &tls.Config{}
-			if SSLInsecureSkipVerify {
+			if conf.MongoSSLInsecureSkipVerify {
 				tlsConfig.InsecureSkipVerify = true
 			}
+
+			if conf.MongoSSLCAFile != "" {
+				caCert, err := ioutil.ReadFile(conf.MongoSSLCAFile)
+				if err != nil {
+					log.Fatal("Can't load mongo CA certificates: ", err)
+				}
+				caCertPool := x509.NewCertPool()
+				caCertPool.AppendCertsFromPEM(caCert)
+				tlsConfig.RootCAs = caCertPool
+			}
+
+			if conf.MongoSSLAllowInvalidHostnames {
+				tlsConfig.InsecureSkipVerify = true
+				tlsConfig.VerifyPeerCertificate = func(rawCerts [][]byte, verifiedChains [][]*x509.Certificate) error {
+					// Code copy/pasted and adapted from
+					// https://github.com/golang/go/blob/81555cb4f3521b53f9de4ce15f64b77cc9df61b9/src/crypto/tls/handshake_client.go#L327-L344, but adapted to skip the hostname verification.
+					// See https://github.com/golang/go/issues/21971#issuecomment-412836078.
+
+					// If this is the first handshake on a connection, process and
+					// (optionally) verify the server's certificates.
+					certs := make([]*x509.Certificate, len(rawCerts))
+					for i, asn1Data := range rawCerts {
+						cert, err := x509.ParseCertificate(asn1Data)
+						if err != nil {
+							return err
+						}
+						certs[i] = cert
+					}
+
+					opts := x509.VerifyOptions{
+						Roots:         tlsConfig.RootCAs,
+						CurrentTime:   time.Now(),
+						DNSName:       "", // <- skip hostname verification
+						Intermediates: x509.NewCertPool(),
+					}
+
+					for i, cert := range certs {
+						if i == 0 {
+							continue
+						}
+						opts.Intermediates.AddCert(cert)
+					}
+					_, err := certs[0].Verify(opts)
+
+					return err
+				}
+			}
+
+			if conf.MongoSSLPEMKeyfile != "" {
+				cert, err := loadCertficateAndKeyFromFile(conf.MongoSSLPEMKeyfile)
+				if err != nil {
+					log.Fatal("Can't load mongo client certificate: ", err)
+				}
+
+				tlsConfig.Certificates = []tls.Certificate{*cert}
+			}
+
 			return tls.Dial("tcp", addr.String(), tlsConfig)
 		}
 	}
@@ -219,7 +361,7 @@ func (m *MongoPump) ensureIndexes() error {
 
 	orgIndex := mgo.Index{
 		Key:        []string{"orgid"},
-		Background: true,
+		Background: m.dbConf.MongoDBType == StandardMongo,
 	}
 
 	err = c.EnsureIndex(orgIndex)
@@ -229,7 +371,7 @@ func (m *MongoPump) ensureIndexes() error {
 
 	apiIndex := mgo.Index{
 		Key:        []string{"apiid"},
-		Background: true,
+		Background: m.dbConf.MongoDBType == StandardMongo,
 	}
 
 	err = c.EnsureIndex(apiIndex)
@@ -238,8 +380,9 @@ func (m *MongoPump) ensureIndexes() error {
 	}
 
 	logBrowserIndex := mgo.Index{
+		Name:       "logBrowserIndex",
 		Key:        []string{"-timestamp", "orgid", "apiid", "apikey", "responsecode"},
-		Background: true,
+		Background: m.dbConf.MongoDBType == StandardMongo,
 	}
 
 	err = c.EnsureIndex(logBrowserIndex)
@@ -254,7 +397,7 @@ func (m *MongoPump) connect() {
 	var err error
 	var dialInfo *mgo.DialInfo
 
-	dialInfo, err = mongoDialInfo(m.dbConf.MongoURL, m.dbConf.MongoUseSSL, m.dbConf.MongoSSLInsecureSkipVerify)
+	dialInfo, err = mongoDialInfo(m.dbConf.BaseMongoConf)
 	if err != nil {
 		log.WithFields(logrus.Fields{
 			"prefix": mongoPrefix,
@@ -270,6 +413,10 @@ func (m *MongoPump) connect() {
 		}).Error("Mongo connection failed. Retrying. Err::", err)
 		time.Sleep(5 * time.Second)
 		m.dbSession, err = mgo.DialWithInfo(dialInfo)
+	}
+
+	if err == nil && m.dbConf.MongoDBType == 0 {
+		m.dbConf.MongoDBType = mongoType(m.dbSession)
 	}
 }
 
