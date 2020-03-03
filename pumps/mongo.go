@@ -221,6 +221,10 @@ func (m *MongoPump) Init(config interface{}) error {
 	err := mapstructure.Decode(config, &m.dbConf)
 	if err == nil {
 		err = mapstructure.Decode(config, &m.dbConf.BaseMongoConf)
+		log.Error("Mongo init!", config)
+		if err != nil {
+			panic(m.dbConf.BaseMongoConf)
+		}
 	}
 
 	if err != nil {

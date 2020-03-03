@@ -6,7 +6,6 @@ import (
 
 	"github.com/kelseyhightower/envconfig"
 
-	"github.com/TykTechnologies/tyk-pump/pumps"
 	"github.com/TykTechnologies/tyk-pump/storage"
 )
 
@@ -22,7 +21,7 @@ type PumpConfig struct {
 type TykPumpConfiguration struct {
 	PurgeDelay              int                        `json:"purge_delay"`
 	DontPurgeUptimeData     bool                       `json:"dont_purge_uptime_data"`
-	UptimePumpConfig        pumps.MongoConf            `json:"uptime_pump_config"`
+	UptimePumpConfig        map[string]interface{}     `json:"uptime_pump_config"`
 	Pumps                   map[string]PumpConfig      `json:"pumps"`
 	AnalyticsStorageType    string                     `json:"analytics_storage_type"`
 	AnalyticsStorageConfig  storage.RedisStorageConfig `json:"analytics_storage_config"`
