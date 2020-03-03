@@ -60,6 +60,7 @@ type BaseMongoConf struct {
 
 type MongoConf struct {
 	BaseMongoConf
+
 	CollectionName            string `json:"collection_name" mapstructure:"collection_name"`
 	MaxInsertBatchSizeBytes   int    `json:"max_insert_batch_size_bytes" mapstructure:"max_insert_batch_size_bytes"`
 	MaxDocumentSizeBytes      int    `json:"max_document_size_bytes" mapstructure:"max_document_size_bytes"`
@@ -218,6 +219,9 @@ func (m *MongoPump) GetName() string {
 func (m *MongoPump) Init(config interface{}) error {
 	m.dbConf = &MongoConf{}
 	err := mapstructure.Decode(config, &m.dbConf)
+	if err == nil {
+		err = mapstructure.Decode(config, &m.dbConf.BaseMongoConf)
+	}
 
 	if err != nil {
 		log.WithFields(logrus.Fields{

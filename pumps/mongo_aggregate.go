@@ -126,6 +126,9 @@ func (m *MongoAggregatePump) GetCollectionName(orgid string) (string, error) {
 func (m *MongoAggregatePump) Init(config interface{}) error {
 	m.dbConf = &MongoAggregateConf{}
 	err := mapstructure.Decode(config, &m.dbConf)
+	if err == nil {
+		err = mapstructure.Decode(config, &m.dbConf.BaseMongoConf)
+	}
 
 	if err != nil {
 		log.WithFields(logrus.Fields{

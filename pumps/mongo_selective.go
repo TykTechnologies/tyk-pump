@@ -50,6 +50,9 @@ func (m *MongoSelectivePump) GetCollectionName(orgid string) (string, error) {
 func (m *MongoSelectivePump) Init(config interface{}) error {
 	m.dbConf = &MongoSelectiveConf{}
 	err := mapstructure.Decode(config, &m.dbConf)
+	if err == nil {
+		err = mapstructure.Decode(config, &m.dbConf.BaseMongoConf)
+	}
 
 	if err != nil {
 		log.WithFields(logrus.Fields{
