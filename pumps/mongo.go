@@ -418,7 +418,7 @@ func (m *MongoPump) connect() {
 	for err != nil {
 		log.WithFields(logrus.Fields{
 			"prefix": mongoPrefix,
-		}).Error("Mongo connection failed. Retrying. Err::", err)
+		}).WithError(err).WithField("dialinfo", dialInfo).Error("Mongo connection failed. Retrying.")
 		time.Sleep(5 * time.Second)
 		m.dbSession, err = mgo.DialWithInfo(dialInfo)
 	}
