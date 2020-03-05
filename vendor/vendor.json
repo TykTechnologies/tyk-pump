@@ -363,12 +363,6 @@
 			"revisionTime": "2016-07-11T12:47:28Z"
 		},
 		{
-			"checksumSHA1": "pSjm4n+YQ2zySeqBBln61N66INU=",
-			"path": "github.com/gocraft/web",
-			"revision": "9707327fb69b5b93fd722c6b4259a7b414bedac5",
-			"revisionTime": "2019-02-07T15:06:52Z"
-		},
-		{
 			"checksumSHA1": "Y2MOwzNZfl4NRNDbLCZa6sgx7O0=",
 			"path": "github.com/golang/protobuf/proto",
 			"revision": "347cf4a86c1cb8d262994d8ef5924d4576c5b331",
