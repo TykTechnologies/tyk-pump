@@ -1,6 +1,6 @@
 #!/bin/bash
 : ${ORGDIR:="/src/github.com/TykTechnologies"}
-: ${SIGNKEY:="729EA673"}
+: ${SIGNKEY:="1181A14D7CA3EE36DA45FEEC0C798DFA8CE71CF5"}
 : ${BUILDPKGS:="1"}
 TYK_PUMP_SRC_DIR=$ORGDIR/tyk-pump
 BUILDTOOLSDIR=$TYK_PUMP_SRC_DIR/build_tools
@@ -10,7 +10,7 @@ echo "Set version number"
 
 if [ $BUILDPKGS == "1" ]; then
     echo "Importing signing key"
-    gpg --list-keys | grep -w $SIGNKEY && echo "Key exists" || gpg --import --batch $BUILDTOOLSDIR/build_key.key
+    gpg --list-keys | grep -w $SIGNKEY && echo "Key exists" || gpg --batch --import $BUILDTOOLSDIR/tyk.io.rpm.signing.key
 fi
 
 DESCRIPTION="Tyk Pump to move analytics data from Redis to any supported back end"
