@@ -56,11 +56,14 @@ func (c *Conn) GetCollectionStats() (colStats bson.M) {
 }
 
 func defaultConf() MongoConf {
-	return MongoConf{
-		CollectionName:             colName,
-		MongoURL:                   dbAddr,
-		MongoSSLInsecureSkipVerify: true,
-		MaxInsertBatchSizeBytes:    10 * MiB,
-		MaxDocumentSizeBytes:       10 * MiB,
+	conf := MongoConf{
+		CollectionName:          colName,
+		MaxInsertBatchSizeBytes: 10 * MiB,
+		MaxDocumentSizeBytes:    10 * MiB,
 	}
+
+	conf.MongoURL = dbAddr
+	conf.MongoSSLInsecureSkipVerify = true
+
+	return conf
 }

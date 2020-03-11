@@ -28,15 +28,24 @@ type ElasticsearchPump struct {
 var elasticsearchPrefix = "elasticsearch-pump"
 
 type ElasticsearchConf struct {
-	IndexName          string `mapstructure:"index_name"`
-	ElasticsearchURL   string `mapstructure:"elasticsearch_url"`
-	EnableSniffing     bool   `mapstructure:"use_sniffing"`
-	DocumentType       string `mapstructure:"document_type"`
-	RollingIndex       bool   `mapstructure:"rolling_index"`
-	ExtendedStatistics bool   `mapstructure:"extended_stats"`
-	GenerateID         bool   `mapstructure:"generate_id"`
-	DecodeBase64       bool   `mapstructure:"decode_base64"`
-	Version            string `mapstructure:"version"`
+	IndexName          string                  `mapstructure:"index_name"`
+	ElasticsearchURL   string                  `mapstructure:"elasticsearch_url"`
+	EnableSniffing     bool                    `mapstructure:"use_sniffing"`
+	DocumentType       string                  `mapstructure:"document_type"`
+	RollingIndex       bool                    `mapstructure:"rolling_index"`
+	ExtendedStatistics bool                    `mapstructure:"extended_stats"`
+	GenerateID         bool                    `mapstructure:"generate_id"`
+	DecodeBase64       bool                    `mapstructure:"decode_base64"`
+	Version            string                  `mapstructure:"version"`
+	DisableBulk        bool                    `mapstructure:"disable_bulk"`
+	BulkConfig         ElasticsearchBulkConfig `mapstructure:"bulk_config"`
+}
+
+type ElasticsearchBulkConfig struct {
+	Workers       int `mapstructure:"workers"`
+	FlushInterval int `mapstructure:"flush_interval"`
+	BulkActions   int `mapstructure:"bulk_actions"`
+	BulkSize      int `mapstructure:"bulk_size"`
 }
 
 type ElasticsearchOperator interface {
@@ -44,18 +53,21 @@ type ElasticsearchOperator interface {
 }
 
 type Elasticsearch3Operator struct {
-	esClient *elasticv3.Client
+	esClient      *elasticv3.Client
+	bulkProcessor *elasticv3.BulkProcessor
 }
 
 type Elasticsearch5Operator struct {
-	esClient *elasticv5.Client
+	esClient      *elasticv5.Client
+	bulkProcessor *elasticv5.BulkProcessor
 }
 
 type Elasticsearch6Operator struct {
-	esClient *elasticv6.Client
+	esClient      *elasticv6.Client
+	bulkProcessor *elasticv6.BulkProcessor
 }
 
-func getOperator(version string, url string, setSniff bool) (ElasticsearchOperator, error) {
+func getOperator(version string, url string, setSniff bool, bulkConfig ElasticsearchBulkConfig) (ElasticsearchOperator, error) {
 	var err error
 
 	urls := strings.Split(url, ",")
@@ -64,14 +76,84 @@ func getOperator(version string, url string, setSniff bool) (ElasticsearchOperat
 	case "3":
 		e := new(Elasticsearch3Operator)
 		e.esClient, err = elasticv3.NewClient(elasticv3.SetURL(urls...), elasticv3.SetSniff(setSniff))
+		if err != nil {
+			return e, err
+		}
+
+		// Setup a bulk processor
+		p := e.esClient.BulkProcessor().Name("TykPumpESv3BackgroundProcessor")
+		if bulkConfig.Workers != 0 {
+			p = p.Workers(bulkConfig.Workers)
+		}
+
+		if bulkConfig.FlushInterval != 0 {
+			p = p.FlushInterval(time.Duration(bulkConfig.FlushInterval) * time.Second)
+		}
+
+		if bulkConfig.BulkActions != 0 {
+			p = p.BulkActions(bulkConfig.BulkActions)
+		}
+
+		if bulkConfig.BulkSize != 0 {
+			p = p.BulkSize(bulkConfig.BulkSize)
+		}
+
+		e.bulkProcessor, err = p.Do()
+
 		return e, err
 	case "5":
 		e := new(Elasticsearch5Operator)
 		e.esClient, err = elasticv5.NewClient(elasticv5.SetURL(urls...), elasticv5.SetSniff(setSniff))
+		if err != nil {
+			return e, err
+		}
+		// Setup a bulk processor
+		p := e.esClient.BulkProcessor().Name("TykPumpESv5BackgroundProcessor")
+		if bulkConfig.Workers != 0 {
+			p = p.Workers(bulkConfig.Workers)
+		}
+
+		if bulkConfig.FlushInterval != 0 {
+			p = p.FlushInterval(time.Duration(bulkConfig.FlushInterval) * time.Second)
+		}
+
+		if bulkConfig.BulkActions != 0 {
+			p = p.BulkActions(bulkConfig.BulkActions)
+		}
+
+		if bulkConfig.BulkSize != 0 {
+			p = p.BulkSize(bulkConfig.BulkSize)
+		}
+
+		e.bulkProcessor, err = p.Do(context.Background())
+
 		return e, err
 	case "6":
 		e := new(Elasticsearch6Operator)
 		e.esClient, err = elasticv6.NewClient(elasticv6.SetURL(urls...), elasticv6.SetSniff(setSniff))
+		if err != nil {
+			return e, err
+		}
+		// Setup a bulk processor
+		p := e.esClient.BulkProcessor().Name("TykPumpESv6BackgroundProcessor")
+		if bulkConfig.Workers != 0 {
+			p = p.Workers(bulkConfig.Workers)
+		}
+
+		if bulkConfig.FlushInterval != 0 {
+			p = p.FlushInterval(time.Duration(bulkConfig.FlushInterval) * time.Second)
+		}
+
+		if bulkConfig.BulkActions != 0 {
+			p = p.BulkActions(bulkConfig.BulkActions)
+		}
+
+		if bulkConfig.BulkSize != 0 {
+			p = p.BulkSize(bulkConfig.BulkSize)
+		}
+
+		e.bulkProcessor, err = p.Do(context.Background())
+
 		return e, err
 	default:
 		// shouldn't get this far, but hey never hurts to check assumptions
@@ -148,7 +230,7 @@ func (e *ElasticsearchPump) Init(config interface{}) error {
 func (e *ElasticsearchPump) connect() {
 	var err error
 
-	e.operator, err = getOperator(e.esConf.Version, e.esConf.ElasticsearchURL, e.esConf.EnableSniffing)
+	e.operator, err = getOperator(e.esConf.Version, e.esConf.ElasticsearchURL, e.esConf.EnableSniffing, e.esConf.BulkConfig)
 	if err != nil {
 		log.WithFields(logrus.Fields{
 			"prefix": elasticsearchPrefix,
@@ -243,6 +325,10 @@ func (e Elasticsearch3Operator) processData(ctx context.Context, data []interfac
 	index := e.esClient.Index().Index(getIndexName(esConf))
 
 	for dataIndex := range data {
+		if ctxErr := ctx.Err(); ctxErr != nil {
+			continue
+		}
+
 		d, ok := data[dataIndex].(analytics.AnalyticsRecord)
 		if !ok {
 			log.WithFields(logrus.Fields{
@@ -253,11 +339,16 @@ func (e Elasticsearch3Operator) processData(ctx context.Context, data []interfac
 
 		mapping, id := getMapping(d, esConf.ExtendedStatistics, esConf.GenerateID, esConf.DecodeBase64)
 
-		_, err := index.BodyJson(mapping).Type(esConf.DocumentType).Id(id).DoC(ctx)
-		if err != nil {
-			log.WithFields(logrus.Fields{
-				"prefix": elasticsearchPrefix,
-			}).Error("Error while writing ", data[dataIndex], err)
+		if !esConf.DisableBulk {
+			r := elasticv3.NewBulkIndexRequest().Index(getIndexName(esConf)).Type(esConf.DocumentType).Id(id).Doc(mapping)
+			e.bulkProcessor.Add(r)
+		} else {
+			_, err := index.BodyJson(mapping).Type(esConf.DocumentType).Id(id).DoC(ctx)
+			if err != nil {
+				log.WithFields(logrus.Fields{
+					"prefix": elasticsearchPrefix,
+				}).Error("Error while writing ", data[dataIndex], err)
+			}
 		}
 	}
 
@@ -268,6 +359,10 @@ func (e Elasticsearch5Operator) processData(ctx context.Context, data []interfac
 	index := e.esClient.Index().Index(getIndexName(esConf))
 
 	for dataIndex := range data {
+		if ctxErr := ctx.Err(); ctxErr != nil {
+			continue
+		}
+
 		d, ok := data[dataIndex].(analytics.AnalyticsRecord)
 		if !ok {
 			log.WithFields(logrus.Fields{
@@ -278,11 +373,16 @@ func (e Elasticsearch5Operator) processData(ctx context.Context, data []interfac
 
 		mapping, id := getMapping(d, esConf.ExtendedStatistics, esConf.GenerateID, esConf.DecodeBase64)
 
-		_, err := index.BodyJson(mapping).Type(esConf.DocumentType).Id(id).Do(ctx)
-		if err != nil {
-			log.WithFields(logrus.Fields{
-				"prefix": elasticsearchPrefix,
-			}).Error("Error while writing ", data[dataIndex], err)
+		if !esConf.DisableBulk {
+			r := elasticv5.NewBulkIndexRequest().Index(getIndexName(esConf)).Type(esConf.DocumentType).Id(id).Doc(mapping)
+			e.bulkProcessor.Add(r)
+		} else {
+			_, err := index.BodyJson(mapping).Type(esConf.DocumentType).Id(id).Do(ctx)
+			if err != nil {
+				log.WithFields(logrus.Fields{
+					"prefix": elasticsearchPrefix,
+				}).Error("Error while writing ", data[dataIndex], err)
+			}
 		}
 	}
 
@@ -293,6 +393,10 @@ func (e Elasticsearch6Operator) processData(ctx context.Context, data []interfac
 	index := e.esClient.Index().Index(getIndexName(esConf))
 
 	for dataIndex := range data {
+		if ctxErr := ctx.Err(); ctxErr != nil {
+			continue
+		}
+
 		d, ok := data[dataIndex].(analytics.AnalyticsRecord)
 		if !ok {
 			log.WithFields(logrus.Fields{
@@ -303,11 +407,16 @@ func (e Elasticsearch6Operator) processData(ctx context.Context, data []interfac
 
 		mapping, id := getMapping(d, esConf.ExtendedStatistics, esConf.GenerateID, esConf.DecodeBase64)
 
-		_, err := index.BodyJson(mapping).Type(esConf.DocumentType).Id(id).Do(ctx)
-		if err != nil {
-			log.WithFields(logrus.Fields{
-				"prefix": elasticsearchPrefix,
-			}).Error("Error while writing ", data[dataIndex], err)
+		if !esConf.DisableBulk {
+			r := elasticv6.NewBulkIndexRequest().Index(getIndexName(esConf)).Type(esConf.DocumentType).Id(id).Doc(mapping)
+			e.bulkProcessor.Add(r)
+		} else {
+			_, err := index.BodyJson(mapping).Type(esConf.DocumentType).Id(id).Do(ctx)
+			if err != nil {
+				log.WithFields(logrus.Fields{
+					"prefix": elasticsearchPrefix,
+				}).Error("Error while writing ", data[dataIndex], err)
+			}
 		}
 	}
 

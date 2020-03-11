@@ -9,6 +9,7 @@ import (
 	"os"
 
 	"github.com/gocraft/health"
+
 	msgpack "gopkg.in/vmihailenco/msgpack.v2"
 
 	"github.com/TykTechnologies/logrus"
@@ -17,6 +18,7 @@ import (
 	"github.com/TykTechnologies/tyk-pump/analytics/demo"
 	logger "github.com/TykTechnologies/tyk-pump/logger"
 	"github.com/TykTechnologies/tyk-pump/pumps"
+	"github.com/TykTechnologies/tyk-pump/server"
 	"github.com/TykTechnologies/tyk-pump/storage"
 
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
@@ -302,6 +304,7 @@ func execPumpWriting(wg *sync.WaitGroup, pmp pumps.Pump, keys *[]interface{}, pu
 func main() {
 	Init()
 	SetupInstrumentation()
+	go server.ServeHealthCheck(SystemConfig.HealthCheckEndpointName, SystemConfig.HealthCheckEndpointPort)
 
 	// Store version which will be read by dashboard and sent to
 	// vclu(version check and licecnse utilisation) service
@@ -321,7 +324,6 @@ func main() {
 
 		return
 	}
-
 	// start the worker loop
 	log.WithFields(logrus.Fields{
 		"prefix": mainPrefix,

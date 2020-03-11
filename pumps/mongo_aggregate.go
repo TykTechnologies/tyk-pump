@@ -30,14 +30,12 @@ type MongoAggregatePump struct {
 }
 
 type MongoAggregateConf struct {
-	MongoURL                   string   `mapstructure:"mongo_url"`
-	MongoUseSSL                bool     `mapstructure:"mongo_use_ssl"`
-	MongoSSLInsecureSkipVerify bool     `mapstructure:"mongo_ssl_insecure_skip_verify"`
-	UseMixedCollection         bool     `mapstructure:"use_mixed_collection"`
-	TrackAllPaths              bool     `mapstructure:"track_all_paths"`
-	IgnoreTagPrefixList        []string `mapstructure:"ignore_tag_prefix_list"`
-	ThresholdLenTagList        int      `mapstructure:"threshold_len_tag_list"`
-	StoreAnalyticsPerMinute    bool     `mapstructure:"store_analytics_per_minute"`
+	BaseMongoConf
+	UseMixedCollection      bool     `mapstructure:"use_mixed_collection"`
+	TrackAllPaths           bool     `mapstructure:"track_all_paths"`
+	IgnoreTagPrefixList     []string `mapstructure:"ignore_tag_prefix_list"`
+	ThresholdLenTagList     int      `mapstructure:"threshold_len_tag_list"`
+	StoreAnalyticsPerMinute bool     `mapstructure:"store_analytics_per_minute"`
 }
 
 func (m *MongoAggregatePump) New() Pump {
@@ -129,6 +127,9 @@ func (m *MongoAggregatePump) GetCollectionName(orgid string) (string, error) {
 func (m *MongoAggregatePump) Init(config interface{}) error {
 	m.dbConf = &MongoAggregateConf{}
 	err := mapstructure.Decode(config, &m.dbConf)
+	if err == nil {
+		err = mapstructure.Decode(config, &m.dbConf.BaseMongoConf)
+	}
 
 	if err != nil {
 		log.WithFields(logrus.Fields{
@@ -158,20 +159,26 @@ func (m *MongoAggregatePump) connect() {
 	var err error
 	var dialInfo *mgo.DialInfo
 
-	dialInfo, err = mongoDialInfo(m.dbConf.MongoURL, m.dbConf.MongoUseSSL, m.dbConf.MongoSSLInsecureSkipVerify)
+	dialInfo, err = mongoDialInfo(m.dbConf.BaseMongoConf)
 	if err != nil {
 		log.WithFields(logrus.Fields{
 			"prefix": mongoPrefix,
 		}).Panic("Mongo URL is invalid: ", err)
 	}
 
+	dialInfo.Timeout = time.Second * 5
 	m.dbSession, err = mgo.DialWithInfo(dialInfo)
-	if err != nil {
+
+	for err != nil {
 		log.WithFields(logrus.Fields{
-			"prefix": analytics.MongoAggregatePrefix,
-		}).Error("Mongo connection failed:", err)
+			"prefix": mongoPrefix,
+		}).WithError(err).WithField("dialinfo", dialInfo).Error("Mongo connection failed. Retrying.")
 		time.Sleep(5 * time.Second)
-		m.connect()
+		m.dbSession, err = mgo.DialWithInfo(dialInfo)
+	}
+
+	if err == nil && m.dbConf.MongoDBType == 0 {
+		m.dbConf.MongoDBType = mongoType(m.dbSession)
 	}
 }
 
@@ -180,7 +187,7 @@ func (m *MongoAggregatePump) ensureIndexes(c *mgo.Collection) error {
 	ttlIndex := mgo.Index{
 		Key:         []string{"expireAt"},
 		ExpireAfter: 0,
-		Background:  true,
+		Background:  m.dbConf.MongoDBType == StandardMongo,
 	}
 
 	err = mgohacks.EnsureTTLIndex(c, ttlIndex)
@@ -190,7 +197,7 @@ func (m *MongoAggregatePump) ensureIndexes(c *mgo.Collection) error {
 
 	apiIndex := mgo.Index{
 		Key:        []string{"timestamp"},
-		Background: true,
+		Background: m.dbConf.MongoDBType == StandardMongo,
 	}
 
 	err = c.EnsureIndex(apiIndex)
@@ -200,7 +207,7 @@ func (m *MongoAggregatePump) ensureIndexes(c *mgo.Collection) error {
 
 	orgIndex := mgo.Index{
 		Key:        []string{"orgid"},
-		Background: true,
+		Background: m.dbConf.MongoDBType == StandardMongo,
 	}
 
 	return c.EnsureIndex(orgIndex)

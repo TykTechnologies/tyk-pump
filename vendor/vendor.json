@@ -53,40 +53,196 @@
 			"revisionTime": "2018-10-04T16:58:12Z"
 		},
 		{
-			"checksumSHA1": "aqCNtmplBjTce0W/nCc2T5z0A/8=",
+			"checksumSHA1": "cE6Wn5ThPwRUb/BWPaRUYjd0tO8=",
+			"path": "github.com/TykTechnologies/tyk",
+			"revision": "cf1d1ad812067cf21ddc5efca7ba2a3007b4b014",
+			"revisionTime": "2020-02-07T05:58:04Z"
+		},
+		{
+			"checksumSHA1": "vhX1+fYn4OM63bufC+xjiaJl0/4=",
 			"path": "github.com/TykTechnologies/tyk/apidef",
-			"revision": "55617d918dddbc6b29ba992a5922f91dac19f44a",
-			"revisionTime": "2018-10-04T16:58:12Z"
+			"revision": "cf1d1ad812067cf21ddc5efca7ba2a3007b4b014",
+			"revisionTime": "2020-02-07T05:58:04Z"
 		},
 		{
-			"checksumSHA1": "LYs+tzkj8p7iYFOwsxScJa38Ytw=",
+			"checksumSHA1": "XJkON88GwCekxHN8FnJRFzfkLyo=",
+			"path": "github.com/TykTechnologies/tyk/apidef/importer",
+			"revision": "cf1d1ad812067cf21ddc5efca7ba2a3007b4b014",
+			"revisionTime": "2020-02-07T05:58:04Z"
+		},
+		{
+			"checksumSHA1": "Ib8SGFJhM56K+FjELQiX6P89jaY=",
+			"path": "github.com/TykTechnologies/tyk/certs",
+			"revision": "cf1d1ad812067cf21ddc5efca7ba2a3007b4b014",
+			"revisionTime": "2020-02-07T05:58:04Z"
+		},
+		{
+			"checksumSHA1": "wGK/4pkSvxJVS6aZ/DeFLcFUzWk=",
+			"path": "github.com/TykTechnologies/tyk/checkup",
+			"revision": "cf1d1ad812067cf21ddc5efca7ba2a3007b4b014",
+			"revisionTime": "2020-02-07T05:58:04Z"
+		},
+		{
+			"checksumSHA1": "sT/GRdaTHwlf6TWv7mC+56tfB8M=",
+			"path": "github.com/TykTechnologies/tyk/cli",
+			"revision": "cf1d1ad812067cf21ddc5efca7ba2a3007b4b014",
+			"revisionTime": "2020-02-07T05:58:04Z"
+		},
+		{
+			"checksumSHA1": "pexJCRTDybUeNMOYcb8F1OSXPTI=",
+			"path": "github.com/TykTechnologies/tyk/cli/bundler",
+			"revision": "cf1d1ad812067cf21ddc5efca7ba2a3007b4b014",
+			"revisionTime": "2020-02-07T05:58:04Z"
+		},
+		{
+			"checksumSHA1": "Sl3y2Qg/YtTZVYD3LNPTaODfl8w=",
+			"path": "github.com/TykTechnologies/tyk/cli/importer",
+			"revision": "cf1d1ad812067cf21ddc5efca7ba2a3007b4b014",
+			"revisionTime": "2020-02-07T05:58:04Z"
+		},
+		{
+			"checksumSHA1": "01xMCXble5dqpnrtahh6tQUi0To=",
+			"path": "github.com/TykTechnologies/tyk/cli/linter",
+			"revision": "cf1d1ad812067cf21ddc5efca7ba2a3007b4b014",
+			"revisionTime": "2020-02-07T05:58:04Z"
+		},
+		{
+			"checksumSHA1": "phwp8vUr1iJ/zigpFPl6D60EFTM=",
 			"path": "github.com/TykTechnologies/tyk/config",
-			"revision": "99e2a7cbfecd31939f023da47e46e257bffc20c5",
-			"revisionTime": "2019-12-11T12:11:00Z"
+			"revision": "cf1d1ad812067cf21ddc5efca7ba2a3007b4b014",
+			"revisionTime": "2020-02-07T05:58:04Z"
 		},
 		{
-			"checksumSHA1": "ydz+j8LMCss321AwXuxHJk15c7o=",
+			"checksumSHA1": "6GLZmxBSNngQoxgXj33xBt9KE5I=",
+			"path": "github.com/TykTechnologies/tyk/coprocess",
+			"revision": "cf1d1ad812067cf21ddc5efca7ba2a3007b4b014",
+			"revisionTime": "2020-02-07T05:58:04Z"
+		},
+		{
+			"checksumSHA1": "zE1lSABxvC9mRA0od8CfiP57sWE=",
+			"path": "github.com/TykTechnologies/tyk/coprocess/grpc",
+			"revision": "cf1d1ad812067cf21ddc5efca7ba2a3007b4b014",
+			"revisionTime": "2020-02-07T05:58:04Z"
+		},
+		{
+			"checksumSHA1": "YyFpd4tKlMOFMoXgnJCFo6hQek0=",
+			"path": "github.com/TykTechnologies/tyk/coprocess/python",
+			"revision": "cf1d1ad812067cf21ddc5efca7ba2a3007b4b014",
+			"revisionTime": "2020-02-07T05:58:04Z"
+		},
+		{
+			"checksumSHA1": "63IpfIOh75D2dgFT9eyc82448RM=",
+			"path": "github.com/TykTechnologies/tyk/ctx",
+			"revision": "cf1d1ad812067cf21ddc5efca7ba2a3007b4b014",
+			"revisionTime": "2020-02-07T05:58:04Z"
+		},
+		{
+			"checksumSHA1": "J71kNHxjQmkaWsb5Bq3bKVqehu0=",
+			"path": "github.com/TykTechnologies/tyk/dlpython",
+			"revision": "cf1d1ad812067cf21ddc5efca7ba2a3007b4b014",
+			"revisionTime": "2020-02-07T05:58:04Z"
+		},
+		{
+			"checksumSHA1": "Cd0PHPm3nrSArckpFQEbCExhGeo=",
+			"path": "github.com/TykTechnologies/tyk/dnscache",
+			"revision": "cf1d1ad812067cf21ddc5efca7ba2a3007b4b014",
+			"revisionTime": "2020-02-07T05:58:04Z"
+		},
+		{
+			"checksumSHA1": "LuZJ0iBwoHMVbmN4g6IxR26UVIs=",
+			"path": "github.com/TykTechnologies/tyk/gateway",
+			"revision": "cf1d1ad812067cf21ddc5efca7ba2a3007b4b014",
+			"revisionTime": "2020-02-07T05:58:04Z"
+		},
+		{
+			"checksumSHA1": "IMFYCEvNCQkCuEzNGRGToUBS+xo=",
+			"path": "github.com/TykTechnologies/tyk/goplugin",
+			"revision": "cf1d1ad812067cf21ddc5efca7ba2a3007b4b014",
+			"revisionTime": "2020-02-07T05:58:04Z"
+		},
+		{
+			"checksumSHA1": "xOdd9q3ZQVjlMW7901sE8jHGRdo=",
+			"path": "github.com/TykTechnologies/tyk/headers",
+			"revision": "cf1d1ad812067cf21ddc5efca7ba2a3007b4b014",
+			"revisionTime": "2020-02-07T05:58:04Z"
+		},
+		{
+			"checksumSHA1": "ioSPZhDsXHQUOtUP6dVCdXbM3as=",
 			"path": "github.com/TykTechnologies/tyk/log",
-			"revision": "55617d918dddbc6b29ba992a5922f91dac19f44a",
-			"revisionTime": "2018-10-04T16:58:12Z"
+			"revision": "cf1d1ad812067cf21ddc5efca7ba2a3007b4b014",
+			"revisionTime": "2020-02-07T05:58:04Z"
 		},
 		{
-			"checksumSHA1": "8HIMsSiUY/Rfk2lVWu2daF2AeXA=",
+			"checksumSHA1": "T7EyNMpVM5MbpdnOErb9wBwKxsU=",
 			"path": "github.com/TykTechnologies/tyk/regexp",
-			"revision": "55617d918dddbc6b29ba992a5922f91dac19f44a",
-			"revisionTime": "2018-10-04T16:58:12Z"
+			"revision": "cf1d1ad812067cf21ddc5efca7ba2a3007b4b014",
+			"revisionTime": "2020-02-07T05:58:04Z"
 		},
 		{
-			"checksumSHA1": "3qnxItdJQzPp7rXY62LJ/zslffo=",
+			"checksumSHA1": "5lEOlsEhYOI6iZaBa/lQyX2BZ2g=",
+			"path": "github.com/TykTechnologies/tyk/request",
+			"revision": "cf1d1ad812067cf21ddc5efca7ba2a3007b4b014",
+			"revisionTime": "2020-02-07T05:58:04Z"
+		},
+		{
+			"checksumSHA1": "MP95QiqOzszwWbNjbXlkPmVpNH0=",
 			"path": "github.com/TykTechnologies/tyk/rpc",
-			"revision": "227cdf3a4e5cd5944f2c1929f66af36935e51828",
-			"revisionTime": "2018-10-06T15:48:16Z"
+			"revision": "cf1d1ad812067cf21ddc5efca7ba2a3007b4b014",
+			"revisionTime": "2020-02-07T05:58:04Z"
 		},
 		{
-			"checksumSHA1": "CJLruelMk5uog4v0A2a+RQtcVME=",
+			"checksumSHA1": "gUXKyefHqUEW6FmLeD0oLPqzaWs=",
+			"path": "github.com/TykTechnologies/tyk/signature_validator",
+			"revision": "cf1d1ad812067cf21ddc5efca7ba2a3007b4b014",
+			"revisionTime": "2020-02-07T05:58:04Z"
+		},
+		{
+			"checksumSHA1": "6CNfUjcHrujoYjhg8J+oRyK2rI0=",
 			"path": "github.com/TykTechnologies/tyk/storage",
-			"revision": "99e2a7cbfecd31939f023da47e46e257bffc20c5",
-			"revisionTime": "2019-12-11T12:11:00Z"
+			"revision": "cf1d1ad812067cf21ddc5efca7ba2a3007b4b014",
+			"revisionTime": "2020-02-07T05:58:04Z"
+		},
+		{
+			"checksumSHA1": "eteBCQJCwCq7GnaZBrH1Y/KwXV4=",
+			"path": "github.com/TykTechnologies/tyk/tcp",
+			"revision": "cf1d1ad812067cf21ddc5efca7ba2a3007b4b014",
+			"revisionTime": "2020-02-07T05:58:04Z"
+		},
+		{
+			"checksumSHA1": "SbcPoJ17K+NeMVl9Q9Pdd1tqbIk=",
+			"path": "github.com/TykTechnologies/tyk/test",
+			"revision": "cf1d1ad812067cf21ddc5efca7ba2a3007b4b014",
+			"revisionTime": "2020-02-07T05:58:04Z"
+		},
+		{
+			"checksumSHA1": "/sUaUN2Acy68RxWdhkwvqsCpUIk=",
+			"path": "github.com/TykTechnologies/tyk/test/goplugins",
+			"revision": "cf1d1ad812067cf21ddc5efca7ba2a3007b4b014",
+			"revisionTime": "2020-02-07T05:58:04Z"
+		},
+		{
+			"checksumSHA1": "iJ5Qm0+DBwLdBlljrLcVbklLy1s=",
+			"path": "github.com/TykTechnologies/tyk/trace",
+			"revision": "cf1d1ad812067cf21ddc5efca7ba2a3007b4b014",
+			"revisionTime": "2020-02-07T05:58:04Z"
+		},
+		{
+			"checksumSHA1": "zTWRKVWkRfXiO+CkouHHVYW2dqA=",
+			"path": "github.com/TykTechnologies/tyk/trace/jaeger",
+			"revision": "cf1d1ad812067cf21ddc5efca7ba2a3007b4b014",
+			"revisionTime": "2020-02-07T05:58:04Z"
+		},
+		{
+			"checksumSHA1": "35hUeFxLoojKceECFlAhCz49NfE=",
+			"path": "github.com/TykTechnologies/tyk/trace/openzipkin",
+			"revision": "cf1d1ad812067cf21ddc5efca7ba2a3007b4b014",
+			"revisionTime": "2020-02-07T05:58:04Z"
+		},
+		{
+			"checksumSHA1": "hS7OadHRUT/AA+fAyvMsTlYQK+U=",
+			"path": "github.com/TykTechnologies/tyk/user",
+			"revision": "cf1d1ad812067cf21ddc5efca7ba2a3007b4b014",
+			"revisionTime": "2020-02-07T05:58:04Z"
 		},
 		{
 			"checksumSHA1": "KmjnydoAbofMieIWm+it5OWERaM=",
@@ -205,6 +361,12 @@
 			"path": "github.com/gocraft/health/stack",
 			"revision": "25b40f8580168c1f905a6dba35d471cdc51ca629",
 			"revisionTime": "2016-07-11T12:47:28Z"
+		},
+		{
+			"checksumSHA1": "pSjm4n+YQ2zySeqBBln61N66INU=",
+			"path": "github.com/gocraft/web",
+			"revision": "9707327fb69b5b93fd722c6b4259a7b414bedac5",
+			"revisionTime": "2019-02-07T15:06:52Z"
 		},
 		{
 			"checksumSHA1": "Y2MOwzNZfl4NRNDbLCZa6sgx7O0=",
