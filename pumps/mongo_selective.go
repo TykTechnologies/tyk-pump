@@ -145,7 +145,7 @@ func (m *MongoSelectivePump) ensureIndexes(c *mgo.Collection) error {
 	}
 
 	err = c.EnsureIndex(logBrowserIndex)
-	if err != nil {
+	if err != nil && !strings.Contains(err.Error(), "already exists with a different name") {
 		return err
 	}
 
