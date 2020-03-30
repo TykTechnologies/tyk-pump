@@ -453,7 +453,7 @@ func AggregateData(data []interface{}, trackAllPaths bool, ignoreTagPrefixList [
 
 			// We need an initial value
 			thisAggregate.Total.RequestTime = thisAggregate.Total.TotalRequestTime / float64(thisAggregate.Total.Hits)
-			if thisV.ResponseCode > 400 {
+			if thisV.ResponseCode >= 400 {
 				thisCounter.ErrorTotal = 1
 				thisCounter.ErrorMap[strconv.Itoa(thisV.ResponseCode)]++
 				thisAggregate.Total.ErrorTotal++
