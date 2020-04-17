@@ -71,7 +71,7 @@ Create a `pump.conf` file:
       "type": "elasticsearch",
       "meta": {
         "index_name": "tyk_analytics",
-        "elasticsearch_url": "localhost:9200",
+        "elasticsearch_url": "http://localhost:9200",
         "enable_sniffing": false,
         "document_type": "tyk_analytics",
         "rolling_index": false,
