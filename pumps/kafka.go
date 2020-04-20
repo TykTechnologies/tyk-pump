@@ -4,12 +4,17 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"time"
+
 	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/mitchellh/mapstructure"
 	"github.com/segmentio/kafka-go"
+	"github.com/segmentio/kafka-go/sasl"
+	"github.com/segmentio/kafka-go/sasl/plain"
+	"github.com/segmentio/kafka-go/sasl/scram"
+
 	"github.com/segmentio/kafka-go/snappy"
-	"time"
 )
 
 type KafkaPump struct {
@@ -32,6 +37,10 @@ type KafkaConf struct {
 	MetaData              map[string]string `mapstructure:"meta_data"`
 	UseSSL                bool              `mapstructure:"use_ssl"`
 	SSLInsecureSkipVerify bool              `mapstructure:"ssl_insecure_skip_verify"`
+	SASLMechanism         string            `mapstructure:"sasl_mechanism"`
+	Username              string            `mapstructure:"sasl_username"`
+	Password              string            `mapstructure:"sasl_password"`
+	Algorithm             string            `mapstructure:"sasl_algorithm"`
 }
 
 func (k *KafkaPump) New() Pump {
@@ -61,11 +70,33 @@ func (k *KafkaPump) Init(config interface{}) error {
 		}
 	}
 
+	var mechanism sasl.Mechanism
+
+	switch k.kafkaConf.SASLMechanism {
+	case "":
+		break
+	case "PLAIN", "plain":
+		mechanism = plain.Mechanism{Username: k.kafkaConf.Username, Password: k.kafkaConf.Password}
+	case "SCRAM", "scram":
+		algorithm := scram.SHA256
+		if k.kafkaConf.Algorithm == "sha-512" || k.kafkaConf.Algorithm == "SHA-512" {
+			algorithm = scram.SHA512
+		}
+		var mechErr error
+		mechanism, mechErr = scram.Mechanism(algorithm, k.kafkaConf.Username, k.kafkaConf.Password)
+		if mechErr != nil {
+			k.log.Fatal("Failed initialize kafka mechanism  : ", mechErr)
+		}
+	default:
+		k.log.Warn("Tyk pump doesn't support " + k.kafkaConf.SASLMechanism + " mechanism.")
+	}
+
 	//Kafka writer connection config
 	dialer := &kafka.Dialer{
-		Timeout:  k.kafkaConf.Timeout * time.Second,
-		ClientID: k.kafkaConf.ClientId,
-		TLS:      tlsConfig,
+		Timeout:       k.kafkaConf.Timeout * time.Second,
+		ClientID:      k.kafkaConf.ClientId,
+		TLS:           tlsConfig,
+		SASLMechanism: mechanism,
 	}
 
 	k.writerConfig.Brokers = k.kafkaConf.Broker
