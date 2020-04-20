@@ -10,6 +10,10 @@ import (
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/mitchellh/mapstructure"
 	"github.com/segmentio/kafka-go"
+	"github.com/segmentio/kafka-go/sasl"
+	"github.com/segmentio/kafka-go/sasl/plain"
+	"github.com/segmentio/kafka-go/sasl/scram"
+
 	"github.com/segmentio/kafka-go/snappy"
 )
 
@@ -82,13 +86,37 @@ func (k *KafkaPump) Init(config interface{}) error {
 				InsecureSkipVerify: k.kafkaConf.SSLInsecureSkipVerify,
 			}
 		}
+	} else if k.kafkaConf.SASLMechanism != "" {
+		k.log.WithField("SASL-Mechanism", k.kafkaConf.SASLMechanism).Warn("SASL-Mechanism is setted but use_ssl is false.")
+	}
+
+	var mechanism sasl.Mechanism
+
+	switch k.kafkaConf.SASLMechanism {
+	case "":
+		break
+	case "PLAIN", "plain":
+		mechanism = plain.Mechanism{Username: k.kafkaConf.Username, Password: k.kafkaConf.Password}
+	case "SCRAM", "scram":
+		algorithm := scram.SHA256
+		if k.kafkaConf.Algorithm == "sha-512" || k.kafkaConf.Algorithm == "SHA-512" {
+			algorithm = scram.SHA512
+		}
+		var mechErr error
+		mechanism, mechErr = scram.Mechanism(algorithm, k.kafkaConf.Username, k.kafkaConf.Password)
+		if mechErr != nil {
+			k.log.Fatal("Failed initialize kafka mechanism  : ", mechErr)
+		}
+	default:
+		k.log.WithField("SASL-Mechanism", k.kafkaConf.SASLMechanism).Warn("Tyk pump doesn't support this SASL mechanism.")
 	}
 
 	//Kafka writer connection config
 	dialer := &kafka.Dialer{
-		Timeout:  k.kafkaConf.Timeout * time.Second,
-		ClientID: k.kafkaConf.ClientId,
-		TLS:      tlsConfig,
+		Timeout:       k.kafkaConf.Timeout * time.Second,
+		ClientID:      k.kafkaConf.ClientId,
+		TLS:           tlsConfig,
+		SASLMechanism: mechanism,
 	}
 
 	k.writerConfig.Brokers = k.kafkaConf.Broker
