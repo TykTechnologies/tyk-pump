@@ -327,6 +327,31 @@ On startup, you should see the loaded configs when initializing the dogstatsd pu
 [May 10 15:23:44]  INFO dogstatsd: buffered: true, max_messages: 32
 [May 10 15:23:44]  INFO dogstatsd: async_uds: true, write_timeout: 2s
 ```
+### Splunk Config
+
+Setting up Splunk with a *HTTP Event Collector*
+
+- `collector_token`: address of the datadog agent including host & port
+- `collector_url`: endpoint the Pump will send analytics too.  Should look something like:
+
+`https://splunk:8088/services/collector/event`
+
+- `ssl_insecure_skip_verify`: Controls whether the pump client verifies the Splunk server's certificate chain and host name.
+
+Example:
+```json
+    "splunk": {
+      "type": "splunk",
+      "meta": {
+        "collector_token": "<token>",
+        "collector_url": "<url>",
+        "ssl_insecure_skip_verify": false,
+        "ssl_cert_file": "<cert-path>",
+        "ssl_key_file": "<key-path>",
+        "ssl_server_name": "<server-name>"
+      }
+    },
+```
 
 ### Logzio Config
 
