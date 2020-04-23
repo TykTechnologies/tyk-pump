@@ -40,6 +40,8 @@ Create a `pump.conf` file:
     "enable_cluster": false
   },
   "purge_delay": 1,
+  "health_check_endpoint_name": "hello",
+  "health_check_endpoint_port": 8080,
   "pumps": {
     "dummy": {
       "type": "dummy",
@@ -234,6 +236,19 @@ Create a `pump.conf` file:
 ```
 
 Settings are the same as for the original `tyk.conf` for redis and for mongoDB.
+
+### Uptime Data
+
+`dont_purge_uptime_data` - Setting this to false will create a pump that pushes uptime data to MongoDB, so the Dashboard can read it. Disable by setting to true
+
+### Health Check
+
+From v2.9.4, we have introduced a `/health` endpoint to confirm the Pump is running. You need to configure the following settings:
+
+- `health_check_endpoint_name` - The default is "hello" 
+- `health_check_endpoint_port` - The default port is 8080
+
+This returns a HTTP 200 OK response if the Pump is running.
 
 ### Tyk Dashboard
 
