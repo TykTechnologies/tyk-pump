@@ -6,7 +6,7 @@ TYK_PUMP_SRC_DIR=$ORGDIR/tyk-pump
 BUILDTOOLSDIR=$TYK_PUMP_SRC_DIR/build_tools
 
 echo "Set version number"
-: ${VERSION:=$(perl -n -e'/v(\d+).(\d+).(\d+)/'' && print "$1\.$2\.$3"' version.go)}
+: ${VERSION:=$(perl -n -e'/v(\d+).(\d+).(\d+)(?:.(\d+))?/'' && print "$1\.$2\.$3".($4 ? "\.$4" : "")' version.go)}
 
 if [ $BUILDPKGS == "1" ]; then
     echo Configuring gpg-agent-config to accept a passphrase
