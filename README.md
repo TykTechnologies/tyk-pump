@@ -37,7 +37,9 @@ Create a `pump.conf` file:
     "database": 0,
     "optimisation_max_idle": 100,
     "optimisation_max_active": 0,
-    "enable_cluster": false
+    "enable_cluster": false,
+    "redis_use_ssl": false,
+    "redis_ssl_insecure_skip_verify": false
   },
   "purge_delay": 1,
   "health_check_endpoint_name": "hello",
@@ -236,6 +238,27 @@ Create a `pump.conf` file:
 ```
 
 Settings are the same as for the original `tyk.conf` for redis and for mongoDB.
+
+### analytics_storage_config
+```json
+  "analytics_storage_config": {
+    "type": "redis",
+    "host": "localhost",
+    "port": 6379,
+    "hosts": null,
+    "username": "",
+    "password": "",
+    "database": 0,
+    "optimisation_max_idle": 100,
+    "optimisation_max_active": 0,
+    "enable_cluster": false,
+    "redis_use_ssl": false,
+    "redis_ssl_insecure_skip_verify": false
+  },
+```
+`redis_use_ssl` - Setting this to true to use SSL when connecting to Redis
+
+`redis_ssl_insecure_skip_verify` - Set this to true to tell Pump to ignore Redis' cert validation
 
 ### Uptime Data
 
