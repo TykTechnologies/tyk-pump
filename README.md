@@ -239,7 +239,7 @@ Create a `pump.conf` file:
 
 Settings are the same as for the original `tyk.conf` for redis and for mongoDB.
 
-###
+### analytics_storage_config
 ```json
   "analytics_storage_config": {
     "type": "redis",
