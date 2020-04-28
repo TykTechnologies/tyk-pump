@@ -239,6 +239,27 @@ Create a `pump.conf` file:
 
 Settings are the same as for the original `tyk.conf` for redis and for mongoDB.
 
+###
+```json
+  "analytics_storage_config": {
+    "type": "redis",
+    "host": "localhost",
+    "port": 6379,
+    "hosts": null,
+    "username": "",
+    "password": "",
+    "database": 0,
+    "optimisation_max_idle": 100,
+    "optimisation_max_active": 0,
+    "enable_cluster": false,
+    "redis_use_ssl": false,
+    "redis_ssl_insecure_skip_verify": false
+  },
+```
+`redis_use_ssl` - Setting this to true to use SSL when connecting to Redis
+
+`redis_ssl_insecure_skip_verify` - Set this to true to tell Pump to ignore Redis' cert validation
+
 ### Uptime Data
 
 `dont_purge_uptime_data` - Setting this to false will create a pump that pushes uptime data to MongoDB, so the Dashboard can read it. Disable by setting to true
