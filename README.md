@@ -37,7 +37,9 @@ Create a `pump.conf` file:
     "database": 0,
     "optimisation_max_idle": 100,
     "optimisation_max_active": 0,
-    "enable_cluster": false
+    "enable_cluster": false,
+    "redis_use_ssl": false,
+    "redis_ssl_insecure_skip_verify": false
   },
   "purge_delay": 1,
   "health_check_endpoint_name": "hello",
