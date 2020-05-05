@@ -68,6 +68,8 @@ func (k *KafkaPump) Init(config interface{}) error {
 		tlsConfig = &tls.Config{
 			InsecureSkipVerify: k.kafkaConf.SSLInsecureSkipVerify,
 		}
+	} else if k.kafkaConf.SASLMechanism != "" {
+		k.log.WithField("SASL-Mechanism", k.kafkaConf.SASLMechanism).Warn("SASL-Mechanism is setted but use_ssl is false.")
 	}
 
 	var mechanism sasl.Mechanism
@@ -88,7 +90,7 @@ func (k *KafkaPump) Init(config interface{}) error {
 			k.log.Fatal("Failed initialize kafka mechanism  : ", mechErr)
 		}
 	default:
-		k.log.Warn("Tyk pump doesn't support " + k.kafkaConf.SASLMechanism + " mechanism.")
+		k.log.WithField("SASL-Mechanism", k.kafkaConf.SASLMechanism).Warn("Tyk pump doesn't support this SASL mechanism.")
 	}
 
 	//Kafka writer connection config

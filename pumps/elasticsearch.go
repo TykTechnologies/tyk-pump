@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"net/http"
 	"strings"
 	"time"
 
@@ -38,8 +39,9 @@ type ElasticsearchConf struct {
 	Version            string                  `mapstructure:"version"`
 	DisableBulk        bool                    `mapstructure:"disable_bulk"`
 	BulkConfig         ElasticsearchBulkConfig `mapstructure:"bulk_config"`
-	Username           string                  `mapstructure:"basic_auth_username"`
-	Password           string                  `mapstructure:"basic_auth_password"`
+	AuthAPIKey         string                  `mapstructure:"auth_api_key"`
+	Username           string                  `mapstructure:"auth_basic_username"`
+	Password           string                  `mapstructure:"auth_basic_password"`
 }
 
 type ElasticsearchBulkConfig struct {
@@ -68,16 +70,33 @@ type Elasticsearch6Operator struct {
 	bulkProcessor *elasticv6.BulkProcessor
 }
 
+type ApiKeyTransport struct {
+	APIKey string
+}
+
+//RoundTrip for ApiKeyTransport auth
+func (ak *ApiKeyTransport) RoundTrip(r *http.Request) (*http.Response, error) {
+	r.Header.Set("Authorization", "ApiKey "+ak.APIKey)
+	return http.DefaultTransport.RoundTrip(r)
+}
+
 func getOperator(conf ElasticsearchConf) (ElasticsearchOperator, error) {
 
 	var err error
 
 	urls := strings.Split(conf.ElasticsearchURL, ",")
 
+	httpClient := http.DefaultClient
+	if conf.AuthAPIKey != "" {
+		conf.Username = ""
+		conf.Password = ""
+		httpClient = &http.Client{Transport: &ApiKeyTransport{APIKey: conf.AuthAPIKey}}
+	}
+
 	switch conf.Version {
 	case "3":
 		e := new(Elasticsearch3Operator)
-		e.esClient, err = elasticv3.NewClient(elasticv3.SetURL(urls...), elasticv3.SetSniff(conf.EnableSniffing), elasticv3.SetBasicAuth(conf.Username, conf.Password))
+		e.esClient, err = elasticv3.NewClient(elasticv3.SetURL(urls...), elasticv3.SetSniff(conf.EnableSniffing), elasticv3.SetBasicAuth(conf.Username, conf.Password), elasticv3.SetHttpClient(httpClient))
 
 		if err != nil {
 			return e, err
@@ -107,7 +126,7 @@ func getOperator(conf ElasticsearchConf) (ElasticsearchOperator, error) {
 	case "5":
 		e := new(Elasticsearch5Operator)
 
-		e.esClient, err = elasticv5.NewClient(elasticv5.SetURL(urls...), elasticv5.SetSniff(conf.EnableSniffing), elasticv5.SetBasicAuth(conf.Username, conf.Password))
+		e.esClient, err = elasticv5.NewClient(elasticv5.SetURL(urls...), elasticv5.SetSniff(conf.EnableSniffing), elasticv5.SetBasicAuth(conf.Username, conf.Password), elasticv5.SetHttpClient(httpClient))
 
 		if err != nil {
 			return e, err
@@ -136,7 +155,7 @@ func getOperator(conf ElasticsearchConf) (ElasticsearchOperator, error) {
 	case "6":
 		e := new(Elasticsearch6Operator)
 
-		e.esClient, err = elasticv6.NewClient(elasticv6.SetURL(urls...), elasticv6.SetSniff(conf.EnableSniffing), elasticv6.SetBasicAuth(conf.Username, conf.Password))
+		e.esClient, err = elasticv6.NewClient(elasticv6.SetURL(urls...), elasticv6.SetSniff(conf.EnableSniffing), elasticv6.SetBasicAuth(conf.Username, conf.Password), elasticv6.SetHttpClient(httpClient))
 
 		if err != nil {
 			return e, err
