@@ -37,9 +37,13 @@ Create a `pump.conf` file:
     "database": 0,
     "optimisation_max_idle": 100,
     "optimisation_max_active": 0,
-    "enable_cluster": false
+    "enable_cluster": false,
+    "redis_use_ssl": false,
+    "redis_ssl_insecure_skip_verify": false
   },
   "purge_delay": 1,
+  "health_check_endpoint_name": "hello",
+  "health_check_endpoint_port": 8080,
   "pumps": {
     "dummy": {
       "type": "dummy",
@@ -235,6 +239,40 @@ Create a `pump.conf` file:
 
 Settings are the same as for the original `tyk.conf` for redis and for mongoDB.
 
+### analytics_storage_config
+```json
+  "analytics_storage_config": {
+    "type": "redis",
+    "host": "localhost",
+    "port": 6379,
+    "hosts": null,
+    "username": "",
+    "password": "",
+    "database": 0,
+    "optimisation_max_idle": 100,
+    "optimisation_max_active": 0,
+    "enable_cluster": false,
+    "redis_use_ssl": false,
+    "redis_ssl_insecure_skip_verify": false
+  },
+```
+`redis_use_ssl` - Setting this to true to use SSL when connecting to Redis
+
+`redis_ssl_insecure_skip_verify` - Set this to true to tell Pump to ignore Redis' cert validation
+
+### Uptime Data
+
+`dont_purge_uptime_data` - Setting this to false will create a pump that pushes uptime data to MongoDB, so the Dashboard can read it. Disable by setting to true
+
+### Health Check
+
+From v2.9.4, we have introduced a `/health` endpoint to confirm the Pump is running. You need to configure the following settings:
+
+- `health_check_endpoint_name` - The default is "hello" 
+- `health_check_endpoint_port` - The default port is 8080
+
+This returns a HTTP 200 OK response if the Pump is running.
+
 ### Tyk Dashboard
 
 The Tyk Dashboard uses the "mongo-pump-aggregate" collection to display analytics.  This is different than the standard "mongo" pump plugin that will store individual analytic items into mongo.  The aggregate functionality was built to be fast, as querying raw analytics is expensive in large data sets.
@@ -326,6 +364,31 @@ On startup, you should see the loaded configs when initializing the dogstatsd pu
 [May 10 15:23:44]  INFO dogstatsd: sample_rate: 50%
 [May 10 15:23:44]  INFO dogstatsd: buffered: true, max_messages: 32
 [May 10 15:23:44]  INFO dogstatsd: async_uds: true, write_timeout: 2s
+```
+### Splunk Config
+
+Setting up Splunk with a *HTTP Event Collector*
+
+- `collector_token`: address of the datadog agent including host & port
+- `collector_url`: endpoint the Pump will send analytics too.  Should look something like:
+
+`https://splunk:8088/services/collector/event`
+
+- `ssl_insecure_skip_verify`: Controls whether the pump client verifies the Splunk server's certificate chain and host name.
+
+Example:
+```json
+    "splunk": {
+      "type": "splunk",
+      "meta": {
+        "collector_token": "<token>",
+        "collector_url": "<url>",
+        "ssl_insecure_skip_verify": false,
+        "ssl_cert_file": "<cert-path>",
+        "ssl_key_file": "<key-path>",
+        "ssl_server_name": "<server-name>"
+      }
+    },
 ```
 
 ### Logzio Config
