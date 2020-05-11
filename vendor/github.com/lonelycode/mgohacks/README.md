@@ -1,4 +1,0 @@
-mgohacks
---------
-
-hacks for mgo

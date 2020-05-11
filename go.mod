@@ -1,0 +1,65 @@
+module github.com/TykTechnologies/tyk-pump
+
+go 1.12
+
+require (
+	github.com/DataDog/datadog-go v0.0.0-20190425163447-40bafcb5f6c1
+	github.com/Sirupsen/logrus v0.0.0-20170308203635-1deb2db2a6ff
+	github.com/TykTechnologies/concurrent-map v0.0.0-20160908201409-7de59d53fd5c
+	github.com/TykTechnologies/gorpc v0.0.0-20190515174534-b9c10befc5f4
+	github.com/TykTechnologies/logrus v0.0.0-20161201171239-55ff0f4b9b3d
+	github.com/TykTechnologies/logrus-prefixed-formatter v0.0.0-20161201171121-85209afb73a6
+	github.com/TykTechnologies/murmur3 v0.0.0-20180602122059-1915e687e465
+	github.com/TykTechnologies/tyk v0.0.0-20200207055804-cf1d1ad81206
+	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
+	github.com/alecthomas/units v0.0.0-20190924025748-f65c72e2690d
+	github.com/beeker1121/goque v0.0.0-20170321141813-4044bc29b280
+	github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973
+	github.com/fatih/structs v1.1.0
+	github.com/go-redis/redis v6.15.6+incompatible
+	github.com/gocraft/health v0.0.0-20170925182251-8675af27fef0
+	github.com/gocraft/web v0.0.0-20190207150652-9707327fb69b
+	github.com/golang/protobuf v1.3.2
+	github.com/golang/snappy v0.0.1
+	github.com/gomodule/redigo v0.0.0-20190226174433-b47395aa1766
+	github.com/influxdata/influxdb v0.0.0-20161118010201-b765a4b8c7d0
+	github.com/jehiah/go-strftime v0.0.0-20151206194810-2efbe75097a5
+	github.com/kelseyhightower/envconfig v1.4.0
+	github.com/konsorten/go-windows-terminal-sequences v1.0.1
+	github.com/logzio/logzio-go v0.0.0-20190331100143-1138f714b3b6
+	github.com/lonelycode/mgohacks v0.0.0-20150820024025-f9c291f7e57e
+	github.com/mailru/easyjson v0.0.0-20180823135443-60711f1a8329
+	github.com/matttproud/golang_protobuf_extensions v1.0.1
+	github.com/mgutz/ansi v0.0.0-20170206155736-9520e82c474b
+	github.com/mitchellh/mapstructure v1.1.2
+	github.com/moesif/moesifapi-go v0.0.0-20170216233325-69242ec5159a
+	github.com/olivere/elastic v6.2.31+incompatible // indirect
+	github.com/pkg/errors v0.8.1
+	github.com/prometheus/client_golang v0.9.1
+	github.com/prometheus/client_model v0.0.0-20190129233127-fd36f4220a90
+	github.com/prometheus/common v0.2.0
+	github.com/prometheus/procfs v0.0.0-20190209105433-f8d8b3f739bd
+	github.com/quipo/statsd v0.0.0-20160923160612-75b7afedf0d2
+	github.com/ricochet2200/go-disk-usage v0.0.0-20150921141558-f0d1b743428f
+	github.com/robertkowalski/graylog-golang v0.0.0-20151121031040-e5295cfa2827
+	github.com/satori/go.uuid v1.2.0
+	github.com/segmentio/analytics-go v0.0.0-20160711225931-bdb0aeca8a99
+	github.com/segmentio/backo-go v0.0.0-20160424052352-204274ad699c
+	github.com/segmentio/kafka-go v0.3.6
+	github.com/smartystreets/go-aws-auth v0.0.0-20180515143844-0c1422d1fdb9
+	github.com/syndtr/goleveldb v0.0.0-20190318030020-c3a204f8e965
+	github.com/xtgo/uuid v0.0.0-20140804021211-a0b114877d4c
+	go.uber.org/atomic v1.3.2
+	golang.org/x/crypto v0.0.0-20190923035154-9ee001bba392
+	golang.org/x/net v0.0.0-20191009170851-d66e71096ffb
+	golang.org/x/sys v0.0.0-20190922100055-0a153f010e69
+	golang.org/x/tools v0.0.0-20190606124116-d0a3d012864b
+	google.golang.org/appengine v1.6.1
+	gopkg.in/alecthomas/kingpin.v2 v2.2.6
+	gopkg.in/mgo.v2 v2.0.0-20190816093944-a6b53ec6cb22
+	gopkg.in/olivere/elastic.v2 v2.0.61
+	gopkg.in/olivere/elastic.v3 v3.0.56
+	gopkg.in/olivere/elastic.v5 v5.0.31
+	gopkg.in/olivere/elastic.v6 v6.2.15
+	gopkg.in/vmihailenco/msgpack.v2 v2.9.1
+)
