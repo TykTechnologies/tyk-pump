@@ -2,11 +2,7 @@
 
 set -e
 
-MATRIX=(
-	""
-)
-
-export GO111MODULE="on"
+export GO111MODULE=on
 
 # print a command and execute it
 show() {
@@ -19,33 +15,28 @@ fatal() {
 	exit 1
 }
 
-PKGS="$(go list ./... | grep -v /vendor/)"
+show go vet . || fatal "go vet errored"
 
-i=0
-# need to do per-pkg because go test doesn't support a single coverage
-# profile for multiple pkgs
-for pkg in $PKGS; do
-	for opts in "${MATRIX[@]}"; do
-		show go test -timeout 30s -v -coverprofile=test-$i.cov $opts $pkg \
-			|| fatal "go test errored"
-		let i++ || true
-	done
-done
+GO_FILES=$(find * -name '*.go' -not -path 'vendor/*' -not -name 'bindata.go')
 
-if [[ ! $LATEST_GO ]]; then
-	echo "Skipping linting and coverage report"
-	exit 0
-fi
+echo "Formatting checks..."
 
-for opts in "${MATRIX[@]}"; do
-	show go vet -v $opts $PKGS || fatal "go vet errored"
-done
-
-# Includes all top-level files and dirs that don't start with a dot
-# (hidden). Also excludes all of vendor/.
-GOFILES=$(find * -name '*.go' -not -path 'vendor/*')
-
-FMT_FILES="$(gofmt -s -l $GOFILES)"
-if [[ -n $FMT_FILES ]]; then
+FMT_FILES="$(gofmt -s -l ${GO_FILES})"
+if [[ -n ${FMT_FILES} ]]; then
 	fatal "Run 'gofmt -s -w' on these files:\n$FMT_FILES"
 fi
+
+echo "gofmt check is ok!"
+
+IMP_FILES="$(goimports -l ${GO_FILES})"
+if [[ -n ${IMP_FILES} ]]; then
+	fatal "Run 'goimports -w' on these files:\n$IMP_FILES"
+fi
+
+echo "goimports check is ok!"
+
+for pkg in $(go list github.com/TykTechnologies/tyk-pump/...);
+do
+    echo "Testing... $pkg"
+    go test -race -v ${pkg} -mod=vendor
+done
