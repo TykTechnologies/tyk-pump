@@ -46,14 +46,16 @@ require (
 	github.com/segmentio/analytics-go v0.0.0-20160711225931-bdb0aeca8a99
 	github.com/segmentio/backo-go v0.0.0-20160424052352-204274ad699c
 	github.com/segmentio/kafka-go v0.3.6
+	github.com/sirupsen/logrus v1.4.2
 	github.com/smartystreets/go-aws-auth v0.0.0-20180515143844-0c1422d1fdb9
 	github.com/syndtr/goleveldb v0.0.0-20190318030020-c3a204f8e965
+	github.com/x-cray/logrus-prefixed-formatter v0.5.2
 	github.com/xtgo/uuid v0.0.0-20140804021211-a0b114877d4c
 	go.uber.org/atomic v1.3.2
-	golang.org/x/crypto v0.0.0-20190923035154-9ee001bba392
-	golang.org/x/net v0.0.0-20191009170851-d66e71096ffb
+	golang.org/x/crypto v0.0.0-20191011191535-87dc89f01550
+	golang.org/x/net v0.0.0-20200226121028-0de0cce0169b
 	golang.org/x/sys v0.0.0-20190922100055-0a153f010e69
-	golang.org/x/tools v0.0.0-20190606124116-d0a3d012864b
+	golang.org/x/tools v0.0.0-20200511202723-1762287ae9dd
 	google.golang.org/appengine v1.6.1
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6
 	gopkg.in/mgo.v2 v2.0.0-20190816093944-a6b53ec6cb22
