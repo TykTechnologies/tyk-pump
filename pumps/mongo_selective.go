@@ -19,6 +19,7 @@ import (
 type MongoSelectivePump struct {
 	dbSession *mgo.Session
 	dbConf    *MongoSelectiveConf
+	filters   analytics.AnalyticsFilters
 	timeout   int
 }
 
@@ -326,6 +327,13 @@ func (m *MongoSelectivePump) WriteUptimeData(data []interface{}) {
 		}
 	}
 
+}
+
+func (m *MongoSelectivePump) SetFilters(filters analytics.AnalyticsFilters) {
+	m.filters = filters
+}
+func (m *MongoSelectivePump) GetFilters() analytics.AnalyticsFilters {
+	return m.filters
 }
 
 func (m *MongoSelectivePump) SetTimeout(timeout int) {

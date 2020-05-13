@@ -4,18 +4,20 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"time"
+
 	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/mitchellh/mapstructure"
 	"github.com/segmentio/kafka-go"
 	"github.com/segmentio/kafka-go/snappy"
-	"time"
 )
 
 type KafkaPump struct {
 	kafkaConf    *KafkaConf
 	writerConfig kafka.WriterConfig
 	log          *logrus.Entry
+	filters      analytics.AnalyticsFilters
 	timeout      int
 }
 
@@ -148,4 +150,11 @@ func (k *KafkaPump) SetTimeout(timeout int) {
 
 func (k *KafkaPump) GetTimeout() int {
 	return k.timeout
+}
+
+func (k *KafkaPump) SetFilters(filters analytics.AnalyticsFilters) {
+	k.filters = filters
+}
+func (k *KafkaPump) GetFilters() analytics.AnalyticsFilters {
+	return k.filters
 }

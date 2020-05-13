@@ -44,11 +44,10 @@ var (
 	version            = kingpin.Version(VERSION)
 )
 
-func init() {
+func Init() {
 	SystemConfig = TykPumpConfiguration{}
 
 	kingpin.Parse()
-
 	log.Formatter = new(prefixed.TextFormatter)
 
 	envDemo := os.Getenv("TYK_PMP_BUILDDEMODATA")
@@ -86,6 +85,7 @@ func init() {
 	if *debugMode {
 		log.Level = logrus.DebugLevel
 	}
+
 }
 
 func setupAnalyticsStore() {
@@ -140,6 +140,7 @@ func initialisePumps() {
 				log.WithFields(logrus.Fields{
 					"prefix": mainPrefix,
 				}).Info("Init Pump: ", thisPmp.GetName())
+				thisPmp.SetFilters(pmp.Filters)
 				thisPmp.SetTimeout(pmp.Timeout)
 				Pumps[i] = thisPmp
 			}
@@ -217,6 +218,26 @@ func writeToPumps(keys []interface{}, job *health.Job, startTime time.Time, purg
 	}
 }
 
+func filterData(pump pumps.Pump, keys []interface{}) []interface{} {
+	filters := pump.GetFilters()
+	if !filters.HasFilter() {
+		return keys
+	}
+	filteredKeys := keys[:]
+	newLenght := 0
+
+	for _, key := range filteredKeys {
+		decoded := key.(analytics.AnalyticsRecord)
+		if filters.ShouldFilter(decoded) {
+			continue
+		}
+		filteredKeys[newLenght] = key
+		newLenght++
+	}
+	filteredKeys = filteredKeys[:newLenght]
+	return filteredKeys
+}
+
 func execPumpWriting(wg *sync.WaitGroup, pmp pumps.Pump, keys *[]interface{}, purgeDelay int, startTime time.Time, job *health.Job) {
 	timer := time.AfterFunc(time.Duration(purgeDelay)*time.Second, func() {
 		if pmp.GetTimeout() == 0 {
@@ -231,6 +252,11 @@ func execPumpWriting(wg *sync.WaitGroup, pmp pumps.Pump, keys *[]interface{}, pu
 	})
 	defer timer.Stop()
 	defer wg.Done()
+
+	log.WithFields(logrus.Fields{
+		"prefix": mainPrefix,
+	}).Debug("Writing to: ", pmp.GetName())
+
 	ch := make(chan error, 1)
 	//Load pump timeout
 	timeout := pmp.GetTimeout()
@@ -246,7 +272,9 @@ func execPumpWriting(wg *sync.WaitGroup, pmp pumps.Pump, keys *[]interface{}, pu
 	defer cancel()
 
 	go func(ch chan error, ctx context.Context, pmp pumps.Pump, keys *[]interface{}) {
-		ch <- pmp.WriteData(ctx, *keys)
+		filteredKeys := filterData(pmp, *keys)
+
+		ch <- pmp.WriteData(ctx, filteredKeys)
 	}(ch, ctx, pmp, keys)
 
 	select {
@@ -268,13 +296,13 @@ func execPumpWriting(wg *sync.WaitGroup, pmp pumps.Pump, keys *[]interface{}, pu
 			}).Warning("Timeout Writing to: ", pmp.GetName())
 		}
 	}
-
 	if job != nil {
 		job.Timing("purge_time_"+pmp.GetName(), time.Since(startTime).Nanoseconds())
 	}
 }
 
 func main() {
+	Init()
 	SetupInstrumentation()
 	go server.ServeHealthCheck(SystemConfig.HealthCheckEndpointName, SystemConfig.HealthCheckEndpointPort)
 

@@ -25,6 +25,7 @@ var COMMON_TAGS_COUNT = 5
 type MongoAggregatePump struct {
 	dbSession *mgo.Session
 	dbConf    *MongoAggregateConf
+	filters   analytics.AnalyticsFilters
 	timeout   int
 }
 
@@ -353,6 +354,12 @@ func (m *MongoAggregatePump) WriteUptimeData(data []interface{}) {
 	}).Warning("Mongo Aggregate should not be writing uptime data!")
 }
 
+func (m *MongoAggregatePump) SetFilters(filters analytics.AnalyticsFilters) {
+	m.filters = filters
+}
+func (m *MongoAggregatePump) GetFilters() analytics.AnalyticsFilters {
+	return m.filters
+}
 func (m *MongoAggregatePump) SetTimeout(timeout int) {
 	m.timeout = timeout
 }

@@ -21,6 +21,7 @@ import (
 type ElasticsearchPump struct {
 	operator ElasticsearchOperator
 	esConf   *ElasticsearchConf
+	filters  analytics.AnalyticsFilters
 	timeout  int
 }
 
@@ -420,4 +421,11 @@ func (e Elasticsearch6Operator) processData(ctx context.Context, data []interfac
 	}
 
 	return nil
+}
+
+func (e *ElasticsearchPump) SetFilters(filters analytics.AnalyticsFilters) {
+	e.filters = filters
+}
+func (e *ElasticsearchPump) GetFilters() analytics.AnalyticsFilters {
+	return e.filters
 }
