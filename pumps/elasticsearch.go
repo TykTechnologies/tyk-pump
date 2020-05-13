@@ -40,6 +40,7 @@ type ElasticsearchConf struct {
 	Version            string                  `mapstructure:"version"`
 	DisableBulk        bool                    `mapstructure:"disable_bulk"`
 	BulkConfig         ElasticsearchBulkConfig `mapstructure:"bulk_config"`
+	AuthAPIKeyID       string                  `mapstructure:"auth_api_key_id"`
 	AuthAPIKey         string                  `mapstructure:"auth_api_key"`
 	Username           string                  `mapstructure:"auth_basic_username"`
 	Password           string                  `mapstructure:"auth_basic_password"`
@@ -72,12 +73,17 @@ type Elasticsearch6Operator struct {
 }
 
 type ApiKeyTransport struct {
-	APIKey string
+	APIKey   string
+	APIKeyID string
 }
 
 //RoundTrip for ApiKeyTransport auth
-func (ak *ApiKeyTransport) RoundTrip(r *http.Request) (*http.Response, error) {
-	r.Header.Set("Authorization", "ApiKey "+ak.APIKey)
+func (t *ApiKeyTransport) RoundTrip(r *http.Request) (*http.Response, error) {
+	auth := t.APIKeyID + ":" + t.APIKey
+	key := base64.StdEncoding.EncodeToString([]byte(auth))
+
+	r.Header.Set("Authorization", "ApiKey "+key)
+
 	return http.DefaultTransport.RoundTrip(r)
 }
 
@@ -88,10 +94,10 @@ func getOperator(conf ElasticsearchConf) (ElasticsearchOperator, error) {
 	urls := strings.Split(conf.ElasticsearchURL, ",")
 
 	httpClient := http.DefaultClient
-	if conf.AuthAPIKey != "" {
+	if conf.AuthAPIKey != "" && conf.AuthAPIKeyID != "" {
 		conf.Username = ""
 		conf.Password = ""
-		httpClient = &http.Client{Transport: &ApiKeyTransport{APIKey: conf.AuthAPIKey}}
+		httpClient = &http.Client{Transport: &ApiKeyTransport{APIKey: conf.AuthAPIKey, APIKeyID: conf.AuthAPIKeyID}}
 	}
 
 	switch conf.Version {
