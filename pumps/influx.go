@@ -15,6 +15,7 @@ import (
 
 type InfluxPump struct {
 	dbConf  *InfluxConf
+	filters analytics.AnalyticsFilters
 	timeout int
 }
 
@@ -150,6 +151,12 @@ func (i *InfluxPump) WriteData(ctx context.Context, data []interface{}) error {
 	return nil
 }
 
+func (i *InfluxPump) SetFilters(filters analytics.AnalyticsFilters) {
+	i.filters = filters
+}
+func (i *InfluxPump) GetFilters() analytics.AnalyticsFilters {
+	return i.filters
+}
 func (i *InfluxPump) SetTimeout(timeout int) {
 	i.timeout = timeout
 }

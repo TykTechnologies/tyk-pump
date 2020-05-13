@@ -3,6 +3,8 @@ package pumps
 import (
 	"context"
 	"errors"
+
+	"github.com/TykTechnologies/tyk-pump/analytics"
 )
 
 type Pump interface {
@@ -10,6 +12,8 @@ type Pump interface {
 	New() Pump
 	Init(interface{}) error
 	WriteData(context.Context, []interface{}) error
+	SetFilters(analytics.AnalyticsFilters)
+	GetFilters() analytics.AnalyticsFilters
 	SetTimeout(timeout int)
 	GetTimeout() int
 }

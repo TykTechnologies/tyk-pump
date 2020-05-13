@@ -91,6 +91,7 @@ func (c *SplunkClient) Send(ctx context.Context, event map[string]interface{}, t
 type SplunkPump struct {
 	client  *SplunkClient
 	config  *SplunkPumpConfig
+	filters analytics.AnalyticsFilters
 	timeout int
 }
 
@@ -164,6 +165,12 @@ func (p *SplunkPump) WriteData(ctx context.Context, data []interface{}) error {
 	return nil
 }
 
+func (p *SplunkPump) SetFilters(filters analytics.AnalyticsFilters) {
+	p.filters = filters
+}
+func (p *SplunkPump) GetFilters() analytics.AnalyticsFilters {
+	return p.filters
+}
 func (s *SplunkPump) SetTimeout(timeout int) {
 	s.timeout = timeout
 }

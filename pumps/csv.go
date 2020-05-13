@@ -17,6 +17,7 @@ import (
 type CSVPump struct {
 	csvConf      *CSVConf
 	wroteHeaders bool
+	filters      analytics.AnalyticsFilters
 	timeout      int
 }
 
@@ -129,6 +130,13 @@ func (c *CSVPump) WriteData(ctx context.Context, data []interface{}) error {
 	return nil
 }
 
+func (c *CSVPump) SetFilters(filters analytics.AnalyticsFilters) {
+	c.filters = filters
+}
+
+func (c *CSVPump) GetFilters() analytics.AnalyticsFilters {
+	return c.filters
+}
 func (c *CSVPump) SetTimeout(timeout int) {
 	c.timeout = timeout
 }

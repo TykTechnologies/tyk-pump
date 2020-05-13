@@ -4,9 +4,11 @@ import (
 	"context"
 
 	"github.com/TykTechnologies/logrus"
+	"github.com/TykTechnologies/tyk-pump/analytics"
 )
 
 type DummyPump struct {
+	filters analytics.AnalyticsFilters
 	timeout int
 }
 
@@ -35,6 +37,12 @@ func (p *DummyPump) WriteData(ctx context.Context, data []interface{}) error {
 	return nil
 }
 
+func (p *DummyPump) SetFilters(filters analytics.AnalyticsFilters) {
+	p.filters = filters
+}
+func (p *DummyPump) GetFilters() analytics.AnalyticsFilters {
+	return p.filters
+}
 func (p *DummyPump) SetTimeout(timeout int) {
 	p.timeout = timeout
 }

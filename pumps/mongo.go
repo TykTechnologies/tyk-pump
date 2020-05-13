@@ -35,6 +35,7 @@ const (
 type MongoPump struct {
 	dbSession *mgo.Session
 	dbConf    *MongoConf
+	filters   analytics.AnalyticsFilters
 	timeout   int
 }
 
@@ -590,6 +591,12 @@ func (m *MongoPump) WriteUptimeData(data []interface{}) {
 	}
 }
 
+func (m *MongoPump) SetFilters(filters analytics.AnalyticsFilters) {
+	m.filters = filters
+}
+func (m *MongoPump) GetFilters() analytics.AnalyticsFilters {
+	return m.filters
+}
 func (m *MongoPump) SetTimeout(timeout int) {
 	m.timeout = timeout
 }
