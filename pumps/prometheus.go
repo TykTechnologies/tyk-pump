@@ -17,71 +17,34 @@ import (
 type PrometheusPump struct {
 	conf *PrometheusConf
 	// Per service
-	TotalStatusMetrics  *prometheus.CounterVec
-	PathStatusMetrics   *prometheus.CounterVec
-	KeyStatusMetrics    *prometheus.CounterVec
-	OauthStatusMetrics  *prometheus.CounterVec
-	TotalLatencyMetrics *prometheus.HistogramVec
+	TotalStatusMetrics    *prometheus.CounterVec
+	PathStatusMetrics     *prometheus.CounterVec
+	KeyStatusMetrics      *prometheus.CounterVec
+	OauthStatusMetrics    *prometheus.CounterVec
+	TotalLatencyMetrics   *prometheus.HistogramVec
+	LatencyTykMetrics     *prometheus.HistogramVec
+	LatencyServiceMetrics *prometheus.HistogramVec
+	LatencyTotalMetrics   *prometheus.HistogramVec
 
 	filters analytics.AnalyticsFilters
 	timeout int
 }
 
 type PrometheusConf struct {
-	Addr string `mapstructure:"listen_address"`
-	Path string `mapstructure:"path"`
+	Addr    string   `mapstructure:"listen_address"`
+	Path    string   `mapstructure:"path"`
+	Metrics []string `mapstructure:"metrics"` // whitelist of metrics we want to expose
 }
 
-var prometheusPrefix = "prometheus-pump"
-
-var prometheusLogger = log.WithFields(logrus.Fields{"prefix": prometheusPrefix})
-
-var buckets = []float64{1, 2, 5, 7, 10, 15, 20, 25, 30, 40, 50, 60, 70, 80, 90, 100, 200, 300, 400, 500, 1000, 2000, 5000, 10000, 30000, 60000}
+var (
+	prometheusPrefix = "prometheus-pump"
+	prometheusLogger = log.WithFields(logrus.Fields{"prefix": prometheusPrefix})
+	buckets          = []float64{1, 2, 5, 7, 10, 15, 20, 25, 30, 40, 50, 60, 70, 80, 90, 100, 200, 300, 400, 500, 1000, 2000, 5000, 10000, 30000, 60000}
+)
 
 func (p *PrometheusPump) New() Pump {
 	newPump := PrometheusPump{}
-	newPump.TotalStatusMetrics = prometheus.NewCounterVec(
-		prometheus.CounterOpts{
-			Name: "tyk_http_status",
-			Help: "HTTP status codes per API",
-		},
-		[]string{"code", "api"},
-	)
-	newPump.PathStatusMetrics = prometheus.NewCounterVec(
-		prometheus.CounterOpts{
-			Name: "tyk_http_status_per_path",
-			Help: "HTTP status codes per API path and method",
-		},
-		[]string{"code", "api", "path", "method"},
-	)
-	newPump.KeyStatusMetrics = prometheus.NewCounterVec(
-		prometheus.CounterOpts{
-			Name: "tyk_http_status_per_key",
-			Help: "HTTP status codes per API key",
-		},
-		[]string{"code", "key"},
-	)
-	newPump.OauthStatusMetrics = prometheus.NewCounterVec(
-		prometheus.CounterOpts{
-			Name: "tyk_http_status_per_oauth_client",
-			Help: "HTTP status codes per oAuth client id",
-		},
-		[]string{"code", "client_id"},
-	)
-	newPump.TotalLatencyMetrics = prometheus.NewHistogramVec(
-		prometheus.HistogramOpts{
-			Name:    "tyk_latency",
-			Help:    "Latency added by Tyk, Total Latency, and upstream latency per API",
-			Buckets: buckets,
-		},
-		[]string{"type", "api"},
-	)
 
-	prometheus.MustRegister(newPump.TotalStatusMetrics)
-	prometheus.MustRegister(newPump.PathStatusMetrics)
-	prometheus.MustRegister(newPump.KeyStatusMetrics)
-	prometheus.MustRegister(newPump.OauthStatusMetrics)
-	prometheus.MustRegister(newPump.TotalLatencyMetrics)
 	return &newPump
 }
 
@@ -104,6 +67,36 @@ func (p *PrometheusPump) Init(conf interface{}) error {
 		return errors.New("Prometheus listen_addr not set")
 	}
 
+	metricSet := []string{
+		"tyk_http_status",
+		"tyk_http_status_per_path",
+		"tyk_http_status_per_key",
+		"tyk_http_status_per_oauth_client",
+		"tyk_latency", // we should deprecate this
+		"latency_total",
+		"latency_tyk",
+		"latency_service",
+	}
+
+	if len(p.conf.Metrics) == 0 {
+		prometheusLogger.Infof("no metrics whitelisted, all enabled: %v", metricSet)
+		p.conf.Metrics = metricSet
+	} else {
+		var metricsToRecord []string
+		for _, metric := range p.conf.Metrics {
+			for _, validMetric := range metricSet {
+				if metric == validMetric {
+					metricsToRecord = append(metricsToRecord, validMetric)
+				}
+			}
+		}
+
+		p.conf.Metrics = metricsToRecord
+		prometheusLogger.Infof("publishing: %v", p.conf.Metrics)
+	}
+
+	p.registerMetrics()
+
 	prometheusLogger.Info("Starting prometheus listener on:", p.conf.Addr)
 
 	http.Handle(p.conf.Path, promhttp.Handler())
@@ -115,6 +108,90 @@ func (p *PrometheusPump) Init(conf interface{}) error {
 	return nil
 }
 
+func (p *PrometheusPump) registerMetrics() {
+	for _, metric := range p.conf.Metrics {
+		switch metric {
+		case "tyk_http_status":
+			p.TotalStatusMetrics = prometheus.NewCounterVec(
+				prometheus.CounterOpts{
+					Name: "tyk_http_status",
+					Help: "HTTP status codes per API",
+				},
+				[]string{"code", "api"},
+			)
+			prometheus.MustRegister(p.TotalStatusMetrics)
+		case "tyk_http_status_per_path":
+			p.PathStatusMetrics = prometheus.NewCounterVec(
+				prometheus.CounterOpts{
+					Name: "tyk_http_status_per_path",
+					Help: "HTTP status codes per API path and method",
+				},
+				[]string{"code", "api", "path", "method"},
+			)
+			prometheus.MustRegister(p.PathStatusMetrics)
+		case "tyk_http_status_per_key":
+			p.KeyStatusMetrics = prometheus.NewCounterVec(
+				prometheus.CounterOpts{
+					Name: "tyk_http_status_per_key",
+					Help: "HTTP status codes per API key",
+				},
+				[]string{"code", "key"},
+			)
+			prometheus.MustRegister(p.KeyStatusMetrics)
+		case "tyk_http_status_per_oauth_client":
+			p.OauthStatusMetrics = prometheus.NewCounterVec(
+				prometheus.CounterOpts{
+					Name: "tyk_http_status_per_oauth_client",
+					Help: "HTTP status codes per oAuth client id",
+				},
+				[]string{"code", "client_id"},
+			)
+			prometheus.MustRegister(p.OauthStatusMetrics)
+		case "tyk_latency":
+			// TODO: We should deprecate this because it is mislabeled
+			p.TotalLatencyMetrics = prometheus.NewHistogramVec(
+				prometheus.HistogramOpts{
+					Name:    "tyk_latency",
+					Help:    "Latency added by Tyk, Total Latency, and upstream latency per API",
+					Buckets: buckets,
+				},
+				[]string{"type", "api"},
+			)
+			prometheus.MustRegister(p.TotalLatencyMetrics)
+		case "latency_total":
+			p.LatencyTotalMetrics = prometheus.NewHistogramVec(
+				prometheus.HistogramOpts{
+					Name:    "latency_total",
+					Help:    "Total Latency, Tyk + service",
+					Buckets: buckets,
+				},
+				[]string{"type", "api"},
+			)
+			prometheus.MustRegister(p.LatencyTotalMetrics)
+		case "latency_tyk":
+			p.LatencyTykMetrics = prometheus.NewHistogramVec(
+				prometheus.HistogramOpts{
+					Name:    "latency_tyk",
+					Help:    "Latency added by Tyk",
+					Buckets: buckets,
+				},
+				[]string{"type", "api"},
+			)
+			prometheus.MustRegister(p.LatencyTykMetrics)
+		case "latency_service":
+			p.LatencyServiceMetrics = prometheus.NewHistogramVec(
+				prometheus.HistogramOpts{
+					Name:    "latency_service",
+					Help:    "Latency of the underlying service or API",
+					Buckets: buckets,
+				},
+				[]string{"type", "api"},
+			)
+			prometheus.MustRegister(p.LatencyServiceMetrics)
+		}
+	}
+}
+
 func (p *PrometheusPump) WriteData(ctx context.Context, data []interface{}) error {
 	log.WithFields(logrus.Fields{
 		"prefix": prometheusPrefix,
@@ -124,13 +201,37 @@ func (p *PrometheusPump) WriteData(ctx context.Context, data []interface{}) erro
 		record := item.(analytics.AnalyticsRecord)
 		code := strconv.Itoa(record.ResponseCode)
 
-		p.TotalStatusMetrics.WithLabelValues(code, record.APIID).Inc()
-		p.PathStatusMetrics.WithLabelValues(code, record.APIID, record.Path, record.Method).Inc()
-		p.KeyStatusMetrics.WithLabelValues(code, record.APIKey)
-		if record.OauthID != "" {
-			p.OauthStatusMetrics.WithLabelValues(code, record.OauthID).Inc()
+		if p.TotalLatencyMetrics != nil {
+			tags := []string{code, record.APIID}
+			tags = append(tags, record.Tags...)
+			p.TotalStatusMetrics.WithLabelValues(tags...).Inc()
 		}
-		p.TotalLatencyMetrics.WithLabelValues("total", record.APIID).Observe(float64(record.RequestTime))
+
+		if p.PathStatusMetrics != nil {
+			tags := []string{code, record.APIID, record.Path, record.Method}
+			tags = append(tags, record.Tags...)
+			p.PathStatusMetrics.WithLabelValues(tags...).Inc()
+		}
+
+		if p.KeyStatusMetrics != nil {
+			tags := []string{code, record.APIKey}
+			tags = append(tags, record.Tags...)
+			p.KeyStatusMetrics.WithLabelValues(tags...)
+		}
+
+		if p.OauthStatusMetrics != nil {
+			if record.OauthID != "" {
+				tags := []string{code, record.OauthID}
+				tags = append(tags, record.Tags...)
+				p.OauthStatusMetrics.WithLabelValues(code, record.OauthID).Inc()
+			}
+		}
+
+		if p.TotalLatencyMetrics != nil {
+			tags := []string{"total", record.APIID}
+			tags = append(tags, record.Tags...)
+			p.TotalLatencyMetrics.WithLabelValues(tags...).Observe(float64(record.RequestTime))
+		}
 	}
 	return nil
 }
