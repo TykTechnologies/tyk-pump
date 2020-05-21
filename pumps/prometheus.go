@@ -3,15 +3,14 @@ package pumps
 import (
 	"context"
 	"errors"
-	"net/http"
-	"strconv"
-	"strings"
-
 	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/mitchellh/mapstructure"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"net/http"
+	"strconv"
+	"time"
 )
 
 const (
@@ -35,15 +34,46 @@ type PrometheusPump struct {
 }
 
 type PrometheusConf struct {
-	Addr    string   `mapstructure:"listen_address"`
-	Path    string   `mapstructure:"path"`
-	Metrics []string `mapstructure:"metrics"` // whitelist of metrics we want to expose
+	Addr    string    `mapstructure:"listen_address"`
+	Path    string    `mapstructure:"path"`
+	Metrics []string  `mapstructure:"metrics"` // whitelist of metrics we want to expose
+	Buckets []float64 `mapstructure:"buckets"`
 }
 
 var (
 	prometheusPrefix = "prometheus-pump"
 	prometheusLogger = log.WithFields(logrus.Fields{"prefix": prometheusPrefix})
-	buckets          = []float64{1, 2, 5, 7, 10, 15, 20, 25, 30, 40, 50, 60, 70, 80, 90, 100, 200, 300, 400, 500, 1000, 2000, 5000, 10000, 30000, 60000}
+	buckets          = []float64{
+		0.000,
+		0.010,
+		0.020,
+		0.030,
+		0.040,
+		0.050,
+		0.060,
+		0.070,
+		0.080,
+		0.090,
+		0.100,
+		0.200,
+		0.300,
+		0.400,
+		0.500,
+		0.600,
+		0.700,
+		0.800,
+		0.900,
+		1.000,
+		2.000,
+		3.000,
+		4.000,
+		5.000,
+		6.000,
+		7.000,
+		8.000,
+		9.000,
+		10.00,
+	}
 )
 
 func (p *PrometheusPump) New() Pump {
@@ -72,14 +102,18 @@ func (p *PrometheusPump) Init(conf interface{}) error {
 	}
 
 	metricSet := []string{
-		"tyk_http_status",
-		"tyk_http_status_per_path",
-		"tyk_http_status_per_key",
-		"tyk_http_status_per_oauth_client",
-		"tyk_latency", // we should deprecate this
-		"tyk_latency_total",
-		"tyk_latency_tyk",
-		"tyk_latency_service",
+		"http_status",
+		"http_status_per_path",
+		"http_status_per_key",
+		"http_status_per_oauth_client",
+		"total_latency",
+		//"latency_tyk",
+		//"latency_service",
+	}
+
+	if len(p.conf.Buckets) == 0 {
+		prometheusLogger.Info("no buckets specified, using default buckets")
+		p.conf.Buckets = buckets
 	}
 
 	if len(p.conf.Metrics) == 0 {
@@ -115,32 +149,39 @@ func (p *PrometheusPump) Init(conf interface{}) error {
 func (p *PrometheusPump) registerMetrics() {
 	for _, metric := range p.conf.Metrics {
 		switch metric {
-		case "tyk_http_status":
+		case "http_status":
 			p.TotalStatusMetrics = prometheus.NewCounterVec(
 				prometheus.CounterOpts{
 					Namespace: namespace,
-					Name:      "http_status",
+					Subsystem: "http",
+					Name:      "status",
 					Help:      "HTTP status codes by API",
 				},
 				[]string{"code", "api", "api_name", "api_version"},
 			)
 			prometheus.MustRegister(p.TotalStatusMetrics)
-		case "tyk_http_status_per_path":
+		case "http_status_per_path":
 			p.PathStatusMetrics = prometheus.NewCounterVec(
 				prometheus.CounterOpts{
-					Name: "tyk_http_status_per_path",
-					Help: "HTTP status codes per API path and method",
+					Namespace: namespace,
+					Subsystem: "http",
+					Name:      "status_per_path",
+					Help:      "HTTP status codes per API path and method",
 				},
-				[]string{"code", "api", "path", "method"},
+				[]string{"code", "api", "api_name", "api_version", "path", "method"},
 			)
 			prometheus.MustRegister(p.PathStatusMetrics)
-		case "tyk_http_status_per_key":
+		case "http_status_per_key":
+			// Useful to discover if a particular API Key has bad credentials.
+			// Need to show the hashed key rather than plaintext key.
 			p.KeyStatusMetrics = prometheus.NewCounterVec(
 				prometheus.CounterOpts{
-					Name: "tyk_http_status_per_key",
-					Help: "HTTP status codes per API key",
+					Namespace: namespace,
+					Subsystem: "http",
+					Name:      "status_per_key",
+					Help:      "HTTP status codes per API key",
 				},
-				[]string{"code", "key"},
+				[]string{"code", "key", "alias"},
 			)
 			prometheus.MustRegister(p.KeyStatusMetrics)
 		case "tyk_http_status_per_oauth_client":
@@ -152,27 +193,18 @@ func (p *PrometheusPump) registerMetrics() {
 				[]string{"code", "client_id"},
 			)
 			prometheus.MustRegister(p.OauthStatusMetrics)
-		case "tyk_latency":
-			// TODO: We should deprecate this because it is mislabeled
+		case "total_latency":
 			p.TotalLatencyMetrics = prometheus.NewHistogramVec(
 				prometheus.HistogramOpts{
-					Name:    "tyk_latency",
-					Help:    "Latency added by Tyk, Total Latency, and upstream latency per API",
-					Buckets: buckets,
+					Namespace: namespace,
+					Subsystem: "http",
+					Name:      "total_latency_seconds",
+					Help:      "Total Latency in seconds by API",
+					Buckets:   p.conf.Buckets,
 				},
-				[]string{"type", "api"},
+				[]string{"api"},
 			)
 			prometheus.MustRegister(p.TotalLatencyMetrics)
-		case "latency_total":
-			p.LatencyTotalMetrics = prometheus.NewHistogramVec(
-				prometheus.HistogramOpts{
-					Name:    "latency_total",
-					Help:    "Total Latency, Tyk + service",
-					Buckets: buckets,
-				},
-				[]string{"type", "api"},
-			)
-			prometheus.MustRegister(p.LatencyTotalMetrics)
 		case "latency_tyk":
 			p.LatencyTykMetrics = prometheus.NewHistogramVec(
 				prometheus.HistogramOpts{
@@ -204,7 +236,6 @@ func (p *PrometheusPump) WriteData(ctx context.Context, data []interface{}) erro
 
 	for _, item := range data {
 		record := item.(analytics.AnalyticsRecord)
-
 		code := strconv.Itoa(record.ResponseCode)
 
 		if p.TotalStatusMetrics != nil {
@@ -219,17 +250,27 @@ func (p *PrometheusPump) WriteData(ctx context.Context, data []interface{}) erro
 		}
 
 		if p.PathStatusMetrics != nil {
-			tags := []string{code, record.APIID, record.Path, record.Method}
-			tags = append(tags, record.Tags...)
-			p.PathStatusMetrics.WithLabelValues(tags...).Inc()
+			labels := prometheus.Labels{
+				"code":        code,
+				"api":         record.APIID,
+				"api_name":    record.APIName,
+				"api_version": record.APIVersion,
+				"path":        record.Path,
+				"method":      record.Method,
+			}
+			p.PathStatusMetrics.With(labels).Inc()
 		}
 
 		if p.KeyStatusMetrics != nil {
-			tags := []string{code, record.APIKey}
-			tags = append(tags, record.Tags...)
-			p.KeyStatusMetrics.WithLabelValues(tags...)
+			labels := prometheus.Labels{
+				"code":  code,
+				"key":   record.APIKey,
+				"alias": record.Alias,
+			}
+			p.KeyStatusMetrics.With(labels).Inc()
 		}
 
+		// TODO: Fixup
 		if p.OauthStatusMetrics != nil {
 			if record.OauthID != "" {
 				tags := []string{code, record.OauthID}
@@ -239,9 +280,12 @@ func (p *PrometheusPump) WriteData(ctx context.Context, data []interface{}) erro
 		}
 
 		if p.TotalLatencyMetrics != nil {
-			tags := []string{"total", record.APIID}
-			tags = append(tags, record.Tags...)
-			p.TotalLatencyMetrics.WithLabelValues(tags...).Observe(float64(record.RequestTime))
+			labels := prometheus.Labels{
+				"api": record.APIID,
+			}
+
+			requestTime := time.Duration(record.RequestTime) * time.Millisecond
+			p.TotalLatencyMetrics.With(labels).Observe(requestTime.Seconds())
 		}
 
 		if p.LatencyTykMetrics != nil {
@@ -263,20 +307,6 @@ func (p *PrometheusPump) WriteData(ctx context.Context, data []interface{}) erro
 		}
 	}
 	return nil
-}
-
-func (p *PrometheusPump) normalizeTagsToLabels(tags []string) prometheus.Labels {
-	labels := prometheus.Labels{}
-
-	for _, tag := range tags {
-		t := strings.SplitN(tag, "-", 2)
-		if len(t) != 2 {
-			continue
-		}
-		labels[t[0]] = t[1]
-	}
-
-	return labels
 }
 
 func (p *PrometheusPump) SetFilters(filters analytics.AnalyticsFilters) {
