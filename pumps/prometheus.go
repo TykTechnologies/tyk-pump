@@ -3,14 +3,15 @@ package pumps
 import (
 	"context"
 	"errors"
+	"net/http"
+	"strconv"
+	"time"
+
 	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/mitchellh/mapstructure"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"net/http"
-	"strconv"
-	"time"
 )
 
 const (
@@ -20,14 +21,13 @@ const (
 type PrometheusPump struct {
 	conf *PrometheusConf
 	// Per service
-	TotalStatusMetrics    *prometheus.CounterVec
-	PathStatusMetrics     *prometheus.CounterVec
-	KeyStatusMetrics      *prometheus.CounterVec
-	OauthStatusMetrics    *prometheus.CounterVec
-	TotalLatencyMetrics   *prometheus.HistogramVec
-	LatencyTykMetrics     *prometheus.HistogramVec
-	LatencyServiceMetrics *prometheus.HistogramVec
-	LatencyTotalMetrics   *prometheus.HistogramVec
+	TotalStatusMetrics  *prometheus.CounterVec
+	PathStatusMetrics   *prometheus.CounterVec
+	KeyStatusMetrics    *prometheus.CounterVec
+	OauthStatusMetrics  *prometheus.CounterVec
+	TotalLatencyMetrics *prometheus.HistogramVec
+	UpstreamLatencyHist *prometheus.HistogramVec
+	GatewayLatencyHist  *prometheus.HistogramVec
 
 	filters analytics.AnalyticsFilters
 	timeout int
@@ -106,9 +106,9 @@ func (p *PrometheusPump) Init(conf interface{}) error {
 		"http_status_per_path",
 		"http_status_per_key",
 		"http_status_per_oauth_client",
-		"total_latency",
-		//"latency_tyk",
-		//"latency_service",
+		"total_latency_seconds",
+		"upstream_latency_seconds",
+		"gateway_latency_seconds",
 	}
 
 	if len(p.conf.Buckets) == 0 {
@@ -193,7 +193,7 @@ func (p *PrometheusPump) registerMetrics() {
 				[]string{"code", "client_id"},
 			)
 			prometheus.MustRegister(p.OauthStatusMetrics)
-		case "total_latency":
+		case "total_latency_seconds":
 			p.TotalLatencyMetrics = prometheus.NewHistogramVec(
 				prometheus.HistogramOpts{
 					Namespace: namespace,
@@ -205,26 +205,30 @@ func (p *PrometheusPump) registerMetrics() {
 				[]string{"api"},
 			)
 			prometheus.MustRegister(p.TotalLatencyMetrics)
-		case "latency_tyk":
-			p.LatencyTykMetrics = prometheus.NewHistogramVec(
+		case "upstream_latency_seconds":
+			p.UpstreamLatencyHist = prometheus.NewHistogramVec(
 				prometheus.HistogramOpts{
-					Name:    "latency_tyk",
-					Help:    "Latency added by Tyk",
-					Buckets: buckets,
+					Namespace: namespace,
+					Subsystem: "http",
+					Name:      "upstream_latency_seconds",
+					Help:      "Upstream latency in seconds by API",
+					Buckets:   p.conf.Buckets,
 				},
-				[]string{"type", "api"},
+				[]string{"api"},
 			)
-			prometheus.MustRegister(p.LatencyTykMetrics)
-		case "latency_service":
-			p.LatencyServiceMetrics = prometheus.NewHistogramVec(
+			prometheus.MustRegister(p.UpstreamLatencyHist)
+		case "gateway_latency_seconds":
+			p.GatewayLatencyHist = prometheus.NewHistogramVec(
 				prometheus.HistogramOpts{
-					Name:    "latency_service",
-					Help:    "Latency of the underlying service or API",
-					Buckets: buckets,
+					Namespace: namespace,
+					Subsystem: "http",
+					Name:      "gateway_latency_seconds",
+					Help:      "Gateway Latency in seconds by API",
+					Buckets:   p.conf.Buckets,
 				},
-				[]string{"type", "api"},
+				[]string{"api"},
 			)
-			prometheus.MustRegister(p.LatencyServiceMetrics)
+			prometheus.MustRegister(p.GatewayLatencyHist)
 		}
 	}
 }
@@ -284,26 +288,32 @@ func (p *PrometheusPump) WriteData(ctx context.Context, data []interface{}) erro
 				"api": record.APIID,
 			}
 
-			requestTime := time.Duration(record.RequestTime) * time.Millisecond
+			// https://prometheus.io/docs/practices/naming/#base-units
+			// Prometheus does not have any units hard coded. For better compatibility, base units should be used.
+			requestTime := time.Duration(record.Latency.Total) * time.Millisecond
 			p.TotalLatencyMetrics.With(labels).Observe(requestTime.Seconds())
 		}
 
-		if p.LatencyTykMetrics != nil {
-			tags := []string{"total", record.APIID}
-			tags = append(tags, record.Tags...)
-			p.LatencyTykMetrics.WithLabelValues(tags...).Observe(float64(record.RequestTime))
+		if p.UpstreamLatencyHist != nil {
+			labels := prometheus.Labels{
+				"api": record.APIID,
+			}
+
+			// https://prometheus.io/docs/practices/naming/#base-units
+			// Prometheus does not have any units hard coded. For better compatibility, base units should be used.
+			requestTime := time.Duration(record.Latency.Upstream) * time.Millisecond
+			p.UpstreamLatencyHist.With(labels).Observe(requestTime.Seconds())
 		}
 
-		if p.LatencyServiceMetrics != nil {
-			tags := []string{"total", record.APIID}
-			tags = append(tags, record.Tags...)
-			p.LatencyServiceMetrics.WithLabelValues(tags...).Observe(float64(record.RequestTime))
-		}
+		if p.GatewayLatencyHist != nil {
+			labels := prometheus.Labels{
+				"api": record.APIID,
+			}
 
-		if p.LatencyTotalMetrics != nil {
-			tags := []string{"total", record.APIID}
-			tags = append(tags, record.Tags...)
-			p.LatencyTotalMetrics.WithLabelValues(tags...).Observe(float64(record.RequestTime))
+			// https://prometheus.io/docs/practices/naming/#base-units
+			// Prometheus does not have any units hard coded. For better compatibility, base units should be used.
+			requestTime := time.Duration(record.Latency.Total)*time.Millisecond - time.Duration(record.Latency.Upstream)*time.Millisecond
+			p.GatewayLatencyHist.With(labels).Observe(requestTime.Seconds())
 		}
 	}
 	return nil
