@@ -2,15 +2,10 @@ package main
 
 import (
 	"context"
+	"os"
 	"strings"
 	"sync"
 	"time"
-
-	"os"
-
-	"github.com/gocraft/health"
-
-	msgpack "gopkg.in/vmihailenco/msgpack.v2"
 
 	"github.com/TykTechnologies/logrus"
 	prefixed "github.com/TykTechnologies/logrus-prefixed-formatter"
@@ -20,8 +15,9 @@ import (
 	"github.com/TykTechnologies/tyk-pump/pumps"
 	"github.com/TykTechnologies/tyk-pump/server"
 	"github.com/TykTechnologies/tyk-pump/storage"
-
+	"github.com/gocraft/health"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
+	msgpack "gopkg.in/vmihailenco/msgpack.v2"
 )
 
 var SystemConfig TykPumpConfiguration

@@ -5,13 +5,17 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/tyk-pump/analytics"
-
 	"github.com/mitchellh/mapstructure"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+)
+
+const (
+	namespace = "tyk"
 )
 
 type PrometheusPump struct {
@@ -73,9 +77,9 @@ func (p *PrometheusPump) Init(conf interface{}) error {
 		"tyk_http_status_per_key",
 		"tyk_http_status_per_oauth_client",
 		"tyk_latency", // we should deprecate this
-		"latency_total",
-		"latency_tyk",
-		"latency_service",
+		"tyk_latency_total",
+		"tyk_latency_tyk",
+		"tyk_latency_service",
 	}
 
 	if len(p.conf.Metrics) == 0 {
@@ -114,10 +118,11 @@ func (p *PrometheusPump) registerMetrics() {
 		case "tyk_http_status":
 			p.TotalStatusMetrics = prometheus.NewCounterVec(
 				prometheus.CounterOpts{
-					Name: "tyk_http_status",
-					Help: "HTTP status codes per API",
+					Namespace: namespace,
+					Name:      "http_status",
+					Help:      "HTTP status codes by API",
 				},
-				[]string{"code", "api"},
+				[]string{"code", "api", "api_name", "api_version"},
 			)
 			prometheus.MustRegister(p.TotalStatusMetrics)
 		case "tyk_http_status_per_path":
@@ -199,12 +204,18 @@ func (p *PrometheusPump) WriteData(ctx context.Context, data []interface{}) erro
 
 	for _, item := range data {
 		record := item.(analytics.AnalyticsRecord)
+
 		code := strconv.Itoa(record.ResponseCode)
 
-		if p.TotalLatencyMetrics != nil {
-			tags := []string{code, record.APIID}
-			tags = append(tags, record.Tags...)
-			p.TotalStatusMetrics.WithLabelValues(tags...).Inc()
+		if p.TotalStatusMetrics != nil {
+			labels := prometheus.Labels{
+				"code":        code,
+				"api":         record.APIID,
+				"api_name":    record.APIName,
+				"api_version": record.APIVersion,
+			}
+
+			p.TotalStatusMetrics.With(labels).Inc()
 		}
 
 		if p.PathStatusMetrics != nil {
@@ -232,8 +243,40 @@ func (p *PrometheusPump) WriteData(ctx context.Context, data []interface{}) erro
 			tags = append(tags, record.Tags...)
 			p.TotalLatencyMetrics.WithLabelValues(tags...).Observe(float64(record.RequestTime))
 		}
+
+		if p.LatencyTykMetrics != nil {
+			tags := []string{"total", record.APIID}
+			tags = append(tags, record.Tags...)
+			p.LatencyTykMetrics.WithLabelValues(tags...).Observe(float64(record.RequestTime))
+		}
+
+		if p.LatencyServiceMetrics != nil {
+			tags := []string{"total", record.APIID}
+			tags = append(tags, record.Tags...)
+			p.LatencyServiceMetrics.WithLabelValues(tags...).Observe(float64(record.RequestTime))
+		}
+
+		if p.LatencyTotalMetrics != nil {
+			tags := []string{"total", record.APIID}
+			tags = append(tags, record.Tags...)
+			p.LatencyTotalMetrics.WithLabelValues(tags...).Observe(float64(record.RequestTime))
+		}
 	}
 	return nil
+}
+
+func (p *PrometheusPump) normalizeTagsToLabels(tags []string) prometheus.Labels {
+	labels := prometheus.Labels{}
+
+	for _, tag := range tags {
+		t := strings.SplitN(tag, "-", 2)
+		if len(t) != 2 {
+			continue
+		}
+		labels[t[0]] = t[1]
+	}
+
+	return labels
 }
 
 func (p *PrometheusPump) SetFilters(filters analytics.AnalyticsFilters) {
