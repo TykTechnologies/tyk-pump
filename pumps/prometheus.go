@@ -18,6 +18,18 @@ const (
 	namespace = "tyk"
 )
 
+var (
+	metricSet = []string{
+		"http_status",
+		"http_status_per_path",
+		"http_status_per_key",
+		"http_status_per_oauth_client",
+		"total_latency_seconds",
+		"upstream_latency_seconds",
+		"gateway_latency_seconds",
+	}
+)
+
 type PrometheusPump struct {
 	conf *PrometheusConf
 	// Per service
@@ -90,7 +102,7 @@ func (p *PrometheusPump) Init(conf interface{}) error {
 	p.conf = &PrometheusConf{}
 	err := mapstructure.Decode(conf, &p.conf)
 	if err != nil {
-		prometheusLogger.Fatal("Failed to decode configuration: ", err)
+		prometheusLogger.WithError(err).Fatal("failed to decode configuration")
 	}
 
 	if p.conf.Path == "" {
@@ -98,17 +110,7 @@ func (p *PrometheusPump) Init(conf interface{}) error {
 	}
 
 	if p.conf.Addr == "" {
-		return errors.New("Prometheus listen_addr not set")
-	}
-
-	metricSet := []string{
-		"http_status",
-		"http_status_per_path",
-		"http_status_per_key",
-		"http_status_per_oauth_client",
-		"total_latency_seconds",
-		"upstream_latency_seconds",
-		"gateway_latency_seconds",
+		return errors.New("prometheus listen_addr not set")
 	}
 
 	if len(p.conf.Buckets) == 0 {
@@ -130,12 +132,12 @@ func (p *PrometheusPump) Init(conf interface{}) error {
 		}
 
 		p.conf.Metrics = metricsToRecord
-		prometheusLogger.Infof("publishing: %v", p.conf.Metrics)
+		prometheusLogger.Infof("publishing metrics: %q", metricsToRecord)
 	}
 
 	p.registerMetrics()
 
-	prometheusLogger.Info("Starting prometheus listener on:", p.conf.Addr)
+	prometheusLogger.Infof("starting prometheus listener: %s%s", p.conf.Addr, p.conf.Path)
 
 	http.Handle(p.conf.Path, promhttp.Handler())
 
@@ -233,7 +235,7 @@ func (p *PrometheusPump) registerMetrics() {
 	}
 }
 
-func (p *PrometheusPump) WriteData(ctx context.Context, data []interface{}) error {
+func (p *PrometheusPump) WriteData(_ context.Context, data []interface{}) error {
 	log.WithFields(logrus.Fields{
 		"prefix": prometheusPrefix,
 	}).Debug("Writing ", len(data), " records")
@@ -274,12 +276,14 @@ func (p *PrometheusPump) WriteData(ctx context.Context, data []interface{}) erro
 			p.KeyStatusMetrics.With(labels).Inc()
 		}
 
-		// TODO: Fixup
 		if p.OauthStatusMetrics != nil {
 			if record.OauthID != "" {
-				tags := []string{code, record.OauthID}
-				tags = append(tags, record.Tags...)
-				p.OauthStatusMetrics.WithLabelValues(code, record.OauthID).Inc()
+				labels := prometheus.Labels{
+					"code":      code,
+					"client_id": record.OauthID,
+				}
+
+				p.OauthStatusMetrics.With(labels).Inc()
 			}
 		}
 

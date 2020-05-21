@@ -6,7 +6,6 @@ import (
 
 	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/tyk-pump/logger"
-
 	"github.com/gocraft/web"
 )
 
@@ -25,14 +24,13 @@ func ServeHealthCheck(configHealthEndpoint string, configHealthPort int) {
 		healthPort = defaultHealthPort
 	}
 
-	router := web.New(Context{}).
-		Get("/"+healthEndpoint, (*Context).Healthcheck)
+	router := web.New(Context{}).Get("/"+healthEndpoint, (*Context).Healthcheck)
 
 	log.WithFields(logrus.Fields{
 		"prefix": serverPrefix,
-	}).Info("Serving health check endpoint at http://localhost:", healthPort, "/", healthEndpoint)
+	}).Info("serving health check endpoint at http://localhost:", healthPort, "/", healthEndpoint)
 
-	http.ListenAndServe("localhost:"+fmt.Sprint(healthPort), router)
+	log.Fatal(http.ListenAndServe("localhost:"+fmt.Sprint(healthPort), router))
 }
 
 type Context struct{}
