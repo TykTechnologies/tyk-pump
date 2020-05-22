@@ -420,9 +420,8 @@ More advanced fields:
 ### Kafka Config
 
 * `broker`: The list of brokers used to discover the partitions available on the kafka cluster. E.g. "localhost:9092"
-* `ssl`: SSL config object to make connection secure. It has the following fields:
-	* `enabled`: Enables SSL connection.
-	* `insecure_skip_verify`: Controls whether the pump client verifies the kafka server's certificate chain and host name.
+* `use_ssl`: Enables SSL connection. 
+* `ssl_insecure_skip_verify`: Controls whether the pump client verifies the kafka server's certificate chain and host name.
 * `client_id`: Unique identifier for client connections established with Kafka.
 * `topic`: The topic that the writer will produce messages to.
 * `timeout`: Timeout is the maximum amount of time will wait for a connect or write to complete. 
