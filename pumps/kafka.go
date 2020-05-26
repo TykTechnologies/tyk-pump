@@ -35,7 +35,7 @@ type KafkaConf struct {
 	UseSSL                bool              `mapstructure:"use_ssl"`
 	SSLInsecureSkipVerify bool              `mapstructure:"ssl_insecure_skip_verify"`
 	SSLCertFile           string            `mapstructure:"ssl_cert_file"`
-	SSLKeyFile            string            `mapstructure:"ssl_cert_key"`
+	SSLKeyFile            string            `mapstructure:"ssl_key_file"`
 }
 
 func (k *KafkaPump) New() Pump {
