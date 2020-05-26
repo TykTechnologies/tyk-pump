@@ -303,7 +303,7 @@ func getMapping(datum analytics.AnalyticsRecord, extendedStatistics bool, genera
 	if extendedStatistics {
 		if decodeBase64 {
 			rawRequest, _ := base64.StdEncoding.DecodeString(record.RawRequest)
-			mapping["raw_request"]= string(rawRequest)
+			mapping["raw_request"] = string(rawRequest)
 			rawResponse, _ := base64.StdEncoding.DecodeString(record.RawResponse)
 			mapping["raw_response"] = string(rawResponse)
 		} else {
