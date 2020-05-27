@@ -43,7 +43,7 @@ Create a `pump.conf` file:
   },
   "purge_delay": 1,
   "health_check_endpoint_name": "hello",
-  "health_check_endpoint_port": 8080,
+  "health_check_endpoint_port": 8083,
   "pumps": {
     "dummy": {
       "type": "dummy",
@@ -269,7 +269,7 @@ Settings are the same as for the original `tyk.conf` for redis and for mongoDB.
 From v2.9.4, we have introduced a `/health` endpoint to confirm the Pump is running. You need to configure the following settings:
 
 - `health_check_endpoint_name` - The default is "hello" 
-- `health_check_endpoint_port` - The default port is 8080
+- `health_check_endpoint_port` - The default port is 8083
 
 This returns a HTTP 200 OK response if the Pump is running.
 
