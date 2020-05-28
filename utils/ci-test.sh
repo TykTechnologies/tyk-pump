@@ -6,6 +6,8 @@ MATRIX=(
 	""
 )
 
+export GO111MODULE=on
+
 # print a command and execute it
 show() {
 	echo "$@" >&2

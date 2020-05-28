@@ -40,7 +40,9 @@ type RedisStorageConfig struct {
 	Type                       string       `mapstructure:"type"`
 	Host                       string       `mapstructure:"host"`
 	Port                       int          `mapstructure:"port"`
-	Hosts                      EnvMapString `mapstructure:"hosts"`
+	Hosts                      EnvMapString `mapstructure:"hosts"` // Deprecated: Use Addrs instead.
+	Addrs                      []string     `mapstructure:"addrs"`
+	MasterName                 string       `mapstructure:"master_name" json:"master_name"`
 	Username                   string       `mapstructure:"username"`
 	Password                   string       `mapstructure:"password"`
 	Database                   int          `mapstructure:"database"`
@@ -90,28 +92,6 @@ func NewRedisClusterPool(forceReconnect bool, config RedisStorageConfig) redis.U
 		timeout = time.Duration(config.Timeout) * time.Second
 	}
 
-	if config.EnableCluster {
-		log.WithFields(logrus.Fields{
-			"prefix": redisLogPrefix,
-		}).Info("--> Using clustered mode")
-	}
-
-	seed_redii := []string{}
-
-	if len(config.Hosts) > 0 {
-		for h, p := range config.Hosts {
-			addr := h + ":" + p
-			seed_redii = append(seed_redii, addr)
-		}
-	} else {
-		addr := config.Host + ":" + strconv.Itoa(config.Port)
-		seed_redii = append(seed_redii, addr)
-	}
-
-	if !config.EnableCluster {
-		seed_redii = seed_redii[:1]
-	}
-
 	var tlsConfig *tls.Config
 	if config.RedisUseSSL {
 		tlsConfig = &tls.Config{
@@ -119,8 +99,10 @@ func NewRedisClusterPool(forceReconnect bool, config RedisStorageConfig) redis.U
 		}
 	}
 
-	thisInstance := redis.NewUniversalClient(&redis.UniversalOptions{
-		Addrs:        seed_redii,
+	var client redis.UniversalClient
+	opts := &RedisOpts{
+		MasterName:   config.MasterName,
+		Addrs:        getRedisAddrs(config),
 		DB:           config.Database,
 		Password:     config.Password,
 		PoolSize:     maxActive,
@@ -129,11 +111,143 @@ func NewRedisClusterPool(forceReconnect bool, config RedisStorageConfig) redis.U
 		WriteTimeout: timeout,
 		DialTimeout:  timeout,
 		TLSConfig:    tlsConfig,
-	})
+	}
 
-	redisClusterSingleton = thisInstance
+	if opts.MasterName != "" {
+		log.Info("--> [REDIS] Creating sentinel-backed failover client")
+		client = redis.NewFailoverClient(opts.failover())
+	} else if config.EnableCluster {
+		log.Info("--> [REDIS] Creating cluster client")
+		client = redis.NewClusterClient(opts.cluster())
+	} else {
+		log.Info("--> [REDIS] Creating single-node client")
+		client = redis.NewClient(opts.simple())
+	}
 
-	return thisInstance
+	redisClusterSingleton = client
+
+	return client
+}
+
+func getRedisAddrs(config RedisStorageConfig) (addrs []string) {
+	if len(config.Addrs) != 0 {
+		addrs = config.Addrs
+	} else {
+		for h, p := range config.Hosts {
+			addr := h + ":" + p
+			addrs = append(addrs, addr)
+		}
+	}
+
+	if len(addrs) == 0 && config.Port != 0 {
+		addr := config.Host + ":" + strconv.Itoa(config.Port)
+		addrs = append(addrs, addr)
+	}
+
+	return addrs
+}
+
+// RedisOpts is the overriden type of redis.UniversalOptions. simple() and cluster() functions are not public
+// in redis library. Therefore, they are redefined in here to use in creation of new redis cluster logic.
+// We don't want to use redis.NewUniversalClient() logic.
+type RedisOpts redis.UniversalOptions
+
+func (o *RedisOpts) cluster() *redis.ClusterOptions {
+	if len(o.Addrs) == 0 {
+		o.Addrs = []string{"127.0.0.1:6379"}
+	}
+
+	return &redis.ClusterOptions{
+		Addrs:     o.Addrs,
+		OnConnect: o.OnConnect,
+
+		Password: o.Password,
+
+		MaxRedirects:   o.MaxRedirects,
+		ReadOnly:       o.ReadOnly,
+		RouteByLatency: o.RouteByLatency,
+		RouteRandomly:  o.RouteRandomly,
+
+		MaxRetries:      o.MaxRetries,
+		MinRetryBackoff: o.MinRetryBackoff,
+		MaxRetryBackoff: o.MaxRetryBackoff,
+
+		DialTimeout:        o.DialTimeout,
+		ReadTimeout:        o.ReadTimeout,
+		WriteTimeout:       o.WriteTimeout,
+		PoolSize:           o.PoolSize,
+		MinIdleConns:       o.MinIdleConns,
+		MaxConnAge:         o.MaxConnAge,
+		PoolTimeout:        o.PoolTimeout,
+		IdleTimeout:        o.IdleTimeout,
+		IdleCheckFrequency: o.IdleCheckFrequency,
+
+		TLSConfig: o.TLSConfig,
+	}
+}
+
+func (o *RedisOpts) simple() *redis.Options {
+	addr := "127.0.0.1:6379"
+	if len(o.Addrs) > 0 {
+		addr = o.Addrs[0]
+	}
+
+	return &redis.Options{
+		Addr:      addr,
+		OnConnect: o.OnConnect,
+
+		DB:       o.DB,
+		Password: o.Password,
+
+		MaxRetries:      o.MaxRetries,
+		MinRetryBackoff: o.MinRetryBackoff,
+		MaxRetryBackoff: o.MaxRetryBackoff,
+
+		DialTimeout:  o.DialTimeout,
+		ReadTimeout:  o.ReadTimeout,
+		WriteTimeout: o.WriteTimeout,
+
+		PoolSize:           o.PoolSize,
+		MinIdleConns:       o.MinIdleConns,
+		MaxConnAge:         o.MaxConnAge,
+		PoolTimeout:        o.PoolTimeout,
+		IdleTimeout:        o.IdleTimeout,
+		IdleCheckFrequency: o.IdleCheckFrequency,
+
+		TLSConfig: o.TLSConfig,
+	}
+}
+
+func (o *RedisOpts) failover() *redis.FailoverOptions {
+	if len(o.Addrs) == 0 {
+		o.Addrs = []string{"127.0.0.1:26379"}
+	}
+
+	return &redis.FailoverOptions{
+		SentinelAddrs: o.Addrs,
+		MasterName:    o.MasterName,
+		OnConnect:     o.OnConnect,
+
+		DB:       o.DB,
+		Password: o.Password,
+
+		MaxRetries:      o.MaxRetries,
+		MinRetryBackoff: o.MinRetryBackoff,
+		MaxRetryBackoff: o.MaxRetryBackoff,
+
+		DialTimeout:  o.DialTimeout,
+		ReadTimeout:  o.ReadTimeout,
+		WriteTimeout: o.WriteTimeout,
+
+		PoolSize:           o.PoolSize,
+		MinIdleConns:       o.MinIdleConns,
+		MaxConnAge:         o.MaxConnAge,
+		PoolTimeout:        o.PoolTimeout,
+		IdleTimeout:        o.IdleTimeout,
+		IdleCheckFrequency: o.IdleCheckFrequency,
+
+		TLSConfig: o.TLSConfig,
+	}
 }
 
 func (r *RedisClusterStorageManager) GetName() string {

@@ -2,19 +2,23 @@ package pumps
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
+	"time"
+
 	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/mitchellh/mapstructure"
 	"github.com/segmentio/kafka-go"
 	"github.com/segmentio/kafka-go/snappy"
-	"time"
 )
 
 type KafkaPump struct {
 	kafkaConf    *KafkaConf
 	writerConfig kafka.WriterConfig
 	log          *logrus.Entry
+	filters      analytics.AnalyticsFilters
+	timeout      int
 }
 
 type Json map[string]interface{}
@@ -22,12 +26,14 @@ type Json map[string]interface{}
 var kafkaPrefix = "kafka-pump"
 
 type KafkaConf struct {
-	Broker     []string          `mapstructure:"broker"`
-	ClientId   string            `mapstructure:"client_id"`
-	Topic      string            `mapstructure:"topic"`
-	Timeout    time.Duration     `mapstructure:"timeout"`
-	Compressed bool              `mapstructure:"compressed"`
-	MetaData   map[string]string `mapstructure:"meta_data"`
+	Broker                []string          `mapstructure:"broker"`
+	ClientId              string            `mapstructure:"client_id"`
+	Topic                 string            `mapstructure:"topic"`
+	Timeout               time.Duration     `mapstructure:"timeout"`
+	Compressed            bool              `mapstructure:"compressed"`
+	MetaData              map[string]string `mapstructure:"meta_data"`
+	UseSSL                bool              `mapstructure:"use_ssl"`
+	SSLInsecureSkipVerify bool              `mapstructure:"ssl_insecure_skip_verify"`
 }
 
 func (k *KafkaPump) New() Pump {
@@ -50,10 +56,18 @@ func (k *KafkaPump) Init(config interface{}) error {
 		k.log.Fatal("Failed to decode configuration: ", err)
 	}
 
+	var tlsConfig *tls.Config
+	if k.kafkaConf.UseSSL {
+		tlsConfig = &tls.Config{
+			InsecureSkipVerify: k.kafkaConf.SSLInsecureSkipVerify,
+		}
+	}
+
 	//Kafka writer connection config
 	dialer := &kafka.Dialer{
 		Timeout:  k.kafkaConf.Timeout * time.Second,
 		ClientID: k.kafkaConf.ClientId,
+		TLS:      tlsConfig,
 	}
 
 	k.writerConfig.Brokers = k.kafkaConf.Broker
@@ -70,7 +84,7 @@ func (k *KafkaPump) Init(config interface{}) error {
 	return nil
 }
 
-func (k *KafkaPump) WriteData(data []interface{}) error {
+func (k *KafkaPump) WriteData(ctx context.Context, data []interface{}) error {
 	startTime := time.Now()
 	k.log.Info("Writing ", len(data), " records...")
 	kafkaMessages := make([]kafka.Message, len(data))
@@ -116,7 +130,7 @@ func (k *KafkaPump) WriteData(data []interface{}) error {
 		}
 	}
 	//Send kafka message
-	kafkaError := k.write(kafkaMessages)
+	kafkaError := k.write(ctx, kafkaMessages)
 	if kafkaError != nil {
 		k.log.WithError(kafkaError).Error("unable to write message")
 	}
@@ -124,8 +138,23 @@ func (k *KafkaPump) WriteData(data []interface{}) error {
 	return nil
 }
 
-func (k *KafkaPump) write(messages []kafka.Message) error {
+func (k *KafkaPump) write(ctx context.Context, messages []kafka.Message) error {
 	kafkaWriter := kafka.NewWriter(k.writerConfig)
 	defer kafkaWriter.Close()
-	return kafkaWriter.WriteMessages(context.Background(), messages...)
+	return kafkaWriter.WriteMessages(ctx, messages...)
+}
+
+func (k *KafkaPump) SetTimeout(timeout int) {
+	k.timeout = timeout
+}
+
+func (k *KafkaPump) GetTimeout() int {
+	return k.timeout
+}
+
+func (k *KafkaPump) SetFilters(filters analytics.AnalyticsFilters) {
+	k.filters = filters
+}
+func (k *KafkaPump) GetFilters() analytics.AnalyticsFilters {
+	return k.filters
 }

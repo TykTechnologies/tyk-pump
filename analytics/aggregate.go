@@ -2,6 +2,7 @@ package analytics
 
 import (
 	b64 "encoding/base64"
+	"encoding/hex"
 	"fmt"
 	"strconv"
 	"strings"
@@ -15,6 +16,11 @@ const (
 	AgggregateMixedCollectionName = "tyk_analytics_aggregates"
 	MongoAggregatePrefix          = "mongo-pump-aggregate"
 )
+
+type ErrorData struct {
+	Code  string
+	Count int
+}
 
 type Counter struct {
 	Hits              int       `json:"hits"`
@@ -39,6 +45,9 @@ type Counter struct {
 	MinLatency   int64   `json:"min_latency"`
 	TotalLatency int64   `json:"total_latency"`
 	Latency      float64 `json:"latency"`
+
+	ErrorMap  map[string]int `json:"error_map"`
+	ErrorList []ErrorData    `json:"error_list"`
 }
 
 type AnalyticsRecordAggregate struct {
@@ -72,10 +81,12 @@ type AnalyticsRecordAggregate struct {
 		Endpoints     []Counter
 		KeyEndpoint   map[string][]Counter `bson:"keyendpoints"`
 		OauthEndpoint map[string][]Counter `bson:"oauthendpoints"`
+		APIEndpoint   []Counter            `bson:"apiendpoints"`
 	}
 
 	KeyEndpoint   map[string]map[string]*Counter `bson:"keyendpoints"`
 	OauthEndpoint map[string]map[string]*Counter `bson:"oauthendpoints"`
+	ApiEndpoint   map[string]*Counter            `bson:"apiendpoints"`
 
 	Total Counter
 
@@ -95,6 +106,7 @@ func (f AnalyticsRecordAggregate) New() AnalyticsRecordAggregate {
 	thisF.Endpoints = make(map[string]*Counter)
 	thisF.KeyEndpoint = make(map[string]map[string]*Counter)
 	thisF.OauthEndpoint = make(map[string]map[string]*Counter)
+	thisF.ApiEndpoint = make(map[string]*Counter)
 
 	return thisF
 }
@@ -109,6 +121,9 @@ func (f *AnalyticsRecordAggregate) generateBSONFromProperty(parent, thisUnit str
 	newUpdate["$inc"].(bson.M)[constructor+"hits"] = incVal.Hits
 	newUpdate["$inc"].(bson.M)[constructor+"success"] = incVal.Success
 	newUpdate["$inc"].(bson.M)[constructor+"errortotal"] = incVal.ErrorTotal
+	for k, v := range incVal.ErrorMap {
+		newUpdate["$inc"].(bson.M)[constructor+"errormap."+k] = v
+	}
 	newUpdate["$inc"].(bson.M)[constructor+"totalrequesttime"] = incVal.TotalRequestTime
 	newUpdate["$set"].(bson.M)[constructor+"identifier"] = incVal.Identifier
 	newUpdate["$set"].(bson.M)[constructor+"humanidentifier"] = incVal.HumanIdentifier
@@ -216,6 +231,10 @@ func (f *AnalyticsRecordAggregate) AsChange() bson.M {
 		}
 	}
 
+	for thisUnit, incVal := range f.ApiEndpoint {
+		newUpdate = f.generateBSONFromProperty("apiendpoints", thisUnit, incVal, newUpdate)
+	}
+
 	newUpdate = f.generateBSONFromProperty("", "total", &f.Total, newUpdate)
 
 	asTime := f.TimeStamp
@@ -231,6 +250,44 @@ func (f *AnalyticsRecordAggregate) AsChange() bson.M {
 	return newUpdate
 }
 
+func (f *AnalyticsRecordAggregate) SetErrorList(parent, thisUnit string, counter *Counter, newUpdate bson.M) {
+	constructor := parent + "." + thisUnit + "."
+	if parent == "" {
+		constructor = thisUnit + "."
+	}
+
+	errorlist := make([]ErrorData, 0)
+
+	for k, v := range counter.ErrorMap {
+		element := ErrorData{
+			Code:  k,
+			Count: v,
+		}
+		errorlist = append(errorlist, element)
+	}
+	counter.ErrorList = errorlist
+
+	newUpdate["$set"].(bson.M)[constructor+"errorlist"] = counter.ErrorList
+}
+
+func (f *AnalyticsRecordAggregate) getRecords(fieldName string, data map[string]*Counter, newUpdate bson.M) []Counter {
+	result := make([]Counter, 0)
+
+	for thisUnit, incVal := range data {
+		var newTime float64
+
+		if incVal.Hits > 0 {
+			newTime = incVal.TotalRequestTime / float64(incVal.Hits)
+		}
+		f.SetErrorList(fieldName, thisUnit, incVal, newUpdate)
+		newUpdate = f.generateSetterForTime(fieldName, thisUnit, newTime, newUpdate)
+		newUpdate = f.latencySetter(fieldName, thisUnit, newUpdate, incVal)
+		result = append(result, *incVal)
+	}
+
+	return result
+}
+
 func (f *AnalyticsRecordAggregate) AsTimeUpdate() bson.M {
 	newUpdate := bson.M{
 		"$set": bson.M{},
@@ -238,159 +295,41 @@ func (f *AnalyticsRecordAggregate) AsTimeUpdate() bson.M {
 
 	// We need to create lists of API data so that we can aggregate across the list
 	// in order to present top-20 style lists of APIs, Tokens etc.
-	apis := make([]Counter, 0)
-	newUpdate["$set"].(bson.M)["lists.apiid"] = make([]interface{}, 0)
-	for thisUnit, incVal := range f.APIID {
-		var newTime float64
+	//apis := make([]Counter, 0)
+	newUpdate["$set"].(bson.M)["lists.apiid"] = f.getRecords("apiid", f.APIID, newUpdate)
 
-		if incVal.Hits > 0 {
-			newTime = incVal.TotalRequestTime / float64(incVal.Hits)
-		}
-		newUpdate = f.generateSetterForTime("apiid", thisUnit, newTime, newUpdate)
-		newUpdate = f.latencySetter("apiid", thisUnit, newUpdate, incVal)
-		apis = append(apis, *incVal)
-	}
-	newUpdate["$set"].(bson.M)["lists.apiid"] = apis
+	newUpdate["$set"].(bson.M)["lists.errors"] = f.getRecords("errors", f.Errors, newUpdate)
 
-	errors := make([]Counter, 0)
-	newUpdate["$set"].(bson.M)["lists.errors"] = make([]interface{}, 0)
-	for thisUnit, incVal := range f.Errors {
-		var newTime float64
+	newUpdate["$set"].(bson.M)["lists.versions"] = f.getRecords("versions", f.Versions, newUpdate)
 
-		if incVal.Hits > 0 {
-			newTime = incVal.TotalRequestTime / float64(incVal.Hits)
-		}
-		newUpdate = f.generateSetterForTime("errors", thisUnit, newTime, newUpdate)
-		newUpdate = f.latencySetter("errors", thisUnit, newUpdate, incVal)
-		errors = append(errors, *incVal)
-	}
-	newUpdate["$set"].(bson.M)["lists.errors"] = errors
+	newUpdate["$set"].(bson.M)["lists.apikeys"] = f.getRecords("apikeys", f.APIKeys, newUpdate)
 
-	versions := make([]Counter, 0)
-	newUpdate["$set"].(bson.M)["lists.versions"] = make([]interface{}, 0)
-	for thisUnit, incVal := range f.Versions {
-		var newTime float64
+	newUpdate["$set"].(bson.M)["lists.oauthids"] = f.getRecords("oauthids", f.OauthIDs, newUpdate)
 
-		if incVal.Hits > 0 {
-			newTime = incVal.TotalRequestTime / float64(incVal.Hits)
-		}
-		newUpdate = f.generateSetterForTime("versions", thisUnit, newTime, newUpdate)
-		newUpdate = f.latencySetter("versions", thisUnit, newUpdate, incVal)
-		versions = append(versions, *incVal)
-	}
-	newUpdate["$set"].(bson.M)["lists.versions"] = versions
+	newUpdate["$set"].(bson.M)["lists.geo"] = f.getRecords("geo", f.Geo, newUpdate)
 
-	apikeys := make([]Counter, 0)
-	newUpdate["$set"].(bson.M)["lists.apikeys"] = make([]interface{}, 0)
-	for thisUnit, incVal := range f.APIKeys {
-		var newTime float64
+	newUpdate["$set"].(bson.M)["lists.tags"] = f.getRecords("tags", f.Tags, newUpdate)
 
-		if incVal.Hits > 0 {
-			newTime = incVal.TotalRequestTime / float64(incVal.Hits)
-		}
-		newUpdate = f.generateSetterForTime("apikeys", thisUnit, newTime, newUpdate)
-		newUpdate = f.latencySetter("apikeys", thisUnit, newUpdate, incVal)
-		apikeys = append(apikeys, *incVal)
-	}
-	newUpdate["$set"].(bson.M)["lists.apikeys"] = apikeys
-
-	oauthids := make([]Counter, 0)
-	newUpdate["$set"].(bson.M)["lists.oauthids"] = make([]interface{}, 0)
-	for thisUnit, incVal := range f.OauthIDs {
-		var newTime float64
-
-		if incVal.Hits > 0 {
-			newTime = incVal.TotalRequestTime / float64(incVal.Hits)
-		}
-		newUpdate = f.generateSetterForTime("oauthids", thisUnit, newTime, newUpdate)
-		newUpdate = f.latencySetter("oauthids", thisUnit, newUpdate, incVal)
-		oauthids = append(oauthids, *incVal)
-	}
-	newUpdate["$set"].(bson.M)["lists.oauthids"] = oauthids
-
-	geo := make([]Counter, 0)
-	newUpdate["$set"].(bson.M)["lists.geo"] = make([]interface{}, 0)
-	for thisUnit, incVal := range f.Geo {
-		var newTime float64
-
-		if incVal.Hits > 0 {
-			newTime = incVal.TotalRequestTime / float64(incVal.Hits)
-		}
-		newUpdate = f.generateSetterForTime("geo", thisUnit, newTime, newUpdate)
-		newUpdate = f.latencySetter("geo", thisUnit, newUpdate, incVal)
-		geo = append(geo, *incVal)
-	}
-	newUpdate["$set"].(bson.M)["lists.geo"] = geo
-
-	tags := make([]Counter, 0)
-	newUpdate["$set"].(bson.M)["lists.tags"] = make([]interface{}, 0)
-	for thisUnit, incVal := range f.Tags {
-		var newTime float64
-
-		if incVal.Hits > 0 {
-			newTime = incVal.TotalRequestTime / float64(incVal.Hits)
-		}
-		newUpdate = f.generateSetterForTime("tags", thisUnit, newTime, newUpdate)
-		newUpdate = f.latencySetter("tags", thisUnit, newUpdate, incVal)
-		tags = append(tags, *incVal)
-	}
-	newUpdate["$set"].(bson.M)["lists.tags"] = tags
-
-	endpoints := make([]Counter, 0)
-	newUpdate["$set"].(bson.M)["lists.endpoints"] = make([]interface{}, 0)
-	for thisUnit, incVal := range f.Endpoints {
-		var newTime float64
-
-		if incVal.Hits > 0 {
-			newTime = incVal.TotalRequestTime / float64(incVal.Hits)
-		}
-		newUpdate = f.generateSetterForTime("endpoints", thisUnit, newTime, newUpdate)
-		newUpdate = f.latencySetter("endpoints", thisUnit, newUpdate, incVal)
-		endpoints = append(endpoints, *incVal)
-	}
-	newUpdate["$set"].(bson.M)["lists.endpoints"] = endpoints
+	newUpdate["$set"].(bson.M)["lists.endpoints"] = f.getRecords("endpoints", f.Endpoints, newUpdate)
 
 	for thisUnit, incVal := range f.KeyEndpoint {
 		parent := "lists.keyendpoints." + thisUnit
-		keyendpoints := make([]Counter, 0)
-
-		newUpdate["$set"].(bson.M)[parent] = make([]interface{}, 0)
-		for k, v := range incVal {
-			var newTime float64
-
-			if v.Hits > 0 {
-				newTime = v.TotalRequestTime / float64(v.Hits)
-			}
-			newUpdate = f.generateSetterForTime("keyendpoints."+thisUnit, k, newTime, newUpdate)
-			newUpdate = f.latencySetter("keyendpoints."+thisUnit, k, newUpdate, v)
-			keyendpoints = append(keyendpoints, *v)
-		}
-		newUpdate["$set"].(bson.M)[parent] = keyendpoints
+		newUpdate["$set"].(bson.M)[parent] = f.getRecords("keyendpoints."+thisUnit, incVal, newUpdate)
 	}
 
 	for thisUnit, incVal := range f.OauthEndpoint {
 		parent := "lists.oauthendpoints." + thisUnit
-		oauthendpoints := make([]Counter, 0)
-
-		newUpdate["$set"].(bson.M)[parent] = make([]interface{}, 0)
-		for k, v := range incVal {
-			var newTime float64
-
-			if v.Hits > 0 {
-				newTime = v.TotalRequestTime / float64(v.Hits)
-			}
-			newUpdate = f.generateSetterForTime("oauthendpoints."+thisUnit, k, newTime, newUpdate)
-			newUpdate = f.latencySetter("oauthendpoints."+thisUnit, k, newUpdate, v)
-			oauthendpoints = append(oauthendpoints, *v)
-		}
-		newUpdate["$set"].(bson.M)[parent] = oauthendpoints
+		newUpdate["$set"].(bson.M)[parent] = f.getRecords("oauthendpoints."+thisUnit, incVal, newUpdate)
 	}
+
+	newUpdate["$set"].(bson.M)["lists.apiendpoints"] = f.getRecords("apiendpoints", f.ApiEndpoint, newUpdate)
 
 	var newTime float64
 
 	if f.Total.Hits > 0 {
 		newTime = f.Total.TotalRequestTime / float64(f.Total.Hits)
 	}
+	f.SetErrorList("", "total", &f.Total, newUpdate)
 	newUpdate = f.generateSetterForTime("", "total", newTime, newUpdate)
 	newUpdate = f.latencySetter("", "total", newUpdate, &f.Total)
 
@@ -460,6 +399,7 @@ func AggregateData(data []interface{}, trackAllPaths bool, ignoreTagPrefixList [
 			thisAggregate.TimeID.Hour = asTime.Hour()
 			thisAggregate.OrgID = orgID
 			thisAggregate.LastTime = thisV.TimeStamp
+			thisAggregate.Total.ErrorMap = make(map[string]int)
 		}
 
 		// Always update the last timestamp
@@ -506,15 +446,18 @@ func AggregateData(data []interface{}, trackAllPaths bool, ignoreTagPrefixList [
 				MaxLatency:           thisV.Latency.Total,
 				MinLatency:           thisV.Latency.Total,
 				TotalLatency:         thisV.Latency.Total,
+				ErrorMap:             make(map[string]int),
 			}
 			thisAggregate.Total.Hits++
 			thisAggregate.Total.TotalRequestTime += float64(thisV.RequestTime)
 
 			// We need an initial value
 			thisAggregate.Total.RequestTime = thisAggregate.Total.TotalRequestTime / float64(thisAggregate.Total.Hits)
-			if thisV.ResponseCode > 400 {
+			if thisV.ResponseCode >= 400 {
 				thisCounter.ErrorTotal = 1
+				thisCounter.ErrorMap[strconv.Itoa(thisV.ResponseCode)]++
 				thisAggregate.Total.ErrorTotal++
+				thisAggregate.Total.ErrorMap[strconv.Itoa(thisV.ResponseCode)]++
 			}
 
 			if (thisV.ResponseCode < 300) && (thisV.ResponseCode >= 200) {
@@ -561,11 +504,18 @@ func AggregateData(data []interface{}, trackAllPaths bool, ignoreTagPrefixList [
 				IncrementOrSetUnit := func(c *Counter) *Counter {
 					if c == nil {
 						newCounter := thisCounter
+						newCounter.ErrorMap = make(map[string]int)
+						for k, v := range thisCounter.ErrorMap {
+							newCounter.ErrorMap[k] = v
+						}
 						c = &newCounter
 					} else {
 						c.Hits += thisCounter.Hits
 						c.Success += thisCounter.Success
 						c.ErrorTotal += thisCounter.ErrorTotal
+						for k, v := range thisCounter.ErrorMap {
+							c.ErrorMap[k] += v
+						}
 						c.TotalRequestTime += thisCounter.TotalRequestTime
 						c.RequestTime = c.TotalRequestTime / float64(c.Hits)
 
@@ -690,12 +640,19 @@ func AggregateData(data []interface{}, trackAllPaths bool, ignoreTagPrefixList [
 					break
 
 				case "TrackPath":
+					log.Debug("TrackPath=", value.(bool))
 					if value.(bool) {
 						fixedPath := replaceUnsupportedChars(thisV.Path)
 						c := IncrementOrSetUnit(thisAggregate.Endpoints[fixedPath])
 						thisAggregate.Endpoints[fixedPath] = c
 						thisAggregate.Endpoints[fixedPath].Identifier = thisV.Path
 						thisAggregate.Endpoints[fixedPath].HumanIdentifier = thisV.Path
+
+						keyStr := hex.EncodeToString([]byte(thisV.APIID + ":" + thisV.APIVersion + ":" + thisV.Path))
+						c = IncrementOrSetUnit(thisAggregate.ApiEndpoint[keyStr])
+						thisAggregate.ApiEndpoint[keyStr] = c
+						thisAggregate.ApiEndpoint[keyStr].Identifier = keyStr
+						thisAggregate.ApiEndpoint[keyStr].HumanIdentifier = thisV.Path
 					}
 					break
 				}
