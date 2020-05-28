@@ -233,7 +233,8 @@ Create a `pump.conf` file:
       "meta": {
         "transport": "udp",
         "network_addr": "localhost:5140",
-        "log_level": 6
+        "log_level": 6,
+        "tag":"syslog-pump"
       }
     }
   },
@@ -443,6 +444,8 @@ More advanced fields:
 
 `"log_level"` - The severity level, an integer from 0-7, based off the Standard: [Syslog Severity Levels](https://en.wikipedia.org/wiki/Syslog#Severity_level)
 
+`"tag"` - Prefix tag
+
 When working with FluentD, you should provide a [FluentD Parser](https://docs.fluentd.org/input/syslog) based on the OS you are using so that FluentD can correctly read the logs
 
 ```.json
@@ -451,7 +454,8 @@ When working with FluentD, you should provide a [FluentD Parser](https://docs.fl
   "meta": {
     "transport": "udp",
     "network_addr": "localhost:5140",
-    "log_level": 6
+    "log_level": 6,
+    "tag": "syslog-pump"
   }
 ```
 

@@ -1,6 +1,7 @@
 package pumps
 
 import (
+	"context"
 	"fmt"
 	"log/syslog"
 
@@ -13,6 +14,8 @@ import (
 type SyslogPump struct {
 	syslogConf *SyslogConf
 	writer     *syslog.Writer
+	filters    analytics.AnalyticsFilters
+	timeout    int
 }
 
 var (
@@ -23,6 +26,7 @@ type SyslogConf struct {
 	Transport   string `mapstructure:"transport"`
 	NetworkAddr string `mapstructure:"network_addr"`
 	LogLevel    int    `mapstructure:"log_level"`
+	Tag         string `mapstructure:"tag"`
 }
 
 func (s *SyslogPump) GetName() string {
@@ -56,11 +60,15 @@ func (s *SyslogPump) Init(config interface{}) error {
 }
 
 func initWriter(s *SyslogPump) {
+	tag := logPrefix
+	if s.syslogConf.Tag != "" {
+		tag = s.syslogConf.Tag
+	}
 	syslogWriter, err := syslog.Dial(
 		s.syslogConf.Transport,
 		s.syslogConf.NetworkAddr,
 		syslog.Priority(s.syslogConf.LogLevel),
-		"syslog-pump")
+		tag)
 
 	if err != nil {
 		log.WithFields(logrus.Fields{
@@ -106,37 +114,57 @@ func initConfigs(pump *SyslogPump) {
 /**
 ** Write the actual Data to Syslog Here
  */
-func (s *SyslogPump) WriteData(data []interface{}) error {
+func (s *SyslogPump) WriteData(ctx context.Context, data []interface{}) error {
+
 	//Data is all the analytics being written
 	for _, v := range data {
+		select {
+		case <-ctx.Done():
+			return nil
+		default:
+			// Decode the raw analytics into Form
+			decoded := v.(analytics.AnalyticsRecord)
+			message := Json{
+				"timestamp":       decoded.TimeStamp,
+				"method":          decoded.Method,
+				"path":            decoded.Path,
+				"raw_path":        decoded.RawPath,
+				"response_code":   decoded.ResponseCode,
+				"alias":           decoded.Alias,
+				"api_key":         decoded.APIKey,
+				"api_version":     decoded.APIVersion,
+				"api_name":        decoded.APIName,
+				"api_id":          decoded.APIID,
+				"org_id":          decoded.OrgID,
+				"oauth_id":        decoded.OauthID,
+				"raw_request":     decoded.RawRequest,
+				"request_time_ms": decoded.RequestTime,
+				"raw_response":    decoded.RawResponse,
+				"ip_address":      decoded.IPAddress,
+				"host":            decoded.Host,
+				"content_length":  decoded.ContentLength,
+				"user_agent":      decoded.UserAgent,
+			}
 
-		// Decode the raw analytics into Form
-		decoded := v.(analytics.AnalyticsRecord)
-		message := Json{
-			"timestamp":       decoded.TimeStamp,
-			"method":          decoded.Method,
-			"path":            decoded.Path,
-			"raw_path":        decoded.RawPath,
-			"response_code":   decoded.ResponseCode,
-			"alias":           decoded.Alias,
-			"api_key":         decoded.APIKey,
-			"api_version":     decoded.APIVersion,
-			"api_name":        decoded.APIName,
-			"api_id":          decoded.APIID,
-			"org_id":          decoded.OrgID,
-			"oauth_id":        decoded.OauthID,
-			"raw_request":     decoded.RawRequest,
-			"request_time_ms": decoded.RequestTime,
-			"raw_response":    decoded.RawResponse,
-			"ip_address":      decoded.IPAddress,
-			"host":            decoded.Host,
-			"content_length":  decoded.ContentLength,
-			"user_agent":      decoded.UserAgent,
+			// Print to Syslog
+			_, _ = fmt.Fprintf(s.writer, "%s", message)
 		}
-
-		// Print to Syslog
-		_, _ = fmt.Fprintf(s.writer, "%s", message)
 	}
 
 	return nil
+}
+
+func (s *SyslogPump) SetTimeout(timeout int) {
+	s.timeout = timeout
+}
+
+func (s *SyslogPump) GetTimeout() int {
+	return s.timeout
+}
+
+func (s *SyslogPump) SetFilters(filters analytics.AnalyticsFilters) {
+	s.filters = filters
+}
+func (s *SyslogPump) GetFilters() analytics.AnalyticsFilters {
+	return s.filters
 }
