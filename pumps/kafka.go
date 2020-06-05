@@ -32,6 +32,8 @@ type KafkaConf struct {
 	MetaData              map[string]string `mapstructure:"meta_data"`
 	UseSSL                bool              `mapstructure:"use_ssl"`
 	SSLInsecureSkipVerify bool              `mapstructure:"ssl_insecure_skip_verify"`
+	SSLCertFile           string            `mapstructure:"ssl_cert_file"`
+	SSLKeyFile            string            `mapstructure:"ssl_key_file"`
 }
 
 func (k *KafkaPump) New() Pump {
@@ -55,10 +57,20 @@ func (k *KafkaPump) Init(config interface{}) error {
 	}
 
 	var tlsConfig *tls.Config
+	var cert tls.Certificate
 	if k.kafkaConf.UseSSL {
-		tlsConfig = &tls.Config{
-			InsecureSkipVerify: k.kafkaConf.SSLInsecureSkipVerify,
+		if k.kafkaConf.SSLCertFile != "" && k.kafkaConf.SSLKeyFile != "" {
+			// Load certificates:
+			var err error
+			cert, err = tls.LoadX509KeyPair(k.kafkaConf.SSLCertFile, k.kafkaConf.SSLKeyFile)
+			if err != nil {
+				return err
+			}
 		}
+	}
+	tlsConfig = &tls.Config{
+		Certificates: []tls.Certificate{cert},
+		InsecureSkipVerify: k.kafkaConf.SSLInsecureSkipVerify,
 	}
 
 	//Kafka writer connection config
