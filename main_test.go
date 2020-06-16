@@ -1,23 +1,43 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"errors"
 	"fmt"
+	"github.com/go-redis/redis"
+	"gopkg.in/mgo.v2"
+	"strconv"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/TykTechnologies/tyk-pump/pumps"
+	"github.com/ory/dockertest/v3"
+)
+
+const (
+	mongoDockerImage = "mongo"
+	redisDockerImage = "redis"
+)
+
+var (
+	testPool *dockertest.Pool
 )
 
 type MockedPump struct {
-	CounterRequest int
-	filters        analytics.AnalyticsFilters
-	timeout        int
+	CounterRequest  int
+	filters         analytics.AnalyticsFilters
+	timeout         int
+	activateTimeout bool
+	hangingTime     int
+	name            string
+	shouldErr       bool
 }
 
 func (p *MockedPump) GetName() string {
-	return "Mocked Pump"
+	return p.name
 }
 
 func (p *MockedPump) New() pumps.Pump {
@@ -27,11 +47,20 @@ func (p *MockedPump) Init(config interface{}) error {
 	return nil
 }
 func (p *MockedPump) WriteData(ctx context.Context, keys []interface{}) error {
+	if p.shouldErr {
+		return errors.New("Pump error")
+	} else if p.activateTimeout {
+		time.Sleep(time.Duration(p.timeout+1) * time.Second)
+		return errors.New("timeout")
+	} else if p.hangingTime > 0 {
+		time.Sleep(time.Duration(p.hangingTime) * time.Second)
+	}
 	for range keys {
 		p.CounterRequest++
 	}
 	return nil
 }
+
 func (p *MockedPump) SetFilters(filters analytics.AnalyticsFilters) {
 	p.filters = filters
 }
@@ -45,6 +74,15 @@ func (p *MockedPump) GetTimeout() int {
 	return p.timeout
 }
 
+func init() {
+	var err error
+	testPool, err = dockertest.NewPool("")
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+//Tests for filterData
 func TestFilterData(t *testing.T) {
 
 	mockedPump := &MockedPump{}
@@ -67,6 +105,7 @@ func TestFilterData(t *testing.T) {
 
 }
 
+//Tests for writeToPumps and execPumpWriting
 func TestWriteData(t *testing.T) {
 	mockedPump := &MockedPump{}
 	Pumps = []pumps.Pump{mockedPump}
@@ -87,7 +126,70 @@ func TestWriteData(t *testing.T) {
 	}
 
 }
+func TestWriteDataWithTimeout(t *testing.T) {
+	var writer bytes.Buffer
+	log.Out = &writer
 
+	mockedPumpTimeouting := &MockedPump{}
+	mockedPumpTimeouting.name = "MockedPumpTimeouting"
+	mockedPumpTimeouting.timeout = 1
+	mockedPumpTimeouting.activateTimeout = true
+
+	mockedPumpSlow := &MockedPump{}
+	mockedPumpSlow.name = "MockedPumpSlow"
+	mockedPumpSlow.hangingTime = 2
+
+	mockedPumpSlowWithTimeout := &MockedPump{}
+	mockedPumpSlowWithTimeout.name = "mockedPumpSlowWithTimeout"
+	mockedPumpSlowWithTimeout.timeout = 3
+	mockedPumpSlowWithTimeout.hangingTime = 2
+
+	mockedPumpErr := &MockedPump{}
+	mockedPumpErr.name = "mockedPumpErr"
+	mockedPumpErr.shouldErr = true
+
+	Pumps = []pumps.Pump{mockedPumpTimeouting, mockedPumpSlow, mockedPumpSlowWithTimeout, mockedPumpErr}
+
+	keys := make([]interface{}, 3)
+	keys[0] = analytics.AnalyticsRecord{APIID: "api111"}
+	keys[1] = analytics.AnalyticsRecord{APIID: "api123"}
+	keys[2] = analytics.AnalyticsRecord{APIID: "api321"}
+
+	job := instrument.NewJob("TestJob")
+
+	writeToPumps(keys, job, time.Now(), 1)
+
+	//Test mockedPumpTimeouting
+	if mockedPumpTimeouting.CounterRequest != 0 {
+		t.Fatal("MockedPumpTimeouting should have 0 records")
+	}
+	if !findInOutput(writer, "Timeout Writing to: MockedPumpTimeouting") {
+		t.Fatal("MockedPumpTimeouting should throw 'Timeout Writing to: MockedPumpTimeouting' log.")
+	}
+
+	//Test mockedPumpSlow
+	if mockedPumpSlow.CounterRequest != 3 {
+		t.Fatal("MockedPumpSlow  should have 3 records")
+	}
+	if !findInOutput(writer, "Pump  MockedPumpSlow is taking more time than the value configured of purge_delay. You should try to set a timeout for this pump.") {
+		t.Fatal("MockedPumpSlow should throw 'Pump  MockedPumpSlow is taking more time than the value configured of purge_delay. You should try to set a timeout for this pump.' log.")
+	}
+
+	//Test mockedPumpSlowWithTimeout
+	if mockedPumpSlowWithTimeout.CounterRequest != 3 {
+		t.Fatal("mockedPumpSlowWithTimeout  should have 3 records")
+	}
+	if !findInOutput(writer, "Pump  mockedPumpSlowWithTimeout is taking more time than the value configured of purge_delay. You should try lowering the timeout configured for this pump") {
+		t.Fatal("mockedPumpSlowWithTimeout should throw 'Pump  mockedPumpSlowWithTimeout is taking more time than the value configured of purge_delay. You should try lowering the timeout configured for this pump.' log.")
+	}
+
+	if mockedPumpErr.CounterRequest != 0 {
+		t.Fatal("mockedPumpErr should have 0 records")
+	}
+	if !findInOutput(writer, "Error Writing to: mockedPumpErr - Error:Pump error") {
+		t.Fatal("mockedPumpErr shoudl throw 'Error Writing to: mockedPumpErr - Error:Pump error' log.")
+	}
+}
 func TestWriteDataWithFilters(t *testing.T) {
 	mockedPump := &MockedPump{}
 	mockedPump.SetFilters(
@@ -113,4 +215,173 @@ func TestWriteDataWithFilters(t *testing.T) {
 		fmt.Println(mockedPump.CounterRequest)
 		t.Fatal("MockedPump with filter should have 3 requests")
 	}
+}
+func TestWriteDataWithoutPumps(t *testing.T) {
+	var writer bytes.Buffer
+	log.Out = &writer
+	Pumps = nil
+	keys := make([]interface{}, 3)
+	keys[0] = analytics.AnalyticsRecord{APIID: "api111"}
+	keys[1] = analytics.AnalyticsRecord{APIID: "api123"}
+	keys[2] = analytics.AnalyticsRecord{APIID: "api321"}
+
+	job := instrument.NewJob("TestJob")
+
+	writeToPumps(keys, job, time.Now(), 1)
+
+	if !findInOutput(writer, "No pumps defined") {
+		t.Fatal("It should log 'No pumps defined'.")
+	}
+}
+
+//Tests for initialisePumps
+func TestInitialisePumps(t *testing.T) {
+	var writer bytes.Buffer
+	log.Out = &writer
+
+	SystemConfig = TykPumpConfiguration{}
+	SystemConfig.DontPurgeUptimeData = true
+	SystemConfig.Pumps = make(map[string]PumpConfig, 4)
+	SystemConfig.Pumps["DummyPump"] = PumpConfig{Name: "DummyPump", Type: "dummy"}
+	SystemConfig.Pumps["InvalidPump"] = PumpConfig{Name: "InvalidPump", Type: "InvalidPump"}
+	SystemConfig.Pumps["dummy"] = PumpConfig{Name: "DummyWithoutType"}
+	SystemConfig.Pumps["SplunkWithoutMeta"] = PumpConfig{Name: "SplunkWithoutMeta", Type: "splunk"}
+
+	initialisePumps()
+
+	if len(Pumps) != 2 {
+		t.Fatal("Should be only 1 pump initialised.")
+	}
+	if !findInOutput(writer, "Pump init error") {
+		t.Fatal("It should log 'Pump init error' for splunk pump.")
+	}
+	if !findInOutput(writer, "Pump load error") {
+		t.Fatal("It should log 'Pump load error' for invalid pump.")
+	}
+}
+func TestInitialisePumpsWithUptimeData(t *testing.T) {
+	var db *mgo.Session
+	var err error
+	var writer bytes.Buffer
+	log.Out = &writer
+
+	SystemConfig = TykPumpConfiguration{}
+	SystemConfig.DontPurgeUptimeData = false
+	SystemConfig.UptimePumpConfig = make(map[string]interface{})
+	SystemConfig.UptimePumpConfig["collection_name"] = "tyk_uptime_analytics"
+
+	resource, err := testPool.Run(mongoDockerImage, "3.0", nil)
+	if err != nil {
+		log.Fatalf("Could not start resource: %s", err)
+	}
+	defer testPool.Purge(resource)
+
+	if err := testPool.Retry(func() error {
+		var err error
+		db, err = mgo.Dial(fmt.Sprintf("localhost:%s", resource.GetPort("27017/tcp")))
+		SystemConfig.UptimePumpConfig["mongo_url"] = fmt.Sprintf("localhost:%s", resource.GetPort("27017/tcp"))
+		if err != nil {
+			return err
+		}
+		return db.Ping()
+	}); err != nil {
+		log.Fatalf("Could not connect to Mongo docker: %s", err)
+	}
+
+	initialisePumps()
+
+	if !findInOutput(writer, "Init Uptime Pump") {
+		t.Fatal("Uptime pump should be initialised.")
+	}
+}
+
+//Testing for store version
+func TestStoreVersion(t *testing.T) {
+	resource, err := testPool.Run(redisDockerImage, "3.2", nil)
+	if err != nil {
+		log.Fatalf("Could not start Redis resource: %s", err)
+	}
+	defer testPool.Purge(resource)
+
+	SystemConfig = TykPumpConfiguration{}
+	SystemConfig.AnalyticsStorageType = "redis"
+	SystemConfig.AnalyticsStorageConfig.Host = "localhost"
+	var db *redis.Client
+	if err := testPool.Retry(func() error {
+		db = redis.NewClient(&redis.Options{
+			Addr: fmt.Sprintf("localhost:%s", resource.GetPort("6379/tcp")),
+		})
+		intPort, _ := strconv.Atoi(resource.GetPort("6379/tcp"))
+		SystemConfig.AnalyticsStorageConfig.Port = intPort
+		return db.Ping().Err()
+	}); err != nil {
+		log.Fatalf("Could not connect to Redis docker: %s", err)
+	}
+
+	storeVersion()
+
+	result, err := db.Get("version-check-pump").Result()
+	if err != nil {
+		t.Fatalf("Error getting version key: %s", err)
+	}
+	if result != VERSION {
+		t.Fatalf("Version stored on redis should be %s", VERSION)
+	}
+}
+
+//Testing setupAnalyticsStore
+func TestSetupAnalyticsStoreTypeRedis(t *testing.T) {
+
+	resource, err := testPool.Run(redisDockerImage, "3.2", nil)
+	if err != nil {
+		log.Fatalf("Could not start Redis resource: %s", err)
+	}
+	defer testPool.Purge(resource)
+
+	SystemConfig = TykPumpConfiguration{}
+	SystemConfig.AnalyticsStorageType = "redis"
+	SystemConfig.AnalyticsStorageConfig.Host = "localhost"
+	var db *redis.Client
+	if err := testPool.Retry(func() error {
+		db = redis.NewClient(&redis.Options{
+			Addr: fmt.Sprintf("localhost:%s", resource.GetPort("6379/tcp")),
+		})
+		intPort, _ := strconv.Atoi(resource.GetPort("6379/tcp"))
+		SystemConfig.AnalyticsStorageConfig.Port = intPort
+		return db.Ping().Err()
+	}); err != nil {
+		log.Fatalf("Could not connect to Redis docker: %s", err)
+	}
+
+	setupAnalyticsStore()
+
+	if AnalyticsStore.GetName() != "redis" || AnalyticsStore.Connect() != true {
+		t.Fatal("AnalyticStore should be redis and be already connected")
+	}
+	if UptimeStorage.GetName() != "redis" || UptimeStorage.Connect() != true {
+		t.Fatal("UptimeStorage should be redis and be already connected")
+	}
+
+	//default options
+	SystemConfig.AnalyticsStorageType = ""
+	setupAnalyticsStore()
+	if AnalyticsStore.GetName() != "redis" || AnalyticsStore.Connect() != true {
+		t.Fatal("AnalyticStore should be redis and be already connected")
+	}
+	if UptimeStorage.GetName() != "redis" || UptimeStorage.Connect() != true {
+		t.Fatal("UptimeStorage should be redis and be already connected")
+	}
+
+}
+
+//Testing Init
+func TestInit(t *testing.T) {
+
+}
+
+func findInOutput(buffer bytes.Buffer, toFind string) bool {
+	if strings.Contains(buffer.String(), toFind) {
+		return true
+	}
+	return false
 }

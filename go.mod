@@ -27,6 +27,7 @@ require (
 	github.com/mitchellh/mapstructure v1.1.2
 	github.com/moesif/moesifapi-go v0.0.0-20170216233325-69242ec5159a
 	github.com/olivere/elastic v6.2.31+incompatible // indirect
+	github.com/ory/dockertest/v3 v3.6.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v0.9.1
 	github.com/prometheus/common v0.2.0 // indirect

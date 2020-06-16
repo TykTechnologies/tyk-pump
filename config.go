@@ -2,9 +2,10 @@ package main
 
 import (
 	"encoding/json"
-	"io/ioutil"
-
+	"errors"
+	"fmt"
 	"github.com/kelseyhightower/envconfig"
+	"io/ioutil"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/TykTechnologies/tyk-pump/storage"
@@ -34,19 +35,21 @@ type TykPumpConfiguration struct {
 	HealthCheckEndpointPort int                        `json:"health_check_endpoint_port"`
 }
 
-func LoadConfig(filePath *string, configStruct *TykPumpConfiguration) {
+func LoadConfig(filePath *string, configStruct *TykPumpConfiguration) error {
 	configuration, err := ioutil.ReadFile(*filePath)
 	if err != nil {
-		log.Fatal("Couldn't load configuration file: ", err)
+		return errors.New(fmt.Sprintf("Couldn't load configuration file: %s", err))
 	}
 
 	marshalErr := json.Unmarshal(configuration, &configStruct)
 	if marshalErr != nil {
-		log.Fatal("Couldn't unmarshal configuration: ", marshalErr)
+		return errors.New(fmt.Sprintf("Couldn't unmarshal configuration: %s", marshalErr))
+
 	}
 
 	overrideErr := envconfig.Process(ENV_PREVIX, configStruct)
 	if overrideErr != nil {
-		log.Error("Failed to process environment variables after file load: ", overrideErr)
+		return errors.New(fmt.Sprintf("Failed to process environment variables after file load: %s", overrideErr))
 	}
+	return nil
 }

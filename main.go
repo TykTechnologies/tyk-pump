@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"gopkg.in/vmihailenco/msgpack.v2"
 	"strings"
 	"sync"
 	"time"
@@ -9,8 +10,6 @@ import (
 	"os"
 
 	"github.com/gocraft/health"
-
-	msgpack "gopkg.in/vmihailenco/msgpack.v2"
 
 	"github.com/TykTechnologies/logrus"
 	prefixed "github.com/TykTechnologies/logrus-prefixed-formatter"
@@ -60,7 +59,10 @@ func Init() {
 		"prefix": mainPrefix,
 	}).Info("## Tyk Analytics Pump, ", VERSION, " ##")
 
-	LoadConfig(conf, &SystemConfig)
+	configErr := LoadConfig(conf, &SystemConfig)
+	if configErr != nil {
+		log.Fatal(configErr)
+	}
 
 	// If no environment variable is set, check the configuration file:
 	if os.Getenv("TYK_LOGLEVEL") == "" {
@@ -118,8 +120,7 @@ func storeVersion() {
 }
 
 func initialisePumps() {
-	Pumps = make([]pumps.Pump, len(SystemConfig.Pumps))
-	i := 0
+	Pumps = []pumps.Pump{}
 	for key, pmp := range SystemConfig.Pumps {
 		pumpTypeName := pmp.Type
 		if pumpTypeName == "" {
@@ -142,10 +143,9 @@ func initialisePumps() {
 				}).Info("Init Pump: ", thisPmp.GetName())
 				thisPmp.SetFilters(pmp.Filters)
 				thisPmp.SetTimeout(pmp.Timeout)
-				Pumps[i] = thisPmp
+				Pumps = append(Pumps, thisPmp)
 			}
 		}
-		i++
 	}
 
 	if !SystemConfig.DontPurgeUptimeData {
@@ -163,45 +163,47 @@ func initialisePumps() {
 
 func StartPurgeLoop(secInterval int) {
 	for range time.Tick(time.Duration(secInterval) * time.Second) {
-		job := instrument.NewJob("PumpRecordsPurge")
-
-		AnalyticsValues := AnalyticsStore.GetAndDeleteSet(storage.ANALYTICS_KEYNAME)
-		if len(AnalyticsValues) > 0 {
-			startTime := time.Now()
-
-			// Convert to something clean
-			keys := make([]interface{}, len(AnalyticsValues))
-
-			for i, v := range AnalyticsValues {
-				decoded := analytics.AnalyticsRecord{}
-				err := msgpack.Unmarshal([]byte(v.(string)), &decoded)
-				log.WithFields(logrus.Fields{
-					"prefix": mainPrefix,
-				}).Debug("Decoded Record: ", decoded)
-				if err != nil {
-					log.WithFields(logrus.Fields{
-						"prefix": mainPrefix,
-					}).Error("Couldn't unmarshal analytics data:", err)
-				} else {
-					keys[i] = interface{}(decoded)
-					job.Event("record")
-				}
-			}
-
-			// Send to pumps
-			writeToPumps(keys, job, startTime, secInterval)
-
-			job.Timing("purge_time_all", time.Since(startTime).Nanoseconds())
-
-		}
-
-		if !SystemConfig.DontPurgeUptimeData {
-			UptimeValues := UptimeStorage.GetAndDeleteSet(storage.UptimeAnalytics_KEYNAME)
-			UptimePump.WriteUptimeData(UptimeValues)
-		}
+		purgeLoop(secInterval)
 	}
 }
 
+func purgeLoop(secInterval int) {
+	job := instrument.NewJob("PumpRecordsPurge")
+
+	AnalyticsValues := AnalyticsStore.GetAndDeleteSet(storage.ANALYTICS_KEYNAME)
+	if len(AnalyticsValues) > 0 {
+		startTime := time.Now()
+
+		// Convert to something clean
+		keys := make([]interface{}, len(AnalyticsValues))
+
+		for i, v := range AnalyticsValues {
+			decoded := analytics.AnalyticsRecord{}
+			err := msgpack.Unmarshal([]byte(v.(string)), &decoded)
+			log.WithFields(logrus.Fields{
+				"prefix": mainPrefix,
+			}).Debug("Decoded Record: ", decoded)
+			if err != nil {
+				log.WithFields(logrus.Fields{
+					"prefix": mainPrefix,
+				}).Error("Couldn't unmarshal analytics data:", err)
+			} else {
+				keys[i] = interface{}(decoded)
+				job.Event("record")
+			}
+		}
+
+		// Send to pumps
+		writeToPumps(keys, job, startTime, secInterval)
+
+		job.Timing("purge_time_all", time.Since(startTime).Nanoseconds())
+	}
+
+	if !SystemConfig.DontPurgeUptimeData {
+		UptimeValues := UptimeStorage.GetAndDeleteSet(storage.UptimeAnalytics_KEYNAME)
+		UptimePump.WriteUptimeData(UptimeValues)
+	}
+}
 func writeToPumps(keys []interface{}, job *health.Job, startTime time.Time, purgeDelay int) {
 	// Send to pumps
 	if Pumps != nil {
@@ -286,10 +288,6 @@ func execPumpWriting(wg *sync.WaitGroup, pmp pumps.Pump, keys *[]interface{}, pu
 		}
 	case <-ctx.Done():
 		switch ctx.Err() {
-		case context.Canceled:
-			log.WithFields(logrus.Fields{
-				"prefix": mainPrefix,
-			}).Warning("The writing to ", pmp.GetName(), " have got canceled.")
 		case context.DeadlineExceeded:
 			log.WithFields(logrus.Fields{
 				"prefix": mainPrefix,
