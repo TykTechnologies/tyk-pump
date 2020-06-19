@@ -317,10 +317,17 @@ The Tyk Dashboard uses the "mongo-pump-aggregate" collection to display analytic
   * `bulk_size`: Specifies the size (in bytes) needed to flush the data and send it to ES. Defaults to 5MB. If it is needed, can be disabled with -1.
 
 ### Moesif Config
-[Moesif](https://www.moesif.com) is a logging and analytics service for APIs. The Moesif pump will
-move analytics data from Tyk to Moesif.
+[Moesif](https://www.moesif.com/?language=tyk-api-gateway) is a user-centric API analytics and monitoring service for APIs. [More Info on Moesif for Tyk](https://www.moesif.com/solutions/track-api-program?language=tyk-api-gateway)
 
-`"application_id"` - Moesif App Id JWT. Multiple api_id's will go under the same app id.
+- `"application_id"` - Moesif App Id JWT. Multiple api_id's will go under the same app id.
+- `"request_header_masks"` - (optional) An option to mask a specific request header field. Type: String Array `[] string`
+- `"request_body_masks"` - (optional) An option to mask a specific - request body field. Type: String Array `[] string`
+- `"response_header_masks"` - (optional) An option to mask a specific response header field. Type: String Array `[] string`
+- `"response_body_masks"` - (optional) An option to mask a specific response body field. Type: String Array `[] string`
+- `"disable_capture_request_body"` - (optional) An option to disable logging of request body. Type: Boolean. Default value is `false`.
+- `"disable_capture_response_body"` - (optional) An option to disable logging of response body. Type: Boolean. Default value is `false`.
+- `"user_id_header"` - (optional) An optional field name to identify User from a request or response header. Type: String.
+- `"company_id_header"` - (optional) An optional field name to identify Company (Account) from a request or response header. Type: String.
 
 ### Prometheus
 Prometheus is an open-source monitoring system with a dimensional data model, flexible query language, efficient time series database and modern alerting approach.
