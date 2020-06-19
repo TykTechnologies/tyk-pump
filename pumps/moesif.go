@@ -224,7 +224,7 @@ func (p *MoesifPump) Init(config interface{}) error {
 	} else {
 		log.WithFields(logrus.Fields{
 			"prefix": moesifPrefix,
-		}).Info("Error fetching application configuration on initilization with err -  " + err.Error())
+		}).Debug("Error fetching application configuration on initilization with err -  " + err.Error())
 	}
 
 	return nil
@@ -318,13 +318,15 @@ func (p *MoesifPump) WriteData(ctx context.Context, data []interface{}) error {
 
 		// User Id
 		var userId string
-		if record.Alias != "" {
-			userId = record.Alias
-		} else if record.OauthID != "" {
-			userId = record.OauthID
-		} else {
-			if p.moesifConf.UserIdHeader != "" {
-				userId = fetchIdFromHeader(decodedReqBody.headers, decodedRspBody.headers, p.moesifConf.UserIdHeader)
+		if p.moesifConf.UserIdHeader != "" {
+			userId = fetchIdFromHeader(decodedReqBody.headers, decodedRspBody.headers, p.moesifConf.UserIdHeader)
+		}
+
+		if userId == "" {
+			if record.Alias != "" {
+				userId = record.Alias
+			} else if record.OauthID != "" {
+				userId = record.OauthID
 			}
 		}
 
@@ -383,13 +385,13 @@ func (p *MoesifPump) WriteData(ctx context.Context, data []interface{}) error {
 				} else {
 					log.WithFields(logrus.Fields{
 						"prefix": moesifPrefix,
-					}).Info("Error fetching application configuration with err -  " + err.Error())
+					}).Debug("Error fetching application configuration with err -  " + err.Error())
 				}
 			}
 		} else {
 			log.WithFields(logrus.Fields{
 				"prefix": moesifPrefix,
-			}).Info("Skipped Event due to sampling percentage: " + strconv.Itoa(p.samplingPercentage) + " and random percentage: " + strconv.Itoa(randomPercentage))
+			}).Debug("Skipped Event due to sampling percentage: " + strconv.Itoa(p.samplingPercentage) + " and random percentage: " + strconv.Itoa(randomPercentage))
 		}
 	}
 
