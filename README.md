@@ -309,6 +309,30 @@ move analytics data from Tyk to Moesif.
 
 `"application_id"` - Moesif App Id JWT. Multiple api_id's will go under the same app id.
 
+### Hybrid RPC Config
+
+Hybrid Pump allows you to install Tyk Pump inside Multi-Cloud or MDCB Worker installations. You can configure Tyk Pump to send data to the source of your choice (i.e. ElasticSearch), and in parallel, forward analytics to the Tyk Cloud. Additionally, you can set the aggregated flag to send only aggregated analytics to MDCB or Tyk Cloud, in order to save network bandwidth between DCs.
+
+NOTE: Make sure your tyk.conf has analytics_config.type set to empty string value.
+
+rpc_key - Put your organization ID in this field.
+
+api_key - This the API key of a user used to authenticate and authorise the Gateway’s access through MDCB. The user should be a standard Dashboard user with minimal privileges so as to reduce risk if compromised. The suggested security settings are read for Real-time notifications and the remaining options set to deny.
+
+aggregated - Set this field to true to send only aggregated analytics to MDCB or Tyk Cloud.
+
+connection_string - The MDCB instance or load balancer.
+
+use_ssl - Set this field to true if you need secured connection (default value is false).
+
+ssl_insecure_skip_verify - Set this field to true if you use self signed certificate.
+
+group_id - This is the “zone” that this instance inhabits, e.g. the DC it lives in. It must be unique to each slave cluster / DC.
+
+call_timeout - This is the timeout (in milliseconds) for RPC calls.
+
+rpc_pool_size - This is maximum number of connections to MDCB.
+
 ### Prometheus
 Prometheus is an open-source monitoring system with a dimensional data model, flexible query language, efficient time series database and modern alerting approach.
 
