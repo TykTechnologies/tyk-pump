@@ -237,6 +237,10 @@ Create a `pump.conf` file:
 
 Settings are the same as for the original `tyk.conf` for redis and for mongoDB.
 
+### Environment Variables
+
+Environment variables can be used to override the settings defined in the configuration file. See [Environment Variables](https://tyk.io/docs/tyk-configuration-reference/environment-variables/) in our docs for details. Where an environment variable is specified, its value will take precedence over the value in the configuration file.
+
 ### analytics_storage_config
 ```json
   "analytics_storage_config": {
