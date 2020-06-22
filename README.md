@@ -449,3 +449,22 @@ go build -v ./...
 ```
 go test -v ./...
 ```
+
+### Multiple Pumps
+
+From Tyk Pump v0.6.0 you can now create multiple pumps of the same type by by setting the top level type as a custom values. For example:
+
+```{.json}
+"csv": {
+  "type": "csv",
+  "meta": {
+    "csv_dir": "./"
+  }
+},
+"csv_alt": {
+  "type": "csv",
+    "meta": {
+    "csv_dir": "./"
+  }
+}
+```
