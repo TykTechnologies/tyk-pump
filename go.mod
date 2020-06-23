@@ -41,6 +41,7 @@ require (
 	github.com/sirupsen/logrus v1.4.2
 	github.com/syndtr/goleveldb v0.0.0-20190318030020-c3a204f8e965 // indirect
 	github.com/xtgo/uuid v0.0.0-20140804021211-a0b114877d4c // indirect
+	golang.org/x/tools v0.0.0-20200623185156-456ad74e1464 // indirect
 	google.golang.org/api v0.24.0 // indirect
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6
 	gopkg.in/mgo.v2 v2.0.0-20190816093944-a6b53ec6cb22
