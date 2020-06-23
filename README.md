@@ -242,7 +242,8 @@ Create a `pump.conf` file:
     "collection_name": "tyk_uptime_analytics",
     "mongo_url": "mongodb://username:password@{hostname:port},{hostname:port}/{db_name}"
   },
-  "dont_purge_uptime_data": false
+  "dont_purge_uptime_data": false,
+  "omit_detailed_recording": false
 }
 ```
 
@@ -272,6 +273,11 @@ Settings are the same as for the original `tyk.conf` for redis and for mongoDB.
 ### Uptime Data
 
 `dont_purge_uptime_data` - Setting this to false will create a pump that pushes uptime data to MongoDB, so the Dashboard can read it. Disable by setting to true
+
+### Omit Detailed Recording
+
+`omit_detailed_recording` - Setting this to true will avoid writing raw_request and raw_response fields for each request in pumps. Defaults to false.
+
 
 ### Health Check
 

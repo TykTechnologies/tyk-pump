@@ -22,8 +22,7 @@ import (
 type ElasticsearchPump struct {
 	operator ElasticsearchOperator
 	esConf   *ElasticsearchConf
-	filters  analytics.AnalyticsFilters
-	timeout  int
+	CommonPumpConfig
 }
 
 var elasticsearchPrefix = "elasticsearch-pump"
@@ -263,14 +262,6 @@ func (e *ElasticsearchPump) WriteData(ctx context.Context, data []interface{}) e
 	return nil
 }
 
-func (e *ElasticsearchPump) SetTimeout(timeout int) {
-	e.timeout = timeout
-}
-
-func (e *ElasticsearchPump) GetTimeout() int {
-	return e.timeout
-}
-
 func getIndexName(esConf *ElasticsearchConf) string {
 	indexName := esConf.IndexName
 
@@ -427,11 +418,4 @@ func (e Elasticsearch6Operator) processData(ctx context.Context, data []interfac
 	}
 
 	return nil
-}
-
-func (e *ElasticsearchPump) SetFilters(filters analytics.AnalyticsFilters) {
-	e.filters = filters
-}
-func (e *ElasticsearchPump) GetFilters() analytics.AnalyticsFilters {
-	return e.filters
 }

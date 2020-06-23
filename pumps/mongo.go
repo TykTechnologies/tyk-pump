@@ -35,8 +35,7 @@ const (
 type MongoPump struct {
 	dbSession *mgo.Session
 	dbConf    *MongoConf
-	filters   analytics.AnalyticsFilters
-	timeout   int
+	CommonPumpConfig
 }
 
 var mongoPrefix = "mongo-pump"
@@ -589,18 +588,4 @@ func (m *MongoPump) WriteUptimeData(data []interface{}) {
 			m.connect()
 		}
 	}
-}
-
-func (m *MongoPump) SetFilters(filters analytics.AnalyticsFilters) {
-	m.filters = filters
-}
-func (m *MongoPump) GetFilters() analytics.AnalyticsFilters {
-	return m.filters
-}
-func (m *MongoPump) SetTimeout(timeout int) {
-	m.timeout = timeout
-}
-
-func (m *MongoPump) GetTimeout() int {
-	return m.timeout
 }
