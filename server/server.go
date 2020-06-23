@@ -32,7 +32,7 @@ func ServeHealthCheck(configHealthEndpoint string, configHealthPort int) {
 		"prefix": serverPrefix,
 	}).Info("Serving health check endpoint at http://localhost:", healthPort, "/", healthEndpoint)
 
-	http.ListenAndServe("localhost:"+fmt.Sprint(healthPort), router)
+	http.ListenAndServe(":"+fmt.Sprint(healthPort), router)
 }
 
 type Context struct{}
