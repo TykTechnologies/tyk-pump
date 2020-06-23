@@ -41,6 +41,7 @@ var (
 	demoApiMode        = kingpin.Flag("demo-api", "pass apiID string to generate demo data").Default("").String()
 	demoApiVersionMode = kingpin.Flag("demo-api-version", "pass apiID string to generate demo data").Default("").String()
 	debugMode          = kingpin.Flag("debug", "enable debug mode").Bool()
+	omitDetails        = kingpin.Flag("omit-details", "Omit raw_request and raw_response data for each analytic record").Bool()
 	version            = kingpin.Version(VERSION)
 )
 
@@ -161,7 +162,7 @@ func initialisePumps() {
 
 }
 
-func StartPurgeLoop(secInterval int) {
+func StartPurgeLoop(secInterval int, omitDetails bool) {
 	for range time.Tick(time.Duration(secInterval) * time.Second) {
 		job := instrument.NewJob("PumpRecordsPurge")
 
@@ -183,6 +184,10 @@ func StartPurgeLoop(secInterval int) {
 						"prefix": mainPrefix,
 					}).Error("Couldn't unmarshal analytics data:", err)
 				} else {
+					if omitDetails {
+						decoded.RawRequest = ""
+						decoded.RawResponse = ""
+					}
 					keys[i] = interface{}(decoded)
 					job.Event("record")
 				}
@@ -329,5 +334,5 @@ func main() {
 		"prefix": mainPrefix,
 	}).Info("Starting purge loop @", SystemConfig.PurgeDelay, "(s)")
 
-	StartPurgeLoop(SystemConfig.PurgeDelay)
+	StartPurgeLoop(SystemConfig.PurgeDelay, *omitDetails)
 }
