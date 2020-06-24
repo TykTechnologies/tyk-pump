@@ -89,10 +89,9 @@ func (c *SplunkClient) Send(ctx context.Context, event map[string]interface{}, t
 
 // SplunkPump is a Tyk Pump driver for Splunk.
 type SplunkPump struct {
-	client  *SplunkClient
-	config  *SplunkPumpConfig
-	filters analytics.AnalyticsFilters
-	timeout int
+	client *SplunkClient
+	config *SplunkPumpConfig
+	CommonPumpConfig
 }
 
 // SplunkPumpConfig contains the driver configuration parameters.
@@ -163,18 +162,4 @@ func (p *SplunkPump) WriteData(ctx context.Context, data []interface{}) error {
 		p.client.Send(ctx, event, decoded.TimeStamp)
 	}
 	return nil
-}
-
-func (p *SplunkPump) SetFilters(filters analytics.AnalyticsFilters) {
-	p.filters = filters
-}
-func (p *SplunkPump) GetFilters() analytics.AnalyticsFilters {
-	return p.filters
-}
-func (s *SplunkPump) SetTimeout(timeout int) {
-	s.timeout = timeout
-}
-
-func (s *SplunkPump) GetTimeout() int {
-	return s.timeout
 }

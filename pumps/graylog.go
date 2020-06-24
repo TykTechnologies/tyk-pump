@@ -13,10 +13,9 @@ import (
 )
 
 type GraylogPump struct {
-	client  *gelf.Gelf
-	conf    *GraylogConf
-	filters analytics.AnalyticsFilters
-	timeout int
+	client *gelf.Gelf
+	conf   *GraylogConf
+	CommonPumpConfig
 }
 
 type GraylogConf struct {
@@ -150,20 +149,4 @@ func (p *GraylogPump) WriteData(ctx context.Context, data []interface{}) error {
 		p.client.Log(string(gelfString))
 	}
 	return nil
-}
-
-func (p *GraylogPump) SetFilters(filters analytics.AnalyticsFilters) {
-	p.filters = filters
-}
-
-func (p *GraylogPump) GetFilters() analytics.AnalyticsFilters {
-	return p.filters
-}
-
-func (p *GraylogPump) SetTimeout(timeout int) {
-	p.timeout = timeout
-}
-
-func (p *GraylogPump) GetTimeout() int {
-	return p.timeout
 }

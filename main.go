@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"sync"
 	"time"
@@ -41,7 +42,6 @@ var (
 	demoApiMode        = kingpin.Flag("demo-api", "pass apiID string to generate demo data").Default("").String()
 	demoApiVersionMode = kingpin.Flag("demo-api-version", "pass apiID string to generate demo data").Default("").String()
 	debugMode          = kingpin.Flag("debug", "enable debug mode").Bool()
-	omitDetails        = kingpin.Flag("omit-details", "Omit raw_request and raw_response data for each analytic record").Bool()
 	version            = kingpin.Version(VERSION)
 )
 
@@ -143,6 +143,7 @@ func initialisePumps() {
 				}).Info("Init Pump: ", thisPmp.GetName())
 				thisPmp.SetFilters(pmp.Filters)
 				thisPmp.SetTimeout(pmp.Timeout)
+				thisPmp.SetOmitDetails(pmp.OmitDetails)
 				Pumps[i] = thisPmp
 			}
 		}
@@ -225,7 +226,7 @@ func writeToPumps(keys []interface{}, job *health.Job, startTime time.Time, purg
 
 func filterData(pump pumps.Pump, keys []interface{}) []interface{} {
 	filters := pump.GetFilters()
-	if !filters.HasFilter() {
+	if !filters.HasFilter() && !pump.GetOmitDetails() {
 		return keys
 	}
 	filteredKeys := keys[:]
@@ -233,10 +234,15 @@ func filterData(pump pumps.Pump, keys []interface{}) []interface{} {
 
 	for _, key := range filteredKeys {
 		decoded := key.(analytics.AnalyticsRecord)
+		if pump.GetOmitDetails() {
+			decoded.RawRequest = ""
+			decoded.RawResponse = ""
+		}
 		if filters.ShouldFilter(decoded) {
 			continue
 		}
-		filteredKeys[newLenght] = key
+		fmt.Println(decoded.RawResponse)
+		filteredKeys[newLenght] = decoded
 		newLenght++
 	}
 	filteredKeys = filteredKeys[:newLenght]
@@ -334,5 +340,5 @@ func main() {
 		"prefix": mainPrefix,
 	}).Info("Starting purge loop @", SystemConfig.PurgeDelay, "(s)")
 
-	StartPurgeLoop(SystemConfig.PurgeDelay, *omitDetails)
+	StartPurgeLoop(SystemConfig.PurgeDelay, SystemConfig.OmitDetails)
 }

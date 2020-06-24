@@ -47,10 +47,9 @@ func NewLogzioPumpConfig() *LogzioPumpConfig {
 }
 
 type LogzioPump struct {
-	sender  *lg.LogzioSender
-	config  *LogzioPumpConfig
-	filters analytics.AnalyticsFilters
-	timeout int
+	sender *lg.LogzioSender
+	config *LogzioPumpConfig
+	CommonPumpConfig
 }
 
 func NewLogzioClient(conf *LogzioPumpConfig) (*lg.LogzioSender, error) {
@@ -146,18 +145,4 @@ func (p *LogzioPump) WriteData(ctx context.Context, data []interface{}) error {
 		p.sender.Send(event)
 	}
 	return nil
-}
-
-func (p *LogzioPump) SetFilters(filters analytics.AnalyticsFilters) {
-	p.filters = filters
-}
-func (p *LogzioPump) GetFilters() analytics.AnalyticsFilters {
-	return p.filters
-}
-func (p *LogzioPump) SetTimeout(timeout int) {
-	p.timeout = timeout
-}
-
-func (p *LogzioPump) GetTimeout() int {
-	return p.timeout
 }

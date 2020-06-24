@@ -17,8 +17,7 @@ type KafkaPump struct {
 	kafkaConf    *KafkaConf
 	writerConfig kafka.WriterConfig
 	log          *logrus.Entry
-	filters      analytics.AnalyticsFilters
-	timeout      int
+	CommonPumpConfig
 }
 
 type Json map[string]interface{}
@@ -142,19 +141,4 @@ func (k *KafkaPump) write(ctx context.Context, messages []kafka.Message) error {
 	kafkaWriter := kafka.NewWriter(k.writerConfig)
 	defer kafkaWriter.Close()
 	return kafkaWriter.WriteMessages(ctx, messages...)
-}
-
-func (k *KafkaPump) SetTimeout(timeout int) {
-	k.timeout = timeout
-}
-
-func (k *KafkaPump) GetTimeout() int {
-	return k.timeout
-}
-
-func (k *KafkaPump) SetFilters(filters analytics.AnalyticsFilters) {
-	k.filters = filters
-}
-func (k *KafkaPump) GetFilters() analytics.AnalyticsFilters {
-	return k.filters
 }
