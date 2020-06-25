@@ -233,7 +233,7 @@ Create a `pump.conf` file:
     "mongo_url": "mongodb://username:password@{hostname:port},{hostname:port}/{db_name}"
   },
   "dont_purge_uptime_data": false,
-  "omit_details": false
+  "omit_detailed_recording": false
 }
 ```
 
@@ -268,9 +268,9 @@ Environment variables can be used to override the settings defined in the config
 
 `dont_purge_uptime_data` - Setting this to false will create a pump that pushes uptime data to MongoDB, so the Dashboard can read it. Disable by setting to true
 
-### Omit Details
+### Omit Detailed Recording
 
-`omit_details` - Setting this to true will avoid writing raw_request and raw_response fields for each request in pumps. Defaults to false.
+`omit_detailed_recording` - Setting this to true will avoid writing raw_request and raw_response fields for each request in pumps. Defaults to false.
 
 
 ### Health Check

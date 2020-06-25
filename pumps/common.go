@@ -3,9 +3,9 @@ package pumps
 import "github.com/TykTechnologies/tyk-pump/analytics"
 
 type CommonPumpConfig struct {
-	filters     analytics.AnalyticsFilters
-	timeout     int
-	omitDetails bool
+	filters               analytics.AnalyticsFilters
+	timeout               int
+	OmitDetailedRecording bool
 }
 
 func (p *CommonPumpConfig) SetFilters(filters analytics.AnalyticsFilters) {
@@ -22,9 +22,9 @@ func (p *CommonPumpConfig) GetTimeout() int {
 	return p.timeout
 }
 
-func (p *CommonPumpConfig) SetOmitDetails(omitDetails bool) {
-	p.omitDetails = omitDetails
+func (p *CommonPumpConfig) SetOmitDetailedRecording(OmitDetailedRecording bool) {
+	p.OmitDetailedRecording = OmitDetailedRecording
 }
-func (p *CommonPumpConfig) GetOmitDetails() bool {
-	return p.omitDetails
+func (p *CommonPumpConfig) GetOmitDetailedRecording() bool {
+	return p.OmitDetailedRecording
 }

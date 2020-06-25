@@ -55,7 +55,7 @@ func TestFilterData(t *testing.T) {
 
 func TestOmitDetailsFilterData(t *testing.T) {
 	mockedPump := &MockedPump{}
-	mockedPump.SetOmitDetails(true)
+	mockedPump.SetOmitDetailedRecording(true)
 
 	keys := make([]interface{}, 1)
 	keys[0] = analytics.AnalyticsRecord{APIID: "api111", RawResponse: "test", RawRequest: "test"}

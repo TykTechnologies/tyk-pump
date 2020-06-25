@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"strings"
 	"sync"
 	"time"
@@ -143,7 +142,7 @@ func initialisePumps() {
 				}).Info("Init Pump: ", thisPmp.GetName())
 				thisPmp.SetFilters(pmp.Filters)
 				thisPmp.SetTimeout(pmp.Timeout)
-				thisPmp.SetOmitDetails(pmp.OmitDetails)
+				thisPmp.SetOmitDetailedRecording(pmp.OmitDetailedRecording)
 				Pumps[i] = thisPmp
 			}
 		}
@@ -226,7 +225,7 @@ func writeToPumps(keys []interface{}, job *health.Job, startTime time.Time, purg
 
 func filterData(pump pumps.Pump, keys []interface{}) []interface{} {
 	filters := pump.GetFilters()
-	if !filters.HasFilter() && !pump.GetOmitDetails() {
+	if !filters.HasFilter() && !pump.GetOmitDetailedRecording() {
 		return keys
 	}
 	filteredKeys := keys[:]
@@ -234,14 +233,13 @@ func filterData(pump pumps.Pump, keys []interface{}) []interface{} {
 
 	for _, key := range filteredKeys {
 		decoded := key.(analytics.AnalyticsRecord)
-		if pump.GetOmitDetails() {
+		if pump.GetOmitDetailedRecording() {
 			decoded.RawRequest = ""
 			decoded.RawResponse = ""
 		}
 		if filters.ShouldFilter(decoded) {
 			continue
 		}
-		fmt.Println(decoded.RawResponse)
 		filteredKeys[newLenght] = decoded
 		newLenght++
 	}
@@ -340,5 +338,5 @@ func main() {
 		"prefix": mainPrefix,
 	}).Info("Starting purge loop @", SystemConfig.PurgeDelay, "(s)")
 
-	StartPurgeLoop(SystemConfig.PurgeDelay, SystemConfig.OmitDetails)
+	StartPurgeLoop(SystemConfig.PurgeDelay, SystemConfig.OmitDetailedRecording)
 }
