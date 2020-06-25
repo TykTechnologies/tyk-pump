@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"github.com/TykTechnologies/tyk-pump/config"
+	"github.com/TykTechnologies/tyk-pump/instrumentation"
 	"gopkg.in/vmihailenco/msgpack.v2"
 	"strings"
 	"sync"
@@ -23,7 +25,7 @@ import (
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
-var SystemConfig TykPumpConfiguration
+var SystemConfig config.TykPumpConfiguration
 var AnalyticsStore storage.AnalyticsStorage
 var UptimeStorage storage.AnalyticsStorage
 var Pumps []pumps.Pump
@@ -44,7 +46,7 @@ var (
 )
 
 func Init() {
-	SystemConfig = TykPumpConfiguration{}
+	SystemConfig = config.TykPumpConfiguration{}
 
 	kingpin.Parse()
 	log.Formatter = new(prefixed.TextFormatter)
@@ -59,7 +61,7 @@ func Init() {
 		"prefix": mainPrefix,
 	}).Info("## Tyk Analytics Pump, ", VERSION, " ##")
 
-	configErr := LoadConfig(conf, &SystemConfig)
+	configErr := config.LoadConfig(conf, &SystemConfig)
 	if configErr != nil {
 		log.Fatal(configErr)
 	}
@@ -168,7 +170,7 @@ func StartPurgeLoop(secInterval int) {
 }
 
 func purgeLoop(secInterval int) {
-	job := instrument.NewJob("PumpRecordsPurge")
+	job := instrumentation.Instrument.NewJob("PumpRecordsPurge")
 
 	AnalyticsValues := AnalyticsStore.GetAndDeleteSet(storage.ANALYTICS_KEYNAME)
 	if len(AnalyticsValues) > 0 {
@@ -204,6 +206,7 @@ func purgeLoop(secInterval int) {
 		UptimePump.WriteUptimeData(UptimeValues)
 	}
 }
+
 func writeToPumps(keys []interface{}, job *health.Job, startTime time.Time, purgeDelay int) {
 	// Send to pumps
 	if Pumps != nil {
@@ -301,7 +304,7 @@ func execPumpWriting(wg *sync.WaitGroup, pmp pumps.Pump, keys *[]interface{}, pu
 
 func main() {
 	Init()
-	SetupInstrumentation()
+	instrumentation.SetupInstrumentation(SystemConfig)
 	go server.ServeHealthCheck(SystemConfig.HealthCheckEndpointName, SystemConfig.HealthCheckEndpointPort)
 
 	// Store version which will be read by dashboard and sent to

@@ -5,8 +5,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/TykTechnologies/tyk-pump/config"
+	"github.com/TykTechnologies/tyk-pump/instrumentation"
 	"github.com/go-redis/redis"
 	"gopkg.in/mgo.v2"
+	"gopkg.in/vmihailenco/msgpack.v2"
+	"os"
 	"strconv"
 	"strings"
 	"testing"
@@ -55,8 +59,10 @@ func (p *MockedPump) WriteData(ctx context.Context, keys []interface{}) error {
 	} else if p.hangingTime > 0 {
 		time.Sleep(time.Duration(p.hangingTime) * time.Second)
 	}
-	for range keys {
-		p.CounterRequest++
+	for _, key := range keys {
+		if key != nil {
+			p.CounterRequest++
+		}
 	}
 	return nil
 }
@@ -74,12 +80,46 @@ func (p *MockedPump) GetTimeout() int {
 	return p.timeout
 }
 
-func init() {
+func TestMain(m *testing.M) {
+	setup()
+	code := m.Run()
+	teardown()
+	os.Exit(code)
+}
+func setup() {
 	var err error
 	testPool, err = dockertest.NewPool("")
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	//Redis
+	if _, found := testPool.ContainerByName(redisDockerImage); !found {
+		_, err = testPool.RunWithOptions(&dockertest.RunOptions{Name: redisDockerImage, Repository: redisDockerImage, Tag: "3.2", Env: nil})
+		if err != nil {
+			log.Fatalf("Could not start Redis resource: %s", err)
+		}
+	}
+
+	//Mongo resource
+	if _, found := testPool.ContainerByName(mongoDockerImage); !found {
+		_, err = testPool.RunWithOptions(&dockertest.RunOptions{Name: mongoDockerImage, Repository: mongoDockerImage, Tag: "3.0", Env: nil})
+		if err != nil {
+			log.Fatalf("Could not start resource: %s", err)
+		}
+	}
+
+	fmt.Printf("\033[1;36m%s\033[0m", "> Setup completed\n")
+}
+
+func teardown() {
+	resourceRedis, _ := testPool.ContainerByName(redisDockerImage)
+	testPool.Purge(resourceRedis)
+
+	resourceMongo, _ := testPool.ContainerByName(mongoDockerImage)
+	testPool.Purge(resourceMongo)
+	fmt.Printf("\033[1;36m%s\033[0m", "> Teardown completed")
+	fmt.Printf("\n")
 }
 
 //Tests for filterData
@@ -115,7 +155,7 @@ func TestWriteData(t *testing.T) {
 	keys[1] = analytics.AnalyticsRecord{APIID: "api123"}
 	keys[2] = analytics.AnalyticsRecord{APIID: "api321"}
 
-	job := instrument.NewJob("TestJob")
+	job := instrumentation.Instrument.NewJob("TestJob")
 
 	writeToPumps(keys, job, time.Now(), 2)
 
@@ -155,7 +195,7 @@ func TestWriteDataWithTimeout(t *testing.T) {
 	keys[1] = analytics.AnalyticsRecord{APIID: "api123"}
 	keys[2] = analytics.AnalyticsRecord{APIID: "api321"}
 
-	job := instrument.NewJob("TestJob")
+	job := instrumentation.Instrument.NewJob("TestJob")
 
 	writeToPumps(keys, job, time.Now(), 1)
 
@@ -205,7 +245,7 @@ func TestWriteDataWithFilters(t *testing.T) {
 	keys[1] = analytics.AnalyticsRecord{APIID: "api123"}
 	keys[2] = analytics.AnalyticsRecord{APIID: "api321"}
 
-	job := instrument.NewJob("TestJob")
+	job := instrumentation.Instrument.NewJob("TestJob")
 
 	writeToPumps(keys, job, time.Now(), 2)
 
@@ -225,7 +265,7 @@ func TestWriteDataWithoutPumps(t *testing.T) {
 	keys[1] = analytics.AnalyticsRecord{APIID: "api123"}
 	keys[2] = analytics.AnalyticsRecord{APIID: "api321"}
 
-	job := instrument.NewJob("TestJob")
+	job := instrumentation.Instrument.NewJob("TestJob")
 
 	writeToPumps(keys, job, time.Now(), 1)
 
@@ -239,13 +279,13 @@ func TestInitialisePumps(t *testing.T) {
 	var writer bytes.Buffer
 	log.Out = &writer
 
-	SystemConfig = TykPumpConfiguration{}
+	SystemConfig = config.TykPumpConfiguration{}
 	SystemConfig.DontPurgeUptimeData = true
-	SystemConfig.Pumps = make(map[string]PumpConfig, 4)
-	SystemConfig.Pumps["DummyPump"] = PumpConfig{Name: "DummyPump", Type: "dummy"}
-	SystemConfig.Pumps["InvalidPump"] = PumpConfig{Name: "InvalidPump", Type: "InvalidPump"}
-	SystemConfig.Pumps["dummy"] = PumpConfig{Name: "DummyWithoutType"}
-	SystemConfig.Pumps["SplunkWithoutMeta"] = PumpConfig{Name: "SplunkWithoutMeta", Type: "splunk"}
+	SystemConfig.Pumps = make(map[string]config.PumpConfig, 4)
+	SystemConfig.Pumps["DummyPump"] = config.PumpConfig{Name: "DummyPump", Type: "dummy"}
+	SystemConfig.Pumps["InvalidPump"] = config.PumpConfig{Name: "InvalidPump", Type: "InvalidPump"}
+	SystemConfig.Pumps["dummy"] = config.PumpConfig{Name: "DummyWithoutType"}
+	SystemConfig.Pumps["SplunkWithoutMeta"] = config.PumpConfig{Name: "SplunkWithoutMeta", Type: "splunk"}
 
 	initialisePumps()
 
@@ -261,20 +301,18 @@ func TestInitialisePumps(t *testing.T) {
 }
 func TestInitialisePumpsWithUptimeData(t *testing.T) {
 	var db *mgo.Session
-	var err error
 	var writer bytes.Buffer
 	log.Out = &writer
 
-	SystemConfig = TykPumpConfiguration{}
+	SystemConfig = config.TykPumpConfiguration{}
 	SystemConfig.DontPurgeUptimeData = false
 	SystemConfig.UptimePumpConfig = make(map[string]interface{})
 	SystemConfig.UptimePumpConfig["collection_name"] = "tyk_uptime_analytics"
 
-	resource, err := testPool.Run(mongoDockerImage, "3.0", nil)
-	if err != nil {
-		log.Fatalf("Could not start resource: %s", err)
+	resource, found := testPool.ContainerByName(mongoDockerImage)
+	if !found {
+		log.Fatalf("Mongo resource not found")
 	}
-	defer testPool.Purge(resource)
 
 	if err := testPool.Retry(func() error {
 		var err error
@@ -297,13 +335,12 @@ func TestInitialisePumpsWithUptimeData(t *testing.T) {
 
 //Testing for store version
 func TestStoreVersion(t *testing.T) {
-	resource, err := testPool.Run(redisDockerImage, "3.2", nil)
-	if err != nil {
-		log.Fatalf("Could not start Redis resource: %s", err)
+	resource, found := testPool.ContainerByName(redisDockerImage)
+	if !found {
+		log.Fatalf("Redis resource not found")
 	}
-	defer testPool.Purge(resource)
 
-	SystemConfig = TykPumpConfiguration{}
+	SystemConfig = config.TykPumpConfiguration{}
 	SystemConfig.AnalyticsStorageType = "redis"
 	SystemConfig.AnalyticsStorageConfig.Host = "localhost"
 	var db *redis.Client
@@ -332,13 +369,12 @@ func TestStoreVersion(t *testing.T) {
 //Testing setupAnalyticsStore
 func TestSetupAnalyticsStoreTypeRedis(t *testing.T) {
 
-	resource, err := testPool.Run(redisDockerImage, "3.2", nil)
-	if err != nil {
-		log.Fatalf("Could not start Redis resource: %s", err)
+	resource, found := testPool.ContainerByName(redisDockerImage)
+	if !found {
+		log.Fatalf("Redis resource not found")
 	}
-	defer testPool.Purge(resource)
 
-	SystemConfig = TykPumpConfiguration{}
+	SystemConfig = config.TykPumpConfiguration{}
 	SystemConfig.AnalyticsStorageType = "redis"
 	SystemConfig.AnalyticsStorageConfig.Host = "localhost"
 	var db *redis.Client
@@ -379,9 +415,76 @@ func TestInit(t *testing.T) {
 
 }
 
+//Testing PurgeLoop
+func TestPurgeLoop(t *testing.T) {
+	resource, found := testPool.ContainerByName(redisDockerImage)
+	if !found {
+		log.Fatalf("Redis resource not found")
+	}
+
+	SystemConfig = config.TykPumpConfiguration{}
+	SystemConfig.AnalyticsStorageType = "redis"
+	SystemConfig.AnalyticsStorageConfig.Host = "localhost"
+	SystemConfig.DontPurgeUptimeData = true
+
+	var db *redis.Client
+	if err := testPool.Retry(func() error {
+		db = redis.NewClient(&redis.Options{
+			Addr: fmt.Sprintf("localhost:%s", resource.GetPort("6379/tcp")),
+		})
+		intPort, _ := strconv.Atoi(resource.GetPort("6379/tcp"))
+		SystemConfig.AnalyticsStorageConfig.Port = intPort
+		return db.Ping().Err()
+	}); err != nil {
+		log.Fatalf("Could not connect to Redis docker: %s", err)
+	}
+
+	if AnalyticsStore == nil {
+		setupAnalyticsStore()
+	}
+
+	record := analytics.AnalyticsRecord{APIID: "api-1", OrgID: "org-1"}
+	saveTestRedisRecord(t, db, record)
+
+	mockedPump := &MockedPump{}
+
+	Pumps = []pumps.Pump{mockedPump}
+	purgeLoop(1)
+
+	if mockedPump.CounterRequest != 1 {
+		t.Fatal("mockedPump should have 1 request after purgeLoop and have:", mockedPump.CounterRequest)
+	}
+
+	recordMalformed := "{record-malformed.."
+	saveTestRedisRecord(t, db, recordMalformed)
+	purgeLoop(1)
+
+	if mockedPump.CounterRequest != 1 {
+		t.Fatal("mockedPump should still have 1 request after the second purgeLoop")
+	}
+}
+
 func findInOutput(buffer bytes.Buffer, toFind string) bool {
 	if strings.Contains(buffer.String(), toFind) {
 		return true
 	}
 	return false
+}
+
+func saveTestRedisRecord(t *testing.T, db *redis.Client, record interface{}) {
+	recordsBuffer := make([][]byte, 0, 10000)
+
+	encodedRecord, errMarshal := msgpack.Marshal(record)
+	if errMarshal != nil {
+		fmt.Println("errMarshal:", errMarshal)
+	}
+	recordsBuffer = append(recordsBuffer, encodedRecord)
+
+	pipe := db.Pipeline()
+	for _, val := range recordsBuffer {
+		pipe.RPush("analytics-tyk-system-analytics", val)
+	}
+	if _, errExec := pipe.Exec(); errExec != nil {
+		t.Fatal("There was a problem saving analytic record in redis.")
+	}
 }
