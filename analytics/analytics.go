@@ -116,3 +116,11 @@ func (a *AnalyticsRecord) GetLineValues() []string {
 
 	return fields
 }
+
+func (a *AnalyticsRecord) ObfuscateKey() {
+	if len(a.APIKey) > 4 {
+		a.APIKey = "****" + a.APIKey[len(a.APIKey)-4:]
+		return
+	}
+	a.APIKey = "----"
+}

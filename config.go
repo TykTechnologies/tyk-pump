@@ -32,6 +32,7 @@ type TykPumpConfiguration struct {
 	LogLevel                string                     `json:"log_level"`
 	HealthCheckEndpointName string                     `json:"health_check_endpoint_name"`
 	HealthCheckEndpointPort int                        `json:"health_check_endpoint_port"`
+	ObfuscateKeys           bool                       `json:"obfuscate_keys"`
 }
 
 func LoadConfig(filePath *string, configStruct *TykPumpConfiguration) {
