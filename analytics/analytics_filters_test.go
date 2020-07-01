@@ -6,6 +6,7 @@ func TestShouldFilter(t *testing.T) {
 	record := AnalyticsRecord{
 		APIID: "apiid123",
 		OrgID: "orgid123",
+		ResponseCode: 200,
 	}
 
 	//test skip_api_ids
@@ -20,6 +21,15 @@ func TestShouldFilter(t *testing.T) {
 	//test skip_org_ids
 	filter = AnalyticsFilters{
 		SkippedOrgsIDs: []string{"orgid123"},
+	}
+	shouldFilter = filter.ShouldFilter(record)
+	if shouldFilter == false {
+		t.Fatal("filter should be filtering the record")
+	}
+
+	//test skip_response_codes
+	filter = AnalyticsFilters{
+		SkippedResponseCodes: []int{200},
 	}
 	shouldFilter = filter.ShouldFilter(record)
 	if shouldFilter == false {
@@ -44,6 +54,15 @@ func TestShouldFilter(t *testing.T) {
 		t.Fatal("filter should not be filtering the record")
 	}
 
+	//test response_codes
+	filter = AnalyticsFilters{
+		ResponseCodes: []int{200},
+	}
+	shouldFilter = filter.ShouldFilter(record)
+	if shouldFilter == true {
+		t.Fatal("filter should not be filtering the record")
+	}
+
 	//test different org_ids
 	filter = AnalyticsFilters{
 		OrgsIDs: []string{"orgid321"},
@@ -61,6 +80,16 @@ func TestShouldFilter(t *testing.T) {
 	if shouldFilter == false {
 		t.Fatal("filter should be filtering the record")
 	}
+
+	//test different response_codes
+	filter = AnalyticsFilters{
+		ResponseCodes: []int{201},
+	}
+	shouldFilter = filter.ShouldFilter(record)
+	if shouldFilter == false {
+		t.Fatal("filter should be filtering the record")
+	}
+
 
 	//test no filter
 	filter = AnalyticsFilters{}
