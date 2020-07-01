@@ -4,8 +4,8 @@ import "testing"
 
 func TestShouldFilter(t *testing.T) {
 	record := AnalyticsRecord{
-		APIID: "apiid123",
-		OrgID: "orgid123",
+		APIID:        "apiid123",
+		OrgID:        "orgid123",
 		ResponseCode: 200,
 	}
 
@@ -89,7 +89,6 @@ func TestShouldFilter(t *testing.T) {
 	if shouldFilter == false {
 		t.Fatal("filter should be filtering the record")
 	}
-
 
 	//test no filter
 	filter = AnalyticsFilters{}
