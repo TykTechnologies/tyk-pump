@@ -251,7 +251,7 @@ This feature adds a new configuration field in each pump called filters and its 
   "skip_response_codes":[]
 }
 ```
-The fields api_ids, org_ids and response_codes works as whitelists (APIs and orgs where we want to send the analytics records) and the fields skip_api_ids, skip_org_ids and skip_response_codes works as the opposite (blackslits).
+The fields api_ids, org_ids and response_codes works as allow list (APIs and orgs where we want to send the analytics records) and the fields skip_api_ids, skip_org_ids and skip_response_codes works as block list.
 
 The priority is always blacklisted configurations over whitelisted.
 
