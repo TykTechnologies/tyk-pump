@@ -238,6 +238,37 @@ Create a `pump.conf` file:
 
 Settings are the same as for the original `tyk.conf` for redis and for mongoDB.
 
+### Filter Records
+
+This feature adds a new configuration field in each pump called filters and its structure is the following:
+```json
+"filters":{
+  "api_ids":[],
+  "org_ids":[],
+  "response_codes":[],
+  "skip_api_ids":[],
+  "skip_org_ids":[],
+  "skip_response_codes":[]
+}
+```
+The fields api_ids, org_ids and response_codes works as allow list (APIs and orgs where we want to send the analytics records) and the fields skip_api_ids, skip_org_ids and skip_response_codes works as block list.
+
+The priority is always block list configurations over allow list.
+
+An example of configuration would be:
+```json
+"csv": {
+ "type": "csv",
+ "filters": {
+   "org_ids": ["org1","org2"]
+ },
+ "meta": {
+   "csv_dir": "./bar"
+ }
+}
+```
+
+
 ### Environment Variables
 
 Environment variables can be used to override the settings defined in the configuration file. See [Environment Variables](https://tyk.io/docs/tyk-configuration-reference/environment-variables/) in our docs for details. Where an environment variable is specified, its value will take precedence over the value in the configuration file.
