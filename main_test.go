@@ -108,8 +108,6 @@ func setup() {
 			log.Fatalf("Could not start resource: %s", err)
 		}
 	}
-
-	fmt.Printf("\033[1;36m%s\033[0m", "> Setup completed\n")
 }
 
 func teardown() {
@@ -118,8 +116,6 @@ func teardown() {
 
 	resourceMongo, _ := testPool.ContainerByName(mongoDockerImage)
 	testPool.Purge(resourceMongo)
-	fmt.Printf("\033[1;36m%s\033[0m", "> Teardown completed")
-	fmt.Printf("\n")
 }
 
 //Tests for filterData
