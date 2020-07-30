@@ -144,10 +144,10 @@ func (p *SplunkPump) WriteData(data []interface{}) error {
 		apiKey := decoded.APIKey
 		if p.config.ObfuscateAPIKeys {
 			if len(apiKey) > 4 {
-				apiKey = "****" + keyName[len(apiKey)-4:]
+				apiKey = "****" + apiKey[len(apiKey)-4:]
 			}
 		}
-		
+
 		event := map[string]interface{}{
 			"method":        decoded.Method,
 			"path":          decoded.Path,
