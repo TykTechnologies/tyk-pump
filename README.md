@@ -218,7 +218,7 @@ Create a `pump.conf` file:
         ],
 	"topic": "tyk-pump",
         "use_ssl": true,
-        "ssl_insecure_skip_verify": false
+        "ssl_insecure_skip_verify": false,
         "client_id": "tyk-pump",
         "timeout": 60,
         "compressed": true,
