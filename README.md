@@ -62,7 +62,8 @@ Create a `pump.conf` file:
       "type": "mongo-pump-aggregate",
       "meta": {
 	"mongo_url": "mongodb://username:password@{hostname:port},{hostname:port}/{db_name}",
-	"use_mixed_collection": true
+	"use_mixed_collection": true,
+	"store_analytics_per_minute": false
       }
     },
     "csv": {
@@ -215,12 +216,10 @@ Create a `pump.conf` file:
         "broker": [
             "localhost:9092"
         ],
-        "ssl": {
-            "enabled": false,
-            "insecure_skip_verify": false
-        },
+	"topic": "tyk-pump",
+        "use_ssl": true,
+        "ssl_insecure_skip_verify": false,
         "client_id": "tyk-pump",
-        "topic": "tyk-pump",
         "timeout": 60,
         "compressed": true,
         "meta_data": {
@@ -238,6 +237,41 @@ Create a `pump.conf` file:
 ```
 
 Settings are the same as for the original `tyk.conf` for redis and for mongoDB.
+
+### Filter Records
+
+This feature adds a new configuration field in each pump called filters and its structure is the following:
+```json
+"filters":{
+  "api_ids":[],
+  "org_ids":[],
+  "response_codes":[],
+  "skip_api_ids":[],
+  "skip_org_ids":[],
+  "skip_response_codes":[]
+}
+```
+The fields api_ids, org_ids and response_codes works as allow list (APIs and orgs where we want to send the analytics records) and the fields skip_api_ids, skip_org_ids and skip_response_codes works as block list.
+
+The priority is always block list configurations over allow list.
+
+An example of configuration would be:
+```json
+"csv": {
+ "type": "csv",
+ "filters": {
+   "org_ids": ["org1","org2"]
+ },
+ "meta": {
+   "csv_dir": "./bar"
+ }
+}
+```
+
+
+### Environment Variables
+
+Environment variables can be used to override the settings defined in the configuration file. See [Environment Variables](https://tyk.io/docs/tyk-configuration-reference/environment-variables/) in our docs for details. Where an environment variable is specified, its value will take precedence over the value in the configuration file.
 
 ### analytics_storage_config
 ```json
@@ -306,6 +340,30 @@ The Tyk Dashboard uses the "mongo-pump-aggregate" collection to display analytic
 move analytics data from Tyk to Moesif.
 
 `"application_id"` - Moesif App Id JWT. Multiple api_id's will go under the same app id.
+
+### Hybrid RPC Config
+
+Hybrid Pump allows you to install Tyk Pump inside Multi-Cloud or MDCB Worker installations. You can configure Tyk Pump to send data to the source of your choice (i.e. ElasticSearch), and in parallel, forward analytics to the Tyk Cloud. Additionally, you can set the aggregated flag to send only aggregated analytics to MDCB or Tyk Cloud, in order to save network bandwidth between DCs.
+
+NOTE: Make sure your tyk.conf has analytics_config.type set to empty string value.
+
+rpc_key - Put your organization ID in this field.
+
+api_key - This the API key of a user used to authenticate and authorise the Gateway’s access through MDCB. The user should be a standard Dashboard user with minimal privileges so as to reduce risk if compromised. The suggested security settings are read for Real-time notifications and the remaining options set to deny.
+
+aggregated - Set this field to true to send only aggregated analytics to MDCB or Tyk Cloud.
+
+connection_string - The MDCB instance or load balancer.
+
+use_ssl - Set this field to true if you need secured connection (default value is false).
+
+ssl_insecure_skip_verify - Set this field to true if you use self signed certificate.
+
+group_id - This is the “zone” that this instance inhabits, e.g. the DC it lives in. It must be unique to each slave cluster / DC.
+
+call_timeout - This is the timeout (in milliseconds) for RPC calls.
+
+rpc_pool_size - This is maximum number of connections to MDCB.
 
 ### Prometheus
 Prometheus is an open-source monitoring system with a dimensional data model, flexible query language, efficient time series database and modern alerting approach.
@@ -446,4 +504,23 @@ go build -v ./...
 
 ```
 go test -v ./...
+```
+
+### Multiple Pumps
+
+From Tyk Pump v0.6.0 you can now create multiple pumps of the same type by by setting the top level type as a custom values. For example:
+
+```{.json}
+"csv": {
+  "type": "csv",
+  "meta": {
+    "csv_dir": "./"
+  }
+},
+"csv_alt": {
+  "type": "csv",
+    "meta": {
+    "csv_dir": "./"
+  }
+}
 ```
