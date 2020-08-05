@@ -38,6 +38,8 @@ type KafkaConf struct {
 	MetaData              map[string]string `mapstructure:"meta_data"`
 	UseSSL                bool              `mapstructure:"use_ssl"`
 	SSLInsecureSkipVerify bool              `mapstructure:"ssl_insecure_skip_verify"`
+	SSLCertFile           string            `mapstructure:"ssl_cert_file"`
+	SSLKeyFile            string            `mapstructure:"ssl_key_file"`
 	SASLMechanism         string            `mapstructure:"sasl_mechanism"`
 	Username              string            `mapstructure:"sasl_username"`
 	Password              string            `mapstructure:"sasl_password"`
@@ -66,8 +68,24 @@ func (k *KafkaPump) Init(config interface{}) error {
 
 	var tlsConfig *tls.Config
 	if k.kafkaConf.UseSSL {
-		tlsConfig = &tls.Config{
-			InsecureSkipVerify: k.kafkaConf.SSLInsecureSkipVerify,
+		if k.kafkaConf.SSLCertFile != "" && k.kafkaConf.SSLKeyFile != "" {
+			var cert tls.Certificate
+			k.log.Debug("Loading certificates for mTLS.")
+			cert, err = tls.LoadX509KeyPair(k.kafkaConf.SSLCertFile, k.kafkaConf.SSLKeyFile)
+			if err != nil {
+				k.log.Debug("Error loading mTLS certificates:", err)
+				return err
+			}
+			tlsConfig = &tls.Config{
+				Certificates:       []tls.Certificate{cert},
+				InsecureSkipVerify: k.kafkaConf.SSLInsecureSkipVerify,
+			}
+		} else if k.kafkaConf.SSLCertFile != "" || k.kafkaConf.SSLKeyFile != "" {
+			k.log.Error("Only one of ssl_cert_file and ssl_cert_key configuration option is setted, you should set both to enable mTLS.")
+		} else {
+			tlsConfig = &tls.Config{
+				InsecureSkipVerify: k.kafkaConf.SSLInsecureSkipVerify,
+			}
 		}
 	} else if k.kafkaConf.SASLMechanism != "" {
 		k.log.WithField("SASL-Mechanism", k.kafkaConf.SASLMechanism).Warn("SASL-Mechanism is setted but use_ssl is false.")
