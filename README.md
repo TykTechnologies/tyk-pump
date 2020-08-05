@@ -443,6 +443,9 @@ More advanced fields:
 * `timeout`: Timeout is the maximum amount of time will wait for a connect or write to complete. 
 * `compressed`: Enable "github.com/golang/snappy" codec to be used to compress Kafka messages. By default is false
 * `meta_data`: Can be used to set custom metadata inside the kafka message
+* `ssl_cert_file`: Can be used to set custom certificate file for authentication with kafka.
+* `ssl_key_file`: Can be used to set custom key file for authentication with kafka.
+
 
 ### Syslog
 `"transport"` - Possible values are `udp, tcp, tls` in string form
