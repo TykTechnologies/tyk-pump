@@ -14,8 +14,7 @@ import (
 type SegmentPump struct {
 	segmentClient *segment.Client
 	segmentConf   *SegmentConf
-	filters       analytics.AnalyticsFilters
-	timeout       int
+	CommonPumpConfig
 }
 
 var segmentPrefix = "segment-pump"
@@ -97,18 +96,4 @@ func (s *SegmentPump) ToJSONMap(obj interface{}) (map[string]interface{}, error)
 	}
 
 	return properties, nil
-}
-
-func (s *SegmentPump) SetFilters(filters analytics.AnalyticsFilters) {
-	s.filters = filters
-}
-func (s *SegmentPump) GetFilters() analytics.AnalyticsFilters {
-	return s.filters
-}
-func (s *SegmentPump) SetTimeout(timeout int) {
-	s.timeout = timeout
-}
-
-func (s *SegmentPump) GetTimeout() int {
-	return s.timeout
 }

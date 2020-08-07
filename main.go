@@ -142,6 +142,7 @@ func initialisePumps() {
 				}).Info("Init Pump: ", thisPmp.GetName())
 				thisPmp.SetFilters(pmp.Filters)
 				thisPmp.SetTimeout(pmp.Timeout)
+				thisPmp.SetOmitDetailedRecording(pmp.OmitDetailedRecording)
 				Pumps[i] = thisPmp
 			}
 		}
@@ -161,7 +162,7 @@ func initialisePumps() {
 
 }
 
-func StartPurgeLoop(secInterval int) {
+func StartPurgeLoop(secInterval int, omitDetails bool) {
 	for range time.Tick(time.Duration(secInterval) * time.Second) {
 		job := instrument.NewJob("PumpRecordsPurge")
 
@@ -183,6 +184,10 @@ func StartPurgeLoop(secInterval int) {
 						"prefix": mainPrefix,
 					}).Error("Couldn't unmarshal analytics data:", err)
 				} else {
+					if omitDetails {
+						decoded.RawRequest = ""
+						decoded.RawResponse = ""
+					}
 					keys[i] = interface{}(decoded)
 					job.Event("record")
 				}
@@ -220,7 +225,7 @@ func writeToPumps(keys []interface{}, job *health.Job, startTime time.Time, purg
 
 func filterData(pump pumps.Pump, keys []interface{}) []interface{} {
 	filters := pump.GetFilters()
-	if !filters.HasFilter() {
+	if !filters.HasFilter() && !pump.GetOmitDetailedRecording() {
 		return keys
 	}
 	filteredKeys := keys[:]
@@ -228,10 +233,14 @@ func filterData(pump pumps.Pump, keys []interface{}) []interface{} {
 
 	for _, key := range filteredKeys {
 		decoded := key.(analytics.AnalyticsRecord)
+		if pump.GetOmitDetailedRecording() {
+			decoded.RawRequest = ""
+			decoded.RawResponse = ""
+		}
 		if filters.ShouldFilter(decoded) {
 			continue
 		}
-		filteredKeys[newLenght] = key
+		filteredKeys[newLenght] = decoded
 		newLenght++
 	}
 	filteredKeys = filteredKeys[:newLenght]
@@ -329,5 +338,5 @@ func main() {
 		"prefix": mainPrefix,
 	}).Info("Starting purge loop @", SystemConfig.PurgeDelay, "(s)")
 
-	StartPurgeLoop(SystemConfig.PurgeDelay)
+	StartPurgeLoop(SystemConfig.PurgeDelay, SystemConfig.OmitDetailedRecording)
 }

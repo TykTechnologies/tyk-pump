@@ -12,8 +12,7 @@ import (
 
 type MockedPump struct {
 	CounterRequest int
-	filters        analytics.AnalyticsFilters
-	timeout        int
+	pumps.CommonPumpConfig
 }
 
 func (p *MockedPump) GetName() string {
@@ -32,19 +31,6 @@ func (p *MockedPump) WriteData(ctx context.Context, keys []interface{}) error {
 	}
 	return nil
 }
-func (p *MockedPump) SetFilters(filters analytics.AnalyticsFilters) {
-	p.filters = filters
-}
-func (p *MockedPump) GetFilters() analytics.AnalyticsFilters {
-	return p.filters
-}
-func (p *MockedPump) SetTimeout(timeout int) {
-	p.timeout = timeout
-}
-func (p *MockedPump) GetTimeout() int {
-	return p.timeout
-}
-
 func TestFilterData(t *testing.T) {
 
 	mockedPump := &MockedPump{}
@@ -65,6 +51,23 @@ func TestFilterData(t *testing.T) {
 		t.Fatal("keys and filtered keys have the  same lenght")
 	}
 
+}
+
+func TestOmitDetailsFilterData(t *testing.T) {
+	mockedPump := &MockedPump{}
+	mockedPump.SetOmitDetailedRecording(true)
+
+	keys := make([]interface{}, 1)
+	keys[0] = analytics.AnalyticsRecord{APIID: "api111", RawResponse: "test", RawRequest: "test"}
+
+	filteredKeys := filterData(mockedPump, keys)
+	if len(filteredKeys) == 0 {
+		t.Fatal("it shouldn't have filtered a key.")
+	}
+	record := filteredKeys[0].(analytics.AnalyticsRecord)
+	if record.RawRequest != "" || record.RawResponse != "" {
+		t.Fatal("raw_request  and raw_response should be empty")
+	}
 }
 
 func TestWriteData(t *testing.T) {

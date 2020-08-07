@@ -44,9 +44,8 @@ type HybridPump struct {
 	trackAllPaths          bool
 	storeAnalyticPerMinute bool
 	ignoreTagPrefixList    []string
-	filters                analytics.AnalyticsFilters
-	timeout                int
-	rpcConfig              rpc.Config
+	CommonPumpConfig
+	rpcConfig rpc.Config
 }
 
 func (p *HybridPump) GetName() string {
@@ -210,18 +209,4 @@ func (p *HybridPump) WriteData(ctx context.Context, data []interface{}) error {
 	}
 
 	return nil
-}
-
-func (p *HybridPump) SetFilters(filters analytics.AnalyticsFilters) {
-	p.filters = filters
-}
-func (p *HybridPump) GetFilters() analytics.AnalyticsFilters {
-	return p.filters
-}
-func (p *HybridPump) SetTimeout(timeout int) {
-	p.timeout = timeout
-}
-
-func (p *HybridPump) GetTimeout() int {
-	return p.timeout
 }

@@ -19,8 +19,7 @@ import (
 type MoesifPump struct {
 	moesifApi  moesifapi.API
 	moesifConf *MoesifConf
-	filters    analytics.AnalyticsFilters
-	timeout    int
+	CommonPumpConfig
 }
 
 type RawDecoded struct {
@@ -144,14 +143,6 @@ func (p *MoesifPump) WriteData(ctx context.Context, data []interface{}) error {
 	return nil
 }
 
-func (p *MoesifPump) SetTimeout(timeout int) {
-	p.timeout = timeout
-}
-
-func (p *MoesifPump) GetTimeout() int {
-	return p.timeout
-}
-
 func decodeRawData(raw string) (*RawDecoded, error) {
 	headersBody := strings.SplitN(raw, "\r\n\r\n", 2)
 
@@ -193,11 +184,4 @@ func decodeHeaders(headers string) map[string]interface{} {
 	}
 
 	return ret
-}
-
-func (p *MoesifPump) SetFilters(filters analytics.AnalyticsFilters) {
-	p.filters = filters
-}
-func (p *MoesifPump) GetFilters() analytics.AnalyticsFilters {
-	return p.filters
 }

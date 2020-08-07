@@ -14,9 +14,8 @@ import (
 )
 
 type InfluxPump struct {
-	dbConf  *InfluxConf
-	filters analytics.AnalyticsFilters
-	timeout int
+	dbConf *InfluxConf
+	CommonPumpConfig
 }
 
 var (
@@ -149,18 +148,4 @@ func (i *InfluxPump) WriteData(ctx context.Context, data []interface{}) error {
 	c.Write(bp)
 
 	return nil
-}
-
-func (i *InfluxPump) SetFilters(filters analytics.AnalyticsFilters) {
-	i.filters = filters
-}
-func (i *InfluxPump) GetFilters() analytics.AnalyticsFilters {
-	return i.filters
-}
-func (i *InfluxPump) SetTimeout(timeout int) {
-	i.timeout = timeout
-}
-
-func (i *InfluxPump) GetTimeout() int {
-	return i.timeout
 }
