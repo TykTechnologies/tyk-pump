@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"regexp"
 	"strings"
 	"time"
 
@@ -243,9 +244,12 @@ func (e *ElasticsearchPump) Init(config interface{}) error {
 		}).Fatal("Invalid version: ", err)
 	}
 
+	var re = regexp.MustCompile(`(.*)\/\/(.*):(.*)\@(.*)`)
+	printableURL := re.ReplaceAllString(e.esConf.ElasticsearchURL, `$1//***:***@$4`)
+
 	log.WithFields(logrus.Fields{
 		"prefix": elasticsearchPrefix,
-	}).Info("Elasticsearch URL: ", e.esConf.ElasticsearchURL)
+	}).Info("Elasticsearch URL: ", printableURL)
 	log.WithFields(logrus.Fields{
 		"prefix": elasticsearchPrefix,
 	}).Info("Elasticsearch Index: ", e.esConf.IndexName)
