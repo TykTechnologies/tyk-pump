@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"net/http"
 	"regexp"
 	"strings"
 	"time"
@@ -40,6 +41,10 @@ type ElasticsearchConf struct {
 	Version            string                  `mapstructure:"version"`
 	DisableBulk        bool                    `mapstructure:"disable_bulk"`
 	BulkConfig         ElasticsearchBulkConfig `mapstructure:"bulk_config"`
+	AuthAPIKeyID       string                  `mapstructure:"auth_api_key_id"`
+	AuthAPIKey         string                  `mapstructure:"auth_api_key"`
+	Username           string                  `mapstructure:"auth_basic_username"`
+	Password           string                  `mapstructure:"auth_basic_password"`
 }
 
 type ElasticsearchBulkConfig struct {
@@ -68,35 +73,59 @@ type Elasticsearch6Operator struct {
 	bulkProcessor *elasticv6.BulkProcessor
 }
 
-func getOperator(version string, url string, setSniff bool, bulkConfig ElasticsearchBulkConfig) (ElasticsearchOperator, error) {
+type ApiKeyTransport struct {
+	APIKey   string
+	APIKeyID string
+}
+
+//RoundTrip for ApiKeyTransport auth
+func (t *ApiKeyTransport) RoundTrip(r *http.Request) (*http.Response, error) {
+	auth := t.APIKeyID + ":" + t.APIKey
+	key := base64.StdEncoding.EncodeToString([]byte(auth))
+
+	r.Header.Set("Authorization", "ApiKey "+key)
+
+	return http.DefaultTransport.RoundTrip(r)
+}
+
+func getOperator(conf ElasticsearchConf) (ElasticsearchOperator, error) {
+
 	var err error
 
-	urls := strings.Split(url, ",")
+	urls := strings.Split(conf.ElasticsearchURL, ",")
 
-	switch version {
+	httpClient := http.DefaultClient
+	if conf.AuthAPIKey != "" && conf.AuthAPIKeyID != "" {
+		conf.Username = ""
+		conf.Password = ""
+		httpClient = &http.Client{Transport: &ApiKeyTransport{APIKey: conf.AuthAPIKey, APIKeyID: conf.AuthAPIKeyID}}
+	}
+
+	switch conf.Version {
 	case "3":
 		e := new(Elasticsearch3Operator)
-		e.esClient, err = elasticv3.NewClient(elasticv3.SetURL(urls...), elasticv3.SetSniff(setSniff))
+		e.esClient, err = elasticv3.NewClient(elasticv3.SetURL(urls...), elasticv3.SetSniff(conf.EnableSniffing), elasticv3.SetBasicAuth(conf.Username, conf.Password), elasticv3.SetHttpClient(httpClient))
+
 		if err != nil {
 			return e, err
 		}
 
 		// Setup a bulk processor
 		p := e.esClient.BulkProcessor().Name("TykPumpESv3BackgroundProcessor")
-		if bulkConfig.Workers != 0 {
-			p = p.Workers(bulkConfig.Workers)
+		if conf.BulkConfig.Workers != 0 {
+			p = p.Workers(conf.BulkConfig.Workers)
 		}
 
-		if bulkConfig.FlushInterval != 0 {
-			p = p.FlushInterval(time.Duration(bulkConfig.FlushInterval) * time.Second)
+		if conf.BulkConfig.FlushInterval != 0 {
+			p = p.FlushInterval(time.Duration(conf.BulkConfig.FlushInterval) * time.Second)
 		}
 
-		if bulkConfig.BulkActions != 0 {
-			p = p.BulkActions(bulkConfig.BulkActions)
+		if conf.BulkConfig.BulkActions != 0 {
+			p = p.BulkActions(conf.BulkConfig.BulkActions)
 		}
 
-		if bulkConfig.BulkSize != 0 {
-			p = p.BulkSize(bulkConfig.BulkSize)
+		if conf.BulkConfig.BulkSize != 0 {
+			p = p.BulkSize(conf.BulkConfig.BulkSize)
 		}
 
 		e.bulkProcessor, err = p.Do()
@@ -104,26 +133,28 @@ func getOperator(version string, url string, setSniff bool, bulkConfig Elasticse
 		return e, err
 	case "5":
 		e := new(Elasticsearch5Operator)
-		e.esClient, err = elasticv5.NewClient(elasticv5.SetURL(urls...), elasticv5.SetSniff(setSniff))
+
+		e.esClient, err = elasticv5.NewClient(elasticv5.SetURL(urls...), elasticv5.SetSniff(conf.EnableSniffing), elasticv5.SetBasicAuth(conf.Username, conf.Password), elasticv5.SetHttpClient(httpClient))
+
 		if err != nil {
 			return e, err
 		}
 		// Setup a bulk processor
 		p := e.esClient.BulkProcessor().Name("TykPumpESv5BackgroundProcessor")
-		if bulkConfig.Workers != 0 {
-			p = p.Workers(bulkConfig.Workers)
+		if conf.BulkConfig.Workers != 0 {
+			p = p.Workers(conf.BulkConfig.Workers)
 		}
 
-		if bulkConfig.FlushInterval != 0 {
-			p = p.FlushInterval(time.Duration(bulkConfig.FlushInterval) * time.Second)
+		if conf.BulkConfig.FlushInterval != 0 {
+			p = p.FlushInterval(time.Duration(conf.BulkConfig.FlushInterval) * time.Second)
 		}
 
-		if bulkConfig.BulkActions != 0 {
-			p = p.BulkActions(bulkConfig.BulkActions)
+		if conf.BulkConfig.BulkActions != 0 {
+			p = p.BulkActions(conf.BulkConfig.BulkActions)
 		}
 
-		if bulkConfig.BulkSize != 0 {
-			p = p.BulkSize(bulkConfig.BulkSize)
+		if conf.BulkConfig.BulkSize != 0 {
+			p = p.BulkSize(conf.BulkConfig.BulkSize)
 		}
 
 		e.bulkProcessor, err = p.Do(context.Background())
@@ -131,26 +162,28 @@ func getOperator(version string, url string, setSniff bool, bulkConfig Elasticse
 		return e, err
 	case "6":
 		e := new(Elasticsearch6Operator)
-		e.esClient, err = elasticv6.NewClient(elasticv6.SetURL(urls...), elasticv6.SetSniff(setSniff))
+
+		e.esClient, err = elasticv6.NewClient(elasticv6.SetURL(urls...), elasticv6.SetSniff(conf.EnableSniffing), elasticv6.SetBasicAuth(conf.Username, conf.Password), elasticv6.SetHttpClient(httpClient))
+
 		if err != nil {
 			return e, err
 		}
 		// Setup a bulk processor
 		p := e.esClient.BulkProcessor().Name("TykPumpESv6BackgroundProcessor")
-		if bulkConfig.Workers != 0 {
-			p = p.Workers(bulkConfig.Workers)
+		if conf.BulkConfig.Workers != 0 {
+			p = p.Workers(conf.BulkConfig.Workers)
 		}
 
-		if bulkConfig.FlushInterval != 0 {
-			p = p.FlushInterval(time.Duration(bulkConfig.FlushInterval) * time.Second)
+		if conf.BulkConfig.FlushInterval != 0 {
+			p = p.FlushInterval(time.Duration(conf.BulkConfig.FlushInterval) * time.Second)
 		}
 
-		if bulkConfig.BulkActions != 0 {
-			p = p.BulkActions(bulkConfig.BulkActions)
+		if conf.BulkConfig.BulkActions != 0 {
+			p = p.BulkActions(conf.BulkConfig.BulkActions)
 		}
 
-		if bulkConfig.BulkSize != 0 {
-			p = p.BulkSize(bulkConfig.BulkSize)
+		if conf.BulkConfig.BulkSize != 0 {
+			p = p.BulkSize(conf.BulkConfig.BulkSize)
 		}
 
 		e.bulkProcessor, err = p.Do(context.Background())
@@ -234,7 +267,7 @@ func (e *ElasticsearchPump) Init(config interface{}) error {
 func (e *ElasticsearchPump) connect() {
 	var err error
 
-	e.operator, err = getOperator(e.esConf.Version, e.esConf.ElasticsearchURL, e.esConf.EnableSniffing, e.esConf.BulkConfig)
+	e.operator, err = getOperator(*e.esConf)
 	if err != nil {
 		log.WithFields(logrus.Fields{
 			"prefix": elasticsearchPrefix,
