@@ -102,6 +102,7 @@ type SplunkPumpConfig struct {
 	SSLCertFile           string `mapstructure:"ssl_cert_file"`
 	SSLKeyFile            string `mapstructure:"ssl_key_file"`
 	SSLServerName         string `mapstructure:"ssl_server_name"`
+	ObfuscateAPIKeys      bool   `mapstructure:"obfuscate_api_keys"`
 }
 
 // New initializes a new pump.
@@ -143,11 +144,18 @@ func (p *SplunkPump) WriteData(ctx context.Context, data []interface{}) error {
 	}).Info("Writing ", len(data), " records")
 	for _, v := range data {
 		decoded := v.(analytics.AnalyticsRecord)
+		apiKey := decoded.APIKey
+		if p.config.ObfuscateAPIKeys {
+			if len(apiKey) > 4 {
+				apiKey = "****" + apiKey[len(apiKey)-4:]
+			}
+		}
+
 		event := map[string]interface{}{
 			"method":        decoded.Method,
 			"path":          decoded.Path,
 			"response_code": decoded.ResponseCode,
-			"api_key":       decoded.APIKey,
+			"api_key":       apiKey,
 			"time_stamp":    decoded.TimeStamp,
 			"api_version":   decoded.APIVersion,
 			"api_name":      decoded.APIName,
