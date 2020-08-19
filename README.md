@@ -226,6 +226,15 @@ Create a `pump.conf` file:
             "key": "value"
         }
       }
+    },
+    "syslog": {
+      "name": "syslog",
+      "meta": {
+        "transport": "udp",
+        "network_addr": "localhost:5140",
+        "log_level": 6,
+        "tag":"syslog-pump"
+      }
     }
   },
   "uptime_pump_config": {
@@ -494,6 +503,28 @@ More advanced fields:
 * `ssl_cert_file`: Can be used to set custom certificate file for authentication with kafka.
 * `ssl_key_file`: Can be used to set custom key file for authentication with kafka.
 
+
+### Syslog
+`"transport"` - Possible values are `udp, tcp, tls` in string form
+
+`"network_addr"` - Host & Port combination of your syslog daemon ie: `"localhost:5140"`
+
+`"log_level"` - The severity level, an integer from 0-7, based off the Standard: [Syslog Severity Levels](https://en.wikipedia.org/wiki/Syslog#Severity_level)
+
+`"tag"` - Prefix tag
+
+When working with FluentD, you should provide a [FluentD Parser](https://docs.fluentd.org/input/syslog) based on the OS you are using so that FluentD can correctly read the logs
+
+```.json
+"syslog": {
+  "name": "syslog",
+  "meta": {
+    "transport": "udp",
+    "network_addr": "localhost:5140",
+    "log_level": 6,
+    "tag": "syslog-pump"
+  }
+```
 
 ## Compiling & Testing
 
