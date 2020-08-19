@@ -16,6 +16,7 @@ type SyslogPump struct {
 	writer     *syslog.Writer
 	filters    analytics.AnalyticsFilters
 	timeout    int
+	CommonPumpConfig
 }
 
 var (
