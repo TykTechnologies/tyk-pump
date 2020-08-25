@@ -167,7 +167,13 @@ func (p *SplunkPump) WriteData(ctx context.Context, data []interface{}) error {
 			"raw_response":  decoded.RawResponse,
 			"ip_address":    decoded.IPAddress,
 		}
-		p.client.Send(ctx, event, decoded.TimeStamp)
+		response, err := p.client.Send(ctx, event, decoded.TimeStamp)
+		if err != nil {
+			log.WithFields(logrus.Fields{
+				"prefix": pumpPrefix,
+			}).Error("Error writing analytic record:", err)
+		}
+		response.Body.Close()
 	}
 	return nil
 }

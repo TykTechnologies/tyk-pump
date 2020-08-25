@@ -76,6 +76,7 @@ func TestSplunkSend(t *testing.T) {
 		"path":   "/test-path",
 	}
 	res, err := client.Send(context.TODO(), e, time.Now())
+	defer res.Body.Close()
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		t.Fatal(err)
