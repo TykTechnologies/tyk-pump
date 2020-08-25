@@ -25,7 +25,7 @@ require (
 	github.com/logzio/logzio-go v0.0.0-20190331100143-1138f714b3b6
 	github.com/lonelycode/mgohacks v0.0.0-20150820024025-f9c291f7e57e
 	github.com/mitchellh/mapstructure v1.1.2
-	github.com/moesif/moesifapi-go v0.0.0-20170216233325-69242ec5159a
+	github.com/moesif/moesifapi-go v1.0.5
 	github.com/olivere/elastic v6.2.31+incompatible // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v0.9.1
@@ -41,6 +41,7 @@ require (
 	github.com/sirupsen/logrus v1.4.2
 	github.com/syndtr/goleveldb v0.0.0-20190318030020-c3a204f8e965 // indirect
 	github.com/xtgo/uuid v0.0.0-20140804021211-a0b114877d4c // indirect
+	golang.org/x/tools v0.0.0-20200623185156-456ad74e1464 // indirect
 	google.golang.org/api v0.24.0 // indirect
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6
 	gopkg.in/mgo.v2 v2.0.0-20190816093944-a6b53ec6cb22

@@ -11,7 +11,7 @@ import (
 )
 
 var defaultHealthEndpoint = "health"
-var defaultHealthPort = 8080
+var defaultHealthPort = 8083
 var serverPrefix = "server"
 var log = logger.GetLogger()
 
@@ -30,9 +30,13 @@ func ServeHealthCheck(configHealthEndpoint string, configHealthPort int) {
 
 	log.WithFields(logrus.Fields{
 		"prefix": serverPrefix,
-	}).Info("Serving health check endpoint at http://localhost:", healthPort, "/", healthEndpoint)
+	}).Info("Serving health check endpoint at http://localhost:", healthPort, "/", healthEndpoint, " ...")
 
-	http.ListenAndServe(":"+fmt.Sprint(healthPort), router)
+	if err := http.ListenAndServe(":"+fmt.Sprint(healthPort), router); err != nil {
+		log.WithFields(logrus.Fields{
+			"prefix": serverPrefix,
+		}).Fatal("Error serving health check endpoint", err)
+	}
 }
 
 type Context struct{}

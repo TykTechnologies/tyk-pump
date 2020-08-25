@@ -43,7 +43,7 @@ Create a `pump.conf` file:
   },
   "purge_delay": 1,
   "health_check_endpoint_name": "hello",
-  "health_check_endpoint_port": 8080,
+  "health_check_endpoint_port": 8083,
   "pumps": {
     "dummy": {
       "type": "dummy",
@@ -218,7 +218,7 @@ Create a `pump.conf` file:
         ],
 	"topic": "tyk-pump",
         "use_ssl": true,
-        "ssl_insecure_skip_verify": false
+        "ssl_insecure_skip_verify": false,
         "client_id": "tyk-pump",
         "timeout": 60,
         "compressed": true,
@@ -226,17 +226,59 @@ Create a `pump.conf` file:
             "key": "value"
         }
       }
+    },
+    "syslog": {
+      "name": "syslog",
+      "meta": {
+        "transport": "udp",
+        "network_addr": "localhost:5140",
+        "log_level": 6,
+        "tag":"syslog-pump"
+      }
     }
   },
   "uptime_pump_config": {
     "collection_name": "tyk_uptime_analytics",
     "mongo_url": "mongodb://username:password@{hostname:port},{hostname:port}/{db_name}"
   },
-  "dont_purge_uptime_data": false
+  "dont_purge_uptime_data": false,
+  "omit_detailed_recording": false,
+  "obfuscate_keys":false
 }
 ```
 
 Settings are the same as for the original `tyk.conf` for redis and for mongoDB.
+
+### Filter Records
+
+This feature adds a new configuration field in each pump called filters and its structure is the following:
+```json
+"filters":{
+  "api_ids":[],
+  "org_ids":[],
+  "response_codes":[],
+  "skip_api_ids":[],
+  "skip_org_ids":[],
+  "skip_response_codes":[]
+}
+```
+The fields api_ids, org_ids and response_codes works as allow list (APIs and orgs where we want to send the analytics records) and the fields skip_api_ids, skip_org_ids and skip_response_codes works as block list.
+
+The priority is always block list configurations over allow list.
+
+An example of configuration would be:
+```json
+"csv": {
+ "type": "csv",
+ "filters": {
+   "org_ids": ["org1","org2"]
+ },
+ "meta": {
+   "csv_dir": "./bar"
+ }
+}
+```
+
 
 ### Environment Variables
 
@@ -267,12 +309,20 @@ Environment variables can be used to override the settings defined in the config
 
 `dont_purge_uptime_data` - Setting this to false will create a pump that pushes uptime data to MongoDB, so the Dashboard can read it. Disable by setting to true
 
+### Omit Detailed Recording
+
+`omit_detailed_recording` - Setting this to true will avoid writing raw_request and raw_response fields for each request in pumps. Defaults to false.
+
+### Obfuscate Keys
+
+`obfuscate_keys` - Setting this to true will obfuscate the API KEY from each record. 
+
 ### Health Check
 
 From v2.9.4, we have introduced a `/health` endpoint to confirm the Pump is running. You need to configure the following settings:
 
 - `health_check_endpoint_name` - The default is "hello" 
-- `health_check_endpoint_port` - The default port is 8080
+- `health_check_endpoint_port` - The default port is 8083
 
 This returns a HTTP 200 OK response if the Pump is running.
 
@@ -305,10 +355,17 @@ The Tyk Dashboard uses the "mongo-pump-aggregate" collection to display analytic
   * `bulk_size`: Specifies the size (in bytes) needed to flush the data and send it to ES. Defaults to 5MB. If it is needed, can be disabled with -1.
 
 ### Moesif Config
-[Moesif](https://www.moesif.com) is a logging and analytics service for APIs. The Moesif pump will
-move analytics data from Tyk to Moesif.
+[Moesif](https://www.moesif.com/?language=tyk-api-gateway) is a user-centric API analytics and monitoring service for APIs. [More Info on Moesif for Tyk](https://www.moesif.com/solutions/track-api-program?language=tyk-api-gateway)
 
-`"application_id"` - Moesif App Id JWT. Multiple api_id's will go under the same app id.
+- `"application_id"` - Moesif App Id JWT. Multiple api_id's will go under the same app id.
+- `"request_header_masks"` - (optional) An option to mask a specific request header field. Type: String Array `[] string`
+- `"request_body_masks"` - (optional) An option to mask a specific - request body field. Type: String Array `[] string`
+- `"response_header_masks"` - (optional) An option to mask a specific response header field. Type: String Array `[] string`
+- `"response_body_masks"` - (optional) An option to mask a specific response body field. Type: String Array `[] string`
+- `"disable_capture_request_body"` - (optional) An option to disable logging of request body. Type: Boolean. Default value is `false`.
+- `"disable_capture_response_body"` - (optional) An option to disable logging of response body. Type: Boolean. Default value is `false`.
+- `"user_id_header"` - (optional) An optional field name to identify User from a request or response header. Type: String.
+- `"company_id_header"` - (optional) An optional field name to identify Company (Account) from a request or response header. Type: String.
 
 ### Hybrid RPC Config
 
@@ -454,6 +511,31 @@ More advanced fields:
 * `timeout`: Timeout is the maximum amount of time will wait for a connect or write to complete. 
 * `compressed`: Enable "github.com/golang/snappy" codec to be used to compress Kafka messages. By default is false
 * `meta_data`: Can be used to set custom metadata inside the kafka message
+* `ssl_cert_file`: Can be used to set custom certificate file for authentication with kafka.
+* `ssl_key_file`: Can be used to set custom key file for authentication with kafka.
+
+
+### Syslog
+`"transport"` - Possible values are `udp, tcp, tls` in string form
+
+`"network_addr"` - Host & Port combination of your syslog daemon ie: `"localhost:5140"`
+
+`"log_level"` - The severity level, an integer from 0-7, based off the Standard: [Syslog Severity Levels](https://en.wikipedia.org/wiki/Syslog#Severity_level)
+
+`"tag"` - Prefix tag
+
+When working with FluentD, you should provide a [FluentD Parser](https://docs.fluentd.org/input/syslog) based on the OS you are using so that FluentD can correctly read the logs
+
+```.json
+"syslog": {
+  "name": "syslog",
+  "meta": {
+    "transport": "udp",
+    "network_addr": "localhost:5140",
+    "log_level": 6,
+    "tag": "syslog-pump"
+  }
+```
 
 ## Compiling & Testing
 

@@ -89,10 +89,9 @@ func (c *SplunkClient) Send(ctx context.Context, event map[string]interface{}, t
 
 // SplunkPump is a Tyk Pump driver for Splunk.
 type SplunkPump struct {
-	client  *SplunkClient
-	config  *SplunkPumpConfig
-	filters analytics.AnalyticsFilters
-	timeout int
+	client *SplunkClient
+	config *SplunkPumpConfig
+	CommonPumpConfig
 }
 
 // SplunkPumpConfig contains the driver configuration parameters.
@@ -103,6 +102,7 @@ type SplunkPumpConfig struct {
 	SSLCertFile           string `mapstructure:"ssl_cert_file"`
 	SSLKeyFile            string `mapstructure:"ssl_key_file"`
 	SSLServerName         string `mapstructure:"ssl_server_name"`
+	ObfuscateAPIKeys      bool   `mapstructure:"obfuscate_api_keys"`
 }
 
 // New initializes a new pump.
@@ -144,11 +144,18 @@ func (p *SplunkPump) WriteData(ctx context.Context, data []interface{}) error {
 	}).Info("Writing ", len(data), " records")
 	for _, v := range data {
 		decoded := v.(analytics.AnalyticsRecord)
+		apiKey := decoded.APIKey
+		if p.config.ObfuscateAPIKeys {
+			if len(apiKey) > 4 {
+				apiKey = "****" + apiKey[len(apiKey)-4:]
+			}
+		}
+
 		event := map[string]interface{}{
 			"method":        decoded.Method,
 			"path":          decoded.Path,
 			"response_code": decoded.ResponseCode,
-			"api_key":       decoded.APIKey,
+			"api_key":       apiKey,
 			"time_stamp":    decoded.TimeStamp,
 			"api_version":   decoded.APIVersion,
 			"api_name":      decoded.APIName,
@@ -163,18 +170,4 @@ func (p *SplunkPump) WriteData(ctx context.Context, data []interface{}) error {
 		p.client.Send(ctx, event, decoded.TimeStamp)
 	}
 	return nil
-}
-
-func (p *SplunkPump) SetFilters(filters analytics.AnalyticsFilters) {
-	p.filters = filters
-}
-func (p *SplunkPump) GetFilters() analytics.AnalyticsFilters {
-	return p.filters
-}
-func (s *SplunkPump) SetTimeout(timeout int) {
-	s.timeout = timeout
-}
-
-func (s *SplunkPump) GetTimeout() int {
-	return s.timeout
 }

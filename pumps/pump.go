@@ -16,6 +16,8 @@ type Pump interface {
 	GetFilters() analytics.AnalyticsFilters
 	SetTimeout(timeout int)
 	GetTimeout() int
+	SetOmitDetailedRecording(bool)
+	GetOmitDetailedRecording() bool
 }
 
 func GetPumpByName(name string) (Pump, error) {
