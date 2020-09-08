@@ -7,11 +7,18 @@ import (
 )
 
 func TestHealthCheck(t *testing.T) {
-	go ServeHealthCheck("", 0)
+	go ServeHealthCheck("", 9090)
 
-	r, _ := http.NewRequest(http.MethodGet, "http://:"+fmt.Sprint(defaultHealthPort)+"/"+defaultHealthEndpoint, nil)
+	r, _ := http.NewRequest(http.MethodGet, "http://:"+fmt.Sprint(9090)+"/"+defaultHealthEndpoint, nil)
 
-	resp, err := http.DefaultClient.Do(r)
+	var err error
+	var resp *http.Response
+	for i := 0; i < 4; i++ {
+		resp, err = http.DefaultClient.Do(r)
+		if err == nil {
+			break
+		}
+	}
 	if err != nil {
 		t.Fatal(err)
 	}
