@@ -463,7 +463,7 @@ func TestPurgeLoop(t *testing.T) {
 	mockedPump := &MockedPump{}
 
 	Pumps = []pumps.Pump{mockedPump}
-	purgeLoop(1,false)
+	purgeLoop(1, false)
 
 	if mockedPump.CounterRequest != 1 {
 		t.Fatal("mockedPump should have 1 request after purgeLoop and have:", mockedPump.CounterRequest)
@@ -471,7 +471,7 @@ func TestPurgeLoop(t *testing.T) {
 
 	recordMalformed := "{record-malformed.."
 	saveTestRedisRecord(t, db, recordMalformed)
-	purgeLoop(1,false)
+	purgeLoop(1, false)
 
 	if mockedPump.CounterRequest != 1 {
 		t.Fatal("mockedPump should still have 1 request after the second purgeLoop")
