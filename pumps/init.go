@@ -26,4 +26,5 @@ func init() {
 	AvailablePumps["logzio"] = &LogzioPump{}
 	AvailablePumps["dogstatsd"] = &DogStatsdPump{}
 	AvailablePumps["kafka"] = &KafkaPump{}
+	AvailablePumps["syslog"] = &SyslogPump{}
 }

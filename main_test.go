@@ -38,6 +38,7 @@ type MockedPump struct {
 	hangingTime     int
 	name            string
 	shouldErr       bool
+	pumps.CommonPumpConfig
 }
 
 func (p *MockedPump) GetName() string {
@@ -142,6 +143,23 @@ func TestFilterData(t *testing.T) {
 }
 
 //Tests for writeToPumps and execPumpWriting
+func TestOmitDetailsFilterData(t *testing.T) {
+	mockedPump := &MockedPump{}
+	mockedPump.SetOmitDetailedRecording(true)
+
+	keys := make([]interface{}, 1)
+	keys[0] = analytics.AnalyticsRecord{APIID: "api111", RawResponse: "test", RawRequest: "test"}
+
+	filteredKeys := filterData(mockedPump, keys)
+	if len(filteredKeys) == 0 {
+		t.Fatal("it shouldn't have filtered a key.")
+	}
+	record := filteredKeys[0].(analytics.AnalyticsRecord)
+	if record.RawRequest != "" || record.RawResponse != "" {
+		t.Fatal("raw_request  and raw_response should be empty")
+	}
+}
+
 func TestWriteData(t *testing.T) {
 	mockedPump := &MockedPump{}
 	Pumps = []pumps.Pump{mockedPump}
@@ -445,7 +463,7 @@ func TestPurgeLoop(t *testing.T) {
 	mockedPump := &MockedPump{}
 
 	Pumps = []pumps.Pump{mockedPump}
-	purgeLoop(1)
+	purgeLoop(1,false)
 
 	if mockedPump.CounterRequest != 1 {
 		t.Fatal("mockedPump should have 1 request after purgeLoop and have:", mockedPump.CounterRequest)
@@ -453,7 +471,7 @@ func TestPurgeLoop(t *testing.T) {
 
 	recordMalformed := "{record-malformed.."
 	saveTestRedisRecord(t, db, recordMalformed)
-	purgeLoop(1)
+	purgeLoop(1,false)
 
 	if mockedPump.CounterRequest != 1 {
 		t.Fatal("mockedPump should still have 1 request after the second purgeLoop")
