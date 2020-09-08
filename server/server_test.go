@@ -9,7 +9,7 @@ import (
 func TestHealthCheck(t *testing.T) {
 	go ServeHealthCheck("", 0)
 
-	r, _ := http.NewRequest(http.MethodGet, "http://localhost:"+fmt.Sprint(defaultHealthPort)+"/"+defaultHealthEndpoint, nil)
+	r, _ := http.NewRequest(http.MethodGet, "http://:"+fmt.Sprint(defaultHealthPort)+"/"+defaultHealthEndpoint, nil)
 
 	resp, err := http.DefaultClient.Do(r)
 	if err != nil {
