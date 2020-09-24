@@ -156,7 +156,7 @@ func TestDontObfuscateKeysAndDontFilterData(t *testing.T) {
 
 func TestObfuscateKeysAndDontFilterData(t *testing.T) {
 	SystemConfig = TykPumpConfiguration{}
-	SystemConfig.ObfuscateKeys = true
+	SystemConfig.obfuscateAuthHeader = ObfuscateAuthHeader{ true, "Authorization" }
 
 	mockedPump := &MockedPump{}
 
@@ -192,7 +192,7 @@ func TestObfuscateKeysAndDontFilterData(t *testing.T) {
 
 func TestObfuscateKeysAndFilterData(t *testing.T) {
 	SystemConfig = TykPumpConfiguration{}
-	SystemConfig.ObfuscateKeys = true
+	SystemConfig.obfuscateAuthHeader = ObfuscateAuthHeader{ true, "Authorization" }
 
 	mockedPump := &MockedPump{}
 

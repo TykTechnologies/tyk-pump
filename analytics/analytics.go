@@ -1,15 +1,19 @@
 package analytics
 
 import (
+	"encoding/base64"
+	"fmt"
 	"reflect"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/tyk-pump/logger"
 )
 
 var log = logger.GetLogger()
+var analyticsRecordPrefix = "analyticsRecord"
 
 type NetworkStats struct {
 	OpenConnections  int64
@@ -117,10 +121,121 @@ func (a *AnalyticsRecord) GetLineValues() []string {
 	return fields
 }
 
-func (a *AnalyticsRecord) ObfuscateKey() {
-	if len(a.APIKey) > 4 {
-		a.APIKey = "****" + a.APIKey[len(a.APIKey)-4:]
+//change name - obfuscateAndDecode request
+func (a *AnalyticsRecord) ObfuscateKey(authHeaderName string, decode bool) {
+	a.APIKey = ObfuscateString(a.APIKey)
+
+	if a.RawRequest == "" {
 		return
 	}
-	a.APIKey = "----"
+	decodeRequest, err := base64.StdEncoding.DecodeString(a.RawRequest)
+	if err != nil {
+		log.WithFields(logrus.Fields{
+			"prefix": analyticsRecordPrefix,
+			"apiId": a.APIID,
+			"apiName:version": a.APIName + ":" + a.APIVersion,
+			"error": err,
+		}).Error("Error while decoding raw request ", a.RawRequest)
+
+		return
+	}
+
+	log.WithFields(logrus.Fields{
+		"prefix": analyticsRecordPrefix,
+		"apiId": a.APIID,
+		"apiName:version": a.APIName + ":" + a.APIVersion,
+		"encoded request": a.RawRequest,
+		"decoded request": decodeRequest,
+	}).Debug("")
+
+	authFieldName := authHeaderName + ": " //For example "Authorization: "
+
+	//todo bearer!
+
+	sDecodedRequest := string(decodeRequest)
+
+	if decode {
+		a.RawRequest = sDecodedRequest
+	}
+
+	fmt.Printf("===> All data : %s\n", sDecodedRequest)
+	iAuthHeaderStarts := strings.Index(sDecodedRequest, authFieldName)
+	if iAuthHeaderStarts == -1 {
+		log.WithFields(logrus.Fields{
+			"prefix": analyticsRecordPrefix,
+			"apiId": a.APIID,
+			"apiName:version": a.APIName + ":" + a.APIVersion,
+			"encoded request": a.RawRequest,
+			"decoded request": decodeRequest,
+			"Authorization header": authHeaderName,
+		}).Debug("Authorization header was not found")
+		return
+	}
+	restOfData := sDecodedRequest[iAuthHeaderStarts:]
+	fmt.Printf("===> restOfData: %s\n",restOfData)
+
+	iRelativeNextHeader := strings.Index(restOfData, "\r\n") // key ends here
+	if iRelativeNextHeader == -1 {
+		log.WithFields(logrus.Fields{
+			"prefix": analyticsRecordPrefix,
+			"apiId": a.APIID,
+			"apiName:version": a.APIName + ":" + a.APIVersion,
+			"encoded request": a.RawRequest,
+			"decoded request": decodeRequest,
+			"Authorization header": authHeaderName,
+		}).Debug("Authorization header was not found")
+		return
+	}
+	iNextHeaderStarts := iAuthHeaderStarts + iRelativeNextHeader // key ends here
+	iKeyBegins := iAuthHeaderStarts + len(authFieldName)
+
+	fmt.Printf("===> iKeyBegins %d iNextHeaderStarts %d \n", iKeyBegins, iNextHeaderStarts)
+	fmt.Printf("key only: %s\n", sDecodedRequest[iKeyBegins:iNextHeaderStarts])
+	obfuscatedKey := ObfuscateString(sDecodedRequest[iKeyBegins:iNextHeaderStarts])
+
+	a.RawRequest = sDecodedRequest[:iKeyBegins] + obfuscatedKey + sDecodedRequest[iNextHeaderStarts+1:]
+
+	if !decode {
+		a.RawRequest = base64.StdEncoding.EncodeToString([]byte(sDecodedRequest))
+	}
+
+	fmt.Printf("===> raw data after changed auth        : %s\n", sDecodedRequest)
+	fmt.Printf("===> raw data after changed auth encoded: %s\n", a.RawRequest)
+
+	/*
+		requestInLine := strings.Split(string(decodeRequest), "\r\n")
+		fmt.Printf("len of splitData: %d \n", len(requestInLine))
+
+		found := false
+	iFound := 0
+
+	for i := 0; i < len(requestgsInLine) && !found; i++ {
+		fmt.Printf("requestInLine: %d# %q\n", i, requestInLine[i])
+
+		if strings.HasPrefix(requestInLine[i], authHeaderName) {
+			found = true
+			iFound = i
+			headerLen := len(requestInLine[iFound])
+			prefixLen := len(authHeaderName) //For instance "Authorization: "
+			//todo: check bearer:
+
+			key := requestInLine[iFound][prefixLen:headerLen] // chars after "Authorization: "  till the end
+
+			obfuscatedKey := ObfuscateString(key)
+			requestInLine[iFound] = requestInLine[iFound][:prefixLen] + obfuscatedKey
+
+		}
+
+	}
+	fmt.Printf("changed auth: #%d: %s\n", iFound, requestInLine[iFound])
+*/
+
+}
+
+func ObfuscateString(keyName string) string {
+
+	if len(keyName) > 4 {
+		return "****" + keyName[len(keyName)-4:]
+	}
+	return "----"
 }
