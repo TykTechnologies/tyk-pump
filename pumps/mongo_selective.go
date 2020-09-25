@@ -187,11 +187,19 @@ func (m *MongoSelectivePump) WriteData(ctx context.Context, data []interface{}) 
 			}
 		}
 
+		timeout, deadlineSet := ctx.Deadline()
+		if deadlineSet{
+			duration := time.Duration(timeout.Second()) * time.Second
+			m.dbSession.SetSocketTimeout(duration)
+			m.dbSession.SetSyncTimeout(duration)
+		}
+
+		thisSession := m.dbSession.Copy()
+		defer thisSession.Close()
+
 		for col_name, filtered_data := range analyticsPerOrg {
 
 			for _, dataSet := range m.AccumulateSet(filtered_data) {
-				thisSession := m.dbSession.Copy()
-				defer thisSession.Close()
 				analyticsCollection := thisSession.DB("").C(col_name)
 
 				indexCreateErr := m.ensureIndexes(analyticsCollection)

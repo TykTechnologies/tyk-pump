@@ -227,6 +227,16 @@ func (m *MongoAggregatePump) WriteData(ctx context.Context, data []interface{}) 
 		// calculate aggregates
 		analyticsPerOrg := analytics.AggregateData(data, m.dbConf.TrackAllPaths, m.dbConf.IgnoreTagPrefixList, m.dbConf.StoreAnalyticsPerMinute)
 
+		timeout, deadlineSet := ctx.Deadline()
+		if deadlineSet{
+			duration := time.Duration(timeout.Second()) * time.Second
+			m.dbSession.SetSocketTimeout( duration)
+			m.dbSession.SetSyncTimeout(duration)
+		}
+
+		thisSession := m.dbSession.Copy()
+		defer thisSession.Close()
+
 		// put aggregated data into MongoDB
 		for orgID, filteredData := range analyticsPerOrg {
 			collectionName, collErr := m.GetCollectionName(orgID)
@@ -236,9 +246,6 @@ func (m *MongoAggregatePump) WriteData(ctx context.Context, data []interface{}) 
 				}).Info("No OrgID for AnalyticsRecord, skipping")
 				continue
 			}
-
-			thisSession := m.dbSession.Copy()
-			defer thisSession.Close()
 
 			analyticsCollection := thisSession.DB("").C(collectionName)
 			indexCreateErr := m.ensureIndexes(analyticsCollection)
@@ -298,7 +305,7 @@ func (m *MongoAggregatePump) WriteData(ctx context.Context, data []interface{}) 
 				if err != nil {
 					log.Error("Couldn't find query doc!")
 				} else {
-					m.doMixedWrite(thisData, query)
+					m.doMixedWrite(thisSession, thisData, query)
 				}
 
 			}
@@ -308,9 +315,10 @@ func (m *MongoAggregatePump) WriteData(ctx context.Context, data []interface{}) 
 	return nil
 }
 
-func (m *MongoAggregatePump) doMixedWrite(changeDoc analytics.AnalyticsRecordAggregate, query bson.M) {
-	thisSession := m.dbSession.Copy()
+func (m *MongoAggregatePump) doMixedWrite(session *mgo.Session, changeDoc analytics.AnalyticsRecordAggregate, query bson.M) {
+	thisSession := session.Copy()
 	defer thisSession.Close()
+
 	analyticsCollection := thisSession.DB("").C(analytics.AgggregateMixedCollectionName)
 	m.ensureIndexes(analyticsCollection)
 
