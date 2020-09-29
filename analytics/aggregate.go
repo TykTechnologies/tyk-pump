@@ -336,6 +336,35 @@ func (f *AnalyticsRecordAggregate) AsTimeUpdate() bson.M {
 	return newUpdate
 }
 
+func (f *AnalyticsRecordAggregate) DiscardAggregations(fields []string) {
+	for _, field := range fields {
+		switch field {
+		case "APIID":
+			f.APIID = make(map[string]*Counter)
+		case "Errors":
+			f.Errors = make(map[string]*Counter)
+		case "Versions":
+			f.Versions = make(map[string]*Counter)
+		case "APIKeys":
+			f.APIKeys = make(map[string]*Counter)
+		case "OauthIDs":
+			f.OauthIDs = make(map[string]*Counter)
+		case "Geo":
+			f.Geo = make(map[string]*Counter)
+		case "Tags":
+			f.Tags = make(map[string]*Counter)
+		case "Endpoints":
+			f.Endpoints = make(map[string]*Counter)
+		case "KeyEndpoint":
+			f.KeyEndpoint = make(map[string]map[string]*Counter)
+		case "OauthEndpoint":
+			f.OauthEndpoint = make(map[string]map[string]*Counter)
+		case "ApiEndpoint":
+			f.ApiEndpoint = make(map[string]*Counter)
+		}
+	}
+}
+
 func doHash(in string) string {
 	sEnc := b64.StdEncoding.EncodeToString([]byte(in))
 	search := strings.TrimRight(sEnc, "=")

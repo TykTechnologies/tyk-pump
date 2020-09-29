@@ -35,6 +35,7 @@ type MongoAggregateConf struct {
 	IgnoreTagPrefixList     []string `mapstructure:"ignore_tag_prefix_list"`
 	ThresholdLenTagList     int      `mapstructure:"threshold_len_tag_list"`
 	StoreAnalyticsPerMinute bool     `mapstructure:"store_analytics_per_minute"`
+	IgnoreAggregationsList []string `mapstructure:"ignore_aggregations_list"`
 }
 
 func (m *MongoAggregatePump) New() Pump {
@@ -254,6 +255,10 @@ func (m *MongoAggregatePump) WriteData(ctx context.Context, data []interface{}) 
 				"timestamp": filteredData.TimeStamp,
 			}
 
+			if len(m.dbConf.IgnoreAggregationsList) > 0 {
+				filteredData.DiscardAggregations(m.dbConf.IgnoreAggregationsList)
+			}
+
 			updateDoc := filteredData.AsChange()
 
 			change := mgo.Change{
@@ -314,6 +319,10 @@ func (m *MongoAggregatePump) doMixedWrite(changeDoc analytics.AnalyticsRecordAgg
 	analyticsCollection := thisSession.DB("").C(analytics.AgggregateMixedCollectionName)
 	m.ensureIndexes(analyticsCollection)
 
+	if len(m.dbConf.IgnoreAggregationsList) > 0 {
+		changeDoc.DiscardAggregations(m.dbConf.IgnoreAggregationsList)
+	}
+	
 	avgChange := mgo.Change{
 		Update:    changeDoc,
 		ReturnNew: true,
