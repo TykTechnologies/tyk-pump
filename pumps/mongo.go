@@ -79,7 +79,6 @@ type MongoConf struct {
 	CollectionCapEnable       bool   `json:"collection_cap_enable" mapstructure:"collection_cap_enable"`
 }
 
-
 func loadCertficateAndKeyFromFile(path string) (*tls.Certificate, error) {
 	raw, err := ioutil.ReadFile(path)
 	if err != nil {
