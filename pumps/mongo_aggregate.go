@@ -149,7 +149,7 @@ func (m *MongoAggregatePump) Init(config interface{}) error {
 
 	log.WithFields(logrus.Fields{
 		"prefix": analytics.MongoAggregatePrefix,
-	}).Debug("MongoDB DB CS: ", m.dbConf.MongoURL)
+	}).Debug("MongoDB DB CS: ", m.dbConf.GetBlurredURL())
 
 	return nil
 }
