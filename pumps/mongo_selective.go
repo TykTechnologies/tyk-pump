@@ -83,7 +83,7 @@ func (m *MongoSelectivePump) Init(config interface{}) error {
 
 	log.WithFields(logrus.Fields{
 		"prefix": mongoSelectivePrefix,
-	}).Debug("MongoDB DB CS: ", m.dbConf.MongoURL)
+	}).Debug("MongoDB DB CS: ", m.dbConf.GetBlurredURL())
 
 	return nil
 }
