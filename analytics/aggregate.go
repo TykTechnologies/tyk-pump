@@ -81,7 +81,6 @@ type AnalyticsRecordAggregate struct {
 		Endpoints     []Counter
 		KeyEndpoint   map[string][]Counter `bson:"keyendpoints"`
 		OauthEndpoint map[string][]Counter `bson:"oauthendpoints"`
-		APIEndpoint   []Counter            `bson:"apiendpoints"`
 	}
 
 	KeyEndpoint   map[string]map[string]*Counter `bson:"keyendpoints"`
