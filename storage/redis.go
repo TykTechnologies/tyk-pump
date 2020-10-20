@@ -45,6 +45,7 @@ type RedisStorageConfig struct {
 	Hosts                      EnvMapString `mapstructure:"hosts"` // Deprecated: Use Addrs instead.
 	Addrs                      []string     `mapstructure:"addrs"`
 	MasterName                 string       `mapstructure:"master_name" json:"master_name"`
+	SentinelPassword           string       `mapstructure:"sentinel_password" json:"sentinel_password"`
 	Username                   string       `mapstructure:"username"`
 	Password                   string       `mapstructure:"password"`
 	Database                   int          `mapstructure:"database"`
@@ -103,16 +104,18 @@ func NewRedisClusterPool(forceReconnect bool, config RedisStorageConfig) redis.U
 
 	var client redis.UniversalClient
 	opts := &redis.UniversalOptions{
-		MasterName:   config.MasterName,
-		Addrs:        getRedisAddrs(config),
-		DB:           config.Database,
-		Password:     config.Password,
-		PoolSize:     maxActive,
-		IdleTimeout:  240 * time.Second,
-		ReadTimeout:  timeout,
-		WriteTimeout: timeout,
-		DialTimeout:  timeout,
-		TLSConfig:    tlsConfig,
+		MasterName:       config.MasterName,
+		SentinelPassword: config.SentinelPassword,
+		Addrs:            getRedisAddrs(config),
+		DB:               config.Database,
+		Username:         config.Username,
+		Password:         config.Password,
+		PoolSize:         maxActive,
+		IdleTimeout:      240 * time.Second,
+		ReadTimeout:      timeout,
+		WriteTimeout:     timeout,
+		DialTimeout:      timeout,
+		TLSConfig:        tlsConfig,
 	}
 
 	if opts.MasterName != "" {
