@@ -13,12 +13,13 @@ require (
 	github.com/beeker1121/goque v0.0.0-20170321141813-4044bc29b280 // indirect
 	github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869 // indirect
 	github.com/fatih/structs v1.1.0
-	github.com/go-redis/redis v6.15.6+incompatible
+	github.com/go-redis/redis/v8 v8.3.1
+	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/gocraft/health v0.0.0-20170925182251-8675af27fef0
 	github.com/gocraft/web v0.0.0-20190207150652-9707327fb69b
 	github.com/gomodule/redigo v0.0.0-20190226174433-b47395aa1766 // indirect
 	github.com/googleapis/gax-go v2.0.2+incompatible // indirect
-	github.com/influxdata/influxdb v0.0.0-20161118010201-b765a4b8c7d0
+	github.com/influxdata/influxdb v1.8.3
 	github.com/jehiah/go-strftime v0.0.0-20151206194810-2efbe75097a5 // indirect
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/lintianzhi/graylogd v0.0.0-20180503131252-dc68342f04dc // indirect
@@ -28,9 +29,7 @@ require (
 	github.com/moesif/moesifapi-go v1.0.5
 	github.com/olivere/elastic v6.2.31+incompatible // indirect
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus/client_golang v0.9.1
-	github.com/prometheus/common v0.2.0 // indirect
-	github.com/prometheus/procfs v0.0.0-20190209105433-f8d8b3f739bd // indirect
+	github.com/prometheus/client_golang v1.0.0
 	github.com/quipo/statsd v0.0.0-20160923160612-75b7afedf0d2
 	github.com/ricochet2200/go-disk-usage v0.0.0-20150921141558-f0d1b743428f // indirect
 	github.com/robertkowalski/graylog-golang v0.0.0-20151121031040-e5295cfa2827
