@@ -377,6 +377,8 @@ github.com/moesif/moesifapi-go v0.0.0-20170216233325-69242ec5159a h1:/PkqjUozGqW
 github.com/moesif/moesifapi-go v0.0.0-20170216233325-69242ec5159a/go.mod h1:HGxp2XZwvI6M063YPSybdTrNYNUTYiJ8W+0sgl+6o2c=
 github.com/moesif/moesifapi-go v1.0.5 h1:SQAQvzAD8Qbvjj2ZFhIw1ERQWQ/F4njcXQ32s81Nv9E=
 github.com/moesif/moesifapi-go v1.0.5/go.mod h1:qlUk62wTdzP5a0NNoSsSUSwdYRSOcf+gyxv+ffZ/8eQ=
+github.com/moesif/moesifapi-go v1.0.6 h1:r3ppy6p5jxzdauziRI3lMtcjDpVH/zW2an2rYXLkNWE=
+github.com/moesif/moesifapi-go v1.0.6/go.mod h1:wRGgVy0QeiCgnjFEiD13HD2Aa7reI8nZXtCnddNnZGs=
 github.com/mschoch/smat v0.0.0-20160514031455-90eadee771ae/go.mod h1:qAyveg+e4CE+eKJXWVjKXM4ck2QobLqTDytGJbLLhJg=
 github.com/mwitkow/go-conntrack v0.0.0-20161129095857-cc309e4a2223/go.mod h1:qRWi+5nqEBWmkhHvq77mSJWrCKwh8bxhgT7d/eI7P4U=
 github.com/newrelic/go-agent v2.13.0+incompatible/go.mod h1:a8Fv1b/fYhFSReoTU6HDkTYIMZeSVNffmoS726Y0LzQ=
@@ -613,6 +615,8 @@ golang.org/x/net v0.0.0-20200602114024-627f9648deb9 h1:pNX+40auqi2JqRfOP1akLGtYc
 golang.org/x/net v0.0.0-20200602114024-627f9648deb9/go.mod h1:qpuaurCH72eLCgpAm/N6yyVIVM9cpaDIP3A8BGJEC5A=
 golang.org/x/net v0.0.0-20201006153459-a7d1128ccaa0 h1:wBouT66WTYFXdxfVdz9sVWARVd/2vfGcmI45D2gj45M=
 golang.org/x/net v0.0.0-20201006153459-a7d1128ccaa0/go.mod h1:sp8m0HH+o8qH0wwXwYZr8TS3Oi6o0r6Gce1SSxlDquU=
+golang.org/x/net v0.0.0-20201031054903-ff519b6c9102 h1:42cLlJJdEh+ySyeUUbEQ5bsTiq8voBeTuweGVkY6Puw=
+golang.org/x/net v0.0.0-20201031054903-ff519b6c9102/go.mod h1:sp8m0HH+o8qH0wwXwYZr8TS3Oi6o0r6Gce1SSxlDquU=
 golang.org/x/oauth2 v0.0.0-20180821212333-d2e6202438be h1:vEDujvNQGv4jgYKudGeI/+DAX4Jffq6hpD55MmoEvKs=
 golang.org/x/oauth2 v0.0.0-20180821212333-d2e6202438be/go.mod h1:N/0e6XlmueqKjAGxoOufVs8QHGRruUQn6yWY3a++T0U=
 golang.org/x/oauth2 v0.0.0-20190226205417-e64efc72b421/go.mod h1:gOpvHmFTYa4IltrdGE7lF6nIHvwfUNPOp7c8zoXwtLw=

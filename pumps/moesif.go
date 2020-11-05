@@ -51,6 +51,10 @@ type MoesifConf struct {
 	DisableCaptureResponseBody bool     `mapstructure:"disable_capture_response_body"`
 	UserIDHeader               string   `mapstructure:"user_id_header"`
 	CompanyIDHeader            string   `mapstructure:"company_id_header"`
+	APIEndpoint                string   `mapstructure:"api_endpoint"`
+	EventQueueSize             int      `mapstructure:"event_queue_size"`
+	BatchSize                  int      `mapstructure:"batch_size"`
+	TimerWakeUpSeconds         int      `mapstructure:"timer_wake_up_seconds"`
 }
 
 func (p *MoesifPump) New() Pump {
@@ -209,7 +213,7 @@ func (p *MoesifPump) Init(config interface{}) error {
 		}).Fatal("Failed to decode configuration: ", loadConfigErr)
 	}
 
-	api := moesifapi.NewAPI(p.moesifConf.ApplicationID)
+	api := moesifapi.NewAPI(p.moesifConf.ApplicationID, &p.moesifConf.APIEndpoint, p.moesifConf.EventQueueSize, p.moesifConf.BatchSize, p.moesifConf.TimerWakeUpSeconds)
 	p.moesifAPI = api
 
 	// Default samplingPercentage and DateTime

@@ -26,7 +26,7 @@ require (
 	github.com/logzio/logzio-go v0.0.0-20190331100143-1138f714b3b6
 	github.com/lonelycode/mgohacks v0.0.0-20150820024025-f9c291f7e57e
 	github.com/mitchellh/mapstructure v1.1.2
-	github.com/moesif/moesifapi-go v1.0.5
+	github.com/moesif/moesifapi-go v1.0.6
 	github.com/olivere/elastic v6.2.31+incompatible // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.0.0
