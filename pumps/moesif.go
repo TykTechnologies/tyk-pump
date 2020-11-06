@@ -42,19 +42,17 @@ type rawDecoded struct {
 var moesifPrefix = "moesif-pump"
 
 type MoesifConf struct {
-	ApplicationID              string   `mapstructure:"application_id"`
-	RequestHeaderMasks         []string `mapstructure:"request_header_masks"`
-	ResponseHeaderMasks        []string `mapstructure:"response_header_masks"`
-	RequestBodyMasks           []string `mapstructure:"request_body_masks"`
-	ResponseBodyMasks          []string `mapstructure:"response_body_masks"`
-	DisableCaptureRequestBody  bool     `mapstructure:"disable_capture_request_body"`
-	DisableCaptureResponseBody bool     `mapstructure:"disable_capture_response_body"`
-	UserIDHeader               string   `mapstructure:"user_id_header"`
-	CompanyIDHeader            string   `mapstructure:"company_id_header"`
-	APIEndpoint                string   `mapstructure:"api_endpoint"`
-	EventQueueSize             int      `mapstructure:"event_queue_size"`
-	BatchSize                  int      `mapstructure:"batch_size"`
-	TimerWakeUpSeconds         int      `mapstructure:"timer_wake_up_seconds"`
+	ApplicationID              string                 `mapstructure:"application_id"`
+	RequestHeaderMasks         []string               `mapstructure:"request_header_masks"`
+	ResponseHeaderMasks        []string               `mapstructure:"response_header_masks"`
+	RequestBodyMasks           []string               `mapstructure:"request_body_masks"`
+	ResponseBodyMasks          []string               `mapstructure:"response_body_masks"`
+	DisableCaptureRequestBody  bool                   `mapstructure:"disable_capture_request_body"`
+	DisableCaptureResponseBody bool                   `mapstructure:"disable_capture_response_body"`
+	UserIDHeader               string                 `mapstructure:"user_id_header"`
+	CompanyIDHeader            string                 `mapstructure:"company_id_header"`
+	EnableBulk                 bool                   `mapstructure:"enable_bulk"`
+	BulkConfig                 map[string]interface{} `mapstructure:"bulk_config"`
 }
 
 func (p *MoesifPump) New() Pump {
@@ -213,7 +211,35 @@ func (p *MoesifPump) Init(config interface{}) error {
 		}).Fatal("Failed to decode configuration: ", loadConfigErr)
 	}
 
-	api := moesifapi.NewAPI(p.moesifConf.ApplicationID, &p.moesifConf.APIEndpoint, p.moesifConf.EventQueueSize, p.moesifConf.BatchSize, p.moesifConf.TimerWakeUpSeconds)
+	var apiEndpoint string
+	var batchSize int
+	var eventQueueSize int
+	var timerWakeupSeconds int
+
+	if p.moesifConf.EnableBulk && len(p.moesifConf.BulkConfig) != 0 {
+
+		// Try to fetch the event queue size from the bulk config
+		if endpoint, found := p.moesifConf.BulkConfig["api_endpoint"].(string); found {
+			apiEndpoint = endpoint
+		}
+
+		// Try to fetch the event queue size from the bulk config
+		if queueSize, found := p.moesifConf.BulkConfig["event_queue_size"].(int); found {
+			eventQueueSize = queueSize
+		}
+
+		// Try to fetch the batch size from the bulk config
+		if batch, found := p.moesifConf.BulkConfig["batch_size"].(int); found {
+			batchSize = batch
+		}
+
+		// Try to fetch the timer wake up seconds from the bulk config
+		if timer, found := p.moesifConf.BulkConfig["timer_wake_up_seconds"].(int); found {
+			timerWakeupSeconds = timer
+		}
+	}
+
+	api := moesifapi.NewAPI(p.moesifConf.ApplicationID, &apiEndpoint, eventQueueSize, batchSize, timerWakeupSeconds)
 	p.moesifAPI = api
 
 	// Default samplingPercentage and DateTime
