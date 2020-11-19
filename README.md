@@ -63,7 +63,8 @@ Create a `pump.conf` file:
       "meta": {
 	"mongo_url": "mongodb://username:password@{hostname:port},{hostname:port}/{db_name}",
 	"use_mixed_collection": true,
-	"store_analytics_per_minute": false
+	"store_analytics_per_minute": false,
+	"track_all_paths": false
       }
     },
     "csv": {
