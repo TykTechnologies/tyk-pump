@@ -5,6 +5,7 @@ go 1.12
 require (
 	github.com/DataDog/datadog-go v0.0.0-20190425163447-40bafcb5f6c1
 	github.com/Sirupsen/logrus v0.11.5-0.20170308203635-1deb2db2a6ff
+	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d // indirect
 	github.com/TykTechnologies/concurrent-map v0.0.0-20160908201409-7de59d53fd5c // indirect
 	github.com/TykTechnologies/logrus v0.0.0-20161201171239-55ff0f4b9b3d
 	github.com/TykTechnologies/logrus-prefixed-formatter v0.0.0-20161201171121-85209afb73a6
@@ -13,6 +14,7 @@ require (
 	github.com/beeker1121/goque v0.0.0-20170321141813-4044bc29b280 // indirect
 	github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869 // indirect
 	github.com/fatih/structs v1.1.0
+	github.com/go-ole/go-ole v1.2.4 // indirect
 	github.com/go-redis/redis/v8 v8.3.1
 	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/gocraft/health v0.0.0-20170925182251-8675af27fef0
@@ -23,7 +25,7 @@ require (
 	github.com/jehiah/go-strftime v0.0.0-20151206194810-2efbe75097a5 // indirect
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/lintianzhi/graylogd v0.0.0-20180503131252-dc68342f04dc // indirect
-	github.com/logzio/logzio-go v0.0.0-20190331100143-1138f714b3b6
+	github.com/logzio/logzio-go v0.0.0-20200316143903-ac8fc0e2910e
 	github.com/lonelycode/mgohacks v0.0.0-20150820024025-f9c291f7e57e
 	github.com/mitchellh/mapstructure v1.1.2
 	github.com/moesif/moesifapi-go v1.0.5
@@ -37,6 +39,7 @@ require (
 	github.com/segmentio/analytics-go v0.0.0-20160711225931-bdb0aeca8a99
 	github.com/segmentio/backo-go v0.0.0-20160424052352-204274ad699c // indirect
 	github.com/segmentio/kafka-go v0.3.6
+	github.com/shirou/gopsutil v3.20.11+incompatible // indirect
 	github.com/sirupsen/logrus v1.4.2
 	github.com/syndtr/goleveldb v0.0.0-20190318030020-c3a204f8e965 // indirect
 	github.com/xtgo/uuid v0.0.0-20140804021211-a0b114877d4c // indirect
