@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"strings"
 	"sync"
 	"time"
 
@@ -13,7 +12,6 @@ import (
 	msgpack "gopkg.in/vmihailenco/msgpack.v2"
 
 	"github.com/TykTechnologies/logrus"
-	prefixed "github.com/TykTechnologies/logrus-prefixed-formatter"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/TykTechnologies/tyk-pump/analytics/demo"
 	logger "github.com/TykTechnologies/tyk-pump/logger"
@@ -48,11 +46,10 @@ func Init() {
 	SystemConfig = TykPumpConfiguration{}
 
 	kingpin.Parse()
-	log.Formatter = new(prefixed.TextFormatter)
 
 	envDemo := os.Getenv("TYK_PMP_BUILDDEMODATA")
 	if envDemo != "" {
-		log.Warning("Demo mode active via environemnt variable")
+		log.Warning("Demo mode active via environment variable")
 		demoMode = &envDemo
 	}
 
@@ -61,25 +58,6 @@ func Init() {
 	}).Info("## Tyk Analytics Pump, ", VERSION, " ##")
 
 	LoadConfig(conf, &SystemConfig)
-
-	// If no environment variable is set, check the configuration file:
-	if os.Getenv("TYK_LOGLEVEL") == "" {
-		level := strings.ToLower(SystemConfig.LogLevel)
-		switch level {
-		case "", "info":
-			// default, do nothing
-		case "error":
-			log.Level = logrus.ErrorLevel
-		case "warn":
-			log.Level = logrus.WarnLevel
-		case "debug":
-			log.Level = logrus.DebugLevel
-		default:
-			log.WithFields(logrus.Fields{
-				"prefix": "main",
-			}).Fatalf("Invalid log level %q specified in config, must be error, warn, debug or info. ", level)
-		}
-	}
 
 	// If debug mode flag is set, override previous log level parameter:
 	if *debugMode {
