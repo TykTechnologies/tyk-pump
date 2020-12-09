@@ -336,6 +336,36 @@ func (f *AnalyticsRecordAggregate) AsTimeUpdate() bson.M {
 	return newUpdate
 }
 
+//DiscardAggregations this method discard the aggregations of X field specified in the aggregated pump configuration
+func (f *AnalyticsRecordAggregate) DiscardAggregations(fields []string) {
+	for _, field := range fields {
+		switch field {
+		case "APIID", "apiid":
+			f.APIID = make(map[string]*Counter)
+		case "Errors", "errors":
+			f.Errors = make(map[string]*Counter)
+		case "Versions", "versions":
+			f.Versions = make(map[string]*Counter)
+		case "APIKeys", "apikeys":
+			f.APIKeys = make(map[string]*Counter)
+		case "OauthIDs", "oauthids":
+			f.OauthIDs = make(map[string]*Counter)
+		case "Geo", "geo":
+			f.Geo = make(map[string]*Counter)
+		case "Tags", "tags":
+			f.Tags = make(map[string]*Counter)
+		case "Endpoints", "endpoints":
+			f.Endpoints = make(map[string]*Counter)
+		case "KeyEndpoint", "keyendpint":
+			f.KeyEndpoint = make(map[string]map[string]*Counter)
+		case "OauthEndpoint", "oauthendpoint":
+			f.OauthEndpoint = make(map[string]map[string]*Counter)
+		case "ApiEndpoint", "apiendpoint":
+			f.ApiEndpoint = make(map[string]*Counter)
+		}
+	}
+}
+
 func doHash(in string) string {
 	sEnc := b64.StdEncoding.EncodeToString([]byte(in))
 	search := strings.TrimRight(sEnc, "=")
