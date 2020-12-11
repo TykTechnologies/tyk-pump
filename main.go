@@ -133,6 +133,9 @@ func initialisePumps() {
 			}).Error("Pump load error (skipping): ", err)
 		} else {
 			thisPmp := pmpType.New()
+			thisPmp.SetFilters(pmp.Filters)
+			thisPmp.SetTimeout(pmp.Timeout)
+			thisPmp.SetOmitDetailedRecording(pmp.OmitDetailedRecording)
 			initErr := thisPmp.Init(pmp.Meta)
 			if initErr != nil {
 				log.Error("Pump init error (skipping): ", initErr)
@@ -140,9 +143,6 @@ func initialisePumps() {
 				log.WithFields(logrus.Fields{
 					"prefix": mainPrefix,
 				}).Info("Init Pump: ", thisPmp.GetName())
-				thisPmp.SetFilters(pmp.Filters)
-				thisPmp.SetTimeout(pmp.Timeout)
-				thisPmp.SetOmitDetailedRecording(pmp.OmitDetailedRecording)
 				Pumps[i] = thisPmp
 			}
 		}

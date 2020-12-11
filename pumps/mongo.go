@@ -464,9 +464,11 @@ func (m *MongoPump) WriteData(ctx context.Context, data []interface{}) error {
 		}).Debug("Connecting to analytics store")
 		m.connect()
 	}
+	accumulateSet := m.AccumulateSet(data)
 
-	for _, dataSet := range m.AccumulateSet(data) {
-		go func(dataSet []interface{}) {
+	errCh := make(chan error, len(accumulateSet))
+	for _, dataSet := range accumulateSet {
+		go func(dataSet []interface{}, errCh chan error) {
 			sess := m.dbSession.Copy()
 			defer sess.Close()
 
@@ -482,8 +484,19 @@ func (m *MongoPump) WriteData(ctx context.Context, data []interface{}) error {
 				if strings.Contains(strings.ToLower(err.Error()), "closed explicitly") {
 					log.Warning("--> Detected connection failure!")
 				}
+				errCh <- err
 			}
-		}(dataSet)
+			errCh <- nil
+		}(dataSet, errCh)
+	}
+
+	for range accumulateSet {
+		select {
+		case err := <-errCh:
+			if err != nil {
+				return err
+			}
+		}
 	}
 
 	return nil
