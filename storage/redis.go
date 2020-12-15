@@ -1,13 +1,14 @@
 package storage
 
 import (
+	"context"
 	"crypto/tls"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/TykTechnologies/logrus"
-	"github.com/go-redis/redis"
+	"github.com/go-redis/redis/v8"
 
 	"github.com/kelseyhightower/envconfig"
 	"github.com/mitchellh/mapstructure"
@@ -18,6 +19,7 @@ import (
 var redisClusterSingleton redis.UniversalClient
 var redisLogPrefix = "redis"
 var ENV_REDIS_PREFIX = "TYK_PMP_REDIS"
+var ctx = context.Background()
 
 type EnvMapString map[string]string
 
@@ -43,6 +45,7 @@ type RedisStorageConfig struct {
 	Hosts                      EnvMapString `mapstructure:"hosts"` // Deprecated: Use Addrs instead.
 	Addrs                      []string     `mapstructure:"addrs"`
 	MasterName                 string       `mapstructure:"master_name" json:"master_name"`
+	SentinelPassword           string       `mapstructure:"sentinel_password" json:"sentinel_password"`
 	Username                   string       `mapstructure:"username"`
 	Password                   string       `mapstructure:"password"`
 	Database                   int          `mapstructure:"database"`
@@ -100,28 +103,30 @@ func NewRedisClusterPool(forceReconnect bool, config RedisStorageConfig) redis.U
 	}
 
 	var client redis.UniversalClient
-	opts := &RedisOpts{
-		MasterName:   config.MasterName,
-		Addrs:        getRedisAddrs(config),
-		DB:           config.Database,
-		Password:     config.Password,
-		PoolSize:     maxActive,
-		IdleTimeout:  240 * time.Second,
-		ReadTimeout:  timeout,
-		WriteTimeout: timeout,
-		DialTimeout:  timeout,
-		TLSConfig:    tlsConfig,
+	opts := &redis.UniversalOptions{
+		MasterName:       config.MasterName,
+		SentinelPassword: config.SentinelPassword,
+		Addrs:            getRedisAddrs(config),
+		DB:               config.Database,
+		Username:         config.Username,
+		Password:         config.Password,
+		PoolSize:         maxActive,
+		IdleTimeout:      240 * time.Second,
+		ReadTimeout:      timeout,
+		WriteTimeout:     timeout,
+		DialTimeout:      timeout,
+		TLSConfig:        tlsConfig,
 	}
 
 	if opts.MasterName != "" {
 		log.Info("--> [REDIS] Creating sentinel-backed failover client")
-		client = redis.NewFailoverClient(opts.failover())
+		client = redis.NewFailoverClient(opts.Failover())
 	} else if config.EnableCluster {
 		log.Info("--> [REDIS] Creating cluster client")
-		client = redis.NewClusterClient(opts.cluster())
+		client = redis.NewClusterClient(opts.Cluster())
 	} else {
 		log.Info("--> [REDIS] Creating single-node client")
-		client = redis.NewClient(opts.simple())
+		client = redis.NewClient(opts.Simple())
 	}
 
 	redisClusterSingleton = client
@@ -145,109 +150,6 @@ func getRedisAddrs(config RedisStorageConfig) (addrs []string) {
 	}
 
 	return addrs
-}
-
-// RedisOpts is the overriden type of redis.UniversalOptions. simple() and cluster() functions are not public
-// in redis library. Therefore, they are redefined in here to use in creation of new redis cluster logic.
-// We don't want to use redis.NewUniversalClient() logic.
-type RedisOpts redis.UniversalOptions
-
-func (o *RedisOpts) cluster() *redis.ClusterOptions {
-	if len(o.Addrs) == 0 {
-		o.Addrs = []string{"127.0.0.1:6379"}
-	}
-
-	return &redis.ClusterOptions{
-		Addrs:     o.Addrs,
-		OnConnect: o.OnConnect,
-
-		Password: o.Password,
-
-		MaxRedirects:   o.MaxRedirects,
-		ReadOnly:       o.ReadOnly,
-		RouteByLatency: o.RouteByLatency,
-		RouteRandomly:  o.RouteRandomly,
-
-		MaxRetries:      o.MaxRetries,
-		MinRetryBackoff: o.MinRetryBackoff,
-		MaxRetryBackoff: o.MaxRetryBackoff,
-
-		DialTimeout:        o.DialTimeout,
-		ReadTimeout:        o.ReadTimeout,
-		WriteTimeout:       o.WriteTimeout,
-		PoolSize:           o.PoolSize,
-		MinIdleConns:       o.MinIdleConns,
-		MaxConnAge:         o.MaxConnAge,
-		PoolTimeout:        o.PoolTimeout,
-		IdleTimeout:        o.IdleTimeout,
-		IdleCheckFrequency: o.IdleCheckFrequency,
-
-		TLSConfig: o.TLSConfig,
-	}
-}
-
-func (o *RedisOpts) simple() *redis.Options {
-	addr := "127.0.0.1:6379"
-	if len(o.Addrs) > 0 {
-		addr = o.Addrs[0]
-	}
-
-	return &redis.Options{
-		Addr:      addr,
-		OnConnect: o.OnConnect,
-
-		DB:       o.DB,
-		Password: o.Password,
-
-		MaxRetries:      o.MaxRetries,
-		MinRetryBackoff: o.MinRetryBackoff,
-		MaxRetryBackoff: o.MaxRetryBackoff,
-
-		DialTimeout:  o.DialTimeout,
-		ReadTimeout:  o.ReadTimeout,
-		WriteTimeout: o.WriteTimeout,
-
-		PoolSize:           o.PoolSize,
-		MinIdleConns:       o.MinIdleConns,
-		MaxConnAge:         o.MaxConnAge,
-		PoolTimeout:        o.PoolTimeout,
-		IdleTimeout:        o.IdleTimeout,
-		IdleCheckFrequency: o.IdleCheckFrequency,
-
-		TLSConfig: o.TLSConfig,
-	}
-}
-
-func (o *RedisOpts) failover() *redis.FailoverOptions {
-	if len(o.Addrs) == 0 {
-		o.Addrs = []string{"127.0.0.1:26379"}
-	}
-
-	return &redis.FailoverOptions{
-		SentinelAddrs: o.Addrs,
-		MasterName:    o.MasterName,
-		OnConnect:     o.OnConnect,
-
-		DB:       o.DB,
-		Password: o.Password,
-
-		MaxRetries:      o.MaxRetries,
-		MinRetryBackoff: o.MinRetryBackoff,
-		MaxRetryBackoff: o.MaxRetryBackoff,
-
-		DialTimeout:  o.DialTimeout,
-		ReadTimeout:  o.ReadTimeout,
-		WriteTimeout: o.WriteTimeout,
-
-		PoolSize:           o.PoolSize,
-		MinIdleConns:       o.MinIdleConns,
-		MaxConnAge:         o.MaxConnAge,
-		PoolTimeout:        o.PoolTimeout,
-		IdleTimeout:        o.IdleTimeout,
-		IdleCheckFrequency: o.IdleCheckFrequency,
-
-		TLSConfig: o.TLSConfig,
-	}
 }
 
 func (r *RedisClusterStorageManager) GetName() string {
@@ -333,18 +235,17 @@ func (r *RedisClusterStorageManager) GetAndDeleteSet(keyName string, chunkSize i
 	}).Debug("Fixed keyname is: ", fixedKey)
 
 	var lrange *redis.StringSliceCmd
-	_, err := r.db.TxPipelined(func(pipe redis.Pipeliner) error {
-		lrange = pipe.LRange(fixedKey, 0, chunkSize-1)
+	_, err := r.db.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
+		lrange = pipe.LRange(ctx,fixedKey, 0, chunkSize-1)
 
 		if chunkSize == 0 {
-			pipe.Del(fixedKey)
+			pipe.Del(ctx,fixedKey)
 		} else {
-			pipe.LTrim(fixedKey, chunkSize, -1)
+			pipe.LTrim(ctx,fixedKey, chunkSize, -1)
 
 			// extend expiry after successful LTRIM
-			pipe.Expire(fixedKey, expire)
+			pipe.Expire(ctx, fixedKey, expire)
 		}
-
 		return nil
 	})
 
@@ -375,7 +276,7 @@ func (r *RedisClusterStorageManager) SetKey(keyName, session string, timeout int
 	log.Debug("[STORE] Setting key: ", r.fixKey(keyName))
 
 	r.ensureConnection()
-	err := r.db.Set(r.fixKey(keyName), session, 0).Err()
+	err := r.db.Set(ctx, r.fixKey(keyName), session, 0).Err()
 	if timeout > 0 {
 		if err := r.SetExp(keyName, timeout); err != nil {
 			return err
@@ -389,7 +290,7 @@ func (r *RedisClusterStorageManager) SetKey(keyName, session string, timeout int
 }
 
 func (r *RedisClusterStorageManager) SetExp(keyName string, timeout int64) error {
-	err := r.db.Expire(r.fixKey(keyName), time.Duration(timeout)*time.Second).Err()
+	err := r.db.Expire(ctx, r.fixKey(keyName), time.Duration(timeout)*time.Second).Err()
 	if err != nil {
 		log.Error("Could not EXPIRE key: ", err)
 	}

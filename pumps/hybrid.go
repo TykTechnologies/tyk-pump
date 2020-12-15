@@ -3,8 +3,8 @@ package pumps
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
-
 	"github.com/TykTechnologies/tyk-pump/analytics"
 
 	"github.com/TykTechnologies/logrus"
@@ -44,7 +44,8 @@ type HybridPump struct {
 	trackAllPaths          bool
 	storeAnalyticPerMinute bool
 	ignoreTagPrefixList    []string
-	timeout                int
+	CommonPumpConfig
+	rpcConfig rpc.Config
 }
 
 func (p *HybridPump) GetName() string {
@@ -92,30 +93,17 @@ func (p *HybridPump) Init(config interface{}) error {
 		rpcConfig.RPCPoolSize = int(rpcPoolSize.(float64))
 	}
 
-	connected := rpc.Connect(
-		rpcConfig,
-		false,
-		dispatcherFuncs,
-		func(userKey string, groupID string) interface{} {
-			return GroupLoginRequest{
-				UserKey: userKey,
-				GroupID: groupID,
-			}
-		},
-		nil,
-		nil,
-	)
-	if !connected {
+	p.rpcConfig = rpcConfig
+	errConnect := p.connectRpc()
+	if errConnect != nil {
 		log.WithFields(logrus.Fields{
 			"prefix": hybridPrefix,
 		}).Fatal("Failed to connect to RPC server")
 	}
-
 	// check if we need to send aggregated analytics
 	if aggregated, ok := meta["aggregated"]; ok {
 		p.aggregated = aggregated.(bool)
 	}
-
 	if p.aggregated {
 		if trackAllPaths, ok := meta["track_all_paths"]; ok {
 			p.trackAllPaths = trackAllPaths.(bool)
@@ -138,12 +126,45 @@ func (p *HybridPump) Init(config interface{}) error {
 	return nil
 }
 
+func (p *HybridPump) connectRpc() error {
+	connected := rpc.Connect(
+		p.rpcConfig,
+		false,
+		dispatcherFuncs,
+		func(userKey string, groupID string) interface{} {
+			return GroupLoginRequest{
+				UserKey: userKey,
+				GroupID: groupID,
+			}
+		},
+		nil,
+		nil,
+	)
+
+	if !connected {
+		return errors.New("failed to connect to RPC server")
+	}
+	return nil
+}
+
 func (p *HybridPump) WriteData(ctx context.Context, data []interface{}) error {
 	if len(data) == 0 {
 		return nil
 	}
 
-	if _, err := rpc.FuncClientSingleton("Ping", nil); err != nil {
+	if !rpc.Login() {
+		log.WithFields(logrus.Fields{
+			"prefix": hybridPrefix,
+		}).Error("Failed to login to RPC server, trying to reconnect...")
+		if errConnect := p.connectRpc(); errConnect != nil {
+			log.WithFields(logrus.Fields{
+				"prefix": hybridPrefix,
+			}).Error("Failed to connect to RPC server")
+			return errConnect
+		}
+	}
+	_, err := rpc.FuncClientSingleton("Ping", nil)
+	if err != nil {
 		log.WithFields(logrus.Fields{
 			"prefix": hybridPrefix,
 		}).WithError(err).Error("Failed to ping RPC server")
@@ -160,7 +181,6 @@ func (p *HybridPump) WriteData(ctx context.Context, data []interface{}) error {
 			}).WithError(err).Error("Failed to marshal analytics data")
 			return err
 		}
-
 		if _, err := rpc.FuncClientSingleton("PurgeAnalyticsData", string(jsonData)); err != nil {
 			log.WithFields(logrus.Fields{
 				"prefix": hybridPrefix,
@@ -189,12 +209,4 @@ func (p *HybridPump) WriteData(ctx context.Context, data []interface{}) error {
 	}
 
 	return nil
-}
-
-func (p *HybridPump) SetTimeout(timeout int) {
-	p.timeout = timeout
-}
-
-func (p *HybridPump) GetTimeout() int {
-	return p.timeout
 }

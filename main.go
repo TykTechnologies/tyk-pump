@@ -41,11 +41,10 @@ var (
 	version            = kingpin.Version(VERSION)
 )
 
-func init() {
+func Init() {
 	SystemConfig = TykPumpConfiguration{}
 
 	kingpin.Parse()
-
 	log.Formatter = new(prefixed.TextFormatter)
 
 	envDemo := os.Getenv("TYK_PMP_BUILDDEMODATA")
@@ -83,6 +82,7 @@ func init() {
 	if *debugMode {
 		log.Level = logrus.DebugLevel
 	}
+
 }
 
 func setupAnalyticsStore() {
@@ -137,7 +137,9 @@ func initialisePumps() {
 				log.WithFields(logrus.Fields{
 					"prefix": mainPrefix,
 				}).Info("Init Pump: ", thisPmp.GetName())
+				thisPmp.SetFilters(pmp.Filters)
 				thisPmp.SetTimeout(pmp.Timeout)
+				thisPmp.SetOmitDetailedRecording(pmp.OmitDetailedRecording)
 				Pumps[i] = thisPmp
 			}
 		}
@@ -157,7 +159,7 @@ func initialisePumps() {
 
 }
 
-func StartPurgeLoop(secInterval, chunkSize int64, expire time.Duration) {
+func StartPurgeLoop(secInterval int, chunkSize int64, expire time.Duration,omitDetails bool) {
 	for range time.Tick(time.Duration(secInterval) * time.Second) {
 		job := instrument.NewJob("PumpRecordsPurge")
 
@@ -179,6 +181,10 @@ func StartPurgeLoop(secInterval, chunkSize int64, expire time.Duration) {
 						"prefix": mainPrefix,
 					}).Error("Couldn't unmarshal analytics data:", err)
 				} else {
+					if omitDetails {
+						decoded.RawRequest = ""
+						decoded.RawResponse = ""
+					}
 					keys[i] = interface{}(decoded)
 					job.Event("record")
 				}
@@ -213,6 +219,30 @@ func writeToPumps(keys []interface{}, job *health.Job, startTime time.Time, purg
 	}
 }
 
+func filterData(pump pumps.Pump, keys []interface{}) []interface{} {
+	filters := pump.GetFilters()
+	if !filters.HasFilter() && !pump.GetOmitDetailedRecording() {
+		return keys
+	}
+	filteredKeys := keys[:]
+	newLenght := 0
+
+	for _, key := range filteredKeys {
+		decoded := key.(analytics.AnalyticsRecord)
+		if pump.GetOmitDetailedRecording() {
+			decoded.RawRequest = ""
+			decoded.RawResponse = ""
+		}
+		if filters.ShouldFilter(decoded) {
+			continue
+		}
+		filteredKeys[newLenght] = decoded
+		newLenght++
+	}
+	filteredKeys = filteredKeys[:newLenght]
+	return filteredKeys
+}
+
 func execPumpWriting(wg *sync.WaitGroup, pmp pumps.Pump, keys *[]interface{}, purgeDelay int, startTime time.Time, job *health.Job) {
 	timer := time.AfterFunc(time.Duration(purgeDelay)*time.Second, func() {
 		if pmp.GetTimeout() == 0 {
@@ -227,6 +257,11 @@ func execPumpWriting(wg *sync.WaitGroup, pmp pumps.Pump, keys *[]interface{}, pu
 	})
 	defer timer.Stop()
 	defer wg.Done()
+
+	log.WithFields(logrus.Fields{
+		"prefix": mainPrefix,
+	}).Debug("Writing to: ", pmp.GetName())
+
 	ch := make(chan error, 1)
 	//Load pump timeout
 	timeout := pmp.GetTimeout()
@@ -242,7 +277,9 @@ func execPumpWriting(wg *sync.WaitGroup, pmp pumps.Pump, keys *[]interface{}, pu
 	defer cancel()
 
 	go func(ch chan error, ctx context.Context, pmp pumps.Pump, keys *[]interface{}) {
-		ch <- pmp.WriteData(ctx, *keys)
+		filteredKeys := filterData(pmp, *keys)
+
+		ch <- pmp.WriteData(ctx, filteredKeys)
 	}(ch, ctx, pmp, keys)
 
 	select {
@@ -264,15 +301,15 @@ func execPumpWriting(wg *sync.WaitGroup, pmp pumps.Pump, keys *[]interface{}, pu
 			}).Warning("Timeout Writing to: ", pmp.GetName())
 		}
 	}
-
 	if job != nil {
 		job.Timing("purge_time_"+pmp.GetName(), time.Since(startTime).Nanoseconds())
 	}
 }
 
 func main() {
+	Init()
 	SetupInstrumentation()
-	go server.ServeHealthCheck(SystemConfig.HealthEndpoint, SystemConfig.HealthPort)
+	go server.ServeHealthCheck(SystemConfig.HealthCheckEndpointName, SystemConfig.HealthCheckEndpointPort)
 
 	// Store version which will be read by dashboard and sent to
 	// vclu(version check and licecnse utilisation) service
@@ -311,5 +348,6 @@ func main() {
 		"prefix": mainPrefix,
 	}).Infof("Starting purge loop @%d, chunk size %d", SystemConfig.PurgeDelay, SystemConfig.PurgeChunk)
 
-	StartPurgeLoop(SystemConfig.PurgeDelay, SystemConfig.PurgeChunk, time.Duration(SystemConfig.StorageExpirationTime)*time.Second)
+
+	StartPurgeLoop(SystemConfig.PurgeDelay,SystemConfig.PurgeChunk, time.Duration(SystemConfig.StorageExpirationTime)*time.Second, SystemConfig.OmitDetailedRecording)
 }

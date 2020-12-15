@@ -14,7 +14,7 @@ import (
 type SegmentPump struct {
 	segmentClient *segment.Client
 	segmentConf   *SegmentConf
-	timeout       int
+	CommonPumpConfig
 }
 
 var segmentPrefix = "segment-pump"
@@ -96,12 +96,4 @@ func (s *SegmentPump) ToJSONMap(obj interface{}) (map[string]interface{}, error)
 	}
 
 	return properties, nil
-}
-
-func (s *SegmentPump) SetTimeout(timeout int) {
-	s.timeout = timeout
-}
-
-func (s *SegmentPump) GetTimeout() int {
-	return s.timeout
 }

@@ -14,8 +14,8 @@ import (
 )
 
 type InfluxPump struct {
-	dbConf  *InfluxConf
-	timeout int
+	dbConf *InfluxConf
+	CommonPumpConfig
 }
 
 var (
@@ -148,12 +148,4 @@ func (i *InfluxPump) WriteData(ctx context.Context, data []interface{}) error {
 	c.Write(bp)
 
 	return nil
-}
-
-func (i *InfluxPump) SetTimeout(timeout int) {
-	i.timeout = timeout
-}
-
-func (i *InfluxPump) GetTimeout() int {
-	return i.timeout
 }

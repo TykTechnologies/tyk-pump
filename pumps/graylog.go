@@ -13,9 +13,9 @@ import (
 )
 
 type GraylogPump struct {
-	client  *gelf.Gelf
-	conf    *GraylogConf
-	timeout int
+	client *gelf.Gelf
+	conf   *GraylogConf
+	CommonPumpConfig
 }
 
 type GraylogConf struct {
@@ -149,12 +149,4 @@ func (p *GraylogPump) WriteData(ctx context.Context, data []interface{}) error {
 		p.client.Log(string(gelfString))
 	}
 	return nil
-}
-
-func (p *GraylogPump) SetTimeout(timeout int) {
-	p.timeout = timeout
-}
-
-func (p *GraylogPump) GetTimeout() int {
-	return p.timeout
 }

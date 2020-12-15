@@ -22,10 +22,10 @@ const (
 )
 
 type DogStatsdPump struct {
-	conf    *DogStatsdConf
-	client  *statsd.Client
-	log     *logrus.Entry
-	timeout int
+	conf   *DogStatsdConf
+	client *statsd.Client
+	log    *logrus.Entry
+	CommonPumpConfig
 }
 
 type DogStatsdConf struct {
@@ -147,12 +147,4 @@ func (s *DogStatsdPump) WriteData(ctx context.Context, data []interface{}) error
 	}
 
 	return nil
-}
-
-func (s *DogStatsdPump) SetTimeout(timeout int) {
-	s.timeout = timeout
-}
-
-func (s *DogStatsdPump) GetTimeout() int {
-	return s.timeout
 }

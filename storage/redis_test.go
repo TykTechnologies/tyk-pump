@@ -1,7 +1,9 @@
 package storage
 
 import (
+	"context"
 	"fmt"
+	"github.com/go-redis/redis/v8"
 	"testing"
 	"time"
 )
@@ -41,22 +43,22 @@ func TestRedisAddressConfiguration(t *testing.T) {
 	})
 
 	t.Run("Default addresses", func(t *testing.T) {
-		opts := &RedisOpts{}
-		simpleOpts := opts.simple()
+		opts := &redis.UniversalOptions{}
+		simpleOpts := opts.Simple()
 
 		if simpleOpts.Addr != "127.0.0.1:6379" {
 			t.Fatal("Wrong default single node address")
 		}
 
 		opts.Addrs = []string{}
-		clusterOpts := opts.cluster()
+		clusterOpts := opts.Cluster()
 
 		if clusterOpts.Addrs[0] != "127.0.0.1:6379" || len(clusterOpts.Addrs) != 1 {
 			t.Fatal("Wrong default cluster mode address")
 		}
 
 		opts.Addrs = []string{}
-		failoverOpts := opts.failover()
+		failoverOpts := opts.Failover()
 
 		if failoverOpts.SentinelAddrs[0] != "127.0.0.1:26379" || len(failoverOpts.SentinelAddrs) != 1 {
 			t.Fatal("Wrong default sentinel mode address")
@@ -108,8 +110,9 @@ func TestRedisClusterStorageManager_GetAndDeleteSet(t *testing.T) {
 
 	for _, tt := range testData {
 		t.Run(fmt.Sprintf("in: %v", tt), func(t *testing.T) {
+			ctx := context.Background()
 			if tt.in != nil {
-				r.db.RPush(r.fixKey(mockKeyName), tt.in)
+				r.db.RPush(ctx,r.fixKey(mockKeyName), tt.in)
 			}
 
 			iterations := 1

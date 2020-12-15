@@ -22,7 +22,8 @@ type PrometheusPump struct {
 	KeyStatusMetrics    *prometheus.CounterVec
 	OauthStatusMetrics  *prometheus.CounterVec
 	TotalLatencyMetrics *prometheus.HistogramVec
-	timeout             int
+
+	CommonPumpConfig
 }
 
 type PrometheusConf struct {
@@ -131,12 +132,4 @@ func (p *PrometheusPump) WriteData(ctx context.Context, data []interface{}) erro
 		p.TotalLatencyMetrics.WithLabelValues("total", record.APIID).Observe(float64(record.RequestTime))
 	}
 	return nil
-}
-
-func (p *PrometheusPump) SetTimeout(timeout int) {
-	p.timeout = timeout
-}
-
-func (p *PrometheusPump) GetTimeout() int {
-	return p.timeout
 }

@@ -4,19 +4,24 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"time"
+
 	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/mitchellh/mapstructure"
 	"github.com/segmentio/kafka-go"
+	"github.com/segmentio/kafka-go/sasl"
+	"github.com/segmentio/kafka-go/sasl/plain"
+	"github.com/segmentio/kafka-go/sasl/scram"
+
 	"github.com/segmentio/kafka-go/snappy"
-	"time"
 )
 
 type KafkaPump struct {
 	kafkaConf    *KafkaConf
 	writerConfig kafka.WriterConfig
 	log          *logrus.Entry
-	timeout      int
+	CommonPumpConfig
 }
 
 type Json map[string]interface{}
@@ -34,6 +39,10 @@ type KafkaConf struct {
 	SSLInsecureSkipVerify bool              `mapstructure:"ssl_insecure_skip_verify"`
 	SSLCertFile           string            `mapstructure:"ssl_cert_file"`
 	SSLKeyFile            string            `mapstructure:"ssl_key_file"`
+	SASLMechanism         string            `mapstructure:"sasl_mechanism"`
+	Username              string            `mapstructure:"sasl_username"`
+	Password              string            `mapstructure:"sasl_password"`
+	Algorithm             string            `mapstructure:"sasl_algorithm"`
 }
 
 func (k *KafkaPump) New() Pump {
@@ -60,13 +69,47 @@ func (k *KafkaPump) Init(config interface{}) error {
 	var cert tls.Certificate
 	if k.kafkaConf.UseSSL {
 		if k.kafkaConf.SSLCertFile != "" && k.kafkaConf.SSLKeyFile != "" {
-			// Load certificates:
-			var err error
+			var cert tls.Certificate
+			k.log.Debug("Loading certificates for mTLS.")
 			cert, err = tls.LoadX509KeyPair(k.kafkaConf.SSLCertFile, k.kafkaConf.SSLKeyFile)
 			if err != nil {
+				k.log.Debug("Error loading mTLS certificates:", err)
 				return err
 			}
+			tlsConfig = &tls.Config{
+				Certificates:       []tls.Certificate{cert},
+				InsecureSkipVerify: k.kafkaConf.SSLInsecureSkipVerify,
+			}
+		} else if k.kafkaConf.SSLCertFile != "" || k.kafkaConf.SSLKeyFile != "" {
+			k.log.Error("Only one of ssl_cert_file and ssl_cert_key configuration option is setted, you should set both to enable mTLS.")
+		} else {
+			tlsConfig = &tls.Config{
+				InsecureSkipVerify: k.kafkaConf.SSLInsecureSkipVerify,
+			}
 		}
+	} else if k.kafkaConf.SASLMechanism != "" {
+		k.log.WithField("SASL-Mechanism", k.kafkaConf.SASLMechanism).Warn("SASL-Mechanism is setted but use_ssl is false.")
+	}
+
+	var mechanism sasl.Mechanism
+
+	switch k.kafkaConf.SASLMechanism {
+	case "":
+		break
+	case "PLAIN", "plain":
+		mechanism = plain.Mechanism{Username: k.kafkaConf.Username, Password: k.kafkaConf.Password}
+	case "SCRAM", "scram":
+		algorithm := scram.SHA256
+		if k.kafkaConf.Algorithm == "sha-512" || k.kafkaConf.Algorithm == "SHA-512" {
+			algorithm = scram.SHA512
+		}
+		var mechErr error
+		mechanism, mechErr = scram.Mechanism(algorithm, k.kafkaConf.Username, k.kafkaConf.Password)
+		if mechErr != nil {
+			k.log.Fatal("Failed initialize kafka mechanism  : ", mechErr)
+		}
+	default:
+		k.log.WithField("SASL-Mechanism", k.kafkaConf.SASLMechanism).Warn("Tyk pump doesn't support this SASL mechanism.")
 	}
 	tlsConfig = &tls.Config{
 		Certificates: []tls.Certificate{cert},
@@ -75,9 +118,10 @@ func (k *KafkaPump) Init(config interface{}) error {
 
 	//Kafka writer connection config
 	dialer := &kafka.Dialer{
-		Timeout:  k.kafkaConf.Timeout * time.Second,
-		ClientID: k.kafkaConf.ClientId,
-		TLS:      tlsConfig,
+		Timeout:       k.kafkaConf.Timeout * time.Second,
+		ClientID:      k.kafkaConf.ClientId,
+		TLS:           tlsConfig,
+		SASLMechanism: mechanism,
 	}
 
 	k.writerConfig.Brokers = k.kafkaConf.Broker
@@ -152,12 +196,4 @@ func (k *KafkaPump) write(ctx context.Context, messages []kafka.Message) error {
 	kafkaWriter := kafka.NewWriter(k.writerConfig)
 	defer kafkaWriter.Close()
 	return kafkaWriter.WriteMessages(ctx, messages...)
-}
-
-func (k *KafkaPump) SetTimeout(timeout int) {
-	k.timeout = timeout
-}
-
-func (k *KafkaPump) GetTimeout() int {
-	return k.timeout
 }

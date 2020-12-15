@@ -17,7 +17,7 @@ import (
 type CSVPump struct {
 	csvConf      *CSVConf
 	wroteHeaders bool
-	timeout      int
+	CommonPumpConfig
 }
 
 type CSVConf struct {
@@ -127,12 +127,4 @@ func (c *CSVPump) WriteData(ctx context.Context, data []interface{}) error {
 	}
 	writer.Flush()
 	return nil
-}
-
-func (c *CSVPump) SetTimeout(timeout int) {
-	c.timeout = timeout
-}
-
-func (c *CSVPump) GetTimeout() int {
-	return c.timeout
 }
