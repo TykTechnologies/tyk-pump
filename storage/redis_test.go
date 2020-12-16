@@ -112,7 +112,7 @@ func TestRedisClusterStorageManager_GetAndDeleteSet(t *testing.T) {
 		t.Run(fmt.Sprintf("in: %v", tt), func(t *testing.T) {
 			ctx := context.Background()
 			if tt.in != nil {
-				r.db.RPush(ctx,r.fixKey(mockKeyName), tt.in)
+				r.db.RPush(ctx, r.fixKey(mockKeyName), tt.in)
 			}
 
 			iterations := 1

@@ -159,7 +159,7 @@ func initialisePumps() {
 
 }
 
-func StartPurgeLoop(secInterval int, chunkSize int64, expire time.Duration,omitDetails bool) {
+func StartPurgeLoop(secInterval int, chunkSize int64, expire time.Duration, omitDetails bool) {
 	for range time.Tick(time.Duration(secInterval) * time.Second) {
 		job := instrument.NewJob("PumpRecordsPurge")
 
@@ -348,6 +348,5 @@ func main() {
 		"prefix": mainPrefix,
 	}).Infof("Starting purge loop @%d, chunk size %d", SystemConfig.PurgeDelay, SystemConfig.PurgeChunk)
 
-
-	StartPurgeLoop(SystemConfig.PurgeDelay,SystemConfig.PurgeChunk, time.Duration(SystemConfig.StorageExpirationTime)*time.Second, SystemConfig.OmitDetailedRecording)
+	StartPurgeLoop(SystemConfig.PurgeDelay, SystemConfig.PurgeChunk, time.Duration(SystemConfig.StorageExpirationTime)*time.Second, SystemConfig.OmitDetailedRecording)
 }

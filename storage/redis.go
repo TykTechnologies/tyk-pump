@@ -236,12 +236,12 @@ func (r *RedisClusterStorageManager) GetAndDeleteSet(keyName string, chunkSize i
 
 	var lrange *redis.StringSliceCmd
 	_, err := r.db.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
-		lrange = pipe.LRange(ctx,fixedKey, 0, chunkSize-1)
+		lrange = pipe.LRange(ctx, fixedKey, 0, chunkSize-1)
 
 		if chunkSize == 0 {
-			pipe.Del(ctx,fixedKey)
+			pipe.Del(ctx, fixedKey)
 		} else {
-			pipe.LTrim(ctx,fixedKey, chunkSize, -1)
+			pipe.LTrim(ctx, fixedKey, chunkSize, -1)
 
 			// extend expiry after successful LTRIM
 			pipe.Expire(ctx, fixedKey, expire)
