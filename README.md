@@ -248,6 +248,13 @@ Create a `pump.conf` file:
 ```
 
 Settings are the same as for the original `tyk.conf` for redis and for mongoDB.
+### Purge configuration
+
+`purge_delay` - The number of seconds the Pump waits between checking for analytics data and purge it from Redis.
+
+`purge_chunk` - The maximum number of records to pull from Redis at a time. If it's unset or 0, all the analytics records in Redis are pulled. If it's setted, `storage_expiration_time` is used to reset the analytics record TTL.
+
+`storage_expiration_time` - The number of seconds for the analytics records TTL. It only works if `purge_chunk` is enabled. Defaults to 60 seconds.
 
 ### Filter Records
 

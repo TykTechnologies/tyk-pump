@@ -8,10 +8,6 @@ import (
 
 	"os"
 
-	"github.com/gocraft/health"
-
-	msgpack "gopkg.in/vmihailenco/msgpack.v2"
-
 	"github.com/TykTechnologies/logrus"
 	prefixed "github.com/TykTechnologies/logrus-prefixed-formatter"
 	"github.com/TykTechnologies/tyk-pump/analytics"
@@ -20,8 +16,9 @@ import (
 	"github.com/TykTechnologies/tyk-pump/pumps"
 	"github.com/TykTechnologies/tyk-pump/server"
 	"github.com/TykTechnologies/tyk-pump/storage"
-
+	"github.com/gocraft/health"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
+	msgpack "gopkg.in/vmihailenco/msgpack.v2"
 )
 
 var SystemConfig TykPumpConfiguration
@@ -162,11 +159,11 @@ func initialisePumps() {
 
 }
 
-func StartPurgeLoop(secInterval int, omitDetails bool) {
+func StartPurgeLoop(secInterval int, chunkSize int64, expire time.Duration, omitDetails bool) {
 	for range time.Tick(time.Duration(secInterval) * time.Second) {
 		job := instrument.NewJob("PumpRecordsPurge")
 
-		AnalyticsValues := AnalyticsStore.GetAndDeleteSet(storage.ANALYTICS_KEYNAME)
+		AnalyticsValues := AnalyticsStore.GetAndDeleteSet(storage.ANALYTICS_KEYNAME, chunkSize, expire)
 		if len(AnalyticsValues) > 0 {
 			startTime := time.Now()
 
@@ -194,14 +191,13 @@ func StartPurgeLoop(secInterval int, omitDetails bool) {
 			}
 
 			// Send to pumps
-			writeToPumps(keys, job, startTime, secInterval)
+			writeToPumps(keys, job, startTime, int(secInterval))
 
 			job.Timing("purge_time_all", time.Since(startTime).Nanoseconds())
-
 		}
 
 		if !SystemConfig.DontPurgeUptimeData {
-			UptimeValues := UptimeStorage.GetAndDeleteSet(storage.UptimeAnalytics_KEYNAME)
+			UptimeValues := UptimeStorage.GetAndDeleteSet(storage.UptimeAnalytics_KEYNAME, chunkSize, expire)
 			UptimePump.WriteUptimeData(UptimeValues)
 		}
 	}
@@ -333,10 +329,24 @@ func main() {
 
 		return
 	}
+
+	// Don't enable chunking if zero value
+	if SystemConfig.PurgeChunk == 0 {
+		SystemConfig.PurgeChunk = -1
+	}
+
+	if SystemConfig.PurgeChunk > 0 {
+		log.WithField("PurgeChunk", SystemConfig.PurgeChunk).Info("PurgeChunk enabled")
+		if SystemConfig.StorageExpirationTime == 0 {
+			SystemConfig.StorageExpirationTime = 60
+			log.WithField("StorageExpirationTime", 60).Warn("StorageExpirationTime not set, but PurgeChunk enabled, overriding to 60s")
+		}
+	}
+
 	// start the worker loop
 	log.WithFields(logrus.Fields{
 		"prefix": mainPrefix,
-	}).Info("Starting purge loop @", SystemConfig.PurgeDelay, "(s)")
+	}).Infof("Starting purge loop @%d, chunk size %d", SystemConfig.PurgeDelay, SystemConfig.PurgeChunk)
 
-	StartPurgeLoop(SystemConfig.PurgeDelay, SystemConfig.OmitDetailedRecording)
+	StartPurgeLoop(SystemConfig.PurgeDelay, SystemConfig.PurgeChunk, time.Duration(SystemConfig.StorageExpirationTime)*time.Second, SystemConfig.OmitDetailedRecording)
 }

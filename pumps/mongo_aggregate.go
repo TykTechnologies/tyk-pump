@@ -254,11 +254,11 @@ func (m *MongoAggregatePump) WriteData(ctx context.Context, data []interface{}) 
 				"orgid":     filteredData.OrgID,
 				"timestamp": filteredData.TimeStamp,
 			}
-			
+
 			if len(m.dbConf.IgnoreAggregationsList) > 0 {
 				filteredData.DiscardAggregations(m.dbConf.IgnoreAggregationsList)
 			}
-			
+
 			updateDoc := filteredData.AsChange()
 
 			change := mgo.Change{
@@ -318,11 +318,11 @@ func (m *MongoAggregatePump) doMixedWrite(changeDoc analytics.AnalyticsRecordAgg
 	defer thisSession.Close()
 	analyticsCollection := thisSession.DB("").C(analytics.AgggregateMixedCollectionName)
 	m.ensureIndexes(analyticsCollection)
-	
+
 	if len(m.dbConf.IgnoreAggregationsList) > 0 {
 		changeDoc.DiscardAggregations(m.dbConf.IgnoreAggregationsList)
 	}
-	
+
 	avgChange := mgo.Change{
 		Update:    changeDoc,
 		ReturnNew: true,

@@ -66,6 +66,7 @@ func (k *KafkaPump) Init(config interface{}) error {
 	}
 
 	var tlsConfig *tls.Config
+	var cert tls.Certificate
 	if k.kafkaConf.UseSSL {
 		if k.kafkaConf.SSLCertFile != "" && k.kafkaConf.SSLKeyFile != "" {
 			var cert tls.Certificate
@@ -109,6 +110,10 @@ func (k *KafkaPump) Init(config interface{}) error {
 		}
 	default:
 		k.log.WithField("SASL-Mechanism", k.kafkaConf.SASLMechanism).Warn("Tyk pump doesn't support this SASL mechanism.")
+	}
+	tlsConfig = &tls.Config{
+		Certificates:       []tls.Certificate{cert},
+		InsecureSkipVerify: k.kafkaConf.SSLInsecureSkipVerify,
 	}
 
 	//Kafka writer connection config
