@@ -53,6 +53,8 @@ type MoesifConf struct {
 	CompanyIDHeader            string                 `mapstructure:"company_id_header"`
 	EnableBulk                 bool                   `mapstructure:"enable_bulk"`
 	BulkConfig                 map[string]interface{} `mapstructure:"bulk_config"`
+	AuthorizationHeaderName    string                 `mapstructure:"authorization_header_name"`
+	AuthorizationUserIdField   string                 `mapstructure:"authorization_user_id_field"`
 }
 
 func (p *MoesifPump) New() Pump {
@@ -199,6 +201,25 @@ func buildURI(raw string, defaultPath string) string {
 		return defaultPath
 	}
 	return defaultPath
+}
+
+func fetchTokenPayload(token string, tokenType string) string {
+	return strings.TrimSpace(strings.SplitAfter(token, tokenType)[1])
+}
+
+func parseAuthorizationHeader(token string, field string) string {
+	if token != "" {
+		data, err := base64.RawURLEncoding.DecodeString(token)
+		if err == nil {
+			parsedJSON := map[string]interface{}{}
+			if jsonErr := json.Unmarshal([]byte(data), &parsedJSON); jsonErr == nil {
+				if value, ok := parsedJSON[field]; ok {
+					return value.(string)
+				}
+			}	
+		}
+	}
+	return ""
 }
 
 func (p *MoesifPump) Init(config interface{}) error {
@@ -357,6 +378,45 @@ func (p *MoesifPump) WriteData(ctx context.Context, data []interface{}) error {
 				userID = record.Alias
 			} else if record.OauthID != "" {
 				userID = record.OauthID
+			} else if len(decodedReqBody.headers) != 0 {
+				var authHeaderName string
+				if p.moesifConf.AuthorizationHeaderName != "" {
+					authHeaderName = strings.ToLower(p.moesifConf.AuthorizationHeaderName)
+				} else {
+					authHeaderName = "authorization"
+				}
+
+				var authUserIdField string
+				if p.moesifConf.AuthorizationUserIdField != "" {
+					authUserIdField = strings.ToLower(p.moesifConf.AuthorizationUserIdField)
+				} else {
+					authUserIdField = "sub"
+				}
+
+				if auth_header, found := decodedReqBody.headers[authHeaderName]; found {
+					if token, ok := auth_header.(string); ok {
+						if strings.Contains(token, "Basic") {
+							basicToken := fetchTokenPayload(token, "Basic")
+							data, err := base64.StdEncoding.DecodeString(basicToken)
+							if err == nil {
+								userID = strings.Split(string(data), ":")[0]
+							}
+						} else if strings.Contains(token, "Bearer") {
+							bearerToken := fetchTokenPayload(token, "Bearer")
+							splitToken := strings.Split(bearerToken, ".")
+							if len(splitToken) >= 2 {
+								userID = parseAuthorizationHeader(splitToken[1], authUserIdField)
+							}
+						} else {
+							splitToken := strings.Split(token, ".")
+							if len(splitToken) >= 2 {
+								userID = parseAuthorizationHeader(splitToken[1], authUserIdField)
+							} else {
+								userID = parseAuthorizationHeader(token, authUserIdField)
+							}
+						}
+					 }
+				}
 			}
 		}
 
