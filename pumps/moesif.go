@@ -216,7 +216,7 @@ func parseAuthorizationHeader(token string, field string) string {
 				if value, ok := parsedJSON[field]; ok {
 					return value.(string)
 				}
-			}	
+			}
 		}
 	}
 	return ""
@@ -415,7 +415,7 @@ func (p *MoesifPump) WriteData(ctx context.Context, data []interface{}) error {
 								userID = parseAuthorizationHeader(token, authUserIdField)
 							}
 						}
-					 }
+					}
 				}
 			}
 		}
