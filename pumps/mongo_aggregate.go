@@ -166,7 +166,10 @@ func (m *MongoAggregatePump) connect() {
 		}).Panic("Mongo URL is invalid: ", err)
 	}
 
-	dialInfo.Timeout = time.Second * 5
+	if m.timeout > 0 {
+		dialInfo.Timeout = time.Second * time.Duration(m.timeout)
+	}
+
 	m.dbSession, err = mgo.DialWithInfo(dialInfo)
 
 	for err != nil {
