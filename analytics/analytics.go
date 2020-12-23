@@ -2,7 +2,6 @@ package analytics
 
 import (
 	"encoding/base64"
-	"fmt"
 	"reflect"
 	"strconv"
 	"strings"
@@ -158,7 +157,6 @@ func (a *AnalyticsRecord) ObfuscateKey(authHeaderName string, decode bool) {
 		a.RawRequest = sDecodedRequest
 	}
 
-	fmt.Printf("===> All data : %s\n", sDecodedRequest)
 	iAuthHeaderStarts := strings.Index(sDecodedRequest, authFieldName)
 	if iAuthHeaderStarts == -1 {
 		log.WithFields(logrus.Fields{
@@ -172,7 +170,6 @@ func (a *AnalyticsRecord) ObfuscateKey(authHeaderName string, decode bool) {
 		return
 	}
 	restOfData := sDecodedRequest[iAuthHeaderStarts:]
-	fmt.Printf("===> restOfData: %s\n",restOfData)
 
 	iRelativeNextHeader := strings.Index(restOfData, "\r\n") // key ends here
 	if iRelativeNextHeader == -1 {
@@ -189,8 +186,6 @@ func (a *AnalyticsRecord) ObfuscateKey(authHeaderName string, decode bool) {
 	iNextHeaderStarts := iAuthHeaderStarts + iRelativeNextHeader // key ends here
 	iKeyBegins := iAuthHeaderStarts + len(authFieldName)
 
-	fmt.Printf("===> iKeyBegins %d iNextHeaderStarts %d \n", iKeyBegins, iNextHeaderStarts)
-	fmt.Printf("key only: %s\n", sDecodedRequest[iKeyBegins:iNextHeaderStarts])
 	obfuscatedKey := ObfuscateString(sDecodedRequest[iKeyBegins:iNextHeaderStarts])
 
 	a.RawRequest = sDecodedRequest[:iKeyBegins] + obfuscatedKey + sDecodedRequest[iNextHeaderStarts+1:]
@@ -198,37 +193,6 @@ func (a *AnalyticsRecord) ObfuscateKey(authHeaderName string, decode bool) {
 	if !decode {
 		a.RawRequest = base64.StdEncoding.EncodeToString([]byte(sDecodedRequest))
 	}
-
-	fmt.Printf("===> raw data after changed auth        : %s\n", sDecodedRequest)
-	fmt.Printf("===> raw data after changed auth encoded: %s\n", a.RawRequest)
-
-	/*
-		requestInLine := strings.Split(string(decodeRequest), "\r\n")
-		fmt.Printf("len of splitData: %d \n", len(requestInLine))
-
-		found := false
-	iFound := 0
-
-	for i := 0; i < len(requestgsInLine) && !found; i++ {
-		fmt.Printf("requestInLine: %d# %q\n", i, requestInLine[i])
-
-		if strings.HasPrefix(requestInLine[i], authHeaderName) {
-			found = true
-			iFound = i
-			headerLen := len(requestInLine[iFound])
-			prefixLen := len(authHeaderName) //For instance "Authorization: "
-			//todo: check bearer:
-
-			key := requestInLine[iFound][prefixLen:headerLen] // chars after "Authorization: "  till the end
-
-			obfuscatedKey := ObfuscateString(key)
-			requestInLine[iFound] = requestInLine[iFound][:prefixLen] + obfuscatedKey
-
-		}
-
-	}
-	fmt.Printf("changed auth: #%d: %s\n", iFound, requestInLine[iFound])
-*/
 
 }
 
