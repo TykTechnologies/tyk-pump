@@ -83,7 +83,7 @@ func (m *MongoSelectivePump) Init(config interface{}) error {
 
 	log.WithFields(logrus.Fields{
 		"prefix": mongoSelectivePrefix,
-	}).Debug("MongoDB DB CS: ", m.dbConf.MongoURL)
+	}).Debug("MongoDB DB CS: ", m.dbConf.GetBlurredURL())
 
 	return nil
 }
@@ -99,7 +99,10 @@ func (m *MongoSelectivePump) connect() {
 		}).Panic("Mongo URL is invalid: ", err)
 	}
 
-	dialInfo.Timeout = time.Second * 5
+	if m.timeout > 0 {
+		dialInfo.Timeout = time.Second * time.Duration(m.timeout)
+	}
+
 	m.dbSession, err = mgo.DialWithInfo(dialInfo)
 
 	for err != nil {

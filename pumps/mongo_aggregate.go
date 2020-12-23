@@ -35,6 +35,7 @@ type MongoAggregateConf struct {
 	IgnoreTagPrefixList     []string `mapstructure:"ignore_tag_prefix_list"`
 	ThresholdLenTagList     int      `mapstructure:"threshold_len_tag_list"`
 	StoreAnalyticsPerMinute bool     `mapstructure:"store_analytics_per_minute"`
+	IgnoreAggregationsList  []string `mapstructure:"ignore_aggregations"`
 }
 
 func (m *MongoAggregatePump) New() Pump {
@@ -149,7 +150,7 @@ func (m *MongoAggregatePump) Init(config interface{}) error {
 
 	log.WithFields(logrus.Fields{
 		"prefix": analytics.MongoAggregatePrefix,
-	}).Debug("MongoDB DB CS: ", m.dbConf.MongoURL)
+	}).Debug("MongoDB DB CS: ", m.dbConf.GetBlurredURL())
 
 	return nil
 }
@@ -165,7 +166,10 @@ func (m *MongoAggregatePump) connect() {
 		}).Panic("Mongo URL is invalid: ", err)
 	}
 
-	dialInfo.Timeout = time.Second * 5
+	if m.timeout > 0 {
+		dialInfo.Timeout = time.Second * time.Duration(m.timeout)
+	}
+
 	m.dbSession, err = mgo.DialWithInfo(dialInfo)
 
 	for err != nil {
@@ -254,6 +258,10 @@ func (m *MongoAggregatePump) WriteData(ctx context.Context, data []interface{}) 
 				"timestamp": filteredData.TimeStamp,
 			}
 
+			if len(m.dbConf.IgnoreAggregationsList) > 0 {
+				filteredData.DiscardAggregations(m.dbConf.IgnoreAggregationsList)
+			}
+
 			updateDoc := filteredData.AsChange()
 
 			change := mgo.Change{
@@ -313,6 +321,10 @@ func (m *MongoAggregatePump) doMixedWrite(changeDoc analytics.AnalyticsRecordAgg
 	defer thisSession.Close()
 	analyticsCollection := thisSession.DB("").C(analytics.AgggregateMixedCollectionName)
 	m.ensureIndexes(analyticsCollection)
+
+	if len(m.dbConf.IgnoreAggregationsList) > 0 {
+		changeDoc.DiscardAggregations(m.dbConf.IgnoreAggregationsList)
+	}
 
 	avgChange := mgo.Change{
 		Update:    changeDoc,

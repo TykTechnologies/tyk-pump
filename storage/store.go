@@ -1,10 +1,12 @@
 package storage
 
+import "time"
+
 type AnalyticsStorage interface {
 	Init(config interface{}) error
 	GetName() string
 	Connect() bool
-	GetAndDeleteSet(string) []interface{}
+	GetAndDeleteSet(setName string, chunkSize int64, expire time.Duration) []interface{}
 }
 
 const (

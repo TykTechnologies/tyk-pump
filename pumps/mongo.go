@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -56,6 +57,16 @@ type BaseMongoConf struct {
 	MongoSSLCAFile                string    `json:"mongo_ssl_ca_file" mapstructure:"mongo_ssl_ca_file"`
 	MongoSSLPEMKeyfile            string    `json:"mongo_ssl_pem_keyfile" mapstructure:"mongo_ssl_pem_keyfile"`
 	MongoDBType                   MongoType `json:"mongo_db_type" mapstructure:"mongo_db_type"`
+}
+
+func (b *BaseMongoConf) GetBlurredURL() string {
+	// mongo uri match with regex ^(mongodb:(?:\/{2})?)((\w+?):(\w+?)@|:?@?)(\S+?):(\d+)(\/(\S+?))?(\?replicaSet=(\S+?))?$
+	// but we need only a segment, so regex explanation: https://regex101.com/r/E34wQO/1
+	regex := `^(mongodb:(?:\/{2})?)((\w+?):(\w+?)@|:?@?)`
+	var re = regexp.MustCompile(regex)
+
+	blurredUrl := re.ReplaceAllString(b.MongoURL, "db_username:db_password@")
+	return blurredUrl
 }
 
 type MongoConf struct {
@@ -223,7 +234,7 @@ func (m *MongoPump) Init(config interface{}) error {
 		err = mapstructure.Decode(config, &m.dbConf.BaseMongoConf)
 		log.WithFields(logrus.Fields{
 			"prefix":          mongoPrefix,
-			"url":             m.dbConf.MongoURL,
+			"url":             m.dbConf.GetBlurredURL(),
 			"collection_name": m.dbConf.CollectionName,
 		}).Info("Init")
 		if err != nil {
@@ -269,7 +280,7 @@ func (m *MongoPump) Init(config interface{}) error {
 
 	log.WithFields(logrus.Fields{
 		"prefix": mongoPrefix,
-	}).Debug("MongoDB DB CS: ", m.dbConf.MongoURL)
+	}).Debug("MongoDB DB CS: ", m.dbConf.GetBlurredURL())
 	log.WithFields(logrus.Fields{
 		"prefix": mongoPrefix,
 	}).Debug("MongoDB Col: ", m.dbConf.CollectionName)
@@ -416,7 +427,9 @@ func (m *MongoPump) connect() {
 		}).Panic("Mongo URL is invalid: ", err)
 	}
 
-	dialInfo.Timeout = time.Second * 5
+	if m.timeout > 0 {
+		dialInfo.Timeout = time.Second * time.Duration(m.timeout)
+	}
 	m.dbSession, err = mgo.DialWithInfo(dialInfo)
 
 	for err != nil {
@@ -451,9 +464,11 @@ func (m *MongoPump) WriteData(ctx context.Context, data []interface{}) error {
 		}).Debug("Connecting to analytics store")
 		m.connect()
 	}
+	accumulateSet := m.AccumulateSet(data)
 
-	for _, dataSet := range m.AccumulateSet(data) {
-		go func(dataSet []interface{}) {
+	errCh := make(chan error, len(accumulateSet))
+	for _, dataSet := range accumulateSet {
+		go func(dataSet []interface{}, errCh chan error) {
 			sess := m.dbSession.Copy()
 			defer sess.Close()
 
@@ -469,8 +484,19 @@ func (m *MongoPump) WriteData(ctx context.Context, data []interface{}) error {
 				if strings.Contains(strings.ToLower(err.Error()), "closed explicitly") {
 					log.Warning("--> Detected connection failure!")
 				}
+				errCh <- err
 			}
-		}(dataSet)
+			errCh <- nil
+		}(dataSet, errCh)
+	}
+
+	for range accumulateSet {
+		select {
+		case err := <-errCh:
+			if err != nil {
+				return err
+			}
+		}
 	}
 
 	return nil
