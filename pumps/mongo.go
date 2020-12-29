@@ -476,17 +476,29 @@ func (m *MongoPump) WriteData(ctx context.Context, data []interface{}) error {
 
 			log.WithFields(logrus.Fields{
 				"prefix": mongoPrefix,
-			}).Info("Purging ", len(dataSet), " records")
+				"collection": collectionName,
+				"number of records": len(dataSet),
+			}).Debug("Attempt to purge records")
 
 			err := analyticsCollection.Insert(dataSet...)
 			if err != nil {
-				log.Error("Problem inserting to mongo collection: ", err)
+				log.WithFields(
+					logrus.Fields{"prefix": mongoPrefix,
+												"collection": collectionName,
+												"number of records": len(dataSet)}).
+					Error("Problem inserting to mongo collection: ", err)
+
 				if strings.Contains(strings.ToLower(err.Error()), "closed explicitly") {
 					log.Warning("--> Detected connection failure!")
 				}
 				errCh <- err
 			}
 			errCh <- nil
+			log.WithFields(logrus.Fields{
+				"prefix": mongoPrefix,
+				"collection": collectionName,
+				"number of records": len(dataSet),
+			}).Info("Completed purging the records")
 		}(dataSet, errCh)
 	}
 

@@ -117,7 +117,7 @@ func (p *PrometheusPump) Init(conf interface{}) error {
 func (p *PrometheusPump) WriteData(ctx context.Context, data []interface{}) error {
 	log.WithFields(logrus.Fields{
 		"prefix": prometheusPrefix,
-	}).Debug("Writing ", len(data), " records")
+	}).Debug("Attempt to write ", len(data), " records")
 
 	for _, item := range data {
 		record := item.(analytics.AnalyticsRecord)
@@ -131,5 +131,6 @@ func (p *PrometheusPump) WriteData(ctx context.Context, data []interface{}) erro
 		}
 		p.TotalLatencyMetrics.WithLabelValues("total", record.APIID).Observe(float64(record.RequestTime))
 	}
+
 	return nil
 }

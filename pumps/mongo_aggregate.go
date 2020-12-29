@@ -219,7 +219,7 @@ func (m *MongoAggregatePump) ensureIndexes(c *mgo.Collection) error {
 func (m *MongoAggregatePump) WriteData(ctx context.Context, data []interface{}) error {
 	log.WithFields(logrus.Fields{
 		"prefix": analytics.MongoAggregatePrefix,
-	}).Debug("Writing ", len(data), " records")
+	}).Debug("Attempt to write ", len(data), " records")
 
 	if m.dbSession == nil {
 		log.WithFields(logrus.Fields{
@@ -300,6 +300,11 @@ func (m *MongoAggregatePump) WriteData(ctx context.Context, data []interface{}) 
 				return m.HandleWriteErr(avgErr)
 			}
 
+			log.WithFields(logrus.Fields{
+				"prefix": analytics.MongoAggregatePrefix,
+				"collection": collectionName,
+			}).Debug("Wrote aggregated data for ", len(data), " records")
+
 			if m.dbConf.UseMixedCollection {
 				thisData := analytics.AnalyticsRecordAggregate{}
 				err := analyticsCollection.Find(query).One(&thisData)
@@ -308,7 +313,6 @@ func (m *MongoAggregatePump) WriteData(ctx context.Context, data []interface{}) 
 				} else {
 					m.doMixedWrite(thisData, query)
 				}
-
 			}
 		}
 	}
@@ -332,15 +336,25 @@ func (m *MongoAggregatePump) doMixedWrite(changeDoc analytics.AnalyticsRecordAgg
 		Upsert:    true,
 	}
 
+	log.WithFields(logrus.Fields{
+		"prefix": analytics.MongoAggregatePrefix,
+		"collection": analytics.AgggregateMixedCollectionName,
+	}).Debug("Attempt to upsert aggregated doc")
+
 	final := analytics.AnalyticsRecordAggregate{}
 	_, avgErr := analyticsCollection.Find(query).Apply(avgChange, &final)
 
 	if avgErr != nil {
 		log.WithFields(logrus.Fields{
 			"prefix": analytics.MongoAggregatePrefix,
+			"collection": analytics.AgggregateMixedCollectionName,
 		}).Error("Mixed coll upsert failure: ", avgErr)
 		m.HandleWriteErr(avgErr)
 	}
+	log.WithFields(logrus.Fields{
+		"prefix": analytics.MongoAggregatePrefix,
+		"collection": analytics.AgggregateMixedCollectionName,
+	}).Info("Completed upserting")
 }
 
 func (m *MongoAggregatePump) HandleWriteErr(err error) error {

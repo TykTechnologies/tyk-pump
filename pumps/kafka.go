@@ -140,7 +140,7 @@ func (k *KafkaPump) Init(config interface{}) error {
 
 func (k *KafkaPump) WriteData(ctx context.Context, data []interface{}) error {
 	startTime := time.Now()
-	k.log.Info("Writing ", len(data), " records...")
+	k.log.Debug("Attempt to write ", len(data), " records...")
 	kafkaMessages := make([]kafka.Message, len(data))
 	for i, v := range data {
 		//Build message format
@@ -189,6 +189,7 @@ func (k *KafkaPump) WriteData(ctx context.Context, data []interface{}) error {
 		k.log.WithError(kafkaError).Error("unable to write message")
 	}
 	k.log.Debug("ElapsedTime in seconds for ", len(data), " records:", time.Now().Sub(startTime))
+	k.log.Info("Purged ", len(data), " records...")
 	return nil
 }
 
