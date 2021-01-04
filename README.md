@@ -302,9 +302,9 @@ An example of this configuration would be:
 }
 ```
 
-In case that any pump doesn't have a configured timeout, and it takes more seconds to write than the value configured for the purge loop in the `purge_delay` config option, you will see the following message: `Pump PMP_NAME is taking more time than the value configured of purge_delay. You should try to set a timeout for this pump.`. 
+In case that any pump doesn't have a configured timeout, and it takes more seconds to write than the value configured for the purge loop in the `purge_delay` config option, you will see the following warning message: `Pump PMP_NAME is taking more time than the value configured of purge_delay. You should try to set a timeout for this pump.`. 
 
-In case that you have a configured timeout, but it still takes more seconds to write than the value configured for the purge loop in the `purge_delay` config option, you will see the following message: `Pump PMP_NAME is taking more time than the value configured of purge_delay. You should try lowering the timeout configured for this pump.`. 
+In case that you have a configured timeout, but it still takes more seconds to write than the value configured for the purge loop in the `purge_delay` config option, you will see the following warning message: `Pump PMP_NAME is taking more time than the value configured of purge_delay. You should try lowering the timeout configured for this pump.`. 
 
 ### Environment Variables
 
