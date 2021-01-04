@@ -288,7 +288,7 @@ An example of configuration would be:
 
 ### Timeouts
 
-You can configure a different timeout for each pump with the configuration option `timeout`. Its default value is zero, which means that the pump will wait for the writing operation forever. It is measured in seconds.
+You can configure a different timeout for each pump with the configuration option `timeout`. Its default value is 0 seconds, which means that the pump will wait for the writing operation forever. 
 
 An example of this configuration would be:
 ```json
@@ -302,9 +302,9 @@ An example of this configuration would be:
 }
 ```
 
-In case that any pump doesn't have a configured timeout, and it takes more seconds to write compared to the `purge_delay`, you will see the following message: `Pump PMP_NAME is taking more time than the value configured of purge_delay. You should try to set a timeout for this pump.`. 
+In case that any pump doesn't have a configured timeout, and it takes more seconds to write than the value configured for the purge loop in the `purge_delay` config option, you will see the following message: `Pump PMP_NAME is taking more time than the value configured of purge_delay. You should try to set a timeout for this pump.`. 
 
-In case that you have a configured timeout, but it still takes more seconds to write compared to the `purge_delay`, you will see the following message: `Pump PMP_NAME is taking more time than the value configured of purge_delay. You should try lowering the timeout configured for this pump.`. 
+In case that you have a configured timeout, but it still takes more seconds to write than the value configured for the purge loop in the `purge_delay` config option, you will see the following message: `Pump PMP_NAME is taking more time than the value configured of purge_delay. You should try lowering the timeout configured for this pump.`. 
 
 ### Environment Variables
 
