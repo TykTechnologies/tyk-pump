@@ -1,10 +1,18 @@
 package analyticspb
 
 import (
+	"fmt"
+	"net"
 	"strconv"
 	"strings"
 	"time"
 	"reflect"
+
+	"github.com/TykTechnologies/tyk/config"
+	"github.com/oschwald/maxminddb-golang"
+	"github.com/prometheus/common/log"
+	"github.com/TykTechnologies/tyk/regexp"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func (a *AnalyticsRecord) GetFieldNames() []string {
@@ -49,4 +57,84 @@ func (a *AnalyticsRecord) GetLineValues() []string {
 	}
 
 	return fields
+}
+
+func (a *AnalyticsRecord) GetGeoDataData(GeoIPDB *maxminddb.Reader, ipStr string) {
+	// Not great, tightly coupled
+	if GeoIPDB == nil {
+		return
+	}
+
+	record, err := geoIPLookup(GeoIPDB, ipStr)
+	if err != nil {
+		log.Error("GeoIP Failure (not recorded): ", err)
+		return
+	}
+	if record == nil {
+		return
+	}
+
+	log.Debug("ISO Code: ", record.Country.ISOCode)
+	log.Debug("City: ", record.City.Names["en"])
+	log.Debug("Lat: ", record.Location.Latitude)
+	log.Debug("Lon: ", record.Location.Longitude)
+	log.Debug("TZ: ", record.Location.TimeZone)
+
+	a.Geo = record
+}
+
+func geoIPLookup(GeoIPDB *maxminddb.Reader, ipStr string) (*GeoData, error) {
+	if ipStr == "" {
+		return nil, nil
+	}
+	ip := net.ParseIP(ipStr)
+	if ip == nil {
+		return nil, fmt.Errorf("invalid IP address %q", ipStr)
+	}
+	record := new(GeoData)
+	if err := GeoIPDB.Lookup(ip, record); err != nil {
+		return nil, fmt.Errorf("geoIPDB lookup of %q failed: %v", ipStr, err)
+	}
+	return record, nil
+}
+
+func initNormalisationPatterns() (pats config.NormaliseURLPatterns) {
+	pats.UUIDs = regexp.MustCompile(`[0-9a-fA-F]{8}(-)?[0-9a-fA-F]{4}(-)?[0-9a-fA-F]{4}(-)?[0-9a-fA-F]{4}(-)?[0-9a-fA-F]{12}`)
+	pats.IDs = regexp.MustCompile(`\/(\d+)`)
+
+	for _, pattern := range config.Global().AnalyticsConfig.NormaliseUrls.Custom {
+		if patRe, err := regexp.Compile(pattern); err != nil {
+			log.Error("failed to compile custom pattern: ", err)
+		} else {
+			pats.Custom = append(pats.Custom, patRe)
+		}
+	}
+	return
+}
+
+func (a *AnalyticsRecord) NormalisePath(globalConfig *config.Config) {
+	if globalConfig.AnalyticsConfig.NormaliseUrls.NormaliseUUIDs {
+		a.Path = globalConfig.AnalyticsConfig.NormaliseUrls.CompiledPatternSet.UUIDs.ReplaceAllString(a.Path, "{uuid}")
+	}
+	if globalConfig.AnalyticsConfig.NormaliseUrls.NormaliseNumbers {
+		a.Path = globalConfig.AnalyticsConfig.NormaliseUrls.CompiledPatternSet.IDs.ReplaceAllString(a.Path, "/{id}")
+	}
+	for _, r := range globalConfig.AnalyticsConfig.NormaliseUrls.CompiledPatternSet.Custom {
+		a.Path = r.ReplaceAllString(a.Path, "{var}")
+	}
+}
+
+func (a *AnalyticsRecord) SetExpiry(expiresAfter int64) {
+	calcExpiry := func(expiresAfter int64) time.Time {
+		expiry := time.Duration(expiresAfter) * time.Second
+		if expiresAfter == 0 {
+			// Expiry is set to 100 years
+			expiry = (24 * time.Hour) * (365 * 100)
+		}
+
+		t := time.Now()
+		t2 := t.Add(expiry)
+		return t2
+	}
+	a.ExpireAt = &timestamppb.Timestamp{Seconds: calcExpiry(expiresAfter).Unix()}
 }
