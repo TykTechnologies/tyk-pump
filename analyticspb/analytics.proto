@@ -6,7 +6,7 @@ option go_package="/analyticspb";
 
 
 message AnalyticsRecordReq{
-  AnalyticsRecord record = 1;
+  bytes record = 1;
 }
 
 message AnalyticsRecordResp{
@@ -42,6 +42,7 @@ message AnalyticsRecord {
   string Alias = 26;
   bool TrackPath = 27;
   google.protobuf.Timestamp ExpireAt = 28;
+  string OauthID = 29;
 }
 
 message Latency {
@@ -77,5 +78,5 @@ message NetworkStats {
 }
 
 service AnalyticsService{
-  rpc SendData(stream AnalyticsRecordReq) returns (AnalyticsRecordResp){};
+  rpc SendData(AnalyticsRecordReq) returns (AnalyticsRecordResp){};
 }
