@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/tyk-pump/analytics"
+	"github.com/TykTechnologies/tyk-pump/analyticspb"
 	"github.com/mitchellh/mapstructure"
 	"github.com/moesif/moesifapi-go"
 	"github.com/moesif/moesifapi-go/models"
@@ -241,7 +242,7 @@ func (p *MoesifPump) WriteData(ctx context.Context, data []interface{}) error {
 
 	transferEncoding := "base64"
 	for dataIndex := range data {
-		var record, _ = data[dataIndex].(analytics.AnalyticsRecord)
+		var record, _ = data[dataIndex].(analyticspb.AnalyticsRecord)
 
 		rawReq, err := base64.StdEncoding.DecodeString(record.RawRequest)
 		if err != nil {
@@ -263,7 +264,7 @@ func (p *MoesifPump) WriteData(ctx context.Context, data []interface{}) error {
 		requestURL := buildURI(string(rawReq), record.Path)
 
 		// Request Time
-		reqTime := record.TimeStamp.UTC()
+		reqTime := record.GetTimestampAsTime().UTC()
 
 		req := models.EventRequestModel{
 			Time:             &reqTime,
@@ -294,11 +295,11 @@ func (p *MoesifPump) WriteData(ctx context.Context, data []interface{}) error {
 		}
 
 		// Response Time
-		rspTime := record.TimeStamp.Add(time.Duration(record.RequestTime) * time.Millisecond).UTC()
+		rspTime := record.GetTimestampAsTime().Add(time.Duration(record.RequestTime) * time.Millisecond).UTC()
 
 		rsp := models.EventResponseModel{
 			Time:             &rspTime,
-			Status:           record.ResponseCode,
+			Status:           int(record.ResponseCode),
 			IpAddress:        nil,
 			Headers:          decodedRspBody.headers,
 			Body:             decodedRspBody.body,

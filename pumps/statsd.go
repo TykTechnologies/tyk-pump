@@ -6,11 +6,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/TykTechnologies/tyk-pump/analyticspb"
 	"github.com/mitchellh/mapstructure"
 	"github.com/quipo/statsd"
 
 	"github.com/TykTechnologies/logrus"
-	"github.com/TykTechnologies/tyk-pump/analytics"
 )
 
 type StatsdPump struct {
@@ -85,10 +85,10 @@ func (s *StatsdPump) WriteData(ctx context.Context, data []interface{}) error {
 
 	for _, v := range data {
 		// Convert to AnalyticsRecord
-		decoded := v.(analytics.AnalyticsRecord)
+		decoded := v.(analyticspb.AnalyticsRecord)
 
 		// Format TimeStamp to Unix Time
-		unixTime := time.Unix(decoded.TimeStamp.Unix(), 0)
+		unixTime := time.Unix(decoded.GetTimestampAsTime().Unix(), 0)
 
 		// Replace : to -
 		sanitizedTime := strings.Replace(unixTime.String(), ":", "-", -1)

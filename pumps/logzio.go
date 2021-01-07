@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/TykTechnologies/logrus"
-	"github.com/TykTechnologies/tyk-pump/analytics"
+	"github.com/TykTechnologies/tyk-pump/analyticspb"
 	lg "github.com/logzio/logzio-go"
 	"github.com/mitchellh/mapstructure"
 )
@@ -119,7 +119,7 @@ func (p *LogzioPump) WriteData(ctx context.Context, data []interface{}) error {
 	}).Info("Writing ", len(data), " records")
 
 	for _, v := range data {
-		decoded := v.(analytics.AnalyticsRecord)
+		decoded := v.(analyticspb.AnalyticsRecord)
 		mapping := map[string]interface{}{
 			"@timestamp":      decoded.TimeStamp,
 			"http_method":     decoded.Method,

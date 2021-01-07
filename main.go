@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"strings"
 	"sync"
 	"time"
@@ -10,8 +12,8 @@ import (
 
 	"github.com/TykTechnologies/logrus"
 	prefixed "github.com/TykTechnologies/logrus-prefixed-formatter"
-	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/TykTechnologies/tyk-pump/analytics/demo"
+	"github.com/TykTechnologies/tyk-pump/analyticspb"
 	logger "github.com/TykTechnologies/tyk-pump/logger"
 	"github.com/TykTechnologies/tyk-pump/pumps"
 	"github.com/TykTechnologies/tyk-pump/server"
@@ -89,6 +91,9 @@ func setupAnalyticsStore() {
 	switch SystemConfig.AnalyticsStorageType {
 	case "redis":
 		AnalyticsStore = &storage.RedisClusterStorageManager{}
+		UptimeStorage = &storage.RedisClusterStorageManager{}
+	case "grpc":
+		AnalyticsStore = &storage.GrpcBuffer{}
 		UptimeStorage = &storage.RedisClusterStorageManager{}
 	default:
 		AnalyticsStore = &storage.RedisClusterStorageManager{}
@@ -171,11 +176,33 @@ func StartPurgeLoop(secInterval int, chunkSize int64, expire time.Duration, omit
 			keys := make([]interface{}, len(AnalyticsValues))
 
 			for i, v := range AnalyticsValues {
-				decoded := analytics.AnalyticsRecord{}
-				err := msgpack.Unmarshal([]byte(v.(string)), &decoded)
-				log.WithFields(logrus.Fields{
-					"prefix": mainPrefix,
-				}).Debug("Decoded Record: ", decoded)
+				decoded := analyticspb.AnalyticsRecord{}
+
+				var err error
+				var ok bool
+
+				switch v.(type){
+				case analyticspb.AnalyticsRecord:
+					fmt.Println("type analyticspb.AnalyticsRecord")
+
+					decoded, ok = v.(analyticspb.AnalyticsRecord)
+					if !ok {
+						err = errors.New("Analytic record couldn't be decoded")
+					}
+				case  *analyticspb.AnalyticsRecord:
+					fmt.Println("type analyticspb.AnalyticsRecord")
+					decoded, ok= v.(analyticspb.AnalyticsRecord)
+					if !ok {
+						err = errors.New("Analytic record couldn't be decoded")
+					}
+				default:
+					err = msgpack.Unmarshal([]byte(v.(string)), &decoded)
+					log.WithFields(logrus.Fields{
+						"prefix": mainPrefix,
+					}).Debug("Decoded Record: ", decoded)
+				}
+
+
 				if err != nil {
 					log.WithFields(logrus.Fields{
 						"prefix": mainPrefix,
@@ -228,7 +255,7 @@ func filterData(pump pumps.Pump, keys []interface{}) []interface{} {
 	newLenght := 0
 
 	for _, key := range filteredKeys {
-		decoded := key.(analytics.AnalyticsRecord)
+		decoded := key.(analyticspb.AnalyticsRecord)
 		if pump.GetOmitDetailedRecording() {
 			decoded.RawRequest = ""
 			decoded.RawResponse = ""

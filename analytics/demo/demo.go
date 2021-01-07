@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/TykTechnologies/tyk-pump/analytics"
+	"github.com/TykTechnologies/tyk-pump/analyticspb"
 
 	"github.com/gocraft/health"
 	uuid "github.com/satori/go.uuid"
@@ -99,8 +99,8 @@ func getUA() string {
 	return userAgents[rand.Intn(len(userAgents))]
 }
 
-func responseCode() int {
-	codes := []int{
+func responseCode() int32 {
+	codes := []int32{
 		200,
 		200,
 		200,
@@ -146,19 +146,18 @@ func GenerateDemoData(start time.Time, days int, orgId string, writer func([]int
 		for i := 0; i < volume; i++ {
 			p := randomPath()
 			api, apiID := randomAPI()
-			r := analytics.AnalyticsRecord{
+			r := analyticspb.AnalyticsRecord{
 				Method:        randomMethod(),
 				Path:          p,
 				RawPath:       p,
 				ContentLength: int64(randomInRange(0, 999)),
 				UserAgent:     getUA(),
-				Day:           d.Day(),
-				Month:         d.Month(),
-				Year:          d.Year(),
-				Hour:          d.Hour(),
+				Day:           int32(d.Day()),
+				Month:         int32(d.Month()),
+				Year:          int32(d.Year()),
+				Hour:          int32(d.Hour()),
 				ResponseCode:  responseCode(),
 				APIKey:        getRandomKey(),
-				TimeStamp:     d,
 				APIVersion:    apiVersion,
 				APIName:       api,
 				APIID:         apiID,
@@ -171,8 +170,9 @@ func GenerateDemoData(start time.Time, days int, orgId string, writer func([]int
 				Tags:          []string{"orgid-" + orgId, "apiid-" + apiID},
 				Alias:         "",
 				TrackPath:     true,
-				ExpireAt:      time.Now().Add(time.Hour * 8760),
 			}
+			r.SetTimestampAsTime(d)
+			r.SetExpireAtsTime(time.Now().Add(time.Hour * 8760))
 
 			set = append(set, r)
 		}

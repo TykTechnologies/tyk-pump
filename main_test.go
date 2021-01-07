@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
+	"github.com/TykTechnologies/tyk-pump/analyticspb"
 	"github.com/TykTechnologies/tyk-pump/pumps"
 )
 
@@ -42,9 +43,9 @@ func TestFilterData(t *testing.T) {
 	)
 
 	keys := make([]interface{}, 3)
-	keys[0] = analytics.AnalyticsRecord{APIID: "api111"}
-	keys[1] = analytics.AnalyticsRecord{APIID: "api123"}
-	keys[2] = analytics.AnalyticsRecord{APIID: "api321"}
+	keys[0] = analyticspb.AnalyticsRecord{APIID: "api111"}
+	keys[1] = analyticspb.AnalyticsRecord{APIID: "api123"}
+	keys[2] = analyticspb.AnalyticsRecord{APIID: "api321"}
 
 	filteredKeys := filterData(mockedPump, keys)
 	if len(keys) == len(filteredKeys) {
@@ -58,13 +59,13 @@ func TestOmitDetailsFilterData(t *testing.T) {
 	mockedPump.SetOmitDetailedRecording(true)
 
 	keys := make([]interface{}, 1)
-	keys[0] = analytics.AnalyticsRecord{APIID: "api111", RawResponse: "test", RawRequest: "test"}
+	keys[0] = analyticspb.AnalyticsRecord{APIID: "api111", RawResponse: "test", RawRequest: "test"}
 
 	filteredKeys := filterData(mockedPump, keys)
 	if len(filteredKeys) == 0 {
 		t.Fatal("it shouldn't have filtered a key.")
 	}
-	record := filteredKeys[0].(analytics.AnalyticsRecord)
+	record := filteredKeys[0].(analyticspb.AnalyticsRecord)
 	if record.RawRequest != "" || record.RawResponse != "" {
 		t.Fatal("raw_request  and raw_response should be empty")
 	}
@@ -75,9 +76,9 @@ func TestWriteData(t *testing.T) {
 	Pumps = []pumps.Pump{mockedPump}
 
 	keys := make([]interface{}, 3)
-	keys[0] = analytics.AnalyticsRecord{APIID: "api111"}
-	keys[1] = analytics.AnalyticsRecord{APIID: "api123"}
-	keys[2] = analytics.AnalyticsRecord{APIID: "api321"}
+	keys[0] = analyticspb.AnalyticsRecord{APIID: "api111"}
+	keys[1] = analyticspb.AnalyticsRecord{APIID: "api123"}
+	keys[2] = analyticspb.AnalyticsRecord{APIID: "api321"}
 
 	job := instrument.NewJob("TestJob")
 
@@ -102,9 +103,9 @@ func TestWriteDataWithFilters(t *testing.T) {
 	Pumps = []pumps.Pump{mockedPump}
 
 	keys := make([]interface{}, 3)
-	keys[0] = analytics.AnalyticsRecord{APIID: "api111"}
-	keys[1] = analytics.AnalyticsRecord{APIID: "api123"}
-	keys[2] = analytics.AnalyticsRecord{APIID: "api321"}
+	keys[0] = analyticspb.AnalyticsRecord{APIID: "api111"}
+	keys[1] = analyticspb.AnalyticsRecord{APIID: "api123"}
+	keys[2] = analyticspb.AnalyticsRecord{APIID: "api321"}
 
 	job := instrument.NewJob("TestJob")
 

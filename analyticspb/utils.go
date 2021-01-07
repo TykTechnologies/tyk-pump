@@ -11,8 +11,9 @@ import (
 	"github.com/TykTechnologies/tyk/config"
 	"github.com/oschwald/maxminddb-golang"
 	"github.com/prometheus/common/log"
-	"github.com/TykTechnologies/tyk/regexp"
 	"google.golang.org/protobuf/types/known/timestamppb"
+	"github.com/golang/protobuf/ptypes"
+
 )
 
 func (a *AnalyticsRecord) GetFieldNames() []string {
@@ -123,4 +124,30 @@ func (a *AnalyticsRecord) SetExpiry(expiresAfter int64) {
 		return t2
 	}
 	a.ExpireAt = &timestamppb.Timestamp{Seconds: calcExpiry(expiresAfter).Unix()}
+}
+
+func (a *AnalyticsRecord) GetTimestampAsTime() time.Time{
+	var timer time.Time
+	if a.TimeStamp!= nil {
+		timer, _ = ptypes.Timestamp(a.TimeStamp)
+	}
+	return timer
+}
+
+func (a *AnalyticsRecord) GetExpireAtsTime() time.Time{
+	var timer time.Time
+	if a.ExpireAt!= nil {
+		timer, _ = ptypes.Timestamp(a.ExpireAt)
+	}
+	return timer
+}
+
+func (a *AnalyticsRecord) SetTimestampAsTime(timer time.Time) {
+	timestamp, _ := ptypes.TimestampProto(timer)
+	a.TimeStamp = timestamp
+}
+
+func (a *AnalyticsRecord) SetExpireAtsTime(timer time.Time) {
+	timestamp, _ := ptypes.TimestampProto(timer)
+	a.ExpireAt = timestamp
 }

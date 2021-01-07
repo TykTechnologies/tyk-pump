@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/TykTechnologies/tyk-pump/analyticspb"
 	"github.com/mitchellh/mapstructure"
 	elasticv3 "gopkg.in/olivere/elastic.v3"
 	elasticv5 "gopkg.in/olivere/elastic.v5"
@@ -17,7 +18,6 @@ import (
 
 	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/murmur3"
-	"github.com/TykTechnologies/tyk-pump/analytics"
 )
 
 type ElasticsearchPump struct {
@@ -306,7 +306,7 @@ func getIndexName(esConf *ElasticsearchConf) string {
 	return indexName
 }
 
-func getMapping(datum analytics.AnalyticsRecord, extendedStatistics bool, generateID bool, decodeBase64 bool) (map[string]interface{}, string) {
+func getMapping(datum analyticspb.AnalyticsRecord, extendedStatistics bool, generateID bool, decodeBase64 bool) (map[string]interface{}, string) {
 	record := datum
 
 	mapping := map[string]interface{}{
@@ -343,7 +343,7 @@ func getMapping(datum analytics.AnalyticsRecord, extendedStatistics bool, genera
 
 	if generateID {
 		hasher := murmur3.New64()
-		hasher.Write([]byte(fmt.Sprintf("%d%s%s%s%s%s%d%s", record.TimeStamp.UnixNano(), record.Method, record.Path, record.IPAddress, record.APIID, record.OauthID, record.RequestTime, record.Alias)))
+		hasher.Write([]byte(fmt.Sprintf("%d%s%s%s%s%s%d%s", record.GetTimestampAsTime().UnixNano(), record.Method, record.Path, record.IPAddress, record.APIID, record.OauthID, record.RequestTime, record.Alias)))
 
 		return mapping, string(hasher.Sum(nil))
 	}
@@ -359,7 +359,7 @@ func (e Elasticsearch3Operator) processData(ctx context.Context, data []interfac
 			continue
 		}
 
-		d, ok := data[dataIndex].(analytics.AnalyticsRecord)
+		d, ok := data[dataIndex].(analyticspb.AnalyticsRecord)
 		if !ok {
 			log.WithFields(logrus.Fields{
 				"prefix": elasticsearchPrefix,
@@ -393,7 +393,7 @@ func (e Elasticsearch5Operator) processData(ctx context.Context, data []interfac
 			continue
 		}
 
-		d, ok := data[dataIndex].(analytics.AnalyticsRecord)
+		d, ok := data[dataIndex].(analyticspb.AnalyticsRecord)
 		if !ok {
 			log.WithFields(logrus.Fields{
 				"prefix": elasticsearchPrefix,
@@ -427,7 +427,7 @@ func (e Elasticsearch6Operator) processData(ctx context.Context, data []interfac
 			continue
 		}
 
-		d, ok := data[dataIndex].(analytics.AnalyticsRecord)
+		d, ok := data[dataIndex].(analyticspb.AnalyticsRecord)
 		if !ok {
 			log.WithFields(logrus.Fields{
 				"prefix": elasticsearchPrefix,

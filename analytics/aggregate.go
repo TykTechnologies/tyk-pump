@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/TykTechnologies/tyk-pump/analyticspb"
 	"github.com/fatih/structs"
 	"gopkg.in/mgo.v2/bson"
 )
@@ -403,7 +404,7 @@ func AggregateData(data []interface{}, trackAllPaths bool, ignoreTagPrefixList [
 	analyticsPerOrg := make(map[string]AnalyticsRecordAggregate)
 
 	for _, v := range data {
-		thisV := v.(AnalyticsRecord)
+		thisV := v.(analyticspb.AnalyticsRecord)
 		orgID := thisV.OrgID
 
 		if orgID == "" {
@@ -416,32 +417,32 @@ func AggregateData(data []interface{}, trackAllPaths bool, ignoreTagPrefixList [
 			thisAggregate = AnalyticsRecordAggregate{}.New()
 
 			// Set the hourly timestamp & expiry
-			asTime := thisV.TimeStamp
+			asTime := thisV.GetTimestampAsTime()
 			if storeAnalyticPerMinute {
 				thisAggregate.TimeStamp = time.Date(asTime.Year(), asTime.Month(), asTime.Day(), asTime.Hour(), asTime.Minute(), 0, 0, asTime.Location())
 			} else {
 				thisAggregate.TimeStamp = time.Date(asTime.Year(), asTime.Month(), asTime.Day(), asTime.Hour(), 0, 0, 0, asTime.Location())
 			}
-			thisAggregate.ExpireAt = thisV.ExpireAt
+			thisAggregate.ExpireAt = thisV.GetExpireAtsTime()
 			thisAggregate.TimeID.Year = asTime.Year()
 			thisAggregate.TimeID.Month = int(asTime.Month())
 			thisAggregate.TimeID.Day = asTime.Day()
 			thisAggregate.TimeID.Hour = asTime.Hour()
 			thisAggregate.OrgID = orgID
-			thisAggregate.LastTime = thisV.TimeStamp
+			thisAggregate.LastTime =  thisV.GetTimestampAsTime()
 			thisAggregate.Total.ErrorMap = make(map[string]int)
 		}
 
 		// Always update the last timestamp
-		thisAggregate.LastTime = thisV.TimeStamp
+		thisAggregate.LastTime =  thisV.GetTimestampAsTime()
 
 		// Create the counter for this record
 		var thisCounter Counter
 		if thisV.ResponseCode == -1 {
 			thisCounter = Counter{
-				LastTime:          thisV.TimeStamp,
+				LastTime:          thisV.GetTimestampAsTime(),
 				OpenConnections:   thisV.Network.OpenConnections,
-				ClosedConnections: thisV.Network.ClosedConnection,
+				ClosedConnections: thisV.Network.ClosedConnections,
 				BytesIn:           thisV.Network.BytesIn,
 				BytesOut:          thisV.Network.BytesOut,
 			}
@@ -468,7 +469,7 @@ func AggregateData(data []interface{}, trackAllPaths bool, ignoreTagPrefixList [
 				ErrorTotal:       0,
 				RequestTime:      float64(thisV.RequestTime),
 				TotalRequestTime: float64(thisV.RequestTime),
-				LastTime:         thisV.TimeStamp,
+				LastTime:         thisV.GetTimestampAsTime(),
 
 				MaxUpstreamLatency:   thisV.Latency.Upstream,
 				MinUpstreamLatency:   thisV.Latency.Upstream,
@@ -485,9 +486,9 @@ func AggregateData(data []interface{}, trackAllPaths bool, ignoreTagPrefixList [
 			thisAggregate.Total.RequestTime = thisAggregate.Total.TotalRequestTime / float64(thisAggregate.Total.Hits)
 			if thisV.ResponseCode >= 400 {
 				thisCounter.ErrorTotal = 1
-				thisCounter.ErrorMap[strconv.Itoa(thisV.ResponseCode)]++
+				thisCounter.ErrorMap[strconv.Itoa(int(thisV.ResponseCode))]++
 				thisAggregate.Total.ErrorTotal++
-				thisAggregate.Total.ErrorMap[strconv.Itoa(thisV.ResponseCode)]++
+				thisAggregate.Total.ErrorMap[strconv.Itoa(int(thisV.ResponseCode))]++
 			}
 
 			if (thisV.ResponseCode < 300) && (thisV.ResponseCode >= 200) {

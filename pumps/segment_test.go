@@ -5,22 +5,22 @@ import (
 	"testing"
 	"time"
 
-	"github.com/TykTechnologies/tyk-pump/analytics"
+	"github.com/TykTechnologies/tyk-pump/analyticspb"
 )
 
-func CreateAnalyticsRecord() analytics.AnalyticsRecord {
-	a := analytics.AnalyticsRecord{}
+func CreateAnalyticsRecord() analyticspb.AnalyticsRecord {
+	a := analyticspb.AnalyticsRecord{}
 	a.Method = "POST"
 	a.Path = "/v1/resource"
 	a.ContentLength = 123
 	a.UserAgent = "Test User Agent"
 	a.Day = 1
-	a.Month = time.January
+	a.Month = int32(time.January)
 	a.Year = 2016
 	a.Hour = 14
 	a.ResponseCode = 202
 	a.APIKey = "APIKEY123"
-	a.TimeStamp = time.Now()
+	a.SetTimestampAsTime(time.Now())
 	a.APIVersion = "1"
 	a.APIName = "Test API"
 	a.APIID = "API123"
@@ -31,7 +31,7 @@ func CreateAnalyticsRecord() analytics.AnalyticsRecord {
 	a.RawResponse = "{\"id\": \"123\"}"
 	//a.IPAddress = "192.168.99.100"
 	a.Tags = []string{"tag-1", "tag-2"}
-	a.ExpireAt = time.Date(2020, time.November, 10, 23, 0, 0, 0, time.UTC)
+	a.SetExpireAtsTime( time.Date(2020, time.November, 10, 23, 0, 0, 0, time.UTC))
 
 	return a
 }

@@ -8,10 +8,10 @@ import (
 	"path"
 	"time"
 
+	"github.com/TykTechnologies/tyk-pump/analyticspb"
 	"github.com/mitchellh/mapstructure"
 
 	"github.com/TykTechnologies/logrus"
-	"github.com/TykTechnologies/tyk-pump/analytics"
 )
 
 type CSVPump struct {
@@ -89,7 +89,7 @@ func (c *CSVPump) WriteData(ctx context.Context, data []interface{}) error {
 	writer := csv.NewWriter(outfile)
 
 	if appendHeader {
-		startRecord := analytics.AnalyticsRecord{}
+		startRecord := analyticspb.AnalyticsRecord{}
 		var headers = startRecord.GetFieldNames()
 
 		err := writer.Write(headers)
@@ -103,7 +103,7 @@ func (c *CSVPump) WriteData(ctx context.Context, data []interface{}) error {
 	}
 
 	for _, v := range data {
-		decoded := v.(analytics.AnalyticsRecord)
+		decoded := v.(analyticspb.AnalyticsRecord)
 
 		toWrite := decoded.GetLineValues()
 		// toWrite := []string{

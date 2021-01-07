@@ -5,11 +5,11 @@ import (
 	"encoding/base64"
 	"encoding/json"
 
+	"github.com/TykTechnologies/tyk-pump/analyticspb"
 	"github.com/mitchellh/mapstructure"
 	gelf "github.com/robertkowalski/graylog-golang"
 
 	"github.com/TykTechnologies/logrus"
-	"github.com/TykTechnologies/tyk-pump/analytics"
 )
 
 type GraylogPump struct {
@@ -80,7 +80,7 @@ func (p *GraylogPump) WriteData(ctx context.Context, data []interface{}) error {
 	}
 
 	for _, item := range data {
-		record := item.(analytics.AnalyticsRecord)
+		record := item.(analyticspb.AnalyticsRecord)
 
 		rReq, err := base64.StdEncoding.DecodeString(record.RawRequest)
 		if err != nil {
@@ -130,7 +130,7 @@ func (p *GraylogPump) WriteData(ctx context.Context, data []interface{}) error {
 		gelfData := map[string]interface{}{
 			//"version": "1.1",
 			"host":      "tyk-pumps",
-			"timestamp": record.TimeStamp.Unix(),
+			"timestamp": record.GetTimestampAsTime().Unix(),
 			"message":   string(message),
 		}
 

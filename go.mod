@@ -17,6 +17,7 @@ require (
 	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/gocraft/health v0.0.0-20170925182251-8675af27fef0
 	github.com/gocraft/web v0.0.0-20190207150652-9707327fb69b
+	github.com/golang/protobuf v1.4.3
 	github.com/gomodule/redigo v0.0.0-20190226174433-b47395aa1766 // indirect
 	github.com/googleapis/gax-go v2.0.2+incompatible // indirect
 	github.com/influxdata/influxdb v1.8.3
@@ -28,8 +29,10 @@ require (
 	github.com/mitchellh/mapstructure v1.1.2
 	github.com/moesif/moesifapi-go v1.0.5
 	github.com/olivere/elastic v6.2.31+incompatible // indirect
+	github.com/oschwald/maxminddb-golang v1.5.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.0.0
+	github.com/prometheus/common v0.6.0
 	github.com/quipo/statsd v0.0.0-20160923160612-75b7afedf0d2
 	github.com/ricochet2200/go-disk-usage v0.0.0-20150921141558-f0d1b743428f // indirect
 	github.com/robertkowalski/graylog-golang v0.0.0-20151121031040-e5295cfa2827
@@ -44,6 +47,7 @@ require (
 	golang.org/x/tools v0.0.0-20200623185156-456ad74e1464 // indirect
 	google.golang.org/api v0.24.0 // indirect
 	google.golang.org/grpc v1.34.0
+	google.golang.org/protobuf v1.25.0
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6
 	gopkg.in/mgo.v2 v2.0.0-20190816093944-a6b53ec6cb22
 	gopkg.in/olivere/elastic.v2 v2.0.61 // indirect

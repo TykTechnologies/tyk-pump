@@ -1,5 +1,7 @@
 package analytics
 
+import "github.com/TykTechnologies/tyk-pump/analyticspb"
+
 type AnalyticsFilters struct {
 	OrgsIDs              []string `json:"org_ids"`
 	APIIDs               []string `json:"api_ids"`
@@ -9,19 +11,19 @@ type AnalyticsFilters struct {
 	SkippedResponseCodes []int    `json:"skip_response_codes"`
 }
 
-func (filters AnalyticsFilters) ShouldFilter(record AnalyticsRecord) bool {
+func (filters AnalyticsFilters) ShouldFilter(record analyticspb.AnalyticsRecord) bool {
 	switch {
 	case len(filters.SkippedAPIIDs) > 0 && stringInSlice(record.APIID, filters.SkippedAPIIDs):
 		return true
 	case len(filters.SkippedOrgsIDs) > 0 && stringInSlice(record.OrgID, filters.SkippedOrgsIDs):
 		return true
-	case len(filters.SkippedResponseCodes) > 0 && intInSlice(record.ResponseCode, filters.SkippedResponseCodes):
+	case len(filters.SkippedResponseCodes) > 0 && intInSlice(int(record.ResponseCode), filters.SkippedResponseCodes):
 		return true
 	case len(filters.APIIDs) > 0 && !stringInSlice(record.APIID, filters.APIIDs):
 		return true
 	case len(filters.OrgsIDs) > 0 && !stringInSlice(record.OrgID, filters.OrgsIDs):
 		return true
-	case len(filters.ResponseCodes) > 0 && !intInSlice(record.ResponseCode, filters.ResponseCodes):
+	case len(filters.ResponseCodes) > 0 && !intInSlice(int(record.ResponseCode), filters.ResponseCodes):
 		return true
 	}
 	return false

@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/TykTechnologies/tyk-pump/analyticspb"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/lonelycode/mgohacks"
 	"github.com/mitchellh/mapstructure"
@@ -170,7 +171,7 @@ func (m *MongoSelectivePump) WriteData(ctx context.Context, data []interface{}) 
 		analyticsPerOrg := make(map[string][]interface{})
 
 		for _, v := range data {
-			orgID := v.(analytics.AnalyticsRecord).OrgID
+			orgID := v.(analyticspb.AnalyticsRecord).OrgID
 			collectionName, collErr := m.GetCollectionName(orgID)
 			skip := false
 			if collErr != nil {
@@ -231,7 +232,7 @@ func (m *MongoSelectivePump) AccumulateSet(data []interface{}) [][]interface{} {
 
 	thisResultSet := make([]interface{}, 0)
 	for i, item := range data {
-		thisItem := item.(analytics.AnalyticsRecord)
+		thisItem := item.(analyticspb.AnalyticsRecord)
 		if thisItem.ResponseCode == -1 {
 			continue
 		}

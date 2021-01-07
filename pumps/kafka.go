@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/TykTechnologies/logrus"
-	"github.com/TykTechnologies/tyk-pump/analytics"
+	"github.com/TykTechnologies/tyk-pump/analyticspb"
 	"github.com/mitchellh/mapstructure"
 	"github.com/segmentio/kafka-go"
 	"github.com/segmentio/kafka-go/sasl"
@@ -144,7 +144,7 @@ func (k *KafkaPump) WriteData(ctx context.Context, data []interface{}) error {
 	kafkaMessages := make([]kafka.Message, len(data))
 	for i, v := range data {
 		//Build message format
-		decoded := v.(analytics.AnalyticsRecord)
+		decoded := v.(analyticspb.AnalyticsRecord)
 		message := Json{
 			"timestamp":       decoded.TimeStamp,
 			"method":          decoded.Method,

@@ -19,6 +19,7 @@ import (
 
 	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/tyk-pump/analytics"
+	"github.com/TykTechnologies/tyk-pump/analyticspb"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/mitchellh/mapstructure"
 	"gopkg.in/mgo.v2"
@@ -509,7 +510,7 @@ func (m *MongoPump) AccumulateSet(data []interface{}) [][]interface{} {
 	thisResultSet := make([]interface{}, 0)
 
 	for i, item := range data {
-		thisItem := item.(analytics.AnalyticsRecord)
+		thisItem := item.(analyticspb.AnalyticsRecord)
 		if thisItem.ResponseCode == -1 {
 			continue
 		}

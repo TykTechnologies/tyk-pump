@@ -7,11 +7,11 @@ import (
 	"time"
 
 	"github.com/DataDog/datadog-go/statsd"
+	"github.com/TykTechnologies/tyk-pump/analyticspb"
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 
 	"github.com/TykTechnologies/logrus"
-	"github.com/TykTechnologies/tyk-pump/analytics"
 )
 
 const (
@@ -116,7 +116,7 @@ func (s *DogStatsdPump) WriteData(ctx context.Context, data []interface{}) error
 	s.log.Info(fmt.Sprintf("purging %d records", len(data)))
 	for _, v := range data {
 		// Convert to AnalyticsRecord
-		decoded := v.(analytics.AnalyticsRecord)
+		decoded := v.(analyticspb.AnalyticsRecord)
 		decoded.Path = strings.TrimRight(decoded.Path, "/")
 
 		/*

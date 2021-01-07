@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/syslog"
 
+	"github.com/TykTechnologies/tyk-pump/analyticspb"
 	"github.com/mitchellh/mapstructure"
 
 	"github.com/TykTechnologies/logrus"
@@ -124,7 +125,7 @@ func (s *SyslogPump) WriteData(ctx context.Context, data []interface{}) error {
 			return nil
 		default:
 			// Decode the raw analytics into Form
-			decoded := v.(analytics.AnalyticsRecord)
+			decoded := v.(analyticspb.AnalyticsRecord)
 			message := Json{
 				"timestamp":       decoded.TimeStamp,
 				"method":          decoded.Method,

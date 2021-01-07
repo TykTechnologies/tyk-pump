@@ -7,7 +7,7 @@ import (
 	"strconv"
 
 	"github.com/TykTechnologies/logrus"
-	"github.com/TykTechnologies/tyk-pump/analytics"
+	"github.com/TykTechnologies/tyk-pump/analyticspb"
 
 	"github.com/mitchellh/mapstructure"
 	"github.com/prometheus/client_golang/prometheus"
@@ -120,8 +120,8 @@ func (p *PrometheusPump) WriteData(ctx context.Context, data []interface{}) erro
 	}).Debug("Writing ", len(data), " records")
 
 	for _, item := range data {
-		record := item.(analytics.AnalyticsRecord)
-		code := strconv.Itoa(record.ResponseCode)
+		record := item.(analyticspb.AnalyticsRecord)
+		code := strconv.Itoa(int(record.ResponseCode))
 
 		p.TotalStatusMetrics.WithLabelValues(code, record.APIID).Inc()
 		p.PathStatusMetrics.WithLabelValues(code, record.APIID, record.Path, record.Method).Inc()

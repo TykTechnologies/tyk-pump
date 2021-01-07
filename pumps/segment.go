@@ -4,11 +4,11 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/TykTechnologies/tyk-pump/analyticspb"
 	"github.com/mitchellh/mapstructure"
 	segment "github.com/segmentio/analytics-go"
 
 	"github.com/TykTechnologies/logrus"
-	"github.com/TykTechnologies/tyk-pump/analytics"
 )
 
 type SegmentPump struct {
@@ -53,13 +53,13 @@ func (s *SegmentPump) WriteData(ctx context.Context, data []interface{}) error {
 	}).Info("Writing ", len(data), " records")
 
 	for _, v := range data {
-		s.WriteDataRecord(v.(analytics.AnalyticsRecord))
+		s.WriteDataRecord(v.(analyticspb.AnalyticsRecord))
 	}
 
 	return nil
 }
 
-func (s *SegmentPump) WriteDataRecord(record analytics.AnalyticsRecord) error {
+func (s *SegmentPump) WriteDataRecord(record analyticspb.AnalyticsRecord) error {
 	key := record.APIKey
 	properties, err := s.ToJSONMap(record)
 

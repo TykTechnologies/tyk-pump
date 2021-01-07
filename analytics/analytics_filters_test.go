@@ -1,9 +1,13 @@
 package analytics
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/TykTechnologies/tyk-pump/analyticspb"
+)
 
 func TestShouldFilter(t *testing.T) {
-	record := AnalyticsRecord{
+	record := analyticspb.AnalyticsRecord{
 		APIID:        "apiid123",
 		OrgID:        "orgid123",
 		ResponseCode: 200,

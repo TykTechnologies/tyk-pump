@@ -6,11 +6,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/TykTechnologies/tyk-pump/analyticspb"
 	"github.com/influxdata/influxdb/client/v2"
 	"github.com/mitchellh/mapstructure"
 
 	"github.com/TykTechnologies/logrus"
-	"github.com/TykTechnologies/tyk-pump/analytics"
 )
 
 type InfluxPump struct {
@@ -93,7 +93,7 @@ func (i *InfluxPump) WriteData(ctx context.Context, data []interface{}) error {
 	//	 Create a point and add to batch
 	for _, v := range data {
 		// Convert to AnalyticsRecord
-		decoded := v.(analytics.AnalyticsRecord)
+		decoded := v.(analyticspb.AnalyticsRecord)
 		mapping := map[string]interface{}{
 			"method":        decoded.Method,
 			"path":          decoded.Path,

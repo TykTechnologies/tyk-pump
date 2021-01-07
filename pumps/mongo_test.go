@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/TykTechnologies/tyk-pump/analytics"
+	"github.com/TykTechnologies/tyk-pump/analyticspb"
 )
 
 func newPump() Pump {
@@ -158,7 +158,7 @@ func TestMongoPump_AccumulateSet(t *testing.T) {
 	mPump := pump.(*MongoPump)
 	mPump.dbConf = &conf
 
-	record := analytics.AnalyticsRecord{}
+	record := analyticspb.AnalyticsRecord{}
 	data := make([]interface{}, 0)
 
 	for i := 0; i < numRecords; i++ {

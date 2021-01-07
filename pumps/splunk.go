@@ -10,10 +10,10 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/TykTechnologies/tyk-pump/analyticspb"
 	"github.com/mitchellh/mapstructure"
 
 	"github.com/TykTechnologies/logrus"
-	"github.com/TykTechnologies/tyk-pump/analytics"
 )
 
 const (
@@ -143,7 +143,7 @@ func (p *SplunkPump) WriteData(ctx context.Context, data []interface{}) error {
 		"prefix": pumpPrefix,
 	}).Info("Writing ", len(data), " records")
 	for _, v := range data {
-		decoded := v.(analytics.AnalyticsRecord)
+		decoded := v.(analyticspb.AnalyticsRecord)
 		apiKey := decoded.APIKey
 		if p.config.ObfuscateAPIKeys {
 			if len(apiKey) > 4 {
@@ -167,7 +167,7 @@ func (p *SplunkPump) WriteData(ctx context.Context, data []interface{}) error {
 			"raw_response":  decoded.RawResponse,
 			"ip_address":    decoded.IPAddress,
 		}
-		p.client.Send(ctx, event, decoded.TimeStamp)
+		p.client.Send(ctx, event, decoded.GetTimestampAsTime())
 	}
 	return nil
 }
