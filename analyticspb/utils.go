@@ -98,20 +98,6 @@ func geoIPLookup(GeoIPDB *maxminddb.Reader, ipStr string) (*GeoData, error) {
 	return record, nil
 }
 
-func initNormalisationPatterns() (pats config.NormaliseURLPatterns) {
-	pats.UUIDs = regexp.MustCompile(`[0-9a-fA-F]{8}(-)?[0-9a-fA-F]{4}(-)?[0-9a-fA-F]{4}(-)?[0-9a-fA-F]{4}(-)?[0-9a-fA-F]{12}`)
-	pats.IDs = regexp.MustCompile(`\/(\d+)`)
-
-	for _, pattern := range config.Global().AnalyticsConfig.NormaliseUrls.Custom {
-		if patRe, err := regexp.Compile(pattern); err != nil {
-			log.Error("failed to compile custom pattern: ", err)
-		} else {
-			pats.Custom = append(pats.Custom, patRe)
-		}
-	}
-	return
-}
-
 func (a *AnalyticsRecord) NormalisePath(globalConfig *config.Config) {
 	if globalConfig.AnalyticsConfig.NormaliseUrls.NormaliseUUIDs {
 		a.Path = globalConfig.AnalyticsConfig.NormaliseUrls.CompiledPatternSet.UUIDs.ReplaceAllString(a.Path, "{uuid}")
