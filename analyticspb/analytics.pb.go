@@ -850,14 +850,14 @@ var file_analyticspb_analytics_proto_rawDesc = []byte{
 	0x42, 0x79, 0x74, 0x65, 0x73, 0x49, 0x6e, 0x18, 0x03, 0x20, 0x01, 0x28, 0x03, 0x52, 0x07, 0x42,
 	0x79, 0x74, 0x65, 0x73, 0x49, 0x6e, 0x12, 0x1a, 0x0a, 0x08, 0x42, 0x79, 0x74, 0x65, 0x73, 0x4f,
 	0x75, 0x74, 0x18, 0x04, 0x20, 0x01, 0x28, 0x03, 0x52, 0x08, 0x42, 0x79, 0x74, 0x65, 0x73, 0x4f,
-	0x75, 0x74, 0x32, 0x63, 0x0a, 0x10, 0x41, 0x6e, 0x61, 0x6c, 0x79, 0x74, 0x69, 0x63, 0x73, 0x53,
-	0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x4f, 0x0a, 0x08, 0x53, 0x65, 0x6e, 0x64, 0x44, 0x61,
-	0x74, 0x61, 0x12, 0x1f, 0x2e, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x74, 0x69, 0x63, 0x73, 0x70, 0x62,
+	0x75, 0x74, 0x32, 0x62, 0x0a, 0x10, 0x41, 0x6e, 0x61, 0x6c, 0x79, 0x74, 0x69, 0x63, 0x73, 0x53,
+	0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x4e, 0x0a, 0x08, 0x53, 0x65, 0x6e, 0x64, 0x44, 0x61,
+	0x74, 0x61, 0x12, 0x1c, 0x2e, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x74, 0x69, 0x63, 0x73, 0x70, 0x62,
 	0x2e, 0x41, 0x6e, 0x61, 0x6c, 0x79, 0x74, 0x69, 0x63, 0x73, 0x52, 0x65, 0x63, 0x6f, 0x72, 0x64,
-	0x52, 0x65, 0x71, 0x1a, 0x20, 0x2e, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x74, 0x69, 0x63, 0x73, 0x70,
-	0x62, 0x2e, 0x41, 0x6e, 0x61, 0x6c, 0x79, 0x74, 0x69, 0x63, 0x73, 0x52, 0x65, 0x63, 0x6f, 0x72,
-	0x64, 0x52, 0x65, 0x73, 0x70, 0x22, 0x00, 0x42, 0x0e, 0x5a, 0x0c, 0x2f, 0x61, 0x6e, 0x61, 0x6c,
-	0x79, 0x74, 0x69, 0x63, 0x73, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x1a, 0x20, 0x2e, 0x61, 0x6e, 0x61, 0x6c, 0x79, 0x74, 0x69, 0x63, 0x73, 0x70, 0x62, 0x2e, 0x41,
+	0x6e, 0x61, 0x6c, 0x79, 0x74, 0x69, 0x63, 0x73, 0x52, 0x65, 0x63, 0x6f, 0x72, 0x64, 0x52, 0x65,
+	0x73, 0x70, 0x22, 0x00, 0x28, 0x01, 0x42, 0x0e, 0x5a, 0x0c, 0x2f, 0x61, 0x6e, 0x61, 0x6c, 0x79,
+	0x74, 0x69, 0x63, 0x73, 0x70, 0x62, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -896,7 +896,7 @@ var file_analyticspb_analytics_proto_depIdxs = []int32{
 	4,  // 6: analyticspb.GeoData.Country:type_name -> analyticspb.Country
 	5,  // 7: analyticspb.GeoData.City:type_name -> analyticspb.City
 	6,  // 8: analyticspb.GeoData.Location:type_name -> analyticspb.Location
-	0,  // 9: analyticspb.AnalyticsService.SendData:input_type -> analyticspb.AnalyticsRecordReq
+	2,  // 9: analyticspb.AnalyticsService.SendData:input_type -> analyticspb.AnalyticsRecord
 	1,  // 10: analyticspb.AnalyticsService.SendData:output_type -> analyticspb.AnalyticsRecordResp
 	10, // [10:11] is the sub-list for method output_type
 	9,  // [9:10] is the sub-list for method input_type
@@ -1052,7 +1052,7 @@ const _ = grpc.SupportPackageIsVersion6
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type AnalyticsServiceClient interface {
-	SendData(ctx context.Context, in *AnalyticsRecordReq, opts ...grpc.CallOption) (*AnalyticsRecordResp, error)
+	SendData(ctx context.Context, opts ...grpc.CallOption) (AnalyticsService_SendDataClient, error)
 }
 
 type analyticsServiceClient struct {
@@ -1063,59 +1063,93 @@ func NewAnalyticsServiceClient(cc grpc.ClientConnInterface) AnalyticsServiceClie
 	return &analyticsServiceClient{cc}
 }
 
-func (c *analyticsServiceClient) SendData(ctx context.Context, in *AnalyticsRecordReq, opts ...grpc.CallOption) (*AnalyticsRecordResp, error) {
-	out := new(AnalyticsRecordResp)
-	err := c.cc.Invoke(ctx, "/analyticspb.AnalyticsService/SendData", in, out, opts...)
+func (c *analyticsServiceClient) SendData(ctx context.Context, opts ...grpc.CallOption) (AnalyticsService_SendDataClient, error) {
+	stream, err := c.cc.NewStream(ctx, &_AnalyticsService_serviceDesc.Streams[0], "/analyticspb.AnalyticsService/SendData", opts...)
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	x := &analyticsServiceSendDataClient{stream}
+	return x, nil
+}
+
+type AnalyticsService_SendDataClient interface {
+	Send(*AnalyticsRecord) error
+	CloseAndRecv() (*AnalyticsRecordResp, error)
+	grpc.ClientStream
+}
+
+type analyticsServiceSendDataClient struct {
+	grpc.ClientStream
+}
+
+func (x *analyticsServiceSendDataClient) Send(m *AnalyticsRecord) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *analyticsServiceSendDataClient) CloseAndRecv() (*AnalyticsRecordResp, error) {
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	m := new(AnalyticsRecordResp)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 // AnalyticsServiceServer is the server API for AnalyticsService service.
 type AnalyticsServiceServer interface {
-	SendData(context.Context, *AnalyticsRecordReq) (*AnalyticsRecordResp, error)
+	SendData(AnalyticsService_SendDataServer) error
 }
 
 // UnimplementedAnalyticsServiceServer can be embedded to have forward compatible implementations.
 type UnimplementedAnalyticsServiceServer struct {
 }
 
-func (*UnimplementedAnalyticsServiceServer) SendData(context.Context, *AnalyticsRecordReq) (*AnalyticsRecordResp, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SendData not implemented")
+func (*UnimplementedAnalyticsServiceServer) SendData(AnalyticsService_SendDataServer) error {
+	return status.Errorf(codes.Unimplemented, "method SendData not implemented")
 }
 
 func RegisterAnalyticsServiceServer(s *grpc.Server, srv AnalyticsServiceServer) {
 	s.RegisterService(&_AnalyticsService_serviceDesc, srv)
 }
 
-func _AnalyticsService_SendData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(AnalyticsRecordReq)
-	if err := dec(in); err != nil {
+func _AnalyticsService_SendData_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(AnalyticsServiceServer).SendData(&analyticsServiceSendDataServer{stream})
+}
+
+type AnalyticsService_SendDataServer interface {
+	SendAndClose(*AnalyticsRecordResp) error
+	Recv() (*AnalyticsRecord, error)
+	grpc.ServerStream
+}
+
+type analyticsServiceSendDataServer struct {
+	grpc.ServerStream
+}
+
+func (x *analyticsServiceSendDataServer) SendAndClose(m *AnalyticsRecordResp) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *analyticsServiceSendDataServer) Recv() (*AnalyticsRecord, error) {
+	m := new(AnalyticsRecord)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
-	if interceptor == nil {
-		return srv.(AnalyticsServiceServer).SendData(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/analyticspb.AnalyticsService/SendData",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AnalyticsServiceServer).SendData(ctx, req.(*AnalyticsRecordReq))
-	}
-	return interceptor(ctx, in, info, handler)
+	return m, nil
 }
 
 var _AnalyticsService_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "analyticspb.AnalyticsService",
 	HandlerType: (*AnalyticsServiceServer)(nil),
-	Methods: []grpc.MethodDesc{
+	Methods:     []grpc.MethodDesc{},
+	Streams: []grpc.StreamDesc{
 		{
-			MethodName: "SendData",
-			Handler:    _AnalyticsService_SendData_Handler,
+			StreamName:    "SendData",
+			Handler:       _AnalyticsService_SendData_Handler,
+			ClientStreams: true,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
 	Metadata: "analyticspb/analytics.proto",
 }
