@@ -5,6 +5,7 @@ import (
 	"net"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"time"
 	"reflect"
 
@@ -150,4 +151,18 @@ func (a *AnalyticsRecord) SetTimestampAsTime(timer time.Time) {
 func (a *AnalyticsRecord) SetExpireAtsTime(timer time.Time) {
 	timestamp, _ := ptypes.TimestampProto(timer)
 	a.ExpireAt = timestamp
+}
+
+func (n *NetworkStats) Flush() NetworkStats {
+	s := NetworkStats{
+		OpenConnections:  atomic.LoadInt64(&n.OpenConnections),
+		ClosedConnections: atomic.LoadInt64(&n.ClosedConnections),
+		BytesIn:          atomic.LoadInt64(&n.BytesIn),
+		BytesOut:         atomic.LoadInt64(&n.BytesOut),
+	}
+	atomic.StoreInt64(&n.OpenConnections, 0)
+	atomic.StoreInt64(&n.ClosedConnections, 0)
+	atomic.StoreInt64(&n.BytesIn, 0)
+	atomic.StoreInt64(&n.BytesOut, 0)
+	return s
 }
