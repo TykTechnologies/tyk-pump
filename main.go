@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"errors"
-	"fmt"
 	"strings"
 	"sync"
 	"time"
@@ -176,6 +175,9 @@ func StartPurgeLoop(secInterval int, chunkSize int64, expire time.Duration, omit
 			keys := make([]interface{}, len(AnalyticsValues))
 
 			for i, v := range AnalyticsValues {
+				if v == nil{
+					continue
+				}
 				decoded := analyticspb.AnalyticsRecord{}
 
 				var err error
@@ -183,18 +185,17 @@ func StartPurgeLoop(secInterval int, chunkSize int64, expire time.Duration, omit
 
 				switch v.(type){
 				case analyticspb.AnalyticsRecord:
-					fmt.Println("type analyticspb.AnalyticsRecord")
 
 					decoded, ok = v.(analyticspb.AnalyticsRecord)
 					if !ok {
 						err = errors.New("Analytic record couldn't be decoded")
 					}
 				case  *analyticspb.AnalyticsRecord:
-					fmt.Println("type analyticspb.AnalyticsRecord")
-					decoded, ok= v.(analyticspb.AnalyticsRecord)
+					aux, ok := v.(*analyticspb.AnalyticsRecord)
 					if !ok {
 						err = errors.New("Analytic record couldn't be decoded")
 					}
+					decoded = *aux
 				default:
 					err = msgpack.Unmarshal([]byte(v.(string)), &decoded)
 					log.WithFields(logrus.Fields{

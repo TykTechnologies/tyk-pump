@@ -12,6 +12,7 @@ require (
 	github.com/TykTechnologies/tyk v0.0.0-20200207055804-cf1d1ad81206
 	github.com/beeker1121/goque v0.0.0-20170321141813-4044bc29b280 // indirect
 	github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869 // indirect
+	github.com/enriquebris/goconcurrentqueue v0.6.0
 	github.com/fatih/structs v1.1.0
 	github.com/go-redis/redis/v8 v8.3.1
 	github.com/go-stack/stack v1.8.0 // indirect
@@ -31,6 +32,7 @@ require (
 	github.com/olivere/elastic v6.2.31+incompatible // indirect
 	github.com/oschwald/maxminddb-golang v1.5.0
 	github.com/pkg/errors v0.9.1
+	github.com/pltr/onering v0.0.0-20180508170801-a3314f7f43c5
 	github.com/prometheus/client_golang v1.0.0
 	github.com/prometheus/common v0.6.0
 	github.com/quipo/statsd v0.0.0-20160923160612-75b7afedf0d2

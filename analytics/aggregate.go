@@ -586,7 +586,7 @@ func AggregateData(data []interface{}, trackAllPaths bool, ignoreTagPrefixList [
 					}
 					break
 				case "ResponseCode":
-					errAsStr := strconv.Itoa(value.(int))
+					errAsStr := strconv.Itoa(int(value.(int32)))
 					if errAsStr != "" {
 						c := IncrementOrSetUnit(thisAggregate.Errors[errAsStr])
 						if c.ErrorTotal > 0 {
@@ -651,11 +651,13 @@ func AggregateData(data []interface{}, trackAllPaths bool, ignoreTagPrefixList [
 					}
 					break
 				case "Geo":
-					c := IncrementOrSetUnit(thisAggregate.Geo[thisV.Geo.Country.ISOCode])
-					if thisV.Geo.Country.ISOCode != "" {
-						thisAggregate.Geo[thisV.Geo.Country.ISOCode] = c
-						thisAggregate.Geo[thisV.Geo.Country.ISOCode].Identifier = thisV.Geo.Country.ISOCode
-						thisAggregate.Geo[thisV.Geo.Country.ISOCode].HumanIdentifier = thisV.Geo.Country.ISOCode
+					if thisV.Geo != nil && thisV.Geo.Country != nil{
+						c := IncrementOrSetUnit(thisAggregate.Geo[thisV.Geo.Country.ISOCode])
+						if thisV.Geo.Country.ISOCode != "" {
+							thisAggregate.Geo[thisV.Geo.Country.ISOCode] = c
+							thisAggregate.Geo[thisV.Geo.Country.ISOCode].Identifier = thisV.Geo.Country.ISOCode
+							thisAggregate.Geo[thisV.Geo.Country.ISOCode].HumanIdentifier = thisV.Geo.Country.ISOCode
+						}
 					}
 					break
 

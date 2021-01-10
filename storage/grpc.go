@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/TykTechnologies/tyk-pump/analyticspb"
+	"github.com/enriquebris/goconcurrentqueue"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
@@ -22,7 +23,8 @@ const MIN_BUF_SIZE = 100000
 var grpcLogPrefix = "grpc"
 
 type server struct{
-	buff chan *analyticspb.AnalyticsRecord
+	workerCh chan *analyticspb.AnalyticsRecord
+	queue *goconcurrentqueue.FIFO
 }
 
 type GrpcBuffer struct{
@@ -36,9 +38,11 @@ func (s *GrpcBuffer) Init(config interface{}) error {
 	s.port = DEFAULT_GRPC_PORT
 
 	s.server = &server{}
-	s.server.buff = make(chan *analyticspb.AnalyticsRecord, MIN_BUF_SIZE)
-
+	s.server.workerCh = make(chan *analyticspb.AnalyticsRecord, MIN_BUF_SIZE)
+	s.server.queue = goconcurrentqueue.NewFIFO()
+	go s.bufferWorker()
 	go s.serveGrpc()
+
 
 	return nil
 }
@@ -52,20 +56,27 @@ func (s *GrpcBuffer) Connect() bool {
 func (s *GrpcBuffer) GetAndDeleteSet(setName string, chunkSize int64, expire time.Duration) []interface{}{
 	result := []interface{}{}
 
-	if chunkSize != 0 {
-		var i int64
-		for i=0;i<chunkSize; i ++ {
-			records := <- s.server.buff
-			result = append(result, records)
-		}
-	}else {
-		for records := range s.server.buff{
-			result = append(result, records)
-		}
+
+	for i:=0;i< s.server.queue.GetLen();i++{
+		item, _  :=s.server.queue.Dequeue()
+		result = append(result, item)
 	}
+
+
 
 	return result
 }
+
+func (s *GrpcBuffer) bufferWorker(){
+	for {
+		select {
+			case val := <- s.server.workerCh:
+				s.server.queue.Enqueue(val)
+		}
+	}
+
+}
+
 
 func (s *GrpcBuffer) serveGrpc(){
 	ctx := context.Background()
@@ -127,7 +138,6 @@ func (s *GrpcBuffer) serveGrpc(){
 	}
 }
 
-
 func (srv *server) SendData(stream analyticspb.AnalyticsService_SendDataServer) error{
 	log.Printf("Pump receiving data via SendData! ")
 
@@ -143,9 +153,9 @@ func (srv *server) SendData(stream analyticspb.AnalyticsService_SendDataServer) 
 			log.Fatalf("Error while reading client stream: %v",err)
 			return err
 		}
-
-		srv.buff <- record
+		srv.workerCh <- record
 	}
 
 	return nil
 }
+
