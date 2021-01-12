@@ -14,7 +14,6 @@ import (
 	"github.com/enriquebris/goconcurrentqueue"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/keepalive"
 )
 const DEFAULT_GRPC_PORT = 50051
 const MIN_BUF_SIZE = 100000
@@ -97,7 +96,7 @@ func (s *GrpcBuffer) serveGrpc(){
 		s.grpcServer = grpc.NewServer(
 			// MaxConnectionAge is just to avoid long connection, to facilitate load balancing
 			// MaxConnectionAgeGrace will torn them, default to infinity
-			grpc.KeepaliveParams(keepalive.ServerParameters{MaxConnectionAge: 2 * time.Minute}),
+			//grpc.KeepaliveParams(keepalive.ServerParameters{MaxConnectionAge: 2 * time.Minute}),
 		)
 
 
@@ -137,7 +136,6 @@ func (s *GrpcBuffer) serveGrpc(){
 }
 
 func (srv *server) SendData(ctx context.Context,req *analyticspb.AnalyticsRecord) (*analyticspb.AnalyticsRecordResp, error){
-	log.Printf("Pump receiving data via SendData! ")
 
 	record := req
 	srv.workerCh <- record
