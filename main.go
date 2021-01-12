@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 	"sync"
 	"time"
@@ -87,6 +88,7 @@ func Init() {
 }
 
 func setupAnalyticsStore() {
+	fmt.Println("type:",SystemConfig.AnalyticsStorageType)
 	switch SystemConfig.AnalyticsStorageType {
 	case "redis":
 		AnalyticsStore = &storage.RedisClusterStorageManager{}

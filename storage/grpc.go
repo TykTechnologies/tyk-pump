@@ -3,20 +3,18 @@ package storage
 import (
 	"context"
 	"fmt"
-	"io"
 	"net"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
+	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/tyk-pump/analyticspb"
 	"github.com/enriquebris/goconcurrentqueue"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
-	"github.com/TykTechnologies/logrus"
-
 )
 const DEFAULT_GRPC_PORT = 50051
 const MIN_BUF_SIZE = 100000
@@ -138,24 +136,13 @@ func (s *GrpcBuffer) serveGrpc(){
 	}
 }
 
-func (srv *server) SendData(stream analyticspb.AnalyticsService_SendDataServer) error{
+func (srv *server) SendData(ctx context.Context,req *analyticspb.AnalyticsRecord) (*analyticspb.AnalyticsRecordResp, error){
 	log.Printf("Pump receiving data via SendData! ")
 
+	record := req
+	srv.workerCh <- record
 
-	for  {
-		record, err := stream.Recv()
-		if err == io.EOF{
-			return stream.SendAndClose(&analyticspb.AnalyticsRecordResp{
-				Response: true,
-			})
-		}
-		if err != nil {
-			log.Fatalf("Error while reading client stream: %v",err)
-			return err
-		}
-		srv.workerCh <- record
-	}
-
-	return nil
+	res := & analyticspb.AnalyticsRecordResp{Response: true}
+	return res, nil
 }
 
