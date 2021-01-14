@@ -330,10 +330,7 @@ func main() {
 		return
 	}
 
-	// Don't enable chunking if zero value
-	if SystemConfig.PurgeChunk == 0 {
-		SystemConfig.PurgeChunk = -1
-	}
+
 
 	if SystemConfig.PurgeChunk > 0 {
 		log.WithField("PurgeChunk", SystemConfig.PurgeChunk).Info("PurgeChunk enabled")
