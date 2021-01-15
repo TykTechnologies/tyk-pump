@@ -330,8 +330,6 @@ func main() {
 		return
 	}
 
-
-
 	if SystemConfig.PurgeChunk > 0 {
 		log.WithField("PurgeChunk", SystemConfig.PurgeChunk).Info("PurgeChunk enabled")
 		if SystemConfig.StorageExpirationTime == 0 {
