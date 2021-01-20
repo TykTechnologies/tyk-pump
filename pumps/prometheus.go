@@ -125,7 +125,7 @@ func (p *PrometheusPump) WriteData(ctx context.Context, data []interface{}) erro
 
 		p.TotalStatusMetrics.WithLabelValues(code, record.APIID).Inc()
 		p.PathStatusMetrics.WithLabelValues(code, record.APIID, record.Path, record.Method).Inc()
-		p.KeyStatusMetrics.WithLabelValues(code, record.APIKey)
+		p.KeyStatusMetrics.WithLabelValues(code, record.APIKey).Inc()
 		if record.OauthID != "" {
 			p.OauthStatusMetrics.WithLabelValues(code, record.OauthID).Inc()
 		}
