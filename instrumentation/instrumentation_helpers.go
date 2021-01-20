@@ -1,10 +1,12 @@
-package main
+package instrumentation
 
 import (
 	"os"
 	"runtime/debug"
 	"time"
 
+	"github.com/TykTechnologies/tyk-pump/config"
+	"github.com/TykTechnologies/tyk-pump/logger"
 	"github.com/TykTechnologies/tyk/rpc"
 
 	"github.com/gocraft/health"
@@ -12,9 +14,10 @@ import (
 
 var applicationGCStats = debug.GCStats{}
 var instrument = health.NewStream()
+var log = logger.GetLogger()
 
 // SetupInstrumentation handles all the intialisation of the instrumentation handler
-func SetupInstrumentation() {
+func SetupInstrumentation(config *config.TykPumpConfiguration) {
 	var enabled bool
 	//instrument.AddSink(&health.WriterSink{os.Stdout})
 	thisInstr := os.Getenv("TYK_INSTRUMENTATION")
@@ -27,14 +30,14 @@ func SetupInstrumentation() {
 		return
 	}
 
-	if SystemConfig.StatsdConnectionString == "" {
+	if config.StatsdConnectionString == "" {
 		log.Error("Instrumentation is enabled, but no connectionstring set for statsd")
 		return
 	}
 
-	log.Info("Sending stats to: ", SystemConfig.StatsdConnectionString, " with prefix: ", SystemConfig.StatsdPrefix)
-	statsdSink, err := NewStatsDSink(SystemConfig.StatsdConnectionString,
-		&StatsDSinkOptions{Prefix: SystemConfig.StatsdPrefix})
+	log.Info("Sending stats to: ", config.StatsdConnectionString, " with prefix: ", config.StatsdPrefix)
+	statsdSink, err := NewStatsDSink(config.StatsdConnectionString,
+		&StatsDSinkOptions{Prefix: config.StatsdPrefix})
 
 	if err != nil {
 		log.Fatal("Failed to start StatsD check: ", err)

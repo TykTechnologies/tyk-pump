@@ -12,6 +12,8 @@ import (
 	prefixed "github.com/TykTechnologies/logrus-prefixed-formatter"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/TykTechnologies/tyk-pump/analytics/demo"
+	"github.com/TykTechnologies/tyk-pump/config"
+	"github.com/TykTechnologies/tyk-pump/instrumentation"
 	logger "github.com/TykTechnologies/tyk-pump/logger"
 	"github.com/TykTechnologies/tyk-pump/pumps"
 	"github.com/TykTechnologies/tyk-pump/server"
@@ -21,7 +23,7 @@ import (
 	msgpack "gopkg.in/vmihailenco/msgpack.v2"
 )
 
-var SystemConfig TykPumpConfiguration
+var SystemConfig config.TykPumpConfiguration
 var AnalyticsStore storage.AnalyticsStorage
 var UptimeStorage storage.AnalyticsStorage
 var Pumps []pumps.Pump
@@ -38,11 +40,11 @@ var (
 	demoApiMode        = kingpin.Flag("demo-api", "pass apiID string to generate demo data").Default("").String()
 	demoApiVersionMode = kingpin.Flag("demo-api-version", "pass apiID string to generate demo data").Default("").String()
 	debugMode          = kingpin.Flag("debug", "enable debug mode").Bool()
-	version            = kingpin.Version(VERSION)
+	version            = kingpin.Version(config.VERSION)
 )
 
 func Init() {
-	SystemConfig = TykPumpConfiguration{}
+	SystemConfig = config.TykPumpConfiguration{}
 
 	kingpin.Parse()
 	log.Formatter = new(prefixed.TextFormatter)
@@ -55,9 +57,9 @@ func Init() {
 
 	log.WithFields(logrus.Fields{
 		"prefix": mainPrefix,
-	}).Info("## Tyk Analytics Pump, ", VERSION, " ##")
+	}).Info("## Tyk Analytics Pump, ", config.VERSION, " ##")
 
-	LoadConfig(conf, &SystemConfig)
+	SystemConfig = *config.LoadConfig(conf)
 
 	// If no environment variable is set, check the configuration file:
 	if os.Getenv("TYK_LOGLEVEL") == "" {
@@ -111,7 +113,7 @@ func storeVersion() {
 	versionStore.KeyPrefix = "version-check-"
 	versionStore.Config = versionConf
 	versionStore.Connect()
-	versionStore.SetKey("pump", VERSION, 0)
+	versionStore.SetKey("pump", config.VERSION, 0)
 }
 
 func initialisePumps() {
@@ -161,7 +163,7 @@ func initialisePumps() {
 
 func StartPurgeLoop(secInterval int, chunkSize int64, expire time.Duration, omitDetails bool) {
 	for range time.Tick(time.Duration(secInterval) * time.Second) {
-		job := instrument.NewJob("PumpRecordsPurge")
+		job := instrumentation.instrument.NewJob("PumpRecordsPurge")
 
 		AnalyticsValues := AnalyticsStore.GetAndDeleteSet(storage.ANALYTICS_KEYNAME, chunkSize, expire)
 		if len(AnalyticsValues) > 0 {
@@ -308,7 +310,7 @@ func execPumpWriting(wg *sync.WaitGroup, pmp pumps.Pump, keys *[]interface{}, pu
 
 func main() {
 	Init()
-	SetupInstrumentation()
+	instrumentation.SetupInstrumentation()
 	go server.ServeHealthCheck(SystemConfig.HealthCheckEndpointName, SystemConfig.HealthCheckEndpointPort)
 
 	// Store version which will be read by dashboard and sent to

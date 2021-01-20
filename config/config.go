@@ -1,9 +1,10 @@
-package main
+package config
 
 import (
 	"encoding/json"
 	"io/ioutil"
 
+	"github.com/TykTechnologies/tyk-pump/logger"
 	"github.com/kelseyhightower/envconfig"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
@@ -11,6 +12,8 @@ import (
 )
 
 const ENV_PREVIX = "TYK_PMP"
+var log = logger.GetLogger()
+
 
 type PumpConfig struct {
 	Name                  string                     `json:"name"` // Deprecated
@@ -38,8 +41,10 @@ type TykPumpConfiguration struct {
 	OmitDetailedRecording   bool                       `json:"omit_detailed_recording"`
 }
 
-func LoadConfig(filePath *string, configStruct *TykPumpConfiguration) {
-	configuration, err := ioutil.ReadFile(*filePath)
+func LoadConfig(filePath *string) *TykPumpConfiguration {
+	var configStruct *TykPumpConfiguration
+	path := *filePath
+	configuration, err := ioutil.ReadFile(path)
 	if err != nil {
 		log.Fatal("Couldn't load configuration file: ", err)
 	}
@@ -53,4 +58,6 @@ func LoadConfig(filePath *string, configStruct *TykPumpConfiguration) {
 	if overrideErr != nil {
 		log.Error("Failed to process environment variables after file load: ", overrideErr)
 	}
+
+	return configStruct
 }

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
+	"github.com/TykTechnologies/tyk-pump/instrumentation"
 	"github.com/TykTechnologies/tyk-pump/pumps"
 )
 
@@ -79,7 +80,7 @@ func TestWriteData(t *testing.T) {
 	keys[1] = analytics.AnalyticsRecord{APIID: "api123"}
 	keys[2] = analytics.AnalyticsRecord{APIID: "api321"}
 
-	job := instrument.NewJob("TestJob")
+	job := instrumentation.instrument.NewJob("TestJob")
 
 	writeToPumps(keys, job, time.Now(), 2)
 
@@ -106,7 +107,7 @@ func TestWriteDataWithFilters(t *testing.T) {
 	keys[1] = analytics.AnalyticsRecord{APIID: "api123"}
 	keys[2] = analytics.AnalyticsRecord{APIID: "api321"}
 
-	job := instrument.NewJob("TestJob")
+	job := instrumentation.instrument.NewJob("TestJob")
 
 	writeToPumps(keys, job, time.Now(), 2)
 
