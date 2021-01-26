@@ -239,7 +239,7 @@ func (p *MoesifPump) Init(config interface{}) error {
 
 	if p.moesifConf.EnableBulk && len(p.moesifConf.BulkConfig) != 0 {
 
-		// Try to fetch the event queue size from the bulk config
+		// Try to fetch the api endpoint from the bulk config
 		if endpoint, found := p.moesifConf.BulkConfig["api_endpoint"].(string); found {
 			apiEndpoint = endpoint
 		}
