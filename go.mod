@@ -13,7 +13,7 @@ require (
 	github.com/TykTechnologies/tyk v0.0.0-20200207055804-cf1d1ad81206
 	github.com/beeker1121/goque v0.0.0-20170321141813-4044bc29b280 // indirect
 	github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869 // indirect
-	github.com/enriquebris/goconcurrentqueue v0.6.0 // indirect
+	github.com/enriquebris/goconcurrentqueue v0.6.0
 	github.com/fatih/structs v1.1.0
 	github.com/go-ole/go-ole v1.2.4 // indirect
 	github.com/go-redis/redis/v8 v8.3.1

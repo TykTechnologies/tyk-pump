@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/TykTechnologies/logrus"
+	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/go-redis/redis/v8"
 
 	"github.com/kelseyhightower/envconfig"
@@ -311,4 +312,8 @@ func (r *RedisClusterStorageManager) ensureConnection() {
 		}
 		log.Info("Reconnecting again...")
 	}
+}
+
+func (r *RedisClusterStorageManager) SendData(data ...*analytics.AnalyticsRecord) {
+	return
 }

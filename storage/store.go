@@ -1,12 +1,17 @@
 package storage
 
-import "time"
+import (
+	"time"
+
+	"github.com/TykTechnologies/tyk-pump/analytics"
+)
 
 type AnalyticsStorage interface {
 	Init(config interface{}) error
 	GetName() string
 	Connect() bool
 	GetAndDeleteSet(setName string, chunkSize int64, expire time.Duration) []interface{}
+	SendData(data ...*analytics.AnalyticsRecord)
 }
 
 const (
