@@ -245,18 +245,18 @@ func (p *MoesifPump) Init(config interface{}) error {
 		}
 
 		// Try to fetch the event queue size from the bulk config
-		if queueSize, found := p.moesifConf.BulkConfig["event_queue_size"].(int); found {
-			eventQueueSize = queueSize
+		if queueSize, found := p.moesifConf.BulkConfig["event_queue_size"]; found {
+			eventQueueSize = int(queueSize.(float64))
 		}
 
 		// Try to fetch the batch size from the bulk config
-		if batch, found := p.moesifConf.BulkConfig["batch_size"].(int); found {
-			batchSize = batch
+		if batch, found := p.moesifConf.BulkConfig["batch_size"]; found {
+			batchSize = int(batch.(float64))
 		}
 
 		// Try to fetch the timer wake up seconds from the bulk config
-		if timer, found := p.moesifConf.BulkConfig["timer_wake_up_seconds"].(int); found {
-			timerWakeupSeconds = timer
+		if timer, found := p.moesifConf.BulkConfig["timer_wake_up_seconds"]; found {
+			timerWakeupSeconds = int(timer.(float64))
 		}
 	}
 
