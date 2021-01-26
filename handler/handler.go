@@ -69,33 +69,51 @@ func (handler *PumpHandler) SetUptimeStorage(storage storage.AnalyticsStorage)  
 }
 
 func (handler *PumpHandler) setupAnalyticStorage() error{
-	switch handler.SystemConfig.AnalyticsStorageType {
-	case "redis":
-		handler.AnalyticsStorage = &storage.RedisClusterStorageManager{}
-	case "queue":
-		handler.AnalyticsStorage = &storage.Queue{}
-	default:
-		handler.AnalyticsStorage = &storage.RedisClusterStorageManager{}
-	}
 
-	return handler.AnalyticsStorage.Init(handler.SystemConfig.AnalyticsStorageConfig)
+	//if the analytic storage is set externally, don't setup it again
+	if !handler.externalAnalyticStorage {
+		switch handler.SystemConfig.AnalyticsStorageType {
+		case "redis":
+			handler.AnalyticsStorage = &storage.RedisClusterStorageManager{}
+		case "queue":
+			handler.AnalyticsStorage = &storage.Queue{}
+		default:
+			handler.AnalyticsStorage = &storage.RedisClusterStorageManager{}
+		}
+	}
+	err := handler.AnalyticsStorage.Init(handler.SystemConfig.AnalyticsStorageConfig)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 func (handler *PumpHandler) setupUptimeStorage() error{
-	switch handler.SystemConfig.AnalyticsStorageType {
-	case "redis":
-		handler.UptimeStorage = &storage.RedisClusterStorageManager{}
-	case "queue":
-		handler.UptimeStorage = &storage.Queue{}
-	default:
-		handler.UptimeStorage = &storage.RedisClusterStorageManager{}
+
+	//if the uptime storage is set externally, don't setup it again
+	if !handler.externalUptimeStorage {
+		switch handler.SystemConfig.AnalyticsStorageType {
+		case "redis":
+			handler.UptimeStorage = &storage.RedisClusterStorageManager{}
+		case "queue":
+			handler.UptimeStorage = &storage.Queue{}
+		default:
+			handler.UptimeStorage = &storage.RedisClusterStorageManager{}
+		}
+	}
+	//if we don't want to purge uptime data, just ignore the initialization
+	if !handler.SystemConfig.DontPurgeUptimeData {
+		// Copy across the redis configuration
+		uptimeConf := handler.SystemConfig.AnalyticsStorageConfig
+
+		// Swap key prefixes for uptime purger
+		uptimeConf.RedisKeyPrefix = "host-checker:"
+		err := handler.UptimeStorage.Init(uptimeConf)
+		if err !=nil {
+			return err
+		}
 	}
 
-	// Copy across the redis configuration
-	uptimeConf := handler.SystemConfig.AnalyticsStorageConfig
-
-	// Swap key prefixes for uptime purger
-	uptimeConf.RedisKeyPrefix = "host-checker:"
-	return handler.UptimeStorage.Init(uptimeConf)
+	return nil
 }
 func (handler *PumpHandler) storeVersion() error{
 	if handler.SystemConfig.AnalyticsStorageType == "redis"{
@@ -180,26 +198,22 @@ func (handler *PumpHandler) Init() error{
 		instrumentation.SetupInstrumentation(handler.SystemConfig)
 	}
 
-	//Setting up the analytic storage. If it's already setup, it means that we're using Tyk Pump as a package
-	if handler.AnalyticsStorage == nil {
-		err := handler.setupAnalyticStorage()
-		if err != nil {
-			return errors.New("error setting up analytic storage:"+err.Error())
-		}
-
-		err =handler.storeVersion()
-		if err != nil {
-			return err
-		}
-
+	//Setting up the analytic storage.
+	if err := handler.setupAnalyticStorage(); err != nil {
+		return errors.New("error setting up analytic storage:"+err.Error())
 	}
-	//Setting up the uptime storage. If it's already setup, it means that we're using Tyk Pump as a package
-	if handler.UptimeStorage == nil {
-		err := handler.setupUptimeStorage()
-		if err != nil {
-			return errors.New("error setting up uptime storage:"+err.Error())
-		}
+
+	//Setting up the version in the analytic storage. It only works when the storage type is redis.
+	if err:= handler.storeVersion(); err != nil {
+		return err
 	}
+
+
+	//Setting up the uptime storage.
+	if err := handler.setupUptimeStorage();err != nil{
+		return errors.New("error setting up uptime storage:"+err.Error())
+	}
+
 
 	//Initializing each pump. It can fail when we Init each pump or if we create an non-existing pump.
 	if err:= handler.initPumps(); err != nil {

@@ -61,7 +61,7 @@ func (handler *PumpHandler) PurgeLoop() {
 			job.Timing("purge_time_all", time.Since(startTime).Nanoseconds())
 		}
 
-		if !handler.SystemConfig.DontPurgeUptimeData {
+		if !handler.SystemConfig.DontPurgeUptimeData || handler.externalUptimeStorage = true {
 			UptimeValues := handler.UptimeStorage.GetAndDeleteSet(storage.UptimeAnalytics_KEYNAME, chunkSize, expire)
 			handler.UptimePump.WriteUptimeData(UptimeValues)
 		}
