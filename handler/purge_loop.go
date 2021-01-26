@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"errors"
 	"sync"
 	"time"
 
@@ -36,11 +37,31 @@ func (handler *PumpHandler) PurgeLoop() {
 			keys := make([]interface{}, len(AnalyticsValues))
 
 			for i, v := range AnalyticsValues {
+				if v == nil {
+					continue
+				}
+
 				decoded := analytics.AnalyticsRecord{}
-				err := msgpack.Unmarshal([]byte(v.(string)), &decoded)
-				handler.logger.WithFields(logrus.Fields{
-					"prefix": handler.loggerPrefix,
-				}).Debug("Decoded Record: ", decoded)
+
+				var err error
+
+				switch v.(type){
+				case analytics.AnalyticsRecord:
+					decoded = v.(analytics.AnalyticsRecord)
+				case *analytics.AnalyticsRecord:
+					aux, ok := v.(*analytics.AnalyticsRecord)
+					if !ok {
+						err = errors.New("analytic record couldn't be decoded")
+					}
+					decoded = *aux
+				default:
+					err = msgpack.Unmarshal([]byte(v.(string)), &decoded)
+					handler.logger.WithFields(logrus.Fields{
+						"prefix": handler.loggerPrefix,
+					}).Debug("Decoded Record: ", decoded)
+				}
+
+
 				if err != nil {
 					handler.logger.WithFields(logrus.Fields{
 						"prefix": handler.loggerPrefix,
