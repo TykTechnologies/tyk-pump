@@ -13,13 +13,13 @@ import (
 )
 
 var applicationGCStats = debug.GCStats{}
-var instrument = health.NewStream()
+var Instrument = health.NewStream()
 var log = logger.GetLogger()
 
 // SetupInstrumentation handles all the intialisation of the instrumentation handler
 func SetupInstrumentation(config *config.TykPumpConfiguration) {
 	var enabled bool
-	//instrument.AddSink(&health.WriterSink{os.Stdout})
+	//Instrument.AddSink(&health.WriterSink{os.Stdout})
 	thisInstr := os.Getenv("TYK_INSTRUMENTATION")
 
 	if thisInstr == "1" {
@@ -45,9 +45,9 @@ func SetupInstrumentation(config *config.TykPumpConfiguration) {
 	}
 
 	log.Info("StatsD instrumentation sink started")
-	instrument.AddSink(statsdSink)
+	Instrument.AddSink(statsdSink)
 
-	rpc.Instrument = instrument
+	rpc.Instrument = Instrument
 
 	MonitorApplicationInstrumentation()
 }
@@ -55,7 +55,7 @@ func SetupInstrumentation(config *config.TykPumpConfiguration) {
 func MonitorApplicationInstrumentation() {
 	log.Info("Starting application monitoring...")
 	go func() {
-		job := instrument.NewJob("GCActivity")
+		job := Instrument.NewJob("GCActivity")
 		metadata := health.Kvs{"host": "pump"}
 		applicationGCStats.PauseQuantiles = make([]time.Duration, 5)
 
