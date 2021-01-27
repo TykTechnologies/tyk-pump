@@ -7,16 +7,9 @@ import (
 	"github.com/TykTechnologies/tyk-pump/config"
 	"github.com/TykTechnologies/tyk-pump/handler"
 	logger "github.com/TykTechnologies/tyk-pump/logger"
-	"github.com/TykTechnologies/tyk-pump/pumps"
-	"github.com/TykTechnologies/tyk-pump/storage"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
-var SystemConfig config.TykPumpConfiguration
-var AnalyticsStore storage.AnalyticsStorage
-var UptimeStorage storage.AnalyticsStorage
-var Pumps []pumps.Pump
-var UptimePump pumps.MongoPump
 
 var log = logger.GetLogger()
 
@@ -57,8 +50,6 @@ func main() {
 
 		return
 	}
-
-
 
 	// start the worker loop
 	pumpHandler.PurgeLoop()
