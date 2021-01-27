@@ -65,7 +65,7 @@ func (b *BaseMongoConf) GetBlurredURL() string {
 	regex := `^(mongodb:(?:\/{2})?)((\w+?):(\w+?)@|:?@?)`
 	var re = regexp.MustCompile(regex)
 
-	blurredUrl := re.ReplaceAllString(b.MongoURL, "db_username:db_password@")
+	blurredUrl := re.ReplaceAllString(b.MongoURL, "***:***@")
 	return blurredUrl
 }
 

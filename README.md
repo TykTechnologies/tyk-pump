@@ -47,9 +47,7 @@ Create a `pump.conf` file:
   "pumps": {
     "dummy": {
       "type": "dummy",
-      "meta": {
-        
-      }
+      "meta": {}
     },
     "mongo": {
       "type": "mongo",
@@ -159,7 +157,18 @@ Create a `pump.conf` file:
         "async_uds": true,
         "async_uds_write_timeout_seconds": 2,
         "buffered": true,
-        "buffered_max_messages": 32
+        "buffered_max_messages": 32,
+        "tags": [
+          "method",
+          "response_code",
+          "api_version",
+          "api_name",
+          "api_id",
+          "org_id",
+          "tracked",
+          "path",
+          "oauth_id"
+        ]
       }
     },
     "prometheus": {
@@ -287,6 +296,25 @@ An example of configuration would be:
 }
 ```
 
+### Timeouts
+
+You can configure a different timeout for each pump with the configuration option `timeout`. Its default value is 0 seconds, which means that the pump will wait for the writing operation forever. 
+
+An example of this configuration would be:
+```json
+"mongo": {
+  "type": "mongo",
+  "timeout":5,
+  "meta": {
+    "collection_name": "tyk_analytics",
+    "mongo_url": "mongodb://username:password@{hostname:port},{hostname:port}/{db_name}"
+  }
+}
+```
+
+In case that any pump doesn't have a configured timeout, and it takes more seconds to write than the value configured for the purge loop in the `purge_delay` config option, you will see the following warning message: `Pump PMP_NAME is taking more time than the value configured of purge_delay. You should try to set a timeout for this pump.`. 
+
+In case that you have a configured timeout, but it still takes more seconds to write than the value configured for the purge loop in the `purge_delay` config option, you will see the following warning message: `Pump PMP_NAME is taking more time than the value configured of purge_delay. You should try lowering the timeout configured for this pump.`. 
 
 ### Environment Variables
 
@@ -329,7 +357,7 @@ Environment variables can be used to override the settings defined in the config
 
 From v2.9.4, we have introduced a `/health` endpoint to confirm the Pump is running. You need to configure the following settings:
 
-- `health_check_endpoint_name` - The default is "hello" 
+- `health_check_endpoint_name` - The default is "hello"
 - `health_check_endpoint_port` - The default port is 8083
 
 This returns a HTTP 200 OK response if the Pump is running.
@@ -433,6 +461,20 @@ And the following Histogram for latencies:
 - `buffered`: Enable buffering of messages
 - `buffered_max_messages`: Max messages in single datagram if `buffered: true`. Default 16
 - `sample_rate`: default 1 which equates to 100% of requests. To sample at 50%, set to 0.5
+- `tags`: List of tags to be added to the metric. The possible options are listed in the below example
+
+If no tag is specified the fallback behavior is to use the below tags:
+- `path`
+- `method`
+- `response_code`
+- `api_version`
+- `api_name`
+- `api_id`
+- `org_id`
+- `tracked`
+- `oauth_id`
+
+Note that this configuration can generate significant charges due to the unbound nature of the `path` tag.
 
 ```.json
 "dogstatsd": {
@@ -444,7 +486,18 @@ And the following Histogram for latencies:
     "async_uds_write_timeout_seconds": 2,
     "buffered": true,
     "buffered_max_messages": 32,
-    "sample_rate": 0.5
+    "sample_rate": 0.5,
+    "tags": [
+      "method",
+      "response_code",
+      "api_version",
+      "api_name",
+      "api_id",
+      "org_id",
+      "tracked",
+      "path",
+      "oauth_id"
+    ]
   }
 },
 ```
@@ -512,11 +565,11 @@ More advanced fields:
 ### Kafka Config
 
 * `broker`: The list of brokers used to discover the partitions available on the kafka cluster. E.g. "localhost:9092"
-* `use_ssl`: Enables SSL connection. 
+* `use_ssl`: Enables SSL connection.
 * `ssl_insecure_skip_verify`: Controls whether the pump client verifies the kafka server's certificate chain and host name.
 * `client_id`: Unique identifier for client connections established with Kafka.
 * `topic`: The topic that the writer will produce messages to.
-* `timeout`: Timeout is the maximum amount of time will wait for a connect or write to complete. 
+* `timeout`: Timeout is the maximum amount of time will wait for a connect or write to complete.
 * `compressed`: Enable "github.com/golang/snappy" codec to be used to compress Kafka messages. By default is false
 * `meta_data`: Can be used to set custom metadata inside the kafka message
 * `ssl_cert_file`: Can be used to set custom certificate file for authentication with kafka.

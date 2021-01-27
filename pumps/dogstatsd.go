@@ -29,13 +29,14 @@ type DogStatsdPump struct {
 }
 
 type DogStatsdConf struct {
-	Namespace            string  `mapstructure:"namespace"`
-	Address              string  `mapstructure:"address"`
-	SampleRate           float64 `mapstructure:"sample_rate"`
-	AsyncUDS             bool    `mapstructure:"async_uds"`
-	AsyncUDSWriteTimeout int     `mapstructure:"async_uds_write_timeout_seconds"`
-	Buffered             bool    `mapstructure:"buffered"`
-	BufferedMaxMessages  int     `mapstructure:"buffered_max_messages"`
+	Namespace            string   `mapstructure:"namespace"`
+	Address              string   `mapstructure:"address"`
+	SampleRate           float64  `mapstructure:"sample_rate"`
+	AsyncUDS             bool     `mapstructure:"async_uds"`
+	AsyncUDSWriteTimeout int      `mapstructure:"async_uds_write_timeout_seconds"`
+	Buffered             bool     `mapstructure:"buffered"`
+	BufferedMaxMessages  int      `mapstructure:"buffered_max_messages"`
+	Tags                 []string `mapstructure:"tags"`
 }
 
 func (s *DogStatsdPump) New() Pump {
@@ -117,7 +118,6 @@ func (s *DogStatsdPump) WriteData(ctx context.Context, data []interface{}) error
 	for _, v := range data {
 		// Convert to AnalyticsRecord
 		decoded := v.(analytics.AnalyticsRecord)
-		decoded.Path = strings.TrimRight(decoded.Path, "/")
 
 		/*
 		 * From DataDog website:
@@ -126,19 +126,53 @@ func (s *DogStatsdPump) WriteData(ctx context.Context, data []interface{}) error
 		 *
 		 * As such, we have significantly limited the available metrics which gets sent to datadog.
 		 */
-		tags := []string{
-			"path:" + decoded.Path,                                // request path
-			"method:" + decoded.Method,                            // request method
-			fmt.Sprintf("response_code:%d", decoded.ResponseCode), // http response code
-			"api_version:" + decoded.APIVersion,
-			"api_name:" + decoded.APIName,
-			"api_id:" + decoded.APIID,
-			"org_id:" + decoded.OrgID,
-			fmt.Sprintf("tracked:%t", decoded.TrackPath),
-		}
-
-		if decoded.OauthID != "" {
-			tags = append(tags, "oauth_id:"+decoded.OauthID)
+		var tags []string
+		if len(s.conf.Tags) == 0 {
+			tags = []string{
+				"path:" + decoded.Path,                                // request path
+				"method:" + decoded.Method,                            // request method
+				fmt.Sprintf("response_code:%d", decoded.ResponseCode), // http response code
+				"api_version:" + decoded.APIVersion,
+				"api_name:" + decoded.APIName,
+				"api_id:" + decoded.APIID,
+				"org_id:" + decoded.OrgID,
+				fmt.Sprintf("tracked:%t", decoded.TrackPath),
+			}
+			if decoded.OauthID != "" {
+				tags = append(tags, "oauth_id:"+decoded.OauthID)
+			}
+		} else {
+			tags = make([]string, 0, len(s.conf.Tags))
+			for _, tag := range s.conf.Tags {
+				var value string
+				switch tag {
+				case "method":
+					value = "method:" + decoded.Method // request method
+				case "response_code":
+					value = fmt.Sprintf("response_code:%d", decoded.ResponseCode) // http response code
+				case "api_version":
+					value = "api_version:" + decoded.APIVersion
+				case "api_name":
+					value = "api_name:" + decoded.APIName
+				case "api_id":
+					value = "api_id:" + decoded.APIID
+				case "org_id":
+					value = "org_id:" + decoded.OrgID
+				case "tracked":
+					value = fmt.Sprintf("tracked:%t", decoded.TrackPath)
+				case "path":
+					decoded.Path = strings.TrimRight(decoded.Path, "/")
+					value = "path:" + decoded.Path // request path
+				case "oauth_id":
+					if decoded.OauthID == "" {
+						continue
+					}
+					value = "oauth_id:" + decoded.OauthID
+				default:
+					return fmt.Errorf("undefined tag '%s'", tag)
+				}
+				tags = append(tags, value)
+			}
 		}
 
 		if err := s.client.Histogram("request_time", float64(decoded.RequestTime), tags, s.conf.SampleRate); err != nil {
