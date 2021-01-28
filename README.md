@@ -389,7 +389,7 @@ The Tyk Dashboard uses the "mongo-pump-aggregate" collection to display analytic
 ### Moesif Config
 [Moesif](https://www.moesif.com/?language=tyk-api-gateway) is a user-centric API analytics and monitoring service for APIs. [More Info on Moesif for Tyk](https://www.moesif.com/solutions/track-api-program?language=tyk-api-gateway)
 
-- `"application_id"` - Moesif App Id JWT. Multiple api_id's will go under the same app id.
+- `"application_id"` - Moesif Application Id. You can find your Moesif Application Id from [_Moesif Dashboard_](https://www.moesif.com/) -> _Top Right Menu_ -> _API Keys_ . Moesif recommends creating separate Application Ids for each environment such as Production, Staging, and Development to keep data isolated. 
 - `"request_header_masks"` - (optional) An option to mask a specific request header field. Type: String Array `[] string`
 - `"request_body_masks"` - (optional) An option to mask a specific - request body field. Type: String Array `[] string`
 - `"response_header_masks"` - (optional) An option to mask a specific response header field. Type: String Array `[] string`
@@ -398,6 +398,13 @@ The Tyk Dashboard uses the "mongo-pump-aggregate" collection to display analytic
 - `"disable_capture_response_body"` - (optional) An option to disable logging of response body. Type: Boolean. Default value is `false`.
 - `"user_id_header"` - (optional) An optional field name to identify User from a request or response header. Type: String.
 - `"company_id_header"` - (optional) An optional field name to identify Company (Account) from a request or response header. Type: String.
+- `"authorization_header_name"` - (optional) An optional request header field name to used to identify the User in Moesif. Type: String. Default value is `authorization`.
+- `"authorization_user_id_field"` - (optional) An optional field name use to parse the User from authorization header in Moesif. Type: String. Default value is `sub`.
+- `"enable_bulk"` - Set this to `true` to enable `bulk_config`.
+- `"bulk_config"`- (optional) Batch writing trigger configuration.
+  * `"event_queue_size"` - (optional) An optional field name which specify the maximum number of events to hold in queue before sending to Moesif. In case of network issues when not able to connect/send event to Moesif, skips adding new events to the queue to prevent memory overflow. Type: int. Default value is `10000`.
+  * `"batch_size"` - (optional) An optional field name which specify the maximum batch size when sending to Moesif. Type: int. Default value is `200`.
+  * `"timer_wake_up_seconds"` - (optional) An optional field which specifies a time (every n seconds) how often background thread runs to send events to moesif. Type: int. Default value is `2` seconds.
 
 ### Hybrid RPC Config
 
