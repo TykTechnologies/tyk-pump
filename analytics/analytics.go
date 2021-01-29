@@ -1,15 +1,18 @@
 package analytics
 
 import (
+	"encoding/base64"
 	"reflect"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/tyk-pump/logger"
 )
 
 var log = logger.GetLogger()
+var analyticsRecordPrefix = "analyticsRecord"
 
 type NetworkStats struct {
 	OpenConnections  int64
@@ -115,4 +118,88 @@ func (a *AnalyticsRecord) GetLineValues() []string {
 	}
 
 	return fields
+}
+
+//change name - obfuscateAndDecode request
+func (a *AnalyticsRecord) ObfuscateKey(authHeaderName string, decode bool) {
+	a.APIKey = ObfuscateString(a.APIKey)
+
+	if a.RawRequest == "" {
+		return
+	}
+	decodeRequest, err := base64.StdEncoding.DecodeString(a.RawRequest)
+	if err != nil {
+		log.WithFields(logrus.Fields{
+			"prefix": analyticsRecordPrefix,
+			"apiId": a.APIID,
+			"apiName:version": a.APIName + ":" + a.APIVersion,
+			"error": err,
+		}).Error("Error while decoding raw request ", a.RawRequest)
+
+		return
+	}
+
+	log.WithFields(logrus.Fields{
+		"prefix": analyticsRecordPrefix,
+		"apiId": a.APIID,
+		"apiName:version": a.APIName + ":" + a.APIVersion,
+		"encoded request": a.RawRequest,
+		"decoded request": decodeRequest,
+	}).Debug("")
+
+	authFieldName := authHeaderName + ": " //For example "Authorization: "
+
+	//todo bearer!
+
+	sDecodedRequest := string(decodeRequest)
+
+	if decode {
+		a.RawRequest = sDecodedRequest
+	}
+
+	iAuthHeaderStarts := strings.Index(sDecodedRequest, authFieldName)
+	if iAuthHeaderStarts == -1 {
+		log.WithFields(logrus.Fields{
+			"prefix": analyticsRecordPrefix,
+			"apiId": a.APIID,
+			"apiName:version": a.APIName + ":" + a.APIVersion,
+			"encoded request": a.RawRequest,
+			"decoded request": decodeRequest,
+			"Authorization header": authHeaderName,
+		}).Debug("Authorization header was not found")
+		return
+	}
+	restOfData := sDecodedRequest[iAuthHeaderStarts:]
+
+	iRelativeNextHeader := strings.Index(restOfData, "\r\n") // key ends here
+	if iRelativeNextHeader == -1 {
+		log.WithFields(logrus.Fields{
+			"prefix": analyticsRecordPrefix,
+			"apiId": a.APIID,
+			"apiName:version": a.APIName + ":" + a.APIVersion,
+			"encoded request": a.RawRequest,
+			"decoded request": decodeRequest,
+			"Authorization header": authHeaderName,
+		}).Debug("Authorization header was not found")
+		return
+	}
+	iNextHeaderStarts := iAuthHeaderStarts + iRelativeNextHeader // key ends here
+	iKeyBegins := iAuthHeaderStarts + len(authFieldName)
+
+	obfuscatedKey := ObfuscateString(sDecodedRequest[iKeyBegins:iNextHeaderStarts])
+
+	a.RawRequest = sDecodedRequest[:iKeyBegins] + obfuscatedKey + sDecodedRequest[iNextHeaderStarts+1:]
+
+	if !decode {
+		a.RawRequest = base64.StdEncoding.EncodeToString([]byte(sDecodedRequest))
+	}
+
+}
+
+func ObfuscateString(keyName string) string {
+
+	if len(keyName) > 4 {
+		return "****" + keyName[len(keyName)-4:]
+	}
+	return "----"
 }
