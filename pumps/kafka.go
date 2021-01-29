@@ -111,7 +111,6 @@ func (k *KafkaPump) Init(config interface{}) error {
 		k.log.WithField("SASL-Mechanism", k.kafkaConf.SASLMechanism).Warn("Tyk pump doesn't support this SASL mechanism.")
 	}
 
-
 	//Kafka writer connection config
 	dialer := &kafka.Dialer{
 		Timeout:       k.kafkaConf.Timeout * time.Second,
