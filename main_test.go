@@ -156,23 +156,21 @@ func TestDontObfuscateKeysAndDontFilterData(t *testing.T) {
 
 func TestObfuscateKeysAndDontFilterData(t *testing.T) {
 	SystemConfig = TykPumpConfiguration{}
-	SystemConfig.obfuscateAuthHeader = ObfuscateAuthHeader{ true, "Authorization" }
+	SystemConfig.obfuscateAuthHeader = ObfuscateAuthHeader{true, "Authorization"}
 
 	mockedPump := &MockedPump{}
 
-	expectedKeys := make([]string, 5)
+	expectedKeys := make([]string, 4)
 	expectedKeys[0] = "----"     // len(key) <= 4
 	expectedKeys[1] = "****8910" // key = 12345678910
 	expectedKeys[2] = "****cret" // key = my-secret
-	expectedKeys[3] = "----"     // empty key
-	expectedKeys[4] = "----"     // empty key
+	expectedKeys[3] = ""         // empty key
 
-	keys := make([]interface{}, 5)
+	keys := make([]interface{}, 4)
 	keys[0] = analytics.AnalyticsRecord{APIID: "api123", APIKey: "1234"}
 	keys[1] = analytics.AnalyticsRecord{APIID: "api456", APIKey: "12345678910"}
 	keys[2] = analytics.AnalyticsRecord{APIID: "api123", APIKey: "my-secret"}
 	keys[3] = analytics.AnalyticsRecord{APIID: "api321", APIKey: ""}
-	keys[4] = analytics.AnalyticsRecord{APIID: "api789", APIKey: "1234"}
 
 	filteredKeys := filterData(mockedPump, keys)
 	if len(keys) != len(filteredKeys) {
@@ -192,7 +190,7 @@ func TestObfuscateKeysAndDontFilterData(t *testing.T) {
 
 func TestObfuscateKeysAndFilterData(t *testing.T) {
 	SystemConfig = TykPumpConfiguration{}
-	SystemConfig.obfuscateAuthHeader = ObfuscateAuthHeader{ true, "Authorization" }
+	SystemConfig.obfuscateAuthHeader = ObfuscateAuthHeader{true, "Authorization"}
 
 	mockedPump := &MockedPump{}
 
@@ -202,18 +200,20 @@ func TestObfuscateKeysAndFilterData(t *testing.T) {
 		},
 	)
 
-	expectedKeys := make([]string, 4)
+	expectedKeys := make([]string, 5)
 	expectedKeys[0] = "----"     // len(key) <= 4
 	expectedKeys[1] = "****8910" // key = 12345678910
 	expectedKeys[2] = "****cret" // key = my-secret
-	expectedKeys[3] = "----"     // empty key
+	expectedKeys[3] = ""         // empty key
+	expectedKeys[4] = "****2345" // 5 chars key
 
-	keys := make([]interface{}, 5)
+	keys := make([]interface{}, 6)
 	keys[0] = analytics.AnalyticsRecord{APIID: "api123", APIKey: "1234"}
 	keys[1] = analytics.AnalyticsRecord{APIID: "api456", APIKey: "12345678910"}
 	keys[2] = analytics.AnalyticsRecord{APIID: "api123", APIKey: "my-secret"}
 	keys[3] = analytics.AnalyticsRecord{APIID: "api321", APIKey: ""}
-	keys[4] = analytics.AnalyticsRecord{APIID: "api789", APIKey: "1234"}
+	keys[4] = analytics.AnalyticsRecord{APIID: "api321", APIKey: "12345"}
+	keys[5] = analytics.AnalyticsRecord{APIID: "api789", APIKey: "1234"}
 
 	filteredKeys := filterData(mockedPump, keys)
 	if len(keys) == len(filteredKeys) {

@@ -41,8 +41,7 @@ type TykPumpConfiguration struct {
 	HealthCheckEndpointName string                     `json:"health_check_endpoint_name"`
 	HealthCheckEndpointPort int                        `json:"health_check_endpoint_port"`
 	OmitDetailedRecording   bool                       `json:"omit_detailed_recording"`
-	base64DecodeRawData			bool											 `json:"base64_decode_raw_data"`
-	obfuscateAuthHeader		  ObfuscateAuthHeader
+	obfuscateAuthHeader     ObfuscateAuthHeader        `json:"obfuscate_auth_header"`
 }
 
 func LoadConfig(filePath *string, configStruct *TykPumpConfiguration) {

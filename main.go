@@ -240,7 +240,7 @@ func filterData(pump pumps.Pump, keys []interface{}) []interface{} {
 			continue
 		}
 		if SystemConfig.obfuscateAuthHeader.ObfuscateKeys {
-			decoded.ObfuscateKey(SystemConfig.obfuscateAuthHeader.AuthHeaderName, SystemConfig.base64DecodeRawData)
+			decoded.ObfuscateKey(SystemConfig.obfuscateAuthHeader.AuthHeaderName)
 		}
 		filteredKeys[newLenght] = decoded
 		newLenght++

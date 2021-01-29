@@ -2,6 +2,7 @@ package analytics
 
 import (
 	"encoding/base64"
+	"fmt"
 	"reflect"
 	"strconv"
 	"strings"
@@ -121,82 +122,73 @@ func (a *AnalyticsRecord) GetLineValues() []string {
 }
 
 //change name - obfuscateAndDecode request
-func (a *AnalyticsRecord) ObfuscateKey(authHeaderName string, decode bool) {
-	a.APIKey = ObfuscateString(a.APIKey)
+func (a *AnalyticsRecord) ObfuscateKey(authHeaderName string) {
+
+	if a.APIKey == "" {
+		return
+	}
+
+	fullApiKey := a.APIKey
+	a.APIKey = ObfuscateString(a.APIKey) //Obfuscate the key field
 
 	if a.RawRequest == "" {
 		return
 	}
+
 	decodeRequest, err := base64.StdEncoding.DecodeString(a.RawRequest)
 	if err != nil {
 		log.WithFields(logrus.Fields{
-			"prefix": analyticsRecordPrefix,
-			"apiId": a.APIID,
+			"prefix":          analyticsRecordPrefix,
+			"apiId":           a.APIID,
 			"apiName:version": a.APIName + ":" + a.APIVersion,
-			"error": err,
+			"error":           err,
 		}).Error("Error while decoding raw request ", a.RawRequest)
 
 		return
 	}
 
+	sDecodedRequest := string(decodeRequest)
 	log.WithFields(logrus.Fields{
-		"prefix": analyticsRecordPrefix,
-		"apiId": a.APIID,
+		"prefix":          analyticsRecordPrefix,
+		"apiId":           a.APIID,
 		"apiName:version": a.APIName + ":" + a.APIVersion,
 		"encoded request": a.RawRequest,
-		"decoded request": decodeRequest,
+		"decoded request": sDecodedRequest,
 	}).Debug("")
-
-	authFieldName := authHeaderName + ": " //For example "Authorization: "
 
 	//todo bearer!
 
-	sDecodedRequest := string(decodeRequest)
-
-	if decode {
-		a.RawRequest = sDecodedRequest
-	}
-
-	iAuthHeaderStarts := strings.Index(sDecodedRequest, authFieldName)
-	if iAuthHeaderStarts == -1 {
+	//Lookup the key and use it as the separator. Once the string is split, we obfuscate the key anf concatenate back
+	//the 2 parts with the obfuscated key in the middle
+	//
+	//Example:
+	// GET ...Authorization: 59d27324b8125f000137663e2c650c3576b348bfbe1490fef5db0c49 ...\r\n
+	// GET ...Authorization: ****0c49 ...\r\n
+	fmt.Println(" before a.APIKey  " + a.APIKey)
+	requestWithoutKey := strings.Split(sDecodedRequest, fullApiKey)
+	if len(requestWithoutKey) != 2 {
 		log.WithFields(logrus.Fields{
-			"prefix": analyticsRecordPrefix,
-			"apiId": a.APIID,
+			"prefix":          analyticsRecordPrefix,
+			"apiId":           a.APIID,
 			"apiName:version": a.APIName + ":" + a.APIVersion,
 			"encoded request": a.RawRequest,
-			"decoded request": decodeRequest,
-			"Authorization header": authHeaderName,
-		}).Debug("Authorization header was not found")
+			"decoded request": sDecodedRequest,
+		}).Error("Authorization key hasn't been found in the decoded string")
+		log.Debug("Authorization key hasn't been found, split array length:", len(requestWithoutKey))
+
 		return
 	}
-	restOfData := sDecodedRequest[iAuthHeaderStarts:]
+	reqWithObfuscatedKey := requestWithoutKey[0] + a.APIKey + requestWithoutKey[1]
 
-	iRelativeNextHeader := strings.Index(restOfData, "\r\n") // key ends here
-	if iRelativeNextHeader == -1 {
-		log.WithFields(logrus.Fields{
-			"prefix": analyticsRecordPrefix,
-			"apiId": a.APIID,
-			"apiName:version": a.APIName + ":" + a.APIVersion,
-			"encoded request": a.RawRequest,
-			"decoded request": decodeRequest,
-			"Authorization header": authHeaderName,
-		}).Debug("Authorization header was not found")
-		return
-	}
-	iNextHeaderStarts := iAuthHeaderStarts + iRelativeNextHeader // key ends here
-	iKeyBegins := iAuthHeaderStarts + len(authFieldName)
-
-	obfuscatedKey := ObfuscateString(sDecodedRequest[iKeyBegins:iNextHeaderStarts])
-
-	a.RawRequest = sDecodedRequest[:iKeyBegins] + obfuscatedKey + sDecodedRequest[iNextHeaderStarts+1:]
-
-	if !decode {
-		a.RawRequest = base64.StdEncoding.EncodeToString([]byte(sDecodedRequest))
-	}
-
+	a.RawRequest = base64.StdEncoding.EncodeToString([]byte(reqWithObfuscatedKey))
+	log.Debug("Encoded RawRequest:", a.RawRequest)
 }
 
 func ObfuscateString(keyName string) string {
+
+	if keyName == "" {
+		return ""
+	}
 
 	if len(keyName) > 4 {
 		return "****" + keyName[len(keyName)-4:]
