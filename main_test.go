@@ -48,7 +48,7 @@ func TestFilterData(t *testing.T) {
 
 	filteredKeys := filterData(mockedPump, keys)
 	if len(keys) == len(filteredKeys) {
-		t.Fatal("keys and filtered keys have the  same length")
+		t.Fatal("keys and filtered keys have the  same lenght")
 	}
 
 }
@@ -74,7 +74,7 @@ func TestDontObfuscateKeysAndFilterData(t *testing.T) {
 	SystemConfig = TykPumpConfiguration{}
 
 	//Since it's false no need to set it, added just to explain
-	//SystemConfig.ObfuscateKeys = false //Log keys, dont obfuscate them
+	//ObfuscateKeys = false //Log keys, dont obfuscate them
 
 	mockedPump := &MockedPump{}
 
@@ -156,7 +156,7 @@ func TestDontObfuscateKeysAndDontFilterData(t *testing.T) {
 
 func TestObfuscateKeysAndDontFilterData(t *testing.T) {
 	SystemConfig = TykPumpConfiguration{}
-	SystemConfig.obfuscateAuthHeader = ObfuscateAuthHeader{true, "Authorization"}
+	SystemConfig.ObfuscateKeys = true
 
 	mockedPump := &MockedPump{}
 
@@ -190,7 +190,7 @@ func TestObfuscateKeysAndDontFilterData(t *testing.T) {
 
 func TestObfuscateKeysAndFilterData(t *testing.T) {
 	SystemConfig = TykPumpConfiguration{}
-	SystemConfig.obfuscateAuthHeader = ObfuscateAuthHeader{true, "Authorization"}
+	SystemConfig.ObfuscateKeys = true
 
 	mockedPump := &MockedPump{}
 

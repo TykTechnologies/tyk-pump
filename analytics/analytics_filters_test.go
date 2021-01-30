@@ -96,6 +96,7 @@ func TestShouldFilter(t *testing.T) {
 	if shouldFilter == true {
 		t.Fatal("filter should not be filtering the record")
 	}
+
 }
 
 func TestHasFilter(t *testing.T) {

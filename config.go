@@ -21,11 +21,6 @@ type PumpConfig struct {
 	Meta                  map[string]interface{}     `json:"meta"` // TODO: convert this to json.RawMessage and use regular json.Unmarshal
 }
 
-type ObfuscateAuthHeader struct {
-	ObfuscateKeys  bool   `json:"obfuscate_keys"`
-	AuthHeaderName string `json:"auth_header_name"`
-}
-
 type TykPumpConfiguration struct {
 	PurgeDelay              int                        `json:"purge_delay"`
 	PurgeChunk              int64                      `json:"purge_chunk"`
@@ -41,7 +36,7 @@ type TykPumpConfiguration struct {
 	HealthCheckEndpointName string                     `json:"health_check_endpoint_name"`
 	HealthCheckEndpointPort int                        `json:"health_check_endpoint_port"`
 	OmitDetailedRecording   bool                       `json:"omit_detailed_recording"`
-	obfuscateAuthHeader     ObfuscateAuthHeader        `json:"obfuscate_auth_header"`
+	ObfuscateKeys           bool                       `json:"obfuscate_keys"`
 }
 
 func LoadConfig(filePath *string, configStruct *TykPumpConfiguration) {

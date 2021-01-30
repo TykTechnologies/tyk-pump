@@ -122,7 +122,7 @@ func (a *AnalyticsRecord) GetLineValues() []string {
 }
 
 //change name - obfuscateAndDecode request
-func (a *AnalyticsRecord) ObfuscateKey(authHeaderName string) {
+func (a *AnalyticsRecord) ObfuscateKey() {
 
 	if a.APIKey == "" {
 		return
