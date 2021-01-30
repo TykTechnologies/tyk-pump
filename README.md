@@ -334,7 +334,7 @@ Environment variables can be used to override the settings defined in the config
     "optimisation_max_active": 0,
     "enable_cluster": false,
     "redis_use_ssl": false,
-    "redis_ssl_insecure_skip_verify": false,
+    "redis_ssl_insecure_skip_verify": false
   },
 ```
 `redis_use_ssl` - Setting this to true to use SSL when connecting to Redis
