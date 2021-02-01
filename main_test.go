@@ -74,7 +74,7 @@ func TestDontObfuscateKeysAndFilterData(t *testing.T) {
 	SystemConfig = TykPumpConfiguration{}
 
 	//Since it's false no need to set it, added just to explain
-	//ObfuscateKeys = false //Log keys, dont obfuscate them
+	//ObfuscateKeys = false //Log the actual keys, dont obfuscate them
 
 	mockedPump := &MockedPump{}
 
@@ -91,11 +91,11 @@ func TestDontObfuscateKeysAndFilterData(t *testing.T) {
 	expectedKeys[3] = ""            // empty key
 
 	keys := make([]interface{}, 5)
-	keys[0] = analytics.AnalyticsRecord{APIID: "api123", APIKey: "1234"}
-	keys[1] = analytics.AnalyticsRecord{APIID: "api456", APIKey: "12345678910"}
-	keys[2] = analytics.AnalyticsRecord{APIID: "api123", APIKey: "my-secret"}
-	keys[3] = analytics.AnalyticsRecord{APIID: "api321", APIKey: ""}
-	keys[4] = analytics.AnalyticsRecord{APIID: "api789", APIKey: "1234"} //should be filtered out
+	keys[0] = analytics.AnalyticsRecord{APIID: "api123", APIKey: expectedKeys[0]}
+	keys[1] = analytics.AnalyticsRecord{APIID: "api456", APIKey: expectedKeys[1]}
+	keys[2] = analytics.AnalyticsRecord{APIID: "api123", APIKey: expectedKeys[2]}
+	keys[3] = analytics.AnalyticsRecord{APIID: "api321", APIKey: expectedKeys[3]}
+	keys[4] = analytics.AnalyticsRecord{APIID: "api789", APIKey: "blabla"} //should be filtered out anyway
 
 	filteredKeys := filterData(mockedPump, keys)
 	if len(keys) == len(filteredKeys) {
@@ -118,7 +118,7 @@ func TestDontObfuscateKeysAndDontFilterData(t *testing.T) {
 	SystemConfig = TykPumpConfiguration{}
 
 	//Since it's false no need to set it, added just to explain
-	//SystemConfig.ObfuscateKeys = false //Log keys, dont obfuscate them
+	//SystemConfig.ObfuscateKeys = false //Log the actual keys, dont obfuscate them
 
 	mockedPump := &MockedPump{}
 
@@ -130,11 +130,11 @@ func TestDontObfuscateKeysAndDontFilterData(t *testing.T) {
 	expectedKeys[4] = "1234"        // 1234 key
 
 	keys := make([]interface{}, 5)
-	keys[0] = analytics.AnalyticsRecord{APIID: "api123", APIKey: "1234"}
-	keys[1] = analytics.AnalyticsRecord{APIID: "api456", APIKey: "12345678910"}
-	keys[2] = analytics.AnalyticsRecord{APIID: "api123", APIKey: "my-secret"}
-	keys[3] = analytics.AnalyticsRecord{APIID: "api321", APIKey: ""}
-	keys[4] = analytics.AnalyticsRecord{APIID: "api789", APIKey: "1234"} //should be filtered out
+	keys[0] = analytics.AnalyticsRecord{APIID: "api123", APIKey: expectedKeys[0]}
+	keys[1] = analytics.AnalyticsRecord{APIID: "api456", APIKey: expectedKeys[1]}
+	keys[2] = analytics.AnalyticsRecord{APIID: "api123", APIKey: expectedKeys[2]}
+	keys[3] = analytics.AnalyticsRecord{APIID: "api321", APIKey: expectedKeys[3]}
+	keys[4] = analytics.AnalyticsRecord{APIID: "api789", APIKey: expectedKeys[4]}
 
 	filteredKeys := filterData(mockedPump, keys)
 	expectedLen := len(keys)
@@ -213,7 +213,7 @@ func TestObfuscateKeysAndFilterData(t *testing.T) {
 	keys[2] = analytics.AnalyticsRecord{APIID: "api123", APIKey: "my-secret"}
 	keys[3] = analytics.AnalyticsRecord{APIID: "api321", APIKey: ""}
 	keys[4] = analytics.AnalyticsRecord{APIID: "api321", APIKey: "12345"}
-	keys[5] = analytics.AnalyticsRecord{APIID: "api789", APIKey: "1234"}
+	keys[5] = analytics.AnalyticsRecord{APIID: "api789", APIKey: "blabla"}
 
 	filteredKeys := filterData(mockedPump, keys)
 	if len(keys) == len(filteredKeys) {

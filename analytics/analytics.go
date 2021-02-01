@@ -148,17 +148,8 @@ func (a *AnalyticsRecord) ObfuscateKey() {
 	}
 
 	sDecodedRequest := string(decodeRequest)
-	log.WithFields(logrus.Fields{
-		"prefix":          analyticsRecordPrefix,
-		"apiId":           a.APIID,
-		"apiName:version": a.APIName + ":" + a.APIVersion,
-		"encoded request": a.RawRequest,
-		"decoded request": sDecodedRequest,
-	}).Debug("")
 
-	//todo bearer!
-
-	//Lookup the key and use it as the separator. Once the string is split, we obfuscate the key anf concatenate back
+	//Algorithm: Lookup the key and use it as the separator. Once the string is split, we obfuscate the key anf concatenate back
 	//the 2 parts with the obfuscated key in the middle
 	//
 	//Example:
@@ -174,14 +165,12 @@ func (a *AnalyticsRecord) ObfuscateKey() {
 			"encoded request": a.RawRequest,
 			"decoded request": sDecodedRequest,
 		}).Error("Authorization key hasn't been found in the decoded string")
-		log.Debug("Authorization key hasn't been found, split array length:", len(requestWithoutKey))
 
 		return
 	}
 	reqWithObfuscatedKey := requestWithoutKey[0] + a.APIKey + requestWithoutKey[1]
 
 	a.RawRequest = base64.StdEncoding.EncodeToString([]byte(reqWithObfuscatedKey))
-	log.Debug("Encoded RawRequest:", a.RawRequest)
 }
 
 func ObfuscateString(keyName string) string {
