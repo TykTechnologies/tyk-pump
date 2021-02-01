@@ -1,15 +1,18 @@
 package analytics
 
 import (
+	"encoding/base64"
 	"reflect"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/tyk-pump/logger"
 )
 
 var log = logger.GetLogger()
+var analyticsRecordPrefix = "analyticsRecord"
 
 type NetworkStats struct {
 	OpenConnections  int64
@@ -115,4 +118,67 @@ func (a *AnalyticsRecord) GetLineValues() []string {
 	}
 
 	return fields
+}
+
+//change name - obfuscateAndDecode request
+func (a *AnalyticsRecord) ObfuscateKey() {
+
+	if a.APIKey == "" {
+		return
+	}
+
+	fullApiKey := a.APIKey
+	a.APIKey = ObfuscateString(a.APIKey) //Obfuscate the key field
+
+	if a.RawRequest == "" {
+		return
+	}
+
+	decodeRequest, err := base64.StdEncoding.DecodeString(a.RawRequest)
+	if err != nil {
+		log.WithFields(logrus.Fields{
+			"prefix":          analyticsRecordPrefix,
+			"apiId":           a.APIID,
+			"apiName:version": a.APIName + ":" + a.APIVersion,
+			"error":           err,
+		}).Error("Error while decoding raw request ", a.RawRequest)
+
+		return
+	}
+
+	sDecodedRequest := string(decodeRequest)
+
+	//Algorithm: Lookup the key and use it as the separator. Once the string is split, we obfuscate the key anf concatenate back
+	//the 2 parts with the obfuscated key in the middle
+	//
+	//Example:
+	// GET ...Authorization: 59d27324b8125f000137663e2c650c3576b348bfbe1490fef5db0c49 ...\r\n
+	// GET ...Authorization: ****0c49 ...\r\n
+	requestWithoutKey := strings.Split(sDecodedRequest, fullApiKey)
+	if len(requestWithoutKey) != 2 {
+		log.WithFields(logrus.Fields{
+			"prefix":          analyticsRecordPrefix,
+			"apiId":           a.APIID,
+			"apiName:version": a.APIName + ":" + a.APIVersion,
+			"encoded request": a.RawRequest,
+			"decoded request": sDecodedRequest,
+		}).Error("Authorization key hasn't been found in the decoded string")
+
+		return
+	}
+	reqWithObfuscatedKey := requestWithoutKey[0] + a.APIKey + requestWithoutKey[1]
+
+	a.RawRequest = base64.StdEncoding.EncodeToString([]byte(reqWithObfuscatedKey))
+}
+
+func ObfuscateString(keyName string) string {
+
+	if keyName == "" {
+		return ""
+	}
+
+	if len(keyName) > 4 {
+		return "****" + keyName[len(keyName)-4:]
+	}
+	return "----"
 }

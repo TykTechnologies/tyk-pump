@@ -252,7 +252,8 @@ Create a `pump.conf` file:
     "mongo_url": "mongodb://username:password@{hostname:port},{hostname:port}/{db_name}"
   },
   "dont_purge_uptime_data": false,
-  "omit_detailed_recording": false
+  "omit_detailed_recording": false,
+  "obfuscate_keys": false
 }
 ```
 
@@ -348,6 +349,9 @@ Environment variables can be used to override the settings defined in the config
 
 `omit_detailed_recording` - Setting this to true will avoid writing raw_request and raw_response fields for each request in pumps. Defaults to false.
 
+### Obfuscate Keys
+
+`obfuscate_keys` -bool. Setting this to true will obfuscate the API KEY from each analytic record. It obfuscate the key in the APIKey field and in the raw request field Defaults to false.
 
 ### Health Check
 
