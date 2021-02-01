@@ -2,7 +2,6 @@ package analytics
 
 import (
 	"encoding/base64"
-	"fmt"
 	"reflect"
 	"strconv"
 	"strings"
@@ -155,7 +154,6 @@ func (a *AnalyticsRecord) ObfuscateKey() {
 	//Example:
 	// GET ...Authorization: 59d27324b8125f000137663e2c650c3576b348bfbe1490fef5db0c49 ...\r\n
 	// GET ...Authorization: ****0c49 ...\r\n
-	fmt.Println(" before a.APIKey  " + a.APIKey)
 	requestWithoutKey := strings.Split(sDecodedRequest, fullApiKey)
 	if len(requestWithoutKey) != 2 {
 		log.WithFields(logrus.Fields{
