@@ -121,6 +121,10 @@ func (a *AnalyticsRecord) GetLineValues() []string {
 }
 
 //change name - obfuscateAndDecode request
+// The key can be found (hashed or not) and need to be obfuscated from 3 places:
+// 1. APIKey field
+// 2. Tags array in a tag that starts with "key-"
+// 3. Raw request - in the authorization header (not hashed, even if tyk was set for hashed keys)
 func (a *AnalyticsRecord) ObfuscateKey() {
 
 	if a.APIKey == "" {
@@ -128,8 +132,19 @@ func (a *AnalyticsRecord) ObfuscateKey() {
 	}
 
 	fullApiKey := a.APIKey
+
+	// 1. Obfuscate the key in APIKey field
 	a.APIKey = ObfuscateString(a.APIKey) //Obfuscate the key field
 
+	// 2. Obfuscate the key in the tag that starts with "key-"
+	for i := range a.Tags {
+		if strings.HasPrefix(a.Tags[i], "key-") {
+			a.Tags[i] = "key-" + ObfuscateString(a.Tags[i][4:])
+			break
+		}
+	}
+
+	// 3. Obfuscate the key in the raw request
 	if a.RawRequest == "" {
 		return
 	}

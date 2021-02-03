@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/google/go-cmp/cmp"
 	"testing"
 	"time"
 
@@ -160,30 +161,40 @@ func TestObfuscateKeysAndDontFilterData(t *testing.T) {
 
 	mockedPump := &MockedPump{}
 
-	expectedKeys := make([]string, 4)
-	expectedKeys[0] = "----"     // len(key) <= 4
-	expectedKeys[1] = "****8910" // key = 12345678910
-	expectedKeys[2] = "****cret" // key = my-secret
-	expectedKeys[3] = ""         // empty key
-
-	keys := make([]interface{}, 4)
-	keys[0] = analytics.AnalyticsRecord{APIID: "api123", APIKey: "1234"}
-	keys[1] = analytics.AnalyticsRecord{APIID: "api456", APIKey: "12345678910"}
-	keys[2] = analytics.AnalyticsRecord{APIID: "api123", APIKey: "my-secret"}
-	keys[3] = analytics.AnalyticsRecord{APIID: "api321", APIKey: ""}
-
-	filteredKeys := filterData(mockedPump, keys)
-	if len(keys) != len(filteredKeys) {
-		t.Fatal("keys and filtered keys should have the same length")
+	expectedKeys1 := make([]string, 4)
+	expectedKeys1[0] = "----"     // len(key) <= 4
+	expectedKeys1[1] = "****8910" // key = 12345678910
+	expectedKeys1[2] = "****cret" // key = my-secret
+	expectedKeys1[3] = ""         // empty key
+	expectedRecords := []analytics.AnalyticsRecord{
+		{APIID: "api123", APIKey: "----", Tags: []string{"key-----"}},
+		{APIID: "api456", APIKey: "****8910", Tags: []string{"key-****8910"}},
+		{APIID: "api123", APIKey: "****cret", Tags: []string{"key-****cret"}},
+		{APIID: "api321", APIKey: "", Tags: []string{"key-"}},
+		{APIID: ""},
 	}
 
-	if len(expectedKeys) != len(filteredKeys) {
-		t.Fatal("expected keys and filtered keys must have the  same length")
+	inputRecords := make([]interface{}, 4)
+	inputRecords[0] = analytics.AnalyticsRecord{APIID: "api123", APIKey: "1234", Tags: []string{"key-1234"}}
+	inputRecords[1] = analytics.AnalyticsRecord{APIID: "api456", APIKey: "12345678910", Tags: []string{"key-****8910"}}
+	inputRecords[2] = analytics.AnalyticsRecord{APIID: "api123", APIKey: "****cret", Tags: []string{"key-****cret"}}
+	inputRecords[3] = analytics.AnalyticsRecord{APIID: "api321", APIKey: "", Tags: []string{"key-"}}
+
+	fmt.Printf("first input  %+v\n", inputRecords[0])
+
+	filteredRecords := filterData(mockedPump, inputRecords)
+	if len(inputRecords) != len(filteredRecords) {
+		t.Fatalf("keys and filtered keys should have the same length (actual records length %d and expected records length %d)",
+			len(inputRecords), len(filteredRecords))
 	}
-	for i := 0; i < len(filteredKeys); i++ {
-		actual := filteredKeys[i].(analytics.AnalyticsRecord).APIKey
-		if actual != expectedKeys[i] {
-			t.Errorf("Record #%d Expected %s, actual %s", i, expectedKeys[i], actual)
+
+	for i := 0; i < len(filteredRecords); i++ {
+		fmt.Printf("Equal input Record #%d Expected %+v\n", i, inputRecords[i])
+
+		if !cmp.Equal(expectedRecords[i], filteredRecords[i]) {
+			t.Errorf("Record #%d Expected %+v,\nactual %+v\n", i, expectedRecords[i], filteredRecords[i].(analytics.AnalyticsRecord))
+		} else {
+			fmt.Printf("Equal Record #%d Expected %+v, actual %+v\n", i, expectedRecords[i], filteredRecords[i].(analytics.AnalyticsRecord))
 		}
 	}
 }

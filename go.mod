@@ -20,6 +20,7 @@ require (
 	github.com/gocraft/health v0.0.0-20170925182251-8675af27fef0
 	github.com/gocraft/web v0.0.0-20190207150652-9707327fb69b
 	github.com/gomodule/redigo v0.0.0-20190226174433-b47395aa1766 // indirect
+	github.com/google/go-cmp v0.5.2
 	github.com/googleapis/gax-go v2.0.2+incompatible // indirect
 	github.com/influxdata/influxdb v1.8.3
 	github.com/jehiah/go-strftime v0.0.0-20151206194810-2efbe75097a5 // indirect
