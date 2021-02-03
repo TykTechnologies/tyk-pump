@@ -18,6 +18,8 @@ type Pump interface {
 	GetTimeout() int
 	SetOmitDetailedRecording(bool)
 	GetOmitDetailedRecording() bool
+	SetIgnoredFields([]string)
+	GetIgnoredFields() []string
 }
 
 func GetPumpByName(name string) (Pump, error) {

@@ -133,6 +133,7 @@ func initialisePumps() {
 			thisPmp.SetFilters(pmp.Filters)
 			thisPmp.SetTimeout(pmp.Timeout)
 			thisPmp.SetOmitDetailedRecording(pmp.OmitDetailedRecording)
+			thisPmp.SetIgnoredFields(pmp.IgnoreFields)
 			initErr := thisPmp.Init(pmp.Meta)
 			if initErr != nil {
 				log.Error("Pump init error (skipping): ", initErr)
@@ -221,7 +222,7 @@ func writeToPumps(keys []interface{}, job *health.Job, startTime time.Time, purg
 
 func filterData(pump pumps.Pump, keys []interface{}) []interface{} {
 	filters := pump.GetFilters()
-	if !filters.HasFilter() && !pump.GetOmitDetailedRecording() && !SystemConfig.ObfuscateKeys {
+	if !filters.HasFilter() && !pump.GetOmitDetailedRecording() && !SystemConfig.ObfuscateKeys && len(pump.GetIgnoredFields()) == 0{
 		return keys
 	}
 	filteredKeys := keys[:]
@@ -233,12 +234,17 @@ func filterData(pump pumps.Pump, keys []interface{}) []interface{} {
 			decoded.RawRequest = ""
 			decoded.RawResponse = ""
 		}
+
 		if filters.ShouldFilter(decoded) {
 			continue
 		}
 
 		if SystemConfig.ObfuscateKeys {
 			decoded.ObfuscateKey()
+		}
+
+		if ignoredFields:= pump.GetIgnoredFields(); len(ignoredFields) >0 {
+			decoded.IgnoreFields(ignoredFields)
 		}
 
 		filteredKeys[newLength] = decoded
