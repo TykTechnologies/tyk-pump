@@ -357,7 +357,7 @@ Environment variables can be used to override the settings defined in the config
 
 `ignore_fields` - []string. You can set this with any value of the [analytic record struct](https://github.com/TykTechnologies/tyk-pump/blob/master/analytics/analytics.go#L30) to ignore that field from your analytic record.
 
-For example:
+For example in CSV Pump you can set the following:
 ```json
 "csv": {
  "type": "csv",
