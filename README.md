@@ -353,6 +353,21 @@ Environment variables can be used to override the settings defined in the config
 
 `obfuscate_keys` -bool. Setting this to true will obfuscate the API KEY from each analytic record. It obfuscate the key in the APIKey field and in the raw request field Defaults to false.
 
+### Ignore Fields
+
+`ignore_fields` - []string. You can set this with any value of the [analytic record struct](https://github.com/TykTechnologies/tyk-pump/blob/master/analytics/analytics.go#L30) to ignore that field from your analytic record.
+
+For example:
+```json
+"csv": {
+ "type": "csv",
+ "ignore_fields":["Tags","APIVersion"],
+ "meta": {
+   "csv_dir": "./bar"
+ }
+```
+Will ignore all the tags and API version for all the analytics records in the CSV Pump.
+
 ### Health Check
 
 From v2.9.4, we have introduced a `/health` endpoint to confirm the Pump is running. You need to configure the following settings:
