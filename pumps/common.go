@@ -6,7 +6,7 @@ type CommonPumpConfig struct {
 	filters               analytics.AnalyticsFilters
 	timeout               int
 	OmitDetailedRecording bool
-	IgnoreFields	[]string
+	IgnoreFields          []string
 }
 
 func (p *CommonPumpConfig) SetFilters(filters analytics.AnalyticsFilters) {

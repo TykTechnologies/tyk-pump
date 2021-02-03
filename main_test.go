@@ -231,25 +231,25 @@ func TestObfuscateKeysAndFilterData(t *testing.T) {
 	}
 }
 
-func TestIgnoreFields(t *testing.T){
+func TestIgnoreFields(t *testing.T) {
 	mockedPump := &MockedPump{}
-	ignoredFields := []string{"tags","APIID"}
+	ignoredFields := []string{"tags", "APIID"}
 	mockedPump.SetIgnoredFields(ignoredFields)
 
 	keys := make([]interface{}, 1)
-	keys[0] = analytics.AnalyticsRecord{APIID: "api111", RawResponse: "test", OrgID: "test",Tags: []string{"tag_test","tag_test2"}}
+	keys[0] = analytics.AnalyticsRecord{APIID: "api111", RawResponse: "test", OrgID: "test", Tags: []string{"tag_test", "tag_test2"}}
 
-	filteredKeys := filterData(mockedPump,keys)
+	filteredKeys := filterData(mockedPump, keys)
 	if len(filteredKeys) == 0 {
 		t.Fatal("it shouldn't have filtered a key.")
 	}
 
 	record := filteredKeys[0].(analytics.AnalyticsRecord)
-	if record.APIID != "" || len(record.Tags) > 0{
+	if record.APIID != "" || len(record.Tags) > 0 {
 		t.Fatal("api_id and tags should be ignored")
 	}
 
-	if record.RawResponse  != "test" && record.OrgID != "test"{
+	if record.RawResponse != "test" && record.OrgID != "test" {
 		t.Fatal("raw_response and org_id shouldn't have been ignored")
 	}
 }

@@ -121,44 +121,48 @@ func (a *AnalyticsRecord) GetLineValues() []string {
 }
 
 func (a *AnalyticsRecord) IgnoreFields(fields []string) {
-	for _, field := range fields{
-		switch field{
-		case "host","Host":
+	for _, field := range fields {
+		switch field {
+		case "host", "Host":
 			a.Host = ""
-		case "path","Path":
+		case "path", "Path":
 			a.Path = ""
-		case "raw_path","RawPath":
+		case "raw_path", "RawPath":
 			a.RawPath = ""
-		case "content_length","ContentLength":
+		case "content_length", "ContentLength":
 			a.ContentLength = 0
-		case "user_agent","UserAgent":
+		case "user_agent", "UserAgent":
 			a.UserAgent = ""
-		case "api_key","APIKey":
+		case "api_key", "APIKey":
 			a.APIKey = ""
-		case "api_id","APIID":
+		case "api_id", "APIID":
 			a.APIID = ""
-		case "org_id","OrgID":
+		case "org_id", "OrgID":
 			a.OrgID = ""
-		case "oauth_id","OauthID":
+		case "oauth_id", "OauthID":
 			a.OauthID = ""
-		case "request_time","RequestTime":
+		case "request_time", "RequestTime":
 			a.RequestTime = 0
-		case "raw_request","RawRequest":
+		case "raw_request", "RawRequest":
 			a.RawRequest = ""
-		case "raw_response","RawResponse":
+		case "raw_response", "RawResponse":
 			a.RawResponse = ""
-		case "ip_address","IPAddress":
+		case "ip_address", "IPAddress":
 			a.IPAddress = ""
-		case "geo","Geo":
+		case "geo", "Geo":
 			a.Geo = GeoData{}
-		case "network","Network":
+		case "network", "Network":
 			a.Network = NetworkStats{}
-		case "latency","Latency":
+		case "latency", "Latency":
 			a.Latency = Latency{}
-		case "tags","Tags":
+		case "tags", "Tags":
 			a.Tags = []string{}
-		case "alias","Alias":
+		case "alias", "Alias":
 			a.Alias = ""
+		default:
+			log.WithFields(logrus.Fields{
+				"prefix": analyticsRecordPrefix,
+			}).Warn("You're trying to ignore " + field + " and it doesn't exists.")
 		}
 	}
 }

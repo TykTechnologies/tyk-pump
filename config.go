@@ -18,7 +18,7 @@ type PumpConfig struct {
 	Filters               analytics.AnalyticsFilters `json:"filters"`
 	Timeout               int                        `json:"timeout"`
 	OmitDetailedRecording bool                       `json:"omit_detailed_recording"`
-	IgnoreFields		  []string					 `json:"ignore_fields"`
+	IgnoreFields          []string                   `json:"ignore_fields"`
 	Meta                  map[string]interface{}     `json:"meta"` // TODO: convert this to json.RawMessage and use regular json.Unmarshal
 }
 
