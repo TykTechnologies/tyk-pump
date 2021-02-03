@@ -365,6 +365,7 @@ For example:
  "meta": {
    "csv_dir": "./bar"
  }
+}
 ```
 Will ignore all the tags and API version for all the analytics records in the CSV Pump.
 
