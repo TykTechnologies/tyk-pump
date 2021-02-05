@@ -385,7 +385,7 @@ The Tyk Dashboard uses the "mongo-pump-aggregate" collection to display analytic
 `"disable_bulk"` - Disable batch writing. Defaults to false.
 
 `bulk_config`: Batch writing trigger configuration. Each option is an OR with eachother:
-  * `wokers`: Number of workers. Defaults to 1.
+  * `workers`: Number of workers. Defaults to 1.
   * `flush_interval`: Specifies the time in seconds to flush the data and send it to ES. Default disabled.
   * `bulk_actions`: Specifies the number of requests needed to flush the data and send it to ES. Defaults to 1000 requests. If it is needed, can be disabled with -1.
   * `bulk_size`: Specifies the size (in bytes) needed to flush the data and send it to ES. Defaults to 5MB. If it is needed, can be disabled with -1.
