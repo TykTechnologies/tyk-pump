@@ -1,4 +1,7 @@
 #!/bin/bash
+# This file is deprecated in favour of TykTechnologies/packagecloud-action
+# Automation in .g/w/release.yml
+
 : ${ORGDIR:="/src/github.com/TykTechnologies"}
 : ${SOURCEBINPATH:="${ORGDIR}/tyk-pump"}
 : ${DEBVERS:="ubuntu/trusty ubuntu/xenial ubuntu/bionic debian/jessie debian/stretch debian/buster"}

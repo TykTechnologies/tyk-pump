@@ -1,4 +1,7 @@
 #!/bin/bash
+# This file is deprecated in favour of .goreleaser.yml
+# Automation in .g/w/release.yml
+
 : ${ORGDIR:="/src/github.com/TykTechnologies"}
 : ${SIGNKEY:="12B5D62C28F57592D1575BD51ED14C59E37DAC20"}
 : ${BUILDPKGS:="1"}
