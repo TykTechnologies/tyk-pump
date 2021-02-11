@@ -27,4 +27,6 @@ func init() {
 	AvailablePumps["dogstatsd"] = &DogStatsdPump{}
 	AvailablePumps["kafka"] = &KafkaPump{}
 	AvailablePumps["syslog"] = &SyslogPump{}
+	AvailablePumps["sql"] = &SQLPump{}
+	AvailablePumps["sql_aggregate"] = &SQLAggregatePump{}
 }
