@@ -1,0 +1,186 @@
+package pumps
+
+import (
+	"context"
+	"os"
+
+	"github.com/TykTechnologies/logrus"
+	"github.com/TykTechnologies/tyk-pump/analytics"
+
+	"github.com/mitchellh/mapstructure"
+
+	"gorm.io/driver/mysql"
+	"gorm.io/driver/postgres"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
+	gorm_logger "gorm.io/gorm/logger"
+)
+
+type PostgresConfig struct {
+	// disables implicit prepared statement usage
+	PreferSimpleProtocol bool `json:"prefer_simple_protocol" mapstructure:"prefer_simple_protocol"`
+}
+
+type MysqlConfig struct {
+	// default size for string fields. By default set to: 256
+	DefaultStringSize uint `json:"default_string_size" mapstructure:"default_string_size"`
+	// disable datetime precision, which not supported before MySQL 5.6
+	DisableDatetimePrecision bool `json:"disable_datetime_precision" mapstructure:"disable_datetime_precision"`
+	// drop & create when rename index, rename index not supported before MySQL 5.7, MariaDB
+	DontSupportRenameIndex bool `json:"dont_support_rename_index" mapstructure:"dont_support_rename_index"`
+	// `change` when rename column, rename column not supported before MySQL 8, MariaDB
+	DontSupportRenameColumn bool `json:"dont_support_rename_column" mapstructure:"dont_support_rename_column"`
+	// auto configure based on currently MySQL version
+	SkipInitializeWithVersion bool `json:"skip_initialize_with_version" mapstructure:"skip_initialize_with_version"`
+}
+
+type SQLPump struct {
+	CommonPumpConfig
+
+	SQLConf *SQLConf
+
+	db      *gorm.DB
+	dbType  string
+	dialect gorm.Dialector
+}
+
+type SQLConf struct {
+	Type          string         `json:"type" mapstructure:"type"`
+	DSN           string         `json:"dsn" mapstructure:"dsn"`
+	Postgres      PostgresConfig `json:"postgres" mapstructure:"postgres"`
+	Mysql         MysqlConfig    `json:"mysql" mapstructure:"mysql"`
+	TableSharding bool           `json:"table_sharding" mapstructure:"table_sharding"`
+}
+
+func Dialect(cfg *SQLConf) gorm.Dialector {
+	switch cfg.Type {
+	case "sqlite":
+		if cfg.DSN == "" {
+			log.Warning("`config.dsn` is empty. Falling back to in-memory storage. Warning: All data will be lost on process restart.")
+			cfg.DSN = "file::memory:?cache=shared"
+		}
+
+		return sqlite.Open(cfg.DSN)
+	case "postgres":
+		// Example DSN: `"host=localhost user=gorm password=gorm DB.name=gorm port=9920 sslmode=disable TimeZone=Asia/Shanghai"`
+		return postgres.New(postgres.Config{
+			DSN:                  cfg.DSN,
+			PreferSimpleProtocol: cfg.Postgres.PreferSimpleProtocol,
+		})
+	case "mysql":
+		return mysql.New(mysql.Config{
+			DSN:                       cfg.DSN,
+			DefaultStringSize:         cfg.Mysql.DefaultStringSize,
+			DisableDatetimePrecision:  cfg.Mysql.DisableDatetimePrecision,
+			DontSupportRenameIndex:    cfg.Mysql.DontSupportRenameIndex,
+			DontSupportRenameColumn:   cfg.Mysql.DontSupportRenameColumn,
+			SkipInitializeWithVersion: cfg.Mysql.SkipInitializeWithVersion,
+		})
+	default:
+		panic("Unsupported `config_storage.type` value:" + cfg.Type)
+	}
+}
+
+var SQLPrefix = "SQL-pump"
+
+func (c *SQLPump) New() Pump {
+	newPump := SQLPump{}
+	return &newPump
+}
+
+func (c *SQLPump) GetName() string {
+	return "SQL Pump"
+}
+
+func (c *SQLPump) Init(conf interface{}) error {
+	c.SQLConf = &SQLConf{}
+	err := mapstructure.Decode(conf, &c.SQLConf)
+
+	if err != nil {
+		log.WithFields(logrus.Fields{
+			"prefix": SQLPrefix,
+		}).Fatal("Failed to decode configuration: ", err)
+	}
+
+	logLevel := gorm_logger.Silent
+
+	switch os.Getenv("TYK_LOGLEVEL") {
+	case "debug":
+		logLevel = gorm_logger.Info
+	case "info":
+		logLevel = gorm_logger.Warn
+	case "warning":
+		logLevel = gorm_logger.Error
+	}
+
+	db, err := gorm.Open(Dialect(c.SQLConf), &gorm.Config{
+		AutoEmbedd:  true,
+		UseJSONTags: true,
+		Logger:      gorm_logger.Default.LogMode(logLevel),
+	})
+
+	if err != nil {
+		log.WithFields(logrus.Fields{
+			"prefix": SQLPrefix,
+		}).Error(err)
+		return err
+	}
+	c.db = db
+
+	if !c.SQLConf.TableSharding {
+		c.db.Table("tyk_analytics").AutoMigrate(&analytics.AnalyticsRecord{})
+	}
+
+	log.WithFields(logrus.Fields{
+		"prefix": SQLPrefix,
+	}).Debug("SQL Initialized")
+	return nil
+}
+
+func (c *SQLPump) WriteData(ctx context.Context, data []interface{}) error {
+	var typedData []*analytics.AnalyticsRecord
+	for _, r := range data {
+		rec := r.(analytics.AnalyticsRecord)
+		typedData = append(typedData, &rec)
+	}
+
+	if c.SQLConf.TableSharding && len(typedData) > 0 {
+		// Check first and last record, to ensure that we will not hit issue when hour is changing
+		table := "tyk_analytics_" + typedData[0].TimeStamp.Format("20060102")
+		if !c.db.Migrator().HasTable(table) {
+			c.db.Table(table).AutoMigrate(&analytics.AnalyticsRecord{})
+		}
+
+		table = "tyk_analytics_" + typedData[len(typedData)-1].TimeStamp.Format("20060102")
+		if !c.db.Migrator().HasTable(table) {
+			c.db.Table(table).AutoMigrate(&analytics.AnalyticsRecord{})
+		}
+	}
+
+	batch := 500
+
+	for i := 0; i < len(typedData); i += batch {
+		j := i + batch
+		if j > len(typedData) {
+			j = len(typedData)
+		}
+
+		resp := c.db
+
+		if c.SQLConf.TableSharding {
+			table := "tyk_analytics_" + typedData[i].TimeStamp.Format("20060102")
+			resp = resp.Table(table)
+		}
+
+		resp = c.db.Create(typedData[i:j])
+		if resp.Error != nil {
+			return resp.Error
+		}
+	}
+
+	log.WithFields(logrus.Fields{
+		"prefix": SQLPrefix,
+	}).Info("Purging ", len(data), " records")
+
+	return nil
+}

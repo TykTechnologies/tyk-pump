@@ -28,7 +28,7 @@ type Counter struct {
 	ErrorTotal        int       `json:"error"`
 	RequestTime       float64   `json:"request_time"`
 	TotalRequestTime  float64   `json:"total_request_time"`
-	Identifier        string    `json:"identifier"`
+	Identifier        string    `json:"identifier" gorm:"-"`
 	HumanIdentifier   string    `json:"human_identifier"`
 	LastTime          time.Time `json:"last_time"`
 	OpenConnections   int64     `json:"open_connections"`
@@ -46,8 +46,8 @@ type Counter struct {
 	TotalLatency int64   `json:"total_latency"`
 	Latency      float64 `json:"latency"`
 
-	ErrorMap  map[string]int `json:"error_map"`
-	ErrorList []ErrorData    `json:"error_list"`
+	ErrorMap  map[string]int `json:"error_map" gorm:"-"`
+	ErrorList []ErrorData    `json:"error_list" gorm:"-"`
 }
 
 type AnalyticsRecordAggregate struct {
@@ -92,6 +92,94 @@ type AnalyticsRecordAggregate struct {
 
 	ExpireAt time.Time `bson:"expireAt" json:"expireAt"`
 	LastTime time.Time
+}
+
+type SQLAnalyticsRecordAggregate struct {
+	Counter `json:"counter"`
+
+	TimeStamp      int64  `json:"timestamp" gorm:"index:dimension, priority:1"`
+	OrgID          string `json:"org_id" gorm:"index:dimension, priority:2"`
+	Dimension      string `json:"dimension" gorm:"index:dimension, priority:3"`
+	DimensionValue string `json:"dimension_value" gorm:"index:dimension, priority:4"`
+
+	Code1x  int `json:"code_1x"`
+	Code200 int `json:"code_200"`
+	Code201 int `json:"code_201"`
+	Code2x  int `json:"code_2x"`
+	Code301 int `json:"code_301"`
+	Code302 int `json:"code_302"`
+	Code303 int `json:"code_303"`
+	Code304 int `json:"code_304"`
+	Code3x  int `json:"code_3x"`
+	Code400 int `json:"code_400"`
+	Code401 int `json:"code_401"`
+	Code403 int `json:"code_403"`
+	Code404 int `json:"code_404"`
+	Code429 int `json:"code_429"`
+	Code4x  int `json:"code_4x"`
+	Code500 int `json:"code_500"`
+	Code501 int `json:"code_501"`
+	Code502 int `json:"code_502"`
+	Code503 int `json:"code_503"`
+	Code504 int `json:"code_504"`
+	Code5x  int `json:"code_5x"`
+}
+
+func (a *SQLAnalyticsRecordAggregate) ProcessStatusCodes() {
+	for k, v := range a.Counter.ErrorMap {
+		switch k {
+		case "200":
+			a.Code200 = v
+		case "201":
+			a.Code201 = v
+		case "301":
+			a.Code301 = v
+		case "302":
+			a.Code302 = v
+		case "303":
+			a.Code303 = v
+		case "400":
+			a.Code400 = v
+		case "401":
+			a.Code401 = v
+		case "403":
+			a.Code403 = v
+		case "404":
+			a.Code404 = v
+		case "429":
+			a.Code429 = v
+		case "500":
+			a.Code500 = v
+		case "501":
+			a.Code501 = v
+		case "502":
+			a.Code502 = v
+		case "503":
+			a.Code503 = v
+		case "504":
+			a.Code404 = v
+		default:
+			switch k[0] {
+			case '1':
+				a.Code1x = v
+			case '2':
+				a.Code2x = v
+			case '3':
+				a.Code3x = v
+			case '4':
+				a.Code4x = v
+			case '5':
+				a.Code5x = v
+			}
+		}
+	}
+
+	a.Counter.ErrorList = nil
+	a.Counter.ErrorMap = nil
+}
+
+func (ar *SQLAnalyticsRecordAggregate) TableName() string {
+	return "tyk_aggregated"
 }
 
 func (f AnalyticsRecordAggregate) New() AnalyticsRecordAggregate {
@@ -178,61 +266,75 @@ func (f *AnalyticsRecordAggregate) latencySetter(parent, thisUnit string, newUpd
 	return newUpdate
 }
 
-func (f *AnalyticsRecordAggregate) AsChange() bson.M {
-	newUpdate := bson.M{
+type Dimension struct {
+	Name    string
+	Value   string
+	Counter *Counter
+}
+
+func (f *AnalyticsRecordAggregate) Dimensions() (dimensions []Dimension) {
+	for key, inc := range f.APIID {
+		dimensions = append(dimensions, Dimension{"apiid", key, inc})
+	}
+
+	for key, inc := range f.Errors {
+		dimensions = append(dimensions, Dimension{"errors", key, inc})
+	}
+
+	for key, inc := range f.Versions {
+		dimensions = append(dimensions, Dimension{"versions", key, inc})
+	}
+
+	for key, inc := range f.APIKeys {
+		dimensions = append(dimensions, Dimension{"apikeys", key, inc})
+	}
+
+	for key, inc := range f.OauthIDs {
+		dimensions = append(dimensions, Dimension{"oauthids", key, inc})
+	}
+
+	for key, inc := range f.Geo {
+		dimensions = append(dimensions, Dimension{"geo", key, inc})
+	}
+
+	for key, inc := range f.Tags {
+		dimensions = append(dimensions, Dimension{"tags", key, inc})
+	}
+
+	for key, inc := range f.Endpoints {
+		dimensions = append(dimensions, Dimension{"endpoints", key, inc})
+	}
+
+	for key, inc := range f.KeyEndpoint {
+		for k, v := range inc {
+			dimensions = append(dimensions, Dimension{"keyendpoints", key + "." + k, v})
+		}
+	}
+
+	for key, inc := range f.OauthEndpoint {
+		for k, v := range inc {
+			dimensions = append(dimensions, Dimension{"oauthendpoints", key + "." + k, v})
+		}
+	}
+
+	for key, inc := range f.ApiEndpoint {
+		dimensions = append(dimensions, Dimension{"apiendpoints", key, inc})
+	}
+
+	dimensions = append(dimensions, Dimension{"", "total", &f.Total})
+
+	return
+}
+
+func (f *AnalyticsRecordAggregate) AsChange() (newUpdate bson.M) {
+	newUpdate = bson.M{
 		"$inc": bson.M{},
 		"$set": bson.M{},
 		"$max": bson.M{},
 	}
 
-	for thisUnit, incVal := range f.APIID {
-		newUpdate = f.generateBSONFromProperty("apiid", thisUnit, incVal, newUpdate)
-	}
-
-	for thisUnit, incVal := range f.Errors {
-		newUpdate = f.generateBSONFromProperty("errors", thisUnit, incVal, newUpdate)
-	}
-
-	for thisUnit, incVal := range f.Versions {
-		newUpdate = f.generateBSONFromProperty("versions", thisUnit, incVal, newUpdate)
-	}
-
-	for thisUnit, incVal := range f.APIKeys {
-		newUpdate = f.generateBSONFromProperty("apikeys", thisUnit, incVal, newUpdate)
-	}
-
-	for thisUnit, incVal := range f.OauthIDs {
-		newUpdate = f.generateBSONFromProperty("oauthids", thisUnit, incVal, newUpdate)
-	}
-
-	for thisUnit, incVal := range f.Geo {
-		newUpdate = f.generateBSONFromProperty("geo", thisUnit, incVal, newUpdate)
-	}
-
-	for thisUnit, incVal := range f.Tags {
-		newUpdate = f.generateBSONFromProperty("tags", thisUnit, incVal, newUpdate)
-	}
-
-	for thisUnit, incVal := range f.Endpoints {
-		newUpdate = f.generateBSONFromProperty("endpoints", thisUnit, incVal, newUpdate)
-	}
-
-	for thisUnit, incVal := range f.KeyEndpoint {
-		parent := "keyendpoints." + thisUnit
-		for k, v := range incVal {
-			newUpdate = f.generateBSONFromProperty(parent, k, v, newUpdate)
-		}
-	}
-
-	for thisUnit, incVal := range f.OauthEndpoint {
-		parent := "oauthendpoints." + thisUnit
-		for k, v := range incVal {
-			newUpdate = f.generateBSONFromProperty(parent, k, v, newUpdate)
-		}
-	}
-
-	for thisUnit, incVal := range f.ApiEndpoint {
-		newUpdate = f.generateBSONFromProperty("apiendpoints", thisUnit, incVal, newUpdate)
+	for _, d := range f.Dimensions() {
+		newUpdate = f.generateBSONFromProperty(d.Name, d.Value, d.Counter, newUpdate)
 	}
 
 	newUpdate = f.generateBSONFromProperty("", "total", &f.Total, newUpdate)
@@ -356,11 +458,11 @@ func (f *AnalyticsRecordAggregate) DiscardAggregations(fields []string) {
 			f.Tags = make(map[string]*Counter)
 		case "Endpoints", "endpoints":
 			f.Endpoints = make(map[string]*Counter)
-		case "KeyEndpoint", "keyendpint":
+		case "KeyEndpoint", "keyendpoints":
 			f.KeyEndpoint = make(map[string]map[string]*Counter)
-		case "OauthEndpoint", "oauthendpoint":
+		case "OauthEndpoint", "oauthendpoints":
 			f.OauthEndpoint = make(map[string]map[string]*Counter)
-		case "ApiEndpoint", "apiendpoint":
+		case "ApiEndpoint", "apiendpoints":
 			f.ApiEndpoint = make(map[string]*Counter)
 		}
 	}

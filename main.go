@@ -142,9 +142,11 @@ func initialisePumps() {
 				}).Info("Init Pump: ", thisPmp.GetName())
 				Pumps[i] = thisPmp
 			}
+			i++
 		}
-		i++
 	}
+
+	Pumps = Pumps[:i]
 
 	if !SystemConfig.DontPurgeUptimeData {
 		log.WithFields(logrus.Fields{
@@ -224,6 +226,7 @@ func filterData(pump pumps.Pump, keys []interface{}) []interface{} {
 	if !filters.HasFilter() && !pump.GetOmitDetailedRecording() && !SystemConfig.ObfuscateKeys {
 		return keys
 	}
+
 	filteredKeys := keys[:]
 	newLength := 0
 
