@@ -221,11 +221,11 @@ func writeToPumps(keys []interface{}, job *health.Job, startTime time.Time, purg
 
 func filterData(pump pumps.Pump, keys []interface{}) []interface{} {
 	filters := pump.GetFilters()
-	if !filters.HasFilter() && !pump.GetOmitDetailedRecording() && !SystemConfig.ObfuscateKeys {
+	if !filters.HasFilter() && !pump.GetOmitDetailedRecording() {
 		return keys
 	}
 	filteredKeys := keys[:]
-	newLength := 0
+	newLenght := 0
 
 	for _, key := range filteredKeys {
 		decoded := key.(analytics.AnalyticsRecord)
@@ -236,15 +236,10 @@ func filterData(pump pumps.Pump, keys []interface{}) []interface{} {
 		if filters.ShouldFilter(decoded) {
 			continue
 		}
-
-		if SystemConfig.ObfuscateKeys {
-			decoded.ObfuscateKey()
-		}
-
-		filteredKeys[newLength] = decoded
-		newLength++
+		filteredKeys[newLenght] = decoded
+		newLenght++
 	}
-	filteredKeys = filteredKeys[:newLength]
+	filteredKeys = filteredKeys[:newLenght]
 	return filteredKeys
 }
 
