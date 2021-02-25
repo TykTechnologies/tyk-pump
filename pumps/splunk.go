@@ -163,8 +163,8 @@ func (p *SplunkPump) WriteData(ctx context.Context, data []interface{}) error {
 				if field == "api_key" && p.config.ObfuscateAPIKeys {
 					apiKey := decoded.APIKey
 
-					if len(apiKey) > 4 {
-						event[field] = "****" + apiKey[len(apiKey)-4:]
+					if len(apiKey) > p.config.ObfuscateAPIKeys {
+						event[field] = "****" + apiKey[len(apiKey)-p.config.ObfuscateAPIKeys:]
 					}
 				} else {
 					// Adding field value
