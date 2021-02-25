@@ -158,8 +158,17 @@ func (p *SplunkPump) WriteData(ctx context.Context, data []interface{}) error {
 					continue
 				}
 
-				// Adding field value
-				event[field] = mapping[field]
+				// Check if the field is "api_key" and the obfuscation is configured
+				if field == "api_key" && p.config.ObfuscateAPIKeys {
+					apiKey := decoded.APIKey
+
+					if len(apiKey) > 4 {
+						event[field] = "****" + apiKey[len(apiKey)-4:]
+					}
+				} else {
+					// Adding field value
+					event[field] = mapping[field]
+				}
 			}
 		} else {
 			// Set the default event fields
