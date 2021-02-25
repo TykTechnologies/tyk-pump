@@ -146,6 +146,28 @@ func (p *SplunkPump) WriteData(ctx context.Context, data []interface{}) error {
 	}).Info("Writing ", len(data), " records")
 	for _, v := range data {
 		decoded := v.(analytics.AnalyticsRecord)
+		mapping := map[string]interface{}{
+			"method":         decoded.Method,
+			"host":           decoded.Host,
+			"path":           decoded.Path,
+			"raw_path":       decoded.RawPath,
+			"content_length": decoded.ContentLength,
+			"user_agent":     decoded.UserAgent,
+			"response_code":  decoded.ResponseCode,
+			"api_key":        decoded.APIKey,
+			"time_stamp":     decoded.TimeStamp,
+			"api_version":    decoded.APIVersion,
+			"api_name":       decoded.APIName,
+			"api_id":         decoded.APIID,
+			"org_id":         decoded.OrgID,
+			"oauth_id":       decoded.OauthID,
+			"raw_request":    decoded.RawRequest,
+			"request_time":   decoded.RequestTime,
+			"raw_response":   decoded.RawResponse,
+			"ip_address":     decoded.IPAddress,
+			"geo":            decoded.Geo,
+			"alias":          decoded.Alias,
+		}
 
 		// Define an empty event
 		event := make(map[string]interface{})
@@ -161,7 +183,7 @@ func (p *SplunkPump) WriteData(ctx context.Context, data []interface{}) error {
 
 				// Check if the field is "api_key" and the obfuscation is configured
 				if field == "api_key" && p.config.ObfuscateAPIKeys {
-					apiKey := decoded.APIKey
+					apiKey := mapping[field].(string)
 
 					if len(apiKey) > p.config.ObfuscateAPIKeys {
 						event[field] = "****" + apiKey[len(apiKey)-p.config.ObfuscateAPIKeys:]
