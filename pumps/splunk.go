@@ -146,22 +146,32 @@ func (p *SplunkPump) WriteData(ctx context.Context, data []interface{}) error {
 	for _, v := range data {
 		decoded := v.(analytics.AnalyticsRecord)
 
-		event := map[string]interface{}{
-			"method":        decoded.Method,
-			"path":          decoded.Path,
-			"response_code": decoded.ResponseCode,
-			"api_key":       decoded.APIKey,
-			"time_stamp":    decoded.TimeStamp,
-			"api_version":   decoded.APIVersion,
-			"api_name":      decoded.APIName,
-			"api_id":        decoded.APIID,
-			"org_id":        decoded.OrgID,
-			"oauth_id":      decoded.OauthID,
-			"raw_request":   decoded.RawRequest,
-			"request_time":  decoded.RequestTime,
-			"raw_response":  decoded.RawResponse,
-			"ip_address":    decoded.IPAddress,
+		// Define an empty event
+		event := make(map[string]interface{})
+
+		// Populate the Splunk event with the fields set in the config
+		if len(p.config.Fields) > 0 {
+			// ToDo: Add dynamically the selected fields to the event
+		} else {
+			// Set the default event fields
+			event = map[string]interface{}{
+				"method":        decoded.Method,
+				"path":          decoded.Path,
+				"response_code": decoded.ResponseCode,
+				"api_key":       decoded.APIKey,
+				"time_stamp":    decoded.TimeStamp,
+				"api_version":   decoded.APIVersion,
+				"api_name":      decoded.APIName,
+				"api_id":        decoded.APIID,
+				"org_id":        decoded.OrgID,
+				"oauth_id":      decoded.OauthID,
+				"raw_request":   decoded.RawRequest,
+				"request_time":  decoded.RequestTime,
+				"raw_response":  decoded.RawResponse,
+				"ip_address":    decoded.IPAddress,
+			}
 		}
+
 		p.client.Send(ctx, event, decoded.TimeStamp)
 	}
 	return nil
