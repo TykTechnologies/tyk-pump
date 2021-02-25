@@ -96,14 +96,15 @@ type SplunkPump struct {
 
 // SplunkPumpConfig contains the driver configuration parameters.
 type SplunkPumpConfig struct {
-	CollectorToken        string   `mapstructure:"collector_token"`
-	CollectorURL          string   `mapstructure:"collector_url"`
-	SSLInsecureSkipVerify bool     `mapstructure:"ssl_insecure_skip_verify"`
-	SSLCertFile           string   `mapstructure:"ssl_cert_file"`
-	SSLKeyFile            string   `mapstructure:"ssl_key_file"`
-	SSLServerName         string   `mapstructure:"ssl_server_name"`
-	ObfuscateAPIKeys      bool     `mapstructure:"obfuscate_api_keys"`
-	Fields                []string `mapstructure:"fields"`
+	CollectorToken         string   `mapstructure:"collector_token"`
+	CollectorURL           string   `mapstructure:"collector_url"`
+	SSLInsecureSkipVerify  bool     `mapstructure:"ssl_insecure_skip_verify"`
+	SSLCertFile            string   `mapstructure:"ssl_cert_file"`
+	SSLKeyFile             string   `mapstructure:"ssl_key_file"`
+	SSLServerName          string   `mapstructure:"ssl_server_name"`
+	ObfuscateAPIKeys       bool     `mapstructure:"obfuscate_api_keys"`
+	ObfuscateAPIKeysLength int      `mapstructure:"obfuscate_api_keys_length"`
+	Fields                 []string `mapstructure:"fields"`
 }
 
 // New initializes a new pump.
