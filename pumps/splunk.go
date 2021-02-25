@@ -177,7 +177,7 @@ func (p *SplunkPump) WriteData(ctx context.Context, data []interface{}) error {
 			// Loop through all fields set in the pump config
 			for _, field := range p.config.Fields {
 				// Skip the next actions in case the configured field doesn't exist
-				if _, ok := mapping[field]; ok {
+				if _, ok := mapping[field]; !ok {
 					continue
 				}
 
