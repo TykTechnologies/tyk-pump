@@ -145,18 +145,12 @@ func (p *SplunkPump) WriteData(ctx context.Context, data []interface{}) error {
 	}).Info("Writing ", len(data), " records")
 	for _, v := range data {
 		decoded := v.(analytics.AnalyticsRecord)
-		apiKey := decoded.APIKey
-		if p.config.ObfuscateAPIKeys {
-			if len(apiKey) > 4 {
-				apiKey = "****" + apiKey[len(apiKey)-4:]
-			}
-		}
 
 		event := map[string]interface{}{
 			"method":        decoded.Method,
 			"path":          decoded.Path,
 			"response_code": decoded.ResponseCode,
-			"api_key":       apiKey,
+			"api_key":       decoded.APIKey,
 			"time_stamp":    decoded.TimeStamp,
 			"api_version":   decoded.APIVersion,
 			"api_name":      decoded.APIName,
