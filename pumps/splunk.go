@@ -151,7 +151,16 @@ func (p *SplunkPump) WriteData(ctx context.Context, data []interface{}) error {
 
 		// Populate the Splunk event with the fields set in the config
 		if len(p.config.Fields) > 0 {
-			// ToDo: Add dynamically the selected fields to the event
+			// Loop through all fields set in the pump config
+			for _, field := range p.config.Fields {
+				// Skip the next actions in case the configured field doesn't exist
+				if _, ok := mapping[field]; ok {
+					continue
+				}
+
+				// Adding field value
+				event[field] = mapping[field]
+			}
 		} else {
 			// Set the default event fields
 			event = map[string]interface{}{
