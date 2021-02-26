@@ -146,6 +146,15 @@ func (p *SplunkPump) WriteData(ctx context.Context, data []interface{}) error {
 	}).Info("Writing ", len(data), " records")
 	for _, v := range data {
 		decoded := v.(analytics.AnalyticsRecord)
+		apiKey := decoded.APIKey
+
+		// Check if the APIKey obfuscation is configured and its doable
+		if p.config.ObfuscateAPIKeys && len(apiKey) > p.config.ObfuscateAPIKeysLength {
+			// Obfuscate the APIKey, starting with 4 asterics and followed by last N chars (configured separately) of the APIKey
+			// The default value of the length is 0 so unless another number is configured, the APIKey will be fully hidden
+			apiKey = "****" + apiKey[len(apiKey)-p.config.ObfuscateAPIKeysLength:]
+		}
+
 		mapping := map[string]interface{}{
 			"method":         decoded.Method,
 			"host":           decoded.Host,
@@ -154,7 +163,7 @@ func (p *SplunkPump) WriteData(ctx context.Context, data []interface{}) error {
 			"content_length": decoded.ContentLength,
 			"user_agent":     decoded.UserAgent,
 			"response_code":  decoded.ResponseCode,
-			"api_key":        decoded.APIKey,
+			"api_key":        apiKey,
 			"time_stamp":     decoded.TimeStamp,
 			"api_version":    decoded.APIVersion,
 			"api_name":       decoded.APIName,
@@ -181,17 +190,8 @@ func (p *SplunkPump) WriteData(ctx context.Context, data []interface{}) error {
 					continue
 				}
 
-				// Check if the field is "api_key" and the obfuscation is configured
-				if field == "api_key" && p.config.ObfuscateAPIKeys {
-					apiKey := mapping[field].(string)
-
-					if len(apiKey) > p.config.ObfuscateAPIKeysLength {
-						event[field] = "****" + apiKey[len(apiKey)-p.config.ObfuscateAPIKeysLength:]
-					}
-				} else {
-					// Adding field value
-					event[field] = mapping[field]
-				}
+				// Adding field value
+				event[field] = mapping[field]
 			}
 		} else {
 			// Set the default event fields
@@ -199,7 +199,7 @@ func (p *SplunkPump) WriteData(ctx context.Context, data []interface{}) error {
 				"method":        decoded.Method,
 				"path":          decoded.Path,
 				"response_code": decoded.ResponseCode,
-				"api_key":       decoded.APIKey,
+				"api_key":       apiKey,
 				"time_stamp":    decoded.TimeStamp,
 				"api_version":   decoded.APIVersion,
 				"api_name":      decoded.APIName,
