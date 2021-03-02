@@ -229,11 +229,12 @@ func (m *MongoPump) GetName() string {
 
 func (m *MongoPump) Init(config interface{}) error {
 	m.dbConf = &MongoConf{}
+	m.log = log.WithField("prefix", mongoPrefix)
+
 	err := mapstructure.Decode(config, &m.dbConf)
 	if err == nil {
 		err = mapstructure.Decode(config, &m.dbConf.BaseMongoConf)
-		log.WithFields(logrus.Fields{
-			"prefix":          mongoPrefix,
+		m.log.WithFields(logrus.Fields{
 			"url":             m.dbConf.GetBlurredURL(),
 			"collection_name": m.dbConf.CollectionName,
 		}).Info("Init")
@@ -243,27 +244,21 @@ func (m *MongoPump) Init(config interface{}) error {
 	}
 
 	if err != nil {
-		log.WithFields(logrus.Fields{
-			"prefix": mongoPrefix,
-		}).Fatal("Failed to decode configuration: ", err)
+		m.log.Fatal("Failed to decode configuration: ", err)
 	}
 
 	overrideErr := envconfig.Process(mongoPumpPrefix, m.dbConf)
 	if overrideErr != nil {
-		log.Error("Failed to process environment variables for mongo pump: ", overrideErr)
+		m.log.Error("Failed to process environment variables for mongo pump: ", overrideErr)
 	}
 
 	if m.dbConf.MaxInsertBatchSizeBytes == 0 {
-		log.WithFields(logrus.Fields{
-			"prefix": mongoPrefix,
-		}).Info("-- No max batch size set, defaulting to 10MB")
+		m.log.Info("-- No max batch size set, defaulting to 10MB")
 		m.dbConf.MaxInsertBatchSizeBytes = 10 * MiB
 	}
 
 	if m.dbConf.MaxDocumentSizeBytes == 0 {
-		log.WithFields(logrus.Fields{
-			"prefix": mongoPrefix,
-		}).Info("-- No max document size set, defaulting to 10MB")
+		m.log.Info("-- No max document size set, defaulting to 10MB")
 		m.dbConf.MaxDocumentSizeBytes = 10 * MiB
 	}
 
@@ -273,17 +268,13 @@ func (m *MongoPump) Init(config interface{}) error {
 
 	indexCreateErr := m.ensureIndexes()
 	if indexCreateErr != nil {
-		log.WithFields(logrus.Fields{
-			"prefix": mongoPrefix,
-		}).Error(indexCreateErr)
+		m.log.Error(indexCreateErr)
 	}
 
-	log.WithFields(logrus.Fields{
-		"prefix": mongoPrefix,
-	}).Debug("MongoDB DB CS: ", m.dbConf.GetBlurredURL())
-	log.WithFields(logrus.Fields{
-		"prefix": mongoPrefix,
-	}).Debug("MongoDB Col: ", m.dbConf.CollectionName)
+	m.log.Debug("MongoDB DB CS: ", m.dbConf.GetBlurredURL())
+	m.log.Debug("MongoDB Col: ", m.dbConf.CollectionName)
+
+	m.log.Info(m.GetName()+" Initialized")
 
 	return nil
 }
@@ -300,25 +291,19 @@ func (m *MongoPump) capCollection() (ok bool) {
 
 	exists, err := m.collectionExists(colName)
 	if err != nil {
-		log.WithFields(logrus.Fields{
-			"prefix": mongoPrefix,
-		}).Errorf("Unable to determine if collection (%s) exists. Not capping collection: %s", colName, err.Error())
+		m.log.Errorf("Unable to determine if collection (%s) exists. Not capping collection: %s", colName, err.Error())
 
 		return false
 	}
 
 	if exists {
-		log.WithFields(logrus.Fields{
-			"prefix": mongoPrefix,
-		}).Warnf("Collection (%s) already exists. Capping could result in data loss. Ignoring", colName)
+		m.log.Warnf("Collection (%s) already exists. Capping could result in data loss. Ignoring", colName)
 
 		return false
 	}
 
 	if strconv.IntSize < 64 {
-		log.WithFields(logrus.Fields{
-			"prefix": mongoPrefix,
-		}).Warn("Pump running < 64bit architecture. Not capping collection as max size would be 2gb")
+		m.log.Warn("Pump running < 64bit architecture. Not capping collection as max size would be 2gb")
 
 		return false
 	}
@@ -327,9 +312,7 @@ func (m *MongoPump) capCollection() (ok bool) {
 		defaultBytes := 5
 		colCapMaxSizeBytes = defaultBytes * GiB
 
-		log.WithFields(logrus.Fields{
-			"prefix": mongoPrefix,
-		}).Infof("-- No max collection size set for %s, defaulting to %d", colName, colCapMaxSizeBytes)
+		m.log.Infof("-- No max collection size set for %s, defaulting to %d", colName, colCapMaxSizeBytes)
 	}
 
 	sess := m.dbSession.Copy()
@@ -337,16 +320,12 @@ func (m *MongoPump) capCollection() (ok bool) {
 
 	err = m.dbSession.DB("").C(colName).Create(&mgo.CollectionInfo{Capped: true, MaxBytes: colCapMaxSizeBytes})
 	if err != nil {
-		log.WithFields(logrus.Fields{
-			"prefix": mongoPrefix,
-		}).Errorf("Unable to create capped collection for (%s). %s", colName, err.Error())
+		m.log.Errorf("Unable to create capped collection for (%s). %s", colName, err.Error())
 
 		return false
 	}
 
-	log.WithFields(logrus.Fields{
-		"prefix": mongoPrefix,
-	}).Infof("Capped collection (%s) created. %d bytes", colName, colCapMaxSizeBytes)
+	m.log.Infof("Capped collection (%s) created. %d bytes", colName, colCapMaxSizeBytes)
 
 	return true
 }
@@ -358,9 +337,7 @@ func (m *MongoPump) collectionExists(name string) (bool, error) {
 
 	colNames, err := sess.DB("").CollectionNames()
 	if err != nil {
-		log.WithFields(logrus.Fields{
-			"prefix": mongoPrefix,
-		}).Error("Unable to get column names: ", err)
+		m.log.Error("Unable to get column names: ", err)
 
 		return false, err
 	}
@@ -422,9 +399,7 @@ func (m *MongoPump) connect() {
 
 	dialInfo, err = mongoDialInfo(m.dbConf.BaseMongoConf)
 	if err != nil {
-		log.WithFields(logrus.Fields{
-			"prefix": mongoPrefix,
-		}).Panic("Mongo URL is invalid: ", err)
+		m.log.Panic("Mongo URL is invalid: ", err)
 	}
 
 	if m.timeout > 0 {
@@ -433,9 +408,7 @@ func (m *MongoPump) connect() {
 	m.dbSession, err = mgo.DialWithInfo(dialInfo)
 
 	for err != nil {
-		log.WithFields(logrus.Fields{
-			"prefix": mongoPrefix,
-		}).WithError(err).WithField("dialinfo", dialInfo).Error("Mongo connection failed. Retrying.")
+		m.log.WithError(err).WithField("dialinfo", dialInfo).Error("Mongo connection failed. Retrying.")
 		time.Sleep(5 * time.Second)
 		m.dbSession, err = mgo.DialWithInfo(dialInfo)
 	}
@@ -449,19 +422,13 @@ func (m *MongoPump) WriteData(ctx context.Context, data []interface{}) error {
 
 	collectionName := m.dbConf.CollectionName
 	if collectionName == "" {
-		log.WithFields(logrus.Fields{
-			"prefix": mongoPrefix,
-		}).Fatal("No collection name!")
+		m.log.Fatal("No collection name!")
 	}
 
-	log.WithFields(logrus.Fields{
-		"prefix": mongoPrefix,
-	}).Debug("Writing ", len(data), " records")
+	m.log.Debug("Attempting to write ", len(data), " records...")
 
 	for m.dbSession == nil {
-		log.WithFields(logrus.Fields{
-			"prefix": mongoPrefix,
-		}).Debug("Connecting to analytics store")
+		m.log.Debug("Connecting to analytics store")
 		m.connect()
 	}
 	accumulateSet := m.AccumulateSet(data)
@@ -474,28 +441,22 @@ func (m *MongoPump) WriteData(ctx context.Context, data []interface{}) error {
 
 			analyticsCollection := sess.DB("").C(collectionName)
 
-			log.WithFields(logrus.Fields{
-				"prefix": mongoPrefix,
+			m.log.WithFields(logrus.Fields{
 				"collection": collectionName,
 				"number of records": len(dataSet),
 			}).Debug("Attempt to purge records")
 
 			err := analyticsCollection.Insert(dataSet...)
 			if err != nil {
-				log.WithFields(
-					logrus.Fields{"prefix": mongoPrefix,
-												"collection": collectionName,
-												"number of records": len(dataSet)}).
-					Error("Problem inserting to mongo collection: ", err)
+				m.log.WithFields(logrus.Fields{"collection": collectionName,"number of records": len(dataSet)}).Error("Problem inserting to mongo collection: ", err)
 
 				if strings.Contains(strings.ToLower(err.Error()), "closed explicitly") {
-					log.Warning("--> Detected connection failure!")
+					m.log.Warning("--> Detected connection failure!")
 				}
 				errCh <- err
 			}
 			errCh <- nil
-			log.WithFields(logrus.Fields{
-				"prefix": mongoPrefix,
+			m.log.WithFields(logrus.Fields{
 				"collection": collectionName,
 				"number of records": len(dataSet),
 			}).Info("Completed purging the records")
@@ -510,6 +471,7 @@ func (m *MongoPump) WriteData(ctx context.Context, data []interface{}) error {
 			}
 		}
 	}
+	m.log.Info("Purged ", len(data), " records...")
 
 	return nil
 }
@@ -529,12 +491,10 @@ func (m *MongoPump) AccumulateSet(data []interface{}) [][]interface{} {
 		// Add 1 KB for metadata as average
 		sizeBytes := len(thisItem.RawRequest) + len(thisItem.RawResponse) + 1024
 
-		log.Debug("Size is: ", sizeBytes)
+		m.log.Debug("Size is: ", sizeBytes)
 
 		if sizeBytes > m.dbConf.MaxDocumentSizeBytes {
-			log.WithFields(logrus.Fields{
-				"prefix": mongoPrefix,
-			}).Warning("Document too large, not writing raw request and raw response!")
+			m.log.Warning("Document too large, not writing raw request and raw response!")
 
 			thisItem.RawRequest = ""
 			thisItem.RawResponse = base64.StdEncoding.EncodeToString([]byte("Document too large, not writing raw request and raw response!"))
@@ -543,7 +503,7 @@ func (m *MongoPump) AccumulateSet(data []interface{}) [][]interface{} {
 		if (accumulatorTotal + sizeBytes) <= m.dbConf.MaxInsertBatchSizeBytes {
 			accumulatorTotal += sizeBytes
 		} else {
-			log.Debug("Created new chunk entry")
+			m.log.Debug("Created new chunk entry")
 			if len(thisResultSet) > 0 {
 				returnArray = append(returnArray, thisResultSet)
 			}
@@ -552,13 +512,13 @@ func (m *MongoPump) AccumulateSet(data []interface{}) [][]interface{} {
 			accumulatorTotal = sizeBytes
 		}
 
-		log.Debug("Accumulator is: ", accumulatorTotal)
+		m.log.Debug("Accumulator is: ", accumulatorTotal)
 		thisResultSet = append(thisResultSet, thisItem)
 
-		log.Debug(accumulatorTotal, " of ", m.dbConf.MaxInsertBatchSizeBytes)
+		m.log.Debug(accumulatorTotal, " of ", m.dbConf.MaxInsertBatchSizeBytes)
 		// Append the last element if the loop is about to end
 		if i == (len(data) - 1) {
-			log.Debug("Appending last entry")
+			m.log.Debug("Appending last entry")
 			returnArray = append(returnArray, thisResultSet)
 		}
 	}
@@ -570,7 +530,7 @@ func (m *MongoPump) AccumulateSet(data []interface{}) [][]interface{} {
 func (m *MongoPump) WriteUptimeData(data []interface{}) {
 
 	for m.dbSession == nil {
-		log.Debug("Connecting to mongoDB store")
+		m.log.Debug("Connecting to mongoDB store")
 		m.connect()
 	}
 
@@ -580,9 +540,7 @@ func (m *MongoPump) WriteUptimeData(data []interface{}) {
 
 	analyticsCollection := sess.DB("").C(collectionName)
 
-	log.WithFields(logrus.Fields{
-		"prefix": mongoPrefix,
-	}).Debug("Uptime Data: ", len(data))
+	m.log.Debug("Uptime Data: ", len(data))
 
 	if len(data) == 0 {
 		return
@@ -594,34 +552,24 @@ func (m *MongoPump) WriteUptimeData(data []interface{}) {
 		decoded := analytics.UptimeReportData{}
 
 		if err := msgpack.Unmarshal([]byte(v.(string)), &decoded); err != nil {
-			log.WithFields(logrus.Fields{
-				"prefix": mongoPrefix,
-			}).Error("Couldn't unmarshal analytics data:", err)
+			m.log.Error("Couldn't unmarshal analytics data:", err)
 
 			continue
 		}
 
 		keys[i] = interface{}(decoded)
 
-		log.WithFields(logrus.Fields{
-			"prefix": mongoPrefix,
-		}).Debug("Decoded Record: ", decoded)
+		m.log.Debug("Decoded Record: ", decoded)
 	}
 
-	log.WithFields(logrus.Fields{
-		"prefix": mongoPrefix,
-	}).Debug("Writing data to ", collectionName)
+	m.log.Debug("Writing data to ", collectionName)
 
 	if err := analyticsCollection.Insert(keys...); err != nil {
 
-		log.WithFields(logrus.Fields{
-			"prefix": mongoPrefix,
-		}).Error("Problem inserting to mongo collection: ", err)
+		m.log.Error("Problem inserting to mongo collection: ", err)
 
 		if strings.Contains(err.Error(), "Closed explicitly") || strings.Contains(err.Error(), "EOF") {
-			log.WithFields(logrus.Fields{
-				"prefix": mongoPrefix,
-			}).Warning("--> Detected connection failure, reconnecting")
+			m.log.Warning("--> Detected connection failure, reconnecting")
 
 			m.connect()
 		}

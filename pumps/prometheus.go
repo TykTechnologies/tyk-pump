@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 
 	"github.com/mitchellh/mapstructure"
@@ -33,7 +32,6 @@ type PrometheusConf struct {
 
 var prometheusPrefix = "prometheus-pump"
 
-var prometheusLogger = log.WithFields(logrus.Fields{"prefix": prometheusPrefix})
 
 var buckets = []float64{1, 2, 5, 7, 10, 15, 20, 25, 30, 40, 50, 60, 70, 80, 90, 100, 200, 300, 400, 500, 1000, 2000, 5000, 10000, 30000, 60000}
 
@@ -90,9 +88,11 @@ func (p *PrometheusPump) GetName() string {
 
 func (p *PrometheusPump) Init(conf interface{}) error {
 	p.conf = &PrometheusConf{}
+	p.log = log.WithField("prefix", prometheusPrefix)
+
 	err := mapstructure.Decode(conf, &p.conf)
 	if err != nil {
-		prometheusLogger.Fatal("Failed to decode configuration: ", err)
+		p.log.Fatal("Failed to decode configuration: ", err)
 	}
 
 	if p.conf.Path == "" {
@@ -103,21 +103,21 @@ func (p *PrometheusPump) Init(conf interface{}) error {
 		return errors.New("Prometheus listen_addr not set")
 	}
 
-	prometheusLogger.Info("Starting prometheus listener on:", p.conf.Addr)
+	p.log.Info("Starting prometheus listener on:", p.conf.Addr)
 
 	http.Handle(p.conf.Path, promhttp.Handler())
 
 	go func() {
 		log.Fatal(http.ListenAndServe(p.conf.Addr, nil))
 	}()
+	p.log.Info(p.GetName()+" Initialized")
 
 	return nil
 }
 
 func (p *PrometheusPump) WriteData(ctx context.Context, data []interface{}) error {
-	log.WithFields(logrus.Fields{
-		"prefix": prometheusPrefix,
-	}).Debug("Attempt to write ", len(data), " records")
+	p.log.Debug("Attempting to write ", len(data), " records...")
+
 
 	for _, item := range data {
 		record := item.(analytics.AnalyticsRecord)
@@ -131,6 +131,7 @@ func (p *PrometheusPump) WriteData(ctx context.Context, data []interface{}) erro
 		}
 		p.TotalLatencyMetrics.WithLabelValues("total", record.APIID).Observe(float64(record.RequestTime))
 	}
+	p.log.Info("Purged ", len(data), " records...")
 
 	return nil
 }

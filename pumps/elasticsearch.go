@@ -60,16 +60,19 @@ type ElasticsearchOperator interface {
 type Elasticsearch3Operator struct {
 	esClient      *elasticv3.Client
 	bulkProcessor *elasticv3.BulkProcessor
+	log          *logrus.Entry
 }
 
 type Elasticsearch5Operator struct {
 	esClient      *elasticv5.Client
 	bulkProcessor *elasticv5.BulkProcessor
+	log          *logrus.Entry
 }
 
 type Elasticsearch6Operator struct {
 	esClient      *elasticv6.Client
 	bulkProcessor *elasticv6.BulkProcessor
+	log          *logrus.Entry
 }
 
 type ApiKeyTransport struct {
@@ -87,8 +90,8 @@ func (t *ApiKeyTransport) RoundTrip(r *http.Request) (*http.Response, error) {
 	return http.DefaultTransport.RoundTrip(r)
 }
 
-func getOperator(conf ElasticsearchConf) (ElasticsearchOperator, error) {
-
+func (e *ElasticsearchPump) getOperator() (ElasticsearchOperator, error) {
+	conf := *e.esConf
 	var err error
 
 	urls := strings.Split(conf.ElasticsearchURL, ",")
@@ -102,15 +105,15 @@ func getOperator(conf ElasticsearchConf) (ElasticsearchOperator, error) {
 
 	switch conf.Version {
 	case "3":
-		e := new(Elasticsearch3Operator)
-		e.esClient, err = elasticv3.NewClient(elasticv3.SetURL(urls...), elasticv3.SetSniff(conf.EnableSniffing), elasticv3.SetBasicAuth(conf.Username, conf.Password), elasticv3.SetHttpClient(httpClient))
+		op := new(Elasticsearch3Operator)
+		op.esClient, err = elasticv3.NewClient(elasticv3.SetURL(urls...), elasticv3.SetSniff(conf.EnableSniffing), elasticv3.SetBasicAuth(conf.Username, conf.Password), elasticv3.SetHttpClient(httpClient))
 
 		if err != nil {
-			return e, err
+			return op, err
 		}
 
 		// Setup a bulk processor
-		p := e.esClient.BulkProcessor().Name("TykPumpESv3BackgroundProcessor")
+		p := op.esClient.BulkProcessor().Name("TykPumpESv3BackgroundProcessor")
 		if conf.BulkConfig.Workers != 0 {
 			p = p.Workers(conf.BulkConfig.Workers)
 		}
@@ -127,19 +130,19 @@ func getOperator(conf ElasticsearchConf) (ElasticsearchOperator, error) {
 			p = p.BulkSize(conf.BulkConfig.BulkSize)
 		}
 
-		e.bulkProcessor, err = p.Do()
-
-		return e, err
+		op.bulkProcessor, err = p.Do()
+		op.log = e.log
+		return op, err
 	case "5":
-		e := new(Elasticsearch5Operator)
+		op := new(Elasticsearch5Operator)
 
-		e.esClient, err = elasticv5.NewClient(elasticv5.SetURL(urls...), elasticv5.SetSniff(conf.EnableSniffing), elasticv5.SetBasicAuth(conf.Username, conf.Password), elasticv5.SetHttpClient(httpClient))
+		op.esClient, err = elasticv5.NewClient(elasticv5.SetURL(urls...), elasticv5.SetSniff(conf.EnableSniffing), elasticv5.SetBasicAuth(conf.Username, conf.Password), elasticv5.SetHttpClient(httpClient))
 
 		if err != nil {
-			return e, err
+			return op, err
 		}
 		// Setup a bulk processor
-		p := e.esClient.BulkProcessor().Name("TykPumpESv5BackgroundProcessor")
+		p := op.esClient.BulkProcessor().Name("TykPumpESv5BackgroundProcessor")
 		if conf.BulkConfig.Workers != 0 {
 			p = p.Workers(conf.BulkConfig.Workers)
 		}
@@ -156,19 +159,19 @@ func getOperator(conf ElasticsearchConf) (ElasticsearchOperator, error) {
 			p = p.BulkSize(conf.BulkConfig.BulkSize)
 		}
 
-		e.bulkProcessor, err = p.Do(context.Background())
-
-		return e, err
+		op.bulkProcessor, err = p.Do(context.Background())
+		op.log = e.log
+		return op, err
 	case "6":
-		e := new(Elasticsearch6Operator)
+		op := new(Elasticsearch6Operator)
 
-		e.esClient, err = elasticv6.NewClient(elasticv6.SetURL(urls...), elasticv6.SetSniff(conf.EnableSniffing), elasticv6.SetBasicAuth(conf.Username, conf.Password), elasticv6.SetHttpClient(httpClient))
+		op.esClient, err = elasticv6.NewClient(elasticv6.SetURL(urls...), elasticv6.SetSniff(conf.EnableSniffing), elasticv6.SetBasicAuth(conf.Username, conf.Password), elasticv6.SetHttpClient(httpClient))
 
 		if err != nil {
-			return e, err
+			return op, err
 		}
 		// Setup a bulk processor
-		p := e.esClient.BulkProcessor().Name("TykPumpESv6BackgroundProcessor")
+		p := op.esClient.BulkProcessor().Name("TykPumpESv6BackgroundProcessor")
 		if conf.BulkConfig.Workers != 0 {
 			p = p.Workers(conf.BulkConfig.Workers)
 		}
@@ -185,14 +188,12 @@ func getOperator(conf ElasticsearchConf) (ElasticsearchOperator, error) {
 			p = p.BulkSize(conf.BulkConfig.BulkSize)
 		}
 
-		e.bulkProcessor, err = p.Do(context.Background())
-
-		return e, err
+		op.bulkProcessor, err = p.Do(context.Background())
+		op.log = e.log
+		return op, err
 	default:
 		// shouldn't get this far, but hey never hurts to check assumptions
-		log.WithFields(logrus.Fields{
-			"prefix": elasticsearchPrefix,
-		}).Fatal("Invalid version: ")
+		e.log.Fatal("Invalid version: ")
 	}
 
 	return nil, err
@@ -209,12 +210,12 @@ func (e *ElasticsearchPump) GetName() string {
 
 func (e *ElasticsearchPump) Init(config interface{}) error {
 	e.esConf = &ElasticsearchConf{}
-	loadConfigErr := mapstructure.Decode(config, &e.esConf)
+	e.log = log.WithField("prefix", elasticsearchPrefix)
 
+
+	loadConfigErr := mapstructure.Decode(config, &e.esConf)
 	if loadConfigErr != nil {
-		log.WithFields(logrus.Fields{
-			"prefix": elasticsearchPrefix,
-		}).Fatal("Failed to decode configuration: ", loadConfigErr)
+		e.log.Fatal("Failed to decode configuration: ", loadConfigErr)
 	}
 
 	if "" == e.esConf.IndexName {
@@ -232,59 +233,45 @@ func (e *ElasticsearchPump) Init(config interface{}) error {
 	switch e.esConf.Version {
 	case "":
 		e.esConf.Version = "3"
-		log.WithFields(logrus.Fields{
-			"prefix": elasticsearchPrefix,
-		}).Info("Version not specified, defaulting to 3. If you are importing to Elasticsearch 5, please specify \"version\" = \"5\"")
+		log.Info("Version not specified, defaulting to 3. If you are importing to Elasticsearch 5, please specify \"version\" = \"5\"")
 	case "3", "5", "6":
 	default:
 		err := errors.New("Only 3, 5, 6 are valid values for this field")
-		log.WithFields(logrus.Fields{
-			"prefix": elasticsearchPrefix,
-		}).Fatal("Invalid version: ", err)
+		e.log.Fatal("Invalid version: ", err)
 	}
 
 	var re = regexp.MustCompile(`(.*)\/\/(.*):(.*)\@(.*)`)
 	printableURL := re.ReplaceAllString(e.esConf.ElasticsearchURL, `$1//***:***@$4`)
 
-	log.WithFields(logrus.Fields{
-		"prefix": elasticsearchPrefix,
-	}).Info("Elasticsearch URL: ", printableURL)
-	log.WithFields(logrus.Fields{
-		"prefix": elasticsearchPrefix,
-	}).Info("Elasticsearch Index: ", e.esConf.IndexName)
+	e.log.Info("Elasticsearch URL: ", printableURL)
+	e.log.Info("Elasticsearch Index: ", e.esConf.IndexName)
 	if e.esConf.RollingIndex {
-		log.WithFields(logrus.Fields{
-			"prefix": elasticsearchPrefix,
-		}).Info("Index will have date appended to it in the format ", e.esConf.IndexName, "-YYYY.MM.DD")
+		e.log.Info("Index will have date appended to it in the format ", e.esConf.IndexName, "-YYYY.MM.DD")
 	}
 
 	e.connect()
 
+	e.log.Info(e.GetName()+" Initialized")
 	return nil
 }
 
 func (e *ElasticsearchPump) connect() {
 	var err error
 
-	e.operator, err = getOperator(*e.esConf)
+	e.operator, err = e.getOperator()
 	if err != nil {
-		log.WithFields(logrus.Fields{
-			"prefix": elasticsearchPrefix,
-		}).Error("Elasticsearch connection failed: ", err)
+		e.log.Error("Elasticsearch connection failed: ", err)
 		time.Sleep(5 * time.Second)
 		e.connect()
 	}
 }
 
 func (e *ElasticsearchPump) WriteData(ctx context.Context, data []interface{}) error {
-	log.WithFields(logrus.Fields{
-		"prefix": elasticsearchPrefix,
-	}).Info("Writing ", len(data), " records")
+	e.log.Debug("Attempting to write ", len(data), " records...")
+
 
 	if e.operator == nil {
-		log.WithFields(logrus.Fields{
-			"prefix": elasticsearchPrefix,
-		}).Debug("Connecting to analytics store")
+		e.log.Debug("Connecting to analytics store")
 		e.connect()
 		e.WriteData(ctx, data)
 	} else {
@@ -361,9 +348,7 @@ func (e Elasticsearch3Operator) processData(ctx context.Context, data []interfac
 
 		d, ok := data[dataIndex].(analytics.AnalyticsRecord)
 		if !ok {
-			log.WithFields(logrus.Fields{
-				"prefix": elasticsearchPrefix,
-			}).Error("Error while writing ", data[dataIndex], ": data not of type analytics.AnalyticsRecord")
+			e.log.Error("Error while writing ", data[dataIndex], ": data not of type analytics.AnalyticsRecord")
 			continue
 		}
 
@@ -375,12 +360,11 @@ func (e Elasticsearch3Operator) processData(ctx context.Context, data []interfac
 		} else {
 			_, err := index.BodyJson(mapping).Type(esConf.DocumentType).Id(id).DoC(ctx)
 			if err != nil {
-				log.WithFields(logrus.Fields{
-					"prefix": elasticsearchPrefix,
-				}).Error("Error while writing ", data[dataIndex], err)
+				e.log.Error("Error while writing ", data[dataIndex], err)
 			}
 		}
 	}
+	e.log.Info("Purged ", len(data), " records...")
 
 	return nil
 }
@@ -395,9 +379,7 @@ func (e Elasticsearch5Operator) processData(ctx context.Context, data []interfac
 
 		d, ok := data[dataIndex].(analytics.AnalyticsRecord)
 		if !ok {
-			log.WithFields(logrus.Fields{
-				"prefix": elasticsearchPrefix,
-			}).Error("Error while writing ", data[dataIndex], ": data not of type analytics.AnalyticsRecord")
+			e.log.Error("Error while writing ", data[dataIndex], ": data not of type analytics.AnalyticsRecord")
 			continue
 		}
 
@@ -409,12 +391,11 @@ func (e Elasticsearch5Operator) processData(ctx context.Context, data []interfac
 		} else {
 			_, err := index.BodyJson(mapping).Type(esConf.DocumentType).Id(id).Do(ctx)
 			if err != nil {
-				log.WithFields(logrus.Fields{
-					"prefix": elasticsearchPrefix,
-				}).Error("Error while writing ", data[dataIndex], err)
+				e.log.Error("Error while writing ", data[dataIndex], err)
 			}
 		}
 	}
+	e.log.Info("Purged ", len(data), " records...")
 
 	return nil
 }
@@ -429,9 +410,7 @@ func (e Elasticsearch6Operator) processData(ctx context.Context, data []interfac
 
 		d, ok := data[dataIndex].(analytics.AnalyticsRecord)
 		if !ok {
-			log.WithFields(logrus.Fields{
-				"prefix": elasticsearchPrefix,
-			}).Error("Error while writing ", data[dataIndex], ": data not of type analytics.AnalyticsRecord")
+			e.log.Error("Error while writing ", data[dataIndex], ": data not of type analytics.AnalyticsRecord")
 			continue
 		}
 
@@ -443,12 +422,12 @@ func (e Elasticsearch6Operator) processData(ctx context.Context, data []interfac
 		} else {
 			_, err := index.BodyJson(mapping).Type(esConf.DocumentType).Id(id).Do(ctx)
 			if err != nil {
-				log.WithFields(logrus.Fields{
-					"prefix": elasticsearchPrefix,
-				}).Error("Error while writing ", data[dataIndex], err)
+				e.log.Error("Error while writing ", data[dataIndex], err)
 			}
 		}
 	}
+	e.log.Info("Purged ", len(data), " records...")
+
 
 	return nil
 }

@@ -10,7 +10,6 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 
-	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 )
 
@@ -21,10 +20,11 @@ const (
 	defaultDogstatsdUDSWriteTimeoutSeconds = 1
 )
 
+var dogstatPrefix = "dogstatsd"
+
 type DogStatsdPump struct {
 	conf   *DogStatsdConf
 	client *statsd.Client
-	log    *logrus.Entry
 	CommonPumpConfig
 }
 
@@ -49,9 +49,8 @@ func (s *DogStatsdPump) GetName() string {
 }
 
 func (s *DogStatsdPump) Init(conf interface{}) error {
-	s.log = log.WithField("prefix", "dogstatsd")
+	s.log = log.WithField("prefix", dogstatPrefix)
 
-	s.log.Info("initializing pump")
 	if err := mapstructure.Decode(conf, &s.conf); err != nil {
 		return errors.Wrap(err, "unable to decode dogstatsd configuration")
 	}
@@ -92,6 +91,8 @@ func (s *DogStatsdPump) Init(conf interface{}) error {
 		return errors.Wrap(err, "unable to connect to dogstatsd client")
 	}
 
+	s.log.Info(s.GetName()+" Initialized")
+
 	return nil
 }
 
@@ -114,7 +115,7 @@ func (s *DogStatsdPump) WriteData(ctx context.Context, data []interface{}) error
 		return nil
 	}
 
-	s.log.Info(fmt.Sprintf("purging %d records", len(data)))
+	s.log.Debug("Attempting to write ", len(data), " records...")
 	for _, v := range data {
 		// Convert to AnalyticsRecord
 		decoded := v.(analytics.AnalyticsRecord)
@@ -179,6 +180,7 @@ func (s *DogStatsdPump) WriteData(ctx context.Context, data []interface{}) error
 			s.log.WithError(err).Error("unable to record Histogram, dropping analytics record")
 		}
 	}
+	s.log.Info("Purged ", len(data), " records...")
 
 	return nil
 }

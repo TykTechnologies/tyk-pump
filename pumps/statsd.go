@@ -9,7 +9,6 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/quipo/statsd"
 
-	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 )
 
@@ -37,19 +36,17 @@ func (s *StatsdPump) GetName() string {
 
 func (s *StatsdPump) Init(config interface{}) error {
 	s.dbConf = &StatsdConf{}
-	err := mapstructure.Decode(config, &s.dbConf)
+	s.log = log.WithField("prefix", statsdPrefix)
 
+	err := mapstructure.Decode(config, &s.dbConf)
 	if err != nil {
-		log.WithFields(logrus.Fields{
-			"prefix": statsdPrefix,
-		}).Fatal("Failed to decode configuration: ", err)
+		s.log.Fatal("Failed to decode configuration: ", err)
 	}
 
 	s.connect()
 
-	log.WithFields(logrus.Fields{
-		"prefix": statsdPrefix,
-	}).Debug("StatsD CS: ", s.dbConf.Address)
+	s.log.Debug("StatsD CS: ", s.dbConf.Address)
+	s.log.Info(s.GetName()+" Initialized")
 
 	return nil
 }
@@ -59,16 +56,16 @@ func (s *StatsdPump) connect() *statsd.StatsdClient {
 	client := statsd.NewStatsdClient(s.dbConf.Address, "")
 
 	for {
-		log.WithField("prefix", statsdPrefix).Debug("connecting to statsD...")
+		s.log.Debug("connecting to statsD...")
 
 		if err := client.CreateSocket(); err != nil {
-			log.WithField("prefix", statsdPrefix).Error("statsD connection failed retrying in 5 seconds:", err)
+			s.log.Error("statsD connection failed retrying in 5 seconds:", err)
 			time.Sleep(5 * time.Second)
 
 			continue
 		}
 
-		log.WithField("prefix", statsdPrefix).Debug("statsD connection successful...")
+		s.log.Debug("statsD connection successful...")
 
 		return client
 	}
@@ -79,6 +76,7 @@ func (s *StatsdPump) WriteData(ctx context.Context, data []interface{}) error {
 	if len(data) == 0 {
 		return nil
 	}
+	s.log.Debug("Attempting to write ", len(data), " records...")
 
 	client := s.connect()
 	defer client.Close()
@@ -145,5 +143,7 @@ func (s *StatsdPump) WriteData(ctx context.Context, data []interface{}) error {
 			}
 		}
 	}
+	s.log.Info("Purged ", len(data), " records...")
+
 	return nil
 }

@@ -12,7 +12,6 @@ import (
 
 	"github.com/mitchellh/mapstructure"
 
-	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 )
 
@@ -20,8 +19,8 @@ const (
 	defaultPath      = "/services/collector/event/1.0"
 	authHeaderName   = "authorization"
 	authHeaderPrefix = "Splunk "
-	pumpPrefix       = "splunk-pump"
-	pumpName         = "Splunk Pump"
+	splunkPumpPrefix       = "splunk-pump"
+	splunkPumpName         = "Splunk Pump"
 )
 
 var (
@@ -114,36 +113,34 @@ func (p *SplunkPump) New() Pump {
 
 // GetName returns the pump name.
 func (p *SplunkPump) GetName() string {
-	return pumpName
+	return splunkPumpName
 }
 
 // Init performs the initialization of the SplunkClient.
 func (p *SplunkPump) Init(config interface{}) error {
 	p.config = &SplunkPumpConfig{}
+	p.log = log.WithField("prefix", splunkPumpPrefix)
+
 	err := mapstructure.Decode(config, p.config)
 	if err != nil {
 		return err
 	}
-	log.WithFields(logrus.Fields{
-		"prefix": pumpPrefix,
-	}).Infof("%s Endpoint: %s", pumpName, p.config.CollectorURL)
+	p.log.Infof("%s Endpoint: %s", splunkPumpName, p.config.CollectorURL)
 
 	p.client, err = NewSplunkClient(p.config.CollectorToken, p.config.CollectorURL, p.config.SSLInsecureSkipVerify, p.config.SSLCertFile, p.config.SSLKeyFile, p.config.SSLServerName)
 	if err != nil {
 		return err
 	}
 
-	log.WithFields(logrus.Fields{
-		"prefix": pumpPrefix,
-	}).Debugf("%s Initialized", pumpName)
+	p.log.Info(p.GetName()+" Initialized")
+
 	return nil
 }
 
 // WriteData prepares an appropriate data structure and sends it to the HTTP Event Collector.
 func (p *SplunkPump) WriteData(ctx context.Context, data []interface{}) error {
-	log.WithFields(logrus.Fields{
-		"prefix": pumpPrefix,
-	}).Info("Writing ", len(data), " records")
+	p.log.Debug("Attempting to write ", len(data), " records...")
+
 	for _, v := range data {
 		decoded := v.(analytics.AnalyticsRecord)
 		apiKey := decoded.APIKey
@@ -215,5 +212,7 @@ func (p *SplunkPump) WriteData(ctx context.Context, data []interface{}) error {
 
 		p.client.Send(ctx, event, decoded.TimeStamp)
 	}
+	p.log.Info("Purged ", len(data), " records...")
+
 	return nil
 }

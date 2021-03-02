@@ -7,7 +7,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	lg "github.com/logzio/logzio-go"
 	"github.com/mitchellh/mapstructure"
@@ -94,29 +93,28 @@ func (p *LogzioPump) GetName() string {
 
 func (p *LogzioPump) Init(config interface{}) error {
 	p.config = NewLogzioPumpConfig()
+	p.log = log.WithField("prefix", LogzioPumpPrefix)
+
+
 	err := mapstructure.Decode(config, p.config)
 	if err != nil {
-		log.WithFields(logrus.Fields{
-			"prefix": LogzioPumpPrefix,
-		}).Fatalf("Failed to decode configuration: %s", err)
+		p.log.Fatalf("Failed to decode configuration: %s", err)
 	}
 
-	log.WithFields(logrus.Fields{
-		"prefix": pumpPrefix,
-	}).Infof("Initializing %s with the following configuration: %+v", pumpName, p.config)
+	p.log.Debugf("Initializing %s with the following configuration: %+v", LogzioPumpName, p.config)
 
 	p.sender, err = NewLogzioClient(p.config)
 	if err != nil {
 		return err
 	}
+	p.log.Info(p.GetName()+" Initialized")
 
 	return nil
 }
 
 func (p *LogzioPump) WriteData(ctx context.Context, data []interface{}) error {
-	log.WithFields(logrus.Fields{
-		"prefix": pumpPrefix,
-	}).Info("Writing ", len(data), " records")
+	p.log.Debug("Attempting to write ", len(data), " records...")
+
 
 	for _, v := range data {
 		decoded := v.(analytics.AnalyticsRecord)
@@ -144,5 +142,7 @@ func (p *LogzioPump) WriteData(ctx context.Context, data []interface{}) error {
 
 		p.sender.Send(event)
 	}
+	p.log.Info("Purged ", len(data), " records...")
+
 	return nil
 }

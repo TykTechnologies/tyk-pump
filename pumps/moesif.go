@@ -224,12 +224,11 @@ func parseAuthorizationHeader(token string, field string) string {
 
 func (p *MoesifPump) Init(config interface{}) error {
 	p.moesifConf = &MoesifConf{}
-	loadConfigErr := mapstructure.Decode(config, &p.moesifConf)
+	p.log = log.WithField("prefix", moesifPrefix)
 
+	loadConfigErr := mapstructure.Decode(config, &p.moesifConf)
 	if loadConfigErr != nil {
-		log.WithFields(logrus.Fields{
-			"prefix": moesifPrefix,
-		}).Fatal("Failed to decode configuration: ", loadConfigErr)
+		p.log.Fatal("Failed to decode configuration: ", loadConfigErr)
 	}
 
 	var apiEndpoint string
@@ -273,18 +272,15 @@ func (p *MoesifPump) Init(config interface{}) error {
 	if err == nil {
 		p.samplingPercentage, p.eTag, p.lastUpdatedTime = p.parseConfiguration(response)
 	} else {
-		log.WithFields(logrus.Fields{
-			"prefix": moesifPrefix,
-		}).Debug("Error fetching application configuration on initilization with err -  " + err.Error())
+		p.log.Debug("Error fetching application configuration on initilization with err -  " + err.Error())
 	}
 
+	p.log.Info(p.GetName()+" Initialized")
 	return nil
 }
 
 func (p *MoesifPump) WriteData(ctx context.Context, data []interface{}) error {
-	log.WithFields(logrus.Fields{
-		"prefix": moesifPrefix,
-	}).Info("Writing ", len(data), " records")
+	p.log.Debug("Attempting to write ", len(data), " records...")
 
 	if len(data) == 0 {
 		return nil
@@ -296,18 +292,14 @@ func (p *MoesifPump) WriteData(ctx context.Context, data []interface{}) error {
 
 		rawReq, err := base64.StdEncoding.DecodeString(record.RawRequest)
 		if err != nil {
-			log.WithFields(logrus.Fields{
-				"prefix": moesifPrefix,
-			}).Fatal(err)
+			p.log.Fatal(err)
 		}
 
 		decodedReqBody, err := decodeRawData(string(rawReq), p.moesifConf.RequestHeaderMasks,
 			p.moesifConf.RequestBodyMasks, p.moesifConf.DisableCaptureRequestBody)
 
 		if err != nil {
-			log.WithFields(logrus.Fields{
-				"prefix": moesifPrefix,
-			}).Fatal(err)
+			p.log.Fatal(err)
 		}
 
 		// Request URL
@@ -330,18 +322,14 @@ func (p *MoesifPump) WriteData(ctx context.Context, data []interface{}) error {
 		rawRsp, err := base64.StdEncoding.DecodeString(record.RawResponse)
 
 		if err != nil {
-			log.WithFields(logrus.Fields{
-				"prefix": moesifPrefix,
-			}).Fatal(err)
+			p.log.Fatal(err)
 		}
 
 		decodedRspBody, err := decodeRawData(string(rawRsp), p.moesifConf.ResponseHeaderMasks,
 			p.moesifConf.ResponseBodyMasks, p.moesifConf.DisableCaptureResponseBody)
 
 		if err != nil {
-			log.WithFields(logrus.Fields{
-				"prefix": moesifPrefix,
-			}).Fatal(err)
+			p.log.Fatal(err)
 		}
 
 		// Response Time
@@ -434,9 +422,7 @@ func (p *MoesifPump) WriteData(ctx context.Context, data []interface{}) error {
 		p.samplingPercentage = p.getSamplingPercentage(userID, companyID)
 
 		if p.samplingPercentage < randomPercentage {
-			log.WithFields(logrus.Fields{
-				"prefix": moesifPrefix,
-			}).Debug("Skipped Event due to sampling percentage: " + strconv.Itoa(p.samplingPercentage) + " and random percentage: " + strconv.Itoa(randomPercentage))
+			p.log.Debug("Skipped Event due to sampling percentage: " + strconv.Itoa(p.samplingPercentage) + " and random percentage: " + strconv.Itoa(randomPercentage))
 			continue
 		}
 		// Add Weight to the Event Model
@@ -461,9 +447,7 @@ func (p *MoesifPump) WriteData(ctx context.Context, data []interface{}) error {
 
 		err = p.moesifAPI.QueueEvent(&event)
 		if err != nil {
-			log.WithFields(logrus.Fields{
-				"prefix": moesifPrefix,
-			}).Error("Error while writing ", data[dataIndex], err)
+			p.log.Error("Error while writing ", data[dataIndex], err)
 		}
 
 		if p.moesifAPI.GetETag() != "" &&
@@ -482,6 +466,7 @@ func (p *MoesifPump) WriteData(ctx context.Context, data []interface{}) error {
 			p.samplingPercentage, p.eTag, p.lastUpdatedTime = p.parseConfiguration(response)
 		}
 	}
+	p.log.Info("Purged ", len(data), " records...")
 
 	return nil
 }

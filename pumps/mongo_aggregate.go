@@ -88,7 +88,7 @@ func getListOfCommonPrefix(list []string) []string {
 	return result
 }
 
-func printAlert(doc analytics.AnalyticsRecordAggregate, thresholdLenTagList int) {
+func (m *MongoAggregatePump) printAlert(doc analytics.AnalyticsRecordAggregate, thresholdLenTagList int) {
 	var listofTags []string
 
 	for k := range doc.Tags {
@@ -103,7 +103,7 @@ func printAlert(doc analytics.AnalyticsRecordAggregate, thresholdLenTagList int)
 		l = COMMON_TAGS_COUNT
 	}
 
-	log.Warnf("WARNING: Found more than %v tag entries per document, which may cause performance issues with aggregate logs. List of most common tag-prefix: [%v]. You can ignore these tags using ignore_tag_prefix_list option", thresholdLenTagList, strings.Join(listOfCommonPrefix[:l], ", "))
+	m.log.Warnf("WARNING: Found more than %v tag entries per document, which may cause performance issues with aggregate logs. List of most common tag-prefix: [%v]. You can ignore these tags using ignore_tag_prefix_list option", thresholdLenTagList, strings.Join(listOfCommonPrefix[:l], ", "))
 }
 
 func (m *MongoAggregatePump) doHash(in string) string {
@@ -126,20 +126,20 @@ func (m *MongoAggregatePump) GetCollectionName(orgid string) (string, error) {
 
 func (m *MongoAggregatePump) Init(config interface{}) error {
 	m.dbConf = &MongoAggregateConf{}
+	m.log = log.WithField("prefix", analytics.MongoAggregatePrefix)
+
 	err := mapstructure.Decode(config, &m.dbConf)
 	if err == nil {
 		err = mapstructure.Decode(config, &m.dbConf.BaseMongoConf)
 	}
 
 	if err != nil {
-		log.WithFields(logrus.Fields{
-			"prefix": analytics.MongoAggregatePrefix,
-		}).Fatal("Failed to decode configuration: ", err)
+		m.log.Fatal("Failed to decode configuration: ", err)
 	}
 
 	overrideErr := envconfig.Process(mongoAggregatePumpPrefix, m.dbConf)
 	if overrideErr != nil {
-		log.Error("Failed to process environment variables for mongo aggregate pump: ", overrideErr)
+		m.log.Error("Failed to process environment variables for mongo aggregate pump: ", overrideErr)
 	}
 
 	if m.dbConf.ThresholdLenTagList == 0 {
@@ -148,9 +148,8 @@ func (m *MongoAggregatePump) Init(config interface{}) error {
 
 	m.connect()
 
-	log.WithFields(logrus.Fields{
-		"prefix": analytics.MongoAggregatePrefix,
-	}).Debug("MongoDB DB CS: ", m.dbConf.GetBlurredURL())
+	m.log.Debug("MongoDB DB CS: ", m.dbConf.GetBlurredURL())
+	m.log.Info(m.GetName()+" Initialized")
 
 	return nil
 }
@@ -161,9 +160,7 @@ func (m *MongoAggregatePump) connect() {
 
 	dialInfo, err = mongoDialInfo(m.dbConf.BaseMongoConf)
 	if err != nil {
-		log.WithFields(logrus.Fields{
-			"prefix": mongoPrefix,
-		}).Panic("Mongo URL is invalid: ", err)
+		m.log.Panic("Mongo URL is invalid: ", err)
 	}
 
 	if m.timeout > 0 {
@@ -173,9 +170,7 @@ func (m *MongoAggregatePump) connect() {
 	m.dbSession, err = mgo.DialWithInfo(dialInfo)
 
 	for err != nil {
-		log.WithFields(logrus.Fields{
-			"prefix": mongoPrefix,
-		}).WithError(err).WithField("dialinfo", dialInfo).Error("Mongo connection failed. Retrying.")
+		m.log.WithError(err).WithField("dialinfo", dialInfo).Error("Mongo connection failed. Retrying.")
 		time.Sleep(5 * time.Second)
 		m.dbSession, err = mgo.DialWithInfo(dialInfo)
 	}
@@ -217,14 +212,10 @@ func (m *MongoAggregatePump) ensureIndexes(c *mgo.Collection) error {
 }
 
 func (m *MongoAggregatePump) WriteData(ctx context.Context, data []interface{}) error {
-	log.WithFields(logrus.Fields{
-		"prefix": analytics.MongoAggregatePrefix,
-	}).Debug("Attempt to write ", len(data), " records")
+	m.log.Debug("Attempting to write ", len(data), " records")
 
 	if m.dbSession == nil {
-		log.WithFields(logrus.Fields{
-			"prefix": analytics.MongoAggregatePrefix,
-		}).Debug("Connecting to analytics store")
+		m.log.Debug("Connecting to analytics store")
 		m.connect()
 		m.WriteData(ctx, data)
 	} else {
@@ -235,9 +226,7 @@ func (m *MongoAggregatePump) WriteData(ctx context.Context, data []interface{}) 
 		for orgID, filteredData := range analyticsPerOrg {
 			collectionName, collErr := m.GetCollectionName(orgID)
 			if collErr != nil {
-				log.WithFields(logrus.Fields{
-					"prefix": analytics.MongoAggregatePrefix,
-				}).Info("No OrgID for AnalyticsRecord, skipping")
+				m.log.Info("No OrgID for AnalyticsRecord, skipping")
 				continue
 			}
 
@@ -248,9 +237,7 @@ func (m *MongoAggregatePump) WriteData(ctx context.Context, data []interface{}) 
 			indexCreateErr := m.ensureIndexes(analyticsCollection)
 
 			if indexCreateErr != nil {
-				log.WithFields(logrus.Fields{
-					"prefix": analytics.MongoAggregatePrefix,
-				}).Error(indexCreateErr)
+				m.log.Error(indexCreateErr)
 			}
 
 			query := bson.M{
@@ -274,9 +261,7 @@ func (m *MongoAggregatePump) WriteData(ctx context.Context, data []interface{}) 
 			_, err := analyticsCollection.Find(query).Apply(change, &doc)
 
 			if err != nil {
-				log.WithFields(logrus.Fields{
-					"prefix": analytics.MongoAggregatePrefix,
-				}).Error("UPSERT Failure: ", err)
+				m.log.Error("UPSERT Failure: ", err)
 				return m.HandleWriteErr(err)
 			}
 
@@ -290,18 +275,15 @@ func (m *MongoAggregatePump) WriteData(ctx context.Context, data []interface{}) 
 			_, avgErr := analyticsCollection.Find(query).Apply(avgChange, &withTimeUpdate)
 
 			if m.dbConf.ThresholdLenTagList != -1 && (len(withTimeUpdate.Tags) > m.dbConf.ThresholdLenTagList) {
-				printAlert(withTimeUpdate, m.dbConf.ThresholdLenTagList)
+				m.printAlert(withTimeUpdate, m.dbConf.ThresholdLenTagList)
 			}
 
 			if avgErr != nil {
-				log.WithFields(logrus.Fields{
-					"prefix": analytics.MongoAggregatePrefix,
-				}).Error("AvgUpdate Failure: ", avgErr)
+				m.log.Error("AvgUpdate Failure: ", avgErr)
 				return m.HandleWriteErr(avgErr)
 			}
 
-			log.WithFields(logrus.Fields{
-				"prefix": analytics.MongoAggregatePrefix,
+			m.log.WithFields(logrus.Fields{
 				"collection": collectionName,
 			}).Debug("Wrote aggregated data for ", len(data), " records")
 
@@ -309,13 +291,14 @@ func (m *MongoAggregatePump) WriteData(ctx context.Context, data []interface{}) 
 				thisData := analytics.AnalyticsRecordAggregate{}
 				err := analyticsCollection.Find(query).One(&thisData)
 				if err != nil {
-					log.Error("Couldn't find query doc!")
+					m.log.Error("Couldn't find query doc!")
 				} else {
 					m.doMixedWrite(thisData, query)
 				}
 			}
 		}
 	}
+	m.log.Info("Purged ", len(data), " records...")
 
 	return nil
 }
@@ -336,8 +319,7 @@ func (m *MongoAggregatePump) doMixedWrite(changeDoc analytics.AnalyticsRecordAgg
 		Upsert:    true,
 	}
 
-	log.WithFields(logrus.Fields{
-		"prefix": analytics.MongoAggregatePrefix,
+	m.log.WithFields(logrus.Fields{
 		"collection": analytics.AgggregateMixedCollectionName,
 	}).Debug("Attempt to upsert aggregated doc")
 
@@ -345,27 +327,21 @@ func (m *MongoAggregatePump) doMixedWrite(changeDoc analytics.AnalyticsRecordAgg
 	_, avgErr := analyticsCollection.Find(query).Apply(avgChange, &final)
 
 	if avgErr != nil {
-		log.WithFields(logrus.Fields{
-			"prefix": analytics.MongoAggregatePrefix,
+		m.log.WithFields(logrus.Fields{
 			"collection": analytics.AgggregateMixedCollectionName,
 		}).Error("Mixed coll upsert failure: ", avgErr)
 		m.HandleWriteErr(avgErr)
 	}
-	log.WithFields(logrus.Fields{
-		"prefix": analytics.MongoAggregatePrefix,
+	m.log.WithFields(logrus.Fields{
 		"collection": analytics.AgggregateMixedCollectionName,
 	}).Info("Completed upserting")
 }
 
 func (m *MongoAggregatePump) HandleWriteErr(err error) error {
 	if err != nil {
-		log.WithFields(logrus.Fields{
-			"prefix": analytics.MongoAggregatePrefix,
-		}).Error("Problem inserting or updating to mongo collection: ", err)
+		m.log.Error("Problem inserting or updating to mongo collection: ", err)
 		if strings.Contains(err.Error(), "Closed explicitly") || strings.Contains(err.Error(), "EOF") {
-			log.WithFields(logrus.Fields{
-				"prefix": analytics.MongoAggregatePrefix,
-			}).Warning("--> Detected connection failure, reconnecting")
+			m.log.Warning("--> Detected connection failure, reconnecting")
 			m.connect()
 		}
 	}
@@ -374,7 +350,5 @@ func (m *MongoAggregatePump) HandleWriteErr(err error) error {
 
 // WriteUptimeData will pull the data from the in-memory store and drop it into the specified MongoDB collection
 func (m *MongoAggregatePump) WriteUptimeData(data []interface{}) {
-	log.WithFields(logrus.Fields{
-		"prefix": analytics.MongoAggregatePrefix,
-	}).Warning("Mongo Aggregate should not be writing uptime data!")
+	m.log.Warning("Mongo Aggregate should not be writing uptime data!")
 }
