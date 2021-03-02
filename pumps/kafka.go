@@ -131,7 +131,7 @@ func (k *KafkaPump) Init(config interface{}) error {
 
 	k.log.Debug("Kafka config: ", k.writerConfig)
 
-	k.log.Info(k.GetName()+" Initialized")
+	k.log.Info(k.GetName() + " Initialized")
 
 	return nil
 }

@@ -9,8 +9,7 @@ type CommonPumpConfig struct {
 	filters               analytics.AnalyticsFilters
 	timeout               int
 	OmitDetailedRecording bool
-	log          *logrus.Entry
-
+	log                   *logrus.Entry
 }
 
 func (p *CommonPumpConfig) SetFilters(filters analytics.AnalyticsFilters) {

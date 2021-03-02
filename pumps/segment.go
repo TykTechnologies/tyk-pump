@@ -41,7 +41,7 @@ func (s *SegmentPump) Init(config interface{}) error {
 	}
 
 	s.segmentClient = segment.New(s.segmentConf.WriteKey)
-	s.log.Info(s.GetName()+" Initialized")
+	s.log.Info(s.GetName() + " Initialized")
 
 	return nil
 }

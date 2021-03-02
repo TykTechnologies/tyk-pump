@@ -60,19 +60,19 @@ type ElasticsearchOperator interface {
 type Elasticsearch3Operator struct {
 	esClient      *elasticv3.Client
 	bulkProcessor *elasticv3.BulkProcessor
-	log          *logrus.Entry
+	log           *logrus.Entry
 }
 
 type Elasticsearch5Operator struct {
 	esClient      *elasticv5.Client
 	bulkProcessor *elasticv5.BulkProcessor
-	log          *logrus.Entry
+	log           *logrus.Entry
 }
 
 type Elasticsearch6Operator struct {
 	esClient      *elasticv6.Client
 	bulkProcessor *elasticv6.BulkProcessor
-	log          *logrus.Entry
+	log           *logrus.Entry
 }
 
 type ApiKeyTransport struct {
@@ -212,7 +212,6 @@ func (e *ElasticsearchPump) Init(config interface{}) error {
 	e.esConf = &ElasticsearchConf{}
 	e.log = log.WithField("prefix", elasticsearchPrefix)
 
-
 	loadConfigErr := mapstructure.Decode(config, &e.esConf)
 	if loadConfigErr != nil {
 		e.log.Fatal("Failed to decode configuration: ", loadConfigErr)
@@ -251,7 +250,7 @@ func (e *ElasticsearchPump) Init(config interface{}) error {
 
 	e.connect()
 
-	e.log.Info(e.GetName()+" Initialized")
+	e.log.Info(e.GetName() + " Initialized")
 	return nil
 }
 
@@ -268,7 +267,6 @@ func (e *ElasticsearchPump) connect() {
 
 func (e *ElasticsearchPump) WriteData(ctx context.Context, data []interface{}) error {
 	e.log.Debug("Attempting to write ", len(data), " records...")
-
 
 	if e.operator == nil {
 		e.log.Debug("Connecting to analytics store")
@@ -427,7 +425,6 @@ func (e Elasticsearch6Operator) processData(ctx context.Context, data []interfac
 		}
 	}
 	e.log.Info("Purged ", len(data), " records...")
-
 
 	return nil
 }

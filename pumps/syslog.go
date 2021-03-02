@@ -54,7 +54,7 @@ func (s *SyslogPump) Init(config interface{}) error {
 	// Init the Syslog writer
 	s.initWriter()
 
-	s.log.Info(s.GetName()+" Initialized")
+	s.log.Info(s.GetName() + " Initialized")
 
 	return nil
 }
@@ -79,7 +79,7 @@ func (s *SyslogPump) initWriter() {
 
 // Set default values if they are not explicitly given
 // And perform validation
-func(s *SyslogPump)  initConfigs() {
+func (s *SyslogPump) initConfigs() {
 	if s.syslogConf.Transport == "" {
 		s.syslogConf.Transport = "udp"
 		s.log.Info("No Transport given, using 'udp'")

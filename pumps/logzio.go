@@ -95,7 +95,6 @@ func (p *LogzioPump) Init(config interface{}) error {
 	p.config = NewLogzioPumpConfig()
 	p.log = log.WithField("prefix", LogzioPumpPrefix)
 
-
 	err := mapstructure.Decode(config, p.config)
 	if err != nil {
 		p.log.Fatalf("Failed to decode configuration: %s", err)
@@ -107,14 +106,13 @@ func (p *LogzioPump) Init(config interface{}) error {
 	if err != nil {
 		return err
 	}
-	p.log.Info(p.GetName()+" Initialized")
+	p.log.Info(p.GetName() + " Initialized")
 
 	return nil
 }
 
 func (p *LogzioPump) WriteData(ctx context.Context, data []interface{}) error {
 	p.log.Debug("Attempting to write ", len(data), " records...")
-
 
 	for _, v := range data {
 		decoded := v.(analytics.AnalyticsRecord)

@@ -56,7 +56,7 @@ func (p *GraylogPump) Init(conf interface{}) error {
 
 	p.connect()
 
-	p.log.Info(p.GetName()+" Initialized")
+	p.log.Info(p.GetName() + " Initialized")
 
 	return nil
 }

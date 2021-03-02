@@ -149,7 +149,7 @@ func (m *MongoAggregatePump) Init(config interface{}) error {
 	m.connect()
 
 	m.log.Debug("MongoDB DB CS: ", m.dbConf.GetBlurredURL())
-	m.log.Info(m.GetName()+" Initialized")
+	m.log.Info(m.GetName() + " Initialized")
 
 	return nil
 }

@@ -19,8 +19,8 @@ const (
 	defaultPath      = "/services/collector/event/1.0"
 	authHeaderName   = "authorization"
 	authHeaderPrefix = "Splunk "
-	splunkPumpPrefix       = "splunk-pump"
-	splunkPumpName         = "Splunk Pump"
+	splunkPumpPrefix = "splunk-pump"
+	splunkPumpName   = "Splunk Pump"
 )
 
 var (
@@ -132,7 +132,7 @@ func (p *SplunkPump) Init(config interface{}) error {
 		return err
 	}
 
-	p.log.Info(p.GetName()+" Initialized")
+	p.log.Info(p.GetName() + " Initialized")
 
 	return nil
 }

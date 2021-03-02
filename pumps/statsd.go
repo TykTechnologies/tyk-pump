@@ -46,7 +46,7 @@ func (s *StatsdPump) Init(config interface{}) error {
 	s.connect()
 
 	s.log.Debug("StatsD CS: ", s.dbConf.Address)
-	s.log.Info(s.GetName()+" Initialized")
+	s.log.Info(s.GetName() + " Initialized")
 
 	return nil
 }

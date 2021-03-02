@@ -274,7 +274,7 @@ func (m *MongoPump) Init(config interface{}) error {
 	m.log.Debug("MongoDB DB CS: ", m.dbConf.GetBlurredURL())
 	m.log.Debug("MongoDB Col: ", m.dbConf.CollectionName)
 
-	m.log.Info(m.GetName()+" Initialized")
+	m.log.Info(m.GetName() + " Initialized")
 
 	return nil
 }
@@ -442,13 +442,13 @@ func (m *MongoPump) WriteData(ctx context.Context, data []interface{}) error {
 			analyticsCollection := sess.DB("").C(collectionName)
 
 			m.log.WithFields(logrus.Fields{
-				"collection": collectionName,
+				"collection":        collectionName,
 				"number of records": len(dataSet),
 			}).Debug("Attempt to purge records")
 
 			err := analyticsCollection.Insert(dataSet...)
 			if err != nil {
-				m.log.WithFields(logrus.Fields{"collection": collectionName,"number of records": len(dataSet)}).Error("Problem inserting to mongo collection: ", err)
+				m.log.WithFields(logrus.Fields{"collection": collectionName, "number of records": len(dataSet)}).Error("Problem inserting to mongo collection: ", err)
 
 				if strings.Contains(strings.ToLower(err.Error()), "closed explicitly") {
 					m.log.Warning("--> Detected connection failure!")
@@ -457,7 +457,7 @@ func (m *MongoPump) WriteData(ctx context.Context, data []interface{}) error {
 			}
 			errCh <- nil
 			m.log.WithFields(logrus.Fields{
-				"collection": collectionName,
+				"collection":        collectionName,
 				"number of records": len(dataSet),
 			}).Info("Completed purging the records")
 		}(dataSet, errCh)

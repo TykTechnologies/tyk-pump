@@ -48,7 +48,7 @@ func (c *CSVPump) Init(conf interface{}) error {
 		c.log.Error(ferr)
 	}
 
-	c.log.Info(c.GetName()+" Initialized")
+	c.log.Info(c.GetName() + " Initialized")
 	return nil
 }
 
@@ -110,7 +110,7 @@ func (c *CSVPump) WriteData(ctx context.Context, data []interface{}) error {
 		// 	decoded.APIVersion}
 		err := writer.Write(toWrite)
 		if err != nil {
-			c.log.Error("File write failed:",err)
+			c.log.Error("File write failed:", err)
 			return err
 		}
 

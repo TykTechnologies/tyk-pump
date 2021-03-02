@@ -53,7 +53,7 @@ func (i *InfluxPump) Init(config interface{}) error {
 	i.connect()
 
 	i.log.Debug("Influx DB CS: ", i.dbConf.Addr)
-	i.log.Info(i.GetName()+" Initialized")
+	i.log.Info(i.GetName() + " Initialized")
 
 	return nil
 }
@@ -78,7 +78,6 @@ func (i *InfluxPump) WriteData(ctx context.Context, data []interface{}) error {
 	c := i.connect()
 	defer c.Close()
 	i.log.Debug("Attempting to write ", len(data), " records...")
-
 
 	bp, _ := client.NewBatchPoints(client.BatchPointsConfig{
 		Database:  i.dbConf.DatabaseName,

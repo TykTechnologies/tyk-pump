@@ -77,7 +77,7 @@ func (m *MongoSelectivePump) Init(config interface{}) error {
 	m.connect()
 
 	m.log.Debug("MongoDB DB CS: ", m.dbConf.GetBlurredURL())
-	m.log.Info(m.GetName()+" Initialized")
+	m.log.Info(m.GetName() + " Initialized")
 
 	return nil
 }
@@ -147,7 +147,6 @@ func (m *MongoSelectivePump) ensureIndexes(c *mgo.Collection) error {
 
 func (m *MongoSelectivePump) WriteData(ctx context.Context, data []interface{}) error {
 	m.log.Debug("Attempting to write ", len(data), " records...")
-
 
 	if m.dbSession == nil {
 		m.log.Debug("Connecting to analytics store")

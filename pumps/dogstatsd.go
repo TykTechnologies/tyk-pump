@@ -91,7 +91,7 @@ func (s *DogStatsdPump) Init(conf interface{}) error {
 		return errors.Wrap(err, "unable to connect to dogstatsd client")
 	}
 
-	s.log.Info(s.GetName()+" Initialized")
+	s.log.Info(s.GetName() + " Initialized")
 
 	return nil
 }

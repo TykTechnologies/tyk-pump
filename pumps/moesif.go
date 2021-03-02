@@ -275,7 +275,7 @@ func (p *MoesifPump) Init(config interface{}) error {
 		p.log.Debug("Error fetching application configuration on initilization with err -  " + err.Error())
 	}
 
-	p.log.Info(p.GetName()+" Initialized")
+	p.log.Info(p.GetName() + " Initialized")
 	return nil
 }
 

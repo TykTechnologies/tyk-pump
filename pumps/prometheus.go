@@ -32,7 +32,6 @@ type PrometheusConf struct {
 
 var prometheusPrefix = "prometheus-pump"
 
-
 var buckets = []float64{1, 2, 5, 7, 10, 15, 20, 25, 30, 40, 50, 60, 70, 80, 90, 100, 200, 300, 400, 500, 1000, 2000, 5000, 10000, 30000, 60000}
 
 func (p *PrometheusPump) New() Pump {
@@ -110,14 +109,13 @@ func (p *PrometheusPump) Init(conf interface{}) error {
 	go func() {
 		log.Fatal(http.ListenAndServe(p.conf.Addr, nil))
 	}()
-	p.log.Info(p.GetName()+" Initialized")
+	p.log.Info(p.GetName() + " Initialized")
 
 	return nil
 }
 
 func (p *PrometheusPump) WriteData(ctx context.Context, data []interface{}) error {
 	p.log.Debug("Attempting to write ", len(data), " records...")
-
 
 	for _, item := range data {
 		record := item.(analytics.AnalyticsRecord)
