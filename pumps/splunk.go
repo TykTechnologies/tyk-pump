@@ -96,13 +96,15 @@ type SplunkPump struct {
 
 // SplunkPumpConfig contains the driver configuration parameters.
 type SplunkPumpConfig struct {
-	CollectorToken        string `mapstructure:"collector_token"`
-	CollectorURL          string `mapstructure:"collector_url"`
-	SSLInsecureSkipVerify bool   `mapstructure:"ssl_insecure_skip_verify"`
-	SSLCertFile           string `mapstructure:"ssl_cert_file"`
-	SSLKeyFile            string `mapstructure:"ssl_key_file"`
-	SSLServerName         string `mapstructure:"ssl_server_name"`
-	ObfuscateAPIKeys      bool   `mapstructure:"obfuscate_api_keys"`
+	CollectorToken         string   `mapstructure:"collector_token"`
+	CollectorURL           string   `mapstructure:"collector_url"`
+	SSLInsecureSkipVerify  bool     `mapstructure:"ssl_insecure_skip_verify"`
+	SSLCertFile            string   `mapstructure:"ssl_cert_file"`
+	SSLKeyFile             string   `mapstructure:"ssl_key_file"`
+	SSLServerName          string   `mapstructure:"ssl_server_name"`
+	ObfuscateAPIKeys       bool     `mapstructure:"obfuscate_api_keys"`
+	ObfuscateAPIKeysLength int      `mapstructure:"obfuscate_api_keys_length"`
+	Fields                 []string `mapstructure:"fields"`
 }
 
 // New initializes a new pump.
@@ -145,28 +147,72 @@ func (p *SplunkPump) WriteData(ctx context.Context, data []interface{}) error {
 	for _, v := range data {
 		decoded := v.(analytics.AnalyticsRecord)
 		apiKey := decoded.APIKey
-		if p.config.ObfuscateAPIKeys {
-			if len(apiKey) > 4 {
-				apiKey = "****" + apiKey[len(apiKey)-4:]
+
+		// Check if the APIKey obfuscation is configured and its doable
+		if p.config.ObfuscateAPIKeys && len(apiKey) > p.config.ObfuscateAPIKeysLength {
+			// Obfuscate the APIKey, starting with 4 asterics and followed by last N chars (configured separately) of the APIKey
+			// The default value of the length is 0 so unless another number is configured, the APIKey will be fully hidden
+			apiKey = "****" + apiKey[len(apiKey)-p.config.ObfuscateAPIKeysLength:]
+		}
+
+		mapping := map[string]interface{}{
+			"method":         decoded.Method,
+			"host":           decoded.Host,
+			"path":           decoded.Path,
+			"raw_path":       decoded.RawPath,
+			"content_length": decoded.ContentLength,
+			"user_agent":     decoded.UserAgent,
+			"response_code":  decoded.ResponseCode,
+			"api_key":        apiKey,
+			"time_stamp":     decoded.TimeStamp,
+			"api_version":    decoded.APIVersion,
+			"api_name":       decoded.APIName,
+			"api_id":         decoded.APIID,
+			"org_id":         decoded.OrgID,
+			"oauth_id":       decoded.OauthID,
+			"raw_request":    decoded.RawRequest,
+			"request_time":   decoded.RequestTime,
+			"raw_response":   decoded.RawResponse,
+			"ip_address":     decoded.IPAddress,
+			"geo":            decoded.Geo,
+			"alias":          decoded.Alias,
+		}
+
+		// Define an empty event
+		event := make(map[string]interface{})
+
+		// Populate the Splunk event with the fields set in the config
+		if len(p.config.Fields) > 0 {
+			// Loop through all fields set in the pump config
+			for _, field := range p.config.Fields {
+				// Skip the next actions in case the configured field doesn't exist
+				if _, ok := mapping[field]; !ok {
+					continue
+				}
+
+				// Adding field value
+				event[field] = mapping[field]
+			}
+		} else {
+			// Set the default event fields
+			event = map[string]interface{}{
+				"method":        decoded.Method,
+				"path":          decoded.Path,
+				"response_code": decoded.ResponseCode,
+				"api_key":       apiKey,
+				"time_stamp":    decoded.TimeStamp,
+				"api_version":   decoded.APIVersion,
+				"api_name":      decoded.APIName,
+				"api_id":        decoded.APIID,
+				"org_id":        decoded.OrgID,
+				"oauth_id":      decoded.OauthID,
+				"raw_request":   decoded.RawRequest,
+				"request_time":  decoded.RequestTime,
+				"raw_response":  decoded.RawResponse,
+				"ip_address":    decoded.IPAddress,
 			}
 		}
 
-		event := map[string]interface{}{
-			"method":        decoded.Method,
-			"path":          decoded.Path,
-			"response_code": decoded.ResponseCode,
-			"api_key":       apiKey,
-			"time_stamp":    decoded.TimeStamp,
-			"api_version":   decoded.APIVersion,
-			"api_name":      decoded.APIName,
-			"api_id":        decoded.APIID,
-			"org_id":        decoded.OrgID,
-			"oauth_id":      decoded.OauthID,
-			"raw_request":   decoded.RawRequest,
-			"request_time":  decoded.RequestTime,
-			"raw_response":  decoded.RawResponse,
-			"ip_address":    decoded.IPAddress,
-		}
 		p.client.Send(ctx, event, decoded.TimeStamp)
 	}
 	return nil
