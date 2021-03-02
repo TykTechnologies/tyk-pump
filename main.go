@@ -221,11 +221,11 @@ func writeToPumps(keys []interface{}, job *health.Job, startTime time.Time, purg
 
 func filterData(pump pumps.Pump, keys []interface{}) []interface{} {
 	filters := pump.GetFilters()
-	if !filters.HasFilter() && !pump.GetOmitDetailedRecording() {
+	if !filters.HasFilter() && !pump.GetOmitDetailedRecording() && !SystemConfig.ObfuscateKeys {
 		return keys
 	}
 	filteredKeys := keys[:]
-	newLenght := 0
+	newLength := 0
 
 	for _, key := range filteredKeys {
 		decoded := key.(analytics.AnalyticsRecord)
@@ -236,10 +236,15 @@ func filterData(pump pumps.Pump, keys []interface{}) []interface{} {
 		if filters.ShouldFilter(decoded) {
 			continue
 		}
-		filteredKeys[newLenght] = decoded
-		newLenght++
+
+		if SystemConfig.ObfuscateKeys {
+			decoded.ObfuscateKey()
+		}
+
+		filteredKeys[newLength] = decoded
+		newLength++
 	}
-	filteredKeys = filteredKeys[:newLenght]
+	filteredKeys = filteredKeys[:newLength]
 	return filteredKeys
 }
 
@@ -328,11 +333,6 @@ func main() {
 		demo.GenerateDemoData(time.Now().AddDate(0, 0, -30), 30, *demoMode, writeToPumps)
 
 		return
-	}
-
-	// Don't enable chunking if zero value
-	if SystemConfig.PurgeChunk == 0 {
-		SystemConfig.PurgeChunk = -1
 	}
 
 	if SystemConfig.PurgeChunk > 0 {

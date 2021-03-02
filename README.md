@@ -47,9 +47,7 @@ Create a `pump.conf` file:
   "pumps": {
     "dummy": {
       "type": "dummy",
-      "meta": {
-        
-      }
+      "meta": {}
     },
     "mongo": {
       "type": "mongo",
@@ -159,7 +157,18 @@ Create a `pump.conf` file:
         "async_uds": true,
         "async_uds_write_timeout_seconds": 2,
         "buffered": true,
-        "buffered_max_messages": 32
+        "buffered_max_messages": 32,
+        "tags": [
+          "method",
+          "response_code",
+          "api_version",
+          "api_name",
+          "api_id",
+          "org_id",
+          "tracked",
+          "path",
+          "oauth_id"
+        ]
       }
     },
     "prometheus": {
@@ -243,7 +252,8 @@ Create a `pump.conf` file:
     "mongo_url": "mongodb://username:password@{hostname:port},{hostname:port}/{db_name}"
   },
   "dont_purge_uptime_data": false,
-  "omit_detailed_recording": false
+  "omit_detailed_recording": false,
+  "obfuscate_keys": false
 }
 ```
 
@@ -286,6 +296,25 @@ An example of configuration would be:
 }
 ```
 
+### Timeouts
+
+You can configure a different timeout for each pump with the configuration option `timeout`. Its default value is 0 seconds, which means that the pump will wait for the writing operation forever. 
+
+An example of this configuration would be:
+```json
+"mongo": {
+  "type": "mongo",
+  "timeout":5,
+  "meta": {
+    "collection_name": "tyk_analytics",
+    "mongo_url": "mongodb://username:password@{hostname:port},{hostname:port}/{db_name}"
+  }
+}
+```
+
+In case that any pump doesn't have a configured timeout, and it takes more seconds to write than the value configured for the purge loop in the `purge_delay` config option, you will see the following warning message: `Pump PMP_NAME is taking more time than the value configured of purge_delay. You should try to set a timeout for this pump.`. 
+
+In case that you have a configured timeout, but it still takes more seconds to write than the value configured for the purge loop in the `purge_delay` config option, you will see the following warning message: `Pump PMP_NAME is taking more time than the value configured of purge_delay. You should try lowering the timeout configured for this pump.`. 
 
 ### Environment Variables
 
@@ -320,12 +349,15 @@ Environment variables can be used to override the settings defined in the config
 
 `omit_detailed_recording` - Setting this to true will avoid writing raw_request and raw_response fields for each request in pumps. Defaults to false.
 
+### Obfuscate Keys
+
+`obfuscate_keys` -bool. Setting this to true will obfuscate the API KEY from each analytic record. It obfuscate the key in the APIKey field and in the raw request field Defaults to false.
 
 ### Health Check
 
 From v2.9.4, we have introduced a `/health` endpoint to confirm the Pump is running. You need to configure the following settings:
 
-- `health_check_endpoint_name` - The default is "hello" 
+- `health_check_endpoint_name` - The default is "hello"
 - `health_check_endpoint_port` - The default port is 8083
 
 This returns a HTTP 200 OK response if the Pump is running.
@@ -353,7 +385,7 @@ The Tyk Dashboard uses the "mongo-pump-aggregate" collection to display analytic
 `"disable_bulk"` - Disable batch writing. Defaults to false.
 
 `bulk_config`: Batch writing trigger configuration. Each option is an OR with eachother:
-  * `wokers`: Number of workers. Defaults to 1.
+  * `workers`: Number of workers. Defaults to 1.
   * `flush_interval`: Specifies the time in seconds to flush the data and send it to ES. Default disabled.
   * `bulk_actions`: Specifies the number of requests needed to flush the data and send it to ES. Defaults to 1000 requests. If it is needed, can be disabled with -1.
   * `bulk_size`: Specifies the size (in bytes) needed to flush the data and send it to ES. Defaults to 5MB. If it is needed, can be disabled with -1.
@@ -361,7 +393,7 @@ The Tyk Dashboard uses the "mongo-pump-aggregate" collection to display analytic
 ### Moesif Config
 [Moesif](https://www.moesif.com/?language=tyk-api-gateway) is a user-centric API analytics and monitoring service for APIs. [More Info on Moesif for Tyk](https://www.moesif.com/solutions/track-api-program?language=tyk-api-gateway)
 
-- `"application_id"` - Moesif App Id JWT. Multiple api_id's will go under the same app id.
+- `"application_id"` - Moesif Application Id. You can find your Moesif Application Id from [_Moesif Dashboard_](https://www.moesif.com/) -> _Top Right Menu_ -> _API Keys_ . Moesif recommends creating separate Application Ids for each environment such as Production, Staging, and Development to keep data isolated. 
 - `"request_header_masks"` - (optional) An option to mask a specific request header field. Type: String Array `[] string`
 - `"request_body_masks"` - (optional) An option to mask a specific - request body field. Type: String Array `[] string`
 - `"response_header_masks"` - (optional) An option to mask a specific response header field. Type: String Array `[] string`
@@ -370,6 +402,13 @@ The Tyk Dashboard uses the "mongo-pump-aggregate" collection to display analytic
 - `"disable_capture_response_body"` - (optional) An option to disable logging of response body. Type: Boolean. Default value is `false`.
 - `"user_id_header"` - (optional) An optional field name to identify User from a request or response header. Type: String.
 - `"company_id_header"` - (optional) An optional field name to identify Company (Account) from a request or response header. Type: String.
+- `"authorization_header_name"` - (optional) An optional request header field name to used to identify the User in Moesif. Type: String. Default value is `authorization`.
+- `"authorization_user_id_field"` - (optional) An optional field name use to parse the User from authorization header in Moesif. Type: String. Default value is `sub`.
+- `"enable_bulk"` - Set this to `true` to enable `bulk_config`.
+- `"bulk_config"`- (optional) Batch writing trigger configuration.
+  * `"event_queue_size"` - (optional) An optional field name which specify the maximum number of events to hold in queue before sending to Moesif. In case of network issues when not able to connect/send event to Moesif, skips adding new events to the queue to prevent memory overflow. Type: int. Default value is `10000`.
+  * `"batch_size"` - (optional) An optional field name which specify the maximum batch size when sending to Moesif. Type: int. Default value is `200`.
+  * `"timer_wake_up_seconds"` - (optional) An optional field which specifies a time (every n seconds) how often background thread runs to send events to moesif. Type: int. Default value is `2` seconds.
 
 ### Hybrid RPC Config
 
@@ -429,6 +468,20 @@ And the following Histogram for latencies:
 - `buffered`: Enable buffering of messages
 - `buffered_max_messages`: Max messages in single datagram if `buffered: true`. Default 16
 - `sample_rate`: default 1 which equates to 100% of requests. To sample at 50%, set to 0.5
+- `tags`: List of tags to be added to the metric. The possible options are listed in the below example
+
+If no tag is specified the fallback behavior is to use the below tags:
+- `path`
+- `method`
+- `response_code`
+- `api_version`
+- `api_name`
+- `api_id`
+- `org_id`
+- `tracked`
+- `oauth_id`
+
+Note that this configuration can generate significant charges due to the unbound nature of the `path` tag.
 
 ```.json
 "dogstatsd": {
@@ -440,7 +493,18 @@ And the following Histogram for latencies:
     "async_uds_write_timeout_seconds": 2,
     "buffered": true,
     "buffered_max_messages": 32,
-    "sample_rate": 0.5
+    "sample_rate": 0.5,
+    "tags": [
+      "method",
+      "response_code",
+      "api_version",
+      "api_name",
+      "api_id",
+      "org_id",
+      "tracked",
+      "path",
+      "oauth_id"
+    ]
   }
 },
 ```
@@ -463,6 +527,9 @@ Setting up Splunk with a *HTTP Event Collector*
 `https://splunk:8088/services/collector/event`
 
 - `ssl_insecure_skip_verify`: Controls whether the pump client verifies the Splunk server's certificate chain and host name.
+- `obfuscate_api_keys`: (optional) Controls whether the pump client should hide the API key. In case you still need substring of the value, check the next option. Type: Boolean. Default value is `false`.
+- `obfuscate_api_keys_length`: (optional) Define the number of the characters from the end of the API key. The `obfuscate_api_keys` should be set to `true`. Type: Integer. Default value is `0`.
+- `fields`: (optional) Define which Analytics fields should participate in the Splunk event. Check the available fields in the example below. Type: String Array `[] string`. Default value is `["method", "path", "response_code", "api_key", "time_stamp", "api_version", "api_name", "api_id", "org_id", "oauth_id", "raw_request", "request_time", "raw_response", "ip_address"]`
 
 Example:
 ```json
@@ -474,7 +541,31 @@ Example:
         "ssl_insecure_skip_verify": false,
         "ssl_cert_file": "<cert-path>",
         "ssl_key_file": "<key-path>",
-        "ssl_server_name": "<server-name>"
+        "ssl_server_name": "<server-name>",
+        "obfuscate_api_keys": true,
+        "obfuscate_api_keys_length": 10,
+        "fields": [
+          "method",
+          "host",
+          "path",
+          "raw_path",
+          "content_length",
+          "user_agent",
+          "response_code",
+          "api_key",
+          "time_stamp",
+          "api_version",
+          "api_name",
+          "api_id",
+          "org_id",
+          "oauth_id",
+          "raw_request",
+          "request_time",
+          "raw_response",
+          "ip_address",
+          "geo",
+          "alias"
+        ]
       }
     },
 ```
@@ -508,11 +599,11 @@ More advanced fields:
 ### Kafka Config
 
 * `broker`: The list of brokers used to discover the partitions available on the kafka cluster. E.g. "localhost:9092"
-* `use_ssl`: Enables SSL connection. 
+* `use_ssl`: Enables SSL connection.
 * `ssl_insecure_skip_verify`: Controls whether the pump client verifies the kafka server's certificate chain and host name.
 * `client_id`: Unique identifier for client connections established with Kafka.
 * `topic`: The topic that the writer will produce messages to.
-* `timeout`: Timeout is the maximum amount of time will wait for a connect or write to complete. 
+* `timeout`: Timeout is the maximum amount of time will wait for a connect or write to complete.
 * `compressed`: Enable "github.com/golang/snappy" codec to be used to compress Kafka messages. By default is false
 * `meta_data`: Can be used to set custom metadata inside the kafka message
 * `ssl_cert_file`: Can be used to set custom certificate file for authentication with kafka.
