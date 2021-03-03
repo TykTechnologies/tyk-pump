@@ -163,21 +163,18 @@ func initialisePumps() {
 func StartPurgeLoop(secInterval int, chunkSize int64, expire time.Duration, omitDetails bool) {
 	for range time.Tick(time.Duration(secInterval) * time.Second) {
 		job := instrument.NewJob("PumpRecordsPurge")
+		startTime := time.Now()
 
-		iterationsPerLoop := 1
-		if SystemConfig.EnableMultipleAnalyticsKeys {
-			iterationsPerLoop = 10
-		}
-		for i := 0; i < iterationsPerLoop; i++ {
-			analyticsKeyName := storage.ANALYTICS_KEYNAME
-			if SystemConfig.EnableMultipleAnalyticsKeys {
-				analyticsKeyName += "_" + fmt.Sprint(i)
+		for i := -1; i < 10; i++ {
+			var analyticsKeyName string
+			if i == -1 {
+				//if it's the first iteration, we look for tyk-system-analytics to maintain backwards compatibility or if analytics_config.enable_multiple_analytics_keys is disabled in the gateway
+				analyticsKeyName = storage.ANALYTICS_KEYNAME
+			} else {
+				analyticsKeyName = storage.ANALYTICS_KEYNAME + "_" + fmt.Sprint(i)
 			}
-
 			AnalyticsValues := AnalyticsStore.GetAndDeleteSet(analyticsKeyName, chunkSize, expire)
 			if len(AnalyticsValues) > 0 {
-				startTime := time.Now()
-
 				// Convert to something clean
 				keys := make([]interface{}, len(AnalyticsValues))
 
@@ -189,7 +186,8 @@ func StartPurgeLoop(secInterval int, chunkSize int64, expire time.Duration, omit
 					}).Debug("Decoded Record: ", decoded)
 					if err != nil {
 						log.WithFields(logrus.Fields{
-							"prefix": mainPrefix,
+							"prefix":       mainPrefix,
+							"analytic_key": analyticsKeyName,
 						}).Error("Couldn't unmarshal analytics data:", err)
 					} else {
 						if omitDetails {
@@ -200,13 +198,12 @@ func StartPurgeLoop(secInterval int, chunkSize int64, expire time.Duration, omit
 						job.Event("record")
 					}
 				}
-
 				// Send to pumps
 				writeToPumps(keys, job, startTime, int(secInterval))
-
-				job.Timing("purge_time_all", time.Since(startTime).Nanoseconds())
 			}
 		}
+
+		job.Timing("purge_time_all", time.Since(startTime).Nanoseconds())
 
 		if !SystemConfig.DontPurgeUptimeData {
 			UptimeValues := UptimeStorage.GetAndDeleteSet(storage.UptimeAnalytics_KEYNAME, chunkSize, expire)
@@ -353,12 +350,6 @@ func main() {
 			SystemConfig.StorageExpirationTime = 60
 			log.WithField("StorageExpirationTime", 60).Warn("StorageExpirationTime not set, but PurgeChunk enabled, overriding to 60s")
 		}
-	}
-
-	if SystemConfig.EnableMultipleAnalyticsKeys {
-		log.WithFields(logrus.Fields{
-			"prefix": mainPrefix,
-		}).Info("Multiple analytics keys enabled")
 	}
 
 	// start the worker loop
