@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/TykTechnologies/logrus"
 	"github.com/fatih/structs"
 	"gopkg.in/mgo.v2/bson"
-	"github.com/TykTechnologies/logrus"
 )
 
 const (
@@ -366,7 +366,7 @@ func (f *AnalyticsRecordAggregate) DiscardAggregations(fields []string) {
 		default:
 			log.WithFields(logrus.Fields{
 				"prefix": MongoAggregatePrefix,
-				"field": field,
+				"field":  field,
 			}).Warning("Invalid field")
 		}
 	}
