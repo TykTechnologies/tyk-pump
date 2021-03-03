@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"sync"
 	"time"
@@ -163,37 +164,48 @@ func StartPurgeLoop(secInterval int, chunkSize int64, expire time.Duration, omit
 	for range time.Tick(time.Duration(secInterval) * time.Second) {
 		job := instrument.NewJob("PumpRecordsPurge")
 
-		AnalyticsValues := AnalyticsStore.GetAndDeleteSet(storage.ANALYTICS_KEYNAME, chunkSize, expire)
-		if len(AnalyticsValues) > 0 {
-			startTime := time.Now()
-
-			// Convert to something clean
-			keys := make([]interface{}, len(AnalyticsValues))
-
-			for i, v := range AnalyticsValues {
-				decoded := analytics.AnalyticsRecord{}
-				err := msgpack.Unmarshal([]byte(v.(string)), &decoded)
-				log.WithFields(logrus.Fields{
-					"prefix": mainPrefix,
-				}).Debug("Decoded Record: ", decoded)
-				if err != nil {
-					log.WithFields(logrus.Fields{
-						"prefix": mainPrefix,
-					}).Error("Couldn't unmarshal analytics data:", err)
-				} else {
-					if omitDetails {
-						decoded.RawRequest = ""
-						decoded.RawResponse = ""
-					}
-					keys[i] = interface{}(decoded)
-					job.Event("record")
-				}
+		iterationsPerLoop := 1
+		if SystemConfig.EnableMultipleAnalyticsKeys {
+			iterationsPerLoop = 10
+		}
+		for i := 0; i < iterationsPerLoop; i++ {
+			analyticsKeyName := storage.ANALYTICS_KEYNAME
+			if SystemConfig.EnableMultipleAnalyticsKeys {
+				analyticsKeyName += "_" + fmt.Sprint(i)
 			}
 
-			// Send to pumps
-			writeToPumps(keys, job, startTime, int(secInterval))
+			AnalyticsValues := AnalyticsStore.GetAndDeleteSet(analyticsKeyName, chunkSize, expire)
+			if len(AnalyticsValues) > 0 {
+				startTime := time.Now()
 
-			job.Timing("purge_time_all", time.Since(startTime).Nanoseconds())
+				// Convert to something clean
+				keys := make([]interface{}, len(AnalyticsValues))
+
+				for i, v := range AnalyticsValues {
+					decoded := analytics.AnalyticsRecord{}
+					err := msgpack.Unmarshal([]byte(v.(string)), &decoded)
+					log.WithFields(logrus.Fields{
+						"prefix": mainPrefix,
+					}).Debug("Decoded Record: ", decoded)
+					if err != nil {
+						log.WithFields(logrus.Fields{
+							"prefix": mainPrefix,
+						}).Error("Couldn't unmarshal analytics data:", err)
+					} else {
+						if omitDetails {
+							decoded.RawRequest = ""
+							decoded.RawResponse = ""
+						}
+						keys[i] = interface{}(decoded)
+						job.Event("record")
+					}
+				}
+
+				// Send to pumps
+				writeToPumps(keys, job, startTime, int(secInterval))
+
+				job.Timing("purge_time_all", time.Since(startTime).Nanoseconds())
+			}
 		}
 
 		if !SystemConfig.DontPurgeUptimeData {
@@ -341,6 +353,12 @@ func main() {
 			SystemConfig.StorageExpirationTime = 60
 			log.WithField("StorageExpirationTime", 60).Warn("StorageExpirationTime not set, but PurgeChunk enabled, overriding to 60s")
 		}
+	}
+
+	if SystemConfig.EnableMultipleAnalyticsKeys {
+		log.WithFields(logrus.Fields{
+			"prefix": mainPrefix,
+		}).Info("Multiple analytics keys enabled")
 	}
 
 	// start the worker loop
