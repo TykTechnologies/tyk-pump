@@ -367,7 +367,7 @@ func (f *AnalyticsRecordAggregate) DiscardAggregations(fields []string) {
 			log.WithFields(logrus.Fields{
 				"prefix": MongoAggregatePrefix,
 				"field":  field,
-			}).Warning("Invalid field")
+			}).Warning("Invalid field in the ignore list. Skipping.")
 		}
 	}
 }
