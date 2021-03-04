@@ -183,12 +183,12 @@ func (m *MongoSelectivePump) WriteData(ctx context.Context, data []interface{}) 
 
 				indexCreateErr := m.ensureIndexes(analyticsCollection)
 				if indexCreateErr != nil {
-					m.log.Error(indexCreateErr)
+					m.log.WithField("collection", col_name).Error(indexCreateErr)
 				}
 
 				err := analyticsCollection.Insert(dataSet...)
 				if err != nil {
-					m.log.Error("Problem inserting to mongo collection: ", err)
+					m.log.WithField("collection", col_name).Error("Problem inserting to mongo collection: ", err)
 					if strings.Contains(strings.ToLower(err.Error()), "closed explicitly") {
 						m.log.Warning("--> Detected connection failure, reconnecting")
 						m.connect()
@@ -258,7 +258,7 @@ func (m *MongoSelectivePump) WriteUptimeData(data []interface{}) {
 		m.connect()
 		m.WriteUptimeData(data)
 	} else {
-		m.log.Info("MONGO SAelective Should not be writing uptime data!")
+		m.log.Info("MONGO Selective Should not be writing uptime data!")
 		collectionName := "tyk_uptime_analytics"
 		thisSession := m.dbSession.Copy()
 		defer thisSession.Close()
@@ -285,7 +285,7 @@ func (m *MongoSelectivePump) WriteUptimeData(data []interface{}) {
 			m.log.Debug("Wrote data to ", collectionName)
 
 			if err != nil {
-				m.log.Error("Problem inserting to mongo collection: ", err)
+				m.log.WithField("collection", collectionName).Error("Problem inserting to mongo collection: ", err)
 				if strings.Contains(err.Error(), "Closed explicitly") || strings.Contains(err.Error(), "EOF") {
 					m.log.Warning("--> Detected connection failure, reconnecting")
 					m.connect()
