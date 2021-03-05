@@ -261,7 +261,7 @@ func (m *MongoAggregatePump) WriteData(ctx context.Context, data []interface{}) 
 			_, err := analyticsCollection.Find(query).Apply(change, &doc)
 
 			if err != nil {
-				m.log.Error("UPSERT Failure: ", err)
+				m.log.WithField("query", query).Error("UPSERT Failure: ", err)
 				return m.HandleWriteErr(err)
 			}
 
@@ -279,7 +279,7 @@ func (m *MongoAggregatePump) WriteData(ctx context.Context, data []interface{}) 
 			}
 
 			if avgErr != nil {
-				m.log.Error("AvgUpdate Failure: ", avgErr)
+				m.log.WithField("query", query).Error("AvgUpdate Failure: ", avgErr)
 				return m.HandleWriteErr(avgErr)
 			}
 
@@ -291,7 +291,7 @@ func (m *MongoAggregatePump) WriteData(ctx context.Context, data []interface{}) 
 				thisData := analytics.AnalyticsRecordAggregate{}
 				err := analyticsCollection.Find(query).One(&thisData)
 				if err != nil {
-					m.log.Error("Couldn't find query doc!")
+					m.log.WithField("query", query).Error("Couldn't find query doc:", err)
 				} else {
 					m.doMixedWrite(thisData, query)
 				}
