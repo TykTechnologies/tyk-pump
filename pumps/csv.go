@@ -21,7 +21,8 @@ type CSVPump struct {
 }
 
 type CSVConf struct {
-	CSVDir string `mapstructure:"csv_dir"`
+	CSVDir       string `mapstructure:"csv_dir"`
+	DecodeBase64 bool   `mapstructure:"decode_base64"`
 }
 
 var csvPrefix = "csv-pump"
