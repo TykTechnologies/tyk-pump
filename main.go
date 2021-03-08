@@ -171,7 +171,7 @@ func StartPurgeLoop(secInterval int, chunkSize int64, expire time.Duration, omit
 				//if it's the first iteration, we look for tyk-system-analytics to maintain backwards compatibility or if analytics_config.enable_multiple_analytics_keys is disabled in the gateway
 				analyticsKeyName = storage.ANALYTICS_KEYNAME
 			} else {
-				analyticsKeyName = storage.ANALYTICS_KEYNAME + "_" + fmt.Sprint(i)
+				analyticsKeyName = fmt.Sprintf("%v_%v", storage.ANALYTICS_KEYNAME, i)
 			}
 			AnalyticsValues := AnalyticsStore.GetAndDeleteSet(analyticsKeyName, chunkSize, expire)
 			if len(AnalyticsValues) > 0 {
