@@ -7,7 +7,6 @@ import (
 
 	"github.com/mitchellh/mapstructure"
 
-	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 )
 
@@ -20,7 +19,7 @@ type SyslogPump struct {
 }
 
 var (
-	logPrefix = "syslog-pump"
+	syslogPrefix = "syslog-pump"
 )
 
 type SyslogConf struct {
@@ -42,26 +41,26 @@ func (s *SyslogPump) New() Pump {
 func (s *SyslogPump) Init(config interface{}) error {
 	//Read configuration file
 	s.syslogConf = &SyslogConf{}
-	err := mapstructure.Decode(config, &s.syslogConf)
+	s.log = log.WithField("prefix", syslogPrefix)
 
+	err := mapstructure.Decode(config, &s.syslogConf)
 	if err != nil {
-		log.WithFields(logrus.Fields{
-			"prefix": logPrefix,
-		}).Fatal("Failed to decode configuration: ", err)
+		s.log.Fatal("Failed to decode configuration: ", err)
 	}
 
 	// Init the configs
-	initConfigs(s)
+	s.initConfigs()
 
 	// Init the Syslog writer
-	initWriter(s)
+	s.initWriter()
 
-	log.Debug("Syslog Pump active")
+	s.log.Info(s.GetName() + " Initialized")
+
 	return nil
 }
 
-func initWriter(s *SyslogPump) {
-	tag := logPrefix
+func (s *SyslogPump) initWriter() {
+	tag := syslogPrefix
 	if s.syslogConf.Tag != "" {
 		tag = s.syslogConf.Tag
 	}
@@ -72,9 +71,7 @@ func initWriter(s *SyslogPump) {
 		tag)
 
 	if err != nil {
-		log.WithFields(logrus.Fields{
-			"prefix": logPrefix,
-		}).Fatal("failed to connect to Syslog Daemon: ", err)
+		s.log.Fatal("failed to connect to Syslog Daemon: ", err)
 	}
 
 	s.writer = syslogWriter
@@ -82,33 +79,25 @@ func initWriter(s *SyslogPump) {
 
 // Set default values if they are not explicitly given
 // And perform validation
-func initConfigs(pump *SyslogPump) {
-	if pump.syslogConf.Transport == "" {
-		pump.syslogConf.Transport = "udp"
-		log.WithFields(logrus.Fields{
-			"prefix": logPrefix,
-		}).Info("No Transport given, using 'udp'")
+func (s *SyslogPump) initConfigs() {
+	if s.syslogConf.Transport == "" {
+		s.syslogConf.Transport = "udp"
+		s.log.Info("No Transport given, using 'udp'")
 	}
 
-	if pump.syslogConf.Transport != "udp" &&
-		pump.syslogConf.Transport != "tcp" &&
-		pump.syslogConf.Transport != "tls" {
-		log.WithFields(logrus.Fields{
-			"prefix": logPrefix,
-		}).Fatal("Chosen invalid Transport type.  Please use a supported Transport type for Syslog")
+	if s.syslogConf.Transport != "udp" &&
+		s.syslogConf.Transport != "tcp" &&
+		s.syslogConf.Transport != "tls" {
+		s.log.Fatal("Chosen invalid Transport type.  Please use a supported Transport type for Syslog")
 	}
 
-	if pump.syslogConf.NetworkAddr == "" {
-		pump.syslogConf.NetworkAddr = "localhost:5140"
-		log.WithFields(logrus.Fields{
-			"prefix": logPrefix,
-		}).Info("No host given, using 'localhost:5140'")
+	if s.syslogConf.NetworkAddr == "" {
+		s.syslogConf.NetworkAddr = "localhost:5140"
+		s.log.Info("No host given, using 'localhost:5140'")
 	}
 
-	if pump.syslogConf.LogLevel == 0 {
-		log.WithFields(logrus.Fields{
-			"prefix": logPrefix,
-		}).Warn("Using Log Level 0 (KERNEL) for Syslog pump")
+	if s.syslogConf.LogLevel == 0 {
+		s.log.Warn("Using Log Level 0 (KERNEL) for Syslog pump")
 	}
 }
 
@@ -116,6 +105,7 @@ func initConfigs(pump *SyslogPump) {
 ** Write the actual Data to Syslog Here
  */
 func (s *SyslogPump) WriteData(ctx context.Context, data []interface{}) error {
+	s.log.Debug("Attempting to write ", len(data), " records...")
 
 	//Data is all the analytics being written
 	for _, v := range data {
@@ -151,6 +141,7 @@ func (s *SyslogPump) WriteData(ctx context.Context, data []interface{}) error {
 			_, _ = fmt.Fprintf(s.writer, "%s", message)
 		}
 	}
+	s.log.Info("Purged ", len(data), " records...")
 
 	return nil
 }

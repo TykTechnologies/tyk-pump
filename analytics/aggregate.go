@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/TykTechnologies/logrus"
 	"github.com/fatih/structs"
 	"gopkg.in/mgo.v2/bson"
 )
@@ -362,6 +363,11 @@ func (f *AnalyticsRecordAggregate) DiscardAggregations(fields []string) {
 			f.OauthEndpoint = make(map[string]map[string]*Counter)
 		case "ApiEndpoint", "apiendpoint":
 			f.ApiEndpoint = make(map[string]*Counter)
+		default:
+			log.WithFields(logrus.Fields{
+				"prefix": MongoAggregatePrefix,
+				"field":  field,
+			}).Warning("Invalid field in the ignore list. Skipping.")
 		}
 	}
 }

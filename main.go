@@ -140,7 +140,7 @@ func initialisePumps() {
 			} else {
 				log.WithFields(logrus.Fields{
 					"prefix": mainPrefix,
-				}).Info("Init Pump: ", thisPmp.GetName())
+				}).Info("Init Pump: ", key)
 				Pumps[i] = thisPmp
 			}
 		}

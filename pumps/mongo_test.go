@@ -23,6 +23,7 @@ func TestMongoPump_capCollection_Enabled(t *testing.T) {
 	mPump := pump.(*MongoPump)
 	mPump.dbConf = &conf
 	mPump.dbConf.CollectionCapEnable = false
+	mPump.log = log.WithField("prefix", mongoPrefix)
 
 	mPump.connect()
 
@@ -44,6 +45,7 @@ func TestMongoPump_capCollection_Exists(t *testing.T) {
 
 	mPump := pump.(*MongoPump)
 	mPump.dbConf = &conf
+	mPump.log = log.WithField("prefix", mongoPrefix)
 
 	mPump.dbConf.CollectionCapEnable = true
 
@@ -69,6 +71,7 @@ func TestMongoPump_capCollection_Not64arch(t *testing.T) {
 
 	mPump := pump.(*MongoPump)
 	mPump.dbConf = &conf
+	mPump.log = log.WithField("prefix", mongoPrefix)
 
 	mPump.dbConf.CollectionCapEnable = true
 
@@ -94,6 +97,7 @@ func TestMongoPump_capCollection_SensibleDefaultSize(t *testing.T) {
 
 	mPump := pump.(*MongoPump)
 	mPump.dbConf = &conf
+	mPump.log = log.WithField("prefix", mongoPrefix)
 
 	mPump.dbConf.CollectionCapEnable = true
 	mPump.dbConf.CollectionCapMaxSizeBytes = 0
@@ -127,6 +131,7 @@ func TestMongoPump_capCollection_OverrideSize(t *testing.T) {
 
 	mPump := pump.(*MongoPump)
 	mPump.dbConf = &conf
+	mPump.log = log.WithField("prefix", mongoPrefix)
 
 	mPump.dbConf.CollectionCapEnable = true
 	mPump.dbConf.CollectionCapMaxSizeBytes = GiB
@@ -157,6 +162,7 @@ func TestMongoPump_AccumulateSet(t *testing.T) {
 
 	mPump := pump.(*MongoPump)
 	mPump.dbConf = &conf
+	mPump.log = log.WithField("prefix", mongoPrefix)
 
 	record := analytics.AnalyticsRecord{}
 	data := make([]interface{}, 0)

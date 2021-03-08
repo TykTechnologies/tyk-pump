@@ -7,7 +7,6 @@ import (
 	"github.com/mitchellh/mapstructure"
 	segment "github.com/segmentio/analytics-go"
 
-	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 )
 
@@ -34,27 +33,26 @@ func (s *SegmentPump) GetName() string {
 
 func (s *SegmentPump) Init(config interface{}) error {
 	s.segmentConf = &SegmentConf{}
-	loadConfigErr := mapstructure.Decode(config, &s.segmentConf)
+	s.log = log.WithField("prefix", segmentPrefix)
 
+	loadConfigErr := mapstructure.Decode(config, &s.segmentConf)
 	if loadConfigErr != nil {
-		log.WithFields(logrus.Fields{
-			"prefix": segmentPrefix,
-		}).Fatal("Failed to decode configuration: ", loadConfigErr)
+		s.log.Fatal("Failed to decode configuration: ", loadConfigErr)
 	}
 
 	s.segmentClient = segment.New(s.segmentConf.WriteKey)
+	s.log.Info(s.GetName() + " Initialized")
 
 	return nil
 }
 
 func (s *SegmentPump) WriteData(ctx context.Context, data []interface{}) error {
-	log.WithFields(logrus.Fields{
-		"prefix": segmentPrefix,
-	}).Info("Writing ", len(data), " records")
+	s.log.Debug("Attempting to write ", len(data), " records...")
 
 	for _, v := range data {
 		s.WriteDataRecord(v.(analytics.AnalyticsRecord))
 	}
+	s.log.Info("Purged ", len(data), " records...")
 
 	return nil
 }
@@ -64,9 +62,7 @@ func (s *SegmentPump) WriteDataRecord(record analytics.AnalyticsRecord) error {
 	properties, err := s.ToJSONMap(record)
 
 	if err != nil {
-		log.WithFields(logrus.Fields{
-			"prefix": segmentPrefix,
-		}).Error("Couldn't marshal analytics data:", err)
+		s.log.Error("Couldn't marshal analytics data:", err)
 	} else {
 		err = s.segmentClient.Track(&segment.Track{
 			Event:       "Hit",
@@ -74,9 +70,7 @@ func (s *SegmentPump) WriteDataRecord(record analytics.AnalyticsRecord) error {
 			Properties:  properties,
 		})
 		if err != nil {
-			log.WithFields(logrus.Fields{
-				"prefix": segmentPrefix,
-			}).Error("Couldn't track record:", err)
+			s.log.Error("Couldn't track record:", err)
 		}
 	}
 
