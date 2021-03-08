@@ -523,6 +523,9 @@ Setting up Splunk with a *HTTP Event Collector*
 `https://splunk:8088/services/collector/event`
 
 - `ssl_insecure_skip_verify`: Controls whether the pump client verifies the Splunk server's certificate chain and host name.
+- `obfuscate_api_keys`: (optional) Controls whether the pump client should hide the API key. In case you still need substring of the value, check the next option. Type: Boolean. Default value is `false`.
+- `obfuscate_api_keys_length`: (optional) Define the number of the characters from the end of the API key. The `obfuscate_api_keys` should be set to `true`. Type: Integer. Default value is `0`.
+- `fields`: (optional) Define which Analytics fields should participate in the Splunk event. Check the available fields in the example below. Type: String Array `[] string`. Default value is `["method", "path", "response_code", "api_key", "time_stamp", "api_version", "api_name", "api_id", "org_id", "oauth_id", "raw_request", "request_time", "raw_response", "ip_address"]`
 
 Example:
 ```json
@@ -534,7 +537,31 @@ Example:
         "ssl_insecure_skip_verify": false,
         "ssl_cert_file": "<cert-path>",
         "ssl_key_file": "<key-path>",
-        "ssl_server_name": "<server-name>"
+        "ssl_server_name": "<server-name>",
+        "obfuscate_api_keys": true,
+        "obfuscate_api_keys_length": 10,
+        "fields": [
+          "method",
+          "host",
+          "path",
+          "raw_path",
+          "content_length",
+          "user_agent",
+          "response_code",
+          "api_key",
+          "time_stamp",
+          "api_version",
+          "api_name",
+          "api_id",
+          "org_id",
+          "oauth_id",
+          "raw_request",
+          "request_time",
+          "raw_response",
+          "ip_address",
+          "geo",
+          "alias"
+        ]
       }
     },
 ```

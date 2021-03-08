@@ -10,7 +10,6 @@ import (
 
 	"github.com/mitchellh/mapstructure"
 
-	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 )
 
@@ -37,28 +36,25 @@ func (c *CSVPump) GetName() string {
 
 func (c *CSVPump) Init(conf interface{}) error {
 	c.csvConf = &CSVConf{}
-	err := mapstructure.Decode(conf, &c.csvConf)
+	c.log = log.WithField("prefix", csvPrefix)
 
+	err := mapstructure.Decode(conf, &c.csvConf)
 	if err != nil {
-		log.WithFields(logrus.Fields{
-			"prefix": mongoPrefix,
-		}).Fatal("Failed to decode configuration: ", err)
+		c.log.Fatal("Failed to decode configuration: ", err)
 	}
 
 	ferr := os.MkdirAll(c.csvConf.CSVDir, 0777)
 	if ferr != nil {
-		log.WithFields(logrus.Fields{
-			"prefix": csvPrefix,
-		}).Error(ferr)
+		c.log.Error(ferr)
 	}
 
-	log.WithFields(logrus.Fields{
-		"prefix": csvPrefix,
-	}).Debug("CSV Initialized")
+	c.log.Info(c.GetName() + " Initialized")
 	return nil
 }
 
 func (c *CSVPump) WriteData(ctx context.Context, data []interface{}) error {
+	c.log.Debug("Attempting to write ", len(data), " records...")
+
 	curtime := time.Now()
 	fname := fmt.Sprintf("%d-%s-%d-%d.csv", curtime.Year(), curtime.Month().String(), curtime.Day(), curtime.Hour())
 	fname = path.Join(c.csvConf.CSVDir, fname)
@@ -70,18 +66,14 @@ func (c *CSVPump) WriteData(ctx context.Context, data []interface{}) error {
 		var createErr error
 		outfile, createErr = os.Create(fname)
 		if createErr != nil {
-			log.WithFields(logrus.Fields{
-				"prefix": csvPrefix,
-			}).Error("Failed to create new CSV file: ", createErr)
+			c.log.Error("Failed to create new CSV file: ", createErr)
 		}
 		appendHeader = true
 	} else {
 		var appendErr error
 		outfile, appendErr = os.OpenFile(fname, os.O_APPEND|os.O_WRONLY, 0600)
 		if appendErr != nil {
-			log.WithFields(logrus.Fields{
-				"prefix": csvPrefix,
-			}).Error("Failed to open CSV file: ", appendErr)
+			c.log.Error("Failed to open CSV file: ", appendErr)
 		}
 	}
 
@@ -94,9 +86,7 @@ func (c *CSVPump) WriteData(ctx context.Context, data []interface{}) error {
 
 		err := writer.Write(headers)
 		if err != nil {
-			log.WithFields(logrus.Fields{
-				"prefix": csvPrefix,
-			}).Error("Failed to write file headers: ", err)
+			c.log.Error("Failed to write file headers: ", err)
 			return err
 
 		}
@@ -120,11 +110,12 @@ func (c *CSVPump) WriteData(ctx context.Context, data []interface{}) error {
 		// 	decoded.APIVersion}
 		err := writer.Write(toWrite)
 		if err != nil {
-			log.Error("File write failed!")
-			log.Error(err)
+			c.log.Error("File write failed:", err)
+			return err
 		}
 
 	}
 	writer.Flush()
+	c.log.Info("Purged ", len(data), " records...")
 	return nil
 }

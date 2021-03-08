@@ -9,7 +9,6 @@ import (
 	"github.com/influxdata/influxdb/client/v2"
 	"github.com/mitchellh/mapstructure"
 
-	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 )
 
@@ -43,19 +42,18 @@ func (i *InfluxPump) GetName() string {
 
 func (i *InfluxPump) Init(config interface{}) error {
 	i.dbConf = &InfluxConf{}
+	i.log = log.WithField("prefix", influxPrefix)
+
 	err := mapstructure.Decode(config, &i.dbConf)
 
 	if err != nil {
-		log.WithFields(logrus.Fields{
-			"prefix": influxPrefix,
-		}).Fatal("Failed to decode configuration: ", err)
+		i.log.Fatal("Failed to decode configuration: ", err)
 	}
 
 	i.connect()
 
-	log.WithFields(logrus.Fields{
-		"prefix": influxPrefix,
-	}).Debug("Influx DB CS: ", i.dbConf.Addr)
+	i.log.Debug("Influx DB CS: ", i.dbConf.Addr)
+	i.log.Info(i.GetName() + " Initialized")
 
 	return nil
 }
@@ -68,9 +66,7 @@ func (i *InfluxPump) connect() client.Client {
 	})
 
 	if err != nil {
-		log.WithFields(logrus.Fields{
-			"prefix": influxPrefix,
-		}).Error("Influx connection failed:", err)
+		i.log.Error("Influx connection failed:", err)
 		time.Sleep(5 * time.Second)
 		i.connect()
 	}
@@ -81,6 +77,7 @@ func (i *InfluxPump) connect() client.Client {
 func (i *InfluxPump) WriteData(ctx context.Context, data []interface{}) error {
 	c := i.connect()
 	defer c.Close()
+	i.log.Debug("Attempting to write ", len(data), " records...")
 
 	bp, _ := client.NewBatchPoints(client.BatchPointsConfig{
 		Database:  i.dbConf.DatabaseName,
@@ -136,7 +133,7 @@ func (i *InfluxPump) WriteData(ctx context.Context, data []interface{}) error {
 
 		// New record
 		if pt, err = client.NewPoint(table, tags, fields, time.Now()); err != nil {
-			log.Error(err)
+			i.log.Error(err)
 			continue
 		}
 
@@ -146,6 +143,7 @@ func (i *InfluxPump) WriteData(ctx context.Context, data []interface{}) error {
 
 	// Now that all points are added, write the batch
 	c.Write(bp)
+	i.log.Info("Purged ", len(data), " records...")
 
 	return nil
 }

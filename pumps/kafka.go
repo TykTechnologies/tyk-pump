@@ -129,13 +129,16 @@ func (k *KafkaPump) Init(config interface{}) error {
 		k.writerConfig.CompressionCodec = snappy.NewCompressionCodec()
 	}
 
-	k.log.Info("Kafka config: ", k.writerConfig)
+	k.log.Debug("Kafka config: ", k.writerConfig)
+
+	k.log.Info(k.GetName() + " Initialized")
+
 	return nil
 }
 
 func (k *KafkaPump) WriteData(ctx context.Context, data []interface{}) error {
 	startTime := time.Now()
-	k.log.Info("Writing ", len(data), " records...")
+	k.log.Debug("Attempting to write ", len(data), " records...")
 	kafkaMessages := make([]kafka.Message, len(data))
 	for i, v := range data {
 		//Build message format
@@ -184,6 +187,7 @@ func (k *KafkaPump) WriteData(ctx context.Context, data []interface{}) error {
 		k.log.WithError(kafkaError).Error("unable to write message")
 	}
 	k.log.Debug("ElapsedTime in seconds for ", len(data), " records:", time.Now().Sub(startTime))
+	k.log.Info("Purged ", len(data), " records...")
 	return nil
 }
 
