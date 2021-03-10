@@ -6,7 +6,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/TykTechnologies/tyk-pump/instrumentation"
 	"github.com/TykTechnologies/tyk-pump/pumps"
@@ -15,10 +14,9 @@ import (
 	"gopkg.in/vmihailenco/msgpack.v2"
 )
 
+
 func (handler *PumpHandler) PurgeLoop() {
-	handler.logger.WithFields(logrus.Fields{
-		"prefix": handler.loggerPrefix,
-	}).Infof("Starting purge loop @%d, chunk size %d", handler.SystemConfig.PurgeDelay, handler.SystemConfig.PurgeChunk)
+	handler.log.Infof("Starting purge loop @%d, chunk size %d", handler.SystemConfig.PurgeDelay, handler.SystemConfig.PurgeChunk)
 
 	secInterval:= handler.SystemConfig.PurgeDelay
 	chunkSize := handler.SystemConfig.PurgeChunk
@@ -56,16 +54,12 @@ func (handler *PumpHandler) PurgeLoop() {
 					decoded = *aux
 				default:
 					err = msgpack.Unmarshal([]byte(v.(string)), &decoded)
-					handler.logger.WithFields(logrus.Fields{
-						"prefix": handler.loggerPrefix,
-					}).Debug("Decoded Record: ", decoded)
+					handler.log.Debug("Decoded Record: ", decoded)
 				}
 
 
 				if err != nil {
-					handler.logger.WithFields(logrus.Fields{
-						"prefix": handler.loggerPrefix,
-					}).Error("Couldn't unmarshal analytics data:", err)
+					handler.log.Error("Couldn't unmarshal analytics data:", err)
 				} else {
 					if omitDetails {
 						decoded.RawRequest = ""
@@ -99,30 +93,22 @@ func (handler *PumpHandler) WriteToPumps(keys []interface{}, job *health.Job, st
 		}
 		wg.Wait()
 	} else {
-		handler.logger.WithFields(logrus.Fields{
-			"prefix": handler.loggerPrefix,
-		}).Warning("No pumps defined!")
+		handler.log.Warning("No pumps defined!")
 	}
 }
 
 func (handler *PumpHandler) execPumpWriting(wg *sync.WaitGroup, pmp pumps.Pump, keys *[]interface{}, purgeDelay int, startTime time.Time, job *health.Job) {
 	timer := time.AfterFunc(time.Duration(purgeDelay)*time.Second, func() {
 		if pmp.GetTimeout() == 0 {
-			handler.logger.WithFields(logrus.Fields{
-				"prefix": handler.loggerPrefix,
-			}).Warning("Pump  ", pmp.GetName(), " is taking more time than the value configured of purge_delay. You should try to set a timeout for this pump.")
+			handler.log.Warning("Pump  ", pmp.GetName(), " is taking more time than the value configured of purge_delay. You should try to set a timeout for this pump.")
 		} else if pmp.GetTimeout() > purgeDelay {
-			handler.logger.WithFields(logrus.Fields{
-				"prefix": handler.loggerPrefix,
-			}).Warning("Pump  ", pmp.GetName(), " is taking more time than the value configured of purge_delay. You should try lowering the timeout configured for this pump.")
+			handler.log.Warning("Pump  ", pmp.GetName(), " is taking more time than the value configured of purge_delay. You should try lowering the timeout configured for this pump.")
 		}
 	})
 	defer timer.Stop()
 	defer wg.Done()
 
-	handler.logger.WithFields(logrus.Fields{
-		"prefix": handler.loggerPrefix,
-	}).Debug("Writing to: ", pmp.GetName())
+	handler.log.Debug("Writing to: ", pmp.GetName())
 
 	ch := make(chan error, 1)
 	//Load pump timeout
@@ -147,20 +133,14 @@ func (handler *PumpHandler) execPumpWriting(wg *sync.WaitGroup, pmp pumps.Pump, 
 	select {
 	case err := <-ch:
 		if err != nil {
-			handler.logger.WithFields(logrus.Fields{
-				"prefix": handler.loggerPrefix,
-			}).Warning("Error Writing to: ", pmp.GetName(), " - Error:", err)
+			handler.log.Warning("Error Writing to: ", pmp.GetName(), " - Error:", err)
 		}
 	case <-ctx.Done():
 		switch ctx.Err() {
 		case context.Canceled:
-			handler.logger.WithFields(logrus.Fields{
-				"prefix": handler.loggerPrefix,
-			}).Warning("The writing to ", pmp.GetName(), " have got canceled.")
+			handler.log.Warning("The writing to ", pmp.GetName(), " have got canceled.")
 		case context.DeadlineExceeded:
-			handler.logger.WithFields(logrus.Fields{
-				"prefix": handler.loggerPrefix,
-			}).Warning("Timeout Writing to: ", pmp.GetName())
+			handler.log.Warning("Timeout Writing to: ", pmp.GetName())
 		}
 	}
 	if job != nil {

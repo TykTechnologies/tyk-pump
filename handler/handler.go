@@ -15,6 +15,7 @@ import (
 	"github.com/TykTechnologies/tyk-pump/storage"
 )
 
+//PumpHandler is the main struct to handle all the tyk-pump process.
 type PumpHandler struct{
 	 SystemConfig *config.TykPumpConfiguration
 
@@ -28,16 +29,21 @@ type PumpHandler struct{
 	 UptimePump *pumps.MongoPump
 
 	 logger  *logrus.Logger
-	 loggerPrefix string
+	 log  *logrus.Entry
 }
 
+//SetLogger set he PumpHandler logger to a given *logrus.Logger.
 func (handler *PumpHandler) SetLogger(log *logrus.Logger){
 	handler.logger = log
 }
-func (handler *PumpHandler) initLogger() error{
-	handler.logger = logger.GetLogger()
-	handler.loggerPrefix = "main"
 
+//initLogger initialise the pump main logger. It checks in TYK_LOGLEVEL and in the config log_level field to set the log level. ENV var > config specification
+func (handler *PumpHandler) initLogger() error{
+	handler.logger =  logger.GetLogger()
+	handler.log = handler.logger.WithField("prefix","main")
+
+
+	//If TYK_LOGLEVEL != "", the log level is set in the logger.GetLogger() method
 	if os.Getenv("TYK_LOGLEVEL") == "" {
 		level := strings.ToLower(handler.SystemConfig.LogLevel)
 		switch level {
@@ -50,26 +56,27 @@ func (handler *PumpHandler) initLogger() error{
 		case "debug":
 			handler.logger.Level = logrus.DebugLevel
 		default:
-			handler.logger.WithFields(logrus.Fields{
-				"prefix": "main",
-			}).Error("Invalid log level %q specified in config, must be error, warn, debug or info. ", level)
+			handler.log.Error("Invalid log level %q specified in config, must be error, warn, debug or info. ", level)
 			return errors.New("invalid log level %q specified in config. It must be error, warn, debug or info")
 		}
 	}
 	return nil
 }
 
+//SetAnalyticsStorage set an external ANALYTICS storage. It's specially useful when we want to use tyk-pump as an external package.
 func (handler *PumpHandler) SetAnalyticsStorage(storage storage.AnalyticsStorage)  {
 	handler.AnalyticsStorage = storage
 	handler.externalAnalyticStorage = true
 }
+
+//SetUptimeStorage set an external UPTIME storage. It's specially useful when we want to use tyk-pump as an external package.
 func (handler *PumpHandler) SetUptimeStorage(storage storage.AnalyticsStorage)  {
 	handler.UptimeStorage = storage
 	handler.externalUptimeStorage = true
 }
 
+//setupAnalyticStorage setup and init the tyk-pump ANALYTICS storage. If it's already set it means we're using pump as an external package.
 func (handler *PumpHandler) setupAnalyticStorage() error{
-
 	//if the analytic storage is set externally, don't setup it again
 	if !handler.externalAnalyticStorage {
 		switch handler.SystemConfig.AnalyticsStorageType {
@@ -87,8 +94,9 @@ func (handler *PumpHandler) setupAnalyticStorage() error{
 	}
 	return nil
 }
-func (handler *PumpHandler) setupUptimeStorage() error{
 
+//setupUptimeStorage setup and init the tyk-pump UPTIME storage. If it's already set it means we're using pump as an external package.
+func (handler *PumpHandler) setupUptimeStorage() error{
 	//if the uptime storage is set externally, don't setup it again
 	if !handler.externalUptimeStorage {
 		switch handler.SystemConfig.AnalyticsStorageType {
@@ -115,6 +123,8 @@ func (handler *PumpHandler) setupUptimeStorage() error{
 
 	return nil
 }
+
+//storeVersion set the version of tyk-pump in analytics storage. It only works when the analytics is REDIS.
 func (handler *PumpHandler) storeVersion() error{
 	if handler.SystemConfig.AnalyticsStorageType == "redis"{
 		var versionStore = &storage.RedisClusterStorageManager{}
@@ -133,6 +143,8 @@ func (handler *PumpHandler) storeVersion() error{
 	return nil
 }
 
+// initPumps initialise each configured pump and store it in handler.Pumps variable. When initializing, it set the filters, timeout and detailed recording of each pump.
+// It can fail when the pump name is invalid or when in an error initialise the pump. For this last error, please check Init func of each pump.
 func (handler *PumpHandler) initPumps() error{
 	handler.Pumps = make([]pumps.Pump, len(handler.SystemConfig.Pumps))
 	i := 0
@@ -144,9 +156,7 @@ func (handler *PumpHandler) initPumps() error{
 
 		pmpType, err := pumps.GetPumpByName(pumpTypeName)
 		if err != nil {
-			handler.logger.WithFields(logrus.Fields{
-				"prefix": handler.loggerPrefix,
-			}).Error("Pump load error (skipping): ", err)
+			handler.log.Error("Pump load error (skipping): ", err)
 			return err
 		} else {
 			thisPmp := pmpType.New()
@@ -158,9 +168,7 @@ func (handler *PumpHandler) initPumps() error{
 				handler.logger.Error("Pump init error (skipping): ", initErr)
 				return initErr
 			} else {
-				handler.logger.WithFields(logrus.Fields{
-					"prefix": handler.loggerPrefix,
-				}).Info("Init Pump: ", thisPmp.GetName())
+				handler.log.Info("Init Pump: ", thisPmp.GetName())
 				handler.Pumps[i] = thisPmp
 			}
 		}
@@ -170,17 +178,13 @@ func (handler *PumpHandler) initPumps() error{
 }
 func (handler *PumpHandler) initUptimeData() error{
 	if !handler.SystemConfig.DontPurgeUptimeData {
-		handler.logger.WithFields(logrus.Fields{
-			"prefix": handler.loggerPrefix,
-		}).Info("'dont_purge_uptime_data' set to false, attempting to start Uptime pump! ", handler.UptimePump.GetName())
+		handler.log.Info("'dont_purge_uptime_data' set to false, attempting to start Uptime pump! ", handler.UptimePump.GetName())
 		handler.UptimePump = &pumps.MongoPump{}
 		err := handler.UptimePump.Init(handler.SystemConfig.UptimePumpConfig)
 		if err != nil {
 			return err
 		}
-		handler.logger.WithFields(logrus.Fields{
-			"prefix": handler.loggerPrefix,
-		}).Info("Init Uptime Pump: ", handler.UptimePump.GetName())
+		handler.log.Info("Init Uptime Pump: ", handler.UptimePump.GetName())
 	}
 	return nil
 }
@@ -239,6 +243,8 @@ func (handler *PumpHandler) Init() error{
 	return nil
 }
 
+//NewPumpHandler creates a new pump handler given a TykPumpConfiguration.
+//Initializing the handler is required after this.
 func NewPumpHandler(config *config.TykPumpConfiguration) *PumpHandler{
 	return &PumpHandler{
 		SystemConfig: config,

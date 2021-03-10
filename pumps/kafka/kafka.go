@@ -24,7 +24,6 @@ import (
 
 type KafkaPump struct {
 	kafkaConf    *KafkaConf
-
 	kafkaClient KafkaClient
 	log          *logrus.Entry
 	pumps.CommonPumpConfig

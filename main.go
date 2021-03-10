@@ -11,7 +11,6 @@ import (
 )
 
 
-var log = logger.GetLogger()
 
 var mainPrefix = "main"
 
@@ -28,20 +27,27 @@ var (
 
 func main() {
 
+	//parsing cli vars
 	kingpin.Parse()
+	//initialise the logger
+	log := logger.GetLogger()
 
+	//load the config given the conf file specified in the --conf var
 	config := config.LoadConfig(conf)
 	if *debugMode {
 		config.LogLevel = "debug"
 	}
 
+	//create a new handler with the loaded config
 	pumpHandler := handler.NewPumpHandler(config)
+	//init the handler
 	err := pumpHandler.Init()
 	if err != nil {
 		log.Error("Error initializing Tyk Pump", err)
 		return
 	}
 
+	//if we specified that we're in demo mode with --demo, let's populate the pump with data
 	if *demoMode != "" {
 		log.Warning("BUILDING DEMO DATA AND EXITING...")
 		log.Warning("Starting from date: ", time.Now().AddDate(0, 0, -30))
@@ -51,7 +57,7 @@ func main() {
 		return
 	}
 
-	// start the worker loop
+	// start the handler purge loop
 	pumpHandler.PurgeLoop()
 }
 
