@@ -183,8 +183,8 @@ jobs:
 
       - name: Push unstable docker image
         run: |
-          docker tag tykio/tyk-pump-docker-pub docker.cloudsmith.io/tyk/tyk-pump/tyk-pump:v1.2.1-rc2
-          docker push docker.cloudsmith.io/tyk/tyk-pump/tyk-pump:v1.2.1-rc2
+          docker tag tykio/tyk-pump-docker-pub:v1.2.1-rc2 docker.cloudsmith.io/tyk/tyk-pump/tyk-pump:v1.2.1-rc2
+          docker push --all-tags docker.cloudsmith.io/tyk/tyk-pump/tyk-pump:v1.2.1-rc2
 
 # AWS mktplace update only for LTS releases
   aws-mktplace-byol:
