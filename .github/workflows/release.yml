@@ -77,7 +77,7 @@ jobs:
         env:
           ECR_REGISTRY: ${{ steps.aws-creds.outputs.ecr }}
         run: |
-            docker build -t ${ECR_REGISTRY}:${GITHUB_REF##*/} \
+            docker build -t ${ECR_REGISTRY}:v1.2.1-rc2 \
                          -t ${ECR_REGISTRY}:latest \
                          -t ${ECR_REGISTRY}:${GITHUB_SHA} \
                          integration/image
@@ -125,7 +125,7 @@ jobs:
           PKG_SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
         run: |
           /unlock-agent.sh
-          current_tag=${GITHUB_REF##*/}
+          current_tag=v1.2.1-rc2
           if [[ $current_tag =~ .+-(qa|rc).* ]]; then
                   echo "::set-output name=upload::true"
                   echo "::set-output name=pc::tyk-pump-unstable"
@@ -183,8 +183,8 @@ jobs:
 
       - name: Push unstable docker image
         run: |
-          docker tag tykio/tyk-pump-docker-pub docker.cloudsmith.io/tyk/tyk-pump/tyk-pump:${GITHUB_REF##*/}
-          docker push --all-tags docker.cloudsmith.io/tyk/tyk-pump/tyk-pump:${GITHUB_REF##*/}
+          docker tag tykio/tyk-pump-docker-pub docker.cloudsmith.io/tyk/tyk-pump/tyk-pump:v1.2.1-rc2
+          docker push docker.cloudsmith.io/tyk/tyk-pump/tyk-pump:v1.2.1-rc2
 
 # AWS mktplace update only for LTS releases
   aws-mktplace-byol:
@@ -201,6 +201,6 @@ jobs:
       - name: Packer build
         working-directory: ./aws
         run: |
-          export VERSION=${GITHUB_REF##*/}
+          export VERSION=v1.2.1-rc2
           packer validate -var-file=${{ matrix.flavour }}.vars.json byol.pkr.hcl
           packer build -var-file=${{ matrix.flavour }}.vars.json byol.pkr.hcl
