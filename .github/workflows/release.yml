@@ -114,7 +114,7 @@ jobs:
         with:
           registry: docker.cloudsmith.io
           username: veselin-dzhuranov
-          api-key: ${{ secrets.CLOUDSMITH_API_KEY }}
+          password: ${{ secrets.CLOUDSMITH_API_KEY }}
 
       - name: Unlock agent and set targets
         id: targets
