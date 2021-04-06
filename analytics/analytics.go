@@ -76,28 +76,28 @@ type GeoData struct {
 
 func (n *NetworkStats) GetFieldNames() []string {
 	return []string{
-		"OpenConnections",
-		"ClosedConnection",
-		"BytesIn",
-		"BytesOut",
+		"NetworkStats.OpenConnections",
+		"NetworkStats.ClosedConnection",
+		"NetworkStats.BytesIn",
+		"NetworkStats.BytesOut",
 	}
 }
 
 func (l *Latency) GetFieldNames() []string {
 	return []string{
-		"Total",
-		"Upstream",
+		"Latency.Total",
+		"Latency.Upstream",
 	}
 }
 
 func (g *GeoData) GetFieldNames() []string {
 	return []string{
-		"ISOCode",
-		"GeoNameID",
-		"Names",
-		"Latitude",
-		"Longitude",
-		"TimeZone",
+		"GeoData.Country.ISOCode",
+		"GeoData.City.GeoNameID",
+		"GeoData.City.Names",
+		"GeoData.Location.Latitude",
+		"GeoData.Location.Longitude",
+		"GeoData.Location.TimeZone",
 	}
 }
 
