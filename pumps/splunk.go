@@ -21,6 +21,7 @@ const (
 	authHeaderPrefix = "Splunk "
 	splunkPumpPrefix = "splunk-pump"
 	splunkPumpName   = "Splunk Pump"
+	splunkDefaultENV = PUMPS_ENV_PREFIX + "_SPLUNK"
 )
 
 var (
@@ -95,6 +96,7 @@ type SplunkPump struct {
 
 // SplunkPumpConfig contains the driver configuration parameters.
 type SplunkPumpConfig struct {
+	EnvPrefix              string   `mapstructure:"env_prefix"`
 	CollectorToken         string   `mapstructure:"collector_token"`
 	CollectorURL           string   `mapstructure:"collector_url"`
 	SSLInsecureSkipVerify  bool     `mapstructure:"ssl_insecure_skip_verify"`
@@ -116,6 +118,10 @@ func (p *SplunkPump) GetName() string {
 	return splunkPumpName
 }
 
+func (p *SplunkPump) GetEnvPrefix() string {
+	return p.config.EnvPrefix
+}
+
 // Init performs the initialization of the SplunkClient.
 func (p *SplunkPump) Init(config interface{}) error {
 	p.config = &SplunkPumpConfig{}
@@ -125,6 +131,9 @@ func (p *SplunkPump) Init(config interface{}) error {
 	if err != nil {
 		return err
 	}
+
+	processPumpEnvVars(p, p.log, p.config, splunkDefaultENV)
+
 	p.log.Infof("%s Endpoint: %s", splunkPumpName, p.config.CollectorURL)
 
 	p.client, err = NewSplunkClient(p.config.CollectorToken, p.config.CollectorURL, p.config.SSLInsecureSkipVerify, p.config.SSLCertFile, p.config.SSLKeyFile, p.config.SSLServerName)

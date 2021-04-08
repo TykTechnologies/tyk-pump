@@ -41,6 +41,7 @@ type MongoPump struct {
 
 var mongoPrefix = "mongo-pump"
 var mongoPumpPrefix = "PMP_MONGO"
+var mongoDefaultEnv = PUMPS_ENV_PREFIX + "_MONGO"
 
 type MongoType int
 
@@ -50,6 +51,7 @@ const (
 )
 
 type BaseMongoConf struct {
+	EnvPrefix                     string    `mapstructure:"env_prefix"`
 	MongoURL                      string    `json:"mongo_url" mapstructure:"mongo_url"`
 	MongoUseSSL                   bool      `json:"mongo_use_ssl" mapstructure:"mongo_use_ssl"`
 	MongoSSLInsecureSkipVerify    bool      `json:"mongo_ssl_insecure_skip_verify" mapstructure:"mongo_ssl_insecure_skip_verify"`
@@ -227,6 +229,10 @@ func (m *MongoPump) GetName() string {
 	return "MongoDB Pump"
 }
 
+func (m *MongoPump) GetEnvPrefix() string {
+	return m.dbConf.EnvPrefix
+}
+
 func (m *MongoPump) Init(config interface{}) error {
 	m.dbConf = &MongoConf{}
 	m.log = log.WithField("prefix", mongoPrefix)
@@ -242,11 +248,13 @@ func (m *MongoPump) Init(config interface{}) error {
 			panic(m.dbConf.BaseMongoConf)
 		}
 	}
-
 	if err != nil {
 		m.log.Fatal("Failed to decode configuration: ", err)
 	}
 
+	processPumpEnvVars(m, m.log, m.dbConf, mongoDefaultEnv)
+
+	//we keep this env check for backward compatibility
 	overrideErr := envconfig.Process(mongoPumpPrefix, m.dbConf)
 	if overrideErr != nil {
 		m.log.Error("Failed to process environment variables for mongo pump: ", overrideErr)
