@@ -52,5 +52,5 @@ require (
 	gorm.io/gorm v1.20.12
 )
 
-//replace gorm.io/gorm => github.com/TykTechnologies/gorm v1.20.7-0.20201118175138-c6cfe4f7b290
-replace gorm.io/gorm => ../gorm
+//replace gorm.io/gorm => ../gorm
+replace gorm.io/gorm => github.com/TykTechnologies/gorm v1.20.7-0.20210409171139-b5c340f85ed0
