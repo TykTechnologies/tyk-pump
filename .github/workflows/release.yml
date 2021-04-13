@@ -45,7 +45,7 @@ jobs:
         id: aws-creds
         run: |
             cd integration/terraform
-            terraform init -input=false -lock=false
+            terraform init -input=false
             terraform refresh
             eval $(terraform output -json tyk-pump | jq -r 'to_entries[] | [.key,.value] | join("=")')
             region=$(terraform output region | xargs)
@@ -130,7 +130,7 @@ jobs:
           /unlock-agent.sh
           current_tag=${GITHUB_REF##*/}
           echo "::set-output name=tag::${current_tag}"
-          if [[ $current_tag =~ .+-(qa|rc).* ]]; then
+          if [[ $current_tag =~ .+-rc.* ]]; then
                   echo "::set-output name=upload::true"
                   echo "::set-output name=pc::tyk-pump-unstable"
                   echo "::set-output name=hub::unstable"
@@ -194,9 +194,90 @@ jobs:
           docker tag tykio/tyk-pump-docker-pub:${{ steps.targets.outputs.tag }} docker.cloudsmith.io/tyk/tyk-pump/tyk-pump:${{ steps.targets.outputs.tag }}
           docker push docker.cloudsmith.io/tyk/tyk-pump/tyk-pump:${{ steps.targets.outputs.tag }}
 
+  install-deb:
+    #if: startsWith(github.ref, 'refs/tags/')
+    needs:
+      - goreleaser
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        distro:
+          - ubuntu:xenial
+          - ubuntu:bionic
+          - ubuntu:focal
+          - debian:jessie
+          - debian:stretch
+          - debian:buster
+
+    steps:
+      - uses: TykTechnologies/gh-asset-action@main
+        with:
+          tag: "v1.3.0-rc4"
+          kind: "_linux_amd64.deb"
+          dest: "tyk-pump.deb"
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/setup-buildx-action@v1
+
+      - name: generate dockerfile
+        run: |
+          cat <<EOF > Dockerfile
+          FROM ${{ matrix.distro }}
+          COPY tyk-pump.deb /
+          RUN dpkg -i /tyk-pump.deb && /opt/tyk-pump/tyk-pump --conf=/opt/tyk-pump/tyk-pump.conf &
+          RUN kill 0
+          EOF
+
+      - name: install on ${{ matrix.distro }}
+        uses: docker/build-push-action@v2
+        with:
+          context: '.'
+          file: Dockerfile
+          push: false
+
+  install-rpm:
+    #if: startsWith(github.ref, 'refs/tags/')
+    needs:
+      - goreleaser
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        distro:
+          - registry.access.redhat.com/ubi7/ubi:7.9
+          - registry.access.redhat.com/ubi8/ubi:8.3
+
+    steps:
+      - uses: TykTechnologies/gh-asset-action@main
+        with:
+          tag: "v1.3.0-rc4"
+          kind: "_linux_x86_64.rpm"
+          dest: "tyk-pump.rpm"
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/setup-buildx-action@v1
+
+      - name: generate dockerfile
+        run: |
+          cat <<EOF > Dockerfile
+          FROM ${{ matrix.distro }}
+          COPY tyk-pump.rpm /
+          RUN rpm -ih /tyk-pump.rpm && /opt/tyk-pump/tyk-pump --conf=/opt/tyk-pump/tyk-pump.conf
+          RUN kill 0
+          EOF
+
+      - name: install on ${{ matrix.distro }}
+        uses: docker/build-push-action@v2
+        with:
+          context: '.'
+          file: Dockerfile
+          push: false
+
 # AWS mktplace update only for LTS releases
   aws-mktplace-byol:
     if: startsWith(github.ref, 'refs/tags/v3.0')
+    needs:
+      - install-deb
+      - install-rpm
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -208,7 +289,7 @@ jobs:
       - uses: dsaltares/fetch-gh-release-asset@master
         with:
           version: "tags/${{ needs.goreleaser.outputs.tag }}"
-          file: "tyk-pump*linux_amd64.deb"
+          file: "tyk-pump_${{ needs.goreleaser.outputs.tag }}_linux_amd64.deb"
           target: "./aws"
           token: ${{ secrets.GITHUB_TOKEN }}
 
