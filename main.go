@@ -136,7 +136,7 @@ func initialisePumps() {
 			thisPmp.SetOmitDetailedRecording(pmp.OmitDetailedRecording)
 			initErr := thisPmp.Init(pmp.Meta)
 			if initErr != nil {
-				log.WithField("pump",thisPmp.GetName()).Error("Pump init error (skipping): ", initErr)
+				log.WithField("pump", thisPmp.GetName()).Error("Pump init error (skipping): ", initErr)
 			} else {
 				log.WithFields(logrus.Fields{
 					"prefix": mainPrefix,

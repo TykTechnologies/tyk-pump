@@ -48,7 +48,7 @@ func NewSplunkClient(token string, collectorURL string, skipVerify bool, certFil
 	}
 	tlsConfig := &tls.Config{InsecureSkipVerify: skipVerify}
 	if !skipVerify {
-		if certFile == "" && keyFile == ""{
+		if certFile == "" && keyFile == "" {
 			return c, errors.New("ssl_insecure_skip_verify set to false but no ssl_cert_file or ssl_key_file specified")
 		}
 		// Load certificates:
