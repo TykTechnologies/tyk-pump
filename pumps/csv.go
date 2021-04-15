@@ -25,7 +25,7 @@ type CSVConf struct {
 }
 
 var csvPrefix = "csv-pump"
-var csvDefaultENV = PUMPS_ENV_PREFIX + "_CSV"+PUMPS_ENV_META_PREFIX
+var csvDefaultENV = PUMPS_ENV_PREFIX + "_CSV" + PUMPS_ENV_META_PREFIX
 
 func (c *CSVPump) New() Pump {
 	newPump := CSVPump{}

@@ -34,7 +34,7 @@ const (
 )
 
 type MongoPump struct {
-	IsUptime	bool
+	IsUptime  bool
 	dbSession *mgo.Session
 	dbConf    *MongoConf
 	CommonPumpConfig
@@ -42,7 +42,7 @@ type MongoPump struct {
 
 var mongoPrefix = "mongo-pump"
 var mongoPumpPrefix = "PMP_MONGO"
-var mongoDefaultEnv = PUMPS_ENV_PREFIX + "_MONGO"+PUMPS_ENV_META_PREFIX
+var mongoDefaultEnv = PUMPS_ENV_PREFIX + "_MONGO" + PUMPS_ENV_META_PREFIX
 
 type MongoType int
 
@@ -254,7 +254,7 @@ func (m *MongoPump) Init(config interface{}) error {
 	}
 
 	//we check for the environment configuration if this pumps is not the uptime pump
-	if !m.IsUptime{
+	if !m.IsUptime {
 		processPumpEnvVars(m, m.log, m.dbConf, mongoDefaultEnv)
 
 		//we keep this env check for backward compatibility
@@ -263,7 +263,6 @@ func (m *MongoPump) Init(config interface{}) error {
 			m.log.Error("Failed to process environment variables for mongo pump: ", overrideErr)
 		}
 	}
-
 
 	if m.dbConf.MaxInsertBatchSizeBytes == 0 {
 		m.log.Info("-- No max batch size set, defaulting to 10MB")
