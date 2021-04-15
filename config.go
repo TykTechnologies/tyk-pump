@@ -95,7 +95,7 @@ func (cfg *TykPumpConfiguration) LoadPumpsByEnv() error {
 		}
 	}
 
-	log.Debug("Found pumps in env vars:", osPumpsEnvNames)
+	log.Info("Found pumps in env vars:", osPumpsEnvNames)
 
 	//then we look for each pmpName specified in the env and try to initialise those pumps
 	for pmpName := range osPumpsEnvNames {
@@ -114,8 +114,11 @@ func (cfg *TykPumpConfiguration) LoadPumpsByEnv() error {
 				continue
 			}
 			pmp.Type = pmpType
+		} else {
+			pmp.Type = pmpName
 		}
 
+		pmpType := pmp.Type
 		//We fetch the env vars for that pump.
 		overrideErr := envconfig.Process(PUMPS_ENV_PREFIX+"_"+pmpName, &pmp)
 		if overrideErr != nil {
@@ -126,10 +129,9 @@ func (cfg *TykPumpConfiguration) LoadPumpsByEnv() error {
 		pmp.Meta = make(map[string]interface{})
 		//Add the meta env prefix for individual configurations
 		pmp.Meta["meta_env_prefix"] = PUMPS_ENV_PREFIX + "_" + pmpName + PUMPS_ENV_META_PREFIX
-		pmp.Type = strings.ToLower(pmp.Type)
+		pmp.Type = strings.ToLower(pmpType)
 
 		cfg.Pumps[pmpName] = pmp
 	}
 	return nil
 }
-
