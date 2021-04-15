@@ -14,7 +14,7 @@ import (
 
 const hybridPrefix = "hybrid-pump"
 
-var hybridDefaultENV = PUMPS_ENV_PREFIX + "_HYBRID"
+var hybridDefaultENV = PUMPS_ENV_PREFIX + "_HYBRID"+PUMPS_ENV_META_PREFIX
 
 type GroupLoginRequest struct {
 	UserKey string
@@ -95,7 +95,7 @@ func (p *HybridPump) Init(config interface{}) error {
 	}
 
 	//we do the env check here in the hybrid pump since the config here behaves different to other pumps.
-	if envPrefix, ok := meta["env_prefix"]; ok {
+	if envPrefix, ok := meta["meta_env_prefix"]; ok {
 		prefix := envPrefix.(string)
 		p.log.Debug(fmt.Sprintf("Checking %v env variables with prefix %v", p.GetName(), prefix))
 		overrideErr := envconfig.Process(prefix, &rpcConfig)

@@ -20,11 +20,11 @@ type SyslogPump struct {
 
 var (
 	syslogPrefix     = "syslog-pump"
-	syslogDefaultENV = PUMPS_ENV_PREFIX + "_SYSLOG"
+	syslogDefaultENV = PUMPS_ENV_PREFIX + "_SYSLOG"+PUMPS_ENV_META_PREFIX
 )
 
 type SyslogConf struct {
-	EnvPrefix   string `mapstructure:"env_prefix"`
+	EnvPrefix   string `mapstructure:"meta_env_prefix"`
 	Transport   string `mapstructure:"transport"`
 	NetworkAddr string `mapstructure:"network_addr"`
 	LogLevel    int    `mapstructure:"log_level"`

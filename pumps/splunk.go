@@ -21,7 +21,7 @@ const (
 	authHeaderPrefix = "Splunk "
 	splunkPumpPrefix = "splunk-pump"
 	splunkPumpName   = "Splunk Pump"
-	splunkDefaultENV = PUMPS_ENV_PREFIX + "_SPLUNK"
+	splunkDefaultENV = PUMPS_ENV_PREFIX + "_SPLUNK"+PUMPS_ENV_META_PREFIX
 )
 
 var (
@@ -96,7 +96,7 @@ type SplunkPump struct {
 
 // SplunkPumpConfig contains the driver configuration parameters.
 type SplunkPumpConfig struct {
-	EnvPrefix              string   `mapstructure:"env_prefix"`
+	EnvPrefix              string   `mapstructure:"meta_env_prefix"`
 	CollectorToken         string   `mapstructure:"collector_token"`
 	CollectorURL           string   `mapstructure:"collector_url"`
 	SSLInsecureSkipVerify  bool     `mapstructure:"ssl_insecure_skip_verify"`

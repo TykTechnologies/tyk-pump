@@ -26,7 +26,7 @@ type PrometheusPump struct {
 }
 
 type PrometheusConf struct {
-	EnvPrefix string `mapstructure:"env_prefix"`
+	EnvPrefix string `mapstructure:"meta_env_prefix"`
 	Addr      string `mapstructure:"listen_address"`
 	Path      string `mapstructure:"path"`
 }

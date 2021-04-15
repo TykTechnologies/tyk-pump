@@ -27,10 +27,10 @@ type KafkaPump struct {
 type Json map[string]interface{}
 
 var kafkaPrefix = "kafka-pump"
-var kafkaDefaultENV = PUMPS_ENV_PREFIX + "_KAFKA"
+var kafkaDefaultENV = PUMPS_ENV_PREFIX + "_KAFKA"+PUMPS_ENV_META_PREFIX
 
 type KafkaConf struct {
-	EnvPrefix             string            `mapstructure:"env_prefix"`
+	EnvPrefix             string            `mapstructure:"meta_env_prefix"`
 	Broker                []string          `mapstructure:"broker"`
 	ClientId              string            `mapstructure:"client_id"`
 	Topic                 string            `mapstructure:"topic"`

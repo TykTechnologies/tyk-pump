@@ -40,10 +40,10 @@ type rawDecoded struct {
 }
 
 var moesifPrefix = "moesif-pump"
-var moesifDefaultENV = PUMPS_ENV_PREFIX + "_MOESIF"
+var moesifDefaultENV = PUMPS_ENV_PREFIX + "_MOESIF"+PUMPS_ENV_META_PREFIX
 
 type MoesifConf struct {
-	EnvPrefix                  string                 `mapstructure:"env_prefix"`
+	EnvPrefix                  string                 `mapstructure:"meta_env_prefix"`
 	ApplicationID              string                 `mapstructure:"application_id"`
 	RequestHeaderMasks         []string               `mapstructure:"request_header_masks"`
 	ResponseHeaderMasks        []string               `mapstructure:"response_header_masks"`

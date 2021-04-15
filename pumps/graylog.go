@@ -18,14 +18,14 @@ type GraylogPump struct {
 }
 
 type GraylogConf struct {
-	EnvPrefix   string   `mapstructure:"env_prefix"`
+	EnvPrefix   string   `mapstructure:"meta_env_prefix"`
 	GraylogHost string   `mapstructure:"host"`
 	GraylogPort int      `mapstructure:"port"`
 	Tags        []string `mapstructure:"tags"`
 }
 
 var graylogPrefix = "graylog-pump"
-var graylogDefaultENV = PUMPS_ENV_PREFIX + "_GRAYLOG"
+var graylogDefaultENV = PUMPS_ENV_PREFIX + "_GRAYLOG"+PUMPS_ENV_META_PREFIX
 
 func (p *GraylogPump) New() Pump {
 	newPump := GraylogPump{}

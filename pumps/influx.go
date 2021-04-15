@@ -19,12 +19,12 @@ type InfluxPump struct {
 
 var (
 	influxPrefix     = "influx-pump"
-	influxDefaultENV = PUMPS_ENV_PREFIX + "_INFLUX"
+	influxDefaultENV = PUMPS_ENV_PREFIX + "_INFLUX"+PUMPS_ENV_META_PREFIX
 	table            = "analytics"
 )
 
 type InfluxConf struct {
-	EnvPrefix    string   `mapstructure:"env_prefix"`
+	EnvPrefix    string   `mapstructure:"meta_env_prefix"`
 	DatabaseName string   `mapstructure:"database_name"`
 	Addr         string   `mapstructure:"address"`
 	Username     string   `mapstructure:"username"`

@@ -151,7 +151,7 @@ func initialisePumps() {
 		log.WithFields(logrus.Fields{
 			"prefix": mainPrefix,
 		}).Info("'dont_purge_uptime_data' set to false, attempting to start Uptime pump! ", UptimePump.GetName())
-		UptimePump = pumps.MongoPump{}
+		UptimePump = pumps.MongoPump{IsUptime:true}
 		UptimePump.Init(SystemConfig.UptimePumpConfig)
 		log.WithFields(logrus.Fields{
 			"prefix": mainPrefix,

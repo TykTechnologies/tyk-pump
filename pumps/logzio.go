@@ -15,7 +15,7 @@ import (
 const (
 	LogzioPumpPrefix = "logzio-pump"
 	LogzioPumpName   = "Logzio Pump"
-	logzioDefaultENV = PUMPS_ENV_PREFIX + "_LOGZIO"
+	logzioDefaultENV = PUMPS_ENV_PREFIX + "_LOGZIO"+PUMPS_ENV_META_PREFIX
 
 	defaultLogzioCheckDiskSpace = true
 	defaultLogzioDiskThreshold  = 98 // represent % of the disk
@@ -27,7 +27,7 @@ const (
 )
 
 type LogzioPumpConfig struct {
-	EnvPrefix      string `mapstructure:"env_prefix"`
+	EnvPrefix      string `mapstructure:"meta_env_prefix"`
 	CheckDiskSpace bool   `mapstructure:"check_disk_space"`
 	DiskThreshold  int    `mapstructure:"disk_threshold"`
 	DrainDuration  string `mapstructure:"drain_duration"`

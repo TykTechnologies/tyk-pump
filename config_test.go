@@ -1,20 +1,40 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
+
+
 
 func TestConfigEnv(t *testing.T) {
 
 	pumpNameCSV := "CSV"
 	pumpNameTest := "TEST"
-	os.Setenv(PUMPS_ENV_PREFIX+"_"+pumpNameCSV+"_DIR", "/TEST")
-	os.Setenv(PUMPS_ENV_PREFIX+"_"+pumpNameTest+"_TYPE", "CSV")
 
-	defer os.Unsetenv(PUMPS_ENV_PREFIX + "_" + pumpNameCSV + "_DIR")
-	defer os.Unsetenv(PUMPS_ENV_PREFIX + "_" + pumpNameTest + "_TYPE")
+	testEnvVars := map[string]string{
+		PUMPS_ENV_PREFIX+"_"+"TOM":"a",
+		PUMPS_ENV_PREFIX+"_"+pumpNameTest+"_FILTERS_ORGIDS":`["a"]`,
+		PUMPS_ENV_PREFIX+"_"+pumpNameTest+"_FILTERS_APIIDS": `["b"]`,
+		PUMPS_ENV_PREFIX+"_"+pumpNameCSV+"_DIR": "/TEST",
+		PUMPS_ENV_PREFIX+"_"+pumpNameTest+"_TEST": "TEST",
+		PUMPS_ENV_PREFIX+"_"+pumpNameTest+"_TIMEOUT": "10",
+		PUMPS_ENV_PREFIX+"_"+pumpNameTest+"_OMITDETAILEDRECORDING": "true",
+		PUMPS_ENV_PREFIX+"_"+pumpNameTest+"_TYPE": "CSV",
+	}
+
+	for env, val := range testEnvVars{
+		os.Setenv(env,val)
+	}
+
+	defer func(){
+		for env := range testEnvVars{
+			os.Unsetenv(env)
+		}
+	}()
+
 
 	cfg := &TykPumpConfiguration{}
 	cfg.Pumps = make(map[string]PumpConfig)
@@ -23,31 +43,22 @@ func TestConfigEnv(t *testing.T) {
 	defaultPath := ""
 	LoadConfig(&defaultPath, cfg)
 
-	if len(cfg.Pumps) != 3 {
-		t.Error(fmt.Sprintf("Pump config should have 3 pumps created and it has %v.", len(cfg.Pumps)))
-	}
+	assert.Len(t, cfg.Pumps, 3)
 
-	if _, ok := cfg.Pumps[pumpNameTest]; !ok {
-		t.Error("Pump should have a pump called " + pumpNameTest)
-	}
+	assert.Contains(t, cfg.Pumps, pumpNameTest)
+	assert.Contains(t, cfg.Pumps, pumpNameCSV)
+	assert.Contains(t, cfg.Pumps, "CSVTEST2")
 
-	if cfg.Pumps[pumpNameTest].Type != "csv" {
-		t.Error(pumpNameTest + " Pump TYPE should be csv")
-	}
 
-	if val, ok := cfg.Pumps[pumpNameTest].Meta["env_prefix"]; !ok || val != PUMPS_ENV_PREFIX+"_"+pumpNameTest {
-		t.Error(pumpNameTest + " Pump should have a meta tag with the env prefix set and it should be " + PUMPS_ENV_PREFIX + "_" + pumpNameTest)
-	}
+	assert.Equal(t,"csv",cfg.Pumps[pumpNameTest].Type )
+	assert.Equal(t,10,cfg.Pumps[pumpNameTest].Timeout)
 
-	if _, ok := cfg.Pumps[pumpNameCSV]; !ok {
-		t.Error("Pump should have a pump called " + pumpNameCSV)
-	}
+	assert.Contains(t,cfg.Pumps[pumpNameTest].Meta,"meta_env_prefix")
+	assert.Contains(t,cfg.Pumps[pumpNameCSV].Meta,"meta_env_prefix")
 
-	if cfg.Pumps[pumpNameCSV].Type != "csv" {
-		t.Error(pumpNameCSV + " Pump TYPE should be csv")
-	}
 
-	if val, ok := cfg.Pumps[pumpNameCSV].Meta["env_prefix"]; !ok || val != PUMPS_ENV_PREFIX+"_"+pumpNameCSV {
-		t.Error(pumpNameCSV + " Pump should have a meta tag with the env prefix set and it should be " + PUMPS_ENV_PREFIX + "_" + pumpNameCSV)
-	}
+	assert.Equal(t,PUMPS_ENV_PREFIX+"_"+pumpNameCSV+PUMPS_ENV_META_PREFIX,cfg.Pumps[pumpNameCSV].Meta["meta_env_prefix"] )
+	assert.Equal(t,PUMPS_ENV_PREFIX+"_"+pumpNameTest+PUMPS_ENV_META_PREFIX,cfg.Pumps[pumpNameTest].Meta["meta_env_prefix"] )
+
+
 }

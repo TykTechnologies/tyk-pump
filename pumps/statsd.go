@@ -18,10 +18,10 @@ type StatsdPump struct {
 }
 
 var statsdPrefix = "statsd-pump"
-var statsdDefaultENV = PUMPS_ENV_PREFIX + "_STATSD"
+var statsdDefaultENV = PUMPS_ENV_PREFIX + "_STATSD"+PUMPS_ENV_META_PREFIX
 
 type StatsdConf struct {
-	EnvPrefix string   `mapstructure:"env_prefix"`
+	EnvPrefix string   `mapstructure:"meta_env_prefix"`
 	Address   string   `mapstructure:"address"`
 	Fields    []string `mapstructure:"fields"`
 	Tags      []string `mapstructure:"tags"`

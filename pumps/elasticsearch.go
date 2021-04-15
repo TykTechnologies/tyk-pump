@@ -27,10 +27,10 @@ type ElasticsearchPump struct {
 }
 
 var elasticsearchPrefix = "elasticsearch-pump"
-var elasticsearchDefaultENV = PUMPS_ENV_PREFIX + "_ELASTICSEARCH"
+var elasticsearchDefaultENV = PUMPS_ENV_PREFIX + "_ELASTICSEARCH"+PUMPS_ENV_META_PREFIX
 
 type ElasticsearchConf struct {
-	EnvPrefix          string                  `mapstructure:"env_prefix"`
+	EnvPrefix          string                  `mapstructure:"meta_env_prefix"`
 	IndexName          string                  `mapstructure:"index_name"`
 	ElasticsearchURL   string                  `mapstructure:"elasticsearch_url"`
 	EnableSniffing     bool                    `mapstructure:"use_sniffing"`

@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -17,6 +16,7 @@ import (
 
 const ENV_PREVIX = "TYK_PMP"
 const PUMPS_ENV_PREFIX = pumps.PUMPS_ENV_PREFIX
+const PUMPS_ENV_META_PREFIX = pumps.PUMPS_ENV_META_PREFIX
 
 type PumpConfig struct {
 	Name                  string                     `json:"name"` // Deprecated
@@ -26,14 +26,13 @@ type PumpConfig struct {
 	OmitDetailedRecording bool                       `json:"omit_detailed_recording"`
 	Meta                  map[string]interface{}     `json:"meta"` // TODO: convert this to json.RawMessage and use regular json.Unmarshal
 }
-type PumpConfigs map[string]PumpConfig
 
 type TykPumpConfiguration struct {
 	PurgeDelay              int                        `json:"purge_delay"`
 	PurgeChunk              int64                      `json:"purge_chunk"`
 	StorageExpirationTime   int64                      `json:"storage_expiration_time"`
 	DontPurgeUptimeData     bool                       `json:"dont_purge_uptime_data"`
-	UptimePumpConfig        map[string]interface{}     `json:"uptime_pump_config"`
+	UptimePumpConfig        pumps.MongoConf    	   	   `json:"uptime_pump_config"`
 	Pumps                   map[string]PumpConfig      `json:"pumps" `
 	AnalyticsStorageType    string                     `json:"analytics_storage_type"`
 	AnalyticsStorageConfig  storage.RedisStorageConfig `json:"analytics_storage_config"`
@@ -64,7 +63,7 @@ func LoadConfig(filePath *string, configStruct *TykPumpConfiguration) {
 
 	errLoadEnvPumps := configStruct.LoadPumpsByEnv()
 	if errLoadEnvPumps != nil {
-		log.Fatal(err)
+		log.Fatal("error loading pumps env vars:",err)
 	}
 }
 
@@ -72,6 +71,10 @@ func (cfg *TykPumpConfiguration) LoadPumpsByEnv() error {
 	if len(cfg.Pumps) == 0 {
 		cfg.Pumps = make(map[string]PumpConfig)
 	}
+
+	osPumpsEnvNames := map[string]bool{}
+
+	//first we look for all the pumps names in the env vars from the os
 	for _, env := range os.Environ() {
 		if strings.HasPrefix(env, PUMPS_ENV_PREFIX) {
 
@@ -81,64 +84,53 @@ func (cfg *TykPumpConfiguration) LoadPumpsByEnv() error {
 			//We split everything after the trim to have an slice with the keywords
 			envSplit := strings.Split(envWoPrefix, "_")
 			if len(envSplit) < 2 {
-				return errors.New(fmt.Sprintf("Problem reading env variable %v", env))
+				log.Debug(fmt.Sprintf("Problem reading env variable %v", env))
+				continue
 			}
 
 			//The name of the pump is always going to be the first keyword after the PUMPS_ENV_PREFIX
 			pmpName := envSplit[0]
 
-			pmp := PumpConfig{}
-
-			//First we check if the config json already have this pump
-			if _, ok := cfg.Pumps[pmpName]; ok {
-				//check if the pump has any meta field. It should if it's already declared but just in case
-				if len(pmp.Meta) == 0 {
-					pmp.Meta = make(map[string]interface{})
-				}
-
-				pmp.Meta["env_prefix"] = PUMPS_ENV_PREFIX + "_" + pmpName
-
-				continue
-			}
-			//If the config don't have this pump declared BUT the name is equal to one of our available pump names, we add it to the config.
-			if _, ok := pumps.AvailablePumps[strings.ToLower(pmpName)]; ok {
-				pmp.Type = strings.ToLower(pmpName)
-				pmp.Meta = make(map[string]interface{})
-				pmp.Meta["env_prefix"] = PUMPS_ENV_PREFIX + "_" + pmpName
-
-				cfg.Pumps[pmpName] = pmp
-				continue
-			}
-
-			foundType := false
-			//If the pump name is not declared nor an available pump name, we look for a TYPE to create that pump.
-			for _, pmpCfg := range envSplit[1:] {
-				if strings.HasPrefix(pmpCfg, "TYPE") {
-					//Env var set validation. An example of a valid input would be CSVTEST_TYPE=CSV.
-					pmpType := strings.Split(pmpCfg, "=")
-					if len(pmpType) < 2 {
-						return errors.New(fmt.Sprintf("TYPE present but not set for %v", pmpName))
-					}
-
-					//We check here if that TYPE exists.
-					_, err := pumps.GetPumpByName(strings.ToLower(pmpType[1]))
-					if err != nil {
-						log.Warnf("Problem creating pump of type %v", pmpType[1])
-						break
-					}
-
-					pmp.Type = strings.ToLower(pmpType[1])
-					pmp.Meta = make(map[string]interface{})
-					pmp.Meta["env_prefix"] = PUMPS_ENV_PREFIX + "_" + pmpName
-
-					foundType = true
-					break
-				}
-			}
-			if foundType {
-				cfg.Pumps[pmpName] = pmp
-			}
+			osPumpsEnvNames[pmpName]=true
 		}
+	}
+
+	log.Debug("Found pumps in env vars:", osPumpsEnvNames)
+
+	//then we look for each pmpName specified in the env and try to initialise those pumps
+	for pmpName := range osPumpsEnvNames{
+		pmp := PumpConfig{}
+
+		//First we check if the config json already have this pump
+		if jsonPump, ok := cfg.Pumps[pmpName]; ok {
+			//check if the pump has any meta field. It should if it's already declared but just in case
+			pmp = jsonPump
+		}
+		//If the config don't have this pump declared BUT the name is equal to one of our available pump names, we add it to the config.
+		if _, ok := pumps.AvailablePumps[strings.ToLower(pmpName)]; !ok {
+			pmpType, found := os.LookupEnv(PUMPS_ENV_PREFIX + "_" + pmpName+"_TYPE")
+			if !found{
+				log.Error(fmt.Sprintf("TYPE Env var for pump %s not found",pmpName))
+				continue
+			}
+			pmp.Type = pmpType
+		}
+
+		//We fetch the env vars for that pump.
+		overrideErr := envconfig.Process(PUMPS_ENV_PREFIX + "_" + pmpName, &pmp)
+		if overrideErr != nil {
+			log.Error("Failed to process environment variables for ",PUMPS_ENV_PREFIX + "_" + pmpName," with err: ", overrideErr)
+		}
+
+		//init the meta map
+		pmp.Meta = make(map[string]interface{})
+		//Add the meta env prefix for individual configurations
+		pmp.Meta["meta_env_prefix"] = PUMPS_ENV_PREFIX + "_" + pmpName + PUMPS_ENV_META_PREFIX
+		pmp.Type = strings.ToLower(pmp.Type)
+
+		cfg.Pumps[pmpName] = pmp
 	}
 	return nil
 }
+
+//func (cfg *TykPumpConfiguration) checkPump

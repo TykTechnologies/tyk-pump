@@ -11,6 +11,7 @@ import (
 )
 
 const PUMPS_ENV_PREFIX = "TYK_PMP_PUMPS"
+const PUMPS_ENV_META_PREFIX = "_META"
 
 type Pump interface {
 	GetName() string

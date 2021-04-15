@@ -21,7 +21,7 @@ const (
 )
 
 var dogstatPrefix = "dogstatsd"
-var dogstatDefaultENV = PUMPS_ENV_PREFIX + "_DOGSTATSD"
+var dogstatDefaultENV = PUMPS_ENV_PREFIX + "_DOGSTATSD"+PUMPS_ENV_META_PREFIX
 
 type DogStatsdPump struct {
 	conf   *DogStatsdConf
@@ -30,7 +30,7 @@ type DogStatsdPump struct {
 }
 
 type DogStatsdConf struct {
-	EnvPrefix            string   `mapstructure:"env_prefix"`
+	EnvPrefix            string   `mapstructure:"meta_env_prefix"`
 	Namespace            string   `mapstructure:"namespace"`
 	Address              string   `mapstructure:"address"`
 	SampleRate           float64  `mapstructure:"sample_rate"`
