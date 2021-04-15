@@ -33,7 +33,7 @@ type TykPumpConfiguration struct {
 	StorageExpirationTime   int64                      `json:"storage_expiration_time"`
 	DontPurgeUptimeData     bool                       `json:"dont_purge_uptime_data"`
 	UptimePumpConfig        pumps.MongoConf            `json:"uptime_pump_config"`
-	Pumps                   map[string]PumpConfig      `json:"pumps" `
+	Pumps                   map[string]PumpConfig      `json:"pumps"`
 	AnalyticsStorageType    string                     `json:"analytics_storage_type"`
 	AnalyticsStorageConfig  storage.RedisStorageConfig `json:"analytics_storage_config"`
 	StatsdConnectionString  string                     `json:"statsd_connection_string"`
