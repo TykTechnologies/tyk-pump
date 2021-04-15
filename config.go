@@ -133,4 +133,3 @@ func (cfg *TykPumpConfiguration) LoadPumpsByEnv() error {
 	return nil
 }
 
-//func (cfg *TykPumpConfiguration) checkPump
