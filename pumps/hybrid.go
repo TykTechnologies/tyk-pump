@@ -7,11 +7,14 @@ import (
 	"fmt"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
+	"github.com/kelseyhightower/envconfig"
 
 	"github.com/TykTechnologies/tyk/rpc"
 )
 
 const hybridPrefix = "hybrid-pump"
+
+var hybridDefaultENV = PUMPS_ENV_PREFIX + "_HYBRID"
 
 type GroupLoginRequest struct {
 	UserKey string
@@ -71,8 +74,6 @@ func (p *HybridPump) Init(config interface{}) error {
 	}
 	if connStr, ok := meta["connection_string"]; ok {
 		rpcConfig.ConnectionString = connStr.(string)
-	} else {
-		p.log.Fatal("Failed to decode configuration - no connection_string")
 	}
 	if rpcKey, ok := meta["rpc_key"]; ok {
 		rpcConfig.RPCKey = rpcKey.(string)
@@ -91,6 +92,26 @@ func (p *HybridPump) Init(config interface{}) error {
 	}
 	if rpcPoolSize, ok := meta["rpc_pool_size"]; ok {
 		rpcConfig.RPCPoolSize = int(rpcPoolSize.(float64))
+	}
+
+	//we do the env check here in the hybrid pump since the config here behaves different to other pumps.
+	if envPrefix, ok := meta["env_prefix"]; ok {
+		prefix := envPrefix.(string)
+		p.log.Debug(fmt.Sprintf("Checking %v env variables with prefix %v", p.GetName(), prefix))
+		overrideErr := envconfig.Process(prefix, &rpcConfig)
+		if overrideErr != nil {
+			p.log.Error(fmt.Sprintf("Failed to process environment variables for %v pump %v with err:%v ", prefix, p.GetName(), overrideErr))
+		}
+	} else {
+		p.log.Debug(fmt.Sprintf("Checking default %v env variables with prefix %v", p.GetName(), hybridDefaultENV))
+		overrideErr := envconfig.Process(hybridDefaultENV, &rpcConfig)
+		if overrideErr != nil {
+			p.log.Error(fmt.Sprintf("Failed to process environment variables for %v pump %v with err:%v ", hybridDefaultENV, p.GetName(), overrideErr))
+		}
+	}
+
+	if rpcConfig.ConnectionString == "" {
+		p.log.Fatal("Failed to decode configuration - no connection_string")
 	}
 
 	p.rpcConfig = rpcConfig

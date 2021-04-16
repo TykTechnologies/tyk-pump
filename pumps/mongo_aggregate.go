@@ -19,6 +19,8 @@ import (
 )
 
 var mongoAggregatePumpPrefix = "PMP_MONGOAGG"
+var mongoAggregateDefaultEnv = PUMPS_ENV_PREFIX + "_MONGOAGGREGATE"
+
 var THRESHOLD_LEN_TAG_LIST = 1000
 var COMMON_TAGS_COUNT = 5
 
@@ -116,6 +118,10 @@ func (m *MongoAggregatePump) GetName() string {
 	return "MongoDB Aggregate Pump"
 }
 
+func (m *MongoAggregatePump) GetEnvPrefix() string {
+	return m.dbConf.EnvPrefix
+}
+
 func (m *MongoAggregatePump) GetCollectionName(orgid string) (string, error) {
 	if orgid == "" {
 		return "", errors.New("OrgID cannot be empty")
@@ -137,6 +143,9 @@ func (m *MongoAggregatePump) Init(config interface{}) error {
 		m.log.Fatal("Failed to decode configuration: ", err)
 	}
 
+	processPumpEnvVars(m, m.log, m.dbConf, mongoAggregateDefaultEnv)
+
+	//we keep this env check for backward compatibility
 	overrideErr := envconfig.Process(mongoAggregatePumpPrefix, m.dbConf)
 	if overrideErr != nil {
 		m.log.Error("Failed to process environment variables for mongo aggregate pump: ", overrideErr)
