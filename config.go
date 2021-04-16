@@ -126,7 +126,10 @@ func (cfg *TykPumpConfiguration) LoadPumpsByEnv() error {
 		}
 
 		//init the meta map
-		pmp.Meta = make(map[string]interface{})
+		if len(pmp.Meta) == 0 {
+			pmp.Meta = make(map[string]interface{})
+
+		}
 		//Add the meta env prefix for individual configurations
 		pmp.Meta["meta_env_prefix"] = PUMPS_ENV_PREFIX + "_" + pmpName + PUMPS_ENV_META_PREFIX
 		pmp.Type = strings.ToLower(pmpType)
