@@ -19,12 +19,10 @@ type SyslogPump struct {
 }
 
 var (
-	syslogPrefix     = "syslog-pump"
-	syslogDefaultENV = PUMPS_ENV_PREFIX + "_SYSLOG"
+	syslogPrefix = "syslog-pump"
 )
 
 type SyslogConf struct {
-	EnvPrefix   string `mapstructure:"env_prefix"`
 	Transport   string `mapstructure:"transport"`
 	NetworkAddr string `mapstructure:"network_addr"`
 	LogLevel    int    `mapstructure:"log_level"`
@@ -40,10 +38,6 @@ func (s *SyslogPump) New() Pump {
 	return &newPump
 }
 
-func (s *SyslogPump) GetEnvPrefix() string {
-	return s.syslogConf.EnvPrefix
-}
-
 func (s *SyslogPump) Init(config interface{}) error {
 	//Read configuration file
 	s.syslogConf = &SyslogConf{}
@@ -54,7 +48,6 @@ func (s *SyslogPump) Init(config interface{}) error {
 		s.log.Fatal("Failed to decode configuration: ", err)
 	}
 
-	processPumpEnvVars(s, s.log, s.syslogConf, syslogDefaultENV)
 	// Init the configs
 	s.initConfigs()
 

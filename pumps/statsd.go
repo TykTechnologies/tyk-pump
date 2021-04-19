@@ -18,13 +18,11 @@ type StatsdPump struct {
 }
 
 var statsdPrefix = "statsd-pump"
-var statsdDefaultENV = PUMPS_ENV_PREFIX + "_STATSD"
 
 type StatsdConf struct {
-	EnvPrefix string   `mapstructure:"env_prefix"`
-	Address   string   `mapstructure:"address"`
-	Fields    []string `mapstructure:"fields"`
-	Tags      []string `mapstructure:"tags"`
+	Address string   `mapstructure:"address"`
+	Fields  []string `mapstructure:"fields"`
+	Tags    []string `mapstructure:"tags"`
 }
 
 func (s *StatsdPump) New() Pump {
@@ -36,10 +34,6 @@ func (s *StatsdPump) GetName() string {
 	return "Statsd Pump"
 }
 
-func (s *StatsdPump) GetEnvPrefix() string {
-	return s.dbConf.EnvPrefix
-}
-
 func (s *StatsdPump) Init(config interface{}) error {
 	s.dbConf = &StatsdConf{}
 	s.log = log.WithField("prefix", statsdPrefix)
@@ -48,8 +42,6 @@ func (s *StatsdPump) Init(config interface{}) error {
 	if err != nil {
 		s.log.Fatal("Failed to decode configuration: ", err)
 	}
-
-	processPumpEnvVars(s, s.log, s.dbConf, statsdDefaultENV)
 
 	s.connect()
 
