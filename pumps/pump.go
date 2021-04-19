@@ -3,9 +3,15 @@ package pumps
 import (
 	"context"
 	"errors"
+	"fmt"
 
+	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/tyk-pump/analytics"
+	"github.com/kelseyhightower/envconfig"
 )
+
+const PUMPS_ENV_PREFIX = "TYK_PMP_PUMPS"
+const PUMPS_ENV_META_PREFIX = "_META"
 
 type Pump interface {
 	GetName() string
@@ -18,6 +24,7 @@ type Pump interface {
 	GetTimeout() int
 	SetOmitDetailedRecording(bool)
 	GetOmitDetailedRecording() bool
+	GetEnvPrefix() string
 }
 
 func GetPumpByName(name string) (Pump, error) {
@@ -27,4 +34,20 @@ func GetPumpByName(name string) (Pump, error) {
 	}
 
 	return nil, errors.New(name + " Not found")
+}
+
+func processPumpEnvVars(pump Pump, log *logrus.Entry, cfg interface{}, defaultEnv string) {
+	if envVar := pump.GetEnvPrefix(); envVar != "" {
+		log.Debug(fmt.Sprintf("Checking %s env variables with prefix %s", pump.GetName(), envVar))
+		overrideErr := envconfig.Process(envVar, cfg)
+		if overrideErr != nil {
+			log.Error(fmt.Sprintf("Failed to process environment variables for %s pump %s with err:%v ", envVar, pump.GetName(), overrideErr))
+		}
+	} else {
+		log.Debug(fmt.Sprintf("Checking default %s env variables with prefix %s", pump.GetName(), defaultEnv))
+		overrideErr := envconfig.Process(defaultEnv, cfg)
+		if overrideErr != nil {
+			log.Error(fmt.Sprintf("Failed to process environment variables for %s pump %s with err:%v ", defaultEnv, pump.GetName(), overrideErr))
+		}
+	}
 }

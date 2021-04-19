@@ -20,10 +20,12 @@ type CSVPump struct {
 }
 
 type CSVConf struct {
-	CSVDir string `mapstructure:"csv_dir"`
+	EnvPrefix string `mapstructure:"meta_env_prefix"`
+	CSVDir    string `mapstructure:"csv_dir"`
 }
 
 var csvPrefix = "csv-pump"
+var csvDefaultENV = PUMPS_ENV_PREFIX + "_CSV" + PUMPS_ENV_META_PREFIX
 
 func (c *CSVPump) New() Pump {
 	newPump := CSVPump{}
@@ -32,6 +34,10 @@ func (c *CSVPump) New() Pump {
 
 func (c *CSVPump) GetName() string {
 	return "CSV Pump"
+}
+
+func (c *CSVPump) GetEnvPrefix() string {
+	return c.csvConf.EnvPrefix
 }
 
 func (c *CSVPump) Init(conf interface{}) error {
@@ -43,9 +49,11 @@ func (c *CSVPump) Init(conf interface{}) error {
 		c.log.Fatal("Failed to decode configuration: ", err)
 	}
 
+	processPumpEnvVars(c, c.log, c.csvConf, csvDefaultENV)
+
 	ferr := os.MkdirAll(c.csvConf.CSVDir, 0777)
 	if ferr != nil {
-		c.log.Error(ferr)
+		c.log.Error(ferr.Error() + " dir: " + c.csvConf.CSVDir)
 	}
 
 	c.log.Info(c.GetName() + " Initialized")
