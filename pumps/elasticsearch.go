@@ -27,8 +27,10 @@ type ElasticsearchPump struct {
 }
 
 var elasticsearchPrefix = "elasticsearch-pump"
+var elasticsearchDefaultENV = PUMPS_ENV_PREFIX + "_ELASTICSEARCH" + PUMPS_ENV_META_PREFIX
 
 type ElasticsearchConf struct {
+	EnvPrefix          string                  `mapstructure:"meta_env_prefix"`
 	IndexName          string                  `mapstructure:"index_name"`
 	ElasticsearchURL   string                  `mapstructure:"elasticsearch_url"`
 	EnableSniffing     bool                    `mapstructure:"use_sniffing"`
@@ -208,6 +210,10 @@ func (e *ElasticsearchPump) GetName() string {
 	return "Elasticsearch Pump"
 }
 
+func (e *ElasticsearchPump) GetEnvPrefix() string {
+	return e.esConf.EnvPrefix
+}
+
 func (e *ElasticsearchPump) Init(config interface{}) error {
 	e.esConf = &ElasticsearchConf{}
 	e.log = log.WithField("prefix", elasticsearchPrefix)
@@ -216,6 +222,8 @@ func (e *ElasticsearchPump) Init(config interface{}) error {
 	if loadConfigErr != nil {
 		e.log.Fatal("Failed to decode configuration: ", loadConfigErr)
 	}
+
+	processPumpEnvVars(e, e.log, e.esConf, elasticsearchDefaultENV)
 
 	if "" == e.esConf.IndexName {
 		e.esConf.IndexName = "tyk_analytics"
