@@ -23,7 +23,6 @@ type MongoSelectivePump struct {
 
 var mongoSelectivePrefix = "mongo-pump-selective"
 var mongoSelectivePumpPrefix = "PMP_MONGOSEL"
-var mongoSelectiveDefaultEnv = PUMPS_ENV_PREFIX + "_MONGOSELECTIVE"
 
 type MongoSelectiveConf struct {
 	BaseMongoConf
@@ -38,10 +37,6 @@ func (m *MongoSelectivePump) New() Pump {
 
 func (m *MongoSelectivePump) GetName() string {
 	return "MongoDB Selective Pump"
-}
-
-func (m *MongoSelectivePump) GetEnvPrefix() string {
-	return m.dbConf.EnvPrefix
 }
 
 func (m *MongoSelectivePump) GetCollectionName(orgid string) (string, error) {
@@ -64,9 +59,6 @@ func (m *MongoSelectivePump) Init(config interface{}) error {
 		m.log.Fatal("Failed to decode configuration: ", err)
 	}
 
-	processPumpEnvVars(m, m.log, m.dbConf, mongoSelectiveDefaultEnv)
-
-	//we keep this env check for backward compatibility
 	overrideErr := envconfig.Process(mongoSelectivePumpPrefix, m.dbConf)
 	if overrideErr != nil {
 		m.log.Error("Failed to process environment variables for mongo selective pump: ", overrideErr)

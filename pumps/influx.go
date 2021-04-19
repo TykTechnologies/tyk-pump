@@ -18,13 +18,11 @@ type InfluxPump struct {
 }
 
 var (
-	influxPrefix     = "influx-pump"
-	influxDefaultENV = PUMPS_ENV_PREFIX + "_INFLUX"
-	table            = "analytics"
+	influxPrefix = "influx-pump"
+	table        = "analytics"
 )
 
 type InfluxConf struct {
-	EnvPrefix    string   `mapstructure:"env_prefix"`
 	DatabaseName string   `mapstructure:"database_name"`
 	Addr         string   `mapstructure:"address"`
 	Username     string   `mapstructure:"username"`
@@ -42,20 +40,15 @@ func (i *InfluxPump) GetName() string {
 	return "InfluxDB Pump"
 }
 
-func (i *InfluxPump) GetEnvPrefix() string {
-	return i.dbConf.EnvPrefix
-}
-
 func (i *InfluxPump) Init(config interface{}) error {
 	i.dbConf = &InfluxConf{}
 	i.log = log.WithField("prefix", influxPrefix)
 
 	err := mapstructure.Decode(config, &i.dbConf)
+
 	if err != nil {
 		i.log.Fatal("Failed to decode configuration: ", err)
 	}
-
-	processPumpEnvVars(i, i.log, i.dbConf, influxDefaultENV)
 
 	i.connect()
 

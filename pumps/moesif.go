@@ -40,10 +40,8 @@ type rawDecoded struct {
 }
 
 var moesifPrefix = "moesif-pump"
-var moesifDefaultENV = PUMPS_ENV_PREFIX + "_MOESIF"
 
 type MoesifConf struct {
-	EnvPrefix                  string                 `mapstructure:"env_prefix"`
 	ApplicationID              string                 `mapstructure:"application_id"`
 	RequestHeaderMasks         []string               `mapstructure:"request_header_masks"`
 	ResponseHeaderMasks        []string               `mapstructure:"response_header_masks"`
@@ -66,10 +64,6 @@ func (p *MoesifPump) New() Pump {
 
 func (p *MoesifPump) GetName() string {
 	return "Moesif Pump"
-}
-
-func (p *MoesifPump) GetEnvPrefix() string {
-	return p.moesifConf.EnvPrefix
 }
 
 func (p *MoesifPump) parseConfiguration(response *http.Response) (int, string, time.Time) {
@@ -236,8 +230,6 @@ func (p *MoesifPump) Init(config interface{}) error {
 	if loadConfigErr != nil {
 		p.log.Fatal("Failed to decode configuration: ", loadConfigErr)
 	}
-
-	processPumpEnvVars(p, p.log, p.moesifConf, moesifDefaultENV)
 
 	var apiEndpoint string
 	var batchSize int
