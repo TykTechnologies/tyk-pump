@@ -116,8 +116,8 @@ func storeVersion() {
 }
 
 func initialisePumps() {
-	Pumps = []pumps.Pump{}
-
+	Pumps = make([]pumps.Pump, len(SystemConfig.Pumps))
+	i := 0
 	for key, pmp := range SystemConfig.Pumps {
 		pumpTypeName := pmp.Type
 		if pumpTypeName == "" {
@@ -136,18 +136,15 @@ func initialisePumps() {
 			thisPmp.SetOmitDetailedRecording(pmp.OmitDetailedRecording)
 			initErr := thisPmp.Init(pmp.Meta)
 			if initErr != nil {
-				log.WithField("pump", thisPmp.GetName()).Error("Pump init error (skipping): ", initErr)
+				log.Error("Pump init error (skipping): ", initErr)
 			} else {
 				log.WithFields(logrus.Fields{
 					"prefix": mainPrefix,
 				}).Info("Init Pump: ", key)
-				Pumps = append(Pumps, thisPmp)
+				Pumps[i] = thisPmp
 			}
 		}
-	}
-
-	if len(Pumps) == 0 {
-		log.Fatal("No pumps configured")
+		i++
 	}
 
 	if !SystemConfig.DontPurgeUptimeData {

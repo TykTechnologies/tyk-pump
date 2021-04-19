@@ -32,7 +32,3 @@ func (p *CommonPumpConfig) SetOmitDetailedRecording(OmitDetailedRecording bool) 
 func (p *CommonPumpConfig) GetOmitDetailedRecording() bool {
 	return p.OmitDetailedRecording
 }
-
-func (p *CommonPumpConfig) GetEnvPrefix() string {
-	return ""
-}
