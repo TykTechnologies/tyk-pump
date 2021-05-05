@@ -4,11 +4,13 @@ import (
 	"context"
 	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/tyk-pump/analytics"
-	"github.com/TykTechnologies/tyk-pump/logger"
 	"github.com/mitchellh/mapstructure"
 )
 
-var stdOutPrefix = "stdout-pump"
+var (
+	stdOutPrefix     = "stdout-pump"
+	stdOutDefaultENV = PUMPS_ENV_PREFIX + "_STDOUT" + PUMPS_ENV_META_PREFIX
+)
 
 type StdOutPump struct {
 	CommonPumpConfig
@@ -16,12 +18,17 @@ type StdOutPump struct {
 }
 
 type StdOutConf struct {
+	EnvPrefix    string `mapstructure:"meta_env_prefix"`
 	Format       string `mapstructure:"format"`
 	LogFieldName string `mapstructure:"log_field_name"`
 }
 
 func (s *StdOutPump) GetName() string {
 	return "Stdout Pump"
+}
+
+func (s *StdOutPump) GetEnvPrefix() string {
+	return s.conf.EnvPrefix
 }
 
 func (s *StdOutPump) New() Pump {
@@ -31,16 +38,16 @@ func (s *StdOutPump) New() Pump {
 
 func (s *StdOutPump) Init(config interface{}) error {
 
+	s.log = log.WithField("prefix", stdOutPrefix)
+
 	s.conf = &StdOutConf{}
 	err := mapstructure.Decode(config, &s.conf)
 
 	if err != nil {
-		log.WithFields(logrus.Fields{
-			"prefix": statsdPrefix,
-		}).Fatal("Failed to decode configuration: ", err)
+		s.log.Fatal("Failed to decode configuration: ", err)
 	}
 
-	log = logger.GetLogger()
+	processPumpEnvVars(s, s.log, s.conf, stdOutDefaultENV)
 
 	if s.conf.Format == "json" {
 		log.Formatter = &logrus.JSONFormatter{}
@@ -49,6 +56,8 @@ func (s *StdOutPump) Init(config interface{}) error {
 	if s.conf.LogFieldName == "" {
 		s.conf.LogFieldName = "tyk-analytics-record"
 	}
+
+	s.log.Info(s.GetName() + " Initialized")
 
 	return nil
 
