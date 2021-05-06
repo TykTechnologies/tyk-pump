@@ -42,6 +42,8 @@ Create a `pump.conf` file:
     "redis_use_ssl": false,
     "redis_ssl_insecure_skip_verify": false
   },
+  "log_level":"info",
+  "log_format":"text",
   "purge_delay": 1,
   "health_check_endpoint_name": "hello",
   "health_check_endpoint_port": 8083,
@@ -272,6 +274,12 @@ Settings are the same as for the original `tyk.conf` for redis and for mongoDB.
 `purge_chunk` - The maximum number of records to pull from Redis at a time. If it's unset or 0, all the analytics records in Redis are pulled. If it's setted, `storage_expiration_time` is used to reset the analytics record TTL.
 
 `storage_expiration_time` - The number of seconds for the analytics records TTL. It only works if `purge_chunk` is enabled. Defaults to 60 seconds.
+
+### Logs
+
+`log_level` - Set the logger details for tyk-pump. The posible values are: `info`,`debug`,`error` and `warn`. By default, the log level is `info`. 
+
+`log_format` - Set the logger format. The possible values are: `text` and `json`. By default, the log format is `text`.
 
 ### Filter Records
 

@@ -2,6 +2,8 @@ package pumps
 
 import (
 	"context"
+	"fmt"
+
 	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/mitchellh/mapstructure"
@@ -49,10 +51,6 @@ func (s *StdOutPump) Init(config interface{}) error {
 
 	processPumpEnvVars(s, s.log, s.conf, stdOutDefaultENV)
 
-	if s.conf.Format == "json" {
-		log.Formatter = &logrus.JSONFormatter{}
-	}
-
 	if s.conf.LogFieldName == "" {
 		s.conf.LogFieldName = "tyk-analytics-record"
 	}
@@ -67,6 +65,7 @@ func (s *StdOutPump) Init(config interface{}) error {
 ** Write the actual Data to Stdout Here
  */
 func (s *StdOutPump) WriteData(ctx context.Context, data []interface{}) error {
+	s.log.Debug("Attempting to write ", len(data), " records...")
 
 	//Data is all the analytics being written
 	for _, v := range data {
@@ -99,11 +98,20 @@ func (s *StdOutPump) WriteData(ctx context.Context, data []interface{}) error {
 				"user_agent":      decoded.UserAgent,
 			}
 
-			log.WithFields(logrus.Fields{
-				s.conf.LogFieldName: message,
-			}).Info()
+			if s.conf.Format == "json" {
+				formatter := &logrus.JSONFormatter{}
+
+				entry := log.WithField(s.conf.LogFieldName, message)
+				entry.Level = logrus.InfoLevel
+				data, _ := formatter.Format(entry)
+				fmt.Print(string(data))
+			} else {
+				s.log.WithField(s.conf.LogFieldName, message).Info()
+			}
+
 		}
 	}
+	s.log.Info("Purged ", len(data), " records...")
 
 	return nil
 }
