@@ -177,7 +177,7 @@ func (c *SQLPump) WriteData(ctx context.Context, data []interface{}) error {
 			resp = resp.Table(table)
 		}
 
-		resp = c.db.Create(typedData[i:j])
+		resp = c.db.WithContext(ctx).Create(typedData[i:j])
 		if resp.Error != nil {
 			return resp.Error
 		}

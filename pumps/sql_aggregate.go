@@ -108,7 +108,7 @@ func (c *SQLAggregatePump) WriteData(ctx context.Context, data []interface{}) er
 			}
 			rec.ProcessStatusCodes()
 
-			resp := c.db.Create(rec)
+			resp := c.db.WithContext(ctx).Create(rec)
 			if resp.Error != nil {
 				return resp.Error
 			}
