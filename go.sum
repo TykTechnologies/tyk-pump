@@ -41,6 +41,8 @@ github.com/TykTechnologies/gojsonschema v0.0.0-20170222154038-dcb3e4bb7990 h1:CJ
 github.com/TykTechnologies/gojsonschema v0.0.0-20170222154038-dcb3e4bb7990/go.mod h1:SQT0NBrY4/pMikBgwFIrWCjcHBxg015Y8is0kAnMtug=
 github.com/TykTechnologies/gorm v1.20.7-0.20201118175138-c6cfe4f7b290 h1:WqCBNcJA7tuinOVsjpAnwZIppjmzD4V51Ou4/3q15Us=
 github.com/TykTechnologies/gorm v1.20.7-0.20201118175138-c6cfe4f7b290/go.mod h1:4csHKIe590V3C+zfTZKCshvfdzi65M74LW0GPkNzb1I=
+github.com/TykTechnologies/gorm v1.20.7-0.20210409171139-b5c340f85ed0 h1:Q08OD/xvO1D3rzdtlwCMsPB4XOKeHMVw8FifVWEYHiM=
+github.com/TykTechnologies/gorm v1.20.7-0.20210409171139-b5c340f85ed0/go.mod h1:l/HFwXrJOl2N+sth1mqa2cd0Gx1Cqb1FRYBLhY1TIJw=
 github.com/TykTechnologies/gorpc v0.0.0-20190515174534-b9c10befc5f4 h1:hTjM5Uubg3w9VjNc8WjrDrLiGX14Ih8/ItyXEn2tNUs=
 github.com/TykTechnologies/gorpc v0.0.0-20190515174534-b9c10befc5f4/go.mod h1:vqhQRhIHefD4jdFo55j+m0vD5NMjx2liq/ubnshQpaY=
 github.com/TykTechnologies/goverify v0.0.0-20160822133757-7ccc57452ade/go.mod h1:mkS8jKcz8otdfEXhJs1QQ/DKoIY1NFFsRPKS0RwQENI=
