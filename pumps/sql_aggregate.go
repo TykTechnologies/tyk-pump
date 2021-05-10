@@ -4,7 +4,6 @@ import (
 	"context"
 	"os"
 
-	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 
 	"github.com/mitchellh/mapstructure"
@@ -16,6 +15,7 @@ import (
 type SQLAggregatePumpConf struct {
 	SQLConf `mapstructure:",squash"`
 
+	EnvPrefix               string   `mapstructure:"meta_env_prefix"`
 	TrackAllPaths           bool     `mapstructure:"track_all_paths"`
 	IgnoreTagPrefixList     []string `mapstructure:"ignore_tag_prefix_list"`
 	ThresholdLenTagList     int      `mapstructure:"threshold_len_tag_list"`
@@ -34,6 +34,7 @@ type SQLAggregatePump struct {
 }
 
 var SQLAggregatePumpPrefix = "SQL-aggregate-pump"
+var SQLAggregateDefaultENV = PUMPS_ENV_PREFIX + "_SQLAGGREGATE" + PUMPS_ENV_META_PREFIX
 
 func (c *SQLAggregatePump) New() Pump {
 	newPump := SQLAggregatePump{}
@@ -44,15 +45,21 @@ func (c *SQLAggregatePump) GetName() string {
 	return "SQL Pump"
 }
 
+func (c *SQLAggregatePump) GetEnvPrefix() string {
+	return c.SQLConf.EnvPrefix
+}
+
 func (c *SQLAggregatePump) Init(conf interface{}) error {
 	c.SQLConf = &SQLAggregatePumpConf{}
-	err := mapstructure.Decode(conf, &c.SQLConf)
+	c.log = log.WithField("prefix", SQLAggregatePumpPrefix)
 
+	err := mapstructure.Decode(conf, &c.SQLConf)
 	if err != nil {
-		log.WithFields(logrus.Fields{
-			"prefix": SQLAggregatePumpPrefix,
-		}).Fatal("Failed to decode configuration: ", err)
+		c.log.Error("Failed to decode configuration: ", err)
+		return err
 	}
+
+	processPumpEnvVars(c, c.log, c.SQLConf, SQLAggregateDefaultENV)
 
 	logLevel := gorm_logger.Silent
 
@@ -73,21 +80,19 @@ func (c *SQLAggregatePump) Init(conf interface{}) error {
 	})
 
 	if err != nil {
-		log.WithFields(logrus.Fields{
-			"prefix": SQLAggregatePumpPrefix,
-		}).Error(err)
+		c.log.Error(err)
 		return err
 	}
 	c.db = db
 	c.db.AutoMigrate(&analytics.SQLAnalyticsRecordAggregate{})
 
-	log.WithFields(logrus.Fields{
-		"prefix": SQLAggregatePumpPrefix,
-	}).Debug("SQL Initialized")
+	c.log.Debug("SQLAggregate Initialized")
 	return nil
 }
 
 func (c *SQLAggregatePump) WriteData(ctx context.Context, data []interface{}) error {
+	c.log.Debug("Attempting to write ", len(data), " records...")
+
 	analyticsPerOrg := analytics.AggregateData(data, c.SQLConf.TrackAllPaths, c.SQLConf.IgnoreTagPrefixList, c.SQLConf.StoreAnalyticsPerMinute)
 
 	for orgID, ag := range analyticsPerOrg {
@@ -105,10 +110,12 @@ func (c *SQLAggregatePump) WriteData(ctx context.Context, data []interface{}) er
 
 			resp := c.db.Create(rec)
 			if resp.Error != nil {
-				panic(resp.Error)
+				return resp.Error
 			}
 		}
 	}
+
+	c.log.Info("Purged ", len(data), " records...")
 
 	return nil
 }

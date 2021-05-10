@@ -4,7 +4,6 @@ import (
 	"context"
 	"os"
 
-	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 
 	"github.com/mitchellh/mapstructure"
@@ -45,6 +44,7 @@ type SQLPump struct {
 }
 
 type SQLConf struct {
+	EnvPrefix     string         `mapstructure:"meta_env_prefix"`
 	Type          string         `json:"type" mapstructure:"type"`
 	DSN           string         `json:"dsn" mapstructure:"dsn"`
 	Postgres      PostgresConfig `json:"postgres" mapstructure:"postgres"`
@@ -82,6 +82,7 @@ func Dialect(cfg *SQLConf) gorm.Dialector {
 }
 
 var SQLPrefix = "SQL-pump"
+var SQLDefaultENV = PUMPS_ENV_PREFIX + "_SQL" + PUMPS_ENV_META_PREFIX
 
 func (c *SQLPump) New() Pump {
 	newPump := SQLPump{}
@@ -92,15 +93,21 @@ func (c *SQLPump) GetName() string {
 	return "SQL Pump"
 }
 
+func (c *SQLPump) GetEnvPrefix() string {
+	return c.SQLConf.EnvPrefix
+}
+
 func (c *SQLPump) Init(conf interface{}) error {
 	c.SQLConf = &SQLConf{}
-	err := mapstructure.Decode(conf, &c.SQLConf)
+	c.log = log.WithField("prefix", SQLPrefix)
 
+	err := mapstructure.Decode(conf, &c.SQLConf)
 	if err != nil {
-		log.WithFields(logrus.Fields{
-			"prefix": SQLPrefix,
-		}).Fatal("Failed to decode configuration: ", err)
+		c.log.Error("Failed to decode configuration: ", err)
+		return err
 	}
+
+	processPumpEnvVars(c, c.log, c.SQLConf, SQLDefaultENV)
 
 	logLevel := gorm_logger.Silent
 
@@ -120,9 +127,7 @@ func (c *SQLPump) Init(conf interface{}) error {
 	})
 
 	if err != nil {
-		log.WithFields(logrus.Fields{
-			"prefix": SQLPrefix,
-		}).Error(err)
+		c.log.Error(err)
 		return err
 	}
 	c.db = db
@@ -131,13 +136,13 @@ func (c *SQLPump) Init(conf interface{}) error {
 		c.db.Table("tyk_analytics").AutoMigrate(&analytics.AnalyticsRecord{})
 	}
 
-	log.WithFields(logrus.Fields{
-		"prefix": SQLPrefix,
-	}).Debug("SQL Initialized")
+	c.log.Debug("SQL Initialized")
 	return nil
 }
 
 func (c *SQLPump) WriteData(ctx context.Context, data []interface{}) error {
+	c.log.Debug("Attempting to write ", len(data), " records...")
+
 	var typedData []*analytics.AnalyticsRecord
 	for _, r := range data {
 		rec := r.(analytics.AnalyticsRecord)
@@ -178,9 +183,7 @@ func (c *SQLPump) WriteData(ctx context.Context, data []interface{}) error {
 		}
 	}
 
-	log.WithFields(logrus.Fields{
-		"prefix": SQLPrefix,
-	}).Info("Purging ", len(data), " records")
+	c.log.Info("Purged ", len(data), " records...")
 
 	return nil
 }
