@@ -34,6 +34,7 @@ require (
 	github.com/segmentio/backo-go v0.0.0-20160424052352-204274ad699c // indirect
 	github.com/segmentio/kafka-go v0.3.6
 	github.com/shirou/gopsutil v3.20.11+incompatible // indirect
+	github.com/stretchr/testify v1.7.0
 	github.com/syndtr/goleveldb v0.0.0-20190318030020-c3a204f8e965 // indirect
 	github.com/xtgo/uuid v0.0.0-20140804021211-a0b114877d4c // indirect
 	golang.org/x/lint v0.0.0-20200302205851-738671d3881b // indirect

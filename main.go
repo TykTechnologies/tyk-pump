@@ -116,8 +116,8 @@ func storeVersion() {
 }
 
 func initialisePumps() {
-	Pumps = make([]pumps.Pump, len(SystemConfig.Pumps))
-	i := 0
+	Pumps = []pumps.Pump{}
+
 	for key, pmp := range SystemConfig.Pumps {
 		pumpTypeName := pmp.Type
 		if pumpTypeName == "" {
@@ -136,24 +136,27 @@ func initialisePumps() {
 			thisPmp.SetOmitDetailedRecording(pmp.OmitDetailedRecording)
 			initErr := thisPmp.Init(pmp.Meta)
 			if initErr != nil {
-				log.Error("Pump init error (skipping): ", initErr)
+				log.WithField("pump", thisPmp.GetName()).Error("Pump init error (skipping): ", initErr)
 			} else {
 				log.WithFields(logrus.Fields{
 					"prefix": mainPrefix,
 				}).Info("Init Pump: ", key)
-				Pumps[i] = thisPmp
+				Pumps = append(Pumps, thisPmp)
 			}
-			i++
 		}
 	}
 
-	Pumps = Pumps[:i]
+	if len(Pumps) == 0 {
+		log.WithFields(logrus.Fields{
+			"prefix": mainPrefix,
+		}).Fatal("No pumps configured")
+	}
 
 	if !SystemConfig.DontPurgeUptimeData {
 		log.WithFields(logrus.Fields{
 			"prefix": mainPrefix,
 		}).Info("'dont_purge_uptime_data' set to false, attempting to start Uptime pump! ", UptimePump.GetName())
-		UptimePump = pumps.MongoPump{}
+		UptimePump = pumps.MongoPump{IsUptime: true}
 		UptimePump.Init(SystemConfig.UptimePumpConfig)
 		log.WithFields(logrus.Fields{
 			"prefix": mainPrefix,
@@ -235,7 +238,6 @@ func filterData(pump pumps.Pump, keys []interface{}) []interface{} {
 	if !filters.HasFilter() && !pump.GetOmitDetailedRecording() {
 		return keys
 	}
-
 	filteredKeys := keys[:]
 	newLenght := 0
 

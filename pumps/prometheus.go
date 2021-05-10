@@ -26,11 +26,13 @@ type PrometheusPump struct {
 }
 
 type PrometheusConf struct {
-	Addr string `mapstructure:"listen_address"`
-	Path string `mapstructure:"path"`
+	EnvPrefix string `mapstructure:"meta_env_prefix"`
+	Addr      string `mapstructure:"listen_address"`
+	Path      string `mapstructure:"path"`
 }
 
 var prometheusPrefix = "prometheus-pump"
+var prometheusDefaultENV = PUMPS_ENV_PREFIX + "_PROMETHEUS"
 
 var buckets = []float64{1, 2, 5, 7, 10, 15, 20, 25, 30, 40, 50, 60, 70, 80, 90, 100, 200, 300, 400, 500, 1000, 2000, 5000, 10000, 30000, 60000}
 
@@ -85,6 +87,10 @@ func (p *PrometheusPump) GetName() string {
 	return "Prometheus Pump"
 }
 
+func (p *PrometheusPump) GetEnvPrefix() string {
+	return p.conf.EnvPrefix
+}
+
 func (p *PrometheusPump) Init(conf interface{}) error {
 	p.conf = &PrometheusConf{}
 	p.log = log.WithField("prefix", prometheusPrefix)
@@ -93,6 +99,8 @@ func (p *PrometheusPump) Init(conf interface{}) error {
 	if err != nil {
 		p.log.Fatal("Failed to decode configuration: ", err)
 	}
+
+	processPumpEnvVars(p, p.log, p.conf, prometheusDefaultENV)
 
 	if p.conf.Path == "" {
 		p.conf.Path = "/metrics"
