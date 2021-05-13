@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/stretchr/testify/assert"
@@ -38,7 +39,7 @@ func TestInit(t *testing.T){
 
 }
 
-func TestInsertRecord(t *testing.T){
+func TestSQLWriteData(t *testing.T){
 	pmp := SQLPump{}
 	cfg := make(map[string]interface{})
 	cfg["type"] = "sqlite"
@@ -72,4 +73,48 @@ func TestInsertRecord(t *testing.T){
 	assert.Equal(t,"api111",dbRecords[0].APIID)
 	//assert.Equal(t,20,dbRecords[1].Day) //TODO test it when days are saved
 	assert.Equal(t,"api321",dbRecords[2].APIID)
+
+}
+
+func TestSQLWriteDataSharded(t *testing.T){
+	pmp := SQLPump{}
+	cfg := make(map[string]interface{})
+	cfg["type"] = "sqlite"
+	cfg["dsn"] = "pmp_test.db"
+	cfg["table_sharding"] = true
+	err := pmp.Init(cfg)
+	if err != nil {
+		t.Fatal("SQL Pump couldn't be initialized with err: ", err)
+	}else{
+		defer func(){
+			os.Remove( "pmp_test.db")
+		}()
+	}
+	keys := make([]interface{}, 5)
+	now := time.Now()
+	nowPlus5 := time.Now().Add(time.Duration(5)*time.Hour)
+	keys[0] = analytics.AnalyticsRecord{APIID: "api111",TimeStamp: now}
+	keys[1] = analytics.AnalyticsRecord{APIID: "api112",TimeStamp: now}
+	keys[2] = analytics.AnalyticsRecord{APIID: "api113",TimeStamp: now}
+	keys[3] = analytics.AnalyticsRecord{APIID: "api114",TimeStamp: nowPlus5}
+	keys[4] = analytics.AnalyticsRecord{APIID: "api115",TimeStamp: nowPlus5}
+
+	ctx := context.TODO()
+	errWrite := pmp.WriteData(ctx,keys)
+	if errWrite != nil {
+		t.Fatal("SQL Pump couldn't write records with err:",errWrite)
+	}
+	table := "tyk_analytics_" + now.Format("20060102")
+	assert.Equal(t,true,pmp.db.Migrator().HasTable(table))
+
+	var dbRecords []analytics.AnalyticsRecord
+
+	if err:= pmp.db.Table(table).Find(&dbRecords).Error ; err != nil{
+		t.Fatal("Error getting analytics records from SQL")
+	}
+	assert.Len(t,dbRecords,5)
+
+	tablePlus5 := "tyk_analytics_" + nowPlus5.Format("20060102")
+	assert.Equal(t,true,pmp.db.Migrator().HasTable(tablePlus5))
+
 }

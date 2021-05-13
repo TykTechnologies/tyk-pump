@@ -42,7 +42,7 @@ func (c *SQLAggregatePump) New() Pump {
 }
 
 func (c *SQLAggregatePump) GetName() string {
-	return "SQL Pump"
+	return "SQL Aggregate Pump"
 }
 
 func (c *SQLAggregatePump) GetEnvPrefix() string {
