@@ -72,7 +72,12 @@ func (c *SQLAggregatePump) Init(conf interface{}) error {
 		logLevel = gorm_logger.Error
 	}
 
-	db, err := gorm.Open(Dialect(&c.SQLConf.SQLConf), &gorm.Config{
+	dialect, errDialect := Dialect(&c.SQLConf.SQLConf)
+	if errDialect != nil {
+		c.log.Error(errDialect)
+		return errDialect
+	}
+	db, err := gorm.Open(dialect, &gorm.Config{
 		AutoEmbedd:             true,
 		UseJSONTags:            true,
 		SkipDefaultTransaction: true,

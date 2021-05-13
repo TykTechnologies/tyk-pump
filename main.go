@@ -334,9 +334,8 @@ func main() {
 
 	// prime the pumps
 	initialisePumps()
-
 	if *demoMode != "" {
-		log.Warning("BUILDING DEMO DATA AND EXITING...")
+		log.Info("BUILDING DEMO DATA AND EXITING...")
 		log.Warning("Starting from date: ", time.Now().AddDate(0, 0, -30))
 		demo.DemoInit(*demoMode, *demoApiMode, *demoApiVersionMode)
 		demo.GenerateDemoData(time.Now().AddDate(0, 0, -30), 30, *demoMode, writeToPumps)

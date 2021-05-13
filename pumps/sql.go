@@ -2,6 +2,7 @@ package pumps
 
 import (
 	"context"
+	"errors"
 	"os"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
@@ -52,7 +53,7 @@ type SQLConf struct {
 	TableSharding bool           `json:"table_sharding" mapstructure:"table_sharding"`
 }
 
-func Dialect(cfg *SQLConf) gorm.Dialector {
+func Dialect(cfg *SQLConf) (gorm.Dialector,error) {
 	switch cfg.Type {
 	case "sqlite":
 		if cfg.DSN == "" {
@@ -60,13 +61,13 @@ func Dialect(cfg *SQLConf) gorm.Dialector {
 			cfg.DSN = "file::memory:?cache=shared"
 		}
 
-		return sqlite.Open(cfg.DSN)
+		return sqlite.Open(cfg.DSN),nil
 	case "postgres":
 		// Example DSN: `"host=localhost user=gorm password=gorm DB.name=gorm port=9920 sslmode=disable TimeZone=Asia/Shanghai"`
 		return postgres.New(postgres.Config{
 			DSN:                  cfg.DSN,
 			PreferSimpleProtocol: cfg.Postgres.PreferSimpleProtocol,
-		})
+		}),nil
 	case "mysql":
 		return mysql.New(mysql.Config{
 			DSN:                       cfg.DSN,
@@ -75,9 +76,9 @@ func Dialect(cfg *SQLConf) gorm.Dialector {
 			DontSupportRenameIndex:    cfg.Mysql.DontSupportRenameIndex,
 			DontSupportRenameColumn:   cfg.Mysql.DontSupportRenameColumn,
 			SkipInitializeWithVersion: cfg.Mysql.SkipInitializeWithVersion,
-		})
+		}),nil
 	default:
-		panic("Unsupported `config_storage.type` value:" + cfg.Type)
+		return nil,errors.New("Unsupported `config_storage.type` value:" + cfg.Type)
 	}
 }
 
@@ -120,7 +121,13 @@ func (c *SQLPump) Init(conf interface{}) error {
 		logLevel = gorm_logger.Error
 	}
 
-	db, err := gorm.Open(Dialect(c.SQLConf), &gorm.Config{
+	dialect, errDialect := Dialect(c.SQLConf)
+	if errDialect != nil {
+		c.log.Error(errDialect)
+		return errDialect
+	}
+
+	db, err := gorm.Open(dialect, &gorm.Config{
 		AutoEmbedd:  true,
 		UseJSONTags: true,
 		Logger:      gorm_logger.Default.LogMode(logLevel),
