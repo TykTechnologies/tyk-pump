@@ -53,7 +53,7 @@ type SQLConf struct {
 	TableSharding bool           `json:"table_sharding" mapstructure:"table_sharding"`
 }
 
-func Dialect(cfg *SQLConf) (gorm.Dialector,error) {
+func Dialect(cfg *SQLConf) (gorm.Dialector, error) {
 	switch cfg.Type {
 	case "sqlite":
 		if cfg.DSN == "" {
@@ -61,13 +61,13 @@ func Dialect(cfg *SQLConf) (gorm.Dialector,error) {
 			cfg.DSN = "file::memory:?cache=shared"
 		}
 
-		return sqlite.Open(cfg.DSN),nil
+		return sqlite.Open(cfg.DSN), nil
 	case "postgres":
 		// Example DSN: `"host=localhost user=gorm password=gorm DB.name=gorm port=9920 sslmode=disable TimeZone=Asia/Shanghai"`
 		return postgres.New(postgres.Config{
 			DSN:                  cfg.DSN,
 			PreferSimpleProtocol: cfg.Postgres.PreferSimpleProtocol,
-		}),nil
+		}), nil
 	case "mysql":
 		return mysql.New(mysql.Config{
 			DSN:                       cfg.DSN,
@@ -76,9 +76,9 @@ func Dialect(cfg *SQLConf) (gorm.Dialector,error) {
 			DontSupportRenameIndex:    cfg.Mysql.DontSupportRenameIndex,
 			DontSupportRenameColumn:   cfg.Mysql.DontSupportRenameColumn,
 			SkipInitializeWithVersion: cfg.Mysql.SkipInitializeWithVersion,
-		}),nil
+		}), nil
 	default:
-		return nil,errors.New("Unsupported `config_storage.type` value:" + cfg.Type)
+		return nil, errors.New("Unsupported `config_storage.type` value:" + cfg.Type)
 	}
 }
 
@@ -151,9 +151,17 @@ func (c *SQLPump) WriteData(ctx context.Context, data []interface{}) error {
 	c.log.Debug("Attempting to write ", len(data), " records...")
 
 	var typedData []*analytics.AnalyticsRecord
-	for _, r := range data {
+
+	batch := 500
+	newBatch := false
+	for i, r := range data {
 		rec := r.(analytics.AnalyticsRecord)
 		typedData = append(typedData, &rec)
+
+		if c.SQLConf.TableSharding && !newBatch && typedData[0].TimeStamp.Format("20060102") < rec.TimeStamp.Format("20060102") {
+			batch = i
+			newBatch = true
+		}
 	}
 
 	if c.SQLConf.TableSharding && len(typedData) > 0 {
@@ -168,8 +176,6 @@ func (c *SQLPump) WriteData(ctx context.Context, data []interface{}) error {
 			c.db.Table(table).AutoMigrate(&analytics.AnalyticsRecord{})
 		}
 	}
-
-	batch := 500
 
 	for i := 0; i < len(typedData); i += batch {
 		j := i + batch
