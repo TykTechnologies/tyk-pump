@@ -26,21 +26,21 @@ type Latency struct {
 
 // AnalyticsRecord encodes the details of a request
 type AnalyticsRecord struct {
-	Method        string       `json:"method"`
-	Host          string       `json:"host"`
-	Path          string       `json:"path"`
+	Method        string       `json:"method" gorm:"column:method"`
+	Host          string       `json:"host" gorm:"column:host"`
+	Path          string       `json:"path" gorm:"column:path"`
 	RawPath       string       `json:"raw_path" gorm:"column:rawpath"`
 	ContentLength int64        `json:"content_length" gorm:"column:contentlength"`
 	UserAgent     string       `json:"user_agent" gorm:"column:useragent"`
-	Day           int          `json:"day" gorm:"-"`
-	Month         time.Month   `json:"month" gorm:"-"`
-	Year          int          `json:"year" gorm:"-"`
-	Hour          int          `json:"hour" gorm:"-"`
+	Day           int          `json:"day" sql:"-"`
+	Month         time.Month   `json:"month" sql:"-"`
+	Year          int          `json:"year" sql:"-"`
+	Hour          int          `json:"hour" sql:"-"`
 	ResponseCode  int          `json:"response_code" gorm:"column:responsecode;index"`
 	APIKey        string       `json:"api_key" gorm:"column:apikey;index"`
 	TimeStamp     time.Time    `json:"timestamp" gorm:"column:timestamp;index"`
 	APIVersion    string       `json:"api_version" gorm:"column:apiversion"`
-	APIName       string       `json:"api_name" gorm:"-"`
+	APIName       string       `json:"api_name" sql:"-"`
 	APIID         string       `json:"api_id" gorm:"column:apiid;index"`
 	OrgID         string       `json:"org_id" gorm:"column:orgid;index"`
 	OauthID       string       `json:"oauth_id" gorm:"column:oauthid;index"`

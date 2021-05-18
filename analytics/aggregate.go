@@ -26,17 +26,16 @@ type ErrorData struct {
 type Counter struct {
 	Hits              int       `json:"hits"`
 	Success           int       `json:"success"`
-	ErrorTotal        int       `json:"error"`
+	ErrorTotal        int       `json:"error" gorm:"column:error"`
 	RequestTime       float64   `json:"request_time"`
 	TotalRequestTime  float64   `json:"total_request_time"`
-	Identifier        string    `json:"identifier" gorm:"-"`
+	Identifier        string    `json:"identifier" sql:"-"`
 	HumanIdentifier   string    `json:"human_identifier"`
 	LastTime          time.Time `json:"last_time"`
 	OpenConnections   int64     `json:"open_connections"`
 	ClosedConnections int64     `json:"closed_connections"`
 	BytesIn           int64     `json:"bytes_in"`
 	BytesOut          int64     `json:"bytes_out"`
-
 	MaxUpstreamLatency   int64   `json:"max_upstream_latency"`
 	MinUpstreamLatency   int64   `json:"min_upstream_latency"`
 	TotalUpstreamLatency int64   `json:"total_upstream_latency"`
@@ -47,8 +46,8 @@ type Counter struct {
 	TotalLatency int64   `json:"total_latency"`
 	Latency      float64 `json:"latency"`
 
-	ErrorMap  map[string]int `json:"error_map" gorm:"-"`
-	ErrorList []ErrorData    `json:"error_list" gorm:"-"`
+	ErrorMap  map[string]int `json:"error_map" sql:"-"`
+	ErrorList []ErrorData    `json:"error_list" sql:"-"`
 }
 
 type AnalyticsRecordAggregate struct {
@@ -96,7 +95,7 @@ type AnalyticsRecordAggregate struct {
 }
 
 type SQLAnalyticsRecordAggregate struct {
-	Counter `json:"counter"`
+	Counter `json:"counter" gorm:"embedded"`
 
 	TimeStamp      int64  `json:"timestamp" gorm:"index:dimension, priority:1"`
 	OrgID          string `json:"org_id" gorm:"index:dimension, priority:2"`
