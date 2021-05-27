@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestInit(t *testing.T) {
+func TestSQLInit(t *testing.T) {
 	pmp := SQLPump{}
 	cfg := make(map[string]interface{})
 	cfg["type"] = "sqlite"
@@ -19,11 +19,11 @@ func TestInit(t *testing.T) {
 	err := pmp.Init(cfg)
 	if err != nil {
 		t.Fatal("SQL Pump couldn't be initialized with err: ", err)
-	} else {
-		defer func() {
-			os.Remove("pmp_test.db")
-		}()
 	}
+	defer func() {
+		os.Remove("pmp_test.db")
+	}()
+
 
 	assert.NotNil(t, pmp.db)
 	assert.Equal(t, "sqlite", pmp.db.Dialector.Name())
@@ -46,11 +46,11 @@ func TestSQLWriteData(t *testing.T) {
 	err := pmp.Init(cfg)
 	if err != nil {
 		t.Fatal("SQL Pump couldn't be initialized with err: ", err)
-	} else {
-		defer func() {
-			os.Remove("pmp_test.db")
-		}()
 	}
+	defer func() {
+		os.Remove("pmp_test.db")
+	}()
+
 	keys := make([]interface{}, 3)
 	keys[0] = analytics.AnalyticsRecord{APIID: "api111", Day: 20}
 	keys[1] = analytics.AnalyticsRecord{APIID: "api123"}
@@ -83,11 +83,11 @@ func TestSQLWriteDataSharded(t *testing.T) {
 	err := pmp.Init(cfg)
 	if err != nil {
 		t.Fatal("SQL Pump couldn't be initialized with err: ", err)
-	} else {
-		defer func() {
-			os.Remove("pmp_test.db")
-		}()
 	}
+	defer func() {
+		os.Remove("pmp_test.db")
+	}()
+
 	keys := make([]interface{}, 5)
 	now := time.Now()
 	nowPlus1 := time.Now().AddDate(0, 0, 1)
