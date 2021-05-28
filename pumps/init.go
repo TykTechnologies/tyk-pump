@@ -27,4 +27,5 @@ func init() {
 	AvailablePumps["dogstatsd"] = &DogStatsdPump{}
 	AvailablePumps["kafka"] = &KafkaPump{}
 	AvailablePumps["syslog"] = &SyslogPump{}
+	AvailablePumps["stdout"] = &StdOutPump{}
 }

@@ -13,65 +13,65 @@ import (
 var log = logger.GetLogger()
 
 type NetworkStats struct {
-	OpenConnections  int64
-	ClosedConnection int64
-	BytesIn          int64
-	BytesOut         int64
+	OpenConnections  int64 `json:"open_connections"`
+	ClosedConnection int64 `json:"closed_connections"`
+	BytesIn          int64 `json:"bytes_in"`
+	BytesOut         int64 `json:"bytes_out"`
 }
 
 type Latency struct {
-	Total    int64
-	Upstream int64
+	Total    int64 `json:"total"`
+	Upstream int64 `json:"upstream"`
 }
 
 // AnalyticsRecord encodes the details of a request
 type AnalyticsRecord struct {
-	Method        string
-	Host          string
-	Path          string
-	RawPath       string
-	ContentLength int64
-	UserAgent     string
-	Day           int
-	Month         time.Month
-	Year          int
-	Hour          int
-	ResponseCode  int
-	APIKey        string
-	TimeStamp     time.Time
-	APIVersion    string
-	APIName       string
-	APIID         string
-	OrgID         string
-	OauthID       string
-	RequestTime   int64
-	RawRequest    string
-	RawResponse   string
-	IPAddress     string
-	Geo           GeoData
-	Network       NetworkStats
-	Latency       Latency
-	Tags          []string
-	Alias         string
-	TrackPath     bool
-	ExpireAt      time.Time `bson:"expireAt" json:"expireAt"`
+	Method        string       `json:"method"`
+	Host          string       `json:"host"`
+	Path          string       `json:"path"`
+	RawPath       string       `json:"raw_path"`
+	ContentLength int64        `json:"content_length"`
+	UserAgent     string       `json:"user_agent"`
+	Day           int          `json:"day"`
+	Month         time.Month   `json:"month"`
+	Year          int          `json:"year"`
+	Hour          int          `json:"hour"`
+	ResponseCode  int          `json:"response_code"`
+	APIKey        string       `json:"api_key"`
+	TimeStamp     time.Time    `json:"timestamp"`
+	APIVersion    string       `json:"api_version"`
+	APIName       string       `json:"api_name"`
+	APIID         string       `json:"api_id"`
+	OrgID         string       `json:"org_id"`
+	OauthID       string       `json:"oauth_id"`
+	RequestTime   int64        `json:"request_time"`
+	RawRequest    string       `json:"raw_request"`
+	RawResponse   string       `json:"raw_response"`
+	IPAddress     string       `json:"ip_address"`
+	Geo           GeoData      `json:"geo"`
+	Network       NetworkStats `json:"network_stats"`
+	Latency       Latency      `json:"latency"`
+	Tags          []string     `json:"tags"`
+	Alias         string       `json:"alias"`
+	TrackPath     bool         `json:"track_path"`
+	ExpireAt      time.Time    `bson:"expireAt" json:"expireAt"`
 }
 
 type GeoData struct {
 	Country struct {
-		ISOCode string `maxminddb:"iso_code"`
-	} `maxminddb:"country"`
+		ISOCode string `maxminddb:"iso_code" json:"iso_code"`
+	} `maxminddb:"country" json:"country"`
 
 	City struct {
-		GeoNameID uint              `maxminddb:"geoname_id"`
-		Names     map[string]string `maxminddb:"names"`
-	} `maxminddb:"city"`
+		GeoNameID uint              `maxminddb:"geoname_id" json:"geoname_id"`
+		Names     map[string]string `maxminddb:"names" json:"names"`
+	} `maxminddb:"city" json:"city"`
 
 	Location struct {
-		Latitude  float64 `maxminddb:"latitude"`
-		Longitude float64 `maxminddb:"longitude"`
-		TimeZone  string  `maxminddb:"time_zone"`
-	} `maxminddb:"location"`
+		Latitude  float64 `maxminddb:"latitude" json:"latitude"`
+		Longitude float64 `maxminddb:"longitude" json:"longitude"`
+		TimeZone  string  `maxminddb:"time_zone" json:"time_zone"`
+	} `maxminddb:"location" json:"location"`
 }
 
 func (n *NetworkStats) GetFieldNames() []string {
