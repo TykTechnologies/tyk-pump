@@ -74,39 +74,16 @@ func (s *StdOutPump) WriteData(ctx context.Context, data []interface{}) error {
 		case <-ctx.Done():
 			return nil
 		default:
-			// Decode the raw analytics into Form
 			decoded := v.(analytics.AnalyticsRecord)
-			message := Json{
-				"timestamp":       decoded.TimeStamp,
-				"method":          decoded.Method,
-				"path":            decoded.Path,
-				"raw_path":        decoded.RawPath,
-				"response_code":   decoded.ResponseCode,
-				"alias":           decoded.Alias,
-				"api_key":         decoded.APIKey,
-				"api_version":     decoded.APIVersion,
-				"api_name":        decoded.APIName,
-				"api_id":          decoded.APIID,
-				"org_id":          decoded.OrgID,
-				"oauth_id":        decoded.OauthID,
-				"raw_request":     decoded.RawRequest,
-				"request_time_ms": decoded.RequestTime,
-				"raw_response":    decoded.RawResponse,
-				"ip_address":      decoded.IPAddress,
-				"host":            decoded.Host,
-				"content_length":  decoded.ContentLength,
-				"user_agent":      decoded.UserAgent,
-			}
 
 			if s.conf.Format == "json" {
 				formatter := &logrus.JSONFormatter{}
-
-				entry := log.WithField(s.conf.LogFieldName, message)
+				entry := log.WithField(s.conf.LogFieldName, decoded)
 				entry.Level = logrus.InfoLevel
 				data, _ := formatter.Format(entry)
 				fmt.Print(string(data))
 			} else {
-				s.log.WithField(s.conf.LogFieldName, message).Info()
+				s.log.WithField(s.conf.LogFieldName, decoded).Info()
 			}
 
 		}
