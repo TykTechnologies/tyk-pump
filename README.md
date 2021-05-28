@@ -195,7 +195,8 @@ Create a `pump.conf` file:
           "oauth_id",
           "raw_request",
           "request_time",
-          "raw_response"
+          "raw_response",
+          "ip_address"
         ]
       }
     },
