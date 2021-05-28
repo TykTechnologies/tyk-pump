@@ -39,6 +39,7 @@ type TykPumpConfiguration struct {
 	StatsdConnectionString  string                     `json:"statsd_connection_string"`
 	StatsdPrefix            string                     `json:"statsd_prefix"`
 	LogLevel                string                     `json:"log_level"`
+	LogFormat               string                     `json:"log_format"`
 	HealthCheckEndpointName string                     `json:"health_check_endpoint_name"`
 	HealthCheckEndpointPort int                        `json:"health_check_endpoint_port"`
 	OmitDetailedRecording   bool                       `json:"omit_detailed_recording"`
@@ -94,8 +95,6 @@ func (cfg *TykPumpConfiguration) LoadPumpsByEnv() error {
 			osPumpsEnvNames[pmpName] = true
 		}
 	}
-
-	log.Info("Found pumps in env vars:", osPumpsEnvNames)
 
 	//then we look for each pmpName specified in the env and try to initialise those pumps
 	for pmpName := range osPumpsEnvNames {
