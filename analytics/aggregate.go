@@ -24,22 +24,22 @@ type ErrorData struct {
 }
 
 type Counter struct {
-	Hits              int       `json:"hits"`
-	Success           int       `json:"success"`
-	ErrorTotal        int       `json:"error" gorm:"column:error"`
-	RequestTime       float64   `json:"request_time"`
-	TotalRequestTime  float64   `json:"total_request_time"`
-	Identifier        string    `json:"identifier" sql:"-"`
-	HumanIdentifier   string    `json:"human_identifier"`
-	LastTime          time.Time `json:"last_time"`
-	OpenConnections   int64     `json:"open_connections"`
-	ClosedConnections int64     `json:"closed_connections"`
-	BytesIn           int64     `json:"bytes_in"`
-	BytesOut          int64     `json:"bytes_out"`
-	MaxUpstreamLatency   int64   `json:"max_upstream_latency"`
-	MinUpstreamLatency   int64   `json:"min_upstream_latency"`
-	TotalUpstreamLatency int64   `json:"total_upstream_latency"`
-	UpstreamLatency      float64 `json:"upstream_latency"`
+	Hits                 int       `json:"hits"`
+	Success              int       `json:"success"`
+	ErrorTotal           int       `json:"error" gorm:"column:error"`
+	RequestTime          float64   `json:"request_time"`
+	TotalRequestTime     float64   `json:"total_request_time"`
+	Identifier           string    `json:"identifier" sql:"-"`
+	HumanIdentifier      string    `json:"human_identifier"`
+	LastTime             time.Time `json:"last_time"`
+	OpenConnections      int64     `json:"open_connections"`
+	ClosedConnections    int64     `json:"closed_connections"`
+	BytesIn              int64     `json:"bytes_in"`
+	BytesOut             int64     `json:"bytes_out"`
+	MaxUpstreamLatency   int64     `json:"max_upstream_latency"`
+	MinUpstreamLatency   int64     `json:"min_upstream_latency"`
+	TotalUpstreamLatency int64     `json:"total_upstream_latency"`
+	UpstreamLatency      float64   `json:"upstream_latency"`
 
 	MaxLatency   int64   `json:"max_latency"`
 	MinLatency   int64   `json:"min_latency"`
