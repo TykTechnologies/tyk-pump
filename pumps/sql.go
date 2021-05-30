@@ -3,7 +3,6 @@ package pumps
 import (
 	"context"
 	"errors"
-	"os"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
 
@@ -51,6 +50,7 @@ type SQLConf struct {
 	Postgres      PostgresConfig `json:"postgres" mapstructure:"postgres"`
 	Mysql         MysqlConfig    `json:"mysql" mapstructure:"mysql"`
 	TableSharding bool           `json:"table_sharding" mapstructure:"table_sharding"`
+	LogLevel      string         `json:"log_level" mapstructure:"log_level`
 }
 
 func Dialect(cfg *SQLConf) (gorm.Dialector, error) {
@@ -112,7 +112,7 @@ func (c *SQLPump) Init(conf interface{}) error {
 
 	logLevel := gorm_logger.Silent
 
-	switch os.Getenv("TYK_LOGLEVEL") {
+	switch c.SQLConf.LogLevel {
 	case "debug":
 		logLevel = gorm_logger.Info
 	case "info":

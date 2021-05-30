@@ -2,7 +2,6 @@ package pumps
 
 import (
 	"context"
-	"os"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
 
@@ -63,7 +62,7 @@ func (c *SQLAggregatePump) Init(conf interface{}) error {
 
 	logLevel := gorm_logger.Silent
 
-	switch os.Getenv("TYK_LOGLEVEL") {
+	switch c.SQLConf.LogLevel {
 	case "debug":
 		logLevel = gorm_logger.Info
 	case "info":

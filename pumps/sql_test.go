@@ -24,7 +24,6 @@ func TestSQLInit(t *testing.T) {
 		os.Remove("pmp_test.db")
 	}()
 
-
 	assert.NotNil(t, pmp.db)
 	assert.Equal(t, "sqlite", pmp.db.Dialector.Name())
 
