@@ -50,7 +50,7 @@ type SQLConf struct {
 	Postgres      PostgresConfig `json:"postgres" mapstructure:"postgres"`
 	Mysql         MysqlConfig    `json:"mysql" mapstructure:"mysql"`
 	TableSharding bool           `json:"table_sharding" mapstructure:"table_sharding"`
-	LogLevel      string         `json:"log_level" mapstructure:"log_level`
+	LogLevel      string         `json:"log_level" mapstructure:"log_level"`
 }
 
 func Dialect(cfg *SQLConf) (gorm.Dialector, error) {
