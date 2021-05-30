@@ -13,7 +13,7 @@ func TestSQLAggregateInit(t *testing.T) {
 	pmp := SQLAggregatePump{}
 	cfg := make(map[string]interface{})
 	cfg["type"] = "sqlite"
-	cfg["dsn"] = "pmp_test.db"
+	cfg["connection_string"] = "pmp_test.db"
 
 	err := pmp.Init(cfg)
 	if err != nil {
@@ -40,7 +40,7 @@ func TestSQLAggregateWriteData(t *testing.T) {
 	pmp := SQLAggregatePump{}
 	cfg := make(map[string]interface{})
 	cfg["type"] = "sqlite"
-	cfg["dsn"] = "pmp_test.db"
+	cfg["connection_string"] = "pmp_test.db"
 
 	err := pmp.Init(cfg)
 	if err != nil {

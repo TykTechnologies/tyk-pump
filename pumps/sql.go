@@ -47,7 +47,7 @@ type SQLPump struct {
 type SQLConf struct {
 	EnvPrefix     string         `mapstructure:"meta_env_prefix"`
 	Type          string         `json:"type" mapstructure:"type"`
-	DSN           string         `json:"dsn" mapstructure:"dsn"`
+	ConnectionString           string         `json:"connection_string" mapstructure:"connection_string"`
 	Postgres      PostgresConfig `json:"postgres" mapstructure:"postgres"`
 	Mysql         MysqlConfig    `json:"mysql" mapstructure:"mysql"`
 	TableSharding bool           `json:"table_sharding" mapstructure:"table_sharding"`
@@ -56,21 +56,21 @@ type SQLConf struct {
 func Dialect(cfg *SQLConf) (gorm.Dialector, error) {
 	switch cfg.Type {
 	case "sqlite":
-		if cfg.DSN == "" {
+		if cfg.ConnectionString == "" {
 			log.Warning("`config.dsn` is empty. Falling back to in-memory storage. Warning: All data will be lost on process restart.")
-			cfg.DSN = "file::memory:?cache=shared"
+			cfg.ConnectionString = "file::memory:?cache=shared"
 		}
 
-		return sqlite.Open(cfg.DSN), nil
+		return sqlite.Open(cfg.ConnectionString), nil
 	case "postgres":
 		// Example DSN: `"host=localhost user=gorm password=gorm DB.name=gorm port=9920 sslmode=disable TimeZone=Asia/Shanghai"`
 		return postgres.New(postgres.Config{
-			DSN:                  cfg.DSN,
+			DSN:                  cfg.ConnectionString,
 			PreferSimpleProtocol: cfg.Postgres.PreferSimpleProtocol,
 		}), nil
 	case "mysql":
 		return mysql.New(mysql.Config{
-			DSN:                       cfg.DSN,
+			DSN:                       cfg.ConnectionString,
 			DefaultStringSize:         cfg.Mysql.DefaultStringSize,
 			DisableDatetimePrecision:  cfg.Mysql.DisableDatetimePrecision,
 			DontSupportRenameIndex:    cfg.Mysql.DontSupportRenameIndex,
