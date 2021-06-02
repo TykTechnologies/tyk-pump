@@ -57,13 +57,13 @@ func Dialect(cfg *SQLConf) (gorm.Dialector, error) {
 	switch cfg.Type {
 	case "sqlite":
 		if cfg.ConnectionString == "" {
-			log.Warning("`config.dsn` is empty. Falling back to in-memory storage. Warning: All data will be lost on process restart.")
+			log.Warning("`meta.connection_string` is empty. Falling back to in-memory storage. Warning: All data will be lost on process restart.")
 			cfg.ConnectionString = "file::memory:?cache=shared"
 		}
 
 		return sqlite.Open(cfg.ConnectionString), nil
 	case "postgres":
-		// Example DSN: `"host=localhost user=gorm password=gorm DB.name=gorm port=9920 sslmode=disable TimeZone=Asia/Shanghai"`
+		// Example connection_string: `"host=localhost user=gorm password=gorm DB.name=gorm port=9920 sslmode=disable TimeZone=Asia/Shanghai"`
 		return postgres.New(postgres.Config{
 			DSN:                  cfg.ConnectionString,
 			PreferSimpleProtocol: cfg.Postgres.PreferSimpleProtocol,
