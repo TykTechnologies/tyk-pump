@@ -44,13 +44,13 @@ type SQLPump struct {
 }
 
 type SQLConf struct {
-	EnvPrefix     string         `mapstructure:"meta_env_prefix"`
-	Type          string         `json:"type" mapstructure:"type"`
+	EnvPrefix        string         `mapstructure:"meta_env_prefix"`
+	Type             string         `json:"type" mapstructure:"type"`
 	ConnectionString string         `json:"connection_string" mapstructure:"connection_string"`
-	Postgres      PostgresConfig `json:"postgres" mapstructure:"postgres"`
-	Mysql         MysqlConfig    `json:"mysql" mapstructure:"mysql"`
-	TableSharding bool           `json:"table_sharding" mapstructure:"table_sharding"`
-	LogLevel      string         `json:"log_level" mapstructure:"log_level"`
+	Postgres         PostgresConfig `json:"postgres" mapstructure:"postgres"`
+	Mysql            MysqlConfig    `json:"mysql" mapstructure:"mysql"`
+	TableSharding    bool           `json:"table_sharding" mapstructure:"table_sharding"`
+	LogLevel         string         `json:"log_level" mapstructure:"log_level"`
 }
 
 func Dialect(cfg *SQLConf) (gorm.Dialector, error) {
