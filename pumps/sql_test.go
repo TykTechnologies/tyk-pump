@@ -14,7 +14,7 @@ func TestSQLInit(t *testing.T) {
 	pmp := SQLPump{}
 	cfg := make(map[string]interface{})
 	cfg["type"] = "sqlite"
-	cfg["dsn"] = "pmp_test.db"
+	cfg["connection_string"] = "pmp_test.db"
 
 	err := pmp.Init(cfg)
 	if err != nil {
@@ -23,7 +23,6 @@ func TestSQLInit(t *testing.T) {
 	defer func() {
 		os.Remove("pmp_test.db")
 	}()
-
 
 	assert.NotNil(t, pmp.db)
 	assert.Equal(t, "sqlite", pmp.db.Dialector.Name())
@@ -41,7 +40,7 @@ func TestSQLWriteData(t *testing.T) {
 	pmp := SQLPump{}
 	cfg := make(map[string]interface{})
 	cfg["type"] = "sqlite"
-	cfg["dsn"] = "pmp_test.db"
+	cfg["connection_string"] = "pmp_test.db"
 
 	err := pmp.Init(cfg)
 	if err != nil {
@@ -78,7 +77,7 @@ func TestSQLWriteDataSharded(t *testing.T) {
 	pmp := SQLPump{}
 	cfg := make(map[string]interface{})
 	cfg["type"] = "sqlite"
-	cfg["dsn"] = "pmp_test.db"
+	cfg["connection_string"] = "pmp_test.db"
 	cfg["table_sharding"] = true
 	err := pmp.Init(cfg)
 	if err != nil {
