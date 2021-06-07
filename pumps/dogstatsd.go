@@ -88,6 +88,9 @@ func (s *DogStatsdPump) Init(conf interface{}) error {
 	var opts []statsd.Option
 	if s.conf.Buffered {
 		opts = append(opts, statsd.WithMaxMessagesPerPayload(s.conf.BufferedMaxMessages))
+	} else {
+		//this option is added to simulate an unbuffered behaviour. Specified in datadog 3.0.0 lib release https://github.com/DataDog/datadog-go/blob/master/CHANGELOG.md#breaking-changes-1
+		opts = append(opts, statsd.WithMaxMessagesPerPayload(1))
 	}
 
 	if s.conf.AsyncUDS {
