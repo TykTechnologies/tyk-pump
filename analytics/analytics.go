@@ -13,8 +13,8 @@ import (
 var log = logger.GetLogger()
 
 type NetworkStats struct {
-	OpenConnections  int64 `json:"open_conn"`
-	ClosedConnection int64 `json:"close_conn"`
+	OpenConnections  int64 `json:"open_connections"`
+	ClosedConnection int64 `json:"closed_connections"`
 	BytesIn          int64 `json:"bytes_in"`
 	BytesOut         int64 `json:"bytes_out"`
 }

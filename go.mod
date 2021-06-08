@@ -3,7 +3,8 @@ module github.com/TykTechnologies/tyk-pump
 go 1.15
 
 require (
-	github.com/DataDog/datadog-go v0.0.0-20190425163447-40bafcb5f6c1
+	github.com/DataDog/datadog-go v4.7.0+incompatible
+	github.com/Microsoft/go-winio v0.5.0 // indirect
 	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d // indirect
 	github.com/TykTechnologies/logrus v0.0.0-20161201171239-55ff0f4b9b3d
 	github.com/TykTechnologies/logrus-prefixed-formatter v0.0.0-20161201171121-85209afb73a6
@@ -38,8 +39,6 @@ require (
 	github.com/syndtr/goleveldb v0.0.0-20190318030020-c3a204f8e965 // indirect
 	github.com/xtgo/uuid v0.0.0-20140804021211-a0b114877d4c // indirect
 	golang.org/x/lint v0.0.0-20200302205851-738671d3881b // indirect
-	golang.org/x/sync v0.0.0-20200317015054-43a5402ce75a // indirect
-	golang.org/x/sys v0.0.0-20210113131315-ba0562f347e0 // indirect
 	golang.org/x/tools v0.0.0-20200623185156-456ad74e1464 // indirect
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6
 	gopkg.in/mgo.v2 v2.0.0-20190816093944-a6b53ec6cb22

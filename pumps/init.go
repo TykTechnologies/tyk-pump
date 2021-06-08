@@ -29,4 +29,5 @@ func init() {
 	AvailablePumps["syslog"] = &SyslogPump{}
 	AvailablePumps["sql"] = &SQLPump{}
 	AvailablePumps["sql_aggregate"] = &SQLAggregatePump{}
+	AvailablePumps["stdout"] = &StdOutPump{}
 }

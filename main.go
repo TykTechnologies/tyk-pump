@@ -47,6 +47,11 @@ func Init() {
 
 	kingpin.Parse()
 	log.Formatter = new(prefixed.TextFormatter)
+	LoadConfig(conf, &SystemConfig)
+
+	if SystemConfig.LogFormat == "json" {
+		log.Formatter = &logrus.JSONFormatter{}
+	}
 
 	envDemo := os.Getenv("TYK_PMP_BUILDDEMODATA")
 	if envDemo != "" {
@@ -57,8 +62,6 @@ func Init() {
 	log.WithFields(logrus.Fields{
 		"prefix": mainPrefix,
 	}).Info("## Tyk Analytics Pump, ", VERSION, " ##")
-
-	LoadConfig(conf, &SystemConfig)
 
 	// If no environment variable is set, check the configuration file:
 	if os.Getenv("TYK_LOGLEVEL") == "" {

@@ -110,6 +110,7 @@ func (p *GraylogPump) WriteData(ctx context.Context, data []interface{}) error {
 			"oauth_id":      record.OauthID,
 			"raw_request":   string(rReq),
 			"request_time":  record.RequestTime,
+			"ip_address":    record.IPAddress,
 			"raw_response":  string(rResp),
 		}
 
