@@ -39,6 +39,7 @@ require (
 	github.com/syndtr/goleveldb v0.0.0-20190318030020-c3a204f8e965 // indirect
 	github.com/xtgo/uuid v0.0.0-20140804021211-a0b114877d4c // indirect
 	golang.org/x/lint v0.0.0-20200302205851-738671d3881b // indirect
+	golang.org/x/sync v0.0.0-20200317015054-43a5402ce75a // indirect
 	golang.org/x/tools v0.0.0-20200623185156-456ad74e1464 // indirect
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6
 	gopkg.in/mgo.v2 v2.0.0-20190816093944-a6b53ec6cb22
