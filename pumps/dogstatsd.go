@@ -87,12 +87,10 @@ func (s *DogStatsdPump) Init(conf interface{}) error {
 
 	var opts []statsd.Option
 	if s.conf.Buffered {
-		opts = append(opts, statsd.Buffered())
 		opts = append(opts, statsd.WithMaxMessagesPerPayload(s.conf.BufferedMaxMessages))
 	}
 
 	if s.conf.AsyncUDS {
-		opts = append(opts, statsd.WithAsyncUDS())
 		opts = append(opts, statsd.WithWriteTimeoutUDS(time.Duration(s.conf.AsyncUDSWriteTimeout)*time.Second))
 	}
 
