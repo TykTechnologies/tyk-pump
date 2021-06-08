@@ -262,6 +262,13 @@ func (m *MongoPump) Init(config interface{}) error {
 		if overrideErr != nil {
 			m.log.Error("Failed to process environment variables for mongo pump: ", overrideErr)
 		}
+	} else if m.IsUptime && m.dbConf.MongoURL == "" {
+		m.log.Debug("Trying to set uptime pump with PMP_MONGO env vars")
+		//we keep this env check for backward compatibility
+		overrideErr := envconfig.Process(mongoPumpPrefix, m.dbConf)
+		if overrideErr != nil {
+			m.log.Error("Failed to process environment variables for mongo pump: ", overrideErr)
+		}
 	}
 
 	if m.dbConf.MaxInsertBatchSizeBytes == 0 {
