@@ -295,7 +295,7 @@ jobs:
           RUN yum install -y curl
 
           RUN curl -s https://packagecloud.io/install/repositories/tyk/tyk-pump/script.rpm.sh | bash && yum install -y tyk-pump-1.2.0-1
-          RUN rpm -ih /tyk-pump.rpm' > Dockerfile
+          RUN rpm -Uvh /tyk-pump.rpm' > Dockerfile
 
       - name: install on ${{ matrix.distro }}
         uses: docker/build-push-action@v2
