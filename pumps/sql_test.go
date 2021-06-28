@@ -2,12 +2,14 @@ package pumps
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"testing"
 	"time"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/stretchr/testify/assert"
+	"gopkg.in/vmihailenco/msgpack.v2"
 )
 
 func TestSQLInit(t *testing.T) {
@@ -112,6 +114,119 @@ func TestSQLWriteDataSharded(t *testing.T) {
 	assert.Len(t, dbRecords, 3)
 
 	tablePlus5 := "tyk_analytics_" + nowPlus1.Format("20060102")
+	assert.Equal(t, true, pmp.db.Migrator().HasTable(tablePlus5))
+	if err := pmp.db.Table(tablePlus5).Find(&dbRecords).Error; err != nil {
+		t.Fatal("Error getting analytics records from SQL")
+	}
+	assert.Len(t, dbRecords, 2)
+
+}
+
+func TestSQLWriteUptimeData(t *testing.T){
+	pmp := SQLPump{IsUptime: true}
+	cfg := make(map[string]interface{})
+	cfg["type"] = "sqlite"
+	cfg["connection_string"] = "pmp_test.db"
+	cfg["table_sharding"] = false
+	err := pmp.Init(cfg)
+	if err != nil {
+		t.Fatal("SQL Pump couldn't be initialized with err: ", err)
+	}
+	defer func() {
+		os.Remove("pmp_test.db")
+	}()
+
+	keys := make([]interface{}, 3)
+	now := time.Now()
+	nowPlus1 := time.Now().Add(2*time.Hour)
+	fmt.Println(now)
+
+	encoded, _ := msgpack.Marshal(analytics.UptimeReportData{OrgID:"1",URL: "url1", TimeStamp: now})
+	keys[0] = string(encoded)
+	keys[1] = string(encoded)
+	keys[2] = string(encoded)
+	pmp.WriteUptimeData( keys)
+	table := "tyk_uptime_analytics"
+	dbRecords :=[]analytics.UptimeReportAggregateSQL{}
+
+	if err := pmp.db.Table(table).Find(&dbRecords).Error; err != nil {
+		t.Fatal("Error getting analytics records from SQL")
+	}
+	assert.Len(t, dbRecords, 2)
+
+	encoded, _ = msgpack.Marshal(analytics.UptimeReportData{OrgID:"1",URL: "url1", TimeStamp: now})
+	keys[0] = string(encoded)
+	keys[1] = string(encoded)
+	keys[2] = string(encoded)
+	pmp.WriteUptimeData( keys)
+
+	dbRecords =[]analytics.UptimeReportAggregateSQL{}
+
+	if err := pmp.db.Table(table).Find(&dbRecords).Error; err != nil {
+		t.Fatal("Error getting analytics records from SQL")
+	}
+	assert.Len(t, dbRecords, 2)
+
+	assert.Equal(t, "total", dbRecords[1].DimensionValue)
+	assert.Equal(t, 6, dbRecords[1].Hits)
+
+
+	encoded, _ = msgpack.Marshal(analytics.UptimeReportData{OrgID:"1",URL: "url1", TimeStamp: nowPlus1})
+	keys[0] = string(encoded)
+	keys[1] = string(encoded)
+	keys[2] = string(encoded)
+
+	pmp.WriteUptimeData( keys)
+
+	dbRecords =[]analytics.UptimeReportAggregateSQL{}
+
+	if err := pmp.db.Table(table).Find(&dbRecords).Error; err != nil {
+		t.Fatal("Error getting analytics records from SQL")
+	}
+	assert.Len(t, dbRecords, 4)
+
+}
+
+
+func TestSQLWriteUptimeDataSharded(t *testing.T) {
+	pmp := SQLPump{}
+	cfg := make(map[string]interface{})
+	cfg["type"] = "sqlite"
+	cfg["connection_string"] = "pmp_test.db"
+	cfg["table_sharding"] = true
+	err := pmp.Init(cfg)
+	if err != nil {
+		t.Fatal("SQL Pump couldn't be initialized with err: ", err)
+	}
+	defer func() {
+		os.Remove("pmp_test.db")
+	}()
+
+	keys := make([]interface{}, 5)
+	now := time.Now()
+	nowPlus1 := time.Now().AddDate(0, 0, 1)
+	encoded, _ := msgpack.Marshal(analytics.UptimeReportData{OrgID:"1",URL: "url1", TimeStamp: now})
+	keys[0] = string(encoded)
+	keys[1] = string(encoded)
+	keys[2] = string(encoded)
+	encoded, _ = msgpack.Marshal(analytics.UptimeReportData{OrgID:"1",URL: "url1", TimeStamp: nowPlus1})
+	keys[3] = string(encoded)
+	keys[4] = string(encoded)
+
+	pmp.WriteUptimeData( keys)
+
+
+	table := "tyk_uptime_analytics_" + now.Format("20060102")
+	assert.Equal(t, true, pmp.db.Migrator().HasTable(table))
+
+	var dbRecords []analytics.UptimeReportAggregateSQL
+
+	if err := pmp.db.Table(table).Find(&dbRecords).Error; err != nil {
+		t.Fatal("Error getting analytics records from SQL")
+	}
+	assert.Len(t, dbRecords, 2)
+
+	tablePlus5 := "tyk_uptime_analytics_" + nowPlus1.Format("20060102")
 	assert.Equal(t, true, pmp.db.Migrator().HasTable(tablePlus5))
 	if err := pmp.db.Table(tablePlus5).Find(&dbRecords).Error; err != nil {
 		t.Fatal("Error getting analytics records from SQL")

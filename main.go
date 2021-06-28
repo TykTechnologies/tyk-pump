@@ -26,7 +26,7 @@ var SystemConfig TykPumpConfiguration
 var AnalyticsStore storage.AnalyticsStorage
 var UptimeStorage storage.AnalyticsStorage
 var Pumps []pumps.Pump
-var UptimePump pumps.MongoPump
+var UptimePump pumps.UptimePump
 
 var log = logger.GetLogger()
 
@@ -38,6 +38,7 @@ var (
 	demoMode           = kingpin.Flag("demo", "pass orgID string to generate demo data").Default("").String()
 	demoApiMode        = kingpin.Flag("demo-api", "pass apiID string to generate demo data").Default("").String()
 	demoApiVersionMode = kingpin.Flag("demo-api-version", "pass apiID string to generate demo data").Default("").String()
+	demoUptime		   = kingpin.Flag("demouptime", "pass orgID string to generate uptime demo data").Default("").String()
 	debugMode          = kingpin.Flag("debug", "enable debug mode").Bool()
 	version            = kingpin.Version(VERSION)
 )
@@ -156,16 +157,32 @@ func initialisePumps() {
 	}
 
 	if !SystemConfig.DontPurgeUptimeData {
-		log.WithFields(logrus.Fields{
-			"prefix": mainPrefix,
-		}).Info("'dont_purge_uptime_data' set to false, attempting to start Uptime pump! ", UptimePump.GetName())
-		UptimePump = pumps.MongoPump{IsUptime: true}
-		UptimePump.Init(SystemConfig.UptimePumpConfig)
-		log.WithFields(logrus.Fields{
-			"prefix": mainPrefix,
-		}).Info("Init Uptime Pump: ", UptimePump.GetName())
+		initialiseUptimePump()
 	}
 
+}
+
+func initialiseUptimePump(){
+
+
+	switch SystemConfig.UptimePumpConfig.UptimeType {
+	case "sql":
+		UptimePump = &pumps.SQLPump{IsUptime: true}
+		UptimePump.Init(SystemConfig.UptimePumpConfig.SQLConf)
+
+	default:
+		UptimePump = &pumps.MongoPump{IsUptime: true}
+		UptimePump.Init(SystemConfig.UptimePumpConfig.MongoConf)
+	}
+	log.WithFields(logrus.Fields{
+		"prefix": mainPrefix,
+	}).Info("'dont_purge_uptime_data' set to false, attempting to start Uptime pump! ", UptimePump.GetName())
+
+	//UptimePump.Init(SystemConfig.UptimePumpConfig)
+	log.WithFields(logrus.Fields{
+		"prefix": mainPrefix,
+		"type": SystemConfig.UptimePumpConfig.Type,
+	}).Info("Init Uptime Pump: ", UptimePump.GetName())
 }
 
 func StartPurgeLoop(secInterval int, chunkSize int64, expire time.Duration, omitDetails bool) {
@@ -345,7 +362,15 @@ func main() {
 
 		return
 	}
+	/*
+	if *demoUptime != "" && !SystemConfig.DontPurgeUptimeData{
+		log.Info("BUILDING UPTIME DEMO DATA AND EXITING...")
+		log.Warning("Starting from date: ", time.Now().AddDate(0, 0, -30))
+		demo.DemoInit(*demoUptime, *demoApiMode, *demoApiVersionMode)
+		demo.GenerateDemoUptimeData(time.Now().AddDate(0, 0, -30), 30, *demoUptime, UptimePump.WriteUptimeData)
 
+		return
+	}*/
 	if SystemConfig.PurgeChunk > 0 {
 		log.WithField("PurgeChunk", SystemConfig.PurgeChunk).Info("PurgeChunk enabled")
 		if SystemConfig.StorageExpirationTime == 0 {

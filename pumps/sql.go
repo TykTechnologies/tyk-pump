@@ -2,11 +2,15 @@ package pumps
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
+	"fmt"
+	"time"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
-
 	"github.com/mitchellh/mapstructure"
+	"gopkg.in/vmihailenco/msgpack.v2"
+	"gorm.io/gorm/clause"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
@@ -35,6 +39,7 @@ type MysqlConfig struct {
 
 type SQLPump struct {
 	CommonPumpConfig
+	IsUptime  bool
 
 	SQLConf *SQLConf
 
@@ -100,7 +105,11 @@ func (c *SQLPump) GetEnvPrefix() string {
 
 func (c *SQLPump) Init(conf interface{}) error {
 	c.SQLConf = &SQLConf{}
-	c.log = log.WithField("prefix", SQLPrefix)
+	if c.IsUptime{
+		c.log = log.WithField("prefix", SQLPrefix+"-uptime")
+	}else{
+		c.log = log.WithField("prefix", SQLPrefix)
+	}
 
 	err := mapstructure.Decode(conf, &c.SQLConf)
 	if err != nil {
@@ -108,9 +117,12 @@ func (c *SQLPump) Init(conf interface{}) error {
 		return err
 	}
 
-	processPumpEnvVars(c, c.log, c.SQLConf, SQLDefaultENV)
+	if !c.IsUptime {
+		processPumpEnvVars(c, c.log, c.SQLConf, SQLDefaultENV)
+	}
 
 	logLevel := gorm_logger.Silent
+
 
 	switch c.SQLConf.LogLevel {
 	case "debug":
@@ -140,7 +152,11 @@ func (c *SQLPump) Init(conf interface{}) error {
 	c.db = db
 
 	if !c.SQLConf.TableSharding {
-		c.db.Table("tyk_analytics").AutoMigrate(&analytics.AnalyticsRecord{})
+		if c.IsUptime {
+			c.db.Table("tyk_uptime_analytics").AutoMigrate(&analytics.UptimeReportAggregateSQL{})
+		}else{
+			c.db.Table("tyk_analytics").AutoMigrate(&analytics.AnalyticsRecord{})
+		}
 	}
 
 	c.log.Debug("SQL Initialized")
@@ -200,4 +216,94 @@ func (c *SQLPump) WriteData(ctx context.Context, data []interface{}) error {
 	c.log.Info("Purged ", len(data), " records...")
 
 	return nil
+}
+
+func (c *SQLPump) WriteUptimeData(data []interface{}) {
+	c.log.Debug("Attempting to write ", len(data), " records...")
+
+	var typedData []analytics.UptimeReportData
+
+	batch := 500
+	newBatch := false
+	var firstDate time.Time
+	for i, r := range data {
+
+		decoded := analytics.UptimeReportData{}
+
+		if err := msgpack.Unmarshal([]byte(r.(string)), &decoded); err != nil {
+			c.log.Error("Couldn't unmarshal uptime analytics data:", err)
+
+			continue
+		}
+		if i == 0 {
+			firstDate = decoded.TimeStamp
+		}
+
+		typedData = append(typedData, decoded)
+
+		if c.SQLConf.TableSharding && !newBatch && firstDate.Format("20060102") < decoded.TimeStamp.Format("20060102") {
+			batch = i
+			newBatch = true
+		}
+	}
+
+	if c.SQLConf.TableSharding && len(typedData) > 0 {
+		// Check first and last record, to ensure that we will not hit issue when hour is changing
+		table := "tyk_uptime_analytics_" + firstDate.Format("20060102")
+		if !c.db.Migrator().HasTable(table) {
+			c.db.Table(table).AutoMigrate(&analytics.UptimeReportAggregateSQL{})
+		}
+
+		table = "tyk_uptime_analytics_" + typedData[len(typedData)-1].TimeStamp.Format("20060102")
+		if !c.db.Migrator().HasTable(table) {
+			c.db.Table(table).AutoMigrate(&analytics.UptimeReportAggregateSQL{})
+		}
+	}
+
+	for i := 0; i < len(typedData); i += batch {
+		j := i + batch
+		if j > len(typedData) {
+			j = len(typedData)
+		}
+
+
+		resp := c.db
+
+		if c.SQLConf.TableSharding {
+			table := "tyk_uptime_analytics_" + typedData[i].TimeStamp.Format("20060102")
+			resp = resp.Table(table)
+		}
+
+		analyticsPerOrg := analytics.AggregateUptimeData(typedData[i:j])
+		for orgID, ag := range analyticsPerOrg {
+
+			for _, d := range ag.Dimensions() {
+				id :=  fmt.Sprint(ag.TimeStamp.Unix())+d.Name+d.Value
+				uID := hex.EncodeToString([]byte(id))
+
+				rec := analytics.UptimeReportAggregateSQL{
+					ID: 	uID,
+					OrgID:          orgID,
+					TimeStamp:      ag.TimeStamp.Unix(),
+					Counter:        *d.Counter,
+					Dimension:      d.Name,
+					DimensionValue: d.Value,
+				}
+				rec.ProcessStatusCodes()
+
+				resp.Clauses(clause.OnConflict{
+					Columns: []clause.Column{{Name: "id"}},
+					DoUpdates:  clause.Assignments(rec.GetAssignments()),
+				}).Create(rec)
+				if resp.Error != nil {
+					c.log.Error(resp.Error)
+				}
+			}
+		}
+
+	}
+
+	c.log.Info("Purged ", len(data), " records...")
+
+
 }
