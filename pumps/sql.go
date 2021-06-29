@@ -289,6 +289,7 @@ func (c *SQLPump) WriteUptimeData(data []interface{}) {
 					Dimension:      d.Name,
 					DimensionValue: d.Value,
 				}
+
 				rec.ProcessStatusCodes()
 
 				resp.Clauses(clause.OnConflict{

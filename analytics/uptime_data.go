@@ -65,6 +65,16 @@ type UptimeReportAggregateSQL struct {
 func (a UptimeReportAggregateSQL) GetAssignments() map[string]interface{} {
 	assignments := make(map[string]interface{})
 
+	baseFields := structs.Fields(a)
+	for _, field := range baseFields{
+		colName := field.Tag("json")
+		if strings.Contains(colName,"code_"){
+			if !field.IsZero(){
+				assignments[colName] = gorm.Expr("`"+colName + "` + "+fmt.Sprint(field.Value()))
+			}
+		}
+	}
+
 	fields := structs.Fields(a.Counter)
 	for _, field := range fields {
 		colName := "counter_"+field.Tag("json")
@@ -265,6 +275,9 @@ func AggregateUptimeData (data []UptimeReportData) map[string]UptimeReportAggreg
 			if (thisV.ResponseCode < 300) && (thisV.ResponseCode >= 200) {
 				thisCounter.Success = 1
 				thisAggregate.Total.Success++
+				//using the errorMap as ResponseCode Map for SQL purpose
+				thisCounter.ErrorMap[strconv.Itoa(thisV.ResponseCode)]++
+				thisAggregate.Total.ErrorMap[strconv.Itoa(thisV.ResponseCode)]++
 			}
 
 
