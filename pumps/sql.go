@@ -302,6 +302,6 @@ func (c *SQLPump) WriteUptimeData(data []interface{}) {
 
 	}
 
-	c.log.Info("Purged ", len(data), " records...")
+	c.log.Debug("Purged ", len(data), " records...")
 
 }
