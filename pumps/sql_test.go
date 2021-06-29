@@ -267,7 +267,6 @@ func TestSQLWriteUptimeDataAggregations(t *testing.T) {
 		t.Fatal("Error getting analytics records from SQL")
 	}
 
-	fmt.Printf("%+v\n", dbRecords[0])
 
 	assert.Len(t, dbRecords, 3)
 	assert.Equal(t, "url", dbRecords[0].Dimension)

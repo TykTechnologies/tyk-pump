@@ -246,18 +246,6 @@ func (c *SQLPump) WriteUptimeData(data []interface{}) {
 		}
 	}
 
-	if c.SQLConf.TableSharding && len(typedData) > 0 {
-		// Check first and last record, to ensure that we will not hit issue when hour is changing
-		table := "tyk_uptime_analytics_" + firstDate.Format("20060102")
-		if !c.db.Migrator().HasTable(table) {
-			c.db.Table(table).AutoMigrate(&analytics.UptimeReportAggregateSQL{})
-		}
-
-		table = "tyk_uptime_analytics_" + typedData[len(typedData)-1].TimeStamp.Format("20060102")
-		if !c.db.Migrator().HasTable(table) {
-			c.db.Table(table).AutoMigrate(&analytics.UptimeReportAggregateSQL{})
-		}
-	}
 
 	for i := 0; i < len(typedData); i += batch {
 		j := i + batch
@@ -269,6 +257,9 @@ func (c *SQLPump) WriteUptimeData(data []interface{}) {
 
 		if c.SQLConf.TableSharding {
 			table := "tyk_uptime_analytics_" + typedData[i].TimeStamp.Format("20060102")
+			if !c.db.Migrator().HasTable(table) {
+				c.db.Table(table).AutoMigrate(&analytics.UptimeReportAggregateSQL{})
+			}
 			resp = resp.Table(table)
 		}
 
@@ -290,7 +281,7 @@ func (c *SQLPump) WriteUptimeData(data []interface{}) {
 
 				rec.ProcessStatusCodes()
 
-				resp.Clauses(clause.OnConflict{
+				resp = resp.Clauses(clause.OnConflict{
 					Columns:   []clause.Column{{Name: "id"}},
 					DoUpdates: clause.Assignments(rec.GetAssignments()),
 				}).Create(rec)
