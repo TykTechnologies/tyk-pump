@@ -39,7 +39,7 @@ type MysqlConfig struct {
 
 type SQLPump struct {
 	CommonPumpConfig
-	IsUptime  bool
+	IsUptime bool
 
 	SQLConf *SQLConf
 
@@ -105,9 +105,9 @@ func (c *SQLPump) GetEnvPrefix() string {
 
 func (c *SQLPump) Init(conf interface{}) error {
 	c.SQLConf = &SQLConf{}
-	if c.IsUptime{
+	if c.IsUptime {
 		c.log = log.WithField("prefix", SQLPrefix+"-uptime")
-	}else{
+	} else {
 		c.log = log.WithField("prefix", SQLPrefix)
 	}
 
@@ -122,7 +122,6 @@ func (c *SQLPump) Init(conf interface{}) error {
 	}
 
 	logLevel := gorm_logger.Silent
-
 
 	switch c.SQLConf.LogLevel {
 	case "debug":
@@ -154,7 +153,7 @@ func (c *SQLPump) Init(conf interface{}) error {
 	if !c.SQLConf.TableSharding {
 		if c.IsUptime {
 			c.db.Table("tyk_uptime_analytics").AutoMigrate(&analytics.UptimeReportAggregateSQL{})
-		}else{
+		} else {
 			c.db.Table("tyk_analytics").AutoMigrate(&analytics.AnalyticsRecord{})
 		}
 	}
@@ -266,7 +265,6 @@ func (c *SQLPump) WriteUptimeData(data []interface{}) {
 			j = len(typedData)
 		}
 
-
 		resp := c.db
 
 		if c.SQLConf.TableSharding {
@@ -278,11 +276,11 @@ func (c *SQLPump) WriteUptimeData(data []interface{}) {
 		for orgID, ag := range analyticsPerOrg {
 
 			for _, d := range ag.Dimensions() {
-				id :=  fmt.Sprint(ag.TimeStamp.Unix())+d.Name+d.Value
+				id := fmt.Sprint(ag.TimeStamp.Unix()) + d.Name + d.Value
 				uID := hex.EncodeToString([]byte(id))
 
 				rec := analytics.UptimeReportAggregateSQL{
-					ID: 	uID,
+					ID:             uID,
 					OrgID:          orgID,
 					TimeStamp:      ag.TimeStamp.Unix(),
 					Counter:        *d.Counter,
@@ -293,8 +291,8 @@ func (c *SQLPump) WriteUptimeData(data []interface{}) {
 				rec.ProcessStatusCodes()
 
 				resp.Clauses(clause.OnConflict{
-					Columns: []clause.Column{{Name: "id"}},
-					DoUpdates:  clause.Assignments(rec.GetAssignments()),
+					Columns:   []clause.Column{{Name: "id"}},
+					DoUpdates: clause.Assignments(rec.GetAssignments()),
 				}).Create(rec)
 				if resp.Error != nil {
 					c.log.Error(resp.Error)
@@ -305,6 +303,5 @@ func (c *SQLPump) WriteUptimeData(data []interface{}) {
 	}
 
 	c.log.Info("Purged ", len(data), " records...")
-
 
 }

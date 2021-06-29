@@ -11,27 +11,26 @@ import (
 )
 
 type UptimeReportData struct {
-	URL          string `json:"url" gorm:"column:url"`
-	RequestTime  int64 `json:"request_time" gorm:"column:requesttime"`
-	ResponseCode int `json:"response_code" gorm:"column:responsecode;index"`
-	TCPError     bool `json:"tcp_error" gorm:"tcperror"`
-	ServerError  bool `json:"server_error" gorm:"servererror"`
-	Day          int `json:"day" gorm:"day"`
+	URL          string     `json:"url" gorm:"column:url"`
+	RequestTime  int64      `json:"request_time" gorm:"column:requesttime"`
+	ResponseCode int        `json:"response_code" gorm:"column:responsecode;index"`
+	TCPError     bool       `json:"tcp_error" gorm:"tcperror"`
+	ServerError  bool       `json:"server_error" gorm:"servererror"`
+	Day          int        `json:"day" gorm:"day"`
 	Month        time.Month `json:"month" gorm:"month"`
-	Year         int `json:"year" gorm:"year"`
-	Hour         int `json:"hour" gorm:"hour"`
-	Minute       int `json:"minute" sql:"-"`
-	TimeStamp    time.Time `json:"timestamp" gorm:"column:timestamp;index"`
-	ExpireAt     time.Time `bson:"expireAt" json:"expireAt" gorm:"expireAt"`
-	APIID        string `json:"api_id" gorm:"column:apiid;index"`
-	OrgID        string `json:"org_id" gorm:"column:orgid;index"`
+	Year         int        `json:"year" gorm:"year"`
+	Hour         int        `json:"hour" gorm:"hour"`
+	Minute       int        `json:"minute" sql:"-"`
+	TimeStamp    time.Time  `json:"timestamp" gorm:"column:timestamp;index"`
+	ExpireAt     time.Time  `bson:"expireAt" json:"expireAt" gorm:"expireAt"`
+	APIID        string     `json:"api_id" gorm:"column:apiid;index"`
+	OrgID        string     `json:"org_id" gorm:"column:orgid;index"`
 }
 
 type UptimeReportAggregateSQL struct {
-	ID      string  `gorm:"primaryKey"`
+	ID string `gorm:"primaryKey"`
 
 	Counter `json:"counter" gorm:"embedded"`
-
 
 	TimeStamp      int64  `json:"timestamp" gorm:"index:dimension, priority:1"`
 	OrgID          string `json:"org_id" gorm:"index:dimension, priority:2"`
@@ -61,28 +60,27 @@ type UptimeReportAggregateSQL struct {
 	Code5x  int `json:"code_5x"`
 }
 
-
 func (a UptimeReportAggregateSQL) GetAssignments() map[string]interface{} {
 	assignments := make(map[string]interface{})
 
 	baseFields := structs.Fields(a)
-	for _, field := range baseFields{
+	for _, field := range baseFields {
 		colName := field.Tag("json")
-		if strings.Contains(colName,"code_"){
-			if !field.IsZero(){
-				assignments[colName] = gorm.Expr("`"+colName + "` + "+fmt.Sprint(field.Value()))
+		if strings.Contains(colName, "code_") {
+			if !field.IsZero() {
+				assignments[colName] = gorm.Expr("`" + colName + "` + " + fmt.Sprint(field.Value()))
 			}
 		}
 	}
 
 	fields := structs.Fields(a.Counter)
 	for _, field := range fields {
-		colName := "counter_"+field.Tag("json")
+		colName := "counter_" + field.Tag("json")
 
 		switch {
 		case strings.Contains(colName, "hits"), strings.Contains(colName, "error"), strings.Contains(colName, "success"):
-			if !field.IsZero(){
-				assignments[colName] = gorm.Expr("`"+colName + "` + "+fmt.Sprint(field.Value()))
+			if !field.IsZero() {
+				assignments[colName] = gorm.Expr("`" + colName + "` + " + fmt.Sprint(field.Value()))
 			}
 		case strings.Contains(colName, "total_request_time"):
 			if !field.IsZero() {
@@ -113,7 +111,6 @@ func (u *UptimeReportAggregate) Dimensions() (dimensions []Dimension) {
 
 	return
 }
-
 
 func (a *UptimeReportAggregateSQL) TableName() string {
 	return "tyk_uptime_analytics"
@@ -172,7 +169,6 @@ func (a *UptimeReportAggregateSQL) ProcessStatusCodes() {
 	a.Counter.ErrorMap = nil
 }
 
-
 type UptimeReportAggregate struct {
 	TimeStamp time.Time
 	OrgID     string
@@ -183,8 +179,8 @@ type UptimeReportAggregate struct {
 		Hour  int
 	}
 
-	URL map[string]*Counter
-	Errors  map[string]*Counter
+	URL    map[string]*Counter
+	Errors map[string]*Counter
 
 	Total Counter
 
@@ -192,17 +188,16 @@ type UptimeReportAggregate struct {
 	LastTime time.Time
 }
 
-func (u UptimeReportAggregate) New() UptimeReportAggregate{
+func (u UptimeReportAggregate) New() UptimeReportAggregate {
 	agg := UptimeReportAggregate{}
 
 	agg.URL = make(map[string]*Counter)
 	agg.Errors = make(map[string]*Counter)
 
-
 	return agg
 }
 
-func AggregateUptimeData (data []UptimeReportData) map[string]UptimeReportAggregate{
+func AggregateUptimeData(data []UptimeReportData) map[string]UptimeReportAggregate {
 	analyticsPerOrg := make(map[string]UptimeReportAggregate)
 
 	for _, v := range data {
@@ -239,13 +234,13 @@ func AggregateUptimeData (data []UptimeReportData) map[string]UptimeReportAggreg
 		var thisCounter Counter
 		if thisV.ResponseCode == -1 {
 			thisCounter = Counter{
-				LastTime:          thisV.TimeStamp,
+				LastTime: thisV.TimeStamp,
 			}
 			if thisV.URL != "" {
 				c := thisAggregate.URL[thisV.URL]
 				if c == nil {
 					c = &Counter{
-						Identifier:      thisV.URL,
+						Identifier: thisV.URL,
 					}
 					thisAggregate.URL[thisV.URL] = c
 				}
@@ -258,7 +253,7 @@ func AggregateUptimeData (data []UptimeReportData) map[string]UptimeReportAggreg
 				RequestTime:      float64(thisV.RequestTime),
 				TotalRequestTime: float64(thisV.RequestTime),
 				LastTime:         thisV.TimeStamp,
-				ErrorMap:             make(map[string]int),
+				ErrorMap:         make(map[string]int),
 			}
 			thisAggregate.Total.Hits++
 			thisAggregate.Total.TotalRequestTime += float64(thisV.RequestTime)
@@ -279,7 +274,6 @@ func AggregateUptimeData (data []UptimeReportData) map[string]UptimeReportAggreg
 				thisCounter.ErrorMap[strconv.Itoa(thisV.ResponseCode)]++
 				thisAggregate.Total.ErrorMap[strconv.Itoa(thisV.ResponseCode)]++
 			}
-
 
 			// Convert to a map (for easy iteration)
 			vAsMap := structs.Map(thisV)
