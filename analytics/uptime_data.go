@@ -200,8 +200,7 @@ func (u UptimeReportAggregate) New() UptimeReportAggregate {
 func AggregateUptimeData(data []UptimeReportData) map[string]UptimeReportAggregate {
 	analyticsPerOrg := make(map[string]UptimeReportAggregate)
 
-	for _, v := range data {
-		thisV := v
+	for _, thisV := range data {
 		orgID := thisV.OrgID
 
 		if orgID == "" {
