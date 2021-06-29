@@ -97,24 +97,55 @@ func (c *SQLAggregatePump) Init(conf interface{}) error {
 func (c *SQLAggregatePump) WriteData(ctx context.Context, data []interface{}) error {
 	c.log.Debug("Attempting to write ", len(data), " records...")
 
-	analyticsPerOrg := analytics.AggregateData(data, c.SQLConf.TrackAllPaths, c.SQLConf.IgnoreTagPrefixList, c.SQLConf.StoreAnalyticsPerMinute)
+	var typedData []*analytics.AnalyticsRecord
 
-	for orgID, ag := range analyticsPerOrg {
-		// ag.DiscardAggregations([]string{"keyendpoints", "oauthendpoints", "apiendpoints"})
+	batch := 500
+	newBatch := false
+	for i, r := range data {
+		rec := r.(analytics.AnalyticsRecord)
+		typedData = append(typedData, &rec)
 
-		for _, d := range ag.Dimensions() {
-			rec := analytics.SQLAnalyticsRecordAggregate{
-				OrgID:          orgID,
-				TimeStamp:      ag.TimeStamp.Unix(),
-				Counter:        *d.Counter,
-				Dimension:      d.Name,
-				DimensionValue: d.Value,
+		if c.SQLConf.TableSharding && !newBatch && typedData[0].TimeStamp.Format("20060102") < rec.TimeStamp.Format("20060102") {
+			batch = i
+			newBatch = true
+		}
+	}
+
+	for i := 0; i < len(typedData); i += batch {
+		j := i + batch
+		if j > len(typedData) {
+			j = len(typedData)
+		}
+
+		resp := c.db
+
+		if c.SQLConf.TableSharding {
+			table := "tyk_aggregated_" + typedData[i].TimeStamp.Format("20060102")
+			if !c.db.Migrator().HasTable(table) {
+				c.db.Table(table).AutoMigrate(&analytics.SQLAnalyticsRecordAggregate{})
 			}
-			rec.ProcessStatusCodes()
+			resp = resp.Table(table)
+		}
 
-			resp := c.db.WithContext(ctx).Create(rec)
-			if resp.Error != nil {
-				return resp.Error
+		analyticsPerOrg := analytics.AggregateData(data[i:j], c.SQLConf.TrackAllPaths, c.SQLConf.IgnoreTagPrefixList, c.SQLConf.StoreAnalyticsPerMinute)
+
+		for orgID, ag := range analyticsPerOrg {
+			// ag.DiscardAggregations([]string{"keyendpoints", "oauthendpoints", "apiendpoints"})
+
+			for _, d := range ag.Dimensions() {
+				rec := analytics.SQLAnalyticsRecordAggregate{
+					OrgID:          orgID,
+					TimeStamp:      ag.TimeStamp.Unix(),
+					Counter:        *d.Counter,
+					Dimension:      d.Name,
+					DimensionValue: d.Value,
+				}
+				rec.ProcessStatusCodes()
+
+				resp = resp.WithContext(ctx).Create(rec)
+				if resp.Error != nil {
+					return resp.Error
+				}
 			}
 		}
 	}

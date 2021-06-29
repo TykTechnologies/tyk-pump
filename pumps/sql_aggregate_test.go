@@ -2,8 +2,10 @@ package pumps
 
 import (
 	"context"
+	"net/http"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/stretchr/testify/assert"
@@ -33,6 +35,59 @@ func TestSQLAggregateInit(t *testing.T) {
 	assert.NotNil(t, invalidDialectErr)
 	//TODO check how to test postgres connection - it's going to requiere to have some postgres up
 
+}
+
+func TestSQLAggregateWriteDataSharded(t *testing.T) {
+	pmp := SQLAggregatePump{}
+	cfg := make(map[string]interface{})
+	cfg["type"] = "sqlite"
+	cfg["connection_string"] = "pmp_test.db"
+	cfg["table_sharding"] = true
+
+	err := pmp.Init(cfg)
+	if err != nil {
+		t.Fatal("SQL Pump Aggregate couldn't be initialized with err: ", err)
+	}
+
+	defer func() {
+		os.Remove("pmp_test.db")
+	}()
+
+	keys := make([]interface{}, 7)
+	now := time.Now()
+	nowPlus1 := time.Now().AddDate(0, 0, 1)
+	keys[0] = analytics.AnalyticsRecord{OrgID: "1", ResponseCode: http.StatusInternalServerError, TimeStamp: now}
+	keys[1] = analytics.AnalyticsRecord{OrgID: "1", ResponseCode: http.StatusBadRequest, TimeStamp: now}
+	keys[2] = analytics.AnalyticsRecord{OrgID: "1", ResponseCode: http.StatusUnavailableForLegalReasons, TimeStamp: now}
+	keys[3] = analytics.AnalyticsRecord{OrgID: "1", ResponseCode: http.StatusOK, TimeStamp: now}
+
+	keys[4] = analytics.AnalyticsRecord{OrgID: "1", ResponseCode: http.StatusNotFound, APIID: "1", TimeStamp: nowPlus1}
+	keys[5] = analytics.AnalyticsRecord{OrgID: "1", ResponseCode: http.StatusNotFound, APIID: "1", TimeStamp: nowPlus1}
+	keys[6] = analytics.AnalyticsRecord{OrgID: "1", ResponseCode: http.StatusUnauthorized, APIID: "2", TimeStamp: nowPlus1}
+
+	ctx := context.TODO()
+	pmp.WriteData(ctx, keys)
+
+	firstDay := "tyk_aggregated_" + now.Format("20060102")
+	assert.Equal(t, true, pmp.db.Migrator().HasTable(firstDay))
+
+	var dbRecords []analytics.SQLAnalyticsRecordAggregate
+
+	if err := pmp.db.Table(firstDay).Find(&dbRecords).Error; err != nil {
+		t.Fatal("Error getting analytics records from SQL")
+	}
+
+	// 3 (from StatusInternalServerError, StatusBadRequest and StatusUnavailableForLegalReasons) + 1 (from total)
+	assert.Len(t, dbRecords, 4)
+
+	secondDay := "tyk_aggregated_" + nowPlus1.Format("20060102")
+	assert.Equal(t, true, pmp.db.Migrator().HasTable(secondDay))
+	if err := pmp.db.Table(secondDay).Find(&dbRecords).Error; err != nil {
+		t.Fatal("Error getting analytics records from SQL")
+	}
+
+	// 2(from apiid) + 2 (from StatusNotFound and StatusUnauthorized) + 1 (from total)
+	assert.Len(t, dbRecords, 5)
 }
 
 func TestSQLAggregateWriteData(t *testing.T) {
