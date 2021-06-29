@@ -37,7 +37,7 @@ func TestSQLAggregateInit(t *testing.T) {
 
 }
 
-func TestSQLAggregateWriteDataSharded(t *testing.T) {
+func TestSQLAggregateWriteData_Sharded(t *testing.T) {
 	pmp := SQLAggregatePump{}
 	cfg := make(map[string]interface{})
 	cfg["type"] = "sqlite"

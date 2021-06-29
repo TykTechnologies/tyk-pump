@@ -95,43 +95,37 @@ func (c *SQLAggregatePump) Init(conf interface{}) error {
 }
 
 func (c *SQLAggregatePump) WriteData(ctx context.Context, data []interface{}) error {
-	c.log.Debug("Attempting to write ", len(data), " records...")
+	dataLen := len(data)
+	c.log.Debug("Attempting to write ", dataLen, " records...")
 
-	var typedData []*analytics.AnalyticsRecord
-
-	batch := 500
-	newBatch := false
-	for i, r := range data {
-		rec := r.(analytics.AnalyticsRecord)
-		typedData = append(typedData, &rec)
-
-		if c.SQLConf.TableSharding && !newBatch && typedData[0].TimeStamp.Format("20060102") < rec.TimeStamp.Format("20060102") {
-			batch = i
-			newBatch = true
-		}
-	}
-
-	for i := 0; i < len(typedData); i += batch {
-		j := i + batch
-		if j > len(typedData) {
-			j = len(typedData)
-		}
-
-		resp := c.db
-
+	startIndex := 0
+	endIndex := dataLen
+	for i := 0; i < dataLen; i++ {
 		if c.SQLConf.TableSharding {
-			table := "tyk_aggregated_" + typedData[i].TimeStamp.Format("20060102")
-			if !c.db.Migrator().HasTable(table) {
-				c.db.Table(table).AutoMigrate(&analytics.SQLAnalyticsRecordAggregate{})
+			recDate := data[startIndex].(analytics.AnalyticsRecord).TimeStamp.Format("20060102")
+			nextRecDate := data[i].(analytics.AnalyticsRecord).TimeStamp.Format("20060102")
+
+			if i != dataLen-1 && recDate == nextRecDate { // write records belong to same day at once
+				continue
 			}
-			resp = resp.Table(table)
+
+			endIndex = i
+			if endIndex == dataLen-1 {
+				endIndex = dataLen
+			}
+
+			table := "tyk_aggregated_" + recDate
+			c.db = c.db.Table(table)
+			if !c.db.Migrator().HasTable(table) {
+				c.db.AutoMigrate(&analytics.SQLAnalyticsRecordAggregate{})
+			}
+		} else {
+			i = dataLen // write all records at once for non-sharded case, stop for loop after 1 iteration
 		}
 
-		analyticsPerOrg := analytics.AggregateData(data[i:j], c.SQLConf.TrackAllPaths, c.SQLConf.IgnoreTagPrefixList, c.SQLConf.StoreAnalyticsPerMinute)
+		analyticsPerOrg := analytics.AggregateData(data[startIndex:endIndex], c.SQLConf.TrackAllPaths, c.SQLConf.IgnoreTagPrefixList, c.SQLConf.StoreAnalyticsPerMinute)
 
 		for orgID, ag := range analyticsPerOrg {
-			// ag.DiscardAggregations([]string{"keyendpoints", "oauthendpoints", "apiendpoints"})
-
 			for _, d := range ag.Dimensions() {
 				rec := analytics.SQLAnalyticsRecordAggregate{
 					OrgID:          orgID,
@@ -142,15 +136,17 @@ func (c *SQLAggregatePump) WriteData(ctx context.Context, data []interface{}) er
 				}
 				rec.ProcessStatusCodes()
 
-				resp = resp.WithContext(ctx).Create(rec)
-				if resp.Error != nil {
-					return resp.Error
+				c.db = c.db.WithContext(ctx).Create(rec)
+				if c.db.Error != nil {
+					return c.db.Error
 				}
 			}
 		}
+
+		startIndex = i // next day start index, necessary for sharded case
 	}
 
-	c.log.Info("Purged ", len(data), " records...")
+	c.log.Info("Purged ", dataLen, " records...")
 
 	return nil
 }
