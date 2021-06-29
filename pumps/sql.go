@@ -246,7 +246,6 @@ func (c *SQLPump) WriteUptimeData(data []interface{}) {
 		}
 	}
 
-
 	for i := 0; i < len(typedData); i += batch {
 		j := i + batch
 		if j > len(typedData) {

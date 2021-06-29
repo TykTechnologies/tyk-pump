@@ -2,7 +2,6 @@ package pumps
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"testing"
 	"time"
@@ -266,7 +265,6 @@ func TestSQLWriteUptimeDataAggregations(t *testing.T) {
 	if err := pmp.db.Table(table).Find(&dbRecords).Error; err != nil {
 		t.Fatal("Error getting analytics records from SQL")
 	}
-
 
 	assert.Len(t, dbRecords, 3)
 	assert.Equal(t, "url", dbRecords[0].Dimension)
