@@ -11,20 +11,20 @@ import (
 )
 
 type UptimeReportData struct {
-	URL          string     `json:"url" gorm:"column:url"`
-	RequestTime  int64      `json:"request_time" gorm:"column:requesttime"`
-	ResponseCode int        `json:"response_code" gorm:"column:responsecode;index"`
-	TCPError     bool       `json:"tcp_error" gorm:"tcperror"`
-	ServerError  bool       `json:"server_error" gorm:"servererror"`
-	Day          int        `json:"day" gorm:"day"`
-	Month        time.Month `json:"month" gorm:"month"`
-	Year         int        `json:"year" gorm:"year"`
-	Hour         int        `json:"hour" gorm:"hour"`
-	Minute       int        `json:"minute" sql:"-"`
-	TimeStamp    time.Time  `json:"timestamp" gorm:"column:timestamp;index"`
-	ExpireAt     time.Time  `bson:"expireAt" json:"expireAt" gorm:"expireAt"`
-	APIID        string     `json:"api_id" gorm:"column:apiid;index"`
-	OrgID        string     `json:"org_id" gorm:"column:orgid;index"`
+	URL          string     `json:"url"`
+	RequestTime  int64      `json:"request_time"`
+	ResponseCode int        `json:"response_code"`
+	TCPError     bool       `json:"tcp_error"`
+	ServerError  bool       `json:"server_error"`
+	Day          int        `json:"day"`
+	Month        time.Month `json:"month"`
+	Year         int        `json:"year"`
+	Hour         int        `json:"hour"`
+	Minute       int        `json:"minute"`
+	TimeStamp    time.Time  `json:"timestamp"`
+	ExpireAt     time.Time  `bson:"expireAt"`
+	APIID        string     `json:"api_id"`
+	OrgID        string     `json:"org_id"`
 }
 
 type UptimeReportAggregateSQL struct {
