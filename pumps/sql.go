@@ -5,7 +5,6 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/mitchellh/mapstructure"
@@ -218,53 +217,47 @@ func (c *SQLPump) WriteData(ctx context.Context, data []interface{}) error {
 }
 
 func (c *SQLPump) WriteUptimeData(data []interface{}) {
-	c.log.Debug("Attempting to write ", len(data), " records...")
+	dataLen := len(data)
+	c.log.Debug("Attempting to write ", dataLen, " records...")
 
-	var typedData []analytics.UptimeReportData
+	typedData := make([]analytics.UptimeReportData, len(data))
 
-	batch := 500
-	newBatch := false
-	var firstDate time.Time
-	for i, r := range data {
-
+	for i, v := range data {
 		decoded := analytics.UptimeReportData{}
-
-		if err := msgpack.Unmarshal([]byte(r.(string)), &decoded); err != nil {
-			c.log.Error("Couldn't unmarshal uptime analytics data:", err)
-
+		if err := msgpack.Unmarshal([]byte(v.(string)), &decoded); err != nil {
+			c.log.Error("Couldn't unmarshal analytics data:", err)
 			continue
 		}
-		if i == 0 {
-			firstDate = decoded.TimeStamp
-		}
-
-		typedData = append(typedData, decoded)
-
-		if c.SQLConf.TableSharding && !newBatch && firstDate.Format("20060102") < decoded.TimeStamp.Format("20060102") {
-			batch = i
-			newBatch = true
-		}
+		typedData[i] = decoded
 	}
 
-	for i := 0; i < len(typedData); i += batch {
-		j := i + batch
-		if j > len(typedData) {
-			j = len(typedData)
-		}
-
-		resp := c.db
-
+	startIndex := 0
+	endIndex := dataLen
+	for i := 0; i < dataLen; i++ {
 		if c.SQLConf.TableSharding {
-			table := "tyk_uptime_analytics_" + typedData[i].TimeStamp.Format("20060102")
-			if !c.db.Migrator().HasTable(table) {
-				c.db.Table(table).AutoMigrate(&analytics.UptimeReportAggregateSQL{})
+			recDate := typedData[startIndex].TimeStamp.Format("20060102")
+			nextRecDate := typedData[i].TimeStamp.Format("20060102")
+
+			if i != dataLen-1 && recDate == nextRecDate { // write records belong to same day at once
+				continue
 			}
-			resp = resp.Table(table)
+
+			endIndex = i
+			if endIndex == dataLen-1 {
+				endIndex = dataLen
+			}
+
+			table := "tyk_uptime_analytics_" + recDate
+			c.db = c.db.Table(table)
+			if !c.db.Migrator().HasTable(table) {
+				c.db.AutoMigrate(&analytics.UptimeReportAggregateSQL{})
+			}
+		} else {
+			i = dataLen // write all records at once for non-sharded case, stop for loop after 1 iteration
 		}
 
-		analyticsPerOrg := analytics.AggregateUptimeData(typedData[i:j])
+		analyticsPerOrg := analytics.AggregateUptimeData(typedData[startIndex:endIndex])
 		for orgID, ag := range analyticsPerOrg {
-
 			for _, d := range ag.Dimensions() {
 				id := fmt.Sprint(ag.TimeStamp.Unix()) + d.Name + d.Value
 				uID := hex.EncodeToString([]byte(id))
@@ -277,21 +270,20 @@ func (c *SQLPump) WriteUptimeData(data []interface{}) {
 					Dimension:      d.Name,
 					DimensionValue: d.Value,
 				}
-
 				rec.ProcessStatusCodes()
 
-				resp = resp.Clauses(clause.OnConflict{
+				c.db = c.db.Clauses(clause.OnConflict{
 					Columns:   []clause.Column{{Name: "id"}},
 					DoUpdates: clause.Assignments(rec.GetAssignments()),
 				}).Create(rec)
-				if resp.Error != nil {
-					c.log.Error(resp.Error)
+				if c.db.Error != nil {
+					c.log.Error(c.db.Error)
 				}
 			}
 		}
-
+		startIndex = i // next day start index, necessary for sharded case
 	}
 
-	c.log.Debug("Purged ", len(data), " records...")
+	c.log.Info("Purged ", len(data), " records...")
 
 }
