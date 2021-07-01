@@ -38,7 +38,6 @@ var (
 	demoMode           = kingpin.Flag("demo", "pass orgID string to generate demo data").Default("").String()
 	demoApiMode        = kingpin.Flag("demo-api", "pass apiID string to generate demo data").Default("").String()
 	demoApiVersionMode = kingpin.Flag("demo-api-version", "pass apiID string to generate demo data").Default("").String()
-	demoUptime         = kingpin.Flag("demouptime", "pass orgID string to generate uptime demo data").Default("").String()
 	debugMode          = kingpin.Flag("debug", "enable debug mode").Bool()
 	version            = kingpin.Version(VERSION)
 )
@@ -361,15 +360,7 @@ func main() {
 
 		return
 	}
-	/*
-		if *demoUptime != "" && !SystemConfig.DontPurgeUptimeData{
-			log.Info("BUILDING UPTIME DEMO DATA AND EXITING...")
-			log.Warning("Starting from date: ", time.Now().AddDate(0, 0, -30))
-			demo.DemoInit(*demoUptime, *demoApiMode, *demoApiVersionMode)
-			demo.GenerateDemoUptimeData(time.Now().AddDate(0, 0, -30), 30, *demoUptime, UptimePump.WriteUptimeData)
 
-			return
-		}*/
 	if SystemConfig.PurgeChunk > 0 {
 		log.WithField("PurgeChunk", SystemConfig.PurgeChunk).Info("PurgeChunk enabled")
 		if SystemConfig.StorageExpirationTime == 0 {
