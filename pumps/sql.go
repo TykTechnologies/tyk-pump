@@ -233,8 +233,7 @@ func (c *SQLPump) WriteUptimeData(data []interface{}) {
 
 	startIndex := 0
 	endIndex := dataLen
-	c.db = c.db.Table(table)
-	table = "tyk_uptime_analytics"
+	table = ""
 
 	for i := 0; i < dataLen; i++ {
 		if c.SQLConf.TableSharding {
@@ -257,6 +256,7 @@ func (c *SQLPump) WriteUptimeData(data []interface{}) {
 			}
 		} else {
 			i = dataLen // write all records at once for non-sharded case, stop for loop after 1 iteration
+			table = "tyk_uptime_analytics"
 		}
 
 		analyticsPerOrg := analytics.AggregateUptimeData(typedData[startIndex:endIndex])
