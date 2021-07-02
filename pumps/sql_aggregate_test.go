@@ -41,17 +41,12 @@ func TestSQLAggregateWriteData_Sharded(t *testing.T) {
 	pmp := SQLAggregatePump{}
 	cfg := make(map[string]interface{})
 	cfg["type"] = "sqlite"
-	cfg["connection_string"] = "pmp_test.db"
 	cfg["table_sharding"] = true
 
 	err := pmp.Init(cfg)
 	if err != nil {
 		t.Fatal("SQL Pump Aggregate couldn't be initialized with err: ", err)
 	}
-
-	defer func() {
-		os.Remove("pmp_test.db")
-	}()
 
 	keys := make([]interface{}, 7)
 	now := time.Now()
@@ -94,16 +89,11 @@ func TestSQLAggregateWriteData(t *testing.T) {
 	pmp := SQLAggregatePump{}
 	cfg := make(map[string]interface{})
 	cfg["type"] = "sqlite"
-	cfg["connection_string"] = "pmp_test.db"
 
 	err := pmp.Init(cfg)
 	if err != nil {
 		t.Fatal("SQL Pump Aggregate couldn't be initialized with err: ", err)
 	}
-
-	defer func() {
-		os.Remove("pmp_test.db")
-	}()
 
 	keys := make([]interface{}, 3)
 	keys[0] = analytics.AnalyticsRecord{APIID: "api111", ResponseCode: 200, OrgID: "org123"}
