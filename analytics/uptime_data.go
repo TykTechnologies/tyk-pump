@@ -60,7 +60,7 @@ type UptimeReportAggregateSQL struct {
 	Code5x  int `json:"code_5x"`
 }
 
-func (a UptimeReportAggregateSQL) GetAssignments() map[string]interface{} {
+func (a UptimeReportAggregateSQL) GetAssignments(tableName string) map[string]interface{} {
 	assignments := make(map[string]interface{})
 
 	baseFields := structs.Fields(a)
@@ -68,7 +68,7 @@ func (a UptimeReportAggregateSQL) GetAssignments() map[string]interface{} {
 		colName := field.Tag("json")
 		if strings.Contains(colName, "code_") {
 			if !field.IsZero() {
-				assignments[colName] = gorm.Expr("`" + colName + "` + " + fmt.Sprint(field.Value()))
+				assignments[colName] = gorm.Expr(tableName + "." + colName + " + " + fmt.Sprint(field.Value()))
 			}
 		}
 	}
@@ -80,16 +80,16 @@ func (a UptimeReportAggregateSQL) GetAssignments() map[string]interface{} {
 		switch {
 		case strings.Contains(colName, "hits"), strings.Contains(colName, "error"), strings.Contains(colName, "success"):
 			if !field.IsZero() {
-				assignments[colName] = gorm.Expr("`" + colName + "` + " + fmt.Sprint(field.Value()))
+				assignments[colName] = gorm.Expr(tableName + "." + colName + " + " + fmt.Sprint(field.Value()))
 			}
 		case strings.Contains(colName, "total_request_time"):
 			if !field.IsZero() {
-				assignments[colName] = gorm.Expr("`" + colName + "` + " + fmt.Sprint(a.TotalRequestTime))
+				assignments[colName] = gorm.Expr(tableName + "." + colName + " + " + fmt.Sprint(a.TotalRequestTime))
 			}
 		case strings.Contains(colName, "request_time"):
 			//AVG adding value to another AVG: newAve = ((oldAve*oldNumPoints) + x)/(oldNumPoints+1)
 			if !field.IsZero() {
-				assignments[colName] = gorm.Expr("((`" + colName + "` * `counter_hits`) + " + fmt.Sprint(a.RequestTime) + ")/( `counter_hits` +1)")
+				assignments[colName] = gorm.Expr("((" + tableName + "." + colName + " * " + tableName + ".counter_hits) + " + fmt.Sprint(a.RequestTime) + ")/( " + tableName + ".counter_hits +1)")
 			}
 		}
 

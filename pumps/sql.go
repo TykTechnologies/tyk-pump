@@ -233,6 +233,9 @@ func (c *SQLPump) WriteUptimeData(data []interface{}) {
 
 	startIndex := 0
 	endIndex := dataLen
+	c.db = c.db.Table(table)
+	table = "tyk_uptime_analytics"
+
 	for i := 0; i < dataLen; i++ {
 		if c.SQLConf.TableSharding {
 			recDate := typedData[startIndex].TimeStamp.Format("20060102")
@@ -247,7 +250,7 @@ func (c *SQLPump) WriteUptimeData(data []interface{}) {
 				endIndex = dataLen
 			}
 
-			table := "tyk_uptime_analytics_" + recDate
+			table = "tyk_uptime_analytics_" + recDate
 			c.db = c.db.Table(table)
 			if !c.db.Migrator().HasTable(table) {
 				c.db.AutoMigrate(&analytics.UptimeReportAggregateSQL{})
@@ -274,7 +277,7 @@ func (c *SQLPump) WriteUptimeData(data []interface{}) {
 
 				c.db = c.db.Clauses(clause.OnConflict{
 					Columns:   []clause.Column{{Name: "id"}},
-					DoUpdates: clause.Assignments(rec.GetAssignments()),
+					DoUpdates: clause.Assignments(rec.GetAssignments(table)),
 				}).Create(rec)
 				if c.db.Error != nil {
 					c.log.Error(c.db.Error)
@@ -284,6 +287,6 @@ func (c *SQLPump) WriteUptimeData(data []interface{}) {
 		startIndex = i // next day start index, necessary for sharded case
 	}
 
-	c.log.Info("Purged ", len(data), " records...")
+	c.log.Debug("Purged ", len(data), " records...")
 
 }
