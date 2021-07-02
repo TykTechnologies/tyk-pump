@@ -160,18 +160,21 @@ func (c *SQLPump) WriteData(ctx context.Context, data []interface{}) error {
 
 	startIndex := 0
 	endIndex := dataLen
+	//We iterate dataLen +1 times since we're writing the data after the date change on sharding_table:true
 	for i := 0; i <= dataLen; i++ {
 		if c.SQLConf.TableSharding {
 			recDate := data[startIndex].(analytics.AnalyticsRecord).TimeStamp.Format("20060102")
 			var nextRecDate string
+			//if we're on i == dataLen iteration, it means that we're out of index range. We're going to use the last record date.
 			if i == dataLen {
 				nextRecDate = data[dataLen-1].(analytics.AnalyticsRecord).TimeStamp.Format("20060102")
 			} else {
 				nextRecDate = data[i].(analytics.AnalyticsRecord).TimeStamp.Format("20060102")
-			}
 
-			if i != dataLen && recDate == nextRecDate { // write records belong to same day at once
-				continue
+				//if both dates are equal, we shouldn't write in the table yet.
+				if recDate == nextRecDate {
+					continue
+				}
 			}
 
 			endIndex = i
