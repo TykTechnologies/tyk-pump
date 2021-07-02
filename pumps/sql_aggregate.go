@@ -94,32 +94,64 @@ func (c *SQLAggregatePump) Init(conf interface{}) error {
 	return nil
 }
 
+// WriteData aggregates and writes the passed data to SQL database. When table sharding is enabled, startIndex and endIndex
+// are found by checking timestamp of the records. The main for loop iterates and finds the index where a new day starts.
+// Then, the data is passed to AggregateData function and written to database day by day on different tables. However,
+// if table sharding is not enabled, the for loop iterates one time and all data is passed at once to the AggregateData
+// function and written to database on single table.
 func (c *SQLAggregatePump) WriteData(ctx context.Context, data []interface{}) error {
-	c.log.Debug("Attempting to write ", len(data), " records...")
+	dataLen := len(data)
+	c.log.Debug("Attempting to write ", dataLen, " records...")
 
-	analyticsPerOrg := analytics.AggregateData(data, c.SQLConf.TrackAllPaths, c.SQLConf.IgnoreTagPrefixList, c.SQLConf.StoreAnalyticsPerMinute)
+	startIndex := 0
+	endIndex := dataLen
+	for i := 0; i < dataLen; i++ {
+		if c.SQLConf.TableSharding {
+			recDate := data[startIndex].(analytics.AnalyticsRecord).TimeStamp.Format("20060102")
+			nextRecDate := data[i].(analytics.AnalyticsRecord).TimeStamp.Format("20060102")
 
-	for orgID, ag := range analyticsPerOrg {
-		// ag.DiscardAggregations([]string{"keyendpoints", "oauthendpoints", "apiendpoints"})
-
-		for _, d := range ag.Dimensions() {
-			rec := analytics.SQLAnalyticsRecordAggregate{
-				OrgID:          orgID,
-				TimeStamp:      ag.TimeStamp.Unix(),
-				Counter:        *d.Counter,
-				Dimension:      d.Name,
-				DimensionValue: d.Value,
+			if i != dataLen-1 && recDate == nextRecDate { // write records belong to same day at once
+				continue
 			}
-			rec.ProcessStatusCodes()
 
-			resp := c.db.WithContext(ctx).Create(rec)
-			if resp.Error != nil {
-				return resp.Error
+			endIndex = i
+			if endIndex == dataLen-1 {
+				endIndex = dataLen
+			}
+
+			table := "tyk_aggregated_" + recDate
+			c.db = c.db.Table(table)
+			if !c.db.Migrator().HasTable(table) {
+				c.db.AutoMigrate(&analytics.SQLAnalyticsRecordAggregate{})
+			}
+		} else {
+			i = dataLen // write all records at once for non-sharded case, stop for loop after 1 iteration
+		}
+
+		analyticsPerOrg := analytics.AggregateData(data[startIndex:endIndex], c.SQLConf.TrackAllPaths, c.SQLConf.IgnoreTagPrefixList, c.SQLConf.StoreAnalyticsPerMinute)
+
+		for orgID, ag := range analyticsPerOrg {
+			for _, d := range ag.Dimensions() {
+				rec := analytics.SQLAnalyticsRecordAggregate{
+					OrgID:          orgID,
+					TimeStamp:      ag.TimeStamp.Unix(),
+					Counter:        *d.Counter,
+					Dimension:      d.Name,
+					DimensionValue: d.Value,
+				}
+				rec.ProcessStatusCodes()
+
+				c.db = c.db.WithContext(ctx).Create(rec)
+				if c.db.Error != nil {
+					return c.db.Error
+				}
 			}
 		}
+
+		startIndex = i // next day start index, necessary for sharded case
 	}
 
-	c.log.Info("Purged ", len(data), " records...")
+	c.log.Info("Purged ", dataLen, " records...")
 
 	return nil
 }
