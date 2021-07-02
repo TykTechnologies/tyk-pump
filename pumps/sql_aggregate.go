@@ -94,6 +94,11 @@ func (c *SQLAggregatePump) Init(conf interface{}) error {
 	return nil
 }
 
+// WriteData aggregates and writes the passed data to SQL database. When table sharding is enabled, startIndex and endIndex
+// are found by checking timestamp of the records. The main for loop iterates and finds the index where a new day starts.
+// Then, the data is passed to AggregateData function and written to database day by day on different tables. However,
+// if table sharding is not enabled, the for loop iterates one time and all data is passed at once to the AggregateData
+// function and written to database on single table.
 func (c *SQLAggregatePump) WriteData(ctx context.Context, data []interface{}) error {
 	dataLen := len(data)
 	c.log.Debug("Attempting to write ", dataLen, " records...")
