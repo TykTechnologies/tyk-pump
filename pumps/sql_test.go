@@ -33,7 +33,6 @@ func TestSQLInit(t *testing.T) {
 	pmp2 := SQLPump{}
 	invalidDialectErr := pmp2.Init(cfg)
 	assert.NotNil(t, invalidDialectErr)
-	//TODO check how to test postgres connection - it's going to requiere to have some postgres up
 
 }
 
@@ -41,20 +40,21 @@ func TestSQLWriteData(t *testing.T) {
 	pmp := SQLPump{}
 	cfg := make(map[string]interface{})
 	cfg["type"] = "sqlite"
-	cfg["connection_string"] = "pmp_test.db"
+	cfg["connection_string"] = ""
 
 	err := pmp.Init(cfg)
 	if err != nil {
 		t.Fatal("SQL Pump couldn't be initialized with err: ", err)
 	}
-	defer func() {
-		os.Remove("pmp_test.db")
-	}()
+
+	defer func(table string) {
+		pmp.db.Migrator().DropTable(table)
+	}(table)
 
 	keys := make([]interface{}, 3)
-	keys[0] = analytics.AnalyticsRecord{APIID: "api111", Day: 20}
-	keys[1] = analytics.AnalyticsRecord{APIID: "api123"}
-	keys[2] = analytics.AnalyticsRecord{APIID: "api321"}
+	keys[0] = analytics.AnalyticsRecord{APIID: "api111", OrgID: "123", TimeStamp: time.Now()}
+	keys[1] = analytics.AnalyticsRecord{APIID: "api123", OrgID: "1234", TimeStamp: time.Now()}
+	keys[2] = analytics.AnalyticsRecord{APIID: "api321", OrgID: "12345", TimeStamp: time.Now()}
 
 	ctx := context.TODO()
 	errWrite := pmp.WriteData(ctx, keys)
@@ -62,15 +62,30 @@ func TestSQLWriteData(t *testing.T) {
 		t.Fatal("SQL Pump couldn't write records with err:", errWrite)
 	}
 
-	var dbRecords []analytics.AnalyticsRecord
-	if err := pmp.db.Find(&dbRecords).Error; err != nil {
-		t.Fatal("Error getting analytics records from SQL")
-	}
+	t.Run("table_records", func(t *testing.T) {
+		var dbRecords []analytics.AnalyticsRecord
 
-	assert.Len(t, dbRecords, 3)
-	assert.Equal(t, "api111", dbRecords[0].APIID)
-	//assert.Equal(t,20,dbRecords[1].Day) //TODO test it when days are saved
-	assert.Equal(t, "api321", dbRecords[2].APIID)
+		table := "tyk_analytics"
+		assert.Equal(t, true, pmp.db.Migrator().HasTable(table))
+		err := pmp.db.Table(table).Find(&dbRecords).Error
+		assert.Nil(t, err)
+		assert.Equal(t, 3, len(dbRecords))
+
+	})
+
+	t.Run("table_content", func(t *testing.T) {
+		var dbRecords []analytics.AnalyticsRecord
+
+		table := "tyk_analytics"
+		assert.Equal(t, true, pmp.db.Migrator().HasTable(table))
+		err := pmp.db.Table(table).Find(&dbRecords).Error
+		assert.Nil(t, err)
+
+		for i := range keys {
+			assert.Equal(t, keys[i].(analytics.AnalyticsRecord).APIID, dbRecords[i].APIID)
+			assert.Equal(t, keys[i].(analytics.AnalyticsRecord).OrgID, dbRecords[i].OrgID)
+		}
+	})
 
 }
 
@@ -78,46 +93,61 @@ func TestSQLWriteDataSharded(t *testing.T) {
 	pmp := SQLPump{}
 	cfg := make(map[string]interface{})
 	cfg["type"] = "sqlite"
-	cfg["connection_string"] = "pmp_test.db"
 	cfg["table_sharding"] = true
 	err := pmp.Init(cfg)
 	if err != nil {
 		t.Fatal("SQL Pump couldn't be initialized with err: ", err)
 	}
-	defer func() {
-		os.Remove("pmp_test.db")
-	}()
 
-	keys := make([]interface{}, 5)
+	keys := make([]interface{}, 6)
 	now := time.Now()
 	nowPlus1 := time.Now().AddDate(0, 0, 1)
+	nowPlus2 := time.Now().AddDate(0, 0, 2)
+
 	keys[0] = analytics.AnalyticsRecord{APIID: "api111", TimeStamp: now}
 	keys[1] = analytics.AnalyticsRecord{APIID: "api112", TimeStamp: now}
 	keys[2] = analytics.AnalyticsRecord{APIID: "api113", TimeStamp: now}
 	keys[3] = analytics.AnalyticsRecord{APIID: "api114", TimeStamp: nowPlus1}
 	keys[4] = analytics.AnalyticsRecord{APIID: "api115", TimeStamp: nowPlus1}
+	keys[5] = analytics.AnalyticsRecord{APIID: "api114", TimeStamp: nowPlus2}
 
-	ctx := context.TODO()
-	errWrite := pmp.WriteData(ctx, keys)
+	errWrite := pmp.WriteData(context.Background(), keys)
 	if errWrite != nil {
 		t.Fatal("SQL Pump couldn't write records with err:", errWrite)
 	}
-	table := "tyk_analytics_" + now.Format("20060102")
-	assert.Equal(t, true, pmp.db.Migrator().HasTable(table))
 
-	var dbRecords []analytics.AnalyticsRecord
-
-	if err := pmp.db.Table(table).Find(&dbRecords).Error; err != nil {
-		t.Fatal("Error getting analytics records from SQL")
+	tests := map[string]struct {
+		date          time.Time
+		amountRecords int
+	}{
+		"shard_1": {
+			date:          now,
+			amountRecords: 3,
+		},
+		"shard_2": {
+			date:          nowPlus1,
+			amountRecords: 2,
+		},
+		"shard_3": {
+			date:          nowPlus2,
+			amountRecords: 1,
+		},
 	}
-	assert.Len(t, dbRecords, 3)
 
-	tablePlus5 := "tyk_analytics_" + nowPlus1.Format("20060102")
-	assert.Equal(t, true, pmp.db.Migrator().HasTable(tablePlus5))
-	if err := pmp.db.Table(tablePlus5).Find(&dbRecords).Error; err != nil {
-		t.Fatal("Error getting analytics records from SQL")
+	for testName, data := range tests {
+		t.Run(testName, func(t *testing.T) {
+			var dbRecords []analytics.AnalyticsRecord
+
+			table := "tyk_analytics_" + data.date.Format("20060102")
+			defer func(table string) {
+				pmp.db.Migrator().DropTable(table)
+			}(table)
+			assert.Equal(t, true, pmp.db.Migrator().HasTable(table))
+			err := pmp.db.Table(table).Find(&dbRecords).Error
+			assert.Nil(t, err)
+			assert.Equal(t, data.amountRecords, len(dbRecords))
+		})
 	}
-	assert.Len(t, dbRecords, 2)
 
 }
 

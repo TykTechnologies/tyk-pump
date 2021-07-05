@@ -165,50 +165,50 @@ func (c *SQLPump) WriteData(ctx context.Context, data []interface{}) error {
 	c.log.Debug("Attempting to write ", len(data), " records...")
 
 	var typedData []*analytics.AnalyticsRecord
-
-	batch := 500
-	newBatch := false
-	for i, r := range data {
-		rec := r.(analytics.AnalyticsRecord)
-		typedData = append(typedData, &rec)
-
-		if c.SQLConf.TableSharding && !newBatch && typedData[0].TimeStamp.Format("20060102") < rec.TimeStamp.Format("20060102") {
-			batch = i
-			newBatch = true
+	for _, r := range data {
+		if r != nil {
+			rec := r.(analytics.AnalyticsRecord)
+			typedData = append(typedData, &rec)
 		}
 	}
+	dataLen := len(typedData)
 
-	if c.SQLConf.TableSharding && len(typedData) > 0 {
-		// Check first and last record, to ensure that we will not hit issue when hour is changing
-		table := "tyk_analytics_" + typedData[0].TimeStamp.Format("20060102")
-		if !c.db.Migrator().HasTable(table) {
-			c.db.Table(table).AutoMigrate(&analytics.AnalyticsRecord{})
-		}
-
-		table = "tyk_analytics_" + typedData[len(typedData)-1].TimeStamp.Format("20060102")
-		if !c.db.Migrator().HasTable(table) {
-			c.db.Table(table).AutoMigrate(&analytics.AnalyticsRecord{})
-		}
-	}
-
-	for i := 0; i < len(typedData); i += batch {
-		j := i + batch
-		if j > len(typedData) {
-			j = len(typedData)
-		}
-
-		resp := c.db
-
+	startIndex := 0
+	endIndex := dataLen
+	//We iterate dataLen +1 times since we're writing the data after the date change on sharding_table:true
+	for i := 0; i <= dataLen; i++ {
 		if c.SQLConf.TableSharding {
-			table := "tyk_analytics_" + typedData[i].TimeStamp.Format("20060102")
-			resp = resp.Table(table)
+			recDate := data[startIndex].(analytics.AnalyticsRecord).TimeStamp.Format("20060102")
+			var nextRecDate string
+			//if we're on i == dataLen iteration, it means that we're out of index range. We're going to use the last record date.
+			if i == dataLen {
+				nextRecDate = data[dataLen-1].(analytics.AnalyticsRecord).TimeStamp.Format("20060102")
+			} else {
+				nextRecDate = data[i].(analytics.AnalyticsRecord).TimeStamp.Format("20060102")
+
+				//if both dates are equal, we shouldn't write in the table yet.
+				if recDate == nextRecDate {
+					continue
+				}
+			}
+
+			endIndex = i
+
+			table := "tyk_analytics_" + recDate
+			c.db = c.db.Table(table)
+			if !c.db.Migrator().HasTable(table) {
+				c.db.AutoMigrate(&analytics.AnalyticsRecord{})
+			}
+		} else {
+			i = dataLen // write all records at once for non-sharded case, stop for loop after 1 iteration
 		}
 
-		resp = resp.WithContext(ctx).Create(typedData[i:j])
-		if resp.Error != nil {
-			c.log.Error(resp.Error)
-			return resp.Error
+		c.db = c.db.WithContext(ctx).Create(typedData[startIndex:endIndex])
+		if c.db.Error != nil {
+			return c.db.Error
 		}
+		startIndex = i // next day start index, necessary for sharded case
+
 	}
 
 	c.log.Info("Purged ", len(data), " records...")
