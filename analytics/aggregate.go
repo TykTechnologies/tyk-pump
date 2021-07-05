@@ -180,7 +180,7 @@ func (a *SQLAnalyticsRecordAggregate) ProcessStatusCodes() {
 }
 
 func (ar *SQLAnalyticsRecordAggregate) TableName() string {
-	return SQLAGGREGATETA
+	return SQLAGGREGATETABLE
 }
 
 func (f AnalyticsRecordAggregate) New() AnalyticsRecordAggregate {
