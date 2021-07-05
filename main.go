@@ -162,6 +162,9 @@ func initialisePumps() {
 }
 
 func initialiseUptimePump() {
+	log.WithFields(logrus.Fields{
+		"prefix": mainPrefix,
+	}).Info("'dont_purge_uptime_data' set to false, attempting to start Uptime pump! ")
 
 	switch SystemConfig.UptimePumpConfig.UptimeType {
 	case "sql":
@@ -172,11 +175,7 @@ func initialiseUptimePump() {
 		UptimePump = &pumps.MongoPump{IsUptime: true}
 		UptimePump.Init(SystemConfig.UptimePumpConfig.MongoConf)
 	}
-	log.WithFields(logrus.Fields{
-		"prefix": mainPrefix,
-	}).Info("'dont_purge_uptime_data' set to false, attempting to start Uptime pump! ", UptimePump.GetName())
 
-	//UptimePump.Init(SystemConfig.UptimePumpConfig)
 	log.WithFields(logrus.Fields{
 		"prefix": mainPrefix,
 		"type":   SystemConfig.UptimePumpConfig.Type,

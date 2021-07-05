@@ -2,7 +2,6 @@ package pumps
 
 import (
 	"context"
-	"os"
 	"testing"
 	"time"
 
@@ -15,14 +14,14 @@ func TestSQLInit(t *testing.T) {
 	pmp := SQLPump{}
 	cfg := make(map[string]interface{})
 	cfg["type"] = "sqlite"
-	cfg["connection_string"] = "pmp_test.db"
+	cfg["connection_string"] = ""
 
 	err := pmp.Init(cfg)
 	if err != nil {
 		t.Fatal("SQL Pump couldn't be initialized with err: ", err)
 	}
 	defer func() {
-		os.Remove("pmp_test.db")
+		pmp.db.Migrator().DropTable(analytics.SQLTABLE)
 	}()
 
 	assert.NotNil(t, pmp.db)
@@ -47,9 +46,9 @@ func TestSQLWriteData(t *testing.T) {
 		t.Fatal("SQL Pump couldn't be initialized with err: ", err)
 	}
 
-	defer func(table string) {
-		pmp.db.Migrator().DropTable(table)
-	}(table)
+	defer func() {
+		pmp.db.Migrator().DropTable(analytics.SQLTABLE)
+	}()
 
 	keys := make([]interface{}, 3)
 	keys[0] = analytics.AnalyticsRecord{APIID: "api111", OrgID: "123", TimeStamp: time.Now()}
@@ -65,7 +64,7 @@ func TestSQLWriteData(t *testing.T) {
 	t.Run("table_records", func(t *testing.T) {
 		var dbRecords []analytics.AnalyticsRecord
 
-		table := "tyk_analytics"
+		table := analytics.SQLTABLE
 		assert.Equal(t, true, pmp.db.Migrator().HasTable(table))
 		err := pmp.db.Table(table).Find(&dbRecords).Error
 		assert.Nil(t, err)
@@ -76,7 +75,7 @@ func TestSQLWriteData(t *testing.T) {
 	t.Run("table_content", func(t *testing.T) {
 		var dbRecords []analytics.AnalyticsRecord
 
-		table := "tyk_analytics"
+		table := analytics.SQLTABLE
 		assert.Equal(t, true, pmp.db.Migrator().HasTable(table))
 		err := pmp.db.Table(table).Find(&dbRecords).Error
 		assert.Nil(t, err)
@@ -117,20 +116,20 @@ func TestSQLWriteDataSharded(t *testing.T) {
 	}
 
 	tests := map[string]struct {
-		date          time.Time
-		amountRecords int
+		date    time.Time
+		RowsLen int
 	}{
 		"shard_1": {
-			date:          now,
-			amountRecords: 3,
+			date:    now,
+			RowsLen: 3,
 		},
 		"shard_2": {
-			date:          nowPlus1,
-			amountRecords: 2,
+			date:    nowPlus1,
+			RowsLen: 2,
 		},
 		"shard_3": {
-			date:          nowPlus2,
-			amountRecords: 1,
+			date:    nowPlus2,
+			RowsLen: 1,
 		},
 	}
 
@@ -138,14 +137,14 @@ func TestSQLWriteDataSharded(t *testing.T) {
 		t.Run(testName, func(t *testing.T) {
 			var dbRecords []analytics.AnalyticsRecord
 
-			table := "tyk_analytics_" + data.date.Format("20060102")
+			table := analytics.SQLTABLE + "_" + data.date.Format("20060102")
 			defer func(table string) {
 				pmp.db.Migrator().DropTable(table)
 			}(table)
 			assert.Equal(t, true, pmp.db.Migrator().HasTable(table))
 			err := pmp.db.Table(table).Find(&dbRecords).Error
 			assert.Nil(t, err)
-			assert.Equal(t, data.amountRecords, len(dbRecords))
+			assert.Equal(t, data.RowsLen, len(dbRecords))
 		})
 	}
 
@@ -155,83 +154,102 @@ func TestSQLWriteUptimeData(t *testing.T) {
 	pmp := SQLPump{IsUptime: true}
 	cfg := make(map[string]interface{})
 	cfg["type"] = "sqlite"
-	cfg["connection_string"] = "pmp_test.db"
+	cfg["connection_string"] = ""
 	cfg["table_sharding"] = false
 	err := pmp.Init(cfg)
 	if err != nil {
 		t.Fatal("SQL Pump couldn't be initialized with err: ", err)
 	}
 	defer func() {
-		os.Remove("pmp_test.db")
+		pmp.db.Migrator().DropTable(analytics.UPTIMESQLTABLE)
 	}()
 
-	keys := make([]interface{}, 3)
 	now := time.Now()
-	nowPlus1 := time.Now().Add(2 * time.Hour)
+	nowPlus1 := time.Now().Add(1 * time.Hour)
 
-	encoded, _ := msgpack.Marshal(analytics.UptimeReportData{OrgID: "1", URL: "url1", TimeStamp: now})
-	keys[0] = string(encoded)
-	keys[1] = string(encoded)
-	keys[2] = string(encoded)
-
-	pmp.WriteUptimeData(keys)
-	table := "tyk_uptime_analytics"
-	dbRecords := []analytics.UptimeReportAggregateSQL{}
-
-	if err := pmp.db.Table(table).Find(&dbRecords).Error; err != nil {
-		t.Fatal("Error getting analytics records from SQL")
+	tests := map[string]struct {
+		Record               analytics.UptimeReportData
+		RecordsAmountToWrite int
+		RowsLen              int
+		HitsPerHour          int
+	}{
+		"first iteration": {
+			Record:               analytics.UptimeReportData{OrgID: "1", URL: "url1", TimeStamp: now},
+			RecordsAmountToWrite: 3,
+			RowsLen:              2,
+			HitsPerHour:          3,
+		},
+		"second iteration": {
+			Record:               analytics.UptimeReportData{OrgID: "1", URL: "url1", TimeStamp: now},
+			RecordsAmountToWrite: 3,
+			RowsLen:              2,
+			HitsPerHour:          6,
+		},
+		"third iteration": {
+			Record:               analytics.UptimeReportData{OrgID: "1", URL: "url1", TimeStamp: now},
+			RecordsAmountToWrite: 3,
+			RowsLen:              2,
+			HitsPerHour:          9,
+		},
+		"fourth iteration": {
+			Record:               analytics.UptimeReportData{OrgID: "1", URL: "url1", TimeStamp: nowPlus1},
+			RecordsAmountToWrite: 3,
+			RowsLen:              4,
+			HitsPerHour:          3, //since we're going to write in a new hour, it should mean a different aggregation.
+		},
 	}
-	assert.Len(t, dbRecords, 2)
 
-	encoded, _ = msgpack.Marshal(analytics.UptimeReportData{OrgID: "1", URL: "url1", TimeStamp: now})
-	keys[0] = string(encoded)
-	keys[1] = string(encoded)
-	keys[2] = string(encoded)
-	pmp.WriteUptimeData(keys)
+	for testName, testValue := range tests {
+		t.Run(testName, func(t *testing.T) {
+			pmp := pmp
+			keys := []interface{}{}
+			//encode the records in the way uptime pump consume them
+			for i := 0; i < testValue.RecordsAmountToWrite; i++ {
+				encoded, _ := msgpack.Marshal(testValue.Record)
+				keys = append(keys, string(encoded))
+			}
 
-	dbRecords = []analytics.UptimeReportAggregateSQL{}
+			pmp.WriteUptimeData(keys)
+			table := analytics.UPTIMESQLTABLE
+			//check if the table exists
+			assert.Equal(t, true, pmp.db.Migrator().HasTable(table))
 
-	if err := pmp.db.Table(table).Find(&dbRecords).Error; err != nil {
-		t.Fatal("Error getting analytics records from SQL")
+			dbRecords := []analytics.UptimeReportAggregateSQL{}
+			if err := pmp.db.Table(table).Find(&dbRecords).Error; err != nil {
+				t.Fatal("Error getting analytics records from SQL")
+			}
+
+			//check amount of rows in the table
+			assert.Equal(t, testValue.RowsLen, len(dbRecords))
+
+			//iterate over the records and check total of hits
+			for _, dbRecord := range dbRecords {
+				if dbRecord.TimeStamp == testValue.Record.TimeStamp.Unix() && dbRecord.DimensionValue == "total" {
+					assert.Equal(t, testValue.HitsPerHour, dbRecord.Hits)
+					break
+				}
+			}
+
+		})
 	}
-	assert.Len(t, dbRecords, 2)
-
-	assert.Equal(t, "total", dbRecords[1].DimensionValue)
-	assert.Equal(t, 6, dbRecords[1].Hits)
-
-	encoded, _ = msgpack.Marshal(analytics.UptimeReportData{OrgID: "1", URL: "url1", TimeStamp: nowPlus1})
-	keys[0] = string(encoded)
-	keys[1] = string(encoded)
-	keys[2] = string(encoded)
-
-	pmp.WriteUptimeData(keys)
-
-	dbRecords = []analytics.UptimeReportAggregateSQL{}
-
-	if err := pmp.db.Table(table).Find(&dbRecords).Error; err != nil {
-		t.Fatal("Error getting analytics records from SQL")
-	}
-	assert.Len(t, dbRecords, 4)
-
 }
 
 func TestSQLWriteUptimeDataSharded(t *testing.T) {
 	pmp := SQLPump{}
 	cfg := make(map[string]interface{})
 	cfg["type"] = "sqlite"
-	cfg["connection_string"] = "pmp_test.db"
+	cfg["connection_string"] = ""
 	cfg["table_sharding"] = true
 	err := pmp.Init(cfg)
 	if err != nil {
 		t.Fatal("SQL Pump couldn't be initialized with err: ", err)
 	}
-	defer func() {
-		os.Remove("pmp_test.db")
-	}()
 
-	keys := make([]interface{}, 5)
+	keys := make([]interface{}, 6)
 	now := time.Now()
 	nowPlus1 := time.Now().AddDate(0, 0, 1)
+	nowPlus2 := time.Now().AddDate(0, 0, 2)
+
 	encoded, _ := msgpack.Marshal(analytics.UptimeReportData{OrgID: "1", URL: "url1", TimeStamp: now})
 	keys[0] = string(encoded)
 	keys[1] = string(encoded)
@@ -239,25 +257,43 @@ func TestSQLWriteUptimeDataSharded(t *testing.T) {
 	encoded, _ = msgpack.Marshal(analytics.UptimeReportData{OrgID: "1", URL: "url1", TimeStamp: nowPlus1})
 	keys[3] = string(encoded)
 	keys[4] = string(encoded)
+	encoded, _ = msgpack.Marshal(analytics.UptimeReportData{OrgID: "1", URL: "url1", TimeStamp: nowPlus2})
+	keys[5] = string(encoded)
 
 	pmp.WriteUptimeData(keys)
 
-	table := "tyk_uptime_analytics_" + now.Format("20060102")
-	assert.Equal(t, true, pmp.db.Migrator().HasTable(table))
-
-	var dbRecords []analytics.UptimeReportAggregateSQL
-
-	if err := pmp.db.Table(table).Find(&dbRecords).Error; err != nil {
-		t.Fatal("Error getting analytics records from SQL")
+	tests := map[string]struct {
+		date    time.Time
+		RowsLen int
+	}{
+		"records day 1": {
+			date:    now,
+			RowsLen: 2,
+		},
+		"records day 2": {
+			date:    nowPlus1,
+			RowsLen: 2,
+		},
+		"records day 3": {
+			date:    nowPlus2,
+			RowsLen: 2,
+		},
 	}
-	assert.Len(t, dbRecords, 2)
 
-	tablePlus5 := "tyk_uptime_analytics_" + nowPlus1.Format("20060102")
-	assert.Equal(t, true, pmp.db.Migrator().HasTable(tablePlus5))
-	if err := pmp.db.Table(tablePlus5).Find(&dbRecords).Error; err != nil {
-		t.Fatal("Error getting analytics records from SQL")
+	for testName, data := range tests {
+		t.Run(testName, func(t *testing.T) {
+			var dbRecords []analytics.UptimeReportAggregateSQL
+
+			table := analytics.UPTIMESQLTABLE + "_" + data.date.Format("20060102")
+			defer func(table string) {
+				pmp.db.Migrator().DropTable(table)
+			}(table)
+			assert.Equal(t, true, pmp.db.Migrator().HasTable(table))
+			err := pmp.db.Table(table).Find(&dbRecords).Error
+			assert.Nil(t, err)
+			assert.Equal(t, data.RowsLen, len(dbRecords))
+		})
 	}
-	assert.Len(t, dbRecords, 2)
 
 }
 
@@ -265,14 +301,14 @@ func TestSQLWriteUptimeDataAggregations(t *testing.T) {
 	pmp := SQLPump{IsUptime: true}
 	cfg := make(map[string]interface{})
 	cfg["type"] = "sqlite"
-	cfg["connection_string"] = "pmp_test.db"
+	cfg["connection_string"] = ""
 	cfg["table_sharding"] = false
 	err := pmp.Init(cfg)
 	if err != nil {
 		t.Fatal("SQL Pump couldn't be initialized with err: ", err)
 	}
 	defer func() {
-		os.Remove("pmp_test.db")
+		pmp.db.Migrator().DropTable(analytics.UPTIMESQLTABLE)
 	}()
 
 	keys := make([]interface{}, 5)
@@ -289,9 +325,9 @@ func TestSQLWriteUptimeDataAggregations(t *testing.T) {
 	keys[4] = string(encoded)
 
 	pmp.WriteUptimeData(keys)
-	table := "tyk_uptime_analytics"
-	dbRecords := []analytics.UptimeReportAggregateSQL{}
 
+	table := analytics.UPTIMESQLTABLE
+	dbRecords := []analytics.UptimeReportAggregateSQL{}
 	if err := pmp.db.Table(table).Find(&dbRecords).Error; err != nil {
 		t.Fatal("Error getting analytics records from SQL")
 	}
