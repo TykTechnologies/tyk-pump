@@ -88,7 +88,9 @@ func (c *SQLAggregatePump) Init(conf interface{}) error {
 		return err
 	}
 	c.db = db
-	c.db.AutoMigrate(&analytics.SQLAnalyticsRecordAggregate{})
+	if !c.SQLConf.TableSharding {
+		c.db.Table(analytics.SQLAGGREGATETABLE).AutoMigrate(&analytics.SQLAnalyticsRecordAggregate{})
+	}
 
 	c.log.Debug("SQLAggregate Initialized")
 	return nil
@@ -105,21 +107,25 @@ func (c *SQLAggregatePump) WriteData(ctx context.Context, data []interface{}) er
 
 	startIndex := 0
 	endIndex := dataLen
-	for i := 0; i < dataLen; i++ {
+	for i := 0; i <= dataLen; i++ {
 		if c.SQLConf.TableSharding {
 			recDate := data[startIndex].(analytics.AnalyticsRecord).TimeStamp.Format("20060102")
-			nextRecDate := data[i].(analytics.AnalyticsRecord).TimeStamp.Format("20060102")
+			var nextRecDate string
+			//if we're on i == dataLen iteration, it means that we're out of index range. We're going to use the last record date.
+			if i == dataLen {
+				nextRecDate = data[dataLen-1].(analytics.AnalyticsRecord).TimeStamp.Format("20060102")
+			} else {
+				nextRecDate = data[i].(analytics.AnalyticsRecord).TimeStamp.Format("20060102")
 
-			if i != dataLen-1 && recDate == nextRecDate { // write records belong to same day at once
-				continue
+				//if both dates are equal, we shouldn't write in the table yet.
+				if recDate == nextRecDate {
+					continue
+				}
 			}
 
 			endIndex = i
-			if endIndex == dataLen-1 {
-				endIndex = dataLen
-			}
 
-			table := "tyk_aggregated_" + recDate
+			table := analytics.SQLAGGREGATETABLE + "_" + recDate
 			c.db = c.db.Table(table)
 			if !c.db.Migrator().HasTable(table) {
 				c.db.AutoMigrate(&analytics.SQLAnalyticsRecordAggregate{})
@@ -141,9 +147,9 @@ func (c *SQLAggregatePump) WriteData(ctx context.Context, data []interface{}) er
 				}
 				rec.ProcessStatusCodes()
 
-				c.db = c.db.WithContext(ctx).Create(rec)
-				if c.db.Error != nil {
-					return c.db.Error
+				tx := c.db.WithContext(ctx).Create(rec)
+				if tx.Error != nil {
+					return tx.Error
 				}
 			}
 		}
