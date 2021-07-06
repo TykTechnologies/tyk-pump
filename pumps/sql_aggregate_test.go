@@ -3,7 +3,6 @@ package pumps
 import (
 	"context"
 	"net/http"
-	"os"
 	"testing"
 	"time"
 
@@ -15,15 +14,15 @@ func TestSQLAggregateInit(t *testing.T) {
 	pmp := SQLAggregatePump{}
 	cfg := make(map[string]interface{})
 	cfg["type"] = "sqlite"
-	cfg["connection_string"] = "pmp_test.db"
+	cfg["connection_string"] = ""
 
 	err := pmp.Init(cfg)
 	if err != nil {
 		t.Fatal("SQL Aggregate Pump couldn't be initialized with err: ", err)
 	}
-	defer func() {
-		os.Remove("pmp_test.db")
-	}()
+	defer func(table string) {
+		pmp.db.Migrator().DropTable(analytics.AggregateSQLTable)
+	}(table)
 
 	assert.NotNil(t, pmp.db)
 	assert.Equal(t, "sqlite", pmp.db.Dialector.Name())
@@ -48,9 +47,11 @@ func TestSQLAggregateWriteData_Sharded(t *testing.T) {
 		t.Fatal("SQL Pump Aggregate couldn't be initialized with err: ", err)
 	}
 
-	keys := make([]interface{}, 7)
+	keys := make([]interface{}, 8)
 	now := time.Now()
 	nowPlus1 := time.Now().AddDate(0, 0, 1)
+	nowPlus2 := time.Now().AddDate(0, 0, 2)
+
 	keys[0] = analytics.AnalyticsRecord{OrgID: "1", ResponseCode: http.StatusInternalServerError, TimeStamp: now}
 	keys[1] = analytics.AnalyticsRecord{OrgID: "1", ResponseCode: http.StatusBadRequest, TimeStamp: now}
 	keys[2] = analytics.AnalyticsRecord{OrgID: "1", ResponseCode: http.StatusUnavailableForLegalReasons, TimeStamp: now}
@@ -60,29 +61,42 @@ func TestSQLAggregateWriteData_Sharded(t *testing.T) {
 	keys[5] = analytics.AnalyticsRecord{OrgID: "1", ResponseCode: http.StatusNotFound, APIID: "1", TimeStamp: nowPlus1}
 	keys[6] = analytics.AnalyticsRecord{OrgID: "1", ResponseCode: http.StatusUnauthorized, APIID: "2", TimeStamp: nowPlus1}
 
-	ctx := context.TODO()
-	pmp.WriteData(ctx, keys)
+	keys[7] = analytics.AnalyticsRecord{OrgID: "1", ResponseCode: http.StatusUnauthorized, APIID: "2", TimeStamp: nowPlus2}
 
-	firstDay := "tyk_aggregated_" + now.Format("20060102")
-	assert.Equal(t, true, pmp.db.Migrator().HasTable(firstDay))
+	pmp.WriteData(context.TODO(), keys)
 
-	var dbRecords []analytics.SQLAnalyticsRecordAggregate
+	tests := map[string]struct {
+		date    time.Time
+		RowsLen int
+	}{
+		"records day 1": {
+			date:    now,
+			RowsLen: 4, // 3 (from StatusInternalServerError, StatusBadRequest and StatusUnavailableForLegalReasons) + 1 (from total)
 
-	if err := pmp.db.Table(firstDay).Find(&dbRecords).Error; err != nil {
-		t.Fatal("Error getting analytics records from SQL")
+		},
+		"records day 2": {
+			date:    nowPlus1,
+			RowsLen: 5, // 2(from apiid) + 2 (from StatusNotFound and StatusUnauthorized) + 1 (from total)
+		},
+		"records day 3": {
+			date:    nowPlus2,
+			RowsLen: 3, // 1(from apiid) + 1 (from StatusUnauthorized) + 1 (from total)
+		},
 	}
+	for testName, data := range tests {
+		t.Run(testName, func(t *testing.T) {
+			var dbRecords []analytics.SQLAnalyticsRecordAggregate
 
-	// 3 (from StatusInternalServerError, StatusBadRequest and StatusUnavailableForLegalReasons) + 1 (from total)
-	assert.Len(t, dbRecords, 4)
-
-	secondDay := "tyk_aggregated_" + nowPlus1.Format("20060102")
-	assert.Equal(t, true, pmp.db.Migrator().HasTable(secondDay))
-	if err := pmp.db.Table(secondDay).Find(&dbRecords).Error; err != nil {
-		t.Fatal("Error getting analytics records from SQL")
+			table := analytics.AggregateSQLTable + "_" + data.date.Format("20060102")
+			defer func(table string) {
+				pmp.db.Migrator().DropTable(table)
+			}(table)
+			assert.Equal(t, true, pmp.db.Migrator().HasTable(table))
+			err := pmp.db.Table(table).Find(&dbRecords).Error
+			assert.Nil(t, err)
+			assert.Equal(t, data.RowsLen, len(dbRecords))
+		})
 	}
-
-	// 2(from apiid) + 2 (from StatusNotFound and StatusUnauthorized) + 1 (from total)
-	assert.Len(t, dbRecords, 5)
 }
 
 func TestSQLAggregateWriteData(t *testing.T) {
@@ -94,6 +108,9 @@ func TestSQLAggregateWriteData(t *testing.T) {
 	if err != nil {
 		t.Fatal("SQL Pump Aggregate couldn't be initialized with err: ", err)
 	}
+	defer func(table string) {
+		pmp.db.Migrator().DropTable(analytics.AggregateSQLTable)
+	}(table)
 
 	keys := make([]interface{}, 3)
 	keys[0] = analytics.AnalyticsRecord{APIID: "api111", ResponseCode: 200, OrgID: "org123"}
