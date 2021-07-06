@@ -21,7 +21,7 @@ func TestSQLAggregateInit(t *testing.T) {
 		t.Fatal("SQL Aggregate Pump couldn't be initialized with err: ", err)
 	}
 	defer func(table string) {
-		pmp.db.Migrator().DropTable(analytics.SQLAGGREGATETABLE)
+		pmp.db.Migrator().DropTable(analytics.AggregateSQLTable)
 	}(table)
 
 	assert.NotNil(t, pmp.db)
@@ -87,7 +87,7 @@ func TestSQLAggregateWriteData_Sharded(t *testing.T) {
 		t.Run(testName, func(t *testing.T) {
 			var dbRecords []analytics.SQLAnalyticsRecordAggregate
 
-			table := analytics.SQLAGGREGATETABLE + "_" + data.date.Format("20060102")
+			table := analytics.AggregateSQLTable + "_" + data.date.Format("20060102")
 			defer func(table string) {
 				pmp.db.Migrator().DropTable(table)
 			}(table)
@@ -109,7 +109,7 @@ func TestSQLAggregateWriteData(t *testing.T) {
 		t.Fatal("SQL Pump Aggregate couldn't be initialized with err: ", err)
 	}
 	defer func(table string) {
-		pmp.db.Migrator().DropTable(analytics.SQLAGGREGATETABLE)
+		pmp.db.Migrator().DropTable(analytics.AggregateSQLTable)
 	}(table)
 
 	keys := make([]interface{}, 3)

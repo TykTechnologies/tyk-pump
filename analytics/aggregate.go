@@ -16,7 +16,7 @@ import (
 const (
 	AgggregateMixedCollectionName = "tyk_analytics_aggregates"
 	MongoAggregatePrefix          = "mongo-pump-aggregate"
-	SQLAGGREGATETABLE             = "tyk_aggregated"
+	AggregateSQLTable             = "tyk_aggregated"
 )
 
 type ErrorData struct {
@@ -180,7 +180,7 @@ func (a *SQLAnalyticsRecordAggregate) ProcessStatusCodes() {
 }
 
 func (ar *SQLAnalyticsRecordAggregate) TableName() string {
-	return SQLAGGREGATETABLE
+	return AggregateSQLTable
 }
 
 func (f AnalyticsRecordAggregate) New() AnalyticsRecordAggregate {

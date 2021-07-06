@@ -89,7 +89,7 @@ func (c *SQLAggregatePump) Init(conf interface{}) error {
 	}
 	c.db = db
 	if !c.SQLConf.TableSharding {
-		c.db.Table(analytics.SQLAGGREGATETABLE).AutoMigrate(&analytics.SQLAnalyticsRecordAggregate{})
+		c.db.Table(analytics.AggregateSQLTable).AutoMigrate(&analytics.SQLAnalyticsRecordAggregate{})
 	}
 
 	c.log.Debug("SQLAggregate Initialized")
@@ -125,7 +125,7 @@ func (c *SQLAggregatePump) WriteData(ctx context.Context, data []interface{}) er
 
 			endIndex = i
 
-			table := analytics.SQLAGGREGATETABLE + "_" + recDate
+			table := analytics.AggregateSQLTable + "_" + recDate
 			c.db = c.db.Table(table)
 			if !c.db.Migrator().HasTable(table) {
 				c.db.AutoMigrate(&analytics.SQLAnalyticsRecordAggregate{})
