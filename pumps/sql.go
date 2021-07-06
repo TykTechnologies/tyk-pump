@@ -2,10 +2,14 @@ package pumps
 
 import (
 	"context"
+	"encoding/hex"
 	"errors"
+	"fmt"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/mitchellh/mapstructure"
+	"gopkg.in/vmihailenco/msgpack.v2"
+	"gorm.io/gorm/clause"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
@@ -34,6 +38,7 @@ type MysqlConfig struct {
 
 type SQLPump struct {
 	CommonPumpConfig
+	IsUptime bool
 
 	SQLConf *SQLConf
 
@@ -99,7 +104,11 @@ func (c *SQLPump) GetEnvPrefix() string {
 
 func (c *SQLPump) Init(conf interface{}) error {
 	c.SQLConf = &SQLConf{}
-	c.log = log.WithField("prefix", SQLPrefix)
+	if c.IsUptime {
+		c.log = log.WithField("prefix", SQLPrefix+"-uptime")
+	} else {
+		c.log = log.WithField("prefix", SQLPrefix)
+	}
 
 	err := mapstructure.Decode(conf, &c.SQLConf)
 	if err != nil {
@@ -107,7 +116,9 @@ func (c *SQLPump) Init(conf interface{}) error {
 		return err
 	}
 
-	processPumpEnvVars(c, c.log, c.SQLConf, SQLDefaultENV)
+	if !c.IsUptime {
+		processPumpEnvVars(c, c.log, c.SQLConf, SQLDefaultENV)
+	}
 
 	logLevel := gorm_logger.Silent
 
@@ -139,7 +150,11 @@ func (c *SQLPump) Init(conf interface{}) error {
 	c.db = db
 
 	if !c.SQLConf.TableSharding {
-		c.db.Table("tyk_analytics").AutoMigrate(&analytics.AnalyticsRecord{})
+		if c.IsUptime {
+			c.db.Table(analytics.UptimeSQLTable).AutoMigrate(&analytics.UptimeReportAggregateSQL{})
+		} else {
+			c.db.Table(analytics.SQLTable).AutoMigrate(&analytics.AnalyticsRecord{})
+		}
 	}
 
 	c.log.Debug("SQL Initialized")
@@ -163,13 +178,13 @@ func (c *SQLPump) WriteData(ctx context.Context, data []interface{}) error {
 	//We iterate dataLen +1 times since we're writing the data after the date change on sharding_table:true
 	for i := 0; i <= dataLen; i++ {
 		if c.SQLConf.TableSharding {
-			recDate := data[startIndex].(analytics.AnalyticsRecord).TimeStamp.Format("20060102")
+			recDate := typedData[startIndex].TimeStamp.Format("20060102")
 			var nextRecDate string
 			//if we're on i == dataLen iteration, it means that we're out of index range. We're going to use the last record date.
 			if i == dataLen {
-				nextRecDate = data[dataLen-1].(analytics.AnalyticsRecord).TimeStamp.Format("20060102")
+				nextRecDate = typedData[dataLen-1].TimeStamp.Format("20060102")
 			} else {
-				nextRecDate = data[i].(analytics.AnalyticsRecord).TimeStamp.Format("20060102")
+				nextRecDate = typedData[i].TimeStamp.Format("20060102")
 
 				//if both dates are equal, we shouldn't write in the table yet.
 				if recDate == nextRecDate {
@@ -179,7 +194,7 @@ func (c *SQLPump) WriteData(ctx context.Context, data []interface{}) error {
 
 			endIndex = i
 
-			table := "tyk_analytics_" + recDate
+			table := analytics.SQLTable + "_" + recDate
 			c.db = c.db.Table(table)
 			if !c.db.Migrator().HasTable(table) {
 				c.db.AutoMigrate(&analytics.AnalyticsRecord{})
@@ -188,9 +203,9 @@ func (c *SQLPump) WriteData(ctx context.Context, data []interface{}) error {
 			i = dataLen // write all records at once for non-sharded case, stop for loop after 1 iteration
 		}
 
-		c.db = c.db.WithContext(ctx).Create(typedData[startIndex:endIndex])
-		if c.db.Error != nil {
-			return c.db.Error
+		tx := c.db.WithContext(ctx).Create(typedData[startIndex:endIndex])
+		if tx.Error != nil {
+			return tx.Error
 		}
 		startIndex = i // next day start index, necessary for sharded case
 
@@ -199,4 +214,83 @@ func (c *SQLPump) WriteData(ctx context.Context, data []interface{}) error {
 	c.log.Info("Purged ", len(data), " records...")
 
 	return nil
+}
+
+func (c *SQLPump) WriteUptimeData(data []interface{}) {
+	dataLen := len(data)
+	c.log.Debug("Attempting to write ", dataLen, " records...")
+
+	typedData := make([]analytics.UptimeReportData, len(data))
+
+	for i, v := range data {
+		decoded := analytics.UptimeReportData{}
+		if err := msgpack.Unmarshal([]byte(v.(string)), &decoded); err != nil {
+			c.log.Error("Couldn't unmarshal analytics data:", err)
+			continue
+		}
+		typedData[i] = decoded
+	}
+
+	startIndex := 0
+	endIndex := dataLen
+	table = ""
+
+	for i := 0; i <= dataLen; i++ {
+		if c.SQLConf.TableSharding {
+			recDate := typedData[startIndex].TimeStamp.Format("20060102")
+			var nextRecDate string
+			//if we're on i == dataLen iteration, it means that we're out of index range. We're going to use the last record date.
+			if i == dataLen {
+				nextRecDate = typedData[dataLen-1].TimeStamp.Format("20060102")
+			} else {
+				nextRecDate = typedData[i].TimeStamp.Format("20060102")
+
+				//if both dates are equal, we shouldn't write in the table yet.
+				if recDate == nextRecDate {
+					continue
+				}
+			}
+
+			endIndex = i
+
+			table = analytics.UptimeSQLTable + "_" + recDate
+			c.db = c.db.Table(table)
+			if !c.db.Migrator().HasTable(table) {
+				c.db.AutoMigrate(&analytics.UptimeReportAggregateSQL{})
+			}
+		} else {
+			i = dataLen // write all records at once for non-sharded case, stop for loop after 1 iteration
+			table = analytics.UptimeSQLTable
+		}
+
+		analyticsPerOrg := analytics.AggregateUptimeData(typedData[startIndex:endIndex])
+		for orgID, ag := range analyticsPerOrg {
+			for _, d := range ag.Dimensions() {
+				id := fmt.Sprint(ag.TimeStamp.Unix()) + d.Name + d.Value
+				uID := hex.EncodeToString([]byte(id))
+
+				rec := analytics.UptimeReportAggregateSQL{
+					ID:             uID,
+					OrgID:          orgID,
+					TimeStamp:      ag.TimeStamp.Unix(),
+					Counter:        *d.Counter,
+					Dimension:      d.Name,
+					DimensionValue: d.Value,
+				}
+				rec.ProcessStatusCodes()
+
+				tx := c.db.Clauses(clause.OnConflict{
+					Columns:   []clause.Column{{Name: "id"}},
+					DoUpdates: clause.Assignments(rec.GetAssignments(table)),
+				}).Create(rec)
+				if tx.Error != nil {
+					c.log.Error(tx.Error)
+				}
+			}
+		}
+		startIndex = i // next day start index, necessary for sharded case
+	}
+
+	c.log.Debug("Purged ", len(data), " records...")
+
 }

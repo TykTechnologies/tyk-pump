@@ -24,6 +24,8 @@ type Latency struct {
 	Upstream int64 `json:"upstream"`
 }
 
+const SQLTable = "tyk_analytics"
+
 // AnalyticsRecord encodes the details of a request
 type AnalyticsRecord struct {
 	Method        string       `json:"method" gorm:"column:method"`
@@ -58,7 +60,7 @@ type AnalyticsRecord struct {
 }
 
 func (ar *AnalyticsRecord) TableName() string {
-	return "tyk_analytics"
+	return SQLTable
 }
 
 type GeoData struct {

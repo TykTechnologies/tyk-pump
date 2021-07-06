@@ -26,7 +26,7 @@ var SystemConfig TykPumpConfiguration
 var AnalyticsStore storage.AnalyticsStorage
 var UptimeStorage storage.AnalyticsStorage
 var Pumps []pumps.Pump
-var UptimePump pumps.MongoPump
+var UptimePump pumps.UptimePump
 
 var log = logger.GetLogger()
 
@@ -156,16 +156,30 @@ func initialisePumps() {
 	}
 
 	if !SystemConfig.DontPurgeUptimeData {
-		log.WithFields(logrus.Fields{
-			"prefix": mainPrefix,
-		}).Info("'dont_purge_uptime_data' set to false, attempting to start Uptime pump! ", UptimePump.GetName())
-		UptimePump = pumps.MongoPump{IsUptime: true}
-		UptimePump.Init(SystemConfig.UptimePumpConfig)
-		log.WithFields(logrus.Fields{
-			"prefix": mainPrefix,
-		}).Info("Init Uptime Pump: ", UptimePump.GetName())
+		initialiseUptimePump()
 	}
 
+}
+
+func initialiseUptimePump() {
+	log.WithFields(logrus.Fields{
+		"prefix": mainPrefix,
+	}).Info("'dont_purge_uptime_data' set to false, attempting to start Uptime pump! ")
+
+	switch SystemConfig.UptimePumpConfig.UptimeType {
+	case "sql":
+		UptimePump = &pumps.SQLPump{IsUptime: true}
+		UptimePump.Init(SystemConfig.UptimePumpConfig.SQLConf)
+
+	default:
+		UptimePump = &pumps.MongoPump{IsUptime: true}
+		UptimePump.Init(SystemConfig.UptimePumpConfig.MongoConf)
+	}
+
+	log.WithFields(logrus.Fields{
+		"prefix": mainPrefix,
+		"type":   SystemConfig.UptimePumpConfig.Type,
+	}).Info("Init Uptime Pump: ", UptimePump.GetName())
 }
 
 func StartPurgeLoop(secInterval int, chunkSize int64, expire time.Duration, omitDetails bool) {
