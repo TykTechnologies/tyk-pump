@@ -151,9 +151,9 @@ func (c *SQLPump) Init(conf interface{}) error {
 
 	if !c.SQLConf.TableSharding {
 		if c.IsUptime {
-			c.db.Table(analytics.UPTIMESQLTABLE).AutoMigrate(&analytics.UptimeReportAggregateSQL{})
+			c.db.Table(analytics.UptimeSQLTable).AutoMigrate(&analytics.UptimeReportAggregateSQL{})
 		} else {
-			c.db.Table(analytics.SQLTABLE).AutoMigrate(&analytics.AnalyticsRecord{})
+			c.db.Table(analytics.SQLTable).AutoMigrate(&analytics.AnalyticsRecord{})
 		}
 	}
 
@@ -194,7 +194,7 @@ func (c *SQLPump) WriteData(ctx context.Context, data []interface{}) error {
 
 			endIndex = i
 
-			table := analytics.SQLTABLE + "_" + recDate
+			table := analytics.SQLTable + "_" + recDate
 			c.db = c.db.Table(table)
 			if !c.db.Migrator().HasTable(table) {
 				c.db.AutoMigrate(&analytics.AnalyticsRecord{})
@@ -253,14 +253,14 @@ func (c *SQLPump) WriteUptimeData(data []interface{}) {
 
 			endIndex = i
 
-			table = analytics.UPTIMESQLTABLE + "_" + recDate
+			table = analytics.UptimeSQLTable + "_" + recDate
 			c.db = c.db.Table(table)
 			if !c.db.Migrator().HasTable(table) {
 				c.db.AutoMigrate(&analytics.UptimeReportAggregateSQL{})
 			}
 		} else {
 			i = dataLen // write all records at once for non-sharded case, stop for loop after 1 iteration
-			table = analytics.UPTIMESQLTABLE
+			table = analytics.UptimeSQLTable
 		}
 
 		analyticsPerOrg := analytics.AggregateUptimeData(typedData[startIndex:endIndex])

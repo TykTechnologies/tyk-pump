@@ -21,7 +21,7 @@ func TestSQLInit(t *testing.T) {
 		t.Fatal("SQL Pump couldn't be initialized with err: ", err)
 	}
 	defer func() {
-		pmp.db.Migrator().DropTable(analytics.SQLTABLE)
+		pmp.db.Migrator().DropTable(analytics.SQLTable)
 	}()
 
 	assert.NotNil(t, pmp.db)
@@ -47,7 +47,7 @@ func TestSQLWriteData(t *testing.T) {
 	}
 
 	defer func() {
-		pmp.db.Migrator().DropTable(analytics.SQLTABLE)
+		pmp.db.Migrator().DropTable(analytics.SQLTable)
 	}()
 
 	keys := make([]interface{}, 3)
@@ -64,7 +64,7 @@ func TestSQLWriteData(t *testing.T) {
 	t.Run("table_records", func(t *testing.T) {
 		var dbRecords []analytics.AnalyticsRecord
 
-		table := analytics.SQLTABLE
+		table := analytics.SQLTable
 		assert.Equal(t, true, pmp.db.Migrator().HasTable(table))
 		err := pmp.db.Table(table).Find(&dbRecords).Error
 		assert.Nil(t, err)
@@ -75,7 +75,7 @@ func TestSQLWriteData(t *testing.T) {
 	t.Run("table_content", func(t *testing.T) {
 		var dbRecords []analytics.AnalyticsRecord
 
-		table := analytics.SQLTABLE
+		table := analytics.SQLTable
 		assert.Equal(t, true, pmp.db.Migrator().HasTable(table))
 		err := pmp.db.Table(table).Find(&dbRecords).Error
 		assert.Nil(t, err)
@@ -137,7 +137,7 @@ func TestSQLWriteDataSharded(t *testing.T) {
 		t.Run(testName, func(t *testing.T) {
 			var dbRecords []analytics.AnalyticsRecord
 
-			table := analytics.SQLTABLE + "_" + data.date.Format("20060102")
+			table := analytics.SQLTable + "_" + data.date.Format("20060102")
 			defer func(table string) {
 				pmp.db.Migrator().DropTable(table)
 			}(table)
@@ -161,7 +161,7 @@ func TestSQLWriteUptimeData(t *testing.T) {
 		t.Fatal("SQL Pump couldn't be initialized with err: ", err)
 	}
 	defer func() {
-		pmp.db.Migrator().DropTable(analytics.UPTIMESQLTABLE)
+		pmp.db.Migrator().DropTable(analytics.UptimeSQLTable)
 	}()
 
 	now := time.Now()
@@ -210,7 +210,7 @@ func TestSQLWriteUptimeData(t *testing.T) {
 			}
 
 			pmp.WriteUptimeData(keys)
-			table := analytics.UPTIMESQLTABLE
+			table := analytics.UptimeSQLTable
 			//check if the table exists
 			assert.Equal(t, true, pmp.db.Migrator().HasTable(table))
 
@@ -284,7 +284,7 @@ func TestSQLWriteUptimeDataSharded(t *testing.T) {
 		t.Run(testName, func(t *testing.T) {
 			var dbRecords []analytics.UptimeReportAggregateSQL
 
-			table := analytics.UPTIMESQLTABLE + "_" + data.date.Format("20060102")
+			table := analytics.UptimeSQLTable + "_" + data.date.Format("20060102")
 			defer func(table string) {
 				pmp.db.Migrator().DropTable(table)
 			}(table)
@@ -308,7 +308,7 @@ func TestSQLWriteUptimeDataAggregations(t *testing.T) {
 		t.Fatal("SQL Pump couldn't be initialized with err: ", err)
 	}
 	defer func() {
-		pmp.db.Migrator().DropTable(analytics.UPTIMESQLTABLE)
+		pmp.db.Migrator().DropTable(analytics.UptimeSQLTable)
 	}()
 
 	keys := make([]interface{}, 5)
@@ -326,7 +326,7 @@ func TestSQLWriteUptimeDataAggregations(t *testing.T) {
 
 	pmp.WriteUptimeData(keys)
 
-	table := analytics.UPTIMESQLTABLE
+	table := analytics.UptimeSQLTable
 	dbRecords := []analytics.UptimeReportAggregateSQL{}
 	if err := pmp.db.Table(table).Find(&dbRecords).Error; err != nil {
 		t.Fatal("Error getting analytics records from SQL")

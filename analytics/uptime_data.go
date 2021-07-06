@@ -10,7 +10,7 @@ import (
 	"gorm.io/gorm"
 )
 
-const UPTIMESQLTABLE = "tyk_uptime_analytics"
+const UptimeSQLTable = "tyk_uptime_analytics"
 
 type UptimeReportData struct {
 	URL          string     `json:"url"`
@@ -115,7 +115,7 @@ func (u *UptimeReportAggregate) Dimensions() (dimensions []Dimension) {
 }
 
 func (a *UptimeReportAggregateSQL) TableName() string {
-	return UPTIMESQLTABLE
+	return UptimeSQLTable
 }
 
 func (a *UptimeReportAggregateSQL) ProcessStatusCodes() {
