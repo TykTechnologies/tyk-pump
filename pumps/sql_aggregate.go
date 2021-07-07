@@ -2,8 +2,11 @@ package pumps
 
 import (
 	"context"
+	"encoding/hex"
+	"fmt"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
+	"gorm.io/gorm/clause"
 
 	"github.com/mitchellh/mapstructure"
 
@@ -105,8 +108,13 @@ func (c *SQLAggregatePump) WriteData(ctx context.Context, data []interface{}) er
 	dataLen := len(data)
 	c.log.Debug("Attempting to write ", dataLen, " records...")
 
+	if dataLen == 0 {
+		return nil
+	}
+
 	startIndex := 0
 	endIndex := dataLen
+	table := ""
 	for i := 0; i <= dataLen; i++ {
 		if c.SQLConf.TableSharding {
 			recDate := data[startIndex].(analytics.AnalyticsRecord).TimeStamp.Format("20060102")
@@ -125,20 +133,25 @@ func (c *SQLAggregatePump) WriteData(ctx context.Context, data []interface{}) er
 
 			endIndex = i
 
-			table := analytics.AggregateSQLTable + "_" + recDate
+			table = analytics.AggregateSQLTable + "_" + recDate
 			c.db = c.db.Table(table)
 			if !c.db.Migrator().HasTable(table) {
 				c.db.AutoMigrate(&analytics.SQLAnalyticsRecordAggregate{})
 			}
 		} else {
 			i = dataLen // write all records at once for non-sharded case, stop for loop after 1 iteration
+			table = analytics.AggregateSQLTable
 		}
 
 		analyticsPerOrg := analytics.AggregateData(data[startIndex:endIndex], c.SQLConf.TrackAllPaths, c.SQLConf.IgnoreTagPrefixList, c.SQLConf.StoreAnalyticsPerMinute)
 
 		for orgID, ag := range analyticsPerOrg {
 			for _, d := range ag.Dimensions() {
+				id := fmt.Sprintf("%v", ag.TimeStamp.Unix()) + orgID + d.Name + d.Value
+				uID := hex.EncodeToString([]byte(id))
+
 				rec := analytics.SQLAnalyticsRecordAggregate{
+					ID:             uID,
 					OrgID:          orgID,
 					TimeStamp:      ag.TimeStamp.Unix(),
 					Counter:        *d.Counter,
@@ -147,7 +160,10 @@ func (c *SQLAggregatePump) WriteData(ctx context.Context, data []interface{}) er
 				}
 				rec.ProcessStatusCodes()
 
-				tx := c.db.WithContext(ctx).Create(rec)
+				tx := c.db.WithContext(ctx).Clauses(clause.OnConflict{
+					Columns:   []clause.Column{{Name: "id"}},
+					DoUpdates: clause.Assignments(rec.GetAssignments(table)),
+				}).Create(rec)
 				if tx.Error != nil {
 					return tx.Error
 				}

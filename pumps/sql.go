@@ -231,6 +231,10 @@ func (c *SQLPump) WriteUptimeData(data []interface{}) {
 		typedData[i] = decoded
 	}
 
+	if len(typedData) == 0 {
+		return
+	}
+
 	startIndex := 0
 	endIndex := dataLen
 	table = ""
@@ -266,7 +270,7 @@ func (c *SQLPump) WriteUptimeData(data []interface{}) {
 		analyticsPerOrg := analytics.AggregateUptimeData(typedData[startIndex:endIndex])
 		for orgID, ag := range analyticsPerOrg {
 			for _, d := range ag.Dimensions() {
-				id := fmt.Sprint(ag.TimeStamp.Unix()) + d.Name + d.Value
+				id := fmt.Sprintf("%v", ag.TimeStamp.Unix()) + orgID + d.Name + d.Value
 				uID := hex.EncodeToString([]byte(id))
 
 				rec := analytics.UptimeReportAggregateSQL{
