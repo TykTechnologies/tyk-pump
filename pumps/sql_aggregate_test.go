@@ -112,62 +112,115 @@ func TestSQLAggregateWriteData(t *testing.T) {
 		pmp.db.Migrator().DropTable(analytics.AggregateSQLTable)
 	}(table)
 
-	keys := make([]interface{}, 3)
-	keys[0] = analytics.AnalyticsRecord{APIID: "api111", ResponseCode: 200, OrgID: "org123"}
-	keys[1] = analytics.AnalyticsRecord{APIID: "api111", ResponseCode: 201, OrgID: "org123"}
-	keys[2] = analytics.AnalyticsRecord{APIID: "api112", ResponseCode: 500, OrgID: "org123"}
+	now := time.Now()
+	nowPlus1 := time.Now().Add(1 * time.Hour)
 
-	ctx := context.TODO()
-	errWrite := pmp.WriteData(ctx, keys)
-	if errWrite != nil {
-		t.Fatal("SQL Aggregate Pump couldn't write records with err:", errWrite)
+	tests := map[string]struct {
+		Record               analytics.AnalyticsRecord
+		RecordsAmountToWrite int
+		RowsLen              int
+		HitsPerHour          int
+	}{
+		"first iteration": {
+			Record:               analytics.AnalyticsRecord{OrgID: "1", APIID: "api1", TimeStamp: now},
+			RecordsAmountToWrite: 3,
+			RowsLen:              2,
+			HitsPerHour:          3,
+		},
+		"second iteration": {
+			Record:               analytics.AnalyticsRecord{OrgID: "1", APIID: "api1", TimeStamp: now},
+			RecordsAmountToWrite: 3,
+			RowsLen:              2,
+			HitsPerHour:          6,
+		},
+		"third iteration": {
+			Record:               analytics.AnalyticsRecord{OrgID: "1", APIID: "api1", TimeStamp: now},
+			RecordsAmountToWrite: 3,
+			RowsLen:              2,
+			HitsPerHour:          9,
+		},
+		"fourth iteration": {
+			Record:               analytics.AnalyticsRecord{OrgID: "1", APIID: "api1", TimeStamp: nowPlus1},
+			RecordsAmountToWrite: 3,
+			RowsLen:              4,
+			HitsPerHour:          3, //since we're going to write in a new hour, it should mean a different aggregation.
+		},
 	}
 
-	var dbRecords []analytics.SQLAnalyticsRecordAggregate
-	if err := pmp.db.Find(&dbRecords).Error; err != nil {
-		t.Fatal("Error getting analytics records from SQL Aggregate Pump")
+	for testName, testValue := range tests {
+		t.Run(testName, func(t *testing.T) {
+			pmp := pmp
+			keys := []interface{}{}
+
+			for i := 0; i < testValue.RecordsAmountToWrite; i++ {
+				keys = append(keys, testValue.Record)
+			}
+
+			pmp.WriteData(context.TODO(), keys)
+			table := analytics.AggregateSQLTable
+			//check if the table exists
+			assert.Equal(t, true, pmp.db.Migrator().HasTable(table))
+
+			dbRecords := []analytics.SQLAnalyticsRecordAggregate{}
+			if err := pmp.db.Table(table).Find(&dbRecords).Error; err != nil {
+				t.Fatal("Error getting analytics records from SQL")
+			}
+
+			//check amount of rows in the table
+			assert.Equal(t, testValue.RowsLen, len(dbRecords))
+
+			//iterate over the records and check total of hits
+			for _, dbRecord := range dbRecords {
+				if dbRecord.TimeStamp == testValue.Record.TimeStamp.Unix() && dbRecord.DimensionValue == "total" {
+					assert.Equal(t, testValue.HitsPerHour, dbRecord.Hits)
+					break
+				}
+			}
+
+		})
+	}
+}
+
+func TestSQLAggregateWriteDataValues(t *testing.T) {
+	pmp := SQLAggregatePump{}
+	cfg := make(map[string]interface{})
+	cfg["type"] = "sqlite"
+
+	err := pmp.Init(cfg)
+	if err != nil {
+		t.Fatal("SQL Pump Aggregate couldn't be initialized with err: ", err)
+	}
+	defer func(table string) {
+		pmp.db.Migrator().DropTable(analytics.AggregateSQLTable)
+	}(table)
+
+	now := time.Now()
+	keys := make([]interface{}, 5)
+	keys[0] = analytics.AnalyticsRecord{OrgID: "1", APIID: "api1", RequestTime: 10, ResponseCode: 200, TimeStamp: now, Latency: analytics.Latency{Total: 10, Upstream: 10}}
+	keys[1] = analytics.AnalyticsRecord{OrgID: "1", APIID: "api1", RequestTime: 10, ResponseCode: 500, TimeStamp: now, Latency: analytics.Latency{Total: 10, Upstream: 10}}
+	keys[2] = analytics.AnalyticsRecord{OrgID: "1", APIID: "api1", RequestTime: 10, ResponseCode: 200, TimeStamp: now, Latency: analytics.Latency{Total: 10, Upstream: 10}}
+	keys[3] = analytics.AnalyticsRecord{OrgID: "1", APIID: "api1", RequestTime: 20, ResponseCode: 200, TimeStamp: now, Latency: analytics.Latency{Total: 20, Upstream: 20}}
+	keys[4] = analytics.AnalyticsRecord{OrgID: "1", APIID: "api1", RequestTime: 20, ResponseCode: 500, TimeStamp: now, Latency: analytics.Latency{Total: 20, Upstream: 20}}
+
+	pmp.WriteData(context.TODO(), keys)
+
+	table := analytics.AggregateSQLTable
+	dbRecords := []analytics.SQLAnalyticsRecordAggregate{}
+	if err := pmp.db.Table(table).Find(&dbRecords).Error; err != nil {
+		t.Fatal("Error getting analytics records from SQL")
 	}
 
-	//for those records, it should have 4 rows - 3 dimensions: apiid-api111, apiid-api1112, errors-500 and total.
-	assert.Len(t, dbRecords, 4)
-
-	analizedAPI1, analizedAPI2, analizedErrors500, analizedTotal := false, false, false, false
-	for _, record := range dbRecords {
-		if record.Dimension == "apiid" && record.DimensionValue == "api111" {
-			analizedAPI1 = true
-			//assert.Equal(t,2,record.Code2x)
-			assert.Equal(t, 2, record.Hits)
-			assert.Equal(t, 2, record.Success)
-			assert.Equal(t, 0, record.ErrorTotal)
-		}
-		if record.Dimension == "apiid" && record.DimensionValue == "api112" {
-			analizedAPI2 = true
-			//assert.Equal(t,0,record.Code2x)
-			//assert.Equal(t,1,record.Code5x)
-			assert.Equal(t, 1, record.Code500)
-			assert.Equal(t, 1, record.Hits)
-			assert.Equal(t, 0, record.Success)
-			assert.Equal(t, 1, record.ErrorTotal)
-		}
-		if record.Dimension == "errors" && record.DimensionValue == "500" {
-			analizedErrors500 = true
-			//assert.Equal(t,0,record.Code2x)
-			//assert.Equal(t,1,record.Code5x)
-			assert.Equal(t, 1, record.Code500)
-			assert.Equal(t, 1, record.Hits)
-			assert.Equal(t, 0, record.Success)
-			assert.Equal(t, 1, record.ErrorTotal)
-		}
-		if record.Dimension == "" && record.DimensionValue == "total" {
-			analizedTotal = true
-			//assert.Equal(t,2,record.Code2x)
-			//assert.Equal(t,1,record.Code5x)
-			assert.Equal(t, 1, record.Code500)
-			assert.Equal(t, 3, record.Hits)
-			assert.Equal(t, 2, record.Success)
-			assert.Equal(t, 1, record.ErrorTotal)
-		}
-	}
-
-	assert.Equal(t, true, analizedAPI1 && analizedAPI2 && analizedErrors500 && analizedTotal)
+	assert.Equal(t, 3, len(dbRecords))
+	assert.Equal(t, "apiid", dbRecords[0].Dimension)
+	assert.Equal(t, "api1", dbRecords[0].DimensionValue)
+	assert.Equal(t, 2, dbRecords[0].Code500)
+	assert.Equal(t, 5, dbRecords[0].Hits)
+	assert.Equal(t, 3, dbRecords[0].Success)
+	assert.Equal(t, 2, dbRecords[0].ErrorTotal)
+	assert.Equal(t, 14.0, dbRecords[0].RequestTime)
+	assert.Equal(t, 70.0, dbRecords[0].TotalRequestTime)
+	assert.Equal(t, int64(70), dbRecords[0].TotalLatency)
+	assert.Equal(t, int64(70), dbRecords[0].TotalUpstreamLatency)
+	assert.Equal(t, int64(20), dbRecords[0].MaxLatency)
+	assert.Equal(t, int64(10), dbRecords[0].MinUpstreamLatency)
 }

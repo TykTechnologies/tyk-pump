@@ -11,6 +11,7 @@ import (
 	"github.com/TykTechnologies/logrus"
 	"github.com/fatih/structs"
 	"gopkg.in/mgo.v2/bson"
+	"gorm.io/gorm"
 )
 
 const (
@@ -96,6 +97,8 @@ type AnalyticsRecordAggregate struct {
 }
 
 type SQLAnalyticsRecordAggregate struct {
+	ID string `gorm:"primaryKey"`
+
 	Counter `json:"counter" gorm:"embedded"`
 
 	TimeStamp      int64  `json:"timestamp" gorm:"index:dimension, priority:1"`
@@ -179,8 +182,58 @@ func (a *SQLAnalyticsRecordAggregate) ProcessStatusCodes() {
 	a.Counter.ErrorMap = nil
 }
 
-func (ar *SQLAnalyticsRecordAggregate) TableName() string {
+func (f *SQLAnalyticsRecordAggregate) TableName() string {
 	return AggregateSQLTable
+}
+
+func (f SQLAnalyticsRecordAggregate) GetAssignments(tableName string) map[string]interface{} {
+	assignments := make(map[string]interface{})
+
+	baseFields := structs.Fields(f)
+	for _, field := range baseFields {
+		colName := field.Tag("json")
+		if strings.Contains(colName, "code_") {
+			if !field.IsZero() {
+				assignments[colName] = gorm.Expr(tableName + "." + colName + " + " + fmt.Sprint(field.Value()))
+			}
+		}
+	}
+
+	fields := structs.Fields(f.Counter)
+	for _, field := range fields {
+		jsonTag := field.Tag("json")
+		colName := "counter_" + jsonTag
+
+		switch jsonTag {
+		//hits, error, success"s, open_connections, closed_connections, bytes_in, bytes_out,total_request_time, total_upstream_latency
+		case "hits", "error", "success", "open_connections", "closed_connections", "bytes_in", "bytes_out", "total_request_time", "total_upstream_latency":
+			if !field.IsZero() {
+				assignments[colName] = gorm.Expr(tableName + "." + colName + " + " + fmt.Sprintf("%v", field.Value()))
+			}
+		//request_time, upstream_latency
+		case "request_time", "upstream_latency", "latency":
+			//AVG adding value to another AVG: newAve = ((oldAve*oldNumPoints) + x)/(oldNumPoints+1)
+			if !field.IsZero() {
+				assignments[colName] = gorm.Expr("((" + tableName + "." + colName + " * " + tableName + ".counter_hits) + " + fmt.Sprintf("%v", field.Value()) + ")/( " + tableName + ".counter_hits +1)")
+			}
+		case "max_upstream_latency", "max_latency":
+			//math max: 0.5 * ((@val1 + @val2) + ABS(@val1 - @val2))
+			if !field.IsZero() {
+				val1 := tableName + "." + colName
+				val2 := fmt.Sprintf("%v", field.Value())
+				assignments[colName] = gorm.Expr("0.5 * ((" + val1 + " + " + val2 + ") + ABS(" + val1 + " - " + val2 + "))")
+			}
+		case "min_latency", "min_upstream_latency":
+			//math min: 0.5 * ((@val1 + @val2) - ABS(@val1 - @val2))
+			if !field.IsZero() {
+				val1 := tableName + "." + colName
+				val2 := fmt.Sprintf("%v", field.Value())
+				assignments[colName] = gorm.Expr("0.5 * ((" + val1 + " + " + val2 + ") - ABS(" + val1 + " - " + val2 + ")) ")
+			}
+		}
+	}
+
+	return assignments
 }
 
 func (f AnalyticsRecordAggregate) New() AnalyticsRecordAggregate {
