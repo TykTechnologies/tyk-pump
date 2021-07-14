@@ -27,6 +27,12 @@ type Pump interface {
 	GetEnvPrefix() string
 }
 
+type UptimePump interface {
+	GetName() string
+	Init(interface{}) error
+	WriteUptimeData(data []interface{})
+}
+
 func GetPumpByName(name string) (Pump, error) {
 
 	if pump, ok := AvailablePumps[name]; ok && pump != nil {

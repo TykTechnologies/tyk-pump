@@ -11,11 +11,13 @@ import (
 	"github.com/TykTechnologies/logrus"
 	"github.com/fatih/structs"
 	"gopkg.in/mgo.v2/bson"
+	"gorm.io/gorm"
 )
 
 const (
 	AgggregateMixedCollectionName = "tyk_analytics_aggregates"
 	MongoAggregatePrefix          = "mongo-pump-aggregate"
+	AggregateSQLTable             = "tyk_aggregated"
 )
 
 type ErrorData struct {
@@ -24,31 +26,30 @@ type ErrorData struct {
 }
 
 type Counter struct {
-	Hits              int       `json:"hits"`
-	Success           int       `json:"success"`
-	ErrorTotal        int       `json:"error"`
-	RequestTime       float64   `json:"request_time"`
-	TotalRequestTime  float64   `json:"total_request_time"`
-	Identifier        string    `json:"identifier"`
-	HumanIdentifier   string    `json:"human_identifier"`
-	LastTime          time.Time `json:"last_time"`
-	OpenConnections   int64     `json:"open_connections"`
-	ClosedConnections int64     `json:"closed_connections"`
-	BytesIn           int64     `json:"bytes_in"`
-	BytesOut          int64     `json:"bytes_out"`
-
-	MaxUpstreamLatency   int64   `json:"max_upstream_latency"`
-	MinUpstreamLatency   int64   `json:"min_upstream_latency"`
-	TotalUpstreamLatency int64   `json:"total_upstream_latency"`
-	UpstreamLatency      float64 `json:"upstream_latency"`
+	Hits                 int       `json:"hits"`
+	Success              int       `json:"success"`
+	ErrorTotal           int       `json:"error" gorm:"column:error"`
+	RequestTime          float64   `json:"request_time"`
+	TotalRequestTime     float64   `json:"total_request_time"`
+	Identifier           string    `json:"identifier" sql:"-"`
+	HumanIdentifier      string    `json:"human_identifier"`
+	LastTime             time.Time `json:"last_time"`
+	OpenConnections      int64     `json:"open_connections"`
+	ClosedConnections    int64     `json:"closed_connections"`
+	BytesIn              int64     `json:"bytes_in"`
+	BytesOut             int64     `json:"bytes_out"`
+	MaxUpstreamLatency   int64     `json:"max_upstream_latency"`
+	MinUpstreamLatency   int64     `json:"min_upstream_latency"`
+	TotalUpstreamLatency int64     `json:"total_upstream_latency"`
+	UpstreamLatency      float64   `json:"upstream_latency"`
 
 	MaxLatency   int64   `json:"max_latency"`
 	MinLatency   int64   `json:"min_latency"`
 	TotalLatency int64   `json:"total_latency"`
 	Latency      float64 `json:"latency"`
 
-	ErrorMap  map[string]int `json:"error_map"`
-	ErrorList []ErrorData    `json:"error_list"`
+	ErrorMap  map[string]int `json:"error_map" sql:"-"`
+	ErrorList []ErrorData    `json:"error_list" sql:"-"`
 }
 
 type AnalyticsRecordAggregate struct {
@@ -93,6 +94,146 @@ type AnalyticsRecordAggregate struct {
 
 	ExpireAt time.Time `bson:"expireAt" json:"expireAt"`
 	LastTime time.Time
+}
+
+type SQLAnalyticsRecordAggregate struct {
+	ID string `gorm:"primaryKey"`
+
+	Counter `json:"counter" gorm:"embedded"`
+
+	TimeStamp      int64  `json:"timestamp" gorm:"index:dimension, priority:1"`
+	OrgID          string `json:"org_id" gorm:"index:dimension, priority:2"`
+	Dimension      string `json:"dimension" gorm:"index:dimension, priority:3"`
+	DimensionValue string `json:"dimension_value" gorm:"index:dimension, priority:4"`
+
+	Code1x  int `json:"code_1x"`
+	Code200 int `json:"code_200"`
+	Code201 int `json:"code_201"`
+	Code2x  int `json:"code_2x"`
+	Code301 int `json:"code_301"`
+	Code302 int `json:"code_302"`
+	Code303 int `json:"code_303"`
+	Code304 int `json:"code_304"`
+	Code3x  int `json:"code_3x"`
+	Code400 int `json:"code_400"`
+	Code401 int `json:"code_401"`
+	Code403 int `json:"code_403"`
+	Code404 int `json:"code_404"`
+	Code429 int `json:"code_429"`
+	Code4x  int `json:"code_4x"`
+	Code500 int `json:"code_500"`
+	Code501 int `json:"code_501"`
+	Code502 int `json:"code_502"`
+	Code503 int `json:"code_503"`
+	Code504 int `json:"code_504"`
+	Code5x  int `json:"code_5x"`
+}
+
+func (a *SQLAnalyticsRecordAggregate) ProcessStatusCodes() {
+	for k, v := range a.Counter.ErrorMap {
+		switch k {
+		case "200":
+			a.Code200 = v
+		case "201":
+			a.Code201 = v
+		case "301":
+			a.Code301 = v
+		case "302":
+			a.Code302 = v
+		case "303":
+			a.Code303 = v
+		case "400":
+			a.Code400 = v
+		case "401":
+			a.Code401 = v
+		case "403":
+			a.Code403 = v
+		case "404":
+			a.Code404 = v
+		case "429":
+			a.Code429 = v
+		case "500":
+			a.Code500 = v
+		case "501":
+			a.Code501 = v
+		case "502":
+			a.Code502 = v
+		case "503":
+			a.Code503 = v
+		case "504":
+			a.Code404 = v
+		default:
+			switch k[0] {
+			case '1':
+				a.Code1x = v
+			case '2':
+				a.Code2x = v
+			case '3':
+				a.Code3x = v
+			case '4':
+				a.Code4x = v
+			case '5':
+				a.Code5x = v
+			}
+		}
+	}
+
+	a.Counter.ErrorList = nil
+	a.Counter.ErrorMap = nil
+}
+
+func (f *SQLAnalyticsRecordAggregate) TableName() string {
+	return AggregateSQLTable
+}
+
+func (f SQLAnalyticsRecordAggregate) GetAssignments(tableName string) map[string]interface{} {
+	assignments := make(map[string]interface{})
+
+	baseFields := structs.Fields(f)
+	for _, field := range baseFields {
+		colName := field.Tag("json")
+		if strings.Contains(colName, "code_") {
+			if !field.IsZero() {
+				assignments[colName] = gorm.Expr(tableName + "." + colName + " + " + fmt.Sprint(field.Value()))
+			}
+		}
+	}
+
+	fields := structs.Fields(f.Counter)
+	for _, field := range fields {
+		jsonTag := field.Tag("json")
+		colName := "counter_" + jsonTag
+
+		switch jsonTag {
+		//hits, error, success"s, open_connections, closed_connections, bytes_in, bytes_out,total_request_time, total_upstream_latency
+		case "hits", "error", "success", "open_connections", "closed_connections", "bytes_in", "bytes_out", "total_request_time", "total_upstream_latency":
+			if !field.IsZero() {
+				assignments[colName] = gorm.Expr(tableName + "." + colName + " + " + fmt.Sprintf("%v", field.Value()))
+			}
+		//request_time, upstream_latency
+		case "request_time", "upstream_latency", "latency":
+			//AVG adding value to another AVG: newAve = ((oldAve*oldNumPoints) + x)/(oldNumPoints+1)
+			if !field.IsZero() {
+				assignments[colName] = gorm.Expr("((" + tableName + "." + colName + " * " + tableName + ".counter_hits) + " + fmt.Sprintf("%v", field.Value()) + ")/( " + tableName + ".counter_hits +1)")
+			}
+		case "max_upstream_latency", "max_latency":
+			//math max: 0.5 * ((@val1 + @val2) + ABS(@val1 - @val2))
+			if !field.IsZero() {
+				val1 := tableName + "." + colName
+				val2 := fmt.Sprintf("%v", field.Value())
+				assignments[colName] = gorm.Expr("0.5 * ((" + val1 + " + " + val2 + ") + ABS(" + val1 + " - " + val2 + "))")
+			}
+		case "min_latency", "min_upstream_latency":
+			//math min: 0.5 * ((@val1 + @val2) - ABS(@val1 - @val2))
+			if !field.IsZero() {
+				val1 := tableName + "." + colName
+				val2 := fmt.Sprintf("%v", field.Value())
+				assignments[colName] = gorm.Expr("0.5 * ((" + val1 + " + " + val2 + ") - ABS(" + val1 + " - " + val2 + ")) ")
+			}
+		}
+	}
+
+	return assignments
 }
 
 func (f AnalyticsRecordAggregate) New() AnalyticsRecordAggregate {
@@ -179,61 +320,83 @@ func (f *AnalyticsRecordAggregate) latencySetter(parent, thisUnit string, newUpd
 	return newUpdate
 }
 
-func (f *AnalyticsRecordAggregate) AsChange() bson.M {
-	newUpdate := bson.M{
+type Dimension struct {
+	Name    string
+	Value   string
+	Counter *Counter
+}
+
+func (f *AnalyticsRecordAggregate) Dimensions() (dimensions []Dimension) {
+	fnLatencySetter := func(counter *Counter) *Counter {
+		if counter.Hits > 0 {
+			counter.Latency = float64(counter.TotalLatency) / float64(counter.Hits)
+			counter.UpstreamLatency = float64(counter.TotalUpstreamLatency) / float64(counter.Hits)
+		}
+		return counter
+	}
+
+	for key, inc := range f.APIID {
+		dimensions = append(dimensions, Dimension{"apiid", key, fnLatencySetter(inc)})
+	}
+
+	for key, inc := range f.Errors {
+		dimensions = append(dimensions, Dimension{"errors", key, fnLatencySetter(inc)})
+	}
+
+	for key, inc := range f.Versions {
+		dimensions = append(dimensions, Dimension{"versions", key, fnLatencySetter(inc)})
+	}
+
+	for key, inc := range f.APIKeys {
+		dimensions = append(dimensions, Dimension{"apikeys", key, fnLatencySetter(inc)})
+	}
+
+	for key, inc := range f.OauthIDs {
+		dimensions = append(dimensions, Dimension{"oauthids", key, fnLatencySetter(inc)})
+	}
+
+	for key, inc := range f.Geo {
+		dimensions = append(dimensions, Dimension{"geo", key, fnLatencySetter(inc)})
+	}
+
+	for key, inc := range f.Tags {
+		dimensions = append(dimensions, Dimension{"tags", key, fnLatencySetter(inc)})
+	}
+
+	for key, inc := range f.Endpoints {
+		dimensions = append(dimensions, Dimension{"endpoints", key, fnLatencySetter(inc)})
+	}
+
+	for key, inc := range f.KeyEndpoint {
+		for k, v := range inc {
+			dimensions = append(dimensions, Dimension{"keyendpoints", key + "." + k, fnLatencySetter(v)})
+		}
+	}
+
+	for key, inc := range f.OauthEndpoint {
+		for k, v := range inc {
+			dimensions = append(dimensions, Dimension{"oauthendpoints", key + "." + k, fnLatencySetter(v)})
+		}
+	}
+
+	for key, inc := range f.ApiEndpoint {
+		dimensions = append(dimensions, Dimension{"apiendpoints", key, fnLatencySetter(inc)})
+	}
+
+	dimensions = append(dimensions, Dimension{"", "total", fnLatencySetter(&f.Total)})
+
+	return
+}
+
+func (f *AnalyticsRecordAggregate) AsChange() (newUpdate bson.M) {
+	newUpdate = bson.M{
 		"$inc": bson.M{},
 		"$set": bson.M{},
 		"$max": bson.M{},
 	}
 
-	for thisUnit, incVal := range f.APIID {
-		newUpdate = f.generateBSONFromProperty("apiid", thisUnit, incVal, newUpdate)
-	}
-
-	for thisUnit, incVal := range f.Errors {
-		newUpdate = f.generateBSONFromProperty("errors", thisUnit, incVal, newUpdate)
-	}
-
-	for thisUnit, incVal := range f.Versions {
-		newUpdate = f.generateBSONFromProperty("versions", thisUnit, incVal, newUpdate)
-	}
-
-	for thisUnit, incVal := range f.APIKeys {
-		newUpdate = f.generateBSONFromProperty("apikeys", thisUnit, incVal, newUpdate)
-	}
-
-	for thisUnit, incVal := range f.OauthIDs {
-		newUpdate = f.generateBSONFromProperty("oauthids", thisUnit, incVal, newUpdate)
-	}
-
-	for thisUnit, incVal := range f.Geo {
-		newUpdate = f.generateBSONFromProperty("geo", thisUnit, incVal, newUpdate)
-	}
-
-	for thisUnit, incVal := range f.Tags {
-		newUpdate = f.generateBSONFromProperty("tags", thisUnit, incVal, newUpdate)
-	}
-
-	for thisUnit, incVal := range f.Endpoints {
-		newUpdate = f.generateBSONFromProperty("endpoints", thisUnit, incVal, newUpdate)
-	}
-
-	for thisUnit, incVal := range f.KeyEndpoint {
-		parent := "keyendpoints." + thisUnit
-		for k, v := range incVal {
-			newUpdate = f.generateBSONFromProperty(parent, k, v, newUpdate)
-		}
-	}
-
-	for thisUnit, incVal := range f.OauthEndpoint {
-		parent := "oauthendpoints." + thisUnit
-		for k, v := range incVal {
-			newUpdate = f.generateBSONFromProperty(parent, k, v, newUpdate)
-		}
-	}
-
-	for thisUnit, incVal := range f.ApiEndpoint {
-		newUpdate = f.generateBSONFromProperty("apiendpoints", thisUnit, incVal, newUpdate)
+	for _, d := range f.Dimensions() {
+		newUpdate = f.generateBSONFromProperty(d.Name, d.Value, d.Counter, newUpdate)
 	}
 
 	newUpdate = f.generateBSONFromProperty("", "total", &f.Total, newUpdate)
@@ -357,11 +520,11 @@ func (f *AnalyticsRecordAggregate) DiscardAggregations(fields []string) {
 			f.Tags = make(map[string]*Counter)
 		case "Endpoints", "endpoints":
 			f.Endpoints = make(map[string]*Counter)
-		case "KeyEndpoint", "keyendpint":
+		case "KeyEndpoint", "keyendpoints":
 			f.KeyEndpoint = make(map[string]map[string]*Counter)
-		case "OauthEndpoint", "oauthendpoint":
+		case "OauthEndpoint", "oauthendpoints":
 			f.OauthEndpoint = make(map[string]map[string]*Counter)
-		case "ApiEndpoint", "apiendpoint":
+		case "ApiEndpoint", "apiendpoints":
 			f.ApiEndpoint = make(map[string]*Counter)
 		default:
 			log.WithFields(logrus.Fields{
@@ -695,7 +858,6 @@ func AggregateData(data []interface{}, trackAllPaths bool, ignoreTagPrefixList [
 			}
 
 		}
-
 		analyticsPerOrg[orgID] = thisAggregate
 
 	}
