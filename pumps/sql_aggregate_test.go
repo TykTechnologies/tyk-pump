@@ -200,7 +200,7 @@ func TestSQLAggregateWriteDataValues(t *testing.T) {
 	keys[1] = analytics.AnalyticsRecord{OrgID: "1", APIID: "api1", RequestTime: 10, ResponseCode: 500, TimeStamp: now, Latency: analytics.Latency{Total: 10, Upstream: 10}}
 	keys[2] = analytics.AnalyticsRecord{OrgID: "1", APIID: "api1", RequestTime: 10, ResponseCode: 200, TimeStamp: now, Latency: analytics.Latency{Total: 10, Upstream: 10}}
 	keys[3] = analytics.AnalyticsRecord{OrgID: "1", APIID: "api1", RequestTime: 20, ResponseCode: 200, TimeStamp: now, Latency: analytics.Latency{Total: 20, Upstream: 20}}
-	keys[4] = analytics.AnalyticsRecord{OrgID: "1", APIID: "api1", RequestTime: 20, ResponseCode: 500, TimeStamp: now, Latency: analytics.Latency{Total: 20, Upstream: 20}}
+	keys[4] = analytics.AnalyticsRecord{OrgID: "1", APIID: "api1", RequestTime: 20, ResponseCode: 500, TimeStamp: now, Latency: analytics.Latency{Total: 20, Upstream: 30}}
 
 	pmp.WriteData(context.TODO(), keys)
 
@@ -219,8 +219,10 @@ func TestSQLAggregateWriteDataValues(t *testing.T) {
 	assert.Equal(t, 2, dbRecords[0].ErrorTotal)
 	assert.Equal(t, 14.0, dbRecords[0].RequestTime)
 	assert.Equal(t, 70.0, dbRecords[0].TotalRequestTime)
+	assert.Equal(t, float64(14), dbRecords[0].Latency)
 	assert.Equal(t, int64(70), dbRecords[0].TotalLatency)
-	assert.Equal(t, int64(70), dbRecords[0].TotalUpstreamLatency)
+	assert.Equal(t, float64(16), dbRecords[0].UpstreamLatency)
+	assert.Equal(t, int64(80), dbRecords[0].TotalUpstreamLatency)
 	assert.Equal(t, int64(20), dbRecords[0].MaxLatency)
 	assert.Equal(t, int64(10), dbRecords[0].MinUpstreamLatency)
 }

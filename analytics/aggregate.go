@@ -327,55 +327,63 @@ type Dimension struct {
 }
 
 func (f *AnalyticsRecordAggregate) Dimensions() (dimensions []Dimension) {
+	fnLatencySetter := func(counter *Counter) *Counter {
+		if counter.Hits > 0 {
+			counter.Latency = float64(counter.TotalLatency) / float64(counter.Hits)
+			counter.UpstreamLatency = float64(counter.TotalUpstreamLatency) / float64(counter.Hits)
+		}
+		return counter
+	}
+
 	for key, inc := range f.APIID {
-		dimensions = append(dimensions, Dimension{"apiid", key, inc})
+		dimensions = append(dimensions, Dimension{"apiid", key, fnLatencySetter(inc)})
 	}
 
 	for key, inc := range f.Errors {
-		dimensions = append(dimensions, Dimension{"errors", key, inc})
+		dimensions = append(dimensions, Dimension{"errors", key, fnLatencySetter(inc)})
 	}
 
 	for key, inc := range f.Versions {
-		dimensions = append(dimensions, Dimension{"versions", key, inc})
+		dimensions = append(dimensions, Dimension{"versions", key, fnLatencySetter(inc)})
 	}
 
 	for key, inc := range f.APIKeys {
-		dimensions = append(dimensions, Dimension{"apikeys", key, inc})
+		dimensions = append(dimensions, Dimension{"apikeys", key, fnLatencySetter(inc)})
 	}
 
 	for key, inc := range f.OauthIDs {
-		dimensions = append(dimensions, Dimension{"oauthids", key, inc})
+		dimensions = append(dimensions, Dimension{"oauthids", key, fnLatencySetter(inc)})
 	}
 
 	for key, inc := range f.Geo {
-		dimensions = append(dimensions, Dimension{"geo", key, inc})
+		dimensions = append(dimensions, Dimension{"geo", key, fnLatencySetter(inc)})
 	}
 
 	for key, inc := range f.Tags {
-		dimensions = append(dimensions, Dimension{"tags", key, inc})
+		dimensions = append(dimensions, Dimension{"tags", key, fnLatencySetter(inc)})
 	}
 
 	for key, inc := range f.Endpoints {
-		dimensions = append(dimensions, Dimension{"endpoints", key, inc})
+		dimensions = append(dimensions, Dimension{"endpoints", key, fnLatencySetter(inc)})
 	}
 
 	for key, inc := range f.KeyEndpoint {
 		for k, v := range inc {
-			dimensions = append(dimensions, Dimension{"keyendpoints", key + "." + k, v})
+			dimensions = append(dimensions, Dimension{"keyendpoints", key + "." + k, fnLatencySetter(v)})
 		}
 	}
 
 	for key, inc := range f.OauthEndpoint {
 		for k, v := range inc {
-			dimensions = append(dimensions, Dimension{"oauthendpoints", key + "." + k, v})
+			dimensions = append(dimensions, Dimension{"oauthendpoints", key + "." + k, fnLatencySetter(v)})
 		}
 	}
 
 	for key, inc := range f.ApiEndpoint {
-		dimensions = append(dimensions, Dimension{"apiendpoints", key, inc})
+		dimensions = append(dimensions, Dimension{"apiendpoints", key, fnLatencySetter(inc)})
 	}
 
-	dimensions = append(dimensions, Dimension{"", "total", &f.Total})
+	dimensions = append(dimensions, Dimension{"", "total", fnLatencySetter(&f.Total)})
 
 	return
 }
@@ -850,7 +858,6 @@ func AggregateData(data []interface{}, trackAllPaths bool, ignoreTagPrefixList [
 			}
 
 		}
-
 		analyticsPerOrg[orgID] = thisAggregate
 
 	}
