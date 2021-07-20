@@ -91,7 +91,7 @@ func (a UptimeReportAggregateSQL) GetAssignments(tableName string) map[string]in
 		case strings.Contains(colName, "request_time"):
 			//AVG adding value to another AVG: newAve = ((oldAve*oldNumPoints) + x)/(oldNumPoints+1)
 			if !field.IsZero() {
-				assignments[colName] = gorm.Expr("(" + tableName + ".counter_total_request_time  +" + fmt.Sprintf("%v", a.TotalRequestTime) + ")/CAST( " + tableName + ".counter_hits + " + fmt.Sprintf("%v", a.Hits) + " AS REAL)")
+				assignments[colName] = gorm.Expr("(" + tableName + ".counter_total_request_time  +" + fmt.Sprintf("%v", a.TotalRequestTime) + ")/( " + tableName + ".counter_hits + " + fmt.Sprintf("%v", a.Hits) + ")")
 			}
 		}
 
