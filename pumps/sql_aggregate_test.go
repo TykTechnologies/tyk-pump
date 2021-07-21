@@ -191,7 +191,7 @@ func TestSQLAggregateWriteDataValues(t *testing.T) {
 		t.Fatal("SQL Pump Aggregate couldn't be initialized with err: ", err)
 	}
 	defer func(table string) {
-		//pmp.db.Migrator().DropTable(analytics.AggregateSQLTable)
+		pmp.db.Migrator().DropTable(analytics.AggregateSQLTable)
 	}(table)
 
 	now := time.Now()
