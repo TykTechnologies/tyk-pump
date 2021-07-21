@@ -202,12 +202,15 @@ func TestSQLAggregateWriteDataValues(t *testing.T) {
 	keys[3] = analytics.AnalyticsRecord{OrgID: "1", APIID: "api1", RequestTime: 20, ResponseCode: 200, TimeStamp: now, Latency: analytics.Latency{Total: 20, Upstream: 20}}
 	keys[4] = analytics.AnalyticsRecord{OrgID: "1", APIID: "api1", RequestTime: 20, ResponseCode: 500, TimeStamp: now, Latency: analytics.Latency{Total: 20, Upstream: 30}}
 
-	pmp.WriteData(context.TODO(), keys)
-
+	err = pmp.WriteData(context.TODO(), keys)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
 	table := analytics.AggregateSQLTable
 	dbRecords := []analytics.SQLAnalyticsRecordAggregate{}
 	if err := pmp.db.Table(table).Find(&dbRecords).Error; err != nil {
 		t.Fatal("Error getting analytics records from SQL")
+		return
 	}
 
 	assert.Equal(t, 3, len(dbRecords))
@@ -225,4 +228,35 @@ func TestSQLAggregateWriteDataValues(t *testing.T) {
 	assert.Equal(t, int64(80), dbRecords[0].TotalUpstreamLatency)
 	assert.Equal(t, int64(20), dbRecords[0].MaxLatency)
 	assert.Equal(t, int64(10), dbRecords[0].MinUpstreamLatency)
+
+	//We check again to validate the ON CONFLICT CLAUSES
+	newKeys := make([]interface{}, 2)
+	newKeys[0] = analytics.AnalyticsRecord{OrgID: "1", APIID: "api1", RequestTime: 10, ResponseCode: 200, TimeStamp: now, Latency: analytics.Latency{Total: 10, Upstream: 5}}
+	newKeys[1] = analytics.AnalyticsRecord{OrgID: "1", APIID: "api1", RequestTime: 10, ResponseCode: 500, TimeStamp: now, Latency: analytics.Latency{Total: 30, Upstream: 10}}
+
+	err = pmp.WriteData(context.TODO(), newKeys)
+	if err != nil {
+		t.Fatal(err.Error())
+	}
+	dbRecords = []analytics.SQLAnalyticsRecordAggregate{}
+	if err := pmp.db.Table(table).Find(&dbRecords).Error; err != nil {
+		t.Fatal("Error getting analytics records from SQL")
+	}
+
+	assert.Equal(t, 3, len(dbRecords))
+	assert.Equal(t, "apiid", dbRecords[0].Dimension)
+	assert.Equal(t, "api1", dbRecords[0].DimensionValue)
+	assert.Equal(t, 3, dbRecords[0].Code500)
+	assert.Equal(t, 7, dbRecords[0].Hits)
+	assert.Equal(t, 4, dbRecords[0].Success)
+	assert.Equal(t, 3, dbRecords[0].ErrorTotal)
+	assert.Equal(t, 12.857142857142858, dbRecords[0].RequestTime)
+	assert.Equal(t, 90.0, dbRecords[0].TotalRequestTime)
+	assert.Equal(t, 15.714285714285714, dbRecords[0].Latency)
+	assert.Equal(t, int64(110), dbRecords[0].TotalLatency)
+	assert.Equal(t, 13.571428571428571, dbRecords[0].UpstreamLatency)
+	assert.Equal(t, int64(95), dbRecords[0].TotalUpstreamLatency)
+	assert.Equal(t, int64(30), dbRecords[0].MaxLatency)
+	assert.Equal(t, int64(5), dbRecords[0].MinUpstreamLatency)
+
 }
