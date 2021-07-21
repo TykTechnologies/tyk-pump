@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"time"
+	"strings"
 
 	"github.com/mitchellh/mapstructure"
 
@@ -109,6 +110,7 @@ type SplunkPumpConfig struct {
 	ObfuscateAPIKeys       bool     `mapstructure:"obfuscate_api_keys"`
 	ObfuscateAPIKeysLength int      `mapstructure:"obfuscate_api_keys_length"`
 	Fields                 []string `mapstructure:"fields"`
+	IgnoreTagPrefixList    []string `mapstructure:"ignore_tag_prefix_list"`
 }
 
 // New initializes a new pump.
@@ -184,7 +186,11 @@ func (p *SplunkPump) WriteData(ctx context.Context, data []interface{}) error {
 			"raw_response":   decoded.RawResponse,
 			"ip_address":     decoded.IPAddress,
 			"geo":            decoded.Geo,
+			"network":        decoded.Network,
+			"latency":        decoded.Latency,
+			"tags":           decoded.Tags,
 			"alias":          decoded.Alias,
+			"track_path":     decoded.TrackPath,
 		}
 
 		// Define an empty event
@@ -197,6 +203,27 @@ func (p *SplunkPump) WriteData(ctx context.Context, data []interface{}) error {
 				// Skip the next actions in case the configured field doesn't exist
 				if _, ok := mapping[field]; !ok {
 					continue
+				}
+
+				// Check if the current analytics field is "tags" and see if some tags are explicitly excluded
+				if (field == "tags" && len(p.config.IgnoreTagPrefixList) > 0) {
+					filteredTags := mapping["tags"].([]string)
+
+					// Loop all explicitly ignored tags
+					for _, excludeTag := range p.config.IgnoreTagPrefixList {
+						// Loop the current analytics item tags
+						for key, currentTag := range filteredTags {
+							// If the current tag's value includes an ignored word, remove it from the list
+							if strings.Contains(currentTag, excludeTag) {
+								copy(filteredTags[key:], filteredTags[key+1:])
+								filteredTags[len(filteredTags) - 1] = ""
+								filteredTags = filteredTags[:len(filteredTags)-1]
+							}
+						}
+					}
+
+					// Reassign the tags after successful filtration
+					mapping["tags"] = filteredTags
 				}
 
 				// Adding field value
