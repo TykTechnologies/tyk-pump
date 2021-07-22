@@ -93,6 +93,10 @@ func (a UptimeReportAggregateSQL) GetAssignments(tableName string) map[string]in
 			if !field.IsZero() {
 				assignments[colName] = gorm.Expr("(" + tableName + ".counter_total_request_time  +" + fmt.Sprintf("%v", a.TotalRequestTime) + ")/( " + tableName + ".counter_hits + " + fmt.Sprintf("%v", a.Hits) + ")")
 			}
+		case strings.Contains(colName, "last_time"):
+			if !field.IsZero() {
+				assignments[colName] = gorm.Expr("'" + a.LastTime.Format(time.RFC3339) + "'")
+			}
 		}
 
 	}
