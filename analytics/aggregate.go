@@ -243,6 +243,10 @@ func (f SQLAnalyticsRecordAggregate) GetAssignments(tableName string) map[string
 				val2 := fmt.Sprintf("%v", field.Value())
 				assignments[colName] = gorm.Expr("0.5 * ((" + val1 + " + " + val2 + ") - ABS(" + val1 + " - " + val2 + ")) ")
 			}
+		case "last_time":
+			if !field.IsZero() {
+				assignments[colName] = gorm.Expr("'" + f.LastTime.Format(time.RFC3339) + "'")
+			}
 		}
 	}
 

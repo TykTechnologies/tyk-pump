@@ -231,8 +231,8 @@ func TestSQLAggregateWriteDataValues(t *testing.T) {
 
 	//We check again to validate the ON CONFLICT CLAUSES
 	newKeys := make([]interface{}, 2)
-	newKeys[0] = analytics.AnalyticsRecord{OrgID: "1", APIID: "api1", RequestTime: 10, ResponseCode: 200, TimeStamp: now, Latency: analytics.Latency{Total: 10, Upstream: 5}}
-	newKeys[1] = analytics.AnalyticsRecord{OrgID: "1", APIID: "api1", RequestTime: 10, ResponseCode: 500, TimeStamp: now, Latency: analytics.Latency{Total: 30, Upstream: 10}}
+	newKeys[0] = analytics.AnalyticsRecord{OrgID: "1", APIID: "api1", RequestTime: 10, ResponseCode: 200, TimeStamp: now.Add(10 * time.Minute), Latency: analytics.Latency{Total: 10, Upstream: 5}}
+	newKeys[1] = analytics.AnalyticsRecord{OrgID: "1", APIID: "api1", RequestTime: 10, ResponseCode: 500, TimeStamp: now.Add(10 * time.Minute), Latency: analytics.Latency{Total: 30, Upstream: 10}}
 
 	err = pmp.WriteData(context.TODO(), newKeys)
 	if err != nil {
@@ -258,5 +258,5 @@ func TestSQLAggregateWriteDataValues(t *testing.T) {
 	assert.Equal(t, int64(95), dbRecords[0].TotalUpstreamLatency)
 	assert.Equal(t, int64(30), dbRecords[0].MaxLatency)
 	assert.Equal(t, int64(5), dbRecords[0].MinUpstreamLatency)
-
+	assert.Equal(t, now.Add(10*time.Minute).Minute(), dbRecords[0].LastTime.Minute())
 }
