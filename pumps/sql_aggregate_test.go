@@ -265,5 +265,5 @@ func TestSQLAggregateWriteDataValues(t *testing.T) {
 	assert.Equal(t, now.Add(10*time.Minute).Minute(), dbRecords[0].LastTime.Minute())
 	assert.Equal(t, "total", dbRecords[2].DimensionValue)
 	assert.Equal(t, 7, dbRecords[2].Hits)
-	assert.Equal(t, now.Add(10*time.Minute).Format(time.RFC3339), dbRecords[0].LastTime.Format(time.RFC3339))
+	assert.Equal(t, now.Add(10*time.Minute).Format("2006-01-02 15:04:05-07:00"), dbRecords[0].LastTime.Format("2006-01-02 15:04:05-07:00"))
 }
