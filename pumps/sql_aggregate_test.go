@@ -228,6 +228,10 @@ func TestSQLAggregateWriteDataValues(t *testing.T) {
 	assert.Equal(t, int64(80), dbRecords[0].TotalUpstreamLatency)
 	assert.Equal(t, int64(20), dbRecords[0].MaxLatency)
 	assert.Equal(t, int64(10), dbRecords[0].MinUpstreamLatency)
+	//checking if it has total dimension
+	assert.Equal(t, "total", dbRecords[2].DimensionValue)
+	assert.Equal(t, 5, dbRecords[2].Hits)
+	assert.Equal(t, now.Format(time.RFC3339), dbRecords[0].LastTime.Format(time.RFC3339))
 
 	//We check again to validate the ON CONFLICT CLAUSES
 	newKeys := make([]interface{}, 2)
@@ -259,4 +263,7 @@ func TestSQLAggregateWriteDataValues(t *testing.T) {
 	assert.Equal(t, int64(30), dbRecords[0].MaxLatency)
 	assert.Equal(t, int64(5), dbRecords[0].MinUpstreamLatency)
 	assert.Equal(t, now.Add(10*time.Minute).Minute(), dbRecords[0].LastTime.Minute())
+	assert.Equal(t, "total", dbRecords[2].DimensionValue)
+	assert.Equal(t, 7, dbRecords[2].Hits)
+	assert.Equal(t, now.Add(10*time.Minute).Format(time.RFC3339), dbRecords[0].LastTime.Format(time.RFC3339))
 }

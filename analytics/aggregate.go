@@ -620,6 +620,7 @@ func AggregateData(data []interface{}, trackAllPaths bool, ignoreTagPrefixList [
 
 		// Always update the last timestamp
 		thisAggregate.LastTime = thisV.TimeStamp
+		thisAggregate.Total.LastTime = thisV.TimeStamp
 
 		// Create the counter for this record
 		var thisCounter Counter
