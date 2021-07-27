@@ -63,10 +63,12 @@ func (ar *AnalyticsRecord) TableName() string {
 	return SQLTable
 }
 
+type Country struct {
+	ISOCode string `maxminddb:"iso_code" json:"iso_code"`
+}
+
 type GeoData struct {
-	Country struct {
-		ISOCode string `maxminddb:"iso_code" json:"iso_code"`
-	} `maxminddb:"country" json:"country"`
+	Country Country `maxminddb:"country" json:"country"`
 
 	City struct {
 		GeoNameID uint              `maxminddb:"geoname_id" json:"geoname_id"`
