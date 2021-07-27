@@ -245,7 +245,7 @@ func (f SQLAnalyticsRecordAggregate) GetAssignments(tableName string) map[string
 			}
 		case "last_time":
 			if !field.IsZero() {
-				assignments[colName] = gorm.Expr("'" + f.LastTime.Format(time.RFC3339) + "'")
+				assignments[colName] = gorm.Expr("'" + f.LastTime.Format("2006-01-02 15:04:05-07:00") + "'")
 			}
 		}
 	}
@@ -620,6 +620,7 @@ func AggregateData(data []interface{}, trackAllPaths bool, ignoreTagPrefixList [
 
 		// Always update the last timestamp
 		thisAggregate.LastTime = thisV.TimeStamp
+		thisAggregate.Total.LastTime = thisV.TimeStamp
 
 		// Create the counter for this record
 		var thisCounter Counter

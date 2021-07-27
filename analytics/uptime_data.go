@@ -95,7 +95,7 @@ func (a UptimeReportAggregateSQL) GetAssignments(tableName string) map[string]in
 			}
 		case strings.Contains(colName, "last_time"):
 			if !field.IsZero() {
-				assignments[colName] = gorm.Expr("'" + a.LastTime.Format(time.RFC3339) + "'")
+				assignments[colName] = gorm.Expr("'" + a.LastTime.Format("2006-01-02 15:04:05-07:00") + "'")
 			}
 		}
 
