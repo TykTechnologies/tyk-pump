@@ -173,25 +173,25 @@ func TestSQLWriteUptimeData(t *testing.T) {
 		RowsLen              int
 		HitsPerHour          int
 	}{
-		"first iteration": {
+		"first": {
 			Record:               analytics.UptimeReportData{OrgID: "1", URL: "url1", TimeStamp: now},
 			RecordsAmountToWrite: 3,
 			RowsLen:              2,
 			HitsPerHour:          3,
 		},
-		"second iteration": {
+		"second": {
 			Record:               analytics.UptimeReportData{OrgID: "1", URL: "url1", TimeStamp: now},
 			RecordsAmountToWrite: 3,
 			RowsLen:              2,
 			HitsPerHour:          6,
 		},
-		"third iteration": {
+		"third": {
 			Record:               analytics.UptimeReportData{OrgID: "1", URL: "url1", TimeStamp: now},
 			RecordsAmountToWrite: 3,
 			RowsLen:              2,
 			HitsPerHour:          9,
 		},
-		"fourth iteration": {
+		"fourth": {
 			Record:               analytics.UptimeReportData{OrgID: "1", URL: "url1", TimeStamp: nowPlus1},
 			RecordsAmountToWrite: 3,
 			RowsLen:              4,
@@ -199,13 +199,15 @@ func TestSQLWriteUptimeData(t *testing.T) {
 		},
 	}
 
-	for testName, testValue := range tests {
+	testNames:=[]string{"first", "second", "third", "fourth"}
+
+	for _, testName := range testNames {
 		t.Run(testName, func(t *testing.T) {
 			pmp := pmp
 			keys := []interface{}{}
 			//encode the records in the way uptime pump consume them
-			for i := 0; i < testValue.RecordsAmountToWrite; i++ {
-				encoded, _ := msgpack.Marshal(testValue.Record)
+			for i := 0; i < tests[testName].RecordsAmountToWrite; i++ {
+				encoded, _ := msgpack.Marshal(tests[testName].Record)
 				keys = append(keys, string(encoded))
 			}
 
@@ -220,12 +222,12 @@ func TestSQLWriteUptimeData(t *testing.T) {
 			}
 
 			//check amount of rows in the table
-			assert.Equal(t, testValue.RowsLen, len(dbRecords))
+			assert.Equal(t, tests[testName].RowsLen, len(dbRecords))
 
 			//iterate over the records and check total of hits
 			for _, dbRecord := range dbRecords {
-				if dbRecord.TimeStamp == testValue.Record.TimeStamp.Unix() && dbRecord.DimensionValue == "total" {
-					assert.Equal(t, testValue.HitsPerHour, dbRecord.Hits)
+				if dbRecord.TimeStamp == tests[testName].Record.TimeStamp.Unix() && dbRecord.DimensionValue == "total" {
+					assert.Equal(t, tests[testName].HitsPerHour, dbRecord.Hits)
 					break
 				}
 			}
