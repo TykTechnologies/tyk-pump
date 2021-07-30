@@ -106,80 +106,44 @@ type SQLAnalyticsRecordAggregate struct {
 	Dimension      string `json:"dimension" gorm:"index:dimension, priority:3"`
 	DimensionValue string `json:"dimension_value" gorm:"index:dimension, priority:4"`
 
-	Code1x  int `json:"code_1x"`
-	Code200 int `json:"code_200"`
-	Code201 int `json:"code_201"`
-	Code2x  int `json:"code_2x"`
-	Code301 int `json:"code_301"`
-	Code302 int `json:"code_302"`
-	Code303 int `json:"code_303"`
-	Code304 int `json:"code_304"`
-	Code3x  int `json:"code_3x"`
-	Code400 int `json:"code_400"`
-	Code401 int `json:"code_401"`
-	Code403 int `json:"code_403"`
-	Code404 int `json:"code_404"`
-	Code429 int `json:"code_429"`
-	Code4x  int `json:"code_4x"`
-	Code500 int `json:"code_500"`
-	Code501 int `json:"code_501"`
-	Code502 int `json:"code_502"`
-	Code503 int `json:"code_503"`
-	Code504 int `json:"code_504"`
-	Code5x  int `json:"code_5x"`
+	Code `json:"code" gorm:"embedded"`
 }
 
-func (a *SQLAnalyticsRecordAggregate) ProcessStatusCodes() {
-	for k, v := range a.Counter.ErrorMap {
-		switch k {
-		case "200":
-			a.Code200 = v
-		case "201":
-			a.Code201 = v
-		case "301":
-			a.Code301 = v
-		case "302":
-			a.Code302 = v
-		case "303":
-			a.Code303 = v
-		case "400":
-			a.Code400 = v
-		case "401":
-			a.Code401 = v
-		case "403":
-			a.Code403 = v
-		case "404":
-			a.Code404 = v
-		case "429":
-			a.Code429 = v
-		case "500":
-			a.Code500 = v
-		case "501":
-			a.Code501 = v
-		case "502":
-			a.Code502 = v
-		case "503":
-			a.Code503 = v
-		case "504":
-			a.Code404 = v
-		default:
-			switch k[0] {
-			case '1':
-				a.Code1x = v
-			case '2':
-				a.Code2x = v
-			case '3':
-				a.Code3x = v
-			case '4':
-				a.Code4x = v
-			case '5':
-				a.Code5x = v
+type Code struct {
+	Code1x  int `json:"1x" gorm:"1x"`
+	Code200 int `json:"200" gorm:"200"`
+	Code201 int `json:"201" gorm:"201"`
+	Code2x  int `json:"2x" gorm:"2x"`
+	Code301 int `json:"301" gorm:"301"`
+	Code302 int `json:"302" gorm:"302"`
+	Code303 int `json:"303" gorm:"303"`
+	Code304 int `json:"304" gorm:"304"`
+	Code3x  int `json:"3x" gorm:"3x"`
+	Code400 int `json:"400" gorm:"400"`
+	Code401 int `json:"401" gorm:"401"`
+	Code403 int `json:"403" gorm:"403"`
+	Code404 int `json:"404" gorm:"404"`
+	Code429 int `json:"429" gorm:"429"`
+	Code4x  int `json:"4x" gorm:"4x"`
+	Code500 int `json:"500" gorm:"500"`
+	Code501 int `json:"501" gorm:"501"`
+	Code502 int `json:"502" gorm:"502"`
+	Code503 int `json:"503" gorm:"503"`
+	Code504 int `json:"504" gorm:"504"`
+	Code5x  int `json:"5x" gorm:"5x"`
+}
+
+func (c *Code) ProcessStatusCodes(errorMap map[string]int) {
+	codeStruct := structs.New(c)
+	for k, v := range errorMap {
+		if field, ok := codeStruct.FieldOk("Code" + k); ok {
+			_ = field.Set(v)
+		} else {
+			if field, ok = codeStruct.FieldOk("Code" + string(k[0]) + "x"); ok {
+				_ = field.Set(v + field.Value().(int))
 			}
 		}
 	}
-
-	a.Counter.ErrorList = nil
-	a.Counter.ErrorMap = nil
 }
 
 func (f *SQLAnalyticsRecordAggregate) TableName() string {
@@ -189,13 +153,12 @@ func (f *SQLAnalyticsRecordAggregate) TableName() string {
 func (f SQLAnalyticsRecordAggregate) GetAssignments(tableName string) map[string]interface{} {
 	assignments := make(map[string]interface{})
 
-	baseFields := structs.Fields(f)
+	baseFields := structs.Fields(f.Code)
 	for _, field := range baseFields {
-		colName := field.Tag("json")
-		if strings.Contains(colName, "code_") {
-			if !field.IsZero() {
-				assignments[colName] = gorm.Expr(tableName + "." + colName + " + " + fmt.Sprint(field.Value()))
-			}
+		jsonTag := field.Tag("json")
+		colName := "code_" + jsonTag
+		if !field.IsZero() {
+			assignments[colName] = gorm.Expr(tableName + "." + colName + " + " + fmt.Sprint(field.Value()))
 		}
 	}
 

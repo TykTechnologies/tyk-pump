@@ -158,7 +158,9 @@ func (c *SQLAggregatePump) WriteData(ctx context.Context, data []interface{}) er
 					Dimension:      d.Name,
 					DimensionValue: d.Value,
 				}
-				rec.ProcessStatusCodes()
+				rec.ProcessStatusCodes(rec.Counter.ErrorMap)
+				rec.Counter.ErrorList = nil
+				rec.Counter.ErrorMap = nil
 
 				tx := c.db.WithContext(ctx).Clauses(clause.OnConflict{
 					Columns:   []clause.Column{{Name: "id"}},
