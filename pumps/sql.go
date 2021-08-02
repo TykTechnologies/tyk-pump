@@ -281,7 +281,9 @@ func (c *SQLPump) WriteUptimeData(data []interface{}) {
 					Dimension:      d.Name,
 					DimensionValue: d.Value,
 				}
-				rec.ProcessStatusCodes()
+				rec.ProcessStatusCodes(rec.Counter.ErrorMap)
+				rec.Counter.ErrorList = nil
+				rec.Counter.ErrorMap = nil
 
 				tx := c.db.Clauses(clause.OnConflict{
 					Columns:   []clause.Column{{Name: "id"}},
