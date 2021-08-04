@@ -24,43 +24,51 @@ type Latency struct {
 	Upstream int64 `json:"upstream"`
 }
 
+const SQLTable = "tyk_analytics"
+
 // AnalyticsRecord encodes the details of a request
 type AnalyticsRecord struct {
-	Method        string       `json:"method"`
-	Host          string       `json:"host"`
-	Path          string       `json:"path"`
-	RawPath       string       `json:"raw_path"`
-	ContentLength int64        `json:"content_length"`
-	UserAgent     string       `json:"user_agent"`
-	Day           int          `json:"day"`
-	Month         time.Month   `json:"month"`
-	Year          int          `json:"year"`
-	Hour          int          `json:"hour"`
-	ResponseCode  int          `json:"response_code"`
-	APIKey        string       `json:"api_key"`
-	TimeStamp     time.Time    `json:"timestamp"`
-	APIVersion    string       `json:"api_version"`
-	APIName       string       `json:"api_name"`
-	APIID         string       `json:"api_id"`
-	OrgID         string       `json:"org_id"`
-	OauthID       string       `json:"oauth_id"`
-	RequestTime   int64        `json:"request_time"`
-	RawRequest    string       `json:"raw_request"`
-	RawResponse   string       `json:"raw_response"`
-	IPAddress     string       `json:"ip_address"`
-	Geo           GeoData      `json:"geo"`
-	Network       NetworkStats `json:"network_stats"`
+	Method        string       `json:"method" gorm:"column:method"`
+	Host          string       `json:"host" gorm:"column:host"`
+	Path          string       `json:"path" gorm:"column:path"`
+	RawPath       string       `json:"raw_path" gorm:"column:rawpath"`
+	ContentLength int64        `json:"content_length" gorm:"column:contentlength"`
+	UserAgent     string       `json:"user_agent" gorm:"column:useragent"`
+	Day           int          `json:"day" sql:"-"`
+	Month         time.Month   `json:"month" sql:"-"`
+	Year          int          `json:"year" sql:"-"`
+	Hour          int          `json:"hour" sql:"-"`
+	ResponseCode  int          `json:"response_code" gorm:"column:responsecode;index"`
+	APIKey        string       `json:"api_key" gorm:"column:apikey;index"`
+	TimeStamp     time.Time    `json:"timestamp" gorm:"column:timestamp;index"`
+	APIVersion    string       `json:"api_version" gorm:"column:apiversion"`
+	APIName       string       `json:"api_name" sql:"-"`
+	APIID         string       `json:"api_id" gorm:"column:apiid;index"`
+	OrgID         string       `json:"org_id" gorm:"column:orgid;index"`
+	OauthID       string       `json:"oauth_id" gorm:"column:oauthid;index"`
+	RequestTime   int64        `json:"request_time" gorm:"column:requesttime"`
+	RawRequest    string       `json:"raw_request" gorm:"column:rawrequest"`
+	RawResponse   string       `json:"raw_response" gorm:"column:rawresponse"`
+	IPAddress     string       `json:"ip_address" gorm:"column:ipaddress"`
+	Geo           GeoData      `json:"geo" gorm:"embedded"`
+	Network       NetworkStats `json:"network"`
 	Latency       Latency      `json:"latency"`
 	Tags          []string     `json:"tags"`
 	Alias         string       `json:"alias"`
-	TrackPath     bool         `json:"track_path"`
+	TrackPath     bool         `json:"track_path" gorm:"column:trackpath"`
 	ExpireAt      time.Time    `bson:"expireAt" json:"expireAt"`
 }
 
+func (ar *AnalyticsRecord) TableName() string {
+	return SQLTable
+}
+
+type Country struct {
+	ISOCode string `maxminddb:"iso_code" json:"iso_code"`
+}
+
 type GeoData struct {
-	Country struct {
-		ISOCode string `maxminddb:"iso_code" json:"iso_code"`
-	} `maxminddb:"country" json:"country"`
+	Country Country `maxminddb:"country" json:"country"`
 
 	City struct {
 		GeoNameID uint              `maxminddb:"geoname_id" json:"geoname_id"`
