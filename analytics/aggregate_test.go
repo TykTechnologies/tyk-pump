@@ -21,3 +21,26 @@ func TestCode_ProcessStatusCodes(t *testing.T) {
 	assert.Equal(t, 5, c.Code4x)
 
 }
+
+func TestAggregate_Tags(t *testing.T) {
+	records := []interface{}{
+		AnalyticsRecord{
+			OrgID: "ORG123",
+			APIID: "123",
+			Tags:  []string{"tag1", ""},
+		},
+		AnalyticsRecord{
+			OrgID: "ORG123",
+			APIID: "123",
+			Tags:  []string{"", "", "tag2"},
+		},
+	}
+
+	aggregations := AggregateData(records, false, []string{}, false)
+
+	t.Run("empty tags", func(t *testing.T) {
+		for _, aggregation := range aggregations {
+			assert.Equal(t, 2, len(aggregation.Tags))
+		}
+	})
+}
