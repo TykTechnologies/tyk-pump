@@ -26,7 +26,7 @@ const (
 
 var (
 	errInvalidSettings = errors.New("Empty settings")
-	//By default in spunk ~ 800 MB. https://docs.splunk.com/Documentation/Splunk/latest/Admin/Limitsconf#.5Bhttp_input.5D
+	//By default in splunk ~ 800 MB. https://docs.splunk.com/Documentation/Splunk/latest/Admin/Limitsconf#.5Bhttp_input.5D
 	maxContentLength = 838860800
 )
 
@@ -132,7 +132,7 @@ func (p *SplunkPump) WriteData(ctx context.Context, data []interface{}) error {
 	fnSendBytes := func(data []byte) error {
 		_, errSend := p.client.Send(ctx, data)
 		if errSend != nil {
-			p.log.Error("Error writing data to Spunk ", errSend)
+			p.log.Error("Error writing data to Splunk ", errSend)
 			return errSend
 		}
 		return nil
