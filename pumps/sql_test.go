@@ -199,7 +199,7 @@ func TestSQLWriteUptimeData(t *testing.T) {
 		},
 	}
 
-	testNames:=[]string{"first", "second", "third", "fourth"}
+	testNames := []string{"first", "second", "third", "fourth"}
 
 	for _, testName := range testNames {
 		t.Run(testName, func(t *testing.T) {
