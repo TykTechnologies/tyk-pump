@@ -214,7 +214,7 @@ func (p *SplunkPump) WriteData(ctx context.Context, data []interface{}) error {
 						// Loop the current analytics item tags
 						for key, currentTag := range filteredTags {
 							// If the current tag's value includes an ignored word, remove it from the list
-							if strings.Contains(currentTag, excludeTag) {
+							if strings.HasPrefix(currentTag, excludeTag) {
 								copy(filteredTags[key:], filteredTags[key+1:])
 								filteredTags[len(filteredTags) - 1] = ""
 								filteredTags = filteredTags[:len(filteredTags)-1]
