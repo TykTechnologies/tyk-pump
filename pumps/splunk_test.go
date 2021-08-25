@@ -79,23 +79,6 @@ func TestSplunkInit(t *testing.T) {
 	}
 }
 
-/*
-type SplunkPumpConfig struct {
-	EnvPrefix              string   `mapstructure:"meta_env_prefix"`
-	CollectorToken         string   `mapstructure:"collector_token"`
-	CollectorURL           string   `mapstructure:"collector_url"`
-	SSLInsecureSkipVerify  bool     `mapstructure:"ssl_insecure_skip_verify"`
-	SSLCertFile            string   `mapstructure:"ssl_cert_file"`
-	SSLKeyFile             string   `mapstructure:"ssl_key_file"`
-	SSLServerName          string   `mapstructure:"ssl_server_name"`
-	ObfuscateAPIKeys       bool     `mapstructure:"obfuscate_api_keys"`
-	ObfuscateAPIKeysLength int      `mapstructure:"obfuscate_api_keys_length"`
-	Fields                 []string `mapstructure:"fields"`
-	IgnoreTagPrefixList    []string `mapstructure:"ignore_tag_prefix_list"`
-	EnableBatch            bool     `mapstructure:"enable_batch"`
-	BatchMaxContentLength  int      `mapstructure:"batch_max_content_length"`
-}
-*/
 func Test_SplunkWriteData(t *testing.T) {
 	handler := &testHandler{test: t, batched: false}
 	server := httptest.NewServer(handler)
