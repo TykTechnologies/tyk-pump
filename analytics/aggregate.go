@@ -810,7 +810,8 @@ func AggregateData(data []interface{}, trackAllPaths bool, ignoreTagPrefixList [
 
 				case "Tags":
 					for _, thisTag := range thisV.Tags {
-						if !ignoreTag(thisTag, ignoreTagPrefixList) {
+						trimmedTag := strings.TrimSpace(thisTag)
+						if trimmedTag != "" && !ignoreTag(thisTag, ignoreTagPrefixList) {
 							c := IncrementOrSetUnit(thisAggregate.Tags[thisTag])
 							thisAggregate.Tags[thisTag] = c
 							thisAggregate.Tags[thisTag].Identifier = thisTag
