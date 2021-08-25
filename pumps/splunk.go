@@ -151,7 +151,7 @@ func (p *SplunkPump) Init(config interface{}) error {
 	return nil
 }
 
-// Filters the tags based on config rules
+// Filters the tags based on config rule
 func (p *SplunkPump) FilterTags(filteredTags []string) []string {
 	// Loop all explicitly ignored tags
 	for _, excludeTag := range p.config.IgnoreTagPrefixList {
