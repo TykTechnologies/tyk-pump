@@ -32,7 +32,7 @@ func TestAggregate_Tags(t *testing.T) {
 		AnalyticsRecord{
 			OrgID: "ORG123",
 			APIID: "123",
-			Tags:  []string{"", "", "tag2"},
+			Tags:  []string{"", "   ", "tag2"},
 		},
 	}
 
@@ -40,6 +40,7 @@ func TestAggregate_Tags(t *testing.T) {
 
 	t.Run("empty tags", func(t *testing.T) {
 		for _, aggregation := range aggregations {
+
 			assert.Equal(t, 2, len(aggregation.Tags))
 		}
 	})
