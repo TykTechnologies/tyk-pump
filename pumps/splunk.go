@@ -151,6 +151,24 @@ func (p *SplunkPump) Init(config interface{}) error {
 	return nil
 }
 
+// Filters the tags based on config rules
+func (p *SplunkPump) FilterTags(filteredTags []string) []string {
+	// Loop all explicitly ignored tags
+	for _, excludeTag := range p.config.IgnoreTagPrefixList {
+		// Loop the current analytics item tags
+		for key, currentTag := range filteredTags {
+			// If the current tag's value includes an ignored word, remove it from the list
+			if strings.HasPrefix(currentTag, excludeTag) {
+				copy(filteredTags[key:], filteredTags[key+1:])
+				filteredTags[len(filteredTags) - 1] = ""
+				filteredTags = filteredTags[:len(filteredTags)-1]
+			}
+		}
+	}
+
+	return filteredTags
+}
+
 // WriteData prepares an appropriate data structure and sends it to the HTTP Event Collector.
 func (p *SplunkPump) WriteData(ctx context.Context, data []interface{}) error {
 	p.log.Debug("Attempting to write ", len(data), " records...")
@@ -207,23 +225,8 @@ func (p *SplunkPump) WriteData(ctx context.Context, data []interface{}) error {
 
 				// Check if the current analytics field is "tags" and see if some tags are explicitly excluded
 				if (field == "tags" && len(p.config.IgnoreTagPrefixList) > 0) {
-					filteredTags := mapping["tags"].([]string)
-
-					// Loop all explicitly ignored tags
-					for _, excludeTag := range p.config.IgnoreTagPrefixList {
-						// Loop the current analytics item tags
-						for key, currentTag := range filteredTags {
-							// If the current tag's value includes an ignored word, remove it from the list
-							if strings.HasPrefix(currentTag, excludeTag) {
-								copy(filteredTags[key:], filteredTags[key+1:])
-								filteredTags[len(filteredTags) - 1] = ""
-								filteredTags = filteredTags[:len(filteredTags)-1]
-							}
-						}
-					}
-
 					// Reassign the tags after successful filtration
-					mapping["tags"] = filteredTags
+					mapping["tags"] = p.FilterTags(mapping["tags"].([]string))
 				}
 
 				// Adding field value
