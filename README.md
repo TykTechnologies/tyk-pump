@@ -543,6 +543,7 @@ Setting up Splunk with a *HTTP Event Collector*
 - `obfuscate_api_keys`: (optional) Controls whether the pump client should hide the API key. In case you still need substring of the value, check the next option. Type: Boolean. Default value is `false`.
 - `obfuscate_api_keys_length`: (optional) Define the number of the characters from the end of the API key. The `obfuscate_api_keys` should be set to `true`. Type: Integer. Default value is `0`.
 - `fields`: (optional) Define which Analytics fields should participate in the Splunk event. Check the available fields in the example below. Type: String Array `[] string`. Default value is `["method", "path", "response_code", "api_key", "time_stamp", "api_version", "api_name", "api_id", "org_id", "oauth_id", "raw_request", "request_time", "raw_response", "ip_address"]`
+- `ignore_tag_prefix_list`: (optional) Choose which tags to be ignored by the Splunk Pump. Keep in mind that the tag name and value are hyphenated. Type:  Type: String Array `[] string`. Default value is `[]`
 
 Example:
 ```json
@@ -577,7 +578,17 @@ Example:
           "raw_response",
           "ip_address",
           "geo",
-          "alias"
+          "network",
+          "latency",
+          "tags",
+          "alias",
+          "track_path"
+        ],
+        "ignore_tag_prefix_list": [
+          "key-",
+          "org-",
+          "api-",
+          "original-path-",
         ]
       }
     },
