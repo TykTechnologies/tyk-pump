@@ -635,6 +635,8 @@ More advanced fields:
 
 
 ### Syslog
+Supported in Tyk Pump v1.0.0+
+
 `"transport"` - Possible values are `udp, tcp, tls` in string form
 
 `"network_addr"` - Host & Port combination of your syslog daemon ie: `"localhost:5140"`

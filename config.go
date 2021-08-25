@@ -27,12 +27,18 @@ type PumpConfig struct {
 	Meta                  map[string]interface{}     `json:"meta"` // TODO: convert this to json.RawMessage and use regular json.Unmarshal
 }
 
+type UptimeConf struct {
+	pumps.MongoConf
+	pumps.SQLConf
+	UptimeType string `json:"uptime_type"`
+}
+
 type TykPumpConfiguration struct {
 	PurgeDelay              int                        `json:"purge_delay"`
 	PurgeChunk              int64                      `json:"purge_chunk"`
 	StorageExpirationTime   int64                      `json:"storage_expiration_time"`
 	DontPurgeUptimeData     bool                       `json:"dont_purge_uptime_data"`
-	UptimePumpConfig        pumps.MongoConf            `json:"uptime_pump_config"`
+	UptimePumpConfig        UptimeConf                 `json:"uptime_pump_config"`
 	Pumps                   map[string]PumpConfig      `json:"pumps"`
 	AnalyticsStorageType    string                     `json:"analytics_storage_type"`
 	AnalyticsStorageConfig  storage.RedisStorageConfig `json:"analytics_storage_config"`
