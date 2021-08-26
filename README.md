@@ -129,6 +129,8 @@ Create a `pump.conf` file:
         "ssl_cert_file": "<cert-path>",
         "ssl_key_file": "<key-path>",
         "ssl_server_name": "<server-name>"
+        "enable_batch":true,
+        "batch_max_content_length":<max_content_length>
       }
     },
     "statsd": {
@@ -544,6 +546,9 @@ Setting up Splunk with a *HTTP Event Collector*
 - `obfuscate_api_keys_length`: (optional) Define the number of the characters from the end of the API key. The `obfuscate_api_keys` should be set to `true`. Type: Integer. Default value is `0`.
 - `fields`: (optional) Define which Analytics fields should participate in the Splunk event. Check the available fields in the example below. Type: String Array `[] string`. Default value is `["method", "path", "response_code", "api_key", "time_stamp", "api_version", "api_name", "api_id", "org_id", "oauth_id", "raw_request", "request_time", "raw_response", "ip_address"]`
 - `ignore_tag_prefix_list`: (optional) Choose which tags to be ignored by the Splunk Pump. Keep in mind that the tag name and value are hyphenated. Type:  Type: String Array `[] string`. Default value is `[]`
+- `enable_batch`: If this is set to `true`, pump is going to send the analytics records in batch to Splunk. Type: Boolean. Default value is `false`.
+- `max_content_length`: Max content length in bytes to be sent in batch requests. It should match the `max_content_length` configured in Splunk. If the purged analytics records size don't reach the amount of bytes, they're send anyways in each `purge_loop`. Type: Integer. Default value is 838860800 (~ 800 MB), the same default value as Splunk config.
+
 
 Example:
 ```json
@@ -558,6 +563,7 @@ Example:
         "ssl_server_name": "<server-name>",
         "obfuscate_api_keys": true,
         "obfuscate_api_keys_length": 10,
+        "enable_batch":true,
         "fields": [
           "method",
           "host",

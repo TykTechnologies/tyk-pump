@@ -3,12 +3,16 @@ package pumps
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/TykTechnologies/tyk-pump/analytics"
+	"github.com/stretchr/testify/assert"
 )
 
 const (
@@ -19,9 +23,13 @@ const (
 type splunkStatus struct {
 	Text string `json:"text"`
 	Code int32  `json:"code"`
+	Len  int    `json:"len"`
 }
 type testHandler struct {
-	test *testing.T
+	test    *testing.T
+	batched bool
+
+	responses []splunkStatus
 }
 
 func (h *testHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -40,14 +48,20 @@ func (h *testHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		h.test.Fatal("Couldn't ready body")
 	}
-	event := make(map[string]interface{})
-	err = json.Unmarshal(body, &event)
-	if err != nil {
-		h.test.Fatal("Couldn't unmarshal event data")
-	}
 	status := splunkStatus{Text: "Success", Code: 0}
+	if !h.batched {
+		event := make(map[string]interface{})
+		err = json.Unmarshal(body, &event)
+		if err != nil {
+			h.test.Fatal("Couldn't unmarshal event data")
+		}
+	} else {
+		status.Len = len(body)
+	}
+
 	statusJSON, _ := json.Marshal(&status)
 	w.Write(statusJSON)
+	h.responses = append(h.responses, status)
 }
 
 func TestSplunkInit(t *testing.T) {
@@ -65,27 +79,109 @@ func TestSplunkInit(t *testing.T) {
 	}
 }
 
-func TestSplunkSend(t *testing.T) {
-	handler := &testHandler{t}
+func Test_SplunkWriteData(t *testing.T) {
+	handler := &testHandler{test: t, batched: false}
 	server := httptest.NewServer(handler)
 	defer server.Close()
-	client, _ := NewSplunkClient(testToken, server.URL, true, "", "", "")
-	e := map[string]interface{}{
-		"method": "POST",
-		"api_id": "123",
-		"path":   "/test-path",
+
+	pmp := SplunkPump{}
+
+	cfg := make(map[string]interface{})
+	cfg["collector_token"] = testToken
+	cfg["collector_url"] = server.URL
+	cfg["ssl_insecure_skip_verify"] = true
+
+	if errInit := pmp.Init(cfg); errInit != nil {
+		t.Error("Error initializing pump")
+		return
 	}
-	res, err := client.Send(context.TODO(), e, time.Now())
-	body, err := ioutil.ReadAll(res.Body)
-	if err != nil {
-		t.Fatal(err)
+
+	keys := make([]interface{}, 1)
+
+	keys[0] = analytics.AnalyticsRecord{OrgID: "1", APIID: "123", Path: "/test-path", Method: "POST", TimeStamp: time.Now()}
+
+	if errWrite := pmp.WriteData(context.TODO(), keys); errWrite != nil {
+		t.Error("Error writing to splunk pump:", errWrite.Error())
+		return
 	}
-	status := new(splunkStatus)
-	err = json.Unmarshal(body, &status)
-	if err != nil {
-		t.Fatal(err)
+
+	assert.Equal(t, 1, len(handler.responses))
+
+	response := handler.responses[0]
+
+	assert.Equal(t, "Success", response.Text)
+	assert.Equal(t, int32(0), response.Code)
+}
+func Test_SplunkWriteDataBatch(t *testing.T) {
+	handler := &testHandler{test: t, batched: true}
+	server := httptest.NewServer(handler)
+	defer server.Close()
+
+	keys := make([]interface{}, 3)
+
+	keys[0] = analytics.AnalyticsRecord{OrgID: "1", APIID: "123", Path: "/test-path", Method: "POST", TimeStamp: time.Now()}
+	keys[1] = analytics.AnalyticsRecord{OrgID: "1", APIID: "123", Path: "/test-path", Method: "POST", TimeStamp: time.Now()}
+	keys[2] = analytics.AnalyticsRecord{OrgID: "1", APIID: "123", Path: "/test-path", Method: "POST", TimeStamp: time.Now()}
+
+	fmt.Println(maxContentLength)
+
+	pmp := SplunkPump{}
+
+	cfg := make(map[string]interface{})
+	cfg["collector_token"] = testToken
+	cfg["collector_url"] = server.URL
+	cfg["ssl_insecure_skip_verify"] = true
+	cfg["enable_batch"] = true
+	cfg["batch_max_content_length"] = getEventBytes(keys[:2])
+
+	if errInit := pmp.Init(cfg); errInit != nil {
+		t.Error("Error initializing pump")
+		return
 	}
-	if status.Code != 0 || status.Text != "Success" {
-		t.Fatalf("Bad status")
+
+	if errWrite := pmp.WriteData(context.TODO(), keys); errWrite != nil {
+		t.Error("Error writing to splunk pump:", errWrite.Error())
+		return
 	}
+
+	assert.Equal(t, 2, len(handler.responses))
+
+	assert.Equal(t, getEventBytes(keys[:2]), handler.responses[0].Len)
+	assert.Equal(t, getEventBytes(keys[2:]), handler.responses[1].Len)
+
+}
+
+//getEventBytes returns the bytes amount of the marshalled events struct
+func getEventBytes(records []interface{}) int {
+	result := 0
+
+	for _, record := range records {
+		decoded := record.(analytics.AnalyticsRecord)
+
+		event := map[string]interface{}{
+			"method":        decoded.Method,
+			"path":          decoded.Path,
+			"response_code": decoded.ResponseCode,
+			"api_key":       decoded.APIKey,
+			"time_stamp":    decoded.TimeStamp,
+			"api_version":   decoded.APIVersion,
+			"api_name":      decoded.APIName,
+			"api_id":        decoded.APIID,
+			"org_id":        decoded.OrgID,
+			"oauth_id":      decoded.OauthID,
+			"raw_request":   decoded.RawRequest,
+			"request_time":  decoded.RequestTime,
+			"raw_response":  decoded.RawResponse,
+			"ip_address":    decoded.IPAddress,
+		}
+
+		eventWrap := struct {
+			Time  int64                  `json:"time"`
+			Event map[string]interface{} `json:"event"`
+		}{Time: decoded.TimeStamp.Unix(), Event: event}
+
+		data, _ := json.Marshal(eventWrap)
+		result += len(data)
+	}
+	return result
 }
