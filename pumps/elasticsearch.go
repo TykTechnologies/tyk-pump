@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/mitchellh/mapstructure"
+	elasticv7 "github.com/olivere/elastic/v7"
 	elasticv3 "gopkg.in/olivere/elastic.v3"
 	elasticv5 "gopkg.in/olivere/elastic.v5"
 	elasticv6 "gopkg.in/olivere/elastic.v6"
@@ -74,6 +75,12 @@ type Elasticsearch5Operator struct {
 type Elasticsearch6Operator struct {
 	esClient      *elasticv6.Client
 	bulkProcessor *elasticv6.BulkProcessor
+	log           *logrus.Entry
+}
+
+type Elasticsearch7Operator struct {
+	esClient      *elasticv7.Client
+	bulkProcessor *elasticv7.BulkProcessor
 	log           *logrus.Entry
 }
 
@@ -193,6 +200,35 @@ func (e *ElasticsearchPump) getOperator() (ElasticsearchOperator, error) {
 		op.bulkProcessor, err = p.Do(context.Background())
 		op.log = e.log
 		return op, err
+	case "7":
+		op := new(Elasticsearch7Operator)
+
+		op.esClient, err = elasticv7.NewClient(elasticv7.SetURL(urls...), elasticv7.SetSniff(conf.EnableSniffing), elasticv7.SetBasicAuth(conf.Username, conf.Password), elasticv7.SetHttpClient(httpClient))
+
+		if err != nil {
+			return op, err
+		}
+		// Setup a bulk processor
+		p := op.esClient.BulkProcessor().Name("TykPumpESv7BackgroundProcessor")
+		if conf.BulkConfig.Workers != 0 {
+			p = p.Workers(conf.BulkConfig.Workers)
+		}
+
+		if conf.BulkConfig.FlushInterval != 0 {
+			p = p.FlushInterval(time.Duration(conf.BulkConfig.FlushInterval) * time.Second)
+		}
+
+		if conf.BulkConfig.BulkActions != 0 {
+			p = p.BulkActions(conf.BulkConfig.BulkActions)
+		}
+
+		if conf.BulkConfig.BulkSize != 0 {
+			p = p.BulkSize(conf.BulkConfig.BulkSize)
+		}
+
+		op.bulkProcessor, err = p.Do(context.Background())
+		op.log = e.log
+		return op, err
 	default:
 		// shouldn't get this far, but hey never hurts to check assumptions
 		e.log.Fatal("Invalid version: ")
@@ -241,7 +277,7 @@ func (e *ElasticsearchPump) Init(config interface{}) error {
 	case "":
 		e.esConf.Version = "3"
 		log.Info("Version not specified, defaulting to 3. If you are importing to Elasticsearch 5, please specify \"version\" = \"5\"")
-	case "3", "5", "6":
+	case "3", "5", "6", "7":
 	default:
 		err := errors.New("Only 3, 5, 6 are valid values for this field")
 		e.log.Fatal("Invalid version: ", err)
@@ -427,6 +463,37 @@ func (e Elasticsearch6Operator) processData(ctx context.Context, data []interfac
 			e.bulkProcessor.Add(r)
 		} else {
 			_, err := index.BodyJson(mapping).Type(esConf.DocumentType).Id(id).Do(ctx)
+			if err != nil {
+				e.log.Error("Error while writing ", data[dataIndex], err)
+			}
+		}
+	}
+	e.log.Info("Purged ", len(data), " records...")
+
+	return nil
+}
+
+func (e Elasticsearch7Operator) processData(ctx context.Context, data []interface{}, esConf *ElasticsearchConf) error {
+	index := e.esClient.Index().Index(getIndexName(esConf))
+
+	for dataIndex := range data {
+		if ctxErr := ctx.Err(); ctxErr != nil {
+			continue
+		}
+
+		d, ok := data[dataIndex].(analytics.AnalyticsRecord)
+		if !ok {
+			e.log.Error("Error while writing ", data[dataIndex], ": data not of type analytics.AnalyticsRecord")
+			continue
+		}
+
+		mapping, id := getMapping(d, esConf.ExtendedStatistics, esConf.GenerateID, esConf.DecodeBase64)
+
+		if !esConf.DisableBulk {
+			r := elasticv7.NewBulkIndexRequest().Index(getIndexName(esConf)).Id(id).Doc(mapping)
+			e.bulkProcessor.Add(r)
+		} else {
+			_, err := index.BodyJson(mapping).Id(id).Do(ctx)
 			if err != nil {
 				e.log.Error("Error while writing ", data[dataIndex], err)
 			}
