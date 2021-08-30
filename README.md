@@ -395,7 +395,7 @@ The Tyk Dashboard uses the "mongo-pump-aggregate" collection to display analytic
 
 `"extended_stats"` - If set to true will include the following additional fields: Raw Request, Raw Response and User Agent.
 
-`"version"` - Specifies the ES version. Use "3" for ES 3.X, "5" for ES 5.X, "6" for ES 6.X. Defaults to "3".
+`"version"` - Specifies the ES version. Use "3" for ES 3.X, "5" for ES 5.X, "6" for ES 6.X, "7" for ES 7.X . Defaults to "3".
 
 `"disable_bulk"` - Disable batch writing. Defaults to false.
 
