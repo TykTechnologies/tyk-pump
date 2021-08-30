@@ -269,6 +269,7 @@ func (c *SQLPump) WriteUptimeData(data []interface{}) {
 
 		analyticsPerOrg := analytics.AggregateUptimeData(typedData[startIndex:endIndex])
 		for orgID, ag := range analyticsPerOrg {
+			recs := []analytics.UptimeReportAggregateSQL{}
 			for _, d := range ag.Dimensions() {
 				id := fmt.Sprintf("%v", ag.TimeStamp.Unix()) + orgID + d.Name + d.Value
 				uID := hex.EncodeToString([]byte(id))
@@ -285,13 +286,14 @@ func (c *SQLPump) WriteUptimeData(data []interface{}) {
 				rec.Counter.ErrorList = nil
 				rec.Counter.ErrorMap = nil
 
-				tx := c.db.Clauses(clause.OnConflict{
-					Columns:   []clause.Column{{Name: "id"}},
-					DoUpdates: clause.Assignments(rec.GetAssignments(table)),
-				}).Create(rec)
-				if tx.Error != nil {
-					c.log.Error(tx.Error)
-				}
+				recs = append(recs, rec)
+			}
+			tx := c.db.Clauses(clause.OnConflict{
+				Columns:   []clause.Column{{Name: "id"}},
+				DoUpdates: clause.Assignments(analytics.OnConflictUptimeAssignments(table, "excluded")),
+			}).Create(recs)
+			if tx.Error != nil {
+				c.log.Error(tx.Error)
 			}
 		}
 		startIndex = i // next day start index, necessary for sharded case
