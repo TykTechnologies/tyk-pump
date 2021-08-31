@@ -25,6 +25,7 @@ type Pump interface {
 	SetOmitDetailedRecording(bool)
 	GetOmitDetailedRecording() bool
 	GetEnvPrefix() string
+	Shutdown() error
 }
 
 type UptimePump interface {

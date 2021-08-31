@@ -59,6 +59,7 @@ type ElasticsearchBulkConfig struct {
 
 type ElasticsearchOperator interface {
 	processData(ctx context.Context, data []interface{}, esConf *ElasticsearchConf) error
+	flushRecords() error
 }
 
 type Elasticsearch3Operator struct {
@@ -400,6 +401,10 @@ func (e Elasticsearch3Operator) processData(ctx context.Context, data []interfac
 	return nil
 }
 
+func (e Elasticsearch3Operator) flushRecords() error {
+	return e.bulkProcessor.Flush()
+}
+
 func (e Elasticsearch5Operator) processData(ctx context.Context, data []interface{}, esConf *ElasticsearchConf) error {
 	index := e.esClient.Index().Index(getIndexName(esConf))
 
@@ -429,6 +434,10 @@ func (e Elasticsearch5Operator) processData(ctx context.Context, data []interfac
 	e.log.Info("Purged ", len(data), " records...")
 
 	return nil
+}
+
+func (e Elasticsearch5Operator) flushRecords() error {
+	return e.bulkProcessor.Flush()
 }
 
 func (e Elasticsearch6Operator) processData(ctx context.Context, data []interface{}, esConf *ElasticsearchConf) error {
@@ -467,10 +476,18 @@ func (e Elasticsearch6Operator) processData(ctx context.Context, data []interfac
 	return nil
 }
 
+func (e Elasticsearch6Operator) flushRecords() error {
+	return e.bulkProcessor.Flush()
+}
+
 // printPurgedBulkRecords print the purged records = bulk size when bulk is enabled
 func printPurgedBulkRecords(bulkSize int, err error, logger *logrus.Entry) {
 	if err != nil {
 		logger.WithError(err).Errorf("Purging %+v  records", bulkSize)
 	}
 	logger.Infof("Purging %+v records", bulkSize)
+}
+
+func (e *ElasticsearchPump) Shutdown() error {
+	return e.operator.flushRecords()
 }

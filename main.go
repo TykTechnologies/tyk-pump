@@ -3,8 +3,10 @@ package main
 import (
 	"context"
 	"fmt"
+	"os/signal"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	"os"
@@ -182,8 +184,9 @@ func initialiseUptimePump() {
 	}).Info("Init Uptime Pump: ", UptimePump.GetName())
 }
 
-func StartPurgeLoop(secInterval int, chunkSize int64, expire time.Duration, omitDetails bool) {
+func StartPurgeLoop(wg *sync.WaitGroup, ctx context.Context, secInterval int, chunkSize int64, expire time.Duration, omitDetails bool) {
 	for range time.Tick(time.Duration(secInterval) * time.Second) {
+
 		job := instrument.NewJob("PumpRecordsPurge")
 		startTime := time.Now()
 
@@ -231,6 +234,25 @@ func StartPurgeLoop(secInterval int, chunkSize int64, expire time.Duration, omit
 			UptimeValues := UptimeStorage.GetAndDeleteSet(storage.UptimeAnalytics_KEYNAME, chunkSize, expire)
 			UptimePump.WriteUptimeData(UptimeValues)
 		}
+		select {
+		case <-ctx.Done():
+			for _, pmp := range Pumps {
+				if err := pmp.Shutdown(); err != nil {
+					log.WithFields(logrus.Fields{
+						"prefix": mainPrefix,
+					}).Error("Error trying to gracefully shutdown  "+pmp.GetName()+":", err)
+				} else {
+					log.WithFields(logrus.Fields{
+						"prefix": mainPrefix,
+					}).Info(pmp.GetName() + " gracefully stoped.")
+				}
+			}
+			wg.Done()
+			return
+		default:
+			log.Info("defaulting")
+		}
+
 	}
 }
 
@@ -373,5 +395,17 @@ func main() {
 		"prefix": mainPrefix,
 	}).Infof("Starting purge loop @%d, chunk size %d", SystemConfig.PurgeDelay, SystemConfig.PurgeChunk)
 
-	StartPurgeLoop(SystemConfig.PurgeDelay, SystemConfig.PurgeChunk, time.Duration(SystemConfig.StorageExpirationTime)*time.Second, SystemConfig.OmitDetailedRecording)
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+	ctx, cancel := context.WithCancel(context.Background())
+	go StartPurgeLoop(&wg, ctx, SystemConfig.PurgeDelay, SystemConfig.PurgeChunk, time.Duration(SystemConfig.StorageExpirationTime)*time.Second, SystemConfig.OmitDetailedRecording)
+
+	termChan := make(chan os.Signal)
+	signal.Notify(termChan, os.Interrupt, syscall.SIGINT, syscall.SIGTERM, os.Kill, syscall.SIGKILL)
+	<-termChan // Blocks here until either SIGINT or SIGTERM is received.
+	cancel()   // cancel the context
+	wg.Wait()  // wait till all the pumps finish
+	log.WithFields(logrus.Fields{
+		"prefix": mainPrefix,
+	}).Info("Tyk-pump stoped.")
 }
