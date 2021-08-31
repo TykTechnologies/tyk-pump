@@ -250,7 +250,6 @@ func StartPurgeLoop(wg *sync.WaitGroup, ctx context.Context, secInterval int, ch
 			wg.Done()
 			return
 		default:
-			log.Info("defaulting")
 		}
 
 	}
