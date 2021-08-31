@@ -572,5 +572,8 @@ func printPurgedBulkRecords(bulkSize int, err error, logger *logrus.Entry) {
 }
 
 func (e *ElasticsearchPump) Shutdown() error {
-	return e.operator.flushRecords()
+	if e.esConf.DisableBulk {
+		return e.operator.flushRecords()
+	}
+	return nil
 }
