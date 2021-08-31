@@ -236,6 +236,9 @@ func StartPurgeLoop(wg *sync.WaitGroup, ctx context.Context, secInterval int, ch
 		}
 		select {
 		case <-ctx.Done():
+			log.WithFields(logrus.Fields{
+				"prefix": mainPrefix,
+			}).Info("Shuting down ", len(Pumps), " pumps...")
 			for _, pmp := range Pumps {
 				if err := pmp.Shutdown(); err != nil {
 					log.WithFields(logrus.Fields{
