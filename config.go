@@ -49,6 +49,7 @@ type TykPumpConfiguration struct {
 	HealthCheckEndpointName string                     `json:"health_check_endpoint_name"`
 	HealthCheckEndpointPort int                        `json:"health_check_endpoint_port"`
 	OmitDetailedRecording   bool                       `json:"omit_detailed_recording"`
+	MaxRecordSize           int                        `json:"max_record_size"` // in bytes
 }
 
 func LoadConfig(filePath *string, configStruct *TykPumpConfiguration) {

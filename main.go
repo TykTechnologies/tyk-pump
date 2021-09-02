@@ -200,9 +200,15 @@ func StartPurgeLoop(secInterval int, chunkSize int64, expire time.Duration, omit
 				// Convert to something clean
 				keys := make([]interface{}, len(AnalyticsValues))
 
+				shouldTrim := SystemConfig.MaxRecordSize != 0
 				for i, v := range AnalyticsValues {
 					decoded := analytics.AnalyticsRecord{}
 					err := msgpack.Unmarshal([]byte(v.(string)), &decoded)
+
+					if shouldTrim {
+						decoded.TrimRawData(SystemConfig.MaxRecordSize)
+					}
+
 					log.WithFields(logrus.Fields{
 						"prefix": mainPrefix,
 					}).Debug("Decoded Record: ", decoded)
