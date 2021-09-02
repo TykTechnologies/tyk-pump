@@ -194,3 +194,10 @@ func (s *DogStatsdPump) WriteData(ctx context.Context, data []interface{}) error
 
 	return nil
 }
+
+func (s *DogStatsdPump) Shutdown() error {
+	if s.conf.Buffered {
+		return s.client.Flush()
+	}
+	return nil
+}
