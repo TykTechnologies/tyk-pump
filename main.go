@@ -402,8 +402,8 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	go StartPurgeLoop(&wg, ctx, SystemConfig.PurgeDelay, SystemConfig.PurgeChunk, time.Duration(SystemConfig.StorageExpirationTime)*time.Second, SystemConfig.OmitDetailedRecording)
 
-	termChan := make(chan os.Signal)
-	signal.Notify(termChan, os.Interrupt, syscall.SIGINT, syscall.SIGTERM, os.Kill, syscall.SIGKILL)
+	termChan := make(chan os.Signal, 1)
+	signal.Notify(termChan, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 	<-termChan // Blocks here until either SIGINT or SIGTERM is received.
 	cancel()   // cancel the context
 	wg.Wait()  // wait till all the pumps finish
