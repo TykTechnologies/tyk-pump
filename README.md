@@ -74,6 +74,22 @@ Create a `pump.conf` file:
         "csv_dir": "./"
       }
     },
+    "sql_aggregate": {
+      "name": "sql_aggregate",
+      "meta": {
+          "type": "postgres",
+          "connection_string": "host=sql_host port=sql_port user=sql_usr dbname=dbname password=sql_pw",
+          "table_sharding": true
+      }
+    },
+    "sql": {
+      "name": "sql",
+      "meta": {
+          "type": "postgres",
+          "connection_string": "host=sql_host port=sql_port user=sql_usr dbname=dbname password=sql_pw",
+          "table_sharding": false
+      }
+    },
     "elasticsearch": {
       "type": "elasticsearch",
       "meta": {
@@ -211,7 +227,7 @@ Create a `pump.conf` file:
         "rpc_key": "5b5fd341e6355b5eb194765e",
         "api_key": "008d6d1525104ae77240f687bb866974",
         "connection_string": "localhost:9090",
-	"aggregated": false,
+	      "aggregated": false,
         "use_ssl": false,
         "ssl_insecure_skip_verify": false,
         "group_id": "",
@@ -361,7 +377,31 @@ Environment variables can be used to override the settings defined in the config
 
 ### Uptime Data
 
-`dont_purge_uptime_data` - Setting this to false will create a pump that pushes uptime data to MongoDB, so the Dashboard can read it. Disable by setting to true
+`dont_purge_uptime_data` - Setting this to false will create a pump that pushes uptime data to Uptime Pump, so the Dashboard can read it. Disable by setting to true
+
+#### Mongo Uptime Pump
+In `uptime_pump_config` you can configure a mongo uptime pump. By default, the uptime pump is going to be `mongo` type, so it's not necessary to specify it here.
+The minimum required configurations for uptime pumps are:
+`collection_name` - That determines the uptime collection name in mongo. By default, `tyk_uptime_analytics`.
+`mongo_url` - The uptime pump mongo connection url. It is usually something like "mongodb://username:password@{hostname:port},{hostname:port}/{db_name}".
+
+#### SQL Uptime Pump
+*Supported in Tyk Pump v1.5.0+*
+
+In `uptime_pump_config` you can configure a SQL uptime pump. To do that, you need to add the field `uptime_type` with `sql` value.
+You can also use different types of SQL Uptime pumps, like `postgres` or `sqlite` using the `type` field. 
+
+An example of a SQL Postgres uptime pump would be:
+```
+    "uptime_pump_config": {
+        "uptime_type": "sql",
+        "type": "postgres",
+        "connection_string": "host=sql_host port=sql_port user=sql_usr dbname=dbname password=sql_pw",
+        "table_sharding": false
+    },
+```
+
+Take into account that you can also set `log_level` field into the `uptime_pump_config` to `debug`,`info` or `warning`. By default, the SQL logger verbosity is `silent`.
 
 ### Omit Detailed Recording
 
@@ -395,7 +435,7 @@ The Tyk Dashboard uses the "mongo-pump-aggregate" collection to display analytic
 
 `"extended_stats"` - If set to true will include the following additional fields: Raw Request, Raw Response and User Agent.
 
-`"version"` - Specifies the ES version. Use "3" for ES 3.X, "5" for ES 5.X, "6" for ES 6.X. Defaults to "3".
+`"version"` - Specifies the ES version. Use "3" for ES 3.X, "5" for ES 5.X, "6" for ES 6.X, "7" for ES 7.X . Defaults to "3".
 
 `"disable_bulk"` - Disable batch writing. Defaults to false.
 
@@ -679,6 +719,50 @@ When working with FluentD, you should provide a [FluentD Parser](https://docs.fl
       "format": "json"
     }
   }
+```
+
+### SQL Pump
+*Supported in Tyk Pump v1.5.0+*
+
+`type` - The supported and tested types are `sqlite` and `postgres`. 
+`connection_string` - Specifies the connection string to the database. For example, for `sqlite` it would usually work specifying the path/name of the database and for `postgres`, specifying the host, port, user, password and dbname.
+`log_level` - Specifies the SQL log verbosity. The possible values are: `info`,`error` and `warning`. By default, the value is `silent`, which means that it won't log any SQL query.
+`table_sharding` - Specifies if all the analytics records are going to be stored in one table or in multiple tables (one per day). By default, `false`.
+If `table_sharding` is `false`, all the records are going to be stored in `tyk_analytics` table. Instead, if it's `true`, all the records of the day are going to be stored in `tyk_analytics_YYYYMMDD` table, where `YYYYMMDD` is going to change depending on the date.
+
+For example:  
+```
+    "sql": {
+        "name": "sql",
+        "meta": {
+            "type": "postgres",
+            "connection_string": "host=localhost port=5432 user=admin dbname=postgres_test password=test",
+            "table_sharding": false
+        }
+    }
+```
+
+### SQL Aggregate Pump
+*Supported in Tyk Pump v1.5.0+*
+
+`type` - The supported and tested types are `sqlite` and `postgres`. 
+`connection_string` - Specifies the connection string to the database. For example, for `sqlite` it would usually work specifying the path/name of the database and for `postgres`, specifying the host, port, user, password and dbname.
+`log_level` - Specifies the SQL log verbosity. The possible values are: `info`,`error` and `warning`. By default, the value is `silent`, which means that it won't log any SQL query.
+`track_all_paths` - Specifies if it should store aggregated data for all the endpoints. By default, `false` which means that only store aggregated data for `tracked endpoints`. 
+`ignore_tag_prefix_list` - Specifies prefixes of tags that should be ignored.
+`table_sharding` - Specifies if all the analytics records are going to be stored in one table or in multiple tables (one per day). By default, `false`.
+If `table_sharding` is `false`, all the records are going to be stored in `tyk_aggregated` table. Instead, if it's `true`, all the records of the day are going to be stored in `tyk_aggregated_YYYYMMDD` table, where `YYYYMMDD` is going to change depending on the date.
+
+For example:  
+```
+    "sql_aggregate": {
+        "name": "sql_aggregate",
+        "meta": {
+            "type": "postgres",
+            "connection_string": "host=localhost port=5432 user=admin dbname=postgres_test password=test",
+            "table_sharding": false
+        }
+    }
 ```
 
 ## Compiling & Testing

@@ -26,6 +26,7 @@ require (
 	github.com/mitchellh/mapstructure v1.1.2
 	github.com/moesif/moesifapi-go v1.0.6
 	github.com/olivere/elastic v6.2.31+incompatible // indirect
+	github.com/olivere/elastic/v7 v7.0.27
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.0.0
 	github.com/quipo/statsd v0.0.0-20160923160612-75b7afedf0d2
