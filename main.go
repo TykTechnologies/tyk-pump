@@ -200,14 +200,9 @@ func StartPurgeLoop(secInterval int, chunkSize int64, expire time.Duration, omit
 				// Convert to something clean
 				keys := make([]interface{}, len(AnalyticsValues))
 
-				shouldTrim := SystemConfig.MaxRecordSize != 0
 				for i, v := range AnalyticsValues {
 					decoded := analytics.AnalyticsRecord{}
 					err := msgpack.Unmarshal([]byte(v.(string)), &decoded)
-
-					if shouldTrim {
-						decoded.TrimRawData(SystemConfig.MaxRecordSize)
-					}
 
 					log.WithFields(logrus.Fields{
 						"prefix": mainPrefix,
@@ -258,17 +253,22 @@ func writeToPumps(keys []interface{}, job *health.Job, startTime time.Time, purg
 
 func filterData(pump pumps.Pump, keys []interface{}) []interface{} {
 	filters := pump.GetFilters()
-	if !filters.HasFilter() && !pump.GetOmitDetailedRecording() {
+	if !filters.HasFilter() && !pump.GetOmitDetailedRecording() && SystemConfig.MaxRecordSize == 0 {
 		return keys
 	}
 	filteredKeys := keys[:]
 	newLenght := 0
 
+	shouldTrim := SystemConfig.MaxRecordSize != 0
 	for _, key := range filteredKeys {
 		decoded := key.(analytics.AnalyticsRecord)
 		if pump.GetOmitDetailedRecording() {
 			decoded.RawRequest = ""
 			decoded.RawResponse = ""
+		} else {
+			if shouldTrim {
+				decoded.TrimRawData(SystemConfig.MaxRecordSize)
+			}
 		}
 		if filters.ShouldFilter(decoded) {
 			continue
