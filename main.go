@@ -234,28 +234,36 @@ func StartPurgeLoop(wg *sync.WaitGroup, ctx context.Context, secInterval int, ch
 			UptimeValues := UptimeStorage.GetAndDeleteSet(storage.UptimeAnalytics_KEYNAME, chunkSize, expire)
 			UptimePump.WriteUptimeData(UptimeValues)
 		}
-		select {
-		case <-ctx.Done():
-			log.WithFields(logrus.Fields{
-				"prefix": mainPrefix,
-			}).Info("Shuting down ", len(Pumps), " pumps...")
-			for _, pmp := range Pumps {
-				if err := pmp.Shutdown(); err != nil {
-					log.WithFields(logrus.Fields{
-						"prefix": mainPrefix,
-					}).Error("Error trying to gracefully shutdown  "+pmp.GetName()+":", err)
-				} else {
-					log.WithFields(logrus.Fields{
-						"prefix": mainPrefix,
-					}).Info(pmp.GetName() + " gracefully stoped.")
-				}
-			}
-			wg.Done()
-			return
-		default:
-		}
 
+		if checkShutdown(ctx, wg) {
+			return
+		}
 	}
+}
+
+func checkShutdown(ctx context.Context, wg *sync.WaitGroup) bool {
+	shutdown := false
+	select {
+	case <-ctx.Done():
+		log.WithFields(logrus.Fields{
+			"prefix": mainPrefix,
+		}).Info("Shuting down ", len(Pumps), " pumps...")
+		for _, pmp := range Pumps {
+			if err := pmp.Shutdown(); err != nil {
+				log.WithFields(logrus.Fields{
+					"prefix": mainPrefix,
+				}).Error("Error trying to gracefully shutdown  "+pmp.GetName()+":", err)
+			} else {
+				log.WithFields(logrus.Fields{
+					"prefix": mainPrefix,
+				}).Info(pmp.GetName() + " gracefully stoped.")
+			}
+		}
+		wg.Done()
+		shutdown = true
+	default:
+	}
+	return shutdown
 }
 
 func writeToPumps(keys []interface{}, job *health.Job, startTime time.Time, purgeDelay int) {
