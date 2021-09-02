@@ -94,6 +94,10 @@ func (c *SQLAggregatePump) Init(conf interface{}) error {
 		c.db.Table(analytics.AggregateSQLTable).AutoMigrate(&analytics.SQLAnalyticsRecordAggregate{})
 	}
 
+	if c.SQLConf.BatchSize == 0 {
+		c.SQLConf.BatchSize = SQLDefaultQueryBatchSize
+	}
+
 	c.log.Debug("SQLAggregate Initialized")
 	return nil
 }
@@ -164,14 +168,21 @@ func (c *SQLAggregatePump) WriteData(ctx context.Context, data []interface{}) er
 				recs = append(recs, rec)
 			}
 
-			//we use excluded as temp  table since it's supported by our SQL storages https://www.postgresql.org/docs/9.5/sql-insert.html#SQL-ON-CONFLICT  https://www.sqlite.org/lang_UPSERT.html
-			tx := c.db.WithContext(ctx).Clauses(clause.OnConflict{
-				Columns:   []clause.Column{{Name: "id"}},
-				DoUpdates: clause.Assignments(analytics.OnConflictAssignments(table, "excluded")),
-			}).Create(recs)
-			if tx.Error != nil {
-				c.log.Error("error writing aggregated records into "+table+":", tx.Error)
-				return tx.Error
+			for i := 0; i < len(recs); i += c.SQLConf.BatchSize {
+				ends := i + c.SQLConf.BatchSize
+				if ends > len(recs) {
+					ends = len(recs)
+				}
+
+				//we use excluded as temp  table since it's supported by our SQL storages https://www.postgresql.org/docs/9.5/sql-insert.html#SQL-ON-CONFLICT  https://www.sqlite.org/lang_UPSERT.html
+				tx := c.db.WithContext(ctx).Clauses(clause.OnConflict{
+					Columns:   []clause.Column{{Name: "id"}},
+					DoUpdates: clause.Assignments(analytics.OnConflictAssignments(table, "excluded")),
+				}).Create(recs[i:ends])
+				if tx.Error != nil {
+					c.log.Error("error writing aggregated records into "+table+":", tx.Error)
+					return tx.Error
+				}
 			}
 		}
 
