@@ -729,6 +729,7 @@ When working with FluentD, you should provide a [FluentD Parser](https://docs.fl
 `log_level` - Specifies the SQL log verbosity. The possible values are: `info`,`error` and `warning`. By default, the value is `silent`, which means that it won't log any SQL query.
 `table_sharding` - Specifies if all the analytics records are going to be stored in one table or in multiple tables (one per day). By default, `false`.
 If `table_sharding` is `false`, all the records are going to be stored in `tyk_analytics` table. Instead, if it's `true`, all the records of the day are going to be stored in `tyk_analytics_YYYYMMDD` table, where `YYYYMMDD` is going to change depending on the date.
+`batch_size` - Specifies the amount of records that are going to be written each batch. Type int. By default, it writes 1000 records max per batch.
 
 For example:  
 ```
@@ -752,6 +753,7 @@ For example:
 `ignore_tag_prefix_list` - Specifies prefixes of tags that should be ignored.
 `table_sharding` - Specifies if all the analytics records are going to be stored in one table or in multiple tables (one per day). By default, `false`.
 If `table_sharding` is `false`, all the records are going to be stored in `tyk_aggregated` table. Instead, if it's `true`, all the records of the day are going to be stored in `tyk_aggregated_YYYYMMDD` table, where `YYYYMMDD` is going to change depending on the date.
+`batch_size` - Specifies the amount of records that are going to be written each batch. Type int. By default, it writes 1000 records max per batch.
 
 For example:  
 ```
