@@ -190,7 +190,7 @@ func GenerateDemoData(start time.Time, days int, orgId string, writer func([]int
 				set = append(set, r)
 			}
 
-			writer(set, nil, time.Now(), 1)
+			writer(set, nil, time.Now(), 10)
 		}
 		count++
 		fmt.Printf("Finished %d of %d\n", count, days)
