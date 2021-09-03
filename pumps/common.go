@@ -36,3 +36,7 @@ func (p *CommonPumpConfig) GetOmitDetailedRecording() bool {
 func (p *CommonPumpConfig) GetEnvPrefix() string {
 	return ""
 }
+
+func (p *CommonPumpConfig) Shutdown() error {
+	return nil
+}

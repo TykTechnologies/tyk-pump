@@ -60,6 +60,7 @@ type ElasticsearchBulkConfig struct {
 
 type ElasticsearchOperator interface {
 	processData(ctx context.Context, data []interface{}, esConf *ElasticsearchConf) error
+	flushRecords() error
 }
 
 type Elasticsearch3Operator struct {
@@ -144,7 +145,7 @@ func (e *ElasticsearchPump) getOperator() (ElasticsearchOperator, error) {
 		p = p.BulkSize(bulkSize)
 		// After execute a bulk commit call his function to print how many records were purged
 		purgerLogger := func(executionId int64, requests []elasticv3.BulkableRequest, response *elasticv3.BulkResponse, err error) {
-			printPurgedBulkRecords(bulkSize, err, op.log)
+			printPurgedBulkRecords(len(requests), err, op.log)
 		}
 		p.After(purgerLogger)
 
@@ -181,7 +182,7 @@ func (e *ElasticsearchPump) getOperator() (ElasticsearchOperator, error) {
 
 		// After execute a bulk commit call his function to print how many records were purged
 		purgerLogger := func(executionId int64, requests []elasticv5.BulkableRequest, response *elasticv5.BulkResponse, err error) {
-			printPurgedBulkRecords(bulkSize, err, op.log)
+			printPurgedBulkRecords(len(requests), err, op.log)
 		}
 		p.After(purgerLogger)
 
@@ -218,7 +219,7 @@ func (e *ElasticsearchPump) getOperator() (ElasticsearchOperator, error) {
 
 		// After execute a bulk commit call his function to print how many records were purged
 		purgerLogger := func(executionId int64, requests []elasticv6.BulkableRequest, response *elasticv6.BulkResponse, err error) {
-			printPurgedBulkRecords(bulkSize, err, op.log)
+			printPurgedBulkRecords(len(requests), err, op.log)
 		}
 		p.After(purgerLogger)
 
@@ -254,7 +255,7 @@ func (e *ElasticsearchPump) getOperator() (ElasticsearchOperator, error) {
 		p = p.BulkSize(bulkSize)
 		// After execute a bulk commit call his function to print how many records were purged
 		purgerLogger := func(executionId int64, requests []elasticv7.BulkableRequest, response *elasticv7.BulkResponse, err error) {
-			printPurgedBulkRecords(bulkSize, err, op.log)
+			printPurgedBulkRecords(len(requests), err, op.log)
 		}
 		p.After(purgerLogger)
 
@@ -438,9 +439,14 @@ func (e Elasticsearch3Operator) processData(ctx context.Context, data []interfac
 			}
 		}
 	}
-	e.log.Info("Purged ", len(data), " records...")
-
+	if esConf.DisableBulk {
+		e.log.Info("Purged ", len(data), " records...")
+	}
 	return nil
+}
+
+func (e Elasticsearch3Operator) flushRecords() error {
+	return e.bulkProcessor.Flush()
 }
 
 func (e Elasticsearch5Operator) processData(ctx context.Context, data []interface{}, esConf *ElasticsearchConf) error {
@@ -469,9 +475,14 @@ func (e Elasticsearch5Operator) processData(ctx context.Context, data []interfac
 			}
 		}
 	}
-	e.log.Info("Purged ", len(data), " records...")
-
+	if esConf.DisableBulk {
+		e.log.Info("Purged ", len(data), " records...")
+	}
 	return nil
+}
+
+func (e Elasticsearch5Operator) flushRecords() error {
+	return e.bulkProcessor.Flush()
 }
 
 func (e Elasticsearch6Operator) processData(ctx context.Context, data []interface{}, esConf *ElasticsearchConf) error {
@@ -510,6 +521,10 @@ func (e Elasticsearch6Operator) processData(ctx context.Context, data []interfac
 	return nil
 }
 
+func (e Elasticsearch6Operator) flushRecords() error {
+	return e.bulkProcessor.Flush()
+}
+
 func (e Elasticsearch7Operator) processData(ctx context.Context, data []interface{}, esConf *ElasticsearchConf) error {
 	index := e.esClient.Index().Index(getIndexName(esConf))
 
@@ -536,15 +551,29 @@ func (e Elasticsearch7Operator) processData(ctx context.Context, data []interfac
 			}
 		}
 	}
-	e.log.Info("Purged ", len(data), " records...")
+	if esConf.DisableBulk {
+		e.log.Info("Purged ", len(data), " records...")
+	}
 
 	return nil
+}
+
+func (e Elasticsearch7Operator) flushRecords() error {
+	return e.bulkProcessor.Flush()
 }
 
 // printPurgedBulkRecords print the purged records = bulk size when bulk is enabled
 func printPurgedBulkRecords(bulkSize int, err error, logger *logrus.Entry) {
 	if err != nil {
 		logger.WithError(err).Errorf("Purging %+v  records", bulkSize)
+		return
 	}
 	logger.Infof("Purging %+v records", bulkSize)
+}
+
+func (e *ElasticsearchPump) Shutdown() error {
+	if e.esConf.DisableBulk {
+		return e.operator.flushRecords()
+	}
+	return nil
 }
