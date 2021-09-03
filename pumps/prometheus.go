@@ -125,7 +125,13 @@ func (p *PrometheusPump) Init(conf interface{}) error {
 func (p *PrometheusPump) WriteData(ctx context.Context, data []interface{}) error {
 	p.log.Debug("Attempting to write ", len(data), " records...")
 
-	for _, item := range data {
+	for i, item := range data {
+		select {
+		case <-ctx.Done():
+			p.log.Warn("Purged ", i, " of ", len(data), " because of timeout.")
+			return errors.New("prometheus pump couldn't write all the analytics records")
+		default:
+		}
 		record := item.(analytics.AnalyticsRecord)
 		code := strconv.Itoa(record.ResponseCode)
 
