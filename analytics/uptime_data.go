@@ -1,9 +1,7 @@
 package analytics
 
 import (
-	"fmt"
 	"strconv"
-	"strings"
 	"time"
 
 	"gorm.io/gorm"
@@ -47,44 +45,32 @@ func (a *UptimeReportAggregateSQL) TableName() string {
 	return UptimeSQLTable
 }
 
-func (a UptimeReportAggregateSQL) GetAssignments(tableName string) map[string]interface{} {
+func OnConflictUptimeAssignments(tableName string, tempTable string) map[string]interface{} {
 	assignments := make(map[string]interface{})
-
-	baseFields := structs.Fields(a.Code)
+	f := UptimeReportAggregateSQL{}
+	baseFields := structs.Fields(f.Code)
 	for _, field := range baseFields {
 		jsonTag := field.Tag("json")
 		colName := "code_" + jsonTag
-		if !field.IsZero() {
-			assignments[colName] = gorm.Expr(tableName + "." + colName + " + " + fmt.Sprint(field.Value()))
-		}
+		assignments[colName] = gorm.Expr(tableName + "." + colName + " + " + tempTable + "." + colName)
+
 	}
 
-	fields := structs.Fields(a.Counter)
+	fields := structs.Fields(f.Counter)
 	for _, field := range fields {
-		colName := "counter_" + field.Tag("json")
-
-		switch {
-		case strings.Contains(colName, "hits"), strings.Contains(colName, "error"), strings.Contains(colName, "success"):
+		jsonTag := field.Tag("json")
+		colName := "counter_" + jsonTag
+		switch jsonTag {
+		case "hits", "error", "success", "total_request_time":
+			assignments[colName] = gorm.Expr(tableName + "." + colName + " + " + tempTable + "." + colName)
+		case "request_time":
 			if !field.IsZero() {
-				assignments[colName] = gorm.Expr(tableName + "." + colName + " + " + fmt.Sprint(field.Value()))
+				assignments[colName] = gorm.Expr("(" + tableName + ".counter_total_request_time  +" + tempTable + "." + "counter_total_request_time" + ")/( " + tableName + ".counter_hits + " + tempTable + ".counter_hits" + ")")
 			}
-		case strings.Contains(colName, "total_request_time"):
-			if !field.IsZero() {
-				assignments[colName] = gorm.Expr(tableName + "." + colName + " + " + fmt.Sprint(a.TotalRequestTime))
-			}
-		case strings.Contains(colName, "request_time"):
-			//AVG adding value to another AVG: newAve = ((oldAve*oldNumPoints) + x)/(oldNumPoints+1)
-			if !field.IsZero() {
-				assignments[colName] = gorm.Expr("(" + tableName + ".counter_total_request_time  +" + fmt.Sprintf("%v", a.TotalRequestTime) + ")/( " + tableName + ".counter_hits + " + fmt.Sprintf("%v", a.Hits) + ")")
-			}
-		case strings.Contains(colName, "last_time"):
-			if !field.IsZero() {
-				assignments[colName] = gorm.Expr("'" + a.LastTime.Format("2006-01-02 15:04:05-07:00") + "'")
-			}
+		case "last_time":
+			assignments[colName] = gorm.Expr(tempTable + "." + colName)
 		}
-
 	}
-
 	return assignments
 }
 

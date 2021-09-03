@@ -103,6 +103,7 @@ func TestSQLAggregateWriteData(t *testing.T) {
 	pmp := SQLAggregatePump{}
 	cfg := make(map[string]interface{})
 	cfg["type"] = "sqlite"
+	cfg["batch_size"] = 2000
 
 	err := pmp.Init(cfg)
 	if err != nil {
@@ -121,25 +122,25 @@ func TestSQLAggregateWriteData(t *testing.T) {
 		RowsLen              int
 		HitsPerHour          int
 	}{
-		"first iteration": {
+		"first": {
 			Record:               analytics.AnalyticsRecord{OrgID: "1", APIID: "api1", TimeStamp: now},
 			RecordsAmountToWrite: 3,
 			RowsLen:              2,
 			HitsPerHour:          3,
 		},
-		"second iteration": {
+		"second": {
 			Record:               analytics.AnalyticsRecord{OrgID: "1", APIID: "api1", TimeStamp: now},
 			RecordsAmountToWrite: 3,
 			RowsLen:              2,
 			HitsPerHour:          6,
 		},
-		"third iteration": {
+		"third": {
 			Record:               analytics.AnalyticsRecord{OrgID: "1", APIID: "api1", TimeStamp: now},
 			RecordsAmountToWrite: 3,
 			RowsLen:              2,
 			HitsPerHour:          9,
 		},
-		"fourth iteration": {
+		"fourth": {
 			Record:               analytics.AnalyticsRecord{OrgID: "1", APIID: "api1", TimeStamp: nowPlus1},
 			RecordsAmountToWrite: 3,
 			RowsLen:              4,
@@ -147,13 +148,15 @@ func TestSQLAggregateWriteData(t *testing.T) {
 		},
 	}
 
-	for testName, testValue := range tests {
+	testNames := []string{"first", "second", "third", "fourth"}
+
+	for _, testName := range testNames {
 		t.Run(testName, func(t *testing.T) {
 			pmp := pmp
 			keys := []interface{}{}
 
-			for i := 0; i < testValue.RecordsAmountToWrite; i++ {
-				keys = append(keys, testValue.Record)
+			for i := 0; i < tests[testName].RecordsAmountToWrite; i++ {
+				keys = append(keys, tests[testName].Record)
 			}
 
 			pmp.WriteData(context.TODO(), keys)
@@ -167,12 +170,12 @@ func TestSQLAggregateWriteData(t *testing.T) {
 			}
 
 			//check amount of rows in the table
-			assert.Equal(t, testValue.RowsLen, len(dbRecords))
+			assert.Equal(t, tests[testName].RowsLen, len(dbRecords))
 
 			//iterate over the records and check total of hits
 			for _, dbRecord := range dbRecords {
-				if dbRecord.TimeStamp == testValue.Record.TimeStamp.Unix() && dbRecord.DimensionValue == "total" {
-					assert.Equal(t, testValue.HitsPerHour, dbRecord.Hits)
+				if dbRecord.TimeStamp == tests[testName].Record.TimeStamp.Unix() && dbRecord.DimensionValue == "total" {
+					assert.Equal(t, tests[testName].HitsPerHour, dbRecord.Hits)
 					break
 				}
 			}
@@ -185,6 +188,7 @@ func TestSQLAggregateWriteDataValues(t *testing.T) {
 	pmp := SQLAggregatePump{}
 	cfg := make(map[string]interface{})
 	cfg["type"] = "sqlite"
+	cfg["batch_size"] = 2
 
 	err := pmp.Init(cfg)
 	if err != nil {

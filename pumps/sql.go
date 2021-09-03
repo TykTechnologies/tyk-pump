@@ -55,6 +55,7 @@ type SQLConf struct {
 	Mysql            MysqlConfig    `json:"mysql" mapstructure:"mysql"`
 	TableSharding    bool           `json:"table_sharding" mapstructure:"table_sharding"`
 	LogLevel         string         `json:"log_level" mapstructure:"log_level"`
+	BatchSize        int            `json:"batch_size" mapstructure:"batch_size"`
 }
 
 func Dialect(cfg *SQLConf) (gorm.Dialector, error) {
@@ -88,6 +89,7 @@ func Dialect(cfg *SQLConf) (gorm.Dialector, error) {
 
 var SQLPrefix = "SQL-pump"
 var SQLDefaultENV = PUMPS_ENV_PREFIX + "_SQL" + PUMPS_ENV_META_PREFIX
+var SQLDefaultQueryBatchSize = 1000
 
 func (c *SQLPump) New() Pump {
 	newPump := SQLPump{}
@@ -157,6 +159,10 @@ func (c *SQLPump) Init(conf interface{}) error {
 		}
 	}
 
+	if c.SQLConf.BatchSize == 0 {
+		c.SQLConf.BatchSize = SQLDefaultQueryBatchSize
+	}
+
 	c.log.Debug("SQL Initialized")
 	return nil
 }
@@ -203,10 +209,19 @@ func (c *SQLPump) WriteData(ctx context.Context, data []interface{}) error {
 			i = dataLen // write all records at once for non-sharded case, stop for loop after 1 iteration
 		}
 
-		tx := c.db.WithContext(ctx).Create(typedData[startIndex:endIndex])
-		if tx.Error != nil {
-			return tx.Error
+		recs := typedData[startIndex:endIndex]
+
+		for i := 0; i < len(recs); i += c.SQLConf.BatchSize {
+			ends := i + c.SQLConf.BatchSize
+			if ends > len(recs) {
+				ends = len(recs)
+			}
+			tx := c.db.WithContext(ctx).Create(recs[i:ends])
+			if tx.Error != nil {
+				c.log.Error(tx.Error)
+			}
 		}
+
 		startIndex = i // next day start index, necessary for sharded case
 
 	}
@@ -269,6 +284,7 @@ func (c *SQLPump) WriteUptimeData(data []interface{}) {
 
 		analyticsPerOrg := analytics.AggregateUptimeData(typedData[startIndex:endIndex])
 		for orgID, ag := range analyticsPerOrg {
+			recs := []analytics.UptimeReportAggregateSQL{}
 			for _, d := range ag.Dimensions() {
 				id := fmt.Sprintf("%v", ag.TimeStamp.Unix()) + orgID + d.Name + d.Value
 				uID := hex.EncodeToString([]byte(id))
@@ -285,14 +301,23 @@ func (c *SQLPump) WriteUptimeData(data []interface{}) {
 				rec.Counter.ErrorList = nil
 				rec.Counter.ErrorMap = nil
 
+				recs = append(recs, rec)
+			}
+
+			for i := 0; i < len(recs); i += c.SQLConf.BatchSize {
+				ends := i + c.SQLConf.BatchSize
+				if ends > len(recs) {
+					ends = len(recs)
+				}
 				tx := c.db.Clauses(clause.OnConflict{
 					Columns:   []clause.Column{{Name: "id"}},
-					DoUpdates: clause.Assignments(rec.GetAssignments(table)),
-				}).Create(rec)
+					DoUpdates: clause.Assignments(analytics.OnConflictUptimeAssignments(table, "excluded")),
+				}).Create(recs[i:ends])
 				if tx.Error != nil {
 					c.log.Error(tx.Error)
 				}
 			}
+
 		}
 		startIndex = i // next day start index, necessary for sharded case
 	}
