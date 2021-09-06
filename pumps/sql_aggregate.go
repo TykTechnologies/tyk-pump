@@ -6,11 +6,11 @@ import (
 	"fmt"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
-	"gorm.io/gorm/clause"
 
 	"github.com/mitchellh/mapstructure"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	gorm_logger "gorm.io/gorm/logger"
 )
 
@@ -80,10 +80,9 @@ func (c *SQLAggregatePump) Init(conf interface{}) error {
 		return errDialect
 	}
 	db, err := gorm.Open(dialect, &gorm.Config{
-		AutoEmbedd:             true,
-		UseJSONTags:            true,
-		SkipDefaultTransaction: true,
-		Logger:                 gorm_logger.Default.LogMode(logLevel),
+		AutoEmbedd:  true,
+		UseJSONTags: true,
+		Logger:      gorm_logger.Default.LogMode(logLevel),
 	})
 
 	if err != nil {
@@ -93,6 +92,10 @@ func (c *SQLAggregatePump) Init(conf interface{}) error {
 	c.db = db
 	if !c.SQLConf.TableSharding {
 		c.db.Table(analytics.AggregateSQLTable).AutoMigrate(&analytics.SQLAnalyticsRecordAggregate{})
+	}
+
+	if c.SQLConf.BatchSize == 0 {
+		c.SQLConf.BatchSize = SQLDefaultQueryBatchSize
 	}
 
 	c.log.Debug("SQLAggregate Initialized")
@@ -146,6 +149,7 @@ func (c *SQLAggregatePump) WriteData(ctx context.Context, data []interface{}) er
 		analyticsPerOrg := analytics.AggregateData(data[startIndex:endIndex], c.SQLConf.TrackAllPaths, c.SQLConf.IgnoreTagPrefixList, c.SQLConf.StoreAnalyticsPerMinute)
 
 		for orgID, ag := range analyticsPerOrg {
+			recs := []analytics.SQLAnalyticsRecordAggregate{}
 			for _, d := range ag.Dimensions() {
 				id := fmt.Sprintf("%v", ag.TimeStamp.Unix()) + orgID + d.Name + d.Value
 				uID := hex.EncodeToString([]byte(id))
@@ -161,12 +165,22 @@ func (c *SQLAggregatePump) WriteData(ctx context.Context, data []interface{}) er
 				rec.ProcessStatusCodes(rec.Counter.ErrorMap)
 				rec.Counter.ErrorList = nil
 				rec.Counter.ErrorMap = nil
+				recs = append(recs, rec)
+			}
 
+			for i := 0; i < len(recs); i += c.SQLConf.BatchSize {
+				ends := i + c.SQLConf.BatchSize
+				if ends > len(recs) {
+					ends = len(recs)
+				}
+
+				//we use excluded as temp  table since it's supported by our SQL storages https://www.postgresql.org/docs/9.5/sql-insert.html#SQL-ON-CONFLICT  https://www.sqlite.org/lang_UPSERT.html
 				tx := c.db.WithContext(ctx).Clauses(clause.OnConflict{
 					Columns:   []clause.Column{{Name: "id"}},
-					DoUpdates: clause.Assignments(rec.GetAssignments(table)),
-				}).Create(rec)
+					DoUpdates: clause.Assignments(analytics.OnConflictAssignments(table, "excluded")),
+				}).Create(recs[i:ends])
 				if tx.Error != nil {
+					c.log.Error("error writing aggregated records into "+table+":", tx.Error)
 					return tx.Error
 				}
 			}

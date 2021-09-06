@@ -4,6 +4,10 @@ import (
 	"context"
 	"fmt"
 
+	"os"
+	"os/signal"
+	"sync"
+	"syscall"
 	"testing"
 	"time"
 
@@ -14,6 +18,7 @@ import (
 
 type MockedPump struct {
 	CounterRequest int
+	TurnedOff      bool
 	pumps.CommonPumpConfig
 }
 
@@ -33,6 +38,12 @@ func (p *MockedPump) WriteData(ctx context.Context, keys []interface{}) error {
 	}
 	return nil
 }
+
+func (p *MockedPump) Shutdown() error {
+	p.TurnedOff = true
+	return nil
+}
+
 func TestFilterData(t *testing.T) {
 
 	mockedPump := &MockedPump{}
@@ -148,5 +159,43 @@ func TestWriteDataWithFilters(t *testing.T) {
 	if mockedPump.CounterRequest != 1 {
 		fmt.Println(mockedPump.CounterRequest)
 		t.Fatal("MockedPump with filter should have 3 requests")
+	}
+}
+
+func TestShutdown(t *testing.T) {
+	mockedPump := &MockedPump{}
+	mockedPump.SetFilters(
+		analytics.AnalyticsFilters{
+			APIIDs: []string{"api123"},
+		},
+	)
+
+	Pumps = []pumps.Pump{mockedPump}
+
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+	ctx, cancel := context.WithCancel(context.Background())
+
+	go func() {
+		for {
+			if checkShutdown(ctx, &wg) {
+				return
+			}
+		}
+	}()
+
+	termChan := make(chan os.Signal, 1)
+	signal.Notify(termChan, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+
+	termChan <- os.Interrupt
+
+	<-termChan
+	cancel()
+	wg.Wait()
+
+	mockedPump = Pumps[0].(*MockedPump)
+
+	if mockedPump.TurnedOff != true {
+		t.Fatal("MockedPump should have turned off")
 	}
 }

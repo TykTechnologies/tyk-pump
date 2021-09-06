@@ -93,6 +93,8 @@ func TestSQLWriteDataSharded(t *testing.T) {
 	cfg := make(map[string]interface{})
 	cfg["type"] = "sqlite"
 	cfg["table_sharding"] = true
+	cfg["batch_size"] = 20000
+
 	err := pmp.Init(cfg)
 	if err != nil {
 		t.Fatal("SQL Pump couldn't be initialized with err: ", err)
