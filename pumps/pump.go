@@ -26,6 +26,8 @@ type Pump interface {
 	GetOmitDetailedRecording() bool
 	GetEnvPrefix() string
 	Shutdown() error
+	SetMaxRecordSize(size int)
+	GetMaxRecordSize() int
 }
 
 type UptimePump interface {

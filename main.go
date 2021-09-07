@@ -139,6 +139,7 @@ func initialisePumps() {
 			thisPmp.SetFilters(pmp.Filters)
 			thisPmp.SetTimeout(pmp.Timeout)
 			thisPmp.SetOmitDetailedRecording(pmp.OmitDetailedRecording)
+			thisPmp.SetMaxRecordSize(pmp.MaxRecordSize)
 			initErr := thisPmp.Init(pmp.Meta)
 			if initErr != nil {
 				log.WithField("pump", thisPmp.GetName()).Error("Pump init error (skipping): ", initErr)
@@ -206,6 +207,7 @@ func StartPurgeLoop(wg *sync.WaitGroup, ctx context.Context, secInterval int, ch
 				for i, v := range AnalyticsValues {
 					decoded := analytics.AnalyticsRecord{}
 					err := msgpack.Unmarshal([]byte(v.(string)), &decoded)
+
 					log.WithFields(logrus.Fields{
 						"prefix": mainPrefix,
 					}).Debug("Decoded Record: ", decoded)
@@ -284,17 +286,26 @@ func writeToPumps(keys []interface{}, job *health.Job, startTime time.Time, purg
 
 func filterData(pump pumps.Pump, keys []interface{}) []interface{} {
 	filters := pump.GetFilters()
-	if !filters.HasFilter() && !pump.GetOmitDetailedRecording() {
+	if !filters.HasFilter() && !pump.GetOmitDetailedRecording() && SystemConfig.MaxRecordSize == 0 {
 		return keys
 	}
 	filteredKeys := keys[:]
 	newLenght := 0
 
+	shouldTrim := SystemConfig.MaxRecordSize != 0 || pump.GetMaxRecordSize() != 0
 	for _, key := range filteredKeys {
 		decoded := key.(analytics.AnalyticsRecord)
 		if pump.GetOmitDetailedRecording() {
 			decoded.RawRequest = ""
 			decoded.RawResponse = ""
+		} else {
+			if shouldTrim {
+				if pump.GetMaxRecordSize() != 0 {
+					decoded.TrimRawData(pump.GetMaxRecordSize())
+				} else {
+					decoded.TrimRawData(SystemConfig.MaxRecordSize)
+				}
+			}
 		}
 		if filters.ShouldFilter(decoded) {
 			continue
