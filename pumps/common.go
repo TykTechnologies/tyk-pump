@@ -8,6 +8,7 @@ import (
 type CommonPumpConfig struct {
 	filters               analytics.AnalyticsFilters
 	timeout               int
+	maxRecordSize         int
 	OmitDetailedRecording bool
 	log                   *logrus.Entry
 }
@@ -39,4 +40,12 @@ func (p *CommonPumpConfig) GetEnvPrefix() string {
 
 func (p *CommonPumpConfig) Shutdown() error {
 	return nil
+}
+
+func (p *CommonPumpConfig) SetMaxRecordSize(size int) {
+	p.maxRecordSize = size
+}
+
+func (p *CommonPumpConfig) GetMaxRecordSize() int {
+	return p.maxRecordSize
 }

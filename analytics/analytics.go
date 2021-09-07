@@ -1,6 +1,7 @@
 package analytics
 
 import (
+	"bytes"
 	"fmt"
 	"sort"
 	"strconv"
@@ -203,4 +204,25 @@ func (a *AnalyticsRecord) GetLineValues() []string {
 	fields = append(fields, strconv.FormatBool(a.TrackPath))
 	fields = append(fields, a.ExpireAt.String())
 	return fields
+}
+
+func (a *AnalyticsRecord) TrimRawData(size int) {
+	// trim RawResponse
+	a.RawResponse = trimString(size, a.RawResponse)
+
+	// trim RawRequest
+	a.RawRequest = trimString(size, a.RawRequest)
+}
+
+func trimString(size int, value string) string {
+	trimBuffer := bytes.Buffer{}
+	defer trimBuffer.Reset()
+
+	trimBuffer.Write([]byte(value))
+	if trimBuffer.Len() < size {
+		size = trimBuffer.Len()
+	}
+	trimBuffer.Truncate(size)
+
+	return string(trimBuffer.Bytes())
 }
