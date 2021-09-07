@@ -27,8 +27,6 @@ type ElasticsearchPump struct {
 	CommonPumpConfig
 }
 
-const DEFAULT_BULK_SIZE = 1000
-
 var elasticsearchPrefix = "elasticsearch-pump"
 var elasticsearchDefaultENV = PUMPS_ENV_PREFIX + "_ELASTICSEARCH" + PUMPS_ENV_META_PREFIX
 
@@ -138,16 +136,17 @@ func (e *ElasticsearchPump) getOperator() (ElasticsearchOperator, error) {
 			p = p.BulkActions(conf.BulkConfig.BulkActions)
 		}
 
-		bulkSize := DEFAULT_BULK_SIZE
 		if conf.BulkConfig.BulkSize != 0 {
-			bulkSize = conf.BulkConfig.BulkSize
+			p = p.BulkSize(conf.BulkConfig.BulkSize)
 		}
-		p = p.BulkSize(bulkSize)
-		// After execute a bulk commit call his function to print how many records were purged
-		purgerLogger := func(executionId int64, requests []elasticv3.BulkableRequest, response *elasticv3.BulkResponse, err error) {
-			printPurgedBulkRecords(len(requests), err, op.log)
+
+		if !conf.DisableBulk {
+			// After execute a bulk commit call his function to print how many records were purged
+			purgerLogger := func(executionId int64, requests []elasticv3.BulkableRequest, response *elasticv3.BulkResponse, err error) {
+				printPurgedBulkRecords(len(requests), err, op.log)
+			}
+			p = p.After(purgerLogger)
 		}
-		p.After(purgerLogger)
 
 		op.bulkProcessor, err = p.Do()
 		op.log = e.log
@@ -174,17 +173,17 @@ func (e *ElasticsearchPump) getOperator() (ElasticsearchOperator, error) {
 			p = p.BulkActions(conf.BulkConfig.BulkActions)
 		}
 
-		bulkSize := DEFAULT_BULK_SIZE
 		if conf.BulkConfig.BulkSize != 0 {
-			bulkSize = conf.BulkConfig.BulkSize
+			p = p.BulkSize(conf.BulkConfig.BulkSize)
 		}
-		p = p.BulkSize(bulkSize)
 
-		// After execute a bulk commit call his function to print how many records were purged
-		purgerLogger := func(executionId int64, requests []elasticv5.BulkableRequest, response *elasticv5.BulkResponse, err error) {
-			printPurgedBulkRecords(len(requests), err, op.log)
+		if !conf.DisableBulk {
+			// After execute a bulk commit call his function to print how many records were purged
+			purgerLogger := func(executionId int64, requests []elasticv5.BulkableRequest, response *elasticv5.BulkResponse, err error) {
+				printPurgedBulkRecords(len(requests), err, op.log)
+			}
+			p = p.After(purgerLogger)
 		}
-		p.After(purgerLogger)
 
 		op.bulkProcessor, err = p.Do(context.Background())
 		op.log = e.log
@@ -211,17 +210,17 @@ func (e *ElasticsearchPump) getOperator() (ElasticsearchOperator, error) {
 			p = p.BulkActions(conf.BulkConfig.BulkActions)
 		}
 
-		bulkSize := DEFAULT_BULK_SIZE
 		if conf.BulkConfig.BulkSize != 0 {
-			bulkSize = conf.BulkConfig.BulkSize
+			p = p.BulkSize(conf.BulkConfig.BulkSize)
 		}
-		p = p.BulkSize(bulkSize)
 
-		// After execute a bulk commit call his function to print how many records were purged
-		purgerLogger := func(executionId int64, requests []elasticv6.BulkableRequest, response *elasticv6.BulkResponse, err error) {
-			printPurgedBulkRecords(len(requests), err, op.log)
+		if !conf.DisableBulk {
+			// After execute a bulk commit call his function to print how many records were purged
+			purgerLogger := func(executionId int64, requests []elasticv6.BulkableRequest, response *elasticv6.BulkResponse, err error) {
+				printPurgedBulkRecords(len(requests), err, op.log)
+			}
+			p = p.After(purgerLogger)
 		}
-		p.After(purgerLogger)
 
 		op.bulkProcessor, err = p.Do(context.Background())
 		op.log = e.log
@@ -248,16 +247,17 @@ func (e *ElasticsearchPump) getOperator() (ElasticsearchOperator, error) {
 			p = p.BulkActions(conf.BulkConfig.BulkActions)
 		}
 
-		bulkSize := DEFAULT_BULK_SIZE
 		if conf.BulkConfig.BulkSize != 0 {
-			bulkSize = conf.BulkConfig.BulkSize
+			p = p.BulkSize(conf.BulkConfig.BulkSize)
 		}
-		p = p.BulkSize(bulkSize)
-		// After execute a bulk commit call his function to print how many records were purged
-		purgerLogger := func(executionId int64, requests []elasticv7.BulkableRequest, response *elasticv7.BulkResponse, err error) {
-			printPurgedBulkRecords(len(requests), err, op.log)
+
+		if !conf.DisableBulk {
+			// After execute a bulk commit call his function to print how many records were purged
+			purgerLogger := func(executionId int64, requests []elasticv7.BulkableRequest, response *elasticv7.BulkResponse, err error) {
+				printPurgedBulkRecords(len(requests), err, op.log)
+			}
+			p = p.After(purgerLogger)
 		}
-		p.After(purgerLogger)
 
 		op.bulkProcessor, err = p.Do(context.Background())
 		op.log = e.log
@@ -565,14 +565,15 @@ func (e Elasticsearch7Operator) flushRecords() error {
 // printPurgedBulkRecords print the purged records = bulk size when bulk is enabled
 func printPurgedBulkRecords(bulkSize int, err error, logger *logrus.Entry) {
 	if err != nil {
-		logger.WithError(err).Errorf("Purging %+v  records", bulkSize)
+		logger.WithError(err).Errorf("Error Purging %+v records", bulkSize)
 		return
 	}
-	logger.Infof("Purging %+v records", bulkSize)
+	logger.Infof("Purged %+v records", bulkSize)
 }
 
 func (e *ElasticsearchPump) Shutdown() error {
-	if e.esConf.DisableBulk {
+	if !e.esConf.DisableBulk {
+		e.log.Info("Flushing bulked records...")
 		return e.operator.flushRecords()
 	}
 	return nil
