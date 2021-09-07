@@ -40,6 +40,7 @@ var (
 	demoMode           = kingpin.Flag("demo", "pass orgID string to generate demo data").Default("").String()
 	demoApiMode        = kingpin.Flag("demo-api", "pass apiID string to generate demo data").Default("").String()
 	demoApiVersionMode = kingpin.Flag("demo-api-version", "pass apiID string to generate demo data").Default("").String()
+	demoTrackPathMode  = kingpin.Flag("demo-track-path", "pass true or false to generate demo data").Default("false").Bool()
 	debugMode          = kingpin.Flag("debug", "enable debug mode").Bool()
 	version            = kingpin.Version(VERSION)
 )
@@ -386,7 +387,7 @@ func main() {
 	if *demoMode != "" {
 		log.Info("BUILDING DEMO DATA AND EXITING...")
 		log.Warning("Starting from date: ", time.Now().AddDate(0, 0, -30))
-		demo.DemoInit(*demoMode, *demoApiMode, *demoApiVersionMode)
+		demo.DemoInit(*demoMode, *demoApiMode, *demoApiVersionMode, *demoTrackPathMode)
 		demo.GenerateDemoData(time.Now().AddDate(0, 0, -30), 30, *demoMode, writeToPumps)
 
 		return

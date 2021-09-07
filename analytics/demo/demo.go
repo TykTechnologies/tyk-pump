@@ -15,11 +15,13 @@ import (
 var apiKeys []string
 var apiID string
 var apiVersion string
+var trackPath bool
 
-func DemoInit(orgId, apiId, version string) {
+func DemoInit(orgId, apiId, version string, trackPaths bool) {
 	apiID = apiId
 	apiKeys = generateAPIKeys(orgId)
 	apiVersion = version
+	trackPath = trackPaths
 	if version == "" {
 		apiVersion = "Default"
 	}
@@ -181,7 +183,7 @@ func GenerateDemoData(start time.Time, days int, orgId string, writer func([]int
 					IPAddress:     "118.93.55.103",
 					Tags:          []string{"orgid-" + orgId, "apiid-" + apiID},
 					Alias:         "",
-					TrackPath:     true,
+					TrackPath:     trackPath,
 					ExpireAt:      time.Now().Add(time.Hour * 8760),
 				}
 
