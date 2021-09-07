@@ -80,8 +80,25 @@ func TestTrimData(t *testing.T) {
 	}
 
 	keys := make([]interface{}, 1)
+	//test for global config max_record_size
 	for maxRecordSize, expected := range testMatrix {
 		SystemConfig.MaxRecordSize = maxRecordSize
+
+		keys[0] = analytics.AnalyticsRecord{
+			APIID:       "api1",
+			RawResponse: loremIpsum,
+			RawRequest:  loremIpsum,
+		}
+
+		filteredKeys := filterData(mockedPump, keys)
+		decoded := filteredKeys[0].(analytics.AnalyticsRecord)
+
+		assert.Equal(t, len(decoded.RawRequest), expected)
+		assert.Equal(t, len(decoded.RawResponse), expected)
+	}
+	//test for individual pump config with max_record_size
+	for maxRecordSize, expected := range testMatrix {
+		mockedPump.SetMaxRecordSize(maxRecordSize)
 
 		keys[0] = analytics.AnalyticsRecord{
 			APIID:       "api1",

@@ -411,6 +411,16 @@ Take into account that you can also set `log_level` field into the `uptime_pump_
 ### Max Record Size
 
 `max_record_size` defines maximum size (in bytes) for Raw Request and Raw Response logs, this value defaults to 0. Is not set then tyk-pump will not trim any data and will store the full information.
+This can also be set at a pump level. For example:
+```{.json}
+"csv": {
+  "type": "csv",
+  "max_record_size":1000,
+  "meta": {
+    "csv_dir": "./"
+  }
+}
+```
 
 ### Health Check
 

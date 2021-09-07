@@ -139,6 +139,7 @@ func initialisePumps() {
 			thisPmp.SetFilters(pmp.Filters)
 			thisPmp.SetTimeout(pmp.Timeout)
 			thisPmp.SetOmitDetailedRecording(pmp.OmitDetailedRecording)
+			thisPmp.SetMaxRecordSize(pmp.MaxRecordSize)
 			initErr := thisPmp.Init(pmp.Meta)
 			if initErr != nil {
 				log.WithField("pump", thisPmp.GetName()).Error("Pump init error (skipping): ", initErr)
@@ -291,7 +292,7 @@ func filterData(pump pumps.Pump, keys []interface{}) []interface{} {
 	filteredKeys := keys[:]
 	newLenght := 0
 
-	shouldTrim := SystemConfig.MaxRecordSize != 0
+	shouldTrim := SystemConfig.MaxRecordSize != 0 || pump.GetMaxRecordSize() != 0
 	for _, key := range filteredKeys {
 		decoded := key.(analytics.AnalyticsRecord)
 		if pump.GetOmitDetailedRecording() {
@@ -299,7 +300,11 @@ func filterData(pump pumps.Pump, keys []interface{}) []interface{} {
 			decoded.RawResponse = ""
 		} else {
 			if shouldTrim {
-				decoded.TrimRawData(SystemConfig.MaxRecordSize)
+				if pump.GetMaxRecordSize() != 0 {
+					decoded.TrimRawData(pump.GetMaxRecordSize())
+				} else {
+					decoded.TrimRawData(SystemConfig.MaxRecordSize)
+				}
 			}
 		}
 		if filters.ShouldFilter(decoded) {
