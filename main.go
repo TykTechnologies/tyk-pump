@@ -285,14 +285,15 @@ func writeToPumps(keys []interface{}, job *health.Job, startTime time.Time, purg
 }
 
 func filterData(pump pumps.Pump, keys []interface{}) []interface{} {
+
+	shouldTrim := SystemConfig.MaxRecordSize != 0 || pump.GetMaxRecordSize() != 0
 	filters := pump.GetFilters()
-	if !filters.HasFilter() && !pump.GetOmitDetailedRecording() && SystemConfig.MaxRecordSize == 0 {
+	if !filters.HasFilter() && !pump.GetOmitDetailedRecording() && !shouldTrim {
 		return keys
 	}
 	filteredKeys := keys[:]
 	newLenght := 0
 
-	shouldTrim := SystemConfig.MaxRecordSize != 0 || pump.GetMaxRecordSize() != 0
 	for _, key := range filteredKeys {
 		decoded := key.(analytics.AnalyticsRecord)
 		if pump.GetOmitDetailedRecording() {
