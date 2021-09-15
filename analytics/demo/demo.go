@@ -153,7 +153,7 @@ func GenerateDemoData(start time.Time, days int, orgId string, writer func([]int
 			ts := start.AddDate(0, 0, d)
 			ts = ts.Add(time.Duration(h) * time.Hour)
 			// Generate daily entries
-			volume := randomInRange(300, 500)
+			volume := randomInRange(20000, 50000)
 			for i := 0; i < volume; i++ {
 				p := randomPath()
 				api, apiID := randomAPI()
