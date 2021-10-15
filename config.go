@@ -56,16 +56,18 @@ type TykPumpConfiguration struct {
 
 func LoadConfig(filePath *string, configStruct *TykPumpConfiguration) {
 
-	if !configStruct.OmitConfigFile {
-		configuration, err := ioutil.ReadFile(*filePath)
-		if err != nil {
-			log.Error("Couldn't load configuration file: ", err)
-		}
+	configuration, err := ioutil.ReadFile(*filePath)
+	if err != nil {
+		log.Error("Couldn't load configuration file: ", err)
+	}
 
-		marshalErr := json.Unmarshal(configuration, &configStruct)
-		if marshalErr != nil {
-			log.Error("Couldn't unmarshal configuration: ", marshalErr)
-		}
+	marshalErr := json.Unmarshal(configuration, &configStruct)
+	if marshalErr != nil {
+		log.Error("Couldn't unmarshal configuration: ", marshalErr)
+	}
+
+	if configStruct.OmitConfigFile {
+		*configStruct = TykPumpConfiguration{}
 	}
 
 	overrideErr := envconfig.Process(ENV_PREVIX, configStruct)
