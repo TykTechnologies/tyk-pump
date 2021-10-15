@@ -66,7 +66,8 @@ func LoadConfig(filePath *string, configStruct *TykPumpConfiguration) {
 		log.Error("Couldn't unmarshal configuration: ", marshalErr)
 	}
 
-	if configStruct.OmitConfigFile {
+	shouldOmit, omitEnvExist := os.LookupEnv(ENV_PREVIX + "_OMITCONFIGFILE")
+	if configStruct.OmitConfigFile || (omitEnvExist && strings.ToLower(shouldOmit) == "true") {
 		*configStruct = TykPumpConfiguration{}
 	}
 
