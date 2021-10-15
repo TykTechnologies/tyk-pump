@@ -51,18 +51,21 @@ type TykPumpConfiguration struct {
 	HealthCheckEndpointPort int                        `json:"health_check_endpoint_port"`
 	OmitDetailedRecording   bool                       `json:"omit_detailed_recording"`
 	MaxRecordSize           int                        `json:"max_record_size"` // in bytes
+	OmitConfigFile          bool                       `json:"omit_config_file"`
 }
 
 func LoadConfig(filePath *string, configStruct *TykPumpConfiguration) {
 
-	configuration, err := ioutil.ReadFile(*filePath)
-	if err != nil {
-		log.Error("Couldn't load configuration file: ", err)
-	}
+	if !configStruct.OmitConfigFile {
+		configuration, err := ioutil.ReadFile(*filePath)
+		if err != nil {
+			log.Error("Couldn't load configuration file: ", err)
+		}
 
-	marshalErr := json.Unmarshal(configuration, &configStruct)
-	if marshalErr != nil {
-		log.Error("Couldn't unmarshal configuration: ", marshalErr)
+		marshalErr := json.Unmarshal(configuration, &configStruct)
+		if marshalErr != nil {
+			log.Error("Couldn't unmarshal configuration: ", marshalErr)
+		}
 	}
 
 	overrideErr := envconfig.Process(ENV_PREVIX, configStruct)
