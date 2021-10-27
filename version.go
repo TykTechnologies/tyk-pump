@@ -1,4 +1,4 @@
 package main
 
-var VERSION = "v1.5.0"
+var VERSION = "v3.0.0"
 var builtBy, Commit, buildDate string
