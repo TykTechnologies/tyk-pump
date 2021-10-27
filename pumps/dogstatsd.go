@@ -29,6 +29,7 @@ type DogStatsdPump struct {
 	CommonPumpConfig
 }
 
+// @PumpConf DogStatsd
 type DogStatsdConf struct {
 	EnvPrefix            string   `mapstructure:"meta_env_prefix"`
 	Namespace            string   `mapstructure:"namespace"`

@@ -72,6 +72,7 @@ func (b *BaseMongoConf) GetBlurredURL() string {
 	return blurredUrl
 }
 
+// @PumpConf Mongo
 type MongoConf struct {
 	BaseMongoConf
 

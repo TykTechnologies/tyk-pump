@@ -26,6 +26,7 @@ const (
 	maxDiskThreshold = 100
 )
 
+// @PumpConf Logzio
 type LogzioPumpConfig struct {
 	EnvPrefix      string `mapstructure:"meta_env_prefix"`
 	CheckDiskSpace bool   `mapstructure:"check_disk_space"`

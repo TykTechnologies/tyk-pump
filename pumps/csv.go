@@ -19,6 +19,7 @@ type CSVPump struct {
 	CommonPumpConfig
 }
 
+// @PumpConf CSV
 type CSVConf struct {
 	EnvPrefix string `mapstructure:"meta_env_prefix"`
 	CSVDir    string `mapstructure:"csv_dir"`

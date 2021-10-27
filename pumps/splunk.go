@@ -47,6 +47,7 @@ type SplunkPump struct {
 }
 
 // SplunkPumpConfig contains the driver configuration parameters.
+// @PumpConf Splunk
 type SplunkPumpConfig struct {
 	EnvPrefix              string   `mapstructure:"meta_env_prefix"`
 	CollectorToken         string   `mapstructure:"collector_token"`

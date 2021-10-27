@@ -14,6 +14,7 @@ import (
 	gorm_logger "gorm.io/gorm/logger"
 )
 
+// @PumpConf SQLAggregate
 type SQLAggregatePumpConf struct {
 	SQLConf `mapstructure:",squash"`
 

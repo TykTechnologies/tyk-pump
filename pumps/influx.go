@@ -23,6 +23,7 @@ var (
 	table            = "analytics"
 )
 
+// @PumpConf Influx
 type InfluxConf struct {
 	EnvPrefix    string   `mapstructure:"meta_env_prefix"`
 	DatabaseName string   `mapstructure:"database_name"`

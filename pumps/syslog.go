@@ -23,6 +23,7 @@ var (
 	syslogDefaultENV = PUMPS_ENV_PREFIX + "_SYSLOG" + PUMPS_ENV_META_PREFIX
 )
 
+// @PumpConf Syslog
 type SyslogConf struct {
 	EnvPrefix   string `mapstructure:"meta_env_prefix"`
 	Transport   string `mapstructure:"transport"`

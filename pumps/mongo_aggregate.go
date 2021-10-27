@@ -30,6 +30,7 @@ type MongoAggregatePump struct {
 	CommonPumpConfig
 }
 
+// @PumpConf MongoAggregate
 type MongoAggregateConf struct {
 	BaseMongoConf
 	UseMixedCollection      bool     `mapstructure:"use_mixed_collection"`

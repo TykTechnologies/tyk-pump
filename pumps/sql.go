@@ -47,6 +47,7 @@ type SQLPump struct {
 	dialect gorm.Dialector
 }
 
+// @PumpConf SQL
 type SQLConf struct {
 	EnvPrefix        string         `mapstructure:"meta_env_prefix"`
 	Type             string         `json:"type" mapstructure:"type"`

@@ -17,6 +17,7 @@ type GraylogPump struct {
 	CommonPumpConfig
 }
 
+// @PumpConf Graylog
 type GraylogConf struct {
 	EnvPrefix   string   `mapstructure:"meta_env_prefix"`
 	GraylogHost string   `mapstructure:"host"`

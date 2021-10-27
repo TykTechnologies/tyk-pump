@@ -25,6 +25,7 @@ type PrometheusPump struct {
 	CommonPumpConfig
 }
 
+// @PumpConf Prometheus
 type PrometheusConf struct {
 	EnvPrefix string `mapstructure:"meta_env_prefix"`
 	Addr      string `mapstructure:"listen_address"`

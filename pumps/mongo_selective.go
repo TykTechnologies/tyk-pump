@@ -25,6 +25,7 @@ var mongoSelectivePrefix = "mongo-pump-selective"
 var mongoSelectivePumpPrefix = "PMP_MONGOSEL"
 var mongoSelectiveDefaultEnv = PUMPS_ENV_PREFIX + "_MONGOSELECTIVE" + PUMPS_ENV_META_PREFIX
 
+// @PumpConf MongoSelective
 type MongoSelectiveConf struct {
 	BaseMongoConf
 	MaxInsertBatchSizeBytes int `mapstructure:"max_insert_batch_size_bytes"`

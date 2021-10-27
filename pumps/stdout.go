@@ -19,6 +19,7 @@ type StdOutPump struct {
 	conf *StdOutConf
 }
 
+// @PumpConf StdOut
 type StdOutConf struct {
 	EnvPrefix    string `mapstructure:"meta_env_prefix"`
 	Format       string `mapstructure:"format"`
