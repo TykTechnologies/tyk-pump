@@ -30,6 +30,7 @@ type ElasticsearchPump struct {
 var elasticsearchPrefix = "elasticsearch-pump"
 var elasticsearchDefaultENV = PUMPS_ENV_PREFIX + "_ELASTICSEARCH" + PUMPS_ENV_META_PREFIX
 
+// @PumpConf Elasticsearch
 type ElasticsearchConf struct {
 	EnvPrefix          string                  `mapstructure:"meta_env_prefix"`
 	IndexName          string                  `mapstructure:"index_name"`
