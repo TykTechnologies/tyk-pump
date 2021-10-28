@@ -29,7 +29,9 @@ type PumpConfig struct {
 }
 
 type UptimeConf struct {
+	// TYKCONFIGEXPAND
 	pumps.MongoConf
+	// TYKCONFIGEXPAND
 	pumps.SQLConf
 	UptimeType string `json:"uptime_type"`
 }

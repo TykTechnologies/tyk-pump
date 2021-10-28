@@ -16,6 +16,7 @@ import (
 
 // @PumpConf SQLAggregate
 type SQLAggregatePumpConf struct {
+	// TYKCONFIGEXPAND
 	SQLConf `mapstructure:",squash"`
 
 	EnvPrefix               string   `mapstructure:"meta_env_prefix"`

@@ -27,6 +27,7 @@ var mongoSelectiveDefaultEnv = PUMPS_ENV_PREFIX + "_MONGOSELECTIVE" + PUMPS_ENV_
 
 // @PumpConf MongoSelective
 type MongoSelectiveConf struct {
+	// TYKCONFIGEXPAND
 	BaseMongoConf
 	MaxInsertBatchSizeBytes int `mapstructure:"max_insert_batch_size_bytes"`
 	MaxDocumentSizeBytes    int `mapstructure:"max_document_size_bytes"`

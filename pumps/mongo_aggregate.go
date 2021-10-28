@@ -32,6 +32,7 @@ type MongoAggregatePump struct {
 
 // @PumpConf MongoAggregate
 type MongoAggregateConf struct {
+	// TYKCONFIGEXPAND
 	BaseMongoConf
 	UseMixedCollection      bool     `mapstructure:"use_mixed_collection"`
 	TrackAllPaths           bool     `mapstructure:"track_all_paths"`

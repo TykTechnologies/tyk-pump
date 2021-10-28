@@ -74,6 +74,7 @@ func (b *BaseMongoConf) GetBlurredURL() string {
 
 // @PumpConf Mongo
 type MongoConf struct {
+	// TYKCONFIGEXPAND
 	BaseMongoConf
 
 	CollectionName            string `json:"collection_name" mapstructure:"collection_name"`
