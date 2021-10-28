@@ -64,11 +64,11 @@ func TestIgnoreConfig(t *testing.T) {
 	config := TykPumpConfiguration{
 		AnalyticsStorageType: "test",
 	}
-	os.Setenv(ENV_PREVIX + "_OMITCONFIGFILE", "true")
+	os.Setenv(ENV_PREVIX+"_OMITCONFIGFILE", "true")
 	defaultPath := ""
 	LoadConfig(&defaultPath, &config)
 
-	assert.Equal(t,"", config.AnalyticsStorageType,"TYK_OMITCONFIGFILE should have unset the configuation")
+	assert.Equal(t, "", config.AnalyticsStorageType, "TYK_OMITCONFIGFILE should have unset the configuation")
 
 	os.Unsetenv(ENV_PREVIX + "_OMITCONFIGFILE")
 
@@ -76,6 +76,6 @@ func TestIgnoreConfig(t *testing.T) {
 	config.AnalyticsStorageType = "test"
 	LoadConfig(&defaultPath, &config)
 
-	assert.Equal(t,"test", config.AnalyticsStorageType,"TYK_OMITCONFIGFILE should not have unset the configuation")
+	assert.Equal(t, "test", config.AnalyticsStorageType, "TYK_OMITCONFIGFILE should not have unset the configuation")
 
 }
