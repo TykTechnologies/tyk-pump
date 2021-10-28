@@ -31,21 +31,21 @@ var kafkaDefaultENV = PUMPS_ENV_PREFIX + "_KAFKA" + PUMPS_ENV_META_PREFIX
 
 // @PumpConf Kafka
 type KafkaConf struct {
-	EnvPrefix             string            `mapstructure:"meta_env_prefix"`
-	Broker                []string          `mapstructure:"broker"`
-	ClientId              string            `mapstructure:"client_id"`
-	Topic                 string            `mapstructure:"topic"`
-	Timeout               time.Duration     `mapstructure:"timeout"`
-	Compressed            bool              `mapstructure:"compressed"`
-	MetaData              map[string]string `mapstructure:"meta_data"`
-	UseSSL                bool              `mapstructure:"use_ssl"`
-	SSLInsecureSkipVerify bool              `mapstructure:"ssl_insecure_skip_verify"`
-	SSLCertFile           string            `mapstructure:"ssl_cert_file"`
-	SSLKeyFile            string            `mapstructure:"ssl_key_file"`
-	SASLMechanism         string            `mapstructure:"sasl_mechanism"`
-	Username              string            `mapstructure:"sasl_username"`
-	Password              string            `mapstructure:"sasl_password"`
-	Algorithm             string            `mapstructure:"sasl_algorithm"`
+	EnvPrefix             string            `json:"meta_env_prefix" mapstructure:"meta_env_prefix"`
+	Broker                []string          `json:"broker" mapstructure:"broker"`
+	ClientId              string            `json:"client_id" mapstructure:"client_id"`
+	Topic                 string            `json:"topic" mapstructure:"topic"`
+	Timeout               time.Duration     `json:"timeout" mapstructure:"timeout"`
+	Compressed            bool              `json:"compressed" mapstructure:"compressed"`
+	MetaData              map[string]string `json:"meta_data" mapstructure:"meta_data"`
+	UseSSL                bool              `json:"use_ssl" mapstructure:"use_ssl"`
+	SSLInsecureSkipVerify bool              `json:"ssl_insecure_skip_verify" mapstructure:"ssl_insecure_skip_verify"`
+	SSLCertFile           string            `json:"ssl_cert_file" mapstructure:"ssl_cert_file"`
+	SSLKeyFile            string            `json:"ssl_key_file" mapstructure:"ssl_key_file"`
+	SASLMechanism         string            `json:"sasl_mechanism" mapstructure:"sasl_mechanism"`
+	Username              string            `json:"sasl_username" mapstructure:"sasl_username"`
+	Password              string            `json:"sasl_password" mapstructure:"sasl_password"`
+	Algorithm             string            `json:"sasl_algorithm" mapstructure:"sasl_algorithm"`
 }
 
 func (k *KafkaPump) New() Pump {

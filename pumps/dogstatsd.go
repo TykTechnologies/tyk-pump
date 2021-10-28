@@ -31,15 +31,15 @@ type DogStatsdPump struct {
 
 // @PumpConf DogStatsd
 type DogStatsdConf struct {
-	EnvPrefix            string   `mapstructure:"meta_env_prefix"`
-	Namespace            string   `mapstructure:"namespace"`
-	Address              string   `mapstructure:"address"`
-	SampleRate           float64  `mapstructure:"sample_rate"`
-	AsyncUDS             bool     `mapstructure:"async_uds"`
-	AsyncUDSWriteTimeout int      `mapstructure:"async_uds_write_timeout_seconds"`
-	Buffered             bool     `mapstructure:"buffered"`
-	BufferedMaxMessages  int      `mapstructure:"buffered_max_messages"`
-	Tags                 []string `mapstructure:"tags"`
+	EnvPrefix            string   `json:"meta_env_prefix" mapstructure:"meta_env_prefix"`
+	Namespace            string   `json:"namespace" mapstructure:"namespace"`
+	Address              string   `json:"address" mapstructure:"address"`
+	SampleRate           float64  `json:"sample_rate" mapstructure:"sample_rate"`
+	AsyncUDS             bool     `json:"async_uds" mapstructure:"async_uds"`
+	AsyncUDSWriteTimeout int      `json:"async_uds_write_timeout_seconds" mapstructure:"async_uds_write_timeout_seconds"`
+	Buffered             bool     `json:"buffered" mapstructure:"buffered"`
+	BufferedMaxMessages  int      `json:"buffered_max_messages" mapstructure:"buffered_max_messages"`
+	Tags                 []string `json:"tags" mapstructure:"tags"`
 }
 
 func (s *DogStatsdPump) New() Pump {

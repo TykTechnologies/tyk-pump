@@ -49,19 +49,19 @@ type SplunkPump struct {
 // SplunkPumpConfig contains the driver configuration parameters.
 // @PumpConf Splunk
 type SplunkPumpConfig struct {
-	EnvPrefix              string   `mapstructure:"meta_env_prefix"`
-	CollectorToken         string   `mapstructure:"collector_token"`
-	CollectorURL           string   `mapstructure:"collector_url"`
-	SSLInsecureSkipVerify  bool     `mapstructure:"ssl_insecure_skip_verify"`
-	SSLCertFile            string   `mapstructure:"ssl_cert_file"`
-	SSLKeyFile             string   `mapstructure:"ssl_key_file"`
-	SSLServerName          string   `mapstructure:"ssl_server_name"`
-	ObfuscateAPIKeys       bool     `mapstructure:"obfuscate_api_keys"`
-	ObfuscateAPIKeysLength int      `mapstructure:"obfuscate_api_keys_length"`
-	Fields                 []string `mapstructure:"fields"`
-	IgnoreTagPrefixList    []string `mapstructure:"ignore_tag_prefix_list"`
-	EnableBatch            bool     `mapstructure:"enable_batch"`
-	BatchMaxContentLength  int      `mapstructure:"batch_max_content_length"`
+	EnvPrefix              string   `json:"meta_env_prefix" mapstructure:"meta_env_prefix"`
+	CollectorToken         string   `json:"collector_token" mapstructure:"collector_token"`
+	CollectorURL           string   `json:"collector_url" mapstructure:"collector_url"`
+	SSLInsecureSkipVerify  bool     `json:"ssl_insecure_skip_verify" mapstructure:"ssl_insecure_skip_verify"`
+	SSLCertFile            string   `json:"ssl_cert_file" mapstructure:"ssl_cert_file"`
+	SSLKeyFile             string   `json:"ssl_key_file" mapstructure:"ssl_key_file"`
+	SSLServerName          string   `json:"ssl_server_name" mapstructure:"ssl_server_name"`
+	ObfuscateAPIKeys       bool     `json:"obfuscate_api_keys" mapstructure:"obfuscate_api_keys"`
+	ObfuscateAPIKeysLength int      `json:"obfuscate_api_keys_length" mapstructure:"obfuscate_api_keys_length"`
+	Fields                 []string `json:"fields" mapstructure:"fields"`
+	IgnoreTagPrefixList    []string `json:"ignore_tag_prefix_list" mapstructure:"ignore_tag_prefix_list"`
+	EnableBatch            bool     `json:"enable_batch" mapstructure:"enable_batch"`
+	BatchMaxContentLength  int      `json:"batch_max_content_length" mapstructure:"batch_max_content_length"`
 }
 
 // New initializes a new pump.

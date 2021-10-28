@@ -28,13 +28,13 @@ const (
 
 // @PumpConf Logzio
 type LogzioPumpConfig struct {
-	EnvPrefix      string `mapstructure:"meta_env_prefix"`
-	CheckDiskSpace bool   `mapstructure:"check_disk_space"`
-	DiskThreshold  int    `mapstructure:"disk_threshold"`
-	DrainDuration  string `mapstructure:"drain_duration"`
-	QueueDir       string `mapstructure:"queue_dir"`
-	Token          string `mapstructure:"token"`
-	URL            string `mapstructure:"url"`
+	EnvPrefix      string `json:"meta_env_prefix" mapstructure:"meta_env_prefix"`
+	CheckDiskSpace bool   `json:"check_disk_space" mapstructure:"check_disk_space"`
+	DiskThreshold  int    `json:"disk_threshold" mapstructure:"disk_threshold"`
+	DrainDuration  string `json:"drain_duration" mapstructure:"drain_duration"`
+	QueueDir       string `json:"queue_dir" mapstructure:"queue_dir"`
+	Token          string `json:"token" mapstructure:"token"`
+	URL            string `json:"url" mapstructure:"url"`
 }
 
 func NewLogzioPumpConfig() *LogzioPumpConfig {

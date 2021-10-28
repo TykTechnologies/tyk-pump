@@ -21,8 +21,8 @@ var segmentDefaultENV = PUMPS_ENV_PREFIX + "_SEGMENT" + PUMPS_ENV_META_PREFIX
 
 // @PumpConf Segment
 type SegmentConf struct {
-	EnvPrefix string `mapstructure:"meta_env_prefix"`
-	WriteKey  string `mapstructure:"segment_write_key"`
+	EnvPrefix string `json:"meta_env_prefix" mapstructure:"meta_env_prefix"`
+	WriteKey  string `json:"segment_write_key" mapstructure:"segment_write_key"`
 }
 
 func (s *SegmentPump) New() Pump {

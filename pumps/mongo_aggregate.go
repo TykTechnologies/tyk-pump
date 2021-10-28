@@ -34,12 +34,12 @@ type MongoAggregatePump struct {
 type MongoAggregateConf struct {
 	// TYKCONFIGEXPAND
 	BaseMongoConf
-	UseMixedCollection      bool     `mapstructure:"use_mixed_collection"`
-	TrackAllPaths           bool     `mapstructure:"track_all_paths"`
-	IgnoreTagPrefixList     []string `mapstructure:"ignore_tag_prefix_list"`
-	ThresholdLenTagList     int      `mapstructure:"threshold_len_tag_list"`
-	StoreAnalyticsPerMinute bool     `mapstructure:"store_analytics_per_minute"`
-	IgnoreAggregationsList  []string `mapstructure:"ignore_aggregations"`
+	UseMixedCollection      bool     `json:"use_mixed_collection" mapstructure:"use_mixed_collection"`
+	TrackAllPaths           bool     `json:"track_all_paths" mapstructure:"track_all_paths"`
+	IgnoreTagPrefixList     []string `json:"ignore_tag_prefix_list" mapstructure:"ignore_tag_prefix_list"`
+	ThresholdLenTagList     int      `json:"threshold_len_tag_list" mapstructure:"threshold_len_tag_list"`
+	StoreAnalyticsPerMinute bool     `json:"store_analytics_per_minute" mapstructure:"store_analytics_per_minute"`
+	IgnoreAggregationsList  []string `json:"ignore_aggregations" mapstructure:"ignore_aggregations"`
 }
 
 func (m *MongoAggregatePump) New() Pump {

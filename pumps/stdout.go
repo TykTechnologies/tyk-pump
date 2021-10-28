@@ -21,9 +21,9 @@ type StdOutPump struct {
 
 // @PumpConf StdOut
 type StdOutConf struct {
-	EnvPrefix    string `mapstructure:"meta_env_prefix"`
-	Format       string `mapstructure:"format"`
-	LogFieldName string `mapstructure:"log_field_name"`
+	EnvPrefix    string `json:"meta_env_prefix" mapstructure:"meta_env_prefix"`
+	Format       string `json:"format" mapstructure:"format"`
+	LogFieldName string `json:"log_field_name" mapstructure:"log_field_name"`
 }
 
 func (s *StdOutPump) GetName() string {

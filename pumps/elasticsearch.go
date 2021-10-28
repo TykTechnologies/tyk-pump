@@ -32,29 +32,29 @@ var elasticsearchDefaultENV = PUMPS_ENV_PREFIX + "_ELASTICSEARCH" + PUMPS_ENV_ME
 
 // @PumpConf Elasticsearch
 type ElasticsearchConf struct {
-	EnvPrefix          string                  `mapstructure:"meta_env_prefix"`
-	IndexName          string                  `mapstructure:"index_name"`
-	ElasticsearchURL   string                  `mapstructure:"elasticsearch_url"`
-	EnableSniffing     bool                    `mapstructure:"use_sniffing"`
-	DocumentType       string                  `mapstructure:"document_type"`
-	RollingIndex       bool                    `mapstructure:"rolling_index"`
-	ExtendedStatistics bool                    `mapstructure:"extended_stats"`
-	GenerateID         bool                    `mapstructure:"generate_id"`
-	DecodeBase64       bool                    `mapstructure:"decode_base64"`
-	Version            string                  `mapstructure:"version"`
-	DisableBulk        bool                    `mapstructure:"disable_bulk"`
-	BulkConfig         ElasticsearchBulkConfig `mapstructure:"bulk_config"`
-	AuthAPIKeyID       string                  `mapstructure:"auth_api_key_id"`
-	AuthAPIKey         string                  `mapstructure:"auth_api_key"`
-	Username           string                  `mapstructure:"auth_basic_username"`
-	Password           string                  `mapstructure:"auth_basic_password"`
+	EnvPrefix          string                  `json:"meta_env_prefix" mapstructure:"meta_env_prefix"`
+	IndexName          string                  `json:"index_name" mapstructure:"index_name"`
+	ElasticsearchURL   string                  `json:"elasticsearch_url" mapstructure:"elasticsearch_url"`
+	EnableSniffing     bool                    `json:"use_sniffing" mapstructure:"use_sniffing"`
+	DocumentType       string                  `json:"document_type" mapstructure:"document_type"`
+	RollingIndex       bool                    `json:"rolling_index" mapstructure:"rolling_index"`
+	ExtendedStatistics bool                    `json:"extended_stats" mapstructure:"extended_stats"`
+	GenerateID         bool                    `json:"generate_id" mapstructure:"generate_id"`
+	DecodeBase64       bool                    `json:"decode_base64" mapstructure:"decode_base64"`
+	Version            string                  `json:"version" mapstructure:"version"`
+	DisableBulk        bool                    `json:"disable_bulk" mapstructure:"disable_bulk"`
+	BulkConfig         ElasticsearchBulkConfig `json:"bulk_config" mapstructure:"bulk_config"`
+	AuthAPIKeyID       string                  `json:"auth_api_key_id" mapstructure:"auth_api_key_id"`
+	AuthAPIKey         string                  `json:"auth_api_key" mapstructure:"auth_api_key"`
+	Username           string                  `json:"auth_basic_username" mapstructure:"auth_basic_username"`
+	Password           string                  `json:"auth_basic_password" mapstructure:"auth_basic_password"`
 }
 
 type ElasticsearchBulkConfig struct {
-	Workers       int `mapstructure:"workers"`
-	FlushInterval int `mapstructure:"flush_interval"`
-	BulkActions   int `mapstructure:"bulk_actions"`
-	BulkSize      int `mapstructure:"bulk_size"`
+	Workers       int `json:"workers" mapstructure:"workers"`
+	FlushInterval int `json:"flush_interval" mapstructure:"flush_interval"`
+	BulkActions   int `json:"bulk_actions" mapstructure:"bulk_actions"`
+	BulkSize      int `json:"bulk_size" mapstructure:"bulk_size"`
 }
 
 type ElasticsearchOperator interface {

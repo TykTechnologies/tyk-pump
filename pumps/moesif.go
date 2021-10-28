@@ -44,20 +44,20 @@ var moesifDefaultENV = PUMPS_ENV_PREFIX + "_MOESIF" + PUMPS_ENV_META_PREFIX
 
 // @PumpConf Moesif
 type MoesifConf struct {
-	EnvPrefix                  string                 `mapstructure:"meta_env_prefix"`
-	ApplicationID              string                 `mapstructure:"application_id"`
-	RequestHeaderMasks         []string               `mapstructure:"request_header_masks"`
-	ResponseHeaderMasks        []string               `mapstructure:"response_header_masks"`
-	RequestBodyMasks           []string               `mapstructure:"request_body_masks"`
-	ResponseBodyMasks          []string               `mapstructure:"response_body_masks"`
-	DisableCaptureRequestBody  bool                   `mapstructure:"disable_capture_request_body"`
-	DisableCaptureResponseBody bool                   `mapstructure:"disable_capture_response_body"`
-	UserIDHeader               string                 `mapstructure:"user_id_header"`
-	CompanyIDHeader            string                 `mapstructure:"company_id_header"`
-	EnableBulk                 bool                   `mapstructure:"enable_bulk"`
-	BulkConfig                 map[string]interface{} `mapstructure:"bulk_config"`
-	AuthorizationHeaderName    string                 `mapstructure:"authorization_header_name"`
-	AuthorizationUserIdField   string                 `mapstructure:"authorization_user_id_field"`
+	EnvPrefix                  string                 `json:"meta_env_prefix" mapstructure:"meta_env_prefix"`
+	ApplicationID              string                 `json:"application_id" mapstructure:"application_id"`
+	RequestHeaderMasks         []string               `json:"request_header_masks" mapstructure:"request_header_masks"`
+	ResponseHeaderMasks        []string               `json:"response_header_masks" mapstructure:"response_header_masks"`
+	RequestBodyMasks           []string               `json:"request_body_masks" mapstructure:"request_body_masks"`
+	ResponseBodyMasks          []string               `json:"response_body_masks" mapstructure:"response_body_masks"`
+	DisableCaptureRequestBody  bool                   `json:"disable_capture_request_body" mapstructure:"disable_capture_request_body"`
+	DisableCaptureResponseBody bool                   `json:"disable_capture_response_body" mapstructure:"disable_capture_response_body"`
+	UserIDHeader               string                 `json:"user_id_header" mapstructure:"user_id_header"`
+	CompanyIDHeader            string                 `json:"company_id_header" mapstructure:"company_id_header"`
+	EnableBulk                 bool                   `json:"enable_bulk" mapstructure:"enable_bulk"`
+	BulkConfig                 map[string]interface{} `json:"bulk_config" mapstructure:"bulk_config"`
+	AuthorizationHeaderName    string                 `json:"authorization_header_name" mapstructure:"authorization_header_name"`
+	AuthorizationUserIdField   string                 `json:"authorization_user_id_field" mapstructure:"authorization_user_id_field"`
 }
 
 func (p *MoesifPump) New() Pump {

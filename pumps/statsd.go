@@ -22,10 +22,10 @@ var statsdDefaultENV = PUMPS_ENV_PREFIX + "_STATSD" + PUMPS_ENV_META_PREFIX
 
 // @PumpConf Statsd
 type StatsdConf struct {
-	EnvPrefix string   `mapstructure:"meta_env_prefix"`
-	Address   string   `mapstructure:"address"`
-	Fields    []string `mapstructure:"fields"`
-	Tags      []string `mapstructure:"tags"`
+	EnvPrefix string   `json:"meta_env_prefix" mapstructure:"meta_env_prefix"`
+	Address   string   `json:"address" mapstructure:"address"`
+	Fields    []string `json:"fields" mapstructure:"fields"`
+	Tags      []string `json:"tags" mapstructure:"tags"`
 }
 
 func (s *StatsdPump) New() Pump {

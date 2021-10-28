@@ -39,23 +39,23 @@ func (e *EnvMapString) Decode(value string) error {
 }
 
 type RedisStorageConfig struct {
-	Type                       string       `mapstructure:"type"`
-	Host                       string       `mapstructure:"host"`
-	Port                       int          `mapstructure:"port"`
-	Hosts                      EnvMapString `mapstructure:"hosts"` // Deprecated: Use Addrs instead.
-	Addrs                      []string     `mapstructure:"addrs"`
-	MasterName                 string       `mapstructure:"master_name" json:"master_name"`
-	SentinelPassword           string       `mapstructure:"sentinel_password" json:"sentinel_password"`
-	Username                   string       `mapstructure:"username"`
-	Password                   string       `mapstructure:"password"`
-	Database                   int          `mapstructure:"database"`
-	Timeout                    int          `mapstructure:"timeout"`
-	MaxIdle                    int          `mapstructure:"optimisation_max_idle" json:"optimisation_max_idle"`
-	MaxActive                  int          `mapstructure:"optimisation_max_active" json:"optimisation_max_active"`
-	EnableCluster              bool         `mapstructure:"enable_cluster" json:"enable_cluster"`
-	RedisKeyPrefix             string       `mapstructure:"redis_key_prefix" json:"redis_key_prefix"`
-	RedisUseSSL                bool         `mapstructure:"redis_use_ssl" json:"redis_use_ssl"`
-	RedisSSLInsecureSkipVerify bool         `mapstructure:"redis_ssl_insecure_skip_verify" json:"redis_ssl_insecure_skip_verify"`
+	Type                       string       `json:"type" mapstructure:"type"`
+	Host                       string       `json:"host" mapstructure:"host"`
+	Port                       int          `json:"port" mapstructure:"port"`
+	Hosts                      EnvMapString `json:"hosts" mapstructure:"hosts"` // Deprecated: Use Addrs instead.
+	Addrs                      []string     `json:"addrs" mapstructure:"addrs"`
+	MasterName                 string       `json:"master_name" mapstructure:"master_name"`
+	SentinelPassword           string       `json:"sentinel_password" mapstructure:"sentinel_password"`
+	Username                   string       `json:"username" mapstructure:"username"`
+	Password                   string       `json:"password" mapstructure:"password"`
+	Database                   int          `json:"database" mapstructure:"database"`
+	Timeout                    int          `json:"timeout" mapstructure:"timeout"`
+	MaxIdle                    int          `json:"optimisation_max_idle" mapstructure:"optimisation_max_idle"`
+	MaxActive                  int          `json:"optimisation_max_active" mapstructure:"optimisation_max_active"`
+	EnableCluster              bool         `json:"enable_cluster" mapstructure:"enable_cluster"`
+	RedisKeyPrefix             string       `json:"redis_key_prefix" mapstructure:"redis_key_prefix"`
+	RedisUseSSL                bool         `json:"redis_use_ssl" mapstructure:"redis_use_ssl"`
+	RedisSSLInsecureSkipVerify bool         `json:"redis_ssl_insecure_skip_verify" mapstructure:"redis_ssl_insecure_skip_verify"`
 }
 
 // RedisClusterStorageManager is a storage manager that uses the redis database.

@@ -19,10 +19,10 @@ type GraylogPump struct {
 
 // @PumpConf Graylog
 type GraylogConf struct {
-	EnvPrefix   string   `mapstructure:"meta_env_prefix"`
-	GraylogHost string   `mapstructure:"host"`
-	GraylogPort int      `mapstructure:"port"`
-	Tags        []string `mapstructure:"tags"`
+	EnvPrefix   string   `json:"meta_env_prefix" mapstructure:"meta_env_prefix"`
+	GraylogHost string   `json:"host" mapstructure:"host"`
+	GraylogPort int      `json:"port" mapstructure:"port"`
+	Tags        []string `json:"tags" mapstructure:"tags"`
 }
 
 var graylogPrefix = "graylog-pump"

@@ -25,11 +25,11 @@ var (
 
 // @PumpConf Syslog
 type SyslogConf struct {
-	EnvPrefix   string `mapstructure:"meta_env_prefix"`
-	Transport   string `mapstructure:"transport"`
-	NetworkAddr string `mapstructure:"network_addr"`
-	LogLevel    int    `mapstructure:"log_level"`
-	Tag         string `mapstructure:"tag"`
+	EnvPrefix   string `json:"meta_env_prefix" mapstructure:"meta_env_prefix"`
+	Transport   string `json:"transport" mapstructure:"transport"`
+	NetworkAddr string `json:"network_addr" mapstructure:"network_addr"`
+	LogLevel    int    `json:"log_level" mapstructure:"log_level"`
+	Tag         string `json:"tag" mapstructure:"tag"`
 }
 
 func (s *SyslogPump) GetName() string {

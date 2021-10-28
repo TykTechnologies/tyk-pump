@@ -49,7 +49,7 @@ type SQLPump struct {
 
 // @PumpConf SQL
 type SQLConf struct {
-	EnvPrefix        string         `mapstructure:"meta_env_prefix"`
+	EnvPrefix        string         `json:"meta_env_prefix" mapstructure:"meta_env_prefix"`
 	Type             string         `json:"type" mapstructure:"type"`
 	ConnectionString string         `json:"connection_string" mapstructure:"connection_string"`
 	Postgres         PostgresConfig `json:"postgres" mapstructure:"postgres"`

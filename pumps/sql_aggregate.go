@@ -19,12 +19,12 @@ type SQLAggregatePumpConf struct {
 	// TYKCONFIGEXPAND
 	SQLConf `mapstructure:",squash"`
 
-	EnvPrefix               string   `mapstructure:"meta_env_prefix"`
-	TrackAllPaths           bool     `mapstructure:"track_all_paths"`
-	IgnoreTagPrefixList     []string `mapstructure:"ignore_tag_prefix_list"`
-	ThresholdLenTagList     int      `mapstructure:"threshold_len_tag_list"`
-	StoreAnalyticsPerMinute bool     `mapstructure:"store_analytics_per_minute"`
-	IgnoreAggregationsList  []string `mapstructure:"ignore_aggregations"`
+	EnvPrefix               string   `json:"meta_env_prefix" mapstructure:"meta_env_prefix"`
+	TrackAllPaths           bool     `json:"track_all_paths" mapstructure:"track_all_paths"`
+	IgnoreTagPrefixList     []string `json:"ignore_tag_prefix_list" mapstructure:"ignore_tag_prefix_list"`
+	ThresholdLenTagList     int      `json:"threshold_len_tag_list" mapstructure:"threshold_len_tag_list"`
+	StoreAnalyticsPerMinute bool     `json:"store_analytics_per_minute" mapstructure:"store_analytics_per_minute"`
+	IgnoreAggregationsList  []string `json:"ignore_aggregations" mapstructure:"ignore_aggregations"`
 }
 
 type SQLAggregatePump struct {

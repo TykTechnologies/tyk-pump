@@ -52,7 +52,7 @@ const (
 )
 
 type BaseMongoConf struct {
-	EnvPrefix                     string    `mapstructure:"meta_env_prefix"`
+	EnvPrefix                     string    `json:"meta_env_prefix" mapstructure:"meta_env_prefix"`
 	MongoURL                      string    `json:"mongo_url" mapstructure:"mongo_url"`
 	MongoUseSSL                   bool      `json:"mongo_use_ssl" mapstructure:"mongo_use_ssl"`
 	MongoSSLInsecureSkipVerify    bool      `json:"mongo_ssl_insecure_skip_verify" mapstructure:"mongo_ssl_insecure_skip_verify"`

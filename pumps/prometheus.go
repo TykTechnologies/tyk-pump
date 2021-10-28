@@ -27,9 +27,9 @@ type PrometheusPump struct {
 
 // @PumpConf Prometheus
 type PrometheusConf struct {
-	EnvPrefix string `mapstructure:"meta_env_prefix"`
-	Addr      string `mapstructure:"listen_address"`
-	Path      string `mapstructure:"path"`
+	EnvPrefix string `json:"meta_env_prefix" mapstructure:"meta_env_prefix"`
+	Addr      string `json:"listen_address" mapstructure:"listen_address"`
+	Path      string `json:"path" mapstructure:"path"`
 }
 
 var prometheusPrefix = "prometheus-pump"

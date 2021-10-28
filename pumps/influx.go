@@ -25,13 +25,13 @@ var (
 
 // @PumpConf Influx
 type InfluxConf struct {
-	EnvPrefix    string   `mapstructure:"meta_env_prefix"`
-	DatabaseName string   `mapstructure:"database_name"`
-	Addr         string   `mapstructure:"address"`
-	Username     string   `mapstructure:"username"`
-	Password     string   `mapstructure:"password"`
-	Fields       []string `mapstructure:"fields"`
-	Tags         []string `mapstructure:"tags"`
+	EnvPrefix    string   `json:"meta_env_prefix" mapstructure:"meta_env_prefix"`
+	DatabaseName string   `json:"database_name" mapstructure:"database_name"`
+	Addr         string   `json:"address" mapstructure:"address"`
+	Username     string   `json:"username" mapstructure:"username"`
+	Password     string   `json:"password" mapstructure:"password"`
+	Fields       []string `json:"fields" mapstructure:"fields"`
+	Tags         []string `json:"tags" mapstructure:"tags"`
 }
 
 func (i *InfluxPump) New() Pump {
