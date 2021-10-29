@@ -54,7 +54,9 @@ type RedisStorageConfig struct {
 	MaxActive                  int          `json:"optimisation_max_active" mapstructure:"optimisation_max_active"`
 	EnableCluster              bool         `json:"enable_cluster" mapstructure:"enable_cluster"`
 	RedisKeyPrefix             string       `json:"redis_key_prefix" mapstructure:"redis_key_prefix"`
+	// Setting this to true to use SSL when connecting to Redis
 	RedisUseSSL                bool         `json:"redis_use_ssl" mapstructure:"redis_use_ssl"`
+	// Set this to true to tell Pump to ignore Redis' cert validation
 	RedisSSLInsecureSkipVerify bool         `json:"redis_ssl_insecure_skip_verify" mapstructure:"redis_ssl_insecure_skip_verify"`
 }
 

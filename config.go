@@ -21,7 +21,51 @@ const PUMPS_ENV_META_PREFIX = pumps.PUMPS_ENV_META_PREFIX
 type PumpConfig struct {
 	Name                  string                     `json:"name"` // Deprecated
 	Type                  string                     `json:"type"`
+	// This feature adds a new configuration field in each pump called filters and its structure is the following:
+	// ```json
+	// "filters":{
+	//   "api_ids":[],
+	//   "org_ids":[],
+	//   "response_codes":[],
+	//   "skip_api_ids":[],
+	//   "skip_org_ids":[],
+	//   "skip_response_codes":[]
+	// }
+	// ```
+	// The fields api_ids, org_ids and response_codes works as allow list (APIs and orgs where we want to send the analytics records) and the fields skip_api_ids, skip_org_ids and skip_response_codes works as block list.
+
+	// The priority is always block list configurations over allow list.
+
+	// An example of configuration would be:
+	// ```json
+	// "csv": {
+	//  "type": "csv",
+	//  "filters": {
+	//    "org_ids": ["org1","org2"]
+	//  },
+	//  "meta": {
+	//    "csv_dir": "./bar"
+	//  }
+	// }
+	// ```
 	Filters               analytics.AnalyticsFilters `json:"filters"`
+	// You can configure a different timeout for each pump with the configuration option `timeout`. Its default value is 0 seconds, which means that the pump will wait for the writing operation forever. 
+
+	// An example of this configuration would be:
+	// ```json
+	// "mongo": {
+	//   "type": "mongo",
+	//   "timeout":5,
+	//   "meta": {
+	//     "collection_name": "tyk_analytics",
+	//     "mongo_url": "mongodb://username:password@{hostname:port},{hostname:port}/{db_name}"
+	//   }
+	// }
+	// ```
+	//
+	// In case that any pump doesn't have a configured timeout, and it takes more seconds to write than the value configured for the purge loop in the `purge_delay` config option, you will see the following warning message: `Pump PMP_NAME is taking more time than the value configured of purge_delay. You should try to set a timeout for this pump.`. 
+	//
+	// In case that you have a configured timeout, but it still takes more seconds to write than the value configured for the purge loop in the `purge_delay` config option, you will see the following warning message: `Pump PMP_NAME is taking more time than the value configured of purge_delay. You should try lowering the timeout configured for this pump.`. 
 	Timeout               int                        `json:"timeout"`
 	OmitDetailedRecording bool                       `json:"omit_detailed_recording"`
 	MaxRecordSize         int                        `json:"max_record_size"` // in bytes
@@ -37,9 +81,13 @@ type UptimeConf struct {
 }
 
 type TykPumpConfiguration struct {
+	// The number of seconds the Pump waits between checking for analytics data and purge it from Redis.
 	PurgeDelay              int                        `json:"purge_delay"`
+	// The maximum number of records to pull from Redis at a time. If it's unset or 0, all the analytics records in Redis are pulled. If it's setted, `storage_expiration_time` is used to reset the analytics record TTL.
 	PurgeChunk              int64                      `json:"purge_chunk"`
+	// The number of seconds for the analytics records TTL. It only works if `purge_chunk` is enabled. Defaults to 60 seconds.
 	StorageExpirationTime   int64                      `json:"storage_expiration_time"`
+	// Setting this to false will create a pump that pushes uptime data to Uptime Pump, so the Dashboard can read it. Disable by setting to true
 	DontPurgeUptimeData     bool                       `json:"dont_purge_uptime_data"`
 	UptimePumpConfig        UptimeConf                 `json:"uptime_pump_config"`
 	Pumps                   map[string]PumpConfig      `json:"pumps"`
@@ -47,11 +95,25 @@ type TykPumpConfiguration struct {
 	AnalyticsStorageConfig  storage.RedisStorageConfig `json:"analytics_storage_config"`
 	StatsdConnectionString  string                     `json:"statsd_connection_string"`
 	StatsdPrefix            string                     `json:"statsd_prefix"`
+	// Set the logger details for tyk-pump. The posible values are: `info`,`debug`,`error` and `warn`. By default, the log level is `info`. 
 	LogLevel                string                     `json:"log_level"`
+	// Set the logger format. The possible values are: `text` and `json`. By default, the log format is `text`.
 	LogFormat               string                     `json:"log_format"`
 	HealthCheckEndpointName string                     `json:"health_check_endpoint_name"`
 	HealthCheckEndpointPort int                        `json:"health_check_endpoint_port"`
+	// Setting this to true will avoid writing raw_request and raw_response fields for each request in pumps. Defaults to false.
 	OmitDetailedRecording   bool                       `json:"omit_detailed_recording"`
+	// `max_record_size` defines maximum size (in bytes) for Raw Request and Raw Response logs, this value defaults to 0. Is not set then tyk-pump will not trim any data and will store the full information.
+	// This can also be set at a pump level. For example:
+	// ```{.json}
+	// "csv": {
+	//   "type": "csv",
+	//   "max_record_size":1000,
+	//   "meta": {
+	//     "csv_dir": "./"
+	//   }
+	// }
+	// ```
 	MaxRecordSize           int                        `json:"max_record_size"` // in bytes
 	OmitConfigFile          bool                       `json:"omit_config_file"`
 }
