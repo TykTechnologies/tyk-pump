@@ -1,11 +1,17 @@
 package analytics
 
 type AnalyticsFilters struct {
+	// [ADD COMMENT]
 	OrgsIDs              []string `json:"org_ids"`
+	// [ADD COMMENT]
 	APIIDs               []string `json:"api_ids"`
+	// [ADD COMMENT]
 	ResponseCodes        []int    `json:"response_codes"`
+	// [ADD COMMENT]
 	SkippedOrgsIDs       []string `json:"skip_org_ids"`
+	// [ADD COMMENT]
 	SkippedAPIIDs        []string `json:"skip_api_ids"`
+	// [ADD COMMENT]
 	SkippedResponseCodes []int    `json:"skip_response_codes"`
 }
 

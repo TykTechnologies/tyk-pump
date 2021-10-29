@@ -21,7 +21,8 @@ type CSVPump struct {
 
 // @PumpConf CSV
 type CSVConf struct {
-	EnvPrefix string `json:"meta_env_prefix" mapstructure:"meta_env_prefix"`
+	EnvPrefix string `mapstructure:"meta_env_prefix"`
+	// [ADD COMMENT]
 	CSVDir    string `json:"csv_dir" mapstructure:"csv_dir"`
 }
 

@@ -52,13 +52,20 @@ const (
 )
 
 type BaseMongoConf struct {
-	EnvPrefix                     string    `json:"meta_env_prefix" mapstructure:"meta_env_prefix"`
+	EnvPrefix                     string    `mapstructure:"meta_env_prefix"`
+	// [ADD COMMENT]
 	MongoURL                      string    `json:"mongo_url" mapstructure:"mongo_url"`
+	// [ADD COMMENT]
 	MongoUseSSL                   bool      `json:"mongo_use_ssl" mapstructure:"mongo_use_ssl"`
+	// [ADD COMMENT]
 	MongoSSLInsecureSkipVerify    bool      `json:"mongo_ssl_insecure_skip_verify" mapstructure:"mongo_ssl_insecure_skip_verify"`
+	// [ADD COMMENT]
 	MongoSSLAllowInvalidHostnames bool      `json:"mongo_ssl_allow_invalid_hostnames" mapstructure:"mongo_ssl_allow_invalid_hostnames"`
+	// [ADD COMMENT]
 	MongoSSLCAFile                string    `json:"mongo_ssl_ca_file" mapstructure:"mongo_ssl_ca_file"`
+	// [ADD COMMENT]
 	MongoSSLPEMKeyfile            string    `json:"mongo_ssl_pem_keyfile" mapstructure:"mongo_ssl_pem_keyfile"`
+	// [ADD COMMENT]
 	MongoDBType                   MongoType `json:"mongo_db_type" mapstructure:"mongo_db_type"`
 }
 
@@ -77,10 +84,15 @@ type MongoConf struct {
 	// TYKCONFIGEXPAND
 	BaseMongoConf
 
+	// [ADD COMMENT]
 	CollectionName            string `json:"collection_name" mapstructure:"collection_name"`
+	// [ADD COMMENT]
 	MaxInsertBatchSizeBytes   int    `json:"max_insert_batch_size_bytes" mapstructure:"max_insert_batch_size_bytes"`
+	// [ADD COMMENT]
 	MaxDocumentSizeBytes      int    `json:"max_document_size_bytes" mapstructure:"max_document_size_bytes"`
+	// [ADD COMMENT]
 	CollectionCapMaxSizeBytes int    `json:"collection_cap_max_size_bytes" mapstructure:"collection_cap_max_size_bytes"`
+	// [ADD COMMENT]
 	CollectionCapEnable       bool   `json:"collection_cap_enable" mapstructure:"collection_cap_enable"`
 }
 

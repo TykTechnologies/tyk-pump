@@ -31,14 +31,69 @@ type DogStatsdPump struct {
 
 // @PumpConf DogStatsd
 type DogStatsdConf struct {
-	EnvPrefix            string   `json:"meta_env_prefix" mapstructure:"meta_env_prefix"`
+	EnvPrefix            string   `mapstructure:"meta_env_prefix"`
+	// prefix for your metrics to datadog
 	Namespace            string   `json:"namespace" mapstructure:"namespace"`
+	// address of the datadog agent including host & port
 	Address              string   `json:"address" mapstructure:"address"`
 	SampleRate           float64  `json:"sample_rate" mapstructure:"sample_rate"`
+	// Enable async UDS over UDP https://github.com/Datadog/datadog-go#unix-domain-sockets-client
 	AsyncUDS             bool     `json:"async_uds" mapstructure:"async_uds"`
+	// Integer write timeout in seconds if `async_uds: true`
 	AsyncUDSWriteTimeout int      `json:"async_uds_write_timeout_seconds" mapstructure:"async_uds_write_timeout_seconds"`
+	// Enable buffering of messages
 	Buffered             bool     `json:"buffered" mapstructure:"buffered"`
+	// Max messages in single datagram if `buffered: true`. Default 16
 	BufferedMaxMessages  int      `json:"buffered_max_messages" mapstructure:"buffered_max_messages"`
+	// List of tags to be added to the metric. The possible options are listed in the below example
+	//
+	// If no tag is specified the fallback behavior is to use the below tags:
+	// - `path`
+	// - `method`
+	// - `response_code`
+	// - `api_version`
+	// - `api_name`
+	// - `api_id`
+	// - `org_id`
+	// - `tracked`
+	// - `oauth_id`
+	//
+	// Note that this configuration can generate significant charges due to the unbound nature of the `path` tag.
+	//
+	// ```.json
+	// "dogstatsd": {
+	//   "type": "dogstatsd",
+	//   "meta": {
+	//     "address": "localhost:8125",
+	//     "namespace": "pump",
+	//     "async_uds": true,
+	//     "async_uds_write_timeout_seconds": 2,
+	//     "buffered": true,
+	//     "buffered_max_messages": 32,
+	//     "sample_rate": 0.5,
+	//     "tags": [
+	//       "method",
+	//       "response_code",
+	//       "api_version",
+	//       "api_name",
+	//       "api_id",
+	//       "org_id",
+	//       "tracked",
+	//       "path",
+	//       "oauth_id"
+	//     ]
+	//   }
+	// },
+	// ```
+	//
+	// On startup, you should see the loaded configs when initializing the dogstatsd pump
+	// ```
+	// [May 10 15:23:44]  INFO dogstatsd: initializing pump
+	// [May 10 15:23:44]  INFO dogstatsd: namespace: pump.
+	// [May 10 15:23:44]  INFO dogstatsd: sample_rate: 50%
+	// [May 10 15:23:44]  INFO dogstatsd: buffered: true, max_messages: 32
+	// [May 10 15:23:44]  INFO dogstatsd: async_uds: true, write_timeout: 2s
+	// ```
 	Tags                 []string `json:"tags" mapstructure:"tags"`
 }
 

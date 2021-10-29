@@ -26,9 +26,26 @@ var (
 // @PumpConf Syslog
 type SyslogConf struct {
 	EnvPrefix   string `json:"meta_env_prefix" mapstructure:"meta_env_prefix"`
+	// Possible values are `udp, tcp, tls` in string form
 	Transport   string `json:"transport" mapstructure:"transport"`
+	// Host & Port combination of your syslog daemon ie: `"localhost:5140"`
 	NetworkAddr string `json:"network_addr" mapstructure:"network_addr"`
+	// The severity level, an integer from 0-7, based off the Standard: [Syslog Severity Levels](https://en.wikipedia.org/wiki/Syslog#Severity_level)
 	LogLevel    int    `json:"log_level" mapstructure:"log_level"`
+	// Prefix tag
+	// 
+	// When working with FluentD, you should provide a [FluentD Parser](https://docs.fluentd.org/input/syslog) based on the OS you are using so that FluentD can correctly read the logs
+	// 
+	// ```.json
+	// "syslog": {
+	//   "name": "syslog",
+	//   "meta": {
+	//     "transport": "udp",
+	//     "network_addr": "localhost:5140",
+	//     "log_level": 6,
+	//     "tag": "syslog-pump"
+	//   }
+	// ```
 	Tag         string `json:"tag" mapstructure:"tag"`
 }
 

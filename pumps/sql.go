@@ -49,13 +49,20 @@ type SQLPump struct {
 
 // @PumpConf SQL
 type SQLConf struct {
-	EnvPrefix        string         `json:"meta_env_prefix" mapstructure:"meta_env_prefix"`
+	EnvPrefix        string         `mapstructure:"meta_env_prefix"`
+	// [ADD COMMENT]
 	Type             string         `json:"type" mapstructure:"type"`
+	// [ADD COMMENT]
 	ConnectionString string         `json:"connection_string" mapstructure:"connection_string"`
+	// [ADD COMMENT]
 	Postgres         PostgresConfig `json:"postgres" mapstructure:"postgres"`
+	// [ADD COMMENT]
 	Mysql            MysqlConfig    `json:"mysql" mapstructure:"mysql"`
+	// [ADD COMMENT]
 	TableSharding    bool           `json:"table_sharding" mapstructure:"table_sharding"`
+	// [ADD COMMENT]
 	LogLevel         string         `json:"log_level" mapstructure:"log_level"`
+	// [ADD COMMENT]
 	BatchSize        int            `json:"batch_size" mapstructure:"batch_size"`
 }
 

@@ -44,7 +44,7 @@ var moesifDefaultENV = PUMPS_ENV_PREFIX + "_MOESIF" + PUMPS_ENV_META_PREFIX
 
 // @PumpConf Moesif
 type MoesifConf struct {
-	EnvPrefix                  string                 `json:"meta_env_prefix" mapstructure:"meta_env_prefix"`
+	EnvPrefix                  string                 `mapstructure:"meta_env_prefix"`
 	// Moesif Application Id. You can find your Moesif Application Id from [_Moesif Dashboard_](https://www.moesif.com/) -> _Top Right Menu_ -> _API Keys_ . Moesif recommends creating separate Application Ids for each environment such as Production, Staging, and Development to keep data isolated. 
 	ApplicationID              string                 `json:"application_id" mapstructure:"application_id"`
 	// An option to mask a specific request header field. Type: String Array `[] string`.

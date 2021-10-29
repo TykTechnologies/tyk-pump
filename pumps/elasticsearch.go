@@ -32,7 +32,7 @@ var elasticsearchDefaultENV = PUMPS_ENV_PREFIX + "_ELASTICSEARCH" + PUMPS_ENV_ME
 
 // @PumpConf Elasticsearch
 type ElasticsearchConf struct {
-	EnvPrefix          string                  `json:"meta_env_prefix" mapstructure:"meta_env_prefix"`
+	EnvPrefix          string                  `mapstructure:"meta_env_prefix"`
 	// The name of the index that all the analytics data will be placed in. Defaults to "tyk_analytics"
 	IndexName          string                  `json:"index_name" mapstructure:"index_name"`
 	// If sniffing is disabled, the URL that all data will be sent to. Defaults to "http://localhost:9200"
@@ -45,7 +45,9 @@ type ElasticsearchConf struct {
 	RollingIndex       bool                    `json:"rolling_index" mapstructure:"rolling_index"`
 	// If set to true will include the following additional fields: Raw Request, Raw Response and User Agent.
 	ExtendedStatistics bool                    `json:"extended_stats" mapstructure:"extended_stats"`
+	// [ADD COMMENT]
 	GenerateID         bool                    `json:"generate_id" mapstructure:"generate_id"`
+	// [ADD COMMENT]
 	DecodeBase64       bool                    `json:"decode_base64" mapstructure:"decode_base64"`
 	// Specifies the ES version. Use "3" for ES 3.X, "5" for ES 5.X, "6" for ES 6.X, "7" for ES 7.X . Defaults to "3"
 	Version            string                  `json:"version" mapstructure:"version"`
@@ -53,9 +55,13 @@ type ElasticsearchConf struct {
 	DisableBulk        bool                    `json:"disable_bulk" mapstructure:"disable_bulk"`
 	// Batch writing trigger configuration. Each option is an OR with eachother:
 	BulkConfig         ElasticsearchBulkConfig `json:"bulk_config" mapstructure:"bulk_config"`
+	// [ADD COMMENT]
 	AuthAPIKeyID       string                  `json:"auth_api_key_id" mapstructure:"auth_api_key_id"`
+	// [ADD COMMENT]
 	AuthAPIKey         string                  `json:"auth_api_key" mapstructure:"auth_api_key"`
+	// [ADD COMMENT]
 	Username           string                  `json:"auth_basic_username" mapstructure:"auth_basic_username"`
+	// [ADD COMMENT]
 	Password           string                  `json:"auth_basic_password" mapstructure:"auth_basic_password"`
 }
 

@@ -19,7 +19,9 @@ const PUMPS_ENV_PREFIX = pumps.PUMPS_ENV_PREFIX
 const PUMPS_ENV_META_PREFIX = pumps.PUMPS_ENV_META_PREFIX
 
 type PumpConfig struct {
-	Name                  string                     `json:"name"` // Deprecated
+	// Deprecated. [ADD COMMENT]
+	Name                  string                     `json:"name"`
+	// [ADD COMMENT]
 	Type                  string                     `json:"type"`
 	// This feature adds a new configuration field in each pump called filters and its structure is the following:
 	// ```json
@@ -33,9 +35,9 @@ type PumpConfig struct {
 	// }
 	// ```
 	// The fields api_ids, org_ids and response_codes works as allow list (APIs and orgs where we want to send the analytics records) and the fields skip_api_ids, skip_org_ids and skip_response_codes works as block list.
-
+	//
 	// The priority is always block list configurations over allow list.
-
+	//
 	// An example of configuration would be:
 	// ```json
 	// "csv": {
@@ -50,7 +52,7 @@ type PumpConfig struct {
 	// ```
 	Filters               analytics.AnalyticsFilters `json:"filters"`
 	// You can configure a different timeout for each pump with the configuration option `timeout`. Its default value is 0 seconds, which means that the pump will wait for the writing operation forever. 
-
+	// 
 	// An example of this configuration would be:
 	// ```json
 	// "mongo": {
@@ -67,8 +69,11 @@ type PumpConfig struct {
 	//
 	// In case that you have a configured timeout, but it still takes more seconds to write than the value configured for the purge loop in the `purge_delay` config option, you will see the following warning message: `Pump PMP_NAME is taking more time than the value configured of purge_delay. You should try lowering the timeout configured for this pump.`. 
 	Timeout               int                        `json:"timeout"`
+	// [ADD COMMENT]
 	OmitDetailedRecording bool                       `json:"omit_detailed_recording"`
+	// [ADD COMMENT]
 	MaxRecordSize         int                        `json:"max_record_size"` // in bytes
+	// [ADD COMMENT]
 	Meta                  map[string]interface{}     `json:"meta"`            // TODO: convert this to json.RawMessage and use regular json.Unmarshal
 }
 
@@ -77,6 +82,7 @@ type UptimeConf struct {
 	pumps.MongoConf
 	// TYKCONFIGEXPAND
 	pumps.SQLConf
+	// [ADD COMMENT]
 	UptimeType string `json:"uptime_type"`
 }
 
@@ -89,17 +95,25 @@ type TykPumpConfiguration struct {
 	StorageExpirationTime   int64                      `json:"storage_expiration_time"`
 	// Setting this to false will create a pump that pushes uptime data to Uptime Pump, so the Dashboard can read it. Disable by setting to true
 	DontPurgeUptimeData     bool                       `json:"dont_purge_uptime_data"`
+	// [ADD COMMENT]
 	UptimePumpConfig        UptimeConf                 `json:"uptime_pump_config"`
+	// [ADD COMMENT]
 	Pumps                   map[string]PumpConfig      `json:"pumps"`
+	// [ADD COMMENT]
 	AnalyticsStorageType    string                     `json:"analytics_storage_type"`
+	// [ADD COMMENT]
 	AnalyticsStorageConfig  storage.RedisStorageConfig `json:"analytics_storage_config"`
+	// [ADD COMMENT]
 	StatsdConnectionString  string                     `json:"statsd_connection_string"`
+	// [ADD COMMENT]
 	StatsdPrefix            string                     `json:"statsd_prefix"`
 	// Set the logger details for tyk-pump. The posible values are: `info`,`debug`,`error` and `warn`. By default, the log level is `info`. 
 	LogLevel                string                     `json:"log_level"`
 	// Set the logger format. The possible values are: `text` and `json`. By default, the log format is `text`.
 	LogFormat               string                     `json:"log_format"`
+	// [ADD COMMENT]
 	HealthCheckEndpointName string                     `json:"health_check_endpoint_name"`
+	// [ADD COMMENT]
 	HealthCheckEndpointPort int                        `json:"health_check_endpoint_port"`
 	// Setting this to true will avoid writing raw_request and raw_response fields for each request in pumps. Defaults to false.
 	OmitDetailedRecording   bool                       `json:"omit_detailed_recording"`

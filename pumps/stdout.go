@@ -21,8 +21,10 @@ type StdOutPump struct {
 
 // @PumpConf StdOut
 type StdOutConf struct {
-	EnvPrefix    string `json:"meta_env_prefix" mapstructure:"meta_env_prefix"`
+	EnvPrefix    string `mapstructure:"meta_env_prefix"`
+	// Format of the analytics logs. Default is `text` if `json` is not explicitly specified. When JSON logging is used all pump logs to stdout will be JSON.
 	Format       string `json:"format" mapstructure:"format"`
+	// Root name of the JSON object the analytics record is nested in
 	LogFieldName string `json:"log_field_name" mapstructure:"log_field_name"`
 }
 

@@ -25,12 +25,18 @@ var (
 
 // @PumpConf Influx
 type InfluxConf struct {
-	EnvPrefix    string   `json:"meta_env_prefix" mapstructure:"meta_env_prefix"`
+	EnvPrefix    string   `mapstructure:"meta_env_prefix"`
+	// [ADD COMMENT]
 	DatabaseName string   `json:"database_name" mapstructure:"database_name"`
+	// [ADD COMMENT]
 	Addr         string   `json:"address" mapstructure:"address"`
+	// [ADD COMMENT]
 	Username     string   `json:"username" mapstructure:"username"`
+	// [ADD COMMENT]
 	Password     string   `json:"password" mapstructure:"password"`
+	// [ADD COMMENT]
 	Fields       []string `json:"fields" mapstructure:"fields"`
+	// [ADD COMMENT]
 	Tags         []string `json:"tags" mapstructure:"tags"`
 }
 

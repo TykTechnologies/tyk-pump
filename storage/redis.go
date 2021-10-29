@@ -39,20 +39,35 @@ func (e *EnvMapString) Decode(value string) error {
 }
 
 type RedisStorageConfig struct {
+	// [ADD COMMENT]
 	Type                       string       `json:"type" mapstructure:"type"`
+	// [ADD COMMENT]
 	Host                       string       `json:"host" mapstructure:"host"`
+	// [ADD COMMENT]
 	Port                       int          `json:"port" mapstructure:"port"`
-	Hosts                      EnvMapString `json:"hosts" mapstructure:"hosts"` // Deprecated: Use Addrs instead.
+	// Deprecated. Use Addrs instead. [ADD COMMENT]
+	Hosts                      EnvMapString `json:"hosts" mapstructure:"hosts"`
+	// [ADD COMMENT]
 	Addrs                      []string     `json:"addrs" mapstructure:"addrs"`
+	// [ADD COMMENT]
 	MasterName                 string       `json:"master_name" mapstructure:"master_name"`
+	// [ADD COMMENT]
 	SentinelPassword           string       `json:"sentinel_password" mapstructure:"sentinel_password"`
+	// [ADD COMMENT]
 	Username                   string       `json:"username" mapstructure:"username"`
+	// [ADD COMMENT]
 	Password                   string       `json:"password" mapstructure:"password"`
+	// [ADD COMMENT]
 	Database                   int          `json:"database" mapstructure:"database"`
+	// [ADD COMMENT]
 	Timeout                    int          `json:"timeout" mapstructure:"timeout"`
+	// [ADD COMMENT]
 	MaxIdle                    int          `json:"optimisation_max_idle" mapstructure:"optimisation_max_idle"`
+	// [ADD COMMENT]
 	MaxActive                  int          `json:"optimisation_max_active" mapstructure:"optimisation_max_active"`
+	// [ADD COMMENT]
 	EnableCluster              bool         `json:"enable_cluster" mapstructure:"enable_cluster"`
+	// [ADD COMMENT]
 	RedisKeyPrefix             string       `json:"redis_key_prefix" mapstructure:"redis_key_prefix"`
 	// Setting this to true to use SSL when connecting to Redis
 	RedisUseSSL                bool         `json:"redis_use_ssl" mapstructure:"redis_use_ssl"`
