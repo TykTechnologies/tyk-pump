@@ -25,15 +25,15 @@ type PostgresConfig struct {
 
 type MysqlConfig struct {
 	// Default size for string fields. Defaults to `256`.
-	DefaultStringSize 			uint 	`json:"default_string_size" mapstructure:"default_string_size"`
+	DefaultStringSize         uint `json:"default_string_size" mapstructure:"default_string_size"`
 	// Disable datetime precision, which not supported before MySQL 5.6.
-	DisableDatetimePrecision	bool 	`json:"disable_datetime_precision" mapstructure:"disable_datetime_precision"`
+	DisableDatetimePrecision  bool `json:"disable_datetime_precision" mapstructure:"disable_datetime_precision"`
 	// Drop & create when rename index, rename index not supported before MySQL 5.7, MariaDB.
-	DontSupportRenameIndex 		bool 	`json:"dont_support_rename_index" mapstructure:"dont_support_rename_index"`
+	DontSupportRenameIndex    bool `json:"dont_support_rename_index" mapstructure:"dont_support_rename_index"`
 	// `change` when rename column, rename column not supported before MySQL 8, MariaDB.
-	DontSupportRenameColumn 	bool 	`json:"dont_support_rename_column" mapstructure:"dont_support_rename_column"`
+	DontSupportRenameColumn   bool `json:"dont_support_rename_column" mapstructure:"dont_support_rename_column"`
 	// Auto configure based on currently MySQL version.
-	SkipInitializeWithVersion 	bool 	`json:"skip_initialize_with_version" mapstructure:"skip_initialize_with_version"`
+	SkipInitializeWithVersion bool `json:"skip_initialize_with_version" mapstructure:"skip_initialize_with_version"`
 }
 
 type SQLPump struct {
