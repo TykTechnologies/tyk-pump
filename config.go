@@ -20,7 +20,7 @@ const PUMPS_ENV_META_PREFIX = pumps.PUMPS_ENV_META_PREFIX
 
 type PumpConfig struct {
 	// Deprecated.
-	Name                  string                     `json:"-"`
+	Name                  string                     `json:"name"`
 	// Sets the pump type. This is needed when the pump key does not equal to the pump name type.
 	// For more information please see the (pumps)[#pumps] sections.
 	Type                  string                     `json:"type"`
@@ -98,7 +98,7 @@ type PumpConfig struct {
 	// ```
 	MaxRecordSize         int                        `json:"max_record_size"`
 	// [ADD COMMENT]
-	Meta                  map[string]interface{}     `json:"meta"`
+	Meta                  map[string]interface{}     `json:"meta"` // TODO: convert this to json.RawMessage and use regular json.Unmarshal
 }
 
 type UptimeConf struct {
