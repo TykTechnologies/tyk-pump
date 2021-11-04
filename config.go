@@ -102,7 +102,8 @@ type PumpConfig struct {
 }
 
 type UptimeConf struct {
-	// #### Mongo Uptime Pump
+	// TYKCONFIGHEADERSTART
+	// HEADER Mongo Uptime Pump
 	// In `uptime_pump_config` you can configure a mongo uptime pump. By default, the uptime pump
 	// is going to be `mongo` type, so it's not necessary to specify it here. The minimum required
 	// configurations for uptime pumps are:
@@ -111,9 +112,11 @@ type UptimeConf struct {
 	// `tyk_uptime_analytics`.
 	// * `mongo_url` - The uptime pump mongo connection url. It is usually something like
 	// "mongodb://username:password@{hostname:port},{hostname:port}/{db_name}".
+	// TYKCONFIGHEADEREND
 	// TYKCONFIGEXPAND
 	pumps.MongoConf
-	// #### SQL Uptime Pump
+	// TYKCONFIGHEADERSTART
+	// HEADER SQL Uptime Pump
 	// *Supported in Tyk Pump v1.5.0+*
 	//
 	// In `uptime_pump_config` you can configure a SQL uptime pump. To do that, you need to add the
@@ -132,6 +135,7 @@ type UptimeConf struct {
 	//
 	// Take into account that you can also set `log_level` field into the `uptime_pump_config` to `debug`,
 	// `info` or `warning`. By default, the SQL logger verbosity is `silent`.
+	// TYKCONFIGHEADEREND
 	// TYKCONFIGEXPAND
 	pumps.SQLConf
 	// Determines the uptime type. Options are `mongo` and `sql`. Defaults to `mongo`.
@@ -191,12 +195,13 @@ type TykPumpConfiguration struct {
 	// Set the logger format. The possible values are: `text` and `json`. By default, the log
 	// format is `text`.
 	LogFormat               string                     `json:"log_format"`
-	// ### Health Check
+	// TYKCONFIGHEADERSTART
+	// HEADER Health Check
 	//
 	// From v2.9.4, we have introduced a `/health` endpoint to confirm the Pump is running. You
 	// need to configure the following settings. This returns a HTTP 200 OK response if the Pump is
 	// running.
-	//
+	// TYKCONFIGHEADEREND
 	// The default is "hello".
 	HealthCheckEndpointName string                     `json:"health_check_endpoint_name"`
 	// The default port is 8083.
