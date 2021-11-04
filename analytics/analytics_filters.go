@@ -1,17 +1,17 @@
 package analytics
 
 type AnalyticsFilters struct {
-	// [ADD COMMENT]
+	// Filters pump data by the whitelisted org_ids.
 	OrgsIDs              []string `json:"org_ids"`
-	// [ADD COMMENT]
+	// Filters pump data by the whitelisted api_ids.
 	APIIDs               []string `json:"api_ids"`
-	// [ADD COMMENT]
+	// Filters pump data by the whitelisted response_codes.
 	ResponseCodes        []int    `json:"response_codes"`
-	// [ADD COMMENT]
+	// Filters pump data by the blacklisted org_ids.
 	SkippedOrgsIDs       []string `json:"skip_org_ids"`
-	// [ADD COMMENT]
+	// Filters pump data by the blacklisted api_ids.
 	SkippedAPIIDs        []string `json:"skip_api_ids"`
-	// [ADD COMMENT]
+	// Filters pump data by the blacklisted response_codes.
 	SkippedResponseCodes []int    `json:"skip_response_codes"`
 }
 

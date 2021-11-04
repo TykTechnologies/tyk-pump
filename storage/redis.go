@@ -39,39 +39,40 @@ func (e *EnvMapString) Decode(value string) error {
 }
 
 type RedisStorageConfig struct {
-	// [ADD COMMENT]
+	// Deprecated. [VALIDATE]
 	Type                       string       `json:"type" mapstructure:"type"`
-	// [ADD COMMENT]
+	// Redis host value.
 	Host                       string       `json:"host" mapstructure:"host"`
-	// [ADD COMMENT]
+	// Redis port value.
 	Port                       int          `json:"port" mapstructure:"port"`
-	// Deprecated. Use Addrs instead. [ADD COMMENT]
+	// Deprecated. Use Addrs instead.
 	Hosts                      EnvMapString `json:"hosts" mapstructure:"hosts"`
-	// [ADD COMMENT]
+	// Use instead of the host value if you're running a redis cluster with mutliple instances.
 	Addrs                      []string     `json:"addrs" mapstructure:"addrs"`
-	// [ADD COMMENT]
+	// Sentinel redis master name. [VALIDATE]
 	MasterName                 string       `json:"master_name" mapstructure:"master_name"`
-	// [ADD COMMENT]
+	// Sentinel redis password.
 	SentinelPassword           string       `json:"sentinel_password" mapstructure:"sentinel_password"`
-	// [ADD COMMENT]
+	// Redis username.
 	Username                   string       `json:"username" mapstructure:"username"`
-	// [ADD COMMENT]
+	// Redis password.
 	Password                   string       `json:"password" mapstructure:"password"`
-	// [ADD COMMENT]
+	// Redis database.
 	Database                   int          `json:"database" mapstructure:"database"`
-	// [ADD COMMENT]
+	// How long to allow for new connections to be established (in milliseconds). [VALIDATE]
 	Timeout                    int          `json:"timeout" mapstructure:"timeout"`
-	// [ADD COMMENT]
+	// Maximum number of idle connections in the pool. [VALIDATE]
 	MaxIdle                    int          `json:"optimisation_max_idle" mapstructure:"optimisation_max_idle"`
-	// [ADD COMMENT]
+	// Maximum number of connections allocated by the pool at a given time. When zero, there is no
+	// limit on the number of connections in the pool. [VALIDATE]
 	MaxActive                  int          `json:"optimisation_max_active" mapstructure:"optimisation_max_active"`
-	// [ADD COMMENT]
+	// Enable this option if you are using a redis cluster. Default is `false`. [VALIDATE]
 	EnableCluster              bool         `json:"enable_cluster" mapstructure:"enable_cluster"`
-	// [ADD COMMENT]
+	// Prefix the redis key names. [VALIDATE]
 	RedisKeyPrefix             string       `json:"redis_key_prefix" mapstructure:"redis_key_prefix"`
-	// Setting this to true to use SSL when connecting to Redis
+	// Setting this to true to use SSL when connecting to Redis.
 	RedisUseSSL                bool         `json:"redis_use_ssl" mapstructure:"redis_use_ssl"`
-	// Set this to true to tell Pump to ignore Redis' cert validation
+	// Set this to `true` to tell Pump to ignore Redis' cert validation.
 	RedisSSLInsecureSkipVerify bool         `json:"redis_ssl_insecure_skip_verify" mapstructure:"redis_ssl_insecure_skip_verify"`
 }
 
