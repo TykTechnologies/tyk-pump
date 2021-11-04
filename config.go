@@ -197,7 +197,6 @@ type TykPumpConfiguration struct {
 	LogFormat               string                     `json:"log_format"`
 	// TYKCONFIGHEADERSTART
 	// HEADER Health Check
-	//
 	// From v2.9.4, we have introduced a `/health` endpoint to confirm the Pump is running. You
 	// need to configure the following settings. This returns a HTTP 200 OK response if the Pump is
 	// running.
