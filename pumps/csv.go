@@ -22,7 +22,7 @@ type CSVPump struct {
 // @PumpConf CSV
 type CSVConf struct {
 	EnvPrefix string `mapstructure:"meta_env_prefix"`
-	// [ADD COMMENT]
+	// The directory where the CSV will be stored. [VALIDATE]
 	CSVDir    string `json:"csv_dir" mapstructure:"csv_dir"`
 }
 

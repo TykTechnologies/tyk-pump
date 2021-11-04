@@ -23,11 +23,22 @@ var statsdDefaultENV = PUMPS_ENV_PREFIX + "_STATSD" + PUMPS_ENV_META_PREFIX
 // @PumpConf Statsd
 type StatsdConf struct {
 	EnvPrefix string   `mapstructure:"meta_env_prefix"`
-	// [ADD COMMENT]
+	// Address of statsd including host & port.
 	Address   string   `json:"address" mapstructure:"address"`
 	// [ADD COMMENT]
 	Fields    []string `json:"fields" mapstructure:"fields"`
-	// [ADD COMMENT]
+	// List of tags to be added to the metric. The possible options are listed in the below example.
+	//
+	// If no tag is specified the fallback behavior is to use the below tags:
+	// - `path`
+	// - `method`
+	// - `response_code`
+	// - `api_version`
+	// - `api_name`
+	// - `api_id`
+	// - `org_id`
+	// - `tracked`
+	// - `oauth_id` [VALIDATE]
 	Tags      []string `json:"tags" mapstructure:"tags"`
 }
 

@@ -33,23 +33,31 @@ var elasticsearchDefaultENV = PUMPS_ENV_PREFIX + "_ELASTICSEARCH" + PUMPS_ENV_ME
 // @PumpConf Elasticsearch
 type ElasticsearchConf struct {
 	EnvPrefix          string                  `mapstructure:"meta_env_prefix"`
-	// The name of the index that all the analytics data will be placed in. Defaults to "tyk_analytics"
+	// The name of the index that all the analytics data will be placed in. Defaults to
+	// "tyk_analytics".
 	IndexName          string                  `json:"index_name" mapstructure:"index_name"`
-	// If sniffing is disabled, the URL that all data will be sent to. Defaults to "http://localhost:9200"
+	// If sniffing is disabled, the URL that all data will be sent to. Defaults to
+	// "http://localhost:9200".
 	ElasticsearchURL   string                  `json:"elasticsearch_url" mapstructure:"elasticsearch_url"`
-	// If sniffing is enabled, the "elasticsearch_url" will be used to make a request to get a list of all the nodes in the cluster, the returned addresses will then be used. Defaults to false
+	// If sniffing is enabled, the "elasticsearch_url" will be used to make a request to get a
+	// list of all the nodes in the cluster, the returned addresses will then be used. Defaults to
+	// `false`.
 	EnableSniffing     bool                    `json:"use_sniffing" mapstructure:"use_sniffing"`
-	// The type of the document that is created in ES. Defaults to "tyk_analytics"
+	// The type of the document that is created in ES. Defaults to "tyk_analytics".
 	DocumentType       string                  `json:"document_type" mapstructure:"document_type"`
-	// Appends the date to the end of the index name, so each days data is split into a different index name. E.g. tyk_analytics-2016.02.28 Defaults to false
+	// Appends the date to the end of the index name, so each days data is split into a different
+	// index name. E.g. tyk_analytics-2016.02.28. Defaults to `false`.
 	RollingIndex       bool                    `json:"rolling_index" mapstructure:"rolling_index"`
-	// If set to true will include the following additional fields: Raw Request, Raw Response and User Agent.
+	// If set to `true` will include the following additional fields: Raw Request, Raw Response and
+	// User Agent.
 	ExtendedStatistics bool                    `json:"extended_stats" mapstructure:"extended_stats"`
-	// [ADD COMMENT]
+	// When enabled, generate _id for outgoing records. This prevents duplicate records when
+	// retrying ES. [VALIDATE]
 	GenerateID         bool                    `json:"generate_id" mapstructure:"generate_id"`
-	// [ADD COMMENT]
+	// Allows for the base64 bits to be decode before being passed to ES.
 	DecodeBase64       bool                    `json:"decode_base64" mapstructure:"decode_base64"`
-	// Specifies the ES version. Use "3" for ES 3.X, "5" for ES 5.X, "6" for ES 6.X, "7" for ES 7.X . Defaults to "3"
+	// Specifies the ES version. Use "3" for ES 3.X, "5" for ES 5.X, "6" for ES 6.X, "7" for ES
+	// 7.X . Defaults to "3".
 	Version            string                  `json:"version" mapstructure:"version"`
 	// Disable batch writing. Defaults to false.
 	DisableBulk        bool                    `json:"disable_bulk" mapstructure:"disable_bulk"`
@@ -70,9 +78,11 @@ type ElasticsearchBulkConfig struct {
 	Workers       int `json:"workers" mapstructure:"workers"`
 	// Specifies the time in seconds to flush the data and send it to ES. Default disabled.
 	FlushInterval int `json:"flush_interval" mapstructure:"flush_interval"`
-	// Specifies the number of requests needed to flush the data and send it to ES. Defaults to 1000 requests. If it is needed, can be disabled with -1.
+	// Specifies the number of requests needed to flush the data and send it to ES. Defaults to
+	// 1000 requests. If it is needed, can be disabled with -1.
 	BulkActions   int `json:"bulk_actions" mapstructure:"bulk_actions"`
-	// Specifies the size (in bytes) needed to flush the data and send it to ES. Defaults to 5MB. If it is needed, can be disabled with -1.
+	// Specifies the size (in bytes) needed to flush the data and send it to ES. Defaults to 5MB.
+	// If it is needed, can be disabled with -1.
 	BulkSize      int `json:"bulk_size" mapstructure:"bulk_size"`
 }
 

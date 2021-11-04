@@ -26,17 +26,28 @@ var (
 // @PumpConf Influx
 type InfluxConf struct {
 	EnvPrefix    string   `mapstructure:"meta_env_prefix"`
-	// [ADD COMMENT]
+	// InfluxDB pump database name.
 	DatabaseName string   `json:"database_name" mapstructure:"database_name"`
-	// [ADD COMMENT]
+	// InfluxDB pump host.
 	Addr         string   `json:"address" mapstructure:"address"`
-	// [ADD COMMENT]
+	// InfluxDB pump database username. [VALIDATE]
 	Username     string   `json:"username" mapstructure:"username"`
-	// [ADD COMMENT]
+	// InfluxDB pump database password. [VALIDATE]
 	Password     string   `json:"password" mapstructure:"password"`
 	// [ADD COMMENT]
 	Fields       []string `json:"fields" mapstructure:"fields"`
-	// [ADD COMMENT]
+	// List of tags to be added to the metric. The possible options are listed in the below example.
+	//
+	// If no tag is specified the fallback behavior is to use the below tags:
+	// - `path`
+	// - `method`
+	// - `response_code`
+	// - `api_version`
+	// - `api_name`
+	// - `api_id`
+	// - `org_id`
+	// - `tracked`
+	// - `oauth_id` [VALIDATE]
 	Tags         []string `json:"tags" mapstructure:"tags"`
 }
 

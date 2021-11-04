@@ -34,11 +34,15 @@ type MongoAggregatePump struct {
 type MongoAggregateConf struct {
 	// TYKCONFIGEXPAND
 	BaseMongoConf
-	// [ADD COMMENT]
+	// If set to `true` your pump will store analytics to both your organisation defined
+	// collections z_tyk_analyticz_aggregate_{ORG ID} and your org-less tyk_analytics_aggregates
+	// collection. When set to 'false' your pump will only store analytics to your org defined
+	// collection.
 	UseMixedCollection      bool     `json:"use_mixed_collection" mapstructure:"use_mixed_collection"`
-	// [ADD COMMENT]
+	// Specifies if it should store aggregated data for all the endpoints. By default, `false`
+	// which means that only store aggregated data for `tracked endpoints`.
 	TrackAllPaths           bool     `json:"track_all_paths" mapstructure:"track_all_paths"`
-	// [ADD COMMENT]
+	// Specifies prefixes of tags that should be ignored.
 	IgnoreTagPrefixList     []string `json:"ignore_tag_prefix_list" mapstructure:"ignore_tag_prefix_list"`
 	// [ADD COMMENT]
 	ThresholdLenTagList     int      `json:"threshold_len_tag_list" mapstructure:"threshold_len_tag_list"`

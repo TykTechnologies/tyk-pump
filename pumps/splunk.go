@@ -50,31 +50,40 @@ type SplunkPump struct {
 // @PumpConf Splunk
 type SplunkPumpConfig struct {
 	EnvPrefix              string   `mapstructure:"meta_env_prefix"`
-	// address of the datadog agent including host & port
+	// Address of the datadog agent including host & port.
 	CollectorToken         string   `json:"collector_token" mapstructure:"collector_token"`
-	// endpoint the Pump will send analytics too.  Should look something like:
-	// 
-	// `https://splunk:8088/services/collector/event`
+	// Endpoint the Pump will send analytics too.  Should look something like:
+	// `https://splunk:8088/services/collector/event`.
 	CollectorURL           string   `json:"collector_url" mapstructure:"collector_url"`
 	// Controls whether the pump client verifies the Splunk server's certificate chain and host name.
 	SSLInsecureSkipVerify  bool     `json:"ssl_insecure_skip_verify" mapstructure:"ssl_insecure_skip_verify"`
-	// [ADD COMMENT]
+	// SSL cert file location. [VALIDATE]
 	SSLCertFile            string   `json:"ssl_cert_file" mapstructure:"ssl_cert_file"`
-	// [ADD COMMENT]
+	// SSL cert key location. [VALIDATE]
 	SSLKeyFile             string   `json:"ssl_key_file" mapstructure:"ssl_key_file"`
-	// [ADD COMMENT]
+	// URL to Splunk server. [VALIDATE]
 	SSLServerName          string   `json:"ssl_server_name" mapstructure:"ssl_server_name"`
-	// Controls whether the pump client should hide the API key. In case you still need substring of the value, check the next option. Type: Boolean. Default value is `false`.
+	// Controls whether the pump client should hide the API key. In case you still need substring
+	// of the value, check the next option. Default value is `false`.
 	ObfuscateAPIKeys       bool     `json:"obfuscate_api_keys" mapstructure:"obfuscate_api_keys"`
-	// Define the number of the characters from the end of the API key. The `obfuscate_api_keys` should be set to `true`. Type: Integer. Default value is `0`.
+	// Define the number of the characters from the end of the API key. The `obfuscate_api_keys`
+	// should be set to `true`. Default value is `0`.
 	ObfuscateAPIKeysLength int      `json:"obfuscate_api_keys_length" mapstructure:"obfuscate_api_keys_length"`
-	// Define which Analytics fields should participate in the Splunk event. Check the available fields in the example below. Type: String Array `[] string`. Default value is `["method", "path", "response_code", "api_key", "time_stamp", "api_version", "api_name", "api_id", "org_id", "oauth_id", "raw_request", "request_time", "raw_response", "ip_address"]`
+	// Define which Analytics fields should participate in the Splunk event. Check the available
+	// fields in the example below. Default value is `["method",
+	// "path", "response_code", "api_key", "time_stamp", "api_version", "api_name", "api_id",
+	// "org_id", "oauth_id", "raw_request", "request_time", "raw_response", "ip_address"]`.
 	Fields                 []string `json:"fields" mapstructure:"fields"`
-	// Choose which tags to be ignored by the Splunk Pump. Keep in mind that the tag name and value are hyphenated. Type:  Type: String Array `[] string`. Default value is `[]`
+	// Choose which tags to be ignored by the Splunk Pump. Keep in mind that the tag name and value
+	// are hyphenated. Default value is `[]`.
 	IgnoreTagPrefixList    []string `json:"ignore_tag_prefix_list" mapstructure:"ignore_tag_prefix_list"`
-	// If this is set to `true`, pump is going to send the analytics records in batch to Splunk. Type: Boolean. Default value is `false`.
+	// If this is set to `true`, pump is going to send the analytics records in batch to Splunk.
+	// Default value is `false`.
 	EnableBatch            bool     `json:"enable_batch" mapstructure:"enable_batch"`
-	// Max content length in bytes to be sent in batch requests. It should match the `max_content_length` configured in Splunk. If the purged analytics records size don't reach the amount of bytes, they're send anyways in each `purge_loop`. Type: Integer. Default value is 838860800 (~ 800 MB), the same default value as Splunk config.
+	// Max content length in bytes to be sent in batch requests. It should match the
+	// `max_content_length` configured in Splunk. If the purged analytics records size don't reach
+	// the amount of bytes, they're send anyways in each `purge_loop`. Default value is 838860800
+	// (~ 800 MB), the same default value as Splunk config.
 	BatchMaxContentLength  int      `json:"batch_max_content_length" mapstructure:"batch_max_content_length"`
 }
 

@@ -32,20 +32,21 @@ type DogStatsdPump struct {
 // @PumpConf DogStatsd
 type DogStatsdConf struct {
 	EnvPrefix            string   `mapstructure:"meta_env_prefix"`
-	// prefix for your metrics to datadog
+	// Prefix for your metrics to datadog.
 	Namespace            string   `json:"namespace" mapstructure:"namespace"`
-	// address of the datadog agent including host & port
+	// Address of the datadog agent including host & port.
 	Address              string   `json:"address" mapstructure:"address"`
+	// Defaults to `1` which equates to `100%` of requests. To sample at `50%`, set to `0.5`.
 	SampleRate           float64  `json:"sample_rate" mapstructure:"sample_rate"`
-	// Enable async UDS over UDP https://github.com/Datadog/datadog-go#unix-domain-sockets-client
+	// Enable async UDS over UDP https://github.com/Datadog/datadog-go#unix-domain-sockets-client.
 	AsyncUDS             bool     `json:"async_uds" mapstructure:"async_uds"`
-	// Integer write timeout in seconds if `async_uds: true`
+	// Integer write timeout in seconds if `async_uds: true`.
 	AsyncUDSWriteTimeout int      `json:"async_uds_write_timeout_seconds" mapstructure:"async_uds_write_timeout_seconds"`
-	// Enable buffering of messages
+	// Enable buffering of messages.
 	Buffered             bool     `json:"buffered" mapstructure:"buffered"`
-	// Max messages in single datagram if `buffered: true`. Default 16
+	// Max messages in single datagram if `buffered: true`. Default 16.
 	BufferedMaxMessages  int      `json:"buffered_max_messages" mapstructure:"buffered_max_messages"`
-	// List of tags to be added to the metric. The possible options are listed in the below example
+	// List of tags to be added to the metric. The possible options are listed in the below example.
 	//
 	// If no tag is specified the fallback behavior is to use the below tags:
 	// - `path`
@@ -58,9 +59,10 @@ type DogStatsdConf struct {
 	// - `tracked`
 	// - `oauth_id`
 	//
-	// Note that this configuration can generate significant charges due to the unbound nature of the `path` tag.
+	// Note that this configuration can generate significant charges due to the unbound nature of
+	// the `path` tag.
 	//
-	// ```.json
+	// ```{.json}
 	// "dogstatsd": {
 	//   "type": "dogstatsd",
 	//   "meta": {

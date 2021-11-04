@@ -45,34 +45,45 @@ var moesifDefaultENV = PUMPS_ENV_PREFIX + "_MOESIF" + PUMPS_ENV_META_PREFIX
 // @PumpConf Moesif
 type MoesifConf struct {
 	EnvPrefix                  string                 `mapstructure:"meta_env_prefix"`
-	// Moesif Application Id. You can find your Moesif Application Id from [_Moesif Dashboard_](https://www.moesif.com/) -> _Top Right Menu_ -> _API Keys_ . Moesif recommends creating separate Application Ids for each environment such as Production, Staging, and Development to keep data isolated. 
+	// Moesif Application Id. You can find your Moesif Application Id from
+	// [_Moesif Dashboard_](https://www.moesif.com/) -> _Top Right Menu_ -> _API Keys_ . Moesif
+	// recommends creating separate Application Ids for each environment such as Production,
+	// Staging, and Development to keep data isolated. 
 	ApplicationID              string                 `json:"application_id" mapstructure:"application_id"`
-	// An option to mask a specific request header field. Type: String Array `[] string`.
+	// An option to mask a specific request header field.
 	RequestHeaderMasks         []string               `json:"request_header_masks" mapstructure:"request_header_masks"`
-	// An option to mask a specific response header field. Type: String Array `[] string`.
+	// An option to mask a specific response header field.
 	ResponseHeaderMasks        []string               `json:"response_header_masks" mapstructure:"response_header_masks"`
-	// An option to mask a specific - request body field. Type: String Array `[] string`.
+	// An option to mask a specific - request body field.
 	RequestBodyMasks           []string               `json:"request_body_masks" mapstructure:"request_body_masks"`
-	// An option to mask a specific response body field. Type: String Array `[] string`.
+	// An option to mask a specific response body field.
 	ResponseBodyMasks          []string               `json:"response_body_masks" mapstructure:"response_body_masks"`
-	// An option to disable logging of request body. Type: Boolean. Default value is `false`.
+	// An option to disable logging of request body. Default value is `false`.
 	DisableCaptureRequestBody  bool                   `json:"disable_capture_request_body" mapstructure:"disable_capture_request_body"`
-	// An option to disable logging of response body. Type: Boolean. Default value is `false`.
+	// An option to disable logging of response body. Default value is `false`.
 	DisableCaptureResponseBody bool                   `json:"disable_capture_response_body" mapstructure:"disable_capture_response_body"`
-	// An optional field name to identify User from a request or response header. Type: String.
+	// An optional field name to identify User from a request or response header.
 	UserIDHeader               string                 `json:"user_id_header" mapstructure:"user_id_header"`
-	// An optional field name to identify Company (Account) from a request or response header. Type: String.
+	// An optional field name to identify Company (Account) from a request or response header.
 	CompanyIDHeader            string                 `json:"company_id_header" mapstructure:"company_id_header"`
 	// Set this to `true` to enable `bulk_config`.
 	EnableBulk                 bool                   `json:"enable_bulk" mapstructure:"enable_bulk"`
 	// Batch writing trigger configuration.
-	//   * `"event_queue_size"` - (optional) An optional field name which specify the maximum number of events to hold in queue before sending to Moesif. In case of network issues when not able to connect/send event to Moesif, skips adding new events to the queue to prevent memory overflow. Type: int. Default value is `10000`.
-	//   * `"batch_size"` - (optional) An optional field name which specify the maximum batch size when sending to Moesif. Type: int. Default value is `200`.
-	//   * `"timer_wake_up_seconds"` - (optional) An optional field which specifies a time (every n seconds) how often background thread runs to send events to moesif. Type: int. Default value is `2` seconds.
+	//   * `"event_queue_size"` - (optional) An optional field name which specify the maximum
+	// number of events to hold in queue before sending to Moesif. In case of network issues when
+	// not able to connect/send event to Moesif, skips adding new events to the queue to prevent
+	// memory overflow. Type: int. Default value is `10000`.
+	//   * `"batch_size"` - (optional) An optional field name which specify the maximum batch size
+	// when sending to Moesif. Type: int. Default value is `200`.
+	//   * `"timer_wake_up_seconds"` - (optional) An optional field which specifies a time (every n
+	// seconds) how often background thread runs to send events to moesif. Type: int. Default value
+	// is `2` seconds.
 	BulkConfig                 map[string]interface{} `json:"bulk_config" mapstructure:"bulk_config"`
-	// An optional request header field name to used to identify the User in Moesif. Type: String. Default value is `authorization`.
+	// An optional request header field name to used to identify the User in Moesif. Default value
+	// is `authorization`.
 	AuthorizationHeaderName    string                 `json:"authorization_header_name" mapstructure:"authorization_header_name"`
-	// An optional field name use to parse the User from authorization header in Moesif. Type: String. Default value is `sub`.
+	// An optional field name use to parse the User from authorization header in Moesif. Default
+	// value is `sub`.
 	AuthorizationUserIdField   string                 `json:"authorization_user_id_field" mapstructure:"authorization_user_id_field"`
 }
 

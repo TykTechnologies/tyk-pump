@@ -53,17 +53,20 @@ const (
 
 type BaseMongoConf struct {
 	EnvPrefix                     string    `mapstructure:"meta_env_prefix"`
-	// [ADD COMMENT]
+	// The full URL to your MongoDB instance, this can be a clustered instance if necessary and
+	// should include the database and username / password data.
 	MongoURL                      string    `json:"mongo_url" mapstructure:"mongo_url"`
-	// [ADD COMMENT]
+	// Set to true to enable Mongo SSL connection.
 	MongoUseSSL                   bool      `json:"mongo_use_ssl" mapstructure:"mongo_use_ssl"`
-	// [ADD COMMENT]
+	// Allows the use of self-signed certificates when connecting to an encrypted MongoDB database.
 	MongoSSLInsecureSkipVerify    bool      `json:"mongo_ssl_insecure_skip_verify" mapstructure:"mongo_ssl_insecure_skip_verify"`
-	// [ADD COMMENT]
+	// Ignore hostname check when it differs from the original (for example with SSH tunneling).
+	// The rest of the TLS verification will still be performed.
 	MongoSSLAllowInvalidHostnames bool      `json:"mongo_ssl_allow_invalid_hostnames" mapstructure:"mongo_ssl_allow_invalid_hostnames"`
-	// [ADD COMMENT]
+	// Path to the PEM file with trusted root certificates
 	MongoSSLCAFile                string    `json:"mongo_ssl_ca_file" mapstructure:"mongo_ssl_ca_file"`
-	// [ADD COMMENT]
+	// Path to the PEM file which contains both client certificate and private key. This is
+	// required for Mutual TLS.
 	MongoSSLPEMKeyfile            string    `json:"mongo_ssl_pem_keyfile" mapstructure:"mongo_ssl_pem_keyfile"`
 	// [ADD COMMENT]
 	MongoDBType                   MongoType `json:"mongo_db_type" mapstructure:"mongo_db_type"`
