@@ -1,4 +1,4 @@
-package main
+package config
 
 import (
 	"encoding/json"
@@ -7,7 +7,9 @@ import (
 	"os"
 	"strings"
 
+	"github.com/TykTechnologies/tyk-pump/logger"
 	"github.com/TykTechnologies/tyk-pump/pumps"
+	"github.com/fatih/structs"
 	"github.com/kelseyhightower/envconfig"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
@@ -17,6 +19,7 @@ import (
 const ENV_PREVIX = "TYK_PMP"
 const PUMPS_ENV_PREFIX = pumps.PUMPS_ENV_PREFIX
 const PUMPS_ENV_META_PREFIX = pumps.PUMPS_ENV_META_PREFIX
+var log = logger.GetLogger()
 
 type PumpConfig struct {
 	Name                  string                     `json:"name"` // Deprecated
@@ -41,7 +44,7 @@ type TykPumpConfiguration struct {
 	DontPurgeUptimeData     bool                       `json:"dont_purge_uptime_data"`
 	UptimePumpConfig        UptimeConf                 `json:"uptime_pump_config"`
 	Pumps                   map[string]PumpConfig      `json:"pumps"`
-	AnalyticsStorageType    string                     `json:"analytics_storage_type"`
+	AnalyticsStorageType    string                     `json:"analytics_storage_type" sensitive:"true"`
 	AnalyticsStorageConfig  storage.RedisStorageConfig `json:"analytics_storage_config"`
 	StatsdConnectionString  string                     `json:"statsd_connection_string"`
 	StatsdPrefix            string                     `json:"statsd_prefix"`
@@ -150,4 +153,16 @@ func (cfg *TykPumpConfiguration) LoadPumpsByEnv() error {
 		cfg.Pumps[pmpName] = pmp
 	}
 	return nil
+}
+
+func (cfg *TykPumpConfiguration)  BlurSensitiveData() TykPumpConfiguration{
+	newConf := *cfg
+	fields := structs.Fields(&newConf)
+	for _, field := range fields {
+		sensitive := field.Tag("sensitive")
+		if sensitive != ""{
+			field.Set("***")
+		}
+	}
+	return newConf
 }

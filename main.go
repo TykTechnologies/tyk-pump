@@ -15,6 +15,7 @@ import (
 	prefixed "github.com/TykTechnologies/logrus-prefixed-formatter"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/TykTechnologies/tyk-pump/analytics/demo"
+	"github.com/TykTechnologies/tyk-pump/config"
 	logger "github.com/TykTechnologies/tyk-pump/logger"
 	"github.com/TykTechnologies/tyk-pump/pumps"
 	"github.com/TykTechnologies/tyk-pump/server"
@@ -24,7 +25,7 @@ import (
 	msgpack "gopkg.in/vmihailenco/msgpack.v2"
 )
 
-var SystemConfig TykPumpConfiguration
+var SystemConfig config.TykPumpConfiguration
 var AnalyticsStore storage.AnalyticsStorage
 var UptimeStorage storage.AnalyticsStorage
 var Pumps []pumps.Pump
@@ -45,11 +46,11 @@ var (
 )
 
 func Init() {
-	SystemConfig = TykPumpConfiguration{}
+	SystemConfig = config.TykPumpConfiguration{}
 
 	kingpin.Parse()
 	log.Formatter = new(prefixed.TextFormatter)
-	LoadConfig(conf, &SystemConfig)
+	config.LoadConfig(conf, &SystemConfig)
 
 	if SystemConfig.LogFormat == "json" {
 		log.Formatter = &logrus.JSONFormatter{}
@@ -384,7 +385,7 @@ func execPumpWriting(wg *sync.WaitGroup, pmp pumps.Pump, keys *[]interface{}, pu
 func main() {
 	Init()
 	SetupInstrumentation()
-	go server.ServeHealthCheck(SystemConfig.HealthCheckEndpointName, SystemConfig.HealthCheckEndpointPort)
+	go server.Serve(SystemConfig)
 
 	// Store version which will be read by dashboard and sent to
 	// vclu(version check and licecnse utilisation) service
