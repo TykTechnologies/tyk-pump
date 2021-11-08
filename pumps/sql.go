@@ -25,13 +25,13 @@ type PostgresConfig struct {
 
 type MysqlConfig struct {
 	// Default size for string fields. Defaults to `256`.
-	DefaultStringSize         uint `json:"default_string_size" mapstructure:"default_string_size"`
+	DefaultStringSize uint `json:"default_string_size" mapstructure:"default_string_size"`
 	// Disable datetime precision, which not supported before MySQL 5.6.
-	DisableDatetimePrecision  bool `json:"disable_datetime_precision" mapstructure:"disable_datetime_precision"`
+	DisableDatetimePrecision bool `json:"disable_datetime_precision" mapstructure:"disable_datetime_precision"`
 	// Drop & create when rename index, rename index not supported before MySQL 5.7, MariaDB.
-	DontSupportRenameIndex    bool `json:"dont_support_rename_index" mapstructure:"dont_support_rename_index"`
+	DontSupportRenameIndex bool `json:"dont_support_rename_index" mapstructure:"dont_support_rename_index"`
 	// `change` when rename column, rename column not supported before MySQL 8, MariaDB.
-	DontSupportRenameColumn   bool `json:"dont_support_rename_column" mapstructure:"dont_support_rename_column"`
+	DontSupportRenameColumn bool `json:"dont_support_rename_column" mapstructure:"dont_support_rename_column"`
 	// Auto configure based on currently MySQL version.
 	SkipInitializeWithVersion bool `json:"skip_initialize_with_version" mapstructure:"skip_initialize_with_version"`
 }
@@ -49,27 +49,27 @@ type SQLPump struct {
 
 // @PumpConf SQL
 type SQLConf struct {
-	EnvPrefix        string         `mapstructure:"meta_env_prefix"`
-	// The supported and tested types are `mysql` and `postgres`. [VALIDATE]
-	Type             string         `json:"type" mapstructure:"type"`
+	EnvPrefix string `mapstructure:"meta_env_prefix"`
+	// The supported and tested types are `sqlite` and `postgres`.
+	Type string `json:"type" mapstructure:"type"`
 	// Specifies the connection string to the database.
-	ConnectionString string         `json:"connection_string" mapstructure:"connection_string"`
+	ConnectionString string `json:"connection_string" mapstructure:"connection_string"`
 	// Postgres configurations.
-	Postgres         PostgresConfig `json:"postgres" mapstructure:"postgres"`
+	Postgres PostgresConfig `json:"postgres" mapstructure:"postgres"`
 	// Mysql configurations.
-	Mysql            MysqlConfig    `json:"mysql" mapstructure:"mysql"`
+	Mysql MysqlConfig `json:"mysql" mapstructure:"mysql"`
 	// Specifies if all the analytics records are going to be stored in one table or in multiple
 	// tables (one per day). By default, `false`. If `false`, all the records are going to be
 	// stored in `tyk_aggregated` table. Instead, if it's `true`, all the records of the day are
 	// going to be stored in `tyk_aggregated_YYYYMMDD` table, where `YYYYMMDD` is going to change
 	// depending on the date.
-	TableSharding    bool           `json:"table_sharding" mapstructure:"table_sharding"`
+	TableSharding bool `json:"table_sharding" mapstructure:"table_sharding"`
 	// Specifies the SQL log verbosity. The possible values are: `info`,`error` and `warning`. By
 	// default, the value is `silent`, which means that it won't log any SQL query.
-	LogLevel         string         `json:"log_level" mapstructure:"log_level"`
+	LogLevel string `json:"log_level" mapstructure:"log_level"`
 	// Specifies the amount of records that are going to be written each batch. Type int. By
 	// default, it writes 1000 records max per batch.
-	BatchSize        int            `json:"batch_size" mapstructure:"batch_size"`
+	BatchSize int `json:"batch_size" mapstructure:"batch_size"`
 }
 
 func Dialect(cfg *SQLConf) (gorm.Dialector, error) {

@@ -22,11 +22,11 @@ var statsdDefaultENV = PUMPS_ENV_PREFIX + "_STATSD" + PUMPS_ENV_META_PREFIX
 
 // @PumpConf Statsd
 type StatsdConf struct {
-	EnvPrefix string   `mapstructure:"meta_env_prefix"`
+	EnvPrefix string `mapstructure:"meta_env_prefix"`
 	// Address of statsd including host & port.
-	Address   string   `json:"address" mapstructure:"address"`
-	// [ADD COMMENT]
-	Fields    []string `json:"fields" mapstructure:"fields"`
+	Address string `json:"address" mapstructure:"address"`
+	// Define which Analytics fields should have its own metric calculation. This should be set to ["request_time"]. [VALIDATE]
+	Fields []string `json:"fields" mapstructure:"fields"`
 	// List of tags to be added to the metric. The possible options are listed in the below example.
 	//
 	// If no tag is specified the fallback behavior is to use the below tags:
@@ -39,7 +39,7 @@ type StatsdConf struct {
 	// - `org_id`
 	// - `tracked`
 	// - `oauth_id` [VALIDATE]
-	Tags      []string `json:"tags" mapstructure:"tags"`
+	Tags []string `json:"tags" mapstructure:"tags"`
 }
 
 func (s *StatsdPump) New() Pump {

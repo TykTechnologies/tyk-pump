@@ -32,58 +32,58 @@ var elasticsearchDefaultENV = PUMPS_ENV_PREFIX + "_ELASTICSEARCH" + PUMPS_ENV_ME
 
 // @PumpConf Elasticsearch
 type ElasticsearchConf struct {
-	EnvPrefix          string                  `mapstructure:"meta_env_prefix"`
+	EnvPrefix string `mapstructure:"meta_env_prefix"`
 	// The name of the index that all the analytics data will be placed in. Defaults to
 	// "tyk_analytics".
-	IndexName          string                  `json:"index_name" mapstructure:"index_name"`
+	IndexName string `json:"index_name" mapstructure:"index_name"`
 	// If sniffing is disabled, the URL that all data will be sent to. Defaults to
 	// "http://localhost:9200".
-	ElasticsearchURL   string                  `json:"elasticsearch_url" mapstructure:"elasticsearch_url"`
+	ElasticsearchURL string `json:"elasticsearch_url" mapstructure:"elasticsearch_url"`
 	// If sniffing is enabled, the "elasticsearch_url" will be used to make a request to get a
 	// list of all the nodes in the cluster, the returned addresses will then be used. Defaults to
 	// `false`.
-	EnableSniffing     bool                    `json:"use_sniffing" mapstructure:"use_sniffing"`
+	EnableSniffing bool `json:"use_sniffing" mapstructure:"use_sniffing"`
 	// The type of the document that is created in ES. Defaults to "tyk_analytics".
-	DocumentType       string                  `json:"document_type" mapstructure:"document_type"`
+	DocumentType string `json:"document_type" mapstructure:"document_type"`
 	// Appends the date to the end of the index name, so each days data is split into a different
 	// index name. E.g. tyk_analytics-2016.02.28. Defaults to `false`.
-	RollingIndex       bool                    `json:"rolling_index" mapstructure:"rolling_index"`
+	RollingIndex bool `json:"rolling_index" mapstructure:"rolling_index"`
 	// If set to `true` will include the following additional fields: Raw Request, Raw Response and
 	// User Agent.
-	ExtendedStatistics bool                    `json:"extended_stats" mapstructure:"extended_stats"`
+	ExtendedStatistics bool `json:"extended_stats" mapstructure:"extended_stats"`
 	// When enabled, generate _id for outgoing records. This prevents duplicate records when
-	// retrying ES. [VALIDATE]
-	GenerateID         bool                    `json:"generate_id" mapstructure:"generate_id"`
+	// retrying ES.
+	GenerateID bool `json:"generate_id" mapstructure:"generate_id"`
 	// Allows for the base64 bits to be decode before being passed to ES.
-	DecodeBase64       bool                    `json:"decode_base64" mapstructure:"decode_base64"`
+	DecodeBase64 bool `json:"decode_base64" mapstructure:"decode_base64"`
 	// Specifies the ES version. Use "3" for ES 3.X, "5" for ES 5.X, "6" for ES 6.X, "7" for ES
 	// 7.X . Defaults to "3".
-	Version            string                  `json:"version" mapstructure:"version"`
+	Version string `json:"version" mapstructure:"version"`
 	// Disable batch writing. Defaults to false.
-	DisableBulk        bool                    `json:"disable_bulk" mapstructure:"disable_bulk"`
+	DisableBulk bool `json:"disable_bulk" mapstructure:"disable_bulk"`
 	// Batch writing trigger configuration. Each option is an OR with eachother:
-	BulkConfig         ElasticsearchBulkConfig `json:"bulk_config" mapstructure:"bulk_config"`
-	// [ADD COMMENT]
-	AuthAPIKeyID       string                  `json:"auth_api_key_id" mapstructure:"auth_api_key_id"`
-	// [ADD COMMENT]
-	AuthAPIKey         string                  `json:"auth_api_key" mapstructure:"auth_api_key"`
-	// [ADD COMMENT]
-	Username           string                  `json:"auth_basic_username" mapstructure:"auth_basic_username"`
-	// [ADD COMMENT]
-	Password           string                  `json:"auth_basic_password" mapstructure:"auth_basic_password"`
+	BulkConfig ElasticsearchBulkConfig `json:"bulk_config" mapstructure:"bulk_config"`
+	// API Key ID used for APIKey auth in ES. It's send to ES in the Authorization header as ApiKey base64(auth_api_key_id:auth_api_key)
+	AuthAPIKeyID string `json:"auth_api_key_id" mapstructure:"auth_api_key_id"`
+	// API Key used for APIKey auth in ES. It's send to ES in the Authorization header as ApiKey base64(auth_api_key_id:auth_api_key)
+	AuthAPIKey string `json:"auth_api_key" mapstructure:"auth_api_key"`
+	// Basic auth username. It's send to ES in the Authorization header as username:password encoded in base64.
+	Username string `json:"auth_basic_username" mapstructure:"auth_basic_username"`
+	// Basic auth password. It's send to ES in the Authorization header as username:password encoded in base64.
+	Password string `json:"auth_basic_password" mapstructure:"auth_basic_password"`
 }
 
 type ElasticsearchBulkConfig struct {
 	// Number of workers. Defaults to 1.
-	Workers       int `json:"workers" mapstructure:"workers"`
+	Workers int `json:"workers" mapstructure:"workers"`
 	// Specifies the time in seconds to flush the data and send it to ES. Default disabled.
 	FlushInterval int `json:"flush_interval" mapstructure:"flush_interval"`
 	// Specifies the number of requests needed to flush the data and send it to ES. Defaults to
 	// 1000 requests. If it is needed, can be disabled with -1.
-	BulkActions   int `json:"bulk_actions" mapstructure:"bulk_actions"`
+	BulkActions int `json:"bulk_actions" mapstructure:"bulk_actions"`
 	// Specifies the size (in bytes) needed to flush the data and send it to ES. Defaults to 5MB.
 	// If it is needed, can be disabled with -1.
-	BulkSize      int `json:"bulk_size" mapstructure:"bulk_size"`
+	BulkSize int `json:"bulk_size" mapstructure:"bulk_size"`
 }
 
 type ElasticsearchOperator interface {

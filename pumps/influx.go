@@ -25,17 +25,20 @@ var (
 
 // @PumpConf Influx
 type InfluxConf struct {
-	EnvPrefix    string   `mapstructure:"meta_env_prefix"`
+	EnvPrefix string `mapstructure:"meta_env_prefix"`
 	// InfluxDB pump database name.
-	DatabaseName string   `json:"database_name" mapstructure:"database_name"`
+	DatabaseName string `json:"database_name" mapstructure:"database_name"`
 	// InfluxDB pump host.
-	Addr         string   `json:"address" mapstructure:"address"`
-	// InfluxDB pump database username. [VALIDATE]
-	Username     string   `json:"username" mapstructure:"username"`
-	// InfluxDB pump database password. [VALIDATE]
-	Password     string   `json:"password" mapstructure:"password"`
-	// [ADD COMMENT]
-	Fields       []string `json:"fields" mapstructure:"fields"`
+	Addr string `json:"address" mapstructure:"address"`
+	// InfluxDB pump database username.
+	Username string `json:"username" mapstructure:"username"`
+	// InfluxDB pump database password.
+	Password string `json:"password" mapstructure:"password"`
+	// Define which Analytics fields should be sent to InfluxDB. Check the available
+	// fields in the example below. Default value is `["method",
+	// "path", "response_code", "api_key", "time_stamp", "api_version", "api_name", "api_id",
+	// "org_id", "oauth_id", "raw_request", "request_time", "raw_response", "ip_address"]`.
+	Fields []string `json:"fields" mapstructure:"fields"`
 	// List of tags to be added to the metric. The possible options are listed in the below example.
 	//
 	// If no tag is specified the fallback behavior is to use the below tags:
@@ -48,7 +51,7 @@ type InfluxConf struct {
 	// - `org_id`
 	// - `tracked`
 	// - `oauth_id` [VALIDATE]
-	Tags         []string `json:"tags" mapstructure:"tags"`
+	Tags []string `json:"tags" mapstructure:"tags"`
 }
 
 func (i *InfluxPump) New() Pump {
@@ -144,7 +147,6 @@ func (i *InfluxPump) WriteData(ctx context.Context, data []interface{}) error {
 			if err != nil {
 				tag = ""
 			} else {
-
 				// convert and remove surrounding quotes from tag value
 				tag = strings.Trim(string(b), "\"")
 			}

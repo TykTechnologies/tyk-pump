@@ -19,14 +19,15 @@ type GraylogPump struct {
 
 // @PumpConf Graylog
 type GraylogConf struct {
-	EnvPrefix   string   `mapstructure:"meta_env_prefix"`
+	EnvPrefix string `mapstructure:"meta_env_prefix"`
 	// Graylog host.
-	GraylogHost string   `json:"host" mapstructure:"host"`
+	GraylogHost string `json:"host" mapstructure:"host"`
 	// Graylog port.
-	GraylogPort int      `json:"port" mapstructure:"port"`
+	GraylogPort int `json:"port" mapstructure:"port"`
 	// List of tags to be added to the metric. The possible options are listed in the below example.
 	//
-	// If no tag is specified the fallback behavior is to use the below tags:
+	// If no tag is specified the fallback behaviour is to don't send anything.
+	// The possible values are:
 	// - `path`
 	// - `method`
 	// - `response_code`
@@ -35,8 +36,12 @@ type GraylogConf struct {
 	// - `api_id`
 	// - `org_id`
 	// - `tracked`
-	// - `oauth_id` [VALIDATE]
-	Tags        []string `json:"tags" mapstructure:"tags"`
+	// - `oauth_id`
+	// - `raw_request`
+	// - `raw_response`
+	// - `request_time`
+	// - `ip_address`
+	Tags []string `json:"tags" mapstructure:"tags"`
 }
 
 var graylogPrefix = "graylog-pump"

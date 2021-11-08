@@ -31,39 +31,39 @@ var kafkaDefaultENV = PUMPS_ENV_PREFIX + "_KAFKA" + PUMPS_ENV_META_PREFIX
 
 // @PumpConf Kafka
 type KafkaConf struct {
-	EnvPrefix             string            `mapstructure:"meta_env_prefix"`
+	EnvPrefix string `mapstructure:"meta_env_prefix"`
 	// The list of brokers used to discover the partitions available on the kafka cluster. E.g.
 	// "localhost:9092".
-	Broker                []string          `json:"broker" mapstructure:"broker"`
+	Broker []string `json:"broker" mapstructure:"broker"`
 	// Unique identifier for client connections established with Kafka.
-	ClientId              string            `json:"client_id" mapstructure:"client_id"`
+	ClientId string `json:"client_id" mapstructure:"client_id"`
 	// The topic that the writer will produce messages to.
-	Topic                 string            `json:"topic" mapstructure:"topic"`
+	Topic string `json:"topic" mapstructure:"topic"`
 	// Timeout is the maximum amount of time will wait for a connect or write to complete.
-	Timeout               time.Duration     `json:"timeout" mapstructure:"timeout"`
+	Timeout time.Duration `json:"timeout" mapstructure:"timeout"`
 	// Enable "github.com/golang/snappy" codec to be used to compress Kafka messages. By default
 	// is `false`.
-	Compressed            bool              `json:"compressed" mapstructure:"compressed"`
+	Compressed bool `json:"compressed" mapstructure:"compressed"`
 	// Can be used to set custom metadata inside the kafka message.
-	MetaData              map[string]string `json:"meta_data" mapstructure:"meta_data"`
+	MetaData map[string]string `json:"meta_data" mapstructure:"meta_data"`
 	// Enables SSL connection.
-	UseSSL                bool              `json:"use_ssl" mapstructure:"use_ssl"`
+	UseSSL bool `json:"use_ssl" mapstructure:"use_ssl"`
 	// Controls whether the pump client verifies the kafka server's certificate chain and host
 	// name.
-	SSLInsecureSkipVerify bool              `json:"ssl_insecure_skip_verify" mapstructure:"ssl_insecure_skip_verify"`
+	SSLInsecureSkipVerify bool `json:"ssl_insecure_skip_verify" mapstructure:"ssl_insecure_skip_verify"`
 	// Can be used to set custom certificate file for authentication with kafka.
-	SSLCertFile           string            `json:"ssl_cert_file" mapstructure:"ssl_cert_file"`
+	SSLCertFile string `json:"ssl_cert_file" mapstructure:"ssl_cert_file"`
 	// Can be used to set custom key file for authentication with kafka.
-	SSLKeyFile            string            `json:"ssl_key_file" mapstructure:"ssl_key_file"`
-	// SASL mechanism configuration - standard mechanism names are listed
-	// (here)[https://www.iana.org/assignments/sasl-mechanisms/sasl-mechanisms.xhtml]. [VALIDATE]
-	SASLMechanism         string            `json:"sasl_mechanism" mapstructure:"sasl_mechanism"`
+	SSLKeyFile string `json:"ssl_key_file" mapstructure:"ssl_key_file"`
+	// SASL mechanism configuration. Only "plain" and "scram" are supported.
+	SASLMechanism string `json:"sasl_mechanism" mapstructure:"sasl_mechanism"`
 	// SASL username.
-	Username              string            `json:"sasl_username" mapstructure:"sasl_username"`
+	Username string `json:"sasl_username" mapstructure:"sasl_username"`
 	// SASL password.
-	Password              string            `json:"sasl_password" mapstructure:"sasl_password"`
-	// SASL algorithm.
-	Algorithm             string            `json:"sasl_algorithm" mapstructure:"sasl_algorithm"`
+	Password string `json:"sasl_password" mapstructure:"sasl_password"`
+	// SASL algorithm. It's the algorithm specified for scram mechanism. It could be sha-512 or sha-256.
+	// Defaults to "sha-256".
+	Algorithm string `json:"sasl_algorithm" mapstructure:"sasl_algorithm"`
 }
 
 func (k *KafkaPump) New() Pump {

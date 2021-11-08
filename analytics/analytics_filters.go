@@ -2,17 +2,17 @@ package analytics
 
 type AnalyticsFilters struct {
 	// Filters pump data by the whitelisted org_ids.
-	OrgsIDs              []string `json:"org_ids"`
+	OrgsIDs []string `json:"org_ids"`
 	// Filters pump data by the whitelisted api_ids.
-	APIIDs               []string `json:"api_ids"`
+	APIIDs []string `json:"api_ids"`
 	// Filters pump data by the whitelisted response_codes.
-	ResponseCodes        []int    `json:"response_codes"`
+	ResponseCodes []int `json:"response_codes"`
 	// Filters pump data by the blacklisted org_ids.
-	SkippedOrgsIDs       []string `json:"skip_org_ids"`
+	SkippedOrgsIDs []string `json:"skip_org_ids"`
 	// Filters pump data by the blacklisted api_ids.
-	SkippedAPIIDs        []string `json:"skip_api_ids"`
+	SkippedAPIIDs []string `json:"skip_api_ids"`
 	// Filters pump data by the blacklisted response_codes.
-	SkippedResponseCodes []int    `json:"skip_response_codes"`
+	SkippedResponseCodes []int `json:"skip_response_codes"`
 }
 
 func (filters AnalyticsFilters) ShouldFilter(record AnalyticsRecord) bool {

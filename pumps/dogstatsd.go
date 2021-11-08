@@ -31,21 +31,21 @@ type DogStatsdPump struct {
 
 // @PumpConf DogStatsd
 type DogStatsdConf struct {
-	EnvPrefix            string   `mapstructure:"meta_env_prefix"`
+	EnvPrefix string `mapstructure:"meta_env_prefix"`
 	// Prefix for your metrics to datadog.
-	Namespace            string   `json:"namespace" mapstructure:"namespace"`
+	Namespace string `json:"namespace" mapstructure:"namespace"`
 	// Address of the datadog agent including host & port.
-	Address              string   `json:"address" mapstructure:"address"`
+	Address string `json:"address" mapstructure:"address"`
 	// Defaults to `1` which equates to `100%` of requests. To sample at `50%`, set to `0.5`.
-	SampleRate           float64  `json:"sample_rate" mapstructure:"sample_rate"`
+	SampleRate float64 `json:"sample_rate" mapstructure:"sample_rate"`
 	// Enable async UDS over UDP https://github.com/Datadog/datadog-go#unix-domain-sockets-client.
-	AsyncUDS             bool     `json:"async_uds" mapstructure:"async_uds"`
+	AsyncUDS bool `json:"async_uds" mapstructure:"async_uds"`
 	// Integer write timeout in seconds if `async_uds: true`.
-	AsyncUDSWriteTimeout int      `json:"async_uds_write_timeout_seconds" mapstructure:"async_uds_write_timeout_seconds"`
+	AsyncUDSWriteTimeout int `json:"async_uds_write_timeout_seconds" mapstructure:"async_uds_write_timeout_seconds"`
 	// Enable buffering of messages.
-	Buffered             bool     `json:"buffered" mapstructure:"buffered"`
+	Buffered bool `json:"buffered" mapstructure:"buffered"`
 	// Max messages in single datagram if `buffered: true`. Default 16.
-	BufferedMaxMessages  int      `json:"buffered_max_messages" mapstructure:"buffered_max_messages"`
+	BufferedMaxMessages int `json:"buffered_max_messages" mapstructure:"buffered_max_messages"`
 	// List of tags to be added to the metric. The possible options are listed in the below example.
 	//
 	// If no tag is specified the fallback behavior is to use the below tags:
@@ -96,7 +96,7 @@ type DogStatsdConf struct {
 	// [May 10 15:23:44]  INFO dogstatsd: buffered: true, max_messages: 32
 	// [May 10 15:23:44]  INFO dogstatsd: async_uds: true, write_timeout: 2s
 	// ```
-	Tags                 []string `json:"tags" mapstructure:"tags"`
+	Tags []string `json:"tags" mapstructure:"tags"`
 }
 
 func (s *DogStatsdPump) New() Pump {

@@ -29,10 +29,12 @@ var mongoSelectiveDefaultEnv = PUMPS_ENV_PREFIX + "_MONGOSELECTIVE" + PUMPS_ENV_
 type MongoSelectiveConf struct {
 	// TYKCONFIGEXPAND
 	BaseMongoConf
-	// [ADD COMMENT]
+	// Maximum insert batch size for mongo selective pump. If the batch we are writing surpass this value, it will be send in multiple batchs.
+	// Defaults to 10Mb.
 	MaxInsertBatchSizeBytes int `json:"max_insert_batch_size_bytes" mapstructure:"max_insert_batch_size_bytes"`
-	// [ADD COMMENT]
-	MaxDocumentSizeBytes    int `json:"max_document_size_bytes" mapstructure:"max_document_size_bytes"`
+	// Maximum document size. If the document exceed this value, it will be skipped.
+	// Defaults to 10Mb.
+	MaxDocumentSizeBytes int `json:"max_document_size_bytes" mapstructure:"max_document_size_bytes"`
 }
 
 func (m *MongoSelectivePump) New() Pump {
