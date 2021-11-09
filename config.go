@@ -184,9 +184,10 @@ type TykPumpConfiguration struct {
 	//   },
 	// ```
 	AnalyticsStorageConfig storage.RedisStorageConfig `json:"analytics_storage_config"`
-	// Deprecated. Statdsd pump connection string. [VALIDATE]
+	// Connection string for StatsD monitoring for information please see the
+	// (Instrumentation docs)[https://tyk.io/docs/basic-config-and-security/report-monitor-trigger-events/instrumentation/].
 	StatsdConnectionString string `json:"statsd_connection_string"`
-	// Deprecated. Statdsd pump key name prefix. [VALIDATE]
+	// Custom prefix value. For example separate settings for production and staging.
 	StatsdPrefix string `json:"statsd_prefix"`
 	// Set the logger details for tyk-pump. The posible values are: `info`,`debug`,`error` and
 	// `warn`. By default, the log level is `info`.

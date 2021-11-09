@@ -39,20 +39,7 @@ type InfluxConf struct {
 	// "path", "response_code", "api_key", "time_stamp", "api_version", "api_name", "api_id",
 	// "org_id", "oauth_id", "raw_request", "request_time", "raw_response", "ip_address"]`.
 	Fields []string `json:"fields" mapstructure:"fields"`
-	// List of tags to be added to the metric. The possible options are listed in the below example.
-	//
-	// If no tag is specified the fallback behavior is to use the below tags:
-	// - `path`
-	// - `method`
-	// - `response_code`
-	// - `api_version`
-	// - `api_name`
-	// - `api_id`
-	// - `org_id`
-	// - `tracked`
-	// - `oauth_id` [VALIDATE]
-	Tags []string `json:"tags" mapstructure:"tags"`
-}
+	// List of tags to be added to the metric.
 
 func (i *InfluxPump) New() Pump {
 	newPump := InfluxPump{}

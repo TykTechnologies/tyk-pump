@@ -25,20 +25,9 @@ type StatsdConf struct {
 	EnvPrefix string `mapstructure:"meta_env_prefix"`
 	// Address of statsd including host & port.
 	Address string `json:"address" mapstructure:"address"`
-	// Define which Analytics fields should have its own metric calculation. This should be set to ["request_time"]. [VALIDATE]
+	// Define which Analytics fields should have its own metric calculation.
 	Fields []string `json:"fields" mapstructure:"fields"`
-	// List of tags to be added to the metric. The possible options are listed in the below example.
-	//
-	// If no tag is specified the fallback behavior is to use the below tags:
-	// - `path`
-	// - `method`
-	// - `response_code`
-	// - `api_version`
-	// - `api_name`
-	// - `api_id`
-	// - `org_id`
-	// - `tracked`
-	// - `oauth_id` [VALIDATE]
+	// List of tags to be added to the metric.
 	Tags []string `json:"tags" mapstructure:"tags"`
 }
 
