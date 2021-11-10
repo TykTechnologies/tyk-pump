@@ -249,78 +249,12 @@ func (m *MongoAggregatePump) WriteData(ctx context.Context, data []interface{}) 
 
 		// put aggregated data into MongoDB
 		for orgID, filteredData := range analyticsPerOrg {
-			collectionName, collErr := m.GetCollectionName(orgID)
-			if collErr != nil {
-				m.log.Info("No OrgID for AnalyticsRecord, skipping")
-				continue
-			}
-
-			thisSession := m.dbSession.Copy()
-			defer thisSession.Close()
-
-			analyticsCollection := thisSession.DB("").C(collectionName)
-			indexCreateErr := m.ensureIndexes(analyticsCollection)
-
-			if indexCreateErr != nil {
-				m.log.Error(indexCreateErr)
-			}
-
-			query := bson.M{
-				"orgid":     filteredData.OrgID,
-				"timestamp": filteredData.TimeStamp,
-			}
-
-			if len(m.dbConf.IgnoreAggregationsList) > 0 {
-				filteredData.DiscardAggregations(m.dbConf.IgnoreAggregationsList)
-			}
-
-			updateDoc := filteredData.AsChange()
-
-			change := mgo.Change{
-				Update:    updateDoc,
-				ReturnNew: true,
-				Upsert:    true,
-			}
-
-			doc := analytics.AnalyticsRecordAggregate{}
-			_, err := analyticsCollection.Find(query).Apply(change, &doc)
-
+			err := m.DoAggregatedWriting(ctx, orgID, filteredData)
 			if err != nil {
-				m.log.WithField("query", query).Error("UPSERT Failure: ", err)
-				return m.HandleWriteErr(err)
+				return err
 			}
 
-			// We have the new doc back, lets fix the averages
-			avgUpdateDoc := doc.AsTimeUpdate()
-			avgChange := mgo.Change{
-				Update:    avgUpdateDoc,
-				ReturnNew: true,
-			}
-			withTimeUpdate := analytics.AnalyticsRecordAggregate{}
-			_, avgErr := analyticsCollection.Find(query).Apply(avgChange, &withTimeUpdate)
-
-			if m.dbConf.ThresholdLenTagList != -1 && (len(withTimeUpdate.Tags) > m.dbConf.ThresholdLenTagList) {
-				m.printAlert(withTimeUpdate, m.dbConf.ThresholdLenTagList)
-			}
-
-			if avgErr != nil {
-				m.log.WithField("query", query).Error("AvgUpdate Failure: ", avgErr)
-				return m.HandleWriteErr(avgErr)
-			}
-
-			m.log.WithFields(logrus.Fields{
-				"collection": collectionName,
-			}).Debug("Wrote aggregated data for ", len(data), " records")
-
-			if m.dbConf.UseMixedCollection {
-				thisData := analytics.AnalyticsRecordAggregate{}
-				err := analyticsCollection.Find(query).One(&thisData)
-				if err != nil {
-					m.log.WithField("query", query).Error("Couldn't find query doc:", err)
-				} else {
-					m.doMixedWrite(thisData, query)
-				}
-			}
+			m.log.Debug("Wrote aggregated data for ", len(data), " records")
 		}
 	}
 	m.log.Info("Purged ", len(data), " records...")
@@ -371,6 +305,78 @@ func (m *MongoAggregatePump) HandleWriteErr(err error) error {
 		}
 	}
 	return err
+}
+
+func (m *MongoAggregatePump) DoAggregatedWriting(ctx context.Context, orgID string, filteredData analytics.AnalyticsRecordAggregate) error {
+	collectionName, collErr := m.GetCollectionName(orgID)
+	if collErr != nil {
+		m.log.Info("No OrgID for AnalyticsRecord, skipping")
+		return nil
+	}
+
+	thisSession := m.dbSession.Copy()
+	defer thisSession.Close()
+
+	analyticsCollection := thisSession.DB("").C(collectionName)
+	indexCreateErr := m.ensureIndexes(analyticsCollection)
+
+	if indexCreateErr != nil {
+		m.log.Error(indexCreateErr)
+	}
+
+	query := bson.M{
+		"orgid":     filteredData.OrgID,
+		"timestamp": filteredData.TimeStamp,
+	}
+
+	if len(m.dbConf.IgnoreAggregationsList) > 0 {
+		filteredData.DiscardAggregations(m.dbConf.IgnoreAggregationsList)
+	}
+
+	updateDoc := filteredData.AsChange()
+
+	change := mgo.Change{
+		Update:    updateDoc,
+		ReturnNew: true,
+		Upsert:    true,
+	}
+
+	doc := analytics.AnalyticsRecordAggregate{}
+	_, err := analyticsCollection.Find(query).Apply(change, &doc)
+
+	if err != nil {
+		m.log.WithField("query", query).Error("UPSERT Failure: ", err)
+		return m.HandleWriteErr(err)
+	}
+
+	// We have the new doc back, lets fix the averages
+	avgUpdateDoc := doc.AsTimeUpdate()
+	avgChange := mgo.Change{
+		Update:    avgUpdateDoc,
+		ReturnNew: true,
+	}
+	withTimeUpdate := analytics.AnalyticsRecordAggregate{}
+	_, avgErr := analyticsCollection.Find(query).Apply(avgChange, &withTimeUpdate)
+
+	if m.dbConf.ThresholdLenTagList != -1 && (len(withTimeUpdate.Tags) > m.dbConf.ThresholdLenTagList) {
+		m.printAlert(withTimeUpdate, m.dbConf.ThresholdLenTagList)
+	}
+
+	if avgErr != nil {
+		m.log.WithField("query", query).Error("AvgUpdate Failure: ", avgErr)
+		return m.HandleWriteErr(avgErr)
+	}
+
+	if m.dbConf.UseMixedCollection {
+		thisData := analytics.AnalyticsRecordAggregate{}
+		err := analyticsCollection.Find(query).One(&thisData)
+		if err != nil {
+			m.log.WithField("query", query).Error("Couldn't find query doc:", err)
+		} else {
+			m.doMixedWrite(thisData, query)
+		}
+	}
+	return nil
 }
 
 // WriteUptimeData will pull the data from the in-memory store and drop it into the specified MongoDB collection
