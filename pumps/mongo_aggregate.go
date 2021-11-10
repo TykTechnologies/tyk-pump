@@ -30,14 +30,30 @@ type MongoAggregatePump struct {
 	CommonPumpConfig
 }
 
+// @PumpConf MongoAggregate
 type MongoAggregateConf struct {
+	// TYKCONFIGEXPAND
 	BaseMongoConf
-	UseMixedCollection      bool     `mapstructure:"use_mixed_collection"`
-	TrackAllPaths           bool     `mapstructure:"track_all_paths"`
-	IgnoreTagPrefixList     []string `mapstructure:"ignore_tag_prefix_list"`
-	ThresholdLenTagList     int      `mapstructure:"threshold_len_tag_list"`
-	StoreAnalyticsPerMinute bool     `mapstructure:"store_analytics_per_minute"`
-	IgnoreAggregationsList  []string `mapstructure:"ignore_aggregations"`
+	// If set to `true` your pump will store analytics to both your organisation defined
+	// collections z_tyk_analyticz_aggregate_{ORG ID} and your org-less tyk_analytics_aggregates
+	// collection. When set to 'false' your pump will only store analytics to your org defined
+	// collection.
+	UseMixedCollection bool `json:"use_mixed_collection" mapstructure:"use_mixed_collection"`
+	// Specifies if it should store aggregated data for all the endpoints. By default, `false`
+	// which means that only store aggregated data for `tracked endpoints`.
+	TrackAllPaths bool `json:"track_all_paths" mapstructure:"track_all_paths"`
+	// Specifies prefixes of tags that should be ignored.
+	IgnoreTagPrefixList []string `json:"ignore_tag_prefix_list" mapstructure:"ignore_tag_prefix_list"`
+	// Determines the threshold of amount of tags of an aggregation. If the amount of tags is superior to the threshold,
+	// it will print an alert.
+	// Defaults to 1000.
+	ThresholdLenTagList int `json:"threshold_len_tag_list" mapstructure:"threshold_len_tag_list"`
+	// Determines if the aggregations should be made per minute instead of per hour.
+	StoreAnalyticsPerMinute bool `json:"store_analytics_per_minute" mapstructure:"store_analytics_per_minute"`
+	// This list determines which aggregations are going to be dropped and not stored in the collection.
+	// Posible values are: "APIID","errors","versions","apikeys","oauthids","geo","tags","endpoints","keyendpoints",
+	// "oauthendpoints", and "apiendpoints".
+	IgnoreAggregationsList []string `json:"ignore_aggregations" mapstructure:"ignore_aggregations"`
 }
 
 func (m *MongoAggregatePump) New() Pump {

@@ -39,23 +39,41 @@ func (e *EnvMapString) Decode(value string) error {
 }
 
 type RedisStorageConfig struct {
-	Type                       string       `mapstructure:"type"`
-	Host                       string       `mapstructure:"host"`
-	Port                       int          `mapstructure:"port"`
-	Hosts                      EnvMapString `mapstructure:"hosts"` // Deprecated: Use Addrs instead.
-	Addrs                      []string     `mapstructure:"addrs"`
-	MasterName                 string       `mapstructure:"master_name" json:"master_name"`
-	SentinelPassword           string       `mapstructure:"sentinel_password" json:"sentinel_password"`
-	Username                   string       `mapstructure:"username"`
-	Password                   string       `mapstructure:"password"`
-	Database                   int          `mapstructure:"database"`
-	Timeout                    int          `mapstructure:"timeout"`
-	MaxIdle                    int          `mapstructure:"optimisation_max_idle" json:"optimisation_max_idle"`
-	MaxActive                  int          `mapstructure:"optimisation_max_active" json:"optimisation_max_active"`
-	EnableCluster              bool         `mapstructure:"enable_cluster" json:"enable_cluster"`
-	RedisKeyPrefix             string       `mapstructure:"redis_key_prefix" json:"redis_key_prefix"`
-	RedisUseSSL                bool         `mapstructure:"redis_use_ssl" json:"redis_use_ssl"`
-	RedisSSLInsecureSkipVerify bool         `mapstructure:"redis_ssl_insecure_skip_verify" json:"redis_ssl_insecure_skip_verify"`
+	// Deprecated.
+	Type string `json:"type" mapstructure:"type"`
+	// Redis host value.
+	Host string `json:"host" mapstructure:"host"`
+	// Redis port value.
+	Port int `json:"port" mapstructure:"port"`
+	// Deprecated. Use Addrs instead.
+	Hosts EnvMapString `json:"hosts" mapstructure:"hosts"`
+	// Use instead of the host value if you're running a redis cluster with mutliple instances.
+	Addrs []string `json:"addrs" mapstructure:"addrs"`
+	// Sentinel redis master name.
+	MasterName string `json:"master_name" mapstructure:"master_name"`
+	// Sentinel redis password.
+	SentinelPassword string `json:"sentinel_password" mapstructure:"sentinel_password"`
+	// Redis username.
+	Username string `json:"username" mapstructure:"username"`
+	// Redis password.
+	Password string `json:"password" mapstructure:"password"`
+	// Redis database.
+	Database int `json:"database" mapstructure:"database"`
+	// How long to allow for new connections to be established (in milliseconds). Defaults to 5sec.
+	Timeout int `json:"timeout" mapstructure:"timeout"`
+	// Maximum number of idle connections in the pool.
+	MaxIdle int `json:"optimisation_max_idle" mapstructure:"optimisation_max_idle"`
+	// Maximum number of connections allocated by the pool at a given time. When zero, there is no
+	// limit on the number of connections in the pool. Defaults to 500.
+	MaxActive int `json:"optimisation_max_active" mapstructure:"optimisation_max_active"`
+	// Enable this option if you are using a redis cluster. Default is `false`.
+	EnableCluster bool `json:"enable_cluster" mapstructure:"enable_cluster"`
+	// Prefix the redis key names. Defaults to "analytics-".
+	RedisKeyPrefix string `json:"redis_key_prefix" mapstructure:"redis_key_prefix"`
+	// Setting this to true to use SSL when connecting to Redis.
+	RedisUseSSL bool `json:"redis_use_ssl" mapstructure:"redis_use_ssl"`
+	// Set this to `true` to tell Pump to ignore Redis' cert validation.
+	RedisSSLInsecureSkipVerify bool `json:"redis_ssl_insecure_skip_verify" mapstructure:"redis_ssl_insecure_skip_verify"`
 }
 
 // RedisClusterStorageManager is a storage manager that uses the redis database.
