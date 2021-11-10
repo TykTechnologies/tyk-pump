@@ -40,6 +40,8 @@ type InfluxConf struct {
 	// "org_id", "oauth_id", "raw_request", "request_time", "raw_response", "ip_address"]`.
 	Fields []string `json:"fields" mapstructure:"fields"`
 	// List of tags to be added to the metric.
+	Tags []string `json:"tags" mapstructure:"tags"`
+}
 
 func (i *InfluxPump) New() Pump {
 	newPump := InfluxPump{}
