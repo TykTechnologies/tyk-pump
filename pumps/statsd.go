@@ -20,11 +20,15 @@ type StatsdPump struct {
 var statsdPrefix = "statsd-pump"
 var statsdDefaultENV = PUMPS_ENV_PREFIX + "_STATSD" + PUMPS_ENV_META_PREFIX
 
+// @PumpConf Statsd
 type StatsdConf struct {
-	EnvPrefix string   `mapstructure:"meta_env_prefix"`
-	Address   string   `mapstructure:"address"`
-	Fields    []string `mapstructure:"fields"`
-	Tags      []string `mapstructure:"tags"`
+	EnvPrefix string `mapstructure:"meta_env_prefix"`
+	// Address of statsd including host & port.
+	Address string `json:"address" mapstructure:"address"`
+	// Define which Analytics fields should have its own metric calculation.
+	Fields []string `json:"fields" mapstructure:"fields"`
+	// List of tags to be added to the metric.
+	Tags []string `json:"tags" mapstructure:"tags"`
 }
 
 func (s *StatsdPump) New() Pump {

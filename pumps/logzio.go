@@ -26,14 +26,24 @@ const (
 	maxDiskThreshold = 100
 )
 
+// @PumpConf Logzio
 type LogzioPumpConfig struct {
-	EnvPrefix      string `mapstructure:"meta_env_prefix"`
-	CheckDiskSpace bool   `mapstructure:"check_disk_space"`
-	DiskThreshold  int    `mapstructure:"disk_threshold"`
-	DrainDuration  string `mapstructure:"drain_duration"`
-	QueueDir       string `mapstructure:"queue_dir"`
-	Token          string `mapstructure:"token"`
-	URL            string `mapstructure:"url"`
+	EnvPrefix string `mapstructure:"meta_env_prefix"`
+	// Set the sender to check if it crosses the maximum allowed disk usage. Default value is
+	// `true`.
+	CheckDiskSpace bool `json:"check_disk_space" mapstructure:"check_disk_space"`
+	// Set disk queue threshold, once the threshold is crossed the sender will not enqueue the
+	// received logs. Default value is `98` (percentage of disk).
+	DiskThreshold int `json:"disk_threshold" mapstructure:"disk_threshold"`
+	// Set drain duration (flush logs on disk). Default value is `3s`.
+	DrainDuration string `json:"drain_duration" mapstructure:"drain_duration"`
+	// The directory for the queue.
+	QueueDir string `json:"queue_dir" mapstructure:"queue_dir"`
+	// Token for sending data to your logzio account.
+	Token string `json:"token" mapstructure:"token"`
+	// If you do not want to use the default Logzio url i.e. when using a proxy. Default is
+	// `https://listener.logz.io:8071`.
+	URL string `json:"url" mapstructure:"url"`
 }
 
 func NewLogzioPumpConfig() *LogzioPumpConfig {

@@ -23,15 +23,23 @@ var (
 	table            = "analytics"
 )
 
+// @PumpConf Influx
 type InfluxConf struct {
-	EnvPrefix    string   `mapstructure:"meta_env_prefix"`
-	DatabaseName string   `mapstructure:"database_name"`
-	Addr         string   `mapstructure:"address"`
-	Username     string   `mapstructure:"username"`
-	Password     string   `mapstructure:"password"`
-	Fields       []string `mapstructure:"fields"`
-	Tags         []string `mapstructure:"tags"`
-}
+	EnvPrefix string `mapstructure:"meta_env_prefix"`
+	// InfluxDB pump database name.
+	DatabaseName string `json:"database_name" mapstructure:"database_name"`
+	// InfluxDB pump host.
+	Addr string `json:"address" mapstructure:"address"`
+	// InfluxDB pump database username.
+	Username string `json:"username" mapstructure:"username"`
+	// InfluxDB pump database password.
+	Password string `json:"password" mapstructure:"password"`
+	// Define which Analytics fields should be sent to InfluxDB. Check the available
+	// fields in the example below. Default value is `["method",
+	// "path", "response_code", "api_key", "time_stamp", "api_version", "api_name", "api_id",
+	// "org_id", "oauth_id", "raw_request", "request_time", "raw_response", "ip_address"]`.
+	Fields []string `json:"fields" mapstructure:"fields"`
+	// List of tags to be added to the metric.
 
 func (i *InfluxPump) New() Pump {
 	newPump := InfluxPump{}
@@ -126,7 +134,6 @@ func (i *InfluxPump) WriteData(ctx context.Context, data []interface{}) error {
 			if err != nil {
 				tag = ""
 			} else {
-
 				// convert and remove surrounding quotes from tag value
 				tag = strings.Trim(string(b), "\"")
 			}
