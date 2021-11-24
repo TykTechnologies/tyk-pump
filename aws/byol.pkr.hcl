@@ -5,6 +5,15 @@
 # ./pr.zsh -title [TT-2932] systemd service restore for deb -base releng/upgrades -branch releng/upgrades -repos tyk-sink,tyk-identity-broker,tyk-pump,raava -p
 # m4 -E -DxREPO=tyk-pump
 
+packer {
+  required_plugins {
+    amazon = {
+      version = ">= 0.0.2"
+      source  = "github.com/hashicorp/amazon"
+    }
+  }
+}
+
 variable "flavour" {
   description = "OS Flavour"
   type    = string
