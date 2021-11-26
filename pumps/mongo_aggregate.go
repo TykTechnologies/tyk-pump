@@ -254,7 +254,7 @@ func (m *MongoAggregatePump) WriteData(ctx context.Context, data []interface{}) 
 				return err
 			}
 
-			m.log.Debug("Wrote aggregated data for ", len(data), " records")
+			m.log.Debug("Processed aggregated data for ", orgID)
 		}
 	}
 	m.log.Info("Purged ", len(data), " records...")
