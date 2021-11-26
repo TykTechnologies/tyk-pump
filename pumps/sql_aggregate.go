@@ -155,40 +155,10 @@ func (c *SQLAggregatePump) WriteData(ctx context.Context, data []interface{}) er
 		analyticsPerOrg := analytics.AggregateData(data[startIndex:endIndex], c.SQLConf.TrackAllPaths, c.SQLConf.IgnoreTagPrefixList, c.SQLConf.StoreAnalyticsPerMinute)
 
 		for orgID, ag := range analyticsPerOrg {
-			recs := []analytics.SQLAnalyticsRecordAggregate{}
-			for _, d := range ag.Dimensions() {
-				id := fmt.Sprintf("%v", ag.TimeStamp.Unix()) + orgID + d.Name + d.Value
-				uID := hex.EncodeToString([]byte(id))
 
-				rec := analytics.SQLAnalyticsRecordAggregate{
-					ID:             uID,
-					OrgID:          orgID,
-					TimeStamp:      ag.TimeStamp.Unix(),
-					Counter:        *d.Counter,
-					Dimension:      d.Name,
-					DimensionValue: d.Value,
-				}
-				rec.ProcessStatusCodes(rec.Counter.ErrorMap)
-				rec.Counter.ErrorList = nil
-				rec.Counter.ErrorMap = nil
-				recs = append(recs, rec)
-			}
-
-			for i := 0; i < len(recs); i += c.SQLConf.BatchSize {
-				ends := i + c.SQLConf.BatchSize
-				if ends > len(recs) {
-					ends = len(recs)
-				}
-
-				//we use excluded as temp  table since it's supported by our SQL storages https://www.postgresql.org/docs/9.5/sql-insert.html#SQL-ON-CONFLICT  https://www.sqlite.org/lang_UPSERT.html
-				tx := c.db.WithContext(ctx).Clauses(clause.OnConflict{
-					Columns:   []clause.Column{{Name: "id"}},
-					DoUpdates: clause.Assignments(analytics.OnConflictAssignments(table, "excluded")),
-				}).Create(recs[i:ends])
-				if tx.Error != nil {
-					c.log.Error("error writing aggregated records into "+table+":", tx.Error)
-					return tx.Error
-				}
+			err := c.DoAggregatedWriting(ctx, table, orgID, ag)
+			if err != nil {
+				return err
 			}
 		}
 
@@ -198,4 +168,45 @@ func (c *SQLAggregatePump) WriteData(ctx context.Context, data []interface{}) er
 	c.log.Info("Purged ", dataLen, " records...")
 
 	return nil
+}
+
+func (c *SQLAggregatePump) DoAggregatedWriting(ctx context.Context, table, orgID string, ag analytics.AnalyticsRecordAggregate) error {
+	recs := []analytics.SQLAnalyticsRecordAggregate{}
+
+	for _, d := range ag.Dimensions() {
+		id := fmt.Sprintf("%v", ag.TimeStamp.Unix()) + orgID + d.Name + d.Value
+		uID := hex.EncodeToString([]byte(id))
+		rec := analytics.SQLAnalyticsRecordAggregate{
+			ID:             uID,
+			OrgID:          orgID,
+			TimeStamp:      ag.TimeStamp.Unix(),
+			Counter:        *d.Counter,
+			Dimension:      d.Name,
+			DimensionValue: d.Value,
+		}
+		rec.ProcessStatusCodes(rec.Counter.ErrorMap)
+		rec.Counter.ErrorList = nil
+		rec.Counter.ErrorMap = nil
+		recs = append(recs, rec)
+	}
+
+	for i := 0; i < len(recs); i += c.SQLConf.BatchSize {
+		ends := i + c.SQLConf.BatchSize
+		if ends > len(recs) {
+			ends = len(recs)
+		}
+
+		//we use excluded as temp  table since it's supported by our SQL storages https://www.postgresql.org/docs/9.5/sql-insert.html#SQL-ON-CONFLICT  https://www.sqlite.org/lang_UPSERT.html
+		tx := c.db.WithContext(ctx).Clauses(clause.OnConflict{
+			Columns:   []clause.Column{{Name: "id"}},
+			DoUpdates: clause.Assignments(analytics.OnConflictAssignments(table, "excluded")),
+		}).Create(recs[i:ends])
+		if tx.Error != nil {
+			c.log.Error("error writing aggregated records into "+table+":", tx.Error)
+			return tx.Error
+		}
+	}
+
+	return nil
+
 }
