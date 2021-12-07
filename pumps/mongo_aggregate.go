@@ -206,6 +206,12 @@ func (m *MongoAggregatePump) connect() {
 }
 
 func (m *MongoAggregatePump) ensureIndexes(c *mgo.Collection) error {
+	exists, errExists:=  m.collectionExists(c.Name)
+	if errExists == nil && exists	{
+		m.log.Debug("Collection ",c.Name," exists, omitting index creation")
+		return nil
+	}
+
 	var err error
 	ttlIndex := mgo.Index{
 		Key:         []string{"expireAt"},
@@ -254,7 +260,7 @@ func (m *MongoAggregatePump) WriteData(ctx context.Context, data []interface{}) 
 				return err
 			}
 
-			m.log.Debug("Processed aggregated data for ", orgID)
+			m.log.Debug("Wrote aggregated data for ", len(data), " records")
 		}
 	}
 	m.log.Info("Purged ", len(data), " records...")
@@ -378,6 +384,28 @@ func (m *MongoAggregatePump) DoAggregatedWriting(ctx context.Context, orgID stri
 	}
 	return nil
 }
+
+// collectionExists checks to see if a collection name exists in the db.
+func (m *MongoAggregatePump) collectionExists(name string) (bool, error) {
+	sess := m.dbSession.Copy()
+	defer sess.Close()
+
+	colNames, err := sess.DB("").CollectionNames()
+	if err != nil {
+		m.log.Error("Unable to get column names: ", err)
+
+		return false, err
+	}
+
+	for _, coll := range colNames {
+		if coll == name {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
 
 // WriteUptimeData will pull the data from the in-memory store and drop it into the specified MongoDB collection
 func (m *MongoAggregatePump) WriteUptimeData(data []interface{}) {
