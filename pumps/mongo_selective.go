@@ -123,6 +123,12 @@ func (m *MongoSelectivePump) connect() {
 }
 
 func (m *MongoSelectivePump) ensureIndexes(c *mgo.Collection) error {
+	exists, errExists:=  m.collectionExists(c.Name)
+	if errExists == nil && exists	{
+		m.log.Debug("Collection ",c.Name," exists, omitting index creation")
+		return nil
+	}
+
 	var err error
 	ttlIndex := mgo.Index{
 		Key:         []string{"expireAt"},
@@ -307,5 +313,25 @@ func (m *MongoSelectivePump) WriteUptimeData(data []interface{}) {
 			}
 		}
 	}
+}
 
+// collectionExists checks to see if a collection name exists in the db.
+func (m *MongoSelectivePump) collectionExists(name string) (bool, error) {
+	sess := m.dbSession.Copy()
+	defer sess.Close()
+
+	colNames, err := sess.DB("").CollectionNames()
+	if err != nil {
+		m.log.Error("Unable to get column names: ", err)
+
+		return false, err
+	}
+
+	for _, coll := range colNames {
+		if coll == name {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }

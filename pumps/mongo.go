@@ -392,6 +392,12 @@ func (m *MongoPump) collectionExists(name string) (bool, error) {
 }
 
 func (m *MongoPump) ensureIndexes() error {
+	exists, errExists:=  m.collectionExists(m.dbConf.CollectionName)
+	if errExists == nil && exists	{
+		m.log.Debug("Collection ",m.dbConf.CollectionName," exists, omitting index creation")
+		return nil
+	}
+
 	var err error
 
 	sess := m.dbSession.Copy()
