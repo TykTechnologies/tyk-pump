@@ -16,6 +16,7 @@ func init() {
 	AvailablePumps["csv"] = &CSVPump{}
 	AvailablePumps["elasticsearch"] = &ElasticsearchPump{}
 	AvailablePumps["influx"] = &InfluxPump{}
+	AvailablePumps["influx2"] = &Influx2Pump{}
 	AvailablePumps["moesif"] = &MoesifPump{}
 	AvailablePumps["statsd"] = &StatsdPump{}
 	AvailablePumps["segment"] = &SegmentPump{}
