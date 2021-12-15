@@ -26,6 +26,17 @@ var (
 	influx2Measurement = "analytics"
 )
 
+type RetentionRule struct {
+	EverySeconds              int64  `mapstructure:"every_seconds" json:"every_seconds"`
+	ShardGroupDurationSeconds int64  `mapstructure:"shard_group_duration_seconds" json:"shard_group_duration_seconds"`
+	Type                      string `mapstructure:"type" json:"type"`
+}
+
+type NewBucket struct {
+	Description    string          `mapstructure:"description" json:"description"`
+	RetentionRules []RetentionRule `mapstructure:"retention_rules" json:"retention_rules"`
+}
+
 // @PumpConf Influx2
 type Influx2Conf struct {
 	EnvPrefix string `mapstructure:"meta_env_prefix"`
@@ -46,6 +57,10 @@ type Influx2Conf struct {
 	Tags []string `mapstructure:"tags" json:"tags"`
 	// Flush data to InfluxDB2 as soon as the pump receives it
 	Flush bool `mapstructure:"flush" json:"flush"`
+	// Create the bucket if it doesn't exist
+	CreateMissingBucket bool `mapstructure:"create_missing_bucket" json:"create_missing_bucket"`
+	// New bucket configuration
+	NewBucketConfig NewBucket `mapstructure:"new_bucket_config" json:"new_bucket_config"`
 }
 
 func (i *Influx2Pump) New() Pump {
@@ -94,15 +109,25 @@ func (i *Influx2Pump) Init(config interface{}) error {
 		*org.Id,
 	)
 
-	bucket, err := i.client.BucketsAPI().FindBucketByName(ctx, i.dbConf.BucketName)
-	if err != nil {
-		return fmt.Errorf("error looking up InfluxDB2 bucket: %v", err)
+	var bucket *domain.Bucket
+	if i.dbConf.CreateMissingBucket {
+		bucket, err = i.createBucket(ctx, org.Id)
+		if err != nil {
+			i.log.Debug("unable to create InfluxDB2 bucket (if missing): ", err)
+		} else {
+			i.log.Info("created missing InfluxDB2 bucket: ", i.dbConf.BucketName)
+		}
 	}
-	i.log.Debugf(
-		"InfluxDB2 found bucket for name %s with ID: %s",
-		i.dbConf.BucketName,
-		*bucket.Id,
-	)
+
+	if bucket == nil {
+		_, err = i.client.BucketsAPI().FindBucketByName(ctx, i.dbConf.BucketName)
+		if err != nil {
+			return fmt.Errorf("error looking up InfluxDB2 bucket: %v", err)
+		}
+		i.log.Info(
+			"using existing InfluxDB2 bucket: ", i.dbConf.BucketName,
+		)
+	}
 
 	i.log.Debug("InfluxDB2 CS: ", i.dbConf.Addr)
 	i.log.Info(i.GetName() + " Initialized")
@@ -120,6 +145,35 @@ func (i *Influx2Pump) connect() influxdb2.Client {
 	opts := influxdb2.DefaultOptions()
 	opts = opts.SetPrecision(time.Microsecond)
 	return influxdb2.NewClientWithOptions(i.dbConf.Addr, i.dbConf.Token, opts)
+}
+
+func (i *Influx2Pump) createBucket(ctx context.Context, orgID *string) (*domain.Bucket, error) {
+	bucketConf := i.dbConf.NewBucketConfig
+	fmt.Println(bucketConf)
+	rp := ""
+	schemaType := domain.SchemaTypeImplicit
+	retentionRules := make(domain.RetentionRules, len(bucketConf.RetentionRules))
+	for i, rr := range bucketConf.RetentionRules {
+		retentionRules[i] = domain.RetentionRule{
+			EverySeconds:              rr.EverySeconds,
+			ShardGroupDurationSeconds: &rr.ShardGroupDurationSeconds,
+			Type:                      domain.RetentionRuleType(rr.Type),
+		}
+	}
+	bucket := &domain.Bucket{
+		Name:           i.dbConf.BucketName,
+		OrgID:          orgID,
+		Description:    &bucketConf.Description,
+		Rp:             &rp,
+		SchemaType:     &schemaType,
+		RetentionRules: retentionRules,
+	}
+	bucketsApi := i.client.BucketsAPI()
+	bucket, err := bucketsApi.CreateBucket(ctx, bucket)
+	if err != nil {
+		return nil, err
+	}
+	return bucket, nil
 }
 
 func (i *Influx2Pump) WriteData(ctx context.Context, data []interface{}) error {
