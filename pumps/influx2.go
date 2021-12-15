@@ -30,22 +30,22 @@ var (
 type Influx2Conf struct {
 	EnvPrefix string `mapstructure:"meta_env_prefix"`
 	// InfluxDB2 pump bucket name.
-	BucketName string `mapstructure:"bucket"          json:"bucket"`
+	BucketName string `mapstructure:"bucket" json:"bucket"`
 	// InfluxDB2 pump organization name.
-	OrgName string `mapstructure:"organization"    json:"organization"`
+	OrgName string `mapstructure:"organization" json:"organization"`
 	// InfluxDB2 pump host.
-	Addr string `mapstructure:"address"         json:"address"`
+	Addr string `mapstructure:"address" json:"address"`
 	// InfluxDB2 pump database token.
-	Token string `mapstructure:"token"           json:"token"`
+	Token string `mapstructure:"token" json:"token"`
 	// Define which Analytics fields should be sent to InfluxDB2. Check the available
 	// fields in the example below. Default value is `["method",
 	// "path", "response_code", "api_key", "time_stamp", "api_version", "api_name", "api_id",
 	// "org_id", "oauth_id", "raw_request", "request_time", "raw_response", "ip_address"]`.
-	Fields []string `mapstructure:"fields"          json:"fields"`
+	Fields []string `mapstructure:"fields" json:"fields"`
 	// List of tags to be added to the metric.
-	Tags []string `mapstructure:"tags"            json:"tags"`
+	Tags []string `mapstructure:"tags" json:"tags"`
 	// Flush data to InfluxDB2 as soon as the pump receives it
-	Flush bool `mapstructure:"flush"           json:"flush"`
+	Flush bool `mapstructure:"flush" json:"flush"`
 }
 
 func (i *Influx2Pump) New() Pump {
