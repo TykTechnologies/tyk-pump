@@ -139,6 +139,15 @@ Create a `pump.conf` file:
           "bucket": "tyk_analytics",
           "address": "http://localhost:8086",
           "token": "ZzSnH2qRpEJd3ph3A6lPaCcP8BkJfaxeiadFG5DBMO8YIAn3mMzGunMqOQE2uPkAkewXE5Q6Gsye3vQTWmeTiQ==",
+          "create_missing_bucket": true,
+          "new_bucket_config": {
+            "description": "Tyk gateway requests",
+            "retention_rules": [
+              {
+                "every_seconds": 3600
+              }
+            ]
+          },
           "fields": ["request_time"],
           "tags": [
             "path",
