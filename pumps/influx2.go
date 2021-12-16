@@ -26,15 +26,18 @@ var (
 	influx2Measurement = "analytics"
 )
 
+// Configuration required to create the Bucket if it doesn't already exist
+// See https://docs.influxdata.com/influxdb/v2.1/api/#operation/PostBuckets
+type NewBucket struct {
+	// A description visible on the InfluxDB2 UI
+	Description string `mapstructure:"description" json:"description"`
+	// Rules to expire or retain data. No rules means data never expires.
+	RetentionRules []RetentionRule `mapstructure:"retention_rules" json:"retention_rules"`
+}
 type RetentionRule struct {
 	EverySeconds              int64  `mapstructure:"every_seconds" json:"every_seconds"`
 	ShardGroupDurationSeconds int64  `mapstructure:"shard_group_duration_seconds" json:"shard_group_duration_seconds"`
 	Type                      string `mapstructure:"type" json:"type"`
-}
-
-type NewBucket struct {
-	Description    string          `mapstructure:"description" json:"description"`
-	RetentionRules []RetentionRule `mapstructure:"retention_rules" json:"retention_rules"`
 }
 
 // @PumpConf Influx2
