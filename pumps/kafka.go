@@ -189,6 +189,7 @@ func (k *KafkaPump) WriteData(ctx context.Context, data []interface{}) error {
 			"host":            decoded.Host,
 			"content_length":  decoded.ContentLength,
 			"user_agent":      decoded.UserAgent,
+			"tags":            decoded.Tags,
 		}
 		//Add static metadata to json
 		for key, value := range k.kafkaConf.MetaData {
