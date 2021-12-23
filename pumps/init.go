@@ -30,4 +30,5 @@ func init() {
 	AvailablePumps["sql"] = &SQLPump{}
 	AvailablePumps["sql_aggregate"] = &SQLAggregatePump{}
 	AvailablePumps["stdout"] = &StdOutPump{}
+	AvailablePumps["timestream"] = &TimestreamPump{}
 }
