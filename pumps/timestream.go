@@ -83,15 +83,13 @@ func (t *TimestreamPump) WriteData(ctx context.Context, data []interface{}) erro
 	t.log.Debug("Attempting to write ", len(data), " records...")
 
 	var records []types.Record
-	var commonAttributes types.Record
 
-	for next, hasNext := BuildTimestreamInputIterator(t, data); hasNext; {
-		records, commonAttributes, hasNext = next()
+	for next, hasNext := BuildTimestreamInputIterator(data); hasNext; {
+		records, hasNext = next()
 		_, err := t.client.WriteRecords(ctx, &timestreamwrite.WriteRecordsInput{
-			DatabaseName:     aws.String(t.config.DatabaseName),
-			TableName:        aws.String(t.config.TableName),
-			Records:          records,
-			CommonAttributes: &commonAttributes,
+			DatabaseName: aws.String(t.config.DatabaseName),
+			TableName:    aws.String(t.config.TableName),
+			Records:      records,
 		})
 		if err != nil {
 			t.log.Errorf("Error writing data to Timestream %+v", err)
@@ -104,41 +102,55 @@ func (t *TimestreamPump) WriteData(ctx context.Context, data []interface{}) erro
 	return nil
 }
 
-func BuildTimestreamInputIterator(t *TimestreamPump, data []interface{}) (func() (records []types.Record, commonAttributes types.Record, hasNext bool), bool) {
+func BuildTimestreamInputIterator(data []interface{}) (func() (records []types.Record, hasNext bool), bool) {
 	curr := -1
-	max := len(data) - 1
-	next := func() (records []types.Record, commonAttributes types.Record, hasNext bool) {
+	max := int(math.Ceil((float64(len(data)) / float64(timestreamMaxRecordsCount)))) - 1
+
+	next := func() (records []types.Record, hasNext bool) {
 		curr++
-		decoded := data[curr].(analytics.AnalyticsRecord)
-		timestramDimensions := GetAnalyticsRecordDimensions(&decoded)
-		timestreamMeasures := GetAnalyticsRecordMeasures(&decoded)
-		commonAttribs := types.Record{
-			Dimensions: timestramDimensions,
-			Time:       aws.String(strconv.FormatInt(decoded.TimeStamp.UnixMilli(), 10)),
-			TimeUnit:   types.TimeUnitMilliseconds,
+		records = make([]types.Record, 0, timestreamMaxRecordsCount)
+
+		for i := curr * timestreamMaxRecordsCount; i < Min(timestreamMaxRecordsCount*(curr+1), len(data)); i++ {
+			decoded := data[i].(analytics.AnalyticsRecord)
+			multimeasureRecord := MapAnalyticRecord2TimestreamMultimeasureRecord(&decoded)
+			records = append(records, multimeasureRecord)
 		}
-		return timestreamMeasures, commonAttribs, curr < max
+		return records, curr < max
 	}
 	return next, curr < max
 }
 
-func GetAnalyticsRecordMeasures(decoded *analytics.AnalyticsRecord) (records []types.Record) {
+func MapAnalyticRecord2TimestreamMultimeasureRecord(decoded *analytics.AnalyticsRecord) types.Record {
+	timestramDimensions := GetAnalyticsRecordDimensions(decoded)
+	timestreamMeasures := GetAnalyticsRecordMeasures(decoded)
+	multimeasureRecord := types.Record{
+		Dimensions:       timestramDimensions,
+		MeasureName:      aws.String("request_metrics"),
+		MeasureValueType: types.MeasureValueTypeMulti,
+		MeasureValues:    timestreamMeasures,
+		Time:             aws.String(strconv.FormatInt(decoded.TimeStamp.UnixMilli(), 10)),
+		TimeUnit:         types.TimeUnitMilliseconds,
+	}
+	return multimeasureRecord
+}
 
-	records = []types.Record{
-		types.Record{
-			MeasureName:      aws.String("GeoData.City.GeoNameID"),
-			MeasureValue:     aws.String(strconv.FormatUint(uint64(decoded.Geo.City.GeoNameID), 10)),
-			MeasureValueType: types.MeasureValueTypeBigint,
+func GetAnalyticsRecordMeasures(decoded *analytics.AnalyticsRecord) (measureValues []types.MeasureValue) {
+
+	measureValues = []types.MeasureValue{
+		types.MeasureValue{
+			Name:  aws.String("GeoData.City.GeoNameID"),
+			Value: aws.String(strconv.FormatUint(uint64(decoded.Geo.City.GeoNameID), 10)),
+			Type:  types.MeasureValueTypeBigint,
 		},
-		types.Record{
-			MeasureName:      aws.String("GeoData.Location.Latitude"),
-			MeasureValue:     aws.String(strconv.FormatFloat(decoded.Geo.Location.Latitude, 'f', -1, 64)),
-			MeasureValueType: types.MeasureValueTypeDouble,
+		types.MeasureValue{
+			Name:  aws.String("GeoData.Location.Latitude"),
+			Value: aws.String(strconv.FormatFloat(decoded.Geo.Location.Latitude, 'f', -1, 64)),
+			Type:  types.MeasureValueTypeDouble,
 		},
-		types.Record{
-			MeasureName:      aws.String("GeoData.Location.Longitude"),
-			MeasureValue:     aws.String(strconv.FormatFloat(decoded.Geo.Location.Longitude, 'f', -1, 64)),
-			MeasureValueType: types.MeasureValueTypeDouble,
+		types.MeasureValue{
+			Name:  aws.String("GeoData.Location.Longitude"),
+			Value: aws.String(strconv.FormatFloat(decoded.Geo.Location.Longitude, 'f', -1, 64)),
+			Type:  types.MeasureValueTypeDouble,
 		},
 	}
 
@@ -154,10 +166,10 @@ func GetAnalyticsRecordMeasures(decoded *analytics.AnalyticsRecord) (records []t
 		"Latency.Upstream":              decoded.Latency.Upstream,
 	}
 	for key, value := range intMeasures {
-		records = append(records, types.Record{
-			MeasureName:      aws.String(key),
-			MeasureValue:     aws.String(strconv.FormatInt(value, 10)),
-			MeasureValueType: types.MeasureValueTypeBigint,
+		measureValues = append(measureValues, types.MeasureValue{
+			Name:  aws.String(key),
+			Value: aws.String(strconv.FormatInt(value, 10)),
+			Type:  types.MeasureValueTypeBigint,
 		})
 	}
 
@@ -173,10 +185,10 @@ func GetAnalyticsRecordMeasures(decoded *analytics.AnalyticsRecord) (records []t
 	//timestream can't ingest empty strings
 	for key, value := range stringMeasures {
 		if value != "" {
-			records = append(records, types.Record{
-				MeasureName:      aws.String(key),
-				MeasureValue:     aws.String(value),
-				MeasureValueType: types.MeasureValueTypeVarchar,
+			measureValues = append(measureValues, types.MeasureValue{
+				Name:  aws.String(key),
+				Value: aws.String(value),
+				Type:  types.MeasureValueTypeVarchar,
 			})
 		}
 	}
@@ -184,33 +196,31 @@ func GetAnalyticsRecordMeasures(decoded *analytics.AnalyticsRecord) (records []t
 	//rawResponse needs special treatment because timestream varchar has a 2KB size limit
 	chunks := chunkString(decoded.RawResponse, timestreamVarcharMaxLength)
 
-	if len(chunks)+len(records) > timestreamMaxRecordsCount {
-		return records
-	}
-	records = append(records, types.Record{
-		MeasureName:      aws.String("RawResponseSize"),
-		MeasureValue:     aws.String(strconv.FormatUint(uint64(len(chunks)), 10)),
-		MeasureValueType: types.MeasureValueTypeBigint,
+	measureValues = append(measureValues, types.MeasureValue{
+		Name:  aws.String("RawResponseSize"),
+		Value: aws.String(strconv.FormatInt(int64(len(chunks)), 10)),
+		Type:  types.MeasureValueTypeBigint,
 	})
 	for i, chunk := range chunks {
 		name := fmt.Sprintf("RawResponse%s", strconv.FormatUint(uint64(i), 10))
-		records = append(records, types.Record{
-			MeasureName:      aws.String(name),
-			MeasureValue:     aws.String(chunk),
-			MeasureValueType: types.MeasureValueTypeVarchar,
+		measureValues = append(measureValues, types.MeasureValue{
+			Name:  aws.String(name),
+			Value: aws.String(chunk),
+			Type:  types.MeasureValueTypeVarchar,
 		})
 	}
 
-	return records
+	return measureValues
+}
+func Min(a, b int) int {
+	if a > b {
+		return b
+	}
+	return a
 }
 
 func chunkString(chars string, chunkSize int) []string {
-	Min := func(a, b int) int {
-		if a > b {
-			return b
-		}
-		return a
-	}
+
 	chunkCount := int(math.Ceil((float64(len(chars)) / float64(chunkSize))))
 	output := make([]string, chunkCount)
 

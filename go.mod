@@ -10,9 +10,9 @@ require (
 	github.com/TykTechnologies/logrus-prefixed-formatter v0.0.0-20161201171121-85209afb73a6
 	github.com/TykTechnologies/murmur3 v0.0.0-20180602122059-1915e687e465
 	github.com/TykTechnologies/tyk v0.0.0-20200207055804-cf1d1ad81206
-	github.com/aws/aws-sdk-go-v2 v1.10.0
+	github.com/aws/aws-sdk-go-v2 v1.11.2
 	github.com/aws/aws-sdk-go-v2/config v1.9.0
-	github.com/aws/aws-sdk-go-v2/service/timestreamwrite v1.5.0
+	github.com/aws/aws-sdk-go-v2/service/timestreamwrite v1.9.0
 	github.com/beeker1121/goque v0.0.0-20170321141813-4044bc29b280 // indirect
 	github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869 // indirect
 	github.com/fatih/structs v1.1.0
