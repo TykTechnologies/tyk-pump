@@ -249,7 +249,7 @@ func checkShutdown(ctx context.Context, wg *sync.WaitGroup) bool {
 	case <-ctx.Done():
 		log.WithFields(logrus.Fields{
 			"prefix": mainPrefix,
-		}).Info("Shuting down ", len(Pumps), " pumps...")
+		}).Info("Shutting down ", len(Pumps), " pumps...")
 		for _, pmp := range Pumps {
 			if err := pmp.Shutdown(); err != nil {
 				log.WithFields(logrus.Fields{
@@ -258,7 +258,7 @@ func checkShutdown(ctx context.Context, wg *sync.WaitGroup) bool {
 			} else {
 				log.WithFields(logrus.Fields{
 					"prefix": mainPrefix,
-				}).Info(pmp.GetName() + " gracefully stoped.")
+				}).Info(pmp.GetName() + " gracefully stopped.")
 			}
 		}
 		wg.Done()
@@ -429,5 +429,5 @@ func main() {
 	wg.Wait()  // wait till all the pumps finish
 	log.WithFields(logrus.Fields{
 		"prefix": mainPrefix,
-	}).Info("Tyk-pump stoped.")
+	}).Info("Tyk-pump stopped.")
 }
