@@ -727,6 +727,56 @@ More advanced fields:
 * `ssl_cert_file`: Can be used to set custom certificate file for authentication with kafka.
 * `ssl_key_file`: Can be used to set custom key file for authentication with kafka.
 
+### Influx2 Config
+Supported in Tyk Pump v1.5.1+
+
+This pump uses the official Go client library for InfluxDB 2.x.
+
+Example:
+```.json
+"influx2": {
+    "type": "influx2",
+    "meta": {
+      "organization": "my-org",
+      "bucket": "my-bucket",
+      "address": "http://localhost:8086",
+      "token": "my-super-secret-auth-token",
+      "fields": ["request_time"],
+      "tags": [
+        "api_id",
+        "api_key",
+        "api_name",
+        "api_version",
+        "ip_address",
+        "method",
+        "oauth_id",
+        "org_id",
+        "path",
+        "raw_request",
+        "response_code"
+      ]
+    }
+}
+```
+Configuration options: 
+
+* `"organization"` - InfluxDB organization name.
+* `"bucket"` - InfluxDB bucket where the analytic data is going to be stored.
+* `"create_missing_bucket"` - Set this to true if you want to create the bucket if not exists. Defaults to false.
+* `"new_bucket_config"` - If `"create_missing_bucket"`is true, you can configure the new bucket configuration under `"new_bucket_config"`:
+  * `"description"` - Description of the bucket. This is going to be visible in the Influx UI.
+  * `"retention_rules"`- This is a slice of retention rules for this bucket. An example of this would be:
+  ```.json
+  "retention_rules":[
+  {
+  "every_seconds":100000,
+  "type":"expires"
+  }
+  ]
+  ```
+  which would mean that the data in the bucket expires every 100000 seconds.
+* `"token"` - Influx DB Auth token
+* `"tags"` - Which elements should work as a tag for the time series.
 
 ### Syslog
 Supported in Tyk Pump v1.0.0+
