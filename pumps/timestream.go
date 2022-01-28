@@ -91,7 +91,7 @@ func (t *TimestreamPump) WriteData(ctx context.Context, data []interface{}) erro
 
 	var records []types.Record
 
-	for next, hasNext := BuildTimestreamInputIterator(t, data); hasNext; {
+	for next, hasNext := t.BuildTimestreamInputIterator(data); hasNext; {
 		records, hasNext = next()
 		_, err := t.client.WriteRecords(ctx, &timestreamwrite.WriteRecordsInput{
 			DatabaseName: aws.String(t.config.DatabaseName),
@@ -109,7 +109,7 @@ func (t *TimestreamPump) WriteData(ctx context.Context, data []interface{}) erro
 	return nil
 }
 
-func BuildTimestreamInputIterator(t *TimestreamPump, data []interface{}) (func() (records []types.Record, hasNext bool), bool) {
+func (t *TimestreamPump) BuildTimestreamInputIterator(data []interface{}) (func() (records []types.Record, hasNext bool), bool) {
 	curr := -1
 	max := int(math.Ceil((float64(len(data)) / float64(timestreamMaxRecordsCount)))) - 1
 
@@ -119,7 +119,7 @@ func BuildTimestreamInputIterator(t *TimestreamPump, data []interface{}) (func()
 
 		for i := curr * timestreamMaxRecordsCount; i < Min(timestreamMaxRecordsCount*(curr+1), len(data)); i++ {
 			decoded := data[i].(analytics.AnalyticsRecord)
-			multimeasureRecord := MapAnalyticRecord2TimestreamMultimeasureRecord(t, &decoded)
+			multimeasureRecord := t.MapAnalyticRecord2TimestreamMultimeasureRecord(&decoded)
 			records = append(records, multimeasureRecord)
 		}
 		return records, curr < max
@@ -127,9 +127,9 @@ func BuildTimestreamInputIterator(t *TimestreamPump, data []interface{}) (func()
 	return next, curr < max
 }
 
-func MapAnalyticRecord2TimestreamMultimeasureRecord(t *TimestreamPump, decoded *analytics.AnalyticsRecord) types.Record {
-	timestramDimensions := GetAnalyticsRecordDimensions(t, decoded)
-	timestreamMeasures := GetAnalyticsRecordMeasures(t, decoded)
+func (t *TimestreamPump) MapAnalyticRecord2TimestreamMultimeasureRecord(decoded *analytics.AnalyticsRecord) types.Record {
+	timestramDimensions := t.GetAnalyticsRecordDimensions(decoded)
+	timestreamMeasures := t.GetAnalyticsRecordMeasures(decoded)
 	multimeasureRecord := types.Record{
 		Dimensions:       timestramDimensions,
 		MeasureName:      aws.String("request_metrics"),
@@ -141,7 +141,7 @@ func MapAnalyticRecord2TimestreamMultimeasureRecord(t *TimestreamPump, decoded *
 	return multimeasureRecord
 }
 
-func GetAnalyticsRecordMeasures(t *TimestreamPump, decoded *analytics.AnalyticsRecord) (measureValues []types.MeasureValue) {
+func (t *TimestreamPump) GetAnalyticsRecordMeasures(decoded *analytics.AnalyticsRecord) (measureValues []types.MeasureValue) {
 
 	measureFieldsMapping := map[string]types.MeasureValue{
 		"GeoData.City.GeoNameID": {
@@ -273,7 +273,7 @@ func mapToVarChar(dictionary map[string]string) string {
 	return output
 }
 
-func GetAnalyticsRecordDimensions(t *TimestreamPump, decoded *analytics.AnalyticsRecord) (dimensions []types.Dimension) {
+func (t *TimestreamPump) GetAnalyticsRecordDimensions(decoded *analytics.AnalyticsRecord) (dimensions []types.Dimension) {
 
 	var dimensionFields = map[string]string{
 		"Method":     decoded.Method,

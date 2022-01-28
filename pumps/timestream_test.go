@@ -113,12 +113,12 @@ func TestGetAnalyticsRecordMeasuresAndDimensions(t *testing.T) {
 		UserAgent: "Firefox1.0",
 	}
 
-	dimensionsActual := GetAnalyticsRecordDimensions(&pump, &decoded)
+	dimensionsActual := pump.GetAnalyticsRecordDimensions(&decoded)
 	if len(dimensionsActual) != 1 {
 		t.Fatal("Should have 1 dimension in list")
 	}
 
-	measuresActual := GetAnalyticsRecordMeasures(&pump, &decoded)
+	measuresActual := pump.GetAnalyticsRecordMeasures(&decoded)
 	if len(measuresActual) != 1 {
 		t.Fatal("Should have 1 measure in list")
 	}
@@ -141,7 +141,7 @@ func TestGetAnalyticsRecordMeasureWithRawResponse(t *testing.T) {
 		RawResponse: "{abc:Firefox1.0,ppp:WEWEWEW}",
 	}
 
-	measuresActual := GetAnalyticsRecordMeasures(&pump, &decoded)
+	measuresActual := pump.GetAnalyticsRecordMeasures(&decoded)
 	if len(measuresActual) != 2 {
 		t.Fatal("Should have 2 measure in list")
 	}
