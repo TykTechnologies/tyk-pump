@@ -2,6 +2,7 @@ package pumps
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math"
 	"net"
@@ -39,10 +40,12 @@ const (
 )
 
 type TimestreamPumpConf struct {
-	EnvPrefix    string `mapstructure:"meta_env_prefix"`
-	AWSRegion    string `mapstructure:"aws_region"`
-	TableName    string `mapstructure:"timestream_table_name"`
-	DatabaseName string `mapstructure:"timestream_database_name"`
+	EnvPrefix    string   `mapstructure:"meta_env_prefix"`
+	AWSRegion    string   `mapstructure:"aws_region"`
+	TableName    string   `mapstructure:"timestream_table_name"`
+	DatabaseName string   `mapstructure:"timestream_database_name"`
+	Dimensions   []string `mapstructure:"dimensions"`
+	Measures     []string `mapstructure:"measures"`
 }
 
 func (t *TimestreamPump) New() Pump {
@@ -70,6 +73,10 @@ func (t *TimestreamPump) Init(config interface{}) error {
 
 	processPumpEnvVars(t, t.log, t.config, timestreamDefaultEnv)
 
+	if len(t.config.Measures) == 0 || len(t.config.Dimensions) == 0 {
+		return errors.New("missing \"measures\" or \"dimensions\" in pump configuration")
+	}
+
 	t.client, err = NewTimesteramWriter(t.config.AWSRegion)
 	if err != nil {
 		return err
@@ -84,7 +91,7 @@ func (t *TimestreamPump) WriteData(ctx context.Context, data []interface{}) erro
 
 	var records []types.Record
 
-	for next, hasNext := BuildTimestreamInputIterator(data); hasNext; {
+	for next, hasNext := BuildTimestreamInputIterator(t, data); hasNext; {
 		records, hasNext = next()
 		_, err := t.client.WriteRecords(ctx, &timestreamwrite.WriteRecordsInput{
 			DatabaseName: aws.String(t.config.DatabaseName),
@@ -102,7 +109,7 @@ func (t *TimestreamPump) WriteData(ctx context.Context, data []interface{}) erro
 	return nil
 }
 
-func BuildTimestreamInputIterator(data []interface{}) (func() (records []types.Record, hasNext bool), bool) {
+func BuildTimestreamInputIterator(t *TimestreamPump, data []interface{}) (func() (records []types.Record, hasNext bool), bool) {
 	curr := -1
 	max := int(math.Ceil((float64(len(data)) / float64(timestreamMaxRecordsCount)))) - 1
 
@@ -112,7 +119,7 @@ func BuildTimestreamInputIterator(data []interface{}) (func() (records []types.R
 
 		for i := curr * timestreamMaxRecordsCount; i < Min(timestreamMaxRecordsCount*(curr+1), len(data)); i++ {
 			decoded := data[i].(analytics.AnalyticsRecord)
-			multimeasureRecord := MapAnalyticRecord2TimestreamMultimeasureRecord(&decoded)
+			multimeasureRecord := MapAnalyticRecord2TimestreamMultimeasureRecord(t, &decoded)
 			records = append(records, multimeasureRecord)
 		}
 		return records, curr < max
@@ -120,9 +127,9 @@ func BuildTimestreamInputIterator(data []interface{}) (func() (records []types.R
 	return next, curr < max
 }
 
-func MapAnalyticRecord2TimestreamMultimeasureRecord(decoded *analytics.AnalyticsRecord) types.Record {
-	timestramDimensions := GetAnalyticsRecordDimensions(decoded)
-	timestreamMeasures := GetAnalyticsRecordMeasures(decoded)
+func MapAnalyticRecord2TimestreamMultimeasureRecord(t *TimestreamPump, decoded *analytics.AnalyticsRecord) types.Record {
+	timestramDimensions := GetAnalyticsRecordDimensions(t, decoded)
+	timestreamMeasures := GetAnalyticsRecordMeasures(t, decoded)
 	multimeasureRecord := types.Record{
 		Dimensions:       timestramDimensions,
 		MeasureName:      aws.String("request_metrics"),
@@ -134,20 +141,20 @@ func MapAnalyticRecord2TimestreamMultimeasureRecord(decoded *analytics.Analytics
 	return multimeasureRecord
 }
 
-func GetAnalyticsRecordMeasures(decoded *analytics.AnalyticsRecord) (measureValues []types.MeasureValue) {
+func GetAnalyticsRecordMeasures(t *TimestreamPump, decoded *analytics.AnalyticsRecord) (measureValues []types.MeasureValue) {
 
-	measureValues = []types.MeasureValue{
-		types.MeasureValue{
+	measureFieldsMapping := map[string]types.MeasureValue{
+		"GeoData.City.GeoNameID": {
 			Name:  aws.String("GeoData.City.GeoNameID"),
 			Value: aws.String(strconv.FormatUint(uint64(decoded.Geo.City.GeoNameID), 10)),
 			Type:  types.MeasureValueTypeBigint,
 		},
-		types.MeasureValue{
+		"GeoData.Location.Latitude": {
 			Name:  aws.String("GeoData.Location.Latitude"),
 			Value: aws.String(strconv.FormatFloat(decoded.Geo.Location.Latitude, 'f', -1, 64)),
 			Type:  types.MeasureValueTypeDouble,
 		},
-		types.MeasureValue{
+		"GeoData.Location.Longitude": {
 			Name:  aws.String("GeoData.Location.Longitude"),
 			Value: aws.String(strconv.FormatFloat(decoded.Geo.Location.Longitude, 'f', -1, 64)),
 			Type:  types.MeasureValueTypeDouble,
@@ -166,11 +173,11 @@ func GetAnalyticsRecordMeasures(decoded *analytics.AnalyticsRecord) (measureValu
 		"Latency.Upstream":              decoded.Latency.Upstream,
 	}
 	for key, value := range intMeasures {
-		measureValues = append(measureValues, types.MeasureValue{
+		measureFieldsMapping[key] = types.MeasureValue{
 			Name:  aws.String(key),
 			Value: aws.String(strconv.FormatInt(value, 10)),
 			Type:  types.MeasureValueTypeBigint,
-		})
+		}
 	}
 
 	var stringMeasures = map[string]string{
@@ -185,29 +192,42 @@ func GetAnalyticsRecordMeasures(decoded *analytics.AnalyticsRecord) (measureValu
 	//timestream can't ingest empty strings
 	for key, value := range stringMeasures {
 		if value != "" {
-			measureValues = append(measureValues, types.MeasureValue{
+			measureFieldsMapping[key] = types.MeasureValue{
 				Name:  aws.String(key),
 				Value: aws.String(value),
 				Type:  types.MeasureValueTypeVarchar,
-			})
+			}
+		}
+	}
+
+	var includeRawResponse = false //special case raw response
+
+	//filter measures according to config
+	for _, key := range t.config.Measures {
+		includeRawResponse = includeRawResponse || key == "RawResponse"
+		//skip if configuration key not present in measure fields
+		if value, ok := measureFieldsMapping[key]; ok {
+			measureValues = append(measureValues, value)
 		}
 	}
 
 	//rawResponse needs special treatment because timestream varchar has a 2KB size limit
-	chunks := chunkString(decoded.RawResponse, timestreamVarcharMaxLength)
+	if includeRawResponse {
+		chunks := chunkString(decoded.RawResponse, timestreamVarcharMaxLength)
 
-	measureValues = append(measureValues, types.MeasureValue{
-		Name:  aws.String("RawResponseSize"),
-		Value: aws.String(strconv.FormatInt(int64(len(chunks)), 10)),
-		Type:  types.MeasureValueTypeBigint,
-	})
-	for i, chunk := range chunks {
-		name := fmt.Sprintf("RawResponse%s", strconv.FormatUint(uint64(i), 10))
 		measureValues = append(measureValues, types.MeasureValue{
-			Name:  aws.String(name),
-			Value: aws.String(chunk),
-			Type:  types.MeasureValueTypeVarchar,
+			Name:  aws.String("RawResponseSize"),
+			Value: aws.String(strconv.FormatInt(int64(len(chunks)), 10)),
+			Type:  types.MeasureValueTypeBigint,
 		})
+		for i, chunk := range chunks {
+			name := fmt.Sprintf("RawResponse%s", strconv.FormatUint(uint64(i), 10))
+			measureValues = append(measureValues, types.MeasureValue{
+				Name:  aws.String(name),
+				Value: aws.String(chunk),
+				Type:  types.MeasureValueTypeVarchar,
+			})
+		}
 	}
 
 	return measureValues
@@ -220,6 +240,9 @@ func Min(a, b int) int {
 }
 
 func chunkString(chars string, chunkSize int) []string {
+	if chunkSize <= 0 {
+		return []string{chars}
+	}
 
 	chunkCount := int(math.Ceil((float64(len(chars)) / float64(chunkSize))))
 	output := make([]string, chunkCount)
@@ -250,7 +273,7 @@ func mapToVarChar(dictionary map[string]string) string {
 	return output
 }
 
-func GetAnalyticsRecordDimensions(decoded *analytics.AnalyticsRecord) (dimensions []types.Dimension) {
+func GetAnalyticsRecordDimensions(t *TimestreamPump, decoded *analytics.AnalyticsRecord) (dimensions []types.Dimension) {
 
 	var dimensionFields = map[string]string{
 		"Method":     decoded.Method,
@@ -265,9 +288,18 @@ func GetAnalyticsRecordDimensions(decoded *analytics.AnalyticsRecord) (dimension
 		"OauthID":    decoded.OauthID,
 	}
 
-	dimensions = make([]types.Dimension, 0, len(dimensionFields))
 	for key, value := range dimensionFields {
-		if value != "" {
+		//timestream can't ingest empty strings
+		if value == "" {
+			delete(dimensionFields, key)
+		}
+	}
+	dimensions = make([]types.Dimension, 0, len(dimensionFields))
+
+	//filter dimensions according to config
+	for _, key := range t.config.Dimensions {
+		//skip if configuration key not present in dimension fields
+		if value, ok := dimensionFields[key]; ok {
 			dimensions = append(dimensions, types.Dimension{
 				Name:               aws.String(key),
 				Value:              aws.String(value),
