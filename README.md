@@ -781,6 +781,61 @@ For example:
     }
 ```
 
+### Timestream Config
+
+`write_rate_limit` - Should be true if you want to save any of the `RateLimit` measures, which are extracted from the headers of the raw response.
+`read_geo_from_request` - If this is true, we will try to read geo information from the headers of the raw request
+
+Example:
+```json
+    "timestream": {
+      "type": "timestream",
+      "meta": {
+        "aws_region": "us-east-1",
+        "timestream_table_name": "tyk-pump-table",
+        "timestream_database_name": "tyk-pump",
+        "write_rate_limit": true,
+        "read_geo_from_request": true,
+        "dimensions": [
+          "Method",
+          "Host",
+          "Path",
+          "RawPath",
+          "APIKey",
+          "APIVersion",
+          "APIName",
+          "APIID",
+          "OrgID",
+          "OauthID"
+        ],
+        "measures": [
+          "ContentLength",
+          "ResponseCode",
+          "RequestTime",
+          "NetworkStats.OpenConnections",
+          "NetworkStats.ClosedConnection",
+          "NetworkStats.BytesIn",
+          "NetworkStats.BytesOut",
+          "Latency.Total",
+          "Latency.Upstream",
+          "RateLimit.Limit",
+          "Ratelimit.Remaining",
+          "Ratelimit.Reset",
+          "UserAgent",
+          "RawRequest",
+          "RawResponse",
+          "IPAddress",
+          "GeoData.Country.ISOCode",
+          "GeoData.City.Names",
+          "GeoData.Location.TimeZone",
+          "GeoData.City.GeoNameID",
+          "GeoData.Location.Latitude",
+          "GeoData.Location.Longitude"
+        ]
+      }
+    },
+```
+
 ## Compiling & Testing
 
 1. Download dependent packages:
