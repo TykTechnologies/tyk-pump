@@ -1,7 +1,10 @@
 package pumps
 
 import (
+	"bufio"
+	"bytes"
 	"context"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"math"
@@ -40,12 +43,14 @@ const (
 )
 
 type TimestreamPumpConf struct {
-	EnvPrefix    string   `mapstructure:"meta_env_prefix"`
-	AWSRegion    string   `mapstructure:"aws_region"`
-	TableName    string   `mapstructure:"timestream_table_name"`
-	DatabaseName string   `mapstructure:"timestream_database_name"`
-	Dimensions   []string `mapstructure:"dimensions"`
-	Measures     []string `mapstructure:"measures"`
+	EnvPrefix          string   `mapstructure:"meta_env_prefix"`
+	AWSRegion          string   `mapstructure:"aws_region"`
+	TableName          string   `mapstructure:"timestream_table_name"`
+	DatabaseName       string   `mapstructure:"timestream_database_name"`
+	Dimensions         []string `mapstructure:"dimensions"`
+	Measures           []string `mapstructure:"measures"`
+	WriteRateLimit     bool     `mapstructure:"write_rate_limit"`
+	ReadGeoFromRequest bool     `mapstructure:"read_geo_from_request"`
 }
 
 func (t *TimestreamPump) New() Pump {
@@ -172,6 +177,24 @@ func (t *TimestreamPump) GetAnalyticsRecordMeasures(decoded *analytics.Analytics
 		"Latency.Total":                 decoded.Latency.Total,
 		"Latency.Upstream":              decoded.Latency.Upstream,
 	}
+	if t.config.WriteRateLimit {
+		headers, err := LoadHeadersFromRawResponse(decoded.RawResponse)
+		if err == nil {
+			i, errr := strconv.ParseInt(headers.Get("X-Ratelimit-Limit"), 10, 64)
+			if errr == nil {
+				intMeasures["RateLimit.Limit"] = i
+			}
+			i, errr = strconv.ParseInt(headers.Get("X-Ratelimit-Remaining"), 10, 64)
+			if errr == nil {
+				intMeasures["Ratelimit.Remaining"] = i
+			}
+			i, errr = strconv.ParseInt(headers.Get("X-Ratelimit-Reset"), 10, 64)
+			if errr == nil {
+				intMeasures["Ratelimit.Reset"] = i
+			}
+		}
+	}
+
 	for key, value := range intMeasures {
 		measureFieldsMapping[key] = types.MeasureValue{
 			Name:  aws.String(key),
@@ -187,6 +210,18 @@ func (t *TimestreamPump) GetAnalyticsRecordMeasures(decoded *analytics.Analytics
 		"GeoData.Country.ISOCode":   decoded.Geo.Country.ISOCode,
 		"GeoData.City.Names":        mapToVarChar(decoded.Geo.City.Names),
 		"GeoData.Location.TimeZone": decoded.Geo.Location.TimeZone,
+	}
+
+	if t.config.ReadGeoFromRequest {
+		headers, err := LoadHeadersFromRawRequest(decoded.RawRequest)
+		if err == nil {
+			if stringMeasures["GeoData.Country.ISOCode"] == "" {
+				stringMeasures["GeoData.Country.ISOCode"] = headers.Get("Cloudfront-Viewer-Country")
+			}
+			if stringMeasures["GeoData.City.Names"] == "" {
+				stringMeasures["GeoData.City.Names"] = headers.Get("Cloudfront-Viewer-City")
+			}
+		}
 	}
 
 	//timestream can't ingest empty strings
@@ -231,6 +266,28 @@ func (t *TimestreamPump) GetAnalyticsRecordMeasures(decoded *analytics.Analytics
 	}
 
 	return measureValues
+}
+func LoadHeadersFromRawRequest(rawRequest string) (http.Header, error) {
+	requestBytes, err := base64.StdEncoding.DecodeString(rawRequest)
+	if err != nil {
+		return nil, err
+	}
+	request, err := http.ReadRequest(bufio.NewReader(bytes.NewReader(requestBytes)))
+	if err != nil {
+		return nil, err
+	}
+	return request.Header, nil
+}
+func LoadHeadersFromRawResponse(rawResponse string) (http.Header, error) {
+	responseBytes, err := base64.StdEncoding.DecodeString(rawResponse)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := http.ReadResponse(bufio.NewReader(bytes.NewReader(responseBytes)), nil)
+	if err != nil {
+		return nil, err
+	}
+	return resp.Header, nil
 }
 func Min(a, b int) int {
 	if a > b {
