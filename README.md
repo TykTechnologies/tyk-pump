@@ -796,6 +796,7 @@ Example:
         "timestream_database_name": "tyk-pump",
         "write_rate_limit": true,
         "read_geo_from_request": true,
+        "write_zero_values": false,
         "dimensions": [
           "Method",
           "Host",
@@ -831,7 +832,29 @@ Example:
           "GeoData.City.GeoNameID",
           "GeoData.Location.Latitude",
           "GeoData.Location.Longitude"
-        ]
+        ],
+        "field_name_mappings":{
+          "Path": "path",
+          "APIKey": "api_key",
+          "APIVersion": "module",
+          "APIName": "email",
+          "Method": "method",
+          "APIID": "account",
+          "measure_name": "request_metrics",
+          "time": "time",
+          "ResponseCode": "response_code",
+          "GeoData.Country.ISOCode": "country_code",
+          "Latency.Total": "latency_total",
+          "RawResponseSize": "sesponse_size",
+          "RequestTime": "request_time",
+          "GeoData.City.Names": "city",
+          "Latency.Upstream": "latency_upstream",
+          "UserAgent": "user_agent",
+          "IPAddress": "ip_address",
+          "RateLimit.Limit": "quota_max",
+          "Ratelimit.Remaining": "quota_remaining",
+          "Ratelimit.Reset": "quota_renewal_rate"
+        }
       }
     },
 ```

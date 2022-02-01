@@ -43,14 +43,16 @@ const (
 )
 
 type TimestreamPumpConf struct {
-	EnvPrefix          string   `mapstructure:"meta_env_prefix"`
-	AWSRegion          string   `mapstructure:"aws_region"`
-	TableName          string   `mapstructure:"timestream_table_name"`
-	DatabaseName       string   `mapstructure:"timestream_database_name"`
-	Dimensions         []string `mapstructure:"dimensions"`
-	Measures           []string `mapstructure:"measures"`
-	WriteRateLimit     bool     `mapstructure:"write_rate_limit"`
-	ReadGeoFromRequest bool     `mapstructure:"read_geo_from_request"`
+	EnvPrefix          string            `mapstructure:"meta_env_prefix"`
+	AWSRegion          string            `mapstructure:"aws_region"`
+	TableName          string            `mapstructure:"timestream_table_name"`
+	DatabaseName       string            `mapstructure:"timestream_database_name"`
+	Dimensions         []string          `mapstructure:"dimensions"`
+	Measures           []string          `mapstructure:"measures"`
+	WriteRateLimit     bool              `mapstructure:"write_rate_limit"`
+	ReadGeoFromRequest bool              `mapstructure:"read_geo_from_request"`
+	WriteZeroValues    bool              `mapstructure:"write_zero_values"`
+	NameMappings       map[string]string `mapstructure:"field_name_mappings"`
 }
 
 func (t *TimestreamPump) New() Pump {
@@ -146,24 +148,37 @@ func (t *TimestreamPump) MapAnalyticRecord2TimestreamMultimeasureRecord(decoded 
 	return multimeasureRecord
 }
 
+func (t *TimestreamPump) nameMap(fieldName string) string {
+	if value, ok := t.config.NameMappings[fieldName]; ok {
+		return value
+	}
+	return fieldName
+}
+
 func (t *TimestreamPump) GetAnalyticsRecordMeasures(decoded *analytics.AnalyticsRecord) (measureValues []types.MeasureValue) {
 
-	measureFieldsMapping := map[string]types.MeasureValue{
-		"GeoData.City.GeoNameID": {
-			Name:  aws.String("GeoData.City.GeoNameID"),
+	measureFieldsMapping := map[string]types.MeasureValue{}
+
+	if decoded.Geo.City.GeoNameID != 0 || t.config.WriteZeroValues {
+		measureFieldsMapping["GeoData.City.GeoNameID"] = types.MeasureValue{
+			Name:  aws.String(t.nameMap("GeoData.City.GeoNameID")),
 			Value: aws.String(strconv.FormatUint(uint64(decoded.Geo.City.GeoNameID), 10)),
 			Type:  types.MeasureValueTypeBigint,
-		},
-		"GeoData.Location.Latitude": {
-			Name:  aws.String("GeoData.Location.Latitude"),
+		}
+	}
+	if decoded.Geo.Location.Latitude != 0.0 || t.config.WriteZeroValues {
+		measureFieldsMapping["GeoData.Location.Latitude"] = types.MeasureValue{
+			Name:  aws.String(t.nameMap("GeoData.Location.Latitude")),
 			Value: aws.String(strconv.FormatFloat(decoded.Geo.Location.Latitude, 'f', -1, 64)),
 			Type:  types.MeasureValueTypeDouble,
-		},
-		"GeoData.Location.Longitude": {
-			Name:  aws.String("GeoData.Location.Longitude"),
+		}
+	}
+	if decoded.Geo.Location.Longitude != 0.0 || t.config.WriteZeroValues {
+		measureFieldsMapping["GeoData.Location.Longitude"] = types.MeasureValue{
+			Name:  aws.String(t.nameMap("GeoData.Location.Longitude")),
 			Value: aws.String(strconv.FormatFloat(decoded.Geo.Location.Longitude, 'f', -1, 64)),
 			Type:  types.MeasureValueTypeDouble,
-		},
+		}
 	}
 
 	var intMeasures = map[string]int64{
@@ -196,10 +211,12 @@ func (t *TimestreamPump) GetAnalyticsRecordMeasures(decoded *analytics.Analytics
 	}
 
 	for key, value := range intMeasures {
-		measureFieldsMapping[key] = types.MeasureValue{
-			Name:  aws.String(key),
-			Value: aws.String(strconv.FormatInt(value, 10)),
-			Type:  types.MeasureValueTypeBigint,
+		if value != 0 || t.config.WriteZeroValues {
+			measureFieldsMapping[key] = types.MeasureValue{
+				Name:  aws.String(t.nameMap(key)),
+				Value: aws.String(strconv.FormatInt(value, 10)),
+				Type:  types.MeasureValueTypeBigint,
+			}
 		}
 	}
 
@@ -228,7 +245,7 @@ func (t *TimestreamPump) GetAnalyticsRecordMeasures(decoded *analytics.Analytics
 	for key, value := range stringMeasures {
 		if value != "" {
 			measureFieldsMapping[key] = types.MeasureValue{
-				Name:  aws.String(key),
+				Name:  aws.String(t.nameMap(key)),
 				Value: aws.String(value),
 				Type:  types.MeasureValueTypeVarchar,
 			}
@@ -251,12 +268,12 @@ func (t *TimestreamPump) GetAnalyticsRecordMeasures(decoded *analytics.Analytics
 		chunks := chunkString(decoded.RawResponse, timestreamVarcharMaxLength)
 
 		measureValues = append(measureValues, types.MeasureValue{
-			Name:  aws.String("RawResponseSize"),
+			Name:  aws.String(t.nameMap("RawResponseSize")),
 			Value: aws.String(strconv.FormatInt(int64(len(chunks)), 10)),
 			Type:  types.MeasureValueTypeBigint,
 		})
 		for i, chunk := range chunks {
-			name := fmt.Sprintf("RawResponse%s", strconv.FormatUint(uint64(i), 10))
+			name := fmt.Sprintf("%s%s", t.nameMap("RawResponse"), strconv.FormatUint(uint64(i), 10))
 			measureValues = append(measureValues, types.MeasureValue{
 				Name:  aws.String(name),
 				Value: aws.String(chunk),
@@ -358,7 +375,7 @@ func (t *TimestreamPump) GetAnalyticsRecordDimensions(decoded *analytics.Analyti
 		//skip if configuration key not present in dimension fields
 		if value, ok := dimensionFields[key]; ok {
 			dimensions = append(dimensions, types.Dimension{
-				Name:               aws.String(key),
+				Name:               aws.String(t.nameMap(key)),
 				Value:              aws.String(value),
 				DimensionValueType: types.DimensionValueTypeVarchar,
 			})
