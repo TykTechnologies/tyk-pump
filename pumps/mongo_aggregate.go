@@ -30,14 +30,30 @@ type MongoAggregatePump struct {
 	CommonPumpConfig
 }
 
+// @PumpConf MongoAggregate
 type MongoAggregateConf struct {
+	// TYKCONFIGEXPAND
 	BaseMongoConf
-	UseMixedCollection      bool     `mapstructure:"use_mixed_collection"`
-	TrackAllPaths           bool     `mapstructure:"track_all_paths"`
-	IgnoreTagPrefixList     []string `mapstructure:"ignore_tag_prefix_list"`
-	ThresholdLenTagList     int      `mapstructure:"threshold_len_tag_list"`
-	StoreAnalyticsPerMinute bool     `mapstructure:"store_analytics_per_minute"`
-	IgnoreAggregationsList  []string `mapstructure:"ignore_aggregations"`
+	// If set to `true` your pump will store analytics to both your organisation defined
+	// collections z_tyk_analyticz_aggregate_{ORG ID} and your org-less tyk_analytics_aggregates
+	// collection. When set to 'false' your pump will only store analytics to your org defined
+	// collection.
+	UseMixedCollection bool `json:"use_mixed_collection" mapstructure:"use_mixed_collection"`
+	// Specifies if it should store aggregated data for all the endpoints. By default, `false`
+	// which means that only store aggregated data for `tracked endpoints`.
+	TrackAllPaths bool `json:"track_all_paths" mapstructure:"track_all_paths"`
+	// Specifies prefixes of tags that should be ignored.
+	IgnoreTagPrefixList []string `json:"ignore_tag_prefix_list" mapstructure:"ignore_tag_prefix_list"`
+	// Determines the threshold of amount of tags of an aggregation. If the amount of tags is superior to the threshold,
+	// it will print an alert.
+	// Defaults to 1000.
+	ThresholdLenTagList int `json:"threshold_len_tag_list" mapstructure:"threshold_len_tag_list"`
+	// Determines if the aggregations should be made per minute instead of per hour.
+	StoreAnalyticsPerMinute bool `json:"store_analytics_per_minute" mapstructure:"store_analytics_per_minute"`
+	// This list determines which aggregations are going to be dropped and not stored in the collection.
+	// Posible values are: "APIID","errors","versions","apikeys","oauthids","geo","tags","endpoints","keyendpoints",
+	// "oauthendpoints", and "apiendpoints".
+	IgnoreAggregationsList []string `json:"ignore_aggregations" mapstructure:"ignore_aggregations"`
 }
 
 func (m *MongoAggregatePump) New() Pump {
@@ -190,6 +206,12 @@ func (m *MongoAggregatePump) connect() {
 }
 
 func (m *MongoAggregatePump) ensureIndexes(c *mgo.Collection) error {
+	exists, errExists:=  m.collectionExists(c.Name)
+	if errExists == nil && exists	{
+		m.log.Debug("Collection ",c.Name," exists, omitting index creation")
+		return nil
+	}
+
 	var err error
 	ttlIndex := mgo.Index{
 		Key:         []string{"expireAt"},
@@ -233,78 +255,12 @@ func (m *MongoAggregatePump) WriteData(ctx context.Context, data []interface{}) 
 
 		// put aggregated data into MongoDB
 		for orgID, filteredData := range analyticsPerOrg {
-			collectionName, collErr := m.GetCollectionName(orgID)
-			if collErr != nil {
-				m.log.Info("No OrgID for AnalyticsRecord, skipping")
-				continue
-			}
-
-			thisSession := m.dbSession.Copy()
-			defer thisSession.Close()
-
-			analyticsCollection := thisSession.DB("").C(collectionName)
-			indexCreateErr := m.ensureIndexes(analyticsCollection)
-
-			if indexCreateErr != nil {
-				m.log.Error(indexCreateErr)
-			}
-
-			query := bson.M{
-				"orgid":     filteredData.OrgID,
-				"timestamp": filteredData.TimeStamp,
-			}
-
-			if len(m.dbConf.IgnoreAggregationsList) > 0 {
-				filteredData.DiscardAggregations(m.dbConf.IgnoreAggregationsList)
-			}
-
-			updateDoc := filteredData.AsChange()
-
-			change := mgo.Change{
-				Update:    updateDoc,
-				ReturnNew: true,
-				Upsert:    true,
-			}
-
-			doc := analytics.AnalyticsRecordAggregate{}
-			_, err := analyticsCollection.Find(query).Apply(change, &doc)
-
+			err := m.DoAggregatedWriting(ctx, orgID, filteredData)
 			if err != nil {
-				m.log.WithField("query", query).Error("UPSERT Failure: ", err)
-				return m.HandleWriteErr(err)
+				return err
 			}
 
-			// We have the new doc back, lets fix the averages
-			avgUpdateDoc := doc.AsTimeUpdate()
-			avgChange := mgo.Change{
-				Update:    avgUpdateDoc,
-				ReturnNew: true,
-			}
-			withTimeUpdate := analytics.AnalyticsRecordAggregate{}
-			_, avgErr := analyticsCollection.Find(query).Apply(avgChange, &withTimeUpdate)
-
-			if m.dbConf.ThresholdLenTagList != -1 && (len(withTimeUpdate.Tags) > m.dbConf.ThresholdLenTagList) {
-				m.printAlert(withTimeUpdate, m.dbConf.ThresholdLenTagList)
-			}
-
-			if avgErr != nil {
-				m.log.WithField("query", query).Error("AvgUpdate Failure: ", avgErr)
-				return m.HandleWriteErr(avgErr)
-			}
-
-			m.log.WithFields(logrus.Fields{
-				"collection": collectionName,
-			}).Debug("Wrote aggregated data for ", len(data), " records")
-
-			if m.dbConf.UseMixedCollection {
-				thisData := analytics.AnalyticsRecordAggregate{}
-				err := analyticsCollection.Find(query).One(&thisData)
-				if err != nil {
-					m.log.WithField("query", query).Error("Couldn't find query doc:", err)
-				} else {
-					m.doMixedWrite(thisData, query)
-				}
-			}
+			m.log.Debug("Processed aggregated data for ", orgID)
 		}
 	}
 	m.log.Info("Purged ", len(data), " records...")
@@ -356,6 +312,100 @@ func (m *MongoAggregatePump) HandleWriteErr(err error) error {
 	}
 	return err
 }
+
+func (m *MongoAggregatePump) DoAggregatedWriting(ctx context.Context, orgID string, filteredData analytics.AnalyticsRecordAggregate) error {
+	collectionName, collErr := m.GetCollectionName(orgID)
+	if collErr != nil {
+		m.log.Info("No OrgID for AnalyticsRecord, skipping")
+		return nil
+	}
+
+	thisSession := m.dbSession.Copy()
+	defer thisSession.Close()
+
+	analyticsCollection := thisSession.DB("").C(collectionName)
+	indexCreateErr := m.ensureIndexes(analyticsCollection)
+
+	if indexCreateErr != nil {
+		m.log.Error(indexCreateErr)
+	}
+
+	query := bson.M{
+		"orgid":     filteredData.OrgID,
+		"timestamp": filteredData.TimeStamp,
+	}
+
+	if len(m.dbConf.IgnoreAggregationsList) > 0 {
+		filteredData.DiscardAggregations(m.dbConf.IgnoreAggregationsList)
+	}
+
+	updateDoc := filteredData.AsChange()
+
+	change := mgo.Change{
+		Update:    updateDoc,
+		ReturnNew: true,
+		Upsert:    true,
+	}
+
+	doc := analytics.AnalyticsRecordAggregate{}
+	_, err := analyticsCollection.Find(query).Apply(change, &doc)
+
+	if err != nil {
+		m.log.WithField("query", query).Error("UPSERT Failure: ", err)
+		return m.HandleWriteErr(err)
+	}
+
+	// We have the new doc back, lets fix the averages
+	avgUpdateDoc := doc.AsTimeUpdate()
+	avgChange := mgo.Change{
+		Update:    avgUpdateDoc,
+		ReturnNew: true,
+	}
+	withTimeUpdate := analytics.AnalyticsRecordAggregate{}
+	_, avgErr := analyticsCollection.Find(query).Apply(avgChange, &withTimeUpdate)
+
+	if m.dbConf.ThresholdLenTagList != -1 && (len(withTimeUpdate.Tags) > m.dbConf.ThresholdLenTagList) {
+		m.printAlert(withTimeUpdate, m.dbConf.ThresholdLenTagList)
+	}
+
+	if avgErr != nil {
+		m.log.WithField("query", query).Error("AvgUpdate Failure: ", avgErr)
+		return m.HandleWriteErr(avgErr)
+	}
+
+	if m.dbConf.UseMixedCollection {
+		thisData := analytics.AnalyticsRecordAggregate{}
+		err := analyticsCollection.Find(query).One(&thisData)
+		if err != nil {
+			m.log.WithField("query", query).Error("Couldn't find query doc:", err)
+		} else {
+			m.doMixedWrite(thisData, query)
+		}
+	}
+	return nil
+}
+
+// collectionExists checks to see if a collection name exists in the db.
+func (m *MongoAggregatePump) collectionExists(name string) (bool, error) {
+	sess := m.dbSession.Copy()
+	defer sess.Close()
+
+	colNames, err := sess.DB("").CollectionNames()
+	if err != nil {
+		m.log.Error("Unable to get column names: ", err)
+
+		return false, err
+	}
+
+	for _, coll := range colNames {
+		if coll == name {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
 
 // WriteUptimeData will pull the data from the in-memory store and drop it into the specified MongoDB collection
 func (m *MongoAggregatePump) WriteUptimeData(data []interface{}) {

@@ -19,9 +19,11 @@ type CSVPump struct {
 	CommonPumpConfig
 }
 
+// @PumpConf CSV
 type CSVConf struct {
 	EnvPrefix string `mapstructure:"meta_env_prefix"`
-	CSVDir    string `mapstructure:"csv_dir"`
+	// The directory and the filename where the CSV data will be stored.
+	CSVDir string `json:"csv_dir" mapstructure:"csv_dir"`
 }
 
 var csvPrefix = "csv-pump"

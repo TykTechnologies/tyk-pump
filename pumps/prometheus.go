@@ -25,10 +25,13 @@ type PrometheusPump struct {
 	CommonPumpConfig
 }
 
+// @PumpConf Prometheus
 type PrometheusConf struct {
 	EnvPrefix string `mapstructure:"meta_env_prefix"`
-	Addr      string `mapstructure:"listen_address"`
-	Path      string `mapstructure:"path"`
+	// The full URL to your Prometheus instance, {HOST}:{PORT}. For example `localhost:9090`.
+	Addr string `json:"listen_address" mapstructure:"listen_address"`
+	// The path to the Prometheus collection. For example `/metrics`.
+	Path string `json:"path" mapstructure:"path"`
 }
 
 var prometheusPrefix = "prometheus-pump"

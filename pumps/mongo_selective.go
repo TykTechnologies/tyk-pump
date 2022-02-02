@@ -25,10 +25,16 @@ var mongoSelectivePrefix = "mongo-pump-selective"
 var mongoSelectivePumpPrefix = "PMP_MONGOSEL"
 var mongoSelectiveDefaultEnv = PUMPS_ENV_PREFIX + "_MONGOSELECTIVE" + PUMPS_ENV_META_PREFIX
 
+// @PumpConf MongoSelective
 type MongoSelectiveConf struct {
+	// TYKCONFIGEXPAND
 	BaseMongoConf
-	MaxInsertBatchSizeBytes int `mapstructure:"max_insert_batch_size_bytes"`
-	MaxDocumentSizeBytes    int `mapstructure:"max_document_size_bytes"`
+	// Maximum insert batch size for mongo selective pump. If the batch we are writing surpass this value, it will be send in multiple batchs.
+	// Defaults to 10Mb.
+	MaxInsertBatchSizeBytes int `json:"max_insert_batch_size_bytes" mapstructure:"max_insert_batch_size_bytes"`
+	// Maximum document size. If the document exceed this value, it will be skipped.
+	// Defaults to 10Mb.
+	MaxDocumentSizeBytes int `json:"max_document_size_bytes" mapstructure:"max_document_size_bytes"`
 }
 
 func (m *MongoSelectivePump) New() Pump {
@@ -117,6 +123,12 @@ func (m *MongoSelectivePump) connect() {
 }
 
 func (m *MongoSelectivePump) ensureIndexes(c *mgo.Collection) error {
+	exists, errExists:=  m.collectionExists(c.Name)
+	if errExists == nil && exists	{
+		m.log.Debug("Collection ",c.Name," exists, omitting index creation")
+		return nil
+	}
+
 	var err error
 	ttlIndex := mgo.Index{
 		Key:         []string{"expireAt"},
@@ -301,5 +313,25 @@ func (m *MongoSelectivePump) WriteUptimeData(data []interface{}) {
 			}
 		}
 	}
+}
 
+// collectionExists checks to see if a collection name exists in the db.
+func (m *MongoSelectivePump) collectionExists(name string) (bool, error) {
+	sess := m.dbSession.Copy()
+	defer sess.Close()
+
+	colNames, err := sess.DB("").CollectionNames()
+	if err != nil {
+		m.log.Error("Unable to get column names: ", err)
+
+		return false, err
+	}
+
+	for _, coll := range colNames {
+		if coll == name {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }

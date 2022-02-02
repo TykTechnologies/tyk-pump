@@ -41,7 +41,7 @@ var (
 	demoApiMode        = kingpin.Flag("demo-api", "pass apiID string to generate demo data").Default("").String()
 	demoApiVersionMode = kingpin.Flag("demo-api-version", "pass apiID string to generate demo data").Default("").String()
 	debugMode          = kingpin.Flag("debug", "enable debug mode").Bool()
-	version            = kingpin.Version(VERSION)
+	version            = kingpin.Version(pumps.VERSION)
 )
 
 func Init() {
@@ -63,7 +63,7 @@ func Init() {
 
 	log.WithFields(logrus.Fields{
 		"prefix": mainPrefix,
-	}).Info("## Tyk Analytics Pump, ", VERSION, " ##")
+	}).Info("## Tyk Analytics Pump, ", pumps.VERSION, " ##")
 
 	// If no environment variable is set, check the configuration file:
 	if os.Getenv("TYK_LOGLEVEL") == "" {
@@ -117,7 +117,7 @@ func storeVersion() {
 	versionStore.KeyPrefix = "version-check-"
 	versionStore.Config = versionConf
 	versionStore.Connect()
-	versionStore.SetKey("pump", VERSION, 0)
+	versionStore.SetKey("pump", pumps.VERSION, 0)
 }
 
 func initialisePumps() {
@@ -249,7 +249,7 @@ func checkShutdown(ctx context.Context, wg *sync.WaitGroup) bool {
 	case <-ctx.Done():
 		log.WithFields(logrus.Fields{
 			"prefix": mainPrefix,
-		}).Info("Shuting down ", len(Pumps), " pumps...")
+		}).Info("Shutting down ", len(Pumps), " pumps...")
 		for _, pmp := range Pumps {
 			if err := pmp.Shutdown(); err != nil {
 				log.WithFields(logrus.Fields{
@@ -258,7 +258,7 @@ func checkShutdown(ctx context.Context, wg *sync.WaitGroup) bool {
 			} else {
 				log.WithFields(logrus.Fields{
 					"prefix": mainPrefix,
-				}).Info(pmp.GetName() + " gracefully stoped.")
+				}).Info(pmp.GetName() + " gracefully stopped.")
 			}
 		}
 		wg.Done()
@@ -429,5 +429,5 @@ func main() {
 	wg.Wait()  // wait till all the pumps finish
 	log.WithFields(logrus.Fields{
 		"prefix": mainPrefix,
-	}).Info("Tyk-pump stoped.")
+	}).Info("Tyk-pump stopped.")
 }
