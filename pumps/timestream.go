@@ -147,8 +147,8 @@ func (t *TimestreamPump) MapAnalyticRecord2TimestreamMultimeasureRecord(decoded 
 		MeasureName:      aws.String("request_metrics"),
 		MeasureValueType: types.MeasureValueTypeMulti,
 		MeasureValues:    timestreamMeasures,
-		Time:             aws.String(strconv.FormatInt(decoded.TimeStamp.UnixMilli(), 10)),
-		TimeUnit:         types.TimeUnitMilliseconds,
+		Time:             aws.String(strconv.FormatInt(decoded.TimeStamp.UnixNano(), 10)),
+		TimeUnit:         types.TimeUnitNanoseconds,
 	}
 	return multimeasureRecord
 }
