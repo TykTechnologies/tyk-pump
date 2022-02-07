@@ -106,7 +106,12 @@ func (t *TimestreamPump) WriteData(ctx context.Context, data []interface{}) erro
 			Records:      records,
 		})
 		if err != nil {
-			t.log.Errorf("Error writing data to Timestream %+v", err)
+			if rrex, ok := err.(*types.RejectedRecordsException); ok {
+				t.log.Errorf("Error writing data to Timestream %v: %v", err, *rrex.RejectedRecords[0].Reason)
+			} else {
+				t.log.Errorf("Error writing data to Timestream %+v", err)
+			}
+
 			return err
 		}
 	}
