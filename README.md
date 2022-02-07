@@ -323,7 +323,7 @@ Create a `pump.conf` file:
           "Method",
           "Host",
           "Path",
-          "APIKey",
+          "APIKey"
         ],
         "measures": [
           "ResponseCode",
@@ -335,7 +335,7 @@ Create a `pump.conf` file:
           "UserAgent",
           "IPAddress",
           "GeoData.Country.ISOCode",
-          "GeoData.City.Names",
+          "GeoData.City.Names"
         ],
         "field_name_mappings":{
           "Path": "path",
