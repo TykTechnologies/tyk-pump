@@ -330,3 +330,98 @@ func (r *RedisClusterStorageManager) ensureConnection() {
 		log.Info("Reconnecting again...")
 	}
 }
+
+func (r *RedisClusterStorageManager) GetSet(keyName string) (map[string]string, error) {
+	log.Debug("Getting from key set: ", keyName)
+	log.Debug("Getting from fixed key set: ", r.fixKey(keyName))
+	r.ensureConnection()
+
+	val, err := r.db.SMembers(ctx, r.fixKey(keyName)).Result()
+	if err != nil {
+		log.Error("Error trying to get key set:", err)
+		return nil, err
+	}
+
+	result := make(map[string]string)
+	for i, value := range val {
+		result[strconv.Itoa(i)] = value
+	}
+
+	return result, nil
+}
+
+func (r *RedisClusterStorageManager) AppendToSet(keyName, value string) {
+	fixedKey := r.fixKey(keyName)
+	log.WithField("keyName", keyName).Debug("Pushing to raw key list")
+	log.WithField("fixedKey", fixedKey).Debug("Appending to fixed key list")
+	r.ensureConnection()
+	if err := r.db.RPush(ctx, fixedKey, value).Err(); err != nil {
+		log.WithError(err).Error("Error trying to append to set keys")
+	}
+}
+
+func (r *RedisClusterStorageManager) GetListRange(keyName string, from, to int64) ([]string, error) {
+	fixedKey := r.fixKey(keyName)
+	logEntry := logrus.Fields{
+		"keyName":  keyName,
+		"fixedKey": fixedKey,
+		"from":     from,
+		"to":       to,
+	}
+	log.WithFields(logEntry).Debug("Getting list range")
+
+	elements, err := r.db.LRange(ctx, fixedKey, from, to).Result()
+	if err != nil {
+		log.WithFields(logEntry).WithError(err).Error("LRANGE command failed")
+		return nil, err
+	}
+
+	return elements, nil
+}
+
+func (r *RedisClusterStorageManager) GetKey(keyName string) (string, error) {
+	r.ensureConnection()
+
+	value, err := r.db.Get(ctx, r.fixKey(keyName)).Result()
+	if err != nil {
+		log.Debug("Error trying to get value:", err)
+		return "", err
+	}
+
+	return value, nil
+}
+
+func (r *RedisClusterStorageManager) SetPrefix(prefix string){
+	r.KeyPrefix = prefix
+}
+
+func (r *RedisClusterStorageManager) RemoveFromList(keyName, value string) error {
+	fixedKey := r.fixKey(keyName)
+	logEntry := logrus.Fields{
+		"keyName":  keyName,
+		"fixedKey": fixedKey,
+		"value":    value,
+	}
+	log.WithFields(logEntry).Debug("Removing value from list")
+	r.ensureConnection()
+	if err := r.db.LRem(ctx, fixedKey, 0, value).Err(); err != nil {
+		log.WithFields(logEntry).WithError(err).Error("LREM command failed")
+		return err
+	}
+
+	return nil
+}
+
+// DeleteKey will remove a key from the database
+func (r *RedisClusterStorageManager) DeleteKey(keyName string) bool {
+	r.ensureConnection()
+
+	log.Debug("DEL Key was: ", keyName)
+	log.Debug("DEL Key became: ", r.fixKey(keyName))
+	n, err := r.db.Del(ctx, r.fixKey(keyName)).Result()
+	if err != nil {
+		log.Error("Error trying to delete key",err)
+	}
+
+	return n > 0
+}

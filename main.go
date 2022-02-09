@@ -29,6 +29,7 @@ var AnalyticsStore storage.AnalyticsStorage
 var UptimeStorage storage.AnalyticsStorage
 var Pumps []pumps.Pump
 var UptimePump pumps.UptimePump
+var ConfigStore storage.StorageHandler
 
 var log = logger.GetLogger()
 
@@ -63,7 +64,8 @@ func Init() {
 
 	log.WithFields(logrus.Fields{
 		"prefix": mainPrefix,
-	}).Info("## Tyk Analytics Pump, ", pumps.VERSION, " ##")
+	}).Info("## Tyk Analytics Pump ID:",SystemConfig.ID,", ", pumps.VERSION, " ##")
+
 
 	// If no environment variable is set, check the configuration file:
 	if os.Getenv("TYK_LOGLEVEL") == "" {
@@ -101,8 +103,9 @@ func setupAnalyticsStore() {
 		UptimeStorage = &storage.RedisClusterStorageManager{}
 	}
 
-	AnalyticsStore.Init(SystemConfig.AnalyticsStorageConfig)
 
+
+	AnalyticsStore.Init(SystemConfig.AnalyticsStorageConfig)
 	// Copy across the redis configuration
 	uptimeConf := SystemConfig.AnalyticsStorageConfig
 
@@ -118,6 +121,13 @@ func storeVersion() {
 	versionStore.Config = versionConf
 	versionStore.Connect()
 	versionStore.SetKey("pump", pumps.VERSION, 0)
+
+
+	ConfigStore = &storage.RedisClusterStorageManager{KeyPrefix: "cfg-"}
+	cfg:= SystemConfig.AnalyticsStorageConfig
+	cfg.RedisKeyPrefix = "cfg-"
+	ConfigStore.Init(cfg)
+
 }
 
 func initialisePumps() {
@@ -261,10 +271,19 @@ func checkShutdown(ctx context.Context, wg *sync.WaitGroup) bool {
 				}).Info(pmp.GetName() + " gracefully stopped.")
 			}
 		}
+
+		err:=SystemConfig.DeleteConfigFromStore()
+		if err != nil {
+			log.Error(err)
+		}
+
 		wg.Done()
 		shutdown = true
 	default:
 	}
+
+
+
 	return shutdown
 }
 
@@ -390,11 +409,18 @@ func main() {
 	// vclu(version check and licecnse utilisation) service
 	storeVersion()
 
+
+
 	// Create the store
 	setupAnalyticsStore()
 
 	// prime the pumps
 	initialisePumps()
+
+	errCfg := SystemConfig.Store()
+	if errCfg!=nil{
+		log.Error("error storing config:",errCfg)
+	}
 	if *demoMode != "" {
 		log.Info("BUILDING DEMO DATA AND EXITING...")
 		log.Warning("Starting from date: ", time.Now().AddDate(0, 0, -30))

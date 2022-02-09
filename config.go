@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/TykTechnologies/tyk-pump/pumps"
 	"github.com/kelseyhightower/envconfig"
+	uuid "github.com/satori/go.uuid"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/TykTechnologies/tyk-pump/storage"
@@ -17,6 +19,7 @@ import (
 const ENV_PREVIX = "TYK_PMP"
 const PUMPS_ENV_PREFIX = pumps.PUMPS_ENV_PREFIX
 const PUMPS_ENV_META_PREFIX = pumps.PUMPS_ENV_META_PREFIX
+const DEFAULT_CONFIG_INDEX = "tyk_config_index"
 
 type PumpConfig struct {
 	// Deprecated.
@@ -141,6 +144,8 @@ type UptimeConf struct {
 }
 
 type TykPumpConfiguration struct {
+	// Identify Tyk Pump
+	ID string `json:"id"`
 	// The number of seconds the Pump waits between checking for analytics data and purge it from
 	// Redis.
 	PurgeDelay int `json:"purge_delay"`
@@ -250,6 +255,10 @@ func LoadConfig(filePath *string, configStruct *TykPumpConfiguration) {
 	if errLoadEnvPumps != nil {
 		log.Fatal("error loading pumps env vars:", err)
 	}
+
+	if configStruct.ID == ""{
+		configStruct.ID = uuid.NewV4().String()
+	}
 }
 
 func (cfg *TykPumpConfiguration) LoadPumpsByEnv() error {
@@ -320,4 +329,41 @@ func (cfg *TykPumpConfiguration) LoadPumpsByEnv() error {
 		cfg.Pumps[pmpName] = pmp
 	}
 	return nil
+}
+
+
+func (cfg *TykPumpConfiguration)  Store() error{
+	if ConfigStore != nil {
+		log.Info("Storing pump config...")
+		pmpName := "tyk_pump_config"+"_"+cfg.ID
+
+		ConfigStore.AppendToSet(DEFAULT_CONFIG_INDEX,pmpName)
+
+		cfgBytes, _ := json.Marshal(&cfg)
+		err := ConfigStore.SetKey(pmpName,string(cfgBytes),-1)
+		if err != nil {
+		log.Error("error storing config ", err)
+		return errors.New("error config store")
+		}
+		return nil
+	}
+	return errors.New("no store configured")
+}
+
+func (cfg *TykPumpConfiguration) DeleteConfigFromStore() error{
+	if ConfigStore != nil {
+		log.Debug("deleting pump config from Redis...")
+		pmpName := "tyk_pump_config"+"_"+cfg.ID
+
+		err := ConfigStore.RemoveFromList(DEFAULT_CONFIG_INDEX,pmpName)
+		if err != nil {
+			log.Error("Error deleting pump key from cfg index",err)
+		}
+		ok := ConfigStore.DeleteKey(pmpName)
+		if !ok {
+			return errors.New("error deleting config")
+		}
+		return nil
+	}
+	return errors.New("no store configured")
 }
