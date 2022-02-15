@@ -163,10 +163,10 @@ func (p *MoesifPump) getSamplingPercentage(userID string, companyID string) int 
 
 func fetchIDFromHeader(requestHeaders map[string]interface{}, responseHeaders map[string]interface{}, headerName string) string {
 	var id string
-	if requid, ok := requestHeaders[headerName].(string); ok {
+	if requid, ok := requestHeaders[strings.ToLower(headerName)].(string); ok {
 		id = requid
 	}
-	if resuid, ok := responseHeaders[headerName].(string); ok {
+	if resuid, ok := responseHeaders[strings.ToLower(headerName)].(string); ok {
 		id = resuid
 	}
 	return id
