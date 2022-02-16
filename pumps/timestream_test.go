@@ -6,92 +6,61 @@ import (
 	"github.com/TykTechnologies/tyk-pump/analytics"
 )
 
-func TestChunkString_SizeZero(t *testing.T) {
-	inputString := "aaa"
-	inputSize := 0
-
-	actual := chunkString(inputString, inputSize)
-
-	if len(actual) != 1 {
-		t.Fatal("Should return a size 1 array with the input")
+func TestChunkString(t *testing.T) {
+	tests := []struct {
+		testName    string
+		inputString string
+		inputSize   int
+		expected    []string
+	}{
+		{
+			testName:    "SizeZero",
+			inputString: "aaa",
+			inputSize:   0,
+			expected:    []string{"aaa"},
+		},
+		{
+			testName:    "SizeLargerThanInputLenght",
+			inputString: "aaa",
+			inputSize:   10,
+			expected:    []string{"aaa"},
+		},
+		{
+			testName:    "Size1",
+			inputString: "aaa",
+			inputSize:   1,
+			expected:    []string{"a", "a", "a"},
+		},
+		{
+			testName:    "Size2_Odd",
+			inputString: "aaa",
+			inputSize:   2,
+			expected:    []string{"aa", "a"},
+		},
+		{
+			testName:    "Size2_Even",
+			inputString: "aaaa",
+			inputSize:   2,
+			expected:    []string{"aa", "aa"},
+		},
+		{
+			testName:    "SizeEqualsInput",
+			inputString: "aaa",
+			inputSize:   3,
+			expected:    []string{"aaa"},
+		},
 	}
-	if actual[0] != inputString {
-		t.Fatal("Should return a size 1 array with the input")
-	}
-}
-func TestChunkString_SizeLargerThanInputLenght(t *testing.T) {
-	inputString := "aaa"
-	inputSize := 10
+	for _, v := range tests {
 
-	actual := chunkString(inputString, inputSize)
-	if len(actual) != 1 {
-		t.Fatal("Should return a size 1 array with the input")
-	}
-	if actual[0] != inputString {
-		t.Fatal("Should return a size 1 array with the input")
-	}
-}
-func TestChunkString1(t *testing.T) {
-	inputString := "aaa"
-	inputSize := 1
-	expected := []string{"a", "a", "a"}
+		actual := chunkString(v.inputString, v.inputSize)
 
-	actual := chunkString(inputString, inputSize)
-
-	if len(actual) != len(expected) {
-		t.Fatalf("Expected len %d, got %d", len(expected), len(actual))
-	}
-	for i := range expected {
-		if expected[i] != actual[i] {
-			t.Fatalf("Expected value %v, in position %d and got %v", expected[i], i, actual[i])
+		if len(actual) != len(v.expected) {
+			t.Fatalf("%v: Expected len %d, got %d", v.testName, len(v.expected), len(actual))
 		}
-	}
-}
-func TestChunkString2(t *testing.T) {
-	inputString := "aaa"
-	inputSize := 2
-	expected := []string{"aa", "a"}
-
-	actual := chunkString(inputString, inputSize)
-
-	if len(actual) != len(expected) {
-		t.Fatalf("Expected len %d, got %d", len(expected), len(actual))
-	}
-	for i := range expected {
-		if expected[i] != actual[i] {
-			t.Fatalf("Expected value %v, in position %d and got %v", expected[i], i, actual[i])
-		}
-	}
-}
-func TestChunkString2pair(t *testing.T) {
-	inputString := "aaaa"
-	inputSize := 2
-	expected := []string{"aa", "aa"}
-
-	actual := chunkString(inputString, inputSize)
-
-	if len(actual) != len(expected) {
-		t.Fatalf("Expected len %d, got %d", len(expected), len(actual))
-	}
-	for i := range expected {
-		if expected[i] != actual[i] {
-			t.Fatalf("Expected value %v, in position %d and got %v", expected[i], i, actual[i])
-		}
-	}
-}
-func TestChunkString3(t *testing.T) {
-	inputString := "aaa"
-	inputSize := 3
-	expected := []string{"aaa"}
-
-	actual := chunkString(inputString, inputSize)
-
-	if len(actual) != len(expected) {
-		t.Fatalf("Expected len %d, got %d", len(expected), len(actual))
-	}
-	for i := range expected {
-		if expected[i] != actual[i] {
-			t.Fatalf("Expected value %v, in position %d and got %v", expected[i], i, actual[i])
+		for i := range v.expected {
+			if v.expected[i] != actual[i] {
+				t.Fatalf("%v: Expected value %v, in position %d and got %v", v.testName, v.expected[i], i, actual[i])
+			}
 		}
 	}
 }
@@ -145,8 +114,4 @@ func TestGetAnalyticsRecordMeasureWithRawResponse(t *testing.T) {
 	if len(measuresActual) != 2 {
 		t.Fatal("Should have 2 measure in list")
 	}
-	// for _, v := range measuresActual {
-	// 	t.Logf("%v", *v.Name)
-	// 	t.Logf("%v", *v.Value)
-	// }
 }
