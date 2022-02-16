@@ -42,17 +42,35 @@ const (
 	timestreamMaxRecordsCount  = 100  //https://docs.aws.amazon.com/timestream/latest/developerguide/API_WriteRecords.html
 )
 
+// @PumpConf Timesteram
 type TimestreamPumpConf struct {
-	EnvPrefix          string            `mapstructure:"meta_env_prefix"`
-	AWSRegion          string            `mapstructure:"aws_region"`
-	TableName          string            `mapstructure:"timestream_table_name"`
-	DatabaseName       string            `mapstructure:"timestream_database_name"`
-	Dimensions         []string          `mapstructure:"dimensions"`
-	Measures           []string          `mapstructure:"measures"`
-	WriteRateLimit     bool              `mapstructure:"write_rate_limit"`
-	ReadGeoFromRequest bool              `mapstructure:"read_geo_from_request"`
-	WriteZeroValues    bool              `mapstructure:"write_zero_values"`
-	NameMappings       map[string]string `mapstructure:"field_name_mappings"`
+	EnvPrefix string `mapstructure:"meta_env_prefix"`
+	//The aws region that contains the timestream database
+	AWSRegion string `mapstructure:"aws_region"`
+	//The table name where the data is going to be written
+	TableName string `mapstructure:"timestream_table_name"`
+	//The timestream database name that contains the table being written to
+	DatabaseName string `mapstructure:"timestream_database_name"`
+	//A filter of all the dimensions that will be written to the table. The possible options are
+	//["Method","Host","Path","RawPath","APIKey","APIVersion","APIName","APIID","OrgID","OauthID"]
+	Dimensions []string `mapstructure:"dimensions"`
+	//A filter of all the measures that will be written to the table. The possible options are
+	//["ContentLength","ResponseCode","RequestTime","NetworkStats.OpenConnections",
+	//"NetworkStats.ClosedConnection","NetworkStats.BytesIn","NetworkStats.BytesOut",
+	//"Latency.Total","Latency.Upstream","GeoData.City.GeoNameID","IPAddress",
+	//"GeoData.Location.Latitude","GeoData.Location.Longitude","UserAgent","RawRequest","RawResponse",
+	//"RateLimit.Limit","Ratelimit.Remaining","Ratelimit.Reset",
+	//"GeoData.Country.ISOCode","GeoData.City.Names","GeoData.Location.TimeZone"]
+	Measures []string `mapstructure:"measures"`
+	//Set to true in order to save any of the `RateLimit` measures. Default value is `false`.
+	WriteRateLimit bool `mapstructure:"write_rate_limit"`
+	//If set true, we will try to read geo information from the headers if
+	//values aren't found on the analytic record . Default value is `false`.
+	ReadGeoFromRequest bool `mapstructure:"read_geo_from_request"`
+	//Set to true, in order to save numerical values with value zero. Default value is `false`.
+	WriteZeroValues bool `mapstructure:"write_zero_values"`
+	//A name mapping for both Dimensions and Measures names. It's not required
+	NameMappings map[string]string `mapstructure:"field_name_mappings"`
 }
 
 func (t *TimestreamPump) New() Pump {
@@ -84,8 +102,9 @@ func (t *TimestreamPump) Init(config interface{}) error {
 		return errors.New("missing \"measures\" or \"dimensions\" in pump configuration")
 	}
 
-	t.client, err = NewTimesteramWriter(t.config.AWSRegion)
+	t.client, err = t.NewTimesteramWriter()
 	if err != nil {
+		t.log.Fatal("Failed to create timestream client: ", err)
 		return err
 	}
 	t.log.Info(t.GetName() + " Initialized")
@@ -390,15 +409,22 @@ func (t *TimestreamPump) GetAnalyticsRecordDimensions(decoded *analytics.Analyti
 	return dimensions
 }
 
-func NewTimesteramWriter(awsRegion string) (c *timestreamwrite.Client, err error) {
+func (t *TimestreamPump) NewTimesteramWriter() (c *timestreamwrite.Client, err error) {
+	timeout := t.CommonPumpConfig.timeout * int(time.Second)
+	if timeout <= 0 {
+		timeout = 30 * int(time.Second)
+	}
+
+	//write client example
+	//https://docs.aws.amazon.com/timestream/latest/developerguide/code-samples.write-client.html
 	tr := &http.Transport{
 		ResponseHeaderTimeout: 20 * time.Second,
 		// Using DefaultTransport values for other parameters: https://golang.org/pkg/net/http/#RoundTripper
 		Proxy: http.ProxyFromEnvironment,
 		DialContext: (&net.Dialer{
-			KeepAlive: 30 * time.Second,
+			KeepAlive: time.Duration(timeout),
 			DualStack: true,
-			Timeout:   30 * time.Second,
+			Timeout:   time.Duration(timeout),
 		}).DialContext,
 		MaxIdleConns:          100,
 		IdleConnTimeout:       90 * time.Second,
@@ -411,9 +437,9 @@ func NewTimesteramWriter(awsRegion string) (c *timestreamwrite.Client, err error
 	cfg, err := config.LoadDefaultConfig(context.TODO(),
 		config.WithHTTPClient(&http.Client{
 			Transport: tr,
-			Timeout:   30 * time.Second,
+			Timeout:   time.Duration(timeout),
 		}),
-		config.WithRegion(awsRegion),
+		config.WithRegion(t.config.AWSRegion),
 		config.WithRetryer(func() aws.Retryer {
 			return retry.AddWithMaxAttempts(retry.NewStandard(), 10)
 		}))
