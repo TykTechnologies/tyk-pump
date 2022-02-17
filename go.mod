@@ -10,6 +10,9 @@ require (
 	github.com/TykTechnologies/logrus-prefixed-formatter v0.0.0-20161201171121-85209afb73a6
 	github.com/TykTechnologies/murmur3 v0.0.0-20180602122059-1915e687e465
 	github.com/TykTechnologies/tyk v0.0.0-20200207055804-cf1d1ad81206
+	github.com/aws/aws-sdk-go-v2 v1.11.2
+	github.com/aws/aws-sdk-go-v2/config v1.9.0
+	github.com/aws/aws-sdk-go-v2/service/timestreamwrite v1.9.0
 	github.com/beeker1121/goque v0.0.0-20170321141813-4044bc29b280 // indirect
 	github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869 // indirect
 	github.com/fatih/structs v1.1.0
@@ -41,6 +44,7 @@ require (
 	github.com/syndtr/goleveldb v0.0.0-20190318030020-c3a204f8e965 // indirect
 	github.com/xtgo/uuid v0.0.0-20140804021211-a0b114877d4c // indirect
 	golang.org/x/lint v0.0.0-20200302205851-738671d3881b // indirect
+	golang.org/x/net v0.0.0-20210614182718-04defd469f4e
 	golang.org/x/tools v0.0.0-20200623185156-456ad74e1464 // indirect
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6
 	gopkg.in/mgo.v2 v2.0.0-20190816093944-a6b53ec6cb22
