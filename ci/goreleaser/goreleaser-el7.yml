@@ -5,14 +5,12 @@
 
 # Generation commands:
 # ./pr.zsh -p -base TD-883/consolidate-releng-code -branch TD-883/consolidate-releng-code -title internal: Update releng after TD-883 consolidation -repos tyk-pump
-# m4 -E -DxREPO=tyk-pump
+# m4 -E -DxEL7_SUFFIX=-el7 -DxREPO=tyk-pump
 
-FROM gcr.io/distroless/static-debian10
-WORKDIR /opt/tyk-pump
-COPY tyk-pump .
-COPY pump.example.conf tyk-pump.conf
-ARG PORTS
-EXPOSE $PORTS
 
-ENTRYPOINT ["/opt/tyk-pump/tyk-pump" ]
-CMD [ "--conf=/opt/tyk-pump/pump.conf" ]
+# Check the documentation at http://goreleaser.com
+# This project needs CGO_ENABLED=1 and the cross-compiler toolchains for
+# - arm64
+# - amd64
+
+
