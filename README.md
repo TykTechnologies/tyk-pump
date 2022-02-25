@@ -919,6 +919,18 @@ For example:
 
 `write_zero_values` - If set to false, numerical values with value zero, won't be recorded
 
+When you initialize a Timestream Pump, the SDK uses its default credential chain to find AWS credentials. This default credential chain looks for credentials in the following order:
+
+- Environment variables. 
+    - Static Credentials (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_SESSION_TOKEN)
+    - Web Identity Token (AWS_WEB_IDENTITY_TOKEN_FILE)
+- Shared configuration files.
+    - SDK defaults to credentials file under .aws folder that is placed in the home folder on your computer.
+- If your application uses an ECS task definition or RunTask API operation, IAM role for tasks.
+- If your application is running on an Amazon EC2 instance, IAM role for Amazon EC2.
+
+If no credentials are provided, Timestream Pump won't be able to connect.
+
 Example:
 ```json
     "timestream": {
