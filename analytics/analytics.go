@@ -11,6 +11,7 @@ import (
 	"github.com/TykTechnologies/tyk-pump/logger"
 )
 
+//go:generate msgp
 var log = logger.GetLogger()
 
 type NetworkStats struct {
