@@ -18,11 +18,10 @@ on:
       - master
     paths:
       - .github/workflows/release.yml
-      - .github/workflows/api-tests.yml
       - ci/*
 
 env:
-  FILES: ci/goreleaser/goreleaser.yml ci/goreleaser/goreleaser-el7.yml ci/Dockerfile.std ci/Dockerfile.slim ci/aws/byol.pkr.hcl .github/workflows/release.yml .github/workflows/del-env.yml ci/terraform/outputs.tf .github/dependabot.yml ci/install/before_install.sh ci/install/post_install.sh ci/install/post_remove.sh ci/install/post_trans.sh .github/workflows/api-tests.yml
+  FILES: ci/goreleaser/goreleaser.yml ci/goreleaser/goreleaser-el7.yml ci/Dockerfile.std ci/Dockerfile.slim ci/aws/byol.pkr.hcl .github/workflows/release.yml .github/workflows/del-env.yml ci/terraform/outputs.tf .github/dependabot.yml ci/install/before_install.sh ci/install/post_install.sh ci/install/post_remove.sh ci/install/post_trans.sh
   
 jobs:
   sync:
