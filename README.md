@@ -913,6 +913,11 @@ For example:
 
 ### Timestream Config
 
+#### Authentication & Prerequisite
+We must authenticate ourselves by providing credentials to AWS.  This pump uses the official AWS GO SDK, so instructions on how to authenticate can be found on [their documentation here](https://aws.github.io/aws-sdk-go-v2/docs/configuring-sdk/#specifying-credentials).  
+
+#### Config Fields
+
 `write_rate_limit` - Set to true in order to save any of the `RateLimit` measures, which are extracted from the headers of the raw response.
 
 `read_geo_from_request` - If set true, we will try to read geo information from the headers of the raw request
