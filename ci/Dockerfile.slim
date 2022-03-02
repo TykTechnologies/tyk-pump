@@ -7,10 +7,12 @@
 # ./pr.zsh -title Sync from latest releng templates -branch test/sync-changes -base master -repos tyk-pump -p
 # m4 -E -DxREPO=tyk-pump
 
-version: 2
-updates:
-  # Maintain dependencies for GitHub Actions
-  - package-ecosystem: "github-actions"
-    directory: "/"
-    schedule:
-      interval: "weekly"
+FROM gcr.io/distroless/static-debian10
+WORKDIR /opt/tyk-pump
+COPY tyk-pump .
+COPY pump.example.conf tyk-pump.conf
+ARG PORTS
+EXPOSE $PORTS
+
+ENTRYPOINT ["/opt/tyk-pump/tyk-pump" ]
+CMD [ "--conf=/opt/tyk-pump/pump.conf" ]
