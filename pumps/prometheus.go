@@ -49,7 +49,7 @@ type PrometheusMetric struct {
 	// Determines the type of the metric. There's currently 2 available options: `counter` or `histogram`.
 	// In case of histogram, you can only modify the labels since it always going to use the request_time.
 	MetricType string `json:"metric_type" mapstructure:"metric_type"`
-	// Defines the buckets into which observations are counted. By default, []float64{.005, .01, .025, .05, .1, .25, .5, 1, 2.5, 5, 10}
+	// Defines the buckets into which observations are counted. The type is float64 array and by default, [1, 2, 5, 7, 10, 15, 20, 25, 30, 40, 50, 60, 70, 80, 90, 100, 200, 300, 400, 500, 1000, 2000, 5000, 10000, 30000, 60000]
 	Buckets []float64 `json:"buckets" mapstructure:"buckets"`
 	// Defines the partitions in the metrics. For example: ['response_code','api_name'].
 	// The available labels are: `["host","method",
@@ -233,6 +233,10 @@ func (pm *PrometheusMetric) InitVec() error {
 		)
 		prometheus.MustRegister(pm.counterVec)
 	}else if pm.MetricType == "histogram"{
+		bkts := pm.Buckets
+		if len(bkts) == 0 {
+			bkts = buckets
+		}
 		pm.histogramVec = prometheus.NewHistogramVec(
 			prometheus.HistogramOpts{
 				Name: pm.Name,
