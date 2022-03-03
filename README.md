@@ -618,14 +618,14 @@ For example:
 	"meta": {
 		"listen_address": "localhost:9090",
 		"path": "/metrics",
-        "custom_metrics":[
-          {
-            "name":"tyk_custom_http_status_per_api_name",
-            "description":"This is a custom counter",
-            "metric_type":"counter",
-            "labels":["response_code","api_name"]
-          }
-        ]
+		"custom_metrics":[
+                  {
+                    "name":"tyk_custom_http_status_per_api_name",
+                    "description":"This is a custom counter",
+                    "metric_type":"counter",
+                    "labels":["response_code","api_name"]
+                  }
+                ]
 	}
 },
 ```
