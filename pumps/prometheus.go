@@ -220,7 +220,8 @@ func (p *PrometheusPump) WriteData(ctx context.Context, data []interface{}) erro
 }
 
 
-
+// InitVec inits the prometheus metric based on the metric_type. It only can create counter and histogram,
+// if the metric_type is anything else it returns an error
 func (pm *PrometheusMetric) InitVec() error {
 	if pm.MetricType == "counter"{
 		pm.counterVec = prometheus.NewCounterVec(
@@ -249,6 +250,7 @@ func (pm *PrometheusMetric) InitVec() error {
 	return nil
 }
 
+// GetLabelsValues return a list of string values based on the custom metric labels.
 func (pm *PrometheusMetric) GetLabelsValues(decoded analytics.AnalyticsRecord) []string{
 	values := []string{}
 	mapping := map[string]interface{}{
