@@ -1,0 +1,20 @@
+[Unit]
+Description=Tyk Pump to move analytics data from Redis to any supported back end
+Wants=network-online.target
+After=network-online.target
+ 
+[Service]
+Type=simple
+User=tyk
+Group=tyk
+# Load env vars from /etc/default/ and /etc/sysconfig/ if they exist.
+# Prefixing the path with '-' makes it try to load, but if the file doesn't
+# exist, it continues onward.
+EnvironmentFile=-/etc/default/tyk-pump
+EnvironmentFile=-/etc/sysconfig/tyk-pump
+ExecStart=/opt/tyk-pump/tyk-pump -c /opt/tyk-pump/pump.conf
+Restart=always
+WorkingDirectory=/opt/tyk-pump
+
+[Install]
+WantedBy=multi-user.target
