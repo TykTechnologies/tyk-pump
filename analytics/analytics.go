@@ -214,6 +214,8 @@ func (a *AnalyticsRecord) TrimRawData(size int) {
 	a.RawRequest = trimString(size, a.RawRequest)
 }
 
+
+
 func trimString(size int, value string) string {
 	trimBuffer := bytes.Buffer{}
 	defer trimBuffer.Reset()
