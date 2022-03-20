@@ -123,9 +123,9 @@ func (m *MongoSelectivePump) connect() {
 }
 
 func (m *MongoSelectivePump) ensureIndexes(c *mgo.Collection) error {
-	exists, errExists:=  m.collectionExists(c.Name)
-	if errExists == nil && exists	{
-		m.log.Debug("Collection ",c.Name," exists, omitting index creation")
+	exists, errExists := m.collectionExists(c.Name)
+	if errExists == nil && exists {
+		m.log.Debug("Collection ", c.Name, " exists, omitting index creation")
 		return nil
 	}
 

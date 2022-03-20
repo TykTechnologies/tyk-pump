@@ -5,10 +5,9 @@ import (
 	"reflect"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
+	logger "github.com/TykTechnologies/tyk-pump/logger"
 	"github.com/niubaoshu/gotiny"
 	"gopkg.in/vmihailenco/msgpack.v2"
-	logger "github.com/TykTechnologies/tyk-pump/logger"
-
 )
 
 var log = logger.GetLogger()
@@ -59,7 +58,7 @@ func (serializer *MsgpSerializer) Decode(analyticsData interface{}, record *anal
 	return msgpack.Unmarshal(data, record)
 }
 
-func (serializer *MsgpSerializer) GetSuffix() string{
+func (serializer *MsgpSerializer) GetSuffix() string {
 	return ""
 }
 
@@ -84,6 +83,6 @@ func (serializer *GoTinySerializer) Decode(analyticsData interface{}, record *an
 	return nil
 }
 
-func (serializer *GoTinySerializer) GetSuffix() string{
-	return "_"+ GOTINY_SERIALIZER
+func (serializer *GoTinySerializer) GetSuffix() string {
+	return "_" + GOTINY_SERIALIZER
 }

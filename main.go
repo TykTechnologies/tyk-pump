@@ -69,7 +69,6 @@ func Init() {
 		"prefix": mainPrefix,
 	}).Info("## Tyk Analytics Pump, ", pumps.VERSION, " ##")
 
-
 	// If no environment variable is set, check the configuration file:
 	if os.Getenv("TYK_LOGLEVEL") == "" {
 		level := strings.ToLower(SystemConfig.LogLevel)
@@ -205,14 +204,13 @@ func StartPurgeLoop(wg *sync.WaitGroup, ctx context.Context, secInterval int, ch
 				analyticsKeyName = fmt.Sprintf("%v_%v", storage.ANALYTICS_KEYNAME, i)
 			}
 
-			for _, serializerMethod := range AnalyticsSerializers{
+			for _, serializerMethod := range AnalyticsSerializers {
 				analyticsKeyName += serializerMethod.GetSuffix()
 				AnalyticsValues := AnalyticsStore.GetAndDeleteSet(analyticsKeyName, chunkSize, expire)
 				if len(AnalyticsValues) > 0 {
 					PreprocessAnalyticsValues(AnalyticsValues, serializerMethod, analyticsKeyName, omitDetails, job, startTime, secInterval)
 				}
 			}
-
 
 		}
 

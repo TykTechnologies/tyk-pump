@@ -241,7 +241,6 @@ func (a *AnalyticsRecord) SetExpiry(expiresInSeconds int64) {
 	a.ExpireAt = t2
 }
 
-
 func trimString(size int, value string) string {
 	trimBuffer := bytes.Buffer{}
 	defer trimBuffer.Reset()
