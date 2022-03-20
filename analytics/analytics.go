@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/TykTechnologies/tyk-pump/logger"
@@ -214,6 +215,31 @@ func (a *AnalyticsRecord) TrimRawData(size int) {
 	a.RawRequest = trimString(size, a.RawRequest)
 }
 
+func (n *NetworkStats) Flush() NetworkStats {
+	s := NetworkStats{
+		OpenConnections:  atomic.LoadInt64(&n.OpenConnections),
+		ClosedConnection: atomic.LoadInt64(&n.ClosedConnection),
+		BytesIn:          atomic.LoadInt64(&n.BytesIn),
+		BytesOut:         atomic.LoadInt64(&n.BytesOut),
+	}
+	atomic.StoreInt64(&n.OpenConnections, 0)
+	atomic.StoreInt64(&n.ClosedConnection, 0)
+	atomic.StoreInt64(&n.BytesIn, 0)
+	atomic.StoreInt64(&n.BytesOut, 0)
+	return s
+}
+
+func (a *AnalyticsRecord) SetExpiry(expiresInSeconds int64) {
+	expiry := time.Duration(expiresInSeconds) * time.Second
+	if expiresInSeconds == 0 {
+		// Expiry is set to 100 years
+		expiry = (24 * time.Hour) * (365 * 100)
+	}
+
+	t := time.Now()
+	t2 := t.Add(expiry)
+	a.ExpireAt = t2
+}
 
 
 func trimString(size int, value string) string {
