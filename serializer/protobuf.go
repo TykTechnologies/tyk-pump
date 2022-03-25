@@ -5,6 +5,7 @@ import (
 	analyticsproto "github.com/TykTechnologies/tyk-pump/serializer/analytics"
 	"github.com/golang/protobuf/proto"
 	"github.com/jinzhu/copier"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type ProtobufSerializer struct {
@@ -37,18 +38,20 @@ func (pb *ProtobufSerializer) TransfromSingleRecordToProto(rec analytics.Analyti
 
 	newRec := analyticsproto.AnalyticsRecord{}
 	copier.Copy(&newRec, &rec)
-	// TODO: enable timestamp in pump
-	//new.TimeStamp = timestamppb.New(rec.TimeStamp)
+
+	newRec.TimeStamp = timestamppb.New(rec.TimeStamp)
+	newRec.ExpireAt = timestamppb.New(rec.ExpireAt)
 
 	return newRec
 }
 
-func (pb *ProtobufSerializer) TransformFromProtoToAnalyticsRecord(analyticsData interface{}, record *analytics.AnalyticsRecord) error {
+func (pb *ProtobufSerializer) TransformFromProtoToAnalyticsRecord(data interface{}, record *analytics.AnalyticsRecord) error {
 
+	analyticsData := data.(analyticsproto.AnalyticsRecord)
 	err := copier.Copy(&record, analyticsData)
 
-	// TODO: enable this field
-	//	new.TimeStamp = rec.TimeStamp.AsTime()
+	record.TimeStamp = analyticsData.TimeStamp.AsTime()
+	record.ExpireAt = analyticsData.ExpireAt.AsTime()
 
 	return err
 }

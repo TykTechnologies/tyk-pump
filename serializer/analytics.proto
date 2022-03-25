@@ -1,6 +1,7 @@
 syntax = "proto3";
 package normalproto;
 
+import "google/protobuf/timestamp.proto";
 option go_package = "analytics/";
 
 message AnalyticsRecord {
@@ -16,7 +17,7 @@ message AnalyticsRecord {
   int32 Hour = 10;
   int32 ResponseCode = 11;
   string APIKey = 12;
- // google.protobuf.Timestamp TimeStamp = 13;
+  google.protobuf.Timestamp TimeStamp = 13;
   string APIVersion = 14;
   string APIName = 15;
   string APIID = 16;
@@ -31,7 +32,7 @@ message AnalyticsRecord {
   repeated string Tags = 25;
   string Alias = 26;
   bool TrackPath = 27;
-  //google.protobuf.Timestamp ExpireAt = 28;
+  google.protobuf.Timestamp ExpireAt = 28;
   string OauthID = 29;
 }
 
