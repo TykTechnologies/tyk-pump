@@ -20,9 +20,11 @@ require (
 	github.com/go-redis/redis/v8 v8.3.1
 	github.com/gocraft/health v0.0.0-20170925182251-8675af27fef0
 	github.com/gocraft/web v0.0.0-20190207150652-9707327fb69b
+	github.com/golang/protobuf v1.4.3
 	github.com/influxdata/influxdb v1.8.3
 	github.com/influxdata/influxdb-client-go/v2 v2.6.0
 	github.com/jehiah/go-strftime v0.0.0-20151206194810-2efbe75097a5 // indirect
+	github.com/jinzhu/copier v0.3.5
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/lintianzhi/graylogd v0.0.0-20180503131252-dc68342f04dc // indirect
 	github.com/logzio/logzio-go v0.0.0-20200316143903-ac8fc0e2910e
@@ -47,6 +49,7 @@ require (
 	golang.org/x/lint v0.0.0-20200302205851-738671d3881b // indirect
 	golang.org/x/net v0.0.0-20210614182718-04defd469f4e
 	golang.org/x/tools v0.0.0-20200623185156-456ad74e1464 // indirect
+	google.golang.org/protobuf v1.26.0-rc.1
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6
 	gopkg.in/mgo.v2 v2.0.0-20190816093944-a6b53ec6cb22
 	gopkg.in/olivere/elastic.v3 v3.0.56
