@@ -17,8 +17,8 @@ func TestSerializer_Encode(t *testing.T) {
 			serializer: NewAnalyticsSerializer(MSGP_SERIALIZER),
 		},
 		{
-			testName:   "gotiny",
-			serializer: NewAnalyticsSerializer(GOTINY_SERIALIZER),
+			testName:   "protobuf",
+			serializer: NewAnalyticsSerializer(PROTOBUF_SERIALIZER),
 		},
 	}
 
@@ -47,8 +47,8 @@ func TestSerializer_Decode(t *testing.T) {
 			serializer: NewAnalyticsSerializer(MSGP_SERIALIZER),
 		},
 		{
-			testName:   "gotiny",
-			serializer: NewAnalyticsSerializer(GOTINY_SERIALIZER),
+			testName:   "protobuf",
+			serializer: NewAnalyticsSerializer(PROTOBUF_SERIALIZER),
 		},
 	}
 
@@ -80,9 +80,9 @@ func TestSerializer_GetSuffix(t *testing.T) {
 			expectedSuffix: "",
 		},
 		{
-			testName:       "gotiny",
-			serializer:     NewAnalyticsSerializer(GOTINY_SERIALIZER),
-			expectedSuffix: "_gotiny",
+			testName:       "protobuf",
+			serializer:     NewAnalyticsSerializer(PROTOBUF_SERIALIZER),
+			expectedSuffix: "_protobuf",
 		},
 	}
 
