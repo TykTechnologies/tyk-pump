@@ -63,7 +63,7 @@ func Init() {
 	}
 
 	//Serializer init
-	AnalyticsSerializers = []serializer.AnalyticsSerializer{serializer.NewAnalyticsSerializer(serializer.MSGP_SERIALIZER), serializer.NewAnalyticsSerializer(serializer.GOTINY_SERIALIZER)}
+	AnalyticsSerializers = []serializer.AnalyticsSerializer{serializer.NewAnalyticsSerializer(serializer.MSGP_SERIALIZER), serializer.NewAnalyticsSerializer(serializer.PROTOBUF_SERIALIZER)}
 
 	log.WithFields(logrus.Fields{
 		"prefix": mainPrefix,

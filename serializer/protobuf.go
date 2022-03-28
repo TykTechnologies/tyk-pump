@@ -18,7 +18,12 @@ func (pb *ProtobufSerializer) Encode(record *analytics.AnalyticsRecord) ([]byte,
 }
 
 func (pb *ProtobufSerializer) Decode(analyticsData interface{}, record *analytics.AnalyticsRecord) error {
-	return pb.TransformFromProtoToAnalyticsRecord(analyticsData, record)
+	protoData := analyticsproto.AnalyticsRecord{}
+	err := proto.Unmarshal(analyticsData.([]byte),&protoData)
+	if err != nil {
+		return err
+	}
+	return pb.TransformFromProtoToAnalyticsRecord(protoData, record)
 }
 
 func (pb *ProtobufSerializer) GetSuffix() string {
@@ -45,13 +50,12 @@ func (pb *ProtobufSerializer) TransfromSingleRecordToProto(rec analytics.Analyti
 	return newRec
 }
 
-func (pb *ProtobufSerializer) TransformFromProtoToAnalyticsRecord(data interface{}, record *analytics.AnalyticsRecord) error {
+func (pb *ProtobufSerializer) TransformFromProtoToAnalyticsRecord(protoRecord analyticsproto.AnalyticsRecord, record *analytics.AnalyticsRecord) error {
 
-	analyticsData := data.(analyticsproto.AnalyticsRecord)
-	err := copier.Copy(&record, analyticsData)
+	err := copier.Copy(&record, protoRecord)
 
-	record.TimeStamp = analyticsData.TimeStamp.AsTime()
-	record.ExpireAt = analyticsData.ExpireAt.AsTime()
+	record.TimeStamp = protoRecord.TimeStamp.AsTime()
+	record.ExpireAt = protoRecord.ExpireAt.AsTime()
 
 	return err
 }
