@@ -242,14 +242,10 @@ func PreprocessAnalyticsValues(AnalyticsValues []interface{}, serializerMethod s
 				"prefix":       mainPrefix,
 				"analytic_key": analyticsKeyName,
 			}).Error("Couldn't unmarshal analytics data:", err)
-		} else {
-			if omitDetails {
-				decoded.RawRequest = ""
-				decoded.RawResponse = ""
-			}
-			keys[i] = interface{}(decoded)
-			job.Event("record")
+			continue
 		}
+		keys[i] = interface{}(decoded)
+		job.Event("record")
 	}
 	// Send to pumps
 	writeToPumps(keys, job, startTime, int(secInterval))
