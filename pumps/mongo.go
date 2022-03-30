@@ -598,8 +598,8 @@ func (m *MongoPump) WriteUptimeData(data []interface{}) {
 		decoded := analytics.UptimeReportData{}
 
 		if err := msgpack.Unmarshal([]byte(v.(string)), &decoded); err != nil {
+			// ToDo: should this work with serializer?
 			m.log.Error("Couldn't unmarshal analytics data:", err)
-
 			continue
 		}
 

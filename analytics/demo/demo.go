@@ -155,37 +155,11 @@ func GenerateDemoData(start time.Time, days int, orgId string, writer func([]int
 			// Generate daily entries
 			volume := randomInRange(300, 500)
 			for i := 0; i < volume; i++ {
-				p := randomPath()
-				api, apiID := randomAPI()
-				r := analytics.AnalyticsRecord{
-					Method:        randomMethod(),
-					Path:          p,
-					RawPath:       p,
-					ContentLength: int64(randomInRange(0, 999)),
-					UserAgent:     getUA(),
-					Day:           ts.Day(),
-					Month:         ts.Month(),
-					Year:          ts.Year(),
-					Hour:          ts.Hour(),
-					ResponseCode:  responseCode(),
-					APIKey:        getRandomKey(),
-					TimeStamp:     ts,
-					APIVersion:    apiVersion,
-					APIName:       api,
-					APIID:         apiID,
-					OrgID:         orgId,
-					OauthID:       "",
-					RequestTime:   int64(randomInRange(0, 10)),
-					RawRequest:    "Qk9EWSBEQVRB",
-					RawResponse:   "UkVTUE9OU0UgREFUQQ==",
-					IPAddress:     "118.93.55.103",
-					Tags:          []string{"orgid-" + orgId, "apiid-" + apiID},
-					Alias:         "",
-					TrackPath:     true,
-					ExpireAt:      time.Now().Add(time.Hour * 8760),
-				}
-
-				r.Geo.Country.ISOCode = country()
+				r := GenerateRandomAnalyticRecord(orgId)
+				r.Day = ts.Day()
+				r.Month = ts.Month()
+				r.Year = ts.Year()
+				r.Hour = ts.Hour()
 
 				set = append(set, r)
 			}
@@ -195,4 +169,41 @@ func GenerateDemoData(start time.Time, days int, orgId string, writer func([]int
 		count++
 		fmt.Printf("Finished %d of %d\n", count, days)
 	}
+}
+
+func GenerateRandomAnalyticRecord(orgId string) analytics.AnalyticsRecord{
+	p := randomPath()
+	api, apiID := randomAPI()
+	ts := time.Now()
+	r := analytics.AnalyticsRecord{
+		Method:        randomMethod(),
+		Path:          p,
+		RawPath:       p,
+		ContentLength: int64(randomInRange(0, 999)),
+		UserAgent:     getUA(),
+		Day:           ts.Day(),
+		Month:         ts.Month(),
+		Year:          ts.Year(),
+		Hour:          ts.Hour(),
+		ResponseCode:  responseCode(),
+		APIKey:        getRandomKey(),
+		TimeStamp:     ts,
+		APIVersion:    apiVersion,
+		APIName:       api,
+		APIID:         apiID,
+		OrgID:         orgId,
+		OauthID:       "",
+		RequestTime:   int64(randomInRange(0, 10)),
+		RawRequest:    "Qk9EWSBEQVRB",
+		RawResponse:   "UkVTUE9OU0UgREFUQQ==",
+		IPAddress:     "118.93.55.103",
+		Tags:          []string{"orgid-" + orgId, "apiid-" + apiID},
+		Alias:         "",
+		TrackPath:     true,
+		ExpireAt:      time.Now().Add(time.Hour * 8760),
+	}
+
+	r.Geo.Country.ISOCode = country()
+
+	return r
 }

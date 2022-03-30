@@ -244,7 +244,6 @@ func (m *MongoAggregatePump) ensureIndexes(c *mgo.Collection) error {
 
 func (m *MongoAggregatePump) WriteData(ctx context.Context, data []interface{}) error {
 	m.log.Debug("Attempting to write ", len(data), " records")
-
 	if m.dbSession == nil {
 		m.log.Debug("Connecting to analytics store")
 		m.connect()

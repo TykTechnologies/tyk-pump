@@ -254,6 +254,7 @@ func (c *SQLPump) WriteUptimeData(data []interface{}) {
 	for i, v := range data {
 		decoded := analytics.UptimeReportData{}
 		if err := msgpack.Unmarshal([]byte(v.(string)), &decoded); err != nil {
+			// ToDo: should this work with serializer?
 			c.log.Error("Couldn't unmarshal analytics data:", err)
 			continue
 		}
