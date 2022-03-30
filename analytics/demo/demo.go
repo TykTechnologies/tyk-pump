@@ -18,7 +18,7 @@ var apiVersion string
 
 func DemoInit(orgId, apiId, version string) {
 	apiID = apiId
-	apiKeys = generateAPIKeys(orgId)
+	GenerateAPIKeys(orgId)
 	apiVersion = version
 	if version == "" {
 		apiVersion = "Default"
@@ -117,13 +117,12 @@ func responseCode() int {
 	return codes[rand.Intn(len(codes))]
 }
 
-func generateAPIKeys(orgId string) []string {
+func GenerateAPIKeys(orgId string) {
 	set := make([]string, 50)
 	for i := 0; i < len(set); i++ {
 		set[i] = generateAPIKey(orgId)
 	}
-
-	return set
+	apiKeys = set
 }
 
 func generateAPIKey(orgId string) string {
@@ -171,7 +170,7 @@ func GenerateDemoData(start time.Time, days int, orgId string, writer func([]int
 	}
 }
 
-func GenerateRandomAnalyticRecord(orgId string) analytics.AnalyticsRecord{
+func GenerateRandomAnalyticRecord(orgId string) analytics.AnalyticsRecord {
 	p := randomPath()
 	api, apiID := randomAPI()
 	ts := time.Now()
