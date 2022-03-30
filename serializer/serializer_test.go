@@ -62,7 +62,7 @@ func TestSerializer_Decode(t *testing.T) {
 			bytes, _ := tc.serializer.Encode(&record)
 			newRecord := &analytics.AnalyticsRecord{}
 
-			err := tc.serializer.Decode(bytes, newRecord
+			err := tc.serializer.Decode(bytes, newRecord)
 			if err != nil {
 				t.Fatal(err)
 			}
