@@ -47,7 +47,7 @@ message Country {
 }
 
 message City {
-  //map<string, string> Names = 1;
+  map<string, string> Names = 1;
 }
 
 message Location {
