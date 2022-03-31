@@ -34,6 +34,7 @@ message AnalyticsRecord {
   bool TrackPath = 27;
   google.protobuf.Timestamp ExpireAt = 28;
   string OauthID = 29;
+  string TimeZone = 30;
 }
 
 message Latency {
