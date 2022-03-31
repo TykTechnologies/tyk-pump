@@ -5,6 +5,7 @@ import (
 	analyticsproto "github.com/TykTechnologies/tyk-pump/serializer/analytics"
 	"github.com/golang/protobuf/proto"
 	"github.com/jinzhu/copier"
+	"google.golang.org/protobuf/types/known/timestamppb"
 	"time"
 )
 
@@ -13,6 +14,8 @@ type ProtobufSerializer struct {
 
 func (pb *ProtobufSerializer) Encode(record *analytics.AnalyticsRecord) ([]byte, error) {
 	protoRecord := pb.TransfromSingleRecordToProto(*record)
+
+	log.Info("timezone:" + protoRecord.TimeZone)
 	return proto.Marshal(&protoRecord)
 }
 
@@ -56,7 +59,6 @@ func (pb *ProtobufSerializer) TransfromSingleRecordToProto(rec analytics.Analyti
 func (pb *ProtobufSerializer) TransformFromProtoToAnalyticsRecord(protoRecord analyticsproto.AnalyticsRecord, record *analytics.AnalyticsRecord) error {
 
 	err := copier.Copy(&record, protoRecord)
-
 	TimeStampFromProto(protoRecord, record)
 
 	return err
@@ -67,6 +69,8 @@ func (pb *ProtobufSerializer) TransformFromProtoToAnalyticsRecord(protoRecord an
 // the same original location, in order to do so, we store the location
 func TimestampToProto(newRecord *analyticsproto.AnalyticsRecord, record analytics.AnalyticsRecord) {
 	// save original location
+	newRecord.TimeStamp = timestamppb.New(record.TimeStamp)
+	newRecord.ExpireAt = timestamppb.New(record.ExpireAt)
 	newRecord.TimeZone = record.TimeStamp.Location().String()
 }
 
