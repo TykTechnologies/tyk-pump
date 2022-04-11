@@ -129,7 +129,7 @@ jobs:
           RPMVERS: ${{ matrix.rpmvers }}
           PACKAGECLOUD_TOKEN: ${{ secrets.PACKAGECLOUD_TOKEN }}
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: deb
           retention-days: 1
@@ -137,7 +137,7 @@ jobs:
             dist/*.deb
             !dist/*PAYG*.deb
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: rpm
           retention-days: 1
