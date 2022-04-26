@@ -20,6 +20,7 @@ require (
 	github.com/go-redis/redis/v8 v8.3.1
 	github.com/gocraft/health v0.0.0-20170925182251-8675af27fef0
 	github.com/gocraft/web v0.0.0-20190207150652-9707327fb69b
+	github.com/gorilla/mux v1.8.0
 	github.com/influxdata/influxdb v1.8.3
 	github.com/influxdata/influxdb-client-go/v2 v2.6.0
 	github.com/jehiah/go-strftime v0.0.0-20151206194810-2efbe75097a5 // indirect
