@@ -3,11 +3,11 @@ package server
 import (
 	"fmt"
 	"net/http"
+	pprof_http "net/http/pprof"
 
 	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/tyk-pump/logger"
-
-	"github.com/gocraft/web"
+	"github.com/gorilla/mux"
 )
 
 var defaultHealthEndpoint = "health"
@@ -15,7 +15,7 @@ var defaultHealthPort = 8083
 var serverPrefix = "server"
 var log = logger.GetLogger()
 
-func ServeHealthCheck(configHealthEndpoint string, configHealthPort int) {
+func ServeHealthCheck(configHealthEndpoint string, configHealthPort int, enableProfiling bool) {
 	healthEndpoint := configHealthEndpoint
 	if healthEndpoint == "" {
 		healthEndpoint = defaultHealthEndpoint
@@ -25,24 +25,31 @@ func ServeHealthCheck(configHealthEndpoint string, configHealthPort int) {
 		healthPort = defaultHealthPort
 	}
 
-	router := web.New(Context{}).
-		Get("/"+healthEndpoint, (*Context).Healthcheck)
+	r := mux.NewRouter()
+
+	r.HandleFunc("/"+healthEndpoint, Healthcheck).Methods("GET")
+	if enableProfiling{
+		r.HandleFunc("/debug/pprof/profile", pprof_http.Profile)
+		r.HandleFunc("/debug/pprof/{_:.*}", pprof_http.Index)
+	}
+
 
 	log.WithFields(logrus.Fields{
 		"prefix": serverPrefix,
 	}).Info("Serving health check endpoint at http://localhost:", healthPort, "/", healthEndpoint, " ...")
 
-	if err := http.ListenAndServe(":"+fmt.Sprint(healthPort), router); err != nil {
+	if err := http.ListenAndServe(":"+fmt.Sprint(healthPort), r); err != nil {
 		log.WithFields(logrus.Fields{
 			"prefix": serverPrefix,
 		}).Fatal("Error serving health check endpoint", err)
 	}
 }
 
-type Context struct{}
 
-func (c *Context) Healthcheck(rw web.ResponseWriter, req *web.Request) {
-	rw.Header().Set("Content-type", "application/json")
-	rw.WriteHeader(http.StatusOK)
-	rw.Write([]byte(`{"status": "ok"}`))
+
+func Healthcheck(rw http.ResponseWriter, r *http.Request) {
+rw.Header().Set("Content-type", "application/json")
+rw.WriteHeader(http.StatusOK)
+rw.Write([]byte(`{"status": "ok"}`))
 }
+

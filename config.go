@@ -222,6 +222,8 @@ type TykPumpConfiguration struct {
 	MaxRecordSize int `json:"max_record_size"`
 	// Defines if tyk-pump should ignore all the values in configuration file. Specially useful when setting all configurations in environment variables.
 	OmitConfigFile bool `json:"omit_config_file"`
+	// Enable debugging of Tyk Pump by exposing profiling information, the same as the gateway https://tyk.io/docs/troubleshooting/tyk-gateway/profiling/
+	HTTPProfile bool `json:"enable_http_profiler"`
 }
 
 func LoadConfig(filePath *string, configStruct *TykPumpConfiguration) {
