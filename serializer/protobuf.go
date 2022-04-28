@@ -42,18 +42,70 @@ func (pb *ProtobufSerializer) TransformToProto(recs []analytics.AnalyticsRecord)
 }
 
 func (pb *ProtobufSerializer) TransfromSingleRecordToProto(rec analytics.AnalyticsRecord) analyticsproto.AnalyticsRecord {
-
-	newRec := analyticsproto.AnalyticsRecord{}
-	copier.Copy(&newRec, &rec)
-
-	// get original huso horario
-	// grab the ms
-	// if huso horario != utc then convert
-	// sumar ms
-
-	TimestampToProto(&newRec, rec)
-
+	newRec := AnalyticsRecordToProto(rec)
 	return newRec
+}
+
+func AnalyticsRecordToProto(rec analytics.AnalyticsRecord) analyticsproto.AnalyticsRecord {
+	latency := analyticsproto.Latency{
+		Total:    rec.Latency.Total,
+		Upstream: rec.Latency.Upstream,
+	}
+
+	net := analyticsproto.NetworkStats{
+		OpenConnections:   rec.Network.OpenConnections,
+		ClosedConnections: rec.Network.ClosedConnection,
+		BytesIn:           rec.Network.BytesIn,
+		BytesOut:          rec.Network.BytesOut,
+	}
+
+	geo := analyticsproto.GeoData{
+		Country: &analyticsproto.Country{
+			ISOCode: rec.Geo.Country.ISOCode,
+		},
+		City: &analyticsproto.City{
+			Names: rec.Geo.City.Names,
+		},
+		Location: &analyticsproto.Location{
+			Latitude:  rec.Geo.Location.Latitude,
+			Longitude: rec.Geo.Location.Longitude,
+			TimeZone:  rec.Geo.Location.TimeZone,
+		},
+	}
+
+	record := analyticsproto.AnalyticsRecord{
+		Host:          rec.Host,
+		Method:        rec.Method,
+		Path:          rec.Path,
+		RawPath:       rec.RawPath,
+		ContentLength: rec.ContentLength,
+		UserAgent:     rec.UserAgent,
+		Day:           int32(rec.Day),
+		Month:         int32(rec.Month),
+		Year:          int32(rec.Year),
+		Hour:          int32(rec.Hour),
+		ResponseCode:  int32(rec.ResponseCode),
+		APIKey:        rec.APIKey,
+		APIVersion:    rec.APIVersion,
+		APIName:       rec.APIName,
+		APIID:         rec.APIID,
+		OrgID:         rec.OrgID,
+		RequestTime:   rec.RequestTime,
+		Latency:       &latency,
+		RawRequest:    rec.RawRequest,
+		RawResponse:   rec.RawResponse,
+		IPAddress:     rec.IPAddress,
+		Geo:           &geo,
+		Network:       &net,
+		Tags:          rec.Tags,
+		Alias:         rec.Alias,
+		TrackPath:     rec.TrackPath,
+		OauthID:       rec.OauthID,
+	}
+
+	TimestampToProto(&record, rec)
+
+	return record
 }
 
 func (pb *ProtobufSerializer) TransformFromProtoToAnalyticsRecord(protoRecord analyticsproto.AnalyticsRecord, record *analytics.AnalyticsRecord) error {
