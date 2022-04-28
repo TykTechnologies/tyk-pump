@@ -1,8 +1,12 @@
 syntax = "proto3";
 package normalproto;
 
+/* To generate the code using this file just type:
+*  protoc --go_out=. analytics.proto
+*/
+
 import "google/protobuf/timestamp.proto";
-option go_package = "analytics/";
+option go_package = "proto/";
 
 message AnalyticsRecord {
   string Host = 1;
@@ -48,6 +52,7 @@ message Country {
 
 message City {
   map<string, string> Names = 1;
+  uint32 GeoNameID = 2;
 }
 
 message Location {

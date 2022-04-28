@@ -68,20 +68,21 @@ func (ar *AnalyticsRecord) TableName() string {
 type Country struct {
 	ISOCode string `maxminddb:"iso_code" json:"iso_code"`
 }
+type City struct {
+	GeoNameID uint              `maxminddb:"geoname_id" json:"geoname_id"`
+	Names     map[string]string `maxminddb:"names" json:"names"`
+}
+
+type Location struct {
+	Latitude  float64 `maxminddb:"latitude" json:"latitude"`
+	Longitude float64 `maxminddb:"longitude" json:"longitude"`
+	TimeZone  string  `maxminddb:"time_zone" json:"time_zone"`
+}
 
 type GeoData struct {
-	Country Country `maxminddb:"country" json:"country"`
-
-	City struct {
-		GeoNameID uint              `maxminddb:"geoname_id" json:"geoname_id"`
-		Names     map[string]string `maxminddb:"names" json:"names"`
-	} `maxminddb:"city" json:"city"`
-
-	Location struct {
-		Latitude  float64 `maxminddb:"latitude" json:"latitude"`
-		Longitude float64 `maxminddb:"longitude" json:"longitude"`
-		TimeZone  string  `maxminddb:"time_zone" json:"time_zone"`
-	} `maxminddb:"location" json:"location"`
+	Country  Country  `maxminddb:"country" json:"country"`
+	City     City     `maxminddb:"city" json:"city"`
+	Location Location `maxminddb:"location" json:"location"`
 }
 
 func (n *NetworkStats) GetFieldNames() []string {
