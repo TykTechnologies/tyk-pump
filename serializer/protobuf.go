@@ -28,28 +28,7 @@ func (pb *ProtobufSerializer) Decode(analyticsData interface{}, record *analytic
 	return pb.TransformSingleProtoToAnalyticsRecord(protoData, record)
 }
 
-func (pb *ProtobufSerializer) TransformToProto(recs []analytics.AnalyticsRecord) []analyticsproto.AnalyticsRecord {
-	transformedRecs := make([]analyticsproto.AnalyticsRecord, len(recs))
-
-	for i, _ := range recs {
-		transformedRecs[i] = pb.TransformSingleRecordToProto(recs[i])
-	}
-	return transformedRecs
-}
-
 func (pb *ProtobufSerializer) TransformSingleRecordToProto(rec analytics.AnalyticsRecord) analyticsproto.AnalyticsRecord {
-	newRec := AnalyticsRecordToAnalyticsProto(rec)
-	return newRec
-}
-
-func (pb *ProtobufSerializer) TransformSingleProtoToAnalyticsRecord(protoRecord analyticsproto.AnalyticsRecord, record *analytics.AnalyticsRecord) error {
-	r := AnalyticsProtoToAnalyticsRecord(protoRecord)
-	record = &r
-
-	return nil
-}
-
-func AnalyticsRecordToAnalyticsProto(rec analytics.AnalyticsRecord) analyticsproto.AnalyticsRecord {
 	latency := analyticsproto.Latency{
 		Total:    rec.Latency.Total,
 		Upstream: rec.Latency.Upstream,
@@ -111,8 +90,9 @@ func AnalyticsRecordToAnalyticsProto(rec analytics.AnalyticsRecord) analyticspro
 	return record
 }
 
-func AnalyticsProtoToAnalyticsRecord(rec analyticsproto.AnalyticsRecord) analytics.AnalyticsRecord {
-	analyticsRecord := analytics.AnalyticsRecord{
+func (pb *ProtobufSerializer) TransformSingleProtoToAnalyticsRecord(rec analyticsproto.AnalyticsRecord, record *analytics.AnalyticsRecord) error {
+
+	record = &analytics.AnalyticsRecord{
 		Method:        rec.Method,
 		Host:          rec.Host,
 		Path:          rec.Path,
@@ -163,6 +143,6 @@ func AnalyticsProtoToAnalyticsRecord(rec analyticsproto.AnalyticsRecord) analyti
 		TrackPath: rec.TrackPath,
 	}
 
-	analyticsRecord.TimeStampFromProto(rec)
-	return analyticsRecord
+	record.TimeStampFromProto(rec)
+	return nil
 }
