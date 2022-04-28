@@ -3,6 +3,8 @@ package analytics
 import (
 	"bytes"
 	"fmt"
+	analyticsproto "github.com/TykTechnologies/tyk-pump/analytics/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 	"sort"
 	"strconv"
 	"strings"
@@ -253,4 +255,27 @@ func trimString(size int, value string) string {
 	trimBuffer.Truncate(size)
 
 	return string(trimBuffer.Bytes())
+}
+
+// TimestampToProto will process timestamps and assign them to the proto record
+// protobuf converts all timestamps to UTC so we need to ensure that we keep
+// the same original location, in order to do so, we store the location
+func (a *AnalyticsRecord) TimestampToProto(newRecord *analyticsproto.AnalyticsRecord) {
+	// save original location
+	newRecord.TimeStamp = timestamppb.New(a.TimeStamp)
+	newRecord.ExpireAt = timestamppb.New(a.ExpireAt)
+	newRecord.TimeZone = a.TimeStamp.Location().String()
+}
+
+func (a *AnalyticsRecord) TimeStampFromProto(protoRecord analyticsproto.AnalyticsRecord) {
+	// get timestamp in original location
+	loc, err := time.LoadLocation(protoRecord.TimeZone)
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	// assign timestamp in original location
+	a.TimeStamp = protoRecord.TimeStamp.AsTime().In(loc)
+	a.ExpireAt = protoRecord.ExpireAt.AsTime().In(loc)
 }
