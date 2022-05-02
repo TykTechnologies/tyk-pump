@@ -288,7 +288,7 @@ func (a *AnalyticsRecord) GetGeo(ipStr string, GeoIPDB *maxminddb.Reader) {
 		return
 	}
 
-	geo, err := geoIPLookup(ipStr, GeoIPDB)
+	geo, err := GeoIPLookup(ipStr, GeoIPDB)
 	if err != nil {
 		log.Error("GeoIP Failure (not recorded): ", err)
 		return
@@ -309,7 +309,7 @@ func (a *AnalyticsRecord) GetGeo(ipStr string, GeoIPDB *maxminddb.Reader) {
 
 }
 
-func geoIPLookup(ipStr string, GeoIPDB *maxminddb.Reader) (*GeoData, error) {
+func GeoIPLookup(ipStr string, GeoIPDB *maxminddb.Reader) (*GeoData, error) {
 	if ipStr == "" {
 		return nil, nil
 	}
