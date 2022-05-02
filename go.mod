@@ -24,16 +24,15 @@ require (
 	github.com/influxdata/influxdb v1.8.3
 	github.com/influxdata/influxdb-client-go/v2 v2.6.0
 	github.com/jehiah/go-strftime v0.0.0-20151206194810-2efbe75097a5 // indirect
-	github.com/jinzhu/copier v0.3.5
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/lintianzhi/graylogd v0.0.0-20180503131252-dc68342f04dc // indirect
 	github.com/logzio/logzio-go v0.0.0-20200316143903-ac8fc0e2910e
 	github.com/lonelycode/mgohacks v0.0.0-20150820024025-f9c291f7e57e
 	github.com/mitchellh/mapstructure v1.1.2
 	github.com/moesif/moesifapi-go v1.0.6
-	github.com/niubaoshu/gotiny v0.0.3
 	github.com/olivere/elastic v6.2.31+incompatible // indirect
 	github.com/olivere/elastic/v7 v7.0.28
+	github.com/oschwald/maxminddb-golang v1.5.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.11.0
 	github.com/quipo/statsd v0.0.0-20160923160612-75b7afedf0d2

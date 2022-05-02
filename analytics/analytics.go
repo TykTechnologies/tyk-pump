@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"fmt"
 	analyticsproto "github.com/TykTechnologies/tyk-pump/analytics/proto"
+	"github.com/oschwald/maxminddb-golang"
 	"google.golang.org/protobuf/types/known/timestamppb"
+	"net"
 	"sort"
 	"strconv"
 	"strings"
@@ -278,4 +280,46 @@ func (a *AnalyticsRecord) TimeStampFromProto(protoRecord analyticsproto.Analytic
 	// assign timestamp in original location
 	a.TimeStamp = protoRecord.TimeStamp.AsTime().In(loc)
 	a.ExpireAt = protoRecord.ExpireAt.AsTime().In(loc)
+}
+
+func (a *AnalyticsRecord) GetGeo(ipStr string, GeoIPDB *maxminddb.Reader) {
+	// Not great, tightly coupled
+	if GeoIPDB == nil {
+		return
+	}
+
+	geo, err := geoIPLookup(ipStr, GeoIPDB)
+	if err != nil {
+		log.Error("GeoIP Failure (not recorded): ", err)
+		return
+	}
+	if geo == nil {
+		return
+	}
+
+	log.Debug("ISO Code: ", geo.Country.ISOCode)
+	log.Debug("City: ", geo.City.Names["en"])
+	log.Debug("Lat: ", geo.Location.Latitude)
+	log.Debug("Lon: ", geo.Location.Longitude)
+	log.Debug("TZ: ", geo.Location.TimeZone)
+
+	a.Geo.Location = geo.Location
+	a.Geo.Country = geo.Country
+	a.Geo.City = geo.City
+
+}
+
+func geoIPLookup(ipStr string, GeoIPDB *maxminddb.Reader) (*GeoData, error) {
+	if ipStr == "" {
+		return nil, nil
+	}
+	ip := net.ParseIP(ipStr)
+	if ip == nil {
+		return nil, fmt.Errorf("invalid IP address %q", ipStr)
+	}
+	record := new(GeoData)
+	if err := GeoIPDB.Lookup(ip, record); err != nil {
+		return nil, fmt.Errorf("geoIPDB lookup of %q failed: %v", ipStr, err)
+	}
+	return record, nil
 }
