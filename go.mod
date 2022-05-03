@@ -21,6 +21,7 @@ require (
 	github.com/gocraft/health v0.0.0-20170925182251-8675af27fef0
 	github.com/gocraft/web v0.0.0-20190207150652-9707327fb69b
 	github.com/golang/protobuf v1.4.3
+	github.com/google/go-cmp v0.5.8
 	github.com/influxdata/influxdb v1.8.3
 	github.com/influxdata/influxdb-client-go/v2 v2.6.0
 	github.com/jehiah/go-strftime v0.0.0-20151206194810-2efbe75097a5 // indirect
