@@ -2,8 +2,10 @@ package serializer
 
 import (
 	"testing"
+	"time"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
+	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -57,6 +59,9 @@ func TestSerializer_Decode(t *testing.T) {
 			record := analytics.AnalyticsRecord{
 				APIID: "api_1",
 				OrgID: "org_1",
+				// The canonical way to strip a monotonic clock reading is to use t = t.Round(0)
+				ExpireAt:time.Now().Add(time.Hour).Round(0),
+				TimeStamp:time.Now().Round(0),
 			}
 
 			bytes, _ := tc.serializer.Encode(&record)
@@ -66,7 +71,9 @@ func TestSerializer_Decode(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			assert.ObjectsAreEqualValues(record, newRecord)
+
+			recordsAreEqual := cmp.Equal(record, *newRecord)
+			assert.Equal(t,true,recordsAreEqual,"records should be equal after decoding")
 		})
 	}
 }

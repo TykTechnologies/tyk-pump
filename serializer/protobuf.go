@@ -92,7 +92,7 @@ func (pb *ProtobufSerializer) TransformSingleRecordToProto(rec analytics.Analyti
 
 func (pb *ProtobufSerializer) TransformSingleProtoToAnalyticsRecord(rec analyticsproto.AnalyticsRecord, record *analytics.AnalyticsRecord) error {
 
-	record = &analytics.AnalyticsRecord{
+	tmpRecord := analytics.AnalyticsRecord{
 		Method:        rec.Method,
 		Host:          rec.Host,
 		Path:          rec.Path,
@@ -142,7 +142,7 @@ func (pb *ProtobufSerializer) TransformSingleProtoToAnalyticsRecord(rec analytic
 		Alias:     rec.Alias,
 		TrackPath: rec.TrackPath,
 	}
-
-	record.TimeStampFromProto(rec)
+	tmpRecord.TimeStampFromProto(rec)
+	*record = tmpRecord
 	return nil
 }
