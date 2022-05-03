@@ -392,7 +392,7 @@ func execPumpWriting(wg *sync.WaitGroup, pmp pumps.Pump, keys *[]interface{}, pu
 func main() {
 	Init()
 	SetupInstrumentation()
-	go server.ServeHealthCheck(SystemConfig.HealthCheckEndpointName, SystemConfig.HealthCheckEndpointPort)
+	go server.ServeHealthCheck(SystemConfig.HealthCheckEndpointName, SystemConfig.HealthCheckEndpointPort, SystemConfig.HTTPProfile)
 
 	// Store version which will be read by dashboard and sent to
 	// vclu(version check and licecnse utilisation) service
