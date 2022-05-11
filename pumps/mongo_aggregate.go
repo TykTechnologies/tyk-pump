@@ -206,9 +206,9 @@ func (m *MongoAggregatePump) connect() {
 }
 
 func (m *MongoAggregatePump) ensureIndexes(c *mgo.Collection) error {
-	exists, errExists:=  m.collectionExists(c.Name)
-	if errExists == nil && exists	{
-		m.log.Debug("Collection ",c.Name," exists, omitting index creation")
+	exists, errExists := m.collectionExists(c.Name)
+	if errExists == nil && exists {
+		m.log.Debug("Collection ", c.Name, " exists, omitting index creation")
 		return nil
 	}
 
@@ -244,7 +244,6 @@ func (m *MongoAggregatePump) ensureIndexes(c *mgo.Collection) error {
 
 func (m *MongoAggregatePump) WriteData(ctx context.Context, data []interface{}) error {
 	m.log.Debug("Attempting to write ", len(data), " records")
-
 	if m.dbSession == nil {
 		m.log.Debug("Connecting to analytics store")
 		m.connect()
@@ -405,7 +404,6 @@ func (m *MongoAggregatePump) collectionExists(name string) (bool, error) {
 
 	return false, nil
 }
-
 
 // WriteUptimeData will pull the data from the in-memory store and drop it into the specified MongoDB collection
 func (m *MongoAggregatePump) WriteUptimeData(data []interface{}) {

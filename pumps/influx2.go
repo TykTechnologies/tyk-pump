@@ -36,11 +36,11 @@ type NewBucket struct {
 }
 type RetentionRule struct {
 	// Duration in seconds for how long data will be kept in the database. 0 means infinite.
-	EverySeconds              int64  `mapstructure:"every_seconds" json:"every_seconds"`
+	EverySeconds int64 `mapstructure:"every_seconds" json:"every_seconds"`
 	// Shard duration measured in seconds.
-	ShardGroupDurationSeconds int64  `mapstructure:"shard_group_duration_seconds" json:"shard_group_duration_seconds"`
+	ShardGroupDurationSeconds int64 `mapstructure:"shard_group_duration_seconds" json:"shard_group_duration_seconds"`
 	// Retention rule type. For example "expire"
-	Type                      string `mapstructure:"type" json:"type"`
+	Type string `mapstructure:"type" json:"type"`
 }
 
 // @PumpConf Influx2

@@ -541,7 +541,6 @@ func replaceUnsupportedChars(path string) string {
 // AggregateData calculates aggregated data, returns map orgID => aggregated analytics data
 func AggregateData(data []interface{}, trackAllPaths bool, ignoreTagPrefixList []string, storeAnalyticPerMinute bool) map[string]AnalyticsRecordAggregate {
 	analyticsPerOrg := make(map[string]AnalyticsRecordAggregate)
-
 	for _, v := range data {
 		thisV := v.(AnalyticsRecord)
 		orgID := thisV.OrgID
