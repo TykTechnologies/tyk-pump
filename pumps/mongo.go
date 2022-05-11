@@ -392,9 +392,9 @@ func (m *MongoPump) collectionExists(name string) (bool, error) {
 }
 
 func (m *MongoPump) ensureIndexes() error {
-	exists, errExists:=  m.collectionExists(m.dbConf.CollectionName)
-	if errExists == nil && exists	{
-		m.log.Debug("Collection ",m.dbConf.CollectionName," exists, omitting index creation")
+	exists, errExists := m.collectionExists(m.dbConf.CollectionName)
+	if errExists == nil && exists {
+		m.log.Debug("Collection ", m.dbConf.CollectionName, " exists, omitting index creation")
 		return nil
 	}
 
@@ -598,8 +598,8 @@ func (m *MongoPump) WriteUptimeData(data []interface{}) {
 		decoded := analytics.UptimeReportData{}
 
 		if err := msgpack.Unmarshal([]byte(v.(string)), &decoded); err != nil {
+			// ToDo: should this work with serializer?
 			m.log.Error("Couldn't unmarshal analytics data:", err)
-
 			continue
 		}
 

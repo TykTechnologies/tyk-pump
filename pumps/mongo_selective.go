@@ -123,9 +123,9 @@ func (m *MongoSelectivePump) connect() {
 }
 
 func (m *MongoSelectivePump) ensureIndexes(c *mgo.Collection) error {
-	exists, errExists:=  m.collectionExists(c.Name)
-	if errExists == nil && exists	{
-		m.log.Debug("Collection ",c.Name," exists, omitting index creation")
+	exists, errExists := m.collectionExists(c.Name)
+	if errExists == nil && exists {
+		m.log.Debug("Collection ", c.Name, " exists, omitting index creation")
 		return nil
 	}
 
@@ -291,11 +291,11 @@ func (m *MongoSelectivePump) WriteUptimeData(data []interface{}) {
 
 			for i, v := range data {
 				decoded := analytics.UptimeReportData{}
+				// ToDo: should this work with serializer?
 				err := msgpack.Unmarshal(v.([]byte), &decoded)
 				m.log.Debug("Decoded Record: ", decoded)
 				if err != nil {
 					m.log.Error("Couldn't unmarshal analytics data:", err)
-
 				} else {
 					keys[i] = interface{}(decoded)
 				}
