@@ -1,6 +1,7 @@
 package pumps
 
 import (
+	"context"
 	"strconv"
 	"testing"
 
@@ -30,6 +31,169 @@ func TestMongoPump_capCollection_Enabled(t *testing.T) {
 	if ok := mPump.capCollection(); ok {
 		t.Error("successfully capped collection when disabled in conf")
 	}
+}
+
+func TestMongoPump_omitIndexCreation(t *testing.T) {
+
+	c := Conn{}
+	c.ConnectDb()
+	defer c.CleanDb()
+
+	pump := newPump()
+	conf := defaultConf()
+
+	mPump := pump.(*MongoPump)
+	mPump.dbConf = &conf
+	record := analytics.AnalyticsRecord{
+		OrgID: "test-org",
+		APIID: "test-api",
+	}
+	records := []interface{}{record,record}
+
+	tcs := []struct{
+		testName string
+		shouldDropCollection bool
+		Indexes int
+		OmitIndexCreation bool
+		dbType MongoType
+	}{
+		{
+			testName: "omitting index creation - StandardMongo",
+			shouldDropCollection: true,
+			Indexes: 1, //1 index corresponding to _id
+			OmitIndexCreation: true,
+			dbType: StandardMongo,
+		},
+		{
+			testName: "not omitting index creation but mongo collection already exists - StandardMongo",
+			shouldDropCollection: false,
+			Indexes: 1, //1 index corresponding to _id
+			OmitIndexCreation: false,
+			dbType: StandardMongo,
+		},
+		{
+			testName: "not omitting index creation but mongo collection doesn't exists - StandardMongo",
+			shouldDropCollection: true,
+			Indexes: 4, //1 index corresponding to _id + 3 from tyk
+			OmitIndexCreation: false,
+			dbType: StandardMongo,
+		},
+		{
+			testName: "omitting index creation - DocDB",
+			shouldDropCollection: true,
+			Indexes: 1, //1 index corresponding to _id
+			OmitIndexCreation: true,
+			dbType: AWSDocumentDB,
+		},
+		{
+			testName: "not omitting index creation but mongo collection already exists - DocDB",
+			shouldDropCollection: false,
+			Indexes: 4, //1 index corresponding to _id + 3 from tyk
+			OmitIndexCreation: false,
+			dbType: AWSDocumentDB,
+		},
+		{
+			testName: "not omitting index creation but mongo collection doesn't exists - DocDB",
+			shouldDropCollection: true,
+			Indexes: 4, //1 index corresponding to _id + 3 from tyk
+			OmitIndexCreation: false,
+			dbType: AWSDocumentDB,
+		},
+	}
+
+	for _, tc := range tcs{
+		t.Run(tc.testName, func(t *testing.T){
+			mPump.dbConf.OmitIndexCreation = tc.OmitIndexCreation
+			mPump.dbConf.MongoDBType = tc.dbType
+			mPump.log = log.WithField("prefix", mongoPrefix)
+			mPump.connect()
+			defer c.CleanIndexes()
+
+			if tc.shouldDropCollection{
+				c.CleanDb()
+			}
+
+			if err := mPump.ensureIndexes(); err != nil {
+				t.Error("there shouldn't be an error ensuring indexes", err)
+			}
+
+			mPump.WriteData(context.Background(), records )
+			indexes, errIndexes :=c.GetIndexes()
+			if errIndexes != nil {
+				t.Error("error getting indexes:",errIndexes)
+			}
+
+			if len(indexes) != tc.Indexes {
+				t.Error("index differential:", indexes)
+			}
+		})
+	}
+/*
+	t.Run("omit index creation true", func(t *testing.T){
+		mPump.dbConf.OmitIndexCreation = true
+		mPump.log = log.WithField("prefix", mongoPrefix)
+		mPump.connect()
+
+		if err := mPump.ensureIndexes(); err != nil {
+			t.Error("there shouldn't be an error ensuring indexes", err)
+		}
+
+
+		mPump.WriteData(context.Background(), records )
+
+		indexes, errIndexes :=c.GetIndexes()
+		if errIndexes != nil {
+			t.Error("error getting indexes:",errIndexes)
+		}
+
+		if len(indexes) != 1 {
+			t.Error("pump should not have created the indexes:", indexes)
+		}
+	})
+
+	t.Run("omit index creation false with existing collection", func(t *testing.T){
+		mPump.dbConf.OmitIndexCreation = false
+		mPump.log = log.WithField("prefix", mongoPrefix)
+		mPump.connect()
+
+		if err := mPump.ensureIndexes(); err != nil {
+			t.Error("there shouldn't be an error ensuring indexes", err)
+		}
+
+		indexes, errIndexes :=c.GetIndexes()
+		if errIndexes != nil {
+			t.Error("error getting indexes:",errIndexes)
+		}
+		mPump.WriteData(context.Background(), records )
+
+		if len(indexes) != 1 {
+			t.Error("pump should have not created the indexes")
+		}
+	})
+
+	t.Run("omit index creation false without existing collection", func(t *testing.T){
+		mPump.dbConf.OmitIndexCreation = false
+		mPump.log = log.WithField("prefix", mongoPrefix)
+		mPump.connect()
+
+		c.CleanDb()
+		if err := mPump.ensureIndexes(); err != nil {
+			t.Error("there shouldn't be an error ensuring indexes", err)
+		}
+
+		indexes, errIndexes :=c.GetIndexes()
+		if errIndexes != nil {
+			t.Error("error getting indexes:",errIndexes)
+		}
+		mPump.WriteData(context.Background(), records )
+
+		fmt.Println(len(indexes))
+		if len(indexes) < 1 {
+			t.Error("pump should have created the indexes")
+		}
+	})
+*/
+//4
 }
 
 func TestMongoPump_capCollection_Exists(t *testing.T) {
