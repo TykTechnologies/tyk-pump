@@ -123,10 +123,17 @@ func (m *MongoSelectivePump) connect() {
 }
 
 func (m *MongoSelectivePump) ensureIndexes(c *mgo.Collection) error {
-	exists, errExists := m.collectionExists(c.Name)
-	if errExists == nil && exists {
-		m.log.Debug("Collection ", c.Name, " exists, omitting index creation")
+	if m.dbConf.OmitIndexCreation {
+		m.log.Debug("omit_index_creation set to true, omitting index creation..")
 		return nil
+	}
+
+	if m.dbConf.MongoDBType == StandardMongo {
+		exists, errExists := m.collectionExists(c.Name)
+		if errExists == nil && exists {
+			m.log.Debug("Collection ", c.Name, " exists, omitting index creation")
+			return nil
+		}
 	}
 
 	var err error
@@ -322,7 +329,7 @@ func (m *MongoSelectivePump) collectionExists(name string) (bool, error) {
 
 	colNames, err := sess.DB("").CollectionNames()
 	if err != nil {
-		m.log.Error("Unable to get column names: ", err)
+		m.log.Error("Unable to get collection names: ", err)
 
 		return false, err
 	}
