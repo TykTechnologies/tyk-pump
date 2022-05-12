@@ -33,7 +33,7 @@ func (c *Conn) CleanDb() {
 	}
 }
 
-func (c *Conn) CleanCollection(){
+func (c *Conn) CleanCollection() {
 	sess := c.Session.Copy()
 	defer sess.Close()
 
@@ -42,7 +42,7 @@ func (c *Conn) CleanCollection(){
 	}
 }
 
-func (c *Conn) CleanIndexes(){
+func (c *Conn) CleanIndexes() {
 	sess := c.Session.Copy()
 	defer sess.Close()
 
@@ -50,7 +50,7 @@ func (c *Conn) CleanIndexes(){
 	if err != nil {
 		panic(err)
 	}
-	for _,index := range indexes{
+	for _, index := range indexes {
 		sess.DB("").C(colName).DropIndexName(index.Name)
 	}
 
@@ -78,7 +78,7 @@ func (c *Conn) GetCollectionStats() (colStats bson.M) {
 	return colStats
 }
 
-func (c *Conn) GetIndexes() ([]mgo.Index,error) {
+func (c *Conn) GetIndexes() ([]mgo.Index, error) {
 	sess := c.Session.Copy()
 	defer sess.Close()
 

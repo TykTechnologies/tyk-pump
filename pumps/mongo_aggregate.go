@@ -213,9 +213,9 @@ func (m *MongoAggregatePump) ensureIndexes(c *mgo.Collection) error {
 
 	//We are going to check if the collection exists only when the DB Type is MongoDB. The mgo CollectionNames func leaks cursors on DocDB.
 	if m.dbConf.MongoDBType == StandardMongo {
-		exists, errExists:=  m.collectionExists(c.Name)
-		if errExists == nil && exists	{
-			m.log.Debug("Collection ",c.Name," exists, omitting index creation")
+		exists, errExists := m.collectionExists(c.Name)
+		if errExists == nil && exists {
+			m.log.Debug("Collection ", c.Name, " exists, omitting index creation")
 			return nil
 		}
 	}
