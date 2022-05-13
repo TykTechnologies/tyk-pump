@@ -33,7 +33,7 @@ func TestMongoPump_capCollection_Enabled(t *testing.T) {
 	}
 }
 
-func TestMongoPump_omitIndexCreation(t *testing.T) {
+func TestMongoPump_OmitIndexCreation(t *testing.T) {
 
 	c := Conn{}
 	c.ConnectDb()
