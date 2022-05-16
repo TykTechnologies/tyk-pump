@@ -395,8 +395,6 @@ func (m *MongoPump) collectionExists(name string) (bool, error) {
 
 func (m *MongoPump) ensureIndexes() error {
 	if m.dbConf.OmitIndexCreation {
-		fmt.Println("m.dbConf.OmitIndexCreation", m.dbConf.OmitIndexCreation)
-
 		m.log.Debug("omit_index_creation set to true, omitting index creation..")
 		return nil
 	}

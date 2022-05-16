@@ -124,7 +124,7 @@ func TestMongoPumpOmitIndexCreation(t *testing.T) {
 			}
 
 			if len(indexes) != tc.Indexes {
-				t.Error("index differential:", indexes)
+				t.Errorf("wanted %v index but got %v indexes", tc.Indexes, len(indexes))
 			}
 		})
 	}
