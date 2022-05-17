@@ -33,6 +33,29 @@ func (c *Conn) CleanDb() {
 	}
 }
 
+func (c *Conn) CleanCollection() {
+	sess := c.Session.Copy()
+	defer sess.Close()
+
+	if err := sess.DB("").C(colName).DropCollection(); err != nil {
+		panic(err)
+	}
+}
+
+func (c *Conn) CleanIndexes() {
+	sess := c.Session.Copy()
+	defer sess.Close()
+
+	indexes, err := sess.DB("").C(colName).Indexes()
+	if err != nil {
+		panic(err)
+	}
+	for _, index := range indexes {
+		sess.DB("").C(colName).DropIndexName(index.Name)
+	}
+
+}
+
 func (c *Conn) InsertDoc() {
 	sess := c.Session.Copy()
 	defer sess.Close()
@@ -53,6 +76,13 @@ func (c *Conn) GetCollectionStats() (colStats bson.M) {
 	}
 
 	return colStats
+}
+
+func (c *Conn) GetIndexes() ([]mgo.Index, error) {
+	sess := c.Session.Copy()
+	defer sess.Close()
+
+	return sess.DB("").C(colName).Indexes()
 }
 
 func defaultConf() MongoConf {
