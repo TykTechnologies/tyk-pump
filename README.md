@@ -151,15 +151,15 @@ This returns a HTTP 200 OK response if the Pump is running.
 {"status": "ok"}
 ```
 
-## Pump Configurations
+# Pump Configurations
 
-### Uptime Data
+## Uptime Data
 
 `dont_purge_uptime_data` - Setting this to false will create a pump that pushes uptime data to (Mongo) Uptime Pump, so the Tyk Dashboard can read it. Disable by setting to `true`
 
 Take into account that you can also set `log_level` field into the `uptime_pump_config` to `debug`,`info` or `warning`. By default, the SQL logger verbosity is `silent`.
 
-#### Mongo Uptime Pump
+### Mongo Uptime Pump
 
 In `uptime_pump_config` you can configure a mongo uptime pump. By default, the uptime pump is going to be `mongo` type, so it's not necessary to specify it here.
 
@@ -187,7 +187,7 @@ TYK_PMP_UPTIMEPUMPCONFIG_MAXDOCUMENTSIZEBYTES=200000
 TYK_PMP_UPTIMEPUMPCONFIG_LOGLEVEL=info
 ```
 
-#### SQL Uptime Pump
+## SQL Uptime Pump
 *Supported in Tyk Pump v1.5.0+*
 
 In `uptime_pump_config` you can configure a SQL uptime pump. To do that, you need to add the field `uptime_type` with `sql` value.
@@ -213,7 +213,33 @@ TYK_PMP_UPTIMEPUMPCONFIG_TABLESHARDING=false
 TYK_PMP_UPTIMEPUMPCONFIG_LOGLEVEL=info
 ```
 
-### Mongo & Tyk Dashboard.
+## GrayLog
+*Supported in Tyk Pump v1.5.0+*
+
+In `uptime_pump_config` you can configure a SQL uptime pump. To do that, you need to add the field `uptime_type` with `sql` value.
+You can also use different types of SQL Uptime pumps, like `postgres` or `sqlite` using the `type` field. 
+
+###### JSON / Conf file Example
+```
+    "uptime_pump_config": {
+        "uptime_type": "sql",
+        "type": "postgres",
+        "connection_string": "host=sql_host port=sql_port user=sql_usr dbname=dbname password=sql_pw",
+        "table_sharding": false,
+	"log_level": info
+    },
+```
+
+###### Env Variables:
+```
+TYK_PMP_UPTIMEPUMPCONFIG_UPTIMETYPE=sql
+TYK_PMP_UPTIMEPUMPCONFIG_TYPE=postgres
+TYK_PMP_UPTIMEPUMPCONFIG_CONNECTIONSTRING=host=sql_host port=sql_port user=sql_usr dbname=dbname password=sql_pw
+TYK_PMP_UPTIMEPUMPCONFIG_TABLESHARDING=false
+TYK_PMP_UPTIMEPUMPCONFIG_LOGLEVEL=info
+```
+
+## Mongo & Tyk Dashboard.
 There are 3 mongo pumps.  You may use one or multiple depending on the data you want.
 
 The Tyk Dashboard uses various Mongo collections to store and visualize API traffic analytics.  Please visit [this link](https://tyk.io/docs/tyk-pump/tyk-pump-configuration/tyk-pump-dashboard-config/) for steps on configuration.
@@ -262,7 +288,7 @@ TYK_PMP_PUMPS_MONGOAGG_TYPE=mongo-pump-aggregate
 TYK_PMP_PUMPS_MONGOAGG_META_USEMIXEDCOLLECTION=true
 ```
 
-### Elasticsearch Config
+## Elasticsearch Config
 
 `"index_name"` - The name of the index that all the analytics data will be placed in. Defaults to "tyk_analytics"
 
@@ -300,7 +326,7 @@ TYK_PMP_PUMPS_ELASTICSEARCH_META_BULKCONFIG_WORKERS=2
 TYK_PMP_PUMPS_ELASTICSEARCH_META_BULKCONFIG_FLUSHINTERVAL=60
 ```
 
-### Moesif Config
+## Moesif Config
 [Moesif](https://www.moesif.com/?language=tyk-api-gateway) is a user-centric API analytics and monitoring service for APIs. [More Info on Moesif for Tyk](https://www.moesif.com/solutions/track-api-program?language=tyk-api-gateway)
 
 - `"application_id"` - Moesif Application Id. You can find your Moesif Application Id from [_Moesif Dashboard_](https://www.moesif.com/) -> _Top Right Menu_ -> _API Keys_ . Moesif recommends creating separate Application Ids for each environment such as Production, Staging, and Development to keep data isolated. 
@@ -327,7 +353,7 @@ TYK_PMP_PUMPS_MOESIF_META_APPLICATIONID=""
 ```
 
 
-### Hybrid RPC Config
+## Hybrid RPC Config
 
 Hybrid Pump allows you to install Tyk Pump inside Multi-Cloud or MDCB Worker installations. You can configure Tyk Pump to send data to the source of your choice (i.e. ElasticSearch), and in parallel, forward analytics to the Tyk Cloud. Additionally, you can set the aggregated flag to send only aggregated analytics to MDCB or Tyk Cloud, in order to save network bandwidth between DCs.
 
@@ -366,7 +392,7 @@ TYK_PMP_PUMPS_HYBRID_META_PINGTIMEOUT=60
 TYK_PMP_PUMPS_HYBRID_META_RPCPOOLSIZE=30
 ```
 
-### Prometheus
+## Prometheus
 Prometheus is an open-source monitoring system with a dimensional data model, flexible query language, efficient time series database and modern alerting approach.
 
 `Note` - When run as docker image then `"listen_address": ":9090"`
@@ -403,7 +429,7 @@ TYK_PMP_PUMPS_PROMETHEUS_META_ADDR=localhost:9090
 TYK_PMP_PUMPS_PROMETHEUS_META_PATH=/metrics
 ```
 
-### DogStatsD
+## DogStatsD
 
 - `address`: address of the datadog agent including host & port
 - `namespace`: prefix for your metrics to datadog
@@ -475,7 +501,7 @@ TYK_PMP_PUMPS_DOGSTATSD_META_BUFFEREDMAXMESSAGES=32
 TYK_PMP_PUMPS_DOGSTATSD_META_TAGS=method,response_code,api_version,api_name,api_id,org_id,tracked,path,oauth_id
 ```
 
-### Splunk Config
+## Splunk
 
 Setting up Splunk with a *HTTP Event Collector*
 
@@ -559,7 +585,7 @@ TYK_PMP_PUMPS_SPLUNK_META_ENABLEBATCH=true
 TYK_PMP_PUMPS_SPLUNK_META_BATCHMAXCONTENTLENGTH="{MAX-CONTENT-LENGTH}"
 ```
 
-### Logzio Config
+## Logzio Config
 
 Logz.io is a cloud observability platform providing Log Management built on ELK, Infrastructure Monitoring based on Grafana, and an ELK-based Cloud SIEM.
 
@@ -595,7 +621,7 @@ More advanced fields:
 `meta.check_disk_space` - Set the sender to check if it crosses the maximum allowed disk usage. Default value is `true`.
 
 
-### Kafka Config
+## Kafka Config
 
 * `broker`: The list of brokers used to discover the partitions available on the kafka cluster. E.g. "localhost:9092"
 * `use_ssl`: Enables SSL connection.
@@ -648,7 +674,7 @@ TYK_PMP_PUMPS_KAFKA_META_METADATA_KEY=value
 ```
 
 
-### Influx2 Config
+## Influx2 Config
 Supported in Tyk Pump v1.5.1+
 
 This pump uses the official Go client library for InfluxDB 2.x.
@@ -716,7 +742,7 @@ TYK_PMP_PUMPS_INFLUX_META_TAGS=path,response_code,api_key,api_version,api_name,a
 ```
 
 
-### Syslog
+## Syslog
 Supported in Tyk Pump v1.0.0+
 
 `"transport"` - Possible values are `udp, tcp, tls` in string form
@@ -741,7 +767,7 @@ When working with FluentD, you should provide a [FluentD Parser](https://docs.fl
 ```
 
 
-### Stdout
+## Stdout
 
 `log_field_name` - Root name of the JSON object the analytics record is nested in
 
@@ -765,7 +791,7 @@ TYK_PMP_PUMPS_STDOUT_META_LOGFIELDNAME=tyk-analytics-record
 TYK_PMP_PUMPS_STDOUT_META_FORMAT=json
 ```
 
-### SQL Pump
+## SQL Pump
 *Supported in Tyk Pump v1.5.0+*
 
 `type` - The supported and tested types are `sqlite` and `postgres`. 
@@ -796,7 +822,7 @@ TYK_PMP_PUMPS_SQL_META_TABLESHARDING=false
 ```
 
 
-### SQL Aggregate Pump
+## SQL Aggregate Pump
 *Supported in Tyk Pump v1.5.0+*
 
 `type` - The supported and tested types are `sqlite` and `postgres`. 
@@ -828,7 +854,7 @@ TYK_PMP_PUMPS_SQLAGGREGATE_META_CONNECTIONSTRING=host=sql_host port=sql_port use
 TYK_PMP_PUMPS_SQLAGGREGATE_META_TABLESHARDING=true 
 ```
 
-### Timestream Config
+## Timestream Config
 
 #### Authentication & Prerequisite
 We must authenticate ourselves by providing credentials to AWS.  This pump uses the official AWS GO SDK, so instructions on how to authenticate can be found on [their documentation here](https://aws.github.io/aws-sdk-go-v2/docs/configuring-sdk/#specifying-credentials).  
@@ -953,7 +979,7 @@ TYK_PMP_PUMPS_TIMESTREAM_META_FIELDNAMEMAPPINGS_RATELIMIT_REMAINING=quota_remain
 TYK_PMP_PUMPS_TIMESTREAM_META_FIELDNAMEMAPPINGS_RATELIMIT_RESET=quota_renewal_rate
 ```
 
-### CSV Config
+## CSV Config
 
 Enable this Pump to have Tyk Pump create or modify a CSV file to track API Analytics.
 
