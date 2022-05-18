@@ -127,13 +127,23 @@ An example of configuration would be:
 "csv": {
  "type": "csv",
  "filters": {
-   "org_ids": ["org1","org2"]
+   "api_ids": ["123","789"]
  },
  "meta": {
    "csv_dir": "./bar"
  }
 }
 ```
+
+###### Env variables
+```yaml
+TYK_PMP_PUMPS_CSV_TYPE=csv 
+TYK_PMP_PUMPS_CSV_META_CSVDIR=./bar
+TYK_PMP_PUMPS_CSV_FILTERS_APIIDS=123,789
+
+```
+
+
 
 ### Timeouts
 
