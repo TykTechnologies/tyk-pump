@@ -107,7 +107,7 @@ TYK_PMP_DONTPURGEUPTIMEDATA=false
 
 ### Filter Records
 
-This feature adds a new configuration field in each pump called filters and its structure is the following:
+You made add the following config field to each pump called `filters` and its structure is the following:
 ```json
 "filters":{
   "api_ids":[],
@@ -122,7 +122,7 @@ The fields api_ids, org_ids and response_codes works as allow list (APIs and org
 
 The priority is always block list configurations over allow list.
 
-An example of configuration would be:
+###### JSON / Conf file Example
 ```json
 "csv": {
  "type": "csv",
