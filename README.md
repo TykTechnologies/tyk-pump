@@ -220,7 +220,7 @@ This returns a HTTP 200 OK response if the Pump is running.
 
 ### Uptime Data
 
-`dont_purge_uptime_data` - Setting this to false will create a pump that pushes uptime data to Uptime Pump, so the Dashboard can read it. Disable by setting to true
+`dont_purge_uptime_data` - Setting this to false will create a pump that pushes uptime data to (Mongo) Uptime Pump, so the Tyk Dashboard can read it. Disable by setting to true
 
 #### Mongo Uptime Pump
 In `uptime_pump_config` you can configure a mongo uptime pump. By default, the uptime pump is going to be `mongo` type, so it's not necessary to specify it here.
@@ -256,9 +256,7 @@ Take into account that you can also set `log_level` field into the `uptime_pump_
 
 ### Tyk Dashboard
 
-The Tyk Dashboard uses the "mongo-pump-aggregate" collection to display analytics.  This is different than the standard "mongo" pump plugin that will store individual analytic items into mongo.  The aggregate functionality was built to be fast, as querying raw analytics is expensive in large data sets.
-
-
+The Tyk Dashboard uses various Mongo collections to store and visualize API traffic analytics.  Please visit [this link](https://tyk.io/docs/tyk-pump/tyk-pump-configuration/tyk-pump-dashboard-config/) for steps on configuration.
 
 ### Elasticsearch Config
 
