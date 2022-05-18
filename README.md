@@ -459,7 +459,7 @@ TYK_PMP_PUMPS_DOGSTATSD_META_ASYNCUDS=true
 TYK_PMP_PUMPS_DOGSTATSD_META_ASYNCUDSWRITETIMEOUT=2
 TYK_PMP_PUMPS_DOGSTATSD_META_BUFFERED=true
 TYK_PMP_PUMPS_DOGSTATSD_META_BUFFEREDMAXMESSAGES=32
-** -> TYK_PMP_PUMPS_DOGSTATSD_META_TAGS=["method", "response_code", "api_version", "api_name", "api_id", "org_id", "tracked", "path", "oauth_id"]
+TYK_PMP_PUMPS_DOGSTATSD_META_TAGS=method,response_code,api_version,api_name,api_id,org_id,tracked,path,oauth_id
 ```
 
 ### Splunk Config
@@ -698,8 +698,8 @@ TYK_PMP_PUMPS_INFLUX_META_TOKEN=ZzSnH2qRpEJd3ph3A6lPaCcP8BkJfaxeiadFG5DBMO8YIAn3
 TYK_PMP_PUMPS_INFLUX_META_CREATEMISSINGBUCKET=true
 TYK_PMP_PUMPS_INFLUX_META_NEWBUCKETCONFIG_DESCRIPTION="Tyk gateway requests"
 TYK_PMP_PUMPS_INFLUX_META_NEWBUCKETCONFIG_RETENTIONRULES_EVERYSECONDS=3600
-** -> TYK_PMP_PUMPS_INFLUX_META_FIELDS=["request_time"]
-** -> TYK_PMP_PUMPS_INFLUX_META_TAGS=["path", "response_code", "api_key", "api_version", "api_name", "api_id", "raw_request", "ip_address", "org_id", "oauth_id"]
+TYK_PMP_PUMPS_INFLUX_META_FIELDS=request_time
+TYK_PMP_PUMPS_INFLUX_META_TAGS=path,response_code,api_key,api_version,api_name,api_id,raw_request,ip_address,org_id,oauth_id
 ```
 
 
@@ -922,8 +922,8 @@ TYK_PMP_PUMPS_TIMESTREAM_META_TIMESTREAMDATABASENAME=tyk-pump
 TYK_PMP_PUMPS_TIMESTREAM_META_WRITERATELIMIT=true
 TYK_PMP_PUMPS_TIMESTREAM_META_READGEOFROMREQUEST=true
 TYK_PMP_PUMPS_TIMESTREAM_META_WRITEZEROVALUES=true
-** -> TYK_PMP_PUMPS_TIMESTREAM_META_DIMENSIONS=["Method", "Host", "Path", "APIKey"]
-** -> TYK_PMP_PUMPS_TIMESTREAM_META_MEASURES=["ResponseCode", "RequestTime", "Latency.Total", "RateLimit.Limit", "RateLimit.Remaining", "RateLimit.Reset", "UserAgent", "IPAddress", "GeoData.Country.ISOCode", "GeoData.City.Names"]
+TYK_PMP_PUMPS_TIMESTREAM_META_DIMENSIONS=Method,Host,Path,APIKey
+TYK_PMP_PUMPS_TIMESTREAM_META_MEASURES=ResponseCode,RequestTime,Latency.Total,RateLimit.Limit,RateLimit.Remaining,RateLimit.Reset,UserAgent,IPAddress,GeoData.Country.ISOCode,GeoData.City.Names
 TYK_PMP_PUMPS_TIMESTREAM_META_FIELDNAMEMAPPINGS_PATH=path
 TYK_PMP_PUMPS_TIMESTREAM_META_FIELDNAMEMAPPINGS_APIKEY=api_key
 TYK_PMP_PUMPS_TIMESTREAM_META_FIELDNAMEMAPPINGS_METHOD=method
