@@ -901,7 +901,7 @@ If `table_sharding` is `false`, all the records are going to be stored in `tyk_a
 
 ###### Env Variables
 ```
-TYK_PMP_PUMPS_SQLAGGREGATE_NAME=sql_aggregate 
+TYK_PMP_PUMPS_SQLAGGREGATE_TYPE=sql_aggregate 
 TYK_PMP_PUMPS_SQLAGGREGATE_META_TYPE=postgres 
 TYK_PMP_PUMPS_SQLAGGREGATE_META_CONNECTIONSTRING=host=sql_host port=sql_port user=sql_usr dbname=dbname password=sql_pw 
 TYK_PMP_PUMPS_SQLAGGREGATE_META_TABLESHARDING=true 
