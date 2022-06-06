@@ -3,10 +3,11 @@ package pumps
 import (
 	"context"
 	"errors"
+	"fmt"
+	"github.com/TykTechnologies/tyk-pump/analytics"
 	"net/http"
 	"strconv"
-
-	"github.com/TykTechnologies/tyk-pump/analytics"
+	"strings"
 
 	"github.com/mitchellh/mapstructure"
 	"github.com/prometheus/client_golang/prometheus"
@@ -128,6 +129,12 @@ func (p *PrometheusPump) Init(conf interface{}) error {
 func (p *PrometheusPump) WriteData(ctx context.Context, data []interface{}) error {
 	p.log.Debug("Attempting to write ", len(data), " records...")
 
+	totalStatusMetrics := make(map[string]float64)
+	pathStatusMetrics := make(map[string]float64)
+	keyStatusMetrics := make(map[string]float64)
+	oauthStatusMetrics := make(map[string]float64)
+	totalLatencyMetrics := make(map[string]float64)
+
 	for i, item := range data {
 		select {
 		case <-ctx.Done():
@@ -138,14 +145,55 @@ func (p *PrometheusPump) WriteData(ctx context.Context, data []interface{}) erro
 		record := item.(analytics.AnalyticsRecord)
 		code := strconv.Itoa(record.ResponseCode)
 
-		p.TotalStatusMetrics.WithLabelValues(code, record.APIID).Inc()
-		p.PathStatusMetrics.WithLabelValues(code, record.APIID, record.Path, record.Method).Inc()
-		p.KeyStatusMetrics.WithLabelValues(code, record.APIKey).Inc()
+		totalStatusMetricsLabel := fmt.Sprintf("%v-%v", code, record.APIID)
+		pathStatusMetricsLabel := fmt.Sprintf("%v-%v-%v-%v", code, record.APIID, record.Path, record.Method)
+		keyStatusMetricsLabel := fmt.Sprintf("%v-%v", code, record.APIKey)
+		oauthStatusMetricsLabel := fmt.Sprintf("%v-%v", code, record.OauthID)
+
+		totalStatusMetrics[totalStatusMetricsLabel] += 1
+		pathStatusMetrics[pathStatusMetricsLabel] += 1
+		keyStatusMetrics[keyStatusMetricsLabel] += 1
 		if record.OauthID != "" {
-			p.OauthStatusMetrics.WithLabelValues(code, record.OauthID).Inc()
+			oauthStatusMetrics[oauthStatusMetricsLabel] += 1
 		}
-		p.TotalLatencyMetrics.WithLabelValues("total", record.APIID).Observe(float64(record.RequestTime))
+
+		totalLatencyMetrics[record.APIID] = float64(record.RequestTime)
 	}
+
+	for k, v := range totalStatusMetrics {
+		labels := strings.Split(k, "-")
+		code := labels[0]
+		apiId := labels[1]
+		p.TotalStatusMetrics.WithLabelValues(code, apiId).Add(v)
+	}
+
+	for k, v := range pathStatusMetrics {
+		labels := strings.Split(k, "-")
+		code := labels[0]
+		apiId := labels[1]
+		recordPath := labels[2]
+		recordMethod := labels[3]
+		p.PathStatusMetrics.WithLabelValues(code, apiId, recordPath, recordMethod).Add(v)
+	}
+
+	for k, v := range keyStatusMetrics {
+		labels := strings.Split(k, "-")
+		code := labels[0]
+		apiKey := labels[1]
+		p.KeyStatusMetrics.WithLabelValues(code, apiKey).Add(v)
+	}
+
+	for k, v := range oauthStatusMetrics {
+		labels := strings.Split(k, "-")
+		code := labels[0]
+		oauthId := labels[1]
+		p.OauthStatusMetrics.WithLabelValues(code, oauthId).Add(v)
+	}
+
+	for k, v := range totalLatencyMetrics {
+		p.TotalLatencyMetrics.WithLabelValues("total", k).Observe(v)
+	}
+
 	p.log.Info("Purged ", len(data), " records...")
 
 	return nil
