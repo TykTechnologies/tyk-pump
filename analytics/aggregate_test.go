@@ -23,7 +23,7 @@ func TestCode_ProcessStatusCodes(t *testing.T) {
 }
 
 func TestAggregate_Tags(t *testing.T) {
-	records := []interface{}{
+	recordsEmptyTag := []interface{}{
 		AnalyticsRecord{
 			OrgID: "ORG123",
 			APIID: "123",
@@ -35,10 +35,31 @@ func TestAggregate_Tags(t *testing.T) {
 			Tags:  []string{"", "   ", "tag2"},
 		},
 	}
+	recordsDot := []interface{}{
+		AnalyticsRecord{
+			OrgID: "ORG123",
+			APIID: "123",
+			Tags:  []string{"tag1", ""},
+		},
+		AnalyticsRecord{
+			OrgID: "ORG123",
+			APIID: "123",
+			Tags:  []string{"", "...", "tag2"},
+		},
+		AnalyticsRecord{
+			OrgID: "ORG123",
+			APIID: "123",
+			Tags:  []string{"", " ...", "tag2"},
+		},
+	}
+	runTestAggregatedTags(t, "empty tags", recordsEmptyTag)
+	runTestAggregatedTags(t, "dot", recordsDot)
+}
 
+func runTestAggregatedTags(t *testing.T, name string, records []interface{}) {
 	aggregations := AggregateData(records, false, []string{}, false)
 
-	t.Run("empty tags", func(t *testing.T) {
+	t.Run(name, func(t *testing.T) {
 		for _, aggregation := range aggregations {
 
 			assert.Equal(t, 2, len(aggregation.Tags))
