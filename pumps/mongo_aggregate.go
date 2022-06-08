@@ -257,9 +257,9 @@ func (m *MongoAggregatePump) WriteData(ctx context.Context, data []interface{}) 
 		m.connect()
 		m.WriteData(ctx, data)
 	} else {
-
 		// calculate aggregates
 		analyticsPerOrg := analytics.AggregateData(data, m.dbConf.TrackAllPaths, m.dbConf.IgnoreTagPrefixList, m.dbConf.StoreAnalyticsPerMinute)
+
 		// put aggregated data into MongoDB
 		for orgID, filteredData := range analyticsPerOrg {
 			err := m.DoAggregatedWriting(ctx, orgID, filteredData)
@@ -343,6 +343,7 @@ func (m *MongoAggregatePump) DoAggregatedWriting(ctx context.Context, orgID stri
 	}
 
 	updateDoc := filteredData.AsChange()
+
 	change := mgo.Change{
 		Update:    updateDoc,
 		ReturnNew: true,
@@ -359,7 +360,6 @@ func (m *MongoAggregatePump) DoAggregatedWriting(ctx context.Context, orgID stri
 
 	// We have the new doc back, lets fix the averages
 	avgUpdateDoc := doc.AsTimeUpdate()
-
 	avgChange := mgo.Change{
 		Update:    avgUpdateDoc,
 		ReturnNew: true,
