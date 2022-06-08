@@ -841,7 +841,7 @@ func TrimTag(thisTag string) string {
 	trimmedTag := strings.TrimSpace(thisTag)
 
 	if strings.Contains(trimmedTag, ".") {
-		trimmedTag = strings.Trim(trimmedTag, ".")
+		trimmedTag = strings.Replace(trimmedTag, ".", "", -1)
 	}
 	return trimmedTag
 }

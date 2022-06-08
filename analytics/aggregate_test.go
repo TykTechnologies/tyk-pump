@@ -44,12 +44,12 @@ func TestAggregate_Tags(t *testing.T) {
 		AnalyticsRecord{
 			OrgID: "ORG123",
 			APIID: "123",
-			Tags:  []string{"", "...", "tag2"},
+			Tags:  []string{"", "...", "tag1"},
 		},
 		AnalyticsRecord{
 			OrgID: "ORG123",
 			APIID: "123",
-			Tags:  []string{"", " ...", "tag2"},
+			Tags:  []string{"internal.group1.dc1.", "tag1", ""},
 		},
 	}
 	runTestAggregatedTags(t, "empty tags", recordsEmptyTag)
@@ -61,8 +61,14 @@ func runTestAggregatedTags(t *testing.T, name string, records []interface{}) {
 
 	t.Run(name, func(t *testing.T) {
 		for _, aggregation := range aggregations {
-
 			assert.Equal(t, 2, len(aggregation.Tags))
 		}
 	})
+}
+
+func TestTrimTag(t *testing.T) {
+	assert.Equal(t, "", TrimTag("..."))
+	assert.Equal(t, "helloworld", TrimTag("hello.world"))
+	assert.Equal(t, "helloworld", TrimTag(".hello.world.."))
+	assert.Equal(t, "hello world", TrimTag(" hello world "))
 }
