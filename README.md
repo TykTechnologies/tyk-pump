@@ -254,7 +254,6 @@ TYK_PMP_PUMPS_GRAYLOG_META_TAGS=method,path,response_code,api_key,api_version,ap
 ## StatsD
 
 Example of integrating with StatsD:
-
 ###### JSON / Conf file Example
 ```
 {
@@ -284,12 +283,16 @@ Example of integrating with StatsD:
 }
 ```
 
+By default, StatsD pump will put the analytic record method and path in your path field. From Pump 1.6+ you can set `separated_method` to true in your Statsd pump meta config in order to have the method attribute in a separated field.
+
+
 ###### Env Variables:
 ```
 TYK_PMP_PUMPS_STATSD_TYPE=statsd
 TYK_PMP_PUMPS_STATSD_META_ADDRESS="localhost:8125"
 TYK_PMP_PUMPS_STATSD_META_FIELDS=request_time
 TYK_PMP_PUMPS_STATSD_META_TAGS=path,response_code,api_key,api_version,api_name,api_id,org_id,oauth_id,raw_request,ip_address
+TYK_PMP_PUMPS_STATSD_META_SEPARATEDMETHOD=false
 ```
 
 ## Mongo & Tyk Dashboard.

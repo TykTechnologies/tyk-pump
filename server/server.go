@@ -28,11 +28,10 @@ func ServeHealthCheck(configHealthEndpoint string, configHealthPort int, enableP
 	r := mux.NewRouter()
 
 	r.HandleFunc("/"+healthEndpoint, Healthcheck).Methods("GET")
-	if enableProfiling{
+	if enableProfiling {
 		r.HandleFunc("/debug/pprof/profile", pprof_http.Profile)
 		r.HandleFunc("/debug/pprof/{_:.*}", pprof_http.Index)
 	}
-
 
 	log.WithFields(logrus.Fields{
 		"prefix": serverPrefix,
@@ -45,11 +44,8 @@ func ServeHealthCheck(configHealthEndpoint string, configHealthPort int, enableP
 	}
 }
 
-
-
 func Healthcheck(rw http.ResponseWriter, r *http.Request) {
-rw.Header().Set("Content-type", "application/json")
-rw.WriteHeader(http.StatusOK)
-rw.Write([]byte(`{"status": "ok"}`))
+	rw.Header().Set("Content-type", "application/json")
+	rw.WriteHeader(http.StatusOK)
+	rw.Write([]byte(`{"status": "ok"}`))
 }
-
