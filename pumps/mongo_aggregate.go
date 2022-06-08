@@ -206,10 +206,18 @@ func (m *MongoAggregatePump) connect() {
 }
 
 func (m *MongoAggregatePump) ensureIndexes(c *mgo.Collection) error {
-	exists, errExists:=  m.collectionExists(c.Name)
-	if errExists == nil && exists	{
-		m.log.Debug("Collection ",c.Name," exists, omitting index creation")
+	if m.dbConf.OmitIndexCreation {
+		m.log.Debug("omit_index_creation set to true, omitting index creation..")
 		return nil
+	}
+
+	//We are going to check if the collection exists only when the DB Type is MongoDB. The mgo CollectionNames func leaks cursors on DocDB.
+	if m.dbConf.MongoDBType == StandardMongo {
+		exists, errExists := m.collectionExists(c.Name)
+		if errExists == nil && exists {
+			m.log.Debug("Collection ", c.Name, " exists, omitting index creation")
+			return nil
+		}
 	}
 
 	var err error
@@ -244,7 +252,6 @@ func (m *MongoAggregatePump) ensureIndexes(c *mgo.Collection) error {
 
 func (m *MongoAggregatePump) WriteData(ctx context.Context, data []interface{}) error {
 	m.log.Debug("Attempting to write ", len(data), " records")
-
 	if m.dbSession == nil {
 		m.log.Debug("Connecting to analytics store")
 		m.connect()
@@ -392,7 +399,7 @@ func (m *MongoAggregatePump) collectionExists(name string) (bool, error) {
 
 	colNames, err := sess.DB("").CollectionNames()
 	if err != nil {
-		m.log.Error("Unable to get column names: ", err)
+		m.log.Error("Unable to get collection names: ", err)
 
 		return false, err
 	}
@@ -405,7 +412,6 @@ func (m *MongoAggregatePump) collectionExists(name string) (bool, error) {
 
 	return false, nil
 }
-
 
 // WriteUptimeData will pull the data from the in-memory store and drop it into the specified MongoDB collection
 func (m *MongoAggregatePump) WriteUptimeData(data []interface{}) {

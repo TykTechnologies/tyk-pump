@@ -17,11 +17,11 @@ import (
 	"github.com/TykTechnologies/tyk-pump/analytics/demo"
 	logger "github.com/TykTechnologies/tyk-pump/logger"
 	"github.com/TykTechnologies/tyk-pump/pumps"
+	"github.com/TykTechnologies/tyk-pump/serializer"
 	"github.com/TykTechnologies/tyk-pump/server"
 	"github.com/TykTechnologies/tyk-pump/storage"
 	"github.com/gocraft/health"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
-	msgpack "gopkg.in/vmihailenco/msgpack.v2"
 )
 
 var SystemConfig TykPumpConfiguration
@@ -29,6 +29,7 @@ var AnalyticsStore storage.AnalyticsStorage
 var UptimeStorage storage.AnalyticsStorage
 var Pumps []pumps.Pump
 var UptimePump pumps.UptimePump
+var AnalyticsSerializers []serializer.AnalyticsSerializer
 
 var log = logger.GetLogger()
 
@@ -60,6 +61,9 @@ func Init() {
 		log.Warning("Demo mode active via environemnt variable")
 		demoMode = &envDemo
 	}
+
+	//Serializer init
+	AnalyticsSerializers = []serializer.AnalyticsSerializer{serializer.NewAnalyticsSerializer(serializer.MSGP_SERIALIZER), serializer.NewAnalyticsSerializer(serializer.PROTOBUF_SERIALIZER)}
 
 	log.WithFields(logrus.Fields{
 		"prefix": mainPrefix,
@@ -199,35 +203,15 @@ func StartPurgeLoop(wg *sync.WaitGroup, ctx context.Context, secInterval int, ch
 			} else {
 				analyticsKeyName = fmt.Sprintf("%v_%v", storage.ANALYTICS_KEYNAME, i)
 			}
-			AnalyticsValues := AnalyticsStore.GetAndDeleteSet(analyticsKeyName, chunkSize, expire)
-			if len(AnalyticsValues) > 0 {
-				// Convert to something clean
-				keys := make([]interface{}, len(AnalyticsValues))
 
-				for i, v := range AnalyticsValues {
-					decoded := analytics.AnalyticsRecord{}
-					err := msgpack.Unmarshal([]byte(v.(string)), &decoded)
-
-					log.WithFields(logrus.Fields{
-						"prefix": mainPrefix,
-					}).Debug("Decoded Record: ", decoded)
-					if err != nil {
-						log.WithFields(logrus.Fields{
-							"prefix":       mainPrefix,
-							"analytic_key": analyticsKeyName,
-						}).Error("Couldn't unmarshal analytics data:", err)
-					} else {
-						if omitDetails {
-							decoded.RawRequest = ""
-							decoded.RawResponse = ""
-						}
-						keys[i] = interface{}(decoded)
-						job.Event("record")
-					}
+			for _, serializerMethod := range AnalyticsSerializers {
+				analyticsKeyName += serializerMethod.GetSuffix()
+				AnalyticsValues := AnalyticsStore.GetAndDeleteSet(analyticsKeyName, chunkSize, expire)
+				if len(AnalyticsValues) > 0 {
+					PreprocessAnalyticsValues(AnalyticsValues, serializerMethod, analyticsKeyName, omitDetails, job, startTime, secInterval)
 				}
-				// Send to pumps
-				writeToPumps(keys, job, startTime, int(secInterval))
 			}
+
 		}
 
 		job.Timing("purge_time_all", time.Since(startTime).Nanoseconds())
@@ -241,6 +225,30 @@ func StartPurgeLoop(wg *sync.WaitGroup, ctx context.Context, secInterval int, ch
 			return
 		}
 	}
+}
+
+func PreprocessAnalyticsValues(AnalyticsValues []interface{}, serializerMethod serializer.AnalyticsSerializer, analyticsKeyName string, omitDetails bool, job *health.Job, startTime time.Time, secInterval int) {
+	keys := make([]interface{}, len(AnalyticsValues))
+
+	for i, v := range AnalyticsValues {
+		decoded := analytics.AnalyticsRecord{}
+		err := serializerMethod.Decode([]byte(v.(string)), &decoded)
+
+		log.WithFields(logrus.Fields{
+			"prefix": mainPrefix,
+		}).Debug("Decoded Record: ", decoded)
+		if err != nil {
+			log.WithFields(logrus.Fields{
+				"prefix":       mainPrefix,
+				"analytic_key": analyticsKeyName,
+			}).Error("Couldn't unmarshal analytics data:", err)
+			continue
+		}
+		keys[i] = interface{}(decoded)
+		job.Event("record")
+	}
+	// Send to pumps
+	writeToPumps(keys, job, startTime, int(secInterval))
 }
 
 func checkShutdown(ctx context.Context, wg *sync.WaitGroup) bool {
@@ -384,7 +392,7 @@ func execPumpWriting(wg *sync.WaitGroup, pmp pumps.Pump, keys *[]interface{}, pu
 func main() {
 	Init()
 	SetupInstrumentation()
-	go server.ServeHealthCheck(SystemConfig.HealthCheckEndpointName, SystemConfig.HealthCheckEndpointPort)
+	go server.ServeHealthCheck(SystemConfig.HealthCheckEndpointName, SystemConfig.HealthCheckEndpointPort, SystemConfig.HTTPProfile)
 
 	// Store version which will be read by dashboard and sent to
 	// vclu(version check and licecnse utilisation) service

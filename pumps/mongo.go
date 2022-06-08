@@ -71,6 +71,8 @@ type BaseMongoConf struct {
 	// Specifies the mongo DB Type. If it's 0, it means that you are using standard mongo db, but if it's 1 it means you are using AWS Document DB.
 	// Defaults to Standard mongo (0).
 	MongoDBType MongoType `json:"mongo_db_type" mapstructure:"mongo_db_type"`
+	// Set to true to disable the default tyk index creation.
+	OmitIndexCreation bool `json:"omit_index_creation" mapstructure:"omit_index_creation"`
 }
 
 func (b *BaseMongoConf) GetBlurredURL() string {
@@ -377,7 +379,7 @@ func (m *MongoPump) collectionExists(name string) (bool, error) {
 
 	colNames, err := sess.DB("").CollectionNames()
 	if err != nil {
-		m.log.Error("Unable to get column names: ", err)
+		m.log.Error("Unable to get collection names: ", err)
 
 		return false, err
 	}
@@ -392,10 +394,17 @@ func (m *MongoPump) collectionExists(name string) (bool, error) {
 }
 
 func (m *MongoPump) ensureIndexes() error {
-	exists, errExists:=  m.collectionExists(m.dbConf.CollectionName)
-	if errExists == nil && exists	{
-		m.log.Debug("Collection ",m.dbConf.CollectionName," exists, omitting index creation")
+	if m.dbConf.OmitIndexCreation {
+		m.log.Debug("omit_index_creation set to true, omitting index creation..")
 		return nil
+	}
+
+	if m.dbConf.MongoDBType == StandardMongo {
+		exists, errExists := m.collectionExists(m.dbConf.CollectionName)
+		if errExists == nil && exists {
+			m.log.Info("Collection ", m.dbConf.CollectionName, " exists, omitting index creation..")
+			return nil
+		}
 	}
 
 	var err error
@@ -598,8 +607,8 @@ func (m *MongoPump) WriteUptimeData(data []interface{}) {
 		decoded := analytics.UptimeReportData{}
 
 		if err := msgpack.Unmarshal([]byte(v.(string)), &decoded); err != nil {
+			// ToDo: should this work with serializer?
 			m.log.Error("Couldn't unmarshal analytics data:", err)
-
 			continue
 		}
 
