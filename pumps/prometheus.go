@@ -23,9 +23,7 @@ type PrometheusPump struct {
 	OauthStatusMetrics  *prometheus.CounterVec
 	TotalLatencyMetrics *prometheus.HistogramVec
 
-
 	customMetrics []*PrometheusMetric
-
 
 	CommonPumpConfig
 }
@@ -43,7 +41,7 @@ type PrometheusConf struct {
 
 type PrometheusMetric struct {
 	// The name of the custom metric. For example: `tyk_http_status_per_api_name`
-	Name string  `json:"name" mapstructure:"name"`
+	Name string `json:"name" mapstructure:"name"`
 	// Description text of the custom metric. For example: `HTTP status codes per API`
 	Help string `json:"help" mapstructure:"help"`
 	// Determines the type of the metric. There's currently 2 available options: `counter` or `histogram`.
@@ -57,13 +55,10 @@ type PrometheusMetric struct {
 	// "org_id", "oauth_id","request_time", "ip_address"]`.
 	Labels []string `json:"labels" mapstructure:"labels"`
 
-	enabled bool
-	counterVec *prometheus.CounterVec
+	enabled      bool
+	counterVec   *prometheus.CounterVec
 	histogramVec *prometheus.HistogramVec
 }
-
-
-
 
 var prometheusPrefix = "prometheus-pump"
 var prometheusDefaultENV = PUMPS_ENV_PREFIX + "_PROMETHEUS"
@@ -115,7 +110,6 @@ func (p *PrometheusPump) New() Pump {
 	prometheus.MustRegister(newPump.OauthStatusMetrics)
 	prometheus.MustRegister(newPump.TotalLatencyMetrics)
 
-
 	return &newPump
 }
 
@@ -147,12 +141,12 @@ func (p *PrometheusPump) Init(conf interface{}) error {
 	}
 
 	if len(p.conf.CustomMetrics) > 0 {
-		for _, metric := range p.conf.CustomMetrics{
+		for _, metric := range p.conf.CustomMetrics {
 			newMetric := &metric
 			errInit := newMetric.InitVec()
 			if errInit != nil {
 				p.log.Error(errInit)
-			}else{
+			} else {
 				p.customMetrics = append(p.customMetrics, newMetric)
 			}
 		}
@@ -191,8 +185,7 @@ func (p *PrometheusPump) WriteData(ctx context.Context, data []interface{}) erro
 		}
 		p.TotalLatencyMetrics.WithLabelValues("total", record.APIID).Observe(float64(record.RequestTime))
 
-
-		for _, customMetric := range p.customMetrics{
+		for _, customMetric := range p.customMetrics {
 			if customMetric.enabled {
 				p.log.Debug("Processing metric:", customMetric.Name)
 
@@ -209,7 +202,7 @@ func (p *PrometheusPump) WriteData(ctx context.Context, data []interface{}) erro
 					}
 				default:
 				}
-			}else{
+			} else {
 				p.log.Info("DISABLED")
 			}
 		}
@@ -219,11 +212,10 @@ func (p *PrometheusPump) WriteData(ctx context.Context, data []interface{}) erro
 	return nil
 }
 
-
 // InitVec inits the prometheus metric based on the metric_type. It only can create counter and histogram,
 // if the metric_type is anything else it returns an error
 func (pm *PrometheusMetric) InitVec() error {
-	if pm.MetricType == "counter"{
+	if pm.MetricType == "counter" {
 		pm.counterVec = prometheus.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: pm.Name,
@@ -232,22 +224,22 @@ func (pm *PrometheusMetric) InitVec() error {
 			pm.Labels,
 		)
 		prometheus.MustRegister(pm.counterVec)
-	}else if pm.MetricType == "histogram"{
+	} else if pm.MetricType == "histogram" {
 		bkts := pm.Buckets
 		if len(bkts) == 0 {
 			bkts = buckets
 		}
 		pm.histogramVec = prometheus.NewHistogramVec(
 			prometheus.HistogramOpts{
-				Name: pm.Name,
-				Help: pm.Help,
+				Name:    pm.Name,
+				Help:    pm.Help,
 				Buckets: buckets,
 			},
 			pm.Labels,
 		)
 		prometheus.MustRegister(pm.histogramVec)
-	}else{
-		return errors.New("invalid metric type:"+ pm.MetricType)
+	} else {
+		return errors.New("invalid metric type:" + pm.MetricType)
 	}
 
 	pm.enabled = true
@@ -255,10 +247,10 @@ func (pm *PrometheusMetric) InitVec() error {
 }
 
 // GetLabelsValues return a list of string values based on the custom metric labels.
-func (pm *PrometheusMetric) GetLabelsValues(decoded analytics.AnalyticsRecord) []string{
+func (pm *PrometheusMetric) GetLabelsValues(decoded analytics.AnalyticsRecord) []string {
 	values := []string{}
 	mapping := map[string]interface{}{
-		"host":			decoded.Host,
+		"host":          decoded.Host,
 		"method":        decoded.Method,
 		"path":          decoded.Path,
 		"response_code": decoded.ResponseCode,
@@ -273,7 +265,7 @@ func (pm *PrometheusMetric) GetLabelsValues(decoded analytics.AnalyticsRecord) [
 		"ip_address":    decoded.IPAddress,
 	}
 
-	for _, label := range pm.Labels{
+	for _, label := range pm.Labels {
 		if val, ok := mapping[label]; ok {
 			values = append(values, fmt.Sprint(val))
 		}
