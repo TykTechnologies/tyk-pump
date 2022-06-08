@@ -459,7 +459,6 @@ Tyk expose the following counters:
 And the following Histogram for latencies:
 - tyk_latency{type, api}
 
-<<<<<<< HEAD
 
 #### Custom Prometheus metrics
 From Pump <TBD_VERSION>+ it's possible to add custom prometheus metrics using the `custom_metrics` configuration.
@@ -471,13 +470,13 @@ For example:
 		"listen_address": "localhost:9090",
 		"path": "/metrics",
 		"custom_metrics":[
-                  {
-                    "name":"tyk_custom_http_status_per_api_name",
-                    "description":"This is a custom counter",
-                    "metric_type":"counter",
-                    "labels":["response_code","api_name"]
-                  }
-                ]
+      {
+        "name":"tyk_custom_http_status_per_api_name",
+        "description":"This is a custom counter",
+        "metric_type":"counter",
+        "labels":["response_code","api_name"]
+      }
+    ]
 	}
 },
 ```
@@ -491,8 +490,6 @@ If you are using `histogram`, its always going to use the `request_time` to obse
 The `labels` configuration determines the label name and value extracted from the analytic record.
 The available values are:  `["host","method", "path", "response_code", "api_key", "time_stamp", "api_version", "api_name", "api_id", "org_id", "oauth_id","request_time", "ip_address"]`
 
-### DogStatsD
-=======
 ###### JSON / Conf File
 ```.json
 {
@@ -501,8 +498,8 @@ The available values are:  `["host","method", "path", "response_code", "api_key"
       "prometheus": {
         "type": "prometheus",
         "meta": {
-	  "listen_address": "localhost:9090",
-	  "path": "/metrics"
+          "listen_address": "localhost:9090",
+          "path": "/metrics"
         }
       }    
     }
@@ -514,10 +511,10 @@ The available values are:  `["host","method", "path", "response_code", "api_key"
 TYK_PMP_PUMPS_PROMETHEUS_TYPE=prometheus
 TYK_PMP_PUMPS_PROMETHEUS_META_ADDR=localhost:9090
 TYK_PMP_PUMPS_PROMETHEUS_META_PATH=/metrics
+TYK_PMP_PUMPS_PROMETHEUS_META_CUSTOMMETRICS=[]
 ```
 
 ## DogStatsD
->>>>>>> origin/master
 
 - `address`: address of the datadog agent including host & port
 - `namespace`: prefix for your metrics to datadog
