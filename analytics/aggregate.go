@@ -800,7 +800,7 @@ func AggregateData(data []interface{}, trackAllPaths bool, ignoreTagPrefixList [
 
 				case "Tags":
 					for _, thisTag := range thisV.Tags {
-						trimmedTag := strings.TrimSpace(thisTag)
+						trimmedTag := TrimTag(thisTag)
 						if trimmedTag != "" && !ignoreTag(thisTag, ignoreTagPrefixList) {
 							c := IncrementOrSetUnit(thisAggregate.Tags[thisTag])
 							thisAggregate.Tags[thisTag] = c
@@ -835,4 +835,13 @@ func AggregateData(data []interface{}, trackAllPaths bool, ignoreTagPrefixList [
 	}
 
 	return analyticsPerOrg
+}
+
+func TrimTag(thisTag string) string {
+	trimmedTag := strings.TrimSpace(thisTag)
+
+	if strings.Contains(trimmedTag, ".") {
+		trimmedTag = strings.Replace(trimmedTag, ".", "", -1)
+	}
+	return trimmedTag
 }
