@@ -43,6 +43,7 @@ require (
 	github.com/segmentio/backo-go v0.0.0-20160424052352-204274ad699c // indirect
 	github.com/segmentio/kafka-go v0.3.6
 	github.com/shirou/gopsutil v3.20.11+incompatible // indirect
+	github.com/sirupsen/logrus v1.7.0
 	github.com/stretchr/testify v1.7.0
 	github.com/syndtr/goleveldb v0.0.0-20190318030020-c3a204f8e965 // indirect
 	github.com/xtgo/uuid v0.0.0-20140804021211-a0b114877d4c // indirect
@@ -56,6 +57,7 @@ require (
 	gopkg.in/olivere/elastic.v5 v5.0.85
 	gopkg.in/olivere/elastic.v6 v6.2.31
 	gopkg.in/vmihailenco/msgpack.v2 v2.9.1
+	gopkg.in/yaml.v3 v3.0.1
 	gorm.io/driver/mysql v1.0.3
 	gorm.io/driver/postgres v1.0.5
 	gorm.io/driver/sqlite v1.1.3

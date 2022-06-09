@@ -1,4 +1,4 @@
-package main
+package config
 
 import (
 	"encoding/json"
@@ -7,12 +7,15 @@ import (
 	"os"
 	"strings"
 
+	"github.com/TykTechnologies/tyk-pump/logger"
 	"github.com/TykTechnologies/tyk-pump/pumps"
 	"github.com/kelseyhightower/envconfig"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/TykTechnologies/tyk-pump/storage"
 )
+
+var log = logger.GetLogger()
 
 const ENV_PREVIX = "TYK_PMP"
 const PUMPS_ENV_PREFIX = pumps.PUMPS_ENV_PREFIX

@@ -49,3 +49,8 @@ func (p *CommonPumpConfig) SetMaxRecordSize(size int) {
 func (p *CommonPumpConfig) GetMaxRecordSize() int {
 	return p.maxRecordSize
 }
+
+func (p *CommonPumpConfig) Validate() []interface{} {
+	result := []interface{}{}
+	return result
+}

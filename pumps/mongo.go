@@ -46,6 +46,9 @@ var mongoDefaultEnv = PUMPS_ENV_PREFIX + "_MONGO" + PUMPS_ENV_META_PREFIX
 
 type MongoType int
 
+type MongoClient interface {
+}
+
 const (
 	StandardMongo MongoType = iota
 	AWSDocumentDB
@@ -160,6 +163,7 @@ func mongoType(session *mgo.Session) MongoType {
 	var result struct {
 		Code int `bson:"code"`
 	}
+
 	session.Run("features", &result)
 
 	if result.Code == 303 {

@@ -1,0 +1,18 @@
+usecase: 
+  - name: "usecase-1"
+    input:
+      config:
+        - TYK_PMP_PUMPS_MONGOAGG_TYPE=mongo-pump-aggregate
+        - TYK_PMP_PUMPS_MONGOAGG_META_MONGOURL=mongodb://tyk-mongo:27017/tyk_analytics
+        - TYK_PMP_PUMPS_MONGOAGG_META_USEMIXEDCOLLECTION=true
+      records:
+        - "{}"
+    validate:
+      error: false
+      error_msg: ""
+      query:
+        type: "mongo_aggregate"
+        org_id: ""
+        timestamp: "" 
+      result:
+        json_result: "[{}]"          

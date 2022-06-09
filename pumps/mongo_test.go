@@ -8,7 +8,7 @@ import (
 	"github.com/TykTechnologies/tyk-pump/analytics"
 )
 
-func newPump() Pump {
+func newMongoTestPump() Pump {
 	return (&MongoPump{}).New()
 }
 
@@ -18,7 +18,7 @@ func TestMongoPump_capCollection_Enabled(t *testing.T) {
 	c.ConnectDb()
 	defer c.CleanDb()
 
-	pump := newPump()
+	pump := newMongoTestPump()
 	conf := defaultConf()
 
 	mPump := pump.(*MongoPump)
@@ -39,7 +39,7 @@ func TestMongoPumpOmitIndexCreation(t *testing.T) {
 	c.ConnectDb()
 	defer c.CleanDb()
 
-	pump := newPump()
+	pump := newMongoTestPump()
 	conf := defaultConf()
 
 	mPump := pump.(*MongoPump)
@@ -138,7 +138,7 @@ func TestMongoPump_capCollection_Exists(t *testing.T) {
 
 	c.InsertDoc()
 
-	pump := newPump()
+	pump := newMongoTestPump()
 	conf := defaultConf()
 
 	mPump := pump.(*MongoPump)
@@ -164,7 +164,7 @@ func TestMongoPump_capCollection_Not64arch(t *testing.T) {
 		t.Skip("skipping as >= 64bit arch")
 	}
 
-	pump := newPump()
+	pump := newMongoTestPump()
 	conf := defaultConf()
 
 	mPump := pump.(*MongoPump)
@@ -190,7 +190,7 @@ func TestMongoPump_capCollection_SensibleDefaultSize(t *testing.T) {
 	c.ConnectDb()
 	defer c.CleanDb()
 
-	pump := newPump()
+	pump := newMongoTestPump()
 	conf := defaultConf()
 
 	mPump := pump.(*MongoPump)
@@ -224,7 +224,7 @@ func TestMongoPump_capCollection_OverrideSize(t *testing.T) {
 	c.ConnectDb()
 	defer c.CleanDb()
 
-	pump := newPump()
+	pump := newMongoTestPump()
 	conf := defaultConf()
 
 	mPump := pump.(*MongoPump)
@@ -249,7 +249,7 @@ func TestMongoPump_capCollection_OverrideSize(t *testing.T) {
 }
 
 func TestMongoPump_AccumulateSet(t *testing.T) {
-	pump := newPump()
+	pump := newMongoTestPump()
 	conf := defaultConf()
 	conf.MaxInsertBatchSizeBytes = 5120
 
