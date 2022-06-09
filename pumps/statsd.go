@@ -29,6 +29,8 @@ type StatsdConf struct {
 	Fields []string `json:"fields" mapstructure:"fields"`
 	// List of tags to be added to the metric.
 	Tags []string `json:"tags" mapstructure:"tags"`
+	// Allows to have a separated method field instead of having it embedded in the path field.
+	SeparatedMethod bool `json:"separated_method" mapstructure:"separated_method"`
 }
 
 func (s *StatsdPump) New() Pump {
@@ -97,30 +99,7 @@ func (s *StatsdPump) WriteData(ctx context.Context, data []interface{}) error {
 		// Convert to AnalyticsRecord
 		decoded := v.(analytics.AnalyticsRecord)
 
-		// Format TimeStamp to Unix Time
-		unixTime := time.Unix(decoded.TimeStamp.Unix(), 0)
-
-		// Replace : to -
-		sanitizedTime := strings.Replace(unixTime.String(), ":", "-", -1)
-
-		// Remove the last splash after path
-		decoded.Path = strings.TrimRight(decoded.Path, "/")
-
-		mapping := map[string]interface{}{
-			"path":          decoded.Method + decoded.Path,
-			"response_code": decoded.ResponseCode,
-			"api_key":       decoded.APIKey,
-			"time_stamp":    sanitizedTime,
-			"api_version":   decoded.APIVersion,
-			"api_name":      decoded.APIName,
-			"api_id":        decoded.APIID,
-			"org_id":        decoded.OrgID,
-			"oauth_id":      decoded.OauthID,
-			"raw_request":   decoded.RawRequest,
-			"request_time":  decoded.RequestTime,
-			"raw_response":  decoded.RawResponse,
-			"ip_address":    decoded.IPAddress,
-		}
+		mapping := s.getMappings(decoded)
 
 		// Combine tags
 		var metricTags string
@@ -158,4 +137,37 @@ func (s *StatsdPump) WriteData(ctx context.Context, data []interface{}) error {
 	s.log.Info("Purged ", len(data), " records...")
 
 	return nil
+}
+
+func (s *StatsdPump) getMappings(decoded analytics.AnalyticsRecord) map[string]interface{} {
+	// Format TimeStamp to Unix Time
+	unixTime := time.Unix(decoded.TimeStamp.Unix(), 0)
+
+	// Replace : to -
+	sanitizedTime := strings.Replace(unixTime.String(), ":", "-", -1)
+
+	// Remove the last splash after path
+	decoded.Path = strings.TrimRight(decoded.Path, "/")
+
+	mapping := map[string]interface{}{
+		"path":          decoded.Method + decoded.Path,
+		"response_code": decoded.ResponseCode,
+		"api_key":       decoded.APIKey,
+		"time_stamp":    sanitizedTime,
+		"api_version":   decoded.APIVersion,
+		"api_name":      decoded.APIName,
+		"api_id":        decoded.APIID,
+		"org_id":        decoded.OrgID,
+		"oauth_id":      decoded.OauthID,
+		"raw_request":   decoded.RawRequest,
+		"request_time":  decoded.RequestTime,
+		"raw_response":  decoded.RawResponse,
+		"ip_address":    decoded.IPAddress,
+	}
+	if s.dbConf.SeparatedMethod {
+		mapping["path"] = decoded.Path
+		mapping["method"] = decoded.Method
+	}
+
+	return mapping
 }

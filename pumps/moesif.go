@@ -6,11 +6,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/TykTechnologies/logrus"
-	"github.com/TykTechnologies/tyk-pump/analytics"
-	"github.com/mitchellh/mapstructure"
-	"github.com/moesif/moesifapi-go"
-	"github.com/moesif/moesifapi-go/models"
 	"io/ioutil"
 	"math"
 	"math/rand"
@@ -18,6 +13,12 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/TykTechnologies/logrus"
+	"github.com/TykTechnologies/tyk-pump/analytics"
+	"github.com/mitchellh/mapstructure"
+	"github.com/moesif/moesifapi-go"
+	"github.com/moesif/moesifapi-go/models"
 )
 
 type MoesifPump struct {
@@ -561,4 +562,12 @@ func (p *MoesifPump) SetTimeout(timeout int) {
 
 func (p *MoesifPump) GetTimeout() int {
 	return p.timeout
+}
+
+func (p *MoesifPump) Shutdown() error {
+	if p.moesifConf.EnableBulk {
+		p.log.Info("Flushing bulked records...")
+		p.moesifAPI.Flush()
+	}
+	return nil
 }

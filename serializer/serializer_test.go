@@ -60,8 +60,8 @@ func TestSerializer_Decode(t *testing.T) {
 				APIID: "api_1",
 				OrgID: "org_1",
 				// The canonical way to strip a monotonic clock reading is to use t = t.Round(0)
-				ExpireAt:time.Now().Add(time.Hour).Round(0),
-				TimeStamp:time.Now().Round(0),
+				ExpireAt:  time.Now().Add(time.Hour).Round(0),
+				TimeStamp: time.Now().Round(0),
 			}
 
 			bytes, _ := tc.serializer.Encode(&record)
@@ -73,7 +73,7 @@ func TestSerializer_Decode(t *testing.T) {
 			}
 
 			recordsAreEqual := cmp.Equal(record, *newRecord)
-			assert.Equal(t,true,recordsAreEqual,"records should be equal after decoding")
+			assert.Equal(t, true, recordsAreEqual, "records should be equal after decoding")
 		})
 	}
 }
