@@ -3,6 +3,7 @@ package pumps
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -22,6 +23,8 @@ type PrometheusPump struct {
 	OauthStatusMetrics  *prometheus.CounterVec
 	TotalLatencyMetrics *prometheus.HistogramVec
 
+	customMetrics []*PrometheusMetric
+
 	CommonPumpConfig
 }
 
@@ -32,6 +35,29 @@ type PrometheusConf struct {
 	Addr string `json:"listen_address" mapstructure:"listen_address"`
 	// The path to the Prometheus collection. For example `/metrics`.
 	Path string `json:"path" mapstructure:"path"`
+	// Custom Prometheus metrics.
+	CustomMetrics []PrometheusMetric `json:"custom_metrics" mapstructure:"custom_metrics"`
+}
+
+type PrometheusMetric struct {
+	// The name of the custom metric. For example: `tyk_http_status_per_api_name`
+	Name string `json:"name" mapstructure:"name"`
+	// Description text of the custom metric. For example: `HTTP status codes per API`
+	Help string `json:"help" mapstructure:"help"`
+	// Determines the type of the metric. There's currently 2 available options: `counter` or `histogram`.
+	// In case of histogram, you can only modify the labels since it always going to use the request_time.
+	MetricType string `json:"metric_type" mapstructure:"metric_type"`
+	// Defines the buckets into which observations are counted. The type is float64 array and by default, [1, 2, 5, 7, 10, 15, 20, 25, 30, 40, 50, 60, 70, 80, 90, 100, 200, 300, 400, 500, 1000, 2000, 5000, 10000, 30000, 60000]
+	Buckets []float64 `json:"buckets" mapstructure:"buckets"`
+	// Defines the partitions in the metrics. For example: ['response_code','api_name'].
+	// The available labels are: `["host","method",
+	// "path", "response_code", "api_key", "time_stamp", "api_version", "api_name", "api_id",
+	// "org_id", "oauth_id","request_time", "ip_address"]`.
+	Labels []string `json:"labels" mapstructure:"labels"`
+
+	enabled      bool
+	counterVec   *prometheus.CounterVec
+	histogramVec *prometheus.HistogramVec
 }
 
 var prometheusPrefix = "prometheus-pump"
@@ -83,6 +109,7 @@ func (p *PrometheusPump) New() Pump {
 	prometheus.MustRegister(newPump.KeyStatusMetrics)
 	prometheus.MustRegister(newPump.OauthStatusMetrics)
 	prometheus.MustRegister(newPump.TotalLatencyMetrics)
+
 	return &newPump
 }
 
@@ -111,6 +138,18 @@ func (p *PrometheusPump) Init(conf interface{}) error {
 
 	if p.conf.Addr == "" {
 		return errors.New("Prometheus listen_addr not set")
+	}
+
+	if len(p.conf.CustomMetrics) > 0 {
+		for _, metric := range p.conf.CustomMetrics {
+			newMetric := &metric
+			errInit := newMetric.InitVec()
+			if errInit != nil {
+				p.log.Error(errInit)
+			} else {
+				p.customMetrics = append(p.customMetrics, newMetric)
+			}
+		}
 	}
 
 	p.log.Info("Starting prometheus listener on:", p.conf.Addr)
@@ -145,8 +184,91 @@ func (p *PrometheusPump) WriteData(ctx context.Context, data []interface{}) erro
 			p.OauthStatusMetrics.WithLabelValues(code, record.OauthID).Inc()
 		}
 		p.TotalLatencyMetrics.WithLabelValues("total", record.APIID).Observe(float64(record.RequestTime))
+
+		for _, customMetric := range p.customMetrics {
+			if customMetric.enabled {
+				p.log.Debug("Processing metric:", customMetric.Name)
+
+				switch customMetric.MetricType {
+				case "counter":
+					if customMetric.counterVec != nil {
+						values := customMetric.GetLabelsValues(record)
+						customMetric.counterVec.WithLabelValues(values...).Inc()
+					}
+				case "histogram":
+					if customMetric.histogramVec != nil {
+						values := customMetric.GetLabelsValues(record)
+						customMetric.histogramVec.WithLabelValues(values...).Observe(float64(record.RequestTime))
+					}
+				default:
+				}
+			} else {
+				p.log.Info("DISABLED")
+			}
+		}
 	}
 	p.log.Info("Purged ", len(data), " records...")
 
 	return nil
+}
+
+// InitVec inits the prometheus metric based on the metric_type. It only can create counter and histogram,
+// if the metric_type is anything else it returns an error
+func (pm *PrometheusMetric) InitVec() error {
+	if pm.MetricType == "counter" {
+		pm.counterVec = prometheus.NewCounterVec(
+			prometheus.CounterOpts{
+				Name: pm.Name,
+				Help: pm.Help,
+			},
+			pm.Labels,
+		)
+		prometheus.MustRegister(pm.counterVec)
+	} else if pm.MetricType == "histogram" {
+		bkts := pm.Buckets
+		if len(bkts) == 0 {
+			bkts = buckets
+		}
+		pm.histogramVec = prometheus.NewHistogramVec(
+			prometheus.HistogramOpts{
+				Name:    pm.Name,
+				Help:    pm.Help,
+				Buckets: buckets,
+			},
+			pm.Labels,
+		)
+		prometheus.MustRegister(pm.histogramVec)
+	} else {
+		return errors.New("invalid metric type:" + pm.MetricType)
+	}
+
+	pm.enabled = true
+	return nil
+}
+
+// GetLabelsValues return a list of string values based on the custom metric labels.
+func (pm *PrometheusMetric) GetLabelsValues(decoded analytics.AnalyticsRecord) []string {
+	values := []string{}
+	mapping := map[string]interface{}{
+		"host":          decoded.Host,
+		"method":        decoded.Method,
+		"path":          decoded.Path,
+		"response_code": decoded.ResponseCode,
+		"api_key":       decoded.APIKey,
+		"time_stamp":    decoded.TimeStamp,
+		"api_version":   decoded.APIVersion,
+		"api_name":      decoded.APIName,
+		"api_id":        decoded.APIID,
+		"org_id":        decoded.OrgID,
+		"oauth_id":      decoded.OauthID,
+		"request_time":  decoded.RequestTime,
+		"ip_address":    decoded.IPAddress,
+	}
+
+	for _, label := range pm.Labels {
+		if val, ok := mapping[label]; ok {
+			values = append(values, fmt.Sprint(val))
+		}
+	}
+	return values
 }
