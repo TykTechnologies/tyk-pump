@@ -281,10 +281,6 @@ func (m *MongoAggregatePump) doMixedWrite(changeDoc analytics.AnalyticsRecordAgg
 	analyticsCollection := thisSession.DB("").C(analytics.AgggregateMixedCollectionName)
 	m.ensureIndexes(analyticsCollection)
 
-	if len(m.dbConf.IgnoreAggregationsList) > 0 {
-		changeDoc.DiscardAggregations(m.dbConf.IgnoreAggregationsList)
-	}
-
 	avgChange := mgo.Change{
 		Update:    changeDoc,
 		ReturnNew: true,
