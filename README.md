@@ -461,7 +461,7 @@ And the following Histogram for latencies:
 
 
 #### Custom Prometheus metrics
-From Pump <TBD_VERSION>+ it's possible to add custom prometheus metrics using the `custom_metrics` configuration.
+From Pump 1.6+ it's possible to add custom prometheus metrics using the `custom_metrics` configuration.
 For example:
 ```json
 "prometheus": {
