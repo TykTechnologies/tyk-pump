@@ -801,11 +801,12 @@ func AggregateData(data []interface{}, trackAllPaths bool, ignoreTagPrefixList [
 				case "Tags":
 					for _, thisTag := range thisV.Tags {
 						trimmedTag := TrimTag(thisTag)
+
 						if trimmedTag != "" && !ignoreTag(thisTag, ignoreTagPrefixList) {
-							c := IncrementOrSetUnit(thisAggregate.Tags[thisTag])
-							thisAggregate.Tags[thisTag] = c
-							thisAggregate.Tags[thisTag].Identifier = thisTag
-							thisAggregate.Tags[thisTag].HumanIdentifier = thisTag
+							c := IncrementOrSetUnit(thisAggregate.Tags[trimmedTag])
+							thisAggregate.Tags[trimmedTag] = c
+							thisAggregate.Tags[trimmedTag].Identifier = trimmedTag
+							thisAggregate.Tags[trimmedTag].HumanIdentifier = trimmedTag
 						}
 					}
 					break
