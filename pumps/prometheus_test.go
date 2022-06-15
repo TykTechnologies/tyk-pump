@@ -118,3 +118,20 @@ func TestGetLabelsValues(t *testing.T) {
 		})
 	}
 }
+
+//WIP
+func TestBuildMetrics(t *testing.T) {
+	tcs := []struct {
+		testName string
+
+		expectedCounterKeys   []string
+		expectedHistogramKeys []string
+	}{}
+
+	for _, tc := range tcs {
+		t.Run(tc.testName, func(t *testing.T) {
+
+		})
+	}
+
+}

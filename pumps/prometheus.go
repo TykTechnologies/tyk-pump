@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
 
@@ -167,6 +168,8 @@ func (p *PrometheusPump) Init(conf interface{}) error {
 func (p *PrometheusPump) WriteData(ctx context.Context, data []interface{}) error {
 	p.log.Debug("Attempting to write ", len(data), " records...")
 
+	counterMap := make(map[string]CounterBuilder)
+	histogramMap := make(map[string]HistogramBuilder)
 	for i, item := range data {
 		select {
 		case <-ctx.Done():
@@ -175,41 +178,118 @@ func (p *PrometheusPump) WriteData(ctx context.Context, data []interface{}) erro
 		default:
 		}
 		record := item.(analytics.AnalyticsRecord)
-		code := strconv.Itoa(record.ResponseCode)
 
-		p.TotalStatusMetrics.WithLabelValues(code, record.APIID).Inc()
-		p.PathStatusMetrics.WithLabelValues(code, record.APIID, record.Path, record.Method).Inc()
-		p.KeyStatusMetrics.WithLabelValues(code, record.APIKey).Inc()
-		if record.OauthID != "" {
-			p.OauthStatusMetrics.WithLabelValues(code, record.OauthID).Inc()
-		}
-		p.TotalLatencyMetrics.WithLabelValues("total", record.APIID).Observe(float64(record.RequestTime))
-
-		for _, customMetric := range p.customMetrics {
-			if customMetric.enabled {
-				p.log.Debug("Processing metric:", customMetric.Name)
-
-				switch customMetric.MetricType {
-				case "counter":
-					if customMetric.counterVec != nil {
-						values := customMetric.GetLabelsValues(record)
-						customMetric.counterVec.WithLabelValues(values...).Inc()
-					}
-				case "histogram":
-					if customMetric.histogramVec != nil {
-						values := customMetric.GetLabelsValues(record)
-						customMetric.histogramVec.WithLabelValues(values...).Observe(float64(record.RequestTime))
-					}
-				default:
-				}
-			} else {
-				p.log.Info("DISABLED")
-			}
-		}
+		p.BuildMetrics(record, counterMap, histogramMap)
 	}
+	p.WriteMetrics(counterMap, histogramMap)
+
 	p.log.Info("Purged ", len(data), " records...")
 
 	return nil
+}
+
+type CounterBuilder struct {
+	labels []string
+	value  int
+	vec    *prometheus.CounterVec
+}
+type HistogramBuilder struct {
+	labels []string
+	total  float64
+	hits   int
+	vec    *prometheus.HistogramVec
+}
+
+//BuildMetrics is going to fill counterMap and histogramMap with the data from record. It also initialise the CounterBuilder/HistogramBuilder vector if necessary.
+func (p *PrometheusPump) BuildMetrics(record analytics.AnalyticsRecord, counterMap map[string]CounterBuilder, histogramMap map[string]HistogramBuilder) {
+	code := strconv.Itoa(record.ResponseCode)
+
+	totalStatusMetricLabels := []string{code, record.APIID}
+	totalStatusMetric := counterMap[strings.Join(totalStatusMetricLabels, "_")]
+	totalStatusMetric.labels = totalStatusMetricLabels
+	totalStatusMetric.value += 1
+	if totalStatusMetric.vec == nil {
+		totalStatusMetric.vec = p.TotalStatusMetrics
+	}
+
+	pathStatusMetricLabels := []string{code, record.APIID, record.Path, record.Method}
+	pathStatusMetric := counterMap[strings.Join(pathStatusMetricLabels, "_")]
+	pathStatusMetric.labels = pathStatusMetricLabels
+	pathStatusMetric.value += 1
+	if pathStatusMetric.vec == nil {
+		pathStatusMetric.vec = p.PathStatusMetrics
+	}
+
+	keyStatusMetricLabels := []string{code, record.APIKey}
+	keyStatusMetric := counterMap[strings.Join(keyStatusMetricLabels, "_")]
+	keyStatusMetric.labels = keyStatusMetricLabels
+	keyStatusMetric.value += 1
+	if keyStatusMetric.vec == nil {
+		keyStatusMetric.vec = p.KeyStatusMetrics
+	}
+
+	if record.OauthID != "" {
+		oauthStatusMetricLabels := []string{code, record.OauthID}
+		oauthStatusMetric := counterMap[strings.Join(oauthStatusMetricLabels, "_")]
+		oauthStatusMetric.labels = oauthStatusMetricLabels
+		oauthStatusMetric.value += 1
+		if oauthStatusMetric.vec == nil {
+			oauthStatusMetric.vec = p.OauthStatusMetrics
+		}
+	}
+
+	totalLatencyMetricLabels := []string{"total", record.APIID}
+	totalLatencyMetric := histogramMap[strings.Join(totalLatencyMetricLabels, "_")]
+	totalLatencyMetric.labels = totalLatencyMetricLabels
+	totalLatencyMetric.hits += 1
+	totalLatencyMetric.total += float64(record.RequestTime)
+	if totalLatencyMetric.vec == nil {
+		totalLatencyMetric.vec = p.TotalLatencyMetrics
+	}
+
+	for _, customMetric := range p.customMetrics {
+		if customMetric.enabled {
+			p.log.Debug("Processing custom metric:", customMetric.Name)
+
+			switch customMetric.MetricType {
+			case "counter":
+				if customMetric.counterVec != nil {
+					values := customMetric.GetLabelsValues(record)
+					newCustomMetric := counterMap[strings.Join(values, "_")]
+					newCustomMetric.labels = values
+					newCustomMetric.value += 1
+					if newCustomMetric.vec == nil {
+						newCustomMetric.vec = customMetric.counterVec
+					}
+				}
+			case "histogram":
+				if customMetric.histogramVec != nil {
+					values := customMetric.GetLabelsValues(record)
+
+					newCustomMetric := histogramMap[strings.Join(values, "_")]
+					newCustomMetric.labels = values
+					newCustomMetric.hits += 1
+					newCustomMetric.total += float64(record.RequestTime)
+					if newCustomMetric.vec == nil {
+						newCustomMetric.vec = customMetric.histogramVec
+					}
+				}
+			default:
+			}
+		} else {
+			p.log.Info("DISABLED")
+		}
+	}
+}
+
+//WriteMetrics is going to Add the labels and value if it's a CounterVec, or Observe the labels and total/hits if it's an HistogramVec
+func (p *PrometheusPump) WriteMetrics(counterMap map[string]CounterBuilder, histogramMap map[string]HistogramBuilder) {
+	for _, metric := range counterMap {
+		metric.vec.WithLabelValues(metric.labels...).Add(float64(metric.value))
+	}
+	for _, metric := range histogramMap {
+		metric.vec.WithLabelValues(metric.labels...).Observe(metric.total / float64(metric.hits))
+	}
 }
 
 // InitVec inits the prometheus metric based on the metric_type. It only can create counter and histogram,
