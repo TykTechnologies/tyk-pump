@@ -1,7 +1,6 @@
 package main
 
 import (
-	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -25,14 +24,8 @@ func TestConfigEnv(t *testing.T) {
 	}
 
 	for env, val := range testEnvVars {
-		os.Setenv(env, val)
+		t.Setenv(env, val)
 	}
-
-	defer func() {
-		for env := range testEnvVars {
-			os.Unsetenv(env)
-		}
-	}()
 
 	cfg := &TykPumpConfiguration{}
 	cfg.Pumps = make(map[string]PumpConfig)
@@ -62,20 +55,20 @@ func TestConfigEnv(t *testing.T) {
 func TestIgnoreConfig(t *testing.T) {
 
 	config := TykPumpConfiguration{
-		AnalyticsStorageType: "test",
+		PurgeDelay: 10,
 	}
-	os.Setenv(ENV_PREVIX+"_OMITCONFIGFILE", "true")
+	t.Setenv(ENV_PREVIX+"_OMITCONFIGFILE", "true")
 	defaultPath := ""
 	LoadConfig(&defaultPath, &config)
 
-	assert.Equal(t, "", config.AnalyticsStorageType, "TYK_OMITCONFIGFILE should have unset the configuation")
+	assert.Equal(t, 0, config.PurgeDelay, "TYK_OMITCONFIGFILE should have unset the configuation")
 
-	os.Unsetenv(ENV_PREVIX + "_OMITCONFIGFILE")
+	t.Setenv(ENV_PREVIX+"_OMITCONFIGFILE", "false")
 
 	config = TykPumpConfiguration{}
-	config.AnalyticsStorageType = "test"
+	config.PurgeDelay = 30
 	LoadConfig(&defaultPath, &config)
 
-	assert.Equal(t, "test", config.AnalyticsStorageType, "TYK_OMITCONFIGFILE should not have unset the configuation")
+	assert.Equal(t, 30, config.PurgeDelay, "TYK_OMITCONFIGFILE should not have unset the configuation")
 
 }
