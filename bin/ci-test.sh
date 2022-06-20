@@ -37,12 +37,12 @@ fi
 
 echo "goimports check is ok!"
 
-for pkg in $(go list github.com/TykTechnologies/tyk-analytics/...);
+for pkg in $(go list github.com/TykTechnologies/tyk-pump/...);
 do
     race="-race"
     echo "Testing... $pkg"
-    if [[ ${pkg} == *"MDCB" ]]; then
-       # run mdcb tests without race detector until gorpc library is modified to avoid races
+    if [[ ${pkg} == *"pumps" ]]; then
+       # run pumps tests without race detector until we add correct testing
       race=""
     fi
     coveragefile=`echo "$pkg" | awk -F/ '{print $NF}'`
