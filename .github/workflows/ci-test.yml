@@ -40,16 +40,6 @@ jobs:
           go version
           go env
           go install golang.org/x/tools/cmd/goimports@latest
-
-          gofmt -l . >> fmt.log
-          fmt_lines=$(wc -l < fmt.log)
-          echo "::set-output name=fmt::$(sed -ze 's/%/%25/g;s/\n/%0A/g' fmt.log)"
-
-      
-          goimports -l . 2>&1 | tee imports.log
-          imports_code=${PIPESTATUS[0]}
-          echo "::set-output name=imports::$(sed -ze 's/%/%25/g;s/\n/%0A/g' imports.log)"
-          [[ $fmt_lines -ne 0 || $imports_code -ne 0 ]] && exit 1
           
       - name: Fetch base branch
         if: ${{ github.event_name == 'pull_request' }}
