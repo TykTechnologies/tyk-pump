@@ -1,6 +1,10 @@
 package analytics
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
 
 func TestShouldFilter(t *testing.T) {
 	record := AnalyticsRecord{
@@ -9,92 +13,94 @@ func TestShouldFilter(t *testing.T) {
 		ResponseCode: 200,
 	}
 
-	//test skip_api_ids
-	filter := AnalyticsFilters{
-		SkippedAPIIDs: []string{"apiid123"},
-	}
-	shouldFilter := filter.ShouldFilter(record)
-	if shouldFilter == false {
-		t.Fatal("filter should be filtering the record")
+	tcs := []struct {
+		testName          string
+		filter            AnalyticsFilters
+		expectedFiltering bool
+	}{
+		{
+			testName: "skip_apiids",
+			filter: AnalyticsFilters{
+				SkippedAPIIDs: []string{"apiid123"},
+			},
+			expectedFiltering: true,
+		},
+		{
+			testName: "skip_org_ids",
+			filter: AnalyticsFilters{
+				SkippedOrgsIDs: []string{"orgid123"},
+			},
+			expectedFiltering: true,
+		},
+		{
+			testName: "skip_response_codes",
+			filter: AnalyticsFilters{
+				SkippedResponseCodes: []int{200},
+			},
+			expectedFiltering: true,
+		},
+		{
+			testName: "api_ids",
+			filter: AnalyticsFilters{
+				APIIDs: []string{"apiid123"},
+			},
+			expectedFiltering: false,
+		},
+		{
+			testName: "org_ids",
+			filter: AnalyticsFilters{
+				OrgsIDs: []string{"orgid123"},
+			},
+			expectedFiltering: false,
+		},
+		{
+			testName: "response_codes",
+			filter: AnalyticsFilters{
+				ResponseCodes: []int{200},
+			},
+			expectedFiltering: false,
+		},
+		{
+			testName: "different org_ids",
+			filter: AnalyticsFilters{
+				OrgsIDs: []string{"orgid321"},
+			},
+			expectedFiltering: true,
+		},
+		{
+			testName: "different api_ids",
+			filter: AnalyticsFilters{
+				APIIDs: []string{"apiid231"},
+			},
+			expectedFiltering: true,
+		},
+		{
+			testName: "different response_codes",
+			filter: AnalyticsFilters{
+				ResponseCodes: []int{201},
+			},
+			expectedFiltering: true,
+		},
+		{
+			testName:          "no filter",
+			filter:            AnalyticsFilters{},
+			expectedFiltering: false,
+		},
+		{
+			testName: "multiple filter",
+			filter: AnalyticsFilters{
+				ResponseCodes: []int{200},
+				APIIDs:        []string{"apiid123"},
+			},
+			expectedFiltering: false,
+		},
 	}
 
-	//test skip_org_ids
-	filter = AnalyticsFilters{
-		SkippedOrgsIDs: []string{"orgid123"},
-	}
-	shouldFilter = filter.ShouldFilter(record)
-	if shouldFilter == false {
-		t.Fatal("filter should be filtering the record")
-	}
-
-	//test skip_response_codes
-	filter = AnalyticsFilters{
-		SkippedResponseCodes: []int{200},
-	}
-	shouldFilter = filter.ShouldFilter(record)
-	if shouldFilter == false {
-		t.Fatal("filter should be filtering the record")
-	}
-
-	//test api_ids
-	filter = AnalyticsFilters{
-		APIIDs: []string{"apiid123"},
-	}
-	shouldFilter = filter.ShouldFilter(record)
-	if shouldFilter == true {
-		t.Fatal("filter should not be filtering the record")
-	}
-
-	//test org_ids
-	filter = AnalyticsFilters{
-		OrgsIDs: []string{"orgid123"},
-	}
-	shouldFilter = filter.ShouldFilter(record)
-	if shouldFilter == true {
-		t.Fatal("filter should not be filtering the record")
-	}
-
-	//test response_codes
-	filter = AnalyticsFilters{
-		ResponseCodes: []int{200},
-	}
-	shouldFilter = filter.ShouldFilter(record)
-	if shouldFilter == true {
-		t.Fatal("filter should not be filtering the record")
-	}
-
-	//test different org_ids
-	filter = AnalyticsFilters{
-		OrgsIDs: []string{"orgid321"},
-	}
-	shouldFilter = filter.ShouldFilter(record)
-	if shouldFilter == false {
-		t.Fatal("filter should be filtering the record")
-	}
-
-	//test different api_ids
-	filter = AnalyticsFilters{
-		APIIDs: []string{"apiid231"},
-	}
-	shouldFilter = filter.ShouldFilter(record)
-	if shouldFilter == false {
-		t.Fatal("filter should be filtering the record")
-	}
-
-	//test different response_codes
-	filter = AnalyticsFilters{
-		ResponseCodes: []int{201},
-	}
-	shouldFilter = filter.ShouldFilter(record)
-	if shouldFilter == false {
-		t.Fatal("filter should be filtering the record")
-	}
-
-	//test no filter
-	filter = AnalyticsFilters{}
-	shouldFilter = filter.ShouldFilter(record)
-	if shouldFilter == true {
-		t.Fatal("filter should not be filtering the record")
+	for _, tc := range tcs {
+		t.Run(tc.testName, func(t *testing.T) {
+			shouldFilter := tc.filter.ShouldFilter(record)
+			assert.Equal(t, tc.expectedFiltering, shouldFilter)
+		})
 	}
 
 }
