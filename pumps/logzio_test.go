@@ -1,8 +1,9 @@
 package pumps
 
 import (
-	"github.com/mitchellh/mapstructure"
 	"testing"
+
+	"github.com/mitchellh/mapstructure"
 )
 
 func TestLogzioInit(t *testing.T) {
