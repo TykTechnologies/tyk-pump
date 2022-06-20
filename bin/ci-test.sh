@@ -2,50 +2,51 @@
 
 set -e
 
-MATRIX=(
-	""
-)
-
 export GO111MODULE=on
 
 # print a command and execute it
 show() {
-	echo "$@" >&2
-	eval "$@"
+ echo "$@" >&2
+ eval "$@"
 }
 
 fatal() {
-	echo "$@" >&2
-	exit 1
+ echo "$@" >&2
+ exit 1
 }
 
-PKGS="$(go list ./... | grep -v /vendor/)"
+TEST_TIMEOUT=20m
 
-i=0
-# need to do per-pkg because go test doesn't support a single coverage
-# profile for multiple pkgs
-for pkg in $PKGS; do
-	for opts in "${MATRIX[@]}"; do
-		show go test -timeout 30s -v -coverprofile=test-$i.cov $opts $pkg \
-			|| fatal "go test errored"
-		let i++ || true
-	done
-done
+show go vet . || fatal "go vet errored"
 
-if [[ ! $LATEST_GO ]]; then
-	echo "Skipping linting and coverage report"
-	exit 0
-fi
+GO_FILES=$(find * -name '*.go' -not -path 'vendor/*' -not -name 'bindata.go')
 
-for opts in "${MATRIX[@]}"; do
-	show go vet -v $opts $PKGS || fatal "go vet errored"
-done
+echo "Formatting checks..."
 
-# Includes all top-level files and dirs that don't start with a dot
-# (hidden). Also excludes all of vendor/.
-GOFILES=$(find * -name '*.go' -not -path 'vendor/*')
-
-FMT_FILES="$(gofmt -s -l $GOFILES)"
-if [[ -n $FMT_FILES ]]; then
+FMT_FILES="$(gofmt -s -l ${GO_FILES})"
+if [[ -n ${FMT_FILES} ]]; then
 	fatal "Run 'gofmt -s -w' on these files:\n$FMT_FILES"
 fi
+
+echo "gofmt check is ok!"
+
+IMP_FILES="$(goimports -l ${GO_FILES})"
+if [[ -n ${IMP_FILES} ]]; then
+	fatal "Run 'goimports -w' on these files:\n$IMP_FILES"
+fi
+
+echo "goimports check is ok!"
+
+for pkg in $(go list github.com/TykTechnologies/tyk-analytics/...);
+do
+    race="-race"
+    echo "Testing... $pkg"
+    if [[ ${pkg} == *"MDCB" ]]; then
+       # run mdcb tests without race detector until gorpc library is modified to avoid races
+      race=""
+    fi
+    coveragefile=`echo "$pkg" | awk -F/ '{print $NF}'`
+    show go test -timeout ${TEST_TIMEOUT} ${race} --coverprofile=${coveragefile}.cov -v ${pkg}
+done
+
+
