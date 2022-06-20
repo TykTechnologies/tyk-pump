@@ -1,6 +1,7 @@
 package main
 
 import (
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -24,8 +25,14 @@ func TestConfigEnv(t *testing.T) {
 	}
 
 	for env, val := range testEnvVars {
-		t.Setenv(env, val)
+		os.Setenv(env, val)
 	}
+
+	defer func() {
+		for env := range testEnvVars {
+			os.Unsetenv(env)
+		}
+	}()
 
 	cfg := &TykPumpConfiguration{}
 	cfg.Pumps = make(map[string]PumpConfig)
@@ -57,13 +64,13 @@ func TestIgnoreConfig(t *testing.T) {
 	config := TykPumpConfiguration{
 		PurgeDelay: 10,
 	}
-	t.Setenv(ENV_PREVIX+"_OMITCONFIGFILE", "true")
+	os.Setenv(ENV_PREVIX+"_OMITCONFIGFILE", "true")
 	defaultPath := ""
 	LoadConfig(&defaultPath, &config)
 
 	assert.Equal(t, 0, config.PurgeDelay, "TYK_OMITCONFIGFILE should have unset the configuation")
 
-	t.Setenv(ENV_PREVIX+"_OMITCONFIGFILE", "false")
+	os.Unsetenv(ENV_PREVIX + "_OMITCONFIGFILE")
 
 	config = TykPumpConfiguration{}
 	config.PurgeDelay = 30
