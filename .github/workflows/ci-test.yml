@@ -42,6 +42,7 @@ jobs:
           gofmt -l . >> fmt.log
           fmt_lines=$(wc -l < fmt.log)
           echo "::set-output name=fmt::$(sed -ze 's/%/%25/g;s/\n/%0A/g' fmt.log)"
+          echo "hereeee"
 
           go install golang.org/x/tools/cmd/goimports@latest
       
