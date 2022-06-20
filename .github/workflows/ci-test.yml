@@ -40,8 +40,6 @@ jobs:
           go install golang.org/x/tools/cmd/goimports@latest
           go install github.com/jteeuwen/go-bindata/...@master
 
-          sudo apt-get install libluajit-5.1-dev
-
           gofmt -l . >> fmt.log
           fmt_lines=$(wc -l < fmt.log)
           echo "::set-output name=fmt::$(sed -ze 's/%/%25/g;s/\n/%0A/g' fmt.log)"
