@@ -24,7 +24,7 @@ jobs:
         go: [1.16]
 
     steps:
-      - name: Checkout Tyk
+      - name: Checkout Tyk Pump
         uses: actions/checkout@v2
         with:
           fetch-depth: 2
@@ -33,6 +33,7 @@ jobs:
         uses: actions/setup-go@v2
         with:
           go-version: ${{ matrix.go }}
+
       - name: Install Dependencies
         env:
           TOKEN: '${{ secrets.repo_token }}'
@@ -41,8 +42,7 @@ jobs:
           "https://github.com"
 
           go get golang.org/x/tools/cmd/goimports
-          
-  
+
       - name: Fetch base branch
         if: ${{ github.event_name == 'pull_request' }}
         run: git fetch origin ${{ github.base_ref }}
@@ -64,6 +64,7 @@ jobs:
         uses: supercharge/redis-github-action@1.2.0
         with:
           redis-version: ${{ matrix.redis-version }}
+
       - name: Start MongoDB
         uses: supercharge/mongodb-github-action@1.2.0
         with:
@@ -80,7 +81,5 @@ jobs:
       - name: Run Pump Tests
         id: ci-tests
         run: |
-          ./bin/ci-tests.sh 2>&1 | tee test.log
-          result_code=${PIPESTATUS[0]}
-          echo "::set-output name=log::$(sed -ze 's/%/%25/g;s/\n/%0A/g' test.log)"
-          exit $result_code
+          ls -la
+          ./bin/ci-tests.sh 
