@@ -1,0 +1,84 @@
+name: CI tests
+
+on: 
+  pull_request:
+  push:
+    branches: 
+      - master
+
+env:
+  TYK_PMP_ANALYTICSSTORAGETYPE: redis
+  TYK_PMP_ANALYTICSSTORAGECONFIG_TYPE: redis
+  TYK_PMP_ANALYTICSSTORAGECONFIG_HOST: localhost
+  TYK_PMP_ANALYTICSSTORAGECONFIG_PORT: 6379
+
+jobs:
+  test:
+    name: Go ${{ matrix.go }} tests
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        redis-version: [5]
+        mongodb-version: [4.2]
+        go: [1.16]
+
+    steps:
+      - name: Checkout Tyk Pump
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 2
+
+      - name: Setup Golang
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ matrix.go }}
+
+      - name: Install Dependencies and basic hygiene test
+        id: hygiene
+        run: |
+          go install golang.org/x/tools/cmd/goimports@latest
+          
+      - name: Fetch base branch
+        if: ${{ github.event_name == 'pull_request' }}
+        run: git fetch origin ${{ github.base_ref }}
+
+      - name: Start Redis
+        uses: supercharge/redis-github-action@1.2.0
+        with:
+          redis-version: ${{ matrix.redis-version }}
+
+      - name: Start MongoDB
+        uses: supercharge/mongodb-github-action@1.2.0
+        with:
+          mongodb-version: '${{ matrix.mongodb-version }}'
+
+      - name: Cache
+        uses: actions/cache@v2
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Run Pump Tests
+        id: ci-tests
+        run: |
+          ./bin/ci-test.sh 2>&1 | tee test.log
+          result_code=${PIPESTATUS[0]}
+          echo "::set-output name=log::$(sed -ze 's/%/%25/g;s/\n/%0A/g' test.log)"
+          exit $result_code
+
+      - name: Download golangci-lint
+        run: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin
+
+      - name: golangci-lint
+        if: ${{ github.event_name == 'pull_request' }}
+        run: |
+          $(go env GOPATH)/bin/golangci-lint run --out-format checkstyle --timeout=300s --max-issues-per-linter=0 --max-same-issues=0 --new-from-rev=origin/${{ github.base_ref }} ./... > golanglint.xml
+
+      - name: golangci-lint
+        if: ${{ github.event_name == 'push' }}
+        run: |
+          $(go env GOPATH)/bin/golangci-lint run --out-format checkstyle --timeout=300s --max-issues-per-linter=0 --max-same-issues=0 --issues-exit-code=0 ./... > golanglint.xml
+ 

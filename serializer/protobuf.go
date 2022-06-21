@@ -1,10 +1,11 @@
 package serializer
 
 import (
+	"time"
+
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	analyticsproto "github.com/TykTechnologies/tyk-pump/analytics/proto"
 	"github.com/golang/protobuf/proto"
-	"time"
 )
 
 type ProtobufSerializer struct {
