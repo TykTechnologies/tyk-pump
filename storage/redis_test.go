@@ -3,9 +3,10 @@ package storage
 import (
 	"context"
 	"fmt"
-	"github.com/go-redis/redis/v8"
 	"testing"
 	"time"
+
+	"github.com/go-redis/redis/v8"
 )
 
 func TestRedisAddressConfiguration(t *testing.T) {
