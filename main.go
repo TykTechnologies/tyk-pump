@@ -299,10 +299,13 @@ func filterData(pump pumps.Pump, keys []interface{}) []interface{} {
 	if !filters.HasFilter() && !pump.GetOmitDetailedRecording() && !shouldTrim {
 		return keys
 	}
-	filteredKeys := keys[:]
+
+	filteredKeys := make([]interface{}, len(keys))
+	copy(filteredKeys, keys)
+
 	newLenght := 0
 
-	for _, key := range filteredKeys {
+	for _, key := range keys {
 		decoded := key.(analytics.AnalyticsRecord)
 		if pump.GetOmitDetailedRecording() {
 			decoded.RawRequest = ""
