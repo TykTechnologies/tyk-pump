@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 
 	"os"
 	"os/signal"
@@ -131,51 +130,90 @@ func TestOmitDetailsFilterData(t *testing.T) {
 	}
 }
 
-func TestWriteData(t *testing.T) {
-	mockedPump := &MockedPump{}
-	Pumps = []pumps.Pump{mockedPump}
-
-	keys := make([]interface{}, 3)
-	keys[0] = analytics.AnalyticsRecord{APIID: "api111"}
-	keys[1] = analytics.AnalyticsRecord{APIID: "api123"}
-	keys[2] = analytics.AnalyticsRecord{APIID: "api321"}
-
-	job := instrument.NewJob("TestJob")
-
-	writeToPumps(keys, job, time.Now(), 2)
-
-	mockedPump = Pumps[0].(*MockedPump)
-
-	if mockedPump.CounterRequest != 3 {
-		t.Fatal("MockedPump should have 3 requests")
-	}
-
-}
-
 func TestWriteDataWithFilters(t *testing.T) {
 	mockedPump := &MockedPump{}
 	mockedPump.SetFilters(
 		analytics.AnalyticsFilters{
-			APIIDs: []string{"api123"},
+			SkippedResponseCodes: []int{200},
+		},
+	)
+	mockedPump2 := &MockedPump{}
+	mockedPump3 := &MockedPump{}
+	mockedPump3.SetFilters(
+		analytics.AnalyticsFilters{
+			ResponseCodes: []int{200},
+		},
+	)
+	mockedPump4 := &MockedPump{}
+	mockedPump4.SetFilters(
+		analytics.AnalyticsFilters{
+			APIIDs:        []string{"api123"},
+			OrgsIDs:       []string{"123"},
+			ResponseCodes: []int{200},
+		},
+	)
+	mockedPump5 := &MockedPump{}
+	mockedPump5.SetFilters(
+		analytics.AnalyticsFilters{
+			APIIDs:        []string{"api111"},
+			OrgsIDs:       []string{"123"},
+			ResponseCodes: []int{200},
 		},
 	)
 
-	Pumps = []pumps.Pump{mockedPump}
+	Pumps = []pumps.Pump{mockedPump, mockedPump2, mockedPump3, mockedPump4, mockedPump5}
+	assert.Len(t, Pumps, 5)
 
-	keys := make([]interface{}, 3)
-	keys[0] = analytics.AnalyticsRecord{APIID: "api111"}
-	keys[1] = analytics.AnalyticsRecord{APIID: "api123"}
-	keys[2] = analytics.AnalyticsRecord{APIID: "api321"}
+	keys := make([]interface{}, 6)
+	keys[0] = analytics.AnalyticsRecord{APIID: "api111", ResponseCode: 400, OrgID: "321"}
+	keys[1] = analytics.AnalyticsRecord{APIID: "api123", ResponseCode: 200, OrgID: "123"}
+	keys[2] = analytics.AnalyticsRecord{APIID: "api123", ResponseCode: 500, OrgID: "123"}
+	keys[3] = analytics.AnalyticsRecord{APIID: "api123", ResponseCode: 200, OrgID: "321"}
+	keys[4] = analytics.AnalyticsRecord{APIID: "api111", ResponseCode: 404, OrgID: "321"}
+	keys[5] = analytics.AnalyticsRecord{APIID: "api111", ResponseCode: 500, OrgID: "321"}
 
 	job := instrument.NewJob("TestJob")
-
 	writeToPumps(keys, job, time.Now(), 2)
 
-	mockedPump = Pumps[0].(*MockedPump)
+	tcs := []struct {
+		testName               string
+		mockedPump             *MockedPump
+		expectedCounterRequest int
+	}{
+		{
+			testName:               "skip_response_code 200",
+			mockedPump:             Pumps[0].(*MockedPump),
+			expectedCounterRequest: 4,
+		},
+		{
+			testName:               "no filter - all records",
+			mockedPump:             Pumps[1].(*MockedPump),
+			expectedCounterRequest: 6,
+		},
+		{
+			testName:               "response_codes 200",
+			mockedPump:             Pumps[2].(*MockedPump),
+			expectedCounterRequest: 2,
+		},
+		{
+			testName:               "api_ids api123 + org_ids 123 + responseCode 200 filters",
+			mockedPump:             Pumps[3].(*MockedPump),
+			expectedCounterRequest: 1,
+		},
+		{
+			testName:               "api_ids api111 + org_ids 123 + responseCode 200 filters",
+			mockedPump:             Pumps[4].(*MockedPump),
+			expectedCounterRequest: 0,
+		},
+	}
 
-	if mockedPump.CounterRequest != 1 {
-		fmt.Println(mockedPump.CounterRequest)
-		t.Fatal("MockedPump with filter should have 3 requests")
+	for _, tc := range tcs {
+		t.Run(tc.testName, func(t *testing.T) {
+			t.Parallel()
+			assert.Equal(t, tc.expectedCounterRequest, tc.mockedPump.CounterRequest)
+			assert.Len(t, keys, 6)
+
+		})
 	}
 }
 
