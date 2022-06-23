@@ -246,15 +246,16 @@ func TestPrometheusCounterMetric(t *testing.T) {
 				labelValues := tc.metric.GetLabelsValues(record)
 				assert.Equal(t, len(tc.metric.Labels), len(labelValues))
 
-				tc.metric.Inc(labelValues...)
+				errInc := tc.metric.Inc(labelValues...)
+				assert.Nil(t, errInc)
 			}
 
 			assert.Equal(t, len(tc.metric.counterMap), tc.expectedMetricsAmount)
 
 			assert.EqualValues(t, tc.expectedMetrics, tc.metric.counterMap)
 
-			tc.metric.Expose()
-
+			errExpose := tc.metric.Expose()
+			assert.Nil(t, errExpose)
 			assert.Equal(t, len(tc.metric.counterMap), 0)
 		})
 	}
@@ -361,7 +362,8 @@ func TestPrometheusHistogramMetric(t *testing.T) {
 				labelValues := tc.metric.GetLabelsValues(record)
 
 				assert.Equal(t, len(tc.metric.Labels)-1, len(labelValues))
-				tc.metric.Observe(record.RequestTime, labelValues...)
+				errObserve := tc.metric.Observe(record.RequestTime, labelValues...)
+				assert.Nil(t, errObserve)
 			}
 
 			assert.Equal(t, len(tc.metric.histogramMap), tc.expectedMetricsAmount)
@@ -376,8 +378,8 @@ func TestPrometheusHistogramMetric(t *testing.T) {
 				}
 			}
 
-			tc.metric.Expose()
-
+			errExpose := tc.metric.Expose()
+			assert.Nil(t, errExpose)
 			assert.Equal(t, len(tc.metric.histogramMap), 0)
 		})
 	}
