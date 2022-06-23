@@ -74,8 +74,6 @@ type PrometheusMetric struct {
 type histogramCounter struct {
 	totalRequestTime uint64
 	hits             uint64
-
-	avgRequestTime float64
 }
 
 const COUNTER_TYPE = "counter"
