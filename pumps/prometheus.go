@@ -364,7 +364,8 @@ func (pm *PrometheusMetric) Observe(requestTime int64, values ...string) error {
 
 //Expose executes prometheus library functions using the counter/histogram vector from the PrometheusMetric struct.
 //If the PrometheusMetric is COUNTER_TYPE, it will execute prometheus client Add function to add the counters from counterMap to the labels value metric
-//If the PrometheusMetric is HISTOGRAM_TYPE and aggregate_observations config is true, it will calculate the average value of the metrics in the histogramMap and execute prometheus Observe. If aggregate_observations is false, it won't do anything since it means that we already exposed the metric.
+//If the PrometheusMetric is HISTOGRAM_TYPE and aggregate_observations config is true, it will calculate the average value of the metrics in the histogramMap and execute prometheus Observe.
+//If aggregate_observations is false, it won't do anything since it means that we already exposed the metric.
 func (pm *PrometheusMetric) Expose() error {
 	switch pm.MetricType {
 	case COUNTER_TYPE:
