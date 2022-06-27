@@ -24,8 +24,7 @@ type PrometheusPump struct {
 	OauthStatusMetrics  *prometheus.CounterVec
 	TotalLatencyMetrics *prometheus.HistogramVec
 
-	customMetrics []*PrometheusMetric
-	allMetrics    []*PrometheusMetric
+	allMetrics []*PrometheusMetric
 
 	CommonPumpConfig
 }
@@ -38,7 +37,7 @@ type PrometheusConf struct {
 	// The path to the Prometheus collection. For example `/metrics`.
 	Path string `json:"path" mapstructure:"path"`
 	// This will enable an experimental feature that will aggregate the histogram metrics request time values before exposing them to prometheus.
-	// Enabling this will reduce the CPU usage of your prometheus pump but you will loose histogram precision.
+	// Enabling this will reduce the CPU usage of your prometheus pump but you will loose histogram precision. Experimental.
 	AggregateObservations bool `json:"aggregate_observations" mapstructure:"aggregate_observations"`
 	// Custom Prometheus metrics.
 	CustomMetrics []PrometheusMetric `json:"custom_metrics" mapstructure:"custom_metrics"`
@@ -87,7 +86,7 @@ var buckets = []float64{1, 2, 5, 7, 10, 15, 20, 25, 30, 40, 50, 60, 70, 80, 90, 
 func (p *PrometheusPump) New() Pump {
 	newPump := PrometheusPump{}
 
-	p.CreateBasicMetrics()
+	newPump.CreateBasicMetrics()
 
 	return &newPump
 }
@@ -160,6 +159,16 @@ func (p *PrometheusPump) Init(conf interface{}) error {
 		return errors.New("Prometheus listen_addr not set")
 	}
 
+	//first we init the base metrics
+	for _, metric := range p.allMetrics {
+		metric.aggregatedObservations = p.conf.AggregateObservations
+		errInit := metric.InitVec()
+		if errInit != nil {
+			p.log.Error(errInit)
+		}
+	}
+
+	//then we check the custom ones
 	if len(p.conf.CustomMetrics) > 0 {
 		customMetrics := []*PrometheusMetric{}
 		for _, metric := range p.conf.CustomMetrics {
@@ -323,6 +332,11 @@ func (pm *PrometheusMetric) GetLabelsValues(decoded analytics.AnalyticsRecord) [
 func (pm *PrometheusMetric) Inc(values ...string) error {
 	switch pm.MetricType {
 	case COUNTER_TYPE:
+		// "response_code", "api_name", "method"
+		// key = map[500--apitest-GET] = 4
+
+		//map[]
+
 		pm.counterMap[strings.Join(values, "--")] += 1
 	default:
 		return errors.New("invalid metric type:" + pm.MetricType)
@@ -368,6 +382,7 @@ func (pm *PrometheusMetric) Expose() error {
 	switch pm.MetricType {
 	case COUNTER_TYPE:
 		for key, value := range pm.counterMap {
+
 			labelsValue := strings.Split(key, "--")
 			pm.counterVec.WithLabelValues(labelsValue...).Add(float64(value))
 		}
