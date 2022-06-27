@@ -387,13 +387,13 @@ func TestPrometheusHistogramMetric(t *testing.T) {
 
 func TestPromtheusCreateBasicMetrics(t *testing.T) {
 	p := PrometheusPump{}
-	p.New()
+	newPump := p.New().(*PrometheusPump)
 
-	assert.Len(t, p.allMetrics, 5)
+	assert.Len(t, newPump.allMetrics, 5)
 
 	actualMetricsNames := []string{}
 	actualMetricTypeCounter := make(map[string]int)
-	for _, metric := range p.allMetrics {
+	for _, metric := range newPump.allMetrics {
 		actualMetricsNames = append(actualMetricsNames, metric.Name)
 		actualMetricTypeCounter[metric.MetricType] += 1
 	}
