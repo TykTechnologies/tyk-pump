@@ -173,7 +173,7 @@ The minimum required configurations for uptime pumps are:
   "uptime_pump_config": {
     "collection_name": "tyk_uptime_analytics",
     "mongo_url": "mongodb://username:password@{hostname:port},{hostname:port}/{db_name}",
-    "log_level": info
+    "log_level": "info"
   }
 }
 ```
