@@ -173,7 +173,7 @@ The minimum required configurations for uptime pumps are:
   "uptime_pump_config": {
     "collection_name": "tyk_uptime_analytics",
     "mongo_url": "mongodb://username:password@{hostname:port},{hostname:port}/{db_name}",
-    "log_level": info
+    "log_level": "info"
   }
 }
 ```
@@ -200,7 +200,7 @@ You can also use different types of SQL Uptime pumps, like `postgres` or `sqlite
         "type": "postgres",
         "connection_string": "host=sql_host port=sql_port user=sql_usr dbname=dbname password=sql_pw",
         "table_sharding": false,
-	"log_level": info
+	"log_level": "info"
     },
 ```
 

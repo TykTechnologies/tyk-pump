@@ -3,15 +3,16 @@ package analytics
 import (
 	"bytes"
 	"fmt"
-	analyticsproto "github.com/TykTechnologies/tyk-pump/analytics/proto"
-	"github.com/oschwald/maxminddb-golang"
-	"google.golang.org/protobuf/types/known/timestamppb"
 	"net"
 	"sort"
 	"strconv"
 	"strings"
 	"sync/atomic"
 	"time"
+
+	analyticsproto "github.com/TykTechnologies/tyk-pump/analytics/proto"
+	"github.com/oschwald/maxminddb-golang"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/TykTechnologies/tyk-pump/logger"
 )
