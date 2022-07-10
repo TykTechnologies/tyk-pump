@@ -14,3 +14,13 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+  - package-ecosystem: "gomod"
+      # Look for `go.mod` file in the `root` directory
+      directory: "/"
+      # Check the gomod registry for updates every Monday
+      schedule:
+        interval: "weekly"
+      reviewers:
+        - "platform"
+      # max number of pull requests that dependabot will open in tandem
+      open-pull-requests-limit: 4
