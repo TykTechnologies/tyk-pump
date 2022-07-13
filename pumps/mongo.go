@@ -9,6 +9,7 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/pem"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net"
@@ -156,7 +157,7 @@ func parsePrivateKey(der []byte) (crypto.PrivateKey, error) {
 	return nil, fmt.Errorf("Failed to parse private key")
 }
 
-func mongoType(session *mgo.Session) MongoType {
+func GetMongoType(session *mgo.Session) MongoType {
 	// Querying for the features which 100% not supported by AWS DocumentDB
 	var result struct {
 		Code int `bson:"code"`
@@ -170,7 +171,7 @@ func mongoType(session *mgo.Session) MongoType {
 	}
 }
 
-func mongoDialInfo(conf BaseMongoConf) (dialInfo *mgo.DialInfo, err error) {
+func DialInfo(conf BaseMongoConf) (dialInfo *mgo.DialInfo, err error) {
 	if dialInfo, err = mgo.ParseURL(conf.MongoURL); err != nil {
 		return dialInfo, err
 	}
@@ -185,7 +186,7 @@ func mongoDialInfo(conf BaseMongoConf) (dialInfo *mgo.DialInfo, err error) {
 			if conf.MongoSSLCAFile != "" {
 				caCert, err := ioutil.ReadFile(conf.MongoSSLCAFile)
 				if err != nil {
-					log.Fatal("Can't load mongo CA certificates: ", err)
+					return nil, errors.New("Can't load mongo CA certificates: "+err.Error())
 				}
 				caCertPool := x509.NewCertPool()
 				caCertPool.AppendCertsFromPEM(caCert)
@@ -232,7 +233,7 @@ func mongoDialInfo(conf BaseMongoConf) (dialInfo *mgo.DialInfo, err error) {
 			if conf.MongoSSLPEMKeyfile != "" {
 				cert, err := loadCertficateAndKeyFromFile(conf.MongoSSLPEMKeyfile)
 				if err != nil {
-					log.Fatal("Can't load mongo client certificate: ", err)
+					return nil, errors.New("Can't load mongo client certificate: "+ err.Error())
 				}
 
 				tlsConfig.Certificates = []tls.Certificate{*cert}
@@ -453,7 +454,7 @@ func (m *MongoPump) connect() {
 	var err error
 	var dialInfo *mgo.DialInfo
 
-	dialInfo, err = mongoDialInfo(m.dbConf.BaseMongoConf)
+	dialInfo, err = DialInfo(m.dbConf.BaseMongoConf)
 	if err != nil {
 		m.Log.Panic("Mongo URL is invalid: ", err)
 	}
@@ -470,7 +471,7 @@ func (m *MongoPump) connect() {
 	}
 
 	if err == nil && m.dbConf.MongoDBType == 0 {
-		m.dbConf.MongoDBType = mongoType(m.dbSession)
+		m.dbConf.MongoDBType = GetMongoType(m.dbSession)
 	}
 }
 

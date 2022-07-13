@@ -184,7 +184,7 @@ func (m *MongoAggregatePump) connect() {
 	var err error
 	var dialInfo *mgo.DialInfo
 
-	dialInfo, err = mongoDialInfo(m.dbConf.BaseMongoConf)
+	dialInfo, err = DialInfo(m.dbConf.BaseMongoConf)
 	if err != nil {
 		m.Log.Panic("Mongo URL is invalid: ", err)
 	}
@@ -202,7 +202,7 @@ func (m *MongoAggregatePump) connect() {
 	}
 
 	if err == nil && m.dbConf.MongoDBType == 0 {
-		m.dbConf.MongoDBType = mongoType(m.dbSession)
+		m.dbConf.MongoDBType = GetMongoType(m.dbSession)
 	}
 }
 
