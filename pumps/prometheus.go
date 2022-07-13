@@ -80,7 +80,7 @@ const COUNTER_TYPE = "counter"
 const HISTOGRAM_TYPE = "histogram"
 
 var prometheusPrefix = "prometheus-pump"
-var prometheusDefaultENV = PUMPS_ENV_PREFIX + "_PROMETHEUS"
+var prometheusDefaultENV = common.PUMPS_ENV_PREFIX + "_PROMETHEUS"
 
 var buckets = []float64{1, 2, 5, 7, 10, 15, 20, 25, 30, 40, 50, 60, 70, 80, 90, 100, 200, 300, 400, 500, 1000, 2000, 5000, 10000, 30000, 60000}
 

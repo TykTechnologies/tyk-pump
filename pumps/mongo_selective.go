@@ -24,7 +24,7 @@ type MongoSelectivePump struct {
 
 var mongoSelectivePrefix = "mongo-pump-selective"
 var mongoSelectivePumpPrefix = "PMP_MONGOSEL"
-var mongoSelectiveDefaultEnv = PUMPS_ENV_PREFIX + "_MONGOSELECTIVE" + PUMPS_ENV_META_PREFIX
+var mongoSelectiveDefaultEnv = common.PUMPS_ENV_PREFIX + "_MONGOSELECTIVE" + common.PUMPS_ENV_META_PREFIX
 
 // @PumpConf MongoSelective
 type MongoSelectiveConf struct {

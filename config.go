@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/TykTechnologies/tyk-pump/pumps"
+	"github.com/TykTechnologies/tyk-pump/pumps/common"
 	"github.com/kelseyhightower/envconfig"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
@@ -15,8 +16,8 @@ import (
 )
 
 const ENV_PREVIX = "TYK_PMP"
-const PUMPS_ENV_PREFIX = pumps.PUMPS_ENV_PREFIX
-const PUMPS_ENV_META_PREFIX = pumps.PUMPS_ENV_META_PREFIX
+const PUMPS_ENV_PREFIX = common.PUMPS_ENV_PREFIX
+const PUMPS_ENV_META_PREFIX = common.PUMPS_ENV_META_PREFIX
 
 type PumpConfig struct {
 	// Deprecated.

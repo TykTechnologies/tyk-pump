@@ -16,7 +16,7 @@ import (
 const (
 	LogzioPumpPrefix = "logzio-pump"
 	LogzioPumpName   = "Logzio Pump"
-	logzioDefaultENV = PUMPS_ENV_PREFIX + "_LOGZIO" + PUMPS_ENV_META_PREFIX
+	logzioDefaultENV = common.PUMPS_ENV_PREFIX + "_LOGZIO" + common.PUMPS_ENV_META_PREFIX
 
 	defaultLogzioCheckDiskSpace = true
 	defaultLogzioDiskThreshold  = 98 // represent % of the disk

@@ -18,7 +18,7 @@ type SegmentPump struct {
 }
 
 var segmentPrefix = "segment-pump"
-var segmentDefaultENV = PUMPS_ENV_PREFIX + "_SEGMENT" + PUMPS_ENV_META_PREFIX
+var segmentDefaultENV = common.PUMPS_ENV_PREFIX + "_SEGMENT" + common.PUMPS_ENV_META_PREFIX
 
 type SegmentConf struct {
 	EnvPrefix string `mapstructure:"meta_env_prefix"`

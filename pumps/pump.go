@@ -8,9 +8,6 @@ import (
 	"github.com/TykTechnologies/tyk-pump/logger"
 )
 
-const PUMPS_ENV_PREFIX = "TYK_PMP_PUMPS"
-const PUMPS_ENV_META_PREFIX = "_META"
-
 var log = logger.GetLogger()
 
 type Pump interface {

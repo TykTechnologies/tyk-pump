@@ -11,7 +11,7 @@ type DummyPump struct {
 }
 
 var dummyPrefix = "dummy-pump"
-var dummyDefaultENV = PUMPS_ENV_PREFIX + "_DUMMY" + PUMPS_ENV_META_PREFIX
+var dummyDefaultENV = common.PUMPS_ENV_PREFIX + "_DUMMY" + common.PUMPS_ENV_META_PREFIX
 
 func (p *DummyPump) GetName() string {
 	return "Dummy Pump"

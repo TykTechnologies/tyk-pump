@@ -12,7 +12,7 @@ import (
 
 var (
 	stdOutPrefix     = "stdout-pump"
-	stdOutDefaultENV = PUMPS_ENV_PREFIX + "_STDOUT" + PUMPS_ENV_META_PREFIX
+	stdOutDefaultENV = common.PUMPS_ENV_PREFIX + "_STDOUT" + common.PUMPS_ENV_META_PREFIX
 )
 
 type StdOutPump struct {

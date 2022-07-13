@@ -103,7 +103,7 @@ func Dialect(cfg *SQLConf) (gorm.Dialector, error) {
 }
 
 var SQLPrefix = "SQL-pump"
-var SQLDefaultENV = PUMPS_ENV_PREFIX + "_SQL" + PUMPS_ENV_META_PREFIX
+var SQLDefaultENV = common.PUMPS_ENV_PREFIX + "_SQL" + common.PUMPS_ENV_META_PREFIX
 var SQLDefaultQueryBatchSize = 1000
 
 func (c *SQLPump) GetName() string {

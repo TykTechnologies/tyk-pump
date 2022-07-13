@@ -20,7 +20,7 @@ import (
 )
 
 var mongoAggregatePumpPrefix = "PMP_MONGOAGG"
-var mongoAggregateDefaultEnv = PUMPS_ENV_PREFIX + "_MONGOAGGREGATE" + PUMPS_ENV_META_PREFIX
+var mongoAggregateDefaultEnv = common.PUMPS_ENV_PREFIX + "_MONGOAGGREGATE" + common.PUMPS_ENV_META_PREFIX
 
 var THRESHOLD_LEN_TAG_LIST = 1000
 var COMMON_TAGS_COUNT = 5

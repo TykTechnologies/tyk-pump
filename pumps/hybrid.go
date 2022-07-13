@@ -15,7 +15,7 @@ import (
 
 const hybridPrefix = "hybrid-pump"
 
-var hybridDefaultENV = PUMPS_ENV_PREFIX + "_HYBRID" + PUMPS_ENV_META_PREFIX
+var hybridDefaultENV = common.PUMPS_ENV_PREFIX + "_HYBRID" + common.PUMPS_ENV_META_PREFIX
 
 type GroupLoginRequest struct {
 	UserKey string

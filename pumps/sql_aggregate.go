@@ -43,7 +43,7 @@ type SQLAggregatePump struct {
 }
 
 var SQLAggregatePumpPrefix = "SQL-aggregate-pump"
-var SQLAggregateDefaultENV = PUMPS_ENV_PREFIX + "_SQLAGGREGATE" + PUMPS_ENV_META_PREFIX
+var SQLAggregateDefaultENV = common.PUMPS_ENV_PREFIX + "_SQLAGGREGATE" + common.PUMPS_ENV_META_PREFIX
 
 func (c *SQLAggregatePump) GetName() string {
 	return "SQL Aggregate Pump"

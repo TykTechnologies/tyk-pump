@@ -43,7 +43,7 @@ type MongoPump struct {
 
 var mongoPrefix = "mongo-pump"
 var mongoPumpPrefix = "PMP_MONGO"
-var mongoDefaultEnv = PUMPS_ENV_PREFIX + "_MONGO" + PUMPS_ENV_META_PREFIX
+var mongoDefaultEnv = common.PUMPS_ENV_PREFIX + "_MONGO" + common.PUMPS_ENV_META_PREFIX
 
 type MongoType int
 

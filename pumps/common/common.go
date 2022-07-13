@@ -8,6 +8,9 @@ import (
 	"github.com/kelseyhightower/envconfig"
 )
 
+const PUMPS_ENV_PREFIX = "TYK_PMP_PUMPS"
+const PUMPS_ENV_META_PREFIX = "_META"
+
 type Pump struct {
 	filters               analytics.AnalyticsFilters
 	Timeout               int

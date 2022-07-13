@@ -23,7 +23,7 @@ type Influx2Pump struct {
 
 var (
 	influx2Prefix      = "influx2-pump"
-	influx2DefaultENV  = PUMPS_ENV_PREFIX + "_INFLUX2" + PUMPS_ENV_META_PREFIX
+	influx2DefaultENV  = common.PUMPS_ENV_PREFIX + "_INFLUX2" + common.PUMPS_ENV_META_PREFIX
 	influx2Measurement = "analytics"
 )
 

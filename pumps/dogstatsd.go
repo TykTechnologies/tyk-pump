@@ -22,7 +22,7 @@ const (
 )
 
 var dogstatPrefix = "dogstatsd"
-var dogstatDefaultENV = PUMPS_ENV_PREFIX + "_DOGSTATSD" + PUMPS_ENV_META_PREFIX
+var dogstatDefaultENV = common.PUMPS_ENV_PREFIX + "_DOGSTATSD" + common.PUMPS_ENV_META_PREFIX
 
 type DogStatsdPump struct {
 	conf   *DogStatsdConf

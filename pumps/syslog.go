@@ -21,7 +21,7 @@ type SyslogPump struct {
 
 var (
 	syslogPrefix     = "syslog-pump"
-	syslogDefaultENV = PUMPS_ENV_PREFIX + "_SYSLOG" + PUMPS_ENV_META_PREFIX
+	syslogDefaultENV = common.PUMPS_ENV_PREFIX + "_SYSLOG" + common.PUMPS_ENV_META_PREFIX
 )
 
 // @PumpConf Syslog

@@ -19,7 +19,7 @@ type StatsdPump struct {
 }
 
 var statsdPrefix = "statsd-pump"
-var statsdDefaultENV = PUMPS_ENV_PREFIX + "_STATSD" + PUMPS_ENV_META_PREFIX
+var statsdDefaultENV = common.PUMPS_ENV_PREFIX + "_STATSD" + common.PUMPS_ENV_META_PREFIX
 
 // @PumpConf Statsd
 type StatsdConf struct {

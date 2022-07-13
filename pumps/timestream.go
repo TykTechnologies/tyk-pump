@@ -38,7 +38,7 @@ type TimestreamPump struct {
 const (
 	timestreamPumpPrefix       = "timestream-pump"
 	timestreamPumpName         = "Timestream Pump"
-	timestreamDefaultEnv       = PUMPS_ENV_PREFIX + "_TIMESTREAM" + PUMPS_ENV_META_PREFIX
+	timestreamDefaultEnv       = common.PUMPS_ENV_PREFIX + "_TIMESTREAM" + common.PUMPS_ENV_META_PREFIX
 	timestreamVarcharMaxLength = 2048 //https://docs.aws.amazon.com/timestream/latest/developerguide/writes.html
 	timestreamMaxRecordsCount  = 100  //https://docs.aws.amazon.com/timestream/latest/developerguide/API_WriteRecords.html
 )

@@ -42,7 +42,7 @@ type rawDecoded struct {
 }
 
 var moesifPrefix = "moesif-pump"
-var moesifDefaultENV = PUMPS_ENV_PREFIX + "_MOESIF" + PUMPS_ENV_META_PREFIX
+var moesifDefaultENV = common.PUMPS_ENV_PREFIX + "_MOESIF" + common.PUMPS_ENV_META_PREFIX
 
 // @PumpConf Moesif
 type MoesifConf struct {

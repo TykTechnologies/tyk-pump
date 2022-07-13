@@ -22,7 +22,7 @@ const (
 	authHeaderPrefix = "Splunk "
 	splunkPumpPrefix = "splunk-pump"
 	splunkPumpName   = "Splunk Pump"
-	splunkDefaultENV = PUMPS_ENV_PREFIX + "_SPLUNK" + PUMPS_ENV_META_PREFIX
+	splunkDefaultENV = common.PUMPS_ENV_PREFIX + "_SPLUNK" + common.PUMPS_ENV_META_PREFIX
 )
 
 var (
