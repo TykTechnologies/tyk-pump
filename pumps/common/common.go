@@ -14,10 +14,12 @@ type Pump struct {
 	maxRecordSize         int
 	OmitDetailedRecording bool
 	Log                   *logrus.Entry
+
+	envPrefix string
 }
 
 func (p *Pump) GetName() string {
-	return ""
+	return "CommonPump"
 }
 func (p *Pump) SetFilters(filters analytics.AnalyticsFilters) {
 	p.filters = filters
@@ -36,12 +38,13 @@ func (p *Pump) GetTimeout() int {
 func (p *Pump) SetOmitDetailedRecording(OmitDetailedRecording bool) {
 	p.OmitDetailedRecording = OmitDetailedRecording
 }
+
 func (p *Pump) GetOmitDetailedRecording() bool {
 	return p.OmitDetailedRecording
 }
 
 func (p *Pump) GetEnvPrefix() string {
-	return ""
+	return p.envPrefix
 }
 
 func (p *Pump) Shutdown() error {
