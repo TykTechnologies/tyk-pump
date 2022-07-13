@@ -107,7 +107,7 @@ func (p *SplunkPump) Init(config interface{}) error {
 		return err
 	}
 
-	p.ProcessEnvVars( p.Log, p.config, splunkDefaultENV)
+	p.ProcessEnvVars(p.Log, p.config, splunkDefaultENV)
 
 	p.Log.Infof("%s Endpoint: %s", splunkPumpName, p.config.CollectorURL)
 

@@ -42,7 +42,7 @@ func (s *SegmentPump) Init(config interface{}) error {
 		s.Log.Fatal("Failed to decode configuration: ", loadConfigErr)
 	}
 
-	s.ProcessEnvVars( s.Log, s.segmentConf, segmentDefaultENV)
+	s.ProcessEnvVars(s.Log, s.segmentConf, segmentDefaultENV)
 
 	s.segmentClient = segment.New(s.segmentConf.WriteKey)
 	s.Log.Info(s.GetName() + " Initialized")

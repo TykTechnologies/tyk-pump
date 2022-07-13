@@ -5,10 +5,13 @@ import (
 	"errors"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
+	"github.com/TykTechnologies/tyk-pump/logger"
 )
 
 const PUMPS_ENV_PREFIX = "TYK_PMP_PUMPS"
 const PUMPS_ENV_META_PREFIX = "_META"
+
+var log = logger.GetLogger()
 
 type Pump interface {
 	GetName() string
@@ -34,8 +37,54 @@ type UptimePump interface {
 
 func GetPumpByName(name string) (Pump, error) {
 
-	if pump, ok := AvailablePumps[name]; ok && pump != nil {
-		return pump, nil
+	switch name {
+	case "dummy":
+		return &DummyPump{}, nil
+	case "mongo":
+		return &MongoPump{}, nil
+	case "mongo-pump-selective":
+		return &MongoSelectivePump{}, nil
+	case "mongo-pump-aggregate":
+		return &MongoAggregatePump{}, nil
+	case "csv":
+		return &CSVPump{}, nil
+	case "elasticsearch":
+		return &ElasticsearchPump{}, nil
+	case "influx":
+		return &InfluxPump{}, nil
+	case "influx2":
+		return &Influx2Pump{}, nil
+	case "moesif":
+		return &MoesifPump{}, nil
+	case "statsd":
+		return &StatsdPump{}, nil
+	case "segment":
+		return &SegmentPump{}, nil
+	case "graylog":
+		return &GraylogPump{}, nil
+	case "splunk":
+		return &SplunkPump{}, nil
+	case "hybrid":
+		return &HybridPump{}, nil
+	case "prometheus":
+		return &PrometheusPump{}, nil
+	case "logzio":
+		return &LogzioPump{}, nil
+	case "dogstatsd":
+		return &DogStatsdPump{}, nil
+	case "kafka":
+		return &KafkaPump{}, nil
+	case "syslog":
+		return &SyslogPump{}, nil
+	case "sql":
+		return &SQLPump{}, nil
+	case "sql_aggregate":
+		return &SQLAggregatePump{}, nil
+	case "stdout":
+		return &StdOutPump{}, nil
+	case "timestream":
+		return &TimestreamPump{}, nil
+	default:
 	}
 
 	return nil, errors.New(name + " Not found")

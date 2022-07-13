@@ -49,7 +49,7 @@ func (s *StdOutPump) Init(config interface{}) error {
 		s.Log.Fatal("Failed to decode configuration: ", err)
 	}
 
-	s.ProcessEnvVars( s.Log, s.conf, stdOutDefaultENV)
+	s.ProcessEnvVars(s.Log, s.conf, stdOutDefaultENV)
 
 	if s.conf.LogFieldName == "" {
 		s.conf.LogFieldName = "tyk-analytics-record"

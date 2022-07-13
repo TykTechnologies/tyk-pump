@@ -274,7 +274,7 @@ func (m *MongoPump) Init(config interface{}) error {
 
 	//we check for the environment configuration if this pumps is not the uptime pump
 	if !m.IsUptime {
-		m.ProcessEnvVars( m.Log, m.dbConf, mongoDefaultEnv)
+		m.ProcessEnvVars(m.Log, m.dbConf, mongoDefaultEnv)
 
 		//we keep this env check for backward compatibility
 		overrideErr := envconfig.Process(mongoPumpPrefix, m.dbConf)
