@@ -121,7 +121,7 @@ func (s *DogStatsdPump) Init(conf interface{}) error {
 		return errors.Wrap(err, "unable to decode dogstatsd configuration")
 	}
 
-	processPumpEnvVars(s, s.Log, s.conf, dogstatDefaultENV)
+	s.ProcessEnvVars(s.Log, s.conf, dogstatDefaultENV)
 
 	if s.conf.Namespace == "" {
 		s.conf.Namespace = defaultDogstatsdNamespace

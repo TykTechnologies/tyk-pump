@@ -52,7 +52,7 @@ func (c *CSVPump) Init(conf interface{}) error {
 		c.Log.Fatal("Failed to decode configuration: ", err)
 	}
 
-	processPumpEnvVars(c, c.Log, c.csvConf, csvDefaultENV)
+	c.ProcessEnvVars(c.Log, c.csvConf, csvDefaultENV)
 
 	ferr := os.MkdirAll(c.csvConf.CSVDir, 0777)
 	if ferr != nil {

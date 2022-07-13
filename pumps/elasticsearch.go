@@ -323,7 +323,7 @@ func (e *ElasticsearchPump) Init(config interface{}) error {
 		e.Log.Fatal("Failed to decode configuration: ", loadConfigErr)
 	}
 
-	processPumpEnvVars(e, e.Log, e.esConf, elasticsearchDefaultENV)
+	e.ProcessEnvVars(e.Log, e.esConf, elasticsearchDefaultENV)
 
 	if "" == e.esConf.IndexName {
 		e.esConf.IndexName = "tyk_analytics"
