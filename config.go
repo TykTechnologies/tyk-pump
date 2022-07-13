@@ -292,7 +292,7 @@ func (cfg *TykPumpConfiguration) LoadPumpsByEnv() error {
 			pmp = jsonPump
 		}
 		//We look if the pmpName is one of our available pumps. If it's not, we look if the env with the TYPE filed exists.
-		if _, ok := pumps.AvailablePumps[strings.ToLower(pmpName)]; !ok {
+		if _, err := pumps.GetPumpByName(strings.ToLower(pmpName)); err != nil {
 			pmpType, found := os.LookupEnv(PUMPS_ENV_PREFIX + "_" + pmpName + "_TYPE")
 			if !found {
 				log.Error(fmt.Sprintf("TYPE Env var for pump %s not found", pmpName))
