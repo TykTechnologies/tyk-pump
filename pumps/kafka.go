@@ -28,7 +28,7 @@ type KafkaPump struct {
 type Json map[string]interface{}
 
 var kafkaPrefix = "kafka-pump"
-var kafkaDefaultENV = PUMPS_ENV_PREFIX + "_KAFKA" + PUMPS_ENV_META_PREFIX
+var kafkaDefaultENV = common.PUMPS_ENV_PREFIX + "_KAFKA" + common.PUMPS_ENV_META_PREFIX
 
 // @PumpConf Kafka
 type KafkaConf struct {
@@ -67,11 +67,6 @@ type KafkaConf struct {
 	Algorithm string `json:"sasl_algorithm" mapstructure:"sasl_algorithm"`
 }
 
-func (k *KafkaPump) New() Pump {
-	newPump := KafkaPump{}
-	return &newPump
-}
-
 func (k *KafkaPump) GetName() string {
 	return "Kafka Pump"
 }
@@ -90,7 +85,7 @@ func (k *KafkaPump) Init(config interface{}) error {
 		k.log.Fatal("Failed to decode configuration: ", err)
 	}
 
-	processPumpEnvVars(k, k.log, k.kafkaConf, kafkaDefaultENV)
+	k.ProcessEnvVars(k.log, k.kafkaConf, kafkaDefaultENV)
 
 	var tlsConfig *tls.Config
 	if k.kafkaConf.UseSSL {

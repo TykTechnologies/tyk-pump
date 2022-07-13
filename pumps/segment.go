@@ -18,16 +18,11 @@ type SegmentPump struct {
 }
 
 var segmentPrefix = "segment-pump"
-var segmentDefaultENV = PUMPS_ENV_PREFIX + "_SEGMENT" + PUMPS_ENV_META_PREFIX
+var segmentDefaultENV = common.PUMPS_ENV_PREFIX + "_SEGMENT" + common.PUMPS_ENV_META_PREFIX
 
 type SegmentConf struct {
 	EnvPrefix string `mapstructure:"meta_env_prefix"`
 	WriteKey  string `json:"segment_write_key" mapstructure:"segment_write_key"`
-}
-
-func (s *SegmentPump) New() Pump {
-	newPump := SegmentPump{}
-	return &newPump
 }
 
 func (s *SegmentPump) GetName() string {
@@ -47,7 +42,7 @@ func (s *SegmentPump) Init(config interface{}) error {
 		s.Log.Fatal("Failed to decode configuration: ", loadConfigErr)
 	}
 
-	processPumpEnvVars(s, s.Log, s.segmentConf, segmentDefaultENV)
+	s.ProcessEnvVars(s.Log, s.segmentConf, segmentDefaultENV)
 
 	s.segmentClient = segment.New(s.segmentConf.WriteKey)
 	s.Log.Info(s.GetName() + " Initialized")

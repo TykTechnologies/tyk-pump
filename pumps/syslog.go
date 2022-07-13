@@ -21,7 +21,7 @@ type SyslogPump struct {
 
 var (
 	syslogPrefix     = "syslog-pump"
-	syslogDefaultENV = PUMPS_ENV_PREFIX + "_SYSLOG" + PUMPS_ENV_META_PREFIX
+	syslogDefaultENV = common.PUMPS_ENV_PREFIX + "_SYSLOG" + common.PUMPS_ENV_META_PREFIX
 )
 
 // @PumpConf Syslog
@@ -57,11 +57,6 @@ func (s *SyslogPump) GetName() string {
 	return "Syslog Pump"
 }
 
-func (s *SyslogPump) New() Pump {
-	newPump := SyslogPump{}
-	return &newPump
-}
-
 func (s *SyslogPump) GetEnvPrefix() string {
 	return s.syslogConf.EnvPrefix
 }
@@ -76,7 +71,7 @@ func (s *SyslogPump) Init(config interface{}) error {
 		s.Log.Fatal("Failed to decode configuration: ", err)
 	}
 
-	processPumpEnvVars(s, s.Log, s.syslogConf, syslogDefaultENV)
+	s.ProcessEnvVars(s.Log, s.syslogConf, syslogDefaultENV)
 	// Init the configs
 	s.initConfigs()
 

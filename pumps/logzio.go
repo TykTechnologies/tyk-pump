@@ -16,7 +16,7 @@ import (
 const (
 	LogzioPumpPrefix = "logzio-pump"
 	LogzioPumpName   = "Logzio Pump"
-	logzioDefaultENV = PUMPS_ENV_PREFIX + "_LOGZIO" + PUMPS_ENV_META_PREFIX
+	logzioDefaultENV = common.PUMPS_ENV_PREFIX + "_LOGZIO" + common.PUMPS_ENV_META_PREFIX
 
 	defaultLogzioCheckDiskSpace = true
 	defaultLogzioDiskThreshold  = 98 // represent % of the disk
@@ -96,10 +96,6 @@ func NewLogzioClient(conf *LogzioPumpConfig) (*lg.LogzioSender, error) {
 	return l, nil
 }
 
-func (p *LogzioPump) New() Pump {
-	return &LogzioPump{}
-}
-
 func (p *LogzioPump) GetName() string {
 	return LogzioPumpName
 }
@@ -117,7 +113,7 @@ func (p *LogzioPump) Init(config interface{}) error {
 		p.Log.Fatalf("Failed to decode configuration: %s", err)
 	}
 
-	processPumpEnvVars(p, p.Log, p.config, logzioDefaultENV)
+	p.ProcessEnvVars(p.Log, p.config, logzioDefaultENV)
 
 	p.Log.Debugf("Initializing %s with the following configuration: %+v", LogzioPumpName, p.config)
 

@@ -43,7 +43,7 @@ type MongoPump struct {
 
 var mongoPrefix = "mongo-pump"
 var mongoPumpPrefix = "PMP_MONGO"
-var mongoDefaultEnv = PUMPS_ENV_PREFIX + "_MONGO" + PUMPS_ENV_META_PREFIX
+var mongoDefaultEnv = common.PUMPS_ENV_PREFIX + "_MONGO" + common.PUMPS_ENV_META_PREFIX
 
 type MongoType int
 
@@ -245,11 +245,6 @@ func mongoDialInfo(conf BaseMongoConf) (dialInfo *mgo.DialInfo, err error) {
 	return dialInfo, err
 }
 
-func (m *MongoPump) New() Pump {
-	newPump := MongoPump{}
-	return &newPump
-}
-
 func (m *MongoPump) GetName() string {
 	return "MongoDB Pump"
 }
@@ -279,7 +274,7 @@ func (m *MongoPump) Init(config interface{}) error {
 
 	//we check for the environment configuration if this pumps is not the uptime pump
 	if !m.IsUptime {
-		processPumpEnvVars(m, m.Log, m.dbConf, mongoDefaultEnv)
+		m.ProcessEnvVars(m.Log, m.dbConf, mongoDefaultEnv)
 
 		//we keep this env check for backward compatibility
 		overrideErr := envconfig.Process(mongoPumpPrefix, m.dbConf)

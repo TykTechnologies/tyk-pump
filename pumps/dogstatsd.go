@@ -22,7 +22,7 @@ const (
 )
 
 var dogstatPrefix = "dogstatsd"
-var dogstatDefaultENV = PUMPS_ENV_PREFIX + "_DOGSTATSD" + PUMPS_ENV_META_PREFIX
+var dogstatDefaultENV = common.PUMPS_ENV_PREFIX + "_DOGSTATSD" + common.PUMPS_ENV_META_PREFIX
 
 type DogStatsdPump struct {
 	conf   *DogStatsdConf
@@ -98,11 +98,6 @@ type DogStatsdConf struct {
 	// [May 10 15:23:44]  INFO dogstatsd: async_uds: true, write_timeout: 2s
 	// ```
 	Tags []string `json:"tags" mapstructure:"tags"`
-}
-
-func (s *DogStatsdPump) New() Pump {
-	newPump := DogStatsdPump{}
-	return &newPump
 }
 
 func (s *DogStatsdPump) GetName() string {

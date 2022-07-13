@@ -7,16 +7,12 @@ import (
 )
 
 type DummyPump struct {
+	cfg interface{}
 	common.Pump
 }
 
 var dummyPrefix = "dummy-pump"
-var dummyDefaultENV = PUMPS_ENV_PREFIX + "_DUMMY" + PUMPS_ENV_META_PREFIX
-
-func (p *DummyPump) New() Pump {
-	newPump := DummyPump{}
-	return &newPump
-}
+var dummyDefaultENV = common.PUMPS_ENV_PREFIX + "_DUMMY" + common.PUMPS_ENV_META_PREFIX
 
 func (p *DummyPump) GetName() string {
 	return "Dummy Pump"
@@ -25,6 +21,7 @@ func (p *DummyPump) GetName() string {
 func (p *DummyPump) Init(conf interface{}) error {
 	p.Log = log.WithField("prefix", dummyPrefix)
 
+	p.ProcessEnvVars(p.Log, &p.cfg, dummyDefaultENV)
 	p.Log.Info("Dummy Initialized")
 	return nil
 }

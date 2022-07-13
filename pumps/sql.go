@@ -103,13 +103,8 @@ func Dialect(cfg *SQLConf) (gorm.Dialector, error) {
 }
 
 var SQLPrefix = "SQL-pump"
-var SQLDefaultENV = PUMPS_ENV_PREFIX + "_SQL" + PUMPS_ENV_META_PREFIX
+var SQLDefaultENV = common.PUMPS_ENV_PREFIX + "_SQL" + common.PUMPS_ENV_META_PREFIX
 var SQLDefaultQueryBatchSize = 1000
-
-func (c *SQLPump) New() Pump {
-	newPump := SQLPump{}
-	return &newPump
-}
 
 func (c *SQLPump) GetName() string {
 	return "SQL Pump"
@@ -134,7 +129,7 @@ func (c *SQLPump) Init(conf interface{}) error {
 	}
 
 	if !c.IsUptime {
-		processPumpEnvVars(c, c.Log, c.SQLConf, SQLDefaultENV)
+		c.ProcessEnvVars(c.Log, c.SQLConf, SQLDefaultENV)
 	}
 
 	logLevel := gorm_logger.Silent

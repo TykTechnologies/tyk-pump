@@ -46,12 +46,7 @@ type GraylogConf struct {
 }
 
 var graylogPrefix = "graylog-pump"
-var graylogDefaultENV = PUMPS_ENV_PREFIX + "_GRAYLOG" + PUMPS_ENV_META_PREFIX
-
-func (p *GraylogPump) New() Pump {
-	newPump := GraylogPump{}
-	return &newPump
-}
+var graylogDefaultENV = common.PUMPS_ENV_PREFIX + "_GRAYLOG" + common.PUMPS_ENV_META_PREFIX
 
 func (p *GraylogPump) GetName() string {
 	return "Graylog Pump"
@@ -71,7 +66,7 @@ func (p *GraylogPump) Init(conf interface{}) error {
 		p.Log.Fatal("Failed to decode configuration: ", err)
 	}
 
-	processPumpEnvVars(p, p.Log, p.conf, graylogDefaultENV)
+	p.ProcessEnvVars(p.Log, p.conf, graylogDefaultENV)
 
 	if p.conf.GraylogHost == "" {
 		p.conf.GraylogHost = "localhost"

@@ -20,7 +20,7 @@ type InfluxPump struct {
 
 var (
 	influxPrefix     = "influx-pump"
-	influxDefaultENV = PUMPS_ENV_PREFIX + "_INFLUX" + PUMPS_ENV_META_PREFIX
+	influxDefaultENV = common.PUMPS_ENV_PREFIX + "_INFLUX" + common.PUMPS_ENV_META_PREFIX
 	table            = "analytics"
 )
 
@@ -44,11 +44,6 @@ type InfluxConf struct {
 	Tags []string `json:"tags" mapstructure:"tags"`
 }
 
-func (i *InfluxPump) New() Pump {
-	newPump := InfluxPump{}
-	return &newPump
-}
-
 func (i *InfluxPump) GetName() string {
 	return "InfluxDB Pump"
 }
@@ -66,7 +61,7 @@ func (i *InfluxPump) Init(config interface{}) error {
 		i.Log.Fatal("Failed to decode configuration: ", err)
 	}
 
-	processPumpEnvVars(i, i.Log, i.dbConf, influxDefaultENV)
+	i.ProcessEnvVars(i.Log, i.dbConf, influxDefaultENV)
 
 	i.connect()
 

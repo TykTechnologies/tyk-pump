@@ -80,17 +80,9 @@ const COUNTER_TYPE = "counter"
 const HISTOGRAM_TYPE = "histogram"
 
 var prometheusPrefix = "prometheus-pump"
-var prometheusDefaultENV = PUMPS_ENV_PREFIX + "_PROMETHEUS"
+var prometheusDefaultENV = common.PUMPS_ENV_PREFIX + "_PROMETHEUS"
 
 var buckets = []float64{1, 2, 5, 7, 10, 15, 20, 25, 30, 40, 50, 60, 70, 80, 90, 100, 200, 300, 400, 500, 1000, 2000, 5000, 10000, 30000, 60000}
-
-func (p *PrometheusPump) New() Pump {
-	newPump := PrometheusPump{}
-
-	newPump.CreateBasicMetrics()
-
-	return &newPump
-}
 
 //CreateBasicMetrics stores all the predefined pump metrics in allMetrics slice
 func (p *PrometheusPump) CreateBasicMetrics() {
@@ -144,13 +136,14 @@ func (p *PrometheusPump) GetEnvPrefix() string {
 func (p *PrometheusPump) Init(conf interface{}) error {
 	p.conf = &PrometheusConf{}
 	p.Log = log.WithField("prefix", prometheusPrefix)
+	p.CreateBasicMetrics()
 
 	err := mapstructure.Decode(conf, &p.conf)
 	if err != nil {
 		p.Log.Fatal("Failed to decode configuration: ", err)
 	}
 
-	processPumpEnvVars(p, p.Log, p.conf, prometheusDefaultENV)
+	p.ProcessEnvVars(p.Log, p.conf, prometheusDefaultENV)
 
 	if p.conf.Path == "" {
 		p.conf.Path = "/metrics"

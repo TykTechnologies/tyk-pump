@@ -22,7 +22,7 @@ const (
 	authHeaderPrefix = "Splunk "
 	splunkPumpPrefix = "splunk-pump"
 	splunkPumpName   = "Splunk Pump"
-	splunkDefaultENV = PUMPS_ENV_PREFIX + "_SPLUNK" + PUMPS_ENV_META_PREFIX
+	splunkDefaultENV = common.PUMPS_ENV_PREFIX + "_SPLUNK" + common.PUMPS_ENV_META_PREFIX
 )
 
 var (
@@ -88,11 +88,6 @@ type SplunkPumpConfig struct {
 	BatchMaxContentLength int `json:"batch_max_content_length" mapstructure:"batch_max_content_length"`
 }
 
-// New initializes a new pump.
-func (p *SplunkPump) New() Pump {
-	return &SplunkPump{}
-}
-
 // GetName returns the pump name.
 func (p *SplunkPump) GetName() string {
 	return splunkPumpName
@@ -112,7 +107,7 @@ func (p *SplunkPump) Init(config interface{}) error {
 		return err
 	}
 
-	processPumpEnvVars(p, p.Log, p.config, splunkDefaultENV)
+	p.ProcessEnvVars(p.Log, p.config, splunkDefaultENV)
 
 	p.Log.Infof("%s Endpoint: %s", splunkPumpName, p.config.CollectorURL)
 

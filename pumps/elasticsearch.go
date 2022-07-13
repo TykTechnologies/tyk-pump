@@ -29,7 +29,7 @@ type ElasticsearchPump struct {
 }
 
 var elasticsearchPrefix = "elasticsearch-pump"
-var elasticsearchDefaultENV = PUMPS_ENV_PREFIX + "_ELASTICSEARCH" + PUMPS_ENV_META_PREFIX
+var elasticsearchDefaultENV = common.PUMPS_ENV_PREFIX + "_ELASTICSEARCH" + common.PUMPS_ENV_META_PREFIX
 
 // @PumpConf Elasticsearch
 type ElasticsearchConf struct {
@@ -299,11 +299,6 @@ func (e *ElasticsearchPump) getOperator() (ElasticsearchOperator, error) {
 	}
 
 	return nil, err
-}
-
-func (e *ElasticsearchPump) New() Pump {
-	newPump := ElasticsearchPump{}
-	return &newPump
 }
 
 func (e *ElasticsearchPump) GetName() string {
