@@ -9,8 +9,6 @@ import (
 
 func TestCSVPump_Init(t *testing.T) {
 
-	assert.Equal(t, "CSV Pump", pmp.GetName())
-
 	tcs := []struct {
 		testName string
 
@@ -20,45 +18,42 @@ func TestCSVPump_Init(t *testing.T) {
 		expectedCSVDir string
 	}{
 		{
-			testName:       "Config file csvdir",
+			testName:       "Config file-  csvdir",
 			config:         map[string]interface{}{"csv_dir": "test1"},
 			expectedCSVDir: "test1",
 		},
 		{
-			testName:       "env var csvdir",
-			config:         map[string]interface{}{"csv_dir": "test1"},
-			expectedCSVDir: "test1",
+			testName:       "Env vars- csvdir",
+			config:         map[string]interface{}{},
+			envVars:        map[string]string{csvDefaultENV + "_CSVDIR": "test2"},
+			expectedCSVDir: "test2",
+		},
+		{
+			testName:       "Config file + Env vars - csvdir",
+			config:         map[string]interface{}{"csv_dir": "test4"},
+			envVars:        map[string]string{csvDefaultENV + "_CSVDIR": "test5"},
+			expectedCSVDir: "test5",
 		},
 	}
 
 	for _, tc := range tcs {
 		t.Run(tc.testName, func(t *testing.T) {
 			pmp := &CSVPump{}
+			assert.Equal(t, "CSV Pump", pmp.GetName())
 
 			for env, val := range tc.envVars {
 				os.Setenv(env, val)
 			}
 			defer func() {
-				for env, _ := range tc.envVars {
+				for env := range tc.envVars {
 					os.Unsetenv(env)
 				}
 			}()
 
 			err := pmp.Init(tc.config)
 			assert.Nil(t, err)
-			assert.Equal(t, tc.expectedCSVDir, pmp.csvConf)
+			assert.NotNil(t, pmp.csvConf)
+			assert.Equal(t, tc.expectedCSVDir, pmp.csvConf.CSVDir)
 		})
 	}
-	cfg := make(map[string]interface{})
-	cfg["csv_dir"] = "test1"
-	err := pmp.Init(cfg)
-	assert.Nil(t, err)
-	assert.Equal(t, "test1", pmp.csvConf.CSVDir)
-
-	os.Setenv(csvDefaultENV+"_CSVDIR", "test2")
-	os.Unsetenv(dummyDefaultENV + "_CSVDIR")
-	err = pmp.Init(cfg)
-	assert.Nil(t, err)
-	assert.Equal(t, "test2", pmp.csvConf.CSVDir)
-
 }
