@@ -92,7 +92,7 @@ func (t *TimestreamPump) Init(config interface{}) error {
 		return err
 	}
 
-	processPumpEnvVars(t, t.Log, t.config, timestreamDefaultEnv)
+	t.ProcessEnvVars( t.Log, t.config, timestreamDefaultEnv)
 
 	if len(t.config.Measures) == 0 || len(t.config.Dimensions) == 0 {
 		return errors.New("missing \"measures\" or \"dimensions\" in pump configuration")

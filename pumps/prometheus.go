@@ -143,7 +143,7 @@ func (p *PrometheusPump) Init(conf interface{}) error {
 		p.Log.Fatal("Failed to decode configuration: ", err)
 	}
 
-	processPumpEnvVars(p, p.Log, p.conf, prometheusDefaultENV)
+	p.ProcessEnvVars( p.Log, p.conf, prometheusDefaultENV)
 
 	if p.conf.Path == "" {
 		p.conf.Path = "/metrics"

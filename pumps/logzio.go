@@ -113,7 +113,7 @@ func (p *LogzioPump) Init(config interface{}) error {
 		p.Log.Fatalf("Failed to decode configuration: %s", err)
 	}
 
-	processPumpEnvVars(p, p.Log, p.config, logzioDefaultENV)
+	p.ProcessEnvVars( p.Log, p.config, logzioDefaultENV)
 
 	p.Log.Debugf("Initializing %s with the following configuration: %+v", LogzioPumpName, p.config)
 

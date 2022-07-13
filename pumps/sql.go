@@ -129,7 +129,7 @@ func (c *SQLPump) Init(conf interface{}) error {
 	}
 
 	if !c.IsUptime {
-		processPumpEnvVars(c, c.Log, c.SQLConf, SQLDefaultENV)
+		c.ProcessEnvVars(c.Log, c.SQLConf, SQLDefaultENV)
 	}
 
 	logLevel := gorm_logger.Silent

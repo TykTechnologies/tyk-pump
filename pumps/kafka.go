@@ -85,7 +85,7 @@ func (k *KafkaPump) Init(config interface{}) error {
 		k.log.Fatal("Failed to decode configuration: ", err)
 	}
 
-	processPumpEnvVars(k, k.log, k.kafkaConf, kafkaDefaultENV)
+	k.ProcessEnvVars( k.log, k.kafkaConf, kafkaDefaultENV)
 
 	var tlsConfig *tls.Config
 	if k.kafkaConf.UseSSL {

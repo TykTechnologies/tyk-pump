@@ -71,7 +71,7 @@ func (s *SyslogPump) Init(config interface{}) error {
 		s.Log.Fatal("Failed to decode configuration: ", err)
 	}
 
-	processPumpEnvVars(s, s.Log, s.syslogConf, syslogDefaultENV)
+	s.ProcessEnvVars(s.Log, s.syslogConf, syslogDefaultENV)
 	// Init the configs
 	s.initConfigs()
 

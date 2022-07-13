@@ -63,7 +63,7 @@ func (c *SQLAggregatePump) Init(conf interface{}) error {
 		return err
 	}
 
-	processPumpEnvVars(c, c.Log, c.SQLConf, SQLAggregateDefaultENV)
+	c.ProcessEnvVars(c.Log, c.SQLConf, SQLAggregateDefaultENV)
 
 	logLevel := gorm_logger.Silent
 

@@ -262,7 +262,7 @@ func (p *MoesifPump) Init(config interface{}) error {
 		p.Log.Fatal("Failed to decode configuration: ", loadConfigErr)
 	}
 
-	processPumpEnvVars(p, p.Log, p.moesifConf, moesifDefaultENV)
+	p.ProcessEnvVars( p.Log, p.moesifConf, moesifDefaultENV)
 
 	var apiEndpoint string
 	var batchSize int

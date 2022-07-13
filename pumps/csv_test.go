@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestCSVPump_Init(t *testing.T) {
+func TestCSVPumpInit(t *testing.T) {
 
 	tcs := []struct {
 		testName string

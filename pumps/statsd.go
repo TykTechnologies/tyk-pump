@@ -51,7 +51,7 @@ func (s *StatsdPump) Init(config interface{}) error {
 		s.Log.Fatal("Failed to decode configuration: ", err)
 	}
 
-	processPumpEnvVars(s, s.Log, s.dbConf, statsdDefaultENV)
+	s.ProcessEnvVars(s.Log, s.dbConf, statsdDefaultENV)
 
 	s.connect()
 

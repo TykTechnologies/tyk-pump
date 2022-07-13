@@ -87,7 +87,7 @@ func (i *Influx2Pump) Init(config interface{}) error {
 		i.Log.Fatal("Failed to decode configuration: ", err)
 	}
 
-	processPumpEnvVars(i, i.Log, i.dbConf, influx2DefaultENV)
+	i.ProcessEnvVars(i.Log, i.dbConf, influx2DefaultENV)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()

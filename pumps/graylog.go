@@ -66,7 +66,7 @@ func (p *GraylogPump) Init(conf interface{}) error {
 		p.Log.Fatal("Failed to decode configuration: ", err)
 	}
 
-	processPumpEnvVars(p, p.Log, p.conf, graylogDefaultENV)
+	p.ProcessEnvVars(p.Log, p.conf, graylogDefaultENV)
 
 	if p.conf.GraylogHost == "" {
 		p.conf.GraylogHost = "localhost"

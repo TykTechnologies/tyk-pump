@@ -66,7 +66,7 @@ func (m *MongoSelectivePump) Init(config interface{}) error {
 		m.Log.Fatal("Failed to decode configuration: ", err)
 	}
 
-	processPumpEnvVars(m, m.Log, m.dbConf, mongoSelectiveDefaultEnv)
+	m.ProcessEnvVars(m.Log, m.dbConf, mongoSelectiveDefaultEnv)
 
 	//we keep this env check for backward compatibility
 	overrideErr := envconfig.Process(mongoSelectivePumpPrefix, m.dbConf)

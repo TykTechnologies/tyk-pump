@@ -61,7 +61,7 @@ func (i *InfluxPump) Init(config interface{}) error {
 		i.Log.Fatal("Failed to decode configuration: ", err)
 	}
 
-	processPumpEnvVars(i, i.Log, i.dbConf, influxDefaultENV)
+	i.ProcessEnvVars(i.Log, i.dbConf, influxDefaultENV)
 
 	i.connect()
 
