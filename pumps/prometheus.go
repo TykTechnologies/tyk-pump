@@ -9,6 +9,7 @@ import (
 
 	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/tyk-pump/analytics"
+	"github.com/TykTechnologies/tyk-pump/pumps/common"
 
 	"github.com/mitchellh/mapstructure"
 	"github.com/prometheus/client_golang/prometheus"
@@ -26,7 +27,7 @@ type PrometheusPump struct {
 
 	allMetrics []*PrometheusMetric
 
-	CommonPumpConfig
+	common.Pump
 }
 
 // @PumpConf Prometheus
@@ -142,14 +143,14 @@ func (p *PrometheusPump) GetEnvPrefix() string {
 
 func (p *PrometheusPump) Init(conf interface{}) error {
 	p.conf = &PrometheusConf{}
-	p.log = log.WithField("prefix", prometheusPrefix)
+	p.Log = log.WithField("prefix", prometheusPrefix)
 
 	err := mapstructure.Decode(conf, &p.conf)
 	if err != nil {
-		p.log.Fatal("Failed to decode configuration: ", err)
+		p.Log.Fatal("Failed to decode configuration: ", err)
 	}
 
-	processPumpEnvVars(p, p.log, p.conf, prometheusDefaultENV)
+	processPumpEnvVars(p, p.Log, p.conf, prometheusDefaultENV)
 
 	if p.conf.Path == "" {
 		p.conf.Path = "/metrics"
@@ -164,7 +165,7 @@ func (p *PrometheusPump) Init(conf interface{}) error {
 		metric.aggregatedObservations = p.conf.AggregateObservations
 		errInit := metric.InitVec()
 		if errInit != nil {
-			p.log.Error(errInit)
+			p.Log.Error(errInit)
 		}
 	}
 
@@ -176,7 +177,7 @@ func (p *PrometheusPump) Init(conf interface{}) error {
 			newMetric.aggregatedObservations = p.conf.AggregateObservations
 			errInit := newMetric.InitVec()
 			if errInit != nil {
-				p.log.Error(errInit)
+				p.Log.Error(errInit)
 			} else {
 				customMetrics = append(customMetrics, newMetric)
 			}
@@ -185,25 +186,25 @@ func (p *PrometheusPump) Init(conf interface{}) error {
 		p.allMetrics = append(p.allMetrics, customMetrics...)
 	}
 
-	p.log.Info("Starting prometheus listener on:", p.conf.Addr)
+	p.Log.Info("Starting prometheus listener on:", p.conf.Addr)
 
 	http.Handle(p.conf.Path, promhttp.Handler())
 
 	go func() {
 		log.Fatal(http.ListenAndServe(p.conf.Addr, nil))
 	}()
-	p.log.Info(p.GetName() + " Initialized")
+	p.Log.Info(p.GetName() + " Initialized")
 
 	return nil
 }
 
 func (p *PrometheusPump) WriteData(ctx context.Context, data []interface{}) error {
-	p.log.Debug("Attempting to write ", len(data), " records...")
+	p.Log.Debug("Attempting to write ", len(data), " records...")
 
 	for i, item := range data {
 		select {
 		case <-ctx.Done():
-			p.log.Warn("Purged ", i, " of ", len(data), " because of timeout.")
+			p.Log.Warn("Purged ", i, " of ", len(data), " because of Timeout.")
 			return errors.New("prometheus pump couldn't write all the analytics records")
 		default:
 		}
@@ -211,7 +212,7 @@ func (p *PrometheusPump) WriteData(ctx context.Context, data []interface{}) erro
 		//we loop through all the metrics avaialble.
 		for _, metric := range p.allMetrics {
 			if metric.enabled {
-				p.log.Debug("Processing metric:", metric.Name)
+				p.Log.Debug("Processing metric:", metric.Name)
 				//we get the values for that metric required labels
 				values := metric.GetLabelsValues(record)
 
@@ -221,7 +222,7 @@ func (p *PrometheusPump) WriteData(ctx context.Context, data []interface{}) erro
 						//if the metric is a counter, we increment the counter memory map
 						err := metric.Inc(values...)
 						if err != nil {
-							p.log.WithFields(logrus.Fields{
+							p.Log.WithFields(logrus.Fields{
 								"metric_type": metric.MetricType,
 								"metric_name": metric.Name,
 							}).Error("error incrementing prometheus metric value:", err)
@@ -232,14 +233,14 @@ func (p *PrometheusPump) WriteData(ctx context.Context, data []interface{}) erro
 						//if the metric is an histogram, we Observe the request time with the given values
 						err := metric.Observe(record.RequestTime, values...)
 						if err != nil {
-							p.log.WithFields(logrus.Fields{
+							p.Log.WithFields(logrus.Fields{
 								"metric_type": metric.MetricType,
 								"metric_name": metric.Name,
 							}).Error("error incrementing prometheus metric value:", err)
 						}
 					}
 				default:
-					p.log.Debug("trying to process an invalid prometheus metric type:", metric.MetricType)
+					p.Log.Debug("trying to process an invalid prometheus metric type:", metric.MetricType)
 				}
 			}
 		}
@@ -249,14 +250,14 @@ func (p *PrometheusPump) WriteData(ctx context.Context, data []interface{}) erro
 	for _, customMetric := range p.allMetrics {
 		err := customMetric.Expose()
 		if err != nil {
-			p.log.WithFields(logrus.Fields{
+			p.Log.WithFields(logrus.Fields{
 				"metric_type": customMetric.MetricType,
 				"metric_name": customMetric.Name,
 			}).Error("error writing prometheus metric:", err)
 		}
 	}
 
-	p.log.Info("Purged ", len(data), " records...")
+	p.Log.Info("Purged ", len(data), " records...")
 
 	return nil
 }

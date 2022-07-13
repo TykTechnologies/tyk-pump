@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/DataDog/datadog-go/statsd"
+	"github.com/TykTechnologies/tyk-pump/pumps/common"
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
 
@@ -26,7 +27,7 @@ var dogstatDefaultENV = PUMPS_ENV_PREFIX + "_DOGSTATSD" + PUMPS_ENV_META_PREFIX
 type DogStatsdPump struct {
 	conf   *DogStatsdConf
 	client *statsd.Client
-	CommonPumpConfig
+	common.Pump
 }
 
 // @PumpConf DogStatsd
@@ -40,7 +41,7 @@ type DogStatsdConf struct {
 	SampleRate float64 `json:"sample_rate" mapstructure:"sample_rate"`
 	// Enable async UDS over UDP https://github.com/Datadog/datadog-go#unix-domain-sockets-client.
 	AsyncUDS bool `json:"async_uds" mapstructure:"async_uds"`
-	// Integer write timeout in seconds if `async_uds: true`.
+	// Integer write Timeout in seconds if `async_uds: true`.
 	AsyncUDSWriteTimeout int `json:"async_uds_write_timeout_seconds" mapstructure:"async_uds_write_timeout_seconds"`
 	// Enable buffering of messages.
 	Buffered bool `json:"buffered" mapstructure:"buffered"`
@@ -114,34 +115,34 @@ func (s *DogStatsdPump) GetEnvPrefix() string {
 
 func (s *DogStatsdPump) Init(conf interface{}) error {
 
-	s.log = log.WithField("prefix", dogstatPrefix)
+	s.Log = log.WithField("prefix", dogstatPrefix)
 
 	if err := mapstructure.Decode(conf, &s.conf); err != nil {
 		return errors.Wrap(err, "unable to decode dogstatsd configuration")
 	}
 
-	processPumpEnvVars(s, s.log, s.conf, dogstatDefaultENV)
+	s.ProcessEnvVars(s.Log, s.conf, dogstatDefaultENV)
 
 	if s.conf.Namespace == "" {
 		s.conf.Namespace = defaultDogstatsdNamespace
 	}
 	s.conf.Namespace += "."
-	s.log.Infof("namespace: %s", s.conf.Namespace)
+	s.Log.Infof("namespace: %s", s.conf.Namespace)
 
 	if s.conf.SampleRate == 0 {
 		s.conf.SampleRate = defaultDogstatsdSampleRate
 	}
-	s.log.Infof("sample_rate: %d%%", int(s.conf.SampleRate*100))
+	s.Log.Infof("sample_rate: %d%%", int(s.conf.SampleRate*100))
 
 	if s.conf.Buffered && s.conf.BufferedMaxMessages == 0 {
 		s.conf.BufferedMaxMessages = defaultDogstatsdBufferedMaxMessages
 	}
-	s.log.Infof("buffered: %t, max_messages: %d", s.conf.Buffered, s.conf.BufferedMaxMessages)
+	s.Log.Infof("buffered: %t, max_messages: %d", s.conf.Buffered, s.conf.BufferedMaxMessages)
 
 	if s.conf.AsyncUDSWriteTimeout == 0 {
 		s.conf.AsyncUDSWriteTimeout = defaultDogstatsdUDSWriteTimeoutSeconds
 	}
-	s.log.Infof("async_uds: %t, write_timeout: %ds", s.conf.AsyncUDS, s.conf.AsyncUDSWriteTimeout)
+	s.Log.Infof("async_uds: %t, write_timeout: %ds", s.conf.AsyncUDS, s.conf.AsyncUDSWriteTimeout)
 
 	var opts []statsd.Option
 	if s.conf.Buffered {
@@ -159,7 +160,7 @@ func (s *DogStatsdPump) Init(conf interface{}) error {
 		return errors.Wrap(err, "unable to connect to dogstatsd client")
 	}
 
-	s.log.Info(s.GetName() + " Initialized")
+	s.Log.Info(s.GetName() + " Initialized")
 
 	return nil
 }
@@ -183,7 +184,7 @@ func (s *DogStatsdPump) WriteData(ctx context.Context, data []interface{}) error
 		return nil
 	}
 
-	s.log.Debug("Attempting to write ", len(data), " records...")
+	s.Log.Debug("Attempting to write ", len(data), " records...")
 	for _, v := range data {
 		// Convert to AnalyticsRecord
 		decoded := v.(analytics.AnalyticsRecord)
@@ -245,10 +246,10 @@ func (s *DogStatsdPump) WriteData(ctx context.Context, data []interface{}) error
 		}
 
 		if err := s.client.Histogram("request_time", float64(decoded.RequestTime), tags, s.conf.SampleRate); err != nil {
-			s.log.WithError(err).Error("unable to record Histogram, dropping analytics record")
+			s.Log.WithError(err).Error("unable to record Histogram, dropping analytics record")
 		}
 	}
-	s.log.Info("Purged ", len(data), " records...")
+	s.Log.Info("Purged ", len(data), " records...")
 
 	return nil
 }

@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/TykTechnologies/tyk-pump/pumps/common"
 	"github.com/influxdata/influxdb/client/v2"
 	"github.com/mitchellh/mapstructure"
 
@@ -14,7 +15,7 @@ import (
 
 type InfluxPump struct {
 	dbConf *InfluxConf
-	CommonPumpConfig
+	common.Pump
 }
 
 var (
@@ -58,19 +59,19 @@ func (i *InfluxPump) GetEnvPrefix() string {
 
 func (i *InfluxPump) Init(config interface{}) error {
 	i.dbConf = &InfluxConf{}
-	i.log = log.WithField("prefix", influxPrefix)
+	i.Log = log.WithField("prefix", influxPrefix)
 
 	err := mapstructure.Decode(config, &i.dbConf)
 	if err != nil {
-		i.log.Fatal("Failed to decode configuration: ", err)
+		i.Log.Fatal("Failed to decode configuration: ", err)
 	}
 
-	processPumpEnvVars(i, i.log, i.dbConf, influxDefaultENV)
+	processPumpEnvVars(i, i.Log, i.dbConf, influxDefaultENV)
 
 	i.connect()
 
-	i.log.Debug("Influx DB CS: ", i.dbConf.Addr)
-	i.log.Info(i.GetName() + " Initialized")
+	i.Log.Debug("Influx DB CS: ", i.dbConf.Addr)
+	i.Log.Info(i.GetName() + " Initialized")
 
 	return nil
 }
@@ -83,7 +84,7 @@ func (i *InfluxPump) connect() client.Client {
 	})
 
 	if err != nil {
-		i.log.Error("Influx connection failed:", err)
+		i.Log.Error("Influx connection failed:", err)
 		time.Sleep(5 * time.Second)
 		i.connect()
 	}
@@ -94,7 +95,7 @@ func (i *InfluxPump) connect() client.Client {
 func (i *InfluxPump) WriteData(ctx context.Context, data []interface{}) error {
 	c := i.connect()
 	defer c.Close()
-	i.log.Debug("Attempting to write ", len(data), " records...")
+	i.Log.Debug("Attempting to write ", len(data), " records...")
 
 	bp, _ := client.NewBatchPoints(client.BatchPointsConfig{
 		Database:  i.dbConf.DatabaseName,
@@ -149,7 +150,7 @@ func (i *InfluxPump) WriteData(ctx context.Context, data []interface{}) error {
 
 		// New record
 		if pt, err = client.NewPoint(table, tags, fields, time.Now()); err != nil {
-			i.log.Error(err)
+			i.Log.Error(err)
 			continue
 		}
 
@@ -159,7 +160,7 @@ func (i *InfluxPump) WriteData(ctx context.Context, data []interface{}) error {
 
 	// Now that all points are added, write the batch
 	c.Write(bp)
-	i.log.Info("Purged ", len(data), " records...")
+	i.Log.Info("Purged ", len(data), " records...")
 
 	return nil
 }

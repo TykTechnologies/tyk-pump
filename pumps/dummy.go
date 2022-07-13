@@ -2,10 +2,12 @@ package pumps
 
 import (
 	"context"
+
+	"github.com/TykTechnologies/tyk-pump/pumps/common"
 )
 
 type DummyPump struct {
-	CommonPumpConfig
+	common.Pump
 }
 
 var dummyPrefix = "dummy-pump"
@@ -21,13 +23,13 @@ func (p *DummyPump) GetName() string {
 }
 
 func (p *DummyPump) Init(conf interface{}) error {
-	p.log = log.WithField("prefix", dummyPrefix)
+	p.Log = log.WithField("prefix", dummyPrefix)
 
-	p.log.Info("Dummy Initialized")
+	p.Log.Info("Dummy Initialized")
 	return nil
 }
 
 func (p *DummyPump) WriteData(ctx context.Context, data []interface{}) error {
-	p.log.Info("Writing ", len(data), " records")
+	p.Log.Info("Writing ", len(data), " records")
 	return nil
 }

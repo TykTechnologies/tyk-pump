@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/syslog"
 
+	"github.com/TykTechnologies/tyk-pump/pumps/common"
 	"github.com/mitchellh/mapstructure"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
@@ -15,7 +16,7 @@ type SyslogPump struct {
 	writer     *syslog.Writer
 	filters    analytics.AnalyticsFilters
 	timeout    int
-	CommonPumpConfig
+	common.Pump
 }
 
 var (
@@ -68,21 +69,21 @@ func (s *SyslogPump) GetEnvPrefix() string {
 func (s *SyslogPump) Init(config interface{}) error {
 	//Read configuration file
 	s.syslogConf = &SyslogConf{}
-	s.log = log.WithField("prefix", syslogPrefix)
+	s.Log = log.WithField("prefix", syslogPrefix)
 
 	err := mapstructure.Decode(config, &s.syslogConf)
 	if err != nil {
-		s.log.Fatal("Failed to decode configuration: ", err)
+		s.Log.Fatal("Failed to decode configuration: ", err)
 	}
 
-	processPumpEnvVars(s, s.log, s.syslogConf, syslogDefaultENV)
+	processPumpEnvVars(s, s.Log, s.syslogConf, syslogDefaultENV)
 	// Init the configs
 	s.initConfigs()
 
 	// Init the Syslog writer
 	s.initWriter()
 
-	s.log.Info(s.GetName() + " Initialized")
+	s.Log.Info(s.GetName() + " Initialized")
 
 	return nil
 }
@@ -99,7 +100,7 @@ func (s *SyslogPump) initWriter() {
 		tag)
 
 	if err != nil {
-		s.log.Fatal("failed to connect to Syslog Daemon: ", err)
+		s.Log.Fatal("failed to connect to Syslog Daemon: ", err)
 	}
 
 	s.writer = syslogWriter
@@ -110,22 +111,22 @@ func (s *SyslogPump) initWriter() {
 func (s *SyslogPump) initConfigs() {
 	if s.syslogConf.Transport == "" {
 		s.syslogConf.Transport = "udp"
-		s.log.Info("No Transport given, using 'udp'")
+		s.Log.Info("No Transport given, using 'udp'")
 	}
 
 	if s.syslogConf.Transport != "udp" &&
 		s.syslogConf.Transport != "tcp" &&
 		s.syslogConf.Transport != "tls" {
-		s.log.Fatal("Chosen invalid Transport type.  Please use a supported Transport type for Syslog")
+		s.Log.Fatal("Chosen invalid Transport type.  Please use a supported Transport type for Syslog")
 	}
 
 	if s.syslogConf.NetworkAddr == "" {
 		s.syslogConf.NetworkAddr = "localhost:5140"
-		s.log.Info("No host given, using 'localhost:5140'")
+		s.Log.Info("No host given, using 'localhost:5140'")
 	}
 
 	if s.syslogConf.LogLevel == 0 {
-		s.log.Warn("Using Log Level 0 (KERNEL) for Syslog pump")
+		s.Log.Warn("Using Log Level 0 (KERNEL) for Syslog pump")
 	}
 }
 
@@ -133,7 +134,7 @@ func (s *SyslogPump) initConfigs() {
 ** Write the actual Data to Syslog Here
  */
 func (s *SyslogPump) WriteData(ctx context.Context, data []interface{}) error {
-	s.log.Debug("Attempting to write ", len(data), " records...")
+	s.Log.Debug("Attempting to write ", len(data), " records...")
 
 	//Data is all the analytics being written
 	for _, v := range data {
@@ -169,7 +170,7 @@ func (s *SyslogPump) WriteData(ctx context.Context, data []interface{}) error {
 			_, _ = fmt.Fprintf(s.writer, "%s", message)
 		}
 	}
-	s.log.Info("Purged ", len(data), " records...")
+	s.Log.Info("Purged ", len(data), " records...")
 
 	return nil
 }

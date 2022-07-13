@@ -19,6 +19,7 @@ import (
 
 	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/tyk-pump/analytics"
+	"github.com/TykTechnologies/tyk-pump/pumps/common"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/mitchellh/mapstructure"
 	"gopkg.in/mgo.v2"
@@ -37,7 +38,7 @@ type MongoPump struct {
 	IsUptime  bool
 	dbSession *mgo.Session
 	dbConf    *MongoConf
-	CommonPumpConfig
+	common.Pump
 }
 
 var mongoPrefix = "mongo-pump"
@@ -259,12 +260,12 @@ func (m *MongoPump) GetEnvPrefix() string {
 
 func (m *MongoPump) Init(config interface{}) error {
 	m.dbConf = &MongoConf{}
-	m.log = log.WithField("prefix", mongoPrefix)
+	m.Log = log.WithField("prefix", mongoPrefix)
 
 	err := mapstructure.Decode(config, &m.dbConf)
 	if err == nil {
 		err = mapstructure.Decode(config, &m.dbConf.BaseMongoConf)
-		m.log.WithFields(logrus.Fields{
+		m.Log.WithFields(logrus.Fields{
 			"url":             m.dbConf.GetBlurredURL(),
 			"collection_name": m.dbConf.CollectionName,
 		}).Info("Init")
@@ -273,34 +274,34 @@ func (m *MongoPump) Init(config interface{}) error {
 		}
 	}
 	if err != nil {
-		m.log.Fatal("Failed to decode configuration: ", err)
+		m.Log.Fatal("Failed to decode configuration: ", err)
 	}
 
 	//we check for the environment configuration if this pumps is not the uptime pump
 	if !m.IsUptime {
-		processPumpEnvVars(m, m.log, m.dbConf, mongoDefaultEnv)
+		processPumpEnvVars(m, m.Log, m.dbConf, mongoDefaultEnv)
 
 		//we keep this env check for backward compatibility
 		overrideErr := envconfig.Process(mongoPumpPrefix, m.dbConf)
 		if overrideErr != nil {
-			m.log.Error("Failed to process environment variables for mongo pump: ", overrideErr)
+			m.Log.Error("Failed to process environment variables for mongo pump: ", overrideErr)
 		}
 	} else if m.IsUptime && m.dbConf.MongoURL == "" {
-		m.log.Debug("Trying to set uptime pump with PMP_MONGO env vars")
+		m.Log.Debug("Trying to set uptime pump with PMP_MONGO env vars")
 		//we keep this env check for backward compatibility
 		overrideErr := envconfig.Process(mongoPumpPrefix, m.dbConf)
 		if overrideErr != nil {
-			m.log.Error("Failed to process environment variables for mongo pump: ", overrideErr)
+			m.Log.Error("Failed to process environment variables for mongo pump: ", overrideErr)
 		}
 	}
 
 	if m.dbConf.MaxInsertBatchSizeBytes == 0 {
-		m.log.Info("-- No max batch size set, defaulting to 10MB")
+		m.Log.Info("-- No max batch size set, defaulting to 10MB")
 		m.dbConf.MaxInsertBatchSizeBytes = 10 * MiB
 	}
 
 	if m.dbConf.MaxDocumentSizeBytes == 0 {
-		m.log.Info("-- No max document size set, defaulting to 10MB")
+		m.Log.Info("-- No max document size set, defaulting to 10MB")
 		m.dbConf.MaxDocumentSizeBytes = 10 * MiB
 	}
 
@@ -310,13 +311,13 @@ func (m *MongoPump) Init(config interface{}) error {
 
 	indexCreateErr := m.ensureIndexes()
 	if indexCreateErr != nil {
-		m.log.Error(indexCreateErr)
+		m.Log.Error(indexCreateErr)
 	}
 
-	m.log.Debug("MongoDB DB CS: ", m.dbConf.GetBlurredURL())
-	m.log.Debug("MongoDB Col: ", m.dbConf.CollectionName)
+	m.Log.Debug("MongoDB DB CS: ", m.dbConf.GetBlurredURL())
+	m.Log.Debug("MongoDB Col: ", m.dbConf.CollectionName)
 
-	m.log.Info(m.GetName() + " Initialized")
+	m.Log.Info(m.GetName() + " Initialized")
 
 	return nil
 }
@@ -333,19 +334,19 @@ func (m *MongoPump) capCollection() (ok bool) {
 
 	exists, err := m.collectionExists(colName)
 	if err != nil {
-		m.log.Errorf("Unable to determine if collection (%s) exists. Not capping collection: %s", colName, err.Error())
+		m.Log.Errorf("Unable to determine if collection (%s) exists. Not capping collection: %s", colName, err.Error())
 
 		return false
 	}
 
 	if exists {
-		m.log.Warnf("Collection (%s) already exists. Capping could result in data loss. Ignoring", colName)
+		m.Log.Warnf("Collection (%s) already exists. Capping could result in data loss. Ignoring", colName)
 
 		return false
 	}
 
 	if strconv.IntSize < 64 {
-		m.log.Warn("Pump running < 64bit architecture. Not capping collection as max size would be 2gb")
+		m.Log.Warn("Pump running < 64bit architecture. Not capping collection as max size would be 2gb")
 
 		return false
 	}
@@ -354,7 +355,7 @@ func (m *MongoPump) capCollection() (ok bool) {
 		defaultBytes := 5
 		colCapMaxSizeBytes = defaultBytes * GiB
 
-		m.log.Infof("-- No max collection size set for %s, defaulting to %d", colName, colCapMaxSizeBytes)
+		m.Log.Infof("-- No max collection size set for %s, defaulting to %d", colName, colCapMaxSizeBytes)
 	}
 
 	sess := m.dbSession.Copy()
@@ -362,12 +363,12 @@ func (m *MongoPump) capCollection() (ok bool) {
 
 	err = m.dbSession.DB("").C(colName).Create(&mgo.CollectionInfo{Capped: true, MaxBytes: colCapMaxSizeBytes})
 	if err != nil {
-		m.log.Errorf("Unable to create capped collection for (%s). %s", colName, err.Error())
+		m.Log.Errorf("Unable to create capped collection for (%s). %s", colName, err.Error())
 
 		return false
 	}
 
-	m.log.Infof("Capped collection (%s) created. %d bytes", colName, colCapMaxSizeBytes)
+	m.Log.Infof("Capped collection (%s) created. %d bytes", colName, colCapMaxSizeBytes)
 
 	return true
 }
@@ -379,7 +380,7 @@ func (m *MongoPump) collectionExists(name string) (bool, error) {
 
 	colNames, err := sess.DB("").CollectionNames()
 	if err != nil {
-		m.log.Error("Unable to get collection names: ", err)
+		m.Log.Error("Unable to get collection names: ", err)
 
 		return false, err
 	}
@@ -395,14 +396,14 @@ func (m *MongoPump) collectionExists(name string) (bool, error) {
 
 func (m *MongoPump) ensureIndexes() error {
 	if m.dbConf.OmitIndexCreation {
-		m.log.Debug("omit_index_creation set to true, omitting index creation..")
+		m.Log.Debug("omit_index_creation set to true, omitting index creation..")
 		return nil
 	}
 
 	if m.dbConf.MongoDBType == StandardMongo {
 		exists, errExists := m.collectionExists(m.dbConf.CollectionName)
 		if errExists == nil && exists {
-			m.log.Info("Collection ", m.dbConf.CollectionName, " exists, omitting index creation..")
+			m.Log.Info("Collection ", m.dbConf.CollectionName, " exists, omitting index creation..")
 			return nil
 		}
 	}
@@ -454,16 +455,16 @@ func (m *MongoPump) connect() {
 
 	dialInfo, err = mongoDialInfo(m.dbConf.BaseMongoConf)
 	if err != nil {
-		m.log.Panic("Mongo URL is invalid: ", err)
+		m.Log.Panic("Mongo URL is invalid: ", err)
 	}
 
-	if m.timeout > 0 {
-		dialInfo.Timeout = time.Second * time.Duration(m.timeout)
+	if m.Timeout > 0 {
+		dialInfo.Timeout = time.Second * time.Duration(m.Timeout)
 	}
 	m.dbSession, err = mgo.DialWithInfo(dialInfo)
 
 	for err != nil {
-		m.log.WithError(err).WithField("dialinfo", m.dbConf.BaseMongoConf.GetBlurredURL()).Error("Mongo connection failed. Retrying.")
+		m.Log.WithError(err).WithField("dialinfo", m.dbConf.BaseMongoConf.GetBlurredURL()).Error("Mongo connection failed. Retrying.")
 		time.Sleep(5 * time.Second)
 		m.dbSession, err = mgo.DialWithInfo(dialInfo)
 	}
@@ -477,13 +478,13 @@ func (m *MongoPump) WriteData(ctx context.Context, data []interface{}) error {
 
 	collectionName := m.dbConf.CollectionName
 	if collectionName == "" {
-		m.log.Fatal("No collection name!")
+		m.Log.Fatal("No collection name!")
 	}
 
-	m.log.Debug("Attempting to write ", len(data), " records...")
+	m.Log.Debug("Attempting to write ", len(data), " records...")
 
 	for m.dbSession == nil {
-		m.log.Debug("Connecting to analytics store")
+		m.Log.Debug("Connecting to analytics store")
 		m.connect()
 	}
 	accumulateSet := m.AccumulateSet(data)
@@ -496,22 +497,22 @@ func (m *MongoPump) WriteData(ctx context.Context, data []interface{}) error {
 
 			analyticsCollection := sess.DB("").C(collectionName)
 
-			m.log.WithFields(logrus.Fields{
+			m.Log.WithFields(logrus.Fields{
 				"collection":        collectionName,
 				"number of records": len(dataSet),
 			}).Debug("Attempt to purge records")
 
 			err := analyticsCollection.Insert(dataSet...)
 			if err != nil {
-				m.log.WithFields(logrus.Fields{"collection": collectionName, "number of records": len(dataSet)}).Error("Problem inserting to mongo collection: ", err)
+				m.Log.WithFields(logrus.Fields{"collection": collectionName, "number of records": len(dataSet)}).Error("Problem inserting to mongo collection: ", err)
 
 				if strings.Contains(strings.ToLower(err.Error()), "closed explicitly") {
-					m.log.Warning("--> Detected connection failure!")
+					m.Log.Warning("--> Detected connection failure!")
 				}
 				errCh <- err
 			}
 			errCh <- nil
-			m.log.WithFields(logrus.Fields{
+			m.Log.WithFields(logrus.Fields{
 				"collection":        collectionName,
 				"number of records": len(dataSet),
 			}).Info("Completed purging the records")
@@ -526,7 +527,7 @@ func (m *MongoPump) WriteData(ctx context.Context, data []interface{}) error {
 			}
 		}
 	}
-	m.log.Info("Purged ", len(data), " records...")
+	m.Log.Info("Purged ", len(data), " records...")
 
 	return nil
 }
@@ -546,10 +547,10 @@ func (m *MongoPump) AccumulateSet(data []interface{}) [][]interface{} {
 		// Add 1 KB for metadata as average
 		sizeBytes := len(thisItem.RawRequest) + len(thisItem.RawResponse) + 1024
 
-		m.log.Debug("Size is: ", sizeBytes)
+		m.Log.Debug("Size is: ", sizeBytes)
 
 		if sizeBytes > m.dbConf.MaxDocumentSizeBytes {
-			m.log.Warning("Document too large, not writing raw request and raw response!")
+			m.Log.Warning("Document too large, not writing raw request and raw response!")
 
 			thisItem.RawRequest = ""
 			thisItem.RawResponse = base64.StdEncoding.EncodeToString([]byte("Document too large, not writing raw request and raw response!"))
@@ -558,7 +559,7 @@ func (m *MongoPump) AccumulateSet(data []interface{}) [][]interface{} {
 		if (accumulatorTotal + sizeBytes) <= m.dbConf.MaxInsertBatchSizeBytes {
 			accumulatorTotal += sizeBytes
 		} else {
-			m.log.Debug("Created new chunk entry")
+			m.Log.Debug("Created new chunk entry")
 			if len(thisResultSet) > 0 {
 				returnArray = append(returnArray, thisResultSet)
 			}
@@ -567,13 +568,13 @@ func (m *MongoPump) AccumulateSet(data []interface{}) [][]interface{} {
 			accumulatorTotal = sizeBytes
 		}
 
-		m.log.Debug("Accumulator is: ", accumulatorTotal)
+		m.Log.Debug("Accumulator is: ", accumulatorTotal)
 		thisResultSet = append(thisResultSet, thisItem)
 
-		m.log.Debug(accumulatorTotal, " of ", m.dbConf.MaxInsertBatchSizeBytes)
+		m.Log.Debug(accumulatorTotal, " of ", m.dbConf.MaxInsertBatchSizeBytes)
 		// Append the last element if the loop is about to end
 		if i == (len(data) - 1) {
-			m.log.Debug("Appending last entry")
+			m.Log.Debug("Appending last entry")
 			returnArray = append(returnArray, thisResultSet)
 		}
 	}
@@ -585,7 +586,7 @@ func (m *MongoPump) AccumulateSet(data []interface{}) [][]interface{} {
 func (m *MongoPump) WriteUptimeData(data []interface{}) {
 
 	for m.dbSession == nil {
-		m.log.Debug("Connecting to mongoDB store")
+		m.Log.Debug("Connecting to mongoDB store")
 		m.connect()
 	}
 
@@ -595,7 +596,7 @@ func (m *MongoPump) WriteUptimeData(data []interface{}) {
 
 	analyticsCollection := sess.DB("").C(collectionName)
 
-	m.log.Debug("Uptime Data: ", len(data))
+	m.Log.Debug("Uptime Data: ", len(data))
 
 	if len(data) == 0 {
 		return
@@ -608,23 +609,23 @@ func (m *MongoPump) WriteUptimeData(data []interface{}) {
 
 		if err := msgpack.Unmarshal([]byte(v.(string)), &decoded); err != nil {
 			// ToDo: should this work with serializer?
-			m.log.Error("Couldn't unmarshal analytics data:", err)
+			m.Log.Error("Couldn't unmarshal analytics data:", err)
 			continue
 		}
 
 		keys[i] = interface{}(decoded)
 
-		m.log.Debug("Decoded Record: ", decoded)
+		m.Log.Debug("Decoded Record: ", decoded)
 	}
 
-	m.log.Debug("Writing data to ", collectionName)
+	m.Log.Debug("Writing data to ", collectionName)
 
 	if err := analyticsCollection.Insert(keys...); err != nil {
 
-		m.log.Error("Problem inserting to mongo collection: ", err)
+		m.Log.Error("Problem inserting to mongo collection: ", err)
 
 		if strings.Contains(err.Error(), "Closed explicitly") || strings.Contains(err.Error(), "EOF") {
-			m.log.Warning("--> Detected connection failure, reconnecting")
+			m.Log.Warning("--> Detected connection failure, reconnecting")
 
 			m.connect()
 		}

@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/TykTechnologies/tyk-pump/pumps/common"
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 	"github.com/influxdata/influxdb-client-go/v2/domain"
 	"github.com/mitchellh/mapstructure"
@@ -17,7 +18,7 @@ import (
 type Influx2Pump struct {
 	dbConf *Influx2Conf
 	client influxdb2.Client
-	CommonPumpConfig
+	common.Pump
 }
 
 var (
@@ -84,14 +85,14 @@ func (i *Influx2Pump) GetEnvPrefix() string {
 
 func (i *Influx2Pump) Init(config interface{}) error {
 	i.dbConf = &Influx2Conf{}
-	i.log = log.WithField("prefix", influx2Prefix)
+	i.Log = log.WithField("prefix", influx2Prefix)
 
 	err := mapstructure.Decode(config, &i.dbConf)
 	if err != nil {
-		i.log.Fatal("Failed to decode configuration: ", err)
+		i.Log.Fatal("Failed to decode configuration: ", err)
 	}
 
-	processPumpEnvVars(i, i.log, i.dbConf, influx2DefaultENV)
+	processPumpEnvVars(i, i.Log, i.dbConf, influx2DefaultENV)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -109,7 +110,7 @@ func (i *Influx2Pump) Init(config interface{}) error {
 	if err != nil {
 		return fmt.Errorf("error looking up InfluxDB2 organization: %v", err)
 	}
-	i.log.Debugf(
+	i.Log.Debugf(
 		"InfluxDB2 found organization for name %s with ID: %s",
 		i.dbConf.OrgName,
 		*org.Id,
@@ -119,9 +120,9 @@ func (i *Influx2Pump) Init(config interface{}) error {
 	if i.dbConf.CreateMissingBucket {
 		bucket, err = i.createBucket(ctx, org.Id)
 		if err != nil {
-			i.log.Debug("unable to create InfluxDB2 bucket (if missing): ", err)
+			i.Log.Debug("unable to create InfluxDB2 bucket (if missing): ", err)
 		} else {
-			i.log.Info("created missing InfluxDB2 bucket: ", i.dbConf.BucketName)
+			i.Log.Info("created missing InfluxDB2 bucket: ", i.dbConf.BucketName)
 		}
 	}
 
@@ -130,13 +131,13 @@ func (i *Influx2Pump) Init(config interface{}) error {
 		if err != nil {
 			return fmt.Errorf("error looking up InfluxDB2 bucket: %v", err)
 		}
-		i.log.Info(
+		i.Log.Info(
 			"using existing InfluxDB2 bucket: ", i.dbConf.BucketName,
 		)
 	}
 
-	i.log.Debug("InfluxDB2 CS: ", i.dbConf.Addr)
-	i.log.Info(i.GetName() + " Initialized")
+	i.Log.Debug("InfluxDB2 CS: ", i.dbConf.Addr)
+	i.Log.Info(i.GetName() + " Initialized")
 
 	return nil
 }
@@ -183,7 +184,7 @@ func (i *Influx2Pump) createBucket(ctx context.Context, orgID *string) (*domain.
 }
 
 func (i *Influx2Pump) WriteData(ctx context.Context, data []interface{}) error {
-	i.log.Debug("Attempting to write ", len(data), " records...")
+	i.Log.Debug("Attempting to write ", len(data), " records...")
 
 	writeApi := i.client.WriteAPI(i.dbConf.OrgName, i.dbConf.BucketName)
 
@@ -236,7 +237,7 @@ func (i *Influx2Pump) WriteData(ctx context.Context, data []interface{}) error {
 	if i.dbConf.Flush {
 		writeApi.Flush()
 	}
-	i.log.Info("Purged ", len(data), " records...")
+	i.Log.Info("Purged ", len(data), " records...")
 
 	return nil
 }
