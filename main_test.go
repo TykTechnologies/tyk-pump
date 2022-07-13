@@ -12,13 +12,14 @@ import (
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/TykTechnologies/tyk-pump/pumps"
+	"github.com/TykTechnologies/tyk-pump/pumps/common"
 	"github.com/stretchr/testify/assert"
 )
 
 type MockedPump struct {
 	CounterRequest int
 	TurnedOff      bool
-	pumps.CommonPumpConfig
+	common.Pump
 }
 
 func (p *MockedPump) GetName() string {

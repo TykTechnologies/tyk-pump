@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/TykTechnologies/tyk-pump/pumps/common"
 	"github.com/mitchellh/mapstructure"
 	elasticv7 "github.com/olivere/elastic/v7"
 	elasticv3 "gopkg.in/olivere/elastic.v3"
@@ -24,7 +25,7 @@ import (
 type ElasticsearchPump struct {
 	operator ElasticsearchOperator
 	esConf   *ElasticsearchConf
-	CommonPumpConfig
+	common.Pump
 }
 
 var elasticsearchPrefix = "elasticsearch-pump"
@@ -179,7 +180,7 @@ func (e *ElasticsearchPump) getOperator() (ElasticsearchOperator, error) {
 		}
 
 		op.bulkProcessor, err = p.Do()
-		op.log = e.log
+		op.log = e.Log
 		return op, err
 	case "5":
 		op := new(Elasticsearch5Operator)
@@ -216,7 +217,7 @@ func (e *ElasticsearchPump) getOperator() (ElasticsearchOperator, error) {
 		}
 
 		op.bulkProcessor, err = p.Do(context.Background())
-		op.log = e.log
+		op.log = e.Log
 		return op, err
 	case "6":
 		op := new(Elasticsearch6Operator)
@@ -253,7 +254,7 @@ func (e *ElasticsearchPump) getOperator() (ElasticsearchOperator, error) {
 		}
 
 		op.bulkProcessor, err = p.Do(context.Background())
-		op.log = e.log
+		op.log = e.Log
 		return op, err
 	case "7":
 		op := new(Elasticsearch7Operator)
@@ -290,11 +291,11 @@ func (e *ElasticsearchPump) getOperator() (ElasticsearchOperator, error) {
 		}
 
 		op.bulkProcessor, err = p.Do(context.Background())
-		op.log = e.log
+		op.log = e.Log
 		return op, err
 	default:
 		// shouldn't get this far, but hey never hurts to check assumptions
-		e.log.Fatal("Invalid version: ")
+		e.Log.Fatal("Invalid version: ")
 	}
 
 	return nil, err
@@ -315,14 +316,14 @@ func (e *ElasticsearchPump) GetEnvPrefix() string {
 
 func (e *ElasticsearchPump) Init(config interface{}) error {
 	e.esConf = &ElasticsearchConf{}
-	e.log = log.WithField("prefix", elasticsearchPrefix)
+	e.Log = log.WithField("prefix", elasticsearchPrefix)
 
 	loadConfigErr := mapstructure.Decode(config, &e.esConf)
 	if loadConfigErr != nil {
-		e.log.Fatal("Failed to decode configuration: ", loadConfigErr)
+		e.Log.Fatal("Failed to decode configuration: ", loadConfigErr)
 	}
 
-	processPumpEnvVars(e, e.log, e.esConf, elasticsearchDefaultENV)
+	processPumpEnvVars(e, e.Log, e.esConf, elasticsearchDefaultENV)
 
 	if "" == e.esConf.IndexName {
 		e.esConf.IndexName = "tyk_analytics"
@@ -343,21 +344,21 @@ func (e *ElasticsearchPump) Init(config interface{}) error {
 	case "3", "5", "6", "7":
 	default:
 		err := errors.New("Only 3, 5, 6, 7 are valid values for this field")
-		e.log.Fatal("Invalid version: ", err)
+		e.Log.Fatal("Invalid version: ", err)
 	}
 
 	var re = regexp.MustCompile(`(.*)\/\/(.*):(.*)\@(.*)`)
 	printableURL := re.ReplaceAllString(e.esConf.ElasticsearchURL, `$1//***:***@$4`)
 
-	e.log.Info("Elasticsearch URL: ", printableURL)
-	e.log.Info("Elasticsearch Index: ", e.esConf.IndexName)
+	e.Log.Info("Elasticsearch URL: ", printableURL)
+	e.Log.Info("Elasticsearch Index: ", e.esConf.IndexName)
 	if e.esConf.RollingIndex {
-		e.log.Info("Index will have date appended to it in the format ", e.esConf.IndexName, "-YYYY.MM.DD")
+		e.Log.Info("Index will have date appended to it in the format ", e.esConf.IndexName, "-YYYY.MM.DD")
 	}
 
 	e.connect()
 
-	e.log.Info(e.GetName() + " Initialized")
+	e.Log.Info(e.GetName() + " Initialized")
 	return nil
 }
 
@@ -366,17 +367,17 @@ func (e *ElasticsearchPump) connect() {
 
 	e.operator, err = e.getOperator()
 	if err != nil {
-		e.log.Error("Elasticsearch connection failed: ", err)
+		e.Log.Error("Elasticsearch connection failed: ", err)
 		time.Sleep(5 * time.Second)
 		e.connect()
 	}
 }
 
 func (e *ElasticsearchPump) WriteData(ctx context.Context, data []interface{}) error {
-	e.log.Debug("Attempting to write ", len(data), " records...")
+	e.Log.Debug("Attempting to write ", len(data), " records...")
 
 	if e.operator == nil {
-		e.log.Debug("Connecting to analytics store")
+		e.Log.Debug("Connecting to analytics store")
 		e.connect()
 		e.WriteData(ctx, data)
 	} else {
@@ -603,7 +604,7 @@ func printPurgedBulkRecords(bulkSize int, err error, logger *logrus.Entry) {
 
 func (e *ElasticsearchPump) Shutdown() error {
 	if !e.esConf.DisableBulk {
-		e.log.Info("Flushing bulked records...")
+		e.Log.Info("Flushing bulked records...")
 		return e.operator.flushRecords()
 	}
 	return nil

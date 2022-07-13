@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/TykTechnologies/tyk-pump/pumps/common"
 	"github.com/mitchellh/mapstructure"
 	segment "github.com/segmentio/analytics-go"
 
@@ -13,7 +14,7 @@ import (
 type SegmentPump struct {
 	segmentClient *segment.Client
 	segmentConf   *SegmentConf
-	CommonPumpConfig
+	common.Pump
 }
 
 var segmentPrefix = "segment-pump"
@@ -39,28 +40,28 @@ func (s *SegmentPump) GetEnvPrefix() string {
 
 func (s *SegmentPump) Init(config interface{}) error {
 	s.segmentConf = &SegmentConf{}
-	s.log = log.WithField("prefix", segmentPrefix)
+	s.Log = log.WithField("prefix", segmentPrefix)
 
 	loadConfigErr := mapstructure.Decode(config, &s.segmentConf)
 	if loadConfigErr != nil {
-		s.log.Fatal("Failed to decode configuration: ", loadConfigErr)
+		s.Log.Fatal("Failed to decode configuration: ", loadConfigErr)
 	}
 
-	processPumpEnvVars(s, s.log, s.segmentConf, segmentDefaultENV)
+	processPumpEnvVars(s, s.Log, s.segmentConf, segmentDefaultENV)
 
 	s.segmentClient = segment.New(s.segmentConf.WriteKey)
-	s.log.Info(s.GetName() + " Initialized")
+	s.Log.Info(s.GetName() + " Initialized")
 
 	return nil
 }
 
 func (s *SegmentPump) WriteData(ctx context.Context, data []interface{}) error {
-	s.log.Debug("Attempting to write ", len(data), " records...")
+	s.Log.Debug("Attempting to write ", len(data), " records...")
 
 	for _, v := range data {
 		s.WriteDataRecord(v.(analytics.AnalyticsRecord))
 	}
-	s.log.Info("Purged ", len(data), " records...")
+	s.Log.Info("Purged ", len(data), " records...")
 
 	return nil
 }
@@ -70,7 +71,7 @@ func (s *SegmentPump) WriteDataRecord(record analytics.AnalyticsRecord) error {
 	properties, err := s.ToJSONMap(record)
 
 	if err != nil {
-		s.log.Error("Couldn't marshal analytics data:", err)
+		s.Log.Error("Couldn't marshal analytics data:", err)
 	} else {
 		err = s.segmentClient.Track(&segment.Track{
 			Event:       "Hit",
@@ -78,7 +79,7 @@ func (s *SegmentPump) WriteDataRecord(record analytics.AnalyticsRecord) error {
 			Properties:  properties,
 		})
 		if err != nil {
-			s.log.Error("Couldn't track record:", err)
+			s.Log.Error("Couldn't track record:", err)
 		}
 	}
 

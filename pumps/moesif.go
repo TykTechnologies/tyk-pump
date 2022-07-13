@@ -16,6 +16,7 @@ import (
 
 	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/tyk-pump/analytics"
+	"github.com/TykTechnologies/tyk-pump/pumps/common"
 	"github.com/mitchellh/mapstructure"
 	"github.com/moesif/moesifapi-go"
 	"github.com/moesif/moesifapi-go/models"
@@ -32,7 +33,7 @@ type MoesifPump struct {
 	appConfig            map[string]interface{}
 	userSampleRateMap    map[string]interface{}
 	companySampleRateMap map[string]interface{}
-	CommonPumpConfig
+	common.Pump
 }
 
 type rawDecoded struct {
@@ -259,14 +260,14 @@ func parseAuthorizationHeader(token string, field string) string {
 
 func (p *MoesifPump) Init(config interface{}) error {
 	p.moesifConf = &MoesifConf{}
-	p.log = log.WithField("prefix", moesifPrefix)
+	p.Log = log.WithField("prefix", moesifPrefix)
 
 	loadConfigErr := mapstructure.Decode(config, &p.moesifConf)
 	if loadConfigErr != nil {
-		p.log.Fatal("Failed to decode configuration: ", loadConfigErr)
+		p.Log.Fatal("Failed to decode configuration: ", loadConfigErr)
 	}
 
-	processPumpEnvVars(p, p.log, p.moesifConf, moesifDefaultENV)
+	processPumpEnvVars(p, p.Log, p.moesifConf, moesifDefaultENV)
 
 	var apiEndpoint string
 	var batchSize int
@@ -309,15 +310,15 @@ func (p *MoesifPump) Init(config interface{}) error {
 	if err == nil {
 		p.samplingPercentage, p.eTag, p.lastUpdatedTime = p.parseConfiguration(response)
 	} else {
-		p.log.Debug("Error fetching application configuration on initilization with err -  " + err.Error())
+		p.Log.Debug("Error fetching application configuration on initilization with err -  " + err.Error())
 	}
 
-	p.log.Info(p.GetName() + " Initialized")
+	p.Log.Info(p.GetName() + " Initialized")
 	return nil
 }
 
 func (p *MoesifPump) WriteData(ctx context.Context, data []interface{}) error {
-	p.log.Debug("Attempting to write ", len(data), " records...")
+	p.Log.Debug("Attempting to write ", len(data), " records...")
 
 	if len(data) == 0 {
 		return nil
@@ -329,14 +330,14 @@ func (p *MoesifPump) WriteData(ctx context.Context, data []interface{}) error {
 
 		rawReq, err := base64.StdEncoding.DecodeString(record.RawRequest)
 		if err != nil {
-			p.log.Fatal(err)
+			p.Log.Fatal(err)
 		}
 
 		decodedReqBody, err := decodeRawData(string(rawReq), p.moesifConf.RequestHeaderMasks,
 			p.moesifConf.RequestBodyMasks, p.moesifConf.DisableCaptureRequestBody)
 
 		if err != nil {
-			p.log.Fatal(err)
+			p.Log.Fatal(err)
 		}
 
 		// Request URL
@@ -359,14 +360,14 @@ func (p *MoesifPump) WriteData(ctx context.Context, data []interface{}) error {
 		rawRsp, err := base64.StdEncoding.DecodeString(record.RawResponse)
 
 		if err != nil {
-			p.log.Fatal(err)
+			p.Log.Fatal(err)
 		}
 
 		decodedRspBody, err := decodeRawData(string(rawRsp), p.moesifConf.ResponseHeaderMasks,
 			p.moesifConf.ResponseBodyMasks, p.moesifConf.DisableCaptureResponseBody)
 
 		if err != nil {
-			p.log.Fatal(err)
+			p.Log.Fatal(err)
 		}
 
 		// Response Time
@@ -459,7 +460,7 @@ func (p *MoesifPump) WriteData(ctx context.Context, data []interface{}) error {
 		p.samplingPercentage = p.getSamplingPercentage(userID, companyID)
 
 		if p.samplingPercentage < randomPercentage {
-			p.log.Debug("Skipped Event due to sampling percentage: " + strconv.Itoa(p.samplingPercentage) + " and random percentage: " + strconv.Itoa(randomPercentage))
+			p.Log.Debug("Skipped Event due to sampling percentage: " + strconv.Itoa(p.samplingPercentage) + " and random percentage: " + strconv.Itoa(randomPercentage))
 			continue
 		}
 		// Add Weight to the Event Model
@@ -484,7 +485,7 @@ func (p *MoesifPump) WriteData(ctx context.Context, data []interface{}) error {
 
 		err = p.moesifAPI.QueueEvent(&event)
 		if err != nil {
-			p.log.Error("Error while writing ", data[dataIndex], err)
+			p.Log.Error("Error while writing ", data[dataIndex], err)
 		}
 
 		if p.moesifAPI.GetETag() != "" &&
@@ -503,7 +504,7 @@ func (p *MoesifPump) WriteData(ctx context.Context, data []interface{}) error {
 			p.samplingPercentage, p.eTag, p.lastUpdatedTime = p.parseConfiguration(response)
 		}
 	}
-	p.log.Info("Purged ", len(data), " records...")
+	p.Log.Info("Purged ", len(data), " records...")
 
 	return nil
 }
@@ -566,7 +567,7 @@ func (p *MoesifPump) GetTimeout() int {
 
 func (p *MoesifPump) Shutdown() error {
 	if p.moesifConf.EnableBulk {
-		p.log.Info("Flushing bulked records...")
+		p.Log.Info("Flushing bulked records...")
 		p.moesifAPI.Flush()
 	}
 	return nil

@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
+	"github.com/TykTechnologies/tyk-pump/pumps/common"
 	"github.com/kelseyhightower/envconfig"
 
 	"github.com/TykTechnologies/tyk/rpc"
@@ -47,7 +48,7 @@ type HybridPump struct {
 	trackAllPaths          bool
 	storeAnalyticPerMinute bool
 	ignoreTagPrefixList    []string
-	CommonPumpConfig
+	common.Pump
 	rpcConfig rpc.Config
 }
 
@@ -61,7 +62,7 @@ func (p *HybridPump) New() Pump {
 
 func (p *HybridPump) Init(config interface{}) error {
 
-	p.log = log.WithField("prefix", hybridPrefix)
+	p.Log = log.WithField("prefix", hybridPrefix)
 
 	meta := config.(map[string]interface{})
 	// read configuration
@@ -97,27 +98,27 @@ func (p *HybridPump) Init(config interface{}) error {
 	//we do the env check here in the hybrid pump since the config here behaves different to other pumps.
 	if envPrefix, ok := meta["meta_env_prefix"]; ok {
 		prefix := envPrefix.(string)
-		p.log.Debug(fmt.Sprintf("Checking %v env variables with prefix %v", p.GetName(), prefix))
+		p.Log.Debug(fmt.Sprintf("Checking %v env variables with prefix %v", p.GetName(), prefix))
 		overrideErr := envconfig.Process(prefix, &rpcConfig)
 		if overrideErr != nil {
-			p.log.Error(fmt.Sprintf("Failed to process environment variables for %v pump %v with err:%v ", prefix, p.GetName(), overrideErr))
+			p.Log.Error(fmt.Sprintf("Failed to process environment variables for %v pump %v with err:%v ", prefix, p.GetName(), overrideErr))
 		}
 	} else {
-		p.log.Debug(fmt.Sprintf("Checking default %v env variables with prefix %v", p.GetName(), hybridDefaultENV))
+		p.Log.Debug(fmt.Sprintf("Checking default %v env variables with prefix %v", p.GetName(), hybridDefaultENV))
 		overrideErr := envconfig.Process(hybridDefaultENV, &rpcConfig)
 		if overrideErr != nil {
-			p.log.Error(fmt.Sprintf("Failed to process environment variables for %v pump %v with err:%v ", hybridDefaultENV, p.GetName(), overrideErr))
+			p.Log.Error(fmt.Sprintf("Failed to process environment variables for %v pump %v with err:%v ", hybridDefaultENV, p.GetName(), overrideErr))
 		}
 	}
 
 	if rpcConfig.ConnectionString == "" {
-		p.log.Fatal("Failed to decode configuration - no connection_string")
+		p.Log.Fatal("Failed to decode configuration - no connection_string")
 	}
 
 	p.rpcConfig = rpcConfig
 	errConnect := p.connectRpc()
 	if errConnect != nil {
-		p.log.Fatal("Failed to connect to RPC server")
+		p.Log.Fatal("Failed to connect to RPC server")
 	}
 	// check if we need to send aggregated analytics
 	if aggregated, ok := meta["aggregated"]; ok {
@@ -170,18 +171,18 @@ func (p *HybridPump) WriteData(ctx context.Context, data []interface{}) error {
 	if len(data) == 0 {
 		return nil
 	}
-	p.log.Debug("Attempting to write ", len(data), " records...")
+	p.Log.Debug("Attempting to write ", len(data), " records...")
 
 	if !rpc.Login() {
-		p.log.Error("Failed to login to RPC server, trying to reconnect...")
+		p.Log.Error("Failed to login to RPC server, trying to reconnect...")
 		if errConnect := p.connectRpc(); errConnect != nil {
-			p.log.Error("Failed to connect to RPC server")
+			p.Log.Error("Failed to connect to RPC server")
 			return errConnect
 		}
 	}
 	_, err := rpc.FuncClientSingleton("Ping", nil)
 	if err != nil {
-		p.log.WithError(err).Error("Failed to ping RPC server")
+		p.Log.WithError(err).Error("Failed to ping RPC server")
 		return err
 	}
 
@@ -190,11 +191,11 @@ func (p *HybridPump) WriteData(ctx context.Context, data []interface{}) error {
 		// turn array with analytics records into JSON payload
 		jsonData, err := json.Marshal(data)
 		if err != nil {
-			p.log.WithError(err).Error("Failed to marshal analytics data")
+			p.Log.WithError(err).Error("Failed to marshal analytics data")
 			return err
 		}
 		if _, err := rpc.FuncClientSingleton("PurgeAnalyticsData", string(jsonData)); err != nil {
-			p.log.WithError(err).Error("Failed to call PurgeAnalyticsData")
+			p.Log.WithError(err).Error("Failed to call PurgeAnalyticsData")
 			return err
 		}
 	} else { // send aggregated data
@@ -204,16 +205,16 @@ func (p *HybridPump) WriteData(ctx context.Context, data []interface{}) error {
 		// turn map with analytics aggregates into JSON payload
 		jsonData, err := json.Marshal(aggregates)
 		if err != nil {
-			p.log.WithError(err).Error("Failed to marshal analytics aggregates data")
+			p.Log.WithError(err).Error("Failed to marshal analytics aggregates data")
 			return err
 		}
 
 		if _, err := rpc.FuncClientSingleton("PurgeAnalyticsDataAggregated", string(jsonData)); err != nil {
-			p.log.WithError(err).Error("Failed to call PurgeAnalyticsDataAggregated")
+			p.Log.WithError(err).Error("Failed to call PurgeAnalyticsDataAggregated")
 			return err
 		}
 	}
-	p.log.Info("Purged ", len(data), " records...")
+	p.Log.Info("Purged ", len(data), " records...")
 
 	return nil
 }

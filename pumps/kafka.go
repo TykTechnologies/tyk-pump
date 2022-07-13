@@ -8,6 +8,7 @@ import (
 
 	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/tyk-pump/analytics"
+	"github.com/TykTechnologies/tyk-pump/pumps/common"
 	"github.com/mitchellh/mapstructure"
 	"github.com/segmentio/kafka-go"
 	"github.com/segmentio/kafka-go/sasl"
@@ -21,7 +22,7 @@ type KafkaPump struct {
 	kafkaConf    *KafkaConf
 	writerConfig kafka.WriterConfig
 	log          *logrus.Entry
-	CommonPumpConfig
+	common.Pump
 }
 
 type Json map[string]interface{}
@@ -40,7 +41,7 @@ type KafkaConf struct {
 	// The topic that the writer will produce messages to.
 	Topic string `json:"topic" mapstructure:"topic"`
 	// Timeout is the maximum amount of time will wait for a connect or write to complete.
-	Timeout time.Duration `json:"timeout" mapstructure:"timeout"`
+	Timeout time.Duration `json:"Timeout" mapstructure:"Timeout"`
 	// Enable "github.com/golang/snappy" codec to be used to compress Kafka messages. By default
 	// is `false`.
 	Compressed bool `json:"compressed" mapstructure:"compressed"`

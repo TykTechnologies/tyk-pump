@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
+	"github.com/TykTechnologies/tyk-pump/pumps/common"
 
 	"github.com/mitchellh/mapstructure"
 
@@ -32,7 +33,7 @@ type SQLAggregatePumpConf struct {
 }
 
 type SQLAggregatePump struct {
-	CommonPumpConfig
+	common.Pump
 
 	SQLConf *SQLAggregatePumpConf
 
@@ -59,15 +60,15 @@ func (c *SQLAggregatePump) GetEnvPrefix() string {
 
 func (c *SQLAggregatePump) Init(conf interface{}) error {
 	c.SQLConf = &SQLAggregatePumpConf{}
-	c.log = log.WithField("prefix", SQLAggregatePumpPrefix)
+	c.Log = log.WithField("prefix", SQLAggregatePumpPrefix)
 
 	err := mapstructure.Decode(conf, &c.SQLConf)
 	if err != nil {
-		c.log.Error("Failed to decode configuration: ", err)
+		c.Log.Error("Failed to decode configuration: ", err)
 		return err
 	}
 
-	processPumpEnvVars(c, c.log, c.SQLConf, SQLAggregateDefaultENV)
+	processPumpEnvVars(c, c.Log, c.SQLConf, SQLAggregateDefaultENV)
 
 	logLevel := gorm_logger.Silent
 
@@ -82,7 +83,7 @@ func (c *SQLAggregatePump) Init(conf interface{}) error {
 
 	dialect, errDialect := Dialect(&c.SQLConf.SQLConf)
 	if errDialect != nil {
-		c.log.Error(errDialect)
+		c.Log.Error(errDialect)
 		return errDialect
 	}
 	db, err := gorm.Open(dialect, &gorm.Config{
@@ -92,7 +93,7 @@ func (c *SQLAggregatePump) Init(conf interface{}) error {
 	})
 
 	if err != nil {
-		c.log.Error(err)
+		c.Log.Error(err)
 		return err
 	}
 	c.db = db
@@ -104,7 +105,7 @@ func (c *SQLAggregatePump) Init(conf interface{}) error {
 		c.SQLConf.BatchSize = SQLDefaultQueryBatchSize
 	}
 
-	c.log.Debug("SQLAggregate Initialized")
+	c.Log.Debug("SQLAggregate Initialized")
 	return nil
 }
 
@@ -115,7 +116,7 @@ func (c *SQLAggregatePump) Init(conf interface{}) error {
 // function and written to database on single table.
 func (c *SQLAggregatePump) WriteData(ctx context.Context, data []interface{}) error {
 	dataLen := len(data)
-	c.log.Debug("Attempting to write ", dataLen, " records...")
+	c.Log.Debug("Attempting to write ", dataLen, " records...")
 
 	if dataLen == 0 {
 		return nil
@@ -165,7 +166,7 @@ func (c *SQLAggregatePump) WriteData(ctx context.Context, data []interface{}) er
 		startIndex = i // next day start index, necessary for sharded case
 	}
 
-	c.log.Info("Purged ", dataLen, " records...")
+	c.Log.Info("Purged ", dataLen, " records...")
 
 	return nil
 }
@@ -202,7 +203,7 @@ func (c *SQLAggregatePump) DoAggregatedWriting(ctx context.Context, table, orgID
 			DoUpdates: clause.Assignments(analytics.OnConflictAssignments(table, "excluded")),
 		}).Create(recs[i:ends])
 		if tx.Error != nil {
-			c.log.Error("error writing aggregated records into "+table+":", tx.Error)
+			c.Log.Error("error writing aggregated records into "+table+":", tx.Error)
 			return tx.Error
 		}
 	}

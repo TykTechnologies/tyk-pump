@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
+	"github.com/TykTechnologies/tyk-pump/pumps/common"
 	"github.com/mitchellh/mapstructure"
 	"gopkg.in/vmihailenco/msgpack.v2"
 	"gorm.io/gorm/clause"
@@ -37,7 +38,7 @@ type MysqlConfig struct {
 }
 
 type SQLPump struct {
-	CommonPumpConfig
+	common.Pump
 	IsUptime bool
 
 	SQLConf *SQLConf
@@ -64,8 +65,8 @@ type SQLConf struct {
 	// going to be stored in `tyk_aggregated_YYYYMMDD` table, where `YYYYMMDD` is going to change
 	// depending on the date.
 	TableSharding bool `json:"table_sharding" mapstructure:"table_sharding"`
-	// Specifies the SQL log verbosity. The possible values are: `info`,`error` and `warning`. By
-	// default, the value is `silent`, which means that it won't log any SQL query.
+	// Specifies the SQL Log verbosity. The possible values are: `info`,`error` and `warning`. By
+	// default, the value is `silent`, which means that it won't Log any SQL query.
 	LogLevel string `json:"log_level" mapstructure:"log_level"`
 	// Specifies the amount of records that are going to be written each batch. Type int. By
 	// default, it writes 1000 records max per batch.
@@ -121,19 +122,19 @@ func (c *SQLPump) GetEnvPrefix() string {
 func (c *SQLPump) Init(conf interface{}) error {
 	c.SQLConf = &SQLConf{}
 	if c.IsUptime {
-		c.log = log.WithField("prefix", SQLPrefix+"-uptime")
+		c.Log = log.WithField("prefix", SQLPrefix+"-uptime")
 	} else {
-		c.log = log.WithField("prefix", SQLPrefix)
+		c.Log = log.WithField("prefix", SQLPrefix)
 	}
 
 	err := mapstructure.Decode(conf, &c.SQLConf)
 	if err != nil {
-		c.log.Error("Failed to decode configuration: ", err)
+		c.Log.Error("Failed to decode configuration: ", err)
 		return err
 	}
 
 	if !c.IsUptime {
-		processPumpEnvVars(c, c.log, c.SQLConf, SQLDefaultENV)
+		processPumpEnvVars(c, c.Log, c.SQLConf, SQLDefaultENV)
 	}
 
 	logLevel := gorm_logger.Silent
@@ -149,7 +150,7 @@ func (c *SQLPump) Init(conf interface{}) error {
 
 	dialect, errDialect := Dialect(c.SQLConf)
 	if errDialect != nil {
-		c.log.Error(errDialect)
+		c.Log.Error(errDialect)
 		return errDialect
 	}
 
@@ -160,7 +161,7 @@ func (c *SQLPump) Init(conf interface{}) error {
 	})
 
 	if err != nil {
-		c.log.Error(err)
+		c.Log.Error(err)
 		return err
 	}
 	c.db = db
@@ -177,12 +178,12 @@ func (c *SQLPump) Init(conf interface{}) error {
 		c.SQLConf.BatchSize = SQLDefaultQueryBatchSize
 	}
 
-	c.log.Debug("SQL Initialized")
+	c.Log.Debug("SQL Initialized")
 	return nil
 }
 
 func (c *SQLPump) WriteData(ctx context.Context, data []interface{}) error {
-	c.log.Debug("Attempting to write ", len(data), " records...")
+	c.Log.Debug("Attempting to write ", len(data), " records...")
 
 	var typedData []*analytics.AnalyticsRecord
 	for _, r := range data {
@@ -232,7 +233,7 @@ func (c *SQLPump) WriteData(ctx context.Context, data []interface{}) error {
 			}
 			tx := c.db.WithContext(ctx).Create(recs[i:ends])
 			if tx.Error != nil {
-				c.log.Error(tx.Error)
+				c.Log.Error(tx.Error)
 			}
 		}
 
@@ -240,14 +241,14 @@ func (c *SQLPump) WriteData(ctx context.Context, data []interface{}) error {
 
 	}
 
-	c.log.Info("Purged ", len(data), " records...")
+	c.Log.Info("Purged ", len(data), " records...")
 
 	return nil
 }
 
 func (c *SQLPump) WriteUptimeData(data []interface{}) {
 	dataLen := len(data)
-	c.log.Debug("Attempting to write ", dataLen, " records...")
+	c.Log.Debug("Attempting to write ", dataLen, " records...")
 
 	typedData := make([]analytics.UptimeReportData, len(data))
 
@@ -255,7 +256,7 @@ func (c *SQLPump) WriteUptimeData(data []interface{}) {
 		decoded := analytics.UptimeReportData{}
 		if err := msgpack.Unmarshal([]byte(v.(string)), &decoded); err != nil {
 			// ToDo: should this work with serializer?
-			c.log.Error("Couldn't unmarshal analytics data:", err)
+			c.Log.Error("Couldn't unmarshal analytics data:", err)
 			continue
 		}
 		typedData[i] = decoded
@@ -329,7 +330,7 @@ func (c *SQLPump) WriteUptimeData(data []interface{}) {
 					DoUpdates: clause.Assignments(analytics.OnConflictUptimeAssignments(table, "excluded")),
 				}).Create(recs[i:ends])
 				if tx.Error != nil {
-					c.log.Error(tx.Error)
+					c.Log.Error(tx.Error)
 				}
 			}
 
@@ -337,6 +338,6 @@ func (c *SQLPump) WriteUptimeData(data []interface{}) {
 		startIndex = i // next day start index, necessary for sharded case
 	}
 
-	c.log.Debug("Purged ", len(data), " records...")
+	c.Log.Debug("Purged ", len(data), " records...")
 
 }

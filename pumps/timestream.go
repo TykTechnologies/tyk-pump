@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
+	"github.com/TykTechnologies/tyk-pump/pumps/common"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/aws/retry"
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -31,7 +32,7 @@ type TimestreamWriteRecordsAPI interface {
 type TimestreamPump struct {
 	client TimestreamWriteRecordsAPI
 	config *TimestreamPumpConf
-	CommonPumpConfig
+	common.Pump
 }
 
 const (
@@ -88,15 +89,15 @@ func (t *TimestreamPump) GetEnvPrefix() string {
 
 func (t *TimestreamPump) Init(config interface{}) error {
 	t.config = &TimestreamPumpConf{}
-	t.log = log.WithField("prefix", timestreamPumpPrefix)
+	t.Log = log.WithField("prefix", timestreamPumpPrefix)
 
 	err := mapstructure.Decode(config, &t.config)
 	if err != nil {
-		t.log.Fatal("Failed to decode configuration: ", err)
+		t.Log.Fatal("Failed to decode configuration: ", err)
 		return err
 	}
 
-	processPumpEnvVars(t, t.log, t.config, timestreamDefaultEnv)
+	processPumpEnvVars(t, t.Log, t.config, timestreamDefaultEnv)
 
 	if len(t.config.Measures) == 0 || len(t.config.Dimensions) == 0 {
 		return errors.New("missing \"measures\" or \"dimensions\" in pump configuration")
@@ -104,16 +105,16 @@ func (t *TimestreamPump) Init(config interface{}) error {
 
 	t.client, err = t.NewTimesteramWriter()
 	if err != nil {
-		t.log.Fatal("Failed to create timestream client: ", err)
+		t.Log.Fatal("Failed to create timestream client: ", err)
 		return err
 	}
-	t.log.Info(t.GetName() + " Initialized")
+	t.Log.Info(t.GetName() + " Initialized")
 
 	return nil
 }
 
 func (t *TimestreamPump) WriteData(ctx context.Context, data []interface{}) error {
-	t.log.Debug("Attempting to write ", len(data), " records...")
+	t.Log.Debug("Attempting to write ", len(data), " records...")
 
 	var records []types.Record
 
@@ -126,16 +127,16 @@ func (t *TimestreamPump) WriteData(ctx context.Context, data []interface{}) erro
 		})
 		if err != nil {
 			if rrex, ok := err.(*types.RejectedRecordsException); ok {
-				t.log.Errorf("Error writing data to Timestream %v: %v", err, *rrex.RejectedRecords[0].Reason)
+				t.Log.Errorf("Error writing data to Timestream %v: %v", err, *rrex.RejectedRecords[0].Reason)
 			} else {
-				t.log.Errorf("Error writing data to Timestream %+v", err)
+				t.Log.Errorf("Error writing data to Timestream %+v", err)
 			}
 
 			return err
 		}
 	}
 
-	t.log.Info("Purged ", len(data), " records...")
+	t.Log.Info("Purged ", len(data), " records...")
 
 	return nil
 }
@@ -410,7 +411,7 @@ func (t *TimestreamPump) GetAnalyticsRecordDimensions(decoded *analytics.Analyti
 }
 
 func (t *TimestreamPump) NewTimesteramWriter() (c *timestreamwrite.Client, err error) {
-	timeout := t.CommonPumpConfig.timeout * int(time.Second)
+	timeout := t.Pump.Timeout * int(time.Second)
 	if timeout <= 0 {
 		timeout = 30 * int(time.Second)
 	}
