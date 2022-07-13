@@ -387,8 +387,8 @@ func TestPrometheusHistogramMetric(t *testing.T) {
 
 func TestPromtheusCreateBasicMetrics(t *testing.T) {
 	newPump := &PrometheusPump{}
-	newPump.Init(PrometheusConf{Addr: "localhost:8080"})
-
+	err := newPump.Init(PrometheusConf{Addr: "localhost:8080"})
+	assert.Nil(t, err)
 	assert.Len(t, newPump.allMetrics, 5)
 
 	actualMetricsNames := []string{}

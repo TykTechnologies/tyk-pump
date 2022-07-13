@@ -7,6 +7,7 @@ import (
 )
 
 type DummyPump struct {
+	cfg interface{}
 	common.Pump
 }
 
@@ -20,6 +21,7 @@ func (p *DummyPump) GetName() string {
 func (p *DummyPump) Init(conf interface{}) error {
 	p.Log = log.WithField("prefix", dummyPrefix)
 
+	p.ProcessEnvVars(p.Log, &p.cfg, dummyDefaultENV)
 	p.Log.Info("Dummy Initialized")
 	return nil
 }
