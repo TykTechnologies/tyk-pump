@@ -9,7 +9,7 @@ import (
 )
 
 func newPump() Pump {
-	return (&MongoPump{}).New()
+	return &MongoPump{}
 }
 
 func TestMongoPump_capCollection_Enabled(t *testing.T) {
