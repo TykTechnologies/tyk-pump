@@ -48,11 +48,6 @@ type GraylogConf struct {
 var graylogPrefix = "graylog-pump"
 var graylogDefaultENV = PUMPS_ENV_PREFIX + "_GRAYLOG" + PUMPS_ENV_META_PREFIX
 
-func (p *GraylogPump) New() Pump {
-	newPump := GraylogPump{}
-	return &newPump
-}
-
 func (p *GraylogPump) GetName() string {
 	return "Graylog Pump"
 }

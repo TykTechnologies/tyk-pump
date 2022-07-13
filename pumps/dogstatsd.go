@@ -100,11 +100,6 @@ type DogStatsdConf struct {
 	Tags []string `json:"tags" mapstructure:"tags"`
 }
 
-func (s *DogStatsdPump) New() Pump {
-	newPump := DogStatsdPump{}
-	return &newPump
-}
-
 func (s *DogStatsdPump) GetName() string {
 	return "DogStatsd Pump"
 }

@@ -89,11 +89,6 @@ type MoesifConf struct {
 	AuthorizationUserIdField string `json:"authorization_user_id_field" mapstructure:"authorization_user_id_field"`
 }
 
-func (p *MoesifPump) New() Pump {
-	newPump := MoesifPump{}
-	return &newPump
-}
-
 func (p *MoesifPump) GetName() string {
 	return "Moesif Pump"
 }

@@ -301,11 +301,6 @@ func (e *ElasticsearchPump) getOperator() (ElasticsearchOperator, error) {
 	return nil, err
 }
 
-func (e *ElasticsearchPump) New() Pump {
-	newPump := ElasticsearchPump{}
-	return &newPump
-}
-
 func (e *ElasticsearchPump) GetName() string {
 	return "Elasticsearch Pump"
 }

@@ -96,10 +96,6 @@ func NewLogzioClient(conf *LogzioPumpConfig) (*lg.LogzioSender, error) {
 	return l, nil
 }
 
-func (p *LogzioPump) New() Pump {
-	return &LogzioPump{}
-}
-
 func (p *LogzioPump) GetName() string {
 	return LogzioPumpName
 }

@@ -67,11 +67,6 @@ type KafkaConf struct {
 	Algorithm string `json:"sasl_algorithm" mapstructure:"sasl_algorithm"`
 }
 
-func (k *KafkaPump) New() Pump {
-	newPump := KafkaPump{}
-	return &newPump
-}
-
 func (k *KafkaPump) GetName() string {
 	return "Kafka Pump"
 }

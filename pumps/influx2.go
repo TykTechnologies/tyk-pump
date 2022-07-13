@@ -70,11 +70,6 @@ type Influx2Conf struct {
 	NewBucketConfig NewBucket `mapstructure:"new_bucket_config" json:"new_bucket_config"`
 }
 
-func (i *Influx2Pump) New() Pump {
-	newPump := Influx2Pump{}
-	return &newPump
-}
-
 func (i *Influx2Pump) GetName() string {
 	return "InfluxDB2 Pump"
 }

@@ -25,11 +25,6 @@ type SegmentConf struct {
 	WriteKey  string `json:"segment_write_key" mapstructure:"segment_write_key"`
 }
 
-func (s *SegmentPump) New() Pump {
-	newPump := SegmentPump{}
-	return &newPump
-}
-
 func (s *SegmentPump) GetName() string {
 	return "Segment Pump"
 }

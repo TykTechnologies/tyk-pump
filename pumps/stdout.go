@@ -38,11 +38,6 @@ func (s *StdOutPump) GetEnvPrefix() string {
 	return s.conf.EnvPrefix
 }
 
-func (s *StdOutPump) New() Pump {
-	newPump := StdOutPump{}
-	return &newPump
-}
-
 func (s *StdOutPump) Init(config interface{}) error {
 
 	s.Log = log.WithField("prefix", stdOutPrefix)

@@ -34,11 +34,6 @@ type StatsdConf struct {
 	SeparatedMethod bool `json:"separated_method" mapstructure:"separated_method"`
 }
 
-func (s *StatsdPump) New() Pump {
-	newPump := StatsdPump{}
-	return &newPump
-}
-
 func (s *StatsdPump) GetName() string {
 	return "Statsd Pump"
 }

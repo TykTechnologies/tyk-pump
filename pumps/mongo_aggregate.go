@@ -57,11 +57,6 @@ type MongoAggregateConf struct {
 	IgnoreAggregationsList []string `json:"ignore_aggregations" mapstructure:"ignore_aggregations"`
 }
 
-func (m *MongoAggregatePump) New() Pump {
-	newPump := MongoAggregatePump{}
-	return &newPump
-}
-
 func getListOfCommonPrefix(list []string) []string {
 	count := make(map[string]int)
 	result := make([]string, 0)

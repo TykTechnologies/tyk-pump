@@ -74,11 +74,6 @@ type TimestreamPumpConf struct {
 	NameMappings map[string]string `mapstructure:"field_name_mappings"`
 }
 
-func (t *TimestreamPump) New() Pump {
-	newPump := TimestreamPump{}
-	return &newPump
-}
-
 func (t *TimestreamPump) GetName() string {
 	return timestreamPumpName
 }

@@ -106,11 +106,6 @@ var SQLPrefix = "SQL-pump"
 var SQLDefaultENV = PUMPS_ENV_PREFIX + "_SQL" + PUMPS_ENV_META_PREFIX
 var SQLDefaultQueryBatchSize = 1000
 
-func (c *SQLPump) New() Pump {
-	newPump := SQLPump{}
-	return &newPump
-}
-
 func (c *SQLPump) GetName() string {
 	return "SQL Pump"
 }

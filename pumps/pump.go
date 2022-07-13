@@ -15,7 +15,6 @@ const PUMPS_ENV_META_PREFIX = "_META"
 
 type Pump interface {
 	GetName() string
-	New() Pump
 	Init(interface{}) error
 	WriteData(context.Context, []interface{}) error
 	SetFilters(analytics.AnalyticsFilters)

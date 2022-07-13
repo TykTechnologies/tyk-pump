@@ -56,10 +56,6 @@ func (p *HybridPump) GetName() string {
 	return "Hybrid pump"
 }
 
-func (p *HybridPump) New() Pump {
-	return &HybridPump{}
-}
-
 func (p *HybridPump) Init(config interface{}) error {
 
 	p.Log = log.WithField("prefix", hybridPrefix)

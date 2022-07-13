@@ -245,11 +245,6 @@ func mongoDialInfo(conf BaseMongoConf) (dialInfo *mgo.DialInfo, err error) {
 	return dialInfo, err
 }
 
-func (m *MongoPump) New() Pump {
-	newPump := MongoPump{}
-	return &newPump
-}
-
 func (m *MongoPump) GetName() string {
 	return "MongoDB Pump"
 }

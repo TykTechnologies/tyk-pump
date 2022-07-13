@@ -88,11 +88,6 @@ type SplunkPumpConfig struct {
 	BatchMaxContentLength int `json:"batch_max_content_length" mapstructure:"batch_max_content_length"`
 }
 
-// New initializes a new pump.
-func (p *SplunkPump) New() Pump {
-	return &SplunkPump{}
-}
-
 // GetName returns the pump name.
 func (p *SplunkPump) GetName() string {
 	return splunkPumpName

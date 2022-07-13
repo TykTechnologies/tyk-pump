@@ -57,11 +57,6 @@ func (s *SyslogPump) GetName() string {
 	return "Syslog Pump"
 }
 
-func (s *SyslogPump) New() Pump {
-	newPump := SyslogPump{}
-	return &newPump
-}
-
 func (s *SyslogPump) GetEnvPrefix() string {
 	return s.syslogConf.EnvPrefix
 }

@@ -44,11 +44,6 @@ type InfluxConf struct {
 	Tags []string `json:"tags" mapstructure:"tags"`
 }
 
-func (i *InfluxPump) New() Pump {
-	newPump := InfluxPump{}
-	return &newPump
-}
-
 func (i *InfluxPump) GetName() string {
 	return "InfluxDB Pump"
 }

@@ -38,11 +38,6 @@ type MongoSelectiveConf struct {
 	MaxDocumentSizeBytes int `json:"max_document_size_bytes" mapstructure:"max_document_size_bytes"`
 }
 
-func (m *MongoSelectivePump) New() Pump {
-	newPump := MongoSelectivePump{}
-	return &newPump
-}
-
 func (m *MongoSelectivePump) GetName() string {
 	return "MongoDB Selective Pump"
 }
