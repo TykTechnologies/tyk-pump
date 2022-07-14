@@ -38,7 +38,7 @@ type TimestreamPump struct {
 const (
 	timestreamPumpPrefix       = "timestream-pump"
 	timestreamPumpName         = "Timestream Pump"
-	timestreamDefaultEnv       = PUMPS_ENV_PREFIX + "_TIMESTREAM" + PUMPS_ENV_META_PREFIX
+	timestreamDefaultEnv       = common.PUMPS_ENV_PREFIX + "_TIMESTREAM" + common.PUMPS_ENV_META_PREFIX
 	timestreamVarcharMaxLength = 2048 //https://docs.aws.amazon.com/timestream/latest/developerguide/writes.html
 	timestreamMaxRecordsCount  = 100  //https://docs.aws.amazon.com/timestream/latest/developerguide/API_WriteRecords.html
 )
@@ -74,11 +74,6 @@ type TimestreamPumpConf struct {
 	NameMappings map[string]string `mapstructure:"field_name_mappings"`
 }
 
-func (t *TimestreamPump) New() Pump {
-	newPump := TimestreamPump{}
-	return &newPump
-}
-
 func (t *TimestreamPump) GetName() string {
 	return timestreamPumpName
 }
@@ -97,7 +92,7 @@ func (t *TimestreamPump) Init(config interface{}) error {
 		return err
 	}
 
-	processPumpEnvVars(t, t.Log, t.config, timestreamDefaultEnv)
+	t.ProcessEnvVars(t.Log, t.config, timestreamDefaultEnv)
 
 	if len(t.config.Measures) == 0 || len(t.config.Dimensions) == 0 {
 		return errors.New("missing \"measures\" or \"dimensions\" in pump configuration")

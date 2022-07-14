@@ -42,7 +42,7 @@ type rawDecoded struct {
 }
 
 var moesifPrefix = "moesif-pump"
-var moesifDefaultENV = PUMPS_ENV_PREFIX + "_MOESIF" + PUMPS_ENV_META_PREFIX
+var moesifDefaultENV = common.PUMPS_ENV_PREFIX + "_MOESIF" + common.PUMPS_ENV_META_PREFIX
 
 // @PumpConf Moesif
 type MoesifConf struct {
@@ -87,11 +87,6 @@ type MoesifConf struct {
 	// An optional field name use to parse the User from authorization header in Moesif. Default
 	// value is `sub`.
 	AuthorizationUserIdField string `json:"authorization_user_id_field" mapstructure:"authorization_user_id_field"`
-}
-
-func (p *MoesifPump) New() Pump {
-	newPump := MoesifPump{}
-	return &newPump
 }
 
 func (p *MoesifPump) GetName() string {
@@ -267,7 +262,7 @@ func (p *MoesifPump) Init(config interface{}) error {
 		p.Log.Fatal("Failed to decode configuration: ", loadConfigErr)
 	}
 
-	processPumpEnvVars(p, p.Log, p.moesifConf, moesifDefaultENV)
+	p.ProcessEnvVars(p.Log, p.moesifConf, moesifDefaultENV)
 
 	var apiEndpoint string
 	var batchSize int

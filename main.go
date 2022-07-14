@@ -133,13 +133,12 @@ func initialisePumps() {
 			pumpTypeName = key
 		}
 
-		pmpType, err := pumps.GetPumpByName(pumpTypeName)
+		thisPmp, err := pumps.GetPumpByName(pumpTypeName)
 		if err != nil {
 			log.WithFields(logrus.Fields{
 				"prefix": mainPrefix,
 			}).Error("Pump load error (skipping): ", err)
 		} else {
-			thisPmp := pmpType.New()
 			thisPmp.SetFilters(pmp.Filters)
 			thisPmp.SetTimeout(pmp.Timeout)
 			thisPmp.SetOmitDetailedRecording(pmp.OmitDetailedRecording)

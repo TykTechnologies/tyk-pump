@@ -12,7 +12,7 @@ import (
 
 var (
 	stdOutPrefix     = "stdout-pump"
-	stdOutDefaultENV = PUMPS_ENV_PREFIX + "_STDOUT" + PUMPS_ENV_META_PREFIX
+	stdOutDefaultENV = common.PUMPS_ENV_PREFIX + "_STDOUT" + common.PUMPS_ENV_META_PREFIX
 )
 
 type StdOutPump struct {
@@ -38,11 +38,6 @@ func (s *StdOutPump) GetEnvPrefix() string {
 	return s.conf.EnvPrefix
 }
 
-func (s *StdOutPump) New() Pump {
-	newPump := StdOutPump{}
-	return &newPump
-}
-
 func (s *StdOutPump) Init(config interface{}) error {
 
 	s.Log = log.WithField("prefix", stdOutPrefix)
@@ -54,7 +49,7 @@ func (s *StdOutPump) Init(config interface{}) error {
 		s.Log.Fatal("Failed to decode configuration: ", err)
 	}
 
-	processPumpEnvVars(s, s.Log, s.conf, stdOutDefaultENV)
+	s.ProcessEnvVars(s.Log, s.conf, stdOutDefaultENV)
 
 	if s.conf.LogFieldName == "" {
 		s.conf.LogFieldName = "tyk-analytics-record"

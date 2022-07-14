@@ -19,7 +19,7 @@ type StatsdPump struct {
 }
 
 var statsdPrefix = "statsd-pump"
-var statsdDefaultENV = PUMPS_ENV_PREFIX + "_STATSD" + PUMPS_ENV_META_PREFIX
+var statsdDefaultENV = common.PUMPS_ENV_PREFIX + "_STATSD" + common.PUMPS_ENV_META_PREFIX
 
 // @PumpConf Statsd
 type StatsdConf struct {
@@ -32,11 +32,6 @@ type StatsdConf struct {
 	Tags []string `json:"tags" mapstructure:"tags"`
 	// Allows to have a separated method field instead of having it embedded in the path field.
 	SeparatedMethod bool `json:"separated_method" mapstructure:"separated_method"`
-}
-
-func (s *StatsdPump) New() Pump {
-	newPump := StatsdPump{}
-	return &newPump
 }
 
 func (s *StatsdPump) GetName() string {
@@ -56,7 +51,7 @@ func (s *StatsdPump) Init(config interface{}) error {
 		s.Log.Fatal("Failed to decode configuration: ", err)
 	}
 
-	processPumpEnvVars(s, s.Log, s.dbConf, statsdDefaultENV)
+	s.ProcessEnvVars(s.Log, s.dbConf, statsdDefaultENV)
 
 	s.connect()
 

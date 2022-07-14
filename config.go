@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/TykTechnologies/tyk-pump/pumps"
+	"github.com/TykTechnologies/tyk-pump/pumps/common"
 	"github.com/kelseyhightower/envconfig"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
@@ -15,8 +16,8 @@ import (
 )
 
 const ENV_PREVIX = "TYK_PMP"
-const PUMPS_ENV_PREFIX = pumps.PUMPS_ENV_PREFIX
-const PUMPS_ENV_META_PREFIX = pumps.PUMPS_ENV_META_PREFIX
+const PUMPS_ENV_PREFIX = common.PUMPS_ENV_PREFIX
+const PUMPS_ENV_META_PREFIX = common.PUMPS_ENV_META_PREFIX
 
 type PumpConfig struct {
 	// Deprecated.
@@ -292,7 +293,7 @@ func (cfg *TykPumpConfiguration) LoadPumpsByEnv() error {
 			pmp = jsonPump
 		}
 		//We look if the pmpName is one of our available pumps. If it's not, we look if the env with the TYPE filed exists.
-		if _, ok := pumps.AvailablePumps[strings.ToLower(pmpName)]; !ok {
+		if _, err := pumps.GetPumpByName(strings.ToLower(pmpName)); err != nil {
 			pmpType, found := os.LookupEnv(PUMPS_ENV_PREFIX + "_" + pmpName + "_TYPE")
 			if !found {
 				log.Error(fmt.Sprintf("TYPE Env var for pump %s not found", pmpName))

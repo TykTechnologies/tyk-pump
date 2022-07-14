@@ -23,7 +23,7 @@ type Influx2Pump struct {
 
 var (
 	influx2Prefix      = "influx2-pump"
-	influx2DefaultENV  = PUMPS_ENV_PREFIX + "_INFLUX2" + PUMPS_ENV_META_PREFIX
+	influx2DefaultENV  = common.PUMPS_ENV_PREFIX + "_INFLUX2" + common.PUMPS_ENV_META_PREFIX
 	influx2Measurement = "analytics"
 )
 
@@ -70,11 +70,6 @@ type Influx2Conf struct {
 	NewBucketConfig NewBucket `mapstructure:"new_bucket_config" json:"new_bucket_config"`
 }
 
-func (i *Influx2Pump) New() Pump {
-	newPump := Influx2Pump{}
-	return &newPump
-}
-
 func (i *Influx2Pump) GetName() string {
 	return "InfluxDB2 Pump"
 }
@@ -92,7 +87,7 @@ func (i *Influx2Pump) Init(config interface{}) error {
 		i.Log.Fatal("Failed to decode configuration: ", err)
 	}
 
-	processPumpEnvVars(i, i.Log, i.dbConf, influx2DefaultENV)
+	i.ProcessEnvVars(i.Log, i.dbConf, influx2DefaultENV)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()

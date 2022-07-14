@@ -24,7 +24,7 @@ type MongoSelectivePump struct {
 
 var mongoSelectivePrefix = "mongo-pump-selective"
 var mongoSelectivePumpPrefix = "PMP_MONGOSEL"
-var mongoSelectiveDefaultEnv = PUMPS_ENV_PREFIX + "_MONGOSELECTIVE" + PUMPS_ENV_META_PREFIX
+var mongoSelectiveDefaultEnv = common.PUMPS_ENV_PREFIX + "_MONGOSELECTIVE" + common.PUMPS_ENV_META_PREFIX
 
 // @PumpConf MongoSelective
 type MongoSelectiveConf struct {
@@ -36,11 +36,6 @@ type MongoSelectiveConf struct {
 	// Maximum document size. If the document exceed this value, it will be skipped.
 	// Defaults to 10Mb.
 	MaxDocumentSizeBytes int `json:"max_document_size_bytes" mapstructure:"max_document_size_bytes"`
-}
-
-func (m *MongoSelectivePump) New() Pump {
-	newPump := MongoSelectivePump{}
-	return &newPump
 }
 
 func (m *MongoSelectivePump) GetName() string {
@@ -71,7 +66,7 @@ func (m *MongoSelectivePump) Init(config interface{}) error {
 		m.Log.Fatal("Failed to decode configuration: ", err)
 	}
 
-	processPumpEnvVars(m, m.Log, m.dbConf, mongoSelectiveDefaultEnv)
+	m.ProcessEnvVars(m.Log, m.dbConf, mongoSelectiveDefaultEnv)
 
 	//we keep this env check for backward compatibility
 	overrideErr := envconfig.Process(mongoSelectivePumpPrefix, m.dbConf)
