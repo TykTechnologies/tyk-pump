@@ -131,7 +131,10 @@ func generateAPIKey(orgId string) string {
 	return orgId + id
 }
 
-func getRandomKey() string {
+func getRandomKey(orgId string) string {
+	if len(apiKeys) == 0 {
+		GenerateAPIKeys(orgId)
+	}
 	return apiKeys[rand.Intn(len(apiKeys))]
 }
 
@@ -185,7 +188,7 @@ func GenerateRandomAnalyticRecord(orgId string) analytics.AnalyticsRecord {
 		Year:          ts.Year(),
 		Hour:          ts.Hour(),
 		ResponseCode:  responseCode(),
-		APIKey:        getRandomKey(),
+		APIKey:        getRandomKey(orgId),
 		TimeStamp:     ts,
 		APIVersion:    apiVersion,
 		APIName:       api,

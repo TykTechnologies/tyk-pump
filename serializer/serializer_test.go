@@ -1,10 +1,12 @@
 package serializer
 
 import (
+	"math/rand"
 	"testing"
 	"time"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
+	"github.com/TykTechnologies/tyk-pump/analytics/demo"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 )
@@ -101,4 +103,57 @@ func TestSerializer_GetSuffix(t *testing.T) {
 			assert.Equal(t, tc.expectedSuffix, tc.serializer.GetSuffix())
 		})
 	}
+}
+
+func BenchmarkProtobufEncoding(b *testing.B) {
+	serializer := NewAnalyticsSerializer(PROTOBUF_SERIALIZER)
+	records := []analytics.AnalyticsRecord{
+		demo.GenerateRandomAnalyticRecord("org_1"),
+		demo.GenerateRandomAnalyticRecord("org_1"),
+		demo.GenerateRandomAnalyticRecord("org_1"),
+		demo.GenerateRandomAnalyticRecord("org_1"),
+		demo.GenerateRandomAnalyticRecord("org_1"),
+		demo.GenerateRandomAnalyticRecord("org_2"),
+		demo.GenerateRandomAnalyticRecord("org_2"),
+		demo.GenerateRandomAnalyticRecord("org_2"),
+		demo.GenerateRandomAnalyticRecord("org_2"),
+		demo.GenerateRandomAnalyticRecord("org_2"),
+	}
+	b.Helper()
+	b.ReportAllocs()
+	b.ResetTimer()
+	var serialSize int
+
+	for n := 0; n < b.N; n++ {
+		record := records[rand.Intn(len(records))]
+		bytes, _ := serializer.Encode(&record)
+		serialSize += len(bytes)
+	}
+	b.ReportMetric(float64(serialSize)/float64(b.N), "B/serial")
+}
+func BenchmarkMsgpEncoding(b *testing.B) {
+	serializer := NewAnalyticsSerializer(MSGP_SERIALIZER)
+	records := []analytics.AnalyticsRecord{
+		demo.GenerateRandomAnalyticRecord("org_1"),
+		demo.GenerateRandomAnalyticRecord("org_1"),
+		demo.GenerateRandomAnalyticRecord("org_1"),
+		demo.GenerateRandomAnalyticRecord("org_1"),
+		demo.GenerateRandomAnalyticRecord("org_1"),
+		demo.GenerateRandomAnalyticRecord("org_2"),
+		demo.GenerateRandomAnalyticRecord("org_2"),
+		demo.GenerateRandomAnalyticRecord("org_2"),
+		demo.GenerateRandomAnalyticRecord("org_2"),
+		demo.GenerateRandomAnalyticRecord("org_2"),
+	}
+	b.Helper()
+	b.ReportAllocs()
+	b.ResetTimer()
+	var serialSize int
+
+	for n := 0; n < b.N; n++ {
+		record := records[rand.Intn(len(records))]
+		bytes, _ := serializer.Encode(&record)
+		serialSize += len(bytes)
+	}
+	b.ReportMetric(float64(serialSize)/float64(b.N), "B/serial")
 }
