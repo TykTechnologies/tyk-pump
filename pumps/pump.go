@@ -39,7 +39,7 @@ func GetPumpByName(name string) (Pump, error) {
 	case "dummy":
 		return &DummyPump{}, nil
 	case "mongo":
-		return &mongo.MongoPump{}, nil
+		return &mongo.Pump{}, nil
 	case "mongo-pump-selective":
 		return &MongoSelectivePump{}, nil
 	case "mongo-pump-aggregate":

@@ -17,7 +17,7 @@ func TestMongoPump_capCollection_Enabled(t *testing.T) {
 
 	conf := defaultConf()
 
-	mPump := &MongoPump{}
+	mPump := &Pump{}
 	mPump.dbConf = &conf
 	mPump.dbConf.CollectionCapEnable = false
 	mPump.Log = logger.GetLogger().WithField("prefix", mongoPrefix)
@@ -37,7 +37,7 @@ func TestMongoPumpOmitIndexCreation(t *testing.T) {
 
 	conf := defaultConf()
 
-	mPump := &MongoPump{}
+	mPump := &Pump{}
 	mPump.dbConf = &conf
 	record := analytics.AnalyticsRecord{
 		OrgID: "test-org",
@@ -135,7 +135,7 @@ func TestMongoPump_capCollection_Exists(t *testing.T) {
 
 	conf := defaultConf()
 
-	mPump := &MongoPump{}
+	mPump := &Pump{}
 	mPump.dbConf = &conf
 	mPump.Log = logger.GetLogger().WithField("prefix", mongoPrefix)
 
@@ -160,7 +160,7 @@ func TestMongoPump_capCollection_Not64arch(t *testing.T) {
 
 	conf := defaultConf()
 
-	mPump := &MongoPump{}
+	mPump := &Pump{}
 	mPump.dbConf = &conf
 	mPump.Log = logger.GetLogger().WithField("prefix", mongoPrefix)
 
@@ -185,7 +185,7 @@ func TestMongoPump_capCollection_SensibleDefaultSize(t *testing.T) {
 
 	conf := defaultConf()
 
-	mPump := &MongoPump{}
+	mPump := &Pump{}
 	mPump.dbConf = &conf
 	mPump.Log = logger.GetLogger().WithField("prefix", mongoPrefix)
 
@@ -218,7 +218,7 @@ func TestMongoPump_capCollection_OverrideSize(t *testing.T) {
 
 	conf := defaultConf()
 
-	mPump := &MongoPump{}
+	mPump := &Pump{}
 	mPump.dbConf = &conf
 	mPump.Log = logger.GetLogger().WithField("prefix", mongoPrefix)
 
@@ -248,7 +248,7 @@ func TestMongoPump_AccumulateSet(t *testing.T) {
 	const dataSize = 1024
 	totalData := dataSize * numRecords
 
-	mPump := &MongoPump{}
+	mPump := &Pump{}
 	mPump.dbConf = &conf
 	mPump.Log = logger.GetLogger().WithField("prefix", mongoPrefix)
 

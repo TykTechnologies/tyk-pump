@@ -179,7 +179,7 @@ func initialiseUptimePump() {
 		UptimePump.Init(SystemConfig.UptimePumpConfig.SQLConf)
 
 	default:
-		UptimePump = &mongo.MongoPump{IsUptime: true}
+		UptimePump = &mongo.Pump{IsUptime: true}
 		UptimePump.Init(SystemConfig.UptimePumpConfig.MongoConf)
 	}
 

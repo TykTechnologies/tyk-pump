@@ -31,7 +31,7 @@ func TestGetPumpByName(t *testing.T) {
 		{
 			testName:     "mongo pump",
 			pmpType:      "mongo",
-			expectedPump: &mongo.MongoPump{},
+			expectedPump: &mongo.Pump{},
 			expectedErr:  nil,
 		},
 		{
