@@ -172,21 +172,31 @@ func initialiseUptimePump() {
 	log.WithFields(logrus.Fields{
 		"prefix": mainPrefix,
 	}).Info("'dont_purge_uptime_data' set to false, attempting to start Uptime pump! ")
-
+	var err error
 	switch SystemConfig.UptimePumpConfig.UptimeType {
 	case "sql":
 		UptimePump = &pumps.SQLPump{IsUptime: true}
-		UptimePump.Init(SystemConfig.UptimePumpConfig.SQLConf)
+		err = UptimePump.Init(SystemConfig.UptimePumpConfig.SQLConf)
 
 	default:
 		UptimePump = &mongo.Pump{IsUptime: true}
-		UptimePump.Init(SystemConfig.UptimePumpConfig.Config)
+		err = UptimePump.Init(SystemConfig.UptimePumpConfig.Config)
+
+	}
+	if err != nil {
+		if err != nil {
+			log.WithFields(logrus.Fields{
+				"prefix": mainPrefix,
+				"type":   SystemConfig.UptimePumpConfig.Type,
+			}).Error("there was an error initializing uptime pump:" + err.Error())
+		}
+	} else {
+		log.WithFields(logrus.Fields{
+			"prefix": mainPrefix,
+			"type":   SystemConfig.UptimePumpConfig.Type,
+		}).Info("Init Uptime Pump: ", UptimePump.GetName())
 	}
 
-	log.WithFields(logrus.Fields{
-		"prefix": mainPrefix,
-		"type":   SystemConfig.UptimePumpConfig.Type,
-	}).Info("Init Uptime Pump: ", UptimePump.GetName())
 }
 
 func StartPurgeLoop(wg *sync.WaitGroup, ctx context.Context, secInterval int, chunkSize int64, expire time.Duration, omitDetails bool) {
