@@ -11,9 +11,9 @@ const (
 )
 
 // @PumpConf Mongo
-type MongoConf struct {
+type Config struct {
 	// TYKCONFIGEXPAND
-	BaseMongoConf
+	BaseConfig
 
 	// Specifies the mongo collection name.
 	CollectionName string `json:"collection_name" mapstructure:"collection_name"`
@@ -30,7 +30,7 @@ type MongoConf struct {
 	CollectionCapEnable bool `json:"collection_cap_enable" mapstructure:"collection_cap_enable"`
 }
 
-type BaseMongoConf struct {
+type BaseConfig struct {
 	EnvPrefix string `mapstructure:"meta_env_prefix"`
 	// The full URL to your MongoDB instance, this can be a clustered instance if necessary and
 	// should include the database and username / password data.
@@ -54,7 +54,7 @@ type BaseMongoConf struct {
 	OmitIndexCreation bool `json:"omit_index_creation" mapstructure:"omit_index_creation"`
 }
 
-func (c *BaseMongoConf) GetBlurredURL() string {
+func (c *BaseConfig) GetBlurredURL() string {
 	// mongo uri match with regex ^(mongodb:(?:\/{2})?)((\w+?):(\w+?)@|:?@?)(\S+?):(\d+)(\/(\S+?))?(\?replicaSet=(\S+?))?$
 	// but we need only a segment, so regex explanation: https://regex101.com/r/E34wQO/1
 	regex := `^(mongodb:(?:\/{2})?)((\w+?):(\w+?)@|:?@?)`

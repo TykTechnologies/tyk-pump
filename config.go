@@ -114,7 +114,7 @@ type UptimeConf struct {
 	// "mongodb://username:password@{hostname:port},{hostname:port}/{db_name}".
 	// TYKCONFIGHEADEREND
 	// TYKCONFIGEXPAND
-	mongo.MongoConf
+	mongo.Config
 	// TYKCONFIGHEADERSTART
 	// HEADER SQL Uptime Pump
 	// *Supported in Tyk Pump v1.5.0+*

@@ -35,7 +35,7 @@ type MongoAggregatePump struct {
 // @PumpConf MongoAggregate
 type MongoAggregateConf struct {
 	// TYKCONFIGEXPAND
-	mongo.BaseMongoConf
+	mongo.BaseConfig
 	// If set to `true` your pump will store analytics to both your organisation defined
 	// collections z_tyk_analyticz_aggregate_{ORG ID} and your org-less tyk_analytics_aggregates
 	// collection. When set to 'false' your pump will only store analytics to your org defined
@@ -149,7 +149,7 @@ func (m *MongoAggregatePump) Init(config interface{}) error {
 
 	err := mapstructure.Decode(config, &m.dbConf)
 	if err == nil {
-		err = mapstructure.Decode(config, &m.dbConf.BaseMongoConf)
+		err = mapstructure.Decode(config, &m.dbConf.BaseConfig)
 	}
 
 	if err != nil {
@@ -180,7 +180,7 @@ func (m *MongoAggregatePump) connect() {
 	var err error
 	var dialInfo *mgo.DialInfo
 
-	dialInfo, err = mongo.DialInfo(m.dbConf.BaseMongoConf)
+	dialInfo, err = mongo.DialInfo(m.dbConf.BaseConfig)
 	if err != nil {
 		m.Log.Panic("Mongo URL is invalid: ", err)
 	}
@@ -192,7 +192,7 @@ func (m *MongoAggregatePump) connect() {
 	m.dbSession, err = mgo.DialWithInfo(dialInfo)
 
 	for err != nil {
-		m.Log.WithError(err).WithField("dialinfo", m.dbConf.BaseMongoConf.GetBlurredURL()).Error("Mongo connection failed. Retrying.")
+		m.Log.WithError(err).WithField("dialinfo", m.dbConf.BaseConfig.GetBlurredURL()).Error("Mongo connection failed. Retrying.")
 		time.Sleep(5 * time.Second)
 		m.dbSession, err = mgo.DialWithInfo(dialInfo)
 	}

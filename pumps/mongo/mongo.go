@@ -19,7 +19,7 @@ import (
 type Pump struct {
 	IsUptime  bool
 	dbSession *mgo.Session
-	dbConf    *MongoConf
+	dbConf    *Config
 	common.Pump
 }
 
@@ -36,18 +36,18 @@ func (p *Pump) GetEnvPrefix() string {
 }
 
 func (p *Pump) Init(config interface{}) error {
-	p.dbConf = &MongoConf{}
+	p.dbConf = &Config{}
 	p.Log = logger.GetLogger().WithField("prefix", mongoPrefix)
 
 	err := mapstructure.Decode(config, &p.dbConf)
 	if err == nil {
-		err = mapstructure.Decode(config, &p.dbConf.BaseMongoConf)
+		err = mapstructure.Decode(config, &p.dbConf.BaseConfig)
 		p.Log.WithFields(logrus.Fields{
 			"url":             p.dbConf.GetBlurredURL(),
 			"collection_name": p.dbConf.CollectionName,
 		}).Info("Init")
 		if err != nil {
-			panic(p.dbConf.BaseMongoConf)
+			panic(p.dbConf.BaseConfig)
 		}
 	}
 	if err != nil {
@@ -103,7 +103,7 @@ func (p *Pump) connect() {
 	var err error
 	var dialInfo *mgo.DialInfo
 
-	dialInfo, err = DialInfo(p.dbConf.BaseMongoConf)
+	dialInfo, err = DialInfo(p.dbConf.BaseConfig)
 	if err != nil {
 		p.Log.Panic("Mongo URL is invalid: ", err)
 	}
@@ -114,7 +114,7 @@ func (p *Pump) connect() {
 	p.dbSession, err = mgo.DialWithInfo(dialInfo)
 
 	for err != nil {
-		p.Log.WithError(err).WithField("dialinfo", p.dbConf.BaseMongoConf.GetBlurredURL()).Error("Mongo connection failed. Retrying.")
+		p.Log.WithError(err).WithField("dialinfo", p.dbConf.BaseConfig.GetBlurredURL()).Error("Mongo connection failed. Retrying.")
 		time.Sleep(5 * time.Second)
 		p.dbSession, err = mgo.DialWithInfo(dialInfo)
 	}

@@ -30,7 +30,7 @@ var mongoSelectiveDefaultEnv = common.PUMPS_ENV_PREFIX + "_MONGOSELECTIVE" + com
 // @PumpConf MongoSelective
 type MongoSelectiveConf struct {
 	// TYKCONFIGEXPAND
-	mongo.BaseMongoConf
+	mongo.BaseConfig
 	// Maximum insert batch size for mongo selective pump. If the batch we are writing surpass this value, it will be send in multiple batchs.
 	// Defaults to 10Mb.
 	MaxInsertBatchSizeBytes int `json:"max_insert_batch_size_bytes" mapstructure:"max_insert_batch_size_bytes"`
@@ -60,7 +60,7 @@ func (m *MongoSelectivePump) Init(config interface{}) error {
 
 	err := mapstructure.Decode(config, &m.dbConf)
 	if err == nil {
-		err = mapstructure.Decode(config, &m.dbConf.BaseMongoConf)
+		err = mapstructure.Decode(config, &m.dbConf.BaseConfig)
 	}
 
 	if err != nil {
@@ -97,7 +97,7 @@ func (m *MongoSelectivePump) connect() {
 	var err error
 	var dialInfo *mgo.DialInfo
 
-	dialInfo, err = mongo.DialInfo(m.dbConf.BaseMongoConf)
+	dialInfo, err = mongo.DialInfo(m.dbConf.BaseConfig)
 	if err != nil {
 		m.Log.Panic("Mongo URL is invalid: ", err)
 	}
@@ -109,7 +109,7 @@ func (m *MongoSelectivePump) connect() {
 	m.dbSession, err = mgo.DialWithInfo(dialInfo)
 
 	for err != nil {
-		m.Log.WithError(err).WithField("dialinfo", m.dbConf.BaseMongoConf.GetBlurredURL()).Error("Mongo connection failed. Retrying.")
+		m.Log.WithError(err).WithField("dialinfo", m.dbConf.BaseConfig.GetBlurredURL()).Error("Mongo connection failed. Retrying.")
 		time.Sleep(5 * time.Second)
 		m.dbSession, err = mgo.DialWithInfo(dialInfo)
 	}

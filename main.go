@@ -180,7 +180,7 @@ func initialiseUptimePump() {
 
 	default:
 		UptimePump = &mongo.Pump{IsUptime: true}
-		UptimePump.Init(SystemConfig.UptimePumpConfig.MongoConf)
+		UptimePump.Init(SystemConfig.UptimePumpConfig.Config)
 	}
 
 	log.WithFields(logrus.Fields{

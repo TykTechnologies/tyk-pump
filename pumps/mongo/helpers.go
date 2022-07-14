@@ -90,7 +90,7 @@ func GetMongoType(session *mgo.Session) MongoType {
 	}
 }
 
-func DialInfo(conf BaseMongoConf) (dialInfo *mgo.DialInfo, err error) {
+func DialInfo(conf BaseConfig) (dialInfo *mgo.DialInfo, err error) {
 	if dialInfo, err = mgo.ParseURL(conf.MongoURL); err != nil {
 		return dialInfo, err
 	}
