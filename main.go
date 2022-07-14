@@ -17,6 +17,7 @@ import (
 	"github.com/TykTechnologies/tyk-pump/analytics/demo"
 	logger "github.com/TykTechnologies/tyk-pump/logger"
 	"github.com/TykTechnologies/tyk-pump/pumps"
+	"github.com/TykTechnologies/tyk-pump/pumps/mongo"
 	"github.com/TykTechnologies/tyk-pump/serializer"
 	"github.com/TykTechnologies/tyk-pump/server"
 	"github.com/TykTechnologies/tyk-pump/storage"
@@ -178,7 +179,7 @@ func initialiseUptimePump() {
 		UptimePump.Init(SystemConfig.UptimePumpConfig.SQLConf)
 
 	default:
-		UptimePump = &pumps.MongoPump{IsUptime: true}
+		UptimePump = &mongo.MongoPump{IsUptime: true}
 		UptimePump.Init(SystemConfig.UptimePumpConfig.MongoConf)
 	}
 

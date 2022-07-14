@@ -1,4 +1,4 @@
-package pumps
+package mongo
 
 import (
 	"context"
@@ -20,6 +20,7 @@ import (
 
 	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/tyk-pump/analytics"
+	"github.com/TykTechnologies/tyk-pump/logger"
 	"github.com/TykTechnologies/tyk-pump/pumps/common"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/mitchellh/mapstructure"
@@ -186,7 +187,7 @@ func DialInfo(conf BaseMongoConf) (dialInfo *mgo.DialInfo, err error) {
 			if conf.MongoSSLCAFile != "" {
 				caCert, err := ioutil.ReadFile(conf.MongoSSLCAFile)
 				if err != nil {
-					return nil, errors.New("Can't load mongo CA certificates: "+err.Error())
+					return nil, errors.New("Can't load mongo CA certificates: " + err.Error())
 				}
 				caCertPool := x509.NewCertPool()
 				caCertPool.AppendCertsFromPEM(caCert)
@@ -233,7 +234,7 @@ func DialInfo(conf BaseMongoConf) (dialInfo *mgo.DialInfo, err error) {
 			if conf.MongoSSLPEMKeyfile != "" {
 				cert, err := loadCertficateAndKeyFromFile(conf.MongoSSLPEMKeyfile)
 				if err != nil {
-					return nil, errors.New("Can't load mongo client certificate: "+ err.Error())
+					return nil, errors.New("Can't load mongo client certificate: " + err.Error())
 				}
 
 				tlsConfig.Certificates = []tls.Certificate{*cert}
@@ -256,7 +257,7 @@ func (m *MongoPump) GetEnvPrefix() string {
 
 func (m *MongoPump) Init(config interface{}) error {
 	m.dbConf = &MongoConf{}
-	m.Log = log.WithField("prefix", mongoPrefix)
+	m.Log = logger.GetLogger().WithField("prefix", mongoPrefix)
 
 	err := mapstructure.Decode(config, &m.dbConf)
 	if err == nil {

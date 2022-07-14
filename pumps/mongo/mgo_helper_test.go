@@ -1,6 +1,6 @@
 // Test Helper for Mongo
 
-package pumps
+package mongo
 
 import (
 	"gopkg.in/mgo.v2"

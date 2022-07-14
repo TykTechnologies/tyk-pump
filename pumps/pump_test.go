@@ -4,6 +4,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/TykTechnologies/tyk-pump/pumps/mongo"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -30,7 +31,7 @@ func TestGetPumpByName(t *testing.T) {
 		{
 			testName:     "mongo pump",
 			pmpType:      "mongo",
-			expectedPump: &MongoPump{},
+			expectedPump: &mongo.MongoPump{},
 			expectedErr:  nil,
 		},
 		{

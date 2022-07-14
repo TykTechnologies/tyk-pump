@@ -1,4 +1,4 @@
-package pumps
+package mongo
 
 import (
 	"context"
@@ -6,11 +6,8 @@ import (
 	"testing"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
+	"github.com/TykTechnologies/tyk-pump/logger"
 )
-
-func newPump() Pump {
-	return &MongoPump{}
-}
 
 func TestMongoPump_capCollection_Enabled(t *testing.T) {
 
@@ -18,13 +15,12 @@ func TestMongoPump_capCollection_Enabled(t *testing.T) {
 	c.ConnectDb()
 	defer c.CleanDb()
 
-	pump := newPump()
 	conf := defaultConf()
 
-	mPump := pump.(*MongoPump)
+	mPump := &MongoPump{}
 	mPump.dbConf = &conf
 	mPump.dbConf.CollectionCapEnable = false
-	mPump.Log = log.WithField("prefix", mongoPrefix)
+	mPump.Log = logger.GetLogger().WithField("prefix", mongoPrefix)
 
 	mPump.connect()
 
@@ -39,10 +35,9 @@ func TestMongoPumpOmitIndexCreation(t *testing.T) {
 	c.ConnectDb()
 	defer c.CleanDb()
 
-	pump := newPump()
 	conf := defaultConf()
 
-	mPump := pump.(*MongoPump)
+	mPump := &MongoPump{}
 	mPump.dbConf = &conf
 	record := analytics.AnalyticsRecord{
 		OrgID: "test-org",
@@ -105,7 +100,7 @@ func TestMongoPumpOmitIndexCreation(t *testing.T) {
 		t.Run(tc.testName, func(t *testing.T) {
 			mPump.dbConf.OmitIndexCreation = tc.OmitIndexCreation
 			mPump.dbConf.MongoDBType = tc.dbType
-			mPump.Log = log.WithField("prefix", mongoPrefix)
+			mPump.Log = logger.GetLogger().WithField("prefix", mongoPrefix)
 			mPump.connect()
 			defer c.CleanIndexes()
 
@@ -138,12 +133,11 @@ func TestMongoPump_capCollection_Exists(t *testing.T) {
 
 	c.InsertDoc()
 
-	pump := newPump()
 	conf := defaultConf()
 
-	mPump := pump.(*MongoPump)
+	mPump := &MongoPump{}
 	mPump.dbConf = &conf
-	mPump.Log = log.WithField("prefix", mongoPrefix)
+	mPump.Log = logger.GetLogger().WithField("prefix", mongoPrefix)
 
 	mPump.dbConf.CollectionCapEnable = true
 
@@ -164,12 +158,11 @@ func TestMongoPump_capCollection_Not64arch(t *testing.T) {
 		t.Skip("skipping as >= 64bit arch")
 	}
 
-	pump := newPump()
 	conf := defaultConf()
 
-	mPump := pump.(*MongoPump)
+	mPump := &MongoPump{}
 	mPump.dbConf = &conf
-	mPump.Log = log.WithField("prefix", mongoPrefix)
+	mPump.Log = logger.GetLogger().WithField("prefix", mongoPrefix)
 
 	mPump.dbConf.CollectionCapEnable = true
 
@@ -190,12 +183,11 @@ func TestMongoPump_capCollection_SensibleDefaultSize(t *testing.T) {
 	c.ConnectDb()
 	defer c.CleanDb()
 
-	pump := newPump()
 	conf := defaultConf()
 
-	mPump := pump.(*MongoPump)
+	mPump := &MongoPump{}
 	mPump.dbConf = &conf
-	mPump.Log = log.WithField("prefix", mongoPrefix)
+	mPump.Log = logger.GetLogger().WithField("prefix", mongoPrefix)
 
 	mPump.dbConf.CollectionCapEnable = true
 	mPump.dbConf.CollectionCapMaxSizeBytes = 0
@@ -224,12 +216,11 @@ func TestMongoPump_capCollection_OverrideSize(t *testing.T) {
 	c.ConnectDb()
 	defer c.CleanDb()
 
-	pump := newPump()
 	conf := defaultConf()
 
-	mPump := pump.(*MongoPump)
+	mPump := &MongoPump{}
 	mPump.dbConf = &conf
-	mPump.Log = log.WithField("prefix", mongoPrefix)
+	mPump.Log = logger.GetLogger().WithField("prefix", mongoPrefix)
 
 	mPump.dbConf.CollectionCapEnable = true
 	mPump.dbConf.CollectionCapMaxSizeBytes = GiB
@@ -249,7 +240,6 @@ func TestMongoPump_capCollection_OverrideSize(t *testing.T) {
 }
 
 func TestMongoPump_AccumulateSet(t *testing.T) {
-	pump := newPump()
 	conf := defaultConf()
 	conf.MaxInsertBatchSizeBytes = 5120
 
@@ -258,9 +248,9 @@ func TestMongoPump_AccumulateSet(t *testing.T) {
 	const dataSize = 1024
 	totalData := dataSize * numRecords
 
-	mPump := pump.(*MongoPump)
+	mPump := &MongoPump{}
 	mPump.dbConf = &conf
-	mPump.Log = log.WithField("prefix", mongoPrefix)
+	mPump.Log = logger.GetLogger().WithField("prefix", mongoPrefix)
 
 	record := analytics.AnalyticsRecord{}
 	data := make([]interface{}, 0)
