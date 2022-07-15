@@ -6,6 +6,7 @@ import (
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/TykTechnologies/tyk-pump/logger"
+	"github.com/TykTechnologies/tyk-pump/pumps/mongo"
 )
 
 var log = logger.GetLogger()
@@ -38,7 +39,7 @@ func GetPumpByName(name string) (Pump, error) {
 	case "dummy":
 		return &DummyPump{}, nil
 	case "mongo":
-		return &MongoPump{}, nil
+		return &mongo.Pump{}, nil
 	case "mongo-pump-selective":
 		return &MongoSelectivePump{}, nil
 	case "mongo-pump-aggregate":

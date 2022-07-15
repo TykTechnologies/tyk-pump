@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/TykTechnologies/tyk-pump/pumps/common"
+	"github.com/TykTechnologies/tyk-pump/pumps/mongo"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/lonelycode/mgohacks"
 	"github.com/mitchellh/mapstructure"
@@ -29,7 +30,7 @@ var mongoSelectiveDefaultEnv = common.PUMPS_ENV_PREFIX + "_MONGOSELECTIVE" + com
 // @PumpConf MongoSelective
 type MongoSelectiveConf struct {
 	// TYKCONFIGEXPAND
-	BaseMongoConf
+	mongo.BaseConfig
 	// Maximum insert batch size for mongo selective pump. If the batch we are writing surpass this value, it will be send in multiple batchs.
 	// Defaults to 10Mb.
 	MaxInsertBatchSizeBytes int `json:"max_insert_batch_size_bytes" mapstructure:"max_insert_batch_size_bytes"`
@@ -59,7 +60,7 @@ func (m *MongoSelectivePump) Init(config interface{}) error {
 
 	err := mapstructure.Decode(config, &m.dbConf)
 	if err == nil {
-		err = mapstructure.Decode(config, &m.dbConf.BaseMongoConf)
+		err = mapstructure.Decode(config, &m.dbConf.BaseConfig)
 	}
 
 	if err != nil {
@@ -76,12 +77,12 @@ func (m *MongoSelectivePump) Init(config interface{}) error {
 
 	if m.dbConf.MaxInsertBatchSizeBytes == 0 {
 		m.Log.Info("-- No max batch size set, defaulting to 10MB")
-		m.dbConf.MaxInsertBatchSizeBytes = 10 * MiB
+		m.dbConf.MaxInsertBatchSizeBytes = 10 * mongo.MiB
 	}
 
 	if m.dbConf.MaxDocumentSizeBytes == 0 {
 		m.Log.Info("-- No max document size set, defaulting to 10MB")
-		m.dbConf.MaxDocumentSizeBytes = 10 * MiB
+		m.dbConf.MaxDocumentSizeBytes = 10 * mongo.MiB
 	}
 
 	m.connect()
@@ -96,7 +97,7 @@ func (m *MongoSelectivePump) connect() {
 	var err error
 	var dialInfo *mgo.DialInfo
 
-	dialInfo, err = mongoDialInfo(m.dbConf.BaseMongoConf)
+	dialInfo, err = mongo.DialInfo(m.dbConf.BaseConfig)
 	if err != nil {
 		m.Log.Panic("Mongo URL is invalid: ", err)
 	}
@@ -108,13 +109,13 @@ func (m *MongoSelectivePump) connect() {
 	m.dbSession, err = mgo.DialWithInfo(dialInfo)
 
 	for err != nil {
-		m.Log.WithError(err).WithField("dialinfo", m.dbConf.BaseMongoConf.GetBlurredURL()).Error("Mongo connection failed. Retrying.")
+		m.Log.WithError(err).WithField("dialinfo", m.dbConf.BaseConfig.GetBlurredURL()).Error("Mongo connection failed. Retrying.")
 		time.Sleep(5 * time.Second)
 		m.dbSession, err = mgo.DialWithInfo(dialInfo)
 	}
 
 	if err == nil && m.dbConf.MongoDBType == 0 {
-		m.dbConf.MongoDBType = mongoType(m.dbSession)
+		m.dbConf.MongoDBType = mongo.GetMongoType(m.dbSession)
 	}
 }
 
@@ -124,7 +125,7 @@ func (m *MongoSelectivePump) ensureIndexes(c *mgo.Collection) error {
 		return nil
 	}
 
-	if m.dbConf.MongoDBType == StandardMongo {
+	if m.dbConf.MongoDBType == mongo.StandardMongo {
 		exists, errExists := m.collectionExists(c.Name)
 		if errExists == nil && exists {
 			m.Log.Debug("Collection ", c.Name, " exists, omitting index creation")
@@ -136,7 +137,7 @@ func (m *MongoSelectivePump) ensureIndexes(c *mgo.Collection) error {
 	ttlIndex := mgo.Index{
 		Key:         []string{"expireAt"},
 		ExpireAfter: 0,
-		Background:  m.dbConf.MongoDBType == StandardMongo,
+		Background:  m.dbConf.MongoDBType == mongo.StandardMongo,
 	}
 
 	err = mgohacks.EnsureTTLIndex(c, ttlIndex)
@@ -146,7 +147,7 @@ func (m *MongoSelectivePump) ensureIndexes(c *mgo.Collection) error {
 
 	apiIndex := mgo.Index{
 		Key:        []string{"apiid"},
-		Background: m.dbConf.MongoDBType == StandardMongo,
+		Background: m.dbConf.MongoDBType == mongo.StandardMongo,
 	}
 
 	err = c.EnsureIndex(apiIndex)
@@ -157,7 +158,7 @@ func (m *MongoSelectivePump) ensureIndexes(c *mgo.Collection) error {
 	logBrowserIndex := mgo.Index{
 		Name:       "logBrowserIndex",
 		Key:        []string{"-timestamp", "apiid", "apikey", "responsecode"},
-		Background: m.dbConf.MongoDBType == StandardMongo,
+		Background: m.dbConf.MongoDBType == mongo.StandardMongo,
 	}
 
 	err = c.EnsureIndex(logBrowserIndex)

@@ -1,6 +1,6 @@
 // Test Helper for Mongo
 
-package pumps
+package mongo
 
 import (
 	"gopkg.in/mgo.v2"
@@ -85,8 +85,8 @@ func (c *Conn) GetIndexes() ([]mgo.Index, error) {
 	return sess.DB("").C(colName).Indexes()
 }
 
-func defaultConf() MongoConf {
-	conf := MongoConf{
+func defaultConf() Config {
+	conf := Config{
 		CollectionName:          colName,
 		MaxInsertBatchSizeBytes: 10 * MiB,
 		MaxDocumentSizeBytes:    10 * MiB,

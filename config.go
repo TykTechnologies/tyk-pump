@@ -9,6 +9,7 @@ import (
 
 	"github.com/TykTechnologies/tyk-pump/pumps"
 	"github.com/TykTechnologies/tyk-pump/pumps/common"
+	"github.com/TykTechnologies/tyk-pump/pumps/mongo"
 	"github.com/kelseyhightower/envconfig"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
@@ -113,7 +114,7 @@ type UptimeConf struct {
 	// "mongodb://username:password@{hostname:port},{hostname:port}/{db_name}".
 	// TYKCONFIGHEADEREND
 	// TYKCONFIGEXPAND
-	pumps.MongoConf
+	mongo.Config
 	// TYKCONFIGHEADERSTART
 	// HEADER SQL Uptime Pump
 	// *Supported in Tyk Pump v1.5.0+*

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/TykTechnologies/tyk-pump/pumps/common"
+	"github.com/TykTechnologies/tyk-pump/pumps/mongo"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/lonelycode/mgohacks"
 	"github.com/mitchellh/mapstructure"
@@ -34,7 +35,7 @@ type MongoAggregatePump struct {
 // @PumpConf MongoAggregate
 type MongoAggregateConf struct {
 	// TYKCONFIGEXPAND
-	BaseMongoConf
+	mongo.BaseConfig
 	// If set to `true` your pump will store analytics to both your organisation defined
 	// collections z_tyk_analyticz_aggregate_{ORG ID} and your org-less tyk_analytics_aggregates
 	// collection. When set to 'false' your pump will only store analytics to your org defined
@@ -148,7 +149,7 @@ func (m *MongoAggregatePump) Init(config interface{}) error {
 
 	err := mapstructure.Decode(config, &m.dbConf)
 	if err == nil {
-		err = mapstructure.Decode(config, &m.dbConf.BaseMongoConf)
+		err = mapstructure.Decode(config, &m.dbConf.BaseConfig)
 	}
 
 	if err != nil {
@@ -179,7 +180,7 @@ func (m *MongoAggregatePump) connect() {
 	var err error
 	var dialInfo *mgo.DialInfo
 
-	dialInfo, err = mongoDialInfo(m.dbConf.BaseMongoConf)
+	dialInfo, err = mongo.DialInfo(m.dbConf.BaseConfig)
 	if err != nil {
 		m.Log.Panic("Mongo URL is invalid: ", err)
 	}
@@ -191,13 +192,13 @@ func (m *MongoAggregatePump) connect() {
 	m.dbSession, err = mgo.DialWithInfo(dialInfo)
 
 	for err != nil {
-		m.Log.WithError(err).WithField("dialinfo", m.dbConf.BaseMongoConf.GetBlurredURL()).Error("Mongo connection failed. Retrying.")
+		m.Log.WithError(err).WithField("dialinfo", m.dbConf.BaseConfig.GetBlurredURL()).Error("Mongo connection failed. Retrying.")
 		time.Sleep(5 * time.Second)
 		m.dbSession, err = mgo.DialWithInfo(dialInfo)
 	}
 
 	if err == nil && m.dbConf.MongoDBType == 0 {
-		m.dbConf.MongoDBType = mongoType(m.dbSession)
+		m.dbConf.MongoDBType = mongo.GetMongoType(m.dbSession)
 	}
 }
 
@@ -208,7 +209,7 @@ func (m *MongoAggregatePump) ensureIndexes(c *mgo.Collection) error {
 	}
 
 	//We are going to check if the collection exists only when the DB Type is MongoDB. The mgo CollectionNames func leaks cursors on DocDB.
-	if m.dbConf.MongoDBType == StandardMongo {
+	if m.dbConf.MongoDBType == mongo.StandardMongo {
 		exists, errExists := m.collectionExists(c.Name)
 		if errExists == nil && exists {
 			m.Log.Debug("Collection ", c.Name, " exists, omitting index creation")
@@ -220,7 +221,7 @@ func (m *MongoAggregatePump) ensureIndexes(c *mgo.Collection) error {
 	ttlIndex := mgo.Index{
 		Key:         []string{"expireAt"},
 		ExpireAfter: 0,
-		Background:  m.dbConf.MongoDBType == StandardMongo,
+		Background:  m.dbConf.MongoDBType == mongo.StandardMongo,
 	}
 
 	err = mgohacks.EnsureTTLIndex(c, ttlIndex)
@@ -230,7 +231,7 @@ func (m *MongoAggregatePump) ensureIndexes(c *mgo.Collection) error {
 
 	apiIndex := mgo.Index{
 		Key:        []string{"timestamp"},
-		Background: m.dbConf.MongoDBType == StandardMongo,
+		Background: m.dbConf.MongoDBType == mongo.StandardMongo,
 	}
 
 	err = c.EnsureIndex(apiIndex)
@@ -240,7 +241,7 @@ func (m *MongoAggregatePump) ensureIndexes(c *mgo.Collection) error {
 
 	orgIndex := mgo.Index{
 		Key:        []string{"orgid"},
-		Background: m.dbConf.MongoDBType == StandardMongo,
+		Background: m.dbConf.MongoDBType == mongo.StandardMongo,
 	}
 
 	return c.EnsureIndex(orgIndex)
