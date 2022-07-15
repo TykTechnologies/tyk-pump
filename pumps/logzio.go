@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
+	"github.com/TykTechnologies/tyk-pump/pumps/common"
 	lg "github.com/logzio/logzio-go"
 	"github.com/mitchellh/mapstructure"
 )
@@ -15,7 +16,7 @@ import (
 const (
 	LogzioPumpPrefix = "logzio-pump"
 	LogzioPumpName   = "Logzio Pump"
-	logzioDefaultENV = PUMPS_ENV_PREFIX + "_LOGZIO" + PUMPS_ENV_META_PREFIX
+	logzioDefaultENV = common.PUMPS_ENV_PREFIX + "_LOGZIO" + common.PUMPS_ENV_META_PREFIX
 
 	defaultLogzioCheckDiskSpace = true
 	defaultLogzioDiskThreshold  = 98 // represent % of the disk
@@ -60,7 +61,7 @@ func NewLogzioPumpConfig() *LogzioPumpConfig {
 type LogzioPump struct {
 	sender *lg.LogzioSender
 	config *LogzioPumpConfig
-	CommonPumpConfig
+	common.Pump
 }
 
 func NewLogzioClient(conf *LogzioPumpConfig) (*lg.LogzioSender, error) {
@@ -95,10 +96,6 @@ func NewLogzioClient(conf *LogzioPumpConfig) (*lg.LogzioSender, error) {
 	return l, nil
 }
 
-func (p *LogzioPump) New() Pump {
-	return &LogzioPump{}
-}
-
 func (p *LogzioPump) GetName() string {
 	return LogzioPumpName
 }
@@ -109,28 +106,28 @@ func (p *LogzioPump) GetEnvPrefix() string {
 
 func (p *LogzioPump) Init(config interface{}) error {
 	p.config = NewLogzioPumpConfig()
-	p.log = log.WithField("prefix", LogzioPumpPrefix)
+	p.Log = log.WithField("prefix", LogzioPumpPrefix)
 
 	err := mapstructure.Decode(config, p.config)
 	if err != nil {
-		p.log.Fatalf("Failed to decode configuration: %s", err)
+		p.Log.Fatalf("Failed to decode configuration: %s", err)
 	}
 
-	processPumpEnvVars(p, p.log, p.config, logzioDefaultENV)
+	p.ProcessEnvVars(p.Log, p.config, logzioDefaultENV)
 
-	p.log.Debugf("Initializing %s with the following configuration: %+v", LogzioPumpName, p.config)
+	p.Log.Debugf("Initializing %s with the following configuration: %+v", LogzioPumpName, p.config)
 
 	p.sender, err = NewLogzioClient(p.config)
 	if err != nil {
 		return err
 	}
-	p.log.Info(p.GetName() + " Initialized")
+	p.Log.Info(p.GetName() + " Initialized")
 
 	return nil
 }
 
 func (p *LogzioPump) WriteData(ctx context.Context, data []interface{}) error {
-	p.log.Debug("Attempting to write ", len(data), " records...")
+	p.Log.Debug("Attempting to write ", len(data), " records...")
 
 	for _, v := range data {
 		decoded := v.(analytics.AnalyticsRecord)
@@ -158,7 +155,7 @@ func (p *LogzioPump) WriteData(ctx context.Context, data []interface{}) error {
 
 		p.sender.Send(event)
 	}
-	p.log.Info("Purged ", len(data), " records...")
+	p.Log.Info("Purged ", len(data), " records...")
 
 	return nil
 }

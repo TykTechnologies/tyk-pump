@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 
+	"github.com/TykTechnologies/tyk-pump/pumps/common"
 	"github.com/mitchellh/mapstructure"
 	gelf "github.com/robertkowalski/graylog-golang"
 
@@ -14,7 +15,7 @@ import (
 type GraylogPump struct {
 	client *gelf.Gelf
 	conf   *GraylogConf
-	CommonPumpConfig
+	common.Pump
 }
 
 // @PumpConf Graylog
@@ -45,12 +46,7 @@ type GraylogConf struct {
 }
 
 var graylogPrefix = "graylog-pump"
-var graylogDefaultENV = PUMPS_ENV_PREFIX + "_GRAYLOG" + PUMPS_ENV_META_PREFIX
-
-func (p *GraylogPump) New() Pump {
-	newPump := GraylogPump{}
-	return &newPump
-}
+var graylogDefaultENV = common.PUMPS_ENV_PREFIX + "_GRAYLOG" + common.PUMPS_ENV_META_PREFIX
 
 func (p *GraylogPump) GetName() string {
 	return "Graylog Pump"
@@ -63,14 +59,14 @@ func (p *GraylogPump) GetEnvPrefix() string {
 func (p *GraylogPump) Init(conf interface{}) error {
 	p.conf = &GraylogConf{}
 
-	p.log = log.WithField("prefix", graylogPrefix)
+	p.Log = log.WithField("prefix", graylogPrefix)
 
 	err := mapstructure.Decode(conf, &p.conf)
 	if err != nil {
-		p.log.Fatal("Failed to decode configuration: ", err)
+		p.Log.Fatal("Failed to decode configuration: ", err)
 	}
 
-	processPumpEnvVars(p, p.log, p.conf, graylogDefaultENV)
+	p.ProcessEnvVars(p.Log, p.conf, graylogDefaultENV)
 
 	if p.conf.GraylogHost == "" {
 		p.conf.GraylogHost = "localhost"
@@ -79,12 +75,12 @@ func (p *GraylogPump) Init(conf interface{}) error {
 	if p.conf.GraylogPort == 0 {
 		p.conf.GraylogPort = 1000
 	}
-	p.log.Info("GraylogHost:", p.conf.GraylogHost)
-	p.log.Info("GraylogPort:", p.conf.GraylogPort)
+	p.Log.Info("GraylogHost:", p.conf.GraylogHost)
+	p.Log.Info("GraylogPort:", p.conf.GraylogPort)
 
 	p.connect()
 
-	p.log.Info(p.GetName() + " Initialized")
+	p.Log.Info(p.GetName() + " Initialized")
 
 	return nil
 }
@@ -97,7 +93,7 @@ func (p *GraylogPump) connect() {
 }
 
 func (p *GraylogPump) WriteData(ctx context.Context, data []interface{}) error {
-	p.log.Debug("Attempting to write ", len(data), " records...")
+	p.Log.Debug("Attempting to write ", len(data), " records...")
 
 	if p.client == nil {
 		p.connect()
@@ -109,13 +105,13 @@ func (p *GraylogPump) WriteData(ctx context.Context, data []interface{}) error {
 
 		rReq, err := base64.StdEncoding.DecodeString(record.RawRequest)
 		if err != nil {
-			p.log.Fatal(err)
+			p.Log.Fatal(err)
 		}
 
 		rResp, err := base64.StdEncoding.DecodeString(record.RawResponse)
 
 		if err != nil {
-			p.log.Fatal(err)
+			p.Log.Fatal(err)
 		}
 
 		mapping := map[string]interface{}{
@@ -144,7 +140,7 @@ func (p *GraylogPump) WriteData(ctx context.Context, data []interface{}) error {
 
 		message, err := json.Marshal(messageMap)
 		if err != nil {
-			p.log.Fatal(err)
+			p.Log.Fatal(err)
 		}
 
 		gelfData := map[string]interface{}{
@@ -157,14 +153,14 @@ func (p *GraylogPump) WriteData(ctx context.Context, data []interface{}) error {
 		gelfString, err := json.Marshal(gelfData)
 
 		if err != nil {
-			p.log.Fatal(err)
+			p.Log.Fatal(err)
 		}
 
-		p.log.Debug("Writing ", string(message))
+		p.Log.Debug("Writing ", string(message))
 
 		p.client.Log(string(gelfString))
 	}
-	p.log.Info("Purged ", len(data), " records...")
+	p.Log.Info("Purged ", len(data), " records...")
 
 	return nil
 }

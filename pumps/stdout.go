@@ -6,16 +6,17 @@ import (
 
 	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/tyk-pump/analytics"
+	"github.com/TykTechnologies/tyk-pump/pumps/common"
 	"github.com/mitchellh/mapstructure"
 )
 
 var (
 	stdOutPrefix     = "stdout-pump"
-	stdOutDefaultENV = PUMPS_ENV_PREFIX + "_STDOUT" + PUMPS_ENV_META_PREFIX
+	stdOutDefaultENV = common.PUMPS_ENV_PREFIX + "_STDOUT" + common.PUMPS_ENV_META_PREFIX
 )
 
 type StdOutPump struct {
-	CommonPumpConfig
+	common.Pump
 	conf *StdOutConf
 }
 
@@ -37,29 +38,24 @@ func (s *StdOutPump) GetEnvPrefix() string {
 	return s.conf.EnvPrefix
 }
 
-func (s *StdOutPump) New() Pump {
-	newPump := StdOutPump{}
-	return &newPump
-}
-
 func (s *StdOutPump) Init(config interface{}) error {
 
-	s.log = log.WithField("prefix", stdOutPrefix)
+	s.Log = log.WithField("prefix", stdOutPrefix)
 
 	s.conf = &StdOutConf{}
 	err := mapstructure.Decode(config, &s.conf)
 
 	if err != nil {
-		s.log.Fatal("Failed to decode configuration: ", err)
+		s.Log.Fatal("Failed to decode configuration: ", err)
 	}
 
-	processPumpEnvVars(s, s.log, s.conf, stdOutDefaultENV)
+	s.ProcessEnvVars(s.Log, s.conf, stdOutDefaultENV)
 
 	if s.conf.LogFieldName == "" {
 		s.conf.LogFieldName = "tyk-analytics-record"
 	}
 
-	s.log.Info(s.GetName() + " Initialized")
+	s.Log.Info(s.GetName() + " Initialized")
 
 	return nil
 
@@ -69,7 +65,7 @@ func (s *StdOutPump) Init(config interface{}) error {
 ** Write the actual Data to Stdout Here
  */
 func (s *StdOutPump) WriteData(ctx context.Context, data []interface{}) error {
-	s.log.Debug("Attempting to write ", len(data), " records...")
+	s.Log.Debug("Attempting to write ", len(data), " records...")
 
 	//Data is all the analytics being written
 	for _, v := range data {
@@ -87,12 +83,12 @@ func (s *StdOutPump) WriteData(ctx context.Context, data []interface{}) error {
 				data, _ := formatter.Format(entry)
 				fmt.Print(string(data))
 			} else {
-				s.log.WithField(s.conf.LogFieldName, decoded).Info()
+				s.Log.WithField(s.conf.LogFieldName, decoded).Info()
 			}
 
 		}
 	}
-	s.log.Info("Purged ", len(data), " records...")
+	s.Log.Info("Purged ", len(data), " records...")
 
 	return nil
 }

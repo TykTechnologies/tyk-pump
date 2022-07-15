@@ -2,32 +2,31 @@ package pumps
 
 import (
 	"context"
+
+	"github.com/TykTechnologies/tyk-pump/pumps/common"
 )
 
 type DummyPump struct {
-	CommonPumpConfig
+	cfg interface{}
+	common.Pump
 }
 
 var dummyPrefix = "dummy-pump"
-var dummyDefaultENV = PUMPS_ENV_PREFIX + "_DUMMY" + PUMPS_ENV_META_PREFIX
-
-func (p *DummyPump) New() Pump {
-	newPump := DummyPump{}
-	return &newPump
-}
+var dummyDefaultENV = common.PUMPS_ENV_PREFIX + "_DUMMY" + common.PUMPS_ENV_META_PREFIX
 
 func (p *DummyPump) GetName() string {
 	return "Dummy Pump"
 }
 
 func (p *DummyPump) Init(conf interface{}) error {
-	p.log = log.WithField("prefix", dummyPrefix)
+	p.Log = log.WithField("prefix", dummyPrefix)
 
-	p.log.Info("Dummy Initialized")
+	p.ProcessEnvVars(p.Log, &p.cfg, dummyDefaultENV)
+	p.Log.Info("Dummy Initialized")
 	return nil
 }
 
 func (p *DummyPump) WriteData(ctx context.Context, data []interface{}) error {
-	p.log.Info("Writing ", len(data), " records")
+	p.Log.Info("Writing ", len(data), " records")
 	return nil
 }

@@ -8,6 +8,7 @@ import (
 
 	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/tyk-pump/analytics"
+	"github.com/TykTechnologies/tyk-pump/pumps/common"
 	"github.com/mitchellh/mapstructure"
 	"github.com/segmentio/kafka-go"
 	"github.com/segmentio/kafka-go/sasl"
@@ -21,13 +22,13 @@ type KafkaPump struct {
 	kafkaConf    *KafkaConf
 	writerConfig kafka.WriterConfig
 	log          *logrus.Entry
-	CommonPumpConfig
+	common.Pump
 }
 
 type Json map[string]interface{}
 
 var kafkaPrefix = "kafka-pump"
-var kafkaDefaultENV = PUMPS_ENV_PREFIX + "_KAFKA" + PUMPS_ENV_META_PREFIX
+var kafkaDefaultENV = common.PUMPS_ENV_PREFIX + "_KAFKA" + common.PUMPS_ENV_META_PREFIX
 
 // @PumpConf Kafka
 type KafkaConf struct {
@@ -40,7 +41,7 @@ type KafkaConf struct {
 	// The topic that the writer will produce messages to.
 	Topic string `json:"topic" mapstructure:"topic"`
 	// Timeout is the maximum amount of time will wait for a connect or write to complete.
-	Timeout time.Duration `json:"timeout" mapstructure:"timeout"`
+	Timeout time.Duration `json:"Timeout" mapstructure:"Timeout"`
 	// Enable "github.com/golang/snappy" codec to be used to compress Kafka messages. By default
 	// is `false`.
 	Compressed bool `json:"compressed" mapstructure:"compressed"`
@@ -66,11 +67,6 @@ type KafkaConf struct {
 	Algorithm string `json:"sasl_algorithm" mapstructure:"sasl_algorithm"`
 }
 
-func (k *KafkaPump) New() Pump {
-	newPump := KafkaPump{}
-	return &newPump
-}
-
 func (k *KafkaPump) GetName() string {
 	return "Kafka Pump"
 }
@@ -89,7 +85,7 @@ func (k *KafkaPump) Init(config interface{}) error {
 		k.log.Fatal("Failed to decode configuration: ", err)
 	}
 
-	processPumpEnvVars(k, k.log, k.kafkaConf, kafkaDefaultENV)
+	k.ProcessEnvVars(k.log, k.kafkaConf, kafkaDefaultENV)
 
 	var tlsConfig *tls.Config
 	if k.kafkaConf.UseSSL {

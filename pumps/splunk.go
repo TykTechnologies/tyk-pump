@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/TykTechnologies/tyk-pump/pumps/common"
 	"github.com/mitchellh/mapstructure"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
@@ -21,7 +22,7 @@ const (
 	authHeaderPrefix = "Splunk "
 	splunkPumpPrefix = "splunk-pump"
 	splunkPumpName   = "Splunk Pump"
-	splunkDefaultENV = PUMPS_ENV_PREFIX + "_SPLUNK" + PUMPS_ENV_META_PREFIX
+	splunkDefaultENV = common.PUMPS_ENV_PREFIX + "_SPLUNK" + common.PUMPS_ENV_META_PREFIX
 )
 
 var (
@@ -43,7 +44,7 @@ type SplunkClient struct {
 type SplunkPump struct {
 	client *SplunkClient
 	config *SplunkPumpConfig
-	CommonPumpConfig
+	common.Pump
 }
 
 // SplunkPumpConfig contains the driver configuration parameters.
@@ -87,11 +88,6 @@ type SplunkPumpConfig struct {
 	BatchMaxContentLength int `json:"batch_max_content_length" mapstructure:"batch_max_content_length"`
 }
 
-// New initializes a new pump.
-func (p *SplunkPump) New() Pump {
-	return &SplunkPump{}
-}
-
 // GetName returns the pump name.
 func (p *SplunkPump) GetName() string {
 	return splunkPumpName
@@ -104,16 +100,16 @@ func (p *SplunkPump) GetEnvPrefix() string {
 // Init performs the initialization of the SplunkClient.
 func (p *SplunkPump) Init(config interface{}) error {
 	p.config = &SplunkPumpConfig{}
-	p.log = log.WithField("prefix", splunkPumpPrefix)
+	p.Log = log.WithField("prefix", splunkPumpPrefix)
 
 	err := mapstructure.Decode(config, p.config)
 	if err != nil {
 		return err
 	}
 
-	processPumpEnvVars(p, p.log, p.config, splunkDefaultENV)
+	p.ProcessEnvVars(p.Log, p.config, splunkDefaultENV)
 
-	p.log.Infof("%s Endpoint: %s", splunkPumpName, p.config.CollectorURL)
+	p.Log.Infof("%s Endpoint: %s", splunkPumpName, p.config.CollectorURL)
 
 	p.client, err = NewSplunkClient(p.config.CollectorToken, p.config.CollectorURL, p.config.SSLInsecureSkipVerify, p.config.SSLCertFile, p.config.SSLKeyFile, p.config.SSLServerName)
 	if err != nil {
@@ -124,7 +120,7 @@ func (p *SplunkPump) Init(config interface{}) error {
 		p.config.BatchMaxContentLength = maxContentLength
 	}
 
-	p.log.Info(p.GetName() + " Initialized")
+	p.Log.Info(p.GetName() + " Initialized")
 
 	return nil
 }
@@ -149,14 +145,14 @@ func (p *SplunkPump) FilterTags(filteredTags []string) []string {
 
 // WriteData prepares an appropriate data structure and sends it to the HTTP Event Collector.
 func (p *SplunkPump) WriteData(ctx context.Context, data []interface{}) error {
-	p.log.Debug("Attempting to write ", len(data), " records...")
+	p.Log.Debug("Attempting to write ", len(data), " records...")
 
 	var batchBuffer bytes.Buffer
 
 	fnSendBytes := func(data []byte) error {
 		_, errSend := p.client.Send(ctx, data)
 		if errSend != nil {
-			p.log.Error("Error writing data to Splunk ", errSend)
+			p.Log.Error("Error writing data to Splunk ", errSend)
 			return errSend
 		}
 		return nil
@@ -274,7 +270,7 @@ func (p *SplunkPump) WriteData(ctx context.Context, data []interface{}) error {
 		batchBuffer.Reset()
 	}
 
-	p.log.Info("Purged ", len(data), " records...")
+	p.Log.Info("Purged ", len(data), " records...")
 
 	return nil
 }

@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/TykTechnologies/tyk-pump/pumps/common"
 	"github.com/mitchellh/mapstructure"
 	"github.com/quipo/statsd"
 
@@ -14,11 +15,11 @@ import (
 
 type StatsdPump struct {
 	dbConf *StatsdConf
-	CommonPumpConfig
+	common.Pump
 }
 
 var statsdPrefix = "statsd-pump"
-var statsdDefaultENV = PUMPS_ENV_PREFIX + "_STATSD" + PUMPS_ENV_META_PREFIX
+var statsdDefaultENV = common.PUMPS_ENV_PREFIX + "_STATSD" + common.PUMPS_ENV_META_PREFIX
 
 // @PumpConf Statsd
 type StatsdConf struct {
@@ -33,11 +34,6 @@ type StatsdConf struct {
 	SeparatedMethod bool `json:"separated_method" mapstructure:"separated_method"`
 }
 
-func (s *StatsdPump) New() Pump {
-	newPump := StatsdPump{}
-	return &newPump
-}
-
 func (s *StatsdPump) GetName() string {
 	return "Statsd Pump"
 }
@@ -48,19 +44,19 @@ func (s *StatsdPump) GetEnvPrefix() string {
 
 func (s *StatsdPump) Init(config interface{}) error {
 	s.dbConf = &StatsdConf{}
-	s.log = log.WithField("prefix", statsdPrefix)
+	s.Log = log.WithField("prefix", statsdPrefix)
 
 	err := mapstructure.Decode(config, &s.dbConf)
 	if err != nil {
-		s.log.Fatal("Failed to decode configuration: ", err)
+		s.Log.Fatal("Failed to decode configuration: ", err)
 	}
 
-	processPumpEnvVars(s, s.log, s.dbConf, statsdDefaultENV)
+	s.ProcessEnvVars(s.Log, s.dbConf, statsdDefaultENV)
 
 	s.connect()
 
-	s.log.Debug("StatsD CS: ", s.dbConf.Address)
-	s.log.Info(s.GetName() + " Initialized")
+	s.Log.Debug("StatsD CS: ", s.dbConf.Address)
+	s.Log.Info(s.GetName() + " Initialized")
 
 	return nil
 }
@@ -70,16 +66,16 @@ func (s *StatsdPump) connect() *statsd.StatsdClient {
 	client := statsd.NewStatsdClient(s.dbConf.Address, "")
 
 	for {
-		s.log.Debug("connecting to statsD...")
+		s.Log.Debug("connecting to statsD...")
 
 		if err := client.CreateSocket(); err != nil {
-			s.log.Error("statsD connection failed retrying in 5 seconds:", err)
+			s.Log.Error("statsD connection failed retrying in 5 seconds:", err)
 			time.Sleep(5 * time.Second)
 
 			continue
 		}
 
-		s.log.Debug("statsD connection successful...")
+		s.Log.Debug("statsD connection successful...")
 
 		return client
 	}
@@ -90,7 +86,7 @@ func (s *StatsdPump) WriteData(ctx context.Context, data []interface{}) error {
 	if len(data) == 0 {
 		return nil
 	}
-	s.log.Debug("Attempting to write ", len(data), " records...")
+	s.Log.Debug("Attempting to write ", len(data), " records...")
 
 	client := s.connect()
 	defer client.Close()
@@ -134,7 +130,7 @@ func (s *StatsdPump) WriteData(ctx context.Context, data []interface{}) error {
 			}
 		}
 	}
-	s.log.Info("Purged ", len(data), " records...")
+	s.Log.Info("Purged ", len(data), " records...")
 
 	return nil
 }
