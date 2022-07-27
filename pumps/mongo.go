@@ -18,11 +18,12 @@ import (
 	"time"
 
 	"github.com/TykTechnologies/logrus"
-	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/mitchellh/mapstructure"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/vmihailenco/msgpack.v2"
+
+	"github.com/TykTechnologies/tyk-pump/analytics"
 )
 
 const (
@@ -540,6 +541,12 @@ func (m *MongoPump) AccumulateSet(data []interface{}) [][]interface{} {
 	for i, item := range data {
 		thisItem := item.(analytics.AnalyticsRecord)
 		if thisItem.ResponseCode == -1 {
+			continue
+		}
+
+		if thisItem.IsGraphRecord() {
+			// TODO: This line is for demo purposes only - don't merge it in this state please!
+			m.log.Info("skipping graph record")
 			continue
 		}
 

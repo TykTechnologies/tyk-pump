@@ -549,6 +549,14 @@ func AggregateData(data []interface{}, trackAllPaths bool, ignoreTagPrefixList [
 			continue
 		}
 
+		if thisV.IsGraphRecord() {
+			// TODO: This line is for demo purposes only - don't merge it in this state please!
+			// We don't want to aggregate Graph Data with REST data - there will be another collection for that.
+			// So it will be the best to skip the record probably.
+			fmt.Println("PoC: skipping graph record for aggregate")
+			continue
+		}
+
 		thisAggregate, found := analyticsPerOrg[orgID]
 
 		if !found {
