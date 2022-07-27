@@ -13,6 +13,7 @@ import (
 	"net"
 	"time"
 
+	mgo2 "github.com/TykTechnologies/tyk-pump/pumps/mongo/drivers/mgo"
 	"gopkg.in/mgo.v2"
 )
 
@@ -73,7 +74,7 @@ func parsePrivateKey(der []byte) (crypto.PrivateKey, error) {
 	return nil, fmt.Errorf("Failed to parse private key")
 }
 
-func GetMongoType(session *mgo.Session) MongoType {
+func GetMongoType(session mgo2.Session) MongoType {
 	// Querying for the features which 100% not supported by AWS DocumentDB
 	var result struct {
 		Code int `bson:"code"`
@@ -90,9 +91,10 @@ func GetMongoType(session *mgo.Session) MongoType {
 	}
 }
 
-func DialInfo(conf BaseConfig) (dialInfo *mgo.DialInfo, err error) {
-	if dialInfo, err = mgo.ParseURL(conf.MongoURL); err != nil {
-		return dialInfo, err
+func DialInfo(conf BaseConfig) (mgo2.Session, error) {
+	dialInfo, err := mgo.ParseURL(conf.MongoURL)
+	if err != nil {
+		return nil, err
 	}
 
 	if conf.MongoUseSSL {
@@ -162,5 +164,7 @@ func DialInfo(conf BaseConfig) (dialInfo *mgo.DialInfo, err error) {
 		}
 	}
 
-	return dialInfo, err
+	mgoSession, err := mgo.DialWithInfo(dialInfo)
+
+	return &mgo2.MgoDriver{mgoSession}, err
 }

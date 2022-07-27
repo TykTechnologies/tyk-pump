@@ -11,6 +11,7 @@ import (
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/TykTechnologies/tyk-pump/logger"
 	"github.com/TykTechnologies/tyk-pump/pumps/common"
+	mgo2 "github.com/TykTechnologies/tyk-pump/pumps/mongo/drivers/mgo"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/mitchellh/mapstructure"
 	"gopkg.in/mgo.v2"
@@ -18,7 +19,7 @@ import (
 
 type Pump struct {
 	IsUptime  bool
-	dbSession *mgo.Session
+	dbSession mgo2.Session
 	dbConf    *Config
 	common.Pump
 }
@@ -269,7 +270,7 @@ func (p *Pump) capCollection() (ok bool) {
 	sess := p.dbSession.Copy()
 	defer sess.Close()
 
-	err = p.dbSession.DB("").C(colName).Create(&mgo.CollectionInfo{Capped: true, MaxBytes: colCapMaxSizeBytes})
+	err = sess.DB("").C(colName).Create(&mgo.CollectionInfo{Capped: true, MaxBytes: colCapMaxSizeBytes})
 	if err != nil {
 		p.Log.Errorf("Unable to create capped collection for (%s). %s", colName, err.Error())
 
