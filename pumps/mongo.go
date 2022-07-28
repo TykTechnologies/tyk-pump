@@ -543,6 +543,11 @@ func (m *MongoPump) AccumulateSet(data []interface{}) [][]interface{} {
 			continue
 		}
 
+		// Skip this record if it is a graph analytics record, they will be handled in a different pump
+		if thisItem.IsGraphRecord() {
+			continue
+		}
+
 		// Add 1 KB for metadata as average
 		sizeBytes := len(thisItem.RawRequest) + len(thisItem.RawResponse) + 1024
 

@@ -5,6 +5,8 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/TykTechnologies/tyk-pump/analytics"
 )
 
@@ -249,29 +251,69 @@ func TestMongoPump_capCollection_OverrideSize(t *testing.T) {
 }
 
 func TestMongoPump_AccumulateSet(t *testing.T) {
-	pump := newPump()
-	conf := defaultConf()
-	conf.MaxInsertBatchSizeBytes = 5120
+	run := func(recordsGenerator func(numRecords int) []interface{}, expectedRecordsCount int) func(t *testing.T) {
+		return func(t *testing.T) {
+			pump := newPump()
+			conf := defaultConf()
+			conf.MaxInsertBatchSizeBytes = 5120
 
-	numRecords := 100
-	// assumed from sizeBytes in AccumulateSet
-	const dataSize = 1024
-	totalData := dataSize * numRecords
+			numRecords := 100
 
-	mPump := pump.(*MongoPump)
-	mPump.dbConf = &conf
-	mPump.log = log.WithField("prefix", mongoPrefix)
+			mPump := pump.(*MongoPump)
+			mPump.dbConf = &conf
+			mPump.log = log.WithField("prefix", mongoPrefix)
 
-	record := analytics.AnalyticsRecord{}
-	data := make([]interface{}, 0)
+			data := recordsGenerator(numRecords)
+			expectedGraphRecordSkips := 0
+			for _, recordData := range data {
+				record := recordData.(analytics.AnalyticsRecord)
+				if record.IsGraphRecord() {
+					expectedGraphRecordSkips++
+				}
+			}
 
-	for i := 0; i < numRecords; i++ {
-		data = append(data, record)
+			// assumed from sizeBytes in AccumulateSet
+			const dataSize = 1024
+			totalData := dataSize * (numRecords - expectedGraphRecordSkips)
+
+			set := mPump.AccumulateSet(data)
+
+			recordsCount := 0
+			for _, setEntry := range set {
+				recordsCount += len(setEntry)
+			}
+			assert.Equal(t, expectedRecordsCount, recordsCount)
+
+			if len(set) != totalData/conf.MaxInsertBatchSizeBytes {
+				t.Errorf("expected accumulator chunks to equal %d, got %d", totalData/conf.MaxInsertBatchSizeBytes, len(set))
+			}
+		}
 	}
 
-	set := mPump.AccumulateSet(data)
+	t.Run("should accumulate all records", run(
+		func(numRecords int) []interface{} {
+			record := analytics.AnalyticsRecord{}
+			data := make([]interface{}, 0)
+			for i := 0; i < numRecords; i++ {
+				data = append(data, record)
+			}
+			return data
+		},
+		100,
+	))
 
-	if len(set) != totalData/conf.MaxInsertBatchSizeBytes {
-		t.Errorf("expected accumulator chunks to equal %d, got %d", totalData/conf.MaxInsertBatchSizeBytes, len(set))
-	}
+	t.Run("should skip all graph analytics records", run(
+		func(numRecords int) []interface{} {
+			data := make([]interface{}, 0)
+			for i := 0; i < numRecords; i++ {
+				record := analytics.AnalyticsRecord{}
+				if i%2 == 0 {
+					record.Tags = []string{analytics.PredefinedTagGraphAnalytics}
+				}
+				data = append(data, record)
+			}
+			return data
+		},
+		50,
+	))
 }
