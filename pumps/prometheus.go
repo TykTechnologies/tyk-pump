@@ -318,6 +318,7 @@ func (pm *PrometheusMetric) GetLabelsValues(decoded analytics.AnalyticsRecord) [
 		"oauth_id":      decoded.OauthID,
 		"request_time":  decoded.RequestTime,
 		"ip_address":    decoded.IPAddress,
+		"alias":         decoded.Alias,
 	}
 
 	for _, label := range pm.Labels {
