@@ -28,6 +28,7 @@ type Pump interface {
 	Shutdown() error
 	SetMaxRecordSize(size int)
 	GetMaxRecordSize() int
+	SetLogLevel(logrus.Level)
 }
 
 type UptimePump interface {

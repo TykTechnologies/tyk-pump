@@ -49,3 +49,7 @@ func (p *CommonPumpConfig) SetMaxRecordSize(size int) {
 func (p *CommonPumpConfig) GetMaxRecordSize() int {
 	return p.maxRecordSize
 }
+
+func (p *CommonPumpConfig) SetLogLevel(level logrus.Level) {
+	p.log.Level = level
+}
