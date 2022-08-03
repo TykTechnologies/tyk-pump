@@ -5,9 +5,9 @@ import (
 	"net/http"
 	pprof_http "net/http/pprof"
 
-	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/tyk-pump/logger"
 	"github.com/gorilla/mux"
+	"github.com/sirupsen/logrus"
 )
 
 var defaultHealthEndpoint = "health"

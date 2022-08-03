@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/TykTechnologies/logrus"
 	"github.com/fatih/structs"
+	"github.com/sirupsen/logrus"
 	"gopkg.in/mgo.v2/bson"
 	"gorm.io/gorm"
 )

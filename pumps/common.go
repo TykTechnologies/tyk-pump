@@ -1,8 +1,8 @@
 package pumps
 
 import (
-	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/tyk-pump/analytics"
+	"github.com/sirupsen/logrus"
 )
 
 type CommonPumpConfig struct {
