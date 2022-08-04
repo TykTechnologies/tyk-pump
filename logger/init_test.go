@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/TykTechnologies/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 //TestFormatterWithForcedPrefixFileOutput check if the prefix is stored in not TTY outputs

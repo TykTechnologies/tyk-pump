@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/tyk-pump/analytics"
+	"github.com/sirupsen/logrus"
 
 	"github.com/mitchellh/mapstructure"
 	"github.com/prometheus/client_golang/prometheus"
