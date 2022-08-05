@@ -103,6 +103,8 @@ type MongoConf struct {
 	CollectionCapMaxSizeBytes int `json:"collection_cap_max_size_bytes" mapstructure:"collection_cap_max_size_bytes"`
 	// Enable collection capping. It's used to set a maximum size of the collection.
 	CollectionCapEnable bool `json:"collection_cap_enable" mapstructure:"collection_cap_enable"`
+	// Enable collecting analytics for graph based analytics
+	GraphAnalyticsEnable bool `json:"graph_analytics_enable" mapstructure:"graph_analytics_enable"`
 }
 
 func loadCertficateAndKeyFromFile(path string) (*tls.Certificate, error) {

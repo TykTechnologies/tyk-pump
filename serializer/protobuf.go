@@ -85,6 +85,7 @@ func (pb *ProtobufSerializer) TransformSingleRecordToProto(rec analytics.Analyti
 		Alias:         rec.Alias,
 		TrackPath:     rec.TrackPath,
 		OauthID:       rec.OauthID,
+		Metadata:      rec.Metadata,
 	}
 	rec.TimestampToProto(&record)
 
