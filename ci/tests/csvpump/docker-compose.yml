@@ -1,0 +1,37 @@
+version: "3"
+services:
+  upstream:
+    image: citizenstig/httpbin
+
+  gateway:
+    image: tykio/tyk-gateway:${gwtag}
+    ports:
+      - "0.0.0.0:8080:8080"
+    volumes:
+      - ./confs/tyk.conf:/conf/tyk.conf
+    environment:
+      - TYK_LOGLEVEL=debug
+    depends_on:
+      - redis
+      - mongo
+      - upstream
+    entrypoint: ["/opt/tyk-gateway/tyk", "--conf", "/conf/tyk.conf"]
+
+  pump:
+    image: tykio/tyk-pump-docker-pub:${tag}
+    volumes:
+      - ./confs/tyk-pump.conf:/conf/tyk-pump.conf
+      - /tmp/pump-data:/pump-data
+    depends_on:
+      - gateway
+    entrypoint: ["/opt/tyk-pump/tyk-pump", "--conf", "/conf/tyk-pump.conf"]
+
+  redis:
+    image: redis:6.0
+    ports:
+      - "6379:6379"
+
+  mongo:
+    image: mongo:4.2
+    ports:
+      - "27017:27017"
