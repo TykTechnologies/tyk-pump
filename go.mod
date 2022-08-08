@@ -14,6 +14,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/timestreamwrite v1.9.0
 	github.com/beeker1121/goque v0.0.0-20170321141813-4044bc29b280 // indirect
 	github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869 // indirect
+	github.com/buger/jsonparser v1.1.1 // indirect
 	github.com/fatih/structs v1.1.0
 	github.com/go-ole/go-ole v1.2.4 // indirect
 	github.com/go-redis/redis/v8 v8.3.1
