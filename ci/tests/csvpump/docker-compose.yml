@@ -16,6 +16,12 @@ services:
       - mongo
       - upstream
     entrypoint: ["/opt/tyk-gateway/tyk", "--conf", "/conf/tyk.conf"]
+    healthcheck:
+      test: curl -s --fail http://localhost:8080/hello| grep -o '.*status":"pass".*details":{.*redis":{"status":"pass"'
+      interval: 5s
+      retries: 10
+      start_period: 4s
+      timeout: 10s
 
   pump:
     image: tykio/tyk-pump-docker-pub:${tag}
@@ -23,13 +29,22 @@ services:
       - ./confs/tyk-pump.conf:/conf/tyk-pump.conf
       - /tmp/pump-data:/pump-data
     depends_on:
-      - gateway
+      redis:
+        condition: service_healthy
+      gateway:
+        condition: service_healthy
     entrypoint: ["/opt/tyk-pump/tyk-pump", "--conf", "/conf/tyk-pump.conf"]
 
   redis:
     image: redis:6.0
     ports:
       - "6379:6379"
+    healthcheck:
+      test: redis-cli ping | grep "PONG"
+      interval: 5s
+      retries: 10
+      start_period: 2s
+      timeout: 10s
 
   mongo:
     image: mongo:4.2

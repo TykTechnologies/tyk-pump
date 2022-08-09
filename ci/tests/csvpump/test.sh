@@ -49,48 +49,29 @@ compose='docker-compose'
 [[ $(docker version --format='{{ .Client.Version }}') =~ 20.10 ]] && compose='docker compose'
 
 #create the tmp directory to hold pump data.
-if [[ -e /tmp/pump-data ]]; then
-    rm -rf /tmp/pump-data/*.csv
+TMPDIR=$(mktemp -d)
+if [[ -e $TMPDIR ]]; then
+    rm -f "$TMPDIR/*.csv"
 else
-    mkdir /tmp/pump-data
+    mkdir "$TMPDIR"
 fi
 
-trap '$compose down' EXIT
+trap cleanup EXIT
 
 $compose up -d
 
 GWBASE="http://localhost:8080"
-
 
 curlf() {
     curl --header 'content-type:application/json' -s --show-error "$@"
 }
 
 cleanup() {
-    rm -f /tmp/pump-data/*.csv
+    $compose down
+    warn "Cleaning up temporary dir $TMPDIR"
+    rm -f "$TMPDIR/*.csv"
+    rmdir "$TMPDIR"
 }
-
-check_gw_status() {
-    info "Checking Tyk GW status..."
-    status=$(curlf "${GWBASE}/hello" | jq -r '.status')
-    if [ "$status" != "pass" ]
-    then
-        return 1
-    fi
-    redis_status=$(curlf "${GWBASE}/hello" | jq -r '.details.redis.status')
-    if [ "$redis_status" != "pass" ]
-    then
-        return 1
-    fi
-    return 0
-}
-
-# Check if gw is up, if not wait a bit.
-if ! check_gw_status
-then
-    info "Gateway & gateway redis is not yet up, waiting a bit..."
-    sleep 10
-fi
 
 # Add the test API - keyless APIs are not getting exported when pump is run.
 info "Adding a test API to the Tyk GW..."
@@ -115,6 +96,7 @@ curl -v --header "Authorization: $KEY" --header "User-Agent: HAL9000" \
     "${GWBASE}/test/"
 
 # Sleep a while till the record gets exported
+info "Waiting for the data to be exported...."
 sleep 20
 
 # Search for our custom  user agent in the csv file.
@@ -123,7 +105,6 @@ then
     info "CSV Pump test completed successfully.."
 else
     warn "CSV pump test failed.."
-    cleanup
     exit 1
 fi
 
