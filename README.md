@@ -491,7 +491,7 @@ If you are using `histogram`, its always going to use the `request_time` to obse
 `buckets` type is an array of float64 and its default value is `[1, 2, 5, 7, 10, 15, 20, 25, 30, 40, 50, 60, 70, 80, 90, 100, 200, 300, 400, 500, 1000, 2000, 5000, 10000, 30000, 60000]`.
 
 The `labels` configuration determines the label name and value extracted from the analytic record.
-The available values are:  `["host","method", "path", "response_code", "api_key", "time_stamp", "api_version", "api_name", "api_id", "org_id", "oauth_id","request_time", "ip_address"]`
+The available values are:  `["host","method", "path", "response_code", "api_key", "time_stamp", "api_version", "api_name", "api_id", "org_id", "oauth_id", "request_time", "ip_address", "alias"]`
 
 ###### JSON / Conf File
 ```.json

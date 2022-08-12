@@ -56,7 +56,7 @@ type PrometheusMetric struct {
 	// Defines the partitions in the metrics. For example: ['response_code','api_name'].
 	// The available labels are: `["host","method",
 	// "path", "response_code", "api_key", "time_stamp", "api_version", "api_name", "api_id",
-	// "org_id", "oauth_id","request_time", "ip_address"]`.
+	// "org_id", "oauth_id","request_time", "ip_address", "alias"]`.
 	Labels []string `json:"labels" mapstructure:"labels"`
 
 	enabled      bool
@@ -318,6 +318,7 @@ func (pm *PrometheusMetric) GetLabelsValues(decoded analytics.AnalyticsRecord) [
 		"oauth_id":      decoded.OauthID,
 		"request_time":  decoded.RequestTime,
 		"ip_address":    decoded.IPAddress,
+		"alias":         decoded.Alias,
 	}
 
 	for _, label := range pm.Labels {

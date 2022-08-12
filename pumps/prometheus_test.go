@@ -235,6 +235,29 @@ func TestPrometheusCounterMetric(t *testing.T) {
 				"500--oauth2": 1,
 			},
 		},
+		{
+			testName: "HTTP status codes per api name and key alias",
+			metric: &PrometheusMetric{
+				Name:       "tyk_http_status_per_api_key_alias",
+				Help:       "HTTP status codes per api name and key alias",
+				MetricType: COUNTER_TYPE,
+				Labels:     []string{"code", "api", "alias"},
+			},
+			analyticsRecords: []analytics.AnalyticsRecord{
+				{APIID: "api_1", ResponseCode: 500, Alias: "alias1"},
+				{APIID: "api_1", ResponseCode: 500, Alias: "alias2"},
+				{APIID: "api_1", ResponseCode: 200, Alias: "alias1"},
+				{APIID: "api_1", ResponseCode: 500, Alias: "alias1"},
+				{APIID: "api_2", ResponseCode: 500, Alias: "alias1"},
+			},
+			expectedMetricsAmount: 4,
+			expectedMetrics: map[string]uint64{
+				"500--api_1--alias1": 2,
+				"500--api_1--alias2": 1,
+				"200--api_1--alias1": 1,
+				"500--api_2--alias1": 1,
+			},
+		},
 	}
 
 	for _, tc := range tcs {
