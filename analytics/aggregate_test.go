@@ -57,7 +57,7 @@ func TestAggregate_Tags(t *testing.T) {
 }
 
 func runTestAggregatedTags(t *testing.T, name string, records []interface{}) {
-	aggregations := AggregateData(records, false, []string{}, false)
+	aggregations := AggregateData(records, false, []string{}, false, false)
 
 	t.Run(name, func(t *testing.T) {
 		for _, aggregation := range aggregations {
@@ -80,7 +80,7 @@ func TestAggregateData_SkipGraphRecords(t *testing.T) {
 			for i := range records {
 				data[i] = records[i]
 			}
-			aggregatedData := AggregateData(data, true, nil, true)
+			aggregatedData := AggregateData(data, true, nil, true, true)
 			assert.Equal(t, expectedAggregatedRecordCount, len(aggregatedData))
 			for _, expectedExistingOrgKey := range expectedExistingOrgKeys {
 				_, exists := aggregatedData[expectedExistingOrgKey]
