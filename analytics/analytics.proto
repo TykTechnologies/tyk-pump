@@ -39,7 +39,7 @@ message AnalyticsRecord {
   google.protobuf.Timestamp ExpireAt = 28;
   string OauthID = 29;
   string TimeZone = 30;
-  map<string, string> Metadata = 31;
+  string ApiSchema = 31;
 }
 
 message Latency {
