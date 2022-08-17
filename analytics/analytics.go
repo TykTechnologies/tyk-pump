@@ -64,7 +64,7 @@ type AnalyticsRecord struct {
 	Alias         string       `json:"alias"`
 	TrackPath     bool         `json:"track_path" gorm:"column:trackpath"`
 	ExpireAt      time.Time    `bson:"expireAt" json:"expireAt"`
-	ApiSchema     string       `bson:"api_schema" json:"api_schema" gorm:"-"`
+	ApiSchema     string       `json:"api_schema" bson:"-" gorm:"-"`
 }
 
 func (ar *AnalyticsRecord) TableName() string {
