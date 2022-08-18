@@ -178,7 +178,7 @@ func (p *PrometheusPump) Init(conf interface{}) error {
 			if errInit != nil {
 				p.log.Error(errInit)
 			} else {
-				p.log.Info("added custom prometheus metric:",newMetric.Name)
+				p.log.Info("added custom prometheus metric:", newMetric.Name)
 				customMetrics = append(customMetrics, newMetric)
 			}
 		}
@@ -215,7 +215,6 @@ func (p *PrometheusPump) WriteData(ctx context.Context, data []interface{}) erro
 				p.log.Debug("Processing metric:", metric.Name)
 				//we get the values for that metric required labels
 				values := metric.GetLabelsValues(record)
-
 
 				switch metric.MetricType {
 				case COUNTER_TYPE:
