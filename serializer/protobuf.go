@@ -30,32 +30,6 @@ func (pb *ProtobufSerializer) Decode(analyticsData interface{}, record *analytic
 }
 
 func (pb *ProtobufSerializer) TransformSingleRecordToProto(rec analytics.AnalyticsRecord) analyticsproto.AnalyticsRecord {
-	latency := analyticsproto.Latency{
-		Total:    rec.Latency.Total,
-		Upstream: rec.Latency.Upstream,
-	}
-
-	net := analyticsproto.NetworkStats{
-		OpenConnections:   rec.Network.OpenConnections,
-		ClosedConnections: rec.Network.ClosedConnection,
-		BytesIn:           rec.Network.BytesIn,
-		BytesOut:          rec.Network.BytesOut,
-	}
-
-	geo := analyticsproto.GeoData{
-		Country: &analyticsproto.Country{
-			ISOCode: rec.Geo.Country.ISOCode,
-		},
-		City: &analyticsproto.City{
-			GeoNameID: uint32(rec.Geo.City.GeoNameID),
-			Names:     rec.Geo.City.Names,
-		},
-		Location: &analyticsproto.Location{
-			Latitude:  rec.Geo.Location.Latitude,
-			Longitude: rec.Geo.Location.Longitude,
-			TimeZone:  rec.Geo.Location.TimeZone,
-		},
-	}
 
 	record := analyticsproto.AnalyticsRecord{
 		Host:          rec.Host,
@@ -75,16 +49,37 @@ func (pb *ProtobufSerializer) TransformSingleRecordToProto(rec analytics.Analyti
 		APIID:         rec.APIID,
 		OrgID:         rec.OrgID,
 		RequestTime:   rec.RequestTime,
-		Latency:       &latency,
-		RawRequest:    rec.RawRequest,
-		RawResponse:   rec.RawResponse,
-		IPAddress:     rec.IPAddress,
-		Geo:           &geo,
-		Network:       &net,
-		Tags:          rec.Tags,
-		Alias:         rec.Alias,
-		TrackPath:     rec.TrackPath,
-		OauthID:       rec.OauthID,
+		Latency: &analyticsproto.Latency{
+			Total:    rec.Latency.Total,
+			Upstream: rec.Latency.Upstream,
+		},
+		RawRequest:  rec.RawRequest,
+		RawResponse: rec.RawResponse,
+		IPAddress:   rec.IPAddress,
+		Geo: &analyticsproto.GeoData{
+			Country: &analyticsproto.Country{
+				ISOCode: rec.Geo.Country.ISOCode,
+			},
+			City: &analyticsproto.City{
+				GeoNameID: uint32(rec.Geo.City.GeoNameID),
+				Names:     rec.Geo.City.Names,
+			},
+			Location: &analyticsproto.Location{
+				Latitude:  rec.Geo.Location.Latitude,
+				Longitude: rec.Geo.Location.Longitude,
+				TimeZone:  rec.Geo.Location.TimeZone,
+			},
+		},
+		Network: &analyticsproto.NetworkStats{
+			OpenConnections:   rec.Network.OpenConnections,
+			ClosedConnections: rec.Network.ClosedConnection,
+			BytesIn:           rec.Network.BytesIn,
+			BytesOut:          rec.Network.BytesOut,
+		},
+		Tags:      rec.Tags,
+		Alias:     rec.Alias,
+		TrackPath: rec.TrackPath,
+		OauthID:   rec.OauthID,
 	}
 	rec.TimestampToProto(&record)
 
