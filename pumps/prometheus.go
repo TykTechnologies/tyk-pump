@@ -169,21 +169,7 @@ func (p *PrometheusPump) Init(conf interface{}) error {
 	}
 
 	//then we check the custom ones
-	if len(p.conf.CustomMetrics) > 0 {
-		customMetrics := []*PrometheusMetric{}
-		for _, metric := range p.conf.CustomMetrics {
-			newMetric := &metric
-			newMetric.aggregatedObservations = p.conf.AggregateObservations
-			errInit := newMetric.InitVec()
-			if errInit != nil {
-				p.log.Error(errInit)
-			} else {
-				customMetrics = append(customMetrics, newMetric)
-			}
-		}
-
-		p.allMetrics = append(p.allMetrics, customMetrics...)
-	}
+	p.InitCustomMetrics()
 
 	p.log.Info("Starting prometheus listener on:", p.conf.Addr)
 
@@ -195,6 +181,26 @@ func (p *PrometheusPump) Init(conf interface{}) error {
 	p.log.Info(p.GetName() + " Initialized")
 
 	return nil
+}
+
+//InitCustomMetrics initialise custom prometheus metrics based on p.conf.CustomMetrics and add them into p.allMetrics
+func (p *PrometheusPump) InitCustomMetrics() {
+	if len(p.conf.CustomMetrics) > 0 {
+		customMetrics := []*PrometheusMetric{}
+		for i := range p.conf.CustomMetrics {
+			newMetric := &p.conf.CustomMetrics[i]
+			newMetric.aggregatedObservations = p.conf.AggregateObservations
+			errInit := newMetric.InitVec()
+			if errInit != nil {
+				p.log.Error("there was an error initialising custom prometheus metric ", newMetric.Name, " error:", errInit)
+			} else {
+				p.log.Info("added custom prometheus metric:", newMetric.Name)
+				customMetrics = append(customMetrics, newMetric)
+			}
+		}
+
+		p.allMetrics = append(p.allMetrics, customMetrics...)
+	}
 }
 
 func (p *PrometheusPump) WriteData(ctx context.Context, data []interface{}) error {
