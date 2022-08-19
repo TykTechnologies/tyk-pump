@@ -195,10 +195,10 @@ func (p *PrometheusPump) InitCustomMetrics() error {
 			errInit := newMetric.InitVec()
 			if errInit != nil {
 				return errInit
-			} else {
-				p.log.Info("added custom prometheus metric:", newMetric.Name)
-				customMetrics = append(customMetrics, newMetric)
 			}
+
+			p.log.Info("added custom prometheus metric:", newMetric.Name)
+			customMetrics = append(customMetrics, newMetric)
 		}
 
 		p.allMetrics = append(p.allMetrics, customMetrics...)
