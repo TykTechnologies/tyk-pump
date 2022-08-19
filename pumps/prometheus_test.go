@@ -76,13 +76,11 @@ func TestInitCustomMetrics(t *testing.T) {
 	tcs := []struct {
 		testName              string
 		metrics               []PrometheusMetric
-		expectedErr           error
 		expectedAllMetricsLen int
 	}{
 		{
 			testName:              "no custom metrics",
 			metrics:               []PrometheusMetric{},
-			expectedErr:           nil,
 			expectedAllMetricsLen: 0,
 		},
 		{
@@ -94,7 +92,6 @@ func TestInitCustomMetrics(t *testing.T) {
 					Labels:     []string{"api_name"},
 				},
 			},
-			expectedErr:           nil,
 			expectedAllMetricsLen: 1,
 		},
 		{
@@ -111,7 +108,6 @@ func TestInitCustomMetrics(t *testing.T) {
 					Labels:     []string{"api_name", "api_key"},
 				},
 			},
-			expectedErr:           nil,
 			expectedAllMetricsLen: 2,
 		},
 		{
@@ -133,20 +129,23 @@ func TestInitCustomMetrics(t *testing.T) {
 					Labels:     []string{"api_name", "api_key"},
 				},
 			},
-			expectedErr:           nil,
 			expectedAllMetricsLen: 3,
 		},
 		{
-			testName: "with error",
+			testName: "one with error",
 			metrics: []PrometheusMetric{
 				{
 					Name:       "test",
 					MetricType: "test_type",
 					Labels:     []string{"api_name"},
 				},
+				{
+					Name:       "other_test",
+					MetricType: COUNTER_TYPE,
+					Labels:     []string{"api_name", "api_key"},
+				},
 			},
-			expectedErr:           errors.New("invalid metric type:test_type"),
-			expectedAllMetricsLen: 0,
+			expectedAllMetricsLen: 1,
 		},
 	}
 
@@ -157,22 +156,19 @@ func TestInitCustomMetrics(t *testing.T) {
 			p.log = log.WithField("prefix", prometheusPrefix)
 			p.conf.CustomMetrics = tc.metrics
 
-			err := p.InitCustomMetrics()
-			assert.Equal(t, tc.expectedErr, err)
-			//if there's no error on init, we check everything else
-			if err == nil {
-				//this function do the unregistering for the metrics in the prometheus lib.
-				defer func() {
-					for i := range tc.metrics {
-						if tc.metrics[i].MetricType == COUNTER_TYPE {
-							prometheus.Unregister(tc.metrics[i].counterVec)
-						} else if tc.metrics[i].MetricType == HISTOGRAM_TYPE {
-							prometheus.Unregister(tc.metrics[i].histogramVec)
-						}
+			p.InitCustomMetrics()
+			//this function do the unregistering for the metrics in the prometheus lib.
+			defer func() {
+				for i := range tc.metrics {
+					if tc.metrics[i].MetricType == COUNTER_TYPE {
+						prometheus.Unregister(tc.metrics[i].counterVec)
+					} else if tc.metrics[i].MetricType == HISTOGRAM_TYPE {
+						prometheus.Unregister(tc.metrics[i].histogramVec)
 					}
-				}()
-				assert.Equal(t, tc.expectedAllMetricsLen, len(p.allMetrics))
-			}
+				}
+			}()
+			assert.Equal(t, tc.expectedAllMetricsLen, len(p.allMetrics))
+
 		})
 	}
 }
