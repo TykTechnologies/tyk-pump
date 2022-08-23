@@ -57,7 +57,7 @@ func TestAggregate_Tags(t *testing.T) {
 }
 
 func runTestAggregatedTags(t *testing.T, name string, records []interface{}) {
-	aggregations := AggregateData(records, false, []string{}, false)
+	aggregations := AggregateData(records, false, []string{}, false, false)
 
 	t.Run(name, func(t *testing.T) {
 		for _, aggregation := range aggregations {
@@ -71,4 +71,62 @@ func TestTrimTag(t *testing.T) {
 	assert.Equal(t, "helloworld", TrimTag("hello.world"))
 	assert.Equal(t, "helloworld", TrimTag(".hello.world.."))
 	assert.Equal(t, "hello world", TrimTag(" hello world "))
+}
+
+func TestAggregateData_SkipGraphRecords(t *testing.T) {
+	run := func(records []AnalyticsRecord, expectedAggregatedRecordCount int, expectedExistingOrgKeys []string, expectedNonExistingOrgKeys []string) func(t *testing.T) {
+		return func(t *testing.T) {
+			data := make([]interface{}, len(records))
+			for i := range records {
+				data[i] = records[i]
+			}
+			aggregatedData := AggregateData(data, true, nil, true, true)
+			assert.Equal(t, expectedAggregatedRecordCount, len(aggregatedData))
+			for _, expectedExistingOrgKey := range expectedExistingOrgKeys {
+				_, exists := aggregatedData[expectedExistingOrgKey]
+				assert.True(t, exists)
+			}
+			for _, expectedNonExistingOrgKey := range expectedNonExistingOrgKeys {
+				_, exists := aggregatedData[expectedNonExistingOrgKey]
+				assert.False(t, exists)
+			}
+		}
+	}
+
+	t.Run("should not skip records if no graph analytics record is present", run(
+		[]AnalyticsRecord{
+			{
+				OrgID: "123",
+				Tags:  []string{"tag_1", "tag_2"},
+			},
+			{
+				OrgID: "987",
+			},
+		},
+		2,
+		[]string{"123", "987"},
+		nil,
+	))
+
+	t.Run("should skip graph analytics records", run([]AnalyticsRecord{
+		{
+			OrgID: "123",
+			Tags:  []string{"tag_1", "tag_2"},
+		},
+		{
+			OrgID: "777-graph",
+			Tags:  []string{"tag_1", "tag_2", PredefinedTagGraphAnalytics},
+		},
+		{
+			OrgID: "987",
+		},
+		{
+			OrgID: "555-graph",
+			Tags:  []string{PredefinedTagGraphAnalytics},
+		},
+	},
+		2,
+		[]string{"123", "987"},
+		[]string{"777-graph", "555-graph"},
+	))
 }

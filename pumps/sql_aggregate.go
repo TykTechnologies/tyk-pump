@@ -152,7 +152,7 @@ func (c *SQLAggregatePump) WriteData(ctx context.Context, data []interface{}) er
 			table = analytics.AggregateSQLTable
 		}
 
-		analyticsPerOrg := analytics.AggregateData(data[startIndex:endIndex], c.SQLConf.TrackAllPaths, c.SQLConf.IgnoreTagPrefixList, c.SQLConf.StoreAnalyticsPerMinute)
+		analyticsPerOrg := analytics.AggregateData(data[startIndex:endIndex], c.SQLConf.TrackAllPaths, c.SQLConf.IgnoreTagPrefixList, c.SQLConf.StoreAnalyticsPerMinute, false)
 
 		for orgID, ag := range analyticsPerOrg {
 
