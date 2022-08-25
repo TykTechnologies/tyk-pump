@@ -1,0 +1,52 @@
+version: "3"
+services:
+  upstream:
+    image: citizenstig/httpbin
+
+  gateway:
+    image: tykio/tyk-gateway:${gwtag}
+    ports:
+      - "0.0.0.0:8080:8080"
+    volumes:
+      - ./confs/tyk.conf:/conf/tyk.conf
+    environment:
+      - TYK_LOGLEVEL=debug
+    depends_on:
+      - redis
+      - mongo
+      - upstream
+    entrypoint: ["/opt/tyk-gateway/tyk", "--conf", "/conf/tyk.conf"]
+    healthcheck:
+      test: curl -s --fail http://localhost:8080/hello| grep -o '.*status":"pass".*details":{.*redis":{"status":"pass"'
+      interval: 5s
+      retries: 10
+      start_period: 4s
+      timeout: 10s
+
+  pump:
+    image: tykio/tyk-pump-docker-pub:${tag}
+    volumes:
+      - ./confs/tyk-pump.conf:/conf/tyk-pump.conf
+      - /tmp/pump-data:/pump-data
+    depends_on:
+      redis:
+        condition: service_healthy
+      gateway:
+        condition: service_healthy
+    entrypoint: ["/opt/tyk-pump/tyk-pump", "--conf", "/conf/tyk-pump.conf"]
+
+  redis:
+    image: redis:6.0
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: redis-cli ping | grep "PONG"
+      interval: 5s
+      retries: 10
+      start_period: 2s
+      timeout: 10s
+
+  mongo:
+    image: mongo:4.2
+    ports:
+      - "27017:27017"

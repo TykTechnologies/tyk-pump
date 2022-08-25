@@ -1,8 +1,8 @@
 package pumps
 
 import (
-	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/tyk-pump/analytics"
+	"github.com/sirupsen/logrus"
 )
 
 type CommonPumpConfig struct {
@@ -48,4 +48,8 @@ func (p *CommonPumpConfig) SetMaxRecordSize(size int) {
 
 func (p *CommonPumpConfig) GetMaxRecordSize() int {
 	return p.maxRecordSize
+}
+
+func (p *CommonPumpConfig) SetLogLevel(level logrus.Level) {
+	p.log.Level = level
 }

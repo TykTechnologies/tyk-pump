@@ -14,11 +14,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/mitchellh/mapstructure"
 	"github.com/moesif/moesifapi-go"
 	"github.com/moesif/moesifapi-go/models"
+	"github.com/sirupsen/logrus"
 )
 
 type MoesifPump struct {

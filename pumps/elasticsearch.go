@@ -16,9 +16,9 @@ import (
 	elasticv5 "gopkg.in/olivere/elastic.v5"
 	elasticv6 "gopkg.in/olivere/elastic.v6"
 
-	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/murmur3"
 	"github.com/TykTechnologies/tyk-pump/analytics"
+	"github.com/sirupsen/logrus"
 )
 
 type ElasticsearchPump struct {
