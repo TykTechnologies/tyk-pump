@@ -11,12 +11,12 @@ updates:
       interval: "weekly"
 
   - package-ecosystem: "gomod"
-      # Look for `go.mod` file in the `root` directory
-      directory: "/"
-      # Check the gomod registry for updates every Monday
-      schedule:
-        interval: "weekly"
-      reviewers:
-        - "TykTechnologies/platform-squad"
-      # max number of pull requests that dependabot will open in tandem
-      open-pull-requests-limit: 4
+    # Look for `go.mod` file in the `root` directory
+    directory: "/"
+    # Check the gomod registry for updates every Monday
+    schedule:
+      interval: "weekly"
+    reviewers:
+      - "TykTechnologies/platform-squad"
+    # max number of pull requests that dependabot will open in tandem
+    open-pull-requests-limit: 4
