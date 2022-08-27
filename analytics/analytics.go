@@ -10,11 +10,16 @@ import (
 	"sync/atomic"
 	"time"
 
-	analyticsproto "github.com/TykTechnologies/tyk-pump/analytics/proto"
 	"github.com/oschwald/maxminddb-golang"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	analyticsproto "github.com/TykTechnologies/tyk-pump/analytics/proto"
+
 	"github.com/TykTechnologies/tyk-pump/logger"
+)
+
+const (
+	PredefinedTagGraphAnalytics = "tyk-graph-analytics"
 )
 
 var log = logger.GetLogger()
@@ -64,6 +69,7 @@ type AnalyticsRecord struct {
 	Alias         string       `json:"alias"`
 	TrackPath     bool         `json:"track_path" gorm:"column:trackpath"`
 	ExpireAt      time.Time    `bson:"expireAt" json:"expireAt"`
+	ApiSchema     string       `json:"api_schema" bson:"-" gorm:"-"`
 }
 
 func (ar *AnalyticsRecord) TableName() string {
@@ -323,4 +329,18 @@ func GeoIPLookup(ipStr string, GeoIPDB *maxminddb.Reader) (*GeoData, error) {
 		return nil, fmt.Errorf("geoIPDB lookup of %q failed: %v", ipStr, err)
 	}
 	return record, nil
+}
+
+func (a *AnalyticsRecord) IsGraphRecord() bool {
+	if len(a.Tags) == 0 {
+		return false
+	}
+
+	for _, tag := range a.Tags {
+		if tag == PredefinedTagGraphAnalytics {
+			return true
+		}
+	}
+
+	return false
 }

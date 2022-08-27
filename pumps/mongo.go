@@ -17,10 +17,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/mitchellh/mapstructure"
+	"github.com/sirupsen/logrus"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/vmihailenco/msgpack.v2"
 )
@@ -540,6 +540,11 @@ func (m *MongoPump) AccumulateSet(data []interface{}) [][]interface{} {
 	for i, item := range data {
 		thisItem := item.(analytics.AnalyticsRecord)
 		if thisItem.ResponseCode == -1 {
+			continue
+		}
+
+		// Skip this record if it is a graph analytics record, they will be handled in a different pump
+		if thisItem.IsGraphRecord() {
 			continue
 		}
 

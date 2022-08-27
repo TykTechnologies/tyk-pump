@@ -6,8 +6,6 @@ require (
 	github.com/DataDog/datadog-go v4.7.0+incompatible
 	github.com/Microsoft/go-winio v0.5.0 // indirect
 	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d // indirect
-	github.com/TykTechnologies/logrus v0.0.0-20161201171239-55ff0f4b9b3d
-	github.com/TykTechnologies/logrus-prefixed-formatter v0.0.0-20161201171121-85209afb73a6
 	github.com/TykTechnologies/murmur3 v0.0.0-20180602122059-1915e687e465
 	github.com/TykTechnologies/tyk v0.0.0-20200207055804-cf1d1ad81206
 	github.com/aws/aws-sdk-go-v2 v1.11.2
@@ -43,8 +41,10 @@ require (
 	github.com/segmentio/backo-go v0.0.0-20160424052352-204274ad699c // indirect
 	github.com/segmentio/kafka-go v0.3.6
 	github.com/shirou/gopsutil v3.20.11+incompatible // indirect
+	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.0
 	github.com/syndtr/goleveldb v0.0.0-20190318030020-c3a204f8e965 // indirect
+	github.com/x-cray/logrus-prefixed-formatter v0.5.2
 	github.com/xtgo/uuid v0.0.0-20140804021211-a0b114877d4c // indirect
 	golang.org/x/lint v0.0.0-20200302205851-738671d3881b // indirect
 	golang.org/x/net v0.0.0-20210614182718-04defd469f4e

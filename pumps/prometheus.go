@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/tyk-pump/analytics"
+	"github.com/sirupsen/logrus"
 
 	"github.com/mitchellh/mapstructure"
 	"github.com/prometheus/client_golang/prometheus"
@@ -56,7 +56,7 @@ type PrometheusMetric struct {
 	// Defines the partitions in the metrics. For example: ['response_code','api_name'].
 	// The available labels are: `["host","method",
 	// "path", "response_code", "api_key", "time_stamp", "api_version", "api_name", "api_id",
-	// "org_id", "oauth_id","request_time", "ip_address"]`.
+	// "org_id", "oauth_id","request_time", "ip_address", "alias"]`.
 	Labels []string `json:"labels" mapstructure:"labels"`
 
 	enabled      bool
@@ -169,21 +169,7 @@ func (p *PrometheusPump) Init(conf interface{}) error {
 	}
 
 	//then we check the custom ones
-	if len(p.conf.CustomMetrics) > 0 {
-		customMetrics := []*PrometheusMetric{}
-		for _, metric := range p.conf.CustomMetrics {
-			newMetric := &metric
-			newMetric.aggregatedObservations = p.conf.AggregateObservations
-			errInit := newMetric.InitVec()
-			if errInit != nil {
-				p.log.Error(errInit)
-			} else {
-				customMetrics = append(customMetrics, newMetric)
-			}
-		}
-
-		p.allMetrics = append(p.allMetrics, customMetrics...)
-	}
+	p.InitCustomMetrics()
 
 	p.log.Info("Starting prometheus listener on:", p.conf.Addr)
 
@@ -195,6 +181,26 @@ func (p *PrometheusPump) Init(conf interface{}) error {
 	p.log.Info(p.GetName() + " Initialized")
 
 	return nil
+}
+
+//InitCustomMetrics initialise custom prometheus metrics based on p.conf.CustomMetrics and add them into p.allMetrics
+func (p *PrometheusPump) InitCustomMetrics() {
+	if len(p.conf.CustomMetrics) > 0 {
+		customMetrics := []*PrometheusMetric{}
+		for i := range p.conf.CustomMetrics {
+			newMetric := &p.conf.CustomMetrics[i]
+			newMetric.aggregatedObservations = p.conf.AggregateObservations
+			errInit := newMetric.InitVec()
+			if errInit != nil {
+				p.log.Error("there was an error initialising custom prometheus metric ", newMetric.Name, " error:", errInit)
+			} else {
+				p.log.Info("added custom prometheus metric:", newMetric.Name)
+				customMetrics = append(customMetrics, newMetric)
+			}
+		}
+
+		p.allMetrics = append(p.allMetrics, customMetrics...)
+	}
 }
 
 func (p *PrometheusPump) WriteData(ctx context.Context, data []interface{}) error {
@@ -318,6 +324,7 @@ func (pm *PrometheusMetric) GetLabelsValues(decoded analytics.AnalyticsRecord) [
 		"oauth_id":      decoded.OauthID,
 		"request_time":  decoded.RequestTime,
 		"ip_address":    decoded.IPAddress,
+		"alias":         decoded.Alias,
 	}
 
 	for _, label := range pm.Labels {

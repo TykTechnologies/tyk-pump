@@ -5,9 +5,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/kelseyhightower/envconfig"
+	"github.com/sirupsen/logrus"
 )
 
 const PUMPS_ENV_PREFIX = "TYK_PMP_PUMPS"
@@ -28,6 +28,7 @@ type Pump interface {
 	Shutdown() error
 	SetMaxRecordSize(size int)
 	GetMaxRecordSize() int
+	SetLogLevel(logrus.Level)
 }
 
 type UptimePump interface {

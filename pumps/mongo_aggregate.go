@@ -14,8 +14,8 @@ import (
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 
-	"github.com/TykTechnologies/logrus"
 	"github.com/TykTechnologies/tyk-pump/analytics"
+	"github.com/sirupsen/logrus"
 )
 
 var mongoAggregatePumpPrefix = "PMP_MONGOAGG"
@@ -258,7 +258,7 @@ func (m *MongoAggregatePump) WriteData(ctx context.Context, data []interface{}) 
 		m.WriteData(ctx, data)
 	} else {
 		// calculate aggregates
-		analyticsPerOrg := analytics.AggregateData(data, m.dbConf.TrackAllPaths, m.dbConf.IgnoreTagPrefixList, m.dbConf.StoreAnalyticsPerMinute)
+		analyticsPerOrg := analytics.AggregateData(data, m.dbConf.TrackAllPaths, m.dbConf.IgnoreTagPrefixList, m.dbConf.StoreAnalyticsPerMinute, true)
 
 		// put aggregated data into MongoDB
 		for orgID, filteredData := range analyticsPerOrg {

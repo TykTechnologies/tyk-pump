@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/TykTechnologies/logrus"
 	"github.com/fatih/structs"
+	"github.com/sirupsen/logrus"
 	"gopkg.in/mgo.v2/bson"
 	"gorm.io/gorm"
 )
@@ -539,13 +539,18 @@ func replaceUnsupportedChars(path string) string {
 }
 
 // AggregateData calculates aggregated data, returns map orgID => aggregated analytics data
-func AggregateData(data []interface{}, trackAllPaths bool, ignoreTagPrefixList []string, storeAnalyticPerMinute bool) map[string]AnalyticsRecordAggregate {
+func AggregateData(data []interface{}, trackAllPaths bool, ignoreTagPrefixList []string, storeAnalyticPerMinute, ignoreGraphData bool) map[string]AnalyticsRecordAggregate {
 	analyticsPerOrg := make(map[string]AnalyticsRecordAggregate)
 	for _, v := range data {
 		thisV := v.(AnalyticsRecord)
 		orgID := thisV.OrgID
 
 		if orgID == "" {
+			continue
+		}
+
+		// We don't want to aggregate Graph Data with REST data - there is a different type for that.
+		if ignoreGraphData && thisV.IsGraphRecord() {
 			continue
 		}
 

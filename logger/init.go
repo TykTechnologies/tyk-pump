@@ -4,8 +4,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/TykTechnologies/logrus"
-	prefixed "github.com/TykTechnologies/logrus-prefixed-formatter"
+	"github.com/sirupsen/logrus"
+	prefixed "github.com/x-cray/logrus-prefixed-formatter"
 )
 
 var log = logrus.New()
@@ -15,10 +15,11 @@ func init() {
 }
 
 func GetFormatterWithForcedPrefix() *prefixed.TextFormatter {
-	textFormatter := new(prefixed.TextFormatter)
-	textFormatter.ForceColors = true
-	textFormatter.TimestampFormat = `Jan 02 15:04:05`
-	return textFormatter
+	formatter := new(prefixed.TextFormatter)
+	formatter.TimestampFormat = `Jan 02 15:04:05`
+	formatter.FullTimestamp = true
+
+	return formatter
 }
 
 func GetLogger() *logrus.Logger {

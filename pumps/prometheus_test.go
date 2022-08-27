@@ -29,9 +29,9 @@ func TestInitVec(t *testing.T) {
 		{
 			testName: "Histogram metric",
 			customMetric: PrometheusMetric{
-				Name:       "testCounterMetric",
-				MetricType: COUNTER_TYPE,
-				Labels:     []string{"response_code", "api_id"},
+				Name:       "testHistogramMetric",
+				MetricType: HISTOGRAM_TYPE,
+				Labels:     []string{"type", "api_id"},
 			},
 			expectedErr: nil,
 			isEnabled:   true,
@@ -67,6 +67,107 @@ func TestInitVec(t *testing.T) {
 				assert.Equal(t, tc.isEnabled, prometheus.Unregister(tc.customMetric.histogramVec))
 
 			}
+
+		})
+	}
+}
+
+func TestInitCustomMetrics(t *testing.T) {
+	tcs := []struct {
+		testName              string
+		metrics               []PrometheusMetric
+		expectedAllMetricsLen int
+	}{
+		{
+			testName:              "no custom metrics",
+			metrics:               []PrometheusMetric{},
+			expectedAllMetricsLen: 0,
+		},
+		{
+			testName: "single custom metrics",
+			metrics: []PrometheusMetric{
+				{
+					Name:       "test",
+					MetricType: COUNTER_TYPE,
+					Labels:     []string{"api_name"},
+				},
+			},
+			expectedAllMetricsLen: 1,
+		},
+		{
+			testName: "multiple custom metrics",
+			metrics: []PrometheusMetric{
+				{
+					Name:       "test",
+					MetricType: COUNTER_TYPE,
+					Labels:     []string{"api_name"},
+				},
+				{
+					Name:       "other_test",
+					MetricType: COUNTER_TYPE,
+					Labels:     []string{"api_name", "api_key"},
+				},
+			},
+			expectedAllMetricsLen: 2,
+		},
+		{
+			testName: "multiple custom metrics with histogram",
+			metrics: []PrometheusMetric{
+				{
+					Name:       "test",
+					MetricType: COUNTER_TYPE,
+					Labels:     []string{"api_name"},
+				},
+				{
+					Name:       "other_test",
+					MetricType: COUNTER_TYPE,
+					Labels:     []string{"api_name", "api_key"},
+				},
+				{
+					Name:       "histogram_test",
+					MetricType: HISTOGRAM_TYPE,
+					Labels:     []string{"api_name", "api_key"},
+				},
+			},
+			expectedAllMetricsLen: 3,
+		},
+		{
+			testName: "one with error",
+			metrics: []PrometheusMetric{
+				{
+					Name:       "test",
+					MetricType: "test_type",
+					Labels:     []string{"api_name"},
+				},
+				{
+					Name:       "other_test",
+					MetricType: COUNTER_TYPE,
+					Labels:     []string{"api_name", "api_key"},
+				},
+			},
+			expectedAllMetricsLen: 1,
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.testName, func(t *testing.T) {
+			p := PrometheusPump{}
+			p.conf = &PrometheusConf{}
+			p.log = log.WithField("prefix", prometheusPrefix)
+			p.conf.CustomMetrics = tc.metrics
+
+			p.InitCustomMetrics()
+			//this function do the unregistering for the metrics in the prometheus lib.
+			defer func() {
+				for i := range tc.metrics {
+					if tc.metrics[i].MetricType == COUNTER_TYPE {
+						prometheus.Unregister(tc.metrics[i].counterVec)
+					} else if tc.metrics[i].MetricType == HISTOGRAM_TYPE {
+						prometheus.Unregister(tc.metrics[i].histogramVec)
+					}
+				}
+			}()
+			assert.Equal(t, tc.expectedAllMetricsLen, len(p.allMetrics))
 
 		})
 	}
@@ -235,6 +336,29 @@ func TestPrometheusCounterMetric(t *testing.T) {
 				"500--oauth2": 1,
 			},
 		},
+		{
+			testName: "HTTP status codes per api name and key alias",
+			metric: &PrometheusMetric{
+				Name:       "tyk_http_status_per_api_key_alias",
+				Help:       "HTTP status codes per api name and key alias",
+				MetricType: COUNTER_TYPE,
+				Labels:     []string{"code", "api", "alias"},
+			},
+			analyticsRecords: []analytics.AnalyticsRecord{
+				{APIID: "api_1", ResponseCode: 500, Alias: "alias1"},
+				{APIID: "api_1", ResponseCode: 500, Alias: "alias2"},
+				{APIID: "api_1", ResponseCode: 200, Alias: "alias1"},
+				{APIID: "api_1", ResponseCode: 500, Alias: "alias1"},
+				{APIID: "api_2", ResponseCode: 500, Alias: "alias1"},
+			},
+			expectedMetricsAmount: 4,
+			expectedMetrics: map[string]uint64{
+				"500--api_1--alias1": 2,
+				"500--api_1--alias2": 1,
+				"200--api_1--alias1": 1,
+				"500--api_2--alias1": 1,
+			},
+		},
 	}
 
 	for _, tc := range tcs {
@@ -385,7 +509,7 @@ func TestPrometheusHistogramMetric(t *testing.T) {
 	}
 }
 
-func TestPromtheusCreateBasicMetrics(t *testing.T) {
+func TestPrometheusCreateBasicMetrics(t *testing.T) {
 	p := PrometheusPump{}
 	newPump := p.New().(*PrometheusPump)
 

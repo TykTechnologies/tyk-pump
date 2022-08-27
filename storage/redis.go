@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/TykTechnologies/logrus"
 	"github.com/go-redis/redis/v8"
+	"github.com/sirupsen/logrus"
 
 	"github.com/kelseyhightower/envconfig"
 	"github.com/mitchellh/mapstructure"

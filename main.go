@@ -11,8 +11,6 @@ import (
 
 	"os"
 
-	"github.com/TykTechnologies/logrus"
-	prefixed "github.com/TykTechnologies/logrus-prefixed-formatter"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/TykTechnologies/tyk-pump/analytics/demo"
 	logger "github.com/TykTechnologies/tyk-pump/logger"
@@ -21,6 +19,7 @@ import (
 	"github.com/TykTechnologies/tyk-pump/server"
 	"github.com/TykTechnologies/tyk-pump/storage"
 	"github.com/gocraft/health"
+	"github.com/sirupsen/logrus"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
@@ -49,7 +48,6 @@ func Init() {
 	SystemConfig = TykPumpConfiguration{}
 
 	kingpin.Parse()
-	log.Formatter = new(prefixed.TextFormatter)
 	LoadConfig(conf, &SystemConfig)
 
 	if SystemConfig.LogFormat == "json" {
