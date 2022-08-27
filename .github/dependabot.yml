@@ -21,6 +21,6 @@ updates:
       schedule:
         interval: "weekly"
       reviewers:
-        - "platform-squad"
+        - "TykTechnologies/platform-squad"
       # max number of pull requests that dependabot will open in tandem
       open-pull-requests-limit: 4
