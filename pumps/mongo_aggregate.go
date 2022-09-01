@@ -203,6 +203,7 @@ func (m *MongoAggregatePump) connect() {
 	if err == nil && m.dbConf.MongoDBType == 0 {
 		m.dbConf.MongoDBType = mongoType(m.dbSession)
 	}
+
 }
 
 func (m *MongoAggregatePump) ensureIndexes(c *mgo.Collection) error {
@@ -221,15 +222,17 @@ func (m *MongoAggregatePump) ensureIndexes(c *mgo.Collection) error {
 	}
 
 	var err error
-	ttlIndex := mgo.Index{
-		Key:         []string{"expireAt"},
-		ExpireAfter: 0,
-		Background:  m.dbConf.MongoDBType == StandardMongo,
-	}
+	if m.dbConf.MongoDBType != CosmosDB {
+		ttlIndex := mgo.Index{
+			Key:         []string{"expireAt"},
+			ExpireAfter: 0,
+			Background:  m.dbConf.MongoDBType == StandardMongo,
+		}
 
-	err = mgohacks.EnsureTTLIndex(c, ttlIndex)
-	if err != nil {
-		return err
+		err = mgohacks.EnsureTTLIndex(c, ttlIndex)
+		if err != nil {
+			return err
+		}
 	}
 
 	apiIndex := mgo.Index{
