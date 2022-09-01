@@ -52,6 +52,11 @@ const (
 	CosmosDB
 )
 
+const (
+	AWSDBError    = 303
+	CosmosDBError = 115
+)
+
 type BaseMongoConf struct {
 	EnvPrefix string `mapstructure:"meta_env_prefix"`
 	// The full URL to your MongoDB instance, this can be a clustered instance if necessary and
@@ -163,15 +168,14 @@ func mongoType(session *mgo.Session) MongoType {
 	}
 	session.Run("features", &result)
 
-	if result.Code == 303 {
+	switch result.Code {
+	case AWSDBError:
 		return AWSDocumentDB
-	}
-
-	if result.Code == 115 {
+	case CosmosDBError:
 		return CosmosDB
+	default:
+		return StandardMongo
 	}
-
-	return StandardMongo
 
 }
 
