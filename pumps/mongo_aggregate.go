@@ -222,6 +222,7 @@ func (m *MongoAggregatePump) ensureIndexes(c *mgo.Collection) error {
 	}
 
 	var err error
+	// CosmosDB does not support "expireAt" option
 	if m.dbConf.MongoDBType != CosmosDB {
 		ttlIndex := mgo.Index{
 			Key:         []string{"expireAt"},
