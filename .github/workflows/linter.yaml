@@ -19,5 +19,5 @@ jobs:
     with:
       exclusions: ""
     secrets:
-      GITHUB_TOKEN: ${{ secrets.ORG_GH_TOKEN }}
+      GH_TOKEN: ${{ secrets.ORG_GH_TOKEN }}
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
