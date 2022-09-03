@@ -11,7 +11,7 @@ issues:
         - dupl
 
   # Show only new issues created since branching away from default branch on the remote
-  new-from-rev: origin/<no value>
+  new-from-rev: origin/master
 
 linters:
   enable:
@@ -33,11 +33,14 @@ linters:
     - wsl
 
 linters-settings:
+  auto-fix: true
   dupl:
     # tokens count to trigger issue, 150 by default
     threshold: 100
+    auto-fix: true
 
   errcheck:
+    auto-fix: true
     # Report about assignment of errors to blank identifier: `num, _ := strconv.Atoi(numStr)`.
     check-blank: true
 
@@ -45,16 +48,19 @@ linters-settings:
     check-type-assertions: true
 
   gocritic:
+    auto-fix: true
     # See https://go-critic.github.io/overview#checks-overview
     # To check which checks are enabled run `GL_DEBUG=gocritic golangci-lint run`
     enabled-tags:
       - performance
 
   gofmt:
+    auto-fix: true
     # Simplify code with '-s' option
     simplify: true
 
   gofumpt:
+    auto-fix: true
     # Choose whether or not to use the extra rules that are disabled by default
     extra-rules: true
 
@@ -62,15 +68,18 @@ linters-settings:
     lang-version: "1.17"
 
   goimports:
+    auto-fix: true
     # Put imports beginning with prefixes after 3rd-party packages; it's a comma-separated list of prefixes
     local-prefixes: ""
 
   govet:
+    auto-fix: true
     # Report about shadowed variables
     check-shadowing: true
     enable-all: true
 
   lll:
+    auto-fix: true  
     # Max line length; lines longer will be reported
     # '\t' is counted as 1 character by default, and can be changed with the 'tab-width' option
     line-length: 120
@@ -78,6 +87,7 @@ linters-settings:
     tab-width: 2
 
   misspell:
+    auto-fix: true
     # Correct spellings using locale preferences for US or UK.
     # Default is to use a neutral variety of English.
     # Setting locale to US will correct the British spelling of 'colour' to 'color'.
@@ -88,16 +98,19 @@ linters-settings:
     ignore-words: []
 
   staticcheck:
+    auto-fix: true
     # https://staticcheck.io/docs/options#checks
     checks: ["all"]
     # Select the Go version to target.
     go: "1.17"
 
   whitespace:
+    auto-fix: true
     multi-if: false # Enforces newlines (or comments) after every multi-line if statement
     multi-func: false # Enforces newlines (or comments) after every multi-line function signature
 
   wsl:
+    auto-fix: true
     # Controls if you may cuddle assignments and anything without needing an empty line between them.
     allow-assign-and-anything: false
     # Allow calls and assignments to be cuddled as long as the lines have any matching variables, fields or types.
