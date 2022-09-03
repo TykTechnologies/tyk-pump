@@ -18,4 +18,5 @@ jobs:
     uses: TykTechnologies/github-actions/.github/workflows/sonarcloud.yaml@main
     with:
       exclusions: ""
-    secrets: inherit
+    secrets:
+      GITHUB_TOKEN: ${{ secrets.ORG_GH_TOKEN }}
