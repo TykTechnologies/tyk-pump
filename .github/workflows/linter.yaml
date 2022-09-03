@@ -1,0 +1,21 @@
+name: Linter
+
+on:
+  push:
+    tags:
+      - v*
+    branches:
+      - master
+      - main
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  golangci:
+    uses: TykTechnologies/github-actions/.github/workflows/golangci.yaml@main
+  sonarcloud:
+    needs: golangci
+    uses: TykTechnologies/github-actions/.github/workflows/sonarcloud.yaml@main
+    with:
+      exclusions: ""
+    secrets: inherit
