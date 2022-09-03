@@ -104,21 +104,18 @@ func TestMongoPumpOmitIndexCreation(t *testing.T) {
 		{
 			testName:             "omitting index creation - CosmosDB",
 			shouldDropCollection: true,
-			Indexes:              1, //1 index corresponding to _id
 			OmitIndexCreation:    true,
 			dbType:               CosmosDB,
 		},
 		{
 			testName:             "not omitting index creation but mongo collection already exists - CosmosDB",
 			shouldDropCollection: false,
-			Indexes:              4, //1 index corresponding to _id + 3 from tyk
 			OmitIndexCreation:    false,
 			dbType:               CosmosDB,
 		},
 		{
 			testName:             "not omitting index creation but mongo collection doesn't exists - CosmosDB",
 			shouldDropCollection: true,
-			Indexes:              4, //1 index corresponding to _id + 3 from tyk
 			OmitIndexCreation:    false,
 			dbType:               CosmosDB,
 		},
