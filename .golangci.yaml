@@ -12,8 +12,6 @@ issues:
 
   # Show only new issues created since branching away from default branch on the remote
   new-from-rev: origin/master
-  
-  fix: true
 
 linters:
   enable:
