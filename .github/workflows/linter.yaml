@@ -16,6 +16,7 @@ jobs:
     with:
       main_branch: "master"
   sonarcloud:
+    if: ${{ always() }}
     needs: golangci
     uses: TykTechnologies/github-actions/.github/workflows/sonarcloud.yaml@main
     with:
