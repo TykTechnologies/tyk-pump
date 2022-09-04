@@ -20,6 +20,7 @@ jobs:
   gotest:
     uses: TykTechnologies/github-actions/.github/workflows/gotest.yaml@main
     strategy:
+      fail-fast: false
       matrix:
         go: [1.16, 1.17]
     with:
