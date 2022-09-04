@@ -30,7 +30,7 @@ linters:
     - revive
     - staticcheck
     - whitespace
-    - wsl
+#    - wsl
 
 linters-settings:
   auto-fix: true
