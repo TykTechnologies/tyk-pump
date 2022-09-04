@@ -19,8 +19,11 @@ env:
 jobs:
   gotest:
     uses: TykTechnologies/github-actions/.github/workflows/gotest.yaml@main
+    strategy:
+      matrix:
+        go: [1.16, 1.17]
     with:
-      go: 1.16
+      go: ${{ matrix.go }}
       redis: 5
       mongo: 4.2
   golangci:
