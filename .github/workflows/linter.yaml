@@ -9,10 +9,20 @@ on:
       - main
   pull_request:
   workflow_dispatch:
+  
+env:
+  TYK_PMP_ANALYTICSSTORAGETYPE: redis
+  TYK_PMP_ANALYTICSSTORAGECONFIG_TYPE: redis
+  TYK_PMP_ANALYTICSSTORAGECONFIG_HOST: localhost
+  TYK_PMP_ANALYTICSSTORAGECONFIG_PORT: 6379
 
 jobs:
   gotest:
     uses: TykTechnologies/github-actions/.github/workflows/gotest.yaml@main
+    with:
+      go: 1.16
+      redis: 5
+      mongo: 4.2
   golangci:
     needs: gotest
     if: ${{ always() }}
