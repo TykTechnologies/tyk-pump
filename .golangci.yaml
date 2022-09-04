@@ -68,7 +68,7 @@ linters-settings:
     lang-version: "1.17"
 
   goimports:
-    auto-fix: true
+    auto-fix: false
     # Put imports beginning with prefixes after 3rd-party packages; it's a comma-separated list of prefixes
     local-prefixes: ""
 
