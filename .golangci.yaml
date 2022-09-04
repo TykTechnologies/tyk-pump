@@ -25,7 +25,7 @@ linters:
     - govet
     - gosec
     - ineffassign
-    - lll
+#    - lll
     - misspell
     - revive
     - staticcheck
