@@ -11,6 +11,8 @@ on:
   workflow_dispatch:
 
 jobs:
+  gotest:
+    uses: TykTechnologies/github-actions/.github/workflows/gotest.yaml@main
   golangci:
     uses: TykTechnologies/github-actions/.github/workflows/golangci.yaml@main
     with:
