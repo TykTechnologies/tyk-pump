@@ -103,26 +103,27 @@ func TestTrimData(t *testing.T) {
 			}
 
 			t.Run("global config", func(t *testing.T) {
-				//first we test with global config
+				// first we test with global config
 				SystemConfig.MaxRecordSize = tc.maxRecordsSize
 				defer func() {
 					SystemConfig.MaxRecordSize = 0
 				}()
 
 				filteredKeys := filterData(mockedPump, keys)
-				decoded := filteredKeys[0].(analytics.AnalyticsRecord)
+				decoded, ok := filteredKeys[0].(analytics.AnalyticsRecord)
+				assert.True(t, ok)
 
 				assert.Equal(t, len(decoded.RawRequest), tc.expectedOutput)
 				assert.Equal(t, len(decoded.RawResponse), tc.expectedOutput)
 			})
-
 			t.Run("pump config", func(t *testing.T) {
-
-				//we try setting pump directly
+				// we try setting pump directly
 				mockedPump.SetMaxRecordSize(tc.maxRecordsSize)
 
 				filteredKeys := filterData(mockedPump, keys)
-				decoded := filteredKeys[0].(analytics.AnalyticsRecord)
+				decoded, ok := filteredKeys[0].(analytics.AnalyticsRecord)
+				assert.True(t, ok)
+
 				assert.Equal(t, len(decoded.RawRequest), tc.expectedOutput)
 				assert.Equal(t, len(decoded.RawResponse), tc.expectedOutput)
 			})
