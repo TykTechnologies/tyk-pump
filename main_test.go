@@ -67,49 +67,66 @@ func TestFilterData(t *testing.T) {
 
 // TestTrimData check the correct functionality of max_record_size
 func TestTrimData(t *testing.T) {
-	mockedPump := &MockedPump{}
 
 	loremIpsum := "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua"
 
-	// key = max_record_size, val = expected output
-	testMatrix := map[int]int{
-		0:                   len(loremIpsum), // if not set then we should not trim
-		5:                   5,               // 5 should be the length of raw response and raw request
-		len(loremIpsum) + 1: len(loremIpsum), // if the raw data is smaller than max_record_size, then nothing is trimmed
+	tcs := []struct {
+		testName       string
+		maxRecordsSize int
+		expectedOutput int
+	}{
+		{
+			testName:       "not set",
+			maxRecordsSize: 0,
+			expectedOutput: len(loremIpsum),
+		},
+		{
+			testName:       "set smaller",
+			maxRecordsSize: 5,
+			expectedOutput: 5,
+		},
+		{
+			testName:       "set bigger",
+			maxRecordsSize: len(loremIpsum) + 1,
+			expectedOutput: len(loremIpsum),
+		},
 	}
 
-	keys := make([]interface{}, 1)
-	//test for global config max_record_size
-	for maxRecordSize, expected := range testMatrix {
-		SystemConfig.MaxRecordSize = maxRecordSize
+	for _, tc := range tcs {
+		t.Run(tc.testName, func(t *testing.T) {
+			mockedPump := &MockedPump{}
+			keys := make([]interface{}, 1)
+			keys[0] = analytics.AnalyticsRecord{
+				APIID:       "api1",
+				RawResponse: loremIpsum,
+				RawRequest:  loremIpsum,
+			}
 
-		keys[0] = analytics.AnalyticsRecord{
-			APIID:       "api1",
-			RawResponse: loremIpsum,
-			RawRequest:  loremIpsum,
-		}
+			t.Run("global config", func(t *testing.T) {
+				//first we test with global config
+				SystemConfig.MaxRecordSize = tc.maxRecordsSize
+				defer func() {
+					SystemConfig.MaxRecordSize = 0
+				}()
 
-		filteredKeys := filterData(mockedPump, keys)
-		decoded := filteredKeys[0].(analytics.AnalyticsRecord)
+				filteredKeys := filterData(mockedPump, keys)
+				decoded := filteredKeys[0].(analytics.AnalyticsRecord)
 
-		assert.Equal(t, len(decoded.RawRequest), expected)
-		assert.Equal(t, len(decoded.RawResponse), expected)
-	}
-	//test for individual pump config with max_record_size
-	for maxRecordSize, expected := range testMatrix {
-		mockedPump.SetMaxRecordSize(maxRecordSize)
+				assert.Equal(t, len(decoded.RawRequest), tc.expectedOutput)
+				assert.Equal(t, len(decoded.RawResponse), tc.expectedOutput)
+			})
 
-		keys[0] = analytics.AnalyticsRecord{
-			APIID:       "api1",
-			RawResponse: loremIpsum,
-			RawRequest:  loremIpsum,
-		}
+			t.Run("pump config", func(t *testing.T) {
 
-		filteredKeys := filterData(mockedPump, keys)
-		decoded := filteredKeys[0].(analytics.AnalyticsRecord)
+				//we try setting pump directly
+				mockedPump.SetMaxRecordSize(tc.maxRecordsSize)
 
-		assert.Equal(t, len(decoded.RawRequest), expected)
-		assert.Equal(t, len(decoded.RawResponse), expected)
+				filteredKeys := filterData(mockedPump, keys)
+				decoded := filteredKeys[0].(analytics.AnalyticsRecord)
+				assert.Equal(t, len(decoded.RawRequest), tc.expectedOutput)
+				assert.Equal(t, len(decoded.RawResponse), tc.expectedOutput)
+			})
+		})
 	}
 }
 
