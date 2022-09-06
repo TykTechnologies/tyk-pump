@@ -4,6 +4,7 @@ import (
 	"context"
 	b64 "encoding/base64"
 	"errors"
+	"fmt"
 	"sort"
 	"strings"
 	"time"
@@ -49,7 +50,7 @@ type MongoAggregateConf struct {
 	// Defaults to 1000.
 	ThresholdLenTagList int `json:"threshold_len_tag_list" mapstructure:"threshold_len_tag_list"`
 	// Determines if the aggregations should be made per minute instead of per hour.
-	StoreAnalyticsPerMinute bool `json:"store_analytics_per_minute" mapstructure:"store_analytics_per_minute"`
+	AnalyticsStoredPerMinute int `json:"analytics_stored_per_minute" mapstructure:"analytics_stored_per_minute"`
 	// This list determines which aggregations are going to be dropped and not stored in the collection.
 	// Posible values are: "APIID","errors","versions","apikeys","oauthids","geo","tags","endpoints","keyendpoints",
 	// "oauthendpoints", and "apiendpoints".
@@ -258,7 +259,7 @@ func (m *MongoAggregatePump) WriteData(ctx context.Context, data []interface{}) 
 		m.WriteData(ctx, data)
 	} else {
 		// calculate aggregates
-		analyticsPerOrg := analytics.AggregateData(data, m.dbConf.TrackAllPaths, m.dbConf.IgnoreTagPrefixList, m.dbConf.StoreAnalyticsPerMinute, true)
+		analyticsPerOrg := analytics.AggregateData(data, m.dbConf.TrackAllPaths, m.dbConf.IgnoreTagPrefixList, m.dbConf.AnalyticsStoredPerMinute, true)
 
 		// put aggregated data into MongoDB
 		for orgID, filteredData := range analyticsPerOrg {
@@ -352,9 +353,11 @@ func (m *MongoAggregatePump) DoAggregatedWriting(ctx context.Context, orgID stri
 
 	doc := analytics.AnalyticsRecordAggregate{}
 	_, err := analyticsCollection.Find(query).Apply(change, &doc)
-
 	if err != nil {
 		m.log.WithField("query", query).Error("UPSERT Failure: ", err)
+		if strings.Contains(err.Error(), "Size must be between 0 and 16793600(16MB)") {
+			m.log.Warning("Detected document size failure, attempting to split")
+		}
 		return m.HandleWriteErr(err)
 	}
 
@@ -412,4 +415,20 @@ func (m *MongoAggregatePump) collectionExists(name string) (bool, error) {
 // WriteUptimeData will pull the data from the in-memory store and drop it into the specified MongoDB collection
 func (m *MongoAggregatePump) WriteUptimeData(data []interface{}) {
 	m.log.Warning("Mongo Aggregate should not be writing uptime data!")
+}
+
+func (m *MongoAggregatePump) getLastDocumentSize(collection *mgo.Collection) (int, error) {
+	var lastDoc analytics.AnalyticsRecordAggregate
+	err := collection.Find(nil).Sort("-timestamp").One(&lastDoc)
+	if err != nil {
+		return 0, err
+	}
+
+	data, err := bson.Marshal(lastDoc)
+	if err != nil {
+		return 0, err
+	}
+	fmt.Println(lastDoc.ExpireAt)
+	//we must add 8 because we are not getting the _id index
+	return len(data) + 17, nil
 }

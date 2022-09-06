@@ -27,8 +27,8 @@ type SQLAggregatePumpConf struct {
 	IgnoreTagPrefixList []string `json:"ignore_tag_prefix_list" mapstructure:"ignore_tag_prefix_list"`
 	ThresholdLenTagList int      `json:"threshold_len_tag_list" mapstructure:"threshold_len_tag_list"`
 	// Determines if the aggregations should be made per minute instead of per hour.
-	StoreAnalyticsPerMinute bool     `json:"store_analytics_per_minute" mapstructure:"store_analytics_per_minute"`
-	IgnoreAggregationsList  []string `json:"ignore_aggregations" mapstructure:"ignore_aggregations"`
+	AnalyticsStoredPerMinute int      `json:"analytics_stored_per_minute" mapstructure:"analytics_stored_per_minute"`
+	IgnoreAggregationsList   []string `json:"ignore_aggregations" mapstructure:"ignore_aggregations"`
 }
 
 type SQLAggregatePump struct {
@@ -152,7 +152,7 @@ func (c *SQLAggregatePump) WriteData(ctx context.Context, data []interface{}) er
 			table = analytics.AggregateSQLTable
 		}
 
-		analyticsPerOrg := analytics.AggregateData(data[startIndex:endIndex], c.SQLConf.TrackAllPaths, c.SQLConf.IgnoreTagPrefixList, c.SQLConf.StoreAnalyticsPerMinute, false)
+		analyticsPerOrg := analytics.AggregateData(data[startIndex:endIndex], c.SQLConf.TrackAllPaths, c.SQLConf.IgnoreTagPrefixList, c.SQLConf.AnalyticsStoredPerMinute, false)
 
 		for orgID, ag := range analyticsPerOrg {
 
