@@ -35,7 +35,7 @@ jobs:
       main_branch: "master"
   sonarcloud:
     if: needs.gotest.result == 'success'
-    needs: golangci
+    needs: [gotest, golangci]
     uses: TykTechnologies/github-actions/.github/workflows/sonarcloud.yaml@main
     with:
       exclusions: ""
