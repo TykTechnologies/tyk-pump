@@ -186,7 +186,7 @@ func TestSQLAggregateWriteData(t *testing.T) {
 
 func TestSQLAggregateWriteDataValues(t *testing.T) {
 	table := analytics.AggregateSQLTable
-	now := time.Now()
+	now := time.Date(2019, 1, 1, 0, 0, 0, 0, time.Local)
 	nowPlus10 := now.Add(10 * time.Minute)
 
 	tcs := []struct {
