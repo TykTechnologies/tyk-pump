@@ -187,16 +187,17 @@ func TestSQLAggregateWriteData(t *testing.T) {
 func TestSQLAggregateWriteDataValues(t *testing.T) {
 	table := analytics.AggregateSQLTable
 	now := time.Now()
+	nowPlus10 := now.Add(10 * time.Minute)
 
 	tcs := []struct {
-		records   map[string][]interface{}
-		assertion func(*testing.T, []analytics.SQLAnalyticsRecordAggregate)
 		testName  string
+		assertion func(*testing.T, []analytics.SQLAnalyticsRecordAggregate)
+		records   [][]interface{}
 	}{
 		{
 			testName: "only one writing",
-			records: map[string][]interface{}{
-				"standalone": {
+			records: [][]interface{}{
+				{
 					analytics.AnalyticsRecord{OrgID: "1", APIID: "api1", RequestTime: 10, ResponseCode: 200, TimeStamp: now, Latency: analytics.Latency{Total: 10, Upstream: 10}},
 					analytics.AnalyticsRecord{OrgID: "1", APIID: "api1", RequestTime: 10, ResponseCode: 500, TimeStamp: now, Latency: analytics.Latency{Total: 10, Upstream: 10}},
 					analytics.AnalyticsRecord{OrgID: "1", APIID: "api1", RequestTime: 10, ResponseCode: 200, TimeStamp: now, Latency: analytics.Latency{Total: 10, Upstream: 10}},
@@ -227,18 +228,18 @@ func TestSQLAggregateWriteDataValues(t *testing.T) {
 			},
 		},
 		{
-			testName: "two one writing - on conflict",
-			records: map[string][]interface{}{
-				"first": {
+			testName: "two writings - on conflict",
+			records: [][]interface{}{
+				{
 					analytics.AnalyticsRecord{OrgID: "1", APIID: "api1", RequestTime: 10, ResponseCode: 200, TimeStamp: now, Latency: analytics.Latency{Total: 10, Upstream: 10}},
 					analytics.AnalyticsRecord{OrgID: "1", APIID: "api1", RequestTime: 10, ResponseCode: 500, TimeStamp: now, Latency: analytics.Latency{Total: 10, Upstream: 10}},
 					analytics.AnalyticsRecord{OrgID: "1", APIID: "api1", RequestTime: 10, ResponseCode: 200, TimeStamp: now, Latency: analytics.Latency{Total: 10, Upstream: 10}},
 					analytics.AnalyticsRecord{OrgID: "1", APIID: "api1", RequestTime: 20, ResponseCode: 200, TimeStamp: now, Latency: analytics.Latency{Total: 20, Upstream: 20}},
 					analytics.AnalyticsRecord{OrgID: "1", APIID: "api1", RequestTime: 20, ResponseCode: 500, TimeStamp: now, Latency: analytics.Latency{Total: 20, Upstream: 30}},
 				},
-				"second": {
-					analytics.AnalyticsRecord{OrgID: "1", APIID: "api1", RequestTime: 10, ResponseCode: 200, TimeStamp: now.Add(10 * time.Minute), Latency: analytics.Latency{Total: 10, Upstream: 5}},
-					analytics.AnalyticsRecord{OrgID: "1", APIID: "api1", RequestTime: 10, ResponseCode: 500, TimeStamp: now.Add(10 * time.Minute), Latency: analytics.Latency{Total: 30, Upstream: 10}},
+				{
+					analytics.AnalyticsRecord{OrgID: "1", APIID: "api1", RequestTime: 10, ResponseCode: 200, TimeStamp: nowPlus10, Latency: analytics.Latency{Total: 10, Upstream: 5}},
+					analytics.AnalyticsRecord{OrgID: "1", APIID: "api1", RequestTime: 10, ResponseCode: 500, TimeStamp: nowPlus10, Latency: analytics.Latency{Total: 30, Upstream: 10}},
 				},
 			},
 			assertion: func(t *testing.T, dbRecords []analytics.SQLAnalyticsRecordAggregate) {
@@ -257,10 +258,10 @@ func TestSQLAggregateWriteDataValues(t *testing.T) {
 				assert.Equal(t, int64(95), dbRecords[0].TotalUpstreamLatency)
 				assert.Equal(t, int64(30), dbRecords[0].MaxLatency)
 				assert.Equal(t, int64(5), dbRecords[0].MinUpstreamLatency)
-				assert.Equal(t, now.Add(10*time.Minute).Minute(), dbRecords[0].LastTime.Minute())
+				assert.Equal(t, nowPlus10.Minute(), dbRecords[0].LastTime.Minute(), "last time incorrect")
 				assert.Equal(t, "total", dbRecords[2].DimensionValue)
 				assert.Equal(t, 7, dbRecords[2].Hits)
-				assert.Equal(t, now.Add(10*time.Minute).Format("2006-01-02 15:04:05-07:00"), dbRecords[0].LastTime.Format("2006-01-02 15:04:05-07:00"))
+				assert.Equal(t, nowPlus10.Format("2006-01-02 15:04:05-07:00"), dbRecords[0].LastTime.Format("2006-01-02 15:04:05-07:00"))
 			},
 		},
 	}
@@ -273,22 +274,21 @@ func TestSQLAggregateWriteDataValues(t *testing.T) {
 			pmp := SQLAggregatePump{}
 			cfg := make(map[string]interface{})
 			cfg["type"] = "sqlite"
-			cfg["batch_size"] = 2
+			cfg["batch_size"] = 1
 
 			err := pmp.Init(cfg)
 			if err != nil {
 				t.Fatal("SQL Pump Aggregate couldn't be initialized with err: ", err)
 			}
-			defer func() {
+			defer func(pmp SQLAggregatePump) {
 				err := pmp.db.Migrator().DropTable(analytics.AggregateSQLTable)
 				if err != nil {
 					t.Error(err)
 				}
-			}()
+			}(pmp)
 			// Write the analytics records
-			for name, records := range tc.records {
-				t.Log("executing pump writing ", name)
-				err = pmp.WriteData(context.TODO(), records)
+			for i := range tc.records {
+				err = pmp.WriteData(context.TODO(), tc.records[i])
 				if err != nil {
 					t.Fatal(err.Error())
 				}
