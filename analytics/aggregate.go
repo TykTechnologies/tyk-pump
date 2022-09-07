@@ -20,6 +20,8 @@ const (
 	AggregateSQLTable             = "tyk_aggregated"
 )
 
+var lastTimestampAgggregateRecord time.Time
+
 type ErrorData struct {
 	Code  string
 	Count int
@@ -539,7 +541,8 @@ func replaceUnsupportedChars(path string) string {
 }
 
 // AggregateData calculates aggregated data, returns map orgID => aggregated analytics data
-func AggregateData(data []interface{}, trackAllPaths bool, ignoreTagPrefixList []string, analyticsStoredPerMinute int, ignoreGraphData bool) map[string]AnalyticsRecordAggregate {
+func AggregateData(data []interface{}, trackAllPaths bool, ignoreTagPrefixList []string, AnalyticsStoredPerMinute int, ignoreGraphData bool) map[string]AnalyticsRecordAggregate {
+	fmt.Println("---------ANALYTICS STORED PER MINUTE:--------------", AnalyticsStoredPerMinute)
 	analyticsPerOrg := make(map[string]AnalyticsRecordAggregate)
 	for _, v := range data {
 		thisV := v.(AnalyticsRecord)
@@ -561,8 +564,16 @@ func AggregateData(data []interface{}, trackAllPaths bool, ignoreTagPrefixList [
 
 			// Set the hourly timestamp & expiry
 			asTime := thisV.TimeStamp
-			//must check if analyticsStoredPerMinute is < 60
-			thisAggregate.TimeStamp = time.Date(asTime.Year(), asTime.Month(), asTime.Day(), asTime.Hour(), 0, 0, 0, asTime.Location())
+			fmt.Println(lastTimestampAgggregateRecord.Add(time.Minute * time.Duration(AnalyticsStoredPerMinute)))
+			if AnalyticsStoredPerMinute == 60 {
+				thisAggregate.TimeStamp = time.Date(asTime.Year(), asTime.Month(), asTime.Day(), asTime.Hour(), 0, 0, 0, asTime.Location())
+			} else if lastTimestampAgggregateRecord.Add(time.Minute * time.Duration(AnalyticsStoredPerMinute)).After(asTime) {
+				thisAggregate.TimeStamp = lastTimestampAgggregateRecord
+			} else {
+				newTime := time.Date(asTime.Year(), asTime.Month(), asTime.Day(), asTime.Hour(), asTime.Minute(), 0, 0, asTime.Location())
+				lastTimestampAgggregateRecord = newTime
+				thisAggregate.TimeStamp = newTime
+			}
 			thisAggregate.ExpireAt = thisV.ExpireAt
 			thisAggregate.TimeID.Year = asTime.Year()
 			thisAggregate.TimeID.Month = int(asTime.Month())
@@ -847,4 +858,8 @@ func TrimTag(thisTag string) string {
 		trimmedTag = strings.Replace(trimmedTag, ".", "", -1)
 	}
 	return trimmedTag
+}
+
+func SetlastTimestampAgggregateRecord(date time.Time) {
+	lastTimestampAgggregateRecord = date
 }

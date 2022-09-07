@@ -4,7 +4,6 @@ import (
 	"context"
 	b64 "encoding/base64"
 	"errors"
-	"fmt"
 	"sort"
 	"strings"
 	"time"
@@ -177,6 +176,14 @@ func (m *MongoAggregatePump) Init(config interface{}) error {
 	m.log.Debug("MongoDB DB CS: ", m.dbConf.GetBlurredURL())
 	m.log.Info(m.GetName() + " Initialized")
 
+	lastTimestampAgggregateRecord, err := getLastDocumentTimestamp(m.dbSession, analytics.AgggregateMixedCollectionName)
+	if err != nil {
+		m.log.Warn("Failed to get last timestamp from aggregate collection: ", err)
+		analytics.SetlastTimestampAgggregateRecord(time.Now())
+	} else {
+		analytics.SetlastTimestampAgggregateRecord(lastTimestampAgggregateRecord)
+	}
+
 	return nil
 }
 
@@ -265,6 +272,12 @@ func (m *MongoAggregatePump) WriteData(ctx context.Context, data []interface{}) 
 		for orgID, filteredData := range analyticsPerOrg {
 			err := m.DoAggregatedWriting(ctx, orgID, filteredData)
 			if err != nil {
+				if strings.Contains(err.Error(), "Size must be between 0 and 16793600(16MB)") {
+					m.log.Warning("Detected document size failure, attempting to split")
+					m.divideAnalyticsStoredPerMinute()
+					m.WriteData(ctx, data)
+					return nil
+				}
 				return err
 			}
 
@@ -355,9 +368,6 @@ func (m *MongoAggregatePump) DoAggregatedWriting(ctx context.Context, orgID stri
 	_, err := analyticsCollection.Find(query).Apply(change, &doc)
 	if err != nil {
 		m.log.WithField("query", query).Error("UPSERT Failure: ", err)
-		if strings.Contains(err.Error(), "Size must be between 0 and 16793600(16MB)") {
-			m.log.Warning("Detected document size failure, attempting to split")
-		}
 		return m.HandleWriteErr(err)
 	}
 
@@ -417,18 +427,30 @@ func (m *MongoAggregatePump) WriteUptimeData(data []interface{}) {
 	m.log.Warning("Mongo Aggregate should not be writing uptime data!")
 }
 
-func (m *MongoAggregatePump) getLastDocumentSize(collection *mgo.Collection) (int, error) {
-	var lastDoc analytics.AnalyticsRecordAggregate
-	err := collection.Find(nil).Sort("-timestamp").One(&lastDoc)
+func getLastDocumentSize(session *mgo.Session, collectionName string) (int, error) {
+	var doc bson.M
+	err := session.DB("").C(collectionName).Find(nil).Sort("-$natural").One(&doc)
 	if err != nil {
 		return 0, err
 	}
 
-	data, err := bson.Marshal(lastDoc)
+	return len(doc), nil
+}
+
+func getLastDocumentTimestamp(session *mgo.Session, collectionName string) (time.Time, error) {
+	var doc bson.M
+	err := session.DB("").C(collectionName).Find(nil).Sort("-$natural").One(&doc)
 	if err != nil {
-		return 0, err
+		return time.Time{}, err
 	}
-	fmt.Println(lastDoc.ExpireAt)
-	//we must add 8 because we are not getting the _id index
-	return len(data) + 17, nil
+
+	return doc["timestamp"].(time.Time), nil
+}
+
+func (m *MongoAggregatePump) divideAnalyticsStoredPerMinute() {
+	if m.dbConf.AnalyticsStoredPerMinute == 1 {
+		m.log.Warn("Analytics Stored Per Minute is set to 1, unable to divide")
+		return
+	}
+	m.dbConf.AnalyticsStoredPerMinute = m.dbConf.AnalyticsStoredPerMinute / 2
 }
