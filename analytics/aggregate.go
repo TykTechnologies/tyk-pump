@@ -854,9 +854,7 @@ func AggregateData(data []interface{}, trackAllPaths bool, ignoreTagPrefixList [
 func TrimTag(thisTag string) string {
 	trimmedTag := strings.TrimSpace(thisTag)
 
-	if strings.Contains(trimmedTag, ".") {
-		trimmedTag = strings.Replace(trimmedTag, ".", "", -1)
-	}
+	trimmedTag = strings.Replace(trimmedTag, ".", "", -1)
 	return trimmedTag
 }
 
