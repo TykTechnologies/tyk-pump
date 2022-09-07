@@ -4,6 +4,7 @@ import (
 	"context"
 	b64 "encoding/base64"
 	"errors"
+	"fmt"
 	"sort"
 	"strings"
 	"time"
@@ -176,12 +177,15 @@ func (m *MongoAggregatePump) Init(config interface{}) error {
 	m.log.Debug("MongoDB DB CS: ", m.dbConf.GetBlurredURL())
 	m.log.Info(m.GetName() + " Initialized")
 
+	//look for the last record timestamp stored in the collection
 	lastTimestampAgggregateRecord, err := getLastDocumentTimestamp(m.dbSession, analytics.AgggregateMixedCollectionName)
+
+	//we will set it to the lastDocumentTimestamp map to track the timestamp of different documents of different Mongo Aggregators
 	if err != nil {
 		m.log.Warn("Failed to get last timestamp from aggregate collection: ", err)
-		analytics.SetlastTimestampAgggregateRecord(time.Now())
+		analytics.SetlastTimestampAgggregateRecord(m.dbConf.MongoURL, time.Now())
 	} else {
-		analytics.SetlastTimestampAgggregateRecord(lastTimestampAgggregateRecord)
+		analytics.SetlastTimestampAgggregateRecord(m.dbConf.MongoURL, lastTimestampAgggregateRecord)
 	}
 
 	return nil
@@ -266,19 +270,24 @@ func (m *MongoAggregatePump) WriteData(ctx context.Context, data []interface{}) 
 		m.WriteData(ctx, data)
 	} else {
 		// calculate aggregates
-		analyticsPerOrg := analytics.AggregateData(data, m.dbConf.TrackAllPaths, m.dbConf.IgnoreTagPrefixList, m.dbConf.AnalyticsStoredPerMinute, true)
+		analyticsPerOrg := analytics.AggregateData(data, m.dbConf.TrackAllPaths, m.dbConf.IgnoreTagPrefixList, m.dbConf.MongoURL, m.dbConf.AnalyticsStoredPerMinute, true)
 
 		// put aggregated data into MongoDB
 		for orgID, filteredData := range analyticsPerOrg {
 			err := m.DoAggregatedWriting(ctx, orgID, filteredData)
 			if err != nil {
 				if strings.Contains(err.Error(), "Size must be between 0 and 16793600(16MB)") {
+					if m.dbConf.AnalyticsStoredPerMinute == 1 {
+						fmt.Println("---------THIS ERROR MUST NOT BE EXECUTED---------")
+						return err
+					}
 					m.log.Warning("Detected document size failure, attempting to split")
 					m.divideAnalyticsStoredPerMinute()
 					m.WriteData(ctx, data)
 					return nil
+				} else {
+					return err
 				}
-				return err
 			}
 
 			m.log.Debug("Processed aggregated data for ", orgID)

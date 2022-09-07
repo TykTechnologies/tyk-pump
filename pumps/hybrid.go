@@ -128,8 +128,16 @@ func (p *HybridPump) Init(config interface{}) error {
 			p.trackAllPaths = trackAllPaths.(bool)
 		}
 
-		if analyticsStoredPerMinute, ok := meta["analytics_stored_per_minute"]; ok {
-			p.analyticsStoredPerMinute = analyticsStoredPerMinute.(int)
+		analyticsStoredPerMinute, ok := meta["analytics_stored_per_minute"].(int)
+		if !ok {
+			p.log.Warn("analytics_stored_per_minute is not configured. The default value will be set to 60")
+			p.analyticsStoredPerMinute = 60
+		} else {
+			if analyticsStoredPerMinute > 60 || analyticsStoredPerMinute < 1 {
+				p.log.Warn("analytics_stored_per_minute range is from 1 to 60. The default value will be set to 60")
+				p.analyticsStoredPerMinute = 60
+			}
+			p.analyticsStoredPerMinute = analyticsStoredPerMinute
 		}
 
 		if list, ok := meta["ignore_tag_prefix_list"]; ok {
@@ -199,7 +207,7 @@ func (p *HybridPump) WriteData(ctx context.Context, data []interface{}) error {
 		}
 	} else { // send aggregated data
 		// calculate aggregates
-		aggregates := analytics.AggregateData(data, p.trackAllPaths, p.ignoreTagPrefixList, p.analyticsStoredPerMinute, false)
+		aggregates := analytics.AggregateData(data, p.trackAllPaths, p.ignoreTagPrefixList, "", p.analyticsStoredPerMinute, false)
 
 		// turn map with analytics aggregates into JSON payload
 		jsonData, err := json.Marshal(aggregates)

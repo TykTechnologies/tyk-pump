@@ -20,7 +20,8 @@ const (
 	AggregateSQLTable             = "tyk_aggregated"
 )
 
-var lastTimestampAgggregateRecord time.Time
+//lastDcoumentTimestamp is a map to store the last document timestamps of different Mongo Aggregators
+var lastDcoumentTimestamp = make(map[string]time.Time)
 
 type ErrorData struct {
 	Code  string
@@ -541,8 +542,8 @@ func replaceUnsupportedChars(path string) string {
 }
 
 // AggregateData calculates aggregated data, returns map orgID => aggregated analytics data
-func AggregateData(data []interface{}, trackAllPaths bool, ignoreTagPrefixList []string, AnalyticsStoredPerMinute int, ignoreGraphData bool) map[string]AnalyticsRecordAggregate {
-	fmt.Println("---------ANALYTICS STORED PER MINUTE:--------------", AnalyticsStoredPerMinute)
+func AggregateData(data []interface{}, trackAllPaths bool, ignoreTagPrefixList []string, dbIdentifier string, AnalyticsStoredPerMinute int, ignoreGraphData bool) map[string]AnalyticsRecordAggregate {
+	fmt.Println("-------MINUTES:-----------", AnalyticsStoredPerMinute)
 	analyticsPerOrg := make(map[string]AnalyticsRecordAggregate)
 	for _, v := range data {
 		thisV := v.(AnalyticsRecord)
@@ -564,15 +565,24 @@ func AggregateData(data []interface{}, trackAllPaths bool, ignoreTagPrefixList [
 
 			// Set the hourly timestamp & expiry
 			asTime := thisV.TimeStamp
-			fmt.Println(lastTimestampAgggregateRecord.Add(time.Minute * time.Duration(AnalyticsStoredPerMinute)))
+
 			if AnalyticsStoredPerMinute == 60 {
+				//if AnalyticsStoredPerMinute is set to 60, use asTime.Hour()
 				thisAggregate.TimeStamp = time.Date(asTime.Year(), asTime.Month(), asTime.Day(), asTime.Hour(), 0, 0, 0, asTime.Location())
-			} else if lastTimestampAgggregateRecord.Add(time.Minute * time.Duration(AnalyticsStoredPerMinute)).After(asTime) {
-				thisAggregate.TimeStamp = lastTimestampAgggregateRecord
+			} else if dbIdentifier != "" {
+				//if AnalyticsStoredPerMinute != 60 and the database is Mongo (because we have an identifier):
+				if lastDcoumentTimestamp[dbIdentifier].Add(time.Minute * time.Duration(AnalyticsStoredPerMinute)).After(asTime) {
+					//if the last record timestamp + amount of minutes set < current time, just add the new record to the current document
+					thisAggregate.TimeStamp = lastDcoumentTimestamp[dbIdentifier]
+				} else {
+					//if last record timestamp + amount of minutes set > current time, just create a new record
+					newTime := time.Date(asTime.Year(), asTime.Month(), asTime.Day(), asTime.Hour(), asTime.Minute(), 0, 0, asTime.Location())
+					lastDcoumentTimestamp[dbIdentifier] = newTime
+					thisAggregate.TimeStamp = newTime
+				}
 			} else {
-				newTime := time.Date(asTime.Year(), asTime.Month(), asTime.Day(), asTime.Hour(), asTime.Minute(), 0, 0, asTime.Location())
-				lastTimestampAgggregateRecord = newTime
-				thisAggregate.TimeStamp = newTime
+				//if AnalyticsStoredPerMinute != 60, and the DB is not Mongo, the only option is use asTime.Minute()
+				thisAggregate.TimeStamp = time.Date(asTime.Year(), asTime.Month(), asTime.Day(), asTime.Hour(), asTime.Minute(), 0, 0, asTime.Location())
 			}
 			thisAggregate.ExpireAt = thisV.ExpireAt
 			thisAggregate.TimeID.Year = asTime.Year()
@@ -858,6 +868,6 @@ func TrimTag(thisTag string) string {
 	return trimmedTag
 }
 
-func SetlastTimestampAgggregateRecord(date time.Time) {
-	lastTimestampAgggregateRecord = date
+func SetlastTimestampAgggregateRecord(id string, date time.Time) {
+	lastDcoumentTimestamp[id] = date
 }
