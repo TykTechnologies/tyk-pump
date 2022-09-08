@@ -318,7 +318,7 @@ The Tyk Dashboard uses various Mongo collections to store and visualize API traf
       "meta": {
         "mongo_url": "mongodb://username:password@{hostname:port},{hostname:port}/{db_name}",
         "use_mixed_collection": true,
-        "store_analytics_per_minute": false,
+        "analytics_stored_per_minute": 60,
         "track_all_paths": false
       },
       "mongo-pump-selective": {

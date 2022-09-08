@@ -4,7 +4,6 @@ import (
 	"context"
 	b64 "encoding/base64"
 	"errors"
-	"fmt"
 	"sort"
 	"strings"
 	"time"
@@ -50,6 +49,7 @@ type MongoAggregateConf struct {
 	// Defaults to 1000.
 	ThresholdLenTagList int `json:"threshold_len_tag_list" mapstructure:"threshold_len_tag_list"`
 	// Determines if the aggregations should be made per minute instead of per hour.
+	//Determines the amount of time the aggregations should be made. Max (and default) = 60 - Min = 1.
 	AnalyticsStoredPerMinute int `json:"analytics_stored_per_minute" mapstructure:"analytics_stored_per_minute"`
 	// This list determines which aggregations are going to be dropped and not stored in the collection.
 	// Posible values are: "APIID","errors","versions","apikeys","oauthids","geo","tags","endpoints","keyendpoints",
@@ -172,6 +172,11 @@ func (m *MongoAggregatePump) Init(config interface{}) error {
 		m.dbConf.ThresholdLenTagList = THRESHOLD_LEN_TAG_LIST
 	}
 
+	if m.dbConf.AnalyticsStoredPerMinute < 1 || m.dbConf.AnalyticsStoredPerMinute > 60 {
+		m.log.Warn("AnalyticsStoredPerMinute is not set or is not between 1 and 60. Defaulting to 60")
+		m.dbConf.AnalyticsStoredPerMinute = 60
+	}
+
 	m.connect()
 
 	m.log.Debug("MongoDB DB CS: ", m.dbConf.GetBlurredURL())
@@ -182,8 +187,7 @@ func (m *MongoAggregatePump) Init(config interface{}) error {
 
 	//we will set it to the lastDocumentTimestamp map to track the timestamp of different documents of different Mongo Aggregators
 	if err != nil {
-		m.log.Warn("Failed to get last timestamp from aggregate collection: ", err)
-		analytics.SetlastTimestampAgggregateRecord(m.dbConf.MongoURL, time.Now())
+		m.log.Warn("Unable to get last timestamp from aggregate collection: ", err)
 	} else {
 		analytics.SetlastTimestampAgggregateRecord(m.dbConf.MongoURL, lastTimestampAgggregateRecord)
 	}
@@ -271,18 +275,22 @@ func (m *MongoAggregatePump) WriteData(ctx context.Context, data []interface{}) 
 	} else {
 		// calculate aggregates
 		analyticsPerOrg := analytics.AggregateData(data, m.dbConf.TrackAllPaths, m.dbConf.IgnoreTagPrefixList, m.dbConf.MongoURL, m.dbConf.AnalyticsStoredPerMinute, true)
-
 		// put aggregated data into MongoDB
 		for orgID, filteredData := range analyticsPerOrg {
 			err := m.DoAggregatedWriting(ctx, orgID, filteredData)
 			if err != nil {
+				//checking if the error is related to the document size
 				if strings.Contains(err.Error(), "Size must be between 0 and 16793600(16MB)") {
+					// if the AnalyticsStoredPerMinute setting is already set to 1, we can't do anything else
 					if m.dbConf.AnalyticsStoredPerMinute == 1 {
-						fmt.Println("---------THIS ERROR MUST NOT BE EXECUTED---------")
 						return err
 					}
-					m.log.Warning("Detected document size failure, attempting to split")
+					m.log.Warning("Detected document size failure, attempting to create a new document and reduce the number of analytics stored per minute")
+					//dividing the AnalyticsStoredPerMinute by 2 to reduce the number of analytics stored per minute
 					m.divideAnalyticsStoredPerMinute()
+					//resetting the lastDocumentTimestamp, this will create a new document with the current timestamp
+					analytics.SetlastTimestampAgggregateRecord(m.dbConf.MongoURL, time.Time{})
+					//executing the function again with the new AnalyticsStoredPerMinute setting
 					m.WriteData(ctx, data)
 					return nil
 				} else {
@@ -436,16 +444,7 @@ func (m *MongoAggregatePump) WriteUptimeData(data []interface{}) {
 	m.log.Warning("Mongo Aggregate should not be writing uptime data!")
 }
 
-func getLastDocumentSize(session *mgo.Session, collectionName string) (int, error) {
-	var doc bson.M
-	err := session.DB("").C(collectionName).Find(nil).Sort("-$natural").One(&doc)
-	if err != nil {
-		return 0, err
-	}
-
-	return len(doc), nil
-}
-
+//getLastDocumentTimestamp will return the timestamp of the last document in the collection
 func getLastDocumentTimestamp(session *mgo.Session, collectionName string) (time.Time, error) {
 	var doc bson.M
 	err := session.DB("").C(collectionName).Find(nil).Sort("-$natural").One(&doc)
@@ -456,6 +455,7 @@ func getLastDocumentTimestamp(session *mgo.Session, collectionName string) (time
 	return doc["timestamp"].(time.Time), nil
 }
 
+//divideAnalyticsStoredPerMinute divides by two the analytics stored per minute setting
 func (m *MongoAggregatePump) divideAnalyticsStoredPerMinute() {
 	if m.dbConf.AnalyticsStoredPerMinute == 1 {
 		m.log.Warn("Analytics Stored Per Minute is set to 1, unable to divide")
