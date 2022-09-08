@@ -81,4 +81,13 @@ jobs:
         if: ${{ github.event_name == 'push' }}
         run: |
           $(go env GOPATH)/bin/golangci-lint run --out-format checkstyle --timeout=300s --max-issues-per-linter=0 --max-same-issues=0 --issues-exit-code=0 ./... > golanglint.xml
- 
+          
+  sonarcloud:
+    if: ${{ always() }}
+    needs: test
+    uses: TykTechnologies/github-actions/.github/workflows/sonarcloud.yaml@main
+    with:
+      exclusions: ""
+    secrets:
+      GH_TOKEN: ${{ secrets.ORG_GH_TOKEN }}
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

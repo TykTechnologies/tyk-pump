@@ -1,0 +1,44 @@
+name: Linter
+
+on:
+  push:
+    tags:
+      - v*
+    branches:
+      - master
+      - main
+  pull_request:
+  workflow_dispatch:
+  
+env:
+  TYK_PMP_ANALYTICSSTORAGETYPE: redis
+  TYK_PMP_ANALYTICSSTORAGECONFIG_TYPE: redis
+  TYK_PMP_ANALYTICSSTORAGECONFIG_HOST: localhost
+  TYK_PMP_ANALYTICSSTORAGECONFIG_PORT: 6379
+
+jobs:
+  gotest:
+    uses: TykTechnologies/github-actions/.github/workflows/gotest.yaml@main
+    strategy:
+      fail-fast: false
+      matrix:
+        go: [1.16, 1.17]
+    with:
+      go: ${{ matrix.go }}
+      redis: 5
+      mongo: 4.2
+  golangci:
+    needs: gotest
+    if: ${{ always() }}
+    uses: TykTechnologies/github-actions/.github/workflows/golangci.yaml@main
+    with:
+      main_branch: "master"
+  sonarcloud:
+    if: ${{ always() }}
+    needs: [gotest, golangci]
+    uses: TykTechnologies/github-actions/.github/workflows/sonarcloud.yaml@main
+    with:
+      exclusions: ""
+    secrets:
+      GH_TOKEN: ${{ secrets.ORG_GH_TOKEN }}
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
