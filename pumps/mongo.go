@@ -176,7 +176,6 @@ func mongoType(session *mgo.Session) MongoType {
 	default:
 		return StandardMongo
 	}
-
 }
 
 func mongoDialInfo(conf BaseMongoConf) (dialInfo *mgo.DialInfo, err error) {

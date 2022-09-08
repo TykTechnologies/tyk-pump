@@ -203,7 +203,6 @@ func (m *MongoAggregatePump) connect() {
 	if err == nil && m.dbConf.MongoDBType == 0 {
 		m.dbConf.MongoDBType = mongoType(m.dbSession)
 	}
-
 }
 
 func (m *MongoAggregatePump) ensureIndexes(c *mgo.Collection) error {
