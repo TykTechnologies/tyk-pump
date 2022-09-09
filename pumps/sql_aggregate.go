@@ -152,7 +152,7 @@ func (c *SQLAggregatePump) WriteData(ctx context.Context, data []interface{}) er
 			table = analytics.AggregateSQLTable
 		}
 
-		//if StoreAnalyticsPerMinute is set to true, we will create new documents with records every 1 minute
+		// if StoreAnalyticsPerMinute is set to true, we will create new documents with records every 1 minute
 		var analyticsStoredPerMinute int
 		if c.SQLConf.StoreAnalyticsPerMinute {
 			analyticsStoredPerMinute = 1

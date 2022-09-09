@@ -20,7 +20,7 @@ const (
 	AggregateSQLTable             = "tyk_aggregated"
 )
 
-//lastDocumentTimestamp is a map to store the last document timestamps of different Mongo Aggregators
+// lastDocumentTimestamp is a map to store the last document timestamps of different Mongo Aggregators
 var lastDocumentTimestamp = make(map[string]time.Time)
 
 type ErrorData struct {
@@ -542,7 +542,7 @@ func replaceUnsupportedChars(path string) string {
 }
 
 // AggregateData calculates aggregated data, returns map orgID => aggregated analytics data
-func AggregateData(data []interface{}, trackAllPaths bool, ignoreTagPrefixList []string, dbIdentifier string, AnalyticsStoredPerMinute int, ignoreGraphData bool) map[string]AnalyticsRecordAggregate {
+func AggregateData(data []interface{}, trackAllPaths bool, ignoreTagPrefixList []string, dbIdentifier string, analyticsStoredPerMinute int, ignoreGraphData bool) map[string]AnalyticsRecordAggregate {
 	analyticsPerOrg := make(map[string]AnalyticsRecordAggregate)
 	for _, v := range data {
 		thisV := v.(AnalyticsRecord)
@@ -564,32 +564,32 @@ func AggregateData(data []interface{}, trackAllPaths bool, ignoreTagPrefixList [
 
 			// Set the hourly timestamp & expiry
 			asTime := thisV.TimeStamp
-			//get the last document timestamp
+			// get the last document timestamp
 			lastDocumentTS, ok := lastDocumentTimestamp[dbIdentifier]
 			emptyTime := time.Time{}
 			if lastDocumentTS == emptyTime || !ok {
-				//if it's not set, or it's empty, just set it to the current time
+				// if it's not set, or it's empty, just set it to the current time
 				lastDocumentTS = time.Date(asTime.Year(), asTime.Month(), asTime.Day(), asTime.Hour(), asTime.Minute(), 0, 0, asTime.Location())
 				SetlastTimestampAgggregateRecord(dbIdentifier, lastDocumentTS)
 			}
 
 			if dbIdentifier != "" {
-				//if AnalyticsStoredPerMinute != 60 and the database is Mongo (because we have an identifier):
-				if lastDocumentTS.Add(time.Minute * time.Duration(AnalyticsStoredPerMinute)).After(asTime) {
-					//if the last record timestamp + AnalyticsStoredPerMinute setting is after the current time, just add the new record to the current document
+				// if AnalyticsStoredPerMinute != 60 and the database is Mongo (because we have an identifier):
+				if lastDocumentTS.Add(time.Minute * time.Duration(analyticsStoredPerMinute)).After(asTime) {
+					// if the last record timestamp + AnalyticsStoredPerMinute setting is after the current time, just add the new record to the current document
 					thisAggregate.TimeStamp = lastDocumentTS
 				} else {
-					//if last record timestamp + amount of minutes set is before current time, just create a new record
+					// if last record timestamp + amount of minutes set is before current time, just create a new record
 					newTime := time.Date(asTime.Year(), asTime.Month(), asTime.Day(), asTime.Hour(), asTime.Minute(), 0, 0, asTime.Location())
 					SetlastTimestampAgggregateRecord(dbIdentifier, newTime)
 					thisAggregate.TimeStamp = newTime
 				}
 			} else {
-				//if AnalyticsStoredPerMinute is set to 1 and DB is not Mongo, use asTime.Minute() and group every record by minute
-				if AnalyticsStoredPerMinute == 1 {
+				// if AnalyticsStoredPerMinute is set to 1 and DB is not Mongo, use asTime.Minute() and group every record by minute
+				if analyticsStoredPerMinute == 1 {
 					thisAggregate.TimeStamp = time.Date(asTime.Year(), asTime.Month(), asTime.Day(), asTime.Hour(), asTime.Minute(), 0, 0, asTime.Location())
 				} else {
-					//if AnalyticsStoredPerMinute is set to 60 and DB is not Mongo, use asTime.Hour() and group every record by hour
+					// if AnalyticsStoredPerMinute is set to 60 and DB is not Mongo, use asTime.Hour() and group every record by hour
 					thisAggregate.TimeStamp = time.Date(asTime.Year(), asTime.Month(), asTime.Day(), asTime.Hour(), 0, 0, 0, asTime.Location())
 				}
 			}
@@ -874,7 +874,7 @@ func AggregateData(data []interface{}, trackAllPaths bool, ignoreTagPrefixList [
 func TrimTag(thisTag string) string {
 	trimmedTag := strings.TrimSpace(thisTag)
 
-	trimmedTag = strings.Replace(trimmedTag, ".", "", -1)
+	trimmedTag = strings.ReplaceAll(trimmedTag, ".", "")
 	return trimmedTag
 }
 

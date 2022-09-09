@@ -184,7 +184,7 @@ func TestAnalyticsStoredPerMinute(t *testing.T) {
 			}
 
 			defer func() {
-				//we clean the db after we finish every test case
+				// we clean the db after we finish every test case
 				sess := pmp1.dbSession.Copy()
 				defer sess.Close()
 
@@ -212,7 +212,7 @@ func TestAnalyticsStoredPerMinute(t *testing.T) {
 
 			analyticsCollection := thisSession.DB("").C(collectionName)
 
-			//we build the query using the timestamp as we do in aggregated analytics
+			// we build the query using the timestamp as we do in aggregated analytics
 			query := bson.M{
 				"orgid": "123",
 			}
@@ -225,15 +225,13 @@ func TestAnalyticsStoredPerMinute(t *testing.T) {
 			// double check that the res is not nil
 			assert.NotNil(t, results)
 
-			//checking if we have the correct number of records
+			// checking if we have the correct number of records
 			assert.Len(t, results, test.WantedNumberOfRecords)
 
 			// validate totals
 			for _, res := range results {
 				assert.NotNil(t, res.Total)
 			}
-
 		})
 	}
-
 }
