@@ -62,42 +62,42 @@ func TestMongoPumpOmitIndexCreation(t *testing.T) {
 		{
 			testName:             "omitting index creation - StandardMongo",
 			shouldDropCollection: true,
-			ExpectedIndexes:      1, //1 index corresponding to _id
+			ExpectedIndexes:      1, // 1 index corresponding to _id
 			OmitIndexCreation:    true,
 			dbType:               StandardMongo,
 		},
 		{
 			testName:             "not omitting index creation but mongo collection already exists - StandardMongo",
 			shouldDropCollection: false,
-			ExpectedIndexes:      1, //1 index corresponding to _id
+			ExpectedIndexes:      1, // 1 index corresponding to _id
 			OmitIndexCreation:    false,
 			dbType:               StandardMongo,
 		},
 		{
 			testName:             "not omitting index creation but mongo collection doesn't exists - StandardMongo",
 			shouldDropCollection: true,
-			ExpectedIndexes:      4, //1 index corresponding to _id + 3 from tyk
+			ExpectedIndexes:      4, // 1 index corresponding to _id + 3 from tyk
 			OmitIndexCreation:    false,
 			dbType:               StandardMongo,
 		},
 		{
 			testName:             "omitting index creation - DocDB",
 			shouldDropCollection: true,
-			ExpectedIndexes:      1, //1 index corresponding to _id
+			ExpectedIndexes:      1, // 1 index corresponding to _id
 			OmitIndexCreation:    true,
 			dbType:               AWSDocumentDB,
 		},
 		{
 			testName:             "not omitting index creation but mongo collection already exists - DocDB",
 			shouldDropCollection: false,
-			ExpectedIndexes:      4, //1 index corresponding to _id + 3 from tyk
+			ExpectedIndexes:      4, // 1 index corresponding to _id + 3 from tyk
 			OmitIndexCreation:    false,
 			dbType:               AWSDocumentDB,
 		},
 		{
 			testName:             "not omitting index creation but mongo collection doesn't exists - DocDB",
 			shouldDropCollection: true,
-			ExpectedIndexes:      4, //1 index corresponding to _id + 3 from tyk
+			ExpectedIndexes:      4, // 1 index corresponding to _id + 3 from tyk
 			OmitIndexCreation:    false,
 			dbType:               AWSDocumentDB,
 		},
