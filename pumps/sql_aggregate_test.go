@@ -185,89 +185,123 @@ func TestSQLAggregateWriteData(t *testing.T) {
 }
 
 func TestSQLAggregateWriteDataValues(t *testing.T) {
-	pmp := SQLAggregatePump{}
-	cfg := make(map[string]interface{})
-	cfg["type"] = "sqlite"
-	cfg["batch_size"] = 2
-
-	err := pmp.Init(cfg)
-	if err != nil {
-		t.Fatal("SQL Pump Aggregate couldn't be initialized with err: ", err)
-	}
-	defer func(table string) {
-		pmp.db.Migrator().DropTable(analytics.AggregateSQLTable)
-	}(table)
-
-	now := time.Now()
-	keys := make([]interface{}, 5)
-	keys[0] = analytics.AnalyticsRecord{OrgID: "1", APIID: "api1", RequestTime: 10, ResponseCode: 200, TimeStamp: now, Latency: analytics.Latency{Total: 10, Upstream: 10}}
-	keys[1] = analytics.AnalyticsRecord{OrgID: "1", APIID: "api1", RequestTime: 10, ResponseCode: 500, TimeStamp: now, Latency: analytics.Latency{Total: 10, Upstream: 10}}
-	keys[2] = analytics.AnalyticsRecord{OrgID: "1", APIID: "api1", RequestTime: 10, ResponseCode: 200, TimeStamp: now, Latency: analytics.Latency{Total: 10, Upstream: 10}}
-	keys[3] = analytics.AnalyticsRecord{OrgID: "1", APIID: "api1", RequestTime: 20, ResponseCode: 200, TimeStamp: now, Latency: analytics.Latency{Total: 20, Upstream: 20}}
-	keys[4] = analytics.AnalyticsRecord{OrgID: "1", APIID: "api1", RequestTime: 20, ResponseCode: 500, TimeStamp: now, Latency: analytics.Latency{Total: 20, Upstream: 30}}
-
-	err = pmp.WriteData(context.TODO(), keys)
-	if err != nil {
-		t.Fatal(err.Error())
-	}
 	table := analytics.AggregateSQLTable
-	dbRecords := []analytics.SQLAnalyticsRecordAggregate{}
-	if err := pmp.db.Table(table).Find(&dbRecords).Error; err != nil {
-		t.Fatal("Error getting analytics records from SQL")
-		return
+	now := time.Date(2019, 1, 1, 0, 0, 0, 0, time.Local)
+	nowPlus10 := now.Add(10 * time.Minute)
+
+	tcs := []struct {
+		testName  string
+		assertion func(*testing.T, []analytics.SQLAnalyticsRecordAggregate)
+		records   [][]interface{}
+	}{
+		{
+			testName: "only one writing",
+			records: [][]interface{}{
+				{
+					analytics.AnalyticsRecord{OrgID: "1", APIID: "api1", RequestTime: 10, ResponseCode: 200, TimeStamp: now, Latency: analytics.Latency{Total: 10, Upstream: 10}},
+					analytics.AnalyticsRecord{OrgID: "1", APIID: "api1", RequestTime: 10, ResponseCode: 500, TimeStamp: now, Latency: analytics.Latency{Total: 10, Upstream: 10}},
+					analytics.AnalyticsRecord{OrgID: "1", APIID: "api1", RequestTime: 10, ResponseCode: 200, TimeStamp: now, Latency: analytics.Latency{Total: 10, Upstream: 10}},
+					analytics.AnalyticsRecord{OrgID: "1", APIID: "api1", RequestTime: 20, ResponseCode: 200, TimeStamp: now, Latency: analytics.Latency{Total: 20, Upstream: 20}},
+					analytics.AnalyticsRecord{OrgID: "1", APIID: "api1", RequestTime: 20, ResponseCode: 500, TimeStamp: now, Latency: analytics.Latency{Total: 20, Upstream: 30}},
+				},
+			},
+			assertion: func(t *testing.T, dbRecords []analytics.SQLAnalyticsRecordAggregate) {
+				assert.Equal(t, 3, len(dbRecords))
+				assert.Equal(t, "apiid", dbRecords[0].Dimension)
+				assert.Equal(t, "api1", dbRecords[0].DimensionValue)
+				assert.Equal(t, 2, dbRecords[0].Code500)
+				assert.Equal(t, 5, dbRecords[0].Hits)
+				assert.Equal(t, 3, dbRecords[0].Success)
+				assert.Equal(t, 2, dbRecords[0].ErrorTotal)
+				assert.Equal(t, 14.0, dbRecords[0].RequestTime)
+				assert.Equal(t, 70.0, dbRecords[0].TotalRequestTime)
+				assert.Equal(t, float64(14), dbRecords[0].Latency)
+				assert.Equal(t, int64(70), dbRecords[0].TotalLatency)
+				assert.Equal(t, float64(16), dbRecords[0].UpstreamLatency)
+				assert.Equal(t, int64(80), dbRecords[0].TotalUpstreamLatency)
+				assert.Equal(t, int64(20), dbRecords[0].MaxLatency)
+				assert.Equal(t, int64(10), dbRecords[0].MinUpstreamLatency)
+				// checking if it has total dimension
+				assert.Equal(t, "total", dbRecords[2].DimensionValue)
+				assert.Equal(t, 5, dbRecords[2].Hits)
+				assert.Equal(t, now.Format(time.RFC3339), dbRecords[0].LastTime.Format(time.RFC3339))
+			},
+		},
+		{
+			testName: "two writings - on conflict",
+			records: [][]interface{}{
+				{
+					analytics.AnalyticsRecord{OrgID: "1", APIID: "api1", RequestTime: 10, ResponseCode: 200, TimeStamp: now, Latency: analytics.Latency{Total: 10, Upstream: 10}},
+					analytics.AnalyticsRecord{OrgID: "1", APIID: "api1", RequestTime: 10, ResponseCode: 500, TimeStamp: now, Latency: analytics.Latency{Total: 10, Upstream: 10}},
+					analytics.AnalyticsRecord{OrgID: "1", APIID: "api1", RequestTime: 10, ResponseCode: 200, TimeStamp: now, Latency: analytics.Latency{Total: 10, Upstream: 10}},
+					analytics.AnalyticsRecord{OrgID: "1", APIID: "api1", RequestTime: 20, ResponseCode: 200, TimeStamp: now, Latency: analytics.Latency{Total: 20, Upstream: 20}},
+					analytics.AnalyticsRecord{OrgID: "1", APIID: "api1", RequestTime: 20, ResponseCode: 500, TimeStamp: now, Latency: analytics.Latency{Total: 20, Upstream: 30}},
+				},
+				{
+					analytics.AnalyticsRecord{OrgID: "1", APIID: "api1", RequestTime: 10, ResponseCode: 200, TimeStamp: nowPlus10, Latency: analytics.Latency{Total: 10, Upstream: 5}},
+					analytics.AnalyticsRecord{OrgID: "1", APIID: "api1", RequestTime: 10, ResponseCode: 500, TimeStamp: nowPlus10, Latency: analytics.Latency{Total: 30, Upstream: 10}},
+				},
+			},
+			assertion: func(t *testing.T, dbRecords []analytics.SQLAnalyticsRecordAggregate) {
+				assert.Equal(t, 3, len(dbRecords))
+				assert.Equal(t, "apiid", dbRecords[0].Dimension)
+				assert.Equal(t, "api1", dbRecords[0].DimensionValue)
+				assert.Equal(t, 3, dbRecords[0].Code500)
+				assert.Equal(t, 7, dbRecords[0].Hits)
+				assert.Equal(t, 4, dbRecords[0].Success)
+				assert.Equal(t, 3, dbRecords[0].ErrorTotal)
+				assert.Equal(t, 12.857142857142858, dbRecords[0].RequestTime)
+				assert.Equal(t, 90.0, dbRecords[0].TotalRequestTime)
+				assert.Equal(t, 15.714285714285714, dbRecords[0].Latency)
+				assert.Equal(t, int64(110), dbRecords[0].TotalLatency)
+				assert.Equal(t, 13.571428571428571, dbRecords[0].UpstreamLatency)
+				assert.Equal(t, int64(95), dbRecords[0].TotalUpstreamLatency)
+				assert.Equal(t, int64(30), dbRecords[0].MaxLatency)
+				assert.Equal(t, int64(5), dbRecords[0].MinUpstreamLatency)
+				assert.Equal(t, nowPlus10.Minute(), dbRecords[0].LastTime.Minute(), "last time incorrect")
+				assert.Equal(t, "total", dbRecords[2].DimensionValue)
+				assert.Equal(t, 7, dbRecords[2].Hits)
+				assert.Equal(t, nowPlus10.Format("2006-01-02 15:04:05-07:00"), dbRecords[0].LastTime.Format("2006-01-02 15:04:05-07:00"))
+			},
+		},
 	}
 
-	assert.Equal(t, 3, len(dbRecords))
-	assert.Equal(t, "apiid", dbRecords[0].Dimension)
-	assert.Equal(t, "api1", dbRecords[0].DimensionValue)
-	assert.Equal(t, 2, dbRecords[0].Code500)
-	assert.Equal(t, 5, dbRecords[0].Hits)
-	assert.Equal(t, 3, dbRecords[0].Success)
-	assert.Equal(t, 2, dbRecords[0].ErrorTotal)
-	assert.Equal(t, 14.0, dbRecords[0].RequestTime)
-	assert.Equal(t, 70.0, dbRecords[0].TotalRequestTime)
-	assert.Equal(t, float64(14), dbRecords[0].Latency)
-	assert.Equal(t, int64(70), dbRecords[0].TotalLatency)
-	assert.Equal(t, float64(16), dbRecords[0].UpstreamLatency)
-	assert.Equal(t, int64(80), dbRecords[0].TotalUpstreamLatency)
-	assert.Equal(t, int64(20), dbRecords[0].MaxLatency)
-	assert.Equal(t, int64(10), dbRecords[0].MinUpstreamLatency)
-	//checking if it has total dimension
-	assert.Equal(t, "total", dbRecords[2].DimensionValue)
-	assert.Equal(t, 5, dbRecords[2].Hits)
-	assert.Equal(t, now.Format(time.RFC3339), dbRecords[0].LastTime.Format(time.RFC3339))
+	for _, tc := range tcs {
+		t.Run(tc.testName, func(t *testing.T) {
+			// Configure and Initialise pump first
+			dbRecords := []analytics.SQLAnalyticsRecordAggregate{}
 
-	//We check again to validate the ON CONFLICT CLAUSES
-	newKeys := make([]interface{}, 2)
-	newKeys[0] = analytics.AnalyticsRecord{OrgID: "1", APIID: "api1", RequestTime: 10, ResponseCode: 200, TimeStamp: now.Add(10 * time.Minute), Latency: analytics.Latency{Total: 10, Upstream: 5}}
-	newKeys[1] = analytics.AnalyticsRecord{OrgID: "1", APIID: "api1", RequestTime: 10, ResponseCode: 500, TimeStamp: now.Add(10 * time.Minute), Latency: analytics.Latency{Total: 30, Upstream: 10}}
+			pmp := SQLAggregatePump{}
+			cfg := make(map[string]interface{})
+			cfg["type"] = "sqlite"
+			cfg["batch_size"] = 1
 
-	err = pmp.WriteData(context.TODO(), newKeys)
-	if err != nil {
-		t.Fatal(err.Error())
+			err := pmp.Init(cfg)
+			if err != nil {
+				t.Fatal("SQL Pump Aggregate couldn't be initialized with err: ", err)
+			}
+			defer func(pmp SQLAggregatePump) {
+				err := pmp.db.Migrator().DropTable(analytics.AggregateSQLTable)
+				if err != nil {
+					t.Error(err)
+				}
+			}(pmp)
+			// Write the analytics records
+			for i := range tc.records {
+				err = pmp.WriteData(context.TODO(), tc.records[i])
+				if err != nil {
+					t.Fatal(err.Error())
+				}
+			}
+
+			// Fetch the analytics records from the db
+			if err := pmp.db.Table(table).Find(&dbRecords).Error; err != nil {
+				t.Fatal("Error getting analytics records from SQL")
+				return
+			}
+
+			// Validate
+			tc.assertion(t, dbRecords)
+		})
 	}
-	dbRecords = []analytics.SQLAnalyticsRecordAggregate{}
-	if err := pmp.db.Table(table).Find(&dbRecords).Error; err != nil {
-		t.Fatal("Error getting analytics records from SQL")
-	}
-
-	assert.Equal(t, 3, len(dbRecords))
-	assert.Equal(t, "apiid", dbRecords[0].Dimension)
-	assert.Equal(t, "api1", dbRecords[0].DimensionValue)
-	assert.Equal(t, 3, dbRecords[0].Code500)
-	assert.Equal(t, 7, dbRecords[0].Hits)
-	assert.Equal(t, 4, dbRecords[0].Success)
-	assert.Equal(t, 3, dbRecords[0].ErrorTotal)
-	assert.Equal(t, 12.857142857142858, dbRecords[0].RequestTime)
-	assert.Equal(t, 90.0, dbRecords[0].TotalRequestTime)
-	assert.Equal(t, 15.714285714285714, dbRecords[0].Latency)
-	assert.Equal(t, int64(110), dbRecords[0].TotalLatency)
-	assert.Equal(t, 13.571428571428571, dbRecords[0].UpstreamLatency)
-	assert.Equal(t, int64(95), dbRecords[0].TotalUpstreamLatency)
-	assert.Equal(t, int64(30), dbRecords[0].MaxLatency)
-	assert.Equal(t, int64(5), dbRecords[0].MinUpstreamLatency)
-	assert.Equal(t, now.Add(10*time.Minute).Minute(), dbRecords[0].LastTime.Minute())
-	assert.Equal(t, "total", dbRecords[2].DimensionValue)
-	assert.Equal(t, 7, dbRecords[2].Hits)
-	assert.Equal(t, now.Add(10*time.Minute).Format("2006-01-02 15:04:05-07:00"), dbRecords[0].LastTime.Format("2006-01-02 15:04:05-07:00"))
 }
