@@ -55,70 +55,70 @@ func TestMongoPumpOmitIndexCreation(t *testing.T) {
 	tcs := []struct {
 		testName             string
 		shouldDropCollection bool
-		Indexes              int
+		ExpectedIndexes      int
 		OmitIndexCreation    bool
 		dbType               MongoType
 	}{
 		{
 			testName:             "omitting index creation - StandardMongo",
 			shouldDropCollection: true,
-			Indexes:              1, //1 index corresponding to _id
+			ExpectedIndexes:      1, //1 index corresponding to _id
 			OmitIndexCreation:    true,
 			dbType:               StandardMongo,
 		},
 		{
 			testName:             "not omitting index creation but mongo collection already exists - StandardMongo",
 			shouldDropCollection: false,
-			Indexes:              1, //1 index corresponding to _id
+			ExpectedIndexes:      1, //1 index corresponding to _id
 			OmitIndexCreation:    false,
 			dbType:               StandardMongo,
 		},
 		{
 			testName:             "not omitting index creation but mongo collection doesn't exists - StandardMongo",
 			shouldDropCollection: true,
-			Indexes:              4, //1 index corresponding to _id + 3 from tyk
+			ExpectedIndexes:      4, //1 index corresponding to _id + 3 from tyk
 			OmitIndexCreation:    false,
 			dbType:               StandardMongo,
 		},
 		{
 			testName:             "omitting index creation - DocDB",
 			shouldDropCollection: true,
-			Indexes:              1, //1 index corresponding to _id
+			ExpectedIndexes:      1, //1 index corresponding to _id
 			OmitIndexCreation:    true,
 			dbType:               AWSDocumentDB,
 		},
 		{
 			testName:             "not omitting index creation but mongo collection already exists - DocDB",
 			shouldDropCollection: false,
-			Indexes:              4, //1 index corresponding to _id + 3 from tyk
+			ExpectedIndexes:      4, //1 index corresponding to _id + 3 from tyk
 			OmitIndexCreation:    false,
 			dbType:               AWSDocumentDB,
 		},
 		{
 			testName:             "not omitting index creation but mongo collection doesn't exists - DocDB",
 			shouldDropCollection: true,
-			Indexes:              4, //1 index corresponding to _id + 3 from tyk
+			ExpectedIndexes:      4, //1 index corresponding to _id + 3 from tyk
 			OmitIndexCreation:    false,
 			dbType:               AWSDocumentDB,
 		},
 		{
 			testName:             "omitting index creation - CosmosDB",
 			shouldDropCollection: true,
-			Indexes:              1, //1 index corresponding to _id
+			ExpectedIndexes:      1, // 1 index corresponding to _id
 			OmitIndexCreation:    true,
 			dbType:               CosmosDB,
 		},
 		{
 			testName:             "not omitting index creation but mongo collection already exists - CosmosDB",
 			shouldDropCollection: false,
-			Indexes:              4, //1 index corresponding to _id + 3 from tyk
+			ExpectedIndexes:      4, // 1 index corresponding to _id + 3 from tyk
 			OmitIndexCreation:    false,
 			dbType:               CosmosDB,
 		},
 		{
 			testName:             "not omitting index creation but mongo collection doesn't exists - CosmosDB",
 			shouldDropCollection: true,
-			Indexes:              4, //1 index corresponding to _id + 3 from tyk
+			ExpectedIndexes:      4, // 1 index corresponding to _id + 3 from tyk
 			OmitIndexCreation:    false,
 			dbType:               CosmosDB,
 		},
@@ -146,8 +146,8 @@ func TestMongoPumpOmitIndexCreation(t *testing.T) {
 				t.Error("error getting indexes:", errIndexes)
 			}
 
-			if len(indexes) != tc.Indexes {
-				t.Errorf("wanted %v index but got %v indexes", tc.Indexes, len(indexes))
+			if len(indexes) != tc.ExpectedIndexes {
+				t.Errorf("wanted %v index but got %v indexes", tc.ExpectedIndexes, len(indexes))
 			}
 		})
 	}
