@@ -298,7 +298,8 @@ TYK_PMP_PUMPS_STATSD_META_SEPARATEDMETHOD=false
 ## Mongo & Tyk Dashboard.
 There are 3 mongo pumps.  You may use one or multiple depending on the data you want.
 
-The Tyk Dashboard uses various Mongo collections to store and visualize API traffic analytics.  Please visit [this link](https://tyk.io/docs/tyk-pump/tyk-pump-configuration/tyk-pump-dashboard-config/) for steps on configuration.
+The Tyk Dashboard uses various Mongo collections to store and visualize API traffic analytics.  Please visit [this link](https://tyk.io/docs/tyk-pump/tyk-pump-configuration/tyk-pump-dashboard-config/) for steps on configuration. 
+Available Mongo instances are: Standard Mongo, DocumentDB (AWS), CosmosDB (Azure). All of them using the same configuration (CosmosDB does not support "expireAt" index, so it will be skipped)
 
 
 ###### JSON / Conf File

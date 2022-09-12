@@ -49,6 +49,12 @@ type MongoType int
 const (
 	StandardMongo MongoType = iota
 	AWSDocumentDB
+	CosmosDB
+)
+
+const (
+	AWSDBError    = 303
+	CosmosDBError = 115
 )
 
 type BaseMongoConf struct {
@@ -68,7 +74,7 @@ type BaseMongoConf struct {
 	// Path to the PEM file which contains both client certificate and private key. This is
 	// required for Mutual TLS.
 	MongoSSLPEMKeyfile string `json:"mongo_ssl_pem_keyfile" mapstructure:"mongo_ssl_pem_keyfile"`
-	// Specifies the mongo DB Type. If it's 0, it means that you are using standard mongo db, but if it's 1 it means you are using AWS Document DB.
+	// Specifies the mongo DB Type. If it's 0, it means that you are using standard mongo db, if it's 1 it means you are using AWS Document DB, if it's 2, it means you are using CosmosDB.
 	// Defaults to Standard mongo (0).
 	MongoDBType MongoType `json:"mongo_db_type" mapstructure:"mongo_db_type"`
 	// Set to true to disable the default tyk index creation.
@@ -162,9 +168,12 @@ func mongoType(session *mgo.Session) MongoType {
 	}
 	session.Run("features", &result)
 
-	if result.Code == 303 {
+	switch result.Code {
+	case AWSDBError:
 		return AWSDocumentDB
-	} else {
+	case CosmosDBError:
+		return CosmosDB
+	default:
 		return StandardMongo
 	}
 }

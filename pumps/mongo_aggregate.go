@@ -237,15 +237,18 @@ func (m *MongoAggregatePump) ensureIndexes(c *mgo.Collection) error {
 	}
 
 	var err error
-	ttlIndex := mgo.Index{
-		Key:         []string{"expireAt"},
-		ExpireAfter: 0,
-		Background:  m.dbConf.MongoDBType == StandardMongo,
-	}
+	// CosmosDB does not support "expireAt" option
+	if m.dbConf.MongoDBType != CosmosDB {
+		ttlIndex := mgo.Index{
+			Key:         []string{"expireAt"},
+			ExpireAfter: 0,
+			Background:  m.dbConf.MongoDBType == StandardMongo,
+		}
 
-	err = mgohacks.EnsureTTLIndex(c, ttlIndex)
-	if err != nil {
-		return err
+		err = mgohacks.EnsureTTLIndex(c, ttlIndex)
+		if err != nil {
+			return err
+		}
 	}
 
 	apiIndex := mgo.Index{
