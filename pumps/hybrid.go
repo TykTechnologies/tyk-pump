@@ -130,7 +130,7 @@ func (p *HybridPump) Init(config interface{}) error {
 			p.trackAllPaths = trackAllPaths.(bool)
 		}
 
-		if storeAnalyticsPerMinute, ok := meta["store_analytics_per_minute"].(bool); storeAnalyticsPerMinute && ok {
+		if storeAnalyticsPerMinute, ok := meta["store_analytics_per_minute"].(bool); ok {
 			p.storeAnalyticsPerMinute = storeAnalyticsPerMinute
 			p.aggregationTime = 1
 		} else {
@@ -147,7 +147,9 @@ func (p *HybridPump) Init(config interface{}) error {
 			}
 		}
 
-		p.enableAggregateSelfHealing, _ = meta["enable_aggregate_self_healing"].(bool)
+		if enableAggregateSelfHealing, ok := meta["enable_aggregate_self_healing"].(bool); ok {
+			p.enableAggregateSelfHealing = enableAggregateSelfHealing
+		}
 
 		if list, ok := meta["ignore_tag_prefix_list"]; ok {
 			ignoreTagPrefixList := list.([]interface{})
