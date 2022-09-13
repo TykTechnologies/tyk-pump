@@ -21,11 +21,11 @@ import (
 type GraphRecord struct {
 	AnalyticsRecord `bson:",inline"`
 
-	Types         map[string][]string
-	HasErrors     bool
 	Errors        []graphError
+	Types         map[string][]string
 	OperationType string
 	Variables     string
+	HasErrors     bool
 }
 
 func (a *AnalyticsRecord) ToGraphRecord() (GraphRecord, error) {
@@ -52,7 +52,7 @@ func (a *AnalyticsRecord) ToGraphRecord() (GraphRecord, error) {
 	record.Variables = base64.StdEncoding.EncodeToString(request.Input.Variables)
 
 	// get the operation ref
-	operationRef := -1
+	operationRef := 0
 	if operationName != "" {
 		for i := range request.OperationDefinitions {
 			if request.OperationDefinitionNameString(i) == operationName {
@@ -65,7 +65,6 @@ func (a *AnalyticsRecord) ToGraphRecord() (GraphRecord, error) {
 		log.Warn("no operations found")
 		return record, err
 	}
-	operationRef = 0
 
 	// get operation type
 	switch request.OperationDefinitions[operationRef].OperationType {
@@ -189,7 +188,6 @@ func recursivelyExtractTypesAndFields(fieldRef, typeDef int, resp map[string][]s
 		}
 
 		recursivelyExtractTypesAndFields(sel.Ref, objTypeRef, resp, req, schema)
-
 	}
 
 	objectTypeName := schema.ObjectTypeDefinitionNameString(typeDef)
@@ -201,7 +199,6 @@ func recursivelyExtractTypesAndFields(fieldRef, typeDef int, resp map[string][]s
 	}
 
 	resp[objectTypeName] = fieldListForType
-	return
 }
 
 func getObjectFieldRefWithName(name string, objTypeRef int, schema *ast.Document) int {

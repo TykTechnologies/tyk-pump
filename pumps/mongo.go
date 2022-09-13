@@ -541,7 +541,6 @@ func (m *MongoPump) WriteData(ctx context.Context, data []interface{}) error {
 }
 
 func (m *MongoPump) AccumulateSet(data []interface{}, forGraph bool) [][]interface{} {
-
 	accumulatorTotal := 0
 	returnArray := make([][]interface{}, 0)
 	thisResultSet := make([]interface{}, 0)

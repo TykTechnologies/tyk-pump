@@ -132,11 +132,9 @@ func (g *GraphMongoPump) WriteData(ctx context.Context, data []interface{}) erro
 	}
 
 	for range accumulateSet {
-		select {
-		case err := <-errCh:
-			if err != nil {
-				return err
-			}
+		err := <-errCh
+		if err != nil {
+			return err
 		}
 	}
 	g.log.Info("Purged ", len(data), " records...")
