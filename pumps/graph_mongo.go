@@ -2,10 +2,11 @@ package pumps
 
 import (
 	"context"
+	"strings"
+
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/mitchellh/mapstructure"
 	"github.com/sirupsen/logrus"
-	"strings"
 )
 
 const mongoGraphPrefix = "mongo-graph-pump"
@@ -75,7 +76,6 @@ func (g *GraphMongoPump) Init(config interface{}) error {
 }
 
 func (g *GraphMongoPump) WriteData(ctx context.Context, data []interface{}) error {
-
 	collectionName := g.dbConf.CollectionName
 	if collectionName == "" {
 		g.log.Fatal("No collection name!")

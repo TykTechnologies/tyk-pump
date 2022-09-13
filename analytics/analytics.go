@@ -325,7 +325,6 @@ func (a *AnalyticsRecord) GetGeo(ipStr string, GeoIPDB *maxminddb.Reader) {
 	a.Geo.Location = geo.Location
 	a.Geo.Country = geo.Country
 	a.Geo.City = geo.City
-
 }
 
 func GeoIPLookup(ipStr string, GeoIPDB *maxminddb.Reader) (*GeoData, error) {

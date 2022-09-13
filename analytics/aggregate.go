@@ -471,7 +471,7 @@ func (f *AnalyticsRecordAggregate) AsTimeUpdate() bson.M {
 	return newUpdate
 }
 
-//DiscardAggregations this method discard the aggregations of X field specified in the aggregated pump configuration
+// DiscardAggregations this method discard the aggregations of X field specified in the aggregated pump configuration
 func (f *AnalyticsRecordAggregate) DiscardAggregations(fields []string) {
 	for _, field := range fields {
 		switch field {

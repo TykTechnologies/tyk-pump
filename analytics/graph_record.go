@@ -7,18 +7,19 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"net/http"
+
 	"github.com/TykTechnologies/graphql-go-tools/pkg/ast"
 	"github.com/TykTechnologies/graphql-go-tools/pkg/astnormalization"
 	"github.com/TykTechnologies/graphql-go-tools/pkg/astparser"
 	gql "github.com/TykTechnologies/graphql-go-tools/pkg/graphql"
 	"github.com/TykTechnologies/graphql-go-tools/pkg/operationreport"
 	"github.com/buger/jsonparser"
-	"io"
-	"net/http"
 )
 
 type GraphRecord struct {
-	AnalyticsRecord
+	AnalyticsRecord `bson:",inline"`
 
 	Types         map[string][]string
 	HasErrors     bool
@@ -98,11 +99,11 @@ func (a *AnalyticsRecord) ToGraphRecord() (GraphRecord, error) {
 		return record, nil
 	}
 	resp, err := http.ReadResponse(bufio.NewReader(bytes.NewReader(responseDecoded)), nil)
-	defer resp.Body.Close()
 	if err != nil {
 		log.WithError(err).Error("error reading raw response")
 		return record, err
 	}
+	defer resp.Body.Close()
 
 	dat, err := io.ReadAll(resp.Body)
 	if err != nil {
