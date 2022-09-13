@@ -126,7 +126,7 @@ func TestDoAggregatedWritingWithIgnoredAggregations(t *testing.T) {
 	}
 }
 
-func TestAnalyticsStoredPerMinute(t *testing.T) {
+func TestAggregationTime(t *testing.T) {
 	cfgPump1 := make(map[string]interface{})
 	cfgPump1["mongo_url"] = "mongodb://localhost:27017/tyk_analytics"
 	cfgPump1["ignore_aggregations"] = []string{"apikeys"}
@@ -139,44 +139,44 @@ func TestAnalyticsStoredPerMinute(t *testing.T) {
 	keys[0] = analytics.AnalyticsRecord{APIID: "api1", OrgID: "123", TimeStamp: timeNow, APIKey: "apikey1"}
 
 	tests := []struct {
-		testName                 string
-		AnalyticsStoredPerMinute int
-		WantedNumberOfRecords    int
+		testName              string
+		AggregationTime       int
+		WantedNumberOfRecords int
 	}{
 		{
-			testName:                 "create record every 60 minutes - 180 minutes hitting the API",
-			AnalyticsStoredPerMinute: 60,
-			WantedNumberOfRecords:    3,
+			testName:              "create record every 60 minutes - 180 minutes hitting the API",
+			AggregationTime:       60,
+			WantedNumberOfRecords: 3,
 		},
 		{
-			testName:                 "create new record every 30 minutes - 120 minutes hitting the API",
-			AnalyticsStoredPerMinute: 30,
-			WantedNumberOfRecords:    4,
+			testName:              "create new record every 30 minutes - 120 minutes hitting the API",
+			AggregationTime:       30,
+			WantedNumberOfRecords: 4,
 		},
 		{
-			testName:                 "create new record every 15 minutes - 90 minutes hitting the API",
-			AnalyticsStoredPerMinute: 15,
-			WantedNumberOfRecords:    6,
+			testName:              "create new record every 15 minutes - 90 minutes hitting the API",
+			AggregationTime:       15,
+			WantedNumberOfRecords: 6,
 		},
 		{
-			testName:                 "create new record every 7 minutes - 28 minutes hitting the API",
-			AnalyticsStoredPerMinute: 7,
-			WantedNumberOfRecords:    4,
+			testName:              "create new record every 7 minutes - 28 minutes hitting the API",
+			AggregationTime:       7,
+			WantedNumberOfRecords: 4,
 		},
 		{
-			testName:                 "create new record every 3 minutes - 24 minutes hitting the API",
-			AnalyticsStoredPerMinute: 3,
-			WantedNumberOfRecords:    8,
+			testName:              "create new record every 3 minutes - 24 minutes hitting the API",
+			AggregationTime:       3,
+			WantedNumberOfRecords: 8,
 		},
 		{
-			testName:                 "create new record every minute - 10 minutes hitting the API",
-			AnalyticsStoredPerMinute: 1,
-			WantedNumberOfRecords:    10,
+			testName:              "create new record every minute - 10 minutes hitting the API",
+			AggregationTime:       1,
+			WantedNumberOfRecords: 10,
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.testName, func(t *testing.T) {
-			cfgPump1["analytics_stored_per_minute"] = test.AnalyticsStoredPerMinute
+			cfgPump1["aggregation_time"] = test.AggregationTime
 			errInit1 := pmp1.Init(cfgPump1)
 			if errInit1 != nil {
 				t.Error(errInit1)
@@ -195,13 +195,13 @@ func TestAnalyticsStoredPerMinute(t *testing.T) {
 
 			ctx := context.TODO()
 			for i := 0; i < test.WantedNumberOfRecords; i++ {
-				for index := 0; index < test.AnalyticsStoredPerMinute; index++ {
+				for index := 0; index < test.AggregationTime; index++ {
 					errWrite := pmp1.WriteData(ctx, keys)
 					if errWrite != nil {
 						t.Fatal("Mongo Aggregate Pump couldn't write records with err:", errWrite)
 					}
 				}
-				timeNow = timeNow.Add(time.Minute * time.Duration(test.AnalyticsStoredPerMinute))
+				timeNow = timeNow.Add(time.Minute * time.Duration(test.AggregationTime))
 				keys[0] = analytics.AnalyticsRecord{APIID: "api1", OrgID: "123", TimeStamp: timeNow, APIKey: "apikey1"}
 			}
 

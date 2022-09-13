@@ -319,7 +319,8 @@ Available Mongo instances are: Standard Mongo, DocumentDB (AWS), CosmosDB (Azure
       "meta": {
         "mongo_url": "mongodb://username:password@{hostname:port},{hostname:port}/{db_name}",
         "use_mixed_collection": true,
-        "analytics_stored_per_minute": 60,
+        "store_analytics_per_minute": false,
+        "aggregation_time": 50,
         "track_all_paths": false
       },
       "mongo-pump-selective": {

@@ -43,10 +43,12 @@ var (
 
 // HybridPump allows to send analytics to MDCB over RPC
 type HybridPump struct {
-	aggregated               bool
-	trackAllPaths            bool
-	analyticsStoredPerMinute int
-	ignoreTagPrefixList      []string
+	aggregated                 bool
+	trackAllPaths              bool
+	storeAnalyticsPerMinute    bool
+	aggregationTime            int
+	enableAggregateSelfHealing bool
+	ignoreTagPrefixList        []string
 	CommonPumpConfig
 	rpcConfig rpc.Config
 }
@@ -128,17 +130,24 @@ func (p *HybridPump) Init(config interface{}) error {
 			p.trackAllPaths = trackAllPaths.(bool)
 		}
 
-		analyticsStoredPerMinute, ok := meta["analytics_stored_per_minute"].(int)
-		if !ok {
-			p.log.Warn("analytics_stored_per_minute is not configured. The default value will be set to 60")
-			p.analyticsStoredPerMinute = 60
+		if storeAnalyticsPerMinute := meta["store_analytics_per_minute"].(bool); storeAnalyticsPerMinute {
+			p.storeAnalyticsPerMinute = storeAnalyticsPerMinute
+			p.aggregationTime = 1
 		} else {
-			if analyticsStoredPerMinute > 60 || analyticsStoredPerMinute < 1 {
-				p.log.Warn("analytics_stored_per_minute range is from 1 to 60. The default value will be set to 60")
-				p.analyticsStoredPerMinute = 60
+			aggregationTime, ok := meta["aggregation_time"].(int)
+			if !ok {
+				p.log.Warn("aggregation_time is not configured. The default value will be set to 60")
+				p.aggregationTime = 60
+			} else {
+				if aggregationTime > 60 || aggregationTime < 1 {
+					p.log.Warn("aggregation_time range is from 1 to 60. The default value will be set to 60")
+					p.aggregationTime = 60
+				}
+				p.aggregationTime = aggregationTime
 			}
-			p.analyticsStoredPerMinute = analyticsStoredPerMinute
 		}
+
+		p.enableAggregateSelfHealing = meta["enable_aggregate_self_healing"].(bool)
 
 		if list, ok := meta["ignore_tag_prefix_list"]; ok {
 			ignoreTagPrefixList := list.([]interface{})
@@ -207,7 +216,7 @@ func (p *HybridPump) WriteData(ctx context.Context, data []interface{}) error {
 		}
 	} else { // send aggregated data
 		// calculate aggregates
-		aggregates := analytics.AggregateData(data, p.trackAllPaths, p.ignoreTagPrefixList, p.rpcConfig.ConnectionString, p.analyticsStoredPerMinute, false)
+		aggregates := analytics.AggregateData(data, p.trackAllPaths, p.ignoreTagPrefixList, p.rpcConfig.ConnectionString, p.aggregationTime, false)
 
 		// turn map with analytics aggregates into JSON payload
 		jsonData, err := json.Marshal(aggregates)

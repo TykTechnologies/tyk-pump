@@ -33,9 +33,7 @@ type SQLAggregatePumpConf struct {
 
 type SQLAggregatePump struct {
 	CommonPumpConfig
-
 	SQLConf *SQLAggregatePumpConf
-
 	db      *gorm.DB
 	dbType  string
 	dialect gorm.Dialector
@@ -153,14 +151,14 @@ func (c *SQLAggregatePump) WriteData(ctx context.Context, data []interface{}) er
 		}
 
 		// if StoreAnalyticsPerMinute is set to true, we will create new documents with records every 1 minute
-		var analyticsStoredPerMinute int
+		var aggregationTime int
 		if c.SQLConf.StoreAnalyticsPerMinute {
-			analyticsStoredPerMinute = 1
+			aggregationTime = 1
 		} else {
-			analyticsStoredPerMinute = 60
+			aggregationTime = 60
 		}
 
-		analyticsPerOrg := analytics.AggregateData(data[startIndex:endIndex], c.SQLConf.TrackAllPaths, c.SQLConf.IgnoreTagPrefixList, "", analyticsStoredPerMinute, false)
+		analyticsPerOrg := analytics.AggregateData(data[startIndex:endIndex], c.SQLConf.TrackAllPaths, c.SQLConf.IgnoreTagPrefixList, "", aggregationTime, false)
 
 		for orgID, ag := range analyticsPerOrg {
 
