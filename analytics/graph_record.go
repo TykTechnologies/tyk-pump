@@ -47,9 +47,11 @@ func (a *AnalyticsRecord) ToGraphRecord() (GraphRecord, error) {
 
 	request, schema, operationName, err := generateNormalizedDocuments(rawRequest, schemaBody)
 	if err != nil {
-		return record, err
+		return record, fmt.Errorf("error generating documents: %w", err)
 	}
-	record.Variables = base64.StdEncoding.EncodeToString(request.Input.Variables)
+	if len(request.Input.Variables) != 0 && string(request.Input.Variables) != "null" {
+		record.Variables = base64.StdEncoding.EncodeToString(request.Input.Variables)
+	}
 
 	// get the operation ref
 	operationRef := 0
@@ -60,10 +62,10 @@ func (a *AnalyticsRecord) ToGraphRecord() (GraphRecord, error) {
 				break
 			}
 		}
-	}
-	if len(request.OperationDefinitions) < 1 {
-		log.Warn("no operations found")
-		return record, err
+	} else {
+		if len(request.OperationDefinitions) > 1 {
+			return record, errors.New("no operation name specified")
+		}
 	}
 
 	// get operation type
@@ -74,10 +76,6 @@ func (a *AnalyticsRecord) ToGraphRecord() (GraphRecord, error) {
 		record.OperationType = operationTypeSubscription
 	case ast.OperationTypeQuery:
 		record.OperationType = operationTypeQuery
-	case ast.OperationTypeUnknown:
-		fallthrough
-	default:
-		record.OperationType = operationTypeUnknown
 	}
 
 	// get the selection set types to start with

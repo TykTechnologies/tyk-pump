@@ -43,7 +43,7 @@ require (
 	github.com/segmentio/kafka-go v0.3.6
 	github.com/shirou/gopsutil v3.20.11+incompatible // indirect
 	github.com/sirupsen/logrus v1.8.1
-	github.com/stretchr/testify v1.7.0
+	github.com/stretchr/testify v1.8.0
 	github.com/syndtr/goleveldb v0.0.0-20190318030020-c3a204f8e965 // indirect
 	github.com/x-cray/logrus-prefixed-formatter v0.5.2
 	github.com/xtgo/uuid v0.0.0-20140804021211-a0b114877d4c // indirect

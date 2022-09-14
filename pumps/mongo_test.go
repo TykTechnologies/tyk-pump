@@ -2,12 +2,9 @@ package pumps
 
 import (
 	"context"
-	"fmt"
+	"github.com/stretchr/testify/assert"
 	"strconv"
 	"testing"
-	"unsafe"
-
-	"github.com/stretchr/testify/assert"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
 )
@@ -339,18 +336,4 @@ func TestMongoPump_AccumulateSet(t *testing.T) {
 		},
 		50,
 	))
-}
-
-func TestPointerSize(t *testing.T) {
-	testStruct := struct {
-		//f map[string]string
-		//s []graphError
-		analytics.AnalyticsRecord
-	}{}
-	fmt.Println(unsafe.Sizeof(testStruct))
-}
-
-type graphError struct {
-	Message string        `json:"message"`
-	Path    []interface{} `json:"path"`
 }

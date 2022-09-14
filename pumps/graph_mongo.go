@@ -98,11 +98,13 @@ func (g *GraphMongoPump) WriteData(ctx context.Context, data []interface{}) erro
 			// make a graph record array with variable length in case there are errors with some conversion
 			finalSet := make([]interface{}, 0)
 			for _, d := range dataSet {
-				r := d.(analytics.AnalyticsRecord)
+				r, ok := d.(analytics.AnalyticsRecord)
+				if !ok {
+					continue
+				}
 				gr, err := r.ToGraphRecord()
 				if err != nil {
 					g.log.WithError(err).Warn("error converting 1 record to graph record")
-					continue
 				}
 				finalSet = append(finalSet, gr)
 			}

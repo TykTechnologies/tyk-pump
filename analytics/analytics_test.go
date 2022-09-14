@@ -3,11 +3,10 @@ package analytics
 import (
 	"encoding/base64"
 	"fmt"
-	"testing"
-	"time"
-
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -22,6 +21,14 @@ type Query {
   characters(filter: FilterCharacter, page: Int): Characters
   listCharacters(): [Characters]!
 }
+
+type Mutation {
+  changeCharacter(): String
+}
+
+type Subscription {
+  listenCharacter(): Characters
+}
 input FilterCharacter {
   name: String
   status: String
@@ -31,6 +38,7 @@ input FilterCharacter {
 }
 type Characters {
   info: Info
+  secondInfo: String
   results: [Character]
 }
 type Info {
@@ -68,19 +76,19 @@ func TestAnalyticsRecord_IsGraphRecord(t *testing.T) {
 
 func TestAnalyticsRecord_ToGraphRecord(t *testing.T) {
 	recordSample := AnalyticsRecord{
+		TimeStamp:    time.Date(2022, 1, 1, 0, 0, 0, 0, time.UTC),
 		Method:       "POST",
 		Host:         "localhost:8281",
-		ResponseCode: 200,
 		Path:         "/",
 		RawPath:      "/",
+		APIName:      "test-api",
+		APIID:        "test-api",
+		ApiSchema:    base64.StdEncoding.EncodeToString([]byte(sampleSchema)),
+		ResponseCode: 200,
 		Day:          1,
 		Month:        1,
 		Year:         2022,
 		Hour:         0,
-		TimeStamp:    time.Date(2022, 1, 1, 0, 0, 0, 0, time.UTC),
-		APIName:      "test-api",
-		APIID:        "test-api",
-		ApiSchema:    base64.StdEncoding.EncodeToString([]byte(sampleSchema)),
 	}
 	graphRecordSample := GraphRecord{
 		AnalyticsRecord: recordSample,
@@ -88,10 +96,11 @@ func TestAnalyticsRecord_ToGraphRecord(t *testing.T) {
 	}
 
 	testCases := []struct {
-		title    string
-		request  string
-		response string
-		expected func(string, string) GraphRecord
+		expected    func(string, string) GraphRecord
+		title       string
+		request     string
+		response    string
+		expectedErr string
 	}{
 		{
 			title:    "no error",
@@ -107,6 +116,41 @@ func TestAnalyticsRecord_ToGraphRecord(t *testing.T) {
 				g.OperationType = "query"
 				return g
 			},
+		},
+		{
+			title:    "no error mutation",
+			request:  `{"query":"mutation{\n  changeCharacter()\n}"}`,
+			response: `{"data":{"characters":{"info":{"count":758}}}}`,
+			expected: func(request, response string) GraphRecord {
+				g := graphRecordSample
+				g.HasErrors = false
+				g.OperationType = "mutation"
+				return g
+			},
+		},
+		{
+			title:    "no error subscription",
+			request:  `{"query":"subscription{\n  listenCharacter(){\n    info{\n      count\n    }\n  }\n}"}`,
+			response: `{"data":{"characters":{"info":{"count":758}}}}`,
+			expected: func(request, response string) GraphRecord {
+				g := graphRecordSample
+				g.HasErrors = false
+				g.Types = map[string][]string{
+					"Characters": {"info"},
+					"Info":       {"count"},
+				}
+				g.OperationType = "subscription"
+				return g
+			},
+		},
+		{
+			title:    "bad document",
+			request:  `{"query":"subscriptiona{\n  listenCharacter(){\n    info{\n      count\n    }\n  }\n}"}`,
+			response: `{"data":{"characters":{"info":{"count":758}}}}`,
+			expected: func(request, response string) GraphRecord {
+				return GraphRecord{}
+			},
+			expectedErr: "error generating documents",
 		},
 		{
 			title:    "no error list operation",
@@ -138,6 +182,30 @@ func TestAnalyticsRecord_ToGraphRecord(t *testing.T) {
 				g.Variables = base64.StdEncoding.EncodeToString([]byte(`{"a":"test"}`))
 				return g
 			},
+		},
+		{
+			title:    "no operation",
+			request:  `{"query":"query main {\ncharacters {\ninfo\n}\n}\n\nquery second {\nlistCharacters{\ninfo\n}\n}","variables":null,"operationName":""}`,
+			response: `{"data":{"characters":{"info":{"count":758}}}}`,
+			expected: func(request, response string) GraphRecord {
+				return GraphRecord{}
+			},
+			expectedErr: "no operation name specified",
+		},
+		{
+			title:    "operation name specified",
+			request:  `{"query":"query main {\ncharacters {\ninfo\n}\n}\n\nquery second {\nlistCharacters{\ninfo\n secondInfo}\n}","variables":null,"operationName":"second"}`,
+			response: `{"data":{"characters":{"info":{"count":758}}}}`,
+			expected: func(request, response string) GraphRecord {
+				g := graphRecordSample
+				g.HasErrors = false
+				g.Types = map[string][]string{
+					"Characters": {"info", "secondInfo"},
+				}
+				g.OperationType = "query"
+				return g
+			},
+			expectedErr: "",
 		},
 		{
 			title:   "has errors",
@@ -184,9 +252,11 @@ func TestAnalyticsRecord_ToGraphRecord(t *testing.T) {
 			expected := testCase.expected(testCase.request, testCase.response)
 			expected.AnalyticsRecord = a
 			gotten, err := a.ToGraphRecord()
-			if err != nil {
-				t.Fatal(err)
+			if testCase.expectedErr != "" {
+				assert.ErrorContains(t, err, testCase.expectedErr)
+				return
 			}
+			assert.NoError(t, err)
 			if diff := cmp.Diff(expected, gotten, cmpopts.IgnoreFields(GraphRecord{}, "RawRequest", "RawResponse")); diff != "" {
 				t.Fatal(diff)
 			}
