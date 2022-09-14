@@ -7,7 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
+	"io/ioutil"
 	"net/http"
 
 	"github.com/TykTechnologies/graphql-go-tools/pkg/ast"
@@ -19,12 +19,13 @@ import (
 )
 
 type GraphRecord struct {
+	Types map[string][]string
+
 	AnalyticsRecord `bson:",inline"`
 
-	Errors        []graphError
-	Types         map[string][]string
 	OperationType string
 	Variables     string
+	Errors        []graphError
 	HasErrors     bool
 }
 
@@ -62,10 +63,8 @@ func (a *AnalyticsRecord) ToGraphRecord() (GraphRecord, error) {
 				break
 			}
 		}
-	} else {
-		if len(request.OperationDefinitions) > 1 {
-			return record, errors.New("no operation name specified")
-		}
+	} else if len(request.OperationDefinitions) > 1 {
+		return record, errors.New("no operation name specified")
 	}
 
 	// get operation type
@@ -102,7 +101,7 @@ func (a *AnalyticsRecord) ToGraphRecord() (GraphRecord, error) {
 	}
 	defer resp.Body.Close()
 
-	dat, err := io.ReadAll(resp.Body)
+	dat, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		log.WithError(err).Error("error reading response body")
 		return record, err
@@ -129,7 +128,7 @@ func extractTypesOfSelectionSet(operationRef int, req, schema *ast.Document) (ma
 	fieldTypeMap := make(map[int]int)
 	operationDef := req.OperationDefinitions[operationRef]
 	if !operationDef.HasSelections {
-		return nil, nil
+		return nil, errors.New("operation has no selection set")
 	}
 
 	for _, selRef := range req.SelectionSets[operationDef.SelectionSet].SelectionRefs {

@@ -3,10 +3,11 @@ package analytics
 import (
 	"encoding/base64"
 	"fmt"
-	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
 	"testing"
 	"time"
+
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -96,11 +97,12 @@ func TestAnalyticsRecord_ToGraphRecord(t *testing.T) {
 	}
 
 	testCases := []struct {
-		expected    func(string, string) GraphRecord
-		title       string
-		request     string
-		response    string
-		expectedErr string
+		expected     func(string, string) GraphRecord
+		modifyRecord func(a AnalyticsRecord) AnalyticsRecord
+		title        string
+		request      string
+		response     string
+		expectedErr  string
 	}{
 		{
 			title:    "no error",
@@ -234,6 +236,28 @@ func TestAnalyticsRecord_ToGraphRecord(t *testing.T) {
 				return g
 			},
 		},
+		{
+			title: "corrupted raw request should error out",
+			modifyRecord: func(a AnalyticsRecord) AnalyticsRecord {
+				a.RawRequest = "this isn't a base64 is it?"
+				return a
+			},
+			expectedErr: "error decoding raw request",
+			expected: func(s, s2 string) GraphRecord {
+				return GraphRecord{}
+			},
+		},
+		{
+			title: "corrupted schema should error out",
+			modifyRecord: func(a AnalyticsRecord) AnalyticsRecord {
+				a.ApiSchema = "this isn't a base64 is it?"
+				return a
+			},
+			expectedErr: "error decoding schema",
+			expected: func(s, s2 string) GraphRecord {
+				return GraphRecord{}
+			},
+		},
 	}
 
 	for _, testCase := range testCases {
@@ -249,6 +273,9 @@ func TestAnalyticsRecord_ToGraphRecord(t *testing.T) {
 				len(testCase.response),
 				testCase.response,
 			)))
+			if testCase.modifyRecord != nil {
+				a = testCase.modifyRecord(a)
+			}
 			expected := testCase.expected(testCase.request, testCase.response)
 			expected.AnalyticsRecord = a
 			gotten, err := a.ToGraphRecord()
