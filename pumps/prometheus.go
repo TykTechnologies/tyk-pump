@@ -39,6 +39,8 @@ type PrometheusConf struct {
 	// This will enable an experimental feature that will aggregate the histogram metrics request time values before exposing them to prometheus.
 	// Enabling this will reduce the CPU usage of your prometheus pump but you will loose histogram precision. Experimental.
 	AggregateObservations bool `json:"aggregate_observations" mapstructure:"aggregate_observations"`
+	// Metrics to exclude from exposition. Currently, excludes only the base metrics.
+	DisabledMetrics []string `json:"disabled_metrics" mapstructure:"disabled_metrics"`
 	// Custom Prometheus metrics.
 	CustomMetrics []PrometheusMetric `json:"custom_metrics" mapstructure:"custom_metrics"`
 }
@@ -69,7 +71,7 @@ type PrometheusMetric struct {
 	aggregatedObservations bool
 }
 
-//histogramCounter is a helper struct to mantain the totalRequestTime and hits in memory
+// histogramCounter is a helper struct to mantain the totalRequestTime and hits in memory
 type histogramCounter struct {
 	totalRequestTime uint64
 	hits             uint64
@@ -91,7 +93,7 @@ func (p *PrometheusPump) New() Pump {
 	return &newPump
 }
 
-//CreateBasicMetrics stores all the predefined pump metrics in allMetrics slice
+// CreateBasicMetrics stores all the predefined pump metrics in allMetrics slice
 func (p *PrometheusPump) CreateBasicMetrics() {
 
 	//counter metrics
@@ -160,16 +162,12 @@ func (p *PrometheusPump) Init(conf interface{}) error {
 	}
 
 	//first we init the base metrics
-	for _, metric := range p.allMetrics {
-		metric.aggregatedObservations = p.conf.AggregateObservations
-		errInit := metric.InitVec()
-		if errInit != nil {
-			p.log.Error(errInit)
-		}
-	}
+	p.initBaseMetrics()
 
 	//then we check the custom ones
 	p.InitCustomMetrics()
+
+	disabledMetrics := p.disableExcludedMetrics()
 
 	p.log.Info("Starting prometheus listener on:", p.conf.Addr)
 
@@ -178,12 +176,41 @@ func (p *PrometheusPump) Init(conf interface{}) error {
 	go func() {
 		log.Fatal(http.ListenAndServe(p.conf.Addr, nil))
 	}()
-	p.log.Info(p.GetName() + " Initialized")
+	p.log.WithField("disabled_metrics", disabledMetrics).Info(p.GetName() + " Initialized")
 
 	return nil
 }
 
-//InitCustomMetrics initialise custom prometheus metrics based on p.conf.CustomMetrics and add them into p.allMetrics
+func (p *PrometheusPump) disableExcludedMetrics() []string {
+	//configure base or custom metrics as disabled if needed. This disables exposition entirely during scrapes.
+	var disabledMetrics []string
+	{
+		toDisableSet := map[string]struct{}{}
+		for _, metric := range p.conf.DisabledMetrics {
+			toDisableSet[metric] = struct{}{}
+		}
+
+		for _, metric := range p.allMetrics {
+			if _, ok := toDisableSet[metric.Name]; ok {
+				metric.enabled = false
+				disabledMetrics = append(disabledMetrics, metric.Name)
+			}
+		}
+	}
+	return disabledMetrics
+}
+
+func (p *PrometheusPump) initBaseMetrics() {
+	for _, metric := range p.allMetrics {
+		metric.aggregatedObservations = p.conf.AggregateObservations
+		errInit := metric.InitVec()
+		if errInit != nil {
+			p.log.Error(errInit)
+		}
+	}
+}
+
+// InitCustomMetrics initialise custom prometheus metrics based on p.conf.CustomMetrics and add them into p.allMetrics
 func (p *PrometheusPump) InitCustomMetrics() {
 	if len(p.conf.CustomMetrics) > 0 {
 		customMetrics := []*PrometheusMetric{}
@@ -335,7 +362,7 @@ func (pm *PrometheusMetric) GetLabelsValues(decoded analytics.AnalyticsRecord) [
 	return values
 }
 
-//Inc is going to fill counterMap and histogramMap with the data from record.
+// Inc is going to fill counterMap and histogramMap with the data from record.
 func (pm *PrometheusMetric) Inc(values ...string) error {
 	switch pm.MetricType {
 	case COUNTER_TYPE:
@@ -352,7 +379,7 @@ func (pm *PrometheusMetric) Inc(values ...string) error {
 	return nil
 }
 
-//Observe will fill hitogramMap with the sum of totalRequest and hits per label value if aggregate_observations is true. If aggregate_observations is set to false (default) it will execute prometheus Observe directly.
+// Observe will fill hitogramMap with the sum of totalRequest and hits per label value if aggregate_observations is true. If aggregate_observations is set to false (default) it will execute prometheus Observe directly.
 func (pm *PrometheusMetric) Observe(requestTime int64, values ...string) error {
 	switch pm.MetricType {
 	case HISTOGRAM_TYPE:
@@ -381,10 +408,10 @@ func (pm *PrometheusMetric) Observe(requestTime int64, values ...string) error {
 	return nil
 }
 
-//Expose executes prometheus library functions using the counter/histogram vector from the PrometheusMetric struct.
-//If the PrometheusMetric is COUNTER_TYPE, it will execute prometheus client Add function to add the counters from counterMap to the labels value metric
-//If the PrometheusMetric is HISTOGRAM_TYPE and aggregate_observations config is true, it will calculate the average value of the metrics in the histogramMap and execute prometheus Observe.
-//If aggregate_observations is false, it won't do anything since it means that we already exposed the metric.
+// Expose executes prometheus library functions using the counter/histogram vector from the PrometheusMetric struct.
+// If the PrometheusMetric is COUNTER_TYPE, it will execute prometheus client Add function to add the counters from counterMap to the labels value metric
+// If the PrometheusMetric is HISTOGRAM_TYPE and aggregate_observations config is true, it will calculate the average value of the metrics in the histogramMap and execute prometheus Observe.
+// If aggregate_observations is false, it won't do anything since it means that we already exposed the metric.
 func (pm *PrometheusMetric) Expose() error {
 	switch pm.MetricType {
 	case COUNTER_TYPE:
@@ -408,7 +435,7 @@ func (pm *PrometheusMetric) Expose() error {
 	return nil
 }
 
-//getAverageRequestTime returns the average request time of an histogramCounter dividing the sum of all the RequestTimes by the hits.
+// getAverageRequestTime returns the average request time of an histogramCounter dividing the sum of all the RequestTimes by the hits.
 func (c histogramCounter) getAverageRequestTime() float64 {
 	return float64(c.totalRequestTime / c.hits)
 }

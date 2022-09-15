@@ -2,14 +2,16 @@ package pumps
 
 import (
 	"errors"
+	"io"
 	"testing"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestInitVec(t *testing.T) {
+func TestPrometheusInitVec(t *testing.T) {
 	tcs := []struct {
 		testName     string
 		customMetric PrometheusMetric
@@ -72,7 +74,7 @@ func TestInitVec(t *testing.T) {
 	}
 }
 
-func TestInitCustomMetrics(t *testing.T) {
+func TestPrometheusInitCustomMetrics(t *testing.T) {
 	tcs := []struct {
 		testName              string
 		metrics               []PrometheusMetric
@@ -173,7 +175,7 @@ func TestInitCustomMetrics(t *testing.T) {
 	}
 }
 
-func TestGetLabelsValues(t *testing.T) {
+func TestPrometheusGetLabelsValues(t *testing.T) {
 	tcs := []struct {
 		testName       string
 		customMetric   PrometheusMetric
@@ -527,4 +529,61 @@ func TestPrometheusCreateBasicMetrics(t *testing.T) {
 	assert.Equal(t, 4, actualMetricTypeCounter[COUNTER_TYPE])
 	assert.Equal(t, 1, actualMetricTypeCounter[HISTOGRAM_TYPE])
 
+}
+
+func TestPrometheusDisablingMetrics(t *testing.T) {
+	p := &PrometheusPump{}
+	newPump := p.New().(*PrometheusPump)
+
+	log := logrus.New()
+	log.Out = io.Discard
+	newPump.log = logrus.NewEntry(log)
+
+	newPump.conf = &PrometheusConf{
+		DisabledMetrics: []string{
+			"foo_bar",
+			"tyk_http_status_per_path",
+		},
+		CustomMetrics: []PrometheusMetric{
+			{
+				Name:       "foo_bar",
+				MetricType: COUNTER_TYPE,
+			},
+			{
+				Name:       "bar_foo",
+				MetricType: COUNTER_TYPE,
+			},
+		},
+	}
+
+	newPump.initBaseMetrics()
+	newPump.InitCustomMetrics()
+	newPump.disableExcludedMetrics()
+
+	defer func() {
+		for i := range newPump.allMetrics {
+			if newPump.allMetrics[i].MetricType == COUNTER_TYPE {
+				prometheus.Unregister(newPump.allMetrics[i].counterVec)
+			} else if newPump.allMetrics[i].MetricType == HISTOGRAM_TYPE {
+				prometheus.Unregister(newPump.allMetrics[i].histogramVec)
+			}
+		}
+	}()
+
+	metricMap := map[string]*PrometheusMetric{}
+	for _, metric := range newPump.allMetrics {
+		metricMap[metric.Name] = metric
+	}
+
+	assertMetric := func(name string, enabled bool) {
+		if assert.Containsf(t, metricMap, name, "metric %s did not exist", name) {
+			assert.Equalf(t, enabled, metricMap[name].enabled,
+				"metric %s enabled should be %v", name, enabled)
+
+		}
+	}
+
+	assertMetric("foo_bar", false)
+	assertMetric("bar_foo", true)
+	assertMetric("tyk_http_status_per_path", false)
 }
