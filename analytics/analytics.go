@@ -22,13 +22,6 @@ const (
 	PredefinedTagGraphAnalytics = "tyk-graph-analytics"
 )
 
-const (
-	operationTypeQuery        = "query"
-	operationTypeMutation     = "mutation"
-	operationTypeSubscription = "subscription"
-	operationTypeUnknown      = "unknown"
-)
-
 var log = logger.GetLogger()
 
 type NetworkStats struct {

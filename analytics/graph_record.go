@@ -70,11 +70,11 @@ func (a *AnalyticsRecord) ToGraphRecord() (GraphRecord, error) {
 	// get operation type
 	switch request.OperationDefinitions[operationRef].OperationType {
 	case ast.OperationTypeMutation:
-		record.OperationType = operationTypeMutation
+		record.OperationType = string(ast.DefaultMutationTypeName)
 	case ast.OperationTypeSubscription:
-		record.OperationType = operationTypeSubscription
+		record.OperationType = string(ast.DefaultSubscriptionTypeName)
 	case ast.OperationTypeQuery:
-		record.OperationType = operationTypeQuery
+		record.OperationType = string(ast.DefaultQueryTypeName)
 	}
 
 	// get the selection set types to start with
