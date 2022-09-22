@@ -540,7 +540,7 @@ func (m *MongoPump) WriteData(ctx context.Context, data []interface{}) error {
 	return nil
 }
 
-func (m *MongoPump) AccumulateSet(data []interface{}, forGraph bool) [][]interface{} {
+func (m *MongoPump) AccumulateSet(data []interface{}, isForGraphRecords bool) [][]interface{} {
 	accumulatorTotal := 0
 	returnArray := make([][]interface{}, 0)
 	thisResultSet := make([]interface{}, 0)
@@ -552,10 +552,7 @@ func (m *MongoPump) AccumulateSet(data []interface{}, forGraph bool) [][]interfa
 		}
 
 		// Skip this record if it is a graph analytics record, they will be handled in a different pump
-		if thisItem.IsGraphRecord() && !forGraph {
-			continue
-		}
-		if forGraph && !thisItem.IsGraphRecord() {
+		if thisItem.IsGraphRecord() != isForGraphRecords {
 			continue
 		}
 
