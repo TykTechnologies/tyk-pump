@@ -2,8 +2,10 @@ package pumps
 
 import "github.com/TykTechnologies/tyk-pump/logger"
 
-var log = logger.GetLogger()
-var AvailablePumps map[string]Pump
+var (
+	log            = logger.GetLogger()
+	AvailablePumps map[string]Pump
+)
 
 func init() {
 	AvailablePumps = make(map[string]Pump)
@@ -33,4 +35,5 @@ func init() {
 	AvailablePumps["stdout"] = &StdOutPump{}
 	AvailablePumps["timestream"] = &TimestreamPump{}
 	AvailablePumps["mongo-graph"] = &GraphMongoPump{}
+	AvailablePumps["mongo-graph-aggregate"] = &MongoGraphAggregatePump{}
 }

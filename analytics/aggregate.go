@@ -18,6 +18,7 @@ const (
 	AgggregateMixedCollectionName = "tyk_analytics_aggregates"
 	MongoAggregatePrefix          = "mongo-pump-aggregate"
 	AggregateSQLTable             = "tyk_aggregated"
+	MongoGraphAggregatePrefix     = "mongo-graph-pump-aggregate"
 )
 
 type ErrorData struct {
@@ -70,6 +71,8 @@ type AnalyticsRecordAggregate struct {
 	OauthIDs map[string]*Counter
 	Geo      map[string]*Counter
 	Tags     map[string]*Counter
+	Types    map[string]*Counter
+	Fields   map[string]*Counter
 
 	Endpoints map[string]*Counter
 
@@ -220,6 +223,8 @@ func (f AnalyticsRecordAggregate) New() AnalyticsRecordAggregate {
 	thisF.KeyEndpoint = make(map[string]map[string]*Counter)
 	thisF.OauthEndpoint = make(map[string]map[string]*Counter)
 	thisF.ApiEndpoint = make(map[string]*Counter)
+	thisF.Types = make(map[string]*Counter)
+	thisF.Fields = make(map[string]*Counter)
 
 	return thisF
 }
@@ -350,6 +355,14 @@ func (f *AnalyticsRecordAggregate) Dimensions() (dimensions []Dimension) {
 
 	for key, inc := range f.ApiEndpoint {
 		dimensions = append(dimensions, Dimension{"apiendpoints", key, fnLatencySetter(inc)})
+	}
+
+	for key, inc := range f.Types {
+		dimensions = append(dimensions, Dimension{"types", key, fnLatencySetter(inc)})
+	}
+
+	for key, inc := range f.Fields {
+		dimensions = append(dimensions, Dimension{"fields", key, fnLatencySetter(inc)})
 	}
 
 	dimensions = append(dimensions, Dimension{"", "total", fnLatencySetter(&f.Total)})
@@ -669,55 +682,53 @@ func AggregateData(data []interface{}, trackAllPaths bool, ignoreTagPrefixList [
 				thisV.TrackPath = true
 			}
 
+			// Mini function to handle incrementing a specific counter in our object
+			IncrementOrSetUnit := func(c *Counter) *Counter {
+				if c == nil {
+					newCounter := thisCounter
+					newCounter.ErrorMap = make(map[string]int)
+					for k, v := range thisCounter.ErrorMap {
+						newCounter.ErrorMap[k] = v
+					}
+					c = &newCounter
+				} else {
+					c.Hits += thisCounter.Hits
+					c.Success += thisCounter.Success
+					c.ErrorTotal += thisCounter.ErrorTotal
+					for k, v := range thisCounter.ErrorMap {
+						c.ErrorMap[k] += v
+					}
+					c.TotalRequestTime += thisCounter.TotalRequestTime
+					c.RequestTime = c.TotalRequestTime / float64(c.Hits)
+
+					if c.MaxLatency < thisCounter.MaxLatency {
+						c.MaxLatency = thisCounter.MaxLatency
+					}
+
+					// don't update min latency in case of errors
+					if c.MinLatency > thisCounter.MinLatency && thisCounter.ErrorTotal == 0 {
+						c.MinLatency = thisCounter.MinLatency
+					}
+
+					if c.MaxUpstreamLatency < thisCounter.MaxUpstreamLatency {
+						c.MaxUpstreamLatency = thisCounter.MaxUpstreamLatency
+					}
+
+					// don't update min latency in case of errors
+					if c.MinUpstreamLatency > thisCounter.MinUpstreamLatency && thisCounter.ErrorTotal == 0 {
+						c.MinUpstreamLatency = thisCounter.MinUpstreamLatency
+					}
+
+					c.TotalLatency += thisCounter.TotalLatency
+					c.TotalUpstreamLatency += thisCounter.TotalUpstreamLatency
+				}
+
+				return c
+			}
+
 			// Convert to a map (for easy iteration)
 			vAsMap := structs.Map(thisV)
 			for key, value := range vAsMap {
-
-				// Mini function to handle incrementing a specific counter in our object
-				IncrementOrSetUnit := func(c *Counter) *Counter {
-					if c == nil {
-						newCounter := thisCounter
-						newCounter.ErrorMap = make(map[string]int)
-						for k, v := range thisCounter.ErrorMap {
-							newCounter.ErrorMap[k] = v
-						}
-						c = &newCounter
-					} else {
-						c.Hits += thisCounter.Hits
-						c.Success += thisCounter.Success
-						c.ErrorTotal += thisCounter.ErrorTotal
-						for k, v := range thisCounter.ErrorMap {
-							c.ErrorMap[k] += v
-						}
-						c.TotalRequestTime += thisCounter.TotalRequestTime
-						c.RequestTime = c.TotalRequestTime / float64(c.Hits)
-
-						if c.MaxLatency < thisCounter.MaxLatency {
-							c.MaxLatency = thisCounter.MaxLatency
-						}
-
-						// don't update min latency in case of errors
-						if c.MinLatency > thisCounter.MinLatency && thisCounter.ErrorTotal == 0 {
-							c.MinLatency = thisCounter.MinLatency
-						}
-
-						if c.MaxUpstreamLatency < thisCounter.MaxUpstreamLatency {
-							c.MaxUpstreamLatency = thisCounter.MaxUpstreamLatency
-						}
-
-						// don't update min latency in case of errors
-						if c.MinUpstreamLatency > thisCounter.MinUpstreamLatency && thisCounter.ErrorTotal == 0 {
-							c.MinUpstreamLatency = thisCounter.MinUpstreamLatency
-						}
-
-						c.TotalLatency += thisCounter.TotalLatency
-						c.TotalUpstreamLatency += thisCounter.TotalUpstreamLatency
-
-					}
-
-					return c
-				}
-
 				switch key {
 				case "APIID":
 					c := IncrementOrSetUnit(thisAggregate.APIID[value.(string)])
@@ -830,6 +841,19 @@ func AggregateData(data []interface{}, trackAllPaths bool, ignoreTagPrefixList [
 						thisAggregate.ApiEndpoint[keyStr].HumanIdentifier = thisV.Path
 					}
 					break
+				case "ApiSchema":
+					graphRecord, err := thisV.ToGraphRecord()
+					if err != nil {
+						log.WithError(err).Warn("error parsing graphql information")
+						continue
+					}
+					for t, fieldsList := range graphRecord.Types {
+						thisAggregate.Types[t] = IncrementOrSetUnit(thisAggregate.Types[t])
+						for _, f := range fieldsList {
+							fName := fmt.Sprintf("%s-%s", t, f)
+							thisAggregate.Fields[fName] = IncrementOrSetUnit(thisAggregate.Fields[fName])
+						}
+					}
 				}
 			}
 
