@@ -847,11 +847,18 @@ func AggregateData(data []interface{}, trackAllPaths bool, ignoreTagPrefixList [
 						log.WithError(err).Warn("error parsing graphql information")
 						continue
 					}
+					hasErr := graphRecord.HasErrors || len(graphRecord.Errors) > 0
 					for t, fieldsList := range graphRecord.Types {
 						thisAggregate.Types[t] = IncrementOrSetUnit(thisAggregate.Types[t])
+						if hasErr {
+							thisAggregate.Types[t].ErrorTotal++
+						}
 						for _, f := range fieldsList {
 							fName := fmt.Sprintf("%s-%s", t, f)
 							thisAggregate.Fields[fName] = IncrementOrSetUnit(thisAggregate.Fields[fName])
+							if hasErr {
+								thisAggregate.Fields[fName].ErrorTotal++
+							}
 						}
 					}
 				}

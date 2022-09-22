@@ -57,8 +57,8 @@ func (m *MongoGraphAggregatePump) WriteData(ctx context.Context, data []interfac
 		analyticsPerOrg := analytics.AggregateData(filtered, m.dbConf.TrackAllPaths, m.dbConf.IgnoreTagPrefixList, m.dbConf.StoreAnalyticsPerMinute, false)
 
 		// put aggregated data into MongoDB
-		for orgID, _ := range analyticsPerOrg {
-			err := m.DoAggregatedWriting(ctx, orgID, analyticsPerOrg[orgID])
+		for orgID, record := range analyticsPerOrg {
+			err := m.DoAggregatedWriting(ctx, orgID, record)
 			if err != nil {
 				return err
 			}
