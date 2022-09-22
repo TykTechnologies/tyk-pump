@@ -72,8 +72,13 @@ type AnalyticsRecord struct {
 	ApiSchema     string       `json:"api_schema" bson:"-" gorm:"-"`
 }
 
-func (ar *AnalyticsRecord) TableName() string {
+func (a *AnalyticsRecord) TableName() string {
 	return SQLTable
+}
+
+type graphError struct {
+	Message string        `json:"message"`
+	Path    []interface{} `json:"path"`
 }
 
 type Country struct {
@@ -313,7 +318,6 @@ func (a *AnalyticsRecord) GetGeo(ipStr string, GeoIPDB *maxminddb.Reader) {
 	a.Geo.Location = geo.Location
 	a.Geo.Country = geo.Country
 	a.Geo.City = geo.City
-
 }
 
 func GeoIPLookup(ipStr string, GeoIPDB *maxminddb.Reader) (*GeoData, error) {
