@@ -136,7 +136,7 @@ func (p *HybridPump) Init(config interface{}) error {
 		} else {
 			aggregationTime, ok := meta["aggregation_time"].(int)
 			if !ok {
-				p.log.Warn("aggregation_time is not configured. The default value will be set to 60")
+				p.log.Warn("aggregation_time is not configured. The default value will be used (60 minutes)")
 				p.aggregationTime = 60
 			} else {
 				if aggregationTime > 60 || aggregationTime < 1 {
