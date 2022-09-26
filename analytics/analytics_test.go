@@ -115,7 +115,7 @@ func TestAnalyticsRecord_ToGraphRecord(t *testing.T) {
 					"Characters": {"info"},
 					"Info":       {"count"},
 				}
-				g.OperationType = "query"
+				g.OperationType = "Query"
 				return g
 			},
 		},
@@ -126,7 +126,7 @@ func TestAnalyticsRecord_ToGraphRecord(t *testing.T) {
 			expected: func(request, response string) GraphRecord {
 				g := graphRecordSample
 				g.HasErrors = false
-				g.OperationType = "mutation"
+				g.OperationType = "Mutation"
 				return g
 			},
 		},
@@ -141,7 +141,7 @@ func TestAnalyticsRecord_ToGraphRecord(t *testing.T) {
 					"Characters": {"info"},
 					"Info":       {"count"},
 				}
-				g.OperationType = "subscription"
+				g.OperationType = "Subscription"
 				return g
 			},
 		},
@@ -165,7 +165,7 @@ func TestAnalyticsRecord_ToGraphRecord(t *testing.T) {
 					"Characters": {"info"},
 					"Info":       {"count"},
 				}
-				g.OperationType = "query"
+				g.OperationType = "Query"
 				return g
 			},
 		},
@@ -180,7 +180,7 @@ func TestAnalyticsRecord_ToGraphRecord(t *testing.T) {
 					"Characters": {"info"},
 					"Info":       {"count"},
 				}
-				g.OperationType = "query"
+				g.OperationType = "Query"
 				g.Variables = base64.StdEncoding.EncodeToString([]byte(`{"a":"test"}`))
 				return g
 			},
@@ -204,7 +204,7 @@ func TestAnalyticsRecord_ToGraphRecord(t *testing.T) {
 				g.Types = map[string][]string{
 					"Characters": {"info", "secondInfo"},
 				}
-				g.OperationType = "query"
+				g.OperationType = "Query"
 				return g
 			},
 			expectedErr: "",
@@ -228,7 +228,7 @@ func TestAnalyticsRecord_ToGraphRecord(t *testing.T) {
 					"Characters": {"info"},
 					"Info":       {"count"},
 				}
-				g.OperationType = "query"
+				g.OperationType = "Query"
 				g.Errors = append(g.Errors, graphError{
 					Message: "Name for character with ID 1002 could not be fetched.",
 					Path:    []interface{}{"hero", "heroFriends", float64(1), "name"},
