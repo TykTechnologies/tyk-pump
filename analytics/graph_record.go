@@ -138,7 +138,7 @@ func extractTypesOfSelectionSet(operationRef int, req, schema *ast.Document) (ma
 		}
 		// get selection field def
 		selFieldDefRef, err := getOperationSelectionFieldDefinition(operationDef.OperationType, req.FieldNameString(sel.Ref), schema)
-		if selFieldDefRef == -1 || err != nil {
+		if selFieldDefRef == ast.InvalidRef || err != nil {
 			if err != nil {
 				log.WithError(err).Error("error getting operation field definition")
 			}
@@ -170,7 +170,7 @@ func recursivelyExtractTypesAndFields(fieldRef, typeDef int, resp map[string][]s
 
 		// get the field definition and run this function on it
 		fieldDefRef := getObjectFieldRefWithName(req.FieldNameString(sel.Ref), typeDef, schema)
-		if fieldDefRef == -1 {
+		if fieldDefRef == ast.InvalidRef {
 			continue
 		}
 
@@ -180,7 +180,7 @@ func recursivelyExtractTypesAndFields(fieldRef, typeDef int, resp map[string][]s
 		}
 
 		objTypeRef := getObjectTypeRefWithName(schema.TypeNameString(fieldDefType), schema)
-		if objTypeRef == -1 {
+		if objTypeRef == ast.InvalidRef {
 			continue
 		}
 
@@ -201,23 +201,23 @@ func recursivelyExtractTypesAndFields(fieldRef, typeDef int, resp map[string][]s
 func getObjectFieldRefWithName(name string, objTypeRef int, schema *ast.Document) int {
 	objectTypeDefinition := schema.ObjectTypeDefinitions[objTypeRef]
 	if !objectTypeDefinition.HasFieldDefinitions {
-		return -1
+		return ast.InvalidRef
 	}
 	for _, r := range objectTypeDefinition.FieldsDefinition.Refs {
 		if schema.FieldDefinitionNameString(r) == name {
 			return r
 		}
 	}
-	return -1
+	return ast.InvalidRef
 }
 
 func getObjectTypeRefWithName(name string, schema *ast.Document) int {
 	n, ok := schema.Index.FirstNodeByNameStr(name)
 	if !ok {
-		return -1
+		return ast.InvalidRef
 	}
 	if n.Kind != ast.NodeKindObjectTypeDefinition {
-		return -1
+		return ast.InvalidRef
 	}
 	return n.Ref
 }
@@ -283,28 +283,28 @@ func getOperationSelectionFieldDefinition(operationType ast.OperationType, opSel
 	case ast.OperationTypeQuery:
 		node, found = schema.Index.FirstNodeByNameBytes(schema.Index.QueryTypeName)
 		if !found {
-			return -1, fmt.Errorf("missing query type declaration")
+			return ast.InvalidRef, fmt.Errorf("missing query type declaration")
 		}
 	case ast.OperationTypeMutation:
 		node, found = schema.Index.FirstNodeByNameBytes(schema.Index.MutationTypeName)
 		if !found {
-			return -1, fmt.Errorf("missing mutation type declaration")
+			return ast.InvalidRef, fmt.Errorf("missing mutation type declaration")
 		}
 	case ast.OperationTypeSubscription:
 		node, found = schema.Index.FirstNodeByNameBytes(schema.Index.SubscriptionTypeName)
 		if !found {
-			return -1, fmt.Errorf("missing subscription type declaration")
+			return ast.InvalidRef, fmt.Errorf("missing subscription type declaration")
 		}
 	default:
-		return -1, fmt.Errorf("unknown operation")
+		return ast.InvalidRef, fmt.Errorf("unknown operation")
 	}
 	if node.Kind != ast.NodeKindObjectTypeDefinition {
-		return -1, fmt.Errorf("invalid node type")
+		return ast.InvalidRef, fmt.Errorf("invalid node type")
 	}
 
 	operationObjDefinition := schema.ObjectTypeDefinitions[node.Ref]
 	if !operationObjDefinition.HasFieldDefinitions {
-		return -1, nil
+		return ast.InvalidRef, nil
 	}
 
 	for _, fieldRef := range operationObjDefinition.FieldsDefinition.Refs {
@@ -313,6 +313,5 @@ func getOperationSelectionFieldDefinition(operationType ast.OperationType, opSel
 		}
 	}
 
-	// TODO get name using selection index and all
-	return -1, fmt.Errorf("field not found")
+	return ast.InvalidRef, fmt.Errorf("field not found")
 }

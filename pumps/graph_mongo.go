@@ -2,6 +2,7 @@ package pumps
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
@@ -34,18 +35,16 @@ func (g *GraphMongoPump) Init(config interface{}) error {
 	g.MongoPump.CommonPumpConfig = g.CommonPumpConfig
 
 	err := mapstructure.Decode(config, &g.dbConf)
-	if err == nil {
-		err = mapstructure.Decode(config, &g.dbConf.BaseMongoConf)
-		g.log.WithFields(logrus.Fields{
-			"url":             g.dbConf.GetBlurredURL(),
-			"collection_name": g.dbConf.CollectionName,
-		}).Info("Init")
-		if err != nil {
-			panic(g.dbConf.BaseMongoConf)
-		}
-	}
 	if err != nil {
 		g.log.Fatal("Failed to decode configuration: ", err)
+	}
+	g.log.WithFields(logrus.Fields{
+		"url":             g.dbConf.GetBlurredURL(),
+		"collection_name": g.dbConf.CollectionName,
+	}).Info("Init")
+
+	if err := mapstructure.Decode(config, &g.dbConf.BaseMongoConf); err != nil {
+		return err
 	}
 
 	if g.dbConf.MaxInsertBatchSizeBytes == 0 {
@@ -78,7 +77,8 @@ func (g *GraphMongoPump) Init(config interface{}) error {
 func (g *GraphMongoPump) WriteData(ctx context.Context, data []interface{}) error {
 	collectionName := g.dbConf.CollectionName
 	if collectionName == "" {
-		g.log.Fatal("No collection name!")
+		g.log.Warn("no collection name")
+		return fmt.Errorf("no collection name")
 	}
 
 	g.log.Debug("Attempting to write ", len(data), " records...")
@@ -105,6 +105,7 @@ func (g *GraphMongoPump) WriteData(ctx context.Context, data []interface{}) erro
 				gr, err := r.ToGraphRecord()
 				if err != nil {
 					g.log.WithError(err).Warn("error converting 1 record to graph record")
+					continue
 				}
 				finalSet = append(finalSet, gr)
 			}
