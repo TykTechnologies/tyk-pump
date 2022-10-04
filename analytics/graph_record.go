@@ -154,6 +154,7 @@ func extractTypesOfSelectionSet(operationRef int, req, schema *ast.Document) (ma
 	return fieldTypeMap, nil
 }
 
+// extractTypesAndFields extracts all types and type fields used in this request
 func extractTypesAndFields(fieldRef, typeDef int, resp map[string][]string, req, schema *ast.Document) {
 	field := req.Fields[fieldRef]
 	fieldListForType := make([]string, 0)
@@ -198,6 +199,7 @@ func extractTypesAndFields(fieldRef, typeDef int, resp map[string][]string, req,
 	resp[objectTypeName] = fieldListForType
 }
 
+// getObjectFieldRefWithName gets the object field reference from the object type using the name from the schame
 func getObjectFieldRefWithName(name string, objTypeRef int, schema *ast.Document) int {
 	objectTypeDefinition := schema.ObjectTypeDefinitions[objTypeRef]
 	if !objectTypeDefinition.HasFieldDefinitions {
@@ -211,6 +213,7 @@ func getObjectFieldRefWithName(name string, objTypeRef int, schema *ast.Document
 	return ast.InvalidRef
 }
 
+// getObjectTypeRefWithName gets the ref of the type from the schema using the name
 func getObjectTypeRefWithName(name string, schema *ast.Document) int {
 	n, ok := schema.Index.FirstNodeByNameStr(name)
 	if !ok {
