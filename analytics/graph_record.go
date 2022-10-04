@@ -85,7 +85,7 @@ func (a *AnalyticsRecord) ToGraphRecord() (GraphRecord, error) {
 	}
 	typesToFieldsMap := make(map[string][]string)
 	for fieldRef, typeDefRef := range fieldTypeList {
-		recursivelyExtractTypesAndFields(fieldRef, typeDefRef, typesToFieldsMap, request, schema)
+		extractTypesAndFields(fieldRef, typeDefRef, typesToFieldsMap, request, schema)
 	}
 	record.Types = typesToFieldsMap
 
@@ -154,7 +154,7 @@ func extractTypesOfSelectionSet(operationRef int, req, schema *ast.Document) (ma
 	return fieldTypeMap, nil
 }
 
-func recursivelyExtractTypesAndFields(fieldRef, typeDef int, resp map[string][]string, req, schema *ast.Document) {
+func extractTypesAndFields(fieldRef, typeDef int, resp map[string][]string, req, schema *ast.Document) {
 	field := req.Fields[fieldRef]
 	fieldListForType := make([]string, 0)
 
@@ -184,7 +184,7 @@ func recursivelyExtractTypesAndFields(fieldRef, typeDef int, resp map[string][]s
 			continue
 		}
 
-		recursivelyExtractTypesAndFields(sel.Ref, objTypeRef, resp, req, schema)
+		extractTypesAndFields(sel.Ref, objTypeRef, resp, req, schema)
 	}
 
 	objectTypeName := schema.ObjectTypeDefinitionNameString(typeDef)
@@ -222,6 +222,7 @@ func getObjectTypeRefWithName(name string, schema *ast.Document) int {
 	return n.Ref
 }
 
+// generateNormalizedDocuments generates and normalizes the ast documents from the raw request and the raw schema
 func generateNormalizedDocuments(requestRaw, schemaRaw []byte) (r, s *ast.Document, operationName string, err error) {
 	httpRequest, err := http.ReadRequest(bufio.NewReader(bytes.NewReader(requestRaw)))
 	if err != nil {

@@ -167,10 +167,10 @@ func TestGraphMongoPump_WriteData(t *testing.T) {
 	}
 
 	testCases := []struct {
-		name                 string
-		records              []customRecord
 		expectedGraphRecords []analytics.GraphRecord
+		records              []customRecord
 		expectedError        string
+		name                 string
 	}{
 		{
 			name: "all records written",
@@ -223,7 +223,7 @@ func TestGraphMongoPump_WriteData(t *testing.T) {
 				},
 				{
 					rawRequest:  rawHTTPReq,
-					rawResponse: rawGQLResponse,
+					rawResponse: rawHTTPResponse,
 				},
 			},
 			expectedGraphRecords: []analytics.GraphRecord{
@@ -275,7 +275,9 @@ func TestGraphMongoPump_WriteData(t *testing.T) {
 			// now check for the written data
 			sess := pump.dbSession.Copy()
 			defer func() {
-				sess.DB("").C(conf.CollectionName).DropCollection()
+				if err := sess.DB("").C(conf.CollectionName).DropCollection(); err != nil {
+					t.Error(err)
+				}
 			}()
 			analyticsColl := sess.DB("").C(conf.CollectionName)
 			var results []analytics.GraphRecord
