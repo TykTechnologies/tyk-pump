@@ -3,11 +3,12 @@ package pumps
 import (
 	"context"
 	"encoding/base64"
+	"testing"
+
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 const rawGQLRequest = `POST / HTTP/1.1
@@ -167,10 +168,10 @@ func TestGraphMongoPump_WriteData(t *testing.T) {
 	}
 
 	testCases := []struct {
-		expectedGraphRecords []analytics.GraphRecord
-		records              []customRecord
 		expectedError        string
 		name                 string
+		expectedGraphRecords []analytics.GraphRecord
+		records              []customRecord
 	}{
 		{
 			name: "all records written",
@@ -276,7 +277,7 @@ func TestGraphMongoPump_WriteData(t *testing.T) {
 			sess := pump.dbSession.Copy()
 			defer func() {
 				if err := sess.DB("").C(conf.CollectionName).DropCollection(); err != nil {
-					t.Error(err)
+					pump.log.WithError(err).Warn("error dropping collection")
 				}
 			}()
 			analyticsColl := sess.DB("").C(conf.CollectionName)

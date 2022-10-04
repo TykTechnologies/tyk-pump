@@ -3,12 +3,73 @@ package analytics
 import (
 	"encoding/base64"
 	"fmt"
+	"testing"
+	"time"
+
+	"github.com/TykTechnologies/graphql-go-tools/pkg/ast"
+	"github.com/TykTechnologies/graphql-go-tools/pkg/astparser"
+	gql "github.com/TykTechnologies/graphql-go-tools/pkg/graphql"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/assert"
-	"testing"
-	"time"
 )
+
+const (
+	requestTemplate  = "POST / HTTP/1.1\r\nHost: localhost:8281\r\nUser-Agent: test-agent\r\nContent-Length: %d\r\n\r\n%s"
+	responseTemplate = "HTTP/0.0 200 OK\r\nContent-Length: %d\r\nConnection: close\r\nContent-Type: application/json\r\n\r\n%s"
+)
+
+const sampleSchema = `
+type Query {
+  characters(filter: FilterCharacter, page: Int): Characters
+  listCharacters(): [Characters]!
+}
+
+type Mutation {
+  changeCharacter(): String
+}
+
+type Subscription {
+  listenCharacter(): Characters
+}
+input FilterCharacter {
+  name: String
+  status: String
+  species: String
+  type: String
+  gender: String! = "M"
+}
+type Characters {
+  info: Info
+  secondInfo: String
+  results: [Character]
+}
+type Info {
+  count: Int
+  next: Int
+  pages: Int
+  prev: Int
+}
+type Character {
+  gender: String
+  id: ID
+  name: String
+}
+
+type EmptyType{
+}`
+
+func getSampleSchema() (*ast.Document, error) {
+	schema, err := gql.NewSchemaFromString(string(sampleSchema))
+	if err != nil {
+		return nil, err
+	}
+	schemaDoc, operationReport := astparser.ParseGraphqlDocumentBytes(schema.Document())
+	if operationReport.HasErrors() {
+		return nil, operationReport
+	}
+	return &schemaDoc, nil
+}
 
 func TestAnalyticsRecord_ToGraphRecord(t *testing.T) {
 	recordSample := AnalyticsRecord{
@@ -222,6 +283,178 @@ func TestAnalyticsRecord_ToGraphRecord(t *testing.T) {
 			if diff := cmp.Diff(expected, gotten, cmpopts.IgnoreFields(GraphRecord{}, "RawRequest", "RawResponse")); diff != "" {
 				t.Fatal(diff)
 			}
+		})
+	}
+}
+
+func Test_getObjectTypeRefWithName(t *testing.T) {
+	schema, err := getSampleSchema()
+	assert.NoError(t, err)
+
+	testCases := []struct {
+		name        string
+		typeName    string
+		expectedRef int
+	}{
+		{
+			name:        "fail",
+			typeName:    "invalidType",
+			expectedRef: -1,
+		},
+		{
+			name:        "successful",
+			typeName:    "Character",
+			expectedRef: 5,
+		},
+		{
+			name:        "invalid because input",
+			typeName:    "FilterCharacter",
+			expectedRef: -1,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			ref := getObjectTypeRefWithName(tc.typeName, schema)
+			assert.Equal(t, tc.expectedRef, ref)
+		})
+	}
+}
+
+func Test_getObjectFieldRefWithName(t *testing.T) {
+	schema, err := getSampleSchema()
+	assert.NoError(t, err)
+
+	testCases := []struct {
+		name        string
+		fieldName   string
+		objectName  string
+		expectedRef int
+	}{
+		{
+			name:        "successful run",
+			fieldName:   "info",
+			objectName:  "Characters",
+			expectedRef: 8,
+		},
+		{
+			name:        "failed run due to invalid field",
+			fieldName:   "infos",
+			objectName:  "Characters",
+			expectedRef: -1,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			objRef := getObjectTypeRefWithName(tc.objectName, schema)
+			assert.NotEqual(t, -1, objRef)
+			ref := getObjectFieldRefWithName(tc.fieldName, objRef, schema)
+			assert.Equal(t, tc.expectedRef, ref)
+		})
+	}
+}
+
+func Test_generateNormalizedDocuments(t *testing.T) {
+	rQuery := `{"query":"mutation{\n  changeCharacter()\n}"}`
+	sampleQuery := []byte(fmt.Sprintf(requestTemplate, len(rQuery), rQuery))
+
+	t.Run("test valid request", func(t *testing.T) {
+		_, _, _, err := generateNormalizedDocuments(sampleQuery, []byte(sampleSchema))
+		assert.NoError(t, err)
+	})
+	t.Run("test invalid request", func(t *testing.T) {
+		_, _, _, err := generateNormalizedDocuments(sampleQuery[:10], []byte(sampleSchema))
+		assert.ErrorContains(t, err, `malformed HTTP version "HTT"`)
+	})
+	t.Run("invalid schema", func(t *testing.T) {
+		_, _, _, err := generateNormalizedDocuments(sampleQuery, []byte(`type Test{`))
+		assert.Error(t, err)
+	})
+	t.Run("invalid request for normalization", func(t *testing.T) {
+		query := `{"query":"mutation{\n  changeCharactersss()\n}"}`
+		_, _, _, err := generateNormalizedDocuments([]byte(fmt.Sprintf(requestTemplate, len(query), query)), []byte(sampleSchema))
+		assert.Error(t, err)
+	})
+}
+
+func Test_getOperationSelectionFieldDefinition(t *testing.T) {
+	schema, err := getSampleSchema()
+	assert.NoError(t, err)
+
+	testCases := []struct {
+		modifySchema  func(ast.Document) *ast.Document
+		name          string
+		operationName string
+		expectedErr   string
+		expectedRef   int
+		operationType ast.OperationType
+	}{
+		{
+			name:          "successful query",
+			operationType: ast.OperationTypeQuery,
+			operationName: "characters",
+			expectedRef:   0,
+			expectedErr:   "",
+		},
+		{
+			name:          "invalid query",
+			operationType: ast.OperationTypeQuery,
+			operationName: "invalidQuery",
+			expectedRef:   -1,
+			expectedErr:   "field not found",
+		},
+		{
+			name:          "invalid query type name",
+			operationType: ast.OperationTypeQuery,
+			operationName: "testOperation",
+			expectedRef:   -1,
+			expectedErr:   "missing query type declaration",
+			modifySchema: func(document ast.Document) *ast.Document {
+				document.Index.QueryTypeName = ast.ByteSlice("Querys")
+				return &document
+			},
+		},
+		{
+			name:          "invalid mutation type name",
+			operationType: ast.OperationTypeMutation,
+			operationName: "testOperation",
+			expectedRef:   -1,
+			expectedErr:   "missing mutation type declaration",
+			modifySchema: func(document ast.Document) *ast.Document {
+				document.Index.MutationTypeName = ast.ByteSlice("Mutations")
+				return &document
+			},
+		},
+		{
+			name:          "invalid subscription type name",
+			operationType: ast.OperationTypeSubscription,
+			operationName: "testOperation",
+			expectedRef:   -1,
+			expectedErr:   "missing subscription type declaration",
+			modifySchema: func(document ast.Document) *ast.Document {
+				document.Index.SubscriptionTypeName = ast.ByteSlice("Subscriptions")
+				return &document
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			var sc *ast.Document
+			if tc.modifySchema != nil {
+				sc = tc.modifySchema(*schema)
+			} else {
+				sc = schema
+			}
+			ref, err := getOperationSelectionFieldDefinition(tc.operationType, tc.operationName, sc)
+			if tc.expectedErr != "" {
+				assert.ErrorContains(t, err, tc.expectedErr)
+			} else {
+				assert.NoError(t, err)
+			}
+
+			assert.Equal(t, tc.expectedRef, ref)
 		})
 	}
 }
