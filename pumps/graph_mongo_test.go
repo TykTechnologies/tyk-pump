@@ -290,3 +290,23 @@ func TestGraphMongoPump_WriteData(t *testing.T) {
 		})
 	}
 }
+
+func TestGraphMongoPump_Init(t *testing.T) {
+	pump := GraphMongoPump{}
+	t.Run("successful init", func(t *testing.T) {
+		conf := defaultConf()
+		assert.NoError(t, pump.Init(conf))
+	})
+	t.Run("invalid conf type", func(t *testing.T) {
+		assert.ErrorContains(t, pump.Init("test"), "expected a map")
+	})
+	t.Run("max document and insert size set", func(t *testing.T) {
+		conf := defaultConf()
+		conf.MaxInsertBatchSizeBytes = 0
+		conf.MaxDocumentSizeBytes = 0
+		err := pump.Init(conf)
+		assert.NoError(t, err)
+		assert.Equal(t, 10*MiB, pump.dbConf.MaxDocumentSizeBytes)
+		assert.Equal(t, 10*MiB, pump.dbConf.MaxInsertBatchSizeBytes)
+	})
+}

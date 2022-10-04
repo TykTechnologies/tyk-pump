@@ -36,7 +36,8 @@ func (g *GraphMongoPump) Init(config interface{}) error {
 
 	err := mapstructure.Decode(config, &g.dbConf)
 	if err != nil {
-		g.log.Fatal("Failed to decode configuration: ", err)
+		g.log.WithError(err).Warn("Failed to decode configuration: ")
+		return err
 	}
 	g.log.WithFields(logrus.Fields{
 		"url":             g.dbConf.GetBlurredURL(),
