@@ -76,7 +76,7 @@ func (a *AnalyticsRecord) TableName() string {
 	return SQLTable
 }
 
-type graphError struct {
+type GraphError struct {
 	Message string        `json:"message"`
 	Path    []interface{} `json:"path"`
 }

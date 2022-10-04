@@ -104,6 +104,7 @@ func (g *GraphMongoPump) WriteData(ctx context.Context, data []interface{}) erro
 				}
 				gr, err := r.ToGraphRecord()
 				if err != nil {
+					errCh <- err
 					g.log.WithError(err).Warn("error converting 1 record to graph record")
 					continue
 				}

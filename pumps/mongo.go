@@ -591,6 +591,9 @@ func (m *MongoPump) AccumulateSet(data []interface{}, isForGraphRecords bool) []
 		}
 	}
 
+	if len(thisResultSet) > 0 && len(returnArray) == 0 {
+		returnArray = append(returnArray, thisResultSet)
+	}
 	return returnArray
 }
 

@@ -25,7 +25,7 @@ type GraphRecord struct {
 
 	OperationType string
 	Variables     string
-	Errors        []graphError
+	Errors        []GraphError
 	HasErrors     bool
 }
 
@@ -89,7 +89,7 @@ func (a *AnalyticsRecord) ToGraphRecord() (GraphRecord, error) {
 	}
 	record.Types = typesToFieldsMap
 
-	// get errors
+	// get response and check to see errors
 	responseDecoded, err := base64.StdEncoding.DecodeString(a.RawResponse)
 	if err != nil {
 		return record, nil

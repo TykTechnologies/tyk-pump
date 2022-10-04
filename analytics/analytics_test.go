@@ -229,7 +229,7 @@ func TestAnalyticsRecord_ToGraphRecord(t *testing.T) {
 					"Info":       {"count"},
 				}
 				g.OperationType = "Query"
-				g.Errors = append(g.Errors, graphError{
+				g.Errors = append(g.Errors, GraphError{
 					Message: "Name for character with ID 1002 could not be fetched.",
 					Path:    []interface{}{"hero", "heroFriends", float64(1), "name"},
 				})
