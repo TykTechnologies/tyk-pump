@@ -180,13 +180,13 @@ func TestGraphMongoPump_WriteData(t *testing.T) {
 					rawRequest:  rawGQLRequest,
 					rawResponse: rawGQLResponse,
 					schema:      schema,
-					tags:        []string{"tyk-graph-analytics"},
+					tags:        []string{analytics.PredefinedTagGraphAnalytics},
 				},
 				{
 					rawRequest:  rawGQLRequest,
 					rawResponse: rawGQLResponseWithError,
 					schema:      schema,
-					tags:        []string{"tyk-graph-analytics"},
+					tags:        []string{analytics.PredefinedTagGraphAnalytics},
 				},
 			},
 			expectedGraphRecords: []analytics.GraphRecord{
@@ -220,7 +220,7 @@ func TestGraphMongoPump_WriteData(t *testing.T) {
 					rawRequest:  rawGQLRequest,
 					rawResponse: rawGQLResponse,
 					schema:      schema,
-					tags:        []string{"tyk-graph-analytics"},
+					tags:        []string{analytics.PredefinedTagGraphAnalytics},
 				},
 				{
 					rawRequest:  rawHTTPReq,
@@ -239,15 +239,26 @@ func TestGraphMongoPump_WriteData(t *testing.T) {
 			},
 		},
 		{
-			name: "should error",
+			name: "skip empty request response",
 			records: []customRecord{
+				{
+					rawRequest:  "",
+					rawResponse: rawGQLResponse,
+					schema:      schema,
+					tags:        []string{analytics.PredefinedTagGraphAnalytics},
+				},
+				{
+					rawResponse: "",
+					rawRequest:  rawGQLRequest,
+					schema:      schema,
+					tags:        []string{analytics.PredefinedTagGraphAnalytics},
+				},
 				{
 					rawRequest:  rawGQLRequest,
 					rawResponse: rawGQLResponse,
-					tags:        []string{"tyk-graph-analytics"},
+					tags:        []string{analytics.PredefinedTagGraphAnalytics},
 				},
 			},
-			expectedError: "error generating documents: external: field: country not defined on type: Query, locations: [], path: [query,country]",
 		},
 	}
 
