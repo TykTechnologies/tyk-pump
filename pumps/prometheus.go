@@ -162,7 +162,7 @@ func (p *PrometheusPump) Init(conf interface{}) error {
 	}
 
 	//first we init the base metrics
-	disabledMetrics := p.initBaseMetrics()
+	p.initBaseMetrics()
 
 	//then we check the custom ones
 	p.InitCustomMetrics()
@@ -174,12 +174,12 @@ func (p *PrometheusPump) Init(conf interface{}) error {
 	go func() {
 		log.Fatal(http.ListenAndServe(p.conf.Addr, nil))
 	}()
-	p.log.WithField("disabled_metrics", disabledMetrics).Info(p.GetName() + " Initialized")
+	p.log.Info(p.GetName() + " Initialized")
 
 	return nil
 }
 
-func (p *PrometheusPump) initBaseMetrics() []string {
+func (p *PrometheusPump) initBaseMetrics() {
 	for _, metric := range p.allMetrics {
 		metric.aggregatedObservations = p.conf.AggregateObservations
 		errInit := metric.InitVec()
@@ -189,21 +189,17 @@ func (p *PrometheusPump) initBaseMetrics() []string {
 	}
 
 	//configure any base metrics as disabled if needed. This disables exposition entirely during scrapes.
-	var disabledMetrics []string
-	{
-		toDisableSet := map[string]struct{}{}
-		for _, metric := range p.conf.DisabledMetrics {
-			toDisableSet[metric] = struct{}{}
-		}
+	toDisableSet := map[string]struct{}{}
+	for _, metric := range p.conf.DisabledMetrics {
+		toDisableSet[metric] = struct{}{}
+	}
 
-		for _, metric := range p.allMetrics {
-			if _, ok := toDisableSet[metric.Name]; ok {
-				metric.enabled = false
-				disabledMetrics = append(disabledMetrics, metric.Name)
-			}
+	for _, metric := range p.allMetrics {
+		if _, ok := toDisableSet[metric.Name]; ok {
+			metric.enabled = false
+
 		}
 	}
-	return disabledMetrics
 }
 
 // InitCustomMetrics initialise custom prometheus metrics based on p.conf.CustomMetrics and add them into p.allMetrics
