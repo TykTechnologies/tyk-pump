@@ -162,12 +162,10 @@ func (p *PrometheusPump) Init(conf interface{}) error {
 	}
 
 	//first we init the base metrics
-	p.initBaseMetrics()
+	disabledMetrics := p.initBaseMetrics()
 
 	//then we check the custom ones
 	p.InitCustomMetrics()
-
-	disabledMetrics := p.disableExcludedMetrics()
 
 	p.log.Info("Starting prometheus listener on:", p.conf.Addr)
 
@@ -181,8 +179,16 @@ func (p *PrometheusPump) Init(conf interface{}) error {
 	return nil
 }
 
-func (p *PrometheusPump) disableExcludedMetrics() []string {
-	//configure base or custom metrics as disabled if needed. This disables exposition entirely during scrapes.
+func (p *PrometheusPump) initBaseMetrics() []string {
+	for _, metric := range p.allMetrics {
+		metric.aggregatedObservations = p.conf.AggregateObservations
+		errInit := metric.InitVec()
+		if errInit != nil {
+			p.log.Error(errInit)
+		}
+	}
+
+	//configure any base metrics as disabled if needed. This disables exposition entirely during scrapes.
 	var disabledMetrics []string
 	{
 		toDisableSet := map[string]struct{}{}
@@ -198,16 +204,6 @@ func (p *PrometheusPump) disableExcludedMetrics() []string {
 		}
 	}
 	return disabledMetrics
-}
-
-func (p *PrometheusPump) initBaseMetrics() {
-	for _, metric := range p.allMetrics {
-		metric.aggregatedObservations = p.conf.AggregateObservations
-		errInit := metric.InitVec()
-		if errInit != nil {
-			p.log.Error(errInit)
-		}
-	}
 }
 
 // InitCustomMetrics initialise custom prometheus metrics based on p.conf.CustomMetrics and add them into p.allMetrics

@@ -541,24 +541,11 @@ func TestPrometheusDisablingMetrics(t *testing.T) {
 
 	newPump.conf = &PrometheusConf{
 		DisabledMetrics: []string{
-			"foo_bar",
 			"tyk_http_status_per_path",
-		},
-		CustomMetrics: []PrometheusMetric{
-			{
-				Name:       "foo_bar",
-				MetricType: COUNTER_TYPE,
-			},
-			{
-				Name:       "bar_foo",
-				MetricType: COUNTER_TYPE,
-			},
 		},
 	}
 
 	newPump.initBaseMetrics()
-	newPump.InitCustomMetrics()
-	newPump.disableExcludedMetrics()
 
 	defer func() {
 		for i := range newPump.allMetrics {
@@ -583,7 +570,5 @@ func TestPrometheusDisablingMetrics(t *testing.T) {
 		}
 	}
 
-	assertMetric("foo_bar", false)
-	assertMetric("bar_foo", true)
 	assertMetric("tyk_http_status_per_path", false)
 }
