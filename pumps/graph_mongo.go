@@ -127,6 +127,7 @@ func (g *GraphMongoPump) WriteData(ctx context.Context, data []interface{}) erro
 					g.log.Warning("--> Detected connection failure!")
 				}
 				errCh <- err
+				return
 			}
 			errCh <- nil
 			g.log.WithFields(logrus.Fields{
