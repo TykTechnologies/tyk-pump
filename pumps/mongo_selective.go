@@ -3,6 +3,7 @@ package pumps
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -251,6 +252,7 @@ func (m *MongoSelectivePump) AccumulateSet(data []interface{}) [][]interface{} {
 			m.log.Warning("Document too large, skipping!")
 			skip = true
 		}
+		fmt.Println("-------------", sizeBytes, m.dbConf.MaxDocumentSizeBytes, skip, thisItem.RawRequest, thisItem.RawResponse)
 
 		m.log.Debug("Size is: ", sizeBytes)
 

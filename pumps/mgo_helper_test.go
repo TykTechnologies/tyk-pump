@@ -97,3 +97,15 @@ func defaultConf() MongoConf {
 
 	return conf
 }
+
+func defaultSelectiveConf() MongoSelectiveConf {
+	conf := MongoSelectiveConf{
+		MaxInsertBatchSizeBytes: 10 * MiB,
+		MaxDocumentSizeBytes:    10 * MiB,
+	}
+
+	conf.MongoURL = dbAddr
+	conf.MongoSSLInsecureSkipVerify = true
+
+	return conf
+}
