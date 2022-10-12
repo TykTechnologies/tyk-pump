@@ -4,7 +4,6 @@ import (
 	"context"
 	b64 "encoding/base64"
 	"errors"
-	"fmt"
 	"sort"
 	"strings"
 	"time"
@@ -353,6 +352,7 @@ func (m *MongoAggregatePump) DoAggregatedWriting(ctx context.Context, orgID stri
 		m.log.Info("No OrgID for AnalyticsRecord, skipping")
 		return nil
 	}
+	collectionName = collectionName[:len(collectionName)-10]
 
 	thisSession := m.dbSession.Copy()
 	defer thisSession.Close()
@@ -460,24 +460,22 @@ func getLastDocumentTimestamp(session *mgo.Session, collectionName string) (time
 // divideAggregationTime divides by two the analytics stored per minute setting
 func (m *MongoAggregatePump) divideAggregationTime() {
 	if m.dbConf.AggregationTime == 1 {
-		m.log.Warn("Analytics Stored Per Minute is set to 1, unable to divide")
+		m.log.Debug("Analytics Stored Per Minute is set to 1, unable to divide")
 		return
 	}
 	oldAggTime := m.dbConf.AggregationTime
 	m.dbConf.AggregationTime /= 2
-	m.log.Info("Analytics Stored Per Minute dicreased from ", oldAggTime, " to ", m.dbConf.AggregationTime)
+	m.log.Warn("Analytics Stored Per Minute dicreased from ", oldAggTime, " to ", m.dbConf.AggregationTime)
 }
 
 // ShouldSelfHeal returns true if the pump should self heal
 func (m *MongoAggregatePump) ShouldSelfHeal(err error) bool {
-
-	const StandarMongoSizeError = "Size must be between 0 and 16793600(16MB)"
+	const StandardMongoSizeError = "Size must be between 0 and"
 	const CosmosSizeError = "Request size is too large"
+	const DocDBSizeError = "Document exceeds maximum size"
 
-	fmt.Println("-----------should self heal---------------------")
 	if m.dbConf.EnableAggregateSelfHealing {
-		if strings.Contains(err.Error(), StandarMongoSizeError) || strings.Contains(err.Error(), CosmosSizeError) {
-			fmt.Println("------------- contiene --------------")
+		if strings.Contains(err.Error(), StandardMongoSizeError) || strings.Contains(err.Error(), CosmosSizeError) {
 			// if the AggregationTime setting is already set to 1, we can't do anything else
 			if m.dbConf.AggregationTime == 1 {
 				m.log.Warning("AggregationTime is equal to 1 minute, unable to reduce it further. Skipping self-healing.")
@@ -496,7 +494,6 @@ func (m *MongoAggregatePump) ShouldSelfHeal(err error) bool {
 
 // SetAggregationTime sets the aggregation time for the pump
 func (m *MongoAggregatePump) SetAggregationTime() {
-
 	// if StoreAnalyticsPerMinute is set to true, the aggregation time will be set to 1.
 	// if not, the aggregation time will be set to the value of the field AggregationTime.
 	// if there is no value for AggregationTime, it will be set to 60.

@@ -134,16 +134,11 @@ func (p *HybridPump) Init(config interface{}) error {
 			p.storeAnalyticsPerMinute = storeAnalyticsPerMinute
 			p.aggregationTime = 1
 		} else {
-			aggregationTime, ok := meta["aggregation_time"].(int)
-			if !ok {
-				p.log.Warn("aggregation_time is not configured. The default value will be used (60 minutes)")
+			aggregationTime := meta["aggregation_time"].(int)
+
+			if aggregationTime > 60 || aggregationTime < 1 {
+				p.log.Warnf("aggregation_time should be between 1 and 60, Found: %v. The default value will be used  (60 minutes)", aggregationTime)
 				p.aggregationTime = 60
-			} else {
-				if aggregationTime > 60 || aggregationTime < 1 {
-					p.log.Warn("aggregation_time range is from 1 to 60. The default value will be set to 60")
-					p.aggregationTime = 60
-				}
-				p.aggregationTime = aggregationTime
 			}
 		}
 
