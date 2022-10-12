@@ -244,7 +244,7 @@ func (m *MongoSelectivePump) AccumulateSet(data []interface{}) [][]interface{} {
 		if thisItem.ResponseCode == -1 {
 			continue
 		}
-		sizeBytes := len([]byte(thisItem.RawRequest)) + len(thisItem.RawResponse) + 1024
+		sizeBytes := len([]byte(thisItem.RawRequest)) + len([]byte(thisItem.RawResponse)) + 1024
 
 		skip := false
 		if sizeBytes > m.dbConf.MaxDocumentSizeBytes {
