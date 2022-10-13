@@ -22,7 +22,10 @@ func TestMongoSelectivePump_AccumulateSet(t *testing.T) {
 			data := recordsGenerator(numRecords)
 			expectedGraphRecordSkips := 0
 			for _, recordData := range data {
-				record := recordData.(analytics.AnalyticsRecord)
+				record, ok := recordData.(analytics.AnalyticsRecord)
+				if !ok {
+					continue
+				}
 				if record.IsGraphRecord() {
 					expectedGraphRecordSkips++
 				}
@@ -34,7 +37,6 @@ func TestMongoSelectivePump_AccumulateSet(t *testing.T) {
 				recordsCount += len(setEntry)
 			}
 			assert.Equal(t, expectedRecordsCount, recordsCount)
-
 		}
 	}
 
@@ -80,7 +82,6 @@ func TestMongoSelectivePump_AccumulateSet(t *testing.T) {
 
 	t.Run("should accumulate 99 records because one of the 100 records exceeds the limit of 1024", run(
 		func(numRecords int) []interface{} {
-
 			data := make([]interface{}, 0)
 			for i := 0; i < 100; i++ {
 				record := analytics.AnalyticsRecord{}
@@ -94,5 +95,4 @@ func TestMongoSelectivePump_AccumulateSet(t *testing.T) {
 		99,
 		1024,
 	))
-
 }
