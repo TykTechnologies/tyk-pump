@@ -539,11 +539,7 @@ func TestPrometheusDisablingMetrics(t *testing.T) {
 	log.Out = io.Discard
 	newPump.log = logrus.NewEntry(log)
 
-	newPump.conf = &PrometheusConf{
-		DisabledMetrics: []string{
-			"tyk_http_status_per_path",
-		},
-	}
+	newPump.conf = &PrometheusConf{DisabledMetrics: []string{"tyk_http_status_per_path"}}
 
 	newPump.initBaseMetrics()
 
@@ -562,13 +558,6 @@ func TestPrometheusDisablingMetrics(t *testing.T) {
 		metricMap[metric.Name] = metric
 	}
 
-	assertMetric := func(name string, enabled bool) {
-		if assert.Containsf(t, metricMap, name, "metric %s did not exist", name) {
-			assert.Equalf(t, enabled, metricMap[name].enabled,
-				"metric %s enabled should be %v", name, enabled)
-
-		}
-	}
-
-	assertMetric("tyk_http_status_per_path", false)
+	assert.Contains(t, metricMap, "tyk_http_status")
+	assert.NotContains(t, metricMap, "tyk_http_status_per_path")
 }
