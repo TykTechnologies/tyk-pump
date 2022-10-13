@@ -574,7 +574,7 @@ func TestEnsureLabels(t *testing.T) {
 				Labels:     tc.labels,
 			}
 
-			pm.EnsureLabels()
+			pm.ensureLabels()
 			typeLabelFound := false
 			numberOfTimesOfTypeLabel := 0
 
