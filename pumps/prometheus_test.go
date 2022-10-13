@@ -540,11 +540,10 @@ func TestPrometheusCreateBasicMetrics(t *testing.T) {
 }
 
 func TestEnsureLabels(t *testing.T) {
-
 	testCases := []struct {
 		name                 string
-		labels               []string
 		metricType           string
+		labels               []string
 		typeLabelShouldExist bool
 	}{
 		{
@@ -591,8 +590,6 @@ func TestEnsureLabels(t *testing.T) {
 			if tc.typeLabelShouldExist {
 				assert.Equal(t, 1, numberOfTimesOfTypeLabel)
 			}
-
 		})
-
 	}
 }

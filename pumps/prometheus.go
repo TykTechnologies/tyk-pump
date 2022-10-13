@@ -270,7 +270,8 @@ func (p *PrometheusPump) WriteData(ctx context.Context, data []interface{}) erro
 // InitVec inits the prometheus metric based on the metric_type. It only can create counter and histogram,
 // if the metric_type is anything else it returns an error
 func (pm *PrometheusMetric) InitVec() error {
-	if pm.MetricType == COUNTER_TYPE {
+	switch pm.MetricType {
+	case COUNTER_TYPE:
 		pm.counterVec = prometheus.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: pm.Name,
@@ -280,7 +281,7 @@ func (pm *PrometheusMetric) InitVec() error {
 		)
 		pm.counterMap = make(map[string]uint64)
 		prometheus.MustRegister(pm.counterVec)
-	} else if pm.MetricType == HISTOGRAM_TYPE {
+	case HISTOGRAM_TYPE:
 		bkts := pm.Buckets
 		if len(bkts) == 0 {
 			bkts = buckets
@@ -297,7 +298,7 @@ func (pm *PrometheusMetric) InitVec() error {
 		)
 		pm.histogramMap = make(map[string]histogramCounter)
 		prometheus.MustRegister(pm.histogramVec)
-	} else {
+	default:
 		return errors.New("invalid metric type:" + pm.MetricType)
 	}
 
