@@ -237,7 +237,6 @@ func (p *PrometheusPump) WriteData(ctx context.Context, data []interface{}) erro
 					if metric.histogramVec != nil {
 						//if the metric is an histogram, we Observe the request time with the given values
 						err := metric.Observe(record.RequestTime, values...)
-						p.log.Infof("\n values: %+v\n", metric)
 						if err != nil {
 							p.log.WithFields(logrus.Fields{
 								"metric_type": metric.MetricType,
