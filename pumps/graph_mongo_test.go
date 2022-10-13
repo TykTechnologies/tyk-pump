@@ -161,10 +161,11 @@ func TestGraphMongoPump_WriteData(t *testing.T) {
 	pump.dbConf.CollectionCapMaxSizeBytes = 0
 
 	type customRecord struct {
-		rawRequest  string
-		rawResponse string
-		schema      string
-		tags        []string
+		rawRequest   string
+		rawResponse  string
+		schema       string
+		tags         []string
+		responseCode int
 	}
 
 	testCases := []struct {
@@ -188,6 +189,13 @@ func TestGraphMongoPump_WriteData(t *testing.T) {
 					schema:      schema,
 					tags:        []string{analytics.PredefinedTagGraphAnalytics},
 				},
+				{
+					rawRequest:   rawGQLRequest,
+					rawResponse:  rawGQLResponse,
+					schema:       schema,
+					tags:         []string{analytics.PredefinedTagGraphAnalytics},
+					responseCode: 500,
+				},
 			},
 			expectedGraphRecords: []analytics.GraphRecord{
 				{
@@ -210,6 +218,14 @@ func TestGraphMongoPump_WriteData(t *testing.T) {
 							Path:    []interface{}{},
 						},
 					},
+				},
+				{
+					Types: map[string][]string{
+						"Country": {"code"},
+					},
+					OperationType: "Query",
+					HasErrors:     true,
+					Errors:        []analytics.GraphError{},
 				},
 			},
 		},
@@ -267,14 +283,18 @@ func TestGraphMongoPump_WriteData(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			records := make([]interface{}, 0)
 			for _, cr := range tc.records {
-				records = append(records, analytics.AnalyticsRecord{
+				r := analytics.AnalyticsRecord{
 					APIName:     "Test API",
 					Path:        "POST",
 					RawRequest:  base64.StdEncoding.EncodeToString([]byte(cr.rawRequest)),
 					RawResponse: base64.StdEncoding.EncodeToString([]byte(cr.rawResponse)),
 					ApiSchema:   base64.StdEncoding.EncodeToString([]byte(cr.schema)),
 					Tags:        cr.tags,
-				})
+				}
+				if cr.responseCode != 0 {
+					r.ResponseCode = cr.responseCode
+				}
+				records = append(records, r)
 			}
 
 			err := pump.WriteData(context.Background(), records)
