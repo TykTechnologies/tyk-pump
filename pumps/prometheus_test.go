@@ -75,7 +75,7 @@ func TestInitVec(t *testing.T) {
 			} else if tc.customMetric.MetricType == HISTOGRAM_TYPE {
 				assert.NotNil(t, tc.customMetric.histogramVec)
 				assert.Equal(t, tc.isEnabled, prometheus.Unregister(tc.customMetric.histogramVec))
-				assert.Contains(t, tc.customMetric.Labels, "type")
+				assert.Equal(t, tc.customMetric.Labels[0], "type")
 			}
 
 		})
@@ -547,7 +547,7 @@ func TestEnsureLabels(t *testing.T) {
 		typeLabelShouldExist bool
 	}{
 		{
-			name:                 "histogram type, type label should be added",
+			name:                 "histogram type, type label should be added if not exist",
 			labels:               []string{"response_code", "api_name", "method", "api_key", "alias", "path"},
 			metricType:           HISTOGRAM_TYPE,
 			typeLabelShouldExist: true,
@@ -559,8 +559,14 @@ func TestEnsureLabels(t *testing.T) {
 			typeLabelShouldExist: false,
 		},
 		{
-			name:                 "histogram type, type label should not be repeated",
-			labels:               []string{"response_code", "api_name", "method", "api_key", "alias", "path", "type"},
+			name:                 "histogram type, type label should not be repeated and in the 1st position",
+			labels:               []string{"type", "response_code", "api_name", "method", "api_key", "alias", "path"},
+			metricType:           HISTOGRAM_TYPE,
+			typeLabelShouldExist: true,
+		},
+		{
+			name:                 "histogram type, type label should not be repeated (even if user repeated it), and always in the 1st position",
+			labels:               []string{"response_code", "api_name", "type", "method", "api_key", "alias", "path", "type"},
 			metricType:           HISTOGRAM_TYPE,
 			typeLabelShouldExist: true,
 		},
@@ -589,6 +595,8 @@ func TestEnsureLabels(t *testing.T) {
 			// if should exist then it should be only one time
 			if tc.typeLabelShouldExist {
 				assert.Equal(t, 1, numberOfTimesOfTypeLabel)
+				// label `type` should be in the 1st position always
+				assert.Equal(t, pm.Labels[0], "type")
 			}
 		})
 	}

@@ -310,16 +310,19 @@ func (pm *PrometheusMetric) InitVec() error {
 func (pm *PrometheusMetric) ensureLabels() {
 	// for histograms we need to be sure that type was added
 	if pm.MetricType == HISTOGRAM_TYPE {
-		typeFound := false
+		// remove all references to `type`
+		var i int
 		for _, label := range pm.Labels {
 			if label == "type" {
-				typeFound = true
+				continue
 			}
+			pm.Labels[i] = label
+			i++
 		}
+		pm.Labels = pm.Labels[:i]
 
-		if !typeFound {
-			pm.Labels = append(pm.Labels, "type")
-		}
+		// then add `type` at the beggining
+		pm.Labels = append([]string{"type"}, pm.Labels...)
 	}
 }
 
