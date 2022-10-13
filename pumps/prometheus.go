@@ -321,7 +321,7 @@ func (pm *PrometheusMetric) ensureLabels() {
 		}
 		pm.Labels = pm.Labels[:i]
 
-		// then add `type` at the beggining
+		// then add `type` at the beginning
 		pm.Labels = append([]string{"type"}, pm.Labels...)
 	}
 }
