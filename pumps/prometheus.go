@@ -237,6 +237,7 @@ func (p *PrometheusPump) WriteData(ctx context.Context, data []interface{}) erro
 					if metric.histogramVec != nil {
 						//if the metric is an histogram, we Observe the request time with the given values
 						err := metric.Observe(record.RequestTime, values...)
+						p.log.Infof("\n values: %+v\n", metric)
 						if err != nil {
 							p.log.WithFields(logrus.Fields{
 								"metric_type": metric.MetricType,
@@ -270,7 +271,7 @@ func (p *PrometheusPump) WriteData(ctx context.Context, data []interface{}) erro
 // InitVec inits the prometheus metric based on the metric_type. It only can create counter and histogram,
 // if the metric_type is anything else it returns an error
 func (pm *PrometheusMetric) InitVec() error {
-	if pm.MetricType == "counter" {
+	if pm.MetricType == COUNTER_TYPE {
 		pm.counterVec = prometheus.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: pm.Name,
@@ -280,11 +281,13 @@ func (pm *PrometheusMetric) InitVec() error {
 		)
 		pm.counterMap = make(map[string]uint64)
 		prometheus.MustRegister(pm.counterVec)
-	} else if pm.MetricType == "histogram" {
+	} else if pm.MetricType == HISTOGRAM_TYPE {
 		bkts := pm.Buckets
 		if len(bkts) == 0 {
 			bkts = buckets
 		}
+
+		pm.EnsureLabels()
 		pm.histogramVec = prometheus.NewHistogramVec(
 			prometheus.HistogramOpts{
 				Name:    pm.Name,
@@ -301,6 +304,23 @@ func (pm *PrometheusMetric) InitVec() error {
 
 	pm.enabled = true
 	return nil
+}
+
+// EnsureLabels ensure the data validity and consistency of the metric labels
+func (pm *PrometheusMetric) EnsureLabels() {
+	// for histograms we need to be sure that type was added
+	if pm.MetricType == HISTOGRAM_TYPE {
+		typeFound := false
+		for _, label := range pm.Labels {
+			if label == "type" {
+				typeFound = true
+			}
+		}
+
+		if !typeFound {
+			pm.Labels = append(pm.Labels, "type")
+		}
+	}
 }
 
 // GetLabelsValues return a list of string values based on the custom metric labels.
@@ -339,11 +359,6 @@ func (pm *PrometheusMetric) GetLabelsValues(decoded analytics.AnalyticsRecord) [
 func (pm *PrometheusMetric) Inc(values ...string) error {
 	switch pm.MetricType {
 	case COUNTER_TYPE:
-		// "response_code", "api_name", "method"
-		// key = map[500--apitest-GET] = 4
-
-		//map[]
-
 		pm.counterMap[strings.Join(values, "--")] += 1
 	default:
 		return errors.New("invalid metric type:" + pm.MetricType)
