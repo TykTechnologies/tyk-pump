@@ -286,7 +286,7 @@ func (pm *PrometheusMetric) InitVec() error {
 			bkts = buckets
 		}
 
-		pm.EnsureLabels()
+		pm.ensureLabels()
 		pm.histogramVec = prometheus.NewHistogramVec(
 			prometheus.HistogramOpts{
 				Name:    pm.Name,
@@ -306,7 +306,7 @@ func (pm *PrometheusMetric) InitVec() error {
 }
 
 // EnsureLabels ensure the data validity and consistency of the metric labels
-func (pm *PrometheusMetric) EnsureLabels() {
+func (pm *PrometheusMetric) ensureLabels() {
 	// for histograms we need to be sure that type was added
 	if pm.MetricType == HISTOGRAM_TYPE {
 		typeFound := false
