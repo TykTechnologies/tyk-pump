@@ -1,7 +1,6 @@
 package pumps
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
@@ -28,7 +27,6 @@ func TestMongoSelectivePump_AccumulateSet(t *testing.T) {
 					expectedGraphRecordSkips++
 				}
 			}
-			fmt.Println("aaaaaaaa----", mPump.dbConf.MaxDocumentSizeBytes)
 			set := mPump.AccumulateSet(data)
 
 			recordsCount := 0
