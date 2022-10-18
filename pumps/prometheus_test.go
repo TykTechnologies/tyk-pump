@@ -2,14 +2,16 @@ package pumps
 
 import (
 	"errors"
+	"io"
 	"testing"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestInitVec(t *testing.T) {
+func TestPrometheusInitVec(t *testing.T) {
 	tcs := []struct {
 		testName     string
 		customMetric PrometheusMetric
@@ -82,7 +84,7 @@ func TestInitVec(t *testing.T) {
 	}
 }
 
-func TestInitCustomMetrics(t *testing.T) {
+func TestPrometheusInitCustomMetrics(t *testing.T) {
 	tcs := []struct {
 		testName              string
 		metrics               []PrometheusMetric
@@ -183,7 +185,7 @@ func TestInitCustomMetrics(t *testing.T) {
 	}
 }
 
-func TestGetLabelsValues(t *testing.T) {
+func TestPrometheusGetLabelsValues(t *testing.T) {
 	tcs := []struct {
 		testName       string
 		customMetric   PrometheusMetric
@@ -539,7 +541,7 @@ func TestPrometheusCreateBasicMetrics(t *testing.T) {
 
 }
 
-func TestEnsureLabels(t *testing.T) {
+func TestPrometheusEnsureLabels(t *testing.T) {
 	testCases := []struct {
 		name                 string
 		metricType           string
@@ -600,4 +602,35 @@ func TestEnsureLabels(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestPrometheusDisablingMetrics(t *testing.T) {
+	p := &PrometheusPump{}
+	newPump := p.New().(*PrometheusPump)
+
+	log := logrus.New()
+	log.Out = io.Discard
+	newPump.log = logrus.NewEntry(log)
+
+	newPump.conf = &PrometheusConf{DisabledMetrics: []string{"tyk_http_status_per_path"}}
+
+	newPump.initBaseMetrics()
+
+	defer func() {
+		for i := range newPump.allMetrics {
+			if newPump.allMetrics[i].MetricType == COUNTER_TYPE {
+				prometheus.Unregister(newPump.allMetrics[i].counterVec)
+			} else if newPump.allMetrics[i].MetricType == HISTOGRAM_TYPE {
+				prometheus.Unregister(newPump.allMetrics[i].histogramVec)
+			}
+		}
+	}()
+
+	metricMap := map[string]*PrometheusMetric{}
+	for _, metric := range newPump.allMetrics {
+		metricMap[metric.Name] = metric
+	}
+
+	assert.Contains(t, metricMap, "tyk_http_status")
+	assert.NotContains(t, metricMap, "tyk_http_status_per_path")
 }
