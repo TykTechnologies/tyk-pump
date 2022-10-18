@@ -188,7 +188,7 @@ func AggregateUptimeData(data []UptimeReportData) map[string]UptimeReportAggrega
 			if (thisV.ResponseCode < 300) && (thisV.ResponseCode >= 200) {
 				thisCounter.Success = 1
 				thisAggregate.Total.Success++
-				//using the errorMap as ResponseCode Map for SQL purpose
+				// using the errorMap as ResponseCode Map for SQL purpose
 				thisCounter.ErrorMap[strconv.Itoa(thisV.ResponseCode)]++
 				thisAggregate.Total.ErrorMap[strconv.Itoa(thisV.ResponseCode)]++
 			}

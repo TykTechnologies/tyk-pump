@@ -286,7 +286,8 @@ func (p *PrometheusPump) WriteData(ctx context.Context, data []interface{}) erro
 // InitVec inits the prometheus metric based on the metric_type. It only can create counter and histogram,
 // if the metric_type is anything else it returns an error
 func (pm *PrometheusMetric) InitVec() error {
-	if pm.MetricType == "counter" {
+	switch pm.MetricType {
+	case COUNTER_TYPE:
 		pm.counterVec = prometheus.NewCounterVec(
 			prometheus.CounterOpts{
 				Name: pm.Name,
@@ -296,11 +297,13 @@ func (pm *PrometheusMetric) InitVec() error {
 		)
 		pm.counterMap = make(map[string]uint64)
 		prometheus.MustRegister(pm.counterVec)
-	} else if pm.MetricType == "histogram" {
+	case HISTOGRAM_TYPE:
 		bkts := pm.Buckets
 		if len(bkts) == 0 {
 			bkts = buckets
 		}
+
+		pm.ensureLabels()
 		pm.histogramVec = prometheus.NewHistogramVec(
 			prometheus.HistogramOpts{
 				Name:    pm.Name,
@@ -311,12 +314,32 @@ func (pm *PrometheusMetric) InitVec() error {
 		)
 		pm.histogramMap = make(map[string]histogramCounter)
 		prometheus.MustRegister(pm.histogramVec)
-	} else {
+	default:
 		return errors.New("invalid metric type:" + pm.MetricType)
 	}
 
 	pm.enabled = true
 	return nil
+}
+
+// EnsureLabels ensure the data validity and consistency of the metric labels
+func (pm *PrometheusMetric) ensureLabels() {
+	// for histograms we need to be sure that type was added
+	if pm.MetricType == HISTOGRAM_TYPE {
+		// remove all references to `type`
+		var i int
+		for _, label := range pm.Labels {
+			if label == "type" {
+				continue
+			}
+			pm.Labels[i] = label
+			i++
+		}
+		pm.Labels = pm.Labels[:i]
+
+		// then add `type` at the beginning
+		pm.Labels = append([]string{"type"}, pm.Labels...)
+	}
 }
 
 // GetLabelsValues return a list of string values based on the custom metric labels.
@@ -355,11 +378,6 @@ func (pm *PrometheusMetric) GetLabelsValues(decoded analytics.AnalyticsRecord) [
 func (pm *PrometheusMetric) Inc(values ...string) error {
 	switch pm.MetricType {
 	case COUNTER_TYPE:
-		// "response_code", "api_name", "method"
-		// key = map[500--apitest-GET] = 4
-
-		//map[]
-
 		pm.counterMap[strings.Join(values, "--")] += 1
 	default:
 		return errors.New("invalid metric type:" + pm.MetricType)

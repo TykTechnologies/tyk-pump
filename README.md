@@ -345,6 +345,26 @@ TYK_PMP_PUMPS_MONGOAGG_TYPE=mongo-pump-aggregate
 TYK_PMP_PUMPS_MONGOAGG_META_USEMIXEDCOLLECTION=true
 ```
 
+###### Mongo Graph Pump
+As of Pump 1.7+, a new mongo is available called the `mongo_graph` pump. This pump is specifically for parsing 
+GraphQL and UDG requests, tracking information like types requested, fields requested, specific graphql body errors etc.
+
+A sample config looks like this:
+```.json
+{
+  ...
+  "pumps": {
+    ...
+    "mongo-graph": {
+      "type": "mongo-graph",
+      "meta": {
+        "collection_name": "graph_analytics",
+        "mongo_url": "mongodb://localhost:27017/tyk_analytics"
+      }
+    }
+}
+```
+
 ## Elasticsearch Config
 
 `"index_name"` - The name of the index that all the analytics data will be placed in. Defaults to "tyk_analytics"

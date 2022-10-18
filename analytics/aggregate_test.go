@@ -19,7 +19,6 @@ func TestCode_ProcessStatusCodes(t *testing.T) {
 
 	assert.Equal(t, 4, c.Code400)
 	assert.Equal(t, 5, c.Code4x)
-
 }
 
 func TestAggregate_Tags(t *testing.T) {

@@ -32,4 +32,5 @@ func init() {
 	AvailablePumps["sql_aggregate"] = &SQLAggregatePump{}
 	AvailablePumps["stdout"] = &StdOutPump{}
 	AvailablePumps["timestream"] = &TimestreamPump{}
+	AvailablePumps["mongo-graph"] = &GraphMongoPump{}
 }
