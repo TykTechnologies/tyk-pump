@@ -297,7 +297,7 @@ func TestMongoPump_AccumulateSet(t *testing.T) {
 			const dataSize = 1024
 			totalData := dataSize * (numRecords - expectedGraphRecordSkips)
 
-			set := mPump.AccumulateSet(data)
+			set := mPump.AccumulateSet(data, false)
 
 			recordsCount := 0
 			for _, setEntry := range set {

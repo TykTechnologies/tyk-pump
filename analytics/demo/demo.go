@@ -12,9 +12,11 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
-var apiKeys []string
-var apiID string
-var apiVersion string
+var (
+	apiKeys    []string
+	apiID      string
+	apiVersion string
+)
 
 func DemoInit(orgId, apiId, version string) {
 	apiID = apiId
@@ -31,7 +33,7 @@ func randomInRange(min, max int) int {
 }
 
 func randomMethod() string {
-	var methods = []string{"GET", "PUT", "POST", "DELETE", "OPTIONS", "HEAD"}
+	methods := []string{"GET", "PUT", "POST", "DELETE", "OPTIONS", "HEAD"}
 
 	rand.Seed(time.Now().Unix())
 	return methods[rand.Intn(len(methods))]
