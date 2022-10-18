@@ -483,6 +483,7 @@ Tyk expose the following counters:
 And the following Histogram for latencies:
 - tyk_latency{type, api}
 
+Note: base metric families can be removed by configuring the `disabled_metrics` property.
 
 #### Custom Prometheus metrics
 From Pump 1.6+ it's possible to add custom prometheus metrics using the `custom_metrics` configuration.
@@ -536,6 +537,7 @@ TYK_PMP_PUMPS_PROMETHEUS_TYPE=prometheus
 TYK_PMP_PUMPS_PROMETHEUS_META_ADDR=localhost:9090
 TYK_PMP_PUMPS_PROMETHEUS_META_PATH=/metrics
 TYK_PMP_PUMPS_PROMETHEUS_META_CUSTOMMETRICS=[]
+TYK_PMP_PUMPS_PROMETHEUS_META_DISABLED_METRICS=[]
 ```
 
 ## DogStatsD
