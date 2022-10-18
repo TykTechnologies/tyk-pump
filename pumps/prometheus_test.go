@@ -37,6 +37,16 @@ func TestInitVec(t *testing.T) {
 			isEnabled:   true,
 		},
 		{
+			testName: "Histogram metric without type label set",
+			customMetric: PrometheusMetric{
+				Name:       "testHistogramMetricWithoutTypeSet",
+				MetricType: HISTOGRAM_TYPE,
+				Labels:     []string{"api_id"},
+			},
+			expectedErr: nil,
+			isEnabled:   true,
+		},
+		{
 			testName: "RandomType metric",
 			customMetric: PrometheusMetric{
 				Name:       "testCounterMetric",
@@ -65,7 +75,7 @@ func TestInitVec(t *testing.T) {
 			} else if tc.customMetric.MetricType == HISTOGRAM_TYPE {
 				assert.NotNil(t, tc.customMetric.histogramVec)
 				assert.Equal(t, tc.isEnabled, prometheus.Unregister(tc.customMetric.histogramVec))
-
+				assert.Equal(t, tc.customMetric.Labels[0], "type")
 			}
 
 		})
@@ -527,4 +537,67 @@ func TestPrometheusCreateBasicMetrics(t *testing.T) {
 	assert.Equal(t, 4, actualMetricTypeCounter[COUNTER_TYPE])
 	assert.Equal(t, 1, actualMetricTypeCounter[HISTOGRAM_TYPE])
 
+}
+
+func TestEnsureLabels(t *testing.T) {
+	testCases := []struct {
+		name                 string
+		metricType           string
+		labels               []string
+		typeLabelShouldExist bool
+	}{
+		{
+			name:                 "histogram type, type label should be added if not exist",
+			labels:               []string{"response_code", "api_name", "method", "api_key", "alias", "path"},
+			metricType:           HISTOGRAM_TYPE,
+			typeLabelShouldExist: true,
+		},
+		{
+			name:                 "counter type, type label should not be added",
+			labels:               []string{"response_code", "api_name", "method", "api_key", "alias", "path"},
+			metricType:           COUNTER_TYPE,
+			typeLabelShouldExist: false,
+		},
+		{
+			name:                 "histogram type, type label should not be repeated and in the 1st position",
+			labels:               []string{"type", "response_code", "api_name", "method", "api_key", "alias", "path"},
+			metricType:           HISTOGRAM_TYPE,
+			typeLabelShouldExist: true,
+		},
+		{
+			name:                 "histogram type, type label should not be repeated (even if user repeated it), and always in the 1st position",
+			labels:               []string{"response_code", "api_name", "type", "method", "api_key", "alias", "path", "type"},
+			metricType:           HISTOGRAM_TYPE,
+			typeLabelShouldExist: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			pm := PrometheusMetric{
+				MetricType: tc.metricType,
+				Labels:     tc.labels,
+			}
+
+			pm.ensureLabels()
+			typeLabelFound := false
+			numberOfTimesOfTypeLabel := 0
+
+			for _, label := range pm.Labels {
+				if label == "type" {
+					typeLabelFound = true
+					numberOfTimesOfTypeLabel++
+				}
+			}
+
+			assert.Equal(t, tc.typeLabelShouldExist, typeLabelFound)
+
+			// if should exist then it should be only one time
+			if tc.typeLabelShouldExist {
+				assert.Equal(t, 1, numberOfTimesOfTypeLabel)
+				// label `type` should be in the 1st position always
+				assert.Equal(t, pm.Labels[0], "type")
+			}
+		})
+	}
 }
