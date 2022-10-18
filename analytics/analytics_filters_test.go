@@ -102,7 +102,6 @@ func TestShouldFilter(t *testing.T) {
 			assert.Equal(t, tc.expectedFiltering, shouldFilter)
 		})
 	}
-
 }
 
 func TestHasFilter(t *testing.T) {
@@ -120,5 +119,4 @@ func TestHasFilter(t *testing.T) {
 	if hasFilter == false {
 		t.Fatal("HasFilter should be true.")
 	}
-
 }
