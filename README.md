@@ -483,8 +483,7 @@ Tyk expose the following counters:
 And the following Histogram for latencies:
 - tyk_latency{type, api}
 
-Note: both custom and base metric families can be excluded from exposition by configuring the `disabled_metrics` 
-property.
+Note: base metric families can be removed by configuring the `disabled_metrics` property.
 
 #### Custom Prometheus metrics
 From Pump 1.6+ it's possible to add custom prometheus metrics using the `custom_metrics` configuration.
