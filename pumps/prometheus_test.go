@@ -2,14 +2,16 @@ package pumps
 
 import (
 	"errors"
+	"io"
 	"testing"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestInitVec(t *testing.T) {
+func TestPrometheusInitVec(t *testing.T) {
 	tcs := []struct {
 		testName     string
 		customMetric PrometheusMetric
@@ -32,6 +34,16 @@ func TestInitVec(t *testing.T) {
 				Name:       "testHistogramMetric",
 				MetricType: HISTOGRAM_TYPE,
 				Labels:     []string{"type", "api_id"},
+			},
+			expectedErr: nil,
+			isEnabled:   true,
+		},
+		{
+			testName: "Histogram metric without type label set",
+			customMetric: PrometheusMetric{
+				Name:       "testHistogramMetricWithoutTypeSet",
+				MetricType: HISTOGRAM_TYPE,
+				Labels:     []string{"api_id"},
 			},
 			expectedErr: nil,
 			isEnabled:   true,
@@ -65,14 +77,14 @@ func TestInitVec(t *testing.T) {
 			} else if tc.customMetric.MetricType == HISTOGRAM_TYPE {
 				assert.NotNil(t, tc.customMetric.histogramVec)
 				assert.Equal(t, tc.isEnabled, prometheus.Unregister(tc.customMetric.histogramVec))
-
+				assert.Equal(t, tc.customMetric.Labels[0], "type")
 			}
 
 		})
 	}
 }
 
-func TestInitCustomMetrics(t *testing.T) {
+func TestPrometheusInitCustomMetrics(t *testing.T) {
 	tcs := []struct {
 		testName              string
 		metrics               []PrometheusMetric
@@ -173,7 +185,7 @@ func TestInitCustomMetrics(t *testing.T) {
 	}
 }
 
-func TestGetLabelsValues(t *testing.T) {
+func TestPrometheusGetLabelsValues(t *testing.T) {
 	tcs := []struct {
 		testName       string
 		customMetric   PrometheusMetric
@@ -527,4 +539,98 @@ func TestPrometheusCreateBasicMetrics(t *testing.T) {
 	assert.Equal(t, 4, actualMetricTypeCounter[COUNTER_TYPE])
 	assert.Equal(t, 1, actualMetricTypeCounter[HISTOGRAM_TYPE])
 
+}
+
+func TestPrometheusEnsureLabels(t *testing.T) {
+	testCases := []struct {
+		name                 string
+		metricType           string
+		labels               []string
+		typeLabelShouldExist bool
+	}{
+		{
+			name:                 "histogram type, type label should be added if not exist",
+			labels:               []string{"response_code", "api_name", "method", "api_key", "alias", "path"},
+			metricType:           HISTOGRAM_TYPE,
+			typeLabelShouldExist: true,
+		},
+		{
+			name:                 "counter type, type label should not be added",
+			labels:               []string{"response_code", "api_name", "method", "api_key", "alias", "path"},
+			metricType:           COUNTER_TYPE,
+			typeLabelShouldExist: false,
+		},
+		{
+			name:                 "histogram type, type label should not be repeated and in the 1st position",
+			labels:               []string{"type", "response_code", "api_name", "method", "api_key", "alias", "path"},
+			metricType:           HISTOGRAM_TYPE,
+			typeLabelShouldExist: true,
+		},
+		{
+			name:                 "histogram type, type label should not be repeated (even if user repeated it), and always in the 1st position",
+			labels:               []string{"response_code", "api_name", "type", "method", "api_key", "alias", "path", "type"},
+			metricType:           HISTOGRAM_TYPE,
+			typeLabelShouldExist: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			pm := PrometheusMetric{
+				MetricType: tc.metricType,
+				Labels:     tc.labels,
+			}
+
+			pm.ensureLabels()
+			typeLabelFound := false
+			numberOfTimesOfTypeLabel := 0
+
+			for _, label := range pm.Labels {
+				if label == "type" {
+					typeLabelFound = true
+					numberOfTimesOfTypeLabel++
+				}
+			}
+
+			assert.Equal(t, tc.typeLabelShouldExist, typeLabelFound)
+
+			// if should exist then it should be only one time
+			if tc.typeLabelShouldExist {
+				assert.Equal(t, 1, numberOfTimesOfTypeLabel)
+				// label `type` should be in the 1st position always
+				assert.Equal(t, pm.Labels[0], "type")
+			}
+		})
+	}
+}
+
+func TestPrometheusDisablingMetrics(t *testing.T) {
+	p := &PrometheusPump{}
+	newPump := p.New().(*PrometheusPump)
+
+	log := logrus.New()
+	log.Out = io.Discard
+	newPump.log = logrus.NewEntry(log)
+
+	newPump.conf = &PrometheusConf{DisabledMetrics: []string{"tyk_http_status_per_path"}}
+
+	newPump.initBaseMetrics()
+
+	defer func() {
+		for i := range newPump.allMetrics {
+			if newPump.allMetrics[i].MetricType == COUNTER_TYPE {
+				prometheus.Unregister(newPump.allMetrics[i].counterVec)
+			} else if newPump.allMetrics[i].MetricType == HISTOGRAM_TYPE {
+				prometheus.Unregister(newPump.allMetrics[i].histogramVec)
+			}
+		}
+	}()
+
+	metricMap := map[string]*PrometheusMetric{}
+	for _, metric := range newPump.allMetrics {
+		metricMap[metric.Name] = metric
+	}
+
+	assert.Contains(t, metricMap, "tyk_http_status")
+	assert.NotContains(t, metricMap, "tyk_http_status_per_path")
 }

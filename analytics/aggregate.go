@@ -172,12 +172,12 @@ func OnConflictAssignments(tableName string, tempTable string) map[string]interf
 		colName := "counter_" + jsonTag
 
 		switch jsonTag {
-		//hits, error, success"s, open_connections, closed_connections, bytes_in, bytes_out,total_request_time, total_upstream_latency, total_latency
+		// hits, error, success"s, open_connections, closed_connections, bytes_in, bytes_out,total_request_time, total_upstream_latency, total_latency
 		case "hits", "error", "success", "open_connections", "closed_connections", "bytes_in", "bytes_out", "total_request_time", "total_latency", "total_upstream_latency":
 			assignments[colName] = gorm.Expr(tableName + "." + colName + " + " + tempTable + "." + colName)
-		//request_time, upstream_latency,latency
+		// request_time, upstream_latency,latency
 		case "request_time", "upstream_latency", "latency":
-			//AVG = (oldTotal + newTotal ) / (oldHits + newHits)
+			// AVG = (oldTotal + newTotal ) / (oldHits + newHits)
 			var totalVal, totalCol string
 			switch jsonTag {
 			case "request_time":
@@ -192,13 +192,13 @@ func OnConflictAssignments(tableName string, tempTable string) map[string]interf
 			assignments[colName] = gorm.Expr("(" + tableName + "." + totalCol + "  +" + totalVal + ")/CAST( " + tableName + ".counter_hits + " + tempTable + ".counter_hits" + " AS REAL)")
 
 		case "max_upstream_latency", "max_latency":
-			//math max: 0.5 * ((@val1 + @val2) + ABS(@val1 - @val2))
+			// math max: 0.5 * ((@val1 + @val2) + ABS(@val1 - @val2))
 			val1 := tableName + "." + colName
 			val2 := tempTable + "." + colName
 			assignments[colName] = gorm.Expr("0.5 * ((" + val1 + " + " + val2 + ") + ABS(" + val1 + " - " + val2 + "))")
 
 		case "min_latency", "min_upstream_latency":
-			//math min: 0.5 * ((@val1 + @val2) - ABS(@val1 - @val2))
+			// math min: 0.5 * ((@val1 + @val2) - ABS(@val1 - @val2))
 			val1 := tableName + "." + colName
 			val2 := tempTable + "." + colName
 			assignments[colName] = gorm.Expr("0.5 * ((" + val1 + " + " + val2 + ") - ABS(" + val1 + " - " + val2 + ")) ")
@@ -230,7 +230,6 @@ func (f AnalyticsRecordAggregate) New() AnalyticsRecordAggregate {
 }
 
 func (f *AnalyticsRecordAggregate) generateBSONFromProperty(parent, thisUnit string, incVal *Counter, newUpdate bson.M) bson.M {
-
 	constructor := parent + "." + thisUnit + "."
 	if parent == "" {
 		constructor = thisUnit + "."
@@ -267,7 +266,6 @@ func (f *AnalyticsRecordAggregate) generateBSONFromProperty(parent, thisUnit str
 }
 
 func (f *AnalyticsRecordAggregate) generateSetterForTime(parent, thisUnit string, realTime float64, newUpdate bson.M) bson.M {
-
 	constructor := parent + "." + thisUnit + "."
 	if parent == "" {
 		constructor = thisUnit + "."
@@ -435,7 +433,7 @@ func (f *AnalyticsRecordAggregate) AsTimeUpdate() bson.M {
 
 	// We need to create lists of API data so that we can aggregate across the list
 	// in order to present top-20 style lists of APIs, Tokens etc.
-	//apis := make([]Counter, 0)
+	// apis := make([]Counter, 0)
 	newUpdate["$set"].(bson.M)["lists.apiid"] = f.getRecords("apiid", f.APIID, newUpdate)
 
 	newUpdate["$set"].(bson.M)["lists.errors"] = f.getRecords("errors", f.Errors, newUpdate)
