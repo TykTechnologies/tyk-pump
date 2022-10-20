@@ -2,6 +2,7 @@ package pumps
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/base64"
 	"errors"
 	"fmt"
@@ -71,6 +72,16 @@ type ElasticsearchConf struct {
 	Username string `json:"auth_basic_username" mapstructure:"auth_basic_username"`
 	// Basic auth password. It's send to ES in the Authorization header as username:password encoded in base64.
 	Password string `json:"auth_basic_password" mapstructure:"auth_basic_password"`
+	// Enables SSL connection.
+	UseSSL bool `json:"use_ssl" mapstructure:"use_ssl"`
+	// Controls whether the pump client verifies the Elastic Search server's certificate chain and hostname.
+	SSLInsecureSkipVerify bool `json:"ssl_insecure_skip_verify" mapstructure:"ssl_insecure_skip_verify"`
+	// Can be used to set custom certificate file for authentication with Elastic Search.
+	SSLCertFile string `json:"ssl_cert_file" mapstructure:"ssl_cert_file"`
+	// Can be used to set custom key file for authentication with Elastic Search.
+	SSLKeyFile string `json:"ssl_key_file" mapstructure:"ssl_key_file"`
+
+	tlsConfig *tls.Config
 }
 
 type ElasticsearchBulkConfig struct {
@@ -120,7 +131,7 @@ type ApiKeyTransport struct {
 	APIKeyID string
 }
 
-//RoundTrip for ApiKeyTransport auth
+// RoundTrip for ApiKeyTransport auth
 func (t *ApiKeyTransport) RoundTrip(r *http.Request) (*http.Response, error) {
 	auth := t.APIKeyID + ":" + t.APIKey
 	key := base64.StdEncoding.EncodeToString([]byte(auth))
@@ -141,6 +152,10 @@ func (e *ElasticsearchPump) getOperator() (ElasticsearchOperator, error) {
 		conf.Username = ""
 		conf.Password = ""
 		httpClient = &http.Client{Transport: &ApiKeyTransport{APIKey: conf.AuthAPIKey, APIKeyID: conf.AuthAPIKeyID}}
+	}
+
+	if conf.UseSSL {
+		httpClient = &http.Client{Transport: &http.Transport{TLSClientConfig: e.esConf.tlsConfig}}
 	}
 
 	switch conf.Version {
@@ -353,6 +368,31 @@ func (e *ElasticsearchPump) Init(config interface{}) error {
 	e.log.Info("Elasticsearch Index: ", e.esConf.IndexName)
 	if e.esConf.RollingIndex {
 		e.log.Info("Index will have date appended to it in the format ", e.esConf.IndexName, "-YYYY.MM.DD")
+	}
+
+	if e.esConf.UseSSL {
+		var tlsConfig *tls.Config
+		if e.esConf.SSLCertFile != "" && e.esConf.SSLKeyFile != "" {
+			e.log.Debug("Loading certificates for mTLS.")
+			cert, err := tls.LoadX509KeyPair(e.esConf.SSLCertFile, e.esConf.SSLKeyFile)
+			if err != nil {
+				e.log.Debug("Error loading mTLS certificates:", err)
+				return err
+			}
+			tlsConfig = &tls.Config{
+				Certificates:       []tls.Certificate{cert},
+				InsecureSkipVerify: e.esConf.SSLInsecureSkipVerify,
+			}
+		} else if e.esConf.SSLCertFile != "" || e.esConf.SSLKeyFile != "" {
+			err := errors.New("Only one of ssl_cert_file and ssl_cert_key configuration option is setted, you should set both to enable mTLS.")
+			e.log.Error(err)
+			return err
+		} else {
+			tlsConfig = &tls.Config{
+				InsecureSkipVerify: e.esConf.SSLInsecureSkipVerify,
+			}
+		}
+		e.esConf.tlsConfig = tlsConfig
 	}
 
 	e.connect()
