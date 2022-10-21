@@ -15,10 +15,12 @@ func TestDoAggregatedWritingWithIgnoredAggregations(t *testing.T) {
 	cfgPump1["mongo_url"] = "mongodb://localhost:27017/tyk_analytics"
 	cfgPump1["ignore_aggregations"] = []string{"apikeys"}
 	cfgPump1["use_mixed_collection"] = true
+	cfgPump1["store_analytics_per_minute"] = false
 
 	cfgPump2 := make(map[string]interface{})
 	cfgPump2["mongo_url"] = "mongodb://localhost:27017/tyk_analytics"
 	cfgPump2["use_mixed_collection"] = true
+	cfgPump2["store_analytics_per_minute"] = false
 
 	pmp1 := MongoAggregatePump{}
 	pmp2 := MongoAggregatePump{}
@@ -92,7 +94,6 @@ func TestDoAggregatedWritingWithIgnoredAggregations(t *testing.T) {
 				collectionName, collErr = pmp1.GetCollectionName("123")
 				assert.Nil(t, collErr)
 			}
-
 			thisSession := pmp1.dbSession.Copy()
 			defer thisSession.Close()
 
@@ -101,7 +102,7 @@ func TestDoAggregatedWritingWithIgnoredAggregations(t *testing.T) {
 			//we build the query using the timestamp as we do in aggregated analytics
 			query := bson.M{
 				"orgid":     "123",
-				"timestamp": time.Date(timeNow.Year(), timeNow.Month(), timeNow.Day(), timeNow.Hour(), timeNow.Minute(), 0, 0, timeNow.Location()),
+				"timestamp": time.Date(timeNow.Year(), timeNow.Month(), timeNow.Day(), timeNow.Hour(), 0, 0, 0, timeNow.Location()),
 			}
 
 			res := analytics.AnalyticsRecordAggregate{}

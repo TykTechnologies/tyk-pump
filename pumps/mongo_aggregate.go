@@ -352,8 +352,6 @@ func (m *MongoAggregatePump) DoAggregatedWriting(ctx context.Context, orgID stri
 		m.log.Info("No OrgID for AnalyticsRecord, skipping")
 		return nil
 	}
-	collectionName = collectionName[:len(collectionName)-10]
-
 	thisSession := m.dbSession.Copy()
 	defer thisSession.Close()
 
