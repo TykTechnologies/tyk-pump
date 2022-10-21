@@ -472,10 +472,10 @@ func (m *MongoAggregatePump) divideAggregationTime() {
 func (m *MongoAggregatePump) ShouldSelfHeal(err error) bool {
 	const StandardMongoSizeError = "Size must be between 0 and"
 	const CosmosSizeError = "Request size is too large"
-	const DocDBSizeError = "Resulting document after update is larger than"
+	const DocDBSizeError = "Document exceeds maximum size"
 
 	if m.dbConf.EnableAggregateSelfHealing {
-		if strings.Contains(err.Error(), StandardMongoSizeError) || strings.Contains(err.Error(), CosmosSizeError) || strings.Contains(err.Error(), DocDBSizeError) {
+		if strings.Contains(err.Error(), StandardMongoSizeError) || strings.Contains(err.Error(), CosmosSizeError) {
 			// if the AggregationTime setting is already set to 1, we can't do anything else
 			if m.dbConf.AggregationTime == 1 {
 				m.log.Warning("AggregationTime is equal to 1 minute, unable to reduce it further. Skipping self-healing.")

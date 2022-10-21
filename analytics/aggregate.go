@@ -23,8 +23,6 @@ const (
 
 // lastDocumentTimestamp is a map to store the last document timestamps of different Mongo Aggregators
 var lastDocumentTimestamp = make(map[string]time.Time)
-
-// lock is used to prevent concurrent writes to the same key
 var lock sync.RWMutex
 
 type ErrorData struct {
@@ -879,14 +877,12 @@ func TrimTag(thisTag string) string {
 	return trimmedTag
 }
 
-// SetlastTimestampAgggregateRecord sets the last timestamp for the aggregate record
 func SetlastTimestampAgggregateRecord(id string, date time.Time) {
 	lock.Lock()
 	defer lock.Unlock()
 	lastDocumentTimestamp[id] = date
 }
 
-// getLastDocumentTimestamp gets the last timestamp for the aggregate record
 func getLastDocumentTimestamp(id string) (time.Time, bool) {
 	lock.RLock()
 	defer lock.RUnlock()
