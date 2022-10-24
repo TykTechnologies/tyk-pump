@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/TykTechnologies/tyk-pump/pumps/common"
+	mgo2 "github.com/TykTechnologies/tyk-pump/pumps/internal/mgo"
 	"github.com/TykTechnologies/tyk-pump/pumps/mongo"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/lonelycode/mgohacks"
@@ -203,8 +204,8 @@ func (m *MongoAggregatePump) connect() {
 	}
 
 	if err == nil && m.dbConf.MongoDBType == 0 {
-		//TODO check this
-		//		m.dbConf.MongoDBType = mongoType(m.dbSession)
+		sessManager := mgo2.NewSessionManager(m.dbSession)
+		m.dbConf.MongoDBType = mongo.GetMongoType(sessManager)
 	}
 }
 
@@ -283,35 +284,6 @@ func mongoDialInfo(conf mongo.BaseConfig) (dialInfo *mgo.DialInfo, err error) {
 	return dialInfo, err
 }
 
-type MongoType int
-
-const (
-	StandardMongo MongoType = iota
-	AWSDocumentDB
-	CosmosDB
-)
-
-const (
-	AWSDBError    = 303
-	CosmosDBError = 115
-)
-
-func mongoType(session *mgo.Session) MongoType {
-	// Querying for the features which 100% not supported by AWS DocumentDB
-	var result struct {
-		Code int `bson:"code"`
-	}
-	session.Run("features", &result)
-
-	switch result.Code {
-	case AWSDBError:
-		return AWSDocumentDB
-	case CosmosDBError:
-		return CosmosDB
-	default:
-		return StandardMongo
-	}
-}
 func (m *MongoAggregatePump) ensureIndexes(c *mgo.Collection) error {
 	if m.dbConf.OmitIndexCreation {
 		m.Log.Debug("omit_index_creation set to true, omitting index creation..")
