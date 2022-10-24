@@ -39,6 +39,8 @@ type PrometheusConf struct {
 	// This will enable an experimental feature that will aggregate the histogram metrics request time values before exposing them to prometheus.
 	// Enabling this will reduce the CPU usage of your prometheus pump but you will loose histogram precision. Experimental.
 	AggregateObservations bool `json:"aggregate_observations" mapstructure:"aggregate_observations"`
+	// Metrics to exclude from exposition. Currently, excludes only the base metrics.
+	DisabledMetrics []string `json:"disabled_metrics" mapstructure:"disabled_metrics"`
 	// Custom Prometheus metrics.
 	CustomMetrics []PrometheusMetric `json:"custom_metrics" mapstructure:"custom_metrics"`
 }
@@ -160,13 +162,7 @@ func (p *PrometheusPump) Init(conf interface{}) error {
 	}
 
 	//first we init the base metrics
-	for _, metric := range p.allMetrics {
-		metric.aggregatedObservations = p.conf.AggregateObservations
-		errInit := metric.InitVec()
-		if errInit != nil {
-			p.log.Error(errInit)
-		}
-	}
+	p.initBaseMetrics()
 
 	//then we check the custom ones
 	p.InitCustomMetrics()
@@ -181,6 +177,26 @@ func (p *PrometheusPump) Init(conf interface{}) error {
 	p.log.Info(p.GetName() + " Initialized")
 
 	return nil
+}
+
+func (p *PrometheusPump) initBaseMetrics() {
+	toDisableSet := map[string]struct{}{}
+	for _, metric := range p.conf.DisabledMetrics {
+		toDisableSet[metric] = struct{}{}
+	}
+	// exclude disabled base metrics if needed. This disables exposition entirely during scrapes.
+	trimmedAllMetrics := make([]*PrometheusMetric, 0, len(p.allMetrics))
+	for _, metric := range p.allMetrics {
+		if _, isDisabled := toDisableSet[metric.Name]; isDisabled {
+			continue
+		}
+		metric.aggregatedObservations = p.conf.AggregateObservations
+		if errInit := metric.InitVec(); errInit != nil {
+			p.log.Error(errInit)
+		}
+		trimmedAllMetrics = append(trimmedAllMetrics, metric)
+	}
+	p.allMetrics = trimmedAllMetrics
 }
 
 // InitCustomMetrics initialise custom prometheus metrics based on p.conf.CustomMetrics and add them into p.allMetrics
