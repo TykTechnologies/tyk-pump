@@ -97,7 +97,7 @@ func (m *MongoSelectivePump) connect() {
 	var err error
 	var dialInfo *mgo.DialInfo
 
-	dialInfo, err = mongo.DialInfo(m.dbConf.BaseConfig)
+	dialInfo, err = mongoDialInfo(m.dbConf.BaseConfig)
 	if err != nil {
 		m.Log.Panic("Mongo URL is invalid: ", err)
 	}
@@ -115,7 +115,8 @@ func (m *MongoSelectivePump) connect() {
 	}
 
 	if err == nil && m.dbConf.MongoDBType == 0 {
-		m.dbConf.MongoDBType = mongo.GetMongoType(m.dbSession)
+		//TODO Check this
+		//	m.dbConf.MongoDBType = mongo.GetMongoType(m.dbSession)
 	}
 }
 
