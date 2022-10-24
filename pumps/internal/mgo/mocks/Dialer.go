@@ -3,7 +3,7 @@
 package mocks
 
 import (
-	mgo "github.com/TykTechnologies/tyk-pump/pumps/mongo/drivers/mgo"
+	mgo "github.com/TykTechnologies/tyk-pump/pumps/internal/mgo"
 	mock "github.com/stretchr/testify/mock"
 
 	time "time"
