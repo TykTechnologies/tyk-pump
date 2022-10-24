@@ -51,7 +51,10 @@ func (c *Collection) Count() (int, error) {
 
 func (c *Collection) Create(info *CollectionInfo) error {
 	mgoInfo := &mgo.CollectionInfo{}
-	copier.Copy(&mgoInfo, &info)
+	err := copier.Copy(&mgoInfo, &info)
+	if err != nil {
+		return err
+	}
 	return c.collection.Create(mgoInfo)
 }
 
@@ -65,7 +68,10 @@ func (c *Collection) Insert(docs ...interface{}) error {
 
 func (c *Collection) EnsureIndex(index Index) error {
 	mgoIndex := mgo.Index{}
-	copier.Copy(&mgoIndex, &index)
+	err := copier.Copy(&mgoIndex, &index)
+	if err != nil {
+		return err
+	}
 
 	return c.collection.EnsureIndex(mgoIndex)
 }
@@ -75,7 +81,9 @@ func (c *Collection) Indexes() (indexes []Index, err error) {
 	if err != nil {
 		return indexes, err
 	}
-	copier.Copy(&indexes, &mgoIndexes)
-
+	err = copier.Copy(&indexes, &mgoIndexes)
+	if err != nil {
+		return indexes, err
+	}
 	return indexes, nil
 }

@@ -82,7 +82,10 @@ func GetMongoType(session mgo.SessionManager) MongoType {
 	var result struct {
 		Code int `bson:"code"`
 	}
-	session.Run("features", &result)
+	err := session.Run("features", &result)
+	if err != nil {
+		return StandardMongo
+	}
 
 	switch result.Code {
 	case AWSDBError:
