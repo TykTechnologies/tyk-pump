@@ -8,8 +8,8 @@ import (
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/TykTechnologies/tyk-pump/logger"
-	"github.com/TykTechnologies/tyk-pump/pumps/mongo/drivers/mgo"
-	"github.com/TykTechnologies/tyk-pump/pumps/mongo/drivers/mgo/mocks"
+	"github.com/TykTechnologies/tyk-pump/pumps/internal/mgo"
+	"github.com/TykTechnologies/tyk-pump/pumps/internal/mgo/mocks"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/stretchr/testify/mock"

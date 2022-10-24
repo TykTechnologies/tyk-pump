@@ -11,7 +11,7 @@ import (
 	"io/ioutil"
 	"time"
 
-	"github.com/TykTechnologies/tyk-pump/pumps/mongo/drivers/mgo"
+	"github.com/TykTechnologies/tyk-pump/pumps/internal/mgo"
 )
 
 type MongoType int

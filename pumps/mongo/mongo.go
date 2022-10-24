@@ -11,7 +11,7 @@ import (
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/TykTechnologies/tyk-pump/logger"
 	"github.com/TykTechnologies/tyk-pump/pumps/common"
-	"github.com/TykTechnologies/tyk-pump/pumps/mongo/drivers/mgo"
+	"github.com/TykTechnologies/tyk-pump/pumps/internal/mgo"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/mitchellh/mapstructure"
 )
