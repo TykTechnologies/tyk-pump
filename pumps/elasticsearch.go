@@ -371,33 +371,46 @@ func (e *ElasticsearchPump) Init(config interface{}) error {
 	}
 
 	if e.esConf.UseSSL {
-		var tlsConfig *tls.Config
-		if e.esConf.SSLCertFile != "" && e.esConf.SSLKeyFile != "" {
-			e.log.Debug("Loading certificates for mTLS.")
-			cert, err := tls.LoadX509KeyPair(e.esConf.SSLCertFile, e.esConf.SSLKeyFile)
-			if err != nil {
-				e.log.Debug("Error loading mTLS certificates:", err)
-				return err
-			}
-			tlsConfig = &tls.Config{
-				Certificates:       []tls.Certificate{cert},
-				InsecureSkipVerify: e.esConf.SSLInsecureSkipVerify,
-			}
-		} else if e.esConf.SSLCertFile != "" || e.esConf.SSLKeyFile != "" {
-			err := errors.New("Only one of ssl_cert_file and ssl_cert_key configuration option is setted, you should set both to enable mTLS.")
-			e.log.Error(err)
-			return err
-		} else {
-			tlsConfig = &tls.Config{
-				InsecureSkipVerify: e.esConf.SSLInsecureSkipVerify,
-			}
+		err := e.setTLSConfig()
+		if err != nil {
+			e.log.Fatal("Failed to set TLS config: ", err)
 		}
-		e.esConf.tlsConfig = tlsConfig
 	}
 
 	e.connect()
 
 	e.log.Info(e.GetName() + " Initialized")
+	return nil
+}
+
+// setTLSConfig sets the TLS config for the pump
+func (e *ElasticsearchPump) setTLSConfig() error {
+	// If the user has not specified a CA file nor a key file, we'll use a tls config with no certs
+	if e.esConf.SSLCertFile == "" && e.esConf.SSLKeyFile == "" {
+		// #nosec G402
+		e.esConf.tlsConfig = &tls.Config{
+			InsecureSkipVerify: e.esConf.SSLInsecureSkipVerify,
+		}
+		return nil
+	}
+	// If the user has specified a SSL cert file or a key file, but not both, we'll return an error
+	if e.esConf.SSLCertFile != "" || e.esConf.SSLKeyFile != "" {
+		err := errors.New("only one of ssl_cert_file and ssl_cert_key configuration option is setted, you should set both to enable mTLS")
+		e.log.Error(err)
+		return err
+	}
+	// If the user has specified both a SSL cert file and a key file, we'll use them to create a tls config
+	e.log.Debug("Loading certificates for mTLS.")
+	cert, err := tls.LoadX509KeyPair(e.esConf.SSLCertFile, e.esConf.SSLKeyFile)
+	if err != nil {
+		e.log.Debug("Error loading mTLS certificates:", err)
+		return err
+	}
+	// #nosec G402
+	e.esConf.tlsConfig = &tls.Config{
+		Certificates:       []tls.Certificate{cert},
+		InsecureSkipVerify: e.esConf.SSLInsecureSkipVerify,
+	}
 	return nil
 }
 
