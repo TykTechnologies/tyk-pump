@@ -129,7 +129,7 @@ type ApiKeyTransport struct {
 	APIKeyID string
 }
 
-//RoundTrip for ApiKeyTransport auth
+// RoundTrip for ApiKeyTransport auth
 func (t *ApiKeyTransport) RoundTrip(r *http.Request) (*http.Response, error) {
 	auth := t.APIKeyID + ":" + t.APIKey
 	key := base64.StdEncoding.EncodeToString([]byte(auth))

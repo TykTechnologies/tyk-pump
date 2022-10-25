@@ -151,7 +151,7 @@ func Test_SplunkWriteDataBatch(t *testing.T) {
 
 }
 
-//getEventBytes returns the bytes amount of the marshalled events struct
+// getEventBytes returns the bytes amount of the marshalled events struct
 func getEventBytes(records []interface{}) int {
 	result := 0
 
