@@ -135,10 +135,10 @@ func TestSetAggregateTimestamp(t *testing.T) {
 	asTime := time.Now()
 
 	tests := []struct {
+		ExpectedTime    time.Time
 		testName        string
 		DBIdentifier    string
 		AggregationTime int
-		ExpectedTime    time.Time
 	}{
 		{
 			testName:        "AggregationTime is 60",
