@@ -321,6 +321,7 @@ Available Mongo instances are: Standard Mongo, DocumentDB (AWS), CosmosDB (Azure
         "use_mixed_collection": true,
         "store_analytics_per_minute": false,
         "aggregation_time": 50,
+        "enable_aggregate_self_healing": true,
         "track_all_paths": false
       },
       "mongo-pump-selective": {
