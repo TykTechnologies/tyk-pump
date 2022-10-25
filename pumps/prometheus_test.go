@@ -2,6 +2,7 @@ package pumps
 
 import (
 	"errors"
+	"os"
 	"testing"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
@@ -20,7 +21,7 @@ func TestInitVec(t *testing.T) {
 			testName: "Counter metric",
 			customMetric: PrometheusMetric{
 				Name:       "testCounterMetric",
-				MetricType: COUNTER_TYPE,
+				MetricType: counterType,
 				Labels:     []string{"response_code", "api_id"},
 			},
 			expectedErr: nil,
@@ -30,7 +31,7 @@ func TestInitVec(t *testing.T) {
 			testName: "Histogram metric",
 			customMetric: PrometheusMetric{
 				Name:       "testHistogramMetric",
-				MetricType: HISTOGRAM_TYPE,
+				MetricType: histogramType,
 				Labels:     []string{"type", "api_id"},
 			},
 			expectedErr: nil,
@@ -58,16 +59,15 @@ func TestInitVec(t *testing.T) {
 
 			assert.Equal(t, tc.isEnabled, tc.isEnabled)
 
-			if tc.customMetric.MetricType == COUNTER_TYPE {
+			if tc.customMetric.MetricType == counterType {
 				assert.NotNil(t, tc.customMetric.counterVec)
 				assert.Equal(t, tc.isEnabled, prometheus.Unregister(tc.customMetric.counterVec))
 
-			} else if tc.customMetric.MetricType == HISTOGRAM_TYPE {
+			} else if tc.customMetric.MetricType == histogramType {
 				assert.NotNil(t, tc.customMetric.histogramVec)
 				assert.Equal(t, tc.isEnabled, prometheus.Unregister(tc.customMetric.histogramVec))
 
 			}
-
 		})
 	}
 }
@@ -88,7 +88,7 @@ func TestInitCustomMetrics(t *testing.T) {
 			metrics: []PrometheusMetric{
 				{
 					Name:       "test",
-					MetricType: COUNTER_TYPE,
+					MetricType: counterType,
 					Labels:     []string{"api_name"},
 				},
 			},
@@ -99,12 +99,12 @@ func TestInitCustomMetrics(t *testing.T) {
 			metrics: []PrometheusMetric{
 				{
 					Name:       "test",
-					MetricType: COUNTER_TYPE,
+					MetricType: counterType,
 					Labels:     []string{"api_name"},
 				},
 				{
 					Name:       "other_test",
-					MetricType: COUNTER_TYPE,
+					MetricType: counterType,
 					Labels:     []string{"api_name", "api_key"},
 				},
 			},
@@ -115,17 +115,17 @@ func TestInitCustomMetrics(t *testing.T) {
 			metrics: []PrometheusMetric{
 				{
 					Name:       "test",
-					MetricType: COUNTER_TYPE,
+					MetricType: counterType,
 					Labels:     []string{"api_name"},
 				},
 				{
 					Name:       "other_test",
-					MetricType: COUNTER_TYPE,
+					MetricType: counterType,
 					Labels:     []string{"api_name", "api_key"},
 				},
 				{
 					Name:       "histogram_test",
-					MetricType: HISTOGRAM_TYPE,
+					MetricType: histogramType,
 					Labels:     []string{"api_name", "api_key"},
 				},
 			},
@@ -141,7 +141,7 @@ func TestInitCustomMetrics(t *testing.T) {
 				},
 				{
 					Name:       "other_test",
-					MetricType: COUNTER_TYPE,
+					MetricType: counterType,
 					Labels:     []string{"api_name", "api_key"},
 				},
 			},
@@ -157,18 +157,105 @@ func TestInitCustomMetrics(t *testing.T) {
 			p.conf.CustomMetrics = tc.metrics
 
 			p.InitCustomMetrics()
-			//this function do the unregistering for the metrics in the prometheus lib.
+			// this function do the unregistering for the metrics in the prometheus lib.
 			defer func() {
 				for i := range tc.metrics {
-					if tc.metrics[i].MetricType == COUNTER_TYPE {
+					if tc.metrics[i].MetricType == counterType {
 						prometheus.Unregister(tc.metrics[i].counterVec)
-					} else if tc.metrics[i].MetricType == HISTOGRAM_TYPE {
+					} else if tc.metrics[i].MetricType == histogramType {
 						prometheus.Unregister(tc.metrics[i].histogramVec)
 					}
 				}
 			}()
 			assert.Equal(t, tc.expectedAllMetricsLen, len(p.allMetrics))
+		})
+	}
+}
 
+func TestInitCustomMetricsEnv(t *testing.T) {
+	tcs := []struct {
+		testName        string
+		envKey          string
+		envValue        string
+		envPrefix       string
+		expectedErr     error
+		expectedMetrics CustomMetrics
+	}{
+		{
+			testName:    "valid custom - coutner metric",
+			envPrefix:   "TYK_PMP_PUMPS_PROMETHEUS_META",
+			envKey:      "TYK_PMP_PUMPS_PROMETHEUS_META_CUSTOMMETRICS",
+			envValue:    `[{"name":"tyk_http_requests_total","help":"Total of API requests","metric_type":"counter","labels":["response_code","api_name"]}]`,
+			expectedErr: nil,
+			expectedMetrics: CustomMetrics{
+				PrometheusMetric{
+					Name:       "tyk_http_requests_total",
+					Help:       "Total of API requests",
+					MetricType: counterType,
+					Labels:     []string{"response_code", "api_name"},
+				},
+			},
+		},
+		{
+			testName:    "valid customs - counter metric",
+			envPrefix:   "TYK_PMP_PUMPS_PROMETHEUS_META",
+			envKey:      "TYK_PMP_PUMPS_PROMETHEUS_META_CUSTOMMETRICS",
+			envValue:    `[{"name":"tyk_http_requests_total","help":"Total of API requests","metric_type":"counter","labels":["response_code","api_name"]},{"name":"tyk_http_requests_total_two","help":"Total Two of API requests","metric_type":"counter","labels":["response_code","api_name"]}]`,
+			expectedErr: nil,
+			expectedMetrics: CustomMetrics{
+				PrometheusMetric{
+					Name:       "tyk_http_requests_total",
+					Help:       "Total of API requests",
+					MetricType: counterType,
+					Labels:     []string{"response_code", "api_name"},
+				},
+				PrometheusMetric{
+					Name:       "tyk_http_requests_total_two",
+					Help:       "Total Two of API requests",
+					MetricType: counterType,
+					Labels:     []string{"response_code", "api_name"},
+				},
+			},
+		},
+		{
+			testName:    "valid customs - histogram metric",
+			envPrefix:   "TYK_PMP_PUMPS_PROMETHEUS_META",
+			envKey:      "TYK_PMP_PUMPS_PROMETHEUS_META_CUSTOMMETRICS",
+			envValue:    `[{"name":"tyk_http_requests_total","help":"Total of API requests","metric_type":"histogram","buckets":[100,200],"labels":["response_code","api_name"]}]`,
+			expectedErr: nil,
+			expectedMetrics: CustomMetrics{
+				PrometheusMetric{
+					Name:       "tyk_http_requests_total",
+					Help:       "Total of API requests",
+					MetricType: histogramType,
+					Buckets:    []float64{100, 200},
+					Labels:     []string{"response_code", "api_name"},
+				},
+			},
+		},
+		{
+			testName:        "invalid custom metric format",
+			envPrefix:       "TYK_PMP_PUMPS_PROMETHEUS_META",
+			envKey:          "TYK_PMP_PUMPS_PROMETHEUS_META_CUSTOMMETRICS",
+			envValue:        `["name":"tyk_http_requests_total","help":"Total of API requests","metric_type":"histogram","buckets":[100,200],"labels":["response_code","api_name"]]`,
+			expectedErr:     nil,
+			expectedMetrics: CustomMetrics(nil),
+		},
+	}
+	for _, tc := range tcs {
+		t.Run(tc.testName, func(t *testing.T) {
+			err := os.Setenv(tc.envKey, tc.envValue)
+			assert.Equal(t, tc.expectedErr, err)
+			defer os.Unsetenv(tc.envKey)
+
+			pmp := &PrometheusPump{}
+
+			pmp.log = log.WithField("prefix", prometheusPrefix)
+			pmp.conf = &PrometheusConf{}
+			pmp.conf.EnvPrefix = tc.envPrefix
+			processPumpEnvVars(pmp, pmp.log, pmp.conf, prometheusDefaultENV)
+
+			assert.Equal(t, tc.expectedMetrics, pmp.conf.CustomMetrics)
 		})
 	}
 }
@@ -184,7 +271,7 @@ func TestGetLabelsValues(t *testing.T) {
 			testName: "tree valid labels",
 			customMetric: PrometheusMetric{
 				Name:       "testCounterMetric",
-				MetricType: COUNTER_TYPE,
+				MetricType: counterType,
 				Labels:     []string{"response_code", "api_id", "api_key"},
 			},
 			record: analytics.AnalyticsRecord{
@@ -198,7 +285,7 @@ func TestGetLabelsValues(t *testing.T) {
 			testName: "two valid labels - one wrong",
 			customMetric: PrometheusMetric{
 				Name:       "testCounterMetric",
-				MetricType: COUNTER_TYPE,
+				MetricType: counterType,
 				Labels:     []string{"host", "method", "randomLabel"},
 			},
 			record: analytics.AnalyticsRecord{
@@ -214,7 +301,7 @@ func TestGetLabelsValues(t *testing.T) {
 			testName: "situational labels names ",
 			customMetric: PrometheusMetric{
 				Name:       "testCounterMetric",
-				MetricType: COUNTER_TYPE,
+				MetricType: counterType,
 				Labels:     []string{"code", "api", "key"},
 			},
 			record: analytics.AnalyticsRecord{
@@ -237,7 +324,6 @@ func TestGetLabelsValues(t *testing.T) {
 }
 
 func TestPrometheusCounterMetric(t *testing.T) {
-
 	tcs := []struct {
 		testName string
 
@@ -251,7 +337,7 @@ func TestPrometheusCounterMetric(t *testing.T) {
 			metric: &PrometheusMetric{
 				Name:       "tyk_http_status",
 				Help:       "HTTP status codes per API",
-				MetricType: COUNTER_TYPE,
+				MetricType: counterType,
 				Labels:     []string{"code", "api"},
 			},
 			analyticsRecords: []analytics.AnalyticsRecord{
@@ -272,7 +358,7 @@ func TestPrometheusCounterMetric(t *testing.T) {
 			metric: &PrometheusMetric{
 				Name:       "tyk_http_status_per_path",
 				Help:       "HTTP status codes per API path and method",
-				MetricType: COUNTER_TYPE,
+				MetricType: counterType,
 				Labels:     []string{"code", "api", "path", "method"},
 			},
 			analyticsRecords: []analytics.AnalyticsRecord{
@@ -297,7 +383,7 @@ func TestPrometheusCounterMetric(t *testing.T) {
 			metric: &PrometheusMetric{
 				Name:       "tyk_http_status_per_key",
 				Help:       "HTTP status codes per API key",
-				MetricType: COUNTER_TYPE,
+				MetricType: counterType,
 				Labels:     []string{"code", "key"},
 			},
 			analyticsRecords: []analytics.AnalyticsRecord{
@@ -319,7 +405,7 @@ func TestPrometheusCounterMetric(t *testing.T) {
 			metric: &PrometheusMetric{
 				Name:       "tyk_http_status_per_oauth_client",
 				Help:       "HTTP status codes per oAuth client id",
-				MetricType: COUNTER_TYPE,
+				MetricType: counterType,
 				Labels:     []string{"code", "client_id"},
 			},
 			analyticsRecords: []analytics.AnalyticsRecord{
@@ -341,7 +427,7 @@ func TestPrometheusCounterMetric(t *testing.T) {
 			metric: &PrometheusMetric{
 				Name:       "tyk_http_status_per_api_key_alias",
 				Help:       "HTTP status codes per api name and key alias",
-				MetricType: COUNTER_TYPE,
+				MetricType: counterType,
 				Labels:     []string{"code", "api", "alias"},
 			},
 			analyticsRecords: []analytics.AnalyticsRecord{
@@ -386,7 +472,6 @@ func TestPrometheusCounterMetric(t *testing.T) {
 }
 
 func TestPrometheusHistogramMetric(t *testing.T) {
-
 	tcs := []struct {
 		testName string
 
@@ -401,7 +486,7 @@ func TestPrometheusHistogramMetric(t *testing.T) {
 			metric: &PrometheusMetric{
 				Name:                   "tyk_latency_per_api",
 				Help:                   "Latency added by Tyk, Total Latency, and upstream latency per API",
-				MetricType:             HISTOGRAM_TYPE,
+				MetricType:             histogramType,
 				Buckets:                buckets,
 				Labels:                 []string{"type", "api"},
 				aggregatedObservations: true,
@@ -427,7 +512,7 @@ func TestPrometheusHistogramMetric(t *testing.T) {
 			metric: &PrometheusMetric{
 				Name:                   "tyk_latency_per_api_2",
 				Help:                   "Latency added by Tyk, Total Latency, and upstream latency per API",
-				MetricType:             HISTOGRAM_TYPE,
+				MetricType:             histogramType,
 				Buckets:                buckets,
 				Labels:                 []string{"type", "api"},
 				aggregatedObservations: false,
@@ -447,7 +532,7 @@ func TestPrometheusHistogramMetric(t *testing.T) {
 			metric: &PrometheusMetric{
 				Name:                   "tyk_latency_per_api_method_path",
 				Help:                   "Latency added by Tyk, Total Latency, and upstream latency per API_ID, Method and Path",
-				MetricType:             HISTOGRAM_TYPE,
+				MetricType:             histogramType,
 				Buckets:                buckets,
 				Labels:                 []string{"type", "api_id", "method", "path"},
 				aggregatedObservations: true,
@@ -524,7 +609,6 @@ func TestPrometheusCreateBasicMetrics(t *testing.T) {
 
 	assert.EqualValues(t, actualMetricsNames, []string{"tyk_http_status", "tyk_http_status_per_path", "tyk_http_status_per_key", "tyk_http_status_per_oauth_client", "tyk_latency"})
 
-	assert.Equal(t, 4, actualMetricTypeCounter[COUNTER_TYPE])
-	assert.Equal(t, 1, actualMetricTypeCounter[HISTOGRAM_TYPE])
-
+	assert.Equal(t, 4, actualMetricTypeCounter[counterType])
+	assert.Equal(t, 1, actualMetricTypeCounter[histogramType])
 }

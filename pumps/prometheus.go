@@ -2,6 +2,7 @@ package pumps
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -40,7 +41,13 @@ type PrometheusConf struct {
 	// Enabling this will reduce the CPU usage of your prometheus pump but you will loose histogram precision. Experimental.
 	AggregateObservations bool `json:"aggregate_observations" mapstructure:"aggregate_observations"`
 	// Custom Prometheus metrics.
-	CustomMetrics []PrometheusMetric `json:"custom_metrics" mapstructure:"custom_metrics"`
+	CustomMetrics CustomMetrics `json:"custom_metrics" mapstructure:"custom_metrics"`
+}
+
+type CustomMetrics []PrometheusMetric
+
+func (metrics *CustomMetrics) Set(data string) error {
+	return json.Unmarshal([]byte(data), &metrics)
 }
 
 type PrometheusMetric struct {
@@ -69,17 +76,21 @@ type PrometheusMetric struct {
 	aggregatedObservations bool
 }
 
-//histogramCounter is a helper struct to mantain the totalRequestTime and hits in memory
+// histogramCounter is a helper struct to mantain the totalRequestTime and hits in memory
 type histogramCounter struct {
 	totalRequestTime uint64
 	hits             uint64
 }
 
-const COUNTER_TYPE = "counter"
-const HISTOGRAM_TYPE = "histogram"
+const (
+	counterType   = "counter"
+	histogramType = "histogram"
+)
 
-var prometheusPrefix = "prometheus-pump"
-var prometheusDefaultENV = PUMPS_ENV_PREFIX + "_PROMETHEUS"
+var (
+	prometheusPrefix     = "prometheus-pump"
+	prometheusDefaultENV = PUMPS_ENV_PREFIX + "_PROMETHEUS"
+)
 
 var buckets = []float64{1, 2, 5, 7, 10, 15, 20, 25, 30, 40, 50, 60, 70, 80, 90, 100, 200, 300, 400, 500, 1000, 2000, 5000, 10000, 30000, 60000}
 
@@ -91,40 +102,39 @@ func (p *PrometheusPump) New() Pump {
 	return &newPump
 }
 
-//CreateBasicMetrics stores all the predefined pump metrics in allMetrics slice
+// CreateBasicMetrics stores all the predefined pump metrics in allMetrics slice
 func (p *PrometheusPump) CreateBasicMetrics() {
-
-	//counter metrics
+	// counter metrics
 	totalStatusMetric := &PrometheusMetric{
 		Name:       "tyk_http_status",
 		Help:       "HTTP status codes per API",
-		MetricType: COUNTER_TYPE,
+		MetricType: counterType,
 		Labels:     []string{"code", "api"},
 	}
 	pathStatusMetrics := &PrometheusMetric{
 		Name:       "tyk_http_status_per_path",
 		Help:       "HTTP status codes per API path and method",
-		MetricType: COUNTER_TYPE,
+		MetricType: counterType,
 		Labels:     []string{"code", "api", "path", "method"},
 	}
 	keyStatusMetrics := &PrometheusMetric{
 		Name:       "tyk_http_status_per_key",
 		Help:       "HTTP status codes per API key",
-		MetricType: COUNTER_TYPE,
+		MetricType: counterType,
 		Labels:     []string{"code", "key"},
 	}
 	oauthStatusMetrics := &PrometheusMetric{
 		Name:       "tyk_http_status_per_oauth_client",
 		Help:       "HTTP status codes per oAuth client id",
-		MetricType: COUNTER_TYPE,
+		MetricType: counterType,
 		Labels:     []string{"code", "client_id"},
 	}
 
-	//histogram metrics
+	// histogram metrics
 	totalLatencyMetrics := &PrometheusMetric{
 		Name:       "tyk_latency",
 		Help:       "Latency added by Tyk, Total Latency, and upstream latency per API",
-		MetricType: HISTOGRAM_TYPE,
+		MetricType: histogramType,
 		Buckets:    buckets,
 		Labels:     []string{"type", "api"},
 	}
@@ -150,7 +160,6 @@ func (p *PrometheusPump) Init(conf interface{}) error {
 	}
 
 	processPumpEnvVars(p, p.log, p.conf, prometheusDefaultENV)
-
 	if p.conf.Path == "" {
 		p.conf.Path = "/metrics"
 	}
@@ -159,7 +168,7 @@ func (p *PrometheusPump) Init(conf interface{}) error {
 		return errors.New("Prometheus listen_addr not set")
 	}
 
-	//first we init the base metrics
+	// first we init the base metrics
 	for _, metric := range p.allMetrics {
 		metric.aggregatedObservations = p.conf.AggregateObservations
 		errInit := metric.InitVec()
@@ -168,7 +177,7 @@ func (p *PrometheusPump) Init(conf interface{}) error {
 		}
 	}
 
-	//then we check the custom ones
+	// then we check the custom ones
 	p.InitCustomMetrics()
 
 	p.log.Info("Starting prometheus listener on:", p.conf.Addr)
@@ -183,7 +192,7 @@ func (p *PrometheusPump) Init(conf interface{}) error {
 	return nil
 }
 
-//InitCustomMetrics initialise custom prometheus metrics based on p.conf.CustomMetrics and add them into p.allMetrics
+// InitCustomMetrics initialise custom prometheus metrics based on p.conf.CustomMetrics and add them into p.allMetrics
 func (p *PrometheusPump) InitCustomMetrics() {
 	if len(p.conf.CustomMetrics) > 0 {
 		customMetrics := []*PrometheusMetric{}
@@ -214,17 +223,17 @@ func (p *PrometheusPump) WriteData(ctx context.Context, data []interface{}) erro
 		default:
 		}
 		record := item.(analytics.AnalyticsRecord)
-		//we loop through all the metrics avaialble.
+		// we loop through all the metrics available.
 		for _, metric := range p.allMetrics {
 			if metric.enabled {
 				p.log.Debug("Processing metric:", metric.Name)
-				//we get the values for that metric required labels
+				// we get the values for that metric required labels
 				values := metric.GetLabelsValues(record)
 
 				switch metric.MetricType {
-				case COUNTER_TYPE:
+				case counterType:
 					if metric.counterVec != nil {
-						//if the metric is a counter, we increment the counter memory map
+						// if the metric is a counter, we increment the counter memory map
 						err := metric.Inc(values...)
 						if err != nil {
 							p.log.WithFields(logrus.Fields{
@@ -233,9 +242,9 @@ func (p *PrometheusPump) WriteData(ctx context.Context, data []interface{}) erro
 							}).Error("error incrementing prometheus metric value:", err)
 						}
 					}
-				case HISTOGRAM_TYPE:
+				case histogramType:
 					if metric.histogramVec != nil {
-						//if the metric is an histogram, we Observe the request time with the given values
+						// if the metric is an histogram, we Observe the request time with the given values
 						err := metric.Observe(record.RequestTime, values...)
 						if err != nil {
 							p.log.WithFields(logrus.Fields{
@@ -251,7 +260,7 @@ func (p *PrometheusPump) WriteData(ctx context.Context, data []interface{}) erro
 		}
 	}
 
-	//after looping through all the analytics records, we expose the metrics to prometheus endpoint
+	// after looping through all the analytics records, we expose the metrics to prometheus endpoint
 	for _, customMetric := range p.allMetrics {
 		err := customMetric.Expose()
 		if err != nil {
@@ -335,14 +344,14 @@ func (pm *PrometheusMetric) GetLabelsValues(decoded analytics.AnalyticsRecord) [
 	return values
 }
 
-//Inc is going to fill counterMap and histogramMap with the data from record.
+// Inc is going to fill counterMap and histogramMap with the data from record.
 func (pm *PrometheusMetric) Inc(values ...string) error {
 	switch pm.MetricType {
-	case COUNTER_TYPE:
+	case counterType:
 		// "response_code", "api_name", "method"
 		// key = map[500--apitest-GET] = 4
 
-		//map[]
+		// map[]
 
 		pm.counterMap[strings.Join(values, "--")] += 1
 	default:
@@ -352,10 +361,10 @@ func (pm *PrometheusMetric) Inc(values ...string) error {
 	return nil
 }
 
-//Observe will fill hitogramMap with the sum of totalRequest and hits per label value if aggregate_observations is true. If aggregate_observations is set to false (default) it will execute prometheus Observe directly.
+// Observe will fill hitogramMap with the sum of totalRequest and hits per label value if aggregate_observations is true. If aggregate_observations is set to false (default) it will execute prometheus Observe directly.
 func (pm *PrometheusMetric) Observe(requestTime int64, values ...string) error {
 	switch pm.MetricType {
-	case HISTOGRAM_TYPE:
+	case histogramType:
 		labelValues := []string{"total"}
 		labelValues = append(labelValues, values...)
 		if pm.aggregatedObservations {
@@ -381,20 +390,20 @@ func (pm *PrometheusMetric) Observe(requestTime int64, values ...string) error {
 	return nil
 }
 
-//Expose executes prometheus library functions using the counter/histogram vector from the PrometheusMetric struct.
-//If the PrometheusMetric is COUNTER_TYPE, it will execute prometheus client Add function to add the counters from counterMap to the labels value metric
-//If the PrometheusMetric is HISTOGRAM_TYPE and aggregate_observations config is true, it will calculate the average value of the metrics in the histogramMap and execute prometheus Observe.
-//If aggregate_observations is false, it won't do anything since it means that we already exposed the metric.
+// Expose executes prometheus library functions using the counter/histogram vector from the PrometheusMetric struct.
+// If the PrometheusMetric is counterType, it will execute prometheus client Add function to add the counters from counterMap to the labels value metric
+// If the PrometheusMetric is histogramType and aggregate_observations config is true, it will calculate the average value of the metrics in the histogramMap and execute prometheus Observe.
+// If aggregate_observations is false, it won't do anything since it means that we already exposed the metric.
 func (pm *PrometheusMetric) Expose() error {
 	switch pm.MetricType {
-	case COUNTER_TYPE:
+	case counterType:
 		for key, value := range pm.counterMap {
 
 			labelsValue := strings.Split(key, "--")
 			pm.counterVec.WithLabelValues(labelsValue...).Add(float64(value))
 		}
 		pm.counterMap = make(map[string]uint64)
-	case HISTOGRAM_TYPE:
+	case histogramType:
 		if pm.aggregatedObservations {
 			for key, value := range pm.histogramMap {
 				labelsValue := strings.Split(key, "--")
@@ -408,7 +417,7 @@ func (pm *PrometheusMetric) Expose() error {
 	return nil
 }
 
-//getAverageRequestTime returns the average request time of an histogramCounter dividing the sum of all the RequestTimes by the hits.
+// getAverageRequestTime returns the average request time of an histogramCounter dividing the sum of all the RequestTimes by the hits.
 func (c histogramCounter) getAverageRequestTime() float64 {
 	return float64(c.totalRequestTime / c.hits)
 }
