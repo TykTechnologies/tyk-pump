@@ -345,7 +345,8 @@ func TestMongoPump_AccumulateSetIgnoreDocSize(t *testing.T) {
 	pump := newPump()
 	conf := defaultConf()
 	conf.MaxDocumentSizeBytes = 2048
-	mPump := pump.(*MongoPump)
+	mPump, ok := pump.(*MongoPump)
+	assert.True(t, ok)
 	mPump.dbConf = &conf
 	mPump.log = log.WithField("prefix", mongoPrefix)
 
