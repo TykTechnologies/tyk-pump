@@ -345,8 +345,17 @@ TYK_PMP_PUMPS_MONGO_META_MAXDOCUMENTSIZEBYTES=20112
 
 TYK_PMP_PUMPS_MONGOAGG_TYPE=mongo-pump-aggregate
 TYK_PMP_PUMPS_MONGOAGG_META_USEMIXEDCOLLECTION=true
+TYK_PMP_PUMPS_MONGOAGG_META_STOREANALYTICSPERMINUTE=false
+TYK_PMP_PUMPS_MONGOAGG_META_AGGREGATIONTIME=50
+TYK_PMP_PUMPS_MONGOAGG_META_ENABLESELFHEALING=true
 ```
 
+###### Self Healing
+The default max size of a document in MongoDB is 16Mb. In Mongo Aggregate, when we try to update a document, and the size reaches the limit, an error is received.
+When Self Healing is enabled and a document size hits 16Mb, Pump will create a new document with the current timestamp and reduce the aggregation time configuration by half. So, if the current_aggregation time is equal to 50, it will be reduced to 25. Also, the data that was being written, is sent to the new document created using its timestamp. 
+Now, following this example, new data will be stored into this new document, and a new document will be created every 25 minutes.
+
+Note that if `store_analytics_per_minute` is equal to true, the value of `aggregation_time` will be equal to 1, no matter the value set. This was designed in this way because of backward compatibility.
 ###### Mongo Graph Pump
 As of Pump 1.7+, a new mongo is available called the `mongo_graph` pump. This pump is specifically for parsing 
 GraphQL and UDG requests, tracking information like types requested, fields requested, specific graphql body errors etc.
