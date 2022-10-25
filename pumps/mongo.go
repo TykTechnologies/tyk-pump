@@ -556,11 +556,6 @@ func (m *MongoPump) AccumulateSet(data []interface{}, isForGraphRecords bool) []
 		if isGraphRecord != isForGraphRecords {
 			continue
 		}
-		if isForGraphRecords {
-			if thisItem.RawRequest == "" || thisItem.RawResponse == "" || thisItem.ApiSchema == "" {
-				continue
-			}
-		}
 
 		// Add 1 KB for metadata as average
 		sizeBytes := len(thisItem.RawRequest) + len(thisItem.RawResponse) + 1024
