@@ -2,6 +2,7 @@ package analytics
 
 import (
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -128,4 +129,44 @@ func TestAggregateData_SkipGraphRecords(t *testing.T) {
 		[]string{"123", "987"},
 		[]string{"777-graph", "555-graph"},
 	))
+}
+
+func TestSetAggregateTimestamp(t *testing.T) {
+	asTime := time.Now()
+
+	tests := []struct {
+		testName        string
+		DBIdentifier    string
+		AggregationTime int
+		ExpectedTime    time.Time
+	}{
+		{
+			testName:        "AggregationTime is 60",
+			AggregationTime: 60,
+			DBIdentifier:    "testing-mongo",
+			ExpectedTime:    time.Date(asTime.Year(), asTime.Month(), asTime.Day(), asTime.Hour(), 0, 0, 0, asTime.Location()),
+		},
+		{
+			testName:        "AggregationTime is 1",
+			AggregationTime: 1,
+			DBIdentifier:    "testing-mongo",
+			ExpectedTime:    time.Date(asTime.Year(), asTime.Month(), asTime.Day(), asTime.Hour(), asTime.Minute(), 0, 0, asTime.Location()),
+		},
+		{
+			testName:        "AggregationTime is 40",
+			AggregationTime: 40,
+			DBIdentifier:    "testing-mongo",
+			ExpectedTime:    time.Date(asTime.Year(), asTime.Month(), asTime.Day(), asTime.Hour(), asTime.Minute(), 0, 0, asTime.Location()),
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.testName, func(t *testing.T) {
+			ts := setAggregateTimestamp(test.DBIdentifier, asTime, test.AggregationTime)
+			assert.Equal(t, test.ExpectedTime, ts)
+		})
+	}
+
+	SetlastTimestampAgggregateRecord("testing-setLastTimestamp", time.Now().Add(-time.Minute*10))
+	ts := setAggregateTimestamp("testing-setLastTimestamp", asTime, 7)
+	assert.Equal(t, time.Date(asTime.Year(), asTime.Month(), asTime.Day(), asTime.Hour(), asTime.Minute(), 0, 0, asTime.Location()), ts)
 }

@@ -213,7 +213,6 @@ func TestAggregationTime(t *testing.T) {
 
 			analyticsCollection := thisSession.DB("").C(collectionName)
 
-			// we build the query using the timestamp as we do in aggregated analytics
 			query := bson.M{
 				"orgid": "123",
 			}
