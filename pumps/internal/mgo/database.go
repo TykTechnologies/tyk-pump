@@ -3,7 +3,6 @@ package mgo
 import mgo "gopkg.in/mgo.v2"
 
 type DatabaseManager interface {
-	// AddUser(username, password string, readOnly bool) error
 	C(name string) CollectionManager
 	CollectionNames() (names []string, err error)
 	DropDatabase() error
