@@ -81,6 +81,7 @@ type ElasticsearchConf struct {
 	// Can be used to set custom key file for authentication with Elastic Search.
 	SSLKeyFile string `json:"ssl_key_file" mapstructure:"ssl_key_file"`
 
+	// tlsConfig is used to store the TLS configuration for the pump client. It is set in the init function - not through env vars.
 	tlsConfig *tls.Config
 }
 
