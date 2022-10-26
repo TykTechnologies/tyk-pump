@@ -193,10 +193,10 @@ func TestInitCustomMetricsEnv(t *testing.T) {
 		expectedMetrics CustomMetrics
 	}{
 		{
-			testName:    "valid custom - coutner metric",
-			envPrefix:   "TYK_PMP_PUMPS_PROMETHEUS_META",
-			envKey:      "TYK_PMP_PUMPS_PROMETHEUS_META_CUSTOMMETRICS",
-			envValue:    `[{"name":"tyk_http_requests_total","help":"Total of API requests","metric_type":"counter","labels":["response_code","api_name"]}]`,
+			testName:  "valid custom - coutner metric",
+			envPrefix: "TYK_PMP_PUMPS_PROMETHEUS_META",
+			envKey:    "TYK_PMP_PUMPS_PROMETHEUS_META_CUSTOMMETRICS",
+			envValue:  `[{"name":"tyk_http_requests_total","help":"Total of API requests","metric_type":"counter","labels":["response_code","api_name"]}]`,
 			expectedMetrics: CustomMetrics{
 				PrometheusMetric{
 					Name:       "tyk_http_requests_total",
@@ -207,10 +207,10 @@ func TestInitCustomMetricsEnv(t *testing.T) {
 			},
 		},
 		{
-			testName:    "valid customs - counter metric",
-			envPrefix:   "TYK_PMP_PUMPS_PROMETHEUS_META",
-			envKey:      "TYK_PMP_PUMPS_PROMETHEUS_META_CUSTOMMETRICS",
-			envValue:    `[{"name":"tyk_http_requests_total","help":"Total of API requests","metric_type":"counter","labels":["response_code","api_name"]},{"name":"tyk_http_requests_total_two","help":"Total Two of API requests","metric_type":"counter","labels":["response_code","api_name"]}]`,
+			testName:  "valid customs - counter metric",
+			envPrefix: "TYK_PMP_PUMPS_PROMETHEUS_META",
+			envKey:    "TYK_PMP_PUMPS_PROMETHEUS_META_CUSTOMMETRICS",
+			envValue:  `[{"name":"tyk_http_requests_total","help":"Total of API requests","metric_type":"counter","labels":["response_code","api_name"]},{"name":"tyk_http_requests_total_two","help":"Total Two of API requests","metric_type":"counter","labels":["response_code","api_name"]}]`,
 			expectedMetrics: CustomMetrics{
 				PrometheusMetric{
 					Name:       "tyk_http_requests_total",
@@ -227,10 +227,10 @@ func TestInitCustomMetricsEnv(t *testing.T) {
 			},
 		},
 		{
-			testName:    "valid customs - histogram metric",
-			envPrefix:   "TYK_PMP_PUMPS_PROMETHEUS_META",
-			envKey:      "TYK_PMP_PUMPS_PROMETHEUS_META_CUSTOMMETRICS",
-			envValue:    `[{"name":"tyk_http_requests_total","help":"Total of API requests","metric_type":"histogram","buckets":[100,200],"labels":["response_code","api_name"]}]`,
+			testName:  "valid customs - histogram metric",
+			envPrefix: "TYK_PMP_PUMPS_PROMETHEUS_META",
+			envKey:    "TYK_PMP_PUMPS_PROMETHEUS_META_CUSTOMMETRICS",
+			envValue:  `[{"name":"tyk_http_requests_total","help":"Total of API requests","metric_type":"histogram","buckets":[100,200],"labels":["response_code","api_name"]}]`,
 			expectedMetrics: CustomMetrics{
 				PrometheusMetric{
 					Name:       "tyk_http_requests_total",
