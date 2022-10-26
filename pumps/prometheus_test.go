@@ -190,7 +190,6 @@ func TestInitCustomMetricsEnv(t *testing.T) {
 		envKey          string
 		envValue        string
 		envPrefix       string
-		expectedErr     error
 		expectedMetrics CustomMetrics
 	}{
 		{
@@ -198,7 +197,6 @@ func TestInitCustomMetricsEnv(t *testing.T) {
 			envPrefix:   "TYK_PMP_PUMPS_PROMETHEUS_META",
 			envKey:      "TYK_PMP_PUMPS_PROMETHEUS_META_CUSTOMMETRICS",
 			envValue:    `[{"name":"tyk_http_requests_total","help":"Total of API requests","metric_type":"counter","labels":["response_code","api_name"]}]`,
-			expectedErr: nil,
 			expectedMetrics: CustomMetrics{
 				PrometheusMetric{
 					Name:       "tyk_http_requests_total",
@@ -213,7 +211,6 @@ func TestInitCustomMetricsEnv(t *testing.T) {
 			envPrefix:   "TYK_PMP_PUMPS_PROMETHEUS_META",
 			envKey:      "TYK_PMP_PUMPS_PROMETHEUS_META_CUSTOMMETRICS",
 			envValue:    `[{"name":"tyk_http_requests_total","help":"Total of API requests","metric_type":"counter","labels":["response_code","api_name"]},{"name":"tyk_http_requests_total_two","help":"Total Two of API requests","metric_type":"counter","labels":["response_code","api_name"]}]`,
-			expectedErr: nil,
 			expectedMetrics: CustomMetrics{
 				PrometheusMetric{
 					Name:       "tyk_http_requests_total",
@@ -234,7 +231,6 @@ func TestInitCustomMetricsEnv(t *testing.T) {
 			envPrefix:   "TYK_PMP_PUMPS_PROMETHEUS_META",
 			envKey:      "TYK_PMP_PUMPS_PROMETHEUS_META_CUSTOMMETRICS",
 			envValue:    `[{"name":"tyk_http_requests_total","help":"Total of API requests","metric_type":"histogram","buckets":[100,200],"labels":["response_code","api_name"]}]`,
-			expectedErr: nil,
 			expectedMetrics: CustomMetrics{
 				PrometheusMetric{
 					Name:       "tyk_http_requests_total",
@@ -250,14 +246,27 @@ func TestInitCustomMetricsEnv(t *testing.T) {
 			envPrefix:       "TYK_PMP_PUMPS_PROMETHEUS_META",
 			envKey:          "TYK_PMP_PUMPS_PROMETHEUS_META_CUSTOMMETRICS",
 			envValue:        `["name":"tyk_http_requests_total","help":"Total of API requests","metric_type":"histogram","buckets":[100,200],"labels":["response_code","api_name"]]`,
-			expectedErr:     nil,
+			expectedMetrics: CustomMetrics(nil),
+		},
+		{
+			testName:        "invalid custom metric input",
+			envPrefix:       "TYK_PMP_PUMPS_PROMETHEUS_META",
+			envKey:          "TYK_PMP_PUMPS_PROMETHEUS_META_CUSTOMMETRICS",
+			envValue:        `invalid-input`,
+			expectedMetrics: CustomMetrics(nil),
+		},
+		{
+			testName:        "empty custom metric input",
+			envPrefix:       "TYK_PMP_PUMPS_PROMETHEUS_META",
+			envKey:          "TYK_PMP_PUMPS_PROMETHEUS_META_CUSTOMMETRICS",
+			envValue:        ``,
 			expectedMetrics: CustomMetrics(nil),
 		},
 	}
 	for _, tc := range tcs {
 		t.Run(tc.testName, func(t *testing.T) {
 			err := os.Setenv(tc.envKey, tc.envValue)
-			assert.Equal(t, tc.expectedErr, err)
+			assert.Nil(t, err)
 			defer os.Unsetenv(tc.envKey)
 
 			pmp := &PrometheusPump{}
