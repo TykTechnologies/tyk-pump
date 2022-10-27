@@ -18,7 +18,7 @@ import (
 	"time"
 )
 
-func Test_setTLSConfig(t *testing.T) {
+func Test_getTLSConfig(t *testing.T) {
 
 	certFile, keyFile, err := createSelfSignedCertificate()
 	if err != nil {
@@ -101,13 +101,13 @@ func Test_setTLSConfig(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := setTLSConfig(tt.args.SSLCertFile, tt.args.SSLKeyFile, tt.args.SSLInsecureSkipVerify)
+			got, err := GetTLSConfig(tt.args.SSLCertFile, tt.args.SSLKeyFile, tt.args.SSLInsecureSkipVerify)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("setTLSConfig() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("GetTLSConfig() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("setTLSConfig() = %v, want %v", got, tt.want)
+				t.Errorf("GetTLSConfig() = %v, want %v", got, tt.want)
 			}
 		})
 	}

@@ -80,9 +80,6 @@ type ElasticsearchConf struct {
 	SSLCertFile string `json:"ssl_cert_file" mapstructure:"ssl_cert_file"`
 	// Can be used to set custom key file for authentication with Elastic Search.
 	SSLKeyFile string `json:"ssl_key_file" mapstructure:"ssl_key_file"`
-
-	// tlsConfig is used to store the TLS configuration for the pump client. It is set in the init function - not through env vars.
-	tlsConfig *tls.Config
 }
 
 type ElasticsearchBulkConfig struct {
@@ -156,7 +153,12 @@ func (e *ElasticsearchPump) getOperator() (ElasticsearchOperator, error) {
 	}
 
 	if conf.UseSSL {
-		httpClient = &http.Client{Transport: &http.Transport{TLSClientConfig: e.esConf.tlsConfig}}
+		tlsConf, err := GetTLSConfig(conf.SSLCertFile, conf.SSLKeyFile, conf.SSLInsecureSkipVerify)
+		if err != nil {
+			e.log.WithError(err).Error("Failed to get TLS config")
+			return nil, err
+		}
+		httpClient = &http.Client{Transport: &http.Transport{TLSClientConfig: tlsConf}}
 	}
 
 	switch conf.Version {
@@ -371,23 +373,14 @@ func (e *ElasticsearchPump) Init(config interface{}) error {
 		e.log.Info("Index will have date appended to it in the format ", e.esConf.IndexName, "-YYYY.MM.DD")
 	}
 
-	if e.esConf.UseSSL {
-		e.log.Debug("Getting SSL Certificates")
-		tlsConfig, err := setTLSConfig(e.esConf.SSLCertFile, e.esConf.SSLKeyFile, e.esConf.SSLInsecureSkipVerify)
-		if err != nil {
-			e.log.Fatal("Failed to set TLS config: ", err)
-		}
-		e.esConf.tlsConfig = tlsConfig
-	}
-
 	e.connect()
 
 	e.log.Info(e.GetName() + " Initialized")
 	return nil
 }
 
-// setTLSConfig sets the TLS config for the pump
-func setTLSConfig(SSLCertFile, SSLKeyFile string, SSLInsecureSkipVerify bool) (*tls.Config, error) {
+// GetTLSConfig sets the TLS config for the pump
+func GetTLSConfig(SSLCertFile, SSLKeyFile string, SSLInsecureSkipVerify bool) (*tls.Config, error) {
 	var tlsConfig *tls.Config
 	// If the user has not specified a CA file nor a key file, we'll use a tls config with no certs
 	if SSLCertFile == "" && SSLKeyFile == "" {
