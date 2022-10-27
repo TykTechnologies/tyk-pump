@@ -27,9 +27,9 @@ func Test_getTLSConfig(t *testing.T) {
 	defer os.Remove(keyFile.Name())
 
 	tests := []struct {
-		name    string
 		args    *ElasticsearchConf
 		want    *tls.Config
+		name    string
 		wantErr bool
 	}{
 		{
@@ -134,7 +134,6 @@ func createSelfSignedCertificate() (*os.File, *os.File, error) {
 	derBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, publicKey(priv), priv)
 	if err != nil {
 		return nil, nil, err
-
 	}
 	out := &bytes.Buffer{}
 	err = pem.Encode(out, &pem.Block{Type: "CERTIFICATE", Bytes: derBytes})
@@ -144,7 +143,6 @@ func createSelfSignedCertificate() (*os.File, *os.File, error) {
 	certFile, err := os.CreateTemp("", "test.*.crt")
 	if err != nil {
 		return nil, nil, err
-
 	}
 	_, err = certFile.Write(out.Bytes())
 	if err != nil {
@@ -155,7 +153,6 @@ func createSelfSignedCertificate() (*os.File, *os.File, error) {
 	block, err := pemBlockForKey(priv)
 	if err != nil {
 		return nil, nil, err
-
 	}
 	err = pem.Encode(out, block)
 	if err != nil {
