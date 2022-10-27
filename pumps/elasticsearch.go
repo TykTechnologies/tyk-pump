@@ -153,7 +153,7 @@ func (e *ElasticsearchPump) getOperator() (ElasticsearchOperator, error) {
 	}
 
 	if conf.UseSSL {
-		tlsConf, err := GetTLSConfig(conf.SSLCertFile, conf.SSLKeyFile, conf.SSLInsecureSkipVerify)
+		tlsConf, err := e.GetTLSConfig()
 		if err != nil {
 			e.log.WithError(err).Error("Failed to get TLS config")
 			return nil, err
@@ -380,27 +380,27 @@ func (e *ElasticsearchPump) Init(config interface{}) error {
 }
 
 // GetTLSConfig sets the TLS config for the pump
-func GetTLSConfig(SSLCertFile, SSLKeyFile string, SSLInsecureSkipVerify bool) (*tls.Config, error) {
+func (e *ElasticsearchPump) GetTLSConfig() (*tls.Config, error) {
 	var tlsConfig *tls.Config
 	// If the user has not specified a CA file nor a key file, we'll use a tls config with no certs
-	if SSLCertFile == "" && SSLKeyFile == "" {
+	if e.esConf.SSLCertFile == "" && e.esConf.SSLKeyFile == "" {
 		// #nosec G402
 		tlsConfig = &tls.Config{
-			InsecureSkipVerify: SSLInsecureSkipVerify,
+			InsecureSkipVerify: e.esConf.SSLInsecureSkipVerify,
 		}
 		return tlsConfig, nil
 	}
 
 	// If the user has specified both a SSL cert file and a key file, we'll use them to create a tls config
-	if SSLCertFile != "" && SSLKeyFile != "" {
-		cert, err := tls.LoadX509KeyPair(SSLCertFile, SSLKeyFile)
+	if e.esConf.SSLCertFile != "" && e.esConf.SSLKeyFile != "" {
+		cert, err := tls.LoadX509KeyPair(e.esConf.SSLCertFile, e.esConf.SSLKeyFile)
 		if err != nil {
 			return tlsConfig, err
 		}
 		// #nosec G402
 		tlsConfig = &tls.Config{
 			Certificates:       []tls.Certificate{cert},
-			InsecureSkipVerify: SSLInsecureSkipVerify,
+			InsecureSkipVerify: e.esConf.SSLInsecureSkipVerify,
 		}
 		return tlsConfig, nil
 	}
@@ -408,7 +408,6 @@ func GetTLSConfig(SSLCertFile, SSLKeyFile string, SSLInsecureSkipVerify bool) (*
 	// If the user has specified a SSL cert file or a key file, but not both, we'll return an error
 	err := errors.New("only one of ssl_cert_file and ssl_cert_key configuration option is setted, you should set both to enable mTLS")
 	return tlsConfig, err
-
 }
 
 func (e *ElasticsearchPump) connect() {

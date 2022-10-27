@@ -19,7 +19,6 @@ import (
 )
 
 func Test_getTLSConfig(t *testing.T) {
-
 	certFile, keyFile, err := createSelfSignedCertificate()
 	if err != nil {
 		log.Fatal(err)
@@ -27,24 +26,20 @@ func Test_getTLSConfig(t *testing.T) {
 	defer os.Remove(certFile.Name())
 	defer os.Remove(keyFile.Name())
 
-	type args struct {
-		SSLCertFile           string
-		SSLKeyFile            string
-		SSLInsecureSkipVerify bool
-	}
 	tests := []struct {
 		name    string
-		args    args
+		args    *ElasticsearchConf
 		want    *tls.Config
 		wantErr bool
 	}{
 		{
 			name: "SSLCertFile, SSLKeyfile are set and InsecureSkipVerify = true",
-			args: args{
+			args: &ElasticsearchConf{
 				SSLCertFile:           certFile.Name(),
 				SSLKeyFile:            keyFile.Name(),
 				SSLInsecureSkipVerify: true,
 			},
+			// #nosec G402
 			want: &tls.Config{
 				Certificates:       getCertificate(certFile.Name(), keyFile.Name()),
 				InsecureSkipVerify: true,
@@ -55,11 +50,12 @@ func Test_getTLSConfig(t *testing.T) {
 			// No error expected. It should fail when sending data to ES, because we're using a self-signed certificate
 			// and InsecureSkipVerify is false
 			name: "SSLCertFile, SSLKeyfile are set and InsecureSkipVerify = false",
-			args: args{
+			args: &ElasticsearchConf{
 				SSLCertFile:           certFile.Name(),
 				SSLKeyFile:            keyFile.Name(),
 				SSLInsecureSkipVerify: true,
 			},
+			// #nosec G402
 			want: &tls.Config{
 				Certificates:       getCertificate(certFile.Name(), keyFile.Name()),
 				InsecureSkipVerify: true,
@@ -68,7 +64,7 @@ func Test_getTLSConfig(t *testing.T) {
 		},
 		{
 			name: "SSLKeyFile not set -> error expected because CertFile is set",
-			args: args{
+			args: &ElasticsearchConf{
 				SSLCertFile:           certFile.Name(),
 				SSLKeyFile:            "",
 				SSLInsecureSkipVerify: true,
@@ -78,7 +74,7 @@ func Test_getTLSConfig(t *testing.T) {
 		},
 		{
 			name: "CertFile not set -> error expected because KeyFile is set",
-			args: args{
+			args: &ElasticsearchConf{
 				SSLCertFile:           "",
 				SSLKeyFile:            keyFile.Name(),
 				SSLInsecureSkipVerify: true,
@@ -88,11 +84,12 @@ func Test_getTLSConfig(t *testing.T) {
 		},
 		{
 			name: "CertFile and KeyFile not set -> no error expected. It must return a tls.Config with InsecureSkipVerify = true",
-			args: args{
+			args: &ElasticsearchConf{
 				SSLCertFile:           "",
 				SSLKeyFile:            "",
 				SSLInsecureSkipVerify: true,
 			},
+			// #nosec G402
 			want: &tls.Config{
 				InsecureSkipVerify: true,
 			},
@@ -101,7 +98,10 @@ func Test_getTLSConfig(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := GetTLSConfig(tt.args.SSLCertFile, tt.args.SSLKeyFile, tt.args.SSLInsecureSkipVerify)
+			pump := ElasticsearchPump{
+				esConf: tt.args,
+			}
+			got, err := pump.GetTLSConfig()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetTLSConfig() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -137,13 +137,19 @@ func createSelfSignedCertificate() (*os.File, *os.File, error) {
 
 	}
 	out := &bytes.Buffer{}
-	pem.Encode(out, &pem.Block{Type: "CERTIFICATE", Bytes: derBytes})
+	err = pem.Encode(out, &pem.Block{Type: "CERTIFICATE", Bytes: derBytes})
+	if err != nil {
+		return nil, nil, err
+	}
 	certFile, err := os.CreateTemp("", "test.*.crt")
 	if err != nil {
 		return nil, nil, err
 
 	}
-	certFile.Write(out.Bytes())
+	_, err = certFile.Write(out.Bytes())
+	if err != nil {
+		return nil, nil, err
+	}
 
 	out.Reset()
 	block, err := pemBlockForKey(priv)
@@ -151,12 +157,18 @@ func createSelfSignedCertificate() (*os.File, *os.File, error) {
 		return nil, nil, err
 
 	}
-	pem.Encode(out, block)
+	err = pem.Encode(out, block)
+	if err != nil {
+		return nil, nil, err
+	}
 	keyFile, err := os.CreateTemp("", "test.*.key")
 	if err != nil {
-		log.Fatal(err)
+		return nil, nil, err
 	}
-	keyFile.Write(out.Bytes())
+	_, err = keyFile.Write(out.Bytes())
+	if err != nil {
+		return nil, nil, err
+	}
 	return certFile, keyFile, nil
 }
 
@@ -187,7 +199,10 @@ func pemBlockForKey(priv interface{}) (*pem.Block, error) {
 }
 
 func getCertificate(certFile, keyFile string) []tls.Certificate {
-	cert, _ := tls.LoadX509KeyPair(certFile, keyFile)
+	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	return []tls.Certificate{cert}
 }
