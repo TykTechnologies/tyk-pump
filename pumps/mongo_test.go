@@ -2,6 +2,7 @@ package pumps
 
 import (
 	"context"
+	"encoding/base64"
 	"strconv"
 	"testing"
 
@@ -337,4 +338,39 @@ func TestMongoPump_AccumulateSet(t *testing.T) {
 		},
 		50,
 	))
+}
+
+func TestMongoPump_AccumulateSetIgnoreDocSize(t *testing.T) {
+	bloat := base64.StdEncoding.EncodeToString(make([]byte, 2048))
+	pump := newPump()
+	conf := defaultConf()
+	conf.MaxDocumentSizeBytes = 2048
+	mPump, ok := pump.(*MongoPump)
+	assert.True(t, ok)
+	mPump.dbConf = &conf
+	mPump.log = log.WithField("prefix", mongoPrefix)
+
+	dataSet := make([]interface{}, 100)
+	for i := 0; i < 100; i++ {
+		record := analytics.AnalyticsRecord{}
+		if i%2 == 0 {
+			record.Tags = []string{analytics.PredefinedTagGraphAnalytics}
+			record.RawRequest = bloat
+			record.RawResponse = bloat
+			record.ApiSchema = bloat
+		}
+		dataSet[i] = record
+	}
+
+	accumulated := mPump.AccumulateSet(dataSet, true)
+	for _, x := range accumulated {
+		for _, y := range x {
+			rec, ok := y.(analytics.AnalyticsRecord)
+			assert.True(t, ok)
+			if rec.IsGraphRecord() {
+				assert.NotEmpty(t, rec.RawRequest)
+				assert.NotEmpty(t, rec.RawResponse)
+			}
+		}
+	}
 }

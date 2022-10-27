@@ -255,7 +255,7 @@ func TestGraphMongoPump_WriteData(t *testing.T) {
 			},
 		},
 		{
-			name: "skip empty request response",
+			name: "should error on empty request response",
 			records: []customRecord{
 				{
 					rawRequest:  "",
@@ -275,6 +275,7 @@ func TestGraphMongoPump_WriteData(t *testing.T) {
 					tags:        []string{analytics.PredefinedTagGraphAnalytics},
 				},
 			},
+			expectedError: "error generating documents",
 		},
 	}
 
