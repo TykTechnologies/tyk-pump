@@ -11,14 +11,14 @@ import (
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/TykTechnologies/tyk-pump/logger"
 	"github.com/TykTechnologies/tyk-pump/pumps/common"
+	"github.com/TykTechnologies/tyk-pump/pumps/internal/mgo"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/mitchellh/mapstructure"
-	"gopkg.in/mgo.v2"
 )
 
 type Pump struct {
 	IsUptime  bool
-	dbSession *mgo.Session
+	dbSession mgo.SessionManager
 	dbConf    *Config
 	common.Pump
 }
@@ -100,23 +100,13 @@ func (p *Pump) Init(config interface{}) error {
 }
 
 func (p *Pump) connect() {
+
 	var err error
-	var dialInfo *mgo.DialInfo
-
-	dialInfo, err = DialInfo(p.dbConf.BaseConfig)
-	if err != nil {
-		p.Log.Panic("Mongo URL is invalid: ", err)
-	}
-
-	if p.Timeout > 0 {
-		dialInfo.Timeout = time.Second * time.Duration(p.Timeout)
-	}
-	p.dbSession, err = mgo.DialWithInfo(dialInfo)
-
+	p.dbSession, err = NewSession(p.dbConf.BaseConfig, p.Timeout)
 	for err != nil {
 		p.Log.WithError(err).WithField("dialinfo", p.dbConf.BaseConfig.GetBlurredURL()).Error("Mongo connection failed. Retrying.")
 		time.Sleep(5 * time.Second)
-		p.dbSession, err = mgo.DialWithInfo(dialInfo)
+		p.dbSession, err = NewSession(p.dbConf.BaseConfig, p.Timeout)
 	}
 
 	if err == nil && p.dbConf.MongoDBType == 0 {
@@ -272,7 +262,6 @@ func (p *Pump) capCollection() (ok bool) {
 	err = p.dbSession.DB("").C(colName).Create(&mgo.CollectionInfo{Capped: true, MaxBytes: colCapMaxSizeBytes})
 	if err != nil {
 		p.Log.Errorf("Unable to create capped collection for (%s). %s", colName, err.Error())
-
 		return false
 	}
 
@@ -353,6 +342,5 @@ func (p *Pump) ensureIndexes() error {
 	if err != nil && !strings.Contains(err.Error(), "already exists with a different name") {
 		return err
 	}
-
 	return nil
 }

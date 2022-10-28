@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/TykTechnologies/tyk-pump/pumps/common"
+	mgo2 "github.com/TykTechnologies/tyk-pump/pumps/internal/mgo"
 	"github.com/TykTechnologies/tyk-pump/pumps/mongo"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/lonelycode/mgohacks"
@@ -97,7 +98,7 @@ func (m *MongoSelectivePump) connect() {
 	var err error
 	var dialInfo *mgo.DialInfo
 
-	dialInfo, err = mongo.DialInfo(m.dbConf.BaseConfig)
+	dialInfo, err = mongoDialInfo(m.dbConf.BaseConfig)
 	if err != nil {
 		m.Log.Panic("Mongo URL is invalid: ", err)
 	}
@@ -115,7 +116,8 @@ func (m *MongoSelectivePump) connect() {
 	}
 
 	if err == nil && m.dbConf.MongoDBType == 0 {
-		m.dbConf.MongoDBType = mongo.GetMongoType(m.dbSession)
+		sessManager := mgo2.NewSessionManager(m.dbSession)
+		m.dbConf.MongoDBType = mongo.GetMongoType(sessManager)
 	}
 }
 

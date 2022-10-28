@@ -2,244 +2,599 @@ package mongo
 
 import (
 	"context"
-	"strconv"
+	"errors"
 	"testing"
+	"time"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/TykTechnologies/tyk-pump/logger"
+	"github.com/TykTechnologies/tyk-pump/pumps/internal/mgo"
+	"github.com/TykTechnologies/tyk-pump/pumps/internal/mgo/mocks"
+	"github.com/stretchr/testify/assert"
+
+	"github.com/stretchr/testify/mock"
 )
 
-func TestMongoPump_capCollection_Enabled(t *testing.T) {
+var (
+	dbAddr  = "127.0.0.1:27017"
+	colName = "test_collection"
+)
 
-	c := Conn{}
-	c.ConnectDb()
-	defer c.CleanDb()
-
-	conf := defaultConf()
-
-	mPump := &Pump{}
-	mPump.dbConf = &conf
-	mPump.dbConf.CollectionCapEnable = false
-	mPump.Log = logger.GetLogger().WithField("prefix", mongoPrefix)
-
-	mPump.connect()
-
-	if ok := mPump.capCollection(); ok {
-		t.Error("successfully capped collection when disabled in conf")
+func defaultConf() Config {
+	conf := Config{
+		CollectionName:          colName,
+		MaxInsertBatchSizeBytes: 10 * MiB,
+		MaxDocumentSizeBytes:    10 * MiB,
 	}
+
+	conf.MongoURL = dbAddr
+	conf.MongoSSLInsecureSkipVerify = true
+
+	return conf
 }
 
-func TestMongoPumpOmitIndexCreation(t *testing.T) {
-
-	c := Conn{}
-	c.ConnectDb()
-	defer c.CleanDb()
-
-	conf := defaultConf()
-
-	mPump := &Pump{}
-	mPump.dbConf = &conf
-	record := analytics.AnalyticsRecord{
-		OrgID: "test-org",
-		APIID: "test-api",
-	}
-	records := []interface{}{record, record}
-
+func TestCollectionExists(t *testing.T) {
 	tcs := []struct {
-		testName             string
-		shouldDropCollection bool
-		Indexes              int
-		OmitIndexCreation    bool
-		dbType               MongoType
+		testName        string
+		expectedErr     error
+		expectedExist   bool
+		givenCollection string
+		setupCalls      func() (*mocks.SessionManager, *mocks.DatabaseManager, *mocks.CollectionManager)
 	}{
 		{
-			testName:             "omitting index creation - StandardMongo",
-			shouldDropCollection: true,
-			Indexes:              1, //1 index corresponding to _id
-			OmitIndexCreation:    true,
-			dbType:               StandardMongo,
+			testName:        "error getting collections",
+			expectedErr:     errors.New("error"),
+			expectedExist:   false,
+			givenCollection: "tyk_analytics",
+
+			setupCalls: func() (*mocks.SessionManager, *mocks.DatabaseManager, *mocks.CollectionManager) {
+				collection := &mocks.CollectionManager{}
+
+				database := &mocks.DatabaseManager{}
+				database.On("CollectionNames").Return([]string{}, errors.New("error"))
+
+				session := &mocks.SessionManager{}
+				session.On("Copy").Return(session)
+				session.On("DB", mock.Anything).Return(database)
+				session.On("Close")
+
+				return session, database, collection
+			},
 		},
 		{
-			testName:             "not omitting index creation but mongo collection already exists - StandardMongo",
-			shouldDropCollection: false,
-			Indexes:              1, //1 index corresponding to _id
-			OmitIndexCreation:    false,
-			dbType:               StandardMongo,
+			testName:        "collection doesn't exist",
+			expectedErr:     nil,
+			expectedExist:   false,
+			givenCollection: "tyk_analytics",
+			setupCalls: func() (*mocks.SessionManager, *mocks.DatabaseManager, *mocks.CollectionManager) {
+				collection := &mocks.CollectionManager{}
+
+				database := &mocks.DatabaseManager{}
+				database.On("CollectionNames").Return([]string{"collection_1", "collection_2"}, nil)
+
+				session := &mocks.SessionManager{}
+				session.On("Copy").Return(session)
+				session.On("DB", mock.Anything).Return(database)
+				session.On("Close")
+
+				return session, database, collection
+			},
 		},
 		{
-			testName:             "not omitting index creation but mongo collection doesn't exists - StandardMongo",
-			shouldDropCollection: true,
-			Indexes:              4, //1 index corresponding to _id + 3 from tyk
-			OmitIndexCreation:    false,
-			dbType:               StandardMongo,
-		},
-		{
-			testName:             "omitting index creation - DocDB",
-			shouldDropCollection: true,
-			Indexes:              1, //1 index corresponding to _id
-			OmitIndexCreation:    true,
-			dbType:               AWSDocumentDB,
-		},
-		{
-			testName:             "not omitting index creation but mongo collection already exists - DocDB",
-			shouldDropCollection: false,
-			Indexes:              4, //1 index corresponding to _id + 3 from tyk
-			OmitIndexCreation:    false,
-			dbType:               AWSDocumentDB,
-		},
-		{
-			testName:             "not omitting index creation but mongo collection doesn't exists - DocDB",
-			shouldDropCollection: true,
-			Indexes:              4, //1 index corresponding to _id + 3 from tyk
-			OmitIndexCreation:    false,
-			dbType:               AWSDocumentDB,
+			testName:        "collection exist",
+			expectedErr:     nil,
+			expectedExist:   true,
+			givenCollection: "tyk_analytics",
+			setupCalls: func() (*mocks.SessionManager, *mocks.DatabaseManager, *mocks.CollectionManager) {
+				collection := &mocks.CollectionManager{}
+
+				database := &mocks.DatabaseManager{}
+				database.On("CollectionNames").Return([]string{"collection_1", "tyk_analytics", "collection_2"}, nil)
+
+				session := &mocks.SessionManager{}
+				session.On("Copy").Return(session)
+				session.On("DB", mock.Anything).Return(database)
+				session.On("Close")
+
+				return session, database, collection
+			},
 		},
 	}
 
 	for _, tc := range tcs {
 		t.Run(tc.testName, func(t *testing.T) {
-			mPump.dbConf.OmitIndexCreation = tc.OmitIndexCreation
-			mPump.dbConf.MongoDBType = tc.dbType
-			mPump.Log = logger.GetLogger().WithField("prefix", mongoPrefix)
-			mPump.connect()
-			defer c.CleanIndexes()
-
-			if tc.shouldDropCollection {
-				c.CleanDb()
+			conf := defaultConf()
+			pmp := &Pump{
+				dbConf: &conf,
 			}
+			pmp.Log = logger.GetLogger().WithField("test", mongoPrefix)
 
-			if err := mPump.ensureIndexes(); err != nil {
-				t.Error("there shouldn't be an error ensuring indexes", err)
-			}
+			session, database, collection := tc.setupCalls()
 
-			mPump.WriteData(context.Background(), records)
-			indexes, errIndexes := c.GetIndexes()
-			if errIndexes != nil {
-				t.Error("error getting indexes:", errIndexes)
-			}
+			//we set the mocked session as the wanted sess
+			pmp.dbSession = session
 
-			if len(indexes) != tc.Indexes {
-				t.Errorf("wanted %v index but got %v indexes", tc.Indexes, len(indexes))
-			}
+			exists, err := pmp.collectionExists(tc.givenCollection)
+			assert.Equal(t, tc.expectedErr, err)
+			assert.Equal(t, tc.expectedExist, exists)
+
+			//asserting if everything we determined in tc.setupCalls were called
+			session.AssertExpectations(t)
+			database.AssertExpectations(t)
+			collection.AssertExpectations(t)
 		})
 	}
 }
 
-func TestMongoPump_capCollection_Exists(t *testing.T) {
+func TestCapCollection(t *testing.T) {
+	tcs := []struct {
+		testName          string
+		expectedResult    bool
+		givenCollection   string
+		givenMaxSizeBytes int
+		givenCapEnabled   bool
 
-	c := Conn{}
-	c.ConnectDb()
-	defer c.CleanDb()
+		setupCalls func() (*mocks.SessionManager, *mocks.DatabaseManager, *mocks.CollectionManager)
+	}{
+		{
+			testName:          "capping disabled - should not cap",
+			expectedResult:    false,
+			givenMaxSizeBytes: 0,
+			givenCapEnabled:   false,
+			givenCollection:   "tyk_analytics",
 
-	c.InsertDoc()
+			setupCalls: func() (*mocks.SessionManager, *mocks.DatabaseManager, *mocks.CollectionManager) {
+				collection := &mocks.CollectionManager{}
 
-	conf := defaultConf()
+				database := &mocks.DatabaseManager{}
 
-	mPump := &Pump{}
-	mPump.dbConf = &conf
-	mPump.Log = logger.GetLogger().WithField("prefix", mongoPrefix)
+				session := &mocks.SessionManager{}
 
-	mPump.dbConf.CollectionCapEnable = true
+				return session, database, collection
+			},
+		},
+		{
+			testName:          "capping enabled - no error but collection already exists",
+			expectedResult:    false,
+			givenMaxSizeBytes: 0,
+			givenCapEnabled:   true,
+			givenCollection:   colName,
 
-	mPump.connect()
+			setupCalls: func() (*mocks.SessionManager, *mocks.DatabaseManager, *mocks.CollectionManager) {
+				collection := &mocks.CollectionManager{}
 
-	if ok := mPump.capCollection(); ok {
-		t.Error("successfully capped collection when already exists")
+				database := &mocks.DatabaseManager{}
+				database.On("CollectionNames").Return([]string{"collection_1", colName, "collection_2"}, nil)
+
+				session := &mocks.SessionManager{}
+				session.On("Copy").Return(session)
+				session.On("DB", mock.Anything).Return(database)
+				session.On("Close")
+
+				return session, database, collection
+			},
+		},
+		{
+			testName:          "capping enabled - error getting collection names",
+			expectedResult:    false,
+			givenMaxSizeBytes: 0,
+			givenCapEnabled:   true,
+			givenCollection:   colName,
+
+			setupCalls: func() (*mocks.SessionManager, *mocks.DatabaseManager, *mocks.CollectionManager) {
+				collection := &mocks.CollectionManager{}
+
+				database := &mocks.DatabaseManager{}
+				database.On("CollectionNames").Return([]string{}, errors.New("error getting collection names"))
+
+				session := &mocks.SessionManager{}
+				session.On("DB", "").Return(database)
+				session.On("Copy").Return(session)
+				session.On("Close")
+
+				return session, database, collection
+			},
+		},
+		{
+			testName:          "capping enabled - collection doesn't exist - default maxSizeByteValues",
+			expectedResult:    true,
+			givenMaxSizeBytes: 0,
+			givenCapEnabled:   true,
+			givenCollection:   colName,
+
+			setupCalls: func() (*mocks.SessionManager, *mocks.DatabaseManager, *mocks.CollectionManager) {
+				collection := &mocks.CollectionManager{}
+				arg := &mgo.CollectionInfo{Capped: true, MaxBytes: 5 * GiB}
+				collection.On("Create", arg).Return(nil)
+
+				database := &mocks.DatabaseManager{}
+				database.On("CollectionNames").Return([]string{"collection_1", "collection_2"}, nil)
+				database.On("C", colName).Return(collection)
+
+				session := &mocks.SessionManager{}
+				session.On("Copy").Return(session)
+				session.On("DB", mock.Anything).Return(database)
+				session.On("Close")
+
+				return session, database, collection
+			},
+		},
+		{
+			testName:          "capping enabled - collection doesn't exist - custom maxSizeByteValues",
+			expectedResult:    true,
+			givenMaxSizeBytes: 3000,
+			givenCapEnabled:   true,
+			givenCollection:   colName,
+
+			setupCalls: func() (*mocks.SessionManager, *mocks.DatabaseManager, *mocks.CollectionManager) {
+				collection := &mocks.CollectionManager{}
+				arg := &mgo.CollectionInfo{Capped: true, MaxBytes: 3000}
+				collection.On("Create", arg).Return(nil)
+
+				database := &mocks.DatabaseManager{}
+				database.On("CollectionNames").Return([]string{"collection_1", "collection_2"}, nil)
+				database.On("C", colName).Return(collection)
+
+				session := &mocks.SessionManager{}
+				session.On("Copy").Return(session)
+				session.On("DB", mock.Anything).Return(database)
+				session.On("Close")
+
+				return session, database, collection
+			},
+		},
+		{
+			testName:          "capping enabled - collection doesn't exist - error capping",
+			expectedResult:    false,
+			givenMaxSizeBytes: 3000,
+			givenCapEnabled:   true,
+			givenCollection:   colName,
+
+			setupCalls: func() (*mocks.SessionManager, *mocks.DatabaseManager, *mocks.CollectionManager) {
+				collection := &mocks.CollectionManager{}
+				arg := &mgo.CollectionInfo{Capped: true, MaxBytes: 3000}
+				collection.On("Create", arg).Return(errors.New("error capping"))
+
+				database := &mocks.DatabaseManager{}
+				database.On("CollectionNames").Return([]string{"collection_1", "collection_2"}, nil)
+				database.On("C", colName).Return(collection)
+
+				session := &mocks.SessionManager{}
+				session.On("Copy").Return(session)
+				session.On("DB", mock.Anything).Return(database)
+				session.On("Close")
+
+				return session, database, collection
+			},
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.testName, func(t *testing.T) {
+			conf := defaultConf()
+			conf.CollectionCapEnable = tc.givenCapEnabled
+			conf.CollectionCapMaxSizeBytes = tc.givenMaxSizeBytes
+			pmp := &Pump{
+				dbConf: &conf,
+			}
+			pmp.Log = logger.GetLogger().WithField("test", mongoPrefix)
+			// setup the expected calls
+			session, database, collection := tc.setupCalls()
+
+			// we set the mocked session as the wanted sess
+			pmp.dbSession = session
+
+			capped := pmp.capCollection()
+			assert.Equal(t, tc.expectedResult, capped)
+
+			//asserting if everything we determined in tc.setupCalls were called
+			session.AssertExpectations(t)
+			database.AssertExpectations(t)
+			collection.AssertExpectations(t)
+		})
 	}
 }
 
-func TestMongoPump_capCollection_Not64arch(t *testing.T) {
+func TestEnsureIndexes(t *testing.T) {
+	tcs := []struct {
+		testName               string
+		expectedErr            error
+		givenOmitIndexCreation bool
+		givenDbType            MongoType
+		setupCalls             func() (*mocks.SessionManager, *mocks.DatabaseManager, *mocks.CollectionManager)
+	}{
+		{
+			testName:               "omitting index creation - StandardMongo",
+			expectedErr:            nil,
+			givenOmitIndexCreation: true,
+			givenDbType:            StandardMongo,
+			setupCalls: func() (*mocks.SessionManager, *mocks.DatabaseManager, *mocks.CollectionManager) {
+				collection := &mocks.CollectionManager{}
 
-	c := Conn{}
-	c.ConnectDb()
-	defer c.CleanDb()
+				database := &mocks.DatabaseManager{}
 
-	if strconv.IntSize >= 64 {
-		t.Skip("skipping as >= 64bit arch")
+				session := &mocks.SessionManager{}
+
+				return session, database, collection
+			},
+		},
+		{
+			testName:               "not omitting index creation but mongo collection already exists - StandardMongo",
+			expectedErr:            nil,
+			givenOmitIndexCreation: false,
+			givenDbType:            StandardMongo,
+			setupCalls: func() (*mocks.SessionManager, *mocks.DatabaseManager, *mocks.CollectionManager) {
+				collection := &mocks.CollectionManager{}
+
+				database := &mocks.DatabaseManager{}
+				database.On("CollectionNames").Return([]string{"collection_1", colName, "collection_2"}, nil)
+
+				session := &mocks.SessionManager{}
+				session.On("Copy").Return(session)
+				session.On("DB", mock.Anything).Return(database)
+				session.On("Close")
+
+				return session, database, collection
+			},
+		},
+		{
+			testName:               "not omitting index creation, error getting collection - StandardMongo",
+			expectedErr:            nil,
+			givenOmitIndexCreation: false,
+			givenDbType:            StandardMongo,
+			setupCalls: func() (*mocks.SessionManager, *mocks.DatabaseManager, *mocks.CollectionManager) {
+				collection := &mocks.CollectionManager{}
+				orgIndex := mgo.Index{
+					Key:        []string{"orgid"},
+					Background: true,
+				}
+				collection.On("EnsureIndex", orgIndex).Return(nil)
+				apiIndex := mgo.Index{
+					Key:        []string{"apiid"},
+					Background: true,
+				}
+				collection.On("EnsureIndex", apiIndex).Return(nil)
+				logBrowserIndex := mgo.Index{
+					Name:       "logBrowserIndex",
+					Key:        []string{"-timestamp", "orgid", "apiid", "apikey", "responsecode"},
+					Background: true,
+				}
+				collection.On("EnsureIndex", logBrowserIndex).Return(nil)
+
+				database := &mocks.DatabaseManager{}
+				database.On("CollectionNames").Return([]string{}, errors.New("error getting collection"))
+				database.On("C", colName).Return(collection)
+
+				session := &mocks.SessionManager{}
+				session.On("Copy").Return(session)
+				session.On("DB", mock.Anything).Return(database)
+				session.On("Close")
+
+				return session, database, collection
+			},
+		},
+		{
+			testName:               "not omitting index creation, error ensuring OrgIndex - StandardMongo",
+			expectedErr:            errors.New("error with orgIndex"),
+			givenOmitIndexCreation: false,
+			givenDbType:            StandardMongo,
+			setupCalls: func() (*mocks.SessionManager, *mocks.DatabaseManager, *mocks.CollectionManager) {
+				collection := &mocks.CollectionManager{}
+				orgIndex := mgo.Index{
+					Key:        []string{"orgid"},
+					Background: true,
+				}
+				collection.On("EnsureIndex", orgIndex).Return(errors.New("error with orgIndex"))
+
+				database := &mocks.DatabaseManager{}
+				database.On("CollectionNames").Return([]string{}, nil)
+				database.On("C", colName).Return(collection)
+
+				session := &mocks.SessionManager{}
+				session.On("Copy").Return(session)
+				session.On("DB", mock.Anything).Return(database)
+				session.On("Close")
+
+				return session, database, collection
+			},
+		},
+		{
+			testName:               "not omitting index creation, error ensuring ApiIndex - StandardMongo",
+			expectedErr:            errors.New("error setting apiIndex"),
+			givenOmitIndexCreation: false,
+			givenDbType:            StandardMongo,
+			setupCalls: func() (*mocks.SessionManager, *mocks.DatabaseManager, *mocks.CollectionManager) {
+				collection := &mocks.CollectionManager{}
+				orgIndex := mgo.Index{
+					Key:        []string{"orgid"},
+					Background: true,
+				}
+				collection.On("EnsureIndex", orgIndex).Return(nil)
+				apiIndex := mgo.Index{
+					Key:        []string{"apiid"},
+					Background: true,
+				}
+				collection.On("EnsureIndex", apiIndex).Return(errors.New("error setting apiIndex"))
+
+				database := &mocks.DatabaseManager{}
+				database.On("CollectionNames").Return([]string{}, nil)
+				database.On("C", colName).Return(collection)
+
+				session := &mocks.SessionManager{}
+				session.On("Copy").Return(session)
+				session.On("DB", mock.Anything).Return(database)
+				session.On("Close")
+
+				return session, database, collection
+			},
+		},
+		{
+			testName:               "not omitting index creation, error ensuring logBrowserIndex - StandardMongo",
+			expectedErr:            errors.New("error ensuring logBrowserIndex"),
+			givenOmitIndexCreation: false,
+			givenDbType:            StandardMongo,
+			setupCalls: func() (*mocks.SessionManager, *mocks.DatabaseManager, *mocks.CollectionManager) {
+				collection := &mocks.CollectionManager{}
+				orgIndex := mgo.Index{
+					Key:        []string{"orgid"},
+					Background: true,
+				}
+				collection.On("EnsureIndex", orgIndex).Return(nil)
+				apiIndex := mgo.Index{
+					Key:        []string{"apiid"},
+					Background: true,
+				}
+				collection.On("EnsureIndex", apiIndex).Return(nil)
+				logBrowserIndex := mgo.Index{
+					Name:       "logBrowserIndex",
+					Key:        []string{"-timestamp", "orgid", "apiid", "apikey", "responsecode"},
+					Background: true,
+				}
+				collection.On("EnsureIndex", logBrowserIndex).Return(errors.New("error ensuring logBrowserIndex"))
+
+				database := &mocks.DatabaseManager{}
+				database.On("CollectionNames").Return([]string{}, nil)
+				database.On("C", colName).Return(collection)
+
+				session := &mocks.SessionManager{}
+				session.On("Copy").Return(session)
+				session.On("DB", mock.Anything).Return(database)
+				session.On("Close")
+
+				return session, database, collection
+			},
+		},
+		{
+			testName:               "not omitting index creation, no error setting all indexes - StandardMongo",
+			expectedErr:            nil,
+			givenOmitIndexCreation: false,
+			givenDbType:            StandardMongo,
+			setupCalls: func() (*mocks.SessionManager, *mocks.DatabaseManager, *mocks.CollectionManager) {
+				collection := &mocks.CollectionManager{}
+				orgIndex := mgo.Index{
+					Key:        []string{"orgid"},
+					Background: true,
+				}
+				collection.On("EnsureIndex", orgIndex).Return(nil)
+				apiIndex := mgo.Index{
+					Key:        []string{"apiid"},
+					Background: true,
+				}
+				collection.On("EnsureIndex", apiIndex).Return(nil)
+				logBrowserIndex := mgo.Index{
+					Name:       "logBrowserIndex",
+					Key:        []string{"-timestamp", "orgid", "apiid", "apikey", "responsecode"},
+					Background: true,
+				}
+				collection.On("EnsureIndex", logBrowserIndex).Return(nil)
+
+				database := &mocks.DatabaseManager{}
+				database.On("CollectionNames").Return([]string{}, nil)
+				database.On("C", colName).Return(collection)
+
+				session := &mocks.SessionManager{}
+				session.On("Copy").Return(session)
+				session.On("DB", mock.Anything).Return(database)
+				session.On("Close")
+
+				return session, database, collection
+			},
+		},
+		{
+			testName:               "omitting index creation - DocDB",
+			expectedErr:            nil,
+			givenOmitIndexCreation: true,
+			givenDbType:            AWSDocumentDB,
+			setupCalls: func() (*mocks.SessionManager, *mocks.DatabaseManager, *mocks.CollectionManager) {
+				collection := &mocks.CollectionManager{}
+
+				database := &mocks.DatabaseManager{}
+
+				session := &mocks.SessionManager{}
+
+				return session, database, collection
+			},
+		},
+		{
+			testName:               "not omitting index creation but mongo collection already exists - DocDB",
+			expectedErr:            nil,
+			givenOmitIndexCreation: false,
+			givenDbType:            AWSDocumentDB,
+			setupCalls: func() (*mocks.SessionManager, *mocks.DatabaseManager, *mocks.CollectionManager) {
+				collection := &mocks.CollectionManager{}
+				orgIndex := mgo.Index{
+					Key:        []string{"orgid"},
+					Background: false,
+				}
+				collection.On("EnsureIndex", orgIndex).Return(nil)
+				apiIndex := mgo.Index{
+					Key:        []string{"apiid"},
+					Background: false,
+				}
+				collection.On("EnsureIndex", apiIndex).Return(nil)
+				logBrowserIndex := mgo.Index{
+					Name:       "logBrowserIndex",
+					Key:        []string{"-timestamp", "orgid", "apiid", "apikey", "responsecode"},
+					Background: false,
+				}
+				collection.On("EnsureIndex", logBrowserIndex).Return(nil)
+
+				database := &mocks.DatabaseManager{}
+				//we are not calling CollectionExist here since it only works for StandardMongo
+				database.On("C", colName).Return(collection)
+
+				session := &mocks.SessionManager{}
+				session.On("Copy").Return(session)
+				session.On("DB", mock.Anything).Return(database)
+				session.On("Close")
+
+				return session, database, collection
+			},
+		},
+		{
+			testName:               "omitting index creation  - DocDB",
+			expectedErr:            nil,
+			givenOmitIndexCreation: true,
+			givenDbType:            AWSDocumentDB,
+			setupCalls: func() (*mocks.SessionManager, *mocks.DatabaseManager, *mocks.CollectionManager) {
+				collection := &mocks.CollectionManager{}
+
+				database := &mocks.DatabaseManager{}
+
+				session := &mocks.SessionManager{}
+
+				return session, database, collection
+			},
+		},
 	}
 
-	conf := defaultConf()
+	for _, tc := range tcs {
+		t.Run(tc.testName, func(t *testing.T) {
+			conf := defaultConf()
+			conf.OmitIndexCreation = tc.givenOmitIndexCreation
+			conf.MongoDBType = tc.givenDbType
+			pmp := &Pump{
+				dbConf: &conf,
+			}
+			pmp.Log = logger.GetLogger().WithField("test", mongoPrefix)
 
-	mPump := &Pump{}
-	mPump.dbConf = &conf
-	mPump.Log = logger.GetLogger().WithField("prefix", mongoPrefix)
+			session, database, collection := tc.setupCalls()
 
-	mPump.dbConf.CollectionCapEnable = true
+			//we set the mocked session as the wanted sess
+			pmp.dbSession = session
 
-	mPump.connect()
+			err := pmp.ensureIndexes()
+			assert.Equal(t, tc.expectedErr, err)
 
-	if ok := mPump.capCollection(); ok {
-		t.Error("should not be able to cap collection when running < 64bit architecture")
+			//asserting if everything we determined in tc.setupCalls were called
+			session.AssertExpectations(t)
+			database.AssertExpectations(t)
+			collection.AssertExpectations(t)
+		})
 	}
 }
 
-func TestMongoPump_capCollection_SensibleDefaultSize(t *testing.T) {
-
-	if strconv.IntSize < 64 {
-		t.Skip("skipping as < 64bit arch")
-	}
-
-	c := Conn{}
-	c.ConnectDb()
-	defer c.CleanDb()
-
-	conf := defaultConf()
-
-	mPump := &Pump{}
-	mPump.dbConf = &conf
-	mPump.Log = logger.GetLogger().WithField("prefix", mongoPrefix)
-
-	mPump.dbConf.CollectionCapEnable = true
-	mPump.dbConf.CollectionCapMaxSizeBytes = 0
-
-	mPump.connect()
-
-	if ok := mPump.capCollection(); !ok {
-		t.Fatal("should have capped collection")
-	}
-
-	colStats := c.GetCollectionStats()
-
-	defSize := 5
-	if colStats["maxSize"].(int64) != int64(defSize*GiB) {
-		t.Errorf("wrong sized capped collection created. Expected (%d), got (%d)", mPump.dbConf.CollectionCapMaxSizeBytes, colStats["maxSize"])
-	}
-}
-
-func TestMongoPump_capCollection_OverrideSize(t *testing.T) {
-
-	if strconv.IntSize < 64 {
-		t.Skip("skipping as < 64bit arch")
-	}
-
-	c := Conn{}
-	c.ConnectDb()
-	defer c.CleanDb()
-
-	conf := defaultConf()
-
-	mPump := &Pump{}
-	mPump.dbConf = &conf
-	mPump.Log = logger.GetLogger().WithField("prefix", mongoPrefix)
-
-	mPump.dbConf.CollectionCapEnable = true
-	mPump.dbConf.CollectionCapMaxSizeBytes = GiB
-
-	mPump.connect()
-
-	if ok := mPump.capCollection(); !ok {
-		t.Error("should have capped collection")
-		t.FailNow()
-	}
-
-	colStats := c.GetCollectionStats()
-
-	if colStats["maxSize"].(int64) != int64(mPump.dbConf.CollectionCapMaxSizeBytes) {
-		t.Errorf("wrong sized capped collection created. Expected (%d), got (%d)", mPump.dbConf.CollectionCapMaxSizeBytes, colStats["maxSize"])
-	}
-}
-
-func TestMongoPump_AccumulateSet(t *testing.T) {
+func TestAccumulateSet(t *testing.T) {
 	conf := defaultConf()
 	conf.MaxInsertBatchSizeBytes = 5120
 
@@ -264,4 +619,43 @@ func TestMongoPump_AccumulateSet(t *testing.T) {
 	if len(set) != totalData/conf.MaxInsertBatchSizeBytes {
 		t.Errorf("expected accumulator chunks to equal %d, got %d", totalData/conf.MaxInsertBatchSizeBytes, len(set))
 	}
+}
+
+func TestWriteData(t *testing.T) {
+	timeNow := time.Now()
+	keys := make([]interface{}, 2)
+	keys[0] = analytics.AnalyticsRecord{APIID: "api1", OrgID: "123", TimeStamp: timeNow, APIKey: "apikey1"}
+	keys[1] = analytics.AnalyticsRecord{APIID: "api1", OrgID: "123", TimeStamp: timeNow, APIKey: "apikey1"}
+
+	//check what functions from Collection are going to be called
+	collection := &mocks.CollectionManager{}
+	collection.On("Insert", keys...).Return(nil)
+
+	//check what functions from Database are going to be called
+	database := &mocks.DatabaseManager{}
+	database.On("C", colName).Return(collection)
+
+	//check what functions from Session are going to be called
+	session := &mocks.SessionManager{}
+	session.On("DB", "").Return(database)
+	session.On("Copy").Return(session)
+	session.On("Close")
+
+	conf := defaultConf()
+	conf.MaxInsertBatchSizeBytes = 5120
+	pmp := &Pump{
+		dbConf: &conf,
+	}
+	pmp.Log = logger.GetLogger().WithField("test", mongoPrefix)
+	//we set the mocked session as the wanted sess
+	pmp.dbSession = session
+
+	//Execute pump writing
+	err := pmp.WriteData(context.Background(), keys)
+	assert.Nil(t, err)
+
+	//assert all the expected mocked calls
+	session.AssertExpectations(t)
+	database.AssertExpectations(t)
+	collection.AssertExpectations(t)
 }

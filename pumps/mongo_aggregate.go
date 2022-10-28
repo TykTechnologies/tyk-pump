@@ -2,13 +2,18 @@ package pumps
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	b64 "encoding/base64"
 	"errors"
+	"io/ioutil"
+	"net"
 	"sort"
 	"strings"
 	"time"
 
 	"github.com/TykTechnologies/tyk-pump/pumps/common"
+	mgo2 "github.com/TykTechnologies/tyk-pump/pumps/internal/mgo"
 	"github.com/TykTechnologies/tyk-pump/pumps/mongo"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/lonelycode/mgohacks"
@@ -177,10 +182,11 @@ func (m *MongoAggregatePump) Init(config interface{}) error {
 }
 
 func (m *MongoAggregatePump) connect() {
+
 	var err error
 	var dialInfo *mgo.DialInfo
 
-	dialInfo, err = mongo.DialInfo(m.dbConf.BaseConfig)
+	dialInfo, err = mongoDialInfo(m.dbConf.BaseConfig)
 	if err != nil {
 		m.Log.Panic("Mongo URL is invalid: ", err)
 	}
@@ -198,8 +204,84 @@ func (m *MongoAggregatePump) connect() {
 	}
 
 	if err == nil && m.dbConf.MongoDBType == 0 {
-		m.dbConf.MongoDBType = mongo.GetMongoType(m.dbSession)
+		sessManager := mgo2.NewSessionManager(m.dbSession)
+		m.dbConf.MongoDBType = mongo.GetMongoType(sessManager)
 	}
+}
+
+func mongoDialInfo(conf mongo.BaseConfig) (dialInfo *mgo.DialInfo, err error) {
+	if dialInfo, err = mgo.ParseURL(conf.MongoURL); err != nil {
+		return dialInfo, err
+	}
+
+	if conf.MongoUseSSL {
+		dialInfo.DialServer = func(addr *mgo.ServerAddr) (net.Conn, error) {
+			tlsConfig := &tls.Config{}
+			if conf.MongoSSLInsecureSkipVerify {
+				tlsConfig.InsecureSkipVerify = true
+			}
+
+			if conf.MongoSSLCAFile != "" {
+				caCert, err := ioutil.ReadFile(conf.MongoSSLCAFile)
+				if err != nil {
+					log.Fatal("Can't load mongo CA certificates: ", err)
+				}
+				caCertPool := x509.NewCertPool()
+				caCertPool.AppendCertsFromPEM(caCert)
+				tlsConfig.RootCAs = caCertPool
+			}
+
+			if conf.MongoSSLAllowInvalidHostnames {
+				tlsConfig.InsecureSkipVerify = true
+				tlsConfig.VerifyPeerCertificate = func(rawCerts [][]byte, verifiedChains [][]*x509.Certificate) error {
+					// Code copy/pasted and adapted from
+					// https://github.com/golang/go/blob/81555cb4f3521b53f9de4ce15f64b77cc9df61b9/src/crypto/tls/handshake_client.go#L327-L344, but adapted to skip the hostname verification.
+					// See https://github.com/golang/go/issues/21971#issuecomment-412836078.
+
+					// If this is the first handshake on a connection, process and
+					// (optionally) verify the server's certificates.
+					certs := make([]*x509.Certificate, len(rawCerts))
+					for i, asn1Data := range rawCerts {
+						cert, err := x509.ParseCertificate(asn1Data)
+						if err != nil {
+							return err
+						}
+						certs[i] = cert
+					}
+
+					opts := x509.VerifyOptions{
+						Roots:         tlsConfig.RootCAs,
+						CurrentTime:   time.Now(),
+						DNSName:       "", // <- skip hostname verification
+						Intermediates: x509.NewCertPool(),
+					}
+
+					for i, cert := range certs {
+						if i == 0 {
+							continue
+						}
+						opts.Intermediates.AddCert(cert)
+					}
+					_, err := certs[0].Verify(opts)
+
+					return err
+				}
+			}
+
+			if conf.MongoSSLPEMKeyfile != "" {
+				cert, err := mongo.LoadCertficateAndKeyFromFile(conf.MongoSSLPEMKeyfile)
+				if err != nil {
+					log.Fatal("Can't load mongo client certificate: ", err)
+				}
+
+				tlsConfig.Certificates = []tls.Certificate{*cert}
+			}
+
+			return tls.Dial("tcp", addr.String(), tlsConfig)
+		}
+	}
+
+	return dialInfo, err
 }
 
 func (m *MongoAggregatePump) ensureIndexes(c *mgo.Collection) error {
