@@ -239,7 +239,6 @@ func TestAggregationTime(t *testing.T) {
 }
 
 func TestMongoAggregatePump_divideAggregationTime(t *testing.T) {
-
 	tests := []struct {
 		name                   string
 		currentAggregationTime int
@@ -291,9 +290,9 @@ func TestMongoAggregatePump_ShouldSelfHeal(t *testing.T) {
 	// dbConf - EnableAggregateSelfHealing / AggregationTime / MongoURL / Log
 
 	tests := []struct {
-		name     string
 		fields   fields
 		inputErr error
+		name     string
 		want     bool
 	}{
 		{
@@ -427,8 +426,8 @@ func TestMongoAggregatePump_HandleWriteErr(t *testing.T) {
 	}
 
 	tests := []struct {
-		name     string
 		inputErr error
+		name     string
 		wantErr  bool
 	}{
 		{
@@ -449,7 +448,6 @@ func TestMongoAggregatePump_HandleWriteErr(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-
 			if err := pmp1.HandleWriteErr(tt.inputErr); (err != nil) != tt.wantErr {
 				t.Errorf("MongoAggregatePump.HandleWriteErr() error = %v, wantErr %v", err, tt.wantErr)
 			}
