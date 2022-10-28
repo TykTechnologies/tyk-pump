@@ -95,6 +95,17 @@ func Test_getTLSConfig(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name: "Invalid CertFile -> error expected.",
+			args: &ElasticsearchConf{
+				SSLCertFile:           "invalid.cert",
+				SSLKeyFile:            "invalid.key",
+				SSLInsecureSkipVerify: true,
+			},
+			// #nosec G402
+			want:    nil,
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
