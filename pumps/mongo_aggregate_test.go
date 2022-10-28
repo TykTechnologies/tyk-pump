@@ -2,10 +2,12 @@ package pumps
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/mgo.v2/bson"
 )
@@ -231,6 +233,225 @@ func TestAggregationTime(t *testing.T) {
 			// validate totals
 			for _, res := range results {
 				assert.NotNil(t, res.Total)
+			}
+		})
+	}
+}
+
+func TestMongoAggregatePump_divideAggregationTime(t *testing.T) {
+
+	tests := []struct {
+		name                   string
+		currentAggregationTime int
+		newAggregationTime     int
+	}{
+		{
+			name:                   "divide 60 minutes (even number)",
+			currentAggregationTime: 60,
+			newAggregationTime:     30,
+		},
+		{
+			name:                   "divide 15 minutes (odd number)",
+			currentAggregationTime: 15,
+			newAggregationTime:     7,
+		},
+		{
+			name:                   "divide 1 minute (must return 1)",
+			currentAggregationTime: 1,
+			newAggregationTime:     1,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			dbConf := &MongoAggregateConf{
+				AggregationTime: tt.currentAggregationTime,
+			}
+
+			commonPumpConfig := CommonPumpConfig{
+				log: logrus.NewEntry(logrus.New()),
+			}
+
+			m := &MongoAggregatePump{
+				dbConf:           dbConf,
+				CommonPumpConfig: commonPumpConfig,
+			}
+			m.divideAggregationTime()
+
+			assert.Equal(t, tt.newAggregationTime, m.dbConf.AggregationTime)
+		})
+	}
+}
+
+func TestMongoAggregatePump_ShouldSelfHeal(t *testing.T) {
+	type fields struct {
+		dbConf           *MongoAggregateConf
+		CommonPumpConfig CommonPumpConfig
+	}
+
+	// dbConf - EnableAggregateSelfHealing / AggregationTime / MongoURL / Log
+
+	tests := []struct {
+		name     string
+		fields   fields
+		inputErr error
+		want     bool
+	}{
+		{
+			name: "random error",
+			fields: fields{
+				dbConf: &MongoAggregateConf{
+					EnableAggregateSelfHealing: true,
+					AggregationTime:            60,
+					BaseMongoConf: BaseMongoConf{
+						MongoURL: "mongodb://localhost:27017",
+					},
+				},
+				CommonPumpConfig: CommonPumpConfig{
+					log: logrus.NewEntry(logrus.New()),
+				},
+			},
+			inputErr: errors.New("random error"),
+			want:     false,
+		},
+		{
+			name: "CosmosSizeError error",
+			fields: fields{
+				dbConf: &MongoAggregateConf{
+					EnableAggregateSelfHealing: true,
+					AggregationTime:            60,
+					BaseMongoConf: BaseMongoConf{
+						MongoURL: "mongodb://localhost:27017",
+					},
+				},
+				CommonPumpConfig: CommonPumpConfig{
+					log: logrus.NewEntry(logrus.New()),
+				},
+			},
+			inputErr: errors.New("Request size is too large"),
+			want:     true,
+		},
+		{
+			name: "StandardMongoSizeError error",
+			fields: fields{
+				dbConf: &MongoAggregateConf{
+					EnableAggregateSelfHealing: true,
+					AggregationTime:            60,
+					BaseMongoConf: BaseMongoConf{
+						MongoURL: "mongodb://localhost:27017",
+					},
+				},
+				CommonPumpConfig: CommonPumpConfig{
+					log: logrus.NewEntry(logrus.New()),
+				},
+			},
+			inputErr: errors.New("Size must be between 0 and"),
+			want:     true,
+		},
+		{
+			name: "DocDBSizeError error",
+			fields: fields{
+				dbConf: &MongoAggregateConf{
+					EnableAggregateSelfHealing: true,
+					AggregationTime:            60,
+					BaseMongoConf: BaseMongoConf{
+						MongoURL: "mongodb://localhost:27017",
+					},
+				},
+				CommonPumpConfig: CommonPumpConfig{
+					log: logrus.NewEntry(logrus.New()),
+				},
+			},
+			inputErr: errors.New("Resulting document after update is larger than"),
+			want:     true,
+		},
+		{
+			name: "StandardMongoSizeError error but self healing disabled",
+			fields: fields{
+				dbConf: &MongoAggregateConf{
+					EnableAggregateSelfHealing: false,
+					AggregationTime:            60,
+					BaseMongoConf: BaseMongoConf{
+						MongoURL: "mongodb://localhost:27017",
+					},
+				},
+				CommonPumpConfig: CommonPumpConfig{
+					log: logrus.NewEntry(logrus.New()),
+				},
+			},
+			inputErr: errors.New("Size must be between 0 and"),
+			want:     false,
+		},
+		{
+			name: "StandardMongoSizeError error but aggregation time is 1",
+			fields: fields{
+				dbConf: &MongoAggregateConf{
+					EnableAggregateSelfHealing: true,
+					AggregationTime:            1,
+					BaseMongoConf: BaseMongoConf{
+						MongoURL: "mongodb://localhost:27017",
+					},
+				},
+				CommonPumpConfig: CommonPumpConfig{
+					log: logrus.NewEntry(logrus.New()),
+				},
+			},
+			inputErr: errors.New("Size must be between 0 and"),
+			want:     false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m := &MongoAggregatePump{
+				dbConf:           tt.fields.dbConf,
+				CommonPumpConfig: tt.fields.CommonPumpConfig,
+			}
+			if got := m.ShouldSelfHeal(tt.inputErr); got != tt.want {
+				t.Errorf("MongoAggregatePump.ShouldSelfHeal() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestMongoAggregatePump_HandleWriteErr(t *testing.T) {
+	cfgPump1 := make(map[string]interface{})
+	cfgPump1["mongo_url"] = "mongodb://localhost:27017/tyk_analytics"
+	cfgPump1["ignore_aggregations"] = []string{"apikeys"}
+	cfgPump1["use_mixed_collection"] = true
+	cfgPump1["store_analytics_per_minute"] = false
+	pmp1 := MongoAggregatePump{}
+
+	errInit1 := pmp1.Init(cfgPump1)
+	if errInit1 != nil {
+		t.Error(errInit1)
+		return
+	}
+
+	tests := []struct {
+		name     string
+		inputErr error
+		wantErr  bool
+	}{
+		{
+			name:     "nil error",
+			inputErr: nil,
+			wantErr:  false,
+		},
+		{
+			name:     "random error",
+			inputErr: errors.New("random error"),
+			wantErr:  true,
+		},
+		{
+			name:     "EOF error",
+			inputErr: errors.New("EOF"),
+			wantErr:  true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			if err := pmp1.HandleWriteErr(tt.inputErr); (err != nil) != tt.wantErr {
+				t.Errorf("MongoAggregatePump.HandleWriteErr() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
