@@ -552,13 +552,9 @@ func (m *MongoPump) AccumulateSet(data []interface{}, isForGraphRecords bool) []
 		}
 
 		// Skip this record if it is a graph analytics record, they will be handled in a different pump
-		if thisItem.IsGraphRecord() != isForGraphRecords {
+		isGraphRecord := thisItem.IsGraphRecord()
+		if isGraphRecord != isForGraphRecords {
 			continue
-		}
-		if isForGraphRecords {
-			if thisItem.RawRequest == "" || thisItem.RawResponse == "" || thisItem.ApiSchema == "" {
-				continue
-			}
 		}
 
 		// Add 1 KB for metadata as average
@@ -566,7 +562,7 @@ func (m *MongoPump) AccumulateSet(data []interface{}, isForGraphRecords bool) []
 
 		m.log.Debug("Size is: ", sizeBytes)
 
-		if sizeBytes > m.dbConf.MaxDocumentSizeBytes {
+		if sizeBytes > m.dbConf.MaxDocumentSizeBytes && !isGraphRecord {
 			m.log.Warning("Document too large, not writing raw request and raw response!")
 
 			thisItem.RawRequest = ""
