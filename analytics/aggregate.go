@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/fatih/structs"
@@ -19,6 +20,12 @@ const (
 	MongoAggregatePrefix          = "mongo-pump-aggregate"
 	AggregateSQLTable             = "tyk_aggregated"
 )
+
+// lastDocumentTimestamp is a map to store the last document timestamps of different Mongo Aggregators
+var lastDocumentTimestamp = make(map[string]time.Time)
+
+// mutex is used to prevent concurrent writes to the same key
+var mutex sync.RWMutex
 
 type ErrorData struct {
 	Code  string
@@ -537,7 +544,7 @@ func replaceUnsupportedChars(path string) string {
 }
 
 // AggregateData calculates aggregated data, returns map orgID => aggregated analytics data
-func AggregateData(data []interface{}, trackAllPaths bool, ignoreTagPrefixList []string, storeAnalyticPerMinute, ignoreGraphData bool) map[string]AnalyticsRecordAggregate {
+func AggregateData(data []interface{}, trackAllPaths bool, ignoreTagPrefixList []string, dbIdentifier string, aggregationTime int, ignoreGraphData bool) map[string]AnalyticsRecordAggregate {
 	analyticsPerOrg := make(map[string]AnalyticsRecordAggregate)
 	for _, v := range data {
 		thisV := v.(AnalyticsRecord)
@@ -559,11 +566,7 @@ func AggregateData(data []interface{}, trackAllPaths bool, ignoreTagPrefixList [
 
 			// Set the hourly timestamp & expiry
 			asTime := thisV.TimeStamp
-			if storeAnalyticPerMinute {
-				thisAggregate.TimeStamp = time.Date(asTime.Year(), asTime.Month(), asTime.Day(), asTime.Hour(), asTime.Minute(), 0, 0, asTime.Location())
-			} else {
-				thisAggregate.TimeStamp = time.Date(asTime.Year(), asTime.Month(), asTime.Day(), asTime.Hour(), 0, 0, 0, asTime.Location())
-			}
+			thisAggregate.TimeStamp = setAggregateTimestamp(dbIdentifier, asTime, aggregationTime)
 			thisAggregate.ExpireAt = thisV.ExpireAt
 			thisAggregate.TimeID.Year = asTime.Year()
 			thisAggregate.TimeID.Month = int(asTime.Month())
@@ -844,8 +847,50 @@ func AggregateData(data []interface{}, trackAllPaths bool, ignoreTagPrefixList [
 func TrimTag(thisTag string) string {
 	trimmedTag := strings.TrimSpace(thisTag)
 
-	if strings.Contains(trimmedTag, ".") {
-		trimmedTag = strings.Replace(trimmedTag, ".", "", -1)
-	}
+	trimmedTag = strings.ReplaceAll(trimmedTag, ".", "")
 	return trimmedTag
+}
+
+// SetlastTimestampAgggregateRecord sets the last timestamp for the aggregate record
+func SetlastTimestampAgggregateRecord(id string, date time.Time) {
+	mutex.Lock()
+	defer mutex.Unlock()
+	lastDocumentTimestamp[id] = date
+}
+
+// getLastDocumentTimestamp gets the last timestamp for the aggregate record
+func getLastDocumentTimestamp(id string) (time.Time, bool) {
+	mutex.RLock()
+	defer mutex.RUnlock()
+	ts, ok := lastDocumentTimestamp[id]
+	return ts, ok
+}
+
+func setAggregateTimestamp(dbIdentifier string, asTime time.Time, aggregationTime int) time.Time {
+	// if aggregationTime is set to 60, use asTime.Hour() and group every record by hour
+	if aggregationTime == 60 {
+		return time.Date(asTime.Year(), asTime.Month(), asTime.Day(), asTime.Hour(), 0, 0, 0, asTime.Location())
+	}
+
+	// get the last document timestamp
+	lastDocumentTS, ok := getLastDocumentTimestamp(dbIdentifier)
+	emptyTime := time.Time{}
+	if lastDocumentTS == emptyTime || !ok {
+		// if it's not set, or it's empty, just set it to the current time
+		lastDocumentTS = time.Date(asTime.Year(), asTime.Month(), asTime.Day(), asTime.Hour(), asTime.Minute(), 0, 0, asTime.Location())
+		SetlastTimestampAgggregateRecord(dbIdentifier, lastDocumentTS)
+	}
+	if dbIdentifier != "" {
+		// if aggregationTime != 60 and the database is Mongo (because we have an identifier):
+		if lastDocumentTS.Add(time.Minute * time.Duration(aggregationTime)).After(asTime) {
+			// if the last record timestamp + aggregationTime setting is after the current time, just add the new record to the current document
+			return lastDocumentTS
+		}
+		// if last record timestamp + amount of minutes set is before current time, just create a new record
+		newTime := time.Date(asTime.Year(), asTime.Month(), asTime.Day(), asTime.Hour(), asTime.Minute(), 0, 0, asTime.Location())
+		SetlastTimestampAgggregateRecord(dbIdentifier, newTime)
+		return newTime
+	}
+	// if aggregationTime is set to 1 and DB is not Mongo, use asTime.Minute() and group every record by minute
+	return time.Date(asTime.Year(), asTime.Month(), asTime.Day(), asTime.Hour(), asTime.Minute(), 0, 0, asTime.Location())
 }
