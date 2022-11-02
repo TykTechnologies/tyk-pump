@@ -334,7 +334,6 @@ func TestMongoAggregatePump_SelfHealing(t *testing.T) {
 			count = 0
 		}
 	}
-
 }
 
 func TestMongoAggregatePump_ShouldSelfHeal(t *testing.T) {
