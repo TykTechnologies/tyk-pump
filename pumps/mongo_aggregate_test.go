@@ -324,11 +324,17 @@ func TestMongoAggregatePump_SelfHealing(t *testing.T) {
 				assert.True(t, contains)
 				// If we get an error, is because aggregation time is equal to 1, and self healing can't divide it
 				assert.Equal(t, 1, pmp1.dbConf.AggregationTime)
-				return
+
+				// checking lastDocumentTimestamp
+				ts, err := getLastDocumentTimestamp(pmp1.dbSession, "tyk_analytics_aggregates")
+				assert.Nil(t, err)
+				assert.NotNil(t, ts)
+				break
 			}
 			count = 0
 		}
 	}
+
 }
 
 func TestMongoAggregatePump_ShouldSelfHeal(t *testing.T) {
@@ -503,4 +509,22 @@ func TestMongoAggregatePump_HandleWriteErr(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestMongoAggregatePump_StoreAnalyticsPerMinute(t *testing.T) {
+	cfgPump1 := make(map[string]interface{})
+	cfgPump1["mongo_url"] = "mongodb://localhost:27017/tyk_analytics"
+	cfgPump1["ignore_aggregations"] = []string{"apikeys"}
+	cfgPump1["use_mixed_collection"] = true
+	cfgPump1["store_analytics_per_minute"] = true
+	cfgPump1["aggregation_time"] = 45
+	pmp1 := MongoAggregatePump{}
+
+	errInit1 := pmp1.Init(cfgPump1)
+	if errInit1 != nil {
+		t.Error(errInit1)
+		return
+	}
+	// Checking if the aggregation time is set to 1. Doesn't matter if aggregation_time is equal to 45 or 1, the result should be always 1.
+	assert.True(t, pmp1.dbConf.AggregationTime == 1)
 }
