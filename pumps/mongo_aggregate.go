@@ -48,8 +48,15 @@ type MongoAggregateConf struct {
 	// it will print an alert.
 	// Defaults to 1000.
 	ThresholdLenTagList int `json:"threshold_len_tag_list" mapstructure:"threshold_len_tag_list"`
-	// Determines if the aggregations should be made per minute instead of per hour.
+	// Determines if the aggregations should be made per minute (true) or per hour (false).
 	StoreAnalyticsPerMinute bool `json:"store_analytics_per_minute" mapstructure:"store_analytics_per_minute"`
+	// Determines the amount of time the aggregations should be made (in minutes). It defaults to the max value is 60 and the minimum is 1.
+	// If StoreAnalyticsPerMinute is set to true, this field will be skipped.
+	AggregationTime int `json:"aggregation_time" mapstructure:"aggregation_time"`
+	// Determines if the self healing will be activated or not.
+	// Self Healing allows pump to handle Mongo document's max-size errors by creating a new document when the max-size is reached.
+	// It also divide by 2 the AggregationTime field to avoid the same error in the future.
+	EnableAggregateSelfHealing bool `json:"enable_aggregate_self_healing" mapstructure:"enable_aggregate_self_healing"`
 	// This list determines which aggregations are going to be dropped and not stored in the collection.
 	// Posible values are: "APIID","errors","versions","apikeys","oauthids","geo","tags","endpoints","keyendpoints",
 	// "oauthendpoints", and "apiendpoints".
@@ -170,11 +177,22 @@ func (m *MongoAggregatePump) Init(config interface{}) error {
 	if m.dbConf.ThresholdLenTagList == 0 {
 		m.dbConf.ThresholdLenTagList = THRESHOLD_LEN_TAG_LIST
 	}
+	m.SetAggregationTime()
 
 	m.connect()
 
 	m.log.Debug("MongoDB DB CS: ", m.dbConf.GetBlurredURL())
 	m.log.Info(m.GetName() + " Initialized")
+
+	// look for the last record timestamp stored in the collection
+	lastTimestampAgggregateRecord, err := getLastDocumentTimestamp(m.dbSession, analytics.AgggregateMixedCollectionName)
+
+	// we will set it to the lastDocumentTimestamp map to track the timestamp of different documents of different Mongo Aggregators
+	if err != nil {
+		m.log.Debug("Last document timestamp not found:", err)
+	} else {
+		analytics.SetlastTimestampAgggregateRecord(m.dbConf.MongoURL, lastTimestampAgggregateRecord)
+	}
 
 	return nil
 }
@@ -261,12 +279,20 @@ func (m *MongoAggregatePump) WriteData(ctx context.Context, data []interface{}) 
 		m.WriteData(ctx, data)
 	} else {
 		// calculate aggregates
-		analyticsPerOrg := analytics.AggregateData(data, m.dbConf.TrackAllPaths, m.dbConf.IgnoreTagPrefixList, m.dbConf.StoreAnalyticsPerMinute, true)
-
+		analyticsPerOrg := analytics.AggregateData(data, m.dbConf.TrackAllPaths, m.dbConf.IgnoreTagPrefixList, m.dbConf.MongoURL, m.dbConf.AggregationTime, true)
 		// put aggregated data into MongoDB
 		for orgID, filteredData := range analyticsPerOrg {
 			err := m.DoAggregatedWriting(ctx, orgID, filteredData)
 			if err != nil {
+				// checking if the error is related to the document size and AggregateSelfHealing is enabled
+				if shouldSelfHeal := m.ShouldSelfHeal(err); shouldSelfHeal {
+					// executing the function again with the new AggregationTime setting
+					newErr := m.WriteData(ctx, data)
+					if newErr == nil {
+						m.log.Info("Self-healing successful")
+					}
+					return newErr
+				}
 				return err
 			}
 
@@ -325,7 +351,6 @@ func (m *MongoAggregatePump) DoAggregatedWriting(ctx context.Context, orgID stri
 		m.log.Info("No OrgID for AnalyticsRecord, skipping")
 		return nil
 	}
-
 	thisSession := m.dbSession.Copy()
 	defer thisSession.Close()
 
@@ -355,7 +380,6 @@ func (m *MongoAggregatePump) DoAggregatedWriting(ctx context.Context, orgID stri
 
 	doc := analytics.AnalyticsRecordAggregate{}
 	_, err := analyticsCollection.Find(query).Apply(change, &doc)
-
 	if err != nil {
 		m.log.WithField("query", query).Error("UPSERT Failure: ", err)
 		return m.HandleWriteErr(err)
@@ -415,4 +439,67 @@ func (m *MongoAggregatePump) collectionExists(name string) (bool, error) {
 // WriteUptimeData will pull the data from the in-memory store and drop it into the specified MongoDB collection
 func (m *MongoAggregatePump) WriteUptimeData(data []interface{}) {
 	m.log.Warning("Mongo Aggregate should not be writing uptime data!")
+}
+
+// getLastDocumentTimestamp will return the timestamp of the last document in the collection
+func getLastDocumentTimestamp(session *mgo.Session, collectionName string) (time.Time, error) {
+	var doc bson.M
+	err := session.DB("").C(collectionName).Find(nil).Sort("-$natural").One(&doc)
+	if err != nil {
+		return time.Time{}, err
+	}
+	if ts, ok := doc["timestamp"].(time.Time); ok {
+		return ts, nil
+	}
+	return time.Time{}, errors.New("timestamp of type: time.Time not found in bson map")
+}
+
+// divideAggregationTime divides by two the analytics stored per minute setting
+func (m *MongoAggregatePump) divideAggregationTime() {
+	if m.dbConf.AggregationTime == 1 {
+		m.log.Debug("Analytics Stored Per Minute is set to 1, unable to divide")
+		return
+	}
+	oldAggTime := m.dbConf.AggregationTime
+	m.dbConf.AggregationTime /= 2
+	m.log.Warn("Analytics Stored Per Minute dicreased from ", oldAggTime, " to ", m.dbConf.AggregationTime)
+}
+
+// ShouldSelfHeal returns true if the pump should self heal
+func (m *MongoAggregatePump) ShouldSelfHeal(err error) bool {
+	const StandardMongoSizeError = "Size must be between 0 and"
+	const CosmosSizeError = "Request size is too large"
+	const DocDBSizeError = "Resulting document after update is larger than"
+
+	if m.dbConf.EnableAggregateSelfHealing {
+		if strings.Contains(err.Error(), StandardMongoSizeError) || strings.Contains(err.Error(), CosmosSizeError) || strings.Contains(err.Error(), DocDBSizeError) {
+			// if the AggregationTime setting is already set to 1, we can't do anything else
+			if m.dbConf.AggregationTime == 1 {
+				m.log.Warning("AggregationTime is equal to 1 minute, unable to reduce it further. Skipping self-healing.")
+				return false
+			}
+			m.log.Warning("Detected document size failure, attempting to create a new document and reduce the number of analytics stored per minute")
+			// dividing the AggregationTime by 2 to reduce the number of analytics stored per minute
+			m.divideAggregationTime()
+			// resetting the lastDocumentTimestamp, this will create a new document with the current timestamp
+			analytics.SetlastTimestampAgggregateRecord(m.dbConf.MongoURL, time.Time{})
+			return true
+		}
+	}
+	return false
+}
+
+// SetAggregationTime sets the aggregation time for the pump
+func (m *MongoAggregatePump) SetAggregationTime() {
+	// if StoreAnalyticsPerMinute is set to true, the aggregation time will be set to 1.
+	// if not, the aggregation time will be set to the value of the field AggregationTime.
+	// if there is no value for AggregationTime, it will be set to 60.
+
+	if m.dbConf.StoreAnalyticsPerMinute {
+		m.log.Info("StoreAnalyticsPerMinute is set to true. Pump will aggregate data every minute.")
+		m.dbConf.AggregationTime = 1
+	} else if m.dbConf.AggregationTime < 1 || m.dbConf.AggregationTime > 60 {
+		m.log.Warn("AggregationTime is not set or is not between 1 and 60. Defaulting to 60")
+		m.dbConf.AggregationTime = 60
+	}
 }
