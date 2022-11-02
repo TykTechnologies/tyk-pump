@@ -3,10 +3,12 @@ package pumps
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
+	"github.com/TykTechnologies/tyk-pump/analytics/demo"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/mgo.v2/bson"
@@ -278,6 +280,54 @@ func TestMongoAggregatePump_divideAggregationTime(t *testing.T) {
 
 			assert.Equal(t, tt.newAggregationTime, m.dbConf.AggregationTime)
 		})
+	}
+}
+
+func TestMongoAggregatePump_SelfHealing(t *testing.T) {
+	cfgPump1 := make(map[string]interface{})
+	cfgPump1["mongo_url"] = "mongodb://localhost:27017/tyk_analytics"
+	cfgPump1["ignore_aggregations"] = []string{"apikeys"}
+	cfgPump1["use_mixed_collection"] = true
+	cfgPump1["aggregation_time"] = 60
+	cfgPump1["enable_aggregate_self_healing"] = true
+
+	pmp1 := MongoAggregatePump{}
+
+	errInit1 := pmp1.Init(cfgPump1)
+	if errInit1 != nil {
+		t.Error(errInit1)
+		return
+	}
+
+	defer func() {
+		// we clean the db after we finish the test
+		// we use pmp1 session since it should be the same
+		sess := pmp1.dbSession.Copy()
+		defer sess.Close()
+
+		if err := sess.DB("").DropDatabase(); err != nil {
+			panic(err)
+		}
+	}()
+
+	var count int
+	var set []interface{}
+	for {
+		count++
+		record := demo.GenerateRandomAnalyticRecord("org123")
+		set = append(set, record)
+		if count == 1000 {
+			err := pmp1.WriteData(context.TODO(), set)
+			if err != nil {
+				// checking if the error is related to the size of the document (standard Mongo)
+				contains := strings.Contains(err.Error(), "Size must be between 0 and")
+				assert.True(t, contains)
+				// If we get an error, is because aggregation time is equal to 1, and self healing can't divide it
+				assert.Equal(t, 1, pmp1.dbConf.AggregationTime)
+				return
+			}
+			count = 0
+		}
 	}
 }
 

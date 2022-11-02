@@ -285,8 +285,7 @@ func (m *MongoAggregatePump) WriteData(ctx context.Context, data []interface{}) 
 			err := m.DoAggregatedWriting(ctx, orgID, filteredData)
 			if err != nil {
 				// checking if the error is related to the document size and AggregateSelfHealing is enabled
-				shouldSelfHeal := m.ShouldSelfHeal(err)
-				if shouldSelfHeal {
+				if shouldSelfHeal := m.ShouldSelfHeal(err); shouldSelfHeal {
 					// executing the function again with the new AggregationTime setting
 					newErr := m.WriteData(ctx, data)
 					if newErr == nil {
