@@ -103,12 +103,23 @@ func (g *GraphMongoPump) WriteData(ctx context.Context, data []interface{}) erro
 				if !ok {
 					continue
 				}
-				gr, err := r.ToGraphRecord()
-				if err != nil {
-					errCh <- err
-					g.log.WithError(err).Warn("error converting 1 record to graph record")
-					continue
+
+				var (
+					gr  analytics.GraphRecord
+					err error
+				)
+				if r.RawRequest == "" || r.RawResponse == "" || r.ApiSchema == "" {
+					g.log.Warn("skipping record parsing")
+					gr = analytics.GraphRecord{AnalyticsRecord: r}
+				} else {
+					gr, err = r.ToGraphRecord()
+					if err != nil {
+						errCh <- err
+						g.log.WithError(err).Warn("error converting 1 record to graph record")
+						continue
+					}
 				}
+
 				finalSet = append(finalSet, gr)
 			}
 
