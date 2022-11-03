@@ -19,6 +19,55 @@ const (
 	responseTemplate = "HTTP/0.0 200 OK\r\nContent-Length: %d\r\nConnection: close\r\nContent-Type: application/json\r\n\r\n%s"
 )
 
+const subgraphSchema = `
+directive @extends on OBJECT
+
+directive @external on FIELD_DEFINITION
+
+directive @key(fields: _FieldSet!) on OBJECT | INTERFACE
+
+directive @provides(fields: _FieldSet!) on FIELD_DEFINITION
+
+directive @requires(fields: _FieldSet!) on FIELD_DEFINITION
+
+type Entity {
+  findProductByUpc(upc: String!): Product!
+  findUserByID(id: ID!): User!
+}
+
+type Product {
+  upc: String!
+  reviews: [Review]
+}
+
+type Query {
+  _entities(representations: [_Any!]!): [_Entity]!
+  _service: _Service!
+}
+
+type Review {
+  body: String!
+  author: User!
+  product: Product!
+}
+
+type User {
+  id: ID!
+  username: String!
+  reviews: [Review]
+}
+
+scalar _Any
+
+union _Entity = Product | User
+
+scalar _FieldSet
+
+type _Service {
+  sdl: String
+}
+`
+
 const sampleSchema = `
 type Query {
   characters(filter: FilterCharacter, page: Int): Characters
@@ -113,6 +162,24 @@ func TestAnalyticsRecord_ToGraphRecord(t *testing.T) {
 				}
 				g.OperationType = "Query"
 				return g
+			},
+		},
+		{
+			title:    "error field type",
+			request:  `{"query":"query($representations: [_Any!]!){_entities(representations: $representations){... on User {reviews {body}}}}","variables":{"representations":[{"id":"1234","__typename":"User"}]}}`,
+			response: `{"data":{"_entities":[{"reviews":[{"body":"A highly effective form of birth control."},{"body":"Fedoras are one of the most fashionable hats around and can look great with a variety of outfits."}]}]}}`,
+			expected: func(s, s2 string) GraphRecord {
+				variables := `{"representations":[{"id":"1234","__typename":"User"}]}`
+				g := graphRecordSample
+				g.OperationType = "Query"
+				g.Variables = base64.StdEncoding.EncodeToString([]byte(variables))
+				g.Types = nil
+				return g
+			},
+			expectedErr: "invalid selection set field type",
+			modifyRecord: func(a AnalyticsRecord) AnalyticsRecord {
+				a.ApiSchema = base64.StdEncoding.EncodeToString([]byte(subgraphSchema))
+				return a
 			},
 		},
 		{
