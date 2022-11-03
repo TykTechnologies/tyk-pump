@@ -149,7 +149,7 @@ func country() string {
 	return codes[rand.Intn(len(codes))]
 }
 
-func GenerateDemoData(start time.Time, days int, recordsPerHour int, orgId string, disableTrackPath bool, writer func([]interface{}, *health.Job, time.Time, int)) {
+func GenerateDemoData(start time.Time, days int, recordsPerHour int, orgId string, trackPath bool, writer func([]interface{}, *health.Job, time.Time, int)) {
 	count := 0
 	for d := days; d >= 0; d-- {
 		for h := 0; h < 23; h++ {
@@ -164,7 +164,7 @@ func GenerateDemoData(start time.Time, days int, recordsPerHour int, orgId strin
 				volume = randomInRange(300, 500)
 			}
 			for i := 0; i < volume; i++ {
-				r := GenerateRandomAnalyticRecord(orgId, disableTrackPath)
+				r := GenerateRandomAnalyticRecord(orgId, trackPath)
 				r.Day = ts.Day()
 				r.Month = ts.Month()
 				r.Year = ts.Year()
@@ -180,7 +180,7 @@ func GenerateDemoData(start time.Time, days int, recordsPerHour int, orgId strin
 	}
 }
 
-func GenerateRandomAnalyticRecord(orgId string, disableTrackPath bool) analytics.AnalyticsRecord {
+func GenerateRandomAnalyticRecord(orgId string, trackPath bool) analytics.AnalyticsRecord {
 	p := randomPath()
 	api, apiID := randomAPI()
 	ts := time.Now()
@@ -208,7 +208,7 @@ func GenerateRandomAnalyticRecord(orgId string, disableTrackPath bool) analytics
 		IPAddress:     "118.93.55.103",
 		Tags:          []string{"orgid-" + orgId, "apiid-" + apiID},
 		Alias:         "",
-		TrackPath:     !disableTrackPath,
+		TrackPath:     trackPath,
 		ExpireAt:      time.Now().Add(time.Hour * 8760),
 	}
 
