@@ -85,6 +85,9 @@ func (a *AnalyticsRecord) ToGraphRecord() (GraphRecord, error) {
 	}
 	typesToFieldsMap := make(map[string][]string)
 	for fieldRef, typeDefRef := range fieldTypeList {
+		if typeDefRef == ast.InvalidRef {
+			continue
+		}
 		extractTypesAndFields(fieldRef, typeDefRef, typesToFieldsMap, request, schema)
 	}
 	record.Types = typesToFieldsMap
