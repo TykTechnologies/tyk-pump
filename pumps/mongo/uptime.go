@@ -4,15 +4,14 @@ import (
 	"strings"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
+	"github.com/TykTechnologies/tyk-pump/pumps/internal/mgo"
 	"gopkg.in/vmihailenco/msgpack.v2"
 )
 
 // WriteUptimeData will pull the data from the in-memory store and drop it into the specified MongoDB collection
 func (p *Pump) WriteUptimeData(data []interface{}) {
-
-	for p.dbSession == nil {
-		p.Log.Debug("Connecting to mongoDB store")
-		p.connect()
+	if len(data) == 0 {
+		return
 	}
 
 	collectionName := "tyk_uptime_analytics"
@@ -23,24 +22,26 @@ func (p *Pump) WriteUptimeData(data []interface{}) {
 
 	p.Log.Debug("Uptime Data: ", len(data))
 
-	if len(data) == 0 {
-		return
-	}
-
-	keys := make([]interface{}, len(data))
-
-	for i, v := range data {
+	var keys []interface{}
+	for _, v := range data {
 		decoded := analytics.UptimeReportData{}
 
-		if err := msgpack.Unmarshal([]byte(v.(string)), &decoded); err != nil {
-			// ToDo: should this work with serializer?
-			p.Log.Error("Couldn't unmarshal analytics data:", err)
+		stringValue, ok := v.(string)
+		if !ok {
 			continue
 		}
 
-		keys[i] = interface{}(decoded)
+		if err := msgpack.Unmarshal([]byte(stringValue), &decoded); err != nil {
+			p.Log.Error("Couldn't unmarshal analytics data:", err)
+			continue
+		}
+		keys = append(keys, interface{}(decoded))
 
 		p.Log.Debug("Decoded Record: ", decoded)
+	}
+
+	if len(keys) == 0 {
+		return
 	}
 
 	p.Log.Debug("Writing data to ", collectionName)
@@ -52,7 +53,7 @@ func (p *Pump) WriteUptimeData(data []interface{}) {
 		if strings.Contains(err.Error(), "Closed explicitly") || strings.Contains(err.Error(), "EOF") {
 			p.Log.Warning("--> Detected connection failure, reconnecting")
 
-			p.connect()
+			p.connect(mgo.NewDialer())
 		}
 	}
 }

@@ -25,10 +25,11 @@ func defaultConf() Config {
 		CollectionName:          colName,
 		MaxInsertBatchSizeBytes: 10 * MiB,
 		MaxDocumentSizeBytes:    10 * MiB,
+		BaseConfig: BaseConfig{
+			MongoURL:                   dbAddr,
+			MongoSSLInsecureSkipVerify: true,
+		},
 	}
-
-	conf.MongoURL = dbAddr
-	conf.MongoSSLInsecureSkipVerify = true
 
 	return conf
 }
@@ -622,40 +623,265 @@ func TestAccumulateSet(t *testing.T) {
 }
 
 func TestWriteData(t *testing.T) {
-	timeNow := time.Now()
-	keys := make([]interface{}, 2)
-	keys[0] = analytics.AnalyticsRecord{APIID: "api1", OrgID: "123", TimeStamp: timeNow, APIKey: "apikey1"}
-	keys[1] = analytics.AnalyticsRecord{APIID: "api1", OrgID: "123", TimeStamp: timeNow, APIKey: "apikey1"}
+	tcs := []struct {
+		testName    string
+		pumpConfig  Config
+		setupCalls  func() (*mocks.SessionManager, *mocks.DatabaseManager, *mocks.CollectionManager, []interface{})
+		expectedErr error
+	}{
+		{
+			testName:   "writing mongo pump - success",
+			pumpConfig: defaultConf(),
+			setupCalls: func() (*mocks.SessionManager, *mocks.DatabaseManager, *mocks.CollectionManager, []interface{}) {
+				//check what functions from Collection are going to be called
+				timeNow := time.Now()
 
-	//check what functions from Collection are going to be called
-	collection := &mocks.CollectionManager{}
-	collection.On("Insert", keys...).Return(nil)
+				keys := make([]interface{}, 2)
+				keys[0] = analytics.AnalyticsRecord{APIID: "api1", OrgID: "123", TimeStamp: timeNow, APIKey: "apikey1"}
+				keys[1] = analytics.AnalyticsRecord{APIID: "api1", OrgID: "123", TimeStamp: timeNow, APIKey: "apikey1"}
 
-	//check what functions from Database are going to be called
-	database := &mocks.DatabaseManager{}
-	database.On("C", colName).Return(collection)
+				collection := &mocks.CollectionManager{}
+				collection.On("Insert", keys...).Return(nil)
 
-	//check what functions from Session are going to be called
-	session := &mocks.SessionManager{}
-	session.On("DB", "").Return(database)
-	session.On("Copy").Return(session)
-	session.On("Close")
+				//check what functions from Database are going to be called
+				database := &mocks.DatabaseManager{}
+				database.On("C", colName).Return(collection)
 
-	conf := defaultConf()
-	conf.MaxInsertBatchSizeBytes = 5120
-	pmp := &Pump{
-		dbConf: &conf,
+				//check what functions from Session are going to be called
+				session := &mocks.SessionManager{}
+				session.On("DB", "").Return(database)
+				session.On("Copy").Return(session)
+				session.On("Close").Maybe()
+				return session, database, collection, keys
+			},
+			expectedErr: nil,
+		},
+		{
+			testName:   "writing mongo pump - error",
+			pumpConfig: defaultConf(),
+			setupCalls: func() (*mocks.SessionManager, *mocks.DatabaseManager, *mocks.CollectionManager, []interface{}) {
+				//check what functions from Collection are going to be called
+				timeNow := time.Now()
+
+				keys := make([]interface{}, 2)
+				keys[0] = analytics.AnalyticsRecord{APIID: "api1", OrgID: "123", TimeStamp: timeNow, APIKey: "apikey1"}
+				keys[1] = analytics.AnalyticsRecord{APIID: "api1", OrgID: "123", TimeStamp: timeNow, APIKey: "apikey1"}
+
+				collection := &mocks.CollectionManager{}
+				collection.On("Insert", keys...).Return(errors.New("error from mongo"))
+
+				//check what functions from Database are going to be called
+				database := &mocks.DatabaseManager{}
+				database.On("C", colName).Return(collection)
+
+				//check what functions from Session are going to be called
+				session := &mocks.SessionManager{}
+				session.On("DB", "").Return(database)
+				session.On("Copy").Return(session)
+				session.On("Close").Maybe()
+				return session, database, collection, keys
+			},
+			expectedErr: errors.New("error from mongo"),
+		},
+		{
+			testName:   "writing mongo pump - error closed explicitly",
+			pumpConfig: defaultConf(),
+			setupCalls: func() (*mocks.SessionManager, *mocks.DatabaseManager, *mocks.CollectionManager, []interface{}) {
+				//check what functions from Collection are going to be called
+				timeNow := time.Now()
+
+				keys := make([]interface{}, 2)
+				keys[0] = analytics.AnalyticsRecord{APIID: "api1", OrgID: "123", TimeStamp: timeNow, APIKey: "apikey1"}
+				keys[1] = analytics.AnalyticsRecord{APIID: "api1", OrgID: "123", TimeStamp: timeNow, APIKey: "apikey1"}
+
+				collection := &mocks.CollectionManager{}
+				collection.On("Insert", keys...).Return(errors.New("error from mongo:closed explicitly"))
+
+				//check what functions from Database are going to be called
+				database := &mocks.DatabaseManager{}
+				database.On("C", colName).Return(collection)
+
+				//check what functions from Session are going to be called
+				session := &mocks.SessionManager{}
+				session.On("DB", "").Return(database)
+				session.On("Copy").Return(session)
+				session.On("Close").Maybe()
+				return session, database, collection, keys
+			},
+			expectedErr: errors.New("error from mongo:closed explicitly"),
+		},
+		{
+			testName: "writing mongo pump - error no collection name",
+			pumpConfig: Config{
+				CollectionName:          "",
+				MaxInsertBatchSizeBytes: 10 * MiB,
+				MaxDocumentSizeBytes:    10 * MiB,
+				BaseConfig: BaseConfig{
+					MongoURL:                   dbAddr,
+					MongoSSLInsecureSkipVerify: true,
+				},
+			},
+			setupCalls: func() (*mocks.SessionManager, *mocks.DatabaseManager, *mocks.CollectionManager, []interface{}) {
+				//check what functions from Collection are going to be called
+				timeNow := time.Now()
+
+				keys := make([]interface{}, 2)
+				keys[0] = analytics.AnalyticsRecord{APIID: "api1", OrgID: "123", TimeStamp: timeNow, APIKey: "apikey1"}
+				keys[1] = analytics.AnalyticsRecord{APIID: "api1", OrgID: "123", TimeStamp: timeNow, APIKey: "apikey1"}
+
+				collection := &mocks.CollectionManager{}
+
+				//check what functions from Database are going to be called
+				database := &mocks.DatabaseManager{}
+
+				//check what functions from Session are going to be called
+				session := &mocks.SessionManager{}
+				return session, database, collection, keys
+			},
+			expectedErr: errors.New("no collection name"),
+		},
 	}
-	pmp.Log = logger.GetLogger().WithField("test", mongoPrefix)
-	//we set the mocked session as the wanted sess
-	pmp.dbSession = session
 
-	//Execute pump writing
-	err := pmp.WriteData(context.Background(), keys)
-	assert.Nil(t, err)
+	logger := logger.GetLogger().WithField("test", mongoPrefix)
+	for _, tc := range tcs {
+		t.Run(tc.testName, func(t *testing.T) {
+			conf := tc.pumpConfig
+			pmp := &Pump{
+				dbConf: &conf,
+			}
+			pmp.Log = logger
 
-	//assert all the expected mocked calls
-	session.AssertExpectations(t)
-	database.AssertExpectations(t)
-	collection.AssertExpectations(t)
+			session, database, collection, records := tc.setupCalls()
+
+			//we set the mocked session as the wanted sess
+			pmp.dbSession = session
+
+			err := pmp.WriteData(context.TODO(), records)
+			assert.Equal(t, tc.expectedErr, err)
+
+			//asserting if everything we determined in tc.setupCalls were called
+			session.AssertExpectations(t)
+			database.AssertExpectations(t)
+			collection.AssertExpectations(t)
+		})
+	}
+}
+
+func TestConnect(t *testing.T) {
+	// we use two setup calls in this test struct in order to emulate and control a failure + reconnect
+	tcs := []struct {
+		testName          string
+		pumpConfig        Config
+		setupCalls        func() (*mocks.SessionManager, *mocks.Dialer)
+		expectedMongoType MongoType
+	}{
+		{
+			testName:   "connecting - success",
+			pumpConfig: defaultConf(),
+			setupCalls: func() (*mocks.SessionManager, *mocks.Dialer) {
+				session := &mocks.SessionManager{}
+				cmd := struct {
+					Code int `bson:"code"`
+				}{}
+				session.On("Run", "features", &cmd).Return(nil)
+
+				dialer := &mocks.Dialer{}
+				dialInfo := &mgo.DialInfo{
+					Addrs: []string{dbAddr},
+				}
+				dialer.On("DialWithInfo", dialInfo).Return(session, nil)
+				return session, dialer
+			},
+			expectedMongoType: StandardMongo,
+		},
+		{
+			testName:   "connecting - retry",
+			pumpConfig: defaultConf(),
+			setupCalls: func() (*mocks.SessionManager, *mocks.Dialer) {
+				session := &mocks.SessionManager{}
+				cmd := struct {
+					Code int `bson:"code"`
+				}{}
+				session.On("Run", "features", &cmd).Return(nil)
+
+				dialer := &mocks.Dialer{}
+				dialInfo := &mgo.DialInfo{
+					Addrs: []string{dbAddr},
+				}
+				// first try we got an error
+				dialer.On("DialWithInfo", dialInfo).Return(session, errors.New("err")).Once()
+				// after that, the connection succeed
+				dialer.On("DialWithInfo", dialInfo).Return(session, nil).Once()
+
+				return session, dialer
+			},
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.testName, func(t *testing.T) {
+			conf := tc.pumpConfig
+			pmp := &Pump{
+				dbConf: &conf,
+			}
+			pmp.Log = logger.GetLogger().WithField("test", mongoPrefix)
+
+			session, dialer := tc.setupCalls()
+			//we set the mocked session as the wanted sess
+
+			pmp.connect(dialer)
+
+			assert.Equal(t, session, pmp.dbSession)
+
+			assert.Equal(t, tc.expectedMongoType, pmp.dbConf.MongoDBType)
+			//asserting if everything we determined in tc.setupCalls were called
+			dialer.AssertExpectations(t)
+			session.AssertExpectations(t)
+		})
+	}
+}
+
+func TestInit(t *testing.T) {
+	tcs := []struct {
+		testName   string
+		pumpConfig interface{}
+		setupCalls func() (*mocks.SessionManager, *mocks.Dialer)
+		assertions func(*testing.T, *Pump)
+	}{
+		{
+			testName: "init - success with defaults",
+			pumpConfig: Config{
+				CollectionName: colName,
+				BaseConfig: BaseConfig{
+					MongoURL:                   dbAddr,
+					MongoSSLInsecureSkipVerify: true,
+				},
+			},
+			setupCalls: func() (*mocks.SessionManager, *mocks.Dialer) {
+				session := &mocks.SessionManager{}
+
+				dialer := &mocks.Dialer{}
+				return session, dialer
+			},
+			assertions: func(t *testing.T, pump *Pump) {
+				// check for defaults
+				assert.Equal(t, 10*MiB, pump.dbConf.MaxDocumentSizeBytes)
+				assert.Equal(t, 10*MiB, pump.dbConf.MaxInsertBatchSizeBytes)
+				// check that the main things were initialised
+				assert.NotNil(t, pump.dbSession)
+				assert.NotNil(t, pump.Log)
+			},
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.testName, func(t *testing.T) {
+			conf := tc.pumpConfig
+			pmp := &Pump{}
+
+			err := pmp.Init(conf)
+			assert.Nil(t, err)
+			tc.assertions(t, pmp)
+		})
+	}
 }
