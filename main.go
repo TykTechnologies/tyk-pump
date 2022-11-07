@@ -411,8 +411,7 @@ func main() {
 		log.Info("BUILDING DEMO DATA AND EXITING...")
 		log.Warning("Starting from date: ", time.Now().AddDate(0, 0, -30))
 		demo.DemoInit(*demoMode, *demoApiMode, *demoApiVersionMode)
-		demo.GenerateDemoData(time.Now().AddDate(0, 0, -*demoDays), *demoDays, *demoRecordsPerHour, *demoMode, *demoTrackPath, writeToPumps)
-
+		demo.GenerateDemoData(*demoDays, *demoRecordsPerHour, *demoMode, *demoTrackPath, writeToPumps)
 		return
 	}
 
