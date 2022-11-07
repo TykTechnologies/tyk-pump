@@ -320,6 +320,8 @@ Available Mongo instances are: Standard Mongo, DocumentDB (AWS), CosmosDB (Azure
         "mongo_url": "mongodb://username:password@{hostname:port},{hostname:port}/{db_name}",
         "use_mixed_collection": true,
         "store_analytics_per_minute": false,
+        "aggregation_time": 50,
+        "enable_aggregate_self_healing": true,
         "track_all_paths": false
       },
       "mongo-pump-selective": {
@@ -343,6 +345,9 @@ TYK_PMP_PUMPS_MONGO_META_MAXDOCUMENTSIZEBYTES=20112
 
 TYK_PMP_PUMPS_MONGOAGG_TYPE=mongo-pump-aggregate
 TYK_PMP_PUMPS_MONGOAGG_META_USEMIXEDCOLLECTION=true
+TYK_PMP_PUMPS_MONGOAGG_META_STOREANALYTICSPERMINUTE=false
+TYK_PMP_PUMPS_MONGOAGG_META_AGGREGATIONTIME=50
+TYK_PMP_PUMPS_MONGOAGG_META_ENABLESELFHEALING=true
 ```
 
 ###### Self Healing

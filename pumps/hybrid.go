@@ -43,10 +43,12 @@ var (
 
 // HybridPump allows to send analytics to MDCB over RPC
 type HybridPump struct {
-	aggregated             bool
-	trackAllPaths          bool
-	storeAnalyticPerMinute bool
-	ignoreTagPrefixList    []string
+	aggregated                 bool
+	trackAllPaths              bool
+	storeAnalyticsPerMinute    bool
+	aggregationTime            int
+	enableAggregateSelfHealing bool
+	ignoreTagPrefixList        []string
 	CommonPumpConfig
 	rpcConfig rpc.Config
 }
@@ -128,8 +130,19 @@ func (p *HybridPump) Init(config interface{}) error {
 			p.trackAllPaths = trackAllPaths.(bool)
 		}
 
-		if storeAnalyticPerMinute, ok := meta["store_analytics_per_minute"]; ok {
-			p.storeAnalyticPerMinute = storeAnalyticPerMinute.(bool)
+		if storeAnalyticsPerMinute, ok := meta["store_analytics_per_minute"].(bool); ok {
+			p.storeAnalyticsPerMinute = storeAnalyticsPerMinute
+			p.aggregationTime = 1
+		} else {
+			aggregationTime, ok := meta["aggregation_time"].(int)
+			if !ok || aggregationTime > 60 || aggregationTime < 1 {
+				p.log.Warnf("aggregation_time should be between 1 and 60, Found: %v. The default value will be used  (60 minutes)", aggregationTime)
+				p.aggregationTime = 60
+			}
+		}
+
+		if enableAggregateSelfHealing, ok := meta["enable_aggregate_self_healing"].(bool); ok {
+			p.enableAggregateSelfHealing = enableAggregateSelfHealing
 		}
 
 		if list, ok := meta["ignore_tag_prefix_list"]; ok {
@@ -199,7 +212,7 @@ func (p *HybridPump) WriteData(ctx context.Context, data []interface{}) error {
 		}
 	} else { // send aggregated data
 		// calculate aggregates
-		aggregates := analytics.AggregateData(data, p.trackAllPaths, p.ignoreTagPrefixList, p.storeAnalyticPerMinute, false)
+		aggregates := analytics.AggregateData(data, p.trackAllPaths, p.ignoreTagPrefixList, p.rpcConfig.ConnectionString, p.aggregationTime, false)
 
 		// turn map with analytics aggregates into JSON payload
 		jsonData, err := json.Marshal(aggregates)
