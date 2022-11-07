@@ -18,7 +18,7 @@ require (
 	github.com/go-ole/go-ole v1.2.4 // indirect
 	github.com/go-redis/redis/v8 v8.3.1
 	github.com/gocraft/health v0.0.0-20170925182251-8675af27fef0
-	github.com/golang/protobuf v1.5.0
+	github.com/golang/protobuf v1.5.2
 	github.com/google/go-cmp v0.5.9
 	github.com/gorilla/mux v1.8.0
 	github.com/influxdata/influxdb v1.8.3
@@ -34,7 +34,7 @@ require (
 	github.com/olivere/elastic/v7 v7.0.28
 	github.com/oschwald/maxminddb-golang v1.5.0
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus/client_golang v1.11.0
+	github.com/prometheus/client_golang v1.13.1
 	github.com/quipo/statsd v0.0.0-20160923160612-75b7afedf0d2
 	github.com/robertkowalski/graylog-golang v0.0.0-20151121031040-e5295cfa2827
 	github.com/satori/go.uuid v1.2.0
@@ -47,9 +47,8 @@ require (
 	github.com/syndtr/goleveldb v0.0.0-20190318030020-c3a204f8e965 // indirect
 	github.com/x-cray/logrus-prefixed-formatter v0.5.2
 	github.com/xtgo/uuid v0.0.0-20140804021211-a0b114877d4c // indirect
-	golang.org/x/lint v0.0.0-20200302205851-738671d3881b // indirect
-	golang.org/x/net v0.0.0-20210614182718-04defd469f4e
-	google.golang.org/protobuf v1.27.1
+	golang.org/x/net v0.0.0-20220225172249-27dd8689420f
+	google.golang.org/protobuf v1.28.1
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6
 	gopkg.in/mgo.v2 v2.0.0-20190816093944-a6b53ec6cb22
 	gopkg.in/olivere/elastic.v3 v3.0.56
