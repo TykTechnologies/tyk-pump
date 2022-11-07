@@ -101,6 +101,7 @@ func TestCollectionExists(t *testing.T) {
 			},
 		},
 	}
+	logger := logger.GetLogger().WithField("test", mongoPrefix)
 
 	for _, tc := range tcs {
 		t.Run(tc.testName, func(t *testing.T) {
@@ -108,8 +109,7 @@ func TestCollectionExists(t *testing.T) {
 			pmp := &Pump{
 				dbConf: &conf,
 			}
-			pmp.Log = logger.GetLogger().WithField("test", mongoPrefix)
-
+			pmp.Log = logger
 			session, database, collection := tc.setupCalls()
 
 			//we set the mocked session as the wanted sess
@@ -269,6 +269,7 @@ func TestCapCollection(t *testing.T) {
 			},
 		},
 	}
+	logger := logger.GetLogger().WithField("test", mongoPrefix)
 
 	for _, tc := range tcs {
 		t.Run(tc.testName, func(t *testing.T) {
@@ -278,7 +279,7 @@ func TestCapCollection(t *testing.T) {
 			pmp := &Pump{
 				dbConf: &conf,
 			}
-			pmp.Log = logger.GetLogger().WithField("test", mongoPrefix)
+			pmp.Log = logger
 			// setup the expected calls
 			session, database, collection := tc.setupCalls()
 
@@ -568,6 +569,7 @@ func TestEnsureIndexes(t *testing.T) {
 			},
 		},
 	}
+	logger := logger.GetLogger().WithField("test", mongoPrefix)
 
 	for _, tc := range tcs {
 		t.Run(tc.testName, func(t *testing.T) {
@@ -577,7 +579,7 @@ func TestEnsureIndexes(t *testing.T) {
 			pmp := &Pump{
 				dbConf: &conf,
 			}
-			pmp.Log = logger.GetLogger().WithField("test", mongoPrefix)
+			pmp.Log = logger
 
 			session, database, collection := tc.setupCalls()
 
@@ -817,6 +819,7 @@ func TestConnect(t *testing.T) {
 			},
 		},
 	}
+	logger := logger.GetLogger().WithField("test", mongoPrefix)
 
 	for _, tc := range tcs {
 		t.Run(tc.testName, func(t *testing.T) {
@@ -824,7 +827,7 @@ func TestConnect(t *testing.T) {
 			pmp := &Pump{
 				dbConf: &conf,
 			}
-			pmp.Log = logger.GetLogger().WithField("test", mongoPrefix)
+			pmp.Log = logger
 
 			session, dialer := tc.setupCalls()
 			//we set the mocked session as the wanted sess
