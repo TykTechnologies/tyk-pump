@@ -1231,4 +1231,4 @@ You can run Tyk Pump in demo mode, which will generate fake analytics data and s
 - `--demo-api=<API_ID>` - Sets the API ID to use for the demo data. If not set, a random API ID will be generated.
 - `--demo-days=<DAYS>` - Sets the number of days of demo data to generate. Defaults to 30.
 - `--demo-records-per-hour=<RECORDS_PER_HOUR>` - Sets the number of records to generate per hour. The default value is a random number between 300 and 500.
-- `--demo-track-path` - Enables tracking of the request path in the demo data. Defaults to false. Consider that having `track_all_paths` set to true in your pump configuration will override this option.
+- `--demo-track-path` - Enables tracking of the request path in the demo data. Defaults to false (disabled). Consider that having `track_all_paths` set to true in your pump configuration will override this option.
