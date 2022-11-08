@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/TykTechnologies/tyk-pump/pumps/common"
+	"github.com/TykTechnologies/tyk-pump/pumps/internal/certs"
 	mgo2 "github.com/TykTechnologies/tyk-pump/pumps/internal/mgo"
 	"github.com/TykTechnologies/tyk-pump/pumps/mongo"
 	"github.com/kelseyhightower/envconfig"
@@ -269,7 +270,7 @@ func mongoDialInfo(conf mongo.BaseConfig) (dialInfo *mgo.DialInfo, err error) {
 			}
 
 			if conf.MongoSSLPEMKeyfile != "" {
-				cert, err := mongo.LoadCertficateAndKeyFromFile(conf.MongoSSLPEMKeyfile)
+				cert, err := certs.LoadCertficateAndKeyFromFile(conf.MongoSSLPEMKeyfile)
 				if err != nil {
 					log.Fatal("Can't load mongo client certificate: ", err)
 				}

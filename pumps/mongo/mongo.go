@@ -3,6 +3,7 @@ package mongo
 import (
 	"context"
 	"encoding/base64"
+	"errors"
 	"strconv"
 	"strings"
 	"time"
@@ -47,11 +48,12 @@ func (p *Pump) Init(config interface{}) error {
 			"collection_name": p.dbConf.CollectionName,
 		}).Info("Init")
 		if err != nil {
-			panic(p.dbConf.BaseConfig)
+			return errors.New("failed to decode pump base configuration")
 		}
 	}
 	if err != nil {
-		p.Log.Fatal("Failed to decode configuration: ", err)
+		p.Log.Error("Failed to decode configuration: ", err)
+		return errors.New("failed to decode pump configuration")
 	}
 
 	//we check for the environment configuration if this pumps is not the uptime pump
@@ -82,7 +84,7 @@ func (p *Pump) Init(config interface{}) error {
 		p.dbConf.MaxDocumentSizeBytes = 10 * MiB
 	}
 
-	p.connect()
+	p.connect(mgo.NewDialer())
 
 	p.capCollection()
 
@@ -99,14 +101,14 @@ func (p *Pump) Init(config interface{}) error {
 	return nil
 }
 
-func (p *Pump) connect() {
+func (p *Pump) connect(dialer mgo.Dialer) {
 
 	var err error
-	p.dbSession, err = NewSession(p.dbConf.BaseConfig, p.Timeout)
+	p.dbSession, err = NewSession(dialer, p.dbConf.BaseConfig, p.Timeout)
 	for err != nil {
 		p.Log.WithError(err).WithField("dialinfo", p.dbConf.BaseConfig.GetBlurredURL()).Error("Mongo connection failed. Retrying.")
 		time.Sleep(5 * time.Second)
-		p.dbSession, err = NewSession(p.dbConf.BaseConfig, p.Timeout)
+		p.dbSession, err = NewSession(dialer, p.dbConf.BaseConfig, p.Timeout)
 	}
 
 	if err == nil && p.dbConf.MongoDBType == 0 {
@@ -118,15 +120,12 @@ func (p *Pump) WriteData(ctx context.Context, data []interface{}) error {
 
 	collectionName := p.dbConf.CollectionName
 	if collectionName == "" {
-		p.Log.Fatal("No collection name!")
+		p.Log.Error("No collection name!")
+		return errors.New("no collection name")
 	}
 
 	p.Log.Debug("Attempting to write ", len(data), " records...")
 
-	for p.dbSession == nil {
-		p.Log.Debug("Connecting to analytics store")
-		p.connect()
-	}
 	accumulateSet := p.AccumulateSet(data)
 
 	errCh := make(chan error, len(accumulateSet))
