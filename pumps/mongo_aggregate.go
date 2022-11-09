@@ -4,6 +4,7 @@ import (
 	"context"
 	b64 "encoding/base64"
 	"errors"
+	"fmt"
 	"sort"
 	"strings"
 	"time"
@@ -220,6 +221,15 @@ func (m *MongoAggregatePump) connect() {
 
 	if err == nil && m.dbConf.MongoDBType == 0 {
 		m.dbConf.MongoDBType = mongoType(m.dbSession)
+	}
+	fmt.Println("------------------", m.dbConf.MongoSessionConsistency)
+	switch m.dbConf.MongoSessionConsistency {
+	case "eventual":
+		m.dbSession.SetMode(mgo.Eventual, true)
+	case "monotonic":
+		m.dbSession.SetMode(mgo.Monotonic, true)
+	default:
+		m.dbSession.SetMode(mgo.Strong, true)
 	}
 }
 

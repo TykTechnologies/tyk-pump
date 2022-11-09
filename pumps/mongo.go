@@ -79,6 +79,10 @@ type BaseMongoConf struct {
 	MongoDBType MongoType `json:"mongo_db_type" mapstructure:"mongo_db_type"`
 	// Set to true to disable the default tyk index creation.
 	OmitIndexCreation bool `json:"omit_index_creation" mapstructure:"omit_index_creation"`
+	// Set the consistency mode for the session, it defaults to `Strong`. The valid values are:
+	// * eventual
+	// monotonic
+	MongoSessionConsistency string `json:"mongo_session_consistency" mapstructure:"mongo_session_consistency"`
 }
 
 func (b *BaseMongoConf) GetBlurredURL() string {
@@ -271,18 +275,18 @@ func (m *MongoPump) Init(config interface{}) error {
 	m.log = log.WithField("prefix", mongoPrefix)
 
 	err := mapstructure.Decode(config, &m.dbConf)
-	if err == nil {
-		err = mapstructure.Decode(config, &m.dbConf.BaseMongoConf)
-		m.log.WithFields(logrus.Fields{
-			"url":             m.dbConf.GetBlurredURL(),
-			"collection_name": m.dbConf.CollectionName,
-		}).Info("Init")
-		if err != nil {
-			panic(m.dbConf.BaseMongoConf)
-		}
-	}
 	if err != nil {
 		m.log.Fatal("Failed to decode configuration: ", err)
+	}
+
+	err = mapstructure.Decode(config, &m.dbConf.BaseMongoConf)
+	m.log.WithFields(logrus.Fields{
+		"url":             m.dbConf.GetBlurredURL(),
+		"collection_name": m.dbConf.CollectionName,
+	}).Info("Init")
+
+	if err != nil {
+		panic(m.dbConf.BaseMongoConf)
 	}
 
 	//we check for the environment configuration if this pumps is not the uptime pump
@@ -479,6 +483,15 @@ func (m *MongoPump) connect() {
 
 	if err == nil && m.dbConf.MongoDBType == 0 {
 		m.dbConf.MongoDBType = mongoType(m.dbSession)
+	}
+
+	switch m.dbConf.MongoSessionConsistency {
+	case "eventual":
+		m.dbSession.SetMode(mgo.Eventual, true)
+	case "monotonic":
+		m.dbSession.SetMode(mgo.Monotonic, true)
+	default:
+		m.dbSession.SetMode(mgo.Strong, true)
 	}
 }
 
