@@ -121,14 +121,7 @@ func (m *MongoSelectivePump) connect() {
 		m.dbConf.MongoDBType = mongoType(m.dbSession)
 	}
 
-	switch m.dbConf.MongoSessionConsistency {
-	case "eventual":
-		m.dbSession.SetMode(mgo.Eventual, true)
-	case "monotonic":
-		m.dbSession.SetMode(mgo.Monotonic, true)
-	default:
-		m.dbSession.SetMode(mgo.Strong, true)
-	}
+	m.dbConf.SetMongoConsistency(m.dbSession)
 }
 
 func (m *MongoSelectivePump) ensureIndexes(c *mgo.Collection) error {
