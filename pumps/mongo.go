@@ -286,18 +286,18 @@ func (m *MongoPump) Init(config interface{}) error {
 	m.log = log.WithField("prefix", mongoPrefix)
 
 	err := mapstructure.Decode(config, &m.dbConf)
+	if err == nil {
+		err = mapstructure.Decode(config, &m.dbConf.BaseMongoConf)
+		m.log.WithFields(logrus.Fields{
+			"url":             m.dbConf.GetBlurredURL(),
+			"collection_name": m.dbConf.CollectionName,
+		}).Info("Init")
+		if err != nil {
+			panic(m.dbConf.BaseMongoConf)
+		}
+	}
 	if err != nil {
 		m.log.Fatal("Failed to decode configuration: ", err)
-	}
-
-	err = mapstructure.Decode(config, &m.dbConf.BaseMongoConf)
-	m.log.WithFields(logrus.Fields{
-		"url":             m.dbConf.GetBlurredURL(),
-		"collection_name": m.dbConf.CollectionName,
-	}).Info("Init")
-
-	if err != nil {
-		panic(m.dbConf.BaseMongoConf)
 	}
 
 	//we check for the environment configuration if this pumps is not the uptime pump
