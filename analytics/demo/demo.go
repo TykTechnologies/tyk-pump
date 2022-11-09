@@ -149,17 +149,24 @@ func country() string {
 	return codes[rand.Intn(len(codes))]
 }
 
-func GenerateDemoData(start time.Time, days int, orgId string, writer func([]interface{}, *health.Job, time.Time, int)) {
+func GenerateDemoData(days, recordsPerHour int, orgID string, trackPath bool, writer func([]interface{}, *health.Job, time.Time, int)) {
+	t := time.Now()
+	start := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
 	count := 0
-	for d := 30; d >= 0; d-- {
-		for h := 0; h < 23; h++ {
+	for d := 0; d < days; d++ {
+		for h := 0; h < 24; h++ {
 			set := []interface{}{}
 			ts := start.AddDate(0, 0, d)
 			ts = ts.Add(time.Duration(h) * time.Hour)
 			// Generate daily entries
-			volume := randomInRange(300, 500)
+			var volume int
+			if recordsPerHour > 0 {
+				volume = recordsPerHour
+			} else {
+				volume = randomInRange(300, 500)
+			}
 			for i := 0; i < volume; i++ {
-				r := GenerateRandomAnalyticRecord(orgId)
+				r := GenerateRandomAnalyticRecord(orgID, trackPath)
 				r.Day = ts.Day()
 				r.Month = ts.Month()
 				r.Year = ts.Year()
@@ -175,7 +182,7 @@ func GenerateDemoData(start time.Time, days int, orgId string, writer func([]int
 	}
 }
 
-func GenerateRandomAnalyticRecord(orgId string) analytics.AnalyticsRecord {
+func GenerateRandomAnalyticRecord(orgID string, trackPath bool) analytics.AnalyticsRecord {
 	p := randomPath()
 	api, apiID := randomAPI()
 	ts := time.Now()
@@ -190,20 +197,20 @@ func GenerateRandomAnalyticRecord(orgId string) analytics.AnalyticsRecord {
 		Year:          ts.Year(),
 		Hour:          ts.Hour(),
 		ResponseCode:  responseCode(),
-		APIKey:        getRandomKey(orgId),
+		APIKey:        getRandomKey(orgID),
 		TimeStamp:     ts,
 		APIVersion:    apiVersion,
 		APIName:       api,
 		APIID:         apiID,
-		OrgID:         orgId,
+		OrgID:         orgID,
 		OauthID:       "",
 		RequestTime:   int64(randomInRange(0, 10)),
 		RawRequest:    "Qk9EWSBEQVRB",
 		RawResponse:   "UkVTUE9OU0UgREFUQQ==",
 		IPAddress:     "118.93.55.103",
-		Tags:          []string{"orgid-" + orgId, "apiid-" + apiID},
+		Tags:          []string{"orgid-" + orgID, "apiid-" + apiID},
 		Alias:         "",
-		TrackPath:     true,
+		TrackPath:     trackPath,
 		ExpireAt:      time.Now().Add(time.Hour * 8760),
 	}
 
