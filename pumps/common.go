@@ -11,6 +11,7 @@ type CommonPumpConfig struct {
 	maxRecordSize         int
 	OmitDetailedRecording bool
 	log                   *logrus.Entry
+	ignoreFields          []string
 }
 
 func (p *CommonPumpConfig) SetFilters(filters analytics.AnalyticsFilters) {
@@ -52,4 +53,12 @@ func (p *CommonPumpConfig) GetMaxRecordSize() int {
 
 func (p *CommonPumpConfig) SetLogLevel(level logrus.Level) {
 	p.log.Level = level
+}
+
+func (p *CommonPumpConfig) SetIgnoreFields(fields []string) {
+	p.ignoreFields = fields
+}
+
+func (p *CommonPumpConfig) GetIgnoreFields() []string {
+	return p.ignoreFields
 }

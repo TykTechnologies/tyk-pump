@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"net"
+	"reflect"
 	"sort"
 	"strconv"
 	"strings"
@@ -347,4 +348,25 @@ func (a *AnalyticsRecord) IsGraphRecord() bool {
 	}
 
 	return false
+}
+
+func (a *AnalyticsRecord) RemoveIgnoredFields(ignoreFields []string) {
+	rt := reflect.TypeOf(*a)
+	for _, fieldToIgnore := range ignoreFields {
+		found := false
+		for i := 0; i < rt.NumField(); i++ {
+			field := rt.Field(i)
+			v := strings.Split(field.Tag.Get("json"), ",")[0] // use split to ignore tag "options"
+			if v == fieldToIgnore {
+				// set field to default value
+				reflect.ValueOf(a).Elem().Field(i).Set(reflect.Zero(field.Type))
+				found = true
+				continue
+			}
+		}
+		if !found {
+			log.Error("Error looking for field + ", fieldToIgnore+" in AnalyticsRecord struct: not found.")
+		}
+	}
+
 }
