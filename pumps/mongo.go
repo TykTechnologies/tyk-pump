@@ -79,9 +79,7 @@ type BaseMongoConf struct {
 	MongoDBType MongoType `json:"mongo_db_type" mapstructure:"mongo_db_type"`
 	// Set to true to disable the default tyk index creation.
 	OmitIndexCreation bool `json:"omit_index_creation" mapstructure:"omit_index_creation"`
-	// Set the consistency mode for the session, it defaults to `Strong`. The valid values are:
-	// * eventual
-	// monotonic
+	// Set the consistency mode for the session, it defaults to `Strong`. The valid values are: strong, monotonic, eventual.
 	MongoSessionConsistency string `json:"mongo_session_consistency" mapstructure:"mongo_session_consistency"`
 }
 
