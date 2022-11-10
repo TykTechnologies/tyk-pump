@@ -416,7 +416,7 @@ func TestGetBlurredURL(t *testing.T) {
 
 		{
 			testName:           "cluster+complex password username",
-			givenURL:           "mongodb://us3r-n4m!:p4_ssw0rd@mongo-HZNP-0.j.com,mongo-HZNP-1.j.com,mongo-HZNP-2.j.com/tyk?replicaSet=RS1",
+			givenURL:           "mongodb://us3r-n4m!:p4_ssw:0rd@mongo-HZNP-0.j.com,mongo-HZNP-1.j.com,mongo-HZNP-2.j.com/tyk?replicaSet=RS1",
 			expectedBlurredURL: "***:***@mongo-HZNP-0.j.com,mongo-HZNP-1.j.com,mongo-HZNP-2.j.com/tyk?replicaSet=RS1",
 		},
 		{
