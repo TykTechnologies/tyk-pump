@@ -83,8 +83,8 @@ type BaseMongoConf struct {
 
 func (b *BaseMongoConf) GetBlurredURL() string {
 	// mongo uri match with regex ^(mongodb:(?:\/{2})?)((\w+?):(\w+?)@|:?@?)(\S+?):(\d+)(\/(\S+?))?(\?replicaSet=(\S+?))?$
-	// but we need only a segment, so regex explanation: https://regex101.com/r/E34wQO/1
-	regex := `^(mongodb:(?:\/{2})?)((\w+?):(\w+?)@|:?@?)`
+	// but we need only a segment, so regex explanation: https://regex101.com/r/8Uzwtw/1
+	regex := `^(mongodb:(?:\/{2})?)((...+?):(...+?)@)`
 	var re = regexp.MustCompile(regex)
 
 	blurredUrl := re.ReplaceAllString(b.MongoURL, "***:***@")
