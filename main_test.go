@@ -274,7 +274,6 @@ func TestShutdown(t *testing.T) {
 }
 
 func TestIgnoreFieldsFilterData(t *testing.T) {
-
 	keys := make([]interface{}, 1)
 	record := analytics.AnalyticsRecord{APIID: "api111", RawResponse: "test", RawRequest: "test", OrgID: "321", ResponseCode: 200, RequestTime: 123}
 	keys[0] = record
@@ -286,9 +285,9 @@ func TestIgnoreFieldsFilterData(t *testing.T) {
 	recordWithoutAPIIDAndAPIName.APIID = ""
 
 	tcs := []struct {
+		expectedRecord analytics.AnalyticsRecord
 		testName       string
 		ignoreFields   []string
-		expectedRecord analytics.AnalyticsRecord
 	}{
 		{
 			testName:       "ignore 1 field",
@@ -315,10 +314,10 @@ func TestIgnoreFieldsFilterData(t *testing.T) {
 			filteredKeys := filterData(mockedPump, keys)
 
 			for _, key := range filteredKeys {
-				record := key.(analytics.AnalyticsRecord)
+				record, ok := key.(analytics.AnalyticsRecord)
+				assert.True(t, ok)
 				assert.Equal(t, tc.expectedRecord, record)
 			}
 		})
-
 	}
 }

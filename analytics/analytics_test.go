@@ -28,7 +28,6 @@ func TestAnalyticsRecord_IsGraphRecord(t *testing.T) {
 }
 
 func TestAnalyticsRecord_RemoveIgnoredFields(t *testing.T) {
-
 	defaultRecord := AnalyticsRecord{
 		APIID:      "api123",
 		APIKey:     "api_key_123",
@@ -68,7 +67,8 @@ func TestAnalyticsRecord_RemoveIgnoredFields(t *testing.T) {
 			args: args{
 				ignoreFields: []string{"api_id", "api_key"},
 			},
-		}, {
+		},
+		{
 			name:           "should remove valid fields and ignore invalid fields",
 			record:         defaultRecord,
 			expectedRecord: recordWithoutAPIKeyAndAPIID,

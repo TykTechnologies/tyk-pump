@@ -368,5 +368,4 @@ func (a *AnalyticsRecord) RemoveIgnoredFields(ignoreFields []string) {
 			log.Error("Error looking for field + ", fieldToIgnore+" in AnalyticsRecord struct: not found.")
 		}
 	}
-
 }
