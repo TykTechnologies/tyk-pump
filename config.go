@@ -54,10 +54,10 @@ type PumpConfig struct {
 	// }
 	// ```
 	Filters analytics.AnalyticsFilters `json:"filters"`
-	// By default, a pump will wait forever for each write operation to complete; you can configure an optional timeout by setting the configuration option timeout.
+	// By default, a pump will wait forever for each write operation to complete; you can configure an optional timeout by setting the configuration option `timeout`.
 	// If you have deployed multiple pumps, then you can configure each timeout independently. The timeout is in seconds and defaults to 0.
 	//
-	// The timeout is configured within the main pump config as shown here; note that this example would configure a 5 seconds timeout:
+	// The timeout is configured within the main pump config as shown here; note that this example would configure a 5 second timeout:
 	// ```{.json}
 	// "pump_name": {
 	//   ...
