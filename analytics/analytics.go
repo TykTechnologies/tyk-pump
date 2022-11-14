@@ -360,7 +360,6 @@ func (a *AnalyticsRecord) RemoveIgnoredFields(ignoreFields []string) {
 				err := field.Zero()
 				if err != nil {
 					log.Error("Unable to ignore "+field.Name()+" field: ", err)
-					continue
 				}
 				found = true
 				continue
