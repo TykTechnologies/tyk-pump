@@ -40,6 +40,9 @@ var (
 	demoMode           = kingpin.Flag("demo", "pass orgID string to generate demo data").Default("").String()
 	demoApiMode        = kingpin.Flag("demo-api", "pass apiID string to generate demo data").Default("").String()
 	demoApiVersionMode = kingpin.Flag("demo-api-version", "pass apiID string to generate demo data").Default("").String()
+	demoTrackPath      = kingpin.Flag("demo-track-path", "enable track path in analytics records").Default("false").Bool()
+	demoDays           = kingpin.Flag("demo-days", "flag that determines the number of days for the analytics records").Default("30").Int()
+	demoRecordsPerHour = kingpin.Flag("demo-records-per-hour", "flag that determines the number of records per hour for the analytics records").Default("0").Int()
 	debugMode          = kingpin.Flag("debug", "enable debug mode").Bool()
 	version            = kingpin.Version(pumps.VERSION)
 )
@@ -412,8 +415,7 @@ func main() {
 		log.Info("BUILDING DEMO DATA AND EXITING...")
 		log.Warning("Starting from date: ", time.Now().AddDate(0, 0, -30))
 		demo.DemoInit(*demoMode, *demoApiMode, *demoApiVersionMode)
-		demo.GenerateDemoData(time.Now().AddDate(0, 0, -30), 30, *demoMode, writeToPumps)
-
+		demo.GenerateDemoData(*demoDays, *demoRecordsPerHour, *demoMode, *demoTrackPath, writeToPumps)
 		return
 	}
 
