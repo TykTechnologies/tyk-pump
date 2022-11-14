@@ -11,6 +11,7 @@ import (
 	"github.com/TykTechnologies/tyk-pump/analytics/demo"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 )
 
@@ -526,4 +527,54 @@ func TestMongoAggregatePump_StoreAnalyticsPerMinute(t *testing.T) {
 	}
 	// Checking if the aggregation time is set to 1. Doesn't matter if aggregation_time is equal to 45 or 1, the result should be always 1.
 	assert.True(t, pmp1.dbConf.AggregationTime == 1)
+}
+
+func TestMongoAggregatePump_SessionConsistency(t *testing.T) {
+	cfgPump1 := make(map[string]interface{})
+	cfgPump1["mongo_url"] = "mongodb://localhost:27017/tyk_analytics"
+	cfgPump1["ignore_aggregations"] = []string{"apikeys"}
+	cfgPump1["use_mixed_collection"] = true
+	cfgPump1["store_analytics_per_minute"] = false
+
+	pmp1 := MongoAggregatePump{}
+
+	tests := []struct {
+		testName            string
+		sessionConsistency  string
+		expectedSessionMode mgo.Mode
+	}{
+		{
+			testName:            "should set session mode to strong",
+			sessionConsistency:  "strong",
+			expectedSessionMode: mgo.Strong,
+		},
+		{
+			testName:            "should set session mode to monotonic",
+			sessionConsistency:  "monotonic",
+			expectedSessionMode: mgo.Monotonic,
+		},
+		{
+			testName:            "should set session mode to eventual",
+			sessionConsistency:  "eventual",
+			expectedSessionMode: mgo.Eventual,
+		},
+		{
+			testName:            "should set session mode to strong by default",
+			sessionConsistency:  "",
+			expectedSessionMode: mgo.Strong,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.testName, func(t *testing.T) {
+			cfgPump1["mongo_session_consistency"] = test.sessionConsistency
+			errInit1 := pmp1.Init(cfgPump1)
+			if errInit1 != nil {
+				t.Error(errInit1)
+				return
+			}
+
+			assert.Equal(t, test.expectedSessionMode, pmp1.dbSession.Mode())
+		})
+	}
 }
