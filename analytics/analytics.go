@@ -4,13 +4,13 @@ import (
 	"bytes"
 	"fmt"
 	"net"
-	"reflect"
 	"sort"
 	"strconv"
 	"strings"
 	"sync/atomic"
 	"time"
 
+	"github.com/fatih/structs"
 	"github.com/oschwald/maxminddb-golang"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -351,15 +351,17 @@ func (a *AnalyticsRecord) IsGraphRecord() bool {
 }
 
 func (a *AnalyticsRecord) RemoveIgnoredFields(ignoreFields []string) {
-	rt := reflect.TypeOf(*a)
 	for _, fieldToIgnore := range ignoreFields {
 		found := false
-		for i := 0; i < rt.NumField(); i++ {
-			field := rt.Field(i)
-			v := strings.Split(field.Tag.Get("json"), ",")[0] // use split to ignore tag "options"
-			if v == fieldToIgnore {
-				// set field to default value
-				reflect.ValueOf(a).Elem().Field(i).Set(reflect.Zero(field.Type))
+		for _, field := range structs.Fields(a) {
+			fieldTag := field.Tag("json")
+			if fieldTag == fieldToIgnore {
+				// setting field to default value
+				err := field.Zero()
+				if err != nil {
+					log.Error("Unable to ignore "+field.Name()+" field: ", err)
+					continue
+				}
 				found = true
 				continue
 			}

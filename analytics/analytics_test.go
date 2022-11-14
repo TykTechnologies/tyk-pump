@@ -82,7 +82,7 @@ func TestAnalyticsRecord_RemoveIgnoredFields(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.record.RemoveIgnoredFields(tt.args.ignoreFields)
 
-			assert.Equal(t, tt.record, tt.expectedRecord)
+			assert.Equal(t, tt.expectedRecord, tt.record)
 		})
 	}
 }
