@@ -60,8 +60,8 @@ type PumpConfig struct {
 	//
 	// The format for this configuration is:
 	// ```{.json}
-	// "{pump_name}": {
-	//   "type": "{pump_type}",
+	// "pump_name": {
+	//   ...
 	//   "timeout":5,
 	//   "meta": {...}
 	// }
