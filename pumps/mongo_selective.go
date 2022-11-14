@@ -120,6 +120,8 @@ func (m *MongoSelectivePump) connect() {
 	if err == nil && m.dbConf.MongoDBType == 0 {
 		m.dbConf.MongoDBType = mongoType(m.dbSession)
 	}
+
+	m.dbConf.SetMongoConsistency(m.dbSession)
 }
 
 func (m *MongoSelectivePump) ensureIndexes(c *mgo.Collection) error {
