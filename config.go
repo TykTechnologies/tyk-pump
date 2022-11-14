@@ -54,11 +54,10 @@ type PumpConfig struct {
 	// }
 	// ```
 	Filters analytics.AnalyticsFilters `json:"filters"`
-	// You can configure a different timeout for each pump with the configuration option `timeout`.
-	// Its default value is `0` seconds, which means that the pump will wait for the writing
-	// operation forever.
+	// By default, a pump will wait forever for each write operation to complete; you can configure an optional timeout by setting the configuration option timeout.
+	// If you have deployed multiple pumps, then you can configure each timeout independently. The timeout is in seconds and defaults to 0.
 	//
-	// The format for this configuration is:
+	// The timeout is configured within the main pump config as shown here; note that this example would configure a 5 seconds timeout:
 	// ```{.json}
 	// "pump_name": {
 	//   ...
@@ -67,15 +66,14 @@ type PumpConfig struct {
 	// }
 	// ```
 	//
-	// In case that any pump doesn't have a configured timeout, and it takes more seconds to write
-	// than the value configured for the purge loop in the `purge_delay` config option, you will
-	// see the following warning message: `Pump {pump_name} is taking more time than the value
-	// configured of purge_delay. You should try to set a timeout for this pump.`.
+	// Tyk will inform you if the pump's write operation is taking longer than the purging loop (configured via purge_delay) as this will mean that data is purged before being written to the target data sink.
 	//
-	// In case that you have a configured timeout, but it still takes more seconds to write than
-	// the value configured for the purge loop in the `purge_delay` config option, you will see the
-	// following warning message: `Pump {pump_name} is taking more time than the value configured of
-	// purge_delay. You should try lowering the timeout configured for this pump.`.
+	// If there is no timeout configured, the following warning log will be generated if this occurs:
+	// `Pump {pump_name} is taking more time than the value configured of purge_delay. You should try to set a timeout for this pump.`
+	//
+	// If there is a timeout configured, but pump's write operation is still taking longer than the purging loop,
+	// the following warning log will be generated if this occurs:
+	// `Pump {pump_name} is taking more time than the value configured of purge_delay. You should try lowering the timeout configured for this pump.`.
 	Timeout int `json:"timeout"`
 	// Setting this to true will avoid writing raw_request and raw_response fields for each request
 	// in pumps. Defaults to `false`.
