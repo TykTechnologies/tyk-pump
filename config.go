@@ -66,13 +66,12 @@ type PumpConfig struct {
 	// }
 	// ```
 	//
-	// Tyk will inform you if the pump's write operation is taking longer than the purging loop (configured via purge_delay) as this will mean that data is purged before being written to the target data sink.
+	// Tyk will inform you if the pump's write operation is taking longer than the purging loop (configured via `purge_delay`) as this will mean that data is purged before being written to the target data sink.
 	//
-	// If there is no timeout configured, the following warning log will be generated if this occurs:
+	// If there is no timeout configured and pump's write operation is taking longer than the purging loop, the following warning log will be generated:
 	// `Pump {pump_name} is taking more time than the value configured of purge_delay. You should try to set a timeout for this pump.`
 	//
-	// If there is a timeout configured, but pump's write operation is still taking longer than the purging loop,
-	// the following warning log will be generated if this occurs:
+	// If there is a timeout configured, but pump's write operation is still taking longer than the purging loop, the following warning log will be generated:
 	// `Pump {pump_name} is taking more time than the value configured of purge_delay. You should try lowering the timeout configured for this pump.`.
 	Timeout int `json:"timeout"`
 	// Setting this to true will avoid writing raw_request and raw_response fields for each request
