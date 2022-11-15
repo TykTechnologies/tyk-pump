@@ -376,6 +376,73 @@ func TestMongoPump_AccumulateSetIgnoreDocSize(t *testing.T) {
 	}
 }
 
+func TestGetBlurredURL(t *testing.T) {
+	tcs := []struct {
+		testName           string
+		givenURL           string
+		expectedBlurredURL string
+	}{
+		{
+			testName:           "mongodb:username:password@",
+			givenURL:           "mongodb:username:password@localhost:27107/mydatabasename",
+			expectedBlurredURL: "***:***@localhost:27107/mydatabasename",
+		},
+		{
+			testName:           "no user or password",
+			givenURL:           "mongodb://localhost:27017/test",
+			expectedBlurredURL: "mongodb://localhost:27017/test",
+		},
+		{
+			testName:           "no mongodb:// but user and password",
+			givenURL:           "mongodb:username:password@localhost:27107/mydatabasename",
+			expectedBlurredURL: "***:***@localhost:27107/mydatabasename",
+		},
+
+		{
+			testName:           "complex url",
+			givenURL:           "mongodb://user:pass@mongo-HZNP-0.j.com,mongo-HZNP-1.j.com,mongo-HZNP-2.j.com/tyk?replicaSet=RS1",
+			expectedBlurredURL: "***:***@mongo-HZNP-0.j.com,mongo-HZNP-1.j.com,mongo-HZNP-2.j.com/tyk?replicaSet=RS1",
+		},
+		{
+			testName:           "complex password username",
+			givenURL:           "mongodb://myDBReader:D1fficultP%40ssw0rd@mongodb0.example.com:27017/?authSource=admin",
+			expectedBlurredURL: "***:***@mongodb0.example.com:27017/?authSource=admin",
+		},
+
+		{
+			testName:           "cluster",
+			givenURL:           "mongodb://mongos0.example.com:27017,mongos1.example.com:27017,mongos2.example.com:27017",
+			expectedBlurredURL: "mongodb://mongos0.example.com:27017,mongos1.example.com:27017,mongos2.example.com:27017",
+		},
+
+		{
+			testName:           "cluster+complex password username",
+			givenURL:           "mongodb://us3r-n4m!:p4_ssw:0rd@mongo-HZNP-0.j.com,mongo-HZNP-1.j.com,mongo-HZNP-2.j.com/tyk?replicaSet=RS1",
+			expectedBlurredURL: "***:***@mongo-HZNP-0.j.com,mongo-HZNP-1.j.com,mongo-HZNP-2.j.com/tyk?replicaSet=RS1",
+		},
+		{
+			testName:           "CosmoDB",
+			givenURL:           "mongodb://contoso123:0Fc3IolnL12312asdfawejunASDFasdfYXX2t8a97kghVcUzcDv98hawelufhawefafnoQRGwNj2nMPL1Y9qsIr9Srdw==@contoso123.documents.azure.com:10255/mydatabase?ssl=true",
+			expectedBlurredURL: "***:***@contoso123.documents.azure.com:10255/mydatabase?ssl=true",
+		},
+		{
+			testName:           "DocDB",
+			givenURL:           "mongodb://UserName:Password@sample-cluster-instance.cluster-corlsfccjozr.us-east-1.docdb.amazonaws.com:27017?replicaSet=rs0&ssl_ca_certs=rds-combined-ca-bundle.pem",
+			expectedBlurredURL: "***:***@sample-cluster-instance.cluster-corlsfccjozr.us-east-1.docdb.amazonaws.com:27017?replicaSet=rs0&ssl_ca_certs=rds-combined-ca-bundle.pem",
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.testName, func(t *testing.T) {
+			conf := BaseMongoConf{
+				MongoURL: tc.givenURL,
+			}
+			actualBlurredURL := conf.GetBlurredURL()
+			assert.Equal(t, tc.expectedBlurredURL, actualBlurredURL)
+		})
+	}
+}
+
 func TestMongoPump_SessionConsistency(t *testing.T) {
 	pump := newPump()
 	conf := defaultConf()
