@@ -42,7 +42,7 @@ const (
 	timestreamMaxRecordsCount  = 100  //https://docs.aws.amazon.com/timestream/latest/developerguide/API_WriteRecords.html
 )
 
-// @PumpConf Timesteram
+// @PumpConf Timestream
 type TimestreamPumpConf struct {
 	EnvPrefix string `mapstructure:"meta_env_prefix"`
 	//The aws region that contains the timestream database
