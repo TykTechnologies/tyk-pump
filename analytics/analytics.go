@@ -10,6 +10,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/fatih/structs"
 	"github.com/oschwald/maxminddb-golang"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -347,4 +348,25 @@ func (a *AnalyticsRecord) IsGraphRecord() bool {
 	}
 
 	return false
+}
+
+func (a *AnalyticsRecord) RemoveIgnoredFields(ignoreFields []string) {
+	for _, fieldToIgnore := range ignoreFields {
+		found := false
+		for _, field := range structs.Fields(a) {
+			fieldTag := field.Tag("json")
+			if fieldTag == fieldToIgnore {
+				// setting field to default value
+				err := field.Zero()
+				if err != nil {
+					log.Error("Unable to ignore "+field.Name()+" field: ", err)
+				}
+				found = true
+				continue
+			}
+		}
+		if !found {
+			log.Error("Error looking for field + ", fieldToIgnore+" in AnalyticsRecord struct: not found.")
+		}
+	}
 }

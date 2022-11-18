@@ -272,3 +272,52 @@ func TestShutdown(t *testing.T) {
 		t.Fatal("MockedPump should have turned off")
 	}
 }
+
+func TestIgnoreFieldsFilterData(t *testing.T) {
+	keys := make([]interface{}, 1)
+	record := analytics.AnalyticsRecord{APIID: "api111", RawResponse: "test", RawRequest: "test", OrgID: "321", ResponseCode: 200, RequestTime: 123}
+	keys[0] = record
+
+	recordWithoutAPIID := record
+	recordWithoutAPIID.APIID = ""
+
+	recordWithoutAPIIDAndAPIName := record
+	recordWithoutAPIIDAndAPIName.APIID = ""
+
+	tcs := []struct {
+		expectedRecord analytics.AnalyticsRecord
+		testName       string
+		ignoreFields   []string
+	}{
+		{
+			testName:       "ignore 1 field",
+			ignoreFields:   []string{"api_id"},
+			expectedRecord: recordWithoutAPIID,
+		},
+		{
+			testName:       "ignore 2 fields",
+			ignoreFields:   []string{"api_id", "api_name"},
+			expectedRecord: recordWithoutAPIIDAndAPIName,
+		},
+		{
+			testName:       "invalid field - log error must be shown",
+			ignoreFields:   []string{"api_id", "api_name", "invalid_field"},
+			expectedRecord: recordWithoutAPIIDAndAPIName,
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.testName, func(t *testing.T) {
+			mockedPump := &MockedPump{}
+			mockedPump.SetIgnoreFields(tc.ignoreFields)
+
+			filteredKeys := filterData(mockedPump, keys)
+
+			for _, key := range filteredKeys {
+				record, ok := key.(analytics.AnalyticsRecord)
+				assert.True(t, ok)
+				assert.Equal(t, tc.expectedRecord, record)
+			}
+		})
+	}
+}

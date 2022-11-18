@@ -145,6 +145,7 @@ func initialisePumps() {
 			thisPmp.SetTimeout(pmp.Timeout)
 			thisPmp.SetOmitDetailedRecording(pmp.OmitDetailedRecording)
 			thisPmp.SetMaxRecordSize(pmp.MaxRecordSize)
+			thisPmp.SetIgnoreFields(pmp.IgnoreFields)
 			initErr := thisPmp.Init(pmp.Meta)
 			if initErr != nil {
 				log.WithField("pump", thisPmp.GetName()).Error("Pump init error (skipping): ", initErr)
@@ -297,7 +298,8 @@ func filterData(pump pumps.Pump, keys []interface{}) []interface{} {
 
 	shouldTrim := SystemConfig.MaxRecordSize != 0 || pump.GetMaxRecordSize() != 0
 	filters := pump.GetFilters()
-	if !filters.HasFilter() && !pump.GetOmitDetailedRecording() && !shouldTrim {
+	ignoreFields := pump.GetIgnoreFields()
+	if !filters.HasFilter() && !pump.GetOmitDetailedRecording() && !shouldTrim && len(ignoreFields) == 0 {
 		return keys
 	}
 
@@ -322,6 +324,9 @@ func filterData(pump pumps.Pump, keys []interface{}) []interface{} {
 		}
 		if filters.ShouldFilter(decoded) {
 			continue
+		}
+		if len(ignoreFields) > 0 {
+			decoded.RemoveIgnoredFields(ignoreFields)
 		}
 		filteredKeys[newLenght] = decoded
 		newLenght++
@@ -365,7 +370,6 @@ func execPumpWriting(wg *sync.WaitGroup, pmp pumps.Pump, keys *[]interface{}, pu
 
 	go func(ch chan error, ctx context.Context, pmp pumps.Pump, keys *[]interface{}) {
 		filteredKeys := filterData(pmp, *keys)
-
 		ch <- pmp.WriteData(ctx, filteredKeys)
 	}(ch, ctx, pmp, keys)
 

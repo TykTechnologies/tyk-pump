@@ -91,6 +91,11 @@ type PumpConfig struct {
 	// ```
 	MaxRecordSize int                    `json:"max_record_size"`
 	Meta          map[string]interface{} `json:"meta"` // TODO: convert this to json.RawMessage and use regular json.Unmarshal
+	// IgnoreFields defines a list of analytics fields that will be ignored when writing to the pump.
+	// This can be used to avoid writing sensitive information to the Database, or data that you don't really need to have.
+	// The field names must be the same as the JSON tags of the analytics record fields.
+	// For example: `["api_key", "api_version"]`.
+	IgnoreFields []string `json:"ignore_fields"`
 }
 
 type UptimeConf struct {
