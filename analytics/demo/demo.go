@@ -165,8 +165,8 @@ func GenerateDemoData(days, recordsPerHour int, orgID string, trackPath bool, wr
 			} else {
 				volume = randomInRange(300, 500)
 			}
-			timeDifference := 3600 / recordsPerHour // this is the difference in seconds between each record
-			nextTimestamp := ts                     // this is the timestamp of the next record
+			timeDifference := 3600 / volume // this is the difference in seconds between each record
+			nextTimestamp := ts             // this is the timestamp of the next record
 			for i := 0; i < volume; i++ {
 				r := GenerateRandomAnalyticRecord(orgID, trackPath)
 				r.Day = ts.Day()
