@@ -29,6 +29,8 @@ type Pump interface {
 	SetMaxRecordSize(size int)
 	GetMaxRecordSize() int
 	SetLogLevel(logrus.Level)
+	SetIgnoreFields([]string)
+	GetIgnoreFields() []string
 }
 
 type UptimePump interface {

@@ -1204,6 +1204,21 @@ This can also be set at a pump level. For example:
 }
 ```
 
+### Ignore Fields
+
+`ignore_fields` defines a list of analytics fields that will be ignored when writing to the pump. This can be used to avoid writing sensitive information to the Database, or data that you don't really need to have.
+Fields must be written using JSON tags. For example:
+
+```{.json}
+"csv": {
+ "type": "csv",
+ "ignore_fields":["api_id","api_version"],
+ "meta": {
+   "csv_dir": "./bar"
+ }
+}
+```
+
 ## Compiling & Testing
 
 1. Download dependent packages:
