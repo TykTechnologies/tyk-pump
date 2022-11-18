@@ -165,12 +165,17 @@ func GenerateDemoData(days, recordsPerHour int, orgID string, trackPath bool, wr
 			} else {
 				volume = randomInRange(300, 500)
 			}
+
+			timeDifference := 3600 / recordsPerHour
+			lastAddedTimestamp := ts
 			for i := 0; i < volume; i++ {
 				r := GenerateRandomAnalyticRecord(orgID, trackPath)
 				r.Day = ts.Day()
 				r.Month = ts.Month()
 				r.Year = ts.Year()
 				r.Hour = ts.Hour()
+				r.TimeStamp = lastAddedTimestamp
+				lastAddedTimestamp = lastAddedTimestamp.Add(time.Second * time.Duration(timeDifference))
 
 				set = append(set, r)
 			}
