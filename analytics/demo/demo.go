@@ -169,10 +169,10 @@ func GenerateDemoData(days, recordsPerHour int, orgID string, trackPath bool, wr
 			nextTimestamp := ts             // this is the timestamp of the next record
 			for i := 0; i < volume; i++ {
 				r := GenerateRandomAnalyticRecord(orgID, trackPath)
-				r.Day = ts.Day()
-				r.Month = ts.Month()
-				r.Year = ts.Year()
-				r.Hour = ts.Hour()
+				r.Day = nextTimestamp.Day()
+				r.Month = nextTimestamp.Month()
+				r.Year = nextTimestamp.Year()
+				r.Hour = nextTimestamp.Hour()
 				r.TimeStamp = nextTimestamp
 				nextTimestamp = nextTimestamp.Add(time.Second * time.Duration(timeDifference))
 
