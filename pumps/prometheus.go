@@ -455,3 +455,11 @@ func (pm *PrometheusMetric) Expose() error {
 func (c histogramCounter) getAverageRequestTime() float64 {
 	return float64(c.totalRequestTime / c.hits)
 }
+
+func (p *PrometheusPump) GetKVMap() map[string]interface{}{
+	var inInterface map[string]interface{}
+	inrec, _ := json.Marshal(p.conf)
+	json.Unmarshal(inrec, &inInterface)
+
+	return inInterface
+}

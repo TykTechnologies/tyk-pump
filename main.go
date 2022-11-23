@@ -14,12 +14,15 @@ import (
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/TykTechnologies/tyk-pump/analytics/demo"
 	logger "github.com/TykTechnologies/tyk-pump/logger"
+	"github.com/TykTechnologies/tyk-pump/opentelemetry"
 	"github.com/TykTechnologies/tyk-pump/pumps"
 	"github.com/TykTechnologies/tyk-pump/serializer"
 	"github.com/TykTechnologies/tyk-pump/server"
 	"github.com/TykTechnologies/tyk-pump/storage"
 	"github.com/gocraft/health"
 	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
@@ -191,13 +194,22 @@ func initialiseUptimePump() {
 	}).Info("Init Uptime Pump: ", UptimePump.GetName())
 }
 
-func StartPurgeLoop(wg *sync.WaitGroup, ctx context.Context, secInterval int, chunkSize int64, expire time.Duration, omitDetails bool) {
-	for range time.Tick(time.Duration(secInterval) * time.Second) {
+var tracer = otel.Tracer("tyk-pump-tracer")
 
+func StartPurgeLoop(wg *sync.WaitGroup, ctx context.Context, secInterval int, chunkSize int64, expire time.Duration, omitDetails bool) {
+
+	for range time.Tick(time.Duration(secInterval) * time.Second) {
 		job := instrument.NewJob("PumpRecordsPurge")
 		startTime := time.Now()
 
+		mainCtx, mainSpan := tracer.Start(ctx, "purge_loop")
+
+		hasrecords := false
+		mainSpan.SetAttributes(attribute.String("purge_delay", fmt.Sprint(SystemConfig.PurgeDelay)))
+		mainSpan.SetAttributes(attribute.String("purge_chunk", fmt.Sprint(SystemConfig.PurgeChunk)))
+
 		for i := -1; i < 10; i++ {
+
 			var analyticsKeyName string
 			if i == -1 {
 				//if it's the first iteration, we look for tyk-system-analytics to maintain backwards compatibility or if analytics_config.enable_multiple_analytics_keys is disabled in the gateway
@@ -209,12 +221,14 @@ func StartPurgeLoop(wg *sync.WaitGroup, ctx context.Context, secInterval int, ch
 			for _, serializerMethod := range AnalyticsSerializers {
 				analyticsKeyName += serializerMethod.GetSuffix()
 				AnalyticsValues := AnalyticsStore.GetAndDeleteSet(analyticsKeyName, chunkSize, expire)
+				fmt.Println("len(AnalyticsValues:",len(AnalyticsValues))
 				if len(AnalyticsValues) > 0 {
-					PreprocessAnalyticsValues(AnalyticsValues, serializerMethod, analyticsKeyName, omitDetails, job, startTime, secInterval)
+					hasrecords = true
+					PreprocessAnalyticsValues(mainCtx, AnalyticsValues, serializerMethod, analyticsKeyName, omitDetails, job, startTime, secInterval)
 				}
 			}
-
 		}
+		mainSpan.SetAttributes(attribute.Bool("has_records", hasrecords))
 
 		job.Timing("purge_time_all", time.Since(startTime).Nanoseconds())
 
@@ -222,6 +236,7 @@ func StartPurgeLoop(wg *sync.WaitGroup, ctx context.Context, secInterval int, ch
 			UptimeValues := UptimeStorage.GetAndDeleteSet(storage.UptimeAnalytics_KEYNAME, chunkSize, expire)
 			UptimePump.WriteUptimeData(UptimeValues)
 		}
+		mainSpan.End()
 
 		if checkShutdown(ctx, wg) {
 			return
@@ -229,7 +244,7 @@ func StartPurgeLoop(wg *sync.WaitGroup, ctx context.Context, secInterval int, ch
 	}
 }
 
-func PreprocessAnalyticsValues(AnalyticsValues []interface{}, serializerMethod serializer.AnalyticsSerializer, analyticsKeyName string, omitDetails bool, job *health.Job, startTime time.Time, secInterval int) {
+func PreprocessAnalyticsValues(ctx context.Context, AnalyticsValues []interface{}, serializerMethod serializer.AnalyticsSerializer, analyticsKeyName string, omitDetails bool, job *health.Job, startTime time.Time, secInterval int) {
 	keys := make([]interface{}, len(AnalyticsValues))
 
 	for i, v := range AnalyticsValues {
@@ -250,7 +265,7 @@ func PreprocessAnalyticsValues(AnalyticsValues []interface{}, serializerMethod s
 		job.Event("record")
 	}
 	// Send to pumps
-	writeToPumps(keys, job, startTime, int(secInterval))
+	writeToPumps(ctx, keys, job, startTime, int(secInterval))
 }
 
 func checkShutdown(ctx context.Context, wg *sync.WaitGroup) bool {
@@ -278,13 +293,13 @@ func checkShutdown(ctx context.Context, wg *sync.WaitGroup) bool {
 	return shutdown
 }
 
-func writeToPumps(keys []interface{}, job *health.Job, startTime time.Time, purgeDelay int) {
+func writeToPumps(ctx context.Context, keys []interface{}, job *health.Job, startTime time.Time, purgeDelay int) {
 	// Send to pumps
 	if Pumps != nil {
 		var wg sync.WaitGroup
 		wg.Add(len(Pumps))
 		for _, pmp := range Pumps {
-			go execPumpWriting(&wg, pmp, &keys, purgeDelay, startTime, job)
+			go execPumpWriting(ctx, &wg, pmp, &keys, purgeDelay, startTime, job)
 		}
 		wg.Wait()
 	} else {
@@ -294,11 +309,17 @@ func writeToPumps(keys []interface{}, job *health.Job, startTime time.Time, purg
 	}
 }
 
-func filterData(pump pumps.Pump, keys []interface{}) []interface{} {
+func filterData(ctx context.Context, pump pumps.Pump, keys []interface{}) []interface{} {
+	_, filterSpan := tracer.Start(ctx, "filter")
+	defer	filterSpan.End()
 
 	shouldTrim := SystemConfig.MaxRecordSize != 0 || pump.GetMaxRecordSize() != 0
+	filterSpan.SetAttributes(attribute.String("should_trim", fmt.Sprint(shouldTrim)))
 	filters := pump.GetFilters()
+	filterSpan.SetAttributes(attribute.String("filters", fmt.Sprint(filters)))
 	ignoreFields := pump.GetIgnoreFields()
+	filterSpan.SetAttributes(attribute.String("ignoreFields", fmt.Sprint(ignoreFields)))
+
 	if !filters.HasFilter() && !pump.GetOmitDetailedRecording() && !shouldTrim && len(ignoreFields) == 0 {
 		return keys
 	}
@@ -335,7 +356,16 @@ func filterData(pump pumps.Pump, keys []interface{}) []interface{} {
 	return filteredKeys
 }
 
-func execPumpWriting(wg *sync.WaitGroup, pmp pumps.Pump, keys *[]interface{}, purgeDelay int, startTime time.Time, job *health.Job) {
+func execPumpWriting(parentCtx context.Context, wg *sync.WaitGroup, pmp pumps.Pump, keys *[]interface{}, purgeDelay int, startTime time.Time, job *health.Job) {
+	pmpCtx, span := tracer.Start(parentCtx, "pump-" + pmp.GetName())
+
+	for field, val := range pmp.GetKVMap(){
+		span.SetAttributes(
+			attribute.String(field, fmt.Sprint(val)))
+	}
+	span.SetAttributes()
+	defer span.End()
+
 	timer := time.AfterFunc(time.Duration(purgeDelay)*time.Second, func() {
 		if pmp.GetTimeout() == 0 {
 			log.WithFields(logrus.Fields{
@@ -361,16 +391,19 @@ func execPumpWriting(wg *sync.WaitGroup, pmp pumps.Pump, keys *[]interface{}, pu
 	var cancel context.CancelFunc
 	//Initialize context depending if the pump has a configured timeout
 	if timeout > 0 {
-		ctx, cancel = context.WithTimeout(context.Background(), time.Duration(timeout)*time.Second)
+		ctx, cancel = context.WithTimeout(parentCtx, time.Duration(timeout)*time.Second)
 	} else {
-		ctx, cancel = context.WithCancel(context.Background())
+		ctx, cancel = context.WithCancel(parentCtx)
 	}
 
 	defer cancel()
 
 	go func(ch chan error, ctx context.Context, pmp pumps.Pump, keys *[]interface{}) {
-		filteredKeys := filterData(pmp, *keys)
+		filteredKeys := filterData(pmpCtx, pmp, *keys)
+
+		_, writeSpan := tracer.Start(pmpCtx, "write")
 		ch <- pmp.WriteData(ctx, filteredKeys)
+		writeSpan.End()
 	}(ch, ctx, pmp, keys)
 
 	select {
@@ -415,7 +448,7 @@ func main() {
 		log.Info("BUILDING DEMO DATA AND EXITING...")
 		log.Warning("Starting from date: ", time.Now().AddDate(0, 0, -30))
 		demo.DemoInit(*demoMode, *demoApiMode, *demoApiVersionMode)
-		demo.GenerateDemoData(*demoDays, *demoRecordsPerHour, *demoMode, *demoTrackPath, writeToPumps)
+		//	demo.GenerateDemoData(*demoDays, *demoRecordsPerHour, *demoMode, *demoTrackPath, writeToPumps)
 		return
 	}
 
@@ -435,13 +468,21 @@ func main() {
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 	ctx, cancel := context.WithCancel(context.Background())
+
+	shutdownOtel, err := opentelemetry.InitOtelProvider(ctx, SystemConfig.OpenTelemetry)
+	if err != nil {
+		log.WithFields(logrus.Fields{
+			"prefix": mainPrefix,
+		}).Error("error initing otel provider", err)
+	}
 	go StartPurgeLoop(&wg, ctx, SystemConfig.PurgeDelay, SystemConfig.PurgeChunk, time.Duration(SystemConfig.StorageExpirationTime)*time.Second, SystemConfig.OmitDetailedRecording)
 
 	termChan := make(chan os.Signal, 1)
 	signal.Notify(termChan, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 	<-termChan // Blocks here until either SIGINT or SIGTERM is received.
-	cancel()   // cancel the context
-	wg.Wait()  // wait till all the pumps finish
+	shutdownOtel(ctx)
+	cancel()  // cancel the context
+	wg.Wait() // wait till all the pumps finish
 	log.WithFields(logrus.Fields{
 		"prefix": mainPrefix,
 	}).Info("Tyk-pump stopped.")

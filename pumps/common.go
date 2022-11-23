@@ -62,3 +62,7 @@ func (p *CommonPumpConfig) SetIgnoreFields(fields []string) {
 func (p *CommonPumpConfig) GetIgnoreFields() []string {
 	return p.ignoreFields
 }
+
+func (p *CommonPumpConfig) GetKVMap() map[string]interface{}{
+	return make(map[string]interface{})
+}

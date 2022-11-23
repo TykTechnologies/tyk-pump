@@ -191,7 +191,7 @@ func TestWriteDataWithFilters(t *testing.T) {
 	keys[5] = analytics.AnalyticsRecord{APIID: "api111", ResponseCode: 500, OrgID: "321"}
 
 	job := instrument.NewJob("TestJob")
-	writeToPumps(keys, job, time.Now(), 2)
+	writeToPumps(context.Background(), keys, job, time.Now(), 2)
 
 	tcs := []struct {
 		testName               string

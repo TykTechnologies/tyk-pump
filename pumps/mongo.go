@@ -8,6 +8,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/base64"
+	"encoding/json"
 	"encoding/pem"
 	"fmt"
 	"io/ioutil"
@@ -661,4 +662,12 @@ func (m *MongoPump) WriteUptimeData(data []interface{}) {
 			m.connect()
 		}
 	}
+}
+
+func (m *MongoPump) GetKVMap() map[string]interface{}{
+	var inInterface map[string]interface{}
+	inrec, _ := json.Marshal(m.dbConf)
+	json.Unmarshal(inrec, &inInterface)
+
+	return inInterface
 }

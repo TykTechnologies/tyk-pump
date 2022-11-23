@@ -2,6 +2,7 @@ package pumps
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -157,4 +158,13 @@ func (g *GraphMongoPump) WriteData(ctx context.Context, data []interface{}) erro
 	g.log.Info("Purged ", len(data), " records...")
 
 	return nil
+}
+
+
+func (g *GraphMongoPump) GetKVMap() map[string]interface{}{
+	var inInterface map[string]interface{}
+	inrec, _ := json.Marshal(g.dbConf)
+	json.Unmarshal(inrec, &inInterface)
+
+	return inInterface
 }

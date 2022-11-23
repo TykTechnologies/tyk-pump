@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/TykTechnologies/tyk-pump/opentelemetry"
 	"github.com/TykTechnologies/tyk-pump/pumps"
 	"github.com/kelseyhightower/envconfig"
 
@@ -223,6 +224,8 @@ type TykPumpConfiguration struct {
 	OmitConfigFile bool `json:"omit_config_file"`
 	// Enable debugging of Tyk Pump by exposing profiling information, the same as the gateway https://tyk.io/docs/troubleshooting/tyk-gateway/profiling/
 	HTTPProfile bool `json:"enable_http_profiler"`
+	//Otel stuff
+	OpenTelemetry opentelemetry.OtelConf `json:"open_telemetry"`
 }
 
 func LoadConfig(filePath *string, configStruct *TykPumpConfiguration) {

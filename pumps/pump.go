@@ -31,6 +31,7 @@ type Pump interface {
 	SetLogLevel(logrus.Level)
 	SetIgnoreFields([]string)
 	GetIgnoreFields() []string
+	GetKVMap() map[string]interface{}
 }
 
 type UptimePump interface {
