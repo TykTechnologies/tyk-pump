@@ -70,6 +70,10 @@ type SQLConf struct {
 	// Specifies the amount of records that are going to be written each batch. Type int. By
 	// default, it writes 1000 records max per batch.
 	BatchSize int `json:"batch_size" mapstructure:"batch_size"`
+	// TableName is a configuration field unique to the sql-graph pump, this field specifies
+	// the name of the sql table to be created/used for the pump in the cases of non-sharding
+	// in the case of sharding, it specifies the table prefix
+	TableName string `json:"table_name" mapstructure:"table_name"`
 }
 
 func Dialect(cfg *SQLConf) (gorm.Dialector, error) {

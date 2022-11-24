@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"time"
 
 	"github.com/TykTechnologies/graphql-go-tools/pkg/ast"
 	"github.com/TykTechnologies/graphql-go-tools/pkg/astnormalization"
@@ -21,8 +22,12 @@ import (
 type GraphRecord struct {
 	Types map[string][]string
 
-	AnalyticsRecord `bson:",inline"`
+	AnalyticsRecord AnalyticsRecord `bson:",inline" gorm:"-:all"`
 
+	OrgID         string    `bson:"-" gorm:"column:orgid;index"`
+	APIID         string    `bson:"-" gorm:"column:apiid;index"`
+	RequestTime   int64     `bson:"-" gorm:"requesttime"`
+	Timestamp     time.Time `bson:"-"`
 	OperationType string
 	Variables     string
 	Errors        []GraphError
@@ -31,6 +36,10 @@ type GraphRecord struct {
 
 func (a *AnalyticsRecord) ToGraphRecord() (GraphRecord, error) {
 	record := GraphRecord{
+		OrgID:           a.OrgID,
+		APIID:           a.APIID,
+		RequestTime:     a.RequestTime,
+		Timestamp:       a.TimeStamp,
 		AnalyticsRecord: *a,
 	}
 	if a.ResponseCode >= 400 {
