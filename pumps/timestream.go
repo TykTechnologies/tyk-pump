@@ -42,7 +42,7 @@ const (
 	timestreamMaxRecordsCount  = 100  //https://docs.aws.amazon.com/timestream/latest/developerguide/API_WriteRecords.html
 )
 
-// @PumpConf Timesteram
+// @PumpConf Timestream
 type TimestreamPumpConf struct {
 	EnvPrefix string `mapstructure:"meta_env_prefix"`
 	//The aws region that contains the timestream database
@@ -102,7 +102,7 @@ func (t *TimestreamPump) Init(config interface{}) error {
 		return errors.New("missing \"measures\" or \"dimensions\" in pump configuration")
 	}
 
-	t.client, err = t.NewTimesteramWriter()
+	t.client, err = t.NewTimestreamWriter()
 	if err != nil {
 		t.log.Fatal("Failed to create timestream client: ", err)
 		return err
@@ -409,7 +409,7 @@ func (t *TimestreamPump) GetAnalyticsRecordDimensions(decoded *analytics.Analyti
 	return dimensions
 }
 
-func (t *TimestreamPump) NewTimesteramWriter() (c *timestreamwrite.Client, err error) {
+func (t *TimestreamPump) NewTimestreamWriter() (c *timestreamwrite.Client, err error) {
 	timeout := t.CommonPumpConfig.timeout * int(time.Second)
 	if timeout <= 0 {
 		timeout = 30 * int(time.Second)
