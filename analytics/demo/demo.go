@@ -151,7 +151,7 @@ func country() string {
 
 func GenerateDemoData(days, recordsPerHour int, orgID string, trackPath bool, writer func([]interface{}, *health.Job, time.Time, int)) {
 	t := time.Now()
-	start := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
+	start := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC)
 	count := 0
 	for d := 0; d < days; d++ {
 		for h := 0; h < 24; h++ {
