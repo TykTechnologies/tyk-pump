@@ -59,6 +59,7 @@ func (g *GraphSQLPump) Init(conf interface{}) error {
 	}
 
 	db, err := gorm.Open(dialect, &gorm.Config{
+		AutoEmbedd:  true,
 		UseJSONTags: true,
 		Logger:      gorm_logger.Default.LogMode(logLevel),
 	})
@@ -82,6 +83,7 @@ func (g *GraphSQLPump) Init(conf interface{}) error {
 			return err
 		}
 	}
+	g.db = g.db.Table(g.tableName)
 
 	g.log.Debug("pump initialized and table set up")
 	return nil
@@ -132,7 +134,7 @@ func (g *GraphSQLPump) WriteData(ctx context.Context, data []interface{}) error 
 			table := g.tableName + "_" + recDate
 			g.db = g.db.Table(table)
 			if !g.db.Migrator().HasTable(table) {
-				if err := g.db.AutoMigrate(&analytics.AnalyticsRecord{}); err != nil {
+				if err := g.db.AutoMigrate(&analytics.GraphRecord{}); err != nil {
 					g.log.Error("error creating table for record")
 					g.log.WithError(err).Debug("error creating table for record")
 					continue
@@ -149,7 +151,7 @@ func (g *GraphSQLPump) WriteData(ctx context.Context, data []interface{}) error 
 			if ends > len(recs) {
 				ends = len(recs)
 			}
-			tx := g.db.WithContext(ctx).Table(g.tableName).Create(recs[i:ends])
+			tx := g.db.WithContext(ctx).Create(recs[i:ends])
 			if tx.Error != nil {
 				g.log.Error(tx.Error)
 			}
