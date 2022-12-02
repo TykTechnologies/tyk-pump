@@ -215,26 +215,43 @@ func TestCSVPump_WriteData(t *testing.T) {
 			// getting the file name
 			curtime := time.Now()
 			fname := fmt.Sprintf("%d-%s-%d-%d.csv", curtime.Year(), curtime.Month().String(), curtime.Day(), curtime.Hour())
+			file, totalRows, err := GetFileAndRows(fname)
+			assert.Nil(t, err)
+			defer file.Close()
 
-			// checking if the file exists
-			openfile, err := os.Open("./testingDirectory/" + fname)
-			if err != nil {
-				t.Error(err)
-			}
-			defer openfile.Close()
-			filedata, err := csv.NewReader(openfile).ReadAll()
-			if err != nil {
-				t.Error(err)
-			}
-
-			// checking if the file contains the right number of records (number of records +1 because of the header)
-			totalRows := len(filedata)
 			if tt.wantErr {
 				assert.Equal(t, tt.args.numberOfRecords, totalRows)
-			} else {
-				assert.Equal(t, tt.args.numberOfRecords+1, totalRows)
+				return
+			}
+			assert.Equal(t, tt.args.numberOfRecords+1, totalRows)
+
+			// trying to append data to an existing file
+			if err := c.WriteData(context.Background(), records); (err != nil) != tt.wantErr {
+				t.Errorf("CSVPump.WriteData() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
+			file, totalRows, err = GetFileAndRows(fname)
+			assert.Nil(t, err)
+			defer file.Close()
+			assert.Equal(t, tt.args.numberOfRecords*2+1, totalRows)
 		})
 	}
+}
+
+func GetFileAndRows(fname string) (*os.File, int, error) {
+	// checking if the file exists
+	openfile, err := os.Open("./testingDirectory/" + fname)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer openfile.Close()
+	filedata, err := csv.NewReader(openfile).ReadAll()
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// checking if the file contains the right number of records (number of records +1 because of the header)
+	totalRows := len(filedata)
+	return openfile, totalRows, nil
+
 }
