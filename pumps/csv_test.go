@@ -16,13 +16,13 @@ import (
 func TestCSVPump_New(t *testing.T) {
 	type fields struct {
 		csvConf          *CSVConf
-		wroteHeaders     bool
 		CommonPumpConfig CommonPumpConfig
+		wroteHeaders     bool
 	}
 	tests := []struct {
+		want   Pump
 		name   string
 		fields fields
-		want   Pump
 	}{
 		{
 			name: "TestCSVPump_New",
@@ -52,13 +52,13 @@ func TestCSVPump_New(t *testing.T) {
 func TestCSVPump_GetName(t *testing.T) {
 	type fields struct {
 		csvConf          *CSVConf
-		wroteHeaders     bool
 		CommonPumpConfig CommonPumpConfig
+		wroteHeaders     bool
 	}
 	tests := []struct {
 		name   string
-		fields fields
 		want   string
+		fields fields
 	}{
 		{
 			name: "TestCSVPump_GetName",
@@ -88,16 +88,16 @@ func TestCSVPump_GetName(t *testing.T) {
 func TestCSVPump_Init(t *testing.T) {
 	type fields struct {
 		csvConf          *CSVConf
-		wroteHeaders     bool
 		CommonPumpConfig CommonPumpConfig
+		wroteHeaders     bool
 	}
 	type args struct {
 		conf interface{}
 	}
 	tests := []struct {
+		args    args
 		name    string
 		fields  fields
-		args    args
 		wantErr bool
 	}{
 		{
@@ -132,7 +132,6 @@ func TestCSVPump_Init(t *testing.T) {
 			if err != nil {
 				t.Errorf("CSVPump.Init() error = %v, wantErr %v", err, tt.wantErr)
 			}
-
 		})
 	}
 }
@@ -189,13 +188,13 @@ func TestCSVPump_WriteData(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-
 			// creating and initializing csv pump
 			c := &CSVPump{
 				csvConf:      tt.fields.csvConf,
 				wroteHeaders: tt.fields.wroteHeaders,
 			}
-			c.Init(tt.fields.csvConf)
+			err := c.Init(tt.fields.csvConf)
+			assert.Nil(t, err)
 			// when init, a directory is created, so we need to remove it after the test
 			defer os.RemoveAll(c.csvConf.CSVDir)
 			// generating random data to write in the csv file
@@ -253,5 +252,4 @@ func GetFileAndRows(fname string) (*os.File, int, error) {
 	// checking if the file contains the right number of records (number of records +1 because of the header)
 	totalRows := len(filedata)
 	return openfile, totalRows, nil
-
 }
