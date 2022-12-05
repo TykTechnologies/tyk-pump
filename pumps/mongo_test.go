@@ -491,14 +491,14 @@ func TestMongoPump_SessionConsistency(t *testing.T) {
 
 func TestMongoPump_Init(t *testing.T) {
 	type fields struct {
-		IsUptime  bool
 		dbSession *mgo.Session
+		IsUptime  bool
 	}
 
 	tests := []struct {
-		name        string
-		fields      fields
 		configParam interface{}
+		fields      fields
+		name        string
 		wantErr     bool
 	}{
 		{
@@ -549,7 +549,6 @@ func TestMongoPump_Init(t *testing.T) {
 }
 
 func TestMongoPump_WriteUptimeData(t *testing.T) {
-
 	c := Conn{}
 	c.ConnectDb()
 
@@ -558,7 +557,8 @@ func TestMongoPump_WriteUptimeData(t *testing.T) {
 
 	mPump, ok := pump.(*MongoPump)
 	assert.True(t, ok)
-	mPump.Init(conf)
+	err := mPump.Init(conf)
+	assert.NoError(t, err)
 
 	tests := []struct {
 		name            string
@@ -588,13 +588,14 @@ func TestMongoPump_WriteUptimeData(t *testing.T) {
 				TimeStamp: time.Now(),
 			}
 			for i := 0; i < tt.amountOfRecords; i++ {
-				encoded, _ := msgpack.Marshal(defaultRecord)
+				encoded, err := msgpack.Marshal(defaultRecord)
+				assert.NoError(t, err)
 				keys = append(keys, string(encoded))
 			}
 
 			mPump.WriteUptimeData(keys)
 
-			//we must check the amount of records written to tyk_uptime_analytics collection
+			// we must check the amount of records written to tyk_uptime_analytics collection
 			session := mPump.dbSession.Copy()
 			defer session.Close()
 			collectionName := "tyk_uptime_analytics"
@@ -602,19 +603,19 @@ func TestMongoPump_WriteUptimeData(t *testing.T) {
 			count, err := collection.Count()
 			assert.NoError(t, err)
 			assert.Equal(t, tt.amountOfRecords, count)
-
 		})
 	}
 
 	t.Run("Testing invalid arguments", func(t *testing.T) {
 		defer c.CleanDb()
 
-		encoded, _ := msgpack.Marshal("invalid-record")
+		encoded, err := msgpack.Marshal("invalid-record")
+		assert.NoError(t, err)
 
 		keys := []interface{}{string(encoded)}
 		mPump.WriteUptimeData(keys)
 
-		//we must check the amount of records written to tyk_uptime_analytics collection
+		// we must check the amount of records written to tyk_uptime_analytics collection
 		session := mPump.dbSession.Copy()
 		defer session.Close()
 		collectionName := "tyk_uptime_analytics"
@@ -622,6 +623,5 @@ func TestMongoPump_WriteUptimeData(t *testing.T) {
 		count, err := collection.Count()
 		assert.NoError(t, err)
 		assert.Equal(t, 0, count)
-
 	})
 }
