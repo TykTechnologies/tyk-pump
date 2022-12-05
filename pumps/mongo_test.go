@@ -3,13 +3,15 @@ package pumps
 import (
 	"context"
 	"encoding/base64"
+	"os"
 	"strconv"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
-	"gopkg.in/mgo.v2"
+	"time"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
+	"github.com/stretchr/testify/assert"
+	"gopkg.in/mgo.v2"
+	"gopkg.in/vmihailenco/msgpack.v2"
 )
 
 func newPump() Pump {
@@ -485,4 +487,141 @@ func TestMongoPump_SessionConsistency(t *testing.T) {
 			assert.Equal(t, test.expectedSessionMode, mPump.dbSession.Mode())
 		})
 	}
+}
+
+func TestMongoPump_Init(t *testing.T) {
+	type fields struct {
+		IsUptime  bool
+		dbSession *mgo.Session
+	}
+
+	tests := []struct {
+		name        string
+		fields      fields
+		configParam interface{}
+		wantErr     bool
+	}{
+		{
+			name: "should init mongo pump",
+			fields: fields{
+				IsUptime: false,
+			},
+			configParam: &BaseMongoConf{
+				MongoURL: "mongodb://localhost:27017",
+			},
+			wantErr: false,
+		},
+		{
+			name: "should init uptime mongo pump",
+			fields: fields{
+				IsUptime: true,
+			},
+			configParam: &BaseMongoConf{
+				MongoURL: "mongodb://localhost:27017",
+			},
+			wantErr: false,
+		},
+		{
+			name: "should init uptime mongo pump using env vars",
+			fields: fields{
+				IsUptime: true,
+			},
+			configParam: nil,
+			wantErr:     false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m := &MongoPump{
+				IsUptime:  tt.fields.IsUptime,
+				dbSession: tt.fields.dbSession,
+			}
+
+			if tt.configParam == nil {
+				os.Setenv("PMP_MONGO_MONGOURL", "mongodb://localhost:27017")
+			}
+
+			if err := m.Init(tt.configParam); (err != nil) != tt.wantErr {
+				t.Errorf("MongoPump.Init() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestMongoPump_WriteUptimeData(t *testing.T) {
+
+	c := Conn{}
+	c.ConnectDb()
+
+	pump := newPump()
+	conf := defaultConf()
+
+	mPump, ok := pump.(*MongoPump)
+	assert.True(t, ok)
+	mPump.Init(conf)
+
+	tests := []struct {
+		name            string
+		amountOfRecords int
+		wantErr         bool
+	}{
+		{
+			name:            "should write uptime data - 1 record",
+			amountOfRecords: 1,
+		},
+		{
+			name:            "should write uptime data - 10 records",
+			amountOfRecords: 10,
+		},
+		{
+			name:            "should not write uptime data",
+			amountOfRecords: 0,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			defer c.CleanDb()
+			keys := []interface{}{}
+			defaultRecord := analytics.UptimeReportData{
+				APIID:     "123",
+				OrgID:     "123",
+				TimeStamp: time.Now(),
+			}
+			for i := 0; i < tt.amountOfRecords; i++ {
+				encoded, _ := msgpack.Marshal(defaultRecord)
+				keys = append(keys, string(encoded))
+			}
+
+			mPump.WriteUptimeData(keys)
+
+			//we must check the amount of records written to tyk_uptime_analytics collection
+			session := mPump.dbSession.Copy()
+			defer session.Close()
+			collectionName := "tyk_uptime_analytics"
+			collection := session.DB("").C(collectionName)
+			count, err := collection.Count()
+			assert.NoError(t, err)
+			assert.Equal(t, tt.amountOfRecords, count)
+
+		})
+	}
+
+	t.Run("Testing invalid arguments", func(t *testing.T) {
+		defer c.CleanDb()
+
+		encoded, _ := msgpack.Marshal("invalid-record")
+
+		keys := []interface{}{string(encoded)}
+		mPump.WriteUptimeData(keys)
+
+		//we must check the amount of records written to tyk_uptime_analytics collection
+		session := mPump.dbSession.Copy()
+		defer session.Close()
+		collectionName := "tyk_uptime_analytics"
+		collection := session.DB("").C(collectionName)
+		count, err := collection.Count()
+		assert.NoError(t, err)
+		assert.Equal(t, 0, count)
+
+	})
 }
