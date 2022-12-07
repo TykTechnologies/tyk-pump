@@ -25,7 +25,7 @@ jobs:
 
     steps:
       - name: Checkout Tyk Pump
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 2
 
@@ -54,7 +54,7 @@ jobs:
           mongodb-version: '${{ matrix.mongodb-version }}'
 
       - name: Cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/go/pkg/mod
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
