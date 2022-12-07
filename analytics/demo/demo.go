@@ -153,10 +153,10 @@ func GenerateDemoData(days, recordsPerHour int, orgID string, trackPath bool, wr
 	t := time.Now()
 	start := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC)
 	count := 0
-	for d := 0; d < days; d++ {
-		for h := 0; h < 24; h++ {
+	for d := days; d > 0; d-- {
+		for h := 23; h >= 0; h-- {
 			set := []interface{}{}
-			ts := start.AddDate(0, 0, d)
+			ts := start.AddDate(0, 0, -d)
 			ts = ts.Add(time.Duration(h) * time.Hour)
 			// Generate daily entries
 			var volume int
