@@ -1301,3 +1301,4 @@ You can run Tyk Pump in demo mode, which will generate fake analytics data and s
 - `--demo-days=<DAYS>` - Sets the number of days of demo data to generate. Defaults to 30.
 - `--demo-records-per-hour=<RECORDS_PER_HOUR>` - Sets the number of records to generate per hour. The default value is a random number between 300 and 500.
 - `--demo-track-path` - Enables tracking of the request path in the demo data. Defaults to false (disabled). Note that setting `track_all_paths` to `true` in your Pump configuration will override this option.
+- `--demo-future-data` - By default, the demo data is generated for the past X days (configured in `demo-days` flag). This option will generate data for the next X days. Defaults to false (disabled).
