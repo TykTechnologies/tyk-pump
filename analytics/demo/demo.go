@@ -173,7 +173,6 @@ func GenerateDemoData(days, recordsPerHour int, orgID string, demoFutureData, tr
 		count++
 		fmt.Printf("Finished %d of %d\n", count, days)
 	}
-
 }
 
 func WriteDemoData(start time.Time, d, h, recordsPerHour int, orgID string, trackPath bool, writer func([]interface{}, *health.Job, time.Time, int)) {
