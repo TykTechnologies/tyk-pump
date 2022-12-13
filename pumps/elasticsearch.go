@@ -80,6 +80,8 @@ type ElasticsearchConf struct {
 	SSLCertFile string `json:"ssl_cert_file" mapstructure:"ssl_cert_file"`
 	// Can be used to set custom key file for authentication with Elastic Search.
 	SSLKeyFile string `json:"ssl_key_file" mapstructure:"ssl_key_file"`
+	// Enables healtch checks.
+	EnableHealthChecks bool `json:"enable_health_checks" mapstructure:"enable_health_checks"`
 }
 
 type ElasticsearchBulkConfig struct {
@@ -276,7 +278,7 @@ func (e *ElasticsearchPump) getOperator() (ElasticsearchOperator, error) {
 	case "7":
 		op := new(Elasticsearch7Operator)
 
-		op.esClient, err = elasticv7.NewClient(elasticv7.SetURL(urls...), elasticv7.SetSniff(conf.EnableSniffing), elasticv7.SetBasicAuth(conf.Username, conf.Password), elasticv7.SetHttpClient(httpClient))
+		op.esClient, err = elasticv7.NewClient(elasticv7.SetURL(urls...), elasticv7.SetSniff(conf.EnableSniffing), elasticv7.SetBasicAuth(conf.Username, conf.Password), elasticv7.SetHttpClient(httpClient), elasticv7.SetHealthcheck(conf.EnableHealthChecks))
 
 		if err != nil {
 			return op, err
