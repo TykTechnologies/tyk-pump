@@ -1,12 +1,12 @@
 package demo
 
 import (
-	"fmt"
 	"math/rand"
 	"strings"
 	"time"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
+	"github.com/TykTechnologies/tyk-pump/logger"
 
 	"github.com/gocraft/health"
 	uuid "github.com/satori/go.uuid"
@@ -16,6 +16,7 @@ var (
 	apiKeys    []string
 	apiID      string
 	apiVersion string
+	log        = logger.GetLogger()
 )
 
 func DemoInit(orgId, apiId, version string) {
@@ -160,7 +161,7 @@ func GenerateDemoData(days, recordsPerHour int, orgID string, demoFutureData, tr
 				WriteDemoData(start, d, h, recordsPerHour, orgID, trackPath, writer)
 			}
 			count++
-			fmt.Printf("Finished %d of %d\n", count, days)
+			log.Infof("Finished %d of %d\n", count, days)
 		}
 		return
 	}
@@ -171,7 +172,7 @@ func GenerateDemoData(days, recordsPerHour int, orgID string, demoFutureData, tr
 			WriteDemoData(start, -d, h, recordsPerHour, orgID, trackPath, writer)
 		}
 		count++
-		fmt.Printf("Finished %d of %d\n", count, days)
+		log.Infof("Finished %d of %d\n", count, days)
 	}
 }
 
