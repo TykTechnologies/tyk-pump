@@ -127,6 +127,7 @@ type Elasticsearch7Operator struct {
 type ApiKeyTransport struct {
 	APIKey   string
 	APIKeyID string
+	ESConf   *ElasticsearchConf
 }
 
 // RoundTrip for ApiKeyTransport auth
@@ -136,7 +137,18 @@ func (t *ApiKeyTransport) RoundTrip(r *http.Request) (*http.Response, error) {
 
 	r.Header.Set("Authorization", "ApiKey "+key)
 
-	return http.DefaultTransport.RoundTrip(r)
+	transport := &http.Transport{
+		ForceAttemptHTTP2:     true,
+		MaxIdleConns:          100,
+		IdleConnTimeout:       90 * time.Second,
+		TLSHandshakeTimeout:   10 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: t.ESConf.SSLInsecureSkipVerify,
+		},
+	}
+
+	return transport.RoundTrip(r)
 }
 
 func (e *ElasticsearchPump) getOperator() (ElasticsearchOperator, error) {
@@ -149,7 +161,13 @@ func (e *ElasticsearchPump) getOperator() (ElasticsearchOperator, error) {
 	if conf.AuthAPIKey != "" && conf.AuthAPIKeyID != "" {
 		conf.Username = ""
 		conf.Password = ""
-		httpClient = &http.Client{Transport: &ApiKeyTransport{APIKey: conf.AuthAPIKey, APIKeyID: conf.AuthAPIKeyID}}
+		httpClient = &http.Client{
+			Transport: &ApiKeyTransport{
+				APIKey: conf.AuthAPIKey,
+				APIKeyID: conf.AuthAPIKeyID,
+				ESConf: e.esConf,
+			},
+		}
 	}
 
 	if conf.UseSSL {
