@@ -1,12 +1,12 @@
 package demo
 
 import (
-	"fmt"
 	"math/rand"
 	"strings"
 	"time"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
+	"github.com/TykTechnologies/tyk-pump/logger"
 
 	"github.com/gocraft/health"
 	uuid "github.com/satori/go.uuid"
@@ -16,6 +16,7 @@ var (
 	apiKeys    []string
 	apiID      string
 	apiVersion string
+	log        = logger.GetLogger()
 )
 
 func DemoInit(orgId, apiId, version string) {
@@ -149,41 +150,58 @@ func country() string {
 	return codes[rand.Intn(len(codes))]
 }
 
-func GenerateDemoData(days, recordsPerHour int, orgID string, trackPath bool, writer func([]interface{}, *health.Job, time.Time, int)) {
+func GenerateDemoData(days, recordsPerHour int, orgID string, demoFutureData, trackPath bool, writer func([]interface{}, *health.Job, time.Time, int)) {
 	t := time.Now()
 	start := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC)
 	count := 0
-	for d := 0; d < days; d++ {
+	// If we are generating future data, we want to start at the current date and create data for the next X days
+	if demoFutureData {
+		for d := 0; d < days; d++ {
+			for h := 0; h < 24; h++ {
+				WriteDemoData(start, d, h, recordsPerHour, orgID, trackPath, writer)
+			}
+			count++
+			log.Infof("Finished %d of %d\n", count, days)
+		}
+		return
+	}
+
+	// Otherwise, we want to start at the (current date - X days) and create data until yesterday's date
+	for d := days; d > 0; d-- {
 		for h := 0; h < 24; h++ {
-			set := []interface{}{}
-			ts := start.AddDate(0, 0, d)
-			ts = ts.Add(time.Duration(h) * time.Hour)
-			// Generate daily entries
-			var volume int
-			if recordsPerHour > 0 {
-				volume = recordsPerHour
-			} else {
-				volume = randomInRange(300, 500)
-			}
-			timeDifference := 3600 / volume // this is the difference in seconds between each record
-			nextTimestamp := ts             // this is the timestamp of the next record
-			for i := 0; i < volume; i++ {
-				r := GenerateRandomAnalyticRecord(orgID, trackPath)
-				r.Day = nextTimestamp.Day()
-				r.Month = nextTimestamp.Month()
-				r.Year = nextTimestamp.Year()
-				r.Hour = nextTimestamp.Hour()
-				r.TimeStamp = nextTimestamp
-				nextTimestamp = nextTimestamp.Add(time.Second * time.Duration(timeDifference))
-
-				set = append(set, r)
-			}
-
-			writer(set, nil, time.Now(), 10)
+			WriteDemoData(start, -d, h, recordsPerHour, orgID, trackPath, writer)
 		}
 		count++
-		fmt.Printf("Finished %d of %d\n", count, days)
+		log.Infof("Finished %d of %d\n", count, days)
 	}
+}
+
+func WriteDemoData(start time.Time, d, h, recordsPerHour int, orgID string, trackPath bool, writer func([]interface{}, *health.Job, time.Time, int)) {
+	set := []interface{}{}
+	ts := start.AddDate(0, 0, d)
+	ts = ts.Add(time.Duration(h) * time.Hour)
+	// Generate daily entries
+	var volume int
+	if recordsPerHour > 0 {
+		volume = recordsPerHour
+	} else {
+		volume = randomInRange(300, 500)
+	}
+	timeDifference := 3600 / volume // this is the difference in seconds between each record
+	nextTimestamp := ts             // this is the timestamp of the next record
+	for i := 0; i < volume; i++ {
+		r := GenerateRandomAnalyticRecord(orgID, trackPath)
+		r.Day = nextTimestamp.Day()
+		r.Month = nextTimestamp.Month()
+		r.Year = nextTimestamp.Year()
+		r.Hour = nextTimestamp.Hour()
+		r.TimeStamp = nextTimestamp
+		nextTimestamp = nextTimestamp.Add(time.Second * time.Duration(timeDifference))
+
+		set = append(set, r)
+	}
+
+	writer(set, nil, time.Now(), 10)
 }
 
 func GenerateRandomAnalyticRecord(orgID string, trackPath bool) analytics.AnalyticsRecord {

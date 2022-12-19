@@ -16,6 +16,7 @@ func TestGenerateDemoData(t *testing.T) {
 		days           int
 		recordsPerHour int
 		trackPath      bool
+		futureData     bool
 	}
 
 	tests := []struct {
@@ -29,6 +30,7 @@ func TestGenerateDemoData(t *testing.T) {
 				recordsPerHour: 1,
 				orgID:          "test",
 				trackPath:      false,
+				futureData:     true,
 				writer: func(data []interface{}, job *health.Job, ts time.Time, n int) {
 				},
 			},
@@ -105,11 +107,21 @@ func TestGenerateDemoData(t *testing.T) {
 					if !ok {
 						t.Errorf("unexpected type: %T", d)
 					}
+					// checking timestamp:
+					// if futureData is true, then timestamp should be in the present and future
+					// if futureData is false, then timestamp should be in the past
+					ts := time.Now()
+					if tt.args.futureData {
+						val := analyticsRecord.TimeStamp.After(time.Date(ts.Year(), ts.Month(), ts.Day(), 0, 0, 0, 0, time.UTC)) || analyticsRecord.TimeStamp.Equal(time.Date(ts.Year(), ts.Month(), ts.Day(), 0, 0, 0, 0, time.UTC))
+						assert.True(t, val)
+					} else {
+						assert.True(t, analyticsRecord.TimeStamp.Before(time.Date(ts.Year(), ts.Month(), ts.Day(), 0, 0, 0, 0, time.UTC)))
+					}
 					assert.Equal(t, tt.args.trackPath, analyticsRecord.TrackPath)
 				}
 			}
 
-			GenerateDemoData(tt.args.days, tt.args.recordsPerHour, tt.args.orgID, tt.args.trackPath, tt.args.writer)
+			GenerateDemoData(tt.args.days, tt.args.recordsPerHour, tt.args.orgID, tt.args.futureData, tt.args.trackPath, tt.args.writer)
 			if tt.args.recordsPerHour == 0 {
 				isValid := counter >= 300*tt.args.days || counter <= 500*tt.args.days
 				assert.True(t, isValid)
