@@ -301,7 +301,10 @@ func filterData(pump pumps.Pump, keys []interface{}) []interface{} {
 	shouldTrim := SystemConfig.MaxRecordSize != 0 || pump.GetMaxRecordSize() != 0
 	filters := pump.GetFilters()
 	ignoreFields := pump.GetIgnoreFields()
-	if !filters.HasFilter() && !pump.GetOmitDetailedRecording() && !shouldTrim && len(ignoreFields) == 0 {
+	getDecoding := pump.GetDecoding()
+	fmt.Println(getDecoding)
+	if !pump.GetDecoding() && !filters.HasFilter() && !pump.GetOmitDetailedRecording() && !shouldTrim && len(ignoreFields) == 0 {
+		fmt.Println("Returning here")
 		return keys
 	}
 
@@ -335,9 +338,7 @@ func filterData(pump pumps.Pump, keys []interface{}) []interface{} {
 			rawRequest, _ := base64.StdEncoding.DecodeString(decoded.RawRequest)
 			decoded.RawRequest = string(rawRequest)
 			rawResponse, _ := base64.StdEncoding.DecodeString(decoded.RawResponse)
-			decoded.RawRequest = string(rawResponse)
-		} else {
-			//something here
+			decoded.RawResponse = string(rawResponse)
 		}
 		filteredKeys[newLenght] = decoded
 		newLenght++

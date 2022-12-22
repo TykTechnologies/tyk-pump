@@ -355,7 +355,7 @@ func TestDecodedKey(t *testing.T) {
 			// 	//check if decoded data from key equals test decoded data
 			record := filteredKeys[0].(analytics.AnalyticsRecord)
 
-			assert.Equal(t, tc.expectedRawResponse, record.RawResponse, "The rawRequest data was decoded successfully.")
+			assert.Equal(t, tc.expectedRawResponse, record.RawResponse)
 			// }
 			// if tc.decodeResponse {
 			// 	assert.Equal(t, tc.expectedRecord, keys[0], "The rawResponse was decoded successfully.")
