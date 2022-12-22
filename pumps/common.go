@@ -12,6 +12,7 @@ type CommonPumpConfig struct {
 	OmitDetailedRecording bool
 	log                   *logrus.Entry
 	ignoreFields          []string
+	decodeBase64          bool
 }
 
 func (p *CommonPumpConfig) SetFilters(filters analytics.AnalyticsFilters) {
@@ -61,4 +62,12 @@ func (p *CommonPumpConfig) SetIgnoreFields(fields []string) {
 
 func (p *CommonPumpConfig) GetIgnoreFields() []string {
 	return p.ignoreFields
+}
+
+func (p *CommonPumpConfig) SetDecoding(decoding bool) {
+	p.decodeBase64 = decoding
+}
+
+func (p *CommonPumpConfig) GetDecoding() bool {
+	return p.decodeBase64
 }
