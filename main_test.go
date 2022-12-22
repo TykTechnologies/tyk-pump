@@ -324,43 +324,42 @@ func TestIgnoreFieldsFilterData(t *testing.T) {
 
 func TestDecodedKey(t *testing.T) {
 	keys := make([]interface{}, 1)
-	record := analytics.AnalyticsRecord{APIID: "api111", RawResponse: "decodedResponseHere", RawRequest: "DecodedRequestHere"}
+	record := analytics.AnalyticsRecord{APIID: "api111", RawResponse: "RGVjb2RlZFJlc3BvbnNl", RawRequest: "DecodedRequestHere"}
 	keys[0] = record
 
-	recordEncodedResponse := record
-
-	recordEncodedRequest := record
-
 	tcs := []struct {
-		expectedRecord analytics.AnalyticsRecord
-		testName       string
-		decodeResponse bool
-		decodeRequest  bool
+		expectedRawResponse string
+		testName            string
+		decodeResponse      bool
+		// decodeRequest  bool
 	}{
 		{
-			testName:       "test decoded response",
-			expectedRecord: recordEncodedResponse,
-			decodeResponse: true,
-			decodeRequest:  false,
+			testName:            "test decoded response",
+			expectedRawResponse: "DecodedResponse",
+			decodeResponse:      true,
 		},
 		{
-			testName:       "test decoded request",
-			expectedRecord: recordEncodedRequest,
-			decodeRequest:  true,
-			decodeResponse: false,
+			testName:            "test decoded request",
+			expectedRawResponse: "RGVjb2RlZFJlc3BvbnNl",
+			decodeResponse:      false,
 		},
 	}
 
 	for _, tc := range tcs {
 		t.Run(tc.testName, func(t *testing.T) {
 			mockedPump := &MockedPump{}
-			if tc.decodeRequest {
-				//check if decoded data from key equals test decoded data
-				assert.Equal(t, tc.expectedRecord, keys[0], "The rawRequest data was decoded successfully.")
-			}
-			if tc.decodeResponse {
-				assert.Equal(t, tc.expectedRecord, keys[0], "The rawResponse was decoded successfully.")
-			}
+			mockedPump.SetDecoding(tc.decodeResponse)
+			filteredKeys := filterData(mockedPump, keys)
+			assert.Len(t, filteredKeys, 1)
+			// if tc.decodeRequest {
+			// 	//check if decoded data from key equals test decoded data
+			record := filteredKeys[0].(analytics.AnalyticsRecord)
+
+			assert.Equal(t, tc.expectedRawResponse, record.RawResponse, "The rawRequest data was decoded successfully.")
+			// }
+			// if tc.decodeResponse {
+			// 	assert.Equal(t, tc.expectedRecord, keys[0], "The rawResponse was decoded successfully.")
+			// }
 		})
 	}
 }
