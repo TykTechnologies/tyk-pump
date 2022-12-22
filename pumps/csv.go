@@ -103,7 +103,10 @@ func (c *CSVPump) WriteData(ctx context.Context, data []interface{}) error {
 	}
 
 	for _, v := range data {
-		decoded := v.(analytics.AnalyticsRecord)
+		decoded, ok := v.(analytics.AnalyticsRecord)
+		if !ok {
+			return fmt.Errorf("couldn't convert %v to analytics.AnalyticsRecord", v)
+		}
 
 		toWrite := decoded.GetLineValues()
 		// toWrite := []string{
