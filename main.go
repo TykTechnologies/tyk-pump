@@ -2,14 +2,14 @@ package main
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
+	"os"
 	"os/signal"
 	"strings"
 	"sync"
 	"syscall"
 	"time"
-
-	"os"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/TykTechnologies/tyk-pump/analytics/demo"
@@ -147,6 +147,7 @@ func initialisePumps() {
 			thisPmp.SetOmitDetailedRecording(pmp.OmitDetailedRecording)
 			thisPmp.SetMaxRecordSize(pmp.MaxRecordSize)
 			thisPmp.SetIgnoreFields(pmp.IgnoreFields)
+			thisPmp.SetDecoding(true) //Hardcoded true bool for testing purposes
 			initErr := thisPmp.Init(pmp.Meta)
 			if initErr != nil {
 				log.WithField("pump", thisPmp.GetName()).Error("Pump init error (skipping): ", initErr)
@@ -328,6 +329,15 @@ func filterData(pump pumps.Pump, keys []interface{}) []interface{} {
 		}
 		if len(ignoreFields) > 0 {
 			decoded.RemoveIgnoredFields(ignoreFields)
+		}
+		//DECODING RAW REQUEST AND RESPONSE FROM BASE 64
+		if pump.GetDecoding() {
+			rawRequest, _ := base64.StdEncoding.DecodeString(decoded.RawRequest)
+			decoded.RawRequest = string(rawRequest)
+			rawResponse, _ := base64.StdEncoding.DecodeString(decoded.RawResponse)
+			decoded.RawRequest = string(rawResponse)
+		} else {
+			//something here
 		}
 		filteredKeys[newLenght] = decoded
 		newLenght++
