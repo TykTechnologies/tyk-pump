@@ -147,7 +147,8 @@ func initialisePumps() {
 			thisPmp.SetOmitDetailedRecording(pmp.OmitDetailedRecording)
 			thisPmp.SetMaxRecordSize(pmp.MaxRecordSize)
 			thisPmp.SetIgnoreFields(pmp.IgnoreFields)
-			thisPmp.SetDecoding(true) //Hardcoded true bool for testing purposes
+			thisPmp.SetDecodingRequest(true)  //Hardcoded true bool for testing purposes
+			thisPmp.SetDecodingResponse(true) //Hardcoded true bool for testing purposes
 			initErr := thisPmp.Init(pmp.Meta)
 			if initErr != nil {
 				log.WithField("pump", thisPmp.GetName()).Error("Pump init error (skipping): ", initErr)
@@ -301,9 +302,9 @@ func filterData(pump pumps.Pump, keys []interface{}) []interface{} {
 	shouldTrim := SystemConfig.MaxRecordSize != 0 || pump.GetMaxRecordSize() != 0
 	filters := pump.GetFilters()
 	ignoreFields := pump.GetIgnoreFields()
-	getDecoding := pump.GetDecoding()
-	fmt.Println(getDecoding)
-	if !pump.GetDecoding() && !filters.HasFilter() && !pump.GetOmitDetailedRecording() && !shouldTrim && len(ignoreFields) == 0 {
+	getDecodingResponse := pump.GetDecodedResponse()
+	getDecodingRequest := pump.GetDecodedRequest()
+	if !getDecodingRequest && !getDecodingResponse && !filters.HasFilter() && !pump.GetOmitDetailedRecording() && !shouldTrim && len(ignoreFields) == 0 {
 		fmt.Println("Returning here")
 		return keys
 	}
@@ -334,11 +335,19 @@ func filterData(pump pumps.Pump, keys []interface{}) []interface{} {
 			decoded.RemoveIgnoredFields(ignoreFields)
 		}
 		//DECODING RAW REQUEST AND RESPONSE FROM BASE 64
-		if pump.GetDecoding() {
+		if getDecodingRequest {
+			fmt.Println("Request WILL be decoded.")
 			rawRequest, _ := base64.StdEncoding.DecodeString(decoded.RawRequest)
 			decoded.RawRequest = string(rawRequest)
+		} else {
+			fmt.Println("Request WILL NOT be decoded.")
+		}
+		if getDecodingResponse {
+			fmt.Println("Response WILL be decoded.")
 			rawResponse, _ := base64.StdEncoding.DecodeString(decoded.RawResponse)
 			decoded.RawResponse = string(rawResponse)
+		} else {
+			fmt.Println("Response WILL NOT be decoded.")
 		}
 		filteredKeys[newLenght] = decoded
 		newLenght++
