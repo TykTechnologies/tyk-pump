@@ -96,6 +96,12 @@ type PumpConfig struct {
 	// The field names must be the same as the JSON tags of the analytics record fields.
 	// For example: `["api_key", "api_version"]`.
 	IgnoreFields []string `json:"ignore_fields"`
+
+	DecodeRawRequest bool `json:"raw_request_decoded"`
+	//Setting this to true allows the Raw Request to be decoded from base 64 for all pumps. This is set to false by default.
+
+	DecodeRawResponse bool `json:"raw_response_decoded"`
+	//Setting this to true allows the Raw Response to be decoded from base 64 for all pumps. This is set to false by default.
 }
 
 type UptimeConf struct {

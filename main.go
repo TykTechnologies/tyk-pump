@@ -147,8 +147,8 @@ func initialisePumps() {
 			thisPmp.SetOmitDetailedRecording(pmp.OmitDetailedRecording)
 			thisPmp.SetMaxRecordSize(pmp.MaxRecordSize)
 			thisPmp.SetIgnoreFields(pmp.IgnoreFields)
-			thisPmp.SetDecodingRequest(true)  //Hardcoded true bool for testing purposes
-			thisPmp.SetDecodingResponse(true) //Hardcoded true bool for testing purposes
+			thisPmp.SetDecodingRequest(pmp.DecodeRawRequest)
+			thisPmp.SetDecodingResponse(pmp.DecodeRawResponse)
 			initErr := thisPmp.Init(pmp.Meta)
 			if initErr != nil {
 				log.WithField("pump", thisPmp.GetName()).Error("Pump init error (skipping): ", initErr)
