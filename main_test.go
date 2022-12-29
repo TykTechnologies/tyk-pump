@@ -403,11 +403,6 @@ func TestDecodedKey(t *testing.T) {
 				record1 := filteredKeys[0].(analytics.AnalyticsRecord)
 				assert.Equal(t, tc.expectedRawResponse, record1.RawResponse)
 			}
-
-			// }
-			// if tc.decodeResponse {
-			// 	assert.Equal(t, tc.expectedRecord, keys[0], "The rawResponse was decoded successfully.")
-			// }
 		})
 	}
 }
