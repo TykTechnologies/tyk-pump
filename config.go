@@ -97,11 +97,12 @@ type PumpConfig struct {
 	// For example: `["api_key", "api_version"]`.
 	IgnoreFields []string `json:"ignore_fields"`
 
+	// Setting this to True allows the Raw Request to be decoded from base 64
+	// for all pumps. This is set to false by default.
 	DecodeRawRequest bool `json:"raw_request_decoded"`
-	//Setting this to true allows the Raw Request to be decoded from base 64 for all pumps. This is set to false by default.
 
+	// Setting this to True allows the Raw Response to be decoded from base 64 for all pumps. This is set to False by default.
 	DecodeRawResponse bool `json:"raw_response_decoded"`
-	//Setting this to true allows the Raw Response to be decoded from base 64 for all pumps. This is set to false by default.
 }
 
 type UptimeConf struct {

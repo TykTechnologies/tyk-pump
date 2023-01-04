@@ -366,46 +366,14 @@ func TestDecodedKey(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.testName, func(t *testing.T) {
-			if tc.decodeResponse && tc.decodeRequest {
-				mockedPump := &MockedPump{}
-				mockedPump.SetDecodingRequest(tc.decodeRequest)
-				mockedPump.SetDecodingResponse(tc.decodeResponse)
-				filteredKeys := filterData(mockedPump, keys)
-				assert.Len(t, filteredKeys, 1)
-				record1 := filteredKeys[0].(analytics.AnalyticsRecord)
-				assert.Equal(t, tc.expectedRawResponse, record1.RawResponse)
-				assert.Equal(t, tc.expectedRawRequest, record1.RawRequest)
-			}
-			if tc.decodeResponse && !tc.decodeRequest {
-				mockedPump := &MockedPump{}
-				mockedPump.SetDecodingRequest(tc.decodeRequest)
-				mockedPump.SetDecodingResponse(tc.decodeResponse)
-				filteredKeys := filterData(mockedPump, keys)
-				assert.Len(t, filteredKeys, 1)
-				record1 := filteredKeys[0].(analytics.AnalyticsRecord)
-				assert.Equal(t, tc.expectedRawResponse, record1.RawResponse)
-				assert.Equal(t, tc.expectedRawRequest, record1.RawRequest)
-			}
-			if !tc.decodeResponse && tc.decodeRequest {
-				mockedPump := &MockedPump{}
-				mockedPump.SetDecodingRequest(tc.decodeRequest)
-				mockedPump.SetDecodingResponse(tc.decodeResponse)
-				filteredKeys := filterData(mockedPump, keys)
-				assert.Len(t, filteredKeys, 1)
-				record1 := filteredKeys[0].(analytics.AnalyticsRecord)
-				assert.Equal(t, tc.expectedRawResponse, record1.RawResponse)
-				assert.Equal(t, tc.expectedRawRequest, record1.RawRequest)
-			}
-			if !tc.decodeResponse && !tc.decodeRequest {
-				mockedPump := &MockedPump{}
-				mockedPump.SetDecodingRequest(tc.decodeRequest)
-				mockedPump.SetDecodingResponse(tc.decodeResponse)
-				filteredKeys := filterData(mockedPump, keys)
-				assert.Len(t, filteredKeys, 1)
-				record1 := filteredKeys[0].(analytics.AnalyticsRecord)
-				assert.Equal(t, tc.expectedRawResponse, record1.RawResponse)
-				assert.Equal(t, tc.expectedRawRequest, record1.RawRequest)
-			}
+			mockedPump := &MockedPump{}
+			mockedPump.SetDecodingRequest(tc.decodeRequest)
+			mockedPump.SetDecodingResponse(tc.decodeResponse)
+			filteredKeys := filterData(mockedPump, keys)
+			assert.Len(t, filteredKeys, 1)
+			record1 := filteredKeys[0].(analytics.AnalyticsRecord)
+			assert.Equal(t, tc.expectedRawResponse, record1.RawResponse)
+			assert.Equal(t, tc.expectedRawRequest, record1.RawRequest)
 		})
 	}
 }
