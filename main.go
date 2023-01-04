@@ -334,13 +334,12 @@ func filterData(pump pumps.Pump, keys []interface{}) []interface{} {
 		if len(ignoreFields) > 0 {
 			decoded.RemoveIgnoredFields(ignoreFields)
 		}
-		//DECODING RAW REQUEST AND RESPONSE FROM BASE 64
+		// DECODING RAW REQUEST AND RESPONSE FROM BASE 64
 		if getDecodingRequest {
 			rawRequest, err := base64.StdEncoding.DecodeString(decoded.RawRequest)
 			if err == nil {
 				decoded.RawRequest = string(rawRequest)
 			}
-
 		}
 		if getDecodingResponse {
 			rawResponse, err := base64.StdEncoding.DecodeString(decoded.RawResponse)
