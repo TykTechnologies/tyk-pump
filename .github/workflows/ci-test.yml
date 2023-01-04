@@ -66,7 +66,7 @@ jobs:
         run: |
           ./bin/ci-test.sh 2>&1 | tee test.log
           result_code=${PIPESTATUS[0]}
-          echo "::set-output name=log::$(sed -ze 's/%/%25/g;s/\n/%0A/g' test.log)"
+          echo "log=$(sed -ze 's/%/%25/g;s/\n/%0A/g' test.log)" >> $GITHUB_OUTPUT
           exit $result_code
 
       - name: Download golangci-lint
