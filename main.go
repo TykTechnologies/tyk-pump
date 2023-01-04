@@ -336,18 +336,17 @@ func filterData(pump pumps.Pump, keys []interface{}) []interface{} {
 		}
 		//DECODING RAW REQUEST AND RESPONSE FROM BASE 64
 		if getDecodingRequest {
-			fmt.Println("Request WILL be decoded.")
-			rawRequest, _ := base64.StdEncoding.DecodeString(decoded.RawRequest)
-			decoded.RawRequest = string(rawRequest)
-		} else {
-			fmt.Println("Request WILL NOT be decoded.")
+			rawRequest, err := base64.StdEncoding.DecodeString(decoded.RawRequest)
+			if err == nil {
+				decoded.RawRequest = string(rawRequest)
+			}
+
 		}
 		if getDecodingResponse {
-			fmt.Println("Response WILL be decoded.")
-			rawResponse, _ := base64.StdEncoding.DecodeString(decoded.RawResponse)
-			decoded.RawResponse = string(rawResponse)
-		} else {
-			fmt.Println("Response WILL NOT be decoded.")
+			rawResponse, err := base64.StdEncoding.DecodeString(decoded.RawResponse)
+			if err == nil {
+				decoded.RawResponse = string(rawResponse)
+			}
 		}
 		filteredKeys[newLenght] = decoded
 		newLenght++
