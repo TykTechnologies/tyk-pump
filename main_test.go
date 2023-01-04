@@ -384,6 +384,7 @@ func TestDecodedKey(t *testing.T) {
 				assert.Len(t, filteredKeys, 1)
 				record1 := filteredKeys[0].(analytics.AnalyticsRecord)
 				assert.Equal(t, tc.expectedRawResponse, record1.RawResponse)
+				assert.Equal(t, tc.expectedRawRequest, record1.RawRequest)
 			}
 			if !tc.decodeResponse && tc.decodeRequest {
 				mockedPump := &MockedPump{}
@@ -393,6 +394,7 @@ func TestDecodedKey(t *testing.T) {
 				assert.Len(t, filteredKeys, 1)
 				record1 := filteredKeys[0].(analytics.AnalyticsRecord)
 				assert.Equal(t, tc.expectedRawResponse, record1.RawResponse)
+				assert.Equal(t, tc.expectedRawRequest, record1.RawRequest)
 			}
 			if !tc.decodeResponse && !tc.decodeRequest {
 				mockedPump := &MockedPump{}
@@ -402,6 +404,7 @@ func TestDecodedKey(t *testing.T) {
 				assert.Len(t, filteredKeys, 1)
 				record1 := filteredKeys[0].(analytics.AnalyticsRecord)
 				assert.Equal(t, tc.expectedRawResponse, record1.RawResponse)
+				assert.Equal(t, tc.expectedRawRequest, record1.RawRequest)
 			}
 		})
 	}
