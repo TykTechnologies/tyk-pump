@@ -304,8 +304,8 @@ func filterData(pump pumps.Pump, keys []interface{}) []interface{} {
 	ignoreFields := pump.GetIgnoreFields()
 	getDecodingResponse := pump.GetDecodedResponse()
 	getDecodingRequest := pump.GetDecodedRequest()
+	// Checking to see if all the config options are empty/false
 	if !getDecodingRequest && !getDecodingResponse && !filters.HasFilter() && !pump.GetOmitDetailedRecording() && !shouldTrim && len(ignoreFields) == 0 {
-		fmt.Println("Returning here")
 		return keys
 	}
 
