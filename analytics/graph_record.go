@@ -21,7 +21,7 @@ import (
 type GraphRecord struct {
 	Types map[string][]string
 
-	AnalyticsRecord `bson:",inline"`
+	AnalyticsRecord AnalyticsRecord `bson:",inline" gorm:"embedded;embeddedPrefix:analytics_"`
 
 	OperationType string
 	Variables     string
