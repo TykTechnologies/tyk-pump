@@ -31,6 +31,10 @@ type Pump interface {
 	SetLogLevel(logrus.Level)
 	SetIgnoreFields([]string)
 	GetIgnoreFields() []string
+	SetDecodingResponse(bool)
+	GetDecodedResponse() bool
+	SetDecodingRequest(bool)
+	GetDecodedRequest() bool
 }
 
 type UptimePump interface {

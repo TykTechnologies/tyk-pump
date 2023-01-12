@@ -96,6 +96,13 @@ type PumpConfig struct {
 	// The field names must be the same as the JSON tags of the analytics record fields.
 	// For example: `["api_key", "api_version"]`.
 	IgnoreFields []string `json:"ignore_fields"`
+
+	// Setting this to True allows the Raw Request to be decoded from base 64
+	// for all pumps. This is set to false by default.
+	DecodeRawRequest bool `json:"raw_request_decoded"`
+
+	// Setting this to True allows the Raw Response to be decoded from base 64 for all pumps. This is set to False by default.
+	DecodeRawResponse bool `json:"raw_response_decoded"`
 }
 
 type UptimeConf struct {
@@ -223,6 +230,13 @@ type TykPumpConfiguration struct {
 	OmitConfigFile bool `json:"omit_config_file"`
 	// Enable debugging of Tyk Pump by exposing profiling information, the same as the gateway https://tyk.io/docs/troubleshooting/tyk-gateway/profiling/
 	HTTPProfile bool `json:"enable_http_profiler"`
+
+	// Setting this to True allows the Raw Request to be decoded from base 64
+	// for all pumps. This is set to false by default.
+	DecodeRawRequest bool `json:"raw_request_decoded"`
+
+	// Setting this to True allows the Raw Response to be decoded from base 64 for all pumps. This is set to False by default.
+	DecodeRawResponse bool `json:"raw_response_decoded"`
 }
 
 func LoadConfig(filePath *string, configStruct *TykPumpConfiguration) {
