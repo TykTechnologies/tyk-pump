@@ -2,6 +2,7 @@ package pumps
 
 import (
 	"context"
+	"fmt"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/mitchellh/mapstructure"
 	"github.com/sirupsen/logrus"
@@ -38,7 +39,7 @@ func (g *GraphSQLPump) Init(conf interface{}) error {
 
 	if err := mapstructure.Decode(conf, &g.SQLConf); err != nil {
 		g.log.WithError(err).Error("error decoding conf")
-		return err
+		return fmt.Errorf("error decoding conf: %w", err)
 	}
 
 	logLevel := gorm_logger.Silent
