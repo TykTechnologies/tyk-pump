@@ -114,6 +114,9 @@ func (g *GraphSQLPump) WriteData(ctx context.Context, data []interface{}) error 
 	startIndex := 0
 	endIndex := dataLen
 	//We iterate dataLen +1 times since we're writing the data after the date change on sharding_table:true
+	if dataLen == 0 {
+		return nil
+	}
 	for i := 0; i <= dataLen; i++ {
 		if g.SQLConf.TableSharding {
 			recDate := graphRecords[startIndex].AnalyticsRecord.TimeStamp.Format("20060102")
@@ -121,6 +124,7 @@ func (g *GraphSQLPump) WriteData(ctx context.Context, data []interface{}) error 
 			//if we're on i == dataLen iteration, it means that we're out of index range. We're going to use the last record date.
 			if i == dataLen {
 				nextRecDate = graphRecords[dataLen-1].AnalyticsRecord.TimeStamp.Format("20060102")
+				recDate = nextRecDate
 			} else {
 				nextRecDate = graphRecords[i].AnalyticsRecord.TimeStamp.Format("20060102")
 
@@ -138,7 +142,6 @@ func (g *GraphSQLPump) WriteData(ctx context.Context, data []interface{}) error 
 				if err := g.db.AutoMigrate(&analytics.GraphRecord{}); err != nil {
 					g.log.Error("error creating table for record")
 					g.log.WithError(err).Debug("error creating table for record")
-					continue
 				}
 			}
 		} else {

@@ -3,12 +3,14 @@ package pumps
 import (
 	"context"
 	"encoding/base64"
+	"fmt"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"testing"
+	"time"
 )
 
 func TestGraphSQLPump_Init(t *testing.T) {
@@ -227,5 +229,53 @@ func TestGraphSQLPump_WriteData(t *testing.T) {
 				t.Error(diff)
 			}
 		})
+	}
+}
+
+func TestGraphSQLPump_Sharded(t *testing.T) {
+	r := require.New(t)
+	conf := SQLConf{
+		Type:             "sqlite",
+		ConnectionString: "",
+		TableName:        "graph-record",
+		TableSharding:    true,
+	}
+	pump := &GraphSQLPump{}
+	assert.NoError(t, pump.Init(conf))
+
+	baseRecord := analytics.AnalyticsRecord{
+		APIID:        "test-api",
+		Path:         "/test-api",
+		RawRequest:   convToBase64(rawGQLRequest),
+		RawResponse:  convToBase64(rawGQLResponse),
+		ApiSchema:    convToBase64(schema),
+		Tags:         []string{analytics.PredefinedTagGraphAnalytics},
+		APIName:      "test-api",
+		ResponseCode: 200,
+		Method:       "POST",
+	}
+
+	expectedTables := make([]string, 0)
+	records := make([]interface{}, 0)
+	for i := 1; i <= 3; i++ {
+		day := i
+		timestamp := time.Date(2023, time.January, day, 0, 1, 0, 0, time.UTC)
+		rec := baseRecord
+		rec.TimeStamp = timestamp
+		rec.Month = timestamp.Month()
+		rec.Day = timestamp.Day()
+		rec.Year = timestamp.Year()
+		records = append(records, rec)
+		expectedTables = append(expectedTables, fmt.Sprintf("%s_%s", conf.TableName, timestamp.Format("20060102")))
+	}
+
+	r.NoError(pump.WriteData(context.Background(), records))
+	// check tables
+	for _, item := range expectedTables {
+		r.Truef(pump.db.Migrator().HasTable(item), "table %s does not exist", item)
+		recs := make([]analytics.GraphRecord, 0)
+		pump.db.Table(item).Find(&recs)
+		fmt.Printf("got %d records for %s\n", len(recs), item)
+		assert.Equalf(t, 1, len(recs), "expected one record for %s table, instead got %d", item, len(recs))
 	}
 }
