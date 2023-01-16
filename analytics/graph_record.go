@@ -94,33 +94,35 @@ func (a *AnalyticsRecord) ToGraphRecord() (GraphRecord, error) {
 	record.Types = typesToFieldsMap
 
 	// get response and check to see errors
-	responseDecoded, err := base64.StdEncoding.DecodeString(a.RawResponse)
-	if err != nil {
-		return record, nil
-	}
-	resp, err := http.ReadResponse(bufio.NewReader(bytes.NewReader(responseDecoded)), nil)
-	if err != nil {
-		log.WithError(err).Error("error reading raw response")
-		return record, err
-	}
-	defer resp.Body.Close()
-
-	dat, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		log.WithError(err).Error("error reading response body")
-		return record, err
-	}
-	errBytes, t, _, err := jsonparser.Get(dat, "errors")
-	if err != nil && err != jsonparser.KeyPathNotFoundError {
-		log.WithError(err).Error("error getting response errors")
-		return record, err
-	}
-	if t != jsonparser.NotExist {
-		if err := json.Unmarshal(errBytes, &record.Errors); err != nil {
-			log.WithError(err).Error("error parsing graph errors")
+	if a.RawResponse != "" {
+		responseDecoded, err := base64.StdEncoding.DecodeString(a.RawResponse)
+		if err != nil {
+			return record, nil
+		}
+		resp, err := http.ReadResponse(bufio.NewReader(bytes.NewReader(responseDecoded)), nil)
+		if err != nil {
+			log.WithError(err).Error("error reading raw response")
 			return record, err
 		}
-		record.HasErrors = true
+		defer resp.Body.Close()
+
+		dat, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			log.WithError(err).Error("error reading response body")
+			return record, err
+		}
+		errBytes, t, _, err := jsonparser.Get(dat, "errors")
+		if err != nil && err != jsonparser.KeyPathNotFoundError {
+			log.WithError(err).Error("error getting response errors")
+			return record, err
+		}
+		if t != jsonparser.NotExist {
+			if err := json.Unmarshal(errBytes, &record.Errors); err != nil {
+				log.WithError(err).Error("error parsing graph errors")
+				return record, err
+			}
+			record.HasErrors = true
+		}
 	}
 
 	return record, nil

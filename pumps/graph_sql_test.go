@@ -7,6 +7,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"testing"
 )
 
@@ -62,6 +63,7 @@ func convToBase64(raw string) string {
 }
 
 func TestGraphSQLPump_WriteData(t *testing.T) {
+	r := require.New(t)
 	conf := SQLConf{
 		Type:             "sqlite",
 		ConnectionString: "",
@@ -76,15 +78,16 @@ func TestGraphSQLPump_WriteData(t *testing.T) {
 		response     string
 		responseCode int
 	}
-	type expectedResponse struct {
+	type customResponses struct {
 		types         map[string][]string
 		operationType string
+		expectedErr   []analytics.GraphError
 	}
 
 	testCases := []struct {
 		name      string
 		records   []customRecord
-		responses []expectedResponse
+		responses []customResponses
 		hasError  bool
 	}{
 		{
@@ -96,8 +99,69 @@ func TestGraphSQLPump_WriteData(t *testing.T) {
 					responseCode: 200,
 					response:     rawGQLResponse,
 				},
+				{
+					isHttp:       false,
+					tags:         []string{analytics.PredefinedTagGraphAnalytics},
+					responseCode: 200,
+					response:     rawGQLResponseWithError,
+				},
+				{
+					isHttp:       false,
+					tags:         []string{analytics.PredefinedTagGraphAnalytics},
+					responseCode: 500,
+					response:     "",
+				},
 			},
-			responses: []expectedResponse{
+			responses: []customResponses{
+				{
+					types: map[string][]string{
+						"Country": {"code"},
+					},
+					operationType: "Query",
+				},
+				{
+					types: map[string][]string{
+						"Country": {"code"},
+					},
+					operationType: "Query",
+					expectedErr: []analytics.GraphError{
+						{
+							Message: "test error",
+							Path:    []interface{}{},
+						},
+					},
+				},
+				{
+					types: map[string][]string{
+						"Country": {"code"},
+					},
+					operationType: "Query",
+					expectedErr:   []analytics.GraphError{},
+				},
+			},
+			hasError: false,
+		},
+		{
+			name: "skip record",
+			records: []customRecord{
+				{
+					isHttp:       false,
+					tags:         []string{analytics.PredefinedTagGraphAnalytics},
+					responseCode: 200,
+					response:     rawGQLResponse,
+				},
+				{
+					isHttp:       true,
+					responseCode: 200,
+					response:     rawHTTPResponse,
+				},
+				{
+					isHttp:       false,
+					responseCode: 200,
+					response:     rawGQLResponse,
+				},
+			},
+			responses: []customResponses{
 				{
 					types: map[string][]string{
 						"Country": {"code"},
@@ -105,7 +169,6 @@ func TestGraphSQLPump_WriteData(t *testing.T) {
 					operationType: "Query",
 				},
 			},
-			hasError: false,
 		},
 	}
 
@@ -113,6 +176,7 @@ func TestGraphSQLPump_WriteData(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			records := make([]interface{}, 0)
 			expectedResponses := make([]analytics.GraphRecord, 0)
+			// create the records to passed to the pump
 			for _, item := range tc.records {
 				r := analytics.AnalyticsRecord{
 					APIName: "Test API",
@@ -126,32 +190,39 @@ func TestGraphSQLPump_WriteData(t *testing.T) {
 					r.RawRequest = convToBase64(rawHTTPReq)
 					r.RawResponse = convToBase64(rawHTTPResponse)
 				}
-				r.RawResponse = item.response
+				r.RawResponse = convToBase64(item.response)
 				if item.responseCode != 0 {
 					r.ResponseCode = item.responseCode
 				}
 				records = append(records, r)
 			}
 
+			// create the responses to be expected from the db
 			for _, item := range tc.responses {
 				r := analytics.GraphRecord{
 					Types:         item.types,
 					OperationType: item.operationType,
 					Errors:        []analytics.GraphError{},
 				}
+				if item.expectedErr == nil {
+					r.Errors = []analytics.GraphError{}
+				} else {
+					r.Errors = item.expectedErr
+					r.HasErrors = true
+				}
 				expectedResponses = append(expectedResponses, r)
 			}
 
 			err := pump.WriteData(context.Background(), records)
 			if !tc.hasError {
-				assert.NoError(t, err)
+				r.NoError(err)
 			} else {
-				assert.Error(t, err)
+				r.Error(err)
 			}
 
 			var resultRecords []analytics.GraphRecord
 			pump.db.Table(conf.TableName).Find(&resultRecords)
-			assert.Equal(t, len(tc.responses), len(resultRecords), "responses count do no match")
+			r.Equalf(len(tc.responses), len(resultRecords), "responses count do no match")
 			if diff := cmp.Diff(expectedResponses, resultRecords, cmpopts.IgnoreFields(analytics.GraphRecord{}, "AnalyticsRecord")); diff != "" {
 				t.Error(diff)
 			}
