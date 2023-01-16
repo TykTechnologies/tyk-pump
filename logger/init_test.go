@@ -9,7 +9,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-//TestFormatterWithForcedPrefixFileOutput check if the prefix is stored in not TTY outputs
+// TestFormatterWithForcedPrefixFileOutput check if the prefix is stored in not TTY outputs
 func TestFormatterWithForcedPrefixFileOutput(t *testing.T) {
 
 	outputFile := "test.log"
@@ -49,5 +49,49 @@ func TestFormatterWithForcedPrefixFileOutput(t *testing.T) {
 	err = os.Remove(outputFile)
 	if err != nil {
 		t.Error("Error removing test logs file:" + err.Error())
+	}
+}
+
+func Test_GetLooger(t *testing.T) {
+	tests := []struct {
+		name          string
+		env           string
+		expectedLevel logrus.Level
+	}{
+		{
+			name:          "default",
+			env:           "",
+			expectedLevel: logrus.InfoLevel,
+		},
+		{
+			name:          "error",
+			env:           "error",
+			expectedLevel: logrus.ErrorLevel,
+		},
+		{
+			name:          "warn",
+			env:           "warn",
+			expectedLevel: logrus.WarnLevel,
+		},
+		{
+			name:          "info",
+			env:           "info",
+			expectedLevel: logrus.InfoLevel,
+		},
+		{
+			name:          "debug",
+			env:           "debug",
+			expectedLevel: logrus.DebugLevel,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			os.Setenv("TYK_LOGLEVEL", tt.env)
+			logger := GetLogger()
+			if logger.Level != tt.expectedLevel {
+				t.Errorf("Expected level %v, got %v", tt.expectedLevel, logger.Level)
+			}
+		})
 	}
 }
