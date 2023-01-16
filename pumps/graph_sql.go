@@ -3,6 +3,7 @@ package pumps
 import (
 	"context"
 	"fmt"
+
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/mitchellh/mapstructure"
 	"github.com/sirupsen/logrus"
@@ -16,14 +17,10 @@ const (
 )
 
 type GraphSQLPump struct {
-	CommonPumpConfig
-
-	SQLConf SQLConf
-
-	db      *gorm.DB
-	dialect gorm.Dialector
-
+	db        *gorm.DB
+	SQLConf   SQLConf
 	tableName string
+	CommonPumpConfig
 }
 
 func (g *GraphSQLPump) GetName() string {
@@ -96,7 +93,10 @@ func (g *GraphSQLPump) WriteData(ctx context.Context, data []interface{}) error 
 	var graphRecords []*analytics.GraphRecord
 	for _, r := range data {
 		if r != nil {
-			rec := r.(analytics.AnalyticsRecord)
+			rec, ok := r.(analytics.AnalyticsRecord)
+			if !ok {
+				continue
+			}
 			if !rec.IsGraphRecord() {
 				continue
 			}
@@ -113,7 +113,7 @@ func (g *GraphSQLPump) WriteData(ctx context.Context, data []interface{}) error 
 
 	startIndex := 0
 	endIndex := dataLen
-	//We iterate dataLen +1 times since we're writing the data after the date change on sharding_table:true
+	// We iterate dataLen +1 times since we're writing the data after the date change on sharding_table:true
 	if dataLen == 0 {
 		return nil
 	}
@@ -121,14 +121,14 @@ func (g *GraphSQLPump) WriteData(ctx context.Context, data []interface{}) error 
 		if g.SQLConf.TableSharding {
 			recDate := graphRecords[startIndex].AnalyticsRecord.TimeStamp.Format("20060102")
 			var nextRecDate string
-			//if we're on i == dataLen iteration, it means that we're out of index range. We're going to use the last record date.
+			// if we're on i == dataLen iteration, it means that we're out of index range. We're going to use the last record date.
 			if i == dataLen {
 				nextRecDate = graphRecords[dataLen-1].AnalyticsRecord.TimeStamp.Format("20060102")
 				recDate = nextRecDate
 			} else {
 				nextRecDate = graphRecords[i].AnalyticsRecord.TimeStamp.Format("20060102")
 
-				//if both dates are equal, we shouldn't write in the table yet.
+				// if both dates are equal, we shouldn't write in the table yet.
 				if recDate == nextRecDate {
 					continue
 				}
@@ -150,19 +150,18 @@ func (g *GraphSQLPump) WriteData(ctx context.Context, data []interface{}) error 
 
 		recs := graphRecords[startIndex:endIndex]
 
-		for i := 0; i < len(recs); i += g.SQLConf.BatchSize {
-			ends := i + g.SQLConf.BatchSize
+		for ri := 0; ri < len(recs); ri += g.SQLConf.BatchSize {
+			ends := ri + g.SQLConf.BatchSize
 			if ends > len(recs) {
 				ends = len(recs)
 			}
-			tx := g.db.WithContext(ctx).Create(recs[i:ends])
+			tx := g.db.WithContext(ctx).Create(recs[ri:ends])
 			if tx.Error != nil {
 				g.log.Error(tx.Error)
 			}
 		}
 
 		startIndex = i // next day start index, necessary for sharded case
-
 	}
 
 	g.log.Info("Purged ", dataLen, " records...")

@@ -4,13 +4,14 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"testing"
+	"time"
+
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
-	"time"
 )
 
 func TestGraphSQLPump_Init(t *testing.T) {
@@ -23,7 +24,9 @@ func TestGraphSQLPump_Init(t *testing.T) {
 		}
 		assert.NoError(t, pump.Init(conf))
 		t.Cleanup(func() {
-			pump.db.Migrator().DropTable("rand-table")
+			if err := pump.db.Migrator().DropTable("rand-table"); err != nil {
+				t.Errorf("error cleaning up table: %v", err)
+			}
 		})
 		assert.True(t, pump.db.Migrator().HasTable(conf.TableName))
 	})
@@ -75,10 +78,10 @@ func TestGraphSQLPump_WriteData(t *testing.T) {
 	assert.NoError(t, pump.Init(conf))
 
 	type customRecord struct {
-		isHttp       bool
-		tags         []string
 		response     string
+		tags         []string
 		responseCode int
+		isHTTP       bool
 	}
 	type customResponses struct {
 		types         map[string][]string
@@ -96,19 +99,19 @@ func TestGraphSQLPump_WriteData(t *testing.T) {
 			name: "default case",
 			records: []customRecord{
 				{
-					isHttp:       false,
+					isHTTP:       false,
 					tags:         []string{analytics.PredefinedTagGraphAnalytics},
 					responseCode: 200,
 					response:     rawGQLResponse,
 				},
 				{
-					isHttp:       false,
+					isHTTP:       false,
 					tags:         []string{analytics.PredefinedTagGraphAnalytics},
 					responseCode: 200,
 					response:     rawGQLResponseWithError,
 				},
 				{
-					isHttp:       false,
+					isHTTP:       false,
 					tags:         []string{analytics.PredefinedTagGraphAnalytics},
 					responseCode: 500,
 					response:     "",
@@ -147,18 +150,18 @@ func TestGraphSQLPump_WriteData(t *testing.T) {
 			name: "skip record",
 			records: []customRecord{
 				{
-					isHttp:       false,
+					isHTTP:       false,
 					tags:         []string{analytics.PredefinedTagGraphAnalytics},
 					responseCode: 200,
 					response:     rawGQLResponse,
 				},
 				{
-					isHttp:       true,
+					isHTTP:       true,
 					responseCode: 200,
 					response:     rawHTTPResponse,
 				},
 				{
-					isHttp:       false,
+					isHTTP:       false,
 					responseCode: 200,
 					response:     rawGQLResponse,
 				},
@@ -185,7 +188,7 @@ func TestGraphSQLPump_WriteData(t *testing.T) {
 					Path:    "POST",
 					Tags:    item.tags,
 				}
-				if !item.isHttp {
+				if !item.isHTTP {
 					r.RawRequest = convToBase64(rawGQLRequest)
 					r.ApiSchema = convToBase64(schema)
 				} else {
