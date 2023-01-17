@@ -88,6 +88,7 @@ func Test_GetLooger(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			os.Setenv("TYK_LOGLEVEL", tt.env)
+			defer os.Unsetenv("TYK_LOGLEVEL")
 			logger := GetLogger()
 			if logger.Level != tt.expectedLevel {
 				t.Errorf("Expected level %v, got %v", tt.expectedLevel, logger.Level)
