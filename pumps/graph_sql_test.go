@@ -74,8 +74,6 @@ func TestGraphSQLPump_WriteData(t *testing.T) {
 		ConnectionString: "",
 		TableName:        "test-table",
 	}
-	pump := &GraphSQLPump{}
-	assert.NoError(t, pump.Init(conf))
 
 	type customRecord struct {
 		response     string
@@ -179,6 +177,14 @@ func TestGraphSQLPump_WriteData(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			pump := &GraphSQLPump{}
+			assert.NoError(t, pump.Init(conf))
+
+			t.Cleanup(func() {
+				if err := pump.db.Migrator().DropTable(conf.TableName); err != nil {
+					t.Error(err)
+				}
+			})
 			records := make([]interface{}, 0)
 			expectedResponses := make([]analytics.GraphRecord, 0)
 			// create the records to passed to the pump
