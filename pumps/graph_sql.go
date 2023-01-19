@@ -16,6 +16,8 @@ const (
 	GraphSQLTable  = "tyk_analytics_graph"
 )
 
+var GraphSQLDefaultENV = PUMPS_ENV_PREFIX + "_GRAPH_SQL" + PUMPS_ENV_META_PREFIX
+
 type GraphSQLPump struct {
 	db        *gorm.DB
 	SQLConf   SQLConf
@@ -38,6 +40,8 @@ func (g *GraphSQLPump) Init(conf interface{}) error {
 		g.log.WithError(err).Error("error decoding conf")
 		return fmt.Errorf("error decoding conf: %w", err)
 	}
+
+	processPumpEnvVars(g, g.log, g.SQLConf, GraphSQLDefaultENV)
 
 	logLevel := gorm_logger.Silent
 
@@ -87,17 +91,15 @@ func (g *GraphSQLPump) Init(conf interface{}) error {
 	return nil
 }
 
-func (g *GraphSQLPump) WriteData(ctx context.Context, data []interface{}) error {
-	g.log.Debug("Attempting to write ", len(data), " records...")
-
+func (g *GraphSQLPump) getGraphRecords(data []interface{}) []*analytics.GraphRecord {
 	var graphRecords []*analytics.GraphRecord
 	for _, r := range data {
 		if r != nil {
-			rec, ok := r.(analytics.AnalyticsRecord)
-			if !ok {
-				continue
-			}
-			if !rec.IsGraphRecord() {
+			var (
+				rec analytics.AnalyticsRecord
+				ok  bool
+			)
+			if rec, ok = r.(analytics.AnalyticsRecord); !ok || !rec.IsGraphRecord() {
 				continue
 			}
 			gr, err := rec.ToGraphRecord()
@@ -109,12 +111,24 @@ func (g *GraphSQLPump) WriteData(ctx context.Context, data []interface{}) error 
 			graphRecords = append(graphRecords, &gr)
 		}
 	}
+	return graphRecords
+}
+
+func (g *GraphSQLPump) GetEnvPrefix() string {
+	return g.SQLConf.EnvPrefix
+}
+
+func (g *GraphSQLPump) WriteData(ctx context.Context, data []interface{}) error {
+	g.log.Debug("Attempting to write ", len(data), " records...")
+
+	graphRecords := g.getGraphRecords(data)
 	dataLen := len(graphRecords)
 
 	startIndex := 0
 	endIndex := dataLen
 	// We iterate dataLen +1 times since we're writing the data after the date change on sharding_table:true
 	if dataLen == 0 {
+		g.log.Debug("no graphql records")
 		return nil
 	}
 	for i := 0; i <= dataLen; i++ {

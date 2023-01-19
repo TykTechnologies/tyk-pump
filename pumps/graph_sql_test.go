@@ -284,7 +284,6 @@ func TestGraphSQLPump_Sharded(t *testing.T) {
 		r.Truef(pump.db.Migrator().HasTable(item), "table %s does not exist", item)
 		recs := make([]analytics.GraphRecord, 0)
 		pump.db.Table(item).Find(&recs)
-		fmt.Printf("got %d records for %s\n", len(recs), item)
 		assert.Equalf(t, 1, len(recs), "expected one record for %s table, instead got %d", item, len(recs))
 	}
 }
