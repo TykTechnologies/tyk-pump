@@ -321,3 +321,60 @@ func TestIgnoreFieldsFilterData(t *testing.T) {
 		})
 	}
 }
+
+func TestDecodedKey(t *testing.T) {
+	keys := make([]interface{}, 1)
+	record := analytics.AnalyticsRecord{APIID: "api111", RawResponse: "RGVjb2RlZFJlc3BvbnNl", RawRequest: "RGVjb2RlZFJlcXVlc3Q="}
+	keys[0] = record
+
+	tcs := []struct {
+		expectedRawResponse string
+		expectedRawRequest  string
+		testName            string
+		decodeResponse      bool
+		decodeRequest       bool
+	}{
+		{
+			testName:            "Decode RESPONSE & REQUEST",
+			expectedRawResponse: "DecodedResponse",
+			expectedRawRequest:  "DecodedRequest",
+			decodeResponse:      true,
+			decodeRequest:       true,
+		},
+		{
+			testName:            "Decode RESPONSE",
+			expectedRawResponse: "DecodedResponse",
+			expectedRawRequest:  "RGVjb2RlZFJlcXVlc3Q=",
+			decodeResponse:      true,
+			decodeRequest:       false,
+		},
+		{
+			testName:            "Decode REQUEST",
+			expectedRawResponse: "RGVjb2RlZFJlc3BvbnNl",
+			expectedRawRequest:  "DecodedRequest",
+			decodeResponse:      false,
+			decodeRequest:       true,
+		},
+		{
+			testName:            "Decode NONE",
+			expectedRawResponse: "RGVjb2RlZFJlc3BvbnNl",
+			expectedRawRequest:  "RGVjb2RlZFJlcXVlc3Q=",
+			decodeResponse:      false,
+			decodeRequest:       false,
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.testName, func(t *testing.T) {
+			mockedPump := &MockedPump{}
+			mockedPump.SetDecodingRequest(tc.decodeRequest)
+			mockedPump.SetDecodingResponse(tc.decodeResponse)
+			filteredKeys := filterData(mockedPump, keys)
+			assert.Len(t, filteredKeys, 1)
+			record1, ok := filteredKeys[0].(analytics.AnalyticsRecord)
+			assert.True(t, ok)
+			assert.Equal(t, tc.expectedRawResponse, record1.RawResponse)
+			assert.Equal(t, tc.expectedRawRequest, record1.RawRequest)
+		})
+	}
+}

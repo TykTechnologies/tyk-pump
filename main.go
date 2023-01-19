@@ -2,14 +2,14 @@ package main
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
+	"os"
 	"os/signal"
 	"strings"
 	"sync"
 	"syscall"
 	"time"
-
-	"os"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/TykTechnologies/tyk-pump/analytics/demo"
@@ -147,6 +147,8 @@ func initialisePumps() {
 			thisPmp.SetOmitDetailedRecording(pmp.OmitDetailedRecording)
 			thisPmp.SetMaxRecordSize(pmp.MaxRecordSize)
 			thisPmp.SetIgnoreFields(pmp.IgnoreFields)
+			thisPmp.SetDecodingRequest(pmp.DecodeRawRequest)
+			thisPmp.SetDecodingResponse(pmp.DecodeRawResponse)
 			initErr := thisPmp.Init(pmp.Meta)
 			if initErr != nil {
 				log.WithField("pump", thisPmp.GetName()).Error("Pump init error (skipping): ", initErr)
@@ -300,7 +302,10 @@ func filterData(pump pumps.Pump, keys []interface{}) []interface{} {
 	shouldTrim := SystemConfig.MaxRecordSize != 0 || pump.GetMaxRecordSize() != 0
 	filters := pump.GetFilters()
 	ignoreFields := pump.GetIgnoreFields()
-	if !filters.HasFilter() && !pump.GetOmitDetailedRecording() && !shouldTrim && len(ignoreFields) == 0 {
+	getDecodingResponse := pump.GetDecodedResponse()
+	getDecodingRequest := pump.GetDecodedRequest()
+	// Checking to see if all the config options are empty/false
+	if !getDecodingRequest && !getDecodingResponse && !filters.HasFilter() && !pump.GetOmitDetailedRecording() && !shouldTrim && len(ignoreFields) == 0 {
 		return keys
 	}
 
@@ -328,6 +333,19 @@ func filterData(pump pumps.Pump, keys []interface{}) []interface{} {
 		}
 		if len(ignoreFields) > 0 {
 			decoded.RemoveIgnoredFields(ignoreFields)
+		}
+		// DECODING RAW REQUEST AND RESPONSE FROM BASE 64
+		if getDecodingRequest {
+			rawRequest, err := base64.StdEncoding.DecodeString(decoded.RawRequest)
+			if err == nil {
+				decoded.RawRequest = string(rawRequest)
+			}
+		}
+		if getDecodingResponse {
+			rawResponse, err := base64.StdEncoding.DecodeString(decoded.RawResponse)
+			if err == nil {
+				decoded.RawResponse = string(rawResponse)
+			}
 		}
 		filteredKeys[newLenght] = decoded
 		newLenght++
