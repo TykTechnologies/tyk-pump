@@ -81,6 +81,7 @@ func TestGraphSQLPump_Init(t *testing.T) {
 	})
 
 	t.Run("init from env", func(t *testing.T) {
+		envPrefix := fmt.Sprintf("%s_GRAPH_SQL%s", PUMPS_ENV_PREFIX, PUMPS_ENV_META_PREFIX) + "_%s"
 		r := require.New(t)
 		envKeyVal := map[string]string{
 			"TYPE":          "sqlite",
@@ -88,9 +89,14 @@ func TestGraphSQLPump_Init(t *testing.T) {
 			"TABLESHARDING": "true",
 		}
 		for key, val := range envKeyVal {
-			osKey := fmt.Sprintf("%s_GRAPH_SQL%s_%s", PUMPS_ENV_PREFIX, PUMPS_ENV_META_PREFIX, key)
-			r.NoError(os.Setenv(osKey, val))
+			newKey := fmt.Sprintf(envPrefix, key)
+			r.NoError(os.Setenv(newKey, val))
 		}
+		t.Cleanup(func() {
+			for k := range envKeyVal {
+				r.NoError(os.Unsetenv(fmt.Sprintf(envPrefix, k)))
+			}
+		})
 
 		conf := GraphSQLConf{
 			SQLConf: SQLConf{
@@ -228,7 +234,7 @@ func TestGraphSQLPump_WriteData(t *testing.T) {
 
 			t.Cleanup(func() {
 				if err := pump.db.Migrator().DropTable(conf.TableName); err != nil {
-					t.Error(err)
+					fmt.Printf("test %s, error: %v\n", tc.name, err)
 				}
 			})
 			records := make([]interface{}, 0)
@@ -278,7 +284,8 @@ func TestGraphSQLPump_WriteData(t *testing.T) {
 			}
 
 			var resultRecords []analytics.GraphRecord
-			pump.db.Table(conf.TableName).Find(&resultRecords)
+			tx := pump.db.Table(conf.TableName).Find(&resultRecords)
+			r.NoError(tx.Error)
 			r.Equalf(len(tc.responses), len(resultRecords), "responses count do no match")
 			if diff := cmp.Diff(expectedResponses, resultRecords, cmpopts.IgnoreFields(analytics.GraphRecord{}, "AnalyticsRecord")); diff != "" {
 				t.Error(diff)
