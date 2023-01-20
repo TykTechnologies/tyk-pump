@@ -16,16 +16,19 @@ import (
 )
 
 func TestGraphSQLPump_Init(t *testing.T) {
+	r := require.New(t)
 	pump := &GraphSQLPump{}
 	t.Run("successful", func(t *testing.T) {
-		conf := SQLConf{
-			Type:             "sqlite",
-			ConnectionString: "",
-			TableName:        "rand-table",
+		conf := GraphSQLConf{
+			SQLConf: SQLConf{
+				Type:             "sqlite",
+				ConnectionString: "",
+			},
+			TableName: "rand-table",
 		}
 		assert.NoError(t, pump.Init(conf))
 		t.Cleanup(func() {
-			if err := pump.db.Migrator().DropTable("rand-table"); err != nil {
+			if err := pump.db.Migrator().DropTable(conf.TableName); err != nil {
 				t.Errorf("error cleaning up table: %v", err)
 			}
 		})
@@ -47,17 +50,31 @@ func TestGraphSQLPump_Init(t *testing.T) {
 
 	t.Run("invalid config", func(t *testing.T) {
 		conf := map[string]interface{}{
-			"type": 1,
+			"table_name": 1,
 		}
 		assert.ErrorContains(t, pump.Init(conf), "error decoding con")
 	})
 
+	t.Run("decode from map", func(t *testing.T) {
+		conf := map[string]interface{}{
+			"table_name":     "test_table",
+			"type":           "sqlite",
+			"table_sharding": true,
+		}
+		r.NoError(pump.Init(conf))
+		assert.Equal(t, "test_table", pump.Conf.TableName)
+		assert.Equal(t, "sqlite", pump.Conf.Type)
+		assert.Equal(t, true, pump.Conf.TableSharding)
+	})
+
 	t.Run("sharded table", func(t *testing.T) {
-		conf := SQLConf{
-			Type:             "sqlite",
-			ConnectionString: "",
-			TableName:        "test-table",
-			TableSharding:    true,
+		conf := GraphSQLConf{
+			SQLConf: SQLConf{
+				Type:             "sqlite",
+				ConnectionString: "",
+				TableSharding:    true,
+			},
+			TableName: "test-table",
 		}
 		assert.NoError(t, pump.Init(conf))
 		assert.False(t, pump.db.Migrator().HasTable(conf.TableName))
@@ -74,15 +91,19 @@ func TestGraphSQLPump_Init(t *testing.T) {
 			osKey := fmt.Sprintf("%s_GRAPH_SQL%s_%s", PUMPS_ENV_PREFIX, PUMPS_ENV_META_PREFIX, key)
 			r.NoError(os.Setenv(osKey, val))
 		}
-		conf := SQLConf{
-			Type:          "postgres",
-			TableName:     "wrong-name",
-			TableSharding: false,
+
+		conf := GraphSQLConf{
+			SQLConf: SQLConf{
+				Type:             "postgres",
+				ConnectionString: "",
+				TableSharding:    false,
+			},
+			TableName: "wrong-name",
 		}
 		r.NoError(pump.Init(conf))
-		assert.Equal(t, "sqlite", pump.SQLConf.Type)
-		assert.Equal(t, "test-table", pump.SQLConf.TableName)
-		assert.Equal(t, true, pump.SQLConf.TableSharding)
+		assert.Equal(t, "sqlite", pump.Conf.Type)
+		assert.Equal(t, "test-table", pump.Conf.TableName)
+		assert.Equal(t, true, pump.Conf.TableSharding)
 	})
 }
 
@@ -92,10 +113,12 @@ func convToBase64(raw string) string {
 
 func TestGraphSQLPump_WriteData(t *testing.T) {
 	r := require.New(t)
-	conf := SQLConf{
-		Type:             "sqlite",
-		ConnectionString: "",
-		TableName:        "test-table",
+	conf := GraphSQLConf{
+		SQLConf: SQLConf{
+			Type:             "sqlite",
+			ConnectionString: "",
+		},
+		TableName: "test-table",
 	}
 
 	type customRecord struct {
@@ -266,11 +289,13 @@ func TestGraphSQLPump_WriteData(t *testing.T) {
 
 func TestGraphSQLPump_Sharded(t *testing.T) {
 	r := require.New(t)
-	conf := SQLConf{
-		Type:             "sqlite",
-		ConnectionString: "",
-		TableName:        "graph-record",
-		TableSharding:    true,
+	conf := GraphSQLConf{
+		SQLConf: SQLConf{
+			Type:             "sqlite",
+			ConnectionString: "",
+			TableSharding:    true,
+		},
+		TableName: "graph-record",
 	}
 	pump := &GraphSQLPump{}
 	assert.NoError(t, pump.Init(conf))

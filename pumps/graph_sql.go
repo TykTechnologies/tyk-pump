@@ -18,9 +18,17 @@ const (
 
 var GraphSQLDefaultENV = PUMPS_ENV_PREFIX + "_GRAPH_SQL" + PUMPS_ENV_META_PREFIX
 
+type GraphSQLConf struct {
+	// TableName is a configuration field unique to the sql-graph pump, this field specifies
+	// the name of the sql table to be created/used for the pump in the cases of non-sharding
+	// in the case of sharding, it specifies the table prefix
+	TableName string `json:"table_name" mapstructure:"table_name"`
+
+	SQLConf `mapstructure:",squash"`
+}
 type GraphSQLPump struct {
 	db        *gorm.DB
-	SQLConf   *SQLConf
+	Conf      *GraphSQLConf
 	tableName string
 	CommonPumpConfig
 }
@@ -36,16 +44,16 @@ func (g *GraphSQLPump) New() Pump {
 func (g *GraphSQLPump) Init(conf interface{}) error {
 	g.log = log.WithField("prefix", GraphSQLPrefix)
 
-	if err := mapstructure.Decode(conf, &g.SQLConf); err != nil {
+	if err := mapstructure.Decode(conf, &g.Conf); err != nil {
 		g.log.WithError(err).Error("error decoding conf")
 		return fmt.Errorf("error decoding conf: %w", err)
 	}
 
-	processPumpEnvVars(g, g.log, g.SQLConf, GraphSQLDefaultENV)
+	processPumpEnvVars(g, g.log, g.Conf, GraphSQLDefaultENV)
 
 	logLevel := gorm_logger.Silent
 
-	switch g.SQLConf.LogLevel {
+	switch g.Conf.LogLevel {
 	case "debug":
 		logLevel = gorm_logger.Info
 	case "info":
@@ -54,7 +62,7 @@ func (g *GraphSQLPump) Init(conf interface{}) error {
 		logLevel = gorm_logger.Error
 	}
 
-	dialect, errDialect := Dialect(g.SQLConf)
+	dialect, errDialect := Dialect(&g.Conf.SQLConf)
 	if errDialect != nil {
 		g.log.Error(errDialect)
 		return errDialect
@@ -71,15 +79,15 @@ func (g *GraphSQLPump) Init(conf interface{}) error {
 	}
 	g.db = db
 
-	if g.SQLConf.BatchSize == 0 {
-		g.SQLConf.BatchSize = SQLDefaultQueryBatchSize
+	if g.Conf.BatchSize == 0 {
+		g.Conf.BatchSize = SQLDefaultQueryBatchSize
 	}
 
 	g.tableName = GraphSQLTable
-	if name := g.SQLConf.TableName; name != "" {
+	if name := g.Conf.TableName; name != "" {
 		g.tableName = name
 	}
-	if !g.SQLConf.TableSharding {
+	if !g.Conf.TableSharding {
 		if err := g.db.Table(g.tableName).AutoMigrate(&analytics.GraphRecord{}); err != nil {
 			g.log.WithError(err).Error("error migrating graph analytics table")
 			return err
@@ -115,7 +123,7 @@ func (g *GraphSQLPump) getGraphRecords(data []interface{}) []*analytics.GraphRec
 }
 
 func (g *GraphSQLPump) GetEnvPrefix() string {
-	return g.SQLConf.EnvPrefix
+	return g.Conf.EnvPrefix
 }
 
 func (g *GraphSQLPump) WriteData(ctx context.Context, data []interface{}) error {
@@ -132,7 +140,7 @@ func (g *GraphSQLPump) WriteData(ctx context.Context, data []interface{}) error 
 		return nil
 	}
 	for i := 0; i <= dataLen; i++ {
-		if g.SQLConf.TableSharding {
+		if g.Conf.TableSharding {
 			recDate := graphRecords[startIndex].AnalyticsRecord.TimeStamp.Format("20060102")
 			var nextRecDate string
 			// if we're on i == dataLen iteration, it means that we're out of index range. We're going to use the last record date.
@@ -164,8 +172,8 @@ func (g *GraphSQLPump) WriteData(ctx context.Context, data []interface{}) error 
 
 		recs := graphRecords[startIndex:endIndex]
 
-		for ri := 0; ri < len(recs); ri += g.SQLConf.BatchSize {
-			ends := ri + g.SQLConf.BatchSize
+		for ri := 0; ri < len(recs); ri += g.Conf.BatchSize {
+			ends := ri + g.Conf.BatchSize
 			if ends > len(recs) {
 				ends = len(recs)
 			}
