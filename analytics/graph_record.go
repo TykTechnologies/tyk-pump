@@ -19,14 +19,14 @@ import (
 )
 
 type GraphRecord struct {
-	Types map[string][]string
+	Types map[string][]string `gorm:"types"`
 
 	AnalyticsRecord AnalyticsRecord `bson:",inline" gorm:"embedded;embeddedPrefix:analytics_"`
 
-	OperationType string
-	Variables     string
-	Errors        []GraphError
-	HasErrors     bool
+	OperationType string       `gorm:"column:operation_type"`
+	Variables     string       `gorm:"variables"`
+	Errors        []GraphError `gorm:"errors"`
+	HasErrors     bool         `gorm:"has_errors"`
 }
 
 func (a *AnalyticsRecord) ToGraphRecord() (GraphRecord, error) {
