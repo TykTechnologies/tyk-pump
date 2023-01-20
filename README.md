@@ -201,8 +201,10 @@ Take into account that you can also set `log_level` field into the `uptime_pump_
 In `uptime_pump_config` you can configure a mongo uptime pump. By default, the uptime pump is going to be `mongo` type, so it's not necessary to specify it here.
 
 The minimum required configurations for uptime pumps are:
-`collection_name` - That determines the uptime collection name in mongo. By default, `tyk_uptime_analytics`.
-`mongo_url` - The uptime pump mongo connection url. It is usually something like "mongodb://username:password@{hostname:port},{hostname:port}/{db_name}".
+
+- `collection_name` - That determines the uptime collection name in mongo. By default, `tyk_uptime_analytics`.
+
+- `mongo_url` - The uptime pump mongo connection url. It is usually something like "mongodb://username:password@{hostname:port},{hostname:port}/{db_name}".
 
 ###### JSON / Conf File
 ```
