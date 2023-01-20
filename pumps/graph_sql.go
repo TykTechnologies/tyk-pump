@@ -20,7 +20,7 @@ var GraphSQLDefaultENV = PUMPS_ENV_PREFIX + "_GRAPH_SQL" + PUMPS_ENV_META_PREFIX
 
 type GraphSQLPump struct {
 	db        *gorm.DB
-	SQLConf   SQLConf
+	SQLConf   *SQLConf
 	tableName string
 	CommonPumpConfig
 }
@@ -54,7 +54,7 @@ func (g *GraphSQLPump) Init(conf interface{}) error {
 		logLevel = gorm_logger.Error
 	}
 
-	dialect, errDialect := Dialect(&g.SQLConf)
+	dialect, errDialect := Dialect(g.SQLConf)
 	if errDialect != nil {
 		g.log.Error(errDialect)
 		return errDialect

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
+	"os"
 	"testing"
 	"time"
 
@@ -60,6 +61,28 @@ func TestGraphSQLPump_Init(t *testing.T) {
 		}
 		assert.NoError(t, pump.Init(conf))
 		assert.False(t, pump.db.Migrator().HasTable(conf.TableName))
+	})
+
+	t.Run("init from env", func(t *testing.T) {
+		r := require.New(t)
+		envKeyVal := map[string]string{
+			"TYPE":          "sqlite",
+			"TABLENAME":     "test-table",
+			"TABLESHARDING": "true",
+		}
+		for key, val := range envKeyVal {
+			osKey := fmt.Sprintf("%s_GRAPH_SQL%s_%s", PUMPS_ENV_PREFIX, PUMPS_ENV_META_PREFIX, key)
+			r.NoError(os.Setenv(osKey, val))
+		}
+		conf := SQLConf{
+			Type:          "postgres",
+			TableName:     "wrong-name",
+			TableSharding: false,
+		}
+		r.NoError(pump.Init(conf))
+		assert.Equal(t, "sqlite", pump.SQLConf.Type)
+		assert.Equal(t, "test-table", pump.SQLConf.TableName)
+		assert.Equal(t, true, pump.SQLConf.TableSharding)
 	})
 }
 
@@ -278,12 +301,22 @@ func TestGraphSQLPump_Sharded(t *testing.T) {
 		expectedTables = append(expectedTables, fmt.Sprintf("%s_%s", conf.TableName, timestamp.Format("20060102")))
 	}
 
+	// cleanup after
+	t.Cleanup(func() {
+		for _, i := range expectedTables {
+			if err := pump.db.Migrator().DropTable(i); err != nil {
+				t.Error(err)
+			}
+		}
+	})
+
 	r.NoError(pump.WriteData(context.Background(), records))
 	// check tables
 	for _, item := range expectedTables {
 		r.Truef(pump.db.Migrator().HasTable(item), "table %s does not exist", item)
 		recs := make([]analytics.GraphRecord, 0)
-		pump.db.Table(item).Find(&recs)
+		q := pump.db.Table(item).Find(&recs)
+		r.NoError(q.Error)
 		assert.Equalf(t, 1, len(recs), "expected one record for %s table, instead got %d", item, len(recs))
 	}
 }
