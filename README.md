@@ -596,7 +596,7 @@ TYK_PMP_PUMPS_PROMETHEUS_TYPE=prometheus
 TYK_PMP_PUMPS_PROMETHEUS_META_ADDR=localhost:9090
 TYK_PMP_PUMPS_PROMETHEUS_META_PATH=/metrics
 TYK_PMP_PUMPS_PROMETHEUS_META_CUSTOMMETRICS='[{"name":"tyk_http_requests_total","description":"Total of API requests","metric_type":"counter","labels":["response_code","api_name"]}]'
-TYK_PMP_PUMPS_PROMETHEUS_META_DISABLED_METRICS=[]
+TYK_PMP_PUMPS_PROMETHEUS_META_DISABLEDMETRICS=[]
 ```
 
 ## DogStatsD
