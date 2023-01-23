@@ -347,7 +347,7 @@ func TestAnalyticsRecord_ToGraphRecord(t *testing.T) {
 				return
 			}
 			assert.NoError(t, err)
-			if diff := cmp.Diff(expected, gotten, cmpopts.IgnoreFields(GraphRecord{}, "RawRequest", "RawResponse")); diff != "" {
+			if diff := cmp.Diff(expected, gotten, cmpopts.IgnoreFields(AnalyticsRecord{}, "RawRequest", "RawResponse")); diff != "" {
 				t.Fatal(diff)
 			}
 		})
