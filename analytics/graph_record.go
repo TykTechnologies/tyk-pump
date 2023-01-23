@@ -112,11 +112,14 @@ func (a *AnalyticsRecord) ToGraphRecord() (GraphRecord, error) {
 			return record, err
 		}
 		errBytes, t, _, err := jsonparser.Get(dat, "errors")
+		// check if the errors key exists in the response
 		if err != nil && err != jsonparser.KeyPathNotFoundError {
+			// we got an unexpected error parsing te response
 			log.WithError(err).Error("error getting response errors")
 			return record, err
 		}
 		if t != jsonparser.NotExist {
+			// errors key exists so unmarshal it
 			if err := json.Unmarshal(errBytes, &record.Errors); err != nil {
 				log.WithError(err).Error("error parsing graph errors")
 				return record, err
