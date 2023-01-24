@@ -19,14 +19,14 @@ import (
 )
 
 type GraphRecord struct {
-	Types map[string][]string
+	Types map[string][]string `gorm:"types"`
 
-	AnalyticsRecord `bson:",inline"`
+	AnalyticsRecord AnalyticsRecord `bson:",inline" gorm:"embedded;embeddedPrefix:analytics_"`
 
-	OperationType string
-	Variables     string
-	Errors        []GraphError
-	HasErrors     bool
+	OperationType string       `gorm:"column:operation_type"`
+	Variables     string       `gorm:"variables"`
+	Errors        []GraphError `gorm:"errors"`
+	HasErrors     bool         `gorm:"has_errors"`
 }
 
 func (a *AnalyticsRecord) ToGraphRecord() (GraphRecord, error) {
@@ -94,33 +94,38 @@ func (a *AnalyticsRecord) ToGraphRecord() (GraphRecord, error) {
 	record.Types = typesToFieldsMap
 
 	// get response and check to see errors
-	responseDecoded, err := base64.StdEncoding.DecodeString(a.RawResponse)
-	if err != nil {
-		return record, nil
-	}
-	resp, err := http.ReadResponse(bufio.NewReader(bytes.NewReader(responseDecoded)), nil)
-	if err != nil {
-		log.WithError(err).Error("error reading raw response")
-		return record, err
-	}
-	defer resp.Body.Close()
-
-	dat, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		log.WithError(err).Error("error reading response body")
-		return record, err
-	}
-	errBytes, t, _, err := jsonparser.Get(dat, "errors")
-	if err != nil && err != jsonparser.KeyPathNotFoundError {
-		log.WithError(err).Error("error getting response errors")
-		return record, err
-	}
-	if t != jsonparser.NotExist {
-		if err := json.Unmarshal(errBytes, &record.Errors); err != nil {
-			log.WithError(err).Error("error parsing graph errors")
+	if a.RawResponse != "" {
+		responseDecoded, err := base64.StdEncoding.DecodeString(a.RawResponse)
+		if err != nil {
+			return record, nil
+		}
+		resp, err := http.ReadResponse(bufio.NewReader(bytes.NewReader(responseDecoded)), nil)
+		if err != nil {
+			log.WithError(err).Error("error reading raw response")
 			return record, err
 		}
-		record.HasErrors = true
+		defer resp.Body.Close()
+
+		dat, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			log.WithError(err).Error("error reading response body")
+			return record, err
+		}
+		errBytes, t, _, err := jsonparser.Get(dat, "errors")
+		// check if the errors key exists in the response
+		if err != nil && err != jsonparser.KeyPathNotFoundError {
+			// we got an unexpected error parsing te response
+			log.WithError(err).Error("error getting response errors")
+			return record, err
+		}
+		if t != jsonparser.NotExist {
+			// errors key exists so unmarshal it
+			if err := json.Unmarshal(errBytes, &record.Errors); err != nil {
+				log.WithError(err).Error("error parsing graph errors")
+				return record, err
+			}
+			record.HasErrors = true
+		}
 	}
 
 	return record, nil
