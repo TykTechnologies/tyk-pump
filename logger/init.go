@@ -24,17 +24,12 @@ func GetFormatterWithForcedPrefix() *prefixed.TextFormatter {
 
 func GetLogger() *logrus.Logger {
 	level := os.Getenv("TYK_LOGLEVEL")
-	if level == "" {
-		level = "info"
-	}
 
 	switch strings.ToLower(level) {
 	case "error":
 		log.Level = logrus.ErrorLevel
 	case "warn":
 		log.Level = logrus.WarnLevel
-	case "info":
-		log.Level = logrus.InfoLevel
 	case "debug":
 		log.Level = logrus.DebugLevel
 	default:
