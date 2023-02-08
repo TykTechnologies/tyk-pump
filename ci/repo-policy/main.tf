@@ -35,10 +35,10 @@ module "tyk-pump" {
 { branch    = "master",
 	reviewers = "2",
 	convos    = "false",
-	required_tests = ["1.15"]},
+	required_tests = ["1.15,Go 1.16 tests"]},
 { branch    = "release-1.7",
 	reviewers = "2",
 	convos    = "false",
-	required_tests = ["1.15"]},
+	required_tests = ["1.15,Go 1.16 tests"]},
 ]
 }
