@@ -11,7 +11,6 @@ import (
 
 // TestFormatterWithForcedPrefixFileOutput check if the prefix is stored in not TTY outputs
 func TestFormatterWithForcedPrefixFileOutput(t *testing.T) {
-
 	outputFile := "test.log"
 	var f *os.File
 	var err error
@@ -52,7 +51,7 @@ func TestFormatterWithForcedPrefixFileOutput(t *testing.T) {
 	}
 }
 
-func Test_GetLooger(t *testing.T) {
+func Test_GetLogger(t *testing.T) {
 	tests := []struct {
 		name          string
 		env           string
@@ -87,11 +86,9 @@ func Test_GetLooger(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			os.Setenv("TYK_LOGLEVEL", tt.env)
-			defer os.Unsetenv("TYK_LOGLEVEL")
-			logger := GetLogger()
-			if logger.Level != tt.expectedLevel {
-				t.Errorf("Expected level %v, got %v", tt.expectedLevel, logger.Level)
+			logLevel := level(tt.env)
+			if logLevel != tt.expectedLevel {
+				t.Errorf("Expected level %v, got %v", tt.expectedLevel, logLevel)
 			}
 		})
 	}
