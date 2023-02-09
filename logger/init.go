@@ -10,20 +10,21 @@ import (
 var log = logrus.New()
 
 func init() {
-	level := os.Getenv("TYK_LOGLEVEL")
+	log.Level = level(os.Getenv("TYK_LOGLEVEL"))
+	log.Formatter = formatter()
+}
 
+func level(level string) logrus.Level {
 	switch strings.ToLower(level) {
 	case "error":
-		log.Level = logrus.ErrorLevel
+		return logrus.ErrorLevel
 	case "warn":
-		log.Level = logrus.WarnLevel
+		return logrus.WarnLevel
 	case "debug":
-		log.Level = logrus.DebugLevel
+		return logrus.DebugLevel
 	default:
-		log.Level = logrus.InfoLevel
+		return logrus.InfoLevel
 	}
-
-	log.Formatter = formatter()
 }
 
 func formatter() *logrus.TextFormatter {
