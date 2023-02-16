@@ -23,9 +23,9 @@ type GraphRecord struct {
 
 	AnalyticsRecord AnalyticsRecord `bson:",inline" gorm:"embedded;embeddedPrefix:analytics_"`
 
-	OperationType string `gorm:"column:operation_type"`
-	Variables     string `gorm:"variables"`
-	Operations    []string
+	OperationType string       `gorm:"column:operation_type"`
+	Variables     string       `gorm:"variables"`
+	RootFields    []string     `gorm:"root_fields"`
 	Errors        []GraphError `gorm:"errors"`
 	HasErrors     bool         `gorm:"has_errors"`
 }
@@ -33,7 +33,7 @@ type GraphRecord struct {
 func (a *AnalyticsRecord) ToGraphRecord() (GraphRecord, error) {
 	record := GraphRecord{
 		AnalyticsRecord: *a,
-		Operations:      make([]string, 0),
+		RootFields:      make([]string, 0),
 		Types:           make(map[string][]string),
 	}
 	if a.ResponseCode >= 400 {
@@ -81,7 +81,7 @@ func (a *AnalyticsRecord) ToGraphRecord() (GraphRecord, error) {
 	}
 
 	// get the selection set types to start with
-	fieldTypeList, err := extractOperationSelectionSetTypes(operationRef, &record.Operations, request, schema)
+	fieldTypeList, err := extractOperationSelectionSetTypes(operationRef, &record.RootFields, request, schema)
 	if err != nil {
 		log.WithError(err).Error("error extracting selection set types")
 		return record, err
@@ -136,7 +136,7 @@ func (a *AnalyticsRecord) ToGraphRecord() (GraphRecord, error) {
 
 // extractOperationSelectionSetTypes extracts all type names of the selection sets in the operation
 // it returns a map of the FieldRef in the req to the type Definition in the schema
-func extractOperationSelectionSetTypes(operationRef int, operationsList *[]string, req, schema *ast.Document) (map[int]int, error) {
+func extractOperationSelectionSetTypes(operationRef int, rootFields *[]string, req, schema *ast.Document) (map[int]int, error) {
 	fieldTypeMap := make(map[int]int)
 	operationDef := req.OperationDefinitions[operationRef]
 	if !operationDef.HasSelections {
@@ -157,7 +157,7 @@ func extractOperationSelectionSetTypes(operationRef int, operationsList *[]strin
 			return nil, errors.New("error getting selection set")
 		}
 
-		*operationsList = append(*operationsList, req.FieldNameString(sel.Ref))
+		*rootFields = append(*rootFields, req.FieldNameString(sel.Ref))
 
 		typeRef := schema.ResolveUnderlyingType(schema.FieldDefinitions[selFieldDefRef].Type)
 		if schema.TypeIsScalar(typeRef, schema) || schema.TypeIsEnum(typeRef, schema) {

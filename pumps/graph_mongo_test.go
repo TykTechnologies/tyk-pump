@@ -205,7 +205,7 @@ func TestGraphMongoPump_WriteData(t *testing.T) {
 					OperationType: "Query",
 					HasErrors:     false,
 					Errors:        []analytics.GraphError{},
-					Operations:    []string{"country"},
+					RootFields:    []string{"country"},
 				},
 				{
 					Types: map[string][]string{
@@ -219,7 +219,7 @@ func TestGraphMongoPump_WriteData(t *testing.T) {
 							Path:    []interface{}{},
 						},
 					},
-					Operations: []string{"country"},
+					RootFields: []string{"country"},
 				},
 				{
 					Types: map[string][]string{
@@ -228,7 +228,7 @@ func TestGraphMongoPump_WriteData(t *testing.T) {
 					OperationType: "Query",
 					HasErrors:     true,
 					Errors:        []analytics.GraphError{},
-					Operations:    []string{"country"},
+					RootFields:    []string{"country"},
 				},
 			},
 		},
@@ -254,7 +254,7 @@ func TestGraphMongoPump_WriteData(t *testing.T) {
 					OperationType: "Query",
 					HasErrors:     false,
 					Errors:        []analytics.GraphError{},
-					Operations:    []string{"country"},
+					RootFields:    []string{"country"},
 				},
 			},
 		},
@@ -283,17 +283,17 @@ func TestGraphMongoPump_WriteData(t *testing.T) {
 				{
 					Types:      map[string][]string{},
 					Errors:     []analytics.GraphError{},
-					Operations: []string{},
+					RootFields: []string{},
 				},
 				{
 					Types:      map[string][]string{},
 					Errors:     []analytics.GraphError{},
-					Operations: []string{},
+					RootFields: []string{},
 				},
 				{
 					Types:      map[string][]string{},
 					Errors:     []analytics.GraphError{},
-					Operations: []string{},
+					RootFields: []string{},
 				},
 			},
 		},

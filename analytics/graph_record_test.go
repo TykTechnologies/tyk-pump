@@ -139,7 +139,7 @@ func TestAnalyticsRecord_ToGraphRecord(t *testing.T) {
 	graphRecordSample := GraphRecord{
 		AnalyticsRecord: recordSample,
 		Types:           make(map[string][]string),
-		Operations:      make([]string, 0),
+		RootFields:      make([]string, 0),
 	}
 
 	testCases := []struct {
@@ -162,7 +162,7 @@ func TestAnalyticsRecord_ToGraphRecord(t *testing.T) {
 					"Info":       {"count"},
 				}
 				g.OperationType = "Query"
-				g.Operations = []string{"characters"}
+				g.RootFields = []string{"characters"}
 				return g
 			},
 		},
@@ -178,7 +178,7 @@ func TestAnalyticsRecord_ToGraphRecord(t *testing.T) {
 					"Info":       {"count"},
 				}
 				g.OperationType = "Query"
-				g.Operations = []string{"characters", "listCharacters"}
+				g.RootFields = []string{"characters", "listCharacters"}
 				return g
 			},
 		},
@@ -208,7 +208,7 @@ func TestAnalyticsRecord_ToGraphRecord(t *testing.T) {
 				g := graphRecordSample
 				g.HasErrors = false
 				g.OperationType = "Mutation"
-				g.Operations = []string{"changeCharacter"}
+				g.RootFields = []string{"changeCharacter"}
 				return g
 			},
 		},
@@ -224,7 +224,7 @@ func TestAnalyticsRecord_ToGraphRecord(t *testing.T) {
 					"Info":       {"count"},
 				}
 				g.OperationType = "Subscription"
-				g.Operations = []string{"listenCharacter"}
+				g.RootFields = []string{"listenCharacter"}
 				return g
 			},
 		},
@@ -249,7 +249,7 @@ func TestAnalyticsRecord_ToGraphRecord(t *testing.T) {
 					"Info":       {"count"},
 				}
 				g.OperationType = "Query"
-				g.Operations = []string{"listCharacters"}
+				g.RootFields = []string{"listCharacters"}
 				return g
 			},
 		},
@@ -265,7 +265,7 @@ func TestAnalyticsRecord_ToGraphRecord(t *testing.T) {
 					"Info":       {"count"},
 				}
 				g.OperationType = "Query"
-				g.Operations = []string{"characters"}
+				g.RootFields = []string{"characters"}
 				g.Variables = base64.StdEncoding.EncodeToString([]byte(`{"a":"test"}`))
 				return g
 			},
@@ -290,7 +290,7 @@ func TestAnalyticsRecord_ToGraphRecord(t *testing.T) {
 					"Characters": {"info", "secondInfo"},
 				}
 				g.OperationType = "Query"
-				g.Operations = []string{"listCharacters"}
+				g.RootFields = []string{"listCharacters"}
 				return g
 			},
 			expectedErr: "",
@@ -319,7 +319,7 @@ func TestAnalyticsRecord_ToGraphRecord(t *testing.T) {
 					Message: "Name for character with ID 1002 could not be fetched.",
 					Path:    []interface{}{"hero", "heroFriends", float64(1), "name"},
 				})
-				g.Operations = []string{"characters"}
+				g.RootFields = []string{"characters"}
 				return g
 			},
 		},

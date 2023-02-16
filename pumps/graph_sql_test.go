@@ -280,9 +280,9 @@ func TestGraphSQLPump_WriteData(t *testing.T) {
 				}
 
 				if item.operations == nil {
-					r.Operations = []string{}
+					r.RootFields = []string{}
 				} else {
-					r.Operations = item.operations
+					r.RootFields = item.operations
 				}
 				expectedResponses = append(expectedResponses, r)
 			}
