@@ -402,14 +402,14 @@ func (f *AnalyticsRecordAggregate) Dimensions() (dimensions []Dimension) {
 	return
 }
 
-func (f *AnalyticsRecordAggregate) AsChange(dimensions []Dimension) (newUpdate bson.M) {
+func (f *AnalyticsRecordAggregate) AsChange() (newUpdate bson.M) {
 	newUpdate = bson.M{
 		"$inc": bson.M{},
 		"$set": bson.M{},
 		"$max": bson.M{},
 	}
 
-	for _, d := range dimensions {
+	for _, d := range f.Dimensions() {
 		newUpdate = f.generateBSONFromProperty(d.Name, d.Value, d.Counter, newUpdate)
 	}
 

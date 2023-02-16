@@ -372,7 +372,7 @@ func (m *MongoAggregatePump) DoAggregatedWriting(ctx context.Context, orgID stri
 		filteredData.DiscardAggregations(m.dbConf.IgnoreAggregationsList)
 	}
 
-	updateDoc := filteredData.AsChange(filteredData.Dimensions())
+	updateDoc := filteredData.AsChange()
 
 	change := mgo.Change{
 		Update:    updateDoc,
