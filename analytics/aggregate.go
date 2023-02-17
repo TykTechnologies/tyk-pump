@@ -619,6 +619,8 @@ func AggregateGraphData(data []interface{}, dbIdentifier string, aggregationTime
 
 		var counter Counter
 		aggregate.AnalyticsRecordAggregate, counter = incrementAggregate(&aggregate.AnalyticsRecordAggregate, &graphRec.AnalyticsRecord, false, nil)
+		// graph errors are different from http status errors and can occur even if a response is gotten.
+		// check for graph errors and increment the error count if there are indeed graph errors
 		if graphRec.HasErrors && counter.ErrorTotal < 1 {
 			counter.ErrorTotal++
 			counter.Success--
