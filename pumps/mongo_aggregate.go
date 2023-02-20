@@ -281,7 +281,7 @@ func (m *MongoAggregatePump) WriteData(ctx context.Context, data []interface{}) 
 		m.WriteData(ctx, data)
 	} else {
 		// calculate aggregates
-		analyticsPerOrg := analytics.AggregateData(data, m.dbConf.TrackAllPaths, m.dbConf.IgnoreTagPrefixList, m.dbConf.MongoURL, m.dbConf.AggregationTime, true)
+		analyticsPerOrg := analytics.AggregateData(data, m.dbConf.TrackAllPaths, m.dbConf.IgnoreTagPrefixList, m.dbConf.MongoURL, m.dbConf.AggregationTime)
 		// put aggregated data into MongoDB
 		for orgID, filteredData := range analyticsPerOrg {
 			err := m.DoAggregatedWriting(ctx, orgID, filteredData)

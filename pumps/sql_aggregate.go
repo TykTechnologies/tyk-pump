@@ -158,7 +158,7 @@ func (c *SQLAggregatePump) WriteData(ctx context.Context, data []interface{}) er
 			aggregationTime = 60
 		}
 
-		analyticsPerOrg := analytics.AggregateData(data[startIndex:endIndex], c.SQLConf.TrackAllPaths, c.SQLConf.IgnoreTagPrefixList, "", aggregationTime, false)
+		analyticsPerOrg := analytics.AggregateData(data[startIndex:endIndex], c.SQLConf.TrackAllPaths, c.SQLConf.IgnoreTagPrefixList, "", aggregationTime)
 
 		for orgID, ag := range analyticsPerOrg {
 
@@ -179,9 +179,9 @@ func (c *SQLAggregatePump) WriteData(ctx context.Context, data []interface{}) er
 func (c *SQLAggregatePump) DoAggregatedWriting(ctx context.Context, table, orgID string, ag analytics.AnalyticsRecordAggregate) error {
 	recs := []analytics.SQLAnalyticsRecordAggregate{}
 
-	for _, d := range ag.Dimensions() {
-		id := fmt.Sprintf("%v", ag.TimeStamp.Unix()) + orgID + d.Name + d.Value
-		uID := hex.EncodeToString([]byte(id))
+	dimensions := ag.Dimensions()
+	for _, d := range dimensions {
+		uID := hex.EncodeToString([]byte(fmt.Sprintf("%v", ag.TimeStamp.Unix()) + orgID + d.Name + d.Value))
 		rec := analytics.SQLAnalyticsRecordAggregate{
 			ID:             uID,
 			OrgID:          orgID,
