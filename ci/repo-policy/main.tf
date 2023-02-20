@@ -1,11 +1,12 @@
 terraform {
 
   #Being used until TFCloud can be used
-  backend "s3" {
-    bucket         = "terraform-state-devenv"
-    key            = "github-policy/tyk-pump"
-    region         = "eu-central-1"
-    dynamodb_table = "terraform-state-locks"
+  backend "remote" {
+    hostname     = "app.terraform.io"
+    organization = "Tyk"
+    workspaces {
+      name = "repo-policy-tyk-pump"
+    }
   }
 
   required_providers {
@@ -35,10 +36,10 @@ module "tyk-pump" {
 { branch    = "master",
 	reviewers = "2",
 	convos    = "false",
-	required_tests = ["1.15,Go 1.16 tests"]},
+	required_tests = ["1.15","Go 1.16 tests"]},
 { branch    = "release-1.7",
 	reviewers = "2",
 	convos    = "false",
-	required_tests = ["1.15,Go 1.16 tests"]},
+	required_tests = ["1.15","Go 1.16 tests"]},
 ]
 }
