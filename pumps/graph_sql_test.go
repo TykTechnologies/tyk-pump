@@ -137,6 +137,7 @@ func TestGraphSQLPump_WriteData(t *testing.T) {
 		types         map[string][]string
 		operationType string
 		expectedErr   []analytics.GraphError
+		operations    []string
 	}
 
 	testCases := []struct {
@@ -173,6 +174,7 @@ func TestGraphSQLPump_WriteData(t *testing.T) {
 						"Country": {"code"},
 					},
 					operationType: "Query",
+					operations:    []string{"country"},
 				},
 				{
 					types: map[string][]string{
@@ -185,6 +187,7 @@ func TestGraphSQLPump_WriteData(t *testing.T) {
 							Path:    []interface{}{},
 						},
 					},
+					operations: []string{"country"},
 				},
 				{
 					types: map[string][]string{
@@ -192,6 +195,7 @@ func TestGraphSQLPump_WriteData(t *testing.T) {
 					},
 					operationType: "Query",
 					expectedErr:   []analytics.GraphError{},
+					operations:    []string{"country"},
 				},
 			},
 			hasError: false,
@@ -222,6 +226,7 @@ func TestGraphSQLPump_WriteData(t *testing.T) {
 						"Country": {"code"},
 					},
 					operationType: "Query",
+					operations:    []string{"country"},
 				},
 			},
 		},
@@ -272,6 +277,12 @@ func TestGraphSQLPump_WriteData(t *testing.T) {
 				} else {
 					r.Errors = item.expectedErr
 					r.HasErrors = true
+				}
+
+				if item.operations == nil {
+					r.RootFields = []string{}
+				} else {
+					r.RootFields = item.operations
 				}
 				expectedResponses = append(expectedResponses, r)
 			}

@@ -64,9 +64,10 @@ type Counter struct {
 type GraphRecordAggregate struct {
 	AnalyticsRecordAggregate
 
-	Types     map[string]*Counter
-	Fields    map[string]*Counter
-	Operation map[string]*Counter
+	Types      map[string]*Counter
+	Fields     map[string]*Counter
+	Operation  map[string]*Counter
+	RootFields map[string]*Counter
 }
 
 type AnalyticsRecordAggregate struct {
@@ -232,6 +233,7 @@ func NewGraphRecordAggregate() GraphRecordAggregate {
 		Types:                    make(map[string]*Counter),
 		Fields:                   make(map[string]*Counter),
 		Operation:                make(map[string]*Counter),
+		RootFields:               make(map[string]*Counter),
 	}
 }
 
@@ -343,6 +345,10 @@ func (g *GraphRecordAggregate) Dimensions() []Dimension {
 
 	for key, inc := range g.Operation {
 		dimensions = append(dimensions, Dimension{Name: "operation", Value: key, Counter: fnLatencySetter(inc)})
+	}
+
+	for key, inc := range g.RootFields {
+		dimensions = append(dimensions, Dimension{Name: "rootfields", Value: key, Counter: fnLatencySetter(inc)})
 	}
 
 	return dimensions
@@ -642,6 +648,13 @@ func AggregateGraphData(data []interface{}, dbIdentifier string, aggregationTime
 				aggregate.Fields[label].Identifier = label
 				aggregate.Fields[label].HumanIdentifier = label
 			}
+		}
+
+		for _, field := range graphRec.RootFields {
+			c = incrementOrSetUnit(&counter, aggregate.RootFields[field])
+			aggregate.RootFields[field] = c
+			aggregate.RootFields[field].Identifier = field
+			aggregate.RootFields[field].HumanIdentifier = field
 		}
 		aggregateMap[record.OrgID] = aggregate
 	}

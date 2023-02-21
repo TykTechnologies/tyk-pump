@@ -25,6 +25,7 @@ type GraphRecord struct {
 
 	OperationType string       `gorm:"column:operation_type"`
 	Variables     string       `gorm:"variables"`
+	RootFields    []string     `gorm:"root_fields"`
 	Errors        []GraphError `gorm:"errors"`
 	HasErrors     bool         `gorm:"has_errors"`
 }
@@ -32,6 +33,8 @@ type GraphRecord struct {
 func (a *AnalyticsRecord) ToGraphRecord() (GraphRecord, error) {
 	record := GraphRecord{
 		AnalyticsRecord: *a,
+		RootFields:      make([]string, 0),
+		Types:           make(map[string][]string),
 	}
 	if a.ResponseCode >= 400 {
 		record.HasErrors = true
@@ -78,7 +81,7 @@ func (a *AnalyticsRecord) ToGraphRecord() (GraphRecord, error) {
 	}
 
 	// get the selection set types to start with
-	fieldTypeList, err := extractTypesOfSelectionSet(operationRef, request, schema)
+	fieldTypeList, err := extractOperationSelectionSetTypes(operationRef, &record.RootFields, request, schema)
 	if err != nil {
 		log.WithError(err).Error("error extracting selection set types")
 		return record, err
@@ -131,9 +134,9 @@ func (a *AnalyticsRecord) ToGraphRecord() (GraphRecord, error) {
 	return record, nil
 }
 
-// extractTypesOfSelectionSet extracts all type names of the selection sets in the operation
+// extractOperationSelectionSetTypes extracts all type names of the selection sets in the operation
 // it returns a map of the FieldRef in the req to the type Definition in the schema
-func extractTypesOfSelectionSet(operationRef int, req, schema *ast.Document) (map[int]int, error) {
+func extractOperationSelectionSetTypes(operationRef int, rootFields *[]string, req, schema *ast.Document) (map[int]int, error) {
 	fieldTypeMap := make(map[int]int)
 	operationDef := req.OperationDefinitions[operationRef]
 	if !operationDef.HasSelections {
@@ -153,6 +156,8 @@ func extractTypesOfSelectionSet(operationRef int, req, schema *ast.Document) (ma
 			}
 			return nil, errors.New("error getting selection set")
 		}
+
+		*rootFields = append(*rootFields, req.FieldNameString(sel.Ref))
 
 		typeRef := schema.ResolveUnderlyingType(schema.FieldDefinitions[selFieldDefRef].Type)
 		if schema.TypeIsScalar(typeRef, schema) || schema.TypeIsEnum(typeRef, schema) {
