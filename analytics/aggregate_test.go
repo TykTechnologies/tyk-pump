@@ -149,6 +149,9 @@ func TestAggregateGraphData(t *testing.T) {
 						"Characters_info": {Hits: 3, ErrorTotal: 0, Success: 3},
 						"Info_count":      {Hits: 3, ErrorTotal: 0, Success: 3},
 					},
+					RootFields: map[string]*Counter{
+						"characters": {Hits: 3, ErrorTotal: 0, Success: 3},
+					},
 				},
 			},
 		},
@@ -178,6 +181,9 @@ func TestAggregateGraphData(t *testing.T) {
 					Fields: map[string]*Counter{
 						"Characters_info": {Hits: 2, ErrorTotal: 0, Success: 2},
 						"Info_count":      {Hits: 2, ErrorTotal: 0, Success: 2},
+					},
+					RootFields: map[string]*Counter{
+						"characters": {Hits: 2, ErrorTotal: 0, Success: 2},
 					},
 				},
 			},
@@ -209,6 +215,9 @@ func TestAggregateGraphData(t *testing.T) {
 						"Characters_info": {Hits: 3, ErrorTotal: 1, Success: 2},
 						"Info_count":      {Hits: 3, ErrorTotal: 1, Success: 2},
 					},
+					RootFields: map[string]*Counter{
+						"characters": {Hits: 3, ErrorTotal: 1, Success: 2},
+					},
 				},
 			},
 		},
@@ -239,6 +248,9 @@ func TestAggregateGraphData(t *testing.T) {
 						"Characters_info": {Hits: 5, ErrorTotal: 2, Success: 3},
 						"Info_count":      {Hits: 5, ErrorTotal: 2, Success: 3},
 					},
+					RootFields: map[string]*Counter{
+						"characters": {Hits: 5, ErrorTotal: 2, Success: 3},
+					},
 				},
 			},
 		},
@@ -256,6 +268,7 @@ func TestAggregateGraphData(t *testing.T) {
 				// check types and fields
 				compareFields(r, expectedAggregate.Types, actualAggregate.Types)
 				compareFields(r, expectedAggregate.Fields, actualAggregate.Fields)
+				compareFields(r, expectedAggregate.RootFields, actualAggregate.RootFields)
 			}
 		})
 	}
@@ -299,6 +312,12 @@ func TestAggregateGraphData_Dimension(t *testing.T) {
 			"Characters_info",
 			"Info_count",
 		},
+		"operation": {
+			"Query",
+		},
+		"rootfields": {
+			"characters",
+		},
 	}
 
 	r := require.New(t)
@@ -309,10 +328,14 @@ func TestAggregateGraphData_Dimension(t *testing.T) {
 	fmt.Println(dimensions)
 	for d, values := range responsesCheck {
 		for _, v := range values {
+			found := false
 			for _, dimension := range dimensions {
-				if d != dimension.Name && v != dimension.Value && dimension.Counter.Hits != 3 {
-					t.Errorf("item missing from dimensions: NameL %s, Value: %s, Hits:3", d, v)
+				if dimension.Name == d && dimension.Value == v && dimension.Counter.Hits == 3 {
+					found = true
 				}
+			}
+			if !found {
+				t.Errorf("item missing from dimensions: NameL %s, Value: %s, Hits:3", d, v)
 			}
 		}
 	}
