@@ -464,8 +464,8 @@ func TestGraphSQLAggregatePump_WriteData_Sharded(t *testing.T) {
 		Year:         2022,
 		Hour:         0,
 		OrgID:        "test-org",
-		RawRequest:   fmt.Sprintf(requestTemplate, len(sampleQuery), sampleQuery),
-		RawResponse:  fmt.Sprintf(responseTemplate, len(sampleResponse), sampleResponse),
+		RawRequest:   base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf(requestTemplate, len(sampleQuery), sampleQuery))),
+		RawResponse:  base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf(responseTemplate, len(sampleResponse), sampleResponse))),
 	}
 
 	t.Run("should shard successfully", func(t *testing.T) {
@@ -492,9 +492,22 @@ func TestGraphSQLAggregatePump_WriteData_Sharded(t *testing.T) {
 		record := sampleRecord
 		secondRecord := sampleRecord
 		secondRecord.TimeStamp = time.Date(2023, 1, 2, 0, 0, 0, 0, time.UTC)
+		secondRecord.Year = 2023
 		assert.False(t, pump.db.Migrator().HasTable(analytics.AggregateGraphSQLTable))
 		r.NoError(pump.WriteData(context.Background(), []interface{}{record, secondRecord}))
-		assert.True(t, pump.db.Migrator().HasTable(analytics.AggregateGraphSQLTable+"_20220101"))
-		assert.True(t, pump.db.Migrator().HasTable(analytics.AggregateGraphSQLTable+"_20230102"))
+		firstShardedTable, secondShardedTable := analytics.AggregateGraphSQLTable+"_20220101", analytics.AggregateGraphSQLTable+"_20230102"
+		assert.True(t, pump.db.Migrator().HasTable(firstShardedTable), "table %s does not exist", firstShardedTable)
+		assert.True(t, pump.db.Migrator().HasTable(secondShardedTable), "table %s does not exist", secondShardedTable)
+
+		// check records
+		aggr := make([]analytics.SQLAnalyticsRecordAggregate, 0)
+		res := pump.db.Table(firstShardedTable).Find(&aggr)
+		assert.NoError(t, res.Error)
+		assert.NotEmpty(t, aggr, "table %s does not contain records", firstShardedTable)
+
+		aggr = make([]analytics.SQLAnalyticsRecordAggregate, 0)
+		res = pump.db.Table(secondShardedTable).Find(&aggr)
+		assert.NoError(t, res.Error)
+		assert.NotEmpty(t, aggr, "table %s does not contain records", secondShardedTable)
 	})
 }
