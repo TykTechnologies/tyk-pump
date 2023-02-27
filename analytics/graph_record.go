@@ -7,9 +7,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/buger/jsonparser"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/buger/jsonparser"
 
 	"github.com/TykTechnologies/graphql-go-tools/pkg/ast"
 	"github.com/TykTechnologies/graphql-go-tools/pkg/astnormalization"
@@ -91,7 +92,8 @@ func parseRequest(encodedRequest, encodedSchema string, record *GraphRecord) {
 	for fieldRef, typeDefRef := range fieldTypeList {
 		if typeDefRef == ast.InvalidRef {
 			err = errors.New("invalid selection set field type")
-			return
+			log.Warn("invalid type found")
+			continue
 		}
 		extractTypesAndFields(fieldRef, typeDefRef, typesToFieldsMap, request, schema)
 	}
@@ -138,7 +140,7 @@ func parseResponse(encodedResponse string, record *GraphRecord) {
 	}
 }
 
-func (a *AnalyticsRecord) ToGraphRecord() (GraphRecord, error) {
+func (a *AnalyticsRecord) ToGraphRecord() GraphRecord {
 	record := GraphRecord{
 		AnalyticsRecord: *a,
 		RootFields:      make([]string, 0),
@@ -153,7 +155,7 @@ func (a *AnalyticsRecord) ToGraphRecord() (GraphRecord, error) {
 
 	parseResponse(a.RawResponse, &record)
 
-	return record, nil
+	return record
 }
 
 // extractOperationSelectionSetTypes extracts all type names of the selection sets in the operation

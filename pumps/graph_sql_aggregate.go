@@ -134,8 +134,8 @@ func (s *GraphSQLAggregatePump) WriteData(ctx context.Context, data []interface{
 
 		analyticsPerOrg := analytics.AggregateGraphData(data[startIndex:endIndex], "", aggregationTime)
 
-		for orgID, ag := range analyticsPerOrg {
-
+		for orgID := range analyticsPerOrg {
+			ag := analyticsPerOrg[orgID]
 			err := s.DoAggregatedWriting(ctx, table, orgID, &ag)
 			if err != nil {
 				s.log.WithError(err).Error("error writing record")

@@ -149,7 +149,6 @@ func TestAnalyticsRecord_ToGraphRecord(t *testing.T) {
 		title        string
 		request      string
 		response     string
-		expectedErr  string
 	}{
 		{
 			title:    "no error",
@@ -184,7 +183,7 @@ func TestAnalyticsRecord_ToGraphRecord(t *testing.T) {
 			},
 		},
 		{
-			title:    "error field type",
+			title:    "subgraph request",
 			request:  `{"query":"query($representations: [_Any!]!){_entities(representations: $representations){... on User {reviews {body}}}}","variables":{"representations":[{"id":"1234","__typename":"User"}]}}`,
 			response: `{"data":{"_entities":[{"reviews":[{"body":"A highly effective form of birth control."},{"body":"Fedoras are one of the most fashionable hats around and can look great with a variety of outfits."}]}]}}`,
 			expected: func() GraphRecord {
@@ -192,10 +191,9 @@ func TestAnalyticsRecord_ToGraphRecord(t *testing.T) {
 				g := graphRecordSample
 				g.OperationType = "Query"
 				g.Variables = base64.StdEncoding.EncodeToString([]byte(variables))
-				g.Types = nil
+				g.RootFields = []string{"_entities"}
 				return g
 			},
-			expectedErr: "invalid selection set field type",
 			modifyRecord: func(a AnalyticsRecord) AnalyticsRecord {
 				a.ApiSchema = base64.StdEncoding.EncodeToString([]byte(subgraphSchema))
 				return a
@@ -232,11 +230,17 @@ func TestAnalyticsRecord_ToGraphRecord(t *testing.T) {
 		{
 			title:    "bad document",
 			request:  `{"query":"subscriptiona{\n  listenCharacter(){\n    info{\n      count\n    }\n  }\n}"}`,
-			response: `{"data":{"characters":{"info":{"count":758}}}}`,
+			response: `{"errors":[{"message":"invalid document error"}]}`,
 			expected: func() GraphRecord {
-				return GraphRecord{}
+				doc := graphRecordSample
+				doc.HasErrors = true
+				doc.Errors = []GraphError{
+					{
+						Message: "invalid document error",
+					},
+				}
+				return doc
 			},
-			expectedErr: "error generating documents",
 		},
 		{
 			title:    "no error list operation",
@@ -274,11 +278,17 @@ func TestAnalyticsRecord_ToGraphRecord(t *testing.T) {
 		{
 			title:    "no operation",
 			request:  `{"query":"query main {\ncharacters {\ninfo\n}\n}\n\nquery second {\nlistCharacters{\ninfo\n}\n}","variables":null,"operationName":""}`,
-			response: `{"data":{"characters":{"info":{"count":758}}}}`,
+			response: `{"errors":[{"message":"no operation specified"}]}`,
 			expected: func() GraphRecord {
-				return GraphRecord{}
+				doc := graphRecordSample
+				doc.HasErrors = true
+				doc.Errors = []GraphError{
+					{
+						Message: "no operation specified",
+					},
+				}
+				return doc
 			},
-			expectedErr: "no operation name specified",
 		},
 		{
 			title:    "operation name specified",
@@ -294,7 +304,6 @@ func TestAnalyticsRecord_ToGraphRecord(t *testing.T) {
 				g.RootFields = []string{"listCharacters"}
 				return g
 			},
-			expectedErr: "",
 		},
 		{
 			title:   "has errors",
@@ -325,37 +334,67 @@ func TestAnalyticsRecord_ToGraphRecord(t *testing.T) {
 			},
 		},
 		{
-			title: "corrupted raw request should error out",
+			title: "corrupted raw request ",
 			modifyRecord: func(a AnalyticsRecord) AnalyticsRecord {
 				a.RawRequest = "this isn't a base64 is it?"
 				return a
 			},
-			expectedErr: "error decoding raw request",
 			expected: func() GraphRecord {
-				return GraphRecord{}
+				return graphRecordSample
 			},
 		},
 		{
-			title: "corrupted schema should error out",
+			title:   "corrupted raw response ",
+			request: `{"query":"query{\n  characters(filter: {\n    \n  }){\n    info{\n      count\n    }\n  }\n}"}`,
+			modifyRecord: func(a AnalyticsRecord) AnalyticsRecord {
+				a.RawResponse = "this isn't a base64 is it?"
+				return a
+			},
+			expected: func() GraphRecord {
+				g := graphRecordSample
+				g.Types = map[string][]string{
+					"Characters": {"info"},
+					"Info":       {"count"},
+				}
+				g.OperationType = "Query"
+				g.RootFields = []string{"characters"}
+				return g
+			},
+		},
+		{
+			title:    "invalid response json ",
+			request:  `{"query":"query{\n  characters(filter: {\n    \n  }){\n    info{\n      count\n    }\n  }\n}"}`,
+			response: "invalid json",
+			expected: func() GraphRecord {
+				g := graphRecordSample
+				g.Types = map[string][]string{
+					"Characters": {"info"},
+					"Info":       {"count"},
+				}
+				g.OperationType = "Query"
+				g.RootFields = []string{"characters"}
+				return g
+			},
+		},
+		{
+			title:    "corrupted schema should error out",
+			request:  `{"query":"query main {\ncharacters {\ninfo\n}\n}\n\nquery second {\nlistCharacters{\ninfo\n}\n}","variables":null,"operationName":""}`,
+			response: `{"errors":[{"message":"no operation specified"}]}`,
 			modifyRecord: func(a AnalyticsRecord) AnalyticsRecord {
 				a.ApiSchema = "this isn't a base64 is it?"
 				return a
 			},
-			expectedErr: "error decoding schema",
 			expected: func() GraphRecord {
-				return GraphRecord{}
+				rec := graphRecordSample
+				rec.Errors = []GraphError{{Message: "no operation specified"}}
+				rec.HasErrors = true
+				return rec
 			},
 		},
 		{
-			title:   "error in request",
-			request: `{"query":"query{\n  characters(filter: {\n    \n  }){\n    info{\n      counts\n    }\n  }\n}"}`,
-			response: `{
-  "errors": [
-    {
-      "message": "illegal field",
-    }
-  ]
-}`,
+			title:    "error in request",
+			request:  `{"query":"query{\n  characters(filter: {\n    \n  }){\n    info{\n      counts\n    }\n  }\n}"}`,
+			response: `{"errors":[{"message":"illegal field"}]}`,
 			expected: func() GraphRecord {
 				g := graphRecordSample
 				g.HasErrors = true
@@ -385,12 +424,7 @@ func TestAnalyticsRecord_ToGraphRecord(t *testing.T) {
 			}
 			expected := testCase.expected()
 			expected.AnalyticsRecord = a
-			gotten, err := a.ToGraphRecord()
-			if testCase.expectedErr != "" {
-				assert.ErrorContains(t, err, testCase.expectedErr)
-				return
-			}
-			assert.NoError(t, err)
+			gotten := a.ToGraphRecord()
 			if diff := cmp.Diff(expected, gotten, cmpopts.IgnoreFields(AnalyticsRecord{}, "RawRequest", "RawResponse")); diff != "" {
 				t.Fatal(diff)
 			}

@@ -115,12 +115,7 @@ func (g *GraphSQLPump) getGraphRecords(data []interface{}) []*analytics.GraphRec
 			if rec, ok = r.(analytics.AnalyticsRecord); !ok || !rec.IsGraphRecord() {
 				continue
 			}
-			gr, err := rec.ToGraphRecord()
-			if err != nil {
-				g.log.Warnf("error converting 1 record")
-				g.log.WithError(err).Debug("error converting record")
-				continue
-			}
+			gr := rec.ToGraphRecord()
 			graphRecords = append(graphRecords, &gr)
 		}
 	}
