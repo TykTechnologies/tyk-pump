@@ -31,7 +31,10 @@ type GraphRecord struct {
 	HasErrors     bool         `gorm:"has_errors"`
 }
 
-func parseRequest(encodedRequest, encodedSchema string, record *GraphRecord) {
+// parseRequest reads the raw encoded request and schema, extracting the type information
+// operation information and root field operations
+// if an error is encountered it simply breaks the operation regardless of how far along it is.
+func (g *GraphRecord) parseRequest(encodedRequest, encodedSchema string) {
 	if encodedRequest == "" || encodedSchema == "" {
 		log.Warn("empty request/schema")
 		return
@@ -55,7 +58,7 @@ func parseRequest(encodedRequest, encodedSchema string, record *GraphRecord) {
 	}
 
 	if len(request.Input.Variables) != 0 && string(request.Input.Variables) != "null" {
-		record.Variables = base64.StdEncoding.EncodeToString(request.Input.Variables)
+		g.Variables = base64.StdEncoding.EncodeToString(request.Input.Variables)
 	}
 
 	// get the operation ref
@@ -75,15 +78,15 @@ func parseRequest(encodedRequest, encodedSchema string, record *GraphRecord) {
 	// get operation type
 	switch request.OperationDefinitions[operationRef].OperationType {
 	case ast.OperationTypeMutation:
-		record.OperationType = string(ast.DefaultMutationTypeName)
+		g.OperationType = string(ast.DefaultMutationTypeName)
 	case ast.OperationTypeSubscription:
-		record.OperationType = string(ast.DefaultSubscriptionTypeName)
+		g.OperationType = string(ast.DefaultSubscriptionTypeName)
 	case ast.OperationTypeQuery:
-		record.OperationType = string(ast.DefaultQueryTypeName)
+		g.OperationType = string(ast.DefaultQueryTypeName)
 	}
 
 	// get the selection set types to start with
-	fieldTypeList, err := extractOperationSelectionSetTypes(operationRef, &record.RootFields, request, schema)
+	fieldTypeList, err := extractOperationSelectionSetTypes(operationRef, &g.RootFields, request, schema)
 	if err != nil {
 		log.WithError(err).Error("error extracting selection set types")
 		return
@@ -97,10 +100,12 @@ func parseRequest(encodedRequest, encodedSchema string, record *GraphRecord) {
 		}
 		extractTypesAndFields(fieldRef, typeDefRef, typesToFieldsMap, request, schema)
 	}
-	record.Types = typesToFieldsMap
+	g.Types = typesToFieldsMap
 }
 
-func parseResponse(encodedResponse string, record *GraphRecord) {
+// parseResponse looks through the encoded response string and parses information like
+// the errors
+func (g *GraphRecord) parseResponse(encodedResponse string) {
 	if encodedResponse == "" {
 		log.Warn("empty response body")
 		return
@@ -132,11 +137,11 @@ func parseResponse(encodedResponse string, record *GraphRecord) {
 	}
 	if t != jsonparser.NotExist {
 		// errors key exists so unmarshal it
-		if err := json.Unmarshal(errBytes, &record.Errors); err != nil {
+		if err := json.Unmarshal(errBytes, &g.Errors); err != nil {
 			log.WithError(err).Error("error parsing graph errors")
 			return
 		}
-		record.HasErrors = true
+		g.HasErrors = true
 	}
 }
 
@@ -151,9 +156,9 @@ func (a *AnalyticsRecord) ToGraphRecord() GraphRecord {
 		record.HasErrors = true
 	}
 
-	parseRequest(a.RawRequest, a.ApiSchema, &record)
+	record.parseRequest(a.RawRequest, a.ApiSchema)
 
-	parseResponse(a.RawResponse, &record)
+	record.parseResponse(a.RawResponse)
 
 	return record
 }
