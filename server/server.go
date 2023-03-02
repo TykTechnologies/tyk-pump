@@ -10,10 +10,12 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-var defaultHealthEndpoint = "health"
-var defaultHealthPort = 8083
-var serverPrefix = "server"
-var log = logger.GetLogger()
+var (
+	defaultHealthEndpoint = "health"
+	defaultHealthPort     = 8083
+	serverPrefix          = "server"
+	log                   = logger.GetLogger()
+)
 
 func ServeHealthCheck(configHealthEndpoint string, configHealthPort int, enableProfiling bool) {
 	healthEndpoint := configHealthEndpoint

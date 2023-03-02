@@ -342,7 +342,7 @@ func TestAggregateGraphData_Dimension(t *testing.T) {
 }
 
 func TestAggregateData_SkipGraphRecords(t *testing.T) {
-	run := func(records []AnalyticsRecord, expectedAggregatedRecordCount int, expectedExistingOrgKeys []string, expectedNonExistingOrgKeys []string) func(t *testing.T) {
+	run := func(records []AnalyticsRecord, expectedAggregatedRecordCount int, expectedExistingOrgKeys, expectedNonExistingOrgKeys []string) func(t *testing.T) {
 		return func(t *testing.T) {
 			data := make([]interface{}, len(records))
 			for i := range records {

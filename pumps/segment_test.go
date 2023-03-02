@@ -29,7 +29,7 @@ func CreateAnalyticsRecord() analytics.AnalyticsRecord {
 	a.RequestTime = time.Now().Unix()
 	a.RawRequest = "{\"field\": \"value\"}"
 	a.RawResponse = "{\"id\": \"123\"}"
-	//a.IPAddress = "192.168.99.100"
+	// a.IPAddress = "192.168.99.100"
 	a.Tags = []string{"tag-1", "tag-2"}
 	a.ExpireAt = time.Date(2020, time.November, 10, 23, 0, 0, 0, time.UTC)
 

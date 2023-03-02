@@ -17,7 +17,6 @@ func newPump() Pump {
 }
 
 func TestMongoPump_capCollection_Enabled(t *testing.T) {
-
 	c := Conn{}
 	c.ConnectDb()
 	defer c.CleanDb()
@@ -38,7 +37,6 @@ func TestMongoPump_capCollection_Enabled(t *testing.T) {
 }
 
 func TestMongoPumpOmitIndexCreation(t *testing.T) {
-
 	c := Conn{}
 	c.ConnectDb()
 	defer c.CleanDb()
@@ -156,7 +154,6 @@ func TestMongoPumpOmitIndexCreation(t *testing.T) {
 }
 
 func TestMongoPump_capCollection_Exists(t *testing.T) {
-
 	c := Conn{}
 	c.ConnectDb()
 	defer c.CleanDb()
@@ -180,7 +177,6 @@ func TestMongoPump_capCollection_Exists(t *testing.T) {
 }
 
 func TestMongoPump_capCollection_Not64arch(t *testing.T) {
-
 	c := Conn{}
 	c.ConnectDb()
 	defer c.CleanDb()
@@ -206,7 +202,6 @@ func TestMongoPump_capCollection_Not64arch(t *testing.T) {
 }
 
 func TestMongoPump_capCollection_SensibleDefaultSize(t *testing.T) {
-
 	if strconv.IntSize < 64 {
 		t.Skip("skipping as < 64bit arch")
 	}
@@ -240,7 +235,6 @@ func TestMongoPump_capCollection_SensibleDefaultSize(t *testing.T) {
 }
 
 func TestMongoPump_capCollection_OverrideSize(t *testing.T) {
-
 	if strconv.IntSize < 64 {
 		t.Skip("skipping as < 64bit arch")
 	}

@@ -38,18 +38,18 @@ const (
 	timestreamPumpPrefix       = "timestream-pump"
 	timestreamPumpName         = "Timestream Pump"
 	timestreamDefaultEnv       = PUMPS_ENV_PREFIX + "_TIMESTREAM" + PUMPS_ENV_META_PREFIX
-	timestreamVarcharMaxLength = 2048 //https://docs.aws.amazon.com/timestream/latest/developerguide/writes.html
-	timestreamMaxRecordsCount  = 100  //https://docs.aws.amazon.com/timestream/latest/developerguide/API_WriteRecords.html
+	timestreamVarcharMaxLength = 2048 // https://docs.aws.amazon.com/timestream/latest/developerguide/writes.html
+	timestreamMaxRecordsCount  = 100  // https://docs.aws.amazon.com/timestream/latest/developerguide/API_WriteRecords.html
 )
 
 // @PumpConf Timestream
 type TimestreamPumpConf struct {
 	EnvPrefix string `mapstructure:"meta_env_prefix"`
-	//The aws region that contains the timestream database
+	// The aws region that contains the timestream database
 	AWSRegion string `mapstructure:"aws_region"`
-	//The table name where the data is going to be written
+	// The table name where the data is going to be written
 	TableName string `mapstructure:"timestream_table_name"`
-	//The timestream database name that contains the table being written to
+	// The timestream database name that contains the table being written to
 	DatabaseName string `mapstructure:"timestream_database_name"`
 	//A filter of all the dimensions that will be written to the table. The possible options are
 	//["Method","Host","Path","RawPath","APIKey","APIVersion","APIName","APIID","OrgID","OauthID"]
@@ -62,14 +62,14 @@ type TimestreamPumpConf struct {
 	//"RateLimit.Limit","Ratelimit.Remaining","Ratelimit.Reset",
 	//"GeoData.Country.ISOCode","GeoData.City.Names","GeoData.Location.TimeZone"]
 	Measures []string `mapstructure:"measures"`
-	//Set to true in order to save any of the `RateLimit` measures. Default value is `false`.
+	// Set to true in order to save any of the `RateLimit` measures. Default value is `false`.
 	WriteRateLimit bool `mapstructure:"write_rate_limit"`
-	//If set true, we will try to read geo information from the headers if
-	//values aren't found on the analytic record . Default value is `false`.
+	// If set true, we will try to read geo information from the headers if
+	// values aren't found on the analytic record . Default value is `false`.
 	ReadGeoFromRequest bool `mapstructure:"read_geo_from_request"`
-	//Set to true, in order to save numerical values with value zero. Default value is `false`.
+	// Set to true, in order to save numerical values with value zero. Default value is `false`.
 	WriteZeroValues bool `mapstructure:"write_zero_values"`
-	//A name mapping for both Dimensions and Measures names. It's not required
+	// A name mapping for both Dimensions and Measures names. It's not required
 	NameMappings map[string]string `mapstructure:"field_name_mappings"`
 }
 
@@ -180,7 +180,6 @@ func (t *TimestreamPump) nameMap(fieldName string) string {
 }
 
 func (t *TimestreamPump) GetAnalyticsRecordMeasures(decoded *analytics.AnalyticsRecord) (measureValues []types.MeasureValue) {
-
 	measureFieldsMapping := map[string]types.MeasureValue{}
 
 	if decoded.Geo.City.GeoNameID != 0 || t.config.WriteZeroValues {
@@ -205,7 +204,7 @@ func (t *TimestreamPump) GetAnalyticsRecordMeasures(decoded *analytics.Analytics
 		}
 	}
 
-	var intMeasures = map[string]int64{
+	intMeasures := map[string]int64{
 		"ContentLength":                 decoded.ContentLength,
 		"ResponseCode":                  int64(decoded.ResponseCode),
 		"RequestTime":                   decoded.RequestTime,
@@ -244,7 +243,7 @@ func (t *TimestreamPump) GetAnalyticsRecordMeasures(decoded *analytics.Analytics
 		}
 	}
 
-	var stringMeasures = map[string]string{
+	stringMeasures := map[string]string{
 		"UserAgent":                 decoded.UserAgent,
 		"RawRequest":                decoded.RawRequest,
 		"IPAddress":                 decoded.IPAddress,
@@ -265,7 +264,7 @@ func (t *TimestreamPump) GetAnalyticsRecordMeasures(decoded *analytics.Analytics
 		}
 	}
 
-	//timestream can't ingest empty strings
+	// timestream can't ingest empty strings
 	for key, value := range stringMeasures {
 		if value != "" {
 			measureFieldsMapping[key] = types.MeasureValue{
@@ -276,18 +275,18 @@ func (t *TimestreamPump) GetAnalyticsRecordMeasures(decoded *analytics.Analytics
 		}
 	}
 
-	var includeRawResponse = false //special case raw response
+	includeRawResponse := false // special case raw response
 
-	//filter measures according to config
+	// filter measures according to config
 	for _, key := range t.config.Measures {
 		includeRawResponse = includeRawResponse || key == "RawResponse"
-		//skip if configuration key not present in measure fields
+		// skip if configuration key not present in measure fields
 		if value, ok := measureFieldsMapping[key]; ok {
 			measureValues = append(measureValues, value)
 		}
 	}
 
-	//rawResponse needs special treatment because timestream varchar has a 2KB size limit
+	// rawResponse needs special treatment because timestream varchar has a 2KB size limit
 	if includeRawResponse {
 		chunks := chunkString(decoded.RawResponse, timestreamVarcharMaxLength)
 
@@ -308,6 +307,7 @@ func (t *TimestreamPump) GetAnalyticsRecordMeasures(decoded *analytics.Analytics
 
 	return measureValues
 }
+
 func LoadHeadersFromRawRequest(rawRequest string) (http.Header, error) {
 	requestBytes, err := base64.StdEncoding.DecodeString(rawRequest)
 	if err != nil {
@@ -319,6 +319,7 @@ func LoadHeadersFromRawRequest(rawRequest string) (http.Header, error) {
 	}
 	return request.Header, nil
 }
+
 func LoadHeadersFromRawResponse(rawResponse string) (http.Header, error) {
 	responseBytes, err := base64.StdEncoding.DecodeString(rawResponse)
 	if err != nil {
@@ -330,6 +331,7 @@ func LoadHeadersFromRawResponse(rawResponse string) (http.Header, error) {
 	}
 	return resp.Header, nil
 }
+
 func Min(a, b int) int {
 	if a > b {
 		return b
@@ -372,8 +374,7 @@ func mapToVarChar(dictionary map[string]string) string {
 }
 
 func (t *TimestreamPump) GetAnalyticsRecordDimensions(decoded *analytics.AnalyticsRecord) (dimensions []types.Dimension) {
-
-	var dimensionFields = map[string]string{
+	dimensionFields := map[string]string{
 		"Method":     decoded.Method,
 		"Host":       decoded.Host,
 		"Path":       decoded.Path,
@@ -387,16 +388,16 @@ func (t *TimestreamPump) GetAnalyticsRecordDimensions(decoded *analytics.Analyti
 	}
 
 	for key, value := range dimensionFields {
-		//timestream can't ingest empty strings
+		// timestream can't ingest empty strings
 		if value == "" {
 			delete(dimensionFields, key)
 		}
 	}
 	dimensions = make([]types.Dimension, 0, len(dimensionFields))
 
-	//filter dimensions according to config
+	// filter dimensions according to config
 	for _, key := range t.config.Dimensions {
-		//skip if configuration key not present in dimension fields
+		// skip if configuration key not present in dimension fields
 		if value, ok := dimensionFields[key]; ok {
 			dimensions = append(dimensions, types.Dimension{
 				Name:               aws.String(t.nameMap(key)),
@@ -415,8 +416,8 @@ func (t *TimestreamPump) NewTimestreamWriter() (c *timestreamwrite.Client, err e
 		timeout = 30 * int(time.Second)
 	}
 
-	//write client example
-	//https://docs.aws.amazon.com/timestream/latest/developerguide/code-samples.write-client.html
+	// write client example
+	// https://docs.aws.amazon.com/timestream/latest/developerguide/code-samples.write-client.html
 	tr := &http.Transport{
 		ResponseHeaderTimeout: 20 * time.Second,
 		// Using DefaultTransport values for other parameters: https://golang.org/pkg/net/http/#RoundTripper

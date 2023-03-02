@@ -16,10 +16,12 @@ import (
 
 // ------------------- REDIS CLUSTER STORAGE MANAGER -------------------------------
 
-var redisClusterSingleton redis.UniversalClient
-var redisLogPrefix = "redis"
-var ENV_REDIS_PREFIX = "TYK_PMP_REDIS"
-var ctx = context.Background()
+var (
+	redisClusterSingleton redis.UniversalClient
+	redisLogPrefix        = "redis"
+	ENV_REDIS_PREFIX      = "TYK_PMP_REDIS"
+	ctx                   = context.Background()
+)
 
 type EnvMapString map[string]string
 
@@ -266,7 +268,6 @@ func (r *RedisClusterStorageManager) GetAndDeleteSet(keyName string, chunkSize i
 		}
 		return nil
 	})
-
 	if err != nil {
 		log.WithFields(logrus.Fields{
 			"prefix": redisLogPrefix,

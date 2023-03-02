@@ -26,7 +26,7 @@ const (
 
 var (
 	errInvalidSettings = errors.New("Empty settings")
-	//By default in splunk ~ 800 MB. https://docs.splunk.com/Documentation/Splunk/latest/Admin/Limitsconf#.5Bhttp_input.5D
+	// By default in splunk ~ 800 MB. https://docs.splunk.com/Documentation/Splunk/latest/Admin/Limitsconf#.5Bhttp_input.5D
 	maxContentLength = 838860800
 )
 
@@ -251,7 +251,7 @@ func (p *SplunkPump) WriteData(ctx context.Context, data []interface{}) error {
 		}
 
 		if p.config.EnableBatch {
-			//if we're batching and the len of our data is already bigger than max_content_length, we send the data and reset the buffer
+			// if we're batching and the len of our data is already bigger than max_content_length, we send the data and reset the buffer
 			if batchBuffer.Len()+len(data) > p.config.BatchMaxContentLength {
 				if err := fnSendBytes(batchBuffer.Bytes()); err != nil {
 					return err
@@ -266,7 +266,7 @@ func (p *SplunkPump) WriteData(ctx context.Context, data []interface{}) error {
 		}
 	}
 
-	//this if is for data remaining in the buffer when len(buffer) is lower than max_content_length
+	// this if is for data remaining in the buffer when len(buffer) is lower than max_content_length
 	if p.config.EnableBatch && batchBuffer.Len() > 0 {
 		if err := fnSendBytes(batchBuffer.Bytes()); err != nil {
 			return err
@@ -280,7 +280,7 @@ func (p *SplunkPump) WriteData(ctx context.Context, data []interface{}) error {
 }
 
 // NewSplunkClient initializes a new SplunkClient.
-func NewSplunkClient(token string, collectorURL string, skipVerify bool, certFile string, keyFile string, serverName string) (c *SplunkClient, err error) {
+func NewSplunkClient(token, collectorURL string, skipVerify bool, certFile, keyFile, serverName string) (c *SplunkClient, err error) {
 	if token == "" || collectorURL == "" {
 		return c, errInvalidSettings
 	}
@@ -313,7 +313,6 @@ func NewSplunkClient(token string, collectorURL string, skipVerify bool, certFil
 
 // Send sends an event to the Splunk HTTP Event Collector interface.
 func (c *SplunkClient) Send(ctx context.Context, data []byte) (*http.Response, error) {
-
 	reader := bytes.NewReader(data)
 	req, err := http.NewRequest("POST", c.CollectorURL, reader)
 	if err != nil {

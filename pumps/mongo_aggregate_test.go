@@ -65,8 +65,8 @@ func TestDoAggregatedWritingWithIgnoredAggregations(t *testing.T) {
 	}
 
 	defer func() {
-		//we clean the db after we finish the test
-		//we use pmp1 session since it should be the same
+		// we clean the db after we finish the test
+		// we use pmp1 session since it should be the same
 		sess := pmp1.dbSession.Copy()
 		defer sess.Close()
 
@@ -104,7 +104,7 @@ func TestDoAggregatedWritingWithIgnoredAggregations(t *testing.T) {
 
 			analyticsCollection := thisSession.DB("").C(collectionName)
 
-			//we build the query using the timestamp as we do in aggregated analytics
+			// we build the query using the timestamp as we do in aggregated analytics
 			query := bson.M{
 				"orgid":     "123",
 				"timestamp": time.Date(timeNow.Year(), timeNow.Month(), timeNow.Day(), timeNow.Hour(), 0, 0, 0, timeNow.Location()),

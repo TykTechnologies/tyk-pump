@@ -26,8 +26,10 @@ type KafkaPump struct {
 
 type Json map[string]interface{}
 
-var kafkaPrefix = "kafka-pump"
-var kafkaDefaultENV = PUMPS_ENV_PREFIX + "_KAFKA" + PUMPS_ENV_META_PREFIX
+var (
+	kafkaPrefix     = "kafka-pump"
+	kafkaDefaultENV = PUMPS_ENV_PREFIX + "_KAFKA" + PUMPS_ENV_META_PREFIX
+)
 
 // @PumpConf Kafka
 type KafkaConf struct {
@@ -82,7 +84,7 @@ func (k *KafkaPump) GetEnvPrefix() string {
 func (k *KafkaPump) Init(config interface{}) error {
 	k.log = log.WithField("prefix", kafkaPrefix)
 
-	//Read configuration file
+	// Read configuration file
 	k.kafkaConf = &KafkaConf{}
 	err := mapstructure.Decode(config, &k.kafkaConf)
 	if err != nil {
@@ -137,7 +139,7 @@ func (k *KafkaPump) Init(config interface{}) error {
 		k.log.WithField("SASL-Mechanism", k.kafkaConf.SASLMechanism).Warn("Tyk pump doesn't support this SASL mechanism.")
 	}
 
-	//Kafka writer connection config
+	// Kafka writer connection config
 	dialer := &kafka.Dialer{
 		Timeout:       k.kafkaConf.Timeout * time.Second,
 		ClientID:      k.kafkaConf.ClientId,
@@ -165,7 +167,7 @@ func (k *KafkaPump) WriteData(ctx context.Context, data []interface{}) error {
 	k.log.Debug("Attempting to write ", len(data), " records...")
 	kafkaMessages := make([]kafka.Message, len(data))
 	for i, v := range data {
-		//Build message format
+		// Build message format
 		decoded := v.(analytics.AnalyticsRecord)
 		message := Json{
 			"timestamp":       decoded.TimeStamp,
@@ -189,24 +191,24 @@ func (k *KafkaPump) WriteData(ctx context.Context, data []interface{}) error {
 			"user_agent":      decoded.UserAgent,
 			"tags":            decoded.Tags,
 		}
-		//Add static metadata to json
+		// Add static metadata to json
 		for key, value := range k.kafkaConf.MetaData {
 			message[key] = value
 		}
 
-		//Transform object to json string
+		// Transform object to json string
 		json, jsonError := json.Marshal(message)
 		if jsonError != nil {
 			k.log.WithError(jsonError).Error("unable to marshal message")
 		}
 
-		//Kafka message structure
+		// Kafka message structure
 		kafkaMessages[i] = kafka.Message{
 			Time:  time.Now(),
 			Value: json,
 		}
 	}
-	//Send kafka message
+	// Send kafka message
 	kafkaError := k.write(ctx, kafkaMessages)
 	if kafkaError != nil {
 		k.log.WithError(kafkaError).Error("unable to write message")

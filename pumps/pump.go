@@ -10,8 +10,10 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const PUMPS_ENV_PREFIX = "TYK_PMP_PUMPS"
-const PUMPS_ENV_META_PREFIX = "_META"
+const (
+	PUMPS_ENV_PREFIX      = "TYK_PMP_PUMPS"
+	PUMPS_ENV_META_PREFIX = "_META"
+)
 
 type Pump interface {
 	GetName() string
@@ -44,7 +46,6 @@ type UptimePump interface {
 }
 
 func GetPumpByName(name string) (Pump, error) {
-
 	if pump, ok := AvailablePumps[name]; ok && pump != nil {
 		return pump, nil
 	}

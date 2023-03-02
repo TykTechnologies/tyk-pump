@@ -23,12 +23,14 @@ import (
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
-var SystemConfig TykPumpConfiguration
-var AnalyticsStore storage.AnalyticsStorage
-var UptimeStorage storage.AnalyticsStorage
-var Pumps []pumps.Pump
-var UptimePump pumps.UptimePump
-var AnalyticsSerializers []serializer.AnalyticsSerializer
+var (
+	SystemConfig         TykPumpConfiguration
+	AnalyticsStore       storage.AnalyticsStorage
+	UptimeStorage        storage.AnalyticsStorage
+	Pumps                []pumps.Pump
+	UptimePump           pumps.UptimePump
+	AnalyticsSerializers []serializer.AnalyticsSerializer
+)
 
 var log = logger.GetLogger()
 
@@ -64,7 +66,7 @@ func Init() {
 		demoMode = &envDemo
 	}
 
-	//Serializer init
+	// Serializer init
 	AnalyticsSerializers = []serializer.AnalyticsSerializer{serializer.NewAnalyticsSerializer(serializer.MSGP_SERIALIZER), serializer.NewAnalyticsSerializer(serializer.PROTOBUF_SERIALIZER)}
 
 	log.WithFields(logrus.Fields{
@@ -94,7 +96,6 @@ func Init() {
 	if *debugMode {
 		log.Level = logrus.DebugLevel
 	}
-
 }
 
 func setupAnalyticsStore() {
@@ -118,7 +119,7 @@ func setupAnalyticsStore() {
 }
 
 func storeVersion() {
-	var versionStore = &storage.RedisClusterStorageManager{}
+	versionStore := &storage.RedisClusterStorageManager{}
 	versionConf := SystemConfig.AnalyticsStorageConfig
 	versionStore.KeyPrefix = "version-check-"
 	versionStore.Config = versionConf
@@ -170,7 +171,6 @@ func initialisePumps() {
 	if !SystemConfig.DontPurgeUptimeData {
 		initialiseUptimePump()
 	}
-
 }
 
 func initialiseUptimePump() {
@@ -203,7 +203,7 @@ func StartPurgeLoop(wg *sync.WaitGroup, ctx context.Context, secInterval int, ch
 		for i := -1; i < 10; i++ {
 			var analyticsKeyName string
 			if i == -1 {
-				//if it's the first iteration, we look for tyk-system-analytics to maintain backwards compatibility or if analytics_config.enable_multiple_analytics_keys is disabled in the gateway
+				// if it's the first iteration, we look for tyk-system-analytics to maintain backwards compatibility or if analytics_config.enable_multiple_analytics_keys is disabled in the gateway
 				analyticsKeyName = storage.ANALYTICS_KEYNAME
 			} else {
 				analyticsKeyName = fmt.Sprintf("%v_%v", storage.ANALYTICS_KEYNAME, i)
@@ -298,7 +298,6 @@ func writeToPumps(keys []interface{}, job *health.Job, startTime time.Time, purg
 }
 
 func filterData(pump pumps.Pump, keys []interface{}) []interface{} {
-
 	shouldTrim := SystemConfig.MaxRecordSize != 0 || pump.GetMaxRecordSize() != 0
 	filters := pump.GetFilters()
 	ignoreFields := pump.GetIgnoreFields()
@@ -374,11 +373,11 @@ func execPumpWriting(wg *sync.WaitGroup, pmp pumps.Pump, keys *[]interface{}, pu
 	}).Debug("Writing to: ", pmp.GetName())
 
 	ch := make(chan error, 1)
-	//Load pump timeout
+	// Load pump timeout
 	timeout := pmp.GetTimeout()
 	var ctx context.Context
 	var cancel context.CancelFunc
-	//Initialize context depending if the pump has a configured timeout
+	// Initialize context depending if the pump has a configured timeout
 	if timeout > 0 {
 		ctx, cancel = context.WithTimeout(context.Background(), time.Duration(timeout)*time.Second)
 	} else {

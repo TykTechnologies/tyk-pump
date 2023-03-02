@@ -168,7 +168,7 @@ func (f *SQLAnalyticsRecordAggregate) TableName() string {
 	return AggregateSQLTable
 }
 
-func OnConflictAssignments(tableName string, tempTable string) map[string]interface{} {
+func OnConflictAssignments(tableName, tempTable string) map[string]interface{} {
 	assignments := make(map[string]interface{})
 	f := SQLAnalyticsRecordAggregate{}
 	baseFields := structs.Fields(f.Code)

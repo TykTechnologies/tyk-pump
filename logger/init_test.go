@@ -35,7 +35,7 @@ func TestFormatterWithForcedPrefixFileOutput(t *testing.T) {
 		t.Error("Closing test logs file:" + err.Error())
 	}
 
-	//Now check the content in the file
+	// Now check the content in the file
 	b, err := ioutil.ReadFile(outputFile)
 	if err != nil {
 		t.Error("Reading test logs file")

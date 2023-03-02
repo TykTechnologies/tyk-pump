@@ -87,7 +87,6 @@ func NewLogzioClient(conf *LogzioPumpConfig) (*lg.LogzioSender, error) {
 		lg.SetTempDirectory(conf.QueueDir),
 		lg.SetUrl(conf.URL),
 	)
-
 	if err != nil {
 		return nil, fmt.Errorf("failed to create new logzio sender: %s", err)
 	}

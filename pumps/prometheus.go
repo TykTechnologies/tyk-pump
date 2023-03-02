@@ -170,7 +170,7 @@ func (p *PrometheusPump) Init(conf interface{}) error {
 		return errors.New("Prometheus listen_addr not set")
 	}
 
-	//first we init the base metrics
+	// first we init the base metrics
 	p.initBaseMetrics()
 
 	// then we check the custom ones

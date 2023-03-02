@@ -112,6 +112,7 @@ func Test_SplunkWriteData(t *testing.T) {
 	assert.Equal(t, "Success", response.Text)
 	assert.Equal(t, int32(0), response.Code)
 }
+
 func Test_SplunkWriteDataBatch(t *testing.T) {
 	handler := &testHandler{test: t, batched: true}
 	server := httptest.NewServer(handler)
@@ -148,7 +149,6 @@ func Test_SplunkWriteDataBatch(t *testing.T) {
 
 	assert.Equal(t, getEventBytes(keys[:2]), handler.responses[0].Len)
 	assert.Equal(t, getEventBytes(keys[2:]), handler.responses[1].Len)
-
 }
 
 // getEventBytes returns the bytes amount of the marshalled events struct

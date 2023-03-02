@@ -5,8 +5,7 @@ import (
 	"gopkg.in/vmihailenco/msgpack.v2"
 )
 
-type MsgpSerializer struct {
-}
+type MsgpSerializer struct{}
 
 func (serializer *MsgpSerializer) Encode(record *analytics.AnalyticsRecord) ([]byte, error) {
 	return msgpack.Marshal(record)

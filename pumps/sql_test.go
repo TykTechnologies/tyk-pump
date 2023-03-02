@@ -27,12 +27,11 @@ func TestSQLInit(t *testing.T) {
 	assert.NotNil(t, pmp.db)
 	assert.Equal(t, "sqlite", pmp.db.Dialector.Name())
 
-	//Checking with invalid type
+	// Checking with invalid type
 	cfg["type"] = "invalid"
 	pmp2 := SQLPump{}
 	invalidDialectErr := pmp2.Init(cfg)
 	assert.NotNil(t, invalidDialectErr)
-
 }
 
 func TestSQLWriteData(t *testing.T) {
@@ -69,7 +68,6 @@ func TestSQLWriteData(t *testing.T) {
 		err := pmp.db.Table(table).Find(&dbRecords).Error
 		assert.Nil(t, err)
 		assert.Equal(t, 3, len(dbRecords))
-
 	})
 
 	t.Run("table_content", func(t *testing.T) {
@@ -85,7 +83,6 @@ func TestSQLWriteData(t *testing.T) {
 			assert.Equal(t, keys[i].(analytics.AnalyticsRecord).OrgID, dbRecords[i].OrgID)
 		}
 	})
-
 }
 
 func TestSQLWriteDataSharded(t *testing.T) {
@@ -149,7 +146,6 @@ func TestSQLWriteDataSharded(t *testing.T) {
 			assert.Equal(t, data.RowsLen, len(dbRecords))
 		})
 	}
-
 }
 
 func TestSQLWriteUptimeData(t *testing.T) {
@@ -197,7 +193,7 @@ func TestSQLWriteUptimeData(t *testing.T) {
 			Record:               analytics.UptimeReportData{OrgID: "1", URL: "url1", TimeStamp: nowPlus1},
 			RecordsAmountToWrite: 3,
 			RowsLen:              4,
-			HitsPerHour:          3, //since we're going to write in a new hour, it should mean a different aggregation.
+			HitsPerHour:          3, // since we're going to write in a new hour, it should mean a different aggregation.
 		},
 	}
 
@@ -207,7 +203,7 @@ func TestSQLWriteUptimeData(t *testing.T) {
 		t.Run(testName, func(t *testing.T) {
 			pmp := pmp
 			keys := []interface{}{}
-			//encode the records in the way uptime pump consume them
+			// encode the records in the way uptime pump consume them
 			for i := 0; i < tests[testName].RecordsAmountToWrite; i++ {
 				encoded, _ := msgpack.Marshal(tests[testName].Record)
 				keys = append(keys, string(encoded))
@@ -215,7 +211,7 @@ func TestSQLWriteUptimeData(t *testing.T) {
 
 			pmp.WriteUptimeData(keys)
 			table := analytics.UptimeSQLTable
-			//check if the table exists
+			// check if the table exists
 			assert.Equal(t, true, pmp.db.Migrator().HasTable(table))
 
 			dbRecords := []analytics.UptimeReportAggregateSQL{}
@@ -223,17 +219,16 @@ func TestSQLWriteUptimeData(t *testing.T) {
 				t.Fatal("Error getting analytics records from SQL")
 			}
 
-			//check amount of rows in the table
+			// check amount of rows in the table
 			assert.Equal(t, tests[testName].RowsLen, len(dbRecords))
 
-			//iterate over the records and check total of hits
+			// iterate over the records and check total of hits
 			for _, dbRecord := range dbRecords {
 				if dbRecord.TimeStamp == tests[testName].Record.TimeStamp.Unix() && dbRecord.DimensionValue == "total" {
 					assert.Equal(t, tests[testName].HitsPerHour, dbRecord.Hits)
 					break
 				}
 			}
-
 		})
 	}
 }
@@ -298,7 +293,6 @@ func TestSQLWriteUptimeDataSharded(t *testing.T) {
 			assert.Equal(t, data.RowsLen, len(dbRecords))
 		})
 	}
-
 }
 
 func TestSQLWriteUptimeDataAggregations(t *testing.T) {
@@ -346,5 +340,4 @@ func TestSQLWriteUptimeDataAggregations(t *testing.T) {
 	assert.Equal(t, 2, dbRecords[0].ErrorTotal)
 	assert.Equal(t, 14.0, dbRecords[0].RequestTime)
 	assert.Equal(t, 70.0, dbRecords[0].TotalRequestTime)
-
 }

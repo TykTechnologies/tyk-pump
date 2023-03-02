@@ -44,8 +44,10 @@ type GraylogConf struct {
 	Tags []string `json:"tags" mapstructure:"tags"`
 }
 
-var graylogPrefix = "graylog-pump"
-var graylogDefaultENV = PUMPS_ENV_PREFIX + "_GRAYLOG" + PUMPS_ENV_META_PREFIX
+var (
+	graylogPrefix     = "graylog-pump"
+	graylogDefaultENV = PUMPS_ENV_PREFIX + "_GRAYLOG" + PUMPS_ENV_META_PREFIX
+)
 
 func (p *GraylogPump) New() Pump {
 	newPump := GraylogPump{}
@@ -113,7 +115,6 @@ func (p *GraylogPump) WriteData(ctx context.Context, data []interface{}) error {
 		}
 
 		rResp, err := base64.StdEncoding.DecodeString(record.RawResponse)
-
 		if err != nil {
 			p.log.Fatal(err)
 		}
@@ -155,7 +156,6 @@ func (p *GraylogPump) WriteData(ctx context.Context, data []interface{}) error {
 		}
 
 		gelfString, err := json.Marshal(gelfData)
-
 		if err != nil {
 			p.log.Fatal(err)
 		}

@@ -131,6 +131,7 @@ func BenchmarkProtobufEncoding(b *testing.B) {
 	}
 	b.ReportMetric(float64(serialSize)/float64(b.N), "B/serial")
 }
+
 func BenchmarkMsgpEncoding(b *testing.B) {
 	serializer := NewAnalyticsSerializer(MSGP_SERIALIZER)
 	records := []analytics.AnalyticsRecord{

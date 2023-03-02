@@ -27,12 +27,12 @@ func TestSQLAggregateInit(t *testing.T) {
 	assert.NotNil(t, pmp.db)
 	assert.Equal(t, "sqlite", pmp.db.Dialector.Name())
 
-	//Checking with invalid type
+	// Checking with invalid type
 	cfg["type"] = "invalid"
 	pmp2 := SQLAggregatePump{}
 	invalidDialectErr := pmp2.Init(cfg)
 	assert.NotNil(t, invalidDialectErr)
-	//TODO check how to test postgres connection - it's going to requiere to have some postgres up
+	// TODO check how to test postgres connection - it's going to requiere to have some postgres up
 
 }
 
@@ -144,7 +144,7 @@ func TestSQLAggregateWriteData(t *testing.T) {
 			Record:               analytics.AnalyticsRecord{OrgID: "1", APIID: "api1", TimeStamp: nowPlus1},
 			RecordsAmountToWrite: 3,
 			RowsLen:              4,
-			HitsPerHour:          3, //since we're going to write in a new hour, it should mean a different aggregation.
+			HitsPerHour:          3, // since we're going to write in a new hour, it should mean a different aggregation.
 		},
 	}
 
@@ -161,7 +161,7 @@ func TestSQLAggregateWriteData(t *testing.T) {
 
 			pmp.WriteData(context.TODO(), keys)
 			table := analytics.AggregateSQLTable
-			//check if the table exists
+			// check if the table exists
 			assert.Equal(t, true, pmp.db.Migrator().HasTable(table))
 
 			dbRecords := []analytics.SQLAnalyticsRecordAggregate{}
@@ -169,17 +169,16 @@ func TestSQLAggregateWriteData(t *testing.T) {
 				t.Fatal("Error getting analytics records from SQL")
 			}
 
-			//check amount of rows in the table
+			// check amount of rows in the table
 			assert.Equal(t, tests[testName].RowsLen, len(dbRecords))
 
-			//iterate over the records and check total of hits
+			// iterate over the records and check total of hits
 			for _, dbRecord := range dbRecords {
 				if dbRecord.TimeStamp == tests[testName].Record.TimeStamp.Unix() && dbRecord.DimensionValue == "total" {
 					assert.Equal(t, tests[testName].HitsPerHour, dbRecord.Hits)
 					break
 				}
 			}
-
 		})
 	}
 }

@@ -10,7 +10,6 @@ import (
 )
 
 func TestRedisAddressConfiguration(t *testing.T) {
-
 	t.Run("Host but no port", func(t *testing.T) {
 		cfg := RedisStorageConfig{Host: "host"}
 		if len(getRedisAddrs(cfg)) != 0 {

@@ -40,8 +40,10 @@ type rawDecoded struct {
 	body    interface{}
 }
 
-var moesifPrefix = "moesif-pump"
-var moesifDefaultENV = PUMPS_ENV_PREFIX + "_MOESIF" + PUMPS_ENV_META_PREFIX
+var (
+	moesifPrefix     = "moesif-pump"
+	moesifDefaultENV = PUMPS_ENV_PREFIX + "_MOESIF" + PUMPS_ENV_META_PREFIX
+)
 
 // @PumpConf Moesif
 type MoesifConf struct {
@@ -140,7 +142,7 @@ func (p *MoesifPump) parseConfiguration(response *http.Response) (int, string, t
 	return p.samplingPercentage, p.eTag, time.Now().UTC()
 }
 
-func (p *MoesifPump) getSamplingPercentage(userID string, companyID string) int {
+func (p *MoesifPump) getSamplingPercentage(userID, companyID string) int {
 	if userID != "" {
 		if userRate, ok := p.userSampleRateMap[userID].(float64); ok {
 			return int(userRate)
@@ -162,7 +164,7 @@ func (p *MoesifPump) getSamplingPercentage(userID string, companyID string) int 
 	return 100
 }
 
-func fetchIDFromHeader(requestHeaders map[string]interface{}, responseHeaders map[string]interface{}, headerName string) string {
+func fetchIDFromHeader(requestHeaders, responseHeaders map[string]interface{}, headerName string) string {
 	var id string
 	if requid, ok := requestHeaders[strings.ToLower(headerName)].(string); ok {
 		id = requid
@@ -224,7 +226,7 @@ func maskRawBody(rawBody string, maskBody []string) string {
 	return base64.StdEncoding.EncodeToString([]byte(rawBody))
 }
 
-func buildURI(raw string, defaultPath string) string {
+func buildURI(raw, defaultPath string) string {
 	pathHeadersBody := strings.SplitN(raw, "\r\n", 2)
 
 	if len(pathHeadersBody) >= 2 {
@@ -238,11 +240,11 @@ func buildURI(raw string, defaultPath string) string {
 	return defaultPath
 }
 
-func fetchTokenPayload(token string, tokenType string) string {
+func fetchTokenPayload(token, tokenType string) string {
 	return strings.TrimSpace(strings.SplitAfter(token, tokenType)[1])
 }
 
-func parseAuthorizationHeader(token string, field string) string {
+func parseAuthorizationHeader(token, field string) string {
 	if token != "" {
 		data, err := base64.RawURLEncoding.DecodeString(token)
 		if err == nil {
@@ -325,7 +327,7 @@ func (p *MoesifPump) WriteData(ctx context.Context, data []interface{}) error {
 
 	transferEncoding := "base64"
 	for dataIndex := range data {
-		var record, _ = data[dataIndex].(analytics.AnalyticsRecord)
+		record, _ := data[dataIndex].(analytics.AnalyticsRecord)
 
 		rawReq, err := base64.StdEncoding.DecodeString(record.RawRequest)
 		if err != nil {
@@ -334,7 +336,6 @@ func (p *MoesifPump) WriteData(ctx context.Context, data []interface{}) error {
 
 		decodedReqBody, err := decodeRawData(string(rawReq), p.moesifConf.RequestHeaderMasks,
 			p.moesifConf.RequestBodyMasks, p.moesifConf.DisableCaptureRequestBody)
-
 		if err != nil {
 			p.log.Fatal(err)
 		}
@@ -357,14 +358,12 @@ func (p *MoesifPump) WriteData(ctx context.Context, data []interface{}) error {
 		}
 
 		rawRsp, err := base64.StdEncoding.DecodeString(record.RawResponse)
-
 		if err != nil {
 			p.log.Fatal(err)
 		}
 
 		decodedRspBody, err := decodeRawData(string(rawRsp), p.moesifConf.ResponseHeaderMasks,
 			p.moesifConf.ResponseBodyMasks, p.moesifConf.DisableCaptureResponseBody)
-
 		if err != nil {
 			p.log.Fatal(err)
 		}
@@ -508,7 +507,7 @@ func (p *MoesifPump) WriteData(ctx context.Context, data []interface{}) error {
 	return nil
 }
 
-func decodeRawData(raw string, maskHeaders []string, maskBody []string, disableCaptureBody bool) (*rawDecoded, error) {
+func decodeRawData(raw string, maskHeaders, maskBody []string, disableCaptureBody bool) (*rawDecoded, error) {
 	headersBody := strings.SplitN(raw, "\r\n\r\n", 2)
 
 	if len(headersBody) == 0 {

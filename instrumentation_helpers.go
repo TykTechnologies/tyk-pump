@@ -10,13 +10,15 @@ import (
 	"github.com/gocraft/health"
 )
 
-var applicationGCStats = debug.GCStats{}
-var instrument = health.NewStream()
+var (
+	applicationGCStats = debug.GCStats{}
+	instrument         = health.NewStream()
+)
 
 // SetupInstrumentation handles all the intialisation of the instrumentation handler
 func SetupInstrumentation() {
 	var enabled bool
-	//instrument.AddSink(&health.WriterSink{os.Stdout})
+	// instrument.AddSink(&health.WriterSink{os.Stdout})
 	thisInstr := os.Getenv("TYK_INSTRUMENTATION")
 
 	if thisInstr == "1" {
@@ -35,7 +37,6 @@ func SetupInstrumentation() {
 	log.Info("Sending stats to: ", SystemConfig.StatsdConnectionString, " with prefix: ", SystemConfig.StatsdPrefix)
 	statsdSink, err := NewStatsDSink(SystemConfig.StatsdConnectionString,
 		&StatsDSinkOptions{Prefix: SystemConfig.StatsdPrefix})
-
 	if err != nil {
 		log.Fatal("Failed to start StatsD check: ", err)
 		return

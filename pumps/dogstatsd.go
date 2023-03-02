@@ -20,8 +20,10 @@ const (
 	defaultDogstatsdUDSWriteTimeoutSeconds = 1
 )
 
-var dogstatPrefix = "dogstatsd"
-var dogstatDefaultENV = PUMPS_ENV_PREFIX + "_DOGSTATSD" + PUMPS_ENV_META_PREFIX
+var (
+	dogstatPrefix     = "dogstatsd"
+	dogstatDefaultENV = PUMPS_ENV_PREFIX + "_DOGSTATSD" + PUMPS_ENV_META_PREFIX
+)
 
 type DogStatsdPump struct {
 	conf   *DogStatsdConf
@@ -113,7 +115,6 @@ func (s *DogStatsdPump) GetEnvPrefix() string {
 }
 
 func (s *DogStatsdPump) Init(conf interface{}) error {
-
 	s.log = log.WithField("prefix", dogstatPrefix)
 
 	if err := mapstructure.Decode(conf, &s.conf); err != nil {
@@ -147,7 +148,7 @@ func (s *DogStatsdPump) Init(conf interface{}) error {
 	if s.conf.Buffered {
 		opts = append(opts, statsd.WithMaxMessagesPerPayload(s.conf.BufferedMaxMessages))
 	} else {
-		//this option is added to simulate an unbuffered behaviour. Specified in datadog 3.0.0 lib release https://github.com/DataDog/datadog-go/blob/master/CHANGELOG.md#breaking-changes-1
+		// this option is added to simulate an unbuffered behaviour. Specified in datadog 3.0.0 lib release https://github.com/DataDog/datadog-go/blob/master/CHANGELOG.md#breaking-changes-1
 		opts = append(opts, statsd.WithMaxMessagesPerPayload(1))
 	}
 

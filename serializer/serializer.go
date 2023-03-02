@@ -13,8 +13,10 @@ type AnalyticsSerializer interface {
 	GetSuffix() string
 }
 
-const MSGP_SERIALIZER = "msgpack"
-const PROTOBUF_SERIALIZER = "protobuf"
+const (
+	MSGP_SERIALIZER     = "msgpack"
+	PROTOBUF_SERIALIZER = "protobuf"
+)
 
 func NewAnalyticsSerializer(serializerType string) AnalyticsSerializer {
 	switch serializerType {

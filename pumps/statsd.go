@@ -17,8 +17,10 @@ type StatsdPump struct {
 	CommonPumpConfig
 }
 
-var statsdPrefix = "statsd-pump"
-var statsdDefaultENV = PUMPS_ENV_PREFIX + "_STATSD" + PUMPS_ENV_META_PREFIX
+var (
+	statsdPrefix     = "statsd-pump"
+	statsdDefaultENV = PUMPS_ENV_PREFIX + "_STATSD" + PUMPS_ENV_META_PREFIX
+)
 
 // @PumpConf Statsd
 type StatsdConf struct {
@@ -66,7 +68,6 @@ func (s *StatsdPump) Init(config interface{}) error {
 }
 
 func (s *StatsdPump) connect() *statsd.StatsdClient {
-
 	client := statsd.NewStatsdClient(s.dbConf.Address, "")
 
 	for {
@@ -86,7 +87,6 @@ func (s *StatsdPump) connect() *statsd.StatsdClient {
 }
 
 func (s *StatsdPump) WriteData(ctx context.Context, data []interface{}) error {
-
 	if len(data) == 0 {
 		return nil
 	}

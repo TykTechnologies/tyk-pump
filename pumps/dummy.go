@@ -8,8 +8,10 @@ type DummyPump struct {
 	CommonPumpConfig
 }
 
-var dummyPrefix = "dummy-pump"
-var dummyDefaultENV = PUMPS_ENV_PREFIX + "_DUMMY" + PUMPS_ENV_META_PREFIX
+var (
+	dummyPrefix     = "dummy-pump"
+	dummyDefaultENV = PUMPS_ENV_PREFIX + "_DUMMY" + PUMPS_ENV_META_PREFIX
+)
 
 func (p *DummyPump) New() Pump {
 	newPump := DummyPump{}

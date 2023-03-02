@@ -5,7 +5,6 @@ import (
 )
 
 func TestGetPumpByName(t *testing.T) {
-
 	name := "dummy"
 	pmpType, err := GetPumpByName(name)
 

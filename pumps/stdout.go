@@ -43,12 +43,10 @@ func (s *StdOutPump) New() Pump {
 }
 
 func (s *StdOutPump) Init(config interface{}) error {
-
 	s.log = log.WithField("prefix", stdOutPrefix)
 
 	s.conf = &StdOutConf{}
 	err := mapstructure.Decode(config, &s.conf)
-
 	if err != nil {
 		s.log.Fatal("Failed to decode configuration: ", err)
 	}
@@ -62,7 +60,6 @@ func (s *StdOutPump) Init(config interface{}) error {
 	s.log.Info(s.GetName() + " Initialized")
 
 	return nil
-
 }
 
 /**
@@ -71,9 +68,8 @@ func (s *StdOutPump) Init(config interface{}) error {
 func (s *StdOutPump) WriteData(ctx context.Context, data []interface{}) error {
 	s.log.Debug("Attempting to write ", len(data), " records...")
 
-	//Data is all the analytics being written
+	// Data is all the analytics being written
 	for _, v := range data {
-
 		select {
 		case <-ctx.Done():
 			return nil

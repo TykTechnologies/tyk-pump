@@ -81,7 +81,6 @@ func (i *InfluxPump) connect() client.Client {
 		Username: i.dbConf.Username,
 		Password: i.dbConf.Password,
 	})
-
 	if err != nil {
 		i.log.Error("Influx connection failed:", err)
 		time.Sleep(5 * time.Second)

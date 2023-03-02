@@ -26,8 +26,10 @@ type CSVConf struct {
 	CSVDir string `json:"csv_dir" mapstructure:"csv_dir"`
 }
 
-var csvPrefix = "csv-pump"
-var csvDefaultENV = PUMPS_ENV_PREFIX + "_CSV" + PUMPS_ENV_META_PREFIX
+var (
+	csvPrefix     = "csv-pump"
+	csvDefaultENV = PUMPS_ENV_PREFIX + "_CSV" + PUMPS_ENV_META_PREFIX
+)
 
 func (c *CSVPump) New() Pump {
 	newPump := CSVPump{}
@@ -53,7 +55,7 @@ func (c *CSVPump) Init(conf interface{}) error {
 
 	processPumpEnvVars(c, c.log, c.csvConf, csvDefaultENV)
 
-	ferr := os.MkdirAll(c.csvConf.CSVDir, 0777)
+	ferr := os.MkdirAll(c.csvConf.CSVDir, 0o777)
 	if ferr != nil {
 		c.log.Error(ferr.Error() + " dir: " + c.csvConf.CSVDir)
 	}
@@ -81,7 +83,7 @@ func (c *CSVPump) WriteData(ctx context.Context, data []interface{}) error {
 		appendHeader = true
 	} else {
 		var appendErr error
-		outfile, appendErr = os.OpenFile(fname, os.O_APPEND|os.O_WRONLY, 0600)
+		outfile, appendErr = os.OpenFile(fname, os.O_APPEND|os.O_WRONLY, 0o600)
 		if appendErr != nil {
 			c.log.Error("Failed to open CSV file: ", appendErr)
 		}
@@ -92,7 +94,7 @@ func (c *CSVPump) WriteData(ctx context.Context, data []interface{}) error {
 
 	if appendHeader {
 		startRecord := analytics.AnalyticsRecord{}
-		var headers = startRecord.GetFieldNames()
+		headers := startRecord.GetFieldNames()
 
 		err := writer.Write(headers)
 		if err != nil {

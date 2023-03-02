@@ -28,8 +28,10 @@ type ElasticsearchPump struct {
 	CommonPumpConfig
 }
 
-var elasticsearchPrefix = "elasticsearch-pump"
-var elasticsearchDefaultENV = PUMPS_ENV_PREFIX + "_ELASTICSEARCH" + PUMPS_ENV_META_PREFIX
+var (
+	elasticsearchPrefix     = "elasticsearch-pump"
+	elasticsearchDefaultENV = PUMPS_ENV_PREFIX + "_ELASTICSEARCH" + PUMPS_ENV_META_PREFIX
+)
 
 // @PumpConf Elasticsearch
 type ElasticsearchConf struct {
@@ -364,7 +366,7 @@ func (e *ElasticsearchPump) Init(config interface{}) error {
 		e.log.Fatal("Invalid version: ", err)
 	}
 
-	var re = regexp.MustCompile(`(.*)\/\/(.*):(.*)\@(.*)`)
+	re := regexp.MustCompile(`(.*)\/\/(.*):(.*)\@(.*)`)
 	printableURL := re.ReplaceAllString(e.esConf.ElasticsearchURL, `$1//***:***@$4`)
 
 	e.log.Info("Elasticsearch URL: ", printableURL)
@@ -441,13 +443,13 @@ func getIndexName(esConf *ElasticsearchConf) string {
 
 	if esConf.RollingIndex {
 		currentTime := time.Now()
-		//This formats the date to be YYYY.MM.DD but Golang makes you use a specific date for its date formatting
+		// This formats the date to be YYYY.MM.DD but Golang makes you use a specific date for its date formatting
 		indexName += "-" + currentTime.Format("2006.01.02")
 	}
 	return indexName
 }
 
-func getMapping(datum analytics.AnalyticsRecord, extendedStatistics bool, generateID bool, decodeBase64 bool) (map[string]interface{}, string) {
+func getMapping(datum analytics.AnalyticsRecord, extendedStatistics, generateID, decodeBase64 bool) (map[string]interface{}, string) {
 	record := datum
 
 	mapping := map[string]interface{}{

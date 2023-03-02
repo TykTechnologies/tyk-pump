@@ -66,7 +66,7 @@ func (s *SyslogPump) GetEnvPrefix() string {
 }
 
 func (s *SyslogPump) Init(config interface{}) error {
-	//Read configuration file
+	// Read configuration file
 	s.syslogConf = &SyslogConf{}
 	s.log = log.WithField("prefix", syslogPrefix)
 
@@ -97,7 +97,6 @@ func (s *SyslogPump) initWriter() {
 		s.syslogConf.NetworkAddr,
 		syslog.Priority(s.syslogConf.LogLevel),
 		tag)
-
 	if err != nil {
 		s.log.Fatal("failed to connect to Syslog Daemon: ", err)
 	}
@@ -135,7 +134,7 @@ func (s *SyslogPump) initConfigs() {
 func (s *SyslogPump) WriteData(ctx context.Context, data []interface{}) error {
 	s.log.Debug("Attempting to write ", len(data), " records...")
 
-	//Data is all the analytics being written
+	// Data is all the analytics being written
 	for _, v := range data {
 		select {
 		case <-ctx.Done():
@@ -185,6 +184,7 @@ func (s *SyslogPump) GetTimeout() int {
 func (s *SyslogPump) SetFilters(filters analytics.AnalyticsFilters) {
 	s.filters = filters
 }
+
 func (s *SyslogPump) GetFilters() analytics.AnalyticsFilters {
 	return s.filters
 }

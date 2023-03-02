@@ -8,8 +8,7 @@ import (
 	"github.com/golang/protobuf/proto"
 )
 
-type ProtobufSerializer struct {
-}
+type ProtobufSerializer struct{}
 
 func (pb *ProtobufSerializer) GetSuffix() string {
 	return "_protobuf"
@@ -93,7 +92,6 @@ func (pb *ProtobufSerializer) TransformSingleRecordToProto(rec analytics.Analyti
 }
 
 func (pb *ProtobufSerializer) TransformSingleProtoToAnalyticsRecord(rec analyticsproto.AnalyticsRecord, record *analytics.AnalyticsRecord) error {
-
 	tmpRecord := analytics.AnalyticsRecord{
 		Method:        rec.Method,
 		Host:          rec.Host,

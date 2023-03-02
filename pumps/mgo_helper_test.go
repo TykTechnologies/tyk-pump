@@ -7,8 +7,10 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
-const dbAddr = "127.0.0.1:27017"
-const colName = "test_collection"
+const (
+	dbAddr  = "127.0.0.1:27017"
+	colName = "test_collection"
+)
 
 type Conn struct {
 	Session *mgo.Session
@@ -53,7 +55,6 @@ func (c *Conn) CleanIndexes() {
 	for _, index := range indexes {
 		sess.DB("").C(colName).DropIndexName(index.Name)
 	}
-
 }
 
 func (c *Conn) InsertDoc() {

@@ -21,25 +21,23 @@ type GroupLoginRequest struct {
 	GroupID string
 }
 
-var (
-	dispatcherFuncs = map[string]interface{}{
-		"Login": func(clientAddr, userKey string) bool {
-			return false
-		},
-		"LoginWithGroup": func(clientAddr string, groupData *GroupLoginRequest) bool {
-			return false
-		},
-		"PurgeAnalyticsData": func(data string) error {
-			return nil
-		},
-		"Ping": func() bool {
-			return false
-		},
-		"PurgeAnalyticsDataAggregated": func(data string) error {
-			return nil
-		},
-	}
-)
+var dispatcherFuncs = map[string]interface{}{
+	"Login": func(clientAddr, userKey string) bool {
+		return false
+	},
+	"LoginWithGroup": func(clientAddr string, groupData *GroupLoginRequest) bool {
+		return false
+	},
+	"PurgeAnalyticsData": func(data string) error {
+		return nil
+	},
+	"Ping": func() bool {
+		return false
+	},
+	"PurgeAnalyticsDataAggregated": func(data string) error {
+		return nil
+	},
+}
 
 // HybridPump allows to send analytics to MDCB over RPC
 type HybridPump struct {
@@ -62,7 +60,6 @@ func (p *HybridPump) New() Pump {
 }
 
 func (p *HybridPump) Init(config interface{}) error {
-
 	p.log = log.WithField("prefix", hybridPrefix)
 
 	meta := config.(map[string]interface{})
@@ -96,7 +93,7 @@ func (p *HybridPump) Init(config interface{}) error {
 		rpcConfig.RPCPoolSize = int(rpcPoolSize.(float64))
 	}
 
-	//we do the env check here in the hybrid pump since the config here behaves different to other pumps.
+	// we do the env check here in the hybrid pump since the config here behaves different to other pumps.
 	if envPrefix, ok := meta["meta_env_prefix"]; ok {
 		prefix := envPrefix.(string)
 		p.log.Debug(fmt.Sprintf("Checking %v env variables with prefix %v", p.GetName(), prefix))
@@ -163,7 +160,7 @@ func (p *HybridPump) connectRpc() error {
 		p.rpcConfig,
 		false,
 		dispatcherFuncs,
-		func(userKey string, groupID string) interface{} {
+		func(userKey, groupID string) interface{} {
 			return GroupLoginRequest{
 				UserKey: userKey,
 				GroupID: groupID,
