@@ -449,8 +449,7 @@ func getIndexName(esConf *ElasticsearchConf) string {
 	return indexName
 }
 
-func getMapping(datum analytics.AnalyticsRecord, extendedStatistics, generateID, decodeBase64 bool) (map[string]interface{}, string) {
-	record := datum
+func getMapping(record *analytics.AnalyticsRecord, extendedStatistics, generateID, decodeBase64 bool) (map[string]interface{}, string) {
 
 	mapping := map[string]interface{}{
 		"@timestamp":       record.TimeStamp,
@@ -508,7 +507,7 @@ func (e Elasticsearch3Operator) processData(ctx context.Context, data []interfac
 			continue
 		}
 
-		mapping, id := getMapping(d, esConf.ExtendedStatistics, esConf.GenerateID, esConf.DecodeBase64)
+		mapping, id := getMapping(&d, esConf.ExtendedStatistics, esConf.GenerateID, esConf.DecodeBase64)
 
 		if !esConf.DisableBulk {
 			r := elasticv3.NewBulkIndexRequest().Index(getIndexName(esConf)).Type(esConf.DocumentType).Id(id).Doc(mapping)
@@ -544,7 +543,7 @@ func (e Elasticsearch5Operator) processData(ctx context.Context, data []interfac
 			continue
 		}
 
-		mapping, id := getMapping(d, esConf.ExtendedStatistics, esConf.GenerateID, esConf.DecodeBase64)
+		mapping, id := getMapping(&d, esConf.ExtendedStatistics, esConf.GenerateID, esConf.DecodeBase64)
 
 		if !esConf.DisableBulk {
 			r := elasticv5.NewBulkIndexRequest().Index(getIndexName(esConf)).Type(esConf.DocumentType).Id(id).Doc(mapping)
@@ -580,7 +579,7 @@ func (e Elasticsearch6Operator) processData(ctx context.Context, data []interfac
 			continue
 		}
 
-		mapping, id := getMapping(d, esConf.ExtendedStatistics, esConf.GenerateID, esConf.DecodeBase64)
+		mapping, id := getMapping(&d, esConf.ExtendedStatistics, esConf.GenerateID, esConf.DecodeBase64)
 
 		if !esConf.DisableBulk {
 			r := elasticv6.NewBulkIndexRequest().Index(getIndexName(esConf)).Type(esConf.DocumentType).Id(id).Doc(mapping)
@@ -620,7 +619,7 @@ func (e Elasticsearch7Operator) processData(ctx context.Context, data []interfac
 			continue
 		}
 
-		mapping, id := getMapping(d, esConf.ExtendedStatistics, esConf.GenerateID, esConf.DecodeBase64)
+		mapping, id := getMapping(&d, esConf.ExtendedStatistics, esConf.GenerateID, esConf.DecodeBase64)
 
 		if !esConf.DisableBulk {
 			r := elasticv7.NewBulkIndexRequest().Index(getIndexName(esConf)).Id(id).Doc(mapping)

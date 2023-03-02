@@ -9,8 +9,7 @@ type DummyPump struct {
 }
 
 var (
-	dummyPrefix     = "dummy-pump"
-	dummyDefaultENV = PUMPS_ENV_PREFIX + "_DUMMY" + PUMPS_ENV_META_PREFIX
+	dummyPrefix = "dummy-pump"
 )
 
 func (p *DummyPump) New() Pump {

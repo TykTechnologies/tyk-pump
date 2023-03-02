@@ -265,7 +265,8 @@ func (p *MoesifPump) Init(config interface{}) error {
 
 	loadConfigErr := mapstructure.Decode(config, &p.moesifConf)
 	if loadConfigErr != nil {
-		p.log.Fatal("Failed to decode configuration: ", loadConfigErr)
+		p.log.Error("Failed to decode configuration: ", loadConfigErr)
+		return loadConfigErr
 	}
 
 	processPumpEnvVars(p, p.log, p.moesifConf, moesifDefaultENV)
@@ -327,11 +328,16 @@ func (p *MoesifPump) WriteData(ctx context.Context, data []interface{}) error {
 
 	transferEncoding := "base64"
 	for dataIndex := range data {
-		record, _ := data[dataIndex].(analytics.AnalyticsRecord)
+		record, ok := data[dataIndex].(analytics.AnalyticsRecord)
+		if !ok {
+			p.log.Error("Failed to cast analytics record")
+			continue
+		}
 
 		rawReq, err := base64.StdEncoding.DecodeString(record.RawRequest)
 		if err != nil {
-			p.log.Fatal(err)
+			p.log.Error(err)
+			continue
 		}
 
 		decodedReqBody, err := decodeRawData(string(rawReq), p.moesifConf.RequestHeaderMasks,
@@ -359,13 +365,15 @@ func (p *MoesifPump) WriteData(ctx context.Context, data []interface{}) error {
 
 		rawRsp, err := base64.StdEncoding.DecodeString(record.RawResponse)
 		if err != nil {
-			p.log.Fatal(err)
+			p.log.Error(err)
+			continue
 		}
 
 		decodedRspBody, err := decodeRawData(string(rawRsp), p.moesifConf.ResponseHeaderMasks,
 			p.moesifConf.ResponseBodyMasks, p.moesifConf.DisableCaptureResponseBody)
 		if err != nil {
-			p.log.Fatal(err)
+			p.log.Error(err)
+			continue
 		}
 
 		// Response Time
