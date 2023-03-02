@@ -33,7 +33,6 @@ func TestSQLAggregateInit(t *testing.T) {
 	invalidDialectErr := pmp2.Init(cfg)
 	assert.NotNil(t, invalidDialectErr)
 	// TODO check how to test postgres connection - it's going to requiere to have some postgres up
-
 }
 
 func TestSQLAggregateWriteData_Sharded(t *testing.T) {

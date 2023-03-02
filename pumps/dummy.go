@@ -8,9 +8,7 @@ type DummyPump struct {
 	CommonPumpConfig
 }
 
-var (
-	dummyPrefix = "dummy-pump"
-)
+var dummyPrefix = "dummy-pump"
 
 func (p *DummyPump) New() Pump {
 	newPump := DummyPump{}

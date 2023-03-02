@@ -450,7 +450,6 @@ func getIndexName(esConf *ElasticsearchConf) string {
 }
 
 func getMapping(record *analytics.AnalyticsRecord, extendedStatistics, generateID, decodeBase64 bool) (map[string]interface{}, string) {
-
 	mapping := map[string]interface{}{
 		"@timestamp":       record.TimeStamp,
 		"http_method":      record.Method,
