@@ -600,11 +600,7 @@ func AggregateGraphData(data []interface{}, dbIdentifier string, aggregationTime
 			continue
 		}
 
-		graphRec, err := record.ToGraphRecord()
-		if err != nil {
-			log.WithError(err).Debug("error converting record to graph record")
-			continue
-		}
+		graphRec := record.ToGraphRecord()
 
 		aggregate, found := aggregateMap[record.OrgID]
 		if !found {

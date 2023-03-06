@@ -10,12 +10,13 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/buger/jsonparser"
+
 	"github.com/TykTechnologies/graphql-go-tools/pkg/ast"
 	"github.com/TykTechnologies/graphql-go-tools/pkg/astnormalization"
 	"github.com/TykTechnologies/graphql-go-tools/pkg/astparser"
 	gql "github.com/TykTechnologies/graphql-go-tools/pkg/graphql"
 	"github.com/TykTechnologies/graphql-go-tools/pkg/operationreport"
-	"github.com/buger/jsonparser"
 )
 
 type GraphRecord struct {
@@ -30,31 +31,34 @@ type GraphRecord struct {
 	HasErrors     bool         `gorm:"has_errors"`
 }
 
-func (a *AnalyticsRecord) ToGraphRecord() (GraphRecord, error) {
-	record := GraphRecord{
-		AnalyticsRecord: *a,
-		RootFields:      make([]string, 0),
-		Types:           make(map[string][]string),
+// parseRequest reads the raw encoded request and schema, extracting the type information
+// operation information and root field operations
+// if an error is encountered it simply breaks the operation regardless of how far along it is.
+func (g *GraphRecord) parseRequest(encodedRequest, encodedSchema string) {
+	if encodedRequest == "" || encodedSchema == "" {
+		log.Warn("empty request/schema")
+		return
 	}
-	if a.ResponseCode >= 400 {
-		record.HasErrors = true
-	}
-	rawRequest, err := base64.StdEncoding.DecodeString(a.RawRequest)
+	rawRequest, err := base64.StdEncoding.DecodeString(encodedRequest)
 	if err != nil {
-		return record, fmt.Errorf("error decoding raw request: %w", err)
+		log.WithError(err).Error("error decoding raw request")
+		return
 	}
 
-	schemaBody, err := base64.StdEncoding.DecodeString(a.ApiSchema)
+	schemaBody, err := base64.StdEncoding.DecodeString(encodedSchema)
 	if err != nil {
-		return record, fmt.Errorf("error decoding schema: %w", err)
+		log.WithError(err).Error("error decoding schema")
+		return
 	}
 
 	request, schema, operationName, err := generateNormalizedDocuments(rawRequest, schemaBody)
 	if err != nil {
-		return record, fmt.Errorf("error generating documents: %w", err)
+		log.WithError(err).Error("error generating document")
+		return
 	}
+
 	if len(request.Input.Variables) != 0 && string(request.Input.Variables) != "null" {
-		record.Variables = base64.StdEncoding.EncodeToString(request.Input.Variables)
+		g.Variables = base64.StdEncoding.EncodeToString(request.Input.Variables)
 	}
 
 	// get the operation ref
@@ -67,71 +71,96 @@ func (a *AnalyticsRecord) ToGraphRecord() (GraphRecord, error) {
 			}
 		}
 	} else if len(request.OperationDefinitions) > 1 {
-		return record, errors.New("no operation name specified")
+		log.Warn("no operation name specified")
+		return
 	}
 
 	// get operation type
 	switch request.OperationDefinitions[operationRef].OperationType {
 	case ast.OperationTypeMutation:
-		record.OperationType = string(ast.DefaultMutationTypeName)
+		g.OperationType = string(ast.DefaultMutationTypeName)
 	case ast.OperationTypeSubscription:
-		record.OperationType = string(ast.DefaultSubscriptionTypeName)
+		g.OperationType = string(ast.DefaultSubscriptionTypeName)
 	case ast.OperationTypeQuery:
-		record.OperationType = string(ast.DefaultQueryTypeName)
+		g.OperationType = string(ast.DefaultQueryTypeName)
 	}
 
 	// get the selection set types to start with
-	fieldTypeList, err := extractOperationSelectionSetTypes(operationRef, &record.RootFields, request, schema)
+	fieldTypeList, err := extractOperationSelectionSetTypes(operationRef, &g.RootFields, request, schema)
 	if err != nil {
 		log.WithError(err).Error("error extracting selection set types")
-		return record, err
+		return
 	}
 	typesToFieldsMap := make(map[string][]string)
 	for fieldRef, typeDefRef := range fieldTypeList {
 		if typeDefRef == ast.InvalidRef {
 			err = errors.New("invalid selection set field type")
-			return record, err
+			log.Warn("invalid type found")
+			continue
 		}
 		extractTypesAndFields(fieldRef, typeDefRef, typesToFieldsMap, request, schema)
 	}
-	record.Types = typesToFieldsMap
+	g.Types = typesToFieldsMap
+}
 
-	// get response and check to see errors
-	if a.RawResponse != "" {
-		responseDecoded, err := base64.StdEncoding.DecodeString(a.RawResponse)
-		if err != nil {
-			return record, nil
-		}
-		resp, err := http.ReadResponse(bufio.NewReader(bytes.NewReader(responseDecoded)), nil)
-		if err != nil {
-			log.WithError(err).Error("error reading raw response")
-			return record, err
-		}
-		defer resp.Body.Close()
-
-		dat, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			log.WithError(err).Error("error reading response body")
-			return record, err
-		}
-		errBytes, t, _, err := jsonparser.Get(dat, "errors")
-		// check if the errors key exists in the response
-		if err != nil && err != jsonparser.KeyPathNotFoundError {
-			// we got an unexpected error parsing te response
-			log.WithError(err).Error("error getting response errors")
-			return record, err
-		}
-		if t != jsonparser.NotExist {
-			// errors key exists so unmarshal it
-			if err := json.Unmarshal(errBytes, &record.Errors); err != nil {
-				log.WithError(err).Error("error parsing graph errors")
-				return record, err
-			}
-			record.HasErrors = true
-		}
+// parseResponse looks through the encoded response string and parses information like
+// the errors
+func (g *GraphRecord) parseResponse(encodedResponse string) {
+	if encodedResponse == "" {
+		log.Warn("empty response body")
+		return
 	}
 
-	return record, nil
+	responseDecoded, err := base64.StdEncoding.DecodeString(encodedResponse)
+	if err != nil {
+		log.WithError(err).Error("error decoding response")
+		return
+	}
+	resp, err := http.ReadResponse(bufio.NewReader(bytes.NewReader(responseDecoded)), nil)
+	if err != nil {
+		log.WithError(err).Error("error reading raw response")
+		return
+	}
+	defer resp.Body.Close()
+
+	dat, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.WithError(err).Error("error reading response body")
+		return
+	}
+	errBytes, t, _, err := jsonparser.Get(dat, "errors")
+	// check if the errors key exists in the response
+	if err != nil && err != jsonparser.KeyPathNotFoundError {
+		// we got an unexpected error parsing te response
+		log.WithError(err).Error("error getting response errors")
+		return
+	}
+	if t != jsonparser.NotExist {
+		// errors key exists so unmarshal it
+		if err := json.Unmarshal(errBytes, &g.Errors); err != nil {
+			log.WithError(err).Error("error parsing graph errors")
+			return
+		}
+		g.HasErrors = true
+	}
+}
+
+func (a *AnalyticsRecord) ToGraphRecord() GraphRecord {
+	record := GraphRecord{
+		AnalyticsRecord: *a,
+		RootFields:      make([]string, 0),
+		Types:           make(map[string][]string),
+		Errors:          make([]GraphError, 0),
+	}
+	if a.ResponseCode >= 400 {
+		record.HasErrors = true
+	}
+
+	record.parseRequest(a.RawRequest, a.ApiSchema)
+
+	record.parseResponse(a.RawResponse)
+
+	return record
 }
 
 // extractOperationSelectionSetTypes extracts all type names of the selection sets in the operation

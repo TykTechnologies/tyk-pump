@@ -123,25 +123,29 @@ func (s *GraphSQLAggregatePump) WriteData(ctx context.Context, data []interface{
 			i = dataLen // write all records at once for non-sharded case, stop for loop after 1 iteration
 			table = analytics.AggregateGraphSQLTable
 		}
-	}
 
-	// if StoreAnalyticsPerMinute is set to true, we will create new documents with records every 1 minute
-	var aggregationTime int
-	if s.SQLConf.StoreAnalyticsPerMinute {
-		aggregationTime = 1
-	} else {
-		aggregationTime = 60
-	}
-
-	aggregates := analytics.AggregateGraphData(data[startIndex:endIndex], "", aggregationTime)
-
-	for orgID := range aggregates {
-		aggr := aggregates[orgID]
-		if err := s.DoAggregatedWriting(ctx, table, orgID, &aggr); err != nil {
-			s.log.WithError(err).Error("error writing record")
-			return err
+		// if StoreAnalyticsPerMinute is set to true, we will create new documents with records every 1 minute
+		var aggregationTime int
+		if s.SQLConf.StoreAnalyticsPerMinute {
+			aggregationTime = 1
+		} else {
+			aggregationTime = 60
 		}
+
+		analyticsPerOrg := analytics.AggregateGraphData(data[startIndex:endIndex], "", aggregationTime)
+
+		for orgID := range analyticsPerOrg {
+			ag := analyticsPerOrg[orgID]
+			err := s.DoAggregatedWriting(ctx, table, orgID, &ag)
+			if err != nil {
+				s.log.WithError(err).Error("error writing record")
+				return err
+			}
+		}
+
+		startIndex = i // next day start index, necessary for sharded case
 	}
+	s.log.Info("Purged ", dataLen, " records...")
 
 	return nil
 }
@@ -172,7 +176,7 @@ func (s *GraphSQLAggregatePump) DoAggregatedWriting(ctx context.Context, table, 
 		}
 
 		// we use excluded as temp  table since it's supported by our SQL storages https://www.postgresql.org/docs/9.5/sql-insert.html#SQL-ON-CONFLICT  https://www.sqlite.org/lang_UPSERT.html
-		tx := s.db.WithContext(ctx).Table(analytics.AggregateGraphSQLTable).Clauses(clause.OnConflict{
+		tx := s.db.WithContext(ctx).Table(table).Clauses(clause.OnConflict{
 			Columns:   []clause.Column{{Name: "id"}},
 			DoUpdates: clause.Assignments(analytics.OnConflictAssignments(table, "excluded")),
 		}).Create(recs[i:ends])
