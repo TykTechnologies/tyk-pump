@@ -3,6 +3,7 @@ package pumps
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/mitchellh/mapstructure"
@@ -84,6 +85,7 @@ func (s *StdOutPump) WriteData(ctx context.Context, data []interface{}) error {
 				formatter := &logrus.JSONFormatter{}
 				entry := log.WithField(s.conf.LogFieldName, decoded)
 				entry.Level = logrus.InfoLevel
+				entry.Time = time.Now().UTC()
 				data, _ := formatter.Format(entry)
 				fmt.Print(string(data))
 			} else {

@@ -406,16 +406,14 @@ For example, if the `aggregation_time` is configured as 50 (minutes) but the doc
 
 Note that `store_analytics_per_minute` takes precedence over `aggregation_time` so if `store_analytics_per_minute` is equal to true, the value of `aggregation_time` will be equal to 1 and self healing will not operate.
 
-###### Mongo Graph Pump
+## Mongo Graph Pump
 As of Pump 1.7+, a new mongo is available called the `mongo_graph` pump. This pump is specifically for parsing 
 GraphQL and UDG requests, tracking information like types requested, fields requested, specific graphql body errors etc.
 
 A sample config looks like this:
-```.json
+```json
 {
-  ...
   "pumps": {
-    ...
     "mongo-graph": {
       "type": "mongo-graph",
       "meta": {
@@ -425,6 +423,29 @@ A sample config looks like this:
     }
 }
 ```
+
+## SQL Graph Pump
+Similar to the Mongo graph pump, the `sql-graph` pump is a specialized pump for parsing and recording granular analytics for GraphQL and UDG requests.
+The difference, like the name says is this pump uses sql type databases as its storage db. Supported SQL databases are `sqlite`, `postgres`, `mysql`.
+
+A sample config looks like this:
+```json
+{
+  "pumps": {
+    "sql-graph": {
+      "meta": {
+        "type": "postgres",
+        "table_name": "graph-records",
+        "connection_string": "host=localhost user=postgres password=password dbname=postgres",
+        "table_sharding": false
+      }
+    }
+  }
+}
+```
+
+`table_sharding` - This determines how the sql tables are created, if this is set to true, a new table is created for each day of records for the graph data.
+The name format for each table is <table_name>_<date>. Defaults to false.
 
 ## Elasticsearch Config
 

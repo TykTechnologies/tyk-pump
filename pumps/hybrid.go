@@ -212,7 +212,7 @@ func (p *HybridPump) WriteData(ctx context.Context, data []interface{}) error {
 		}
 	} else { // send aggregated data
 		// calculate aggregates
-		aggregates := analytics.AggregateData(data, p.trackAllPaths, p.ignoreTagPrefixList, p.rpcConfig.ConnectionString, p.aggregationTime, false)
+		aggregates := analytics.AggregateData(data, p.trackAllPaths, p.ignoreTagPrefixList, p.rpcConfig.ConnectionString, p.aggregationTime)
 
 		// turn map with analytics aggregates into JSON payload
 		jsonData, err := json.Marshal(aggregates)
