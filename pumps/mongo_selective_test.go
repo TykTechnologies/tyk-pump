@@ -102,6 +102,7 @@ func TestMongoSelectivePump_SessionConsistency(t *testing.T) {
 	mPump := MongoSelectivePump{}
 	conf := defaultSelectiveConf()
 	mPump.dbConf = &conf
+	mPump.log = log.WithField("prefix", mongoSelectivePrefix)
 
 	tests := []struct {
 		testName            string

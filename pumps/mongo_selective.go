@@ -21,9 +21,11 @@ type MongoSelectivePump struct {
 	CommonPumpConfig
 }
 
-var mongoSelectivePrefix = "mongo-pump-selective"
-var mongoSelectivePumpPrefix = "PMP_MONGOSEL"
-var mongoSelectiveDefaultEnv = PUMPS_ENV_PREFIX + "_MONGOSELECTIVE" + PUMPS_ENV_META_PREFIX
+var (
+	mongoSelectivePrefix     = "mongo-pump-selective"
+	mongoSelectivePumpPrefix = "PMP_MONGOSEL"
+	mongoSelectiveDefaultEnv = PUMPS_ENV_PREFIX + "_MONGOSELECTIVE" + PUMPS_ENV_META_PREFIX
+)
 
 // @PumpConf MongoSelective
 type MongoSelectiveConf struct {
@@ -72,7 +74,7 @@ func (m *MongoSelectivePump) Init(config interface{}) error {
 
 	processPumpEnvVars(m, m.log, m.dbConf, mongoSelectiveDefaultEnv)
 
-	//we keep this env check for backward compatibility
+	// we keep this env check for backward compatibility
 	overrideErr := envconfig.Process(mongoSelectivePumpPrefix, m.dbConf)
 	if overrideErr != nil {
 		m.log.Error("Failed to process environment variables for mongo selective pump: ", overrideErr)
@@ -211,7 +213,6 @@ func (m *MongoSelectivePump) WriteData(ctx context.Context, data []interface{}) 
 		}
 
 		for col_name, filtered_data := range analyticsPerOrg {
-
 			for _, dataSet := range m.AccumulateSet(filtered_data) {
 				thisSession := m.dbSession.Copy()
 				defer thisSession.Close()
@@ -231,7 +232,6 @@ func (m *MongoSelectivePump) WriteData(ctx context.Context, data []interface{}) 
 					}
 				}
 			}
-
 		}
 
 	}

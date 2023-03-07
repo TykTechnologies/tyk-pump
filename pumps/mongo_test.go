@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/mgo.v2"
@@ -17,7 +18,6 @@ func newPump() Pump {
 }
 
 func TestMongoPump_capCollection_Enabled(t *testing.T) {
-
 	c := Conn{}
 	c.ConnectDb()
 	defer c.CleanDb()
@@ -38,7 +38,6 @@ func TestMongoPump_capCollection_Enabled(t *testing.T) {
 }
 
 func TestMongoPumpOmitIndexCreation(t *testing.T) {
-
 	c := Conn{}
 	c.ConnectDb()
 	defer c.CleanDb()
@@ -156,7 +155,6 @@ func TestMongoPumpOmitIndexCreation(t *testing.T) {
 }
 
 func TestMongoPump_capCollection_Exists(t *testing.T) {
-
 	c := Conn{}
 	c.ConnectDb()
 	defer c.CleanDb()
@@ -180,7 +178,6 @@ func TestMongoPump_capCollection_Exists(t *testing.T) {
 }
 
 func TestMongoPump_capCollection_Not64arch(t *testing.T) {
-
 	c := Conn{}
 	c.ConnectDb()
 	defer c.CleanDb()
@@ -206,7 +203,6 @@ func TestMongoPump_capCollection_Not64arch(t *testing.T) {
 }
 
 func TestMongoPump_capCollection_SensibleDefaultSize(t *testing.T) {
-
 	if strconv.IntSize < 64 {
 		t.Skip("skipping as < 64bit arch")
 	}
@@ -240,7 +236,6 @@ func TestMongoPump_capCollection_SensibleDefaultSize(t *testing.T) {
 }
 
 func TestMongoPump_capCollection_OverrideSize(t *testing.T) {
-
 	if strconv.IntSize < 64 {
 		t.Skip("skipping as < 64bit arch")
 	}
@@ -483,6 +478,47 @@ func TestMongoPump_SessionConsistency(t *testing.T) {
 			mPump.dbConf.MongoSessionConsistency = test.sessionConsistency
 			mPump.connect()
 			assert.Equal(t, test.expectedSessionMode, mPump.dbSession.Mode())
+		})
+	}
+}
+
+func Test_MongoDialInfo(t *testing.T) {
+	tcs := []struct {
+		expectedDialInfo *mgo.DialInfo
+		givenConf        *BaseMongoConf
+		expectedError    error
+		testName         string
+	}{
+		{
+			testName: "simple",
+			givenConf: &BaseMongoConf{
+				MongoURL: "mongodb://localhost:27017",
+			},
+			expectedDialInfo: &mgo.DialInfo{
+				Addrs:   []string{"localhost:27017"},
+				Timeout: 5 * time.Second,
+			},
+			expectedError: nil,
+		},
+		{
+			testName: "custom timeout",
+			givenConf: &BaseMongoConf{
+				MongoURL:          "mongodb://localhost:27017",
+				ConnectionTimeout: 10,
+			},
+			expectedDialInfo: &mgo.DialInfo{
+				Addrs:   []string{"localhost:27017"},
+				Timeout: 10 * time.Second,
+			},
+			expectedError: nil,
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.testName, func(t *testing.T) {
+			actualDialInfo, actualError := mongoDialInfo(*tc.givenConf)
+			assert.Equal(t, tc.expectedDialInfo, actualDialInfo)
+			assert.Equal(t, tc.expectedError, actualError)
 		})
 	}
 }

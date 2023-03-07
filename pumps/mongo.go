@@ -201,6 +201,12 @@ func mongoDialInfo(conf BaseMongoConf) (dialInfo *mgo.DialInfo, err error) {
 		return dialInfo, err
 	}
 
+	timeout := MongoDefaultConnTimeout
+	if conf.ConnectionTimeout > 0 {
+		timeout = conf.ConnectionTimeout
+	}
+	dialInfo.Timeout = time.Duration(timeout) * time.Second
+
 	if conf.MongoUseSSL {
 		dialInfo.DialServer = func(addr *mgo.ServerAddr) (net.Conn, error) {
 			tlsConfig := &tls.Config{}
@@ -482,12 +488,6 @@ func (m *MongoPump) connect() {
 	if err != nil {
 		m.log.Panic("Mongo URL is invalid: ", err)
 	}
-
-	timeout := MongoDefaultConnTimeout
-	if m.dbConf.ConnectionTimeout > 0 {
-		timeout = m.dbConf.ConnectionTimeout
-	}
-	dialInfo.Timeout = time.Duration(timeout) * time.Second
 
 	m.log.Info("Connecting to Mongo...")
 	m.dbSession, err = mgo.DialWithInfo(dialInfo)
