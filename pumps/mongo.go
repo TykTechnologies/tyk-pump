@@ -53,8 +53,9 @@ const (
 )
 
 const (
-	AWSDBError    = 303
-	CosmosDBError = 115
+	AWSDBError              = 303
+	CosmosDBError           = 115
+	MongoDefaultConnTimeout = 5
 )
 
 type BaseMongoConf struct {
@@ -81,6 +82,8 @@ type BaseMongoConf struct {
 	OmitIndexCreation bool `json:"omit_index_creation" mapstructure:"omit_index_creation"`
 	// Set the consistency mode for the session, it defaults to `Strong`. The valid values are: strong, monotonic, eventual.
 	MongoSessionConsistency string `json:"mongo_session_consistency" mapstructure:"mongo_session_consistency"`
+	// Set the connection timeout in seconds. Defaults to `5` seconds.
+	ConnectionTimeout int `json:"mongo_connection_timeout" mapstructure:"mongo_connection_timeout"`
 }
 
 func (b *BaseMongoConf) GetBlurredURL() string {
@@ -479,9 +482,13 @@ func (m *MongoPump) connect() {
 		m.log.Panic("Mongo URL is invalid: ", err)
 	}
 
-	if m.timeout > 0 {
-		dialInfo.Timeout = time.Second * time.Duration(m.timeout)
+	timeout := MongoDefaultConnTimeout
+	if m.dbConf.ConnectionTimeout > 0 {
+		timeout = m.dbConf.ConnectionTimeout
 	}
+	dialInfo.Timeout = time.Duration(timeout) * time.Second
+
+	m.log.Info("Connecting to MongoDB...")
 	m.dbSession, err = mgo.DialWithInfo(dialInfo)
 
 	for err != nil {
