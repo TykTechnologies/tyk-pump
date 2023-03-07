@@ -445,6 +445,7 @@ func TestMongoPump_SessionConsistency(t *testing.T) {
 	mPump, ok := pump.(*MongoPump)
 	assert.True(t, ok)
 	mPump.dbConf = &conf
+	mPump.log = log.WithField("prefix", mongoPrefix)
 
 	tests := []struct {
 		testName            string
