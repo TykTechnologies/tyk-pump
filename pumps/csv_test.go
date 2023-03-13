@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/TykTechnologies/tyk-pump/demo"
+	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -201,7 +201,7 @@ func TestCSVPump_WriteData(t *testing.T) {
 			var records []interface{}
 			if !tt.wantErr {
 				for i := 0; i < tt.args.numberOfRecords; i++ {
-					records = append(records, demo.GenerateRandomAnalyticRecord("orgid", false))
+					records = append(records, analytics.GenerateRandomAnalyticRecord("orgid", false))
 				}
 			} else {
 				records = append(records, "invalid record")

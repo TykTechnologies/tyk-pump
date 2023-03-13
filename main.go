@@ -12,10 +12,8 @@ import (
 	"time"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
-	"github.com/TykTechnologies/tyk-pump/demo"
 	logger "github.com/TykTechnologies/tyk-pump/logger"
 	"github.com/TykTechnologies/tyk-pump/pumps"
-	"github.com/TykTechnologies/tyk-pump/serializer"
 	"github.com/TykTechnologies/tyk-pump/server"
 	"github.com/TykTechnologies/tyk-pump/storage"
 	"github.com/gocraft/health"
@@ -28,7 +26,7 @@ var AnalyticsStore storage.AnalyticsStorage
 var UptimeStorage storage.AnalyticsStorage
 var Pumps []pumps.Pump
 var UptimePump pumps.UptimePump
-var AnalyticsSerializers []serializer.AnalyticsSerializer
+var AnalyticsSerializers []analytics.AnalyticsSerializer
 
 var log = logger.GetLogger()
 
@@ -65,7 +63,7 @@ func Init() {
 	}
 
 	//Serializer init
-	AnalyticsSerializers = []serializer.AnalyticsSerializer{serializer.NewAnalyticsSerializer(serializer.MSGP_SERIALIZER), serializer.NewAnalyticsSerializer(serializer.PROTOBUF_SERIALIZER)}
+	AnalyticsSerializers = []analytics.AnalyticsSerializer{analytics.NewAnalyticsSerializer(analytics.MSGP_SERIALIZER), analytics.NewAnalyticsSerializer(analytics.PROTOBUF_SERIALIZER)}
 
 	log.WithFields(logrus.Fields{
 		"prefix": mainPrefix,
@@ -232,7 +230,7 @@ func StartPurgeLoop(wg *sync.WaitGroup, ctx context.Context, secInterval int, ch
 	}
 }
 
-func PreprocessAnalyticsValues(AnalyticsValues []interface{}, serializerMethod serializer.AnalyticsSerializer, analyticsKeyName string, omitDetails bool, job *health.Job, startTime time.Time, secInterval int) {
+func PreprocessAnalyticsValues(AnalyticsValues []interface{}, serializerMethod analytics.AnalyticsSerializer, analyticsKeyName string, omitDetails bool, job *health.Job, startTime time.Time, secInterval int) {
 	keys := make([]interface{}, len(AnalyticsValues))
 
 	for i, v := range AnalyticsValues {
@@ -433,8 +431,8 @@ func main() {
 	if *demoMode != "" {
 		log.Info("BUILDING DEMO DATA AND EXITING...")
 		log.Warning("Starting from date: ", time.Now().AddDate(0, 0, -30))
-		demo.DemoInit(*demoMode, *demoApiMode, *demoApiVersionMode)
-		demo.GenerateDemoData(*demoDays, *demoRecordsPerHour, *demoMode, *demoFutureData, *demoTrackPath, writeToPumps)
+		analytics.DemoInit(*demoMode, *demoApiMode, *demoApiVersionMode)
+		analytics.GenerateDemoData(*demoDays, *demoRecordsPerHour, *demoMode, *demoFutureData, *demoTrackPath, writeToPumps)
 		return
 	}
 

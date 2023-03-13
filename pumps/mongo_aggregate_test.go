@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
-	"github.com/TykTechnologies/tyk-pump/demo"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/mgo.v2"
@@ -315,7 +314,7 @@ func TestMongoAggregatePump_SelfHealing(t *testing.T) {
 	var set []interface{}
 	for {
 		count++
-		record := demo.GenerateRandomAnalyticRecord("org123", true)
+		record := analytics.GenerateRandomAnalyticRecord("org123", true)
 		set = append(set, record)
 		if count == 1000 {
 			err := pmp1.WriteData(context.TODO(), set)
