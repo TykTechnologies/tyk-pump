@@ -19,5 +19,3 @@ require (
 	gopkg.in/vmihailenco/msgpack.v2 v2.9.2
 	gorm.io/gorm v1.24.6
 )
-
-replace github.com/TykTechnologies/tyk-pump/analytics/proto => ./proto
