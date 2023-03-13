@@ -14,16 +14,14 @@ import (
 	"github.com/oschwald/maxminddb-golang"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	analyticsproto "github.com/TykTechnologies/tyk-pump/analytics/proto"
-
-	"github.com/TykTechnologies/tyk-pump/logger"
+	"github.com/TykTechnologies/tyk-pump/analytics/proto"
 )
 
 const (
 	PredefinedTagGraphAnalytics = "tyk-graph-analytics"
 )
 
-var log = logger.GetLogger()
+var log = GetLogger()
 
 type NetworkStats struct {
 	OpenConnections  int64 `json:"open_connections"`
@@ -275,14 +273,14 @@ func trimString(size int, value string) string {
 // TimestampToProto will process timestamps and assign them to the proto record
 // protobuf converts all timestamps to UTC so we need to ensure that we keep
 // the same original location, in order to do so, we store the location
-func (a *AnalyticsRecord) TimestampToProto(newRecord *analyticsproto.AnalyticsRecord) {
+func (a *AnalyticsRecord) TimestampToProto(newRecord *proto.AnalyticsRecord) {
 	// save original location
 	newRecord.TimeStamp = timestamppb.New(a.TimeStamp)
 	newRecord.ExpireAt = timestamppb.New(a.ExpireAt)
 	newRecord.TimeZone = a.TimeStamp.Location().String()
 }
 
-func (a *AnalyticsRecord) TimeStampFromProto(protoRecord analyticsproto.AnalyticsRecord) {
+func (a *AnalyticsRecord) TimeStampFromProto(protoRecord proto.AnalyticsRecord) {
 	// get timestamp in original location
 	loc, err := time.LoadLocation(protoRecord.TimeZone)
 	if err != nil {
