@@ -73,6 +73,8 @@ github.com/TykTechnologies/tyk-pump/analytics v0.0.0-20230313172023-efae5aca07eb
 github.com/TykTechnologies/tyk-pump/analytics v0.0.0-20230313172023-efae5aca07eb/go.mod h1:JaoC+gScFwVYntqisuPMXQDkFOrvfv1uxNGdpETvy1o=
 github.com/TykTechnologies/tyk-pump/analytics v0.0.0-20230313172930-5550a11b7f24 h1:V7e+WlvXwShGKvPaiNCL82JEafYe8c9rKiD24NlYdD8=
 github.com/TykTechnologies/tyk-pump/analytics v0.0.0-20230313172930-5550a11b7f24/go.mod h1:JaoC+gScFwVYntqisuPMXQDkFOrvfv1uxNGdpETvy1o=
+github.com/TykTechnologies/tyk-pump/analytics v0.0.0-20230313174414-f2944500d11e h1:poQhmziGqKk4MbW9fBMG1iPTlMJC8YIHqYyX1FgfdOI=
+github.com/TykTechnologies/tyk-pump/analytics v0.0.0-20230313174414-f2944500d11e/go.mod h1:BQTJb2AI+cOTVL9T2oiX9Ny7I+J25eAnJDRu8WLgJpQ=
 github.com/agnivade/levenshtein v1.0.1/go.mod h1:CURSv5d9Uaml+FovSIICkLbAUZ9S4RqaHDIsdSBg7lM=
 github.com/agnivade/levenshtein v1.1.0 h1:n6qGwyHG61v3ABce1rPVZklEYRT8NFpCMrpZdBUbYGM=
 github.com/agnivade/levenshtein v1.1.0/go.mod h1:veldBMzWxcCG2ZvUTKD2kJNRdCk5hVbJomOvKkmgYbo=

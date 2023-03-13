@@ -230,10 +230,10 @@ func StartPurgeLoop(wg *sync.WaitGroup, ctx context.Context, secInterval int, ch
 	}
 }
 
-func PreprocessAnalyticsValues(AnalyticsValues []interface{}, serializerMethod analytics.AnalyticsSerializer, analyticsKeyName string, omitDetails bool, job *health.Job, startTime time.Time, secInterval int) {
-	keys := make([]interface{}, len(AnalyticsValues))
+func PreprocessAnalyticsValues(analyticsValues []interface{}, serializerMethod analytics.AnalyticsSerializer, analyticsKeyName string, omitDetails bool, job *health.Job, startTime time.Time, secInterval int) {
+	keys := make([]interface{}, len(analyticsValues))
 
-	for i, v := range AnalyticsValues {
+	for i, v := range analyticsValues {
 		decoded := analytics.AnalyticsRecord{}
 		err := serializerMethod.Decode([]byte(v.(string)), &decoded)
 
