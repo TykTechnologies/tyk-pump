@@ -9,7 +9,7 @@ import (
 	"github.com/TykTechnologies/tyk-pump/logger"
 
 	"github.com/gocraft/health"
-	uuid "github.com/satori/go.uuid"
+	"github.com/gofrs/uuid"
 )
 
 var (
@@ -129,7 +129,7 @@ func GenerateAPIKeys(orgId string) {
 }
 
 func generateAPIKey(orgId string) string {
-	u1 := uuid.NewV4()
+	u1, _ := uuid.NewV4()
 	id := strings.Replace(u1.String(), "-", "", -1)
 	return orgId + id
 }
