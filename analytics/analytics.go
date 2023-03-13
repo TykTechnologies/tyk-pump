@@ -21,8 +21,6 @@ const (
 	PredefinedTagGraphAnalytics = "tyk-graph-analytics"
 )
 
-var log = GetLogger()
-
 type NetworkStats struct {
 	OpenConnections  int64 `json:"open_connections"`
 	ClosedConnection int64 `json:"closed_connections"`
