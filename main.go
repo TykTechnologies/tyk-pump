@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
-	"github.com/TykTechnologies/tyk-pump/analytics/demo"
+	"github.com/TykTechnologies/tyk-pump/demo"
 	logger "github.com/TykTechnologies/tyk-pump/logger"
 	"github.com/TykTechnologies/tyk-pump/pumps"
 	"github.com/TykTechnologies/tyk-pump/serializer"

@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
-	"github.com/TykTechnologies/tyk-pump/analytics/demo"
+	"github.com/TykTechnologies/tyk-pump/demo"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 )

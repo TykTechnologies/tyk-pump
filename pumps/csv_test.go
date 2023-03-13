@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/TykTechnologies/tyk-pump/analytics/demo"
+	"github.com/TykTechnologies/tyk-pump/demo"
 	"github.com/stretchr/testify/assert"
 )
 
