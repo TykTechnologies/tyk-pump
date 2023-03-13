@@ -7,7 +7,7 @@ require (
 	github.com/buger/jsonparser v1.1.1
 	github.com/fatih/structs v1.1.0
 	github.com/gocraft/health v0.0.0-20170925182251-8675af27fef0
-	github.com/gofrs/uuid v4.4.0+incompatible
+	github.com/gofrs/uuid v3.3.0+incompatible
 	github.com/golang/protobuf v1.5.2
 	github.com/google/go-cmp v0.5.9
 	github.com/oschwald/maxminddb-golang v1.10.0
