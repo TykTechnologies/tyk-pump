@@ -8,7 +8,7 @@ require (
 	github.com/TykTechnologies/graphql-go-tools v1.6.2-0.20230216100002-ee4225ff8008
 	github.com/TykTechnologies/murmur3 v0.0.0-20180602122059-1915e687e465
 	github.com/TykTechnologies/tyk v0.0.0-20200207055804-cf1d1ad81206
-	github.com/TykTechnologies/tyk-pump/analytics v0.0.0-20230313172023-efae5aca07eb
+	github.com/TykTechnologies/tyk-pump/analytics v0.0.0-20230313172930-5550a11b7f24
 	github.com/aws/aws-sdk-go-v2 v1.16.14
 	github.com/aws/aws-sdk-go-v2/config v1.9.0
 	github.com/aws/aws-sdk-go-v2/service/timestreamwrite v1.9.0
