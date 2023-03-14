@@ -6,7 +6,7 @@ require (
 	github.com/DataDog/datadog-go v4.7.0+incompatible
 	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d // indirect
 	github.com/TykTechnologies/graphql-go-tools v1.6.2-0.20220811124354-8d1f142966f8
-	github.com/TykTechnologies/murmur3 v0.0.0-20180602122059-1915e687e465
+	github.com/TykTechnologies/murmur3 v0.0.0-20230310161213-aad17efd5632
 	github.com/TykTechnologies/tyk v0.0.0-20200207055804-cf1d1ad81206
 	github.com/aws/aws-sdk-go-v2 v1.16.14
 	github.com/aws/aws-sdk-go-v2/config v1.9.0
