@@ -20,17 +20,9 @@ const hybridPrefix = "hybrid-pump"
 
 var hybridDefaultENV = PUMPS_ENV_PREFIX + "_HYBRID" + PUMPS_ENV_META_PREFIX
 
-type GroupLoginRequest struct {
-	UserKey string
-	GroupID string
-}
-
 var (
 	dispatcherFuncs = map[string]interface{}{
 		"Login": func(clientAddr, userKey string) bool {
-			return false
-		},
-		"LoginWithGroup": func(clientAddr string, groupData *GroupLoginRequest) bool {
 			return false
 		},
 		"PurgeAnalyticsData": func(data string) error {
@@ -51,10 +43,9 @@ var (
 type HybridPump struct {
 	CommonPumpConfig
 
-	clientSingleton    *gorpc.Client
-	dispatcher         *gorpc.Dispatcher
-	clientIsConnected  atomic.Value
-	rpcConnectionsPool []net.Conn
+	clientSingleton   *gorpc.Client
+	dispatcher        *gorpc.Dispatcher
+	clientIsConnected atomic.Value
 
 	funcClientSingleton *gorpc.DispatcherClient
 
@@ -76,8 +67,6 @@ type HybridPumpConf struct {
 	RPCKey string `mapstructure:"rpc_key"`
 	// RPC server API key
 	APIKey string `mapstructure:"api_key"`
-	// RPC server group ID
-	GroupID string `mapstructure:"group_id"`
 	// RPC server call timeout
 	CallTimeout int `mapstructure:"call_timeout"`
 	// RPC server ping timeout
@@ -124,10 +113,9 @@ func (p *HybridPump) New() Pump {
 }
 
 func (p *HybridPump) Init(config interface{}) error {
-
 	p.log = log.WithField("prefix", hybridPrefix)
 
-	//Read configuration file
+	// Read configuration file
 	p.hybridConfig = &HybridPumpConf{}
 	err := mapstructure.Decode(config, &p.hybridConfig)
 	if err != nil {
@@ -139,7 +127,7 @@ func (p *HybridPump) Init(config interface{}) error {
 
 	if p.hybridConfig.ConnectionString == "" {
 		p.log.Error("Failed to decode configuration - no connection_string")
-		return errors.New("no connection_string")
+		return errors.New("empty connection_string")
 	}
 
 	p.hybridConfig.CheckDefaults()
@@ -221,21 +209,8 @@ func (p *HybridPump) onConnectFunc(conn net.Conn) (net.Conn, string, error) {
 	p.clientIsConnected.Store(true)
 	remoteAddr := conn.RemoteAddr().String()
 	p.log.WithField("remoteAddr", remoteAddr).Debug("connected to RPC server")
-	p.rpcConnectionsPool = append(p.rpcConnectionsPool, conn)
 
 	return conn, remoteAddr, nil
-}
-
-func (p *HybridPump) CloseConnections() error {
-	var generalErr error
-	for _, v := range p.rpcConnectionsPool {
-		err := v.Close()
-		if err != nil {
-			generalErr = err
-			p.log.WithError(err).Error("closing connection")
-		}
-	}
-	return generalErr
 }
 
 func (p *HybridPump) callRPCFn(funcName string, request interface{}) (interface{}, error) {
@@ -262,13 +237,17 @@ func getDialFn(connID string, config HybridPumpConf) func(addr string) (conn net
 		}
 
 		if err != nil {
-
 			return nil, err
 		}
 
-		conn.Write([]byte("proto2"))
-		conn.Write([]byte{byte(len(connID))})
-		conn.Write([]byte(connID))
+		initWrite := [][]byte{[]byte("proto2"), []byte(len(connID))}, []byte(connID)}
+
+		for _, data := range initWrite {
+			if _, err := conn.Write(data); err != nil {
+				return nil, err
+			}
+		}
+
 		return conn, nil
 	}
 }
@@ -279,14 +258,20 @@ func (p *HybridPump) WriteData(ctx context.Context, data []interface{}) error {
 	}
 	p.log.Debug("Attempting to write ", len(data), " records...")
 
-	if logged, err := p.RPCLogin(); !logged || err != nil {
-		p.log.WithError(err).Error("Failed to login to MDCB")
-		return errors.New("failed to login to MDCB")
+	logged, err := p.RPCLogin()
+	if err != nil {
+		p.log.Error("Failed to login to RPC server: ", err)
+		return err
+	} else if !logged {
+		p.log.Error("RPC Login incorrect")
+		return errors.New("RPC Login incorrect")
 	}
 
 	// do RPC call to server
 	if !p.hybridConfig.Aggregated { // send analytics records as is
 		// turn array with analytics records into JSON payload
+
+		p.log.Info("Sending analytics data to MDCB")
 		jsonData, err := json.Marshal(data)
 		if err != nil {
 			p.log.WithError(err).Error("Failed to marshal analytics data")
@@ -298,6 +283,8 @@ func (p *HybridPump) WriteData(ctx context.Context, data []interface{}) error {
 			return err
 		}
 	} else {
+		p.log.Info("Sending aggregated analytics data to MDCB")
+
 		// aggregate analytics records
 		aggregates := analytics.AggregateData(data, p.hybridConfig.TrackAllPaths, p.hybridConfig.IgnoreTagPrefixList, p.hybridConfig.ConnectionString, p.hybridConfig.aggregationTime)
 
@@ -321,39 +308,23 @@ func (p *HybridPump) WriteData(ctx context.Context, data []interface{}) error {
 
 func (p *HybridPump) Shutdown() error {
 	p.log.Info("Shutting down...")
-	if err := p.CloseConnections(); err != nil {
-		return err
-	}
+	p.clientSingleton.Stop()
+	p.clientSingleton = nil
+	p.funcClientSingleton = nil
+
+	p.clientIsConnected.Store(false)
+
 	p.log.Info("Pump shut down.")
 	return nil
 }
 
 func (p *HybridPump) RPCLogin() (bool, error) {
 	// do RPC call to server
-	var logged bool
-	if p.hybridConfig.GroupID != "" {
-		p.log.Info("with group_id, calling LoginWithGroup ")
-
-		groupLoginData := GroupLoginRequest{
-			UserKey: p.hybridConfig.APIKey,
-			GroupID: p.hybridConfig.GroupID,
-		}
-		groupLogged, err := p.callRPCFn("LoginWithGroup", groupLoginData)
-		if err != nil {
-			p.log.WithError(err).Error("Failed to call LoginWithGroup")
-			return false, err
-		}
-		logged = groupLogged.(bool)
-	} else {
-		p.log.Info("without group_id, calling Login ")
-
-		groupLogged, err := p.callRPCFn("Login", p.hybridConfig.APIKey)
-		if err != nil {
-			p.log.WithError(err).Error("Failed to call Login")
-			return false, err
-		}
-		logged = groupLogged.(bool)
+	logged, err := p.callRPCFn("Login", p.hybridConfig.APIKey)
+	if err != nil {
+		p.log.WithError(err).Error("Failed to call Login")
+		return false, err
 	}
 
-	return logged, nil
+	return logged.(bool), nil
 }
