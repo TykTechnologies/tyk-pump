@@ -2,14 +2,18 @@ package pumps
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"errors"
-	"fmt"
+	"net"
+	"sync/atomic"
+	"time"
 
+	"github.com/TykTechnologies/gorpc"
 	"github.com/TykTechnologies/tyk-pump/analytics"
-	"github.com/kelseyhightower/envconfig"
-
-	"github.com/TykTechnologies/tyk/rpc"
+	"github.com/gofrs/uuid"
+	"github.com/mitchellh/mapstructure"
+	"github.com/sirupsen/logrus"
 )
 
 const hybridPrefix = "hybrid-pump"
@@ -17,8 +21,9 @@ const hybridPrefix = "hybrid-pump"
 var hybridDefaultENV = PUMPS_ENV_PREFIX + "_HYBRID" + PUMPS_ENV_META_PREFIX
 
 type GroupLoginRequest struct {
-	UserKey string
-	GroupID string
+	UserKey   string
+	GroupID   string
+	ForceSync bool
 }
 
 var (
@@ -39,18 +44,75 @@ var (
 			return nil
 		},
 	}
+	GlobalRPCCallTimeout = 30
+	GlobalRPCPingTimeout = 60
 )
 
 // HybridPump allows to send analytics to MDCB over RPC
 type HybridPump struct {
-	aggregated                 bool
-	trackAllPaths              bool
-	storeAnalyticsPerMinute    bool
-	aggregationTime            int
-	enableAggregateSelfHealing bool
-	ignoreTagPrefixList        []string
 	CommonPumpConfig
-	rpcConfig rpc.Config
+
+	clientSingleton   *gorpc.Client
+	dispatcher        *gorpc.Dispatcher
+	clientIsConnected atomic.Value
+
+	funcClientSingleton *gorpc.DispatcherClient
+
+	hybridConfig *HybridPumpConf
+}
+
+// @PumpConf Hybrid
+type HybridPumpConf struct {
+	EnvPrefix string `mapstructure:"meta_env_prefix"`
+	// Enable or disable the pump
+	Enabled bool `mapstructure:"enabled"`
+	// Use SSL to connect to RPC server
+	UseSSL bool `mapstructure:"use_ssl"`
+	// Skip SSL verification
+	SSLInsecureSkipVerify bool `mapstructure:"ssl_insecure_skip_verify"`
+	// RPC server connection string
+	ConnectionString string `mapstructure:"connection_string"`
+	// RPC server key
+	RPCKey string `mapstructure:"rpc_key"`
+	// RPC server API key
+	APIKey string `mapstructure:"api_key"`
+	// RPC server group ID
+	GroupID string `mapstructure:"group_id"`
+	// RPC server call timeout
+	CallTimeout int `mapstructure:"call_timeout"`
+	// RPC server ping timeout
+	PingTimeout int `mapstructure:"ping_timeout"`
+	// RPC server connection pool size
+	RPCPoolSize int `mapstructure:"rpc_pool_size"`
+	// Send aggregated analytics data to RPC server
+	Aggregated bool `mapstructure:"aggregated"`
+	// Specifies if it should store aggregated data for all the endpoints if `aggregated` is set to `true`. By default, `false`
+	// which means that only store aggregated data for `tracked endpoints`.
+	TrackAllPaths bool `mapstructure:"track_all_paths"`
+	// Determines if the aggregations should be made per minute (true) or per hour (false) if `aggregated` is set to `true`.
+	StoreAnalyticsPerMinute bool `json:"store_analytics_per_minute" mapstructure:"store_analytics_per_minute"`
+	// Specifies prefixes of tags that should be ignored if `aggregated` is set to `true`.
+	IgnoreTagPrefixList []string `json:"ignore_tag_prefix_list" mapstructure:"ignore_tag_prefix_list"`
+
+	aggregationTime int
+}
+
+func (conf *HybridPumpConf) CheckDefaults() {
+	if conf.CallTimeout == 0 {
+		conf.CallTimeout = GlobalRPCCallTimeout
+	}
+
+	if conf.PingTimeout == 0 {
+		conf.PingTimeout = GlobalRPCPingTimeout
+	}
+
+	if conf.Aggregated {
+		if conf.StoreAnalyticsPerMinute {
+			conf.aggregationTime = 1
+		} else {
+			conf.aggregationTime = 60
+		}
+	}
 }
 
 func (p *HybridPump) GetName() string {
@@ -65,118 +127,153 @@ func (p *HybridPump) Init(config interface{}) error {
 
 	p.log = log.WithField("prefix", hybridPrefix)
 
-	meta := config.(map[string]interface{})
-	// read configuration
-	rpcConfig := rpc.Config{}
-	if useSSL, ok := meta["use_ssl"]; ok {
-		rpcConfig.UseSSL = useSSL.(bool)
-	}
-	if sslInsecure, ok := meta["ssl_insecure_skip_verify"]; ok {
-		rpcConfig.SSLInsecureSkipVerify = sslInsecure.(bool)
-	}
-	if connStr, ok := meta["connection_string"]; ok {
-		rpcConfig.ConnectionString = connStr.(string)
-	}
-	if rpcKey, ok := meta["rpc_key"]; ok {
-		rpcConfig.RPCKey = rpcKey.(string)
-	}
-	if apiKey, ok := meta["api_key"]; ok {
-		rpcConfig.APIKey = apiKey.(string)
-	}
-	if groupID, ok := meta["group_id"]; ok {
-		rpcConfig.GroupID = groupID.(string)
-	}
-	if callTimeout, ok := meta["call_timeout"]; ok {
-		rpcConfig.CallTimeout = int(callTimeout.(float64))
-	}
-	if pingTimeout, ok := meta["ping_timeout"]; ok {
-		rpcConfig.PingTimeout = int(pingTimeout.(float64))
-	}
-	if rpcPoolSize, ok := meta["rpc_pool_size"]; ok {
-		rpcConfig.RPCPoolSize = int(rpcPoolSize.(float64))
+	//Read configuration file
+	p.hybridConfig = &HybridPumpConf{}
+	err := mapstructure.Decode(config, &p.hybridConfig)
+	if err != nil {
+		p.log.Error("Failed to decode configuration: ", err)
+		return err
 	}
 
-	//we do the env check here in the hybrid pump since the config here behaves different to other pumps.
-	if envPrefix, ok := meta["meta_env_prefix"]; ok {
-		prefix := envPrefix.(string)
-		p.log.Debug(fmt.Sprintf("Checking %v env variables with prefix %v", p.GetName(), prefix))
-		overrideErr := envconfig.Process(prefix, &rpcConfig)
-		if overrideErr != nil {
-			p.log.Error(fmt.Sprintf("Failed to process environment variables for %v pump %v with err:%v ", prefix, p.GetName(), overrideErr))
-		}
-	} else {
-		p.log.Debug(fmt.Sprintf("Checking default %v env variables with prefix %v", p.GetName(), hybridDefaultENV))
-		overrideErr := envconfig.Process(hybridDefaultENV, &rpcConfig)
-		if overrideErr != nil {
-			p.log.Error(fmt.Sprintf("Failed to process environment variables for %v pump %v with err:%v ", hybridDefaultENV, p.GetName(), overrideErr))
-		}
+	processPumpEnvVars(p, p.log, p.hybridConfig, hybridDefaultENV)
+
+	if p.hybridConfig.ConnectionString == "" {
+		p.log.Error("Failed to decode configuration - no connection_string")
+		return errors.New("no connection_string")
 	}
 
-	if rpcConfig.ConnectionString == "" {
-		p.log.Fatal("Failed to decode configuration - no connection_string")
-	}
+	p.hybridConfig.CheckDefaults()
 
-	p.rpcConfig = rpcConfig
+	p.log.Debug("connecting to MDCB rpc server")
 	errConnect := p.connectRpc()
 	if errConnect != nil {
 		p.log.Fatal("Failed to connect to RPC server")
 	}
-	// check if we need to send aggregated analytics
-	if aggregated, ok := meta["aggregated"]; ok {
-		p.aggregated = aggregated.(bool)
-	}
-	if p.aggregated {
-		if trackAllPaths, ok := meta["track_all_paths"]; ok {
-			p.trackAllPaths = trackAllPaths.(bool)
-		}
+	p.log.Debug("starting rpc dispatcher")
+	p.startDispatcher()
 
-		if storeAnalyticsPerMinute, ok := meta["store_analytics_per_minute"].(bool); ok {
-			p.storeAnalyticsPerMinute = storeAnalyticsPerMinute
-			p.aggregationTime = 1
-		} else {
-			aggregationTime, ok := meta["aggregation_time"].(int)
-			if !ok || aggregationTime > 60 || aggregationTime < 1 {
-				p.log.Warnf("aggregation_time should be between 1 and 60, Found: %v. The default value will be used  (60 minutes)", aggregationTime)
-				p.aggregationTime = 60
-			}
-		}
-
-		if enableAggregateSelfHealing, ok := meta["enable_aggregate_self_healing"].(bool); ok {
-			p.enableAggregateSelfHealing = enableAggregateSelfHealing
-		}
-
-		if list, ok := meta["ignore_tag_prefix_list"]; ok {
-			ignoreTagPrefixList := list.([]interface{})
-			p.ignoreTagPrefixList = make([]string, len(ignoreTagPrefixList))
-			for k, v := range ignoreTagPrefixList {
-				p.ignoreTagPrefixList[k] = fmt.Sprint(v)
-			}
-		}
-
+	logged, err := p.RPCLogin()
+	if err != nil {
+		p.log.Error("Failed to login to RPC server: ", err)
+		return err
+	} else if !logged {
+		p.log.Error("RPC Login incorrect")
+		return errors.New("RPC Login incorrect")
 	}
 
 	return nil
 }
 
-func (p *HybridPump) connectRpc() error {
-	connected := rpc.Connect(
-		p.rpcConfig,
-		false,
-		dispatcherFuncs,
-		func(userKey string, groupID string) interface{} {
-			return GroupLoginRequest{
-				UserKey: userKey,
-				GroupID: groupID,
-			}
-		},
-		nil,
-		nil,
-	)
+func (p *HybridPump) startDispatcher() {
+	p.dispatcher = gorpc.NewDispatcher()
 
-	if !connected {
-		return errors.New("failed to connect to RPC server")
+	for funcName, funcBody := range dispatcherFuncs {
+		p.dispatcher.AddFunc(funcName, funcBody)
 	}
+
+	p.funcClientSingleton = p.dispatcher.NewFuncClient(p.clientSingleton)
+}
+
+func (p *HybridPump) connectRpc() error {
+	p.log.Info("Setting new RPC connection!")
+
+	connUUID, err := uuid.NewV4()
+	if err != nil {
+		return err
+	}
+	connID := connUUID.String()
+
+	// Length should fit into 1 byte. Protection if we decide change uuid in future.
+	if len(connID) > 255 {
+		return errors.New("connID is too long")
+	}
+
+	if p.hybridConfig.UseSSL {
+		clientCfg := &tls.Config{
+			InsecureSkipVerify: p.hybridConfig.SSLInsecureSkipVerify,
+		}
+
+		p.clientSingleton = gorpc.NewTLSClient(p.hybridConfig.ConnectionString, clientCfg)
+	} else {
+		p.clientSingleton = gorpc.NewTCPClient(p.hybridConfig.ConnectionString)
+	}
+
+	if p.log.Level != logrus.DebugLevel {
+		p.clientSingleton.LogError = gorpc.NilErrorLogger
+	}
+
+	p.clientSingleton.OnConnect = p.onConnectFunc
+
+	p.clientSingleton.Conns = p.hybridConfig.RPCPoolSize
+	if p.clientSingleton.Conns == 0 {
+		p.clientSingleton.Conns = 20
+	}
+
+	p.clientSingleton.Dial = getDialFn(connID, *p.hybridConfig)
+
+	p.clientSingleton.Start()
+
 	return nil
+}
+
+var rpcConnectionsPool []net.Conn
+
+func (p *HybridPump) onConnectFunc(conn net.Conn) (net.Conn, string, error) {
+	p.clientIsConnected.Store(true)
+	remoteAddr := conn.RemoteAddr().String()
+	p.log.WithField("remoteAddr", remoteAddr).Debug("connected to RPC server")
+	rpcConnectionsPool = append(rpcConnectionsPool, conn)
+
+	return conn, remoteAddr, nil
+}
+
+func (p *HybridPump) CloseConnections() error {
+	var generalErr error
+	for k, v := range rpcConnectionsPool {
+		err := v.Close()
+		if err != nil {
+			generalErr = err
+			p.log.WithError(err).Error("closing connection")
+		} else {
+			rpcConnectionsPool = append(rpcConnectionsPool[:k], rpcConnectionsPool[k+1:]...)
+		}
+	}
+	return generalErr
+}
+
+func (p *HybridPump) callRPCFn(funcName string, request interface{}) (interface{}, error) {
+	return p.funcClientSingleton.CallTimeout(funcName, request, time.Duration(p.hybridConfig.CallTimeout)*time.Second)
+}
+
+func getDialFn(connID string, config HybridPumpConf) func(addr string) (conn net.Conn, err error) {
+	return func(addr string) (conn net.Conn, err error) {
+		dialer := &net.Dialer{
+			Timeout:   10 * time.Second,
+			KeepAlive: 30 * time.Second,
+		}
+
+		useSSL := config.UseSSL
+
+		if useSSL {
+			cfg := &tls.Config{
+				InsecureSkipVerify: config.SSLInsecureSkipVerify,
+			}
+
+			conn, err = tls.DialWithDialer(dialer, "tcp", addr, cfg)
+		} else {
+			conn, err = dialer.Dial("tcp", addr)
+		}
+
+		if err != nil {
+
+			return nil, err
+		}
+
+		conn.Write([]byte("proto2"))
+		conn.Write([]byte{byte(len(connID))})
+		conn.Write([]byte(connID))
+		return conn, nil
+	}
 }
 
 func (p *HybridPump) WriteData(ctx context.Context, data []interface{}) error {
@@ -185,34 +282,27 @@ func (p *HybridPump) WriteData(ctx context.Context, data []interface{}) error {
 	}
 	p.log.Debug("Attempting to write ", len(data), " records...")
 
-	if !rpc.Login() {
-		p.log.Error("Failed to login to RPC server, trying to reconnect...")
-		if errConnect := p.connectRpc(); errConnect != nil {
-			p.log.Error("Failed to connect to RPC server")
-			return errConnect
-		}
-	}
-	_, err := rpc.FuncClientSingleton("Ping", nil)
-	if err != nil {
-		p.log.WithError(err).Error("Failed to ping RPC server")
-		return err
+	if logged, err := p.RPCLogin(); logged == false || err != nil {
+		p.log.WithError(err).Error("Failed to login to MDCB")
+		return errors.New("failed to login to MDCB")
 	}
 
 	// do RPC call to server
-	if !p.aggregated { // send analytics records as is
+	if !p.hybridConfig.Aggregated { // send analytics records as is
 		// turn array with analytics records into JSON payload
 		jsonData, err := json.Marshal(data)
 		if err != nil {
 			p.log.WithError(err).Error("Failed to marshal analytics data")
 			return err
 		}
-		if _, err := rpc.FuncClientSingleton("PurgeAnalyticsData", string(jsonData)); err != nil {
+
+		if _, err := p.callRPCFn("PurgeAnalyticsData", string(jsonData)); err != nil {
 			p.log.WithError(err).Error("Failed to call PurgeAnalyticsData")
 			return err
 		}
-	} else { // send aggregated data
-		// calculate aggregates
-		aggregates := analytics.AggregateData(data, p.trackAllPaths, p.ignoreTagPrefixList, p.rpcConfig.ConnectionString, p.aggregationTime)
+	} else {
+		// aggregate analytics records
+		aggregates := analytics.AggregateData(data, p.hybridConfig.TrackAllPaths, p.hybridConfig.IgnoreTagPrefixList, p.hybridConfig.ConnectionString, p.hybridConfig.aggregationTime)
 
 		// turn map with analytics aggregates into JSON payload
 		jsonData, err := json.Marshal(aggregates)
@@ -221,7 +311,8 @@ func (p *HybridPump) WriteData(ctx context.Context, data []interface{}) error {
 			return err
 		}
 
-		if _, err := rpc.FuncClientSingleton("PurgeAnalyticsDataAggregated", string(jsonData)); err != nil {
+		// send aggregated data
+		if _, err := p.callRPCFn("PurgeAnalyticsDataAggregated", string(jsonData)); err != nil {
 			p.log.WithError(err).Error("Failed to call PurgeAnalyticsDataAggregated")
 			return err
 		}
@@ -229,4 +320,39 @@ func (p *HybridPump) WriteData(ctx context.Context, data []interface{}) error {
 	p.log.Info("Purged ", len(data), " records...")
 
 	return nil
+}
+
+func (p *HybridPump) Shutdown() error {
+	p.log.Info("Shutting down...")
+	if err := p.CloseConnections(); err != nil {
+		return err
+	}
+	p.log.Info("Pump shut down.")
+	return nil
+}
+
+func (p *HybridPump) RPCLogin() (bool, error) {
+	// do RPC call to server
+	var logged bool
+	if p.hybridConfig.GroupID == "" {
+		groupLoginData := GroupLoginRequest{
+			UserKey: p.hybridConfig.APIKey,
+			GroupID: p.hybridConfig.GroupID,
+		}
+		groupLogged, err := p.callRPCFn("LoginWithGroup", groupLoginData)
+		if err != nil {
+			p.log.WithError(err).Error("Failed to call Login")
+			return false, err
+		}
+		logged = groupLogged.(bool)
+	} else {
+		groupLogged, err := p.callRPCFn("Login", p.hybridConfig.APIKey)
+		if err != nil {
+			p.log.WithError(err).Error("Failed to call Login")
+			return false, err
+		}
+		logged = groupLogged.(bool)
+	}
+
+	return logged, nil
 }
