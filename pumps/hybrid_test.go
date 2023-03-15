@@ -3,6 +3,7 @@ package pumps
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"net"
 	"testing"
@@ -11,6 +12,7 @@ import (
 	"github.com/TykTechnologies/gorpc"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/atomic"
 )
 
 func setupKeepalive(conn net.Conn) error {
@@ -317,4 +319,106 @@ func TestHybridPumpShutdown(t *testing.T) {
 	assert.False(t, hybridPump.clientIsConnected.Load().(bool))
 
 	assert.Nil(t, hybridPump.clientSingleton)
+}
+
+func TestWriteLicenseExpire(t *testing.T) {
+	mockConf := &HybridPumpConf{
+		ConnectionString: "localhost:9092",
+		RPCKey:           "testkey",
+		APIKey:           "testapikey",
+	}
+
+	loginCall := atomic.NewInt32(0)
+
+	dispatcher := gorpc.NewDispatcher()
+	dispatcher.AddFunc("Login", func(clientAddr, userKey string) bool {
+		fmt.Println(loginCall)
+
+		return loginCall.Inc() <= 3
+	})
+	dispatcher.AddFunc("PurgeAnalyticsData", func(clientID, data string) error { return nil })
+
+	server, err := startRPCMock(t, mockConf, dispatcher)
+	assert.NoError(t, err)
+	defer stopRPCMock(t, server)
+
+	hybridPump := &HybridPump{}
+	// first login - success
+	err = hybridPump.Init(mockConf)
+	assert.NoError(t, err)
+
+	// second login - success
+	err = hybridPump.WriteData(context.Background(), []interface{}{analytics.AnalyticsRecord{APIKey: "testapikey"}})
+	assert.Nil(t, err)
+
+	// third login - success
+	err = hybridPump.WriteData(context.Background(), []interface{}{analytics.AnalyticsRecord{APIKey: "testapikey"}})
+	assert.Nil(t, err)
+
+	// license expired, login fail - WriteData should fail
+	err = hybridPump.WriteData(context.Background(), []interface{}{analytics.AnalyticsRecord{APIKey: "testapikey"}})
+	assert.NotNil(t, err)
+	assert.Equal(t, ErrRPCLogin, err)
+}
+
+func TestHybridConfigCheckDefaults(t *testing.T) {
+	//nolint:govet
+	tcs := []struct {
+		testName       string
+		givenConfig    *HybridPumpConf
+		expectedConfig *HybridPumpConf
+	}{
+		{
+			testName:    "default values - no aggregated",
+			givenConfig: &HybridPumpConf{},
+			expectedConfig: &HybridPumpConf{
+				CallTimeout: 30,
+				Aggregated:  false,
+			},
+		},
+		{
+			testName: "aggregated true with StoreAnalyticsPerMinute",
+			givenConfig: &HybridPumpConf{
+				Aggregated:              true,
+				StoreAnalyticsPerMinute: true,
+			},
+			expectedConfig: &HybridPumpConf{
+				CallTimeout:             30,
+				Aggregated:              true,
+				StoreAnalyticsPerMinute: true,
+				aggregationTime:         1,
+			},
+		},
+
+		{
+			testName: "aggregated true without StoreAnalyticsPerMinute",
+			givenConfig: &HybridPumpConf{
+				Aggregated:              true,
+				StoreAnalyticsPerMinute: false,
+			},
+			expectedConfig: &HybridPumpConf{
+				CallTimeout:             30,
+				Aggregated:              true,
+				StoreAnalyticsPerMinute: false,
+				aggregationTime:         60,
+			},
+		},
+		{
+			testName: "custom timeout",
+			givenConfig: &HybridPumpConf{
+				CallTimeout: 20,
+			},
+			expectedConfig: &HybridPumpConf{
+				CallTimeout: 20,
+			},
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.testName, func(t *testing.T) {
+			tc.givenConfig.CheckDefaults()
+
+			assert.Equal(t, tc.expectedConfig, tc.givenConfig)
+		})
+	}
 }

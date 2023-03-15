@@ -36,7 +36,7 @@ var (
 		},
 	}
 	GlobalRPCCallTimeout = 30
-	GlobalRPCPingTimeout = 60
+	ErrRPCLogin          = errors.New("RPC login incorrect")
 )
 
 // HybridPump allows to send analytics to MDCB over RPC
@@ -68,8 +68,6 @@ type HybridPumpConf struct {
 
 	// RPC server call timeout
 	CallTimeout int `mapstructure:"call_timeout"`
-	// RPC server ping timeout
-	PingTimeout int `mapstructure:"ping_timeout"`
 	// RPC server connection pool size
 	RPCPoolSize int `mapstructure:"rpc_pool_size"`
 
@@ -93,10 +91,6 @@ type HybridPumpConf struct {
 func (conf *HybridPumpConf) CheckDefaults() {
 	if conf.CallTimeout == 0 {
 		conf.CallTimeout = GlobalRPCCallTimeout
-	}
-
-	if conf.PingTimeout == 0 {
-		conf.PingTimeout = GlobalRPCPingTimeout
 	}
 
 	if conf.Aggregated {
@@ -150,8 +144,8 @@ func (p *HybridPump) Init(config interface{}) error {
 		p.log.Error("Failed to login to RPC server: ", err)
 		return err
 	} else if !logged {
-		p.log.Error("RPC Login incorrect")
-		return errors.New("RPC Login incorrect")
+		p.log.Error(ErrRPCLogin.Error())
+		return ErrRPCLogin
 	}
 
 	return nil
@@ -269,28 +263,26 @@ func (p *HybridPump) WriteData(ctx context.Context, data []interface{}) error {
 		p.log.Error("Failed to login to RPC server: ", err)
 		return err
 	} else if !logged {
-		p.log.Error("RPC Login incorrect")
-		return errors.New("RPC Login incorrect")
+		p.log.Error(ErrRPCLogin.Error())
+		return ErrRPCLogin
 	}
 
 	// do RPC call to server
 	if !p.hybridConfig.Aggregated { // send analytics records as is
 		// turn array with analytics records into JSON payload
-
-		p.log.Info("Sending analytics data to MDCB")
 		jsonData, err := json.Marshal(data)
 		if err != nil {
 			p.log.WithError(err).Error("Failed to marshal analytics data")
 			return err
 		}
 
+		p.log.Debug("Sending analytics data to MDCB")
+
 		if _, err := p.callRPCFn("PurgeAnalyticsData", string(jsonData)); err != nil {
 			p.log.WithError(err).Error("Failed to call PurgeAnalyticsData")
 			return err
 		}
 	} else {
-		p.log.Info("Sending aggregated analytics data to MDCB")
-
 		// aggregate analytics records
 		aggregates := analytics.AggregateData(data, p.hybridConfig.TrackAllPaths, p.hybridConfig.IgnoreTagPrefixList, p.hybridConfig.ConnectionString, p.hybridConfig.aggregationTime)
 
@@ -300,6 +292,8 @@ func (p *HybridPump) WriteData(ctx context.Context, data []interface{}) error {
 			p.log.WithError(err).Error("Failed to marshal analytics aggregates data")
 			return err
 		}
+
+		p.log.Debug("Sending aggregated analytics data to MDCB")
 
 		// send aggregated data
 		if _, err := p.callRPCFn("PurgeAnalyticsDataAggregated", string(jsonData)); err != nil {
