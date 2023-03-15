@@ -14,7 +14,11 @@ import (
 )
 
 func setupKeepalive(conn net.Conn) error {
-	tcpConn := conn.(*net.TCPConn)
+	tcpConn, ok := conn.(*net.TCPConn)
+	if !ok {
+		return errors.New("not a tcp connection")
+	}
+
 	if err := tcpConn.SetKeepAlive(true); err != nil {
 		return err
 	}
@@ -67,7 +71,7 @@ func (ln *testListener) Close() error {
 	return ln.L.Close()
 }
 
-func startRPCMock(t *testing.T, config HybridPumpConf, dispatcher *gorpc.Dispatcher) (*gorpc.Server, error) {
+func startRPCMock(t *testing.T, config *HybridPumpConf, dispatcher *gorpc.Dispatcher) (*gorpc.Server, error) {
 	server := gorpc.NewTCPServer(config.ConnectionString, dispatcher.NewHandlerFunc())
 	list := &testListener{}
 	server.Listener = list
@@ -90,15 +94,16 @@ func stopRPCMock(t *testing.T, server *gorpc.Server) {
 }
 
 func TestHybridPumpInit(t *testing.T) {
+	//nolint:govet
 	tcs := []struct {
 		testName             string
-		givenConfig          HybridPumpConf
 		givenDispatcherFuncs map[string]interface{}
+		givenConfig          *HybridPumpConf
 		expectedError        error
 	}{
 		{
 			testName:    "Should return error if connection string is empty",
-			givenConfig: HybridPumpConf{}, // empty connection string
+			givenConfig: &HybridPumpConf{}, // empty connection string
 			givenDispatcherFuncs: map[string]interface{}{
 				"Login": func(clientAddr, userKey string) bool { return false },
 			},
@@ -106,7 +111,7 @@ func TestHybridPumpInit(t *testing.T) {
 		},
 		{
 			testName: "Should return error if invalid credentials",
-			givenConfig: HybridPumpConf{
+			givenConfig: &HybridPumpConf{
 				ConnectionString: "localhost:12345",
 				APIKey:           "invalid_credentials",
 			}, // empty connection string
@@ -119,7 +124,7 @@ func TestHybridPumpInit(t *testing.T) {
 		},
 		{
 			testName: "Should init if valid credentials",
-			givenConfig: HybridPumpConf{
+			givenConfig: &HybridPumpConf{
 				ConnectionString: "localhost:12345",
 				APIKey:           "valid_credentials",
 			},
@@ -135,7 +140,6 @@ func TestHybridPumpInit(t *testing.T) {
 	for _, tc := range tcs {
 		t.Run(tc.testName, func(t *testing.T) {
 			p := &HybridPump{}
-			defer p.Shutdown()
 
 			dispatcher := gorpc.NewDispatcher()
 			for funcName, funcBody := range tc.givenDispatcherFuncs {
@@ -150,21 +154,24 @@ func TestHybridPumpInit(t *testing.T) {
 
 			err = p.Init(tc.givenConfig)
 			assert.Equal(t, tc.expectedError, err)
+
+			assert.Nil(t, p.Shutdown())
 		})
 	}
 }
 
 func TestHybridPumpWriteData(t *testing.T) {
+	//nolint:govet
 	tcs := []struct {
 		testName             string
-		givenConfig          HybridPumpConf
+		givenConfig          *HybridPumpConf
 		givenDispatcherFuncs map[string]interface{}
 		givenData            []interface{}
 		expectedError        error
 	}{
 		{
 			testName: "write non aggregated data",
-			givenConfig: HybridPumpConf{
+			givenConfig: &HybridPumpConf{
 				ConnectionString: "localhost:12345",
 				APIKey:           "valid_credentials",
 			},
@@ -195,7 +202,7 @@ func TestHybridPumpWriteData(t *testing.T) {
 		},
 		{
 			testName: "write aggregated data",
-			givenConfig: HybridPumpConf{
+			givenConfig: &HybridPumpConf{
 				ConnectionString: "localhost:12345",
 				APIKey:           "valid_credentials",
 				Aggregated:       true,
@@ -227,7 +234,7 @@ func TestHybridPumpWriteData(t *testing.T) {
 		},
 		{
 			testName: "write aggregated data - no records",
-			givenConfig: HybridPumpConf{
+			givenConfig: &HybridPumpConf{
 				ConnectionString: "localhost:12345",
 				APIKey:           "valid_credentials",
 				Aggregated:       true,
@@ -268,7 +275,12 @@ func TestHybridPumpWriteData(t *testing.T) {
 				t.Fail()
 				return
 			}
-			defer p.Shutdown()
+			defer func() {
+				err := p.Shutdown()
+				if err != nil {
+					t.Fatalf("Failed to shutdown hybrid pump: %v", err)
+				}
+			}()
 
 			err = p.WriteData(context.TODO(), tc.givenData)
 			assert.Equal(t, tc.expectedError, err)
@@ -277,7 +289,7 @@ func TestHybridPumpWriteData(t *testing.T) {
 }
 
 func TestHybridPumpShutdown(t *testing.T) {
-	mockConf := HybridPumpConf{
+	mockConf := &HybridPumpConf{
 		ConnectionString: "localhost:9092",
 		RPCKey:           "testkey",
 		APIKey:           "testapikey",

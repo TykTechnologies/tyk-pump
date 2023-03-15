@@ -55,24 +55,26 @@ type HybridPump struct {
 // @PumpConf Hybrid
 type HybridPumpConf struct {
 	EnvPrefix string `mapstructure:"meta_env_prefix"`
-	// Enable or disable the pump
-	Enabled bool `mapstructure:"enabled"`
-	// Use SSL to connect to RPC server
-	UseSSL bool `mapstructure:"use_ssl"`
-	// Skip SSL verification
-	SSLInsecureSkipVerify bool `mapstructure:"ssl_insecure_skip_verify"`
+
 	// RPC server connection string
 	ConnectionString string `mapstructure:"connection_string"`
 	// RPC server key
 	RPCKey string `mapstructure:"rpc_key"`
 	// RPC server API key
 	APIKey string `mapstructure:"api_key"`
+
+	// Specifies prefixes of tags that should be ignored if `aggregated` is set to `true`.
+	IgnoreTagPrefixList []string `json:"ignore_tag_prefix_list" mapstructure:"ignore_tag_prefix_list"`
+
 	// RPC server call timeout
 	CallTimeout int `mapstructure:"call_timeout"`
 	// RPC server ping timeout
 	PingTimeout int `mapstructure:"ping_timeout"`
 	// RPC server connection pool size
 	RPCPoolSize int `mapstructure:"rpc_pool_size"`
+
+	aggregationTime int
+
 	// Send aggregated analytics data to RPC server
 	Aggregated bool `mapstructure:"aggregated"`
 	// Specifies if it should store aggregated data for all the endpoints if `aggregated` is set to `true`. By default, `false`
@@ -80,10 +82,12 @@ type HybridPumpConf struct {
 	TrackAllPaths bool `mapstructure:"track_all_paths"`
 	// Determines if the aggregations should be made per minute (true) or per hour (false) if `aggregated` is set to `true`.
 	StoreAnalyticsPerMinute bool `json:"store_analytics_per_minute" mapstructure:"store_analytics_per_minute"`
-	// Specifies prefixes of tags that should be ignored if `aggregated` is set to `true`.
-	IgnoreTagPrefixList []string `json:"ignore_tag_prefix_list" mapstructure:"ignore_tag_prefix_list"`
-
-	aggregationTime int
+	// Enable or disable the pump
+	Enabled bool `mapstructure:"enabled"`
+	// Use SSL to connect to RPC server
+	UseSSL bool `mapstructure:"use_ssl"`
+	// Skip SSL verification
+	SSLInsecureSkipVerify bool `mapstructure:"ssl_insecure_skip_verify"`
 }
 
 func (conf *HybridPumpConf) CheckDefaults() {
@@ -133,7 +137,7 @@ func (p *HybridPump) Init(config interface{}) error {
 	p.hybridConfig.CheckDefaults()
 
 	p.log.Info("connecting to MDCB rpc server")
-	errConnect := p.connectRpc()
+	errConnect := p.connectRPC()
 	if errConnect != nil {
 		p.log.Fatal("Failed to connect to RPC server")
 	}
@@ -163,7 +167,7 @@ func (p *HybridPump) startDispatcher() {
 	p.funcClientSingleton = p.dispatcher.NewFuncClient(p.clientSingleton)
 }
 
-func (p *HybridPump) connectRpc() error {
+func (p *HybridPump) connectRPC() error {
 	p.log.Info("Setting new RPC connection!")
 
 	connUUID, err := uuid.NewV4()
@@ -178,6 +182,7 @@ func (p *HybridPump) connectRpc() error {
 	}
 
 	if p.hybridConfig.UseSSL {
+		// #nosec G402
 		clientCfg := &tls.Config{
 			InsecureSkipVerify: p.hybridConfig.SSLInsecureSkipVerify,
 		}
@@ -198,7 +203,7 @@ func (p *HybridPump) connectRpc() error {
 		p.clientSingleton.Conns = 20
 	}
 
-	p.clientSingleton.Dial = getDialFn(connID, *p.hybridConfig)
+	p.clientSingleton.Dial = getDialFn(connID, p.hybridConfig)
 
 	p.clientSingleton.Start()
 
@@ -217,7 +222,7 @@ func (p *HybridPump) callRPCFn(funcName string, request interface{}) (interface{
 	return p.funcClientSingleton.CallTimeout(funcName, request, time.Duration(p.hybridConfig.CallTimeout)*time.Second)
 }
 
-func getDialFn(connID string, config HybridPumpConf) func(addr string) (conn net.Conn, err error) {
+func getDialFn(connID string, config *HybridPumpConf) func(addr string) (conn net.Conn, err error) {
 	return func(addr string) (conn net.Conn, err error) {
 		dialer := &net.Dialer{
 			Timeout:   10 * time.Second,
@@ -227,6 +232,7 @@ func getDialFn(connID string, config HybridPumpConf) func(addr string) (conn net
 		useSSL := config.UseSSL
 
 		if useSSL {
+			// #nosec G402
 			cfg := &tls.Config{
 				InsecureSkipVerify: config.SSLInsecureSkipVerify,
 			}
@@ -240,7 +246,7 @@ func getDialFn(connID string, config HybridPumpConf) func(addr string) (conn net
 			return nil, err
 		}
 
-		initWrite := [][]byte{[]byte("proto2"), []byte(len(connID))}, []byte(connID)}
+		initWrite := [][]byte{[]byte("proto2"), {byte(len(connID))}, []byte(connID)}
 
 		for _, data := range initWrite {
 			if _, err := conn.Write(data); err != nil {
