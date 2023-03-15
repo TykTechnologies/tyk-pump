@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 	"net"
+	"os"
 	"testing"
 	"time"
 
@@ -418,6 +419,110 @@ func TestHybridConfigCheckDefaults(t *testing.T) {
 			tc.givenConfig.CheckDefaults()
 
 			assert.Equal(t, tc.expectedConfig, tc.givenConfig)
+		})
+	}
+}
+
+func TestConfigParsing(t *testing.T) {
+	svAddress := "localhost:9099"
+
+	//nolint:govet
+	tcs := []struct {
+		testName       string
+		givenEnvs      map[string]string
+		givenBaseConf  map[string]interface{}
+		expectedConfig *HybridPumpConf
+	}{
+		{
+			testName: "all envs",
+			givenEnvs: map[string]string{
+				hybridDefaultENV + "_CONNECTIONSTRING": svAddress,
+				hybridDefaultENV + "_CALLTIMEOUT":      "20",
+				hybridDefaultENV + "_RPCKEY":           "testkey",
+				hybridDefaultENV + "_APIKEY":           "testapikey",
+				hybridDefaultENV + "_AGGREGATED":       "true",
+			},
+			givenBaseConf: map[string]interface{}{},
+			expectedConfig: &HybridPumpConf{
+				ConnectionString: svAddress,
+				CallTimeout:      20,
+				RPCKey:           "testkey",
+				APIKey:           "testapikey",
+				Aggregated:       true,
+				aggregationTime:  60,
+			},
+		},
+		{
+			testName:  "all config",
+			givenEnvs: map[string]string{},
+			givenBaseConf: map[string]interface{}{
+				"connection_string": svAddress,
+				"call_timeout":      20,
+				"rpc_key":           "testkey",
+				"api_key":           "testapikey",
+				"aggregated":        true,
+			},
+			expectedConfig: &HybridPumpConf{
+				ConnectionString: svAddress,
+				CallTimeout:      20,
+				RPCKey:           "testkey",
+				APIKey:           "testapikey",
+				Aggregated:       true,
+				aggregationTime:  60,
+			},
+		},
+
+		{
+			testName: "mixed config",
+			givenEnvs: map[string]string{
+				hybridDefaultENV + "_CONNECTIONSTRING": svAddress,
+				hybridDefaultENV + "_RPCKEY":           "testkey",
+				hybridDefaultENV + "_APIKEY":           "testapikey",
+			},
+			givenBaseConf: map[string]interface{}{
+				"call_timeout":               20,
+				"aggregated":                 true,
+				"store_analytics_per_minute": true,
+				"track_all_paths":            true,
+			},
+			expectedConfig: &HybridPumpConf{
+				ConnectionString:        svAddress,
+				CallTimeout:             20,
+				RPCKey:                  "testkey",
+				APIKey:                  "testapikey",
+				Aggregated:              true,
+				StoreAnalyticsPerMinute: true,
+				aggregationTime:         1,
+				TrackAllPaths:           true,
+			},
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.testName, func(t *testing.T) {
+			for key, env := range tc.givenEnvs {
+				os.Setenv(key, env)
+			}
+			defer func(envs map[string]string) {
+				for _, env := range envs {
+					os.Unsetenv(env)
+				}
+			}(tc.givenEnvs)
+
+			dispatcher := gorpc.NewDispatcher()
+			dispatcher.AddFunc("Login", func(clientAddr, userKey string) bool {
+				return true
+			})
+
+			server, err := startRPCMock(t, &HybridPumpConf{ConnectionString: svAddress}, dispatcher)
+			assert.NoError(t, err)
+			defer stopRPCMock(t, server)
+
+			hybridPump := &HybridPump{}
+			err = hybridPump.Init(tc.givenBaseConf)
+			assert.NoError(t, err)
+
+			assert.Equal(t, tc.expectedConfig, hybridPump.hybridConfig)
 		})
 	}
 }
