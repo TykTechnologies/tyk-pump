@@ -332,7 +332,7 @@ func TestWriteLicenseExpire(t *testing.T) {
 
 	dispatcher := gorpc.NewDispatcher()
 	dispatcher.AddFunc("Login", func(clientAddr, userKey string) bool {
-		loginCall += 1
+		loginCall++
 		return loginCall <= 3
 	})
 	dispatcher.AddFunc("PurgeAnalyticsData", func(clientID, data string) error { return nil })
