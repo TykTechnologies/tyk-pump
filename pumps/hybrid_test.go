@@ -155,7 +155,9 @@ func TestHybridPumpInit(t *testing.T) {
 			err = p.Init(tc.givenConfig)
 			assert.Equal(t, tc.expectedError, err)
 
-			assert.Nil(t, p.Shutdown())
+			if err == nil {
+				assert.Nil(t, p.Shutdown())
+			}
 		})
 	}
 }
