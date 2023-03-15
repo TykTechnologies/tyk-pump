@@ -1,6 +1,6 @@
 module github.com/TykTechnologies/tyk-pump
 
-go 1.15
+go 1.16
 
 require (
 	github.com/DataDog/datadog-go v4.7.0+incompatible
