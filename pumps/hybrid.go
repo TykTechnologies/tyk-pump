@@ -21,9 +21,8 @@ const hybridPrefix = "hybrid-pump"
 var hybridDefaultENV = PUMPS_ENV_PREFIX + "_HYBRID" + PUMPS_ENV_META_PREFIX
 
 type GroupLoginRequest struct {
-	UserKey   string
-	GroupID   string
-	ForceSync bool
+	UserKey string
+	GroupID string
 }
 
 var (
@@ -52,9 +51,10 @@ var (
 type HybridPump struct {
 	CommonPumpConfig
 
-	clientSingleton   *gorpc.Client
-	dispatcher        *gorpc.Dispatcher
-	clientIsConnected atomic.Value
+	clientSingleton    *gorpc.Client
+	dispatcher         *gorpc.Dispatcher
+	clientIsConnected  atomic.Value
+	rpcConnectionsPool []net.Conn
 
 	funcClientSingleton *gorpc.DispatcherClient
 
@@ -144,14 +144,15 @@ func (p *HybridPump) Init(config interface{}) error {
 
 	p.hybridConfig.CheckDefaults()
 
-	p.log.Debug("connecting to MDCB rpc server")
+	p.log.Info("connecting to MDCB rpc server")
 	errConnect := p.connectRpc()
 	if errConnect != nil {
 		p.log.Fatal("Failed to connect to RPC server")
 	}
-	p.log.Debug("starting rpc dispatcher")
+	p.log.Info("starting rpc dispatcher")
 	p.startDispatcher()
 
+	p.log.Info("loging in to MDCB rpc server")
 	logged, err := p.RPCLogin()
 	if err != nil {
 		p.log.Error("Failed to login to RPC server: ", err)
@@ -216,26 +217,22 @@ func (p *HybridPump) connectRpc() error {
 	return nil
 }
 
-var rpcConnectionsPool []net.Conn
-
 func (p *HybridPump) onConnectFunc(conn net.Conn) (net.Conn, string, error) {
 	p.clientIsConnected.Store(true)
 	remoteAddr := conn.RemoteAddr().String()
 	p.log.WithField("remoteAddr", remoteAddr).Debug("connected to RPC server")
-	rpcConnectionsPool = append(rpcConnectionsPool, conn)
+	p.rpcConnectionsPool = append(p.rpcConnectionsPool, conn)
 
 	return conn, remoteAddr, nil
 }
 
 func (p *HybridPump) CloseConnections() error {
 	var generalErr error
-	for k, v := range rpcConnectionsPool {
+	for _, v := range p.rpcConnectionsPool {
 		err := v.Close()
 		if err != nil {
 			generalErr = err
 			p.log.WithError(err).Error("closing connection")
-		} else {
-			rpcConnectionsPool = append(rpcConnectionsPool[:k], rpcConnectionsPool[k+1:]...)
 		}
 	}
 	return generalErr
@@ -282,7 +279,7 @@ func (p *HybridPump) WriteData(ctx context.Context, data []interface{}) error {
 	}
 	p.log.Debug("Attempting to write ", len(data), " records...")
 
-	if logged, err := p.RPCLogin(); logged == false || err != nil {
+	if logged, err := p.RPCLogin(); !logged || err != nil {
 		p.log.WithError(err).Error("Failed to login to MDCB")
 		return errors.New("failed to login to MDCB")
 	}
@@ -334,18 +331,22 @@ func (p *HybridPump) Shutdown() error {
 func (p *HybridPump) RPCLogin() (bool, error) {
 	// do RPC call to server
 	var logged bool
-	if p.hybridConfig.GroupID == "" {
+	if p.hybridConfig.GroupID != "" {
+		p.log.Info("with group_id, calling LoginWithGroup ")
+
 		groupLoginData := GroupLoginRequest{
 			UserKey: p.hybridConfig.APIKey,
 			GroupID: p.hybridConfig.GroupID,
 		}
 		groupLogged, err := p.callRPCFn("LoginWithGroup", groupLoginData)
 		if err != nil {
-			p.log.WithError(err).Error("Failed to call Login")
+			p.log.WithError(err).Error("Failed to call LoginWithGroup")
 			return false, err
 		}
 		logged = groupLogged.(bool)
 	} else {
+		p.log.Info("without group_id, calling Login ")
+
 		groupLogged, err := p.callRPCFn("Login", p.hybridConfig.APIKey)
 		if err != nil {
 			p.log.WithError(err).Error("Failed to call Login")
