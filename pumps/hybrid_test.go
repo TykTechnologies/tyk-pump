@@ -321,8 +321,6 @@ func TestHybridPumpShutdown(t *testing.T) {
 }
 
 func TestWriteLicenseExpire(t *testing.T) {
-	t.Parallel()
-
 	mockConf := &HybridPumpConf{
 		ConnectionString: "localhost:9092",
 		RPCKey:           "testkey",
