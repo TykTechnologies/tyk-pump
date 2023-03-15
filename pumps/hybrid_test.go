@@ -3,7 +3,6 @@ package pumps
 import (
 	"context"
 	"errors"
-	"fmt"
 	"io"
 	"net"
 	"testing"
@@ -12,7 +11,6 @@ import (
 	"github.com/TykTechnologies/gorpc"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/stretchr/testify/assert"
-	"go.uber.org/atomic"
 )
 
 func setupKeepalive(conn net.Conn) error {
@@ -322,19 +320,20 @@ func TestHybridPumpShutdown(t *testing.T) {
 }
 
 func TestWriteLicenseExpire(t *testing.T) {
+	t.Parallel()
+
 	mockConf := &HybridPumpConf{
 		ConnectionString: "localhost:9092",
 		RPCKey:           "testkey",
 		APIKey:           "testapikey",
 	}
 
-	loginCall := atomic.NewInt32(0)
+	loginCall := 0
 
 	dispatcher := gorpc.NewDispatcher()
 	dispatcher.AddFunc("Login", func(clientAddr, userKey string) bool {
-		fmt.Println(loginCall)
-
-		return loginCall.Inc() <= 3
+		loginCall += 1
+		return loginCall <= 3
 	})
 	dispatcher.AddFunc("PurgeAnalyticsData", func(clientID, data string) error { return nil })
 
