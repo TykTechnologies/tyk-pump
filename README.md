@@ -54,6 +54,7 @@ The table below provides details on the fields within each `tyk_analytics` recor
 - [CSV](#csv-config)
 - [ElasticSearch (2.0+)](#elasticsearch-config)
 - [Graylog](#graylog)
+- [Resurface.io](#resurfaceio)
 - InfluxDB
 - [InfluxDB2](#influx2-config)
 - [Moesif](#moesif-config)
@@ -288,6 +289,36 @@ TYK_PMP_PUMPS_GRAYLOG_TYPE=graylog
 TYK_PMP_PUMPS_GRAYLOG_META_GRAYLOGHOST=10.60.6.15
 TYK_PMP_PUMPS_GRAYLOG_META_GRAYLOGPORT=12216
 TYK_PMP_PUMPS_GRAYLOG_META_TAGS=method,path,response_code,api_key,api_version,api_name,api_id,org_id,oauth_id,raw_request,request_time,raw_response,ip_address
+```
+
+## Resurface.io
+Resurface provides data-driven API security, by making each and every API call a durable transaction inside a purpose-built data lake. Use Resurface for attack and failure triage, root cause, threat and risk identification, and simply just knowing how your APIs are being used (and misused!). By continously scanning your own data lake, Resurface provides retroactive analysis. It identifies what's important in your API data, sending warnings and alerts in real-time for fast action.
+
+The only two fields necessary in the pump cofiguration are:
+
+ - `capture_url` corresponds to the Resurface database [capture endpoint URL](https://resurface.io/docs/#getting-capture-url). You might need to subsitute `localhost` for the corresponding hostname, if you're not running resurface locally.
+ - `rules` corresponds to an [active set of rules](https://resurface.io/logging-rules) that control what data is logged and how sensitive data is masked. The example below applies a predefined set of rules (`include debug`), but logging rules are easily customized to meet the needs of any application.
+
+**Note: Resurface requires Detailed Logging to be enabled in order to capture API call details in full.**
+
+###### JSON / Conf File Example
+
+```.json
+
+"resurface": {
+    "type": "resurfaceio",
+    "meta": {
+        "capture_url": "http://localhost:7701/message",
+        "rules": "include debug"
+    }
+}
+```
+
+###### Env Variables
+```
+TYK_PMP_PUMPS_RESURFACEIO_TYPE=resurfaceio
+TYK_PMP_PUMPS_RESURFACEIO_META_URL=http://localhost:7701/message
+TYK_PMP_PUMPS_RESURFACEIO_META_RULES="include debug"
 ```
 
 ## StatsD
