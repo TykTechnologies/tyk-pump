@@ -122,7 +122,7 @@ func TestHybridPumpInit(t *testing.T) {
 					return userKey == "valid_credentials"
 				},
 			},
-			expectedError: errors.New("RPC Login incorrect"),
+			expectedError: ErrRPCLogin,
 		},
 		{
 			testName: "Should init if valid credentials",
