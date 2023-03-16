@@ -202,8 +202,10 @@ Take into account that you can also set `log_level` field into the `uptime_pump_
 In `uptime_pump_config` you can configure a mongo uptime pump. By default, the uptime pump is going to be `mongo` type, so it's not necessary to specify it here.
 
 The minimum required configurations for uptime pumps are:
-`collection_name` - That determines the uptime collection name in mongo. By default, `tyk_uptime_analytics`.
-`mongo_url` - The uptime pump mongo connection url. It is usually something like "mongodb://username:password@{hostname:port},{hostname:port}/{db_name}".
+
+- `collection_name` - That determines the uptime collection name in mongo. By default, `tyk_uptime_analytics`.
+
+- `mongo_url` - The uptime pump mongo connection url. It is usually something like "mongodb://username:password@{hostname:port},{hostname:port}/{db_name}".
 
 ###### JSON / Conf File
 ```
@@ -648,7 +650,7 @@ TYK_PMP_PUMPS_PROMETHEUS_TYPE=prometheus
 TYK_PMP_PUMPS_PROMETHEUS_META_ADDR=localhost:9090
 TYK_PMP_PUMPS_PROMETHEUS_META_PATH=/metrics
 TYK_PMP_PUMPS_PROMETHEUS_META_CUSTOMMETRICS='[{"name":"tyk_http_requests_total","description":"Total of API requests","metric_type":"counter","labels":["response_code","api_name"]}]'
-TYK_PMP_PUMPS_PROMETHEUS_META_DISABLED_METRICS=[]
+TYK_PMP_PUMPS_PROMETHEUS_META_DISABLEDMETRICS=[]
 ```
 
 ## DogStatsD
