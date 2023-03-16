@@ -5,15 +5,16 @@ go 1.16
 require (
 	github.com/DataDog/datadog-go v4.7.0+incompatible
 	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d // indirect
+	github.com/TykTechnologies/gorpc v0.0.0-20210624160652-fe65bda0ccb9
 	github.com/TykTechnologies/graphql-go-tools v1.6.2-0.20220811124354-8d1f142966f8
 	github.com/TykTechnologies/murmur3 v0.0.0-20230310161213-aad17efd5632
-	github.com/TykTechnologies/tyk v0.0.0-20200207055804-cf1d1ad81206
 	github.com/aws/aws-sdk-go-v2 v1.16.14
 	github.com/aws/aws-sdk-go-v2/config v1.9.0
 	github.com/aws/aws-sdk-go-v2/service/timestreamwrite v1.9.0
 	github.com/beeker1121/goque v0.0.0-20170321141813-4044bc29b280 // indirect
 	github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869 // indirect
 	github.com/buger/jsonparser v1.1.1
+	github.com/cenkalti/backoff/v4 v4.0.2
 	github.com/fatih/structs v1.1.0
 	github.com/go-ole/go-ole v1.2.4 // indirect
 	github.com/go-redis/redis/v8 v8.3.1
