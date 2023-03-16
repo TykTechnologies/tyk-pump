@@ -106,6 +106,7 @@ func TestHybridPumpInit(t *testing.T) {
 			testName:    "Should return error if connection string is empty",
 			givenConfig: &HybridPumpConf{}, // empty connection string
 			givenDispatcherFuncs: map[string]interface{}{
+				"Ping":  func() bool { return true },
 				"Login": func(clientAddr, userKey string) bool { return false },
 			},
 			expectedError: errors.New("empty connection_string"),
@@ -117,6 +118,7 @@ func TestHybridPumpInit(t *testing.T) {
 				APIKey:           "invalid_credentials",
 			}, // empty connection string
 			givenDispatcherFuncs: map[string]interface{}{
+				"Ping": func() bool { return true },
 				"Login": func(clientAddr, userKey string) bool {
 					return userKey == "valid_credentials"
 				},
@@ -130,6 +132,7 @@ func TestHybridPumpInit(t *testing.T) {
 				APIKey:           "valid_credentials",
 			},
 			givenDispatcherFuncs: map[string]interface{}{
+				"Ping": func() bool { return true },
 				"Login": func(clientAddr, userKey string) bool {
 					return userKey == "valid_credentials"
 				},
@@ -179,6 +182,7 @@ func TestHybridPumpWriteData(t *testing.T) {
 				APIKey:           "valid_credentials",
 			},
 			givenDispatcherFuncs: map[string]interface{}{
+				"Ping": func() bool { return true },
 				"Login": func(clientAddr, userKey string) bool {
 					return userKey == "valid_credentials"
 				},
@@ -211,6 +215,7 @@ func TestHybridPumpWriteData(t *testing.T) {
 				Aggregated:       true,
 			},
 			givenDispatcherFuncs: map[string]interface{}{
+				"Ping": func() bool { return true },
 				"Login": func(clientAddr, userKey string) bool {
 					return userKey == "valid_credentials"
 				},
@@ -243,6 +248,7 @@ func TestHybridPumpWriteData(t *testing.T) {
 				Aggregated:       true,
 			},
 			givenDispatcherFuncs: map[string]interface{}{
+				"Ping": func() bool { return true },
 				"Login": func(clientAddr, userKey string) bool {
 					return userKey == "valid_credentials"
 				},
@@ -299,6 +305,7 @@ func TestHybridPumpShutdown(t *testing.T) {
 	}
 
 	dispatcher := gorpc.NewDispatcher()
+	dispatcher.AddFunc("Ping", func() bool { return true })
 	dispatcher.AddFunc("Login", func(clientAddr, userKey string) bool {
 		return userKey == mockConf.APIKey
 	})
@@ -330,6 +337,7 @@ func TestWriteLicenseExpire(t *testing.T) {
 	loginCall := 0
 
 	dispatcher := gorpc.NewDispatcher()
+	dispatcher.AddFunc("Ping", func() bool { return true })
 	dispatcher.AddFunc("Login", func(clientAddr, userKey string) bool {
 		loginCall++
 		return loginCall <= 3
@@ -370,7 +378,7 @@ func TestHybridConfigCheckDefaults(t *testing.T) {
 			testName:    "default values - no aggregated",
 			givenConfig: &HybridPumpConf{},
 			expectedConfig: &HybridPumpConf{
-				CallTimeout: 30,
+				CallTimeout: DefaultRPCCallTimeout,
 				Aggregated:  false,
 			},
 		},
@@ -381,7 +389,7 @@ func TestHybridConfigCheckDefaults(t *testing.T) {
 				StoreAnalyticsPerMinute: true,
 			},
 			expectedConfig: &HybridPumpConf{
-				CallTimeout:             30,
+				CallTimeout:             DefaultRPCCallTimeout,
 				Aggregated:              true,
 				StoreAnalyticsPerMinute: true,
 				aggregationTime:         1,
@@ -395,7 +403,7 @@ func TestHybridConfigCheckDefaults(t *testing.T) {
 				StoreAnalyticsPerMinute: false,
 			},
 			expectedConfig: &HybridPumpConf{
-				CallTimeout:             30,
+				CallTimeout:             DefaultRPCCallTimeout,
 				Aggregated:              true,
 				StoreAnalyticsPerMinute: false,
 				aggregationTime:         60,
@@ -508,6 +516,7 @@ func TestConfigParsing(t *testing.T) {
 			}(tc.givenEnvs)
 
 			dispatcher := gorpc.NewDispatcher()
+			dispatcher.AddFunc("Ping", func() bool { return true })
 			dispatcher.AddFunc("Login", func(clientAddr, userKey string) bool {
 				return true
 			})
