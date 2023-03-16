@@ -38,6 +38,13 @@ var (
 	}
 	DefaultRPCCallTimeout = 10
 	ErrRPCLogin           = errors.New("RPC login incorrect")
+	retryAndLog           = func(fn func() error, retryMsg string, logger *logrus.Entry) error {
+		return backoff.RetryNotify(fn, backoff.WithMaxRetries(backoff.NewExponentialBackOff(), 3), func(err error, t time.Duration) {
+			if err != nil {
+				logger.Error("Failed to connect to Tyk MDCB, retrying")
+			}
+		})
+	}
 )
 
 // HybridPump allows to send analytics to MDCB over RPC
@@ -130,20 +137,8 @@ func (p *HybridPump) Init(config interface{}) error {
 
 	p.hybridConfig.CheckDefaults()
 
-	p.log.Info("connecting to Tyk MDCB")
-	if err = backoff.RetryNotify(p.connectRPC, backoff.WithMaxRetries(backoff.NewExponentialBackOff(), 3), func(err error, t time.Duration) {
-		if err != nil {
-			p.log.Error("Failed to connect to Tyk MDCB, retrying")
-		}
-	}); err != nil {
-		p.log.Fatal("Failed to connect to Tyk MDCB")
-		return err
-	}
-
-	p.log.Info("loging in to Tyk MDCB")
-
-	if err := backoff.Retry(p.RPCLogin, backoff.WithMaxRetries(backoff.NewExponentialBackOff(), 3)); err != nil {
-		p.log.Error("Failed to login to Tyk MDCB: ", err)
+	if err := p.connectAndLogin(true); err != nil {
+		p.log.Error(err)
 		return err
 	}
 
@@ -269,22 +264,16 @@ func (p *HybridPump) WriteData(ctx context.Context, data []interface{}) error {
 		}
 		p.log.Error("Failed to connect to Tyk MDCB, retrying")
 
-		// try to reconnect
-		if err = p.connectRPC(); err != nil {
-			p.log.Error("Failed to reconnect to Tyk MDCB: ", err)
-			return err
-		}
-		p.log.Info("Trying to relogin to Tyk MDCB...")
-
 		// try to login again
-		if err = p.RPCLogin(); err != nil {
-			p.log.Error("Failed to login to Tyk MDCB: ", err)
+		if err = p.connectAndLogin(false); err != nil {
+			p.log.Error(err)
 			return err
 		}
 	}
 
 	// do RPC call to server
-	if !p.hybridConfig.Aggregated { // send analytics records as is
+	if !p.hybridConfig.Aggregated {
+		// send analytics records as is
 		// turn array with analytics records into JSON payload
 		jsonData, err := json.Marshal(data)
 		if err != nil {
@@ -349,6 +338,34 @@ func (p *HybridPump) RPCLogin() error {
 
 	if !logged.(bool) {
 		return ErrRPCLogin
+	}
+
+	return nil
+}
+
+// connectAndLogin connects to RPC server and logs in if retry is true, it will retry with retryAndLog func
+func (p *HybridPump) connectAndLogin(retry bool) error {
+	connectFn := p.connectRPC
+	loginFn := p.RPCLogin
+
+	if retry {
+		connectFn = func() error {
+			return retryAndLog(p.connectRPC, "Failed to connect to Tyk MDCB, retrying", p.log)
+		}
+
+		loginFn = func() error {
+			return retryAndLog(p.RPCLogin, "Failed to login to Tyk MDCB, retrying", p.log)
+		}
+	}
+
+	p.log.Info("Connecting to Tyk MDCB...")
+	if err := connectFn(); err != nil {
+		return err
+	}
+
+	p.log.Info("Logging in to Tyk MDCB...")
+	if err := loginFn(); err != nil {
+		return err
 	}
 
 	return nil

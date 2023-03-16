@@ -1,6 +1,7 @@
 package pumps
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"io"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/TykTechnologies/gorpc"
 	"github.com/TykTechnologies/tyk-pump/analytics"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -267,6 +269,7 @@ func TestHybridPumpWriteData(t *testing.T) {
 	for _, tc := range tcs {
 		t.Run(tc.testName, func(t *testing.T) {
 			p := &HybridPump{}
+			p.New()
 
 			dispatcher := gorpc.NewDispatcher()
 			for funcName, funcBody := range tc.givenDispatcherFuncs {
@@ -352,6 +355,11 @@ func TestWriteLicenseExpire(t *testing.T) {
 	// first login - success
 	err = hybridPump.Init(mockConf)
 	assert.NoError(t, err)
+	defer func() {
+		if err := hybridPump.Shutdown(); err != nil {
+			t.Fail()
+		}
+	}()
 
 	// second login - success
 	err = hybridPump.WriteData(context.Background(), []interface{}{analytics.AnalyticsRecord{APIKey: "testapikey"}})
@@ -429,7 +437,7 @@ func TestHybridConfigCheckDefaults(t *testing.T) {
 	}
 }
 
-func TestConfigParsing(t *testing.T) {
+func TestHybridConfigParsing(t *testing.T) {
 	svAddress := "localhost:9099"
 
 	//nolint:govet
@@ -528,8 +536,185 @@ func TestConfigParsing(t *testing.T) {
 			hybridPump := &HybridPump{}
 			err = hybridPump.Init(tc.givenBaseConf)
 			assert.NoError(t, err)
+			defer func() {
+				if err := hybridPump.Shutdown(); err != nil {
+					t.Fail()
+				}
+			}()
 
 			assert.Equal(t, tc.expectedConfig, hybridPump.hybridConfig)
+		})
+	}
+}
+
+func TestDispatcherFuncs(t *testing.T) {
+	//nolint:govet
+	tcs := []struct {
+		testName       string
+		function       string
+		input          []interface{}
+		expectedOutput interface{}
+		expectedError  error
+	}{
+		{
+			testName:       "Login",
+			function:       "Login",
+			input:          []interface{}{"127.0.0.1", "userKey123"},
+			expectedOutput: false,
+		},
+		{
+			testName:       "PurgeAnalyticsData",
+			function:       "PurgeAnalyticsData",
+			input:          []interface{}{"test data"},
+			expectedOutput: nil,
+			expectedError:  nil,
+		},
+		{
+			testName:       "Ping",
+			function:       "Ping",
+			input:          []interface{}{},
+			expectedOutput: false,
+		},
+		{
+			testName:       "PurgeAnalyticsDataAggregated",
+			function:       "PurgeAnalyticsDataAggregated",
+			input:          []interface{}{"test data"},
+			expectedOutput: nil,
+			expectedError:  nil,
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.testName, func(t *testing.T) {
+			switch fn := dispatcherFuncs[tc.function].(type) {
+			case func(string, string) bool:
+				result := fn(tc.input[0].(string), tc.input[1].(string))
+				if result != tc.expectedOutput {
+					t.Errorf("Expected %v, got %v", tc.expectedOutput, result)
+				}
+			case func(string) error:
+				err := fn(tc.input[0].(string))
+				if !errors.Is(err, tc.expectedError) {
+					t.Errorf("Expected error %v, got %v", tc.expectedError, err)
+				}
+			case func() bool:
+				result := fn()
+				if result != tc.expectedOutput {
+					t.Errorf("Expected %v, got %v", tc.expectedOutput, result)
+				}
+			default:
+				t.Errorf("Unexpected function type")
+			}
+		})
+	}
+}
+
+func TestRetryAndLog(t *testing.T) {
+	buf := bytes.Buffer{}
+	testLogger := logrus.New()
+	testLogger.SetOutput(&buf)
+
+	retries := 0
+	fn := func() error {
+		retries++
+		if retries == 3 {
+			return nil
+		}
+		return errors.New("test error")
+	}
+
+	err := retryAndLog(fn, "retrying", testLogger.WithField("test", "test"))
+	assert.Nil(t, err)
+	assert.Equal(t, 3, retries)
+	assert.Contains(t, buf.String(), "retrying")
+}
+
+func TestConnectAndLogin(t *testing.T) {
+	//nolint:govet
+	tcs := []struct {
+		testName            string
+		givenRetry          bool
+		shouldStartSv       bool
+		givenAttemptSuccess int
+		expectedErr         error
+	}{
+		{
+			testName:      "without retry - success",
+			givenRetry:    false,
+			shouldStartSv: true,
+		},
+		{
+			testName:      "without retry - server down",
+			givenRetry:    false,
+			shouldStartSv: false,
+			expectedErr:   errors.New("gorpc.Client: [localhost:9092]. Cannot obtain response during timeout=1s"),
+		},
+		{
+			testName:      "with retry - success",
+			givenRetry:    true,
+			shouldStartSv: true,
+		},
+		{
+			testName:      "with retry - server down",
+			givenRetry:    true,
+			shouldStartSv: false,
+			expectedErr:   errors.New("gorpc.Client: [localhost:9092]. Cannot obtain response during timeout=1s"),
+		},
+		{
+			testName:            "without retry - fail first attempt - error",
+			givenRetry:          false,
+			shouldStartSv:       true,
+			givenAttemptSuccess: 2,
+			expectedErr:         ErrRPCLogin,
+		},
+		{
+			testName:            " retry - fail first attempt - success after",
+			givenRetry:          true,
+			shouldStartSv:       true,
+			givenAttemptSuccess: 2,
+			expectedErr:         nil,
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.testName, func(t *testing.T) {
+			mockConf := &HybridPumpConf{
+				ConnectionString: "localhost:9092",
+				RPCKey:           "testkey",
+				APIKey:           "testapikey",
+				CallTimeout:      1,
+			}
+
+			pump := &HybridPump{}
+			pump.hybridConfig = mockConf
+			pump.log = log.WithField("prefix", "hybrid-test")
+
+			if tc.shouldStartSv {
+				attempts := 0
+				dispatcherFns := map[string]interface{}{
+					"Ping": func() bool { return true },
+					"Login": func(clientAddr, userKey string) bool {
+						attempts++
+						return attempts >= tc.givenAttemptSuccess
+					},
+				}
+				dispatcher := gorpc.NewDispatcher()
+				for fnName, fn := range dispatcherFns {
+					dispatcher.AddFunc(fnName, fn)
+				}
+
+				server, err := startRPCMock(t, mockConf, dispatcher)
+				assert.NoError(t, err)
+				defer stopRPCMock(t, server)
+			}
+
+			err := pump.connectAndLogin(tc.givenRetry)
+			if tc.expectedErr == nil {
+				assert.Nil(t, err)
+			} else {
+				assert.NotNil(t, err)
+				assert.Equal(t, err.Error(), tc.expectedErr.Error())
+			}
 		})
 	}
 }
