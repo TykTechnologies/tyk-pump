@@ -11,6 +11,7 @@ import (
 
 	"github.com/TykTechnologies/gorpc"
 	"github.com/TykTechnologies/tyk-pump/analytics"
+	"github.com/cenkalti/backoff/v4"
 	"github.com/gofrs/uuid"
 	"github.com/mitchellh/mapstructure"
 	"github.com/sirupsen/logrus"
@@ -35,8 +36,8 @@ var (
 			return nil
 		},
 	}
-	GlobalRPCCallTimeout = 30
-	ErrRPCLogin          = errors.New("RPC login incorrect")
+	DefaultRPCCallTimeout = 10
+	ErrRPCLogin           = errors.New("RPC login incorrect")
 )
 
 // HybridPump allows to send analytics to MDCB over RPC
@@ -56,33 +57,33 @@ type HybridPump struct {
 type HybridPumpConf struct {
 	EnvPrefix string `mapstructure:"meta_env_prefix"`
 
-	// RPC server connection string
+	// MDCB URL connection string
 	ConnectionString string `mapstructure:"connection_string"`
-	// RPC server key
+	// Your organisation ID to connect to the MDCB installation.
 	RPCKey string `mapstructure:"rpc_key"`
-	// RPC server API key
+	// This the API key of a user used to authenticate and authorise the Hybrid Pump access through MDCB.
+	// The user should be a standard Dashboard user with minimal privileges so as to reduce any risk if the user is compromised.
 	APIKey string `mapstructure:"api_key"`
 
 	// Specifies prefixes of tags that should be ignored if `aggregated` is set to `true`.
 	IgnoreTagPrefixList []string `json:"ignore_tag_prefix_list" mapstructure:"ignore_tag_prefix_list"`
 
-	// RPC server call timeout
+	// Hybrid pump RPC calls timeout in seconds. Defaults to `10` seconds.
 	CallTimeout int `mapstructure:"call_timeout"`
-	// RPC server connection pool size
+	// Hybrid pump connection pool size
 	RPCPoolSize int `mapstructure:"rpc_pool_size"`
-
+	// aggregationTime is to specify the frequency of the aggregation in minutes if `aggregated` is set to `true`.
 	aggregationTime int
 
-	// Send aggregated analytics data to RPC server
+	// Send aggregated analytics data to Tyk MDCB
 	Aggregated bool `mapstructure:"aggregated"`
 	// Specifies if it should store aggregated data for all the endpoints if `aggregated` is set to `true`. By default, `false`
 	// which means that only store aggregated data for `tracked endpoints`.
 	TrackAllPaths bool `mapstructure:"track_all_paths"`
 	// Determines if the aggregations should be made per minute (true) or per hour (false) if `aggregated` is set to `true`.
 	StoreAnalyticsPerMinute bool `json:"store_analytics_per_minute" mapstructure:"store_analytics_per_minute"`
-	// Enable or disable the pump
-	Enabled bool `mapstructure:"enabled"`
-	// Use SSL to connect to RPC server
+
+	// Use SSL to connect to Tyk MDCB
 	UseSSL bool `mapstructure:"use_ssl"`
 	// Skip SSL verification
 	SSLInsecureSkipVerify bool `mapstructure:"ssl_insecure_skip_verify"`
@@ -90,14 +91,13 @@ type HybridPumpConf struct {
 
 func (conf *HybridPumpConf) CheckDefaults() {
 	if conf.CallTimeout == 0 {
-		conf.CallTimeout = GlobalRPCCallTimeout
+		conf.CallTimeout = DefaultRPCCallTimeout
 	}
 
 	if conf.Aggregated {
+		conf.aggregationTime = 60
 		if conf.StoreAnalyticsPerMinute {
 			conf.aggregationTime = 1
-		} else {
-			conf.aggregationTime = 60
 		}
 	}
 }
@@ -130,22 +130,21 @@ func (p *HybridPump) Init(config interface{}) error {
 
 	p.hybridConfig.CheckDefaults()
 
-	p.log.Info("connecting to MDCB rpc server")
-	errConnect := p.connectRPC()
-	if errConnect != nil {
-		p.log.Fatal("Failed to connect to RPC server")
-	}
-	p.log.Info("starting rpc dispatcher")
-	p.startDispatcher()
-
-	p.log.Info("loging in to MDCB rpc server")
-	logged, err := p.RPCLogin()
-	if err != nil {
-		p.log.Error("Failed to login to RPC server: ", err)
+	p.log.Info("connecting to Tyk MDCB")
+	if err = backoff.RetryNotify(p.connectRPC, backoff.WithMaxRetries(backoff.NewExponentialBackOff(), 3), func(err error, t time.Duration) {
+		if err != nil {
+			p.log.Error("Failed to connect to Tyk MDCB, retrying")
+		}
+	}); err != nil {
+		p.log.Fatal("Failed to connect to Tyk MDCB")
 		return err
-	} else if !logged {
-		p.log.Error(ErrRPCLogin.Error())
-		return ErrRPCLogin
+	}
+
+	p.log.Info("loging in to Tyk MDCB")
+
+	if err := backoff.Retry(p.RPCLogin, backoff.WithMaxRetries(backoff.NewExponentialBackOff(), 3)); err != nil {
+		p.log.Error("Failed to login to Tyk MDCB: ", err)
+		return err
 	}
 
 	return nil
@@ -162,7 +161,7 @@ func (p *HybridPump) startDispatcher() {
 }
 
 func (p *HybridPump) connectRPC() error {
-	p.log.Info("Setting new RPC connection!")
+	p.log.Debug("Setting new MDCB connection!")
 
 	connUUID, err := uuid.NewV4()
 	if err != nil {
@@ -201,7 +200,11 @@ func (p *HybridPump) connectRPC() error {
 
 	p.clientSingleton.Start()
 
-	return nil
+	p.startDispatcher()
+
+	_, err = p.callRPCFn("Ping", nil)
+
+	return err
 }
 
 func (p *HybridPump) onConnectFunc(conn net.Conn) (net.Conn, string, error) {
@@ -219,7 +222,7 @@ func (p *HybridPump) callRPCFn(funcName string, request interface{}) (interface{
 func getDialFn(connID string, config *HybridPumpConf) func(addr string) (conn net.Conn, err error) {
 	return func(addr string) (conn net.Conn, err error) {
 		dialer := &net.Dialer{
-			Timeout:   10 * time.Second,
+			Timeout:   time.Duration(config.CallTimeout) * time.Second,
 			KeepAlive: 30 * time.Second,
 		}
 
@@ -258,13 +261,26 @@ func (p *HybridPump) WriteData(ctx context.Context, data []interface{}) error {
 	}
 	p.log.Debug("Attempting to write ", len(data), " records...")
 
-	logged, err := p.RPCLogin()
+	err := p.RPCLogin()
 	if err != nil {
-		p.log.Error("Failed to login to RPC server: ", err)
-		return err
-	} else if !logged {
-		p.log.Error(ErrRPCLogin.Error())
-		return ErrRPCLogin
+		if errors.Is(err, ErrRPCLogin) {
+			p.log.Error("Failed to login to Tyk MDCB: ", err)
+			return err
+		}
+		p.log.Error("Failed to connect to Tyk MDCB, retrying")
+
+		// try to reconnect
+		if err = p.connectRPC(); err != nil {
+			p.log.Error("Failed to reconnect to Tyk MDCB: ", err)
+			return err
+		}
+		p.log.Info("Trying to relogin to Tyk MDCB...")
+
+		// try to login again
+		if err = p.RPCLogin(); err != nil {
+			p.log.Error("Failed to login to Tyk MDCB: ", err)
+			return err
+		}
 	}
 
 	// do RPC call to server
@@ -276,7 +292,7 @@ func (p *HybridPump) WriteData(ctx context.Context, data []interface{}) error {
 			return err
 		}
 
-		p.log.Debug("Sending analytics data to MDCB")
+		p.log.Debug("Sending analytics data to Tyk MDCB")
 
 		if _, err := p.callRPCFn("PurgeAnalyticsData", string(jsonData)); err != nil {
 			p.log.WithError(err).Error("Failed to call PurgeAnalyticsData")
@@ -293,7 +309,7 @@ func (p *HybridPump) WriteData(ctx context.Context, data []interface{}) error {
 			return err
 		}
 
-		p.log.Debug("Sending aggregated analytics data to MDCB")
+		p.log.Debug("Sending aggregated analytics data to Tyk MDCB")
 
 		// send aggregated data
 		if _, err := p.callRPCFn("PurgeAnalyticsDataAggregated", string(jsonData)); err != nil {
@@ -318,13 +334,22 @@ func (p *HybridPump) Shutdown() error {
 	return nil
 }
 
-func (p *HybridPump) RPCLogin() (bool, error) {
+func (p *HybridPump) RPCLogin() error {
+	if val, ok := p.clientIsConnected.Load().(bool); !ok || !val {
+		p.log.Debug("Client is not connected to RPC server")
+		return errors.New("client is not connected to RPC server")
+	}
+
 	// do RPC call to server
 	logged, err := p.callRPCFn("Login", p.hybridConfig.APIKey)
 	if err != nil {
 		p.log.WithError(err).Error("Failed to call Login")
-		return false, err
+		return err
 	}
 
-	return logged.(bool), nil
+	if !logged.(bool) {
+		return ErrRPCLogin
+	}
+
+	return nil
 }
