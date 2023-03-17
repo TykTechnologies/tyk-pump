@@ -2,6 +2,7 @@ package pumps
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/syslog"
 
@@ -165,8 +166,14 @@ func (s *SyslogPump) WriteData(ctx context.Context, data []interface{}) error {
 				"user_agent":      decoded.UserAgent,
 			}
 
+			// Transform object to json string
+			json, jsonError := json.Marshal(message)
+			if jsonError != nil {
+				s.log.WithError(jsonError).Error("unable to marshal message")
+			}
+
 			// Print to Syslog
-			_, _ = fmt.Fprintf(s.writer, "%s", message)
+			_, _ = fmt.Fprintf(s.writer, "%s", json)
 		}
 	}
 	s.log.Info("Purged ", len(data), " records...")
