@@ -94,6 +94,7 @@ func defaultConf() MongoConf {
 
 	conf.MongoURL = dbAddr
 	conf.MongoSSLInsecureSkipVerify = true
+	conf.BaseMongoConf.MongoDriverType = "mgo"
 
 	return conf
 }

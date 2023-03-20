@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/TykTechnologies/storage/persistent/id"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/mitchellh/mapstructure"
 	"github.com/sirupsen/logrus"
@@ -28,6 +29,16 @@ func (g *GraphMongoPump) GetEnvPrefix() string {
 func (g *GraphMongoPump) GetName() string {
 	return "MongoDB Graph Pump"
 }
+
+func (g GraphMongoPump) TableName() string {
+	return ""
+}
+
+func (g GraphMongoPump) GetObjectID() id.ObjectId {
+	return ""
+}
+
+func (g GraphMongoPump) SetObjectID(id.ObjectId) {}
 
 func (g *GraphMongoPump) Init(config interface{}) error {
 	g.dbConf = &MongoConf{}
@@ -84,20 +95,14 @@ func (g *GraphMongoPump) WriteData(ctx context.Context, data []interface{}) erro
 
 	g.log.Debug("Attempting to write ", len(data), " records...")
 
-	for g.dbSession == nil {
-		g.log.Debug("Connecting to analytics store")
-		g.connect()
-	}
 	accumulateSet := g.AccumulateSet(data, true)
 
 	errCh := make(chan error, len(accumulateSet))
 	for _, dataSet := range accumulateSet {
-		go func(dataSet []interface{}, errCh chan error) {
-			sess := g.dbSession.Copy()
-			defer sess.Close()
+		go func(dataSet []id.DBObject, errCh chan error) {
 
 			// make a graph record array with variable length in case there are errors with some conversion
-			finalSet := make([]interface{}, 0)
+			finalSet := make([]id.DBObject, 0)
 			for _, d := range dataSet {
 				r, ok := d.(analytics.AnalyticsRecord)
 				if !ok {
@@ -123,14 +128,12 @@ func (g *GraphMongoPump) WriteData(ctx context.Context, data []interface{}) erro
 				finalSet = append(finalSet, gr)
 			}
 
-			analyticsCollection := sess.DB("").C(collectionName)
-
 			g.log.WithFields(logrus.Fields{
 				"collection":        collectionName,
 				"number of records": len(finalSet),
 			}).Debug("Attempt to purge records")
 
-			err := analyticsCollection.Insert(finalSet...)
+			err := g.store.Insert(context.Background(), finalSet...)
 			if err != nil {
 				g.log.WithFields(logrus.Fields{"collection": collectionName, "number of records": len(finalSet)}).Error("Problem inserting to mongo collection: ", err)
 

@@ -6,6 +6,7 @@ import (
 
 	"gorm.io/gorm"
 
+	"github.com/TykTechnologies/storage/persistent/id"
 	"github.com/fatih/structs"
 )
 
@@ -42,6 +43,16 @@ type UptimeReportAggregateSQL struct {
 }
 
 func (a *UptimeReportAggregateSQL) TableName() string {
+	return UptimeSQLTable
+}
+
+func (a UptimeReportData) GetObjectID() id.ObjectId {
+	return ""
+}
+
+func (a UptimeReportData) SetObjectID(id.ObjectId) {}
+
+func (a UptimeReportData) TableName() string {
 	return UptimeSQLTable
 }
 

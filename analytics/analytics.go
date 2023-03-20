@@ -14,6 +14,7 @@ import (
 	"github.com/oschwald/maxminddb-golang"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"github.com/TykTechnologies/storage/persistent/id"
 	analyticsproto "github.com/TykTechnologies/tyk-pump/analytics/proto"
 
 	"github.com/TykTechnologies/tyk-pump/logger"
@@ -73,9 +74,15 @@ type AnalyticsRecord struct {
 	ApiSchema     string       `json:"api_schema" bson:"-" gorm:"-:all"`
 }
 
-func (a *AnalyticsRecord) TableName() string {
+func (a AnalyticsRecord) TableName() string {
 	return SQLTable
 }
+
+func (a AnalyticsRecord) GetObjectID() id.ObjectId {
+	return ""
+}
+
+func (a AnalyticsRecord) SetObjectID(id id.ObjectId) {}
 
 type GraphError struct {
 	Message string        `json:"message"`

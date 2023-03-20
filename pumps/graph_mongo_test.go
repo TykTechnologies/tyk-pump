@@ -319,16 +319,16 @@ func TestGraphMongoPump_WriteData(t *testing.T) {
 			}
 
 			// now check for the written data
-			sess := pump.dbSession.Copy()
+
 			defer func() {
-				if err := sess.DB("").C(conf.CollectionName).DropCollection(); err != nil {
+				if err := pump.store.DropDatabase(context.Background()); err != nil {
 					pump.log.WithError(err).Warn("error dropping collection")
 				}
 			}()
-			analyticsColl := sess.DB("").C(conf.CollectionName)
+
 			var results []analytics.GraphRecord
-			query := analyticsColl.Find(nil)
-			assert.NoError(t, query.All(&results))
+			err = pump.store.Query(context.Background(), pump, results, nil)
+			assert.Nil(t, err)
 			if diff := cmp.Diff(tc.expectedGraphRecords, results, cmpopts.IgnoreFields(analytics.GraphRecord{}, "AnalyticsRecord")); diff != "" {
 				t.Error(diff)
 			}
