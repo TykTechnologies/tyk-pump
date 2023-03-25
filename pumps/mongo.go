@@ -40,9 +40,11 @@ type MongoPump struct {
 	CommonPumpConfig
 }
 
-var mongoPrefix = "mongo-pump"
-var mongoPumpPrefix = "PMP_MONGO"
-var mongoDefaultEnv = PUMPS_ENV_PREFIX + "_MONGO" + PUMPS_ENV_META_PREFIX
+var (
+	mongoPrefix     = "mongo-pump"
+	mongoPumpPrefix = "PMP_MONGO"
+	mongoDefaultEnv = PUMPS_ENV_PREFIX + "_MONGO" + PUMPS_ENV_META_PREFIX
+)
 
 type MongoType int
 
@@ -53,8 +55,9 @@ const (
 )
 
 const (
-	AWSDBError    = 303
-	CosmosDBError = 115
+	AWSDBError              = 303
+	CosmosDBError           = 115
+	MongoDefaultConnTimeout = 5
 )
 
 type BaseMongoConf struct {
@@ -81,13 +84,15 @@ type BaseMongoConf struct {
 	OmitIndexCreation bool `json:"omit_index_creation" mapstructure:"omit_index_creation"`
 	// Set the consistency mode for the session, it defaults to `Strong`. The valid values are: strong, monotonic, eventual.
 	MongoSessionConsistency string `json:"mongo_session_consistency" mapstructure:"mongo_session_consistency"`
+	// Set the connection timeout in seconds. Defaults to `5` seconds.
+	ConnectionTimeout int `json:"mongo_connection_timeout" mapstructure:"mongo_connection_timeout"`
 }
 
 func (b *BaseMongoConf) GetBlurredURL() string {
 	// mongo uri match with regex ^(mongodb:(?:\/{2})?)((\w+?):(\w+?)@|:?@?)(\S+?):(\d+)(\/(\S+?))?(\?replicaSet=(\S+?))?$
 	// but we need only a segment, so regex explanation: https://regex101.com/r/8Uzwtw/1
 	regex := `^(mongodb:(?:\/{2})?)((...+?):(...+?)@)`
-	var re = regexp.MustCompile(regex)
+	re := regexp.MustCompile(regex)
 
 	blurredUrl := re.ReplaceAllString(b.MongoURL, "***:***@")
 	return blurredUrl
@@ -196,6 +201,12 @@ func mongoDialInfo(conf BaseMongoConf) (dialInfo *mgo.DialInfo, err error) {
 		return dialInfo, err
 	}
 
+	timeout := MongoDefaultConnTimeout
+	if conf.ConnectionTimeout > 0 {
+		timeout = conf.ConnectionTimeout
+	}
+	dialInfo.Timeout = time.Duration(timeout) * time.Second
+
 	if conf.MongoUseSSL {
 		dialInfo.DialServer = func(addr *mgo.ServerAddr) (net.Conn, error) {
 			tlsConfig := &tls.Config{}
@@ -298,18 +309,18 @@ func (m *MongoPump) Init(config interface{}) error {
 		m.log.Fatal("Failed to decode configuration: ", err)
 	}
 
-	//we check for the environment configuration if this pumps is not the uptime pump
+	// we check for the environment configuration if this pumps is not the uptime pump
 	if !m.IsUptime {
 		processPumpEnvVars(m, m.log, m.dbConf, mongoDefaultEnv)
 
-		//we keep this env check for backward compatibility
+		// we keep this env check for backward compatibility
 		overrideErr := envconfig.Process(mongoPumpPrefix, m.dbConf)
 		if overrideErr != nil {
 			m.log.Error("Failed to process environment variables for mongo pump: ", overrideErr)
 		}
 	} else if m.IsUptime && m.dbConf.MongoURL == "" {
 		m.log.Debug("Trying to set uptime pump with PMP_MONGO env vars")
-		//we keep this env check for backward compatibility
+		// we keep this env check for backward compatibility
 		overrideErr := envconfig.Process(mongoPumpPrefix, m.dbConf)
 		if overrideErr != nil {
 			m.log.Error("Failed to process environment variables for mongo pump: ", overrideErr)
@@ -344,10 +355,9 @@ func (m *MongoPump) Init(config interface{}) error {
 }
 
 func (m *MongoPump) capCollection() (ok bool) {
-
-	var colName = m.dbConf.CollectionName
-	var colCapMaxSizeBytes = m.dbConf.CollectionCapMaxSizeBytes
-	var colCapEnable = m.dbConf.CollectionCapEnable
+	colName := m.dbConf.CollectionName
+	colCapMaxSizeBytes := m.dbConf.CollectionCapMaxSizeBytes
+	colCapEnable := m.dbConf.CollectionCapEnable
 
 	if !colCapEnable {
 		return false
@@ -479,9 +489,7 @@ func (m *MongoPump) connect() {
 		m.log.Panic("Mongo URL is invalid: ", err)
 	}
 
-	if m.timeout > 0 {
-		dialInfo.Timeout = time.Second * time.Duration(m.timeout)
-	}
+	m.log.Info("Connecting to Mongo...")
 	m.dbSession, err = mgo.DialWithInfo(dialInfo)
 
 	for err != nil {
@@ -498,7 +506,6 @@ func (m *MongoPump) connect() {
 }
 
 func (m *MongoPump) WriteData(ctx context.Context, data []interface{}) error {
-
 	collectionName := m.dbConf.CollectionName
 	if collectionName == "" {
 		m.log.Fatal("No collection name!")
@@ -615,7 +622,6 @@ func (m *MongoPump) AccumulateSet(data []interface{}, isForGraphRecords bool) []
 
 // WriteUptimeData will pull the data from the in-memory store and drop it into the specified MongoDB collection
 func (m *MongoPump) WriteUptimeData(data []interface{}) {
-
 	for m.dbSession == nil {
 		m.log.Debug("Connecting to mongoDB store")
 		m.connect()

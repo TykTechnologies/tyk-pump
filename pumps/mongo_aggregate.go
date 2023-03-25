@@ -206,9 +206,13 @@ func (m *MongoAggregatePump) connect() {
 		m.log.Panic("Mongo URL is invalid: ", err)
 	}
 
-	if m.timeout > 0 {
-		dialInfo.Timeout = time.Second * time.Duration(m.timeout)
+	timeout := MongoDefaultConnTimeout
+	if m.dbConf.ConnectionTimeout > 0 {
+		timeout = m.dbConf.ConnectionTimeout
 	}
+	dialInfo.Timeout = time.Duration(timeout) * time.Second
+
+	m.log.Info("Connecting to Mongo...")
 
 	m.dbSession, err = mgo.DialWithInfo(dialInfo)
 
