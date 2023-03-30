@@ -1,135 +1,138 @@
 package pumps
 
-// import (
-// 	"context"
-// 	"errors"
-// 	"strings"
-// 	"testing"
-// 	"time"
+import (
+	"context"
+	"testing"
+	"time"
 
-// 	"github.com/TykTechnologies/tyk-pump/analytics"
-// 	"github.com/TykTechnologies/tyk-pump/analytics/demo"
-// 	"github.com/sirupsen/logrus"
-// 	"github.com/stretchr/testify/assert"
-// 	"gopkg.in/mgo.v2/bson"
-// )
+	"github.com/TykTechnologies/storage/persistent/dbm"
+	"github.com/TykTechnologies/storage/persistent/id"
+	"github.com/TykTechnologies/tyk-pump/analytics"
+	"github.com/stretchr/testify/assert"
+)
 
-// func TestDoAggregatedWritingWithIgnoredAggregations(t *testing.T) {
-// 	cfgPump1 := make(map[string]interface{})
-// 	cfgPump1["mongo_url"] = "mongodb://localhost:27017/tyk_analytics"
-// 	cfgPump1["ignore_aggregations"] = []string{"apikeys"}
-// 	cfgPump1["use_mixed_collection"] = true
-// 	cfgPump1["store_analytics_per_minute"] = false
+type dummyObject struct {
+	tableName string
+}
 
-// 	cfgPump2 := make(map[string]interface{})
-// 	cfgPump2["mongo_url"] = "mongodb://localhost:27017/tyk_analytics"
-// 	cfgPump2["use_mixed_collection"] = true
-// 	cfgPump2["store_analytics_per_minute"] = false
+func (dummyObject) GetObjectID() id.ObjectId {
+	return ""
+}
 
-// 	pmp1 := MongoAggregatePump{}
-// 	pmp2 := MongoAggregatePump{}
+func (dummyObject) SetObjectID(id.ObjectId) {}
 
-// 	errInit1 := pmp1.Init(cfgPump1)
-// 	if errInit1 != nil {
-// 		t.Error(errInit1)
-// 		return
-// 	}
-// 	errInit2 := pmp2.Init(cfgPump2)
-// 	if errInit2 != nil {
-// 		t.Error(errInit2)
-// 		return
-// 	}
+func (d dummyObject) TableName() string {
+	return d.tableName
+}
 
-// 	timeNow := time.Now()
-// 	keys := make([]interface{}, 2)
-// 	keys[0] = analytics.AnalyticsRecord{APIID: "api1", OrgID: "123", TimeStamp: timeNow, APIKey: "apikey1"}
-// 	keys[1] = analytics.AnalyticsRecord{APIID: "api1", OrgID: "123", TimeStamp: timeNow, APIKey: "apikey1"}
+func TestDoAggregatedWritingWithIgnoredAggregations(t *testing.T) {
+	cfgPump1 := make(map[string]interface{})
+	cfgPump1["mongo_url"] = "mongodb://localhost:27017/tyk_analytics"
+	cfgPump1["ignore_aggregations"] = []string{"apikeys"}
+	cfgPump1["use_mixed_collection"] = true
+	cfgPump1["store_analytics_per_minute"] = false
 
-// 	keys2 := make([]interface{}, 2)
-// 	keys2[0] = analytics.AnalyticsRecord{APIID: "api2", OrgID: "123", TimeStamp: timeNow, APIKey: "apikey2"}
-// 	keys2[1] = analytics.AnalyticsRecord{APIID: "api2", OrgID: "123", TimeStamp: timeNow, APIKey: "apikey2"}
+	cfgPump2 := make(map[string]interface{})
+	cfgPump2["mongo_url"] = "mongodb://localhost:27017/tyk_analytics"
+	cfgPump2["use_mixed_collection"] = true
+	cfgPump2["store_analytics_per_minute"] = false
 
-// 	ctx := context.TODO()
-// 	errWrite := pmp1.WriteData(ctx, keys)
-// 	if errWrite != nil {
-// 		t.Fatal("Mongo Aggregate Pump couldn't write records with err:", errWrite)
-// 	}
-// 	errWrite2 := pmp2.WriteData(ctx, keys2)
-// 	if errWrite2 != nil {
-// 		t.Fatal("Mongo Aggregate Pump couldn't write records with err:", errWrite2)
-// 	}
-// 	errWrite3 := pmp1.WriteData(ctx, keys)
-// 	if errWrite != nil {
-// 		t.Fatal("Mongo Aggregate Pump couldn't write records with err:", errWrite3)
-// 	}
+	pmp1 := MongoAggregatePump{}
+	pmp2 := MongoAggregatePump{}
 
-// 	defer func() {
-// 		//we clean the db after we finish the test
-// 		//we use pmp1 session since it should be the same
-// 		sess := pmp1.dbSession.Copy()
-// 		defer sess.Close()
+	errInit1 := pmp1.Init(cfgPump1)
+	if errInit1 != nil {
+		t.Error(errInit1)
+		return
+	}
+	errInit2 := pmp2.Init(cfgPump2)
+	if errInit2 != nil {
+		t.Error(errInit2)
+		return
+	}
 
-// 		if err := sess.DB("").DropDatabase(); err != nil {
-// 			panic(err)
-// 		}
-// 	}()
+	timeNow := time.Now()
+	keys := make([]interface{}, 2)
+	keys[0] = analytics.AnalyticsRecord{APIID: "api1", OrgID: "123", TimeStamp: timeNow, APIKey: "apikey1"}
+	keys[1] = analytics.AnalyticsRecord{APIID: "api1", OrgID: "123", TimeStamp: timeNow, APIKey: "apikey1"}
 
-// 	tcs := []struct {
-// 		testName string
-// 		IsMixed  bool
-// 	}{
-// 		{
-// 			testName: "not_mixed_collection",
-// 			IsMixed:  false,
-// 		},
-// 		{
-// 			testName: "mixed_collection",
-// 			IsMixed:  true,
-// 		},
-// 	}
+	keys2 := make([]interface{}, 2)
+	keys2[0] = analytics.AnalyticsRecord{APIID: "api2", OrgID: "123", TimeStamp: timeNow, APIKey: "apikey2"}
+	keys2[1] = analytics.AnalyticsRecord{APIID: "api2", OrgID: "123", TimeStamp: timeNow, APIKey: "apikey2"}
 
-// 	for _, tc := range tcs {
-// 		t.Run(tc.testName, func(t *testing.T) {
-// 			collectionName := ""
-// 			if tc.IsMixed {
-// 				collectionName = analytics.AgggregateMixedCollectionName
-// 			} else {
-// 				var collErr error
-// 				collectionName, collErr = pmp1.GetCollectionName("123")
-// 				assert.Nil(t, collErr)
-// 			}
-// 			thisSession := pmp1.dbSession.Copy()
-// 			defer thisSession.Close()
+	ctx := context.TODO()
+	errWrite := pmp1.WriteData(ctx, keys)
+	if errWrite != nil {
+		t.Fatal("Mongo Aggregate Pump couldn't write records with err:", errWrite)
+	}
+	errWrite2 := pmp2.WriteData(ctx, keys2)
+	if errWrite2 != nil {
+		t.Fatal("Mongo Aggregate Pump couldn't write records with err:", errWrite2)
+	}
+	errWrite3 := pmp1.WriteData(ctx, keys)
+	if errWrite != nil {
+		t.Fatal("Mongo Aggregate Pump couldn't write records with err:", errWrite3)
+	}
 
-// 			analyticsCollection := thisSession.DB("").C(collectionName)
+	defer func() {
+		err := pmp1.store.DropDatabase(context.Background())
+		if err != nil {
+			t.Errorf("error dropping database: %v", err)
+		}
+	}()
 
-// 			//we build the query using the timestamp as we do in aggregated analytics
-// 			query := bson.M{
-// 				"orgid":     "123",
-// 				"timestamp": time.Date(timeNow.Year(), timeNow.Month(), timeNow.Day(), timeNow.Hour(), 0, 0, 0, timeNow.Location()),
-// 			}
+	tcs := []struct {
+		testName string
+		IsMixed  bool
+	}{
+		// {
+		// 	testName: "not_mixed_collection",
+		// 	IsMixed:  false,
+		// },
+		{
+			testName: "mixed_collection",
+			IsMixed:  true,
+		},
+	}
 
-// 			res := analytics.AnalyticsRecordAggregate{}
-// 			// fetch the results
-// 			errFind := analyticsCollection.Find(query).One(&res)
-// 			assert.Nil(t, errFind)
+	for _, tc := range tcs {
+		t.Run(tc.testName, func(t *testing.T) {
+			dummyObject := dummyObject{}
+			if tc.IsMixed {
+				dummyObject.tableName = analytics.AgggregateMixedCollectionName
+			} else {
+				var collErr error
+				dummyObject.tableName, collErr = pmp1.GetCollectionName("123")
+				assert.Nil(t, collErr)
+			}
 
-// 			// double check that the res is not nil
-// 			assert.NotNil(t, res)
+			//we build the query using the timestamp as we do in aggregated analytics
+			query := dbm.DBM{
+				"orgid":     "123",
+				"timestamp": time.Date(timeNow.Year(), timeNow.Month(), timeNow.Day(), timeNow.Hour(), 0, 0, 0, timeNow.Location()),
+			}
 
-// 			// validate totals
-// 			assert.NotNil(t, res.Total)
-// 			assert.Equal(t, 6, res.Total.Hits)
+			res := analytics.AnalyticsRecordAggregate{}
+			// fetch the results
+			errFind := pmp1.store.Query(context.Background(), dummyObject, &res, query)
+			assert.Nil(t, errFind)
 
-// 			// validate that APIKeys (ignored in pmp1) wasn't overriden
-// 			assert.Len(t, res.APIKeys, 1)
-// 			if val, ok := res.APIKeys["apikey2"]; ok {
-// 				assert.NotNil(t, val)
-// 				assert.Equal(t, 2, val.Hits)
-// 			}
-// 		})
-// 	}
-// }
+			// double check that the res is not nil
+			assert.NotNil(t, res)
+
+			// validate totals
+			assert.NotNil(t, res.Total)
+			assert.Equal(t, 6, res.Total.Hits)
+
+			// validate that APIKeys (ignored in pmp1) wasn't overriden
+			assert.Len(t, res.APIKeys, 1)
+			if val, ok := res.APIKeys["apikey2"]; ok {
+				assert.NotNil(t, val)
+				assert.Equal(t, 2, val.Hits)
+			}
+		})
+	}
+}
 
 // func TestAggregationTime(t *testing.T) {
 // 	cfgPump1 := make(map[string]interface{})

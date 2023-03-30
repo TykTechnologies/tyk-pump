@@ -62,6 +62,12 @@ github.com/TykTechnologies/murmur3 v0.0.0-20180602122059-1915e687e465/go.mod h1:
 github.com/TykTechnologies/openid2go v0.0.0-20200122120050-1b642583380a/go.mod h1:rGlqNE4CvxZIeiHp0mgrw+/jdGSjJzkZ0n78hhHMdfM=
 github.com/TykTechnologies/storage v0.0.0-20230316150957-b21386d68cd7 h1:F3SCsuk+38v4gg6fkdAaPXH3TBlQpCKbspQdo/jHD34=
 github.com/TykTechnologies/storage v0.0.0-20230316150957-b21386d68cd7/go.mod h1:+0S3KuNlLGBTMTSFREuZFm315zzXjuuCO4QSAPy+d3M=
+github.com/TykTechnologies/storage v0.0.0-20230327165544-4abcecfdeaaa h1:bCjUnfORlOnn5kVvV8TjNlUWw9YRqEgKE2zwMXQdz64=
+github.com/TykTechnologies/storage v0.0.0-20230327165544-4abcecfdeaaa/go.mod h1:+0S3KuNlLGBTMTSFREuZFm315zzXjuuCO4QSAPy+d3M=
+github.com/TykTechnologies/storage v0.0.0-20230330141630-095a50dacd7d h1:N0warGs75ltMyWOQ1Gxe8E6sxv6POtdZTmkzBIRiw/I=
+github.com/TykTechnologies/storage v0.0.0-20230330141630-095a50dacd7d/go.mod h1:+0S3KuNlLGBTMTSFREuZFm315zzXjuuCO4QSAPy+d3M=
+github.com/TykTechnologies/storage v0.0.0-20230330143204-8a0ec99b9367 h1:YEh1F7owMuVGWFvZJNsJJ7dhVgYjERYfAqp4lcVrmng=
+github.com/TykTechnologies/storage v0.0.0-20230330143204-8a0ec99b9367/go.mod h1:+0S3KuNlLGBTMTSFREuZFm315zzXjuuCO4QSAPy+d3M=
 github.com/TykTechnologies/tyk v0.0.0-20200207055804-cf1d1ad81206 h1:dYSY3KkcFkITF+q8FWpPS87ggv1Rex1Vmmu9q4t4Pwc=
 github.com/TykTechnologies/tyk v0.0.0-20200207055804-cf1d1ad81206/go.mod h1:+WNQ0t1t4ZCh0Z+mDnnyNAQZc5hVJ490iqLOWKPLIMI=
 github.com/agnivade/levenshtein v1.0.1/go.mod h1:CURSv5d9Uaml+FovSIICkLbAUZ9S4RqaHDIsdSBg7lM=

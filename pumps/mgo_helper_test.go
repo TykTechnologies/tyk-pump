@@ -6,6 +6,7 @@ import (
 	"context"
 
 	"github.com/TykTechnologies/storage/persistent"
+	"github.com/TykTechnologies/storage/persistent/dbm"
 	"github.com/TykTechnologies/storage/persistent/id"
 	"github.com/TykTechnologies/storage/persistent/index"
 )
@@ -54,19 +55,12 @@ func (c *Conn) CleanCollection() {
 	}
 }
 
-// func (c *Conn) CleanIndexes() {
-// 	sess := c.Session.Copy()
-// 	defer sess.Close()
-
-// 	indexes, err := sess.DB("").C(colName).Indexes()
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// 	for _, index := range indexes {
-// 		sess.DB("").C(colName).DropIndexName(index.Name)
-// 	}
-
-// }
+func (c *Conn) CleanIndexes() {
+	err := c.Store.CleanIndexes(context.Background(), c)
+	if err != nil {
+		panic(err)
+	}
+}
 
 type Doc struct {
 	ID  id.ObjectId `bson:"_id"`
@@ -96,18 +90,14 @@ func (c *Conn) InsertDoc() {
 	}
 }
 
-// func (c *Conn) GetCollectionStats() (colStats bson.M) {
-// 	sess := c.Session.Copy()
-// 	defer sess.Close()
-
-// 	data := bson.D{{Name: "collStats", Value: colName}}
-
-// 	if err := sess.DB("").Run(data, &colStats); err != nil {
-// 		panic(err)
-// 	}
-
-// 	return colStats
-// }
+func (c *Conn) GetCollectionStats() (colStats dbm.DBM) {
+	var err error
+	colStats, err = c.Store.DBTableStats(context.Background(), c)
+	if err != nil {
+		panic(err)
+	}
+	return colStats
+}
 
 func (c *Conn) GetIndexes() ([]index.Index, error) {
 	return c.Store.GetIndexes(context.Background(), c)

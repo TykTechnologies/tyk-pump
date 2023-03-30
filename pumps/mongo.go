@@ -323,6 +323,11 @@ func (m *MongoPump) ensureIndexes() error {
 }
 
 func (m *MongoPump) connect() {
+
+	if m.dbConf.MongoDriverType == "" {
+		m.dbConf.MongoDriverType = "mgo"
+	}
+
 	store, err := persistent.NewPersistentStorage(&persistent.ClientOpts{
 		ConnectionString:         m.dbConf.MongoURL,
 		UseSSL:                   m.dbConf.MongoUseSSL,

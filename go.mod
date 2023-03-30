@@ -7,7 +7,7 @@ require (
 	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d // indirect
 	github.com/TykTechnologies/graphql-go-tools v1.6.2-0.20220811124354-8d1f142966f8
 	github.com/TykTechnologies/murmur3 v0.0.0-20180602122059-1915e687e465
-	github.com/TykTechnologies/storage v0.0.0-20230316150957-b21386d68cd7
+	github.com/TykTechnologies/storage v0.0.0-20230330143204-8a0ec99b9367
 	github.com/TykTechnologies/tyk v0.0.0-20200207055804-cf1d1ad81206
 	github.com/aws/aws-sdk-go-v2 v1.16.14
 	github.com/aws/aws-sdk-go-v2/config v1.9.0

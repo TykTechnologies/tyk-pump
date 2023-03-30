@@ -4,6 +4,7 @@ import (
 	"context"
 	b64 "encoding/base64"
 	"errors"
+	"fmt"
 	"sort"
 	"strings"
 	"time"
@@ -64,15 +65,19 @@ type MongoAggregateConf struct {
 	IgnoreAggregationsList []string `json:"ignore_aggregations" mapstructure:"ignore_aggregations"`
 }
 
-func (m MongoAggregatePump) TableName() string {
+type dbObject struct {
+	tableName string
+}
+
+func (d dbObject) TableName() string {
+	return d.tableName
+}
+
+func (dbObject) GetObjectID() id.ObjectId {
 	return ""
 }
 
-func (m MongoAggregatePump) GetObjectID() id.ObjectId {
-	return ""
-}
-
-func (m MongoAggregatePump) SetObjectID(id id.ObjectId) {}
+func (dbObject) SetObjectID(id id.ObjectId) {}
 
 func (m *MongoAggregatePump) New() Pump {
 	newPump := MongoAggregatePump{}
@@ -210,6 +215,11 @@ func (m *MongoAggregatePump) Init(config interface{}) error {
 
 func (m *MongoAggregatePump) connect() {
 	var err error
+
+	if m.dbConf.MongoDriverType == "" {
+		m.dbConf.MongoDriverType = "mgo"
+	}
+
 	m.store, err = persistent.NewPersistentStorage(&persistent.ClientOpts{
 		ConnectionString:         m.dbConf.MongoURL,
 		UseSSL:                   m.dbConf.MongoUseSSL,
@@ -240,7 +250,9 @@ func (m *MongoAggregatePump) ensureIndexes(collectionName string) error {
 			return nil
 		}
 	}
-
+	d := dbObject{
+		tableName: collectionName,
+	}
 	var err error
 	// CosmosDB does not support "expireAt" option
 	if m.dbConf.MongoDBType != CosmosDB {
@@ -250,9 +262,10 @@ func (m *MongoAggregatePump) ensureIndexes(collectionName string) error {
 			IsTTLIndex: true,
 			Background: m.dbConf.MongoDBType == StandardMongo,
 		}
-
-		err = m.store.CreateIndex(context.Background(), m, ttlIndex)
+		err = m.store.CreateIndex(context.Background(), d, ttlIndex)
 		if err != nil {
+			fmt.Println("tableName:", d.TableName())
+			fmt.Println("ensureIndexes err 1")
 			return err
 		}
 	}
@@ -262,8 +275,9 @@ func (m *MongoAggregatePump) ensureIndexes(collectionName string) error {
 		Background: m.dbConf.MongoDBType == StandardMongo,
 	}
 
-	err = m.store.CreateIndex(context.Background(), m, apiIndex)
+	err = m.store.CreateIndex(context.Background(), d, apiIndex)
 	if err != nil {
+		fmt.Println("ensureIndexes err 2")
 		return err
 	}
 
@@ -271,8 +285,8 @@ func (m *MongoAggregatePump) ensureIndexes(collectionName string) error {
 		Keys:       []dbm.DBM{{"orgid": 1}},
 		Background: m.dbConf.MongoDBType == StandardMongo,
 	}
-
-	return m.store.CreateIndex(context.Background(), m, orgIndex)
+	fmt.Println("ensureIndexes err 3")
+	return m.store.CreateIndex(context.Background(), d, orgIndex)
 }
 
 func (m *MongoAggregatePump) WriteData(ctx context.Context, data []interface{}) error {
@@ -283,6 +297,7 @@ func (m *MongoAggregatePump) WriteData(ctx context.Context, data []interface{}) 
 	for orgID, filteredData := range analyticsPerOrg {
 		err := m.DoAggregatedWriting(ctx, orgID, filteredData)
 		if err != nil {
+			fmt.Println("here's the error", err)
 			// checking if the error is related to the document size and AggregateSelfHealing is enabled
 			if shouldSelfHeal := m.ShouldSelfHeal(err); shouldSelfHeal {
 				// executing the function again with the new AggregationTime setting
@@ -304,13 +319,16 @@ func (m *MongoAggregatePump) WriteData(ctx context.Context, data []interface{}) 
 }
 
 func (m *MongoAggregatePump) doMixedWrite(changeDoc analytics.AnalyticsRecordAggregate, query dbm.DBM) {
-	m.ensureIndexes(m.TableName())
+	err := m.ensureIndexes(changeDoc.TableName())
+	if err != nil {
+		m.log.Error("error creating indexes: ", err)
+	}
 
 	m.log.WithFields(logrus.Fields{
 		"collection": analytics.AgggregateMixedCollectionName,
 	}).Debug("Attempt to upsert aggregated doc")
 
-	err := m.store.BulkUpdate(context.Background(), []id.DBObject{changeDoc}, query)
+	err = m.store.BulkUpdate(context.Background(), []id.DBObject{changeDoc}, query)
 	if err != nil {
 		m.log.WithFields(logrus.Fields{
 			"collection": analytics.AgggregateMixedCollectionName,
@@ -334,15 +352,12 @@ func (m *MongoAggregatePump) HandleWriteErr(err error) error {
 }
 
 func (m *MongoAggregatePump) DoAggregatedWriting(ctx context.Context, orgID string, filteredData analytics.AnalyticsRecordAggregate) error {
-	collectionName, collErr := m.GetCollectionName(orgID)
-	if collErr != nil {
-		m.log.Info("No OrgID for AnalyticsRecord, skipping")
-		return nil
-	}
 
-	indexCreateErr := m.ensureIndexes(collectionName)
+	fmt.Println("filteredData tablename:", filteredData.TableName())
+	indexCreateErr := m.ensureIndexes(filteredData.TableName())
 
 	if indexCreateErr != nil {
+		fmt.Println("logging error...")
 		m.log.Error(indexCreateErr)
 	}
 
@@ -356,10 +371,14 @@ func (m *MongoAggregatePump) DoAggregatedWriting(ctx context.Context, orgID stri
 	}
 
 	updateDoc := filteredData.AsChange()
-
-	doc := analytics.AnalyticsRecordAggregate{}
-	err := m.store.UpdateAll(context.Background(), doc, query, updateDoc)
+	fmt.Println("do_aggregated_writing 1")
+	doc := &analytics.AnalyticsRecordAggregate{
+		OrgID: filteredData.OrgID,
+	}
+	fmt.Println("tableName:", doc.TableName())
+	err := m.store.Upsert(context.Background(), doc, query, updateDoc)
 	if err != nil {
+		fmt.Println("do_aggregated_writing 1.1")
 		m.log.WithField("query", query).Error("UPSERT Failure: ", err)
 		return m.HandleWriteErr(err)
 	}
@@ -367,12 +386,17 @@ func (m *MongoAggregatePump) DoAggregatedWriting(ctx context.Context, orgID stri
 	// We have the new doc back, lets fix the averages
 	avgUpdateDoc := doc.AsTimeUpdate()
 
-	withTimeUpdate := analytics.AnalyticsRecordAggregate{}
-	err = m.store.UpdateAll(context.Background(), withTimeUpdate, query, avgUpdateDoc)
+	withTimeUpdate := analytics.AnalyticsRecordAggregate{
+		OrgID: filteredData.OrgID,
+	}
+
+	err = m.store.Upsert(context.Background(), &withTimeUpdate, query, avgUpdateDoc)
 	if err != nil {
+		fmt.Println("do_aggregated_writing 1.2")
 		m.log.WithField("query", query).Error("AvgUpdate Failure: ", err)
 		return m.HandleWriteErr(err)
 	}
+	fmt.Println("do_aggregated_writing 2")
 	if m.dbConf.ThresholdLenTagList != -1 && (len(withTimeUpdate.Tags) > m.dbConf.ThresholdLenTagList) {
 		m.printAlert(withTimeUpdate, m.dbConf.ThresholdLenTagList)
 	}
@@ -381,10 +405,13 @@ func (m *MongoAggregatePump) DoAggregatedWriting(ctx context.Context, orgID stri
 		m.log.WithField("query", query).Error("AvgUpdate Failure: ", err)
 		return m.HandleWriteErr(err)
 	}
-
+	fmt.Println("do_aggregated_writing 3")
 	if m.dbConf.UseMixedCollection {
-		thisData := analytics.AnalyticsRecordAggregate{}
-		err := m.store.Query(context.Background(), thisData, thisData, query)
+		thisData := analytics.AnalyticsRecordAggregate{
+			OrgID: filteredData.OrgID,
+		}
+		err := m.store.Query(context.Background(), &thisData, &thisData, query)
+		fmt.Println("do_aggregated_writing 3.1")
 		if err != nil {
 			m.log.WithField("query", query).Error("Couldn't find query doc:", err)
 		} else {
@@ -406,8 +433,13 @@ func (m *MongoAggregatePump) WriteUptimeData(data []interface{}) {
 
 // getLastDocumentTimestamp will return the timestamp of the last document in the collection
 func (m *MongoAggregatePump) getLastDocumentTimestamp() (time.Time, error) {
+
+	d := dbObject{
+		tableName: analytics.AgggregateMixedCollectionName,
+	}
+
 	var result dbm.DBM
-	err := m.store.Query(context.Background(), m, result, dbm.DBM{"_sort": "-$natural", "_limit": 1})
+	err := m.store.Query(context.Background(), d, result, dbm.DBM{"_sort": "-$natural", "_limit": 1})
 	if err != nil {
 		return time.Time{}, err
 	}

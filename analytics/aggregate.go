@@ -104,8 +104,8 @@ type AnalyticsRecordAggregate struct {
 	LastTime time.Time
 }
 
-func (AnalyticsRecordAggregate) TableName() string {
-	return ""
+func (a AnalyticsRecordAggregate) TableName() string {
+	return "z_tyk_analyticz_aggregate_" + a.OrgID
 }
 
 func (AnalyticsRecordAggregate) GetObjectID() id.ObjectId {

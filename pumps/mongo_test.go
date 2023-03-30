@@ -8,6 +8,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
+	"github.com/TykTechnologies/storage/persistent/id"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 )
 
@@ -16,11 +17,6 @@ func newPump() Pump {
 }
 
 func TestMongoPump_capCollection_Enabled(t *testing.T) {
-
-	c := Conn{}
-	c.ConnectDb()
-	defer c.CleanDb()
-
 	pump := newPump()
 	conf := defaultConf()
 
@@ -37,21 +33,19 @@ func TestMongoPump_capCollection_Enabled(t *testing.T) {
 }
 
 func TestMongoPumpOmitIndexCreation(t *testing.T) {
-
-	c := Conn{}
-	c.ConnectDb()
-	defer c.CleanDb()
-
 	pump := newPump()
 	conf := defaultConf()
 
 	mPump := pump.(*MongoPump)
+
 	mPump.dbConf = &conf
 	record := analytics.AnalyticsRecord{
 		OrgID: "test-org",
 		APIID: "test-api",
 	}
 	records := []interface{}{record, record}
+	mPump.connect()
+	defer mPump.store.Drop(context.Background(), mPump)
 
 	tcs := []struct {
 		testName             string
@@ -67,62 +61,62 @@ func TestMongoPumpOmitIndexCreation(t *testing.T) {
 			OmitIndexCreation:    true,
 			dbType:               StandardMongo,
 		},
-		// {
-		// 	testName:             "not omitting index creation but mongo collection already exists - StandardMongo",
-		// 	shouldDropCollection: false,
-		// 	ExpectedIndexes:      1, // 1 index corresponding to _id
-		// 	OmitIndexCreation:    false,
-		// 	dbType:               StandardMongo,
-		// },
-		// {
-		// 	testName:             "not omitting index creation but mongo collection doesn't exists - StandardMongo",
-		// 	shouldDropCollection: true,
-		// 	ExpectedIndexes:      4, // 1 index corresponding to _id + 3 from tyk
-		// 	OmitIndexCreation:    false,
-		// 	dbType:               StandardMongo,
-		// },
-		// {
-		// 	testName:             "omitting index creation - DocDB",
-		// 	shouldDropCollection: true,
-		// 	ExpectedIndexes:      1, // 1 index corresponding to _id
-		// 	OmitIndexCreation:    true,
-		// 	dbType:               AWSDocumentDB,
-		// },
-		// {
-		// 	testName:             "not omitting index creation but mongo collection already exists - DocDB",
-		// 	shouldDropCollection: false,
-		// 	ExpectedIndexes:      4, // 1 index corresponding to _id + 3 from tyk
-		// 	OmitIndexCreation:    false,
-		// 	dbType:               AWSDocumentDB,
-		// },
-		// {
-		// 	testName:             "not omitting index creation but mongo collection doesn't exists - DocDB",
-		// 	shouldDropCollection: true,
-		// 	ExpectedIndexes:      4, // 1 index corresponding to _id + 3 from tyk
-		// 	OmitIndexCreation:    false,
-		// 	dbType:               AWSDocumentDB,
-		// },
-		// {
-		// 	testName:             "omitting index creation - CosmosDB",
-		// 	shouldDropCollection: true,
-		// 	ExpectedIndexes:      1, // 1 index corresponding to _id
-		// 	OmitIndexCreation:    true,
-		// 	dbType:               CosmosDB,
-		// },
-		// {
-		// 	testName:             "not omitting index creation but mongo collection already exists - CosmosDB",
-		// 	shouldDropCollection: false,
-		// 	ExpectedIndexes:      4, // 1 index corresponding to _id + 3 from tyk
-		// 	OmitIndexCreation:    false,
-		// 	dbType:               CosmosDB,
-		// },
-		// {
-		// 	testName:             "not omitting index creation but mongo collection doesn't exists - CosmosDB",
-		// 	shouldDropCollection: true,
-		// 	ExpectedIndexes:      4, // 1 index corresponding to _id + 3 from tyk
-		// 	OmitIndexCreation:    false,
-		// 	dbType:               CosmosDB,
-		// },
+		{
+			testName:             "not omitting index creation but mongo collection already exists - StandardMongo",
+			shouldDropCollection: false,
+			ExpectedIndexes:      1, // 1 index corresponding to _id
+			OmitIndexCreation:    false,
+			dbType:               StandardMongo,
+		},
+		{
+			testName:             "not omitting index creation but mongo collection doesn't exists - StandardMongo",
+			shouldDropCollection: true,
+			ExpectedIndexes:      4, // 1 index corresponding to _id + 3 from tyk
+			OmitIndexCreation:    false,
+			dbType:               StandardMongo,
+		},
+		{
+			testName:             "omitting index creation - DocDB",
+			shouldDropCollection: true,
+			ExpectedIndexes:      1, // 1 index corresponding to _id
+			OmitIndexCreation:    true,
+			dbType:               AWSDocumentDB,
+		},
+		{
+			testName:             "not omitting index creation but mongo collection already exists - DocDB",
+			shouldDropCollection: false,
+			ExpectedIndexes:      4, // 1 index corresponding to _id + 3 from tyk
+			OmitIndexCreation:    false,
+			dbType:               AWSDocumentDB,
+		},
+		{
+			testName:             "not omitting index creation but mongo collection doesn't exists - DocDB",
+			shouldDropCollection: true,
+			ExpectedIndexes:      4, // 1 index corresponding to _id + 3 from tyk
+			OmitIndexCreation:    false,
+			dbType:               AWSDocumentDB,
+		},
+		{
+			testName:             "omitting index creation - CosmosDB",
+			shouldDropCollection: true,
+			ExpectedIndexes:      1, // 1 index corresponding to _id
+			OmitIndexCreation:    true,
+			dbType:               CosmosDB,
+		},
+		{
+			testName:             "not omitting index creation but mongo collection already exists - CosmosDB",
+			shouldDropCollection: false,
+			ExpectedIndexes:      4, // 1 index corresponding to _id + 3 from tyk
+			OmitIndexCreation:    false,
+			dbType:               CosmosDB,
+		},
+		{
+			testName:             "not omitting index creation but mongo collection doesn't exists - CosmosDB",
+			shouldDropCollection: true,
+			ExpectedIndexes:      4, // 1 index corresponding to _id + 3 from tyk
+			OmitIndexCreation:    false,
+			dbType:               CosmosDB,
+		},
 	}
 
 	for _, tc := range tcs {
@@ -130,20 +124,34 @@ func TestMongoPumpOmitIndexCreation(t *testing.T) {
 			mPump.dbConf.OmitIndexCreation = tc.OmitIndexCreation
 			mPump.dbConf.MongoDBType = tc.dbType
 			mPump.log = log.WithField("prefix", mongoPrefix)
-			mPump.dbConf.CollectionName = colName
 			mPump.connect()
-			defer c.CleanDb()
+			defer mPump.store.CleanIndexes(context.Background(), mPump)
 
+			// Drop collection if it exists
 			if tc.shouldDropCollection {
-				c.CleanDb()
+				if HasTable(t, mPump) {
+					err := mPump.store.Drop(context.Background(), mPump)
+					if err != nil {
+						t.Error("there shouldn't be an error dropping database", err)
+					}
+				}
+			} else {
+				// Create collection if it doesn't exist
+				CreateCollectionIfNeeded(t, mPump)
 			}
 
 			if err := mPump.ensureIndexes(); err != nil {
 				t.Error("there shouldn't be an error ensuring indexes", err)
 			}
 
-			mPump.WriteData(context.Background(), records)
-			indexes, errIndexes := c.GetIndexes()
+			err := mPump.WriteData(context.Background(), records)
+			if err != nil {
+				t.Error("there shouldn't be an error writing data", err)
+			}
+			// Before getting indexes, we must ensure that the collection exists to avoid an unexpected error
+			CreateCollectionIfNeeded(t, mPump)
+
+			indexes, errIndexes := mPump.store.GetIndexes(context.Background(), mPump)
 			if errIndexes != nil {
 				t.Error("error getting indexes:", errIndexes)
 			}
@@ -153,6 +161,26 @@ func TestMongoPumpOmitIndexCreation(t *testing.T) {
 			}
 		})
 	}
+}
+
+func CreateCollectionIfNeeded(t *testing.T, mPump *MongoPump) {
+	t.Helper()
+	if !HasTable(t, mPump) {
+		err := mPump.store.Migrate(context.Background(), []id.DBObject{mPump})
+		if err != nil {
+			t.Error("there shouldn't be an error migrating database", err)
+		}
+	}
+}
+
+func HasTable(t *testing.T, mPump *MongoPump) bool {
+	t.Helper()
+	hasTable, err := mPump.store.HasTable(context.Background(), mPump.TableName())
+	if err != nil {
+		t.Error("there shouldn't be an error checking if table exists", err)
+	}
+
+	return hasTable
 }
 
 func TestMongoPump_capCollection_Exists(t *testing.T) {
@@ -205,73 +233,73 @@ func TestMongoPump_capCollection_Not64arch(t *testing.T) {
 	}
 }
 
-// func TestMongoPump_capCollection_SensibleDefaultSize(t *testing.T) {
+func TestMongoPump_capCollection_SensibleDefaultSize(t *testing.T) {
 
-// 	if strconv.IntSize < 64 {
-// 		t.Skip("skipping as < 64bit arch")
-// 	}
+	if strconv.IntSize < 64 {
+		t.Skip("skipping as < 64bit arch")
+	}
 
-// 	c := Conn{}
-// 	c.ConnectDb()
-// 	defer c.CleanDb()
+	c := Conn{}
+	c.ConnectDb()
+	defer c.CleanDb()
 
-// 	pump := newPump()
-// 	conf := defaultConf()
+	pump := newPump()
+	conf := defaultConf()
 
-// 	mPump := pump.(*MongoPump)
-// 	mPump.dbConf = &conf
-// 	mPump.log = log.WithField("prefix", mongoPrefix)
+	mPump := pump.(*MongoPump)
+	mPump.dbConf = &conf
+	mPump.log = log.WithField("prefix", mongoPrefix)
 
-// 	mPump.dbConf.CollectionCapEnable = true
-// 	mPump.dbConf.CollectionCapMaxSizeBytes = 0
+	mPump.dbConf.CollectionCapEnable = true
+	mPump.dbConf.CollectionCapMaxSizeBytes = 0
 
-// 	mPump.connect()
+	mPump.connect()
 
-// 	if ok := mPump.capCollection(); !ok {
-// 		t.Fatal("should have capped collection")
-// 	}
+	if ok := mPump.capCollection(); !ok {
+		t.Fatal("should have capped collection")
+	}
 
-// 	colStats := c.GetCollectionStats()
+	colStats := c.GetCollectionStats()
 
-// 	defSize := 5
-// 	if colStats["maxSize"].(int64) != int64(defSize*GiB) {
-// 		t.Errorf("wrong sized capped collection created. Expected (%d), got (%d)", mPump.dbConf.CollectionCapMaxSizeBytes, colStats["maxSize"])
-// 	}
-// }
+	defSize := 5
+	if colStats["maxSize"].(int64) != int64(defSize*GiB) {
+		t.Errorf("wrong sized capped collection created. Expected (%d), got (%d)", mPump.dbConf.CollectionCapMaxSizeBytes, colStats["maxSize"])
+	}
+}
 
-// func TestMongoPump_capCollection_OverrideSize(t *testing.T) {
+func TestMongoPump_capCollection_OverrideSize(t *testing.T) {
 
-// 	if strconv.IntSize < 64 {
-// 		t.Skip("skipping as < 64bit arch")
-// 	}
+	if strconv.IntSize < 64 {
+		t.Skip("skipping as < 64bit arch")
+	}
 
-// 	c := Conn{}
-// 	c.ConnectDb()
-// 	defer c.CleanDb()
+	c := Conn{}
+	c.ConnectDb()
+	defer c.CleanDb()
 
-// 	pump := newPump()
-// 	conf := defaultConf()
+	pump := newPump()
+	conf := defaultConf()
 
-// 	mPump := pump.(*MongoPump)
-// 	mPump.dbConf = &conf
-// 	mPump.log = log.WithField("prefix", mongoPrefix)
+	mPump := pump.(*MongoPump)
+	mPump.dbConf = &conf
+	mPump.log = log.WithField("prefix", mongoPrefix)
 
-// 	mPump.dbConf.CollectionCapEnable = true
-// 	mPump.dbConf.CollectionCapMaxSizeBytes = GiB
+	mPump.dbConf.CollectionCapEnable = true
+	mPump.dbConf.CollectionCapMaxSizeBytes = GiB
 
-// 	mPump.connect()
+	mPump.connect()
 
-// 	if ok := mPump.capCollection(); !ok {
-// 		t.Error("should have capped collection")
-// 		t.FailNow()
-// 	}
+	if ok := mPump.capCollection(); !ok {
+		t.Error("should have capped collection")
+		t.FailNow()
+	}
 
-// 	colStats := c.GetCollectionStats()
+	colStats := c.GetCollectionStats()
 
-// 	if colStats["maxSize"].(int64) != int64(mPump.dbConf.CollectionCapMaxSizeBytes) {
-// 		t.Errorf("wrong sized capped collection created. Expected (%d), got (%d)", mPump.dbConf.CollectionCapMaxSizeBytes, colStats["maxSize"])
-// 	}
-// }
+	if colStats["maxSize"].(int64) != int64(mPump.dbConf.CollectionCapMaxSizeBytes) {
+		t.Errorf("wrong sized capped collection created. Expected (%d), got (%d)", mPump.dbConf.CollectionCapMaxSizeBytes, colStats["maxSize"])
+	}
+}
 
 func TestMongoPump_AccumulateSet(t *testing.T) {
 	run := func(recordsGenerator func(numRecords int) []interface{}, expectedRecordsCount int) func(t *testing.T) {
