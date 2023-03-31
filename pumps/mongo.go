@@ -8,7 +8,6 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"fmt"
-	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
@@ -83,6 +82,24 @@ type BaseMongoConf struct {
 	MongoSessionConsistency string `json:"mongo_session_consistency" mapstructure:"mongo_session_consistency"`
 	// MongoDriverType is the type of the driver (library) to use. The valid values are: "mongo-go" and "mgo".
 	MongoDriverType string `json:"driver_type" mapstructure:"driver_type"`
+}
+
+type dbObject struct {
+	tableName string
+}
+
+func (d dbObject) TableName() string {
+	return d.tableName
+}
+
+func (dbObject) GetObjectID() id.ObjectId {
+	return ""
+}
+
+func (dbObject) SetObjectID(id id.ObjectId) {}
+
+func createDBObject(tableName string) dbObject {
+	return dbObject{tableName: tableName}
 }
 
 func (b *BaseMongoConf) GetBlurredURL() string {
@@ -174,17 +191,15 @@ func (m *MongoPump) Init(config interface{}) error {
 		if overrideErr != nil {
 			m.log.Error("Failed to process environment variables for mongo pump: ", overrideErr)
 		}
-	} else {
-		if m.dbConf.MongoURL == "" {
-			m.log.Debug("Trying to set uptime pump with PMP_MONGO env vars")
-			//we keep this env check for backward compatibility
-			overrideErr := envconfig.Process(mongoPumpPrefix, m.dbConf)
-			if overrideErr != nil {
-				m.log.Error("Failed to process environment variables for mongo pump: ", overrideErr)
-			}
-
-			m.dbConf.CollectionName = "tyk_uptime_analytics"
+	} else if m.dbConf.MongoURL == "" {
+		m.log.Debug("Trying to set uptime pump with PMP_MONGO env vars")
+		// we keep this env check for backward compatibility
+		overrideErr := envconfig.Process(mongoPumpPrefix, m.dbConf)
+		if overrideErr != nil {
+			m.log.Error("Failed to process environment variables for mongo pump: ", overrideErr)
 		}
+
+		m.dbConf.CollectionName = "tyk_uptime_analytics"
 	}
 
 	if m.dbConf.MaxInsertBatchSizeBytes == 0 {
@@ -201,7 +216,7 @@ func (m *MongoPump) Init(config interface{}) error {
 
 	m.capCollection()
 
-	indexCreateErr := m.ensureIndexes()
+	indexCreateErr := m.ensureIndexes(m.dbConf.CollectionName)
 	if indexCreateErr != nil {
 		m.log.Error(indexCreateErr)
 	}
@@ -249,7 +264,11 @@ func (m *MongoPump) capCollection() (ok bool) {
 		m.log.Infof("-- No max collection size set for %s, defaulting to %d", colName, colCapMaxSizeBytes)
 	}
 
-	err = m.store.Migrate(context.Background(), []id.DBObject{m}, dbm.DBM{"capped": true, "maxBytes": colCapMaxSizeBytes})
+	d := dbObject{
+		tableName: colName,
+	}
+
+	err = m.store.Migrate(context.Background(), []id.DBObject{d}, dbm.DBM{"capped": true, "maxBytes": colCapMaxSizeBytes})
 	if err != nil {
 		m.log.Errorf("Unable to create capped collection for (%s). %s", colName, err.Error())
 
@@ -266,26 +285,16 @@ func (m *MongoPump) collectionExists(name string) (bool, error) {
 	return m.store.HasTable(context.Background(), name)
 }
 
-func (*MongoPump) GetObjectID() id.ObjectId {
-	return id.NewObjectID()
-}
-
-func (*MongoPump) SetObjectID(id id.ObjectId) {}
-
-func (m *MongoPump) TableName() string {
-	return m.dbConf.CollectionName
-}
-
-func (m *MongoPump) ensureIndexes() error {
+func (m *MongoPump) ensureIndexes(collectionName string) error {
 	if m.dbConf.OmitIndexCreation {
 		m.log.Debug("omit_index_creation set to true, omitting index creation..")
 		return nil
 	}
 
 	if m.dbConf.MongoDBType == StandardMongo {
-		exists, errExists := m.collectionExists(m.dbConf.CollectionName)
+		exists, errExists := m.collectionExists(collectionName)
 		if errExists == nil && exists {
-			m.log.Info("Collection ", m.dbConf.CollectionName, " exists, omitting index creation..")
+			m.log.Info("Collection ", collectionName, " exists, omitting index creation..")
 			return nil
 		}
 	}
@@ -297,7 +306,9 @@ func (m *MongoPump) ensureIndexes() error {
 		Background: m.dbConf.MongoDBType == StandardMongo,
 	}
 
-	err = m.store.CreateIndex(context.Background(), m, orgIndex)
+	d := createDBObject(collectionName)
+
+	err = m.store.CreateIndex(context.Background(), d, orgIndex)
 	if err != nil {
 		return err
 	}
@@ -307,7 +318,7 @@ func (m *MongoPump) ensureIndexes() error {
 		Background: m.dbConf.MongoDBType == StandardMongo,
 	}
 
-	err = m.store.CreateIndex(context.Background(), m, apiIndex)
+	err = m.store.CreateIndex(context.Background(), d, apiIndex)
 	if err != nil {
 		return err
 	}
@@ -317,7 +328,7 @@ func (m *MongoPump) ensureIndexes() error {
 		Keys:       []dbm.DBM{{"-timestamp": 1}, {"orgid": 1}, {"apiid": 1}, {"apikey": 1}, {"responsecode": 1}},
 		Background: m.dbConf.MongoDBType == StandardMongo,
 	}
-	return m.store.CreateIndex(context.Background(), m, logBrowserIndex)
+	return m.store.CreateIndex(context.Background(), d, logBrowserIndex)
 }
 
 func (m *MongoPump) connect() {
@@ -436,7 +447,7 @@ func (m *MongoPump) AccumulateSet(data []interface{}, isForGraphRecords bool) []
 		}
 
 		m.log.Debug("Accumulator is: ", accumulatorTotal)
-		thisResultSet = append(thisResultSet, thisItem)
+		thisResultSet = append(thisResultSet, &thisItem)
 
 		m.log.Debug(accumulatorTotal, " of ", m.dbConf.MaxInsertBatchSizeBytes)
 		// Append the last element if the loop is about to end
@@ -471,7 +482,7 @@ func (m *MongoPump) WriteUptimeData(data []interface{}) {
 			continue
 		}
 
-		keys[i] = decoded
+		keys[i] = &decoded
 
 		m.log.Debug("Decoded Record: ", decoded)
 	}
@@ -479,7 +490,6 @@ func (m *MongoPump) WriteUptimeData(data []interface{}) {
 	m.log.Debug("Writing data to ", m.dbConf.CollectionName)
 
 	if err := m.store.Insert(context.Background(), keys...); err != nil {
-
 		m.log.Error("Problem inserting to mongo collection: ", err)
 
 		if strings.Contains(err.Error(), "Closed explicitly") || strings.Contains(err.Error(), "EOF") {
@@ -488,24 +498,4 @@ func (m *MongoPump) WriteUptimeData(data []interface{}) {
 			m.connect()
 		}
 	}
-}
-
-func getCollectionObject(result interface{}) (id.DBObject, error) {
-	resultv := reflect.ValueOf(result)
-	if resultv.Kind() != reflect.Ptr {
-		return nil, fmt.Errorf("result argument must be a pointer")
-	}
-
-	if resultv.Elem().Kind() == reflect.Slice {
-		// log.Error("I'm slice!", resultv.Elem(), resultv.Elem().Type(), resultv.Elem().Type().Elem())
-		resultv = reflect.New(resultv.Elem().Type().Elem())
-		if resultv.Elem().Kind() == reflect.Ptr {
-			resultv = resultv.Elem()
-		}
-		// log.Error(resultv.Type(), resultv.MethodByName("TableName"))
-	}
-	// log.Error("Not slice!")
-
-	// log.Error("READING TableName:", result, resultv)
-	return resultv.Interface().(id.DBObject), nil
 }

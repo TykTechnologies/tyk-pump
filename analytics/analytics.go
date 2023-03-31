@@ -74,15 +74,15 @@ type AnalyticsRecord struct {
 	ApiSchema     string       `json:"api_schema" bson:"-" gorm:"-:all"`
 }
 
-func (a AnalyticsRecord) TableName() string {
+func (a *AnalyticsRecord) TableName() string {
 	return SQLTable
 }
 
-func (a AnalyticsRecord) GetObjectID() id.ObjectId {
+func (a *AnalyticsRecord) GetObjectID() id.ObjectId {
 	return ""
 }
 
-func (a AnalyticsRecord) SetObjectID(id id.ObjectId) {}
+func (a *AnalyticsRecord) SetObjectID(id id.ObjectId) {}
 
 type GraphError struct {
 	Message string        `json:"message"`

@@ -333,7 +333,7 @@ func TestGraphMongoPump_WriteData(t *testing.T) {
 			}()
 
 			var results []analytics.GraphRecord
-			err = pump.store.Query(context.Background(), analytics.GraphRecord{}, &results, nil)
+			err = pump.store.Query(context.Background(), &analytics.GraphRecord{}, &results, nil)
 			assert.Nil(t, err)
 			if diff := cmp.Diff(tc.expectedGraphRecords, results, cmpopts.IgnoreFields(analytics.GraphRecord{}, "AnalyticsRecord")); diff != "" {
 				t.Error(diff)

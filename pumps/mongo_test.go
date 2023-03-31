@@ -44,8 +44,17 @@ func TestMongoPumpOmitIndexCreation(t *testing.T) {
 		APIID: "test-api",
 	}
 	records := []interface{}{record, record}
+	dbObject := createDBObject(conf.CollectionName)
 	mPump.connect()
-	defer mPump.store.Drop(context.Background(), mPump)
+	defer func() {
+		// we clean the db after we finish every test case
+		defer func() {
+			err := mPump.store.Drop(context.Background(), dbObject)
+			if err != nil {
+				t.Fatal(err)
+			}
+		}()
+	}()
 
 	tcs := []struct {
 		testName             string
@@ -125,22 +134,27 @@ func TestMongoPumpOmitIndexCreation(t *testing.T) {
 			mPump.dbConf.MongoDBType = tc.dbType
 			mPump.log = log.WithField("prefix", mongoPrefix)
 			mPump.connect()
-			defer mPump.store.CleanIndexes(context.Background(), mPump)
+			defer func() {
+				err := mPump.store.CleanIndexes(context.Background(), dbObject)
+				if err != nil {
+					t.Fatal(err)
+				}
+			}()
 
 			// Drop collection if it exists
 			if tc.shouldDropCollection {
-				if HasTable(t, mPump) {
-					err := mPump.store.Drop(context.Background(), mPump)
+				if HasTable(t, mPump, dbObject) {
+					err := mPump.store.Drop(context.Background(), dbObject)
 					if err != nil {
 						t.Error("there shouldn't be an error dropping database", err)
 					}
 				}
 			} else {
 				// Create collection if it doesn't exist
-				CreateCollectionIfNeeded(t, mPump)
+				CreateCollectionIfNeeded(t, mPump, dbObject)
 			}
 
-			if err := mPump.ensureIndexes(); err != nil {
+			if err := mPump.ensureIndexes(dbObject.TableName()); err != nil {
 				t.Error("there shouldn't be an error ensuring indexes", err)
 			}
 
@@ -149,9 +163,9 @@ func TestMongoPumpOmitIndexCreation(t *testing.T) {
 				t.Error("there shouldn't be an error writing data", err)
 			}
 			// Before getting indexes, we must ensure that the collection exists to avoid an unexpected error
-			CreateCollectionIfNeeded(t, mPump)
+			CreateCollectionIfNeeded(t, mPump, dbObject)
 
-			indexes, errIndexes := mPump.store.GetIndexes(context.Background(), mPump)
+			indexes, errIndexes := mPump.store.GetIndexes(context.Background(), dbObject)
 			if errIndexes != nil {
 				t.Error("error getting indexes:", errIndexes)
 			}
@@ -163,19 +177,19 @@ func TestMongoPumpOmitIndexCreation(t *testing.T) {
 	}
 }
 
-func CreateCollectionIfNeeded(t *testing.T, mPump *MongoPump) {
+func CreateCollectionIfNeeded(t *testing.T, mPump *MongoPump, dbObject id.DBObject) {
 	t.Helper()
-	if !HasTable(t, mPump) {
-		err := mPump.store.Migrate(context.Background(), []id.DBObject{mPump})
+	if !HasTable(t, mPump, dbObject) {
+		err := mPump.store.Migrate(context.Background(), []id.DBObject{dbObject})
 		if err != nil {
 			t.Error("there shouldn't be an error migrating database", err)
 		}
 	}
 }
 
-func HasTable(t *testing.T, mPump *MongoPump) bool {
+func HasTable(t *testing.T, mPump *MongoPump, dbObject id.DBObject) bool {
 	t.Helper()
-	hasTable, err := mPump.store.HasTable(context.Background(), mPump.TableName())
+	hasTable, err := mPump.store.HasTable(context.Background(), dbObject.TableName())
 	if err != nil {
 		t.Error("there shouldn't be an error checking if table exists", err)
 	}
@@ -394,7 +408,7 @@ func TestMongoPump_AccumulateSetIgnoreDocSize(t *testing.T) {
 	accumulated := mPump.AccumulateSet(dataSet, true)
 	for _, x := range accumulated {
 		for _, y := range x {
-			rec, ok := y.(analytics.AnalyticsRecord)
+			rec, ok := y.(*analytics.AnalyticsRecord)
 			assert.True(t, ok)
 			if rec.IsGraphRecord() {
 				assert.NotEmpty(t, rec.RawRequest)

@@ -32,15 +32,15 @@ type GraphRecord struct {
 	HasErrors     bool         `gorm:"has_errors"`
 }
 
-func (g GraphRecord) TableName() string {
+func (g *GraphRecord) TableName() string {
 	return g.AnalyticsRecord.TableName()
 }
 
-func (GraphRecord) GetObjectID() id.ObjectId {
+func (*GraphRecord) GetObjectID() id.ObjectId {
 	return ""
 }
 
-func (GraphRecord) SetObjectID(id.ObjectId) {}
+func (*GraphRecord) SetObjectID(id.ObjectId) {}
 
 // parseRequest reads the raw encoded request and schema, extracting the type information
 // operation information and root field operations

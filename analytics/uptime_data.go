@@ -46,13 +46,13 @@ func (a *UptimeReportAggregateSQL) TableName() string {
 	return UptimeSQLTable
 }
 
-func (a UptimeReportData) GetObjectID() id.ObjectId {
+func (a *UptimeReportData) GetObjectID() id.ObjectId {
 	return ""
 }
 
-func (a UptimeReportData) SetObjectID(id.ObjectId) {}
+func (a *UptimeReportData) SetObjectID(id.ObjectId) {}
 
-func (a UptimeReportData) TableName() string {
+func (a *UptimeReportData) TableName() string {
 	return UptimeSQLTable
 }
 

@@ -13,7 +13,6 @@ import (
 
 	"github.com/TykTechnologies/storage/persistent"
 	"github.com/TykTechnologies/storage/persistent/dbm"
-	"github.com/TykTechnologies/storage/persistent/id"
 	"github.com/TykTechnologies/storage/persistent/index"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/sirupsen/logrus"
@@ -63,20 +62,6 @@ type MongoAggregateConf struct {
 	// "oauthendpoints", and "apiendpoints".
 	IgnoreAggregationsList []string `json:"ignore_aggregations" mapstructure:"ignore_aggregations"`
 }
-
-type dbObject struct {
-	tableName string
-}
-
-func (d dbObject) TableName() string {
-	return d.tableName
-}
-
-func (dbObject) GetObjectID() id.ObjectId {
-	return ""
-}
-
-func (dbObject) SetObjectID(id id.ObjectId) {}
 
 func (m *MongoAggregatePump) New() Pump {
 	newPump := MongoAggregatePump{}
@@ -312,7 +297,7 @@ func (m *MongoAggregatePump) WriteData(ctx context.Context, data []interface{}) 
 	return nil
 }
 
-func (m *MongoAggregatePump) doMixedWrite(changeDoc analytics.AnalyticsRecordAggregate, query dbm.DBM) {
+func (m *MongoAggregatePump) doMixedWrite(changeDoc *analytics.AnalyticsRecordAggregate, query dbm.DBM) {
 	changeDoc.Mixed = true
 	err := m.ensureIndexes(changeDoc.TableName())
 	if err != nil {
@@ -323,29 +308,17 @@ func (m *MongoAggregatePump) doMixedWrite(changeDoc analytics.AnalyticsRecordAgg
 		"collection": analytics.AgggregateMixedCollectionName,
 	}).Debug("Attempt to upsert aggregated doc")
 
-	err = m.store.Upsert(context.Background(), &changeDoc, query, dbm.DBM{
+	err = m.store.Upsert(context.Background(), changeDoc, query, dbm.DBM{
 		"$set": changeDoc,
 	})
 	if err != nil {
 		m.log.WithFields(logrus.Fields{
 			"collection": analytics.AgggregateMixedCollectionName,
 		}).Error("Mixed coll upsert failure: ", err)
-		m.HandleWriteErr(err)
 	}
 	m.log.WithFields(logrus.Fields{
 		"collection": analytics.AgggregateMixedCollectionName,
 	}).Info("Completed upserting")
-}
-
-func (m *MongoAggregatePump) HandleWriteErr(err error) error {
-	if err != nil {
-		m.log.Error("Problem inserting or updating to mongo collection: ", err)
-		if strings.Contains(err.Error(), "Closed explicitly") || strings.Contains(err.Error(), "EOF") {
-			m.log.Warning("--> Detected connection failure, reconnecting")
-			m.connect()
-		}
-	}
-	return err
 }
 
 func (m *MongoAggregatePump) DoAggregatedWriting(ctx context.Context, orgID string, filteredData analytics.AnalyticsRecordAggregate) error {
@@ -372,7 +345,7 @@ func (m *MongoAggregatePump) DoAggregatedWriting(ctx context.Context, orgID stri
 	err := m.store.Upsert(context.Background(), doc, query, updateDoc)
 	if err != nil {
 		m.log.WithField("query", query).Error("UPSERT Failure: ", err)
-		return m.HandleWriteErr(err)
+		return err
 	}
 
 	// We have the new doc back, lets fix the averages
@@ -385,15 +358,10 @@ func (m *MongoAggregatePump) DoAggregatedWriting(ctx context.Context, orgID stri
 	err = m.store.Upsert(context.Background(), &withTimeUpdate, query, avgUpdateDoc)
 	if err != nil {
 		m.log.WithField("query", query).Error("AvgUpdate Failure: ", err)
-		return m.HandleWriteErr(err)
+		return err
 	}
 	if m.dbConf.ThresholdLenTagList != -1 && (len(withTimeUpdate.Tags) > m.dbConf.ThresholdLenTagList) {
 		m.printAlert(withTimeUpdate, m.dbConf.ThresholdLenTagList)
-	}
-
-	if err != nil {
-		m.log.WithField("query", query).Error("AvgUpdate Failure: ", err)
-		return m.HandleWriteErr(err)
 	}
 	if m.dbConf.UseMixedCollection {
 		thisData := analytics.AnalyticsRecordAggregate{
@@ -403,7 +371,7 @@ func (m *MongoAggregatePump) DoAggregatedWriting(ctx context.Context, orgID stri
 		if err != nil {
 			m.log.WithField("query", query).Error("Couldn't find query doc:", err)
 		} else {
-			m.doMixedWrite(thisData, query)
+			m.doMixedWrite(&thisData, query)
 		}
 	}
 	return nil
@@ -421,7 +389,6 @@ func (m *MongoAggregatePump) WriteUptimeData(data []interface{}) {
 
 // getLastDocumentTimestamp will return the timestamp of the last document in the collection
 func (m *MongoAggregatePump) getLastDocumentTimestamp() (time.Time, error) {
-
 	d := dbObject{
 		tableName: analytics.AgggregateMixedCollectionName,
 	}

@@ -30,16 +30,6 @@ func (g *GraphMongoPump) GetName() string {
 	return "MongoDB Graph Pump"
 }
 
-func (g GraphMongoPump) TableName() string {
-	return ""
-}
-
-func (g GraphMongoPump) GetObjectID() id.ObjectId {
-	return ""
-}
-
-func (g GraphMongoPump) SetObjectID(id.ObjectId) {}
-
 func (g *GraphMongoPump) Init(config interface{}) error {
 	g.dbConf = &MongoConf{}
 	g.log = log.WithField("prefix", mongoGraphPrefix)
@@ -73,7 +63,7 @@ func (g *GraphMongoPump) Init(config interface{}) error {
 
 	g.capCollection()
 
-	indexCreateErr := g.ensureIndexes()
+	indexCreateErr := g.ensureIndexes(g.dbConf.CollectionName)
 	if indexCreateErr != nil {
 		g.log.Error(indexCreateErr)
 	}
@@ -100,11 +90,10 @@ func (g *GraphMongoPump) WriteData(ctx context.Context, data []interface{}) erro
 	errCh := make(chan error, len(accumulateSet))
 	for _, dataSet := range accumulateSet {
 		go func(dataSet []id.DBObject, errCh chan error) {
-
 			// make a graph record array with variable length in case there are errors with some conversion
 			finalSet := make([]id.DBObject, 0)
 			for _, d := range dataSet {
-				r, ok := d.(analytics.AnalyticsRecord)
+				r, ok := d.(*analytics.AnalyticsRecord)
 				if !ok {
 					continue
 				}
@@ -115,7 +104,7 @@ func (g *GraphMongoPump) WriteData(ctx context.Context, data []interface{}) erro
 				)
 				if r.RawRequest == "" || r.RawResponse == "" || r.ApiSchema == "" {
 					g.log.Warn("skipping record parsing")
-					gr = analytics.GraphRecord{AnalyticsRecord: r}
+					gr = analytics.GraphRecord{AnalyticsRecord: *r}
 				} else {
 					gr = r.ToGraphRecord()
 					if err != nil {
@@ -125,7 +114,7 @@ func (g *GraphMongoPump) WriteData(ctx context.Context, data []interface{}) erro
 					}
 				}
 
-				finalSet = append(finalSet, gr)
+				finalSet = append(finalSet, &gr)
 			}
 
 			g.log.WithFields(logrus.Fields{

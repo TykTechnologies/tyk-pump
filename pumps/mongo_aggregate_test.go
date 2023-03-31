@@ -101,12 +101,12 @@ func TestDoAggregatedWritingWithIgnoredAggregations(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.testName, func(t *testing.T) {
-			dummyObject := dummyObject{}
+			newDummyObject := dummyObject{}
 			if tc.IsMixed {
-				dummyObject.tableName = analytics.AgggregateMixedCollectionName
+				newDummyObject.tableName = analytics.AgggregateMixedCollectionName
 			} else {
 				var collErr error
-				dummyObject.tableName, collErr = pmp1.GetCollectionName("123")
+				newDummyObject.tableName, collErr = pmp1.GetCollectionName("123")
 				assert.Nil(t, collErr)
 			}
 
@@ -118,7 +118,7 @@ func TestDoAggregatedWritingWithIgnoredAggregations(t *testing.T) {
 
 			res := analytics.AnalyticsRecordAggregate{}
 			// fetch the results
-			errFind := pmp1.store.Query(context.Background(), dummyObject, &res, query)
+			errFind := pmp1.store.Query(context.Background(), newDummyObject, &res, query)
 			assert.Nil(t, errFind)
 
 			// double check that the res is not nil
@@ -197,7 +197,12 @@ func TestAggregationTime(t *testing.T) {
 
 			defer func() {
 				// we clean the db after we finish every test case
-				defer pmp1.store.DropDatabase(context.Background())
+				defer func() {
+					err := pmp1.store.DropDatabase(context.Background())
+					if err != nil {
+						t.Fatal(err)
+					}
+				}()
 			}()
 
 			ctx := context.TODO()
@@ -218,7 +223,7 @@ func TestAggregationTime(t *testing.T) {
 
 			results := []analytics.AnalyticsRecordAggregate{}
 			// fetch the results
-			errFind := pmp1.store.Query(context.Background(), analytics.AnalyticsRecordAggregate{
+			errFind := pmp1.store.Query(context.Background(), &analytics.AnalyticsRecordAggregate{
 				Mixed: true,
 			}, &results, query)
 			assert.Nil(t, errFind)
@@ -297,8 +302,13 @@ func TestMongoAggregatePump_SelfHealing(t *testing.T) {
 	}
 
 	defer func() {
-		// we clean the db after we finish the test
-		defer pmp1.store.DropDatabase(context.Background())
+		// we clean the db after we finish every test case
+		defer func() {
+			err := pmp1.store.DropDatabase(context.Background())
+			if err != nil {
+				t.Fatal(err)
+			}
+		}()
 	}()
 
 	var count int
@@ -452,50 +462,6 @@ func TestMongoAggregatePump_ShouldSelfHeal(t *testing.T) {
 			}
 			if got := m.ShouldSelfHeal(tt.inputErr); got != tt.want {
 				t.Errorf("MongoAggregatePump.ShouldSelfHeal() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestMongoAggregatePump_HandleWriteErr(t *testing.T) {
-	cfgPump1 := make(map[string]interface{})
-	cfgPump1["mongo_url"] = "mongodb://localhost:27017/tyk_analytics"
-	cfgPump1["ignore_aggregations"] = []string{"apikeys"}
-	cfgPump1["use_mixed_collection"] = true
-	cfgPump1["store_analytics_per_minute"] = false
-	pmp1 := MongoAggregatePump{}
-
-	errInit1 := pmp1.Init(cfgPump1)
-	if errInit1 != nil {
-		t.Error(errInit1)
-		return
-	}
-
-	tests := []struct {
-		inputErr error
-		name     string
-		wantErr  bool
-	}{
-		{
-			name:     "nil error",
-			inputErr: nil,
-			wantErr:  false,
-		},
-		{
-			name:     "random error",
-			inputErr: errors.New("random error"),
-			wantErr:  true,
-		},
-		{
-			name:     "EOF error",
-			inputErr: errors.New("EOF"),
-			wantErr:  true,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := pmp1.HandleWriteErr(tt.inputErr); (err != nil) != tt.wantErr {
-				t.Errorf("MongoAggregatePump.HandleWriteErr() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}

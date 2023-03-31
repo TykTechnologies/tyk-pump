@@ -116,18 +116,18 @@ type AnalyticsRecordAggregate struct {
 	Mixed    bool
 }
 
-func (a AnalyticsRecordAggregate) TableName() string {
-	if a.Mixed {
+func (f *AnalyticsRecordAggregate) TableName() string {
+	if f.Mixed {
 		return AgggregateMixedCollectionName
 	}
-	return "z_tyk_analyticz_aggregate_" + a.OrgID
+	return "z_tyk_analyticz_aggregate_" + f.OrgID
 }
 
-func (AnalyticsRecordAggregate) GetObjectID() id.ObjectId {
+func (f *AnalyticsRecordAggregate) GetObjectID() id.ObjectId {
 	return ""
 }
 
-func (AnalyticsRecordAggregate) SetObjectID(id id.ObjectId) {}
+func (f *AnalyticsRecordAggregate) SetObjectID(id id.ObjectId) {}
 
 type SQLAnalyticsRecordAggregate struct {
 	ID string `gorm:"primaryKey"`

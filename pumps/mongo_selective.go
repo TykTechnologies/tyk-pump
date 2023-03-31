@@ -23,16 +23,6 @@ type MongoSelectivePump struct {
 	CommonPumpConfig
 }
 
-func (MongoSelectivePump) GetObjectID() id.ObjectId {
-	return ""
-}
-
-func (MongoSelectivePump) SetObjectID(id.ObjectId) {}
-
-func (m MongoSelectivePump) TableName() string {
-	return ""
-}
-
 var mongoSelectivePrefix = "mongo-pump-selective"
 var mongoSelectivePumpPrefix = "PMP_MONGOSEL"
 var mongoSelectiveDefaultEnv = PUMPS_ENV_PREFIX + "_MONGOSELECTIVE" + PUMPS_ENV_META_PREFIX
@@ -141,6 +131,9 @@ func (m *MongoSelectivePump) ensureIndexes(collectionName string) error {
 	}
 
 	var err error
+	d := dbObject{
+		tableName: collectionName,
+	}
 	// CosmosDB does not support "expireAt" option
 	if m.dbConf.MongoDBType != CosmosDB {
 		ttlIndex := index.Index{
@@ -150,7 +143,10 @@ func (m *MongoSelectivePump) ensureIndexes(collectionName string) error {
 			Background: m.dbConf.MongoDBType == StandardMongo,
 		}
 
-		err = m.store.CreateIndex(context.Background(), m, ttlIndex)
+		err = m.store.CreateIndex(context.Background(), d, ttlIndex)
+		if err != nil {
+			return err
+		}
 	}
 
 	apiIndex := index.Index{
@@ -158,7 +154,7 @@ func (m *MongoSelectivePump) ensureIndexes(collectionName string) error {
 		Background: m.dbConf.MongoDBType == StandardMongo,
 	}
 
-	err = m.store.CreateIndex(context.Background(), m, apiIndex)
+	err = m.store.CreateIndex(context.Background(), d, apiIndex)
 	if err != nil {
 		return err
 	}
@@ -169,7 +165,7 @@ func (m *MongoSelectivePump) ensureIndexes(collectionName string) error {
 		Background: m.dbConf.MongoDBType == StandardMongo,
 	}
 
-	err = m.store.CreateIndex(context.Background(), m, logBrowserIndex)
+	err = m.store.CreateIndex(context.Background(), d, logBrowserIndex)
 	if err != nil && !strings.Contains(err.Error(), "already exists with a different name") {
 		return err
 	}
@@ -201,17 +197,16 @@ func (m *MongoSelectivePump) WriteData(ctx context.Context, data []interface{}) 
 		}
 	}
 
-	for col_name, filtered_data := range analyticsPerOrg {
-
-		for _, dataSet := range m.AccumulateSet(filtered_data) {
-			indexCreateErr := m.ensureIndexes(m.TableName())
+	for colName, filteredData := range analyticsPerOrg {
+		for _, dataSet := range m.AccumulateSet(filteredData) {
+			indexCreateErr := m.ensureIndexes(colName)
 			if indexCreateErr != nil {
-				m.log.WithField("collection", col_name).Error(indexCreateErr)
+				m.log.WithField("collection", colName).Error(indexCreateErr)
 			}
 
 			err := m.store.Insert(context.Background(), dataSet...)
 			if err != nil {
-				m.log.WithField("collection", col_name).Error("Problem inserting to mongo collection: ", err)
+				m.log.WithField("collection", colName).Error("Problem inserting to mongo collection: ", err)
 				if strings.Contains(strings.ToLower(err.Error()), "closed explicitly") {
 					m.log.Warning("--> Detected connection failure, reconnecting")
 					m.connect()
@@ -259,7 +254,7 @@ func (m *MongoSelectivePump) AccumulateSet(data []interface{}) [][]id.DBObject {
 				thisResultSet = make([]id.DBObject, 0)
 				accumulatorTotal = sizeBytes
 			}
-			thisResultSet = append(thisResultSet, thisItem)
+			thisResultSet = append(thisResultSet, &thisItem)
 
 			m.log.Debug(accumulatorTotal, " of ", m.dbConf.MaxInsertBatchSizeBytes)
 			// Append the last element if the loop is about to end
@@ -291,7 +286,7 @@ func (m *MongoSelectivePump) WriteUptimeData(data []interface{}) {
 			if err != nil {
 				m.log.Error("Couldn't unmarshal analytics data:", err)
 			} else {
-				keys[i] = decoded
+				keys[i] = &decoded
 			}
 		}
 
@@ -305,7 +300,6 @@ func (m *MongoSelectivePump) WriteUptimeData(data []interface{}) {
 				m.connect()
 			}
 		}
-
 	}
 }
 
