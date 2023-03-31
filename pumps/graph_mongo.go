@@ -117,7 +117,7 @@ func (g *GraphMongoPump) WriteData(ctx context.Context, data []interface{}) erro
 					g.log.Warn("skipping record parsing")
 					gr = analytics.GraphRecord{AnalyticsRecord: r}
 				} else {
-					gr, err = r.ToGraphRecord()
+					gr = r.ToGraphRecord()
 					if err != nil {
 						errCh <- err
 						g.log.WithError(err).Warn("error converting 1 record to graph record")

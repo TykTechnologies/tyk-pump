@@ -54,6 +54,7 @@ The table below provides details on the fields within each `tyk_analytics` recor
 - [CSV](#csv-config)
 - [ElasticSearch (2.0+)](#elasticsearch-config)
 - [Graylog](#graylog)
+- [Resurface.io](#resurfaceio)
 - InfluxDB
 - [InfluxDB2](#influx2-config)
 - [Moesif](#moesif-config)
@@ -201,8 +202,10 @@ Take into account that you can also set `log_level` field into the `uptime_pump_
 In `uptime_pump_config` you can configure a mongo uptime pump. By default, the uptime pump is going to be `mongo` type, so it's not necessary to specify it here.
 
 The minimum required configurations for uptime pumps are:
-`collection_name` - That determines the uptime collection name in mongo. By default, `tyk_uptime_analytics`.
-`mongo_url` - The uptime pump mongo connection url. It is usually something like "mongodb://username:password@{hostname:port},{hostname:port}/{db_name}".
+
+- `collection_name` - That determines the uptime collection name in mongo. By default, `tyk_uptime_analytics`.
+
+- `mongo_url` - The uptime pump mongo connection url. It is usually something like "mongodb://username:password@{hostname:port},{hostname:port}/{db_name}".
 
 ###### JSON / Conf File
 ```
@@ -286,6 +289,36 @@ TYK_PMP_PUMPS_GRAYLOG_TYPE=graylog
 TYK_PMP_PUMPS_GRAYLOG_META_GRAYLOGHOST=10.60.6.15
 TYK_PMP_PUMPS_GRAYLOG_META_GRAYLOGPORT=12216
 TYK_PMP_PUMPS_GRAYLOG_META_TAGS=method,path,response_code,api_key,api_version,api_name,api_id,org_id,oauth_id,raw_request,request_time,raw_response,ip_address
+```
+
+## Resurface.io
+Resurface provides data-driven API security, by making each and every API call a durable transaction inside a purpose-built data lake. Use Resurface for attack and failure triage, root cause, threat and risk identification, and simply just knowing how your APIs are being used (and misused!). By continously scanning your own data lake, Resurface provides retroactive analysis. It identifies what's important in your API data, sending warnings and alerts in real-time for fast action.
+
+The only two fields necessary in the pump cofiguration are:
+
+ - `capture_url` corresponds to the Resurface database [capture endpoint URL](https://resurface.io/docs/#getting-capture-url). You might need to subsitute `localhost` for the corresponding hostname, if you're not running resurface locally.
+ - `rules` corresponds to an [active set of rules](https://resurface.io/logging-rules) that control what data is logged and how sensitive data is masked. The example below applies a predefined set of rules (`include debug`), but logging rules are easily customized to meet the needs of any application.
+
+**Note: Resurface requires Detailed Logging to be enabled in order to capture API call details in full.**
+
+###### JSON / Conf File Example
+
+```.json
+
+"resurface": {
+    "type": "resurfaceio",
+    "meta": {
+        "capture_url": "http://localhost:7701/message",
+        "rules": "include debug"
+    }
+}
+```
+
+###### Env Variables
+```
+TYK_PMP_PUMPS_RESURFACEIO_TYPE=resurfaceio
+TYK_PMP_PUMPS_RESURFACEIO_META_URL=http://localhost:7701/message
+TYK_PMP_PUMPS_RESURFACEIO_META_RULES="include debug"
 ```
 
 ## StatsD
@@ -404,16 +437,14 @@ For example, if the `aggregation_time` is configured as 50 (minutes) but the doc
 
 Note that `store_analytics_per_minute` takes precedence over `aggregation_time` so if `store_analytics_per_minute` is equal to true, the value of `aggregation_time` will be equal to 1 and self healing will not operate.
 
-###### Mongo Graph Pump
+## Mongo Graph Pump
 As of Pump 1.7+, a new mongo is available called the `mongo_graph` pump. This pump is specifically for parsing 
 GraphQL and UDG requests, tracking information like types requested, fields requested, specific graphql body errors etc.
 
 A sample config looks like this:
-```.json
+```json
 {
-  ...
   "pumps": {
-    ...
     "mongo-graph": {
       "type": "mongo-graph",
       "meta": {
@@ -423,6 +454,29 @@ A sample config looks like this:
     }
 }
 ```
+
+## SQL Graph Pump
+Similar to the Mongo graph pump, the `sql-graph` pump is a specialized pump for parsing and recording granular analytics for GraphQL and UDG requests.
+The difference, like the name says is this pump uses sql type databases as its storage db. Supported SQL databases are `sqlite`, `postgres`, `mysql`.
+
+A sample config looks like this:
+```json
+{
+  "pumps": {
+    "sql-graph": {
+      "meta": {
+        "type": "postgres",
+        "table_name": "graph-records",
+        "connection_string": "host=localhost user=postgres password=password dbname=postgres",
+        "table_sharding": false
+      }
+    }
+  }
+}
+```
+
+`table_sharding` - This determines how the sql tables are created, if this is set to true, a new table is created for each day of records for the graph data.
+The name format for each table is <table_name>_<date>. Defaults to false.
 
 ## Elasticsearch Config
 
@@ -596,7 +650,7 @@ TYK_PMP_PUMPS_PROMETHEUS_TYPE=prometheus
 TYK_PMP_PUMPS_PROMETHEUS_META_ADDR=localhost:9090
 TYK_PMP_PUMPS_PROMETHEUS_META_PATH=/metrics
 TYK_PMP_PUMPS_PROMETHEUS_META_CUSTOMMETRICS='[{"name":"tyk_http_requests_total","description":"Total of API requests","metric_type":"counter","labels":["response_code","api_name"]}]'
-TYK_PMP_PUMPS_PROMETHEUS_META_DISABLED_METRICS=[]
+TYK_PMP_PUMPS_PROMETHEUS_META_DISABLEDMETRICS=[]
 ```
 
 ## DogStatsD

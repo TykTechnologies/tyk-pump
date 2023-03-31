@@ -139,21 +139,22 @@ func TestAnalyticsRecord_ToGraphRecord(t *testing.T) {
 	graphRecordSample := GraphRecord{
 		AnalyticsRecord: recordSample,
 		Types:           make(map[string][]string),
+		RootFields:      make([]string, 0),
+		Errors:          make([]GraphError, 0),
 	}
 
 	testCases := []struct {
-		expected     func(string, string) GraphRecord
+		expected     func() GraphRecord
 		modifyRecord func(a AnalyticsRecord) AnalyticsRecord
 		title        string
 		request      string
 		response     string
-		expectedErr  string
 	}{
 		{
 			title:    "no error",
 			request:  `{"query":"query{\n  characters(filter: {\n    \n  }){\n    info{\n      count\n    }\n  }\n}"}`,
 			response: `{"data":{"characters":{"info":{"count":758}}}}`,
-			expected: func(request, response string) GraphRecord {
+			expected: func() GraphRecord {
 				g := graphRecordSample
 				g.HasErrors = false
 				g.Types = map[string][]string{
@@ -161,22 +162,38 @@ func TestAnalyticsRecord_ToGraphRecord(t *testing.T) {
 					"Info":       {"count"},
 				}
 				g.OperationType = "Query"
+				g.RootFields = []string{"characters"}
 				return g
 			},
 		},
 		{
-			title:    "error field type",
+			title:    "multiple query operations",
+			request:  `{"query":"query {\r\n  characters(filter: {}) {\r\n    info {\r\n      count\r\n    }\r\n  }\r\n  listCharacters {\r\n    info {\r\n      count\r\n    }\r\n  }\r\n}\r\n"}`,
+			response: `{"data":{"characters":{"info":{"count":758}}}}`,
+			expected: func() GraphRecord {
+				g := graphRecordSample
+				g.HasErrors = false
+				g.Types = map[string][]string{
+					"Characters": {"info"},
+					"Info":       {"count"},
+				}
+				g.OperationType = "Query"
+				g.RootFields = []string{"characters", "listCharacters"}
+				return g
+			},
+		},
+		{
+			title:    "subgraph request",
 			request:  `{"query":"query($representations: [_Any!]!){_entities(representations: $representations){... on User {reviews {body}}}}","variables":{"representations":[{"id":"1234","__typename":"User"}]}}`,
 			response: `{"data":{"_entities":[{"reviews":[{"body":"A highly effective form of birth control."},{"body":"Fedoras are one of the most fashionable hats around and can look great with a variety of outfits."}]}]}}`,
-			expected: func(s, s2 string) GraphRecord {
+			expected: func() GraphRecord {
 				variables := `{"representations":[{"id":"1234","__typename":"User"}]}`
 				g := graphRecordSample
 				g.OperationType = "Query"
 				g.Variables = base64.StdEncoding.EncodeToString([]byte(variables))
-				g.Types = nil
+				g.RootFields = []string{"_entities"}
 				return g
 			},
-			expectedErr: "invalid selection set field type",
 			modifyRecord: func(a AnalyticsRecord) AnalyticsRecord {
 				a.ApiSchema = base64.StdEncoding.EncodeToString([]byte(subgraphSchema))
 				return a
@@ -186,10 +203,11 @@ func TestAnalyticsRecord_ToGraphRecord(t *testing.T) {
 			title:    "no error mutation",
 			request:  `{"query":"mutation{\n  changeCharacter()\n}"}`,
 			response: `{"data":{"characters":{"info":{"count":758}}}}`,
-			expected: func(request, response string) GraphRecord {
+			expected: func() GraphRecord {
 				g := graphRecordSample
 				g.HasErrors = false
 				g.OperationType = "Mutation"
+				g.RootFields = []string{"changeCharacter"}
 				return g
 			},
 		},
@@ -197,7 +215,7 @@ func TestAnalyticsRecord_ToGraphRecord(t *testing.T) {
 			title:    "no error subscription",
 			request:  `{"query":"subscription{\n  listenCharacter(){\n    info{\n      count\n    }\n  }\n}"}`,
 			response: `{"data":{"characters":{"info":{"count":758}}}}`,
-			expected: func(request, response string) GraphRecord {
+			expected: func() GraphRecord {
 				g := graphRecordSample
 				g.HasErrors = false
 				g.Types = map[string][]string{
@@ -205,23 +223,30 @@ func TestAnalyticsRecord_ToGraphRecord(t *testing.T) {
 					"Info":       {"count"},
 				}
 				g.OperationType = "Subscription"
+				g.RootFields = []string{"listenCharacter"}
 				return g
 			},
 		},
 		{
 			title:    "bad document",
 			request:  `{"query":"subscriptiona{\n  listenCharacter(){\n    info{\n      count\n    }\n  }\n}"}`,
-			response: `{"data":{"characters":{"info":{"count":758}}}}`,
-			expected: func(request, response string) GraphRecord {
-				return GraphRecord{}
+			response: `{"errors":[{"message":"invalid document error"}]}`,
+			expected: func() GraphRecord {
+				doc := graphRecordSample
+				doc.HasErrors = true
+				doc.Errors = []GraphError{
+					{
+						Message: "invalid document error",
+					},
+				}
+				return doc
 			},
-			expectedErr: "error generating documents",
 		},
 		{
 			title:    "no error list operation",
 			request:  `{"query":"query{\n  listCharacters(){\n    info{\n      count\n    }\n  }\n}"}`,
 			response: `{"data":{"characters":{"info":{"count":758}}}}`,
-			expected: func(request, response string) GraphRecord {
+			expected: func() GraphRecord {
 				g := graphRecordSample
 				g.HasErrors = false
 				g.Types = map[string][]string{
@@ -229,6 +254,7 @@ func TestAnalyticsRecord_ToGraphRecord(t *testing.T) {
 					"Info":       {"count"},
 				}
 				g.OperationType = "Query"
+				g.RootFields = []string{"listCharacters"}
 				return g
 			},
 		},
@@ -236,7 +262,7 @@ func TestAnalyticsRecord_ToGraphRecord(t *testing.T) {
 			title:    "has variables",
 			request:  `{"query":"query{\n  characters(filter: {\n    \n  }){\n    info{\n      count\n    }\n  }\n}","variables":{"a":"test"}}`,
 			response: `{"data":{"characters":{"info":{"count":758}}}}`,
-			expected: func(request, response string) GraphRecord {
+			expected: func() GraphRecord {
 				g := graphRecordSample
 				g.HasErrors = false
 				g.Types = map[string][]string{
@@ -244,6 +270,7 @@ func TestAnalyticsRecord_ToGraphRecord(t *testing.T) {
 					"Info":       {"count"},
 				}
 				g.OperationType = "Query"
+				g.RootFields = []string{"characters"}
 				g.Variables = base64.StdEncoding.EncodeToString([]byte(`{"a":"test"}`))
 				return g
 			},
@@ -251,26 +278,32 @@ func TestAnalyticsRecord_ToGraphRecord(t *testing.T) {
 		{
 			title:    "no operation",
 			request:  `{"query":"query main {\ncharacters {\ninfo\n}\n}\n\nquery second {\nlistCharacters{\ninfo\n}\n}","variables":null,"operationName":""}`,
-			response: `{"data":{"characters":{"info":{"count":758}}}}`,
-			expected: func(request, response string) GraphRecord {
-				return GraphRecord{}
+			response: `{"errors":[{"message":"no operation specified"}]}`,
+			expected: func() GraphRecord {
+				doc := graphRecordSample
+				doc.HasErrors = true
+				doc.Errors = []GraphError{
+					{
+						Message: "no operation specified",
+					},
+				}
+				return doc
 			},
-			expectedErr: "no operation name specified",
 		},
 		{
 			title:    "operation name specified",
 			request:  `{"query":"query main {\ncharacters {\ninfo\n}\n}\n\nquery second {\nlistCharacters{\ninfo\n secondInfo}\n}","variables":null,"operationName":"second"}`,
 			response: `{"data":{"characters":{"info":{"count":758}}}}`,
-			expected: func(request, response string) GraphRecord {
+			expected: func() GraphRecord {
 				g := graphRecordSample
 				g.HasErrors = false
 				g.Types = map[string][]string{
 					"Characters": {"info", "secondInfo"},
 				}
 				g.OperationType = "Query"
+				g.RootFields = []string{"listCharacters"}
 				return g
 			},
-			expectedErr: "",
 		},
 		{
 			title:   "has errors",
@@ -284,7 +317,7 @@ func TestAnalyticsRecord_ToGraphRecord(t *testing.T) {
     }
   ]
 }`,
-			expected: func(request, response string) GraphRecord {
+			expected: func() GraphRecord {
 				g := graphRecordSample
 				g.HasErrors = true
 				g.Types = map[string][]string{
@@ -296,29 +329,79 @@ func TestAnalyticsRecord_ToGraphRecord(t *testing.T) {
 					Message: "Name for character with ID 1002 could not be fetched.",
 					Path:    []interface{}{"hero", "heroFriends", float64(1), "name"},
 				})
+				g.RootFields = []string{"characters"}
 				return g
 			},
 		},
 		{
-			title: "corrupted raw request should error out",
+			title: "corrupted raw request ",
 			modifyRecord: func(a AnalyticsRecord) AnalyticsRecord {
 				a.RawRequest = "this isn't a base64 is it?"
 				return a
 			},
-			expectedErr: "error decoding raw request",
-			expected: func(s, s2 string) GraphRecord {
-				return GraphRecord{}
+			expected: func() GraphRecord {
+				return graphRecordSample
 			},
 		},
 		{
-			title: "corrupted schema should error out",
+			title:   "corrupted raw response ",
+			request: `{"query":"query{\n  characters(filter: {\n    \n  }){\n    info{\n      count\n    }\n  }\n}"}`,
+			modifyRecord: func(a AnalyticsRecord) AnalyticsRecord {
+				a.RawResponse = "this isn't a base64 is it?"
+				return a
+			},
+			expected: func() GraphRecord {
+				g := graphRecordSample
+				g.Types = map[string][]string{
+					"Characters": {"info"},
+					"Info":       {"count"},
+				}
+				g.OperationType = "Query"
+				g.RootFields = []string{"characters"}
+				return g
+			},
+		},
+		{
+			title:    "invalid response json ",
+			request:  `{"query":"query{\n  characters(filter: {\n    \n  }){\n    info{\n      count\n    }\n  }\n}"}`,
+			response: "invalid json",
+			expected: func() GraphRecord {
+				g := graphRecordSample
+				g.Types = map[string][]string{
+					"Characters": {"info"},
+					"Info":       {"count"},
+				}
+				g.OperationType = "Query"
+				g.RootFields = []string{"characters"}
+				return g
+			},
+		},
+		{
+			title:    "corrupted schema should error out",
+			request:  `{"query":"query main {\ncharacters {\ninfo\n}\n}\n\nquery second {\nlistCharacters{\ninfo\n}\n}","variables":null,"operationName":""}`,
+			response: `{"errors":[{"message":"no operation specified"}]}`,
 			modifyRecord: func(a AnalyticsRecord) AnalyticsRecord {
 				a.ApiSchema = "this isn't a base64 is it?"
 				return a
 			},
-			expectedErr: "error decoding schema",
-			expected: func(s, s2 string) GraphRecord {
-				return GraphRecord{}
+			expected: func() GraphRecord {
+				rec := graphRecordSample
+				rec.Errors = []GraphError{{Message: "no operation specified"}}
+				rec.HasErrors = true
+				return rec
+			},
+		},
+		{
+			title:    "error in request",
+			request:  `{"query":"query{\n  characters(filter: {\n    \n  }){\n    info{\n      counts\n    }\n  }\n}"}`,
+			response: `{"errors":[{"message":"illegal field"}]}`,
+			expected: func() GraphRecord {
+				g := graphRecordSample
+				g.HasErrors = true
+				g.Errors = append(g.Errors, GraphError{
+					Message: "illegal field",
+				})
+				return g
 			},
 		},
 	}
@@ -339,15 +422,10 @@ func TestAnalyticsRecord_ToGraphRecord(t *testing.T) {
 			if testCase.modifyRecord != nil {
 				a = testCase.modifyRecord(a)
 			}
-			expected := testCase.expected(testCase.request, testCase.response)
+			expected := testCase.expected()
 			expected.AnalyticsRecord = a
-			gotten, err := a.ToGraphRecord()
-			if testCase.expectedErr != "" {
-				assert.ErrorContains(t, err, testCase.expectedErr)
-				return
-			}
-			assert.NoError(t, err)
-			if diff := cmp.Diff(expected, gotten, cmpopts.IgnoreFields(GraphRecord{}, "RawRequest", "RawResponse")); diff != "" {
+			gotten := a.ToGraphRecord()
+			if diff := cmp.Diff(expected, gotten, cmpopts.IgnoreFields(AnalyticsRecord{}, "RawRequest", "RawResponse")); diff != "" {
 				t.Fatal(diff)
 			}
 		})

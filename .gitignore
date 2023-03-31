@@ -19,3 +19,4 @@ pumps/chunk.go
 .DS_Store
 migrate.js
 utils/release_rc.sh
+.terraform**
