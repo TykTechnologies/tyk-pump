@@ -274,7 +274,8 @@ func (m *MongoAggregatePump) WriteData(ctx context.Context, data []interface{}) 
 	// calculate aggregates
 	analyticsPerOrg := analytics.AggregateData(data, m.dbConf.TrackAllPaths, m.dbConf.IgnoreTagPrefixList, m.dbConf.MongoURL, m.dbConf.AggregationTime)
 	// put aggregated data into MongoDB
-	for orgID, filteredData := range analyticsPerOrg {
+	for orgID := range analyticsPerOrg {
+		filteredData := analyticsPerOrg[orgID]
 		err := m.DoAggregatedWriting(ctx, orgID, filteredData)
 		if err != nil {
 			// checking if the error is related to the document size and AggregateSelfHealing is enabled
