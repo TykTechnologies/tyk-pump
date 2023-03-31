@@ -132,7 +132,9 @@ func (g *GraphMongoPump) WriteData(ctx context.Context, data []interface{}) erro
 				"collection":        collectionName,
 				"number of records": len(finalSet),
 			}).Debug("Attempt to purge records")
-
+			for _, r := range finalSet {
+				fmt.Println("tablename:", r.TableName())
+			}
 			err := g.store.Insert(context.Background(), finalSet...)
 			if err != nil {
 				g.log.WithFields(logrus.Fields{"collection": collectionName, "number of records": len(finalSet)}).Error("Problem inserting to mongo collection: ", err)

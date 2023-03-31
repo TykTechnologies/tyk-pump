@@ -319,6 +319,8 @@ func (m *MongoAggregatePump) WriteData(ctx context.Context, data []interface{}) 
 }
 
 func (m *MongoAggregatePump) doMixedWrite(changeDoc analytics.AnalyticsRecordAggregate, query dbm.DBM) {
+	changeDoc.Mixed = true
+	fmt.Println("changedoc tablename:", changeDoc.TableName())
 	err := m.ensureIndexes(changeDoc.TableName())
 	if err != nil {
 		m.log.Error("error creating indexes: ", err)
@@ -328,7 +330,9 @@ func (m *MongoAggregatePump) doMixedWrite(changeDoc analytics.AnalyticsRecordAgg
 		"collection": analytics.AgggregateMixedCollectionName,
 	}).Debug("Attempt to upsert aggregated doc")
 
-	err = m.store.BulkUpdate(context.Background(), []id.DBObject{changeDoc}, query)
+	err = m.store.Upsert(context.Background(), &changeDoc, query, dbm.DBM{
+		"$set": changeDoc,
+	})
 	if err != nil {
 		m.log.WithFields(logrus.Fields{
 			"collection": analytics.AgggregateMixedCollectionName,
@@ -439,7 +443,7 @@ func (m *MongoAggregatePump) getLastDocumentTimestamp() (time.Time, error) {
 	}
 
 	var result dbm.DBM
-	err := m.store.Query(context.Background(), d, result, dbm.DBM{"_sort": "-$natural", "_limit": 1})
+	err := m.store.Query(context.Background(), d, &result, dbm.DBM{"_sort": "-$natural", "_limit": 1})
 	if err != nil {
 		return time.Time{}, err
 	}

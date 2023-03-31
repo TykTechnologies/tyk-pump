@@ -102,9 +102,13 @@ type AnalyticsRecordAggregate struct {
 
 	ExpireAt time.Time `bson:"expireAt" json:"expireAt"`
 	LastTime time.Time
+	Mixed    bool
 }
 
 func (a AnalyticsRecordAggregate) TableName() string {
+	if a.Mixed {
+		return AgggregateMixedCollectionName
+	}
 	return "z_tyk_analyticz_aggregate_" + a.OrgID
 }
 

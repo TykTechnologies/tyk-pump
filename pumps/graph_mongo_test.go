@@ -145,9 +145,6 @@ X-Ratelimit-Reset: 0
 `
 
 func TestGraphMongoPump_WriteData(t *testing.T) {
-	c := Conn{}
-	c.ConnectDb()
-	defer c.CleanDb()
 
 	conf := defaultConf()
 	pump := GraphMongoPump{
@@ -159,6 +156,8 @@ func TestGraphMongoPump_WriteData(t *testing.T) {
 	pump.MongoPump.CommonPumpConfig = pump.CommonPumpConfig
 	pump.dbConf.CollectionCapEnable = true
 	pump.dbConf.CollectionCapMaxSizeBytes = 0
+
+	pump.connect()
 
 	type customRecord struct {
 		rawRequest   string
@@ -327,7 +326,7 @@ func TestGraphMongoPump_WriteData(t *testing.T) {
 			}()
 
 			var results []analytics.GraphRecord
-			err = pump.store.Query(context.Background(), pump, results, nil)
+			err = pump.store.Query(context.Background(), analytics.GraphRecord{}, &results, nil)
 			assert.Nil(t, err)
 			if diff := cmp.Diff(tc.expectedGraphRecords, results, cmpopts.IgnoreFields(analytics.GraphRecord{}, "AnalyticsRecord")); diff != "" {
 				t.Error(diff)
