@@ -17,6 +17,7 @@ import (
 	"github.com/TykTechnologies/graphql-go-tools/pkg/astparser"
 	gql "github.com/TykTechnologies/graphql-go-tools/pkg/graphql"
 	"github.com/TykTechnologies/graphql-go-tools/pkg/operationreport"
+	"github.com/TykTechnologies/storage/persistent/id"
 )
 
 type GraphRecord struct {
@@ -30,6 +31,16 @@ type GraphRecord struct {
 	Errors        []GraphError `gorm:"errors"`
 	HasErrors     bool         `gorm:"has_errors"`
 }
+
+func (g GraphRecord) TableName() string {
+	return g.AnalyticsRecord.TableName()
+}
+
+func (GraphRecord) GetObjectID() id.ObjectId {
+	return ""
+}
+
+func (GraphRecord) SetObjectID(id.ObjectId) {}
 
 // parseRequest reads the raw encoded request and schema, extracting the type information
 // operation information and root field operations
