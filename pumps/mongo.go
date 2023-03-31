@@ -278,7 +278,6 @@ func (m *MongoPump) TableName() string {
 
 func (m *MongoPump) ensureIndexes() error {
 	if m.dbConf.OmitIndexCreation {
-		fmt.Println("omitting...")
 		m.log.Debug("omit_index_creation set to true, omitting index creation..")
 		return nil
 	}
@@ -318,7 +317,6 @@ func (m *MongoPump) ensureIndexes() error {
 		Keys:       []dbm.DBM{{"-timestamp": 1}, {"orgid": 1}, {"apiid": 1}, {"apikey": 1}, {"responsecode": 1}},
 		Background: m.dbConf.MongoDBType == StandardMongo,
 	}
-	fmt.Println("creating indexes....")
 	return m.store.CreateIndex(context.Background(), m, logBrowserIndex)
 }
 
