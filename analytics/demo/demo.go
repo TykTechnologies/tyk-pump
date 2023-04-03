@@ -171,7 +171,7 @@ func GenerateDemoData(days, recordsPerHour int, orgID string, demoFutureData, tr
 
 	// Otherwise, we want to start at the (current date - X days) and create data until yesterday's date
 	for d := days; d > 0; d-- {
-		for h := 0; h < 24; h++ {
+		for h := 0; h < 1; h++ {
 			WriteDemoData(start, -d, h, recordsPerHour, orgID, trackPath, writer)
 		}
 		count++

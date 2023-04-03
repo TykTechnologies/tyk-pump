@@ -4,19 +4,18 @@ import (
 	"context"
 	b64 "encoding/base64"
 	"errors"
-	"fmt"
 	"sort"
 	"strings"
 	"time"
 
 	"github.com/kelseyhightower/envconfig"
 	"github.com/mitchellh/mapstructure"
+	"github.com/sirupsen/logrus"
 
 	"github.com/TykTechnologies/storage/persistent"
 	"github.com/TykTechnologies/storage/persistent/dbm"
 	"github.com/TykTechnologies/storage/persistent/index"
 	"github.com/TykTechnologies/tyk-pump/analytics"
-	"github.com/sirupsen/logrus"
 )
 
 var mongoAggregatePumpPrefix = "PMP_MONGOAGG"
@@ -275,22 +274,27 @@ func (m *MongoAggregatePump) WriteData(ctx context.Context, data []interface{}) 
 	// calculate aggregates
 	analyticsPerOrg := analytics.AggregateData(data, m.dbConf.TrackAllPaths, m.dbConf.IgnoreTagPrefixList, m.dbConf.MongoURL, m.dbConf.AggregationTime)
 	// put aggregated data into MongoDB
+	writingAttempts := []bool{false}
+	if m.dbConf.UseMixedCollection {
+		writingAttempts = append(writingAttempts, true)
+	}
 	for orgID := range analyticsPerOrg {
 		filteredData := analyticsPerOrg[orgID]
-		err := m.DoAggregatedWriting(ctx, orgID, filteredData)
-		if err != nil {
-			// checking if the error is related to the document size and AggregateSelfHealing is enabled
-			if shouldSelfHeal := m.ShouldSelfHeal(err); shouldSelfHeal {
-				// executing the function again with the new AggregationTime setting
-				newErr := m.WriteData(ctx, data)
-				if newErr == nil {
-					m.log.Info("Self-healing successful")
+		for _, isMixedCollection := range writingAttempts {
+			err := m.DoAggregatedWriting(ctx, orgID, filteredData, isMixedCollection)
+			if err != nil {
+				// checking if the error is related to the document size and AggregateSelfHealing is enabled
+				if shouldSelfHeal := m.ShouldSelfHeal(err); shouldSelfHeal {
+					// executing the function again with the new AggregationTime setting
+					newErr := m.WriteData(ctx, data)
+					if newErr == nil {
+						m.log.Info("Self-healing successful")
+					}
+					return newErr
 				}
-				return newErr
+				return err
 			}
-			return err
 		}
-
 		m.log.Debug("Processed aggregated data for ", orgID)
 	}
 
@@ -299,32 +303,8 @@ func (m *MongoAggregatePump) WriteData(ctx context.Context, data []interface{}) 
 	return nil
 }
 
-func (m *MongoAggregatePump) doMixedWrite(changeDoc *analytics.AnalyticsRecordAggregate, query dbm.DBM) {
-	changeDoc.Mixed = true
-	err := m.ensureIndexes(changeDoc.TableName())
-	if err != nil {
-		m.log.Error("error creating indexes: ", err)
-	}
-
-	m.log.WithFields(logrus.Fields{
-		"collection": analytics.AgggregateMixedCollectionName,
-	}).Debug("Attempt to upsert aggregated doc")
-
-	err = m.store.Upsert(context.Background(), changeDoc, query, dbm.DBM{
-		"$set": changeDoc,
-	})
-	if err != nil {
-		m.log.WithFields(logrus.Fields{
-			"collection": analytics.AgggregateMixedCollectionName,
-		}).Error("Mixed coll upsert failure: ", err)
-	}
-	m.log.WithFields(logrus.Fields{
-		"collection": analytics.AgggregateMixedCollectionName,
-	}).Info("Completed upserting")
-}
-
-func (m *MongoAggregatePump) DoAggregatedWriting(ctx context.Context, orgID string, filteredData analytics.AnalyticsRecordAggregate) error {
-
+func (m *MongoAggregatePump) DoAggregatedWriting(ctx context.Context, orgID string, filteredData analytics.AnalyticsRecordAggregate, mixed bool) error {
+	filteredData.Mixed = mixed
 	indexCreateErr := m.ensureIndexes(filteredData.TableName())
 
 	if indexCreateErr != nil {
@@ -343,7 +323,13 @@ func (m *MongoAggregatePump) DoAggregatedWriting(ctx context.Context, orgID stri
 	updateDoc := filteredData.AsChange()
 	doc := &analytics.AnalyticsRecordAggregate{
 		OrgID: filteredData.OrgID,
+		Mixed: mixed,
 	}
+
+	m.log.WithFields(logrus.Fields{
+		"collection": doc.TableName(),
+	}).Debug("Attempt to upsert aggregated doc")
+
 	err := m.store.Upsert(context.Background(), doc, query, updateDoc)
 	if err != nil {
 		m.log.WithField("query", query).Error("UPSERT Failure: ", err)
@@ -365,19 +351,7 @@ func (m *MongoAggregatePump) DoAggregatedWriting(ctx context.Context, orgID stri
 	if m.dbConf.ThresholdLenTagList != -1 && (len(withTimeUpdate.Tags) > m.dbConf.ThresholdLenTagList) {
 		m.printAlert(withTimeUpdate, m.dbConf.ThresholdLenTagList)
 	}
-	if m.dbConf.UseMixedCollection {
-		thisData := &analytics.AnalyticsRecordAggregate{
-			OrgID: filteredData.OrgID,
-		}
-		fmt.Println("withTimeUpdate ID:", withTimeUpdate.GetObjectID())
-		thisData.SetObjectID(withTimeUpdate.GetObjectID())
-		err := m.store.Query(context.Background(), thisData, thisData, query)
-		if err != nil {
-			m.log.WithField("query", query).Error("Couldn't find query doc:", err)
-		} else {
-			m.doMixedWrite(thisData, query)
-		}
-	}
+
 	return nil
 }
 
