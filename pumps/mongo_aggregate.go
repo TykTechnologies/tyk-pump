@@ -4,6 +4,7 @@ import (
 	"context"
 	b64 "encoding/base64"
 	"errors"
+	"fmt"
 	"sort"
 	"strings"
 	"time"
@@ -201,7 +202,7 @@ func (m *MongoAggregatePump) connect() {
 	var err error
 
 	if m.dbConf.MongoDriverType == "" {
-		m.dbConf.MongoDriverType = "mgo"
+		m.dbConf.MongoDriverType = "mongo-go"
 	}
 
 	m.store, err = persistent.NewPersistentStorage(&persistent.ClientOpts{
@@ -365,14 +366,16 @@ func (m *MongoAggregatePump) DoAggregatedWriting(ctx context.Context, orgID stri
 		m.printAlert(withTimeUpdate, m.dbConf.ThresholdLenTagList)
 	}
 	if m.dbConf.UseMixedCollection {
-		thisData := analytics.AnalyticsRecordAggregate{
+		thisData := &analytics.AnalyticsRecordAggregate{
 			OrgID: filteredData.OrgID,
 		}
-		err := m.store.Query(context.Background(), &thisData, &thisData, query)
+		fmt.Println("withTimeUpdate ID:", withTimeUpdate.GetObjectID())
+		thisData.SetObjectID(withTimeUpdate.GetObjectID())
+		err := m.store.Query(context.Background(), thisData, thisData, query)
 		if err != nil {
 			m.log.WithField("query", query).Error("Couldn't find query doc:", err)
 		} else {
-			m.doMixedWrite(&thisData, query)
+			m.doMixedWrite(thisData, query)
 		}
 	}
 	return nil

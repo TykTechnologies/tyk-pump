@@ -72,6 +72,7 @@ type GraphRecordAggregate struct {
 }
 
 type AnalyticsRecordAggregate struct {
+	ID        id.ObjectId `json:"_id" bson:"_id" gorm:"-:all"`
 	TimeStamp time.Time
 	OrgID     string
 	TimeID    struct {
@@ -113,7 +114,7 @@ type AnalyticsRecordAggregate struct {
 
 	ExpireAt time.Time `bson:"expireAt" json:"expireAt"`
 	LastTime time.Time
-	Mixed    bool
+	Mixed    bool `bson:"-" json:"-"`
 }
 
 func (f *AnalyticsRecordAggregate) TableName() string {
@@ -124,10 +125,12 @@ func (f *AnalyticsRecordAggregate) TableName() string {
 }
 
 func (f *AnalyticsRecordAggregate) GetObjectID() id.ObjectId {
-	return ""
+	return f.ID
 }
 
-func (f *AnalyticsRecordAggregate) SetObjectID(id id.ObjectId) {}
+func (f *AnalyticsRecordAggregate) SetObjectID(id id.ObjectId) {
+	f.ID = id
+}
 
 type SQLAnalyticsRecordAggregate struct {
 	ID string `gorm:"primaryKey"`

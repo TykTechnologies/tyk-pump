@@ -13,20 +13,21 @@ import (
 const UptimeSQLTable = "tyk_uptime_analytics"
 
 type UptimeReportData struct {
-	URL          string     `json:"url"`
-	RequestTime  int64      `json:"request_time"`
-	ResponseCode int        `json:"response_code"`
-	TCPError     bool       `json:"tcp_error"`
-	ServerError  bool       `json:"server_error"`
-	Day          int        `json:"day"`
-	Month        time.Month `json:"month"`
-	Year         int        `json:"year"`
-	Hour         int        `json:"hour"`
-	Minute       int        `json:"minute"`
-	TimeStamp    time.Time  `json:"timestamp"`
-	ExpireAt     time.Time  `bson:"expireAt"`
-	APIID        string     `json:"api_id"`
-	OrgID        string     `json:"org_id"`
+	ID           id.ObjectId `json:"_id" bson:"_id" gorm:"-:all"`
+	URL          string      `json:"url"`
+	RequestTime  int64       `json:"request_time"`
+	ResponseCode int         `json:"response_code"`
+	TCPError     bool        `json:"tcp_error"`
+	ServerError  bool        `json:"server_error"`
+	Day          int         `json:"day"`
+	Month        time.Month  `json:"month"`
+	Year         int         `json:"year"`
+	Hour         int         `json:"hour"`
+	Minute       int         `json:"minute"`
+	TimeStamp    time.Time   `json:"timestamp"`
+	ExpireAt     time.Time   `bson:"expireAt"`
+	APIID        string      `json:"api_id"`
+	OrgID        string      `json:"org_id"`
 }
 
 type UptimeReportAggregateSQL struct {
@@ -47,10 +48,12 @@ func (a *UptimeReportAggregateSQL) TableName() string {
 }
 
 func (a *UptimeReportData) GetObjectID() id.ObjectId {
-	return ""
+	return a.ID
 }
 
-func (a *UptimeReportData) SetObjectID(id.ObjectId) {}
+func (a *UptimeReportData) SetObjectID(id id.ObjectId) {
+	a.ID = id
+}
 
 func (a *UptimeReportData) TableName() string {
 	return UptimeSQLTable

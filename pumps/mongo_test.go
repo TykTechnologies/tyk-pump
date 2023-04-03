@@ -3,11 +3,16 @@ package pumps
 import (
 	"context"
 	"encoding/base64"
+	"errors"
 	"strconv"
 	"testing"
+	"time"
 
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+	"gopkg.in/vmihailenco/msgpack.v2"
 
+	"github.com/TykTechnologies/storage/persistent/dbm"
 	"github.com/TykTechnologies/storage/persistent/id"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 )
@@ -46,15 +51,15 @@ func TestMongoPumpOmitIndexCreation(t *testing.T) {
 	records := []interface{}{record, record}
 	dbObject := createDBObject(conf.CollectionName)
 	mPump.connect()
-	defer func() {
-		// we clean the db after we finish every test case
-		defer func() {
-			err := mPump.store.Drop(context.Background(), dbObject)
-			if err != nil {
-				t.Fatal(err)
-			}
-		}()
-	}()
+	// defer func() {
+	// 	// we clean the db after we finish every test case
+	// 	defer func() {
+	// 		err := mPump.store.Drop(context.Background(), dbObject)
+	// 		if err != nil {
+	// 			t.Fatal(err)
+	// 		}
+	// 	}()
+	// }()
 
 	tcs := []struct {
 		testName             string
@@ -485,46 +490,76 @@ func TestGetBlurredURL(t *testing.T) {
 	}
 }
 
-// func TestMongoPump_SessionConsistency(t *testing.T) {
-// 	pump := newPump()
-// 	conf := defaultConf()
+func TestWriteUptimeData(t *testing.T) {
+	pump := newPump()
+	mPump, ok := pump.(*MongoPump)
+	assert.True(t, ok)
+	conf := defaultConf()
+	conf.MongoURL = ""
+	mPump.dbConf = &conf
+	table := "tyk_uptime_analytics"
+	mPump.dbConf.CollectionName = table
+	d := createDBObject(table)
+	mPump.log = logrus.NewEntry(logrus.New())
 
-// 	mPump, ok := pump.(*MongoPump)
-// 	assert.True(t, ok)
-// 	mPump.dbConf = &conf
+	mPump.connect()
 
-// 	tests := []struct {
-// 		testName            string
-// 		sessionConsistency  string
-// 		expectedSessionMode mgo.Mode
-// 	}{
-// 		{
-// 			testName:            "should set session mode to strong",
-// 			sessionConsistency:  "strong",
-// 			expectedSessionMode: mgo.Strong,
-// 		},
-// 		{
-// 			testName:            "should set session mode to monotonic",
-// 			sessionConsistency:  "monotonic",
-// 			expectedSessionMode: mgo.Monotonic,
-// 		},
-// 		{
-// 			testName:            "should set session mode to eventual",
-// 			sessionConsistency:  "eventual",
-// 			expectedSessionMode: mgo.Eventual,
-// 		},
-// 		{
-// 			testName:            "should set session mode to strong by default",
-// 			sessionConsistency:  "",
-// 			expectedSessionMode: mgo.Strong,
-// 		},
-// 	}
+	now := time.Now()
 
-// 	for _, test := range tests {
-// 		t.Run(test.testName, func(t *testing.T) {
-// 			mPump.dbConf.MongoSessionConsistency = test.sessionConsistency
-// 			mPump.connect()
-// 			assert.Equal(t, test.expectedSessionMode, mPump.dbSession.Mode())
-// 		})
-// 	}
-// }
+	tests := []struct {
+		name                 string
+		Record               *analytics.UptimeReportData
+		RecordsAmountToWrite int
+		wantedError          error
+	}{
+		{
+			name:                 "write 3 uptime records",
+			Record:               &analytics.UptimeReportData{OrgID: "1", URL: "url1", TimeStamp: now},
+			RecordsAmountToWrite: 3,
+		},
+		{
+			name:                 "write 6 uptime records",
+			Record:               &analytics.UptimeReportData{OrgID: "1", URL: "url1", TimeStamp: now},
+			RecordsAmountToWrite: 6,
+		},
+		{
+			name:                 "length of records is 0",
+			Record:               &analytics.UptimeReportData{},
+			RecordsAmountToWrite: 0,
+			wantedError:          errors.New("length of records is 0"),
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			keys := []interface{}{}
+			for i := 0; i < test.RecordsAmountToWrite; i++ {
+				encoded, _ := msgpack.Marshal(test.Record)
+				keys = append(keys, string(encoded))
+			}
+
+			mPump.WriteUptimeData(keys)
+
+			defer func() {
+				//clean up the table
+				err := mPump.store.Drop(context.Background(), d)
+				assert.Nil(t, err)
+			}()
+
+			//check if the table exists
+			hasTable, err := mPump.store.HasTable(context.Background(), table)
+			assert.Nil(t, err)
+			assert.Equal(t, true, hasTable)
+
+			dbRecords := []analytics.UptimeReportAggregate{}
+			if err := mPump.store.Query(context.Background(), d, &dbRecords, dbm.DBM{}); err != nil {
+				t.Fatal("Error getting analytics records from Mongo")
+			}
+
+			//check amount of rows in the table
+			assert.Equal(t, test.RecordsAmountToWrite, len(dbRecords))
+
+		})
+	}
+
+}

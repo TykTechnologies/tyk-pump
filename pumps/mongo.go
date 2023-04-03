@@ -92,11 +92,13 @@ func (d dbObject) TableName() string {
 	return d.tableName
 }
 
+// GetObjectID is a dummy function to satisfy the interface
 func (dbObject) GetObjectID() id.ObjectId {
 	return ""
 }
 
-func (dbObject) SetObjectID(id id.ObjectId) {}
+// SetObjectID is a dummy function to satisfy the interface
+func (dbObject) SetObjectID(id.ObjectId) {}
 
 func createDBObject(tableName string) dbObject {
 	return dbObject{tableName: tableName}
@@ -491,11 +493,5 @@ func (m *MongoPump) WriteUptimeData(data []interface{}) {
 
 	if err := m.store.Insert(context.Background(), keys...); err != nil {
 		m.log.Error("Problem inserting to mongo collection: ", err)
-
-		if strings.Contains(err.Error(), "Closed explicitly") || strings.Contains(err.Error(), "EOF") {
-			m.log.Warning("--> Detected connection failure, reconnecting")
-
-			m.connect()
-		}
 	}
 }
