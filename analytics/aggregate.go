@@ -72,7 +72,7 @@ type GraphRecordAggregate struct {
 }
 
 type AnalyticsRecordAggregate struct {
-	ID        id.ObjectId `json:"_id" bson:"_id" gorm:"-:all"`
+	id        id.ObjectId `json:"_id" bson:"_id" gorm:"-:all"`
 	TimeStamp time.Time
 	OrgID     string
 	TimeID    struct {
@@ -125,11 +125,11 @@ func (f *AnalyticsRecordAggregate) TableName() string {
 }
 
 func (f *AnalyticsRecordAggregate) GetObjectID() id.ObjectId {
-	return f.ID
+	return f.id
 }
 
 func (f *AnalyticsRecordAggregate) SetObjectID(id id.ObjectId) {
-	f.ID = id
+	f.id = id
 }
 
 type SQLAnalyticsRecordAggregate struct {
