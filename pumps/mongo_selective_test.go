@@ -119,7 +119,6 @@ func TestConnection(t *testing.T) {
 		// Checking if the connection is alive
 		assert.Nil(t, mPump.store.Ping(context.Background()))
 	})
-
 }
 
 func TestEnsureIndexes(t *testing.T) {
@@ -137,7 +136,7 @@ func TestEnsureIndexes(t *testing.T) {
 			assert.NoError(t, mPump.store.DropDatabase(context.Background()))
 		}()
 		collectionName := "index_test"
-		dbObject := dbObject{
+		obj := dbObject{
 			tableName: collectionName,
 		}
 
@@ -145,7 +144,7 @@ func TestEnsureIndexes(t *testing.T) {
 		assert.NoError(t, err)
 
 		// Checking if the indexes are created
-		indexes, err := mPump.store.GetIndexes(context.Background(), dbObject)
+		indexes, err := mPump.store.GetIndexes(context.Background(), obj)
 		assert.NoError(t, err)
 		assert.NotNil(t, indexes)
 
@@ -162,7 +161,6 @@ func TestEnsureIndexes(t *testing.T) {
 		assert.Len(t, indexes[1].Keys, 1)
 		assert.Len(t, indexes[2].Keys, 1)
 		assert.Len(t, indexes[3].Keys, 4) // 4 keys because of the compound index: timestamp, apiid, apikey, responsecode
-
 	})
 	t.Run("should ensure one less index using CosmosDB", func(t *testing.T) {
 		defer func() {
@@ -171,15 +169,15 @@ func TestEnsureIndexes(t *testing.T) {
 		}()
 		mPump.dbConf.MongoDBType = CosmosDB
 		collectionName := "index_test_cosmosdb"
-		dbObject := dbObject{
+		obj := dbObject{
 			tableName: collectionName,
 		}
 
-		err := mPump.ensureIndexes(dbObject.TableName())
+		err := mPump.ensureIndexes(obj.TableName())
 		assert.NoError(t, err)
 
 		// Checking if the indexes are created
-		indexes, err := mPump.store.GetIndexes(context.Background(), dbObject)
+		indexes, err := mPump.store.GetIndexes(context.Background(), obj)
 		assert.NoError(t, err)
 		assert.NotNil(t, indexes)
 
@@ -201,7 +199,7 @@ func TestEnsureIndexes(t *testing.T) {
 			assert.NoError(t, mPump.store.DropDatabase(context.Background()))
 		}()
 		collectionName := "index_test"
-		dbObject := dbObject{
+		obj := dbObject{
 			tableName: collectionName,
 		}
 		conf.OmitIndexCreation = true
@@ -209,10 +207,9 @@ func TestEnsureIndexes(t *testing.T) {
 		assert.NoError(t, err)
 
 		// Since the indexes were not created, the collection does not exist, and an error is expected
-		indexes, err := mPump.store.GetIndexes(context.Background(), dbObject)
+		indexes, err := mPump.store.GetIndexes(context.Background(), obj)
 		assert.Error(t, err)
 		assert.Nil(t, indexes)
-
 	})
 
 	t.Run("should not ensure indexes because the collection already exists", func(t *testing.T) {
@@ -220,11 +217,11 @@ func TestEnsureIndexes(t *testing.T) {
 			assert.NoError(t, mPump.store.DropDatabase(context.Background()))
 		}()
 		collectionName := "index_test"
-		dbObject := dbObject{
+		obj := dbObject{
 			tableName: collectionName,
 		}
 		// Creating the collection
-		err := mPump.store.Migrate(context.Background(), []id.DBObject{dbObject})
+		err := mPump.store.Migrate(context.Background(), []id.DBObject{obj})
 		assert.NoError(t, err)
 
 		// Creating the indexes
@@ -232,7 +229,7 @@ func TestEnsureIndexes(t *testing.T) {
 		assert.NoError(t, err)
 
 		// Checking if the indexes are created
-		indexes, err := mPump.store.GetIndexes(context.Background(), dbObject)
+		indexes, err := mPump.store.GetIndexes(context.Background(), obj)
 		assert.NoError(t, err)
 		assert.NotNil(t, indexes)
 
@@ -301,7 +298,6 @@ func TestWriteData(t *testing.T) {
 
 		// No data should be written
 		assert.Len(t, results, 0)
-
 	})
 }
 
