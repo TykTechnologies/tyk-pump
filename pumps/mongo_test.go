@@ -201,7 +201,6 @@ func HasTable(t *testing.T, mPump *MongoPump, dbObject id.DBObject) bool {
 }
 
 func TestMongoPump_capCollection_Exists(t *testing.T) {
-
 	c := Conn{}
 	c.ConnectDb()
 	defer c.CleanDb()
@@ -225,7 +224,6 @@ func TestMongoPump_capCollection_Exists(t *testing.T) {
 }
 
 func TestMongoPump_capCollection_Not64arch(t *testing.T) {
-
 	c := Conn{}
 	c.ConnectDb()
 	defer c.CleanDb()
@@ -251,7 +249,6 @@ func TestMongoPump_capCollection_Not64arch(t *testing.T) {
 }
 
 func TestMongoPump_capCollection_SensibleDefaultSize(t *testing.T) {
-
 	if strconv.IntSize < 64 {
 		t.Skip("skipping as < 64bit arch")
 	}
@@ -285,7 +282,6 @@ func TestMongoPump_capCollection_SensibleDefaultSize(t *testing.T) {
 }
 
 func TestMongoPump_capCollection_OverrideSize(t *testing.T) {
-
 	if strconv.IntSize < 64 {
 		t.Skip("skipping as < 64bit arch")
 	}
@@ -489,7 +485,6 @@ func TestGetBlurredURL(t *testing.T) {
 }
 
 func TestWriteUptimeData(t *testing.T) {
-
 	now := time.Now()
 
 	tests := []struct {
@@ -532,12 +527,12 @@ func TestWriteUptimeData(t *testing.T) {
 			newPump.WriteUptimeData(keys)
 
 			defer func() {
-				//clean up the table
+				// clean up the table
 				err := newPump.store.DropDatabase(context.Background())
 				assert.Nil(t, err)
 			}()
 
-			//check if the table exists
+			// check if the table exists
 			hasTable, err := newPump.store.HasTable(context.Background(), newPump.dbConf.CollectionName)
 			assert.Nil(t, err)
 			assert.Equal(t, true, hasTable)
@@ -547,10 +542,8 @@ func TestWriteUptimeData(t *testing.T) {
 				t.Fatal("Error getting analytics records from Mongo")
 			}
 
-			//check amount of rows in the table
+			// check amount of rows in the table
 			assert.Equal(t, test.RecordsAmountToWrite, len(dbRecords))
-
 		})
 	}
-
 }
