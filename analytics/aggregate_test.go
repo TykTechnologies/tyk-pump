@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/TykTechnologies/storage/persistent/id"
 	"github.com/stretchr/testify/require"
 
 	"github.com/stretchr/testify/assert"
@@ -468,4 +469,12 @@ func TestAggregatedRecordTableName(t *testing.T) {
 			assert.Equal(t, tc.expectedTableName, tc.givenRecord.TableName())
 		})
 	}
+}
+
+func TestAggregatedRecord(t *testing.T) {
+	rec := &AnalyticsRecord{}
+
+	newID := id.NewObjectID()
+	rec.SetObjectID(newID)
+	assert.Equal(t, newID, rec.GetObjectID())
 }
