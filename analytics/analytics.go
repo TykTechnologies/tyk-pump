@@ -42,7 +42,7 @@ const SQLTable = "tyk_analytics"
 
 // AnalyticsRecord encodes the details of a request
 type AnalyticsRecord struct {
-	id            id.ObjectId  `json:"_id" bson:"_id" gorm:"-:all"`
+	id            id.ObjectId  `bson:"_id" gorm:"-:all"`
 	Method        string       `json:"method" gorm:"column:method"`
 	Host          string       `json:"host" gorm:"column:host"`
 	Path          string       `json:"path" gorm:"column:path"`

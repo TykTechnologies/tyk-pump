@@ -72,7 +72,7 @@ type GraphRecordAggregate struct {
 }
 
 type AnalyticsRecordAggregate struct {
-	id        id.ObjectId `json:"_id" bson:"_id" gorm:"-:all"`
+	id        id.ObjectId `bson:"_id" gorm:"-:all"`
 	TimeStamp time.Time
 	OrgID     string
 	TimeID    struct {
