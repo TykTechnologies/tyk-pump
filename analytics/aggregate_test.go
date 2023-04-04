@@ -1082,3 +1082,157 @@ func TestAnalyticsRecordAggregate_AsChange(t *testing.T) {
 		})
 	}
 }
+
+func TestAnalyticsRecordAggregate_AsTimeUpdate(t *testing.T) {
+	currentTime := time.Date(2023, 0o4, 0o4, 10, 0, 0, 0, time.UTC)
+
+	tcs := []struct {
+		given    *AnalyticsRecordAggregate
+		expected dbm.DBM
+		testName string
+	}{
+		{
+			testName: "oauthendpoint+keyendpoint+apiendpoint+tota",
+			given: &AnalyticsRecordAggregate{
+				OrgID: "testorg",
+				KeyEndpoint: map[string]map[string]*Counter{
+					"apikey1": {
+						"/get": {
+							Hits:                 3,
+							Success:              0,
+							ErrorTotal:           3,
+							TotalLatency:         300,
+							TotalUpstreamLatency: 600,
+							LastTime:             currentTime,
+							ErrorMap:             map[string]int{"404": 1, "500": 2},
+						},
+					},
+				},
+				OauthEndpoint: map[string]map[string]*Counter{
+					"oauthid1": {
+						"/get": {
+							Hits:                 3,
+							Success:              0,
+							ErrorTotal:           3,
+							TotalLatency:         300,
+							TotalUpstreamLatency: 600,
+							LastTime:             currentTime,
+							ErrorMap:             map[string]int{"404": 1, "500": 2},
+						},
+					},
+				},
+				ApiEndpoint: map[string]*Counter{
+					"/get": {
+						Hits:                 3,
+						Success:              0,
+						ErrorTotal:           3,
+						TotalLatency:         300,
+						TotalUpstreamLatency: 600,
+						LastTime:             currentTime,
+						ErrorMap:             map[string]int{"404": 1, "500": 2},
+					},
+				},
+
+				Total: Counter{
+					Hits:                 3,
+					Success:              0,
+					ErrorTotal:           3,
+					TotalLatency:         300,
+					TotalUpstreamLatency: 600,
+					TotalRequestTime:     300,
+					ErrorMap:             map[string]int{"404": 1, "500": 2},
+					BytesIn:              0,
+					BytesOut:             0,
+					OpenConnections:      0,
+					ClosedConnections:    0,
+					HumanIdentifier:      "",
+					Identifier:           "",
+					LastTime:             currentTime,
+					MinLatency:           10,
+					MaxLatency:           100,
+					MinUpstreamLatency:   20,
+					MaxUpstreamLatency:   100,
+				},
+			},
+			expected: dbm.DBM{
+				"$set": dbm.DBM{
+					"apiendpoints./get.errorlist":               []ErrorData{{Code: "404", Count: 1}, {Code: "500", Count: 2}},
+					"apiendpoints./get.latency":                 float64(100),
+					"apiendpoints./get.requesttime":             float64(0),
+					"apiendpoints./get.upstreamlatency":         float64(200),
+					"keyendpoints.apikey1./get.errorlist":       []ErrorData{{Code: "404", Count: 1}, {Code: "500", Count: 2}},
+					"keyendpoints.apikey1./get.latency":         float64(100),
+					"keyendpoints.apikey1./get.requesttime":     float64(0),
+					"keyendpoints.apikey1./get.upstreamlatency": float64(200),
+					"lists.apiendpoints": []Counter{
+						{
+							Hits:                 3,
+							Success:              0,
+							ErrorTotal:           3,
+							TotalLatency:         300,
+							TotalUpstreamLatency: 600,
+							UpstreamLatency:      200,
+							Latency:              100,
+							LastTime:             currentTime,
+							ErrorMap:             map[string]int{"404": 1, "500": 2},
+							ErrorList:            []ErrorData{{Code: "404", Count: 1}, {Code: "500", Count: 2}},
+						},
+					},
+					"lists.apiid":     []Counter{},
+					"lists.apikeys":   []Counter{},
+					"lists.endpoints": []Counter{},
+					"lists.errors":    []Counter{},
+					"lists.geo":       []Counter{},
+					"lists.oauthids":  []Counter{},
+					"lists.tags":      []Counter{},
+					"lists.versions":  []Counter{},
+					"lists.keyendpoints.apikey1": []Counter{
+						{
+							Hits:                 3,
+							Success:              0,
+							ErrorTotal:           3,
+							TotalLatency:         300,
+							TotalUpstreamLatency: 600,
+							UpstreamLatency:      200,
+							Latency:              100,
+							LastTime:             currentTime,
+							ErrorMap:             map[string]int{"404": 1, "500": 2},
+							ErrorList:            []ErrorData{{Code: "404", Count: 1}, {Code: "500", Count: 2}},
+						},
+					},
+					"lists.oauthendpoints.oauthid1": []Counter{
+						{
+							Hits:                 3,
+							Success:              0,
+							ErrorTotal:           3,
+							TotalLatency:         300,
+							TotalUpstreamLatency: 600,
+							UpstreamLatency:      200,
+							Latency:              100,
+							LastTime:             currentTime,
+							ErrorMap:             map[string]int{"404": 1, "500": 2},
+							ErrorList:            []ErrorData{{Code: "404", Count: 1}, {Code: "500", Count: 2}},
+						},
+					},
+					"oauthendpoints.oauthid1./get.errorlist":       []ErrorData{{Code: "404", Count: 1}, {Code: "500", Count: 2}},
+					"oauthendpoints.oauthid1./get.latency":         float64(100),
+					"oauthendpoints.oauthid1./get.requesttime":     float64(0),
+					"oauthendpoints.oauthid1./get.upstreamlatency": float64(200),
+					"total.errorlist":                              []ErrorData{{Code: "404", Count: 1}, {Code: "500", Count: 2}},
+					"total.latency":                                float64(100),
+					"total.requesttime":                            float64(100),
+					"total.upstreamlatency":                        float64(200),
+				},
+			},
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.testName, func(t *testing.T) {
+			actual := tc.given.AsTimeUpdate()
+			if !cmp.Equal(tc.expected, actual) {
+				t.Errorf("AggregateUptimeData() mismatch (-want +got):\n%s", cmp.Diff(tc.expected, actual))
+			}
+		})
+	}
+}

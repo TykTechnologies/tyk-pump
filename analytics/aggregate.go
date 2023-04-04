@@ -4,6 +4,7 @@ import (
 	b64 "encoding/base64"
 	"encoding/hex"
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -71,6 +72,19 @@ type GraphRecordAggregate struct {
 	RootFields map[string]*Counter
 }
 
+type AggregateFieldList struct {
+	APIKeys       []Counter
+	APIID         []Counter
+	OauthIDs      []Counter
+	Geo           []Counter
+	Tags          []Counter
+	Errors        []Counter
+	Endpoints     []Counter
+	KeyEndpoint   map[string][]Counter `bson:"keyendpoints"`
+	OauthEndpoint map[string][]Counter `bson:"oauthendpoints"`
+	APIEndpoint   []Counter            `bson:"apiendpoints"`
+}
+
 type AnalyticsRecordAggregate struct {
 	id        id.ObjectId `bson:"_id" gorm:"-:all"`
 	TimeStamp time.Time
@@ -93,18 +107,7 @@ type AnalyticsRecordAggregate struct {
 
 	Endpoints map[string]*Counter
 
-	Lists struct {
-		APIKeys       []Counter
-		APIID         []Counter
-		OauthIDs      []Counter
-		Geo           []Counter
-		Tags          []Counter
-		Errors        []Counter
-		Endpoints     []Counter
-		KeyEndpoint   map[string][]Counter `bson:"keyendpoints"`
-		OauthEndpoint map[string][]Counter `bson:"oauthendpoints"`
-		APIEndpoint   []Counter            `bson:"apiendpoints"`
-	}
+	Lists AggregateFieldList
 
 	KeyEndpoint   map[string]map[string]*Counter `bson:"keyendpoints"`
 	OauthEndpoint map[string]map[string]*Counter `bson:"oauthendpoints"`
@@ -467,6 +470,10 @@ func (f *AnalyticsRecordAggregate) SetErrorList(parent, thisUnit string, counter
 		}
 		errorlist = append(errorlist, element)
 	}
+	sort.SliceStable(errorlist, func(i, j int) bool {
+		return errorlist[i].Code < errorlist[j].Code
+	})
+
 	counter.ErrorList = errorlist
 
 	newUpdate["$set"].(dbm.DBM)[constructor+"errorlist"] = counter.ErrorList
