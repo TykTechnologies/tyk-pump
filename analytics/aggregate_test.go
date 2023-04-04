@@ -438,3 +438,34 @@ func TestSetAggregateTimestamp(t *testing.T) {
 	ts := setAggregateTimestamp("testing-setLastTimestamp", asTime, 7)
 	assert.Equal(t, time.Date(asTime.Year(), asTime.Month(), asTime.Day(), asTime.Hour(), asTime.Minute(), 0, 0, asTime.Location()), ts)
 }
+
+func TestAggregatedRecordTableName(t *testing.T) {
+	tcs := []struct {
+		testName          string
+		givenRecord       AnalyticsRecordAggregate
+		expectedTableName string
+	}{
+		{
+			testName: "should return table name with org id",
+			givenRecord: AnalyticsRecordAggregate{
+				OrgID: "123",
+				Mixed: true,
+			},
+			expectedTableName: AgggregateMixedCollectionName,
+		},
+		{
+			testName: "should return table name with org id",
+			givenRecord: AnalyticsRecordAggregate{
+				OrgID: "123",
+				Mixed: false,
+			},
+			expectedTableName: "z_tyk_analyticz_aggregate_123",
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.testName, func(t *testing.T) {
+			assert.Equal(t, tc.expectedTableName, tc.givenRecord.TableName())
+		})
+	}
+}
