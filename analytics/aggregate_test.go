@@ -675,3 +675,52 @@ func TestAnalyticsRecordAggregate_generateBSONFromProperty(t *testing.T) {
 		})
 	}
 }
+
+func TestAnalyticsRecordAggregate_generateSetterForTime(t *testing.T) {
+	tcs := []struct {
+		expected dbm.DBM
+
+		testName         string
+		givenName        string
+		givenValue       string
+		givenRequestTime float64
+	}{
+		{
+			testName:         "with name",
+			givenName:        "test",
+			givenValue:       "total",
+			givenRequestTime: 100,
+			expected: dbm.DBM{
+				"$set": dbm.DBM{
+					"test.total.requesttime": float64(100),
+				},
+			},
+		},
+		{
+			testName:         "without name",
+			givenName:        "",
+			givenValue:       "noname",
+			givenRequestTime: 130,
+			expected: dbm.DBM{
+				"$set": dbm.DBM{
+					"noname.requesttime": float64(130),
+				},
+			},
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.testName, func(t *testing.T) {
+			aggregate := &AnalyticsRecordAggregate{}
+
+			baseDBM := dbm.DBM{
+				"$set": dbm.DBM{},
+			}
+
+			actual := aggregate.generateSetterForTime(tc.givenName, tc.givenValue, tc.givenRequestTime, baseDBM)
+			if !cmp.Equal(tc.expected, actual) {
+				t.Errorf("AggregateUptimeData() mismatch (-want +got):\n%s", cmp.Diff(tc.expected, actual))
+			}
+		})
+	}
+}
