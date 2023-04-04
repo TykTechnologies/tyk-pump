@@ -82,7 +82,6 @@ type BaseMongoConf struct {
 	// MongoDriverType is the type of the driver (library) to use. The valid values are: "mongo-go" and "mgo".
 	MongoDriverType string `json:"driver_type" mapstructure:"driver_type"`
 }
-
 type dbObject struct {
 	tableName string
 }
@@ -326,7 +325,7 @@ func (m *MongoPump) ensureIndexes(collectionName string) error {
 
 	logBrowserIndex := index.Index{
 		Name:       "logBrowserIndex",
-		Keys:       []dbm.DBM{{"-timestamp": 1}, {"orgid": 1}, {"apiid": 1}, {"apikey": 1}, {"responsecode": 1}},
+		Keys:       []dbm.DBM{{"timestamp": -1}, {"orgid": 1}, {"apiid": 1}, {"apikey": 1}, {"responsecode": 1}},
 		Background: m.dbConf.MongoDBType == StandardMongo,
 	}
 	return m.store.CreateIndex(context.Background(), d, logBrowserIndex)
