@@ -437,21 +437,21 @@ func (m *MongoPump) AccumulateSet(data []interface{}, isForGraphRecords bool) []
 // processItem checks if the item should be processed based on its ResponseCode and if it's a graph record.
 // It returns the processed item and a boolean indicating if the item should be skipped.
 func (m *MongoPump) processItem(item interface{}, isForGraphRecords bool) (*analytics.AnalyticsRecord, bool) {
-	thisItem, ok := item.(*analytics.AnalyticsRecord)
+	thisItem, ok := item.(analytics.AnalyticsRecord)
 	if !ok {
 		m.log.Error("Couldn't convert item to analytics.AnalyticsRecord")
 		return nil, true
 	}
 	if thisItem.ResponseCode == -1 {
-		return thisItem, true
+		return &thisItem, true
 	}
 
 	isGraphRecord := thisItem.IsGraphRecord()
 	if isGraphRecord != isForGraphRecords {
-		return thisItem, true
+		return &thisItem, true
 	}
 
-	return thisItem, false
+	return &thisItem, false
 }
 
 // getItemSizeBytes calculates the size of the item in bytes, including an additional 1 KB for metadata.
