@@ -167,7 +167,7 @@ func (a *AnalyticsRecord) GetFieldNames() []string {
 	fields = append(fields, a.Geo.GetFieldNames()...)
 	fields = append(fields, a.Network.GetFieldNames()...)
 	fields = append(fields, a.Latency.GetFieldNames()...)
-	return append(fields, "Tags", "Alias", "TrackPath", "ExpireAt")
+	return append(fields, "Tags", "Alias", "TrackPath", "ExpireAt", "ApiSchema")
 }
 
 func (n *NetworkStats) GetLineValues() []string {
@@ -232,6 +232,8 @@ func (a *AnalyticsRecord) GetLineValues() []string {
 	fields = append(fields, a.Alias)
 	fields = append(fields, strconv.FormatBool(a.TrackPath))
 	fields = append(fields, a.ExpireAt.String())
+	fields = append(fields, a.ApiSchema)
+
 	return fields
 }
 
