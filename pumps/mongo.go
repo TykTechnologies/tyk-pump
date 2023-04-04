@@ -96,7 +96,9 @@ func (dbObject) GetObjectID() id.ObjectId {
 }
 
 // SetObjectID is a dummy function to satisfy the interface
-func (dbObject) SetObjectID(id.ObjectId) {}
+func (dbObject) SetObjectID(id.ObjectId) {
+	// empty
+}
 
 func createDBObject(tableName string) dbObject {
 	return dbObject{tableName: tableName}

@@ -22,11 +22,15 @@ func (c *Conn) TableName() string {
 	return colName
 }
 
-func (c *Conn) GetObjectID() id.ObjectId {
+// SetObjectID is a dummy function to satisfy the interface
+func (*Conn) GetObjectID() id.ObjectId {
 	return ""
 }
 
-func (c *Conn) SetObjectID(id id.ObjectId) {}
+// SetObjectID is a dummy function to satisfy the interface
+func (*Conn) SetObjectID(id.ObjectId) {
+	// empty
+}
 
 func (c *Conn) ConnectDb() {
 	if c.Store == nil {

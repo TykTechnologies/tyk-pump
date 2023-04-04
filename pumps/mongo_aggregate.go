@@ -330,7 +330,7 @@ func (m *MongoAggregatePump) DoAggregatedWriting(ctx context.Context, orgID stri
 		"collection": doc.TableName(),
 	}).Debug("Attempt to upsert aggregated doc")
 
-	err := m.store.Upsert(context.Background(), doc, query, updateDoc)
+	err := m.store.Upsert(ctx, doc, query, updateDoc)
 	if err != nil {
 		m.log.WithField("query", query).Error("UPSERT Failure: ", err)
 		return err
@@ -343,7 +343,7 @@ func (m *MongoAggregatePump) DoAggregatedWriting(ctx context.Context, orgID stri
 		OrgID: filteredData.OrgID,
 	}
 
-	err = m.store.Upsert(context.Background(), &withTimeUpdate, query, avgUpdateDoc)
+	err = m.store.Upsert(ctx, &withTimeUpdate, query, avgUpdateDoc)
 	if err != nil {
 		m.log.WithField("query", query).Error("AvgUpdate Failure: ", err)
 		return err

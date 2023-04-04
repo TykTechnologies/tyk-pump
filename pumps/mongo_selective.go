@@ -23,11 +23,9 @@ type MongoSelectivePump struct {
 	CommonPumpConfig
 }
 
-var (
-	mongoSelectivePrefix     = "mongo-pump-selective"
-	mongoSelectivePumpPrefix = "PMP_MONGOSEL"
-	mongoSelectiveDefaultEnv = PUMPS_ENV_PREFIX + "_MONGOSELECTIVE" + PUMPS_ENV_META_PREFIX
-)
+var mongoSelectivePrefix = "mongo-pump-selective"
+var mongoSelectivePumpPrefix = "PMP_MONGOSEL"
+var mongoSelectiveDefaultEnv = PUMPS_ENV_PREFIX + "_MONGOSELECTIVE" + PUMPS_ENV_META_PREFIX
 
 // @PumpConf MongoSelective
 type MongoSelectiveConf struct {
@@ -76,7 +74,7 @@ func (m *MongoSelectivePump) Init(config interface{}) error {
 
 	processPumpEnvVars(m, m.log, m.dbConf, mongoSelectiveDefaultEnv)
 
-	// we keep this env check for backward compatibility
+	//we keep this env check for backward compatibility
 	overrideErr := envconfig.Process(mongoSelectivePumpPrefix, m.dbConf)
 	if overrideErr != nil {
 		m.log.Error("Failed to process environment variables for mongo selective pump: ", overrideErr)
@@ -169,7 +167,7 @@ func (m *MongoSelectivePump) ensureIndexes(collectionName string) error {
 
 	logBrowserIndex := index.Index{
 		Name:       "logBrowserIndex",
-		Keys:       []dbm.DBM{{"-timestamp": 1}, {"apiid": 1}, {"apikey": 1}, {"responsecode": 1}},
+		Keys:       []dbm.DBM{{"timestamp": -1}, {"apiid": 1}, {"apikey": 1}, {"responsecode": 1}},
 		Background: m.dbConf.MongoDBType == StandardMongo,
 	}
 
@@ -217,6 +215,7 @@ func (m *MongoSelectivePump) WriteData(ctx context.Context, data []interface{}) 
 				m.log.WithField("collection", colName).Error("Problem inserting to mongo collection: ", err)
 			}
 		}
+
 	}
 
 	m.log.Info("Purged ", len(data), " records...")

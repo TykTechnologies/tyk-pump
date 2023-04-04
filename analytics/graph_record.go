@@ -36,11 +36,15 @@ func (g *GraphRecord) TableName() string {
 	return g.AnalyticsRecord.TableName()
 }
 
+// GetObjectID is a dummy function to satisfy the interface
 func (*GraphRecord) GetObjectID() id.ObjectId {
 	return ""
 }
 
-func (*GraphRecord) SetObjectID(id.ObjectId) {}
+// SetObjectID is a dummy function to satisfy the interface
+func (*GraphRecord) SetObjectID(id.ObjectId) {
+	// empty
+}
 
 // parseRequest reads the raw encoded request and schema, extracting the type information
 // operation information and root field operations
