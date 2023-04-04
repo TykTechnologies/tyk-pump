@@ -201,7 +201,7 @@ func (m *MongoAggregatePump) connect() {
 	var err error
 
 	if m.dbConf.MongoDriverType == "" {
-		m.dbConf.MongoDriverType = "mongo-go"
+		m.dbConf.MongoDriverType = "mgo"
 	}
 
 	m.store, err = persistent.NewPersistentStorage(&persistent.ClientOpts{
