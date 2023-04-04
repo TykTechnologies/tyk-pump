@@ -524,7 +524,8 @@ func TestWriteUptimeData(t *testing.T) {
 
 			keys := []interface{}{}
 			for i := 0; i < test.RecordsAmountToWrite; i++ {
-				encoded, _ := msgpack.Marshal(test.Record)
+				encoded, err := msgpack.Marshal(test.Record)
+				assert.Nil(t, err)
 				keys = append(keys, string(encoded))
 			}
 
