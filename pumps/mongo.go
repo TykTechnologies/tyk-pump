@@ -403,62 +403,98 @@ func (m *MongoPump) WriteData(ctx context.Context, data []interface{}) error {
 	return nil
 }
 
+// AccumulateSet groups data items into chunks based on the max batch size limit while handling graph analytics records separately.
+// It returns a 2D array of DBObjects.
 func (m *MongoPump) AccumulateSet(data []interface{}, isForGraphRecords bool) [][]id.DBObject {
 	accumulatorTotal := 0
 	returnArray := make([][]id.DBObject, 0)
 	thisResultSet := make([]id.DBObject, 0)
 
 	for i, item := range data {
-		thisItem := item.(analytics.AnalyticsRecord)
-		if thisItem.ResponseCode == -1 {
+		// Process the current item and determine if it should be skipped
+		thisItem, skip := m.processItem(item, isForGraphRecords)
+		if skip {
 			continue
 		}
 
-		// Skip this record if it is a graph analytics record, they will be handled in a different pump
-		isGraphRecord := thisItem.IsGraphRecord()
-		if isGraphRecord != isForGraphRecords {
-			continue
-		}
+		// Calculate the size of the current item
+		sizeBytes := m.getItemSizeBytes(thisItem)
 
-		// Add 1 KB for metadata as average
-		sizeBytes := len(thisItem.RawRequest) + len(thisItem.RawResponse) + 1024
+		// Handle large documents that exceed the max document size limit
+		m.handleLargeDocuments(thisItem, sizeBytes, isForGraphRecords)
 
-		m.log.Debug("Size is: ", sizeBytes)
-
-		if sizeBytes > m.dbConf.MaxDocumentSizeBytes && !isGraphRecord {
-			m.log.Warning("Document too large, not writing raw request and raw response!")
-
-			thisItem.RawRequest = ""
-			thisItem.RawResponse = base64.StdEncoding.EncodeToString([]byte("Document too large, not writing raw request and raw response!"))
-		}
-
-		if (accumulatorTotal + sizeBytes) <= m.dbConf.MaxInsertBatchSizeBytes {
-			accumulatorTotal += sizeBytes
-		} else {
-			m.log.Debug("Created new chunk entry")
-			if len(thisResultSet) > 0 {
-				returnArray = append(returnArray, thisResultSet)
-			}
-
-			thisResultSet = make([]id.DBObject, 0)
-			accumulatorTotal = sizeBytes
-		}
-
-		m.log.Debug("Accumulator is: ", accumulatorTotal)
-		thisResultSet = append(thisResultSet, &thisItem)
-
-		m.log.Debug(accumulatorTotal, " of ", m.dbConf.MaxInsertBatchSizeBytes)
-		// Append the last element if the loop is about to end
-		if i == (len(data) - 1) {
-			m.log.Debug("Appending last entry")
-			returnArray = append(returnArray, thisResultSet)
-		}
+		// Accumulate the item and update the accumulator total, result set, and return array
+		accumulatorTotal, thisResultSet, returnArray = m.accumulate(thisResultSet, returnArray, thisItem, sizeBytes, accumulatorTotal, i == (len(data)-1))
 	}
 
+	// Append the remaining result set to the return array if it's not empty
 	if len(thisResultSet) > 0 && len(returnArray) == 0 {
 		returnArray = append(returnArray, thisResultSet)
 	}
 	return returnArray
+}
+
+// processItem checks if the item should be processed based on its ResponseCode and if it's a graph record.
+// It returns the processed item and a boolean indicating if the item should be skipped.
+func (m *MongoPump) processItem(item interface{}, isForGraphRecords bool) (*analytics.AnalyticsRecord, bool) {
+	thisItem, ok := item.(*analytics.AnalyticsRecord)
+	if !ok {
+		m.log.Error("Couldn't convert item to analytics.AnalyticsRecord")
+		return nil, true
+	}
+	if thisItem.ResponseCode == -1 {
+		return thisItem, true
+	}
+
+	isGraphRecord := thisItem.IsGraphRecord()
+	if isGraphRecord != isForGraphRecords {
+		return thisItem, true
+	}
+
+	return thisItem, false
+}
+
+// getItemSizeBytes calculates the size of the item in bytes, including an additional 1 KB for metadata.
+func (m *MongoPump) getItemSizeBytes(thisItem *analytics.AnalyticsRecord) int {
+	// Add 1 KB for metadata as average
+	return len(thisItem.RawRequest) + len(thisItem.RawResponse) + 1024
+}
+
+// handleLargeDocuments checks if the item size exceeds the max document size limit and modifies the item if necessary.
+func (m *MongoPump) handleLargeDocuments(thisItem *analytics.AnalyticsRecord, sizeBytes int, isGraphRecord bool) {
+	if sizeBytes > m.dbConf.MaxDocumentSizeBytes && !isGraphRecord {
+		m.log.Warning("Document too large, not writing raw request and raw response!")
+
+		thisItem.RawRequest = ""
+		thisItem.RawResponse = base64.StdEncoding.EncodeToString([]byte("Document too large, not writing raw request and raw response!"))
+	}
+}
+
+// accumulate processes the given item and updates the accumulator total, result set, and return array.
+// It manages chunking the data into separate sets based on the max batch size limit, and appends the last item when necessary.
+func (m *MongoPump) accumulate(thisResultSet []id.DBObject, returnArray [][]id.DBObject, thisItem *analytics.AnalyticsRecord, sizeBytes, accumulatorTotal int, isLastItem bool) (int, []id.DBObject, [][]id.DBObject) {
+	if (accumulatorTotal + sizeBytes) <= m.dbConf.MaxInsertBatchSizeBytes {
+		accumulatorTotal += sizeBytes
+	} else {
+		m.log.Debug("Created new chunk entry")
+		if len(thisResultSet) > 0 {
+			returnArray = append(returnArray, thisResultSet)
+		}
+
+		thisResultSet = make([]id.DBObject, 0)
+		accumulatorTotal = sizeBytes
+	}
+
+	m.log.Debug("Accumulator is: ", accumulatorTotal)
+	thisResultSet = append(thisResultSet, thisItem)
+
+	m.log.Debug(accumulatorTotal, " of ", m.dbConf.MaxInsertBatchSizeBytes)
+	if isLastItem {
+		m.log.Debug("Appending last entry")
+		returnArray = append(returnArray, thisResultSet)
+	}
+
+	return accumulatorTotal, thisResultSet, returnArray
 }
 
 // WriteUptimeData will pull the data from the in-memory store and drop it into the specified MongoDB collection

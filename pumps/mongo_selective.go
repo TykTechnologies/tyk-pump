@@ -223,52 +223,91 @@ func (m *MongoSelectivePump) WriteData(ctx context.Context, data []interface{}) 
 	return nil
 }
 
+// AccumulateSet organizes analytics data into a set of chunks based on their size.
 func (m *MongoSelectivePump) AccumulateSet(data []interface{}) [][]id.DBObject {
 	accumulatorTotal := 0
 	returnArray := make([][]id.DBObject, 0)
-
 	thisResultSet := make([]id.DBObject, 0)
+
+	// Process each item in the data array.
 	for i, item := range data {
-		thisItem := item.(analytics.AnalyticsRecord)
-		if thisItem.ResponseCode == -1 {
+		thisItem, skip := m.processItem(item)
+		if skip {
 			continue
 		}
-		// Add 1 KB for metadata as average
-		sizeBytes := len([]byte(thisItem.RawRequest)) + len([]byte(thisItem.RawResponse)) + 1024
 
-		skip := false
-		if sizeBytes > m.dbConf.MaxDocumentSizeBytes {
-			m.log.Warning("Document too large, skipping!")
-			skip = true
-		}
-
-		m.log.Debug("Size is: ", sizeBytes)
-
-		if !skip {
-			if (accumulatorTotal + sizeBytes) < m.dbConf.MaxInsertBatchSizeBytes {
-				accumulatorTotal += sizeBytes
-			} else {
-				m.log.Debug("Created new chunk entry")
-				if len(thisResultSet) > 0 {
-					returnArray = append(returnArray, thisResultSet)
-				}
-
-				thisResultSet = make([]id.DBObject, 0)
-				accumulatorTotal = sizeBytes
-			}
-			thisResultSet = append(thisResultSet, &thisItem)
-
-			m.log.Debug(accumulatorTotal, " of ", m.dbConf.MaxInsertBatchSizeBytes)
-			// Append the last element if the loop is about to end
-			if i == (len(data) - 1) {
-				m.log.Debug("Appending last entry")
-				returnArray = append(returnArray, thisResultSet)
-			}
-		}
-
+		sizeBytes := m.getItemSizeBytes(thisItem)
+		accumulatorTotal, thisResultSet, returnArray = m.accumulate(thisResultSet, returnArray, thisItem, sizeBytes, accumulatorTotal, i == (len(data)-1))
 	}
 
 	return returnArray
+}
+
+// processItem checks if the item should be skipped or processed.
+func (m *MongoSelectivePump) processItem(item interface{}) (*analytics.AnalyticsRecord, bool) {
+	thisItem, ok := item.(analytics.AnalyticsRecord)
+	if !ok {
+		m.log.Warning("Couldn't convert item to analytics.AnalyticsRecord, skipping")
+		return &thisItem, true
+	}
+
+	// Skip item if the response code is -1.
+	if thisItem.ResponseCode == -1 {
+		return &thisItem, true
+	}
+
+	return &thisItem, false
+}
+
+// getItemSizeBytes calculates the size of the analytics item in bytes and checks if it's within the allowed limit.
+func (m *MongoSelectivePump) getItemSizeBytes(thisItem *analytics.AnalyticsRecord) int {
+	// Add 1 KB for metadata as average.
+	sizeBytes := len([]byte(thisItem.RawRequest)) + len([]byte(thisItem.RawResponse)) + 1024
+
+	// Skip item if its size exceeds the maximum allowed document size.
+	if sizeBytes > m.dbConf.MaxDocumentSizeBytes {
+		m.log.Warning("Document too large, skipping!")
+		return -1
+	}
+
+	m.log.Debug("Size is:", sizeBytes)
+	return sizeBytes
+}
+
+// accumulate processes the given item and updates the accumulator total, result set, and return array.
+// It manages chunking the data into separate sets based on the max batch size limit, and appends the last item when necessary.
+func (m *MongoSelectivePump) accumulate(thisResultSet []id.DBObject, returnArray [][]id.DBObject, thisItem *analytics.AnalyticsRecord, sizeBytes, accumulatorTotal int, isLastItem bool) (int, []id.DBObject, [][]id.DBObject) {
+	// If the item size is invalid (negative), return the current state
+	if sizeBytes < 0 {
+		return accumulatorTotal, thisResultSet, returnArray
+	}
+
+	// If the current accumulator total plus the item size is within the max batch size limit,
+	// add the item size to the accumulator total
+	if (accumulatorTotal + sizeBytes) < m.dbConf.MaxInsertBatchSizeBytes {
+		accumulatorTotal += sizeBytes
+	} else {
+		// If the item size exceeds the max batch size limit,
+		// create a new chunk entry and reset the accumulator total and result set
+		m.log.Debug("Created new chunk entry")
+		if len(thisResultSet) > 0 {
+			returnArray = append(returnArray, thisResultSet)
+		}
+
+		thisResultSet = make([]id.DBObject, 0)
+		accumulatorTotal = sizeBytes
+	}
+
+	thisResultSet = append(thisResultSet, thisItem)
+
+	m.log.Debug(accumulatorTotal, " of ", m.dbConf.MaxInsertBatchSizeBytes)
+
+	if isLastItem {
+		m.log.Debug("Appending last entry")
+		returnArray = append(returnArray, thisResultSet)
+	}
+
+	return accumulatorTotal, thisResultSet, returnArray
 }
 
 // WriteUptimeData will pull the data from the in-memory store and drop it into the specified MongoDB collection
