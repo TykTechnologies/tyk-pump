@@ -6,7 +6,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/TykTechnologies/storage/persistent/dbm"
 	"github.com/TykTechnologies/storage/persistent/id"
+	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
 
 	"github.com/stretchr/testify/assert"
@@ -343,7 +345,7 @@ func TestAggregateGraphData_Dimension(t *testing.T) {
 }
 
 func TestAggregateData_SkipGraphRecords(t *testing.T) {
-	run := func(records []AnalyticsRecord, expectedAggregatedRecordCount int, expectedExistingOrgKeys []string, expectedNonExistingOrgKeys []string) func(t *testing.T) {
+	run := func(records []AnalyticsRecord, expectedAggregatedRecordCount int, expectedExistingOrgKeys, expectedNonExistingOrgKeys []string) func(t *testing.T) {
 		return func(t *testing.T) {
 			data := make([]interface{}, len(records))
 			for i := range records {
@@ -440,7 +442,7 @@ func TestSetAggregateTimestamp(t *testing.T) {
 	assert.Equal(t, time.Date(asTime.Year(), asTime.Month(), asTime.Day(), asTime.Hour(), asTime.Minute(), 0, 0, asTime.Location()), ts)
 }
 
-func TestAggregatedRecordTableName(t *testing.T) {
+func TestAggregatedRecord_TableName(t *testing.T) {
 	tcs := []struct {
 		testName          string
 		givenRecord       AnalyticsRecordAggregate
@@ -471,10 +473,205 @@ func TestAggregatedRecordTableName(t *testing.T) {
 	}
 }
 
-func TestAggregatedRecord(t *testing.T) {
-	rec := &AnalyticsRecord{}
+func TestAggregatedRecord_GetObjectID(t *testing.T) {
+	t.Run("should return the ID field", func(t *testing.T) {
+		id := id.NewObjectID()
+		record := AnalyticsRecordAggregate{
+			id: id,
+		}
+		assert.Equal(t, id, record.GetObjectID())
+	})
+}
 
-	newID := id.NewObjectID()
-	rec.SetObjectID(newID)
-	assert.Equal(t, newID, rec.GetObjectID())
+func TestAggregatedRecord_SetObjectID(t *testing.T) {
+	t.Run("should set the ID field", func(t *testing.T) {
+		id := id.NewObjectID()
+		record := AnalyticsRecordAggregate{}
+		record.SetObjectID(id)
+		assert.Equal(t, id, record.id)
+	})
+}
+
+func TestSQLAnalyticsRecordAggregate_TableName(t *testing.T) {
+	t.Run("should return the SQL table name", func(t *testing.T) {
+		record := SQLAnalyticsRecordAggregate{}
+		assert.Equal(t, AggregateSQLTable, record.TableName())
+	})
+}
+
+func TestAnalyticsRecordAggregate_generateBSONFromProperty(t *testing.T) {
+	currentTime := time.Date(2023, 0o4, 0o4, 10, 0, 0, 0, time.UTC)
+
+	tcs := []struct {
+		givenCounter *Counter
+		expected     dbm.DBM
+
+		testName   string
+		givenName  string
+		givenValue string
+	}{
+		{
+			testName: "success counter",
+			givenCounter: &Counter{
+				Hits:                 2,
+				TotalRequestTime:     100,
+				Success:              1,
+				ErrorTotal:           0,
+				RequestTime:          100,
+				TotalUpstreamLatency: 20,
+				MaxLatency:           100,
+				MaxUpstreamLatency:   110,
+				MinUpstreamLatency:   10,
+				MinLatency:           20,
+				TotalLatency:         150,
+				Identifier:           "",
+				HumanIdentifier:      "",
+				ErrorMap:             map[string]int{"200": 1},
+				LastTime:             currentTime,
+			},
+			givenName:  "test",
+			givenValue: "total",
+			expected: dbm.DBM{
+				"$set": dbm.DBM{
+					"test.total.bytesin":           int64(0),
+					"test.total.bytesout":          int64(0),
+					"test.total.humanidentifier":   "",
+					"test.total.identifier":        "",
+					"test.total.lasttime":          currentTime,
+					"test.total.openconnections":   int64(0),
+					"test.total.closedconnections": int64(0),
+				},
+				"$inc": dbm.DBM{
+					"test.total.errormap.200":         int(1),
+					"test.total.errortotal":           int(0),
+					"test.total.hits":                 int(2),
+					"test.total.success":              int(1),
+					"test.total.totallatency":         int64(150),
+					"test.total.totalrequesttime":     float64(100),
+					"test.total.totalupstreamlatency": int64(20),
+				},
+				"$max": dbm.DBM{
+					"test.total.maxlatency":         int64(100),
+					"test.total.maxupstreamlatency": int64(110),
+				},
+				"$min": dbm.DBM{
+					"test.total.minlatency":         int64(20),
+					"test.total.minupstreamlatency": int64(10),
+				},
+			},
+		},
+		{
+			testName: "error counter",
+			givenCounter: &Counter{
+				Hits:                 2,
+				TotalRequestTime:     100,
+				Success:              0,
+				ErrorTotal:           2,
+				RequestTime:          100,
+				TotalUpstreamLatency: 20,
+				MaxLatency:           100,
+				MaxUpstreamLatency:   110,
+				MinUpstreamLatency:   10,
+				MinLatency:           20,
+				TotalLatency:         150,
+				Identifier:           "test",
+				HumanIdentifier:      "",
+				ErrorMap:             map[string]int{"500": 2},
+				LastTime:             currentTime,
+			},
+			givenName:  "test",
+			givenValue: "total",
+			expected: dbm.DBM{
+				"$set": dbm.DBM{
+					"test.total.bytesin":           int64(0),
+					"test.total.bytesout":          int64(0),
+					"test.total.humanidentifier":   "",
+					"test.total.identifier":        "test",
+					"test.total.lasttime":          currentTime,
+					"test.total.openconnections":   int64(0),
+					"test.total.closedconnections": int64(0),
+				},
+				"$inc": dbm.DBM{
+					"test.total.errormap.500":         int(2),
+					"test.total.errortotal":           int(2),
+					"test.total.hits":                 int(2),
+					"test.total.success":              int(0),
+					"test.total.totallatency":         int64(150),
+					"test.total.totalrequesttime":     float64(100),
+					"test.total.totalupstreamlatency": int64(20),
+				},
+				"$max": dbm.DBM{
+					"test.total.maxlatency":         int64(100),
+					"test.total.maxupstreamlatency": int64(110),
+				},
+				"$min": dbm.DBM{}, // we don't update mins on case of full error counter
+			},
+		},
+
+		{
+			testName: "without name",
+			givenCounter: &Counter{
+				Hits:                 2,
+				TotalRequestTime:     100,
+				Success:              0,
+				ErrorTotal:           2,
+				RequestTime:          100,
+				TotalUpstreamLatency: 20,
+				MaxLatency:           100,
+				MaxUpstreamLatency:   110,
+				MinUpstreamLatency:   10,
+				MinLatency:           20,
+				TotalLatency:         150,
+				Identifier:           "test",
+				HumanIdentifier:      "",
+				ErrorMap:             map[string]int{"500": 2},
+				LastTime:             currentTime,
+			},
+			givenName:  "",
+			givenValue: "noname",
+			expected: dbm.DBM{
+				"$set": dbm.DBM{
+					"noname.bytesin":           int64(0),
+					"noname.bytesout":          int64(0),
+					"noname.humanidentifier":   "",
+					"noname.identifier":        "test",
+					"noname.lasttime":          currentTime,
+					"noname.openconnections":   int64(0),
+					"noname.closedconnections": int64(0),
+				},
+				"$inc": dbm.DBM{
+					"noname.errormap.500":         int(2),
+					"noname.errortotal":           int(2),
+					"noname.hits":                 int(2),
+					"noname.success":              int(0),
+					"noname.totallatency":         int64(150),
+					"noname.totalrequesttime":     float64(100),
+					"noname.totalupstreamlatency": int64(20),
+				},
+				"$max": dbm.DBM{
+					"noname.maxlatency":         int64(100),
+					"noname.maxupstreamlatency": int64(110),
+				},
+				"$min": dbm.DBM{}, // we don't update mins on case of full error counter
+			},
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.testName, func(t *testing.T) {
+			aggregate := &AnalyticsRecordAggregate{}
+
+			baseDBM := dbm.DBM{
+				"$set": dbm.DBM{},
+				"$inc": dbm.DBM{},
+				"$max": dbm.DBM{},
+				"$min": dbm.DBM{},
+			}
+
+			actual := aggregate.generateBSONFromProperty(tc.givenName, tc.givenValue, tc.givenCounter, baseDBM)
+			if !cmp.Equal(tc.expected, actual) {
+				t.Errorf("AggregateUptimeData() mismatch (-want +got):\n%s", cmp.Diff(tc.expected, actual))
+			}
+		})
+	}
 }
