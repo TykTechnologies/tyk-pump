@@ -281,7 +281,7 @@ func (m *MongoAggregatePump) WriteData(ctx context.Context, data []interface{}) 
 	for orgID := range analyticsPerOrg {
 		filteredData := analyticsPerOrg[orgID]
 		for _, isMixedCollection := range writingAttempts {
-			err := m.DoAggregatedWriting(ctx, orgID, &filteredData, isMixedCollection)
+			err := m.DoAggregatedWriting(ctx, orgID, filteredData, isMixedCollection)
 			if err != nil {
 				// checking if the error is related to the document size and AggregateSelfHealing is enabled
 				if shouldSelfHeal := m.ShouldSelfHeal(err); shouldSelfHeal {
@@ -303,7 +303,7 @@ func (m *MongoAggregatePump) WriteData(ctx context.Context, data []interface{}) 
 	return nil
 }
 
-func (m *MongoAggregatePump) DoAggregatedWriting(ctx context.Context, orgID string, filteredData *analytics.AnalyticsRecordAggregate, mixed bool) error {
+func (m *MongoAggregatePump) DoAggregatedWriting(ctx context.Context, orgID string, filteredData analytics.AnalyticsRecordAggregate, mixed bool) error {
 	filteredData.Mixed = mixed
 	indexCreateErr := m.ensureIndexes(filteredData.TableName())
 

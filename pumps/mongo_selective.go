@@ -100,6 +100,12 @@ func (m *MongoSelectivePump) Init(config interface{}) error {
 
 func (m *MongoSelectivePump) connect() {
 	var err error
+
+	if m.dbConf.MongoDriverType == "" {
+		// Default to mgo
+		m.dbConf.MongoDriverType = persistent.Mgo
+	}
+
 	m.store, err = persistent.NewPersistentStorage(&persistent.ClientOpts{
 		ConnectionString:         m.dbConf.MongoURL,
 		UseSSL:                   m.dbConf.MongoUseSSL,
@@ -207,10 +213,6 @@ func (m *MongoSelectivePump) WriteData(ctx context.Context, data []interface{}) 
 			err := m.store.Insert(context.Background(), dataSet...)
 			if err != nil {
 				m.log.WithField("collection", colName).Error("Problem inserting to mongo collection: ", err)
-				if strings.Contains(strings.ToLower(err.Error()), "closed explicitly") {
-					m.log.Warning("--> Detected connection failure, reconnecting")
-					m.connect()
-				}
 			}
 		}
 
@@ -273,33 +275,31 @@ func (m *MongoSelectivePump) AccumulateSet(data []interface{}) [][]id.DBObject {
 func (m *MongoSelectivePump) WriteUptimeData(data []interface{}) {
 	m.log.Info("MONGO Selective Should not be writing uptime data!")
 	m.log.Debug("Uptime Data: ", len(data))
-	collectionName := "tyk_uptime_analytics"
 
-	if len(data) > 0 {
-		keys := make([]id.DBObject, len(data))
+	if len(data) == 0 {
+		return
+	}
 
-		for i, v := range data {
-			decoded := analytics.UptimeReportData{}
+	keys := make([]id.DBObject, len(data))
+
+	for i, v := range data {
+		decoded := analytics.UptimeReportData{}
+
+		if err := msgpack.Unmarshal([]byte(v.(string)), &decoded); err != nil {
 			// ToDo: should this work with serializer?
-			err := msgpack.Unmarshal(v.([]byte), &decoded)
-			m.log.Debug("Decoded Record: ", decoded)
-			if err != nil {
-				m.log.Error("Couldn't unmarshal analytics data:", err)
-			} else {
-				keys[i] = &decoded
-			}
+			m.log.Error("Couldn't unmarshal analytics data:", err)
+			continue
 		}
 
-		err := m.store.Insert(context.Background(), keys...)
-		m.log.Debug("Wrote data to ", collectionName)
+		keys[i] = &decoded
 
-		if err != nil {
-			m.log.WithField("collection", collectionName).Error("Problem inserting to mongo collection: ", err)
-			if strings.Contains(err.Error(), "Closed explicitly") || strings.Contains(err.Error(), "EOF") {
-				m.log.Warning("--> Detected connection failure, reconnecting")
-				m.connect()
-			}
-		}
+		m.log.Debug("Decoded Record: ", decoded)
+	}
+
+	m.log.Debug("Writing data to ", analytics.UptimeSQLTable)
+
+	if err := m.store.Insert(context.Background(), keys...); err != nil {
+		m.log.Error("Problem inserting to mongo collection: ", err)
 	}
 }
 

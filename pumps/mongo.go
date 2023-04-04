@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
-	"strings"
 
 	"github.com/TykTechnologies/storage/persistent"
 	"github.com/TykTechnologies/storage/persistent/dbm"
@@ -380,10 +379,6 @@ func (m *MongoPump) WriteData(ctx context.Context, data []interface{}) error {
 			err := m.store.Insert(context.Background(), dataSet...)
 			if err != nil {
 				m.log.WithFields(logrus.Fields{"collection": collectionName, "number of records": len(dataSet)}).Error("Problem inserting to mongo collection: ", err)
-
-				if strings.Contains(strings.ToLower(err.Error()), "closed explicitly") {
-					m.log.Warning("--> Detected connection failure!")
-				}
 				errCh <- err
 			}
 			errCh <- nil
