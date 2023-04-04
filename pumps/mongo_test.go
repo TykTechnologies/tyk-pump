@@ -3,7 +3,6 @@ package pumps
 import (
 	"context"
 	"encoding/base64"
-	"errors"
 	"strconv"
 	"testing"
 	"time"
@@ -510,23 +509,25 @@ func TestWriteUptimeData(t *testing.T) {
 		name                 string
 		Record               *analytics.UptimeReportData
 		RecordsAmountToWrite int
-		wantedError          error
+		shouldHaveTable      bool
 	}{
 		{
 			name:                 "write 3 uptime records",
 			Record:               &analytics.UptimeReportData{OrgID: "1", URL: "url1", TimeStamp: now},
 			RecordsAmountToWrite: 3,
+			shouldHaveTable:      true,
 		},
 		{
 			name:                 "write 6 uptime records",
 			Record:               &analytics.UptimeReportData{OrgID: "1", URL: "url1", TimeStamp: now},
 			RecordsAmountToWrite: 6,
+			shouldHaveTable:      true,
 		},
 		{
 			name:                 "length of records is 0",
 			Record:               &analytics.UptimeReportData{},
 			RecordsAmountToWrite: 0,
-			wantedError:          errors.New("length of records is 0"),
+			shouldHaveTable:      false,
 		},
 	}
 
@@ -542,14 +543,16 @@ func TestWriteUptimeData(t *testing.T) {
 
 			defer func() {
 				//clean up the table
-				err := mPump.store.Drop(context.Background(), d)
-				assert.Nil(t, err)
+				if test.shouldHaveTable {
+					err := mPump.store.Drop(context.Background(), d)
+					assert.Nil(t, err)
+				}
 			}()
 
 			//check if the table exists
 			hasTable, err := mPump.store.HasTable(context.Background(), table)
 			assert.Nil(t, err)
-			assert.Equal(t, true, hasTable)
+			assert.Equal(t, test.shouldHaveTable, hasTable)
 
 			dbRecords := []analytics.UptimeReportAggregate{}
 			if err := mPump.store.Query(context.Background(), d, &dbRecords, dbm.DBM{}); err != nil {
