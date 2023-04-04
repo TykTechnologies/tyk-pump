@@ -186,6 +186,7 @@ func AggregateUptimeData(data []UptimeReportData) map[string]UptimeReportAggrega
 				TotalRequestTime: float64(thisV.RequestTime),
 				LastTime:         thisV.TimeStamp,
 				ErrorMap:         make(map[string]int),
+				ErrorList:        []ErrorData{},
 			}
 			thisAggregate.Total.Hits++
 			thisAggregate.Total.TotalRequestTime += float64(thisV.RequestTime)
