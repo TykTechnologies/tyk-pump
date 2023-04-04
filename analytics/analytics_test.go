@@ -1,9 +1,12 @@
 package analytics
 
 import (
+	"fmt"
 	"testing"
+	"time"
 
 	"github.com/TykTechnologies/storage/persistent/id"
+	"github.com/fatih/structs"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -145,5 +148,29 @@ func TestAnalyticsRecord_GetFieldNames(t *testing.T) {
 
 	for _, expected := range expectedFields {
 		assert.Contains(t, fields, expected)
+	}
+}
+
+func TestAnalyticsRecord_GetLineValues(t *testing.T) {
+	rec := &AnalyticsRecord{
+		APIID:      "api123",
+		OrgID:      "org123",
+		APIKey:     "key123",
+		Path:       "/path",
+		RawPath:    "/rawpath",
+		APIVersion: "v1",
+		APIName:    "api_name",
+		TimeStamp:  time.Now(),
+		ApiSchema:  "http",
+	}
+
+	fields := rec.GetLineValues()
+
+	assert.Equal(t, 39, len(fields))
+
+	for _, field := range structs.Fields(rec) {
+		if field.IsExported() && !field.IsZero() {
+			assert.Contains(t, fields, fmt.Sprint(field.Value()))
+		}
 	}
 }
