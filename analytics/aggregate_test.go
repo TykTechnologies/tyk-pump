@@ -724,3 +724,79 @@ func TestAnalyticsRecordAggregate_generateSetterForTime(t *testing.T) {
 		})
 	}
 }
+
+func TestAnalyticsRecordAggregate_latencySetter(t *testing.T) {
+	tcs := []struct {
+		givenCounter *Counter
+		expected     dbm.DBM
+
+		testName   string
+		givenName  string
+		givenValue string
+	}{
+		{
+			testName: "with name and hits",
+			givenCounter: &Counter{
+				Hits:                 2,
+				TotalLatency:         100,
+				TotalUpstreamLatency: 200,
+			},
+			givenName:  "test",
+			givenValue: "total",
+			expected: dbm.DBM{
+				"$set": dbm.DBM{
+					"test.total.latency":         float64(50),
+					"test.total.upstreamlatency": float64(100),
+				},
+			},
+		},
+		{
+			testName: "without name and with hits",
+			givenCounter: &Counter{
+				Hits:                 2,
+				TotalLatency:         200,
+				TotalUpstreamLatency: 400,
+			},
+			givenName:  "",
+			givenValue: "noname",
+			expected: dbm.DBM{
+				"$set": dbm.DBM{
+					"noname.latency":         float64(100),
+					"noname.upstreamlatency": float64(200),
+				},
+			},
+		},
+
+		{
+			testName: "without name and without hits",
+			givenCounter: &Counter{
+				Hits:                 0,
+				TotalLatency:         200,
+				TotalUpstreamLatency: 400,
+			},
+			givenName:  "",
+			givenValue: "noname",
+			expected: dbm.DBM{
+				"$set": dbm.DBM{
+					"noname.latency":         float64(0),
+					"noname.upstreamlatency": float64(0),
+				},
+			},
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.testName, func(t *testing.T) {
+			aggregate := &AnalyticsRecordAggregate{}
+
+			baseDBM := dbm.DBM{
+				"$set": dbm.DBM{},
+			}
+
+			actual := aggregate.latencySetter(tc.givenName, tc.givenValue, baseDBM, tc.givenCounter)
+			if !cmp.Equal(tc.expected, actual) {
+				t.Errorf("AggregateUptimeData() mismatch (-want +got):\n%s", cmp.Diff(tc.expected, actual))
+			}
+		})
+	}
+}
