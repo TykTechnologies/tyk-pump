@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/vmihailenco/msgpack.v2"
 
@@ -490,18 +489,6 @@ func TestGetBlurredURL(t *testing.T) {
 }
 
 func TestWriteUptimeData(t *testing.T) {
-	pump := newPump()
-	mPump, ok := pump.(*MongoPump)
-	assert.True(t, ok)
-	conf := defaultConf()
-	conf.MongoURL = ""
-	mPump.dbConf = &conf
-	table := "tyk_uptime_analytics"
-	mPump.dbConf.CollectionName = table
-	d := createDBObject(table)
-	mPump.log = logrus.NewEntry(logrus.New())
-
-	mPump.connect()
 
 	now := time.Now()
 
@@ -509,53 +496,53 @@ func TestWriteUptimeData(t *testing.T) {
 		name                 string
 		Record               *analytics.UptimeReportData
 		RecordsAmountToWrite int
-		shouldHaveTable      bool
 	}{
 		{
 			name:                 "write 3 uptime records",
 			Record:               &analytics.UptimeReportData{OrgID: "1", URL: "url1", TimeStamp: now},
 			RecordsAmountToWrite: 3,
-			shouldHaveTable:      true,
 		},
 		{
 			name:                 "write 6 uptime records",
 			Record:               &analytics.UptimeReportData{OrgID: "1", URL: "url1", TimeStamp: now},
 			RecordsAmountToWrite: 6,
-			shouldHaveTable:      true,
 		},
 		{
 			name:                 "length of records is 0",
 			Record:               &analytics.UptimeReportData{},
 			RecordsAmountToWrite: 0,
-			shouldHaveTable:      false,
 		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			newPump := &MongoPump{IsUptime: true}
+			conf := defaultConf()
+			conf.MongoURL = ""
+			err := newPump.Init(conf)
+			assert.Nil(t, err)
+
 			keys := []interface{}{}
 			for i := 0; i < test.RecordsAmountToWrite; i++ {
 				encoded, _ := msgpack.Marshal(test.Record)
 				keys = append(keys, string(encoded))
 			}
 
-			mPump.WriteUptimeData(keys)
+			newPump.WriteUptimeData(keys)
 
 			defer func() {
 				//clean up the table
-				if test.shouldHaveTable {
-					err := mPump.store.Drop(context.Background(), d)
-					assert.Nil(t, err)
-				}
+				err := newPump.store.DropDatabase(context.Background())
+				assert.Nil(t, err)
 			}()
 
 			//check if the table exists
-			hasTable, err := mPump.store.HasTable(context.Background(), table)
+			hasTable, err := newPump.store.HasTable(context.Background(), newPump.dbConf.CollectionName)
 			assert.Nil(t, err)
-			assert.Equal(t, test.shouldHaveTable, hasTable)
+			assert.Equal(t, true, hasTable)
 
-			dbRecords := []analytics.UptimeReportAggregate{}
-			if err := mPump.store.Query(context.Background(), d, &dbRecords, dbm.DBM{}); err != nil {
+			dbRecords := []analytics.UptimeReportData{}
+			if err := newPump.store.Query(context.Background(), &analytics.UptimeReportData{}, &dbRecords, dbm.DBM{}); err != nil {
 				t.Fatal("Error getting analytics records from Mongo")
 			}
 
