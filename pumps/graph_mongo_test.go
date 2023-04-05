@@ -145,7 +145,6 @@ X-Ratelimit-Reset: 0
 `
 
 func TestGraphMongoPump_WriteData(t *testing.T) {
-
 	conf := defaultConf()
 	pump := GraphMongoPump{
 		MongoPump: MongoPump{

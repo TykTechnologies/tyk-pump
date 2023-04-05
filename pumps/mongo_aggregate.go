@@ -18,11 +18,15 @@ import (
 	"github.com/TykTechnologies/tyk-pump/analytics"
 )
 
-var mongoAggregatePumpPrefix = "PMP_MONGOAGG"
-var mongoAggregateDefaultEnv = PUMPS_ENV_PREFIX + "_MONGOAGGREGATE" + PUMPS_ENV_META_PREFIX
+var (
+	mongoAggregatePumpPrefix = "PMP_MONGOAGG"
+	mongoAggregateDefaultEnv = PUMPS_ENV_PREFIX + "_MONGOAGGREGATE" + PUMPS_ENV_META_PREFIX
+)
 
-var THRESHOLD_LEN_TAG_LIST = 1000
-var COMMON_TAGS_COUNT = 5
+var (
+	THRESHOLD_LEN_TAG_LIST = 1000
+	COMMON_TAGS_COUNT      = 5
+)
 
 type MongoAggregatePump struct {
 	store  persistent.PersistentStorage
@@ -168,7 +172,7 @@ func (m *MongoAggregatePump) Init(config interface{}) error {
 
 	processPumpEnvVars(m, m.log, m.dbConf, mongoAggregateDefaultEnv)
 
-	//we keep this env check for backward compatibility
+	// we keep this env check for backward compatibility
 	overrideErr := envconfig.Process(mongoAggregatePumpPrefix, m.dbConf)
 	if overrideErr != nil {
 		m.log.Error("Failed to process environment variables for mongo aggregate pump: ", overrideErr)
@@ -226,7 +230,7 @@ func (m *MongoAggregatePump) ensureIndexes(collectionName string) error {
 		return nil
 	}
 
-	//We are going to check if the collection exists only when the DB Type is MongoDB. The mgo CollectionNames func leaks cursors on DocDB.
+	// We are going to check if the collection exists only when the DB Type is MongoDB. The mgo CollectionNames func leaks cursors on DocDB.
 	if m.dbConf.MongoDBType == StandardMongo {
 		exists, errExists := m.collectionExists(collectionName)
 		if errExists == nil && exists {

@@ -59,7 +59,7 @@ func (a *UptimeReportData) TableName() string {
 	return UptimeSQLTable
 }
 
-func OnConflictUptimeAssignments(tableName string, tempTable string) map[string]interface{} {
+func OnConflictUptimeAssignments(tableName, tempTable string) map[string]interface{} {
 	assignments := make(map[string]interface{})
 	f := UptimeReportAggregateSQL{}
 	baseFields := structs.Fields(f.Code)

@@ -110,7 +110,7 @@ func TestDoAggregatedWritingWithIgnoredAggregations(t *testing.T) {
 				assert.Nil(t, collErr)
 			}
 
-			//we build the query using the timestamp as we do in aggregated analytics
+			// we build the query using the timestamp as we do in aggregated analytics
 			query := dbm.DBM{
 				"orgid":     "123",
 				"timestamp": time.Date(timeNow.Year(), timeNow.Month(), timeNow.Day(), timeNow.Hour(), 0, 0, 0, timeNow.Location()),

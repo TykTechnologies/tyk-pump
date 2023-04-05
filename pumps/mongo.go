@@ -38,9 +38,11 @@ type MongoPump struct {
 	CommonPumpConfig
 }
 
-var mongoPrefix = "mongo-pump"
-var mongoPumpPrefix = "PMP_MONGO"
-var mongoDefaultEnv = PUMPS_ENV_PREFIX + "_MONGO" + PUMPS_ENV_META_PREFIX
+var (
+	mongoPrefix     = "mongo-pump"
+	mongoPumpPrefix = "PMP_MONGO"
+	mongoDefaultEnv = PUMPS_ENV_PREFIX + "_MONGO" + PUMPS_ENV_META_PREFIX
+)
 
 type MongoType int
 
@@ -108,7 +110,7 @@ func (b *BaseMongoConf) GetBlurredURL() string {
 	// mongo uri match with regex ^(mongodb:(?:\/{2})?)((\w+?):(\w+?)@|:?@?)(\S+?):(\d+)(\/(\S+?))?(\?replicaSet=(\S+?))?$
 	// but we need only a segment, so regex explanation: https://regex101.com/r/8Uzwtw/1
 	regex := `^(mongodb:(?:\/{2})?)((...+?):(...+?)@)`
-	var re = regexp.MustCompile(regex)
+	re := regexp.MustCompile(regex)
 
 	blurredUrl := re.ReplaceAllString(b.MongoURL, "***:***@")
 	return blurredUrl
@@ -184,11 +186,11 @@ func (m *MongoPump) Init(config interface{}) error {
 		m.log.Fatal("Failed to decode configuration: ", err)
 	}
 
-	//we check for the environment configuration if this pumps is not the uptime pump
+	// we check for the environment configuration if this pumps is not the uptime pump
 	if !m.IsUptime {
 		processPumpEnvVars(m, m.log, m.dbConf, mongoDefaultEnv)
 
-		//we keep this env check for backward compatibility
+		// we keep this env check for backward compatibility
 		overrideErr := envconfig.Process(mongoPumpPrefix, m.dbConf)
 		if overrideErr != nil {
 			m.log.Error("Failed to process environment variables for mongo pump: ", overrideErr)
@@ -232,9 +234,9 @@ func (m *MongoPump) Init(config interface{}) error {
 }
 
 func (m *MongoPump) capCollection() (ok bool) {
-	var colName = m.dbConf.CollectionName
-	var colCapMaxSizeBytes = m.dbConf.CollectionCapMaxSizeBytes
-	var colCapEnable = m.dbConf.CollectionCapEnable
+	colName := m.dbConf.CollectionName
+	colCapMaxSizeBytes := m.dbConf.CollectionCapMaxSizeBytes
+	colCapEnable := m.dbConf.CollectionCapEnable
 
 	if !colCapEnable {
 		return false
@@ -334,7 +336,6 @@ func (m *MongoPump) ensureIndexes(collectionName string) error {
 }
 
 func (m *MongoPump) connect() {
-
 	if m.dbConf.MongoDriverType == "" {
 		m.dbConf.MongoDriverType = "mgo"
 	}
@@ -350,7 +351,6 @@ func (m *MongoPump) connect() {
 		ConnectionTimeout:        m.timeout,
 		Type:                     m.dbConf.MongoDriverType,
 	})
-
 	if err != nil {
 		m.log.Fatal("Failed to connect: ", err)
 	}
@@ -359,7 +359,6 @@ func (m *MongoPump) connect() {
 }
 
 func (m *MongoPump) WriteData(ctx context.Context, data []interface{}) error {
-
 	collectionName := m.dbConf.CollectionName
 	if collectionName == "" {
 		m.log.Fatal("No collection name!")

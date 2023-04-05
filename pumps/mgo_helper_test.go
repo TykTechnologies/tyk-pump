@@ -11,8 +11,10 @@ import (
 	"github.com/TykTechnologies/storage/persistent/index"
 )
 
-const dbAddr = "127.0.0.1:27017"
-const colName = "test_collection"
+const (
+	dbAddr  = "127.0.0.1:27017"
+	colName = "test_collection"
+)
 
 type Conn struct {
 	Store persistent.PersistentStorage
