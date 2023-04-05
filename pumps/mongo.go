@@ -337,7 +337,7 @@ func (m *MongoPump) ensureIndexes(collectionName string) error {
 
 func (m *MongoPump) connect() {
 	if m.dbConf.MongoDriverType == "" {
-		m.dbConf.MongoDriverType = "mgo"
+		m.dbConf.MongoDriverType = persistent.Mgo
 	}
 
 	store, err := persistent.NewPersistentStorage(&persistent.ClientOpts{
