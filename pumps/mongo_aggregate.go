@@ -24,8 +24,8 @@ var (
 )
 
 var (
-	THRESHOLD_LEN_TAG_LIST = 1000
-	COMMON_TAGS_COUNT      = 5
+	ThresholdLenTagList = 1000
+	CommonTagsCount     = 5
 )
 
 type MongoAggregatePump struct {
@@ -128,8 +128,8 @@ func (m *MongoAggregatePump) printAlert(doc analytics.AnalyticsRecordAggregate, 
 
 	// list 5 common tag prefix
 	l := len(listOfCommonPrefix)
-	if l > COMMON_TAGS_COUNT {
-		l = COMMON_TAGS_COUNT
+	if l > CommonTagsCount {
+		l = CommonTagsCount
 	}
 
 	m.log.Warnf("WARNING: Found more than %v tag entries per document, which may cause performance issues with aggregate logs. List of most common tag-prefix: [%v]. You can ignore these tags using ignore_tag_prefix_list option", thresholdLenTagList, strings.Join(listOfCommonPrefix[:l], ", "))
@@ -179,7 +179,7 @@ func (m *MongoAggregatePump) Init(config interface{}) error {
 	}
 
 	if m.dbConf.ThresholdLenTagList == 0 {
-		m.dbConf.ThresholdLenTagList = THRESHOLD_LEN_TAG_LIST
+		m.dbConf.ThresholdLenTagList = ThresholdLenTagList
 	}
 	m.SetAggregationTime()
 
@@ -285,7 +285,7 @@ func (m *MongoAggregatePump) WriteData(ctx context.Context, data []interface{}) 
 	for orgID := range analyticsPerOrg {
 		filteredData := analyticsPerOrg[orgID]
 		for _, isMixedCollection := range writingAttempts {
-			err := m.DoAggregatedWriting(ctx, orgID, &filteredData, isMixedCollection)
+			err := m.DoAggregatedWriting(ctx, &filteredData, isMixedCollection)
 			if err != nil {
 				// checking if the error is related to the document size and AggregateSelfHealing is enabled
 				if shouldSelfHeal := m.ShouldSelfHeal(err); shouldSelfHeal {
@@ -307,7 +307,7 @@ func (m *MongoAggregatePump) WriteData(ctx context.Context, data []interface{}) 
 	return nil
 }
 
-func (m *MongoAggregatePump) DoAggregatedWriting(ctx context.Context, orgID string, filteredData *analytics.AnalyticsRecordAggregate, mixed bool) error {
+func (m *MongoAggregatePump) DoAggregatedWriting(ctx context.Context, filteredData *analytics.AnalyticsRecordAggregate, mixed bool) error {
 	filteredData.Mixed = mixed
 	indexCreateErr := m.ensureIndexes(filteredData.TableName())
 
