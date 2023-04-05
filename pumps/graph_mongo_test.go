@@ -332,7 +332,13 @@ func TestGraphMongoPump_WriteData(t *testing.T) {
 			}()
 
 			var results []analytics.GraphRecord
-			err = pump.store.Query(context.Background(), &analytics.GraphRecord{}, &results, nil)
+
+			// Using the same collection name as the default pump config
+			d := dbObject{
+				tableName: pump.dbConf.CollectionName,
+			}
+			err = pump.store.Query(context.Background(), d, &results, nil)
+
 			assert.Nil(t, err)
 			if diff := cmp.Diff(tc.expectedGraphRecords, results, cmpopts.IgnoreFields(analytics.GraphRecord{}, "AnalyticsRecord")); diff != "" {
 				t.Error(diff)

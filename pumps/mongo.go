@@ -416,6 +416,9 @@ func (m *MongoPump) AccumulateSet(data []interface{}, isForGraphRecords bool) []
 			continue
 		}
 
+		// If collection name is not set, we'll use the default one
+		thisItem.CollectionName = m.dbConf.CollectionName
+
 		// Calculate the size of the current item
 		sizeBytes := m.getItemSizeBytes(thisItem)
 
