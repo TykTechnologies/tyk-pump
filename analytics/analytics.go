@@ -73,9 +73,14 @@ type AnalyticsRecord struct {
 	TrackPath     bool         `json:"track_path" gorm:"column:trackpath"`
 	ExpireAt      time.Time    `bson:"expireAt" json:"expireAt"`
 	ApiSchema     string       `json:"api_schema" bson:"-" gorm:"-:all"`
+
+	CollectionName string `json:"-" bson:"-" gorm:"-:all"`
 }
 
 func (a *AnalyticsRecord) TableName() string {
+	if a.CollectionName != "" {
+		return a.CollectionName
+	}
 	return SQLTable
 }
 
