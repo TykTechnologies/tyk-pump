@@ -4,6 +4,7 @@ package pumps
 
 import (
 	"context"
+	"os"
 
 	"github.com/TykTechnologies/storage/persistent"
 	"github.com/TykTechnologies/storage/persistent/dbm"
@@ -118,7 +119,12 @@ func defaultConf() MongoConf {
 
 	conf.MongoURL = dbAddr
 	conf.MongoSSLInsecureSkipVerify = true
-	conf.BaseMongoConf.MongoDriverType = persistent.Mgo
+
+	if os.Getenv("MONGO_DRIVER") == "mongo-go" {
+		conf.MongoDriverType = persistent.OfficialMongo
+	} else {
+		conf.MongoDriverType = persistent.Mgo
+	}
 
 	return conf
 }
@@ -131,7 +137,12 @@ func defaultSelectiveConf() MongoSelectiveConf {
 
 	conf.MongoURL = dbAddr
 	conf.MongoSSLInsecureSkipVerify = true
-	conf.BaseMongoConf.MongoDriverType = persistent.Mgo
+
+	if os.Getenv("MONGO_DRIVER") == "mongo-go" {
+		conf.MongoDriverType = persistent.OfficialMongo
+	} else {
+		conf.MongoDriverType = persistent.Mgo
+	}
 
 	return conf
 }
