@@ -323,14 +323,13 @@ func TestGraphMongoPump_WriteData(t *testing.T) {
 				assert.NoError(t, err)
 			}
 
-			// now check for the written data
-
 			defer func() {
 				if err := pump.store.DropDatabase(context.Background()); err != nil {
 					pump.log.WithError(err).Warn("error dropping collection")
 				}
 			}()
 
+			// now check for the written data
 			var results []analytics.GraphRecord
 
 			// Using the same collection name as the default pump config

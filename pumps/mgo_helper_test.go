@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	dbAddr  = "127.0.0.1:27017"
+	dbAddr  = "mongodb://localhost:27017/test"
 	colName = "test_collection"
 )
 
@@ -118,7 +118,7 @@ func defaultConf() MongoConf {
 
 	conf.MongoURL = dbAddr
 	conf.MongoSSLInsecureSkipVerify = true
-	conf.BaseMongoConf.MongoDriverType = "mgo"
+	conf.BaseMongoConf.MongoDriverType = persistent.Mgo
 
 	return conf
 }
@@ -131,6 +131,7 @@ func defaultSelectiveConf() MongoSelectiveConf {
 
 	conf.MongoURL = dbAddr
 	conf.MongoSSLInsecureSkipVerify = true
+	conf.BaseMongoConf.MongoDriverType = persistent.Mgo
 
 	return conf
 }

@@ -203,6 +203,7 @@ func TestEnsureIndexes(t *testing.T) {
 			tableName: collectionName,
 		}
 		conf.OmitIndexCreation = true
+
 		err := mPump.ensureIndexes(collectionName)
 		assert.NoError(t, err)
 
@@ -330,7 +331,6 @@ func TestWriteUptimeDataMongoSelective(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			newPump := &MongoSelectivePump{}
 			conf := defaultConf()
-			conf.MongoURL = ""
 			err := newPump.Init(conf)
 			assert.Nil(t, err)
 

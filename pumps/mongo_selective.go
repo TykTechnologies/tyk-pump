@@ -142,6 +142,17 @@ func (m *MongoSelectivePump) ensureIndexes(collectionName string) error {
 	d := dbObject{
 		tableName: collectionName,
 	}
+
+	apiIndex := index.Index{
+		Keys:       []dbm.DBM{{"apiid": 1}},
+		Background: m.dbConf.MongoDBType == StandardMongo,
+	}
+
+	err = m.store.CreateIndex(context.Background(), d, apiIndex)
+	if err != nil {
+		return err
+	}
+
 	// CosmosDB does not support "expireAt" option
 	if m.dbConf.MongoDBType != CosmosDB {
 		ttlIndex := index.Index{
@@ -155,16 +166,6 @@ func (m *MongoSelectivePump) ensureIndexes(collectionName string) error {
 		if err != nil {
 			return err
 		}
-	}
-
-	apiIndex := index.Index{
-		Keys:       []dbm.DBM{{"apiid": 1}},
-		Background: m.dbConf.MongoDBType == StandardMongo,
-	}
-
-	err = m.store.CreateIndex(context.Background(), d, apiIndex)
-	if err != nil {
-		return err
 	}
 
 	logBrowserIndex := index.Index{

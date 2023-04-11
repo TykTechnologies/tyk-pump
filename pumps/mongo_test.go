@@ -49,15 +49,6 @@ func TestMongoPumpOmitIndexCreation(t *testing.T) {
 	records := []interface{}{record, record}
 	dbObject := createDBObject(conf.CollectionName)
 	mPump.connect()
-	// defer func() {
-	// 	// we clean the db after we finish every test case
-	// 	defer func() {
-	// 		err := mPump.store.Drop(context.Background(), dbObject)
-	// 		if err != nil {
-	// 			t.Fatal(err)
-	// 		}
-	// 	}()
-	// }()
 
 	tcs := []struct {
 		testName             string
@@ -513,7 +504,6 @@ func TestWriteUptimeData(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			newPump := &MongoPump{IsUptime: true}
 			conf := defaultConf()
-			conf.MongoURL = ""
 			err := newPump.Init(conf)
 			assert.Nil(t, err)
 
