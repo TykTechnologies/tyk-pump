@@ -36,7 +36,7 @@ require (
 	github.com/olivere/elastic/v7 v7.0.28
 	github.com/oschwald/maxminddb-golang v1.5.0
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus/client_golang v1.11.0
+	github.com/prometheus/client_golang v1.14.0
 	github.com/quipo/statsd v0.0.0-20160923160612-75b7afedf0d2
 	github.com/resurfaceio/logger-go/v3 v3.2.1
 	github.com/robertkowalski/graylog-golang v0.0.0-20151121031040-e5295cfa2827
