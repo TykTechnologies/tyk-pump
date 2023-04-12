@@ -42,7 +42,7 @@ require (
 	github.com/robertkowalski/graylog-golang v0.0.0-20151121031040-e5295cfa2827
 	github.com/segmentio/analytics-go v0.0.0-20160711225931-bdb0aeca8a99
 	github.com/segmentio/backo-go v0.0.0-20160424052352-204274ad699c // indirect
-	github.com/segmentio/kafka-go v0.3.6
+	github.com/segmentio/kafka-go v0.4.39
 	github.com/shirou/gopsutil v3.20.11+incompatible // indirect
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.8.1
