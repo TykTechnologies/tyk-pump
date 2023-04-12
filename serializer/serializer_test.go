@@ -8,6 +8,7 @@ import (
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/TykTechnologies/tyk-pump/analytics/demo"
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -74,7 +75,7 @@ func TestSerializer_Decode(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			recordsAreEqual := cmp.Equal(record, *newRecord)
+			recordsAreEqual := cmp.Equal(record, *newRecord, cmpopts.IgnoreUnexported(analytics.AnalyticsRecord{}))
 			assert.Equal(t, true, recordsAreEqual, "records should be equal after decoding")
 		})
 	}
@@ -131,6 +132,7 @@ func BenchmarkProtobufEncoding(b *testing.B) {
 	}
 	b.ReportMetric(float64(serialSize)/float64(b.N), "B/serial")
 }
+
 func BenchmarkMsgpEncoding(b *testing.B) {
 	serializer := NewAnalyticsSerializer(MSGP_SERIALIZER)
 	records := []analytics.AnalyticsRecord{

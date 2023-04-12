@@ -425,7 +425,7 @@ func TestAnalyticsRecord_ToGraphRecord(t *testing.T) {
 			expected := testCase.expected()
 			expected.AnalyticsRecord = a
 			gotten := a.ToGraphRecord()
-			if diff := cmp.Diff(expected, gotten, cmpopts.IgnoreFields(AnalyticsRecord{}, "RawRequest", "RawResponse")); diff != "" {
+			if diff := cmp.Diff(expected, gotten, cmpopts.IgnoreFields(AnalyticsRecord{}, "RawRequest", "RawResponse"), cmpopts.IgnoreUnexported(AnalyticsRecord{})); diff != "" {
 				t.Fatal(diff)
 			}
 		})

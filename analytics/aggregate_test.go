@@ -6,6 +6,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/TykTechnologies/storage/persistent/dbm"
+	"github.com/TykTechnologies/storage/persistent/id"
+	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
 
 	"github.com/stretchr/testify/assert"
@@ -342,7 +345,7 @@ func TestAggregateGraphData_Dimension(t *testing.T) {
 }
 
 func TestAggregateData_SkipGraphRecords(t *testing.T) {
-	run := func(records []AnalyticsRecord, expectedAggregatedRecordCount int, expectedExistingOrgKeys []string, expectedNonExistingOrgKeys []string) func(t *testing.T) {
+	run := func(records []AnalyticsRecord, expectedAggregatedRecordCount int, expectedExistingOrgKeys, expectedNonExistingOrgKeys []string) func(t *testing.T) {
 		return func(t *testing.T) {
 			data := make([]interface{}, len(records))
 			for i := range records {
@@ -437,4 +440,799 @@ func TestSetAggregateTimestamp(t *testing.T) {
 	SetlastTimestampAgggregateRecord("testing-setLastTimestamp", time.Now().Add(-time.Minute*10))
 	ts := setAggregateTimestamp("testing-setLastTimestamp", asTime, 7)
 	assert.Equal(t, time.Date(asTime.Year(), asTime.Month(), asTime.Day(), asTime.Hour(), asTime.Minute(), 0, 0, asTime.Location()), ts)
+}
+
+func TestAggregatedRecord_TableName(t *testing.T) {
+	tcs := []struct {
+		testName          string
+		givenRecord       AnalyticsRecordAggregate
+		expectedTableName string
+	}{
+		{
+			testName: "should return table name with org id",
+			givenRecord: AnalyticsRecordAggregate{
+				OrgID: "123",
+				Mixed: true,
+			},
+			expectedTableName: AgggregateMixedCollectionName,
+		},
+		{
+			testName: "should return table name with org id",
+			givenRecord: AnalyticsRecordAggregate{
+				OrgID: "123",
+				Mixed: false,
+			},
+			expectedTableName: "z_tyk_analyticz_aggregate_123",
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.testName, func(t *testing.T) {
+			assert.Equal(t, tc.expectedTableName, tc.givenRecord.TableName())
+		})
+	}
+}
+
+func TestAggregatedRecord_GetObjectID(t *testing.T) {
+	t.Run("should return the ID field", func(t *testing.T) {
+		id := id.NewObjectID()
+		record := AnalyticsRecordAggregate{
+			id: id,
+		}
+		assert.Equal(t, id, record.GetObjectID())
+	})
+}
+
+func TestAggregatedRecord_SetObjectID(t *testing.T) {
+	t.Run("should set the ID field", func(t *testing.T) {
+		id := id.NewObjectID()
+		record := AnalyticsRecordAggregate{}
+		record.SetObjectID(id)
+		assert.Equal(t, id, record.id)
+	})
+}
+
+func TestSQLAnalyticsRecordAggregate_TableName(t *testing.T) {
+	t.Run("should return the SQL table name", func(t *testing.T) {
+		record := SQLAnalyticsRecordAggregate{}
+		assert.Equal(t, AggregateSQLTable, record.TableName())
+	})
+}
+
+func TestAnalyticsRecordAggregate_generateBSONFromProperty(t *testing.T) {
+	currentTime := time.Date(2023, 0o4, 0o4, 10, 0, 0, 0, time.UTC)
+
+	tcs := []struct {
+		givenCounter *Counter
+		expected     dbm.DBM
+
+		testName   string
+		givenName  string
+		givenValue string
+	}{
+		{
+			testName: "success counter",
+			givenCounter: &Counter{
+				Hits:                 2,
+				TotalRequestTime:     100,
+				Success:              1,
+				ErrorTotal:           0,
+				RequestTime:          100,
+				TotalUpstreamLatency: 20,
+				MaxLatency:           100,
+				MaxUpstreamLatency:   110,
+				MinUpstreamLatency:   10,
+				MinLatency:           20,
+				TotalLatency:         150,
+				Identifier:           "",
+				HumanIdentifier:      "",
+				ErrorMap:             map[string]int{"200": 1},
+				LastTime:             currentTime,
+			},
+			givenName:  "test",
+			givenValue: "total",
+			expected: dbm.DBM{
+				"$set": dbm.DBM{
+					"test.total.bytesin":           int64(0),
+					"test.total.bytesout":          int64(0),
+					"test.total.humanidentifier":   "",
+					"test.total.identifier":        "",
+					"test.total.lasttime":          currentTime,
+					"test.total.openconnections":   int64(0),
+					"test.total.closedconnections": int64(0),
+				},
+				"$inc": dbm.DBM{
+					"test.total.errormap.200":         int(1),
+					"test.total.errortotal":           int(0),
+					"test.total.hits":                 int(2),
+					"test.total.success":              int(1),
+					"test.total.totallatency":         int64(150),
+					"test.total.totalrequesttime":     float64(100),
+					"test.total.totalupstreamlatency": int64(20),
+				},
+				"$max": dbm.DBM{
+					"test.total.maxlatency":         int64(100),
+					"test.total.maxupstreamlatency": int64(110),
+				},
+				"$min": dbm.DBM{
+					"test.total.minlatency":         int64(20),
+					"test.total.minupstreamlatency": int64(10),
+				},
+			},
+		},
+		{
+			testName: "error counter",
+			givenCounter: &Counter{
+				Hits:                 2,
+				TotalRequestTime:     100,
+				Success:              0,
+				ErrorTotal:           2,
+				RequestTime:          100,
+				TotalUpstreamLatency: 20,
+				MaxLatency:           100,
+				MaxUpstreamLatency:   110,
+				MinUpstreamLatency:   10,
+				MinLatency:           20,
+				TotalLatency:         150,
+				Identifier:           "test",
+				HumanIdentifier:      "",
+				ErrorMap:             map[string]int{"500": 2},
+				LastTime:             currentTime,
+			},
+			givenName:  "test",
+			givenValue: "total",
+			expected: dbm.DBM{
+				"$set": dbm.DBM{
+					"test.total.bytesin":           int64(0),
+					"test.total.bytesout":          int64(0),
+					"test.total.humanidentifier":   "",
+					"test.total.identifier":        "test",
+					"test.total.lasttime":          currentTime,
+					"test.total.openconnections":   int64(0),
+					"test.total.closedconnections": int64(0),
+				},
+				"$inc": dbm.DBM{
+					"test.total.errormap.500":         int(2),
+					"test.total.errortotal":           int(2),
+					"test.total.hits":                 int(2),
+					"test.total.success":              int(0),
+					"test.total.totallatency":         int64(150),
+					"test.total.totalrequesttime":     float64(100),
+					"test.total.totalupstreamlatency": int64(20),
+				},
+				"$max": dbm.DBM{
+					"test.total.maxlatency":         int64(100),
+					"test.total.maxupstreamlatency": int64(110),
+				},
+				"$min": dbm.DBM{}, // we don't update mins on case of full error counter
+			},
+		},
+
+		{
+			testName: "without name",
+			givenCounter: &Counter{
+				Hits:                 2,
+				TotalRequestTime:     100,
+				Success:              0,
+				ErrorTotal:           2,
+				RequestTime:          100,
+				TotalUpstreamLatency: 20,
+				MaxLatency:           100,
+				MaxUpstreamLatency:   110,
+				MinUpstreamLatency:   10,
+				MinLatency:           20,
+				TotalLatency:         150,
+				Identifier:           "test",
+				HumanIdentifier:      "",
+				ErrorMap:             map[string]int{"500": 2},
+				LastTime:             currentTime,
+			},
+			givenName:  "",
+			givenValue: "noname",
+			expected: dbm.DBM{
+				"$set": dbm.DBM{
+					"noname.bytesin":           int64(0),
+					"noname.bytesout":          int64(0),
+					"noname.humanidentifier":   "",
+					"noname.identifier":        "test",
+					"noname.lasttime":          currentTime,
+					"noname.openconnections":   int64(0),
+					"noname.closedconnections": int64(0),
+				},
+				"$inc": dbm.DBM{
+					"noname.errormap.500":         int(2),
+					"noname.errortotal":           int(2),
+					"noname.hits":                 int(2),
+					"noname.success":              int(0),
+					"noname.totallatency":         int64(150),
+					"noname.totalrequesttime":     float64(100),
+					"noname.totalupstreamlatency": int64(20),
+				},
+				"$max": dbm.DBM{
+					"noname.maxlatency":         int64(100),
+					"noname.maxupstreamlatency": int64(110),
+				},
+				"$min": dbm.DBM{}, // we don't update mins on case of full error counter
+			},
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.testName, func(t *testing.T) {
+			aggregate := &AnalyticsRecordAggregate{}
+
+			baseDBM := dbm.DBM{
+				"$set": dbm.DBM{},
+				"$inc": dbm.DBM{},
+				"$max": dbm.DBM{},
+				"$min": dbm.DBM{},
+			}
+
+			actual := aggregate.generateBSONFromProperty(tc.givenName, tc.givenValue, tc.givenCounter, baseDBM)
+			if !cmp.Equal(tc.expected, actual) {
+				t.Errorf("AggregateUptimeData() mismatch (-want +got):\n%s", cmp.Diff(tc.expected, actual))
+			}
+		})
+	}
+}
+
+func TestAnalyticsRecordAggregate_generateSetterForTime(t *testing.T) {
+	tcs := []struct {
+		expected dbm.DBM
+
+		testName         string
+		givenName        string
+		givenValue       string
+		givenRequestTime float64
+	}{
+		{
+			testName:         "with name",
+			givenName:        "test",
+			givenValue:       "total",
+			givenRequestTime: 100,
+			expected: dbm.DBM{
+				"$set": dbm.DBM{
+					"test.total.requesttime": float64(100),
+				},
+			},
+		},
+		{
+			testName:         "without name",
+			givenName:        "",
+			givenValue:       "noname",
+			givenRequestTime: 130,
+			expected: dbm.DBM{
+				"$set": dbm.DBM{
+					"noname.requesttime": float64(130),
+				},
+			},
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.testName, func(t *testing.T) {
+			aggregate := &AnalyticsRecordAggregate{}
+
+			baseDBM := dbm.DBM{
+				"$set": dbm.DBM{},
+			}
+
+			actual := aggregate.generateSetterForTime(tc.givenName, tc.givenValue, tc.givenRequestTime, baseDBM)
+			if !cmp.Equal(tc.expected, actual) {
+				t.Errorf("AggregateUptimeData() mismatch (-want +got):\n%s", cmp.Diff(tc.expected, actual))
+			}
+		})
+	}
+}
+
+func TestAnalyticsRecordAggregate_latencySetter(t *testing.T) {
+	tcs := []struct {
+		givenCounter *Counter
+		expected     dbm.DBM
+
+		testName   string
+		givenName  string
+		givenValue string
+	}{
+		{
+			testName: "with name and hits",
+			givenCounter: &Counter{
+				Hits:                 2,
+				TotalLatency:         100,
+				TotalUpstreamLatency: 200,
+			},
+			givenName:  "test",
+			givenValue: "total",
+			expected: dbm.DBM{
+				"$set": dbm.DBM{
+					"test.total.latency":         float64(50),
+					"test.total.upstreamlatency": float64(100),
+				},
+			},
+		},
+		{
+			testName: "without name and with hits",
+			givenCounter: &Counter{
+				Hits:                 2,
+				TotalLatency:         200,
+				TotalUpstreamLatency: 400,
+			},
+			givenName:  "",
+			givenValue: "noname",
+			expected: dbm.DBM{
+				"$set": dbm.DBM{
+					"noname.latency":         float64(100),
+					"noname.upstreamlatency": float64(200),
+				},
+			},
+		},
+
+		{
+			testName: "without name and without hits",
+			givenCounter: &Counter{
+				Hits:                 0,
+				TotalLatency:         200,
+				TotalUpstreamLatency: 400,
+			},
+			givenName:  "",
+			givenValue: "noname",
+			expected: dbm.DBM{
+				"$set": dbm.DBM{
+					"noname.latency":         float64(0),
+					"noname.upstreamlatency": float64(0),
+				},
+			},
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.testName, func(t *testing.T) {
+			aggregate := &AnalyticsRecordAggregate{}
+
+			baseDBM := dbm.DBM{
+				"$set": dbm.DBM{},
+			}
+
+			actual := aggregate.latencySetter(tc.givenName, tc.givenValue, baseDBM, tc.givenCounter)
+			if !cmp.Equal(tc.expected, actual) {
+				t.Errorf("AggregateUptimeData() mismatch (-want +got):\n%s", cmp.Diff(tc.expected, actual))
+			}
+		})
+	}
+}
+
+func TestAnalyticsRecordAggregate_AsChange(t *testing.T) {
+	currentTime := time.Date(2023, 0o4, 0o4, 10, 0, 0, 0, time.UTC)
+
+	tcs := []struct {
+		given    *AnalyticsRecordAggregate
+		expected dbm.DBM
+		testName string
+	}{
+		{
+			testName: "aggregate with versions - no errors",
+			given: &AnalyticsRecordAggregate{
+				OrgID: "testorg",
+				TimeID: struct {
+					Year  int
+					Month int
+					Day   int
+					Hour  int
+				}{
+					Year:  currentTime.Year(),
+					Month: int(currentTime.Month()),
+					Day:   currentTime.Day(),
+					Hour:  currentTime.Hour(),
+				},
+				Versions: map[string]*Counter{
+					"v1": {
+						Hits:                 1,
+						Success:              1,
+						TotalLatency:         100,
+						TotalUpstreamLatency: 200,
+						TotalRequestTime:     200,
+						MinUpstreamLatency:   20,
+						MinLatency:           10,
+						MaxUpstreamLatency:   100,
+						MaxLatency:           100,
+						LastTime:             currentTime,
+					},
+					"v2": {
+						Hits:                 1,
+						Success:              1,
+						TotalLatency:         100,
+						TotalUpstreamLatency: 200,
+						TotalRequestTime:     200,
+						MinUpstreamLatency:   20,
+						MinLatency:           10,
+						MaxUpstreamLatency:   100,
+						MaxLatency:           100,
+						LastTime:             currentTime,
+					},
+				},
+				Total: Counter{
+					Hits:                 2,
+					Success:              2,
+					TotalLatency:         200,
+					TotalRequestTime:     200,
+					MaxUpstreamLatency:   100,
+					MaxLatency:           100,
+					MinUpstreamLatency:   20,
+					MinLatency:           10,
+					TotalUpstreamLatency: 400,
+					LastTime:             currentTime,
+				},
+				Errors:    map[string]*Counter{},
+				LastTime:  currentTime,
+				TimeStamp: currentTime,
+				ExpireAt:  currentTime,
+			},
+			expected: dbm.DBM{
+				"$inc": dbm.DBM{
+					"total.hits":                       int(2),
+					"total.success":                    int(2),
+					"total.errortotal":                 int(0),
+					"total.totallatency":               int64(200),
+					"total.totalupstreamlatency":       int64(400),
+					"total.totalrequesttime":           float64(200),
+					"versions.v1.errortotal":           int(0),
+					"versions.v1.hits":                 int(1),
+					"versions.v1.success":              int(1),
+					"versions.v1.totallatency":         int64(100),
+					"versions.v1.totalrequesttime":     float64(200),
+					"versions.v1.totalupstreamlatency": int64(200),
+					"versions.v2.errortotal":           int(0),
+					"versions.v2.hits":                 int(1),
+					"versions.v2.success":              int(1),
+					"versions.v2.totallatency":         int64(100),
+					"versions.v2.totalrequesttime":     float64(200),
+					"versions.v2.totalupstreamlatency": int64(200),
+				},
+				"$min": dbm.DBM{
+					"total.minlatency":               int64(10),
+					"total.minupstreamlatency":       int64(20),
+					"versions.v1.minlatency":         int64(10),
+					"versions.v1.minupstreamlatency": int64(20),
+					"versions.v2.minlatency":         int64(10),
+					"versions.v2.minupstreamlatency": int64(20),
+				},
+				"$max": dbm.DBM{
+					"total.maxlatency":               int64(100),
+					"total.maxupstreamlatency":       int64(100),
+					"versions.v1.maxlatency":         int64(100),
+					"versions.v1.maxupstreamlatency": int64(100),
+					"versions.v2.maxlatency":         int64(100),
+					"versions.v2.maxupstreamlatency": int64(100),
+				},
+				"$set": dbm.DBM{
+					"expireAt":                      currentTime,
+					"lasttime":                      currentTime,
+					"timestamp":                     currentTime,
+					"total.lasttime":                currentTime,
+					"timeid.day":                    currentTime.Day(),
+					"timeid.hour":                   currentTime.Hour(),
+					"timeid.month":                  currentTime.Month(),
+					"timeid.year":                   currentTime.Year(),
+					"total.bytesin":                 int64(0),
+					"total.bytesout":                int64(0),
+					"total.closedconnections":       int64(0),
+					"total.openconnections":         int64(0),
+					"total.humanidentifier":         "",
+					"total.identifier":              "",
+					"versions.v1.bytesin":           int64(0),
+					"versions.v1.bytesout":          int64(0),
+					"versions.v1.lasttime":          currentTime,
+					"versions.v1.humanidentifier":   "",
+					"versions.v1.identifier":        "",
+					"versions.v1.closedconnections": int64(0),
+					"versions.v1.openconnections":   int64(0),
+					"versions.v2.bytesin":           int64(0),
+					"versions.v2.bytesout":          int64(0),
+					"versions.v2.lasttime":          currentTime,
+					"versions.v2.humanidentifier":   "",
+					"versions.v2.identifier":        "",
+					"versions.v2.closedconnections": int64(0),
+					"versions.v2.openconnections":   int64(0),
+				},
+			},
+		},
+		{
+			testName: "aggregate with apiid - with errors",
+			given: &AnalyticsRecordAggregate{
+				OrgID: "testorg",
+				TimeID: struct {
+					Year  int
+					Month int
+					Day   int
+					Hour  int
+				}{
+					Year:  currentTime.Year(),
+					Month: int(currentTime.Month()),
+					Day:   currentTime.Day(),
+					Hour:  currentTime.Hour(),
+				},
+				APIID: map[string]*Counter{
+					"api1": {
+						Hits:                 3,
+						Success:              0,
+						ErrorTotal:           3,
+						TotalLatency:         100,
+						TotalUpstreamLatency: 200,
+						TotalRequestTime:     200,
+						MinUpstreamLatency:   20,
+						MinLatency:           10,
+						MaxUpstreamLatency:   100,
+						MaxLatency:           100,
+						ErrorMap:             map[string]int{"404": 1, "500": 2},
+						ErrorList:            []ErrorData{{Code: "404", Count: 1}, {Code: "500", Count: 2}},
+						LastTime:             currentTime,
+					},
+					"api2": {
+						Hits:                 1,
+						Success:              1,
+						TotalLatency:         100,
+						TotalUpstreamLatency: 200,
+						TotalRequestTime:     200,
+						MinUpstreamLatency:   20,
+						MinLatency:           10,
+						MaxUpstreamLatency:   100,
+						MaxLatency:           100,
+						LastTime:             currentTime,
+					},
+				},
+				Total: Counter{
+					Hits:                 4,
+					Success:              1,
+					ErrorTotal:           3,
+					TotalLatency:         200,
+					TotalRequestTime:     200,
+					MaxUpstreamLatency:   100,
+					MaxLatency:           100,
+					MinUpstreamLatency:   20,
+					MinLatency:           10,
+					TotalUpstreamLatency: 400,
+					ErrorMap:             map[string]int{"404": 1, "500": 2},
+					ErrorList:            []ErrorData{{Code: "404", Count: 1}, {Code: "500", Count: 2}},
+					LastTime:             currentTime,
+				},
+				Errors:    map[string]*Counter{},
+				LastTime:  currentTime,
+				TimeStamp: currentTime,
+				ExpireAt:  currentTime,
+			},
+			expected: dbm.DBM{
+				"$inc": dbm.DBM{
+					"total.hits":                      int(4),
+					"total.success":                   int(1),
+					"total.errortotal":                int(3),
+					"total.totallatency":              int64(200),
+					"total.totalupstreamlatency":      int64(400),
+					"total.totalrequesttime":          float64(200),
+					"total.errormap.404":              int(1),
+					"total.errormap.500":              int(2),
+					"apiid.api1.hits":                 int(3),
+					"apiid.api1.success":              int(0),
+					"apiid.api1.errortotal":           int(3),
+					"apiid.api1.totallatency":         int64(100),
+					"apiid.api1.totalupstreamlatency": int64(200),
+					"apiid.api1.totalrequesttime":     float64(200),
+					"apiid.api1.errormap.404":         int(1),
+					"apiid.api1.errormap.500":         int(2),
+					"apiid.api2.hits":                 int(1),
+					"apiid.api2.success":              int(1),
+					"apiid.api2.totallatency":         int64(100),
+					"apiid.api2.totalupstreamlatency": int64(200),
+					"apiid.api2.totalrequesttime":     float64(200),
+					"apiid.api2.errortotal":           int(0),
+				},
+				"$min": dbm.DBM{
+					"total.minlatency":              int64(10),
+					"total.minupstreamlatency":      int64(20),
+					"apiid.api2.minlatency":         int64(10),
+					"apiid.api2.minupstreamlatency": int64(20),
+				},
+				"$max": dbm.DBM{
+					"total.maxlatency":              int64(100),
+					"total.maxupstreamlatency":      int64(100),
+					"apiid.api1.maxlatency":         int64(100),
+					"apiid.api1.maxupstreamlatency": int64(100),
+					"apiid.api2.maxlatency":         int64(100),
+					"apiid.api2.maxupstreamlatency": int64(100),
+				},
+				"$set": dbm.DBM{
+					"expireAt":                     currentTime,
+					"lasttime":                     currentTime,
+					"timestamp":                    currentTime,
+					"total.lasttime":               currentTime,
+					"timeid.day":                   currentTime.Day(),
+					"timeid.hour":                  currentTime.Hour(),
+					"timeid.month":                 currentTime.Month(),
+					"timeid.year":                  currentTime.Year(),
+					"total.bytesin":                int64(0),
+					"total.bytesout":               int64(0),
+					"total.closedconnections":      int64(0),
+					"total.openconnections":        int64(0),
+					"total.humanidentifier":        "",
+					"total.identifier":             "",
+					"apiid.api1.bytesin":           int64(0),
+					"apiid.api1.bytesout":          int64(0),
+					"apiid.api1.closedconnections": int64(0),
+					"apiid.api1.openconnections":   int64(0),
+					"apiid.api1.humanidentifier":   "",
+					"apiid.api1.identifier":        "",
+					"apiid.api1.lasttime":          currentTime,
+					"apiid.api2.bytesin":           int64(0),
+					"apiid.api2.bytesout":          int64(0),
+					"apiid.api2.closedconnections": int64(0),
+					"apiid.api2.openconnections":   int64(0),
+					"apiid.api2.humanidentifier":   "",
+					"apiid.api2.identifier":        "",
+					"apiid.api2.lasttime":          currentTime,
+				},
+			},
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.testName, func(t *testing.T) {
+			actual := tc.given.AsChange()
+			if !cmp.Equal(tc.expected, actual) {
+				t.Errorf("AggregateUptimeData() mismatch (-want +got):\n%s", cmp.Diff(tc.expected, actual))
+			}
+		})
+	}
+}
+
+func TestAnalyticsRecordAggregate_AsTimeUpdate(t *testing.T) {
+	currentTime := time.Date(2023, 0o4, 0o4, 10, 0, 0, 0, time.UTC)
+
+	tcs := []struct {
+		given    *AnalyticsRecordAggregate
+		expected dbm.DBM
+		testName string
+	}{
+		{
+			testName: "oauthendpoint+keyendpoint+apiendpoint+tota",
+			given: &AnalyticsRecordAggregate{
+				OrgID: "testorg",
+				KeyEndpoint: map[string]map[string]*Counter{
+					"apikey1": {
+						"/get": {
+							Hits:                 3,
+							Success:              0,
+							ErrorTotal:           3,
+							TotalLatency:         300,
+							TotalUpstreamLatency: 600,
+							LastTime:             currentTime,
+							ErrorMap:             map[string]int{"404": 1, "500": 2},
+						},
+					},
+				},
+				OauthEndpoint: map[string]map[string]*Counter{
+					"oauthid1": {
+						"/get": {
+							Hits:                 3,
+							Success:              0,
+							ErrorTotal:           3,
+							TotalLatency:         300,
+							TotalUpstreamLatency: 600,
+							LastTime:             currentTime,
+							ErrorMap:             map[string]int{"404": 1, "500": 2},
+						},
+					},
+				},
+				ApiEndpoint: map[string]*Counter{
+					"/get": {
+						Hits:                 3,
+						Success:              0,
+						ErrorTotal:           3,
+						TotalLatency:         300,
+						TotalUpstreamLatency: 600,
+						LastTime:             currentTime,
+						ErrorMap:             map[string]int{"404": 1, "500": 2},
+					},
+				},
+
+				Total: Counter{
+					Hits:                 3,
+					Success:              0,
+					ErrorTotal:           3,
+					TotalLatency:         300,
+					TotalUpstreamLatency: 600,
+					TotalRequestTime:     300,
+					ErrorMap:             map[string]int{"404": 1, "500": 2},
+					BytesIn:              0,
+					BytesOut:             0,
+					OpenConnections:      0,
+					ClosedConnections:    0,
+					HumanIdentifier:      "",
+					Identifier:           "",
+					LastTime:             currentTime,
+					MinLatency:           10,
+					MaxLatency:           100,
+					MinUpstreamLatency:   20,
+					MaxUpstreamLatency:   100,
+				},
+			},
+			expected: dbm.DBM{
+				"$set": dbm.DBM{
+					"apiendpoints./get.errorlist":               []ErrorData{{Code: "404", Count: 1}, {Code: "500", Count: 2}},
+					"apiendpoints./get.latency":                 float64(100),
+					"apiendpoints./get.requesttime":             float64(0),
+					"apiendpoints./get.upstreamlatency":         float64(200),
+					"keyendpoints.apikey1./get.errorlist":       []ErrorData{{Code: "404", Count: 1}, {Code: "500", Count: 2}},
+					"keyendpoints.apikey1./get.latency":         float64(100),
+					"keyendpoints.apikey1./get.requesttime":     float64(0),
+					"keyendpoints.apikey1./get.upstreamlatency": float64(200),
+					"lists.apiendpoints": []Counter{
+						{
+							Hits:                 3,
+							Success:              0,
+							ErrorTotal:           3,
+							TotalLatency:         300,
+							TotalUpstreamLatency: 600,
+							UpstreamLatency:      200,
+							Latency:              100,
+							LastTime:             currentTime,
+							ErrorMap:             map[string]int{"404": 1, "500": 2},
+							ErrorList:            []ErrorData{{Code: "404", Count: 1}, {Code: "500", Count: 2}},
+						},
+					},
+					"lists.apiid":     []Counter{},
+					"lists.apikeys":   []Counter{},
+					"lists.endpoints": []Counter{},
+					"lists.errors":    []Counter{},
+					"lists.geo":       []Counter{},
+					"lists.oauthids":  []Counter{},
+					"lists.tags":      []Counter{},
+					"lists.versions":  []Counter{},
+					"lists.keyendpoints.apikey1": []Counter{
+						{
+							Hits:                 3,
+							Success:              0,
+							ErrorTotal:           3,
+							TotalLatency:         300,
+							TotalUpstreamLatency: 600,
+							UpstreamLatency:      200,
+							Latency:              100,
+							LastTime:             currentTime,
+							ErrorMap:             map[string]int{"404": 1, "500": 2},
+							ErrorList:            []ErrorData{{Code: "404", Count: 1}, {Code: "500", Count: 2}},
+						},
+					},
+					"lists.oauthendpoints.oauthid1": []Counter{
+						{
+							Hits:                 3,
+							Success:              0,
+							ErrorTotal:           3,
+							TotalLatency:         300,
+							TotalUpstreamLatency: 600,
+							UpstreamLatency:      200,
+							Latency:              100,
+							LastTime:             currentTime,
+							ErrorMap:             map[string]int{"404": 1, "500": 2},
+							ErrorList:            []ErrorData{{Code: "404", Count: 1}, {Code: "500", Count: 2}},
+						},
+					},
+					"oauthendpoints.oauthid1./get.errorlist":       []ErrorData{{Code: "404", Count: 1}, {Code: "500", Count: 2}},
+					"oauthendpoints.oauthid1./get.latency":         float64(100),
+					"oauthendpoints.oauthid1./get.requesttime":     float64(0),
+					"oauthendpoints.oauthid1./get.upstreamlatency": float64(200),
+					"total.errorlist":                              []ErrorData{{Code: "404", Count: 1}, {Code: "500", Count: 2}},
+					"total.latency":                                float64(100),
+					"total.requesttime":                            float64(100),
+					"total.upstreamlatency":                        float64(200),
+				},
+			},
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.testName, func(t *testing.T) {
+			actual := tc.given.AsTimeUpdate()
+			if !cmp.Equal(tc.expected, actual) {
+				t.Errorf("AggregateUptimeData() mismatch (-want +got):\n%s", cmp.Diff(tc.expected, actual))
+			}
+		})
+	}
 }

@@ -145,10 +145,6 @@ X-Ratelimit-Reset: 0
 `
 
 func TestGraphMongoPump_WriteData(t *testing.T) {
-	c := Conn{}
-	c.ConnectDb()
-	defer c.CleanDb()
-
 	conf := defaultConf()
 	pump := GraphMongoPump{
 		MongoPump: MongoPump{
@@ -159,6 +155,8 @@ func TestGraphMongoPump_WriteData(t *testing.T) {
 	pump.MongoPump.CommonPumpConfig = pump.CommonPumpConfig
 	pump.dbConf.CollectionCapEnable = true
 	pump.dbConf.CollectionCapMaxSizeBytes = 0
+
+	pump.connect()
 
 	type customRecord struct {
 		rawRequest   string
@@ -325,17 +323,22 @@ func TestGraphMongoPump_WriteData(t *testing.T) {
 				assert.NoError(t, err)
 			}
 
-			// now check for the written data
-			sess := pump.dbSession.Copy()
 			defer func() {
-				if err := sess.DB("").C(conf.CollectionName).DropCollection(); err != nil {
+				if err := pump.store.DropDatabase(context.Background()); err != nil {
 					pump.log.WithError(err).Warn("error dropping collection")
 				}
 			}()
-			analyticsColl := sess.DB("").C(conf.CollectionName)
+
+			// now check for the written data
 			var results []analytics.GraphRecord
-			query := analyticsColl.Find(nil)
-			assert.NoError(t, query.All(&results))
+
+			// Using the same collection name as the default pump config
+			d := dbObject{
+				tableName: pump.dbConf.CollectionName,
+			}
+			err = pump.store.Query(context.Background(), d, &results, nil)
+
+			assert.Nil(t, err)
 			if diff := cmp.Diff(tc.expectedGraphRecords, results, cmpopts.IgnoreFields(analytics.GraphRecord{}, "AnalyticsRecord")); diff != "" {
 				t.Error(diff)
 			}

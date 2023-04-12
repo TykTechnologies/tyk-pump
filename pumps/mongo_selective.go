@@ -4,26 +4,30 @@ import (
 	"context"
 	"errors"
 	"strings"
-	"time"
 
 	"github.com/kelseyhightower/envconfig"
-	"github.com/lonelycode/mgohacks"
 	"github.com/mitchellh/mapstructure"
-	"gopkg.in/mgo.v2"
+
 	"gopkg.in/vmihailenco/msgpack.v2"
 
+	"github.com/TykTechnologies/storage/persistent"
+	"github.com/TykTechnologies/storage/persistent/dbm"
+	"github.com/TykTechnologies/storage/persistent/id"
+	"github.com/TykTechnologies/storage/persistent/index"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 )
 
 type MongoSelectivePump struct {
-	dbSession *mgo.Session
-	dbConf    *MongoSelectiveConf
+	store  persistent.PersistentStorage
+	dbConf *MongoSelectiveConf
 	CommonPumpConfig
 }
 
-var mongoSelectivePrefix = "mongo-pump-selective"
-var mongoSelectivePumpPrefix = "PMP_MONGOSEL"
-var mongoSelectiveDefaultEnv = PUMPS_ENV_PREFIX + "_MONGOSELECTIVE" + PUMPS_ENV_META_PREFIX
+var (
+	mongoSelectivePrefix     = "mongo-pump-selective"
+	mongoSelectivePumpPrefix = "PMP_MONGOSEL"
+	mongoSelectiveDefaultEnv = PUMPS_ENV_PREFIX + "_MONGOSELECTIVE" + PUMPS_ENV_META_PREFIX
+)
 
 // @PumpConf MongoSelective
 type MongoSelectiveConf struct {
@@ -72,7 +76,7 @@ func (m *MongoSelectivePump) Init(config interface{}) error {
 
 	processPumpEnvVars(m, m.log, m.dbConf, mongoSelectiveDefaultEnv)
 
-	//we keep this env check for backward compatibility
+	// we keep this env check for backward compatibility
 	overrideErr := envconfig.Process(mongoSelectivePumpPrefix, m.dbConf)
 	if overrideErr != nil {
 		m.log.Error("Failed to process environment variables for mongo selective pump: ", overrideErr)
@@ -98,78 +102,79 @@ func (m *MongoSelectivePump) Init(config interface{}) error {
 
 func (m *MongoSelectivePump) connect() {
 	var err error
-	var dialInfo *mgo.DialInfo
 
-	dialInfo, err = mongoDialInfo(m.dbConf.BaseMongoConf)
+	if m.dbConf.MongoDriverType == "" {
+		// Default to mgo
+		m.dbConf.MongoDriverType = persistent.Mgo
+	}
+
+	m.store, err = persistent.NewPersistentStorage(&persistent.ClientOpts{
+		ConnectionString:         m.dbConf.MongoURL,
+		UseSSL:                   m.dbConf.MongoUseSSL,
+		SSLInsecureSkipVerify:    m.dbConf.MongoSSLInsecureSkipVerify,
+		SSLAllowInvalidHostnames: m.dbConf.MongoSSLAllowInvalidHostnames,
+		SSLCAFile:                m.dbConf.MongoSSLCAFile,
+		SSLPEMKeyfile:            m.dbConf.MongoSSLPEMKeyfile,
+		SessionConsistency:       m.dbConf.MongoSessionConsistency,
+		ConnectionTimeout:        m.timeout,
+		Type:                     m.dbConf.MongoDriverType,
+	})
 	if err != nil {
-		m.log.Panic("Mongo URL is invalid: ", err)
+		m.log.Fatal("Failed to connect to mongo: ", err)
 	}
-
-	if m.timeout > 0 {
-		dialInfo.Timeout = time.Second * time.Duration(m.timeout)
-	}
-
-	m.dbSession, err = mgo.DialWithInfo(dialInfo)
-
-	for err != nil {
-		m.log.WithError(err).WithField("dialinfo", m.dbConf.BaseMongoConf.GetBlurredURL()).Error("Mongo connection failed. Retrying.")
-		time.Sleep(5 * time.Second)
-		m.dbSession, err = mgo.DialWithInfo(dialInfo)
-	}
-
-	if err == nil && m.dbConf.MongoDBType == 0 {
-		m.dbConf.MongoDBType = mongoType(m.dbSession)
-	}
-
-	m.dbConf.SetMongoConsistency(m.dbSession)
 }
 
-func (m *MongoSelectivePump) ensureIndexes(c *mgo.Collection) error {
+func (m *MongoSelectivePump) ensureIndexes(collectionName string) error {
 	if m.dbConf.OmitIndexCreation {
 		m.log.Debug("omit_index_creation set to true, omitting index creation..")
 		return nil
 	}
 
 	if m.dbConf.MongoDBType == StandardMongo {
-		exists, errExists := m.collectionExists(c.Name)
+		exists, errExists := m.collectionExists(collectionName)
 		if errExists == nil && exists {
-			m.log.Debug("Collection ", c.Name, " exists, omitting index creation")
+			m.log.Debug("Collection ", collectionName, " exists, omitting index creation")
 			return nil
 		}
 	}
 
 	var err error
+	d := dbObject{
+		tableName: collectionName,
+	}
+
+	apiIndex := index.Index{
+		Keys:       []dbm.DBM{{"apiid": 1}},
+		Background: m.dbConf.MongoDBType == StandardMongo,
+	}
+
+	err = m.store.CreateIndex(context.Background(), d, apiIndex)
+	if err != nil {
+		return err
+	}
+
 	// CosmosDB does not support "expireAt" option
 	if m.dbConf.MongoDBType != CosmosDB {
-		ttlIndex := mgo.Index{
-			Key:         []string{"expireAt"},
-			ExpireAfter: 0,
-			Background:  m.dbConf.MongoDBType == StandardMongo,
+		ttlIndex := index.Index{
+			Keys:       []dbm.DBM{{"expireAt": 1}},
+			IsTTLIndex: true,
+			TTL:        0,
+			Background: m.dbConf.MongoDBType == StandardMongo,
 		}
 
-		err = mgohacks.EnsureTTLIndex(c, ttlIndex)
+		err = m.store.CreateIndex(context.Background(), d, ttlIndex)
 		if err != nil {
 			return err
 		}
 	}
 
-	apiIndex := mgo.Index{
-		Key:        []string{"apiid"},
-		Background: m.dbConf.MongoDBType == StandardMongo,
-	}
-
-	err = c.EnsureIndex(apiIndex)
-	if err != nil {
-		return err
-	}
-
-	logBrowserIndex := mgo.Index{
+	logBrowserIndex := index.Index{
 		Name:       "logBrowserIndex",
-		Key:        []string{"-timestamp", "apiid", "apikey", "responsecode"},
+		Keys:       []dbm.DBM{{"timestamp": -1}, {"apiid": 1}, {"apikey": 1}, {"responsecode": 1}},
 		Background: m.dbConf.MongoDBType == StandardMongo,
 	}
 
-	err = c.EnsureIndex(logBrowserIndex)
+	err = m.store.CreateIndex(context.Background(), d, logBrowserIndex)
 	if err != nil && !strings.Contains(err.Error(), "already exists with a different name") {
 		return err
 	}
@@ -180,171 +185,166 @@ func (m *MongoSelectivePump) ensureIndexes(c *mgo.Collection) error {
 func (m *MongoSelectivePump) WriteData(ctx context.Context, data []interface{}) error {
 	m.log.Debug("Attempting to write ", len(data), " records...")
 
-	if m.dbSession == nil {
-		m.log.Debug("Connecting to analytics store")
-		m.connect()
-		m.WriteData(ctx, data)
-	} else {
-		analyticsPerOrg := make(map[string][]interface{})
+	analyticsPerOrg := make(map[string][]interface{})
 
-		for _, v := range data {
-			orgID := v.(analytics.AnalyticsRecord).OrgID
-			collectionName, collErr := m.GetCollectionName(orgID)
-			skip := false
-			if collErr != nil {
-				m.log.Warning("No OrgID for AnalyticsRecord, skipping")
-				skip = true
-			}
-
-			if !skip {
-				_, found := analyticsPerOrg[collectionName]
-				if !found {
-					analyticsPerOrg[collectionName] = []interface{}{v}
-				} else {
-					analyticsPerOrg[collectionName] = append(analyticsPerOrg[collectionName], v)
-				}
-			}
+	for _, v := range data {
+		orgID := v.(analytics.AnalyticsRecord).OrgID
+		collectionName, collErr := m.GetCollectionName(orgID)
+		skip := false
+		if collErr != nil {
+			m.log.Warning("No OrgID for AnalyticsRecord, skipping")
+			skip = true
 		}
 
-		for col_name, filtered_data := range analyticsPerOrg {
-
-			for _, dataSet := range m.AccumulateSet(filtered_data) {
-				thisSession := m.dbSession.Copy()
-				defer thisSession.Close()
-				analyticsCollection := thisSession.DB("").C(col_name)
-
-				indexCreateErr := m.ensureIndexes(analyticsCollection)
-				if indexCreateErr != nil {
-					m.log.WithField("collection", col_name).Error(indexCreateErr)
-				}
-
-				err := analyticsCollection.Insert(dataSet...)
-				if err != nil {
-					m.log.WithField("collection", col_name).Error("Problem inserting to mongo collection: ", err)
-					if strings.Contains(strings.ToLower(err.Error()), "closed explicitly") {
-						m.log.Warning("--> Detected connection failure, reconnecting")
-						m.connect()
-					}
-				}
+		if !skip {
+			_, found := analyticsPerOrg[collectionName]
+			if !found {
+				analyticsPerOrg[collectionName] = []interface{}{v}
+			} else {
+				analyticsPerOrg[collectionName] = append(analyticsPerOrg[collectionName], v)
 			}
-
 		}
-
 	}
+
+	for colName, filteredData := range analyticsPerOrg {
+		for _, dataSet := range m.AccumulateSet(filteredData) {
+			indexCreateErr := m.ensureIndexes(colName)
+			if indexCreateErr != nil {
+				m.log.WithField("collection", colName).Error(indexCreateErr)
+			}
+
+			err := m.store.Insert(context.Background(), dataSet...)
+			if err != nil {
+				m.log.WithField("collection", colName).Error("Problem inserting to mongo collection: ", err)
+			}
+		}
+	}
+
 	m.log.Info("Purged ", len(data), " records...")
 
 	return nil
 }
 
-func (m *MongoSelectivePump) AccumulateSet(data []interface{}) [][]interface{} {
+// AccumulateSet organizes analytics data into a set of chunks based on their size.
+func (m *MongoSelectivePump) AccumulateSet(data []interface{}) [][]id.DBObject {
 	accumulatorTotal := 0
-	returnArray := make([][]interface{}, 0)
+	returnArray := make([][]id.DBObject, 0)
+	thisResultSet := make([]id.DBObject, 0)
 
-	thisResultSet := make([]interface{}, 0)
+	// Process each item in the data array.
 	for i, item := range data {
-		thisItem := item.(analytics.AnalyticsRecord)
-		if thisItem.ResponseCode == -1 {
+		thisItem, skip := m.processItem(item)
+		if skip {
 			continue
 		}
-		// Add 1 KB for metadata as average
-		sizeBytes := len([]byte(thisItem.RawRequest)) + len([]byte(thisItem.RawResponse)) + 1024
 
-		skip := false
-		if sizeBytes > m.dbConf.MaxDocumentSizeBytes {
-			m.log.Warning("Document too large, skipping!")
-			skip = true
-		}
-
-		m.log.Debug("Size is: ", sizeBytes)
-
-		if !skip {
-			if (accumulatorTotal + sizeBytes) < m.dbConf.MaxInsertBatchSizeBytes {
-				accumulatorTotal += sizeBytes
-			} else {
-				m.log.Debug("Created new chunk entry")
-				if len(thisResultSet) > 0 {
-					returnArray = append(returnArray, thisResultSet)
-				}
-
-				thisResultSet = make([]interface{}, 0)
-				accumulatorTotal = sizeBytes
-			}
-			thisResultSet = append(thisResultSet, thisItem)
-
-			m.log.Debug(accumulatorTotal, " of ", m.dbConf.MaxInsertBatchSizeBytes)
-			// Append the last element if the loop is about to end
-			if i == (len(data) - 1) {
-				m.log.Debug("Appending last entry")
-				returnArray = append(returnArray, thisResultSet)
-			}
-		}
-
+		sizeBytes := m.getItemSizeBytes(thisItem)
+		accumulatorTotal, thisResultSet, returnArray = m.accumulate(thisResultSet, returnArray, thisItem, sizeBytes, accumulatorTotal, i == (len(data)-1))
 	}
 
 	return returnArray
 }
 
+// processItem checks if the item should be skipped or processed.
+func (m *MongoSelectivePump) processItem(item interface{}) (*analytics.AnalyticsRecord, bool) {
+	thisItem, ok := item.(analytics.AnalyticsRecord)
+	if !ok {
+		m.log.Warning("Couldn't convert item to analytics.AnalyticsRecord, skipping")
+		return &thisItem, true
+	}
+
+	// Skip item if the response code is -1.
+	if thisItem.ResponseCode == -1 {
+		return &thisItem, true
+	}
+
+	return &thisItem, false
+}
+
+// getItemSizeBytes calculates the size of the analytics item in bytes and checks if it's within the allowed limit.
+func (m *MongoSelectivePump) getItemSizeBytes(thisItem *analytics.AnalyticsRecord) int {
+	// Add 1 KB for metadata as average.
+	sizeBytes := len([]byte(thisItem.RawRequest)) + len([]byte(thisItem.RawResponse)) + 1024
+
+	// Skip item if its size exceeds the maximum allowed document size.
+	if sizeBytes > m.dbConf.MaxDocumentSizeBytes {
+		m.log.Warning("Document too large, skipping!")
+		return -1
+	}
+
+	m.log.Debug("Size is:", sizeBytes)
+	return sizeBytes
+}
+
+// accumulate processes the given item and updates the accumulator total, result set, and return array.
+// It manages chunking the data into separate sets based on the max batch size limit, and appends the last item when necessary.
+func (m *MongoSelectivePump) accumulate(thisResultSet []id.DBObject, returnArray [][]id.DBObject, thisItem *analytics.AnalyticsRecord, sizeBytes, accumulatorTotal int, isLastItem bool) (int, []id.DBObject, [][]id.DBObject) {
+	// If the item size is invalid (negative), return the current state
+	if sizeBytes < 0 {
+		return accumulatorTotal, thisResultSet, returnArray
+	}
+
+	// If the current accumulator total plus the item size is within the max batch size limit,
+	// add the item size to the accumulator total
+	if (accumulatorTotal + sizeBytes) < m.dbConf.MaxInsertBatchSizeBytes {
+		accumulatorTotal += sizeBytes
+	} else {
+		// If the item size exceeds the max batch size limit,
+		// create a new chunk entry and reset the accumulator total and result set
+		m.log.Debug("Created new chunk entry")
+		if len(thisResultSet) > 0 {
+			returnArray = append(returnArray, thisResultSet)
+		}
+
+		thisResultSet = make([]id.DBObject, 0)
+		accumulatorTotal = sizeBytes
+	}
+
+	thisResultSet = append(thisResultSet, thisItem)
+
+	m.log.Debug(accumulatorTotal, " of ", m.dbConf.MaxInsertBatchSizeBytes)
+
+	if isLastItem {
+		m.log.Debug("Appending last entry")
+		returnArray = append(returnArray, thisResultSet)
+	}
+
+	return accumulatorTotal, thisResultSet, returnArray
+}
+
 // WriteUptimeData will pull the data from the in-memory store and drop it into the specified MongoDB collection
 func (m *MongoSelectivePump) WriteUptimeData(data []interface{}) {
-	if m.dbSession == nil {
-		m.log.Debug("Connecting to mongoDB store")
-		m.connect()
-		m.WriteUptimeData(data)
-	} else {
-		m.log.Info("MONGO Selective Should not be writing uptime data!")
-		collectionName := "tyk_uptime_analytics"
-		thisSession := m.dbSession.Copy()
-		defer thisSession.Close()
-		analyticsCollection := thisSession.DB("").C(collectionName)
+	m.log.Info("MONGO Selective Should not be writing uptime data!")
+	m.log.Debug("Uptime Data: ", len(data))
 
-		m.log.Debug("Uptime Data: ", len(data))
+	if len(data) == 0 {
+		return
+	}
 
-		if len(data) > 0 {
-			keys := make([]interface{}, len(data))
+	keys := make([]id.DBObject, len(data))
 
-			for i, v := range data {
-				decoded := analytics.UptimeReportData{}
-				// ToDo: should this work with serializer?
-				err := msgpack.Unmarshal(v.([]byte), &decoded)
-				m.log.Debug("Decoded Record: ", decoded)
-				if err != nil {
-					m.log.Error("Couldn't unmarshal analytics data:", err)
-				} else {
-					keys[i] = interface{}(decoded)
-				}
-			}
+	for i, v := range data {
+		decoded := analytics.UptimeReportData{}
 
-			err := analyticsCollection.Insert(keys...)
-			m.log.Debug("Wrote data to ", collectionName)
-
-			if err != nil {
-				m.log.WithField("collection", collectionName).Error("Problem inserting to mongo collection: ", err)
-				if strings.Contains(err.Error(), "Closed explicitly") || strings.Contains(err.Error(), "EOF") {
-					m.log.Warning("--> Detected connection failure, reconnecting")
-					m.connect()
-				}
-			}
+		if err := msgpack.Unmarshal([]byte(v.(string)), &decoded); err != nil {
+			// ToDo: should this work with serializer?
+			m.log.Error("Couldn't unmarshal analytics data:", err)
+			continue
 		}
+
+		keys[i] = &decoded
+
+		m.log.Debug("Decoded Record: ", decoded)
+	}
+
+	m.log.Debug("Writing data to ", analytics.UptimeSQLTable)
+
+	if err := m.store.Insert(context.Background(), keys...); err != nil {
+		m.log.Error("Problem inserting to mongo collection: ", err)
 	}
 }
 
 // collectionExists checks to see if a collection name exists in the db.
 func (m *MongoSelectivePump) collectionExists(name string) (bool, error) {
-	sess := m.dbSession.Copy()
-	defer sess.Close()
-
-	colNames, err := sess.DB("").CollectionNames()
-	if err != nil {
-		m.log.Error("Unable to get collection names: ", err)
-
-		return false, err
-	}
-
-	for _, coll := range colNames {
-		if coll == name {
-			return true, nil
-		}
-	}
-
-	return false, nil
+	return m.store.HasTable(context.Background(), name)
 }

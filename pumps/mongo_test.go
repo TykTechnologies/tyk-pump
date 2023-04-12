@@ -5,10 +5,13 @@ import (
 	"encoding/base64"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
-	"gopkg.in/mgo.v2"
+	"gopkg.in/vmihailenco/msgpack.v2"
 
+	"github.com/TykTechnologies/storage/persistent/dbm"
+	"github.com/TykTechnologies/storage/persistent/id"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 )
 
@@ -17,11 +20,6 @@ func newPump() Pump {
 }
 
 func TestMongoPump_capCollection_Enabled(t *testing.T) {
-
-	c := Conn{}
-	c.ConnectDb()
-	defer c.CleanDb()
-
 	pump := newPump()
 	conf := defaultConf()
 
@@ -38,21 +36,19 @@ func TestMongoPump_capCollection_Enabled(t *testing.T) {
 }
 
 func TestMongoPumpOmitIndexCreation(t *testing.T) {
-
-	c := Conn{}
-	c.ConnectDb()
-	defer c.CleanDb()
-
 	pump := newPump()
 	conf := defaultConf()
 
 	mPump := pump.(*MongoPump)
+
 	mPump.dbConf = &conf
 	record := analytics.AnalyticsRecord{
 		OrgID: "test-org",
 		APIID: "test-api",
 	}
 	records := []interface{}{record, record}
+	dbObject := createDBObject(conf.CollectionName)
+	mPump.connect()
 
 	tcs := []struct {
 		testName             string
@@ -132,18 +128,38 @@ func TestMongoPumpOmitIndexCreation(t *testing.T) {
 			mPump.dbConf.MongoDBType = tc.dbType
 			mPump.log = log.WithField("prefix", mongoPrefix)
 			mPump.connect()
-			defer c.CleanIndexes()
+			defer func() {
+				err := mPump.store.CleanIndexes(context.Background(), dbObject)
+				if err != nil {
+					t.Fatal(err)
+				}
+			}()
 
+			// Drop collection if it exists
 			if tc.shouldDropCollection {
-				c.CleanDb()
+				if HasTable(t, mPump, dbObject) {
+					err := mPump.store.Drop(context.Background(), dbObject)
+					if err != nil {
+						t.Error("there shouldn't be an error dropping database", err)
+					}
+				}
+			} else {
+				// Create collection if it doesn't exist
+				CreateCollectionIfNeeded(t, mPump, dbObject)
 			}
 
-			if err := mPump.ensureIndexes(); err != nil {
+			if err := mPump.ensureIndexes(dbObject.TableName()); err != nil {
 				t.Error("there shouldn't be an error ensuring indexes", err)
 			}
 
-			mPump.WriteData(context.Background(), records)
-			indexes, errIndexes := c.GetIndexes()
+			err := mPump.WriteData(context.Background(), records)
+			if err != nil {
+				t.Error("there shouldn't be an error writing data", err)
+			}
+			// Before getting indexes, we must ensure that the collection exists to avoid an unexpected error
+			CreateCollectionIfNeeded(t, mPump, dbObject)
+
+			indexes, errIndexes := mPump.store.GetIndexes(context.Background(), dbObject)
 			if errIndexes != nil {
 				t.Error("error getting indexes:", errIndexes)
 			}
@@ -155,8 +171,27 @@ func TestMongoPumpOmitIndexCreation(t *testing.T) {
 	}
 }
 
-func TestMongoPump_capCollection_Exists(t *testing.T) {
+func CreateCollectionIfNeeded(t *testing.T, mPump *MongoPump, dbObject id.DBObject) {
+	t.Helper()
+	if !HasTable(t, mPump, dbObject) {
+		err := mPump.store.Migrate(context.Background(), []id.DBObject{dbObject})
+		if err != nil {
+			t.Error("there shouldn't be an error migrating database", err)
+		}
+	}
+}
 
+func HasTable(t *testing.T, mPump *MongoPump, dbObject id.DBObject) bool {
+	t.Helper()
+	hasTable, err := mPump.store.HasTable(context.Background(), dbObject.TableName())
+	if err != nil {
+		t.Error("there shouldn't be an error checking if table exists", err)
+	}
+
+	return hasTable
+}
+
+func TestMongoPump_capCollection_Exists(t *testing.T) {
 	c := Conn{}
 	c.ConnectDb()
 	defer c.CleanDb()
@@ -180,7 +215,6 @@ func TestMongoPump_capCollection_Exists(t *testing.T) {
 }
 
 func TestMongoPump_capCollection_Not64arch(t *testing.T) {
-
 	c := Conn{}
 	c.ConnectDb()
 	defer c.CleanDb()
@@ -206,7 +240,6 @@ func TestMongoPump_capCollection_Not64arch(t *testing.T) {
 }
 
 func TestMongoPump_capCollection_SensibleDefaultSize(t *testing.T) {
-
 	if strconv.IntSize < 64 {
 		t.Skip("skipping as < 64bit arch")
 	}
@@ -240,7 +273,6 @@ func TestMongoPump_capCollection_SensibleDefaultSize(t *testing.T) {
 }
 
 func TestMongoPump_capCollection_OverrideSize(t *testing.T) {
-
 	if strconv.IntSize < 64 {
 		t.Skip("skipping as < 64bit arch")
 	}
@@ -366,7 +398,7 @@ func TestMongoPump_AccumulateSetIgnoreDocSize(t *testing.T) {
 	accumulated := mPump.AccumulateSet(dataSet, true)
 	for _, x := range accumulated {
 		for _, y := range x {
-			rec, ok := y.(analytics.AnalyticsRecord)
+			rec, ok := y.(*analytics.AnalyticsRecord)
 			assert.True(t, ok)
 			if rec.IsGraphRecord() {
 				assert.NotEmpty(t, rec.RawRequest)
@@ -443,46 +475,65 @@ func TestGetBlurredURL(t *testing.T) {
 	}
 }
 
-func TestMongoPump_SessionConsistency(t *testing.T) {
-	pump := newPump()
-	conf := defaultConf()
-
-	mPump, ok := pump.(*MongoPump)
-	assert.True(t, ok)
-	mPump.dbConf = &conf
+func TestWriteUptimeData(t *testing.T) {
+	now := time.Now()
 
 	tests := []struct {
-		testName            string
-		sessionConsistency  string
-		expectedSessionMode mgo.Mode
+		name                 string
+		Record               *analytics.UptimeReportData
+		RecordsAmountToWrite int
 	}{
 		{
-			testName:            "should set session mode to strong",
-			sessionConsistency:  "strong",
-			expectedSessionMode: mgo.Strong,
+			name:                 "write 3 uptime records",
+			Record:               &analytics.UptimeReportData{OrgID: "1", URL: "url1", TimeStamp: now},
+			RecordsAmountToWrite: 3,
 		},
 		{
-			testName:            "should set session mode to monotonic",
-			sessionConsistency:  "monotonic",
-			expectedSessionMode: mgo.Monotonic,
+			name:                 "write 6 uptime records",
+			Record:               &analytics.UptimeReportData{OrgID: "1", URL: "url1", TimeStamp: now},
+			RecordsAmountToWrite: 6,
 		},
 		{
-			testName:            "should set session mode to eventual",
-			sessionConsistency:  "eventual",
-			expectedSessionMode: mgo.Eventual,
-		},
-		{
-			testName:            "should set session mode to strong by default",
-			sessionConsistency:  "",
-			expectedSessionMode: mgo.Strong,
+			name:                 "length of records is 0",
+			Record:               &analytics.UptimeReportData{},
+			RecordsAmountToWrite: 0,
 		},
 	}
 
 	for _, test := range tests {
-		t.Run(test.testName, func(t *testing.T) {
-			mPump.dbConf.MongoSessionConsistency = test.sessionConsistency
-			mPump.connect()
-			assert.Equal(t, test.expectedSessionMode, mPump.dbSession.Mode())
+		t.Run(test.name, func(t *testing.T) {
+			newPump := &MongoPump{IsUptime: true}
+			conf := defaultConf()
+			err := newPump.Init(conf)
+			assert.Nil(t, err)
+
+			keys := []interface{}{}
+			for i := 0; i < test.RecordsAmountToWrite; i++ {
+				encoded, err := msgpack.Marshal(test.Record)
+				assert.Nil(t, err)
+				keys = append(keys, string(encoded))
+			}
+
+			newPump.WriteUptimeData(keys)
+
+			defer func() {
+				// clean up the table
+				err := newPump.store.DropDatabase(context.Background())
+				assert.Nil(t, err)
+			}()
+
+			// check if the table exists
+			hasTable, err := newPump.store.HasTable(context.Background(), newPump.dbConf.CollectionName)
+			assert.Nil(t, err)
+			assert.Equal(t, true, hasTable)
+
+			dbRecords := []analytics.UptimeReportData{}
+			if err := newPump.store.Query(context.Background(), &analytics.UptimeReportData{}, &dbRecords, dbm.DBM{}); err != nil {
+				t.Fatal("Error getting analytics records from Mongo")
+			}
+
+			// check amount of rows in the table
+			assert.Equal(t, test.RecordsAmountToWrite, len(dbRecords))
 		})
 	}
 }

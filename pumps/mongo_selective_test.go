@@ -1,11 +1,16 @@
 package pumps
 
 import (
+	"context"
+	"fmt"
 	"testing"
+	"time"
 
+	"github.com/TykTechnologies/storage/persistent/dbm"
+	"github.com/TykTechnologies/storage/persistent/id"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/stretchr/testify/assert"
-	"gopkg.in/mgo.v2"
+	"gopkg.in/vmihailenco/msgpack.v2"
 )
 
 func TestMongoSelectivePump_AccumulateSet(t *testing.T) {
@@ -98,43 +103,258 @@ func TestMongoSelectivePump_AccumulateSet(t *testing.T) {
 	))
 }
 
-func TestMongoSelectivePump_SessionConsistency(t *testing.T) {
+func TestConnection(t *testing.T) {
 	mPump := MongoSelectivePump{}
 	conf := defaultSelectiveConf()
 	mPump.dbConf = &conf
+	// Checking if the connection is nil before connecting
+	assert.Nil(t, mPump.store)
+	mPump.log = log.WithField("prefix", mongoPrefix)
+
+	t.Run("should connect to mgo", func(t *testing.T) {
+		// If connect fails, it will stop the execution with a fatal error
+		mPump.connect()
+		// Checking if the connection is not nil after connecting
+		assert.NotNil(t, mPump.store)
+		// Checking if the connection is alive
+		assert.Nil(t, mPump.store.Ping(context.Background()))
+	})
+}
+
+func TestEnsureIndexes(t *testing.T) {
+	mPump := MongoSelectivePump{}
+	conf := defaultSelectiveConf()
+	mPump.dbConf = &conf
+	mPump.log = log.WithField("prefix", mongoPrefix)
+	mPump.connect()
+
+	// _id, apiid_1, expireAt_1, logBrowserIndex are the current indexes
+	numberOfCreatedIndexes := 4
+
+	t.Run("should ensure indexes", func(t *testing.T) {
+		defer func() {
+			assert.NoError(t, mPump.store.DropDatabase(context.Background()))
+		}()
+		collectionName := "index_test"
+		obj := dbObject{
+			tableName: collectionName,
+		}
+
+		err := mPump.ensureIndexes(collectionName)
+		assert.NoError(t, err)
+
+		// Checking if the indexes are created
+		indexes, err := mPump.store.GetIndexes(context.Background(), obj)
+		assert.NoError(t, err)
+		assert.NotNil(t, indexes)
+
+		// Checking if the indexes are created with the correct name
+		fmt.Printf("indexes: %#v\n", indexes)
+		assert.Len(t, indexes, numberOfCreatedIndexes)
+		assert.Equal(t, "_id_", indexes[0].Name)
+		assert.Equal(t, "apiid_1", indexes[1].Name)
+		assert.Equal(t, "expireAt_1", indexes[2].Name)
+		assert.Equal(t, "logBrowserIndex", indexes[3].Name)
+
+		// Checking if the indexes are created with the correct keys
+		assert.Len(t, indexes[0].Keys, 1)
+		assert.Len(t, indexes[1].Keys, 1)
+		assert.Len(t, indexes[2].Keys, 1)
+		assert.Len(t, indexes[3].Keys, 4) // 4 keys because of the compound index: timestamp, apiid, apikey, responsecode
+	})
+	t.Run("should ensure one less index using CosmosDB", func(t *testing.T) {
+		defer func() {
+			mPump.dbConf.MongoDBType = StandardMongo
+			assert.NoError(t, mPump.store.DropDatabase(context.Background()))
+		}()
+		mPump.dbConf.MongoDBType = CosmosDB
+		collectionName := "index_test_cosmosdb"
+		obj := dbObject{
+			tableName: collectionName,
+		}
+
+		err := mPump.ensureIndexes(obj.TableName())
+		assert.NoError(t, err)
+
+		// Checking if the indexes are created
+		indexes, err := mPump.store.GetIndexes(context.Background(), obj)
+		assert.NoError(t, err)
+		assert.NotNil(t, indexes)
+
+		// Checking if the indexes are created with the correct name
+		assert.Len(t, indexes, numberOfCreatedIndexes-1)
+		assert.Equal(t, "_id_", indexes[0].Name)
+		assert.Equal(t, "apiid_1", indexes[1].Name)
+		assert.Equal(t, "logBrowserIndex", indexes[2].Name)
+
+		// Checking if the indexes are created with the correct keys
+		assert.Len(t, indexes[0].Keys, 1)
+		assert.Len(t, indexes[1].Keys, 1)
+		assert.Len(t, indexes[2].Keys, 4) // 4 keys because of the compound index: timestamp, apiid, apikey, responsecode
+	})
+
+	t.Run("should not ensure indexes because of omit index creation setting", func(t *testing.T) {
+		defer func() {
+			conf.OmitIndexCreation = false
+			assert.NoError(t, mPump.store.DropDatabase(context.Background()))
+		}()
+		collectionName := "index_test"
+		obj := dbObject{
+			tableName: collectionName,
+		}
+		conf.OmitIndexCreation = true
+
+		err := mPump.ensureIndexes(collectionName)
+		assert.NoError(t, err)
+
+		// Since the indexes were not created, the collection does not exist, and an error is expected
+		indexes, err := mPump.store.GetIndexes(context.Background(), obj)
+		assert.Error(t, err)
+		assert.Nil(t, indexes)
+	})
+
+	t.Run("should not ensure indexes because the collection already exists", func(t *testing.T) {
+		defer func() {
+			assert.NoError(t, mPump.store.DropDatabase(context.Background()))
+		}()
+		collectionName := "index_test"
+		obj := dbObject{
+			tableName: collectionName,
+		}
+		// Creating the collection
+		err := mPump.store.Migrate(context.Background(), []id.DBObject{obj})
+		assert.NoError(t, err)
+
+		// Creating the indexes
+		err = mPump.ensureIndexes(collectionName)
+		assert.NoError(t, err)
+
+		// Checking if the indexes are created
+		indexes, err := mPump.store.GetIndexes(context.Background(), obj)
+		assert.NoError(t, err)
+		assert.NotNil(t, indexes)
+
+		// Checking if the default _id index is created
+		assert.Len(t, indexes, 1)
+		assert.Equal(t, "_id_", indexes[0].Name)
+	})
+}
+
+func TestWriteData(t *testing.T) {
+	mPump := MongoSelectivePump{}
+	conf := defaultSelectiveConf()
+	mPump.dbConf = &conf
+	mPump.log = log.WithField("prefix", mongoPrefix)
+	mPump.connect()
+	defer func() {
+		assert.NoError(t, mPump.store.DropDatabase(context.Background()))
+	}()
+
+	t.Run("should write 3 records", func(t *testing.T) {
+		defer func() {
+			assert.NoError(t, mPump.store.DropDatabase(context.Background()))
+		}()
+		data := []interface{}{
+			analytics.AnalyticsRecord{
+				APIID: "123",
+				OrgID: "abc",
+			},
+			analytics.AnalyticsRecord{
+				APIID: "456",
+				OrgID: "abc",
+			},
+			analytics.AnalyticsRecord{
+				APIID: "789",
+				OrgID: "abc",
+			},
+		}
+		err := mPump.WriteData(context.Background(), data)
+		assert.NoError(t, err)
+
+		var results []analytics.AnalyticsRecord
+		err = mPump.store.Query(context.Background(), &analytics.AnalyticsRecord{}, &results, nil)
+		assert.NoError(t, err)
+		assert.Len(t, results, 3)
+		assert.Equal(t, "123", results[0].APIID)
+		assert.Equal(t, "456", results[1].APIID)
+		assert.Equal(t, "789", results[2].APIID)
+	})
+
+	t.Run("should not write data because the collection does not exist", func(t *testing.T) {
+		defer func() {
+			assert.NoError(t, mPump.store.DropDatabase(context.Background()))
+		}()
+		// data with empty orgID
+		data := []interface{}{
+			analytics.AnalyticsRecord{
+				APIID: "123",
+			},
+		}
+		err := mPump.WriteData(context.Background(), data)
+		assert.NoError(t, err)
+
+		var results []analytics.AnalyticsRecord
+		err = mPump.store.Query(context.Background(), &analytics.AnalyticsRecord{}, &results, nil)
+		assert.NoError(t, err)
+
+		// No data should be written
+		assert.Len(t, results, 0)
+	})
+}
+
+func TestWriteUptimeDataMongoSelective(t *testing.T) {
+	now := time.Now()
 
 	tests := []struct {
-		testName            string
-		sessionConsistency  string
-		expectedSessionMode mgo.Mode
+		name                 string
+		Record               interface{}
+		RecordsAmountToWrite int
 	}{
 		{
-			testName:            "should set session mode to strong",
-			sessionConsistency:  "strong",
-			expectedSessionMode: mgo.Strong,
+			name:                 "write 3 uptime records",
+			Record:               &analytics.UptimeReportData{OrgID: "1", URL: "url1", TimeStamp: now},
+			RecordsAmountToWrite: 3,
 		},
 		{
-			testName:            "should set session mode to monotonic",
-			sessionConsistency:  "monotonic",
-			expectedSessionMode: mgo.Monotonic,
+			name:                 "write 6 uptime records",
+			Record:               &analytics.UptimeReportData{OrgID: "1", URL: "url1", TimeStamp: now},
+			RecordsAmountToWrite: 6,
 		},
 		{
-			testName:            "should set session mode to eventual",
-			sessionConsistency:  "eventual",
-			expectedSessionMode: mgo.Eventual,
-		},
-		{
-			testName:            "should set session mode to strong by default",
-			sessionConsistency:  "",
-			expectedSessionMode: mgo.Strong,
+			name:                 "length of records is 0",
+			Record:               &analytics.UptimeReportData{},
+			RecordsAmountToWrite: 0,
 		},
 	}
 
 	for _, test := range tests {
-		t.Run(test.testName, func(t *testing.T) {
-			mPump.dbConf.MongoSessionConsistency = test.sessionConsistency
-			mPump.connect()
-			assert.Equal(t, test.expectedSessionMode, mPump.dbSession.Mode())
+		t.Run(test.name, func(t *testing.T) {
+			newPump := &MongoSelectivePump{}
+			conf := defaultConf()
+			err := newPump.Init(conf)
+			assert.Nil(t, err)
+
+			keys := []interface{}{}
+			for i := 0; i < test.RecordsAmountToWrite; i++ {
+				encoded, err := msgpack.Marshal(test.Record)
+				assert.Nil(t, err)
+				keys = append(keys, string(encoded))
+			}
+
+			newPump.WriteUptimeData(keys)
+
+			defer func() {
+				// clean up the table
+				err := newPump.store.DropDatabase(context.Background())
+				assert.Nil(t, err)
+			}()
+
+			dbRecords := []analytics.UptimeReportData{}
+			err = newPump.store.Query(context.Background(), &analytics.UptimeReportData{}, &dbRecords, dbm.DBM{})
+			assert.NoError(t, err)
+
+			// check amount of rows in the table
+			assert.Equal(t, test.RecordsAmountToWrite, len(dbRecords))
 		})
 	}
 }

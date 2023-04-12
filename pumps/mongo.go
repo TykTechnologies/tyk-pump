@@ -5,23 +5,21 @@ import (
 	"crypto"
 	"crypto/ecdsa"
 	"crypto/rsa"
-	"crypto/tls"
 	"crypto/x509"
 	"encoding/base64"
-	"encoding/pem"
 	"fmt"
-	"io/ioutil"
-	"net"
 	"regexp"
 	"strconv"
-	"strings"
-	"time"
 
+	"github.com/TykTechnologies/storage/persistent"
+	"github.com/TykTechnologies/storage/persistent/dbm"
+	"github.com/TykTechnologies/storage/persistent/id"
+	"github.com/TykTechnologies/storage/persistent/index"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/mitchellh/mapstructure"
 	"github.com/sirupsen/logrus"
-	"gopkg.in/mgo.v2"
+
 	"gopkg.in/vmihailenco/msgpack.v2"
 )
 
@@ -34,15 +32,17 @@ const (
 )
 
 type MongoPump struct {
-	IsUptime  bool
-	dbSession *mgo.Session
-	dbConf    *MongoConf
+	IsUptime bool
+	store    persistent.PersistentStorage
+	dbConf   *MongoConf
 	CommonPumpConfig
 }
 
-var mongoPrefix = "mongo-pump"
-var mongoPumpPrefix = "PMP_MONGO"
-var mongoDefaultEnv = PUMPS_ENV_PREFIX + "_MONGO" + PUMPS_ENV_META_PREFIX
+var (
+	mongoPrefix     = "mongo-pump"
+	mongoPumpPrefix = "PMP_MONGO"
+	mongoDefaultEnv = PUMPS_ENV_PREFIX + "_MONGO" + PUMPS_ENV_META_PREFIX
+)
 
 type MongoType int
 
@@ -81,27 +81,39 @@ type BaseMongoConf struct {
 	OmitIndexCreation bool `json:"omit_index_creation" mapstructure:"omit_index_creation"`
 	// Set the consistency mode for the session, it defaults to `Strong`. The valid values are: strong, monotonic, eventual.
 	MongoSessionConsistency string `json:"mongo_session_consistency" mapstructure:"mongo_session_consistency"`
+	// MongoDriverType is the type of the driver (library) to use. The valid values are: "mongo-go" and "mgo".
+	MongoDriverType string `json:"driver_type" mapstructure:"driver_type"`
+}
+type dbObject struct {
+	tableName string
+}
+
+func (d dbObject) TableName() string {
+	return d.tableName
+}
+
+// GetObjectID is a dummy function to satisfy the interface
+func (dbObject) GetObjectID() id.ObjectId {
+	return ""
+}
+
+// SetObjectID is a dummy function to satisfy the interface
+func (dbObject) SetObjectID(id.ObjectId) {
+	// empty
+}
+
+func createDBObject(tableName string) dbObject {
+	return dbObject{tableName: tableName}
 }
 
 func (b *BaseMongoConf) GetBlurredURL() string {
 	// mongo uri match with regex ^(mongodb:(?:\/{2})?)((\w+?):(\w+?)@|:?@?)(\S+?):(\d+)(\/(\S+?))?(\?replicaSet=(\S+?))?$
 	// but we need only a segment, so regex explanation: https://regex101.com/r/8Uzwtw/1
 	regex := `^(mongodb:(?:\/{2})?)((...+?):(...+?)@)`
-	var re = regexp.MustCompile(regex)
+	re := regexp.MustCompile(regex)
 
 	blurredUrl := re.ReplaceAllString(b.MongoURL, "***:***@")
 	return blurredUrl
-}
-
-func (b *BaseMongoConf) SetMongoConsistency(session *mgo.Session) {
-	switch b.MongoSessionConsistency {
-	case "eventual":
-		session.SetMode(mgo.Eventual, true)
-	case "monotonic":
-		session.SetMode(mgo.Monotonic, true)
-	default:
-		session.SetMode(mgo.Strong, true)
-	}
 }
 
 // @PumpConf Mongo
@@ -124,38 +136,6 @@ type MongoConf struct {
 	CollectionCapEnable bool `json:"collection_cap_enable" mapstructure:"collection_cap_enable"`
 }
 
-func loadCertficateAndKeyFromFile(path string) (*tls.Certificate, error) {
-	raw, err := ioutil.ReadFile(path)
-	if err != nil {
-		return nil, err
-	}
-
-	var cert tls.Certificate
-	for {
-		block, rest := pem.Decode(raw)
-		if block == nil {
-			break
-		}
-		if block.Type == "CERTIFICATE" {
-			cert.Certificate = append(cert.Certificate, block.Bytes)
-		} else {
-			cert.PrivateKey, err = parsePrivateKey(block.Bytes)
-			if err != nil {
-				return nil, fmt.Errorf("Failure reading private key from \"%s\": %s", path, err)
-			}
-		}
-		raw = rest
-	}
-
-	if len(cert.Certificate) == 0 {
-		return nil, fmt.Errorf("No certificate found in \"%s\"", path)
-	} else if cert.PrivateKey == nil {
-		return nil, fmt.Errorf("No private key found in \"%s\"", path)
-	}
-
-	return &cert, nil
-}
-
 func parsePrivateKey(der []byte) (crypto.PrivateKey, error) {
 	if key, err := x509.ParsePKCS1PrivateKey(der); err == nil {
 		return key, nil
@@ -172,98 +152,6 @@ func parsePrivateKey(der []byte) (crypto.PrivateKey, error) {
 		return key, nil
 	}
 	return nil, fmt.Errorf("Failed to parse private key")
-}
-
-func mongoType(session *mgo.Session) MongoType {
-	// Querying for the features which 100% not supported by AWS DocumentDB
-	var result struct {
-		Code int `bson:"code"`
-	}
-	session.Run("features", &result)
-
-	switch result.Code {
-	case AWSDBError:
-		return AWSDocumentDB
-	case CosmosDBError:
-		return CosmosDB
-	default:
-		return StandardMongo
-	}
-}
-
-func mongoDialInfo(conf BaseMongoConf) (dialInfo *mgo.DialInfo, err error) {
-	if dialInfo, err = mgo.ParseURL(conf.MongoURL); err != nil {
-		return dialInfo, err
-	}
-
-	if conf.MongoUseSSL {
-		dialInfo.DialServer = func(addr *mgo.ServerAddr) (net.Conn, error) {
-			tlsConfig := &tls.Config{}
-			if conf.MongoSSLInsecureSkipVerify {
-				tlsConfig.InsecureSkipVerify = true
-			}
-
-			if conf.MongoSSLCAFile != "" {
-				caCert, err := ioutil.ReadFile(conf.MongoSSLCAFile)
-				if err != nil {
-					log.Fatal("Can't load mongo CA certificates: ", err)
-				}
-				caCertPool := x509.NewCertPool()
-				caCertPool.AppendCertsFromPEM(caCert)
-				tlsConfig.RootCAs = caCertPool
-			}
-
-			if conf.MongoSSLAllowInvalidHostnames {
-				tlsConfig.InsecureSkipVerify = true
-				tlsConfig.VerifyPeerCertificate = func(rawCerts [][]byte, verifiedChains [][]*x509.Certificate) error {
-					// Code copy/pasted and adapted from
-					// https://github.com/golang/go/blob/81555cb4f3521b53f9de4ce15f64b77cc9df61b9/src/crypto/tls/handshake_client.go#L327-L344, but adapted to skip the hostname verification.
-					// See https://github.com/golang/go/issues/21971#issuecomment-412836078.
-
-					// If this is the first handshake on a connection, process and
-					// (optionally) verify the server's certificates.
-					certs := make([]*x509.Certificate, len(rawCerts))
-					for i, asn1Data := range rawCerts {
-						cert, err := x509.ParseCertificate(asn1Data)
-						if err != nil {
-							return err
-						}
-						certs[i] = cert
-					}
-
-					opts := x509.VerifyOptions{
-						Roots:         tlsConfig.RootCAs,
-						CurrentTime:   time.Now(),
-						DNSName:       "", // <- skip hostname verification
-						Intermediates: x509.NewCertPool(),
-					}
-
-					for i, cert := range certs {
-						if i == 0 {
-							continue
-						}
-						opts.Intermediates.AddCert(cert)
-					}
-					_, err := certs[0].Verify(opts)
-
-					return err
-				}
-			}
-
-			if conf.MongoSSLPEMKeyfile != "" {
-				cert, err := loadCertficateAndKeyFromFile(conf.MongoSSLPEMKeyfile)
-				if err != nil {
-					log.Fatal("Can't load mongo client certificate: ", err)
-				}
-
-				tlsConfig.Certificates = []tls.Certificate{*cert}
-			}
-
-			return tls.Dial("tcp", addr.String(), tlsConfig)
-		}
-	}
-
-	return dialInfo, err
 }
 
 func (m *MongoPump) New() Pump {
@@ -298,22 +186,24 @@ func (m *MongoPump) Init(config interface{}) error {
 		m.log.Fatal("Failed to decode configuration: ", err)
 	}
 
-	//we check for the environment configuration if this pumps is not the uptime pump
+	// we check for the environment configuration if this pumps is not the uptime pump
 	if !m.IsUptime {
 		processPumpEnvVars(m, m.log, m.dbConf, mongoDefaultEnv)
 
-		//we keep this env check for backward compatibility
+		// we keep this env check for backward compatibility
 		overrideErr := envconfig.Process(mongoPumpPrefix, m.dbConf)
 		if overrideErr != nil {
 			m.log.Error("Failed to process environment variables for mongo pump: ", overrideErr)
 		}
-	} else if m.IsUptime && m.dbConf.MongoURL == "" {
+	} else if m.dbConf.MongoURL == "" {
 		m.log.Debug("Trying to set uptime pump with PMP_MONGO env vars")
-		//we keep this env check for backward compatibility
+		// we keep this env check for backward compatibility
 		overrideErr := envconfig.Process(mongoPumpPrefix, m.dbConf)
 		if overrideErr != nil {
 			m.log.Error("Failed to process environment variables for mongo pump: ", overrideErr)
 		}
+
+		m.dbConf.CollectionName = "tyk_uptime_analytics"
 	}
 
 	if m.dbConf.MaxInsertBatchSizeBytes == 0 {
@@ -330,7 +220,7 @@ func (m *MongoPump) Init(config interface{}) error {
 
 	m.capCollection()
 
-	indexCreateErr := m.ensureIndexes()
+	indexCreateErr := m.ensureIndexes(m.dbConf.CollectionName)
 	if indexCreateErr != nil {
 		m.log.Error(indexCreateErr)
 	}
@@ -344,10 +234,9 @@ func (m *MongoPump) Init(config interface{}) error {
 }
 
 func (m *MongoPump) capCollection() (ok bool) {
-
-	var colName = m.dbConf.CollectionName
-	var colCapMaxSizeBytes = m.dbConf.CollectionCapMaxSizeBytes
-	var colCapEnable = m.dbConf.CollectionCapEnable
+	colName := m.dbConf.CollectionName
+	colCapMaxSizeBytes := m.dbConf.CollectionCapMaxSizeBytes
+	colCapEnable := m.dbConf.CollectionCapEnable
 
 	if !colCapEnable {
 		return false
@@ -379,10 +268,11 @@ func (m *MongoPump) capCollection() (ok bool) {
 		m.log.Infof("-- No max collection size set for %s, defaulting to %d", colName, colCapMaxSizeBytes)
 	}
 
-	sess := m.dbSession.Copy()
-	defer sess.Close()
+	d := dbObject{
+		tableName: colName,
+	}
 
-	err = m.dbSession.DB("").C(colName).Create(&mgo.CollectionInfo{Capped: true, MaxBytes: colCapMaxSizeBytes})
+	err = m.store.Migrate(context.Background(), []id.DBObject{d}, dbm.DBM{"capped": true, "maxBytes": colCapMaxSizeBytes})
 	if err != nil {
 		m.log.Errorf("Unable to create capped collection for (%s). %s", colName, err.Error())
 
@@ -396,109 +286,79 @@ func (m *MongoPump) capCollection() (ok bool) {
 
 // collectionExists checks to see if a collection name exists in the db.
 func (m *MongoPump) collectionExists(name string) (bool, error) {
-	sess := m.dbSession.Copy()
-	defer sess.Close()
-
-	colNames, err := sess.DB("").CollectionNames()
-	if err != nil {
-		m.log.Error("Unable to get collection names: ", err)
-
-		return false, err
-	}
-
-	for _, coll := range colNames {
-		if coll == name {
-			return true, nil
-		}
-	}
-
-	return false, nil
+	return m.store.HasTable(context.Background(), name)
 }
 
-func (m *MongoPump) ensureIndexes() error {
+func (m *MongoPump) ensureIndexes(collectionName string) error {
 	if m.dbConf.OmitIndexCreation {
 		m.log.Debug("omit_index_creation set to true, omitting index creation..")
 		return nil
 	}
 
 	if m.dbConf.MongoDBType == StandardMongo {
-		exists, errExists := m.collectionExists(m.dbConf.CollectionName)
+		exists, errExists := m.collectionExists(collectionName)
 		if errExists == nil && exists {
-			m.log.Info("Collection ", m.dbConf.CollectionName, " exists, omitting index creation..")
+			m.log.Info("Collection ", collectionName, " exists, omitting index creation..")
 			return nil
 		}
 	}
 
 	var err error
 
-	sess := m.dbSession.Copy()
-	defer sess.Close()
-
-	c := sess.DB("").C(m.dbConf.CollectionName)
-
-	orgIndex := mgo.Index{
-		Key:        []string{"orgid"},
+	orgIndex := index.Index{
+		Keys:       []dbm.DBM{{"orgid": 1}},
 		Background: m.dbConf.MongoDBType == StandardMongo,
 	}
 
-	err = c.EnsureIndex(orgIndex)
+	d := createDBObject(collectionName)
+
+	err = m.store.CreateIndex(context.Background(), d, orgIndex)
 	if err != nil {
 		return err
 	}
 
-	apiIndex := mgo.Index{
-		Key:        []string{"apiid"},
+	apiIndex := index.Index{
+		Keys:       []dbm.DBM{{"apiid": 1}},
 		Background: m.dbConf.MongoDBType == StandardMongo,
 	}
 
-	err = c.EnsureIndex(apiIndex)
+	err = m.store.CreateIndex(context.Background(), d, apiIndex)
 	if err != nil {
 		return err
 	}
 
-	logBrowserIndex := mgo.Index{
+	logBrowserIndex := index.Index{
 		Name:       "logBrowserIndex",
-		Key:        []string{"-timestamp", "orgid", "apiid", "apikey", "responsecode"},
+		Keys:       []dbm.DBM{{"timestamp": -1}, {"orgid": 1}, {"apiid": 1}, {"apikey": 1}, {"responsecode": 1}},
 		Background: m.dbConf.MongoDBType == StandardMongo,
 	}
-
-	err = c.EnsureIndex(logBrowserIndex)
-	if err != nil && !strings.Contains(err.Error(), "already exists with a different name") {
-		return err
-	}
-
-	return nil
+	return m.store.CreateIndex(context.Background(), d, logBrowserIndex)
 }
 
 func (m *MongoPump) connect() {
-	var err error
-	var dialInfo *mgo.DialInfo
+	if m.dbConf.MongoDriverType == "" {
+		m.dbConf.MongoDriverType = persistent.Mgo
+	}
 
-	dialInfo, err = mongoDialInfo(m.dbConf.BaseMongoConf)
+	store, err := persistent.NewPersistentStorage(&persistent.ClientOpts{
+		ConnectionString:         m.dbConf.MongoURL,
+		UseSSL:                   m.dbConf.MongoUseSSL,
+		SSLInsecureSkipVerify:    m.dbConf.MongoSSLInsecureSkipVerify,
+		SSLAllowInvalidHostnames: m.dbConf.MongoSSLAllowInvalidHostnames,
+		SSLCAFile:                m.dbConf.MongoSSLCAFile,
+		SSLPEMKeyfile:            m.dbConf.MongoSSLPEMKeyfile,
+		SessionConsistency:       m.dbConf.MongoSessionConsistency,
+		ConnectionTimeout:        m.timeout,
+		Type:                     m.dbConf.MongoDriverType,
+	})
 	if err != nil {
-		m.log.Panic("Mongo URL is invalid: ", err)
+		m.log.Fatal("Failed to connect: ", err)
 	}
 
-	if m.timeout > 0 {
-		dialInfo.Timeout = time.Second * time.Duration(m.timeout)
-	}
-	m.dbSession, err = mgo.DialWithInfo(dialInfo)
-
-	for err != nil {
-		m.log.WithError(err).WithField("dialinfo", m.dbConf.BaseMongoConf.GetBlurredURL()).Error("Mongo connection failed. Retrying.")
-		time.Sleep(5 * time.Second)
-		m.dbSession, err = mgo.DialWithInfo(dialInfo)
-	}
-
-	if err == nil && m.dbConf.MongoDBType == 0 {
-		m.dbConf.MongoDBType = mongoType(m.dbSession)
-	}
-
-	m.dbConf.SetMongoConsistency(m.dbSession)
+	m.store = store
 }
 
 func (m *MongoPump) WriteData(ctx context.Context, data []interface{}) error {
-
 	collectionName := m.dbConf.CollectionName
 	if collectionName == "" {
 		m.log.Fatal("No collection name!")
@@ -506,32 +366,19 @@ func (m *MongoPump) WriteData(ctx context.Context, data []interface{}) error {
 
 	m.log.Debug("Attempting to write ", len(data), " records...")
 
-	for m.dbSession == nil {
-		m.log.Debug("Connecting to analytics store")
-		m.connect()
-	}
 	accumulateSet := m.AccumulateSet(data, false)
 
 	errCh := make(chan error, len(accumulateSet))
 	for _, dataSet := range accumulateSet {
-		go func(dataSet []interface{}, errCh chan error) {
-			sess := m.dbSession.Copy()
-			defer sess.Close()
-
-			analyticsCollection := sess.DB("").C(collectionName)
-
+		go func(errCh chan error, dataSet ...id.DBObject) {
 			m.log.WithFields(logrus.Fields{
 				"collection":        collectionName,
 				"number of records": len(dataSet),
 			}).Debug("Attempt to purge records")
 
-			err := analyticsCollection.Insert(dataSet...)
+			err := m.store.Insert(context.Background(), dataSet...)
 			if err != nil {
 				m.log.WithFields(logrus.Fields{"collection": collectionName, "number of records": len(dataSet)}).Error("Problem inserting to mongo collection: ", err)
-
-				if strings.Contains(strings.ToLower(err.Error()), "closed explicitly") {
-					m.log.Warning("--> Detected connection failure!")
-				}
 				errCh <- err
 			}
 			errCh <- nil
@@ -539,7 +386,7 @@ func (m *MongoPump) WriteData(ctx context.Context, data []interface{}) error {
 				"collection":        collectionName,
 				"number of records": len(dataSet),
 			}).Info("Completed purging the records")
-		}(dataSet, errCh)
+		}(errCh, dataSet...)
 	}
 
 	for range accumulateSet {
@@ -555,85 +402,112 @@ func (m *MongoPump) WriteData(ctx context.Context, data []interface{}) error {
 	return nil
 }
 
-func (m *MongoPump) AccumulateSet(data []interface{}, isForGraphRecords bool) [][]interface{} {
+// AccumulateSet groups data items into chunks based on the max batch size limit while handling graph analytics records separately.
+// It returns a 2D array of DBObjects.
+func (m *MongoPump) AccumulateSet(data []interface{}, isForGraphRecords bool) [][]id.DBObject {
 	accumulatorTotal := 0
-	returnArray := make([][]interface{}, 0)
-	thisResultSet := make([]interface{}, 0)
+	returnArray := make([][]id.DBObject, 0)
+	thisResultSet := make([]id.DBObject, 0)
 
 	for i, item := range data {
-		thisItem := item.(analytics.AnalyticsRecord)
-		if thisItem.ResponseCode == -1 {
+		// Process the current item and determine if it should be skipped
+		thisItem, skip := m.processItem(item, isForGraphRecords)
+		if skip {
 			continue
 		}
 
-		// Skip this record if it is a graph analytics record, they will be handled in a different pump
-		isGraphRecord := thisItem.IsGraphRecord()
-		if isGraphRecord != isForGraphRecords {
-			continue
-		}
+		// If collection name is not set, we'll use the default one
+		thisItem.CollectionName = m.dbConf.CollectionName
 
-		// Add 1 KB for metadata as average
-		sizeBytes := len(thisItem.RawRequest) + len(thisItem.RawResponse) + 1024
+		// Calculate the size of the current item
+		sizeBytes := m.getItemSizeBytes(thisItem)
 
-		m.log.Debug("Size is: ", sizeBytes)
+		// Handle large documents that exceed the max document size limit
+		m.handleLargeDocuments(thisItem, sizeBytes, isForGraphRecords)
 
-		if sizeBytes > m.dbConf.MaxDocumentSizeBytes && !isGraphRecord {
-			m.log.Warning("Document too large, not writing raw request and raw response!")
-
-			thisItem.RawRequest = ""
-			thisItem.RawResponse = base64.StdEncoding.EncodeToString([]byte("Document too large, not writing raw request and raw response!"))
-		}
-
-		if (accumulatorTotal + sizeBytes) <= m.dbConf.MaxInsertBatchSizeBytes {
-			accumulatorTotal += sizeBytes
-		} else {
-			m.log.Debug("Created new chunk entry")
-			if len(thisResultSet) > 0 {
-				returnArray = append(returnArray, thisResultSet)
-			}
-
-			thisResultSet = make([]interface{}, 0)
-			accumulatorTotal = sizeBytes
-		}
-
-		m.log.Debug("Accumulator is: ", accumulatorTotal)
-		thisResultSet = append(thisResultSet, thisItem)
-
-		m.log.Debug(accumulatorTotal, " of ", m.dbConf.MaxInsertBatchSizeBytes)
-		// Append the last element if the loop is about to end
-		if i == (len(data) - 1) {
-			m.log.Debug("Appending last entry")
-			returnArray = append(returnArray, thisResultSet)
-		}
+		// Accumulate the item and update the accumulator total, result set, and return array
+		accumulatorTotal, thisResultSet, returnArray = m.accumulate(thisResultSet, returnArray, thisItem, sizeBytes, accumulatorTotal, i == (len(data)-1))
 	}
 
+	// Append the remaining result set to the return array if it's not empty
 	if len(thisResultSet) > 0 && len(returnArray) == 0 {
 		returnArray = append(returnArray, thisResultSet)
 	}
 	return returnArray
 }
 
-// WriteUptimeData will pull the data from the in-memory store and drop it into the specified MongoDB collection
-func (m *MongoPump) WriteUptimeData(data []interface{}) {
-
-	for m.dbSession == nil {
-		m.log.Debug("Connecting to mongoDB store")
-		m.connect()
+// processItem checks if the item should be processed based on its ResponseCode and if it's a graph record.
+// It returns the processed item and a boolean indicating if the item should be skipped.
+func (m *MongoPump) processItem(item interface{}, isForGraphRecords bool) (*analytics.AnalyticsRecord, bool) {
+	thisItem, ok := item.(analytics.AnalyticsRecord)
+	if !ok {
+		m.log.Error("Couldn't convert item to analytics.AnalyticsRecord")
+		return nil, true
+	}
+	if thisItem.ResponseCode == -1 {
+		return &thisItem, true
 	}
 
-	collectionName := "tyk_uptime_analytics"
-	sess := m.dbSession.Copy()
-	defer sess.Close()
+	isGraphRecord := thisItem.IsGraphRecord()
+	if isGraphRecord != isForGraphRecords {
+		return &thisItem, true
+	}
 
-	analyticsCollection := sess.DB("").C(collectionName)
+	return &thisItem, false
+}
 
+// getItemSizeBytes calculates the size of the item in bytes, including an additional 1 KB for metadata.
+func (m *MongoPump) getItemSizeBytes(thisItem *analytics.AnalyticsRecord) int {
+	// Add 1 KB for metadata as average
+	return len(thisItem.RawRequest) + len(thisItem.RawResponse) + 1024
+}
+
+// handleLargeDocuments checks if the item size exceeds the max document size limit and modifies the item if necessary.
+func (m *MongoPump) handleLargeDocuments(thisItem *analytics.AnalyticsRecord, sizeBytes int, isGraphRecord bool) {
+	if sizeBytes > m.dbConf.MaxDocumentSizeBytes && !isGraphRecord {
+		m.log.Warning("Document too large, not writing raw request and raw response!")
+
+		thisItem.RawRequest = ""
+		thisItem.RawResponse = base64.StdEncoding.EncodeToString([]byte("Document too large, not writing raw request and raw response!"))
+	}
+}
+
+// accumulate processes the given item and updates the accumulator total, result set, and return array.
+// It manages chunking the data into separate sets based on the max batch size limit, and appends the last item when necessary.
+func (m *MongoPump) accumulate(thisResultSet []id.DBObject, returnArray [][]id.DBObject, thisItem *analytics.AnalyticsRecord, sizeBytes, accumulatorTotal int, isLastItem bool) (int, []id.DBObject, [][]id.DBObject) {
+	if (accumulatorTotal + sizeBytes) <= m.dbConf.MaxInsertBatchSizeBytes {
+		accumulatorTotal += sizeBytes
+	} else {
+		m.log.Debug("Created new chunk entry")
+		if len(thisResultSet) > 0 {
+			returnArray = append(returnArray, thisResultSet)
+		}
+
+		thisResultSet = make([]id.DBObject, 0)
+		accumulatorTotal = sizeBytes
+	}
+
+	m.log.Debug("Accumulator is: ", accumulatorTotal)
+	thisResultSet = append(thisResultSet, thisItem)
+
+	m.log.Debug(accumulatorTotal, " of ", m.dbConf.MaxInsertBatchSizeBytes)
+	if isLastItem {
+		m.log.Debug("Appending last entry")
+		returnArray = append(returnArray, thisResultSet)
+	}
+
+	return accumulatorTotal, thisResultSet, returnArray
+}
+
+// WriteUptimeData will pull the data from the in-memory store and drop it into the specified MongoDB collection
+func (m *MongoPump) WriteUptimeData(data []interface{}) {
 	m.log.Debug("Uptime Data: ", len(data))
 
 	if len(data) == 0 {
 		return
 	}
 
-	keys := make([]interface{}, len(data))
+	keys := make([]id.DBObject, len(data))
 
 	for i, v := range data {
 		decoded := analytics.UptimeReportData{}
@@ -644,21 +518,14 @@ func (m *MongoPump) WriteUptimeData(data []interface{}) {
 			continue
 		}
 
-		keys[i] = interface{}(decoded)
+		keys[i] = &decoded
 
 		m.log.Debug("Decoded Record: ", decoded)
 	}
 
-	m.log.Debug("Writing data to ", collectionName)
+	m.log.Debug("Writing data to ", m.dbConf.CollectionName)
 
-	if err := analyticsCollection.Insert(keys...); err != nil {
-
+	if err := m.store.Insert(context.Background(), keys...); err != nil {
 		m.log.Error("Problem inserting to mongo collection: ", err)
-
-		if strings.Contains(err.Error(), "Closed explicitly") || strings.Contains(err.Error(), "EOF") {
-			m.log.Warning("--> Detected connection failure, reconnecting")
-
-			m.connect()
-		}
 	}
 }

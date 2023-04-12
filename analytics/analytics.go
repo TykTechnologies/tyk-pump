@@ -14,6 +14,7 @@ import (
 	"github.com/oschwald/maxminddb-golang"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"github.com/TykTechnologies/storage/persistent/id"
 	analyticsproto "github.com/TykTechnologies/tyk-pump/analytics/proto"
 
 	"github.com/TykTechnologies/tyk-pump/logger"
@@ -41,6 +42,7 @@ const SQLTable = "tyk_analytics"
 
 // AnalyticsRecord encodes the details of a request
 type AnalyticsRecord struct {
+	id            id.ObjectId  `bson:"_id" gorm:"-:all"`
 	Method        string       `json:"method" gorm:"column:method"`
 	Host          string       `json:"host" gorm:"column:host"`
 	Path          string       `json:"path" gorm:"column:path"`
@@ -71,10 +73,23 @@ type AnalyticsRecord struct {
 	TrackPath     bool         `json:"track_path" gorm:"column:trackpath"`
 	ExpireAt      time.Time    `bson:"expireAt" json:"expireAt"`
 	ApiSchema     string       `json:"api_schema" bson:"-" gorm:"-:all"`
+
+	CollectionName string `json:"-" bson:"-" gorm:"-:all"`
 }
 
 func (a *AnalyticsRecord) TableName() string {
+	if a.CollectionName != "" {
+		return a.CollectionName
+	}
 	return SQLTable
+}
+
+func (a *AnalyticsRecord) GetObjectID() id.ObjectId {
+	return a.id
+}
+
+func (a *AnalyticsRecord) SetObjectID(id id.ObjectId) {
+	a.id = id
 }
 
 type GraphError struct {
@@ -157,7 +172,7 @@ func (a *AnalyticsRecord) GetFieldNames() []string {
 	fields = append(fields, a.Geo.GetFieldNames()...)
 	fields = append(fields, a.Network.GetFieldNames()...)
 	fields = append(fields, a.Latency.GetFieldNames()...)
-	return append(fields, "Tags", "Alias", "TrackPath", "ExpireAt")
+	return append(fields, "Tags", "Alias", "TrackPath", "ExpireAt", "ApiSchema")
 }
 
 func (n *NetworkStats) GetLineValues() []string {
@@ -222,6 +237,8 @@ func (a *AnalyticsRecord) GetLineValues() []string {
 	fields = append(fields, a.Alias)
 	fields = append(fields, strconv.FormatBool(a.TrackPath))
 	fields = append(fields, a.ExpireAt.String())
+	fields = append(fields, a.ApiSchema)
+
 	return fields
 }
 

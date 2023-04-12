@@ -1,9 +1,9 @@
 name: CI tests
 
-on: 
+on:
   pull_request:
   push:
-    branches: 
+    branches:
       - master
 
 env:
@@ -38,7 +38,7 @@ jobs:
         id: hygiene
         run: |
           go install golang.org/x/tools/cmd/goimports@latest
-          
+
       - name: Fetch base branch
         if: ${{ github.event_name == 'pull_request' }}
         run: git fetch origin ${{ github.base_ref }}
@@ -51,7 +51,7 @@ jobs:
       - name: Start MongoDB
         uses: supercharge/mongodb-github-action@1.2.0
         with:
-          mongodb-version: '${{ matrix.mongodb-version }}'
+          mongodb-version: "${{ matrix.mongodb-version }}"
 
       - name: Cache
         uses: actions/cache@v3
@@ -81,4 +81,3 @@ jobs:
         if: ${{ github.event_name == 'push' }}
         run: |
           $(go env GOPATH)/bin/golangci-lint run --out-format checkstyle --timeout=300s --max-issues-per-linter=0 --max-same-issues=0 --issues-exit-code=0 ./... > golanglint.xml
-

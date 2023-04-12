@@ -8,6 +8,7 @@ require (
 	github.com/TykTechnologies/gorpc v0.0.0-20210624160652-fe65bda0ccb9
 	github.com/TykTechnologies/graphql-go-tools v1.6.2-0.20230320143102-7a16078ce517
 	github.com/TykTechnologies/murmur3 v0.0.0-20230310161213-aad17efd5632
+	github.com/TykTechnologies/storage v0.0.0-20230410152719-1e659ae95643
 	github.com/aws/aws-sdk-go-v2 v1.16.14
 	github.com/aws/aws-sdk-go-v2/config v1.9.0
 	github.com/aws/aws-sdk-go-v2/service/timestreamwrite v1.9.0
@@ -29,7 +30,6 @@ require (
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/lintianzhi/graylogd v0.0.0-20180503131252-dc68342f04dc // indirect
 	github.com/logzio/logzio-go v0.0.0-20200316143903-ac8fc0e2910e
-	github.com/lonelycode/mgohacks v0.0.0-20150820024025-f9c291f7e57e
 	github.com/mitchellh/mapstructure v1.3.1
 	github.com/moesif/moesifapi-go v1.0.6
 	github.com/olivere/elastic v6.2.31+incompatible // indirect
@@ -51,7 +51,6 @@ require (
 	golang.org/x/net v0.0.0-20220722155237-a158d28d115b
 	google.golang.org/protobuf v1.28.1
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6
-	gopkg.in/mgo.v2 v2.0.0-20190816093944-a6b53ec6cb22
 	gopkg.in/olivere/elastic.v3 v3.0.56
 	gopkg.in/olivere/elastic.v5 v5.0.85
 	gopkg.in/olivere/elastic.v6 v6.2.31
