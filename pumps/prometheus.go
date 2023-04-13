@@ -387,7 +387,7 @@ func (pm *PrometheusMetric) GetLabelsValues(decoded analytics.AnalyticsRecord) [
 func (pm *PrometheusMetric) Inc(values ...string) error {
 	switch pm.MetricType {
 	case counterType:
-		pm.counterMap[strings.Join(values, "--")] += 1
+		pm.counterMap[strings.Join(values, "\x00")] += 1
 	default:
 		return errors.New("invalid metric type:" + pm.MetricType)
 	}
@@ -402,7 +402,7 @@ func (pm *PrometheusMetric) Observe(requestTime int64, values ...string) error {
 		labelValues := []string{"total"}
 		labelValues = append(labelValues, values...)
 		if pm.aggregatedObservations {
-			key := strings.Join(labelValues, "--")
+			key := strings.Join(labelValues, "\x00")
 
 			if currentValue, ok := pm.histogramMap[key]; ok {
 				currentValue.hits += 1
@@ -433,14 +433,14 @@ func (pm *PrometheusMetric) Expose() error {
 	case counterType:
 		for key, value := range pm.counterMap {
 
-			labelsValue := strings.Split(key, "--")
+			labelsValue := strings.Split(key, "\x00")
 			pm.counterVec.WithLabelValues(labelsValue...).Add(float64(value))
 		}
 		pm.counterMap = make(map[string]uint64)
 	case histogramType:
 		if pm.aggregatedObservations {
 			for key, value := range pm.histogramMap {
-				labelsValue := strings.Split(key, "--")
+				labelsValue := strings.Split(key, "\x00")
 				pm.histogramVec.WithLabelValues(labelsValue...).Observe(value.getAverageRequestTime())
 			}
 			pm.histogramMap = make(map[string]histogramCounter)

@@ -369,9 +369,9 @@ func TestPrometheusCounterMetric(t *testing.T) {
 			},
 			expectedMetricsAmount: 3,
 			expectedMetrics: map[string]uint64{
-				"500--api_1": 2,
-				"200--api_1": 1,
-				"404--api_2": 1,
+				"500\x00api_1": 2,
+				"200\x00api_1": 1,
+				"404\x00api_2": 1,
 			},
 		},
 		{
@@ -392,11 +392,11 @@ func TestPrometheusCounterMetric(t *testing.T) {
 			},
 			expectedMetricsAmount: 5,
 			expectedMetrics: map[string]uint64{
-				"500--api_1--test--GET":  2,
-				"500--api_1--test--POST": 1,
-				"500--api_1--test2--GET": 1,
-				"200--api_1--test2--GET": 1,
-				"200--api_2--test--GET":  1,
+				"500\x00api_1\x00test\x00GET":  2,
+				"500\x00api_1\x00test\x00POST": 1,
+				"500\x00api_1\x00test2\x00GET": 1,
+				"200\x00api_1\x00test2\x00GET": 1,
+				"200\x00api_2\x00test\x00GET":  1,
 			},
 		},
 		{
@@ -416,9 +416,9 @@ func TestPrometheusCounterMetric(t *testing.T) {
 			},
 			expectedMetricsAmount: 3,
 			expectedMetrics: map[string]uint64{
-				"500--key1": 2,
-				"200--key1": 2,
-				"500--key2": 1,
+				"500\x00key1": 2,
+				"200\x00key1": 2,
+				"500\x00key2": 1,
 			},
 		},
 		{
@@ -438,9 +438,9 @@ func TestPrometheusCounterMetric(t *testing.T) {
 			},
 			expectedMetricsAmount: 3,
 			expectedMetrics: map[string]uint64{
-				"500--oauth1": 2,
-				"200--oauth1": 2,
-				"500--oauth2": 1,
+				"500\x00oauth1": 2,
+				"200\x00oauth1": 2,
+				"500\x00oauth2": 1,
 			},
 		},
 		{
@@ -460,10 +460,10 @@ func TestPrometheusCounterMetric(t *testing.T) {
 			},
 			expectedMetricsAmount: 4,
 			expectedMetrics: map[string]uint64{
-				"500--api_1--alias1": 2,
-				"500--api_1--alias2": 1,
-				"200--api_1--alias1": 1,
-				"500--api_2--alias1": 1,
+				"500\x00api_1\x00alias1": 2,
+				"500\x00api_1\x00alias2": 1,
+				"200\x00api_1\x00alias1": 1,
+				"500\x00api_2\x00alias1": 1,
 			},
 		},
 	}
@@ -520,12 +520,12 @@ func TestPrometheusHistogramMetric(t *testing.T) {
 			},
 			expectedMetricsAmount: 2,
 			expectedMetrics: map[string]histogramCounter{
-				"total--api_1": {hits: 3, totalRequestTime: 300},
-				"total--api_2": {hits: 1, totalRequestTime: 323},
+				"total\x00api_1": {hits: 3, totalRequestTime: 300},
+				"total\x00api_2": {hits: 1, totalRequestTime: 323},
 			},
 			expectedAverages: map[string]float64{
-				"total--api_1": 100,
-				"total--api_2": 323,
+				"total\x00api_1": 100,
+				"total\x00api_2": 323,
 			},
 		},
 		{
@@ -564,20 +564,20 @@ func TestPrometheusHistogramMetric(t *testing.T) {
 				{APIID: "api_1", Method: "POST", Path: "test", RequestTime: 200},
 				{APIID: "api_2", Method: "GET", Path: "ping", RequestTime: 10},
 				{APIID: "api_2", Method: "GET", Path: "ping", RequestTime: 20},
-				{APIID: "api_2", Method: "GET", Path: "health", RequestTime: 400},
+				{APIID: "api--2", Method: "GET", Path: "health", RequestTime: 400},
 			},
 			expectedMetricsAmount: 4,
 			expectedMetrics: map[string]histogramCounter{
-				"total--api_1--GET--test":   {hits: 2, totalRequestTime: 200},
-				"total--api_1--POST--test":  {hits: 1, totalRequestTime: 200},
-				"total--api_2--GET--ping":   {hits: 2, totalRequestTime: 30},
-				"total--api_2--GET--health": {hits: 1, totalRequestTime: 400},
+				"total\x00api_1\x00GET\x00test":    {hits: 2, totalRequestTime: 200},
+				"total\x00api_1\x00POST\x00test":   {hits: 1, totalRequestTime: 200},
+				"total\x00api_2\x00GET\x00ping":    {hits: 2, totalRequestTime: 30},
+				"total\x00api--2\x00GET\x00health": {hits: 1, totalRequestTime: 400},
 			},
 			expectedAverages: map[string]float64{
-				"total--api_1--GET--test":   100,
-				"total--api_1--POST--test":  200,
-				"total--api_2--GET--ping":   15,
-				"total--api_2--GET--health": 400,
+				"total\x00api_1\x00GET\x00test":    100,
+				"total\x00api_1\x00POST\x00test":   200,
+				"total\x00api_2\x00GET\x00ping":    15,
+				"total\x00api--2\x00GET\x00health": 400,
 			},
 		},
 	}
