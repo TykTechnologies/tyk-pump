@@ -72,7 +72,7 @@ type PrometheusMetric struct {
 	counterVec   *prometheus.CounterVec
 	histogramVec *prometheus.HistogramVec
 
-	counterMap map[string]uint64
+	counterMap map[string]counterStruct
 
 	histogramMap           map[string]histogramCounter
 	aggregatedObservations bool
@@ -82,6 +82,12 @@ type PrometheusMetric struct {
 type histogramCounter struct {
 	totalRequestTime uint64
 	hits             uint64
+	labelValues      []string
+}
+
+type counterStruct struct {
+	labelValues []string
+	count       uint64
 }
 
 const (
@@ -304,7 +310,7 @@ func (pm *PrometheusMetric) InitVec() error {
 			},
 			pm.Labels,
 		)
-		pm.counterMap = make(map[string]uint64)
+		pm.counterMap = make(map[string]counterStruct)
 		prometheus.MustRegister(pm.counterVec)
 	case histogramType:
 		bkts := pm.Buckets
@@ -387,7 +393,17 @@ func (pm *PrometheusMetric) GetLabelsValues(decoded analytics.AnalyticsRecord) [
 func (pm *PrometheusMetric) Inc(values ...string) error {
 	switch pm.MetricType {
 	case counterType:
-		pm.counterMap[strings.Join(values, "--")] += 1
+		// We use a map to store the counter values, the unique key is the label values joined by "--"
+		key := strings.Join(values, "--")
+		if currentValue, ok := pm.counterMap[key]; ok {
+			currentValue.count += 1
+			pm.counterMap[key] = currentValue
+		} else {
+			pm.counterMap[key] = counterStruct{
+				count:       1,
+				labelValues: values,
+			}
+		}
 	default:
 		return errors.New("invalid metric type:" + pm.MetricType)
 	}
@@ -412,6 +428,7 @@ func (pm *PrometheusMetric) Observe(requestTime int64, values ...string) error {
 				pm.histogramMap[key] = histogramCounter{
 					hits:             1,
 					totalRequestTime: uint64(requestTime),
+					labelValues:      labelValues,
 				}
 			}
 		} else {
@@ -431,17 +448,14 @@ func (pm *PrometheusMetric) Observe(requestTime int64, values ...string) error {
 func (pm *PrometheusMetric) Expose() error {
 	switch pm.MetricType {
 	case counterType:
-		for key, value := range pm.counterMap {
-
-			labelsValue := strings.Split(key, "--")
-			pm.counterVec.WithLabelValues(labelsValue...).Add(float64(value))
+		for _, value := range pm.counterMap {
+			pm.counterVec.WithLabelValues(value.labelValues...).Add(float64(value.count))
 		}
-		pm.counterMap = make(map[string]uint64)
+		pm.counterMap = make(map[string]counterStruct)
 	case histogramType:
 		if pm.aggregatedObservations {
-			for key, value := range pm.histogramMap {
-				labelsValue := strings.Split(key, "--")
-				pm.histogramVec.WithLabelValues(labelsValue...).Observe(value.getAverageRequestTime())
+			for _, value := range pm.histogramMap {
+				pm.histogramVec.WithLabelValues(value.labelValues...).Observe(value.getAverageRequestTime())
 			}
 			pm.histogramMap = make(map[string]histogramCounter)
 		}
