@@ -17,7 +17,7 @@ import (
 	"github.com/TykTechnologies/graphql-go-tools/pkg/astparser"
 	gql "github.com/TykTechnologies/graphql-go-tools/pkg/graphql"
 	"github.com/TykTechnologies/graphql-go-tools/pkg/operationreport"
-	"github.com/TykTechnologies/storage/persistent/id"
+	"github.com/TykTechnologies/storage/persistent/model"
 )
 
 type GraphRecord struct {
@@ -36,13 +36,13 @@ func (g *GraphRecord) TableName() string {
 	return g.AnalyticsRecord.TableName()
 }
 
-// GetObjectID is a dummy function to satisfy the interface
-func (*GraphRecord) GetObjectID() id.ObjectId {
+// GetObjectId is a dummy function to satisfy the interface
+func (*GraphRecord) GetObjectId() model.ObjectId {
 	return ""
 }
 
-// SetObjectID is a dummy function to satisfy the interface
-func (*GraphRecord) SetObjectID(id.ObjectId) {
+// SetObjectId is a dummy function to satisfy the interface
+func (*GraphRecord) SetObjectId(model.ObjectId) {
 	// empty
 }
 

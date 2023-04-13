@@ -11,9 +11,9 @@ import (
 	"gopkg.in/vmihailenco/msgpack.v2"
 
 	"github.com/TykTechnologies/storage/persistent"
-	"github.com/TykTechnologies/storage/persistent/dbm"
-	"github.com/TykTechnologies/storage/persistent/id"
-	"github.com/TykTechnologies/storage/persistent/index"
+
+	"github.com/TykTechnologies/storage/persistent/model"
+
 	"github.com/TykTechnologies/tyk-pump/analytics"
 )
 
@@ -143,8 +143,8 @@ func (m *MongoSelectivePump) ensureIndexes(collectionName string) error {
 		tableName: collectionName,
 	}
 
-	apiIndex := index.Index{
-		Keys:       []dbm.DBM{{"apiid": 1}},
+	apiIndex := model.Index{
+		Keys:       []model.DBM{{"apiid": 1}},
 		Background: m.dbConf.MongoDBType == StandardMongo,
 	}
 
@@ -155,8 +155,8 @@ func (m *MongoSelectivePump) ensureIndexes(collectionName string) error {
 
 	// CosmosDB does not support "expireAt" option
 	if m.dbConf.MongoDBType != CosmosDB {
-		ttlIndex := index.Index{
-			Keys:       []dbm.DBM{{"expireAt": 1}},
+		ttlIndex := model.Index{
+			Keys:       []model.DBM{{"expireAt": 1}},
 			IsTTLIndex: true,
 			TTL:        0,
 			Background: m.dbConf.MongoDBType == StandardMongo,
@@ -168,9 +168,9 @@ func (m *MongoSelectivePump) ensureIndexes(collectionName string) error {
 		}
 	}
 
-	logBrowserIndex := index.Index{
+	logBrowserIndex := model.Index{
 		Name:       "logBrowserIndex",
-		Keys:       []dbm.DBM{{"timestamp": -1}, {"apiid": 1}, {"apikey": 1}, {"responsecode": 1}},
+		Keys:       []model.DBM{{"timestamp": -1}, {"apiid": 1}, {"apikey": 1}, {"responsecode": 1}},
 		Background: m.dbConf.MongoDBType == StandardMongo,
 	}
 
@@ -226,10 +226,10 @@ func (m *MongoSelectivePump) WriteData(ctx context.Context, data []interface{}) 
 }
 
 // AccumulateSet organizes analytics data into a set of chunks based on their size.
-func (m *MongoSelectivePump) AccumulateSet(data []interface{}) [][]id.DBObject {
+func (m *MongoSelectivePump) AccumulateSet(data []interface{}) [][]model.DBObject {
 	accumulatorTotal := 0
-	returnArray := make([][]id.DBObject, 0)
-	thisResultSet := make([]id.DBObject, 0)
+	returnArray := make([][]model.DBObject, 0)
+	thisResultSet := make([]model.DBObject, 0)
 
 	// Process each item in the data array.
 	for i, item := range data {
@@ -278,7 +278,7 @@ func (m *MongoSelectivePump) getItemSizeBytes(thisItem *analytics.AnalyticsRecor
 
 // accumulate processes the given item and updates the accumulator total, result set, and return array.
 // It manages chunking the data into separate sets based on the max batch size limit, and appends the last item when necessary.
-func (m *MongoSelectivePump) accumulate(thisResultSet []id.DBObject, returnArray [][]id.DBObject, thisItem *analytics.AnalyticsRecord, sizeBytes, accumulatorTotal int, isLastItem bool) (int, []id.DBObject, [][]id.DBObject) {
+func (m *MongoSelectivePump) accumulate(thisResultSet []model.DBObject, returnArray [][]model.DBObject, thisItem *analytics.AnalyticsRecord, sizeBytes, accumulatorTotal int, isLastItem bool) (int, []model.DBObject, [][]model.DBObject) {
 	// If the item size is invalid (negative), return the current state
 	if sizeBytes < 0 {
 		return accumulatorTotal, thisResultSet, returnArray
@@ -296,7 +296,7 @@ func (m *MongoSelectivePump) accumulate(thisResultSet []id.DBObject, returnArray
 			returnArray = append(returnArray, thisResultSet)
 		}
 
-		thisResultSet = make([]id.DBObject, 0)
+		thisResultSet = make([]model.DBObject, 0)
 		accumulatorTotal = sizeBytes
 	}
 
@@ -321,7 +321,7 @@ func (m *MongoSelectivePump) WriteUptimeData(data []interface{}) {
 		return
 	}
 
-	keys := make([]id.DBObject, len(data))
+	keys := make([]model.DBObject, len(data))
 
 	for i, v := range data {
 		decoded := analytics.UptimeReportData{}

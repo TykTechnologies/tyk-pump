@@ -6,8 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/TykTechnologies/storage/persistent/dbm"
-	"github.com/TykTechnologies/storage/persistent/id"
+	"github.com/TykTechnologies/storage/persistent/model"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
 
@@ -473,21 +472,21 @@ func TestAggregatedRecord_TableName(t *testing.T) {
 	}
 }
 
-func TestAggregatedRecord_GetObjectID(t *testing.T) {
+func TestAggregatedRecord_GetObjectId(t *testing.T) {
 	t.Run("should return the ID field", func(t *testing.T) {
-		id := id.NewObjectID()
+		id := model.NewObjectId()
 		record := AnalyticsRecordAggregate{
 			id: id,
 		}
-		assert.Equal(t, id, record.GetObjectID())
+		assert.Equal(t, id, record.GetObjectId())
 	})
 }
 
-func TestAggregatedRecord_SetObjectID(t *testing.T) {
+func TestAggregatedRecord_SetObjectId(t *testing.T) {
 	t.Run("should set the ID field", func(t *testing.T) {
-		id := id.NewObjectID()
+		id := model.NewObjectId()
 		record := AnalyticsRecordAggregate{}
-		record.SetObjectID(id)
+		record.SetObjectId(id)
 		assert.Equal(t, id, record.id)
 	})
 }
@@ -504,7 +503,7 @@ func TestAnalyticsRecordAggregate_generateBSONFromProperty(t *testing.T) {
 
 	tcs := []struct {
 		givenCounter *Counter
-		expected     dbm.DBM
+		expected     model.DBM
 
 		testName   string
 		givenName  string
@@ -531,8 +530,8 @@ func TestAnalyticsRecordAggregate_generateBSONFromProperty(t *testing.T) {
 			},
 			givenName:  "test",
 			givenValue: "total",
-			expected: dbm.DBM{
-				"$set": dbm.DBM{
+			expected: model.DBM{
+				"$set": model.DBM{
 					"test.total.bytesin":           int64(0),
 					"test.total.bytesout":          int64(0),
 					"test.total.humanidentifier":   "",
@@ -541,7 +540,7 @@ func TestAnalyticsRecordAggregate_generateBSONFromProperty(t *testing.T) {
 					"test.total.openconnections":   int64(0),
 					"test.total.closedconnections": int64(0),
 				},
-				"$inc": dbm.DBM{
+				"$inc": model.DBM{
 					"test.total.errormap.200":         int(1),
 					"test.total.errortotal":           int(0),
 					"test.total.hits":                 int(2),
@@ -550,11 +549,11 @@ func TestAnalyticsRecordAggregate_generateBSONFromProperty(t *testing.T) {
 					"test.total.totalrequesttime":     float64(100),
 					"test.total.totalupstreamlatency": int64(20),
 				},
-				"$max": dbm.DBM{
+				"$max": model.DBM{
 					"test.total.maxlatency":         int64(100),
 					"test.total.maxupstreamlatency": int64(110),
 				},
-				"$min": dbm.DBM{
+				"$min": model.DBM{
 					"test.total.minlatency":         int64(20),
 					"test.total.minupstreamlatency": int64(10),
 				},
@@ -581,8 +580,8 @@ func TestAnalyticsRecordAggregate_generateBSONFromProperty(t *testing.T) {
 			},
 			givenName:  "test",
 			givenValue: "total",
-			expected: dbm.DBM{
-				"$set": dbm.DBM{
+			expected: model.DBM{
+				"$set": model.DBM{
 					"test.total.bytesin":           int64(0),
 					"test.total.bytesout":          int64(0),
 					"test.total.humanidentifier":   "",
@@ -591,7 +590,7 @@ func TestAnalyticsRecordAggregate_generateBSONFromProperty(t *testing.T) {
 					"test.total.openconnections":   int64(0),
 					"test.total.closedconnections": int64(0),
 				},
-				"$inc": dbm.DBM{
+				"$inc": model.DBM{
 					"test.total.errormap.500":         int(2),
 					"test.total.errortotal":           int(2),
 					"test.total.hits":                 int(2),
@@ -600,11 +599,11 @@ func TestAnalyticsRecordAggregate_generateBSONFromProperty(t *testing.T) {
 					"test.total.totalrequesttime":     float64(100),
 					"test.total.totalupstreamlatency": int64(20),
 				},
-				"$max": dbm.DBM{
+				"$max": model.DBM{
 					"test.total.maxlatency":         int64(100),
 					"test.total.maxupstreamlatency": int64(110),
 				},
-				"$min": dbm.DBM{}, // we don't update mins on case of full error counter
+				"$min": model.DBM{}, // we don't update mins on case of full error counter
 			},
 		},
 
@@ -629,8 +628,8 @@ func TestAnalyticsRecordAggregate_generateBSONFromProperty(t *testing.T) {
 			},
 			givenName:  "",
 			givenValue: "noname",
-			expected: dbm.DBM{
-				"$set": dbm.DBM{
+			expected: model.DBM{
+				"$set": model.DBM{
 					"noname.bytesin":           int64(0),
 					"noname.bytesout":          int64(0),
 					"noname.humanidentifier":   "",
@@ -639,7 +638,7 @@ func TestAnalyticsRecordAggregate_generateBSONFromProperty(t *testing.T) {
 					"noname.openconnections":   int64(0),
 					"noname.closedconnections": int64(0),
 				},
-				"$inc": dbm.DBM{
+				"$inc": model.DBM{
 					"noname.errormap.500":         int(2),
 					"noname.errortotal":           int(2),
 					"noname.hits":                 int(2),
@@ -648,11 +647,11 @@ func TestAnalyticsRecordAggregate_generateBSONFromProperty(t *testing.T) {
 					"noname.totalrequesttime":     float64(100),
 					"noname.totalupstreamlatency": int64(20),
 				},
-				"$max": dbm.DBM{
+				"$max": model.DBM{
 					"noname.maxlatency":         int64(100),
 					"noname.maxupstreamlatency": int64(110),
 				},
-				"$min": dbm.DBM{}, // we don't update mins on case of full error counter
+				"$min": model.DBM{}, // we don't update mins on case of full error counter
 			},
 		},
 	}
@@ -661,11 +660,11 @@ func TestAnalyticsRecordAggregate_generateBSONFromProperty(t *testing.T) {
 		t.Run(tc.testName, func(t *testing.T) {
 			aggregate := &AnalyticsRecordAggregate{}
 
-			baseDBM := dbm.DBM{
-				"$set": dbm.DBM{},
-				"$inc": dbm.DBM{},
-				"$max": dbm.DBM{},
-				"$min": dbm.DBM{},
+			baseDBM := model.DBM{
+				"$set": model.DBM{},
+				"$inc": model.DBM{},
+				"$max": model.DBM{},
+				"$min": model.DBM{},
 			}
 
 			actual := aggregate.generateBSONFromProperty(tc.givenName, tc.givenValue, tc.givenCounter, baseDBM)
@@ -678,7 +677,7 @@ func TestAnalyticsRecordAggregate_generateBSONFromProperty(t *testing.T) {
 
 func TestAnalyticsRecordAggregate_generateSetterForTime(t *testing.T) {
 	tcs := []struct {
-		expected dbm.DBM
+		expected model.DBM
 
 		testName         string
 		givenName        string
@@ -690,8 +689,8 @@ func TestAnalyticsRecordAggregate_generateSetterForTime(t *testing.T) {
 			givenName:        "test",
 			givenValue:       "total",
 			givenRequestTime: 100,
-			expected: dbm.DBM{
-				"$set": dbm.DBM{
+			expected: model.DBM{
+				"$set": model.DBM{
 					"test.total.requesttime": float64(100),
 				},
 			},
@@ -701,8 +700,8 @@ func TestAnalyticsRecordAggregate_generateSetterForTime(t *testing.T) {
 			givenName:        "",
 			givenValue:       "noname",
 			givenRequestTime: 130,
-			expected: dbm.DBM{
-				"$set": dbm.DBM{
+			expected: model.DBM{
+				"$set": model.DBM{
 					"noname.requesttime": float64(130),
 				},
 			},
@@ -713,8 +712,8 @@ func TestAnalyticsRecordAggregate_generateSetterForTime(t *testing.T) {
 		t.Run(tc.testName, func(t *testing.T) {
 			aggregate := &AnalyticsRecordAggregate{}
 
-			baseDBM := dbm.DBM{
-				"$set": dbm.DBM{},
+			baseDBM := model.DBM{
+				"$set": model.DBM{},
 			}
 
 			actual := aggregate.generateSetterForTime(tc.givenName, tc.givenValue, tc.givenRequestTime, baseDBM)
@@ -728,7 +727,7 @@ func TestAnalyticsRecordAggregate_generateSetterForTime(t *testing.T) {
 func TestAnalyticsRecordAggregate_latencySetter(t *testing.T) {
 	tcs := []struct {
 		givenCounter *Counter
-		expected     dbm.DBM
+		expected     model.DBM
 
 		testName   string
 		givenName  string
@@ -743,8 +742,8 @@ func TestAnalyticsRecordAggregate_latencySetter(t *testing.T) {
 			},
 			givenName:  "test",
 			givenValue: "total",
-			expected: dbm.DBM{
-				"$set": dbm.DBM{
+			expected: model.DBM{
+				"$set": model.DBM{
 					"test.total.latency":         float64(50),
 					"test.total.upstreamlatency": float64(100),
 				},
@@ -759,8 +758,8 @@ func TestAnalyticsRecordAggregate_latencySetter(t *testing.T) {
 			},
 			givenName:  "",
 			givenValue: "noname",
-			expected: dbm.DBM{
-				"$set": dbm.DBM{
+			expected: model.DBM{
+				"$set": model.DBM{
 					"noname.latency":         float64(100),
 					"noname.upstreamlatency": float64(200),
 				},
@@ -776,8 +775,8 @@ func TestAnalyticsRecordAggregate_latencySetter(t *testing.T) {
 			},
 			givenName:  "",
 			givenValue: "noname",
-			expected: dbm.DBM{
-				"$set": dbm.DBM{
+			expected: model.DBM{
+				"$set": model.DBM{
 					"noname.latency":         float64(0),
 					"noname.upstreamlatency": float64(0),
 				},
@@ -789,8 +788,8 @@ func TestAnalyticsRecordAggregate_latencySetter(t *testing.T) {
 		t.Run(tc.testName, func(t *testing.T) {
 			aggregate := &AnalyticsRecordAggregate{}
 
-			baseDBM := dbm.DBM{
-				"$set": dbm.DBM{},
+			baseDBM := model.DBM{
+				"$set": model.DBM{},
 			}
 
 			actual := aggregate.latencySetter(tc.givenName, tc.givenValue, baseDBM, tc.givenCounter)
@@ -806,7 +805,7 @@ func TestAnalyticsRecordAggregate_AsChange(t *testing.T) {
 
 	tcs := []struct {
 		given    *AnalyticsRecordAggregate
-		expected dbm.DBM
+		expected model.DBM
 		testName string
 	}{
 		{
@@ -867,8 +866,8 @@ func TestAnalyticsRecordAggregate_AsChange(t *testing.T) {
 				TimeStamp: currentTime,
 				ExpireAt:  currentTime,
 			},
-			expected: dbm.DBM{
-				"$inc": dbm.DBM{
+			expected: model.DBM{
+				"$inc": model.DBM{
 					"total.hits":                       int(2),
 					"total.success":                    int(2),
 					"total.errortotal":                 int(0),
@@ -888,7 +887,7 @@ func TestAnalyticsRecordAggregate_AsChange(t *testing.T) {
 					"versions.v2.totalrequesttime":     float64(200),
 					"versions.v2.totalupstreamlatency": int64(200),
 				},
-				"$min": dbm.DBM{
+				"$min": model.DBM{
 					"total.minlatency":               int64(10),
 					"total.minupstreamlatency":       int64(20),
 					"versions.v1.minlatency":         int64(10),
@@ -896,7 +895,7 @@ func TestAnalyticsRecordAggregate_AsChange(t *testing.T) {
 					"versions.v2.minlatency":         int64(10),
 					"versions.v2.minupstreamlatency": int64(20),
 				},
-				"$max": dbm.DBM{
+				"$max": model.DBM{
 					"total.maxlatency":               int64(100),
 					"total.maxupstreamlatency":       int64(100),
 					"versions.v1.maxlatency":         int64(100),
@@ -904,7 +903,7 @@ func TestAnalyticsRecordAggregate_AsChange(t *testing.T) {
 					"versions.v2.maxlatency":         int64(100),
 					"versions.v2.maxupstreamlatency": int64(100),
 				},
-				"$set": dbm.DBM{
+				"$set": model.DBM{
 					"expireAt":                      currentTime,
 					"lasttime":                      currentTime,
 					"timestamp":                     currentTime,
@@ -1000,8 +999,8 @@ func TestAnalyticsRecordAggregate_AsChange(t *testing.T) {
 				TimeStamp: currentTime,
 				ExpireAt:  currentTime,
 			},
-			expected: dbm.DBM{
-				"$inc": dbm.DBM{
+			expected: model.DBM{
+				"$inc": model.DBM{
 					"total.hits":                      int(4),
 					"total.success":                   int(1),
 					"total.errortotal":                int(3),
@@ -1025,13 +1024,13 @@ func TestAnalyticsRecordAggregate_AsChange(t *testing.T) {
 					"apiid.api2.totalrequesttime":     float64(200),
 					"apiid.api2.errortotal":           int(0),
 				},
-				"$min": dbm.DBM{
+				"$min": model.DBM{
 					"total.minlatency":              int64(10),
 					"total.minupstreamlatency":      int64(20),
 					"apiid.api2.minlatency":         int64(10),
 					"apiid.api2.minupstreamlatency": int64(20),
 				},
-				"$max": dbm.DBM{
+				"$max": model.DBM{
 					"total.maxlatency":              int64(100),
 					"total.maxupstreamlatency":      int64(100),
 					"apiid.api1.maxlatency":         int64(100),
@@ -1039,7 +1038,7 @@ func TestAnalyticsRecordAggregate_AsChange(t *testing.T) {
 					"apiid.api2.maxlatency":         int64(100),
 					"apiid.api2.maxupstreamlatency": int64(100),
 				},
-				"$set": dbm.DBM{
+				"$set": model.DBM{
 					"expireAt":                     currentTime,
 					"lasttime":                     currentTime,
 					"timestamp":                    currentTime,
@@ -1088,7 +1087,7 @@ func TestAnalyticsRecordAggregate_AsTimeUpdate(t *testing.T) {
 
 	tcs := []struct {
 		given    *AnalyticsRecordAggregate
-		expected dbm.DBM
+		expected model.DBM
 		testName string
 	}{
 		{
@@ -1154,8 +1153,8 @@ func TestAnalyticsRecordAggregate_AsTimeUpdate(t *testing.T) {
 					MaxUpstreamLatency:   100,
 				},
 			},
-			expected: dbm.DBM{
-				"$set": dbm.DBM{
+			expected: model.DBM{
+				"$set": model.DBM{
 					"apiendpoints./get.errorlist":               []ErrorData{{Code: "404", Count: 1}, {Code: "500", Count: 2}},
 					"apiendpoints./get.latency":                 float64(100),
 					"apiendpoints./get.requesttime":             float64(0),

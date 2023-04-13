@@ -7,9 +7,8 @@ import (
 	"os"
 
 	"github.com/TykTechnologies/storage/persistent"
-	"github.com/TykTechnologies/storage/persistent/dbm"
-	"github.com/TykTechnologies/storage/persistent/id"
-	"github.com/TykTechnologies/storage/persistent/index"
+
+	"github.com/TykTechnologies/storage/persistent/model"
 )
 
 const (
@@ -25,13 +24,13 @@ func (c *Conn) TableName() string {
 	return colName
 }
 
-// SetObjectID is a dummy function to satisfy the interface
-func (*Conn) GetObjectID() id.ObjectId {
+// SetObjectId is a dummy function to satisfy the interface
+func (*Conn) GetObjectId() model.ObjectId {
 	return ""
 }
 
-// SetObjectID is a dummy function to satisfy the interface
-func (*Conn) SetObjectID(id.ObjectId) {
+// SetObjectId is a dummy function to satisfy the interface
+func (*Conn) SetObjectId(model.ObjectId) {
 	// empty
 }
 
@@ -70,15 +69,15 @@ func (c *Conn) CleanIndexes() {
 }
 
 type Doc struct {
-	ID  id.ObjectId `bson:"_id"`
-	Foo string      `bson:"foo"`
+	ID  model.ObjectId `bson:"_id"`
+	Foo string         `bson:"foo"`
 }
 
-func (d Doc) GetObjectID() id.ObjectId {
+func (d Doc) GetObjectId() model.ObjectId {
 	return d.ID
 }
 
-func (d *Doc) SetObjectID(id id.ObjectId) {
+func (d *Doc) SetObjectId(id model.ObjectId) {
 	d.ID = id
 }
 
@@ -90,14 +89,14 @@ func (c *Conn) InsertDoc() {
 	doc := Doc{
 		Foo: "bar",
 	}
-	doc.SetObjectID(id.NewObjectID())
+	doc.SetObjectId(model.NewObjectId())
 	err := c.Store.Insert(context.Background(), &doc)
 	if err != nil {
 		panic(err)
 	}
 }
 
-func (c *Conn) GetCollectionStats() (colStats dbm.DBM) {
+func (c *Conn) GetCollectionStats() (colStats model.DBM) {
 	var err error
 	colStats, err = c.Store.DBTableStats(context.Background(), c)
 	if err != nil {
@@ -106,7 +105,7 @@ func (c *Conn) GetCollectionStats() (colStats dbm.DBM) {
 	return colStats
 }
 
-func (c *Conn) GetIndexes() ([]index.Index, error) {
+func (c *Conn) GetIndexes() ([]model.Index, error) {
 	return c.Store.GetIndexes(context.Background(), c)
 }
 

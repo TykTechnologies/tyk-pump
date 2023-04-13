@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/TykTechnologies/storage/persistent/id"
+	"github.com/TykTechnologies/storage/persistent/model"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/mitchellh/mapstructure"
 	"github.com/sirupsen/logrus"
@@ -89,16 +89,16 @@ func (g *GraphMongoPump) WriteData(ctx context.Context, data []interface{}) erro
 
 	errCh := make(chan error, len(accumulateSet))
 	for _, dataSet := range accumulateSet {
-		go func(dataSet []id.DBObject, errCh chan error) {
+		go func(dataSet []model.DBObject, errCh chan error) {
 			// make a graph record array with variable length in case there are errors with some conversion
-			finalSet := make([]id.DBObject, 0)
+			finalSet := make([]model.DBObject, 0)
 			for _, d := range dataSet {
 				r, ok := d.(*analytics.AnalyticsRecord)
 				if !ok {
 					continue
 				}
 
-				r.SetObjectID(id.NewObjectID())
+				r.SetObjectId(model.NewObjectId())
 
 				var (
 					gr  analytics.GraphRecord

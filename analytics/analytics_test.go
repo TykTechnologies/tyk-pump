@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/TykTechnologies/storage/persistent/id"
+	"github.com/TykTechnologies/storage/persistent/model"
 	"github.com/fatih/structs"
 	"github.com/stretchr/testify/assert"
 )
@@ -96,9 +96,9 @@ func TestAnalyticsRecord_Base(t *testing.T) {
 
 	assert.Equal(t, SQLTable, rec.TableName())
 
-	newID := id.NewObjectID()
-	rec.SetObjectID(newID)
-	assert.Equal(t, newID, rec.GetObjectID())
+	newID := model.NewObjectId()
+	rec.SetObjectId(newID)
+	assert.Equal(t, newID, rec.GetObjectId())
 }
 
 func TestAnalyticsRecord_GetFieldNames(t *testing.T) {

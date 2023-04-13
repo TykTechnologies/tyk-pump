@@ -7,8 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/TykTechnologies/storage/persistent/dbm"
-	"github.com/TykTechnologies/storage/persistent/id"
+	"github.com/TykTechnologies/storage/persistent/model"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/TykTechnologies/tyk-pump/analytics/demo"
 	"github.com/sirupsen/logrus"
@@ -19,13 +18,13 @@ type dummyObject struct {
 	tableName string
 }
 
-func (dummyObject) GetObjectID() id.ObjectId {
+func (*dummyObject) GetObjectId() model.ObjectId {
 	return ""
 }
 
-func (dummyObject) SetObjectID(id.ObjectId) {}
+func (*dummyObject) SetObjectId(model.ObjectId) {}
 
-func (d dummyObject) TableName() string {
+func (d *dummyObject) TableName() string {
 	return d.tableName
 }
 
@@ -111,14 +110,14 @@ func TestDoAggregatedWritingWithIgnoredAggregations(t *testing.T) {
 			}
 
 			// we build the query using the timestamp as we do in aggregated analytics
-			query := dbm.DBM{
+			query := model.DBM{
 				"orgid":     "123",
 				"timestamp": time.Date(timeNow.Year(), timeNow.Month(), timeNow.Day(), timeNow.Hour(), 0, 0, 0, timeNow.Location()),
 			}
 
 			res := analytics.AnalyticsRecordAggregate{}
 			// fetch the results
-			errFind := pmp1.store.Query(context.Background(), newDummyObject, &res, query)
+			errFind := pmp1.store.Query(context.Background(), &newDummyObject, &res, query)
 			assert.Nil(t, errFind)
 
 			// double check that the res is not nil
@@ -217,7 +216,7 @@ func TestAggregationTime(t *testing.T) {
 				keys[0] = analytics.AnalyticsRecord{APIID: "api1", OrgID: "123", TimeStamp: timeNow, APIKey: "apikey1"}
 			}
 
-			query := dbm.DBM{
+			query := model.DBM{
 				"orgid": "123",
 			}
 

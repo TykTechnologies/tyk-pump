@@ -13,8 +13,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/TykTechnologies/storage/persistent"
-	"github.com/TykTechnologies/storage/persistent/dbm"
-	"github.com/TykTechnologies/storage/persistent/index"
+	"github.com/TykTechnologies/storage/persistent/model"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 )
 
@@ -244,8 +243,8 @@ func (m *MongoAggregatePump) ensureIndexes(collectionName string) error {
 	var err error
 	// CosmosDB does not support "expireAt" option
 	if m.dbConf.MongoDBType != CosmosDB {
-		ttlIndex := index.Index{
-			Keys:       []dbm.DBM{{"expireAt": 1}},
+		ttlIndex := model.Index{
+			Keys:       []model.DBM{{"expireAt": 1}},
 			TTL:        0,
 			IsTTLIndex: true,
 			Background: m.dbConf.MongoDBType == StandardMongo,
@@ -256,8 +255,8 @@ func (m *MongoAggregatePump) ensureIndexes(collectionName string) error {
 		}
 	}
 
-	apiIndex := index.Index{
-		Keys:       []dbm.DBM{{"timestamp": 1}},
+	apiIndex := model.Index{
+		Keys:       []model.DBM{{"timestamp": 1}},
 		Background: m.dbConf.MongoDBType == StandardMongo,
 	}
 
@@ -266,8 +265,8 @@ func (m *MongoAggregatePump) ensureIndexes(collectionName string) error {
 		return err
 	}
 
-	orgIndex := index.Index{
-		Keys:       []dbm.DBM{{"orgid": 1}},
+	orgIndex := model.Index{
+		Keys:       []model.DBM{{"orgid": 1}},
 		Background: m.dbConf.MongoDBType == StandardMongo,
 	}
 	return m.store.CreateIndex(context.Background(), d, orgIndex)
@@ -315,7 +314,7 @@ func (m *MongoAggregatePump) DoAggregatedWriting(ctx context.Context, filteredDa
 		m.log.Error(indexCreateErr)
 	}
 
-	query := dbm.DBM{
+	query := model.DBM{
 		"orgid":     filteredData.OrgID,
 		"timestamp": filteredData.TimeStamp,
 	}
@@ -375,8 +374,8 @@ func (m *MongoAggregatePump) getLastDocumentTimestamp() (time.Time, error) {
 		tableName: analytics.AgggregateMixedCollectionName,
 	}
 
-	var result dbm.DBM
-	err := m.store.Query(context.Background(), d, &result, dbm.DBM{"_sort": "-$natural", "_limit": 1})
+	var result model.DBM
+	err := m.store.Query(context.Background(), d, &result, model.DBM{"_sort": "-$natural", "_limit": 1})
 	if err != nil {
 		return time.Time{}, err
 	}
