@@ -92,13 +92,13 @@ func (d dbObject) TableName() string {
 	return d.tableName
 }
 
-// GetObjectId is a dummy function to satisfy the interface
-func (dbObject) GetObjectId() model.ObjectId {
+// GetObjectID is a dummy function to satisfy the interface
+func (dbObject) GetObjectID() model.ObjectID {
 	return ""
 }
 
-// SetObjectId is a dummy function to satisfy the interface
-func (dbObject) SetObjectId(model.ObjectId) {
+// SetObjectID is a dummy function to satisfy the interface
+func (dbObject) SetObjectID(model.ObjectID) {
 	// empty
 }
 

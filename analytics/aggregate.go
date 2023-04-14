@@ -85,7 +85,7 @@ type AggregateFieldList struct {
 }
 
 type AnalyticsRecordAggregate struct {
-	id        model.ObjectId `bson:"_id" gorm:"-:all"`
+	id        model.ObjectID `bson:"_id" gorm:"-:all"`
 	TimeStamp time.Time
 	OrgID     string
 	TimeID    struct {
@@ -126,11 +126,11 @@ func (f *AnalyticsRecordAggregate) TableName() string {
 	return "z_tyk_analyticz_aggregate_" + f.OrgID
 }
 
-func (f *AnalyticsRecordAggregate) GetObjectId() model.ObjectId {
+func (f *AnalyticsRecordAggregate) GetObjectID() model.ObjectID {
 	return f.id
 }
 
-func (f *AnalyticsRecordAggregate) SetObjectId(id model.ObjectId) {
+func (f *AnalyticsRecordAggregate) SetObjectID(id model.ObjectID) {
 	f.id = id
 }
 

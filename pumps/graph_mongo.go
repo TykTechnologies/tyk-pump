@@ -98,7 +98,7 @@ func (g *GraphMongoPump) WriteData(ctx context.Context, data []interface{}) erro
 					continue
 				}
 
-				r.SetObjectId(model.NewObjectId())
+				r.SetObjectID(model.NewObjectID())
 
 				var (
 					gr  analytics.GraphRecord

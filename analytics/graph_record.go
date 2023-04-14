@@ -36,13 +36,13 @@ func (g *GraphRecord) TableName() string {
 	return g.AnalyticsRecord.TableName()
 }
 
-// GetObjectId is a dummy function to satisfy the interface
-func (*GraphRecord) GetObjectId() model.ObjectId {
+// GetObjectID is a dummy function to satisfy the interface
+func (*GraphRecord) GetObjectID() model.ObjectID {
 	return ""
 }
 
-// SetObjectId is a dummy function to satisfy the interface
-func (*GraphRecord) SetObjectId(model.ObjectId) {
+// SetObjectID is a dummy function to satisfy the interface
+func (*GraphRecord) SetObjectID(model.ObjectID) {
 	// empty
 }
 

@@ -24,13 +24,13 @@ func (c *Conn) TableName() string {
 	return colName
 }
 
-// SetObjectId is a dummy function to satisfy the interface
-func (*Conn) GetObjectId() model.ObjectId {
+// SetObjectID is a dummy function to satisfy the interface
+func (*Conn) GetObjectID() model.ObjectID {
 	return ""
 }
 
-// SetObjectId is a dummy function to satisfy the interface
-func (*Conn) SetObjectId(model.ObjectId) {
+// SetObjectID is a dummy function to satisfy the interface
+func (*Conn) SetObjectID(model.ObjectID) {
 	// empty
 }
 
@@ -69,15 +69,15 @@ func (c *Conn) CleanIndexes() {
 }
 
 type Doc struct {
-	ID  model.ObjectId `bson:"_id"`
+	ID  model.ObjectID `bson:"_id"`
 	Foo string         `bson:"foo"`
 }
 
-func (d Doc) GetObjectId() model.ObjectId {
+func (d Doc) GetObjectID() model.ObjectID {
 	return d.ID
 }
 
-func (d *Doc) SetObjectId(id model.ObjectId) {
+func (d *Doc) SetObjectID(id model.ObjectID) {
 	d.ID = id
 }
 
@@ -89,7 +89,7 @@ func (c *Conn) InsertDoc() {
 	doc := Doc{
 		Foo: "bar",
 	}
-	doc.SetObjectId(model.NewObjectId())
+	doc.SetObjectID(model.NewObjectID())
 	err := c.Store.Insert(context.Background(), &doc)
 	if err != nil {
 		panic(err)

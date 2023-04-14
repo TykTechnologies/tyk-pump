@@ -96,9 +96,9 @@ func TestAnalyticsRecord_Base(t *testing.T) {
 
 	assert.Equal(t, SQLTable, rec.TableName())
 
-	newID := model.NewObjectId()
-	rec.SetObjectId(newID)
-	assert.Equal(t, newID, rec.GetObjectId())
+	newID := model.NewObjectID()
+	rec.SetObjectID(newID)
+	assert.Equal(t, newID, rec.GetObjectID())
 }
 
 func TestAnalyticsRecord_GetFieldNames(t *testing.T) {

@@ -13,7 +13,7 @@ import (
 const UptimeSQLTable = "tyk_uptime_analytics"
 
 type UptimeReportData struct {
-	ID           model.ObjectId `json:"_id" bson:"_id" gorm:"-:all"`
+	ID           model.ObjectID `json:"_id" bson:"_id" gorm:"-:all"`
 	URL          string         `json:"url"`
 	RequestTime  int64          `json:"request_time"`
 	ResponseCode int            `json:"response_code"`
@@ -47,11 +47,11 @@ func (a *UptimeReportAggregateSQL) TableName() string {
 	return UptimeSQLTable
 }
 
-func (a *UptimeReportData) GetObjectId() model.ObjectId {
+func (a *UptimeReportData) GetObjectID() model.ObjectID {
 	return a.ID
 }
 
-func (a *UptimeReportData) SetObjectId(id model.ObjectId) {
+func (a *UptimeReportData) SetObjectID(id model.ObjectID) {
 	a.ID = id
 }
 

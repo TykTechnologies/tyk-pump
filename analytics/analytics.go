@@ -42,7 +42,7 @@ const SQLTable = "tyk_analytics"
 
 // AnalyticsRecord encodes the details of a request
 type AnalyticsRecord struct {
-	id            model.ObjectId `bson:"_id" gorm:"-:all"`
+	id            model.ObjectID `bson:"_id" gorm:"-:all"`
 	Method        string         `json:"method" gorm:"column:method"`
 	Host          string         `json:"host" gorm:"column:host"`
 	Path          string         `json:"path" gorm:"column:path"`
@@ -84,11 +84,11 @@ func (a *AnalyticsRecord) TableName() string {
 	return SQLTable
 }
 
-func (a *AnalyticsRecord) GetObjectId() model.ObjectId {
+func (a *AnalyticsRecord) GetObjectID() model.ObjectID {
 	return a.id
 }
 
-func (a *AnalyticsRecord) SetObjectId(id model.ObjectId) {
+func (a *AnalyticsRecord) SetObjectID(id model.ObjectID) {
 	a.id = id
 }
 

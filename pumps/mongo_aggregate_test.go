@@ -18,11 +18,11 @@ type dummyObject struct {
 	tableName string
 }
 
-func (*dummyObject) GetObjectId() model.ObjectId {
+func (*dummyObject) GetObjectID() model.ObjectID {
 	return ""
 }
 
-func (*dummyObject) SetObjectId(model.ObjectId) {}
+func (*dummyObject) SetObjectID(model.ObjectID) {}
 
 func (d *dummyObject) TableName() string {
 	return d.tableName

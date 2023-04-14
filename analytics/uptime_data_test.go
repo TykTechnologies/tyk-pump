@@ -11,21 +11,21 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestUptimeReportData_GetObjectId(t *testing.T) {
+func TestUptimeReportData_GetObjectID(t *testing.T) {
 	t.Run("should return the ID field", func(t *testing.T) {
-		id := model.NewObjectId()
+		id := model.NewObjectID()
 		record := UptimeReportData{
 			ID: id,
 		}
-		assert.Equal(t, id, record.GetObjectId())
+		assert.Equal(t, id, record.GetObjectID())
 	})
 }
 
-func TestUptimeReportData_SetObjectId(t *testing.T) {
+func TestUptimeReportData_SetObjectID(t *testing.T) {
 	t.Run("should set the ID field", func(t *testing.T) {
-		id := model.NewObjectId()
+		id := model.NewObjectID()
 		record := UptimeReportData{}
-		record.SetObjectId(id)
+		record.SetObjectID(id)
 		assert.Equal(t, id, record.ID)
 	})
 }

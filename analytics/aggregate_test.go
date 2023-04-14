@@ -472,21 +472,21 @@ func TestAggregatedRecord_TableName(t *testing.T) {
 	}
 }
 
-func TestAggregatedRecord_GetObjectId(t *testing.T) {
+func TestAggregatedRecord_GetObjectID(t *testing.T) {
 	t.Run("should return the ID field", func(t *testing.T) {
-		id := model.NewObjectId()
+		id := model.NewObjectID()
 		record := AnalyticsRecordAggregate{
 			id: id,
 		}
-		assert.Equal(t, id, record.GetObjectId())
+		assert.Equal(t, id, record.GetObjectID())
 	})
 }
 
-func TestAggregatedRecord_SetObjectId(t *testing.T) {
+func TestAggregatedRecord_SetObjectID(t *testing.T) {
 	t.Run("should set the ID field", func(t *testing.T) {
-		id := model.NewObjectId()
+		id := model.NewObjectID()
 		record := AnalyticsRecordAggregate{}
-		record.SetObjectId(id)
+		record.SetObjectID(id)
 		assert.Equal(t, id, record.id)
 	})
 }
