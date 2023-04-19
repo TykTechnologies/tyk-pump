@@ -69,7 +69,7 @@ func Init() {
 
 	log.WithFields(logrus.Fields{
 		"prefix": mainPrefix,
-	}).Info("## Tyk Analytics Pump, ", pumps.VERSION, " ##")
+	}).Info("## Tyk Pump, ", pumps.VERSION, " ##")
 
 	// If no environment variable is set, check the configuration file:
 	if os.Getenv("TYK_LOGLEVEL") == "" {
