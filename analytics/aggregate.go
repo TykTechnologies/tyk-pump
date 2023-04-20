@@ -10,8 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/TykTechnologies/storage/persistent/dbm"
-	"github.com/TykTechnologies/storage/persistent/id"
+	"github.com/TykTechnologies/storage/persistent/model"
 	"github.com/fatih/structs"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
@@ -86,7 +85,7 @@ type AggregateFieldList struct {
 }
 
 type AnalyticsRecordAggregate struct {
-	id        id.ObjectId `bson:"_id" gorm:"-:all"`
+	id        model.ObjectID `bson:"_id" gorm:"-:all"`
 	TimeStamp time.Time
 	OrgID     string
 	TimeID    struct {
@@ -127,11 +126,11 @@ func (f *AnalyticsRecordAggregate) TableName() string {
 	return "z_tyk_analyticz_aggregate_" + f.OrgID
 }
 
-func (f *AnalyticsRecordAggregate) GetObjectID() id.ObjectId {
+func (f *AnalyticsRecordAggregate) GetObjectID() model.ObjectID {
 	return f.id
 }
 
-func (f *AnalyticsRecordAggregate) SetObjectID(id id.ObjectId) {
+func (f *AnalyticsRecordAggregate) SetObjectID(id model.ObjectID) {
 	f.id = id
 }
 
@@ -275,53 +274,53 @@ func (f AnalyticsRecordAggregate) New() AnalyticsRecordAggregate {
 	return thisF
 }
 
-func (f *AnalyticsRecordAggregate) generateBSONFromProperty(parent, thisUnit string, incVal *Counter, newUpdate dbm.DBM) dbm.DBM {
+func (f *AnalyticsRecordAggregate) generateBSONFromProperty(parent, thisUnit string, incVal *Counter, newUpdate model.DBM) model.DBM {
 	constructor := parent + "." + thisUnit + "."
 	if parent == "" {
 		constructor = thisUnit + "."
 	}
 
-	newUpdate["$inc"].(dbm.DBM)[constructor+"hits"] = incVal.Hits
-	newUpdate["$inc"].(dbm.DBM)[constructor+"success"] = incVal.Success
-	newUpdate["$inc"].(dbm.DBM)[constructor+"errortotal"] = incVal.ErrorTotal
+	newUpdate["$inc"].(model.DBM)[constructor+"hits"] = incVal.Hits
+	newUpdate["$inc"].(model.DBM)[constructor+"success"] = incVal.Success
+	newUpdate["$inc"].(model.DBM)[constructor+"errortotal"] = incVal.ErrorTotal
 	for k, v := range incVal.ErrorMap {
-		newUpdate["$inc"].(dbm.DBM)[constructor+"errormap."+k] = v
+		newUpdate["$inc"].(model.DBM)[constructor+"errormap."+k] = v
 	}
-	newUpdate["$inc"].(dbm.DBM)[constructor+"totalrequesttime"] = incVal.TotalRequestTime
-	newUpdate["$set"].(dbm.DBM)[constructor+"identifier"] = incVal.Identifier
-	newUpdate["$set"].(dbm.DBM)[constructor+"humanidentifier"] = incVal.HumanIdentifier
-	newUpdate["$set"].(dbm.DBM)[constructor+"lasttime"] = incVal.LastTime
-	newUpdate["$set"].(dbm.DBM)[constructor+"openconnections"] = incVal.OpenConnections
-	newUpdate["$set"].(dbm.DBM)[constructor+"closedconnections"] = incVal.ClosedConnections
-	newUpdate["$set"].(dbm.DBM)[constructor+"bytesin"] = incVal.BytesIn
-	newUpdate["$set"].(dbm.DBM)[constructor+"bytesout"] = incVal.BytesOut
-	newUpdate["$max"].(dbm.DBM)[constructor+"maxlatency"] = incVal.MaxLatency
+	newUpdate["$inc"].(model.DBM)[constructor+"totalrequesttime"] = incVal.TotalRequestTime
+	newUpdate["$set"].(model.DBM)[constructor+"identifier"] = incVal.Identifier
+	newUpdate["$set"].(model.DBM)[constructor+"humanidentifier"] = incVal.HumanIdentifier
+	newUpdate["$set"].(model.DBM)[constructor+"lasttime"] = incVal.LastTime
+	newUpdate["$set"].(model.DBM)[constructor+"openconnections"] = incVal.OpenConnections
+	newUpdate["$set"].(model.DBM)[constructor+"closedconnections"] = incVal.ClosedConnections
+	newUpdate["$set"].(model.DBM)[constructor+"bytesin"] = incVal.BytesIn
+	newUpdate["$set"].(model.DBM)[constructor+"bytesout"] = incVal.BytesOut
+	newUpdate["$max"].(model.DBM)[constructor+"maxlatency"] = incVal.MaxLatency
 	// Don't update min latency in case of errors
 	if incVal.Hits != incVal.ErrorTotal {
 		if newUpdate["$min"] == nil {
-			newUpdate["$min"] = dbm.DBM{}
+			newUpdate["$min"] = model.DBM{}
 		}
-		newUpdate["$min"].(dbm.DBM)[constructor+"minlatency"] = incVal.MinLatency
-		newUpdate["$min"].(dbm.DBM)[constructor+"minupstreamlatency"] = incVal.MinUpstreamLatency
+		newUpdate["$min"].(model.DBM)[constructor+"minlatency"] = incVal.MinLatency
+		newUpdate["$min"].(model.DBM)[constructor+"minupstreamlatency"] = incVal.MinUpstreamLatency
 	}
-	newUpdate["$max"].(dbm.DBM)[constructor+"maxupstreamlatency"] = incVal.MaxUpstreamLatency
-	newUpdate["$inc"].(dbm.DBM)[constructor+"totalupstreamlatency"] = incVal.TotalUpstreamLatency
-	newUpdate["$inc"].(dbm.DBM)[constructor+"totallatency"] = incVal.TotalLatency
+	newUpdate["$max"].(model.DBM)[constructor+"maxupstreamlatency"] = incVal.MaxUpstreamLatency
+	newUpdate["$inc"].(model.DBM)[constructor+"totalupstreamlatency"] = incVal.TotalUpstreamLatency
+	newUpdate["$inc"].(model.DBM)[constructor+"totallatency"] = incVal.TotalLatency
 
 	return newUpdate
 }
 
-func (f *AnalyticsRecordAggregate) generateSetterForTime(parent, thisUnit string, realTime float64, newUpdate dbm.DBM) dbm.DBM {
+func (f *AnalyticsRecordAggregate) generateSetterForTime(parent, thisUnit string, realTime float64, newUpdate model.DBM) model.DBM {
 	constructor := parent + "." + thisUnit + "."
 	if parent == "" {
 		constructor = thisUnit + "."
 	}
-	newUpdate["$set"].(dbm.DBM)[constructor+"requesttime"] = realTime
+	newUpdate["$set"].(model.DBM)[constructor+"requesttime"] = realTime
 
 	return newUpdate
 }
 
-func (f *AnalyticsRecordAggregate) latencySetter(parent, thisUnit string, newUpdate dbm.DBM, counter *Counter) dbm.DBM {
+func (f *AnalyticsRecordAggregate) latencySetter(parent, thisUnit string, newUpdate model.DBM, counter *Counter) model.DBM {
 	if counter.Hits > 0 {
 		counter.Latency = float64(counter.TotalLatency) / float64(counter.Hits)
 		counter.UpstreamLatency = float64(counter.TotalUpstreamLatency) / float64(counter.Hits)
@@ -334,8 +333,8 @@ func (f *AnalyticsRecordAggregate) latencySetter(parent, thisUnit string, newUpd
 	if parent == "" {
 		constructor = thisUnit + "."
 	}
-	newUpdate["$set"].(dbm.DBM)[constructor+"latency"] = counter.Latency
-	newUpdate["$set"].(dbm.DBM)[constructor+"upstreamlatency"] = counter.UpstreamLatency
+	newUpdate["$set"].(model.DBM)[constructor+"latency"] = counter.Latency
+	newUpdate["$set"].(model.DBM)[constructor+"upstreamlatency"] = counter.UpstreamLatency
 
 	return newUpdate
 }
@@ -429,11 +428,11 @@ func (f *AnalyticsRecordAggregate) Dimensions() (dimensions []Dimension) {
 	return
 }
 
-func (f *AnalyticsRecordAggregate) AsChange() (newUpdate dbm.DBM) {
-	newUpdate = dbm.DBM{
-		"$inc": dbm.DBM{},
-		"$set": dbm.DBM{},
-		"$max": dbm.DBM{},
+func (f *AnalyticsRecordAggregate) AsChange() (newUpdate model.DBM) {
+	newUpdate = model.DBM{
+		"$inc": model.DBM{},
+		"$set": model.DBM{},
+		"$max": model.DBM{},
 	}
 
 	for _, d := range f.Dimensions() {
@@ -444,18 +443,18 @@ func (f *AnalyticsRecordAggregate) AsChange() (newUpdate dbm.DBM) {
 
 	asTime := f.TimeStamp
 	newTime := time.Date(asTime.Year(), asTime.Month(), asTime.Day(), asTime.Hour(), asTime.Minute(), 0, 0, asTime.Location())
-	newUpdate["$set"].(dbm.DBM)["timestamp"] = newTime
-	newUpdate["$set"].(dbm.DBM)["expireAt"] = f.ExpireAt
-	newUpdate["$set"].(dbm.DBM)["timeid.year"] = newTime.Year()
-	newUpdate["$set"].(dbm.DBM)["timeid.month"] = newTime.Month()
-	newUpdate["$set"].(dbm.DBM)["timeid.day"] = newTime.Day()
-	newUpdate["$set"].(dbm.DBM)["timeid.hour"] = newTime.Hour()
-	newUpdate["$set"].(dbm.DBM)["lasttime"] = f.LastTime
+	newUpdate["$set"].(model.DBM)["timestamp"] = newTime
+	newUpdate["$set"].(model.DBM)["expireAt"] = f.ExpireAt
+	newUpdate["$set"].(model.DBM)["timeid.year"] = newTime.Year()
+	newUpdate["$set"].(model.DBM)["timeid.month"] = newTime.Month()
+	newUpdate["$set"].(model.DBM)["timeid.day"] = newTime.Day()
+	newUpdate["$set"].(model.DBM)["timeid.hour"] = newTime.Hour()
+	newUpdate["$set"].(model.DBM)["lasttime"] = f.LastTime
 
 	return newUpdate
 }
 
-func (f *AnalyticsRecordAggregate) SetErrorList(parent, thisUnit string, counter *Counter, newUpdate dbm.DBM) {
+func (f *AnalyticsRecordAggregate) SetErrorList(parent, thisUnit string, counter *Counter, newUpdate model.DBM) {
 	constructor := parent + "." + thisUnit + "."
 	if parent == "" {
 		constructor = thisUnit + "."
@@ -476,10 +475,10 @@ func (f *AnalyticsRecordAggregate) SetErrorList(parent, thisUnit string, counter
 
 	counter.ErrorList = errorlist
 
-	newUpdate["$set"].(dbm.DBM)[constructor+"errorlist"] = counter.ErrorList
+	newUpdate["$set"].(model.DBM)[constructor+"errorlist"] = counter.ErrorList
 }
 
-func (f *AnalyticsRecordAggregate) getRecords(fieldName string, data map[string]*Counter, newUpdate dbm.DBM) []Counter {
+func (f *AnalyticsRecordAggregate) getRecords(fieldName string, data map[string]*Counter, newUpdate model.DBM) []Counter {
 	result := make([]Counter, 0)
 
 	for thisUnit, incVal := range data {
@@ -497,41 +496,41 @@ func (f *AnalyticsRecordAggregate) getRecords(fieldName string, data map[string]
 	return result
 }
 
-func (f *AnalyticsRecordAggregate) AsTimeUpdate() dbm.DBM {
-	newUpdate := dbm.DBM{
-		"$set": dbm.DBM{},
+func (f *AnalyticsRecordAggregate) AsTimeUpdate() model.DBM {
+	newUpdate := model.DBM{
+		"$set": model.DBM{},
 	}
 
 	// We need to create lists of API data so that we can aggregate across the list
 	// in order to present top-20 style lists of APIs, Tokens etc.
 	// apis := make([]Counter, 0)
-	newUpdate["$set"].(dbm.DBM)["lists.apiid"] = f.getRecords("apiid", f.APIID, newUpdate)
+	newUpdate["$set"].(model.DBM)["lists.apiid"] = f.getRecords("apiid", f.APIID, newUpdate)
 
-	newUpdate["$set"].(dbm.DBM)["lists.errors"] = f.getRecords("errors", f.Errors, newUpdate)
+	newUpdate["$set"].(model.DBM)["lists.errors"] = f.getRecords("errors", f.Errors, newUpdate)
 
-	newUpdate["$set"].(dbm.DBM)["lists.versions"] = f.getRecords("versions", f.Versions, newUpdate)
+	newUpdate["$set"].(model.DBM)["lists.versions"] = f.getRecords("versions", f.Versions, newUpdate)
 
-	newUpdate["$set"].(dbm.DBM)["lists.apikeys"] = f.getRecords("apikeys", f.APIKeys, newUpdate)
+	newUpdate["$set"].(model.DBM)["lists.apikeys"] = f.getRecords("apikeys", f.APIKeys, newUpdate)
 
-	newUpdate["$set"].(dbm.DBM)["lists.oauthids"] = f.getRecords("oauthids", f.OauthIDs, newUpdate)
+	newUpdate["$set"].(model.DBM)["lists.oauthids"] = f.getRecords("oauthids", f.OauthIDs, newUpdate)
 
-	newUpdate["$set"].(dbm.DBM)["lists.geo"] = f.getRecords("geo", f.Geo, newUpdate)
+	newUpdate["$set"].(model.DBM)["lists.geo"] = f.getRecords("geo", f.Geo, newUpdate)
 
-	newUpdate["$set"].(dbm.DBM)["lists.tags"] = f.getRecords("tags", f.Tags, newUpdate)
+	newUpdate["$set"].(model.DBM)["lists.tags"] = f.getRecords("tags", f.Tags, newUpdate)
 
-	newUpdate["$set"].(dbm.DBM)["lists.endpoints"] = f.getRecords("endpoints", f.Endpoints, newUpdate)
+	newUpdate["$set"].(model.DBM)["lists.endpoints"] = f.getRecords("endpoints", f.Endpoints, newUpdate)
 
 	for thisUnit, incVal := range f.KeyEndpoint {
 		parent := "lists.keyendpoints." + thisUnit
-		newUpdate["$set"].(dbm.DBM)[parent] = f.getRecords("keyendpoints."+thisUnit, incVal, newUpdate)
+		newUpdate["$set"].(model.DBM)[parent] = f.getRecords("keyendpoints."+thisUnit, incVal, newUpdate)
 	}
 
 	for thisUnit, incVal := range f.OauthEndpoint {
 		parent := "lists.oauthendpoints." + thisUnit
-		newUpdate["$set"].(dbm.DBM)[parent] = f.getRecords("oauthendpoints."+thisUnit, incVal, newUpdate)
+		newUpdate["$set"].(model.DBM)[parent] = f.getRecords("oauthendpoints."+thisUnit, incVal, newUpdate)
 	}
 
-	newUpdate["$set"].(dbm.DBM)["lists.apiendpoints"] = f.getRecords("apiendpoints", f.ApiEndpoint, newUpdate)
+	newUpdate["$set"].(model.DBM)["lists.apiendpoints"] = f.getRecords("apiendpoints", f.ApiEndpoint, newUpdate)
 
 	var newTime float64
 

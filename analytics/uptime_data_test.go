@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/TykTechnologies/storage/persistent/id"
+	"github.com/TykTechnologies/storage/persistent/model"
 	"github.com/google/go-cmp/cmp"
 	"gorm.io/gorm/clause"
 
@@ -13,7 +13,7 @@ import (
 
 func TestUptimeReportData_GetObjectID(t *testing.T) {
 	t.Run("should return the ID field", func(t *testing.T) {
-		id := id.NewObjectID()
+		id := model.NewObjectID()
 		record := UptimeReportData{
 			ID: id,
 		}
@@ -23,7 +23,7 @@ func TestUptimeReportData_GetObjectID(t *testing.T) {
 
 func TestUptimeReportData_SetObjectID(t *testing.T) {
 	t.Run("should set the ID field", func(t *testing.T) {
-		id := id.NewObjectID()
+		id := model.NewObjectID()
 		record := UptimeReportData{}
 		record.SetObjectID(id)
 		assert.Equal(t, id, record.ID)

@@ -12,9 +12,7 @@ import (
 	"strconv"
 
 	"github.com/TykTechnologies/storage/persistent"
-	"github.com/TykTechnologies/storage/persistent/dbm"
-	"github.com/TykTechnologies/storage/persistent/id"
-	"github.com/TykTechnologies/storage/persistent/index"
+	"github.com/TykTechnologies/storage/persistent/model"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/mitchellh/mapstructure"
@@ -93,12 +91,12 @@ func (d dbObject) TableName() string {
 }
 
 // GetObjectID is a dummy function to satisfy the interface
-func (dbObject) GetObjectID() id.ObjectId {
+func (dbObject) GetObjectID() model.ObjectID {
 	return ""
 }
 
 // SetObjectID is a dummy function to satisfy the interface
-func (dbObject) SetObjectID(id.ObjectId) {
+func (dbObject) SetObjectID(model.ObjectID) {
 	// empty
 }
 
@@ -272,7 +270,7 @@ func (m *MongoPump) capCollection() (ok bool) {
 		tableName: colName,
 	}
 
-	err = m.store.Migrate(context.Background(), []id.DBObject{d}, dbm.DBM{"capped": true, "maxBytes": colCapMaxSizeBytes})
+	err = m.store.Migrate(context.Background(), []model.DBObject{d}, model.DBM{"capped": true, "maxBytes": colCapMaxSizeBytes})
 	if err != nil {
 		m.log.Errorf("Unable to create capped collection for (%s). %s", colName, err.Error())
 
@@ -305,8 +303,8 @@ func (m *MongoPump) ensureIndexes(collectionName string) error {
 
 	var err error
 
-	orgIndex := index.Index{
-		Keys:       []dbm.DBM{{"orgid": 1}},
+	orgIndex := model.Index{
+		Keys:       []model.DBM{{"orgid": 1}},
 		Background: m.dbConf.MongoDBType == StandardMongo,
 	}
 
@@ -317,8 +315,8 @@ func (m *MongoPump) ensureIndexes(collectionName string) error {
 		return err
 	}
 
-	apiIndex := index.Index{
-		Keys:       []dbm.DBM{{"apiid": 1}},
+	apiIndex := model.Index{
+		Keys:       []model.DBM{{"apiid": 1}},
 		Background: m.dbConf.MongoDBType == StandardMongo,
 	}
 
@@ -327,9 +325,9 @@ func (m *MongoPump) ensureIndexes(collectionName string) error {
 		return err
 	}
 
-	logBrowserIndex := index.Index{
+	logBrowserIndex := model.Index{
 		Name:       "logBrowserIndex",
-		Keys:       []dbm.DBM{{"timestamp": -1}, {"orgid": 1}, {"apiid": 1}, {"apikey": 1}, {"responsecode": 1}},
+		Keys:       []model.DBM{{"timestamp": -1}, {"orgid": 1}, {"apiid": 1}, {"apikey": 1}, {"responsecode": 1}},
 		Background: m.dbConf.MongoDBType == StandardMongo,
 	}
 	return m.store.CreateIndex(context.Background(), d, logBrowserIndex)
@@ -370,7 +368,7 @@ func (m *MongoPump) WriteData(ctx context.Context, data []interface{}) error {
 
 	errCh := make(chan error, len(accumulateSet))
 	for _, dataSet := range accumulateSet {
-		go func(errCh chan error, dataSet ...id.DBObject) {
+		go func(errCh chan error, dataSet ...model.DBObject) {
 			m.log.WithFields(logrus.Fields{
 				"collection":        collectionName,
 				"number of records": len(dataSet),
@@ -404,10 +402,10 @@ func (m *MongoPump) WriteData(ctx context.Context, data []interface{}) error {
 
 // AccumulateSet groups data items into chunks based on the max batch size limit while handling graph analytics records separately.
 // It returns a 2D array of DBObjects.
-func (m *MongoPump) AccumulateSet(data []interface{}, isForGraphRecords bool) [][]id.DBObject {
+func (m *MongoPump) AccumulateSet(data []interface{}, isForGraphRecords bool) [][]model.DBObject {
 	accumulatorTotal := 0
-	returnArray := make([][]id.DBObject, 0)
-	thisResultSet := make([]id.DBObject, 0)
+	returnArray := make([][]model.DBObject, 0)
+	thisResultSet := make([]model.DBObject, 0)
 
 	for i, item := range data {
 		// Process the current item and determine if it should be skipped
@@ -474,7 +472,7 @@ func (m *MongoPump) handleLargeDocuments(thisItem *analytics.AnalyticsRecord, si
 
 // accumulate processes the given item and updates the accumulator total, result set, and return array.
 // It manages chunking the data into separate sets based on the max batch size limit, and appends the last item when necessary.
-func (m *MongoPump) accumulate(thisResultSet []id.DBObject, returnArray [][]id.DBObject, thisItem *analytics.AnalyticsRecord, sizeBytes, accumulatorTotal int, isLastItem bool) (int, []id.DBObject, [][]id.DBObject) {
+func (m *MongoPump) accumulate(thisResultSet []model.DBObject, returnArray [][]model.DBObject, thisItem *analytics.AnalyticsRecord, sizeBytes, accumulatorTotal int, isLastItem bool) (int, []model.DBObject, [][]model.DBObject) {
 	if (accumulatorTotal + sizeBytes) <= m.dbConf.MaxInsertBatchSizeBytes {
 		accumulatorTotal += sizeBytes
 	} else {
@@ -483,7 +481,7 @@ func (m *MongoPump) accumulate(thisResultSet []id.DBObject, returnArray [][]id.D
 			returnArray = append(returnArray, thisResultSet)
 		}
 
-		thisResultSet = make([]id.DBObject, 0)
+		thisResultSet = make([]model.DBObject, 0)
 		accumulatorTotal = sizeBytes
 	}
 
@@ -507,7 +505,7 @@ func (m *MongoPump) WriteUptimeData(data []interface{}) {
 		return
 	}
 
-	keys := make([]id.DBObject, len(data))
+	keys := make([]model.DBObject, len(data))
 
 	for i, v := range data {
 		decoded := analytics.UptimeReportData{}

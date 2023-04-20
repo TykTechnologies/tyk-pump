@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/TykTechnologies/storage/persistent/id"
+	"github.com/TykTechnologies/storage/persistent/model"
 	"github.com/fatih/structs"
 	"github.com/stretchr/testify/assert"
 )
@@ -96,7 +96,7 @@ func TestAnalyticsRecord_Base(t *testing.T) {
 
 	assert.Equal(t, SQLTable, rec.TableName())
 
-	newID := id.NewObjectID()
+	newID := model.NewObjectID()
 	rec.SetObjectID(newID)
 	assert.Equal(t, newID, rec.GetObjectID())
 }
@@ -161,7 +161,7 @@ func TestAnalyticsRecord_GetLineValues(t *testing.T) {
 		APIVersion: "v1",
 		APIName:    "api_name",
 		TimeStamp:  time.Now(),
-		ApiSchema:  "http",
+		APISchema:  "http",
 	}
 
 	fields := rec.GetLineValues()
