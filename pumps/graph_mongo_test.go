@@ -307,7 +307,7 @@ func TestGraphMongoPump_WriteData(t *testing.T) {
 					Path:        "POST",
 					RawRequest:  base64.StdEncoding.EncodeToString([]byte(cr.rawRequest)),
 					RawResponse: base64.StdEncoding.EncodeToString([]byte(cr.rawResponse)),
-					ApiSchema:   base64.StdEncoding.EncodeToString([]byte(cr.schema)),
+					APISchema:   base64.StdEncoding.EncodeToString([]byte(cr.schema)),
 					Tags:        cr.tags,
 				}
 				if cr.responseCode != 0 {

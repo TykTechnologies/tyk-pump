@@ -129,7 +129,7 @@ func TestAnalyticsRecord_ToGraphRecord(t *testing.T) {
 		RawPath:      "/",
 		APIName:      "test-api",
 		APIID:        "test-api",
-		ApiSchema:    base64.StdEncoding.EncodeToString([]byte(sampleSchema)),
+		APISchema:    base64.StdEncoding.EncodeToString([]byte(sampleSchema)),
 		ResponseCode: 200,
 		Day:          1,
 		Month:        1,
@@ -195,7 +195,7 @@ func TestAnalyticsRecord_ToGraphRecord(t *testing.T) {
 				return g
 			},
 			modifyRecord: func(a AnalyticsRecord) AnalyticsRecord {
-				a.ApiSchema = base64.StdEncoding.EncodeToString([]byte(subgraphSchema))
+				a.APISchema = base64.StdEncoding.EncodeToString([]byte(subgraphSchema))
 				return a
 			},
 		},
@@ -381,7 +381,7 @@ func TestAnalyticsRecord_ToGraphRecord(t *testing.T) {
 			request:  `{"query":"query main {\ncharacters {\ninfo\n}\n}\n\nquery second {\nlistCharacters{\ninfo\n}\n}","variables":null,"operationName":""}`,
 			response: `{"errors":[{"message":"no operation specified"}]}`,
 			modifyRecord: func(a AnalyticsRecord) AnalyticsRecord {
-				a.ApiSchema = "this isn't a base64 is it?"
+				a.APISchema = "this isn't a base64 is it?"
 				return a
 			},
 			expected: func() GraphRecord {

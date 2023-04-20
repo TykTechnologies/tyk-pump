@@ -10,8 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/vmihailenco/msgpack.v2"
 
-	"github.com/TykTechnologies/storage/persistent/dbm"
-	"github.com/TykTechnologies/storage/persistent/id"
+	"github.com/TykTechnologies/storage/persistent/model"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 )
 
@@ -171,17 +170,17 @@ func TestMongoPumpOmitIndexCreation(t *testing.T) {
 	}
 }
 
-func CreateCollectionIfNeeded(t *testing.T, mPump *MongoPump, dbObject id.DBObject) {
+func CreateCollectionIfNeeded(t *testing.T, mPump *MongoPump, dbObject model.DBObject) {
 	t.Helper()
 	if !HasTable(t, mPump, dbObject) {
-		err := mPump.store.Migrate(context.Background(), []id.DBObject{dbObject})
+		err := mPump.store.Migrate(context.Background(), []model.DBObject{dbObject})
 		if err != nil {
 			t.Error("there shouldn't be an error migrating database", err)
 		}
 	}
 }
 
-func HasTable(t *testing.T, mPump *MongoPump, dbObject id.DBObject) bool {
+func HasTable(t *testing.T, mPump *MongoPump, dbObject model.DBObject) bool {
 	t.Helper()
 	hasTable, err := mPump.store.HasTable(context.Background(), dbObject.TableName())
 	if err != nil {
@@ -390,7 +389,7 @@ func TestMongoPump_AccumulateSetIgnoreDocSize(t *testing.T) {
 			record.Tags = []string{analytics.PredefinedTagGraphAnalytics}
 			record.RawRequest = bloat
 			record.RawResponse = bloat
-			record.ApiSchema = bloat
+			record.APISchema = bloat
 		}
 		dataSet[i] = record
 	}
@@ -528,7 +527,7 @@ func TestWriteUptimeData(t *testing.T) {
 			assert.Equal(t, true, hasTable)
 
 			dbRecords := []analytics.UptimeReportData{}
-			if err := newPump.store.Query(context.Background(), &analytics.UptimeReportData{}, &dbRecords, dbm.DBM{}); err != nil {
+			if err := newPump.store.Query(context.Background(), &analytics.UptimeReportData{}, &dbRecords, model.DBM{}); err != nil {
 				t.Fatal("Error getting analytics records from Mongo")
 			}
 
