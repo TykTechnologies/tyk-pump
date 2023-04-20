@@ -6,8 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/TykTechnologies/storage/persistent/dbm"
-	"github.com/TykTechnologies/storage/persistent/id"
+	"github.com/TykTechnologies/storage/persistent/model"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/vmihailenco/msgpack.v2"
@@ -222,7 +221,7 @@ func TestEnsureIndexes(t *testing.T) {
 			tableName: collectionName,
 		}
 		// Creating the collection
-		err := mPump.store.Migrate(context.Background(), []id.DBObject{obj})
+		err := mPump.store.Migrate(context.Background(), []model.DBObject{obj})
 		assert.NoError(t, err)
 
 		// Creating the indexes
@@ -350,7 +349,7 @@ func TestWriteUptimeDataMongoSelective(t *testing.T) {
 			}()
 
 			dbRecords := []analytics.UptimeReportData{}
-			err = newPump.store.Query(context.Background(), &analytics.UptimeReportData{}, &dbRecords, dbm.DBM{})
+			err = newPump.store.Query(context.Background(), &analytics.UptimeReportData{}, &dbRecords, model.DBM{})
 			assert.NoError(t, err)
 
 			// check amount of rows in the table
