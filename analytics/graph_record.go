@@ -171,7 +171,7 @@ func (a *AnalyticsRecord) ToGraphRecord() GraphRecord {
 		record.HasErrors = true
 	}
 
-	record.parseRequest(a.RawRequest, a.ApiSchema)
+	record.parseRequest(a.RawRequest, a.APISchema)
 
 	record.parseResponse(a.RawResponse)
 

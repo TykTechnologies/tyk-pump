@@ -161,7 +161,7 @@ func TestAnalyticsRecord_GetLineValues(t *testing.T) {
 		APIVersion: "v1",
 		APIName:    "api_name",
 		TimeStamp:  time.Now(),
-		ApiSchema:  "http",
+		APISchema:  "http",
 	}
 
 	fields := rec.GetLineValues()

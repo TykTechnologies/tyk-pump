@@ -389,7 +389,7 @@ func TestMongoPump_AccumulateSetIgnoreDocSize(t *testing.T) {
 			record.Tags = []string{analytics.PredefinedTagGraphAnalytics}
 			record.RawRequest = bloat
 			record.RawResponse = bloat
-			record.ApiSchema = bloat
+			record.APISchema = bloat
 		}
 		dataSet[i] = record
 	}
