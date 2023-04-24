@@ -1270,15 +1270,15 @@ TYK_PMP_PUMPS_CSV_FILTERS_APIIDS=123,789
 ### Timeouts
 
 You can configure a different timeout for each pump with the configuration option `timeout`. Its default value is 0 seconds, which means that the pump will wait for the writing operation forever. 
+In Mongo pumps, the default value is 10 seconds. If you want to disable the timeout, you can set the value to 0. Take into account that if you disable the timeout, the pump will wait for the writing operation forever, and it could block the pump execution.
 
-###### JSON / Conf file Example
 ```json
 "mongo": {
   "type": "mongo",
-  "timeout":5,
+  "timeout": 5,
   "meta": {
     "collection_name": "tyk_analytics",
-    "mongo_url": "mongodb://username:password@{hostname:port},{hostname:port}/{db_name}"
+    "mongo_url": "mongodb://username:password@{hostname:port}/{db_name}"
   }
 }
 ```
@@ -1302,7 +1302,7 @@ In case that you have a configured timeout, but it still takes more seconds to w
 
 `max_record_size` defines maximum size (in bytes) for Raw Request and Raw Response logs, this value defaults to 0. Is not set then tyk-pump will not trim any data and will store the full information.
 This can also be set at a pump level. For example:
-```{.json}
+```json
 "csv": {
   "type": "csv",
   "max_record_size":1000,
@@ -1317,13 +1317,26 @@ This can also be set at a pump level. For example:
 `ignore_fields` defines a list of analytics fields that will be ignored when writing to the pump. This can be used to avoid writing sensitive information to the Database, or data that you don't really need to have.
 Fields must be written using JSON tags. For example:
 
-```{.json}
+```json
 "csv": {
  "type": "csv",
  "ignore_fields":["api_id","api_version"],
  "meta": {
    "csv_dir": "./bar"
  }
+}
+```
+
+### Decode Raw Request & Raw Response
+`raw_request_decoded` and `raw_response_decoded` decode from base64 the raw request and raw response fields before writing to Pump. This is useful if you want to search for specific values in the raw request/response. Both are disabled by default.
+```json
+"csv": {
+  "type": "csv",
+  "raw_request_decoded": true,
+  "raw_response_decoded": true,
+  "meta": {
+    "csv_dir": "./"
+  }
 }
 ```
 
