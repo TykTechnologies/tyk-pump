@@ -102,6 +102,16 @@ func (c *SQLAggregatePump) Init(conf interface{}) error {
 		c.SQLConf.BatchSize = SQLDefaultQueryBatchSize
 	}
 
+	if c.GetDecodedRequest() {
+		c.log.Warn("SQLAggregate Pump is unable to decode base64 encoded requests, skipping")
+		c.SetDecodingRequest(false)
+	}
+
+	if c.GetDecodedResponse() {
+		c.log.Warn("SQLAggregate Pump is unable to decode base64 encoded responses, skipping")
+		c.SetDecodingResponse(false)
+	}
+
 	c.log.Debug("SQLAggregate Initialized")
 	return nil
 }

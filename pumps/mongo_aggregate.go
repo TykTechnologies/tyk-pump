@@ -182,6 +182,16 @@ func (m *MongoAggregatePump) Init(config interface{}) error {
 	}
 	m.SetAggregationTime()
 
+	if m.GetDecodedRequest() {
+		m.log.Warn("Mongo Aggregate Pump is unable to decode base64 encoded requests, skipping")
+		m.SetDecodingRequest(false)
+	}
+
+	if m.GetDecodedResponse() {
+		m.log.Warn("Mongo Aggregate Pump is unable to decode base64 encoded responses, skipping")
+		m.SetDecodingResponse(false)
+	}
+
 	m.connect()
 
 	m.log.Debug("MongoDB DB CS: ", m.dbConf.GetBlurredURL())

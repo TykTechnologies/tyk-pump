@@ -177,6 +177,16 @@ func (c *SQLPump) Init(conf interface{}) error {
 		c.SQLConf.BatchSize = SQLDefaultQueryBatchSize
 	}
 
+	if c.GetDecodedRequest() {
+		c.log.Warn("SQL Pump is unable to decode base64 encoded requests, skipping")
+		c.SetDecodingRequest(false)
+	}
+
+	if c.GetDecodedResponse() {
+		c.log.Warn("SQL Pump is unable to decode base64 encoded responses, skipping")
+		c.SetDecodingResponse(false)
+	}
+
 	c.log.Debug("SQL Initialized")
 	return nil
 }

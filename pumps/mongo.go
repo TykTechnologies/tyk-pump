@@ -223,6 +223,16 @@ func (m *MongoPump) Init(config interface{}) error {
 		m.log.Error(indexCreateErr)
 	}
 
+	if m.GetDecodedRequest() {
+		m.log.Warn("Mongo Pump is unable to decode base64 encoded requests, skipping")
+		m.SetDecodingRequest(false)
+	}
+
+	if m.GetDecodedResponse() {
+		m.log.Warn("Mongo Pump is unable to decode base64 encoded responses, skipping")
+		m.SetDecodingResponse(false)
+	}
+
 	m.log.Debug("MongoDB DB CS: ", m.dbConf.GetBlurredURL())
 	m.log.Debug("MongoDB Col: ", m.dbConf.CollectionName)
 
