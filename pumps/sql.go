@@ -118,6 +118,20 @@ func (c *SQLPump) GetEnvPrefix() string {
 	return c.SQLConf.EnvPrefix
 }
 
+func (c *SQLPump) GetDecodedRequest() bool {
+	if c.decodeRequestBase64 {
+		c.log.Warn("Decode request is not supported for SQL pump")
+	}
+	return false
+}
+
+func (c *SQLPump) GetDecodedResponse() bool {
+	if c.decodeResponseBase64 {
+		c.log.Warn("Decode request is not supported for SQL pump")
+	}
+	return false
+}
+
 func (c *SQLPump) Init(conf interface{}) error {
 	c.SQLConf = &SQLConf{}
 	if c.IsUptime {
@@ -175,16 +189,6 @@ func (c *SQLPump) Init(conf interface{}) error {
 
 	if c.SQLConf.BatchSize == 0 {
 		c.SQLConf.BatchSize = SQLDefaultQueryBatchSize
-	}
-
-	if c.GetDecodedRequest() {
-		c.log.Warn("SQL Pump is unable to decode base64 encoded requests, skipping")
-		c.SetDecodingRequest(false)
-	}
-
-	if c.GetDecodedResponse() {
-		c.log.Warn("SQL Pump is unable to decode base64 encoded responses, skipping")
-		c.SetDecodingResponse(false)
 	}
 
 	c.log.Debug("SQL Initialized")

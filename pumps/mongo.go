@@ -165,6 +165,20 @@ func (m *MongoPump) GetEnvPrefix() string {
 	return m.dbConf.EnvPrefix
 }
 
+func (m *MongoPump) GetDecodedRequest() bool {
+	if m.decodeRequestBase64 {
+		m.log.Warn("Decode request is not supported for Mongo pump")
+	}
+	return false
+}
+
+func (m *MongoPump) GetDecodedResponse() bool {
+	if m.decodeResponseBase64 {
+		m.log.Warn("Decode request is not supported for Mongo pump")
+	}
+	return false
+}
+
 func (m *MongoPump) Init(config interface{}) error {
 	m.dbConf = &MongoConf{}
 	m.log = log.WithField("prefix", mongoPrefix)
@@ -221,16 +235,6 @@ func (m *MongoPump) Init(config interface{}) error {
 	indexCreateErr := m.ensureIndexes(m.dbConf.CollectionName)
 	if indexCreateErr != nil {
 		m.log.Error(indexCreateErr)
-	}
-
-	if m.GetDecodedRequest() {
-		m.log.Warn("Mongo Pump is unable to decode base64 encoded requests, skipping")
-		m.SetDecodingRequest(false)
-	}
-
-	if m.GetDecodedResponse() {
-		m.log.Warn("Mongo Pump is unable to decode base64 encoded responses, skipping")
-		m.SetDecodingResponse(false)
 	}
 
 	m.log.Debug("MongoDB DB CS: ", m.dbConf.GetBlurredURL())

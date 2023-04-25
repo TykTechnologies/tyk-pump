@@ -59,6 +59,20 @@ func (m *MongoSelectivePump) GetCollectionName(orgid string) (string, error) {
 	return "z_tyk_analyticz_" + orgid, nil
 }
 
+func (m *MongoSelectivePump) GetDecodedRequest() bool {
+	if m.decodeRequestBase64 {
+		m.log.Warn("Decode request is not supported for Mongo Selective pump")
+	}
+	return false
+}
+
+func (m *MongoSelectivePump) GetDecodedResponse() bool {
+	if m.decodeResponseBase64 {
+		m.log.Warn("Decode request is not supported for Mongo Selective pump")
+	}
+	return false
+}
+
 func (m *MongoSelectivePump) Init(config interface{}) error {
 	m.dbConf = &MongoSelectiveConf{}
 	m.log = log.WithField("prefix", mongoSelectivePrefix)
@@ -88,16 +102,6 @@ func (m *MongoSelectivePump) Init(config interface{}) error {
 	if m.dbConf.MaxDocumentSizeBytes == 0 {
 		m.log.Info("-- No max document size set, defaulting to 10MB")
 		m.dbConf.MaxDocumentSizeBytes = 10 * MiB
-	}
-
-	if m.GetDecodedRequest() {
-		m.log.Warn("Mongo Selective Pump is unable to decode base64 encoded requests, skipping")
-		m.SetDecodingRequest(false)
-	}
-
-	if m.GetDecodedResponse() {
-		m.log.Warn("Mongo Selective Pump is unable to decode base64 encoded responses, skipping")
-		m.SetDecodingResponse(false)
 	}
 
 	m.connect()

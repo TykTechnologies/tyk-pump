@@ -156,6 +156,20 @@ func (m *MongoAggregatePump) GetCollectionName(orgid string) (string, error) {
 	return "z_tyk_analyticz_aggregate_" + orgid, nil
 }
 
+func (m *MongoAggregatePump) GetDecodedRequest() bool {
+	if m.decodeRequestBase64 {
+		m.log.Warn("Decode request is not supported for Mongo Aggregate pump")
+	}
+	return false
+}
+
+func (m *MongoAggregatePump) GetDecodedResponse() bool {
+	if m.decodeResponseBase64 {
+		m.log.Warn("Decode request is not supported for Mongo Aggregate pump")
+	}
+	return false
+}
+
 func (m *MongoAggregatePump) Init(config interface{}) error {
 	m.dbConf = &MongoAggregateConf{}
 	m.log = log.WithField("prefix", analytics.MongoAggregatePrefix)
@@ -181,16 +195,6 @@ func (m *MongoAggregatePump) Init(config interface{}) error {
 		m.dbConf.ThresholdLenTagList = ThresholdLenTagList
 	}
 	m.SetAggregationTime()
-
-	if m.GetDecodedRequest() {
-		m.log.Warn("Mongo Aggregate Pump is unable to decode base64 encoded requests, skipping")
-		m.SetDecodingRequest(false)
-	}
-
-	if m.GetDecodedResponse() {
-		m.log.Warn("Mongo Aggregate Pump is unable to decode base64 encoded responses, skipping")
-		m.SetDecodingResponse(false)
-	}
 
 	m.connect()
 

@@ -55,6 +55,20 @@ func (c *SQLAggregatePump) GetEnvPrefix() string {
 	return c.SQLConf.EnvPrefix
 }
 
+func (c *SQLAggregatePump) GetDecodedRequest() bool {
+	if c.decodeRequestBase64 {
+		c.log.Warn("Decode request is not supported for SQL aggregate pump")
+	}
+	return false
+}
+
+func (c *SQLAggregatePump) GetDecodedResponse() bool {
+	if c.decodeResponseBase64 {
+		c.log.Warn("Decode request is not supported for SQL aggregate pump")
+	}
+	return false
+}
+
 func (c *SQLAggregatePump) Init(conf interface{}) error {
 	c.SQLConf = &SQLAggregatePumpConf{}
 	c.log = log.WithField("prefix", SQLAggregatePumpPrefix)
@@ -100,16 +114,6 @@ func (c *SQLAggregatePump) Init(conf interface{}) error {
 
 	if c.SQLConf.BatchSize == 0 {
 		c.SQLConf.BatchSize = SQLDefaultQueryBatchSize
-	}
-
-	if c.GetDecodedRequest() {
-		c.log.Warn("SQLAggregate Pump is unable to decode base64 encoded requests, skipping")
-		c.SetDecodingRequest(false)
-	}
-
-	if c.GetDecodedResponse() {
-		c.log.Warn("SQLAggregate Pump is unable to decode base64 encoded responses, skipping")
-		c.SetDecodingResponse(false)
 	}
 
 	c.log.Debug("SQLAggregate Initialized")
