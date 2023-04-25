@@ -233,5 +233,7 @@ func (rp *ResurfacePump) WriteData(ctx context.Context, data []interface{}) erro
 		logger.SendHttpMessage(rp.logger, &resp, &req, decoded.TimeStamp.Unix()*1000, decoded.RequestTime, customFields)
 	}
 
+	rp.log.Info("Purged ", len(data), " records...")
+
 	return nil
 }
