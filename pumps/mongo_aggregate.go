@@ -156,6 +156,18 @@ func (m *MongoAggregatePump) GetCollectionName(orgid string) (string, error) {
 	return "z_tyk_analyticz_aggregate_" + orgid, nil
 }
 
+func (m *MongoAggregatePump) SetDecodingRequest(decoding bool) {
+	if decoding {
+		log.WithField("pump", m.GetName()).Warn("Decoding request is not supported for Mongo Aggregate pump")
+	}
+}
+
+func (m *MongoAggregatePump) SetDecodingResponse(decoding bool) {
+	if decoding {
+		log.WithField("pump", m.GetName()).Warn("Decoding response is not supported for Mongo Aggregate pump")
+	}
+}
+
 func (m *MongoAggregatePump) Init(config interface{}) error {
 	m.dbConf = &MongoAggregateConf{}
 	m.log = log.WithField("prefix", analytics.MongoAggregatePrefix)

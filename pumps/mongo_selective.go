@@ -59,6 +59,18 @@ func (m *MongoSelectivePump) GetCollectionName(orgid string) (string, error) {
 	return "z_tyk_analyticz_" + orgid, nil
 }
 
+func (m *MongoSelectivePump) SetDecodingRequest(decoding bool) {
+	if decoding {
+		log.WithField("pump", m.GetName()).Warn("Decoding request is not supported for Mongo Selective pump")
+	}
+}
+
+func (m *MongoSelectivePump) SetDecodingResponse(decoding bool) {
+	if decoding {
+		log.WithField("pump", m.GetName()).Warn("Decoding response is not supported for Mongo Selective pump")
+	}
+}
+
 func (m *MongoSelectivePump) Init(config interface{}) error {
 	m.dbConf = &MongoSelectiveConf{}
 	m.log = log.WithField("prefix", mongoSelectivePrefix)

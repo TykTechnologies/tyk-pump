@@ -357,3 +357,22 @@ func TestWriteUptimeDataMongoSelective(t *testing.T) {
 		})
 	}
 }
+
+func TestDecodeRequestAndDecodeResponseMongoSelective(t *testing.T) {
+	newPump := &MongoSelectivePump{}
+	conf := defaultConf()
+	err := newPump.Init(conf)
+	assert.Nil(t, err)
+
+	// checking if the default values are false
+	assert.False(t, newPump.GetDecodedRequest())
+	assert.False(t, newPump.GetDecodedResponse())
+
+	// trying to set the values to true
+	newPump.SetDecodingRequest(true)
+	newPump.SetDecodingResponse(true)
+
+	// checking if the values are still false as expected because this pump doesn't support decoding requests/responses
+	assert.False(t, newPump.GetDecodedRequest())
+	assert.False(t, newPump.GetDecodedResponse())
+}
