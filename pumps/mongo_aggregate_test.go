@@ -483,3 +483,22 @@ func TestMongoAggregatePump_StoreAnalyticsPerMinute(t *testing.T) {
 	// Checking if the aggregation time is set to 1. Doesn't matter if aggregation_time is equal to 45 or 1, the result should be always 1.
 	assert.True(t, pmp1.dbConf.AggregationTime == 1)
 }
+
+func TestDecodeRequestAndDecodeResponseMongoAggregate(t *testing.T) {
+	newPump := &MongoAggregatePump{}
+	conf := defaultConf()
+	err := newPump.Init(conf)
+	assert.Nil(t, err)
+
+	// checking if the default values are false
+	assert.False(t, newPump.GetDecodedRequest())
+	assert.False(t, newPump.GetDecodedResponse())
+
+	// trying to set the values to true
+	newPump.SetDecodingRequest(true)
+	newPump.SetDecodingResponse(true)
+
+	// checking if the values are still false as expected because this pump doesn't support decoding requests/responses
+	assert.False(t, newPump.GetDecodedRequest())
+	assert.False(t, newPump.GetDecodedResponse())
+}
