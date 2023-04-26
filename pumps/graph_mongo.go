@@ -30,18 +30,16 @@ func (g *GraphMongoPump) GetName() string {
 	return "MongoDB Graph Pump"
 }
 
-func (g *GraphMongoPump) GetDecodedRequest() bool {
-	if g.decodeRequestBase64 {
-		g.log.Warn("Decode request is not supported for Graph Mongo pump")
+func (g *GraphMongoPump) SetDecodingRequest(decoding bool) {
+	if decoding {
+		log.WithField("pump", g.GetName()).Warn("Decoding request is not supported for Graph Mongo pump")
 	}
-	return false
 }
 
-func (g *GraphMongoPump) GetDecodedResponse() bool {
-	if g.decodeResponseBase64 {
-		g.log.Warn("Decode request is not supported for Graph Mongo pump")
+func (g *GraphMongoPump) SetDecodingResponse(decoding bool) {
+	if decoding {
+		log.WithField("pump", g.GetName()).Warn("Decoding response is not supported for Graph Mongo pump")
 	}
-	return false
 }
 
 func (g *GraphMongoPump) Init(config interface{}) error {

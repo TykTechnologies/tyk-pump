@@ -39,8 +39,10 @@ type SQLAggregatePump struct {
 	dialect gorm.Dialector
 }
 
-var SQLAggregatePumpPrefix = "SQL-aggregate-pump"
-var SQLAggregateDefaultENV = PUMPS_ENV_PREFIX + "_SQLAGGREGATE" + PUMPS_ENV_META_PREFIX
+var (
+	SQLAggregatePumpPrefix = "SQL-aggregate-pump"
+	SQLAggregateDefaultENV = PUMPS_ENV_PREFIX + "_SQLAGGREGATE" + PUMPS_ENV_META_PREFIX
+)
 
 func (c *SQLAggregatePump) New() Pump {
 	newPump := SQLAggregatePump{}
@@ -55,18 +57,16 @@ func (c *SQLAggregatePump) GetEnvPrefix() string {
 	return c.SQLConf.EnvPrefix
 }
 
-func (c *SQLAggregatePump) GetDecodedRequest() bool {
-	if c.decodeRequestBase64 {
-		c.log.Warn("Decode request is not supported for SQL aggregate pump")
+func (c *SQLAggregatePump) SetDecodingRequest(decoding bool) {
+	if decoding {
+		log.WithField("pump", c.GetName()).Warn("Decoding request is not supported for SQL Aggregate pump")
 	}
-	return false
 }
 
-func (c *SQLAggregatePump) GetDecodedResponse() bool {
-	if c.decodeResponseBase64 {
-		c.log.Warn("Decode request is not supported for SQL aggregate pump")
+func (c *SQLAggregatePump) SetDecodingResponse(decoding bool) {
+	if decoding {
+		log.WithField("pump", c.GetName()).Warn("Decoding response is not supported for SQL Aggregate pump")
 	}
-	return false
 }
 
 func (c *SQLAggregatePump) Init(conf interface{}) error {
@@ -102,7 +102,6 @@ func (c *SQLAggregatePump) Init(conf interface{}) error {
 		UseJSONTags: true,
 		Logger:      gorm_logger.Default.LogMode(logLevel),
 	})
-
 	if err != nil {
 		c.log.Error(err)
 		return err
@@ -140,13 +139,13 @@ func (c *SQLAggregatePump) WriteData(ctx context.Context, data []interface{}) er
 		if c.SQLConf.TableSharding {
 			recDate := data[startIndex].(analytics.AnalyticsRecord).TimeStamp.Format("20060102")
 			var nextRecDate string
-			//if we're on i == dataLen iteration, it means that we're out of index range. We're going to use the last record date.
+			// if we're on i == dataLen iteration, it means that we're out of index range. We're going to use the last record date.
 			if i == dataLen {
 				nextRecDate = data[dataLen-1].(analytics.AnalyticsRecord).TimeStamp.Format("20060102")
 			} else {
 				nextRecDate = data[i].(analytics.AnalyticsRecord).TimeStamp.Format("20060102")
 
-				//if both dates are equal, we shouldn't write in the table yet.
+				// if both dates are equal, we shouldn't write in the table yet.
 				if recDate == nextRecDate {
 					continue
 				}
@@ -216,7 +215,7 @@ func (c *SQLAggregatePump) DoAggregatedWriting(ctx context.Context, table, orgID
 			ends = len(recs)
 		}
 
-		//we use excluded as temp  table since it's supported by our SQL storages https://www.postgresql.org/docs/9.5/sql-insert.html#SQL-ON-CONFLICT  https://www.sqlite.org/lang_UPSERT.html
+		// we use excluded as temp  table since it's supported by our SQL storages https://www.postgresql.org/docs/9.5/sql-insert.html#SQL-ON-CONFLICT  https://www.sqlite.org/lang_UPSERT.html
 		tx := c.db.WithContext(ctx).Clauses(clause.OnConflict{
 			Columns:   []clause.Column{{Name: "id"}},
 			DoUpdates: clause.Assignments(analytics.OnConflictAssignments(table, "excluded")),
@@ -228,5 +227,4 @@ func (c *SQLAggregatePump) DoAggregatedWriting(ctx context.Context, table, orgID
 	}
 
 	return nil
-
 }

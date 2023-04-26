@@ -165,18 +165,16 @@ func (m *MongoPump) GetEnvPrefix() string {
 	return m.dbConf.EnvPrefix
 }
 
-func (m *MongoPump) GetDecodedRequest() bool {
-	if m.decodeRequestBase64 {
-		m.log.Warn("Decode request is not supported for Mongo pump")
+func (m *MongoPump) SetDecodingRequest(decoding bool) {
+	if decoding {
+		log.WithField("pump", m.GetName()).Warn("Decoding request is not supported for Mongo pump")
 	}
-	return false
 }
 
-func (m *MongoPump) GetDecodedResponse() bool {
-	if m.decodeResponseBase64 {
-		m.log.Warn("Decode request is not supported for Mongo pump")
+func (m *MongoPump) SetDecodingResponse(decoding bool) {
+	if decoding {
+		log.WithField("pump", m.GetName()).Warn("Decoding response is not supported for Mongo pump")
 	}
-	return false
 }
 
 func (m *MongoPump) Init(config interface{}) error {

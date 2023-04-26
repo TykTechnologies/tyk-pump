@@ -59,18 +59,16 @@ func (m *MongoSelectivePump) GetCollectionName(orgid string) (string, error) {
 	return "z_tyk_analyticz_" + orgid, nil
 }
 
-func (m *MongoSelectivePump) GetDecodedRequest() bool {
-	if m.decodeRequestBase64 {
-		m.log.Warn("Decode request is not supported for Mongo Selective pump")
+func (m *MongoSelectivePump) SetDecodingRequest(decoding bool) {
+	if decoding {
+		log.WithField("pump", m.GetName()).Warn("Decoding request is not supported for Mongo Selective pump")
 	}
-	return false
 }
 
-func (m *MongoSelectivePump) GetDecodedResponse() bool {
-	if m.decodeResponseBase64 {
-		m.log.Warn("Decode request is not supported for Mongo Selective pump")
+func (m *MongoSelectivePump) SetDecodingResponse(decoding bool) {
+	if decoding {
+		log.WithField("pump", m.GetName()).Warn("Decoding response is not supported for Mongo Selective pump")
 	}
-	return false
 }
 
 func (m *MongoSelectivePump) Init(config interface{}) error {
