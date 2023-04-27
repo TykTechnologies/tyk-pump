@@ -356,6 +356,7 @@ func (m *MongoAggregatePump) DoAggregatedWriting(ctx context.Context, filteredDa
 
 	withTimeUpdate := analytics.AnalyticsRecordAggregate{
 		OrgID: filteredData.OrgID,
+		Mixed: mixed,
 	}
 
 	err = m.store.Upsert(ctx, &withTimeUpdate, query, avgUpdateDoc)

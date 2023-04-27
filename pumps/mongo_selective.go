@@ -217,12 +217,11 @@ func (m *MongoSelectivePump) WriteData(ctx context.Context, data []interface{}) 
 	}
 
 	for colName, filteredData := range analyticsPerOrg {
-		for _, dataSet := range m.AccumulateSet(filteredData) {
+		for _, dataSet := range m.AccumulateSet(filteredData, colName) {
 			indexCreateErr := m.ensureIndexes(colName)
 			if indexCreateErr != nil {
 				m.log.WithField("collection", colName).Error(indexCreateErr)
 			}
-
 			err := m.store.Insert(context.Background(), dataSet...)
 			if err != nil {
 				m.log.WithField("collection", colName).Error("Problem inserting to mongo collection: ", err)
@@ -236,7 +235,7 @@ func (m *MongoSelectivePump) WriteData(ctx context.Context, data []interface{}) 
 }
 
 // AccumulateSet organizes analytics data into a set of chunks based on their size.
-func (m *MongoSelectivePump) AccumulateSet(data []interface{}) [][]model.DBObject {
+func (m *MongoSelectivePump) AccumulateSet(data []interface{}, collectionName string) [][]model.DBObject {
 	accumulatorTotal := 0
 	returnArray := make([][]model.DBObject, 0)
 	thisResultSet := make([]model.DBObject, 0)
@@ -247,6 +246,8 @@ func (m *MongoSelectivePump) AccumulateSet(data []interface{}) [][]model.DBObjec
 		if skip {
 			continue
 		}
+
+		thisItem.CollectionName = collectionName
 
 		sizeBytes := m.getItemSizeBytes(thisItem)
 		accumulatorTotal, thisResultSet, returnArray = m.accumulate(thisResultSet, returnArray, thisItem, sizeBytes, accumulatorTotal, i == (len(data)-1))
