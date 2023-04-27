@@ -35,7 +35,7 @@ func TestMongoSelectivePump_AccumulateSet(t *testing.T) {
 					expectedGraphRecordSkips++
 				}
 			}
-			set := mPump.AccumulateSet(data)
+			set := mPump.AccumulateSet(data, analytics.SQLTable) // SQLTable = "tyk_analytics"
 
 			recordsCount := 0
 			for _, setEntry := range set {
@@ -271,7 +271,12 @@ func TestWriteData(t *testing.T) {
 		assert.NoError(t, err)
 
 		var results []analytics.AnalyticsRecord
-		err = mPump.store.Query(context.Background(), &analytics.AnalyticsRecord{}, &results, nil)
+		colName, colErr := mPump.GetCollectionName("abc")
+		assert.NoError(t, colErr)
+		d := dummyObject{
+			tableName: colName,
+		}
+		err = mPump.store.Query(context.Background(), &d, &results, nil)
 		assert.NoError(t, err)
 		assert.Len(t, results, 3)
 		assert.Equal(t, "123", results[0].APIID)
