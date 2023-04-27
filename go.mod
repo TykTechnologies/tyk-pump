@@ -21,7 +21,7 @@ require (
 	github.com/go-redis/redis/v8 v8.3.1
 	github.com/gocraft/health v0.0.0-20170925182251-8675af27fef0
 	github.com/gofrs/uuid v3.3.0+incompatible
-	github.com/golang/protobuf v1.5.2
+	github.com/golang/protobuf v1.5.3
 	github.com/google/go-cmp v0.5.9
 	github.com/gorilla/mux v1.8.0
 	github.com/influxdata/influxdb v1.8.3
@@ -36,7 +36,7 @@ require (
 	github.com/olivere/elastic/v7 v7.0.28
 	github.com/oschwald/maxminddb-golang v1.5.0
 	github.com/pkg/errors v0.9.1
-	github.com/prometheus/client_golang v1.11.0
+	github.com/prometheus/client_golang v1.15.0
 	github.com/quipo/statsd v0.0.0-20160923160612-75b7afedf0d2
 	github.com/resurfaceio/logger-go/v3 v3.2.1
 	github.com/robertkowalski/graylog-golang v0.0.0-20151121031040-e5295cfa2827
@@ -48,8 +48,8 @@ require (
 	github.com/stretchr/testify v1.8.1
 	github.com/syndtr/goleveldb v0.0.0-20190318030020-c3a204f8e965 // indirect
 	github.com/xtgo/uuid v0.0.0-20140804021211-a0b114877d4c // indirect
-	golang.org/x/net v0.0.0-20220722155237-a158d28d115b
-	google.golang.org/protobuf v1.28.1
+	golang.org/x/net v0.7.0
+	google.golang.org/protobuf v1.30.0
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6
 	gopkg.in/olivere/elastic.v3 v3.0.56
 	gopkg.in/olivere/elastic.v5 v5.0.85
