@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/TykTechnologies/storage/persistent"
 	"github.com/TykTechnologies/storage/persistent/model"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/TykTechnologies/tyk-pump/analytics/demo"
@@ -501,4 +502,13 @@ func TestDecodeRequestAndDecodeResponseMongoAggregate(t *testing.T) {
 	// checking if the values are still false as expected because this pump doesn't support decoding requests/responses
 	assert.False(t, newPump.GetDecodedRequest())
 	assert.False(t, newPump.GetDecodedResponse())
+}
+
+func TestDefaultDriverAggregate(t *testing.T) {
+	newPump := &MongoAggregatePump{}
+	defaultConf := defaultConf()
+	defaultConf.MongoDriverType = ""
+	err := newPump.Init(defaultConf)
+	assert.Nil(t, err)
+	assert.Equal(t, persistent.OfficialMongo, newPump.dbConf.MongoDriverType)
 }
