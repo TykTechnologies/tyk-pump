@@ -80,7 +80,7 @@ type BaseMongoConf struct {
 	// Set the consistency mode for the session, it defaults to `Strong`. The valid values are: strong, monotonic, eventual.
 	MongoSessionConsistency string `json:"mongo_session_consistency" mapstructure:"mongo_session_consistency"`
 	// MongoDriverType is the type of the driver (library) to use. The valid values are: "mongo-go" and "mgo".
-	MongoDriverType string `json:"driver_type" mapstructure:"driver_type"`
+	MongoDriverType string `json:"driver" mapstructure:"driver"`
 }
 type dbObject struct {
 	tableName string
@@ -347,7 +347,8 @@ func (m *MongoPump) ensureIndexes(collectionName string) error {
 
 func (m *MongoPump) connect() {
 	if m.dbConf.MongoDriverType == "" {
-		m.dbConf.MongoDriverType = persistent.Mgo
+		// Default to mongo-go
+		m.dbConf.MongoDriverType = persistent.OfficialMongo
 	}
 
 	store, err := persistent.NewPersistentStorage(&persistent.ClientOpts{
