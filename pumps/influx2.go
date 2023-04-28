@@ -155,7 +155,6 @@ func (i *Influx2Pump) connect() influxdb2.Client {
 
 func (i *Influx2Pump) createBucket(ctx context.Context, orgID *string) (*domain.Bucket, error) {
 	bucketConf := i.dbConf.NewBucketConfig
-	fmt.Println(bucketConf)
 	rp := ""
 	schemaType := domain.SchemaTypeImplicit
 	retentionRules := make(domain.RetentionRules, len(bucketConf.RetentionRules))

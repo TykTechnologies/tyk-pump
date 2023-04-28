@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/TykTechnologies/storage/persistent"
 	"github.com/TykTechnologies/storage/persistent/model"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/stretchr/testify/assert"
@@ -380,4 +381,13 @@ func TestDecodeRequestAndDecodeResponseMongoSelective(t *testing.T) {
 	// checking if the values are still false as expected because this pump doesn't support decoding requests/responses
 	assert.False(t, newPump.GetDecodedRequest())
 	assert.False(t, newPump.GetDecodedResponse())
+}
+
+func TestDefaultDriverSelective(t *testing.T) {
+	newPump := &MongoSelectivePump{}
+	defaultConf := defaultConf()
+	defaultConf.MongoDriverType = ""
+	err := newPump.Init(defaultConf)
+	assert.Nil(t, err)
+	assert.Equal(t, persistent.OfficialMongo, newPump.dbConf.MongoDriverType)
 }
