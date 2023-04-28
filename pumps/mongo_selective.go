@@ -114,8 +114,8 @@ func (m *MongoSelectivePump) connect() {
 	var err error
 
 	if m.dbConf.MongoDriverType == "" {
-		// Default to mgo
-		m.dbConf.MongoDriverType = persistent.Mgo
+		// Default to mongo-go
+		m.dbConf.MongoDriverType = persistent.OfficialMongo
 	}
 
 	m.store, err = persistent.NewPersistentStorage(&persistent.ClientOpts{
