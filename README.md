@@ -1363,8 +1363,8 @@ This can also be set at a pump level. For example:
 
 The `driver` setting defines the driver type to use for Mongo Pumps. It can be one of the following values:
 
-- `mongo-go` (default): Uses the official MongoDB driver. You can get more information about this driver [here](https://github.com/mongodb/mongo-go-driver)
-- `mgo`: Uses the mgo driver. This driver is deprecated. You can get more information about this driver [here](https://github.com/go-mgo/mgo)
+- `mongo-go` (default): Uses the official MongoDB driver. This driver supports Mongo versions greater or equal to v4. You can get more information about this driver [here](https://github.com/mongodb/mongo-go-driver).
+- `mgo`: Uses the mgo driver. This driver is deprecated. This driver supports Mongo versions lower or equal to v4. You can get more information about this driver [here](https://github.com/go-mgo/mgo)
 
 ```json
 "mongo": {
