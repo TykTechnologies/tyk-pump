@@ -136,7 +136,6 @@ TYK_PMP_DONTPURGEUPTIMEDATA=true
 
 </details>
 
-
 ## Base Configuration Fields Explained
 
 ### analytics_storage_config
@@ -470,6 +469,7 @@ A sample config looks like this:
         "mongo_url": "mongodb://localhost:27017/tyk_analytics"
       }
     }
+  }
 }
 ```
 
@@ -1355,6 +1355,24 @@ This can also be set at a pump level. For example:
   "max_record_size":1000,
   "meta": {
     "csv_dir": "./"
+  }
+}
+```
+
+### Driver Type
+
+The `driver` setting defines the driver type to use for Mongo Pumps. It can be one of the following values:
+
+- `mongo-go` (default): Uses the official MongoDB driver. This driver supports Mongo versions greater or equal to v4. You can get more information about this driver [here](https://github.com/mongodb/mongo-go-driver).
+- `mgo`: Uses the mgo driver. This driver is deprecated. This driver supports Mongo versions lower or equal to v4. You can get more information about this driver [here](https://github.com/go-mgo/mgo)
+
+```json
+"mongo": {
+  "type": "mongo",
+  "meta": {
+    "mongo_url": "mongodb://tyk-mongo:27017/tyk_analytics",
+    "collection_name": "tyk_analytics",
+    "driver": "mongo-go"
   }
 }
 ```
