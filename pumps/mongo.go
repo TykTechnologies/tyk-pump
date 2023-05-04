@@ -79,7 +79,8 @@ type BaseMongoConf struct {
 	OmitIndexCreation bool `json:"omit_index_creation" mapstructure:"omit_index_creation"`
 	// Set the consistency mode for the session, it defaults to `Strong`. The valid values are: strong, monotonic, eventual.
 	MongoSessionConsistency string `json:"mongo_session_consistency" mapstructure:"mongo_session_consistency"`
-	// MongoDriverType is the type of the driver (library) to use. The valid values are: "mongo-go" and "mgo".
+	// MongoDriverType is the type of the driver (library) to use. The valid values are: “mongo-go” and “mgo”. Default to “mongo-go”.
+	// You can find more details about the drivers [here](https://github.com/TykTechnologies/tyk-pump#driver-type).
 	MongoDriverType string `json:"driver" mapstructure:"driver"`
 }
 type dbObject struct {
