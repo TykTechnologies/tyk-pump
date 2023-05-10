@@ -510,5 +510,5 @@ func TestDefaultDriverAggregate(t *testing.T) {
 	defaultConf.MongoDriverType = ""
 	err := newPump.Init(defaultConf)
 	assert.Nil(t, err)
-	assert.Equal(t, persistent.OfficialMongo, newPump.dbConf.MongoDriverType)
+	assert.Equal(t, persistent.Mgo, newPump.dbConf.MongoDriverType)
 }
