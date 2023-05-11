@@ -62,6 +62,8 @@ github.com/TykTechnologies/storage v1.0.1 h1:YI85mHMofwIrF0QgrRYqKKd2xuPO/lxGe+S
 github.com/TykTechnologies/storage v1.0.1/go.mod h1:+0S3KuNlLGBTMTSFREuZFm315zzXjuuCO4QSAPy+d3M=
 github.com/TykTechnologies/storage v1.0.2 h1:bWaLbpDmsjxT/8QVl9Fpuz1w1orqa/COvs1Gih+fvYE=
 github.com/TykTechnologies/storage v1.0.2/go.mod h1:+0S3KuNlLGBTMTSFREuZFm315zzXjuuCO4QSAPy+d3M=
+github.com/TykTechnologies/storage v1.0.3 h1:UMEKTA9C8ir636qUS3aAfbBH/KKegH+KmC81LYLnSUg=
+github.com/TykTechnologies/storage v1.0.3/go.mod h1:+0S3KuNlLGBTMTSFREuZFm315zzXjuuCO4QSAPy+d3M=
 github.com/agnivade/levenshtein v1.0.1/go.mod h1:CURSv5d9Uaml+FovSIICkLbAUZ9S4RqaHDIsdSBg7lM=
 github.com/agnivade/levenshtein v1.1.1 h1:QY8M92nrzkmr798gCo3kmMyqXFzdQVpxLlGPRBij0P8=
 github.com/agnivade/levenshtein v1.1.1/go.mod h1:veldBMzWxcCG2ZvUTKD2kJNRdCk5hVbJomOvKkmgYbo=
