@@ -1377,6 +1377,23 @@ The `driver` setting defines the driver type to use for Mongo Pumps. It can be o
 }
 ```
 
+### Direct Connection
+
+`MongoDirectConnection` informs whether to establish connections only with the specified seed servers or to obtain information for the whole cluster and establish connections with further servers too. If true, the client will only connect to the host provided in the ConnectionString and won't attempt to discover other hosts in the cluster. Useful when network restrictions prevent discovery, such as with SSH tunneling. Default is `false`.
+You can get more info from the [official MongoDB driver docs](https://www.mongodb.com/docs/drivers/go/current/fundamentals/connection/#direct-connection).
+
+```json
+"mongo": {
+  "type": "mongo",
+  "meta": {
+    "mongo_url": "mongodb://tyk-mongo:27017/tyk_analytics",
+    "collection_name": "tyk_analytics",
+    "driver": "mongo-go",
+    "mongo_direct_connection": true
+  }
+}
+```
+
 ### Ignore Fields
 
 `ignore_fields` defines a list of analytics fields that will be ignored when writing to the pump. This can be used to avoid writing sensitive information to the Database, or data that you don't really need to have.
