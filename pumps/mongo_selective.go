@@ -128,6 +128,7 @@ func (m *MongoSelectivePump) connect() {
 		SessionConsistency:       m.dbConf.MongoSessionConsistency,
 		ConnectionTimeout:        m.timeout,
 		Type:                     m.dbConf.MongoDriverType,
+		DirectConnection:         m.dbConf.MongoDirectConnection,
 	})
 	if err != nil {
 		m.log.Fatal("Failed to connect to mongo: ", err)

@@ -82,6 +82,12 @@ type BaseMongoConf struct {
 	// MongoDriverType is the type of the driver (library) to use. The valid values are: “mongo-go” and “mgo”.
 	// Default to “mongo-go”. Check out this guide to [learn about different MongoDB drivers Tyk Pump support](https://github.com/TykTechnologies/tyk-pump#driver-type).
 	MongoDriverType string `json:"driver" mapstructure:"driver"`
+	// MongoDirectConnection informs whether to establish connections only with the specified seed servers,
+	// or to obtain information for the whole cluster and establish connections with further servers too.
+	// If true, the client will only connect to the host provided in the ConnectionString
+	// and won't attempt to discover other hosts in the cluster. Useful when network restrictions
+	// prevent discovery, such as with SSH tunneling. Default is false.
+	MongoDirectConnection bool `json:"mongo_direct_connection" mapstructure:"mongo_direct_connection"`
 }
 type dbObject struct {
 	tableName string
@@ -362,6 +368,7 @@ func (m *MongoPump) connect() {
 		SessionConsistency:       m.dbConf.MongoSessionConsistency,
 		ConnectionTimeout:        m.timeout,
 		Type:                     m.dbConf.MongoDriverType,
+		DirectConnection:         m.dbConf.MongoDirectConnection,
 	})
 	if err != nil {
 		m.log.Fatal("Failed to connect: ", err)
