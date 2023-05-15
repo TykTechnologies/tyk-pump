@@ -396,7 +396,7 @@ func (pm *PrometheusMetric) Inc(values ...string) error {
 		// We use a map to store the counter values, the unique key is the label values joined by "--"
 		key := strings.Join(values, "--")
 		if currentValue, ok := pm.counterMap[key]; ok {
-			currentValue.count += 1
+			currentValue.count++
 			pm.counterMap[key] = currentValue
 		} else {
 			pm.counterMap[key] = counterStruct{
