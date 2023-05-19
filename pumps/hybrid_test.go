@@ -388,6 +388,7 @@ func TestHybridConfigCheckDefaults(t *testing.T) {
 			expectedConfig: &HybridPumpConf{
 				CallTimeout: DefaultRPCCallTimeout,
 				Aggregated:  false,
+				RPCPoolSize: 5,
 			},
 		},
 		{
@@ -401,6 +402,7 @@ func TestHybridConfigCheckDefaults(t *testing.T) {
 				Aggregated:              true,
 				StoreAnalyticsPerMinute: true,
 				aggregationTime:         1,
+				RPCPoolSize:             5,
 			},
 		},
 
@@ -415,6 +417,7 @@ func TestHybridConfigCheckDefaults(t *testing.T) {
 				Aggregated:              true,
 				StoreAnalyticsPerMinute: false,
 				aggregationTime:         60,
+				RPCPoolSize:             5,
 			},
 		},
 		{
@@ -424,6 +427,19 @@ func TestHybridConfigCheckDefaults(t *testing.T) {
 			},
 			expectedConfig: &HybridPumpConf{
 				CallTimeout: 20,
+				RPCPoolSize: 5,
+			},
+		},
+
+		{
+			testName: "custom rpc_pool_size",
+			givenConfig: &HybridPumpConf{
+				CallTimeout: 20,
+				RPCPoolSize: 20,
+			},
+			expectedConfig: &HybridPumpConf{
+				CallTimeout: 20,
+				RPCPoolSize: 20,
 			},
 		},
 	}
