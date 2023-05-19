@@ -77,7 +77,7 @@ type HybridPumpConf struct {
 
 	// Hybrid pump RPC calls timeout in seconds. Defaults to `10` seconds.
 	CallTimeout int `mapstructure:"call_timeout"`
-	// Hybrid pump connection pool size
+	// Hybrid pump connection pool size. Defaults to `5`.
 	RPCPoolSize int `mapstructure:"rpc_pool_size"`
 	// aggregationTime is to specify the frequency of the aggregation in minutes if `aggregated` is set to `true`.
 	aggregationTime int
@@ -106,6 +106,10 @@ func (conf *HybridPumpConf) CheckDefaults() {
 		if conf.StoreAnalyticsPerMinute {
 			conf.aggregationTime = 1
 		}
+	}
+
+	if conf.RPCPoolSize == 0 {
+		conf.RPCPoolSize = 5
 	}
 }
 
@@ -187,9 +191,6 @@ func (p *HybridPump) connectRPC() error {
 	p.clientSingleton.OnConnect = p.onConnectFunc
 
 	p.clientSingleton.Conns = p.hybridConfig.RPCPoolSize
-	if p.clientSingleton.Conns == 0 {
-		p.clientSingleton.Conns = 20
-	}
 
 	p.clientSingleton.Dial = getDialFn(connID, p.hybridConfig)
 
