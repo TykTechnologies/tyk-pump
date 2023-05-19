@@ -480,6 +480,7 @@ func TestHybridConfigParsing(t *testing.T) {
 				APIKey:           "testapikey",
 				Aggregated:       true,
 				aggregationTime:  60,
+				RPCPoolSize:      5,
 			},
 		},
 		{
@@ -499,6 +500,7 @@ func TestHybridConfigParsing(t *testing.T) {
 				APIKey:           "testapikey",
 				Aggregated:       true,
 				aggregationTime:  60,
+				RPCPoolSize:      5,
 			},
 		},
 
@@ -514,6 +516,7 @@ func TestHybridConfigParsing(t *testing.T) {
 				"aggregated":                 true,
 				"store_analytics_per_minute": true,
 				"track_all_paths":            true,
+				"rpc_pool_size":              20,
 			},
 			expectedConfig: &HybridPumpConf{
 				ConnectionString:        svAddress,
@@ -524,6 +527,7 @@ func TestHybridConfigParsing(t *testing.T) {
 				StoreAnalyticsPerMinute: true,
 				aggregationTime:         1,
 				TrackAllPaths:           true,
+				RPCPoolSize:             20,
 			},
 		},
 	}
