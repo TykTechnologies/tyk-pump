@@ -388,6 +388,7 @@ func TestHybridConfigCheckDefaults(t *testing.T) {
 			expectedConfig: &HybridPumpConf{
 				CallTimeout: DefaultRPCCallTimeout,
 				Aggregated:  false,
+				RPCPoolSize: 5,
 			},
 		},
 		{
@@ -401,6 +402,7 @@ func TestHybridConfigCheckDefaults(t *testing.T) {
 				Aggregated:              true,
 				StoreAnalyticsPerMinute: true,
 				aggregationTime:         1,
+				RPCPoolSize:             5,
 			},
 		},
 
@@ -415,6 +417,7 @@ func TestHybridConfigCheckDefaults(t *testing.T) {
 				Aggregated:              true,
 				StoreAnalyticsPerMinute: false,
 				aggregationTime:         60,
+				RPCPoolSize:             5,
 			},
 		},
 		{
@@ -424,6 +427,19 @@ func TestHybridConfigCheckDefaults(t *testing.T) {
 			},
 			expectedConfig: &HybridPumpConf{
 				CallTimeout: 20,
+				RPCPoolSize: 5,
+			},
+		},
+
+		{
+			testName: "custom rpc_pool_size",
+			givenConfig: &HybridPumpConf{
+				CallTimeout: 20,
+				RPCPoolSize: 20,
+			},
+			expectedConfig: &HybridPumpConf{
+				CallTimeout: 20,
+				RPCPoolSize: 20,
 			},
 		},
 	}
@@ -464,6 +480,7 @@ func TestHybridConfigParsing(t *testing.T) {
 				APIKey:           "testapikey",
 				Aggregated:       true,
 				aggregationTime:  60,
+				RPCPoolSize:      5,
 			},
 		},
 		{
@@ -483,6 +500,7 @@ func TestHybridConfigParsing(t *testing.T) {
 				APIKey:           "testapikey",
 				Aggregated:       true,
 				aggregationTime:  60,
+				RPCPoolSize:      5,
 			},
 		},
 
@@ -498,6 +516,7 @@ func TestHybridConfigParsing(t *testing.T) {
 				"aggregated":                 true,
 				"store_analytics_per_minute": true,
 				"track_all_paths":            true,
+				"rpc_pool_size":              20,
 			},
 			expectedConfig: &HybridPumpConf{
 				ConnectionString:        svAddress,
@@ -508,6 +527,7 @@ func TestHybridConfigParsing(t *testing.T) {
 				StoreAnalyticsPerMinute: true,
 				aggregationTime:         1,
 				TrackAllPaths:           true,
+				RPCPoolSize:             20,
 			},
 		},
 	}
