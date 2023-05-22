@@ -3,6 +3,9 @@ package pumps
 import (
 	"context"
 	"encoding/base64"
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/stretchr/testify/require"
 	"strconv"
 	"testing"
 	"time"
@@ -319,17 +322,10 @@ func TestMongoPump_AccumulateSet(t *testing.T) {
 			mPump.log = log.WithField("prefix", mongoPrefix)
 
 			data := recordsGenerator(numRecords)
-			expectedGraphRecordSkips := 0
-			for _, recordData := range data {
-				record := recordData.(analytics.AnalyticsRecord)
-				if record.IsGraphRecord() {
-					expectedGraphRecordSkips++
-				}
-			}
 
 			// assumed from sizeBytes in AccumulateSet
 			const dataSize = 1024
-			totalData := dataSize * (numRecords - expectedGraphRecordSkips)
+			totalData := dataSize * (numRecords)
 
 			set := mPump.AccumulateSet(data, false)
 
@@ -357,7 +353,7 @@ func TestMongoPump_AccumulateSet(t *testing.T) {
 		100,
 	))
 
-	t.Run("should skip all graph analytics records", run(
+	t.Run("should include all graph analytics records", run(
 		func(numRecords int) []interface{} {
 			data := make([]interface{}, 0)
 			for i := 0; i < numRecords; i++ {
@@ -369,7 +365,7 @@ func TestMongoPump_AccumulateSet(t *testing.T) {
 			}
 			return data
 		},
-		50,
+		100,
 	))
 }
 
@@ -564,4 +560,92 @@ func TestDefaultDriver(t *testing.T) {
 	err := newPump.Init(defaultConf)
 	assert.Nil(t, err)
 	assert.Equal(t, persistent.Mgo, newPump.dbConf.MongoDriverType)
+}
+
+func TestMongoPump_WriteData(t *testing.T) {
+	sampleRecord := analytics.AnalyticsRecord{
+		Method:       "GET",
+		Host:         "localhost:9000",
+		Path:         "/test",
+		Day:          1,
+		Month:        1,
+		Year:         2023,
+		ResponseCode: 200,
+		APIKey:       "testkey",
+		TimeStamp:    time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
+		APIName:      "testapi",
+		APIID:        "testapi",
+		OrgID:        "testorg",
+		Geo: analytics.GeoData{
+			City: analytics.City{
+				Names: map[string]string{},
+			},
+		},
+		Tags: []string{},
+	}
+
+	run := func(recordGenerator func(count int) []analytics.AnalyticsRecord) func(t *testing.T) {
+		return func(t *testing.T) {
+			pump := &MongoPump{}
+			conf := defaultConf()
+			pump.dbConf = &conf
+			pump.log = log.WithField("prefix", mongoPrefix)
+
+			pump.connect()
+
+			t.Cleanup(func() {
+				if err := pump.store.DropDatabase(context.Background()); err != nil {
+					pump.log.WithError(err).Warn("error dropping collection")
+				}
+			})
+
+			data := recordGenerator(100)
+			interfaceRecords := make([]interface{}, len(data))
+			for i, d := range data {
+				interfaceRecords[i] = d
+			}
+
+			err := pump.WriteData(context.Background(), interfaceRecords)
+			require.NoError(t, err)
+
+			var results []analytics.AnalyticsRecord
+
+			// Using the same collection name as the default pump config
+			d := dbObject{
+				tableName: pump.dbConf.CollectionName,
+			}
+			err = pump.store.Query(context.Background(), d, &results, nil)
+
+			assert.Nil(t, err)
+
+			// ensure the length and content are the same
+			assert.Equal(t, len(data), len(results))
+			if diff := cmp.Diff(data, results, cmpopts.IgnoreFields(analytics.AnalyticsRecord{}, "id", "APISchema")); diff != "" {
+				t.Error(diff)
+			}
+		}
+	}
+
+	t.Run("should write all records", run(func(count int) []analytics.AnalyticsRecord {
+		records := make([]analytics.AnalyticsRecord, count)
+		for i, _ := range records {
+			records[i] = sampleRecord
+		}
+		return records
+	}))
+
+	t.Run("should write graph records as well", run(func(count int) []analytics.AnalyticsRecord {
+		records := make([]analytics.AnalyticsRecord, count)
+		for i, _ := range records {
+			record := sampleRecord
+			if i%2 == 0 {
+				record.RawRequest = rawGQLRequest
+				record.RawResponse = rawGQLResponse
+				record.APISchema = schema
+				record.Tags = []string{analytics.PredefinedTagGraphAnalytics}
+			}
+			records[i] = record
+		}
+		return records
+	}))
 }
