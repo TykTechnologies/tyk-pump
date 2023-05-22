@@ -3,12 +3,13 @@ package pumps
 import (
 	"context"
 	"encoding/base64"
-	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/stretchr/testify/require"
 	"strconv"
 	"testing"
 	"time"
+
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/stretchr/testify/require"
 
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/vmihailenco/msgpack.v2"
@@ -628,7 +629,7 @@ func TestMongoPump_WriteData(t *testing.T) {
 
 	t.Run("should write all records", run(func(count int) []analytics.AnalyticsRecord {
 		records := make([]analytics.AnalyticsRecord, count)
-		for i, _ := range records {
+		for i := range records {
 			records[i] = sampleRecord
 		}
 		return records
@@ -636,7 +637,7 @@ func TestMongoPump_WriteData(t *testing.T) {
 
 	t.Run("should write graph records as well", run(func(count int) []analytics.AnalyticsRecord {
 		records := make([]analytics.AnalyticsRecord, count)
-		for i, _ := range records {
+		for i := range records {
 			record := sampleRecord
 			if i%2 == 0 {
 				record.RawRequest = rawGQLRequest
