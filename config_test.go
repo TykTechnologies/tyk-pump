@@ -43,7 +43,6 @@ func TestToUpperPumps(t *testing.T) {
 	assert.Equal(t, len(pumpNames)-1, len(initialConfig.Pumps))
 	assert.Equal(t, initialConfig.Pumps[strings.ToUpper(pumpNames[0])].Type, "mongo")
 	assert.Equal(t, initialConfig.Pumps[strings.ToUpper(pumpNames[1])].Type, "sql")
-	assert.Equal(t, initialConfig.Pumps[strings.ToUpper(pumpNames[2])].Type, "sql")
 	assert.Equal(t, initialConfig.Pumps[strings.ToUpper(pumpNames[3])].Type, "sql")
 	assert.Equal(t, initialConfig.Pumps[strings.ToUpper(pumpNames[0])].Name, "mongo-pump")
 	assert.Equal(t, initialConfig.Pumps[strings.ToUpper(pumpNames[1])].Name, "sql-pump")
@@ -52,6 +51,9 @@ func TestToUpperPumps(t *testing.T) {
 	// Check if the pumps with lower case are empty (don't appear in the map)
 	assert.Equal(t, initialConfig.Pumps[pumpNames[0]], PumpConfig{})
 	assert.Equal(t, initialConfig.Pumps[pumpNames[1]], PumpConfig{})
+
+	// Checking if the index 4 overrides the index 2 (the original value was 'mongo')
+	assert.Equal(t, initialConfig.Pumps[strings.ToUpper(pumpNames[2])].Type, "sql")
 }
 
 func TestConfigEnv(t *testing.T) {
