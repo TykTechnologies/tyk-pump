@@ -8,6 +8,52 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestToUpperPumps(t *testing.T) {
+	pumpNames := []string{"test1", "test2", "TEST3", "Test4", "test3"} // index 4 must override index 2
+
+	initialConfig := &TykPumpConfiguration{
+		Pumps: map[string]PumpConfig{
+			pumpNames[0]: {
+				Type: "mongo",
+				Name: "mongo-pump",
+				Meta: map[string]interface{}{
+					"meta_env_prefix": "test",
+				},
+			},
+			pumpNames[1]: {
+				Type: "sql",
+				Name: "sql-pump",
+				Meta: map[string]interface{}{
+					"meta_env_prefix": "test2",
+				},
+			},
+			pumpNames[2]: {
+				Type: "mongo",
+			},
+			pumpNames[3]: {
+				Type: "sql",
+			},
+			pumpNames[4]: {
+				Type: "sql",
+			},
+		},
+	}
+	defaultPath := ""
+	LoadConfig(&defaultPath, initialConfig)
+	assert.Equal(t, len(pumpNames)-1, len(initialConfig.Pumps))
+	assert.Equal(t, initialConfig.Pumps[strings.ToUpper(pumpNames[0])].Type, "mongo")
+	assert.Equal(t, initialConfig.Pumps[strings.ToUpper(pumpNames[1])].Type, "sql")
+	assert.Equal(t, initialConfig.Pumps[strings.ToUpper(pumpNames[2])].Type, "sql")
+	assert.Equal(t, initialConfig.Pumps[strings.ToUpper(pumpNames[3])].Type, "sql")
+	assert.Equal(t, initialConfig.Pumps[strings.ToUpper(pumpNames[0])].Name, "mongo-pump")
+	assert.Equal(t, initialConfig.Pumps[strings.ToUpper(pumpNames[1])].Name, "sql-pump")
+	assert.Equal(t, initialConfig.Pumps[strings.ToUpper(pumpNames[0])].Meta["meta_env_prefix"], "test")
+	assert.Equal(t, initialConfig.Pumps[strings.ToUpper(pumpNames[1])].Meta["meta_env_prefix"], "test2")
+	// Check if the pumps with lower case are empty (don't appear in the map)
+	assert.Equal(t, initialConfig.Pumps[pumpNames[0]], PumpConfig{})
+	assert.Equal(t, initialConfig.Pumps[pumpNames[1]], PumpConfig{})
+}
+
 func TestConfigEnv(t *testing.T) {
 	pumpNameCSV := "CSV"
 	pumpNameTest := "TEST"
@@ -76,50 +122,4 @@ func TestIgnoreConfig(t *testing.T) {
 	LoadConfig(&defaultPath, &config)
 
 	assert.Equal(t, 30, config.PurgeDelay, "TYK_OMITCONFIGFILE should not have unset the configuation")
-}
-
-func TestToUpperPumps(t *testing.T) {
-	pumpNames := []string{"test1", "test2", "TEST3", "Test4", "test3"} // index 4 must override index 2
-
-	initialConfig := &TykPumpConfiguration{
-		Pumps: map[string]PumpConfig{
-			pumpNames[0]: {
-				Type: "mongo",
-				Name: "mongo-pump",
-				Meta: map[string]interface{}{
-					"meta_env_prefix": "test",
-				},
-			},
-			pumpNames[1]: {
-				Type: "sql",
-				Name: "sql-pump",
-				Meta: map[string]interface{}{
-					"meta_env_prefix": "test2",
-				},
-			},
-			pumpNames[2]: {
-				Type: "mongo",
-			},
-			pumpNames[3]: {
-				Type: "sql",
-			},
-			pumpNames[4]: {
-				Type: "sql",
-			},
-		},
-	}
-	defaultPath := ""
-	LoadConfig(&defaultPath, initialConfig)
-	assert.Equal(t, len(pumpNames)-1, len(initialConfig.Pumps))
-	assert.Equal(t, initialConfig.Pumps[strings.ToUpper(pumpNames[0])].Type, "mongo")
-	assert.Equal(t, initialConfig.Pumps[strings.ToUpper(pumpNames[1])].Type, "sql")
-	assert.Equal(t, initialConfig.Pumps[strings.ToUpper(pumpNames[2])].Type, "sql")
-	assert.Equal(t, initialConfig.Pumps[strings.ToUpper(pumpNames[3])].Type, "sql")
-	assert.Equal(t, initialConfig.Pumps[strings.ToUpper(pumpNames[0])].Name, "mongo-pump")
-	assert.Equal(t, initialConfig.Pumps[strings.ToUpper(pumpNames[1])].Name, "sql-pump")
-	assert.Equal(t, initialConfig.Pumps[strings.ToUpper(pumpNames[0])].Meta["meta_env_prefix"], "test")
-	assert.Equal(t, initialConfig.Pumps[strings.ToUpper(pumpNames[1])].Meta["meta_env_prefix"], "test2")
-	// Check if the pumps with lower case are empty (don't appear in the map)
-	assert.Equal(t, initialConfig.Pumps[pumpNames[0]], PumpConfig{})
-	assert.Equal(t, initialConfig.Pumps[pumpNames[1]], PumpConfig{})
 }
