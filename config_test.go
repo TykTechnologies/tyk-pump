@@ -9,7 +9,6 @@ import (
 )
 
 func TestConfigEnv(t *testing.T) {
-
 	pumpNameCSV := "CSV"
 	pumpNameTest := "TEST"
 
@@ -61,7 +60,6 @@ func TestConfigEnv(t *testing.T) {
 }
 
 func TestIgnoreConfig(t *testing.T) {
-
 	config := TykPumpConfiguration{
 		PurgeDelay: 10,
 	}
@@ -78,7 +76,6 @@ func TestIgnoreConfig(t *testing.T) {
 	LoadConfig(&defaultPath, &config)
 
 	assert.Equal(t, 30, config.PurgeDelay, "TYK_OMITCONFIGFILE should not have unset the configuation")
-
 }
 
 func TestToUpperPumps(t *testing.T) {
@@ -103,5 +100,4 @@ func TestToUpperPumps(t *testing.T) {
 	// Check if the pumps with lower case are empty (don't appear in the map)
 	assert.Equal(t, initialConfig.Pumps[pumpNames[0]], PumpConfig{})
 	assert.Equal(t, initialConfig.Pumps[pumpNames[1]], PumpConfig{})
-
 }
