@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -77,5 +78,30 @@ func TestIgnoreConfig(t *testing.T) {
 	LoadConfig(&defaultPath, &config)
 
 	assert.Equal(t, 30, config.PurgeDelay, "TYK_OMITCONFIGFILE should not have unset the configuation")
+
+}
+
+func TestToUpperPumps(t *testing.T) {
+	pumpNames := []string{"test1", "test2"}
+
+	initialConfig := &TykPumpConfiguration{
+		Pumps: map[string]PumpConfig{
+			pumpNames[0]: {
+				Type: "mongo",
+			},
+			pumpNames[1]: {
+				Type: "sql",
+			},
+		},
+	}
+	defaultPath := ""
+	LoadConfig(&defaultPath, initialConfig)
+
+	assert.Equal(t, len(pumpNames), len(initialConfig.Pumps))
+	assert.Equal(t, initialConfig.Pumps[strings.ToUpper(pumpNames[0])].Type, "mongo")
+	assert.Equal(t, initialConfig.Pumps[strings.ToUpper(pumpNames[1])].Type, "sql")
+	// Check if the pumps with lower case are empty (don't appear in the map)
+	assert.Equal(t, initialConfig.Pumps[pumpNames[0]], PumpConfig{})
+	assert.Equal(t, initialConfig.Pumps[pumpNames[1]], PumpConfig{})
 
 }
