@@ -384,7 +384,7 @@ func (m *MongoPump) WriteData(ctx context.Context, data []interface{}) error {
 
 	m.log.Debug("Attempting to write ", len(data), " records...")
 
-	accumulateSet := m.AccumulateSet(data, true)
+	accumulateSet := m.AccumulateSet(data, false)
 
 	errCh := make(chan error, len(accumulateSet))
 	for _, dataSet := range accumulateSet {
@@ -456,7 +456,7 @@ func (m *MongoPump) AccumulateSet(data []interface{}, isForGraphRecords bool) []
 
 // shouldProcessItem checks if the item should be processed based on its ResponseCode and if it's a graph record.
 // It returns the processed item and a boolean indicating if the item should be skipped.
-func (m *MongoPump) shouldProcessItem(item interface{}, isForGraphRecords bool) (*analytics.AnalyticsRecord, bool) {
+func (m *MongoPump) shouldProcessItem(item interface{}, isForGraphRecords bool) (records *analytics.AnalyticsRecord, shouldSKip bool) {
 	thisItem, ok := item.(analytics.AnalyticsRecord)
 	if !ok {
 		m.log.Error("Couldn't convert item to analytics.AnalyticsRecord")
@@ -467,10 +467,9 @@ func (m *MongoPump) shouldProcessItem(item interface{}, isForGraphRecords bool) 
 	}
 
 	isGraphRecord := thisItem.IsGraphRecord()
-	if isGraphRecord != isForGraphRecords {
+	if isForGraphRecords && !isGraphRecord {
 		return &thisItem, true
 	}
-
 	return &thisItem, false
 }
 
