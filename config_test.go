@@ -56,6 +56,19 @@ func TestToUpperPumps(t *testing.T) {
 	assert.Equal(t, initialConfig.Pumps[strings.ToUpper(pumpNames[2])].Type, "sql")
 }
 
+func TestLoadExampleConf(t *testing.T) {
+	defaultPath := "./pump.example.conf"
+	initialConfig := &TykPumpConfiguration{}
+	LoadConfig(&defaultPath, initialConfig)
+	assert.NotZero(t, len(initialConfig.Pumps))
+
+	for k, pump := range initialConfig.Pumps {
+		assert.NotNil(t, pump)
+		// Checking if the key of the map is equal to the pump type but upper case
+		assert.Equal(t, k, strings.ToUpper(pump.Type))
+	}
+}
+
 func TestConfigEnv(t *testing.T) {
 	pumpNameCSV := "CSV"
 	pumpNameTest := "TEST"
