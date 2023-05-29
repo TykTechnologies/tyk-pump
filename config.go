@@ -251,6 +251,13 @@ func LoadConfig(filePath *string, configStruct *TykPumpConfiguration) {
 		log.Error("Couldn't unmarshal configuration: ", marshalErr)
 	}
 
+	toUpperMap := make(map[string]PumpConfig)
+	for pumpName := range configStruct.Pumps {
+		upperPumpName := strings.ToUpper(pumpName)
+		toUpperMap[upperPumpName] = configStruct.Pumps[pumpName]
+	}
+	configStruct.Pumps = toUpperMap
+
 	shouldOmit, omitEnvExist := os.LookupEnv(ENV_PREVIX + "_OMITCONFIGFILE")
 	if configStruct.OmitConfigFile || (omitEnvExist && strings.ToLower(shouldOmit) == "true") {
 		*configStruct = TykPumpConfiguration{}
@@ -289,7 +296,7 @@ func (cfg *TykPumpConfiguration) LoadPumpsByEnv() error {
 			}
 
 			//The name of the pump is always going to be the first keyword after the PUMPS_ENV_PREFIX
-			pmpName := envSplit[0]
+			pmpName := strings.ToUpper(envSplit[0])
 
 			osPumpsEnvNames[pmpName] = true
 		}
