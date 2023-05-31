@@ -2,21 +2,25 @@ package pumps
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGetPumpByName(t *testing.T) {
 
-	name := "dummy"
-	pmpType, err := GetPumpByName(name)
+	dummyType, err := GetPumpByName("dummy")
+	assert.NoError(t, err)
+	assert.Equal(t, dummyType, &DummyPump{})
 
-	if err != nil || pmpType == nil {
-		t.Fail()
-	}
+	invalidPump, err := GetPumpByName("xyz")
+	assert.Error(t, err)
+	assert.Nil(t, invalidPump)
 
-	name2 := "xyz"
-	pmpType2, err2 := GetPumpByName(name2)
+	mongoPump, err := GetPumpByName("MONGO")
+	assert.NoError(t, err)
+	assert.Equal(t, mongoPump, &MongoPump{})
 
-	if err2 == nil || pmpType2 != nil {
-		t.Fail()
-	}
+	sqlPump, err := GetPumpByName("SqL")
+	assert.NoError(t, err)
+	assert.Equal(t, sqlPump, &SQLPump{})
 }
