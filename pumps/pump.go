@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/kelseyhightower/envconfig"
@@ -45,7 +46,7 @@ type UptimePump interface {
 
 func GetPumpByName(name string) (Pump, error) {
 
-	if pump, ok := AvailablePumps[name]; ok && pump != nil {
+	if pump, ok := AvailablePumps[strings.ToLower(name)]; ok && pump != nil {
 		return pump, nil
 	}
 
