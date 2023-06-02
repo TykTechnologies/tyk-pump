@@ -9,7 +9,7 @@ on:
       - main
   pull_request:
   workflow_dispatch:
-
+  
 env:
   TYK_PMP_ANALYTICSSTORAGETYPE: redis
   TYK_PMP_ANALYTICSSTORAGECONFIG_TYPE: redis
@@ -22,7 +22,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        go: [1.18, 1.19]
+        go: [1.16, 1.17]
     with:
       go: ${{ matrix.go }}
       redis: 5
