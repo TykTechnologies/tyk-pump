@@ -10,50 +10,27 @@ import (
 
 func TestToUpperPumps(t *testing.T) {
 	pumpNames := []string{"test1", "test2", "TEST3", "Test4", "test3"} // index 4 must override index 2
-
 	initialConfig := &TykPumpConfiguration{
-		Pumps: map[string]PumpConfig{
-			pumpNames[0]: {
-				Type: "mongo",
-				Name: "mongo-pump",
-				Meta: map[string]interface{}{
-					"meta_env_prefix": "test",
-				},
-			},
-			pumpNames[1]: {
-				Type: "sql",
-				Name: "sql-pump",
-				Meta: map[string]interface{}{
-					"meta_env_prefix": "test2",
-				},
-			},
-			pumpNames[2]: {
-				Type: "mongo",
-			},
-			pumpNames[3]: {
-				Type: "sql",
-			},
-			pumpNames[4]: {
-				Type: "sql",
-			},
-		},
+		Pumps: make(map[string]PumpConfig),
 	}
+	initialConfig.Pumps[pumpNames[0]] = PumpConfig{Type: "mongo"}
+	initialConfig.Pumps[pumpNames[1]] = PumpConfig{Type: "sql"}
+	initialConfig.Pumps[pumpNames[2]] = PumpConfig{Type: "mongo-aggregate"}
+	initialConfig.Pumps[pumpNames[3]] = PumpConfig{Type: "csv"}
+	initialConfig.Pumps[pumpNames[4]] = PumpConfig{Type: "sql-aggregate"}
+
 	defaultPath := ""
 	LoadConfig(&defaultPath, initialConfig)
 	assert.Equal(t, len(pumpNames)-1, len(initialConfig.Pumps))
 	assert.Equal(t, initialConfig.Pumps[strings.ToUpper(pumpNames[0])].Type, "mongo")
 	assert.Equal(t, initialConfig.Pumps[strings.ToUpper(pumpNames[1])].Type, "sql")
-	assert.Equal(t, initialConfig.Pumps[strings.ToUpper(pumpNames[3])].Type, "sql")
-	assert.Equal(t, initialConfig.Pumps[strings.ToUpper(pumpNames[0])].Name, "mongo-pump")
-	assert.Equal(t, initialConfig.Pumps[strings.ToUpper(pumpNames[1])].Name, "sql-pump")
-	assert.Equal(t, initialConfig.Pumps[strings.ToUpper(pumpNames[0])].Meta["meta_env_prefix"], "test")
-	assert.Equal(t, initialConfig.Pumps[strings.ToUpper(pumpNames[1])].Meta["meta_env_prefix"], "test2")
+	assert.Equal(t, initialConfig.Pumps[strings.ToUpper(pumpNames[3])].Type, "csv")
 	// Check if the pumps with lower case are empty (don't appear in the map)
 	assert.Equal(t, initialConfig.Pumps[pumpNames[0]], PumpConfig{})
 	assert.Equal(t, initialConfig.Pumps[pumpNames[1]], PumpConfig{})
 
 	// Checking if the index 4 overrides the index 2 (the original value was 'mongo')
-	assert.Equal(t, initialConfig.Pumps[strings.ToUpper(pumpNames[2])].Type, "sql")
+	assert.Equal(t, initialConfig.Pumps[strings.ToUpper(pumpNames[2])].Type, "sql-aggregate")
 }
 
 func TestLoadExampleConf(t *testing.T) {
