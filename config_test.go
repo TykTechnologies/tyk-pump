@@ -121,20 +121,34 @@ func TestConfigEnv(t *testing.T) {
 }
 
 func TestIgnoreConfig(t *testing.T) {
-	config := TykPumpConfiguration{
-		PurgeDelay: 10,
-	}
-	os.Setenv(ENV_PREVIX+"_OMITCONFIGFILE", "true")
-	defaultPath := ""
-	LoadConfig(&defaultPath, &config)
+	defaultPath := "pump.example.conf"
 
-	assert.Equal(t, 0, config.PurgeDelay, "TYK_OMITCONFIGFILE should have unset the configuation")
+	t.Run("Ignoring the config file", func(t *testing.T) {
+		initialConfig := TykPumpConfiguration{PurgeDelay: 5}
+		os.Setenv(ENV_PREVIX+"_OMITCONFIGFILE", "true")
+		defer os.Unsetenv(ENV_PREVIX + "_OMITCONFIGFILE")
+		LoadConfig(&defaultPath, &initialConfig)
+		assert.Equal(t, 5, initialConfig.PurgeDelay, "TYK_OMITCONFIGFILE set to true shouldn't have unset the configuration")
+	})
 
-	os.Unsetenv(ENV_PREVIX + "_OMITCONFIGFILE")
+	t.Run("Not ignoring the config file", func(t *testing.T) {
+		initialConfig := TykPumpConfiguration{PurgeDelay: 5}
+		os.Setenv(ENV_PREVIX+"_OMITCONFIGFILE", "false")
+		defer os.Unsetenv(ENV_PREVIX + "_OMITCONFIGFILE")
+		LoadConfig(&defaultPath, &initialConfig)
+		assert.Equal(t, 10, initialConfig.PurgeDelay, "TYK_OMITCONFIGFILE set to false should overwrite the configuration")
+	})
 
-	config = TykPumpConfiguration{}
-	config.PurgeDelay = 30
-	LoadConfig(&defaultPath, &config)
+	t.Run("Environment variable not set", func(t *testing.T) {
+		initialConfig := TykPumpConfiguration{PurgeDelay: 5}
+		LoadConfig(&defaultPath, &initialConfig)
+		assert.Equal(t, 10, initialConfig.PurgeDelay, "TYK_OMITCONFIGFILE not set should overwrite the configuration")
+	})
 
-	assert.Equal(t, 30, config.PurgeDelay, "TYK_OMITCONFIGFILE should not have unset the configuation")
+	t.Run("Config file does not exist", func(t *testing.T) {
+		initialConfig := TykPumpConfiguration{PurgeDelay: 5}
+		nonexistentPath := "nonexistent_config.json"
+		LoadConfig(&nonexistentPath, &initialConfig)
+		assert.Equal(t, 5, initialConfig.PurgeDelay, "Nonexistent config file should not affect the configuration")
+	})
 }
