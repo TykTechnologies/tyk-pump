@@ -36,7 +36,7 @@ module "tyk-pump" {
 { branch    = "master",
 	reviewers = "2",
 	convos    = "false",
-	required_tests = ["1.19","Go 1.19 tests"]},
+	required_tests = ["1.19-bullseye","Go 1.19 tests"]},
 { branch    = "release-1.7",
 	reviewers = "0",
 	convos    = "false",
