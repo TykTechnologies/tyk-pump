@@ -272,7 +272,7 @@ func LoadConfig(filePath *string, configStruct *TykPumpConfiguration) {
 
 func (cfg *TykPumpConfiguration) shouldOmitConfigFile() bool {
 	shouldOmit, omitEnvExist := os.LookupEnv(ENV_PREVIX + "_OMITCONFIGFILE")
-	return cfg.OmitConfigFile || (omitEnvExist && strings.EqualFold(shouldOmit, "true"))
+	return omitEnvExist && strings.EqualFold(shouldOmit, "true")
 }
 
 func (cfg *TykPumpConfiguration) LoadPumpsByEnv() error {
