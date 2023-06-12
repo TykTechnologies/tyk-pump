@@ -240,15 +240,16 @@ type TykPumpConfiguration struct {
 }
 
 func LoadConfig(filePath *string, configStruct *TykPumpConfiguration) {
+	if !configStruct.shouldOmitConfigFile() {
+		configuration, err := ioutil.ReadFile(*filePath)
+		if err != nil {
+			log.Error("Couldn't load configuration file: ", err)
+		}
 
-	configuration, err := ioutil.ReadFile(*filePath)
-	if err != nil {
-		log.Error("Couldn't load configuration file: ", err)
-	}
-
-	marshalErr := json.Unmarshal(configuration, &configStruct)
-	if marshalErr != nil {
-		log.Error("Couldn't unmarshal configuration: ", marshalErr)
+		marshalErr := json.Unmarshal(configuration, &configStruct)
+		if marshalErr != nil {
+			log.Error("Couldn't unmarshal configuration: ", marshalErr)
+		}
 	}
 
 	toUpperMap := make(map[string]PumpConfig)
@@ -258,11 +259,6 @@ func LoadConfig(filePath *string, configStruct *TykPumpConfiguration) {
 	}
 	configStruct.Pumps = toUpperMap
 
-	shouldOmit, omitEnvExist := os.LookupEnv(ENV_PREVIX + "_OMITCONFIGFILE")
-	if configStruct.OmitConfigFile || (omitEnvExist && strings.ToLower(shouldOmit) == "true") {
-		*configStruct = TykPumpConfiguration{}
-	}
-
 	overrideErr := envconfig.Process(ENV_PREVIX, configStruct)
 	if overrideErr != nil {
 		log.Error("Failed to process environment variables after file load: ", overrideErr)
@@ -270,8 +266,13 @@ func LoadConfig(filePath *string, configStruct *TykPumpConfiguration) {
 
 	errLoadEnvPumps := configStruct.LoadPumpsByEnv()
 	if errLoadEnvPumps != nil {
-		log.Fatal("error loading pumps env vars:", err)
+		log.Fatal("error loading pumps env vars:", errLoadEnvPumps)
 	}
+}
+
+func (cfg *TykPumpConfiguration) shouldOmitConfigFile() bool {
+	shouldOmit, omitEnvExist := os.LookupEnv(ENV_PREVIX + "_OMITCONFIGFILE")
+	return omitEnvExist && strings.EqualFold(shouldOmit, "true")
 }
 
 func (cfg *TykPumpConfiguration) LoadPumpsByEnv() error {
