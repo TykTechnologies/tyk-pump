@@ -588,7 +588,7 @@ group_id - This is the “zone” that this instance inhabits, e.g. the DC it li
 
 call_timeout - This is the timeout (in milliseconds) for RPC calls.
 
-rpc_pool_size - This is maximum number of connections to MDCB.
+rpc_pool_size - This is maximum number of connections to MDCB. Default is 5.
 
 ###### Env Variables
 
@@ -1363,8 +1363,8 @@ This can also be set at a pump level. For example:
 
 The `driver` setting defines the driver type to use for Mongo Pumps. It can be one of the following values:
 
-- `mongo-go` (default): Uses the official MongoDB driver. This driver supports Mongo versions greater or equal to v4. You can get more information about this driver [here](https://github.com/mongodb/mongo-go-driver).
-- `mgo`: Uses the mgo driver. This driver is deprecated. This driver supports Mongo versions lower or equal to v4. You can get more information about this driver [here](https://github.com/go-mgo/mgo)
+- `mongo-go`: Uses the official MongoDB driver. This driver supports Mongo versions greater or equal to v4. You can get more information about this driver [here](https://github.com/mongodb/mongo-go-driver).
+- `mgo` (default): Uses the mgo driver. This driver is deprecated. This driver supports Mongo versions lower or equal to v4. You can get more information about this driver [here](https://github.com/go-mgo/mgo)
 
 ```json
 "mongo": {
