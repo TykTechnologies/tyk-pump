@@ -9,7 +9,7 @@ import (
 )
 
 func TestToUpperPumps(t *testing.T) {
-	pumpNames := []string{"test1", "test2", "TEST3", "Test4", "test3"} // index 4 must override index 2
+	pumpNames := []string{"test1", "test2", "TEST3", "Test4", "test3"}
 	initialConfig := &TykPumpConfiguration{
 		Pumps: make(map[string]PumpConfig),
 	}
@@ -17,7 +17,8 @@ func TestToUpperPumps(t *testing.T) {
 	initialConfig.Pumps[pumpNames[1]] = PumpConfig{Type: "sql"}
 	initialConfig.Pumps[pumpNames[2]] = PumpConfig{Type: "mongo-aggregate"}
 	initialConfig.Pumps[pumpNames[3]] = PumpConfig{Type: "csv"}
-	initialConfig.Pumps[pumpNames[4]] = PumpConfig{Type: "sql-aggregate"}
+	os.Setenv(ENV_PREVIX+"_PUMPS_TEST3_TYPE", "sql-aggregate")
+	defer os.Unsetenv(ENV_PREVIX + "_PUMPS_TEST3_TYPE")
 
 	defaultPath := ""
 	LoadConfig(&defaultPath, initialConfig)
@@ -28,7 +29,9 @@ func TestToUpperPumps(t *testing.T) {
 	// Check if the pumps with lower case are empty (don't appear in the map)
 	assert.Equal(t, initialConfig.Pumps[pumpNames[0]], PumpConfig{})
 	assert.Equal(t, initialConfig.Pumps[pumpNames[1]], PumpConfig{})
+	assert.Equal(t, initialConfig.Pumps[pumpNames[3]], PumpConfig{})
 
+	LoadConfig(&defaultPath, initialConfig)
 	// Checking if the index 4 overrides the index 2 (the original value was 'mongo')
 	assert.Equal(t, initialConfig.Pumps[strings.ToUpper(pumpNames[2])].Type, "sql-aggregate")
 }
