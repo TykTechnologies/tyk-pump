@@ -9,7 +9,7 @@ on:
       - main
   pull_request:
   workflow_dispatch:
-  
+
 env:
   TYK_PMP_ANALYTICSSTORAGETYPE: redis
   TYK_PMP_ANALYTICSSTORAGECONFIG_TYPE: redis
