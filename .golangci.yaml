@@ -65,7 +65,7 @@ linters-settings:
     extra-rules: true
 
     # Select the Go version to target.
-    lang-version: "1.17"
+    lang-version: "1.19"
 
   goimports:
     auto-fix: false
@@ -102,7 +102,7 @@ linters-settings:
     # https://staticcheck.io/docs/options#checks
     checks: ["all"]
     # Select the Go version to target.
-    go: "1.17"
+    go: "1.19"
 
   whitespace:
     auto-fix: true

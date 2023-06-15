@@ -12,13 +12,26 @@ terraform {
   required_providers {
     github = {
       source  = "integrations/github"
-      version = "5.16.0"
     }
   }
 }
 
 provider "github" {
   owner = "TykTechnologies"
+}
+
+# Copypasta from modules/github-repos/variables.tf
+# FIXME: Unmodularise the github-repos module
+variable "historical_branches" {
+  type = list(object({
+    branch         = string           # Name of the branch
+    source_branch  = optional(string) # Source of the branch, needed when creating it
+    reviewers      = number           # Min number of reviews needed
+    required_tests = list(string)     # Workflows that need to pass before merging
+    convos         = bool             # Should conversations be resolved before merging
+
+  }))
+  description = "List of branches managed by terraform"
 }
 
 module "tyk-pump" {
@@ -32,14 +45,15 @@ module "tyk-pump" {
   vulnerability_alerts        = true
   squash_merge_commit_message = "COMMIT_MESSAGES"
   squash_merge_commit_title   = "COMMIT_OR_PR_TITLE"
-  release_branches     = [
+  release_branches     = concat(var.historical_branches, [
 { branch    = "master",
-	reviewers = "2",
+	reviewers = "1",
 	convos    = "false",
-	required_tests = ["1.16","Go 1.16 tests"]},
-{ branch    = "release-1.7",
+	required_tests = ["1.19-bullseye","Go 1.19 tests"]},
+{ branch    = "release-1.8",
 	reviewers = "0",
 	convos    = "false",
-	required_tests = ["1.15","Go 1.16 tests"]},
-]
+	source_branch  = "master",
+	required_tests = ["1.16","Go 1.16 tests"]},
+])
 }
