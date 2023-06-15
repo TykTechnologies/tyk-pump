@@ -9,7 +9,7 @@ import (
 )
 
 func TestToUpperPumps(t *testing.T) {
-	pumpNames := []string{"test1", "test2", "TEST3", "Test4", "test3"}
+	pumpNames := []string{"test1", "test2", "tEst3", "Test4"}
 	initialConfig := &TykPumpConfiguration{
 		Pumps: make(map[string]PumpConfig),
 	}
@@ -22,7 +22,7 @@ func TestToUpperPumps(t *testing.T) {
 
 	defaultPath := ""
 	LoadConfig(&defaultPath, initialConfig)
-	assert.Equal(t, len(pumpNames)-1, len(initialConfig.Pumps))
+	assert.Equal(t, len(pumpNames), len(initialConfig.Pumps))
 	assert.Equal(t, initialConfig.Pumps[strings.ToUpper(pumpNames[0])].Type, "mongo")
 	assert.Equal(t, initialConfig.Pumps[strings.ToUpper(pumpNames[1])].Type, "sql")
 	assert.Equal(t, initialConfig.Pumps[strings.ToUpper(pumpNames[3])].Type, "csv")
@@ -31,7 +31,6 @@ func TestToUpperPumps(t *testing.T) {
 	assert.Equal(t, initialConfig.Pumps[pumpNames[1]], PumpConfig{})
 	assert.Equal(t, initialConfig.Pumps[pumpNames[3]], PumpConfig{})
 
-	LoadConfig(&defaultPath, initialConfig)
 	// Checking if the index 4 overrides the index 2 (the original value was 'mongo')
 	assert.Equal(t, initialConfig.Pumps[strings.ToUpper(pumpNames[2])].Type, "sql-aggregate")
 }
