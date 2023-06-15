@@ -54,6 +54,6 @@ module "tyk-pump" {
 	reviewers = "0",
 	convos    = "false",
 	source_branch  = "master",
-	required_tests = ["1.16","Go 1.16 tests"]},
+	required_tests = ["1.19-bullseye","Go 1.19 tests"]},
 ])
 }
