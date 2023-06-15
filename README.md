@@ -350,6 +350,23 @@ TYK_PMP_PUMPS_MONGOAGG_META_AGGREGATIONTIME=50
 TYK_PMP_PUMPS_MONGOAGG_META_ENABLESELFHEALING=true
 ```
 
+###### Self Healing
+By default, the maximum size of a document in MongoDB is 16MB. If we try to update a document that has grown to this size, an error is received.
+
+The Mongo Aggregate pump creates a new document in the database for each "aggregation period"; the length of that period is defined by `aggregation_time`. If, during that period (in minutes) the document grows beyond 16MB, the error will be received and no more records will be recorded until the end of the aggregation period (when a new document will be created).
+
+The Self Healing option in the Mongo Aggregate Pump avoids this data loss by monitoring the size of the current document. When this hits the 16MB limit, Pump will automatically create a new document with the current timestamp and start writing to that instead.
+
+When it does this, the Pump will halve the `aggregation_time` so that it aggregates records for half the time period originally configured before creating a new document, reducing the risk of repeatedly hitting the maximum document size.
+
+This self healing is repeatable, however, such that if the document size does reach maximum (16MB) even with the new shorter aggregation period, a new document will be created and the `aggregation_time` will be halved again.
+
+The minimum value for `aggregation_time` is 1; Self Healing cannot reduce it beyond this value.
+
+For example, if the `aggregation_time` is configured as 50 (minutes) but the document hits the maximum size (16MB), a new document will be started and the `aggregation_time` will be set to 25 (minutes).
+
+Note that `store_analytics_per_minute` takes precedence over `aggregation_time` so if `store_analytics_per_minute` is equal to true, the value of `aggregation_time` will be equal to 1 and self healing will not operate.
+
 ###### Mongo Graph Pump
 As of Pump 1.7+, a new mongo is available called the `mongo_graph` pump. This pump is specifically for parsing 
 GraphQL and UDG requests, tracking information like types requested, fields requested, specific graphql body errors etc.
