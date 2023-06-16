@@ -19,9 +19,14 @@ const PUMPS_ENV_PREFIX = pumps.PUMPS_ENV_PREFIX
 const PUMPS_ENV_META_PREFIX = pumps.PUMPS_ENV_META_PREFIX
 
 type PumpConfig struct {
-	// Deprecated.
+	// The name of the pump. This is used to identify the pump in the logs.
+	// Deprecated, use `type` instead.
 	Name string `json:"name"`
 	// Sets the pump type. This is needed when the pump key does not equal to the pump name type.
+	// Current valid types are: `mongo`, `mongo-pump-selective`, `mongo-pump-aggregate`, `csv`,
+	// `elasticsearch`, `influx`, `influx2`, `moesif`, `statsd`, `segment`, `graylog`, `splunk`, `hybrid`, `prometheus`,
+	// `logzio`, `dogstatsd`, `kafka`, `syslog`, `sql`, `sql_aggregate`, `stdout`, `timestream`, `mongo-graph`,
+	// `sql-graph`, `sql-graph-aggregate`, `resurfaceio`.
 	Type string `json:"type"`
 	// This feature adds a new configuration field in each pump called filters and its structure is
 	// the following:
