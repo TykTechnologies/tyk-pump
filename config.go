@@ -19,9 +19,14 @@ const PUMPS_ENV_PREFIX = pumps.PUMPS_ENV_PREFIX
 const PUMPS_ENV_META_PREFIX = pumps.PUMPS_ENV_META_PREFIX
 
 type PumpConfig struct {
-	// Deprecated.
+	// The name of the pump. This is used to identify the pump in the logs.
+	// Deprecated, use `type` instead.
 	Name string `json:"name"`
 	// Sets the pump type. This is needed when the pump key does not equal to the pump name type.
+	// Current valid types are: `mongo`, `mongo-pump-selective`, `mongo-pump-aggregate`, `csv`,
+	// `elasticsearch`, `influx`, `influx2`, `moesif`, `statsd`, `segment`, `graylog`, `splunk`, `hybrid`, `prometheus`,
+	// `logzio`, `dogstatsd`, `kafka`, `syslog`, `sql`, `sql_aggregate`, `stdout`, `timestream`, `mongo-graph`,
+	// `sql-graph`, `sql-graph-aggregate`, `resurfaceio`.
 	Type string `json:"type"`
 	// This feature adds a new configuration field in each pump called filters and its structure is
 	// the following:
@@ -90,18 +95,17 @@ type PumpConfig struct {
 	// }
 	// ```
 	MaxRecordSize int                    `json:"max_record_size"`
-	Meta          map[string]interface{} `json:"meta"` // TODO: convert this to json.RawMessage and use regular json.Unmarshal
+	Meta          map[string]interface{} `json:"meta"`
 	// IgnoreFields defines a list of analytics fields that will be ignored when writing to the pump.
 	// This can be used to avoid writing sensitive information to the Database, or data that you don't really need to have.
 	// The field names must be the same as the JSON tags of the analytics record fields.
 	// For example: `["api_key", "api_version"]`.
 	IgnoreFields []string `json:"ignore_fields"`
 
-	// Setting this to True allows the Raw Request to be decoded from base 64
-	// for all pumps. This is set to false by default.
+	// Setting this to true allows the Raw Request to be decoded from base 64 for all pumps. This is set to false by default.
 	DecodeRawRequest bool `json:"raw_request_decoded"`
 
-	// Setting this to True allows the Raw Response to be decoded from base 64 for all pumps. This is set to False by default.
+	// Setting this to true allows the Raw Response to be decoded from base 64 for all pumps. This is set to false by default.
 	DecodeRawResponse bool `json:"raw_response_decoded"`
 }
 
