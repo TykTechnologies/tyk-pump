@@ -72,7 +72,7 @@ type BaseMongoConf struct {
 	// Path to the PEM file which contains both client certificate and private key. This is
 	// required for Mutual TLS.
 	MongoSSLPEMKeyfile string `json:"mongo_ssl_pem_keyfile" mapstructure:"mongo_ssl_pem_keyfile"`
-	// Specifies the mongo DB Type. If it's 0, it means that you are using standard mongo db, if it's 1 it means you are using AWS Document DB, if it's 2, it means you are using CosmosDB.
+	// Specifies the mongo DB Type. If it's 0, it means that you are using standard mongo db. If it's 1 it means you are using AWS Document DB. If it's 2, it means you are using CosmosDB.
 	// Defaults to Standard mongo (0).
 	MongoDBType MongoType `json:"mongo_db_type" mapstructure:"mongo_db_type"`
 	// Set to true to disable the default tyk index creation.
@@ -80,7 +80,7 @@ type BaseMongoConf struct {
 	// Set the consistency mode for the session, it defaults to `Strong`. The valid values are: strong, monotonic, eventual.
 	MongoSessionConsistency string `json:"mongo_session_consistency" mapstructure:"mongo_session_consistency"`
 	// MongoDriverType is the type of the driver (library) to use. The valid values are: “mongo-go” and “mgo”.
-	// Default to “mongo-go”. Check out this guide to [learn about different MongoDB drivers Tyk Pump support](https://github.com/TykTechnologies/tyk-pump#driver-type).
+	// Default to “mgo”. Check out this guide to [learn about MongoDB drivers supported by Tyk Pump](https://github.com/TykTechnologies/tyk-pump#driver-type).
 	MongoDriverType string `json:"driver" mapstructure:"driver"`
 	// MongoDirectConnection informs whether to establish connections only with the specified seed servers,
 	// or to obtain information for the whole cluster and establish connections with further servers too.
@@ -128,7 +128,7 @@ type MongoConf struct {
 
 	// Specifies the mongo collection name.
 	CollectionName string `json:"collection_name" mapstructure:"collection_name"`
-	// Maximum insert batch size for mongo selective pump. If the batch we are writing surpass this value, it will be send in multiple batchs.
+	// Maximum insert batch size for mongo selective pump. If the batch we are writing surpasses this value, it will be sent in multiple batches.
 	// Defaults to 10Mb.
 	MaxInsertBatchSizeBytes int `json:"max_insert_batch_size_bytes" mapstructure:"max_insert_batch_size_bytes"`
 	// Maximum document size. If the document exceed this value, it will be skipped.

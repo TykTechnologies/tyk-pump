@@ -90,18 +90,17 @@ type PumpConfig struct {
 	// }
 	// ```
 	MaxRecordSize int                    `json:"max_record_size"`
-	Meta          map[string]interface{} `json:"meta"` // TODO: convert this to json.RawMessage and use regular json.Unmarshal
+	Meta          map[string]interface{} `json:"meta"`
 	// IgnoreFields defines a list of analytics fields that will be ignored when writing to the pump.
 	// This can be used to avoid writing sensitive information to the Database, or data that you don't really need to have.
 	// The field names must be the same as the JSON tags of the analytics record fields.
 	// For example: `["api_key", "api_version"]`.
 	IgnoreFields []string `json:"ignore_fields"`
 
-	// Setting this to True allows the Raw Request to be decoded from base 64
-	// for all pumps. This is set to false by default.
+	// Setting this to true allows the Raw Request to be decoded from base 64 for all pumps. This is set to false by default.
 	DecodeRawRequest bool `json:"raw_request_decoded"`
 
-	// Setting this to True allows the Raw Response to be decoded from base 64 for all pumps. This is set to False by default.
+	// Setting this to true allows the Raw Response to be decoded from base 64 for all pumps. This is set to false by default.
 	DecodeRawResponse bool `json:"raw_response_decoded"`
 }
 
