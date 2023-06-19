@@ -94,14 +94,13 @@ type PumpConfig struct {
 	//   }
 	// }
 	// ```
-	MaxRecordSize int                    `json:"max_record_size"`
-	Meta          map[string]interface{} `json:"meta"`
+	MaxRecordSize int `json:"max_record_size"`
 	// IgnoreFields defines a list of analytics fields that will be ignored when writing to the pump.
 	// This can be used to avoid writing sensitive information to the Database, or data that you don't really need to have.
 	// The field names must be the same as the JSON tags of the analytics record fields.
 	// For example: `["api_key", "api_version"]`.
-	IgnoreFields []string `json:"ignore_fields"`
-
+	IgnoreFields []string               `json:"ignore_fields"`
+	Meta         map[string]interface{} `json:"meta"`
 	// Setting this to true allows the Raw Request to be decoded from base 64 for all pumps. This is set to false by default.
 	DecodeRawRequest bool `json:"raw_request_decoded"`
 
