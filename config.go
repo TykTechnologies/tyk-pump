@@ -94,17 +94,17 @@ type PumpConfig struct {
 	//   }
 	// }
 	// ```
-	MaxRecordSize int                    `json:"max_record_size"`
-	Meta          map[string]interface{} `json:"meta"`
+	MaxRecordSize int `json:"max_record_size"`
 	// IgnoreFields defines a list of analytics fields that will be ignored when writing to the pump.
 	// This can be used to avoid writing sensitive information to the Database, or data that you don't really need to have.
 	// The field names must be the same as the JSON tags of the analytics record fields.
 	// For example: `["api_key", "api_version"]`.
 	IgnoreFields []string `json:"ignore_fields"`
-
+	// Meta is a map of configuration values that are specific to each pump. For example, the
+	// `csv` pump requires a `csv_dir` value to be set, that need to be set in the `meta` map.
+	Meta map[string]interface{} `json:"meta"`
 	// Setting this to true allows the Raw Request to be decoded from base 64 for all pumps. This is set to false by default.
 	DecodeRawRequest bool `json:"raw_request_decoded"`
-
 	// Setting this to true allows the Raw Response to be decoded from base 64 for all pumps. This is set to false by default.
 	DecodeRawResponse bool `json:"raw_response_decoded"`
 }
@@ -235,11 +235,11 @@ type TykPumpConfiguration struct {
 	// Enable debugging of Tyk Pump by exposing profiling information, the same as the gateway https://tyk.io/docs/troubleshooting/tyk-gateway/profiling/
 	HTTPProfile bool `json:"enable_http_profiler"`
 
-	// Setting this to True allows the Raw Request to be decoded from base 64
+	// Setting this to true allows the Raw Request to be decoded from base 64
 	// for all pumps. This is set to false by default.
 	DecodeRawRequest bool `json:"raw_request_decoded"`
 
-	// Setting this to True allows the Raw Response to be decoded from base 64 for all pumps. This is set to False by default.
+	// Setting this to true allows the Raw Response to be decoded from base 64 for all pumps. This is set to false by default.
 	DecodeRawResponse bool `json:"raw_response_decoded"`
 }
 
