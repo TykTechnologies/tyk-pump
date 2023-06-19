@@ -235,11 +235,11 @@ type TykPumpConfiguration struct {
 	// Enable debugging of Tyk Pump by exposing profiling information, the same as the gateway https://tyk.io/docs/troubleshooting/tyk-gateway/profiling/
 	HTTPProfile bool `json:"enable_http_profiler"`
 
-	// Setting this to True allows the Raw Request to be decoded from base 64
+	// Setting this to true allows the Raw Request to be decoded from base 64
 	// for all pumps. This is set to false by default.
 	DecodeRawRequest bool `json:"raw_request_decoded"`
 
-	// Setting this to True allows the Raw Response to be decoded from base 64 for all pumps. This is set to false by default.
+	// Setting this to true allows the Raw Response to be decoded from base 64 for all pumps. This is set to false by default.
 	DecodeRawResponse bool `json:"raw_response_decoded"`
 }
 
