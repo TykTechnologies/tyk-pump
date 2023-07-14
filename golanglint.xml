@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-
-<checkstyle version="5.0">
-  <file name="analytics/analytics.go">
-    <error column="2" line="72" message="var-naming: struct field ApiSchema should be APISchema" severity="warning" source="revive">
-    </error>
-  </file>
-</checkstyle>
