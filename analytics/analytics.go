@@ -72,7 +72,7 @@ type AnalyticsRecord struct {
 	Alias         string         `json:"alias"`
 	TrackPath     bool           `json:"track_path" gorm:"column:trackpath"`
 	ExpireAt      time.Time      `bson:"expireAt" json:"expireAt"`
-	APISchema     string         `json:"api_schema" bson:"-" gorm:"-:all"`
+	ApiSchema     string         `json:"api_schema" bson:"-" gorm:"-:all"`
 
 	CollectionName string `json:"-" bson:"-" gorm:"-:all"`
 }
@@ -237,7 +237,7 @@ func (a *AnalyticsRecord) GetLineValues() []string {
 	fields = append(fields, a.Alias)
 	fields = append(fields, strconv.FormatBool(a.TrackPath))
 	fields = append(fields, a.ExpireAt.String())
-	fields = append(fields, a.APISchema)
+	fields = append(fields, a.ApiSchema)
 
 	return fields
 }
