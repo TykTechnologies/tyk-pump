@@ -20,7 +20,7 @@ require (
 	github.com/golang/protobuf v1.5.2
 	github.com/google/go-cmp v0.5.9
 	github.com/gorilla/mux v1.8.0
-	github.com/influxdata/influxdb v1.8.3
+	github.com/influxdata/influxdb v1.8.10
 	github.com/influxdata/influxdb-client-go/v2 v2.6.0
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/logzio/logzio-go v0.0.0-20200316143903-ac8fc0e2910e
@@ -70,22 +70,26 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sts v1.8.0 // indirect
 	github.com/aws/smithy-go v1.13.2 // indirect
 	github.com/beeker1121/goque v0.0.0-20170321141813-4044bc29b280 // indirect
+	github.com/benbjohnson/tmpl v1.1.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/deepmap/oapi-codegen v1.8.2 // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
+	github.com/dustin/go-humanize v1.0.0 // indirect
 	github.com/eclipse/paho.mqtt.golang v1.2.0 // indirect
 	github.com/go-ole/go-ole v1.2.4 // indirect
 	github.com/go-sql-driver/mysql v1.5.0 // indirect
+	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/snappy v0.0.3 // indirect
-	github.com/google/uuid v1.1.2 // indirect
+	github.com/google/uuid v1.2.0 // indirect
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/helloeave/json v1.15.3 // indirect
-	github.com/huandu/xstrings v1.2.1 // indirect
-	github.com/imdario/mergo v0.3.8 // indirect
+	github.com/huandu/xstrings v1.3.2 // indirect
+	github.com/imdario/mergo v0.3.12 // indirect
 	github.com/influxdata/line-protocol v0.0.0-20200327222509-2487e7298839 // indirect
+	github.com/influxdata/pkg-config v0.2.8 // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
 	github.com/jackc/pgconn v1.7.0 // indirect
 	github.com/jackc/pgio v1.0.0 // indirect
@@ -107,8 +111,8 @@ require (
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-sqlite3 v1.14.3 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.1 // indirect
-	github.com/mitchellh/copystructure v1.0.0 // indirect
-	github.com/mitchellh/reflectwalk v1.0.0 // indirect
+	github.com/mitchellh/copystructure v1.1.1 // indirect
+	github.com/mitchellh/reflectwalk v1.0.1 // indirect
 	github.com/montanaflynn/stats v0.0.0-20171201202039-1bf9dbcd8cbe // indirect
 	github.com/nats-io/nats.go v1.11.1-0.20210623165838-4b75fc59ae30 // indirect
 	github.com/nats-io/nkeys v0.3.0 // indirect
@@ -123,6 +127,7 @@ require (
 	github.com/r3labs/sse/v2 v2.8.1 // indirect
 	github.com/segmentio/backo-go v0.0.0-20160424052352-204274ad699c // indirect
 	github.com/shirou/gopsutil v3.20.11+incompatible // indirect
+	github.com/spf13/pflag v1.0.3 // indirect
 	github.com/syndtr/goleveldb v0.0.0-20190318030020-c3a204f8e965 // indirect
 	github.com/tidwall/gjson v1.11.0 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
@@ -141,9 +146,11 @@ require (
 	go.uber.org/multierr v1.6.0 // indirect
 	go.uber.org/zap v1.18.1 // indirect
 	golang.org/x/crypto v0.0.0-20220622213112-05595931fe9d // indirect
+	golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4 // indirect
 	golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4 // indirect
 	golang.org/x/sys v0.0.0-20220811171246-fbc7d0a398ab // indirect
 	golang.org/x/text v0.3.7 // indirect
+	golang.org/x/tools v0.1.12 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	google.golang.org/appengine v1.6.5 // indirect
 	gopkg.in/cenkalti/backoff.v1 v1.1.0 // indirect
