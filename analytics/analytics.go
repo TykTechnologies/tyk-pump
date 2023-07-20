@@ -72,7 +72,7 @@ type AnalyticsRecord struct {
 	Alias         string         `json:"alias"`
 	TrackPath     bool           `json:"track_path" gorm:"column:trackpath"`
 	ExpireAt      time.Time      `bson:"expireAt" json:"expireAt"`
-	ApiSchema     string         `json:"api_schema" bson:"-" gorm:"-:all"`
+	ApiSchema     string         `json:"api_schema" bson:"-" gorm:"-:all"` //nolint:var-naming
 
 	CollectionName string `json:"-" bson:"-" gorm:"-:all"`
 }
