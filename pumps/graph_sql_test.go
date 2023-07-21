@@ -253,7 +253,7 @@ func TestGraphSQLPump_WriteData(t *testing.T) {
 				}
 				if !item.isHTTP {
 					r.RawRequest = convToBase64(rawGQLRequest)
-					r.APISchema = convToBase64(schema)
+					r.ApiSchema = convToBase64(schema)
 				} else {
 					r.RawRequest = convToBase64(rawHTTPReq)
 					r.RawResponse = convToBase64(rawHTTPResponse)
@@ -323,7 +323,7 @@ func TestGraphSQLPump_Sharded(t *testing.T) {
 		Path:         "/test-api",
 		RawRequest:   convToBase64(rawGQLRequest),
 		RawResponse:  convToBase64(rawGQLResponse),
-		APISchema:    convToBase64(schema),
+		ApiSchema:    convToBase64(schema),
 		Tags:         []string{analytics.PredefinedTagGraphAnalytics},
 		APIName:      "test-api",
 		ResponseCode: 200,
