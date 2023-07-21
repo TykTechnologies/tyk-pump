@@ -27,7 +27,7 @@ require (
 	github.com/mitchellh/mapstructure v1.3.1
 	github.com/moesif/moesifapi-go v1.0.6
 	github.com/olivere/elastic/v7 v7.0.28
-	github.com/oschwald/maxminddb-golang v1.5.0
+	github.com/oschwald/maxminddb-golang v1.11.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.11.0
 	github.com/quipo/statsd v0.0.0-20160923160612-75b7afedf0d2
@@ -36,7 +36,7 @@ require (
 	github.com/segmentio/analytics-go v0.0.0-20160711225931-bdb0aeca8a99
 	github.com/segmentio/kafka-go v0.3.6
 	github.com/sirupsen/logrus v1.8.1
-	github.com/stretchr/testify v1.8.1
+	github.com/stretchr/testify v1.8.4
 	golang.org/x/net v0.0.0-20220722155237-a158d28d115b
 	google.golang.org/protobuf v1.28.1
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6
@@ -142,7 +142,7 @@ require (
 	go.uber.org/zap v1.18.1 // indirect
 	golang.org/x/crypto v0.0.0-20220622213112-05595931fe9d // indirect
 	golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4 // indirect
-	golang.org/x/sys v0.0.0-20220811171246-fbc7d0a398ab // indirect
+	golang.org/x/sys v0.9.0 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	google.golang.org/appengine v1.6.5 // indirect
