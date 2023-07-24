@@ -459,6 +459,11 @@ func TestGetBlurredURL(t *testing.T) {
 			givenURL:           "mongodb://UserName:Password@sample-cluster-instance.cluster-corlsfccjozr.us-east-1.docdb.amazonaws.com:27017?replicaSet=rs0&ssl_ca_certs=rds-combined-ca-bundle.pem",
 			expectedBlurredURL: "***:***@sample-cluster-instance.cluster-corlsfccjozr.us-east-1.docdb.amazonaws.com:27017?replicaSet=rs0&ssl_ca_certs=rds-combined-ca-bundle.pem",
 		},
+		{
+			testName:           "DNS seed list connection",
+			givenURL:           "mongodb+srv://admin:pass@server.example.com/?connectTimeoutMS=300000",
+			expectedBlurredURL: "***:***@server.example.com/?connectTimeoutMS=300000",
+		},
 	}
 
 	for _, tc := range tcs {
