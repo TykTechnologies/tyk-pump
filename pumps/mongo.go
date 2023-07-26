@@ -112,9 +112,9 @@ func createDBObject(tableName string) dbObject {
 }
 
 func (b *BaseMongoConf) GetBlurredURL() string {
-	// mongo uri match with regex ^(mongodb:(?:\/{2})?)((\w+?):(\w+?)@|:?@?)(\S+?):(\d+)(\/(\S+?))?(\?replicaSet=(\S+?))?$
-	// but we need only a segment, so regex explanation: https://regex101.com/r/8Uzwtw/1
-	regex := `^(mongodb:(?:\/{2})?)((...+?):(...+?)@)`
+	// mongo uri match with regex ^(mongodb\S*(+srv)*:(?:\/{2})?)((\w+?):(\w+?)@|:?@?)(\S+?):(\d+)(\/(\S+?))?(\?replicaSet=(\S+?))?$
+	// but we need only a segment, so regex explanation: https://regex101.com/r/C4GQvi/1
+	regex := `^(mongodb\S*(srv)*:(?:\/{2})?)((...+?):(...+?)@)`
 	re := regexp.MustCompile(regex)
 
 	blurredUrl := re.ReplaceAllString(b.MongoURL, "***:***@")
