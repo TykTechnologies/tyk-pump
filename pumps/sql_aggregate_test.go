@@ -8,6 +8,7 @@ import (
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/stretchr/testify/assert"
+	"gorm.io/gorm"
 )
 
 func TestSQLAggregateInit(t *testing.T) {
@@ -26,6 +27,13 @@ func TestSQLAggregateInit(t *testing.T) {
 
 	assert.NotNil(t, pmp.db)
 	assert.Equal(t, "sqlite", pmp.db.Dialector.Name())
+	assert.Equal(t, true, pmp.db.Migrator().HasTable(analytics.AggregateSQLTable))
+
+	// wait until the index is created
+	for !pmp.indexCreated.Load() {
+	}
+
+	assert.Equal(t, true, pmp.db.Migrator().HasIndex(analytics.AggregateSQLTable, newAggregatedIndexName))
 
 	// Checking with invalid type
 	cfg["type"] = "invalid"
@@ -33,7 +41,6 @@ func TestSQLAggregateInit(t *testing.T) {
 	invalidDialectErr := pmp2.Init(cfg)
 	assert.NotNil(t, invalidDialectErr)
 	// TODO check how to test postgres connection - it's going to requiere to have some postgres up
-
 }
 
 func TestSQLAggregateWriteData_Sharded(t *testing.T) {
@@ -325,4 +332,99 @@ func TestDecodeRequestAndDecodeResponseSQLAggregate(t *testing.T) {
 	// checking if the values are still false as expected because this pump doesn't support decoding requests/responses
 	assert.False(t, newPump.GetDecodedRequest())
 	assert.False(t, newPump.GetDecodedResponse())
+}
+
+func TestEnsureIndex(t *testing.T) {
+	tcs := []struct {
+		testName             string
+		pmpSetupFn           func(tableName string) *SQLAggregatePump
+		givenTableName       string
+		givenRunInBackground bool
+		expectedErr          error
+	}{
+		{
+			testName: "index created correctly, not background",
+			pmpSetupFn: func(tableName string) *SQLAggregatePump {
+				pmp := &SQLAggregatePump{}
+				cfg := &SQLAggregatePumpConf{}
+				cfg.Type = "sqlite"
+				cfg.ConnectionString = ""
+				pmp.SQLConf = cfg
+
+				pmp.log = log.WithField("prefix", "sql-aggregate-pump")
+				dialect, errDialect := Dialect(&pmp.SQLConf.SQLConf)
+				if errDialect != nil {
+					return nil
+				}
+				db, err := gorm.Open(dialect, &gorm.Config{
+					AutoEmbedd:  true,
+					UseJSONTags: true,
+				})
+				if err != nil {
+					return nil
+				}
+				pmp.db = db
+
+				if err := pmp.ensureTable(tableName); err != nil {
+					return nil
+				}
+
+				return pmp
+			},
+			givenTableName:       "test",
+			givenRunInBackground: false,
+			expectedErr:          nil,
+		},
+		{
+			testName: "index created correctly, background",
+			pmpSetupFn: func(tableName string) *SQLAggregatePump {
+				pmp := &SQLAggregatePump{}
+				cfg := &SQLAggregatePumpConf{}
+				cfg.Type = "sqlite"
+				cfg.ConnectionString = ""
+				pmp.SQLConf = cfg
+
+				pmp.log = log.WithField("prefix", "sql-aggregate-pump")
+				dialect, errDialect := Dialect(&pmp.SQLConf.SQLConf)
+				if errDialect != nil {
+					return nil
+				}
+				db, err := gorm.Open(dialect, &gorm.Config{
+					AutoEmbedd:  true,
+					UseJSONTags: true,
+				})
+				if err != nil {
+					return nil
+				}
+				pmp.db = db
+
+				if err := pmp.ensureTable(tableName); err != nil {
+					return nil
+				}
+
+				return pmp
+			},
+			givenTableName:       "test",
+			givenRunInBackground: true,
+			expectedErr:          nil,
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.testName, func(t *testing.T) {
+			pmp := tc.pmpSetupFn(tc.givenTableName)
+			assert.NotNil(t, pmp)
+
+			actualErr := pmp.ensureIndex(tc.givenTableName, tc.givenRunInBackground)
+			assert.Equal(t, tc.expectedErr, actualErr)
+
+			if actualErr == nil {
+				if tc.givenRunInBackground {
+					time.Sleep(2 * time.Second)
+				}
+				assert.Equal(t, true, pmp.db.Migrator().HasIndex(tc.givenTableName, newAggregatedIndexName))
+			}
+
+		})
+	}
 }

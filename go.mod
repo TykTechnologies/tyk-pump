@@ -16,7 +16,7 @@ require (
 	github.com/fatih/structs v1.1.0
 	github.com/go-redis/redis/v8 v8.3.1
 	github.com/gocraft/health v0.0.0-20170925182251-8675af27fef0
-	github.com/gofrs/uuid v3.3.0+incompatible
+	github.com/gofrs/uuid v4.0.0+incompatible
 	github.com/golang/protobuf v1.5.3
 	github.com/google/go-cmp v0.5.9
 	github.com/gorilla/mux v1.8.0
@@ -45,9 +45,9 @@ require (
 	gopkg.in/olivere/elastic.v6 v6.2.31
 	gopkg.in/vmihailenco/msgpack.v2 v2.9.1
 	gorm.io/driver/mysql v1.0.3
-	gorm.io/driver/postgres v1.0.5
+	gorm.io/driver/postgres v1.2.0
 	gorm.io/driver/sqlite v1.1.3
-	gorm.io/gorm v1.21.10
+	gorm.io/gorm v1.21.16
 )
 
 require (
@@ -87,13 +87,13 @@ require (
 	github.com/imdario/mergo v0.3.12 // indirect
 	github.com/influxdata/line-protocol v0.0.0-20200327222509-2487e7298839 // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
-	github.com/jackc/pgconn v1.7.0 // indirect
+	github.com/jackc/pgconn v1.10.0 // indirect
 	github.com/jackc/pgio v1.0.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
-	github.com/jackc/pgproto3/v2 v2.0.5 // indirect
+	github.com/jackc/pgproto3/v2 v2.1.1 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20200714003250-2b9c44734f2b // indirect
-	github.com/jackc/pgtype v1.5.0 // indirect
-	github.com/jackc/pgx/v4 v4.9.0 // indirect
+	github.com/jackc/pgtype v1.8.1 // indirect
+	github.com/jackc/pgx/v4 v4.13.0 // indirect
 	github.com/jehiah/go-strftime v0.0.0-20151206194810-2efbe75097a5 // indirect
 	github.com/jensneuse/abstractlogger v0.0.4 // indirect
 	github.com/jensneuse/byte-template v0.0.0-20200214152254-4f3cf06e5c68 // indirect
