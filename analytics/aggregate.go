@@ -139,10 +139,10 @@ type SQLAnalyticsRecordAggregate struct {
 
 	Counter `json:"counter" gorm:"embedded"`
 
-	TimeStamp      int64  `json:"timestamp" gorm:"index:dimension, priority:1"`
-	OrgID          string `json:"org_id" gorm:"index:dimension, priority:2"`
-	Dimension      string `json:"dimension" gorm:"index:dimension, priority:3"`
-	DimensionValue string `json:"dimension_value" gorm:"index:dimension, priority:4"`
+	TimeStamp      int64  `json:"timestamp"`
+	OrgID          string `json:"org_id"`
+	Dimension      string `json:"dimension"`
+	DimensionValue string `json:"dimension_value"`
 
 	Code `json:"code" gorm:"embedded"`
 }
