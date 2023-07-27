@@ -39,8 +39,8 @@ type KafkaConf struct {
 	ClientId string `json:"client_id" mapstructure:"client_id"`
 	// The topic that the writer will produce messages to.
 	Topic string `json:"topic" mapstructure:"topic"`
-	// Timeout is the maximum amount of time will wait for a connect or write to complete.
-	Timeout time.Duration `json:"timeout" mapstructure:"timeout"`
+	// Timeout is the maximum amount of seconds to wait for a connect or write to complete.
+	Timeout int `json:"timeout" mapstructure:"timeout"`
 	// Enable "github.com/golang/snappy" codec to be used to compress Kafka messages. By default
 	// is `false`.
 	Compressed bool `json:"compressed" mapstructure:"compressed"`
@@ -139,7 +139,7 @@ func (k *KafkaPump) Init(config interface{}) error {
 
 	//Kafka writer connection config
 	dialer := &kafka.Dialer{
-		Timeout:       k.kafkaConf.Timeout * time.Second,
+		Timeout:       time.Duration(k.kafkaConf.Timeout) * time.Second,
 		ClientID:      k.kafkaConf.ClientId,
 		TLS:           tlsConfig,
 		SASLMechanism: mechanism,
@@ -149,8 +149,8 @@ func (k *KafkaPump) Init(config interface{}) error {
 	k.writerConfig.Topic = k.kafkaConf.Topic
 	k.writerConfig.Balancer = &kafka.LeastBytes{}
 	k.writerConfig.Dialer = dialer
-	k.writerConfig.WriteTimeout = k.kafkaConf.Timeout * time.Second
-	k.writerConfig.ReadTimeout = k.kafkaConf.Timeout * time.Second
+	k.writerConfig.WriteTimeout = time.Duration(k.kafkaConf.Timeout) * time.Second
+	k.writerConfig.ReadTimeout = time.Duration(k.kafkaConf.Timeout) * time.Second
 	if k.kafkaConf.Compressed {
 		k.writerConfig.CompressionCodec = snappy.NewCompressionCodec()
 	}
