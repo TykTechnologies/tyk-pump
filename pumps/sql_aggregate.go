@@ -147,25 +147,31 @@ func (c *SQLAggregatePump) ensureIndex(tableName string, background bool) error 
 			if c.dbType == "postgres" {
 				option = "CONCURRENTLY"
 			}
-			c.log.Info("Creating index for table ", tableName, " on background...")
+
 			err := c.db.Table(tableName).Exec(fmt.Sprintf("CREATE INDEX %s IF NOT EXISTS %s ON %s (dimension, timestamp, org_id, dimension_value)", option, newAggregatedIndexName, tableName)).Error
 			if err != nil {
 				c.log.Errorf("error creating index for table %s : %s", tableName, err.Error())
 				return err
 			}
+
 			c.indexCreated.Store(true)
-			c.log.Info("Index created!")
+			c.log.Info("Index for table ", tableName, " created successfully")
 
 			return nil
 		}
 
 		if background {
+			c.log.Info("Creating index for table ", tableName, " on background...")
 			go createIndexFn(c)
+			return nil
 		} else {
 			c.log.Info("Creating index for table ", tableName, "...")
 			return createIndexFn(c)
 		}
 	}
+	// index is already created
+	c.indexCreated.Store(true)
+
 	return nil
 }
 
@@ -180,11 +186,6 @@ func (c *SQLAggregatePump) ensureTable(tableName string) error {
 		}
 	}
 	return nil
-}
-
-func (c *SQLAggregatePump) waitForIndex() {
-	for !c.indexCreated.Load() {
-	}
 }
 
 // WriteData aggregates and writes the passed data to SQL database. When table sharding is enabled, startIndex and endIndex

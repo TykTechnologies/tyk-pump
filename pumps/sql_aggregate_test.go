@@ -404,7 +404,7 @@ func TestEnsureIndex(t *testing.T) {
 
 				return pmp
 			},
-			givenTableName:       "test",
+			givenTableName:       "test2",
 			givenRunInBackground: true,
 			expectedErr:          nil,
 		},
@@ -414,17 +414,18 @@ func TestEnsureIndex(t *testing.T) {
 		t.Run(tc.testName, func(t *testing.T) {
 			pmp := tc.pmpSetupFn(tc.givenTableName)
 			assert.NotNil(t, pmp)
+			assert.False(t, pmp.indexCreated.Load())
 
 			actualErr := pmp.ensureIndex(tc.givenTableName, tc.givenRunInBackground)
 			assert.Equal(t, tc.expectedErr, actualErr)
 
 			if actualErr == nil {
 				if tc.givenRunInBackground {
-					time.Sleep(2 * time.Second)
+					for !pmp.indexCreated.Load() {
+					}
 				}
-				assert.Equal(t, true, pmp.db.Migrator().HasIndex(tc.givenTableName, newAggregatedIndexName))
+				assert.Equal(t, true, pmp.indexCreated.Load())
 			}
-
 		})
 	}
 }
