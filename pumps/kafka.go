@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"os"
 	"time"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
@@ -40,7 +41,7 @@ type KafkaConf struct {
 	// The topic that the writer will produce messages to.
 	Topic string `json:"topic" mapstructure:"topic"`
 	// Timeout is the maximum amount of seconds to wait for a connect or write to complete.
-	Timeout int `json:"timeout" mapstructure:"timeout"`
+	Timeout interface{} `json:"timeout" mapstructure:"timeout"`
 	// Enable "github.com/golang/snappy" codec to be used to compress Kafka messages. By default
 	// is `false`.
 	Compressed bool `json:"compressed" mapstructure:"compressed"`
@@ -90,6 +91,10 @@ func (k *KafkaPump) Init(config interface{}) error {
 	}
 
 	processPumpEnvVars(k, k.log, k.kafkaConf, kafkaDefaultENV)
+	// This interface field is not reached by envconfig library, that's why we manually check it
+	if os.Getenv("TYK_PMP_PUMPS_KAFKA_META_TIMEOUT") != "" {
+		k.kafkaConf.Timeout = os.Getenv("TYK_PMP_PUMPS_KAFKA_META_TIMEOUT")
+	}
 
 	var tlsConfig *tls.Config
 	if k.kafkaConf.UseSSL {
@@ -137,9 +142,21 @@ func (k *KafkaPump) Init(config interface{}) error {
 		k.log.WithField("SASL-Mechanism", k.kafkaConf.SASLMechanism).Warn("Tyk pump doesn't support this SASL mechanism.")
 	}
 
+	// Timeout is an interface type to allow both time.Duration and float values
+	var timeout time.Duration
+	switch k.kafkaConf.Timeout.(type) {
+	case string:
+		timeout, err = time.ParseDuration(k.kafkaConf.Timeout.(string))
+		if err != nil {
+			k.log.Fatal("Failed to parse timeout: ", err)
+		}
+	case float64:
+		timeout = time.Duration(k.kafkaConf.Timeout.(float64)) * time.Second
+	}
+
 	//Kafka writer connection config
 	dialer := &kafka.Dialer{
-		Timeout:       time.Duration(k.kafkaConf.Timeout) * time.Second,
+		Timeout:       timeout,
 		ClientID:      k.kafkaConf.ClientId,
 		TLS:           tlsConfig,
 		SASLMechanism: mechanism,
@@ -149,8 +166,8 @@ func (k *KafkaPump) Init(config interface{}) error {
 	k.writerConfig.Topic = k.kafkaConf.Topic
 	k.writerConfig.Balancer = &kafka.LeastBytes{}
 	k.writerConfig.Dialer = dialer
-	k.writerConfig.WriteTimeout = time.Duration(k.kafkaConf.Timeout) * time.Second
-	k.writerConfig.ReadTimeout = time.Duration(k.kafkaConf.Timeout) * time.Second
+	k.writerConfig.WriteTimeout = timeout
+	k.writerConfig.ReadTimeout = timeout
 	if k.kafkaConf.Compressed {
 		k.writerConfig.CompressionCodec = snappy.NewCompressionCodec()
 	}
