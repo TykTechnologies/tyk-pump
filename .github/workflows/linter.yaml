@@ -18,7 +18,7 @@ env:
 
 jobs:
   gotest:
-    uses: TykTechnologies/github-actions/.github/workflows/gotest.yaml@main
+    uses: TykTechnologies/github-actions/.github/workflows/gotest.yaml@gotest/test-params
     strategy:
       fail-fast: false
       matrix:
