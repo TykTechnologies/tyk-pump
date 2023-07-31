@@ -27,12 +27,14 @@ jobs:
       go: ${{ matrix.go }}
       redis: 5
       mongo: 4.2
+      test-options: ""-count=1 -failfast -v""
   golangci:
     needs: gotest
     if: ${{ always() }}
-    uses: TykTechnologies/github-actions/.github/workflows/golangci.yaml@main
+    uses: TykTechnologies/github-actions/.github/workflows/golangci.yaml@golangci/go-version
     with:
       main_branch: "master"
+      go_version: 1.19
   sonarcloud:
     if: ${{ always() }}
     needs: [gotest, golangci]
