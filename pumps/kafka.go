@@ -144,14 +144,14 @@ func (k *KafkaPump) Init(config interface{}) error {
 
 	// Timeout is an interface type to allow both time.Duration and float values
 	var timeout time.Duration
-	switch k.kafkaConf.Timeout.(type) {
+	switch v := k.kafkaConf.Timeout.(type) {
 	case string:
-		timeout, err = time.ParseDuration(k.kafkaConf.Timeout.(string))
+		timeout, err = time.ParseDuration(v)
 		if err != nil {
 			k.log.Fatal("Failed to parse timeout: ", err)
 		}
 	case float64:
-		timeout = time.Duration(k.kafkaConf.Timeout.(float64)) * time.Second
+		timeout = time.Duration(v) * time.Second
 	}
 
 	//Kafka writer connection config
