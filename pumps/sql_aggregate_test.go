@@ -55,6 +55,11 @@ func TestSQLAggregateWriteData_Sharded(t *testing.T) {
 		t.Fatal("SQL Pump Aggregate couldn't be initialized with err: ", err)
 	}
 
+	// wait until the index is created for sqlite to avoid locking
+	//nolint:revive
+	for !pmp.indexCreated.Load() {
+	}
+
 	keys := make([]interface{}, 8)
 	now := time.Now()
 	nowPlus1 := time.Now().AddDate(0, 0, 1)
@@ -120,6 +125,11 @@ func TestSQLAggregateWriteData(t *testing.T) {
 	defer func(table string) {
 		pmp.db.Migrator().DropTable(analytics.AggregateSQLTable)
 	}(table)
+
+	// wait until the index is created for sqlite to avoid locking
+	//nolint:revive
+	for !pmp.indexCreated.Load() {
+	}
 
 	now := time.Now()
 	nowPlus1 := time.Now().Add(1 * time.Hour)
