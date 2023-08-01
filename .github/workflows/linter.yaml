@@ -27,7 +27,6 @@ jobs:
       go: ${{ matrix.go }}
       redis: 5
       mongo: 4.2
-      test-options: "-count=1 -failfast -v"
   golangci:
     needs: gotest
     if: ${{ always() }}

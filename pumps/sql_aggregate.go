@@ -123,13 +123,14 @@ func (c *SQLAggregatePump) Init(conf interface{}) error {
 			return err
 		}
 
+		// we can run the index creation in background only for postgres since it supports CONCURRENTLY
 		shouldRunOnBackground := false
 		if c.dbType == "postgres" {
 			shouldRunOnBackground = true
 			c.backgroundIndexCreated = make(chan bool)
 		}
 
-		// if index doesn't exist, create it on background since it's going to migrate all the existing data
+		// if index doesn't exist, create it
 		if err := c.ensureIndex(analytics.AggregateSQLTable, shouldRunOnBackground); err != nil {
 			c.log.Error(err)
 			return err
