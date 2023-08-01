@@ -162,12 +162,16 @@ func (c *SQLAggregatePump) ensureIndex(tableName string, background bool) error 
 
 		if background {
 			c.log.Info("Creating index for table ", tableName, " on background...")
-			go createIndexFn(c)
+			go func() {
+				if err := createIndexFn(c); err != nil {
+					c.log.Error(err)
+				}
+			}()
 			return nil
-		} else {
-			c.log.Info("Creating index for table ", tableName, "...")
-			return createIndexFn(c)
 		}
+
+		c.log.Info("Creating index for table ", tableName, "...")
+		return createIndexFn(c)
 	}
 	// index is already created
 	c.indexCreated.Store(true)

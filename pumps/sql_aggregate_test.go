@@ -30,6 +30,7 @@ func TestSQLAggregateInit(t *testing.T) {
 	assert.Equal(t, true, pmp.db.Migrator().HasTable(analytics.AggregateSQLTable))
 
 	// wait until the index is created
+	//nolint:revive
 	for !pmp.indexCreated.Load() {
 	}
 
@@ -107,7 +108,7 @@ func TestSQLAggregateWriteData_Sharded(t *testing.T) {
 }
 
 func TestSQLAggregateWriteData(t *testing.T) {
-	pmp := SQLAggregatePump{}
+	pmp := &SQLAggregatePump{}
 	cfg := make(map[string]interface{})
 	cfg["type"] = "sqlite"
 	cfg["batch_size"] = 2000
@@ -277,7 +278,7 @@ func TestSQLAggregateWriteDataValues(t *testing.T) {
 			// Configure and Initialise pump first
 			dbRecords := []analytics.SQLAnalyticsRecordAggregate{}
 
-			pmp := SQLAggregatePump{}
+			pmp := &SQLAggregatePump{}
 			cfg := make(map[string]interface{})
 			cfg["type"] = "sqlite"
 			cfg["batch_size"] = 1
@@ -286,7 +287,7 @@ func TestSQLAggregateWriteDataValues(t *testing.T) {
 			if err != nil {
 				t.Fatal("SQL Pump Aggregate couldn't be initialized with err: ", err)
 			}
-			defer func(pmp SQLAggregatePump) {
+			defer func(pmp *SQLAggregatePump) {
 				err := pmp.db.Migrator().DropTable(analytics.AggregateSQLTable)
 				if err != nil {
 					t.Error(err)
@@ -335,12 +336,13 @@ func TestDecodeRequestAndDecodeResponseSQLAggregate(t *testing.T) {
 }
 
 func TestEnsureIndex(t *testing.T) {
+	//nolint:govet
 	tcs := []struct {
 		testName             string
-		pmpSetupFn           func(tableName string) *SQLAggregatePump
 		givenTableName       string
-		givenRunInBackground bool
 		expectedErr          error
+		pmpSetupFn           func(tableName string) *SQLAggregatePump
+		givenRunInBackground bool
 	}{
 		{
 			testName: "index created correctly, not background",
@@ -421,6 +423,7 @@ func TestEnsureIndex(t *testing.T) {
 
 			if actualErr == nil {
 				if tc.givenRunInBackground {
+					//nolint:revive
 					for !pmp.indexCreated.Load() {
 					}
 				}
