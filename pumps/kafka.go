@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
@@ -146,12 +147,17 @@ func (k *KafkaPump) Init(config interface{}) error {
 	var timeout time.Duration
 	switch v := k.kafkaConf.Timeout.(type) {
 	case string:
-		timeout, err = time.ParseDuration(v)
+		timeout, err = time.ParseDuration(v) // i.e: when timeout is '1s'
 		if err != nil {
-			k.log.Fatal("Failed to parse timeout: ", err)
+			floatValue, floatErr := strconv.ParseFloat(v, 64) // i.e: when timeout is '1'
+			if floatErr != nil {
+				k.log.Fatal("Failed to parse timeout: ", floatErr)
+			} else {
+				timeout = time.Duration(floatValue * float64(time.Second))
+			}
 		}
 	case float64:
-		timeout = time.Duration(v) * time.Second
+		timeout = time.Duration(v) * time.Second // i.e: when timeout is 1
 	}
 
 	//Kafka writer connection config
