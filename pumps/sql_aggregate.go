@@ -38,6 +38,7 @@ type SQLAggregatePump struct {
 	dbType  string
 	dialect gorm.Dialector
 
+	// this channel is used to signal that the background index creation has finished - this is used for testing
 	backgroundIndexCreated chan bool
 }
 
