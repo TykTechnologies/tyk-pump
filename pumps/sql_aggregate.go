@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
-	"sync/atomic"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
 
@@ -39,7 +38,7 @@ type SQLAggregatePump struct {
 	dbType  string
 	dialect gorm.Dialector
 
-	indexCreated atomic.Bool
+	backgroundIndexCreated chan bool
 }
 
 var (
@@ -114,15 +113,23 @@ func (c *SQLAggregatePump) Init(conf interface{}) error {
 		c.log.Error(err)
 		return err
 	}
+
 	c.db = db
+
 	if !c.SQLConf.TableSharding {
 		// if table doesn't exist, create it
 		if err := c.ensureTable(analytics.AggregateSQLTable); err != nil {
 			return err
 		}
 
+		shouldRunOnBackground := false
+		if c.dbType == "postgres" {
+			shouldRunOnBackground = true
+			c.backgroundIndexCreated = make(chan bool)
+		}
+
 		// if index doesn't exist, create it on background since it's going to migrate all the existing data
-		if err := c.ensureIndex(analytics.AggregateSQLTable, true); err != nil {
+		if err := c.ensureIndex(analytics.AggregateSQLTable, shouldRunOnBackground); err != nil {
 			c.log.Error(err)
 			return err
 		}
@@ -154,28 +161,30 @@ func (c *SQLAggregatePump) ensureIndex(tableName string, background bool) error 
 				return err
 			}
 
-			c.indexCreated.Store(true)
-			c.log.Info("Index for table ", tableName, " created successfully")
+			if background {
+				c.backgroundIndexCreated <- true
+			}
+
+			c.log.Info("Index ", newAggregatedIndexName, " for table ", tableName, " created successfully")
 
 			return nil
 		}
 
 		if background {
 			c.log.Info("Creating index for table ", tableName, " on background...")
-			go func() {
+
+			go func(c *SQLAggregatePump) {
 				if err := createIndexFn(c); err != nil {
 					c.log.Error(err)
 				}
-			}()
+			}(c)
+
 			return nil
 		}
 
 		c.log.Info("Creating index for table ", tableName, "...")
 		return createIndexFn(c)
 	}
-	// index is already created
-	c.indexCreated.Store(true)
-
 	return nil
 }
 
@@ -228,10 +237,10 @@ func (c *SQLAggregatePump) WriteData(ctx context.Context, data []interface{}) er
 
 			table = analytics.AggregateSQLTable + "_" + recDate
 			c.db = c.db.Table(table)
-			if err := c.ensureTable(table); err != nil {
-				if err := c.ensureIndex(table, false); err != nil {
-					return err
-				}
+			if errTable := c.ensureTable(table); errTable != nil {
+				return errTable
+			}
+			if err := c.ensureIndex(table, false); err != nil {
 				return err
 			}
 		} else {

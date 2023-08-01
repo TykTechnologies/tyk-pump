@@ -9,6 +9,7 @@ import (
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 func TestSQLAggregateInit(t *testing.T) {
@@ -28,11 +29,6 @@ func TestSQLAggregateInit(t *testing.T) {
 	assert.NotNil(t, pmp.db)
 	assert.Equal(t, "sqlite", pmp.db.Dialector.Name())
 	assert.Equal(t, true, pmp.db.Migrator().HasTable(analytics.AggregateSQLTable))
-
-	// wait until the index is created
-	//nolint:revive
-	for !pmp.indexCreated.Load() {
-	}
 
 	assert.Equal(t, true, pmp.db.Migrator().HasIndex(analytics.AggregateSQLTable, newAggregatedIndexName))
 
@@ -56,9 +52,6 @@ func TestSQLAggregateWriteData_Sharded(t *testing.T) {
 	}
 
 	// wait until the index is created for sqlite to avoid locking
-	//nolint:revive
-	for !pmp.indexCreated.Load() {
-	}
 
 	keys := make([]interface{}, 8)
 	now := time.Now()
@@ -126,10 +119,8 @@ func TestSQLAggregateWriteData(t *testing.T) {
 		pmp.db.Migrator().DropTable(analytics.AggregateSQLTable)
 	}(table)
 
-	// wait until the index is created for sqlite to avoid locking
-	//nolint:revive
-	for !pmp.indexCreated.Load() {
-	}
+	err = pmp.ensureIndex(analytics.AggregateSQLTable, false)
+	assert.Nil(t, err)
 
 	now := time.Now()
 	nowPlus1 := time.Now().Add(1 * time.Hour)
@@ -371,6 +362,7 @@ func TestEnsureIndex(t *testing.T) {
 				db, err := gorm.Open(dialect, &gorm.Config{
 					AutoEmbedd:  true,
 					UseJSONTags: true,
+					Logger:      logger.Default.LogMode(logger.Info),
 				})
 				if err != nil {
 					return nil
@@ -404,11 +396,14 @@ func TestEnsureIndex(t *testing.T) {
 				db, err := gorm.Open(dialect, &gorm.Config{
 					AutoEmbedd:  true,
 					UseJSONTags: true,
+					Logger:      logger.Default.LogMode(logger.Info),
 				})
 				if err != nil {
 					return nil
 				}
 				pmp.db = db
+
+				pmp.backgroundIndexCreated = make(chan bool, 1)
 
 				if err := pmp.ensureTable(tableName); err != nil {
 					return nil
@@ -426,18 +421,18 @@ func TestEnsureIndex(t *testing.T) {
 		t.Run(tc.testName, func(t *testing.T) {
 			pmp := tc.pmpSetupFn(tc.givenTableName)
 			assert.NotNil(t, pmp)
-			assert.False(t, pmp.indexCreated.Load())
 
 			actualErr := pmp.ensureIndex(tc.givenTableName, tc.givenRunInBackground)
 			assert.Equal(t, tc.expectedErr, actualErr)
 
 			if actualErr == nil {
 				if tc.givenRunInBackground {
-					//nolint:revive
-					for !pmp.indexCreated.Load() {
-					}
+					// wait for the background index creation to finish
+					<-pmp.backgroundIndexCreated
+				} else {
+					hasIndex := pmp.db.Table(tc.givenTableName).Migrator().HasIndex(tc.givenTableName, newAggregatedIndexName)
+					assert.True(t, hasIndex)
 				}
-				assert.Equal(t, true, pmp.indexCreated.Load())
 			}
 		})
 	}
