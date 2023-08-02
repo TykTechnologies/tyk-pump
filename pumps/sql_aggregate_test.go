@@ -2,6 +2,7 @@ package pumps
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"testing"
 	"time"
@@ -415,6 +416,36 @@ func TestEnsureIndex(t *testing.T) {
 			givenRunInBackground: true,
 			expectedErr:          nil,
 		},
+		{
+			testName: "index created on non existing table, not background",
+			pmpSetupFn: func(tableName string) *SQLAggregatePump {
+				pmp := &SQLAggregatePump{}
+				cfg := &SQLAggregatePumpConf{}
+				cfg.Type = "sqlite"
+				cfg.ConnectionString = ""
+				pmp.SQLConf = cfg
+
+				pmp.log = log.WithField("prefix", "sql-aggregate-pump")
+				dialect, errDialect := Dialect(&pmp.SQLConf.SQLConf)
+				if errDialect != nil {
+					return nil
+				}
+				db, err := gorm.Open(dialect, &gorm.Config{
+					AutoEmbedd:  true,
+					UseJSONTags: true,
+					Logger:      logger.Default.LogMode(logger.Info),
+				})
+				if err != nil {
+					return nil
+				}
+				pmp.db = db
+
+				return pmp
+			},
+			givenTableName:       "test3",
+			givenRunInBackground: false,
+			expectedErr:          errors.New("no such table: main.test3"),
+		},
 	}
 
 	for _, tc := range tcs {
@@ -423,7 +454,6 @@ func TestEnsureIndex(t *testing.T) {
 			assert.NotNil(t, pmp)
 
 			actualErr := pmp.ensureIndex(tc.givenTableName, tc.givenRunInBackground)
-			assert.Equal(t, tc.expectedErr, actualErr)
 
 			if actualErr == nil {
 				if tc.givenRunInBackground {
@@ -433,6 +463,8 @@ func TestEnsureIndex(t *testing.T) {
 					hasIndex := pmp.db.Table(tc.givenTableName).Migrator().HasIndex(tc.givenTableName, newAggregatedIndexName)
 					assert.True(t, hasIndex)
 				}
+			} else {
+				assert.Equal(t, tc.expectedErr.Error(), actualErr.Error())
 			}
 		})
 	}
