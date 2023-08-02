@@ -105,6 +105,8 @@ func (c *SQLAggregatePump) Init(conf interface{}) error {
 		c.log.Error(errDialect)
 		return errDialect
 	}
+	c.dbType = c.SQLConf.Type
+
 	db, err := gorm.Open(dialect, &gorm.Config{
 		AutoEmbedd:  true,
 		UseJSONTags: true,
