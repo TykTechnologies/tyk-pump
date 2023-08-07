@@ -3,9 +3,6 @@
 # Generated on: Wed Jul 26 08:25:03 UTC 2023
 
 FROM debian:bullseye-slim
-ARG TARGETARCH
-FROM debian:bullseye-slim-s390x
-ARG TARGETARCH
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -26,10 +23,8 @@ RUN rm -rf /root/.cache \
     && find /usr/lib -type f -name '*.o' -delete
 
 # Comment this to test in dev
-COPY *${TARGETARCH}.deb /
-RUN dpkg -i /tyk-pump*${TARGETARCH}.deb && rm /*.deb
-COPY *s390x.deb /
-RUN dpkg -i /tyk-pump*s390x.deb && rm /*.deb
+COPY exact_filename.deb /
+RUN dpkg -i /tyk-pump_exact_filename.deb && rm /*.deb
 
 ARG PORTS
 
