@@ -161,199 +161,199 @@ func (e *ElasticsearchPump) getOperator() (ElasticsearchOperator, error) {
 		httpClient = &http.Client{Transport: &http.Transport{TLSClientConfig: tlsConf}}
 	}
 
-	switch conf.Version {
-	case "3":
-		op := new(Elasticsearch3Operator)
-		op.esClient, err = elasticv3.NewClient(elasticv3.SetURL(urls...), elasticv3.SetSniff(conf.EnableSniffing), elasticv3.SetBasicAuth(conf.Username, conf.Password), elasticv3.SetHttpClient(httpClient))
-
-		if err != nil {
-			return op, err
-		}
-
-		// Setup a bulk processor
-		p := op.esClient.BulkProcessor().Name("TykPumpESv3BackgroundProcessor")
-		if conf.BulkConfig.Workers != 0 {
-			p = p.Workers(conf.BulkConfig.Workers)
-		}
-
-		if conf.BulkConfig.FlushInterval != 0 {
-			p = p.FlushInterval(time.Duration(conf.BulkConfig.FlushInterval) * time.Second)
-		}
-
-		if conf.BulkConfig.BulkActions != 0 {
-			p = p.BulkActions(conf.BulkConfig.BulkActions)
-		}
-
-		if conf.BulkConfig.BulkSize != 0 {
-			p = p.BulkSize(conf.BulkConfig.BulkSize)
-		}
-
-		if !conf.DisableBulk {
-			// After execute a bulk commit call his function to print how many records were purged
-			purgerLogger := func(executionId int64, requests []elasticv3.BulkableRequest, response *elasticv3.BulkResponse, err error) {
-				printPurgedBulkRecords(len(requests), err, op.log)
-			}
-			p = p.After(purgerLogger)
-		}
-
-		op.bulkProcessor, err = p.Do()
-		op.log = e.log
-		return op, err
-	case "5":
-		op := new(Elasticsearch5Operator)
-
-		op.esClient, err = elasticv5.NewClient(elasticv5.SetURL(urls...), elasticv5.SetSniff(conf.EnableSniffing), elasticv5.SetBasicAuth(conf.Username, conf.Password), elasticv5.SetHttpClient(httpClient))
-
-		if err != nil {
-			return op, err
-		}
-		// Setup a bulk processor
-		p := op.esClient.BulkProcessor().Name("TykPumpESv5BackgroundProcessor")
-		if conf.BulkConfig.Workers != 0 {
-			p = p.Workers(conf.BulkConfig.Workers)
-		}
-
-		if conf.BulkConfig.FlushInterval != 0 {
-			p = p.FlushInterval(time.Duration(conf.BulkConfig.FlushInterval) * time.Second)
-		}
-
-		if conf.BulkConfig.BulkActions != 0 {
-			p = p.BulkActions(conf.BulkConfig.BulkActions)
-		}
-
-		if conf.BulkConfig.BulkSize != 0 {
-			p = p.BulkSize(conf.BulkConfig.BulkSize)
-		}
-
-		if !conf.DisableBulk {
-			// After execute a bulk commit call his function to print how many records were purged
-			purgerLogger := func(executionId int64, requests []elasticv5.BulkableRequest, response *elasticv5.BulkResponse, err error) {
-				printPurgedBulkRecords(len(requests), err, op.log)
-			}
-			p = p.After(purgerLogger)
-		}
-
-		op.bulkProcessor, err = p.Do(context.Background())
-		op.log = e.log
-		return op, err
-	case "6":
-		op := new(Elasticsearch6Operator)
-
-		op.esClient, err = elasticv6.NewClient(elasticv6.SetURL(urls...), elasticv6.SetSniff(conf.EnableSniffing), elasticv6.SetBasicAuth(conf.Username, conf.Password), elasticv6.SetHttpClient(httpClient))
-
-		if err != nil {
-			return op, err
-		}
-		// Setup a bulk processor
-		p := op.esClient.BulkProcessor().Name("TykPumpESv6BackgroundProcessor")
-		if conf.BulkConfig.Workers != 0 {
-			p = p.Workers(conf.BulkConfig.Workers)
-		}
-
-		if conf.BulkConfig.FlushInterval != 0 {
-			p = p.FlushInterval(time.Duration(conf.BulkConfig.FlushInterval) * time.Second)
-		}
-
-		if conf.BulkConfig.BulkActions != 0 {
-			p = p.BulkActions(conf.BulkConfig.BulkActions)
-		}
-
-		if conf.BulkConfig.BulkSize != 0 {
-			p = p.BulkSize(conf.BulkConfig.BulkSize)
-		}
-
-		if !conf.DisableBulk {
-			// After execute a bulk commit call his function to print how many records were purged
-			purgerLogger := func(executionId int64, requests []elasticv6.BulkableRequest, response *elasticv6.BulkResponse, err error) {
-				printPurgedBulkRecords(len(requests), err, op.log)
-			}
-			p = p.After(purgerLogger)
-		}
-
-		op.bulkProcessor, err = p.Do(context.Background())
-		op.log = e.log
-		return op, err
-	case "7":
-		op := new(Elasticsearch7Operator)
-
-		op.esClient, err = elasticv7.NewClient(elasticv7.SetURL(urls...), elasticv7.SetSniff(conf.EnableSniffing), elasticv7.SetBasicAuth(conf.Username, conf.Password), elasticv7.SetHttpClient(httpClient))
-
-		if err != nil {
-			return op, err
-		}
-		// Setup a bulk processor
-		p := op.esClient.BulkProcessor().Name("TykPumpESv7BackgroundProcessor")
-		if conf.BulkConfig.Workers != 0 {
-			p = p.Workers(conf.BulkConfig.Workers)
-		}
-
-		if conf.BulkConfig.FlushInterval != 0 {
-			p = p.FlushInterval(time.Duration(conf.BulkConfig.FlushInterval) * time.Second)
-		}
-
-		if conf.BulkConfig.BulkActions != 0 {
-			p = p.BulkActions(conf.BulkConfig.BulkActions)
-		}
-
-		if conf.BulkConfig.BulkSize != 0 {
-			p = p.BulkSize(conf.BulkConfig.BulkSize)
-		}
-
-		if !conf.DisableBulk {
-			// After execute a bulk commit call his function to print how many records were purged
-			purgerLogger := func(executionId int64, requests []elasticv7.BulkableRequest, response *elasticv7.BulkResponse, err error) {
-				printPurgedBulkRecords(len(requests), err, op.log)
-			}
-			p = p.After(purgerLogger)
-		}
-
-		op.bulkProcessor, err = p.Do(context.Background())
-		op.log = e.log
-		return op, err
-	default:
-		// shouldn't get this far, but hey never hurts to check assumptions
-		e.log.Fatal("Invalid version: ")
-	}
-
-	return nil, err
-}
-
-func (e *ElasticsearchPump) New() Pump {
-	newPump := ElasticsearchPump{}
-	return &newPump
-}
-
-func (e *ElasticsearchPump) GetName() string {
-	return "Elasticsearch Pump"
-}
-
-func (e *ElasticsearchPump) GetEnvPrefix() string {
-	return e.esConf.EnvPrefix
-}
-
-func (e *ElasticsearchPump) Init(config interface{}) error {
-	e.esConf = &ElasticsearchConf{}
-	e.log = log.WithField("prefix", elasticsearchPrefix)
-
-	loadConfigErr := mapstructure.Decode(config, &e.esConf)
-	if loadConfigErr != nil {
-		e.log.Fatal("Failed to decode configuration: ", loadConfigErr)
-	}
-
-	processPumpEnvVars(e, e.log, e.esConf, elasticsearchDefaultENV)
-
-	if "" == e.esConf.IndexName {
-		e.esConf.IndexName = "tyk_analytics"
-	}
-
-	if "" == e.esConf.ElasticsearchURL {
-		e.esConf.ElasticsearchURL = "http://localhost:9200"
-	}
-
-	if "" == e.esConf.DocumentType {
-		e.esConf.DocumentType = "tyk_analytics"
-	}
-
+ 	switch conf.Version {
+ 	case "3":
+ 		op := new(Elasticsearch3Operator)
+ 		op.esClient, err = elasticv3.NewClient(elasticv3.SetURL(urls...), elasticv3.SetSniff(conf.EnableSniffing), elasticv3.SetBasicAuth(conf.Username, conf.Password), elasticv3.SetHttpClient(httpClient))
+ 
+ 		if err != nil {
+ 			return op, err
+ 		}
+ 
+ 		// Setup a bulk processor
+ 		p := op.esClient.BulkProcessor().Name("TykPumpESv3BackgroundProcessor")
+ 		if conf.BulkConfig.Workers != 0 {
+ 			p = p.Workers(conf.BulkConfig.Workers)
+ 		}
+ 
+ 		if conf.BulkConfig.FlushInterval != 0 {
+ 			p = p.FlushInterval(time.Duration(conf.BulkConfig.FlushInterval) * time.Second)
+ 		}
+ 
+ 		if conf.BulkConfig.BulkActions != 0 {
+ 			p = p.BulkActions(conf.BulkConfig.BulkActions)
+ 		}
+ 
+ 		if conf.BulkConfig.BulkSize != 0 {
+ 			p = p.BulkSize(conf.BulkConfig.BulkSize)
+ 		}
+ 
+ 		if !conf.DisableBulk {
+ 			// After execute a bulk commit call his function to print how many records were purged
+ 			purgerLogger := func(executionId int64, requests []elasticv3.BulkableRequest, response *elasticv3.BulkResponse, err error) {
+ 				printPurgedBulkRecords(len(requests), err, op.log)
+ 			}
+ 			p = p.After(purgerLogger)
+ 		}
+ 
+ 		op.bulkProcessor, err = p.Do()
+ 		op.log = e.log
+ 		return op, err;
+ 	case "5":
+ 		op := new(Elasticsearch5Operator)
+ 
+ 		op.esClient, err = elasticv5.NewClient(elasticv5.SetURL(urls...), elasticv5.SetSniff(conf.EnableSniffing), elasticv5.SetBasicAuth(conf.Username, conf.Password), elasticv5.SetHttpClient(httpClient))
+ 
+ 		if err != nil {
+ 			return op, err
+ 		}
+ 		// Setup a bulk processor
+ 		p := op.esClient.BulkProcessor().Name("TykPumpESv5BackgroundProcessor")
+ 		if conf.BulkConfig.Workers != 0 {
+ 			p = p.Workers(conf.BulkConfig.Workers)
+ 		}
+ 
+ 		if conf.BulkConfig.FlushInterval != 0 {
+ 			p = p.FlushInterval(time.Duration(conf.BulkConfig.FlushInterval) * time.Second)
+ 		}
+ 
+ 		if conf.BulkConfig.BulkActions != 0 {
+ 			p = p.BulkActions(conf.BulkConfig.BulkActions)
+ 		}
+ 
+ 		if conf.BulkConfig.BulkSize != 0 {
+ 			p = p.BulkSize(conf.BulkConfig.BulkSize)
+ 		}
+ 
+ 		if !conf.DisableBulk {
+ 			// After execute a bulk commit call his function to print how many records were purged
+ 			purgerLogger := func(executionId int64, requests []elasticv5.BulkableRequest, response *elasticv5.BulkResponse, err error) {
+ 				printPurgedBulkRecords(len(requests), err, op.log)
+ 			}
+ 			p = p.After(purgerLogger)
+ 		}
+ 
+ 		op.bulkProcessor, err = p.Do(context.Background())
+ 		op.log = e.log
+ 		return op, err;
+ 	case "6":
+ 		op := new(Elasticsearch6Operator)
+ 
+ 		op.esClient, err = elasticv6.NewClient(elasticv6.SetURL(urls...), elasticv6.SetSniff(conf.EnableSniffing), elasticv6.SetBasicAuth(conf.Username, conf.Password), elasticv6.SetHttpClient(httpClient))
+ 
+ 		if err != nil {
+ 			return op, err
+ 		}
+ 		// Setup a bulk processor
+ 		p := op.esClient.BulkProcessor().Name("TykPumpESv6BackgroundProcessor")
+ 		if conf.BulkConfig.Workers != 0 {
+ 			p = p.Workers(conf.BulkConfig.Workers)
+ 		}
+ 
+ 		if conf.BulkConfig.FlushInterval != 0 {
+ 			p = p.FlushInterval(time.Duration(conf.BulkConfig.FlushInterval) * time.Second)
+ 		}
+ 
+ 		if conf.BulkConfig.BulkActions != 0 {
+ 			p = p.BulkActions(conf.BulkConfig.BulkActions)
+ 		}
+ 
+ 		if conf.BulkConfig.BulkSize != 0 {
+ 			p = p.BulkSize(conf.BulkConfig.BulkSize)
+ 		}
+ 
+ 		if !conf.DisableBulk {
+ 			// After execute a bulk commit call his function to print how many records were purged
+ 			purgerLogger := func(executionId int64, requests []elasticv6.BulkableRequest, response *elasticv6.BulkResponse, err error) {
+ 				printPurgedBulkRecords(len(requests), err, op.log)
+ 			}
+ 			p = p.After(purgerLogger)
+ 		}
+ 
+ 		op.bulkProcessor, err = p.Do(context.Background())
+ 		op.log = e.log
+ 		return op, err;
+ 	case "7":
+ 		op := new(Elasticsearch7Operator)
+ 
+ 		op.esClient, err = elasticv7.NewClient(elasticv7.SetURL(urls...), elasticv7.SetSniff(conf.EnableSniffing), elasticv7.SetBasicAuth(conf.Username, conf.Password), elasticv7.SetHttpClient(httpClient))
+ 
+ 		if err != nil {
+ 			return op, err
+ 		}
+ 		// Setup a bulk processor
+ 		p := op.esClient.BulkProcessor().Name("TykPumpESv7BackgroundProcessor")
+ 		if conf.BulkConfig.Workers != 0 {
+ 			p = p.Workers(conf.BulkConfig.Workers)
+ 		}
+ 
+ 		if conf.BulkConfig.FlushInterval != 0 {
+ 			p = p.FlushInterval(time.Duration(conf.BulkConfig.FlushInterval) * time.Second)
+ 		}
+ 
+ 		if conf.BulkConfig.BulkActions != 0 {
+ 			p = p.BulkActions(conf.BulkConfig.BulkActions)
+ 		}
+ 
+ 		if conf.BulkConfig.BulkSize != 0 {
+ 			p = p.BulkSize(conf.BulkConfig.BulkSize)
+ 		}
+ 
+ 		if !conf.DisableBulk {
+ 			// After execute a bulk commit call his function to print how many records were purged
+ 			purgerLogger := func(executionId int64, requests []elasticv7.BulkableRequest, response *elasticv7.BulkResponse, err error) {
+ 				printPurgedBulkRecords(len(requests), err, op.log)
+ 			}
+ 			p = p.After(purgerLogger)
+ 		}
+ 
+ 		op.bulkProcessor, err = p.Do(context.Background())
+ 		op.log = e.log
+ 		return op, err;
+ 	case "s390x":
+ 		// Add support for s390x architecture
+ 		op := new(ElasticsearchS390xOperator)
+ 
+ 		op.esClient, err = elasticv7.NewClient(elasticv7.SetURL(urls...), elasticv7.SetSniff(conf.EnableSniffing), elasticv7.SetBasicAuth(conf.Username, conf.Password), elasticv7.SetHttpClient(httpClient))
+ 
+ 		if err != nil {
+ 			return op, err
+ 		}
+ 		// Setup a bulk processor
+ 		p := op.esClient.BulkProcessor().Name("TykPumpESv7BackgroundProcessor")
+ 		if conf.BulkConfig.Workers != 0 {
+ 			p = p.Workers(conf.BulkConfig.Workers)
+ 		}
+ 
+ 		if conf.BulkConfig.FlushInterval != 0 {
+ 			p = p.FlushInterval(time.Duration(conf.BulkConfig.FlushInterval) * time.Second)
+ 		}
+ 
+ 		if conf.BulkConfig.BulkActions != 0 {
+ 			p = p.BulkActions(conf.BulkConfig.BulkActions)
+ 		}
+ 
+ 		if conf.BulkConfig.BulkSize != 0 {
+ 			p = p.BulkSize(conf.BulkConfig.BulkSize)
+ 		}
+ 
+ 		if !conf.DisableBulk {
+ 			// After execute a bulk commit call his function to print how many records were purged
+ 			purgerLogger := func(executionId int64, requests []elasticv7.BulkableRequest, response *elasticv7.BulkResponse, err error) {
+ 				printPurgedBulkRecords(len(requests), err, op.log)
+ 			}
+ 			p = p.After(purgerLogger)
+ 		}
+ 
+ 		op.bulkProcessor, err = p.Do(context.Background())
+ 		op.log = e.log
+ 		return op, err;
+ 	default:
+ 		// shouldn't get this far, but hey never hurts to check assumptions
+ 		e.log.Fatal("Invalid version: ")
+ 	}
+ 
+ 	return nil, err
 	switch e.esConf.Version {
 	case "":
 		e.esConf.Version = "3"
