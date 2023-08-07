@@ -14,6 +14,7 @@ builds:
     goarch:
       - amd64
       - arm64
+      - s390x
     binary: tyk-pump
 
 dockers:
@@ -23,9 +24,12 @@ dockers:
     image_templates:
       - "tykio/tyk-pump-docker-pub:{{ .Tag }}-amd64"
       - "docker.tyk.io/tyk-pump/tyk-pump:{{ .Tag }}-amd64"
+      - "tykio/tyk-pump-docker-pub:{{ .Tag }}-s390x"
+      - "docker.tyk.io/tyk-pump/tyk-pump:{{ .Tag }}-s390x"
     build_flag_templates:
       - "--build-arg=PORTS=80"
       - "--platform=linux/amd64"
+      - "--platform=linux/s390x"
       - "--label=org.opencontainers.image.created={{.Date}}"
       - "--label=org.opencontainers.image.title={{.ProjectName}}"
       - "--label=org.opencontainers.image.revision={{.FullCommit}}"
