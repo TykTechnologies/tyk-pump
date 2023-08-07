@@ -7,7 +7,7 @@
 # ./pr.zsh -repos tyk-pump -base master -branch exp/sync-test -base master -title Sync from latest releng templates -p
 # m4 -E -DxREPO=tyk-pump
 
-FROM gcr.io/distroless/static-debian10
+FROM gcr.io/distroless/s390x-debian10
 WORKDIR /opt/tyk-pump
 COPY tyk-pump .
 COPY pump.example.conf tyk-pump.conf
