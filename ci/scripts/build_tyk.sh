@@ -6,6 +6,5 @@ architectures=("amd64" "arm64" "s390x")
 # Iterate over the list of architectures
 for arch in "${architectures[@]}"; do
     echo "Building pump assets for architecture: $arch"
-    # Add the commands to build the pump assets for the current architecture
-    # These commands will depend on the specific build process for the pump assets
+    GOOS=linux GOARCH=$arch go build -o tyk-pump-$arch
 done
