@@ -21,8 +21,8 @@ dockers:
   - ids:
       - std
     image_templates:
-      - "tykio/tyk-pump-docker-pub:{{ .Tag }}-amd64"
-      - "docker.tyk.io/tyk-pump/tyk-pump:{{ .Tag }}-amd64"
+      - tykio/tyk-pump-docker-pub:{{ replace .Tag "+" "-" }}-amd64
+      - docker.tyk.io/tyk-pump/tyk-pump:{{ replace .Tag "+" "-" }}-amd64
     build_flag_templates:
       - "--build-arg=PORTS=80"
       - "--platform=linux/amd64"
@@ -43,8 +43,8 @@ dockers:
   - ids:
       - std
     image_templates:
-      - "tykio/tyk-pump-docker-pub:{{ .Tag }}-arm64"
-      - "docker.tyk.io/tyk-pump/tyk-pump:{{ .Tag }}-arm64"
+      - tykio/tyk-pump-docker-pub:{{ replace .Tag "+" "-" }}-arm64
+      - docker.tyk.io/tyk-pump/tyk-pump:{{ replace .Tag "+" "-" }}-arm64
     build_flag_templates:
       - "--build-arg=PORTS=80"
       - "--platform=linux/arm64"
@@ -63,18 +63,18 @@ dockers:
       - "pump.example.conf"
   
 docker_manifests:
-  - name_template: tykio/tyk-pump-docker-pub:{{ .Tag }}
+  - name_template: tykio/tyk-pump-docker-pub:{{ replace .Tag "+" "-" }}
     image_templates:
-      - tykio/tyk-pump-docker-pub:{{ .Tag }}-amd64
-      - tykio/tyk-pump-docker-pub:{{ .Tag }}-arm64
+      - tykio/tyk-pump-docker-pub:{{ replace .Tag "+" "-" }}-amd64
+      - tykio/tyk-pump-docker-pub:{{ replace .Tag "+" "-" }}-arm64
   - name_template: tykio/tyk-pump-docker-pub:v{{ .Major }}.{{ .Minor }}{{.Prerelease}}
     image_templates:
-      - tykio/tyk-pump-docker-pub:{{ .Tag }}-amd64
-      - tykio/tyk-pump-docker-pub:{{ .Tag }}-arm64
-  - name_template: docker.tyk.io/tyk-pump/tyk-pump:{{ .Tag }}
+      - tykio/tyk-pump-docker-pub:{{ replace .Tag "+" "-" }}-amd64
+      - tykio/tyk-pump-docker-pub:{{ replace .Tag "+" "-" }}-arm64
+  - name_template: docker.tyk.io/tyk-pump/tyk-pump:{{ replace .Tag "+" "-" }}
     image_templates:
-      - docker.tyk.io/tyk-pump/tyk-pump:{{ .Tag }}-amd64
-      - docker.tyk.io/tyk-pump/tyk-pump:{{ .Tag }}-arm64
+      - docker.tyk.io/tyk-pump/tyk-pump:{{ replace .Tag "+" "-" }}-amd64
+      - docker.tyk.io/tyk-pump/tyk-pump:{{ replace .Tag "+" "-" }}-arm64
 
 nfpms:
   - id: std
