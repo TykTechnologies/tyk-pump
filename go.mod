@@ -7,7 +7,11 @@ require (
 	github.com/TykTechnologies/gorpc v0.0.0-20210624160652-fe65bda0ccb9
 	github.com/TykTechnologies/graphql-go-tools v1.6.2-0.20230320143102-7a16078ce517
 	github.com/TykTechnologies/murmur3 v0.0.0-20230310161213-aad17efd5632
+<<<<<<< HEAD
 	github.com/TykTechnologies/storage v1.0.5
+=======
+	github.com/TykTechnologies/storage v1.0.8
+>>>>>>> a1fad74... [TT-9464] Updating storage to v1.0.8 (#698)
 	github.com/aws/aws-sdk-go-v2 v1.16.14
 	github.com/aws/aws-sdk-go-v2/config v1.9.0
 	github.com/aws/aws-sdk-go-v2/service/timestreamwrite v1.9.0
