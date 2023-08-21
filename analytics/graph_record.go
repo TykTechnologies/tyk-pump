@@ -20,6 +20,13 @@ import (
 	"github.com/TykTechnologies/storage/persistent/model"
 )
 
+// GraphSQLTableName should be defined before SQL migration is called on the GraphRecord
+// the reason this approach is used to define the table name is due to gorm's inability to
+// read values from the fields of the GraphRecord/AnalyticsRecord struct when it is migrating, due to that
+// a single static value is going to be returned as TableName and it will be used as the prefix for index/relationship creation no matter the
+// value passed to db.Table()
+var GraphSQLTableName string
+
 type GraphRecord struct {
 	Types map[string][]string `gorm:"types"`
 
@@ -33,7 +40,7 @@ type GraphRecord struct {
 }
 
 func (g *GraphRecord) TableName() string {
-	return g.AnalyticsRecord.TableName()
+	return GraphSQLTableName
 }
 
 // GetObjectID is a dummy function to satisfy the interface
