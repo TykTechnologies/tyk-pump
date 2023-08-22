@@ -7,9 +7,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/buger/jsonparser"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/buger/jsonparser"
 
 	"github.com/TykTechnologies/graphql-go-tools/pkg/ast"
 	"github.com/TykTechnologies/graphql-go-tools/pkg/astnormalization"
