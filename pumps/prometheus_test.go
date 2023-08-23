@@ -352,6 +352,7 @@ func TestPrometheusCounterMetric(t *testing.T) {
 		analyticsRecords      []analytics.AnalyticsRecord
 		expectedMetricsAmount int
 		expectedMetrics       map[string]counterStruct
+		trackAllPaths         bool
 	}{
 		{
 			testName: "HTTP status codes per API",
@@ -375,7 +376,8 @@ func TestPrometheusCounterMetric(t *testing.T) {
 			},
 		},
 		{
-			testName: "HTTP status codes per API path and method",
+			testName:      "HTTP status codes per API path and method - trackign all paths",
+			trackAllPaths: true,
 			metric: &PrometheusMetric{
 				Name:       "tyk_http_status_per_path",
 				Help:       "HTTP status codes per API path and method",
@@ -397,6 +399,57 @@ func TestPrometheusCounterMetric(t *testing.T) {
 				"500--api_1--test2--GET": {labelValues: []string{"500", "api_1", "test2", "GET"}, count: 1},
 				"200--api_1--test2--GET": {labelValues: []string{"200", "api_1", "test2", "GET"}, count: 1},
 				"200--api_2--test--GET":  {labelValues: []string{"200", "api_2", "test", "GET"}, count: 1},
+			},
+		},
+		{
+			testName:      "HTTP status codes per API path and method - tracking some paths",
+			trackAllPaths: false,
+			metric: &PrometheusMetric{
+				Name:       "tyk_http_status_per_path",
+				Help:       "HTTP status codes per API path and method",
+				MetricType: counterType,
+				Labels:     []string{"code", "api", "path", "method"},
+			},
+			analyticsRecords: []analytics.AnalyticsRecord{
+				{APIID: "api_1", ResponseCode: 500, Path: "test", Method: "GET", TrackPath: true},
+				{APIID: "api_1", ResponseCode: 500, Path: "test2", Method: "GET"},
+				{APIID: "api_1", ResponseCode: 500, Path: "test", Method: "GET", TrackPath: true},
+				{APIID: "api_1", ResponseCode: 500, Path: "test", Method: "POST", TrackPath: true},
+				{APIID: "api_1", ResponseCode: 200, Path: "test2", Method: "GET"},
+				{APIID: "api_2", ResponseCode: 200, Path: "test", Method: "GET"},
+			},
+			expectedMetricsAmount: 5,
+			expectedMetrics: map[string]counterStruct{
+				"500--api_1--test--GET":    {labelValues: []string{"500", "api_1", "test", "GET"}, count: 2},
+				"500--api_1--test--POST":   {labelValues: []string{"500", "api_1", "test", "POST"}, count: 1},
+				"500--api_1--unknown--GET": {labelValues: []string{"500", "api_1", "unknown", "GET"}, count: 1},
+				"200--api_1--unknown--GET": {labelValues: []string{"200", "api_1", "unknown", "GET"}, count: 1},
+				"200--api_2--unknown--GET": {labelValues: []string{"200", "api_2", "unknown", "GET"}, count: 1},
+			},
+		},
+		{
+			testName:      "HTTP status codes per API path and method - not tracking paths",
+			trackAllPaths: false,
+			metric: &PrometheusMetric{
+				Name:       "tyk_http_status_per_path",
+				Help:       "HTTP status codes per API path and method",
+				MetricType: counterType,
+				Labels:     []string{"code", "api", "path", "method"},
+			},
+			analyticsRecords: []analytics.AnalyticsRecord{
+				{APIID: "api_1", ResponseCode: 500, Path: "test", Method: "GET"},
+				{APIID: "api_1", ResponseCode: 500, Path: "test2", Method: "GET"},
+				{APIID: "api_1", ResponseCode: 500, Path: "test", Method: "GET"},
+				{APIID: "api_1", ResponseCode: 500, Path: "test", Method: "POST"},
+				{APIID: "api_1", ResponseCode: 200, Path: "test2", Method: "GET"},
+				{APIID: "api_2", ResponseCode: 200, Path: "test", Method: "GET"},
+			},
+			expectedMetricsAmount: 4,
+			expectedMetrics: map[string]counterStruct{
+				"500--api_1--unknown--GET":  {labelValues: []string{"500", "api_1", "unknown", "GET"}, count: 3},
+				"500--api_1--unknown--POST": {labelValues: []string{"500", "api_1", "unknown", "POST"}, count: 1},
+				"200--api_1--unknown--GET":  {labelValues: []string{"200", "api_1", "unknown", "GET"}, count: 1},
+				"200--api_2--unknown--GET":  {labelValues: []string{"200", "api_2", "unknown", "GET"}, count: 1},
 			},
 		},
 		{
@@ -474,6 +527,10 @@ func TestPrometheusCounterMetric(t *testing.T) {
 			assert.Nil(t, err)
 			defer prometheus.Unregister(tc.metric.counterVec)
 			for _, record := range tc.analyticsRecords {
+				if !(tc.trackAllPaths || record.TrackPath) {
+					record.Path = "unknown"
+				}
+
 				labelValues := tc.metric.GetLabelsValues(record)
 				assert.Equal(t, len(tc.metric.Labels), len(labelValues))
 
