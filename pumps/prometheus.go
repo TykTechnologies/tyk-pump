@@ -43,7 +43,7 @@ type PrometheusConf struct {
 	// Metrics to exclude from exposition. Currently, excludes only the base metrics.
 	DisabledMetrics []string `json:"disabled_metrics" mapstructure:"disabled_metrics"`
 	// Specifies if it should expose aggregated metrics for all the endpoints. By default, `false`
-	// which means that all APIs endpoints will be counted as 'uknown' unless the API use track endpoint plugin.
+	// which means that all APIs endpoints will be counted as 'unknown' unless the API use track endpoint plugin.
 	TrackAllPaths bool `json:"track_all_paths" mapstructure:"track_all_paths"`
 	// Custom Prometheus metrics.
 	CustomMetrics CustomMetrics `json:"custom_metrics" mapstructure:"custom_metrics"`
@@ -94,8 +94,9 @@ type counterStruct struct {
 }
 
 const (
-	counterType   = "counter"
-	histogramType = "histogram"
+	counterType           = "counter"
+	histogramType         = "histogram"
+	prometheusUnknownPath = "unknown"
 )
 
 var (
@@ -250,7 +251,7 @@ func (p *PrometheusPump) WriteData(ctx context.Context, data []interface{}) erro
 		record := item.(analytics.AnalyticsRecord)
 
 		if !(p.conf.TrackAllPaths || record.TrackPath) {
-			record.Path = "unknown"
+			record.Path = prometheusUnknownPath
 		}
 
 		// we loop through all the metrics available.
