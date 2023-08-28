@@ -129,7 +129,7 @@ func (c *SQLAggregatePump) Init(conf interface{}) error {
 		shouldRunOnBackground := false
 		if c.dbType == "postgres" {
 			shouldRunOnBackground = true
-			c.backgroundIndexCreated = make(chan bool)
+			c.backgroundIndexCreated = make(chan bool, 1)
 		}
 
 		// if index doesn't exist, create it
