@@ -29,6 +29,8 @@ type SQLAggregatePumpConf struct {
 	// Determines if the aggregations should be made per minute instead of per hour.
 	StoreAnalyticsPerMinute bool     `json:"store_analytics_per_minute" mapstructure:"store_analytics_per_minute"`
 	IgnoreAggregationsList  []string `json:"ignore_aggregations" mapstructure:"ignore_aggregations"`
+	// Set to true to disable the default tyk index creation.
+	OmitIndexCreation bool `json:"omit_index_creation" mapstructure:"omit_index_creation"`
 }
 
 type SQLAggregatePump struct {
@@ -37,11 +39,19 @@ type SQLAggregatePump struct {
 	db      *gorm.DB
 	dbType  string
 	dialect gorm.Dialector
+
+	// this channel is used to signal that the background index creation has finished - this is used for testing
+	backgroundIndexCreated chan bool
 }
 
 var (
 	SQLAggregatePumpPrefix = "SQL-aggregate-pump"
 	SQLAggregateDefaultENV = PUMPS_ENV_PREFIX + "_SQLAGGREGATE" + PUMPS_ENV_META_PREFIX
+)
+
+const (
+	oldAggregatedIndexName = "dimension"
+	newAggregatedIndexName = "idx_dimension"
 )
 
 func (c *SQLAggregatePump) New() Pump {
@@ -97,6 +107,8 @@ func (c *SQLAggregatePump) Init(conf interface{}) error {
 		c.log.Error(errDialect)
 		return errDialect
 	}
+	c.dbType = c.SQLConf.Type
+
 	db, err := gorm.Open(dialect, &gorm.Config{
 		AutoEmbedd:  true,
 		UseJSONTags: true,
@@ -106,9 +118,27 @@ func (c *SQLAggregatePump) Init(conf interface{}) error {
 		c.log.Error(err)
 		return err
 	}
+
 	c.db = db
+
 	if !c.SQLConf.TableSharding {
-		c.db.Table(analytics.AggregateSQLTable).AutoMigrate(&analytics.SQLAnalyticsRecordAggregate{})
+		// if table doesn't exist, create it
+		if err := c.ensureTable(analytics.AggregateSQLTable); err != nil {
+			return err
+		}
+
+		// we can run the index creation in background only for postgres since it supports CONCURRENTLY
+		shouldRunOnBackground := false
+		if c.dbType == "postgres" {
+			shouldRunOnBackground = true
+			c.backgroundIndexCreated = make(chan bool, 1)
+		}
+
+		// if index doesn't exist, create it
+		if err := c.ensureIndex(analytics.AggregateSQLTable, shouldRunOnBackground); err != nil {
+			c.log.Error(err)
+			return err
+		}
 	}
 
 	if c.SQLConf.BatchSize == 0 {
@@ -116,6 +146,71 @@ func (c *SQLAggregatePump) Init(conf interface{}) error {
 	}
 
 	c.log.Debug("SQLAggregate Initialized")
+	return nil
+}
+
+// ensureIndex creates the new optimized index for tyk_aggregated.
+// it uses CONCURRENTLY to avoid locking the table for a long time - postgresql.org/docs/current/sql-createindex.html#SQL-CREATEINDEX-CONCURRENTLY
+// if background is true, it will run the index creation in a goroutine
+// if not, it will block until it finishes
+func (c *SQLAggregatePump) ensureIndex(tableName string, background bool) error {
+	if c.SQLConf.OmitIndexCreation {
+		c.log.Info("omit_index_creation set to true, omitting index creation..")
+		return nil
+	}
+
+	if !c.db.Migrator().HasIndex(tableName, newAggregatedIndexName) {
+		createIndexFn := func(c *SQLAggregatePump) error {
+			option := ""
+			if c.dbType == "postgres" {
+				option = "CONCURRENTLY"
+			}
+
+			err := c.db.Table(tableName).Exec(fmt.Sprintf("CREATE INDEX %s IF NOT EXISTS %s ON %s (dimension, timestamp, org_id, dimension_value)", option, newAggregatedIndexName, tableName)).Error
+			if err != nil {
+				c.log.Errorf("error creating index for table %s : %s", tableName, err.Error())
+				return err
+			}
+
+			if background {
+				c.backgroundIndexCreated <- true
+			}
+
+			c.log.Info("Index ", newAggregatedIndexName, " for table ", tableName, " created successfully")
+
+			return nil
+		}
+
+		if background {
+			c.log.Info("Creating index for table ", tableName, " on background...")
+
+			go func(c *SQLAggregatePump) {
+				if err := createIndexFn(c); err != nil {
+					c.log.Error(err)
+				}
+			}(c)
+
+			return nil
+		}
+
+		c.log.Info("Creating index for table ", tableName, "...")
+		return createIndexFn(c)
+	}
+	c.log.Info(newAggregatedIndexName, " already exists.")
+
+	return nil
+}
+
+// ensureTable creates the table if it doesn't exist
+func (c *SQLAggregatePump) ensureTable(tableName string) error {
+	if !c.db.Migrator().HasTable(tableName) {
+		c.db = c.db.Table(tableName)
+
+		if err := c.db.Migrator().CreateTable(&analytics.SQLAnalyticsRecordAggregate{}); err != nil {
+			c.log.Error("error creating table", err)
+			return err
+		}
+	}
 	return nil
 }
 
@@ -155,8 +250,11 @@ func (c *SQLAggregatePump) WriteData(ctx context.Context, data []interface{}) er
 
 			table = analytics.AggregateSQLTable + "_" + recDate
 			c.db = c.db.Table(table)
-			if !c.db.Migrator().HasTable(table) {
-				c.db.AutoMigrate(&analytics.SQLAnalyticsRecordAggregate{})
+			if errTable := c.ensureTable(table); errTable != nil {
+				return errTable
+			}
+			if err := c.ensureIndex(table, false); err != nil {
+				return err
 			}
 		} else {
 			i = dataLen // write all records at once for non-sharded case, stop for loop after 1 iteration
