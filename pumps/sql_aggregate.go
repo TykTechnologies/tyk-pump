@@ -29,6 +29,8 @@ type SQLAggregatePumpConf struct {
 	// Determines if the aggregations should be made per minute instead of per hour.
 	StoreAnalyticsPerMinute bool     `json:"store_analytics_per_minute" mapstructure:"store_analytics_per_minute"`
 	IgnoreAggregationsList  []string `json:"ignore_aggregations" mapstructure:"ignore_aggregations"`
+	// Set to true to disable the default tyk index creation.
+	OmitIndexCreation bool `json:"omit_index_creation" mapstructure:"omit_index_creation"`
 }
 
 type SQLAggregatePump struct {
@@ -152,6 +154,11 @@ func (c *SQLAggregatePump) Init(conf interface{}) error {
 // if background is true, it will run the index creation in a goroutine
 // if not, it will block until it finishes
 func (c *SQLAggregatePump) ensureIndex(tableName string, background bool) error {
+	if c.SQLConf.OmitIndexCreation {
+		c.log.Info("omit_index_creation set to true, omitting index creation..")
+		return nil
+	}
+
 	if !c.db.Migrator().HasIndex(tableName, newAggregatedIndexName) {
 		createIndexFn := func(c *SQLAggregatePump) error {
 			option := ""
