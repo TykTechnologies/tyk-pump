@@ -29,6 +29,8 @@ type Json map[string]interface{}
 var kafkaPrefix = "kafka-pump"
 var kafkaDefaultENV = PUMPS_ENV_PREFIX + "_KAFKA" + PUMPS_ENV_META_PREFIX
 
+var kafkaWriter *kafka.Writer
+
 // @PumpConf Kafka
 type KafkaConf struct {
 	EnvPrefix string `mapstructure:"meta_env_prefix"`
@@ -64,6 +66,24 @@ type KafkaConf struct {
 	// SASL algorithm. It's the algorithm specified for scram mechanism. It could be sha-512 or sha-256.
 	// Defaults to "sha-256".
 	Algorithm string `json:"sasl_algorithm" mapstructure:"sasl_algorithm"`
+
+	// Limit the maximum size of a request in bytes before being sent to
+	// a partition.
+	//
+	// The default is to use a kafka default value of 1048576.
+	BatchBytes int `json:"batch_bytes" mapstructure:"batch_bytes"`
+
+	// Limit on how many messages will be buffered before being sent to a
+	// partition.
+	//
+	// The default is to use a target batch size of 100 messages.
+	BatchSize int `json:"batch_size" mapstructure:"batch_size"`
+
+	// Time limit on how often incomplete message batches will be flushed to
+	// kafka.
+	//
+	// The default is to flush at least every second.
+	BatchTimeout int `json:"batch_timeout" mapstructure:"batch_timeout"`
 }
 
 func (k *KafkaPump) New() Pump {
@@ -151,9 +171,16 @@ func (k *KafkaPump) Init(config interface{}) error {
 	k.writerConfig.Dialer = dialer
 	k.writerConfig.WriteTimeout = k.kafkaConf.Timeout * time.Second
 	k.writerConfig.ReadTimeout = k.kafkaConf.Timeout * time.Second
+	k.writerConfig.BatchBytes = k.kafkaConf.BatchBytes                    // 100 MB
+	k.writerConfig.BatchSize = k.kafkaConf.BatchSize                      //100K
+	k.writerConfig.BatchTimeout = time.Duration(k.kafkaConf.BatchTimeout) // every second
+
 	if k.kafkaConf.Compressed {
 		k.writerConfig.CompressionCodec = snappy.NewCompressionCodec()
 	}
+
+	kafkaWriter = kafka.NewWriter(k.writerConfig)
+	defer kafkaWriter.Close()
 
 	k.log.Info(k.GetName() + " Initialized")
 
@@ -217,7 +244,5 @@ func (k *KafkaPump) WriteData(ctx context.Context, data []interface{}) error {
 }
 
 func (k *KafkaPump) write(ctx context.Context, messages []kafka.Message) error {
-	kafkaWriter := kafka.NewWriter(k.writerConfig)
-	defer kafkaWriter.Close()
 	return kafkaWriter.WriteMessages(ctx, messages...)
 }
