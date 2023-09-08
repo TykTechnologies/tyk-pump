@@ -172,7 +172,6 @@ func (k *KafkaPump) Init(config interface{}) error {
 	k.writerConfig.BatchBytes = k.kafkaConf.BatchBytes                    // 100 MB
 	k.writerConfig.BatchSize = k.kafkaConf.BatchSize                      //100K
 	k.writerConfig.BatchTimeout = time.Duration(k.kafkaConf.BatchTimeout) // every second
-	k.writerConfig.Async = true
 
 	if k.kafkaConf.Compressed {
 		k.writerConfig.CompressionCodec = snappy.NewCompressionCodec()
