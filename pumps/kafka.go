@@ -4,11 +4,11 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"github.com/segmentio/kafka-go"
 	"time"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/mitchellh/mapstructure"
-	"github.com/segmentio/kafka-go"
 	"github.com/segmentio/kafka-go/sasl"
 	"github.com/segmentio/kafka-go/sasl/plain"
 	"github.com/segmentio/kafka-go/sasl/scram"
@@ -28,8 +28,6 @@ type Json map[string]interface{}
 
 var kafkaPrefix = "kafka-pump"
 var kafkaDefaultENV = PUMPS_ENV_PREFIX + "_KAFKA" + PUMPS_ENV_META_PREFIX
-
-var kafkaWriter *kafka.Writer
 
 // @PumpConf Kafka
 type KafkaConf struct {
@@ -174,13 +172,11 @@ func (k *KafkaPump) Init(config interface{}) error {
 	k.writerConfig.BatchBytes = k.kafkaConf.BatchBytes                    // 100 MB
 	k.writerConfig.BatchSize = k.kafkaConf.BatchSize                      //100K
 	k.writerConfig.BatchTimeout = time.Duration(k.kafkaConf.BatchTimeout) // every second
+	k.writerConfig.Async = true
 
 	if k.kafkaConf.Compressed {
 		k.writerConfig.CompressionCodec = snappy.NewCompressionCodec()
 	}
-
-	kafkaWriter = kafka.NewWriter(k.writerConfig)
-	defer kafkaWriter.Close()
 
 	k.log.Info(k.GetName() + " Initialized")
 
@@ -244,5 +240,7 @@ func (k *KafkaPump) WriteData(ctx context.Context, data []interface{}) error {
 }
 
 func (k *KafkaPump) write(ctx context.Context, messages []kafka.Message) error {
+	kafkaWriter := kafka.NewWriter(k.writerConfig)
+	defer kafkaWriter.Close()
 	return kafkaWriter.WriteMessages(ctx, messages...)
 }
