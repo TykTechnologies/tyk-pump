@@ -314,7 +314,7 @@ func TestAggregateGraphData_Dimension(t *testing.T) {
 	r := require.New(t)
 	aggregated := AggregateGraphData(records, "", 1)
 	r.Len(aggregated, 1)
-	aggre := aggregated["test-org"]
+	aggre := aggregated["test-api"]
 	dimensions := aggre.Dimensions()
 	fmt.Println(dimensions)
 	for d, values := range responsesCheck {
@@ -326,7 +326,7 @@ func TestAggregateGraphData_Dimension(t *testing.T) {
 				}
 			}
 			if !found {
-				t.Errorf("item missing from dimensions: NameL %s, Value: %s, Hits:3", d, v)
+				t.Errorf("item missing from dimensions: Name: %s, Value: %s, Hits:3", d, v)
 			}
 		}
 	}
