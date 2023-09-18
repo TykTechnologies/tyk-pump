@@ -68,7 +68,7 @@ func (s *GraphSQLAggregatePump) Init(conf interface{}) error {
 	}
 	s.db = db
 	if !s.SQLConf.TableSharding {
-		if err := s.db.Table(analytics.AggregateGraphSQLTable).AutoMigrate(&analytics.SQLAnalyticsRecordAggregate{}); err != nil {
+		if err := s.db.Table(analytics.AggregateGraphSQLTable).AutoMigrate(&analytics.GraphSQLAnalyticsRecordAggregate{}); err != nil {
 			s.log.WithError(err).Warn("error migrating table")
 		}
 	}
@@ -132,11 +132,11 @@ func (s *GraphSQLAggregatePump) WriteData(ctx context.Context, data []interface{
 			aggregationTime = 60
 		}
 
-		analyticsPerOrg := analytics.AggregateGraphData(data[startIndex:endIndex], "", aggregationTime)
+		analyticsPerAPI := analytics.AggregateGraphData(data[startIndex:endIndex], "", aggregationTime)
 
-		for orgID := range analyticsPerOrg {
-			ag := analyticsPerOrg[orgID]
-			err := s.DoAggregatedWriting(ctx, table, orgID, &ag)
+		for apiID := range analyticsPerAPI {
+			ag := analyticsPerAPI[apiID]
+			err := s.DoAggregatedWriting(ctx, table, ag.OrgID, apiID, &ag)
 			if err != nil {
 				s.log.WithError(err).Error("error writing record")
 				return err
@@ -150,14 +150,15 @@ func (s *GraphSQLAggregatePump) WriteData(ctx context.Context, data []interface{
 	return nil
 }
 
-func (s *GraphSQLAggregatePump) DoAggregatedWriting(ctx context.Context, table, orgID string, ag *analytics.GraphRecordAggregate) error {
-	recs := []analytics.SQLAnalyticsRecordAggregate{}
+func (s *GraphSQLAggregatePump) DoAggregatedWriting(ctx context.Context, table, orgID, apiID string, ag *analytics.GraphRecordAggregate) error {
+	var recs []analytics.GraphSQLAnalyticsRecordAggregate
 
 	dimensions := ag.Dimensions()
 	for _, d := range dimensions {
-		rec := analytics.SQLAnalyticsRecordAggregate{
-			ID:             hex.EncodeToString([]byte(fmt.Sprintf("%v", ag.TimeStamp.Unix()) + orgID + d.Name + d.Value)),
+		rec := analytics.GraphSQLAnalyticsRecordAggregate{
+			ID:             hex.EncodeToString([]byte(fmt.Sprintf("%v", ag.TimeStamp.Unix()) + apiID + d.Name + d.Value)),
 			OrgID:          orgID,
+			ApiID:          apiID,
 			TimeStamp:      ag.TimeStamp.Unix(),
 			Counter:        *d.Counter,
 			Dimension:      d.Name,
