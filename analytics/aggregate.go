@@ -150,15 +150,15 @@ type SQLAnalyticsRecordAggregate struct {
 type GraphSQLAnalyticsRecordAggregate struct {
 	ID string `gorm:"primaryKey"`
 
-	Counter `json:"counter" gorm:"embedded"`
-
-	TimeStamp      int64  `json:"timestamp"`
 	OrgID          string `json:"org_id"`
-	ApiID          string `json:"api_id"`
 	Dimension      string `json:"dimension"`
 	DimensionValue string `json:"dimension_value"`
+	APIID          string `json:"api_id"`
 
-	Code `json:"code" gorm:"embedded"`
+	Counter `json:"counter" gorm:"embedded"`
+	Code    `json:"code" gorm:"embedded"`
+
+	TimeStamp int64 `json:"timestamp"`
 }
 
 type Code struct {

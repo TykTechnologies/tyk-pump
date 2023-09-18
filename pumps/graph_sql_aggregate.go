@@ -158,7 +158,7 @@ func (s *GraphSQLAggregatePump) DoAggregatedWriting(ctx context.Context, table, 
 		rec := analytics.GraphSQLAnalyticsRecordAggregate{
 			ID:             hex.EncodeToString([]byte(fmt.Sprintf("%v", ag.TimeStamp.Unix()) + apiID + d.Name + d.Value)),
 			OrgID:          orgID,
-			ApiID:          apiID,
+			APIID:          apiID,
 			TimeStamp:      ag.TimeStamp.Unix(),
 			Counter:        *d.Counter,
 			Dimension:      d.Name,
