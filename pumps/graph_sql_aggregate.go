@@ -115,7 +115,7 @@ func (s *GraphSQLAggregatePump) WriteData(ctx context.Context, data []interface{
 			table = analytics.AggregateGraphSQLTable + "_" + recDate
 			s.db = s.db.Table(table)
 			if !s.db.Migrator().HasTable(table) {
-				if err := s.db.AutoMigrate(&analytics.SQLAnalyticsRecordAggregate{}); err != nil {
+				if err := s.db.AutoMigrate(&analytics.GraphSQLAnalyticsRecordAggregate{}); err != nil {
 					s.log.WithError(err).Warn("error running auto migration")
 				}
 			}
