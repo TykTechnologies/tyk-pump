@@ -90,6 +90,8 @@ func TestTrimTag(t *testing.T) {
 }
 
 func TestAggregateGraphData(t *testing.T) {
+	query := `{"query":"query{\n  characters(filter: {\n    \n  }){\n    info{\n      count\n    }\n  }\n}"}`
+	rawResponse := `{"data":{"characters":{"info":{"count":758}}}}`
 	sampleRecord := AnalyticsRecord{
 		TimeStamp:    time.Date(2022, 1, 1, 0, 0, 0, 0, time.UTC),
 		Method:       "POST",
@@ -109,6 +111,8 @@ func TestAggregateGraphData(t *testing.T) {
 		APIKey:       "test-key",
 		TrackPath:    true,
 		OauthID:      "test-id",
+		RawRequest:   base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf(requestTemplate, len(query), query))),
+		RawResponse:  base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf(responseTemplate, len(rawResponse), rawResponse))),
 	}
 
 	compareFields := func(r *require.Assertions, expected, actual map[string]*Counter) {
@@ -133,16 +137,12 @@ func TestAggregateGraphData(t *testing.T) {
 				records := make([]interface{}, 3)
 				for i := range records {
 					record := sampleRecord
-					query := `{"query":"query{\n  characters(filter: {\n    \n  }){\n    info{\n      count\n    }\n  }\n}"}`
-					response := `{"data":{"characters":{"info":{"count":758}}}}`
-					record.RawRequest = base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf(requestTemplate, len(query), query)))
-					record.RawResponse = base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf(responseTemplate, len(response), response)))
 					records[i] = record
 				}
 				return records
 			},
 			expectedAggregate: map[string]GraphRecordAggregate{
-				"test-org": {
+				"test-api": {
 					Types: map[string]*Counter{
 						"Characters": {Hits: 3, ErrorTotal: 0, Success: 3},
 						"Info":       {Hits: 3, ErrorTotal: 0, Success: 3},
@@ -163,10 +163,6 @@ func TestAggregateGraphData(t *testing.T) {
 				records := make([]interface{}, 3)
 				for i := range records {
 					record := sampleRecord
-					query := `{"query":"query{\n  characters(filter: {\n    \n  }){\n    info{\n      count\n    }\n  }\n}"}`
-					response := `{"data":{"characters":{"info":{"count":758}}}}`
-					record.RawRequest = base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf(requestTemplate, len(query), query)))
-					record.RawResponse = base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf(responseTemplate, len(response), response)))
 					if i == 1 {
 						record.Tags = []string{}
 					}
@@ -175,7 +171,7 @@ func TestAggregateGraphData(t *testing.T) {
 				return records
 			},
 			expectedAggregate: map[string]GraphRecordAggregate{
-				"test-org": {
+				"test-api": {
 					Types: map[string]*Counter{
 						"Characters": {Hits: 2, ErrorTotal: 0, Success: 2},
 						"Info":       {Hits: 2, ErrorTotal: 0, Success: 2},
@@ -196,19 +192,16 @@ func TestAggregateGraphData(t *testing.T) {
 				records := make([]interface{}, 3)
 				for i := range records {
 					record := sampleRecord
-					query := `{"query":"query{\n  characters(filter: {\n    \n  }){\n    info{\n      count\n    }\n  }\n}"}`
-					response := `{"data":{"characters":{"info":{"count":758}}}}`
 					if i == 1 {
-						response = graphErrorResponse
+						response := graphErrorResponse
+						record.RawResponse = base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf(responseTemplate, len(response), response)))
 					}
-					record.RawRequest = base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf(requestTemplate, len(query), query)))
-					record.RawResponse = base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf(responseTemplate, len(response), response)))
 					records[i] = record
 				}
 				return records
 			},
 			expectedAggregate: map[string]GraphRecordAggregate{
-				"test-org": {
+				"test-api": {
 					Types: map[string]*Counter{
 						"Characters": {Hits: 3, ErrorTotal: 1, Success: 2},
 						"Info":       {Hits: 3, ErrorTotal: 1, Success: 2},
@@ -229,10 +222,6 @@ func TestAggregateGraphData(t *testing.T) {
 				records := make([]interface{}, 5)
 				for i := range records {
 					record := sampleRecord
-					query := `{"query":"query{\n  characters(filter: {\n    \n  }){\n    info{\n      count\n    }\n  }\n}"}`
-					response := `{"data":{"characters":{"info":{"count":758}}}}`
-					record.RawRequest = base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf(requestTemplate, len(query), query)))
-					record.RawResponse = base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf(responseTemplate, len(response), response)))
 					if i == 2 || i == 4 {
 						record.ResponseCode = 500
 					}
@@ -241,7 +230,7 @@ func TestAggregateGraphData(t *testing.T) {
 				return records
 			},
 			expectedAggregate: map[string]GraphRecordAggregate{
-				"test-org": {
+				"test-api": {
 					Types: map[string]*Counter{
 						"Characters": {Hits: 5, ErrorTotal: 2, Success: 3},
 						"Info":       {Hits: 5, ErrorTotal: 2, Success: 3},
@@ -325,7 +314,7 @@ func TestAggregateGraphData_Dimension(t *testing.T) {
 	r := require.New(t)
 	aggregated := AggregateGraphData(records, "", 1)
 	r.Len(aggregated, 1)
-	aggre := aggregated["test-org"]
+	aggre := aggregated["test-api"]
 	dimensions := aggre.Dimensions()
 	fmt.Println(dimensions)
 	for d, values := range responsesCheck {
@@ -337,7 +326,7 @@ func TestAggregateGraphData_Dimension(t *testing.T) {
 				}
 			}
 			if !found {
-				t.Errorf("item missing from dimensions: NameL %s, Value: %s, Hits:3", d, v)
+				t.Errorf("item missing from dimensions: Name: %s, Value: %s, Hits:3", d, v)
 			}
 		}
 	}
