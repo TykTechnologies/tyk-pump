@@ -14,6 +14,8 @@ builds:
     goarch:
       - amd64
       - arm64
+      - s390x
+      - ppc64le
     binary: tyk-pump
 
 dockers:
@@ -61,20 +63,68 @@ dockers:
       - "README.md"
       - "LICENSE.md"
       - "pump.example.conf"
+  - ids:
+      - std
+    image_templates:
+      - "tykio/tyk-pump-docker-pub:{{ .Tag }}-s390x"
+      - "docker.tyk.io/tyk-pump/tyk-pump:{{ .Tag }}-s390x"
+    build_flag_templates:
+      - "--build-arg=PORTS=80"
+      - "--platform=linux/s390x"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title={{.ProjectName}}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+    use: buildx
+    goarch: s390x
+    goos: linux
+    dockerfile: ci/Dockerfile.std
+    extra_files:
+      - "ci/install/"
+      - "README.md"
+      - "LICENSE.md"
+      - "pump.example.conf"
+  - ids:
+      - std
+    image_templates:
+      - "tykio/tyk-pump-docker-pub:{{ .Tag }}-ppc64le"
+      - "docker.tyk.io/tyk-pump/tyk-pump:{{ .Tag }}-ppc64le"
+    build_flag_templates:
+      - "--build-arg=PORTS=80"
+      - "--platform=linux/ppc64le"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title={{.ProjectName}}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+    use: buildx
+    goarch: ppc64le
+    goos: linux
+    dockerfile: ci/Dockerfile.std
+    extra_files:
+      - "ci/install/"
+      - "README.md"
+      - "LICENSE.md"
+      - "pump.example.conf"
   
 docker_manifests:
   - name_template: tykio/tyk-pump-docker-pub:{{ .Tag }}
     image_templates:
       - tykio/tyk-pump-docker-pub:{{ .Tag }}-amd64
       - tykio/tyk-pump-docker-pub:{{ .Tag }}-arm64
+      - tykio/tyk-pump-docker-pub:{{ .Tag }}-s390x
+      - tykio/tyk-pump-docker-pub:{{ .Tag }}-ppc64le
   - name_template: tykio/tyk-pump-docker-pub:v{{ .Major }}.{{ .Minor }}{{.Prerelease}}
     image_templates:
       - tykio/tyk-pump-docker-pub:{{ .Tag }}-amd64
       - tykio/tyk-pump-docker-pub:{{ .Tag }}-arm64
+      - tykio/tyk-pump-docker-pub:{{ .Tag }}-s390x
+      - tykio/tyk-pump-docker-pub:{{ .Tag }}-ppc64le
   - name_template: docker.tyk.io/tyk-pump/tyk-pump:{{ .Tag }}
     image_templates:
       - docker.tyk.io/tyk-pump/tyk-pump:{{ .Tag }}-amd64
       - docker.tyk.io/tyk-pump/tyk-pump:{{ .Tag }}-arm64
+      - docker.tyk.io/tyk-pump/tyk-pump:{{ .Tag }}-s390x
+      - docker.tyk.io/tyk-pump/tyk-pump:{{ .Tag }}-ppc64le      
 
 nfpms:
   - id: std
