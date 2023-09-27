@@ -75,6 +75,7 @@ dockers:
       - "--label=org.opencontainers.image.title={{.ProjectName}}"
       - "--label=org.opencontainers.image.revision={{.FullCommit}}"
       - "--label=org.opencontainers.image.version={{.Version}}"
+      - "--build-arg TARGETARCH=ppc64el"
     use: buildx
     goarch: s390x
     goos: linux
