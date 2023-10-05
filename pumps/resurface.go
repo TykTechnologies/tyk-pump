@@ -19,6 +19,7 @@ import (
 type ResurfacePump struct {
 	logger *logger.HttpLogger
 	config *ResurfacePumpConfig
+	data   chan []interface{}
 	CommonPumpConfig
 }
 
@@ -74,6 +75,8 @@ func (rp *ResurfacePump) Init(config interface{}) error {
 		rp.log.Info(rp.GetName() + " Initialized (Logger disabled)")
 		return errors.New("logger is not enabled")
 	}
+	rp.data = make(chan []interface{}, 5)
+	go rp.writeData()
 	rp.log.Info(rp.GetName() + " Initialized")
 	return nil
 }
@@ -210,30 +213,40 @@ func mapRawData(rec *analytics.AnalyticsRecord) (httpReq http.Request, httpResp 
 	return
 }
 
+func (rp *ResurfacePump) writeData() {
+	for data := range rp.data {
+		for _, v := range data {
+			decoded, ok := v.(analytics.AnalyticsRecord)
+			if !ok {
+				rp.log.Error("Error decoding analytic record")
+				continue
+			}
+			if len(decoded.RawRequest) == 0 && len(decoded.RawResponse) == 0 {
+				rp.log.Warn("Record dropped. Please enable Detailed Logging.")
+				continue
+			}
+
+			req, resp, customFields, err := mapRawData(&decoded)
+			if err != nil {
+				rp.log.Error(err)
+				continue
+			}
+
+			logger.SendHttpMessage(rp.logger, &resp, &req, decoded.TimeStamp.Unix()*1000, decoded.RequestTime, customFields)
+		}
+		rp.log.Info("Wrote ", len(data), " records...")
+	}
+}
+
 func (rp *ResurfacePump) WriteData(ctx context.Context, data []interface{}) error {
 	rp.log.Debug("Writing ", len(data), " records")
-
-	for _, v := range data {
-		decoded, ok := v.(analytics.AnalyticsRecord)
-		if !ok {
-			rp.log.Error("Error decoding analytic record")
-			continue
-		}
-		if len(decoded.RawRequest) == 0 && len(decoded.RawResponse) == 0 {
-			rp.log.Warn("Record dropped. Please enable Detailed Logging.")
-			continue
-		}
-
-		req, resp, customFields, err := mapRawData(&decoded)
-		if err != nil {
-			rp.log.Error(err)
-			continue
-		}
-
-		logger.SendHttpMessage(rp.logger, &resp, &req, decoded.TimeStamp.Unix()*1000, decoded.RequestTime, customFields)
-	}
-
+	rp.data <- data
 	rp.log.Info("Purged ", len(data), " records...")
 
+	return nil
+}
+
+func (rp *ResurfacePump) Shutdown() error {
+	rp.logger.Stop()
 	return nil
 }
