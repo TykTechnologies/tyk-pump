@@ -139,12 +139,26 @@ type SQLAnalyticsRecordAggregate struct {
 
 	Counter `json:"counter" gorm:"embedded"`
 
-	TimeStamp      int64  `json:"timestamp" gorm:"index:dimension, priority:1"`
-	OrgID          string `json:"org_id" gorm:"index:dimension, priority:2"`
-	Dimension      string `json:"dimension" gorm:"index:dimension, priority:3"`
-	DimensionValue string `json:"dimension_value" gorm:"index:dimension, priority:4"`
+	TimeStamp      int64  `json:"timestamp"`
+	OrgID          string `json:"org_id"`
+	Dimension      string `json:"dimension"`
+	DimensionValue string `json:"dimension_value"`
 
 	Code `json:"code" gorm:"embedded"`
+}
+
+type GraphSQLAnalyticsRecordAggregate struct {
+	ID string `gorm:"primaryKey"`
+
+	OrgID          string `json:"org_id"`
+	Dimension      string `json:"dimension"`
+	DimensionValue string `json:"dimension_value"`
+	APIID          string `json:"api_id"`
+
+	Counter `json:"counter" gorm:"embedded"`
+	Code    `json:"code" gorm:"embedded"`
+
+	TimeStamp int64 `json:"timestamp"`
 }
 
 type Code struct {
@@ -611,6 +625,7 @@ func replaceUnsupportedChars(path string) string {
 	return result
 }
 
+// AggregateGraphData collects the graph records into a map of GraphRecordAggregate to apiID
 func AggregateGraphData(data []interface{}, dbIdentifier string, aggregationTime int) map[string]GraphRecordAggregate {
 	aggregateMap := make(map[string]GraphRecordAggregate)
 
@@ -619,14 +634,13 @@ func AggregateGraphData(data []interface{}, dbIdentifier string, aggregationTime
 		if !ok {
 			continue
 		}
-
 		if !record.IsGraphRecord() {
 			continue
 		}
 
 		graphRec := record.ToGraphRecord()
 
-		aggregate, found := aggregateMap[record.OrgID]
+		aggregate, found := aggregateMap[record.APIID]
 		if !found {
 			aggregate = NewGraphRecordAggregate()
 
@@ -676,7 +690,7 @@ func AggregateGraphData(data []interface{}, dbIdentifier string, aggregationTime
 			aggregate.RootFields[field].Identifier = field
 			aggregate.RootFields[field].HumanIdentifier = field
 		}
-		aggregateMap[record.OrgID] = aggregate
+		aggregateMap[record.APIID] = aggregate
 	}
 	return aggregateMap
 }

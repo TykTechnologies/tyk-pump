@@ -387,7 +387,7 @@ func TestMongoPump_AccumulateSetIgnoreDocSize(t *testing.T) {
 			record.Tags = []string{analytics.PredefinedTagGraphAnalytics}
 			record.RawRequest = bloat
 			record.RawResponse = bloat
-			record.APISchema = bloat
+			record.ApiSchema = bloat
 		}
 		dataSet[i] = record
 	}
@@ -458,6 +458,11 @@ func TestGetBlurredURL(t *testing.T) {
 			testName:           "DocDB",
 			givenURL:           "mongodb://UserName:Password@sample-cluster-instance.cluster-corlsfccjozr.us-east-1.docdb.amazonaws.com:27017?replicaSet=rs0&ssl_ca_certs=rds-combined-ca-bundle.pem",
 			expectedBlurredURL: "***:***@sample-cluster-instance.cluster-corlsfccjozr.us-east-1.docdb.amazonaws.com:27017?replicaSet=rs0&ssl_ca_certs=rds-combined-ca-bundle.pem",
+		},
+		{
+			testName:           "DNS seed list connection",
+			givenURL:           "mongodb+srv://admin:pass@server.example.com/?connectTimeoutMS=300000",
+			expectedBlurredURL: "***:***@server.example.com/?connectTimeoutMS=300000",
 		},
 	}
 
@@ -621,7 +626,7 @@ func TestMongoPump_WriteData(t *testing.T) {
 
 			// ensure the length and content are the same
 			assert.Equal(t, len(data), len(results))
-			if diff := cmp.Diff(data, results, cmpopts.IgnoreFields(analytics.AnalyticsRecord{}, "id", "APISchema")); diff != "" {
+			if diff := cmp.Diff(data, results, cmpopts.IgnoreFields(analytics.AnalyticsRecord{}, "id", "ApiSchema")); diff != "" {
 				t.Error(diff)
 			}
 		}
@@ -642,7 +647,7 @@ func TestMongoPump_WriteData(t *testing.T) {
 			if i%2 == 0 {
 				record.RawRequest = rawGQLRequest
 				record.RawResponse = rawGQLResponse
-				record.APISchema = schema
+				record.ApiSchema = schema
 				record.Tags = []string{analytics.PredefinedTagGraphAnalytics}
 			}
 			records[i] = record
