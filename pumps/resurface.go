@@ -10,6 +10,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/mitchellh/mapstructure"
@@ -17,9 +18,11 @@ import (
 )
 
 type ResurfacePump struct {
-	logger *logger.HttpLogger
-	config *ResurfacePumpConfig
-	data   chan []interface{}
+	logger  *logger.HttpLogger
+	config  *ResurfacePumpConfig
+	data    chan []interface{}
+	wg      sync.WaitGroup
+	enabled bool
 	CommonPumpConfig
 }
 
@@ -50,6 +53,7 @@ func (rp *ResurfacePump) GetEnvPrefix() string {
 }
 
 func (rp *ResurfacePump) Init(config interface{}) error {
+	rp.wg = sync.WaitGroup{}
 	rp.config = &ResurfacePumpConfig{}
 	rp.log = log.WithField("prefix", resurfacePrefix)
 
@@ -75,10 +79,24 @@ func (rp *ResurfacePump) Init(config interface{}) error {
 		rp.log.Info(rp.GetName() + " Initialized (Logger disabled)")
 		return errors.New("logger is not enabled")
 	}
-	rp.data = make(chan []interface{}, 5)
-	go rp.writeData()
+	rp.initWorker()
 	rp.log.Info(rp.GetName() + " Initialized")
 	return nil
+}
+
+func (rp *ResurfacePump) initWorker() {
+	rp.data = make(chan []interface{}, 5)
+	rp.wg.Add(1)
+	go rp.writeData()
+	rp.enable()
+}
+
+func (rp *ResurfacePump) disable() {
+	rp.enabled = false
+}
+
+func (rp *ResurfacePump) enable() {
+	rp.enabled = true
 }
 
 func parseHeaders(headersString string, existingHeaders http.Header) (headers http.Header) {
@@ -214,6 +232,7 @@ func mapRawData(rec *analytics.AnalyticsRecord) (httpReq http.Request, httpResp 
 }
 
 func (rp *ResurfacePump) writeData() {
+	defer rp.wg.Done()
 	for data := range rp.data {
 		for _, v := range data {
 			decoded, ok := v.(analytics.AnalyticsRecord)
@@ -240,13 +259,42 @@ func (rp *ResurfacePump) writeData() {
 
 func (rp *ResurfacePump) WriteData(ctx context.Context, data []interface{}) error {
 	rp.log.Debug("Writing ", len(data), " records")
-	rp.data <- data
-	rp.log.Info("Purged ", len(data), " records...")
+	if rp.enabled {
+		rp.data <- data
+		rp.log.Info("Purged ", len(data), " records...")
+	} else {
+		select {
+		case peek, open := <-rp.data:
+			if open {
+				rp.data <- peek
+				close(rp.data)
+			}
+		default:
+			close(rp.data)
+		}
+	}
+	return nil
+}
+
+func (rp *ResurfacePump) Flush() error {
+	rp.disable()
+	err := rp.WriteData(context.TODO(), []interface{}{})
+	if err != nil {
+		return err
+	}
+	rp.wg.Wait()
+	rp.initWorker()
 
 	return nil
 }
 
 func (rp *ResurfacePump) Shutdown() error {
 	rp.logger.Stop()
+
+	err := rp.Flush()
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
