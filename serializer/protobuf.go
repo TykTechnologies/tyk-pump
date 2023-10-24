@@ -177,36 +177,38 @@ func (pb *ProtobufSerializer) TransformSingleProtoToAnalyticsRecord(rec analytic
 	}
 	tmpRecord.TimeStampFromProto(rec)
 
-	// process anc convert graphql stats
-	operationType := analytics.Operation_Unknown
-	switch rec.GraphQLStats.OperationType {
-	case analyticsproto.GraphQLOperations_OPERATION_QUERY:
-		operationType = analytics.Operation_Query
-	case analyticsproto.GraphQLOperations_OPERATION_MUTATION:
-		operationType = analytics.Operation_Mutation
-	case analyticsproto.GraphQLOperations_OPERATION_SUBSCRIPTION:
-		operationType = analytics.Operation_Subscription
-	default:
-		operationType = analytics.Operation_Unknown
-	}
+	if rec.GraphQLStats != nil {
+		// process anc convert graphql stats
+		operationType := analytics.Operation_Unknown
+		switch rec.GraphQLStats.OperationType {
+		case analyticsproto.GraphQLOperations_OPERATION_QUERY:
+			operationType = analytics.Operation_Query
+		case analyticsproto.GraphQLOperations_OPERATION_MUTATION:
+			operationType = analytics.Operation_Mutation
+		case analyticsproto.GraphQLOperations_OPERATION_SUBSCRIPTION:
+			operationType = analytics.Operation_Subscription
+		default:
+			operationType = analytics.Operation_Unknown
+		}
 
-	types := make(map[string][]string)
-	for key, val := range rec.GraphQLStats.Types {
-		types[key] = val.Fields
-	}
-	errors := make([]analytics.GraphError, len(rec.GraphQLStats.GraphErrors))
-	for i, val := range rec.GraphQLStats.GraphErrors {
-		errors[i].Message = val
-	}
+		types := make(map[string][]string)
+		for key, val := range rec.GraphQLStats.Types {
+			types[key] = val.Fields
+		}
+		errors := make([]analytics.GraphError, len(rec.GraphQLStats.GraphErrors))
+		for i, val := range rec.GraphQLStats.GraphErrors {
+			errors[i].Message = val
+		}
 
-	tmpRecord.GraphQLStats = analytics.GraphQLStats{
-		IsGraphQL:     rec.GraphQLStats.IsGraphQL,
-		OperationType: operationType,
-		HasErrors:     rec.GraphQLStats.HasError,
-		RootFields:    rec.GraphQLStats.RootFields,
-		Types:         types,
-		Variables:     rec.GraphQLStats.Variables,
-		Errors:        errors,
+		tmpRecord.GraphQLStats = analytics.GraphQLStats{
+			IsGraphQL:     rec.GraphQLStats.IsGraphQL,
+			OperationType: operationType,
+			HasErrors:     rec.GraphQLStats.HasError,
+			RootFields:    rec.GraphQLStats.RootFields,
+			Types:         types,
+			Variables:     rec.GraphQLStats.Variables,
+			Errors:        errors,
+		}
 	}
 
 	*record = tmpRecord
