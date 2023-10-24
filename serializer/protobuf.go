@@ -93,7 +93,6 @@ func (pb *ProtobufSerializer) TransformSingleRecordToProto(rec analytics.Analyti
 }
 
 func (pb *ProtobufSerializer) TransformSingleProtoToAnalyticsRecord(rec analyticsproto.AnalyticsRecord, record *analytics.AnalyticsRecord) error {
-
 	tmpRecord := analytics.AnalyticsRecord{
 		Method:        rec.Method,
 		Host:          rec.Host,
@@ -146,6 +145,38 @@ func (pb *ProtobufSerializer) TransformSingleProtoToAnalyticsRecord(rec analytic
 		ApiSchema: rec.ApiSchema,
 	}
 	tmpRecord.TimeStampFromProto(rec)
+
+	// process anc convert graphql stats
+	operationType := analytics.Operation_Unknown
+	switch rec.GraphQLStats.OperationType {
+	case analyticsproto.GraphQLOperations_OPERATION_QUERY:
+		operationType = analytics.Operation_Query
+	case analyticsproto.GraphQLOperations_OPERATION_MUTATION:
+		operationType = analytics.Operation_Mutation
+	case analyticsproto.GraphQLOperations_OPERATION_SUBSCRIPTION:
+		operationType = analytics.Operation_Subscription
+	default:
+		operationType = analytics.Operation_Unknown
+	}
+
+	types := make(map[string][]string)
+	for key, val := range rec.GraphQLStats.Types {
+		types[key] = val.Fields
+	}
+	errors := make([]analytics.GraphError, len(rec.GraphQLStats.GraphErrors))
+	for i, val := range rec.GraphQLStats.GraphErrors {
+		errors[i].Message = val
+	}
+
+	tmpRecord.GraphQLStats = analytics.GraphQLStats{
+		OperationType: operationType,
+		HasErrors:     rec.GraphQLStats.HasError,
+		RootFields:    rec.GraphQLStats.RootFields,
+		Types:         types,
+		Variables:     rec.GraphQLStats.Variables,
+		Errors:        errors,
+	}
+
 	*record = tmpRecord
 	return nil
 }

@@ -74,7 +74,8 @@ type AnalyticsRecord struct {
 	ExpireAt      time.Time      `bson:"expireAt" json:"expireAt"`
 	ApiSchema     string         `json:"api_schema" bson:"-" gorm:"-:all"` //nolint
 
-	CollectionName string `json:"-" bson:"-" gorm:"-:all"`
+	GraphQLStats   GraphQLStats `json:"-" bson:"-" gorm:"-:all"`
+	CollectionName string       `json:"-" bson:"-" gorm:"-:all"`
 }
 
 func (a *AnalyticsRecord) TableName() string {
@@ -90,6 +91,24 @@ func (a *AnalyticsRecord) GetObjectID() model.ObjectID {
 
 func (a *AnalyticsRecord) SetObjectID(id model.ObjectID) {
 	a.id = id
+}
+
+type GraphQLOperations int
+
+const (
+	Operation_Unknown GraphQLOperations = iota
+	Operation_Query
+	Operation_Mutation
+	Operation_Subscription
+)
+
+type GraphQLStats struct {
+	Types         map[string][]string
+	OperationType GraphQLOperations
+	Variables     string
+	RootFields    []string
+	HasErrors     bool
+	Errors        []GraphError
 }
 
 type GraphError struct {

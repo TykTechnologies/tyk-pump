@@ -77,18 +77,20 @@ message NetworkStats {
 }
 
 enum GraphQLOperations{
-  OPERATION_QUERY = 0;
-  OPERATION_MUTATION = 1;
-  OPERATION_SUBSCRIPTION = 2;
+  OPERATION_UNKNOWN = 0;
+  OPERATION_QUERY = 1;
+  OPERATION_MUTATION = 2;
+  OPERATION_SUBSCRIPTION = 3;
 }
 
 message GraphQLStats{
-  map<string, RepeatedFields> Types = 1;
-  GraphQLOperations OperationType = 2;
-  string Variables = 3;
-  repeated string RootFields = 4;
-  bool HasError = 5;
-  repeated string GraphErrors = 6;
+  bool IsGraphQL = 1;
+  map<string, RepeatedFields> Types = 2;
+  GraphQLOperations OperationType = 3;
+  string Variables = 4;
+  repeated string RootFields = 5;
+  bool HasError = 6;
+  repeated string GraphErrors = 7;
 }
 
 message RepeatedFields{
