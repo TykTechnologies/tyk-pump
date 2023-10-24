@@ -103,6 +103,7 @@ const (
 )
 
 type GraphQLStats struct {
+	IsGraphQL     bool
 	Types         map[string][]string
 	OperationType GraphQLOperations
 	Variables     string

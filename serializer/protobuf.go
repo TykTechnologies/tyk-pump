@@ -88,6 +88,37 @@ func (pb *ProtobufSerializer) TransformSingleRecordToProto(rec analytics.Analyti
 		ApiSchema:     rec.ApiSchema,
 	}
 	rec.TimestampToProto(&record)
+	if rec.GraphQLStats.IsGraphQL {
+		// operation type
+		operationType := analyticsproto.GraphQLOperations_OPERATION_UNKNOWN
+		switch rec.GraphQLStats.OperationType {
+		case analytics.Operation_Query:
+			operationType = analyticsproto.GraphQLOperations_OPERATION_QUERY
+		case analytics.Operation_Mutation:
+			operationType = analyticsproto.GraphQLOperations_OPERATION_MUTATION
+		case analytics.Operation_Subscription:
+			operationType = analyticsproto.GraphQLOperations_OPERATION_SUBSCRIPTION
+		}
+		//graph errors
+		graphErrors := make([]string, len(rec.GraphQLStats.Errors))
+		for i, val := range rec.GraphQLStats.Errors {
+			graphErrors[i] = val.Message
+		}
+		// types
+		graphTypes := make(map[string]*analyticsproto.RepeatedFields)
+		for key, val := range rec.GraphQLStats.Types {
+			graphTypes[key] = &analyticsproto.RepeatedFields{Fields: val}
+		}
+		record.GraphQLStats = &analyticsproto.GraphQLStats{
+			IsGraphQL:     true,
+			Variables:     rec.GraphQLStats.Variables,
+			HasError:      rec.GraphQLStats.HasErrors,
+			OperationType: operationType,
+			GraphErrors:   graphErrors,
+			RootFields:    rec.GraphQLStats.RootFields,
+			Types:         graphTypes,
+		}
+	}
 
 	return record
 }
@@ -169,6 +200,7 @@ func (pb *ProtobufSerializer) TransformSingleProtoToAnalyticsRecord(rec analytic
 	}
 
 	tmpRecord.GraphQLStats = analytics.GraphQLStats{
+		IsGraphQL:     rec.GraphQLStats.IsGraphQL,
 		OperationType: operationType,
 		HasErrors:     rec.GraphQLStats.HasError,
 		RootFields:    rec.GraphQLStats.RootFields,
