@@ -40,6 +40,7 @@ message AnalyticsRecord {
   string OauthID = 29;
   string TimeZone = 30;
   string ApiSchema = 31;
+  GraphQLStats GraphQLStats = 32;
 }
 
 message Latency {
@@ -73,4 +74,25 @@ message NetworkStats {
   int64 ClosedConnections = 2;
   int64 BytesIn = 3;
   int64 BytesOut = 4;
+}
+
+enum GraphQLOperations{
+  OPERATION_UNKNOWN = 0;
+  OPERATION_QUERY = 1;
+  OPERATION_MUTATION = 2;
+  OPERATION_SUBSCRIPTION = 3;
+}
+
+message GraphQLStats{
+  bool IsGraphQL = 1;
+  map<string, RepeatedFields> Types = 2;
+  GraphQLOperations OperationType = 3;
+  string Variables = 4;
+  repeated string RootFields = 5;
+  bool HasError = 6;
+  repeated string GraphErrors = 7;
+}
+
+message RepeatedFields{
+  repeated string fields = 1;
 }
