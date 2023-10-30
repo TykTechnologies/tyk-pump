@@ -92,14 +92,14 @@ func (pb *ProtobufSerializer) TransformSingleRecordToProto(rec analytics.Analyti
 		// operation type
 		operationType := analyticsproto.GraphQLOperations_OPERATION_UNKNOWN
 		switch rec.GraphQLStats.OperationType {
-		case analytics.Operation_Query:
+		case analytics.OperationQuery:
 			operationType = analyticsproto.GraphQLOperations_OPERATION_QUERY
-		case analytics.Operation_Mutation:
+		case analytics.OperationMutation:
 			operationType = analyticsproto.GraphQLOperations_OPERATION_MUTATION
-		case analytics.Operation_Subscription:
+		case analytics.OperationSubscription:
 			operationType = analyticsproto.GraphQLOperations_OPERATION_SUBSCRIPTION
 		}
-		//graph errors
+		// graph errors
 		graphErrors := make([]string, len(rec.GraphQLStats.Errors))
 		for i, val := range rec.GraphQLStats.Errors {
 			graphErrors[i] = val.Message
@@ -179,16 +179,16 @@ func (pb *ProtobufSerializer) TransformSingleProtoToAnalyticsRecord(rec analytic
 
 	if rec.GraphQLStats != nil {
 		// process anc convert graphql stats
-		operationType := analytics.Operation_Unknown
+		var operationType analytics.GraphQLOperations
 		switch rec.GraphQLStats.OperationType {
 		case analyticsproto.GraphQLOperations_OPERATION_QUERY:
-			operationType = analytics.Operation_Query
+			operationType = analytics.OperationQuery
 		case analyticsproto.GraphQLOperations_OPERATION_MUTATION:
-			operationType = analytics.Operation_Mutation
+			operationType = analytics.OperationMutation
 		case analyticsproto.GraphQLOperations_OPERATION_SUBSCRIPTION:
-			operationType = analytics.Operation_Subscription
+			operationType = analytics.OperationSubscription
 		default:
-			operationType = analytics.Operation_Unknown
+			operationType = analytics.OperationUnknown
 		}
 
 		types := make(map[string][]string)

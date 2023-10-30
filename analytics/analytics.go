@@ -96,20 +96,20 @@ func (a *AnalyticsRecord) SetObjectID(id model.ObjectID) {
 type GraphQLOperations int
 
 const (
-	Operation_Unknown GraphQLOperations = iota
-	Operation_Query
-	Operation_Mutation
-	Operation_Subscription
+	OperationUnknown GraphQLOperations = iota
+	OperationQuery
+	OperationMutation
+	OperationSubscription
 )
 
 type GraphQLStats struct {
-	IsGraphQL     bool
-	Types         map[string][]string
-	OperationType GraphQLOperations
 	Variables     string
 	RootFields    []string
-	HasErrors     bool
+	Types         map[string][]string
 	Errors        []GraphError
+	OperationType GraphQLOperations
+	HasErrors     bool
+	IsGraphQL     bool
 }
 
 type GraphError struct {
