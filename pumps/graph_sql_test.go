@@ -2,7 +2,6 @@ package pumps
 
 import (
 	"context"
-	"encoding/base64"
 	"fmt"
 	"os"
 	"testing"
@@ -111,10 +110,6 @@ func TestGraphSQLPump_Init(t *testing.T) {
 		assert.Equal(t, "test-table", pump.Conf.TableName)
 		assert.Equal(t, true, pump.Conf.TableSharding)
 	})
-}
-
-func convToBase64(raw string) string {
-	return base64.StdEncoding.EncodeToString([]byte(raw))
 }
 
 func TestGraphSQLPump_WriteData(t *testing.T) {

@@ -626,7 +626,7 @@ func TestMongoPump_WriteData(t *testing.T) {
 
 			// ensure the length and content are the same
 			assert.Equal(t, len(data), len(results))
-			if diff := cmp.Diff(data, results, cmpopts.IgnoreFields(analytics.AnalyticsRecord{}, "id", "ApiSchema")); diff != "" {
+			if diff := cmp.Diff(data, results, cmpopts.IgnoreFields(analytics.AnalyticsRecord{}, "id", "ApiSchema", "GraphQLStats")); diff != "" {
 				t.Error(diff)
 			}
 		}
@@ -645,10 +645,12 @@ func TestMongoPump_WriteData(t *testing.T) {
 		for i := range records {
 			record := sampleRecord
 			if i%2 == 0 {
-				record.RawRequest = rawGQLRequest
-				record.RawResponse = rawGQLResponse
-				record.ApiSchema = schema
-				record.Tags = []string{analytics.PredefinedTagGraphAnalytics}
+				record.GraphQLStats.IsGraphQL = true
+				record.GraphQLStats.Types = map[string][]string{
+					"Country": {"code"},
+				}
+				record.GraphQLStats.RootFields = []string{"country"}
+				record.GraphQLStats.HasErrors = false
 			}
 			records[i] = record
 		}
