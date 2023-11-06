@@ -374,17 +374,7 @@ func GeoIPLookup(ipStr string, GeoIPDB *maxminddb.Reader) (*GeoData, error) {
 }
 
 func (a *AnalyticsRecord) IsGraphRecord() bool {
-	if len(a.Tags) == 0 {
-		return false
-	}
-
-	for _, tag := range a.Tags {
-		if tag == PredefinedTagGraphAnalytics {
-			return true
-		}
-	}
-
-	return false
+	return a.GraphQLStats.IsGraphQL
 }
 
 func (a *AnalyticsRecord) RemoveIgnoredFields(ignoreFields []string) {
