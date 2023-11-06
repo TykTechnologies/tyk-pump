@@ -74,7 +74,7 @@ type AnalyticsRecord struct {
 	ExpireAt      time.Time      `bson:"expireAt" json:"expireAt"`
 	ApiSchema     string         `json:"api_schema" bson:"-" gorm:"-:all"` //nolint
 
-	GraphQLStats   GraphQLStats `json:"-" bson:"-" gorm:"-:all"`
+	GraphQLStats   GraphQLStats `json:"graphql_stats" bson:"-" gorm:"-:all"`
 	CollectionName string       `json:"-" bson:"-" gorm:"-:all"`
 }
 
