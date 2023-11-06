@@ -47,7 +47,7 @@ func TestGraphMongoPump_WriteData(t *testing.T) {
 					HasErrors:     false,
 					OperationType: analytics.OperationQuery,
 				}
-				for i, _ := range records {
+				for i := range records {
 					record := sampleRecord
 					record.GraphQLStats = stats
 					if i == 0 {
@@ -114,7 +114,7 @@ func TestGraphMongoPump_WriteData(t *testing.T) {
 					HasErrors:     false,
 					OperationType: analytics.OperationQuery,
 				}
-				for i, _ := range records {
+				for i := range records {
 					record := sampleRecord
 					record.GraphQLStats = stats
 					if i == 1 {
