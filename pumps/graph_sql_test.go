@@ -330,13 +330,18 @@ func TestGraphSQLPump_Sharded(t *testing.T) {
 	baseRecord := analytics.AnalyticsRecord{
 		APIID:        "test-api",
 		Path:         "/test-api",
-		RawRequest:   convToBase64(rawGQLRequest),
-		RawResponse:  convToBase64(rawGQLResponse),
-		ApiSchema:    convToBase64(schema),
-		Tags:         []string{analytics.PredefinedTagGraphAnalytics},
 		APIName:      "test-api",
 		ResponseCode: 200,
 		Method:       "POST",
+		GraphQLStats: analytics.GraphQLStats{
+			IsGraphQL: true,
+			Types: map[string][]string{
+				"Country": {"code"},
+			},
+			RootFields:    []string{"country"},
+			OperationType: analytics.OperationQuery,
+			HasErrors:     false,
+		},
 	}
 
 	expectedTables := make([]string, 0)

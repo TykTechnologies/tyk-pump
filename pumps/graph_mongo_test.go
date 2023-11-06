@@ -31,16 +31,6 @@ X-Ratelimit-Reset: 0
 
 {"data":{"country":null}}`
 
-const rawGQLResponseWithError = `HTTP/0.0 200 OK
-Content-Length: 61
-Connection: close
-Content-Type: application/json
-X-Ratelimit-Limit: 0
-X-Ratelimit-Remaining: 0
-X-Ratelimit-Reset: 0
-
-{"data":{"country":null},"errors":[{"message":"test error"}]}`
-
 const schema = `type Query {
   countries(filter: CountryFilterInput): [Country!]!
   country(code: ID!): Country
@@ -105,43 +95,6 @@ input ContinentFilterInput {
 input LanguageFilterInput {
   code: StringQueryOperatorInput
 }`
-
-const rawHTTPReq = `GET /get HTTP/1.1
-Host: localhost:8181
-User-Agent: PostmanRuntime/7.29.2
-Accept: */*
-Accept-Encoding: gzip, deflate, br
-Postman-Token: a67c3054-aa1a-47f3-9bca-5dbde04c8565
-`
-
-const rawHTTPResponse = `
-HTTP/1.1 200 OK
-Content-Length: 376
-Access-Control-Allow-Credentials: true
-Access-Control-Allow-Origin: *
-Connection: close
-Content-Type: application/json
-Date: Tue, 04 Oct 2022 06:33:23 GMT
-Server: gunicorn/19.9.0
-X-Ratelimit-Limit: 0
-X-Ratelimit-Remaining: 0
-X-Ratelimit-Reset: 0
-
-{
-  "args": {}, 
-  "headers": {
-    "Accept": "*/*", 
-    "Accept-Encoding": "gzip, deflate, br", 
-    "Host": "httpbin.org", 
-    "Postman-Token": "a67c3054-aa1a-47f3-9bca-5dbde04c8565", 
-    "User-Agent": "PostmanRuntime/7.29.2", 
-    "X-Amzn-Trace-Id": "Root=1-633bd3b3-6345504724f3295b68d7dcd3"
-  }, 
-  "origin": "::1, 102.89.45.253", 
-  "url": "http://httpbin.org/get"
-}
-
-`
 
 func TestGraphMongoPump_WriteData(t *testing.T) {
 	conf := defaultConf()
