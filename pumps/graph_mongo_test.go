@@ -2,7 +2,6 @@ package pumps
 
 import (
 	"context"
-	"encoding/base64"
 	"testing"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
@@ -158,42 +157,47 @@ func TestGraphMongoPump_WriteData(t *testing.T) {
 
 	pump.connect()
 
-	type customRecord struct {
-		rawRequest   string
-		rawResponse  string
-		schema       string
-		tags         []string
-		responseCode int
+	sampleRecord := analytics.AnalyticsRecord{
+		APIName: "Test API",
+		Path:    "POST",
 	}
-
 	testCases := []struct {
 		expectedError        string
 		name                 string
+		modifyRecord         func() []interface{}
 		expectedGraphRecords []analytics.GraphRecord
-		records              []customRecord
 	}{
 		{
 			name: "all records written",
-			records: []customRecord{
-				{
-					rawRequest:  rawGQLRequest,
-					rawResponse: rawGQLResponse,
-					schema:      schema,
-					tags:        []string{analytics.PredefinedTagGraphAnalytics},
-				},
-				{
-					rawRequest:  rawGQLRequest,
-					rawResponse: rawGQLResponseWithError,
-					schema:      schema,
-					tags:        []string{analytics.PredefinedTagGraphAnalytics},
-				},
-				{
-					rawRequest:   rawGQLRequest,
-					rawResponse:  rawGQLResponse,
-					schema:       schema,
-					tags:         []string{analytics.PredefinedTagGraphAnalytics},
-					responseCode: 500,
-				},
+			modifyRecord: func() []interface{} {
+				records := make([]interface{}, 3)
+				stats := analytics.GraphQLStats{
+					IsGraphQL: true,
+					Types: map[string][]string{
+						"Country": {"code"},
+					},
+					RootFields:    []string{"country"},
+					HasErrors:     false,
+					OperationType: analytics.OperationQuery,
+				}
+				for i, _ := range records {
+					record := sampleRecord
+					record.GraphQLStats = stats
+					if i == 0 {
+						record.GraphQLStats.HasErrors = false
+					} else if i == 1 {
+						record.GraphQLStats.HasErrors = true
+						record.GraphQLStats.Errors = []analytics.GraphError{
+							{
+								Message: "test error",
+							},
+						}
+					} else {
+						record.GraphQLStats.HasErrors = true
+					}
+					records[i] = record
+				}
+				return records
 			},
 			expectedGraphRecords: []analytics.GraphRecord{
 				{
@@ -232,17 +236,26 @@ func TestGraphMongoPump_WriteData(t *testing.T) {
 		},
 		{
 			name: "contains non graph records",
-			records: []customRecord{
-				{
-					rawRequest:  rawGQLRequest,
-					rawResponse: rawGQLResponse,
-					schema:      schema,
-					tags:        []string{analytics.PredefinedTagGraphAnalytics},
-				},
-				{
-					rawRequest:  rawHTTPReq,
-					rawResponse: rawHTTPResponse,
-				},
+			modifyRecord: func() []interface{} {
+				records := make([]interface{}, 2)
+				stats := analytics.GraphQLStats{
+					IsGraphQL: true,
+					Types: map[string][]string{
+						"Country": {"code"},
+					},
+					RootFields:    []string{"country"},
+					HasErrors:     false,
+					OperationType: analytics.OperationQuery,
+				}
+				for i, _ := range records {
+					record := sampleRecord
+					record.GraphQLStats = stats
+					if i == 1 {
+						record.GraphQLStats.IsGraphQL = false
+					}
+					records[i] = record
+				}
+				return records
 			},
 			expectedGraphRecords: []analytics.GraphRecord{
 				{
@@ -256,66 +269,12 @@ func TestGraphMongoPump_WriteData(t *testing.T) {
 				},
 			},
 		},
-		{
-			name: "should be empty on empty request response",
-			records: []customRecord{
-				{
-					rawRequest:  "",
-					rawResponse: rawGQLResponse,
-					schema:      schema,
-					tags:        []string{analytics.PredefinedTagGraphAnalytics},
-				},
-				{
-					rawResponse: "",
-					rawRequest:  rawGQLRequest,
-					schema:      schema,
-					tags:        []string{analytics.PredefinedTagGraphAnalytics},
-				},
-				{
-					rawRequest:  rawGQLRequest,
-					rawResponse: rawGQLResponse,
-					tags:        []string{analytics.PredefinedTagGraphAnalytics},
-				},
-			},
-			expectedGraphRecords: []analytics.GraphRecord{
-				{
-					Types:      map[string][]string{},
-					Errors:     []analytics.GraphError{},
-					RootFields: []string{},
-				},
-				{
-					Types:      map[string][]string{},
-					Errors:     []analytics.GraphError{},
-					RootFields: []string{},
-				},
-				{
-					Types:      map[string][]string{},
-					Errors:     []analytics.GraphError{},
-					RootFields: []string{},
-				},
-			},
-		},
 	}
 
 	// clean db before start
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			records := make([]interface{}, 0)
-			for _, cr := range tc.records {
-				r := analytics.AnalyticsRecord{
-					APIName:     "Test API",
-					Path:        "POST",
-					RawRequest:  base64.StdEncoding.EncodeToString([]byte(cr.rawRequest)),
-					RawResponse: base64.StdEncoding.EncodeToString([]byte(cr.rawResponse)),
-					ApiSchema:   base64.StdEncoding.EncodeToString([]byte(cr.schema)),
-					Tags:        cr.tags,
-				}
-				if cr.responseCode != 0 {
-					r.ResponseCode = cr.responseCode
-				}
-				records = append(records, r)
-			}
-
+			records := tc.modifyRecord()
 			err := pump.WriteData(context.Background(), records)
 			if tc.expectedError != "" {
 				assert.ErrorContains(t, err, tc.expectedError)
