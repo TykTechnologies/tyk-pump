@@ -50,16 +50,17 @@ func TestGraphMongoPump_WriteData(t *testing.T) {
 				for i := range records {
 					record := sampleRecord
 					record.GraphQLStats = stats
-					if i == 0 {
+					switch i {
+					case 0:
 						record.GraphQLStats.HasErrors = false
-					} else if i == 1 {
+					case 1:
 						record.GraphQLStats.HasErrors = true
 						record.GraphQLStats.Errors = []analytics.GraphError{
 							{
 								Message: "test error",
 							},
 						}
-					} else {
+					default:
 						record.GraphQLStats.HasErrors = true
 					}
 					records[i] = record
