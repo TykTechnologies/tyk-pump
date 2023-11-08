@@ -116,7 +116,7 @@ func (g *GraphMongoPump) WriteData(ctx context.Context, data []interface{}) erro
 					gr  analytics.GraphRecord
 					err error
 				)
-				if r.RawRequest == "" || r.RawResponse == "" || r.ApiSchema == "" {
+				if !r.GraphQLStats.IsGraphQL {
 					g.log.Warn("skipping record parsing")
 					gr = analytics.GraphRecord{AnalyticsRecord: *r}
 				} else {

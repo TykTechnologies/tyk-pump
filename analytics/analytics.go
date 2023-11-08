@@ -74,7 +74,7 @@ type AnalyticsRecord struct {
 	ExpireAt      time.Time      `bson:"expireAt" json:"expireAt"`
 	ApiSchema     string         `json:"api_schema" bson:"-" gorm:"-:all"` //nolint
 
-	GraphQLStats   GraphQLStats `json:"-" bson:"-" gorm:"-:all"`
+	GraphQLStats   GraphQLStats `json:"graphql_stats" bson:"-" gorm:"-:all"`
 	CollectionName string       `json:"-" bson:"-" gorm:"-:all"`
 }
 
@@ -374,17 +374,7 @@ func GeoIPLookup(ipStr string, GeoIPDB *maxminddb.Reader) (*GeoData, error) {
 }
 
 func (a *AnalyticsRecord) IsGraphRecord() bool {
-	if len(a.Tags) == 0 {
-		return false
-	}
-
-	for _, tag := range a.Tags {
-		if tag == PredefinedTagGraphAnalytics {
-			return true
-		}
-	}
-
-	return false
+	return a.GraphQLStats.IsGraphQL
 }
 
 func (a *AnalyticsRecord) RemoveIgnoredFields(ignoreFields []string) {
