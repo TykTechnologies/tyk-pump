@@ -296,7 +296,7 @@ jobs:
               echo Attempting to test $d
               if [ -d $d ] && [ -e $d/test.sh ]; then
                   cd $d
-                  ./test.sh ${{ needs.goreleaser.outputs.tag }}
+                  ./test.sh ${{ needs.goreleaser.outputs.tags }}
                   cd -
               fi
           done
@@ -305,7 +305,7 @@ jobs:
               echo Attempting to test $d
               if [ -d $d ] && [ -e $d/test.sh ]; then
                   cd $d
-                  ./test.sh ${{ needs.goreleaser.outputs.tag }}
+                  ./test.sh ${{ needs.goreleaser.outputs.tags }}
                   cd -
               fi
           done
