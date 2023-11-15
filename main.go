@@ -35,6 +35,7 @@ var log = logger.GetLogger()
 var mainPrefix = "main"
 
 var (
+	//lint:ignore U1000 Function is used when version flag is passed in command line
 	help               = kingpin.CommandLine.HelpFlag.Short('h')
 	conf               = kingpin.Flag("conf", "path to the config file").Short('c').Default("pump.conf").String()
 	demoMode           = kingpin.Flag("demo", "pass orgID string to generate demo data").Default("").String()
@@ -45,7 +46,8 @@ var (
 	demoRecordsPerHour = kingpin.Flag("demo-records-per-hour", "flag that determines the number of records per hour for the analytics records").Default("0").Int()
 	demoFutureData     = kingpin.Flag("demo-future-data", "flag that determines if the demo data should be in the future").Default("false").Bool()
 	debugMode          = kingpin.Flag("debug", "enable debug mode").Bool()
-	version            = kingpin.Version(pumps.Version)
+	//lint:ignore U1000 Function is used when version flag is passed in command line
+	version = kingpin.Version(pumps.Version)
 )
 
 func Init() {
@@ -123,7 +125,12 @@ func storeVersion() {
 	versionStore.KeyPrefix = "version-check-"
 	versionStore.Config = versionConf
 	versionStore.Connect()
-	versionStore.SetKey("pump", pumps.Version, 0)
+	err := versionStore.SetKey("pump", pumps.Version, 0)
+	if err != nil {
+		log.WithFields(logrus.Fields{
+			"prefix": mainPrefix,
+		}).Error("Error storing version: ", err)
+	}
 }
 
 func initialisePumps() {
