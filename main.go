@@ -45,7 +45,7 @@ var (
 	demoRecordsPerHour = kingpin.Flag("demo-records-per-hour", "flag that determines the number of records per hour for the analytics records").Default("0").Int()
 	demoFutureData     = kingpin.Flag("demo-future-data", "flag that determines if the demo data should be in the future").Default("false").Bool()
 	debugMode          = kingpin.Flag("debug", "enable debug mode").Bool()
-	version            = kingpin.Version(pumps.VERSION)
+	version            = kingpin.Version(pumps.Version)
 )
 
 func Init() {
@@ -69,7 +69,7 @@ func Init() {
 
 	log.WithFields(logrus.Fields{
 		"prefix": mainPrefix,
-	}).Info("## Tyk Pump, ", pumps.VERSION, " ##")
+	}).Info("## Tyk Pump, ", pumps.Version, " ##")
 
 	// If no environment variable is set, check the configuration file:
 	if os.Getenv("TYK_LOGLEVEL") == "" {
@@ -123,7 +123,7 @@ func storeVersion() {
 	versionStore.KeyPrefix = "version-check-"
 	versionStore.Config = versionConf
 	versionStore.Connect()
-	versionStore.SetKey("pump", pumps.VERSION, 0)
+	versionStore.SetKey("pump", pumps.Version, 0)
 }
 
 func initialisePumps() {
