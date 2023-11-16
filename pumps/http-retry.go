@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
@@ -28,10 +29,10 @@ func newBackoffRetry(errMsg string, maxRetries uint64, httpSend httpSender, logg
 }
 
 func (s *backoffRetry) send(ctx context.Context, data []byte) error {
-	fn := func() error {
+	opFn := func() error {
 		resp, err := s.httpsend(ctx, data)
 		if err != nil {
-			return err
+			return s.handleErr(err)
 		}
 		defer resp.Body.Close()
 
@@ -39,19 +40,33 @@ func (s *backoffRetry) send(ctx context.Context, data []byte) error {
 			return nil
 		}
 
-		// server error or rate limit hit - backoff retry
+		body, _ := io.ReadAll(resp.Body)
+		err = fmt.Errorf("got status code %d and response '%s'", resp.StatusCode, body)
+
+		// server error or rate limit hit - attempt retry
 		if resp.StatusCode >= http.StatusInternalServerError || resp.StatusCode == http.StatusTooManyRequests {
-			body, _ := io.ReadAll(resp.Body)
-			return fmt.Errorf("error status code %d and response '%s'", resp.StatusCode, body)
+			return err
 		}
 
 		// any other error treat as permanent (i.e. auth error, invalid request) and don't retry
-		return backoff.Permanent(errPerm)
+		return backoff.Permanent(err)
 	}
 
-	return backoff.RetryNotify(fn, backoff.WithMaxRetries(backoff.NewExponentialBackOff(), s.maxRetries), func(err error, t time.Duration) {
+	return backoff.RetryNotify(opFn, backoff.WithMaxRetries(backoff.NewExponentialBackOff(), s.maxRetries), func(err error, t time.Duration) {
 		if err != nil {
 			s.logger.WithError(err).Errorf("%s retrying in %s", s.errMsg, t)
 		}
 	})
+}
+
+func (s *backoffRetry) handleErr(err error) error {
+	if e, ok := err.(*url.Error); ok {
+		if e.Temporary() {
+			// temp error, attempt retry
+			return err
+		}
+		// permanent error - don't retry
+		return backoff.Permanent(err)
+	}
+	return err
 }

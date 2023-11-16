@@ -128,8 +128,9 @@ func (p *SplunkPump) Init(config interface{}) error {
 
 	sender := func(ctx context.Context, data []byte) (*http.Response, error) {
 		reader := bytes.NewReader(data)
-		req, err := http.NewRequest("POST", p.config.CollectorURL, reader)
+		req, err := http.NewRequest(http.MethodPost, p.config.CollectorURL, reader)
 		if err != nil {
+			// invalid req, don't retry
 			return nil, backoff.Permanent(err)
 		}
 		req = req.WithContext(ctx)
