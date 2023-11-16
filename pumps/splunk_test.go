@@ -26,13 +26,21 @@ type splunkStatus struct {
 	Len  int    `json:"len"`
 }
 type testHandler struct {
-	test    *testing.T
-	batched bool
-
-	responses []splunkStatus
+	test                  *testing.T
+	batched               bool
+	returnErrorOnFirstReq bool
+	responses             []splunkStatus
+	reqCount              int
 }
 
 func (h *testHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	h.reqCount++
+	if h.returnErrorOnFirstReq && h.reqCount == 1 {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("splunk internal error"))
+		return
+	}
+
 	authHeaderValue := r.Header.Get("authorization")
 	if authHeaderValue == "" {
 		h.test.Fatal("Auth header is empty")
@@ -79,6 +87,41 @@ func TestSplunkInit(t *testing.T) {
 	}
 }
 
+func Test_SplunkBackoffRetry(t *testing.T) {
+	handler := &testHandler{test: t, batched: false, returnErrorOnFirstReq: true}
+	server := httptest.NewServer(handler)
+	defer server.Close()
+
+	pmp := SplunkPump{}
+
+	cfg := make(map[string]interface{})
+	cfg["collector_token"] = testToken
+	cfg["max_retries"] = 1
+	cfg["collector_url"] = server.URL
+	cfg["ssl_insecure_skip_verify"] = true
+
+	if errInit := pmp.Init(cfg); errInit != nil {
+		t.Error("Error initializing pump")
+		return
+	}
+
+	keys := make([]interface{}, 1)
+
+	keys[0] = analytics.AnalyticsRecord{OrgID: "1", APIID: "123", Path: "/test-path", Method: "POST", TimeStamp: time.Now()}
+
+	if errWrite := pmp.WriteData(context.TODO(), keys); errWrite != nil {
+		t.Error("Error writing to splunk pump:", errWrite.Error())
+		return
+	}
+
+	assert.Equal(t, 1, len(handler.responses))
+
+	response := handler.responses[0]
+
+	assert.Equal(t, "Success", response.Text)
+	assert.Equal(t, int32(0), response.Code)
+}
+
 func Test_SplunkWriteData(t *testing.T) {
 	handler := &testHandler{test: t, batched: false}
 	server := httptest.NewServer(handler)
@@ -112,6 +155,7 @@ func Test_SplunkWriteData(t *testing.T) {
 	assert.Equal(t, "Success", response.Text)
 	assert.Equal(t, int32(0), response.Code)
 }
+
 func Test_SplunkWriteDataBatch(t *testing.T) {
 	handler := &testHandler{test: t, batched: true}
 	server := httptest.NewServer(handler)
