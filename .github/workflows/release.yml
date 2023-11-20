@@ -278,6 +278,18 @@ jobs:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 1
+
+      - uses: aws-actions/configure-aws-credentials@v2
+        with:
+          role-to-assume: arn:aws:iam::754489498669:role/ecr_rw_tyk
+          role-session-name: cipush
+          aws-region: eu-central-1
+
+      - uses: aws-actions/amazon-ecr-login@v1
+        id: ecr
+        with:
+          mask-password: 'true'
+          
       - name: Run ci/tests
         shell: bash
         env:        
@@ -296,7 +308,7 @@ jobs:
               echo Attempting to test $d
               if [ -d $d ] && [ -e $d/test.sh ]; then
                   cd $d
-                  ./test.sh ${{ needs.goreleaser.outputs.tag }}
+                  ./test.sh ${{ steps.ecr.outputs.registry }}/tyk-pump:sha-${{ github.sha }}
                   cd -
               fi
           done
@@ -305,7 +317,7 @@ jobs:
               echo Attempting to test $d
               if [ -d $d ] && [ -e $d/test.sh ]; then
                   cd $d
-                  ./test.sh ${{ needs.goreleaser.outputs.tag }}
+                  ./test.sh ${{ steps.ecr.outputs.registry }}/tyk-pump:sha-${{ github.sha }}
                   cd -
               fi
           done
