@@ -109,6 +109,9 @@ func (s *SQSPump) WriteData(ctx context.Context, data []interface{}) error {
 		if s.SQSConf.AWSMessageGroupID != "" {
 			messages[i].MessageGroupId = aws.String(s.SQSConf.AWSMessageGroupID)
 		}
+		if s.SQSConf.AWSDelaySeconds != 0 {
+			messages[i].DelaySeconds = s.SQSConf.AWSDelaySeconds
+		}
 	}
 	SQSError := s.write(ctx, messages)
 	if SQSError != nil {
