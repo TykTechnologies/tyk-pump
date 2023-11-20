@@ -1,8 +1,6 @@
-package pumps
+package httpretry
 
 import (
-	"context"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -13,24 +11,22 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-var errPerm = errors.New("bad request - not retrying")
-
-type httpSender func(ctx context.Context, data []byte) (*http.Response, error)
-
-type backoffRetry struct {
+type BackoffHTTPRetry struct {
 	errMsg     string
 	maxRetries uint64
 	logger     *logrus.Entry
-	httpsend   httpSender
+	httpclient *http.Client
 }
 
-func newBackoffRetry(errMsg string, maxRetries uint64, httpSend httpSender, logger *logrus.Entry) *backoffRetry {
-	return &backoffRetry{errMsg: errMsg, maxRetries: maxRetries, httpsend: httpSend, logger: logger}
+// NewBackoffRetry Creates an exponential backoff retry to use httpClient for connections. Will retry if a temporary error or
+// 5xx or 429 status code in response.
+func NewBackoffRetry(errMsg string, maxRetries uint64, httpClient *http.Client, logger *logrus.Entry) *BackoffHTTPRetry {
+	return &BackoffHTTPRetry{errMsg: errMsg, maxRetries: maxRetries, httpclient: httpClient, logger: logger}
 }
 
-func (s *backoffRetry) send(ctx context.Context, data []byte) error {
+func (s *BackoffHTTPRetry) Send(req *http.Request) error {
 	opFn := func() error {
-		resp, err := s.httpsend(ctx, data)
+		resp, err := s.httpclient.Do(req)
 		if err != nil {
 			return s.handleErr(err)
 		}
@@ -53,13 +49,11 @@ func (s *backoffRetry) send(ctx context.Context, data []byte) error {
 	}
 
 	return backoff.RetryNotify(opFn, backoff.WithMaxRetries(backoff.NewExponentialBackOff(), s.maxRetries), func(err error, t time.Duration) {
-		if err != nil {
-			s.logger.WithError(err).Errorf("%s retrying in %s", s.errMsg, t)
-		}
+		s.logger.WithError(err).Errorf("%s retrying in %s", s.errMsg, t)
 	})
 }
 
-func (s *backoffRetry) handleErr(err error) error {
+func (s *BackoffHTTPRetry) handleErr(err error) error {
 	if e, ok := err.(*url.Error); ok {
 		if e.Temporary() {
 			// temp error, attempt retry
@@ -68,5 +62,6 @@ func (s *backoffRetry) handleErr(err error) error {
 		// permanent error - don't retry
 		return backoff.Permanent(err)
 	}
+	// anything else - retry
 	return err
 }

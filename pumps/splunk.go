@@ -6,13 +6,13 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"errors"
-	"github.com/cenkalti/backoff/v4"
-	"github.com/mitchellh/mapstructure"
 	"net/http"
 	"net/url"
 	"strings"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
+	retry "github.com/TykTechnologies/tyk-pump/http-retry"
+	"github.com/mitchellh/mapstructure"
 )
 
 const (
@@ -36,7 +36,7 @@ type SplunkClient struct {
 	CollectorURL  string
 	TLSSkipVerify bool
 	httpClient    *http.Client
-	retry         *backoffRetry
+	retry         *retry.BackoffHTTPRetry
 }
 
 // SplunkPump is a Tyk Pump driver for Splunk.
@@ -126,19 +126,11 @@ func (p *SplunkPump) Init(config interface{}) error {
 		p.config.BatchMaxContentLength = maxContentLength
 	}
 
-	sender := func(ctx context.Context, data []byte) (*http.Response, error) {
-		reader := bytes.NewReader(data)
-		req, err := http.NewRequest(http.MethodPost, p.config.CollectorURL, reader)
-		if err != nil {
-			// invalid req, don't retry
-			return nil, backoff.Permanent(err)
-		}
-		req = req.WithContext(ctx)
-		req.Header.Add(authHeaderName, authHeaderPrefix+p.client.Token)
-		return p.client.httpClient.Do(req)
+	if p.config.MaxRetries > 0 {
+		p.log.Infof("%d max retries", p.config.MaxRetries)
 	}
 
-	p.client.retry = newBackoffRetry("Failed writing data to Splunk", p.config.MaxRetries, sender, p.log)
+	p.client.retry = retry.NewBackoffRetry("Failed writing data to Splunk", p.config.MaxRetries, p.client.httpClient, p.log)
 	p.log.Info(p.GetName() + " Initialized")
 
 	return nil
@@ -259,14 +251,14 @@ func (p *SplunkPump) WriteData(ctx context.Context, data []interface{}) error {
 		if p.config.EnableBatch {
 			//if we're batching and the len of our data is already bigger than max_content_length, we send the data and reset the buffer
 			if batchBuffer.Len()+len(data) > p.config.BatchMaxContentLength {
-				if err := p.client.retry.send(ctx, batchBuffer.Bytes()); err != nil {
+				if err := p.send(ctx, batchBuffer.Bytes()); err != nil {
 					return err
 				}
 				batchBuffer.Reset()
 			}
 			batchBuffer.Write(data)
 		} else {
-			if err := p.client.retry.send(ctx, data); err != nil {
+			if err := p.send(ctx, data); err != nil {
 				return err
 			}
 		}
@@ -274,7 +266,7 @@ func (p *SplunkPump) WriteData(ctx context.Context, data []interface{}) error {
 
 	//this if is for data remaining in the buffer when len(buffer) is lower than max_content_length
 	if p.config.EnableBatch && batchBuffer.Len() > 0 {
-		if err := p.client.retry.send(ctx, batchBuffer.Bytes()); err != nil {
+		if err := p.send(ctx, batchBuffer.Bytes()); err != nil {
 			return err
 		}
 		batchBuffer.Reset()
@@ -315,4 +307,15 @@ func NewSplunkClient(token string, collectorURL string, skipVerify bool, certFil
 		httpClient:   http.DefaultClient,
 	}
 	return c, nil
+}
+
+func (p *SplunkPump) send(ctx context.Context, data []byte) error {
+	reader := bytes.NewReader(data)
+	req, err := http.NewRequest(http.MethodPost, p.config.CollectorURL, reader)
+	if err != nil {
+		return err
+	}
+	req = req.WithContext(ctx)
+	req.Header.Add(authHeaderName, authHeaderPrefix+p.client.Token)
+	return p.client.retry.Send(req)
 }
