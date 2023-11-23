@@ -311,7 +311,7 @@ func NewSplunkClient(token string, collectorURL string, skipVerify bool, certFil
 
 func (p *SplunkPump) send(ctx context.Context, data []byte) error {
 	reader := bytes.NewReader(data)
-	req, err := http.NewRequest(http.MethodPost, p.config.CollectorURL, reader)
+	req, err := http.NewRequest(http.MethodPost, p.client.CollectorURL, reader)
 	if err != nil {
 		return err
 	}
