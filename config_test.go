@@ -131,3 +131,116 @@ func TestIgnoreConfig(t *testing.T) {
 		assert.Equal(t, 5, initialConfig.PurgeDelay, "Nonexistent config file should not affect the configuration")
 	})
 }
+
+func TestTykPumpConfiguration_LoadPumpsByEnv(t *testing.T) {
+	tcs := []struct {
+		cfg      *TykPumpConfiguration
+		wanted   map[string]PumpConfig
+		setup    func()
+		teardown func()
+		name     string
+	}{
+		{
+			name: "no initial pumps",
+			cfg:  &TykPumpConfiguration{},
+			setup: func() {
+				os.Setenv(ENV_PREVIX+"_PUMPS_ENVTEST_TYPE", "mongo-pump-aggregate")
+				os.Setenv(ENV_PREVIX+"_PUMPS_ENVTEST_META_MONGOURL", "mongodb://localhost:27017")
+			},
+			teardown: func() {
+				os.Unsetenv(ENV_PREVIX + "_PUMPS_ENVTEST_TYPE")
+				os.Unsetenv(ENV_PREVIX + "_PUMPS_ENVTEST_META_MONGOURL")
+			},
+			wanted: map[string]PumpConfig{
+				"ENVTEST": {
+					Type: "mongo-pump-aggregate",
+					Meta: map[string]interface{}{
+						"meta_env_prefix": ENV_PREVIX + "_PUMPS_ENVTEST_META",
+					},
+				},
+			},
+		},
+		{
+			name: "with initial pumps",
+			cfg: &TykPumpConfiguration{
+				Pumps: map[string]PumpConfig{
+					"INITIAL": {
+						Type: "csv",
+						Meta: map[string]interface{}{
+							"csv_dir": "/tmp",
+						},
+					},
+				},
+			},
+			setup: func() {
+				os.Setenv(ENV_PREVIX+"_PUMPS_ENVTEST_TYPE", "mongo-pump-aggregate")
+				os.Setenv(ENV_PREVIX+"_PUMPS_ENVTEST_META_MONGOURL", "mongodb://localhost:27017")
+			},
+			teardown: func() {
+				os.Unsetenv(ENV_PREVIX + "_PUMPS_ENVTEST_TYPE")
+				os.Unsetenv(ENV_PREVIX + "_PUMPS_ENVTEST_META_MONGOURL")
+			},
+			wanted: map[string]PumpConfig{
+				"INITIAL": {
+					Type: "csv",
+					Meta: map[string]interface{}{
+						"csv_dir": "/tmp",
+					},
+				},
+				"ENVTEST": {
+					Type: "mongo-pump-aggregate",
+					Meta: map[string]interface{}{
+						"meta_env_prefix": ENV_PREVIX + "_PUMPS_ENVTEST_META",
+					},
+				},
+			},
+		},
+		{
+			name: "type env var not found and type in cfg is empty",
+			cfg:  &TykPumpConfiguration{},
+			setup: func() {
+				os.Setenv(ENV_PREVIX+"_PUMPS_ENVTEST_META_MONGOURL", "mongodb://localhost:27017")
+			},
+			teardown: func() {
+				os.Unsetenv(ENV_PREVIX + "_PUMPS_ENVTEST_META_MONGOURL")
+			},
+			wanted: map[string]PumpConfig{},
+		},
+		{
+			name: "type env var not found but type in cfg is set",
+			cfg: &TykPumpConfiguration{
+				Pumps: map[string]PumpConfig{
+					"ENVTEST": {
+						Type: "mongo",
+					},
+				},
+			},
+			setup: func() {
+				// Deliberately not setting the TYPE env var for ENVTEST
+				os.Setenv(ENV_PREVIX+"_PUMPS_ENVTEST_META_MONGOURL", "mongodb://localhost:27017")
+			},
+			teardown: func() {
+				os.Unsetenv(ENV_PREVIX + "_PUMPS_ENVTEST_META_MONGOURL")
+			},
+			wanted: map[string]PumpConfig{
+				"ENVTEST": {
+					Type: "mongo", // Expecting the predefined type to be retained
+					Meta: map[string]interface{}{
+						"meta_env_prefix": ENV_PREVIX + "_PUMPS_ENVTEST_META",
+					},
+				},
+			},
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			tc.setup()
+			defer tc.teardown()
+
+			err := tc.cfg.LoadPumpsByEnv()
+			assert.NoError(t, err)
+			assert.Equal(t, tc.wanted, tc.cfg.Pumps)
+		})
+	}
+}
