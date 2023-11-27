@@ -412,62 +412,9 @@ jobs:
           context: "."
           file: Dockerfile
           push: false
-  smoke-tests:
-    needs:
-      - goreleaser
-    permissions:
-      id-token: write   # This is required for requesting the JWT
-      contents: read    # This is required for actions/checkout
-    runs-on: ubuntu-latest
 
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
-
-      - uses: aws-actions/configure-aws-credentials@v2
-        with:
-          role-to-assume: arn:aws:iam::754489498669:role/ecr_rw_tyk
-          role-session-name: cipush
-          aws-region: eu-central-1
-
-      - id: ecr
-        uses: aws-actions/amazon-ecr-login@v1
-        with:
-          mask-password: 'true'
-
-      - name: Run ci/tests
-        shell: bash
-        env:        
-          GITHUB_TAG: ${{ github.ref }} /* mdcb or dash */
-        run: |
-          set -eaxo pipefail
-          if [ ! -d smoke-tests ]; then
-             echo "::warning No repo specific smoke tests defined"
-          fi
-          if [ ! -d ci/tests ]; then
-             echo "::warning No ci tests defined"
-             exit 0
-          fi
-          for d in ci/tests/*/
-          do
-              echo Attempting to test $d
-              if [ -d $d ] && [ -e $d/test.sh ]; then
-                  cd $d
-                  ./test.sh ${{ steps.ecr.outputs.registry }}/tyk-pump:sha-${{ github.sha }}
-                  cd -
-              fi
-          done
-          for d in smoke-tests/*/
-          do
-              echo Attempting to test $d
-              if [ -d $d ] && [ -e $d/test.sh ]; then
-                  cd $d
-                  ./test.sh ${{ steps.ecr.outputs.registry }}/tyk-pump:sha-${{ github.sha }}
-                  cd -
-              fi
-          done
-
+  smoke-test:
+    uses: ./.github/workflows/smoke-test.yml
 
   sbom:
     needs: goreleaser
