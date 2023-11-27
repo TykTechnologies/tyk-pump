@@ -40,7 +40,7 @@ jobs:
               echo Attempting to test $d
               if [ -d $d ] && [ -e $d/test.sh ]; then
                   cd $d
-                  ./test.sh {{`${{ steps.ecr.outputs.registry }}`}}/{{ .Name }}:sha-{{`${{ github.sha }}`}}
+                  ./test.sh ${{ steps.ecr.outputs.registry }}/tyk-pump:sha-${{ github.sha }}
                   cd -
               fi
           done
