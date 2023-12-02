@@ -289,7 +289,6 @@ func (cfg *TykPumpConfiguration) LoadPumpsByEnv() error {
 	//first we look for all the pumps names in the env vars from the os
 	for _, env := range os.Environ() {
 		if strings.HasPrefix(env, PUMPS_ENV_PREFIX) {
-
 			// We trim everything after PUMPS_ENV_PREFIX. For example, if we have TYK_PUMP_PUMPS_CSV_TYPE we would have CSV_TYPE here
 			envWoPrefix := strings.TrimPrefix(env, PUMPS_ENV_PREFIX+"_")
 
@@ -302,7 +301,6 @@ func (cfg *TykPumpConfiguration) LoadPumpsByEnv() error {
 
 			//The name of the pump is always going to be the first keyword after the PUMPS_ENV_PREFIX
 			pmpName := strings.ToUpper(envSplit[0])
-
 			osPumpsEnvNames[pmpName] = true
 		}
 	}
@@ -317,18 +315,21 @@ func (cfg *TykPumpConfiguration) LoadPumpsByEnv() error {
 			pmp = jsonPump
 		}
 		//We look if the pmpName is one of our available pumps. If it's not, we look if the env with the TYPE filed exists.
+		var pmpType string
 		if _, ok := pumps.AvailablePumps[strings.ToLower(pmpName)]; !ok {
-			pmpType, found := os.LookupEnv(PUMPS_ENV_PREFIX + "_" + pmpName + "_TYPE")
+			var found bool
+			pmpType, found = os.LookupEnv(PUMPS_ENV_PREFIX + "_" + pmpName + "_TYPE")
 			if !found {
-				log.Error(fmt.Sprintf("TYPE Env var for pump %s not found", pmpName))
-				continue
+				if pmp.Type == "" {
+					log.Error(fmt.Sprintf("TYPE Env var for pump %s not found", pmpName))
+					continue
+				}
+				pmpType = pmp.Type
 			}
-			pmp.Type = pmpType
 		} else {
-			pmp.Type = pmpName
+			pmpType = pmpName
 		}
 
-		pmpType := pmp.Type
 		//We fetch the env vars for that pump.
 		overrideErr := envconfig.Process(PUMPS_ENV_PREFIX+"_"+pmpName, &pmp)
 		if overrideErr != nil {
