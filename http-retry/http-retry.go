@@ -30,7 +30,12 @@ func (s *BackoffHTTPRetry) Send(req *http.Request) error {
 		if err != nil {
 			return s.handleErr(err)
 		}
-		defer resp.Body.Close()
+		defer func() {
+			// read all response and discard so http client can
+			// reuse connection as per doc on Response.Body
+			io.Copy(io.Discard, resp.Body)
+			resp.Body.Close()
+		}()
 
 		if resp.StatusCode == http.StatusOK {
 			return nil
