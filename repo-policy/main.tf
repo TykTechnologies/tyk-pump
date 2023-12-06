@@ -11,7 +11,7 @@ terraform {
 
   required_providers {
     github = {
-      source  = "integrations/github"
+      source = "integrations/github"
     }
   }
 }
@@ -35,25 +35,25 @@ variable "historical_branches" {
 }
 
 module "tyk-pump" {
-  source               = "./modules/github-repos"
-  repo                 = "tyk-pump"
-  description          = "Tyk Analytics Pump to move analytics data from Redis to any supported back end (multiple back ends can be written to at once)."
-  default_branch       = "master"
+  source                      = "./modules/github-repos"
+  repo                        = "tyk-pump"
+  description                 = "Tyk Analytics Pump to move analytics data from Redis to any supported back end (multiple back ends can be written to at once)."
+  default_branch              = "master"
   topics                      = []
   visibility                  = "public"
   wiki                        = false
   vulnerability_alerts        = true
   squash_merge_commit_message = "COMMIT_MESSAGES"
   squash_merge_commit_title   = "COMMIT_OR_PR_TITLE"
-  release_branches     = concat(var.historical_branches, [
-{ branch    = "master",
-	reviewers = "1",
-	convos    = "false",
-	required_tests = ["1.19-bullseye","Go 1.19 tests"]},
-{ branch    = "release-1.8",
-	reviewers = "0",
-	convos    = "false",
-	source_branch  = "master",
-	required_tests = ["1.19-bullseye","Go 1.19 tests"]},
-])
+  release_branches = concat(var.historical_branches, [
+    { branch    = "master",
+      reviewers = "1",
+      convos    = "false",
+    required_tests = ["1.19-bullseye", "Go 1.19 tests", "api-tests (sha256, mongo44)", "api-tests (sha256, postgres15)", "api-tests (murmur64, mongo44)", "api-tests (murmur64, postgres15)"] },
+    { branch        = "release-1.8",
+      reviewers     = "0",
+      convos        = "false",
+      source_branch = "master",
+    required_tests = ["1.19-bullseye", "Go 1.19 tests"] },
+  ])
 }
