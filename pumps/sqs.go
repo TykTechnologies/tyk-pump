@@ -9,7 +9,9 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	"github.com/aws/aws-sdk-go-v2/service/sqs/types"
+	"github.com/kr/pretty"
 	"github.com/mitchellh/mapstructure"
+	"github.com/oklog/ulid/v2"
 	"github.com/sirupsen/logrus"
 	"time"
 )
@@ -37,15 +39,16 @@ var SQSDefaultENV = PUMPS_ENV_PREFIX + "_SQS" + PUMPS_ENV_META_PREFIX
 
 // @PumpConf SQS
 type SQSConf struct {
-	EnvPrefix         string `mapstructure:"meta_env_prefix"`
-	QueueName         string `mapstructure:"aws_queue_name"`
-	AWSRegion         string `mapstructure:"aws_region"`
-	AWSSecret         string `mapstructure:"aws_secret"`
-	AWSKey            string `mapstructure:"aws_key"`
-	AWSEndpoint       string `mapstructure:"aws_endpoint"`
-	AWSDelaySeconds   int32  `mapstructure:"aws_delay_seconds"`
-	AWSMessageGroupID string `mapstructure:"aws_message_group_id"`
-	AWSSQSBatchLimit  int    `mapstructure:"aws_sqs_batch_limit"`
+	EnvPrefix                        string `mapstructure:"meta_env_prefix"`
+	QueueName                        string `mapstructure:"aws_queue_name"`
+	AWSRegion                        string `mapstructure:"aws_region"`
+	AWSSecret                        string `mapstructure:"aws_secret"`
+	AWSKey                           string `mapstructure:"aws_key"`
+	AWSEndpoint                      string `mapstructure:"aws_endpoint"`
+	AWSDelaySeconds                  int32  `mapstructure:"aws_delay_seconds"`
+	AWSMessageGroupID                string `mapstructure:"aws_message_group_id"`
+	AWSSQSBatchLimit                 int    `mapstructure:"aws_sqs_batch_limit"`
+	AWSMessageIDDeduplicationEnabled bool   `mapstructure:"aws_message_id_deduplication_enabled"`
 }
 
 func (s *SQSPump) New() Pump {
@@ -104,13 +107,21 @@ func (s *SQSPump) WriteData(ctx context.Context, data []interface{}) error {
 		decodedMessageByteArray, _ := json.Marshal(decoded)
 		messages[i] = types.SendMessageBatchRequestEntry{
 			MessageBody: aws.String(string(decodedMessageByteArray)),
-			Id:          aws.String(decoded.GetObjectID().String()),
+			Id:          aws.String(ulid.Make().String()),
 		}
 		if s.SQSConf.AWSMessageGroupID != "" {
 			messages[i].MessageGroupId = aws.String(s.SQSConf.AWSMessageGroupID)
 		}
 		if s.SQSConf.AWSDelaySeconds != 0 {
 			messages[i].DelaySeconds = s.SQSConf.AWSDelaySeconds
+		}
+
+		// for FIFO SQS
+		if s.SQSConf.AWSMessageGroupID != "" {
+			messages[i].MessageGroupId = aws.String(s.SQSConf.AWSMessageGroupID)
+		}
+		if s.SQSConf.AWSMessageIDDeduplicationEnabled {
+			messages[i].MessageDeduplicationId = messages[i].Id
 		}
 	}
 	SQSError := s.write(ctx, messages)
@@ -125,6 +136,7 @@ func (s *SQSPump) WriteData(ctx context.Context, data []interface{}) error {
 }
 
 func (s *SQSPump) write(c context.Context, messages []types.SendMessageBatchRequestEntry) error {
+	pretty.Print(messages)
 	for i := 0; i < len(messages); i += s.SQSConf.AWSSQSBatchLimit {
 		end := i + s.SQSConf.AWSSQSBatchLimit
 

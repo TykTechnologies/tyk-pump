@@ -23,9 +23,11 @@ require (
 	github.com/influxdata/influxdb v1.8.10
 	github.com/influxdata/influxdb-client-go/v2 v2.6.0
 	github.com/kelseyhightower/envconfig v1.4.0
+	github.com/kr/pretty v0.3.1
 	github.com/logzio/logzio-go v0.0.0-20200316143903-ac8fc0e2910e
 	github.com/mitchellh/mapstructure v1.3.1
 	github.com/moesif/moesifapi-go v1.0.6
+	github.com/oklog/ulid/v2 v2.1.0
 	github.com/olivere/elastic/v7 v7.0.28
 	github.com/oschwald/maxminddb-golang v1.11.0
 	github.com/pkg/errors v0.9.1
