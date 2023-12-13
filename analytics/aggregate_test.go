@@ -1,7 +1,6 @@
 package analytics
 
 import (
-	"encoding/base64"
 	"fmt"
 	"testing"
 	"time"
@@ -90,8 +89,6 @@ func TestTrimTag(t *testing.T) {
 }
 
 func TestAggregateGraphData(t *testing.T) {
-	query := `{"query":"query{\n  characters(filter: {\n    \n  }){\n    info{\n      count\n    }\n  }\n}"}`
-	rawResponse := `{"data":{"characters":{"info":{"count":758}}}}`
 	sampleRecord := AnalyticsRecord{
 		TimeStamp:    time.Date(2022, 1, 1, 0, 0, 0, 0, time.UTC),
 		Method:       "POST",
@@ -100,8 +97,6 @@ func TestAggregateGraphData(t *testing.T) {
 		RawPath:      "/",
 		APIName:      "test-api",
 		APIID:        "test-api",
-		ApiSchema:    base64.StdEncoding.EncodeToString([]byte(sampleSchema)),
-		Tags:         []string{PredefinedTagGraphAnalytics},
 		ResponseCode: 200,
 		Day:          1,
 		Month:        1,
@@ -111,8 +106,16 @@ func TestAggregateGraphData(t *testing.T) {
 		APIKey:       "test-key",
 		TrackPath:    true,
 		OauthID:      "test-id",
-		RawRequest:   base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf(requestTemplate, len(query), query))),
-		RawResponse:  base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf(responseTemplate, len(rawResponse), rawResponse))),
+		GraphQLStats: GraphQLStats{
+			IsGraphQL: true,
+			Types: map[string][]string{
+				"Characters": {"info"},
+				"Info":       {"count"},
+			},
+			RootFields:    []string{"characters"},
+			OperationType: OperationQuery,
+			HasErrors:     false,
+		},
 	}
 
 	compareFields := func(r *require.Assertions, expected, actual map[string]*Counter) {
@@ -164,7 +167,7 @@ func TestAggregateGraphData(t *testing.T) {
 				for i := range records {
 					record := sampleRecord
 					if i == 1 {
-						record.Tags = []string{}
+						record.GraphQLStats.IsGraphQL = false
 					}
 					records[i] = record
 				}
@@ -193,8 +196,12 @@ func TestAggregateGraphData(t *testing.T) {
 				for i := range records {
 					record := sampleRecord
 					if i == 1 {
-						response := graphErrorResponse
-						record.RawResponse = base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf(responseTemplate, len(response), response)))
+						record.GraphQLStats.HasErrors = true
+						record.GraphQLStats.Errors = []GraphError{
+							{
+								Message: "Name for character with ID 1002 could not be fetched.",
+							},
+						}
 					}
 					records[i] = record
 				}
@@ -274,24 +281,27 @@ func TestAggregateGraphData_Dimension(t *testing.T) {
 		RawPath:      "/",
 		APIName:      "test-api",
 		APIID:        "test-api",
-		ApiSchema:    base64.StdEncoding.EncodeToString([]byte(sampleSchema)),
-		Tags:         []string{PredefinedTagGraphAnalytics},
 		ResponseCode: 200,
 		Day:          1,
 		Month:        1,
 		Year:         2022,
 		Hour:         0,
 		OrgID:        "test-org",
+		GraphQLStats: GraphQLStats{
+			IsGraphQL: true,
+			Types: map[string][]string{
+				"Characters": {"info"},
+				"Info":       {"count"},
+			},
+			RootFields:    []string{"characters"},
+			OperationType: OperationQuery,
+			HasErrors:     false,
+		},
 	}
 
 	records := make([]interface{}, 3)
 	for i := range records {
-		record := sampleRecord
-		query := `{"query":"query{\n  characters(filter: {\n    \n  }){\n    info{\n      count\n    }\n  }\n}"}`
-		response := `{"data":{"characters":{"info":{"count":758}}}}`
-		record.RawRequest = base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf(requestTemplate, len(query), query)))
-		record.RawResponse = base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf(responseTemplate, len(response), response)))
-		records[i] = record
+		records[i] = sampleRecord
 	}
 
 	responsesCheck := map[string][]string{
@@ -374,14 +384,18 @@ func TestAggregateData_SkipGraphRecords(t *testing.T) {
 		},
 		{
 			OrgID: "777-graph",
-			Tags:  []string{"tag_1", "tag_2", PredefinedTagGraphAnalytics},
+			GraphQLStats: GraphQLStats{
+				IsGraphQL: true,
+			},
 		},
 		{
 			OrgID: "987",
 		},
 		{
 			OrgID: "555-graph",
-			Tags:  []string{PredefinedTagGraphAnalytics},
+			GraphQLStats: GraphQLStats{
+				IsGraphQL: true,
+			},
 		},
 	},
 		2,

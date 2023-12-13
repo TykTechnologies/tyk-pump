@@ -2,7 +2,6 @@ package pumps
 
 import (
 	"context"
-	"encoding/base64"
 	"fmt"
 	"os"
 	"testing"
@@ -113,12 +112,7 @@ func TestGraphSQLPump_Init(t *testing.T) {
 	})
 }
 
-func convToBase64(raw string) string {
-	return base64.StdEncoding.EncodeToString([]byte(raw))
-}
-
 func TestGraphSQLPump_WriteData(t *testing.T) {
-	r := require.New(t)
 	conf := GraphSQLConf{
 		SQLConf: SQLConf{
 			Type:             "sqlite",
@@ -127,97 +121,117 @@ func TestGraphSQLPump_WriteData(t *testing.T) {
 		TableName: "test-table",
 	}
 
-	type customRecord struct {
-		response     string
-		tags         []string
-		responseCode int
-		isHTTP       bool
-	}
 	type customResponses struct {
 		types         map[string][]string
 		operationType string
 		expectedErr   []analytics.GraphError
 		operations    []string
+		variables     string
 	}
 
 	testCases := []struct {
-		name      string
-		records   []customRecord
-		responses []customResponses
-		hasError  bool
+		name       string
+		graphStats []analytics.GraphQLStats
+		responses  []customResponses
+		hasError   bool
 	}{
 		{
 			name: "default case",
-			records: []customRecord{
+			graphStats: []analytics.GraphQLStats{
 				{
-					isHTTP:       false,
-					tags:         []string{analytics.PredefinedTagGraphAnalytics},
-					responseCode: 200,
-					response:     rawGQLResponse,
+					IsGraphQL: true,
+					HasErrors: false,
+					Types: map[string][]string{
+						"Character": {"info", "age"},
+						"Info":      {"height"},
+					},
+					RootFields:    []string{"character"},
+					OperationType: analytics.OperationQuery,
 				},
 				{
-					isHTTP:       false,
-					tags:         []string{analytics.PredefinedTagGraphAnalytics},
-					responseCode: 200,
-					response:     rawGQLResponseWithError,
+					IsGraphQL: true,
+					HasErrors: true,
+					Types: map[string][]string{
+						"Character": {"info", "age"},
+						"Info":      {"height"},
+					},
+					RootFields:    []string{"character"},
+					OperationType: analytics.OperationSubscription,
+					Errors: []analytics.GraphError{
+						{
+							Message: "sample error",
+						},
+					},
 				},
 				{
-					isHTTP:       false,
-					tags:         []string{analytics.PredefinedTagGraphAnalytics},
-					responseCode: 500,
-					response:     "",
+					IsGraphQL: true,
+					HasErrors: false,
+					Types: map[string][]string{
+						"Character": {"info", "age"},
+						"Info":      {"height"},
+					},
+					RootFields:    []string{"character"},
+					OperationType: analytics.OperationQuery,
+					Variables:     `{"in":"hello"}`,
 				},
 			},
+			// TODO location info in errors
 			responses: []customResponses{
 				{
 					types: map[string][]string{
-						"Country": {"code"},
+						"Character": {"info", "age"},
+						"Info":      {"height"},
 					},
 					operationType: "Query",
-					operations:    []string{"country"},
+					operations:    []string{"character"},
 				},
 				{
 					types: map[string][]string{
-						"Country": {"code"},
+						"Character": {"info", "age"},
+						"Info":      {"height"},
 					},
-					operationType: "Query",
+					operationType: "Subscription",
 					expectedErr: []analytics.GraphError{
 						{
-							Message: "test error",
+							Message: "sample error",
 							Path:    []interface{}{},
 						},
 					},
-					operations: []string{"country"},
+					operations: []string{"character"},
 				},
 				{
 					types: map[string][]string{
-						"Country": {"code"},
+						"Character": {"info", "age"},
+						"Info":      {"height"},
 					},
 					operationType: "Query",
 					expectedErr:   []analytics.GraphError{},
-					operations:    []string{"country"},
+					operations:    []string{"character"},
+					variables:     `{"in":"hello"}`,
 				},
 			},
 			hasError: false,
 		},
 		{
 			name: "skip record",
-			records: []customRecord{
+			graphStats: []analytics.GraphQLStats{
 				{
-					isHTTP:       false,
-					tags:         []string{analytics.PredefinedTagGraphAnalytics},
-					responseCode: 200,
-					response:     rawGQLResponse,
+					IsGraphQL: true,
+					HasErrors: false,
+					Types: map[string][]string{
+						"Country": {"code"},
+					},
+					RootFields:    []string{"country"},
+					OperationType: analytics.OperationQuery,
 				},
 				{
-					isHTTP:       true,
-					responseCode: 200,
-					response:     rawHTTPResponse,
-				},
-				{
-					isHTTP:       false,
-					responseCode: 200,
-					response:     rawGQLResponse,
+					IsGraphQL: false,
+					HasErrors: false,
+					Types: map[string][]string{
+						"Country": {"code"},
+					},
+					RootFields:    []string{"country"},
+					OperationType: analytics.OperationQuery,
 				},
 			},
 			responses: []customResponses{
@@ -245,22 +259,11 @@ func TestGraphSQLPump_WriteData(t *testing.T) {
 			records := make([]interface{}, 0)
 			expectedResponses := make([]analytics.GraphRecord, 0)
 			// create the records to passed to the pump
-			for _, item := range tc.records {
+			for _, item := range tc.graphStats {
 				r := analytics.AnalyticsRecord{
-					APIName: "Test API",
-					Path:    "POST",
-					Tags:    item.tags,
-				}
-				if !item.isHTTP {
-					r.RawRequest = convToBase64(rawGQLRequest)
-					r.ApiSchema = convToBase64(schema)
-				} else {
-					r.RawRequest = convToBase64(rawHTTPReq)
-					r.RawResponse = convToBase64(rawHTTPResponse)
-				}
-				r.RawResponse = convToBase64(item.response)
-				if item.responseCode != 0 {
-					r.ResponseCode = item.responseCode
+					APIName:      "Test API",
+					Path:         "POST",
+					GraphQLStats: item,
 				}
 				records = append(records, r)
 			}
@@ -271,8 +274,9 @@ func TestGraphSQLPump_WriteData(t *testing.T) {
 					Types:         item.types,
 					OperationType: item.operationType,
 					Errors:        []analytics.GraphError{},
+					Variables:     item.variables,
 				}
-				if item.expectedErr == nil {
+				if len(item.expectedErr) == 0 {
 					r.Errors = []analytics.GraphError{}
 				} else {
 					r.Errors = item.expectedErr
@@ -289,15 +293,15 @@ func TestGraphSQLPump_WriteData(t *testing.T) {
 
 			err := pump.WriteData(context.Background(), records)
 			if !tc.hasError {
-				r.NoError(err)
+				require.NoError(t, err)
 			} else {
-				r.Error(err)
+				require.Error(t, err)
 			}
 
 			var resultRecords []analytics.GraphRecord
 			tx := pump.db.Table(conf.TableName).Find(&resultRecords)
-			r.NoError(tx.Error)
-			r.Equalf(len(tc.responses), len(resultRecords), "responses count do no match")
+			require.NoError(t, tx.Error)
+			require.Equalf(t, len(tc.responses), len(resultRecords), "responses count do no match")
 			if diff := cmp.Diff(expectedResponses, resultRecords, cmpopts.IgnoreFields(analytics.GraphRecord{}, "AnalyticsRecord")); diff != "" {
 				t.Error(diff)
 			}
@@ -321,13 +325,18 @@ func TestGraphSQLPump_Sharded(t *testing.T) {
 	baseRecord := analytics.AnalyticsRecord{
 		APIID:        "test-api",
 		Path:         "/test-api",
-		RawRequest:   convToBase64(rawGQLRequest),
-		RawResponse:  convToBase64(rawGQLResponse),
-		ApiSchema:    convToBase64(schema),
-		Tags:         []string{analytics.PredefinedTagGraphAnalytics},
 		APIName:      "test-api",
 		ResponseCode: 200,
 		Method:       "POST",
+		GraphQLStats: analytics.GraphQLStats{
+			IsGraphQL: true,
+			Types: map[string][]string{
+				"Country": {"code"},
+			},
+			RootFields:    []string{"country"},
+			OperationType: analytics.OperationQuery,
+			HasErrors:     false,
+		},
 	}
 
 	expectedTables := make([]string, 0)

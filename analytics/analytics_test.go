@@ -23,9 +23,11 @@ func TestAnalyticsRecord_IsGraphRecord(t *testing.T) {
 		assert.False(t, record.IsGraphRecord())
 	})
 
-	t.Run("should return true when tags contain the graph analytics tag", func(t *testing.T) {
+	t.Run("should return true with graph stats", func(t *testing.T) {
 		record := AnalyticsRecord{
-			Tags: []string{"tag_1", "tag_2", PredefinedTagGraphAnalytics, "tag_4", "tag_5"},
+			GraphQLStats: GraphQLStats{
+				IsGraphQL: true,
+			},
 		}
 		assert.True(t, record.IsGraphRecord())
 	})
