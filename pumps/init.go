@@ -9,6 +9,7 @@ func init() {
 	AvailablePumps = make(map[string]Pump)
 
 	// Register all the storage handlers here
+	AvailablePumps["noop"] = &NoopPump{}
 	AvailablePumps["dummy"] = &DummyPump{}
 	AvailablePumps["mongo"] = &MongoPump{}
 	AvailablePumps["mongo-pump-selective"] = &MongoSelectivePump{}
