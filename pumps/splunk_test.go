@@ -35,11 +35,6 @@ type testHandler struct {
 
 func (h *testHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.reqCount++
-	if h.returnErrorOnFirstReq && h.reqCount == 1 {
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("splunk internal error"))
-		return
-	}
 
 	authHeaderValue := r.Header.Get("authorization")
 	if authHeaderValue == "" {
@@ -56,6 +51,14 @@ func (h *testHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		h.test.Fatal("Couldn't ready body")
 	}
+	r.Body.Close()
+
+	if h.returnErrorOnFirstReq && h.reqCount == 1 {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte("splunk internal error"))
+		return
+	}
+
 	status := splunkStatus{Text: "Success", Code: 0}
 	if !h.batched {
 		event := make(map[string]interface{})
@@ -89,7 +92,10 @@ func TestSplunkInit(t *testing.T) {
 
 func Test_SplunkBackoffRetry(t *testing.T) {
 	handler := &testHandler{test: t, batched: false, returnErrorOnFirstReq: true}
-	server := httptest.NewServer(handler)
+	server := httptest.NewUnstartedServer(handler)
+	server.Config.SetKeepAlivesEnabled(false)
+	server.Start()
+
 	defer server.Close()
 
 	pmp := SplunkPump{}
