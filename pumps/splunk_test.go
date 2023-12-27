@@ -106,8 +106,8 @@ func Test_SplunkBackoffRetry(t *testing.T) {
 	cfg["collector_url"] = server.URL
 	cfg["ssl_insecure_skip_verify"] = true
 
-	if errInit := pmp.Init(cfg); errInit != nil {
-		t.Error("Error initializing pump")
+	if err := pmp.Init(cfg); err != nil {
+		t.Errorf("Error initializing pump %v", err)
 		return
 	}
 
