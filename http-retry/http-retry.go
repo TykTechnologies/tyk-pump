@@ -54,7 +54,7 @@ func (s *BackoffHTTPRetry) Send(req *http.Request) error {
 
 		t := time.Now()
 		resp, err := s.httpclient.Do(req)
-		s.logger.Debugf("Req %s took %s", req.URL, time.Now().Sub(t))
+		s.logger.Debugf("Req %s took %s", req.URL, time.Since(t))
 
 		if err != nil {
 			return s.handleErr(err)
