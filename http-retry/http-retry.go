@@ -16,10 +16,10 @@ import (
 )
 
 type BackoffHTTPRetry struct {
-	errMsg     string
-	maxRetries uint64
 	logger     *logrus.Entry
 	httpclient *http.Client
+	errMsg     string
+	maxRetries uint64
 }
 
 type (
@@ -37,7 +37,12 @@ func NewBackoffRetry(errMsg string, maxRetries uint64, httpClient *http.Client, 
 func (s *BackoffHTTPRetry) Send(req *http.Request) error {
 	var reqBody []byte
 	if req.Body != nil {
-		reqBody, _ = io.ReadAll(req.Body)
+		var err error
+		reqBody, err = io.ReadAll(req.Body)
+		if err != nil {
+			s.logger.WithError(err).Error("Failed to read req body")
+			return err
+		}
 		req.Body.Close() // closing the original body
 	}
 
@@ -47,14 +52,20 @@ func (s *BackoffHTTPRetry) Send(req *http.Request) error {
 		// resulting in "http: ContentLength=X with Body length Y" error
 		req.Body = io.NopCloser(bytes.NewBuffer(reqBody))
 
+		t := time.Now()
 		resp, err := s.httpclient.Do(req)
+		s.logger.Debugf("Req %s took %s", req.URL, time.Now().Sub(t))
+
 		if err != nil {
 			return s.handleErr(err)
 		}
 		defer func() {
 			// read all response and discard so http client can
 			// reuse connection as per doc on Response.Body
-			io.Copy(io.Discard, resp.Body)
+			_, err := io.Copy(io.Discard, resp.Body)
+			if err != nil {
+				s.logger.WithError(err).Error("Failed to read and discard resp body")
+			}
 			resp.Body.Close()
 		}()
 
@@ -62,7 +73,13 @@ func (s *BackoffHTTPRetry) Send(req *http.Request) error {
 			return nil
 		}
 
-		body, _ := io.ReadAll(resp.Body)
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			s.logger.WithError(err).Error("Failed to read resp body")
+			// attempt retry
+			return err
+		}
+
 		err = fmt.Errorf("got status code %d and response '%s'", resp.StatusCode, body)
 
 		// server error or rate limit hit - attempt retry

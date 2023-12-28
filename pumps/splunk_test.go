@@ -55,7 +55,10 @@ func (h *testHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	if h.returnErrorOnFirstReq && h.reqCount == 1 {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("splunk internal error"))
+		_, err := w.Write([]byte("splunk internal error"))
+		if err != nil {
+			h.test.Fatalf("Failed to write response got error %v", err)
+		}
 		return
 	}
 
