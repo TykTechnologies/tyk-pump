@@ -317,5 +317,7 @@ func (p *SplunkPump) send(ctx context.Context, data []byte) error {
 	}
 	req = req.WithContext(ctx)
 	req.Header.Add(authHeaderName, authHeaderPrefix+p.client.Token)
+
+	p.log.Debugf("Sending %d bytes to splunk", len(data))
 	return p.client.retry.Send(req)
 }
