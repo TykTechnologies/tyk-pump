@@ -775,7 +775,7 @@ Setting up Splunk with a _HTTP Event Collector_
 - `ignore_tag_prefix_list`: (optional) Choose which tags to be ignored by the Splunk Pump. Keep in mind that the tag name and value are hyphenated. Type: Type: String Array `[] string`. Default value is `[]`
 - `enable_batch`: If this is set to `true`, pump is going to send the analytics records in batch to Splunk. Type: Boolean. Default value is `false`.
 - `max_content_length`: Max content length in bytes to be sent in batch requests. It should match the `max_content_length` configured in Splunk. If the purged analytics records size don't reach the amount of bytes, they're send anyways in each `purge_loop`. Type: Integer. Default value is 838860800 (~ 800 MB), the same default value as Splunk config.
-- `max_retries`: Max number of retries if failed to send requests to splunk HEC. Default value is `0`.
+- `max_retries`: Max number of retries if failed to send requests to splunk HEC. Default value is `0` (no retries after failure). Connections, network, timeouts, temporary, too many requests and internal server errors are all considered retryable.
 
 ###### JSON / Conf File
 

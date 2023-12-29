@@ -26,11 +26,11 @@ type splunkStatus struct {
 	Len  int    `json:"len"`
 }
 type testHandler struct {
-	test                  *testing.T
-	batched               bool
-	returnErrorOnFirstReq bool
-	responses             []splunkStatus
-	reqCount              int
+	test         *testing.T
+	batched      bool
+	returnErrors int
+	responses    []splunkStatus
+	reqCount     int
 }
 
 func (h *testHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -53,7 +53,8 @@ func (h *testHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	r.Body.Close()
 
-	if h.returnErrorOnFirstReq && h.reqCount == 1 {
+	if h.returnErrors >= h.reqCount {
+		fmt.Println("returning err.......")
 		w.WriteHeader(http.StatusInternalServerError)
 		_, err := w.Write([]byte("splunk internal error"))
 		if err != nil {
@@ -94,41 +95,114 @@ func TestSplunkInit(t *testing.T) {
 }
 
 func Test_SplunkBackoffRetry(t *testing.T) {
-	handler := &testHandler{test: t, batched: false, returnErrorOnFirstReq: true}
-	server := httptest.NewUnstartedServer(handler)
-	server.Config.SetKeepAlivesEnabled(false)
-	server.Start()
+	go t.Run("max_retries=1", func(t *testing.T) {
+		handler := &testHandler{test: t, batched: false, returnErrors: 1}
+		server := httptest.NewUnstartedServer(handler)
+		server.Config.SetKeepAlivesEnabled(false)
+		server.Start()
 
-	defer server.Close()
+		defer server.Close()
 
-	pmp := SplunkPump{}
+		pmp := SplunkPump{}
+		cfg := make(map[string]interface{})
+		cfg["collector_token"] = testToken
+		cfg["max_retries"] = 1
+		cfg["collector_url"] = server.URL
+		cfg["ssl_insecure_skip_verify"] = true
 
-	cfg := make(map[string]interface{})
-	cfg["collector_token"] = testToken
-	cfg["max_retries"] = 1
-	cfg["collector_url"] = server.URL
-	cfg["ssl_insecure_skip_verify"] = true
+		if err := pmp.Init(cfg); err != nil {
+			t.Errorf("Error initializing pump %v", err)
+			return
+		}
 
-	if err := pmp.Init(cfg); err != nil {
-		t.Errorf("Error initializing pump %v", err)
-		return
-	}
+		keys := make([]interface{}, 1)
 
-	keys := make([]interface{}, 1)
+		keys[0] = analytics.AnalyticsRecord{OrgID: "1", APIID: "123", Path: "/test-path", Method: "POST", TimeStamp: time.Now()}
 
-	keys[0] = analytics.AnalyticsRecord{OrgID: "1", APIID: "123", Path: "/test-path", Method: "POST", TimeStamp: time.Now()}
+		if errWrite := pmp.WriteData(context.TODO(), keys); errWrite != nil {
+			t.Error("Error writing to splunk pump:", errWrite.Error())
+			return
+		}
 
-	if errWrite := pmp.WriteData(context.TODO(), keys); errWrite != nil {
-		t.Error("Error writing to splunk pump:", errWrite.Error())
-		return
-	}
+		assert.Equal(t, 1, len(handler.responses))
+		assert.Equal(t, 2, handler.reqCount)
 
-	assert.Equal(t, 1, len(handler.responses))
+		response := handler.responses[0]
 
-	response := handler.responses[0]
+		assert.Equal(t, "Success", response.Text)
+		assert.Equal(t, int32(0), response.Code)
+	})
 
-	assert.Equal(t, "Success", response.Text)
-	assert.Equal(t, int32(0), response.Code)
+	t.Run("max_retries=0", func(t *testing.T) {
+		handler := &testHandler{test: t, batched: false, returnErrors: 1}
+		server := httptest.NewUnstartedServer(handler)
+		server.Config.SetKeepAlivesEnabled(false)
+		server.Start()
+
+		defer server.Close()
+
+		pmp := SplunkPump{}
+		cfg := make(map[string]interface{})
+		cfg["collector_token"] = testToken
+		cfg["max_retries"] = 0
+		cfg["collector_url"] = server.URL
+		cfg["ssl_insecure_skip_verify"] = true
+
+		if err := pmp.Init(cfg); err != nil {
+			t.Errorf("Error initializing pump %v", err)
+			return
+		}
+
+		keys := make([]interface{}, 1)
+
+		keys[0] = analytics.AnalyticsRecord{OrgID: "1", APIID: "123", Path: "/test-path", Method: "POST", TimeStamp: time.Now()}
+
+		if errWrite := pmp.WriteData(context.TODO(), keys); errWrite == nil {
+			t.Error("Error expected writing to splunk pump, got nil")
+			return
+		}
+
+		assert.Equal(t, 1, handler.reqCount)
+	})
+
+	t.Run("max_retries=3", func(t *testing.T) {
+		handler := &testHandler{test: t, batched: false, returnErrors: 2}
+		server := httptest.NewUnstartedServer(handler)
+		server.Config.SetKeepAlivesEnabled(false)
+		server.Start()
+
+		defer server.Close()
+
+		pmp := SplunkPump{}
+		cfg := make(map[string]interface{})
+		cfg["collector_token"] = testToken
+		cfg["max_retries"] = 3
+		cfg["collector_url"] = server.URL
+		cfg["ssl_insecure_skip_verify"] = true
+
+		if err := pmp.Init(cfg); err != nil {
+			t.Errorf("Error initializing pump %v", err)
+			return
+		}
+
+		keys := make([]interface{}, 1)
+
+		keys[0] = analytics.AnalyticsRecord{OrgID: "1", APIID: "123", Path: "/test-path", Method: "POST", TimeStamp: time.Now()}
+
+		if errWrite := pmp.WriteData(context.TODO(), keys); errWrite != nil {
+			t.Error("Error writing to splunk pump:", errWrite.Error())
+			return
+		}
+
+		assert.Equal(t, 1, len(handler.responses))
+		assert.Equal(t, 3, handler.reqCount)
+
+		response := handler.responses[0]
+
+		assert.Equal(t, "Success", response.Text)
+		assert.Equal(t, int32(0), response.Code)
+	})
+
 }
 
 func Test_SplunkWriteData(t *testing.T) {
