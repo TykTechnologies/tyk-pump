@@ -37,18 +37,37 @@ type SQSPump struct {
 var SQSPrefix = "sqs-pump"
 var SQSDefaultENV = PUMPS_ENV_PREFIX + "_SQS" + PUMPS_ENV_META_PREFIX
 
-// @PumpConf SQS
+// SQSConf represents the configuration structure for the Tyk Pump SQS (Simple Queue Service) pump.
 type SQSConf struct {
-	EnvPrefix                        string `mapstructure:"meta_env_prefix"`
-	QueueName                        string `mapstructure:"aws_queue_name"`
-	AWSRegion                        string `mapstructure:"aws_region"`
-	AWSSecret                        string `mapstructure:"aws_secret"`
-	AWSKey                           string `mapstructure:"aws_key"`
-	AWSEndpoint                      string `mapstructure:"aws_endpoint"`
-	AWSDelaySeconds                  int32  `mapstructure:"aws_delay_seconds"`
-	AWSMessageGroupID                string `mapstructure:"aws_message_group_id"`
-	AWSSQSBatchLimit                 int    `mapstructure:"aws_sqs_batch_limit"`
-	AWSMessageIDDeduplicationEnabled bool   `mapstructure:"aws_message_id_deduplication_enabled"`
+	// EnvPrefix defines the prefix for environment variables related to this SQS configuration.
+	EnvPrefix string `mapstructure:"meta_env_prefix"`
+
+	// QueueName specifies the name of the AWS Simple Queue Service (SQS) queue for message delivery.
+	QueueName string `mapstructure:"aws_queue_name"`
+
+	// AWSRegion sets the AWS region where the SQS queue is located.
+	AWSRegion string `mapstructure:"aws_region"`
+
+	// AWSSecret is the AWS secret key used for authentication.
+	AWSSecret string `mapstructure:"aws_secret"`
+
+	// AWSKey is the AWS access key ID used for authentication.
+	AWSKey string `mapstructure:"aws_key"`
+
+	// AWSEndpoint is the custom endpoint URL for AWS SQS, if applicable.
+	AWSEndpoint string `mapstructure:"aws_endpoint"`
+
+	// AWSDelaySeconds configures the delay (in seconds) before messages become available for processing.
+	AWSDelaySeconds int32 `mapstructure:"aws_delay_seconds"`
+
+	// AWSMessageGroupID specifies the message group ID for ordered processing within the SQS queue.
+	AWSMessageGroupID string `mapstructure:"aws_message_group_id"`
+
+	// AWSSQSBatchLimit sets the maximum number of messages in a single batch when sending to the SQS queue.
+	AWSSQSBatchLimit int `mapstructure:"aws_sqs_batch_limit"`
+
+	// AWSMessageIDDeduplicationEnabled enables/disables message deduplication based on unique IDs.
+	AWSMessageIDDeduplicationEnabled bool `mapstructure:"aws_message_id_deduplication_enabled"`
 }
 
 func (s *SQSPump) New() Pump {
