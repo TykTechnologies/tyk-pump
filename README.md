@@ -67,6 +67,7 @@ The table below provides details on the fields within each `tyk_analytics` recor
 - [Kafka](#kafka-config)
 - [Stdout](#stdout) (i.e. for use by Datadog logging agent in Kubernetes)
 - [Timestream](#timestream-config)
+- [AWS SQS](#SQS-config)
 
 # Configuration:
 
@@ -1264,6 +1265,76 @@ Enable this Pump to have Tyk Pump create or modify a CSV file to track API Analy
 ```
 TYK_PMP_PUMPS_CSV_TYPE=csv
 TYK_PMP_PUMPS_CSV_META_CSVDIR=./
+```
+
+## SQS Config
+
+#### Authentication & Prerequisite
+
+We must authenticate ourselves by providing credentials to AWS. This pump uses the official AWS GO SDK, so instructions on how to authenticate can be found on [their documentation here](https://aws.github.io/aws-sdk-go-v2/docs/configuring-sdk/#specifying-credentials).
+
+#### Config Fields
+
+`aws_queue_name` - Specifies the name of the AWS Simple Queue Service (SQS) queue where messages will be sent
+
+`aws_message_group_id` - Specifies the name of the AWS Simple Queue Service (SQS) queue where messages will be sent
+
+`aws_sqs_batch_limit` - Sets the maximum number of messages to include in a single batch when sending messages to the SQS queue
+
+`aws_message_id_deduplication_enabled` - Enables or disables the deduplication of messages based on unique message IDs to prevent unintended duplicates in the queu
+
+`aws_delay_seconds` - Configures the delay (in seconds) before messages sent to the SQS queue become available for processing.
+
+When you initialize a Timestream Pump, the SDK uses its default credential chain to find AWS credentials. This default credential chain looks for credentials in the following order:
+
+- Environment variables.
+  - Static Credentials (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_SESSION_TOKEN`)
+  - Web Identity Token (`AWS_WEB_IDENTITY_TOKEN_FILE`)
+- Shared configuration files.
+  - SDK defaults to credentials file under `.aws` folder that is placed in the home folder on your computer.
+- If your application uses an ECS task definition or RunTask API operation, IAM role for tasks.
+- If your application is running on an Amazon EC2 instance, IAM role for Amazon EC2.
+
+If no credentials are provided, SQS Pump won't be able to connect.
+
+###### JSON / Conf File
+
+```json
+    "sqs": {
+      "type": "sqs",
+      "meta": {
+        "log_field_name": "tyk-analytics-record",
+        "format": "json",
+        "aws_queue_name": "access-logs-queue.fifo",
+        "aws_region": "us-east-1",
+        "aws_key": "key",
+        "aws_secret": "secret",
+        "aws_endpoint": "http://aws-endpoint:4566",
+        "aws_message_group_id": "message_group_id",
+        "aws_sqs_batch_limit": 10,
+        "aws_message_id_deduplication_enabled": true,
+        "aws_delay_seconds": 0
+      }
+    },
+```
+
+###### Env Variables
+
+```
+# SQS Pump Configuration
+TYK_PMP_PUMPS_SQS_TYPE=sqs
+TYK_PMP_PUMPS_SQS_META_LOGFIELDNAME=tyk-analytics-record
+TYK_PMP_PUMPS_SQS_META_FORMAT=json
+TYK_PMP_PUMPS_SQS_META_AWSQUEUENAME=access-logs-queue.fifo
+TYK_PMP_PUMPS_SQS_META_AWSREGION=us-east-1
+TYK_PMP_PUMPS_SQS_META_AWSKEY=key
+TYK_PMP_PUMPS_SQS_META_AWSSECRET=secret
+TYK_PMP_PUMPS_SQS_META_AWSENDPOINT=http://aws-endpoint:4566
+TYK_PMP_PUMPS_SQS_META_AWSMESSAGEGROUPID=message_group_id
+TYK_PMP_PUMPS_SQS_META_AWSSQSBATCHLIMIT=10
+TYK_PMP_PUMPS_SQS_META_AWSMESSAGEIDDEDUPLICATIONENABLED=true
+TYK_PMP_PUMPS_SQS_META_AWSDELAYSECONDS=0
+
 ```
 
 # Base Pump Configurations
