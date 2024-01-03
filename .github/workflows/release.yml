@@ -11,6 +11,9 @@
 name: Release
 
 on:
+  # Trigger release every monday at midnight for master CI images
+  schedule:
+    - cron: "0 0 * * 1"  
   pull_request:
   push:
     branches:
