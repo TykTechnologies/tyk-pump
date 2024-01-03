@@ -9,7 +9,6 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	"github.com/aws/aws-sdk-go-v2/service/sqs/types"
-	"github.com/kr/pretty"
 	"github.com/mitchellh/mapstructure"
 	"github.com/oklog/ulid/v2"
 	"github.com/sirupsen/logrus"
@@ -155,7 +154,7 @@ func (s *SQSPump) WriteData(ctx context.Context, data []interface{}) error {
 }
 
 func (s *SQSPump) write(c context.Context, messages []types.SendMessageBatchRequestEntry) error {
-	pretty.Print(messages)
+	log.Debug(messages)
 	for i := 0; i < len(messages); i += s.SQSConf.AWSSQSBatchLimit {
 		end := i + s.SQSConf.AWSSQSBatchLimit
 
