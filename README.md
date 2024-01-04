@@ -587,7 +587,7 @@ ssl_insecure_skip_verify - Set this field to true if you use self signed certifi
 
 group_id - This is the “zone” that this instance inhabits, e.g. the DC it lives in. It must be unique to each slave cluster / DC.
 
-call_timeout - This is the timeout (in milliseconds) for RPC calls.
+call_timeout - This is the timeout (in milliseconds) for RPC calls. Default is 10.
 
 rpc_pool_size - This is maximum number of connections to MDCB. Default is 5.
 
@@ -602,9 +602,9 @@ TYK_PMP_PUMPS_HYBRID_META_AGGREGATED=false
 TYK_PMP_PUMPS_HYBRID_META_USESSL=false
 TYK_PMP_PUMPS_HYBRID_META_SSLINSECURESKIPVERIFY=false
 TYK_PMP_PUMPS_HYBRID_META_GROUPID=""
-TYK_PMP_PUMPS_HYBRID_META_CALLTIMEOUT=30
+TYK_PMP_PUMPS_HYBRID_META_CALLTIMEOUT=10
 TYK_PMP_PUMPS_HYBRID_META_PINGTIMEOUT=60
-TYK_PMP_PUMPS_HYBRID_META_RPCPOOLSIZE=30
+TYK_PMP_PUMPS_HYBRID_META_RPCPOOLSIZE=5
 ```
 
 ## Prometheus
