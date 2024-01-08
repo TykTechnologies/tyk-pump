@@ -2,12 +2,16 @@ package storage
 
 import (
 	"context"
-	"crypto/tls"
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/go-redis/redis/v8"
+	"github.com/TykTechnologies/storage/temporal/connector"
+	keyvalue "github.com/TykTechnologies/storage/temporal/keyvalue"
+	"github.com/TykTechnologies/storage/temporal/list"
+	"github.com/TykTechnologies/storage/temporal/model"
+
 	"github.com/sirupsen/logrus"
 
 	"github.com/kelseyhightower/envconfig"
@@ -16,10 +20,15 @@ import (
 
 // ------------------- REDIS CLUSTER STORAGE MANAGER -------------------------------
 
-var redisClusterSingleton redis.UniversalClient
+var redisClusterSingleton *redisManager
 var redisLogPrefix = "redis"
 var ENV_REDIS_PREFIX = "TYK_PMP_REDIS"
 var ctx = context.Background()
+
+type redisManager struct {
+	list list.List
+	kv   keyvalue.KeyValue
+}
 
 type EnvMapString map[string]string
 
@@ -78,13 +87,13 @@ type RedisStorageConfig struct {
 
 // RedisClusterStorageManager is a storage manager that uses the redis database.
 type RedisClusterStorageManager struct {
-	db        redis.UniversalClient
+	db        *redisManager
 	KeyPrefix string
 	HashKeys  bool
 	Config    RedisStorageConfig
 }
 
-func NewRedisClusterPool(forceReconnect bool, config RedisStorageConfig) redis.UniversalClient {
+func NewRedisClusterPool(forceReconnect bool, config RedisStorageConfig) *redisManager {
 	if !forceReconnect {
 		if redisClusterSingleton != nil {
 			log.WithFields(logrus.Fields{
@@ -94,7 +103,7 @@ func NewRedisClusterPool(forceReconnect bool, config RedisStorageConfig) redis.U
 		}
 	} else {
 		if redisClusterSingleton != nil {
-			redisClusterSingleton.Close()
+			// redisClusterSingleton.Close()
 		}
 	}
 
@@ -107,49 +116,52 @@ func NewRedisClusterPool(forceReconnect bool, config RedisStorageConfig) redis.U
 		maxActive = config.MaxActive
 	}
 
-	timeout := 5 * time.Second
+	timeout := 5
 
 	if config.Timeout > 0 {
-		timeout = time.Duration(config.Timeout) * time.Second
+		timeout = config.Timeout
 	}
 
-	var tlsConfig *tls.Config
-	if config.RedisUseSSL {
-		tlsConfig = &tls.Config{
-			InsecureSkipVerify: config.RedisSSLInsecureSkipVerify,
-		}
-	}
-
-	var client redis.UniversalClient
-	opts := &redis.UniversalOptions{
+	opts := &model.RedisOptions{
 		MasterName:       config.MasterName,
 		SentinelPassword: config.SentinelPassword,
 		Addrs:            getRedisAddrs(config),
-		DB:               config.Database,
+		Database:         config.Database,
 		Username:         config.Username,
 		Password:         config.Password,
-		PoolSize:         maxActive,
-		IdleTimeout:      240 * time.Second,
-		ReadTimeout:      timeout,
-		WriteTimeout:     timeout,
-		DialTimeout:      timeout,
-		TLSConfig:        tlsConfig,
+		MaxActive:        maxActive,
+		Timeout:          timeout,
+		EnableCluster:    config.EnableCluster,
 	}
 
-	if opts.MasterName != "" {
-		log.Info("--> [REDIS] Creating sentinel-backed failover client")
-		client = redis.NewFailoverClient(opts.Failover())
-	} else if config.EnableCluster {
-		log.Info("--> [REDIS] Creating cluster client")
-		client = redis.NewClusterClient(opts.Cluster())
-	} else {
-		log.Info("--> [REDIS] Creating single-node client")
-		client = redis.NewClient(opts.Simple())
+	tlsOptions := &model.TLS{
+		Enable:             config.RedisUseSSL,
+		InsecureSkipVerify: config.RedisSSLInsecureSkipVerify,
 	}
 
-	redisClusterSingleton = client
+	conn, err := connector.NewConnector(model.RedisV9Type, model.WithRedisConfig(opts), model.WithTLS(tlsOptions))
+	if err != nil {
+		log.WithFields(logrus.Fields{"prefix": redisLogPrefix}).Error(err)
+		return nil
+	}
 
-	return client
+	kv, err := keyvalue.NewKeyValue(conn)
+	if err != nil {
+		log.WithFields(logrus.Fields{"prefix": redisLogPrefix}).Error(err)
+		return nil
+	}
+
+	l, err := list.NewList(conn)
+	if err != nil {
+		log.WithFields(logrus.Fields{"prefix": redisLogPrefix}).Error(err)
+		return nil
+	}
+
+	redisClusterSingleton = &redisManager{}
+	redisClusterSingleton.kv = kv
+	redisClusterSingleton.list = l
+
+	return redisClusterSingleton
 }
 
 func getRedisAddrs(config RedisStorageConfig) (addrs []string) {
@@ -252,29 +264,27 @@ func (r *RedisClusterStorageManager) GetAndDeleteSet(keyName string, chunkSize i
 		"prefix": redisLogPrefix,
 	}).Debug("Fixed keyname is: ", fixedKey)
 
-	var lrange *redis.StringSliceCmd
-	_, err := r.db.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
-		lrange = pipe.LRange(ctx, fixedKey, 0, chunkSize-1)
-
-		if chunkSize == 0 {
-			pipe.Del(ctx, fixedKey)
-		} else {
-			pipe.LTrim(ctx, fixedKey, chunkSize, -1)
-
-			// extend expiry after successful LTRIM
-			pipe.Expire(ctx, fixedKey, expire)
-		}
-		return nil
-	})
-
+	vals, err := r.db.list.Pop(ctx, fixedKey, chunkSize-1)
 	if err != nil {
+		fmt.Println("FAILED 1")
 		log.WithFields(logrus.Fields{
 			"prefix": redisLogPrefix,
 		}).Error("Multi command failed: ", err)
 		r.Connect()
+		return nil
 	}
 
-	vals := lrange.Val()
+	fmt.Println("vals:", vals)
+
+	err = r.db.kv.Expire(ctx, fixedKey, expire)
+	if err != nil {
+		fmt.Println("FAILED 2")
+		log.WithFields(logrus.Fields{
+			"prefix": redisLogPrefix,
+		}).Error("Multi command failed: ", err)
+		r.Connect()
+		return nil
+	}
 
 	result := make([]interface{}, len(vals))
 	for i, v := range vals {
@@ -294,7 +304,7 @@ func (r *RedisClusterStorageManager) SetKey(keyName, session string, timeout int
 	log.Debug("[STORE] Setting key: ", r.fixKey(keyName))
 
 	r.ensureConnection()
-	err := r.db.Set(ctx, r.fixKey(keyName), session, 0).Err()
+	err := r.db.kv.Set(ctx, r.fixKey(keyName), session, 0)
 	if timeout > 0 {
 		if err := r.SetExp(keyName, timeout); err != nil {
 			return err
@@ -308,7 +318,7 @@ func (r *RedisClusterStorageManager) SetKey(keyName, session string, timeout int
 }
 
 func (r *RedisClusterStorageManager) SetExp(keyName string, timeout int64) error {
-	err := r.db.Expire(ctx, r.fixKey(keyName), time.Duration(timeout)*time.Second).Err()
+	err := r.db.kv.Expire(ctx, r.fixKey(keyName), time.Duration(timeout)*time.Second)
 	if err != nil {
 		log.Error("Could not EXPIRE key: ", err)
 	}
