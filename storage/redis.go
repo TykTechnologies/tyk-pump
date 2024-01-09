@@ -27,6 +27,7 @@ var ctx = context.Background()
 type redisManager struct {
 	list list.List
 	kv   keyvalue.KeyValue
+	conn model.Connector
 }
 
 type EnvMapString map[string]string
@@ -92,7 +93,7 @@ type RedisClusterStorageManager struct {
 	Config    RedisStorageConfig
 }
 
-func NewRedisClusterPool(forceReconnect bool, config RedisStorageConfig) *redisManager {
+func NewRedisClusterPool(forceReconnect bool, config *RedisStorageConfig) *redisManager {
 	if !forceReconnect {
 		if redisClusterSingleton != nil {
 			log.WithFields(logrus.Fields{
@@ -102,7 +103,14 @@ func NewRedisClusterPool(forceReconnect bool, config RedisStorageConfig) *redisM
 		}
 	} else {
 		if redisClusterSingleton != nil {
-			// redisClusterSingleton.Close()
+			err := redisClusterSingleton.conn.Disconnect(ctx)
+			if err != nil {
+				log.WithFields(logrus.Fields{
+					"prefix": redisLogPrefix,
+				}).Error("Error disconnecting Redis: " + err.Error())
+			}
+
+			return redisClusterSingleton
 		}
 	}
 
@@ -124,7 +132,7 @@ func NewRedisClusterPool(forceReconnect bool, config RedisStorageConfig) *redisM
 	opts := &model.RedisOptions{
 		MasterName:       config.MasterName,
 		SentinelPassword: config.SentinelPassword,
-		Addrs:            getRedisAddrs(config),
+		Addrs:            getRedisAddrs(*config),
 		Database:         config.Database,
 		Username:         config.Username,
 		Password:         config.Password,
