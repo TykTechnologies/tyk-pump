@@ -221,7 +221,7 @@ func (r *RedisClusterStorageManager) Connect() bool {
 		log.WithFields(logrus.Fields{
 			"prefix": redisLogPrefix,
 		}).Debug("Connecting to redis cluster")
-		r.db = NewRedisClusterPool(false, r.Config)
+		r.db = NewRedisClusterPool(false, &r.Config)
 		return true
 	}
 
