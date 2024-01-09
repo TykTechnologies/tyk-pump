@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"testing"
 	"time"
-
-	"github.com/go-redis/redis/v8"
 )
 
 func TestRedisAddressConfiguration(t *testing.T) {
@@ -43,58 +41,36 @@ func TestRedisAddressConfiguration(t *testing.T) {
 		}
 	})
 
-	t.Run("Default addresses", func(t *testing.T) {
-		opts := &redis.UniversalOptions{}
-		simpleOpts := opts.Simple()
-
-		if simpleOpts.Addr != "127.0.0.1:6379" {
-			t.Fatal("Wrong default single node address")
-		}
-
-		opts.Addrs = []string{}
-		clusterOpts := opts.Cluster()
-
-		if clusterOpts.Addrs[0] != "127.0.0.1:6379" || len(clusterOpts.Addrs) != 1 {
-			t.Fatal("Wrong default cluster mode address")
-		}
-
-		opts.Addrs = []string{}
-		failoverOpts := opts.Failover()
-
-		if failoverOpts.SentinelAddrs[0] != "127.0.0.1:26379" || len(failoverOpts.SentinelAddrs) != 1 {
-			t.Fatal("Wrong default sentinel mode address")
-		}
-	})
 }
 
 var testData = []struct {
 	in    []string
 	chunk int64
 }{
-	// {in: nil, chunk: int64(0)},
-	// {in: []string{"one"}, chunk: int64(0)},
-	// {in: []string{"one", "two"}, chunk: int64(0)},
-	// {in: []string{"one", "two", "three"}, chunk: int64(0)},
-	// {in: []string{"one", "two", "three", "four"}, chunk: int64(0)},
-	// {in: []string{"one", "two", "three", "four", "five"}, chunk: int64(0)},
-	// {in: nil, chunk: int64(1)},
-	// {in: []string{"one"}, chunk: int64(1)},
-	// {in: []string{"one", "two"}, chunk: int64(1)},
-	// {in: []string{"one", "two", "three"}, chunk: int64(1)},
-	// {in: []string{"one", "two", "three", "four"}, chunk: int64(1)},
-	// {in: []string{"one", "two", "three", "four", "five"}, chunk: int64(1)},
-	// {in: nil, chunk: int64(2)},
-	// {in: []string{"one"}, chunk: int64(2)},
+	{in: nil, chunk: int64(0)},
+	{in: []string{"one"}, chunk: int64(0)},
+	{in: []string{"one", "two"}, chunk: int64(0)},
+	{in: []string{"one", "two", "three"}, chunk: int64(0)},
+	{in: []string{"one", "two", "three", "four"}, chunk: int64(0)},
+	{in: []string{"one", "two", "three", "four", "five"}, chunk: int64(0)},
+	{in: nil, chunk: int64(1)},
+	{in: []string{"one"}, chunk: int64(1)},
+	{in: []string{"one", "two"}, chunk: int64(1)},
+	{in: []string{"one", "two", "three"}, chunk: int64(1)},
+	{in: []string{"one", "two", "three", "four"}, chunk: int64(1)},
+	{in: []string{"one", "two", "three", "four", "five"}, chunk: int64(1)},
+	{in: nil, chunk: int64(2)},
+	{in: []string{"one"}, chunk: int64(2)},
 	{in: []string{"one", "two"}, chunk: int64(2)},
-	// {in: []string{"one", "two", "three"}, chunk: int64(2)},
-	// {in: []string{"one", "two", "three", "four"}, chunk: int64(2)},
-	// {in: []string{"one", "two", "three", "four", "five"}, chunk: int64(2)},
-	// {in: nil, chunk: int64(3)},
-	// {in: []string{"one"}, chunk: int64(3)},
-	// {in: []string{"one", "two"}, chunk: int64(3)},
-	// {in: []string{"one", "two", "three"}, chunk: int64(3)},
-	// {in: []string{"one", "two", "three", "four"}, chunk: int64(3)},
-	// {in: []string{"one", "two", "three", "four", "five"}, chunk: int64(3)},
+	{in: []string{"one", "two", "three"}, chunk: int64(2)},
+	{in: []string{"one", "two", "three", "four"}, chunk: int64(2)},
+	{in: []string{"one", "two", "three", "four", "five"}, chunk: int64(2)},
+	{in: nil, chunk: int64(3)},
+	{in: []string{"one"}, chunk: int64(3)},
+	{in: []string{"one", "two"}, chunk: int64(3)},
+	{in: []string{"one", "two", "three"}, chunk: int64(3)},
+	{in: []string{"one", "two", "three", "four"}, chunk: int64(3)},
+	{in: []string{"one", "two", "three", "four", "five"}, chunk: int64(3)},
 }
 
 func TestRedisClusterStorageManager_GetAndDeleteSet(t *testing.T) {
@@ -102,7 +78,12 @@ func TestRedisClusterStorageManager_GetAndDeleteSet(t *testing.T) {
 	conf["host"] = "localhost"
 	conf["port"] = 6379
 
-	r := RedisClusterStorageManager{}
+	r := RedisClusterStorageManager{
+		Config: RedisStorageConfig{
+			Host: "localhost",
+			Port: 6379,
+		},
+	}
 	if err := r.Init(conf); err != nil {
 		t.Fatal("unable to connect", err.Error())
 	}
@@ -144,13 +125,15 @@ func TestRedisClusterStorageManager_GetAndDeleteSet(t *testing.T) {
 
 			count := 0
 			for i := 0; i < iterations; i++ {
-				res := r.GetAndDeleteSet(mockKeyName, tt.chunk, 60*time.Second)
+				res, err := r.GetAndDeleteSet(mockKeyName, tt.chunk, 60*time.Second)
+				if err != nil {
+					t.Fatal(err)
+				}
 				count += len(res)
 				t.Logf("---> %d: %v", i, res)
 			}
 
 			if count != len(tt.in) {
-				fmt.Println("count:", count, "(tt.in):", tt.in)
 				t.Fatal()
 			}
 		})

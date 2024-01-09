@@ -2,7 +2,6 @@ package storage
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -241,7 +240,7 @@ func (r *RedisClusterStorageManager) fixKey(keyName string) string {
 	return setKeyName
 }
 
-func (r *RedisClusterStorageManager) GetAndDeleteSet(keyName string, chunkSize int64, expire time.Duration) []interface{} {
+func (r *RedisClusterStorageManager) GetAndDeleteSet(keyName string, chunkSize int64, expire time.Duration) ([]interface{}, error) {
 	log.WithFields(logrus.Fields{
 		"prefix": redisLogPrefix,
 	}).Debug("Getting raw key set: ", keyName)
@@ -264,38 +263,23 @@ func (r *RedisClusterStorageManager) GetAndDeleteSet(keyName string, chunkSize i
 		"prefix": redisLogPrefix,
 	}).Debug("Fixed keyname is: ", fixedKey)
 
-	vals, err := r.db.list.Pop(ctx, fixedKey, chunkSize-1)
+	result, err := r.db.list.Pop(ctx, fixedKey, chunkSize)
 	if err != nil {
-		fmt.Println("FAILED 1")
-		log.WithFields(logrus.Fields{
-			"prefix": redisLogPrefix,
-		}).Error("Multi command failed: ", err)
-		r.Connect()
-		return nil
+		return nil, err
 	}
-
-	fmt.Println("vals:", vals)
 
 	err = r.db.kv.Expire(ctx, fixedKey, expire)
 	if err != nil {
-		fmt.Println("FAILED 2")
-		log.WithFields(logrus.Fields{
-			"prefix": redisLogPrefix,
-		}).Error("Multi command failed: ", err)
-		r.Connect()
-		return nil
+		return nil, err
 	}
 
-	result := make([]interface{}, len(vals))
-	for i, v := range vals {
-		result[i] = v
+	intResult := []interface{}{}
+	for _, v := range result {
+		intResult = append(intResult, v)
+
 	}
 
-	log.WithFields(logrus.Fields{
-		"prefix": redisLogPrefix,
-	}).Debug("Unpacked vals: ", len(result))
-
-	return result
+	return intResult, nil
 }
 
 // SetKey will create (or update) a key value in the store
