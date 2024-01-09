@@ -19,12 +19,14 @@ import (
 
 // ------------------- REDIS CLUSTER STORAGE MANAGER -------------------------------
 
-var redisClusterSingleton *redisManager
-var redisLogPrefix = "redis"
-var ENV_REDIS_PREFIX = "TYK_PMP_REDIS"
-var ctx = context.Background()
+var (
+	redisClusterSingleton *RedisManager
+	redisLogPrefix        = "redis"
+	ENV_REDIS_PREFIX      = "TYK_PMP_REDIS"
+	ctx                   = context.Background()
+)
 
-type redisManager struct {
+type RedisManager struct {
 	list list.List
 	kv   keyvalue.KeyValue
 	conn model.Connector
@@ -87,13 +89,13 @@ type RedisStorageConfig struct {
 
 // RedisClusterStorageManager is a storage manager that uses the redis database.
 type RedisClusterStorageManager struct {
-	db        *redisManager
+	db        *RedisManager
 	KeyPrefix string
 	HashKeys  bool
 	Config    RedisStorageConfig
 }
 
-func NewRedisClusterPool(forceReconnect bool, config *RedisStorageConfig) *redisManager {
+func NewRedisClusterPool(forceReconnect bool, config *RedisStorageConfig) *RedisManager {
 	if !forceReconnect {
 		if redisClusterSingleton != nil {
 			log.WithFields(logrus.Fields{
@@ -164,7 +166,7 @@ func NewRedisClusterPool(forceReconnect bool, config *RedisStorageConfig) *redis
 		return nil
 	}
 
-	redisClusterSingleton = &redisManager{}
+	redisClusterSingleton = &RedisManager{}
 	redisClusterSingleton.kv = kv
 	redisClusterSingleton.list = l
 
@@ -284,7 +286,6 @@ func (r *RedisClusterStorageManager) GetAndDeleteSet(keyName string, chunkSize i
 	intResult := []interface{}{}
 	for _, v := range result {
 		intResult = append(intResult, v)
-
 	}
 
 	return intResult, nil
