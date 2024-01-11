@@ -226,7 +226,7 @@ func TestWriteDataWithFilters(t *testing.T) {
 	}
 
 	for _, tc := range tcs {
-		tc := tc // Create a local copy of tc for use in the closure
+		tc := tc
 		t.Run(tc.testName, func(t *testing.T) {
 			t.Parallel()
 			assert.Equal(t, tc.expectedCounterRequest, tc.mockedPump.CounterRequest)
