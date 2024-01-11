@@ -25,7 +25,7 @@ linters:
     - govet
     - gosec
     - ineffassign
-#    - lll
+    #    - lll
     - misspell
     - revive
     - staticcheck
@@ -65,7 +65,7 @@ linters-settings:
     extra-rules: true
 
     # Select the Go version to target.
-    lang-version: "1.19"
+    lang-version: "1.21"
 
   goimports:
     auto-fix: false
@@ -79,7 +79,7 @@ linters-settings:
     enable-all: true
 
   lll:
-    auto-fix: true  
+    auto-fix: true
     # Max line length; lines longer will be reported
     # '\t' is counted as 1 character by default, and can be changed with the 'tab-width' option
     line-length: 120
@@ -102,7 +102,7 @@ linters-settings:
     # https://staticcheck.io/docs/options#checks
     checks: ["all"]
     # Select the Go version to target.
-    go: "1.19"
+    go: "1.21"
 
   whitespace:
     auto-fix: true
