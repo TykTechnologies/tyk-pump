@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-
 	"os"
 	"os/signal"
 	"sync"
@@ -28,9 +27,11 @@ func (p *MockedPump) GetName() string {
 func (p *MockedPump) New() pumps.Pump {
 	return &MockedPump{}
 }
+
 func (p *MockedPump) Init(config interface{}) error {
 	return nil
 }
+
 func (p *MockedPump) WriteData(ctx context.Context, keys []interface{}) error {
 	for range keys {
 		p.CounterRequest++
@@ -44,7 +45,6 @@ func (p *MockedPump) Shutdown() error {
 }
 
 func TestFilterData(t *testing.T) {
-
 	mockedPump := &MockedPump{}
 
 	mockedPump.SetFilters(
@@ -62,12 +62,10 @@ func TestFilterData(t *testing.T) {
 	if len(keys) == len(filteredKeys) {
 		t.Fatal("keys and filtered keys have the  same lenght")
 	}
-
 }
 
 // TestTrimData check the correct functionality of max_record_size
 func TestTrimData(t *testing.T) {
-
 	loremIpsum := "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua"
 
 	tcs := []struct {
@@ -233,7 +231,6 @@ func TestWriteDataWithFilters(t *testing.T) {
 			assert.Len(t, keys, 6)
 		})
 	}
-
 }
 
 func TestShutdown(t *testing.T) {
