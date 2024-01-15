@@ -25,12 +25,10 @@ linters:
     - govet
     - gosec
     - ineffassign
-    #    - lll
     - misspell
     - revive
     - staticcheck
     - whitespace
-#    - wsl
 
 linters-settings:
   auto-fix: true
