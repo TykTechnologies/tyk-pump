@@ -49,7 +49,7 @@ module "tyk-pump" {
     { branch    = "master",
       reviewers = "1",
       convos    = "false",
-    required_tests = ["1.19-bullseye", "Go 1.19 tests", "api-tests (sha256, mongo44)", "api-tests (sha256, postgres15)", "api-tests (murmur64, mongo44)", "api-tests (murmur64, postgres15)"] },
+    required_tests = ["1.21-bullseye", "Go 1.21 tests", "api-tests (sha256, mongo44)", "api-tests (sha256, postgres15)", "api-tests (murmur64, mongo44)", "api-tests (murmur64, postgres15)"] },
     { branch        = "release-1.8",
       reviewers     = "0",
       convos        = "false",

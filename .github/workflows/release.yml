@@ -37,9 +37,9 @@ jobs:
       fail-fast: false
       matrix:
         golang_cross:
-          - 1.19-bullseye 
+          - 1.21-bullseye 
         include: 
-          - golang_cross: 1.19-bullseye
+          - golang_cross: 1.21-bullseye
             goreleaser: 'ci/goreleaser/goreleaser.yml'
             cgo:  0  
             rpmvers: 'el/7 el/8 el/9 amazon/2 amazon/2023'
@@ -124,13 +124,13 @@ jobs:
 
       - uses: aws-actions/amazon-ecr-login@v2
         id: ecr
-        if: ${{ matrix.golang_cross == '1.19-bullseye' }}
+        if: ${{ matrix.golang_cross == '1.21-bullseye' }}
         with:
           mask-password: 'true'
 
       - name: Docker metadata for CI
         id: metadata
-        if: ${{ matrix.golang_cross == '1.19-bullseye' }}
+        if: ${{ matrix.golang_cross == '1.21-bullseye' }}
         uses: docker/metadata-action@v5
         with:
           images: ${{ steps.ecr.outputs.registry }}/tyk-pump
@@ -144,7 +144,7 @@ jobs:
             type=semver,pattern=v{{version}},prefix=v
 
       - name: CI push
-        if: ${{ matrix.golang_cross == '1.19-bullseye' }}
+        if: ${{ matrix.golang_cross == '1.21-bullseye' }}
         shell: bash
         env:
           t: ${{ steps.metadata.outputs.tags }}
@@ -160,7 +160,7 @@ jobs:
           done
 
       - uses: actions/upload-artifact@v3
-        if: ${{ matrix.golang_cross == '1.19-bullseye' }}
+        if: ${{ matrix.golang_cross == '1.21-bullseye' }}
         with:
           name: deb
           retention-days: 1
@@ -169,7 +169,7 @@ jobs:
             !dist/*PAYG*.deb
 
       - uses: actions/upload-artifact@v3
-        if: ${{ matrix.golang_cross == '1.19-bullseye' }}
+        if: ${{ matrix.golang_cross == '1.21-bullseye' }}
         with:
           name: rpm
           retention-days: 1
