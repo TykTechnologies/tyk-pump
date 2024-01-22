@@ -257,7 +257,7 @@ func (rp *ResurfacePump) writeData() {
 	}
 }
 
-func (rp *ResurfacePump) WriteData(ctx context.Context, data []interface{}) error {
+func (rp *ResurfacePump) WriteData(_ context.Context, data []interface{}) error {
 	rp.log.Debug("Writing ", len(data), " records")
 	if rp.enabled {
 		rp.data <- data
