@@ -169,6 +169,7 @@ func NewRedisClusterPool(forceReconnect bool, config *RedisStorageConfig) *Redis
 	redisClusterSingleton = &RedisManager{}
 	redisClusterSingleton.kv = kv
 	redisClusterSingleton.list = l
+	redisClusterSingleton.conn = conn
 
 	return redisClusterSingleton
 }

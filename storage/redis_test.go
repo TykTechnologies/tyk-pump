@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"testing"
 	"time"
+
+	"github.com/TykTechnologies/storage/temporal/model"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestRedisAddressConfiguration(t *testing.T) {
@@ -136,6 +139,36 @@ func TestRedisClusterStorageManager_GetAndDeleteSet(t *testing.T) {
 			if count != len(tt.in) {
 				t.Fatal()
 			}
+		})
+	}
+}
+
+func TestNewRedisClusterPool(t *testing.T) {
+	tcs := []struct {
+		name string
+		cfg  *RedisStorageConfig
+	}{
+		{
+			name: "connect to localhost:6379",
+			cfg: &RedisStorageConfig{
+				Host: "localhost",
+				Port: 6379,
+			},
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			pool := NewRedisClusterPool(false, tc.cfg)
+			if pool == nil {
+				t.Fatal("pool is nil")
+			}
+
+			assert.NotNil(t, pool.conn)
+			assert.NotNil(t, pool.kv)
+			assert.NotNil(t, pool.list)
+			assert.Equal(t, pool.conn.Type(), model.RedisV9Type)
+			assert.NoError(t, pool.conn.Ping(context.Background()))
 		})
 	}
 }
