@@ -22,7 +22,7 @@ import (
 var (
 	redisClusterSingleton *RedisManager
 	redisLogPrefix        = "redis"
-	ENV_REDIS_PREFIX      = "TYK_PMP_REDIS"
+	envRedisPrefix        = "TYK_PMP_REDIS"
 	ctx                   = context.Background()
 )
 
@@ -204,7 +204,7 @@ func (r *RedisClusterStorageManager) Init(config interface{}) error {
 		}).Fatal("Failed to decode configuration: ", err)
 	}
 
-	overrideErr := envconfig.Process(ENV_REDIS_PREFIX, &r.Config)
+	overrideErr := envconfig.Process(envRedisPrefix, &r.Config)
 	if overrideErr != nil {
 		log.Error("Failed to process environment variables for redis: ", overrideErr)
 	}
