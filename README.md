@@ -586,7 +586,7 @@ ssl_insecure_skip_verify - Set this field to true if you use self signed certifi
 
 group_id - This is the “zone” that this instance inhabits, e.g. the DC it lives in. It must be unique to each slave cluster / DC.
 
-call_timeout - This is the timeout (in milliseconds) for RPC calls.
+call_timeout - This is the timeout (in milliseconds) for RPC calls. Default is 10.
 
 rpc_pool_size - This is maximum number of connections to MDCB. Default is 5.
 
@@ -601,9 +601,9 @@ TYK_PMP_PUMPS_HYBRID_META_AGGREGATED=false
 TYK_PMP_PUMPS_HYBRID_META_USESSL=false
 TYK_PMP_PUMPS_HYBRID_META_SSLINSECURESKIPVERIFY=false
 TYK_PMP_PUMPS_HYBRID_META_GROUPID=""
-TYK_PMP_PUMPS_HYBRID_META_CALLTIMEOUT=30
+TYK_PMP_PUMPS_HYBRID_META_CALLTIMEOUT=10
 TYK_PMP_PUMPS_HYBRID_META_PINGTIMEOUT=60
-TYK_PMP_PUMPS_HYBRID_META_RPCPOOLSIZE=30
+TYK_PMP_PUMPS_HYBRID_META_RPCPOOLSIZE=5
 ```
 
 ## Prometheus
@@ -775,6 +775,7 @@ Setting up Splunk with a _HTTP Event Collector_
 - `ignore_tag_prefix_list`: (optional) Choose which tags to be ignored by the Splunk Pump. Keep in mind that the tag name and value are hyphenated. Type: Type: String Array `[] string`. Default value is `[]`
 - `enable_batch`: If this is set to `true`, pump is going to send the analytics records in batch to Splunk. Type: Boolean. Default value is `false`.
 - `max_content_length`: Max content length in bytes to be sent in batch requests. It should match the `max_content_length` configured in Splunk. If the purged analytics records size don't reach the amount of bytes, they're send anyways in each `purge_loop`. Type: Integer. Default value is 838860800 (~ 800 MB), the same default value as Splunk config.
+- `max_retries`: Max number of retries if failed to send requests to splunk HEC. Default value is `0` (no retries after failure). Connections, network, timeouts, temporary, too many requests and internal server errors are all considered retryable.
 
 ###### JSON / Conf File
 
@@ -791,6 +792,7 @@ Setting up Splunk with a _HTTP Event Collector_
         "obfuscate_api_keys": true,
         "obfuscate_api_keys_length": 10,
         "enable_batch":true,
+        "max_retries": 2,
         "fields": [
           "method",
           "host",

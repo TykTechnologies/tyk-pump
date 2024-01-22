@@ -204,6 +204,7 @@ func TestSqlGraphAggregatePump_WriteData(t *testing.T) {
 		hits      int
 		success   int
 		error     int
+		apiID     string
 	}
 
 	testCases := []struct {
@@ -215,12 +216,19 @@ func TestSqlGraphAggregatePump_WriteData(t *testing.T) {
 			name: "default",
 			recordGenerator: func() []interface{} {
 				records := make([]interface{}, 3)
+				stats := analytics.GraphQLStats{
+					IsGraphQL: true,
+					Types: map[string][]string{
+						"Characters": {"info"},
+						"Info":       {"count"},
+					},
+					RootFields:    []string{"characters"},
+					HasErrors:     false,
+					OperationType: analytics.OperationQuery,
+				}
 				for i := range records {
 					record := sampleRecord
-					query := `{"query":"query{\n  characters(filter: {\n    \n  }){\n    info{\n      count\n    }\n  }\n}"}`
-					response := `{"data":{"characters":{"info":{"count":758}}}}`
-					record.RawRequest = base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf(requestTemplate, len(query), query)))
-					record.RawResponse = base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf(responseTemplate, len(response), response)))
+					record.GraphQLStats = stats
 					records[i] = record
 				}
 				return records
@@ -233,6 +241,7 @@ func TestSqlGraphAggregatePump_WriteData(t *testing.T) {
 					hits:      3,
 					error:     0,
 					success:   3,
+					apiID:     "test-api",
 				},
 				{
 					orgID:     "test-org",
@@ -241,6 +250,7 @@ func TestSqlGraphAggregatePump_WriteData(t *testing.T) {
 					hits:      3,
 					error:     0,
 					success:   3,
+					apiID:     "test-api",
 				},
 				{
 					orgID:     "test-org",
@@ -249,6 +259,7 @@ func TestSqlGraphAggregatePump_WriteData(t *testing.T) {
 					hits:      3,
 					error:     0,
 					success:   3,
+					apiID:     "test-api",
 				},
 				{
 					orgID:     "test-org",
@@ -257,6 +268,7 @@ func TestSqlGraphAggregatePump_WriteData(t *testing.T) {
 					hits:      3,
 					error:     0,
 					success:   3,
+					apiID:     "test-api",
 				},
 				{
 					orgID:     "test-org",
@@ -265,6 +277,7 @@ func TestSqlGraphAggregatePump_WriteData(t *testing.T) {
 					hits:      3,
 					error:     0,
 					success:   3,
+					apiID:     "test-api",
 				},
 				{
 					orgID:     "test-org",
@@ -273,21 +286,118 @@ func TestSqlGraphAggregatePump_WriteData(t *testing.T) {
 					hits:      3,
 					error:     0,
 					success:   3,
+					apiID:     "test-api",
+				},
+			},
+		},
+		{
+			name: "default with different api ID",
+			recordGenerator: func() []interface{} {
+				records := make([]interface{}, 3)
+				stats := analytics.GraphQLStats{
+					IsGraphQL: true,
+					Types: map[string][]string{
+						"Characters": {"info"},
+						"Info":       {"count"},
+					},
+					RootFields:    []string{"characters"},
+					HasErrors:     false,
+					OperationType: analytics.OperationQuery,
+				}
+				for i := range records {
+					record := sampleRecord
+					record.GraphQLStats = stats
+					if i == 1 {
+						record.APIID = "second-api"
+					}
+					records[i] = record
+				}
+				return records
+			},
+			expectedResults: []expectedResponseCheck{
+				{
+					orgID:     "test-org",
+					dimension: "types",
+					name:      "Characters",
+					hits:      1,
+					error:     0,
+					success:   1,
+					apiID:     "second-api",
+				},
+				{
+					orgID:     "test-org",
+					dimension: "types",
+					name:      "Characters",
+					hits:      2,
+					error:     0,
+					success:   2,
+					apiID:     "test-api",
+				},
+				{
+					orgID:     "test-org",
+					dimension: "types",
+					name:      "Info",
+					hits:      2,
+					error:     0,
+					success:   2,
+					apiID:     "test-api",
+				},
+				{
+					orgID:     "test-org",
+					dimension: "fields",
+					name:      "Characters_info",
+					hits:      2,
+					error:     0,
+					success:   2,
+					apiID:     "test-api",
+				},
+				{
+					orgID:     "test-org",
+					dimension: "fields",
+					name:      "Info_count",
+					hits:      2,
+					error:     0,
+					success:   2,
+					apiID:     "test-api",
+				},
+				{
+					orgID:     "test-org",
+					dimension: "rootfields",
+					name:      "characters",
+					hits:      2,
+					error:     0,
+					success:   2,
+					apiID:     "test-api",
+				},
+				{
+					orgID:     "test-org",
+					dimension: "operation",
+					name:      "Query",
+					hits:      2,
+					error:     0,
+					success:   2,
+					apiID:     "test-api",
 				},
 			},
 		},
 		{
 			name: "skip non graph records",
 			recordGenerator: func() []interface{} {
+				stats := analytics.GraphQLStats{
+					IsGraphQL:     true,
+					OperationType: analytics.OperationQuery,
+					Types: map[string][]string{
+						"Characters": {"info"},
+						"Info":       {"count"},
+					},
+					RootFields: []string{"characters"},
+					HasErrors:  false,
+				}
 				records := make([]interface{}, 3)
 				for i := range records {
 					record := sampleRecord
-					query := `{"query":"query{\n  characters(filter: {\n    \n  }){\n    info{\n      count\n    }\n  }\n}"}`
-					response := `{"data":{"characters":{"info":{"count":758}}}}`
-					record.RawRequest = base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf(requestTemplate, len(query), query)))
-					record.RawResponse = base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf(responseTemplate, len(response), response)))
-					if i == 1 {
-						record.Tags = []string{}
+					if i != 1 {
+						record.GraphQLStats = stats
 					}
 					records[i] = record
 				}
@@ -301,6 +411,7 @@ func TestSqlGraphAggregatePump_WriteData(t *testing.T) {
 					hits:      2,
 					error:     0,
 					success:   2,
+					apiID:     "test-api",
 				},
 				{
 					orgID:     "test-org",
@@ -309,6 +420,7 @@ func TestSqlGraphAggregatePump_WriteData(t *testing.T) {
 					hits:      2,
 					error:     0,
 					success:   2,
+					apiID:     "test-api",
 				},
 				{
 					orgID:     "test-org",
@@ -317,6 +429,7 @@ func TestSqlGraphAggregatePump_WriteData(t *testing.T) {
 					hits:      2,
 					error:     0,
 					success:   2,
+					apiID:     "test-api",
 				},
 				{
 					orgID:     "test-org",
@@ -325,6 +438,7 @@ func TestSqlGraphAggregatePump_WriteData(t *testing.T) {
 					hits:      2,
 					error:     0,
 					success:   2,
+					apiID:     "test-api",
 				},
 				{
 					orgID:     "test-org",
@@ -333,6 +447,7 @@ func TestSqlGraphAggregatePump_WriteData(t *testing.T) {
 					hits:      2,
 					error:     0,
 					success:   2,
+					apiID:     "test-api",
 				},
 				{
 					orgID:     "test-org",
@@ -341,22 +456,35 @@ func TestSqlGraphAggregatePump_WriteData(t *testing.T) {
 					hits:      2,
 					error:     0,
 					success:   2,
+					apiID:     "test-api",
 				},
 			},
 		},
 		{
 			name: "has errors",
 			recordGenerator: func() []interface{} {
+				stats := analytics.GraphQLStats{
+					IsGraphQL: true,
+					Types: map[string][]string{
+						"Characters": {"info"},
+						"Info":       {"count"},
+					},
+					RootFields:    []string{"characters"},
+					HasErrors:     false,
+					OperationType: analytics.OperationQuery,
+				}
 				records := make([]interface{}, 3)
 				for i := range records {
 					record := sampleRecord
-					query := `{"query":"query{\n  characters(filter: {\n    \n  }){\n    info{\n      count\n    }\n  }\n}"}`
-					response := `{"data":{"characters":{"info":{"count":758}}}}`
+					record.GraphQLStats = stats
 					if i == 1 {
-						response = graphErrorResponse
+						record.GraphQLStats.HasErrors = true
+						record.GraphQLStats.Errors = []analytics.GraphError{
+							{
+								Message: "Name for character with ID 1002 could not be fetched",
+							},
+						}
 					}
-					record.RawRequest = base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf(requestTemplate, len(query), query)))
-					record.RawResponse = base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf(responseTemplate, len(response), response)))
 					records[i] = record
 				}
 				return records
@@ -369,6 +497,7 @@ func TestSqlGraphAggregatePump_WriteData(t *testing.T) {
 					hits:      3,
 					error:     1,
 					success:   2,
+					apiID:     "test-api",
 				},
 				{
 					orgID:     "test-org",
@@ -377,6 +506,7 @@ func TestSqlGraphAggregatePump_WriteData(t *testing.T) {
 					hits:      3,
 					error:     1,
 					success:   2,
+					apiID:     "test-api",
 				},
 				{
 					orgID:     "test-org",
@@ -385,6 +515,7 @@ func TestSqlGraphAggregatePump_WriteData(t *testing.T) {
 					hits:      3,
 					error:     1,
 					success:   2,
+					apiID:     "test-api",
 				},
 				{
 					orgID:     "test-org",
@@ -393,6 +524,7 @@ func TestSqlGraphAggregatePump_WriteData(t *testing.T) {
 					hits:      3,
 					error:     1,
 					success:   2,
+					apiID:     "test-api",
 				},
 				{
 					orgID:     "test-org",
@@ -401,6 +533,7 @@ func TestSqlGraphAggregatePump_WriteData(t *testing.T) {
 					hits:      3,
 					error:     1,
 					success:   2,
+					apiID:     "test-api",
 				},
 				{
 					orgID:     "test-org",
@@ -409,6 +542,7 @@ func TestSqlGraphAggregatePump_WriteData(t *testing.T) {
 					hits:      3,
 					error:     1,
 					success:   2,
+					apiID:     "test-api",
 				},
 			},
 		},
@@ -429,14 +563,20 @@ func TestSqlGraphAggregatePump_WriteData(t *testing.T) {
 			for _, expected := range tc.expectedResults {
 				resp := make([]analytics.SQLAnalyticsRecordAggregate, 0)
 				tx := pump.db.Table(analytics.AggregateGraphSQLTable).Where(
-					"org_id = ? AND dimension = ? AND dimension_value = ? AND counter_hits = ? AND counter_success = ? AND counter_error = ?",
-					expected.orgID, expected.dimension, expected.name, expected.hits, expected.success, expected.error,
+					"org_id = ? AND dimension = ? AND dimension_value = ? AND counter_hits = ? AND counter_success = ? AND counter_error = ? AND api_id = ?",
+					expected.orgID, expected.dimension, expected.name, expected.hits, expected.success, expected.error, expected.apiID,
 				).Find(&resp)
 				r.NoError(tx.Error)
 				if len(resp) < 1 {
 					t.Errorf(
-						"couldn't find record with fields: org_id: %s, dimension: %s, dimension_value: %s, counter_hits: %d, counter_success: %d, counter_error: %d",
-						expected.orgID, expected.dimension, expected.name, expected.hits, expected.success, expected.error,
+						"couldn't find record with fields: api_id: %s, org_id: %s, dimension: %s, dimension_value: %s, counter_hits: %d, counter_success: %d, counter_error: %d",
+						expected.apiID,
+						expected.orgID,
+						expected.dimension,
+						expected.name,
+						expected.hits,
+						expected.success,
+						expected.error,
 					)
 				}
 			}
@@ -464,8 +604,18 @@ func TestGraphSQLAggregatePump_WriteData_Sharded(t *testing.T) {
 		Year:         2022,
 		Hour:         0,
 		OrgID:        "test-org",
-		RawRequest:   base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf(requestTemplate, len(sampleQuery), sampleQuery))),
-		RawResponse:  base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf(responseTemplate, len(sampleResponse), sampleResponse))),
+		GraphQLStats: analytics.GraphQLStats{
+			IsGraphQL: true,
+			Types: map[string][]string{
+				"Characters": {"info"},
+				"Info":       {"count"},
+			},
+			RootFields: []string{
+				"characters",
+			},
+			OperationType: analytics.OperationQuery,
+			HasErrors:     false,
+		},
 	}
 
 	t.Run("should shard successfully", func(t *testing.T) {

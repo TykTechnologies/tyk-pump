@@ -1,6 +1,8 @@
 package pumps
 
 var (
-	VERSION                    = "v1.8.0"
-	builtBy, Commit, buildDate string
+	Version   = "v1.8.0"
+	BuiltBy   string
+	Commit    string
+	BuildDate string
 )

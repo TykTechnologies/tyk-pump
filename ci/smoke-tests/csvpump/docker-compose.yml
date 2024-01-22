@@ -24,7 +24,7 @@ services:
       timeout: 10s
 
   pump:
-    image: tykio/tyk-pump-docker-pub:${tag}
+    image: ${pump_image}
     volumes:
       - ./confs/tyk-pump.conf:/conf/tyk-pump.conf
       - /tmp/pump-data:/pump-data

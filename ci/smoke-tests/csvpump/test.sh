@@ -36,7 +36,7 @@ function warn {
 DEFAULT_GW_TAG=v4.0.1
 
 [[ -z $1 ]] && usage "$0"
-export tag=$1
+export pump_image=$1
 export gwtag=$2
 
 if [[ -z $2 ]]; then
