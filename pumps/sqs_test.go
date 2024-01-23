@@ -1,11 +1,15 @@
+// Disabling 'revive' linter as it's complaining about the 'GetQueueUrl' input, which is imported from the AWS SDK.
+//
+//revive:disable
 package pumps
 
 import (
 	"context"
-	"github.com/TykTechnologies/tyk-pump/analytics"
-	"github.com/aws/aws-sdk-go-v2/aws"
 	"testing"
 	"time"
+
+	"github.com/TykTechnologies/tyk-pump/analytics"
+	"github.com/aws/aws-sdk-go-v2/aws"
 
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	"github.com/stretchr/testify/assert"
@@ -68,7 +72,7 @@ func TestSQSPump_WriteData(t *testing.T) {
 }
 
 func TestSQSPump_Chunks(t *testing.T) {
-	var Calls int = 0
+	var Calls int
 	// Mock SQS client
 	mockSQS := &MockSQSSendMessageBatchAPI{
 		// Implement the required functions for testing
