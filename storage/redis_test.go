@@ -142,29 +142,26 @@ func TestNewRedisClusterPool(t *testing.T) {
 	testCases := []struct {
 		forceReconnect   bool
 		config           *RedisStorageConfig
-		expectNil        bool
 		expectConnection bool
 		testName         string
 	}{
 		{
 			testName:         "Connect to localhost:6379",
 			config:           &RedisStorageConfig{Host: "localhost", Port: 6379},
-			expectNil:        false,
 			expectConnection: true,
 		},
 		{
 			testName:         "Force reconnect with existing singleton",
 			forceReconnect:   true,
 			config:           &RedisStorageConfig{Host: "localhost", Port: 6379},
-			expectNil:        false,
 			expectConnection: true,
 		},
 
 		{
 			testName:         "Invalid configuration",
 			config:           &RedisStorageConfig{Host: "invalid-host", Port: 6379},
-			expectNil:        false,
 			expectConnection: false,
+			forceReconnect:   true,
 		},
 	}
 
@@ -172,20 +169,19 @@ func TestNewRedisClusterPool(t *testing.T) {
 		t.Run(tc.testName, func(t *testing.T) {
 			NewRedisClusterPool(tc.forceReconnect, tc.config)
 
-			if tc.expectNil {
-				assert.Nil(t, redisClusterSingleton, "Expected redisClusterSingleton to be nil")
+			assert.NotNil(t, redisClusterSingleton, "Expected redisClusterSingleton not to be nil")
+
+			assert.NotNil(t, redisClusterSingleton.conn, "Expected connection not to be nil")
+			assert.NotNil(t, redisClusterSingleton.kv, "Expected kv not to be nil")
+			assert.NotNil(t, redisClusterSingleton.list, "Expected list not to be nil")
+			assert.Equal(t, model.RedisV9Type, redisClusterSingleton.conn.Type(), "Expected connection type to be RedisV9Type")
+
+			if tc.expectConnection {
+				assert.NoError(t, redisClusterSingleton.conn.Ping(context.Background()), "Expected no error on ping")
 			} else {
-				assert.NotNil(t, redisClusterSingleton, "Expected redisClusterSingleton not to be nil")
-
-				assert.NotNil(t, redisClusterSingleton.conn, "Expected connection not to be nil")
-				assert.NotNil(t, redisClusterSingleton.kv, "Expected kv not to be nil")
-				assert.NotNil(t, redisClusterSingleton.list, "Expected list not to be nil")
-				assert.Equal(t, model.RedisV9Type, redisClusterSingleton.conn.Type(), "Expected connection type to be RedisV9Type")
-
-				if tc.expectConnection {
-					assert.NoError(t, redisClusterSingleton.conn.Ping(context.Background()), "Expected no error on ping")
-				}
+				assert.Error(t, redisClusterSingleton.conn.Ping(context.Background()), "Expected error on ping")
 			}
+
 		})
 	}
 }
