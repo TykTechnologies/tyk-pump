@@ -274,14 +274,22 @@ func (r *RedisClusterStorageManager) GetAndDeleteSet(keyName string, chunkSize i
 		"prefix": redisLogPrefix,
 	}).Debug("Fixed keyname is: ", fixedKey)
 
+	// In Pump, we used to delete a key when chunkSize was 0.
+	// This is not the case with Storage Library. So we need to check if chunkSize is 0 and set it to -1.
+	if chunkSize == 0 {
+		chunkSize = -1
+	}
+
 	result, err := r.db.list.Pop(ctx, fixedKey, chunkSize)
 	if err != nil {
 		return nil, err
 	}
 
-	err = r.db.kv.Expire(ctx, fixedKey, expire)
-	if err != nil {
-		return nil, err
+	if chunkSize != -1 {
+		err = r.db.kv.Expire(ctx, fixedKey, expire)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	intResult := []interface{}{}
