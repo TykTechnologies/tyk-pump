@@ -95,13 +95,13 @@ type RedisClusterStorageManager struct {
 	Config    RedisStorageConfig
 }
 
-func NewRedisClusterPool(forceReconnect bool, config *RedisStorageConfig) *RedisManager {
+func NewRedisClusterPool(forceReconnect bool, config *RedisStorageConfig) {
 	if !forceReconnect {
 		if redisClusterSingleton != nil {
 			log.WithFields(logrus.Fields{
 				"prefix": redisLogPrefix,
 			}).Debug("Redis pool already INITIALISED")
-			return redisClusterSingleton
+			return
 		}
 	} else {
 		if redisClusterSingleton != nil {
@@ -112,7 +112,6 @@ func NewRedisClusterPool(forceReconnect bool, config *RedisStorageConfig) *Redis
 				}).Error("Error disconnecting Redis: " + err.Error())
 			}
 
-			return redisClusterSingleton
 		}
 	}
 
@@ -151,27 +150,25 @@ func NewRedisClusterPool(forceReconnect bool, config *RedisStorageConfig) *Redis
 	conn, err := connector.NewConnector(model.RedisV9Type, model.WithRedisConfig(opts), model.WithTLS(tlsOptions))
 	if err != nil {
 		log.WithFields(logrus.Fields{"prefix": redisLogPrefix}).Error(err)
-		return nil
+		return
 	}
 
 	kv, err := keyvalue.NewKeyValue(conn)
 	if err != nil {
 		log.WithFields(logrus.Fields{"prefix": redisLogPrefix}).Error(err)
-		return nil
+		return
 	}
 
 	l, err := list.NewList(conn)
 	if err != nil {
 		log.WithFields(logrus.Fields{"prefix": redisLogPrefix}).Error(err)
-		return nil
+		return
 	}
 
 	redisClusterSingleton = &RedisManager{}
 	redisClusterSingleton.kv = kv
 	redisClusterSingleton.list = l
 	redisClusterSingleton.conn = conn
-
-	return redisClusterSingleton
 }
 
 func getRedisAddrs(config RedisStorageConfig) (addrs []string) {
@@ -224,7 +221,8 @@ func (r *RedisClusterStorageManager) Connect() bool {
 		log.WithFields(logrus.Fields{
 			"prefix": redisLogPrefix,
 		}).Debug("Connecting to redis cluster")
-		r.db = NewRedisClusterPool(false, &r.Config)
+		NewRedisClusterPool(false, &r.Config)
+		r.db = redisClusterSingleton
 		return true
 	}
 
