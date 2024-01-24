@@ -6,13 +6,8 @@ require (
 	github.com/DataDog/datadog-go v4.7.0+incompatible
 	github.com/TykTechnologies/gorpc v0.0.0-20210624160652-fe65bda0ccb9
 	github.com/TykTechnologies/murmur3 v0.0.0-20230310161213-aad17efd5632
-<<<<<<< HEAD
-	github.com/TykTechnologies/storage v1.1.0
-	github.com/aws/aws-sdk-go-v2 v1.16.14
-=======
-	github.com/TykTechnologies/storage v1.0.8
+github.com/TykTechnologies/storage v1.1.0
 	github.com/aws/aws-sdk-go-v2 v1.22.1
->>>>>>> origin/master
 	github.com/aws/aws-sdk-go-v2/config v1.9.0
 	github.com/aws/aws-sdk-go-v2/credentials v1.5.0
 	github.com/aws/aws-sdk-go-v2/service/sqs v1.26.0
