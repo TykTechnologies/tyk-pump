@@ -111,7 +111,6 @@ func NewRedisClusterPool(forceReconnect bool, config *RedisStorageConfig) {
 					"prefix": redisLogPrefix,
 				}).Error("Error disconnecting Redis: " + err.Error())
 			}
-
 		}
 	}
 

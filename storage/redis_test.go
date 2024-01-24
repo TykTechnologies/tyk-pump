@@ -11,7 +11,6 @@ import (
 )
 
 func TestRedisAddressConfiguration(t *testing.T) {
-
 	t.Run("Host but no port", func(t *testing.T) {
 		cfg := RedisStorageConfig{Host: "host"}
 		if len(getRedisAddrs(cfg)) != 0 {
@@ -43,7 +42,6 @@ func TestRedisAddressConfiguration(t *testing.T) {
 			t.Fatal("Wrong address")
 		}
 	})
-
 }
 
 var testData = []struct {
@@ -140,10 +138,10 @@ func TestRedisClusterStorageManager_GetAndDeleteSet(t *testing.T) {
 
 func TestNewRedisClusterPool(t *testing.T) {
 	testCases := []struct {
-		forceReconnect   bool
 		config           *RedisStorageConfig
-		expectConnection bool
 		testName         string
+		forceReconnect   bool
+		expectConnection bool
 	}{
 		{
 			testName:         "Connect to localhost:6379",
@@ -181,7 +179,6 @@ func TestNewRedisClusterPool(t *testing.T) {
 			} else {
 				assert.Error(t, redisClusterSingleton.conn.Ping(context.Background()), "Expected error on ping")
 			}
-
 		})
 	}
 }
