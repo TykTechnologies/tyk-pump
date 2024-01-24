@@ -257,11 +257,16 @@ func (rp *ResurfacePump) writeData() {
 	}
 }
 
-func (rp *ResurfacePump) WriteData(_ context.Context, data []interface{}) error {
+func (rp *ResurfacePump) WriteData(ctx context.Context, data []interface{}) error {
 	rp.log.Debug("Writing ", len(data), " records")
 	if rp.enabled {
-		rp.data <- data
-		rp.log.Info("Purged ", len(data), " records...")
+		select {
+		case rp.data <- data:
+			rp.log.Info("Purged ", len(data), " records...")
+		case <-ctx.Done():
+			// Context has been cancelled or timed out
+			return ctx.Err()
+		}
 	} else {
 		select {
 		case peek, open := <-rp.data:
@@ -269,6 +274,10 @@ func (rp *ResurfacePump) WriteData(_ context.Context, data []interface{}) error 
 				rp.data <- peek
 				close(rp.data)
 			}
+		case <-ctx.Done():
+			// Context has been cancelled or timed out
+			close(rp.data)
+			return ctx.Err()
 		default:
 			close(rp.data)
 		}
@@ -278,7 +287,7 @@ func (rp *ResurfacePump) WriteData(_ context.Context, data []interface{}) error 
 
 func (rp *ResurfacePump) Flush() error {
 	rp.disable()
-	err := rp.WriteData(context.TODO(), []interface{}{})
+	err := rp.WriteData(context.Background(), []interface{}{})
 	if err != nil {
 		return err
 	}
