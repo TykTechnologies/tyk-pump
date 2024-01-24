@@ -14,7 +14,7 @@ import (
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/mitchellh/mapstructure"
-	"github.com/resurfaceio/logger-go/v3"
+	logger "github.com/resurfaceio/logger-go/v3"
 )
 
 type ResurfacePump struct {
