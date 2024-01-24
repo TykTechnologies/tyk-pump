@@ -6,7 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-redis/redis/v8"
+	"github.com/TykTechnologies/storage/temporal/model"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestRedisAddressConfiguration(t *testing.T) {
@@ -43,28 +44,6 @@ func TestRedisAddressConfiguration(t *testing.T) {
 		}
 	})
 
-	t.Run("Default addresses", func(t *testing.T) {
-		opts := &redis.UniversalOptions{}
-		simpleOpts := opts.Simple()
-
-		if simpleOpts.Addr != "127.0.0.1:6379" {
-			t.Fatal("Wrong default single node address")
-		}
-
-		opts.Addrs = []string{}
-		clusterOpts := opts.Cluster()
-
-		if clusterOpts.Addrs[0] != "127.0.0.1:6379" || len(clusterOpts.Addrs) != 1 {
-			t.Fatal("Wrong default cluster mode address")
-		}
-
-		opts.Addrs = []string{}
-		failoverOpts := opts.Failover()
-
-		if failoverOpts.SentinelAddrs[0] != "127.0.0.1:26379" || len(failoverOpts.SentinelAddrs) != 1 {
-			t.Fatal("Wrong default sentinel mode address")
-		}
-	})
 }
 
 var testData = []struct {
@@ -102,9 +81,23 @@ func TestRedisClusterStorageManager_GetAndDeleteSet(t *testing.T) {
 	conf["host"] = "localhost"
 	conf["port"] = 6379
 
-	r := RedisClusterStorageManager{}
+	r := RedisClusterStorageManager{
+		Config: RedisStorageConfig{
+			Host: "localhost",
+			Port: 6379,
+		},
+	}
 	if err := r.Init(conf); err != nil {
 		t.Fatal("unable to connect", err.Error())
+	}
+
+	connected := r.Connect()
+	if !connected {
+		t.Fatal("failed to connect")
+	}
+
+	if r.db == nil {
+		t.Fatal("db is empty")
 	}
 
 	mockKeyName := "testanalytics"
@@ -113,7 +106,14 @@ func TestRedisClusterStorageManager_GetAndDeleteSet(t *testing.T) {
 		t.Run(fmt.Sprintf("in: %v", tt), func(t *testing.T) {
 			ctx := context.Background()
 			if tt.in != nil {
-				r.db.RPush(ctx, r.fixKey(mockKeyName), tt.in)
+				in := [][]byte{}
+				for _, v := range tt.in {
+					in = append(in, []byte(v))
+				}
+				err := r.db.list.Append(ctx, false, r.fixKey(mockKeyName), in...)
+				if err != nil {
+					t.Fatal(err)
+				}
 			}
 
 			iterations := 1
@@ -128,8 +128,10 @@ func TestRedisClusterStorageManager_GetAndDeleteSet(t *testing.T) {
 
 			count := 0
 			for i := 0; i < iterations; i++ {
-				res := r.GetAndDeleteSet(mockKeyName, tt.chunk, 60*time.Second)
-
+				res, err := r.GetAndDeleteSet(mockKeyName, tt.chunk, 60*time.Second)
+				if err != nil {
+					t.Fatal(err)
+				}
 				count += len(res)
 				t.Logf("---> %d: %v", i, res)
 			}
@@ -137,6 +139,36 @@ func TestRedisClusterStorageManager_GetAndDeleteSet(t *testing.T) {
 			if count != len(tt.in) {
 				t.Fatal()
 			}
+		})
+	}
+}
+
+func TestNewRedisClusterPool(t *testing.T) {
+	tcs := []struct {
+		name string
+		cfg  *RedisStorageConfig
+	}{
+		{
+			name: "connect to localhost:6379",
+			cfg: &RedisStorageConfig{
+				Host: "localhost",
+				Port: 6379,
+			},
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			pool := NewRedisClusterPool(false, tc.cfg)
+			if pool == nil {
+				t.Fatal("pool is nil")
+			}
+
+			assert.NotNil(t, pool.conn)
+			assert.NotNil(t, pool.kv)
+			assert.NotNil(t, pool.list)
+			assert.Equal(t, pool.conn.Type(), model.RedisV9Type)
+			assert.NoError(t, pool.conn.Ping(context.Background()))
 		})
 	}
 }

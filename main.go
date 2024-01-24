@@ -218,7 +218,13 @@ func StartPurgeLoop(wg *sync.WaitGroup, ctx context.Context, secInterval int, ch
 
 			for _, serializerMethod := range AnalyticsSerializers {
 				analyticsKeyName += serializerMethod.GetSuffix()
-				AnalyticsValues := AnalyticsStore.GetAndDeleteSet(analyticsKeyName, chunkSize, expire)
+				AnalyticsValues, err := AnalyticsStore.GetAndDeleteSet(analyticsKeyName, chunkSize, expire)
+				if err != nil {
+					log.WithFields(logrus.Fields{
+						"prefix": mainPrefix,
+					}).Error("Error trying to execute GetAndDeleteSet: " + err.Error())
+					return
+				}
 				if len(AnalyticsValues) > 0 {
 					PreprocessAnalyticsValues(AnalyticsValues, serializerMethod, analyticsKeyName, omitDetails, job, startTime, secInterval)
 				}
@@ -229,7 +235,13 @@ func StartPurgeLoop(wg *sync.WaitGroup, ctx context.Context, secInterval int, ch
 		job.Timing("purge_time_all", time.Since(startTime).Nanoseconds())
 
 		if !SystemConfig.DontPurgeUptimeData {
-			UptimeValues := UptimeStorage.GetAndDeleteSet(storage.UptimeAnalytics_KEYNAME, chunkSize, expire)
+			UptimeValues, err := UptimeStorage.GetAndDeleteSet(storage.UptimeAnalytics_KEYNAME, chunkSize, expire)
+			if err != nil {
+				log.WithFields(logrus.Fields{
+					"prefix": mainPrefix,
+				}).Error("Error trying to execute GetAndDeleteSet: " + err.Error())
+				return
+			}
 			UptimePump.WriteUptimeData(UptimeValues)
 		}
 
