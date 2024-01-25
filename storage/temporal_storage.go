@@ -166,15 +166,9 @@ func NewTemporalStorageHandler(forceReconnect bool, config *TemporalStorageConfi
 			Hosts:            config.Hosts,
 		}
 
-		enableTLS := config.UseSSL
-		if !enableTLS {
-			enableTLS = config.RedisUseSSL
-		}
+		enableTLS := config.UseSSL || config.RedisUseSSL
 
-		insecureSkipVerify := config.SSLInsecureSkipVerify
-		if !insecureSkipVerify {
-			insecureSkipVerify = config.RedisSSLInsecureSkipVerify
-		}
+		insecureSkipVerify := config.SSLInsecureSkipVerify || config.RedisSSLInsecureSkipVerify
 
 		tlsOptions := &model.TLS{
 			Enable:             enableTLS,
