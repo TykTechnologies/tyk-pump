@@ -1,7 +1,6 @@
 package analytics
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
@@ -326,7 +325,6 @@ func TestAggregateGraphData_Dimension(t *testing.T) {
 	r.Len(aggregated, 1)
 	aggre := aggregated["test-api"]
 	dimensions := aggre.Dimensions()
-	fmt.Println(dimensions)
 	for d, values := range responsesCheck {
 		for _, v := range values {
 			found := false

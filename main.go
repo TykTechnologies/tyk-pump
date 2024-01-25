@@ -102,47 +102,51 @@ func Init() {
 
 func setupAnalyticsStore() {
 	switch SystemConfig.AnalyticsStorageType {
-	case "redis":
-		AnalyticsStore = &storage.TemporalStorageHandler{
-			Config: storage.TemporalStorageConfig{
-				Type: "redis",
-			},
+	case "redis", "":
+		err := AnalyticsStore.Init(SystemConfig.AnalyticsStorageConfig)
+		if err != nil {
+			log.WithFields(logrus.Fields{
+				"prefix": mainPrefix,
+			}).Fatal("Error connecting to Redis: ", err)
 		}
-		UptimeStorage = &storage.TemporalStorageHandler{
-			Config: storage.TemporalStorageConfig{
-				Type: "redis",
-			},
+
+		// Copy across the redis configuration
+		uptimeConf := SystemConfig.AnalyticsStorageConfig
+		// Swap key prefixes for uptime purger
+		uptimeConf.KeyPrefix = "host-checker:"
+
+		err = UptimeStorage.Init(uptimeConf)
+		if err != nil {
+			log.WithFields(logrus.Fields{
+				"prefix": mainPrefix,
+			}).Fatal("Error connecting to Redis: ", err)
 		}
+
 	default:
-		AnalyticsStore = &storage.TemporalStorageHandler{
-			Config: storage.TemporalStorageConfig{
-				Type: "redis",
-			},
-		}
-		UptimeStorage = &storage.TemporalStorageHandler{
-			Config: storage.TemporalStorageConfig{
-				Type: "redis",
-			},
-		}
+		log.WithFields(logrus.Fields{
+			"prefix": mainPrefix,
+		}).Fatal("Invalid analytics storage type: ", SystemConfig.AnalyticsStorageType)
 	}
-
-	AnalyticsStore.Init(SystemConfig.AnalyticsStorageConfig)
-
-	// Copy across the redis configuration
-	uptimeConf := SystemConfig.AnalyticsStorageConfig
-
-	// Swap key prefixes for uptime purger
-	uptimeConf.KeyPrefix = "host-checker:"
-	UptimeStorage.Init(uptimeConf)
 }
 
 func storeVersion() {
-	versionStore := &storage.TemporalStorageHandler{}
-	versionConf := SystemConfig.AnalyticsStorageConfig
-	versionStore.KeyPrefix = "version-check-"
-	versionStore.Config = versionConf
-	versionStore.Connect()
-	err := versionStore.SetKey("pump", pumps.Version, 0)
+	versionConf := &SystemConfig.AnalyticsStorageConfig
+	versionConf.KeyPrefix = "version-check-"
+	versionStore, err := storage.NewTemporalStorageHandler(versionConf, false)
+	if err != nil {
+		log.WithFields(logrus.Fields{
+			"prefix": mainPrefix,
+		}).Fatal("Error connecting to Temporal Storage: ", err)
+	}
+
+	err = versionStore.Init()
+	if err != nil {
+		log.WithFields(logrus.Fields{
+			"prefix": mainPrefix,
+		}).Fatal("Error connecting to Temporal Storage: ", err)
+	}
+
+	err = versionStore.SetKey("pump", pumps.Version, 0)
 	if err != nil {
 		log.WithFields(logrus.Fields{
 			"prefix": mainPrefix,

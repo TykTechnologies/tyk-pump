@@ -45,18 +45,17 @@ func TestRedisClusterStorageManager_GetAndDeleteSet(t *testing.T) {
 	conf["host"] = "localhost"
 	conf["port"] = 6379
 
-	r := TemporalStorageHandler{}
-	if err := r.Init(conf); err != nil {
+	r, err := NewTemporalStorageHandler(conf, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if err := r.Init(); err != nil {
 		t.Fatal("unable to connect", err.Error())
 	}
 
-	connected := r.Connect()
-	if !connected {
-		t.Fatal("failed to connect")
-	}
-
-	if r.db == nil {
-		t.Fatal("db is empty")
+	if r.conn == nil {
+		t.Fatal("conn is empty")
 	}
 
 	mockKeyName := "testanalytics"
@@ -69,7 +68,7 @@ func TestRedisClusterStorageManager_GetAndDeleteSet(t *testing.T) {
 				for _, v := range tt.in {
 					in = append(in, []byte(v))
 				}
-				err := r.db.list.Append(ctx, false, r.fixKey(mockKeyName), in...)
+				err := r.list.Append(ctx, false, r.fixKey(mockKeyName), in...)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -120,7 +119,6 @@ func TestNewTemporalClusterStorageHandler(t *testing.T) {
 			config:           &TemporalStorageConfig{Host: "localhost", Port: 6379},
 			expectConnection: true,
 		},
-
 		{
 			testName:         "Invalid configuration",
 			config:           &TemporalStorageConfig{Host: "invalid-host", Port: 6379},
@@ -131,20 +129,23 @@ func TestNewTemporalClusterStorageHandler(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.testName, func(t *testing.T) {
-			err := NewTemporalStorageHandler(tc.forceReconnect, tc.config)
+			tsh, err := NewTemporalStorageHandler(tc.config, tc.forceReconnect)
 			assert.NoError(t, err, "Expected no error on NewTemporalStorageHandler")
 
-			assert.NotNil(t, temporalStorageSingleton, "Expected temporalStorageSingleton not to be nil")
+			err = tsh.Init()
+			assert.NoError(t, err, "Expected no error on NewTemporalStorageHandler Init method")
 
-			assert.NotNil(t, temporalStorageSingleton.conn, "Expected connection not to be nil")
-			assert.NotNil(t, temporalStorageSingleton.kv, "Expected kv not to be nil")
-			assert.NotNil(t, temporalStorageSingleton.list, "Expected list not to be nil")
-			assert.Equal(t, model.RedisV9Type, temporalStorageSingleton.conn.Type(), "Expected connection type to be RedisV9Type")
+			assert.NotNil(t, connectorSingleton, "Expected connectorSingleton not to be nil")
+
+			assert.NotNil(t, connectorSingleton.conn, "Expected connection not to be nil")
+			assert.NotNil(t, connectorSingleton.kv, "Expected kv not to be nil")
+			assert.NotNil(t, connectorSingleton.list, "Expected list not to be nil")
+			assert.Equal(t, model.RedisV9Type, connectorSingleton.conn.Type(), "Expected connection type to be RedisV9Type")
 
 			if tc.expectConnection {
-				assert.NoError(t, temporalStorageSingleton.conn.Ping(context.Background()), "Expected no error on ping")
+				assert.NoError(t, connectorSingleton.conn.Ping(context.Background()), "Expected no error on ping")
 			} else {
-				assert.Error(t, temporalStorageSingleton.conn.Ping(context.Background()), "Expected error on ping")
+				assert.Error(t, connectorSingleton.conn.Ping(context.Background()), "Expected error on ping")
 			}
 		})
 	}
