@@ -103,11 +103,18 @@ func Init() {
 func setupAnalyticsStore() {
 	switch SystemConfig.AnalyticsStorageType {
 	case "redis", "":
-		err := AnalyticsStore.Init(SystemConfig.AnalyticsStorageConfig)
+		var err error
+		AnalyticsStore, err = storage.NewTemporalStorageHandler(SystemConfig.AnalyticsStorageConfig, false)
 		if err != nil {
 			log.WithFields(logrus.Fields{
 				"prefix": mainPrefix,
-			}).Fatal("Error connecting to Redis: ", err)
+			}).Fatal("Error connecting to Temporal Storage: ", err)
+		}
+		err = AnalyticsStore.Init()
+		if err != nil {
+			log.WithFields(logrus.Fields{
+				"prefix": mainPrefix,
+			}).Fatal("Error connecting to Temporal Storage: ", err)
 		}
 
 		// Copy across the redis configuration
@@ -115,7 +122,14 @@ func setupAnalyticsStore() {
 		// Swap key prefixes for uptime purger
 		uptimeConf.KeyPrefix = "host-checker:"
 
-		err = UptimeStorage.Init(uptimeConf)
+		UptimeStorage, err = storage.NewTemporalStorageHandler(uptimeConf, false)
+		if err != nil {
+			log.WithFields(logrus.Fields{
+				"prefix": mainPrefix,
+			}).Fatal("Error connecting to Temporal Storage: ", err)
+		}
+
+		err = UptimeStorage.Init()
 		if err != nil {
 			log.WithFields(logrus.Fields{
 				"prefix": mainPrefix,

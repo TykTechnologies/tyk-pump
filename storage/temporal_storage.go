@@ -20,7 +20,7 @@ import (
 )
 
 var (
-	connectorSingleton *TemporalStorageHandler
+	connectorSingleton model.Connector
 	logPrefix          = "temporal-storage"
 	// Deprecated: use envTemporalStoragePrefix instead.
 	envRedisPrefix           = "TYK_PMP_REDIS"
@@ -31,7 +31,6 @@ var (
 // TemporalStorageHandler is a storage manager that uses non data-persistent databases, like Redis.
 type TemporalStorageHandler struct {
 	Config         *TemporalStorageConfig
-	conn           model.Connector
 	kv             model.KeyValue
 	list           model.List
 	forceReconnect bool
@@ -53,6 +52,11 @@ func NewTemporalStorageHandler(config interface{}, forceReconnect bool) (*Tempor
 
 	case *TemporalStorageConfig:
 		r.Config = c
+
+		return r, nil
+
+	case TemporalStorageConfig:
+		r.Config = &c
 
 		return r, nil
 
@@ -97,6 +101,7 @@ func (r *TemporalStorageHandler) Init() error {
 
 // Connect will establish a connection to the r.db
 func (r *TemporalStorageHandler) connect() error {
+	var err error
 	if connectorSingleton == nil || r.forceReconnect {
 		log.WithFields(logrus.Fields{
 			"prefix": logPrefix,
@@ -105,11 +110,22 @@ func (r *TemporalStorageHandler) connect() error {
 			return fmt.Errorf("unsupported database type: %s", r.Config.Type)
 		}
 
-		if err := r.resetConnection(r.Config); err != nil {
+		if err = r.resetConnection(r.Config); err != nil {
 			return err
 		}
 
 		log.WithFields(logrus.Fields{"prefix": logPrefix}).Debug("Temporal Storage already INITIALISED")
+	} else if r.kv == nil || r.list == nil {
+		// This is the case when the connector is already created but we're instantiating a new TemporalStorageHandler
+		r.kv, err = getKVFromConnector()
+		if err != nil {
+			return err
+		}
+
+		r.list, err = getListFromConnector()
+		if err != nil {
+			return err
+		}
 	}
 
 	log.WithFields(logrus.Fields{
@@ -121,7 +137,7 @@ func (r *TemporalStorageHandler) connect() error {
 
 func (r *TemporalStorageHandler) resetConnection(config *TemporalStorageConfig) error {
 	if connectorSingleton != nil {
-		if err := connectorSingleton.conn.Disconnect(ctx); err != nil {
+		if err := connectorSingleton.Disconnect(ctx); err != nil {
 			return fmt.Errorf("error disconnecting Temporal Storage: %s", err)
 		}
 	}
@@ -171,10 +187,9 @@ func (r *TemporalStorageHandler) resetConnection(config *TemporalStorageConfig) 
 		return err
 	}
 
-	connectorSingleton = r
-	connectorSingleton.kv = kv
-	connectorSingleton.list = list
-	connectorSingleton.conn = conn
+	connectorSingleton = conn
+	r.kv = kv
+	r.list = list
 
 	return nil
 }
@@ -196,6 +211,24 @@ func createConnector(opts *model.RedisOptions, tlsOptions *model.TLS) (model.Con
 	}
 
 	return conn, kv, l, nil
+}
+
+func getKVFromConnector() (model.KeyValue, error) {
+	kv, err := keyvalue.NewKeyValue(connectorSingleton)
+	if err != nil {
+		return nil, err
+	}
+
+	return kv, nil
+}
+
+func getListFromConnector() (model.List, error) {
+	l, err := list.NewList(connectorSingleton)
+	if err != nil {
+		return nil, err
+	}
+
+	return l, nil
 }
 
 func (r *TemporalStorageHandler) GetName() string {
@@ -293,7 +326,7 @@ func (r *TemporalStorageHandler) ensureConnection() error {
 			return err
 		}
 
-		if r.conn == nil {
+		if connectorSingleton == nil {
 			return fmt.Errorf("connection failed")
 		}
 		return nil

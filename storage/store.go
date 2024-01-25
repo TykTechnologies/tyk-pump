@@ -8,9 +8,8 @@ import (
 )
 
 type AnalyticsStorage interface {
-	Init(config interface{}) error
+	Init() error
 	GetName() string
-	connect() error
 	GetAndDeleteSet(setName string, chunkSize int64, expire time.Duration) ([]interface{}, error)
 }
 

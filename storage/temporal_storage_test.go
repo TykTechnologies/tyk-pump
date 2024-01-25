@@ -54,8 +54,8 @@ func TestRedisClusterStorageManager_GetAndDeleteSet(t *testing.T) {
 		t.Fatal("unable to connect", err.Error())
 	}
 
-	if r.conn == nil {
-		t.Fatal("conn is empty")
+	if connectorSingleton == nil {
+		t.Fatal("connectorSingleton is nil")
 	}
 
 	mockKeyName := "testanalytics"
@@ -137,15 +137,15 @@ func TestNewTemporalClusterStorageHandler(t *testing.T) {
 
 			assert.NotNil(t, connectorSingleton, "Expected connectorSingleton not to be nil")
 
-			assert.NotNil(t, connectorSingleton.conn, "Expected connection not to be nil")
-			assert.NotNil(t, connectorSingleton.kv, "Expected kv not to be nil")
-			assert.NotNil(t, connectorSingleton.list, "Expected list not to be nil")
-			assert.Equal(t, model.RedisV9Type, connectorSingleton.conn.Type(), "Expected connection type to be RedisV9Type")
+			assert.NotNil(t, connectorSingleton, "Expected connectorSingleton not to be nil")
+			assert.NotNil(t, tsh.kv, "Expected kv not to be nil")
+			assert.NotNil(t, tsh.list, "Expected list not to be nil")
+			assert.Equal(t, model.RedisV9Type, connectorSingleton.Type(), "Expected connection type to be RedisV9Type")
 
 			if tc.expectConnection {
-				assert.NoError(t, connectorSingleton.conn.Ping(context.Background()), "Expected no error on ping")
+				assert.NoError(t, connectorSingleton.Ping(context.Background()), "Expected no error on ping")
 			} else {
-				assert.Error(t, connectorSingleton.conn.Ping(context.Background()), "Expected error on ping")
+				assert.Error(t, connectorSingleton.Ping(context.Background()), "Expected error on ping")
 			}
 		})
 	}
