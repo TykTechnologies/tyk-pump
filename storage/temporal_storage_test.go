@@ -63,7 +63,6 @@ func TestRedisClusterStorageManager_GetAndDeleteSet(t *testing.T) {
 
 	for _, tt := range testData {
 		t.Run(fmt.Sprintf("in: %v", tt), func(t *testing.T) {
-			ctx := context.Background()
 			if tt.in != nil {
 				in := [][]byte{}
 				for _, v := range tt.in {
@@ -151,6 +150,7 @@ func TestNewTemporalClusterStorageHandler(t *testing.T) {
 		})
 	}
 }
+
 func TestTemporalStorageHandler_ensureConnection(t *testing.T) {
 	conf := make(map[string]interface{})
 	conf["host"] = "localhost"
@@ -219,6 +219,7 @@ func TestTemporalStorageHandler_SetKey(t *testing.T) {
 		t.Fatalf("Expected value %s, got %s", session, res)
 	}
 }
+
 func TestTemporalStorageHandler_GetName(t *testing.T) {
 	conf := make(map[string]interface{})
 	conf["host"] = "localhost"
@@ -244,12 +245,13 @@ func TestTemporalStorageHandler_GetName(t *testing.T) {
 		t.Fatalf("Expected %s, but got %s", expected, result)
 	}
 }
+
 func TestTemporalStorageHandler_Init(t *testing.T) {
 	testCases := []struct {
-		name           string
 		conf           map[string]interface{}
-		forceReconnect bool
 		errExpected    error
+		name           string
+		forceReconnect bool
 	}{
 		{
 			name: "Valid configuration",
