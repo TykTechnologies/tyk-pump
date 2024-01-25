@@ -10,7 +10,7 @@ type AnalyticsStorage interface {
 }
 
 const (
-	RedisKeyPrefix          string = "analytics-"
+	KeyPrefix               string = "analytics-"
 	ANALYTICS_KEYNAME       string = "tyk-system-analytics"
 	UptimeAnalytics_KEYNAME string = "tyk-uptime-analytics"
 )

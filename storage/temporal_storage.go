@@ -22,7 +22,7 @@ import (
 var (
 	temporalStorageSingleton *storageHandler
 	logPrefix                = "temporal-storage"
-	// Deprecated. Use envTemporalStoragePrefix instead.
+	// Deprecated: use envTemporalStoragePrefix instead.
 	envRedisPrefix           = "TYK_PMP_REDIS"
 	envTemporalStoragePrefix = "TYK_PMP_TEMPORAL_STORAGE"
 	ctx                      = context.Background()
@@ -52,16 +52,10 @@ func (e *EnvMapString) Decode(value string) error {
 }
 
 type TemporalStorageConfig struct {
-	// Deprecated.
+	// Type is deprecated.
 	Type string `json:"type" mapstructure:"type"`
 	// Host value. For example: "localhost".
 	Host string `json:"host" mapstructure:"host"`
-	// Port value. For example: 6379.
-	Port int `json:"port" mapstructure:"port"`
-	// Deprecated. Use Addrs instead.
-	Hosts EnvMapString `json:"hosts" mapstructure:"hosts"`
-	// Use instead of the host value if you're running a cluster instance with mutliple instances.
-	Addrs []string `json:"addrs" mapstructure:"addrs"`
 	// Sentinel master name.
 	MasterName string `json:"master_name" mapstructure:"master_name"`
 	// Sentinel password.
@@ -70,6 +64,18 @@ type TemporalStorageConfig struct {
 	Username string `json:"username" mapstructure:"username"`
 	// DB password.
 	Password string `json:"password" mapstructure:"password"`
+	// Prefix the key names. Defaults to "analytics-".
+	// Deprecated: use KeyPrefix instead.
+	RedisKeyPrefix string `json:"redis_key_prefix" mapstructure:"redis_key_prefix"`
+	// Prefix the key names. Defaults to "analytics-".
+	KeyPrefix string `json:"key_prefix" mapstructure:"key_prefix"`
+	// Deprecated: use Addrs instead.
+	Hosts EnvMapString `json:"hosts" mapstructure:"hosts"`
+	// Use instead of the host value if you're running a cluster instance with multiple instances.
+	Addrs []string `json:"addrs" mapstructure:"addrs"`
+
+	// Port value. For example: 6379.
+	Port int `json:"port" mapstructure:"port"`
 	// Database name.
 	Database int `json:"database" mapstructure:"database"`
 	// How long to allow for new connections to be established (in milliseconds). Defaults to 5sec.
@@ -79,19 +85,15 @@ type TemporalStorageConfig struct {
 	// Maximum number of connections allocated by the pool at a given time. When zero, there is no
 	// limit on the number of connections in the pool. Defaults to 500.
 	MaxActive int `json:"optimisation_max_active" mapstructure:"optimisation_max_active"`
+
 	// Enable this option if you are using a cluster instance. Default is `false`.
 	EnableCluster bool `json:"enable_cluster" mapstructure:"enable_cluster"`
-	// Prefix the key names. Defaults to "analytics-".
-	// Deprecated. Use KeyPrefix instead.
-	RedisKeyPrefix string `json:"redis_key_prefix" mapstructure:"redis_key_prefix"`
 	// Setting this to true to use SSL when connecting to the DB.
-	// Deprecated. Use UseSSL instead.
+	// Deprecated: use UseSSL instead.
 	RedisUseSSL bool `json:"redis_use_ssl" mapstructure:"redis_use_ssl"`
 	// Set this to `true` to tell Pump to ignore database's cert validation.
-	// Deprecated. Use SSLInsecureSkipVerify instead.
+	// Deprecated: use SSLInsecureSkipVerify instead.
 	RedisSSLInsecureSkipVerify bool `json:"redis_ssl_insecure_skip_verify" mapstructure:"redis_ssl_insecure_skip_verify"`
-	// Prefix the key names. Defaults to "analytics-".
-	KeyPrefix string `json:"key_prefix" mapstructure:"key_prefix"`
 	// Setting this to true to use SSL when connecting to the DB.
 	UseSSL bool `json:"use_ssl" mapstructure:"use_ssl"`
 	// Set this to `true` to tell Pump to ignore database's cert validation.
@@ -100,10 +102,10 @@ type TemporalStorageConfig struct {
 
 // TemporalStorageHandler is a storage manager that uses non data-persistent databases, like Redis.
 type TemporalStorageHandler struct {
-	db        *storageHandler
 	KeyPrefix string
-	HashKeys  bool
+	db        *storageHandler
 	Config    TemporalStorageConfig
+	HashKeys  bool
 }
 
 func NewTemporalStorageHandler(forceReconnect bool, config *TemporalStorageConfig) error {
@@ -191,7 +193,6 @@ func NewTemporalStorageHandler(forceReconnect bool, config *TemporalStorageConfi
 	default:
 		return fmt.Errorf("unsupported database type: %s", config.Type)
 	}
-
 }
 
 func (r *TemporalStorageHandler) GetName() string {
@@ -221,12 +222,13 @@ func (r *TemporalStorageHandler) Init(config interface{}) error {
 		log.Error("Failed to process environment variables from temporal storage prefix: ", overrideErr)
 	}
 
-	if r.Config.KeyPrefix != "" {
+	switch {
+	case r.Config.KeyPrefix != "":
 		r.KeyPrefix = r.Config.KeyPrefix
-	} else if r.Config.RedisKeyPrefix != "" {
+	case r.Config.RedisKeyPrefix != "":
 		r.KeyPrefix = r.Config.RedisKeyPrefix
-	} else {
-		r.KeyPrefix = RedisKeyPrefix
+	default:
+		r.KeyPrefix = KeyPrefix
 	}
 
 	if r.Config.Type != "" {

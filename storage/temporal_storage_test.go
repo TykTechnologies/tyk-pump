@@ -79,7 +79,7 @@ func TestRedisClusterStorageManager_GetAndDeleteSet(t *testing.T) {
 			if tt.chunk > 0 {
 				iterations = len(tt.in) / int(tt.chunk)
 				if rem := len(tt.in) % int(tt.chunk); rem > 0 {
-					iterations += 1
+					iterations++
 				}
 			}
 
@@ -131,7 +131,8 @@ func TestNewTemporalClusterStorageHandler(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.testName, func(t *testing.T) {
-			NewTemporalStorageHandler(tc.forceReconnect, tc.config)
+			err := NewTemporalStorageHandler(tc.forceReconnect, tc.config)
+			assert.NoError(t, err, "Expected no error on NewTemporalStorageHandler")
 
 			assert.NotNil(t, temporalStorageSingleton, "Expected temporalStorageSingleton not to be nil")
 
