@@ -98,6 +98,16 @@ type TemporalStorageConfig struct {
 	UseSSL bool `json:"use_ssl" mapstructure:"use_ssl"`
 	// Set this to `true` to tell Pump to ignore database's cert validation.
 	SSLInsecureSkipVerify bool `json:"ssl_insecure_skip_verify" mapstructure:"ssl_insecure_skip_verify"`
+	// Path to the CA file.
+	SSLCAFile string `json:"ssl_ca_file" mapstructure:"ssl_ca_file"`
+	// Path to the cert file.
+	SSLCertFile string `json:"ssl_cert_file" mapstructure:"ssl_cert_file"`
+	// Path to the key file.
+	SSLKeyFile string `json:"ssl_key_file" mapstructure:"ssl_key_file"`
+	// Maximum supported TLS version. Defaults to TLS 1.3, valid values are TLS 1.0, 1.1, 1.2, 1.3.
+	SSLMaxVersion string `json:"ssl_max_version" mapstructure:"ssl_max_version"`
+	// Minimum supported TLS version. Defaults to TLS 1.2, valid values are TLS 1.0, 1.1, 1.2, 1.3.
+	SSLMinVersion string `json:"ssl_min_version" mapstructure:"ssl_min_version"`
 }
 
 // TemporalStorageHandler is a storage manager that uses non data-persistent databases, like Redis.
@@ -170,6 +180,11 @@ func NewTemporalStorageHandler(forceReconnect bool, config *TemporalStorageConfi
 		tlsOptions := &model.TLS{
 			Enable:             enableTLS,
 			InsecureSkipVerify: insecureSkipVerify,
+			CAFile:             config.SSLCAFile,
+			CertFile:           config.SSLCertFile,
+			KeyFile:            config.SSLKeyFile,
+			MaxVersion:         config.SSLMaxVersion,
+			MinVersion:         config.SSLMinVersion,
 		}
 
 		conn, err := connector.NewConnector(model.RedisV9Type, model.WithRedisConfig(opts), model.WithTLS(tlsOptions))
