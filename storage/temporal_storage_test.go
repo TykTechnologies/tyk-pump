@@ -180,17 +180,6 @@ func TestTemporalStorageHandler_ensureConnection(t *testing.T) {
 		assert.NoError(t, err, "Expected no error when reconnecting")
 		assert.NotNil(t, connectorSingleton, "Expected connectorSingleton not to be nil after reconnecting")
 	})
-
-	// This test timeouts because of the exponential backoff:
-	// t.Run("Connection failed after several attempts", func(t *testing.T) {
-	// 	connectorSingleton = nil
-	// 	conf["type"] = "invalid"
-	// 	r, err = NewTemporalStorageHandler(conf, true)
-	// 	assert.NoError(t, err, "Expected no error when creating new TemporalStorageHandler")
-
-	// 	err = r.ensureConnection()
-	// 	assert.Error(t, err, "Expected error when reconnecting after connection failure")
-	// })
 }
 
 func TestTemporalStorageHandler_SetKey(t *testing.T) {
