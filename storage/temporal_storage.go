@@ -152,6 +152,9 @@ func NewTemporalStorageHandler(forceReconnect bool, config *TemporalStorageConfi
 			MaxActive:        maxActive,
 			Timeout:          timeout,
 			EnableCluster:    config.EnableCluster,
+			Host:             config.Host,
+			Port:             config.Port,
+			Hosts:            config.Hosts,
 		}
 
 		enableTLS := config.UseSSL
