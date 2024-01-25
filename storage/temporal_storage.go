@@ -69,11 +69,20 @@ type TemporalStorageConfig struct {
 	RedisKeyPrefix string `json:"redis_key_prefix" mapstructure:"redis_key_prefix"`
 	// Prefix the key names. Defaults to "analytics-".
 	KeyPrefix string `json:"key_prefix" mapstructure:"key_prefix"`
+	// Path to the CA file.
+	SSLCAFile string `json:"ssl_ca_file" mapstructure:"ssl_ca_file"`
+	// Path to the cert file.
+	SSLCertFile string `json:"ssl_cert_file" mapstructure:"ssl_cert_file"`
+	// Path to the key file.
+	SSLKeyFile string `json:"ssl_key_file" mapstructure:"ssl_key_file"`
+	// Maximum supported TLS version. Defaults to TLS 1.3, valid values are TLS 1.0, 1.1, 1.2, 1.3.
+	SSLMaxVersion string `json:"ssl_max_version" mapstructure:"ssl_max_version"`
+	// Minimum supported TLS version. Defaults to TLS 1.2, valid values are TLS 1.0, 1.1, 1.2, 1.3.
+	SSLMinVersion string `json:"ssl_min_version" mapstructure:"ssl_min_version"`
 	// Deprecated: use Addrs instead.
 	Hosts EnvMapString `json:"hosts" mapstructure:"hosts"`
 	// Use instead of the host value if you're running a cluster instance with multiple instances.
 	Addrs []string `json:"addrs" mapstructure:"addrs"`
-
 	// Port value. For example: 6379.
 	Port int `json:"port" mapstructure:"port"`
 	// Database name.
@@ -98,16 +107,6 @@ type TemporalStorageConfig struct {
 	UseSSL bool `json:"use_ssl" mapstructure:"use_ssl"`
 	// Set this to `true` to tell Pump to ignore database's cert validation.
 	SSLInsecureSkipVerify bool `json:"ssl_insecure_skip_verify" mapstructure:"ssl_insecure_skip_verify"`
-	// Path to the CA file.
-	SSLCAFile string `json:"ssl_ca_file" mapstructure:"ssl_ca_file"`
-	// Path to the cert file.
-	SSLCertFile string `json:"ssl_cert_file" mapstructure:"ssl_cert_file"`
-	// Path to the key file.
-	SSLKeyFile string `json:"ssl_key_file" mapstructure:"ssl_key_file"`
-	// Maximum supported TLS version. Defaults to TLS 1.3, valid values are TLS 1.0, 1.1, 1.2, 1.3.
-	SSLMaxVersion string `json:"ssl_max_version" mapstructure:"ssl_max_version"`
-	// Minimum supported TLS version. Defaults to TLS 1.2, valid values are TLS 1.0, 1.1, 1.2, 1.3.
-	SSLMinVersion string `json:"ssl_min_version" mapstructure:"ssl_min_version"`
 }
 
 // TemporalStorageHandler is a storage manager that uses non data-persistent databases, like Redis.
