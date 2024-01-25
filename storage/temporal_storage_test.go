@@ -10,40 +10,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestRedisAddressConfiguration(t *testing.T) {
-	t.Run("Host but no port", func(t *testing.T) {
-		cfg := RedisStorageConfig{Host: "host"}
-		if len(getRedisAddrs(cfg)) != 0 {
-			t.Fatal("Port is 0, there is no valid addr")
-		}
-	})
-
-	t.Run("Port but no host", func(t *testing.T) {
-		cfg := RedisStorageConfig{Port: 30000}
-
-		addrs := getRedisAddrs(cfg)
-		if addrs[0] != ":30000" || len(addrs) != 1 {
-			t.Fatal("Port is valid, it is a valid addr")
-		}
-	})
-
-	t.Run("addrs parameter should have precedence", func(t *testing.T) {
-		cfg := RedisStorageConfig{Host: "host", Port: 30000}
-
-		addrs := getRedisAddrs(cfg)
-		if addrs[0] != "host:30000" || len(addrs) != 1 {
-			t.Fatal("Wrong address")
-		}
-
-		cfg.Addrs = []string{"override:30000"}
-
-		addrs = getRedisAddrs(cfg)
-		if addrs[0] != "override:30000" || len(addrs) != 1 {
-			t.Fatal("Wrong address")
-		}
-	})
-}
-
 var testData = []struct {
 	in    []string
 	chunk int64
@@ -79,7 +45,7 @@ func TestRedisClusterStorageManager_GetAndDeleteSet(t *testing.T) {
 	conf["host"] = "localhost"
 	conf["port"] = 6379
 
-	r := RedisClusterStorageManager{}
+	r := TemporalStorageHandler{}
 	if err := r.Init(conf); err != nil {
 		t.Fatal("unable to connect", err.Error())
 	}
@@ -136,28 +102,28 @@ func TestRedisClusterStorageManager_GetAndDeleteSet(t *testing.T) {
 	}
 }
 
-func TestNewRedisClusterPool(t *testing.T) {
+func TestNewTemporalClusterStorageHandler(t *testing.T) {
 	testCases := []struct {
-		config           *RedisStorageConfig
+		config           *TemporalStorageConfig
 		testName         string
 		forceReconnect   bool
 		expectConnection bool
 	}{
 		{
 			testName:         "Connect to localhost:6379",
-			config:           &RedisStorageConfig{Host: "localhost", Port: 6379},
+			config:           &TemporalStorageConfig{Host: "localhost", Port: 6379},
 			expectConnection: true,
 		},
 		{
 			testName:         "Force reconnect with existing singleton",
 			forceReconnect:   true,
-			config:           &RedisStorageConfig{Host: "localhost", Port: 6379},
+			config:           &TemporalStorageConfig{Host: "localhost", Port: 6379},
 			expectConnection: true,
 		},
 
 		{
 			testName:         "Invalid configuration",
-			config:           &RedisStorageConfig{Host: "invalid-host", Port: 6379},
+			config:           &TemporalStorageConfig{Host: "invalid-host", Port: 6379},
 			expectConnection: false,
 			forceReconnect:   true,
 		},
@@ -165,19 +131,19 @@ func TestNewRedisClusterPool(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.testName, func(t *testing.T) {
-			NewRedisClusterPool(tc.forceReconnect, tc.config)
+			NewTemporalStorageHandler(tc.forceReconnect, tc.config)
 
-			assert.NotNil(t, redisClusterSingleton, "Expected redisClusterSingleton not to be nil")
+			assert.NotNil(t, temporalStorageSingleton, "Expected temporalStorageSingleton not to be nil")
 
-			assert.NotNil(t, redisClusterSingleton.conn, "Expected connection not to be nil")
-			assert.NotNil(t, redisClusterSingleton.kv, "Expected kv not to be nil")
-			assert.NotNil(t, redisClusterSingleton.list, "Expected list not to be nil")
-			assert.Equal(t, model.RedisV9Type, redisClusterSingleton.conn.Type(), "Expected connection type to be RedisV9Type")
+			assert.NotNil(t, temporalStorageSingleton.conn, "Expected connection not to be nil")
+			assert.NotNil(t, temporalStorageSingleton.kv, "Expected kv not to be nil")
+			assert.NotNil(t, temporalStorageSingleton.list, "Expected list not to be nil")
+			assert.Equal(t, model.RedisV9Type, temporalStorageSingleton.conn.Type(), "Expected connection type to be RedisV9Type")
 
 			if tc.expectConnection {
-				assert.NoError(t, redisClusterSingleton.conn.Ping(context.Background()), "Expected no error on ping")
+				assert.NoError(t, temporalStorageSingleton.conn.Ping(context.Background()), "Expected no error on ping")
 			} else {
-				assert.Error(t, redisClusterSingleton.conn.Ping(context.Background()), "Expected error on ping")
+				assert.Error(t, temporalStorageSingleton.conn.Ping(context.Background()), "Expected error on ping")
 			}
 		})
 	}

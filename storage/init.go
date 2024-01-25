@@ -11,5 +11,7 @@ func init() {
 	AvailableStores = make(map[string]AnalyticsStorage)
 
 	// Register all the storage handlers here
-	AvailableStores["redis"] = &RedisClusterStorageManager{}
+	AvailableStores["redis"] = &TemporalStorageHandler{Config: TemporalStorageConfig{
+		Type: "redis",
+	}}
 }

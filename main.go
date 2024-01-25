@@ -102,11 +102,27 @@ func Init() {
 func setupAnalyticsStore() {
 	switch SystemConfig.AnalyticsStorageType {
 	case "redis":
-		AnalyticsStore = &storage.RedisClusterStorageManager{}
-		UptimeStorage = &storage.RedisClusterStorageManager{}
+		AnalyticsStore = &storage.TemporalStorageHandler{
+			Config: storage.TemporalStorageConfig{
+				Type: "redis",
+			},
+		}
+		UptimeStorage = &storage.TemporalStorageHandler{
+			Config: storage.TemporalStorageConfig{
+				Type: "redis",
+			},
+		}
 	default:
-		AnalyticsStore = &storage.RedisClusterStorageManager{}
-		UptimeStorage = &storage.RedisClusterStorageManager{}
+		AnalyticsStore = &storage.TemporalStorageHandler{
+			Config: storage.TemporalStorageConfig{
+				Type: "redis",
+			},
+		}
+		UptimeStorage = &storage.TemporalStorageHandler{
+			Config: storage.TemporalStorageConfig{
+				Type: "redis",
+			},
+		}
 	}
 
 	AnalyticsStore.Init(SystemConfig.AnalyticsStorageConfig)
@@ -115,12 +131,12 @@ func setupAnalyticsStore() {
 	uptimeConf := SystemConfig.AnalyticsStorageConfig
 
 	// Swap key prefixes for uptime purger
-	uptimeConf.RedisKeyPrefix = "host-checker:"
+	uptimeConf.KeyPrefix = "host-checker:"
 	UptimeStorage.Init(uptimeConf)
 }
 
 func storeVersion() {
-	var versionStore = &storage.RedisClusterStorageManager{}
+	var versionStore = &storage.TemporalStorageHandler{}
 	versionConf := SystemConfig.AnalyticsStorageConfig
 	versionStore.KeyPrefix = "version-check-"
 	versionStore.Config = versionConf
@@ -222,8 +238,7 @@ func StartPurgeLoop(wg *sync.WaitGroup, ctx context.Context, secInterval int, ch
 				if err != nil {
 					log.WithFields(logrus.Fields{
 						"prefix": mainPrefix,
-					}).Fatal("Error trying to execute GetAndDeleteSet: " + err.Error())
-					return
+					}).Error("Error trying to execute GetAndDeleteSet: " + err.Error())
 				}
 				if len(AnalyticsValues) > 0 {
 					PreprocessAnalyticsValues(AnalyticsValues, serializerMethod, analyticsKeyName, omitDetails, job, startTime, secInterval)
@@ -239,8 +254,7 @@ func StartPurgeLoop(wg *sync.WaitGroup, ctx context.Context, secInterval int, ch
 			if err != nil {
 				log.WithFields(logrus.Fields{
 					"prefix": mainPrefix,
-				}).Fatal("Error trying to execute GetAndDeleteSet: " + err.Error())
-				return
+				}).Error("Error trying to execute GetAndDeleteSet: " + err.Error())
 			}
 			UptimePump.WriteUptimeData(UptimeValues)
 		}
