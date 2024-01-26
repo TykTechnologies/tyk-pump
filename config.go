@@ -175,7 +175,7 @@ type TykPumpConfiguration struct {
 	// Sets the analytics storage type. Where the pump will be fetching data from. Currently, only
 	// the `redis` option is supported.
 	AnalyticsStorageType string `json:"analytics_storage_type"`
-	// Example Redis storage configuration:
+	// Example Temporal storage configuration:
 	// ```{.json}
 	//   "analytics_storage_config": {
 	//     "type": "redis",
@@ -188,11 +188,11 @@ type TykPumpConfiguration struct {
 	//     "optimisation_max_idle": 100,
 	//     "optimisation_max_active": 0,
 	//     "enable_cluster": false,
-	//     "redis_use_ssl": false,
-	//     "redis_ssl_insecure_skip_verify": false
+	//     "use_ssl": false,
+	//     "ssl_insecure_skip_verify": false
 	//   },
 	// ```
-	AnalyticsStorageConfig storage.RedisStorageConfig `json:"analytics_storage_config"`
+	AnalyticsStorageConfig storage.TemporalStorageConfig `json:"analytics_storage_config"`
 	// Connection string for StatsD monitoring for information please see the
 	// [Instrumentation docs](https://tyk.io/docs/basic-config-and-security/report-monitor-trigger-events/instrumentation/).
 	StatsdConnectionString string `json:"statsd_connection_string"`
