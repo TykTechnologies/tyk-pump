@@ -23,12 +23,14 @@ import (
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
-var SystemConfig TykPumpConfiguration
-var AnalyticsStore storage.AnalyticsStorage
-var UptimeStorage storage.AnalyticsStorage
-var Pumps []pumps.Pump
-var UptimePump pumps.UptimePump
-var AnalyticsSerializers []serializer.AnalyticsSerializer
+var (
+	SystemConfig         TykPumpConfiguration
+	AnalyticsStore       storage.AnalyticsStorage
+	UptimeStorage        storage.AnalyticsStorage
+	Pumps                []pumps.Pump
+	UptimePump           pumps.UptimePump
+	AnalyticsSerializers []serializer.AnalyticsSerializer
+)
 
 var log = logger.GetLogger()
 
@@ -66,7 +68,7 @@ func Init() {
 		demoMode = &envDemo
 	}
 
-	//Serializer init
+	// Serializer init
 	AnalyticsSerializers = []serializer.AnalyticsSerializer{serializer.NewAnalyticsSerializer(serializer.MSGP_SERIALIZER), serializer.NewAnalyticsSerializer(serializer.PROTOBUF_SERIALIZER)}
 
 	log.WithFields(logrus.Fields{
@@ -96,36 +98,69 @@ func Init() {
 	if *debugMode {
 		log.Level = logrus.DebugLevel
 	}
-
 }
 
 func setupAnalyticsStore() {
 	switch SystemConfig.AnalyticsStorageType {
-	case "redis":
-		AnalyticsStore = &storage.RedisClusterStorageManager{}
-		UptimeStorage = &storage.RedisClusterStorageManager{}
+	case "redis", "":
+		var err error
+		AnalyticsStore, err = storage.NewTemporalStorageHandler(SystemConfig.AnalyticsStorageConfig, false)
+		if err != nil {
+			log.WithFields(logrus.Fields{
+				"prefix": mainPrefix,
+			}).Fatal("Error connecting to Temporal Storage: ", err)
+		}
+		err = AnalyticsStore.Init()
+		if err != nil {
+			log.WithFields(logrus.Fields{
+				"prefix": mainPrefix,
+			}).Fatal("Error connecting to Temporal Storage: ", err)
+		}
+
+		// Copy across the redis configuration
+		uptimeConf := SystemConfig.AnalyticsStorageConfig
+		// Swap key prefixes for uptime purger
+		uptimeConf.KeyPrefix = "host-checker:"
+
+		UptimeStorage, err = storage.NewTemporalStorageHandler(uptimeConf, false)
+		if err != nil {
+			log.WithFields(logrus.Fields{
+				"prefix": mainPrefix,
+			}).Fatal("Error connecting to Temporal Storage: ", err)
+		}
+
+		err = UptimeStorage.Init()
+		if err != nil {
+			log.WithFields(logrus.Fields{
+				"prefix": mainPrefix,
+			}).Fatal("Error connecting to Redis: ", err)
+		}
+
 	default:
-		AnalyticsStore = &storage.RedisClusterStorageManager{}
-		UptimeStorage = &storage.RedisClusterStorageManager{}
+		log.WithFields(logrus.Fields{
+			"prefix": mainPrefix,
+		}).Fatal("Invalid analytics storage type: ", SystemConfig.AnalyticsStorageType)
 	}
-
-	AnalyticsStore.Init(SystemConfig.AnalyticsStorageConfig)
-
-	// Copy across the redis configuration
-	uptimeConf := SystemConfig.AnalyticsStorageConfig
-
-	// Swap key prefixes for uptime purger
-	uptimeConf.RedisKeyPrefix = "host-checker:"
-	UptimeStorage.Init(uptimeConf)
 }
 
 func storeVersion() {
-	var versionStore = &storage.RedisClusterStorageManager{}
-	versionConf := SystemConfig.AnalyticsStorageConfig
-	versionStore.KeyPrefix = "version-check-"
-	versionStore.Config = versionConf
-	versionStore.Connect()
-	err := versionStore.SetKey("pump", pumps.Version, 0)
+	versionConf := &SystemConfig.AnalyticsStorageConfig
+	versionConf.KeyPrefix = "version-check-"
+	versionStore, err := storage.NewTemporalStorageHandler(versionConf, false)
+	if err != nil {
+		log.WithFields(logrus.Fields{
+			"prefix": mainPrefix,
+		}).Fatal("Error connecting to Temporal Storage: ", err)
+	}
+
+	err = versionStore.Init()
+	if err != nil {
+		log.WithFields(logrus.Fields{
+			"prefix": mainPrefix,
+		}).Fatal("Error connecting to Temporal Storage: ", err)
+	}
+
+	err = versionStore.SetKey("pump", pumps.Version, 0)
 	if err != nil {
 		log.WithFields(logrus.Fields{
 			"prefix": mainPrefix,
@@ -177,7 +212,6 @@ func initialisePumps() {
 	if !SystemConfig.DontPurgeUptimeData {
 		initialiseUptimePump()
 	}
-
 }
 
 func initialiseUptimePump() {
@@ -210,7 +244,7 @@ func StartPurgeLoop(wg *sync.WaitGroup, ctx context.Context, secInterval int, ch
 		for i := -1; i < 10; i++ {
 			var analyticsKeyName string
 			if i == -1 {
-				//if it's the first iteration, we look for tyk-system-analytics to maintain backwards compatibility or if analytics_config.enable_multiple_analytics_keys is disabled in the gateway
+				// if it's the first iteration, we look for tyk-system-analytics to maintain backwards compatibility or if analytics_config.enable_multiple_analytics_keys is disabled in the gateway
 				analyticsKeyName = storage.ANALYTICS_KEYNAME
 			} else {
 				analyticsKeyName = fmt.Sprintf("%v_%v", storage.ANALYTICS_KEYNAME, i)
@@ -218,7 +252,12 @@ func StartPurgeLoop(wg *sync.WaitGroup, ctx context.Context, secInterval int, ch
 
 			for _, serializerMethod := range AnalyticsSerializers {
 				analyticsKeyName += serializerMethod.GetSuffix()
-				AnalyticsValues := AnalyticsStore.GetAndDeleteSet(analyticsKeyName, chunkSize, expire)
+				AnalyticsValues, err := AnalyticsStore.GetAndDeleteSet(analyticsKeyName, chunkSize, expire)
+				if err != nil {
+					log.WithFields(logrus.Fields{
+						"prefix": mainPrefix,
+					}).Error("Error on Purge Loop. Is Temporal Storage down?: " + err.Error())
+				}
 				if len(AnalyticsValues) > 0 {
 					PreprocessAnalyticsValues(AnalyticsValues, serializerMethod, analyticsKeyName, omitDetails, job, startTime, secInterval)
 				}
@@ -229,7 +268,12 @@ func StartPurgeLoop(wg *sync.WaitGroup, ctx context.Context, secInterval int, ch
 		job.Timing("purge_time_all", time.Since(startTime).Nanoseconds())
 
 		if !SystemConfig.DontPurgeUptimeData {
-			UptimeValues := UptimeStorage.GetAndDeleteSet(storage.UptimeAnalytics_KEYNAME, chunkSize, expire)
+			UptimeValues, err := UptimeStorage.GetAndDeleteSet(storage.UptimeAnalytics_KEYNAME, chunkSize, expire)
+			if err != nil {
+				log.WithFields(logrus.Fields{
+					"prefix": mainPrefix,
+				}).Error("Error on Purge Loop. Is Temporal Storage down?: " + err.Error())
+			}
 			UptimePump.WriteUptimeData(UptimeValues)
 		}
 
@@ -305,7 +349,6 @@ func writeToPumps(keys []interface{}, job *health.Job, startTime time.Time, purg
 }
 
 func filterData(pump pumps.Pump, keys []interface{}) []interface{} {
-
 	shouldTrim := SystemConfig.MaxRecordSize != 0 || pump.GetMaxRecordSize() != 0
 	filters := pump.GetFilters()
 	ignoreFields := pump.GetIgnoreFields()
@@ -381,11 +424,11 @@ func execPumpWriting(wg *sync.WaitGroup, pmp pumps.Pump, keys *[]interface{}, pu
 	}).Debug("Writing to: ", pmp.GetName())
 
 	ch := make(chan error, 1)
-	//Load pump timeout
+	// Load pump timeout
 	timeout := pmp.GetTimeout()
 	var ctx context.Context
 	var cancel context.CancelFunc
-	//Initialize context depending if the pump has a configured timeout
+	// Initialize context depending if the pump has a configured timeout
 	if timeout > 0 {
 		ctx, cancel = context.WithTimeout(context.Background(), time.Duration(timeout)*time.Second)
 	} else {
