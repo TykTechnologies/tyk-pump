@@ -10,15 +10,19 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/mitchellh/mapstructure"
-	"github.com/resurfaceio/logger-go/v3"
+	logger "github.com/resurfaceio/logger-go/v3"
 )
 
 type ResurfacePump struct {
-	logger *logger.HttpLogger
-	config *ResurfacePumpConfig
+	logger  *logger.HttpLogger
+	config  *ResurfacePumpConfig
+	data    chan []interface{}
+	wg      sync.WaitGroup
+	enabled bool
 	CommonPumpConfig
 }
 
@@ -49,6 +53,7 @@ func (rp *ResurfacePump) GetEnvPrefix() string {
 }
 
 func (rp *ResurfacePump) Init(config interface{}) error {
+	rp.wg = sync.WaitGroup{}
 	rp.config = &ResurfacePumpConfig{}
 	rp.log = log.WithField("prefix", resurfacePrefix)
 
@@ -74,8 +79,24 @@ func (rp *ResurfacePump) Init(config interface{}) error {
 		rp.log.Info(rp.GetName() + " Initialized (Logger disabled)")
 		return errors.New("logger is not enabled")
 	}
+	rp.initWorker()
 	rp.log.Info(rp.GetName() + " Initialized")
 	return nil
+}
+
+func (rp *ResurfacePump) initWorker() {
+	rp.data = make(chan []interface{}, 5)
+	rp.wg.Add(1)
+	go rp.writeData()
+	rp.enable()
+}
+
+func (rp *ResurfacePump) disable() {
+	rp.enabled = false
+}
+
+func (rp *ResurfacePump) enable() {
+	rp.enabled = true
 }
 
 func parseHeaders(headersString string, existingHeaders http.Header) (headers http.Header) {
@@ -210,30 +231,79 @@ func mapRawData(rec *analytics.AnalyticsRecord) (httpReq http.Request, httpResp 
 	return
 }
 
+func (rp *ResurfacePump) writeData() {
+	defer rp.wg.Done()
+	for data := range rp.data {
+		for _, v := range data {
+			decoded, ok := v.(analytics.AnalyticsRecord)
+			if !ok {
+				rp.log.Error("Error decoding analytic record")
+				continue
+			}
+			if len(decoded.RawRequest) == 0 && len(decoded.RawResponse) == 0 {
+				rp.log.Warn("Record dropped. Please enable Detailed Logging.")
+				continue
+			}
+
+			req, resp, customFields, err := mapRawData(&decoded)
+			if err != nil {
+				rp.log.Error(err)
+				continue
+			}
+
+			logger.SendHttpMessage(rp.logger, &resp, &req, decoded.TimeStamp.Unix()*1000, decoded.RequestTime, customFields)
+		}
+		rp.log.Info("Wrote ", len(data), " records...")
+	}
+}
+
 func (rp *ResurfacePump) WriteData(ctx context.Context, data []interface{}) error {
 	rp.log.Debug("Writing ", len(data), " records")
-
-	for _, v := range data {
-		decoded, ok := v.(analytics.AnalyticsRecord)
-		if !ok {
-			rp.log.Error("Error decoding analytic record")
-			continue
+	if rp.enabled {
+		select {
+		case rp.data <- data:
+			rp.log.Info("Purged ", len(data), " records...")
+		case <-ctx.Done():
+			// Context has been cancelled or timed out
+			return ctx.Err()
 		}
-		if len(decoded.RawRequest) == 0 && len(decoded.RawResponse) == 0 {
-			rp.log.Warn("Record dropped. Please enable Detailed Logging.")
-			continue
+	} else {
+		select {
+		case peek, open := <-rp.data:
+			if open {
+				rp.data <- peek
+				close(rp.data)
+			}
+		case <-ctx.Done():
+			// Context has been cancelled or timed out
+			close(rp.data)
+			return ctx.Err()
+		default:
+			close(rp.data)
 		}
-
-		req, resp, customFields, err := mapRawData(&decoded)
-		if err != nil {
-			rp.log.Error(err)
-			continue
-		}
-
-		logger.SendHttpMessage(rp.logger, &resp, &req, decoded.TimeStamp.Unix()*1000, decoded.RequestTime, customFields)
 	}
+	return nil
+}
 
-	rp.log.Info("Purged ", len(data), " records...")
+func (rp *ResurfacePump) Flush() error {
+	rp.disable()
+	err := rp.WriteData(context.Background(), []interface{}{})
+	if err != nil {
+		return err
+	}
+	rp.wg.Wait()
+	rp.initWorker()
+
+	return nil
+}
+
+func (rp *ResurfacePump) Shutdown() error {
+	rp.logger.Stop()
+
+	err := rp.Flush()
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

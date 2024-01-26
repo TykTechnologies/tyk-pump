@@ -121,7 +121,10 @@ func TestResurfaceWriteData(t *testing.T) {
 	}
 
 	err := pmp.WriteData(context.TODO(), recs)
-	assert.Nil(t, err, pmp.GetName()+"couldn't write records")
+	assert.Nil(t, err, pmp.GetName()+" couldn't write records")
+
+	err = pmp.Flush()
+	assert.Nil(t, err, pmp.GetName()+" couldn't flush records")
 
 	queue := pmp.logger.Queue()
 	assert.Equal(t, len(recs), len(queue))
@@ -162,7 +165,10 @@ func TestResurfaceWriteData(t *testing.T) {
 			TimeStamp:    time.Now(),
 		},
 	})
-	assert.Nil(t, err, pmp.GetName()+"couldn't write records")
+	assert.Nil(t, err, pmp.GetName()+" couldn't write records")
+
+	err = pmp.Flush()
+	assert.Nil(t, err, pmp.GetName()+" couldn't flush records")
 
 	queue = pmp.logger.Queue()
 	assert.Equal(t, len(recs)+1, len(queue))
@@ -231,7 +237,10 @@ func TestResurfaceWriteCustomFields(t *testing.T) {
 	}
 
 	err := pmp.WriteData(context.TODO(), recs)
-	assert.Nil(t, err, pmp.GetName()+"couldn't write records")
+	assert.Nil(t, err, pmp.GetName()+" couldn't write records")
+
+	err = pmp.Flush()
+	assert.Nil(t, err, pmp.GetName()+" couldn't flush records")
 
 	queue := pmp.logger.Queue()
 	assert.Equal(t, len(recs), len(queue))
@@ -284,9 +293,10 @@ func TestResurfaceWriteChunkedResponse(t *testing.T) {
 	}
 
 	err := pmp.WriteData(context.TODO(), recs)
-	if err != nil {
-		t.Fatal(pmp.GetName()+"couldn't write records with err:", err)
-	}
+	assert.Nil(t, err, pmp.GetName()+" couldn't write records")
+
+	err = pmp.Flush()
+	assert.Nil(t, err, pmp.GetName()+" couldn't flush records")
 
 	queue := pmp.logger.Queue()
 	assert.Equal(t, len(recs), len(queue))
@@ -319,7 +329,10 @@ func TestResurfaceSkipWrite(t *testing.T) {
 	}
 
 	err := pmp.WriteData(context.TODO(), recs)
-	assert.Nil(t, err, pmp.GetName()+"couldn't write records")
+	assert.Nil(t, err, pmp.GetName()+" couldn't write records")
+
+	err = pmp.Flush()
+	assert.Nil(t, err, pmp.GetName()+" couldn't flush records")
 
 	queue := pmp.logger.Queue()
 	assert.Equal(t, 0, len(queue))
