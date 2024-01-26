@@ -6,13 +6,8 @@ require (
 	github.com/DataDog/datadog-go v4.7.0+incompatible
 	github.com/TykTechnologies/gorpc v0.0.0-20210624160652-fe65bda0ccb9
 	github.com/TykTechnologies/murmur3 v0.0.0-20230310161213-aad17efd5632
-<<<<<<< HEAD
-	github.com/TykTechnologies/storage v1.0.8
-	github.com/aws/aws-sdk-go-v2 v1.16.14
-=======
 	github.com/TykTechnologies/storage v1.1.1
 	github.com/aws/aws-sdk-go-v2 v1.22.1
->>>>>>> 407c373... [TT-10520] Migrating from go-redis to storage library (#765)
 	github.com/aws/aws-sdk-go-v2/config v1.9.0
 	github.com/aws/aws-sdk-go-v2/service/timestreamwrite v1.9.0
 	github.com/cenkalti/backoff/v4 v4.0.2
