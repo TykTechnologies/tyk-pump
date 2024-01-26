@@ -11,7 +11,8 @@ import (
 	"strings"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
-	retry "github.com/TykTechnologies/tyk-pump/http-retry"
+	"github.com/TykTechnologies/tyk-pump/retry"
+
 	"github.com/mitchellh/mapstructure"
 )
 

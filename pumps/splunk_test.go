@@ -3,7 +3,6 @@ package pumps
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -54,7 +53,6 @@ func (h *testHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	r.Body.Close()
 
 	if h.returnErrors >= h.reqCount {
-		fmt.Println("returning err.......")
 		w.WriteHeader(http.StatusInternalServerError)
 		_, err := w.Write([]byte("splunk internal error"))
 		if err != nil {
@@ -248,8 +246,6 @@ func Test_SplunkWriteDataBatch(t *testing.T) {
 	keys[0] = analytics.AnalyticsRecord{OrgID: "1", APIID: "123", Path: "/test-path", Method: "POST", TimeStamp: time.Now()}
 	keys[1] = analytics.AnalyticsRecord{OrgID: "1", APIID: "123", Path: "/test-path", Method: "POST", TimeStamp: time.Now()}
 	keys[2] = analytics.AnalyticsRecord{OrgID: "1", APIID: "123", Path: "/test-path", Method: "POST", TimeStamp: time.Now()}
-
-	fmt.Println(maxContentLength)
 
 	pmp := SplunkPump{}
 
