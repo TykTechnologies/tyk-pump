@@ -353,6 +353,8 @@ func (m *MongoPump) ensureIndexes(collectionName string) error {
 }
 
 func (m *MongoPump) connect() {
+	m.dbConf.MongoDriverType = getMongoDriverType(m.dbConf.MongoDriverType)
+
 	store, err := persistent.NewPersistentStorage(&persistent.ClientOpts{
 		ConnectionString:         m.dbConf.MongoURL,
 		UseSSL:                   m.dbConf.MongoUseSSL,
@@ -362,7 +364,7 @@ func (m *MongoPump) connect() {
 		SSLPEMKeyfile:            m.dbConf.MongoSSLPEMKeyfile,
 		SessionConsistency:       m.dbConf.MongoSessionConsistency,
 		ConnectionTimeout:        m.timeout,
-		Type:                     getMongoDriverType(m.dbConf.MongoDriverType),
+		Type:                     m.dbConf.MongoDriverType,
 		DirectConnection:         m.dbConf.MongoDirectConnection,
 	})
 	if err != nil {

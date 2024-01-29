@@ -215,6 +215,8 @@ func (m *MongoAggregatePump) Init(config interface{}) error {
 func (m *MongoAggregatePump) connect() {
 	var err error
 
+	m.dbConf.MongoDriverType = getMongoDriverType(m.dbConf.MongoDriverType)
+
 	m.store, err = persistent.NewPersistentStorage(&persistent.ClientOpts{
 		ConnectionString:         m.dbConf.MongoURL,
 		UseSSL:                   m.dbConf.MongoUseSSL,
@@ -224,7 +226,7 @@ func (m *MongoAggregatePump) connect() {
 		SSLPEMKeyfile:            m.dbConf.MongoSSLPEMKeyfile,
 		SessionConsistency:       m.dbConf.MongoSessionConsistency,
 		ConnectionTimeout:        m.timeout,
-		Type:                     getMongoDriverType(m.dbConf.MongoDriverType),
+		Type:                     m.dbConf.MongoDriverType,
 		DirectConnection:         m.dbConf.MongoDirectConnection,
 	})
 	if err != nil {
