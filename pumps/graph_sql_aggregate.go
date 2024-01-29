@@ -25,6 +25,10 @@ func (s *GraphSQLAggregatePump) GetName() string {
 	return "Sql Graph Aggregate Pump"
 }
 
+func (s *GraphSQLAggregatePump) GetEnvPrefix() string {
+	return s.SQLConf.EnvPrefix
+}
+
 func (s *GraphSQLAggregatePump) New() Pump {
 	return &GraphSQLAggregatePump{}
 }
