@@ -1,4 +1,4 @@
-package httpretry
+package retry
 
 import (
 	"bytes"
