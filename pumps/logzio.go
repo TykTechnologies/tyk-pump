@@ -159,7 +159,10 @@ func (p *LogzioPump) WriteData(ctx context.Context, data []interface{}) error {
 			return fmt.Errorf("failed to marshal decoded data: %s", err)
 		}
 
-		p.sender.Send(event)
+		err = p.sender.Send(event)
+if err != nil {
+    return fmt.Errorf("failed to send event: %s", err)
+}
 	}
 	p.log.Info("Purged ", len(data), " records...")
 
