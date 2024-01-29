@@ -353,11 +353,6 @@ func (m *MongoPump) ensureIndexes(collectionName string) error {
 }
 
 func (m *MongoPump) connect() {
-	if m.dbConf.MongoDriverType == "" {
-		// Default to mgo
-		m.dbConf.MongoDriverType = persistent.Mgo
-	}
-
 	store, err := persistent.NewPersistentStorage(&persistent.ClientOpts{
 		ConnectionString:         m.dbConf.MongoURL,
 		UseSSL:                   m.dbConf.MongoUseSSL,
@@ -367,7 +362,7 @@ func (m *MongoPump) connect() {
 		SSLPEMKeyfile:            m.dbConf.MongoSSLPEMKeyfile,
 		SessionConsistency:       m.dbConf.MongoSessionConsistency,
 		ConnectionTimeout:        m.timeout,
-		Type:                     m.dbConf.MongoDriverType,
+		Type:                     getMongoDriverType(m.dbConf.MongoDriverType),
 		DirectConnection:         m.dbConf.MongoDirectConnection,
 	})
 	if err != nil {
@@ -546,4 +541,13 @@ func (m *MongoPump) WriteUptimeData(data []interface{}) {
 	if err := m.store.Insert(context.Background(), keys...); err != nil {
 		m.log.Error("Problem inserting to mongo collection: ", err)
 	}
+}
+
+func getMongoDriverType(driverType string) string {
+	if driverType == "" {
+		// Default to mongo-go
+		return persistent.OfficialMongo
+	}
+
+	return driverType
 }

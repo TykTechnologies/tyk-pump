@@ -113,11 +113,6 @@ func (m *MongoSelectivePump) Init(config interface{}) error {
 func (m *MongoSelectivePump) connect() {
 	var err error
 
-	if m.dbConf.MongoDriverType == "" {
-		// Default to mgo
-		m.dbConf.MongoDriverType = persistent.Mgo
-	}
-
 	m.store, err = persistent.NewPersistentStorage(&persistent.ClientOpts{
 		ConnectionString:         m.dbConf.MongoURL,
 		UseSSL:                   m.dbConf.MongoUseSSL,
@@ -127,7 +122,7 @@ func (m *MongoSelectivePump) connect() {
 		SSLPEMKeyfile:            m.dbConf.MongoSSLPEMKeyfile,
 		SessionConsistency:       m.dbConf.MongoSessionConsistency,
 		ConnectionTimeout:        m.timeout,
-		Type:                     m.dbConf.MongoDriverType,
+		Type:                     getMongoDriverType(m.dbConf.MongoDriverType),
 		DirectConnection:         m.dbConf.MongoDirectConnection,
 	})
 	if err != nil {
