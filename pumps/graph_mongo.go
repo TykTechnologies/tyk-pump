@@ -13,6 +13,8 @@ import (
 
 const mongoGraphPrefix = "mongo-graph-pump"
 
+var mongoGraphDefaultEnv = PUMPS_ENV_PREFIX + "_MONGOGRAPH" + PUMPS_ENV_META_PREFIX
+
 type GraphMongoPump struct {
 	CommonPumpConfig
 	MongoPump
@@ -60,6 +62,7 @@ func (g *GraphMongoPump) Init(config interface{}) error {
 	if err := mapstructure.Decode(config, &g.dbConf.BaseMongoConf); err != nil {
 		return err
 	}
+	processPumpEnvVars(g, g.log, g.dbConf, mongoGraphDefaultEnv)
 
 	if g.dbConf.MaxInsertBatchSizeBytes == 0 {
 		g.log.Info("-- No max batch size set, defaulting to 10MB")
