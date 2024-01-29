@@ -150,13 +150,19 @@ func (p *LogzioPump) WriteData(ctx context.Context, data []interface{}) error {
 			"raw_response":    decoded.RawResponse,
 			"ip_address":      decoded.IPAddress,
 		}
+			"ip_address":      decoded.IPAddress,
+		}
+	p.log.Info(p.GetName() + " Initialized")
 
 		event, err := json.Marshal(mapping)
 		if err != nil {
 			return fmt.Errorf("failed to marshal decoded data: %s", err)
 		}
 
-		p.sender.Send(event)
+		err = p.sender.Send(event)
+if err != nil {
+    return fmt.Errorf("failed to send event: %s", err)
+}
 	}
 	p.log.Info("Purged ", len(data), " records...")
 
