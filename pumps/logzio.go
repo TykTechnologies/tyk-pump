@@ -150,6 +150,9 @@ func (p *LogzioPump) WriteData(ctx context.Context, data []interface{}) error {
 			"raw_response":    decoded.RawResponse,
 			"ip_address":      decoded.IPAddress,
 		}
+			"ip_address":      decoded.IPAddress,
+		}
+	p.log.Info(p.GetName() + " Initialized")
 
 		event, err := json.Marshal(mapping)
 		if err != nil {
