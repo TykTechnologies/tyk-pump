@@ -80,7 +80,7 @@ type BaseMongoConf struct {
 	// Set the consistency mode for the session, it defaults to `Strong`. The valid values are: strong, monotonic, eventual.
 	MongoSessionConsistency string `json:"mongo_session_consistency" mapstructure:"mongo_session_consistency"`
 	// MongoDriverType is the type of the driver (library) to use. The valid values are: “mongo-go” and “mgo”.
-	// Default to “mgo”. Check out this guide to [learn about MongoDB drivers supported by Tyk Pump](https://github.com/TykTechnologies/tyk-pump#driver-type).
+	// Default to "mongo-go". Check out this guide to [learn about MongoDB drivers supported by Tyk Pump](https://github.com/TykTechnologies/tyk-pump#driver-type).
 	MongoDriverType string `json:"driver" mapstructure:"driver"`
 	// MongoDirectConnection informs whether to establish connections only with the specified seed servers,
 	// or to obtain information for the whole cluster and establish connections with further servers too.
