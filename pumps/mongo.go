@@ -80,7 +80,7 @@ type BaseMongoConf struct {
 	// Set the consistency mode for the session, it defaults to `Strong`. The valid values are: strong, monotonic, eventual.
 	MongoSessionConsistency string `json:"mongo_session_consistency" mapstructure:"mongo_session_consistency"`
 	// MongoDriverType is the type of the driver (library) to use. The valid values are: “mongo-go” and “mgo”.
-	// Default to “mgo”. Check out this guide to [learn about MongoDB drivers supported by Tyk Pump](https://github.com/TykTechnologies/tyk-pump#driver-type).
+	// Since v1.9, the default driver is "mongo-go". Check out this guide to [learn about MongoDB drivers supported by Tyk Pump](https://github.com/TykTechnologies/tyk-pump#driver-type).
 	MongoDriverType string `json:"driver" mapstructure:"driver"`
 	// MongoDirectConnection informs whether to establish connections only with the specified seed servers,
 	// or to obtain information for the whole cluster and establish connections with further servers too.
@@ -353,10 +353,7 @@ func (m *MongoPump) ensureIndexes(collectionName string) error {
 }
 
 func (m *MongoPump) connect() {
-	if m.dbConf.MongoDriverType == "" {
-		// Default to mgo
-		m.dbConf.MongoDriverType = persistent.Mgo
-	}
+	m.dbConf.MongoDriverType = getMongoDriverType(m.dbConf.MongoDriverType)
 
 	store, err := persistent.NewPersistentStorage(&persistent.ClientOpts{
 		ConnectionString:         m.dbConf.MongoURL,
@@ -546,4 +543,13 @@ func (m *MongoPump) WriteUptimeData(data []interface{}) {
 	if err := m.store.Insert(context.Background(), keys...); err != nil {
 		m.log.Error("Problem inserting to mongo collection: ", err)
 	}
+}
+
+func getMongoDriverType(driverType string) string {
+	if driverType == "" {
+		// Default to mongo-go
+		return persistent.OfficialMongo
+	}
+
+	return driverType
 }

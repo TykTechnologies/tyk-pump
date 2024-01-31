@@ -37,7 +37,7 @@ func (c *Conn) ConnectDb() {
 	if c.Store == nil {
 		var err error
 		c.Store, err = persistent.NewPersistentStorage(&persistent.ClientOpts{
-			Type:             "mgo",
+			Type:             "mongo-go",
 			ConnectionString: dbAddr,
 		})
 		if err != nil {
