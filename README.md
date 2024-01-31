@@ -1292,6 +1292,7 @@ When you initialize an SQS Pump, the SDK uses its default credential chain to fi
 - Environment variables.
   - Static Credentials (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_SESSION_TOKEN`)
   - Web Identity Token (`AWS_WEB_IDENTITY_TOKEN_FILE`)
+  - Pump Environment Variables (`TYK_PMP_PUMPS_SQS_AWSKEY`, `TYK_PMP_PUMPS_SQS_AWSSECRET`, `TYK_PMP_PUMPS_SQS_AWSTOKEN`)
 - Shared configuration files.
   - SDK defaults to credentials file under `.aws` folder that is placed in the home folder on your computer.
 - If your application uses an ECS task definition or RunTask API operation, IAM role for tasks.
@@ -1311,6 +1312,7 @@ If no credentials are provided, SQS Pump won't be able to connect.
         "aws_region": "us-east-1",
         "aws_key": "key",
         "aws_secret": "secret",
+        "aws_token": "token",
         "aws_endpoint": "http://aws-endpoint:4566",
         "aws_message_group_id": "message_group_id",
         "aws_sqs_batch_limit": 10,
