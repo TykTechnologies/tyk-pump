@@ -144,7 +144,7 @@ func setupAnalyticsStore() {
 }
 
 func storeVersion() {
-	versionConf := &SystemConfig.AnalyticsStorageConfig
+	versionConf := SystemConfig.AnalyticsStorageConfig
 	versionConf.KeyPrefix = "version-check-"
 	versionStore, err := storage.NewTemporalStorageHandler(versionConf, false)
 	if err != nil {
