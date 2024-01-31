@@ -565,7 +565,7 @@ func TestDefaultDriver(t *testing.T) {
 	defaultConf.MongoDriverType = ""
 	err := newPump.Init(defaultConf)
 	assert.Nil(t, err)
-	assert.Equal(t, persistent.Mgo, newPump.dbConf.MongoDriverType)
+	assert.Equal(t, persistent.OfficialMongo, newPump.dbConf.MongoDriverType)
 }
 
 func TestMongoPump_WriteData(t *testing.T) {
@@ -656,4 +656,36 @@ func TestMongoPump_WriteData(t *testing.T) {
 		}
 		return records
 	}))
+}
+func TestGetMongoDriverType(t *testing.T) {
+	tests := []struct {
+		name       string
+		driverType string
+		want       string
+	}{
+		{
+			name:       "Empty driver type",
+			driverType: "",
+			want:       persistent.OfficialMongo,
+		},
+		{
+			name:       "mongo-go driver type",
+			driverType: persistent.OfficialMongo,
+			want:       persistent.OfficialMongo,
+		},
+		{
+			name:       "mgo driver type",
+			driverType: persistent.Mgo,
+			want:       persistent.Mgo,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := getMongoDriverType(tt.driverType)
+			if got != tt.want {
+				t.Errorf("got %v, want %v", got, tt.want)
+			}
+		})
+	}
 }
