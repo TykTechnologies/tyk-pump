@@ -56,6 +56,10 @@ type SQSConf struct {
 	// AWSKey is the AWS access key ID used for authentication.
 	AWSKey string `mapstructure:"aws_key"`
 
+	// AWSToken is the AWS session token used for authentication.
+	// This is only required when using temporary credentials.
+	AWSToken string `mapstructure:"aws_token"`
+
 	// AWSEndpoint is the custom endpoint URL for AWS SQS, if applicable.
 	AWSEndpoint string `mapstructure:"aws_endpoint"`
 
@@ -198,7 +202,8 @@ func (s *SQSPump) NewSQSPublisher() (c *sqs.Client, err error) {
 			options.BaseEndpoint = aws.String(s.SQSConf.AWSEndpoint)
 		}
 		if s.SQSConf.AWSKey != "" && s.SQSConf.AWSSecret != "" {
-			options.Credentials = credentials.NewStaticCredentialsProvider(s.SQSConf.AWSKey, s.SQSConf.AWSSecret, "")
+			// Token can be empty since it's optional
+			options.Credentials = credentials.NewStaticCredentialsProvider(s.SQSConf.AWSKey, s.SQSConf.AWSSecret, s.SQSConf.AWSToken)
 		}
 	})
 
