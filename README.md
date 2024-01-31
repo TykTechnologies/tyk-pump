@@ -1287,7 +1287,7 @@ We must authenticate ourselves by providing credentials to AWS. This pump uses t
 
 `aws_delay_seconds` - Configures the delay (in seconds) before messages sent to the SQS queue become available for processing.
 
-When you initialize a SQS Pump, the SDK uses its default credential chain to find AWS credentials. This default credential chain looks for credentials in the following order:
+When you initialize an SQS Pump, the SDK uses its default credential chain to find AWS credentials. This default credential chain looks for credentials in the following order:
 
 - Environment variables.
   - Static Credentials (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_SESSION_TOKEN`)
