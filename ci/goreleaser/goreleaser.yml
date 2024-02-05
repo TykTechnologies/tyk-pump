@@ -129,7 +129,7 @@ publishers:
       - REPO=tyk/tyk-pump-unstable
       - RPMVERS={{ .Env.RPMVERS }}
       - DEBVERS={{ .Env.DEBVERS }}
-    cmd: ./ci/bin/pc.sh {{ .ArtifactPath }}
+    cmd: packagecloud publish --debvers "$DEBVERS" --rpmvers "$RPMVERS" $REPO {{ .ArtifactPath }}
 # This disables archives
 archives:
   - format: binary
