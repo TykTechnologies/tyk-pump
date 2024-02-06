@@ -82,7 +82,7 @@ docker_manifests:
       - docker.tyk.io/tyk-pump/tyk-pump:{{ .Tag }}-amd64
       - docker.tyk.io/tyk-pump/tyk-pump:{{ .Tag }}-arm64
 nfpms:
-  - id: std-packages
+  - id: std
     vendor: "Tyk Technologies Ltd"
     homepage: "https://tyk.io"
     maintainer: "Tyk <info@tyk.io>"
@@ -124,8 +124,6 @@ nfpms:
         type: origin
 publishers:
   - name: tyk-pump-unstable
-    ids:
-      - std-packages
     env:
       - PACKAGECLOUD_TOKEN={{ .Env.PACKAGECLOUD_TOKEN }}
       - REPO=tyk/tyk-pump-unstable
