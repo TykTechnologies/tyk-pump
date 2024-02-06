@@ -126,10 +126,7 @@ publishers:
   - name: tyk-pump-unstable
     env:
       - PACKAGECLOUD_TOKEN={{ .Env.PACKAGECLOUD_TOKEN }}
-      - REPO=tyk/tyk-pump-unstable
-      - RPMVERS={{ .Env.RPMVERS }}
-      - DEBVERS={{ .Env.DEBVERS }}
-    cmd: packagecloud publish --debvers "$DEBVERS" --rpmvers "$RPMVERS" $REPO {{ .ArtifactPath }}
+    cmd: packagecloud publish --debvers "{{ .Env.DEBVERS }}" --rpmvers "{{ .Env.RPMVERS }}" tyk/tyk-pump-unstable  {{ .ArtifactPath }}
 # This disables archives
 archives:
   - format: binary
