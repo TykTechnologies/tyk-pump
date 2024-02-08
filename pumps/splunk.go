@@ -50,6 +50,8 @@ type SplunkPump struct {
 // SplunkPumpConfig contains the driver configuration parameters.
 // @PumpConf Splunk
 type SplunkPumpConfig struct {
+	// The prefix for the environment variables that will be used to override the configuration.
+	// Defaults to `TYK_PMP_PUMPS_SPLUNK_META`
 	EnvPrefix string `mapstructure:"meta_env_prefix"`
 	// Address of the datadog agent including host & port.
 	CollectorToken string `json:"collector_token" mapstructure:"collector_token"`
@@ -86,7 +88,8 @@ type SplunkPumpConfig struct {
 	// the amount of bytes, they're send anyways in each `purge_loop`. Default value is 838860800
 	// (~ 800 MB), the same default value as Splunk config.
 	BatchMaxContentLength int `json:"batch_max_content_length" mapstructure:"batch_max_content_length"`
-	// MaxRetries the maximum amount of retries if failed to send requests to splunk HEC. Default value is `0`
+	// MaxRetries represents the maximum amount of retries to attempt if failed to send requests to splunk HEC.
+	// Default value is `0`
 	MaxRetries uint64 `json:"max_retries" mapstructure:"max_retries"`
 }
 

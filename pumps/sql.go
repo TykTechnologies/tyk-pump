@@ -49,6 +49,8 @@ type SQLPump struct {
 
 // @PumpConf SQL
 type SQLConf struct {
+	// The prefix for the environment variables that will be used to override the configuration.
+	// Defaults to `TYK_PMP_PUMPS_SQL_META`
 	EnvPrefix string `mapstructure:"meta_env_prefix"`
 	// The supported and tested types are `sqlite` and `postgres`.
 	Type string `json:"type" mapstructure:"type"`

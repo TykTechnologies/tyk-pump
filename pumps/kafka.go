@@ -33,6 +33,8 @@ var kafkaDefaultENV = PUMPS_ENV_PREFIX + "_KAFKA" + PUMPS_ENV_META_PREFIX
 
 // @PumpConf Kafka
 type KafkaConf struct {
+	// The prefix for the environment variables that will be used to override the configuration.
+	// Defaults to `TYK_PMP_PUMPS_KAFKA_META`
 	EnvPrefix string `mapstructure:"meta_env_prefix"`
 	// The list of brokers used to discover the partitions available on the kafka cluster. E.g.
 	// "localhost:9092".

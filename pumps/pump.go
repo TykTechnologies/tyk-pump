@@ -61,6 +61,7 @@ func processPumpEnvVars(pump Pump, log *logrus.Entry, cfg interface{}, defaultEn
 			log.Error(fmt.Sprintf("Failed to process environment variables for %s pump %s with err:%v ", envVar, pump.GetName(), overrideErr))
 		}
 	} else {
+		fmt.Println("usando defaultEnv:", defaultEnv)
 		log.Debug(fmt.Sprintf("Checking default %s env variables with prefix %s", pump.GetName(), defaultEnv))
 		overrideErr := envconfig.Process(defaultEnv, cfg)
 		if overrideErr != nil {

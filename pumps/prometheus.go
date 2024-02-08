@@ -32,6 +32,8 @@ type PrometheusPump struct {
 
 // @PumpConf Prometheus
 type PrometheusConf struct {
+	// Prefix for the environment variables that will be used to override the configuration.
+	// Defaults to `TYK_PMP_PUMPS_PROMETHEUS_META`
 	EnvPrefix string `mapstructure:"meta_env_prefix"`
 	// The full URL to your Prometheus instance, {HOST}:{PORT}. For example `localhost:9090`.
 	Addr string `json:"listen_address" mapstructure:"listen_address"`

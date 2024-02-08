@@ -19,6 +19,8 @@ type SQLAggregatePumpConf struct {
 	// TYKCONFIGEXPAND
 	SQLConf `mapstructure:",squash"`
 
+	// The prefix for the environment variables that will be used to override the configuration.
+	// Defaults to `TYK_PMP_PUMPS_SQLAGGREGATE_META`
 	EnvPrefix string `mapstructure:"meta_env_prefix"`
 	// Specifies if it should store aggregated data for all the endpoints. By default, `false`
 	// which means that only store aggregated data for `tracked endpoints`.

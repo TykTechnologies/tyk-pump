@@ -28,6 +28,8 @@ const (
 
 // @PumpConf Logzio
 type LogzioPumpConfig struct {
+	// The prefix for the environment variables that will be used to override the configuration.
+	// Defaults to `TYK_PMP_PUMPS_LOGZIO_META`
 	EnvPrefix string `mapstructure:"meta_env_prefix"`
 	// Set the sender to check if it crosses the maximum allowed disk usage. Default value is
 	// `true`.

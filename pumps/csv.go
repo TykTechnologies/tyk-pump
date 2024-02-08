@@ -21,6 +21,8 @@ type CSVPump struct {
 
 // @PumpConf CSV
 type CSVConf struct {
+	// The prefix for the environment variables that will be used to override the configuration.
+	// Defaults to `TYK_PMP_PUMPS_CSV_META`
 	EnvPrefix string `mapstructure:"meta_env_prefix"`
 	// The directory and the filename where the CSV data will be stored.
 	CSVDir string `json:"csv_dir" mapstructure:"csv_dir"`

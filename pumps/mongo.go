@@ -56,6 +56,8 @@ const (
 )
 
 type BaseMongoConf struct {
+	// Prefix for the environment variables that will be used to override the configuration.
+	// Defaults to `TYK_PMP_PUMPS_MONGO_META`
 	EnvPrefix string `mapstructure:"meta_env_prefix"`
 	// The full URL to your MongoDB instance, this can be a clustered instance if necessary and
 	// should include the database and username / password data.

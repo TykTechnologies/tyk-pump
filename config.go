@@ -163,8 +163,15 @@ type TykPumpConfiguration struct {
 	StorageExpirationTime int64 `json:"storage_expiration_time"`
 	// Setting this to `false` will create a pump that pushes uptime data to Uptime Pump, so the
 	// Dashboard can read it. Disable by setting to `true`.
-	DontPurgeUptimeData bool       `json:"dont_purge_uptime_data"`
-	UptimePumpConfig    UptimeConf `json:"uptime_pump_config"`
+	DontPurgeUptimeData bool `json:"dont_purge_uptime_data"`
+	// Example Uptime Pump configuration:
+	// ```{.json}
+	// "uptime_pump_config": {
+	//   "uptime_type": "mongo",
+	//   "mongo_url": "mongodb://localhost:27017",
+	//   "collection_name": "tyk_uptime_analytics"
+	// },
+	UptimePumpConfig UptimeConf `json:"uptime_pump_config"`
 	// The default environment variable prefix for each pump follows this format:
 	// `TYK_PMP_PUMPS_{PUMP-NAME}_`, for example `TYK_PMP_PUMPS_KAFKA_`.
 	//
