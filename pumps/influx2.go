@@ -45,6 +45,8 @@ type RetentionRule struct {
 
 // @PumpConf Influx2
 type Influx2Conf struct {
+	// The prefix for the environment variables that will be used to override the configuration.
+	// Defaults to `TYK_PMP_PUMPS_INFLUX2_META`
 	EnvPrefix string `mapstructure:"meta_env_prefix"`
 	// InfluxDB2 pump bucket name.
 	BucketName string `mapstructure:"bucket" json:"bucket"`

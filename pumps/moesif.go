@@ -45,6 +45,8 @@ var moesifDefaultENV = PUMPS_ENV_PREFIX + "_MOESIF" + PUMPS_ENV_META_PREFIX
 
 // @PumpConf Moesif
 type MoesifConf struct {
+	// The prefix for the environment variables that will be used to override the configuration.
+	// Defaults to `TYK_PMP_PUMPS_MOESIF_META`
 	EnvPrefix string `mapstructure:"meta_env_prefix"`
 	// Moesif Application Id. You can find your Moesif Application Id from
 	// [_Moesif Dashboard_](https://www.moesif.com/) -> _Top Right Menu_ -> _API Keys_ . Moesif

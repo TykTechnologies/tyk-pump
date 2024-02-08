@@ -25,6 +25,8 @@ var (
 
 // @PumpConf Influx
 type InfluxConf struct {
+	// The prefix for the environment variables that will be used to override the configuration.
+	// Defaults to `TYK_PMP_PUMPS_INFLUX_META`
 	EnvPrefix string `mapstructure:"meta_env_prefix"`
 	// InfluxDB pump database name.
 	DatabaseName string `json:"database_name" mapstructure:"database_name"`

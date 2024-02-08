@@ -56,6 +56,12 @@ const (
 )
 
 type BaseMongoConf struct {
+	// Prefix for the environment variables that will be used to override the configuration.
+	// Defaults to `TYK_PMP_PUMPS_MONGO_META` for Mongo Pump
+	// `TYK_PMP_PUMPS_UPTIME_META` for Uptime Pump
+	// `TYK_PMP_PUMPS_MONGOAGGREGATE_META` for Mongo Aggregate Pump
+	// `TYK_PMP_PUMPS_MONGOSELECTIVE_META` for Mongo Selective Pump
+	// `TYK_PMP_PUMPS_MONGOGRAPH_META` for Mongo Graph Pump.
 	EnvPrefix string `mapstructure:"meta_env_prefix"`
 	// The full URL to your MongoDB instance, this can be a clustered instance if necessary and
 	// should include the database and username / password data.

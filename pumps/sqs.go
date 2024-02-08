@@ -41,7 +41,8 @@ var (
 
 // SQSConf represents the configuration structure for the Tyk Pump SQS (Simple Queue Service) pump.
 type SQSConf struct {
-	// EnvPrefix defines the prefix for environment variables related to this SQS configuration.
+	// EnvPrefix specifies the prefix for the environment variables that will be used to override the configuration.
+	// Defaults to `TYK_PMP_PUMPS_SQS_META`
 	EnvPrefix string `mapstructure:"meta_env_prefix"`
 
 	// QueueName specifies the name of the AWS Simple Queue Service (SQS) queue for message delivery.

@@ -62,6 +62,8 @@ type HybridPump struct {
 
 // @PumpConf Hybrid
 type HybridPumpConf struct {
+	// The prefix for the environment variables that will be used to override the configuration.
+	// Defaults to `TYK_PMP_PUMPS_HYBRID_META`
 	EnvPrefix string `mapstructure:"meta_env_prefix"`
 
 	// MDCB URL connection string
