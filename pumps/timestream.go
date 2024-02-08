@@ -44,8 +44,8 @@ const (
 
 // @PumpConf Timestream
 type TimestreamPumpConf struct {
-	//The prefix for the environment variables that will be used to override the configuration.
-	//Defaults to `TYK_PMP_PUMPS_TIMESTREAM_META`
+	// The prefix for the environment variables that will be used to override the configuration.
+	// Defaults to `TYK_PMP_PUMPS_TIMESTREAM_META`
 	EnvPrefix string `mapstructure:"meta_env_prefix"`
 	//The aws region that contains the timestream database
 	AWSRegion string `mapstructure:"aws_region"`
