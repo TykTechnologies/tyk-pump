@@ -31,15 +31,15 @@ type TemporalStorageConfig struct {
 	Port int `json:"port" mapstructure:"port"`
 	// Deprecated: use Addrs instead.
 	Hosts EnvMapString `json:"hosts" mapstructure:"hosts"`
-	// Use instead of the host value if you're running a cluster instance with multiple instances.
+	// Use instead of the host value if you're running a Redis cluster with multiple instances.
 	Addrs []string `json:"addrs" mapstructure:"addrs"`
 	// Sentinel master name.
 	MasterName string `json:"master_name" mapstructure:"master_name"`
 	// Sentinel password.
 	SentinelPassword string `json:"sentinel_password" mapstructure:"sentinel_password"`
-	// DB username.
+	// Database username.
 	Username string `json:"username" mapstructure:"username"`
-	// DB password.
+	// Database password.
 	Password string `json:"password" mapstructure:"password"`
 	// Database name.
 	Database int `json:"database" mapstructure:"database"`
