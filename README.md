@@ -143,7 +143,7 @@ TYK_PMP_DONTPURGEUPTIMEDATA=true
 
 This is the Tyk Pump's primary database which it scrapes Tyk Gateway analytics from. Normally this is `redis`.
 
-```json
+```.json
   "analytics_storage_config": {
     "type": "redis",
     "host": "localhost",
@@ -460,7 +460,7 @@ GraphQL and UDG requests, tracking information like types requested, fields requ
 
 A sample config looks like this:
 
-```json
+```.json
 {
   "pumps": {
     "mongo-graph": {
@@ -481,7 +481,7 @@ The difference, like the name says is this pump uses sql type databases as its s
 
 A sample config looks like this:
 
-```json
+```.json
 {
   "pumps": {
     "sql-graph": {
@@ -661,7 +661,7 @@ The available values are: `["host","method", "path", "response_code", "api_key",
 
 ###### JSON / Conf File
 
-```.json
+```json
 {
     ...
     "pumps": {
@@ -711,7 +711,7 @@ If no tag is specified the fallback behavior is to use the below tags:
 
 Note that this configuration can generate significant charges due to the unbound nature of the `path` tag.
 
-```.json
+```json
 "dogstatsd": {
   "type": "dogstatsd",
   "meta": {
@@ -854,7 +854,7 @@ Example simplest configuration just needs the token for sending data to your log
 
 ###### JSON / Conf File
 
-```.json
+```json
 "logzio": {
       "type": "logzio",
       "meta": {
@@ -893,7 +893,7 @@ More advanced fields:
 
 ###### JSON / Conf File
 
-```.json
+```json
 {
     ...
     "pumps": {
@@ -945,21 +945,22 @@ Configuration options:
 - `"new_bucket_config"` - If `"create_missing_bucket"`is true, you can configure the new bucket configuration under `"new_bucket_config"`:
   - `"description"` - Description of the bucket. This is going to be visible in the Influx UI.
   - `"retention_rules"`- This is a slice of retention rules for this bucket. An example of this would be:
-  ```.json
+ 
+```json
   "retention_rules":[
   {
   "every_seconds":100000,
   "type":"expires"
   }
   ]
-  ```
+```
   which would mean that the data in the bucket expires every 100000 seconds.
 - `"token"` - Influx DB Auth token
 - `"tags"` - Which elements should work as a tag for the time series.
 
 ###### JSON / Conf File
 
-```.json
+```json
 "influx2": {
     "type": "influx2",
     "meta": {
