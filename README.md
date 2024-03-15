@@ -1475,7 +1475,7 @@ You can get more info from the [official MongoDB driver docs](https://www.mongod
 `ignore_fields` defines a list of analytics fields that will be ignored when writing to the pump. This can be used to avoid writing sensitive information to the Database, or data that you don't really need to have.
 Fields must be written using JSON tags. For example:
 
-```json
+```.json
 "csv": {
  "type": "csv",
  "ignore_fields":["api_id","api_version"],
@@ -1490,7 +1490,7 @@ Fields must be written using JSON tags. For example:
 `raw_request_decoded` and `raw_response_decoded` decode from base64 the raw request and raw response fields before writing to Pump. This is useful if you want to search for specific values in the raw request/response. Both are disabled by default.
 This setting is not available for Mongo and SQL pumps, since dashboard will decode the raw request/response.
 
-```json
+```.json
 "csv": {
   "type": "csv",
   "raw_request_decoded": true,
