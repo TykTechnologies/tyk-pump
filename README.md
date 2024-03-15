@@ -631,7 +631,7 @@ Note: base metric families can be removed by configuring the `disabled_metrics` 
 From Pump 1.6+ it's possible to add custom prometheus metrics using the `custom_metrics` configuration.
 For example:
 
-```json
+```.json
 "prometheus": {
   "type": "prometheus",
 	"meta": {
@@ -661,7 +661,7 @@ The available values are: `["host","method", "path", "response_code", "api_key",
 
 ###### JSON / Conf File
 
-```json
+```.json
 {
     ...
     "pumps": {
@@ -711,7 +711,7 @@ If no tag is specified the fallback behavior is to use the below tags:
 
 Note that this configuration can generate significant charges due to the unbound nature of the `path` tag.
 
-```json
+```.json
 "dogstatsd": {
   "type": "dogstatsd",
   "meta": {
@@ -780,7 +780,7 @@ Setting up Splunk with a _HTTP Event Collector_
 
 ###### JSON / Conf File
 
-```json
+```.json
     "splunk": {
       "type": "splunk",
       "meta": {
@@ -854,7 +854,7 @@ Example simplest configuration just needs the token for sending data to your log
 
 ###### JSON / Conf File
 
-```json
+```.json
 "logzio": {
       "type": "logzio",
       "meta": {
@@ -893,7 +893,7 @@ More advanced fields:
 
 ###### JSON / Conf File
 
-```json
+```.json
 {
     ...
     "pumps": {
@@ -946,7 +946,7 @@ Configuration options:
   - `"description"` - Description of the bucket. This is going to be visible in the Influx UI.
   - `"retention_rules"`- This is a slice of retention rules for this bucket. An example of this would be:
  
-```json
+```.json
   "retention_rules":[
   {
   "every_seconds":100000,
@@ -960,7 +960,7 @@ Configuration options:
 
 ###### JSON / Conf File
 
-```json
+```.json
 "influx2": {
     "type": "influx2",
     "meta": {
@@ -1148,7 +1148,7 @@ If no credentials are provided, Timestream Pump won't be able to connect.
 
 ###### JSON / Conf File
 
-```json
+```.json
     "timestream": {
       "type": "timestream",
       "meta": {
@@ -1303,7 +1303,7 @@ If no credentials are provided, SQS Pump won't be able to connect.
 
 ###### JSON / Conf File
 
-```json
+```.json
     "sqs": {
       "type": "sqs",
       "meta": {
@@ -1350,7 +1350,7 @@ The following configurations can be added to any Pump. Keep reading for an examp
 
 You made add the following config field to each pump called `filters` and its structure is the following:
 
-```json
+```.json
 "filters":{
   "api_ids":[],
   "org_ids":[],
@@ -1369,7 +1369,7 @@ Here we see how we can take a CSV Pump, and add a filters section to it:
 
 ###### JSON / Conf file Example
 
-```json
+```.json
 "csv": {
  "type": "csv",
  "filters": {
@@ -1394,7 +1394,7 @@ TYK_PMP_PUMPS_CSV_FILTERS_APIIDS=123,789
 You can configure a different timeout for each pump with the configuration option `timeout`. Its default value is 0 seconds, which means that the pump will wait for the writing operation forever.
 In Mongo pumps, the default value is 10 seconds. If you want to disable the timeout, you can set the value to 0. Take into account that if you disable the timeout, the pump will wait for the writing operation forever, and it could block the pump execution.
 
-```json
+```.json
 "mongo": {
   "type": "mongo",
   "timeout": 5,
@@ -1425,7 +1425,7 @@ In case that you have a configured timeout, but it still takes more seconds to w
 `max_record_size` defines maximum size (in bytes) for Raw Request and Raw Response logs, this value defaults to 0. Is not set then tyk-pump will not trim any data and will store the full information.
 This can also be set at a pump level. For example:
 
-```json
+```.json
 "csv": {
   "type": "csv",
   "max_record_size":1000,
@@ -1442,7 +1442,7 @@ The `driver` setting defines the driver type to use for Mongo Pumps. It can be o
 - `mongo-go` (default): Uses the official MongoDB driver. This driver supports Mongo versions greater or equal to v4. You can get more information about this driver [here](https://github.com/mongodb/mongo-go-driver).
 - `mgo`: Uses the mgo driver. This driver is deprecated. This driver supports Mongo versions lower or equal to v4. You can get more information about this driver [here](https://github.com/go-mgo/mgo)
 
-```json
+```.json
 "mongo": {
   "type": "mongo",
   "meta": {
@@ -1458,7 +1458,7 @@ The `driver` setting defines the driver type to use for Mongo Pumps. It can be o
 `MongoDirectConnection` informs whether to establish connections only with the specified seed servers or to obtain information for the whole cluster and establish connections with further servers too. If true, the client will only connect to the host provided in the ConnectionString and won't attempt to discover other hosts in the cluster. Useful when network restrictions prevent discovery, such as with SSH tunneling. Default is `false`.
 You can get more info from the [official MongoDB driver docs](https://www.mongodb.com/docs/drivers/go/current/fundamentals/connection/#direct-connection).
 
-```json
+```.json
 "mongo": {
   "type": "mongo",
   "meta": {
