@@ -456,7 +456,9 @@ Note that `store_analytics_per_minute` takes precedence over `aggregation_time` 
 ## Mongo Graph Pump
 
 As of Pump 1.7+, a new mongo is available called the `mongo_graph` pump. This pump is specifically for parsing
-GraphQL and UDG requests, tracking information like types requested, fields requested, specific graphql body errors etc.
+GraphQL and UDG requests, tracking information like types requested, fields requested, specific graphql body errors etc. 
+
+**Note that only Gateways v4.3.+ are compatible with this new pump. Previous versions would send the analytics data to the `tyk_analytics` collection** 
 
 A sample config looks like this:
 
