@@ -19,9 +19,9 @@ var (
 	log        = logger.GetLogger()
 )
 
-func DemoInit(orgId, apiId, version string) {
+func DemoInit(orgId, apiId, version string, apikeysCount int) {
 	apiID = apiId
-	GenerateAPIKeys(orgId)
+	GenerateAPIKeys(orgId, apikeysCount)
 	apiVersion = version
 	if version == "" {
 		apiVersion = "Default"
@@ -120,8 +120,8 @@ func responseCode() int {
 	return codes[rand.Intn(len(codes))]
 }
 
-func GenerateAPIKeys(orgId string) {
-	set := make([]string, 50)
+func GenerateAPIKeys(orgId string, apikeysQuantity int) {
+	set := make([]string, apikeysQuantity)
 	for i := 0; i < len(set); i++ {
 		set[i] = generateAPIKey(orgId)
 	}
@@ -137,9 +137,9 @@ func generateAPIKey(orgId string) string {
 	return orgId + id
 }
 
-func getRandomKey(orgId string) string {
+func getRandomKey(orgId string, apiKeysCount int) string {
 	if len(apiKeys) == 0 {
-		GenerateAPIKeys(orgId)
+		GenerateAPIKeys(orgId, apiKeysCount)
 	}
 	return apiKeys[rand.Intn(len(apiKeys))]
 }
@@ -153,7 +153,7 @@ func country() string {
 	return codes[rand.Intn(len(codes))]
 }
 
-func GenerateDemoData(days, recordsPerHour int, orgID string, demoFutureData, trackPath bool, writer func([]interface{}, *health.Job, time.Time, int)) {
+func GenerateDemoData(days, recordsPerHour int, orgID string, demoFutureData, trackPath bool, apiKeysCount int, writer func([]interface{}, *health.Job, time.Time, int)) {
 	t := time.Now()
 	start := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC)
 	count := 0
@@ -161,7 +161,7 @@ func GenerateDemoData(days, recordsPerHour int, orgID string, demoFutureData, tr
 	if demoFutureData {
 		for d := 0; d < days; d++ {
 			for h := 0; h < 24; h++ {
-				WriteDemoData(start, d, h, recordsPerHour, orgID, trackPath, writer)
+				WriteDemoData(start, d, h, recordsPerHour, orgID, trackPath, apiKeysCount, writer)
 			}
 			count++
 			log.Infof("Finished %d of %d\n", count, days)
@@ -172,14 +172,14 @@ func GenerateDemoData(days, recordsPerHour int, orgID string, demoFutureData, tr
 	// Otherwise, we want to start at the (current date - X days) and create data until yesterday's date
 	for d := days; d > 0; d-- {
 		for h := 0; h < 24; h++ {
-			WriteDemoData(start, -d, h, recordsPerHour, orgID, trackPath, writer)
+			WriteDemoData(start, -d, h, recordsPerHour, orgID, trackPath, apiKeysCount, writer)
 		}
 		count++
 		log.Infof("Finished %d of %d\n", count, days)
 	}
 }
 
-func WriteDemoData(start time.Time, d, h, recordsPerHour int, orgID string, trackPath bool, writer func([]interface{}, *health.Job, time.Time, int)) {
+func WriteDemoData(start time.Time, d, h, recordsPerHour int, orgID string, trackPath bool, apikeysCount int, writer func([]interface{}, *health.Job, time.Time, int)) {
 	set := []interface{}{}
 	ts := start.AddDate(0, 0, d)
 	ts = ts.Add(time.Duration(h) * time.Hour)
@@ -193,7 +193,7 @@ func WriteDemoData(start time.Time, d, h, recordsPerHour int, orgID string, trac
 	timeDifference := 3600 / volume // this is the difference in seconds between each record
 	nextTimestamp := ts             // this is the timestamp of the next record
 	for i := 0; i < volume; i++ {
-		r := GenerateRandomAnalyticRecord(orgID, trackPath)
+		r := GenerateRandomAnalyticRecord(orgID, trackPath, apikeysCount)
 		r.Day = nextTimestamp.Day()
 		r.Month = nextTimestamp.Month()
 		r.Year = nextTimestamp.Year()
@@ -207,7 +207,7 @@ func WriteDemoData(start time.Time, d, h, recordsPerHour int, orgID string, trac
 	writer(set, nil, time.Now(), 10)
 }
 
-func GenerateRandomAnalyticRecord(orgID string, trackPath bool) analytics.AnalyticsRecord {
+func GenerateRandomAnalyticRecord(orgID string, trackPath bool, apiKeysCount int) analytics.AnalyticsRecord {
 	p := randomPath()
 	api, apiID := randomAPI()
 	ts := time.Now()
@@ -222,7 +222,7 @@ func GenerateRandomAnalyticRecord(orgID string, trackPath bool) analytics.Analyt
 		Year:          ts.Year(),
 		Hour:          ts.Hour(),
 		ResponseCode:  responseCode(),
-		APIKey:        getRandomKey(orgID),
+		APIKey:        getRandomKey(orgID, apiKeysCount),
 		TimeStamp:     ts,
 		APIVersion:    apiVersion,
 		APIName:       api,
