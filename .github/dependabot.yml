@@ -9,8 +9,6 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
-    reviewers:
-      - "TykTechnologies/devops"
 
   - package-ecosystem: "gomod"
     # Look for `go.mod` file in the `root` directory
