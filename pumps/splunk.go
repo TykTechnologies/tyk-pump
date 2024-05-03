@@ -302,7 +302,10 @@ func NewSplunkClient(token string, collectorURL string, skipVerify bool, certFil
 		}
 		tlsConfig = &tls.Config{Certificates: []tls.Certificate{cert}, ServerName: serverName}
 	}
-	http.DefaultClient.Transport = &http.Transport{TLSClientConfig: tlsConfig}
+	http.DefaultClient.Transport = &http.Transport{
+		Proxy:           http.ProxyFromEnvironment,
+		TLSClientConfig: tlsConfig,
+	}
 	// Append the default collector API path:
 	u.Path = defaultPath
 	c = &SplunkClient{
