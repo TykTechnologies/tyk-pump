@@ -3,9 +3,11 @@ package pumps
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -305,4 +307,56 @@ func getEventBytes(records []interface{}) int {
 		result += len(data)
 	}
 	return result
+}
+
+func TestProxyFromEnvironment(t *testing.T) {
+	// Setup a test server to act as a proxy
+	proxyServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintln(w, "Proxy call successful")
+	}))
+	defer proxyServer.Close()
+
+	// Set environment variable to use the proxy
+	os.Setenv("HTTP_PROXY", proxyServer.URL)
+	defer os.Unsetenv("HTTP_PROXY")
+
+	// Initialize client
+	client, err := NewSplunkClient("token", "https://example.com", true, "", "", "")
+	if err != nil {
+		t.Fatal("Failed to create client:", err)
+	}
+
+	// Make a request
+	resp, err := client.httpClient.Get("http://example.com")
+	if err != nil {
+		t.Fatal("Failed to make request:", err)
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatal("Failed to read response:", err)
+	}
+
+	// Check if the proxy was called
+	if string(body) != "Proxy call successful\n" {
+		t.Errorf("Expected proxy to be called, but it wasn't")
+	}
+}
+
+func TestInvalidProxyURL(t *testing.T) {
+	// Set an invalid proxy URL
+	os.Setenv("HTTP_PROXY", "htttp://invalid-url")
+	defer os.Unsetenv("HTTP_PROXY")
+
+	// Initialize client
+	client, err := NewSplunkClient("token", "https://example.com", true, "", "", "")
+	if err != nil {
+		t.Fatal("Failed to create client:", err)
+	}
+
+	// Make a request and expect it to fail
+	_, err = client.httpClient.Get("http://example.com")
+	if err == nil {
+		t.Error("Expected error due to invalid proxy URL, but no error occurred")
+	}
 }
