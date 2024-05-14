@@ -50,10 +50,10 @@ do
             echo "Running tests with MONGO_DRIVER=$mongo_driver"
             export MONGO_DRIVER=$mongo_driver
             coveragefile=`echo "$pkg" | awk -F/ '{print $NF}'`
-            show go test -timeout ${TEST_TIMEOUT} ${race} --coverprofile=${coveragefile}.cov -v ${pkg}
+            show go test -tags=boringcrypto -timeout ${TEST_TIMEOUT} ${race} --coverprofile=${coveragefile}.cov -v ${pkg}
         done
     else
         coveragefile=`echo "$pkg" | awk -F/ '{print $NF}'`
-        show go test -timeout ${TEST_TIMEOUT} ${race} --coverprofile=${coveragefile}.cov -v ${pkg}
+        show go test -tags=boringcrypto -timeout ${TEST_TIMEOUT} ${race} --coverprofile=${coveragefile}.cov -v ${pkg}
     fi
 done
