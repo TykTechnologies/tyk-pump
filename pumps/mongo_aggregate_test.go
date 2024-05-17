@@ -7,12 +7,27 @@ import (
 	"testing"
 	"time"
 
+	"github.com/TykTechnologies/storage/persistent"
+	"github.com/TykTechnologies/storage/persistent/model"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/TykTechnologies/tyk-pump/analytics/demo"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
-	"gopkg.in/mgo.v2/bson"
 )
+
+type dummyObject struct {
+	tableName string
+}
+
+func (dummyObject) GetObjectID() model.ObjectID {
+	return ""
+}
+
+func (dummyObject) SetObjectID(model.ObjectID) {}
+
+func (d dummyObject) TableName() string {
+	return d.tableName
+}
 
 func TestDoAggregatedWritingWithIgnoredAggregations(t *testing.T) {
 	cfgPump1 := make(map[string]interface{})
@@ -64,13 +79,9 @@ func TestDoAggregatedWritingWithIgnoredAggregations(t *testing.T) {
 	}
 
 	defer func() {
-		//we clean the db after we finish the test
-		//we use pmp1 session since it should be the same
-		sess := pmp1.dbSession.Copy()
-		defer sess.Close()
-
-		if err := sess.DB("").DropDatabase(); err != nil {
-			panic(err)
+		err := pmp1.store.DropDatabase(context.Background())
+		if err != nil {
+			t.Errorf("error dropping database: %v", err)
 		}
 	}()
 
@@ -90,28 +101,24 @@ func TestDoAggregatedWritingWithIgnoredAggregations(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.testName, func(t *testing.T) {
-			collectionName := ""
+			newDummyObject := dummyObject{}
 			if tc.IsMixed {
-				collectionName = analytics.AgggregateMixedCollectionName
+				newDummyObject.tableName = analytics.AgggregateMixedCollectionName
 			} else {
 				var collErr error
-				collectionName, collErr = pmp1.GetCollectionName("123")
+				newDummyObject.tableName, collErr = pmp1.GetCollectionName("123")
 				assert.Nil(t, collErr)
 			}
-			thisSession := pmp1.dbSession.Copy()
-			defer thisSession.Close()
 
-			analyticsCollection := thisSession.DB("").C(collectionName)
-
-			//we build the query using the timestamp as we do in aggregated analytics
-			query := bson.M{
+			// we build the query using the timestamp as we do in aggregated analytics
+			query := model.DBM{
 				"orgid":     "123",
 				"timestamp": time.Date(timeNow.Year(), timeNow.Month(), timeNow.Day(), timeNow.Hour(), 0, 0, 0, timeNow.Location()),
 			}
 
 			res := analytics.AnalyticsRecordAggregate{}
 			// fetch the results
-			errFind := analyticsCollection.Find(query).One(&res)
+			errFind := pmp1.store.Query(context.Background(), newDummyObject, &res, query)
 			assert.Nil(t, errFind)
 
 			// double check that the res is not nil
@@ -190,12 +197,12 @@ func TestAggregationTime(t *testing.T) {
 
 			defer func() {
 				// we clean the db after we finish every test case
-				sess := pmp1.dbSession.Copy()
-				defer sess.Close()
-
-				if err := sess.DB("").DropDatabase(); err != nil {
-					panic(err)
-				}
+				defer func() {
+					err := pmp1.store.DropDatabase(context.Background())
+					if err != nil {
+						t.Fatal(err)
+					}
+				}()
 			}()
 
 			ctx := context.TODO()
@@ -210,20 +217,15 @@ func TestAggregationTime(t *testing.T) {
 				keys[0] = analytics.AnalyticsRecord{APIID: "api1", OrgID: "123", TimeStamp: timeNow, APIKey: "apikey1"}
 			}
 
-			collectionName := analytics.AgggregateMixedCollectionName
-
-			thisSession := pmp1.dbSession.Copy()
-			defer thisSession.Close()
-
-			analyticsCollection := thisSession.DB("").C(collectionName)
-
-			query := bson.M{
+			query := model.DBM{
 				"orgid": "123",
 			}
 
 			results := []analytics.AnalyticsRecordAggregate{}
 			// fetch the results
-			errFind := analyticsCollection.Find(query).All(&results)
+			errFind := pmp1.store.Query(context.Background(), &analytics.AnalyticsRecordAggregate{
+				Mixed: true,
+			}, &results, query)
 			assert.Nil(t, errFind)
 
 			// double check that the res is not nil
@@ -300,21 +302,20 @@ func TestMongoAggregatePump_SelfHealing(t *testing.T) {
 	}
 
 	defer func() {
-		// we clean the db after we finish the test
-		// we use pmp1 session since it should be the same
-		sess := pmp1.dbSession.Copy()
-		defer sess.Close()
-
-		if err := sess.DB("").DropDatabase(); err != nil {
-			panic(err)
-		}
+		// we clean the db after we finish every test case
+		defer func() {
+			err := pmp1.store.DropDatabase(context.Background())
+			if err != nil {
+				t.Fatal(err)
+			}
+		}()
 	}()
 
 	var count int
 	var set []interface{}
 	for {
 		count++
-		record := demo.GenerateRandomAnalyticRecord("org123")
+		record := demo.GenerateRandomAnalyticRecord("org123", true)
 		set = append(set, record)
 		if count == 1000 {
 			err := pmp1.WriteData(context.TODO(), set)
@@ -326,7 +327,7 @@ func TestMongoAggregatePump_SelfHealing(t *testing.T) {
 				assert.Equal(t, 1, pmp1.dbConf.AggregationTime)
 
 				// checking lastDocumentTimestamp
-				ts, err := getLastDocumentTimestamp(pmp1.dbSession, "tyk_analytics_aggregates")
+				ts, err := pmp1.getLastDocumentTimestamp()
 				assert.Nil(t, err)
 				assert.NotNil(t, ts)
 				break
@@ -466,50 +467,6 @@ func TestMongoAggregatePump_ShouldSelfHeal(t *testing.T) {
 	}
 }
 
-func TestMongoAggregatePump_HandleWriteErr(t *testing.T) {
-	cfgPump1 := make(map[string]interface{})
-	cfgPump1["mongo_url"] = "mongodb://localhost:27017/tyk_analytics"
-	cfgPump1["ignore_aggregations"] = []string{"apikeys"}
-	cfgPump1["use_mixed_collection"] = true
-	cfgPump1["store_analytics_per_minute"] = false
-	pmp1 := MongoAggregatePump{}
-
-	errInit1 := pmp1.Init(cfgPump1)
-	if errInit1 != nil {
-		t.Error(errInit1)
-		return
-	}
-
-	tests := []struct {
-		inputErr error
-		name     string
-		wantErr  bool
-	}{
-		{
-			name:     "nil error",
-			inputErr: nil,
-			wantErr:  false,
-		},
-		{
-			name:     "random error",
-			inputErr: errors.New("random error"),
-			wantErr:  true,
-		},
-		{
-			name:     "EOF error",
-			inputErr: errors.New("EOF"),
-			wantErr:  true,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := pmp1.HandleWriteErr(tt.inputErr); (err != nil) != tt.wantErr {
-				t.Errorf("MongoAggregatePump.HandleWriteErr() error = %v, wantErr %v", err, tt.wantErr)
-			}
-		})
-	}
-}
-
 func TestMongoAggregatePump_StoreAnalyticsPerMinute(t *testing.T) {
 	cfgPump1 := make(map[string]interface{})
 	cfgPump1["mongo_url"] = "mongodb://localhost:27017/tyk_analytics"
@@ -526,4 +483,32 @@ func TestMongoAggregatePump_StoreAnalyticsPerMinute(t *testing.T) {
 	}
 	// Checking if the aggregation time is set to 1. Doesn't matter if aggregation_time is equal to 45 or 1, the result should be always 1.
 	assert.True(t, pmp1.dbConf.AggregationTime == 1)
+}
+
+func TestDecodeRequestAndDecodeResponseMongoAggregate(t *testing.T) {
+	newPump := &MongoAggregatePump{}
+	conf := defaultConf()
+	err := newPump.Init(conf)
+	assert.Nil(t, err)
+
+	// checking if the default values are false
+	assert.False(t, newPump.GetDecodedRequest())
+	assert.False(t, newPump.GetDecodedResponse())
+
+	// trying to set the values to true
+	newPump.SetDecodingRequest(true)
+	newPump.SetDecodingResponse(true)
+
+	// checking if the values are still false as expected because this pump doesn't support decoding requests/responses
+	assert.False(t, newPump.GetDecodedRequest())
+	assert.False(t, newPump.GetDecodedResponse())
+}
+
+func TestDefaultDriverAggregate(t *testing.T) {
+	newPump := &MongoAggregatePump{}
+	defaultConf := defaultConf()
+	defaultConf.MongoDriverType = ""
+	err := newPump.Init(defaultConf)
+	assert.Nil(t, err)
+	assert.Equal(t, persistent.OfficialMongo, newPump.dbConf.MongoDriverType)
 }

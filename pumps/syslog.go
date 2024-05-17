@@ -25,6 +25,8 @@ var (
 
 // @PumpConf Syslog
 type SyslogConf struct {
+	// The prefix for the environment variables that will be used to override the configuration.
+	// Defaults to `TYK_PMP_PUMPS_SYSLOG_META`
 	EnvPrefix string `json:"meta_env_prefix" mapstructure:"meta_env_prefix"`
 	// Possible values are `udp, tcp, tls` in string form.
 	Transport string `json:"transport" mapstructure:"transport"`

@@ -1,9 +1,9 @@
 name: CI tests
 
-on: 
+on:
   pull_request:
   push:
-    branches: 
+    branches:
       - master
 
 env:
@@ -21,11 +21,11 @@ jobs:
       matrix:
         redis-version: [5]
         mongodb-version: [4.2]
-        go: [1.16]
+        go: [1.21]
 
     steps:
       - name: Checkout Tyk Pump
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 2
 
@@ -38,7 +38,7 @@ jobs:
         id: hygiene
         run: |
           go install golang.org/x/tools/cmd/goimports@latest
-          
+
       - name: Fetch base branch
         if: ${{ github.event_name == 'pull_request' }}
         run: git fetch origin ${{ github.base_ref }}
@@ -51,10 +51,10 @@ jobs:
       - name: Start MongoDB
         uses: supercharge/mongodb-github-action@1.2.0
         with:
-          mongodb-version: '${{ matrix.mongodb-version }}'
+          mongodb-version: "${{ matrix.mongodb-version }}"
 
       - name: Cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/go/pkg/mod
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
@@ -66,7 +66,7 @@ jobs:
         run: |
           ./bin/ci-test.sh 2>&1 | tee test.log
           result_code=${PIPESTATUS[0]}
-          echo "::set-output name=log::$(sed -ze 's/%/%25/g;s/\n/%0A/g' test.log)"
+          echo "log=$(sed -ze 's/%/%25/g;s/\n/%0A/g' test.log)" >> $GITHUB_OUTPUT
           exit $result_code
 
       - name: Download golangci-lint
@@ -81,4 +81,3 @@ jobs:
         if: ${{ github.event_name == 'push' }}
         run: |
           $(go env GOPATH)/bin/golangci-lint run --out-format checkstyle --timeout=300s --max-issues-per-linter=0 --max-same-issues=0 --issues-exit-code=0 ./... > golanglint.xml
-

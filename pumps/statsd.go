@@ -22,6 +22,8 @@ var statsdDefaultENV = PUMPS_ENV_PREFIX + "_STATSD" + PUMPS_ENV_META_PREFIX
 
 // @PumpConf Statsd
 type StatsdConf struct {
+	// The prefix for the environment variables that will be used to override the configuration.
+	// Defaults to `TYK_PMP_PUMPS_STATSD_META`
 	EnvPrefix string `mapstructure:"meta_env_prefix"`
 	// Address of statsd including host & port.
 	Address string `json:"address" mapstructure:"address"`

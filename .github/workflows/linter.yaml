@@ -9,7 +9,7 @@ on:
       - main
   pull_request:
   workflow_dispatch:
-  
+
 env:
   TYK_PMP_ANALYTICSSTORAGETYPE: redis
   TYK_PMP_ANALYTICSSTORAGECONFIG_TYPE: redis
@@ -22,17 +22,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        go: [1.16, 1.17]
+        go: [1.21]
     with:
       go: ${{ matrix.go }}
       redis: 5
       mongo: 4.2
+      test-options: ""-count=1 -failfast -v""
   golangci:
     needs: gotest
     if: ${{ always() }}
     uses: TykTechnologies/github-actions/.github/workflows/golangci.yaml@main
     with:
       main_branch: "master"
+      go_version: 1.21
   sonarcloud:
     if: ${{ always() }}
     needs: [gotest, golangci]

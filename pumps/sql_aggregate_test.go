@@ -2,12 +2,15 @@ package pumps
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"testing"
 	"time"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/stretchr/testify/assert"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 func TestSQLAggregateInit(t *testing.T) {
@@ -26,14 +29,16 @@ func TestSQLAggregateInit(t *testing.T) {
 
 	assert.NotNil(t, pmp.db)
 	assert.Equal(t, "sqlite", pmp.db.Dialector.Name())
+	assert.Equal(t, true, pmp.db.Migrator().HasTable(analytics.AggregateSQLTable))
 
-	//Checking with invalid type
+	assert.Equal(t, true, pmp.db.Migrator().HasIndex(analytics.AggregateSQLTable, newAggregatedIndexName))
+
+	// Checking with invalid type
 	cfg["type"] = "invalid"
 	pmp2 := SQLAggregatePump{}
 	invalidDialectErr := pmp2.Init(cfg)
 	assert.NotNil(t, invalidDialectErr)
-	//TODO check how to test postgres connection - it's going to requiere to have some postgres up
-
+	// TODO check how to test postgres connection - it's going to requiere to have some postgres up
 }
 
 func TestSQLAggregateWriteData_Sharded(t *testing.T) {
@@ -46,6 +51,8 @@ func TestSQLAggregateWriteData_Sharded(t *testing.T) {
 	if err != nil {
 		t.Fatal("SQL Pump Aggregate couldn't be initialized with err: ", err)
 	}
+
+	// wait until the index is created for sqlite to avoid locking
 
 	keys := make([]interface{}, 8)
 	now := time.Now()
@@ -100,7 +107,7 @@ func TestSQLAggregateWriteData_Sharded(t *testing.T) {
 }
 
 func TestSQLAggregateWriteData(t *testing.T) {
-	pmp := SQLAggregatePump{}
+	pmp := &SQLAggregatePump{}
 	cfg := make(map[string]interface{})
 	cfg["type"] = "sqlite"
 	cfg["batch_size"] = 2000
@@ -112,6 +119,9 @@ func TestSQLAggregateWriteData(t *testing.T) {
 	defer func(table string) {
 		pmp.db.Migrator().DropTable(analytics.AggregateSQLTable)
 	}(table)
+
+	err = pmp.ensureIndex(analytics.AggregateSQLTable, false)
+	assert.Nil(t, err)
 
 	now := time.Now()
 	nowPlus1 := time.Now().Add(1 * time.Hour)
@@ -144,7 +154,7 @@ func TestSQLAggregateWriteData(t *testing.T) {
 			Record:               analytics.AnalyticsRecord{OrgID: "1", APIID: "api1", TimeStamp: nowPlus1},
 			RecordsAmountToWrite: 3,
 			RowsLen:              4,
-			HitsPerHour:          3, //since we're going to write in a new hour, it should mean a different aggregation.
+			HitsPerHour:          3, // since we're going to write in a new hour, it should mean a different aggregation.
 		},
 	}
 
@@ -161,7 +171,7 @@ func TestSQLAggregateWriteData(t *testing.T) {
 
 			pmp.WriteData(context.TODO(), keys)
 			table := analytics.AggregateSQLTable
-			//check if the table exists
+			// check if the table exists
 			assert.Equal(t, true, pmp.db.Migrator().HasTable(table))
 
 			dbRecords := []analytics.SQLAnalyticsRecordAggregate{}
@@ -169,17 +179,16 @@ func TestSQLAggregateWriteData(t *testing.T) {
 				t.Fatal("Error getting analytics records from SQL")
 			}
 
-			//check amount of rows in the table
+			// check amount of rows in the table
 			assert.Equal(t, tests[testName].RowsLen, len(dbRecords))
 
-			//iterate over the records and check total of hits
+			// iterate over the records and check total of hits
 			for _, dbRecord := range dbRecords {
 				if dbRecord.TimeStamp == tests[testName].Record.TimeStamp.Unix() && dbRecord.DimensionValue == "total" {
 					assert.Equal(t, tests[testName].HitsPerHour, dbRecord.Hits)
 					break
 				}
 			}
-
 		})
 	}
 }
@@ -271,7 +280,7 @@ func TestSQLAggregateWriteDataValues(t *testing.T) {
 			// Configure and Initialise pump first
 			dbRecords := []analytics.SQLAnalyticsRecordAggregate{}
 
-			pmp := SQLAggregatePump{}
+			pmp := &SQLAggregatePump{}
 			cfg := make(map[string]interface{})
 			cfg["type"] = "sqlite"
 			cfg["batch_size"] = 1
@@ -280,7 +289,7 @@ func TestSQLAggregateWriteDataValues(t *testing.T) {
 			if err != nil {
 				t.Fatal("SQL Pump Aggregate couldn't be initialized with err: ", err)
 			}
-			defer func(pmp SQLAggregatePump) {
+			defer func(pmp *SQLAggregatePump) {
 				err := pmp.db.Migrator().DropTable(analytics.AggregateSQLTable)
 				if err != nil {
 					t.Error(err)
@@ -302,6 +311,200 @@ func TestSQLAggregateWriteDataValues(t *testing.T) {
 
 			// Validate
 			tc.assertion(t, dbRecords)
+		})
+	}
+}
+
+func TestDecodeRequestAndDecodeResponseSQLAggregate(t *testing.T) {
+	newPump := &SQLAggregatePump{}
+	cfg := make(map[string]interface{})
+	cfg["type"] = "sqlite"
+	cfg["connection_string"] = ""
+	cfg["table_sharding"] = true
+	err := newPump.Init(cfg)
+	assert.Nil(t, err)
+
+	// checking if the default values are false
+	assert.False(t, newPump.GetDecodedRequest())
+	assert.False(t, newPump.GetDecodedResponse())
+
+	// trying to set the values to true
+	newPump.SetDecodingRequest(true)
+	newPump.SetDecodingResponse(true)
+
+	// checking if the values are still false as expected because this pump doesn't support decoding requests/responses
+	assert.False(t, newPump.GetDecodedRequest())
+	assert.False(t, newPump.GetDecodedResponse())
+}
+
+func TestEnsureIndex(t *testing.T) {
+	//nolint:govet
+	tcs := []struct {
+		testName             string
+		givenTableName       string
+		expectedErr          error
+		pmpSetupFn           func(tableName string) *SQLAggregatePump
+		givenRunInBackground bool
+		shouldHaveIndex      bool
+	}{
+		{
+			testName: "index created correctly, not background",
+			pmpSetupFn: func(tableName string) *SQLAggregatePump {
+				pmp := &SQLAggregatePump{}
+				cfg := &SQLAggregatePumpConf{}
+				cfg.Type = "sqlite"
+				cfg.ConnectionString = ""
+				pmp.SQLConf = cfg
+
+				pmp.log = log.WithField("prefix", "sql-aggregate-pump")
+				dialect, errDialect := Dialect(&pmp.SQLConf.SQLConf)
+				if errDialect != nil {
+					return nil
+				}
+				db, err := gorm.Open(dialect, &gorm.Config{
+					AutoEmbedd:  true,
+					UseJSONTags: true,
+					Logger:      logger.Default.LogMode(logger.Info),
+				})
+				if err != nil {
+					return nil
+				}
+				pmp.db = db
+
+				if err := pmp.ensureTable(tableName); err != nil {
+					return nil
+				}
+
+				return pmp
+			},
+			givenTableName:       "test",
+			givenRunInBackground: false,
+			expectedErr:          nil,
+			shouldHaveIndex:      true,
+		},
+		{
+			testName: "index created correctly, background",
+			pmpSetupFn: func(tableName string) *SQLAggregatePump {
+				pmp := &SQLAggregatePump{}
+				cfg := &SQLAggregatePumpConf{}
+				cfg.Type = "sqlite"
+				cfg.ConnectionString = ""
+				pmp.SQLConf = cfg
+
+				pmp.log = log.WithField("prefix", "sql-aggregate-pump")
+				dialect, errDialect := Dialect(&pmp.SQLConf.SQLConf)
+				if errDialect != nil {
+					return nil
+				}
+				db, err := gorm.Open(dialect, &gorm.Config{
+					AutoEmbedd:  true,
+					UseJSONTags: true,
+					Logger:      logger.Default.LogMode(logger.Info),
+				})
+				if err != nil {
+					return nil
+				}
+				pmp.db = db
+
+				pmp.backgroundIndexCreated = make(chan bool, 1)
+
+				if err := pmp.ensureTable(tableName); err != nil {
+					return nil
+				}
+
+				return pmp
+			},
+			givenTableName:       "test2",
+			givenRunInBackground: true,
+			expectedErr:          nil,
+			shouldHaveIndex:      true,
+		},
+		{
+			testName: "index created on non existing table, not background",
+			pmpSetupFn: func(tableName string) *SQLAggregatePump {
+				pmp := &SQLAggregatePump{}
+				cfg := &SQLAggregatePumpConf{}
+				cfg.Type = "sqlite"
+				cfg.ConnectionString = ""
+				pmp.SQLConf = cfg
+
+				pmp.log = log.WithField("prefix", "sql-aggregate-pump")
+				dialect, errDialect := Dialect(&pmp.SQLConf.SQLConf)
+				if errDialect != nil {
+					return nil
+				}
+				db, err := gorm.Open(dialect, &gorm.Config{
+					AutoEmbedd:  true,
+					UseJSONTags: true,
+					Logger:      logger.Default.LogMode(logger.Info),
+				})
+				if err != nil {
+					return nil
+				}
+				pmp.db = db
+
+				return pmp
+			},
+			givenTableName:       "test3",
+			givenRunInBackground: false,
+			expectedErr:          errors.New("no such table: main.test3"),
+			shouldHaveIndex:      false,
+		},
+		{
+			testName: "omit_index_creation enabled",
+			pmpSetupFn: func(tableName string) *SQLAggregatePump {
+				pmp := &SQLAggregatePump{}
+				cfg := &SQLAggregatePumpConf{}
+				cfg.Type = "sqlite"
+				cfg.ConnectionString = ""
+				cfg.OmitIndexCreation = true
+				pmp.SQLConf = cfg
+
+				pmp.log = log.WithField("prefix", "sql-aggregate-pump")
+				dialect, errDialect := Dialect(&pmp.SQLConf.SQLConf)
+				if errDialect != nil {
+					return nil
+				}
+				db, err := gorm.Open(dialect, &gorm.Config{
+					AutoEmbedd:  true,
+					UseJSONTags: true,
+					Logger:      logger.Default.LogMode(logger.Info),
+				})
+				if err != nil {
+					return nil
+				}
+				pmp.db = db
+
+				if err := pmp.ensureTable(tableName); err != nil {
+					return nil
+				}
+				return pmp
+			},
+			givenTableName:       "test3",
+			givenRunInBackground: false,
+			expectedErr:          nil,
+			shouldHaveIndex:      false,
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.testName, func(t *testing.T) {
+			pmp := tc.pmpSetupFn(tc.givenTableName)
+			assert.NotNil(t, pmp)
+
+			actualErr := pmp.ensureIndex(tc.givenTableName, tc.givenRunInBackground)
+
+			if actualErr == nil {
+				if tc.givenRunInBackground {
+					// wait for the background index creation to finish
+					<-pmp.backgroundIndexCreated
+				} else {
+					hasIndex := pmp.db.Table(tc.givenTableName).Migrator().HasIndex(tc.givenTableName, newAggregatedIndexName)
+					assert.Equal(t, tc.shouldHaveIndex, hasIndex)
+				}
+			} else {
+				assert.Equal(t, tc.expectedErr.Error(), actualErr.Error())
+			}
 		})
 	}
 }

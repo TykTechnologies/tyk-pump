@@ -2,14 +2,14 @@ package main
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
+	"os"
 	"os/signal"
 	"strings"
 	"sync"
 	"syscall"
 	"time"
-
-	"os"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/TykTechnologies/tyk-pump/analytics/demo"
@@ -23,25 +23,33 @@ import (
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
-var SystemConfig TykPumpConfiguration
-var AnalyticsStore storage.AnalyticsStorage
-var UptimeStorage storage.AnalyticsStorage
-var Pumps []pumps.Pump
-var UptimePump pumps.UptimePump
-var AnalyticsSerializers []serializer.AnalyticsSerializer
+var (
+	SystemConfig         TykPumpConfiguration
+	AnalyticsStore       storage.AnalyticsStorage
+	UptimeStorage        storage.AnalyticsStorage
+	Pumps                []pumps.Pump
+	UptimePump           pumps.UptimePump
+	AnalyticsSerializers []serializer.AnalyticsSerializer
+)
 
 var log = logger.GetLogger()
 
 var mainPrefix = "main"
 
 var (
+	//lint:ignore U1000 Function is used when version flag is passed in command line
 	help               = kingpin.CommandLine.HelpFlag.Short('h')
 	conf               = kingpin.Flag("conf", "path to the config file").Short('c').Default("pump.conf").String()
 	demoMode           = kingpin.Flag("demo", "pass orgID string to generate demo data").Default("").String()
 	demoApiMode        = kingpin.Flag("demo-api", "pass apiID string to generate demo data").Default("").String()
 	demoApiVersionMode = kingpin.Flag("demo-api-version", "pass apiID string to generate demo data").Default("").String()
+	demoTrackPath      = kingpin.Flag("demo-track-path", "enable track path in analytics records").Default("false").Bool()
+	demoDays           = kingpin.Flag("demo-days", "flag that determines the number of days for the analytics records").Default("30").Int()
+	demoRecordsPerHour = kingpin.Flag("demo-records-per-hour", "flag that determines the number of records per hour for the analytics records").Default("0").Int()
+	demoFutureData     = kingpin.Flag("demo-future-data", "flag that determines if the demo data should be in the future").Default("false").Bool()
 	debugMode          = kingpin.Flag("debug", "enable debug mode").Bool()
-	version            = kingpin.Version(pumps.VERSION)
+	//lint:ignore U1000 Function is used when version flag is passed in command line
+	version = kingpin.Version(pumps.Version)
 )
 
 func Init() {
@@ -60,12 +68,12 @@ func Init() {
 		demoMode = &envDemo
 	}
 
-	//Serializer init
+	// Serializer init
 	AnalyticsSerializers = []serializer.AnalyticsSerializer{serializer.NewAnalyticsSerializer(serializer.MSGP_SERIALIZER), serializer.NewAnalyticsSerializer(serializer.PROTOBUF_SERIALIZER)}
 
 	log.WithFields(logrus.Fields{
 		"prefix": mainPrefix,
-	}).Info("## Tyk Analytics Pump, ", pumps.VERSION, " ##")
+	}).Info("## Tyk Pump, ", pumps.Version, " ##")
 
 	// If no environment variable is set, check the configuration file:
 	if os.Getenv("TYK_LOGLEVEL") == "" {
@@ -90,36 +98,74 @@ func Init() {
 	if *debugMode {
 		log.Level = logrus.DebugLevel
 	}
-
 }
 
 func setupAnalyticsStore() {
 	switch SystemConfig.AnalyticsStorageType {
-	case "redis":
-		AnalyticsStore = &storage.RedisClusterStorageManager{}
-		UptimeStorage = &storage.RedisClusterStorageManager{}
+	case "redis", "":
+		var err error
+		AnalyticsStore, err = storage.NewTemporalStorageHandler(SystemConfig.AnalyticsStorageConfig, false)
+		if err != nil {
+			log.WithFields(logrus.Fields{
+				"prefix": mainPrefix,
+			}).Fatal("Error connecting to Temporal Storage: ", err)
+		}
+		err = AnalyticsStore.Init()
+		if err != nil {
+			log.WithFields(logrus.Fields{
+				"prefix": mainPrefix,
+			}).Fatal("Error connecting to Temporal Storage: ", err)
+		}
+
+		// Copy across the redis configuration
+		uptimeConf := SystemConfig.AnalyticsStorageConfig
+		// Swap key prefixes for uptime purger
+		uptimeConf.KeyPrefix = "host-checker:"
+
+		UptimeStorage, err = storage.NewTemporalStorageHandler(uptimeConf, false)
+		if err != nil {
+			log.WithFields(logrus.Fields{
+				"prefix": mainPrefix,
+			}).Fatal("Error connecting to Temporal Storage: ", err)
+		}
+
+		err = UptimeStorage.Init()
+		if err != nil {
+			log.WithFields(logrus.Fields{
+				"prefix": mainPrefix,
+			}).Fatal("Error connecting to Redis: ", err)
+		}
+
 	default:
-		AnalyticsStore = &storage.RedisClusterStorageManager{}
-		UptimeStorage = &storage.RedisClusterStorageManager{}
+		log.WithFields(logrus.Fields{
+			"prefix": mainPrefix,
+		}).Fatal("Invalid analytics storage type: ", SystemConfig.AnalyticsStorageType)
 	}
-
-	AnalyticsStore.Init(SystemConfig.AnalyticsStorageConfig)
-
-	// Copy across the redis configuration
-	uptimeConf := SystemConfig.AnalyticsStorageConfig
-
-	// Swap key prefixes for uptime purger
-	uptimeConf.RedisKeyPrefix = "host-checker:"
-	UptimeStorage.Init(uptimeConf)
 }
 
 func storeVersion() {
-	var versionStore = &storage.RedisClusterStorageManager{}
 	versionConf := SystemConfig.AnalyticsStorageConfig
-	versionStore.KeyPrefix = "version-check-"
-	versionStore.Config = versionConf
-	versionStore.Connect()
-	versionStore.SetKey("pump", pumps.VERSION, 0)
+	versionConf.KeyPrefix = "version-check-"
+	versionStore, err := storage.NewTemporalStorageHandler(versionConf, false)
+	if err != nil {
+		log.WithFields(logrus.Fields{
+			"prefix": mainPrefix,
+		}).Fatal("Error connecting to Temporal Storage: ", err)
+	}
+
+	err = versionStore.Init()
+	if err != nil {
+		log.WithFields(logrus.Fields{
+			"prefix": mainPrefix,
+		}).Fatal("Error connecting to Temporal Storage: ", err)
+	}
+
+	err = versionStore.SetKey("pump", pumps.Version, 0)
+	if err != nil {
+		log.WithFields(logrus.Fields{
+			"prefix": mainPrefix,
+		}).Error("Error storing version: ", err)
+	}
 }
 
 func initialisePumps() {
@@ -142,6 +188,9 @@ func initialisePumps() {
 			thisPmp.SetTimeout(pmp.Timeout)
 			thisPmp.SetOmitDetailedRecording(pmp.OmitDetailedRecording)
 			thisPmp.SetMaxRecordSize(pmp.MaxRecordSize)
+			thisPmp.SetIgnoreFields(pmp.IgnoreFields)
+			thisPmp.SetDecodingRequest(pmp.DecodeRawRequest)
+			thisPmp.SetDecodingResponse(pmp.DecodeRawResponse)
 			initErr := thisPmp.Init(pmp.Meta)
 			if initErr != nil {
 				log.WithField("pump", thisPmp.GetName()).Error("Pump init error (skipping): ", initErr)
@@ -163,7 +212,6 @@ func initialisePumps() {
 	if !SystemConfig.DontPurgeUptimeData {
 		initialiseUptimePump()
 	}
-
 }
 
 func initialiseUptimePump() {
@@ -196,7 +244,7 @@ func StartPurgeLoop(wg *sync.WaitGroup, ctx context.Context, secInterval int, ch
 		for i := -1; i < 10; i++ {
 			var analyticsKeyName string
 			if i == -1 {
-				//if it's the first iteration, we look for tyk-system-analytics to maintain backwards compatibility or if analytics_config.enable_multiple_analytics_keys is disabled in the gateway
+				// if it's the first iteration, we look for tyk-system-analytics to maintain backwards compatibility or if analytics_config.enable_multiple_analytics_keys is disabled in the gateway
 				analyticsKeyName = storage.ANALYTICS_KEYNAME
 			} else {
 				analyticsKeyName = fmt.Sprintf("%v_%v", storage.ANALYTICS_KEYNAME, i)
@@ -204,7 +252,12 @@ func StartPurgeLoop(wg *sync.WaitGroup, ctx context.Context, secInterval int, ch
 
 			for _, serializerMethod := range AnalyticsSerializers {
 				analyticsKeyName += serializerMethod.GetSuffix()
-				AnalyticsValues := AnalyticsStore.GetAndDeleteSet(analyticsKeyName, chunkSize, expire)
+				AnalyticsValues, err := AnalyticsStore.GetAndDeleteSet(analyticsKeyName, chunkSize, expire)
+				if err != nil {
+					log.WithFields(logrus.Fields{
+						"prefix": mainPrefix,
+					}).Error("Error on Purge Loop. Is Temporal Storage down?: " + err.Error())
+				}
 				if len(AnalyticsValues) > 0 {
 					PreprocessAnalyticsValues(AnalyticsValues, serializerMethod, analyticsKeyName, omitDetails, job, startTime, secInterval)
 				}
@@ -215,7 +268,12 @@ func StartPurgeLoop(wg *sync.WaitGroup, ctx context.Context, secInterval int, ch
 		job.Timing("purge_time_all", time.Since(startTime).Nanoseconds())
 
 		if !SystemConfig.DontPurgeUptimeData {
-			UptimeValues := UptimeStorage.GetAndDeleteSet(storage.UptimeAnalytics_KEYNAME, chunkSize, expire)
+			UptimeValues, err := UptimeStorage.GetAndDeleteSet(storage.UptimeAnalytics_KEYNAME, chunkSize, expire)
+			if err != nil {
+				log.WithFields(logrus.Fields{
+					"prefix": mainPrefix,
+				}).Error("Error on Purge Loop. Is Temporal Storage down?: " + err.Error())
+			}
 			UptimePump.WriteUptimeData(UptimeValues)
 		}
 
@@ -291,10 +349,13 @@ func writeToPumps(keys []interface{}, job *health.Job, startTime time.Time, purg
 }
 
 func filterData(pump pumps.Pump, keys []interface{}) []interface{} {
-
 	shouldTrim := SystemConfig.MaxRecordSize != 0 || pump.GetMaxRecordSize() != 0
 	filters := pump.GetFilters()
-	if !filters.HasFilter() && !pump.GetOmitDetailedRecording() && !shouldTrim {
+	ignoreFields := pump.GetIgnoreFields()
+	getDecodingResponse := pump.GetDecodedResponse()
+	getDecodingRequest := pump.GetDecodedRequest()
+	// Checking to see if all the config options are empty/false
+	if !getDecodingRequest && !getDecodingResponse && !filters.HasFilter() && !pump.GetOmitDetailedRecording() && !shouldTrim && len(ignoreFields) == 0 {
 		return keys
 	}
 
@@ -319,6 +380,22 @@ func filterData(pump pumps.Pump, keys []interface{}) []interface{} {
 		}
 		if filters.ShouldFilter(decoded) {
 			continue
+		}
+		if len(ignoreFields) > 0 {
+			decoded.RemoveIgnoredFields(ignoreFields)
+		}
+		// DECODING RAW REQUEST AND RESPONSE FROM BASE 64
+		if getDecodingRequest {
+			rawRequest, err := base64.StdEncoding.DecodeString(decoded.RawRequest)
+			if err == nil {
+				decoded.RawRequest = string(rawRequest)
+			}
+		}
+		if getDecodingResponse {
+			rawResponse, err := base64.StdEncoding.DecodeString(decoded.RawResponse)
+			if err == nil {
+				decoded.RawResponse = string(rawResponse)
+			}
 		}
 		filteredKeys[newLenght] = decoded
 		newLenght++
@@ -347,11 +424,11 @@ func execPumpWriting(wg *sync.WaitGroup, pmp pumps.Pump, keys *[]interface{}, pu
 	}).Debug("Writing to: ", pmp.GetName())
 
 	ch := make(chan error, 1)
-	//Load pump timeout
+	// Load pump timeout
 	timeout := pmp.GetTimeout()
 	var ctx context.Context
 	var cancel context.CancelFunc
-	//Initialize context depending if the pump has a configured timeout
+	// Initialize context depending if the pump has a configured timeout
 	if timeout > 0 {
 		ctx, cancel = context.WithTimeout(context.Background(), time.Duration(timeout)*time.Second)
 	} else {
@@ -362,7 +439,6 @@ func execPumpWriting(wg *sync.WaitGroup, pmp pumps.Pump, keys *[]interface{}, pu
 
 	go func(ch chan error, ctx context.Context, pmp pumps.Pump, keys *[]interface{}) {
 		filteredKeys := filterData(pmp, *keys)
-
 		ch <- pmp.WriteData(ctx, filteredKeys)
 	}(ch, ctx, pmp, keys)
 
@@ -408,8 +484,7 @@ func main() {
 		log.Info("BUILDING DEMO DATA AND EXITING...")
 		log.Warning("Starting from date: ", time.Now().AddDate(0, 0, -30))
 		demo.DemoInit(*demoMode, *demoApiMode, *demoApiVersionMode)
-		demo.GenerateDemoData(time.Now().AddDate(0, 0, -30), 30, *demoMode, writeToPumps)
-
+		demo.GenerateDemoData(*demoDays, *demoRecordsPerHour, *demoMode, *demoFutureData, *demoTrackPath, writeToPumps)
 		return
 	}
 

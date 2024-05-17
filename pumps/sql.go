@@ -49,6 +49,8 @@ type SQLPump struct {
 
 // @PumpConf SQL
 type SQLConf struct {
+	// The prefix for the environment variables that will be used to override the configuration.
+	// Defaults to `TYK_PMP_PUMPS_SQL_META`
 	EnvPrefix string `mapstructure:"meta_env_prefix"`
 	// The supported and tested types are `sqlite` and `postgres`.
 	Type string `json:"type" mapstructure:"type"`
@@ -101,9 +103,11 @@ func Dialect(cfg *SQLConf) (gorm.Dialector, error) {
 	}
 }
 
-var SQLPrefix = "SQL-pump"
-var SQLDefaultENV = PUMPS_ENV_PREFIX + "_SQL" + PUMPS_ENV_META_PREFIX
-var SQLDefaultQueryBatchSize = 1000
+var (
+	SQLPrefix                = "SQL-pump"
+	SQLDefaultENV            = PUMPS_ENV_PREFIX + "_SQL" + PUMPS_ENV_META_PREFIX
+	SQLDefaultQueryBatchSize = 1000
+)
 
 func (c *SQLPump) New() Pump {
 	newPump := SQLPump{}
@@ -116,6 +120,18 @@ func (c *SQLPump) GetName() string {
 
 func (c *SQLPump) GetEnvPrefix() string {
 	return c.SQLConf.EnvPrefix
+}
+
+func (c *SQLPump) SetDecodingRequest(decoding bool) {
+	if decoding {
+		log.WithField("pump", c.GetName()).Warn("Decoding request is not supported for SQL pump")
+	}
+}
+
+func (c *SQLPump) SetDecodingResponse(decoding bool) {
+	if decoding {
+		log.WithField("pump", c.GetName()).Warn("Decoding response is not supported for SQL pump")
+	}
 }
 
 func (c *SQLPump) Init(conf interface{}) error {
@@ -158,7 +174,6 @@ func (c *SQLPump) Init(conf interface{}) error {
 		UseJSONTags: true,
 		Logger:      gorm_logger.Default.LogMode(logLevel),
 	})
-
 	if err != nil {
 		c.log.Error(err)
 		return err
@@ -195,18 +210,18 @@ func (c *SQLPump) WriteData(ctx context.Context, data []interface{}) error {
 
 	startIndex := 0
 	endIndex := dataLen
-	//We iterate dataLen +1 times since we're writing the data after the date change on sharding_table:true
+	// We iterate dataLen +1 times since we're writing the data after the date change on sharding_table:true
 	for i := 0; i <= dataLen; i++ {
 		if c.SQLConf.TableSharding {
 			recDate := typedData[startIndex].TimeStamp.Format("20060102")
 			var nextRecDate string
-			//if we're on i == dataLen iteration, it means that we're out of index range. We're going to use the last record date.
+			// if we're on i == dataLen iteration, it means that we're out of index range. We're going to use the last record date.
 			if i == dataLen {
 				nextRecDate = typedData[dataLen-1].TimeStamp.Format("20060102")
 			} else {
 				nextRecDate = typedData[i].TimeStamp.Format("20060102")
 
-				//if both dates are equal, we shouldn't write in the table yet.
+				// if both dates are equal, we shouldn't write in the table yet.
 				if recDate == nextRecDate {
 					continue
 				}
@@ -273,13 +288,13 @@ func (c *SQLPump) WriteUptimeData(data []interface{}) {
 		if c.SQLConf.TableSharding {
 			recDate := typedData[startIndex].TimeStamp.Format("20060102")
 			var nextRecDate string
-			//if we're on i == dataLen iteration, it means that we're out of index range. We're going to use the last record date.
+			// if we're on i == dataLen iteration, it means that we're out of index range. We're going to use the last record date.
 			if i == dataLen {
 				nextRecDate = typedData[dataLen-1].TimeStamp.Format("20060102")
 			} else {
 				nextRecDate = typedData[i].TimeStamp.Format("20060102")
 
-				//if both dates are equal, we shouldn't write in the table yet.
+				// if both dates are equal, we shouldn't write in the table yet.
 				if recDate == nextRecDate {
 					continue
 				}
@@ -338,5 +353,4 @@ func (c *SQLPump) WriteUptimeData(data []interface{}) {
 	}
 
 	c.log.Debug("Purged ", len(data), " records...")
-
 }

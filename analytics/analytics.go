@@ -10,9 +10,11 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/fatih/structs"
 	"github.com/oschwald/maxminddb-golang"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
+	"github.com/TykTechnologies/storage/persistent/model"
 	analyticsproto "github.com/TykTechnologies/tyk-pump/analytics/proto"
 
 	"github.com/TykTechnologies/tyk-pump/logger"
@@ -40,40 +42,74 @@ const SQLTable = "tyk_analytics"
 
 // AnalyticsRecord encodes the details of a request
 type AnalyticsRecord struct {
-	Method        string       `json:"method" gorm:"column:method"`
-	Host          string       `json:"host" gorm:"column:host"`
-	Path          string       `json:"path" gorm:"column:path"`
-	RawPath       string       `json:"raw_path" gorm:"column:rawpath"`
-	ContentLength int64        `json:"content_length" gorm:"column:contentlength"`
-	UserAgent     string       `json:"user_agent" gorm:"column:useragent"`
-	Day           int          `json:"day" sql:"-"`
-	Month         time.Month   `json:"month" sql:"-"`
-	Year          int          `json:"year" sql:"-"`
-	Hour          int          `json:"hour" sql:"-"`
-	ResponseCode  int          `json:"response_code" gorm:"column:responsecode;index"`
-	APIKey        string       `json:"api_key" gorm:"column:apikey;index"`
-	TimeStamp     time.Time    `json:"timestamp" gorm:"column:timestamp;index"`
-	APIVersion    string       `json:"api_version" gorm:"column:apiversion"`
-	APIName       string       `json:"api_name" sql:"-"`
-	APIID         string       `json:"api_id" gorm:"column:apiid;index"`
-	OrgID         string       `json:"org_id" gorm:"column:orgid;index"`
-	OauthID       string       `json:"oauth_id" gorm:"column:oauthid;index"`
-	RequestTime   int64        `json:"request_time" gorm:"column:requesttime"`
-	RawRequest    string       `json:"raw_request" gorm:"column:rawrequest"`
-	RawResponse   string       `json:"raw_response" gorm:"column:rawresponse"`
-	IPAddress     string       `json:"ip_address" gorm:"column:ipaddress"`
-	Geo           GeoData      `json:"geo" gorm:"embedded"`
-	Network       NetworkStats `json:"network"`
-	Latency       Latency      `json:"latency"`
-	Tags          []string     `json:"tags"`
-	Alias         string       `json:"alias"`
-	TrackPath     bool         `json:"track_path" gorm:"column:trackpath"`
-	ExpireAt      time.Time    `bson:"expireAt" json:"expireAt"`
-	ApiSchema     string       `json:"api_schema" bson:"-" gorm:"-:all"`
+	id            model.ObjectID `bson:"_id" gorm:"-:all"`
+	Method        string         `json:"method" gorm:"column:method"`
+	Host          string         `json:"host" gorm:"column:host"`
+	Path          string         `json:"path" gorm:"column:path"`
+	RawPath       string         `json:"raw_path" gorm:"column:rawpath"`
+	ContentLength int64          `json:"content_length" gorm:"column:contentlength"`
+	UserAgent     string         `json:"user_agent" gorm:"column:useragent"`
+	Day           int            `json:"day" sql:"-"`
+	Month         time.Month     `json:"month" sql:"-"`
+	Year          int            `json:"year" sql:"-"`
+	Hour          int            `json:"hour" sql:"-"`
+	ResponseCode  int            `json:"response_code" gorm:"column:responsecode;index"`
+	APIKey        string         `json:"api_key" gorm:"column:apikey;index"`
+	TimeStamp     time.Time      `json:"timestamp" gorm:"column:timestamp;index"`
+	APIVersion    string         `json:"api_version" gorm:"column:apiversion"`
+	APIName       string         `json:"api_name" sql:"-"`
+	APIID         string         `json:"api_id" gorm:"column:apiid;index"`
+	OrgID         string         `json:"org_id" gorm:"column:orgid;index"`
+	OauthID       string         `json:"oauth_id" gorm:"column:oauthid;index"`
+	RequestTime   int64          `json:"request_time" gorm:"column:requesttime"`
+	RawRequest    string         `json:"raw_request" gorm:"column:rawrequest"`
+	RawResponse   string         `json:"raw_response" gorm:"column:rawresponse"`
+	IPAddress     string         `json:"ip_address" gorm:"column:ipaddress"`
+	Geo           GeoData        `json:"geo" gorm:"embedded"`
+	Network       NetworkStats   `json:"network"`
+	Latency       Latency        `json:"latency"`
+	Tags          []string       `json:"tags"`
+	Alias         string         `json:"alias"`
+	TrackPath     bool           `json:"track_path" gorm:"column:trackpath"`
+	ExpireAt      time.Time      `bson:"expireAt" json:"expireAt"`
+	ApiSchema     string         `json:"api_schema" bson:"-" gorm:"-:all"` //nolint
+
+	GraphQLStats   GraphQLStats `json:"graphql_stats" bson:"-" gorm:"-:all"`
+	CollectionName string       `json:"-" bson:"-" gorm:"-:all"`
 }
 
 func (a *AnalyticsRecord) TableName() string {
+	if a.CollectionName != "" {
+		return a.CollectionName
+	}
 	return SQLTable
+}
+
+func (a *AnalyticsRecord) GetObjectID() model.ObjectID {
+	return a.id
+}
+
+func (a *AnalyticsRecord) SetObjectID(id model.ObjectID) {
+	a.id = id
+}
+
+type GraphQLOperations int
+
+const (
+	OperationUnknown GraphQLOperations = iota
+	OperationQuery
+	OperationMutation
+	OperationSubscription
+)
+
+type GraphQLStats struct {
+	Variables     string
+	RootFields    []string
+	Types         map[string][]string
+	Errors        []GraphError
+	OperationType GraphQLOperations
+	HasErrors     bool
+	IsGraphQL     bool
 }
 
 type GraphError struct {
@@ -156,7 +192,7 @@ func (a *AnalyticsRecord) GetFieldNames() []string {
 	fields = append(fields, a.Geo.GetFieldNames()...)
 	fields = append(fields, a.Network.GetFieldNames()...)
 	fields = append(fields, a.Latency.GetFieldNames()...)
-	return append(fields, "Tags", "Alias", "TrackPath", "ExpireAt")
+	return append(fields, "Tags", "Alias", "TrackPath", "ExpireAt", "ApiSchema")
 }
 
 func (n *NetworkStats) GetLineValues() []string {
@@ -221,6 +257,8 @@ func (a *AnalyticsRecord) GetLineValues() []string {
 	fields = append(fields, a.Alias)
 	fields = append(fields, strconv.FormatBool(a.TrackPath))
 	fields = append(fields, a.ExpireAt.String())
+	fields = append(fields, a.ApiSchema)
+
 	return fields
 }
 
@@ -336,15 +374,26 @@ func GeoIPLookup(ipStr string, GeoIPDB *maxminddb.Reader) (*GeoData, error) {
 }
 
 func (a *AnalyticsRecord) IsGraphRecord() bool {
-	if len(a.Tags) == 0 {
-		return false
-	}
+	return a.GraphQLStats.IsGraphQL
+}
 
-	for _, tag := range a.Tags {
-		if tag == PredefinedTagGraphAnalytics {
-			return true
+func (a *AnalyticsRecord) RemoveIgnoredFields(ignoreFields []string) {
+	for _, fieldToIgnore := range ignoreFields {
+		found := false
+		for _, field := range structs.Fields(a) {
+			fieldTag := field.Tag("json")
+			if fieldTag == fieldToIgnore {
+				// setting field to default value
+				err := field.Zero()
+				if err != nil {
+					log.Error("Unable to ignore "+field.Name()+" field: ", err)
+				}
+				found = true
+				continue
+			}
+		}
+		if !found {
+			log.Error("Error looking for field + ", fieldToIgnore+" in AnalyticsRecord struct: not found.")
 		}
 	}
-
-	return false
 }

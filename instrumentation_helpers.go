@@ -5,8 +5,6 @@ import (
 	"runtime/debug"
 	"time"
 
-	"github.com/TykTechnologies/tyk/rpc"
-
 	"github.com/gocraft/health"
 )
 
@@ -43,8 +41,6 @@ func SetupInstrumentation() {
 
 	log.Info("StatsD instrumentation sink started")
 	instrument.AddSink(statsdSink)
-
-	rpc.Instrument = instrument
 
 	MonitorApplicationInstrumentation()
 }

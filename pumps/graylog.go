@@ -19,6 +19,8 @@ type GraylogPump struct {
 
 // @PumpConf Graylog
 type GraylogConf struct {
+	// The prefix for the environment variables that will be used to override the configuration.
+	// Defaults to `TYK_PMP_PUMPS_GRAYLOG_META`
 	EnvPrefix string `mapstructure:"meta_env_prefix"`
 	// Graylog host.
 	GraylogHost string `json:"host" mapstructure:"host"`

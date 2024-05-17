@@ -3,7 +3,6 @@ package pumps
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -26,13 +25,16 @@ type splunkStatus struct {
 	Len  int    `json:"len"`
 }
 type testHandler struct {
-	test    *testing.T
-	batched bool
-
-	responses []splunkStatus
+	test         *testing.T
+	batched      bool
+	returnErrors int
+	responses    []splunkStatus
+	reqCount     int
 }
 
 func (h *testHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	h.reqCount++
+
 	authHeaderValue := r.Header.Get("authorization")
 	if authHeaderValue == "" {
 		h.test.Fatal("Auth header is empty")
@@ -48,6 +50,17 @@ func (h *testHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		h.test.Fatal("Couldn't ready body")
 	}
+	r.Body.Close()
+
+	if h.returnErrors >= h.reqCount {
+		w.WriteHeader(http.StatusInternalServerError)
+		_, err := w.Write([]byte("splunk internal error"))
+		if err != nil {
+			h.test.Fatalf("Failed to write response got error %v", err)
+		}
+		return
+	}
+
 	status := splunkStatus{Text: "Success", Code: 0}
 	if !h.batched {
 		event := make(map[string]interface{})
@@ -77,6 +90,116 @@ func TestSplunkInit(t *testing.T) {
 	if err == nil {
 		t.Fatal("Empty parameters should return an error")
 	}
+}
+
+func Test_SplunkBackoffRetry(t *testing.T) {
+	go t.Run("max_retries=1", func(t *testing.T) {
+		handler := &testHandler{test: t, batched: false, returnErrors: 1}
+		server := httptest.NewUnstartedServer(handler)
+		server.Config.SetKeepAlivesEnabled(false)
+		server.Start()
+
+		defer server.Close()
+
+		pmp := SplunkPump{}
+		cfg := make(map[string]interface{})
+		cfg["collector_token"] = testToken
+		cfg["max_retries"] = 1
+		cfg["collector_url"] = server.URL
+		cfg["ssl_insecure_skip_verify"] = true
+
+		if err := pmp.Init(cfg); err != nil {
+			t.Errorf("Error initializing pump %v", err)
+			return
+		}
+
+		keys := make([]interface{}, 1)
+
+		keys[0] = analytics.AnalyticsRecord{OrgID: "1", APIID: "123", Path: "/test-path", Method: "POST", TimeStamp: time.Now()}
+
+		if errWrite := pmp.WriteData(context.TODO(), keys); errWrite != nil {
+			t.Error("Error writing to splunk pump:", errWrite.Error())
+			return
+		}
+
+		assert.Equal(t, 1, len(handler.responses))
+		assert.Equal(t, 2, handler.reqCount)
+
+		response := handler.responses[0]
+
+		assert.Equal(t, "Success", response.Text)
+		assert.Equal(t, int32(0), response.Code)
+	})
+
+	t.Run("max_retries=0", func(t *testing.T) {
+		handler := &testHandler{test: t, batched: false, returnErrors: 1}
+		server := httptest.NewUnstartedServer(handler)
+		server.Config.SetKeepAlivesEnabled(false)
+		server.Start()
+
+		defer server.Close()
+
+		pmp := SplunkPump{}
+		cfg := make(map[string]interface{})
+		cfg["collector_token"] = testToken
+		cfg["max_retries"] = 0
+		cfg["collector_url"] = server.URL
+		cfg["ssl_insecure_skip_verify"] = true
+
+		if err := pmp.Init(cfg); err != nil {
+			t.Errorf("Error initializing pump %v", err)
+			return
+		}
+
+		keys := make([]interface{}, 1)
+
+		keys[0] = analytics.AnalyticsRecord{OrgID: "1", APIID: "123", Path: "/test-path", Method: "POST", TimeStamp: time.Now()}
+
+		if errWrite := pmp.WriteData(context.TODO(), keys); errWrite == nil {
+			t.Error("Error expected writing to splunk pump, got nil")
+			return
+		}
+
+		assert.Equal(t, 1, handler.reqCount)
+	})
+
+	t.Run("max_retries=3", func(t *testing.T) {
+		handler := &testHandler{test: t, batched: false, returnErrors: 2}
+		server := httptest.NewUnstartedServer(handler)
+		server.Config.SetKeepAlivesEnabled(false)
+		server.Start()
+
+		defer server.Close()
+
+		pmp := SplunkPump{}
+		cfg := make(map[string]interface{})
+		cfg["collector_token"] = testToken
+		cfg["max_retries"] = 3
+		cfg["collector_url"] = server.URL
+		cfg["ssl_insecure_skip_verify"] = true
+
+		if err := pmp.Init(cfg); err != nil {
+			t.Errorf("Error initializing pump %v", err)
+			return
+		}
+
+		keys := make([]interface{}, 1)
+
+		keys[0] = analytics.AnalyticsRecord{OrgID: "1", APIID: "123", Path: "/test-path", Method: "POST", TimeStamp: time.Now()}
+
+		if errWrite := pmp.WriteData(context.TODO(), keys); errWrite != nil {
+			t.Error("Error writing to splunk pump:", errWrite.Error())
+			return
+		}
+
+		assert.Equal(t, 1, len(handler.responses))
+		assert.Equal(t, 3, handler.reqCount)
+
+		response := handler.responses[0]
+
+		assert.Equal(t, "Success", response.Text)
+		assert.Equal(t, int32(0), response.Code)
+	})
 }
 
 func Test_SplunkWriteData(t *testing.T) {
@@ -112,6 +235,7 @@ func Test_SplunkWriteData(t *testing.T) {
 	assert.Equal(t, "Success", response.Text)
 	assert.Equal(t, int32(0), response.Code)
 }
+
 func Test_SplunkWriteDataBatch(t *testing.T) {
 	handler := &testHandler{test: t, batched: true}
 	server := httptest.NewServer(handler)
@@ -122,8 +246,6 @@ func Test_SplunkWriteDataBatch(t *testing.T) {
 	keys[0] = analytics.AnalyticsRecord{OrgID: "1", APIID: "123", Path: "/test-path", Method: "POST", TimeStamp: time.Now()}
 	keys[1] = analytics.AnalyticsRecord{OrgID: "1", APIID: "123", Path: "/test-path", Method: "POST", TimeStamp: time.Now()}
 	keys[2] = analytics.AnalyticsRecord{OrgID: "1", APIID: "123", Path: "/test-path", Method: "POST", TimeStamp: time.Now()}
-
-	fmt.Println(maxContentLength)
 
 	pmp := SplunkPump{}
 
@@ -148,7 +270,6 @@ func Test_SplunkWriteDataBatch(t *testing.T) {
 
 	assert.Equal(t, getEventBytes(keys[:2]), handler.responses[0].Len)
 	assert.Equal(t, getEventBytes(keys[2:]), handler.responses[1].Len)
-
 }
 
 // getEventBytes returns the bytes amount of the marshalled events struct

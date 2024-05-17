@@ -4,21 +4,24 @@ import (
 	b64 "encoding/base64"
 	"encoding/hex"
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/TykTechnologies/storage/persistent/model"
 	"github.com/fatih/structs"
 	"github.com/sirupsen/logrus"
-	"gopkg.in/mgo.v2/bson"
 	"gorm.io/gorm"
 )
 
 const (
-	AgggregateMixedCollectionName = "tyk_analytics_aggregates"
-	MongoAggregatePrefix          = "mongo-pump-aggregate"
-	AggregateSQLTable             = "tyk_aggregated"
+	AgggregateMixedCollectionName     = "tyk_analytics_aggregates"
+	GraphAggregateMixedCollectionName = "tyk_graph_analytics_aggregate"
+	MongoAggregatePrefix              = "mongo-pump-aggregate"
+	AggregateSQLTable                 = "tyk_aggregated"
+	AggregateGraphSQLTable            = "tyk_graph_aggregated"
 )
 
 // lastDocumentTimestamp is a map to store the last document timestamps of different Mongo Aggregators
@@ -59,7 +62,30 @@ type Counter struct {
 	ErrorList []ErrorData    `json:"error_list" sql:"-"`
 }
 
+type GraphRecordAggregate struct {
+	AnalyticsRecordAggregate
+
+	Types      map[string]*Counter
+	Fields     map[string]*Counter
+	Operation  map[string]*Counter
+	RootFields map[string]*Counter
+}
+
+type AggregateFieldList struct {
+	APIKeys       []Counter
+	APIID         []Counter
+	OauthIDs      []Counter
+	Geo           []Counter
+	Tags          []Counter
+	Errors        []Counter
+	Endpoints     []Counter
+	KeyEndpoint   map[string][]Counter `bson:"keyendpoints"`
+	OauthEndpoint map[string][]Counter `bson:"oauthendpoints"`
+	APIEndpoint   []Counter            `bson:"apiendpoints"`
+}
+
 type AnalyticsRecordAggregate struct {
+	id        model.ObjectID `bson:"_id" gorm:"-:all"`
 	TimeStamp time.Time
 	OrgID     string
 	TimeID    struct {
@@ -80,18 +106,7 @@ type AnalyticsRecordAggregate struct {
 
 	Endpoints map[string]*Counter
 
-	Lists struct {
-		APIKeys       []Counter
-		APIID         []Counter
-		OauthIDs      []Counter
-		Geo           []Counter
-		Tags          []Counter
-		Errors        []Counter
-		Endpoints     []Counter
-		KeyEndpoint   map[string][]Counter `bson:"keyendpoints"`
-		OauthEndpoint map[string][]Counter `bson:"oauthendpoints"`
-		APIEndpoint   []Counter            `bson:"apiendpoints"`
-	}
+	Lists AggregateFieldList
 
 	KeyEndpoint   map[string]map[string]*Counter `bson:"keyendpoints"`
 	OauthEndpoint map[string]map[string]*Counter `bson:"oauthendpoints"`
@@ -101,6 +116,22 @@ type AnalyticsRecordAggregate struct {
 
 	ExpireAt time.Time `bson:"expireAt" json:"expireAt"`
 	LastTime time.Time
+	Mixed    bool `bson:"-" json:"-"`
+}
+
+func (f *AnalyticsRecordAggregate) TableName() string {
+	if f.Mixed {
+		return AgggregateMixedCollectionName
+	}
+	return "z_tyk_analyticz_aggregate_" + f.OrgID
+}
+
+func (f *AnalyticsRecordAggregate) GetObjectID() model.ObjectID {
+	return f.id
+}
+
+func (f *AnalyticsRecordAggregate) SetObjectID(id model.ObjectID) {
+	f.id = id
 }
 
 type SQLAnalyticsRecordAggregate struct {
@@ -108,12 +139,26 @@ type SQLAnalyticsRecordAggregate struct {
 
 	Counter `json:"counter" gorm:"embedded"`
 
-	TimeStamp      int64  `json:"timestamp" gorm:"index:dimension, priority:1"`
-	OrgID          string `json:"org_id" gorm:"index:dimension, priority:2"`
-	Dimension      string `json:"dimension" gorm:"index:dimension, priority:3"`
-	DimensionValue string `json:"dimension_value" gorm:"index:dimension, priority:4"`
+	TimeStamp      int64  `json:"timestamp"`
+	OrgID          string `json:"org_id"`
+	Dimension      string `json:"dimension"`
+	DimensionValue string `json:"dimension_value"`
 
 	Code `json:"code" gorm:"embedded"`
+}
+
+type GraphSQLAnalyticsRecordAggregate struct {
+	ID string `gorm:"primaryKey"`
+
+	OrgID          string `json:"org_id"`
+	Dimension      string `json:"dimension"`
+	DimensionValue string `json:"dimension_value"`
+	APIID          string `json:"api_id"`
+
+	Counter `json:"counter" gorm:"embedded"`
+	Code    `json:"code" gorm:"embedded"`
+
+	TimeStamp int64 `json:"timestamp"`
 }
 
 type Code struct {
@@ -157,7 +202,7 @@ func (f *SQLAnalyticsRecordAggregate) TableName() string {
 	return AggregateSQLTable
 }
 
-func OnConflictAssignments(tableName string, tempTable string) map[string]interface{} {
+func OnConflictAssignments(tableName, tempTable string) map[string]interface{} {
 	assignments := make(map[string]interface{})
 	f := SQLAnalyticsRecordAggregate{}
 	baseFields := structs.Fields(f.Code)
@@ -214,6 +259,18 @@ func OnConflictAssignments(tableName string, tempTable string) map[string]interf
 	return assignments
 }
 
+func NewGraphRecordAggregate() GraphRecordAggregate {
+	analyticsAggregate := AnalyticsRecordAggregate{}.New()
+
+	return GraphRecordAggregate{
+		AnalyticsRecordAggregate: analyticsAggregate,
+		Types:                    make(map[string]*Counter),
+		Fields:                   make(map[string]*Counter),
+		Operation:                make(map[string]*Counter),
+		RootFields:               make(map[string]*Counter),
+	}
+}
+
 func (f AnalyticsRecordAggregate) New() AnalyticsRecordAggregate {
 	thisF := AnalyticsRecordAggregate{}
 	thisF.APIID = make(map[string]*Counter)
@@ -231,53 +288,53 @@ func (f AnalyticsRecordAggregate) New() AnalyticsRecordAggregate {
 	return thisF
 }
 
-func (f *AnalyticsRecordAggregate) generateBSONFromProperty(parent, thisUnit string, incVal *Counter, newUpdate bson.M) bson.M {
+func (f *AnalyticsRecordAggregate) generateBSONFromProperty(parent, thisUnit string, incVal *Counter, newUpdate model.DBM) model.DBM {
 	constructor := parent + "." + thisUnit + "."
 	if parent == "" {
 		constructor = thisUnit + "."
 	}
 
-	newUpdate["$inc"].(bson.M)[constructor+"hits"] = incVal.Hits
-	newUpdate["$inc"].(bson.M)[constructor+"success"] = incVal.Success
-	newUpdate["$inc"].(bson.M)[constructor+"errortotal"] = incVal.ErrorTotal
+	newUpdate["$inc"].(model.DBM)[constructor+"hits"] = incVal.Hits
+	newUpdate["$inc"].(model.DBM)[constructor+"success"] = incVal.Success
+	newUpdate["$inc"].(model.DBM)[constructor+"errortotal"] = incVal.ErrorTotal
 	for k, v := range incVal.ErrorMap {
-		newUpdate["$inc"].(bson.M)[constructor+"errormap."+k] = v
+		newUpdate["$inc"].(model.DBM)[constructor+"errormap."+k] = v
 	}
-	newUpdate["$inc"].(bson.M)[constructor+"totalrequesttime"] = incVal.TotalRequestTime
-	newUpdate["$set"].(bson.M)[constructor+"identifier"] = incVal.Identifier
-	newUpdate["$set"].(bson.M)[constructor+"humanidentifier"] = incVal.HumanIdentifier
-	newUpdate["$set"].(bson.M)[constructor+"lasttime"] = incVal.LastTime
-	newUpdate["$set"].(bson.M)[constructor+"openconnections"] = incVal.OpenConnections
-	newUpdate["$set"].(bson.M)[constructor+"closedconnections"] = incVal.ClosedConnections
-	newUpdate["$set"].(bson.M)[constructor+"bytesin"] = incVal.BytesIn
-	newUpdate["$set"].(bson.M)[constructor+"bytesout"] = incVal.BytesOut
-	newUpdate["$max"].(bson.M)[constructor+"maxlatency"] = incVal.MaxLatency
+	newUpdate["$inc"].(model.DBM)[constructor+"totalrequesttime"] = incVal.TotalRequestTime
+	newUpdate["$set"].(model.DBM)[constructor+"identifier"] = incVal.Identifier
+	newUpdate["$set"].(model.DBM)[constructor+"humanidentifier"] = incVal.HumanIdentifier
+	newUpdate["$set"].(model.DBM)[constructor+"lasttime"] = incVal.LastTime
+	newUpdate["$set"].(model.DBM)[constructor+"openconnections"] = incVal.OpenConnections
+	newUpdate["$set"].(model.DBM)[constructor+"closedconnections"] = incVal.ClosedConnections
+	newUpdate["$set"].(model.DBM)[constructor+"bytesin"] = incVal.BytesIn
+	newUpdate["$set"].(model.DBM)[constructor+"bytesout"] = incVal.BytesOut
+	newUpdate["$max"].(model.DBM)[constructor+"maxlatency"] = incVal.MaxLatency
 	// Don't update min latency in case of errors
 	if incVal.Hits != incVal.ErrorTotal {
 		if newUpdate["$min"] == nil {
-			newUpdate["$min"] = bson.M{}
+			newUpdate["$min"] = model.DBM{}
 		}
-		newUpdate["$min"].(bson.M)[constructor+"minlatency"] = incVal.MinLatency
-		newUpdate["$min"].(bson.M)[constructor+"minupstreamlatency"] = incVal.MinUpstreamLatency
+		newUpdate["$min"].(model.DBM)[constructor+"minlatency"] = incVal.MinLatency
+		newUpdate["$min"].(model.DBM)[constructor+"minupstreamlatency"] = incVal.MinUpstreamLatency
 	}
-	newUpdate["$max"].(bson.M)[constructor+"maxupstreamlatency"] = incVal.MaxUpstreamLatency
-	newUpdate["$inc"].(bson.M)[constructor+"totalupstreamlatency"] = incVal.TotalUpstreamLatency
-	newUpdate["$inc"].(bson.M)[constructor+"totallatency"] = incVal.TotalLatency
+	newUpdate["$max"].(model.DBM)[constructor+"maxupstreamlatency"] = incVal.MaxUpstreamLatency
+	newUpdate["$inc"].(model.DBM)[constructor+"totalupstreamlatency"] = incVal.TotalUpstreamLatency
+	newUpdate["$inc"].(model.DBM)[constructor+"totallatency"] = incVal.TotalLatency
 
 	return newUpdate
 }
 
-func (f *AnalyticsRecordAggregate) generateSetterForTime(parent, thisUnit string, realTime float64, newUpdate bson.M) bson.M {
+func (f *AnalyticsRecordAggregate) generateSetterForTime(parent, thisUnit string, realTime float64, newUpdate model.DBM) model.DBM {
 	constructor := parent + "." + thisUnit + "."
 	if parent == "" {
 		constructor = thisUnit + "."
 	}
-	newUpdate["$set"].(bson.M)[constructor+"requesttime"] = realTime
+	newUpdate["$set"].(model.DBM)[constructor+"requesttime"] = realTime
 
 	return newUpdate
 }
 
-func (f *AnalyticsRecordAggregate) latencySetter(parent, thisUnit string, newUpdate bson.M, counter *Counter) bson.M {
+func (f *AnalyticsRecordAggregate) latencySetter(parent, thisUnit string, newUpdate model.DBM, counter *Counter) model.DBM {
 	if counter.Hits > 0 {
 		counter.Latency = float64(counter.TotalLatency) / float64(counter.Hits)
 		counter.UpstreamLatency = float64(counter.TotalUpstreamLatency) / float64(counter.Hits)
@@ -290,8 +347,8 @@ func (f *AnalyticsRecordAggregate) latencySetter(parent, thisUnit string, newUpd
 	if parent == "" {
 		constructor = thisUnit + "."
 	}
-	newUpdate["$set"].(bson.M)[constructor+"latency"] = counter.Latency
-	newUpdate["$set"].(bson.M)[constructor+"upstreamlatency"] = counter.UpstreamLatency
+	newUpdate["$set"].(model.DBM)[constructor+"latency"] = counter.Latency
+	newUpdate["$set"].(model.DBM)[constructor+"upstreamlatency"] = counter.UpstreamLatency
 
 	return newUpdate
 }
@@ -302,15 +359,36 @@ type Dimension struct {
 	Counter *Counter
 }
 
-func (f *AnalyticsRecordAggregate) Dimensions() (dimensions []Dimension) {
-	fnLatencySetter := func(counter *Counter) *Counter {
-		if counter.Hits > 0 {
-			counter.Latency = float64(counter.TotalLatency) / float64(counter.Hits)
-			counter.UpstreamLatency = float64(counter.TotalUpstreamLatency) / float64(counter.Hits)
-		}
-		return counter
+func fnLatencySetter(counter *Counter) *Counter {
+	if counter.Hits > 0 {
+		counter.Latency = float64(counter.TotalLatency) / float64(counter.Hits)
+		counter.UpstreamLatency = float64(counter.TotalUpstreamLatency) / float64(counter.Hits)
+	}
+	return counter
+}
+
+func (g *GraphRecordAggregate) Dimensions() []Dimension {
+	dimensions := g.AnalyticsRecordAggregate.Dimensions()
+	for key, inc := range g.Types {
+		dimensions = append(dimensions, Dimension{Name: "types", Value: key, Counter: fnLatencySetter(inc)})
 	}
 
+	for key, inc := range g.Fields {
+		dimensions = append(dimensions, Dimension{Name: "fields", Value: key, Counter: fnLatencySetter(inc)})
+	}
+
+	for key, inc := range g.Operation {
+		dimensions = append(dimensions, Dimension{Name: "operation", Value: key, Counter: fnLatencySetter(inc)})
+	}
+
+	for key, inc := range g.RootFields {
+		dimensions = append(dimensions, Dimension{Name: "rootfields", Value: key, Counter: fnLatencySetter(inc)})
+	}
+
+	return dimensions
+}
+
+func (f *AnalyticsRecordAggregate) Dimensions() (dimensions []Dimension) {
 	for key, inc := range f.APIID {
 		dimensions = append(dimensions, Dimension{"apiid", key, fnLatencySetter(inc)})
 	}
@@ -364,11 +442,11 @@ func (f *AnalyticsRecordAggregate) Dimensions() (dimensions []Dimension) {
 	return
 }
 
-func (f *AnalyticsRecordAggregate) AsChange() (newUpdate bson.M) {
-	newUpdate = bson.M{
-		"$inc": bson.M{},
-		"$set": bson.M{},
-		"$max": bson.M{},
+func (f *AnalyticsRecordAggregate) AsChange() (newUpdate model.DBM) {
+	newUpdate = model.DBM{
+		"$inc": model.DBM{},
+		"$set": model.DBM{},
+		"$max": model.DBM{},
 	}
 
 	for _, d := range f.Dimensions() {
@@ -379,18 +457,18 @@ func (f *AnalyticsRecordAggregate) AsChange() (newUpdate bson.M) {
 
 	asTime := f.TimeStamp
 	newTime := time.Date(asTime.Year(), asTime.Month(), asTime.Day(), asTime.Hour(), asTime.Minute(), 0, 0, asTime.Location())
-	newUpdate["$set"].(bson.M)["timestamp"] = newTime
-	newUpdate["$set"].(bson.M)["expireAt"] = f.ExpireAt
-	newUpdate["$set"].(bson.M)["timeid.year"] = newTime.Year()
-	newUpdate["$set"].(bson.M)["timeid.month"] = newTime.Month()
-	newUpdate["$set"].(bson.M)["timeid.day"] = newTime.Day()
-	newUpdate["$set"].(bson.M)["timeid.hour"] = newTime.Hour()
-	newUpdate["$set"].(bson.M)["lasttime"] = f.LastTime
+	newUpdate["$set"].(model.DBM)["timestamp"] = newTime
+	newUpdate["$set"].(model.DBM)["expireAt"] = f.ExpireAt
+	newUpdate["$set"].(model.DBM)["timeid.year"] = newTime.Year()
+	newUpdate["$set"].(model.DBM)["timeid.month"] = newTime.Month()
+	newUpdate["$set"].(model.DBM)["timeid.day"] = newTime.Day()
+	newUpdate["$set"].(model.DBM)["timeid.hour"] = newTime.Hour()
+	newUpdate["$set"].(model.DBM)["lasttime"] = f.LastTime
 
 	return newUpdate
 }
 
-func (f *AnalyticsRecordAggregate) SetErrorList(parent, thisUnit string, counter *Counter, newUpdate bson.M) {
+func (f *AnalyticsRecordAggregate) SetErrorList(parent, thisUnit string, counter *Counter, newUpdate model.DBM) {
 	constructor := parent + "." + thisUnit + "."
 	if parent == "" {
 		constructor = thisUnit + "."
@@ -405,12 +483,16 @@ func (f *AnalyticsRecordAggregate) SetErrorList(parent, thisUnit string, counter
 		}
 		errorlist = append(errorlist, element)
 	}
+	sort.SliceStable(errorlist, func(i, j int) bool {
+		return errorlist[i].Code < errorlist[j].Code
+	})
+
 	counter.ErrorList = errorlist
 
-	newUpdate["$set"].(bson.M)[constructor+"errorlist"] = counter.ErrorList
+	newUpdate["$set"].(model.DBM)[constructor+"errorlist"] = counter.ErrorList
 }
 
-func (f *AnalyticsRecordAggregate) getRecords(fieldName string, data map[string]*Counter, newUpdate bson.M) []Counter {
+func (f *AnalyticsRecordAggregate) getRecords(fieldName string, data map[string]*Counter, newUpdate model.DBM) []Counter {
 	result := make([]Counter, 0)
 
 	for thisUnit, incVal := range data {
@@ -428,41 +510,41 @@ func (f *AnalyticsRecordAggregate) getRecords(fieldName string, data map[string]
 	return result
 }
 
-func (f *AnalyticsRecordAggregate) AsTimeUpdate() bson.M {
-	newUpdate := bson.M{
-		"$set": bson.M{},
+func (f *AnalyticsRecordAggregate) AsTimeUpdate() model.DBM {
+	newUpdate := model.DBM{
+		"$set": model.DBM{},
 	}
 
 	// We need to create lists of API data so that we can aggregate across the list
 	// in order to present top-20 style lists of APIs, Tokens etc.
 	// apis := make([]Counter, 0)
-	newUpdate["$set"].(bson.M)["lists.apiid"] = f.getRecords("apiid", f.APIID, newUpdate)
+	newUpdate["$set"].(model.DBM)["lists.apiid"] = f.getRecords("apiid", f.APIID, newUpdate)
 
-	newUpdate["$set"].(bson.M)["lists.errors"] = f.getRecords("errors", f.Errors, newUpdate)
+	newUpdate["$set"].(model.DBM)["lists.errors"] = f.getRecords("errors", f.Errors, newUpdate)
 
-	newUpdate["$set"].(bson.M)["lists.versions"] = f.getRecords("versions", f.Versions, newUpdate)
+	newUpdate["$set"].(model.DBM)["lists.versions"] = f.getRecords("versions", f.Versions, newUpdate)
 
-	newUpdate["$set"].(bson.M)["lists.apikeys"] = f.getRecords("apikeys", f.APIKeys, newUpdate)
+	newUpdate["$set"].(model.DBM)["lists.apikeys"] = f.getRecords("apikeys", f.APIKeys, newUpdate)
 
-	newUpdate["$set"].(bson.M)["lists.oauthids"] = f.getRecords("oauthids", f.OauthIDs, newUpdate)
+	newUpdate["$set"].(model.DBM)["lists.oauthids"] = f.getRecords("oauthids", f.OauthIDs, newUpdate)
 
-	newUpdate["$set"].(bson.M)["lists.geo"] = f.getRecords("geo", f.Geo, newUpdate)
+	newUpdate["$set"].(model.DBM)["lists.geo"] = f.getRecords("geo", f.Geo, newUpdate)
 
-	newUpdate["$set"].(bson.M)["lists.tags"] = f.getRecords("tags", f.Tags, newUpdate)
+	newUpdate["$set"].(model.DBM)["lists.tags"] = f.getRecords("tags", f.Tags, newUpdate)
 
-	newUpdate["$set"].(bson.M)["lists.endpoints"] = f.getRecords("endpoints", f.Endpoints, newUpdate)
+	newUpdate["$set"].(model.DBM)["lists.endpoints"] = f.getRecords("endpoints", f.Endpoints, newUpdate)
 
 	for thisUnit, incVal := range f.KeyEndpoint {
 		parent := "lists.keyendpoints." + thisUnit
-		newUpdate["$set"].(bson.M)[parent] = f.getRecords("keyendpoints."+thisUnit, incVal, newUpdate)
+		newUpdate["$set"].(model.DBM)[parent] = f.getRecords("keyendpoints."+thisUnit, incVal, newUpdate)
 	}
 
 	for thisUnit, incVal := range f.OauthEndpoint {
 		parent := "lists.oauthendpoints." + thisUnit
-		newUpdate["$set"].(bson.M)[parent] = f.getRecords("oauthendpoints."+thisUnit, incVal, newUpdate)
+		newUpdate["$set"].(model.DBM)[parent] = f.getRecords("oauthendpoints."+thisUnit, incVal, newUpdate)
 	}
 
-	newUpdate["$set"].(bson.M)["lists.apiendpoints"] = f.getRecords("apiendpoints", f.ApiEndpoint, newUpdate)
+	newUpdate["$set"].(model.DBM)["lists.apiendpoints"] = f.getRecords("apiendpoints", f.ApiEndpoint, newUpdate)
 
 	var newTime float64
 
@@ -543,8 +625,78 @@ func replaceUnsupportedChars(path string) string {
 	return result
 }
 
+// AggregateGraphData collects the graph records into a map of GraphRecordAggregate to apiID
+func AggregateGraphData(data []interface{}, dbIdentifier string, aggregationTime int) map[string]GraphRecordAggregate {
+	aggregateMap := make(map[string]GraphRecordAggregate)
+
+	for _, item := range data {
+		record, ok := item.(AnalyticsRecord)
+		if !ok {
+			continue
+		}
+		if !record.IsGraphRecord() {
+			continue
+		}
+
+		graphRec := record.ToGraphRecord()
+
+		aggregate, found := aggregateMap[record.APIID]
+		if !found {
+			aggregate = NewGraphRecordAggregate()
+
+			// Set the hourly timestamp & expiry
+			asTime := record.TimeStamp
+			aggregate.TimeStamp = setAggregateTimestamp(dbIdentifier, asTime, aggregationTime)
+			aggregate.ExpireAt = record.ExpireAt
+			aggregate.TimeID.Year = asTime.Year()
+			aggregate.TimeID.Month = int(asTime.Month())
+			aggregate.TimeID.Day = asTime.Day()
+			aggregate.TimeID.Hour = asTime.Hour()
+			aggregate.OrgID = record.OrgID
+			aggregate.LastTime = record.TimeStamp
+			aggregate.Total.ErrorMap = make(map[string]int)
+		}
+
+		var counter Counter
+		aggregate.AnalyticsRecordAggregate, counter = incrementAggregate(&aggregate.AnalyticsRecordAggregate, &graphRec.AnalyticsRecord, false, nil)
+		// graph errors are different from http status errors and can occur even if a response is gotten.
+		// check for graph errors and increment the error count if there are indeed graph errors
+		if graphRec.HasErrors && counter.ErrorTotal < 1 {
+			counter.ErrorTotal++
+			counter.Success--
+		}
+		c := incrementOrSetUnit(&counter, aggregate.Operation[graphRec.OperationType])
+		aggregate.Operation[graphRec.OperationType] = c
+		aggregate.Operation[graphRec.OperationType].Identifier = graphRec.OperationType
+		aggregate.Operation[graphRec.OperationType].HumanIdentifier = graphRec.OperationType
+
+		for t, fields := range graphRec.Types {
+			c = incrementOrSetUnit(&counter, aggregate.Types[t])
+			aggregate.Types[t] = c
+			aggregate.Types[t].Identifier = t
+			aggregate.Types[t].HumanIdentifier = t
+			for _, f := range fields {
+				label := fmt.Sprintf("%s_%s", t, f)
+				c := incrementOrSetUnit(&counter, aggregate.Fields[label])
+				aggregate.Fields[label] = c
+				aggregate.Fields[label].Identifier = label
+				aggregate.Fields[label].HumanIdentifier = label
+			}
+		}
+
+		for _, field := range graphRec.RootFields {
+			c = incrementOrSetUnit(&counter, aggregate.RootFields[field])
+			aggregate.RootFields[field] = c
+			aggregate.RootFields[field].Identifier = field
+			aggregate.RootFields[field].HumanIdentifier = field
+		}
+		aggregateMap[record.APIID] = aggregate
+	}
+	return aggregateMap
+}
+
 // AggregateData calculates aggregated data, returns map orgID => aggregated analytics data
-func AggregateData(data []interface{}, trackAllPaths bool, ignoreTagPrefixList []string, dbIdentifier string, aggregationTime int, ignoreGraphData bool) map[string]AnalyticsRecordAggregate {
+func AggregateData(data []interface{}, trackAllPaths bool, ignoreTagPrefixList []string, dbIdentifier string, aggregationTime int) map[string]AnalyticsRecordAggregate {
 	analyticsPerOrg := make(map[string]AnalyticsRecordAggregate)
 	for _, v := range data {
 		thisV := v.(AnalyticsRecord)
@@ -555,7 +707,7 @@ func AggregateData(data []interface{}, trackAllPaths bool, ignoreTagPrefixList [
 		}
 
 		// We don't want to aggregate Graph Data with REST data - there is a different type for that.
-		if ignoreGraphData && thisV.IsGraphRecord() {
+		if thisV.IsGraphRecord() {
 			continue
 		}
 
@@ -576,272 +728,279 @@ func AggregateData(data []interface{}, trackAllPaths bool, ignoreTagPrefixList [
 			thisAggregate.LastTime = thisV.TimeStamp
 			thisAggregate.Total.ErrorMap = make(map[string]int)
 		}
-
-		// Always update the last timestamp
-		thisAggregate.LastTime = thisV.TimeStamp
-		thisAggregate.Total.LastTime = thisV.TimeStamp
-
-		// Create the counter for this record
-		var thisCounter Counter
-		if thisV.ResponseCode == -1 {
-			thisCounter = Counter{
-				LastTime:          thisV.TimeStamp,
-				OpenConnections:   thisV.Network.OpenConnections,
-				ClosedConnections: thisV.Network.ClosedConnection,
-				BytesIn:           thisV.Network.BytesIn,
-				BytesOut:          thisV.Network.BytesOut,
-			}
-			thisAggregate.Total.OpenConnections += thisCounter.OpenConnections
-			thisAggregate.Total.ClosedConnections += thisCounter.ClosedConnections
-			thisAggregate.Total.BytesIn += thisCounter.BytesIn
-			thisAggregate.Total.BytesOut += thisCounter.BytesOut
-			if thisV.APIID != "" {
-				c := thisAggregate.APIID[thisV.APIID]
-				if c == nil {
-					c = &Counter{
-						Identifier:      thisV.APIID,
-						HumanIdentifier: thisV.APIName,
-					}
-					thisAggregate.APIID[thisV.APIID] = c
-				}
-				c.BytesIn += thisCounter.BytesIn
-				c.BytesOut += thisCounter.BytesOut
-			}
-		} else {
-			thisCounter = Counter{
-				Hits:             1,
-				Success:          0,
-				ErrorTotal:       0,
-				RequestTime:      float64(thisV.RequestTime),
-				TotalRequestTime: float64(thisV.RequestTime),
-				LastTime:         thisV.TimeStamp,
-
-				MaxUpstreamLatency:   thisV.Latency.Upstream,
-				MinUpstreamLatency:   thisV.Latency.Upstream,
-				TotalUpstreamLatency: thisV.Latency.Upstream,
-				MaxLatency:           thisV.Latency.Total,
-				MinLatency:           thisV.Latency.Total,
-				TotalLatency:         thisV.Latency.Total,
-				ErrorMap:             make(map[string]int),
-			}
-			thisAggregate.Total.Hits++
-			thisAggregate.Total.TotalRequestTime += float64(thisV.RequestTime)
-
-			// We need an initial value
-			thisAggregate.Total.RequestTime = thisAggregate.Total.TotalRequestTime / float64(thisAggregate.Total.Hits)
-			if thisV.ResponseCode >= 400 {
-				thisCounter.ErrorTotal = 1
-				thisCounter.ErrorMap[strconv.Itoa(thisV.ResponseCode)]++
-				thisAggregate.Total.ErrorTotal++
-				thisAggregate.Total.ErrorMap[strconv.Itoa(thisV.ResponseCode)]++
-			}
-
-			if (thisV.ResponseCode < 300) && (thisV.ResponseCode >= 200) {
-				thisCounter.Success = 1
-				thisAggregate.Total.Success++
-			}
-
-			thisAggregate.Total.TotalLatency += thisV.Latency.Total
-			thisAggregate.Total.TotalUpstreamLatency += thisV.Latency.Upstream
-
-			if thisAggregate.Total.MaxLatency < thisV.Latency.Total {
-				thisAggregate.Total.MaxLatency = thisV.Latency.Total
-			}
-
-			if thisAggregate.Total.MaxUpstreamLatency < thisV.Latency.Upstream {
-				thisAggregate.Total.MaxUpstreamLatency = thisV.Latency.Upstream
-			}
-
-			// by default, min_total_latency will have 0 value
-			// it should not be set to 0 always
-			if thisAggregate.Total.Hits == 1 {
-				thisAggregate.Total.MinLatency = thisV.Latency.Total
-				thisAggregate.Total.MinUpstreamLatency = thisV.Latency.Upstream
-			} else {
-				// Don't update min latency in case of error
-				if thisAggregate.Total.MinLatency > thisV.Latency.Total && (thisV.ResponseCode < 300) && (thisV.ResponseCode >= 200) {
-					thisAggregate.Total.MinLatency = thisV.Latency.Total
-				}
-				// Don't update min latency in case of error
-				if thisAggregate.Total.MinUpstreamLatency > thisV.Latency.Upstream && (thisV.ResponseCode < 300) && (thisV.ResponseCode >= 200) {
-					thisAggregate.Total.MinUpstreamLatency = thisV.Latency.Upstream
-				}
-			}
-
-			if trackAllPaths {
-				thisV.TrackPath = true
-			}
-
-			// Convert to a map (for easy iteration)
-			vAsMap := structs.Map(thisV)
-			for key, value := range vAsMap {
-
-				// Mini function to handle incrementing a specific counter in our object
-				IncrementOrSetUnit := func(c *Counter) *Counter {
-					if c == nil {
-						newCounter := thisCounter
-						newCounter.ErrorMap = make(map[string]int)
-						for k, v := range thisCounter.ErrorMap {
-							newCounter.ErrorMap[k] = v
-						}
-						c = &newCounter
-					} else {
-						c.Hits += thisCounter.Hits
-						c.Success += thisCounter.Success
-						c.ErrorTotal += thisCounter.ErrorTotal
-						for k, v := range thisCounter.ErrorMap {
-							c.ErrorMap[k] += v
-						}
-						c.TotalRequestTime += thisCounter.TotalRequestTime
-						c.RequestTime = c.TotalRequestTime / float64(c.Hits)
-
-						if c.MaxLatency < thisCounter.MaxLatency {
-							c.MaxLatency = thisCounter.MaxLatency
-						}
-
-						// don't update min latency in case of errors
-						if c.MinLatency > thisCounter.MinLatency && thisCounter.ErrorTotal == 0 {
-							c.MinLatency = thisCounter.MinLatency
-						}
-
-						if c.MaxUpstreamLatency < thisCounter.MaxUpstreamLatency {
-							c.MaxUpstreamLatency = thisCounter.MaxUpstreamLatency
-						}
-
-						// don't update min latency in case of errors
-						if c.MinUpstreamLatency > thisCounter.MinUpstreamLatency && thisCounter.ErrorTotal == 0 {
-							c.MinUpstreamLatency = thisCounter.MinUpstreamLatency
-						}
-
-						c.TotalLatency += thisCounter.TotalLatency
-						c.TotalUpstreamLatency += thisCounter.TotalUpstreamLatency
-
-					}
-
-					return c
-				}
-
-				switch key {
-				case "APIID":
-					c := IncrementOrSetUnit(thisAggregate.APIID[value.(string)])
-					if value.(string) != "" {
-						thisAggregate.APIID[value.(string)] = c
-						thisAggregate.APIID[value.(string)].Identifier = thisV.APIID
-						thisAggregate.APIID[value.(string)].HumanIdentifier = thisV.APIName
-					}
-					break
-				case "ResponseCode":
-					errAsStr := strconv.Itoa(value.(int))
-					if errAsStr != "" {
-						c := IncrementOrSetUnit(thisAggregate.Errors[errAsStr])
-						if c.ErrorTotal > 0 {
-							thisAggregate.Errors[errAsStr] = c
-							thisAggregate.Errors[errAsStr].Identifier = errAsStr
-						}
-					}
-					break
-				case "APIVersion":
-					versionStr := doHash(thisV.APIID + ":" + value.(string))
-					c := IncrementOrSetUnit(thisAggregate.Versions[versionStr])
-					if value.(string) != "" {
-						thisAggregate.Versions[versionStr] = c
-						thisAggregate.Versions[versionStr].Identifier = value.(string)
-						thisAggregate.Versions[versionStr].HumanIdentifier = value.(string)
-					}
-					break
-				case "APIKey":
-					if value.(string) != "" {
-						c := IncrementOrSetUnit(thisAggregate.APIKeys[value.(string)])
-						thisAggregate.APIKeys[value.(string)] = c
-						thisAggregate.APIKeys[value.(string)].Identifier = value.(string)
-						thisAggregate.APIKeys[value.(string)].HumanIdentifier = thisV.Alias
-
-						if thisV.TrackPath {
-							keyStr := doHash(thisV.APIID + ":" + thisV.Path)
-							data := thisAggregate.KeyEndpoint[value.(string)]
-
-							if data == nil {
-								data = make(map[string]*Counter)
-							}
-
-							c = IncrementOrSetUnit(data[keyStr])
-							c.Identifier = keyStr
-							c.HumanIdentifier = keyStr
-							data[keyStr] = c
-							thisAggregate.KeyEndpoint[value.(string)] = data
-
-						}
-					}
-					break
-				case "OauthID":
-					if value.(string) != "" {
-						c := IncrementOrSetUnit(thisAggregate.OauthIDs[value.(string)])
-						thisAggregate.OauthIDs[value.(string)] = c
-						thisAggregate.OauthIDs[value.(string)].Identifier = value.(string)
-
-						if thisV.TrackPath {
-							keyStr := doHash(thisV.APIID + ":" + thisV.Path)
-							data := thisAggregate.OauthEndpoint[value.(string)]
-
-							if data == nil {
-								data = make(map[string]*Counter)
-							}
-
-							c = IncrementOrSetUnit(data[keyStr])
-							c.Identifier = keyStr
-							c.HumanIdentifier = keyStr
-							data[keyStr] = c
-							thisAggregate.OauthEndpoint[value.(string)] = data
-						}
-					}
-					break
-				case "Geo":
-					c := IncrementOrSetUnit(thisAggregate.Geo[thisV.Geo.Country.ISOCode])
-					if thisV.Geo.Country.ISOCode != "" {
-						thisAggregate.Geo[thisV.Geo.Country.ISOCode] = c
-						thisAggregate.Geo[thisV.Geo.Country.ISOCode].Identifier = thisV.Geo.Country.ISOCode
-						thisAggregate.Geo[thisV.Geo.Country.ISOCode].HumanIdentifier = thisV.Geo.Country.ISOCode
-					}
-					break
-
-				case "Tags":
-					for _, thisTag := range thisV.Tags {
-						trimmedTag := TrimTag(thisTag)
-
-						if trimmedTag != "" && !ignoreTag(thisTag, ignoreTagPrefixList) {
-							c := IncrementOrSetUnit(thisAggregate.Tags[trimmedTag])
-							thisAggregate.Tags[trimmedTag] = c
-							thisAggregate.Tags[trimmedTag].Identifier = trimmedTag
-							thisAggregate.Tags[trimmedTag].HumanIdentifier = trimmedTag
-						}
-					}
-					break
-
-				case "TrackPath":
-					log.Debug("TrackPath=", value.(bool))
-					if value.(bool) {
-						fixedPath := replaceUnsupportedChars(thisV.Path)
-						c := IncrementOrSetUnit(thisAggregate.Endpoints[fixedPath])
-						thisAggregate.Endpoints[fixedPath] = c
-						thisAggregate.Endpoints[fixedPath].Identifier = thisV.Path
-						thisAggregate.Endpoints[fixedPath].HumanIdentifier = thisV.Path
-
-						keyStr := hex.EncodeToString([]byte(thisV.APIID + ":" + thisV.APIVersion + ":" + thisV.Path))
-						c = IncrementOrSetUnit(thisAggregate.ApiEndpoint[keyStr])
-						thisAggregate.ApiEndpoint[keyStr] = c
-						thisAggregate.ApiEndpoint[keyStr].Identifier = keyStr
-						thisAggregate.ApiEndpoint[keyStr].HumanIdentifier = thisV.Path
-					}
-					break
-				}
-			}
-
-		}
+		thisAggregate, _ = incrementAggregate(&thisAggregate, &thisV, trackAllPaths, ignoreTagPrefixList)
 		analyticsPerOrg[orgID] = thisAggregate
-
 	}
 
 	return analyticsPerOrg
+}
+
+// incrementAggregate increments the analytic record aggregate fields using the analytics record
+func incrementAggregate(aggregate *AnalyticsRecordAggregate, record *AnalyticsRecord, trackAllPaths bool, ignoreTagPrefixList []string) (AnalyticsRecordAggregate, Counter) {
+	// Always update the last timestamp
+	aggregate.LastTime = record.TimeStamp
+	aggregate.Total.LastTime = record.TimeStamp
+
+	// Create the counter for this record
+	var thisCounter Counter
+	if record.ResponseCode == -1 {
+		thisCounter = Counter{
+			LastTime:          record.TimeStamp,
+			OpenConnections:   record.Network.OpenConnections,
+			ClosedConnections: record.Network.ClosedConnection,
+			BytesIn:           record.Network.BytesIn,
+			BytesOut:          record.Network.BytesOut,
+		}
+		aggregate.Total.OpenConnections += thisCounter.OpenConnections
+		aggregate.Total.ClosedConnections += thisCounter.ClosedConnections
+		aggregate.Total.BytesIn += thisCounter.BytesIn
+		aggregate.Total.BytesOut += thisCounter.BytesOut
+		if record.APIID != "" {
+			c := aggregate.APIID[record.APIID]
+			if c == nil {
+				c = &Counter{
+					Identifier:      record.APIID,
+					HumanIdentifier: record.APIName,
+				}
+				aggregate.APIID[record.APIID] = c
+			}
+			c.BytesIn += thisCounter.BytesIn
+			c.BytesOut += thisCounter.BytesOut
+		}
+	} else {
+		thisCounter = Counter{
+			Hits:             1,
+			Success:          0,
+			ErrorTotal:       0,
+			RequestTime:      float64(record.RequestTime),
+			TotalRequestTime: float64(record.RequestTime),
+			LastTime:         record.TimeStamp,
+
+			MaxUpstreamLatency:   record.Latency.Upstream,
+			MinUpstreamLatency:   record.Latency.Upstream,
+			TotalUpstreamLatency: record.Latency.Upstream,
+			MaxLatency:           record.Latency.Total,
+			MinLatency:           record.Latency.Total,
+			TotalLatency:         record.Latency.Total,
+			ErrorMap:             make(map[string]int),
+		}
+		aggregate.Total.Hits++
+		aggregate.Total.TotalRequestTime += float64(record.RequestTime)
+
+		// We need an initial value
+		aggregate.Total.RequestTime = aggregate.Total.TotalRequestTime / float64(aggregate.Total.Hits)
+		if record.ResponseCode >= 400 {
+			thisCounter.ErrorTotal = 1
+			thisCounter.ErrorMap[strconv.Itoa(record.ResponseCode)]++
+			aggregate.Total.ErrorTotal++
+			aggregate.Total.ErrorMap[strconv.Itoa(record.ResponseCode)]++
+		}
+
+		if (record.ResponseCode < 300) && (record.ResponseCode >= 200) {
+			thisCounter.Success = 1
+			aggregate.Total.Success++
+		}
+
+		aggregate.Total.TotalLatency += record.Latency.Total
+		aggregate.Total.TotalUpstreamLatency += record.Latency.Upstream
+
+		if aggregate.Total.MaxLatency < record.Latency.Total {
+			aggregate.Total.MaxLatency = record.Latency.Total
+		}
+
+		if aggregate.Total.MaxUpstreamLatency < record.Latency.Upstream {
+			aggregate.Total.MaxUpstreamLatency = record.Latency.Upstream
+		}
+
+		// by default, min_total_latency will have 0 value
+		// it should not be set to 0 always
+		if aggregate.Total.Hits == 1 {
+			aggregate.Total.MinLatency = record.Latency.Total
+			aggregate.Total.MinUpstreamLatency = record.Latency.Upstream
+		} else {
+			// Don't update min latency in case of error
+			if aggregate.Total.MinLatency > record.Latency.Total && (record.ResponseCode < 300) && (record.ResponseCode >= 200) {
+				aggregate.Total.MinLatency = record.Latency.Total
+			}
+			// Don't update min latency in case of error
+			if aggregate.Total.MinUpstreamLatency > record.Latency.Upstream && (record.ResponseCode < 300) && (record.ResponseCode >= 200) {
+				aggregate.Total.MinUpstreamLatency = record.Latency.Upstream
+			}
+		}
+
+		if trackAllPaths {
+			record.TrackPath = true
+		}
+
+		// Convert to a map (for easy iteration)
+		vAsMap := structs.Map(record)
+		for key, value := range vAsMap {
+			switch key {
+			case "APIID":
+				val, ok := value.(string)
+				c := incrementOrSetUnit(&thisCounter, aggregate.APIID[val])
+				if val != "" && ok {
+					aggregate.APIID[val] = c
+					aggregate.APIID[val].Identifier = record.APIID
+					aggregate.APIID[val].HumanIdentifier = record.APIName
+				}
+			case "ResponseCode":
+				val, ok := value.(int)
+				if !ok {
+					break
+				}
+				errAsStr := strconv.Itoa(val)
+				if errAsStr != "" {
+					c := incrementOrSetUnit(&thisCounter, aggregate.Errors[errAsStr])
+					if c.ErrorTotal > 0 {
+						aggregate.Errors[errAsStr] = c
+						aggregate.Errors[errAsStr].Identifier = errAsStr
+					}
+				}
+			case "APIVersion":
+				val, ok := value.(string)
+				versionStr := doHash(record.APIID + ":" + val)
+				c := incrementOrSetUnit(&thisCounter, aggregate.Versions[versionStr])
+				if val != "" && ok {
+					aggregate.Versions[versionStr] = c
+					aggregate.Versions[versionStr].Identifier = val
+					aggregate.Versions[versionStr].HumanIdentifier = val
+				}
+			case "APIKey":
+				val, ok := value.(string)
+				if val != "" && ok {
+					c := incrementOrSetUnit(&thisCounter, aggregate.APIKeys[val])
+					aggregate.APIKeys[val] = c
+					aggregate.APIKeys[val].Identifier = val
+					aggregate.APIKeys[val].HumanIdentifier = record.Alias
+
+					if record.TrackPath {
+						keyStr := doHash(record.APIID + ":" + record.Path)
+						data := aggregate.KeyEndpoint[val]
+
+						if data == nil {
+							data = make(map[string]*Counter)
+						}
+
+						c = incrementOrSetUnit(&thisCounter, data[keyStr])
+						c.Identifier = keyStr
+						c.HumanIdentifier = keyStr
+						data[keyStr] = c
+						aggregate.KeyEndpoint[val] = data
+
+					}
+				}
+			case "OauthID":
+				val, ok := value.(string)
+				if val != "" && ok {
+					c := incrementOrSetUnit(&thisCounter, aggregate.OauthIDs[val])
+					aggregate.OauthIDs[val] = c
+					aggregate.OauthIDs[val].Identifier = val
+
+					if record.TrackPath {
+						keyStr := doHash(record.APIID + ":" + record.Path)
+						data := aggregate.OauthEndpoint[val]
+
+						if data == nil {
+							data = make(map[string]*Counter)
+						}
+
+						c = incrementOrSetUnit(&thisCounter, data[keyStr])
+						c.Identifier = keyStr
+						c.HumanIdentifier = keyStr
+						data[keyStr] = c
+						aggregate.OauthEndpoint[val] = data
+					}
+				}
+			case "Geo":
+				c := incrementOrSetUnit(&thisCounter, aggregate.Geo[record.Geo.Country.ISOCode])
+				if record.Geo.Country.ISOCode != "" {
+					aggregate.Geo[record.Geo.Country.ISOCode] = c
+					aggregate.Geo[record.Geo.Country.ISOCode].Identifier = record.Geo.Country.ISOCode
+					aggregate.Geo[record.Geo.Country.ISOCode].HumanIdentifier = record.Geo.Country.ISOCode
+				}
+
+			case "Tags":
+				for _, thisTag := range record.Tags {
+					trimmedTag := TrimTag(thisTag)
+
+					if trimmedTag != "" && !ignoreTag(thisTag, ignoreTagPrefixList) {
+						c := incrementOrSetUnit(&thisCounter, aggregate.Tags[trimmedTag])
+						aggregate.Tags[trimmedTag] = c
+						aggregate.Tags[trimmedTag].Identifier = trimmedTag
+						aggregate.Tags[trimmedTag].HumanIdentifier = trimmedTag
+					}
+				}
+
+			case "TrackPath":
+				val, ok := value.(bool)
+				if !ok {
+					break
+				}
+				log.Debug("TrackPath=", val)
+				if val {
+					fixedPath := replaceUnsupportedChars(record.Path)
+					c := incrementOrSetUnit(&thisCounter, aggregate.Endpoints[fixedPath])
+					aggregate.Endpoints[fixedPath] = c
+					aggregate.Endpoints[fixedPath].Identifier = record.Path
+					aggregate.Endpoints[fixedPath].HumanIdentifier = record.Path
+
+					keyStr := hex.EncodeToString([]byte(record.APIID + ":" + record.APIVersion + ":" + record.Path))
+					c = incrementOrSetUnit(&thisCounter, aggregate.ApiEndpoint[keyStr])
+					aggregate.ApiEndpoint[keyStr] = c
+					aggregate.ApiEndpoint[keyStr].Identifier = keyStr
+					aggregate.ApiEndpoint[keyStr].HumanIdentifier = record.Path
+				}
+			}
+		}
+	}
+	return *aggregate, thisCounter
+}
+
+// incrementOrSetUnit is a Mini function to handle incrementing a specific counter in our object
+func incrementOrSetUnit(b, c *Counter) *Counter {
+	base := *b
+	if c == nil {
+		newCounter := base
+		newCounter.ErrorMap = make(map[string]int)
+		for k, v := range base.ErrorMap {
+			newCounter.ErrorMap[k] = v
+		}
+		c = &newCounter
+	} else {
+		c.Hits += base.Hits
+		c.Success += base.Success
+		c.ErrorTotal += base.ErrorTotal
+		for k, v := range base.ErrorMap {
+			c.ErrorMap[k] += v
+		}
+		c.TotalRequestTime += base.TotalRequestTime
+		c.RequestTime = c.TotalRequestTime / float64(c.Hits)
+
+		if c.MaxLatency < base.MaxLatency {
+			c.MaxLatency = base.MaxLatency
+		}
+
+		// don't update min latency in case of errors
+		if c.MinLatency > base.MinLatency && base.ErrorTotal == 0 {
+			c.MinLatency = base.MinLatency
+		}
+
+		if c.MaxUpstreamLatency < base.MaxUpstreamLatency {
+			c.MaxUpstreamLatency = base.MaxUpstreamLatency
+		}
+
+		// don't update min latency in case of errors
+		if c.MinUpstreamLatency > base.MinUpstreamLatency && base.ErrorTotal == 0 {
+			c.MinUpstreamLatency = base.MinUpstreamLatency
+		}
+
+		c.TotalLatency += base.TotalLatency
+		c.TotalUpstreamLatency += base.TotalUpstreamLatency
+
+	}
+
+	return c
 }
 
 func TrimTag(thisTag string) string {

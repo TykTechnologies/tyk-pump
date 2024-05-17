@@ -3,86 +3,109 @@
 package pumps
 
 import (
-	"gopkg.in/mgo.v2"
-	"gopkg.in/mgo.v2/bson"
+	"context"
+	"os"
+
+	"github.com/TykTechnologies/storage/persistent"
+	"github.com/TykTechnologies/storage/persistent/model"
 )
 
-const dbAddr = "127.0.0.1:27017"
-const colName = "test_collection"
+const (
+	dbAddr  = "mongodb://localhost:27017/test"
+	colName = "test_collection"
+)
 
 type Conn struct {
-	Session *mgo.Session
+	Store persistent.PersistentStorage
+}
+
+func (c *Conn) TableName() string {
+	return colName
+}
+
+// SetObjectID is a dummy function to satisfy the interface
+func (*Conn) GetObjectID() model.ObjectID {
+	return ""
+}
+
+// SetObjectID is a dummy function to satisfy the interface
+func (*Conn) SetObjectID(model.ObjectID) {
+	// empty
 }
 
 func (c *Conn) ConnectDb() {
-	if c.Session == nil {
+	if c.Store == nil {
 		var err error
-		c.Session, err = mgo.Dial(dbAddr)
+		c.Store, err = persistent.NewPersistentStorage(&persistent.ClientOpts{
+			Type:             "mongo-go",
+			ConnectionString: dbAddr,
+		})
 		if err != nil {
-			panic("Unable to connect to mongo")
+			panic("Unable to connect to mongo: " + err.Error())
 		}
 	}
 }
 
 func (c *Conn) CleanDb() {
-	sess := c.Session.Copy()
-	defer sess.Close()
-
-	if err := sess.DB("").DropDatabase(); err != nil {
+	err := c.Store.DropDatabase(context.Background())
+	if err != nil {
 		panic(err)
 	}
 }
 
 func (c *Conn) CleanCollection() {
-	sess := c.Session.Copy()
-	defer sess.Close()
-
-	if err := sess.DB("").C(colName).DropCollection(); err != nil {
+	err := c.Store.Drop(context.Background(), c)
+	if err != nil {
 		panic(err)
 	}
 }
 
 func (c *Conn) CleanIndexes() {
-	sess := c.Session.Copy()
-	defer sess.Close()
-
-	indexes, err := sess.DB("").C(colName).Indexes()
+	err := c.Store.CleanIndexes(context.Background(), c)
 	if err != nil {
 		panic(err)
 	}
-	for _, index := range indexes {
-		sess.DB("").C(colName).DropIndexName(index.Name)
-	}
+}
 
+type Doc struct {
+	ID  model.ObjectID `bson:"_id"`
+	Foo string         `bson:"foo"`
+}
+
+func (d Doc) GetObjectID() model.ObjectID {
+	return d.ID
+}
+
+func (d *Doc) SetObjectID(id model.ObjectID) {
+	d.ID = id
+}
+
+func (d Doc) TableName() string {
+	return colName
 }
 
 func (c *Conn) InsertDoc() {
-	sess := c.Session.Copy()
-	defer sess.Close()
-
-	if err := sess.DB("").C(colName).Insert(bson.M{"foo": "bar"}); err != nil {
+	doc := Doc{
+		Foo: "bar",
+	}
+	doc.SetObjectID(model.NewObjectID())
+	err := c.Store.Insert(context.Background(), &doc)
+	if err != nil {
 		panic(err)
 	}
 }
 
-func (c *Conn) GetCollectionStats() (colStats bson.M) {
-	sess := c.Session.Copy()
-	defer sess.Close()
-
-	data := bson.D{{Name: "collStats", Value: colName}}
-
-	if err := sess.DB("").Run(data, &colStats); err != nil {
+func (c *Conn) GetCollectionStats() (colStats model.DBM) {
+	var err error
+	colStats, err = c.Store.DBTableStats(context.Background(), c)
+	if err != nil {
 		panic(err)
 	}
-
 	return colStats
 }
 
-func (c *Conn) GetIndexes() ([]mgo.Index, error) {
-	sess := c.Session.Copy()
-	defer sess.Close()
-
-	return sess.DB("").C(colName).Indexes()
+func (c *Conn) GetIndexes() ([]model.Index, error) {
+	return c.Store.GetIndexes(context.Background(), c)
 }
 
 func defaultConf() MongoConf {
@@ -95,6 +118,12 @@ func defaultConf() MongoConf {
 	conf.MongoURL = dbAddr
 	conf.MongoSSLInsecureSkipVerify = true
 
+	if os.Getenv("MONGO_DRIVER") == "mongo-go" {
+		conf.MongoDriverType = persistent.OfficialMongo
+	} else {
+		conf.MongoDriverType = persistent.Mgo
+	}
+
 	return conf
 }
 
@@ -106,6 +135,12 @@ func defaultSelectiveConf() MongoSelectiveConf {
 
 	conf.MongoURL = dbAddr
 	conf.MongoSSLInsecureSkipVerify = true
+
+	if os.Getenv("MONGO_DRIVER") == "mongo-go" {
+		conf.MongoDriverType = persistent.OfficialMongo
+	} else {
+		conf.MongoDriverType = persistent.Mgo
+	}
 
 	return conf
 }

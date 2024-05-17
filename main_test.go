@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-
 	"os"
 	"os/signal"
 	"sync"
@@ -28,9 +27,11 @@ func (p *MockedPump) GetName() string {
 func (p *MockedPump) New() pumps.Pump {
 	return &MockedPump{}
 }
+
 func (p *MockedPump) Init(config interface{}) error {
 	return nil
 }
+
 func (p *MockedPump) WriteData(ctx context.Context, keys []interface{}) error {
 	for range keys {
 		p.CounterRequest++
@@ -44,7 +45,6 @@ func (p *MockedPump) Shutdown() error {
 }
 
 func TestFilterData(t *testing.T) {
-
 	mockedPump := &MockedPump{}
 
 	mockedPump.SetFilters(
@@ -62,12 +62,10 @@ func TestFilterData(t *testing.T) {
 	if len(keys) == len(filteredKeys) {
 		t.Fatal("keys and filtered keys have the  same lenght")
 	}
-
 }
 
 // TestTrimData check the correct functionality of max_record_size
 func TestTrimData(t *testing.T) {
-
 	loremIpsum := "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua"
 
 	tcs := []struct {
@@ -226,11 +224,11 @@ func TestWriteDataWithFilters(t *testing.T) {
 	}
 
 	for _, tc := range tcs {
+		tc := tc
 		t.Run(tc.testName, func(t *testing.T) {
 			t.Parallel()
 			assert.Equal(t, tc.expectedCounterRequest, tc.mockedPump.CounterRequest)
 			assert.Len(t, keys, 6)
-
 		})
 	}
 }
@@ -270,5 +268,111 @@ func TestShutdown(t *testing.T) {
 
 	if mockedPump.TurnedOff != true {
 		t.Fatal("MockedPump should have turned off")
+	}
+}
+
+func TestIgnoreFieldsFilterData(t *testing.T) {
+	keys := make([]interface{}, 1)
+	record := analytics.AnalyticsRecord{APIID: "api111", RawResponse: "test", RawRequest: "test", OrgID: "321", ResponseCode: 200, RequestTime: 123}
+	keys[0] = record
+
+	recordWithoutAPIID := record
+	recordWithoutAPIID.APIID = ""
+
+	recordWithoutAPIIDAndAPIName := record
+	recordWithoutAPIIDAndAPIName.APIID = ""
+
+	tcs := []struct {
+		expectedRecord analytics.AnalyticsRecord
+		testName       string
+		ignoreFields   []string
+	}{
+		{
+			testName:       "ignore 1 field",
+			ignoreFields:   []string{"api_id"},
+			expectedRecord: recordWithoutAPIID,
+		},
+		{
+			testName:       "ignore 2 fields",
+			ignoreFields:   []string{"api_id", "api_name"},
+			expectedRecord: recordWithoutAPIIDAndAPIName,
+		},
+		{
+			testName:       "invalid field - log error must be shown",
+			ignoreFields:   []string{"api_id", "api_name", "invalid_field"},
+			expectedRecord: recordWithoutAPIIDAndAPIName,
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.testName, func(t *testing.T) {
+			mockedPump := &MockedPump{}
+			mockedPump.SetIgnoreFields(tc.ignoreFields)
+
+			filteredKeys := filterData(mockedPump, keys)
+
+			for _, key := range filteredKeys {
+				record, ok := key.(analytics.AnalyticsRecord)
+				assert.True(t, ok)
+				assert.Equal(t, tc.expectedRecord, record)
+			}
+		})
+	}
+}
+
+func TestDecodedKey(t *testing.T) {
+	keys := make([]interface{}, 1)
+	record := analytics.AnalyticsRecord{APIID: "api111", RawResponse: "RGVjb2RlZFJlc3BvbnNl", RawRequest: "RGVjb2RlZFJlcXVlc3Q="}
+	keys[0] = record
+
+	tcs := []struct {
+		expectedRawResponse string
+		expectedRawRequest  string
+		testName            string
+		decodeResponse      bool
+		decodeRequest       bool
+	}{
+		{
+			testName:            "Decode RESPONSE & REQUEST",
+			expectedRawResponse: "DecodedResponse",
+			expectedRawRequest:  "DecodedRequest",
+			decodeResponse:      true,
+			decodeRequest:       true,
+		},
+		{
+			testName:            "Decode RESPONSE",
+			expectedRawResponse: "DecodedResponse",
+			expectedRawRequest:  "RGVjb2RlZFJlcXVlc3Q=",
+			decodeResponse:      true,
+			decodeRequest:       false,
+		},
+		{
+			testName:            "Decode REQUEST",
+			expectedRawResponse: "RGVjb2RlZFJlc3BvbnNl",
+			expectedRawRequest:  "DecodedRequest",
+			decodeResponse:      false,
+			decodeRequest:       true,
+		},
+		{
+			testName:            "Decode NONE",
+			expectedRawResponse: "RGVjb2RlZFJlc3BvbnNl",
+			expectedRawRequest:  "RGVjb2RlZFJlcXVlc3Q=",
+			decodeResponse:      false,
+			decodeRequest:       false,
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.testName, func(t *testing.T) {
+			mockedPump := &MockedPump{}
+			mockedPump.SetDecodingRequest(tc.decodeRequest)
+			mockedPump.SetDecodingResponse(tc.decodeResponse)
+			filteredKeys := filterData(mockedPump, keys)
+			assert.Len(t, filteredKeys, 1)
+			record1, ok := filteredKeys[0].(analytics.AnalyticsRecord)
+			assert.True(t, ok)
+			assert.Equal(t, tc.expectedRawResponse, record1.RawResponse)
+			assert.Equal(t, tc.expectedRawRequest, record1.RawRequest)
+		})
 	}
 }

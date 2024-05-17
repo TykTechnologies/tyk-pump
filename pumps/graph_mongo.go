@@ -5,12 +5,15 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/TykTechnologies/storage/persistent/model"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/mitchellh/mapstructure"
 	"github.com/sirupsen/logrus"
 )
 
 const mongoGraphPrefix = "mongo-graph-pump"
+
+var mongoGraphDefaultEnv = PUMPS_ENV_PREFIX + "_MONGOGRAPH" + PUMPS_ENV_META_PREFIX
 
 type GraphMongoPump struct {
 	CommonPumpConfig
@@ -27,6 +30,18 @@ func (g *GraphMongoPump) GetEnvPrefix() string {
 
 func (g *GraphMongoPump) GetName() string {
 	return "MongoDB Graph Pump"
+}
+
+func (g *GraphMongoPump) SetDecodingRequest(decoding bool) {
+	if decoding {
+		log.WithField("pump", g.GetName()).Warn("Decoding request is not supported for Graph Mongo pump")
+	}
+}
+
+func (g *GraphMongoPump) SetDecodingResponse(decoding bool) {
+	if decoding {
+		log.WithField("pump", g.GetName()).Warn("Decoding response is not supported for Graph Mongo pump")
+	}
 }
 
 func (g *GraphMongoPump) Init(config interface{}) error {
@@ -47,6 +62,7 @@ func (g *GraphMongoPump) Init(config interface{}) error {
 	if err := mapstructure.Decode(config, &g.dbConf.BaseMongoConf); err != nil {
 		return err
 	}
+	processPumpEnvVars(g, g.log, g.dbConf, mongoGraphDefaultEnv)
 
 	if g.dbConf.MaxInsertBatchSizeBytes == 0 {
 		g.log.Info("-- No max batch size set, defaulting to 10MB")
@@ -62,7 +78,7 @@ func (g *GraphMongoPump) Init(config interface{}) error {
 
 	g.capCollection()
 
-	indexCreateErr := g.ensureIndexes()
+	indexCreateErr := g.ensureIndexes(g.dbConf.CollectionName)
 	if indexCreateErr != nil {
 		g.log.Error(indexCreateErr)
 	}
@@ -84,35 +100,30 @@ func (g *GraphMongoPump) WriteData(ctx context.Context, data []interface{}) erro
 
 	g.log.Debug("Attempting to write ", len(data), " records...")
 
-	for g.dbSession == nil {
-		g.log.Debug("Connecting to analytics store")
-		g.connect()
-	}
 	accumulateSet := g.AccumulateSet(data, true)
 
 	errCh := make(chan error, len(accumulateSet))
 	for _, dataSet := range accumulateSet {
-		go func(dataSet []interface{}, errCh chan error) {
-			sess := g.dbSession.Copy()
-			defer sess.Close()
-
+		go func(dataSet []model.DBObject, errCh chan error) {
 			// make a graph record array with variable length in case there are errors with some conversion
-			finalSet := make([]interface{}, 0)
+			finalSet := make([]model.DBObject, 0)
 			for _, d := range dataSet {
-				r, ok := d.(analytics.AnalyticsRecord)
+				r, ok := d.(*analytics.AnalyticsRecord)
 				if !ok {
 					continue
 				}
+
+				r.SetObjectID(model.NewObjectID())
 
 				var (
 					gr  analytics.GraphRecord
 					err error
 				)
-				if r.RawRequest == "" || r.RawResponse == "" || r.ApiSchema == "" {
+				if !r.GraphQLStats.IsGraphQL {
 					g.log.Warn("skipping record parsing")
-					gr = analytics.GraphRecord{AnalyticsRecord: r}
+					gr = analytics.GraphRecord{AnalyticsRecord: *r}
 				} else {
-					gr, err = r.ToGraphRecord()
+					gr = r.ToGraphRecord()
 					if err != nil {
 						errCh <- err
 						g.log.WithError(err).Warn("error converting 1 record to graph record")
@@ -120,17 +131,14 @@ func (g *GraphMongoPump) WriteData(ctx context.Context, data []interface{}) erro
 					}
 				}
 
-				finalSet = append(finalSet, gr)
+				finalSet = append(finalSet, &gr)
 			}
-
-			analyticsCollection := sess.DB("").C(collectionName)
 
 			g.log.WithFields(logrus.Fields{
 				"collection":        collectionName,
 				"number of records": len(finalSet),
 			}).Debug("Attempt to purge records")
-
-			err := analyticsCollection.Insert(finalSet...)
+			err := g.store.Insert(context.Background(), finalSet...)
 			if err != nil {
 				g.log.WithFields(logrus.Fields{"collection": collectionName, "number of records": len(finalSet)}).Error("Problem inserting to mongo collection: ", err)
 

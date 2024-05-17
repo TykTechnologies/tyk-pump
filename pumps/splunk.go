@@ -10,9 +10,10 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/mitchellh/mapstructure"
-
 	"github.com/TykTechnologies/tyk-pump/analytics"
+	"github.com/TykTechnologies/tyk-pump/retry"
+
+	"github.com/mitchellh/mapstructure"
 )
 
 const (
@@ -35,8 +36,8 @@ type SplunkClient struct {
 	Token         string
 	CollectorURL  string
 	TLSSkipVerify bool
-
-	httpClient *http.Client
+	httpClient    *http.Client
+	retry         *retry.BackoffHTTPRetry
 }
 
 // SplunkPump is a Tyk Pump driver for Splunk.
@@ -49,6 +50,8 @@ type SplunkPump struct {
 // SplunkPumpConfig contains the driver configuration parameters.
 // @PumpConf Splunk
 type SplunkPumpConfig struct {
+	// The prefix for the environment variables that will be used to override the configuration.
+	// Defaults to `TYK_PMP_PUMPS_SPLUNK_META`
 	EnvPrefix string `mapstructure:"meta_env_prefix"`
 	// Address of the datadog agent including host & port.
 	CollectorToken string `json:"collector_token" mapstructure:"collector_token"`
@@ -85,6 +88,9 @@ type SplunkPumpConfig struct {
 	// the amount of bytes, they're send anyways in each `purge_loop`. Default value is 838860800
 	// (~ 800 MB), the same default value as Splunk config.
 	BatchMaxContentLength int `json:"batch_max_content_length" mapstructure:"batch_max_content_length"`
+	// MaxRetries represents the maximum amount of retries to attempt if failed to send requests to splunk HEC.
+	// Default value is `0`
+	MaxRetries uint64 `json:"max_retries" mapstructure:"max_retries"`
 }
 
 // New initializes a new pump.
@@ -124,6 +130,11 @@ func (p *SplunkPump) Init(config interface{}) error {
 		p.config.BatchMaxContentLength = maxContentLength
 	}
 
+	if p.config.MaxRetries > 0 {
+		p.log.Infof("%d max retries", p.config.MaxRetries)
+	}
+
+	p.client.retry = retry.NewBackoffRetry("Failed writing data to Splunk", p.config.MaxRetries, p.client.httpClient, p.log)
 	p.log.Info(p.GetName() + " Initialized")
 
 	return nil
@@ -152,15 +163,6 @@ func (p *SplunkPump) WriteData(ctx context.Context, data []interface{}) error {
 	p.log.Debug("Attempting to write ", len(data), " records...")
 
 	var batchBuffer bytes.Buffer
-
-	fnSendBytes := func(data []byte) error {
-		_, errSend := p.client.Send(ctx, data)
-		if errSend != nil {
-			p.log.Error("Error writing data to Splunk ", errSend)
-			return errSend
-		}
-		return nil
-	}
 
 	for _, v := range data {
 		decoded := v.(analytics.AnalyticsRecord)
@@ -253,14 +255,14 @@ func (p *SplunkPump) WriteData(ctx context.Context, data []interface{}) error {
 		if p.config.EnableBatch {
 			//if we're batching and the len of our data is already bigger than max_content_length, we send the data and reset the buffer
 			if batchBuffer.Len()+len(data) > p.config.BatchMaxContentLength {
-				if err := fnSendBytes(batchBuffer.Bytes()); err != nil {
+				if err := p.send(ctx, batchBuffer.Bytes()); err != nil {
 					return err
 				}
 				batchBuffer.Reset()
 			}
 			batchBuffer.Write(data)
 		} else {
-			if err := fnSendBytes(data); err != nil {
+			if err := p.send(ctx, data); err != nil {
 				return err
 			}
 		}
@@ -268,7 +270,7 @@ func (p *SplunkPump) WriteData(ctx context.Context, data []interface{}) error {
 
 	//this if is for data remaining in the buffer when len(buffer) is lower than max_content_length
 	if p.config.EnableBatch && batchBuffer.Len() > 0 {
-		if err := fnSendBytes(batchBuffer.Bytes()); err != nil {
+		if err := p.send(ctx, batchBuffer.Bytes()); err != nil {
 			return err
 		}
 		batchBuffer.Reset()
@@ -311,15 +313,15 @@ func NewSplunkClient(token string, collectorURL string, skipVerify bool, certFil
 	return c, nil
 }
 
-// Send sends an event to the Splunk HTTP Event Collector interface.
-func (c *SplunkClient) Send(ctx context.Context, data []byte) (*http.Response, error) {
-
+func (p *SplunkPump) send(ctx context.Context, data []byte) error {
 	reader := bytes.NewReader(data)
-	req, err := http.NewRequest("POST", c.CollectorURL, reader)
+	req, err := http.NewRequest(http.MethodPost, p.client.CollectorURL, reader)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	req = req.WithContext(ctx)
-	req.Header.Add(authHeaderName, authHeaderPrefix+c.Token)
-	return c.httpClient.Do(req)
+	req.Header.Add(authHeaderName, authHeaderPrefix+p.client.Token)
+
+	p.log.Debugf("Sending %d bytes to splunk", len(data))
+	return p.client.retry.Send(req)
 }

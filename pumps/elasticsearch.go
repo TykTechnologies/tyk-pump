@@ -33,6 +33,8 @@ var elasticsearchDefaultENV = PUMPS_ENV_PREFIX + "_ELASTICSEARCH" + PUMPS_ENV_ME
 
 // @PumpConf Elasticsearch
 type ElasticsearchConf struct {
+	// The prefix for the environment variables that will be used to override the configuration.
+	// Defaults to `TYK_PMP_PUMPS_ELASTICSEARCH_META`
 	EnvPrefix string `mapstructure:"meta_env_prefix"`
 	// The name of the index that all the analytics data will be placed in. Defaults to
 	// "tyk_analytics".

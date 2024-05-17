@@ -9,24 +9,27 @@ import (
 	"time"
 
 	"github.com/kelseyhightower/envconfig"
-	"github.com/lonelycode/mgohacks"
 	"github.com/mitchellh/mapstructure"
-	"gopkg.in/mgo.v2"
-	"gopkg.in/mgo.v2/bson"
-
-	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/sirupsen/logrus"
+
+	"github.com/TykTechnologies/storage/persistent"
+	"github.com/TykTechnologies/storage/persistent/model"
+	"github.com/TykTechnologies/tyk-pump/analytics"
 )
 
-var mongoAggregatePumpPrefix = "PMP_MONGOAGG"
-var mongoAggregateDefaultEnv = PUMPS_ENV_PREFIX + "_MONGOAGGREGATE" + PUMPS_ENV_META_PREFIX
+var (
+	mongoAggregatePumpPrefix = "PMP_MONGOAGG"
+	mongoAggregateDefaultEnv = PUMPS_ENV_PREFIX + "_MONGOAGGREGATE" + PUMPS_ENV_META_PREFIX
+)
 
-var THRESHOLD_LEN_TAG_LIST = 1000
-var COMMON_TAGS_COUNT = 5
+var (
+	ThresholdLenTagList = 1000
+	CommonTagsCount     = 5
+)
 
 type MongoAggregatePump struct {
-	dbSession *mgo.Session
-	dbConf    *MongoAggregateConf
+	store  persistent.PersistentStorage
+	dbConf *MongoAggregateConf
 	CommonPumpConfig
 }
 
@@ -124,8 +127,8 @@ func (m *MongoAggregatePump) printAlert(doc analytics.AnalyticsRecordAggregate, 
 
 	// list 5 common tag prefix
 	l := len(listOfCommonPrefix)
-	if l > COMMON_TAGS_COUNT {
-		l = COMMON_TAGS_COUNT
+	if l > CommonTagsCount {
+		l = CommonTagsCount
 	}
 
 	m.log.Warnf("WARNING: Found more than %v tag entries per document, which may cause performance issues with aggregate logs. List of most common tag-prefix: [%v]. You can ignore these tags using ignore_tag_prefix_list option", thresholdLenTagList, strings.Join(listOfCommonPrefix[:l], ", "))
@@ -153,6 +156,18 @@ func (m *MongoAggregatePump) GetCollectionName(orgid string) (string, error) {
 	return "z_tyk_analyticz_aggregate_" + orgid, nil
 }
 
+func (m *MongoAggregatePump) SetDecodingRequest(decoding bool) {
+	if decoding {
+		log.WithField("pump", m.GetName()).Warn("Decoding request is not supported for Mongo Aggregate pump")
+	}
+}
+
+func (m *MongoAggregatePump) SetDecodingResponse(decoding bool) {
+	if decoding {
+		log.WithField("pump", m.GetName()).Warn("Decoding response is not supported for Mongo Aggregate pump")
+	}
+}
+
 func (m *MongoAggregatePump) Init(config interface{}) error {
 	m.dbConf = &MongoAggregateConf{}
 	m.log = log.WithField("prefix", analytics.MongoAggregatePrefix)
@@ -168,14 +183,14 @@ func (m *MongoAggregatePump) Init(config interface{}) error {
 
 	processPumpEnvVars(m, m.log, m.dbConf, mongoAggregateDefaultEnv)
 
-	//we keep this env check for backward compatibility
+	// we keep this env check for backward compatibility
 	overrideErr := envconfig.Process(mongoAggregatePumpPrefix, m.dbConf)
 	if overrideErr != nil {
 		m.log.Error("Failed to process environment variables for mongo aggregate pump: ", overrideErr)
 	}
 
 	if m.dbConf.ThresholdLenTagList == 0 {
-		m.dbConf.ThresholdLenTagList = THRESHOLD_LEN_TAG_LIST
+		m.dbConf.ThresholdLenTagList = ThresholdLenTagList
 	}
 	m.SetAggregationTime()
 
@@ -185,7 +200,7 @@ func (m *MongoAggregatePump) Init(config interface{}) error {
 	m.log.Info(m.GetName() + " Initialized")
 
 	// look for the last record timestamp stored in the collection
-	lastTimestampAgggregateRecord, err := getLastDocumentTimestamp(m.dbSession, analytics.AgggregateMixedCollectionName)
+	lastTimestampAgggregateRecord, err := m.getLastDocumentTimestamp()
 
 	// we will set it to the lastDocumentTimestamp map to track the timestamp of different documents of different Mongo Aggregators
 	if err != nil {
@@ -199,90 +214,88 @@ func (m *MongoAggregatePump) Init(config interface{}) error {
 
 func (m *MongoAggregatePump) connect() {
 	var err error
-	var dialInfo *mgo.DialInfo
 
-	dialInfo, err = mongoDialInfo(m.dbConf.BaseMongoConf)
+	m.dbConf.MongoDriverType = getMongoDriverType(m.dbConf.MongoDriverType)
+
+	m.store, err = persistent.NewPersistentStorage(&persistent.ClientOpts{
+		ConnectionString:         m.dbConf.MongoURL,
+		UseSSL:                   m.dbConf.MongoUseSSL,
+		SSLInsecureSkipVerify:    m.dbConf.MongoSSLInsecureSkipVerify,
+		SSLAllowInvalidHostnames: m.dbConf.MongoSSLAllowInvalidHostnames,
+		SSLCAFile:                m.dbConf.MongoSSLCAFile,
+		SSLPEMKeyfile:            m.dbConf.MongoSSLPEMKeyfile,
+		SessionConsistency:       m.dbConf.MongoSessionConsistency,
+		ConnectionTimeout:        m.timeout,
+		Type:                     m.dbConf.MongoDriverType,
+		DirectConnection:         m.dbConf.MongoDirectConnection,
+	})
 	if err != nil {
-		m.log.Panic("Mongo URL is invalid: ", err)
-	}
-
-	if m.timeout > 0 {
-		dialInfo.Timeout = time.Second * time.Duration(m.timeout)
-	}
-
-	m.dbSession, err = mgo.DialWithInfo(dialInfo)
-
-	for err != nil {
-		m.log.WithError(err).WithField("dialinfo", m.dbConf.BaseMongoConf.GetBlurredURL()).Error("Mongo connection failed. Retrying.")
-		time.Sleep(5 * time.Second)
-		m.dbSession, err = mgo.DialWithInfo(dialInfo)
-	}
-
-	if err == nil && m.dbConf.MongoDBType == 0 {
-		m.dbConf.MongoDBType = mongoType(m.dbSession)
+		m.log.Fatal("Failed to connect to mongo: ", err)
 	}
 }
 
-func (m *MongoAggregatePump) ensureIndexes(c *mgo.Collection) error {
+func (m *MongoAggregatePump) ensureIndexes(collectionName string) error {
 	if m.dbConf.OmitIndexCreation {
 		m.log.Debug("omit_index_creation set to true, omitting index creation..")
 		return nil
 	}
 
-	//We are going to check if the collection exists only when the DB Type is MongoDB. The mgo CollectionNames func leaks cursors on DocDB.
+	// We are going to check if the collection exists only when the DB Type is MongoDB. The mgo CollectionNames func leaks cursors on DocDB.
 	if m.dbConf.MongoDBType == StandardMongo {
-		exists, errExists := m.collectionExists(c.Name)
+		exists, errExists := m.collectionExists(collectionName)
 		if errExists == nil && exists {
-			m.log.Debug("Collection ", c.Name, " exists, omitting index creation")
+			m.log.Debug("Collection ", collectionName, " exists, omitting index creation")
 			return nil
 		}
 	}
-
+	d := dbObject{
+		tableName: collectionName,
+	}
 	var err error
 	// CosmosDB does not support "expireAt" option
 	if m.dbConf.MongoDBType != CosmosDB {
-		ttlIndex := mgo.Index{
-			Key:         []string{"expireAt"},
-			ExpireAfter: 0,
-			Background:  m.dbConf.MongoDBType == StandardMongo,
+		ttlIndex := model.Index{
+			Keys:       []model.DBM{{"expireAt": 1}},
+			TTL:        0,
+			IsTTLIndex: true,
+			Background: m.dbConf.MongoDBType == StandardMongo,
 		}
-
-		err = mgohacks.EnsureTTLIndex(c, ttlIndex)
+		err = m.store.CreateIndex(context.Background(), d, ttlIndex)
 		if err != nil {
 			return err
 		}
 	}
 
-	apiIndex := mgo.Index{
-		Key:        []string{"timestamp"},
+	apiIndex := model.Index{
+		Keys:       []model.DBM{{"timestamp": 1}},
 		Background: m.dbConf.MongoDBType == StandardMongo,
 	}
 
-	err = c.EnsureIndex(apiIndex)
+	err = m.store.CreateIndex(context.Background(), d, apiIndex)
 	if err != nil {
 		return err
 	}
 
-	orgIndex := mgo.Index{
-		Key:        []string{"orgid"},
+	orgIndex := model.Index{
+		Keys:       []model.DBM{{"orgid": 1}},
 		Background: m.dbConf.MongoDBType == StandardMongo,
 	}
-
-	return c.EnsureIndex(orgIndex)
+	return m.store.CreateIndex(context.Background(), d, orgIndex)
 }
 
 func (m *MongoAggregatePump) WriteData(ctx context.Context, data []interface{}) error {
 	m.log.Debug("Attempting to write ", len(data), " records")
-	if m.dbSession == nil {
-		m.log.Debug("Connecting to analytics store")
-		m.connect()
-		m.WriteData(ctx, data)
-	} else {
-		// calculate aggregates
-		analyticsPerOrg := analytics.AggregateData(data, m.dbConf.TrackAllPaths, m.dbConf.IgnoreTagPrefixList, m.dbConf.MongoURL, m.dbConf.AggregationTime, true)
-		// put aggregated data into MongoDB
-		for orgID, filteredData := range analyticsPerOrg {
-			err := m.DoAggregatedWriting(ctx, orgID, filteredData)
+	// calculate aggregates
+	analyticsPerOrg := analytics.AggregateData(data, m.dbConf.TrackAllPaths, m.dbConf.IgnoreTagPrefixList, m.dbConf.MongoURL, m.dbConf.AggregationTime)
+	// put aggregated data into MongoDB
+	writingAttempts := []bool{false}
+	if m.dbConf.UseMixedCollection {
+		writingAttempts = append(writingAttempts, true)
+	}
+	for orgID := range analyticsPerOrg {
+		filteredData := analyticsPerOrg[orgID]
+		for _, isMixedCollection := range writingAttempts {
+			err := m.DoAggregatedWriting(ctx, &filteredData, isMixedCollection)
 			if err != nil {
 				// checking if the error is related to the document size and AggregateSelfHealing is enabled
 				if shouldSelfHeal := m.ShouldSelfHeal(err); shouldSelfHeal {
@@ -295,73 +308,24 @@ func (m *MongoAggregatePump) WriteData(ctx context.Context, data []interface{}) 
 				}
 				return err
 			}
-
-			m.log.Debug("Processed aggregated data for ", orgID)
 		}
+		m.log.Debug("Processed aggregated data for ", orgID)
 	}
+
 	m.log.Info("Purged ", len(data), " records...")
 
 	return nil
 }
 
-func (m *MongoAggregatePump) doMixedWrite(changeDoc analytics.AnalyticsRecordAggregate, query bson.M) {
-	thisSession := m.dbSession.Copy()
-	defer thisSession.Close()
-	analyticsCollection := thisSession.DB("").C(analytics.AgggregateMixedCollectionName)
-	m.ensureIndexes(analyticsCollection)
-
-	avgChange := mgo.Change{
-		Update:    changeDoc,
-		ReturnNew: true,
-		Upsert:    true,
-	}
-
-	m.log.WithFields(logrus.Fields{
-		"collection": analytics.AgggregateMixedCollectionName,
-	}).Debug("Attempt to upsert aggregated doc")
-
-	final := analytics.AnalyticsRecordAggregate{}
-	_, avgErr := analyticsCollection.Find(query).Apply(avgChange, &final)
-
-	if avgErr != nil {
-		m.log.WithFields(logrus.Fields{
-			"collection": analytics.AgggregateMixedCollectionName,
-		}).Error("Mixed coll upsert failure: ", avgErr)
-		m.HandleWriteErr(avgErr)
-	}
-	m.log.WithFields(logrus.Fields{
-		"collection": analytics.AgggregateMixedCollectionName,
-	}).Info("Completed upserting")
-}
-
-func (m *MongoAggregatePump) HandleWriteErr(err error) error {
-	if err != nil {
-		m.log.Error("Problem inserting or updating to mongo collection: ", err)
-		if strings.Contains(err.Error(), "Closed explicitly") || strings.Contains(err.Error(), "EOF") {
-			m.log.Warning("--> Detected connection failure, reconnecting")
-			m.connect()
-		}
-	}
-	return err
-}
-
-func (m *MongoAggregatePump) DoAggregatedWriting(ctx context.Context, orgID string, filteredData analytics.AnalyticsRecordAggregate) error {
-	collectionName, collErr := m.GetCollectionName(orgID)
-	if collErr != nil {
-		m.log.Info("No OrgID for AnalyticsRecord, skipping")
-		return nil
-	}
-	thisSession := m.dbSession.Copy()
-	defer thisSession.Close()
-
-	analyticsCollection := thisSession.DB("").C(collectionName)
-	indexCreateErr := m.ensureIndexes(analyticsCollection)
+func (m *MongoAggregatePump) DoAggregatedWriting(ctx context.Context, filteredData *analytics.AnalyticsRecordAggregate, mixed bool) error {
+	filteredData.Mixed = mixed
+	indexCreateErr := m.ensureIndexes(filteredData.TableName())
 
 	if indexCreateErr != nil {
 		m.log.Error(indexCreateErr)
 	}
 
-	query := bson.M{
+	query := model.DBM{
 		"orgid":     filteredData.OrgID,
 		"timestamp": filteredData.TimeStamp,
 	}
@@ -371,69 +335,44 @@ func (m *MongoAggregatePump) DoAggregatedWriting(ctx context.Context, orgID stri
 	}
 
 	updateDoc := filteredData.AsChange()
-
-	change := mgo.Change{
-		Update:    updateDoc,
-		ReturnNew: true,
-		Upsert:    true,
+	doc := &analytics.AnalyticsRecordAggregate{
+		OrgID: filteredData.OrgID,
+		Mixed: mixed,
 	}
 
-	doc := analytics.AnalyticsRecordAggregate{}
-	_, err := analyticsCollection.Find(query).Apply(change, &doc)
+	m.log.WithFields(logrus.Fields{
+		"collection": doc.TableName(),
+	}).Debug("Attempt to upsert aggregated doc")
+
+	err := m.store.Upsert(ctx, doc, query, updateDoc)
 	if err != nil {
 		m.log.WithField("query", query).Error("UPSERT Failure: ", err)
-		return m.HandleWriteErr(err)
+		return err
 	}
 
 	// We have the new doc back, lets fix the averages
 	avgUpdateDoc := doc.AsTimeUpdate()
-	avgChange := mgo.Change{
-		Update:    avgUpdateDoc,
-		ReturnNew: true,
-	}
-	withTimeUpdate := analytics.AnalyticsRecordAggregate{}
-	_, avgErr := analyticsCollection.Find(query).Apply(avgChange, &withTimeUpdate)
 
+	withTimeUpdate := analytics.AnalyticsRecordAggregate{
+		OrgID: filteredData.OrgID,
+		Mixed: mixed,
+	}
+
+	err = m.store.Upsert(ctx, &withTimeUpdate, query, avgUpdateDoc)
+	if err != nil {
+		m.log.WithField("query", query).Error("AvgUpdate Failure: ", err)
+		return err
+	}
 	if m.dbConf.ThresholdLenTagList != -1 && (len(withTimeUpdate.Tags) > m.dbConf.ThresholdLenTagList) {
 		m.printAlert(withTimeUpdate, m.dbConf.ThresholdLenTagList)
 	}
 
-	if avgErr != nil {
-		m.log.WithField("query", query).Error("AvgUpdate Failure: ", avgErr)
-		return m.HandleWriteErr(avgErr)
-	}
-
-	if m.dbConf.UseMixedCollection {
-		thisData := analytics.AnalyticsRecordAggregate{}
-		err := analyticsCollection.Find(query).One(&thisData)
-		if err != nil {
-			m.log.WithField("query", query).Error("Couldn't find query doc:", err)
-		} else {
-			m.doMixedWrite(thisData, query)
-		}
-	}
 	return nil
 }
 
 // collectionExists checks to see if a collection name exists in the db.
 func (m *MongoAggregatePump) collectionExists(name string) (bool, error) {
-	sess := m.dbSession.Copy()
-	defer sess.Close()
-
-	colNames, err := sess.DB("").CollectionNames()
-	if err != nil {
-		m.log.Error("Unable to get collection names: ", err)
-
-		return false, err
-	}
-
-	for _, coll := range colNames {
-		if coll == name {
-			return true, nil
-		}
-	}
-
-	return false, nil
+	return m.store.HasTable(context.Background(), name)
 }
 
 // WriteUptimeData will pull the data from the in-memory store and drop it into the specified MongoDB collection
@@ -442,16 +381,20 @@ func (m *MongoAggregatePump) WriteUptimeData(data []interface{}) {
 }
 
 // getLastDocumentTimestamp will return the timestamp of the last document in the collection
-func getLastDocumentTimestamp(session *mgo.Session, collectionName string) (time.Time, error) {
-	var doc bson.M
-	err := session.DB("").C(collectionName).Find(nil).Sort("-$natural").One(&doc)
+func (m *MongoAggregatePump) getLastDocumentTimestamp() (time.Time, error) {
+	d := dbObject{
+		tableName: analytics.AgggregateMixedCollectionName,
+	}
+
+	var result model.DBM
+	err := m.store.Query(context.Background(), d, &result, model.DBM{"_sort": "-$natural", "_limit": 1})
 	if err != nil {
 		return time.Time{}, err
 	}
-	if ts, ok := doc["timestamp"].(time.Time); ok {
+	if ts, ok := result["timestamp"].(time.Time); ok {
 		return ts, nil
 	}
-	return time.Time{}, errors.New("timestamp of type: time.Time not found in bson map")
+	return time.Time{}, errors.New("timestamp of type: time.Time not found in query result")
 }
 
 // divideAggregationTime divides by two the analytics stored per minute setting

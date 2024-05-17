@@ -3,6 +3,7 @@ package pumps
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/mitchellh/mapstructure"
@@ -21,6 +22,8 @@ type StdOutPump struct {
 
 // @PumpConf StdOut
 type StdOutConf struct {
+	// The prefix for the environment variables that will be used to override the configuration.
+	// Defaults to `TYK_PMP_PUMPS_STDOUT_META`
 	EnvPrefix string `mapstructure:"meta_env_prefix"`
 	// Format of the analytics logs. Default is `text` if `json` is not explicitly specified. When
 	// JSON logging is used all pump logs to stdout will be JSON.
@@ -84,6 +87,7 @@ func (s *StdOutPump) WriteData(ctx context.Context, data []interface{}) error {
 				formatter := &logrus.JSONFormatter{}
 				entry := log.WithField(s.conf.LogFieldName, decoded)
 				entry.Level = logrus.InfoLevel
+				entry.Time = time.Now().UTC()
 				data, _ := formatter.Format(entry)
 				fmt.Print(string(data))
 			} else {

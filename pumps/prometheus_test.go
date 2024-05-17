@@ -351,7 +351,8 @@ func TestPrometheusCounterMetric(t *testing.T) {
 		metric                *PrometheusMetric
 		analyticsRecords      []analytics.AnalyticsRecord
 		expectedMetricsAmount int
-		expectedMetrics       map[string]uint64
+		expectedMetrics       map[string]counterStruct
+		trackAllPaths         bool
 	}{
 		{
 			testName: "HTTP status codes per API",
@@ -368,14 +369,15 @@ func TestPrometheusCounterMetric(t *testing.T) {
 				{APIID: "api_2", ResponseCode: 404},
 			},
 			expectedMetricsAmount: 3,
-			expectedMetrics: map[string]uint64{
-				"500--api_1": 2,
-				"200--api_1": 1,
-				"404--api_2": 1,
+			expectedMetrics: map[string]counterStruct{
+				"500--api_1": {labelValues: []string{"500", "api_1"}, count: 2},
+				"200--api_1": {labelValues: []string{"200", "api_1"}, count: 1},
+				"404--api_2": {labelValues: []string{"404", "api_2"}, count: 1},
 			},
 		},
 		{
-			testName: "HTTP status codes per API path and method",
+			testName:      "HTTP status codes per API path and method - trackign all paths",
+			trackAllPaths: true,
 			metric: &PrometheusMetric{
 				Name:       "tyk_http_status_per_path",
 				Help:       "HTTP status codes per API path and method",
@@ -391,12 +393,63 @@ func TestPrometheusCounterMetric(t *testing.T) {
 				{APIID: "api_2", ResponseCode: 200, Path: "test", Method: "GET"},
 			},
 			expectedMetricsAmount: 5,
-			expectedMetrics: map[string]uint64{
-				"500--api_1--test--GET":  2,
-				"500--api_1--test--POST": 1,
-				"500--api_1--test2--GET": 1,
-				"200--api_1--test2--GET": 1,
-				"200--api_2--test--GET":  1,
+			expectedMetrics: map[string]counterStruct{
+				"500--api_1--test--GET":  {labelValues: []string{"500", "api_1", "test", "GET"}, count: 2},
+				"500--api_1--test--POST": {labelValues: []string{"500", "api_1", "test", "POST"}, count: 1},
+				"500--api_1--test2--GET": {labelValues: []string{"500", "api_1", "test2", "GET"}, count: 1},
+				"200--api_1--test2--GET": {labelValues: []string{"200", "api_1", "test2", "GET"}, count: 1},
+				"200--api_2--test--GET":  {labelValues: []string{"200", "api_2", "test", "GET"}, count: 1},
+			},
+		},
+		{
+			testName:      "HTTP status codes per API path and method - tracking some paths",
+			trackAllPaths: false,
+			metric: &PrometheusMetric{
+				Name:       "tyk_http_status_per_path",
+				Help:       "HTTP status codes per API path and method",
+				MetricType: counterType,
+				Labels:     []string{"code", "api", "path", "method"},
+			},
+			analyticsRecords: []analytics.AnalyticsRecord{
+				{APIID: "api_1", ResponseCode: 500, Path: "test", Method: "GET", TrackPath: true},
+				{APIID: "api_1", ResponseCode: 500, Path: "test2", Method: "GET"},
+				{APIID: "api_1", ResponseCode: 500, Path: "test", Method: "GET", TrackPath: true},
+				{APIID: "api_1", ResponseCode: 500, Path: "test", Method: "POST", TrackPath: true},
+				{APIID: "api_1", ResponseCode: 200, Path: "test2", Method: "GET"},
+				{APIID: "api_2", ResponseCode: 200, Path: "test", Method: "GET"},
+			},
+			expectedMetricsAmount: 5,
+			expectedMetrics: map[string]counterStruct{
+				"500--api_1--test--GET":    {labelValues: []string{"500", "api_1", "test", "GET"}, count: 2},
+				"500--api_1--test--POST":   {labelValues: []string{"500", "api_1", "test", "POST"}, count: 1},
+				"500--api_1--unknown--GET": {labelValues: []string{"500", "api_1", "unknown", "GET"}, count: 1},
+				"200--api_1--unknown--GET": {labelValues: []string{"200", "api_1", "unknown", "GET"}, count: 1},
+				"200--api_2--unknown--GET": {labelValues: []string{"200", "api_2", "unknown", "GET"}, count: 1},
+			},
+		},
+		{
+			testName:      "HTTP status codes per API path and method - not tracking paths",
+			trackAllPaths: false,
+			metric: &PrometheusMetric{
+				Name:       "tyk_http_status_per_path",
+				Help:       "HTTP status codes per API path and method",
+				MetricType: counterType,
+				Labels:     []string{"code", "api", "path", "method"},
+			},
+			analyticsRecords: []analytics.AnalyticsRecord{
+				{APIID: "api_1", ResponseCode: 500, Path: "test", Method: "GET"},
+				{APIID: "api_1", ResponseCode: 500, Path: "test2", Method: "GET"},
+				{APIID: "api_1", ResponseCode: 500, Path: "test", Method: "GET"},
+				{APIID: "api_1", ResponseCode: 500, Path: "test", Method: "POST"},
+				{APIID: "api_1", ResponseCode: 200, Path: "test2", Method: "GET"},
+				{APIID: "api_2", ResponseCode: 200, Path: "test", Method: "GET"},
+			},
+			expectedMetricsAmount: 4,
+			expectedMetrics: map[string]counterStruct{
+				"500--api_1--unknown--GET":  {labelValues: []string{"500", "api_1", "unknown", "GET"}, count: 3},
+				"500--api_1--unknown--POST": {labelValues: []string{"500", "api_1", "unknown", "POST"}, count: 1},
+				"200--api_1--unknown--GET":  {labelValues: []string{"200", "api_1", "unknown", "GET"}, count: 1},
+				"200--api_2--unknown--GET":  {labelValues: []string{"200", "api_2", "unknown", "GET"}, count: 1},
 			},
 		},
 		{
@@ -415,10 +468,10 @@ func TestPrometheusCounterMetric(t *testing.T) {
 				{APIID: "api_2", ResponseCode: 200, APIKey: "key1"},
 			},
 			expectedMetricsAmount: 3,
-			expectedMetrics: map[string]uint64{
-				"500--key1": 2,
-				"200--key1": 2,
-				"500--key2": 1,
+			expectedMetrics: map[string]counterStruct{
+				"500--key1": {labelValues: []string{"500", "key1"}, count: 2},
+				"200--key1": {labelValues: []string{"200", "key1"}, count: 2},
+				"500--key2": {labelValues: []string{"500", "key2"}, count: 1},
 			},
 		},
 		{
@@ -437,10 +490,10 @@ func TestPrometheusCounterMetric(t *testing.T) {
 				{APIID: "api_2", ResponseCode: 200, OauthID: "oauth1"},
 			},
 			expectedMetricsAmount: 3,
-			expectedMetrics: map[string]uint64{
-				"500--oauth1": 2,
-				"200--oauth1": 2,
-				"500--oauth2": 1,
+			expectedMetrics: map[string]counterStruct{
+				"500--oauth1": {labelValues: []string{"500", "oauth1"}, count: 2},
+				"200--oauth1": {labelValues: []string{"200", "oauth1"}, count: 2},
+				"500--oauth2": {labelValues: []string{"500", "oauth2"}, count: 1},
 			},
 		},
 		{
@@ -459,11 +512,11 @@ func TestPrometheusCounterMetric(t *testing.T) {
 				{APIID: "api_2", ResponseCode: 500, Alias: "alias1"},
 			},
 			expectedMetricsAmount: 4,
-			expectedMetrics: map[string]uint64{
-				"500--api_1--alias1": 2,
-				"500--api_1--alias2": 1,
-				"200--api_1--alias1": 1,
-				"500--api_2--alias1": 1,
+			expectedMetrics: map[string]counterStruct{
+				"500--api_1--alias1": {labelValues: []string{"500", "api_1", "alias1"}, count: 2},
+				"500--api_1--alias2": {labelValues: []string{"500", "api_1", "alias2"}, count: 1},
+				"200--api_1--alias1": {labelValues: []string{"200", "api_1", "alias1"}, count: 1},
+				"500--api_2--alias1": {labelValues: []string{"500", "api_2", "alias1"}, count: 1},
 			},
 		},
 	}
@@ -474,6 +527,10 @@ func TestPrometheusCounterMetric(t *testing.T) {
 			assert.Nil(t, err)
 			defer prometheus.Unregister(tc.metric.counterVec)
 			for _, record := range tc.analyticsRecords {
+				if !(tc.trackAllPaths || record.TrackPath) {
+					record.Path = "unknown"
+				}
+
 				labelValues := tc.metric.GetLabelsValues(record)
 				assert.Equal(t, len(tc.metric.Labels), len(labelValues))
 
@@ -520,8 +577,16 @@ func TestPrometheusHistogramMetric(t *testing.T) {
 			},
 			expectedMetricsAmount: 2,
 			expectedMetrics: map[string]histogramCounter{
-				"total--api_1": {hits: 3, totalRequestTime: 300},
-				"total--api_2": {hits: 1, totalRequestTime: 323},
+				"total--api_1": {
+					hits:             3,
+					totalRequestTime: 300,
+					labelValues:      []string{"total", "api_1"},
+				},
+				"total--api_2": {
+					hits:             1,
+					totalRequestTime: 323,
+					labelValues:      []string{"total", "api_2"},
+				},
 			},
 			expectedAverages: map[string]float64{
 				"total--api_1": 100,
@@ -565,19 +630,42 @@ func TestPrometheusHistogramMetric(t *testing.T) {
 				{APIID: "api_2", Method: "GET", Path: "ping", RequestTime: 10},
 				{APIID: "api_2", Method: "GET", Path: "ping", RequestTime: 20},
 				{APIID: "api_2", Method: "GET", Path: "health", RequestTime: 400},
+				{APIID: "api--3", Method: "GET", Path: "health", RequestTime: 300},
 			},
-			expectedMetricsAmount: 4,
+			expectedMetricsAmount: 5,
 			expectedMetrics: map[string]histogramCounter{
-				"total--api_1--GET--test":   {hits: 2, totalRequestTime: 200},
-				"total--api_1--POST--test":  {hits: 1, totalRequestTime: 200},
-				"total--api_2--GET--ping":   {hits: 2, totalRequestTime: 30},
-				"total--api_2--GET--health": {hits: 1, totalRequestTime: 400},
+				"total--api_1--GET--test": {
+					hits:             2,
+					totalRequestTime: 200,
+					labelValues:      []string{"total", "api_1", "GET", "test"},
+				},
+				"total--api_1--POST--test": {
+					hits:             1,
+					totalRequestTime: 200,
+					labelValues:      []string{"total", "api_1", "POST", "test"},
+				},
+				"total--api_2--GET--ping": {
+					hits:             2,
+					totalRequestTime: 30,
+					labelValues:      []string{"total", "api_2", "GET", "ping"},
+				},
+				"total--api_2--GET--health": {
+					hits:             1,
+					totalRequestTime: 400,
+					labelValues:      []string{"total", "api_2", "GET", "health"},
+				},
+				"total--api--3--GET--health": {
+					hits:             1,
+					totalRequestTime: 300,
+					labelValues:      []string{"total", "api--3", "GET", "health"},
+				},
 			},
 			expectedAverages: map[string]float64{
-				"total--api_1--GET--test":   100,
-				"total--api_1--POST--test":  200,
-				"total--api_2--GET--ping":   15,
-				"total--api_2--GET--health": 400,
+				"total--api_1--GET--test":    100,
+				"total--api_1--POST--test":   200,
+				"total--api_2--GET--ping":    15,
+				"total--api_2--GET--health":  400,
+				"total--api--3--GET--health": 300,
 			},
 		},
 	}

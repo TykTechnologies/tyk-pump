@@ -21,6 +21,8 @@ type CSVPump struct {
 
 // @PumpConf CSV
 type CSVConf struct {
+	// The prefix for the environment variables that will be used to override the configuration.
+	// Defaults to `TYK_PMP_PUMPS_CSV_META`
 	EnvPrefix string `mapstructure:"meta_env_prefix"`
 	// The directory and the filename where the CSV data will be stored.
 	CSVDir string `json:"csv_dir" mapstructure:"csv_dir"`
@@ -103,7 +105,10 @@ func (c *CSVPump) WriteData(ctx context.Context, data []interface{}) error {
 	}
 
 	for _, v := range data {
-		decoded := v.(analytics.AnalyticsRecord)
+		decoded, ok := v.(analytics.AnalyticsRecord)
+		if !ok {
+			return fmt.Errorf("couldn't convert %v to analytics.AnalyticsRecord", v)
+		}
 
 		toWrite := decoded.GetLineValues()
 		// toWrite := []string{
