@@ -405,7 +405,7 @@ func (m *MongoAggregatePump) divideAggregationTime() {
 	}
 	oldAggTime := m.dbConf.AggregationTime
 	m.dbConf.AggregationTime /= 2
-	m.log.Warn("Analytics Stored Per Minute dicreased from ", oldAggTime, " to ", m.dbConf.AggregationTime)
+	m.log.Warn("Analytics Stored Per Minute decreased from ", oldAggTime, " to ", m.dbConf.AggregationTime)
 }
 
 // ShouldSelfHeal returns true if the pump should self heal
