@@ -104,6 +104,51 @@ jobs:
           -v /tmp/build.sh:/tmp/build.sh                                         \
           -w /go/src/github.com/TykTechnologies/tyk-pump                      \
           tykio/golang-cross:${{ matrix.golang_cross }} /tmp/build.sh
+
+      - name: Build boringcrypto variant
+        env:
+          NFPM_STD_PASSPHRASE: ${{ secrets.SIGNING_KEY_PASSPHRASE }}
+          PKG_SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
+          PACKAGECLOUD_TOKEN: ${{ secrets.PACKAGECLOUD_TOKEN }}
+          GOEXPERIMENT: boringcrypto
+        run: |
+          echo '#!/bin/sh
+          ci/bin/unlock-agent.sh
+          git config --global url."https://${{ secrets.ORG_GH_TOKEN }}@github.com".insteadOf "https://github.com"
+          git config --global --add safe.directory /go/src/github.com/TykTechnologies/tyk-pump
+          goreleaser release --clean -f ci/goreleaser/goreleaser-boringcrypto.yml ${{ !startsWith(github.ref, 'refs/tags/') && ' --snapshot --skip=sign' || '' }}' | tee /tmp/build-boringcrypto.sh
+          chmod +x /tmp/build-boringcrypto.sh
+          docker run --rm --privileged -e GITHUB_TOKEN=${{ github.token }} \
+          -e GOPRIVATE=github.com/TykTechnologies                                \
+          -e DEBVERS='${{ matrix.debvers }}'                               \
+          -e RPMVERS='${{ matrix.rpmvers }}'                               \
+          -e CGO_ENABLED=${{ matrix.cgo }}                                 \
+          -e NFPM_STD_PASSPHRASE="$NFPM_STD_PASSPHRASE"                          \
+          -e GPG_FINGERPRINT=12B5D62C28F57592D1575BD51ED14C59E37DAC20            \
+          -e PKG_SIGNING_KEY="$PKG_SIGNING_KEY"                                  \
+          -e PACKAGECLOUD_TOKEN=$PACKAGECLOUD_TOKEN                              \
+          -e GOEXPERIMENT=$GOEXPERIMENT                                          \
+          -v ${{github.workspace}}:/go/src/github.com/TykTechnologies/tyk-pump \
+          -v /var/run/docker.sock:/var/run/docker.sock                           \
+          -v ~/.docker/config.json:/root/.docker/config.json                     \
+          -e GOCACHE=/cache/go-build                                             \
+          -e GOMODCACHE=/go/pkg/mod                                              \
+          -v ~/go/pkg/mod:/go/pkg/mod                                            \
+          -v ~/.cache/go-build:/cache/go-build                                   \
+          -v /tmp/build-boringcrypto.sh:/tmp/build-boringcrypto.sh               \
+          -w /go/src/github.com/TykTechnologies/tyk-pump                      \
+          tykio/golang-cross:${{ matrix.golang_cross }} /tmp/build-boringcrypto.sh
+
+      - name: Set build tag
+        id: set_build_tag
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            echo "build_tag=${{ github.ref_name }}" >> $GITHUB_ENV
+          elif [[ "${{ github.ref }}" == refs/pull/* ]]; then
+            echo "build_tag=pr-${{ github.event.number }}" >> $GITHUB_ENV
+          else
+            echo "build_tag=${{ github.sha }}" >> $GITHUB_ENV
+          fi
       - uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::754489498669:role/ecr_rw_tyk
@@ -135,7 +180,7 @@ jobs:
         shell: bash
         env:
           t: ${{ steps.ci_metadata.outputs.tags }}
-          build_tag: ${{ startswith(github.ref, 'refs/tags') && github.ref_name || 'v0.0.0' }}
+          build_tag: ${{ env.build_tag }}
         run: |
           set +e
           IFS=$'\n' tags=($t)
@@ -144,6 +189,33 @@ jobs:
                  docker tag tykio/tyk-pump-docker-pub:${build_tag}-${arch} ${tag}-${arch} && docker push ${tag}-${arch}
              done
              docker manifest create ${tag} ${tag}-amd64 ${tag}-arm64 && docker manifest push ${tag}
+          done
+      - name: Docker metadata for boringcrypto
+        id: boringcrypto_metadata
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ steps.ecr.outputs.registry }}/tyk-pump-boringcrypto
+          flavor: |
+            latest=false
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,format=long
+            type=semver,pattern=v{{major}}.{{minor}},prefix=v
+            type=semver,pattern=v{{version}},prefix=v
+      - name: Push boringcrypto image
+        shell: bash
+        env:
+          t: ${{ steps.boringcrypto_metadata.outputs.tags }}
+          build_tag: ${{ env.build_tag }}
+        run: |
+          set +e
+          IFS=$'\n' tags=($t)
+          for tag in "${tags[@]}"; do
+             for arch in amd64; do
+                 docker tag tykio/tyk-pump-docker-pub:${build_tag}-${arch} ${tag}-${arch} && docker push ${tag}-${arch}
+             done
+             docker manifest create ${tag} ${tag}-amd64 && docker manifest push ${tag}
           done
       - uses: actions/upload-artifact@v4
         if: ${{ matrix.golang_cross == '1.21-bookworm' }}
@@ -502,118 +574,3 @@ jobs:
       DEPDASH_URL: ${{ secrets.DEPDASH_URL }}
       DEPDASH_KEY: ${{ secrets.DEPDASH_KEY }}
       ORG_GH_TOKEN: ${{ secrets.ORG_GH_TOKEN }}
-
-  boringcrypto:
-    needs: goreleaser
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write # AWS OIDC JWT
-      contents: read # actions/checkout
-    steps:
-      - name: Checkout of tyk-pump
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
-      - uses: docker/setup-qemu-action@v3
-      - uses: docker/setup-buildx-action@v3
-      - name: Login to DockerHub
-        if: startsWith(github.ref, 'refs/tags')
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-      - name: Login to Cloudsmith
-        if: startsWith(github.ref, 'refs/tags')
-        uses: docker/login-action@v3
-        with:
-          registry: docker.tyk.io
-          username: ${{ secrets.CLOUDSMITH_USERNAME }}
-          password: ${{ secrets.CLOUDSMITH_API_KEY }}
-      - uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-      - name: Build boringcrypto variant
-        env:
-          NFPM_STD_PASSPHRASE: ${{ secrets.SIGNING_KEY_PASSPHRASE }}
-          PKG_SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
-          PACKAGECLOUD_TOKEN: ${{ secrets.PACKAGECLOUD_TOKEN }}
-          GOEXPERIMENT: boringcrypto
-        run: |
-          echo '#!/bin/sh
-          ci/bin/unlock-agent.sh
-          git config --global url."https://${{ secrets.ORG_GH_TOKEN }}@github.com".insteadOf "https://github.com"
-          git config --global --add safe.directory /go/src/github.com/TykTechnologies/tyk-pump
-          goreleaser release --clean -f ci/goreleaser/goreleaser-boringcrypto.yml ${{ !startsWith(github.ref, 'refs/tags/') && ' --snapshot --skip=sign' || '' }}' | tee /tmp/build.sh
-          chmod +x /tmp/build.sh
-          docker run --rm --privileged -e GITHUB_TOKEN=${{ github.token }} \
-          -e GOPRIVATE=github.com/TykTechnologies                                \
-          -e DEBVERS='ubuntu/xenial ubuntu/bionic ubuntu/focal ubuntu/jammy debian/jessie debian/buster debian/bullseye debian/bookworm'                               \
-          -e RPMVERS='el/7 el/8 el/9 amazon/2 amazon/2023'                               \
-          -e CGO_ENABLED=0                                 \
-          -e NFPM_STD_PASSPHRASE="$NFPM_STD_PASSPHRASE"                          \
-          -e GPG_FINGERPRINT=12B5D62C28F57592D1575BD51ED14C59E37DAC20            \
-          -e PKG_SIGNING_KEY="$PKG_SIGNING_KEY"                                  \
-          -e PACKAGECLOUD_TOKEN=$PACKAGECLOUD_TOKEN                              \
-          -e GOEXPERIMENT=$GOEXPERIMENT                                          \
-          -v ${{github.workspace}}:/go/src/github.com/TykTechnologies/tyk-pump \
-          -v /var/run/docker.sock:/var/run/docker.sock                           \
-          -v ~/.docker/config.json:/root/.docker/config.json                     \
-          -e GOCACHE=/cache/go-build                                             \
-          -e GOMODCACHE=/go/pkg/mod                                              \
-          -v ~/go/pkg/mod:/go/pkg/mod                                            \
-          -v ~/.cache/go-build:/cache/go-build                                   \
-          -v /tmp/build.sh:/tmp/build.sh                                         \
-          -w /go/src/github.com/TykTechnologies/tyk-pump                      \
-          tykio/golang-cross:1.21-bookworm /tmp/build.sh
-      - name: Set build tag
-        id: set_build_tag
-        run: |
-          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
-            echo "build_tag=${{ github.ref_name }}" >> $GITHUB_ENV
-          elif [[ "${{ github.ref }}" == refs/pull/* ]]; then
-            echo "build_tag=pr-${{ github.event.number }}" >> $GITHUB_ENV
-          else
-            echo "build_tag=${{ github.sha }}" >> $GITHUB_ENV
-          fi
-      - uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: arn:aws:iam::754489498669:role/ecr_rw_tyk
-          role-session-name: cipush
-          aws-region: eu-central-1
-          mask-aws-account-id: false
-      - uses: aws-actions/amazon-ecr-login@v2
-        id: ecr
-        with:
-          mask-password: 'true'
-      - name: Docker metadata for boringcrypto
-        id: boringcrypto_metadata
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ steps.ecr.outputs.registry }}/tyk-pump-boringcrypto
-          flavor: |
-            latest=false
-          tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=sha,format=long
-            type=semver,pattern=v{{major}}.{{minor}},prefix=v
-            type=semver,pattern=v{{version}},prefix=v
-      - name: Push boringcrypto image
-        shell: bash
-        env:
-          t: ${{ steps.boringcrypto_metadata.outputs.tags }}
-          build_tag: ${{ env.build_tag }}
-        run: |
-          set +e
-          IFS=$'\n' tags=($t)
-          for tag in "${tags[@]}"; do
-             for arch in amd64; do
-                 docker tag tykio/tyk-pump-docker-pub:${build_tag}-${arch} ${tag}-${arch} && docker push ${tag}-${arch}
-             done
-             docker manifest create ${tag} ${tag}-amd64 && docker manifest push ${tag}
-          done
