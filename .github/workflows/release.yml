@@ -570,6 +570,9 @@ jobs:
           -v /tmp/build.sh:/tmp/build.sh                                         \
           -w /go/src/github.com/TykTechnologies/tyk-pump                      \
           tykio/golang-cross:1.21-bookworm /tmp/build.sh
+      - name: Set build tag
+        id: set_build_tag
+        run: echo "build_tag=$(echo ${{ github.ref_name }} | sed 's/refs\/tags\///')" >> $GITHUB_ENV
       - uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::754489498669:role/ecr_rw_tyk
@@ -597,7 +600,7 @@ jobs:
         shell: bash
         env:
           t: ${{ steps.boringcrypto_metadata.outputs.tags }}
-          build_tag: ${{ startswith(github.ref, 'refs/tags') && github.ref_name || 'v0.0.0' }}
+          build_tag: ${{ env.build_tag }}
         run: |
           set +e
           IFS=$'\n' tags=($t)
