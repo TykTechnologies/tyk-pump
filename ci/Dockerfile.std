@@ -2,8 +2,10 @@
 
 FROM debian:bookworm-slim
 ARG TARGETARCH
+ARG GOEXPERIMENT
 
 ENV DEBIAN_FRONTEND=noninteractive
+ENV GOEXPERIMENT=${GOEXPERIMENT}
 
 RUN apt-get update \
     && apt-get dist-upgrade -y ca-certificates
