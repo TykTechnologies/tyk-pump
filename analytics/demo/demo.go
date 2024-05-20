@@ -153,6 +153,7 @@ func country() string {
 	return codes[rand.Intn(len(codes))]
 }
 
+// GenerateDemoData given the params for the demo mode
 func GenerateDemoData(days, recordsPerHour int, orgID string, demoFutureData, trackPath bool, apiKeysCount int, writer func([]interface{}, *health.Job, time.Time, int)) {
 	t := time.Now()
 	start := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC)
@@ -179,6 +180,7 @@ func GenerateDemoData(days, recordsPerHour int, orgID string, demoFutureData, tr
 	}
 }
 
+// WriteDemoData writes the data generated in demo mode into store
 func WriteDemoData(start time.Time, d, h, recordsPerHour int, orgID string, trackPath bool, apikeysCount int, writer func([]interface{}, *health.Job, time.Time, int)) {
 	set := []interface{}{}
 	ts := start.AddDate(0, 0, d)
@@ -207,6 +209,7 @@ func WriteDemoData(start time.Time, d, h, recordsPerHour int, orgID string, trac
 	writer(set, nil, time.Now(), 10)
 }
 
+// GenerateRandomAnalyticRecord generates one single analytics record for the demo mode
 func GenerateRandomAnalyticRecord(orgID string, trackPath bool, apiKeysCount int) analytics.AnalyticsRecord {
 	p := randomPath()
 	api, apiID := randomAPI()
