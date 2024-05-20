@@ -183,15 +183,15 @@ jobs:
         id: boringcrypto_metadata
         uses: docker/metadata-action@v5
         with:
-          images: ${{ steps.ecr.outputs.registry }}/tyk-pump-boringcrypto
+          images: ${{ steps.ecr.outputs.registry }}/tyk-pump
           flavor: |
             latest=false
           tags: |
             type=ref,event=branch
             type=ref,event=pr
             type=sha,format=long
-            type=semver,pattern=v{{major}}.{{minor}},prefix=v
-            type=semver,pattern=v{{version}},prefix=v
+            type=semver,pattern=v{{major}}.{{minor}}-boringcrypto,prefix=v
+            type=semver,pattern=v{{version}}-boringcrypto,prefix=v
       - name: Push boringcrypto image
         shell: bash
         env:
