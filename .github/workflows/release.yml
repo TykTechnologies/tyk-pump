@@ -196,7 +196,7 @@ jobs:
         shell: bash
         env:
           t: ${{ steps.boringcrypto_metadata.outputs.tags }}
-          build_tag: ${{ env.build_tag }}
+          build_tag: ${{ startswith(github.ref, 'refs/tags') && github.ref_name || 'v0.0.0' }}
         run: |
           set +e
           IFS=$'\n' tags=($t)
