@@ -177,7 +177,12 @@ jobs:
              for arch in amd64 arm64; do
                  docker tag tykio/tyk-pump-docker-pub:${build_tag}-${arch} ${tag}-${arch} && docker push ${tag}-${arch}
              done
-             docker manifest create ${tag} ${tag}-amd64 ${tag}-arm64 && docker manifest push ${tag}
+             if docker manifest inspect ${tag}; then
+                docker manifest create --amend ${tag} ${tag}-amd64 ${tag}-arm64
+             else
+                docker manifest create ${tag} ${tag}-amd64 ${tag}-arm64
+             fi
+             docker manifest push ${tag}
           done
       - name: Docker metadata for boringcrypto
         id: boringcrypto_metadata
