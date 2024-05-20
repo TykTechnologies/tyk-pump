@@ -41,7 +41,7 @@ jobs:
             debvers: 'ubuntu/xenial ubuntu/bionic ubuntu/focal ubuntu/jammy debian/jessie debian/buster debian/bullseye debian/bookworm'
     outputs:
       tags: ${{ steps.ci_metadata.outputs.tags }}
-      commit_author: ${{ steps.fetch-author.outputs.commit_author}}
+      commit_author: ${{ steps.fetch-author.outputs.commit_author }}
     steps:
       - name: Checkout of tyk-pump
         uses: actions/checkout@v4
@@ -209,7 +209,12 @@ jobs:
              for arch in amd64; do
                  docker tag tykio/tyk-pump-docker-pub:${build_tag}-${arch} ${tag}-${arch} && docker push ${tag}-${arch}
              done
-             docker manifest create ${tag} ${tag}-amd64 && docker manifest push ${tag}
+             if docker manifest inspect ${tag}; then
+                docker manifest create --amend ${tag} ${tag}-amd64
+             else
+                docker manifest create ${tag} ${tag}-amd64
+             fi
+             docker manifest push ${tag}
           done
       - uses: actions/upload-artifact@v4
         if: ${{ matrix.golang_cross == '1.21-bookworm' }}
