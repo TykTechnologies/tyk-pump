@@ -456,7 +456,9 @@ Note that `store_analytics_per_minute` takes precedence over `aggregation_time` 
 ## Mongo Graph Pump
 
 As of Pump 1.7+, a new mongo is available called the `mongo_graph` pump. This pump is specifically for parsing
-GraphQL and UDG requests, tracking information like types requested, fields requested, specific graphql body errors etc.
+GraphQL and UDG requests, tracking information like types requested, fields requested, specific graphql body errors etc. 
+
+**Note that only Gateways v4.3.+ are compatible with this new pump. Previous versions would send the analytics data to the `tyk_analytics` collection** 
 
 A sample config looks like this:
 
@@ -1438,7 +1440,7 @@ This can also be set at a pump level. For example:
 
 The `driver` setting defines the driver type to use for Mongo Pumps. It can be one of the following values:
 
-- `mongo-go` (default): Uses the official MongoDB driver. This driver supports Mongo versions greater or equal to v4. You can get more information about this driver [here](https://github.com/mongodb/mongo-go-driver).
+- `mongo-go` (default from v1.9.0): Uses the official MongoDB driver. This driver supports Mongo versions greater or equal to v4. You can get more information about this driver [here](https://github.com/mongodb/mongo-go-driver).
 - `mgo`: Uses the mgo driver. This driver is deprecated. This driver supports Mongo versions lower or equal to v4. You can get more information about this driver [here](https://github.com/go-mgo/mgo)
 
 ```json
