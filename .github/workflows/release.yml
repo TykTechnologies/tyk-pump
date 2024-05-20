@@ -138,17 +138,6 @@ jobs:
           -v /tmp/build-boringcrypto.sh:/tmp/build-boringcrypto.sh               \
           -w /go/src/github.com/TykTechnologies/tyk-pump                      \
           tykio/golang-cross:${{ matrix.golang_cross }} /tmp/build-boringcrypto.sh
-
-      - name: Set build tag
-        id: set_build_tag
-        run: |
-          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
-            echo "build_tag=${{ github.ref_name }}" >> $GITHUB_ENV
-          elif [[ "${{ github.ref }}" == refs/pull/* ]]; then
-            echo "build_tag=pr-${{ github.event.number }}" >> $GITHUB_ENV
-          else
-            echo "build_tag=${{ github.sha }}" >> $GITHUB_ENV
-          fi
       - uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::754489498669:role/ecr_rw_tyk
@@ -180,7 +169,7 @@ jobs:
         shell: bash
         env:
           t: ${{ steps.ci_metadata.outputs.tags }}
-          build_tag: ${{ env.build_tag }}
+          build_tag: ${{ startswith(github.ref, 'refs/tags') && github.ref_name || 'v0.0.0' }}
         run: |
           set +e
           IFS=$'\n' tags=($t)
