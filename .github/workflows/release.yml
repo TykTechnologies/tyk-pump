@@ -572,7 +572,14 @@ jobs:
           tykio/golang-cross:1.21-bookworm /tmp/build.sh
       - name: Set build tag
         id: set_build_tag
-        run: echo "build_tag=$(echo ${{ github.ref_name }} | sed 's/refs\/tags\///')" >> $GITHUB_ENV
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            echo "build_tag=${{ github.ref_name }}" >> $GITHUB_ENV
+          elif [[ "${{ github.ref }}" == refs/pull/* ]]; then
+            echo "build_tag=pr-${{ github.event.number }}" >> $GITHUB_ENV
+          else
+            echo "build_tag=${{ github.sha }}" >> $GITHUB_ENV
+          fi
       - uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::754489498669:role/ecr_rw_tyk
