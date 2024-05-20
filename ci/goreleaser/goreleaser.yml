@@ -18,22 +18,8 @@ builds:
       - arm64
       - s390x
     binary: tyk-pump
-  - id: boringcrypto
-    ldflags:
-      - -X github.com/TykTechnologies/tyk-pump/pumps.Version={{.Version}}
-      - -X github.com/TykTechnologies/tyk-pump/pumps.Commit={{.FullCommit}}
-      - -X github.com/TykTechnologies/tyk-pump/pumps.BuildDate={{.Date}}
-      - -X github.com/TykTechnologies/tyk-pump/pumps.BuiltBy=goreleaser
-    goos:
-      - linux
-    goarch:
-      - amd64
-    binary: tyk-pump
-    tags:
-      - boringcrypto
     env:
-      - GOEXPERIMENT=boringcrypto
-
+      - GOEXPERIMENT={{ .Env.GOEXPERIMENT | default "" }}
 dockers:
   # Build tykio/tyk-pump-docker-pub, docker.tyk.io/tyk-pump/tyk-pump (amd64)
   - ids:
@@ -41,6 +27,8 @@ dockers:
     image_templates:
       - "tykio/tyk-pump-docker-pub:{{.Tag}}-amd64"
       - "docker.tyk.io/tyk-pump/tyk-pump:{{.Tag}}-amd64"
+      - "tykio/tyk-pump-docker-pub:{{.Tag}}-boringcrypto-amd64"
+      - "docker.tyk.io/tyk-pump/tyk-pump:{{.Tag}}-boringcrypto-amd64"
     build_flag_templates:
       - "--build-arg=PORTS=80"
       - "--platform=linux/amd64"
@@ -79,29 +67,6 @@ dockers:
       - "README.md"
       - "LICENSE.md"
       - "pump.example.conf"
-  # Build tykio/tyk-pump-docker-pub with boringcrypto (amd64)
-  - ids:
-      - boringcrypto
-    image_templates:
-      - "tykio/tyk-pump-docker-pub:{{.Tag}}-boringcrypto-amd64"
-      - "docker.tyk.io/tyk-pump/tyk-pump:{{.Tag}}-boringcrypto-amd64"
-    build_flag_templates:
-      - "--build-arg=PORTS=80"
-      - "--platform=linux/amd64"
-      - "--label=org.opencontainers.image.created={{.Date}}"
-      - "--label=org.opencontainers.image.title={{.ProjectName}}"
-      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
-      - "--label=org.opencontainers.image.version={{.Version}}"
-    use: buildx
-    goarch: amd64
-    goos: linux
-    dockerfile: ci/Dockerfile.std
-    extra_files:
-      - "ci/install/"
-      - "README.md"
-      - "LICENSE.md"
-      - "pump.example.conf"
-
 docker_manifests:
   - name_template: tykio/tyk-pump-docker-pub:{{ .Tag }}
     image_templates:
@@ -119,7 +84,12 @@ docker_manifests:
     image_templates:
       - docker.tyk.io/tyk-pump/tyk-pump:{{ .Tag }}-amd64
       - docker.tyk.io/tyk-pump/tyk-pump:{{ .Tag }}-arm64
-
+  - name_template: tykio/tyk-pump-docker-pub:{{ .Tag }}-boringcrypto
+    image_templates:
+      - tykio/tyk-pump-docker-pub:{{ .Tag }}-boringcrypto-amd64
+  - name_template: docker.tyk.io/tyk-pump/tyk-pump:{{ .Tag }}-boringcrypto
+    image_templates:
+      - docker.tyk.io/tyk-pump/tyk-pump:{{ .Tag }}-boringcrypto-amd64
 nfpms:
   - id: std
     vendor: "Tyk Technologies Ltd"
