@@ -135,7 +135,7 @@ jobs:
         shell: bash
         env:
           t: ${{ steps.ci_metadata.outputs.tags }}
-          build_tag: ${{ startsWith(github.ref, 'refs/tags') && github.ref_name || 'v0.0.0' }}
+          build_tag: ${{ startswith(github.ref, 'refs/tags') && github.ref_name || 'v0.0.0' }}
         run: |
           set +e
           IFS=$'\n' tags=($t)
@@ -161,7 +161,6 @@ jobs:
           path: |
             dist/*.rpm
             !dist/*PAYG*.rpm
-
   boringcrypto:
     name: 'boringcrypto'
     runs-on: ubuntu-latest-m
