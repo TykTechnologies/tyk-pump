@@ -47,7 +47,7 @@ var (
 	demoDays           = kingpin.Flag("demo-days", "flag that determines the number of days for the analytics records").Default("30").Int()
 	demoRecordsPerHour = kingpin.Flag("demo-records-per-hour", "flag that determines the number of records per hour for the analytics records").Default("0").Int()
 	demoFutureData     = kingpin.Flag("demo-future-data", "flag that determines if the demo data should be in the future").Default("false").Bool()
-	demoApiKeysCount   = kingpin.Flag("demo-apikeys-count", "flag that determines the quantity of apikeys to generate in demo mode").Default("50").Int()
+	demoAPIKeysCount   = kingpin.Flag("demo-apikeys-count", "flag that determines the quantity of apikeys to generate in demo mode").Default("50").Int()
 	debugMode          = kingpin.Flag("debug", "enable debug mode").Bool()
 	//lint:ignore U1000 Function is used when version flag is passed in command line
 	version = kingpin.Version(pumps.Version)
@@ -484,8 +484,8 @@ func main() {
 	if *demoMode != "" {
 		log.Info("BUILDING DEMO DATA AND EXITING...")
 		log.Warning("Starting from date: ", time.Now().AddDate(0, 0, -30))
-		demo.DemoInit(*demoMode, *demoApiMode, *demoApiVersionMode, *demoApiKeysCount)
-		demo.GenerateDemoData(*demoDays, *demoRecordsPerHour, *demoMode, *demoFutureData, *demoTrackPath, *demoApiKeysCount, writeToPumps)
+		demo.DemoInit(*demoMode, *demoApiMode, *demoApiVersionMode, *demoAPIKeysCount)
+		demo.GenerateDemoData(*demoDays, *demoRecordsPerHour, *demoMode, *demoFutureData, *demoTrackPath, *demoAPIKeysCount, writeToPumps)
 		return
 	}
 

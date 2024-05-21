@@ -120,21 +120,21 @@ func responseCode() int {
 	return codes[rand.Intn(len(codes))]
 }
 
-func GenerateAPIKeys(orgId string, apikeysQuantity int) {
+func GenerateAPIKeys(orgID string, apikeysQuantity int) {
 	set := make([]string, apikeysQuantity)
 	for i := 0; i < len(set); i++ {
-		set[i] = generateAPIKey(orgId)
+		set[i] = generateAPIKey(orgID)
 	}
 	apiKeys = set
 }
 
-func generateAPIKey(orgId string) string {
+func generateAPIKey(orgID string) string {
 	u1, err := uuid.NewV4()
 	if err != nil {
 		log.WithError(err).Error("failed to generate UUID")
 	}
 	id := strings.Replace(u1.String(), "-", "", -1)
-	return orgId + id
+	return orgID + id
 }
 
 func getRandomKey(orgId string, apiKeysCount int) string {
