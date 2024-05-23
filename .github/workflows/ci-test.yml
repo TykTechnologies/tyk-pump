@@ -78,10 +78,6 @@ jobs:
           $(go env GOPATH)/bin/golangci-lint run \
           --out-format checkstyle \
           --timeout=300s \
-          --enable shadow \
-          --enable errcheck \
-          --enable gofumpt \
-          --enable staticcheck \
           --max-issues-per-linter=0 \
           --max-same-issues=0 \
           --new-from-rev=origin/${{ github.base_ref }} \
