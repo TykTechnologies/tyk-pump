@@ -70,7 +70,7 @@ jobs:
           exit $result_code
 
       - name: Download golangci-lint
-        run: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.58.2
+        run: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.56.2
 
       - name: golangci-lint
         if: ${{ github.event_name == 'pull_request' }}
