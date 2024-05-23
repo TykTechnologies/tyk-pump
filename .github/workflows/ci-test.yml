@@ -70,7 +70,7 @@ jobs:
           exit $result_code
 
       - name: Download golangci-lint
-        run: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin
+        run: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.58.2
 
       - name: golangci-lint
         if: ${{ github.event_name == 'pull_request' }}
@@ -81,7 +81,7 @@ jobs:
           --enable shadow \
           --enable errcheck \
           --enable gofumpt \
-          --enable staticcheck
+          --enable staticcheck \
           --max-issues-per-linter=0 \
           --max-same-issues=0 \
           --new-from-rev=origin/${{ github.base_ref }} \
