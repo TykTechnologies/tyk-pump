@@ -80,8 +80,7 @@ jobs:
           --timeout=300s \
           --max-issues-per-linter=0 \
           --max-same-issues=0 \
-          --new-from-rev=origin/${{ github.base_ref }} \
-          ./... > golanglint.xml
+          --new-from-rev=origin/${{ github.base_ref }} ./... > golanglint.xml
 
       - name: golangci-lint
         if: ${{ github.event_name == 'push' }}
