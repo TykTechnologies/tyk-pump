@@ -19,7 +19,8 @@ var (
 	log        = logger.GetLogger()
 )
 
-func DemoInit(orgId, apiId, version string, apikeysCount int) {
+// Start initializes the demo mode
+func Start(orgId, apiId, version string, apikeysCount int) {
 	apiID = apiId
 	GenerateAPIKeys(orgId, apikeysCount)
 	apiVersion = version
@@ -137,9 +138,9 @@ func generateAPIKey(orgID string) string {
 	return orgID + id
 }
 
-func getRandomKey(orgId string, apiKeysCount int) string {
+func getRandomKey(orgID string, apiKeysCount int) string {
 	if len(apiKeys) == 0 {
-		GenerateAPIKeys(orgId, apiKeysCount)
+		GenerateAPIKeys(orgID, apiKeysCount)
 	}
 	return apiKeys[rand.Intn(len(apiKeys))]
 }

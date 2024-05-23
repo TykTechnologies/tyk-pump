@@ -484,7 +484,7 @@ func main() {
 	if *demoMode != "" {
 		log.Info("BUILDING DEMO DATA AND EXITING...")
 		log.Warning("Starting from date: ", time.Now().AddDate(0, 0, -30))
-		demo.DemoInit(*demoMode, *demoApiMode, *demoApiVersionMode, *demoAPIKeysCount)
+		demo.Start(*demoMode, *demoApiMode, *demoApiVersionMode, *demoAPIKeysCount)
 		demo.GenerateDemoData(*demoDays, *demoRecordsPerHour, *demoMode, *demoFutureData, *demoTrackPath, *demoAPIKeysCount, writeToPumps)
 		return
 	}
