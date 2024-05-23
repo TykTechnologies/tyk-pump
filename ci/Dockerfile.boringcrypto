@@ -30,7 +30,7 @@ WORKDIR /opt/tyk-pump/
 COPY --from=build /app/tyk-pump /opt/tyk-pump/
 
 # Copy other necessary files
-COPY pump.conf /opt/tyk-pump/pump.conf
+COPY ci/pump.conf /opt/tyk-pump/pump.conf
 
 # Expose the necessary ports
 ARG PORTS
