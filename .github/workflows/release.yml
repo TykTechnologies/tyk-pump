@@ -187,7 +187,7 @@ jobs:
       - name: Build Docker image with boringcrypto
         run: |
           echo 'Building Docker image with GOEXPERIMENT=boringcrypto'
-          docker build --build-arg GOEXPERIMENT=boringcrypto --build-arg BUILDTAGS=boringcrypto -t ${{ secrets.DOCKER_USERNAME }}/tyk-pump:${{ steps.sanitize-tag.outputs.tag }}-boringcrypto -f Dockerfile .
+          docker build --build-arg GOEXPERIMENT=boringcrypto --build-arg BUILDTAGS=boringcrypto -t ${{ secrets.DOCKER_USERNAME }}/tyk-pump:${{ steps.sanitize-tag.outputs.tag }}-boringcrypto -f ci/Dockerfile.distroless .
 
       - name: Push Docker image with boringcrypto
         run: |
