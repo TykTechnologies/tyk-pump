@@ -56,4 +56,8 @@ do
         coveragefile=`echo "$pkg" | awk -F/ '{print $NF}'`
         show go test -timeout ${TEST_TIMEOUT} ${race} --coverprofile=${coveragefile}.cov -v ${pkg}
     fi
+
+    echo "Running tests with GOEXPERIMENT=boringcrypto"
+    export GOEXPERIMENT=boringcrypto
+    show go test -tags=boringcrypto -timeout ${TEST_TIMEOUT} ${race} --coverprofile=${coveragefile}.cov -v ${pkg}
 done
