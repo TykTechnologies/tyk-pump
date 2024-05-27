@@ -189,7 +189,7 @@ jobs:
           echo 'Building Docker image with GOEXPERIMENT=boringcrypto for amd64'
           docker buildx build --build-arg GOEXPERIMENT=boringcrypto --build-arg BUILDTAGS=boringcrypto \
             --platform linux/amd64 \
-            --tag ${{ secrets.DOCKER_USERNAME }}/tyk-pump:${{ steps.sanitize-tag.outputs.tag }}-boringcrypto-amd64 \
+            --tag ${{ steps.ci_metadata.outputs.tags }}-boringcrypto-amd64 \
             --push \
             -f ci/Dockerfile.boringcrypto .
 
@@ -198,17 +198,17 @@ jobs:
           echo 'Building Docker image with GOEXPERIMENT=boringcrypto for arm64'
           docker buildx build --build-arg GOEXPERIMENT=boringcrypto --build-arg BUILDTAGS=boringcrypto \
             --platform linux/arm64 \
-            --tag ${{ secrets.DOCKER_USERNAME }}/tyk-pump:${{ steps.sanitize-tag.outputs.tag }}-boringcrypto-arm64 \
+            --tag ${{ steps.ci_metadata.outputs.tags }}-boringcrypto-arm64 \
             --push \
             -f ci/Dockerfile.boringcrypto .
 
       - name: Create and push Docker manifest
         run: |
           echo 'Creating and pushing Docker manifest'
-          docker buildx imagetools create --tag ${{ secrets.DOCKER_USERNAME }}/tyk-pump:${{ steps.sanitize-tag.outputs.tag }}-boringcrypto \
-            ${{ secrets.DOCKER_USERNAME }}/tyk-pump:${{ steps.sanitize-tag.outputs.tag }}-boringcrypto-amd64 \
-            ${{ secrets.DOCKER_USERNAME }}/tyk-pump:${{ steps.sanitize-tag.outputs.tag }}-boringcrypto-arm64
-          docker buildx imagetools inspect ${{ secrets.DOCKER_USERNAME }}/tyk-pump:${{ steps.sanitize-tag.outputs.tag }}-boringcrypto
+          docker buildx imagetools create --tag ${{ steps.ci_metadata.outputs.tags }}-boringcrypto \
+            ${{ steps.ci_metadata.outputs.tags }}-boringcrypto-amd64 \
+            ${{ steps.ci_metadata.outputs.tags }}-boringcrypto-arm64
+          docker buildx imagetools inspect ${{ steps.ci_metadata.outputs.tags }}-boringcrypto
   test-controller-api:
     needs: goreleaser
     runs-on: ubuntu-latest-m-2
