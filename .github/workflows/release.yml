@@ -198,28 +198,28 @@ jobs:
               -f ci/Dockerfile.boringcrypto .
           done
 
-    - name: Build and push Docker image with boringcrypto for arm64
-      run: |
-        echo 'Building Docker image with GOEXPERIMENT=boringcrypto for arm64'
-        IFS=',' read -ra TAGS <<< "${{ env.tags }}"
-        for tag in "${TAGS[@]}"; do
-          docker buildx build --build-arg GOEXPERIMENT=boringcrypto --build-arg BUILDTAGS=boringcrypto \
-            --platform linux/arm64 \
-            --tag ${tag}-boringcrypto-arm64 \
-            --push \
-            -f ci/Dockerfile.boringcrypto .
-        done
+      - name: Build and push Docker image with boringcrypto for arm64
+        run: |
+          echo 'Building Docker image with GOEXPERIMENT=boringcrypto for arm64'
+          IFS=',' read -ra TAGS <<< "${{ env.tags }}"
+          for tag in "${TAGS[@]}"; do
+            docker buildx build --build-arg GOEXPERIMENT=boringcrypto --build-arg BUILDTAGS=boringcrypto \
+              --platform linux/arm64 \
+              --tag ${tag}-boringcrypto-arm64 \
+              --push \
+              -f ci/Dockerfile.boringcrypto .
+          done
 
-    - name: Create and push Docker manifest
-      run: |
-        echo 'Creating and pushing Docker manifest'
-        IFS=',' read -ra TAGS <<< "${{ env.tags }}"
-        for tag in "${TAGS[@]}"; do
-          docker buildx imagetools create --tag ${tag}-boringcrypto \
-            ${tag}-boringcrypto-amd64 \
-            ${tag}-boringcrypto-arm64
-          docker buildx imagetools inspect ${tag}-boringcrypto
-        done
+      - name: Create and push Docker manifest
+        run: |
+          echo 'Creating and pushing Docker manifest'
+          IFS=',' read -ra TAGS <<< "${{ env.tags }}"
+          for tag in "${TAGS[@]}"; do
+            docker buildx imagetools create --tag ${tag}-boringcrypto \
+              ${tag}-boringcrypto-amd64 \
+              ${tag}-boringcrypto-arm64
+            docker buildx imagetools inspect ${tag}-boringcrypto
+          done
   test-controller-api:
     needs: goreleaser
     runs-on: ubuntu-latest-m-2
