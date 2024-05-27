@@ -13,6 +13,28 @@ env:
   TYK_PMP_ANALYTICSSTORAGECONFIG_PORT: 6379
 
 jobs:
+  golangci-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Tyk Pump
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - name: Fetch base branch
+        if: ${{ github.event_name == 'pull_request' }}
+        run: git fetch origin ${{ github.base_ref }}
+      - name: golangci-lint
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: latest
+          args: --out-format=checkstyle:golanglint.xml --timeout=300s --max-issues-per-linter=0 --max-same-issues=0 --new-from-rev=origin/${{ github.base_ref }}
+      - uses: actions/upload-artifact@v2
+        with:
+          name: golangcilint
+          retention-days: 1
+          path: |
+            golanglint.xml
   test:
     name: Go ${{ matrix.go }} tests
     runs-on: ubuntu-latest
@@ -68,16 +90,4 @@ jobs:
           result_code=${PIPESTATUS[0]}
           echo "log=$(sed -ze 's/%/%25/g;s/\n/%0A/g' test.log)" >> $GITHUB_OUTPUT
           exit $result_code
-
-      - name: Download golangci-lint
-        run: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin
-
-      - name: golangci-lint
-        if: ${{ github.event_name == 'pull_request' }}
-        run: |
-          $(go env GOPATH)/bin/golangci-lint run --out-format checkstyle --timeout=300s --max-issues-per-linter=0 --max-same-issues=0 --new-from-rev=origin/${{ github.base_ref }} ./... > golanglint.xml
-
-      - name: golangci-lint
-        if: ${{ github.event_name == 'push' }}
-        run: |
-          $(go env GOPATH)/bin/golangci-lint run --out-format checkstyle --timeout=300s --max-issues-per-linter=0 --max-same-issues=0 --issues-exit-code=0 ./... > golanglint.xml
+   
