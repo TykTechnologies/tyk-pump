@@ -184,12 +184,12 @@ jobs:
 
       - name: Get tags from goreleaser job
         id: get_tags
-        run: echo "tags=${{ needs.goreleaser.outputs.tags }}" >> $GITHUB_ENV
+        run: echo "TAGS=${{ needs.goreleaser.outputs.tags }}" >> $GITHUB_ENV
 
       - name: Build and push Docker image with boringcrypto for amd64
         run: |
           echo 'Building Docker image with GOEXPERIMENT=boringcrypto for amd64'
-          IFS=',' read -ra TAGS <<< "${{ env.tags }}"
+          IFS=',' read -ra TAGS <<< "${{ env.TAGS }}"
           for tag in "${TAGS[@]}"; do
             docker buildx build --build-arg GOEXPERIMENT=boringcrypto --build-arg BUILDTAGS=boringcrypto \
               --platform linux/amd64 \
@@ -201,7 +201,7 @@ jobs:
       - name: Build and push Docker image with boringcrypto for arm64
         run: |
           echo 'Building Docker image with GOEXPERIMENT=boringcrypto for arm64'
-          IFS=',' read -ra TAGS <<< "${{ env.tags }}"
+          IFS=',' read -ra TAGS <<< "${{ env.TAGS }}"
           for tag in "${TAGS[@]}"; do
             docker buildx build --build-arg GOEXPERIMENT=boringcrypto --build-arg BUILDTAGS=boringcrypto \
               --platform linux/arm64 \
@@ -213,7 +213,7 @@ jobs:
       - name: Create and push Docker manifest
         run: |
           echo 'Creating and pushing Docker manifest'
-          IFS=',' read -ra TAGS <<< "${{ env.tags }}"
+          IFS=',' read -ra TAGS <<< "${{ env.TAGS }}"
           for tag in "${TAGS[@]}"; do
             docker buildx imagetools create --tag ${tag}-boringcrypto \
               ${tag}-boringcrypto-amd64 \
