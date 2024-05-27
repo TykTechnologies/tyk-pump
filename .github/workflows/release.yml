@@ -179,17 +179,18 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Sanitize Docker tag
-        id: sanitize-tag
-        run: |
-          echo "::set-output name=tag::$(echo "${GITHUB_REF##*/}" | sed 's/[^a-zA-Z0-9_.-]/-/g')"
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Get tags from goreleaser job
+        id: get_tags
+        run: echo "tags=${{ needs.goreleaser.outputs.tags }}" >> $GITHUB_ENV
 
       - name: Build and push Docker image with boringcrypto for amd64
         run: |
           echo 'Building Docker image with GOEXPERIMENT=boringcrypto for amd64'
-          tags=${{ needs.goreleaser.outputs.tags }}
-          IFS=$'\n' tags=($tags)
-          for tag in "${tags[@]}"; do
+          IFS=',' read -ra TAGS <<< "${{ env.tags }}"
+          for tag in "${TAGS[@]}"; do
             docker buildx build --build-arg GOEXPERIMENT=boringcrypto --build-arg BUILDTAGS=boringcrypto \
               --platform linux/amd64 \
               --tag ${tag}-boringcrypto-amd64 \
@@ -197,30 +198,28 @@ jobs:
               -f ci/Dockerfile.boringcrypto .
           done
 
-      - name: Build and push Docker image with boringcrypto for arm64
-        run: |
-          echo 'Building Docker image with GOEXPERIMENT=boringcrypto for arm64'
-          tags=${{ needs.goreleaser.outputs.tags }}
-          IFS=$'\n' tags=($tags)
-          for tag in "${tags[@]}"; do
-            docker buildx build --build-arg GOEXPERIMENT=boringcrypto --build-arg BUILDTAGS=boringcrypto \
-              --platform linux/arm64 \
-              --tag ${tag}-boringcrypto-arm64 \
-              --push \
-              -f ci/Dockerfile.boringcrypto .
-          done
+    - name: Build and push Docker image with boringcrypto for arm64
+      run: |
+        echo 'Building Docker image with GOEXPERIMENT=boringcrypto for arm64'
+        IFS=',' read -ra TAGS <<< "${{ env.tags }}"
+        for tag in "${TAGS[@]}"; do
+          docker buildx build --build-arg GOEXPERIMENT=boringcrypto --build-arg BUILDTAGS=boringcrypto \
+            --platform linux/arm64 \
+            --tag ${tag}-boringcrypto-arm64 \
+            --push \
+            -f ci/Dockerfile.boringcrypto .
+        done
 
-      - name: Create and push Docker manifest
-        run: |
-          echo 'Creating and pushing Docker manifest'
-          tags=${{ needs.goreleaser.outputs.tags }}
-          IFS=$'\n' tags=($tags)
-          for tag in "${tags[@]}"; do
-            docker buildx imagetools create --tag ${tag}-boringcrypto \
-              ${tag}-boringcrypto-amd64 \
-              ${tag}-boringcrypto-arm64
-            docker buildx imagetools inspect ${tag}-boringcrypto
-          done
+    - name: Create and push Docker manifest
+      run: |
+        echo 'Creating and pushing Docker manifest'
+        IFS=',' read -ra TAGS <<< "${{ env.tags }}"
+        for tag in "${TAGS[@]}"; do
+          docker buildx imagetools create --tag ${tag}-boringcrypto \
+            ${tag}-boringcrypto-amd64 \
+            ${tag}-boringcrypto-arm64
+          docker buildx imagetools inspect ${tag}-boringcrypto
+        done
   test-controller-api:
     needs: goreleaser
     runs-on: ubuntu-latest-m-2
