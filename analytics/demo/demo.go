@@ -20,8 +20,8 @@ var (
 )
 
 // Start initializes the demo mode
-func Start(orgID, newApiID, version string, apikeysCount int) {
-	apiID = newApiID
+func Start(orgID, newAAPIID, version string, apikeysCount int) {
+	apiID = newAAPIID
 	GenerateAPIKeys(orgID, apikeysCount)
 	apiVersion = version
 	if version == "" {
