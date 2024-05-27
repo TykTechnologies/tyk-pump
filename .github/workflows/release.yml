@@ -184,13 +184,21 @@ jobs:
         run: |
           echo "::set-output name=tag::$(echo "${GITHUB_REF##*/}" | sed 's/[^a-zA-Z0-9_.-]/-/g')"
 
-      - name: Build and push Docker images with boringcrypto
+      - name: Build and push Docker image with boringcrypto for amd64
         run: |
-          echo 'Building and pushing Docker images with GOEXPERIMENT=boringcrypto'
-          docker buildx create --use
+          echo 'Building Docker image with GOEXPERIMENT=boringcrypto for amd64'
           docker buildx build --build-arg GOEXPERIMENT=boringcrypto --build-arg BUILDTAGS=boringcrypto \
-            --platform linux/amd64,linux/arm64 \
-            --tag ${{ secrets.DOCKER_USERNAME }}/tyk-pump:${{ steps.sanitize-tag.outputs.tag }}-boringcrypto \
+            --platform linux/amd64 \
+            --tag ${{ secrets.DOCKER_USERNAME }}/tyk-pump:${{ steps.sanitize-tag.outputs.tag }}-boringcrypto-amd64 \
+            --push \
+            -f ci/Dockerfile.boringcrypto .
+
+      - name: Build and push Docker image with boringcrypto for arm64
+        run: |
+          echo 'Building Docker image with GOEXPERIMENT=boringcrypto for arm64'
+          docker buildx build --build-arg GOEXPERIMENT=boringcrypto --build-arg BUILDTAGS=boringcrypto \
+            --platform linux/arm64 \
+            --tag ${{ secrets.DOCKER_USERNAME }}/tyk-pump:${{ steps.sanitize-tag.outputs.tag }}-boringcrypto-arm64 \
             --push \
             -f ci/Dockerfile.boringcrypto .
 
