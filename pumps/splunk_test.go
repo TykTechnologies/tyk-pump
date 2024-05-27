@@ -202,6 +202,22 @@ func Test_SplunkBackoffRetry(t *testing.T) {
 	})
 }
 
+func TestSplunkProxy(t *testing.T) {
+	client, err := NewSplunkClient(testToken, testEndpointURL, true, "", "", "")
+	if err != nil {
+		t.Error("Error initializing Splunk client:", err.Error())
+		return
+	}
+
+	transport, ok := client.httpClient.Transport.(*http.Transport)
+	if !ok {
+		t.Error("Transport type assertion failed")
+		return
+	}
+
+	assert.True(t, transport.Proxy != nil, "Splunk transport proxy should not be nil")
+}
+
 func Test_SplunkWriteData(t *testing.T) {
 	handler := &testHandler{test: t, batched: false}
 	server := httptest.NewServer(handler)
