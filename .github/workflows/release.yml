@@ -193,6 +193,14 @@ jobs:
         run: |
           echo 'Pushing Docker image with boringcrypto'
           docker push ${{ secrets.DOCKER_USERNAME }}/tyk-pump:${{ steps.sanitize-tag.outputs.tag }}-boringcrypto
+          
+      - name: Create and push Docker manifest
+        run: |
+          echo 'Creating and pushing Docker manifest'
+          docker manifest create ${{ secrets.DOCKER_USERNAME }}/tyk-pump:${{ steps.sanitize-tag.outputs.tag }}-boringcrypto \
+            --amend ${{ secrets.DOCKER_USERNAME }}/tyk-pump:${{ steps.sanitize-tag.outputs.tag }}-boringcrypto-amd64 \
+            --amend ${{ secrets.DOCKER_USERNAME }}/tyk-pump:${{ steps.sanitize-tag.outputs.tag }}-boringcrypto-arm64
+          docker manifest push ${{ secrets.DOCKER_USERNAME }}/tyk-pump:${{ steps.sanitize-tag.outputs.tag }}-boringcrypto
   test-controller-api:
     needs: goreleaser
     runs-on: ubuntu-latest-m-2
