@@ -5,9 +5,9 @@ ARG TARGETARCH
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Only copy and install standard packages
-COPY *std*${TARGETARCH}.deb /
-RUN dpkg -i /tyk-pump*std*${TARGETARCH}.deb && rm /*.deb
+# Copy and install the standard package for the given architecture
+COPY tyk-pump*${TARGETARCH}.deb /tyk-pump.deb
+RUN dpkg -i /tyk-pump.deb && rm /tyk-pump.deb
 
 FROM gcr.io/distroless/static-debian12:nonroot
 
