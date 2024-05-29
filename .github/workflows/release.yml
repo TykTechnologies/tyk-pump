@@ -22,7 +22,6 @@ on:
 env:
   GOPRIVATE: github.com/TykTechnologies
 jobs:
-jobs:
   goreleaser:
     name: '${{ matrix.golang_cross }}'
     runs-on: ubuntu-latest-m
