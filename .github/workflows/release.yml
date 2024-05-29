@@ -184,7 +184,8 @@ jobs:
 
       - name: Get tags from goreleaser job
         id: get_tags
-        run: echo "TAGS=${{ needs.goreleaser.outputs.tags }}" >> $GITHUB_ENV
+        run: echo "TAGS=$(echo "${{ needs.goreleaser.outputs.tags }}" | tr '\n' ',')" >> $GITHUB_ENV
+
 
       - name: Build and push Docker image with boringcrypto for amd64
         run: |
