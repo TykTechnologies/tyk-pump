@@ -175,7 +175,7 @@ nfpms:
       preinstall: "ci/install/before_install.sh"
       postinstall: "ci/install/post_install.sh"
       postremove: "ci/install/post_remove.sh"
-    bindir: "/opt/tyk-pump/std"
+    bindir: "/opt/tyk-pump"
     rpm:
       scripts:
         posttrans: ci/install/post_trans.sh
