@@ -184,8 +184,7 @@ nfpms:
       - src: "LICENSE.md"
         dst: "/opt/share/docs/tyk-pump-fips/LICENSE.md"
       - src: pump.example.conf
-        dst: "/opt/tyk-pump-fips/pump.conf"
-        type: "config|noreplace"
+        dst: "/opt/tyk-pump/pump.conf"
     scripts:
       preinstall: "ci/install/before_install.sh"
       postinstall: "ci/install/post_install.sh"

@@ -22,6 +22,7 @@ on:
 env:
   GOPRIVATE: github.com/TykTechnologies
 jobs:
+jobs:
   goreleaser:
     name: '${{ matrix.golang_cross }}'
     runs-on: ubuntu-latest-m
@@ -41,7 +42,7 @@ jobs:
             debvers: 'ubuntu/xenial ubuntu/bionic ubuntu/focal ubuntu/jammy debian/jessie debian/buster debian/bullseye debian/bookworm'
     outputs:
       tags: ${{ steps.ci_metadata.outputs.tags }}
-      commit_author: ${{ steps.fetch-author.outputs.commit_author}}
+      commit_author: ${{ steps.fetch-author.outputs.commit_author }}
     steps:
       - name: Checkout of tyk-pump
         uses: actions/checkout@v4
@@ -142,8 +143,10 @@ jobs:
           for tag in "${tags[@]}"; do
              for arch in amd64 arm64; do
                  docker tag tykio/tyk-pump-docker-pub:${build_tag}-${arch} ${tag}-${arch} && docker push ${tag}-${arch}
+                 docker tag tykio/tyk-pump-docker-pub:${build_tag}-fips-${arch} ${tag}-fips-${arch} && docker push ${tag}-fips-${arch}
              done
              docker manifest create ${tag} ${tag}-amd64 ${tag}-arm64 && docker manifest push ${tag}
+             docker manifest create ${tag}-fips ${tag}-fips-amd64 ${tag}-fips-arm64 && docker manifest push ${tag}-fips
           done
       - uses: actions/upload-artifact@v4
         if: ${{ matrix.golang_cross == '1.21-bookworm' }}
