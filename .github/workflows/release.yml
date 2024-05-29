@@ -186,7 +186,6 @@ jobs:
         id: get_tags
         run: echo "TAGS=$(echo "${{ needs.goreleaser.outputs.tags }}" | tr '\n' ',')" >> $GITHUB_ENV
 
-
       - name: Build and push Docker image with boringcrypto for amd64
         run: |
           echo 'Building Docker image with GOEXPERIMENT=boringcrypto for amd64'
@@ -194,7 +193,7 @@ jobs:
           for tag in "${TAGS[@]}"; do
             docker buildx build --build-arg GOEXPERIMENT=boringcrypto --build-arg BUILDTAGS=boringcrypto \
               --platform linux/amd64 \
-              --tag ${tag}-boringcrypto-amd64 \
+              --tag ${tag}-amd64 \
               --push \
               -f ci/Dockerfile.boringcrypto .
           done
@@ -206,7 +205,7 @@ jobs:
           for tag in "${TAGS[@]}"; do
             docker buildx build --build-arg GOEXPERIMENT=boringcrypto --build-arg BUILDTAGS=boringcrypto \
               --platform linux/arm64 \
-              --tag ${tag}-boringcrypto-arm64 \
+              --tag ${tag}-arm64 \
               --push \
               -f ci/Dockerfile.boringcrypto .
           done
