@@ -5,8 +5,6 @@ ARG TARGETARCH
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# COPY *${TARGETARCH}.deb /
-# RUN dpkg -i /tyk-pump*${TARGETARCH}.deb && rm /*.deb
 COPY tyk-pump*${TARGETARCH}.deb /tyk-pump.deb
 RUN dpkg -i /tyk-pump.deb && rm /tyk-pump.deb
 
