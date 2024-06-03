@@ -59,42 +59,20 @@ dockers:
       - "README.md"
       - "LICENSE.md"
       - "pump.example.conf"
-  - ids:
-      - std
-    image_templates:
-      - "tykio/tyk-pump-docker-pub:{{.Tag}}-fips-amd64"
-      # - "docker.tyk.io/tyk-pump/tyk-pump:{{.Tag}}-fips-amd64"
-    build_flag_templates:
-      - "--build-arg=PORTS=80"
-      - "--platform=linux/amd64"
-      - "--label=org.opencontainers.image.created={{.Date}}"
-      - "--label=org.opencontainers.image.title={{.ProjectName}}"
-      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
-      - "--label=org.opencontainers.image.version={{.Version}}"
-    use: buildx
-    goarch: amd64
-    goos: linux
-    dockerfile: ci/Dockerfile.std
-    extra_files:
-      - "ci/install/"
-      - "README.md"
-      - "LICENSE.md"
-      - "pump.example.conf"
-  # Build tykio/tyk-pump-docker-pub, docker.tyk.io/tyk-pump/tyk-pump (arm64)
   # - ids:
   #     - std
   #   image_templates:
-  #     - "tykio/tyk-pump-docker-pub:{{.Tag}}-arm64"
-  #     - "docker.tyk.io/tyk-pump/tyk-pump:{{.Tag}}-arm64"
+  #     - "tykio/tyk-pump-docker-pub:{{.Tag}}-fips-amd64"
+  #     - "docker.tyk.io/tyk-pump/tyk-pump:{{.Tag}}-fips-amd64"
   #   build_flag_templates:
   #     - "--build-arg=PORTS=80"
-  #     - "--platform=linux/arm64"
+  #     - "--platform=linux/amd64"
   #     - "--label=org.opencontainers.image.created={{.Date}}"
   #     - "--label=org.opencontainers.image.title={{.ProjectName}}"
   #     - "--label=org.opencontainers.image.revision={{.FullCommit}}"
   #     - "--label=org.opencontainers.image.version={{.Version}}"
   #   use: buildx
-  #   goarch: arm64
+  #   goarch: amd64
   #   goos: linux
   #   dockerfile: ci/Dockerfile.std
   #   extra_files:
@@ -102,6 +80,28 @@ dockers:
   #     - "README.md"
   #     - "LICENSE.md"
   #     - "pump.example.conf"
+  # Build tykio/tyk-pump-docker-pub, docker.tyk.io/tyk-pump/tyk-pump (arm64)
+  - ids:
+      - std
+    image_templates:
+      - "tykio/tyk-pump-docker-pub:{{.Tag}}-arm64"
+      - "docker.tyk.io/tyk-pump/tyk-pump:{{.Tag}}-arm64"
+    build_flag_templates:
+      - "--build-arg=PORTS=80"
+      - "--platform=linux/arm64"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title={{.ProjectName}}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+    use: buildx
+    goarch: arm64
+    goos: linux
+    dockerfile: ci/Dockerfile.std
+    extra_files:
+      - "ci/install/"
+      - "README.md"
+      - "LICENSE.md"
+      - "pump.example.conf"
   # - ids:
   #     - std
   #   image_templates:
