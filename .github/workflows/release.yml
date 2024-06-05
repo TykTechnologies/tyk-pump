@@ -18,12 +18,12 @@ on:
       - master
       - release-**
     tags:
-      - "v*"
+      - 'v*'
 env:
   GOPRIVATE: github.com/TykTechnologies
 jobs:
   goreleaser:
-    name: "${{ matrix.golang_cross }}"
+    name: '${{ matrix.golang_cross }}'
     runs-on: ubuntu-latest-m
     permissions:
       id-token: write # AWS OIDC JWT
@@ -35,13 +35,13 @@ jobs:
           - 1.21-bookworm
         include:
           - golang_cross: 1.21-bookworm
-            goreleaser: "ci/goreleaser/goreleaser.yml"
+            goreleaser: 'ci/goreleaser/goreleaser.yml'
             cgo: 0
-            rpmvers: "el/7 el/8 el/9 amazon/2 amazon/2023"
-            debvers: "ubuntu/xenial ubuntu/bionic ubuntu/focal ubuntu/jammy debian/jessie debian/buster debian/bullseye debian/bookworm"
+            rpmvers: 'el/7 el/8 el/9 amazon/2 amazon/2023'
+            debvers: 'ubuntu/xenial ubuntu/bionic ubuntu/focal ubuntu/jammy debian/jessie debian/buster debian/bullseye debian/bookworm'
     outputs:
       tags: ${{ steps.ci_metadata.outputs.tags }}
-      commit_author: ${{ steps.fetch-author.outputs.commit_author }}
+      commit_author: ${{ steps.fetch-author.outputs.commit_author}}
     steps:
       - name: Checkout of tyk-pump
         uses: actions/checkout@v4
@@ -115,7 +115,7 @@ jobs:
         id: ecr
         if: ${{ matrix.golang_cross == '1.21-bookworm' }}
         with:
-          mask-password: "true"
+          mask-password: 'true'
       - name: Docker metadata for CI
         id: ci_metadata
         if: ${{ matrix.golang_cross == '1.21-bookworm' }}
@@ -142,10 +142,8 @@ jobs:
           for tag in "${tags[@]}"; do
              for arch in amd64 arm64; do
                  docker tag tykio/tyk-pump-docker-pub:${build_tag}-${arch} ${tag}-${arch} && docker push ${tag}-${arch}
-                #  docker tag tykio/tyk-pump-docker-pub:${build_tag}-fips-${arch} ${tag}-fips-${arch} && docker push ${tag}-fips-${arch}
              done
              docker manifest create ${tag} ${tag}-amd64 ${tag}-arm64 && docker manifest push ${tag}
-            #  docker manifest create ${tag}-fips ${tag}-fips-amd64 ${tag}-fips-arm64 && docker manifest push ${tag}-fips
           done
       - uses: actions/upload-artifact@v4
         if: ${{ matrix.golang_cross == '1.21-bookworm' }}
@@ -215,7 +213,7 @@ jobs:
       - id: ecr
         uses: aws-actions/amazon-ecr-login@v2
         with:
-          mask-password: "true"
+          mask-password: 'true'
           # Only ${{ github.actor }} has access
           # See https://github.com/mxschmitt/action-tmate#use-registered-public-ssh-keys
       - name: Setup tmate session only in debug mode
@@ -235,7 +233,7 @@ jobs:
         working-directory: auto
         id: env_up
         env:
-          pull_policy: "if_not_present"
+          pull_policy: 'if_not_present'
           GH_TOKEN: ${{ secrets.ORG_GH_TOKEN }}
           TYK_DB_LICENSEKEY: ${{ secrets.DASH_LICENSE }}
           TYK_MDCB_LICENSE: ${{ secrets.MDCB_LICENSE }}
@@ -307,7 +305,7 @@ jobs:
         if: failure() && (steps.test_execution.outcome != 'success' || steps.env_up.outcome != 'success')
         working-directory: auto
         env:
-          pull_policy: "if_not_present"
+          pull_policy: 'if_not_present'
           GH_TOKEN: ${{ secrets.ORG_GH_TOKEN }}
           TYK_DB_LICENSEKEY: ${{ secrets.DASH_LICENSE }}
           TYK_MDCB_LICENSE: ${{ secrets.MDCB_LICENSE }}
