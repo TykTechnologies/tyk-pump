@@ -191,7 +191,6 @@ nfpms:
       signature:
         key_file: tyk.io.signing.key
         type: origin
-
 publishers:
   - name: tyk-pump-unstable
     env:
