@@ -192,46 +192,6 @@ nfpms:
         key_file: tyk.io.signing.key
         type: origin
 
-  - id: fips
-    vendor: "Tyk Technologies Ltd"
-    homepage: "https://tyk.io"
-    maintainer: "Tyk <info@tyk.io>"
-    description: Tyk Analytics Pump to move analytics data from Redis to any supported backend (multiple backends can be written to at once).
-    package_name: tyk-pump-fips
-    file_name_template: "{{ .ConventionalFileName }}"
-    builds:
-      - fips-linux
-    formats:
-      - deb
-      - rpm
-    contents:
-      - src: "README.md"
-        dst: "/opt/share/docs/tyk-pump-fips/README.md"
-      - src: "ci/install/*"
-        dst: "/opt/tyk-pump-fips/install"
-      - src: ci/install/inits/systemd/system/tyk-pump.service
-        dst: "/lib/systemd/system/tyk-pump.service"
-      - src: ci/install/inits/sysv/init.d/tyk-pump
-        dst: "/etc/init.d/tyk-pump"
-      - src: "LICENSE.md"
-        dst: "/opt/share/docs/tyk-pump-fips/LICENSE.md"
-      - src: pump.example.conf
-        dst: "/opt/tyk-pump/pump.conf"
-    scripts:
-      preinstall: "ci/install/before_install.sh"
-      postinstall: "ci/install/post_install.sh"
-      postremove: "ci/install/post_remove.sh"
-    bindir: "/opt/tyk-pump/fips"
-    rpm:
-      scripts:
-        posttrans: ci/install/post_trans.sh
-      signature:
-        key_file: tyk.io.signing.key
-    deb:
-      signature:
-        key_file: tyk.io.signing.key
-        type: origin
-
 publishers:
   - name: tyk-pump-unstable
     env:
