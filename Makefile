@@ -5,7 +5,7 @@ clean:
 	rm -f tyk-pump
 
 run-fips: build-fips
-	./$(BINARY_NAME)
+	./tyk-pump
 
 validate-fips: build-fips
 	go tool nm tyk-pump | grep -i boring
