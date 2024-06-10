@@ -65,7 +65,6 @@ dockers:
       - "LICENSE.md"
       - "pump.example.conf"
 
-
 docker_manifests:
   - name_template: tykio/tyk-pump-docker-pub:{{ .Tag }}
     image_templates:
