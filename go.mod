@@ -38,7 +38,7 @@ require (
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.8.4
 	golang.org/x/net v0.25.0
-	google.golang.org/protobuf v1.30.0
+	google.golang.org/protobuf v1.34.2
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6
 	gopkg.in/olivere/elastic.v3 v3.0.56
 	gopkg.in/olivere/elastic.v5 v5.0.85
