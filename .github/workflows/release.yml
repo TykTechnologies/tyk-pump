@@ -200,11 +200,13 @@ jobs:
           path: |
             dist/*.rpm
             !dist/*PAYG*.rpm
-  test-controller-api:
+  test-controller:
     needs: goreleaser
     runs-on: ubuntu-latest
+    container: tykio/gromit:v1.6
     outputs:
-      envfiles: ${{ steps.params.outputs.envfiles }}
+      conf: ${{ steps.params.outputs.conf }}
+      db: ${{ steps.params.outputs.db }}
       pump: ${{ steps.params.outputs.pump }}
       sink: ${{ steps.params.outputs.sink }}
       gd_tag: ${{ steps.params.outputs.gd_tag }}
@@ -215,35 +217,25 @@ jobs:
         id: params
         shell: bash
         env:
+          REPO: ${{ github.repository }}
           # Cover pull_request_target too
           BASE_REF: ${{startsWith(github.event_name, 'pull_request') && github.base_ref || github.ref}}
-        run: |
-          set -eo pipefail
-          endpoint="http://tui.internal.dev.tyk.technology/api/tyk-pump/$BASE_REF/${{ github.event_name}}/api"
-          curl="curl -s --retry 5 --retry-delay 10 --fail-with-body --retry-all-errors"
-          echo "pump<<EOF
-          $($curl ${endpoint}/Pump)
-          EOF
-          sink<<EOF
-          $($curl ${endpoint}/Sink)
-          EOF
-          envfiles<<EOF
-          $($curl ${endpoint}/EnvFiles)
-          EOF" | tee -a "$GITHUB_OUTPUT"
+          TAGS: ${{ needs.goreleaser.outputs.tags }}
+          IS_PR: ${{startsWith(github.event_name, 'pull_request') && 'yes' }}
+          IS_TAG: ${{startsWith(github.ref, 'refs/tags') && 'yes' }}
+        run: gromit policy controller --loglevel debug | tee -a "$GITHUB_OUTPUT"
   api-tests:
-    needs: [goreleaser, test-controller-api]
-    runs-on: ubuntu-latest-m-2
-    env:
-      METADATA_REPORT_PATH: /tmp/metadata.toml
-      XUNIT_REPORT_PATH: ${{ github.workspace }}/reports/pytest-report.xml
+    needs: test-controller
+    runs-on: ubuntu-latest
     permissions:
       id-token: write # This is required for requesting the Github JWT
       contents: read # This is required for actions/checkout
     strategy:
       fail-fast: false
       matrix:
-        envfiles: ${{ fromJson(needs.test-controller-api.outputs.envfiles) }}
-        sink: ${{ fromJson(needs.test-controller-api.outputs.sink) }}
+        conf: ${{ fromJson(needs.test-controller.outputs.conf) }}
+        db: ${{ fromJson(needs.test-controller.outputs.db) }}
+        sink: ${{ fromJson(needs.test-controller.outputs.sink) }}
         include:
           - db: postgres15
             markers: "and not sql"
@@ -280,119 +272,42 @@ jobs:
           GH_TOKEN: ${{ secrets.ORG_GH_TOKEN }}
           TYK_DB_LICENSEKEY: ${{ secrets.DASH_LICENSE }}
           TYK_MDCB_LICENSE: ${{ secrets.MDCB_LICENSE }}
-        run: |
-          tags=(${{ needs.goreleaser.outputs.tags }})
-          docker run -q --rm -v ~/.docker/config.json:/root/.docker/config.json tykio/gromit policy match ${tags[0]} 2>versions.env
-          echo '# alfa and beta have to come after the override
-          tyk_alfa_image=$tyk_image
-          tyk_beta_image=$tyk_image
-          ECR=${{steps.ecr.outputs.registry}}
-          tyk_sink_image=${{matrix.sink}}
-          confs_dir=./pro-ha
-          env_file=local-${{ matrix.envfiles.db }}.env' >> versions.env
-          echo "::group::versions"
-          cat versions.env
-          echo "::endgroup::"
-          # Add Tyk component config variations to $env_file
-          cat confs/${{ matrix.envfiles.config }}.env >> local-${{ matrix.envfiles.db }}.env
-          # bring up env, the project name is important
-          docker compose -p auto -f pro-ha.yml -f deps_pro-ha.yml -f ${{ matrix.envfiles.db }}.yml -f ${{ matrix.envfiles.cache }}.yml --env-file versions.env --profile master-datacenter up --quiet-pull -d
-          ./dash-bootstrap.sh http://localhost:3000
-          docker compose -p auto -f pro-ha.yml -f deps_pro-ha.yml -f ${{ matrix.envfiles.db }}.yml -f ${{ matrix.envfiles.cache }}.yml --env-file versions.env --profile slave-datacenter up --quiet-pull -d
+          ECR: ${{ steps.ecr.outputs.registry }}
+          VERSIONS: ${{ needs.test-controller.outputs.versions}}
+        run: "echo \"ECR=${ECR}\n$VERSIONS\n\ntyk_sink_image=${{matrix.sink}} \n# base dir for config files\nconfs_dir=./pro-ha\n# pick database to use\nenv_file=local-${{ matrix.db }}.env\n\" > versions.env\nprintf '::group::versions\\n%s\\n::endgroup::' \"$(cat versions.env)\"\n# Add Tyk component config variations to $env_file\ncat confs/${{ matrix.conf }}.env >> local-${{ matrix.db }}.env\n# bring up env, the project name is important\ndocker compose -p auto -f pro-ha.yml -f deps_pro-ha.yml -f ${{ matrix.db }}.yml --env-file versions.env --profile master-datacenter up --quiet-pull -d\n./dash-bootstrap.sh http://localhost:3000\ndocker compose -p auto -f pro-ha.yml -f deps_pro-ha.yml -f ${{ matrix.db }}.yml --env-file versions.env --profile slave-datacenter up --quiet-pull -d\n"
       - name: Run tests
         working-directory: auto
         id: test_execution
-        env:
-          # Cover pull_request_target too
-          BASE_REF: ${{startsWith(github.event_name, 'pull_request') && github.base_ref || github.ref}}
         run: |
-          # Generate report id
-          echo "id=$(date +%s%N)" >> $GITHUB_OUTPUT
-          # Run tests
-          set -o pipefail
           echo "### API tests ${{ matrix.db }} ${{ matrix.conf }}" >> $GITHUB_STEP_SUMMARY
           if docker run --rm --network auto_default --env-file pytest.env -v ${{ github.workspace }}/reports:/app/reports \
-            ${{ steps.ecr.outputs.registry }}/tyk-automated-tests:$BASE_REF \
-            pytest -c pytest_ci.ini --junitxml=./${XUNIT_REPORT_PATH#"${{ github.workspace }}"} --ci -m "not local and not dind ${{ matrix.markers }}" | tee tests.out; then
-              echo "All tests passed!" >> $GITHUB_STEP_SUMMARY
+             ${{ steps.ecr.outputs.registry }}/tyk-automated-tests:${{ needs.test-controller.outputs.gd_tag }} \
+             pytest -c pytest_ci.ini --ci -m "not local and not dind ${{ matrix.markers }}" | tee tests.out; then
+               echo "All tests passed!" >> $GITHUB_STEP_SUMMARY
           else
-            echo "::error title=API tests ${{ matrix.envfiles.db }} ${{ matrix.envfiles.conf }}::Test execution failed"
-            cat tests.out >> $GITHUB_STEP_SUMMARY
-            exit 1
+               echo "::error title=API tests ${{ matrix.db }} ${{ matrix.conf }}::Test execution failed"
+               cat tests.out >> $GITHUB_STEP_SUMMARY
+               docker logs tyk tyk-analytics
+               exit 1
           fi
-      - name: Generate metadata
-        if: always() && steps.test_execution.outcome != 'skipped'
-        id: metadata_report
-        env:
-          REPORT_NAME: ${{ github.repository }}_${{ github.run_id }}_${{ github.run_attempt }}-${{steps.test_execution.outputs.id}}
-        run: |
-          # Generate metadata report
-          echo "[metadata]
-          repo = ${{ github.repository }}
-          branch = ${{ github.ref }}
-          commit = ${{ github.sha }}
-          test_suite_version = ${{ needs.test-controller-api.outputs.gd_tag }}
-          test_suite_name = ${{ github.job }}
-          test_suite_run = ${{ github.run_id }}-${{ github.run_attempt }}
-          db = ${{ matrix.db }}
-          conf = ${{ matrix.conf }}
-          pump_compatibility = ${{ matrix.pump }}
-          sink_compatibility = ${{ matrix.sink }}
-          " > ${METADATA_REPORT_PATH}
-          # Print metadata report
-          if [[ "${{ runner.debug }}" == "1" ]]; then
-            echo "::group::metadata report"
-            cat ${METADATA_REPORT_PATH}
-            echo "::endgroup::"
-          fi
-          #Upload xunit report
-          aws s3 cp ${XUNIT_REPORT_PATH}  s3://assets.dev.tyk.technology/testreports/${REPORT_NAME#*/}.xml
-          #Upload metadata report
-          aws s3 cp ${METADATA_REPORT_PATH} s3://assets.dev.tyk.technology/testreports/${REPORT_NAME#*/}.metadata.toml
-      - name: Docker logs for all components
-        if: failure() && (steps.test_execution.outcome != 'success' || steps.env_up.outcome != 'success')
-        working-directory: auto
-        env:
-          pull_policy: 'if_not_present'
-          GH_TOKEN: ${{ secrets.ORG_GH_TOKEN }}
-          TYK_DB_LICENSEKEY: ${{ secrets.DASH_LICENSE }}
-          TYK_MDCB_LICENSE: ${{ secrets.MDCB_LICENSE }}
-          ECR: ${{ steps.ecr.outputs.registry }}
-          VERSIONS: ${{ needs.test-controller-api.outputs.versions }}
-        run: |
-          docker compose -p auto -f pro-ha.yml -f deps_pro-ha.yml -f ${{ matrix.db }}.yml -f ${{ matrix.cache_db }}.yml --env-file versions.env --profile all logs | sort > ${{ github.workspace }}/docker-compose.log
-          echo "::group::DockerLogs"
-          cat ${{ github.workspace }}/docker-compose.log
-          echo "::endgroup::"
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
-        if: failure() && (steps.test_execution.outcome != 'success' || steps.env_up.outcome != 'success')
-        with:
-          name: docker-compose-logs-${{ github.job }}-${{ matrix.db }}-${{ matrix.conf }}-${{ github.run_id }}
-          path: ${{ github.workspace }}/docker-compose.log
-          retention-days: 3
-          overwrite: true
       - name: Archive Integration tests report
-        if: always()
-        uses: actions/upload-artifact@v4
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v3
         with:
-          name: api-test-report-${{ matrix.db }}-${{ matrix.conf }}-${{ github.run_id }}
+          name: api-test-report
           retention-days: 3
           path: ${{ github.workspace }}/reports
-          overwrite: true
       - name: Fetch commit author
-        if: failure() && steps.test_execution.outcome != 'success' && github.event_name == 'push'
-        env:
-          USER_EMAIL: ${{ needs.goreleaser.outputs.commit_author }}
-        run: echo "GIT_USER_EMAIL=$USER_EMAIL" >> $GITHUB_ENV
+        if: ${{ steps.test_execution.outcome != 'success' && !github.event.pull_request.draft }}
+        run: echo "GIT_USER_EMAIL=$(git show -s --format='%ae' HEAD)" >> $GITHUB_ENV
       - name: Fetch slack user
-        if: failure() && steps.test_execution.outcome != 'success' && github.event_name == 'push'
+        if: ${{ steps.test_execution.outcome != 'success' && !github.event.pull_request.draft }}
         id: fetch_slack_user
         uses: TykTechnologies/github-actions/.github/actions/github-to-slack@main
         with:
           github_email: ${{ env.GIT_USER_EMAIL }}
       - name: Notify slack
-        if: failure() && steps.test_execution.outcome != 'success' && github.event_name == 'push'
+        if: ${{ steps.test_execution.outcome != 'success' && !github.event.pull_request.draft }}
         uses: rtCamp/action-slack-notify@v2
         env:
           SLACK_WEBHOOK: ${{ secrets.API_TEST_ALERT_SLACK_WEBHOOK }}
@@ -401,6 +316,15 @@ jobs:
           SLACK_USERNAME: API INTEGRATION TESTS
           SLACK_MESSAGE: "*Test*: ${{ matrix.db }}-${{ matrix.conf }}, *Author*: ${{ steps.fetch_slack_user.outputs.slack-user-name }}"
           SLACK_FOOTER: "<https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}|SEE EXECUTION DETAILS HERE>"
+      - name: Comment on PR
+        if: ${{ always() && !github.event.pull_request.draft }}
+        uses: mshick/add-pr-comment@v2
+        with:
+          message: "**API tests result - ${{ matrix.db }}-${{ matrix.conf }} env: ${{ steps.test_execution.outcome }}** ${{ env.STATUS }} \nBranch used: ${{ github.ref }}\nCommit: ${{ github.event.after }} ${{ github.event.commits[0].message }}\nTriggered by: ${{ github.event_name }} (@${{ github.actor }})\n[Execution page](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})\n"
+          repo-token: ${{ secrets.ORG_GH_TOKEN }}
+          message-id: ${{ matrix.db }}-${{ matrix.conf }}
+        env:
+          STATUS: "${{ steps.test_execution.outcome == 'success' && ':white_check_mark:' || ':no_entry_sign:' }}"
   upgrade-deb:
     services:
       httpbin.org:
