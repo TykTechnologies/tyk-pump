@@ -70,7 +70,7 @@ jobs:
           registry: docker.tyk.io
           username: ${{ secrets.CLOUDSMITH_USERNAME }}
           password: ${{ secrets.CLOUDSMITH_API_KEY }}
-      - uses: actions/cache@v4
+      - uses: actions/cache@v3
         with:
           path: |
             ~/.cache/go-build
@@ -95,7 +95,7 @@ jobs:
           -e DEBVERS='${{ matrix.debvers }}'                               \
           -e RPMVERS='${{ matrix.rpmvers }}'                               \
           -e CGO_ENABLED=${{ matrix.cgo }}                                 \
-          -e NFPM_PASSPHRASE="$NFPM_PASSPHRASE"                          \
+          -e NFPM_STD_PASSPHRASE="$NFPM_STD_PASSPHRASE"                          \
           -e GPG_FINGERPRINT=12B5D62C28F57592D1575BD51ED14C59E37DAC20            \
           -e PKG_SIGNING_KEY="$PKG_SIGNING_KEY"                                  \
           -e PACKAGECLOUD_TOKEN=$PACKAGECLOUD_TOKEN                              \
