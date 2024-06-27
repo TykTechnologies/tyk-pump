@@ -18,77 +18,23 @@ builds:
       - arm64
       - s390x
     binary: tyk-pump
-
-dockers:
-  # Build tykio/tyk-pump-docker-pub, docker.tyk.io/tyk-pump/tyk-pump (amd64)
-  - ids:
-      - std
-    image_templates:
-      - "tykio/tyk-pump-docker-pub:{{.Tag}}-amd64"
-      - "docker.tyk.io/tyk-pump/tyk-pump:{{.Tag}}-amd64"
-    build_flag_templates:
-      - "--build-arg=PORTS=80"
-      - "--platform=linux/amd64"
-      - "--label=org.opencontainers.image.created={{.Date}}"
-      - "--label=org.opencontainers.image.title={{.ProjectName}}"
-      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
-      - "--label=org.opencontainers.image.version={{.Version}}"
-    use: buildx
-    goarch: amd64
-    goos: linux
-    dockerfile: ci/Dockerfile.std
-    extra_files:
-      - "ci/install/"
-      - "README.md"
-      - "LICENSE.md"
-      - "pump.example.conf"
-  # Build tykio/tyk-pump-docker-pub, docker.tyk.io/tyk-pump/tyk-pump (arm64)
-  - ids:
-      - std
-    image_templates:
-      - "tykio/tyk-pump-docker-pub:{{.Tag}}-arm64"
-      - "docker.tyk.io/tyk-pump/tyk-pump:{{.Tag}}-arm64"
-    build_flag_templates:
-      - "--build-arg=PORTS=80"
-      - "--platform=linux/arm64"
-      - "--label=org.opencontainers.image.created={{.Date}}"
-      - "--label=org.opencontainers.image.title={{.ProjectName}}"
-      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
-      - "--label=org.opencontainers.image.version={{.Version}}"
-    use: buildx
-    goarch: arm64
-    goos: linux
-    dockerfile: ci/Dockerfile.std
-    extra_files:
-      - "ci/install/"
-      - "README.md"
-      - "LICENSE.md"
-      - "pump.example.conf"
-
-docker_manifests:
-  - name_template: tykio/tyk-pump-docker-pub:{{ .Tag }}
-    image_templates:
-      - tykio/tyk-pump-docker-pub:{{ .Tag }}-amd64
-      - tykio/tyk-pump-docker-pub:{{ .Tag }}-arm64
-  - name_template: tykio/tyk-pump-docker-pub:v{{ .Major }}.{{ .Minor }}{{.Prerelease}}
-    image_templates:
-      - tykio/tyk-pump-docker-pub:{{ .Tag }}-amd64
-      - tykio/tyk-pump-docker-pub:{{ .Tag }}-arm64
-  - name_template: tykio/tyk-pump-docker-pub:v{{ .Major }}{{.Prerelease}}
-    image_templates:
-      - tykio/tyk-pump-docker-pub:{{ .Tag }}-amd64
-      - tykio/tyk-pump-docker-pub:{{ .Tag }}-arm64
-  - name_template: docker.tyk.io/tyk-pump/tyk-pump:{{ .Tag }}
-    image_templates:
-      - docker.tyk.io/tyk-pump/tyk-pump:{{ .Tag }}-amd64
-      - docker.tyk.io/tyk-pump/tyk-pump:{{ .Tag }}-arm64
-
+  - id: fips
+    ldflags:
+      - -X github.com/TykTechnologies/tyk-pump/pumps.Version={{.Version}}
+      - -X github.com/TykTechnologies/tyk-pump/pumps.Commit={{.FullCommit}}
+      - -X github.com/TykTechnologies/tyk-pump/pumps.BuildDate={{.Date}}
+      - -X github.com/TykTechnologies/tyk-pump/pumps.BuiltBy=goreleaser
+    goos:
+      - linux
+    goarch:
+      - amd64
+    binary: tyk-pump
 nfpms:
   - id: std
     vendor: "Tyk Technologies Ltd"
     homepage: "https://tyk.io"
     maintainer: "Tyk <info@tyk.io>"
-    description: Tyk Analytics Pump to move analytics data from Redis to any supported backend (multiple backends can be written to at once).
+    description: Tyk Analytics Pump to move analytics data from Redis to any supported back end (multiple back ends can be written to at once).
     package_name: tyk-pump
     file_name_template: "{{ .ConventionalFileName }}"
     builds:
@@ -102,13 +48,53 @@ nfpms:
       - src: "ci/install/*"
         dst: "/opt/tyk-pump/install"
       - src: ci/install/inits/systemd/system/tyk-pump.service
-        dst: "/lib/systemd/system/tyk-pump.service"
+        dst: /lib/systemd/system/tyk-pump.service
       - src: ci/install/inits/sysv/init.d/tyk-pump
-        dst: "/etc/init.d/tyk-pump"
+        dst: /etc/init.d/tyk-pump
       - src: "LICENSE.md"
         dst: "/opt/share/docs/tyk-pump/LICENSE.md"
       - src: pump.example.conf
-        dst: "/opt/tyk-pump/pump.conf"
+        dst: /opt/tyk-pump/pump.conf
+        type: "config|noreplace"
+    scripts:
+      preinstall: "ci/install/before_install.sh"
+      postinstall: "ci/install/post_install.sh"
+      postremove: "ci/install/post_remove.sh"
+    bindir: "/opt/tyk-pump"
+    rpm:
+      scripts:
+        posttrans: ci/install/post_trans.sh
+      signature:
+        key_file: tyk.io.signing.key
+    deb:
+      signature:
+        key_file: tyk.io.signing.key
+        type: origin
+  - id: fips
+    vendor: "Tyk Technologies Ltd"
+    homepage: "https://tyk.io"
+    maintainer: "Tyk <info@tyk.io>"
+    description: Tyk Analytics Pump to move analytics data from Redis to any supported back end (multiple back ends can be written to at once).
+    package_name: tyk-pump-fips
+    file_name_template: "{{ .ConventionalFileName }}"
+    builds:
+      - fips
+    formats:
+      - deb
+      - rpm
+    contents:
+      - src: "README.md"
+        dst: "/opt/share/docs/tyk-pump/README.md"
+      - src: "ci/install/*"
+        dst: "/opt/tyk-pump/install"
+      - src: ci/install/inits/systemd/system/tyk-pump.service
+        dst: /lib/systemd/system/tyk-pump.service
+      - src: ci/install/inits/sysv/init.d/tyk-pump
+        dst: /etc/init.d/tyk-pump
+      - src: "LICENSE.md"
+        dst: "/opt/share/docs/tyk-pump/LICENSE.md"
+      - src: pump.example.conf
+        dst: /opt/tyk-pump/pump.conf
         type: "config|noreplace"
     scripts:
       preinstall: "ci/install/before_install.sh"
@@ -129,7 +115,6 @@ publishers:
     env:
       - PACKAGECLOUD_TOKEN={{ .Env.PACKAGECLOUD_TOKEN }}
     cmd: packagecloud publish --debvers "{{ .Env.DEBVERS }}" --rpmvers "{{ .Env.RPMVERS }}" tyk/tyk-pump-unstable {{ .ArtifactPath }}
-
 # This disables archives
 archives:
   - format: binary
