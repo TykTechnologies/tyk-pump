@@ -37,4 +37,5 @@ func init() {
 	AvailablePumps["sql-graph-aggregate"] = &GraphSQLAggregatePump{}
 	AvailablePumps["resurfaceio"] = &ResurfacePump{}
 	AvailablePumps["sqs"] = &SQSPump{}
+	AvailablePumps["kinesis"] = &KinesisPump{}
 }
