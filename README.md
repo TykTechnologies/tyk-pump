@@ -68,6 +68,7 @@ The table below provides details on the fields within each `tyk_analytics` recor
 - [Stdout](#stdout) (i.e. for use by Datadog logging agent in Kubernetes)
 - [Timestream](#timestream-config)
 - [AWS SQS](#SQS-config)
+- [AWS Kinesis](#Kinesis-config) 
 
 # Configuration:
 
@@ -1342,6 +1343,45 @@ TYK_PMP_PUMPS_SQS_META_AWSMESSAGEIDDEDUPLICATIONENABLED=true
 TYK_PMP_PUMPS_SQS_META_AWSDELAYSECONDS=0
 
 ```
+
+## Kinesis Config
+
+#### Authentication & Prerequisite
+
+We must authenticate ourselves by providing credentials to AWS. This pump uses the official AWS GO SDK, so instructions on how to authenticate can be found on [their documentation here](https://aws.github.io/aws-sdk-go-v2/docs/configuring-sdk/#specifying-credentials).
+
+#### Config Fields
+
+`stream_name` - The name of your Kinesis stream in the specified AWS region
+
+`region` - The AWS region your Kinesis stream is located - i.e. eu-west-2
+
+`batch_size` - Optional. The maximum size of the records in a batch is 5MiB. If your records are larger in size setting this batch size paramter can guarantee you don't have failed delivery due to too large a batch. Default size if unset is 100.
+
+###### JSON / Conf File
+
+```json
+    "kinesis":{
+      "type": "kinesis",
+      "meta": {
+        "stream_name": "my-stream",
+        "region": "eu-west-2",
+        "batch_size": 100
+      }
+    },
+```
+
+###### Env Variables
+
+```
+#Kinesis Pump Configuration
+TYK_PMP_PUMPS_KINESIS_TYPE=kinesis
+TYK_PMP_PUMPS_KINESIs_META_STREAMNAME=my-stream
+TYK_PMP_PUMPS_KINESIS_META_REGION=eu-west-2
+TYK_PMP_PUMPS_KINESIS_META_BATCHSIZE=100
+```
+
+
 
 # Base Pump Configurations
 
