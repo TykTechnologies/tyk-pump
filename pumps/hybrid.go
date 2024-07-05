@@ -68,7 +68,7 @@ type HybridPumpConf struct {
 
 	// MDCB URL connection string
 	ConnectionString string `mapstructure:"connection_string"`
-	// Your organisation ID to connect to the MDCB installation.
+	// Your organization ID to connect to the MDCB installation.
 	RPCKey string `mapstructure:"rpc_key"`
 	// This the API key of a user used to authenticate and authorize the Hybrid Pump access through MDCB.
 	// The user should be a standard Dashboard user with minimal privileges so as to reduce any risk if the user is compromised.
