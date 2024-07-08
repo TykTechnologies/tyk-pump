@@ -4,12 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"math/rand"
+	"strconv"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/mitchellh/mapstructure"
 	"github.com/sirupsen/logrus"
-
-	"strconv"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
@@ -43,8 +42,10 @@ type KinesisConf struct {
 	Region string `mapstructure:"region"`
 }
 
-var kinesisPrefix = "kinesis-pump"
-var kinesisDefaultENV = PUMPS_ENV_PREFIX + "_KINESIS" + PUMPS_ENV_META_PREFIX
+var (
+	kinesisPrefix     = "kinesis-pump"
+	kinesisDefaultENV = PUMPS_ENV_PREFIX + "_KINESIS" + PUMPS_ENV_META_PREFIX
+)
 
 func (p *KinesisPump) New() Pump {
 	newPump := KinesisPump{}
@@ -53,10 +54,9 @@ func (p *KinesisPump) New() Pump {
 
 // Init initializes the pump with configuration settings.
 func (p *KinesisPump) Init(config interface{}) error {
-
 	p.log = log.WithField("prefix", kinesisPrefix)
 
-	//Read configuration file
+	// Read configuration file
 	p.kinesisConf = &KinesisConf{}
 	err := mapstructure.Decode(config, &p.kinesisConf)
 	if err != nil {
@@ -73,7 +73,7 @@ func (p *KinesisPump) Init(config interface{}) error {
 		p.log.Fatalf("unable to load Kinesis SDK config, %v", err)
 	}
 
-	var defaultBatchSize = 100
+	defaultBatchSize := 100
 	if p.kinesisConf.BatchSize == 0 {
 		p.kinesisConf.BatchSize = defaultBatchSize
 	}
@@ -87,18 +87,16 @@ func (p *KinesisPump) Init(config interface{}) error {
 	p.log.Info(p.GetName() + " Initialized")
 
 	return nil
-
 }
 
 // WriteData writes the analytics records to AWS Kinesis in batches.
 func (p *KinesisPump) WriteData(ctx context.Context, records []interface{}) error {
-	//
 	batches := splitIntoBatches(records, p.kinesisConf.BatchSize)
 	for _, batch := range batches {
 		var entries []types.PutRecordsRequestEntry
 		for _, record := range batch {
 
-			//Build message format
+			// Build message format
 			decoded := record.(analytics.AnalyticsRecord)
 			message := Json{
 				"timestamp":       decoded.TimeStamp,
@@ -123,7 +121,7 @@ func (p *KinesisPump) WriteData(ctx context.Context, records []interface{}) erro
 				"tags":            decoded.Tags,
 			}
 
-			//Transform object to json string
+			// Transform object to json string
 			json, jsonError := json.Marshal(message)
 			if jsonError != nil {
 				p.log.WithError(jsonError).Error("unable to marshal message")
