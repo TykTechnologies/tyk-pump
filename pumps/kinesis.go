@@ -26,10 +26,6 @@ type KinesisPump struct {
 
 // @PumpConf Kinesis
 type KinesisConf struct {
-	// Each PutRecords (the function used in this pump)request can support up to 500 records.
-	// Each record in the request can be as large as 1 MiB, up to a limit of 5 MiB for the entire request, including partition keys.
-	// Each shard can support writes up to 1,000 records per second, up to a maximum data write total of 1 MiB per second.
-	BatchSize int `mapstructure:"batch_size"`
 	// The prefix for the environment variables that will be used to override the configuration.
 	// Defaults to `TYK_PMP_PUMPS_KINESIS_META`
 	EnvPrefix string `mapstructure:"meta_env_prefix"`
@@ -40,6 +36,10 @@ type KinesisConf struct {
 	StreamName string `mapstructure:"stream_name"`
 	// AWS Region the Kinesis stream targets
 	Region string `mapstructure:"region"`
+	// Each PutRecords (the function used in this pump)request can support up to 500 records.
+	// Each record in the request can be as large as 1 MiB, up to a limit of 5 MiB for the entire request, including partition keys.
+	// Each shard can support writes up to 1,000 records per second, up to a maximum data write total of 1 MiB per second.
+	BatchSize int `mapstructure:"batch_size"`
 }
 
 var (
@@ -154,7 +154,6 @@ func (p *KinesisPump) WriteData(ctx context.Context, records []interface{}) erro
 				p.log.Debug(record)
 			}
 			p.log.Info("Purged ", len(output.Records), " records...")
-
 		}
 	}
 	return nil
