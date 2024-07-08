@@ -3,7 +3,7 @@ package pumps
 import (
 	"context"
 	"encoding/json"
-	"math/rand"
+	"math/rand/v2"
 	"strconv"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
