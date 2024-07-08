@@ -2,13 +2,13 @@ package pumps
 
 import (
 	"context"
+	"crypto/rand"
 	"encoding/json"
-	"math/rand/v2"
-	"strconv"
-
+	"fmt"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/mitchellh/mapstructure"
 	"github.com/sirupsen/logrus"
+	"math/big"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
@@ -131,11 +131,16 @@ func (p *KinesisPump) WriteData(ctx context.Context, records []interface{}) erro
 				p.log.WithError(jsonError).Error("unable to marshal message")
 			}
 
+			n, err := rand.Int(rand.Reader, big.NewInt(1000000000))
+			if err != nil {
+				p.log.Error("failed to generate int for Partition key: ", err)
+			}
+
 			// Partition key uses a string representation of Int
 			// Should even distribute across shards as AWS uses md5 of each message partition key
 			entry := types.PutRecordsRequestEntry{
 				Data:         json,
-				PartitionKey: aws.String(strconv.Itoa(rand.Int())),
+				PartitionKey: aws.String(fmt.Sprint(n)),
 			}
 			entries = append(entries, entry)
 		}
