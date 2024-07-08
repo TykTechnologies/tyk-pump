@@ -6,7 +6,7 @@ ARG TARGETARCH
 ENV DEBIAN_FRONTEND=noninteractive
 
 COPY *${TARGETARCH}.deb /
-RUN dpkg -i /tyk-pump*${TARGETARCH}.deb && rm /*.deb
+RUN rm -f /*fips*.deb && dpkg -i /tyk-pump*${TARGETARCH}.deb && rm /*.deb
 
 FROM gcr.io/distroless/static-debian12:nonroot
 
@@ -16,5 +16,6 @@ ARG PORTS
 EXPOSE $PORTS
 
 WORKDIR /opt/tyk-pump/
+
 ENTRYPOINT ["/opt/tyk-pump/tyk-pump" ]
 CMD [ "--conf=/opt/tyk-pump/pump.conf" ]
