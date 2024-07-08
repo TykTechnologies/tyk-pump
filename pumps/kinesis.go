@@ -101,6 +101,7 @@ func (p *KinesisPump) WriteData(ctx context.Context, records []interface{}) erro
 				p.log.WithField("record", record).Error("unable to decode record")
 				continue
 			}
+			//nolint:dupl
 			analyticsRecord := Json{
 				"timestamp":       decoded.TimeStamp,
 				"method":          decoded.Method,
