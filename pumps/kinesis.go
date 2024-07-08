@@ -96,8 +96,12 @@ func (p *KinesisPump) WriteData(ctx context.Context, records []interface{}) erro
 		var entries []types.PutRecordsRequestEntry
 		for _, record := range batch {
 			// Build message format
-			decoded := record.(analytics.AnalyticsRecord)
-			message := Json{
+			decoded, ok := record.(analytics.AnalyticsRecord)
+			if !ok {
+				p.log.WithField("record", record).Error("unable to decode record")
+				continue
+			}
+			analyticsRecord := Json{
 				"timestamp":       decoded.TimeStamp,
 				"method":          decoded.Method,
 				"path":            decoded.Path,
@@ -121,7 +125,7 @@ func (p *KinesisPump) WriteData(ctx context.Context, records []interface{}) erro
 			}
 
 			// Transform object to json string
-			json, jsonError := json.Marshal(message)
+			json, jsonError := json.Marshal(analyticsRecord)
 			if jsonError != nil {
 				p.log.WithError(jsonError).Error("unable to marshal message")
 			}
@@ -140,7 +144,7 @@ func (p *KinesisPump) WriteData(ctx context.Context, records []interface{}) erro
 			Records:    entries,
 		}
 
-		output, err := p.client.PutRecords(context.TODO(), input)
+		output, err := p.client.PutRecords(ctx, input)
 		if err != nil {
 			p.log.Error("failed to put records to Kinesis: ", err)
 		}
