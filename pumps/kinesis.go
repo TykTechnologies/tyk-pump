@@ -3,10 +3,11 @@ package pumps
 import (
 	"context"
 	"encoding/json"
+	"math/rand"
+
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/mitchellh/mapstructure"
 	"github.com/sirupsen/logrus"
-	"math/rand"
 
 	"strconv"
 
