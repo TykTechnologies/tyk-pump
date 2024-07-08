@@ -5,10 +5,11 @@ import (
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
+	"math/big"
+
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/mitchellh/mapstructure"
 	"github.com/sirupsen/logrus"
-	"math/big"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
