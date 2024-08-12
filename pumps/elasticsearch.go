@@ -1,9 +1,11 @@
 package pumps
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -11,6 +13,8 @@ import (
 	"strings"
 	"time"
 
+	elasticv8 "github.com/elastic/go-elasticsearch/v8"
+	"github.com/elastic/go-elasticsearch/v8/esutil"
 	"github.com/mitchellh/mapstructure"
 	elasticv7 "github.com/olivere/elastic/v7"
 	elasticv3 "gopkg.in/olivere/elastic.v3"
@@ -126,6 +130,13 @@ type Elasticsearch7Operator struct {
 	log           *logrus.Entry
 }
 
+type Elasticsearch8Operator struct {
+	conf        *ElasticsearchConf
+	esClient    *elasticv8.Client
+	bulkIndexer esutil.BulkIndexer
+	log         *logrus.Entry
+}
+
 type ApiKeyTransport struct {
 	APIKey   string
 	APIKeyID string
@@ -147,11 +158,13 @@ func (e *ElasticsearchPump) getOperator() (ElasticsearchOperator, error) {
 
 	urls := strings.Split(conf.ElasticsearchURL, ",")
 
+	var httpTransport http.RoundTripper = nil
 	httpClient := http.DefaultClient
 	if conf.AuthAPIKey != "" && conf.AuthAPIKeyID != "" {
 		conf.Username = ""
 		conf.Password = ""
-		httpClient = &http.Client{Transport: &ApiKeyTransport{APIKey: conf.AuthAPIKey, APIKeyID: conf.AuthAPIKeyID}}
+		httpTransport = &ApiKeyTransport{APIKey: conf.AuthAPIKey, APIKeyID: conf.AuthAPIKeyID}
+		httpClient = &http.Client{Transport: httpTransport}
 	}
 
 	if conf.UseSSL {
@@ -160,7 +173,8 @@ func (e *ElasticsearchPump) getOperator() (ElasticsearchOperator, error) {
 			e.log.WithError(err).Error("Failed to get TLS config")
 			return nil, err
 		}
-		httpClient = &http.Client{Transport: &http.Transport{TLSClientConfig: tlsConf}}
+		httpTransport = &http.Transport{TLSClientConfig: tlsConf}
+		httpClient = &http.Client{Transport: httpTransport}
 	}
 
 	switch conf.Version {
@@ -312,12 +326,64 @@ func (e *ElasticsearchPump) getOperator() (ElasticsearchOperator, error) {
 		op.bulkProcessor, err = p.Do(context.Background())
 		op.log = e.log
 		return op, err
+	case "8":
+		op := &Elasticsearch8Operator{
+			conf: &conf,
+		}
+
+		cfg := elasticv8.Config{
+			Addresses: urls,
+		}
+		if conf.Username != "" || conf.Password != "" {
+			cfg.Username = conf.Username
+			cfg.Password = conf.Password
+		}
+		if httpTransport != nil {
+			cfg.Transport = httpTransport
+		}
+
+		op.esClient, err = elasticv8.NewClient(cfg)
+
+		if err != nil {
+			return op, err
+		}
+
+		op.bulkIndexer, err = setupElasticsearch8BulkIndexer(op)
+
+		if err != nil {
+			return op, err
+		}
+
+		op.log = e.log
+		return op, err
 	default:
 		// shouldn't get this far, but hey never hurts to check assumptions
 		e.log.Fatal("Invalid version: ")
 	}
 
 	return nil, err
+}
+
+func setupElasticsearch8BulkIndexer(op *Elasticsearch8Operator) (esutil.BulkIndexer, error) {
+	// Setup a bulk indexer
+	bulkCfg := esutil.BulkIndexerConfig{
+		Index:  getIndexName(op.conf),
+		Client: op.esClient,
+	}
+
+	if op.conf.BulkConfig.Workers != 0 {
+		bulkCfg.NumWorkers = op.conf.BulkConfig.Workers
+	}
+
+	if op.conf.BulkConfig.FlushInterval != 0 {
+		bulkCfg.FlushInterval = time.Duration(op.conf.BulkConfig.FlushInterval) * time.Second
+	}
+
+	// op.conf.BulkConfig.BulkActions not supported
+
+	// op.conf.BulkConfig.BulkSize not supported
+
+	return esutil.NewBulkIndexer(bulkCfg)
 }
 
 func (e *ElasticsearchPump) New() Pump {
@@ -360,9 +426,9 @@ func (e *ElasticsearchPump) Init(config interface{}) error {
 	case "":
 		e.esConf.Version = "3"
 		log.Info("Version not specified, defaulting to 3. If you are importing to Elasticsearch 5, please specify \"version\" = \"5\"")
-	case "3", "5", "6", "7":
+	case "3", "5", "6", "7", "8":
 	default:
-		err := errors.New("Only 3, 5, 6, 7 are valid values for this field")
+		err := errors.New("Only 3, 5, 6, 7, 8 are valid values for this field")
 		e.log.Fatal("Invalid version: ", err)
 	}
 
@@ -641,6 +707,75 @@ func (e Elasticsearch7Operator) processData(ctx context.Context, data []interfac
 
 func (e Elasticsearch7Operator) flushRecords() error {
 	return e.bulkProcessor.Flush()
+}
+
+func (e *Elasticsearch8Operator) processData(ctx context.Context, data []interface{}, esConf *ElasticsearchConf) error {
+	for dataIndex := range data {
+		if ctxErr := ctx.Err(); ctxErr != nil {
+			continue
+		}
+
+		d, ok := data[dataIndex].(analytics.AnalyticsRecord)
+		if !ok {
+			e.log.Error("Error while writing ", data[dataIndex], ": data not of type analytics.AnalyticsRecord")
+			continue
+		}
+
+		mapping, id := getMapping(d, esConf.ExtendedStatistics, esConf.GenerateID, esConf.DecodeBase64)
+		bs, err := json.Marshal(mapping)
+		if err != nil {
+			e.log.Error("Error while writing ", data[dataIndex], ": failed to marshal into JSON: ", err)
+			continue
+		}
+		body := bytes.NewReader(bs)
+
+		if !esConf.DisableBulk {
+			err = e.bulkIndexer.Add(
+				ctx,
+				esutil.BulkIndexerItem{
+					Action:     "index",
+					Body:       body,
+					Index:      getIndexName(esConf),
+					DocumentID: id,
+
+					OnSuccess: func(ctx context.Context, item esutil.BulkIndexerItem, resp esutil.BulkIndexerResponseItem) {
+						e.log.Info("Purged 1 record...")
+					},
+					OnFailure: func(ctx context.Context, item esutil.BulkIndexerItem, resp esutil.BulkIndexerResponseItem, err error) {
+						e.log.Error("Error while writing ", data[dataIndex], err)
+					},
+				},
+			)
+			if err != nil {
+				e.log.Error("Error while adding ", data[dataIndex], " to BulkIndexer: ", err)
+			}
+		} else {
+			e.esClient.Index(
+				getIndexName(esConf),
+				body,
+				e.esClient.Index.WithDocumentID(id),
+				e.esClient.Index.WithContext(ctx),
+			)
+			if err != nil {
+				e.log.Error("Error while writing ", data[dataIndex], err)
+			}
+		}
+	}
+	if esConf.DisableBulk {
+		e.log.Info("Purged ", len(data), " records...")
+	}
+
+	return nil
+}
+
+func (e *Elasticsearch8Operator) flushRecords() error {
+	err := e.bulkIndexer.Close(context.Background())
+	if err != nil {
+		return err
+	}
+	e.log.Info("Purged ", e.bulkIndexer.Stats().NumFlushed, " records in this bulk...")
+	e.bulkIndexer, err = setupElasticsearch8BulkIndexer(e)
+	return err
 }
 
 // printPurgedBulkRecords print the purged records = bulk size when bulk is enabled
