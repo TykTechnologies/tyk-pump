@@ -43,7 +43,7 @@ jobs:
       matrix:
         redis-version: [5]
         mongodb-version: [4.2]
-        go: [1.21]
+        go: [1.22.7]
 
     steps:
       - name: Checkout Tyk Pump
