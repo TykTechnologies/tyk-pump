@@ -66,8 +66,8 @@ type SQLConf struct {
 	// going to be stored in `tyk_aggregated_YYYYMMDD` table, where `YYYYMMDD` is going to change
 	// depending on the date.
 	TableSharding bool `json:"table_sharding" mapstructure:"table_sharding"`
-	// Specifies the SQL audit verbosity. The possible values are: `info`,`error` and `warning`. By
-	// default, the value is `silent`, which means that it won't audit any SQL query.
+	// Specifies the SQL log verbosity. The possible values are: `info`,`error` and `warning`. By
+	// default, the value is `silent`, which means that it won't log any SQL query.
 	LogLevel string `json:"log_level" mapstructure:"log_level"`
 	// Specifies the amount of records that are going to be written each batch. Type int. By
 	// default, it writes 1000 records max per batch.
