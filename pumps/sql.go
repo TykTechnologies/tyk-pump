@@ -66,8 +66,8 @@ type SQLConf struct {
 	// going to be stored in `tyk_aggregated_YYYYMMDD` table, where `YYYYMMDD` is going to change
 	// depending on the date.
 	TableSharding bool `json:"table_sharding" mapstructure:"table_sharding"`
-	// Specifies the SQL log verbosity. The possible values are: `info`,`error` and `warning`. By
-	// default, the value is `silent`, which means that it won't log any SQL query.
+	// Specifies the SQL audit verbosity. The possible values are: `info`,`error` and `warning`. By
+	// default, the value is `silent`, which means that it won't audit any SQL query.
 	LogLevel string `json:"log_level" mapstructure:"log_level"`
 	// Specifies the amount of records that are going to be written each batch. Type int. By
 	// default, it writes 1000 records max per batch.
@@ -212,7 +212,7 @@ func (c *SQLPump) WriteData(ctx context.Context, data []interface{}) error {
 	endIndex := dataLen
 	// We iterate dataLen +1 times since we're writing the data after the date change on sharding_table:true
 	for i := 0; i <= dataLen; i++ {
-		if c.SQLConf.TableSharding {
+		if c.SQLConf.TableSharding && startIndex < len(typedData) {
 			recDate := typedData[startIndex].TimeStamp.Format("20060102")
 			var nextRecDate string
 			// if we're on i == dataLen iteration, it means that we're out of index range. We're going to use the last record date.
