@@ -231,8 +231,19 @@ func (c *SQLPump) WriteData(ctx context.Context, data []interface{}) error {
 
 			table := analytics.SQLTable + "_" + recDate
 			c.db = c.db.Table(table)
+			fakerecord := &analytics.AnalyticsRecord{}
+			fakerecord.CollectionName = table
 			if !c.db.Migrator().HasTable(table) {
-				c.db.AutoMigrate(&analytics.AnalyticsRecord{})
+				err := c.db.AutoMigrate(&fakerecord)
+				if err != nil {
+					fmt.Println("Error creating table: ", err)
+				} else {
+					fmt.Println("Ensuring indexes for: ", table)
+					err = c.ensureIndex(table, true)
+					if err != nil {
+						fmt.Println("Error ensuring index: ", err)
+					}
+				}
 			}
 		} else {
 			i = dataLen // write all records at once for non-sharded case, stop for loop after 1 iteration
@@ -353,4 +364,66 @@ func (c *SQLPump) WriteUptimeData(data []interface{}) {
 	}
 
 	c.log.Debug("Purged ", len(data), " records...")
+}
+
+func (c *SQLPump) ensureIndex(tableName string, background bool) error {
+	if !c.db.Migrator().HasTable(tableName) {
+		//return errors.New("table doesn't exist")
+		c.log.Error("Table Exist ", tableName, "...")
+		return nil
+	}
+
+	indexes := []struct {
+		baseName string
+		columns  string
+	}{
+		{"idx_responsecode", "responsecode"},
+		{"idx_apikey", "apikey"},
+		{"idx_timestamp", "timestamp"},
+		{"idx_apiid", "apiid"},
+		{"idx_orgid", "orgid"},
+		{"idx_oauthid", "oauthid"},
+	}
+
+	createIndexFn := func(indexBaseName, columns string) error {
+		indexName := tableName + "_" + indexBaseName
+		option := ""
+		if c.dbType == "postgres" {
+			option = "CONCURRENTLY"
+		}
+
+		sql := fmt.Sprintf("CREATE INDEX %s IF NOT EXISTS %s ON %s (%s)", option, indexName, tableName, columns)
+		err := c.db.Exec(sql).Error
+		if err != nil {
+			c.log.Errorf("error creating index %s for table %s : %s", indexName, tableName, err.Error())
+			return err
+		}
+
+		c.log.Infof("Index %s created for table %s", indexName, tableName)
+		return nil
+	}
+
+	for _, idx := range indexes {
+		indexName := tableName + idx.baseName
+		if !c.db.Migrator().HasIndex(tableName, indexName) {
+			if background {
+				go func(baseName, cols string) {
+					if err := createIndexFn(baseName, cols); err != nil {
+						c.log.Error(err)
+					}
+				}(idx.baseName, idx.columns)
+			} else {
+				if err := createIndexFn(idx.baseName, idx.columns); err != nil {
+					return err
+				}
+			}
+		} else {
+			c.log.Infof("Index %s already exists for table %s", indexName, tableName)
+		}
+	}
+
+	if background {
+		//	c.backgroundIndexCreated <- true
+	}
+	return nil
 }
