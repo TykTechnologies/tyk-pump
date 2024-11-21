@@ -339,7 +339,7 @@ func TestDecodeRequestAndDecodeResponseSQLAggregate(t *testing.T) {
 	assert.False(t, newPump.GetDecodedResponse())
 }
 
-func TestEnsureIndex(t *testing.T) {
+func TestEnsureIndexSQLAggregate(t *testing.T) {
 	//nolint:govet
 	tcs := []struct {
 		testName             string
@@ -454,7 +454,7 @@ func TestEnsureIndex(t *testing.T) {
 
 				return pmp
 			},
-			givenTableName:       "test2",
+			givenTableName:       "shard1",
 			givenRunInBackground: true,
 			expectedErr:          nil,
 			shouldHaveIndex:      true,
