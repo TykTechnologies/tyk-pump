@@ -199,23 +199,6 @@ func (c *SQLPump) Init(conf interface{}) error {
 	return nil
 }
 
-// ensureTable creates the table if it doesn't exist
-func (c *SQLPump) ensureTable(tableName string) error {
-	if !c.db.Migrator().HasTable(tableName) {
-		c.db = c.db.Table(tableName)
-
-		if err := c.db.Migrator().CreateTable(&analytics.AnalyticsRecord{}); err != nil {
-			c.log.Error("error creating table", err)
-			return err
-		}
-
-		if err := c.ensureIndex(tableName, false); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 func (c *SQLPump) WriteData(ctx context.Context, data []interface{}) error {
 	c.log.Debug("Attempting to write ", len(data), " records...")
 
@@ -431,6 +414,23 @@ func (c *SQLPump) ensureIndex(tableName string, background bool) error {
 
 	if background {
 		c.backgroundIndexCreated <- true
+	}
+	return nil
+}
+
+// ensureTable creates the table if it doesn't exist
+func (c *SQLPump) ensureTable(tableName string) error {
+	if !c.db.Migrator().HasTable(tableName) {
+		c.db = c.db.Table(tableName)
+
+		if err := c.db.Migrator().CreateTable(&analytics.AnalyticsRecord{}); err != nil {
+			c.log.Error("error creating table", err)
+			return err
+		}
+
+		if err := c.ensureIndex(tableName, false); err != nil {
+			return err
+		}
 	}
 	return nil
 }

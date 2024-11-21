@@ -363,3 +363,84 @@ func TestDecodeRequestAndDecodeResponseSQL(t *testing.T) {
 	assert.False(t, newPump.GetDecodedRequest())
 	assert.False(t, newPump.GetDecodedResponse())
 }
+
+func TestEnsureIndexSQL(t *testing.T) {
+	//nolint:govet
+	tcs := []struct {
+		testName             string
+		givenTableName       string
+		expectedErr          error
+		pmpSetupFn           func(tableName string) *SQLPump
+		givenRunInBackground bool
+		shouldHaveIndex      bool
+	}{
+		{
+			testName: "index created correctly, not background",
+			pmpSetupFn: func(tableName string) *SQLPump {
+				pmp := SQLPump{}
+				cfg := make(map[string]interface{})
+				cfg["type"] = "sqlite"
+				cfg["connection_string"] = ""
+				pmp.log = log.WithField("prefix", "sql-pump")
+				err := pmp.Init(cfg)
+
+				assert.Nil(t, err)
+				if err := pmp.ensureTable(tableName); err != nil {
+					return nil
+				}
+
+				return &pmp
+			},
+			givenTableName:       "test",
+			givenRunInBackground: false,
+			expectedErr:          nil,
+			shouldHaveIndex:      true,
+		},
+		{
+			testName: "index created correctly, background",
+			pmpSetupFn: func(tableName string) *SQLPump {
+				cfg := make(map[string]interface{})
+				pmp := SQLPump{}
+				cfg["type"] = "sqlite"
+				cfg["connection_string"] = ""
+				pmp.log = log.WithField("prefix", "sql-pump")
+				err := pmp.Init(cfg)
+				assert.Nil(t, err)
+				pmp.log = log.WithField("prefix", "sql-aggregate-pump")
+
+				pmp.backgroundIndexCreated = make(chan bool, 1)
+				if err := pmp.ensureTable(tableName); err != nil {
+					return nil
+				}
+
+				return &pmp
+			},
+			givenTableName:       "test2",
+			givenRunInBackground: true,
+			expectedErr:          nil,
+			shouldHaveIndex:      true,
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.testName, func(t *testing.T) {
+			pmp := tc.pmpSetupFn(tc.givenTableName)
+			assert.NotNil(t, pmp)
+
+			actualErr := pmp.ensureIndex(tc.givenTableName, tc.givenRunInBackground)
+
+			if actualErr == nil {
+				if tc.givenRunInBackground {
+					// wait for the background index creation to finish
+					<-pmp.backgroundIndexCreated
+				} else {
+					indexName := tc.givenTableName + "_idx_apiid"
+					hasIndex := pmp.db.Table(tc.givenTableName).Migrator().HasIndex(tc.givenTableName, indexName)
+					assert.Equal(t, tc.shouldHaveIndex, hasIndex)
+				}
+			} else {
+				assert.Equal(t, tc.expectedErr.Error(), actualErr.Error())
+			}
+		})
+	}
+}
