@@ -160,15 +160,15 @@ func (c *SQLAggregatePump) ensureIndex(tableName string, background bool) error 
 		c.log.Info("omit_index_creation set to true, omitting index creation..")
 		return nil
 	}
-
-	if !c.db.Migrator().HasIndex(tableName, newAggregatedIndexName) {
+	indexName := fmt.Sprintf("%s_%s", tableName, newAggregatedIndexName)
+	if !c.db.Migrator().HasIndex(tableName, indexName) {
 		createIndexFn := func(c *SQLAggregatePump) error {
 			option := ""
 			if c.dbType == "postgres" {
 				option = "CONCURRENTLY"
 			}
 
-			err := c.db.Table(tableName).Exec(fmt.Sprintf("CREATE INDEX %s IF NOT EXISTS %s ON %s (dimension, timestamp, org_id, dimension_value)", option, newAggregatedIndexName, tableName)).Error
+			err := c.db.Table(tableName).Exec(fmt.Sprintf("CREATE INDEX %s IF NOT EXISTS %s ON %s (dimension, timestamp, org_id, dimension_value)", option, indexName, tableName)).Error
 			if err != nil {
 				c.log.Errorf("error creating index for table %s : %s", tableName, err.Error())
 				return err
@@ -178,7 +178,7 @@ func (c *SQLAggregatePump) ensureIndex(tableName string, background bool) error 
 				c.backgroundIndexCreated <- true
 			}
 
-			c.log.Info("Index ", newAggregatedIndexName, " for table ", tableName, " created successfully")
+			c.log.Info("Index ", indexName, " for table ", tableName, " created successfully")
 
 			return nil
 		}
@@ -198,7 +198,7 @@ func (c *SQLAggregatePump) ensureIndex(tableName string, background bool) error 
 		c.log.Info("Creating index for table ", tableName, "...")
 		return createIndexFn(c)
 	}
-	c.log.Info(newAggregatedIndexName, " already exists.")
+	c.log.Info(indexName, " already exists.")
 
 	return nil
 }

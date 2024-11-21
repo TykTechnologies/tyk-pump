@@ -3,6 +3,7 @@ package pumps
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"testing"
 	"time"
@@ -31,7 +32,8 @@ func TestSQLAggregateInit(t *testing.T) {
 	assert.Equal(t, "sqlite", pmp.db.Dialector.Name())
 	assert.Equal(t, true, pmp.db.Migrator().HasTable(analytics.AggregateSQLTable))
 
-	assert.Equal(t, true, pmp.db.Migrator().HasIndex(analytics.AggregateSQLTable, newAggregatedIndexName))
+	indexName := fmt.Sprintf("%s_%s", analytics.AggregateSQLTable, newAggregatedIndexName)
+	assert.Equal(t, true, pmp.db.Migrator().HasIndex(analytics.AggregateSQLTable, indexName))
 
 	// Checking with invalid type
 	cfg["type"] = "invalid"
@@ -420,6 +422,44 @@ func TestEnsureIndex(t *testing.T) {
 			shouldHaveIndex:      true,
 		},
 		{
+			testName: "index created correctly, background on sharded pump",
+			pmpSetupFn: func(tableName string) *SQLAggregatePump {
+				pmp := &SQLAggregatePump{}
+				cfg := &SQLAggregatePumpConf{}
+				cfg.Type = "sqlite"
+				cfg.TableSharding = true
+				cfg.ConnectionString = ""
+				pmp.SQLConf = cfg
+
+				pmp.log = log.WithField("prefix", "sql-aggregate-pump")
+				dialect, errDialect := Dialect(&pmp.SQLConf.SQLConf)
+				if errDialect != nil {
+					return nil
+				}
+				db, err := gorm.Open(dialect, &gorm.Config{
+					AutoEmbedd:  true,
+					UseJSONTags: true,
+					Logger:      logger.Default.LogMode(logger.Info),
+				})
+				if err != nil {
+					return nil
+				}
+				pmp.db = db
+
+				pmp.backgroundIndexCreated = make(chan bool, 1)
+
+				if err := pmp.ensureTable(tableName); err != nil {
+					return nil
+				}
+
+				return pmp
+			},
+			givenTableName:       "test2",
+			givenRunInBackground: true,
+			expectedErr:          nil,
+			shouldHaveIndex:      true,
+		},
+		{
 			testName: "index created on non existing table, not background",
 			pmpSetupFn: func(tableName string) *SQLAggregatePump {
 				pmp := &SQLAggregatePump{}
@@ -499,7 +539,8 @@ func TestEnsureIndex(t *testing.T) {
 					// wait for the background index creation to finish
 					<-pmp.backgroundIndexCreated
 				} else {
-					hasIndex := pmp.db.Table(tc.givenTableName).Migrator().HasIndex(tc.givenTableName, newAggregatedIndexName)
+					indexName := fmt.Sprintf("%s_%s", tc.givenTableName, newAggregatedIndexName)
+					hasIndex := pmp.db.Table(tc.givenTableName).Migrator().HasIndex(tc.givenTableName, indexName)
 					assert.Equal(t, tc.shouldHaveIndex, hasIndex)
 				}
 			} else {
