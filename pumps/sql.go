@@ -45,6 +45,9 @@ type SQLPump struct {
 	db      *gorm.DB
 	dbType  string
 	dialect gorm.Dialector
+
+	// this channel is used to signal that the background index creation has finished - this is used for testing
+	backgroundIndexCreated chan bool
 }
 
 // @PumpConf SQL
@@ -196,6 +199,23 @@ func (c *SQLPump) Init(conf interface{}) error {
 	return nil
 }
 
+// ensureTable creates the table if it doesn't exist
+func (c *SQLPump) ensureTable(tableName string) error {
+	if !c.db.Migrator().HasTable(tableName) {
+		c.db = c.db.Table(tableName)
+
+		if err := c.db.Migrator().CreateTable(&analytics.AnalyticsRecord{}); err != nil {
+			c.log.Error("error creating table", err)
+			return err
+		}
+
+		if err := c.ensureIndex(tableName, false); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (c *SQLPump) WriteData(ctx context.Context, data []interface{}) error {
 	c.log.Debug("Attempting to write ", len(data), " records...")
 
@@ -231,19 +251,8 @@ func (c *SQLPump) WriteData(ctx context.Context, data []interface{}) error {
 
 			table := analytics.SQLTable + "_" + recDate
 			c.db = c.db.Table(table)
-			fakerecord := &analytics.AnalyticsRecord{}
-			fakerecord.CollectionName = table
-			if !c.db.Migrator().HasTable(table) {
-				err := c.db.AutoMigrate(&fakerecord)
-				if err != nil {
-					fmt.Println("Error creating table: ", err)
-				} else {
-					fmt.Println("Ensuring indexes for: ", table)
-					err = c.ensureIndex(table, true)
-					if err != nil {
-						fmt.Println("Error ensuring index: ", err)
-					}
-				}
+			if errTable := c.ensureTable(table); errTable != nil {
+				return errTable
 			}
 		} else {
 			i = dataLen // write all records at once for non-sharded case, stop for loop after 1 iteration
@@ -368,9 +377,7 @@ func (c *SQLPump) WriteUptimeData(data []interface{}) {
 
 func (c *SQLPump) ensureIndex(tableName string, background bool) error {
 	if !c.db.Migrator().HasTable(tableName) {
-		//return errors.New("table doesn't exist")
-		c.log.Error("Table Exist ", tableName, "...")
-		return nil
+		return errors.New("cannot create indexes as table doesn't exist: " + tableName)
 	}
 
 	indexes := []struct {
@@ -423,7 +430,7 @@ func (c *SQLPump) ensureIndex(tableName string, background bool) error {
 	}
 
 	if background {
-		//	c.backgroundIndexCreated <- true
+		c.backgroundIndexCreated <- true
 	}
 	return nil
 }
