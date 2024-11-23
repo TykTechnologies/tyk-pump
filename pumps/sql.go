@@ -370,8 +370,8 @@ func (c *SQLPump) WriteUptimeData(data []interface{}) {
 	c.log.Debug("Purged ", len(data), " records...")
 }
 
-func (c *SQLPump) buildIndexName(baseIndexName string, tableName string) string {
-	return fmt.Sprintf("%s_%s", tableName, baseIndexName)
+func (c *SQLPump) buildIndexName(indexBaseName, tableName string) string {
+	return fmt.Sprintf("%s_%s", tableName, indexBaseName)
 }
 
 func (c *SQLPump) ensureIndex(tableName string, background bool) error {
@@ -380,7 +380,7 @@ func (c *SQLPump) ensureIndex(tableName string, background bool) error {
 	}
 
 	createIndexFn := func(indexBaseName, columns string) error {
-		indexName := c.buildIndexName(indexBaseName, columns)
+		indexName := c.buildIndexName(indexBaseName, tableName)
 		option := ""
 		if c.dbType == "postgres" {
 			option = "CONCURRENTLY"

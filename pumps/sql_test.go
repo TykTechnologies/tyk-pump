@@ -364,7 +364,7 @@ func TestDecodeRequestAndDecodeResponseSQL(t *testing.T) {
 	assert.False(t, newPump.GetDecodedResponse())
 }
 
-func TestEnsureIndexSQL1(t *testing.T) {
+func TestEnsureIndexSQL(t *testing.T) {
 	//nolint:govet
 	tcs := []struct {
 		testName             string
@@ -383,8 +383,8 @@ func TestEnsureIndexSQL1(t *testing.T) {
 				cfg["connection_string"] = ""
 				pmp.log = log.WithField("prefix", "sql-pump")
 				err := pmp.Init(cfg)
-
 				assert.Nil(t, err)
+
 				if err := pmp.ensureTable(tableName); err != nil {
 					return nil
 				}
@@ -406,7 +406,6 @@ func TestEnsureIndexSQL1(t *testing.T) {
 				pmp.log = log.WithField("prefix", "sql-pump")
 				err := pmp.Init(cfg)
 				assert.Nil(t, err)
-				pmp.log = log.WithField("prefix", "sql-aggregate-pump")
 
 				pmp.backgroundIndexCreated = make(chan bool, 1)
 				if err := pmp.ensureTable(tableName); err != nil {
@@ -415,7 +414,7 @@ func TestEnsureIndexSQL1(t *testing.T) {
 
 				return &pmp
 			},
-			givenTableName:       "test2",
+			givenTableName:       "test",
 			givenRunInBackground: true,
 			expectedErr:          nil,
 			shouldHaveIndex:      true,
@@ -438,12 +437,39 @@ func TestEnsureIndexSQL1(t *testing.T) {
 					// wait for the background index creation to finish
 					<-pmp.backgroundIndexCreated
 				} else {
-					indexName := pmp.buildIndexName("idx_apiid", tc.givenTableName)
+					indexToUse := indexes[0]
+					t.Logf("\n Sent: %v --%v \n", indexToUse.baseName, tc.givenTableName)
+					indexName := pmp.buildIndexName(indexToUse.baseName, tc.givenTableName)
 					hasIndex := pmp.db.Table(tc.givenTableName).Migrator().HasIndex(tc.givenTableName, indexName)
 					assert.Equal(t, tc.shouldHaveIndex, hasIndex)
 				}
 			} else {
 				assert.Equal(t, tc.expectedErr.Error(), actualErr.Error())
+			}
+		})
+	}
+}
+
+func TestBuildIndexName(t *testing.T) {
+	tests := []struct {
+		indexBaseName string
+		tableName     string
+		expected      string
+	}{
+		{"idx_responsecode", "users", "users_idx_responsecode"},
+		{"idx_apikey", "transactions", "transactions_idx_apikey"},
+		{"idx_timestamp", "logs", "logs_idx_timestamp"},
+		{"idx_apiid", "api_calls", "api_calls_idx_apiid"},
+		{"idx_orgid", "organizations", "organizations_idx_orgid"},
+	}
+
+	c := &SQLPump{} // Create an instance of SQLPump.
+
+	for _, tt := range tests {
+		t.Run(tt.indexBaseName+"_"+tt.tableName, func(t *testing.T) {
+			result := c.buildIndexName(tt.indexBaseName, tt.tableName)
+			if result != tt.expected {
+				t.Errorf("buildIndexName(%s, %s) = %s; want %s", tt.indexBaseName, tt.tableName, result, tt.expected)
 			}
 		})
 	}
