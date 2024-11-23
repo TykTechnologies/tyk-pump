@@ -364,57 +364,49 @@ func TestDecodeRequestAndDecodeResponseSQL(t *testing.T) {
 	assert.False(t, newPump.GetDecodedResponse())
 }
 
+func setupSQLPump(t *testing.T, tableName string, useBackground bool) *SQLPump {
+	t.Helper()
+	pmp := &SQLPump{}
+	pmp.log = log.WithField("prefix", "sql-pump")
+	cfg := map[string]interface{}{
+		"type":              "sqlite",
+		"connection_string": "",
+	}
+
+	assert.NoError(t, pmp.Init(cfg))
+	if useBackground {
+		pmp.backgroundIndexCreated = make(chan bool, 1)
+	}
+	assert.NoError(t, pmp.ensureTable(tableName))
+
+	return pmp
+}
 func TestEnsureIndexSQL(t *testing.T) {
 	//nolint:govet
 	tcs := []struct {
 		testName             string
 		givenTableName       string
 		expectedErr          error
-		pmpSetupFn           func(tableName string) *SQLPump
+		pmpSetupFn           func(t *testing.T, tableName string) *SQLPump
 		givenRunInBackground bool
 		shouldHaveIndex      bool
 	}{
 		{
 			testName: "index created correctly, not background",
-			pmpSetupFn: func(tableName string) *SQLPump {
-				pmp := SQLPump{}
-				cfg := make(map[string]interface{})
-				cfg["type"] = "sqlite"
-				cfg["connection_string"] = ""
-				pmp.log = log.WithField("prefix", "sql-pump")
-				err := pmp.Init(cfg)
-				assert.Nil(t, err)
-
-				if err := pmp.ensureTable(tableName); err != nil {
-					return nil
-				}
-
-				return &pmp
+			pmpSetupFn: func(t *testing.T, tableName string) *SQLPump {
+				return setupSQLPump(t, tableName, false)
 			},
-			givenTableName:       "test",
+			givenTableName:       "analytics_no_background",
 			givenRunInBackground: false,
 			expectedErr:          nil,
 			shouldHaveIndex:      true,
 		},
 		{
 			testName: "index created correctly, background",
-			pmpSetupFn: func(tableName string) *SQLPump {
-				cfg := make(map[string]interface{})
-				pmp := SQLPump{}
-				cfg["type"] = "sqlite"
-				cfg["connection_string"] = ""
-				pmp.log = log.WithField("prefix", "sql-pump")
-				err := pmp.Init(cfg)
-				assert.Nil(t, err)
-
-				pmp.backgroundIndexCreated = make(chan bool, 1)
-				if err := pmp.ensureTable(tableName); err != nil {
-					return nil
-				}
-
-				return &pmp
+			pmpSetupFn: func(t *testing.T, tableName string) *SQLPump {
+				return setupSQLPump(t, tableName, true)
 			},
-			givenTableName:       "test",
+			givenTableName:       "analytics_background",
 			givenRunInBackground: true,
 			expectedErr:          nil,
 			shouldHaveIndex:      true,
@@ -423,28 +415,31 @@ func TestEnsureIndexSQL(t *testing.T) {
 
 	for _, tc := range tcs {
 		t.Run(tc.testName, func(t *testing.T) {
-			pmp := tc.pmpSetupFn(tc.givenTableName)
+			pmp := tc.pmpSetupFn(t, tc.givenTableName)
 			defer func() {
 				pmp.db.Migrator().DropTable(tc.givenTableName)
 			}()
-
 			assert.NotNil(t, pmp)
 
 			actualErr := pmp.ensureIndex(tc.givenTableName, tc.givenRunInBackground)
+			isErrExpected := tc.expectedErr != nil
+			didErr := actualErr != nil
+			assert.Equal(t, isErrExpected, didErr)
+
+			if isErrExpected {
+				assert.Equal(t, tc.expectedErr.Error(), actualErr.Error())
+			}
 
 			if actualErr == nil {
 				if tc.givenRunInBackground {
 					// wait for the background index creation to finish
 					<-pmp.backgroundIndexCreated
-				} else {
-					indexToUse := indexes[0]
-					t.Logf("\n Sent: %v --%v \n", indexToUse.baseName, tc.givenTableName)
-					indexName := pmp.buildIndexName(indexToUse.baseName, tc.givenTableName)
-					hasIndex := pmp.db.Table(tc.givenTableName).Migrator().HasIndex(tc.givenTableName, indexName)
-					assert.Equal(t, tc.shouldHaveIndex, hasIndex)
 				}
-			} else {
-				assert.Equal(t, tc.expectedErr.Error(), actualErr.Error())
+
+				indexToUse := indexes[0]
+				indexName := pmp.buildIndexName(indexToUse.baseName, tc.givenTableName)
+				hasIndex := pmp.db.Table(tc.givenTableName).Migrator().HasIndex(tc.givenTableName, indexName)
+				assert.Equal(t, tc.shouldHaveIndex, hasIndex)
 			}
 		})
 	}

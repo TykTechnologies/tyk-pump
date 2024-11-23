@@ -113,7 +113,7 @@ var (
 
 	indexes = []struct {
 		baseName string
-		columns  string
+		column   string
 	}{
 		{"idx_responsecode", "responsecode"},
 		{"idx_apikey", "apikey"},
@@ -249,6 +249,9 @@ func (c *SQLPump) WriteData(ctx context.Context, data []interface{}) error {
 			if errTable := c.ensureTable(table); errTable != nil {
 				return errTable
 			}
+			if err := c.ensureIndex(table, false); err != nil {
+				return err
+			}
 		} else {
 			i = dataLen // write all records at once for non-sharded case, stop for loop after 1 iteration
 		}
@@ -379,14 +382,19 @@ func (c *SQLPump) ensureIndex(tableName string, background bool) error {
 		return errors.New("cannot create indexes as table doesn't exist: " + tableName)
 	}
 
-	createIndexFn := func(indexBaseName, columns string) error {
+	createIndexFn := func(indexBaseName, column string) error {
 		indexName := c.buildIndexName(indexBaseName, tableName)
 		option := ""
 		if c.dbType == "postgres" {
 			option = "CONCURRENTLY"
 		}
 
-		sql := fmt.Sprintf("CREATE INDEX %s IF NOT EXISTS %s ON %s (%s)", option, indexName, tableName, columns)
+		columnExist := c.db.Migrator().HasColumn(&analytics.AnalyticsRecord{}, column)
+		if !columnExist {
+			return errors.New("cannot create index for non existent column " + column)
+		}
+
+		sql := fmt.Sprintf("CREATE INDEX %s IF NOT EXISTS %s ON %s (%s)", option, indexName, tableName, column)
 		err := c.db.Exec(sql).Error
 		if err != nil {
 			c.log.Errorf("error creating index %s for table %s : %s", indexName, tableName, err.Error())
@@ -405,9 +413,9 @@ func (c *SQLPump) ensureIndex(tableName string, background bool) error {
 					if err := createIndexFn(baseName, cols); err != nil {
 						c.log.Error(err)
 					}
-				}(idx.baseName, idx.columns)
+				}(idx.baseName, idx.column)
 			} else {
-				if err := createIndexFn(idx.baseName, idx.columns); err != nil {
+				if err := createIndexFn(idx.baseName, idx.column); err != nil {
 					return err
 				}
 			}
@@ -426,13 +434,8 @@ func (c *SQLPump) ensureIndex(tableName string, background bool) error {
 func (c *SQLPump) ensureTable(tableName string) error {
 	if !c.db.Migrator().HasTable(tableName) {
 		c.db = c.db.Table(tableName)
-
 		if err := c.db.Migrator().CreateTable(&analytics.AnalyticsRecord{}); err != nil {
 			c.log.Error("error creating table", err)
-			return err
-		}
-
-		if err := c.ensureIndex(tableName, false); err != nil {
 			return err
 		}
 	}
