@@ -5,11 +5,11 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/mitchellh/mapstructure"
 	"gopkg.in/vmihailenco/msgpack.v2"
 	"gorm.io/gorm/clause"
+	"sync"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
@@ -249,9 +249,6 @@ func (c *SQLPump) WriteData(ctx context.Context, data []interface{}) error {
 			if errTable := c.ensureTable(table); errTable != nil {
 				return errTable
 			}
-			if err := c.ensureIndex(table, false); err != nil {
-				return err
-			}
 		} else {
 			i = dataLen // write all records at once for non-sharded case, stop for loop after 1 iteration
 		}
@@ -377,12 +374,17 @@ func (c *SQLPump) buildIndexName(indexBaseName, tableName string) string {
 	return fmt.Sprintf("%s_%s", tableName, indexBaseName)
 }
 
+// ensureIndex check that all indexes for the analytics SQL table are in place
 func (c *SQLPump) ensureIndex(tableName string, background bool) error {
 	if !c.db.Migrator().HasTable(tableName) {
 		return errors.New("cannot create indexes as table doesn't exist: " + tableName)
 	}
 
+	// waitgroup to facilitate testing and track when all indexes are created
+	var wg sync.WaitGroup
+	wg.Add(len(indexes))
 	createIndexFn := func(indexBaseName, column string) error {
+		defer wg.Done()
 		indexName := c.buildIndexName(indexBaseName, tableName)
 		option := ""
 		if c.dbType == "postgres" {
@@ -407,6 +409,7 @@ func (c *SQLPump) ensureIndex(tableName string, background bool) error {
 
 	for _, idx := range indexes {
 		indexName := tableName + idx.baseName
+
 		if !c.db.Migrator().HasIndex(tableName, indexName) {
 			if background {
 				go func(baseName, cols string) {
@@ -425,6 +428,7 @@ func (c *SQLPump) ensureIndex(tableName string, background bool) error {
 	}
 
 	if background {
+		wg.Wait()
 		c.backgroundIndexCreated <- true
 	}
 	return nil
@@ -436,6 +440,9 @@ func (c *SQLPump) ensureTable(tableName string) error {
 		c.db = c.db.Table(tableName)
 		if err := c.db.Migrator().CreateTable(&analytics.AnalyticsRecord{}); err != nil {
 			c.log.Error("error creating table", err)
+			return err
+		}
+		if err := c.ensureIndex(tableName, false); err != nil {
 			return err
 		}
 	}
