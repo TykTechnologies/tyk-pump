@@ -21,7 +21,10 @@ func TestSQLInit(t *testing.T) {
 		t.Fatal("SQL Pump couldn't be initialized with err: ", err)
 	}
 	defer func() {
-		pmp.db.Migrator().DropTable(analytics.SQLTable)
+		err := pmp.db.Migrator().DropTable(analytics.SQLTable)
+		if err != nil {
+			t.Errorf("Failed to drop table: %v", err)
+		}
 	}()
 
 	assert.NotNil(t, pmp.db)
