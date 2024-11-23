@@ -110,6 +110,18 @@ var (
 	SQLPrefix                = "SQL-pump"
 	SQLDefaultENV            = PUMPS_ENV_PREFIX + "_SQL" + PUMPS_ENV_META_PREFIX
 	SQLDefaultQueryBatchSize = 1000
+
+	indexes = []struct {
+		baseName string
+		columns  string
+	}{
+		{"idx_responsecode", "responsecode"},
+		{"idx_apikey", "apikey"},
+		{"idx_timestamp", "timestamp"},
+		{"idx_apiid", "apiid"},
+		{"idx_orgid", "orgid"},
+		{"idx_oauthid", "oauthid"},
+	}
 )
 
 func (c *SQLPump) New() Pump {
@@ -358,25 +370,17 @@ func (c *SQLPump) WriteUptimeData(data []interface{}) {
 	c.log.Debug("Purged ", len(data), " records...")
 }
 
+func (c *SQLPump) buildIndexName(baseIndexName string, tableName string) string {
+	return fmt.Sprintf("%s_%s", tableName, baseIndexName)
+}
+
 func (c *SQLPump) ensureIndex(tableName string, background bool) error {
 	if !c.db.Migrator().HasTable(tableName) {
 		return errors.New("cannot create indexes as table doesn't exist: " + tableName)
 	}
 
-	indexes := []struct {
-		baseName string
-		columns  string
-	}{
-		{"idx_responsecode", "responsecode"},
-		{"idx_apikey", "apikey"},
-		{"idx_timestamp", "timestamp"},
-		{"idx_apiid", "apiid"},
-		{"idx_orgid", "orgid"},
-		{"idx_oauthid", "oauthid"},
-	}
-
 	createIndexFn := func(indexBaseName, columns string) error {
-		indexName := tableName + "_" + indexBaseName
+		indexName := c.buildIndexName(indexBaseName, columns)
 		option := ""
 		if c.dbType == "postgres" {
 			option = "CONCURRENTLY"

@@ -364,7 +364,7 @@ func TestDecodeRequestAndDecodeResponseSQL(t *testing.T) {
 	assert.False(t, newPump.GetDecodedResponse())
 }
 
-func TestEnsureIndexSQL(t *testing.T) {
+func TestEnsureIndexSQL1(t *testing.T) {
 	//nolint:govet
 	tcs := []struct {
 		testName             string
@@ -425,6 +425,10 @@ func TestEnsureIndexSQL(t *testing.T) {
 	for _, tc := range tcs {
 		t.Run(tc.testName, func(t *testing.T) {
 			pmp := tc.pmpSetupFn(tc.givenTableName)
+			defer func() {
+				pmp.db.Migrator().DropTable(tc.givenTableName)
+			}()
+
 			assert.NotNil(t, pmp)
 
 			actualErr := pmp.ensureIndex(tc.givenTableName, tc.givenRunInBackground)
@@ -434,7 +438,7 @@ func TestEnsureIndexSQL(t *testing.T) {
 					// wait for the background index creation to finish
 					<-pmp.backgroundIndexCreated
 				} else {
-					indexName := tc.givenTableName + "_idx_apiid"
+					indexName := pmp.buildIndexName("idx_apiid", tc.givenTableName)
 					hasIndex := pmp.db.Table(tc.givenTableName).Migrator().HasIndex(tc.givenTableName, indexName)
 					assert.Equal(t, tc.shouldHaveIndex, hasIndex)
 				}
