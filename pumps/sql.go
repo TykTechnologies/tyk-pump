@@ -5,11 +5,12 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"sync"
+
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/mitchellh/mapstructure"
 	"gopkg.in/vmihailenco/msgpack.v2"
 	"gorm.io/gorm/clause"
-	"sync"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
