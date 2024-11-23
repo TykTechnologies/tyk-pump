@@ -381,6 +381,7 @@ func setupSQLPump(t *testing.T, tableName string, useBackground bool) *SQLPump {
 
 	return pmp
 }
+
 func TestEnsureIndexSQL(t *testing.T) {
 	//nolint:govet
 	tcs := []struct {
