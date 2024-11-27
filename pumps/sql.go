@@ -424,20 +424,25 @@ func (c *SQLPump) ensureIndex(tableName string, background bool) error {
 
 	for _, idx := range indexes {
 		indexName := tableName + idx.baseName
-		if !c.db.Migrator().HasIndex(tableName, indexName) {
-			if background {
-				go func(baseName, cols string) {
-					if err := c.createIndex(baseName, tableName, cols, wg); err != nil {
-						c.log.Error(err)
-					}
-				}(idx.baseName, idx.column)
-			} else {
-				if err := c.createIndex(idx.baseName, tableName, idx.column, wg); err != nil {
-					return err
+
+		if c.db.Migrator().HasIndex(tableName, indexName) {
+			c.log.WithFields(logrus.Fields{
+				"index": indexName,
+				"table": tableName,
+			}).Info("Index already exists")
+			continue
+		}
+
+		if background {
+			go func(baseName, cols string) {
+				if err := c.createIndex(baseName, tableName, cols, wg); err != nil {
+					c.log.Error(err)
 				}
-			}
+			}(idx.baseName, idx.column)
 		} else {
-			c.log.Infof("Index %s already exists for table %s", indexName, tableName)
+			if err := c.createIndex(idx.baseName, tableName, idx.column, wg); err != nil {
+				return err
+			}
 		}
 	}
 
