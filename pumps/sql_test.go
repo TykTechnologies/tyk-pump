@@ -146,6 +146,26 @@ func TestSQLWriteDataSharded(t *testing.T) {
 			assert.Equal(t, data.RowsLen, len(dbRecords))
 		})
 	}
+
+	t.Run("empty_keys", func(t *testing.T) {
+		emptyKeys := make([]interface{}, 0)
+		errWrite := pmp.WriteData(context.Background(), emptyKeys)
+		if errWrite != nil {
+			t.Fatal("SQL Pump couldn't write records with err:", errWrite)
+		}
+
+		// Check if any table has been created for the empty input case
+		tables := []string{
+			analytics.SQLTable + "_" + now.Format("20060102"),
+			analytics.SQLTable + "_" + nowPlus1.Format("20060102"),
+			analytics.SQLTable + "_" + nowPlus2.Format("20060102"),
+		}
+		for _, table := range tables {
+			t.Run("checking_"+table, func(t *testing.T) {
+				assert.Equal(t, false, pmp.db.Migrator().HasTable(table)) // No table should exist
+			})
+		}
+	})
 }
 
 func TestSQLWriteUptimeData(t *testing.T) {
