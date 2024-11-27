@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"sync"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
@@ -393,11 +394,18 @@ func (c *SQLPump) createIndex(indexBaseName, tableName, column string, wg *sync.
 	sql := fmt.Sprintf("CREATE INDEX %s IF NOT EXISTS %s ON %s (%s)", option, indexName, tableName, column)
 	err := c.db.Exec(sql).Error
 	if err != nil {
-		c.log.Errorf("error creating index %s for table %s : %s", indexName, tableName, err.Error())
+		c.log.WithFields(logrus.Fields{
+			"index": indexName,
+			"table": tableName,
+		}).WithError(err).Error("Error creating index")
 		return err
 	}
 
 	c.log.Infof("Index %s created for table %s", indexName, tableName)
+	c.log.WithFields(logrus.Fields{
+		"index": indexName,
+		"table": tableName,
+	}).Info("Index created")
 	return nil
 }
 
