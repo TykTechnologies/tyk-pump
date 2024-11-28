@@ -377,10 +377,7 @@ func (c *SQLPump) buildIndexName(indexBaseName, tableName string) string {
 	return fmt.Sprintf("%s_%s", tableName, indexBaseName)
 }
 
-func (c *SQLPump) createIndex(indexBaseName, tableName, column string, wg *sync.WaitGroup) error {
-	if wg != nil {
-		defer wg.Done()
-	}
+func (c *SQLPump) createIndex(indexBaseName, tableName, column string) error {
 	indexName := c.buildIndexName(indexBaseName, tableName)
 	option := ""
 	if c.dbType == "postgres" {
@@ -417,9 +414,8 @@ func (c *SQLPump) ensureIndex(tableName string, background bool) error {
 	}
 
 	// waitgroup to facilitate testing and track when all indexes are created
-	var wg *sync.WaitGroup
+	var wg sync.WaitGroup
 	if background {
-		wg = &sync.WaitGroup{}
 		wg.Add(len(indexes))
 	}
 
@@ -436,12 +432,13 @@ func (c *SQLPump) ensureIndex(tableName string, background bool) error {
 
 		if background {
 			go func(baseName, cols string) {
-				if err := c.createIndex(baseName, tableName, cols, wg); err != nil {
+				defer wg.Done()
+				if err := c.createIndex(baseName, tableName, cols); err != nil {
 					c.log.Error(err)
 				}
 			}(idx.baseName, idx.column)
 		} else {
-			if err := c.createIndex(idx.baseName, tableName, idx.column, wg); err != nil {
+			if err := c.createIndex(idx.baseName, tableName, idx.column); err != nil {
 				return err
 			}
 		}
