@@ -20,8 +20,8 @@ RUN rm -rf /root/.cache \
     && find /usr/lib -type f -name '*.a' -o -name '*.o' -delete
 
 # Comment this to test in dev
-COPY *${TARGETARCH}.deb /
-RUN rm -f /*fips*.deb && dpkg -i /tyk-pump*${TARGETARCH}.deb && rm /*.deb
+COPY ${BUILD_PACKAGE_NAME}*${TARGETARCH}.deb /
+RUN dpkg -i /${BUILD_PACKAGE_NAME}*${TARGETARCH}.deb && rm /*.deb
 
 ARG PORTS
 

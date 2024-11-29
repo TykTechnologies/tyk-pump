@@ -8,13 +8,11 @@ name: Release
 # - docker hub
 # - devenv ECR
 # - Cloudsmith
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+# concurrency:
+#   group: ${{ github.workflow }}-${{ github.ref }}
+#   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 on:
-  # Trigger release every monday at midnight for master CI images
-  schedule:
-    - cron: "0 0 * * 1"
   pull_request:
   push:
     branches:
@@ -24,7 +22,7 @@ on:
       - 'v*'
 env:
   GOPRIVATE: github.com/TykTechnologies
-  VARIATION: inverted
+  VARIATION: prod-variation
   DOCKER_BUILD_SUMMARY: false
   DOCKER_BUILD_RECORD_UPLOAD: false
   # startsWith covers pull_request_target too
@@ -41,9 +39,9 @@ jobs:
       fail-fast: false
       matrix:
         golang_cross:
-          - 1.22-bookworm
+          - 1.21-bookworm
         include:
-          - golang_cross: 1.22-bookworm
+          - golang_cross: 1.21-bookworm
             goreleaser: 'ci/goreleaser/goreleaser.yml'
             cgo: 0
             rpmvers: 'el/7 el/8 el/9 amazon/2 amazon/2023'
@@ -127,15 +125,16 @@ jobs:
           mask-aws-account-id: false
       - uses: aws-actions/amazon-ecr-login@v2
         id: ecr
-        if: ${{ matrix.golang_cross == '1.22-bookworm' }}
+        if: ${{ matrix.golang_cross == '1.21-bookworm' }}
         with:
           mask-password: 'true'
       - name: Docker metadata for CI
-        id: ci_metadata
-        if: ${{ matrix.golang_cross == '1.22-bookworm' }}
+        id: ci_metadata_std
+        if: ${{ matrix.golang_cross == '1.21-bookworm' }}
         uses: docker/metadata-action@v5
         with:
-          images: ${{ steps.ecr.outputs.registry }}/tyk-pump
+          images: |
+            ${{ steps.ecr.outputs.registry }}/tyk-pump
           flavor: |
             latest=false
           tags: |
@@ -146,50 +145,59 @@ jobs:
             type=semver,pattern={{major}}.{{minor}},prefix=v
             type=semver,pattern={{version}},prefix=v
       - name: push image to CI
-        if: ${{ matrix.golang_cross == '1.22-bookworm' }}
+        if: ${{ matrix.golang_cross == '1.21-bookworm' }}
         uses: docker/build-push-action@v6
         with:
           context: "dist"
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64,linux/arm64,linux/s390x
           file: ci/Dockerfile.distroless
           provenance: mode=max
           sbom: true
           push: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          tags: ${{ steps.ci_metadata.outputs.tags }}
+          tags: steps.ci_metadata_std.outputs.tags
           labels: ${{ steps.tag_metadata.outputs.labels }}
+          build-args: |
+            BUILD_PACKAGE_NAME=tyk-pump
       - name: Docker metadata for tag push
-        id: tag_metadata
+        id: tag_metadata_std
         uses: docker/metadata-action@v5
         with:
           images: |
-            tykio/tyk-pump-docker-pub
             docker.tyk.io/tyk-pump/tyk-pump
+
+            tykio/tyk-pump-docker-pub
           flavor: |
             latest=false
             prefix=v
           tags: |
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{version}}
-          labels: "org.opencontainers.image.title=tyk-pump  (distroless) \norg.opencontainers.image.description=Tyk Analytics Pump to move analytics data from Redis to any supported back end (multiple back ends can be written to at once).\norg.opencontainers.image.vendor=tyk.io\norg.opencontainers.image.version=${{ github.ref_name }}\n"
-      - name: push image to prod
-        if: ${{ matrix.golang_cross == '1.22-bookworm' }}
+          labels: |
+            org.opencontainers.image.title=Tyk Analytics Pump
+            org.opencontainers.image.description=Tyk Analytics Pump to move analytics data from Redis to any supported back end (multiple back ends can be written to at once).
+            org.opencontainers.image.vendor=tyk.io
+            org.opencontainers.image.version=${{ github.ref_name }}
+      - name: push std image to prod
+        if: ${{ matrix.golang_cross == '1.21-bookworm' }}
         uses: docker/build-push-action@v6
         with:
           context: "dist"
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64,linux/arm64,linux/s390x
           file: ci/Dockerfile.distroless
           provenance: mode=max
           sbom: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
           push: ${{ startsWith(github.ref, 'refs/tags') }}
-          tags: ${{ steps.tag_metadata.outputs.tags }}
-          labels: ${{ steps.tag_metadata.outputs.labels }}
+          tags: ${{ steps.tag_metadata_std.outputs.tags }}
+          labels: ${{ steps.tag_metadata_std.outputs.labels }}
+          build-args: |
+            BUILD_PACKAGE_NAME=tyk-pump
       - name: save deb
         uses: actions/upload-artifact@v4
-        if: ${{ matrix.golang_cross == '1.22-bookworm' }}
+        if: ${{ matrix.golang_cross == '1.21-bookworm' }}
         with:
           name: deb
           retention-days: 1
@@ -199,7 +207,7 @@ jobs:
             !dist/*fips*.deb
       - name: save rpm
         uses: actions/upload-artifact@v4
-        if: ${{ matrix.golang_cross == '1.22-bookworm' }}
+        if: ${{ matrix.golang_cross == '1.21-bookworm' }}
         with:
           name: rpm
           retention-days: 1
@@ -264,7 +272,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release download --repo github.com/tyklabs/tyk-pro --archive tar.gz -O env.tgz
+          gh release download --repo github.com/TykTechnologies/tyk-pro --archive tar.gz -O env.tgz
           mkdir auto && tar --strip-components=1 -C auto -xzvf env.tgz
       - name: env up
         shell: bash
@@ -281,6 +289,8 @@ jobs:
           set -eaxo pipefail
           docker run -q --rm -v ~/.docker/config.json:/root/.docker/config.json tykio/gromit policy match ${tags[0]} ${match_tag} 2>versions.env
           echo '# alfa and beta have to come after the override
+
+          tyk_image="$ECR/tyk-ee"
           tyk_alfa_image=$tyk_image
           tyk_beta_image=$tyk_image
           ECR=${{steps.ecr.outputs.registry}}
@@ -453,7 +463,7 @@ jobs:
           ARG TARGETARCH
           COPY tyk-pump*_${TARGETARCH}.deb /tyk-pump.deb
           RUN apt-get update && apt-get install -y curl
-          RUN curl -fsSL https://packagecloud.io/install/repositories/tyk/tyk-pump/script.deb.sh | bash && apt-get install -y tyk-pump=1.6.0
+          RUN curl -fsSL https://packagecloud.io/install/repositories/tyk//script.deb.sh | bash && apt-get install -y tyk-pump=1.6.0
           RUN dpkg -i /tyk-pump.deb
 
           ' | tee Dockerfile
@@ -499,8 +509,8 @@ jobs:
           COPY tyk-pump*.${RHELARCH}.rpm /tyk-pump.rpm
           RUN command -v curl || yum install -y curl
           RUN command -v useradd || yum install -y shadow-utils
-          RUN curl -fsSL https://packagecloud.io/install/repositories/tyk/tyk-pump/script.rpm.sh | bash && yum install -y tyk-pump-1.6.0-1
-          RUN curl https://keyserver.tyk.io/tyk.io.rpm.signing.key.2020 -o tyk-pump.key && rpm --import tyk-pump.key
+          RUN curl -fsSL https://packagecloud.io/install/repositories/tyk//script.rpm.sh | bash && yum install -y tyk-pump-1.6.0-1
+          RUN curl https://keyserver.tyk.io/tyk.io.rpm.signing.key.2020 -o .key && rpm --import .key
           RUN rpm --checksig /tyk-pump.rpm
           RUN rpm -Uvh --force /tyk-pump.rpm
 
