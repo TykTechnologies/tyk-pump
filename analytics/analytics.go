@@ -53,14 +53,14 @@ type AnalyticsRecord struct {
 	Month         time.Month     `json:"month" sql:"-"`
 	Year          int            `json:"year" sql:"-"`
 	Hour          int            `json:"hour" sql:"-"`
-	ResponseCode  int            `json:"response_code" gorm:"column:responsecode;index"`
-	APIKey        string         `json:"api_key" gorm:"column:apikey;index"`
-	TimeStamp     time.Time      `json:"timestamp" gorm:"column:timestamp;index"`
+	ResponseCode  int            `json:"response_code" gorm:"column:responsecode"`
+	APIKey        string         `json:"api_key" gorm:"column:apikey"`
+	TimeStamp     time.Time      `json:"timestamp" gorm:"column:timestamp"`
 	APIVersion    string         `json:"api_version" gorm:"column:apiversion"`
 	APIName       string         `json:"api_name" sql:"-"`
-	APIID         string         `json:"api_id" gorm:"column:apiid;index"`
-	OrgID         string         `json:"org_id" gorm:"column:orgid;index"`
-	OauthID       string         `json:"oauth_id" gorm:"column:oauthid;index"`
+	APIID         string         `json:"api_id" gorm:"column:apiid"`
+	OrgID         string         `json:"org_id" gorm:"column:orgid"`
+	OauthID       string         `json:"oauth_id" gorm:"column:oauthid"`
 	RequestTime   int64          `json:"request_time" gorm:"column:requesttime"`
 	RawRequest    string         `json:"raw_request" gorm:"column:rawrequest"`
 	RawResponse   string         `json:"raw_response" gorm:"column:rawresponse"`
