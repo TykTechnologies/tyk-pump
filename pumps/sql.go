@@ -5,6 +5,9 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"sync"
+
+	"github.com/sirupsen/logrus"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/mitchellh/mapstructure"
@@ -45,6 +48,9 @@ type SQLPump struct {
 	db      *gorm.DB
 	dbType  string
 	dialect gorm.Dialector
+
+	// this channel is used to signal that the background index creation has finished - this is used for testing
+	backgroundIndexCreated chan bool
 }
 
 // @PumpConf SQL
@@ -107,6 +113,18 @@ var (
 	SQLPrefix                = "SQL-pump"
 	SQLDefaultENV            = PUMPS_ENV_PREFIX + "_SQL" + PUMPS_ENV_META_PREFIX
 	SQLDefaultQueryBatchSize = 1000
+
+	indexes = []struct {
+		baseName string
+		column   string
+	}{
+		{"idx_responsecode", "responsecode"},
+		{"idx_apikey", "apikey"},
+		{"idx_timestamp", "timestamp"},
+		{"idx_apiid", "apiid"},
+		{"idx_orgid", "orgid"},
+		{"idx_oauthid", "oauthid"},
+	}
 )
 
 func (c *SQLPump) New() Pump {
@@ -231,8 +249,8 @@ func (c *SQLPump) WriteData(ctx context.Context, data []interface{}) error {
 
 			table := analytics.SQLTable + "_" + recDate
 			c.db = c.db.Table(table)
-			if !c.db.Migrator().HasTable(table) {
-				c.db.AutoMigrate(&analytics.AnalyticsRecord{})
+			if errTable := c.ensureTable(table); errTable != nil {
+				return errTable
 			}
 		} else {
 			i = dataLen // write all records at once for non-sharded case, stop for loop after 1 iteration
@@ -353,4 +371,97 @@ func (c *SQLPump) WriteUptimeData(data []interface{}) {
 	}
 
 	c.log.Debug("Purged ", len(data), " records...")
+}
+
+func (c *SQLPump) buildIndexName(indexBaseName, tableName string) string {
+	return fmt.Sprintf("%s_%s", tableName, indexBaseName)
+}
+
+func (c *SQLPump) createIndex(indexBaseName, tableName, column string) error {
+	indexName := c.buildIndexName(indexBaseName, tableName)
+	option := ""
+	if c.dbType == "postgres" {
+		option = "CONCURRENTLY"
+	}
+
+	columnExist := c.db.Migrator().HasColumn(&analytics.AnalyticsRecord{}, column)
+	if !columnExist {
+		return errors.New("cannot create index for non existent column " + column)
+	}
+
+	query := fmt.Sprintf("CREATE INDEX %s IF NOT EXISTS %s ON %s (%s)", option, indexName, tableName, column)
+	err := c.db.Exec(query).Error
+	if err != nil {
+		c.log.WithFields(logrus.Fields{
+			"index": indexName,
+			"table": tableName,
+		}).WithError(err).Error("Error creating index")
+		return err
+	}
+
+	c.log.Infof("Index %s created for table %s", indexName, tableName)
+	c.log.WithFields(logrus.Fields{
+		"index": indexName,
+		"table": tableName,
+	}).Info("Index created")
+	return nil
+}
+
+// ensureIndex check that all indexes for the analytics SQL table are in place
+func (c *SQLPump) ensureIndex(tableName string, background bool) error {
+	if !c.db.Migrator().HasTable(tableName) {
+		return errors.New("cannot create indexes as table doesn't exist: " + tableName)
+	}
+
+	// waitgroup to facilitate testing and track when all indexes are created
+	var wg sync.WaitGroup
+	if background {
+		wg.Add(len(indexes))
+	}
+
+	for _, idx := range indexes {
+		indexName := tableName + idx.baseName
+
+		if c.db.Migrator().HasIndex(tableName, indexName) {
+			c.log.WithFields(logrus.Fields{
+				"index": indexName,
+				"table": tableName,
+			}).Info("Index already exists")
+			continue
+		}
+
+		if background {
+			go func(baseName, cols string) {
+				defer wg.Done()
+				if err := c.createIndex(baseName, tableName, cols); err != nil {
+					c.log.Error(err)
+				}
+			}(idx.baseName, idx.column)
+		} else {
+			if err := c.createIndex(idx.baseName, tableName, idx.column); err != nil {
+				return err
+			}
+		}
+	}
+
+	if background {
+		wg.Wait()
+		c.backgroundIndexCreated <- true
+	}
+	return nil
+}
+
+// ensureTable creates the table if it doesn't exist
+func (c *SQLPump) ensureTable(tableName string) error {
+	if !c.db.Migrator().HasTable(tableName) {
+		c.db = c.db.Table(tableName)
+		if err := c.db.Migrator().CreateTable(&analytics.AnalyticsRecord{}); err != nil {
+			c.log.Error("error creating table", err)
+			return err
+		}
+		if err := c.ensureIndex(tableName, false); err != nil {
+			return err
+		}
+	}
+	return nil
 }
