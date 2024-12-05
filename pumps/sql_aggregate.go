@@ -198,7 +198,6 @@ func (c *SQLAggregatePump) ensureIndex(tableName string, background bool) error 
 		c.log.Info("Creating index for table ", tableName, "...")
 		return createIndexFn(c)
 	}
-	c.log.Info(indexName, " already exists.")
 
 	return nil
 }

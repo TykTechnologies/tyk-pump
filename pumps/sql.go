@@ -389,8 +389,8 @@ func (c *SQLPump) createIndex(indexBaseName, tableName, column string) error {
 		return errors.New("cannot create index for non existent column " + column)
 	}
 
-	sql := fmt.Sprintf("CREATE INDEX %s IF NOT EXISTS %s ON %s (%s)", option, indexName, tableName, column)
-	err := c.db.Exec(sql).Error
+	query := fmt.Sprintf("CREATE INDEX %s IF NOT EXISTS %s ON %s (%s)", option, indexName, tableName, column)
+	err := c.db.Exec(query).Error
 	if err != nil {
 		c.log.WithFields(logrus.Fields{
 			"index": indexName,
