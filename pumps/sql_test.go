@@ -383,3 +383,113 @@ func TestDecodeRequestAndDecodeResponseSQL(t *testing.T) {
 	assert.False(t, newPump.GetDecodedRequest())
 	assert.False(t, newPump.GetDecodedResponse())
 }
+
+func setupSQLPump(t *testing.T, tableName string, useBackground bool) *SQLPump {
+	t.Helper()
+	pmp := &SQLPump{}
+	pmp.log = log.WithField("prefix", "sql-pump")
+	cfg := map[string]interface{}{
+		"type":              "sqlite",
+		"connection_string": "",
+	}
+
+	assert.NoError(t, pmp.Init(cfg))
+	if useBackground {
+		pmp.backgroundIndexCreated = make(chan bool, 1)
+	}
+	assert.NoError(t, pmp.ensureTable(tableName))
+
+	return pmp
+}
+
+func TestEnsureIndexSQL(t *testing.T) {
+	//nolint:govet
+	tcs := []struct {
+		testName             string
+		givenTableName       string
+		expectedErr          error
+		pmpSetupFn           func(t *testing.T, tableName string) *SQLPump
+		givenRunInBackground bool
+		shouldHaveIndex      bool
+	}{
+		{
+			testName: "index created correctly, not background",
+			pmpSetupFn: func(t *testing.T, tableName string) *SQLPump {
+				return setupSQLPump(t, tableName, false)
+			},
+			givenTableName:       "analytics_no_background",
+			givenRunInBackground: false,
+			expectedErr:          nil,
+			shouldHaveIndex:      true,
+		},
+		{
+			testName: "index created correctly, background",
+			pmpSetupFn: func(t *testing.T, tableName string) *SQLPump {
+				return setupSQLPump(t, tableName, true)
+			},
+			givenTableName:       "analytics_background",
+			givenRunInBackground: true,
+			expectedErr:          nil,
+			shouldHaveIndex:      true,
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.testName, func(t *testing.T) {
+			pmp := tc.pmpSetupFn(t, tc.givenTableName)
+			defer func() {
+				err := pmp.db.Migrator().DropTable(tc.givenTableName)
+				if err != nil {
+					t.Errorf("Failed to drop table: %v", err)
+				}
+			}()
+			assert.NotNil(t, pmp)
+
+			actualErr := pmp.ensureIndex(tc.givenTableName, tc.givenRunInBackground)
+			isErrExpected := tc.expectedErr != nil
+			didErr := actualErr != nil
+			assert.Equal(t, isErrExpected, didErr)
+
+			if isErrExpected {
+				assert.Equal(t, tc.expectedErr.Error(), actualErr.Error())
+			}
+
+			if actualErr == nil {
+				if tc.givenRunInBackground {
+					// wait for the background index creation to finish
+					<-pmp.backgroundIndexCreated
+				}
+
+				indexToUse := indexes[0]
+				indexName := pmp.buildIndexName(indexToUse.baseName, tc.givenTableName)
+				hasIndex := pmp.db.Table(tc.givenTableName).Migrator().HasIndex(tc.givenTableName, indexName)
+				assert.Equal(t, tc.shouldHaveIndex, hasIndex)
+			}
+		})
+	}
+}
+
+func TestBuildIndexName(t *testing.T) {
+	tests := []struct {
+		indexBaseName string
+		tableName     string
+		expected      string
+	}{
+		{"idx_responsecode", "users", "users_idx_responsecode"},
+		{"idx_apikey", "transactions", "transactions_idx_apikey"},
+		{"idx_timestamp", "logs", "logs_idx_timestamp"},
+		{"idx_apiid", "api_calls", "api_calls_idx_apiid"},
+		{"idx_orgid", "organizations", "organizations_idx_orgid"},
+	}
+
+	c := &SQLPump{} // Create an instance of SQLPump.
+
+	for _, tt := range tests {
+		t.Run(tt.indexBaseName+"_"+tt.tableName, func(t *testing.T) {
+			result := c.buildIndexName(tt.indexBaseName, tt.tableName)
+			if result != tt.expected {
+				t.Errorf("buildIndexName(%s, %s) = %s; want %s", tt.indexBaseName, tt.tableName, result, tt.expected)
+			}
+		})
+	}
+}
