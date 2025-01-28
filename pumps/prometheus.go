@@ -71,7 +71,7 @@ type PrometheusMetric struct {
 	// of the value, check the next option. Default value is `false`.
 	ObfuscateAPIKeys bool `json:"obfuscate_api_keys" mapstructure:"obfuscate_api_keys"`
 	// Define the number of the characters from the end of the API key. The `obfuscate_api_keys`
-	// should be set to `true`. Default value is `0`.
+	// should be set to `true`. Default value is `4`.
 	ObfuscateAPIKeysLength int `json:"obfuscate_api_keys_length" mapstructure:"obfuscate_api_keys_length"`
 	// Defines the partitions in the metrics. For example: ['response_code','api_name'].
 	// The available labels are: `["host","method",
@@ -377,11 +377,8 @@ func (pm *PrometheusMetric) ensureLabels() {
 // GetLabelsValues return a list of string values based on the custom metric labels.
 func (pm *PrometheusMetric) GetLabelsValues(decoded analytics.AnalyticsRecord) []string {
 	values := []string{}
-	apiKey := decoded.APIKey
 	// If API Key obfuscation is enabled, we only show the last <ObfuscateAPIKeysLength> characters of the API Key
-	if pm.ObfuscateAPIKeys && len(apiKey) > pm.ObfuscateAPIKeysLength {
-		apiKey = "****" + apiKey[len(apiKey)-pm.ObfuscateAPIKeysLength:]
-	}
+	apiKey := obfuscateAPIKey(decoded.APIKey, pm.ObfuscateAPIKeys, pm.ObfuscateAPIKeysLength)
 	mapping := map[string]interface{}{
 		"host":          decoded.Host,
 		"method":        decoded.Method,
@@ -409,6 +406,21 @@ func (pm *PrometheusMetric) GetLabelsValues(decoded analytics.AnalyticsRecord) [
 		}
 	}
 	return values
+}
+
+func obfuscateAPIKey(apiKey string, obfuscate bool, length int) string {
+	if !obfuscate {
+		return apiKey
+	}
+	if length == 0 {
+		length = 4
+	}
+
+	if len(apiKey) <= length {
+		return "****"
+	}
+
+	return "****" + apiKey[len(apiKey)-length:]
 }
 
 // Inc is going to fill counterMap and histogramMap with the data from record.
