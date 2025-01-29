@@ -378,7 +378,7 @@ func (pm *PrometheusMetric) ensureLabels() {
 func (pm *PrometheusMetric) GetLabelsValues(decoded analytics.AnalyticsRecord) []string {
 	values := []string{}
 	// If API Key obfuscation is enabled, we only show the last <ObfuscateAPIKeysLength> characters of the API Key
-	apiKey := obfuscateAPIKey(decoded.APIKey, pm.ObfuscateAPIKeys, pm.ObfuscateAPIKeysLength)
+	apiKey := pm.obfuscateAPIKey(decoded.APIKey)
 	mapping := map[string]interface{}{
 		"host":          decoded.Host,
 		"method":        decoded.Method,
@@ -408,19 +408,15 @@ func (pm *PrometheusMetric) GetLabelsValues(decoded analytics.AnalyticsRecord) [
 	return values
 }
 
-func obfuscateAPIKey(apiKey string, obfuscate bool, length int) string {
-	if !obfuscate {
+func (pm *PrometheusMetric) obfuscateAPIKey(apiKey string) string {
+	if !pm.ObfuscateAPIKeys {
 		return apiKey
 	}
-	if length == 0 {
-		length = 4
-	}
 
-	if len(apiKey) <= length {
-		return "****"
+	if len(apiKey) > 4 {
+		return "****" + apiKey[len(apiKey)-4:]
 	}
-
-	return "****" + apiKey[len(apiKey)-length:]
+	return "--"
 }
 
 // Inc is going to fill counterMap and histogramMap with the data from record.
