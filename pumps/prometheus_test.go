@@ -289,6 +289,21 @@ func TestPrometheusGetLabelsValues(t *testing.T) {
 		expectedLabels []string
 	}{
 		{
+			testName: "empty API key with obfuscation enabled",
+			customMetric: PrometheusMetric{
+				Name:             "testCounterMetric",
+				MetricType:       counterType,
+				Labels:           []string{"code", "api", "key"},
+				ObfuscateAPIKeys: true,
+			},
+			record: analytics.AnalyticsRecord{
+				APIID:        "api_1",
+				ResponseCode: 200,
+				APIKey:       "",
+			},
+			expectedLabels: []string{"200", "api_1", "--"},
+		},
+		{
 			testName: "tree valid labels",
 			customMetric: PrometheusMetric{
 				Name:       "testCounterMetric",
@@ -333,6 +348,81 @@ func TestPrometheusGetLabelsValues(t *testing.T) {
 				APIKey:       "apikey",
 			},
 			expectedLabels: []string{"200", "api_1", "apikey"},
+		},
+		{
+			testName: "obfuscated API key - showing last 4 chars",
+			customMetric: PrometheusMetric{
+				Name:             "testCounterMetric",
+				MetricType:       counterType,
+				Labels:           []string{"code", "api", "key"},
+				ObfuscateAPIKeys: true,
+			},
+			record: analytics.AnalyticsRecord{
+				APIID:        "api_1",
+				ResponseCode: 200,
+				APIKey:       "abcdefghijklmnop",
+			},
+			expectedLabels: []string{"200", "api_1", "****mnop"},
+		},
+		{
+			testName: "obfuscated API key - short key (4 chars)",
+			customMetric: PrometheusMetric{
+				Name:             "testCounterMetric",
+				MetricType:       counterType,
+				Labels:           []string{"code", "api", "key"},
+				ObfuscateAPIKeys: true,
+			},
+			record: analytics.AnalyticsRecord{
+				APIID:        "api_1",
+				ResponseCode: 200,
+				APIKey:       "abcd",
+			},
+			expectedLabels: []string{"200", "api_1", "--"},
+		},
+		{
+			testName: "obfuscated API key - very short key (3 chars)",
+			customMetric: PrometheusMetric{
+				Name:             "testCounterMetric",
+				MetricType:       counterType,
+				Labels:           []string{"code", "api", "key"},
+				ObfuscateAPIKeys: true,
+			},
+			record: analytics.AnalyticsRecord{
+				APIID:        "api_1",
+				ResponseCode: 200,
+				APIKey:       "abc",
+			},
+			expectedLabels: []string{"200", "api_1", "--"},
+		},
+		{
+			testName: "obfuscation disabled",
+			customMetric: PrometheusMetric{
+				Name:             "testCounterMetric",
+				MetricType:       counterType,
+				Labels:           []string{"code", "api", "key"},
+				ObfuscateAPIKeys: false,
+			},
+			record: analytics.AnalyticsRecord{
+				APIID:        "api_1",
+				ResponseCode: 200,
+				APIKey:       "abcdefghijklmnop",
+			},
+			expectedLabels: []string{"200", "api_1", "abcdefghijklmnop"},
+		},
+		{
+			testName: "obfuscation disabled with short key",
+			customMetric: PrometheusMetric{
+				Name:             "testCounterMetric",
+				MetricType:       counterType,
+				Labels:           []string{"code", "api", "key"},
+				ObfuscateAPIKeys: false,
+			},
+			record: analytics.AnalyticsRecord{
+				APIID:        "api_1",
+				ResponseCode: 200,
+				APIKey:       "abc",
+			},
+			expectedLabels: []string{"200", "api_1", "abc"},
 		},
 	}
 
