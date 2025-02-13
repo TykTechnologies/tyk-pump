@@ -315,7 +315,7 @@ func TestMongoAggregatePump_SelfHealing(t *testing.T) {
 	var set []interface{}
 	for {
 		count++
-		record := demo.GenerateRandomAnalyticRecord("org123", true)
+		record := demo.GenerateRandomAnalyticRecord("org123", true, 50)
 		set = append(set, record)
 		if count == 1000 {
 			err := pmp1.WriteData(context.TODO(), set)
