@@ -416,13 +416,12 @@ func (pm *PrometheusMetric) GetLabelsValues(decoded analytics.AnalyticsRecord) [
 					if len(parts) == 2 && parts[0] != "" && parts[1] != "" {
 						values = append(values, fmt.Sprint(parts[1]))
 						found = true
-						break
 					}
 
-					values = append(values, "")
 					break
 				}
 			}
+
 			if !found {
 				values = append(values, "")
 			}
