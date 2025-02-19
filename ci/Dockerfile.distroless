@@ -2,11 +2,12 @@
 
 FROM debian:bookworm-slim as DEB
 ARG TARGETARCH
+ARG EDITION
 
 ENV DEBIAN_FRONTEND=noninteractive
 
 COPY *${TARGETARCH}.deb /
-RUN rm -f /*fips*.deb && dpkg -i /tyk-pump*${TARGETARCH}.deb && rm /*.deb
+RUN rm -f /*fips*.deb && dpkg -i /tyk-pump${EDITION}_*${TARGETARCH}.deb && rm /*.deb
 
 FROM gcr.io/distroless/static-debian12:nonroot
 
