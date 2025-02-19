@@ -405,8 +405,8 @@ func (pm *PrometheusMetric) GetLabelsValues(decoded analytics.AnalyticsRecord) [
 			values = append(values, fmt.Sprint(val))
 		}
 
-		if strings.HasPrefix(label, "custom-prom-metric-") {
-			label = fmt.Sprintf("%s:", strings.TrimPrefix(label, "custom-prom-metric-"))
+		if strings.HasPrefix(label, "custom_prom_metric_") {
+			label = fmt.Sprintf("%s:", strings.TrimPrefix(label, "custom_prom_metric_"))
 			for _, tag := range decoded.Tags {
 				if strings.HasPrefix(tag, label) {
 					parts := strings.Split(tag, ":")
