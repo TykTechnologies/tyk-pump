@@ -403,11 +403,7 @@ func (pm *PrometheusMetric) GetLabelsValues(decoded analytics.AnalyticsRecord) [
 	for _, label := range pm.Labels {
 		if val, ok := mapping[label]; ok {
 			values = append(values, fmt.Sprint(val))
-		}
-
-		// Check if the label is a custom prometheus metric label
-		if strings.HasPrefix(label, "custom_prom_metric_") {
-
+		} else if strings.HasPrefix(label, "custom_prom_metric_") {
 			// Get the label name with `:`
 			label = fmt.Sprintf("%s:", strings.TrimPrefix(label, "custom_prom_metric_"))
 
