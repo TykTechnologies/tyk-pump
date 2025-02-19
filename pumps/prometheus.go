@@ -102,9 +102,10 @@ type counterStruct struct {
 }
 
 const (
-	counterType           = "counter"
-	histogramType         = "histogram"
-	prometheusUnknownPath = "unknown"
+	counterType                 = "counter"
+	histogramType               = "histogram"
+	prometheusUnknownPath       = "unknown"
+	prometheusCustomLabelPrefix = "custom_label_"
 )
 
 var (
@@ -403,9 +404,9 @@ func (pm *PrometheusMetric) GetLabelsValues(decoded analytics.AnalyticsRecord) [
 	for _, label := range pm.Labels {
 		if val, ok := mapping[label]; ok {
 			values = append(values, fmt.Sprint(val))
-		} else {
+		} else if strings.HasPrefix(label, prometheusCustomLabelPrefix) {
 			// Get the label name with `:`
-			label = fmt.Sprintf("%s:", label)
+			label = fmt.Sprintf("%s:", strings.TrimPrefix(label, prometheusCustomLabelPrefix))
 
 			// Track if a tag is found
 			found := false
