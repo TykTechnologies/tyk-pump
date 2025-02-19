@@ -405,36 +405,30 @@ func (pm *PrometheusMetric) GetLabelsValues(decoded analytics.AnalyticsRecord) [
 			values = append(values, fmt.Sprint(val))
 		}
 
-		println(label)
 		// Check if the label is a custom prometheus metric label
 		if strings.HasPrefix(label, "custom_prom_metric_") {
 
 			// Get the label name with `:`
 			label = fmt.Sprintf("%s:", strings.TrimPrefix(label, "custom_prom_metric_"))
 
-			println(label)
 			// Track if a tag is found
 			found := false
 			for _, tag := range decoded.Tags {
-				println(tag)
 				if strings.HasPrefix(tag, label) {
 					// Check if the tag is a correctly formated key:value pair
 					parts := strings.Split(tag, ":")
 					if len(parts) == 2 && parts[0] != "" && parts[1] != "" {
-						println(parts[1])
 						values = append(values, fmt.Sprint(parts[1]))
 						found = true
 						break
 					}
 
-					println("error")
-					values = append(values, "error")
+					values = append(values, "")
 					break
 				}
 			}
 			if !found {
-				println("not found")
-				values = append(values, "not found")
+				values = append(values, "")
 			}
 		}
 	}
