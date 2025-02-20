@@ -80,7 +80,7 @@ func TestSqlGraphAggregatePump_Init(t *testing.T) {
 	t.Run("successful", func(t *testing.T) {
 		conf := SQLAggregatePumpConf{
 			SQLConf: SQLConf{
-				Type:             "sqlite",
+				Type:             "postgres",
 				ConnectionString: "",
 			},
 		}
@@ -115,18 +115,18 @@ func TestSqlGraphAggregatePump_Init(t *testing.T) {
 
 	t.Run("decode from map", func(t *testing.T) {
 		conf := map[string]interface{}{
-			"type":           "sqlite",
+			"type":           "postgres",
 			"table_sharding": true,
 		}
 		r.NoError(pump.Init(conf))
-		assert.Equal(t, "sqlite", pump.SQLConf.Type)
+		assert.Equal(t, "postgres", pump.SQLConf.Type)
 		assert.Equal(t, true, pump.SQLConf.TableSharding)
 	})
 
 	t.Run("sharded table", func(t *testing.T) {
 		conf := SQLAggregatePumpConf{
 			SQLConf: SQLConf{
-				Type:             "sqlite",
+				Type:             "postgres",
 				ConnectionString: "",
 				TableSharding:    true,
 			},
@@ -139,7 +139,7 @@ func TestSqlGraphAggregatePump_Init(t *testing.T) {
 		envPrefix := fmt.Sprintf("%s_SQLGRAPHAGGREGATE%s", PUMPS_ENV_PREFIX, PUMPS_ENV_META_PREFIX) + "_%s"
 		r := require.New(t)
 		envKeyVal := map[string]string{
-			"TYPE":          "sqlite",
+			"TYPE":          "postgres",
 			"TABLESHARDING": "true",
 		}
 		for key, val := range envKeyVal {
@@ -160,7 +160,7 @@ func TestSqlGraphAggregatePump_Init(t *testing.T) {
 			},
 		}
 		r.NoError(pump.Init(conf))
-		assert.Equal(t, "sqlite", pump.SQLConf.Type)
+		assert.Equal(t, "postgres", pump.SQLConf.Type)
 		assert.Equal(t, true, pump.SQLConf.TableSharding)
 	})
 }
@@ -168,7 +168,7 @@ func TestSqlGraphAggregatePump_Init(t *testing.T) {
 func TestSqlGraphAggregatePump_WriteData(t *testing.T) {
 	r := require.New(t)
 	conf := SQLConf{
-		Type:             "sqlite",
+		Type:             "postgres",
 		ConnectionString: "",
 	}
 	pump := GraphSQLAggregatePump{}
@@ -554,7 +554,7 @@ func TestSqlGraphAggregatePump_WriteData(t *testing.T) {
 			records := tc.recordGenerator()
 			r.NoError(pump.WriteData(context.Background(), records))
 			t.Cleanup(func() {
-				// use DELETE FROM table; since it is sqlite
+				// use DELETE FROM table; since it is postgres
 				if tx := pump.db.Exec(fmt.Sprintf("DELETE FROM %s", analytics.AggregateGraphSQLTable)); tx.Error != nil {
 					t.Error(tx.Error)
 				}
@@ -622,7 +622,7 @@ func TestGraphSQLAggregatePump_WriteData_Sharded(t *testing.T) {
 		r := require.New(t)
 		r.NoError(pump.Init(SQLAggregatePumpConf{
 			SQLConf: SQLConf{
-				Type:          "sqlite",
+				Type:          "postgres",
 				TableSharding: true,
 			},
 		}))
@@ -635,7 +635,7 @@ func TestGraphSQLAggregatePump_WriteData_Sharded(t *testing.T) {
 		r := require.New(t)
 		r.NoError(pump.Init(SQLAggregatePumpConf{
 			SQLConf: SQLConf{
-				Type:          "sqlite",
+				Type:          "postgres",
 				TableSharding: true,
 			},
 		}))

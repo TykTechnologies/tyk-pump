@@ -13,7 +13,7 @@ import (
 func TestSQLInit(t *testing.T) {
 	pmp := SQLPump{}
 	cfg := make(map[string]interface{})
-	cfg["type"] = "sqlite"
+	cfg["type"] = "postgres"
 	cfg["connection_string"] = ""
 
 	err := pmp.Init(cfg)
@@ -25,7 +25,7 @@ func TestSQLInit(t *testing.T) {
 	}()
 
 	assert.NotNil(t, pmp.db)
-	assert.Equal(t, "sqlite", pmp.db.Dialector.Name())
+	assert.Equal(t, "postgres", pmp.db.Dialector.Name())
 
 	// Checking with invalid type
 	cfg["type"] = "invalid"
@@ -37,7 +37,7 @@ func TestSQLInit(t *testing.T) {
 func TestSQLWriteData(t *testing.T) {
 	pmp := SQLPump{}
 	cfg := make(map[string]interface{})
-	cfg["type"] = "sqlite"
+	cfg["type"] = "postgres"
 	cfg["connection_string"] = ""
 
 	err := pmp.Init(cfg)
@@ -88,7 +88,7 @@ func TestSQLWriteData(t *testing.T) {
 func TestSQLWriteDataSharded(t *testing.T) {
 	pmp := SQLPump{}
 	cfg := make(map[string]interface{})
-	cfg["type"] = "sqlite"
+	cfg["type"] = "postgres"
 	cfg["table_sharding"] = true
 	cfg["batch_size"] = 20000
 
@@ -171,7 +171,7 @@ func TestSQLWriteDataSharded(t *testing.T) {
 func TestSQLWriteUptimeData(t *testing.T) {
 	pmp := SQLPump{IsUptime: true}
 	cfg := make(map[string]interface{})
-	cfg["type"] = "sqlite"
+	cfg["type"] = "postgres"
 	cfg["connection_string"] = ""
 	cfg["table_sharding"] = false
 	err := pmp.Init(cfg)
@@ -256,7 +256,7 @@ func TestSQLWriteUptimeData(t *testing.T) {
 func TestSQLWriteUptimeDataSharded(t *testing.T) {
 	pmp := SQLPump{}
 	cfg := make(map[string]interface{})
-	cfg["type"] = "sqlite"
+	cfg["type"] = "postgres"
 	cfg["connection_string"] = ""
 	cfg["table_sharding"] = true
 	err := pmp.Init(cfg)
@@ -318,7 +318,7 @@ func TestSQLWriteUptimeDataSharded(t *testing.T) {
 func TestSQLWriteUptimeDataAggregations(t *testing.T) {
 	pmp := SQLPump{IsUptime: true}
 	cfg := make(map[string]interface{})
-	cfg["type"] = "sqlite"
+	cfg["type"] = "postgres"
 	cfg["connection_string"] = ""
 	cfg["table_sharding"] = false
 	err := pmp.Init(cfg)
@@ -365,7 +365,7 @@ func TestSQLWriteUptimeDataAggregations(t *testing.T) {
 func TestDecodeRequestAndDecodeResponseSQL(t *testing.T) {
 	newPump := &SQLPump{}
 	cfg := make(map[string]interface{})
-	cfg["type"] = "sqlite"
+	cfg["type"] = "postgres"
 	cfg["connection_string"] = ""
 	cfg["table_sharding"] = true
 	err := newPump.Init(cfg)
@@ -389,7 +389,7 @@ func setupSQLPump(t *testing.T, tableName string, useBackground bool) *SQLPump {
 	pmp := &SQLPump{}
 	pmp.log = log.WithField("prefix", "sql-pump")
 	cfg := map[string]interface{}{
-		"type":              "sqlite",
+		"type":              "postgres",
 		"connection_string": "",
 	}
 

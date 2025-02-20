@@ -129,7 +129,7 @@ type UptimeConf struct {
 	//
 	// In `uptime_pump_config` you can configure a SQL uptime pump. To do that, you need to add the
 	// field `uptime_type` with `sql` value. You can also use different types of SQL Uptime pumps,
-	// like `postgres` or `sqlite` using the `type` field.
+	// like `postgres` using the `type` field.
 	//
 	// An example of a SQL Postgres uptime pump would be:
 	// ```{.json}

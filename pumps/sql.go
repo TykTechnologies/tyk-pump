@@ -16,7 +16,6 @@ import (
 
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
-	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	gorm_logger "gorm.io/gorm/logger"
 )
@@ -58,7 +57,8 @@ type SQLConf struct {
 	// The prefix for the environment variables that will be used to override the configuration.
 	// Defaults to `TYK_PMP_PUMPS_SQL_META`
 	EnvPrefix string `mapstructure:"meta_env_prefix"`
-	// The supported and tested types are `sqlite` and `postgres`.
+	// The only supported and tested types are `postgres` and `mysql`.
+	// From v1.12.0, we no longer support `sqlite` as a storage type.
 	Type string `json:"type" mapstructure:"type"`
 	// Specifies the connection string to the database.
 	ConnectionString string `json:"connection_string" mapstructure:"connection_string"`
@@ -82,13 +82,6 @@ type SQLConf struct {
 
 func Dialect(cfg *SQLConf) (gorm.Dialector, error) {
 	switch cfg.Type {
-	case "sqlite":
-		if cfg.ConnectionString == "" {
-			log.Warning("`meta.connection_string` is empty. Falling back to in-memory storage. Warning: All data will be lost on process restart.")
-			cfg.ConnectionString = "file::memory:?cache=shared"
-		}
-
-		return sqlite.Open(cfg.ConnectionString), nil
 	case "postgres":
 		// Example connection_string: `"host=localhost user=gorm password=gorm DB.name=gorm port=9920 sslmode=disable TimeZone=Asia/Shanghai"`
 		return postgres.New(postgres.Config{

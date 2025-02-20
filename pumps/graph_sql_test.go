@@ -20,7 +20,7 @@ func TestGraphSQLPump_Init(t *testing.T) {
 	t.Run("successful", func(t *testing.T) {
 		conf := GraphSQLConf{
 			SQLConf: SQLConf{
-				Type:             "sqlite",
+				Type:             "postgres",
 				ConnectionString: "",
 			},
 			TableName: "rand-table",
@@ -57,19 +57,19 @@ func TestGraphSQLPump_Init(t *testing.T) {
 	t.Run("decode from map", func(t *testing.T) {
 		conf := map[string]interface{}{
 			"table_name":     "test_table",
-			"type":           "sqlite",
+			"type":           "postgres",
 			"table_sharding": true,
 		}
 		r.NoError(pump.Init(conf))
 		assert.Equal(t, "test_table", pump.Conf.TableName)
-		assert.Equal(t, "sqlite", pump.Conf.Type)
+		assert.Equal(t, "postgres", pump.Conf.Type)
 		assert.Equal(t, true, pump.Conf.TableSharding)
 	})
 
 	t.Run("sharded table", func(t *testing.T) {
 		conf := GraphSQLConf{
 			SQLConf: SQLConf{
-				Type:             "sqlite",
+				Type:             "postgres",
 				ConnectionString: "",
 				TableSharding:    true,
 			},
@@ -83,7 +83,7 @@ func TestGraphSQLPump_Init(t *testing.T) {
 		envPrefix := fmt.Sprintf("%s_GRAPH_SQL%s", PUMPS_ENV_PREFIX, PUMPS_ENV_META_PREFIX) + "_%s"
 		r := require.New(t)
 		envKeyVal := map[string]string{
-			"TYPE":          "sqlite",
+			"TYPE":          "postgres",
 			"TABLENAME":     "test-table",
 			"TABLESHARDING": "true",
 		}
@@ -106,7 +106,7 @@ func TestGraphSQLPump_Init(t *testing.T) {
 			TableName: "wrong-name",
 		}
 		r.NoError(pump.Init(conf))
-		assert.Equal(t, "sqlite", pump.Conf.Type)
+		assert.Equal(t, "postgres", pump.Conf.Type)
 		assert.Equal(t, "test-table", pump.Conf.TableName)
 		assert.Equal(t, true, pump.Conf.TableSharding)
 	})
@@ -115,7 +115,7 @@ func TestGraphSQLPump_Init(t *testing.T) {
 func TestGraphSQLPump_WriteData(t *testing.T) {
 	conf := GraphSQLConf{
 		SQLConf: SQLConf{
-			Type:             "sqlite",
+			Type:             "postgres",
 			ConnectionString: "",
 		},
 		TableName: "test-table",
@@ -313,7 +313,7 @@ func TestGraphSQLPump_Sharded(t *testing.T) {
 	r := require.New(t)
 	conf := GraphSQLConf{
 		SQLConf: SQLConf{
-			Type:             "sqlite",
+			Type:             "postgres",
 			ConnectionString: "",
 			TableSharding:    true,
 		},

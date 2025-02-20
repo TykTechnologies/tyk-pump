@@ -17,7 +17,7 @@ import (
 func TestSQLAggregateInit(t *testing.T) {
 	pmp := SQLAggregatePump{}
 	cfg := make(map[string]interface{})
-	cfg["type"] = "sqlite"
+	cfg["type"] = "postgres"
 	cfg["connection_string"] = ""
 
 	err := pmp.Init(cfg)
@@ -29,7 +29,7 @@ func TestSQLAggregateInit(t *testing.T) {
 	}(table)
 
 	assert.NotNil(t, pmp.db)
-	assert.Equal(t, "sqlite", pmp.db.Dialector.Name())
+	assert.Equal(t, "postgres", pmp.db.Dialector.Name())
 	assert.Equal(t, true, pmp.db.Migrator().HasTable(analytics.AggregateSQLTable))
 
 	indexName := fmt.Sprintf("%s_%s", analytics.AggregateSQLTable, newAggregatedIndexName)
@@ -46,7 +46,7 @@ func TestSQLAggregateInit(t *testing.T) {
 func TestSQLAggregateWriteData_Sharded(t *testing.T) {
 	pmp := SQLAggregatePump{}
 	cfg := make(map[string]interface{})
-	cfg["type"] = "sqlite"
+	cfg["type"] = "postgres"
 	cfg["table_sharding"] = true
 
 	err := pmp.Init(cfg)
@@ -54,7 +54,7 @@ func TestSQLAggregateWriteData_Sharded(t *testing.T) {
 		t.Fatal("SQL Pump Aggregate couldn't be initialized with err: ", err)
 	}
 
-	// wait until the index is created for sqlite to avoid locking
+	// wait until the index is created for postgres to avoid locking
 
 	keys := make([]interface{}, 8)
 	now := time.Now()
@@ -111,7 +111,7 @@ func TestSQLAggregateWriteData_Sharded(t *testing.T) {
 func TestSQLAggregateWriteData(t *testing.T) {
 	pmp := &SQLAggregatePump{}
 	cfg := make(map[string]interface{})
-	cfg["type"] = "sqlite"
+	cfg["type"] = "postgres"
 	cfg["batch_size"] = 2000
 
 	err := pmp.Init(cfg)
@@ -284,7 +284,7 @@ func TestSQLAggregateWriteDataValues(t *testing.T) {
 
 			pmp := &SQLAggregatePump{}
 			cfg := make(map[string]interface{})
-			cfg["type"] = "sqlite"
+			cfg["type"] = "postgres"
 			cfg["batch_size"] = 1
 
 			err := pmp.Init(cfg)
@@ -320,7 +320,7 @@ func TestSQLAggregateWriteDataValues(t *testing.T) {
 func TestDecodeRequestAndDecodeResponseSQLAggregate(t *testing.T) {
 	newPump := &SQLAggregatePump{}
 	cfg := make(map[string]interface{})
-	cfg["type"] = "sqlite"
+	cfg["type"] = "postgres"
 	cfg["connection_string"] = ""
 	cfg["table_sharding"] = true
 	err := newPump.Init(cfg)
@@ -354,7 +354,7 @@ func TestEnsureIndexSQLAggregate(t *testing.T) {
 			pmpSetupFn: func(tableName string) *SQLAggregatePump {
 				pmp := &SQLAggregatePump{}
 				cfg := &SQLAggregatePumpConf{}
-				cfg.Type = "sqlite"
+				cfg.Type = "postgres"
 				cfg.ConnectionString = ""
 				pmp.SQLConf = cfg
 
@@ -389,7 +389,7 @@ func TestEnsureIndexSQLAggregate(t *testing.T) {
 			pmpSetupFn: func(tableName string) *SQLAggregatePump {
 				pmp := &SQLAggregatePump{}
 				cfg := &SQLAggregatePumpConf{}
-				cfg.Type = "sqlite"
+				cfg.Type = "postgres"
 				cfg.ConnectionString = ""
 				pmp.SQLConf = cfg
 
@@ -426,7 +426,7 @@ func TestEnsureIndexSQLAggregate(t *testing.T) {
 			pmpSetupFn: func(tableName string) *SQLAggregatePump {
 				pmp := &SQLAggregatePump{}
 				cfg := &SQLAggregatePumpConf{}
-				cfg.Type = "sqlite"
+				cfg.Type = "postgres"
 				cfg.TableSharding = true
 				cfg.ConnectionString = ""
 				pmp.SQLConf = cfg
@@ -464,7 +464,7 @@ func TestEnsureIndexSQLAggregate(t *testing.T) {
 			pmpSetupFn: func(tableName string) *SQLAggregatePump {
 				pmp := &SQLAggregatePump{}
 				cfg := &SQLAggregatePumpConf{}
-				cfg.Type = "sqlite"
+				cfg.Type = "postgres"
 				cfg.ConnectionString = ""
 				pmp.SQLConf = cfg
 
@@ -495,7 +495,7 @@ func TestEnsureIndexSQLAggregate(t *testing.T) {
 			pmpSetupFn: func(tableName string) *SQLAggregatePump {
 				pmp := &SQLAggregatePump{}
 				cfg := &SQLAggregatePumpConf{}
-				cfg.Type = "sqlite"
+				cfg.Type = "postgres"
 				cfg.ConnectionString = ""
 				cfg.OmitIndexCreation = true
 				pmp.SQLConf = cfg

@@ -32,9 +32,9 @@ case $i in
     SQL_TYPE="postgres"
     shift # past argument=value
     ;;
-    -sqlite=*|--sqlite=*)
+    -mysql=*|--mysql=*)
     SQL_CONNECTION_STRING="${i#*=}"
-    SQL_TYPE="sqlite"
+    SQL_TYPE="mysql"
     shift # past argument=value
     ;;
     --default)

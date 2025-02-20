@@ -68,7 +68,7 @@ The table below provides details on the fields within each `tyk_analytics` recor
 - [Stdout](#stdout) (i.e. for use by Datadog logging agent in Kubernetes)
 - [Timestream](#timestream-config)
 - [AWS SQS](#SQS-config)
-- [AWS Kinesis](#Kinesis-config) 
+- [AWS Kinesis](#Kinesis-config)
 
 # Configuration:
 
@@ -237,7 +237,9 @@ TYK_PMP_UPTIMEPUMPCONFIG_LOGLEVEL=info
 _Supported in Tyk Pump v1.5.0+_
 
 In `uptime_pump_config` you can configure a SQL uptime pump. To do that, you need to add the field `uptime_type` with `sql` value.
-You can also use different types of SQL Uptime pumps, like `postgres` or `sqlite` using the `type` field.
+You can also use different types of SQL Uptime pumps, like `postgres` or `mysql` using the `type` field.
+
+> **Note**: From v1.12.0 onwards, SQLite is no longer supported as a SQL Pump type.
 
 ###### JSON / Conf file Example
 
@@ -457,9 +459,9 @@ Note that `store_analytics_per_minute` takes precedence over `aggregation_time` 
 ## Mongo Graph Pump
 
 As of Pump 1.7+, a new mongo is available called the `mongo_graph` pump. This pump is specifically for parsing
-GraphQL and UDG requests, tracking information like types requested, fields requested, specific graphql body errors etc. 
+GraphQL and UDG requests, tracking information like types requested, fields requested, specific graphql body errors etc.
 
-**Note that only Gateways v4.3.+ are compatible with this new pump. Previous versions would send the analytics data to the `tyk_analytics` collection** 
+**Note that only Gateways v4.3.+ are compatible with this new pump. Previous versions would send the analytics data to the `tyk_analytics` collection**
 
 A sample config looks like this:
 
@@ -480,7 +482,7 @@ A sample config looks like this:
 ## SQL Graph Pump
 
 Similar to the Mongo graph pump, the `sql-graph` pump is a specialized pump for parsing and recording granular analytics for GraphQL and UDG requests.
-The difference, like the name says is this pump uses sql type databases as its storage db. Supported SQL databases are `sqlite`, `postgres`, `mysql`.
+The difference, like the name says is this pump uses sql type databases as its storage db. Supported SQL databases are `mysql` and `postgres`.
 
 A sample config looks like this:
 
@@ -1058,8 +1060,8 @@ TYK_PMP_PUMPS_STDOUT_META_FORMAT=json
 
 _Supported in Tyk Pump v1.5.0+_
 
-`type` - The supported and tested types are `sqlite` and `postgres`.
-`connection_string` - Specifies the connection string to the database. For example, for `sqlite` it would usually work specifying the path/name of the database and for `postgres`, specifying the host, port, user, password and dbname.
+`type` - The supported and tested types are `mysql` and `postgres`.
+`connection_string` - Specifies the connection string to the database. For example, for `mysql` it would usually work specifying the username, password, host, port and database name like `user:password@tcp(hostname:3306)/dbname` and for `postgres`, specifying the host, port, user, password and dbname.
 `log_level` - Specifies the SQL log verbosity. The possible values are: `info`,`error` and `warning`. By default, the value is `silent`, which means that it won't log any SQL query.
 `table_sharding` - Specifies if all the analytics records are going to be stored in one table or in multiple tables (one per day). By default, `false`.
 If `table_sharding` is `false`, all the records are going to be stored in `tyk_analytics` table. Instead, if it's `true`, all the records of the day are going to be stored in `tyk_analytics_YYYYMMDD` table, where `YYYYMMDD` is going to change depending on the date.
@@ -1091,8 +1093,8 @@ TYK_PMP_PUMPS_SQL_META_TABLESHARDING=false
 
 _Supported in Tyk Pump v1.5.0+_
 
-`type` - The supported and tested types are `sqlite` and `postgres`.
-`connection_string` - Specifies the connection string to the database. For example, for `sqlite` it would usually work specifying the path/name of the database and for `postgres`, specifying the host, port, user, password and dbname.
+`type` - The supported and tested types are `mysql` and `postgres`.
+`connection_string` - Specifies the connection string to the database. For example, for `mysql` it would usually work specifying the username, password, host, port and database name like `user:password@tcp(hostname:3306)/dbname` and for `postgres`, specifying the host, port, user, password and dbname.
 `log_level` - Specifies the SQL log verbosity. The possible values are: `info`,`error` and `warning`. By default, the value is `silent`, which means that it won't log any SQL query.
 `track_all_paths` - Specifies if it should store aggregated data for all the endpoints. By default, `false` which means that only store aggregated data for `tracked endpoints`.
 `ignore_tag_prefix_list` - Specifies prefixes of tags that should be ignored.
@@ -1380,8 +1382,6 @@ TYK_PMP_PUMPS_KINESIs_META_STREAMNAME=my-stream
 TYK_PMP_PUMPS_KINESIS_META_REGION=eu-west-2
 TYK_PMP_PUMPS_KINESIS_META_BATCHSIZE=100
 ```
-
-
 
 # Base Pump Configurations
 
