@@ -106,6 +106,7 @@ func TestSQLWriteDataSharded(t *testing.T) {
 	cfg["type"] = "postgres"
 	cfg["table_sharding"] = true
 	cfg["batch_size"] = 20000
+	cfg["connection_string"] = getTestPostgresConnectionString()
 
 	err := pmp.Init(cfg)
 	if err != nil {
