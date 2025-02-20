@@ -327,7 +327,7 @@ func TestDecodeRequestAndDecodeResponseSQLAggregate(t *testing.T) {
 	newPump := &SQLAggregatePump{}
 	cfg := make(map[string]interface{})
 	cfg["type"] = "postgres"
-	cfg["connection_string"] = ""
+	cfg["connection_string"] = getTestPostgresConnectionString()
 	cfg["table_sharding"] = true
 	err := newPump.Init(cfg)
 	assert.Nil(t, err)

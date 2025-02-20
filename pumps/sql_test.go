@@ -492,7 +492,6 @@ func TestEnsureIndexSQL(t *testing.T) {
 }
 
 func TestBuildIndexName(t *testing.T) {
-	// No need to skip this test as it doesn't use PostgreSQL
 	tests := []struct {
 		indexBaseName string
 		tableName     string
