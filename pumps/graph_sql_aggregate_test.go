@@ -143,8 +143,9 @@ func TestSqlGraphAggregatePump_Init(t *testing.T) {
 		envPrefix := fmt.Sprintf("%s_SQLGRAPHAGGREGATE%s", PUMPS_ENV_PREFIX, PUMPS_ENV_META_PREFIX) + "_%s"
 		r := require.New(t)
 		envKeyVal := map[string]string{
-			"TYPE":          "postgres",
-			"TABLESHARDING": "true",
+			"TYPE":              "postgres",
+			"TABLESHARDING":     "true",
+			"CONNECTION_STRING": getTestPostgresConnectionString(),
 		}
 		for key, val := range envKeyVal {
 			newKey := fmt.Sprintf(envPrefix, key)
@@ -165,6 +166,7 @@ func TestSqlGraphAggregatePump_Init(t *testing.T) {
 		}
 		r.NoError(pump.Init(conf))
 		assert.Equal(t, "postgres", pump.SQLConf.Type)
+		assert.Equal(t, getTestPostgresConnectionString(), pump.SQLConf.ConnectionString)
 		assert.Equal(t, true, pump.SQLConf.TableSharding)
 	})
 }
@@ -632,8 +634,9 @@ func TestGraphSQLAggregatePump_WriteData_Sharded(t *testing.T) {
 		r := require.New(t)
 		r.NoError(pump.Init(SQLAggregatePumpConf{
 			SQLConf: SQLConf{
-				Type:          "postgres",
-				TableSharding: true,
+				Type:             "postgres",
+				TableSharding:    true,
+				ConnectionString: getTestPostgresConnectionString(),
 			},
 		}))
 		assert.False(t, pump.db.Migrator().HasTable(analytics.AggregateGraphSQLTable))
@@ -645,8 +648,9 @@ func TestGraphSQLAggregatePump_WriteData_Sharded(t *testing.T) {
 		r := require.New(t)
 		r.NoError(pump.Init(SQLAggregatePumpConf{
 			SQLConf: SQLConf{
-				Type:          "postgres",
-				TableSharding: true,
+				Type:             "postgres",
+				TableSharding:    true,
+				ConnectionString: getTestPostgresConnectionString(),
 			},
 		}))
 		record := sampleRecord

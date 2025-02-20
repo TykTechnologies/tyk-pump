@@ -291,7 +291,7 @@ func TestSQLAggregateWriteDataValues(t *testing.T) {
 			cfg := make(map[string]interface{})
 			cfg["type"] = "postgres"
 			cfg["batch_size"] = 1
-
+			cfg["connection_string"] = getTestPostgresConnectionString()
 			err := pmp.Init(cfg)
 			if err != nil {
 				t.Fatal("SQL Pump Aggregate couldn't be initialized with err: ", err)
