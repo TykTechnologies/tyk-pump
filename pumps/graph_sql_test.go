@@ -15,13 +15,16 @@ import (
 )
 
 func TestGraphSQLPump_Init(t *testing.T) {
+	if os.Getenv("TYK_TEST_POSTGRES") == "" {
+		t.Skip("Skipping test because TYK_TEST_POSTGRES environment variable is not set")
+	}
 	r := require.New(t)
 	pump := &GraphSQLPump{}
 	t.Run("successful", func(t *testing.T) {
 		conf := GraphSQLConf{
 			SQLConf: SQLConf{
 				Type:             "postgres",
-				ConnectionString: "",
+				ConnectionString: getTestPostgresConnectionString(),
 			},
 			TableName: "rand-table",
 		}
@@ -56,9 +59,10 @@ func TestGraphSQLPump_Init(t *testing.T) {
 
 	t.Run("decode from map", func(t *testing.T) {
 		conf := map[string]interface{}{
-			"table_name":     "test_table",
-			"type":           "postgres",
-			"table_sharding": true,
+			"table_name":        "test_table",
+			"type":              "postgres",
+			"table_sharding":    true,
+			"connection_string": getTestPostgresConnectionString(),
 		}
 		r.NoError(pump.Init(conf))
 		assert.Equal(t, "test_table", pump.Conf.TableName)
@@ -70,7 +74,7 @@ func TestGraphSQLPump_Init(t *testing.T) {
 		conf := GraphSQLConf{
 			SQLConf: SQLConf{
 				Type:             "postgres",
-				ConnectionString: "",
+				ConnectionString: getTestPostgresConnectionString(),
 				TableSharding:    true,
 			},
 			TableName: "test-table",
@@ -100,7 +104,7 @@ func TestGraphSQLPump_Init(t *testing.T) {
 		conf := GraphSQLConf{
 			SQLConf: SQLConf{
 				Type:             "postgres",
-				ConnectionString: "",
+				ConnectionString: getTestPostgresConnectionString(),
 				TableSharding:    false,
 			},
 			TableName: "wrong-name",
@@ -113,10 +117,13 @@ func TestGraphSQLPump_Init(t *testing.T) {
 }
 
 func TestGraphSQLPump_WriteData(t *testing.T) {
+	if os.Getenv("TYK_TEST_POSTGRES") == "" {
+		t.Skip("Skipping test because TYK_TEST_POSTGRES environment variable is not set")
+	}
 	conf := GraphSQLConf{
 		SQLConf: SQLConf{
 			Type:             "postgres",
-			ConnectionString: "",
+			ConnectionString: getTestPostgresConnectionString(),
 		},
 		TableName: "test-table",
 	}
@@ -310,11 +317,14 @@ func TestGraphSQLPump_WriteData(t *testing.T) {
 }
 
 func TestGraphSQLPump_Sharded(t *testing.T) {
+	if os.Getenv("TYK_TEST_POSTGRES") == "" {
+		t.Skip("Skipping test because TYK_TEST_POSTGRES environment variable is not set")
+	}
 	r := require.New(t)
 	conf := GraphSQLConf{
 		SQLConf: SQLConf{
 			Type:             "postgres",
-			ConnectionString: "",
+			ConnectionString: getTestPostgresConnectionString(),
 			TableSharding:    true,
 		},
 		TableName: "graph-record",

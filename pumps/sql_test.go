@@ -2,6 +2,7 @@ package pumps
 
 import (
 	"context"
+	"os"
 	"testing"
 	"time"
 
@@ -10,11 +11,23 @@ import (
 	"gopkg.in/vmihailenco/msgpack.v2"
 )
 
+func getTestPostgresConnectionString() string {
+	return os.Getenv("TYK_TEST_POSTGRES")
+}
+
+func skipTestIfNoPostgres(t *testing.T) {
+	t.Helper()
+	if os.Getenv("TYK_TEST_POSTGRES") == "" {
+		t.Skip("Skipping test because TYK_TEST_POSTGRES environment variable is not set")
+	}
+}
+
 func TestSQLInit(t *testing.T) {
+	skipTestIfNoPostgres(t)
 	pmp := SQLPump{}
 	cfg := make(map[string]interface{})
 	cfg["type"] = "postgres"
-	cfg["connection_string"] = ""
+	cfg["connection_string"] = getTestPostgresConnectionString()
 
 	err := pmp.Init(cfg)
 	if err != nil {
@@ -35,10 +48,11 @@ func TestSQLInit(t *testing.T) {
 }
 
 func TestSQLWriteData(t *testing.T) {
+	skipTestIfNoPostgres(t)
 	pmp := SQLPump{}
 	cfg := make(map[string]interface{})
 	cfg["type"] = "postgres"
-	cfg["connection_string"] = ""
+	cfg["connection_string"] = getTestPostgresConnectionString()
 
 	err := pmp.Init(cfg)
 	if err != nil {
@@ -86,6 +100,7 @@ func TestSQLWriteData(t *testing.T) {
 }
 
 func TestSQLWriteDataSharded(t *testing.T) {
+	skipTestIfNoPostgres(t)
 	pmp := SQLPump{}
 	cfg := make(map[string]interface{})
 	cfg["type"] = "postgres"
@@ -169,10 +184,11 @@ func TestSQLWriteDataSharded(t *testing.T) {
 }
 
 func TestSQLWriteUptimeData(t *testing.T) {
+	skipTestIfNoPostgres(t)
 	pmp := SQLPump{IsUptime: true}
 	cfg := make(map[string]interface{})
 	cfg["type"] = "postgres"
-	cfg["connection_string"] = ""
+	cfg["connection_string"] = getTestPostgresConnectionString()
 	cfg["table_sharding"] = false
 	err := pmp.Init(cfg)
 	if err != nil {
@@ -254,10 +270,11 @@ func TestSQLWriteUptimeData(t *testing.T) {
 }
 
 func TestSQLWriteUptimeDataSharded(t *testing.T) {
+	skipTestIfNoPostgres(t)
 	pmp := SQLPump{}
 	cfg := make(map[string]interface{})
 	cfg["type"] = "postgres"
-	cfg["connection_string"] = ""
+	cfg["connection_string"] = getTestPostgresConnectionString()
 	cfg["table_sharding"] = true
 	err := pmp.Init(cfg)
 	if err != nil {
@@ -316,10 +333,11 @@ func TestSQLWriteUptimeDataSharded(t *testing.T) {
 }
 
 func TestSQLWriteUptimeDataAggregations(t *testing.T) {
+	skipTestIfNoPostgres(t)
 	pmp := SQLPump{IsUptime: true}
 	cfg := make(map[string]interface{})
 	cfg["type"] = "postgres"
-	cfg["connection_string"] = ""
+	cfg["connection_string"] = getTestPostgresConnectionString()
 	cfg["table_sharding"] = false
 	err := pmp.Init(cfg)
 	if err != nil {
@@ -363,10 +381,11 @@ func TestSQLWriteUptimeDataAggregations(t *testing.T) {
 }
 
 func TestDecodeRequestAndDecodeResponseSQL(t *testing.T) {
+	skipTestIfNoPostgres(t)
 	newPump := &SQLPump{}
 	cfg := make(map[string]interface{})
 	cfg["type"] = "postgres"
-	cfg["connection_string"] = ""
+	cfg["connection_string"] = getTestPostgresConnectionString()
 	cfg["table_sharding"] = true
 	err := newPump.Init(cfg)
 	assert.Nil(t, err)
@@ -385,12 +404,13 @@ func TestDecodeRequestAndDecodeResponseSQL(t *testing.T) {
 }
 
 func setupSQLPump(t *testing.T, tableName string, useBackground bool) *SQLPump {
+	skipTestIfNoPostgres(t)
 	t.Helper()
 	pmp := &SQLPump{}
 	pmp.log = log.WithField("prefix", "sql-pump")
 	cfg := map[string]interface{}{
 		"type":              "postgres",
-		"connection_string": "",
+		"connection_string": getTestPostgresConnectionString(),
 	}
 
 	assert.NoError(t, pmp.Init(cfg))
@@ -403,6 +423,7 @@ func setupSQLPump(t *testing.T, tableName string, useBackground bool) *SQLPump {
 }
 
 func TestEnsureIndexSQL(t *testing.T) {
+	skipTestIfNoPostgres(t)
 	//nolint:govet
 	tcs := []struct {
 		testName             string
@@ -470,6 +491,7 @@ func TestEnsureIndexSQL(t *testing.T) {
 }
 
 func TestBuildIndexName(t *testing.T) {
+	// No need to skip this test as it doesn't use PostgreSQL
 	tests := []struct {
 		indexBaseName string
 		tableName     string

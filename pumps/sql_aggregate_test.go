@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
 	"testing"
 	"time"
 
@@ -15,10 +16,13 @@ import (
 )
 
 func TestSQLAggregateInit(t *testing.T) {
+	if os.Getenv("TYK_TEST_POSTGRES") == "" {
+		t.Skip("Skipping test because TYK_TEST_POSTGRES environment variable is not set")
+	}
 	pmp := SQLAggregatePump{}
 	cfg := make(map[string]interface{})
 	cfg["type"] = "postgres"
-	cfg["connection_string"] = ""
+	cfg["connection_string"] = getTestPostgresConnectionString()
 
 	err := pmp.Init(cfg)
 	if err != nil {
@@ -44,9 +48,13 @@ func TestSQLAggregateInit(t *testing.T) {
 }
 
 func TestSQLAggregateWriteData_Sharded(t *testing.T) {
+	if os.Getenv("TYK_TEST_POSTGRES") == "" {
+		t.Skip("Skipping test because TYK_TEST_POSTGRES environment variable is not set")
+	}
 	pmp := SQLAggregatePump{}
 	cfg := make(map[string]interface{})
 	cfg["type"] = "postgres"
+	cfg["connection_string"] = getTestPostgresConnectionString()
 	cfg["table_sharding"] = true
 
 	err := pmp.Init(cfg)
@@ -109,6 +117,9 @@ func TestSQLAggregateWriteData_Sharded(t *testing.T) {
 }
 
 func TestSQLAggregateWriteData(t *testing.T) {
+	if os.Getenv("TYK_TEST_POSTGRES") == "" {
+		t.Skip("Skipping test because TYK_TEST_POSTGRES environment variable is not set")
+	}
 	pmp := &SQLAggregatePump{}
 	cfg := make(map[string]interface{})
 	cfg["type"] = "postgres"
@@ -196,6 +207,9 @@ func TestSQLAggregateWriteData(t *testing.T) {
 }
 
 func TestSQLAggregateWriteDataValues(t *testing.T) {
+	if os.Getenv("TYK_TEST_POSTGRES") == "" {
+		t.Skip("Skipping test because TYK_TEST_POSTGRES environment variable is not set")
+	}
 	table := analytics.AggregateSQLTable
 	now := time.Date(2019, 1, 1, 0, 0, 0, 0, time.Local)
 	nowPlus10 := now.Add(10 * time.Minute)
@@ -318,6 +332,9 @@ func TestSQLAggregateWriteDataValues(t *testing.T) {
 }
 
 func TestDecodeRequestAndDecodeResponseSQLAggregate(t *testing.T) {
+	if os.Getenv("TYK_TEST_POSTGRES") == "" {
+		t.Skip("Skipping test because TYK_TEST_POSTGRES environment variable is not set")
+	}
 	newPump := &SQLAggregatePump{}
 	cfg := make(map[string]interface{})
 	cfg["type"] = "postgres"
@@ -340,6 +357,9 @@ func TestDecodeRequestAndDecodeResponseSQLAggregate(t *testing.T) {
 }
 
 func TestEnsureIndexSQLAggregate(t *testing.T) {
+	if os.Getenv("TYK_TEST_POSTGRES") == "" {
+		t.Skip("Skipping test because TYK_TEST_POSTGRES environment variable is not set")
+	}
 	//nolint:govet
 	tcs := []struct {
 		testName             string

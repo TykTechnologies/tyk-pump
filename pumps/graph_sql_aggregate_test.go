@@ -74,6 +74,9 @@ const (
 )
 
 func TestSqlGraphAggregatePump_Init(t *testing.T) {
+	if os.Getenv("TYK_TEST_POSTGRES") == "" {
+		t.Skip("Skipping test because TYK_TEST_POSTGRES environment variable is not set")
+	}
 	tableName := analytics.AggregateGraphSQLTable
 	r := require.New(t)
 	pump := &GraphSQLAggregatePump{}
@@ -81,7 +84,7 @@ func TestSqlGraphAggregatePump_Init(t *testing.T) {
 		conf := SQLAggregatePumpConf{
 			SQLConf: SQLConf{
 				Type:             "postgres",
-				ConnectionString: "",
+				ConnectionString: getTestPostgresConnectionString(),
 			},
 		}
 		assert.NoError(t, pump.Init(conf))
@@ -115,8 +118,9 @@ func TestSqlGraphAggregatePump_Init(t *testing.T) {
 
 	t.Run("decode from map", func(t *testing.T) {
 		conf := map[string]interface{}{
-			"type":           "postgres",
-			"table_sharding": true,
+			"type":              "postgres",
+			"table_sharding":    true,
+			"connection_string": getTestPostgresConnectionString(),
 		}
 		r.NoError(pump.Init(conf))
 		assert.Equal(t, "postgres", pump.SQLConf.Type)
@@ -127,7 +131,7 @@ func TestSqlGraphAggregatePump_Init(t *testing.T) {
 		conf := SQLAggregatePumpConf{
 			SQLConf: SQLConf{
 				Type:             "postgres",
-				ConnectionString: "",
+				ConnectionString: getTestPostgresConnectionString(),
 				TableSharding:    true,
 			},
 		}
@@ -155,7 +159,7 @@ func TestSqlGraphAggregatePump_Init(t *testing.T) {
 		conf := SQLAggregatePumpConf{
 			SQLConf: SQLConf{
 				Type:             "postgres",
-				ConnectionString: "",
+				ConnectionString: getTestPostgresConnectionString(),
 				TableSharding:    false,
 			},
 		}
@@ -166,10 +170,13 @@ func TestSqlGraphAggregatePump_Init(t *testing.T) {
 }
 
 func TestSqlGraphAggregatePump_WriteData(t *testing.T) {
+	if os.Getenv("TYK_TEST_POSTGRES") == "" {
+		t.Skip("Skipping test because TYK_TEST_POSTGRES environment variable is not set")
+	}
 	r := require.New(t)
 	conf := SQLConf{
 		Type:             "postgres",
-		ConnectionString: "",
+		ConnectionString: getTestPostgresConnectionString(),
 	}
 	pump := GraphSQLAggregatePump{}
 	r.NoError(pump.Init(conf))
@@ -586,6 +593,9 @@ func TestSqlGraphAggregatePump_WriteData(t *testing.T) {
 }
 
 func TestGraphSQLAggregatePump_WriteData_Sharded(t *testing.T) {
+	if os.Getenv("TYK_TEST_POSTGRES") == "" {
+		t.Skip("Skipping test because TYK_TEST_POSTGRES environment variable is not set")
+	}
 	pump := GraphSQLAggregatePump{}
 
 	sampleRecord := analytics.AnalyticsRecord{

@@ -43,6 +43,7 @@ jobs:
       matrix:
         redis-version: [5]
         mongodb-version: [4.2]
+        postgres-version: [15]
         go: [1.22.7]
 
     steps:
@@ -75,6 +76,14 @@ jobs:
         with:
           mongodb-version: "${{ matrix.mongodb-version }}"
 
+      - name: Start PostgreSQL
+        uses: harmon758/postgresql-action@v1
+        with:
+          postgresql version: "${{ matrix.postgres-version }}"
+          postgresql db: "tyk_analytics"
+          postgresql user: "tyk"
+          postgresql password: "tyk123"
+
       - name: Cache
         uses: actions/cache@v4
         with:
@@ -85,6 +94,8 @@ jobs:
 
       - name: Run Pump Tests
         id: ci-tests
+        env:
+          TYK_TEST_POSTGRES: "host=localhost user=tyk password=tyk123 dbname=tyk_analytics port=5432 sslmode=disable"
         run: |
           ./bin/ci-test.sh 2>&1 | tee test.log
           result_code=${PIPESTATUS[0]}
