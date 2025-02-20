@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"os"
 	"testing"
 	"time"
 
@@ -16,9 +15,7 @@ import (
 )
 
 func TestSQLAggregateInit(t *testing.T) {
-	if os.Getenv("TYK_TEST_POSTGRES") == "" {
-		t.Skip("Skipping test because TYK_TEST_POSTGRES environment variable is not set")
-	}
+	skipTestIfNoPostgres(t)
 	pmp := SQLAggregatePump{}
 	cfg := make(map[string]interface{})
 	cfg["type"] = "postgres"
@@ -48,9 +45,7 @@ func TestSQLAggregateInit(t *testing.T) {
 }
 
 func TestSQLAggregateWriteData_Sharded(t *testing.T) {
-	if os.Getenv("TYK_TEST_POSTGRES") == "" {
-		t.Skip("Skipping test because TYK_TEST_POSTGRES environment variable is not set")
-	}
+	skipTestIfNoPostgres(t)
 	pmp := SQLAggregatePump{}
 	cfg := make(map[string]interface{})
 	cfg["type"] = "postgres"
@@ -117,9 +112,7 @@ func TestSQLAggregateWriteData_Sharded(t *testing.T) {
 }
 
 func TestSQLAggregateWriteData(t *testing.T) {
-	if os.Getenv("TYK_TEST_POSTGRES") == "" {
-		t.Skip("Skipping test because TYK_TEST_POSTGRES environment variable is not set")
-	}
+	skipTestIfNoPostgres(t)
 	pmp := &SQLAggregatePump{}
 	cfg := make(map[string]interface{})
 	cfg["type"] = "postgres"
@@ -207,9 +200,7 @@ func TestSQLAggregateWriteData(t *testing.T) {
 }
 
 func TestSQLAggregateWriteDataValues(t *testing.T) {
-	if os.Getenv("TYK_TEST_POSTGRES") == "" {
-		t.Skip("Skipping test because TYK_TEST_POSTGRES environment variable is not set")
-	}
+	skipTestIfNoPostgres(t)
 	table := analytics.AggregateSQLTable
 	now := time.Date(2019, 1, 1, 0, 0, 0, 0, time.Local)
 	nowPlus10 := now.Add(10 * time.Minute)
@@ -332,9 +323,7 @@ func TestSQLAggregateWriteDataValues(t *testing.T) {
 }
 
 func TestDecodeRequestAndDecodeResponseSQLAggregate(t *testing.T) {
-	if os.Getenv("TYK_TEST_POSTGRES") == "" {
-		t.Skip("Skipping test because TYK_TEST_POSTGRES environment variable is not set")
-	}
+	skipTestIfNoPostgres(t)
 	newPump := &SQLAggregatePump{}
 	cfg := make(map[string]interface{})
 	cfg["type"] = "postgres"
@@ -357,9 +346,7 @@ func TestDecodeRequestAndDecodeResponseSQLAggregate(t *testing.T) {
 }
 
 func TestEnsureIndexSQLAggregate(t *testing.T) {
-	if os.Getenv("TYK_TEST_POSTGRES") == "" {
-		t.Skip("Skipping test because TYK_TEST_POSTGRES environment variable is not set")
-	}
+	skipTestIfNoPostgres(t)
 	//nolint:govet
 	tcs := []struct {
 		testName             string
@@ -375,7 +362,7 @@ func TestEnsureIndexSQLAggregate(t *testing.T) {
 				pmp := &SQLAggregatePump{}
 				cfg := &SQLAggregatePumpConf{}
 				cfg.Type = "postgres"
-				cfg.ConnectionString = ""
+				cfg.ConnectionString = getTestPostgresConnectionString()
 				pmp.SQLConf = cfg
 
 				pmp.log = log.WithField("prefix", "sql-aggregate-pump")
@@ -410,7 +397,7 @@ func TestEnsureIndexSQLAggregate(t *testing.T) {
 				pmp := &SQLAggregatePump{}
 				cfg := &SQLAggregatePumpConf{}
 				cfg.Type = "postgres"
-				cfg.ConnectionString = ""
+				cfg.ConnectionString = getTestPostgresConnectionString()
 				pmp.SQLConf = cfg
 
 				pmp.log = log.WithField("prefix", "sql-aggregate-pump")
@@ -448,7 +435,7 @@ func TestEnsureIndexSQLAggregate(t *testing.T) {
 				cfg := &SQLAggregatePumpConf{}
 				cfg.Type = "postgres"
 				cfg.TableSharding = true
-				cfg.ConnectionString = ""
+				cfg.ConnectionString = getTestPostgresConnectionString()
 				pmp.SQLConf = cfg
 
 				pmp.log = log.WithField("prefix", "sql-aggregate-pump")
@@ -485,7 +472,7 @@ func TestEnsureIndexSQLAggregate(t *testing.T) {
 				pmp := &SQLAggregatePump{}
 				cfg := &SQLAggregatePumpConf{}
 				cfg.Type = "postgres"
-				cfg.ConnectionString = ""
+				cfg.ConnectionString = getTestPostgresConnectionString()
 				pmp.SQLConf = cfg
 
 				pmp.log = log.WithField("prefix", "sql-aggregate-pump")
@@ -507,7 +494,7 @@ func TestEnsureIndexSQLAggregate(t *testing.T) {
 			},
 			givenTableName:       "test3",
 			givenRunInBackground: false,
-			expectedErr:          errors.New("no such table: main.test3"),
+			expectedErr:          errors.New("relation \"test3\" does not exist"),
 			shouldHaveIndex:      false,
 		},
 		{
@@ -516,7 +503,7 @@ func TestEnsureIndexSQLAggregate(t *testing.T) {
 				pmp := &SQLAggregatePump{}
 				cfg := &SQLAggregatePumpConf{}
 				cfg.Type = "postgres"
-				cfg.ConnectionString = ""
+				cfg.ConnectionString = getTestPostgresConnectionString()
 				cfg.OmitIndexCreation = true
 				pmp.SQLConf = cfg
 
@@ -565,6 +552,12 @@ func TestEnsureIndexSQLAggregate(t *testing.T) {
 				}
 			} else {
 				assert.Equal(t, tc.expectedErr.Error(), actualErr.Error())
+			}
+
+			if pmp.db != nil {
+				if err := pmp.db.Migrator().DropTable(tc.givenTableName); err != nil {
+					t.Logf("Failed to drop table: %v", err)
+				}
 			}
 		})
 	}

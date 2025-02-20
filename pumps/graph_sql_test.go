@@ -15,9 +15,7 @@ import (
 )
 
 func TestGraphSQLPump_Init(t *testing.T) {
-	if os.Getenv("TYK_TEST_POSTGRES") == "" {
-		t.Skip("Skipping test because TYK_TEST_POSTGRES environment variable is not set")
-	}
+	skipTestIfNoPostgres(t)
 	r := require.New(t)
 	pump := &GraphSQLPump{}
 	t.Run("successful", func(t *testing.T) {
@@ -117,9 +115,7 @@ func TestGraphSQLPump_Init(t *testing.T) {
 }
 
 func TestGraphSQLPump_WriteData(t *testing.T) {
-	if os.Getenv("TYK_TEST_POSTGRES") == "" {
-		t.Skip("Skipping test because TYK_TEST_POSTGRES environment variable is not set")
-	}
+	skipTestIfNoPostgres(t)
 	conf := GraphSQLConf{
 		SQLConf: SQLConf{
 			Type:             "postgres",
@@ -317,9 +313,7 @@ func TestGraphSQLPump_WriteData(t *testing.T) {
 }
 
 func TestGraphSQLPump_Sharded(t *testing.T) {
-	if os.Getenv("TYK_TEST_POSTGRES") == "" {
-		t.Skip("Skipping test because TYK_TEST_POSTGRES environment variable is not set")
-	}
+	skipTestIfNoPostgres(t)
 	r := require.New(t)
 	conf := GraphSQLConf{
 		SQLConf: SQLConf{
