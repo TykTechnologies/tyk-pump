@@ -494,7 +494,7 @@ func TestEnsureIndexSQLAggregate(t *testing.T) {
 			},
 			givenTableName:       "test3",
 			givenRunInBackground: false,
-			expectedErr:          errors.New("relation \"test3\" does not exist"),
+			expectedErr:          errors.New("relation \"test3\" does not exist (SQLSTATE 42P01)"),
 			shouldHaveIndex:      false,
 		},
 		{
