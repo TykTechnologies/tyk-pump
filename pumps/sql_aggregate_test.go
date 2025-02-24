@@ -117,6 +117,7 @@ func TestSQLAggregateWriteData(t *testing.T) {
 	cfg := make(map[string]interface{})
 	cfg["type"] = "postgres"
 	cfg["batch_size"] = 2000
+	cfg["connection_string"] = getTestPostgresConnectionString()
 
 	err := pmp.Init(cfg)
 	if err != nil {
