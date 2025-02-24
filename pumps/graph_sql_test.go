@@ -254,6 +254,10 @@ func TestGraphSQLPump_WriteData(t *testing.T) {
 			pump := &GraphSQLPump{}
 			assert.NoError(t, pump.Init(conf))
 
+			if err := pump.db.Migrator().DropTable(conf.TableName); err != nil {
+				fmt.Printf("test %s, error: %v\n", tc.name, err)
+			}
+
 			t.Cleanup(func() {
 				if err := pump.db.Migrator().DropTable(conf.TableName); err != nil {
 					fmt.Printf("test %s, error: %v\n", tc.name, err)
@@ -356,6 +360,7 @@ func TestGraphSQLPump_Sharded(t *testing.T) {
 		records = append(records, rec)
 		tableName := fmt.Sprintf("%s_%s", conf.TableName, timestamp.Format("20060102"))
 		// Making sure the table doesn't exist before writing data
+		//nolint:errcheck
 		_ = pump.db.Migrator().DropTable(tableName)
 		expectedTables = append(expectedTables, tableName)
 	}
