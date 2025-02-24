@@ -266,6 +266,7 @@ func TestSQLAggregateWriteDataValues(t *testing.T) {
 				},
 			},
 			assertion: func(t *testing.T, dbRecords []analytics.SQLAnalyticsRecordAggregate) {
+				const delta = 1e-10 // Small epsilon for floating-point comparisons
 				assert.Equal(t, 3, len(dbRecords))
 				assert.Equal(t, "apiid", dbRecords[0].Dimension)
 				assert.Equal(t, "api1", dbRecords[0].DimensionValue)
@@ -273,11 +274,11 @@ func TestSQLAggregateWriteDataValues(t *testing.T) {
 				assert.Equal(t, 7, dbRecords[0].Hits)
 				assert.Equal(t, 4, dbRecords[0].Success)
 				assert.Equal(t, 3, dbRecords[0].ErrorTotal)
-				assert.Equal(t, 12.857142857142858, dbRecords[0].RequestTime)
+				assert.InDelta(t, 12.857142857142858, dbRecords[0].RequestTime, delta)
 				assert.Equal(t, 90.0, dbRecords[0].TotalRequestTime)
-				assert.Equal(t, 15.714285714285714, dbRecords[0].Latency)
+				assert.InDelta(t, 15.714285714285714, dbRecords[0].Latency, delta)
 				assert.Equal(t, int64(110), dbRecords[0].TotalLatency)
-				assert.Equal(t, 13.571428571428571, dbRecords[0].UpstreamLatency)
+				assert.InDelta(t, 13.571428571428571, dbRecords[0].UpstreamLatency, delta)
 				assert.Equal(t, int64(95), dbRecords[0].TotalUpstreamLatency)
 				assert.Equal(t, int64(30), dbRecords[0].MaxLatency)
 				assert.Equal(t, int64(5), dbRecords[0].MinUpstreamLatency)
