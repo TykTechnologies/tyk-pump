@@ -21,6 +21,9 @@ func TestSQLAggregateInit(t *testing.T) {
 	cfg["type"] = "postgres"
 	cfg["connection_string"] = getTestPostgresConnectionString()
 
+	// Set up background index creation channel
+	pmp.backgroundIndexCreated = make(chan bool, 1)
+
 	err := pmp.Init(cfg)
 	if err != nil {
 		t.Fatal("SQL Aggregate Pump couldn't be initialized with err: ", err)
@@ -32,6 +35,9 @@ func TestSQLAggregateInit(t *testing.T) {
 	assert.NotNil(t, pmp.db)
 	assert.Equal(t, "postgres", pmp.db.Dialector.Name())
 	assert.Equal(t, true, pmp.db.Migrator().HasTable(analytics.AggregateSQLTable))
+
+	// Wait for background index creation to complete
+	<-pmp.backgroundIndexCreated
 
 	indexName := fmt.Sprintf("%s_%s", analytics.AggregateSQLTable, newAggregatedIndexName)
 	assert.Equal(t, true, pmp.db.Migrator().HasIndex(analytics.AggregateSQLTable, indexName))
@@ -293,6 +299,10 @@ func TestSQLAggregateWriteDataValues(t *testing.T) {
 			cfg["type"] = "postgres"
 			cfg["batch_size"] = 1
 			cfg["connection_string"] = getTestPostgresConnectionString()
+
+			// Set up background index creation channel before init
+			pmp.backgroundIndexCreated = make(chan bool, 1)
+
 			err := pmp.Init(cfg)
 			if err != nil {
 				t.Fatal("SQL Pump Aggregate couldn't be initialized with err: ", err)
@@ -303,6 +313,10 @@ func TestSQLAggregateWriteDataValues(t *testing.T) {
 					t.Error(err)
 				}
 			}(pmp)
+
+			// Wait for background index creation to complete
+			<-pmp.backgroundIndexCreated
+
 			// Write the analytics records
 			for i := range tc.records {
 				err = pmp.WriteData(context.TODO(), tc.records[i])
