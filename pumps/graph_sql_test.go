@@ -356,7 +356,7 @@ func TestGraphSQLPump_Sharded(t *testing.T) {
 		records = append(records, rec)
 		tableName := fmt.Sprintf("%s_%s", conf.TableName, timestamp.Format("20060102"))
 		// Making sure the table doesn't exist before writing data
-		pump.db.Migrator().DropTable(tableName)
+		_ = pump.db.Migrator().DropTable(tableName)
 		expectedTables = append(expectedTables, tableName)
 	}
 
