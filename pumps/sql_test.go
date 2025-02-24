@@ -2,6 +2,7 @@ package pumps
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"testing"
 	"time"
@@ -468,6 +469,7 @@ func TestEnsureIndexSQL(t *testing.T) {
 			assert.NotNil(t, pmp)
 
 			actualErr := pmp.ensureIndex(tc.givenTableName, tc.givenRunInBackground)
+			fmt.Println("actualErr", actualErr)
 			isErrExpected := tc.expectedErr != nil
 			didErr := actualErr != nil
 			assert.Equal(t, isErrExpected, didErr)

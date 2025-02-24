@@ -180,9 +180,6 @@ func (c *SQLPump) Init(conf interface{}) error {
 		return errDialect
 	}
 
-	c.dbType = c.SQLConf.Type
-	c.dialect = dialect
-
 	db, err := gorm.Open(dialect, &gorm.Config{
 		AutoEmbedd:  true,
 		UseJSONTags: true,
@@ -385,12 +382,7 @@ func (c *SQLPump) createIndex(indexBaseName, tableName, column string) error {
 		return errors.New("cannot create index for non existent column " + column)
 	}
 
-	var query string
-	if c.dbType == "postgres" {
-		query = fmt.Sprintf("CREATE INDEX IF NOT EXISTS %s %s ON %s (%s)", indexName, option, tableName, column)
-	} else {
-		query = fmt.Sprintf("CREATE INDEX %s IF NOT EXISTS %s ON %s (%s)", option, indexName, tableName, column)
-	}
+	query := fmt.Sprintf("CREATE INDEX %s IF NOT EXISTS %s ON %s (%s)", option, indexName, tableName, column)
 
 	err := c.db.Exec(query).Error
 	if err != nil {
