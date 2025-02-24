@@ -254,15 +254,12 @@ func TestGraphSQLPump_WriteData(t *testing.T) {
 			pump := &GraphSQLPump{}
 			assert.NoError(t, pump.Init(conf))
 
-			if err := pump.db.Migrator().DropTable(conf.TableName); err != nil {
-				fmt.Printf("test %s, error: %v\n", tc.name, err)
-			}
-
-			t.Cleanup(func() {
+			defer func() {
 				if err := pump.db.Migrator().DropTable(conf.TableName); err != nil {
 					fmt.Printf("test %s, error: %v\n", tc.name, err)
 				}
-			})
+			}()
+
 			records := make([]interface{}, 0)
 			expectedResponses := make([]analytics.GraphRecord, 0)
 			// create the records to passed to the pump
