@@ -347,7 +347,7 @@ func TestGraphSQLPump_Sharded(t *testing.T) {
 	records := make([]interface{}, 0)
 	for i := 1; i <= 3; i++ {
 		day := i
-		timestamp := time.Date(2025, time.January, day, 0, 1, 0, 0, time.UTC)
+		timestamp := time.Date(2025, time.Month(i), day, 0, 1, 0, 0, time.UTC)
 		rec := baseRecord
 		rec.TimeStamp = timestamp
 		rec.Month = timestamp.Month()
