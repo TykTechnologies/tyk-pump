@@ -322,7 +322,7 @@ func TestGraphSQLPump_Sharded(t *testing.T) {
 			ConnectionString: getTestPostgresConnectionString(),
 			TableSharding:    true,
 		},
-		TableName: "graph-record",
+		TableName: "graph_record",
 	}
 	pump := &GraphSQLPump{}
 	assert.NoError(t, pump.Init(conf))
@@ -356,28 +356,32 @@ func TestGraphSQLPump_Sharded(t *testing.T) {
 		rec.Year = timestamp.Year()
 		records = append(records, rec)
 		tableName := fmt.Sprintf("%s_%s", conf.TableName, timestamp.Format("20060102"))
-		// Making sure the table doesn't exist before writing data
-		//nolint:errcheck
-		_ = pump.db.Migrator().DropTable(tableName)
+
+		// Clean existing data if table exists
+		if pump.db.Migrator().HasTable(tableName) {
+			pump.db.Exec(fmt.Sprintf("DELETE FROM \"%s\"", tableName))
+		}
 		expectedTables = append(expectedTables, tableName)
 	}
 
-	// cleanup after
+	// cleanup after test completes
 	t.Cleanup(func() {
-		for _, i := range expectedTables {
-			if err := pump.db.Migrator().DropTable(i); err != nil {
-				t.Error(err)
+		for _, tableName := range expectedTables {
+			if pump.db.Migrator().HasTable(tableName) {
+				pump.db.Exec(fmt.Sprintf("DELETE FROM \"%s\"", tableName))
+				pump.db.Migrator().DropTable(tableName)
 			}
 		}
 	})
 
 	r.NoError(pump.WriteData(context.Background(), records))
+
 	// check tables
-	for _, item := range expectedTables {
-		r.Truef(pump.db.Migrator().HasTable(item), "table %s does not exist", item)
+	for _, tableName := range expectedTables {
+		r.Truef(pump.db.Migrator().HasTable(tableName), "table %s does not exist", tableName)
 		recs := make([]analytics.GraphRecord, 0)
-		q := pump.db.Table(item).Find(&recs)
-		r.NoError(q.Error)
-		assert.Equalf(t, 1, len(recs), "expected one record for %s table, instead got %d", item, len(recs))
+		err := pump.db.Table(tableName).Find(&recs).Error
+		r.NoError(err)
+		assert.Equalf(t, 1, len(recs), "expected one record for %s table, instead got %d", tableName, len(recs))
 	}
 }
