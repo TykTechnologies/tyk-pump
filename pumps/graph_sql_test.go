@@ -369,7 +369,10 @@ func TestGraphSQLPump_Sharded(t *testing.T) {
 		for _, tableName := range expectedTables {
 			if pump.db.Migrator().HasTable(tableName) {
 				pump.db.Exec(fmt.Sprintf("DELETE FROM \"%s\"", tableName))
-				pump.db.Migrator().DropTable(tableName)
+				err := pump.db.Migrator().DropTable(tableName)
+				if err != nil {
+					t.Errorf("error dropping table %s: %v", tableName, err)
+				}
 			}
 		}
 	})
