@@ -2,7 +2,6 @@ package pumps
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"testing"
 	"time"
@@ -23,12 +22,18 @@ func skipTestIfNoPostgres(t *testing.T) {
 	}
 }
 
-func TestSQLInit(t *testing.T) {
-	skipTestIfNoPostgres(t)
-	pmp := SQLPump{}
+func newSQLConfig(sharded bool) map[string]interface{} {
 	cfg := make(map[string]interface{})
 	cfg["type"] = "postgres"
 	cfg["connection_string"] = getTestPostgresConnectionString()
+	cfg["table_sharding"] = sharded
+	return cfg
+}
+
+func TestSQLInit(t *testing.T) {
+	skipTestIfNoPostgres(t)
+	pmp := SQLPump{}
+	cfg := newSQLConfig(false)
 
 	err := pmp.Init(cfg)
 	if err != nil {
@@ -51,9 +56,7 @@ func TestSQLInit(t *testing.T) {
 func TestSQLWriteData(t *testing.T) {
 	skipTestIfNoPostgres(t)
 	pmp := SQLPump{}
-	cfg := make(map[string]interface{})
-	cfg["type"] = "postgres"
-	cfg["connection_string"] = getTestPostgresConnectionString()
+	cfg := newSQLConfig(false)
 
 	err := pmp.Init(cfg)
 	if err != nil {
@@ -103,11 +106,8 @@ func TestSQLWriteData(t *testing.T) {
 func TestSQLWriteDataSharded(t *testing.T) {
 	skipTestIfNoPostgres(t)
 	pmp := SQLPump{}
-	cfg := make(map[string]interface{})
-	cfg["type"] = "postgres"
-	cfg["table_sharding"] = true
+	cfg := newSQLConfig(true)
 	cfg["batch_size"] = 20000
-	cfg["connection_string"] = getTestPostgresConnectionString()
 
 	err := pmp.Init(cfg)
 	if err != nil {
@@ -188,10 +188,7 @@ func TestSQLWriteDataSharded(t *testing.T) {
 func TestSQLWriteUptimeData(t *testing.T) {
 	skipTestIfNoPostgres(t)
 	pmp := SQLPump{IsUptime: true}
-	cfg := make(map[string]interface{})
-	cfg["type"] = "postgres"
-	cfg["connection_string"] = getTestPostgresConnectionString()
-	cfg["table_sharding"] = false
+	cfg := newSQLConfig(false)
 	err := pmp.Init(cfg)
 	if err != nil {
 		t.Fatal("SQL Pump couldn't be initialized with err: ", err)
@@ -274,10 +271,7 @@ func TestSQLWriteUptimeData(t *testing.T) {
 func TestSQLWriteUptimeDataSharded(t *testing.T) {
 	skipTestIfNoPostgres(t)
 	pmp := SQLPump{}
-	cfg := make(map[string]interface{})
-	cfg["type"] = "postgres"
-	cfg["connection_string"] = getTestPostgresConnectionString()
-	cfg["table_sharding"] = true
+	cfg := newSQLConfig(true)
 	err := pmp.Init(cfg)
 	if err != nil {
 		t.Fatal("SQL Pump couldn't be initialized with err: ", err)
@@ -337,10 +331,7 @@ func TestSQLWriteUptimeDataSharded(t *testing.T) {
 func TestSQLWriteUptimeDataAggregations(t *testing.T) {
 	skipTestIfNoPostgres(t)
 	pmp := SQLPump{IsUptime: true}
-	cfg := make(map[string]interface{})
-	cfg["type"] = "postgres"
-	cfg["connection_string"] = getTestPostgresConnectionString()
-	cfg["table_sharding"] = false
+	cfg := newSQLConfig(false)
 	err := pmp.Init(cfg)
 	if err != nil {
 		t.Fatal("SQL Pump couldn't be initialized with err: ", err)
@@ -385,10 +376,7 @@ func TestSQLWriteUptimeDataAggregations(t *testing.T) {
 func TestDecodeRequestAndDecodeResponseSQL(t *testing.T) {
 	skipTestIfNoPostgres(t)
 	newPump := &SQLPump{}
-	cfg := make(map[string]interface{})
-	cfg["type"] = "postgres"
-	cfg["connection_string"] = getTestPostgresConnectionString()
-	cfg["table_sharding"] = true
+	cfg := newSQLConfig(true)
 	err := newPump.Init(cfg)
 	assert.Nil(t, err)
 
@@ -469,7 +457,6 @@ func TestEnsureIndexSQL(t *testing.T) {
 			assert.NotNil(t, pmp)
 
 			actualErr := pmp.ensureIndex(tc.givenTableName, tc.givenRunInBackground)
-			fmt.Println("actualErr", actualErr)
 			isErrExpected := tc.expectedErr != nil
 			didErr := actualErr != nil
 			assert.Equal(t, isErrExpected, didErr)

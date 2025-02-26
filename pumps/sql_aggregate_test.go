@@ -17,9 +17,7 @@ import (
 func TestSQLAggregateInit(t *testing.T) {
 	skipTestIfNoPostgres(t)
 	pmp := SQLAggregatePump{}
-	cfg := make(map[string]interface{})
-	cfg["type"] = "postgres"
-	cfg["connection_string"] = getTestPostgresConnectionString()
+	cfg := newSQLConfig(false)
 
 	// Set up background index creation channel
 	pmp.backgroundIndexCreated = make(chan bool, 1)
@@ -53,10 +51,7 @@ func TestSQLAggregateInit(t *testing.T) {
 func TestSQLAggregateWriteData_Sharded(t *testing.T) {
 	skipTestIfNoPostgres(t)
 	pmp := SQLAggregatePump{}
-	cfg := make(map[string]interface{})
-	cfg["type"] = "postgres"
-	cfg["connection_string"] = getTestPostgresConnectionString()
-	cfg["table_sharding"] = true
+	cfg := newSQLConfig(true)
 
 	err := pmp.Init(cfg)
 	if err != nil {
@@ -120,10 +115,8 @@ func TestSQLAggregateWriteData_Sharded(t *testing.T) {
 func TestSQLAggregateWriteData(t *testing.T) {
 	skipTestIfNoPostgres(t)
 	pmp := &SQLAggregatePump{}
-	cfg := make(map[string]interface{})
-	cfg["type"] = "postgres"
+	cfg := newSQLConfig(false)
 	cfg["batch_size"] = 2000
-	cfg["connection_string"] = getTestPostgresConnectionString()
 
 	err := pmp.Init(cfg)
 	if err != nil {
@@ -296,10 +289,8 @@ func TestSQLAggregateWriteDataValues(t *testing.T) {
 			dbRecords := []analytics.SQLAnalyticsRecordAggregate{}
 
 			pmp := &SQLAggregatePump{}
-			cfg := make(map[string]interface{})
-			cfg["type"] = "postgres"
+			cfg := newSQLConfig(false)
 			cfg["batch_size"] = 1
-			cfg["connection_string"] = getTestPostgresConnectionString()
 
 			// Set up background index creation channel before init
 			pmp.backgroundIndexCreated = make(chan bool, 1)
@@ -341,10 +332,7 @@ func TestSQLAggregateWriteDataValues(t *testing.T) {
 func TestDecodeRequestAndDecodeResponseSQLAggregate(t *testing.T) {
 	skipTestIfNoPostgres(t)
 	newPump := &SQLAggregatePump{}
-	cfg := make(map[string]interface{})
-	cfg["type"] = "postgres"
-	cfg["connection_string"] = getTestPostgresConnectionString()
-	cfg["table_sharding"] = true
+	cfg := newSQLConfig(true)
 	err := newPump.Init(cfg)
 	assert.Nil(t, err)
 
