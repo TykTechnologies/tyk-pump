@@ -74,14 +74,15 @@ const (
 )
 
 func TestSqlGraphAggregatePump_Init(t *testing.T) {
+	skipTestIfNoPostgres(t)
 	tableName := analytics.AggregateGraphSQLTable
 	r := require.New(t)
 	pump := &GraphSQLAggregatePump{}
 	t.Run("successful", func(t *testing.T) {
 		conf := SQLAggregatePumpConf{
 			SQLConf: SQLConf{
-				Type:             "sqlite",
-				ConnectionString: "",
+				Type:             "postgres",
+				ConnectionString: getTestPostgresConnectionString(),
 			},
 		}
 		assert.NoError(t, pump.Init(conf))
@@ -115,19 +116,20 @@ func TestSqlGraphAggregatePump_Init(t *testing.T) {
 
 	t.Run("decode from map", func(t *testing.T) {
 		conf := map[string]interface{}{
-			"type":           "sqlite",
-			"table_sharding": true,
+			"type":              "postgres",
+			"table_sharding":    true,
+			"connection_string": getTestPostgresConnectionString(),
 		}
 		r.NoError(pump.Init(conf))
-		assert.Equal(t, "sqlite", pump.SQLConf.Type)
+		assert.Equal(t, "postgres", pump.SQLConf.Type)
 		assert.Equal(t, true, pump.SQLConf.TableSharding)
 	})
 
 	t.Run("sharded table", func(t *testing.T) {
 		conf := SQLAggregatePumpConf{
 			SQLConf: SQLConf{
-				Type:             "sqlite",
-				ConnectionString: "",
+				Type:             "postgres",
+				ConnectionString: getTestPostgresConnectionString(),
 				TableSharding:    true,
 			},
 		}
@@ -139,8 +141,9 @@ func TestSqlGraphAggregatePump_Init(t *testing.T) {
 		envPrefix := fmt.Sprintf("%s_SQLGRAPHAGGREGATE%s", PUMPS_ENV_PREFIX, PUMPS_ENV_META_PREFIX) + "_%s"
 		r := require.New(t)
 		envKeyVal := map[string]string{
-			"TYPE":          "sqlite",
-			"TABLESHARDING": "true",
+			"TYPE":              "postgres",
+			"TABLESHARDING":     "true",
+			"CONNECTION_STRING": getTestPostgresConnectionString(),
 		}
 		for key, val := range envKeyVal {
 			newKey := fmt.Sprintf(envPrefix, key)
@@ -155,21 +158,23 @@ func TestSqlGraphAggregatePump_Init(t *testing.T) {
 		conf := SQLAggregatePumpConf{
 			SQLConf: SQLConf{
 				Type:             "postgres",
-				ConnectionString: "",
+				ConnectionString: getTestPostgresConnectionString(),
 				TableSharding:    false,
 			},
 		}
 		r.NoError(pump.Init(conf))
-		assert.Equal(t, "sqlite", pump.SQLConf.Type)
+		assert.Equal(t, "postgres", pump.SQLConf.Type)
+		assert.Equal(t, getTestPostgresConnectionString(), pump.SQLConf.ConnectionString)
 		assert.Equal(t, true, pump.SQLConf.TableSharding)
 	})
 }
 
 func TestSqlGraphAggregatePump_WriteData(t *testing.T) {
+	skipTestIfNoPostgres(t)
 	r := require.New(t)
 	conf := SQLConf{
-		Type:             "sqlite",
-		ConnectionString: "",
+		Type:             "postgres",
+		ConnectionString: getTestPostgresConnectionString(),
 	}
 	pump := GraphSQLAggregatePump{}
 	r.NoError(pump.Init(conf))
@@ -554,7 +559,7 @@ func TestSqlGraphAggregatePump_WriteData(t *testing.T) {
 			records := tc.recordGenerator()
 			r.NoError(pump.WriteData(context.Background(), records))
 			t.Cleanup(func() {
-				// use DELETE FROM table; since it is sqlite
+				// use DELETE FROM table; since it is postgres
 				if tx := pump.db.Exec(fmt.Sprintf("DELETE FROM %s", analytics.AggregateGraphSQLTable)); tx.Error != nil {
 					t.Error(tx.Error)
 				}
@@ -586,6 +591,7 @@ func TestSqlGraphAggregatePump_WriteData(t *testing.T) {
 }
 
 func TestGraphSQLAggregatePump_WriteData_Sharded(t *testing.T) {
+	skipTestIfNoPostgres(t)
 	pump := GraphSQLAggregatePump{}
 
 	sampleRecord := analytics.AnalyticsRecord{
@@ -622,8 +628,9 @@ func TestGraphSQLAggregatePump_WriteData_Sharded(t *testing.T) {
 		r := require.New(t)
 		r.NoError(pump.Init(SQLAggregatePumpConf{
 			SQLConf: SQLConf{
-				Type:          "sqlite",
-				TableSharding: true,
+				Type:             "postgres",
+				TableSharding:    true,
+				ConnectionString: getTestPostgresConnectionString(),
 			},
 		}))
 		assert.False(t, pump.db.Migrator().HasTable(analytics.AggregateGraphSQLTable))
@@ -635,8 +642,9 @@ func TestGraphSQLAggregatePump_WriteData_Sharded(t *testing.T) {
 		r := require.New(t)
 		r.NoError(pump.Init(SQLAggregatePumpConf{
 			SQLConf: SQLConf{
-				Type:          "sqlite",
-				TableSharding: true,
+				Type:             "postgres",
+				TableSharding:    true,
+				ConnectionString: getTestPostgresConnectionString(),
 			},
 		}))
 		record := sampleRecord

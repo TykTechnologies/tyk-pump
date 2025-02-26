@@ -47,7 +47,6 @@ require (
 	gopkg.in/vmihailenco/msgpack.v2 v2.9.1
 	gorm.io/driver/mysql v1.0.3
 	gorm.io/driver/postgres v1.2.0
-	gorm.io/driver/sqlite v1.1.3
 	gorm.io/gorm v1.21.16
 )
 
@@ -99,7 +98,6 @@ require (
 	github.com/lib/pq v1.10.6 // indirect
 	github.com/lintianzhi/graylogd v0.0.0-20180503131252-dc68342f04dc // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
-	github.com/mattn/go-sqlite3 v1.14.3 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.4 // indirect
 	github.com/montanaflynn/stats v0.0.0-20171201202039-1bf9dbcd8cbe // indirect
 	github.com/olivere/elastic v6.2.31+incompatible // indirect

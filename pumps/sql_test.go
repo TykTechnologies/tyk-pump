@@ -2,6 +2,7 @@ package pumps
 
 import (
 	"context"
+	"os"
 	"testing"
 	"time"
 
@@ -10,11 +11,29 @@ import (
 	"gopkg.in/vmihailenco/msgpack.v2"
 )
 
-func TestSQLInit(t *testing.T) {
-	pmp := SQLPump{}
+func getTestPostgresConnectionString() string {
+	return os.Getenv("TYK_TEST_POSTGRES")
+}
+
+func skipTestIfNoPostgres(t *testing.T) {
+	t.Helper()
+	if os.Getenv("TYK_TEST_POSTGRES") == "" {
+		t.Skip("Skipping test because TYK_TEST_POSTGRES environment variable is not set")
+	}
+}
+
+func newSQLConfig(sharded bool) map[string]interface{} {
 	cfg := make(map[string]interface{})
-	cfg["type"] = "sqlite"
-	cfg["connection_string"] = ""
+	cfg["type"] = "postgres"
+	cfg["connection_string"] = getTestPostgresConnectionString()
+	cfg["table_sharding"] = sharded
+	return cfg
+}
+
+func TestSQLInit(t *testing.T) {
+	skipTestIfNoPostgres(t)
+	pmp := SQLPump{}
+	cfg := newSQLConfig(false)
 
 	err := pmp.Init(cfg)
 	if err != nil {
@@ -25,7 +44,7 @@ func TestSQLInit(t *testing.T) {
 	}()
 
 	assert.NotNil(t, pmp.db)
-	assert.Equal(t, "sqlite", pmp.db.Dialector.Name())
+	assert.Equal(t, "postgres", pmp.db.Dialector.Name())
 
 	// Checking with invalid type
 	cfg["type"] = "invalid"
@@ -35,10 +54,9 @@ func TestSQLInit(t *testing.T) {
 }
 
 func TestSQLWriteData(t *testing.T) {
+	skipTestIfNoPostgres(t)
 	pmp := SQLPump{}
-	cfg := make(map[string]interface{})
-	cfg["type"] = "sqlite"
-	cfg["connection_string"] = ""
+	cfg := newSQLConfig(false)
 
 	err := pmp.Init(cfg)
 	if err != nil {
@@ -86,10 +104,9 @@ func TestSQLWriteData(t *testing.T) {
 }
 
 func TestSQLWriteDataSharded(t *testing.T) {
+	skipTestIfNoPostgres(t)
 	pmp := SQLPump{}
-	cfg := make(map[string]interface{})
-	cfg["type"] = "sqlite"
-	cfg["table_sharding"] = true
+	cfg := newSQLConfig(true)
 	cfg["batch_size"] = 20000
 
 	err := pmp.Init(cfg)
@@ -169,11 +186,9 @@ func TestSQLWriteDataSharded(t *testing.T) {
 }
 
 func TestSQLWriteUptimeData(t *testing.T) {
+	skipTestIfNoPostgres(t)
 	pmp := SQLPump{IsUptime: true}
-	cfg := make(map[string]interface{})
-	cfg["type"] = "sqlite"
-	cfg["connection_string"] = ""
-	cfg["table_sharding"] = false
+	cfg := newSQLConfig(false)
 	err := pmp.Init(cfg)
 	if err != nil {
 		t.Fatal("SQL Pump couldn't be initialized with err: ", err)
@@ -254,11 +269,9 @@ func TestSQLWriteUptimeData(t *testing.T) {
 }
 
 func TestSQLWriteUptimeDataSharded(t *testing.T) {
+	skipTestIfNoPostgres(t)
 	pmp := SQLPump{}
-	cfg := make(map[string]interface{})
-	cfg["type"] = "sqlite"
-	cfg["connection_string"] = ""
-	cfg["table_sharding"] = true
+	cfg := newSQLConfig(true)
 	err := pmp.Init(cfg)
 	if err != nil {
 		t.Fatal("SQL Pump couldn't be initialized with err: ", err)
@@ -316,11 +329,9 @@ func TestSQLWriteUptimeDataSharded(t *testing.T) {
 }
 
 func TestSQLWriteUptimeDataAggregations(t *testing.T) {
+	skipTestIfNoPostgres(t)
 	pmp := SQLPump{IsUptime: true}
-	cfg := make(map[string]interface{})
-	cfg["type"] = "sqlite"
-	cfg["connection_string"] = ""
-	cfg["table_sharding"] = false
+	cfg := newSQLConfig(false)
 	err := pmp.Init(cfg)
 	if err != nil {
 		t.Fatal("SQL Pump couldn't be initialized with err: ", err)
@@ -363,11 +374,9 @@ func TestSQLWriteUptimeDataAggregations(t *testing.T) {
 }
 
 func TestDecodeRequestAndDecodeResponseSQL(t *testing.T) {
+	skipTestIfNoPostgres(t)
 	newPump := &SQLPump{}
-	cfg := make(map[string]interface{})
-	cfg["type"] = "sqlite"
-	cfg["connection_string"] = ""
-	cfg["table_sharding"] = true
+	cfg := newSQLConfig(true)
 	err := newPump.Init(cfg)
 	assert.Nil(t, err)
 
@@ -385,12 +394,13 @@ func TestDecodeRequestAndDecodeResponseSQL(t *testing.T) {
 }
 
 func setupSQLPump(t *testing.T, tableName string, useBackground bool) *SQLPump {
+	skipTestIfNoPostgres(t)
 	t.Helper()
 	pmp := &SQLPump{}
 	pmp.log = log.WithField("prefix", "sql-pump")
 	cfg := map[string]interface{}{
-		"type":              "sqlite",
-		"connection_string": "",
+		"type":              "postgres",
+		"connection_string": getTestPostgresConnectionString(),
 	}
 
 	assert.NoError(t, pmp.Init(cfg))
@@ -403,6 +413,7 @@ func setupSQLPump(t *testing.T, tableName string, useBackground bool) *SQLPump {
 }
 
 func TestEnsureIndexSQL(t *testing.T) {
+	skipTestIfNoPostgres(t)
 	//nolint:govet
 	tcs := []struct {
 		testName             string

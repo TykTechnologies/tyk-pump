@@ -15,10 +15,12 @@ import (
 )
 
 func TestSQLAggregateInit(t *testing.T) {
+	skipTestIfNoPostgres(t)
 	pmp := SQLAggregatePump{}
-	cfg := make(map[string]interface{})
-	cfg["type"] = "sqlite"
-	cfg["connection_string"] = ""
+	cfg := newSQLConfig(false)
+
+	// Set up background index creation channel
+	pmp.backgroundIndexCreated = make(chan bool, 1)
 
 	err := pmp.Init(cfg)
 	if err != nil {
@@ -29,8 +31,11 @@ func TestSQLAggregateInit(t *testing.T) {
 	}(table)
 
 	assert.NotNil(t, pmp.db)
-	assert.Equal(t, "sqlite", pmp.db.Dialector.Name())
+	assert.Equal(t, "postgres", pmp.db.Dialector.Name())
 	assert.Equal(t, true, pmp.db.Migrator().HasTable(analytics.AggregateSQLTable))
+
+	// Wait for background index creation to complete
+	<-pmp.backgroundIndexCreated
 
 	indexName := fmt.Sprintf("%s_%s", analytics.AggregateSQLTable, newAggregatedIndexName)
 	assert.Equal(t, true, pmp.db.Migrator().HasIndex(analytics.AggregateSQLTable, indexName))
@@ -44,17 +49,16 @@ func TestSQLAggregateInit(t *testing.T) {
 }
 
 func TestSQLAggregateWriteData_Sharded(t *testing.T) {
+	skipTestIfNoPostgres(t)
 	pmp := SQLAggregatePump{}
-	cfg := make(map[string]interface{})
-	cfg["type"] = "sqlite"
-	cfg["table_sharding"] = true
+	cfg := newSQLConfig(true)
 
 	err := pmp.Init(cfg)
 	if err != nil {
 		t.Fatal("SQL Pump Aggregate couldn't be initialized with err: ", err)
 	}
 
-	// wait until the index is created for sqlite to avoid locking
+	// wait until the index is created for postgres to avoid locking
 
 	keys := make([]interface{}, 8)
 	now := time.Now()
@@ -109,9 +113,9 @@ func TestSQLAggregateWriteData_Sharded(t *testing.T) {
 }
 
 func TestSQLAggregateWriteData(t *testing.T) {
+	skipTestIfNoPostgres(t)
 	pmp := &SQLAggregatePump{}
-	cfg := make(map[string]interface{})
-	cfg["type"] = "sqlite"
+	cfg := newSQLConfig(false)
 	cfg["batch_size"] = 2000
 
 	err := pmp.Init(cfg)
@@ -196,6 +200,7 @@ func TestSQLAggregateWriteData(t *testing.T) {
 }
 
 func TestSQLAggregateWriteDataValues(t *testing.T) {
+	skipTestIfNoPostgres(t)
 	table := analytics.AggregateSQLTable
 	now := time.Date(2019, 1, 1, 0, 0, 0, 0, time.Local)
 	nowPlus10 := now.Add(10 * time.Minute)
@@ -254,6 +259,7 @@ func TestSQLAggregateWriteDataValues(t *testing.T) {
 				},
 			},
 			assertion: func(t *testing.T, dbRecords []analytics.SQLAnalyticsRecordAggregate) {
+				const delta = 1e-10 // Small epsilon for floating-point comparisons
 				assert.Equal(t, 3, len(dbRecords))
 				assert.Equal(t, "apiid", dbRecords[0].Dimension)
 				assert.Equal(t, "api1", dbRecords[0].DimensionValue)
@@ -261,11 +267,11 @@ func TestSQLAggregateWriteDataValues(t *testing.T) {
 				assert.Equal(t, 7, dbRecords[0].Hits)
 				assert.Equal(t, 4, dbRecords[0].Success)
 				assert.Equal(t, 3, dbRecords[0].ErrorTotal)
-				assert.Equal(t, 12.857142857142858, dbRecords[0].RequestTime)
+				assert.InDelta(t, 12.857142857142858, dbRecords[0].RequestTime, delta)
 				assert.Equal(t, 90.0, dbRecords[0].TotalRequestTime)
-				assert.Equal(t, 15.714285714285714, dbRecords[0].Latency)
+				assert.InDelta(t, 15.714285714285714, dbRecords[0].Latency, delta)
 				assert.Equal(t, int64(110), dbRecords[0].TotalLatency)
-				assert.Equal(t, 13.571428571428571, dbRecords[0].UpstreamLatency)
+				assert.InDelta(t, 13.571428571428571, dbRecords[0].UpstreamLatency, delta)
 				assert.Equal(t, int64(95), dbRecords[0].TotalUpstreamLatency)
 				assert.Equal(t, int64(30), dbRecords[0].MaxLatency)
 				assert.Equal(t, int64(5), dbRecords[0].MinUpstreamLatency)
@@ -283,9 +289,11 @@ func TestSQLAggregateWriteDataValues(t *testing.T) {
 			dbRecords := []analytics.SQLAnalyticsRecordAggregate{}
 
 			pmp := &SQLAggregatePump{}
-			cfg := make(map[string]interface{})
-			cfg["type"] = "sqlite"
+			cfg := newSQLConfig(false)
 			cfg["batch_size"] = 1
+
+			// Set up background index creation channel before init
+			pmp.backgroundIndexCreated = make(chan bool, 1)
 
 			err := pmp.Init(cfg)
 			if err != nil {
@@ -297,6 +305,10 @@ func TestSQLAggregateWriteDataValues(t *testing.T) {
 					t.Error(err)
 				}
 			}(pmp)
+
+			// Wait for background index creation to complete
+			<-pmp.backgroundIndexCreated
+
 			// Write the analytics records
 			for i := range tc.records {
 				err = pmp.WriteData(context.TODO(), tc.records[i])
@@ -318,11 +330,9 @@ func TestSQLAggregateWriteDataValues(t *testing.T) {
 }
 
 func TestDecodeRequestAndDecodeResponseSQLAggregate(t *testing.T) {
+	skipTestIfNoPostgres(t)
 	newPump := &SQLAggregatePump{}
-	cfg := make(map[string]interface{})
-	cfg["type"] = "sqlite"
-	cfg["connection_string"] = ""
-	cfg["table_sharding"] = true
+	cfg := newSQLConfig(true)
 	err := newPump.Init(cfg)
 	assert.Nil(t, err)
 
@@ -340,6 +350,7 @@ func TestDecodeRequestAndDecodeResponseSQLAggregate(t *testing.T) {
 }
 
 func TestEnsureIndexSQLAggregate(t *testing.T) {
+	skipTestIfNoPostgres(t)
 	//nolint:govet
 	tcs := []struct {
 		testName             string
@@ -354,8 +365,8 @@ func TestEnsureIndexSQLAggregate(t *testing.T) {
 			pmpSetupFn: func(tableName string) *SQLAggregatePump {
 				pmp := &SQLAggregatePump{}
 				cfg := &SQLAggregatePumpConf{}
-				cfg.Type = "sqlite"
-				cfg.ConnectionString = ""
+				cfg.Type = "postgres"
+				cfg.ConnectionString = getTestPostgresConnectionString()
 				pmp.SQLConf = cfg
 
 				pmp.log = log.WithField("prefix", "sql-aggregate-pump")
@@ -389,8 +400,8 @@ func TestEnsureIndexSQLAggregate(t *testing.T) {
 			pmpSetupFn: func(tableName string) *SQLAggregatePump {
 				pmp := &SQLAggregatePump{}
 				cfg := &SQLAggregatePumpConf{}
-				cfg.Type = "sqlite"
-				cfg.ConnectionString = ""
+				cfg.Type = "postgres"
+				cfg.ConnectionString = getTestPostgresConnectionString()
 				pmp.SQLConf = cfg
 
 				pmp.log = log.WithField("prefix", "sql-aggregate-pump")
@@ -426,9 +437,9 @@ func TestEnsureIndexSQLAggregate(t *testing.T) {
 			pmpSetupFn: func(tableName string) *SQLAggregatePump {
 				pmp := &SQLAggregatePump{}
 				cfg := &SQLAggregatePumpConf{}
-				cfg.Type = "sqlite"
+				cfg.Type = "postgres"
 				cfg.TableSharding = true
-				cfg.ConnectionString = ""
+				cfg.ConnectionString = getTestPostgresConnectionString()
 				pmp.SQLConf = cfg
 
 				pmp.log = log.WithField("prefix", "sql-aggregate-pump")
@@ -464,8 +475,8 @@ func TestEnsureIndexSQLAggregate(t *testing.T) {
 			pmpSetupFn: func(tableName string) *SQLAggregatePump {
 				pmp := &SQLAggregatePump{}
 				cfg := &SQLAggregatePumpConf{}
-				cfg.Type = "sqlite"
-				cfg.ConnectionString = ""
+				cfg.Type = "postgres"
+				cfg.ConnectionString = getTestPostgresConnectionString()
 				pmp.SQLConf = cfg
 
 				pmp.log = log.WithField("prefix", "sql-aggregate-pump")
@@ -487,7 +498,7 @@ func TestEnsureIndexSQLAggregate(t *testing.T) {
 			},
 			givenTableName:       "test3",
 			givenRunInBackground: false,
-			expectedErr:          errors.New("no such table: main.test3"),
+			expectedErr:          errors.New("ERROR: relation \"test3\" does not exist (SQLSTATE 42P01)"),
 			shouldHaveIndex:      false,
 		},
 		{
@@ -495,8 +506,8 @@ func TestEnsureIndexSQLAggregate(t *testing.T) {
 			pmpSetupFn: func(tableName string) *SQLAggregatePump {
 				pmp := &SQLAggregatePump{}
 				cfg := &SQLAggregatePumpConf{}
-				cfg.Type = "sqlite"
-				cfg.ConnectionString = ""
+				cfg.Type = "postgres"
+				cfg.ConnectionString = getTestPostgresConnectionString()
 				cfg.OmitIndexCreation = true
 				pmp.SQLConf = cfg
 
@@ -545,6 +556,12 @@ func TestEnsureIndexSQLAggregate(t *testing.T) {
 				}
 			} else {
 				assert.Equal(t, tc.expectedErr.Error(), actualErr.Error())
+			}
+
+			if pmp.db != nil {
+				if err := pmp.db.Migrator().DropTable(tc.givenTableName); err != nil {
+					t.Logf("Failed to drop table: %v", err)
+				}
 			}
 		})
 	}

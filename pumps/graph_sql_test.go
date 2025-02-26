@@ -15,13 +15,14 @@ import (
 )
 
 func TestGraphSQLPump_Init(t *testing.T) {
+	skipTestIfNoPostgres(t)
 	r := require.New(t)
 	pump := &GraphSQLPump{}
 	t.Run("successful", func(t *testing.T) {
 		conf := GraphSQLConf{
 			SQLConf: SQLConf{
-				Type:             "sqlite",
-				ConnectionString: "",
+				Type:             "postgres",
+				ConnectionString: getTestPostgresConnectionString(),
 			},
 			TableName: "rand-table",
 		}
@@ -56,21 +57,22 @@ func TestGraphSQLPump_Init(t *testing.T) {
 
 	t.Run("decode from map", func(t *testing.T) {
 		conf := map[string]interface{}{
-			"table_name":     "test_table",
-			"type":           "sqlite",
-			"table_sharding": true,
+			"table_name":        "test_table",
+			"type":              "postgres",
+			"table_sharding":    true,
+			"connection_string": getTestPostgresConnectionString(),
 		}
 		r.NoError(pump.Init(conf))
 		assert.Equal(t, "test_table", pump.Conf.TableName)
-		assert.Equal(t, "sqlite", pump.Conf.Type)
+		assert.Equal(t, "postgres", pump.Conf.Type)
 		assert.Equal(t, true, pump.Conf.TableSharding)
 	})
 
 	t.Run("sharded table", func(t *testing.T) {
 		conf := GraphSQLConf{
 			SQLConf: SQLConf{
-				Type:             "sqlite",
-				ConnectionString: "",
+				Type:             "postgres",
+				ConnectionString: getTestPostgresConnectionString(),
 				TableSharding:    true,
 			},
 			TableName: "test-table",
@@ -83,7 +85,7 @@ func TestGraphSQLPump_Init(t *testing.T) {
 		envPrefix := fmt.Sprintf("%s_GRAPH_SQL%s", PUMPS_ENV_PREFIX, PUMPS_ENV_META_PREFIX) + "_%s"
 		r := require.New(t)
 		envKeyVal := map[string]string{
-			"TYPE":          "sqlite",
+			"TYPE":          "postgres",
 			"TABLENAME":     "test-table",
 			"TABLESHARDING": "true",
 		}
@@ -100,23 +102,24 @@ func TestGraphSQLPump_Init(t *testing.T) {
 		conf := GraphSQLConf{
 			SQLConf: SQLConf{
 				Type:             "postgres",
-				ConnectionString: "",
+				ConnectionString: getTestPostgresConnectionString(),
 				TableSharding:    false,
 			},
 			TableName: "wrong-name",
 		}
 		r.NoError(pump.Init(conf))
-		assert.Equal(t, "sqlite", pump.Conf.Type)
+		assert.Equal(t, "postgres", pump.Conf.Type)
 		assert.Equal(t, "test-table", pump.Conf.TableName)
 		assert.Equal(t, true, pump.Conf.TableSharding)
 	})
 }
 
 func TestGraphSQLPump_WriteData(t *testing.T) {
+	skipTestIfNoPostgres(t)
 	conf := GraphSQLConf{
 		SQLConf: SQLConf{
-			Type:             "sqlite",
-			ConnectionString: "",
+			Type:             "postgres",
+			ConnectionString: getTestPostgresConnectionString(),
 		},
 		TableName: "test-table",
 	}
@@ -251,11 +254,12 @@ func TestGraphSQLPump_WriteData(t *testing.T) {
 			pump := &GraphSQLPump{}
 			assert.NoError(t, pump.Init(conf))
 
-			t.Cleanup(func() {
+			defer func() {
 				if err := pump.db.Migrator().DropTable(conf.TableName); err != nil {
 					fmt.Printf("test %s, error: %v\n", tc.name, err)
 				}
-			})
+			}()
+
 			records := make([]interface{}, 0)
 			expectedResponses := make([]analytics.GraphRecord, 0)
 			// create the records to passed to the pump
@@ -310,14 +314,15 @@ func TestGraphSQLPump_WriteData(t *testing.T) {
 }
 
 func TestGraphSQLPump_Sharded(t *testing.T) {
+	skipTestIfNoPostgres(t)
 	r := require.New(t)
 	conf := GraphSQLConf{
 		SQLConf: SQLConf{
-			Type:             "sqlite",
-			ConnectionString: "",
+			Type:             "postgres",
+			ConnectionString: getTestPostgresConnectionString(),
 			TableSharding:    true,
 		},
-		TableName: "graph-record",
+		TableName: "graph_record",
 	}
 	pump := &GraphSQLPump{}
 	assert.NoError(t, pump.Init(conf))
@@ -343,32 +348,43 @@ func TestGraphSQLPump_Sharded(t *testing.T) {
 	records := make([]interface{}, 0)
 	for i := 1; i <= 3; i++ {
 		day := i
-		timestamp := time.Date(2023, time.January, day, 0, 1, 0, 0, time.UTC)
+		timestamp := time.Date(2025, time.Month(i), day, 0, 1, 0, 0, time.UTC)
 		rec := baseRecord
 		rec.TimeStamp = timestamp
 		rec.Month = timestamp.Month()
 		rec.Day = timestamp.Day()
 		rec.Year = timestamp.Year()
 		records = append(records, rec)
-		expectedTables = append(expectedTables, fmt.Sprintf("%s_%s", conf.TableName, timestamp.Format("20060102")))
+		tableName := fmt.Sprintf("%s_%s", conf.TableName, timestamp.Format("20060102"))
+
+		// Clean existing data if table exists
+		if pump.db.Migrator().HasTable(tableName) {
+			pump.db.Exec(fmt.Sprintf("DELETE FROM \"%s\"", tableName))
+		}
+		expectedTables = append(expectedTables, tableName)
 	}
 
-	// cleanup after
+	// cleanup after test completes
 	t.Cleanup(func() {
-		for _, i := range expectedTables {
-			if err := pump.db.Migrator().DropTable(i); err != nil {
-				t.Error(err)
+		for _, tableName := range expectedTables {
+			if pump.db.Migrator().HasTable(tableName) {
+				pump.db.Exec(fmt.Sprintf("DELETE FROM \"%s\"", tableName))
+				err := pump.db.Migrator().DropTable(tableName)
+				if err != nil {
+					t.Errorf("error dropping table %s: %v", tableName, err)
+				}
 			}
 		}
 	})
 
 	r.NoError(pump.WriteData(context.Background(), records))
+
 	// check tables
-	for _, item := range expectedTables {
-		r.Truef(pump.db.Migrator().HasTable(item), "table %s does not exist", item)
+	for _, tableName := range expectedTables {
+		r.Truef(pump.db.Migrator().HasTable(tableName), "table %s does not exist", tableName)
 		recs := make([]analytics.GraphRecord, 0)
-		q := pump.db.Table(item).Find(&recs)
-		r.NoError(q.Error)
-		assert.Equalf(t, 1, len(recs), "expected one record for %s table, instead got %d", item, len(recs))
+		err := pump.db.Table(tableName).Find(&recs).Error
+		r.NoError(err)
+		assert.Equalf(t, 1, len(recs), "expected one record for %s table, instead got %d", tableName, len(recs))
 	}
 }
