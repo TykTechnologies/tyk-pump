@@ -6,7 +6,12 @@
 # - amd64
 version: 2
 builds:
-  - id: std
+  - id: fips-amd64
+    flags:
+      - -tags=fips,boringcrypto
+    env:
+      - NOP=nop # ignore this, it is jsut to avoid a complex conditional in the templates
+      - $env
     ldflags:
       - -X github.com/TykTechnologies/tyk-pump/pumps.Version={{.Version}}
       - -X github.com/TykTechnologies/tyk-pump/pumps.Commit={{.FullCommit}}
@@ -16,30 +21,56 @@ builds:
       - linux
     goarch:
       - amd64
+    binary: tyk-pump
+  - id: std-amd64
+    env:
+      - NOP=nop # ignore this, it is jsut to avoid a complex conditional in the templates
+    ldflags:
+      - -X github.com/TykTechnologies/tyk-pump/pumps.Version={{.Version}}
+      - -X github.com/TykTechnologies/tyk-pump/pumps.Commit={{.FullCommit}}
+      - -X github.com/TykTechnologies/tyk-pump/pumps.BuildDate={{.Date}}
+      - -X github.com/TykTechnologies/tyk-pump/pumps.BuiltBy=goreleaser
+    goos:
+      - linux
+    goarch:
+      - amd64
+    binary: tyk-pump
+  - id: std-arm64
+    env:
+      - NOP=nop # ignore this, it is jsut to avoid a complex conditional in the templates
+    ldflags:
+      - -X github.com/TykTechnologies/tyk-pump/pumps.Version={{.Version}}
+      - -X github.com/TykTechnologies/tyk-pump/pumps.Commit={{.FullCommit}}
+      - -X github.com/TykTechnologies/tyk-pump/pumps.BuildDate={{.Date}}
+      - -X github.com/TykTechnologies/tyk-pump/pumps.BuiltBy=goreleaser
+    goos:
+      - linux
+    goarch:
       - arm64
+    binary: tyk-pump
+  - id: std-s390x
+    env:
+      - NOP=nop # ignore this, it is jsut to avoid a complex conditional in the templates
+    ldflags:
+      - -X github.com/TykTechnologies/tyk-pump/pumps.Version={{.Version}}
+      - -X github.com/TykTechnologies/tyk-pump/pumps.Commit={{.FullCommit}}
+      - -X github.com/TykTechnologies/tyk-pump/pumps.BuildDate={{.Date}}
+      - -X github.com/TykTechnologies/tyk-pump/pumps.BuiltBy=goreleaser
+    goos:
+      - linux
+    goarch:
       - s390x
     binary: tyk-pump
-  - id: fips
-    ldflags:
-      - -X github.com/TykTechnologies/tyk-pump/pumps.Version={{.Version}}
-      - -X github.com/TykTechnologies/tyk-pump/pumps.Commit={{.FullCommit}}
-      - -X github.com/TykTechnologies/tyk-pump/pumps.BuildDate={{.Date}}
-      - -X github.com/TykTechnologies/tyk-pump/pumps.BuiltBy=goreleaser
-    goos:
-      - linux
-    goarch:
-      - amd64
-    binary: tyk-pump
 nfpms:
-  - id: std
+  - id: fips
     vendor: "Tyk Technologies Ltd"
     homepage: "https://tyk.io"
     maintainer: "Tyk <info@tyk.io>"
-    description: Tyk Analytics Pump to move analytics data from Redis to any supported back end (multiple back ends can be written to at once).
-    package_name: tyk-pump
+    description: Tyk Analytics Pump to move analytics data from Redis to any supported back end (multiple back ends can be written to at once). This version is compiled with boringssl.
+    package_name: tyk-pump-fips
     file_name_template: "{{ .ConventionalFileName }}"
-    builds:
-      - std
+    ids:
+      - fips-amd64
     formats:
       - deb
       - rpm
@@ -71,15 +102,17 @@ nfpms:
       signature:
         key_file: tyk.io.signing.key
         type: origin
-  - id: fips
+  - id: std
     vendor: "Tyk Technologies Ltd"
     homepage: "https://tyk.io"
     maintainer: "Tyk <info@tyk.io>"
     description: Tyk Analytics Pump to move analytics data from Redis to any supported back end (multiple back ends can be written to at once).
-    package_name: tyk-pump-fips
+    package_name: tyk-pump
     file_name_template: "{{ .ConventionalFileName }}"
-    builds:
-      - fips
+    ids:
+      - std-amd64
+      - std-arm64
+      - std-s390x
     formats:
       - deb
       - rpm
@@ -112,13 +145,21 @@ nfpms:
         key_file: tyk.io.signing.key
         type: origin
 publishers:
-  - name: tyk-pump-unstable
+  - name: fips
+    ids:
+      - fips
+    env:
+      - PACKAGECLOUD_TOKEN={{ .Env.PACKAGECLOUD_TOKEN }}
+    cmd: packagecloud publish --debvers "{{ .Env.DEBVERS }}" --rpmvers "{{ .Env.RPMVERS }}" tyk/tyk-ee-unstable {{ .ArtifactPath }}
+  - name: std
+    ids:
+      - std
     env:
       - PACKAGECLOUD_TOKEN={{ .Env.PACKAGECLOUD_TOKEN }}
     cmd: packagecloud publish --debvers "{{ .Env.DEBVERS }}" --rpmvers "{{ .Env.RPMVERS }}" tyk/tyk-pump-unstable {{ .ArtifactPath }}
 # This disables archives
 archives:
-  - format: binary
+  - formats: ['binary']
     allow_different_binary_count: true
 checksum:
   disable: true
