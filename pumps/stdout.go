@@ -74,28 +74,29 @@ func (s *StdOutPump) Init(config interface{}) error {
 func (s *StdOutPump) WriteData(ctx context.Context, data []interface{}) error {
 	s.log.Debug("Attempting to write ", len(data), " records...")
 
-	//Data is all the analytics being written
 	for _, v := range data {
+		decoded, ok := v.(analytics.AnalyticsRecord)
+		if !ok {
+			s.log.Error("Failed to decode analytics record")
+			continue
+		}
 
-		select {
-		case <-ctx.Done():
-			return nil
-		default:
-			decoded := v.(analytics.AnalyticsRecord)
-
-			if s.conf.Format == "json" {
-				formatter := &logrus.JSONFormatter{}
-				entry := log.WithField(s.conf.LogFieldName, decoded)
-				entry.Level = logrus.InfoLevel
-				entry.Time = time.Now().UTC()
-				data, _ := formatter.Format(entry)
-				fmt.Print(string(data))
-			} else {
-				s.log.WithField(s.conf.LogFieldName, decoded).Info()
+		if s.conf.Format == "json" {
+			formatter := &logrus.JSONFormatter{}
+			entry := log.WithField(s.conf.LogFieldName, decoded)
+			entry.Level = logrus.InfoLevel
+			entry.Time = time.Now().UTC()
+			data, err := formatter.Format(entry)
+			if err != nil {
+				s.log.Error("Failed to format record: ", err)
+				continue
 			}
-
+			fmt.Print(string(data))
+		} else {
+			s.log.WithField(s.conf.LogFieldName, decoded).Info()
 		}
 	}
+
 	s.log.Info("Purged ", len(data), " records...")
 
 	return nil
