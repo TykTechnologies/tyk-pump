@@ -41,6 +41,9 @@ type KinesisConf struct {
 	// Each record in the request can be as large as 1 MiB, up to a limit of 5 MiB for the entire request, including partition keys.
 	// Each shard can support writes up to 1,000 records per second, up to a maximum data write total of 1 MiB per second.
 	BatchSize int `mapstructure:"batch_size"`
+	// The KMS Key ID used for server-side encryption of the Kinesis stream.
+	// Defaults to an empty string if not provided.
+	KMSKeyID string `mapstructure:"kms_key_id" default:""`
 }
 
 var (
@@ -85,6 +88,20 @@ func (p *KinesisPump) Init(config interface{}) error {
 
 	// Create Kinesis client
 	p.client = kinesis.NewFromConfig(cfg)
+
+	// Check if KMSKeyID is provided and enable server-side encryption
+	if p.kinesisConf.KMSKeyID != "" {
+		_, err := p.client.StartStreamEncryption(context.TODO(), &kinesis.StartStreamEncryptionInput{
+			StreamName:     aws.String(p.kinesisConf.StreamName),
+			EncryptionType: types.EncryptionTypeKms,
+			KeyId:          aws.String(p.kinesisConf.KMSKeyID),
+		})
+		if err != nil {
+			p.log.Fatalf("Failed to enable server-side encryption for Kinesis stream: %v", err)
+		}
+		p.log.Info("Server-side encryption enabled for Kinesis stream with KMS Key ID: ", fmt.Sprintf("%s***%s", p.kinesisConf.KMSKeyID[:4], p.kinesisConf.KMSKeyID[len(p.kinesisConf.KMSKeyID)-4:]))
+	}
+
 	p.log.Info(p.GetName() + " Initialized")
 
 	return nil
