@@ -229,14 +229,11 @@ jobs:
     steps:
       - name: set params
         id: params
-        shell: bash
-        run: |
-          set -eo pipefail
-          curl -s --retry 5 --retry-delay 10 --fail-with-body "http://tui.internal.dev.tyk.technology/v2/$VARIATION/tyk-pump/$BASE_REF/${{ github.event_name}}/api.gho" | tee -a "$GITHUB_OUTPUT"
-          if ! [[ $VARIATION =~ prod ]] ;then
-              echo "::warning file=.github/workflows/release.yml,line=24,col=1,endColumn=8::Using non-prod variation"
-              echo "### :warning: You are using VARIATION=${VARIATION} in test-controller-api" >> $GITHUB_STEP_SUMMARY
-          fi
+        uses: TykTechnologies/github-actions/.github/actions/tests/test-controller@QA-1607_test_reusable_workflows
+        with:
+          variation: ${{ env.VARIATION }}
+          base_ref: ${{ env.BASE_REF }}
+          test_type: api
   api-tests:
     needs:
       - test-controller-api
@@ -276,39 +273,16 @@ jobs:
         run: |
           gh release download --repo github.com/TykTechnologies/tyk-pro --archive tar.gz -O env.tgz
           mkdir auto && tar --strip-components=1 -C auto -xzvf env.tgz
-      - name: env up
-        shell: bash
-        working-directory: auto
-        id: env_up
-        env:
-          pull_policy: 'if_not_present'
-          GH_TOKEN: ${{ secrets.ORG_GH_TOKEN }}
-          TYK_DB_LICENSEKEY: ${{ secrets.DASH_LICENSE }}
-          TYK_MDCB_LICENSE: ${{ secrets.MDCB_LICENSE }}
-        run: |
-          match_tag=${{steps.ecr.outputs.registry}}/tyk-pump:$BASE_REF
-          tags=(${{ needs.goreleaser.outputs.std_tags }})
-          set -eaxo pipefail
-          docker run -q --rm -v ~/.docker/config.json:/root/.docker/config.json tykio/gromit policy match ${tags[0]} ${match_tag} 2>versions.env
-          echo '# alfa and beta have to come after the override
-
-          tyk_image="$ECR/tyk-ee"
-          tyk_alfa_image=$tyk_image
-          tyk_beta_image=$tyk_image
-          ECR=${{steps.ecr.outputs.registry}}
-          tyk_sink_image=${{matrix.sink}}
-          confs_dir=./pro-ha
-          env_file=local.env' >> versions.env
-          cat ./confs/${{ matrix.envfiles.config }}.env local-${{ matrix.envfiles.db }}.env > local.env
-          echo "::group::versions"
-          cat versions.env local.env
-          echo "::endgroup::"
-          # bring up env, the project name is important
-          docker compose -p auto -f pro-ha.yml -f deps_pro-ha.yml -f ${{ matrix.envfiles.db }}.yml -f ${{ matrix.envfiles.cache }}.yml --env-file versions.env --profile master-datacenter up --quiet-pull -d
-          ./dash-bootstrap.sh http://localhost:3000
-          docker compose -p auto -f pro-ha.yml -f deps_pro-ha.yml -f ${{ matrix.envfiles.db }}.yml -f ${{ matrix.envfiles.cache }}.yml --env-file versions.env --profile slave-datacenter up --quiet-pull -d
-          echo "$(cat pytest.env | grep USER_API_SECRET)" >> $GITHUB_OUTPUT
-          echo "ts=$(date +%s%N)" >> $GITHUB_OUTPUT
+          - name: env up
+          id: env_up
+          uses: TykTechnologies/github-actions/.github/actions/tests/env-up@QA-1607_test_reusable_workflows
+          with:
+            base_ref: ${{ env.BASE_REF }}
+            tags: ${{'754489498669.dkr.ecr.eu-central-1.amazonaws.com/tyk-ee:'}}${{env.BASE_REF}}
+            github_token: ${{ secrets.ORG_GH_TOKEN }}
+            sink-image: ${{ matrix.sink }}
+            TYK_DB_LICENSEKEY: ${{ secrets.DASH_LICENSE }}
+            TYK_MDCB_LICENSE: ${{ secrets.MDCB_LICENSE }}
       - uses: actions/checkout@v4
         with:
           repository: TykTechnologies/tyk-analytics
