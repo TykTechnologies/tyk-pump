@@ -270,8 +270,6 @@ jobs:
           # See https://github.com/mxschmitt/action-tmate#use-registered-public-ssh-keys
       - name: Checkout tyk-pro
         uses: TykTechnologies/github-actions/.github/actions/tests/checkout-tyk-pro@QA-1607_test_reusable_workflows
-        with:
-          org_gh_token: ${{ secrets.ORG_GH_TOKEN }}
       - name: Checkout test code
         uses: TykTechnologies/github-actions/.github/actions/tests/choose-test-branch@QA-1607_test_reusable_workflows
         with:
