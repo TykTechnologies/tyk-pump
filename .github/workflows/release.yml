@@ -272,15 +272,15 @@ jobs:
         with:
           path: auto
           fetch-depth: 1
+      - name: Checkout tyk-pro
+        uses: TykTechnologies/github-actions/.github/actions/tests/checkout-tyk-pro@QA-1607_test_reusable_workflows
+        with:
+          org_gh_token: ${{ secrets.ORG_GH_TOKEN }}
       - name: Checkout test code
         uses: TykTechnologies/github-actions/.github/actions/tests/choose-test-branch@QA-1607_test_reusable_workflows
         with:
           org_gh_token: ${{ secrets.ORG_GH_TOKEN }}
           test_folder: api
-      - name: Checkout tyk-pro
-        uses: TykTechnologies/github-actions/.github/actions/tests/checkout-tyk-pro@QA-1607_test_reusable_workflows
-        with:
-          org_gh_token: ${{ secrets.ORG_GH_TOKEN }}
       - name: env up
         id: env_up
         uses: TykTechnologies/github-actions/.github/actions/tests/env-up@QA-1607_test_reusable_workflows
