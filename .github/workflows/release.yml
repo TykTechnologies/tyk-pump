@@ -273,16 +273,15 @@ jobs:
         run: |
           gh release download --repo github.com/TykTechnologies/tyk-pro --archive tar.gz -O env.tgz
           mkdir auto && tar --strip-components=1 -C auto -xzvf env.tgz
-          - name: env up
-          id: env_up
-          uses: TykTechnologies/github-actions/.github/actions/tests/env-up@QA-1607_test_reusable_workflows
-          with:
-            base_ref: ${{ env.BASE_REF }}
-            tags: ${{'754489498669.dkr.ecr.eu-central-1.amazonaws.com/tyk-ee:'}}${{env.BASE_REF}}
-            github_token: ${{ secrets.ORG_GH_TOKEN }}
-            sink-image: ${{ matrix.sink }}
-            TYK_DB_LICENSEKEY: ${{ secrets.DASH_LICENSE }}
-            TYK_MDCB_LICENSE: ${{ secrets.MDCB_LICENSE }}
+      - name: env up
+        id: env_up
+        uses: TykTechnologies/github-actions/.github/actions/tests/env-up@QA-1607_test_reusable_workflows
+        with:
+          base_ref: ${{ env.BASE_REF }}
+          tags: ${{ needs.goreleaser.outputs.std_tags }}
+          github_token: ${{ secrets.ORG_GH_TOKEN }}
+          TYK_DB_LICENSEKEY: ${{ secrets.DASH_LICENSE }}
+          TYK_MDCB_LICENSE: ${{ secrets.MDCB_LICENSE }}
       - uses: actions/checkout@v4
         with:
           repository: TykTechnologies/tyk-analytics
