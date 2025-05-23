@@ -268,10 +268,6 @@ jobs:
           limit-access-to-actor: true
           # Only ${{ github.actor }} has access
           # See https://github.com/mxschmitt/action-tmate#use-registered-public-ssh-keys
-      - uses: actions/checkout@v4
-        with:
-          path: auto
-          fetch-depth: 1
       - name: Checkout tyk-pro
         uses: TykTechnologies/github-actions/.github/actions/tests/checkout-tyk-pro@QA-1607_test_reusable_workflows
         with:
