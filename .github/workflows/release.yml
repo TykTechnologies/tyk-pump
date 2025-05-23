@@ -241,6 +241,7 @@ jobs:
     runs-on: ubuntu-latest-m-2
     env:
       XUNIT_REPORT_PATH: ${{ github.workspace}}/test-results.xml
+      BASE_REF: ${{startsWith(github.event_name, 'pull_request') && github.base_ref || github.ref_name}}
     permissions:
       id-token: write # This is required for requesting the Github JWT
       contents: read # This is required for actions/checkout
@@ -267,12 +268,15 @@ jobs:
           limit-access-to-actor: true
           # Only ${{ github.actor }} has access
           # See https://github.com/mxschmitt/action-tmate#use-registered-public-ssh-keys
-      - name: fetch env from tyk-pro
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh release download --repo github.com/TykTechnologies/tyk-pro --archive tar.gz -O env.tgz
-          mkdir auto && tar --strip-components=1 -C auto -xzvf env.tgz
+      - uses: actions/checkout@v4
+        with:
+          path: auto
+          fetch-depth: 1
+      - name: Checkout test code
+        uses: TykTechnologies/github-actions/.github/actions/tests/choose-test-branch@QA-1607_test_reusable_workflows
+        with:
+          org_gh_token: ${{ secrets.ORG_GH_TOKEN }}
+          test_folder: api
       - name: env up
         id: env_up
         uses: TykTechnologies/github-actions/.github/actions/tests/env-up@QA-1607_test_reusable_workflows
@@ -282,111 +286,16 @@ jobs:
           github_token: ${{ secrets.ORG_GH_TOKEN }}
           TYK_DB_LICENSEKEY: ${{ secrets.DASH_LICENSE }}
           TYK_MDCB_LICENSE: ${{ secrets.MDCB_LICENSE }}
-      - uses: actions/checkout@v4
-        with:
-          repository: TykTechnologies/tyk-analytics
-          path: tyk-analytics
-          token: ${{ secrets.ORG_GH_TOKEN }}
-          fetch-depth: 0
-          sparse-checkout: tests/api
-      - name: Choosing test code branch
-        working-directory: tyk-analytics/tests/api
-        run: |
-          if [[ ${{ github.event_name }} == "pull_request" ]]; then
-            PR_BRANCH=${{ github.event.pull_request.head.ref }}
-            TARGET_BRANCH=${{ github.event.pull_request.base.ref }}
-            echo "Looking for PR_BRANCH:$PR_BRANCH or TARGET_BRANCH:$TARGET_BRANCH..."
-            if git rev-parse --verify "origin/$PR_BRANCH" >/dev/null 2>&1; then
-              echo "PR branch $PR_BRANCH exists. Checking out..."
-              git checkout "$PR_BRANCH"
-            elif git rev-parse --verify "origin/$TARGET_BRANCH" >/dev/null 2>&1; then
-              echo "Target branch $TARGET_BRANCH exists. Checking out..."
-              git checkout "$TARGET_BRANCH"
-            fi
-          fi
-          if [[ ${{ github.event_name }} == "push" ]]; then
-            PUSH_BRANCH=${{ github.ref_name }}
-            echo "Looking for PUSH_BRANCH:$PUSH_BRANCH..."
-            if git rev-parse --verify "origin/$PUSH_BRANCH" >/dev/null 2>&1; then
-              echo "Push branch $PUSH_BRANCH exists. Checking out..."
-              git checkout "$PUSH_BRANCH"
-            fi
-          fi
-          echo "Current commit: $(git rev-parse HEAD)"
-      - uses: actions/setup-python@v5
-        with:
-          cache: 'pip'
-          python-version: '3.10'
       - name: Run API tests
         id: test_execution
-        working-directory: tyk-analytics/tests/api
-        run: |
-          pytest="pytest --ci --random-order --force-flaky --no-success-flaky-report --maxfail=3 --junitxml=${XUNIT_REPORT_PATH} --cache-clear --ignore=./tests/mdcb -v --log-cli-level=ERROR"
-          pip install -r requirements.txt
-          cat >pytest.env <<-EOF
-          TYK_TEST_BASE_URL=http://localhost:3000/
-          TYK_TEST_GW_URL=https://localhost:8080/
-          TYK_TEST_GW_1_ALFA_URL=https://localhost:8181/
-          TYK_TEST_GW_1_BETA_URL=https://localhost:8182/
-          TYK_TEST_GW_2_ALFA_URL=https://localhost:8281/
-          TYK_TEST_GW_2_BETA_URL=https://localhost:8282/
-          TYK_TEST_MONGODB=localhost:27017
-          TYK_TEST_REDIS=localhost
-          TYK_TEST_DB_ADMIN=12345
-          TYK_TEST_GW_SECRET=352d20ee67be67f6340b4c0605b044b7
-          TYK_TEST_DB_NAME=tyk_analytics
-          TYK_TEST_FEDERATION_HOST=federation
-          TYK_TEST_GRAPHQL_FAKER_HOST=graphql-faker
-          GATEWAY_CONTAINER_NAME=tyk
-          USER_API_SECRET=${{ steps.env_up.outputs.USER_API_SECRET }}
-          EOF
-          env $(cat pytest.env | xargs) $pytest -m "${{ matrix.envfiles.apimarkers }}"
-      - name: Generate metadata and upload test reports
-        id: metadata_report
-        if: always() && (steps.test_execution.conclusion != 'skipped')
-        env:
-          REPORT_NAME: ${{ github.repository }}_${{ github.run_id }}_${{ github.run_attempt }}-${{steps.env_up.outputs.ts}}
-          METADATA_REPORT_PATH: metadata.toml
-        run: |
-          # Generate metadata report
-          set -eo pipefail
-          echo "[metadata]
-          repo = ${{ github.repository }}
-          branch = ${{ github.ref }}
-          commit = ${{ github.sha }}
-          test_suite_version = $BASE_REF
-          test_suite_name = ${{ github.job }}
-          test_suite_run = ${{ github.run_id }}-${{ github.run_attempt }}
-          db = ${{ matrix.envfiles.db }}
-          conf = ${{ matrix.envfiles.config }}
-          cache = ${{ matrix.envfiles.cache }}
-          pump_compatibility = ${{ matrix.pump }}
-          sink_compatibility = ${{ matrix.sink }}
-          " | tee ${METADATA_REPORT_PATH}
-          aws s3 cp ${XUNIT_REPORT_PATH}  s3://assets.dev.tyk.technology/testreports/${REPORT_NAME#*/}.xml
-          aws s3 cp ${METADATA_REPORT_PATH} s3://assets.dev.tyk.technology/testreports/${REPORT_NAME#*/}.metadata.toml
-      - name: Docker logs for all components
-        if: failure() && (steps.test_execution.outcome != 'success' || steps.env_up.outcome != 'success')
-        working-directory: auto
-        env:
-          pull_policy: 'if_not_present'
-          GH_TOKEN: ${{ secrets.ORG_GH_TOKEN }}
-          TYK_DB_LICENSEKEY: ${{ secrets.DASH_LICENSE }}
-          TYK_MDCB_LICENSE: ${{ secrets.MDCB_LICENSE }}
-          ECR: ${{ steps.ecr.outputs.registry }}
-        run: |
-          docker compose -p auto -f pro-ha.yml -f deps_pro-ha.yml -f ${{ matrix.envfiles.db }}.yml -f ${{ matrix.envfiles.cache }}.yml --env-file versions.env --profile all logs | sort > ${{ github.workspace }}/docker-compose.log
-          echo "::group::DockerLogs"
-          cat ${{ github.workspace }}/docker-compose.log
-          echo "::endgroup::"
-      - name: Upload compose logs
-        uses: actions/upload-artifact@v4
-        if: failure() && (steps.test_execution.outcome != 'success' || steps.env_up.outcome != 'success')
+        uses: TykTechnologies/github-actions/.github/actions/tests/api-tests@QA-1607_test_reusable_workflows
         with:
-          name: docker-compose-logs-${{ github.job }}-${{ matrix.envfiles.db }}-${{ matrix.envfiles.conf }}-${{ github.run_id }}
-          path: ${{ github.workspace }}/docker-compose.log
-          retention-days: 3
-          overwrite: true
+          user_api_secret: ${{ steps.env_up.outputs.USER_API_SECRET}}
+      - name: Reporting
+        if: always()
+        with:
+          execution_status: ${{ steps.test_execution.outcome }}
+        uses: TykTechnologies/github-actions/.github/actions/tests/reporting@QA-1607_test_reusable_workflows
   test-controller-distros:
     if: github.event.pull_request.draft == false
     needs:
