@@ -44,7 +44,7 @@ jobs:
         redis-version: [5]
         mongodb-version: [4.2]
         postgres-version: [15]
-        go: [1.22.7]
+        go: [1.23.8]
 
     steps:
       - name: Checkout Tyk Pump
