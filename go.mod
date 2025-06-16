@@ -1,6 +1,6 @@
 module github.com/TykTechnologies/tyk-pump
 
-go 1.23.8
+go 1.23.10
 
 toolchain go1.24.3
 
