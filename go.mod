@@ -2,8 +2,6 @@ module github.com/TykTechnologies/tyk-pump
 
 go 1.24
 
-toolchain go1.24.5
-
 require (
 	github.com/DataDog/datadog-go v4.7.0+incompatible
 	github.com/TykTechnologies/gorpc v0.0.0-20210624160652-fe65bda0ccb9

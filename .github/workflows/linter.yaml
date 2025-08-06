@@ -22,7 +22,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        go: [1.24.5]
+        go: [1.24]
     with:
       go: ${{ matrix.go }}
       redis: 5
