@@ -1017,6 +1017,8 @@ Supported in Tyk Pump v1.0.0+
 
 `"tag"` - Prefix tag
 
+`"syslog_fragmentation"` - When set to `true`, prevents log fragmentation by serializing messages to JSON. When `false`, uses the legacy format. Defaults to `false` for backward compatibility.
+
 When working with FluentD, you should provide a [FluentD Parser](https://docs.fluentd.org/input/syslog) based on the OS you are using so that FluentD can correctly read the logs
 
 ```.json
@@ -1026,8 +1028,21 @@ When working with FluentD, you should provide a [FluentD Parser](https://docs.fl
     "transport": "udp",
     "network_addr": "localhost:5140",
     "log_level": 6,
-    "tag": "syslog-pump"
+    "tag": "syslog-pump",
+    "syslog_fragmentation": false
   }
+}
+```
+
+###### Env Variables
+
+```
+TYK_PMP_PUMPS_SYSLOG_TYPE=syslog
+TYK_PMP_PUMPS_SYSLOG_META_TRANSPORT=udp
+TYK_PMP_PUMPS_SYSLOG_META_NETWORKADDR=localhost:5140
+TYK_PMP_PUMPS_SYSLOG_META_LOGLEVEL=6
+TYK_PMP_PUMPS_SYSLOG_META_TAG=syslog-pump
+TYK_PMP_PUMPS_SYSLOG_META_SYSLOGFRAGMENTATION=false
 ```
 
 ## Stdout
