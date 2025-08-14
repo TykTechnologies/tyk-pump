@@ -149,7 +149,7 @@ func (s *SyslogPump) WriteData(ctx context.Context, data []interface{}) error {
 		default:
 			// Decode the raw analytics into Form
 			decoded := v.(analytics.AnalyticsRecord)
-			
+
 			if s.syslogConf.SyslogFragmentation {
 				// New behavior: Serialize to JSON to prevent log fragmentation
 				message := Json{
