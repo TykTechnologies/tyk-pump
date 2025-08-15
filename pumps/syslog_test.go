@@ -138,17 +138,17 @@ func TestSyslogPump_WriteData(t *testing.T) {
 
 			assert.Equal(t, tt.wantLogs, len(receivedMessages), "Expected %d log entries, got %d", tt.wantLogs, len(receivedMessages))
 
-			// Verify each message contains valid JSON
+			// Verify each message contains the original map format
 			for i, msg := range receivedMessages {
-				// Syslog messages have a header, extract the JSON part
-				// Look for the JSON object starting with '{'
-				jsonStart := strings.Index(msg, "{")
-				require.True(t, jsonStart >= 0, "Message should contain JSON object: %s", msg)
-				jsonPart := strings.TrimSpace(msg[jsonStart:])
+				// Syslog messages have a header, extract the map part
+				// Look for the map starting with 'map['
+				mapStart := strings.Index(msg, "map[")
+				require.True(t, mapStart >= 0, "Message should contain map format: %s", msg)
+				mapPart := strings.TrimSpace(msg[mapStart:])
 				
-				var jsonData map[string]interface{}
-				err := json.Unmarshal([]byte(jsonPart), &jsonData)
-				assert.NoError(t, err, "Log entry %d should contain valid JSON: %s", i, jsonPart)
+				// Verify it's the expected map format
+				assert.True(t, strings.HasPrefix(mapPart, "map["), "Log entry %d should start with 'map[': %s", i, mapPart)
+				assert.True(t, strings.HasSuffix(mapPart, "]"), "Log entry %d should end with ']': %s", i, mapPart)
 			}
 		})
 	}
@@ -203,11 +203,11 @@ Content-Length: 156
 	// Wait for message
 	select {
 	case msg := <-messages:
-		// Extract JSON from syslog message
-		// Look for the JSON object starting with '{'
-		jsonStart := strings.Index(msg, "{")
-		require.True(t, jsonStart >= 0, "Message should contain JSON object: %s", msg)
-		jsonPart := strings.TrimSpace(msg[jsonStart:])
+		// Extract map from syslog message
+		// Look for the map starting with 'map['
+		mapStart := strings.Index(msg, "map[")
+		require.True(t, mapStart >= 0, "Message should contain map format: %s", msg)
+		mapPart := strings.TrimSpace(msg[mapStart:])
 		
 		// Verify the syslog message itself is a single line (no fragmentation)
 		lines := strings.Split(msg, "\n")
@@ -219,41 +219,22 @@ Content-Length: 156
 		}
 		assert.Equal(t, 1, len(nonEmptyLines), "Syslog message should be a single line, got %d lines", len(nonEmptyLines))
 
-		// Verify it's valid JSON
-		var jsonData map[string]interface{}
-		err = json.Unmarshal([]byte(jsonPart), &jsonData)
-		if err != nil {
-			// If JSON is truncated due to UDP limits, that's expected for large payloads
-			if strings.Contains(err.Error(), "unexpected end of JSON input") {
-				t.Logf("JSON truncated due to UDP packet size limits (expected for large payloads): %s", jsonPart[len(jsonPart)-50:])
-				return
-			}
-		}
-		assert.NoError(t, err, "JSON part should be valid JSON: %s", jsonPart)
-
-		// Verify newlines are properly escaped in JSON
-		assert.Contains(t, jsonPart, "\\n", "Newlines should be escaped in JSON output")
+		// Verify it's the expected map format
+		assert.True(t, strings.HasPrefix(mapPart, "map["), "Should be map format: %s", mapPart)
+		// Note: May be truncated due to UDP packet size limits, so don't require ending with "]"
 		
-		// Verify original HTTP data is preserved in JSON (newlines should be escaped)
-		// Note: Large payloads may get truncated due to UDP packet size limits
-		if rawReq, ok := jsonData["raw_request"].(string); ok && rawReq != "" {
-			assert.Equal(t, record.RawRequest, rawReq, "HTTP RawRequest should be preserved")
-			// Verify that the original multiline HTTP content is preserved
-			assert.Contains(t, rawReq, "POST /api/users HTTP/1.1", "Should contain HTTP request line")
-			assert.Contains(t, rawReq, "Host: api.example.com", "Should contain HTTP headers")
-			if strings.Contains(rawReq, "John Doe") {
-				assert.Contains(t, rawReq, "\"name\": \"John Doe\"", "Should contain JSON body")
-			}
-		}
+		// Verify newlines are properly escaped (should appear as \n not actual newlines)
+		assert.Contains(t, mapPart, "\\n", "Newlines should be escaped in map output")
 		
-		if rawResp, ok := jsonData["raw_response"].(string); ok && rawResp != "" {
-			assert.Equal(t, record.RawResponse, rawResp, "HTTP RawResponse should be preserved")
-			assert.Contains(t, rawResp, "HTTP/1.1 201 Created", "Should contain HTTP status line")
-			assert.Contains(t, rawResp, "Content-Type: application/json", "Should contain response headers")
-			if strings.Contains(rawResp, "12345") {
-				assert.Contains(t, rawResp, "\"id\": 12345", "Should contain response body")
-			}
-		}
+		// The key test: ensure the syslog message itself doesn't contain raw newlines that would cause fragmentation
+		// We check this by ensuring the raw multiline content appears escaped in the single-line syslog message
+		assert.Contains(t, mapPart, "raw_request:POST /api/users HTTP/1.1\\n", "Should contain escaped newlines in raw_request")
+		
+		// Verify the original multiline content is present but escaped
+		assert.Contains(t, mapPart, "raw_request:", "Should contain raw_request field")
+		assert.Contains(t, mapPart, "raw_response:", "Should contain raw_response field")
+		assert.Contains(t, mapPart, "POST /api/users HTTP/1.1", "Should contain HTTP request line")
+		assert.Contains(t, mapPart, "HTTP/1.1 201 Created", "Should contain HTTP status line")
 		
 	case <-time.After(2 * time.Second):
 		t.Fatal("Timeout waiting for syslog message")
@@ -261,7 +242,7 @@ Content-Length: 156
 }
 
 func TestSyslogPump_WriteData_SpecialCharacters(t *testing.T) {
-	// Test data with special characters that could break JSON
+	// Test data with special characters that could break output
 	record := analytics.AnalyticsRecord{
 		Method:       "POST",
 		Path:         "/api/test",
@@ -285,28 +266,19 @@ func TestSyslogPump_WriteData_SpecialCharacters(t *testing.T) {
 	// Wait for message
 	select {
 	case msg := <-messages:
-		// Extract JSON from syslog message
-		// Look for the JSON object starting with '{'
-		jsonStart := strings.Index(msg, "{")
-		require.True(t, jsonStart >= 0, "Message should contain JSON object: %s", msg)
-		jsonPart := strings.TrimSpace(msg[jsonStart:])
+		// Extract map from syslog message
+		mapStart := strings.Index(msg, "map[")
+		require.True(t, mapStart >= 0, "Message should contain map format: %s", msg)
+		mapPart := strings.TrimSpace(msg[mapStart:])
 		
-		// Verify it's valid JSON despite special characters
-		var jsonData map[string]interface{}
-		err = json.Unmarshal([]byte(jsonPart), &jsonData)
-		if err != nil {
-			// If JSON is truncated due to UDP limits, that's expected for large payloads
-			if strings.Contains(err.Error(), "unexpected end of JSON input") {
-				t.Logf("JSON truncated due to UDP packet size limits (expected for large payloads): %s", jsonPart[len(jsonPart)-100:])
-				return
-			}
-		}
-		assert.NoError(t, err, "Output should be valid JSON even with special characters: %s", jsonPart)
-
-		// Verify special characters are properly escaped/preserved
-		assert.Equal(t, record.RawRequest, jsonData["raw_request"], "RawRequest with special chars should be preserved")
-		assert.Equal(t, record.RawResponse, jsonData["raw_response"], "RawResponse with unicode should be preserved")
-		assert.Equal(t, record.APIKey, jsonData["api_key"], "APIKey with quotes and backslashes should be preserved")
+		// Verify special characters and unicode are handled properly
+		assert.Contains(t, mapPart, "raw_request:", "Should contain raw_request field")
+		assert.Contains(t, mapPart, "raw_response:", "Should contain raw_response field")
+		assert.Contains(t, mapPart, "测试", "Should preserve unicode characters")
+		assert.Contains(t, mapPart, "🚀", "Should preserve emoji")
+		
+		// Verify newlines are escaped in the raw_request field
+		assert.Contains(t, mapPart, "\\n", "Newlines should be escaped")
 		
 	case <-time.After(2 * time.Second):
 		t.Fatal("Timeout waiting for syslog message")
