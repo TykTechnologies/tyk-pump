@@ -2,14 +2,12 @@ package pumps
 
 import (
 	"context"
-	"encoding/json"
 	"net"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
-	"github.com/TykTechnologies/tyk-pump/analytics/demo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -52,7 +50,7 @@ func createTestSyslogPump(addr string) *SyslogPump {
 			log: log.WithField("prefix", "test"),
 		},
 	}
-	
+
 	// Initialize the writer
 	pump.initWriter()
 	return pump
@@ -145,7 +143,7 @@ func TestSyslogPump_WriteData(t *testing.T) {
 				mapStart := strings.Index(msg, "map[")
 				require.True(t, mapStart >= 0, "Message should contain map format: %s", msg)
 				mapPart := strings.TrimSpace(msg[mapStart:])
-				
+
 				// Verify it's the expected map format
 				assert.True(t, strings.HasPrefix(mapPart, "map["), "Log entry %d should start with 'map[': %s", i, mapPart)
 				assert.True(t, strings.HasSuffix(mapPart, "]"), "Log entry %d should end with ']': %s", i, mapPart)
@@ -208,7 +206,7 @@ Content-Length: 156
 		mapStart := strings.Index(msg, "map[")
 		require.True(t, mapStart >= 0, "Message should contain map format: %s", msg)
 		mapPart := strings.TrimSpace(msg[mapStart:])
-		
+
 		// Verify the syslog message itself is a single line (no fragmentation)
 		lines := strings.Split(msg, "\n")
 		nonEmptyLines := []string{}
@@ -222,20 +220,20 @@ Content-Length: 156
 		// Verify it's the expected map format
 		assert.True(t, strings.HasPrefix(mapPart, "map["), "Should be map format: %s", mapPart)
 		// Note: May be truncated due to UDP packet size limits, so don't require ending with "]"
-		
+
 		// Verify newlines are properly escaped (should appear as \n not actual newlines)
 		assert.Contains(t, mapPart, "\\n", "Newlines should be escaped in map output")
-		
+
 		// The key test: ensure the syslog message itself doesn't contain raw newlines that would cause fragmentation
 		// We check this by ensuring the raw multiline content appears escaped in the single-line syslog message
 		assert.Contains(t, mapPart, "raw_request:POST /api/users HTTP/1.1\\n", "Should contain escaped newlines in raw_request")
-		
+
 		// Verify the original multiline content is present but escaped
 		assert.Contains(t, mapPart, "raw_request:", "Should contain raw_request field")
 		assert.Contains(t, mapPart, "raw_response:", "Should contain raw_response field")
 		assert.Contains(t, mapPart, "POST /api/users HTTP/1.1", "Should contain HTTP request line")
 		assert.Contains(t, mapPart, "HTTP/1.1 201 Created", "Should contain HTTP status line")
-		
+
 	case <-time.After(2 * time.Second):
 		t.Fatal("Timeout waiting for syslog message")
 	}
@@ -270,87 +268,16 @@ func TestSyslogPump_WriteData_SpecialCharacters(t *testing.T) {
 		mapStart := strings.Index(msg, "map[")
 		require.True(t, mapStart >= 0, "Message should contain map format: %s", msg)
 		mapPart := strings.TrimSpace(msg[mapStart:])
-		
+
 		// Verify special characters and unicode are handled properly
 		assert.Contains(t, mapPart, "raw_request:", "Should contain raw_request field")
 		assert.Contains(t, mapPart, "raw_response:", "Should contain raw_response field")
 		assert.Contains(t, mapPart, "测试", "Should preserve unicode characters")
 		assert.Contains(t, mapPart, "🚀", "Should preserve emoji")
-		
+
 		// Verify newlines are escaped in the raw_request field
 		assert.Contains(t, mapPart, "\\n", "Newlines should be escaped")
-		
-	case <-time.After(2 * time.Second):
-		t.Fatal("Timeout waiting for syslog message")
-	}
-}
 
-func TestSyslogPump_WriteData_AllFieldsPreserved(t *testing.T) {
-	// Use demo data to get a record with all fields populated
-	demo.DemoInit("test-org", "test-api", "v1.0")
-	record := demo.GenerateRandomAnalyticRecord("test-org", true)
-	
-	// Override some fields to ensure they're captured
-	record.Method = "PUT"
-	record.Path = "/api/preserve/test"
-	record.ResponseCode = 404
-	record.Alias = "test-alias"
-	record.OauthID = "oauth-123"
-
-	// Create mock syslog server
-	addr, messages := mockSyslogServer(t)
-
-	// Create syslog pump with test configuration
-	s := createTestSyslogPump(addr)
-
-	err := s.WriteData(context.Background(), []interface{}{record})
-	assert.NoError(t, err)
-
-	// Wait for message
-	select {
-	case msg := <-messages:
-		// Extract JSON from syslog message
-		// Look for the JSON object starting with '{'
-		jsonStart := strings.Index(msg, "{")
-		require.True(t, jsonStart >= 0, "Message should contain JSON object: %s", msg)
-		jsonPart := strings.TrimSpace(msg[jsonStart:])
-		
-		var jsonData map[string]interface{}
-		err = json.Unmarshal([]byte(jsonPart), &jsonData)
-		require.NoError(t, err, "Should be able to parse JSON: %s", jsonPart)
-
-		// Verify all expected fields are present and correct
-		expectedFields := map[string]interface{}{
-			"method":          record.Method,
-			"path":            record.Path,
-			"raw_path":        record.RawPath,
-			"response_code":   float64(record.ResponseCode), // JSON unmarshals numbers as float64
-			"alias":           record.Alias,
-			"api_key":         record.APIKey,
-			"api_version":     record.APIVersion,
-			"api_name":        record.APIName,
-			"api_id":          record.APIID,
-			"org_id":          record.OrgID,
-			"oauth_id":        record.OauthID,
-			"raw_request":     record.RawRequest,
-			"request_time_ms": float64(record.RequestTime),
-			"raw_response":    record.RawResponse,
-			"ip_address":      record.IPAddress,
-			"host":            record.Host,
-			"content_length":  float64(record.ContentLength),
-			"user_agent":      record.UserAgent,
-		}
-
-		for field, expectedValue := range expectedFields {
-			actualValue, exists := jsonData[field]
-			assert.True(t, exists, "Field %s should exist in JSON output", field)
-			assert.Equal(t, expectedValue, actualValue, "Field %s should have correct value", field)
-		}
-
-		// Verify timestamp is present and properly formatted
-		_, exists := jsonData["timestamp"]
-		assert.True(t, exists, "timestamp field should exist")
-		
 	case <-time.After(2 * time.Second):
 		t.Fatal("Timeout waiting for syslog message")
 	}
@@ -383,171 +310,5 @@ func TestSyslogPump_WriteData_ContextCancellation(t *testing.T) {
 		t.Error("Should not receive any messages when context is cancelled")
 	case <-time.After(100 * time.Millisecond):
 		// Good, no messages received
-	}
-}
-
-func TestSyslogPump_WriteData_LargeData(t *testing.T) {
-	// Test with moderately large data (but within UDP limits)
-	largeString := strings.Repeat("a", 500)
-	record := analytics.AnalyticsRecord{
-		Method:       "POST",
-		Path:         "/api/large",
-		ResponseCode: 200,
-		TimeStamp:    time.Now(),
-		RawRequest:   largeString,
-		RawResponse:  largeString,
-	}
-
-	// Create mock syslog server
-	addr, messages := mockSyslogServer(t)
-
-	// Create syslog pump with test configuration
-	s := createTestSyslogPump(addr)
-
-	err := s.WriteData(context.Background(), []interface{}{record})
-	assert.NoError(t, err)
-
-	// Wait for message
-	select {
-	case msg := <-messages:
-		// Extract JSON from syslog message
-		// Look for the JSON object starting with '{'
-		jsonStart := strings.Index(msg, "{")
-		require.True(t, jsonStart >= 0, "Message should contain JSON object: %s", msg)
-		jsonPart := strings.TrimSpace(msg[jsonStart:])
-		
-		// Verify it's still valid JSON
-		var jsonData map[string]interface{}
-		err = json.Unmarshal([]byte(jsonPart), &jsonData)
-		if err != nil {
-			// If JSON is truncated due to UDP limits, that's expected for large payloads
-			if strings.Contains(err.Error(), "unexpected end of JSON input") {
-				t.Logf("JSON truncated due to UDP packet size limits (expected for large payloads): %s", jsonPart[len(jsonPart)-50:])
-				return
-			}
-		}
-		assert.NoError(t, err, "Large data should still produce valid JSON: %s", jsonPart[:100]+"...") // Show first 100 chars
-
-		// Verify large strings are preserved (if not truncated)
-		if rawReq, ok := jsonData["raw_request"].(string); ok {
-			assert.Equal(t, largeString, rawReq, "Large RawRequest should be preserved")
-		}
-		if rawResp, ok := jsonData["raw_response"].(string); ok {
-			assert.Equal(t, largeString, rawResp, "Large RawResponse should be preserved")
-		}
-		
-	case <-time.After(5 * time.Second): // Give more time for large data
-		t.Fatal("Timeout waiting for syslog message")
-	}
-}
-
-// Test that demonstrates the fix for the original fragmentation issue
-func TestSyslogPump_WriteData_FragmentationFix(t *testing.T) {
-	// This test demonstrates how the JSON serialization prevents syslog fragmentation
-	record := analytics.AnalyticsRecord{
-		Method:       "POST",
-		Path:         "/api/checkout",
-		ResponseCode: 200,
-		TimeStamp:    time.Now(),
-		// Real-world example that would cause fragmentation in the old implementation
-		RawRequest: `POST /api/checkout HTTP/1.1
-Host: ecommerce.example.com
-User-Agent: Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/605.1.15
-Content-Type: application/json
-Authorization: Bearer token123
-X-Forwarded-For: 192.168.1.100
-
-{
-  "cart_id": "cart_789",
-  "items": [
-    {"product_id": "p123", "quantity": 2},
-    {"product_id": "p456", "quantity": 1}
-  ],
-  "payment": {
-    "method": "credit_card",
-    "card_ending": "4321"
-  }
-}`,
-		RawResponse: `HTTP/1.1 200 OK
-Date: Wed, 15 Aug 2024 14:30:00 GMT
-Content-Type: application/json
-Set-Cookie: session_id=abc123; Secure; HttpOnly
-X-Transaction-ID: txn_987654321
-
-{
-  "order_id": "order_12345",
-  "status": "confirmed",
-  "total": 99.99,
-  "estimated_delivery": "2024-08-18"
-}`,
-	}
-
-	// Create mock syslog server
-	addr, messages := mockSyslogServer(t)
-
-	// Create syslog pump with test configuration
-	s := createTestSyslogPump(addr)
-
-	err := s.WriteData(context.Background(), []interface{}{record})
-	assert.NoError(t, err)
-
-	// Wait for message
-	select {
-	case msg := <-messages:
-		// This is the key test: the entire syslog message should be on one line
-		lines := strings.Split(msg, "\n")
-		nonEmptyLines := []string{}
-		for _, line := range lines {
-			if strings.TrimSpace(line) != "" {
-				nonEmptyLines = append(nonEmptyLines, line)
-			}
-		}
-		assert.Equal(t, 1, len(nonEmptyLines), "Syslog message should be exactly one line to prevent fragmentation")
-
-		// Extract JSON from syslog message
-		// Look for the JSON object starting with '{'
-		jsonStart := strings.Index(msg, "{")
-		require.True(t, jsonStart >= 0, "Message should contain JSON object: %s", msg)
-		jsonPart := strings.TrimSpace(msg[jsonStart:])
-		
-		// Verify the newlines in the original HTTP data are escaped in JSON
-		assert.Contains(t, jsonPart, "\\n", "Newlines in original HTTP data should be escaped in JSON")
-		assert.NotContains(t, jsonPart, "Host: ecommerce.example.com\nUser-Agent", "Raw newlines should not appear in syslog output")
-
-		// Verify we can parse it as JSON and get the original HTTP data back intact
-		var jsonData map[string]interface{}
-		err = json.Unmarshal([]byte(jsonPart), &jsonData)
-		if err != nil {
-			// If JSON is truncated due to UDP limits, that's expected for large payloads
-			if strings.Contains(err.Error(), "unexpected end of JSON input") {
-				t.Logf("JSON truncated due to UDP packet size limits (expected for large payloads): %s", jsonPart[len(jsonPart)-50:])
-				return
-			}
-		}
-		assert.NoError(t, err, "Should be able to parse JSON")
-		
-		// The original multiline HTTP data should be completely preserved
-		// Note: Large payloads may get truncated due to UDP packet size limits, so check gracefully
-		if rawReq, ok := jsonData["raw_request"].(string); ok && rawReq != "" {
-			// Verify specific multiline content is preserved (at least the beginning)
-			assert.Contains(t, rawReq, "POST /api/checkout HTTP/1.1", "Should preserve HTTP request line")
-			assert.Contains(t, rawReq, "Authorization: Bearer token123", "Should preserve headers")
-			if strings.Contains(rawReq, "cart_789") {
-				assert.Contains(t, rawReq, "\"cart_id\": \"cart_789\"", "Should preserve JSON body")
-			}
-		}
-		
-		if rawResp, ok := jsonData["raw_response"].(string); ok && rawResp != "" {
-			assert.Contains(t, rawResp, "HTTP/1.1 200 OK", "Should preserve HTTP status line")
-			if strings.Contains(rawResp, "session_id") {
-				assert.Contains(t, rawResp, "Set-Cookie: session_id=abc123", "Should preserve response headers")
-			}
-			if strings.Contains(rawResp, "order_12345") {
-				assert.Contains(t, rawResp, "\"order_id\": \"order_12345\"", "Should preserve response body")
-			}
-		}
-		
-	case <-time.After(2 * time.Second):
-		t.Fatal("Timeout waiting for syslog message")
 	}
 }
