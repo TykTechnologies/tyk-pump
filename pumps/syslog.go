@@ -146,12 +146,12 @@ func (s *SyslogPump) WriteData(ctx context.Context, data []interface{}) error {
 		default:
 			// Decode the raw analytics into Form
 			decoded := v.(analytics.AnalyticsRecord)
-			
+
 			// Escape newlines in raw_request and raw_response to prevent log fragmentation
 			// while maintaining the original map format for backward compatibility
 			escapedRawRequest := strings.ReplaceAll(decoded.RawRequest, "\n", "\\n")
 			escapedRawResponse := strings.ReplaceAll(decoded.RawResponse, "\n", "\\n")
-			
+
 			message := Json{
 				"timestamp":       decoded.TimeStamp,
 				"method":          decoded.Method,
