@@ -2,9 +2,9 @@ package pumps
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log/syslog"
+	"strings"
 
 	"github.com/mitchellh/mapstructure"
 
@@ -149,6 +149,7 @@ func (s *SyslogPump) WriteData(ctx context.Context, data []interface{}) error {
 		default:
 			// Decode the raw analytics into Form
 			decoded := v.(analytics.AnalyticsRecord)
+<<<<<<< HEAD
 			
 			if s.syslogConf.SyslogFragmentation {
 				// New behavior: Serialize to JSON to prevent log fragmentation
@@ -206,6 +207,38 @@ func (s *SyslogPump) WriteData(ctx context.Context, data []interface{}) error {
 					decoded.ContentLength,
 					decoded.UserAgent)
 			}
+=======
+
+			// Escape newlines in raw_request and raw_response to prevent log fragmentation
+			// while maintaining the original map format for backward compatibility
+			escapedRawRequest := strings.ReplaceAll(decoded.RawRequest, "\n", "\\n")
+			escapedRawResponse := strings.ReplaceAll(decoded.RawResponse, "\n", "\\n")
+
+			message := Json{
+				"timestamp":       decoded.TimeStamp,
+				"method":          decoded.Method,
+				"path":            decoded.Path,
+				"raw_path":        decoded.RawPath,
+				"response_code":   decoded.ResponseCode,
+				"alias":           decoded.Alias,
+				"api_key":         decoded.APIKey,
+				"api_version":     decoded.APIVersion,
+				"api_name":        decoded.APIName,
+				"api_id":          decoded.APIID,
+				"org_id":          decoded.OrgID,
+				"oauth_id":        decoded.OauthID,
+				"raw_request":     escapedRawRequest,
+				"request_time_ms": decoded.RequestTime,
+				"raw_response":    escapedRawResponse,
+				"ip_address":      decoded.IPAddress,
+				"host":            decoded.Host,
+				"content_length":  decoded.ContentLength,
+				"user_agent":      decoded.UserAgent,
+			}
+
+			// Print to Syslog using original map format (maintains backward compatibility)
+			_, _ = fmt.Fprintf(s.writer, "%s", message)
+>>>>>>> 0596e82... [TT-15532] Alternative backward-compatible fix for syslog pump log fragmentation (#886)
 		}
 	}
 	s.log.Info("Purged ", len(data), " records...")
