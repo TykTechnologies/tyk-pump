@@ -2,9 +2,9 @@ package pumps
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log/syslog"
+	"strings"
 
 	"github.com/mitchellh/mapstructure"
 
@@ -146,6 +146,12 @@ func (s *SyslogPump) WriteData(ctx context.Context, data []interface{}) error {
 		default:
 			// Decode the raw analytics into Form
 			decoded := v.(analytics.AnalyticsRecord)
+
+			// Escape newlines in raw_request and raw_response to prevent log fragmentation
+			// while maintaining the original map format for backward compatibility
+			escapedRawRequest := strings.ReplaceAll(decoded.RawRequest, "\n", "\\n")
+			escapedRawResponse := strings.ReplaceAll(decoded.RawResponse, "\n", "\\n")
+
 			message := Json{
 				"timestamp":       decoded.TimeStamp,
 				"method":          decoded.Method,
@@ -159,24 +165,17 @@ func (s *SyslogPump) WriteData(ctx context.Context, data []interface{}) error {
 				"api_id":          decoded.APIID,
 				"org_id":          decoded.OrgID,
 				"oauth_id":        decoded.OauthID,
-				"raw_request":     decoded.RawRequest,
+				"raw_request":     escapedRawRequest,
 				"request_time_ms": decoded.RequestTime,
-				"raw_response":    decoded.RawResponse,
+				"raw_response":    escapedRawResponse,
 				"ip_address":      decoded.IPAddress,
 				"host":            decoded.Host,
 				"content_length":  decoded.ContentLength,
 				"user_agent":      decoded.UserAgent,
 			}
 
-			// Serialize to JSON to prevent log fragmentation
-			jsonData, err := json.Marshal(message)
-			if err != nil {
-				s.log.Error("Failed to marshal message to JSON: ", err)
-				continue
-			}
-
-			// Print to Syslog as single-line JSON
-			_, _ = fmt.Fprintf(s.writer, "%s", string(jsonData))
+			// Print to Syslog using original map format (maintains backward compatibility)
+			_, _ = fmt.Fprintf(s.writer, "%s", message)
 		}
 	}
 	s.log.Info("Purged ", len(data), " records...")
