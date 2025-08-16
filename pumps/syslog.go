@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/syslog"
+	"strings"
 
 	"github.com/mitchellh/mapstructure"
 
@@ -145,6 +146,12 @@ func (s *SyslogPump) WriteData(ctx context.Context, data []interface{}) error {
 		default:
 			// Decode the raw analytics into Form
 			decoded := v.(analytics.AnalyticsRecord)
+
+			// Escape newlines in raw_request and raw_response to prevent log fragmentation
+			// while maintaining the original map format for backward compatibility
+			escapedRawRequest := strings.ReplaceAll(decoded.RawRequest, "\n", "\\n")
+			escapedRawResponse := strings.ReplaceAll(decoded.RawResponse, "\n", "\\n")
+
 			message := Json{
 				"timestamp":       decoded.TimeStamp,
 				"method":          decoded.Method,
@@ -158,16 +165,20 @@ func (s *SyslogPump) WriteData(ctx context.Context, data []interface{}) error {
 				"api_id":          decoded.APIID,
 				"org_id":          decoded.OrgID,
 				"oauth_id":        decoded.OauthID,
-				"raw_request":     decoded.RawRequest,
+				"raw_request":     escapedRawRequest,
 				"request_time_ms": decoded.RequestTime,
-				"raw_response":    decoded.RawResponse,
+				"raw_response":    escapedRawResponse,
 				"ip_address":      decoded.IPAddress,
 				"host":            decoded.Host,
 				"content_length":  decoded.ContentLength,
 				"user_agent":      decoded.UserAgent,
 			}
 
+<<<<<<< HEAD
 			// Print to Syslog
+=======
+			// Print to Syslog using original map format (maintains backward compatibility)
+>>>>>>> 0596e82... [TT-15532] Alternative backward-compatible fix for syslog pump log fragmentation (#886)
 			_, _ = fmt.Fprintf(s.writer, "%s", message)
 		}
 	}

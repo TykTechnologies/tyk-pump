@@ -20,3 +20,4 @@ pumps/chunk.go
 migrate.js
 utils/release_rc.sh
 .terraform**
+.claude/settings.local.json
