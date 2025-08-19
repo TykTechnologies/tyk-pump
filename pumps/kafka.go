@@ -68,6 +68,9 @@ type KafkaConf struct {
 	// SASL algorithm. It's the algorithm specified for scram mechanism. It could be sha-512 or sha-256.
 	// Defaults to "sha-256".
 	Algorithm string `json:"sasl_algorithm" mapstructure:"sasl_algorithm"`
+	// BatchBytes controls the maximum size of a request in bytes before it's sent to a partition.
+	// If the value is 0, the writer will use the default value from kafka-go library (1MB).
+	BatchBytes int `json:"batch_bytes" mapstructure:"batch_bytes"`
 }
 
 func (k *KafkaPump) New() Pump {
@@ -162,7 +165,7 @@ func (k *KafkaPump) Init(config interface{}) error {
 		timeout = time.Duration(v) * time.Second // i.e: when timeout is 1
 	}
 
-	//Kafka writer connection config
+	// Kafka writer connection config
 	dialer := &kafka.Dialer{
 		Timeout:       timeout,
 		ClientID:      k.kafkaConf.ClientId,
@@ -170,6 +173,7 @@ func (k *KafkaPump) Init(config interface{}) error {
 		SASLMechanism: mechanism,
 	}
 
+	// Kafka writer config
 	k.writerConfig.Brokers = k.kafkaConf.Broker
 	k.writerConfig.Topic = k.kafkaConf.Topic
 	k.writerConfig.Balancer = &kafka.LeastBytes{}
@@ -179,6 +183,7 @@ func (k *KafkaPump) Init(config interface{}) error {
 	if k.kafkaConf.Compressed {
 		k.writerConfig.CompressionCodec = snappy.NewCompressionCodec()
 	}
+	k.writerConfig.BatchBytes = k.kafkaConf.BatchBytes
 
 	k.log.Info(k.GetName() + " Initialized")
 
