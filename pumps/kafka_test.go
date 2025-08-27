@@ -1,6 +1,7 @@
 package pumps
 
 import (
+	"os"
 	"testing"
 
 	"github.com/segmentio/kafka-go"
@@ -143,4 +144,42 @@ func TestKafkaPump_WriterConfigIntegrity(t *testing.T) {
 	assert.NotNil(t, pump.writerConfig.CompressionCodec)
 	assert.NotNil(t, pump.writerConfig.Dialer)
 	assert.IsType(t, &kafka.LeastBytes{}, pump.writerConfig.Balancer)
+}
+
+func TestKafkaPump_BatchBytesEnvironmentVariableOverride(t *testing.T) {
+	// Test that BatchBytes can be overridden via environment variables
+	// This follows the same pattern as other configuration fields
+	config := map[string]interface{}{
+		"broker":      []string{"localhost:9092"},
+		"topic":       "test-topic",
+		"batch_bytes": 1024000, // 1MB
+	}
+
+	os.Setenv("TYK_PMP_PUMPS_KAFKA_META_BATCHBYTES", "2048000") // 2MB
+	defer os.Unsetenv("TYK_PMP_PUMPS_KAFKA_META_BATCHBYTES")
+
+	pump := &KafkaPump{}
+	err := pump.Init(config)
+
+	assert.NoError(t, err)
+	assert.Equal(t, 2048000, pump.writerConfig.BatchBytes)
+}
+
+func TestKafkaPump_BatchBytesEnvironmentVariableInvalid(t *testing.T) {
+	// Test that BatchBytes environment variable is ignored if it's not a valid integer
+	// This follows the same pattern as other configuration fields
+	config := map[string]interface{}{
+		"broker":      []string{"localhost:9092"},
+		"topic":       "test-topic",
+		"batch_bytes": 1024000, // 1MB
+	}
+
+	os.Setenv("TYK_PMP_PUMPS_KAFKA_META_BATCHBYTES", "not-an-integer")
+	defer os.Unsetenv("TYK_PMP_PUMPS_KAFKA_META_BATCHBYTES")
+
+	pump := &KafkaPump{}
+	err := pump.Init(config)
+
+	assert.NoError(t, err)
+	assert.Equal(t, 1024000, pump.writerConfig.BatchBytes)
 }
