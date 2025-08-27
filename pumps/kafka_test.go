@@ -4,6 +4,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/mitchellh/mapstructure"
 	"github.com/segmentio/kafka-go"
 	"github.com/stretchr/testify/assert"
 )
@@ -182,4 +183,26 @@ func TestKafkaPump_BatchBytesEnvironmentVariableInvalid(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Equal(t, 1024000, pump.writerConfig.BatchBytes)
+}
+
+func TestKafkaPump_BatchBytesConfigAndEnvironmentVariableBothInvalid(t *testing.T) {
+	// Test that mapstructure.Decode fails when batch_bytes is a non-integer string
+	config := map[string]interface{}{
+		"broker":      []string{"localhost:9092"},
+		"topic":       "test-topic",
+		"batch_bytes": "invalid-config-value", // Non-integer config value
+	}
+
+	os.Setenv("TYK_PMP_PUMPS_KAFKA_META_BATCHBYTES", "invalid-env-value")
+	defer os.Unsetenv("TYK_PMP_PUMPS_KAFKA_META_BATCHBYTES")
+
+	// Test that mapstructure.Decode fails with invalid batch_bytes config
+	// We test this directly without calling Init() to avoid log.Fatal()
+	kafkaConf := &KafkaConf{}
+	err := mapstructure.Decode(config, kafkaConf)
+
+	// We expect mapstructure.Decode to fail when trying to convert string to int
+	assert.Error(t, err, "Expected mapstructure.Decode to fail with invalid batch_bytes config")
+	assert.Contains(t, err.Error(), "batch_bytes", "Error should mention batch_bytes field")
+	assert.Contains(t, err.Error(), "expected type 'int'", "Error should mention type conversion issue")
 }
