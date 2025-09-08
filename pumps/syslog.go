@@ -53,9 +53,6 @@ type SyslogConf struct {
 	//   }
 	// ```
 	Tag string `json:"tag" mapstructure:"tag"`
-	// When set to true, prevents log fragmentation by serializing messages to JSON.
-	// When false, uses the legacy format. Defaults to false for backward compatibility.
-	SyslogFragmentation bool `json:"syslog_fragmentation" mapstructure:"syslog_fragmentation"`
 }
 
 func (s *SyslogPump) GetName() string {
@@ -149,63 +146,37 @@ func (s *SyslogPump) WriteData(ctx context.Context, data []interface{}) error {
 		default:
 			// Decode the raw analytics into Form
 			decoded := v.(analytics.AnalyticsRecord)
-			
-			if s.syslogConf.SyslogFragmentation {
-				// New behavior: Serialize to JSON to prevent log fragmentation
-				message := Json{
-					"timestamp":       decoded.TimeStamp,
-					"method":          decoded.Method,
-					"path":            decoded.Path,
-					"raw_path":        decoded.RawPath,
-					"response_code":   decoded.ResponseCode,
-					"alias":           decoded.Alias,
-					"api_key":         decoded.APIKey,
-					"api_version":     decoded.APIVersion,
-					"api_name":        decoded.APIName,
-					"api_id":          decoded.APIID,
-					"org_id":          decoded.OrgID,
-					"oauth_id":        decoded.OauthID,
-					"raw_request":     decoded.RawRequest,
-					"request_time_ms": decoded.RequestTime,
-					"raw_response":    decoded.RawResponse,
-					"ip_address":      decoded.IPAddress,
-					"host":            decoded.Host,
-					"content_length":  decoded.ContentLength,
-					"user_agent":      decoded.UserAgent,
-				}
-
-				// Serialize to JSON to prevent log fragmentation
-				jsonData, err := json.Marshal(message)
-				if err != nil {
-					s.log.Error("Failed to marshal message to JSON: ", err)
-					continue
-				}
-
-				// Print to Syslog as single-line JSON
-				_, _ = fmt.Fprintf(s.writer, "%s", string(jsonData))
-			} else {
-				// Legacy behavior: Use the old format for backward compatibility
-				_, _ = fmt.Fprintf(s.writer, "timestamp=%s method=%s path=%s raw_path=%s response_code=%d alias=%s api_key=%s api_version=%s api_name=%s api_id=%s org_id=%s oauth_id=%s raw_request=%s request_time_ms=%d raw_response=%s ip_address=%s host=%s content_length=%d user_agent=%s",
-					decoded.TimeStamp,
-					decoded.Method,
-					decoded.Path,
-					decoded.RawPath,
-					decoded.ResponseCode,
-					decoded.Alias,
-					decoded.APIKey,
-					decoded.APIVersion,
-					decoded.APIName,
-					decoded.APIID,
-					decoded.OrgID,
-					decoded.OauthID,
-					decoded.RawRequest,
-					decoded.RequestTime,
-					decoded.RawResponse,
-					decoded.IPAddress,
-					decoded.Host,
-					decoded.ContentLength,
-					decoded.UserAgent)
+			message := Json{
+				"timestamp":       decoded.TimeStamp,
+				"method":          decoded.Method,
+				"path":            decoded.Path,
+				"raw_path":        decoded.RawPath,
+				"response_code":   decoded.ResponseCode,
+				"alias":           decoded.Alias,
+				"api_key":         decoded.APIKey,
+				"api_version":     decoded.APIVersion,
+				"api_name":        decoded.APIName,
+				"api_id":          decoded.APIID,
+				"org_id":          decoded.OrgID,
+				"oauth_id":        decoded.OauthID,
+				"raw_request":     decoded.RawRequest,
+				"request_time_ms": decoded.RequestTime,
+				"raw_response":    decoded.RawResponse,
+				"ip_address":      decoded.IPAddress,
+				"host":            decoded.Host,
+				"content_length":  decoded.ContentLength,
+				"user_agent":      decoded.UserAgent,
 			}
+
+			// Serialize to JSON to prevent log fragmentation
+			jsonData, err := json.Marshal(message)
+			if err != nil {
+				s.log.Error("Failed to marshal message to JSON: ", err)
+				continue
+			}
+
+			// Print to Syslog as single-line JSON
+			_, _ = fmt.Fprintf(s.writer, "%s", string(jsonData))
 		}
 	}
 	s.log.Info("Purged ", len(data), " records...")
