@@ -174,11 +174,7 @@ func (s *SyslogPump) WriteData(ctx context.Context, data []interface{}) error {
 				"user_agent":      decoded.UserAgent,
 			}
 
-<<<<<<< HEAD
-			// Print to Syslog
-=======
 			// Print to Syslog using original map format (maintains backward compatibility)
->>>>>>> 0596e82... [TT-15532] Alternative backward-compatible fix for syslog pump log fragmentation (#886)
 			_, _ = fmt.Fprintf(s.writer, "%s", message)
 		}
 	}
