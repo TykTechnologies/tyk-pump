@@ -22,7 +22,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        go: [1.22.7]
+        go: [1.24]
     with:
       go: ${{ matrix.go }}
       redis: 5
@@ -34,7 +34,7 @@ jobs:
     uses: TykTechnologies/github-actions/.github/workflows/golangci.yaml@main
     with:
       main_branch: "master"
-      go_version: 1.22.7
+      go_version: 1.24
   sonarcloud:
     if: ${{ always() }}
     needs: [gotest, golangci]
