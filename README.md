@@ -1368,7 +1368,8 @@ We must authenticate ourselves by providing credentials to AWS. This pump uses t
       "meta": {
         "stream_name": "my-stream",
         "region": "eu-west-2",
-        "batch_size": 100
+        "batch_size": 100,
+        "kms_key_id": "your-kms-key-id"
       }
     },
 ```
@@ -1381,6 +1382,7 @@ TYK_PMP_PUMPS_KINESIS_TYPE=kinesis
 TYK_PMP_PUMPS_KINESIs_META_STREAMNAME=my-stream
 TYK_PMP_PUMPS_KINESIS_META_REGION=eu-west-2
 TYK_PMP_PUMPS_KINESIS_META_BATCHSIZE=100
+TYK_PMP_PUMPS_KINESIS_META_KMSKEYID=your-kms-key-id
 ```
 
 # Base Pump Configurations
