@@ -13,6 +13,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/kinesis"
 	"github.com/aws/aws-sdk-go-v2/service/kinesis/types"
 )
@@ -37,6 +38,12 @@ type KinesisConf struct {
 	StreamName string `mapstructure:"stream_name"`
 	// AWS Region the Kinesis stream targets
 	Region string `mapstructure:"region"`
+	// AWS Access Key ID for authentication. If not provided, will use default credential chain (environment variables, shared credentials file, IAM roles, etc.)
+	AccessKeyID string `mapstructure:"access_key_id"`
+	// AWS Secret Access Key for authentication. If not provided, will use default credential chain
+	SecretAccessKey string `mapstructure:"secret_access_key"`
+	// AWS Session Token for temporary credentials (optional)
+	SessionToken string `mapstructure:"session_token"`
 	// Each PutRecords (the function used in this pump)request can support up to 500 records.
 	// Each record in the request can be as large as 1 MiB, up to a limit of 5 MiB for the entire request, including partition keys.
 	// Each shard can support writes up to 1,000 records per second, up to a maximum data write total of 1 MiB per second.
@@ -72,7 +79,13 @@ func (p *KinesisPump) Init(config interface{}) error {
 	// Load AWS configuration
 	// Credentials are loaded as specified in
 	// https://aws.github.io/aws-sdk-go-v2/docs/configuring-sdk/#specifying-credentials
-	cfg, err := awsconfig.LoadDefaultConfig(context.TODO(), awsconfig.WithRegion(p.kinesisConf.Region))
+	var cfg aws.Config
+	if p.kinesisConf.AccessKeyID != "" && p.kinesisConf.SecretAccessKey != "" {
+		creds := credentials.NewStaticCredentialsProvider(p.kinesisConf.AccessKeyID, p.kinesisConf.SecretAccessKey, p.kinesisConf.SessionToken)
+		cfg, err = awsconfig.LoadDefaultConfig(context.TODO(), awsconfig.WithCredentialsProvider(creds), awsconfig.WithRegion(p.kinesisConf.Region))
+	} else {
+		cfg, err = awsconfig.LoadDefaultConfig(context.TODO(), awsconfig.WithRegion(p.kinesisConf.Region))
+	}
 	if err != nil {
 		p.log.Fatalf("unable to load Kinesis SDK config, %v", err)
 	}
