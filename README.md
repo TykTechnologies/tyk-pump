@@ -1371,7 +1371,9 @@ We must authenticate ourselves by providing credentials to AWS. This pump uses t
         "stream_name": "my-stream",
         "region": "eu-west-2",
         "batch_size": 100,
-        "kms_key_id": "1234abcd-12ab-34cd-56ef-1234567890ab"
+        "kms_key_id": "1234abcd-12ab-34cd-56ef-1234567890ab",
+        "access_key_id": "your-key-id",
+        "secret_access_key": "your-secret-key"
       }
     },
 ```
