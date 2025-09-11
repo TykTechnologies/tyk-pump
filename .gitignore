@@ -21,3 +21,4 @@ migrate.js
 utils/release_rc.sh
 .terraform**
 .claude/settings.local.json
+dist/
