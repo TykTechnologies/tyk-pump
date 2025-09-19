@@ -122,11 +122,11 @@ publishers:
       - PACKAGECLOUD_TOKEN={{ .Env.PACKAGECLOUD_TOKEN }}
     cmd: packagecloud publish --debvers "{{ .Env.DEBVERS }}" --rpmvers "{{ .Env.RPMVERS }}" tyk/tyk-pump-unstable {{ .ArtifactPath }}
 dockers:
-  # Build tykio/tyk-pump-fips fips (amd64)
+  # Build tykio/tyk-pump-docker-pub fips (amd64)
   - ids:
       - fips-amd64
     image_templates:
-      - "tykio/tyk-pump-fips:{{.Tag}}-fips-amd64"
+      - "tykio/tyk-pump-docker-pub:{{.Tag}}-fips-amd64"
     build_flag_templates:
       - "--build-arg=PORTS=80"
       - "--build-arg=BUILD_PACKAGE_NAME=tyk-pump-fips"
@@ -192,16 +192,16 @@ dockers:
       - "LICENSE.md"
       - "pump.example.conf"
 docker_manifests:
-  # Single-arch manifest for tykio/tyk-pump-fips fips
-  - name_template: tykio/tyk-pump-fips:{{ .Tag }}-fips
+  # Single-arch manifest for tykio/tyk-pump-docker-pub fips
+  - name_template: tykio/tyk-pump-docker-pub:{{ .Tag }}-fips
     image_templates:
-      - tykio/tyk-pump-fips:{{`{{ .Tag }}`}}-fips-amd64
-  - name_template: tykio/tyk-pump-fips:v{{ .Major }}.{{ .Minor }}{{.Prerelease}}-fips
+      - tykio/tyk-pump-docker-pub:{{`{{ .Tag }}`}}-fips-amd64
+  - name_template: tykio/tyk-pump-docker-pub:v{{ .Major }}.{{ .Minor }}{{.Prerelease}}-fips
     image_templates:
-      - tykio/tyk-pump-fips:{{`{{ .Tag }}`}}-fips-amd64
-  - name_template: tykio/tyk-pump-fips:v{{ .Major }}{{.Prerelease}}-fips
+      - tykio/tyk-pump-docker-pub:{{`{{ .Tag }}`}}-fips-amd64
+  - name_template: tykio/tyk-pump-docker-pub:v{{ .Major }}{{.Prerelease}}-fips
     image_templates:
-      - tykio/tyk-pump-fips:{{`{{ .Tag }}`}}-fips-amd64
+      - tykio/tyk-pump-docker-pub:{{`{{ .Tag }}`}}-fips-amd64
   # Multi-arch manifest for tykio/tyk-pump-docker-pub std
   - name_template: tykio/tyk-pump-docker-pub:{{ .Tag }}
     image_templates:

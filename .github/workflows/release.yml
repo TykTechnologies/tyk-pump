@@ -50,7 +50,6 @@ jobs:
             debvers: 'ubuntu/xenial ubuntu/bionic ubuntu/focal ubuntu/jammy debian/jessie debian/buster debian/bullseye debian/bookworm'
     outputs:
       fips_tags: ${{ steps.ci_metadata_fips.outputs.tags }}
-      fips_tags: ${{ steps.ci_metadata_fips.outputs.tags }}
       std_tags: ${{ steps.ci_metadata_std.outputs.tags }}
       commit_author: ${{ steps.set_outputs.outputs.commit_author}}
     steps:
@@ -169,7 +168,7 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: |
-            tykio/tyk-pump-fips
+            tykio/tyk-pump-docker-pub
           flavor: |
             latest=false
             prefix=v
