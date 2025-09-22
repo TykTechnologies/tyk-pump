@@ -6,12 +6,7 @@
 # - amd64
 version: 2
 builds:
-  - id: fips-amd64
-    flags:
-      - -tags=fips,boringcrypto
-    env:
-      - NOP=nop # ignore this, it is jsut to avoid a complex conditional in the templates
-      - GOEXPERIMENT=boringcrypto
+  - id: std
     ldflags:
       - -X github.com/TykTechnologies/tyk-pump/pumps.Version={{.Version}}
       - -X github.com/TykTechnologies/tyk-pump/pumps.Commit={{.FullCommit}}
@@ -24,7 +19,48 @@ builds:
       - arm64
       - s390x
     binary: tyk-pump
+  - id: std-amd64
+    ldflags:
+      - -X github.com/TykTechnologies/tyk-pump/pumps.Version={{.Version}}
+      - -X github.com/TykTechnologies/tyk-pump/pumps.Commit={{.FullCommit}}
+      - -X github.com/TykTechnologies/tyk-pump/pumps.BuildDate={{.Date}}
+      - -X github.com/TykTechnologies/tyk-pump/pumps.BuiltBy=goreleaser
+    goos:
+      - linux
+    goarch:
+      - amd64
+    binary: tyk-pump
+  - id: std-arm64
+    ldflags:
+      - -X github.com/TykTechnologies/tyk-pump/pumps.Version={{.Version}}
+      - -X github.com/TykTechnologies/tyk-pump/pumps.Commit={{.FullCommit}}
+      - -X github.com/TykTechnologies/tyk-pump/pumps.BuildDate={{.Date}}
+      - -X github.com/TykTechnologies/tyk-pump/pumps.BuiltBy=goreleaser
+    goos:
+      - linux
+    goarch:
+      - arm64
+    binary: tyk-pump
   - id: fips
+    flags:
+      - -tags=fips,boringcrypto
+    env:
+      - GOEXPERIMENT=boringcrypto
+    ldflags:
+      - -X github.com/TykTechnologies/tyk-pump/pumps.Version={{.Version}}
+      - -X github.com/TykTechnologies/tyk-pump/pumps.Commit={{.FullCommit}}
+      - -X github.com/TykTechnologies/tyk-pump/pumps.BuildDate={{.Date}}
+      - -X github.com/TykTechnologies/tyk-pump/pumps.BuiltBy=goreleaser
+    goos:
+      - linux
+    goarch:
+      - amd64
+    binary: tyk-pump
+  - id: fips-amd64
+    flags:
+      - -tags=fips,boringcrypto
+    env:
+      - GOEXPERIMENT=boringcrypto
     ldflags:
       - -X github.com/TykTechnologies/tyk-pump/pumps.Version={{.Version}}
       - -X github.com/TykTechnologies/tyk-pump/pumps.Commit={{.FullCommit}}
@@ -80,7 +116,7 @@ nfpms:
     vendor: "Tyk Technologies Ltd"
     homepage: "https://tyk.io"
     maintainer: "Tyk <info@tyk.io>"
-    description: Tyk Analytics Pump to move analytics data from Redis to any supported back end (multiple back ends can be written to at once).
+    description: Tyk Analytics Pump to move analytics data from Redis to any supported back end (multiple back ends can be written to at once). This version is compiled with boringssl.
     package_name: tyk-pump-fips
     file_name_template: "{{ .ConventionalFileName }}"
     builds:
@@ -192,16 +228,6 @@ dockers:
       - "LICENSE.md"
       - "pump.example.conf"
 docker_manifests:
-  # Single-arch manifest for tykio/tyk-pump-docker-pub fips
-  - name_template: tykio/tyk-pump-docker-pub:{{ .Tag }}-fips
-    image_templates:
-      - tykio/tyk-pump-docker-pub:{{`{{ .Tag }}`}}-fips-amd64
-  - name_template: tykio/tyk-pump-docker-pub:v{{ .Major }}.{{ .Minor }}{{.Prerelease}}-fips
-    image_templates:
-      - tykio/tyk-pump-docker-pub:{{`{{ .Tag }}`}}-fips-amd64
-  - name_template: tykio/tyk-pump-docker-pub:v{{ .Major }}{{.Prerelease}}-fips
-    image_templates:
-      - tykio/tyk-pump-docker-pub:{{`{{ .Tag }}`}}-fips-amd64
   # Multi-arch manifest for tykio/tyk-pump-docker-pub std
   - name_template: tykio/tyk-pump-docker-pub:{{ .Tag }}
     image_templates:
@@ -215,6 +241,16 @@ docker_manifests:
     image_templates:
       - tykio/tyk-pump-docker-pub:{{`{{ .Tag }}`}}-std-amd64
       - tykio/tyk-pump-docker-pub:{{`{{ .Tag }}`}}-std-arm64
+  # FIPS manifest (amd64 only for now)
+  - name_template: tykio/tyk-pump-docker-pub:{{ .Tag }}-fips
+    image_templates:
+      - tykio/tyk-pump-docker-pub:{{`{{ .Tag }}`}}-fips-amd64
+  - name_template: tykio/tyk-pump-docker-pub:v{{ .Major }}.{{ .Minor }}{{.Prerelease}}-fips
+    image_templates:
+      - tykio/tyk-pump-docker-pub:{{`{{ .Tag }}`}}-fips-amd64
+  - name_template: tykio/tyk-pump-docker-pub:v{{ .Major }}{{.Prerelease}}-fips
+    image_templates:
+      - tykio/tyk-pump-docker-pub:{{`{{ .Tag }}`}}-fips-amd64
 # This disables archives
 archives:
   - format: binary

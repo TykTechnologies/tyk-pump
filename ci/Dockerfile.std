@@ -2,6 +2,7 @@
 
 FROM debian:bookworm-slim
 ARG TARGETARCH
+ARG BUILD_PACKAGE_NAME
 
 ENV DEBIAN_FRONTEND=noninteractive
 
