@@ -49,7 +49,7 @@ jobs:
             rpmvers: 'el/7 el/8 el/9 amazon/2 amazon/2023'
             debvers: 'ubuntu/xenial ubuntu/bionic ubuntu/focal ubuntu/jammy debian/jessie debian/buster debian/bullseye debian/bookworm'
     outputs:
-      tags: ${{ steps.ci_metadata.outputs.tags }}
+      std_tags: ${{ steps.ci_metadata_std.outputs.tags }}
       commit_author: ${{ steps.set_outputs.outputs.commit_author}}
     steps:
       - name: Checkout of tyk-pump
@@ -130,8 +130,8 @@ jobs:
         if: ${{ matrix.golang_cross == '1.22-bookworm' }}
         with:
           mask-password: 'true'
-      - name: Docker metadata for CI
-        id: ci_metadata
+      - name: Docker metadata for std CI
+        id: ci_metadata_std
         if: ${{ matrix.golang_cross == '1.22-bookworm' }}
         uses: docker/metadata-action@v5
         with:
@@ -151,14 +151,16 @@ jobs:
         with:
           context: "dist"
           platforms: linux/amd64,linux/arm64
-          file: ci/Dockerfile.distroless
+          file: ci/Dockerfile.std
           provenance: mode=max
           sbom: true
           push: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          tags: ${{ steps.ci_metadata.outputs.tags }}
-          labels: ${{ steps.tag_metadata.outputs.labels }}
+          tags: ${{ steps.ci_metadata_std.outputs.tags }}
+          labels: ${{ steps.ci_metadata_std.outputs.labels }}
+          build-args: |
+            BUILD_PACKAGE_NAME=tyk-pump
       - name: Docker metadata for tag push
         id: tag_metadata
         uses: docker/metadata-action@v5
@@ -179,7 +181,7 @@ jobs:
         with:
           context: "dist"
           platforms: linux/amd64,linux/arm64
-          file: ci/Dockerfile.distroless
+          file: ci/Dockerfile.std
           provenance: mode=max
           sbom: true
           cache-from: type=gha
@@ -187,6 +189,8 @@ jobs:
           push: ${{ startsWith(github.ref, 'refs/tags') }}
           tags: ${{ steps.tag_metadata.outputs.tags }}
           labels: ${{ steps.tag_metadata.outputs.labels }}
+          build-args: |
+            BUILD_PACKAGE_NAME=tyk-pump
       - name: save deb
         uses: actions/upload-artifact@v4
         if: ${{ matrix.golang_cross == '1.22-bookworm' }}
