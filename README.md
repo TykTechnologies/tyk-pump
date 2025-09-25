@@ -144,7 +144,7 @@ TYK_PMP_DONTPURGEUPTIMEDATA=true
 
 This is the Tyk Pump's primary database which it scrapes Tyk Gateway analytics from. Normally this is `redis`.
 
-```json
+```.json
   "analytics_storage_config": {
     "type": "redis",
     "host": "localhost",
@@ -465,7 +465,7 @@ GraphQL and UDG requests, tracking information like types requested, fields requ
 
 A sample config looks like this:
 
-```json
+```.json
 {
   "pumps": {
     "mongo-graph": {
@@ -486,7 +486,7 @@ The difference, like the name says is this pump uses sql type databases as its s
 
 A sample config looks like this:
 
-```json
+```.json
 {
   "pumps": {
     "sql-graph": {
@@ -636,7 +636,7 @@ Note: base metric families can be removed by configuring the `disabled_metrics` 
 From Pump 1.6+ it's possible to add custom prometheus metrics using the `custom_metrics` configuration.
 For example:
 
-```json
+```.json
 "prometheus": {
   "type": "prometheus",
 	"meta": {
@@ -785,7 +785,7 @@ Setting up Splunk with a _HTTP Event Collector_
 
 ###### JSON / Conf File
 
-```json
+```.json
     "splunk": {
       "type": "splunk",
       "meta": {
@@ -950,14 +950,15 @@ Configuration options:
 - `"new_bucket_config"` - If `"create_missing_bucket"`is true, you can configure the new bucket configuration under `"new_bucket_config"`:
   - `"description"` - Description of the bucket. This is going to be visible in the Influx UI.
   - `"retention_rules"`- This is a slice of retention rules for this bucket. An example of this would be:
-  ```.json
+ 
+```.json
   "retention_rules":[
   {
   "every_seconds":100000,
   "type":"expires"
   }
   ]
-  ```
+```
   which would mean that the data in the bucket expires every 100000 seconds.
 - `"token"` - Influx DB Auth token
 - `"tags"` - Which elements should work as a tag for the time series.
@@ -1152,7 +1153,7 @@ If no credentials are provided, Timestream Pump won't be able to connect.
 
 ###### JSON / Conf File
 
-```json
+```.json
     "timestream": {
       "type": "timestream",
       "meta": {
@@ -1307,7 +1308,7 @@ If no credentials are provided, SQS Pump won't be able to connect.
 
 ###### JSON / Conf File
 
-```json
+```.json
     "sqs": {
       "type": "sqs",
       "meta": {
@@ -1391,7 +1392,7 @@ The following configurations can be added to any Pump. Keep reading for an examp
 
 You made add the following config field to each pump called `filters` and its structure is the following:
 
-```json
+```.json
 "filters":{
   "api_ids":[],
   "org_ids":[],
@@ -1410,7 +1411,7 @@ Here we see how we can take a CSV Pump, and add a filters section to it:
 
 ###### JSON / Conf file Example
 
-```json
+```.json
 "csv": {
  "type": "csv",
  "filters": {
@@ -1435,7 +1436,7 @@ TYK_PMP_PUMPS_CSV_FILTERS_APIIDS=123,789
 You can configure a different timeout for each pump with the configuration option `timeout`. Its default value is 0 seconds, which means that the pump will wait for the writing operation forever.
 In Mongo pumps, the default value is 10 seconds. If you want to disable the timeout, you can set the value to 0. Take into account that if you disable the timeout, the pump will wait for the writing operation forever, and it could block the pump execution.
 
-```json
+```.json
 "mongo": {
   "type": "mongo",
   "timeout": 5,
@@ -1466,7 +1467,7 @@ In case that you have a configured timeout, but it still takes more seconds to w
 `max_record_size` defines maximum size (in bytes) for Raw Request and Raw Response logs, this value defaults to 0. Is not set then tyk-pump will not trim any data and will store the full information.
 This can also be set at a pump level. For example:
 
-```json
+```.json
 "csv": {
   "type": "csv",
   "max_record_size":1000,
@@ -1483,7 +1484,7 @@ The `driver` setting defines the driver type to use for Mongo Pumps. It can be o
 - `mongo-go` (default from v1.9.0): Uses the official MongoDB driver. This driver supports Mongo versions greater or equal to v4. You can get more information about this driver [here](https://github.com/mongodb/mongo-go-driver).
 - `mgo`: Uses the mgo driver. This driver is deprecated. This driver supports Mongo versions lower or equal to v4. You can get more information about this driver [here](https://github.com/go-mgo/mgo)
 
-```json
+```.json
 "mongo": {
   "type": "mongo",
   "meta": {
@@ -1499,7 +1500,7 @@ The `driver` setting defines the driver type to use for Mongo Pumps. It can be o
 `MongoDirectConnection` informs whether to establish connections only with the specified seed servers or to obtain information for the whole cluster and establish connections with further servers too. If true, the client will only connect to the host provided in the ConnectionString and won't attempt to discover other hosts in the cluster. Useful when network restrictions prevent discovery, such as with SSH tunneling. Default is `false`.
 You can get more info from the [official MongoDB driver docs](https://www.mongodb.com/docs/drivers/go/current/fundamentals/connection/#direct-connection).
 
-```json
+```.json
 "mongo": {
   "type": "mongo",
   "meta": {
@@ -1516,7 +1517,7 @@ You can get more info from the [official MongoDB driver docs](https://www.mongod
 `ignore_fields` defines a list of analytics fields that will be ignored when writing to the pump. This can be used to avoid writing sensitive information to the Database, or data that you don't really need to have.
 Fields must be written using JSON tags. For example:
 
-```json
+```.json
 "csv": {
  "type": "csv",
  "ignore_fields":["api_id","api_version"],
@@ -1531,7 +1532,7 @@ Fields must be written using JSON tags. For example:
 `raw_request_decoded` and `raw_response_decoded` decode from base64 the raw request and raw response fields before writing to Pump. This is useful if you want to search for specific values in the raw request/response. Both are disabled by default.
 This setting is not available for Mongo and SQL pumps, since dashboard will decode the raw request/response.
 
-```json
+```.json
 "csv": {
   "type": "csv",
   "raw_request_decoded": true,
@@ -1572,3 +1573,7 @@ You can run Tyk Pump in demo mode, which will generate fake analytics data and s
 - `--demo-records-per-hour=<RECORDS_PER_HOUR>` - Sets the number of records to generate per hour. The default value is a random number between 300 and 500.
 - `--demo-track-path` - Enables tracking of the request path in the demo data. Defaults to false (disabled). Note that setting `track_all_paths` to `true` in your Pump configuration will override this option.
 - `--demo-future-data` - By default, the demo data is generated for the past X days (configured in `demo-days` flag). This option will generate data for the next X days. Defaults to false (disabled).
+
+## Security Issues
+
+If you discover a security vulnerability within this project, please don't use the issue tracker. Instead, kindly email us directly at [support@tyk.io](mailto:support@tyk.io). We take security seriously and will promptly address your concerns.
