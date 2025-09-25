@@ -895,6 +895,7 @@ More advanced fields:
 - `meta_data`: Can be used to set custom metadata inside the kafka message
 - `ssl_cert_file`: Can be used to set custom certificate file for authentication with kafka.
 - `ssl_key_file`: Can be used to set custom key file for authentication with kafka.
+- `batch_bytes`: The maximum size of the batch to be sent to the kafka cluster.
 
 ###### JSON / Conf File
 
@@ -916,7 +917,8 @@ More advanced fields:
         "compressed": true,
         "meta_data": {
             "key": "value"
-        }
+        },
+        "batch_bytes": 1048576
       }
     }
 }
@@ -934,6 +936,7 @@ TYK_PMP_PUMPS_KAFKA_META_CLIENTID=tyk-pump
 TYK_PMP_PUMPS_KAFKA_META_TIMEOUT=60
 TYK_PMP_PUMPS_KAFKA_META_COMPRESSED=true
 TYK_PMP_PUMPS_KAFKA_META_METADATA_KEY=value
+TYK_PMP_PUMPS_KAFKA_META_BATCHBYTES=1048576
 ```
 
 ## Influx2 Config
