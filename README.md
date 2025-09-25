@@ -1360,6 +1360,8 @@ We must authenticate ourselves by providing credentials to AWS. This pump uses t
 
 `batch_size` - Optional. The maximum size of the records in a batch is 5MiB. If your records are larger in size setting this batch size paramter can guarantee you don't have failed delivery due to too large a batch. Default size if unset is 100.
 
+`kms_key_id` - Optional. The KMS Key ID used for server-side encryption of the Kinesis stream.
+
 ###### JSON / Conf File
 
 ```json
@@ -1368,7 +1370,10 @@ We must authenticate ourselves by providing credentials to AWS. This pump uses t
       "meta": {
         "stream_name": "my-stream",
         "region": "eu-west-2",
-        "batch_size": 100
+        "batch_size": 100,
+        "kms_key_id": "your-kms-key-id",
+        "access_key_id": "your-key-id",
+        "secret_access_key": "your-secret-key"
       }
     },
 ```
@@ -1381,6 +1386,9 @@ TYK_PMP_PUMPS_KINESIS_TYPE=kinesis
 TYK_PMP_PUMPS_KINESIs_META_STREAMNAME=my-stream
 TYK_PMP_PUMPS_KINESIS_META_REGION=eu-west-2
 TYK_PMP_PUMPS_KINESIS_META_BATCHSIZE=100
+TYK_PMP_PUMPS_KINESIS_META_KMSKEYID=your-kms-key-id
+TYK_PMP_PUMPS_KINESIS_META_ACCESSKEYID=your-key-id
+TYK_PMP_PUMPS_KINESIS_META_SECRETACCESSKEY=your-secret-key
 ```
 
 # Base Pump Configurations
