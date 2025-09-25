@@ -561,6 +561,7 @@ TYK_PMP_PUMPS_ELASTICSEARCH_META_BULKCONFIG_FLUSHINTERVAL=60
 - `"authorization_user_id_field"` - (optional) An optional field name use to parse the User from authorization header in Moesif. Type: String. Default value is `sub`.
 - `"enable_bulk"` - Set this to `true` to enable `bulk_config`.
 - `"bulk_config"`- (optional) Batch writing trigger configuration.
+  - `"api_endpoint"` - (optional) API Endpoint for when setting up client-side encryption via [Moesif Secure Proxy](https://www.moesif.com/docs/platform/secure-proxy/).
   - `"event_queue_size"` - (optional) An optional field name which specify the maximum number of events to hold in queue before sending to Moesif. In case of network issues when not able to connect/send event to Moesif, skips adding new events to the queue to prevent memory overflow. Type: int. Default value is `10000`.
   - `"batch_size"` - (optional) An optional field name which specify the maximum batch size when sending to Moesif. Type: int. Default value is `200`.
   - `"timer_wake_up_seconds"` - (optional) An optional field which specifies a time (every n seconds) how often background thread runs to send events to moesif. Type: int. Default value is `2` seconds.
