@@ -1358,7 +1358,13 @@ We must authenticate ourselves by providing credentials to AWS. This pump uses t
 
 `region` - The AWS region your Kinesis stream is located - i.e. eu-west-2
 
-`batch_size` - Optional. The maximum size of the records in a batch is 5MiB. If your records are larger in size setting this batch size paramter can guarantee you don't have failed delivery due to too large a batch. Default size if unset is 100.
+`batch_size` - The maximum size of the records in a batch is 5MiB. If your records are larger in size setting this batch size paramter can guarantee you don't have failed delivery due to too large a batch. Default size if unset is 100 (optional)
+
+`access_key_id` - AWS Access Key ID for authentication. If not provided, will use default credential chain (environment variables, shared credentials file, IAM roles, etc.) (optional)
+
+`secret_access_key` - AWS Secret Access Key for authentication. If not provided, will use default credential chain (optional)
+
+`session_token` - AWS Session Token for temporary credentials (optional)
 
 ###### JSON / Conf File
 
@@ -1368,7 +1374,10 @@ We must authenticate ourselves by providing credentials to AWS. This pump uses t
       "meta": {
         "stream_name": "my-stream",
         "region": "eu-west-2",
-        "batch_size": 100
+        "batch_size": 100,
+        "access_key_id": "your-key-id",
+        "secret_access_key": "your-secret-key",
+        "session_token": "your-session-token"
       }
     },
 ```
@@ -1378,9 +1387,12 @@ We must authenticate ourselves by providing credentials to AWS. This pump uses t
 ```
 #Kinesis Pump Configuration
 TYK_PMP_PUMPS_KINESIS_TYPE=kinesis
-TYK_PMP_PUMPS_KINESIs_META_STREAMNAME=my-stream
+TYK_PMP_PUMPS_KINESIS_META_STREAMNAME=my-stream
 TYK_PMP_PUMPS_KINESIS_META_REGION=eu-west-2
 TYK_PMP_PUMPS_KINESIS_META_BATCHSIZE=100
+TYK_PMP_PUMPS_KINESIS_META_ACCESSKEYID=your-key-id
+TYK_PMP_PUMPS_KINESIS_META_SECRETACCESSKEY=your-secret-key
+TYK_PMP_PUMPS_KINESIS_META_SESSIONTOKEN=your-session-token
 ```
 
 # Base Pump Configurations
