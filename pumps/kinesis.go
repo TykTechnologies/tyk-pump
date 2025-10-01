@@ -38,11 +38,11 @@ type KinesisConf struct {
 	StreamName string `mapstructure:"stream_name"`
 	// AWS Region the Kinesis stream targets
 	Region string `mapstructure:"region"`
-	// AWS Access Key ID for authentication. If not provided, will use default credential chain (environment variables, shared credentials file, IAM roles, etc.)
+	// AWS Access Key ID for authentication. If not provided, will use default credential chain (environment variables, shared credentials file, IAM roles, etc.) -- Optional
 	AccessKeyID string `mapstructure:"access_key_id"`
-	// AWS Secret Access Key for authentication. If not provided, will use default credential chain
+	// AWS Secret Access Key for authentication. If not provided, will use default credential chain -- Optional
 	SecretAccessKey string `mapstructure:"secret_access_key"`
-	// AWS Session Token for temporary credentials (optional)
+	// AWS Session Token for temporary credentials -- Optional
 	SessionToken string `mapstructure:"session_token"`
 	// Each PutRecords (the function used in this pump)request can support up to 500 records.
 	// Each record in the request can be as large as 1 MiB, up to a limit of 5 MiB for the entire request, including partition keys.
