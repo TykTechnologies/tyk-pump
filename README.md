@@ -1358,7 +1358,7 @@ We must authenticate ourselves by providing credentials to AWS. This pump uses t
 
 `region` - The AWS region your Kinesis stream is located - i.e. eu-west-2
 
-`batch_size` - Optional. The maximum size of the records in a batch is 5MiB. If your records are larger in size setting this batch size paramter can guarantee you don't have failed delivery due to too large a batch. Default size if unset is 100. (optional)
+`batch_size` - The maximum size of the records in a batch is 5MiB. If your records are larger in size setting this batch size paramter can guarantee you don't have failed delivery due to too large a batch. Default size if unset is 100 (optional)
 
 `access_key_id` - AWS Access Key ID for authentication. If not provided, will use default credential chain (environment variables, shared credentials file, IAM roles, etc.) (optional)
 
