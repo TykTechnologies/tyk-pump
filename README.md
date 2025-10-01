@@ -1363,6 +1363,8 @@ We must authenticate ourselves by providing credentials to AWS. This pump uses t
 
 `batch_size` - Optional. The maximum size of the records in a batch is 5MiB. If your records are larger in size setting this batch size paramter can guarantee you don't have failed delivery due to too large a batch. Default size if unset is 100.
 
+`kms_key_id` - Optional. The AWS KMS key ID used to encrypt the records in the Kinesis stream. If not provided, the records will not be encrypted.
+
 ###### JSON / Conf File
 
 ```json
