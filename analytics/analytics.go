@@ -74,6 +74,9 @@ type AnalyticsRecord struct {
 	ExpireAt      time.Time      `bson:"expireAt" json:"expireAt"`
 	ApiSchema     string         `json:"api_schema" bson:"-" gorm:"-:all"` //nolint
 
+	// TraceID is the OpenTelemetry trace ID for this request
+	TraceID string `json:"trace_id" gorm:"column:traceid"`
+
 	GraphQLStats   GraphQLStats `json:"graphql_stats" bson:"-" gorm:"-:all"`
 	CollectionName string       `json:"-" bson:"-" gorm:"-:all"`
 }
@@ -192,7 +195,7 @@ func (a *AnalyticsRecord) GetFieldNames() []string {
 	fields = append(fields, a.Geo.GetFieldNames()...)
 	fields = append(fields, a.Network.GetFieldNames()...)
 	fields = append(fields, a.Latency.GetFieldNames()...)
-	return append(fields, "Tags", "Alias", "TrackPath", "ExpireAt", "ApiSchema")
+	return append(fields, "Tags", "Alias", "TrackPath", "ExpireAt", "ApiSchema", "TraceID")
 }
 
 func (n *NetworkStats) GetLineValues() []string {
@@ -258,6 +261,7 @@ func (a *AnalyticsRecord) GetLineValues() []string {
 	fields = append(fields, strconv.FormatBool(a.TrackPath))
 	fields = append(fields, a.ExpireAt.String())
 	fields = append(fields, a.ApiSchema)
+	fields = append(fields, a.TraceID)
 
 	return fields
 }

@@ -108,7 +108,7 @@ func TestAnalyticsRecord_GetFieldNames(t *testing.T) {
 
 	fields := rec.GetFieldNames()
 
-	assert.Equal(t, 39, len(fields))
+	assert.Equal(t, 40, len(fields))
 
 	expectedFields := []string{
 		"Method",
@@ -168,11 +168,53 @@ func TestAnalyticsRecord_GetLineValues(t *testing.T) {
 
 	fields := rec.GetLineValues()
 
-	assert.Equal(t, 39, len(fields))
+	assert.Equal(t, 40, len(fields))
 
 	for _, field := range structs.Fields(rec) {
 		if field.IsExported() && !field.IsZero() {
 			assert.Contains(t, fields, fmt.Sprint(field.Value()))
 		}
 	}
+}
+
+func TestAnalyticsRecord_TraceID(t *testing.T) {
+	t.Run("should handle empty TraceID", func(t *testing.T) {
+		record := AnalyticsRecord{}
+		assert.Empty(t, record.TraceID)
+	})
+
+	t.Run("should store and retrieve TraceID", func(t *testing.T) {
+		traceID := "4bf92f3577b34da6a3ce929d0e0e4736"
+		record := AnalyticsRecord{
+			TraceID: traceID,
+		}
+		assert.Equal(t, traceID, record.TraceID)
+	})
+
+	t.Run("should include TraceID in field names", func(t *testing.T) {
+		record := AnalyticsRecord{}
+		fields := record.GetFieldNames()
+		assert.Contains(t, fields, "TraceID")
+	})
+
+	t.Run("should include TraceID in line values", func(t *testing.T) {
+		traceID := "4bf92f3577b34da6a3ce929d0e0e4736"
+		record := AnalyticsRecord{
+			TraceID: traceID,
+		}
+		values := record.GetLineValues()
+		assert.Contains(t, values, traceID)
+	})
+
+	t.Run("should handle TraceID in RemoveIgnoredFields", func(t *testing.T) {
+		traceID := "4bf92f3577b34da6a3ce929d0e0e4736"
+		record := AnalyticsRecord{
+			TraceID: traceID,
+			APIID:   "api123",
+		}
+
+		record.RemoveIgnoredFields([]string{"trace_id"})
+		assert.Empty(t, record.TraceID)
+		assert.Equal(t, "api123", record.APIID) // Other fields should remain
+	})
 }
