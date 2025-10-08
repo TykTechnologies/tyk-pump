@@ -20,6 +20,7 @@ func TestKafkaPump_GetName(t *testing.T) {
 }
 
 func TestKafkaPump_Init_BatchBytesConfiguration(t *testing.T) {
+	//nolint:govet
 	tests := []struct {
 		name          string
 		description   string
