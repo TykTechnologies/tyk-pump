@@ -22,9 +22,9 @@ func TestKafkaPump_GetName(t *testing.T) {
 func TestKafkaPump_Init_BatchBytesConfiguration(t *testing.T) {
 	tests := []struct {
 		name          string
+		description   string
 		config        map[string]interface{}
 		expectedBytes int
-		description   string
 	}{
 		{
 			name: "Custom BatchBytes Value",
