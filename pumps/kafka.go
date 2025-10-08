@@ -183,7 +183,11 @@ func (k *KafkaPump) Init(config interface{}) error {
 	if k.kafkaConf.Compressed {
 		k.writerConfig.CompressionCodec = snappy.NewCompressionCodec()
 	}
-	k.writerConfig.BatchBytes = k.kafkaConf.BatchBytes
+	if k.kafkaConf.BatchBytes < 0 {
+		k.log.Errorf("The config batch_bytes cannot be negative, but was set to %d", k.kafkaConf.BatchBytes)
+	} else {
+		k.writerConfig.BatchBytes = k.kafkaConf.BatchBytes
+	}
 
 	k.log.Info(k.GetName() + " Initialized")
 

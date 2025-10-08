@@ -207,3 +207,21 @@ func TestKafkaPump_BatchBytesConfigAndEnvironmentVariableBothInvalid(t *testing.
 	assert.Contains(t, err.Error(), "batch_bytes", "Error should mention batch_bytes field")
 	assert.Contains(t, err.Error(), "expected type 'int'", "Error should mention type conversion issue")
 }
+
+func TestKafkaPump_Init_NegativeBatchBytes(t *testing.T) {
+	// Test that negative batch_bytes values are handled properly
+	// The pump should log an error and use the default value (0) instead of the negative value
+	config := map[string]interface{}{
+		"broker":      []string{"localhost:9092"},
+		"topic":       "test-topic",
+		"batch_bytes": -1024, // Negative value
+	}
+
+	pump := &KafkaPump{}
+	err := pump.Init(config)
+
+	// Init should succeed despite negative batch_bytes
+	assert.NoError(t, err, "Init should succeed with negative batch_bytes")
+	// The negative value should NOT be set, instead it should use default (0)
+	assert.Equal(t, 0, pump.writerConfig.BatchBytes, "Should use default value (0) when batch_bytes is negative")
+}
