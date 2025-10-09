@@ -214,34 +214,49 @@ type MockKinesisClient struct {
 	mock.Mock
 }
 
-func (m *MockKinesisClient) DescribeStream(ctx context.Context, params *kinesis.DescribeStreamInput, optFns ...func(*kinesis.Options)) (*kinesis.DescribeStreamOutput, error) {
+func (m *MockKinesisClient) DescribeStream(ctx context.Context, params *kinesis.DescribeStreamInput, _ ...func(*kinesis.Options)) (*kinesis.DescribeStreamOutput, error) {
 	args := m.Called(ctx, params)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*kinesis.DescribeStreamOutput), args.Error(1)
+
+	output, ok := args.Get(0).(*kinesis.DescribeStreamOutput)
+	if !ok {
+		return nil, args.Error(1)
+	}
+	return output, args.Error(1)
 }
 
-func (m *MockKinesisClient) StartStreamEncryption(ctx context.Context, params *kinesis.StartStreamEncryptionInput, optFns ...func(*kinesis.Options)) (*kinesis.StartStreamEncryptionOutput, error) {
+func (m *MockKinesisClient) StartStreamEncryption(ctx context.Context, params *kinesis.StartStreamEncryptionInput, _ ...func(*kinesis.Options)) (*kinesis.StartStreamEncryptionOutput, error) {
 	args := m.Called(ctx, params)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*kinesis.StartStreamEncryptionOutput), args.Error(1)
+
+	output, ok := args.Get(0).(*kinesis.StartStreamEncryptionOutput)
+	if !ok {
+		return nil, args.Error(1)
+	}
+	return output, args.Error(1)
 }
 
-func (m *MockKinesisClient) PutRecords(ctx context.Context, params *kinesis.PutRecordsInput, optFns ...func(*kinesis.Options)) (*kinesis.PutRecordsOutput, error) {
+func (m *MockKinesisClient) PutRecords(ctx context.Context, params *kinesis.PutRecordsInput, _ ...func(*kinesis.Options)) (*kinesis.PutRecordsOutput, error) {
 	args := m.Called(ctx, params)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*kinesis.PutRecordsOutput), args.Error(1)
+
+	output, ok := args.Get(0).(*kinesis.PutRecordsOutput)
+	if !ok {
+		return nil, args.Error(1)
+	}
+	return output, args.Error(1)
 }
 
 // TestableKinesisPump extends KinesisPump for testing with dependency injection
 type TestableKinesisPump struct {
-	KinesisPump
 	mockClient KinesisClientInterface
+	KinesisPump
 }
 
 func (p *TestableKinesisPump) InitWithMock(config interface{}, mockClient KinesisClientInterface) error {
