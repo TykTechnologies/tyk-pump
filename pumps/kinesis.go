@@ -109,7 +109,7 @@ func (p *KinesisPump) Init(config interface{}) error {
 			if currentKeyID == p.kinesisConf.KMSKeyID {
 				p.log.Info("Server-side encryption is already enabled with the specified KMS Key ID")
 			} else {
-				p.log.Warn("Server-side encryption is already enabled with a different KMS Key ID")
+				p.log.Fatal("Server-side encryption is already enabled with a different KMS Key ID")
 			}
 		default:
 			// Encryption not enabled, proceed to enable it
