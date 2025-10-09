@@ -4,8 +4,10 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math/big"
+	"time"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/mitchellh/mapstructure"
@@ -91,15 +93,30 @@ func (p *KinesisPump) Init(config interface{}) error {
 
 	// Check if KMSKeyID is provided and enable server-side encryption
 	if p.kinesisConf.KMSKeyID != "" {
-		_, err := p.client.StartStreamEncryption(context.TODO(), &kinesis.StartStreamEncryptionInput{
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+
+		_, err := p.client.StartStreamEncryption(ctx, &kinesis.StartStreamEncryptionInput{
 			StreamName:     aws.String(p.kinesisConf.StreamName),
 			EncryptionType: types.EncryptionTypeKms,
 			KeyId:          aws.String(p.kinesisConf.KMSKeyID),
 		})
+
 		if err != nil {
-			p.log.Fatalf("Failed to enable server-side encryption for Kinesis stream: %v", err)
+			var resourceInUseErr *types.ResourceInUseException
+			if errors.As(err, &resourceInUseErr) {
+				p.log.Info("Server-side encryption is already enabled for the Kinesis stream.")
+			} else {
+				p.log.Fatalf("Failed to enable server-side encryption for Kinesis stream: %v", err)
+			}
+		} else {
+			kmsKeyID := p.kinesisConf.KMSKeyID
+			loggableKeyID := "***" // Default to a fully masked key
+			if len(kmsKeyID) >= 8 {
+				loggableKeyID = fmt.Sprintf("%s***%s", kmsKeyID[:4], kmsKeyID[len(kmsKeyID)-4:])
+			}
+			p.log.Info("Server-side encryption enabled for Kinesis stream with KMS Key ID: ", loggableKeyID)
 		}
-		p.log.Info("Server-side encryption enabled for Kinesis stream with KMS Key ID: ", fmt.Sprintf("%s***%s", p.kinesisConf.KMSKeyID[:4], p.kinesisConf.KMSKeyID[len(p.kinesisConf.KMSKeyID)-4:]))
 	}
 
 	p.log.Info(p.GetName() + " Initialized")
