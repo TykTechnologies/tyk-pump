@@ -348,12 +348,42 @@ func writeToPumps(keys []interface{}, job *health.Job, startTime time.Time, purg
 	}
 }
 
+func getDecodingSettings(pump pumps.Pump) (decodingRequest, decodingResponse bool) {
+	decodingResponse = pump.GetDecodedResponse() || SystemConfig.DecodeRawResponse
+	decodingRequest = pump.GetDecodedRequest() || SystemConfig.DecodeRawRequest
+	return decodingRequest, decodingResponse
+}
+
+func decodeBase64Data(record *analytics.AnalyticsRecord, decodeRequest, decodeResponse bool) {
+	// DECODING RAW REQUEST AND RESPONSE FROM BASE 64
+	if decodeRequest {
+		rawRequest, err := base64.StdEncoding.DecodeString(record.RawRequest)
+		if err == nil {
+			record.RawRequest = string(rawRequest)
+		}
+	}
+	if decodeResponse {
+		rawResponse, err := base64.StdEncoding.DecodeString(record.RawResponse)
+		if err == nil {
+			record.RawResponse = string(rawResponse)
+		}
+	}
+}
+
+func trimRawData(record *analytics.AnalyticsRecord, pump pumps.Pump) {
+	if pump.GetMaxRecordSize() != 0 {
+		record.TrimRawData(pump.GetMaxRecordSize())
+	} else {
+		record.TrimRawData(SystemConfig.MaxRecordSize)
+	}
+}
+
 func filterData(pump pumps.Pump, keys []interface{}) []interface{} {
 	shouldTrim := SystemConfig.MaxRecordSize != 0 || pump.GetMaxRecordSize() != 0
 	filters := pump.GetFilters()
 	ignoreFields := pump.GetIgnoreFields()
-	getDecodingResponse := pump.GetDecodedResponse()
-	getDecodingRequest := pump.GetDecodedRequest()
+	getDecodingRequest, getDecodingResponse := getDecodingSettings(pump)
+
 	// Checking to see if all the config options are empty/false
 	if !getDecodingRequest && !getDecodingResponse && !filters.HasFilter() && !pump.GetOmitDetailedRecording() && !shouldTrim && len(ignoreFields) == 0 {
 		return keys
@@ -371,11 +401,7 @@ func filterData(pump pumps.Pump, keys []interface{}) []interface{} {
 			decoded.RawResponse = ""
 		} else {
 			if shouldTrim {
-				if pump.GetMaxRecordSize() != 0 {
-					decoded.TrimRawData(pump.GetMaxRecordSize())
-				} else {
-					decoded.TrimRawData(SystemConfig.MaxRecordSize)
-				}
+				trimRawData(&decoded, pump)
 			}
 		}
 		if filters.ShouldFilter(decoded) {
@@ -384,19 +410,7 @@ func filterData(pump pumps.Pump, keys []interface{}) []interface{} {
 		if len(ignoreFields) > 0 {
 			decoded.RemoveIgnoredFields(ignoreFields)
 		}
-		// DECODING RAW REQUEST AND RESPONSE FROM BASE 64
-		if getDecodingRequest {
-			rawRequest, err := base64.StdEncoding.DecodeString(decoded.RawRequest)
-			if err == nil {
-				decoded.RawRequest = string(rawRequest)
-			}
-		}
-		if getDecodingResponse {
-			rawResponse, err := base64.StdEncoding.DecodeString(decoded.RawResponse)
-			if err == nil {
-				decoded.RawResponse = string(rawResponse)
-			}
-		}
+		decodeBase64Data(&decoded, getDecodingRequest, getDecodingResponse)
 		filteredKeys[newLenght] = decoded
 		newLenght++
 	}

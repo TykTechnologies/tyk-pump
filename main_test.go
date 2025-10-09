@@ -376,3 +376,122 @@ func TestDecodedKey(t *testing.T) {
 		})
 	}
 }
+
+func TestGetDecodingSettings(t *testing.T) {
+	originalSystemConfig := SystemConfig
+	t.Cleanup(func() {
+		SystemConfig = originalSystemConfig
+	})
+
+	testCases := []struct {
+		name                   string
+		pumpDecodeRequest      bool
+		pumpDecodeResponse     bool
+		globalDecodeRequest    bool
+		globalDecodeResponse   bool
+		expectedDecodeRequest  bool
+		expectedDecodeResponse bool
+	}{
+		{
+			name:                   "pump level settings both enabled",
+			pumpDecodeRequest:      true,
+			pumpDecodeResponse:     true,
+			globalDecodeRequest:    false,
+			globalDecodeResponse:   false,
+			expectedDecodeRequest:  true,
+			expectedDecodeResponse: true,
+		},
+		{
+			name:                   "pump level settings both disabled, global both enabled",
+			pumpDecodeRequest:      false,
+			pumpDecodeResponse:     false,
+			globalDecodeRequest:    true,
+			globalDecodeResponse:   true,
+			expectedDecodeRequest:  true,
+			expectedDecodeResponse: true,
+		},
+		{
+			name:                   "pump level settings both disabled, global both disabled",
+			pumpDecodeRequest:      false,
+			pumpDecodeResponse:     false,
+			globalDecodeRequest:    false,
+			globalDecodeResponse:   false,
+			expectedDecodeRequest:  false,
+			expectedDecodeResponse: false,
+		},
+		{
+			name:                   "pump request enabled, pump response disabled, global both enabled",
+			pumpDecodeRequest:      true,
+			pumpDecodeResponse:     false,
+			globalDecodeRequest:    true,
+			globalDecodeResponse:   true,
+			expectedDecodeRequest:  true,
+			expectedDecodeResponse: true,
+		},
+		{
+			name:                   "pump request disabled, pump response enabled, global both enabled",
+			pumpDecodeRequest:      false,
+			pumpDecodeResponse:     true,
+			globalDecodeRequest:    true,
+			globalDecodeResponse:   true,
+			expectedDecodeRequest:  true,
+			expectedDecodeResponse: true,
+		},
+		{
+			name:                   "pump request enabled, pump response disabled, global request disabled, global response enabled",
+			pumpDecodeRequest:      true,
+			pumpDecodeResponse:     false,
+			globalDecodeRequest:    false,
+			globalDecodeResponse:   true,
+			expectedDecodeRequest:  true,
+			expectedDecodeResponse: true,
+		},
+		{
+			name:                   "pump request disabled, pump response enabled, global request enabled, global response disabled",
+			pumpDecodeRequest:      false,
+			pumpDecodeResponse:     true,
+			globalDecodeRequest:    true,
+			globalDecodeResponse:   false,
+			expectedDecodeRequest:  true,
+			expectedDecodeResponse: true,
+		},
+		{
+			name:                   "pump request enabled, pump response disabled, global both disabled",
+			pumpDecodeRequest:      true,
+			pumpDecodeResponse:     false,
+			globalDecodeRequest:    false,
+			globalDecodeResponse:   false,
+			expectedDecodeRequest:  true,
+			expectedDecodeResponse: false,
+		},
+		{
+			name:                   "pump request disabled, pump response enabled, global both disabled",
+			pumpDecodeRequest:      false,
+			pumpDecodeResponse:     true,
+			globalDecodeRequest:    false,
+			globalDecodeResponse:   false,
+			expectedDecodeRequest:  false,
+			expectedDecodeResponse: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			SystemConfig = TykPumpConfiguration{
+				DecodeRawRequest:  tc.globalDecodeRequest,
+				DecodeRawResponse: tc.globalDecodeResponse,
+			}
+
+			mockedPump := &MockedPump{}
+			mockedPump.SetDecodingRequest(tc.pumpDecodeRequest)
+			mockedPump.SetDecodingResponse(tc.pumpDecodeResponse)
+
+			actualDecodeRequest, actualDecodeResponse := getDecodingSettings(mockedPump)
+
+			assert.Equal(t, tc.expectedDecodeRequest, actualDecodeRequest,
+				"DecodeRequest mismatch: expected %v, got %v", tc.expectedDecodeRequest, actualDecodeRequest)
+			assert.Equal(t, tc.expectedDecodeResponse, actualDecodeResponse,
+				"DecodeResponse mismatch: expected %v, got %v", tc.expectedDecodeResponse, actualDecodeResponse)
+		})
+	}
+}
