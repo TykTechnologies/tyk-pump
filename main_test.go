@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"os"
 	"os/signal"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/TykTechnologies/tyk-pump/pumps"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -373,6 +375,103 @@ func TestDecodedKey(t *testing.T) {
 			assert.True(t, ok)
 			assert.Equal(t, tc.expectedRawResponse, record1.RawResponse)
 			assert.Equal(t, tc.expectedRawRequest, record1.RawRequest)
+		})
+	}
+}
+
+func TestDeprecationWarnings(t *testing.T) {
+	originalOutput := log.Out
+	originalLevel := log.Level
+	t.Cleanup(func() {
+		log.Out = originalOutput
+		log.Level = originalLevel
+	})
+
+	decodeRequestMsg := "Global raw_request_decoded setting is deprecated. Please use pump level raw_request_decoded configuration instead."
+	decodeResponseMsg := "Global raw_response_decoded setting is deprecated. Please use pump level raw_response_decoded configuration instead."
+
+	tcs := []struct {
+		testName              string
+		decodeRawRequest      bool
+		decodeRawResponse     bool
+		expectedRequestMsg    string
+		expectedResponseMsg   string
+		shouldLogRequestWarn  bool
+		shouldLogResponseWarn bool
+	}{
+		{
+			testName:              "both deprecated settings enabled",
+			decodeRawRequest:      true,
+			decodeRawResponse:     true,
+			expectedRequestMsg:    decodeRequestMsg,
+			expectedResponseMsg:   decodeResponseMsg,
+			shouldLogRequestWarn:  true,
+			shouldLogResponseWarn: true,
+		},
+		{
+			testName:              "only raw_request_decoded enabled",
+			decodeRawRequest:      true,
+			decodeRawResponse:     false,
+			expectedRequestMsg:    decodeRequestMsg,
+			expectedResponseMsg:   "",
+			shouldLogRequestWarn:  true,
+			shouldLogResponseWarn: false,
+		},
+		{
+			testName:              "only raw_response_decoded enabled",
+			decodeRawRequest:      false,
+			decodeRawResponse:     true,
+			expectedRequestMsg:    "",
+			expectedResponseMsg:   decodeResponseMsg,
+			shouldLogRequestWarn:  false,
+			shouldLogResponseWarn: true,
+		},
+		{
+			testName:              "both deprecated settings disabled",
+			decodeRawRequest:      false,
+			decodeRawResponse:     false,
+			expectedRequestMsg:    "",
+			expectedResponseMsg:   "",
+			shouldLogRequestWarn:  false,
+			shouldLogResponseWarn: false,
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.testName, func(t *testing.T) {
+			var buf bytes.Buffer
+			log.Out = &buf
+			log.Level = logrus.WarnLevel
+
+			originalSystemConfig := SystemConfig
+			t.Cleanup(func() {
+				SystemConfig = originalSystemConfig
+			})
+
+			SystemConfig = TykPumpConfiguration{
+				DecodeRawRequest:  tc.decodeRawRequest,
+				DecodeRawResponse: tc.decodeRawResponse,
+			}
+
+			showDecodeDeprecationWarnings()
+
+			logOutput := buf.String()
+
+			if tc.shouldLogRequestWarn {
+				assert.Contains(t, logOutput, tc.expectedRequestMsg, "Expected raw_request deprecation warning not found")
+			} else {
+				assert.NotContains(t, logOutput, "raw_request_decoded setting is deprecated", "Unexpected raw_request deprecation warning found")
+			}
+
+			if tc.shouldLogResponseWarn {
+				assert.Contains(t, logOutput, tc.expectedResponseMsg, "Expected raw_response deprecation warning not found")
+			} else {
+				assert.NotContains(t, logOutput, "raw_response_decoded setting is deprecated", "Unexpected raw_response deprecation warning found")
+			}
+
+			if tc.shouldLogRequestWarn || tc.shouldLogResponseWarn {
+				assert.Contains(t, logOutput, "prefix=main", "Expected log prefix not found")
+			}
 		})
 	}
 }
