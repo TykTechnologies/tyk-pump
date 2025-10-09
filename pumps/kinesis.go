@@ -101,16 +101,17 @@ func (p *KinesisPump) Init(config interface{}) error {
 			StreamName: aws.String(p.kinesisConf.StreamName),
 		})
 
-		if err != nil {
-			p.log.Errorf("Failed to describe Kinesis stream: %v", err)
-		} else if describeOutput.StreamDescription.EncryptionType == types.EncryptionTypeKms {
+		switch {
+		case err != nil:
+			p.log.Fatalf("Failed to describe Kinesis stream: %v", err)
+		case describeOutput.StreamDescription.EncryptionType == types.EncryptionTypeKms:
 			currentKeyID := aws.ToString(describeOutput.StreamDescription.KeyId)
 			if currentKeyID == p.kinesisConf.KMSKeyID {
 				p.log.Info("Server-side encryption is already enabled with the specified KMS Key ID")
 			} else {
 				p.log.Warn("Server-side encryption is already enabled with a different KMS Key ID")
 			}
-		} else {
+		default:
 			// Encryption not enabled, proceed to enable it
 			_, err := p.client.StartStreamEncryption(ctx, &kinesis.StartStreamEncryptionInput{
 				StreamName:     aws.String(p.kinesisConf.StreamName),

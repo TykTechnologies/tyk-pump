@@ -145,6 +145,7 @@ func TestKinesisPump_EncryptionConfig_NoKMSKeyID(t *testing.T) {
 }
 
 func TestKinesisPump_BatchSize_Configuration(t *testing.T) {
+	//nolint:govet
 	tests := []struct {
 		name          string
 		batchSize     interface{}
