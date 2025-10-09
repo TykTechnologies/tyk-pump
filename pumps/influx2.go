@@ -191,20 +191,22 @@ func (i *Influx2Pump) WriteData(ctx context.Context, data []interface{}) error {
 	for _, v := range data {
 		ar := v.(analytics.AnalyticsRecord)
 		mapping := map[string]interface{}{
-			"method":        ar.Method,
-			"path":          ar.Path,
-			"response_code": ar.ResponseCode,
-			"api_key":       ar.APIKey,
-			"time_stamp":    ar.TimeStamp,
-			"api_version":   ar.APIVersion,
-			"api_name":      ar.APIName,
-			"api_id":        ar.APIID,
-			"org_id":        ar.OrgID,
-			"oauth_id":      ar.OauthID,
-			"raw_request":   ar.RawRequest,
-			"request_time":  ar.RequestTime,
-			"raw_response":  ar.RawResponse,
-			"ip_address":    ar.IPAddress,
+			"method":           ar.Method,
+			"path":             ar.Path,
+			"response_code":    ar.ResponseCode,
+			"api_key":          ar.APIKey,
+			"time_stamp":       ar.TimeStamp,
+			"api_version":      ar.APIVersion,
+			"api_name":         ar.APIName,
+			"api_id":           ar.APIID,
+			"org_id":           ar.OrgID,
+			"oauth_id":         ar.OauthID,
+			"raw_request":      ar.RawRequest,
+			"request_time":     ar.RequestTime,
+			"raw_response":     ar.RawResponse,
+			"ip_address":       ar.IPAddress,
+			"total_latency":    ar.Latency.Total,
+			"upstream_latency": ar.Latency.Upstream,
 		}
 		tags := make(map[string]string)
 		fields := make(map[string]interface{})
