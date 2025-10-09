@@ -244,9 +244,11 @@ type TykPumpConfiguration struct {
 
 	// Setting this to true allows the Raw Request to be decoded from base 64
 	// for all pumps. This is set to false by default.
+	// Deprecated: Use pump level raw_request_decoded configuration instead.
 	DecodeRawRequest bool `json:"raw_request_decoded"`
 
 	// Setting this to true allows the Raw Response to be decoded from base 64 for all pumps. This is set to false by default.
+	// Deprecated: Use pump level raw_response_decoded configuration instead.
 	DecodeRawResponse bool `json:"raw_response_decoded"`
 }
 
