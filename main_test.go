@@ -392,10 +392,10 @@ func TestDeprecationWarnings(t *testing.T) {
 
 	tcs := []struct {
 		testName              string
-		decodeRawRequest      bool
-		decodeRawResponse     bool
 		expectedRequestMsg    string
 		expectedResponseMsg   string
+		decodeRawRequest      bool
+		decodeRawResponse     bool
 		shouldLogRequestWarn  bool
 		shouldLogResponseWarn bool
 	}{
