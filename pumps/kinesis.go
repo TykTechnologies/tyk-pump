@@ -103,13 +103,13 @@ func (p *KinesisPump) Init(config interface{}) error {
 
 		switch {
 		case err != nil:
-			p.log.Warnf("Failed to describe Kinesis stream: %v", err)
+			return fmt.Errorf("failed to describe Kinesis stream: %w", err)
 		case describeOutput.StreamDescription.EncryptionType == types.EncryptionTypeKms:
 			currentKeyID := aws.ToString(describeOutput.StreamDescription.KeyId)
 			if currentKeyID == p.kinesisConf.KMSKeyID {
 				p.log.Info("Server-side encryption is already enabled with the specified KMS Key ID")
 			} else {
-				p.log.Warn("Server-side encryption is already enabled with a different KMS Key ID")
+				return errors.New("server-side encryption is already enabled with a different KMS Key ID")
 			}
 		default:
 			// Encryption not enabled, proceed to enable it
@@ -124,15 +124,10 @@ func (p *KinesisPump) Init(config interface{}) error {
 				if errors.As(err, &resourceInUseErr) {
 					p.log.Info("Server-side encryption is already enabled for the Kinesis stream.")
 				} else {
-					p.log.Warnf("Failed to enable server-side encryption for Kinesis stream: %v", err)
+					return fmt.Errorf("failed to enable server-side encryption for Kinesis stream: %w", err)
 				}
 			} else {
-				kmsKeyID := p.kinesisConf.KMSKeyID
-				loggableKeyID := "***" // Default to a fully masked key
-				if len(kmsKeyID) >= 8 {
-					loggableKeyID = fmt.Sprintf("%s***%s", kmsKeyID[:4], kmsKeyID[len(kmsKeyID)-4:])
-				}
-				p.log.Info("Server-side encryption enabled for Kinesis stream with KMS Key ID: ", loggableKeyID)
+				p.log.Info("Server-side encryption enabled for Kinesis stream using the configured KMS Key ID.")
 			}
 		}
 	}
