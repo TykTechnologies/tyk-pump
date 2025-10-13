@@ -5,7 +5,6 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"strings"
 	"sync"
 	"time"
 
@@ -206,7 +205,7 @@ func (c *SQLPump) Init(conf interface{}) error {
 		}
 	} else if c.SQLConf.MigrateOldTables {
 		// Migrate all existing sharded tables on init
-		if err := c.migrateAllShardedTables(); err != nil {
+		if err := MigrateAllShardedTables(c.db, analytics.SQLTable, "", &analytics.AnalyticsRecord{}, c.log); err != nil {
 			c.log.WithError(err).Warn("Failed to migrate existing sharded tables")
 			// Don't fail initialization, just log the warning
 		}
@@ -487,58 +486,5 @@ func (c *SQLPump) ensureTable(tableName string) error {
 			return err
 		}
 	}
-	return nil
-}
-
-// migrateAllShardedTables scans for all existing sharded tables and migrates them
-func (c *SQLPump) migrateAllShardedTables() error {
-	if !c.SQLConf.TableSharding {
-		// No sharding, nothing to migrate
-		return nil
-	}
-
-	c.log.Info("Scanning for existing sharded tables to migrate...")
-
-	// Get all tables in the database
-	var tables []string
-	err := c.db.Raw("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'").Scan(&tables).Error
-	if err != nil {
-		c.log.WithError(err).Warn("Failed to get list of tables, skipping migration scan")
-		return nil
-	}
-
-	// Find tables matching our sharded pattern
-	shardedTables := make([]string, 0)
-	tablePrefix := analytics.SQLTable + "_"
-
-	for _, table := range tables {
-		if strings.HasPrefix(table, tablePrefix) {
-			// Check if it matches the date pattern (YYYYMMDD)
-			suffix := strings.TrimPrefix(table, tablePrefix)
-			if len(suffix) == 8 {
-				// Try to parse as date to validate format
-				if _, err := time.Parse("20060102", suffix); err == nil {
-					shardedTables = append(shardedTables, table)
-				}
-			}
-		}
-	}
-
-	c.log.WithField("count", len(shardedTables)).Info("Found sharded tables to migrate")
-
-	// Migrate each sharded table
-	for _, tableName := range shardedTables {
-		c.log.WithField("table", tableName).Debug("Migrating sharded table")
-
-		c.db = c.db.Table(tableName)
-		if err := c.db.AutoMigrate(&analytics.AnalyticsRecord{}); err != nil {
-			c.log.WithField("table", tableName).WithError(err).Warn("Failed to migrate sharded table")
-			// Continue with other tables even if one fails
-		} else {
-			c.log.WithField("table", tableName).Debug("Successfully migrated sharded table")
-		}
-	}
-
-	c.log.Info("Completed migration of sharded tables")
 	return nil
 }
