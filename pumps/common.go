@@ -88,19 +88,20 @@ func (p *CommonPumpConfig) GetDecodedResponse() bool {
 // HandleTableMigration handles the table migration logic for SQL pumps
 // It migrates either all sharded tables or just the current day's table based on configuration
 func HandleTableMigration(db *gorm.DB, conf *SQLConf, tableName string, model interface{}, log *logrus.Entry, migrateAllFunc func() error) error {
-	if !conf.TableSharding {
+	switch {
+	case !conf.TableSharding:
 		// Non-sharded case: migrate the main table
 		if err := db.Table(tableName).AutoMigrate(model); err != nil {
 			log.WithError(err).Error("error migrating table")
 			return err
 		}
-	} else if conf.MigrateOldTables {
+	case conf.MigrateOldTables:
 		// Migrate all existing sharded tables
 		if err := migrateAllFunc(); err != nil {
 			log.WithError(err).Warn("Failed to migrate existing sharded tables")
 			// Don't fail initialization, just log the warning
 		}
-	} else {
+	default:
 		// Migrate current day's table to ensure it has latest schema
 		currentDayTable := tableName + "_" + time.Now().Format("20060102")
 		if err := db.Table(currentDayTable).AutoMigrate(model); err != nil {
@@ -120,7 +121,17 @@ func MigrateAllShardedTables(db *gorm.DB, tablePrefix, logPrefix string, model i
 
 	// Get all tables in the database
 	var tables []string
-	err := db.Raw(`SELECT table_name FROM "information_schema.tables" WHERE table_schema = 'public'`).Scan(&tables).Error
+	var err error
+
+	// Use database-specific queries for better compatibility
+	switch db.Dialector.Name() {
+	case "sqlite":
+		// For SQLite, use the mock information_schema.tables table (created in tests)
+		err = db.Raw(`SELECT table_name FROM "information_schema.tables" WHERE table_schema = 'public'`).Scan(&tables).Error
+	default:
+		// For PostgreSQL, MySQL, and other databases, use the real information_schema
+		err = db.Raw(`SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'`).Scan(&tables).Error
+	}
 	if err != nil {
 		log.WithError(err).Warn("Failed to get list of tables, skipping migration scan")
 		return nil
