@@ -84,7 +84,7 @@ type SQLConf struct {
 	// When true, scans for all sharded tables matching the pattern and migrates them on init.
 	// When false, only migrates tables as they are accessed during WriteData.
 	// Defaults to false for performance reasons.
-	MigrateOldTables bool `json:"migrate_old_tables" mapstructure:"migrate_old_tables" default:"false"`
+	MigrateOldTables bool `json:"migrate_old_tables" mapstructure:"migrate_old_tables"`
 }
 
 func Dialect(cfg *SQLConf) (gorm.Dialector, error) {
