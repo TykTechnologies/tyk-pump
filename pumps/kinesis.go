@@ -4,8 +4,10 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math/big"
+	"time"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/mitchellh/mapstructure"
@@ -41,6 +43,9 @@ type KinesisConf struct {
 	// Each record in the request can be as large as 1 MiB, up to a limit of 5 MiB for the entire request, including partition keys.
 	// Each shard can support writes up to 1,000 records per second, up to a maximum data write total of 1 MiB per second.
 	BatchSize int `mapstructure:"batch_size"`
+	// The KMS Key ID used for server-side encryption of the Kinesis stream.
+	// Defaults to an empty string if not provided.
+	KMSKeyID string `mapstructure:"kms_key_id" default:""`
 }
 
 var (
@@ -85,6 +90,48 @@ func (p *KinesisPump) Init(config interface{}) error {
 
 	// Create Kinesis client
 	p.client = kinesis.NewFromConfig(cfg)
+
+	// Check if KMSKeyID is provided and enable server-side encryption
+	if p.kinesisConf.KMSKeyID != "" {
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer cancel()
+
+		// First, check if encryption is already enabled
+		describeOutput, err := p.client.DescribeStream(ctx, &kinesis.DescribeStreamInput{
+			StreamName: aws.String(p.kinesisConf.StreamName),
+		})
+
+		switch {
+		case err != nil:
+			return fmt.Errorf("failed to describe Kinesis stream: %w", err)
+		case describeOutput.StreamDescription.EncryptionType == types.EncryptionTypeKms:
+			currentKeyID := aws.ToString(describeOutput.StreamDescription.KeyId)
+			if currentKeyID == p.kinesisConf.KMSKeyID {
+				p.log.Info("Server-side encryption is already enabled with the specified KMS Key ID")
+			} else {
+				return errors.New("server-side encryption is already enabled with a different KMS Key ID")
+			}
+		default:
+			// Encryption not enabled, proceed to enable it
+			_, err := p.client.StartStreamEncryption(ctx, &kinesis.StartStreamEncryptionInput{
+				StreamName:     aws.String(p.kinesisConf.StreamName),
+				EncryptionType: types.EncryptionTypeKms,
+				KeyId:          aws.String(p.kinesisConf.KMSKeyID),
+			})
+
+			if err != nil {
+				var resourceInUseErr *types.ResourceInUseException
+				if errors.As(err, &resourceInUseErr) {
+					p.log.Info("Server-side encryption is already enabled for the Kinesis stream.")
+				} else {
+					return fmt.Errorf("failed to enable server-side encryption for Kinesis stream: %w", err)
+				}
+			} else {
+				p.log.Info("Server-side encryption enabled for Kinesis stream using the configured KMS Key ID.")
+			}
+		}
+	}
+
 	p.log.Info(p.GetName() + " Initialized")
 
 	return nil
