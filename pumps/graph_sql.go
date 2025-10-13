@@ -3,6 +3,8 @@ package pumps
 import (
 	"context"
 	"fmt"
+	"strings"
+	"time"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/mitchellh/mapstructure"
@@ -87,11 +89,27 @@ func (g *GraphSQLPump) Init(conf interface{}) error {
 	if name := g.Conf.TableName; name != "" {
 		g.tableName = name
 	}
+
 	analytics.GraphSQLTableName = g.tableName
 	if !g.Conf.TableSharding {
 		if err := g.db.Table(g.tableName).AutoMigrate(&analytics.GraphRecord{}); err != nil {
 			g.log.WithError(err).Error("error migrating graph analytics table")
 			return err
+		}
+	} else if g.Conf.MigrateOldTables {
+		// Migrate all existing sharded tables
+		if err := g.migrateAllShardedTables(); err != nil {
+			g.log.WithError(err).Warn("Failed to migrate existing sharded graph tables")
+			// Don't fail initialization, just log the warning
+		}
+	} else {
+		// Migrate current day's table to ensure it has latest schema
+		currentDayTable := g.tableName + "_" + time.Now().Format("20060102")
+		if err := g.db.Table(currentDayTable).AutoMigrate(&analytics.GraphRecord{}); err != nil {
+			g.log.WithField("table", currentDayTable).WithError(err).Warn("Failed to migrate current day table")
+			// Don't fail initialization, just log the warning
+		} else {
+			g.log.WithField("table", currentDayTable).Debug("Migrated current day table")
 		}
 	}
 	g.db = g.db.Table(g.tableName)
@@ -194,4 +212,57 @@ func (g *GraphSQLPump) WriteData(ctx context.Context, data []interface{}) error 
 
 func (g *GraphSQLPump) SetLogLevel(level logrus.Level) {
 	g.log.Level = level
+}
+
+// migrateAllShardedTables scans for all existing sharded tables and migrates them
+func (g *GraphSQLPump) migrateAllShardedTables() error {
+	if !g.Conf.TableSharding {
+		// No sharding, nothing to migrate
+		return nil
+	}
+
+	g.log.Info("Scanning for existing sharded graph tables to migrate...")
+
+	// Get all tables in the database
+	var tables []string
+	err := g.db.Raw("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'").Scan(&tables).Error
+	if err != nil {
+		g.log.WithError(err).Warn("Failed to get list of tables, skipping migration scan")
+		return nil
+	}
+
+	// Find tables matching our sharded pattern
+	shardedTables := make([]string, 0)
+	tablePrefix := g.tableName + "_"
+
+	for _, table := range tables {
+		if strings.HasPrefix(table, tablePrefix) {
+			// Check if it matches the date pattern (YYYYMMDD)
+			suffix := strings.TrimPrefix(table, tablePrefix)
+			if len(suffix) == 8 {
+				// Try to parse as date to validate format
+				if _, err := time.Parse("20060102", suffix); err == nil {
+					shardedTables = append(shardedTables, table)
+				}
+			}
+		}
+	}
+
+	g.log.WithField("count", len(shardedTables)).Info("Found sharded graph tables to migrate")
+
+	// Migrate each sharded table
+	for _, tableName := range shardedTables {
+		g.log.WithField("table", tableName).Debug("Migrating sharded graph table")
+
+		g.db = g.db.Table(tableName)
+		if err := g.db.AutoMigrate(&analytics.GraphRecord{}); err != nil {
+			g.log.WithField("table", tableName).WithError(err).Warn("Failed to migrate sharded graph table")
+			// Continue with other tables even if one fails
+		} else {
+			g.log.WithField("table", tableName).Debug("Successfully migrated sharded graph table")
+		}
+	}
+
+	g.log.Info("Completed migration of sharded graph tables")
+	return nil
 }

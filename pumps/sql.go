@@ -5,7 +5,9 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"strings"
 	"sync"
+	"time"
 
 	"github.com/sirupsen/logrus"
 
@@ -78,6 +80,11 @@ type SQLConf struct {
 	// Specifies the amount of records that are going to be written each batch. Type int. By
 	// default, it writes 1000 records max per batch.
 	BatchSize int `json:"batch_size" mapstructure:"batch_size"`
+	// Specifies whether to migrate all existing sharded tables during initialization.
+	// When true, scans for all sharded tables matching the pattern and migrates them on init.
+	// When false, only migrates tables as they are accessed during WriteData.
+	// Defaults to false for performance reasons.
+	MigrateOldTables bool `json:"migrate_old_tables" mapstructure:"migrate_old_tables" default:"false"`
 }
 
 func Dialect(cfg *SQLConf) (gorm.Dialector, error) {
@@ -196,6 +203,29 @@ func (c *SQLPump) Init(conf interface{}) error {
 			c.db.Table(analytics.UptimeSQLTable).AutoMigrate(&analytics.UptimeReportAggregateSQL{})
 		} else {
 			c.db.Table(analytics.SQLTable).AutoMigrate(&analytics.AnalyticsRecord{})
+		}
+	} else if c.SQLConf.MigrateOldTables {
+		// Migrate all existing sharded tables on init
+		if err := c.migrateAllShardedTables(); err != nil {
+			c.log.WithError(err).Warn("Failed to migrate existing sharded tables")
+			// Don't fail initialization, just log the warning
+		}
+	} else {
+		// Migrate current day's table to ensure it has latest schema
+		currentDayTable := analytics.SQLTable + "_" + time.Now().Format("20060102")
+		if c.IsUptime {
+			currentDayTable = analytics.UptimeSQLTable + "_" + time.Now().Format("20060102")
+			if err := c.db.Table(currentDayTable).AutoMigrate(&analytics.UptimeReportAggregateSQL{}); err != nil {
+				c.log.WithField("table", currentDayTable).WithError(err).Warn("Failed to migrate current day uptime table")
+			} else {
+				c.log.WithField("table", currentDayTable).Debug("Migrated current day uptime table")
+			}
+		} else {
+			if err := c.db.Table(currentDayTable).AutoMigrate(&analytics.AnalyticsRecord{}); err != nil {
+				c.log.WithField("table", currentDayTable).WithError(err).Warn("Failed to migrate current day table")
+			} else {
+				c.log.WithField("table", currentDayTable).Debug("Migrated current day table")
+			}
 		}
 	}
 
@@ -457,5 +487,58 @@ func (c *SQLPump) ensureTable(tableName string) error {
 			return err
 		}
 	}
+	return nil
+}
+
+// migrateAllShardedTables scans for all existing sharded tables and migrates them
+func (c *SQLPump) migrateAllShardedTables() error {
+	if !c.SQLConf.TableSharding {
+		// No sharding, nothing to migrate
+		return nil
+	}
+
+	c.log.Info("Scanning for existing sharded tables to migrate...")
+
+	// Get all tables in the database
+	var tables []string
+	err := c.db.Raw("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'").Scan(&tables).Error
+	if err != nil {
+		c.log.WithError(err).Warn("Failed to get list of tables, skipping migration scan")
+		return nil
+	}
+
+	// Find tables matching our sharded pattern
+	shardedTables := make([]string, 0)
+	tablePrefix := analytics.SQLTable + "_"
+
+	for _, table := range tables {
+		if strings.HasPrefix(table, tablePrefix) {
+			// Check if it matches the date pattern (YYYYMMDD)
+			suffix := strings.TrimPrefix(table, tablePrefix)
+			if len(suffix) == 8 {
+				// Try to parse as date to validate format
+				if _, err := time.Parse("20060102", suffix); err == nil {
+					shardedTables = append(shardedTables, table)
+				}
+			}
+		}
+	}
+
+	c.log.WithField("count", len(shardedTables)).Info("Found sharded tables to migrate")
+
+	// Migrate each sharded table
+	for _, tableName := range shardedTables {
+		c.log.WithField("table", tableName).Debug("Migrating sharded table")
+
+		c.db = c.db.Table(tableName)
+		if err := c.db.AutoMigrate(&analytics.AnalyticsRecord{}); err != nil {
+			c.log.WithField("table", tableName).WithError(err).Warn("Failed to migrate sharded table")
+			// Continue with other tables even if one fails
+		} else {
+			c.log.WithField("table", tableName).Debug("Successfully migrated sharded table")
+		}
+	}
+
+	c.log.Info("Completed migration of sharded tables")
 	return nil
 }
