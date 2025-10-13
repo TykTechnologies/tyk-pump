@@ -120,7 +120,7 @@ func MigrateAllShardedTables(db *gorm.DB, tablePrefix, logPrefix string, model i
 
 	// Get all tables in the database
 	var tables []string
-	err := db.Raw("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'").Scan(&tables).Error
+	err := db.Raw(`SELECT table_name FROM "information_schema.tables" WHERE table_schema = 'public'`).Scan(&tables).Error
 	if err != nil {
 		log.WithError(err).Warn("Failed to get list of tables, skipping migration scan")
 		return nil
