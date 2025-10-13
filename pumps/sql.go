@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"sync"
-	"time"
 
 	"github.com/sirupsen/logrus"
 
@@ -197,34 +196,24 @@ func (c *SQLPump) Init(conf interface{}) error {
 	}
 	c.db = db
 
-	if !c.SQLConf.TableSharding {
-		if c.IsUptime {
-			c.db.Table(analytics.UptimeSQLTable).AutoMigrate(&analytics.UptimeReportAggregateSQL{})
-		} else {
-			c.db.Table(analytics.SQLTable).AutoMigrate(&analytics.AnalyticsRecord{})
+	// Handle table migration based on configuration
+	if c.IsUptime {
+		// Create migration function for uptime sharded tables
+		migrateShardedTables := func() error {
+			return MigrateAllShardedTables(c.db, analytics.UptimeSQLTable, "uptime", &analytics.UptimeReportAggregateSQL{}, c.log)
 		}
-	} else if c.SQLConf.MigrateOldTables {
-		// Migrate all existing sharded tables on init
-		if err := MigrateAllShardedTables(c.db, analytics.SQLTable, "", &analytics.AnalyticsRecord{}, c.log); err != nil {
-			c.log.WithError(err).Warn("Failed to migrate existing sharded tables")
-			// Don't fail initialization, just log the warning
+
+		if err := HandleTableMigration(c.db, c.SQLConf, analytics.UptimeSQLTable, &analytics.UptimeReportAggregateSQL{}, c.log, migrateShardedTables); err != nil {
+			return err
 		}
 	} else {
-		// Migrate current day's table to ensure it has latest schema
-		currentDayTable := analytics.SQLTable + "_" + time.Now().Format("20060102")
-		if c.IsUptime {
-			currentDayTable = analytics.UptimeSQLTable + "_" + time.Now().Format("20060102")
-			if err := c.db.Table(currentDayTable).AutoMigrate(&analytics.UptimeReportAggregateSQL{}); err != nil {
-				c.log.WithField("table", currentDayTable).WithError(err).Warn("Failed to migrate current day uptime table")
-			} else {
-				c.log.WithField("table", currentDayTable).Debug("Migrated current day uptime table")
-			}
-		} else {
-			if err := c.db.Table(currentDayTable).AutoMigrate(&analytics.AnalyticsRecord{}); err != nil {
-				c.log.WithField("table", currentDayTable).WithError(err).Warn("Failed to migrate current day table")
-			} else {
-				c.log.WithField("table", currentDayTable).Debug("Migrated current day table")
-			}
+		// Create migration function for analytics sharded tables
+		migrateShardedTables := func() error {
+			return MigrateAllShardedTables(c.db, analytics.SQLTable, "", &analytics.AnalyticsRecord{}, c.log)
+		}
+
+		if err := HandleTableMigration(c.db, c.SQLConf, analytics.SQLTable, &analytics.AnalyticsRecord{}, c.log, migrateShardedTables); err != nil {
+			return err
 		}
 	}
 
