@@ -1,6 +1,7 @@
 package pumps
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
@@ -128,9 +129,16 @@ func MigrateAllShardedTables(db *gorm.DB, tablePrefix, logPrefix string, model i
 	case "sqlite":
 		// For SQLite, use the mock information_schema.tables table (created in tests)
 		err = db.Raw(`SELECT table_name FROM "information_schema.tables" WHERE table_schema = 'public'`).Scan(&tables).Error
-	default:
-		// For PostgreSQL, MySQL, and other databases, use the real information_schema
+	case "mysql":
+		// For MySQL, use the database name as schema
+		err = db.Raw(`SELECT table_name FROM information_schema.tables WHERE table_schema = DATABASE()`).Scan(&tables).Error
+	case "postgres":
+		// For PostgreSQL, use 'public' schema
 		err = db.Raw(`SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'`).Scan(&tables).Error
+	default:
+		// Unknown database type
+		log.WithField("dialector", db.Dialector.Name()).Error("Unsupported database type for table migration")
+		return fmt.Errorf("unsupported database type: %s", db.Dialector.Name())
 	}
 	if err != nil {
 		log.WithError(err).Warn("Failed to get list of tables, skipping migration scan")
