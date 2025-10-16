@@ -137,7 +137,7 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: |
-            ${{ steps.ecr.outputs.registry }}/tyk-pump-fips
+            ${{ steps.ecr.outputs.registry }}/tyk-pump
           flavor: |
             latest=false
           tags: |
@@ -152,7 +152,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: "dist"
-          platforms: linux/amd64
+          platforms: linux/amd64,linux/arm64,linux/s390x
           file: ci/Dockerfile.distroless
           provenance: mode=max
           sbom: true
@@ -185,7 +185,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: "dist"
-          platforms: linux/amd64
+          platforms: linux/amd64,linux/arm64,linux/s390x
           file: ci/Dockerfile.distroless
           provenance: mode=max
           sbom: true
