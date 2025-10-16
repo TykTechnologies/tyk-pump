@@ -151,9 +151,7 @@ type UptimeConf struct {
 }
 
 type TykPumpConfiguration struct {
-	// The number of seconds the Pump waits between checking for analytics data and purge it from
-	// Redis.
-	PurgeDelay int `json:"purge_delay"`
+	// 8-byte aligned fields first
 	// The maximum number of records to pull from Redis at a time. If it's unset or `0`, all the
 	// analytics records in Redis are pulled. If it's set, `storage_expiration_time` is used to
 	// reset the analytics record TTL.
@@ -161,9 +159,8 @@ type TykPumpConfiguration struct {
 	// The number of seconds for the analytics records TTL. It only works if `purge_chunk` is
 	// enabled. Defaults to `60` seconds.
 	StorageExpirationTime int64 `json:"storage_expiration_time"`
-	// Setting this to `false` will create a pump that pushes uptime data to Uptime Pump, so the
-	// Dashboard can read it. Disable by setting to `true`.
-	DontPurgeUptimeData bool `json:"dont_purge_uptime_data"`
+
+	// Larger structs and slices/maps (pointer-sized)
 	// Example Uptime Pump configuration:
 	// ```{.json}
 	// "uptime_pump_config": {
@@ -179,9 +176,6 @@ type TykPumpConfiguration struct {
 	// want a Kafka pump which is called `PROD` you need to create `TYK_PMP_PUMPS_PROD_TYPE=kafka`
 	// and configure it using the `TYK_PMP_PUMPS_PROD_` prefix.
 	Pumps map[string]PumpConfig `json:"pumps"`
-	// Sets the analytics storage type. Where the pump will be fetching data from. Currently, only
-	// the `redis` option is supported.
-	AnalyticsStorageType string `json:"analytics_storage_type"`
 	// Example Temporal storage configuration:
 	// ```{.json}
 	//   "analytics_storage_config": {
@@ -200,6 +194,11 @@ type TykPumpConfiguration struct {
 	//   },
 	// ```
 	AnalyticsStorageConfig storage.TemporalStorageConfig `json:"analytics_storage_config"`
+
+	// String fields (pointer-sized)
+	// Sets the analytics storage type. Where the pump will be fetching data from. Currently, only
+	// the `redis` option is supported.
+	AnalyticsStorageType string `json:"analytics_storage_type"`
 	// Connection string for StatsD monitoring for information please see the
 	// [Instrumentation docs](https://tyk.io/docs/basic-config-and-security/report-monitor-trigger-events/instrumentation/).
 	StatsdConnectionString string `json:"statsd_connection_string"`
@@ -219,11 +218,13 @@ type TykPumpConfiguration struct {
 	// TYKCONFIGHEADEREND
 	// The default is "hello".
 	HealthCheckEndpointName string `json:"health_check_endpoint_name"`
+
+	// 4-byte aligned fields
+	// The number of seconds the Pump waits between checking for analytics data and purge it from
+	// Redis.
+	PurgeDelay int `json:"purge_delay"`
 	// The default port is 8083.
 	HealthCheckEndpointPort int `json:"health_check_endpoint_port"`
-	// Setting this to true will avoid writing raw_request and raw_response fields for each request
-	// in pumps. Defaults to false.
-	OmitDetailedRecording bool `json:"omit_detailed_recording"`
 	// Defines maximum size (in bytes) for Raw Request and Raw Response logs, this value defaults
 	// to 0. If it is not set then tyk-pump will not trim any data and will store the full
 	// information. This can also be set at a pump level. For example:
@@ -237,16 +238,24 @@ type TykPumpConfiguration struct {
 	// }
 	// ```
 	MaxRecordSize int `json:"max_record_size"`
+
+	// 1-byte aligned fields (booleans) - group together at the end
+	// Setting this to `false` will create a pump that pushes uptime data to Uptime Pump, so the
+	// Dashboard can read it. Disable by setting to `true`.
+	DontPurgeUptimeData bool `json:"dont_purge_uptime_data"`
+	// Setting this to true will avoid writing raw_request and raw_response fields for each request
+	// in pumps. Defaults to false.
+	OmitDetailedRecording bool `json:"omit_detailed_recording"`
 	// Defines if tyk-pump should ignore all the values in configuration file. Specially useful when setting all configurations in environment variables.
 	OmitConfigFile bool `json:"omit_config_file"`
 	// Enable debugging of Tyk Pump by exposing profiling information, the same as the gateway https://tyk.io/docs/troubleshooting/tyk-gateway/profiling/
 	HTTPProfile bool `json:"enable_http_profiler"`
-
 	// Setting this to true allows the Raw Request to be decoded from base 64
 	// for all pumps. This is set to false by default.
+	// Deprecated: Use pump level raw_request_decoded configuration instead.
 	DecodeRawRequest bool `json:"raw_request_decoded"`
-
 	// Setting this to true allows the Raw Response to be decoded from base 64 for all pumps. This is set to false by default.
+	// Deprecated: Use pump level raw_response_decoded configuration instead.
 	DecodeRawResponse bool `json:"raw_response_decoded"`
 }
 
