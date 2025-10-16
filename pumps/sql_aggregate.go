@@ -123,6 +123,16 @@ func (c *SQLAggregatePump) Init(conf interface{}) error {
 
 	c.db = db
 
+	// Handle table migration
+	migrateShardedTables := func() error {
+		return MigrateAllShardedTables(c.db, analytics.AggregateSQLTable, "aggregate", &analytics.SQLAnalyticsRecordAggregate{}, c.log)
+	}
+
+	if err := HandleTableMigration(c.db, &c.SQLConf.SQLConf, analytics.AggregateSQLTable, &analytics.SQLAnalyticsRecordAggregate{}, c.log, migrateShardedTables); err != nil {
+		return err
+	}
+
+	// Handle aggregate-specific setup for non-sharded tables
 	if !c.SQLConf.TableSharding {
 		// if table doesn't exist, create it
 		if err := c.ensureTable(analytics.AggregateSQLTable); err != nil {

@@ -87,12 +87,16 @@ func (g *GraphSQLPump) Init(conf interface{}) error {
 	if name := g.Conf.TableName; name != "" {
 		g.tableName = name
 	}
+
 	analytics.GraphSQLTableName = g.tableName
-	if !g.Conf.TableSharding {
-		if err := g.db.Table(g.tableName).AutoMigrate(&analytics.GraphRecord{}); err != nil {
-			g.log.WithError(err).Error("error migrating graph analytics table")
-			return err
-		}
+
+	// Create migration function for sharded tables
+	migrateShardedTables := func() error {
+		return MigrateAllShardedTables(g.db, g.tableName, "graph", &analytics.GraphRecord{}, g.log)
+	}
+
+	if err := HandleTableMigration(g.db, &g.Conf.SQLConf, g.tableName, &analytics.GraphRecord{}, g.log, migrateShardedTables); err != nil {
+		return err
 	}
 	g.db = g.db.Table(g.tableName)
 
