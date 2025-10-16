@@ -168,8 +168,7 @@ func MigrateAllShardedTables(db *gorm.DB, tablePrefix, logPrefix string, model i
 	for _, tableName := range shardedTables {
 		log.WithField("table", tableName).Debug("Migrating sharded " + logPrefix + " table")
 
-		db = db.Table(tableName)
-		if err := db.AutoMigrate(model); err != nil {
+		if err := db.Table(tableName).AutoMigrate(model); err != nil {
 			log.WithField("table", tableName).WithError(err).Warn("Failed to migrate sharded " + logPrefix + " table")
 			// Continue with other tables even if one fails
 		} else {
