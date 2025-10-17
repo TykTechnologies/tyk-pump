@@ -36,6 +36,7 @@ type NetworkStats struct {
 type Latency struct {
 	Total    int64 `json:"total"`
 	Upstream int64 `json:"upstream"`
+	Gateway  int64 `json:"gateway"`
 }
 
 const SQLTable = "tyk_analytics"
@@ -150,6 +151,7 @@ func (l *Latency) GetFieldNames() []string {
 	return []string{
 		"Latency.Total",
 		"Latency.Upstream",
+		"Latency.Gateway",
 	}
 }
 
@@ -206,7 +208,8 @@ func (n *NetworkStats) GetLineValues() []string {
 func (l *Latency) GetLineValues() []string {
 	fields := []string{}
 	fields = append(fields, strconv.FormatUint(uint64(l.Total), 10))
-	return append(fields, strconv.FormatUint(uint64(l.Upstream), 10))
+	fields = append(fields, strconv.FormatUint(uint64(l.Upstream), 10))
+	return append(fields, strconv.FormatUint(uint64(l.Gateway), 10))
 }
 
 func (g *GeoData) GetLineValues() []string {
