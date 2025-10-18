@@ -90,4 +90,37 @@ jobs:
           result_code=${PIPESTATUS[0]}
           echo "log=$(sed -ze 's/%/%25/g;s/\n/%0A/g' test.log)" >> $GITHUB_OUTPUT
           exit $result_code
+<<<<<<< HEAD
    
+=======
+
+  aggregator-ci-test:
+    name: Aggregated CI Status
+    runs-on: ubuntu-latest
+    if: ${{ always() && github.event_name == 'pull_request' }}
+    needs: [ test ]
+    steps:
+      - name: Aggregate results
+        run: |
+          failed=()
+          # Get the needs context as JSON once
+          needs_json='${{ toJSON(needs) }}'
+
+          # Loop through all jobs in the needs context
+          for job in $(echo "$needs_json" | jq -r 'keys[]'); do
+            job_result=$(echo "$needs_json" | jq -r --arg job "$job" '.[$job].result')
+
+            if [[ "$job_result" != "success" ]]; then
+              failed+=("$job")
+            fi
+          done
+
+          if (( ${#failed[@]} )); then
+            # Join the failed job names with commas
+            failed_jobs=$(IFS=", "; echo "${failed[*]}")
+            echo "❌ Failed jobs ----- : $failed_jobs"
+            exit 1
+          fi
+
+          echo "✅ All required jobs succeeded"
+>>>>>>> 088ac3b... TT-15781: add aggregator job to ci-test.yml (#906)
