@@ -505,6 +505,9 @@ func (pm *PrometheusMetric) Observe(requestTime int64, values ...string) error {
 				}
 			}
 		} else {
+			if pm.histogramVec == nil {
+				return errors.New("histogram vector is nil")
+			}
 			pm.histogramVec.WithLabelValues(labelValues...).Observe(float64(requestTime))
 		}
 

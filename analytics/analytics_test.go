@@ -1,6 +1,7 @@
 package analytics
 
 import (
+	"encoding/json"
 	"fmt"
 	"testing"
 	"time"
@@ -108,7 +109,7 @@ func TestAnalyticsRecord_GetFieldNames(t *testing.T) {
 
 	fields := rec.GetFieldNames()
 
-	assert.Equal(t, 39, len(fields))
+	assert.Equal(t, 40, len(fields))
 
 	expectedFields := []string{
 		"Method",
@@ -142,6 +143,7 @@ func TestAnalyticsRecord_GetFieldNames(t *testing.T) {
 		"GeoData.Location.TimeZone",
 		"Latency.Total",
 		"Latency.Upstream",
+		"Latency.Gateway",
 		"NetworkStats.OpenConnections",
 		"NetworkStats.ClosedConnection",
 		"NetworkStats.BytesIn",
@@ -168,11 +170,115 @@ func TestAnalyticsRecord_GetLineValues(t *testing.T) {
 
 	fields := rec.GetLineValues()
 
-	assert.Equal(t, 39, len(fields))
+	assert.Equal(t, 40, len(fields))
 
 	for _, field := range structs.Fields(rec) {
 		if field.IsExported() && !field.IsZero() {
 			assert.Contains(t, fields, fmt.Sprint(field.Value()))
 		}
 	}
+}
+
+func TestLatency_GetFieldNames(t *testing.T) {
+	latency := &Latency{}
+	fieldNames := latency.GetFieldNames()
+
+	expectedFields := []string{
+		"Latency.Total",
+		"Latency.Upstream",
+		"Latency.Gateway",
+	}
+
+	assert.Equal(t, expectedFields, fieldNames)
+	assert.Len(t, fieldNames, 3)
+}
+
+func TestLatency_GetLineValues(t *testing.T) {
+	tcs := []struct {
+		testName     string
+		latency      Latency
+		expectedVals []string
+	}{
+		{
+			testName: "all zero values",
+			latency: Latency{
+				Total:    0,
+				Upstream: 0,
+				Gateway:  0,
+			},
+			expectedVals: []string{"0", "0", "0"},
+		},
+		{
+			testName: "all positive values",
+			latency: Latency{
+				Total:    100,
+				Upstream: 80,
+				Gateway:  20,
+			},
+			expectedVals: []string{"100", "80", "20"},
+		},
+		{
+			testName: "mixed values",
+			latency: Latency{
+				Total:    150,
+				Upstream: 120,
+				Gateway:  30,
+			},
+			expectedVals: []string{"150", "120", "30"},
+		},
+		{
+			testName: "large values",
+			latency: Latency{
+				Total:    999999,
+				Upstream: 888888,
+				Gateway:  111111,
+			},
+			expectedVals: []string{"999999", "888888", "111111"},
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.testName, func(t *testing.T) {
+			lineValues := tc.latency.GetLineValues()
+			assert.Equal(t, tc.expectedVals, lineValues)
+			assert.Len(t, lineValues, 3)
+		})
+	}
+}
+
+func TestLatency_Struct(t *testing.T) {
+	// Test that the Latency struct has the Gateway field
+	latency := Latency{
+		Total:    100,
+		Upstream: 80,
+		Gateway:  20,
+	}
+
+	assert.Equal(t, int64(100), latency.Total)
+	assert.Equal(t, int64(80), latency.Upstream)
+	assert.Equal(t, int64(20), latency.Gateway)
+}
+
+func TestLatency_JSONSerialization(t *testing.T) {
+	latency := Latency{
+		Total:    100,
+		Upstream: 80,
+		Gateway:  20,
+	}
+
+	// Test JSON marshaling
+	jsonData, err := json.Marshal(latency)
+	assert.NoError(t, err)
+
+	// Verify the JSON contains the gateway field
+	jsonStr := string(jsonData)
+	assert.Contains(t, jsonStr, `"total":100`)
+	assert.Contains(t, jsonStr, `"upstream":80`)
+	assert.Contains(t, jsonStr, `"gateway":20`)
+
+	// Test JSON unmarshaling
+	var unmarshaled Latency
+	err = json.Unmarshal(jsonData, &unmarshaled)
+	assert.NoError(t, err)
+	assert.Equal(t, latency, unmarshaled)
 }
