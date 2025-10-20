@@ -246,6 +246,40 @@ func (p *PrometheusPump) InitCustomMetrics() {
 	}
 }
 
+// observeLatencyMetrics handles the special case of tyk_latency metric with multiple latency types
+func (p *PrometheusPump) observeLatencyMetrics(metric *PrometheusMetric, record analytics.AnalyticsRecord, values []string) {
+	latencyTypes := []struct {
+		name  string
+		value int64
+	}{
+		{"total", record.RequestTime},
+		{"upstream", record.Latency.Upstream},
+		{"gateway", record.Latency.Gateway},
+	}
+
+	for _, lt := range latencyTypes {
+		err := metric.Observe(lt.value, append([]string{lt.name}, values...)...)
+		if err != nil {
+			p.log.WithFields(logrus.Fields{
+				"metric_type":  metric.MetricType,
+				"metric_name":  metric.Name,
+				"latency_type": lt.name,
+			}).Error("error incrementing prometheus metric value:", err)
+		}
+	}
+}
+
+// observeHistogramMetric handles standard histogram metrics
+func (p *PrometheusPump) observeHistogramMetric(metric *PrometheusMetric, requestTime int64, values []string) {
+	err := metric.Observe(requestTime, values...)
+	if err != nil {
+		p.log.WithFields(logrus.Fields{
+			"metric_type": metric.MetricType,
+			"metric_name": metric.Name,
+		}).Error("error incrementing prometheus metric value:", err)
+	}
+}
+
 func (p *PrometheusPump) WriteData(ctx context.Context, data []interface{}) error {
 	p.log.Debug("Attempting to write ", len(data), " records...")
 
@@ -283,46 +317,10 @@ func (p *PrometheusPump) WriteData(ctx context.Context, data []interface{}) erro
 					}
 				case histogramType:
 					if metric.histogramVec != nil {
-						// if the metric is an histogram, we Observe the different latency types
 						if metric.Name == "tyk_latency" {
-							// Total latency
-							err := metric.Observe(record.RequestTime, append([]string{"total"}, values...)...)
-							if err != nil {
-								p.log.WithFields(logrus.Fields{
-									"metric_type":  metric.MetricType,
-									"metric_name":  metric.Name,
-									"latency_type": "total",
-								}).Error("error incrementing prometheus metric value:", err)
-							}
-
-							// Upstream latency
-							err = metric.Observe(record.Latency.Upstream, append([]string{"upstream"}, values...)...)
-							if err != nil {
-								p.log.WithFields(logrus.Fields{
-									"metric_type":  metric.MetricType,
-									"metric_name":  metric.Name,
-									"latency_type": "upstream",
-								}).Error("error incrementing prometheus metric value:", err)
-							}
-
-							// Gateway latency
-							err = metric.Observe(record.Latency.Gateway, append([]string{"gateway"}, values...)...)
-							if err != nil {
-								p.log.WithFields(logrus.Fields{
-									"metric_type":  metric.MetricType,
-									"metric_name":  metric.Name,
-									"latency_type": "gateway",
-								}).Error("error incrementing prometheus metric value:", err)
-							}
+							p.observeLatencyMetrics(metric, record, values)
 						} else {
-							// For other histogram metrics, use the original behavior
-							err := metric.Observe(record.RequestTime, values...)
-							if err != nil {
-								p.log.WithFields(logrus.Fields{
-									"metric_type": metric.MetricType,
-									"metric_name": metric.Name,
-								}).Error("error incrementing prometheus metric value:", err)
-							}
+							p.observeHistogramMetric(metric, record.RequestTime, values)
 						}
 					}
 				default:
