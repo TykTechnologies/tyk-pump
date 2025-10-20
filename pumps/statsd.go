@@ -8,6 +8,7 @@ import (
 
 	"github.com/mitchellh/mapstructure"
 	"github.com/quipo/statsd"
+	"github.com/sirupsen/logrus"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
 )
@@ -87,6 +88,29 @@ func (s *StatsdPump) connect() *statsd.StatsdClient {
 	}
 }
 
+// isTimingField checks if a field should be sent as a timing metric
+func (s *StatsdPump) isTimingField(field string) bool {
+	timingFields := []string{"request_time", "latency_total", "latency_upstream", "latency_gateway"}
+	for _, f := range timingFields {
+		if field == f {
+			return true
+		}
+	}
+	return false
+}
+
+// sendTimingMetric sends a timing metric to StatsD with proper error handling
+func (s *StatsdPump) sendTimingMetric(client *statsd.StatsdClient, field, metricTags string, value int64) {
+	metric := field + "." + metricTags
+	if err := client.Timing(metric, value); err != nil {
+		s.log.WithFields(logrus.Fields{
+			"field":  field,
+			"metric": metric,
+			"value":  value,
+		}).Error("failed to send timing metric to StatsD:", err)
+	}
+}
+
 func (s *StatsdPump) WriteData(ctx context.Context, data []interface{}) error {
 
 	if len(data) == 0 {
@@ -127,21 +151,10 @@ func (s *StatsdPump) WriteData(ctx context.Context, data []interface{}) error {
 		metricTags = strings.Replace(metricTags, "\"", "", -1)
 		metricTags = strings.Replace(metricTags, " ", "", -1)
 
-		// For each field, create metric calculation
-		// Everybody has their own implementation here
+		// Send timing metrics for each configured field
 		for _, f := range s.dbConf.Fields {
-			if f == "request_time" {
-				metric := f + "." + metricTags
-				client.Timing(metric, mapping[f].(int64))
-			} else if f == "latency_total" {
-				metric := f + "." + metricTags
-				client.Timing(metric, mapping[f].(int64))
-			} else if f == "latency_upstream" {
-				metric := f + "." + metricTags
-				client.Timing(metric, mapping[f].(int64))
-			} else if f == "latency_gateway" {
-				metric := f + "." + metricTags
-				client.Timing(metric, mapping[f].(int64))
+			if s.isTimingField(f) {
+				s.sendTimingMetric(client, f, metricTags, mapping[f].(int64))
 			}
 		}
 	}
