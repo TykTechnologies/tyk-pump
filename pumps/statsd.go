@@ -161,22 +161,22 @@ func (s *StatsdPump) getMappings(decoded analytics.AnalyticsRecord) map[string]i
 	decoded.Path = strings.TrimRight(decoded.Path, "/")
 
 	mapping := map[string]interface{}{
-		"path":            decoded.Method + decoded.Path,
-		"response_code":   decoded.ResponseCode,
-		"api_key":         decoded.APIKey,
-		"time_stamp":      sanitizedTime,
-		"api_version":     decoded.APIVersion,
-		"api_name":        decoded.APIName,
-		"api_id":          decoded.APIID,
-		"org_id":          decoded.OrgID,
-		"oauth_id":        decoded.OauthID,
-		"raw_request":     decoded.RawRequest,
-		"request_time":    decoded.RequestTime,
-		"latency_total":   decoded.Latency.Total,
+		"path":             decoded.Method + decoded.Path,
+		"response_code":    decoded.ResponseCode,
+		"api_key":          decoded.APIKey,
+		"time_stamp":       sanitizedTime,
+		"api_version":      decoded.APIVersion,
+		"api_name":         decoded.APIName,
+		"api_id":           decoded.APIID,
+		"org_id":           decoded.OrgID,
+		"oauth_id":         decoded.OauthID,
+		"raw_request":      decoded.RawRequest,
+		"request_time":     decoded.RequestTime,
+		"latency_total":    decoded.Latency.Total,
 		"latency_upstream": decoded.Latency.Upstream,
-		"latency_gateway": decoded.Latency.Gateway,
-		"raw_response":    decoded.RawResponse,
-		"ip_address":      decoded.IPAddress,
+		"latency_gateway":  decoded.Latency.Gateway,
+		"raw_response":     decoded.RawResponse,
+		"ip_address":       decoded.IPAddress,
 	}
 	if s.dbConf.SeparatedMethod {
 		mapping["path"] = decoded.Path

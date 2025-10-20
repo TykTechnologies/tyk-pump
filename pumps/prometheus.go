@@ -289,28 +289,28 @@ func (p *PrometheusPump) WriteData(ctx context.Context, data []interface{}) erro
 							err := metric.Observe(record.RequestTime, append([]string{"total"}, values...)...)
 							if err != nil {
 								p.log.WithFields(logrus.Fields{
-									"metric_type": metric.MetricType,
-									"metric_name": metric.Name,
+									"metric_type":  metric.MetricType,
+									"metric_name":  metric.Name,
 									"latency_type": "total",
 								}).Error("error incrementing prometheus metric value:", err)
 							}
-							
+
 							// Upstream latency
 							err = metric.Observe(record.Latency.Upstream, append([]string{"upstream"}, values...)...)
 							if err != nil {
 								p.log.WithFields(logrus.Fields{
-									"metric_type": metric.MetricType,
-									"metric_name": metric.Name,
+									"metric_type":  metric.MetricType,
+									"metric_name":  metric.Name,
 									"latency_type": "upstream",
 								}).Error("error incrementing prometheus metric value:", err)
 							}
-							
+
 							// Gateway latency
 							err = metric.Observe(record.Latency.Gateway, append([]string{"gateway"}, values...)...)
 							if err != nil {
 								p.log.WithFields(logrus.Fields{
-									"metric_type": metric.MetricType,
-									"metric_name": metric.Name,
+									"metric_type":  metric.MetricType,
+									"metric_name":  metric.Name,
 									"latency_type": "gateway",
 								}).Error("error incrementing prometheus metric value:", err)
 							}
@@ -413,27 +413,27 @@ func (pm *PrometheusMetric) GetLabelsValues(decoded analytics.AnalyticsRecord) [
 	// If API Key obfuscation is enabled, we only show the last <ObfuscateAPIKeysLength> characters of the API Key
 	apiKey := pm.obfuscateAPIKey(decoded.APIKey)
 	mapping := map[string]interface{}{
-		"host":            decoded.Host,
-		"method":          decoded.Method,
-		"path":            decoded.Path,
-		"code":            decoded.ResponseCode,
-		"response_code":   decoded.ResponseCode,
-		"api_key":         apiKey,
-		"key":             apiKey,
-		"time_stamp":      decoded.TimeStamp,
-		"api_version":     decoded.APIVersion,
-		"api_name":        decoded.APIName,
-		"api":             decoded.APIID,
-		"api_id":          decoded.APIID,
-		"org_id":          decoded.OrgID,
-		"client_id":       decoded.OauthID,
-		"oauth_id":        decoded.OauthID,
-		"request_time":    decoded.RequestTime,
-		"latency_total":   decoded.Latency.Total,
+		"host":             decoded.Host,
+		"method":           decoded.Method,
+		"path":             decoded.Path,
+		"code":             decoded.ResponseCode,
+		"response_code":    decoded.ResponseCode,
+		"api_key":          apiKey,
+		"key":              apiKey,
+		"time_stamp":       decoded.TimeStamp,
+		"api_version":      decoded.APIVersion,
+		"api_name":         decoded.APIName,
+		"api":              decoded.APIID,
+		"api_id":           decoded.APIID,
+		"org_id":           decoded.OrgID,
+		"client_id":        decoded.OauthID,
+		"oauth_id":         decoded.OauthID,
+		"request_time":     decoded.RequestTime,
+		"latency_total":    decoded.Latency.Total,
 		"latency_upstream": decoded.Latency.Upstream,
-		"latency_gateway": decoded.Latency.Gateway,
-		"ip_address":      decoded.IPAddress,
-		"alias":           decoded.Alias,
+		"latency_gateway":  decoded.Latency.Gateway,
+		"ip_address":       decoded.IPAddress,
+		"alias":            decoded.Alias,
 	}
 
 	for _, label := range pm.Labels {
@@ -489,7 +489,7 @@ func (pm *PrometheusMetric) Observe(requestTime int64, values ...string) error {
 		} else {
 			latencyType = "total" // Default to total for backward compatibility
 		}
-		
+
 		labelValues := []string{latencyType}
 		labelValues = append(labelValues, values...)
 		if pm.aggregatedObservations {
