@@ -231,26 +231,26 @@ docker_manifests:
   # Single-arch manifest for tykio/tyk-pump-fips fips
   - name_template: tykio/tyk-pump-fips:{{ .Tag }}-fips
     image_templates:
-      - tykio/tyk-pump-fips:{{`{{ .Tag }}`}}-fips-amd64
+      - tykio/tyk-pump-fips:{{ .Tag }}-fips-amd64
   - name_template: tykio/tyk-pump-fips:v{{ .Major }}.{{ .Minor }}{{.Prerelease}}-fips
     image_templates:
-      - tykio/tyk-pump-fips:{{`{{ .Tag }}`}}-fips-amd64
+      - tykio/tyk-pump-fips:{{ .Tag }}-fips-amd64
   - name_template: tykio/tyk-pump-fips:v{{ .Major }}{{.Prerelease}}-fips
     image_templates:
-      - tykio/tyk-pump-fips:{{`{{ .Tag }}`}}-fips-amd64
+      - tykio/tyk-pump-fips:{{ .Tag }}-fips-amd64
   # Multi-arch manifest for tykio/tyk-pump-docker-pub std
   - name_template: tykio/tyk-pump-docker-pub:{{ .Tag }}
     image_templates:
-      - tykio/tyk-pump-docker-pub:{{`{{ .Tag }}`}}-std-amd64
-      - tykio/tyk-pump-docker-pub:{{`{{ .Tag }}`}}-std-arm64
+      - tykio/tyk-pump-docker-pub:{{ .Tag }}-std-amd64
+      - tykio/tyk-pump-docker-pub:{{ .Tag }}-std-arm64
   - name_template: tykio/tyk-pump-docker-pub:v{{ .Major }}.{{ .Minor }}{{.Prerelease}}
     image_templates:
-      - tykio/tyk-pump-docker-pub:{{`{{ .Tag }}`}}-std-amd64
-      - tykio/tyk-pump-docker-pub:{{`{{ .Tag }}`}}-std-arm64
+      - tykio/tyk-pump-docker-pub:{{ .Tag }}-std-amd64
+      - tykio/tyk-pump-docker-pub:{{ .Tag }}-std-arm64
   - name_template: tykio/tyk-pump-docker-pub:v{{ .Major }}{{.Prerelease}}
     image_templates:
-      - tykio/tyk-pump-docker-pub:{{`{{ .Tag }}`}}-std-amd64
-      - tykio/tyk-pump-docker-pub:{{`{{ .Tag }}`}}-std-arm64
+      - tykio/tyk-pump-docker-pub:{{ .Tag }}-std-amd64
+      - tykio/tyk-pump-docker-pub:{{ .Tag }}-std-arm64
 # This disables archives
 archives:
   - formats: ['binary']
