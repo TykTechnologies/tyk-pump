@@ -22,38 +22,6 @@ builds:
     goarch:
       - amd64
     binary: tyk-pump
-  - id: fips-arm64
-    flags:
-      - -tags=fips,boringcrypto
-    env:
-      - NOP=nop # ignore this, it is jsut to avoid a complex conditional in the templates
-      - GOEXPERIMENT=boringcrypto
-    ldflags:
-      - -X github.com/TykTechnologies/tyk-pump/pumps.Version={{.Version}}
-      - -X github.com/TykTechnologies/tyk-pump/pumps.Commit={{.FullCommit}}
-      - -X github.com/TykTechnologies/tyk-pump/pumps.BuildDate={{.Date}}
-      - -X github.com/TykTechnologies/tyk-pump/pumps.BuiltBy=goreleaser
-    goos:
-      - linux
-    goarch:
-      - arm64
-    binary: tyk-pump
-  - id: fips-s390x
-    flags:
-      - -tags=fips,boringcrypto
-    env:
-      - NOP=nop # ignore this, it is jsut to avoid a complex conditional in the templates
-      - GOEXPERIMENT=boringcrypto
-    ldflags:
-      - -X github.com/TykTechnologies/tyk-pump/pumps.Version={{.Version}}
-      - -X github.com/TykTechnologies/tyk-pump/pumps.Commit={{.FullCommit}}
-      - -X github.com/TykTechnologies/tyk-pump/pumps.BuildDate={{.Date}}
-      - -X github.com/TykTechnologies/tyk-pump/pumps.BuiltBy=goreleaser
-    goos:
-      - linux
-    goarch:
-      - s390x
-    binary: tyk-pump
   - id: std-amd64
     env:
       - NOP=nop # ignore this, it is jsut to avoid a complex conditional in the templates
@@ -103,8 +71,6 @@ nfpms:
     file_name_template: "{{ .ConventionalFileName }}"
     ids:
       - fips-amd64
-      - fips-arm64
-      - fips-s390x
     formats:
       - deb
       - rpm
@@ -215,52 +181,6 @@ dockers:
       - "dist/"
       - "LICENSE.md"
       - "pump.example.conf"
-  # Build tykio/tyk-pump-fips fips (arm64)
-  - ids:
-      - fips-arm64
-    image_templates:
-      - "tykio/tyk-pump-fips:{{.Tag}}-fips-arm64"
-    build_flag_templates:
-      - "--build-arg=PORTS=80"
-      - "--build-arg=BUILD_PACKAGE_NAME=tyk-pump-fips"
-      - "--platform=linux/arm64"
-      - "--label=org.opencontainers.image.created={{.Date}}"
-      - "--label=org.opencontainers.image.title={{.ProjectName}} FIPS"
-      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
-      - "--label=org.opencontainers.image.version={{.Version}}"
-    use: buildx
-    goarch: arm64
-    goos: linux
-    dockerfile: ci/Dockerfile.std
-    extra_files:
-      - "ci/install/"
-      - "README.md"
-      - "dist/"
-      - "LICENSE.md"
-      - "pump.example.conf"
-  # Build tykio/tyk-pump-fips fips (s390x)
-  - ids:
-      - fips-s390x
-    image_templates:
-      - "tykio/tyk-pump-fips:{{.Tag}}-fips-s390x"
-    build_flag_templates:
-      - "--build-arg=PORTS=80"
-      - "--build-arg=BUILD_PACKAGE_NAME=tyk-pump-fips"
-      - "--platform=linux/s390x"
-      - "--label=org.opencontainers.image.created={{.Date}}"
-      - "--label=org.opencontainers.image.title={{.ProjectName}} FIPS"
-      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
-      - "--label=org.opencontainers.image.version={{.Version}}"
-    use: buildx
-    goarch: s390x
-    goos: linux
-    dockerfile: ci/Dockerfile.std
-    extra_files:
-      - "ci/install/"
-      - "README.md"
-      - "dist/"
-      - "LICENSE.md"
-      - "pump.example.conf"
   # Build tykio/tyk-pump-docker-pub std (amd64)
   - ids:
       - std-amd64
@@ -331,22 +251,16 @@ dockers:
       - "LICENSE.md"
       - "pump.example.conf"
 docker_manifests:
-  # Multi-arch manifest for tykio/tyk-pump-fips fips
+  # Single-arch manifest for tykio/tyk-pump-fips fips
   - name_template: tykio/tyk-pump-fips:{{ .Tag }}-fips
     image_templates:
       - tykio/tyk-pump-fips:{{ .Tag }}-fips-amd64
-      - tykio/tyk-pump-fips:{{ .Tag }}-fips-arm64
-      - tykio/tyk-pump-fips:{{ .Tag }}-fips-s390x
   - name_template: tykio/tyk-pump-fips:v{{ .Major }}.{{ .Minor }}{{.Prerelease}}-fips
     image_templates:
       - tykio/tyk-pump-fips:{{ .Tag }}-fips-amd64
-      - tykio/tyk-pump-fips:{{ .Tag }}-fips-arm64
-      - tykio/tyk-pump-fips:{{ .Tag }}-fips-s390x
   - name_template: tykio/tyk-pump-fips:v{{ .Major }}{{.Prerelease}}-fips
     image_templates:
       - tykio/tyk-pump-fips:{{ .Tag }}-fips-amd64
-      - tykio/tyk-pump-fips:{{ .Tag }}-fips-arm64
-      - tykio/tyk-pump-fips:{{ .Tag }}-fips-s390x
   # Multi-arch manifest for tykio/tyk-pump-docker-pub std
   - name_template: tykio/tyk-pump-docker-pub:{{ .Tag }}
     image_templates:
