@@ -96,7 +96,7 @@ func HandleTableMigration(db *gorm.DB, conf *SQLConf, tableName string, model in
 			log.WithError(err).Error("error migrating table")
 			return err
 		}
-	case conf.MigrateOldTables:
+	case conf.MigrateShardedTables:
 		// Migrate all existing sharded tables
 		if err := migrateAllFunc(); err != nil {
 			log.WithError(err).Warn("Failed to migrate existing sharded tables")
