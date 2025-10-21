@@ -48,19 +48,6 @@ builds:
     goarch:
       - arm64
     binary: tyk-pump
-  - id: std-s390x
-    env:
-      - NOP=nop # ignore this, it is jsut to avoid a complex conditional in the templates
-    ldflags:
-      - -X github.com/TykTechnologies/tyk-pump/pumps.Version={{.Version}}
-      - -X github.com/TykTechnologies/tyk-pump/pumps.Commit={{.FullCommit}}
-      - -X github.com/TykTechnologies/tyk-pump/pumps.BuildDate={{.Date}}
-      - -X github.com/TykTechnologies/tyk-pump/pumps.BuiltBy=goreleaser
-    goos:
-      - linux
-    goarch:
-      - s390x
-    binary: tyk-pump
 nfpms:
   - id: fips
     vendor: "Tyk Technologies Ltd"
@@ -112,7 +99,6 @@ nfpms:
     ids:
       - std-amd64
       - std-arm64
-      - std-s390x
     formats:
       - deb
       - rpm
@@ -227,29 +213,6 @@ dockers:
       - "dist/"
       - "LICENSE.md"
       - "pump.example.conf"
-  # Build tykio/tyk-pump-docker-pub std (s390x)
-  - ids:
-      - std-s390x
-    image_templates:
-      - "tykio/tyk-pump-docker-pub:{{.Tag}}-std-s390x"
-    build_flag_templates:
-      - "--build-arg=PORTS=80"
-      - "--build-arg=BUILD_PACKAGE_NAME=tyk-pump"
-      - "--platform=linux/s390x"
-      - "--label=org.opencontainers.image.created={{.Date}}"
-      - "--label=org.opencontainers.image.title={{.ProjectName}}"
-      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
-      - "--label=org.opencontainers.image.version={{.Version}}"
-    use: buildx
-    goarch: s390x
-    goos: linux
-    dockerfile: ci/Dockerfile.std
-    extra_files:
-      - "ci/install/"
-      - "README.md"
-      - "dist/"
-      - "LICENSE.md"
-      - "pump.example.conf"
 docker_manifests:
   # Single-arch manifest for tykio/tyk-pump-fips fips
   - name_template: tykio/tyk-pump-fips:{{ .Tag }}-fips
@@ -266,17 +229,14 @@ docker_manifests:
     image_templates:
       - tykio/tyk-pump-docker-pub:{{ .Tag }}-std-amd64
       - tykio/tyk-pump-docker-pub:{{ .Tag }}-std-arm64
-      - tykio/tyk-pump-docker-pub:{{ .Tag }}-std-s390x
   - name_template: tykio/tyk-pump-docker-pub:v{{ .Major }}.{{ .Minor }}{{.Prerelease}}
     image_templates:
       - tykio/tyk-pump-docker-pub:{{ .Tag }}-std-amd64
       - tykio/tyk-pump-docker-pub:{{ .Tag }}-std-arm64
-      - tykio/tyk-pump-docker-pub:{{ .Tag }}-std-s390x
   - name_template: tykio/tyk-pump-docker-pub:v{{ .Major }}{{.Prerelease}}
     image_templates:
       - tykio/tyk-pump-docker-pub:{{ .Tag }}-std-amd64
       - tykio/tyk-pump-docker-pub:{{ .Tag }}-std-arm64
-      - tykio/tyk-pump-docker-pub:{{ .Tag }}-std-s390x
 # This disables archives
 archives:
   - formats: ['binary']
