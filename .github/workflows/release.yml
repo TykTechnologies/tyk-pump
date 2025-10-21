@@ -137,7 +137,7 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: |
-            ${{ steps.ecr.outputs.registry }}/tyk-pump
+            ${{ steps.ecr.outputs.registry }}/tyk-pump-fips
           flavor: |
             latest=false
           tags: |
