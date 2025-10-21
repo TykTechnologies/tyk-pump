@@ -97,8 +97,8 @@ func (g *GraphSQLPump) Init(conf interface{}) error {
 	g.db = g.db.Table(g.tableName)
 
 	if g.db.Error != nil {
-		g.log.WithError(err).Error("error initializing pump")
-		return err
+		g.log.WithError(g.db.Error).Error("error initializing pump")
+		return g.db.Error
 	}
 
 	g.log.Debug("pump initialized and table set up")
