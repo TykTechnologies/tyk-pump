@@ -90,6 +90,7 @@ jobs:
           result_code=${PIPESTATUS[0]}
           echo "log=$(sed -ze 's/%/%25/g;s/\n/%0A/g' test.log)" >> $GITHUB_OUTPUT
           exit $result_code
+
   aggregator-ci-test:
     name: Aggregated CI Status
     runs-on: ubuntu-latest
