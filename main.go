@@ -52,11 +52,27 @@ var (
 	version = kingpin.Version(pumps.Version)
 )
 
+func showDecodeDeprecationWarnings() {
+	if SystemConfig.DecodeRawRequest {
+		log.WithFields(logrus.Fields{
+			"prefix": mainPrefix,
+		}).Warning("Global raw_request_decoded setting is deprecated. Please use pump level raw_request_decoded configuration instead.")
+	}
+
+	if SystemConfig.DecodeRawResponse {
+		log.WithFields(logrus.Fields{
+			"prefix": mainPrefix,
+		}).Warning("Global raw_response_decoded setting is deprecated. Please use pump level raw_response_decoded configuration instead.")
+	}
+}
+
 func Init() {
 	SystemConfig = TykPumpConfiguration{}
 
 	kingpin.Parse()
 	LoadConfig(conf, &SystemConfig)
+
+	showDecodeDeprecationWarnings()
 
 	if SystemConfig.LogFormat == "json" {
 		log.Formatter = &logrus.JSONFormatter{}

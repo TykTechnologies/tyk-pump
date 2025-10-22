@@ -895,6 +895,7 @@ More advanced fields:
 - `meta_data`: Can be used to set custom metadata inside the kafka message
 - `ssl_cert_file`: Can be used to set custom certificate file for authentication with kafka.
 - `ssl_key_file`: Can be used to set custom key file for authentication with kafka.
+- `batch_bytes`: The maximum size of the batch to be sent to the kafka cluster.
 
 ###### JSON / Conf File
 
@@ -916,7 +917,8 @@ More advanced fields:
         "compressed": true,
         "meta_data": {
             "key": "value"
-        }
+        },
+        "batch_bytes": 1048576
       }
     }
 }
@@ -934,6 +936,7 @@ TYK_PMP_PUMPS_KAFKA_META_CLIENTID=tyk-pump
 TYK_PMP_PUMPS_KAFKA_META_TIMEOUT=60
 TYK_PMP_PUMPS_KAFKA_META_COMPRESSED=true
 TYK_PMP_PUMPS_KAFKA_META_METADATA_KEY=value
+TYK_PMP_PUMPS_KAFKA_META_BATCHBYTES=1048576
 ```
 
 ## Influx2 Config
@@ -1358,7 +1361,9 @@ We must authenticate ourselves by providing credentials to AWS. This pump uses t
 
 `region` - The AWS region your Kinesis stream is located - i.e. eu-west-2
 
-`batch_size` - Optional. The maximum size of the records in a batch is 5MiB. If your records are larger in size setting this batch size paramter can guarantee you don't have failed delivery due to too large a batch. Default size if unset is 100.
+`batch_size` - The maximum size of the records in a batch is 5MiB. If your records are larger in size setting this batch size paramter can guarantee you don't have failed delivery due to too large a batch. Default size if unset is 100 (optional)
+
+`kms_key_id` - The AWS KMS key ID used to encrypt the records in the Kinesis stream. If not provided, the records will not be encrypted (optional)
 
 ###### JSON / Conf File
 
@@ -1368,7 +1373,8 @@ We must authenticate ourselves by providing credentials to AWS. This pump uses t
       "meta": {
         "stream_name": "my-stream",
         "region": "eu-west-2",
-        "batch_size": 100
+        "batch_size": 100,
+        "kms_key_id": "your-kms-key-id"
       }
     },
 ```
@@ -1381,6 +1387,7 @@ TYK_PMP_PUMPS_KINESIS_TYPE=kinesis
 TYK_PMP_PUMPS_KINESIs_META_STREAMNAME=my-stream
 TYK_PMP_PUMPS_KINESIS_META_REGION=eu-west-2
 TYK_PMP_PUMPS_KINESIS_META_BATCHSIZE=100
+TYK_PMP_PUMPS_KINESIS_META_KMSKEYID=your-kms-key-id
 ```
 
 # Base Pump Configurations
