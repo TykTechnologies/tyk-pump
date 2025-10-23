@@ -37,10 +37,10 @@ type MongoAggregatePump struct {
 type MongoAggregateConf struct {
 	// TYKCONFIGEXPAND
 	BaseMongoConf
-	// If set to `true` your pump will store analytics to both your organisation defined
-	// collections z_tyk_analyticz_aggregate_{ORG ID} and your org-less tyk_analytics_aggregates
-	// collection. When set to 'false' your pump will only store analytics to your org defined
-	// collection.
+	// If set to `true` the Mongo Aggregate pump will send analytics to two collections:
+	// - z_tyk_analyticz_aggregate_{ORG ID}
+	// - tyk_analytics_aggregates
+	// When set to 'false' your pump will only store analytics to z_tyk_analyticz_aggregate_{ORG ID}.
 	UseMixedCollection bool `json:"use_mixed_collection" mapstructure:"use_mixed_collection"`
 	// Specifies if it should store aggregated data for all the endpoints. By default, `false`
 	// which means that only store aggregated data for `tracked endpoints`.
