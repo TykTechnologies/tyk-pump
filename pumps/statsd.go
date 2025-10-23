@@ -8,6 +8,7 @@ import (
 
 	"github.com/mitchellh/mapstructure"
 	"github.com/quipo/statsd"
+	"github.com/sirupsen/logrus"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
 )
@@ -87,6 +88,29 @@ func (s *StatsdPump) connect() *statsd.StatsdClient {
 	}
 }
 
+// isTimingField checks if a field should be sent as a timing metric
+func (s *StatsdPump) isTimingField(field string) bool {
+	timingFields := []string{"request_time", "latency_total", "latency_upstream", "latency_gateway"}
+	for _, f := range timingFields {
+		if field == f {
+			return true
+		}
+	}
+	return false
+}
+
+// sendTimingMetric sends a timing metric to StatsD with proper error handling
+func (s *StatsdPump) sendTimingMetric(client *statsd.StatsdClient, field, metricTags string, value int64) {
+	metric := field + "." + metricTags
+	if err := client.Timing(metric, value); err != nil {
+		s.log.WithFields(logrus.Fields{
+			"field":  field,
+			"metric": metric,
+			"value":  value,
+		}).Error("failed to send timing metric to StatsD:", err)
+	}
+}
+
 func (s *StatsdPump) WriteData(ctx context.Context, data []interface{}) error {
 
 	if len(data) == 0 {
@@ -95,7 +119,11 @@ func (s *StatsdPump) WriteData(ctx context.Context, data []interface{}) error {
 	s.log.Debug("Attempting to write ", len(data), " records...")
 
 	client := s.connect()
-	defer client.Close()
+	defer func() {
+		if err := client.Close(); err != nil {
+			s.log.WithError(err).Warn("failed to close StatsD client")
+		}
+	}()
 
 	for _, v := range data {
 		// Convert to AnalyticsRecord
@@ -127,12 +155,16 @@ func (s *StatsdPump) WriteData(ctx context.Context, data []interface{}) error {
 		metricTags = strings.Replace(metricTags, "\"", "", -1)
 		metricTags = strings.Replace(metricTags, " ", "", -1)
 
-		// For each field, create metric calculation
-		// Everybody has their own implementation here
+		// Send timing metrics for each configured field
 		for _, f := range s.dbConf.Fields {
-			if f == "request_time" {
-				metric := f + "." + metricTags
-				client.Timing(metric, mapping[f].(int64))
+			if s.isTimingField(f) {
+				if v, ok := mapping[f]; ok {
+					if iv, ok2 := v.(int64); ok2 {
+						s.sendTimingMetric(client, f, metricTags, iv)
+					} else {
+						s.log.WithField("field", f).Warn("unexpected type for timing metric value, skipping")
+					}
+				}
 			}
 		}
 	}
@@ -152,19 +184,22 @@ func (s *StatsdPump) getMappings(decoded analytics.AnalyticsRecord) map[string]i
 	decoded.Path = strings.TrimRight(decoded.Path, "/")
 
 	mapping := map[string]interface{}{
-		"path":          decoded.Method + decoded.Path,
-		"response_code": decoded.ResponseCode,
-		"api_key":       decoded.APIKey,
-		"time_stamp":    sanitizedTime,
-		"api_version":   decoded.APIVersion,
-		"api_name":      decoded.APIName,
-		"api_id":        decoded.APIID,
-		"org_id":        decoded.OrgID,
-		"oauth_id":      decoded.OauthID,
-		"raw_request":   decoded.RawRequest,
-		"request_time":  decoded.RequestTime,
-		"raw_response":  decoded.RawResponse,
-		"ip_address":    decoded.IPAddress,
+		"path":             decoded.Method + decoded.Path,
+		"response_code":    decoded.ResponseCode,
+		"api_key":          decoded.APIKey,
+		"time_stamp":       sanitizedTime,
+		"api_version":      decoded.APIVersion,
+		"api_name":         decoded.APIName,
+		"api_id":           decoded.APIID,
+		"org_id":           decoded.OrgID,
+		"oauth_id":         decoded.OauthID,
+		"raw_request":      decoded.RawRequest,
+		"request_time":     decoded.RequestTime,
+		"latency_total":    decoded.Latency.Total,
+		"latency_upstream": decoded.Latency.Upstream,
+		"latency_gateway":  decoded.Latency.Gateway,
+		"raw_response":     decoded.RawResponse,
+		"ip_address":       decoded.IPAddress,
 	}
 	if s.dbConf.SeparatedMethod {
 		mapping["path"] = decoded.Path
