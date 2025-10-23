@@ -906,11 +906,11 @@ func TestPrometheusDisablingMetrics(t *testing.T) {
 	assert.NotContains(t, metricMap, "tyk_http_status_per_path")
 }
 
-func TestPrometheusPump_observeLatencyMetrics(t *testing.T) {
+func TestPrometheusPump_observeLatencyMetrics(_ *testing.T) {
 	p := &PrometheusPump{}
-	log := logrus.New()
-	log.Out = io.Discard
-	p.log = logrus.NewEntry(log)
+	loggerInstance := logrus.New()
+	loggerInstance.Out = io.Discard
+	p.log = logrus.NewEntry(loggerInstance)
 
 	// Create a test metric
 	metric := &PrometheusMetric{
@@ -941,18 +941,18 @@ func TestPrometheusPump_observeLatencyMetrics(t *testing.T) {
 	values := []string{"api123"}
 
 	// Test the function
-	p.observeLatencyMetrics(metric, record, values)
+	p.observeLatencyMetrics(metric, &record, values)
 
 	// Verify that the metric was observed correctly by checking the histogram
 	// We can't directly test the internal state, but we can verify no errors occurred
 	// The actual metric observation is tested through integration tests
 }
 
-func TestPrometheusPump_observeHistogramMetric(t *testing.T) {
+func TestPrometheusPump_observeHistogramMetric(_ *testing.T) {
 	p := &PrometheusPump{}
-	log := logrus.New()
-	log.Out = io.Discard
-	p.log = logrus.NewEntry(log)
+	loggerInstance := logrus.New()
+	loggerInstance.Out = io.Discard
+	p.log = logrus.NewEntry(loggerInstance)
 
 	// Create a test metric
 	metric := &PrometheusMetric{
@@ -980,11 +980,11 @@ func TestPrometheusPump_observeHistogramMetric(t *testing.T) {
 	// The actual metric observation is tested through integration tests
 }
 
-func TestPrometheusPump_observeLatencyMetrics_ErrorHandling(t *testing.T) {
+func TestPrometheusPump_observeLatencyMetrics_ErrorHandling(_ *testing.T) {
 	p := &PrometheusPump{}
-	log := logrus.New()
-	log.Out = io.Discard
-	p.log = logrus.NewEntry(log)
+	loggerInstance := logrus.New()
+	loggerInstance.Out = io.Discard
+	p.log = logrus.NewEntry(loggerInstance)
 
 	// Create a test metric with nil histogram vector to trigger error
 	metric := &PrometheusMetric{
@@ -1006,16 +1006,16 @@ func TestPrometheusPump_observeLatencyMetrics_ErrorHandling(t *testing.T) {
 	values := []string{"api123"}
 
 	// Test the function - should handle error gracefully
-	p.observeLatencyMetrics(metric, record, values)
+	p.observeLatencyMetrics(metric, &record, values)
 
 	// The function should not panic and should log the error
 }
 
-func TestPrometheusPump_observeHistogramMetric_ErrorHandling(t *testing.T) {
+func TestPrometheusPump_observeHistogramMetric_ErrorHandling(_ *testing.T) {
 	p := &PrometheusPump{}
-	log := logrus.New()
-	log.Out = io.Discard
-	p.log = logrus.NewEntry(log)
+	loggerInstance := logrus.New()
+	loggerInstance.Out = io.Discard
+	p.log = logrus.NewEntry(loggerInstance)
 
 	// Create a test metric with nil histogram vector to trigger error
 	metric := &PrometheusMetric{

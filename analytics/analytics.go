@@ -206,10 +206,11 @@ func (n *NetworkStats) GetLineValues() []string {
 }
 
 func (l *Latency) GetLineValues() []string {
-	fields := []string{}
-	fields = append(fields, strconv.FormatUint(uint64(l.Total), 10))
-	fields = append(fields, strconv.FormatUint(uint64(l.Upstream), 10))
-	return append(fields, strconv.FormatUint(uint64(l.Gateway), 10))
+	return []string{
+		strconv.FormatInt(l.Total, 10),
+		strconv.FormatInt(l.Upstream, 10),
+		strconv.FormatInt(l.Gateway, 10),
+	}
 }
 
 func (g *GeoData) GetLineValues() []string {

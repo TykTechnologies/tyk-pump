@@ -247,7 +247,7 @@ func (p *PrometheusPump) InitCustomMetrics() {
 }
 
 // observeLatencyMetrics handles the special case of tyk_latency metric with multiple latency types
-func (p *PrometheusPump) observeLatencyMetrics(metric *PrometheusMetric, record analytics.AnalyticsRecord, values []string) {
+func (p *PrometheusPump) observeLatencyMetrics(metric *PrometheusMetric, record *analytics.AnalyticsRecord, values []string) {
 	latencyTypes := []struct {
 		name  string
 		value int64
@@ -318,7 +318,7 @@ func (p *PrometheusPump) WriteData(ctx context.Context, data []interface{}) erro
 				case histogramType:
 					if metric.histogramVec != nil {
 						if metric.Name == "tyk_latency" {
-							p.observeLatencyMetrics(metric, record, values)
+							p.observeLatencyMetrics(metric, &record, values)
 						} else {
 							p.observeHistogramMetric(metric, record.RequestTime, values)
 						}

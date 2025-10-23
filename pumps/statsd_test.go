@@ -154,14 +154,14 @@ func TestStatsdPump_isTimingField(t *testing.T) {
 	}
 }
 
-func TestStatsdPump_sendTimingMetric(t *testing.T) {
+func TestStatsdPump_sendTimingMetric(_ *testing.T) {
 	// Create a real StatsD client with a dummy address
 	client := statsd.NewStatsdClient("127.0.0.1:8125", "")
 
 	pmp := &StatsdPump{}
-	log := logrus.New()
-	log.Out = io.Discard
-	pmp.log = logrus.NewEntry(log)
+	loggerInstance := logrus.New()
+	loggerInstance.Out = io.Discard
+	pmp.log = logrus.NewEntry(loggerInstance)
 
 	// Test successful timing metric
 	field := "request_time"
@@ -176,14 +176,14 @@ func TestStatsdPump_sendTimingMetric(t *testing.T) {
 	client.Close()
 }
 
-func TestStatsdPump_sendTimingMetric_ErrorHandling(t *testing.T) {
+func TestStatsdPump_sendTimingMetric_ErrorHandling(_ *testing.T) {
 	// Create a StatsD client with an invalid address to trigger connection error
 	client := statsd.NewStatsdClient("invalid:address", "")
 
 	pmp := &StatsdPump{}
-	log := logrus.New()
-	log.Out = io.Discard
-	pmp.log = logrus.NewEntry(log)
+	loggerInstance := logrus.New()
+	loggerInstance.Out = io.Discard
+	pmp.log = logrus.NewEntry(loggerInstance)
 
 	// Test error handling
 	field := "request_time"

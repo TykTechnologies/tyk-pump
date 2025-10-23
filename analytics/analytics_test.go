@@ -194,10 +194,10 @@ func TestLatency_GetFieldNames(t *testing.T) {
 }
 
 func TestLatency_GetLineValues(t *testing.T) {
-	tcs := []struct {
-		testName     string
+	tcs := []struct { //nolint:govet // field alignment here is not performance-critical
 		latency      Latency
 		expectedVals []string
+		testName     string
 	}{
 		{
 			testName: "all zero values",

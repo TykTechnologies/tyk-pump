@@ -119,7 +119,11 @@ func (s *StatsdPump) WriteData(ctx context.Context, data []interface{}) error {
 	s.log.Debug("Attempting to write ", len(data), " records...")
 
 	client := s.connect()
-	defer client.Close()
+	defer func() {
+		if err := client.Close(); err != nil {
+			s.log.WithError(err).Warn("failed to close StatsD client")
+		}
+	}()
 
 	for _, v := range data {
 		// Convert to AnalyticsRecord
@@ -154,7 +158,13 @@ func (s *StatsdPump) WriteData(ctx context.Context, data []interface{}) error {
 		// Send timing metrics for each configured field
 		for _, f := range s.dbConf.Fields {
 			if s.isTimingField(f) {
-				s.sendTimingMetric(client, f, metricTags, mapping[f].(int64))
+				if v, ok := mapping[f]; ok {
+					if iv, ok2 := v.(int64); ok2 {
+						s.sendTimingMetric(client, f, metricTags, iv)
+					} else {
+						s.log.WithField("field", f).Warn("unexpected type for timing metric value, skipping")
+					}
+				}
 			}
 		}
 	}
