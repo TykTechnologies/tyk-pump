@@ -78,11 +78,11 @@ type SQLConf struct {
 	// Specifies the amount of records that are going to be written each batch. Type int. By
 	// default, it writes 1000 records max per batch.
 	BatchSize int `json:"batch_size" mapstructure:"batch_size"`
-	// Specifies whether to migrate all existing sharded tables during initialization.
-	// When true, scans for all sharded tables matching the pattern and migrates them on init.
-	// When false, only migrates tables as they are accessed during WriteData.
-	// Defaults to false for performance reasons.
-	MigrateOldTables bool `json:"migrate_old_tables" mapstructure:"migrate_old_tables"`
+	// Specifies whether to migrate all existing sharded tables to latest schema during Pump initialization (default: false).
+	// When true, on initialization Pump will scan and migrate all sharded tables to the latest schema.
+	// When false, existing tables will not be migrated and may miss columns included in the latest schema.
+	// If there are a large number of existing tables, or those tables are in use by other services, there may be a performance impact from the migration. We recommend testing carefully.
+	MigrateShardedTables bool `json:"migrate_sharded_tables" mapstructure:"migrate_sharded_tables"`
 }
 
 func Dialect(cfg *SQLConf) (gorm.Dialector, error) {
