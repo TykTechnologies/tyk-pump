@@ -79,8 +79,8 @@ type PumpConfig struct {
 	// If there is a timeout configured, but pump's write operation is still taking longer than the purging loop, the following warning log will be generated:
 	// `Pump {pump_name} is taking more time than the value configured of purge_delay. You should try lowering the timeout configured for this pump.`.
 	Timeout int `json:"timeout"`
-	// Reduce the size of the traffic logs generated for each request by setting this to true.
-	// Defaults to `false`.
+	// Reduce the size of the traffic logs generated for each request by setting this to true. Tyk Pump will
+	// then not include the `raw_request` and `raw_response` in the logs. Defaults to `false`.
 	OmitDetailedRecording bool `json:"omit_detailed_recording"`
 	// Defines maximum size (in bytes) for Raw Request and Raw Response logs, this value defaults
 	// to 0. If it is not set then tyk-pump will not trim any data and will store the full
