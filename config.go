@@ -79,8 +79,8 @@ type PumpConfig struct {
 	// If there is a timeout configured, but pump's write operation is still taking longer than the purging loop, the following warning log will be generated:
 	// `Pump {pump_name} is taking more time than the value configured of purge_delay. You should try lowering the timeout configured for this pump.`.
 	Timeout int `json:"timeout"`
-	// Setting this to true will avoid writing raw_request and raw_response fields for each request
-	// in pumps. Defaults to `false`.
+	// Reduce the size of the traffic logs generated for each request by setting this to true. Tyk Pump will
+	// then not include the `raw_request` and `raw_response` in the logs. Defaults to `false`.
 	OmitDetailedRecording bool `json:"omit_detailed_recording"`
 	// Defines maximum size (in bytes) for Raw Request and Raw Response logs, this value defaults
 	// to 0. If it is not set then tyk-pump will not trim any data and will store the full
@@ -151,7 +151,6 @@ type UptimeConf struct {
 }
 
 type TykPumpConfiguration struct {
-	// 8-byte aligned fields first
 	// The maximum number of records to pull from Redis at a time. If it's unset or `0`, all the
 	// analytics records in Redis are pulled. If it's set, `storage_expiration_time` is used to
 	// reset the analytics record TTL.
@@ -160,7 +159,6 @@ type TykPumpConfiguration struct {
 	// enabled. Defaults to `60` seconds.
 	StorageExpirationTime int64 `json:"storage_expiration_time"`
 
-	// Larger structs and slices/maps (pointer-sized)
 	// Example Uptime Pump configuration:
 	// ```{.json}
 	// "uptime_pump_config": {
@@ -195,12 +193,12 @@ type TykPumpConfiguration struct {
 	// ```
 	AnalyticsStorageConfig storage.TemporalStorageConfig `json:"analytics_storage_config"`
 
-	// String fields (pointer-sized)
-	// Sets the analytics storage type. Where the pump will be fetching data from. Currently, only
-	// the `redis` option is supported.
+	// Sets the type of storage from which the Pump will fetch data.
+	// The supported value is `redis`, which covers both Redis and the Redis-compatible Valkey.
+	// Pump will default to assume Redis if no alternative is provided, so this configuration can be ignored at present.
 	AnalyticsStorageType string `json:"analytics_storage_type"`
 	// Connection string for StatsD monitoring for information please see the
-	// [Instrumentation docs](https://tyk.io/docs/basic-config-and-security/report-monitor-trigger-events/instrumentation/).
+	// [Instrumentation docs]({{< ref "basic-config-and-security/report-monitor-trigger-events/instrumentation" >}}).
 	StatsdConnectionString string `json:"statsd_connection_string"`
 	// Custom prefix value. For example separate settings for production and staging.
 	StatsdPrefix string `json:"statsd_prefix"`
@@ -219,9 +217,11 @@ type TykPumpConfiguration struct {
 	// The default is "hello".
 	HealthCheckEndpointName string `json:"health_check_endpoint_name"`
 
-	// 4-byte aligned fields
-	// The number of seconds the Pump waits between checking for analytics data and purge it from
-	// Redis.
+	// Controls the frequency at which Tyk Pump should perform regular collection and purge
+	// of traffic logs from the temporal storage (typically Redis). Set the time between purges (in seconds).
+	// Be careful to ensure that this is long enough for the transfer of records to the target data sink (e.g.
+	// persistent storage or external APM) to complete to avoid data loss, but short enough to optimise
+	// your temporal storage size.
 	PurgeDelay int `json:"purge_delay"`
 	// The default port is 8083.
 	HealthCheckEndpointPort int `json:"health_check_endpoint_port"`
@@ -239,16 +239,15 @@ type TykPumpConfiguration struct {
 	// ```
 	MaxRecordSize int `json:"max_record_size"`
 
-	// 1-byte aligned fields (booleans) - group together at the end
-	// Setting this to `false` will create a pump that pushes uptime data to Uptime Pump, so the
-	// Dashboard can read it. Disable by setting to `true`.
+	// A default Uptime Pump will transfer uptime metrics which are used by Tyk Dashboard.
+	// If this is not required, you can disable that Pump by setting this option to `true`.
 	DontPurgeUptimeData bool `json:"dont_purge_uptime_data"`
-	// Setting this to true will avoid writing raw_request and raw_response fields for each request
-	// in pumps. Defaults to false.
+	// Reduce the size of the traffic logs generated for each request by setting this to true. Tyk Pump will
+	// then not include the `raw_request` and `raw_response` in the logs. Defaults to false.
 	OmitDetailedRecording bool `json:"omit_detailed_recording"`
 	// Defines if tyk-pump should ignore all the values in configuration file. Specially useful when setting all configurations in environment variables.
 	OmitConfigFile bool `json:"omit_config_file"`
-	// Enable debugging of Tyk Pump by exposing profiling information, the same as the gateway https://tyk.io/docs/troubleshooting/tyk-gateway/profiling/
+	// Expose profiling information to support debugging of Tyk Pump. This operates in the same as for Tyk Gateway, as explained [here]({{< ref "troubleshooting/tyk-gateway/profiling" >}}).
 	HTTPProfile bool `json:"enable_http_profiler"`
 	// Setting this to true allows the Raw Request to be decoded from base 64
 	// for all pumps. This is set to false by default.
