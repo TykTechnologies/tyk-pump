@@ -153,7 +153,7 @@ func (p *PrometheusPump) CreateBasicMetrics() {
 	// histogram metrics
 	totalLatencyMetrics := &PrometheusMetric{
 		Name:       "tyk_latency",
-		Help:       "Latency added by Tyk, Total Latency, and upstream latency per API",
+		Help:       "Latency added by Tyk, Total Latency, upstream latency, and gateway latency per API",
 		MetricType: histogramType,
 		Buckets:    buckets,
 		Labels:     []string{"type", "api"},
@@ -246,6 +246,40 @@ func (p *PrometheusPump) InitCustomMetrics() {
 	}
 }
 
+// observeLatencyMetrics handles the special case of tyk_latency metric with multiple latency types
+func (p *PrometheusPump) observeLatencyMetrics(metric *PrometheusMetric, record *analytics.AnalyticsRecord, values []string) {
+	latencyTypes := []struct {
+		name  string
+		value int64
+	}{
+		{"total", record.RequestTime},
+		{"upstream", record.Latency.Upstream},
+		{"gateway", record.Latency.Gateway},
+	}
+
+	for _, lt := range latencyTypes {
+		err := metric.Observe(lt.value, append([]string{lt.name}, values...)...)
+		if err != nil {
+			p.log.WithFields(logrus.Fields{
+				"metric_type":  metric.MetricType,
+				"metric_name":  metric.Name,
+				"latency_type": lt.name,
+			}).Error("error incrementing prometheus metric value:", err)
+		}
+	}
+}
+
+// observeHistogramMetric handles standard histogram metrics
+func (p *PrometheusPump) observeHistogramMetric(metric *PrometheusMetric, requestTime int64, values []string) {
+	err := metric.Observe(requestTime, values...)
+	if err != nil {
+		p.log.WithFields(logrus.Fields{
+			"metric_type": metric.MetricType,
+			"metric_name": metric.Name,
+		}).Error("error incrementing prometheus metric value:", err)
+	}
+}
+
 func (p *PrometheusPump) WriteData(ctx context.Context, data []interface{}) error {
 	p.log.Debug("Attempting to write ", len(data), " records...")
 
@@ -283,13 +317,10 @@ func (p *PrometheusPump) WriteData(ctx context.Context, data []interface{}) erro
 					}
 				case histogramType:
 					if metric.histogramVec != nil {
-						// if the metric is an histogram, we Observe the request time with the given values
-						err := metric.Observe(record.RequestTime, values...)
-						if err != nil {
-							p.log.WithFields(logrus.Fields{
-								"metric_type": metric.MetricType,
-								"metric_name": metric.Name,
-							}).Error("error incrementing prometheus metric value:", err)
+						if metric.Name == "tyk_latency" {
+							p.observeLatencyMetrics(metric, &record, values)
+						} else {
+							p.observeHistogramMetric(metric, record.RequestTime, values)
 						}
 					}
 				default:
@@ -380,24 +411,27 @@ func (pm *PrometheusMetric) GetLabelsValues(decoded analytics.AnalyticsRecord) [
 	// If API Key obfuscation is enabled, we only show the last <ObfuscateAPIKeysLength> characters of the API Key
 	apiKey := pm.obfuscateAPIKey(decoded.APIKey)
 	mapping := map[string]interface{}{
-		"host":          decoded.Host,
-		"method":        decoded.Method,
-		"path":          decoded.Path,
-		"code":          decoded.ResponseCode,
-		"response_code": decoded.ResponseCode,
-		"api_key":       apiKey,
-		"key":           apiKey,
-		"time_stamp":    decoded.TimeStamp,
-		"api_version":   decoded.APIVersion,
-		"api_name":      decoded.APIName,
-		"api":           decoded.APIID,
-		"api_id":        decoded.APIID,
-		"org_id":        decoded.OrgID,
-		"client_id":     decoded.OauthID,
-		"oauth_id":      decoded.OauthID,
-		"request_time":  decoded.RequestTime,
-		"ip_address":    decoded.IPAddress,
-		"alias":         decoded.Alias,
+		"host":             decoded.Host,
+		"method":           decoded.Method,
+		"path":             decoded.Path,
+		"code":             decoded.ResponseCode,
+		"response_code":    decoded.ResponseCode,
+		"api_key":          apiKey,
+		"key":              apiKey,
+		"time_stamp":       decoded.TimeStamp,
+		"api_version":      decoded.APIVersion,
+		"api_name":         decoded.APIName,
+		"api":              decoded.APIID,
+		"api_id":           decoded.APIID,
+		"org_id":           decoded.OrgID,
+		"client_id":        decoded.OauthID,
+		"oauth_id":         decoded.OauthID,
+		"request_time":     decoded.RequestTime,
+		"latency_total":    decoded.Latency.Total,
+		"latency_upstream": decoded.Latency.Upstream,
+		"latency_gateway":  decoded.Latency.Gateway,
+		"ip_address":       decoded.IPAddress,
+		"alias":            decoded.Alias,
 	}
 
 	for _, label := range pm.Labels {
@@ -445,7 +479,16 @@ func (pm *PrometheusMetric) Inc(values ...string) error {
 func (pm *PrometheusMetric) Observe(requestTime int64, values ...string) error {
 	switch pm.MetricType {
 	case histogramType:
-		labelValues := []string{"total"}
+		// For tyk_latency metric, we need to determine the latency type from the first value
+		var latencyType string
+		if len(values) > 0 && (values[0] == "total" || values[0] == "upstream" || values[0] == "gateway") {
+			latencyType = values[0]
+			values = values[1:] // Remove the latency type from values
+		} else {
+			latencyType = "total" // Default to total for backward compatibility
+		}
+
+		labelValues := []string{latencyType}
 		labelValues = append(labelValues, values...)
 		if pm.aggregatedObservations {
 			key := strings.Join(labelValues, "--")
@@ -462,6 +505,9 @@ func (pm *PrometheusMetric) Observe(requestTime int64, values ...string) error {
 				}
 			}
 		} else {
+			if pm.histogramVec == nil {
+				return errors.New("histogram vector is nil")
+			}
 			pm.histogramVec.WithLabelValues(labelValues...).Observe(float64(requestTime))
 		}
 

@@ -78,6 +78,11 @@ type SQLConf struct {
 	// Specifies the amount of records that are going to be written each batch. Type int. By
 	// default, it writes 1000 records max per batch.
 	BatchSize int `json:"batch_size" mapstructure:"batch_size"`
+	// Specifies whether to migrate all existing sharded tables to latest schema during Pump initialization (default: false).
+	// When true, on initialization Pump will scan and migrate all sharded tables to the latest schema.
+	// When false, existing tables will not be migrated and may miss columns included in the latest schema.
+	// If there are a large number of existing tables, or those tables are in use by other services, there may be a performance impact from the migration. We recommend testing carefully.
+	MigrateShardedTables bool `json:"migrate_sharded_tables" mapstructure:"migrate_sharded_tables"`
 }
 
 func Dialect(cfg *SQLConf) (gorm.Dialector, error) {
@@ -191,11 +196,24 @@ func (c *SQLPump) Init(conf interface{}) error {
 	}
 	c.db = db
 
-	if !c.SQLConf.TableSharding {
-		if c.IsUptime {
-			c.db.Table(analytics.UptimeSQLTable).AutoMigrate(&analytics.UptimeReportAggregateSQL{})
-		} else {
-			c.db.Table(analytics.SQLTable).AutoMigrate(&analytics.AnalyticsRecord{})
+	// Handle table migration based on configuration
+	if c.IsUptime {
+		// Create migration function for uptime sharded tables
+		migrateShardedTables := func() error {
+			return MigrateAllShardedTables(c.db, analytics.UptimeSQLTable, "uptime", &analytics.UptimeReportAggregateSQL{}, c.log)
+		}
+
+		if err := HandleTableMigration(c.db, c.SQLConf, analytics.UptimeSQLTable, &analytics.UptimeReportAggregateSQL{}, c.log, migrateShardedTables); err != nil {
+			return err
+		}
+	} else {
+		// Create migration function for analytics sharded tables
+		migrateShardedTables := func() error {
+			return MigrateAllShardedTables(c.db, analytics.SQLTable, "", &analytics.AnalyticsRecord{}, c.log)
+		}
+
+		if err := HandleTableMigration(c.db, c.SQLConf, analytics.SQLTable, &analytics.AnalyticsRecord{}, c.log, migrateShardedTables); err != nil {
+			return err
 		}
 	}
 
