@@ -18,9 +18,9 @@ fi
 cleanup() {
     # After installing, remove files that were not needed on this platform / system
     if [ "${use_systemctl}" = "True" ]; then
-        rm -f /lib/systemd/system/tyk-pump.service
-    else
         rm -f /etc/init.d/tyk-pump
+    else
+        rm -f /lib/systemd/system/tyk-pump.service
     fi
 }
 
@@ -39,8 +39,8 @@ restoreServices() {
 setupOwnership() {
     printf "\033[32m Post Install of the install directory ownership and permissions\033[0m\n"
     [ "${change_ownership}" = "True" ] && chown -R tyk:tyk /opt/tyk-pump
-    # Config file should never be world-readable
-    chmod 660 /opt/tyk-pump/pump.conf
+    # Config file should never be world-readable (only if it exists)
+    [ -f /opt/tyk-pump/pump.conf ] && chmod 660 /opt/tyk-pump/pump.conf
 }
 
 cleanInstall() {
