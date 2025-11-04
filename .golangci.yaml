@@ -1,3 +1,5 @@
+version: "2"
+
 issues:
   exclude:
     - "^exported: exported var Err[A-Za-z0-9]+ should have comment or be unexported$"
