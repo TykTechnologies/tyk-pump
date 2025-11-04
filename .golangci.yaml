@@ -33,8 +33,6 @@ linters:
     staticcheck:
       # https://staticcheck.io/docs/options#checks
       checks: [\"all\"]
-      # Select the Go version to target.
-      go: \"1.24\"
     whitespace:
       multi-if: false # Enforces newlines (or comments) after every multi-line if statement
       multi-func: false # Enforces newlines (or comments) after every multi-line function signature
@@ -93,8 +91,6 @@ formatters:
     gofumpt:
       # Choose whether or not to use the extra rules that are disabled by default
       extra-rules: true
-      # Select the Go version to target.
-      lang-version: \"1.24\"
   exclusions:
     generated: lax
     paths:
