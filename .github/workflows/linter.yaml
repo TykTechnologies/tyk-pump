@@ -51,7 +51,7 @@ jobs:
   sonarcloud:
     if: ${{ always() }}
     needs: [gotest, golangci]
-    uses: TykTechnologies/github-actions/.github/workflows/sonarcloud.yaml@main
+    uses: TykTechnologies/github-actions/.github/workflows/sonarcloud.yaml@feat/TT-16081/update-sonarcloud-action
     with:
       exclusions: ""
     secrets:
