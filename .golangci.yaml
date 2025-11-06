@@ -81,7 +81,7 @@ issues:
   new-from-rev: origin/master
 output:
   formats:
-    - format: checkstyle
+    checkstyle:
       path: golanglint.xml
 formatters:
   enable:
