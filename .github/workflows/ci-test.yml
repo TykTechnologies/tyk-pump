@@ -13,33 +13,6 @@ env:
   TYK_PMP_ANALYTICSSTORAGECONFIG_PORT: 6379
 
 jobs:
-  golangci-lint:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Tyk Pump
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 2
-      - name: Fetch base branch
-        if: ${{ github.event_name == 'pull_request' }}
-        run: git fetch origin ${{ github.base_ref }}
-      - name: golangci-lint
-        uses: golangci/golangci-lint-action@v8
-        timeout-minutes: 20
-        with:
-          version: v2.5.0
-          only-new-issues: ${{ github.event_name == 'pull_request' }}
-          # Output formats configured in .golangci.yml (v2 approach)
-          # Generates: text to stdout + checkstyle JSON for SonarQube
-          args: --issues-exit-code=0 -v ./...
-          skip-cache: false
-          skip-save-cache: false
-      - uses: actions/upload-artifact@v4
-        with:
-          name: golangcilint
-          retention-days: 1
-          path: |
-            golanglint.xml
   test:
     name: Go ${{ matrix.go }} tests
     runs-on: ubuntu-latest

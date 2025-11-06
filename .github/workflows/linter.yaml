@@ -48,6 +48,13 @@ jobs:
           args: --issues-exit-code=0 -v ./...
           skip-cache: false
           skip-save-cache: false
+      - name: Upload golangci-lint report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: golangci-report
+          retention-days: 1
+          path: golanglint.xml
   sonarcloud:
     if: ${{ always() }}
     needs: [gotest, golangci]

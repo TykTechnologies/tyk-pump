@@ -79,6 +79,10 @@ linters:
 issues:
   # Show only new issues created since branching away from default branch on the remote
   new-from-rev: origin/master
+output:
+  formats:
+    - format: checkstyle
+      path: golanglint.xml
 formatters:
   enable:
     - gofmt
