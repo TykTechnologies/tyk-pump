@@ -410,6 +410,10 @@ func (pm *PrometheusMetric) GetLabelsValues(decoded analytics.AnalyticsRecord) [
 	values := []string{}
 	// If API Key obfuscation is enabled, we only show the last <ObfuscateAPIKeysLength> characters of the API Key
 	apiKey := pm.obfuscateAPIKey(decoded.APIKey)
+
+	portalApp := PortalAppTag(decoded.Tags)
+	portalOrg := PortalOrgTag(decoded.Tags)
+
 	mapping := map[string]interface{}{
 		"host":             decoded.Host,
 		"method":           decoded.Method,
@@ -432,6 +436,8 @@ func (pm *PrometheusMetric) GetLabelsValues(decoded analytics.AnalyticsRecord) [
 		"latency_gateway":  decoded.Latency.Gateway,
 		"ip_address":       decoded.IPAddress,
 		"alias":            decoded.Alias,
+		"portal_app":       portalApp,
+		"portal_org":       portalOrg,
 	}
 
 	for _, label := range pm.Labels {
@@ -440,6 +446,24 @@ func (pm *PrometheusMetric) GetLabelsValues(decoded analytics.AnalyticsRecord) [
 		}
 	}
 	return values
+}
+
+func PortalAppTag(tags []string) string {
+	for _, tag := range tags {
+		if strings.HasPrefix(tag, "portal_app_") {
+			return tag
+		}
+	}
+	return "portal_app_unknown"
+}
+
+func PortalOrgTag(tags []string) string {
+	for _, tag := range tags {
+		if strings.HasPrefix(tag, "portal_org_") {
+			return tag
+		}
+	}
+	return "portal_org_unknown"
 }
 
 func (pm *PrometheusMetric) obfuscateAPIKey(apiKey string) string {

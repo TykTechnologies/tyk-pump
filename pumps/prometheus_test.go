@@ -281,6 +281,138 @@ func TestInitCustomMetricsEnv(t *testing.T) {
 	}
 }
 
+func TestPortalAppTag(t *testing.T) {
+	tcs := []struct {
+		testName     string
+		tags         []string
+		expectedTag  string
+	}{
+		{
+			testName:    "tag with portal_app_ prefix",
+			tags:        []string{"portal_app_123", "other_tag"},
+			expectedTag: "portal_app_123",
+		},
+		{
+			testName:    "multiple tags with one portal_app",
+			tags:        []string{"tag1", "tag2", "portal_app_myapp", "tag3"},
+			expectedTag: "portal_app_myapp",
+		},
+		{
+			testName:    "no portal_app tag",
+			tags:        []string{"tag1", "tag2", "tag3"},
+			expectedTag: "portal_app_unknown",
+		},
+		{
+			testName:    "empty tags array",
+			tags:        []string{},
+			expectedTag: "portal_app_unknown",
+		},
+		{
+			testName:    "nil tags array",
+			tags:        nil,
+			expectedTag: "portal_app_unknown",
+		},
+		{
+			testName:    "portal_app_ at start",
+			tags:        []string{"portal_app_first"},
+			expectedTag: "portal_app_first",
+		},
+		{
+			testName:    "portal_app_ at end",
+			tags:        []string{"tag1", "tag2", "portal_app_last"},
+			expectedTag: "portal_app_last",
+		},
+		{
+			testName:    "multiple portal_app tags - returns first match",
+			tags:        []string{"portal_app_first", "portal_app_second"},
+			expectedTag: "portal_app_first",
+		},
+		{
+			testName:    "tag with portal_app but no prefix",
+			tags:        []string{"my_portal_app_tag"},
+			expectedTag: "portal_app_unknown",
+		},
+		{
+			testName:    "exact prefix only",
+			tags:        []string{"portal_app_"},
+			expectedTag: "portal_app_",
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.testName, func(t *testing.T) {
+			result := PortalAppTag(tc.tags)
+			assert.Equal(t, tc.expectedTag, result)
+		})
+	}
+}
+
+func TestPortalOrgTag(t *testing.T) {
+	tcs := []struct {
+		testName     string
+		tags         []string
+		expectedTag  string
+	}{
+		{
+			testName:    "tag with portal_org_ prefix",
+			tags:        []string{"portal_org_456", "other_tag"},
+			expectedTag: "portal_org_456",
+		},
+		{
+			testName:    "multiple tags with one portal_org",
+			tags:        []string{"tag1", "tag2", "portal_org_myorg", "tag3"},
+			expectedTag: "portal_org_myorg",
+		},
+		{
+			testName:    "no portal_org tag",
+			tags:        []string{"tag1", "tag2", "tag3"},
+			expectedTag: "portal_org_unknown",
+		},
+		{
+			testName:    "empty tags array",
+			tags:        []string{},
+			expectedTag: "portal_org_unknown",
+		},
+		{
+			testName:    "nil tags array",
+			tags:        nil,
+			expectedTag: "portal_org_unknown",
+		},
+		{
+			testName:    "portal_org_ at start",
+			tags:        []string{"portal_org_first"},
+			expectedTag: "portal_org_first",
+		},
+		{
+			testName:    "portal_org_ at end",
+			tags:        []string{"tag1", "tag2", "portal_org_last"},
+			expectedTag: "portal_org_last",
+		},
+		{
+			testName:    "multiple portal_org tags - returns first match",
+			tags:        []string{"portal_org_first", "portal_org_second"},
+			expectedTag: "portal_org_first",
+		},
+		{
+			testName:    "tag with portal_org but no prefix",
+			tags:        []string{"my_portal_org_tag"},
+			expectedTag: "portal_org_unknown",
+		},
+		{
+			testName:    "exact prefix only",
+			tags:        []string{"portal_org_"},
+			expectedTag: "portal_org_",
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.testName, func(t *testing.T) {
+			result := PortalOrgTag(tc.tags)
+			assert.Equal(t, tc.expectedTag, result)
+		})
+	}
+}
+
 func TestPrometheusGetLabelsValues(t *testing.T) {
 	tcs := []struct {
 		testName       string
@@ -423,6 +555,130 @@ func TestPrometheusGetLabelsValues(t *testing.T) {
 				APIKey:       "abc",
 			},
 			expectedLabels: []string{"200", "api_1", "abc"},
+		},
+		{
+			testName: "portal_app label with matching tag",
+			customMetric: PrometheusMetric{
+				Name:       "testCounterMetric",
+				MetricType: counterType,
+				Labels:     []string{"code", "api", "portal_app"},
+			},
+			record: analytics.AnalyticsRecord{
+				APIID:        "api_1",
+				ResponseCode: 200,
+				Tags:         []string{"portal_app_myapp", "other_tag"},
+			},
+			expectedLabels: []string{"200", "api_1", "portal_app_myapp"},
+		},
+		{
+			testName: "portal_app label with no matching tag",
+			customMetric: PrometheusMetric{
+				Name:       "testCounterMetric",
+				MetricType: counterType,
+				Labels:     []string{"code", "api", "portal_app"},
+			},
+			record: analytics.AnalyticsRecord{
+				APIID:        "api_1",
+				ResponseCode: 200,
+				Tags:         []string{"tag1", "tag2"},
+			},
+			expectedLabels: []string{"200", "api_1", "portal_app_unknown"},
+		},
+		{
+			testName: "portal_org label with matching tag",
+			customMetric: PrometheusMetric{
+				Name:       "testCounterMetric",
+				MetricType: counterType,
+				Labels:     []string{"code", "api", "portal_org"},
+			},
+			record: analytics.AnalyticsRecord{
+				APIID:        "api_1",
+				ResponseCode: 200,
+				Tags:         []string{"portal_org_myorg", "other_tag"},
+			},
+			expectedLabels: []string{"200", "api_1", "portal_org_myorg"},
+		},
+		{
+			testName: "portal_org label with no matching tag",
+			customMetric: PrometheusMetric{
+				Name:       "testCounterMetric",
+				MetricType: counterType,
+				Labels:     []string{"code", "api", "portal_org"},
+			},
+			record: analytics.AnalyticsRecord{
+				APIID:        "api_1",
+				ResponseCode: 200,
+				Tags:         []string{"tag1", "tag2"},
+			},
+			expectedLabels: []string{"200", "api_1", "portal_org_unknown"},
+		},
+		{
+			testName: "both portal_app and portal_org labels",
+			customMetric: PrometheusMetric{
+				Name:       "testCounterMetric",
+				MetricType: counterType,
+				Labels:     []string{"code", "api", "portal_app", "portal_org"},
+			},
+			record: analytics.AnalyticsRecord{
+				APIID:        "api_1",
+				ResponseCode: 200,
+				Tags:         []string{"portal_app_app123", "portal_org_org456"},
+			},
+			expectedLabels: []string{"200", "api_1", "portal_app_app123", "portal_org_org456"},
+		},
+		{
+			testName: "portal labels with empty tags",
+			customMetric: PrometheusMetric{
+				Name:       "testCounterMetric",
+				MetricType: counterType,
+				Labels:     []string{"code", "portal_app", "portal_org"},
+			},
+			record: analytics.AnalyticsRecord{
+				APIID:        "api_1",
+				ResponseCode: 200,
+				Tags:         []string{},
+			},
+			expectedLabels: []string{"200", "portal_app_unknown", "portal_org_unknown"},
+		},
+		{
+			testName: "portal labels mixed with other labels",
+			customMetric: PrometheusMetric{
+				Name:       "testCounterMetric",
+				MetricType: counterType,
+				Labels:     []string{"code", "api", "method", "portal_app", "portal_org", "path"},
+			},
+			record: analytics.AnalyticsRecord{
+				APIID:        "api_1",
+				ResponseCode: 200,
+				Method:       "GET",
+				Path:         "/test",
+				Tags:         []string{"portal_app_webapp", "portal_org_acme"},
+			},
+			expectedLabels: []string{"200", "api_1", "GET", "portal_app_webapp", "portal_org_acme", "/test"},
+		},
+		{
+			testName: "portal_app with multiple matching tags - returns first",
+			customMetric: PrometheusMetric{
+				Name:       "testCounterMetric",
+				MetricType: counterType,
+				Labels:     []string{"portal_app"},
+			},
+			record: analytics.AnalyticsRecord{
+				Tags: []string{"portal_app_first", "portal_app_second"},
+			},
+			expectedLabels: []string{"portal_app_first"},
+		},
+		{
+			testName: "portal_org with multiple matching tags - returns first",
+			customMetric: PrometheusMetric{
+				Name:       "testCounterMetric",
+				MetricType: counterType,
+				Labels:     []string{"portal_org"},
+			},
+			record: analytics.AnalyticsRecord{
+				Tags: []string{"portal_org_first", "portal_org_second"},
+			},
+			expectedLabels: []string{"portal_org_first"},
 		},
 	}
 
