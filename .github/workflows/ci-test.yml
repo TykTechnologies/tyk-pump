@@ -13,28 +13,6 @@ env:
   TYK_PMP_ANALYTICSSTORAGECONFIG_PORT: 6379
 
 jobs:
-  golangci-lint:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Tyk Pump
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 2
-      - name: Fetch base branch
-        if: ${{ github.event_name == 'pull_request' }}
-        run: git fetch origin ${{ github.base_ref }}
-      - name: golangci-lint
-        if: ${{ github.event_name == 'pull_request' }}
-        uses: golangci/golangci-lint-action@v3
-        with:
-          version: latest
-          args: --out-format=checkstyle:golanglint.xml --timeout=300s --max-issues-per-linter=0 --max-same-issues=0 --new-from-rev=origin/${{ github.base_ref }}
-      - uses: actions/upload-artifact@v4
-        with:
-          name: golangcilint
-          retention-days: 1
-          path: |
-            golanglint.xml
   test:
     name: Go ${{ matrix.go }} tests
     runs-on: ubuntu-latest

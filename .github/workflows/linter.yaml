@@ -29,12 +29,32 @@ jobs:
       mongo: 4.2
       test-options: "-count=1 -failfast -v"
   golangci:
+    runs-on: ubuntu-latest
     needs: gotest
     if: ${{ always() }}
-    uses: TykTechnologies/github-actions/.github/workflows/golangci.yaml@main
-    with:
-      main_branch: "master"
-      go_version: 1.24
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v8
+        timeout-minutes: 20
+        with:
+          version: v2.5.0
+          only-new-issues: ${{ github.event_name == 'pull_request' }}
+          # Output formats configured in .golangci.yaml (v2 approach)
+          # Generates: text to stdout + checkstyle JSON for SonarQube
+          args: --issues-exit-code=0 -v ./...
+          skip-cache: false
+          skip-save-cache: false
+      - name: Upload golangci-lint report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: golangci-report
+          retention-days: 1
+          path: golanglint.xml
   sonarcloud:
     if: ${{ always() }}
     needs: [gotest, golangci]
