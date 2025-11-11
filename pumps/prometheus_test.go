@@ -288,54 +288,54 @@ func TestPortalAppTag(t *testing.T) {
 		expectedTag  string
 	}{
 		{
-			testName:    "tag with portal_app_ prefix",
-			tags:        []string{"portal_app_123", "other_tag"},
-			expectedTag: "portal_app_123",
+			testName:    "tag with portal-app- prefix",
+			tags:        []string{"portal-app-123", "other_tag"},
+			expectedTag: "portal-app-123",
 		},
 		{
 			testName:    "multiple tags with one portal_app",
-			tags:        []string{"tag1", "tag2", "portal_app_myapp", "tag3"},
-			expectedTag: "portal_app_myapp",
+			tags:        []string{"tag1", "tag2", "portal-app-myapp", "tag3"},
+			expectedTag: "portal-app-myapp",
 		},
 		{
 			testName:    "no portal_app tag",
 			tags:        []string{"tag1", "tag2", "tag3"},
-			expectedTag: "portal_app_unknown",
+			expectedTag: "portal-app-unknown",
 		},
 		{
 			testName:    "empty tags array",
 			tags:        []string{},
-			expectedTag: "portal_app_unknown",
+			expectedTag: "portal-app-unknown",
 		},
 		{
 			testName:    "nil tags array",
 			tags:        nil,
-			expectedTag: "portal_app_unknown",
+			expectedTag: "portal-app-unknown",
 		},
 		{
-			testName:    "portal_app_ at start",
-			tags:        []string{"portal_app_first"},
-			expectedTag: "portal_app_first",
+			testName:    "portal-app- at start",
+			tags:        []string{"portal-app-first"},
+			expectedTag: "portal-app-first",
 		},
 		{
-			testName:    "portal_app_ at end",
-			tags:        []string{"tag1", "tag2", "portal_app_last"},
-			expectedTag: "portal_app_last",
+			testName:    "portal-app- at end",
+			tags:        []string{"tag1", "tag2", "portal-app-last"},
+			expectedTag: "portal-app-last",
 		},
 		{
 			testName:    "multiple portal_app tags - returns first match",
-			tags:        []string{"portal_app_first", "portal_app_second"},
-			expectedTag: "portal_app_first",
+			tags:        []string{"portal-app-first", "portal-app-second"},
+			expectedTag: "portal-app-first",
 		},
 		{
 			testName:    "tag with portal_app but no prefix",
-			tags:        []string{"my_portal_app_tag"},
-			expectedTag: "portal_app_unknown",
+			tags:        []string{"my_portal-app-tag"},
+			expectedTag: "portal-app-unknown",
 		},
 		{
 			testName:    "exact prefix only",
-			tags:        []string{"portal_app_"},
-			expectedTag: "portal_app_",
+			tags:        []string{"portal-app-"},
+			expectedTag: "portal-app-",
 		},
 	}
 
@@ -354,54 +354,54 @@ func TestPortalOrgTag(t *testing.T) {
 		expectedTag  string
 	}{
 		{
-			testName:    "tag with portal_org_ prefix",
-			tags:        []string{"portal_org_456", "other_tag"},
-			expectedTag: "portal_org_456",
+			testName:    "tag with portal-org- prefix",
+			tags:        []string{"portal-org-456", "other_tag"},
+			expectedTag: "portal-org-456",
 		},
 		{
 			testName:    "multiple tags with one portal_org",
-			tags:        []string{"tag1", "tag2", "portal_org_myorg", "tag3"},
-			expectedTag: "portal_org_myorg",
+			tags:        []string{"tag1", "tag2", "portal-org-myorg", "tag3"},
+			expectedTag: "portal-org-myorg",
 		},
 		{
 			testName:    "no portal_org tag",
 			tags:        []string{"tag1", "tag2", "tag3"},
-			expectedTag: "portal_org_unknown",
+			expectedTag: "portal-org-unknown",
 		},
 		{
 			testName:    "empty tags array",
 			tags:        []string{},
-			expectedTag: "portal_org_unknown",
+			expectedTag: "portal-org-unknown",
 		},
 		{
 			testName:    "nil tags array",
 			tags:        nil,
-			expectedTag: "portal_org_unknown",
+			expectedTag: "portal-org-unknown",
 		},
 		{
-			testName:    "portal_org_ at start",
-			tags:        []string{"portal_org_first"},
-			expectedTag: "portal_org_first",
+			testName:    "portal-org- at start",
+			tags:        []string{"portal-org-first"},
+			expectedTag: "portal-org-first",
 		},
 		{
-			testName:    "portal_org_ at end",
-			tags:        []string{"tag1", "tag2", "portal_org_last"},
-			expectedTag: "portal_org_last",
+			testName:    "portal-org- at end",
+			tags:        []string{"tag1", "tag2", "portal-org-last"},
+			expectedTag: "portal-org-last",
 		},
 		{
 			testName:    "multiple portal_org tags - returns first match",
-			tags:        []string{"portal_org_first", "portal_org_second"},
-			expectedTag: "portal_org_first",
+			tags:        []string{"portal-org-first", "portal-org-second"},
+			expectedTag: "portal-org-first",
 		},
 		{
 			testName:    "tag with portal_org but no prefix",
-			tags:        []string{"my_portal_org_tag"},
-			expectedTag: "portal_org_unknown",
+			tags:        []string{"my_portal-org-tag"},
+			expectedTag: "portal-org-unknown",
 		},
 		{
 			testName:    "exact prefix only",
-			tags:        []string{"portal_org_"},
-			expectedTag: "portal_org_",
+			tags:        []string{"portal-org-"},
+			expectedTag: "portal-org-",
 		},
 	}
 
@@ -566,9 +566,9 @@ func TestPrometheusGetLabelsValues(t *testing.T) {
 			record: analytics.AnalyticsRecord{
 				APIID:        "api_1",
 				ResponseCode: 200,
-				Tags:         []string{"portal_app_myapp", "other_tag"},
+				Tags:         []string{"portal-app-myapp", "other_tag"},
 			},
-			expectedLabels: []string{"200", "api_1", "portal_app_myapp"},
+			expectedLabels: []string{"200", "api_1", "portal-app-myapp"},
 		},
 		{
 			testName: "portal_app label with no matching tag",
@@ -582,7 +582,7 @@ func TestPrometheusGetLabelsValues(t *testing.T) {
 				ResponseCode: 200,
 				Tags:         []string{"tag1", "tag2"},
 			},
-			expectedLabels: []string{"200", "api_1", "portal_app_unknown"},
+			expectedLabels: []string{"200", "api_1", "portal-app-unknown"},
 		},
 		{
 			testName: "portal_org label with matching tag",
@@ -594,9 +594,9 @@ func TestPrometheusGetLabelsValues(t *testing.T) {
 			record: analytics.AnalyticsRecord{
 				APIID:        "api_1",
 				ResponseCode: 200,
-				Tags:         []string{"portal_org_myorg", "other_tag"},
+				Tags:         []string{"portal-org-myorg", "other_tag"},
 			},
-			expectedLabels: []string{"200", "api_1", "portal_org_myorg"},
+			expectedLabels: []string{"200", "api_1", "portal-org-myorg"},
 		},
 		{
 			testName: "portal_org label with no matching tag",
@@ -610,7 +610,7 @@ func TestPrometheusGetLabelsValues(t *testing.T) {
 				ResponseCode: 200,
 				Tags:         []string{"tag1", "tag2"},
 			},
-			expectedLabels: []string{"200", "api_1", "portal_org_unknown"},
+			expectedLabels: []string{"200", "api_1", "portal-org-unknown"},
 		},
 		{
 			testName: "both portal_app and portal_org labels",
@@ -622,9 +622,9 @@ func TestPrometheusGetLabelsValues(t *testing.T) {
 			record: analytics.AnalyticsRecord{
 				APIID:        "api_1",
 				ResponseCode: 200,
-				Tags:         []string{"portal_app_app123", "portal_org_org456"},
+				Tags:         []string{"portal-app-app123", "portal-org-org456"},
 			},
-			expectedLabels: []string{"200", "api_1", "portal_app_app123", "portal_org_org456"},
+			expectedLabels: []string{"200", "api_1", "portal-app-app123", "portal-org-org456"},
 		},
 		{
 			testName: "portal labels with empty tags",
@@ -638,7 +638,7 @@ func TestPrometheusGetLabelsValues(t *testing.T) {
 				ResponseCode: 200,
 				Tags:         []string{},
 			},
-			expectedLabels: []string{"200", "portal_app_unknown", "portal_org_unknown"},
+			expectedLabels: []string{"200", "portal-app-unknown", "portal-org-unknown"},
 		},
 		{
 			testName: "portal labels mixed with other labels",
@@ -652,9 +652,9 @@ func TestPrometheusGetLabelsValues(t *testing.T) {
 				ResponseCode: 200,
 				Method:       "GET",
 				Path:         "/test",
-				Tags:         []string{"portal_app_webapp", "portal_org_acme"},
+				Tags:         []string{"portal-app-webapp", "portal-org-acme"},
 			},
-			expectedLabels: []string{"200", "api_1", "GET", "portal_app_webapp", "portal_org_acme", "/test"},
+			expectedLabels: []string{"200", "api_1", "GET", "portal-app-webapp", "portal-org-acme", "/test"},
 		},
 		{
 			testName: "portal_app with multiple matching tags - returns first",
@@ -664,9 +664,9 @@ func TestPrometheusGetLabelsValues(t *testing.T) {
 				Labels:     []string{"portal_app"},
 			},
 			record: analytics.AnalyticsRecord{
-				Tags: []string{"portal_app_first", "portal_app_second"},
+				Tags: []string{"portal-app-first", "portal-app-second"},
 			},
-			expectedLabels: []string{"portal_app_first"},
+			expectedLabels: []string{"portal-app-first"},
 		},
 		{
 			testName: "portal_org with multiple matching tags - returns first",
@@ -676,9 +676,9 @@ func TestPrometheusGetLabelsValues(t *testing.T) {
 				Labels:     []string{"portal_org"},
 			},
 			record: analytics.AnalyticsRecord{
-				Tags: []string{"portal_org_first", "portal_org_second"},
+				Tags: []string{"portal-org-first", "portal-org-second"},
 			},
-			expectedLabels: []string{"portal_org_first"},
+			expectedLabels: []string{"portal-org-first"},
 		},
 	}
 

@@ -450,20 +450,20 @@ func (pm *PrometheusMetric) GetLabelsValues(decoded analytics.AnalyticsRecord) [
 
 func PortalAppTag(tags []string) string {
 	for _, tag := range tags {
-		if strings.HasPrefix(tag, "portal_app_") {
+		if strings.HasPrefix(tag, "portal-app-") {
 			return tag
 		}
 	}
-	return "portal_app_unknown"
+	return "portal-app-unknown"
 }
 
 func PortalOrgTag(tags []string) string {
 	for _, tag := range tags {
-		if strings.HasPrefix(tag, "portal_org_") {
+		if strings.HasPrefix(tag, "portal-org-") {
 			return tag
 		}
 	}
-	return "portal_org_unknown"
+	return "portal-org-unknown"
 }
 
 func (pm *PrometheusMetric) obfuscateAPIKey(apiKey string) string {
