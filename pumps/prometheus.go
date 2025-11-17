@@ -437,7 +437,7 @@ func (pm *PrometheusMetric) GetLabelsValues(decoded analytics.AnalyticsRecord) [
 	for _, label := range pm.Labels {
 		if strings.HasPrefix(label, "tag_") {
 			tagPrefix := strings.TrimPrefix(label, "tag_") + "-"
-			value := "" // Default no tag value
+			value := "" // Default value when no tag matches
 			for _, t := range decoded.Tags {
 				if strings.HasPrefix(t, tagPrefix) {
 					value = strings.TrimPrefix(t, tagPrefix)
