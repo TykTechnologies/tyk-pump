@@ -33,7 +33,7 @@ jobs:
   goreleaser:
     if: github.event.pull_request.draft == false
     name: '${{ matrix.golang_cross }}'
-    runs-on: ubuntu-latest-m
+    runs-on: ${{ vars.DEFAULT_RUNNER }}
     permissions:
       id-token: write # AWS OIDC JWT
       contents: read # actions/checkout
@@ -80,7 +80,19 @@ jobs:
           registry: docker.tyk.io
           username: ${{ secrets.CLOUDSMITH_USERNAME }}
           password: ${{ secrets.CLOUDSMITH_API_KEY }}
-      - uses: actions/cache@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::754489498669:role/ecr_rw_tyk
+          role-session-name: cipush
+          aws-region: eu-central-1
+          # Don't mask to pass it across job boundaries
+          mask-aws-account-id: false
+      - uses: aws-actions/amazon-ecr-login@v2
+        id: ecr
+        if: ${{ matrix.golang_cross == '1.24-bookworm' }}
+        with:
+          mask-password: 'true'
+      - uses: WarpBuilds/cache@v1
         with:
           path: |
             ~/.cache/go-build
@@ -119,18 +131,6 @@ jobs:
           -v /tmp/build.sh:/tmp/build.sh                                         \
           -w /go/src/github.com/TykTechnologies/tyk-pump                      \
           tykio/golang-cross:${{ matrix.golang_cross }} /tmp/build.sh
-      - uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: arn:aws:iam::754489498669:role/ecr_rw_tyk
-          role-session-name: cipush
-          aws-region: eu-central-1
-          # Don't mask to pass it across job boundaries
-          mask-aws-account-id: false
-      - uses: aws-actions/amazon-ecr-login@v2
-        id: ecr
-        if: ${{ matrix.golang_cross == '1.24-bookworm' }}
-        with:
-          mask-password: 'true'
       - name: Docker metadata for fips CI
         id: ci_metadata_fips
         if: ${{ matrix.golang_cross == '1.24-bookworm' }}
@@ -286,7 +286,7 @@ jobs:
     if: github.event.pull_request.draft == false
     needs:
       - goreleaser
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.DEFAULT_RUNNER }}
     outputs:
       envfiles: ${{ steps.params.outputs.envfiles }}
       pump: ${{ steps.params.outputs.pump }}
@@ -303,7 +303,7 @@ jobs:
     needs:
       - test-controller-api
       - goreleaser
-    runs-on: ubuntu-latest-m-2
+    runs-on: ${{ vars.DEFAULT_RUNNER }}
     env:
       XUNIT_REPORT_PATH: ${{ github.workspace}}/test-results.xml
     permissions:
@@ -365,7 +365,7 @@ jobs:
           execution_status: ${{ steps.test_execution.outcome }}
   aggregator-ci-test:
     name: Aggregated CI Status
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.DEFAULT_RUNNER }}
     # Dynamically determine which jobs to depend on based on repository configuration
     needs: [goreleaser, api-tests]
     if: ${{ always() && github.event_name == 'pull_request' }}
@@ -397,7 +397,7 @@ jobs:
     if: github.event.pull_request.draft == false
     needs:
       - goreleaser
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.DEFAULT_RUNNER }}
     outputs:
       deb: ${{ steps.params.outputs.deb }}
       rpm: ${{ steps.params.outputs.rpm }}
@@ -418,7 +418,7 @@ jobs:
     services:
       httpbin.org:
         image: kennethreitz/httpbin
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.DEFAULT_RUNNER }}
     needs:
       - test-controller-distros
     strategy:
@@ -464,7 +464,7 @@ jobs:
     services:
       httpbin.org:
         image: kennethreitz/httpbin
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.DEFAULT_RUNNER }}
     needs:
       - test-controller-distros
     strategy:
