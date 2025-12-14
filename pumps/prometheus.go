@@ -371,7 +371,7 @@ func (pm *PrometheusMetric) InitVec() error {
 			prometheus.HistogramOpts{
 				Name:    pm.Name,
 				Help:    pm.Help,
-				Buckets: buckets,
+				Buckets: bkts,
 			},
 			pm.Labels,
 		)
