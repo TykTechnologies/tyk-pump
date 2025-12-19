@@ -198,7 +198,7 @@ type TykPumpConfiguration struct {
 	// Pump will default to assume Redis if no alternative is provided, so this configuration can be ignored at present.
 	AnalyticsStorageType string `json:"analytics_storage_type"`
 	// Connection string for StatsD monitoring for information please see the
-	// [Instrumentation docs]({{< ref "basic-config-and-security/report-monitor-trigger-events/instrumentation" >}}).
+	// [Instrumentation docs](https://tyk.io/docs/basic-config-and-security/report-monitor-trigger-events/instrumentation/).
 	StatsdConnectionString string `json:"statsd_connection_string"`
 	// Custom prefix value. For example separate settings for production and staging.
 	StatsdPrefix string `json:"statsd_prefix"`
@@ -247,7 +247,7 @@ type TykPumpConfiguration struct {
 	OmitDetailedRecording bool `json:"omit_detailed_recording"`
 	// Defines if tyk-pump should ignore all the values in configuration file. Specially useful when setting all configurations in environment variables.
 	OmitConfigFile bool `json:"omit_config_file"`
-	// Expose profiling information to support debugging of Tyk Pump. This operates in the same as for Tyk Gateway, as explained [here]({{< ref "troubleshooting/tyk-gateway/profiling" >}}).
+	// Expose profiling information to support debugging of Tyk Pump. This operates in the same way as for Tyk Gateway, as explained [here](https://tyk.io/docs/troubleshooting/tyk-gateway/profiling/).
 	HTTPProfile bool `json:"enable_http_profiler"`
 	// Setting this to true allows the Raw Request to be decoded from base 64
 	// for all pumps. This is set to false by default.
