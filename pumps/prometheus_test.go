@@ -424,6 +424,36 @@ func TestPrometheusGetLabelsValues(t *testing.T) {
 			},
 			expectedLabels: []string{"200", "api_1", "abc"},
 		},
+		{
+			testName: "valid custom tag",
+			customMetric: PrometheusMetric{
+				Name:       "testCounterMetric",
+				MetricType: counterType,
+				Labels:     []string{"tag_custom"},
+			},
+			record: analytics.AnalyticsRecord{
+				APIID:        "api_1",
+				ResponseCode: 200,
+				APIKey:       "apikey",
+				Tags:         []string{"custom-value"},
+			},
+			expectedLabels: []string{"value"},
+		},
+		{
+			testName: "two valid tag labels - one without value",
+			customMetric: PrometheusMetric{
+				Name:       "testCounterMetric",
+				MetricType: counterType,
+				Labels:     []string{"tag_custom", "tag_noexists"},
+			},
+			record: analytics.AnalyticsRecord{
+				APIID:        "api_1",
+				ResponseCode: 200,
+				APIKey:       "apikey",
+				Tags:         []string{"custom-value"},
+			},
+			expectedLabels: []string{"value", ""},
+		},
 	}
 
 	for _, tc := range tcs {
