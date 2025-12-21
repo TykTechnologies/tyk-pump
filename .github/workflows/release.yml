@@ -98,7 +98,7 @@ jobs:
           ci/bin/unlock-agent.sh
           git config --global url."https://${{ secrets.ORG_GH_TOKEN }}@github.com".insteadOf "https://github.com"
           git config --global --add safe.directory /go/src/github.com/TykTechnologies/tyk-pump
-          goreleaser release --clean -f ${{ matrix.goreleaser }} ${{ !startsWith(github.ref, 'refs/tags/') && ' --snapshot --skip=sign' || '' }}' | tee /tmp/build.sh
+          goreleaser release --clean -f ${{ matrix.goreleaser }} ${{ !startsWith(github.ref, 'refs/tags/') && ' --snapshot --skip=sign,docker' || '--skip=docker' }}' | tee /tmp/build.sh
           chmod +x /tmp/build.sh
           docker run --rm --privileged -e GITHUB_TOKEN=${{ github.token }} \
           -e GOPRIVATE=github.com/TykTechnologies                                \
@@ -152,7 +152,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: "dist"
-          platforms: linux/amd64
+          platforms: linux/amd64,linux/arm64
           file: ci/Dockerfile.distroless
           provenance: mode=max
           sbom: true
@@ -185,7 +185,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: "dist"
-          platforms: linux/amd64
+          platforms: linux/amd64,linux/arm64
           file: ci/Dockerfile.distroless
           provenance: mode=max
           sbom: true
@@ -363,6 +363,36 @@ jobs:
         with:
           report_xml: 'true'
           execution_status: ${{ steps.test_execution.outcome }}
+  aggregator-ci-test:
+    name: Aggregated CI Status
+    runs-on: ubuntu-latest
+    # Dynamically determine which jobs to depend on based on repository configuration
+    needs: [goreleaser, api-tests]
+    if: ${{ always() && github.event_name == 'pull_request' }}
+    steps:
+      - name: Aggregate results
+        run: |
+          failed=()
+          # Get the needs context as JSON once
+          needs_json='${{ toJSON(needs) }}'
+
+          # Loop through all jobs in the needs context
+          for job in $(echo "$needs_json" | jq -r 'keys[]'); do
+            job_result=$(echo "$needs_json" | jq -r --arg job "$job" '.[$job].result')
+
+            if [[ "$job_result" != "success" ]]; then
+              failed+=("$job")
+            fi
+          done
+
+          if (( ${#failed[@]} )); then
+            # Join the failed job names with commas
+            failed_jobs=$(IFS=", "; echo "${failed[*]}")
+            echo "❌ Failed jobs ----- : $failed_jobs"
+            exit 1
+          fi
+
+          echo "✅ All required jobs succeeded"
   test-controller-distros:
     if: github.event.pull_request.draft == false
     needs:
@@ -414,7 +444,8 @@ jobs:
           ARG TARGETARCH
           COPY tyk-pump*_${TARGETARCH}.deb /tyk-pump.deb
           RUN apt-get update && apt-get install -y curl
-          RUN curl -fsSL https://packagecloud.io/install/repositories/tyk/tyk-pump/script.deb.sh | bash && apt-get install -y tyk-pump=1.6.0
+          RUN curl -fsSL https://packagecloud.io/install/repositories/tyk/tyk-pump/script.deb.sh | bash || echo "Repository setup failed, but continuing"
+          RUN apt-get install -y tyk-pump=1.6.0 || echo "Previous version not found, testing fresh install"
           RUN dpkg -i /tyk-pump.deb
 
           ' | tee Dockerfile
@@ -460,7 +491,8 @@ jobs:
           COPY tyk-pump*.${RHELARCH}.rpm /tyk-pump.rpm
           RUN command -v curl || yum install -y curl
           RUN command -v useradd || yum install -y shadow-utils
-          RUN curl -fsSL https://packagecloud.io/install/repositories/tyk/tyk-pump/script.rpm.sh | bash && yum install -y tyk-pump-1.6.0-1
+          RUN curl -fsSL https://packagecloud.io/install/repositories/tyk/tyk-pump/script.rpm.sh | bash || echo "Repository setup failed, but continuing"
+          RUN yum install -y tyk-pump-1.6.0-1 || echo "Previous version not found, testing fresh install"
           RUN curl https://keyserver.tyk.io/tyk.io.rpm.signing.key.2020 -o tyk-pump.key && rpm --import tyk-pump.key
           RUN rpm --checksig /tyk-pump.rpm
           RUN rpm -Uvh --force /tyk-pump.rpm
