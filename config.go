@@ -198,7 +198,7 @@ type TykPumpConfiguration struct {
 	// Pump will default to assume Redis if no alternative is provided, so this configuration can be ignored at present.
 	AnalyticsStorageType string `json:"analytics_storage_type"`
 	// Connection string for StatsD monitoring for information please see the
-	// [Instrumentation docs](https://tyk.io/docs/basic-config-and-security/report-monitor-trigger-events/instrumentation/).
+	// [Instrumentation docs](/api-management/logs-metrics).
 	StatsdConnectionString string `json:"statsd_connection_string"`
 	// Custom prefix value. For example separate settings for production and staging.
 	StatsdPrefix string `json:"statsd_prefix"`
@@ -247,13 +247,13 @@ type TykPumpConfiguration struct {
 	OmitDetailedRecording bool `json:"omit_detailed_recording"`
 	// Defines if tyk-pump should ignore all the values in configuration file. Specially useful when setting all configurations in environment variables.
 	OmitConfigFile bool `json:"omit_config_file"`
-	// Expose profiling information to support debugging of Tyk Pump. This operates in the same way as for Tyk Gateway, as explained [here](https://tyk.io/docs/troubleshooting/tyk-gateway/profiling/).
+	// Expose profiling information to support debugging of Tyk Pump. This operates in the same way as for Tyk Gateway, as explained [here](api-management/troubleshooting-debugging).
 	HTTPProfile bool `json:"enable_http_profiler"`
-	// Setting this to true allows the Raw Request to be decoded from base 64
+	// This option was intended to decode raw request payloads from base64 for all Pumps. However, it was never implemented and therefore has no functional effect. It has now been deprecated.
 	// for all pumps. This is set to false by default.
 	// Deprecated: Use pump level raw_request_decoded configuration instead.
 	DecodeRawRequest bool `json:"raw_request_decoded"`
-	// Setting this to true allows the Raw Response to be decoded from base 64 for all pumps. This is set to false by default.
+	// This option was intended to decode raw response payloads from base64 for all Pumps. However, it was never implemented and therefore has no functional effect. It has now been deprecated.
 	// Deprecated: Use pump level raw_response_decoded configuration instead.
 	DecodeRawResponse bool `json:"raw_response_decoded"`
 }
