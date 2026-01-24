@@ -769,7 +769,7 @@ TYK_PMP_PUMPS_DOGSTATSD_META_TAGS=method,response_code,api_version,api_name,api_
 
 Setting up Splunk with a _HTTP Event Collector_
 
-- `collector_token`: address of the datadog agent including host & port
+- `collector_token`: authorization token for the collector
 - `collector_url`: endpoint the Pump will send analytics too. Should look something like:
 
 `https://splunk:8088/services/collector/event`
