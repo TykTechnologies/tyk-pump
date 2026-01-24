@@ -1,0 +1,329 @@
+package pumps
+
+import (
+	"bytes"
+	"context"
+	"crypto/tls"
+	"encoding/json"
+	"errors"
+	"net/http"
+	"net/url"
+	"strings"
+
+	"github.com/TykTechnologies/tyk-pump/analytics"
+	"github.com/TykTechnologies/tyk-pump/retry"
+
+	"github.com/mitchellh/mapstructure"
+)
+
+const (
+	dynatraceDefaultPath = "/api/v2/logs/ingest"
+	dynatraceAuthHeaderName = "Authorization"
+	dynatraceAuthHeaderPrefix = "Api-Token "
+	dynatracePumpPrefix = "dynatrace-pump"
+	dynatracePumpName = "Dynatrace Pump"
+	dynatraceDefaultEnv = PUMPS_ENV_PREFIX + "_DYNATRACE" + PUMPS_ENV_META_PREFIX
+)
+
+var (
+	dynatraceErrInvalidSettings = errors.New("Empty settings")
+	//By default in dynatrace ~ 800 MB. https://docs.dynatrace.com/Documentation/Dynatrace/latest/Admin/Limitsconf#.5Bhttp_input.5D
+	dynatraceMaxContentLength = 838860800
+)
+
+// DynatraceClient contains Dynatrace client methods.
+type DynatraceClient struct {
+	Token         string
+	EndpointUrl  string
+	TLSSkipVerify bool
+	httpClient    *http.Client
+	retry         *retry.BackoffHTTPRetry
+}
+
+// DynatracePump is a Tyk Pump driver for Dynatrace.
+type DynatracePump struct {
+	client *DynatraceClient
+	config *DynatracePumpConfig
+	CommonPumpConfig
+}
+
+// DynatracePumpConfig contains the driver configuration parameters.
+// @PumpConf Dynatrace
+type DynatracePumpConfig struct {
+	// The prefix for the environment variables that will be used to override the configuration.
+	// Defaults to `TYK_PMP_PUMPS_DYNATRACE_META`
+	EnvPrefix string `mapstructure:"meta_env_prefix"`
+	// API Token.
+	ApiToken string `json:"api_token" mapstructure:"api_token"`
+	// Endpoint the Pump will send analytics too. Should look something like:
+	// `https://{your-environment-id}.live.dynatrace.com` or `https://{your-activegate-domain}:9999/e/{your-environment-id}`.
+	EndpointUrl string `json:"endpoint_url" mapstructure:"endpoint_url"`
+	// Controls whether the pump client verifies the Dynatrace server's certificate chain and host name.
+	SSLInsecureSkipVerify bool `json:"ssl_insecure_skip_verify" mapstructure:"ssl_insecure_skip_verify"`
+	// SSL cert file location.
+	SSLCertFile string `json:"ssl_cert_file" mapstructure:"ssl_cert_file"`
+	// SSL cert key location.
+	SSLKeyFile string `json:"ssl_key_file" mapstructure:"ssl_key_file"`
+	// SSL Server name used in the TLS connection.
+	SSLServerName string `json:"ssl_server_name" mapstructure:"ssl_server_name"`
+	// Controls whether the pump client should hide the API key. In case you still need substring
+	// of the value, check the next option. Default value is `false`.
+	ObfuscateAPIKeys bool `json:"obfuscate_api_keys" mapstructure:"obfuscate_api_keys"`
+	// Define the number of the characters from the end of the API key. The `obfuscate_api_keys`
+	// should be set to `true`. Default value is `0`.
+	ObfuscateAPIKeysLength int `json:"obfuscate_api_keys_length" mapstructure:"obfuscate_api_keys_length"`
+	// Define which Analytics fields should participate in the Dynatrace event. Check the available
+	// fields in the example below. Default value is `["method",
+	// "path", "response_code", "api_key", "time_stamp", "api_version", "api_name", "api_id",
+	// "org_id", "oauth_id", "raw_request", "request_time", "raw_response", "ip_address"]`.
+	Fields []string `json:"fields" mapstructure:"fields"`
+	// Choose which tags to be ignored by the Dynatrace Pump. Keep in mind that the tag name and value
+	// are hyphenated. Default value is `[]`.
+	IgnoreTagPrefixList []string `json:"ignore_tag_prefix_list" mapstructure:"ignore_tag_prefix_list"`
+	// If this is set to `true`, pump is going to send the analytics records in batch to Dynatrace.
+	// Default value is `false`.
+	EnableBatch bool `json:"enable_batch" mapstructure:"enable_batch"`
+	// Max content length in bytes to be sent in batch requests. It should match the
+	// `max_content_length` configured in Dynatrace. If the purged analytics records size don't reach
+	// the amount of bytes, they're send anyways in each `purge_loop`. Default value is 838860800
+	// (~ 800 MB), the same default value as Dynatrace config.
+	BatchMaxContentLength int `json:"batch_max_content_length" mapstructure:"batch_max_content_length"`
+	// MaxRetries represents the maximum amount of retries to attempt if failed to send requests to dynatrace HEC.
+	// Default value is `0`
+	MaxRetries uint64 `json:"max_retries" mapstructure:"max_retries"`
+}
+
+// New initializes a new pump.
+func (p *DynatracePump) New() Pump {
+	return &DynatracePump{}
+}
+
+// GetName returns the pump name.
+func (p *DynatracePump) GetName() string {
+	return dynatracePumpName
+}
+
+func (p *DynatracePump) GetEnvPrefix() string {
+	return p.config.EnvPrefix
+}
+
+// Init performs the initialization of the DynatraceClient.
+func (p *DynatracePump) Init(config interface{}) error {
+	p.config = &DynatracePumpConfig{}
+	p.log = log.WithField("prefix", dynatracePumpPrefix)
+
+	err := mapstructure.Decode(config, p.config)
+	if err != nil {
+		return err
+	}
+
+	processPumpEnvVars(p, p.log, p.config, dynatraceDefaultEnv)
+
+	p.log.Infof("%s Endpoint: %s", dynatracePumpName, p.config.EndpointUrl)
+
+	p.client, err = NewDynatraceClient(p.config.ApiToken, p.config.EndpointUrl, p.config.SSLInsecureSkipVerify, p.config.SSLCertFile, p.config.SSLKeyFile, p.config.SSLServerName)
+	if err != nil {
+		return err
+	}
+
+	if p.config.EnableBatch && p.config.BatchMaxContentLength == 0 {
+		p.config.BatchMaxContentLength = dynatraceMaxContentLength
+	}
+
+	if p.config.MaxRetries > 0 {
+		p.log.Infof("%d max retries", p.config.MaxRetries)
+	}
+
+	p.client.retry = retry.NewBackoffRetry("Failed writing data to Dynatrace", p.config.MaxRetries, p.client.httpClient, p.log)
+	p.log.Info(p.GetName() + " Initialized")
+
+	return nil
+}
+
+// Filters the tags based on config rule
+func (p *DynatracePump) FilterTags(filteredTags []string) []string {
+	// Loop all explicitly ignored tags
+	for _, excludeTag := range p.config.IgnoreTagPrefixList {
+		// Loop the current analytics item tags
+		for key, currentTag := range filteredTags {
+			// If the current tag's value includes an ignored word, remove it from the list
+			if strings.HasPrefix(currentTag, excludeTag) {
+				copy(filteredTags[key:], filteredTags[key+1:])
+				filteredTags[len(filteredTags)-1] = ""
+				filteredTags = filteredTags[:len(filteredTags)-1]
+			}
+		}
+	}
+
+	return filteredTags
+}
+
+// WriteData prepares an appropriate data structure and sends it to the HTTP Event Collector.
+func (p *DynatracePump) WriteData(ctx context.Context, data []interface{}) error {
+	p.log.Debug("Attempting to write ", len(data), " records...")
+
+	var batchBuffer bytes.Buffer
+
+	for _, v := range data {
+		decoded := v.(analytics.AnalyticsRecord)
+		apiKey := decoded.APIKey
+
+		// Check if the APIKey obfuscation is configured and its doable
+		if p.config.ObfuscateAPIKeys && len(apiKey) > p.config.ObfuscateAPIKeysLength {
+			// Obfuscate the APIKey, starting with 4 asterics and followed by last N chars (configured separately) of the APIKey
+			// The default value of the length is 0 so unless another number is configured, the APIKey will be fully hidden
+			apiKey = "****" + apiKey[len(apiKey)-p.config.ObfuscateAPIKeysLength:]
+		}
+
+		mapping := map[string]interface{}{
+			"method":         decoded.Method,
+			"host":           decoded.Host,
+			"path":           decoded.Path,
+			"raw_path":       decoded.RawPath,
+			"content_length": decoded.ContentLength,
+			"user_agent":     decoded.UserAgent,
+			"response_code":  decoded.ResponseCode,
+			"api_key":        apiKey,
+			"time_stamp":     decoded.TimeStamp,
+			"api_version":    decoded.APIVersion,
+			"api_name":       decoded.APIName,
+			"api_id":         decoded.APIID,
+			"org_id":         decoded.OrgID,
+			"oauth_id":       decoded.OauthID,
+			"raw_request":    decoded.RawRequest,
+			"request_time":   decoded.RequestTime,
+			"raw_response":   decoded.RawResponse,
+			"ip_address":     decoded.IPAddress,
+			"geo":            decoded.Geo,
+			"network":        decoded.Network,
+			"latency":        decoded.Latency,
+			"tags":           decoded.Tags,
+			"alias":          decoded.Alias,
+			"track_path":     decoded.TrackPath,
+		}
+
+		// Define an empty event
+		event := make(map[string]interface{})
+
+		// Populate the Dynatrace event with the fields set in the config
+		if len(p.config.Fields) > 0 {
+			// Loop through all fields set in the pump config
+			for _, field := range p.config.Fields {
+				// Skip the next actions in case the configured field doesn't exist
+				if _, ok := mapping[field]; !ok {
+					continue
+				}
+
+				// Check if the current analytics field is "tags" and see if some tags are explicitly excluded
+				if field == "tags" && len(p.config.IgnoreTagPrefixList) > 0 {
+					// Reassign the tags after successful filtration
+					mapping["tags"] = p.FilterTags(mapping["tags"].([]string))
+				}
+
+				// Adding field value
+				event[field] = mapping[field]
+			}
+		} else {
+			// Set the default event fields
+			event = map[string]interface{}{
+				"method":        decoded.Method,
+				"path":          decoded.Path,
+				"response_code": decoded.ResponseCode,
+				"api_key":       apiKey,
+				"time_stamp":    decoded.TimeStamp,
+				"api_version":   decoded.APIVersion,
+				"api_name":      decoded.APIName,
+				"api_id":        decoded.APIID,
+				"org_id":        decoded.OrgID,
+				"oauth_id":      decoded.OauthID,
+				"raw_request":   decoded.RawRequest,
+				"request_time":  decoded.RequestTime,
+				"raw_response":  decoded.RawResponse,
+				"ip_address":    decoded.IPAddress,
+			}
+		}
+		eventWrap := struct {
+			Time  int64                  `json:"time"`
+			Event map[string]interface{} `json:"event"`
+		}{Time: decoded.TimeStamp.Unix(), Event: event}
+
+		data, err := json.Marshal(eventWrap)
+		if err != nil {
+			return err
+		}
+
+		if p.config.EnableBatch {
+			//if we're batching and the len of our data is already bigger than max_content_length, we send the data and reset the buffer
+			if batchBuffer.Len()+len(data) > p.config.BatchMaxContentLength {
+				if err := p.send(ctx, batchBuffer.Bytes()); err != nil {
+					return err
+				}
+				batchBuffer.Reset()
+			}
+			batchBuffer.Write(data)
+		} else {
+			if err := p.send(ctx, data); err != nil {
+				return err
+			}
+		}
+	}
+
+	//this if is for data remaining in the buffer when len(buffer) is lower than max_content_length
+	if p.config.EnableBatch && batchBuffer.Len() > 0 {
+		if err := p.send(ctx, batchBuffer.Bytes()); err != nil {
+			return err
+		}
+		batchBuffer.Reset()
+	}
+
+	p.log.Info("Purged ", len(data), " records...")
+
+	return nil
+}
+
+// NewDynatraceClient initializes a new DynatraceClient.
+func NewDynatraceClient(token string, endpointUrl string, skipVerify bool, certFile string, keyFile string, serverName string) (c *DynatraceClient, err error) {
+	if token == "" || endpointUrl == "" {
+		return c, dynatraceErrInvalidSettings
+	}
+	u, err := url.Parse(endpointUrl)
+	if err != nil {
+		return c, err
+	}
+	tlsConfig := &tls.Config{InsecureSkipVerify: skipVerify}
+	if !skipVerify {
+		if certFile == "" && keyFile == "" {
+			return c, errors.New("ssl_insecure_skip_verify set to false but no ssl_cert_file or ssl_key_file specified")
+		}
+		// Load certificates:
+		cert, err := tls.LoadX509KeyPair(certFile, keyFile)
+		if err != nil {
+			return c, err
+		}
+		tlsConfig = &tls.Config{Certificates: []tls.Certificate{cert}, ServerName: serverName}
+	}
+	http.DefaultClient.Transport = &http.Transport{
+		Proxy:           http.ProxyFromEnvironment,
+		TLSClientConfig: tlsConfig,
+	}
+	u.Path = dynatraceDefaultPath // Append the default endpoint API path
+	c = &DynatraceClient{
+		Token:        token,
+		EndpointUrl:  u.String(),
+		httpClient:   http.DefaultClient,
+	}
+	return c, nil
+}
+
+func (p *DynatracePump) send(ctx context.Context, data []byte) error {
+	reader := bytes.NewReader(data)
+	req, err := http.NewRequest(http.MethodPost, p.client.EndpointUrl, reader)
+	if err != nil {
+		return err
+	}
+	req = req.WithContext(ctx)
+	req.Header.Add(dynatraceAuthHeaderName, dynatraceAuthHeaderPrefix+p.client.Token)
+
+	p.log.Debugf("Sending %d bytes to dynatrace", len(data))
+	return p.client.retry.Send(req)
+}
