@@ -55,10 +55,9 @@ The table below provides details on the fields within each `tyk_analytics` recor
 - [ElasticSearch (2.0+)](#elasticsearch-config)
 - [Graylog](#graylog)
 - [Resurface.io](#resurfaceio)
-- InfluxDB
 - [InfluxDB2](#influx2-config)
 - [Moesif](#moesif-config)
-- [Splunk](#splunk-config)
+- [Splunk](#splunk)
 - [StatsD](#statsd)
 - [DogStatsD](#dogstatsd)
 - [Hybrid (Tyk RPC)](#hybrid-rpc-config)
