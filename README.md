@@ -68,6 +68,7 @@ The table below provides details on the fields within each `tyk_analytics` recor
 - [Timestream](#timestream-config)
 - [AWS SQS](#SQS-config)
 - [AWS Kinesis](#Kinesis-config)
+- [Dynatrace](#dynatrace-config)
 
 # Configuration:
 
@@ -1388,6 +1389,10 @@ TYK_PMP_PUMPS_KINESIS_META_REGION=eu-west-2
 TYK_PMP_PUMPS_KINESIS_META_BATCHSIZE=100
 TYK_PMP_PUMPS_KINESIS_META_KMSKEYID=your-kms-key-id
 ```
+
+## Dynatrace Config
+
+TBD
 
 # Base Pump Configurations
 
