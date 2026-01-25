@@ -1716,7 +1716,7 @@ go test -v ./...
 
 You can run Tyk Pump in demo mode, which will generate fake analytics data and send it to the configured pumps. This is useful for testing and development. To enable demo mode, use the following flags:
 
-- `--demo=<ORG_ID>` - Enables demo mode and sets the organization ID to use for the demo data. **This is required to enable Demo Mode**.
+- `--demo=<ORG_ID>` - Enables demo mode and sets the organization ID to use for the demo data. **This is required to enable Demo Mode**. This can also be configured via environment variable: `TYK_PMP_BUILDDEMODATA=<ORG_ID>`.
 - `--demo-api=<API_ID>` - Configure the value to be recorded as the `API_ID` in the demo transactions. If this option is not set, the Pump Demo mode will use a random `API_ID`. Note that the same `API_ID` will be used for all transaction logs.
 - `--demo-days=<DAYS>` - Sets the number of days of demo data to generate. Defaults to 30.
 - `--demo-hours=<HOURS>` - Sets the number of hours of demo data to generate. If provided, this flag takes precedence over `--demo-days`. Defaults to 0 (disabled).
