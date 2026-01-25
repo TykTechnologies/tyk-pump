@@ -106,8 +106,7 @@ Create a `pump.conf` file:
       "meta": {
         "csv_dir": "./"
       }
-    },
-	...
+    }
   },
   "dont_purge_uptime_data": true,
   "omit_detailed_recording": false,
@@ -392,7 +391,6 @@ Available Mongo instances are: Standard Mongo, DocumentDB (AWS), CosmosDB (Azure
 
 ```json
 {
-  ...
   "pumps": {
     "mongo": {
       "type": "mongo",
@@ -668,7 +666,6 @@ The available values are: `["host","method", "path", "response_code", "api_key",
 
 ```json
 {
-    ...
     "pumps": {
       "prometheus": {
         "type": "prometheus",
@@ -901,7 +898,6 @@ More advanced fields:
 
 ```json
 {
-    ...
     "pumps": {
       "kafka": {
       "type": "kafka",
