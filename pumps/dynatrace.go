@@ -75,9 +75,9 @@ type DynatracePumpConfig struct {
 	// should be set to `true`. Default value is `0`.
 	ObfuscateAPIKeysLength int `json:"obfuscate_api_keys_length" mapstructure:"obfuscate_api_keys_length"`
 	// Define which Analytics fields should participate in the Dynatrace event. Check the available
-	// fields in the example below. Default value is `["method",
-	// "path", "response_code", "api_key", "time_stamp", "api_version", "api_name", "api_id",
-	// "org_id", "oauth_id", "raw_request", "request_time", "raw_response", "ip_address"]`.
+	// fields in the example below. Default value is `["http.method", "http.url", "http.status_code",
+	// "http.client_ip", "api_key", "api_version", "api_name", "api_id", "org_id", "oauth_id",
+	// "raw_request", "request_time", "raw_response"]`.
 	Fields []string `json:"fields" mapstructure:"fields"`
 	// Choose which tags to be ignored by the Dynatrace Pump. Keep in mind that the tag name and value
 	// are hyphenated. Default value is `[]`.
