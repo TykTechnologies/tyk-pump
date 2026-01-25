@@ -211,7 +211,7 @@ The minimum required configurations for uptime pumps are:
 
 ###### JSON / Conf File
 
-```
+```json
 {
   "uptime_pump_config": {
     "collection_name": "tyk_uptime_analytics",
@@ -242,14 +242,16 @@ You can also use different types of SQL Uptime pumps, like `postgres` or `mysql`
 
 ###### JSON / Conf file Example
 
-```
-    "uptime_pump_config": {
-        "uptime_type": "sql",
-        "type": "postgres",
-        "connection_string": "host=sql_host port=sql_port user=sql_usr dbname=dbname password=sql_pw",
-        "table_sharding": false,
-	"log_level": "info"
-    },
+```json
+{
+  "uptime_pump_config": {
+    "uptime_type": "sql",
+    "type": "postgres",
+    "connection_string": "host=sql_host port=sql_port user=sql_usr dbname=dbname password=sql_pw",
+    "table_sharding": false,
+	  "log_level": "info"
+  }
+}
 ```
 
 ###### Env Variables:
@@ -268,29 +270,31 @@ Example of integrating with GrayLog:
 
 ###### JSON / Conf file Example
 
-```
-"graylog": {
-      "type": "graylog",
-      "meta": {
-        "host": "10.60.6.15",
-        "port": 12216,
-        "tags": [
-          "method",
-          "path",
-          "response_code",
-          "api_key",
-          "api_version",
-          "api_name",
-          "api_id",
-          "org_id",
-          "oauth_id",
-          "raw_request",
-          "request_time",
-          "raw_response",
-          "ip_address"
-        ]
-      }
-    },
+```json
+{
+  "graylog": {
+    "type": "graylog",
+    "meta": {
+      "host": "10.60.6.15",
+      "port": 12216,
+      "tags": [
+        "method",
+        "path",
+        "response_code",
+        "api_key",
+        "api_version",
+        "api_name",
+        "api_id",
+        "org_id",
+        "oauth_id",
+        "raw_request",
+        "request_time",
+        "raw_response",
+        "ip_address"
+      ]
+    }
+  }
+}
 ```
 
 ###### Env Variables:
@@ -316,13 +320,14 @@ The only two fields necessary in the pump cofiguration are:
 ###### JSON / Conf File Example
 
 ```json
-
-"resurface": {
+{
+  "resurface": {
     "type": "resurfaceio",
     "meta": {
         "capture_url": "http://localhost:7701/message",
         "rules": "include debug"
     }
+  }
 }
 ```
 
@@ -340,7 +345,7 @@ Example of integrating with StatsD:
 
 ###### JSON / Conf file Example
 
-```
+```json
 {
   "pumps": {
     "statsd": {
@@ -666,15 +671,15 @@ The available values are: `["host","method", "path", "response_code", "api_key",
 
 ```json
 {
-    "pumps": {
-      "prometheus": {
-        "type": "prometheus",
-        "meta": {
-          "listen_address": "localhost:9090",
-          "path": "/metrics"
-        }
+  "pumps": {
+    "prometheus": {
+      "type": "prometheus",
+      "meta": {
+        "listen_address": "localhost:9090",
+        "path": "/metrics"
       }
     }
+  }
 }
 ```
 
@@ -783,53 +788,55 @@ Setting up Splunk with a _HTTP Event Collector_
 ###### JSON / Conf File
 
 ```json
-    "splunk": {
-      "type": "splunk",
-      "meta": {
-        "collector_token": "<token>",
-        "collector_url": "<url>",
-        "ssl_insecure_skip_verify": false,
-        "ssl_cert_file": "<cert-path>",
-        "ssl_key_file": "<key-path>",
-        "ssl_server_name": "<server-name>",
-        "obfuscate_api_keys": true,
-        "obfuscate_api_keys_length": 10,
-        "enable_batch":true,
-        "max_retries": 2,
-        "fields": [
-          "method",
-          "host",
-          "path",
-          "raw_path",
-          "content_length",
-          "user_agent",
-          "response_code",
-          "api_key",
-          "time_stamp",
-          "api_version",
-          "api_name",
-          "api_id",
-          "org_id",
-          "oauth_id",
-          "raw_request",
-          "request_time",
-          "raw_response",
-          "ip_address",
-          "geo",
-          "network",
-          "latency",
-          "tags",
-          "alias",
-          "track_path"
-        ],
-        "ignore_tag_prefix_list": [
-          "key-",
-          "org-",
-          "api-",
-          "original-path-",
-        ]
-      }
-    },
+{
+  "splunk": {
+    "type": "splunk",
+    "meta": {
+      "collector_token": "<token>",
+      "collector_url": "<url>",
+      "ssl_insecure_skip_verify": false,
+      "ssl_cert_file": "<cert-path>",
+      "ssl_key_file": "<key-path>",
+      "ssl_server_name": "<server-name>",
+      "obfuscate_api_keys": true,
+      "obfuscate_api_keys_length": 10,
+      "enable_batch":true,
+      "max_retries": 2,
+      "fields": [
+        "method",
+        "host",
+        "path",
+        "raw_path",
+        "content_length",
+        "user_agent",
+        "response_code",
+        "api_key",
+        "time_stamp",
+        "api_version",
+        "api_name",
+        "api_id",
+        "org_id",
+        "oauth_id",
+        "raw_request",
+        "request_time",
+        "raw_response",
+        "ip_address",
+        "geo",
+        "network",
+        "latency",
+        "tags",
+        "alias",
+        "track_path"
+      ],
+      "ignore_tag_prefix_list": [
+        "key-",
+        "org-",
+        "api-",
+        "original-path-",
+      ]
+    }
+  }
+}
 ```
 
 ###### Env Variables
@@ -857,12 +864,14 @@ Example simplest configuration just needs the token for sending data to your log
 ###### JSON / Conf File
 
 ```json
-"logzio": {
-      "type": "logzio",
-      "meta": {
-        "token": "<YOUR-LOGZ.IO-TOKEN>"
-      }
+{
+  "logzio": {
+    "type": "logzio",
+    "meta": {
+      "token": "<YOUR-LOGZ.IO-TOKEN>"
     }
+  }
+}
 ```
 
 ###### Env Variables
@@ -965,7 +974,8 @@ Configuration options:
 ###### JSON / Conf File
 
 ```json
-"influx2": {
+{
+  "influx2": {
     "type": "influx2",
     "meta": {
       "organization": "my-org",
@@ -987,6 +997,7 @@ Configuration options:
         "response_code"
       ]
     }
+  }
 }
 ```
 
@@ -1038,14 +1049,16 @@ When working with FluentD, you should provide a [FluentD Parser](https://docs.fl
 
 ###### JSON / Conf File
 
-```
-"stdout": {
+```json
+{
+  "stdout": {
    "type": "stdout",
     "meta": {
       "log_field_name": "tyk-analytics-record",
       "format": "json"
     }
   }
+}
 ```
 
 ###### Env Variables
@@ -1069,15 +1082,17 @@ If `table_sharding` is `false`, all the records are going to be stored in `tyk_a
 
 ###### JSON / Conf File
 
-```
-    "sql": {
-        "name": "sql",
-        "meta": {
-            "type": "postgres",
-            "connection_string": "host=localhost port=5432 user=admin dbname=postgres_test password=test",
-            "table_sharding": false
-        }
-    }
+```json
+{
+  "sql": {
+      "name": "sql",
+      "meta": {
+          "type": "postgres",
+          "connection_string": "host=localhost port=5432 user=admin dbname=postgres_test password=test",
+          "table_sharding": false
+      }
+  }
+}
 ```
 
 ###### Env Variables
@@ -1104,15 +1119,17 @@ If `table_sharding` is `false`, all the records are going to be stored in `tyk_a
 
 ###### JSON / Conf File
 
-```
-    "sql_aggregate": {
-        "name": "sql_aggregate",
-        "meta": {
-            "type": "postgres",
-            "connection_string": "host=localhost port=5432 user=admin dbname=postgres_test password=test",
-            "table_sharding": false
-        }
-    }
+```json
+{
+  "sql_aggregate": {
+      "name": "sql_aggregate",
+      "meta": {
+          "type": "postgres",
+          "connection_string": "host=localhost port=5432 user=admin dbname=postgres_test password=test",
+          "table_sharding": false
+      }
+  }
+}
 ```
 
 ###### Env Variables
@@ -1260,7 +1277,7 @@ Enable this Pump to have Tyk Pump create or modify a CSV file to track API Analy
 
 ###### JSON / Conf File
 
-```
+```json
 {
   "csv": {
     "type": "csv",
