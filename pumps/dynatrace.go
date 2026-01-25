@@ -16,6 +16,9 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
+// https://docs.dynatrace.com/docs/analyze-explore-automate/logs/lma-log-ingestion/lma-log-ingestion-via-api
+// https://docs.dynatrace.com/docs/discover-dynatrace/references/dynatrace-api/environment-api/log-monitoring-v2/post-ingest-logs
+
 const (
 	dynatraceDefaultPath = "/api/v2/logs/ingest"
 	dynatraceAuthHeaderName = "Authorization"
@@ -158,7 +161,7 @@ func (p *DynatracePump) FilterTags(filteredTags []string) []string {
 	return filteredTags
 }
 
-// WriteData prepares an appropriate data structure and sends it to the HTTP Event Collector.
+// WriteData prepares an appropriate data structure and sends it to the API endpoint.
 func (p *DynatracePump) WriteData(ctx context.Context, data []interface{}) error {
 	p.log.Debug("Attempting to write ", len(data), " records...")
 
