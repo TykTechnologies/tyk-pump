@@ -153,10 +153,39 @@ func country() string {
 	return codes[rand.Intn(len(codes))]
 }
 
-func GenerateDemoData(days, recordsPerHour int, orgID string, demoFutureData, trackPath bool, writer func([]interface{}, *health.Job, time.Time, int)) {
-	t := time.Now()
-	start := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC)
+func GenerateDemoData(days, hours, recordsPerHour int, orgID string, demoFutureData, trackPath bool, writer func([]interface{}, *health.Job, time.Time, int)) {
+	t := time.Now().UTC()
+	var start time.Time
+	var hourStart int
+	if hours > 0 {
+		hourStart = t.Hour() // For hours mode, start at the beginning of the current hour instead of current day
+	}
+	start = time.Date(t.Year(), t.Month(), t.Day(), hourStart, 0, 0, 0, time.UTC)
 	count := 0
+
+	// If hours is set, use it instead of days
+	if hours > 0 {
+		total := hours
+		if demoFutureData {
+			// Generate data for the next X hours
+			for h := 0; h < hours; h++ {
+				WriteDemoDataByHour(start, h, recordsPerHour, orgID, trackPath, writer)
+				count++
+				log.Infof("Finished %d of %d hours\n", count, total)
+			}
+		} else {
+			// Generate data for the past X hours
+			for h := hours; h > 0; h-- {
+				WriteDemoDataByHour(start, -h, recordsPerHour, orgID, trackPath, writer)
+				count++
+				log.Infof("Finished %d of %d hours\n", count, total)
+			}
+		}
+		log.Infof("Completed: generated data for %d hours\n", hours)
+		return
+	}
+
+	// Otherwise use days logic
 	// If we are generating future data, we want to start at the current date and create data for the next X days
 	if demoFutureData {
 		for d := 0; d < days; d++ {
@@ -164,7 +193,7 @@ func GenerateDemoData(days, recordsPerHour int, orgID string, demoFutureData, tr
 				WriteDemoData(start, d, h, recordsPerHour, orgID, trackPath, writer)
 			}
 			count++
-			log.Infof("Finished %d of %d\n", count, days)
+			log.Infof("Finished %d of %d days\n", count, days)
 		}
 		return
 	}
@@ -175,7 +204,7 @@ func GenerateDemoData(days, recordsPerHour int, orgID string, demoFutureData, tr
 			WriteDemoData(start, -d, h, recordsPerHour, orgID, trackPath, writer)
 		}
 		count++
-		log.Infof("Finished %d of %d\n", count, days)
+		log.Infof("Finished %d of %d days\n", count, days)
 	}
 }
 
@@ -184,6 +213,34 @@ func WriteDemoData(start time.Time, d, h, recordsPerHour int, orgID string, trac
 	ts := start.AddDate(0, 0, d)
 	ts = ts.Add(time.Duration(h) * time.Hour)
 	// Generate daily entries
+	var volume int
+	if recordsPerHour > 0 {
+		volume = recordsPerHour
+	} else {
+		volume = randomInRange(300, 500)
+	}
+	timeDifference := 3600 / volume // this is the difference in seconds between each record
+	nextTimestamp := ts             // this is the timestamp of the next record
+	for i := 0; i < volume; i++ {
+		r := GenerateRandomAnalyticRecord(orgID, trackPath)
+		r.Day = nextTimestamp.Day()
+		r.Month = nextTimestamp.Month()
+		r.Year = nextTimestamp.Year()
+		r.Hour = nextTimestamp.Hour()
+		r.TimeStamp = nextTimestamp
+		nextTimestamp = nextTimestamp.Add(time.Second * time.Duration(timeDifference))
+
+		set = append(set, r)
+	}
+
+	writer(set, nil, time.Now(), 10)
+}
+
+// Generate demo data for a specific hour offset
+func WriteDemoDataByHour(start time.Time, hourOffset, recordsPerHour int, orgID string, trackPath bool, writer func([]interface{}, *health.Job, time.Time, int)) {
+	set := []interface{}{}
+	ts := start.Add(time.Duration(hourOffset) * time.Hour)
+	// Generate hourly entries
 	var volume int
 	if recordsPerHour > 0 {
 		volume = recordsPerHour

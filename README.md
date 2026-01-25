@@ -1719,6 +1719,7 @@ You can run Tyk Pump in demo mode, which will generate fake analytics data and s
 - `--demo=<ORG_ID>` - Enables demo mode and sets the organization ID to use for the demo data. **This is required to enable Demo Mode**.
 - `--demo-api=<API_ID>` - Configure the value to be recorded as the `API_ID` in the demo transactions. If this option is not set, the Pump Demo mode will use a random `API_ID`. Note that the same `API_ID` will be used for all transaction logs.
 - `--demo-days=<DAYS>` - Sets the number of days of demo data to generate. Defaults to 30.
+- `--demo-hours=<HOURS>` - Sets the number of hours of demo data to generate. If provided, this flag takes precedence over `--demo-days`. Defaults to 0 (disabled).
 - `--demo-records-per-hour=<RECORDS_PER_HOUR>` - Sets the number of records to generate per hour. The default value is a random number between 300 and 500.
 - `--demo-track-path` - Enables tracking of the request path in the demo data. Defaults to false (disabled). Note that setting `track_all_paths` to `true` in your Pump configuration will override this option.
-- `--demo-future-data` - By default, the demo data is generated for the past X days (configured in `demo-days` flag). This option will generate data for the next X days. Defaults to false (disabled).
+- `--demo-future-data` - By default, the demo data is generated for the past X days/hours (configured in `demo-days` or `demo-hours` flag). This option will generate data for the next X days/hours. Defaults to false (disabled).
