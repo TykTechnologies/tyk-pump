@@ -162,6 +162,12 @@ func (p *DynatracePump) WriteData(ctx context.Context, data []interface{}) error
 	p.log.Debug("Attempting to write ", len(data), " records...")
 
 	var batchBuffer bytes.Buffer
+	var currentBatchCount int
+
+	// Start JSON array for batch mode
+	if p.config.EnableBatch {
+		batchBuffer.WriteByte('[')
+	}
 
 	for _, v := range data {
 		decoded := v.(analytics.AnalyticsRecord)
@@ -252,33 +258,60 @@ func (p *DynatracePump) WriteData(ctx context.Context, data []interface{}) error
 
 		event["timestamp"] = decoded.TimeStamp.UnixMilli()
 
-		data, err := json.Marshal(event)
+		eventData, err := json.Marshal(event)
 		if err != nil {
 			return err
 		}
 
+		// Check if single event exceeds max content length
+		var payloadSize int
 		if p.config.EnableBatch {
-			//if we're batching and the len of our data is already bigger than max_content_length, we send the data and reset the buffer
-			if batchBuffer.Len()+len(data) > dynatraceMaxContentLength {
+			payloadSize = 2 // for JSON array brackets
+		}
+		if len(eventData)+payloadSize > dynatraceMaxContentLength {
+			p.log.Warnf("Event with timestamp '%s' too large (%d bytes), skipping", decoded.TimeStamp, len(eventData))
+			continue
+		}
+
+		if p.config.EnableBatch {
+			// Calculate size including comma separator and closing bracket ']'
+			payloadSize = len(eventData) + 2
+
+			// If adding this event would exceed max content length, send current batch first
+			if batchBuffer.Len()+payloadSize > dynatraceMaxContentLength {
+				// Close the current array and send
+				batchBuffer.WriteByte(']')
+				p.log.Debugf("Mid run - sending %d batch records...", currentBatchCount+1)
 				if err := p.send(ctx, batchBuffer.Bytes()); err != nil {
 					return err
 				}
+				// Reset for next batch
 				batchBuffer.Reset()
+				batchBuffer.WriteByte('[')
+				currentBatchCount = 0
 			}
-			batchBuffer.Write(data)
+
+			// Add comma separator if not the first event in this batch
+			if currentBatchCount > 0 {
+				batchBuffer.WriteByte(',')
+			}
+			batchBuffer.Write(eventData)
+			currentBatchCount++
 		} else {
-			if err := p.send(ctx, data); err != nil {
+			// For non-batch mode, API accepts single JSON object (does not need to be in array)
+			if err := p.send(ctx, eventData); err != nil {
 				return err
 			}
 		}
 	}
 
-	//this if is for data remaining in the buffer when len(buffer) is lower than max_content_length
-	if p.config.EnableBatch && batchBuffer.Len() > 0 {
+	// Send remaining data in batch buffer
+	if p.config.EnableBatch && currentBatchCount > 0 {
+		batchBuffer.WriteByte(']')
+		p.log.Debugf("End of run - sending %d batch records...", currentBatchCount)
 		if err := p.send(ctx, batchBuffer.Bytes()); err != nil {
 			return err
 		}
-		batchBuffer.Reset()
 	}
 
 	p.log.Info("Purged ", len(data), " records...")
