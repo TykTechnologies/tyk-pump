@@ -79,6 +79,12 @@ type DynatracePumpConfig struct {
 	// "http.client_ip", "api_key", "api_version", "api_name", "api_id", "org_id", "oauth_id",
 	// "raw_request", "request_time", "raw_response"]`.
 	Fields []string `json:"fields" mapstructure:"fields"`
+	// Configures a list of key/value pairs to attach to events.
+	// When configuring it via environment variable, the expected value
+	// is a comma separated list of key-value pairs delimited with a colon.
+	// Example: `TYK_PMP_PUMPS_DYNATRACE_META_PROPERTIES=key1:value1,key2:/value2`
+	// Produces: `{"key1": "value1", "key2": "/value2"}`
+	Properties map[string]string `json:"properties" mapstructure:"properties"`
 	// Choose which tags to be ignored by the Dynatrace Pump. Keep in mind that the tag name and value
 	// are hyphenated. Default value is `[]`.
 	IgnoreTagPrefixList []string `json:"ignore_tag_prefix_list" mapstructure:"ignore_tag_prefix_list"`
@@ -233,6 +239,14 @@ func (p *DynatracePump) WriteData(ctx context.Context, data []interface{}) error
 				"raw_request":      decoded.RawRequest,
 				"request_time":     decoded.RequestTime,
 				"raw_response":     decoded.RawResponse,
+			}
+		}
+
+		// Populate custom properties
+		if len(p.config.Properties) > 0 {
+			// Loop through all fields set in the pump config
+			for key, value := range p.config.Properties {
+				event[key] = value
 			}
 		}
 
