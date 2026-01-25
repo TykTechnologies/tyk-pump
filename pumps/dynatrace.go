@@ -26,12 +26,11 @@ const (
 	dynatracePumpPrefix = "dynatrace-pump"
 	dynatracePumpName = "Dynatrace Pump"
 	dynatraceDefaultEnv = PUMPS_ENV_PREFIX + "_DYNATRACE" + PUMPS_ENV_META_PREFIX
+	dynatraceMaxContentLength = 10485760 // 10 MB - https://docs.dynatrace.com/docs/analyze-explore-automate/logs/lma-limits
 )
 
 var (
 	dynatraceErrInvalidSettings = errors.New("Empty settings")
-	//By default in dynatrace ~ 800 MB. https://docs.dynatrace.com/Documentation/Dynatrace/latest/Admin/Limitsconf#.5Bhttp_input.5D
-	dynatraceMaxContentLength = 838860800
 )
 
 // DynatraceClient contains Dynatrace client methods.
@@ -86,12 +85,7 @@ type DynatracePumpConfig struct {
 	// If this is set to `true`, pump is going to send the analytics records in batch to Dynatrace.
 	// Default value is `false`.
 	EnableBatch bool `json:"enable_batch" mapstructure:"enable_batch"`
-	// Max content length in bytes to be sent in batch requests. It should match the
-	// `max_content_length` configured in Dynatrace. If the purged analytics records size don't reach
-	// the amount of bytes, they're send anyways in each `purge_loop`. Default value is 838860800
-	// (~ 800 MB), the same default value as Dynatrace config.
-	BatchMaxContentLength int `json:"batch_max_content_length" mapstructure:"batch_max_content_length"`
-	// MaxRetries represents the maximum amount of retries to attempt if failed to send requests to dynatrace HEC.
+	// MaxRetries represents the maximum amount of retries to attempt if failed to send requests to Dynatrace API.
 	// Default value is `0`
 	MaxRetries uint64 `json:"max_retries" mapstructure:"max_retries"`
 }
@@ -127,10 +121,6 @@ func (p *DynatracePump) Init(config interface{}) error {
 	p.client, err = NewDynatraceClient(p.config.ApiToken, p.config.EndpointUrl, p.config.SSLInsecureSkipVerify, p.config.SSLCertFile, p.config.SSLKeyFile, p.config.SSLServerName)
 	if err != nil {
 		return err
-	}
-
-	if p.config.EnableBatch && p.config.BatchMaxContentLength == 0 {
-		p.config.BatchMaxContentLength = dynatraceMaxContentLength
 	}
 
 	if p.config.MaxRetries > 0 {
@@ -257,7 +247,7 @@ func (p *DynatracePump) WriteData(ctx context.Context, data []interface{}) error
 
 		if p.config.EnableBatch {
 			//if we're batching and the len of our data is already bigger than max_content_length, we send the data and reset the buffer
-			if batchBuffer.Len()+len(data) > p.config.BatchMaxContentLength {
+			if batchBuffer.Len()+len(data) > dynatraceMaxContentLength {
 				if err := p.send(ctx, batchBuffer.Bytes()); err != nil {
 					return err
 				}
@@ -326,6 +316,7 @@ func (p *DynatracePump) send(ctx context.Context, data []byte) error {
 	}
 	req = req.WithContext(ctx)
 	req.Header.Add(dynatraceAuthHeaderName, dynatraceAuthHeaderPrefix+p.client.Token)
+	req.Header.Add("Content-Type", "application/json; charset=utf-8")
 
 	p.log.Debugf("Sending %d bytes to dynatrace", len(data))
 	return p.client.retry.Send(req)
