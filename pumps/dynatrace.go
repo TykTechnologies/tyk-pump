@@ -235,13 +235,10 @@ func (p *DynatracePump) WriteData(ctx context.Context, data []interface{}) error
 				"raw_response":     decoded.RawResponse,
 			}
 		}
-		eventWrap := struct {
-			Message string                    `json:"message"`
-			Time  int64                       `json:"timestamp"`
-			Properties map[string]interface{} `json:"properties"`
-		}{Message: decoded.RawPath, Time: decoded.TimeStamp.UnixMilli(), Properties: event}
 
-		data, err := json.Marshal(eventWrap)
+		event["timestamp"] = decoded.TimeStamp.UnixMilli()
+
+		data, err := json.Marshal(event)
 		if err != nil {
 			return err
 		}
