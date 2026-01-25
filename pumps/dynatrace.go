@@ -236,9 +236,10 @@ func (p *DynatracePump) WriteData(ctx context.Context, data []interface{}) error
 			}
 		}
 		eventWrap := struct {
-			Time  int64                    `json:"timestamp"`
-			Content map[string]interface{} `json:"content"`
-		}{Time: decoded.TimeStamp.UnixMilli(), Content: event}
+			Message string                    `json:"message"`
+			Time  int64                       `json:"timestamp"`
+			Properties map[string]interface{} `json:"properties"`
+		}{Message: decoded.RawPath, Time: decoded.TimeStamp.UnixMilli(), Properties: event}
 
 		data, err := json.Marshal(eventWrap)
 		if err != nil {
