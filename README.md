@@ -949,7 +949,7 @@ Configuration options:
 - `"new_bucket_config"` - If `"create_missing_bucket"`is true, you can configure the new bucket configuration under `"new_bucket_config"`:
   - `"description"` - Description of the bucket. This is going to be visible in the Influx UI.
   - `"retention_rules"`- This is a slice of retention rules for this bucket. An example of this would be:
-  ```.json
+  ```json
   "retention_rules":[
   {
   "every_seconds":100000,
