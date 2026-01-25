@@ -1153,75 +1153,77 @@ If no credentials are provided, Timestream Pump won't be able to connect.
 ###### JSON / Conf File
 
 ```json
-    "timestream": {
-      "type": "timestream",
-      "meta": {
-        "aws_region": "us-east-1",
-        "timestream_table_name": "tyk-pump-table",
-        "timestream_database_name": "tyk-pump",
-        "write_rate_limit": true,
-        "read_geo_from_request": true,
-        "write_zero_values": false,
-        "dimensions": [
-          "Method",
-          "Host",
-          "Path",
-          "RawPath",
-          "APIKey",
-          "APIVersion",
-          "APIName",
-          "APIID",
-          "OrgID",
-          "OauthID"
-        ],
-        "measures": [
-          "ContentLength",
-          "ResponseCode",
-          "RequestTime",
-          "NetworkStats.OpenConnections",
-          "NetworkStats.ClosedConnection",
-          "NetworkStats.BytesIn",
-          "NetworkStats.BytesOut",
-          "Latency.Total",
-          "Latency.Upstream",
-          "RateLimit.Limit",
-          "Ratelimit.Remaining",
-          "Ratelimit.Reset",
-          "UserAgent",
-          "RawRequest",
-          "RawResponse",
-          "IPAddress",
-          "GeoData.Country.ISOCode",
-          "GeoData.City.Names",
-          "GeoData.Location.TimeZone",
-          "GeoData.City.GeoNameID",
-          "GeoData.Location.Latitude",
-          "GeoData.Location.Longitude"
-        ],
-        "field_name_mappings":{
-          "Path": "path",
-          "APIKey": "api_key",
-          "APIVersion": "module",
-          "APIName": "email",
-          "Method": "method",
-          "APIID": "account",
-          "measure_name": "request_metrics",
-          "time": "time",
-          "ResponseCode": "response_code",
-          "GeoData.Country.ISOCode": "country_code",
-          "Latency.Total": "latency_total",
-          "RawResponseSize": "sesponse_size",
-          "RequestTime": "request_time",
-          "GeoData.City.Names": "city",
-          "Latency.Upstream": "latency_upstream",
-          "UserAgent": "user_agent",
-          "IPAddress": "ip_address",
-          "RateLimit.Limit": "quota_max",
-          "Ratelimit.Remaining": "quota_remaining",
-          "Ratelimit.Reset": "quota_renewal_rate"
-        }
+{
+  "timestream": {
+    "type": "timestream",
+    "meta": {
+      "aws_region": "us-east-1",
+      "timestream_table_name": "tyk-pump-table",
+      "timestream_database_name": "tyk-pump",
+      "write_rate_limit": true,
+      "read_geo_from_request": true,
+      "write_zero_values": false,
+      "dimensions": [
+        "Method",
+        "Host",
+        "Path",
+        "RawPath",
+        "APIKey",
+        "APIVersion",
+        "APIName",
+        "APIID",
+        "OrgID",
+        "OauthID"
+      ],
+      "measures": [
+        "ContentLength",
+        "ResponseCode",
+        "RequestTime",
+        "NetworkStats.OpenConnections",
+        "NetworkStats.ClosedConnection",
+        "NetworkStats.BytesIn",
+        "NetworkStats.BytesOut",
+        "Latency.Total",
+        "Latency.Upstream",
+        "RateLimit.Limit",
+        "Ratelimit.Remaining",
+        "Ratelimit.Reset",
+        "UserAgent",
+        "RawRequest",
+        "RawResponse",
+        "IPAddress",
+        "GeoData.Country.ISOCode",
+        "GeoData.City.Names",
+        "GeoData.Location.TimeZone",
+        "GeoData.City.GeoNameID",
+        "GeoData.Location.Latitude",
+        "GeoData.Location.Longitude"
+      ],
+      "field_name_mappings":{
+        "Path": "path",
+        "APIKey": "api_key",
+        "APIVersion": "module",
+        "APIName": "email",
+        "Method": "method",
+        "APIID": "account",
+        "measure_name": "request_metrics",
+        "time": "time",
+        "ResponseCode": "response_code",
+        "GeoData.Country.ISOCode": "country_code",
+        "Latency.Total": "latency_total",
+        "RawResponseSize": "sesponse_size",
+        "RequestTime": "request_time",
+        "GeoData.City.Names": "city",
+        "Latency.Upstream": "latency_upstream",
+        "UserAgent": "user_agent",
+        "IPAddress": "ip_address",
+        "RateLimit.Limit": "quota_max",
+        "Ratelimit.Remaining": "quota_remaining",
+        "Ratelimit.Reset": "quota_renewal_rate"
       }
-    },
+    }
+  }
+}
 ```
 
 ###### Env Variables
@@ -1259,12 +1261,14 @@ Enable this Pump to have Tyk Pump create or modify a CSV file to track API Analy
 ###### JSON / Conf File
 
 ```
-    "csv": {
-      "type": "csv",
-      "meta": {
-        "csv_dir": "./"
-      }
-    },
+{
+  "csv": {
+    "type": "csv",
+    "meta": {
+      "csv_dir": "./"
+    }
+  }
+}
 ```
 
 ###### Env Variables
@@ -1308,23 +1312,25 @@ If no credentials are provided, SQS Pump won't be able to connect.
 ###### JSON / Conf File
 
 ```json
-    "sqs": {
-      "type": "sqs",
-      "meta": {
-        "log_field_name": "tyk-analytics-record",
-        "format": "json",
-        "aws_queue_name": "access-logs-queue.fifo",
-        "aws_region": "us-east-1",
-        "aws_key": "key",
-        "aws_secret": "secret",
-        "aws_token": "token",
-        "aws_endpoint": "http://aws-endpoint:4566",
-        "aws_message_group_id": "message_group_id",
-        "aws_sqs_batch_limit": 10,
-        "aws_message_id_deduplication_enabled": true,
-        "aws_delay_seconds": 0
-      }
-    },
+{
+  "sqs": {
+    "type": "sqs",
+    "meta": {
+      "log_field_name": "tyk-analytics-record",
+      "format": "json",
+      "aws_queue_name": "access-logs-queue.fifo",
+      "aws_region": "us-east-1",
+      "aws_key": "key",
+      "aws_secret": "secret",
+      "aws_token": "token",
+      "aws_endpoint": "http://aws-endpoint:4566",
+      "aws_message_group_id": "message_group_id",
+      "aws_sqs_batch_limit": 10,
+      "aws_message_id_deduplication_enabled": true,
+      "aws_delay_seconds": 0
+    }
+  }
+}
 ```
 
 ###### Env Variables
@@ -1365,15 +1371,17 @@ We must authenticate ourselves by providing credentials to AWS. This pump uses t
 ###### JSON / Conf File
 
 ```json
-    "kinesis":{
-      "type": "kinesis",
-      "meta": {
-        "stream_name": "my-stream",
-        "region": "eu-west-2",
-        "batch_size": 100,
-        "kms_key_id": "your-kms-key-id"
-      }
-    },
+{
+  "kinesis": {
+    "type": "kinesis",
+    "meta": {
+      "stream_name": "my-stream",
+      "region": "eu-west-2",
+      "batch_size": 100,
+      "kms_key_id": "your-kms-key-id"
+    }
+  }
+}
 ```
 
 ###### Env Variables
@@ -1411,57 +1419,59 @@ Note that this integration is different than sending [Open Telemetry data to Dyn
 ###### JSON / Conf File
 
 ```json
-    "dynatrace": {
-      "type": "dynatrace",
-      "meta": {
-        "api_token": "<token>",
-        "endpoint_url": "https://{your-environment-id}.live.dynatrace.com",
-        "ssl_insecure_skip_verify": false,
-        "ssl_cert_file": "<cert-path>",
-        "ssl_key_file": "<key-path>",
-        "ssl_server_name": "<server-name>",
-        "obfuscate_api_keys": true,
-        "obfuscate_api_keys_length": 10,
-        "enable_batch": true,
-        "max_retries": 2,
-        "fields": [
-          "http.method",
-          "http.host",
-          "http.url",
-          "http.status_code",
-          "http.client_ip",
-          "api_key",
-          "geo.city_name",
-          "geo.country_name",
-          "geo.name",
-          "geo.region_name",
-          "content_length",
-          "user_agent",
-          "api_version",
-          "api_name",
-          "api_id",
-          "org_id",
-          "oauth_id",
-          "raw_request",
-          "request_time",
-          "raw_response",
-          "network",
-          "latency",
-          "tags",
-          "alias",
-          "track_path"
-        ],
-        "properties": {
-          "dt.http.application_id": "tyk-pump",
-          "dt.host_group.id": "my-host-group-id"
-        },
-        "ignore_tag_prefix_list": [
-          "key-",
-          "org-",
-          "api-"
-        ]
-      }
-    },
+{
+  "dynatrace": {
+    "type": "dynatrace",
+    "meta": {
+      "api_token": "<token>",
+      "endpoint_url": "https://{your-environment-id}.live.dynatrace.com",
+      "ssl_insecure_skip_verify": false,
+      "ssl_cert_file": "<cert-path>",
+      "ssl_key_file": "<key-path>",
+      "ssl_server_name": "<server-name>",
+      "obfuscate_api_keys": true,
+      "obfuscate_api_keys_length": 10,
+      "enable_batch": true,
+      "max_retries": 2,
+      "fields": [
+        "http.method",
+        "http.host",
+        "http.url",
+        "http.status_code",
+        "http.client_ip",
+        "api_key",
+        "geo.city_name",
+        "geo.country_name",
+        "geo.name",
+        "geo.region_name",
+        "content_length",
+        "user_agent",
+        "api_version",
+        "api_name",
+        "api_id",
+        "org_id",
+        "oauth_id",
+        "raw_request",
+        "request_time",
+        "raw_response",
+        "network",
+        "latency",
+        "tags",
+        "alias",
+        "track_path"
+      ],
+      "properties": {
+        "dt.http.application_id": "tyk-pump",
+        "dt.host_group.id": "my-host-group-id"
+      },
+      "ignore_tag_prefix_list": [
+        "key-",
+        "org-",
+        "api-"
+      ]
+    }
+  }
+}
 ```
 
 ###### Env Variables
@@ -1488,13 +1498,15 @@ The following configurations can be added to any Pump. Keep reading for an examp
 You made add the following config field to each pump called `filters` and its structure is the following:
 
 ```json
-"filters":{
-  "api_ids":[],
-  "org_ids":[],
-  "response_codes":[],
-  "skip_api_ids":[],
-  "skip_org_ids":[],
-  "skip_response_codes":[]
+{
+  "filters": {
+    "api_ids": [],
+    "org_ids": [],
+    "response_codes": [],
+    "skip_api_ids": [],
+    "skip_org_ids": [],
+    "skip_response_codes": []
+  }
 }
 ```
 
@@ -1507,14 +1519,16 @@ Here we see how we can take a CSV Pump, and add a filters section to it:
 ###### JSON / Conf file Example
 
 ```json
-"csv": {
- "type": "csv",
- "filters": {
-   "api_ids": ["123","789"]
- },
- "meta": {
-   "csv_dir": "./bar"
- }
+{
+  "csv": {
+    "type": "csv",
+    "filters": {
+      "api_ids": ["123","789"]
+    },
+    "meta": {
+      "csv_dir": "./bar"
+    }
+  }
 }
 ```
 
@@ -1532,12 +1546,14 @@ You can configure a different timeout for each pump with the configuration optio
 In Mongo pumps, the default value is 10 seconds. If you want to disable the timeout, you can set the value to 0. Take into account that if you disable the timeout, the pump will wait for the writing operation forever, and it could block the pump execution.
 
 ```json
-"mongo": {
-  "type": "mongo",
-  "timeout": 5,
-  "meta": {
-    "collection_name": "tyk_analytics",
-    "mongo_url": "mongodb://username:password@{hostname:port}/{db_name}"
+{
+  "mongo": {
+    "type": "mongo",
+    "timeout": 5,
+    "meta": {
+      "collection_name": "tyk_analytics",
+      "mongo_url": "mongodb://username:password@{hostname:port}/{db_name}"
+    }
   }
 }
 ```
@@ -1563,11 +1579,13 @@ In case that you have a configured timeout, but it still takes more seconds to w
 This can also be set at a pump level. For example:
 
 ```json
-"csv": {
-  "type": "csv",
-  "max_record_size":1000,
-  "meta": {
-    "csv_dir": "./"
+{
+  "csv": {
+    "type": "csv",
+    "max_record_size": 1000,
+    "meta": {
+      "csv_dir": "./"
+    }
   }
 }
 ```
@@ -1580,12 +1598,14 @@ The `driver` setting defines the driver type to use for Mongo Pumps. It can be o
 - `mgo`: Uses the mgo driver. This driver is deprecated. This driver supports Mongo versions lower or equal to v4. You can get more information about this driver [here](https://github.com/go-mgo/mgo)
 
 ```json
-"mongo": {
-  "type": "mongo",
-  "meta": {
-    "mongo_url": "mongodb://tyk-mongo:27017/tyk_analytics",
-    "collection_name": "tyk_analytics",
-    "driver": "mongo-go"
+{
+  "mongo": {
+    "type": "mongo",
+    "meta": {
+      "mongo_url": "mongodb://tyk-mongo:27017/tyk_analytics",
+      "collection_name": "tyk_analytics",
+      "driver": "mongo-go"
+    }
   }
 }
 ```
@@ -1596,13 +1616,15 @@ The `driver` setting defines the driver type to use for Mongo Pumps. It can be o
 You can get more info from the [official MongoDB driver docs](https://www.mongodb.com/docs/drivers/go/current/fundamentals/connection/#direct-connection).
 
 ```json
-"mongo": {
-  "type": "mongo",
-  "meta": {
-    "mongo_url": "mongodb://tyk-mongo:27017/tyk_analytics",
-    "collection_name": "tyk_analytics",
-    "driver": "mongo-go",
-    "mongo_direct_connection": true
+{
+  "mongo": {
+    "type": "mongo",
+    "meta": {
+      "mongo_url": "mongodb://tyk-mongo:27017/tyk_analytics",
+      "collection_name": "tyk_analytics",
+      "driver": "mongo-go",
+      "mongo_direct_connection": true
+    }
   }
 }
 ```
@@ -1613,12 +1635,14 @@ You can get more info from the [official MongoDB driver docs](https://www.mongod
 Fields must be written using JSON tags. For example:
 
 ```json
-"csv": {
- "type": "csv",
- "ignore_fields":["api_id","api_version"],
- "meta": {
-   "csv_dir": "./bar"
- }
+{
+  "csv": {
+    "type": "csv",
+    "ignore_fields":["api_id","api_version"],
+    "meta": {
+      "csv_dir": "./bar"
+    }
+  }
 }
 ```
 
@@ -1628,12 +1652,14 @@ Fields must be written using JSON tags. For example:
 This setting is not available for Mongo and SQL pumps, since dashboard will decode the raw request/response.
 
 ```json
-"csv": {
-  "type": "csv",
-  "raw_request_decoded": true,
-  "raw_response_decoded": true,
-  "meta": {
-    "csv_dir": "./"
+{
+  "csv": {
+    "type": "csv",
+    "raw_request_decoded": true,
+    "raw_response_decoded": true,
+    "meta": {
+      "csv_dir": "./"
+    }
   }
 }
 ```
