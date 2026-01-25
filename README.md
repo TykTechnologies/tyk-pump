@@ -144,6 +144,7 @@ TYK_PMP_DONTPURGEUPTIMEDATA=true
 This is the Tyk Pump's primary database which it scrapes Tyk Gateway analytics from. Normally this is `redis`.
 
 ```json
+{
   "analytics_storage_config": {
     "type": "redis",
     "host": "localhost",
@@ -157,7 +158,8 @@ This is the Tyk Pump's primary database which it scrapes Tyk Gateway analytics f
     "enable_cluster": false,
     "redis_use_ssl": false,
     "redis_ssl_insecure_skip_verify": false
-  },
+  }
+}
 ```
 
 `redis_use_ssl` - Setting this to true to use SSL when connecting to Redis
@@ -187,7 +189,7 @@ You can configure the health check endpoint and port for the Tyk Pump:
 
 This returns a HTTP 200 OK response if the Pump is running.
 
-```
+```json
 {"status": "ok"}
 ```
 
@@ -640,21 +642,23 @@ From Pump 1.6+ it's possible to add custom prometheus metrics using the `custom_
 For example:
 
 ```json
-"prometheus": {
-  "type": "prometheus",
-	"meta": {
-		"listen_address": "localhost:9090",
-		"path": "/metrics",
-		"custom_metrics":[
-      {
-        "name":"tyk_custom_http_status_per_api_name",
-        "description":"This is a custom counter",
-        "metric_type":"counter",
-        "labels":["response_code","api_name"]
-      }
-    ]
-	}
-},
+{
+  "prometheus": {
+    "type": "prometheus",
+    "meta": {
+      "listen_address": "localhost:9090",
+      "path": "/metrics",
+      "custom_metrics":[
+        {
+          "name":"tyk_custom_http_status_per_api_name",
+          "description":"This is a custom counter",
+          "metric_type":"counter",
+          "labels":["response_code","api_name"]
+        }
+      ]
+    }
+  }
+}
 ```
 
 This will create a metric for HTTP status code and API name.
@@ -719,29 +723,31 @@ If no tag is specified the fallback behavior is to use the below tags:
 Note that this configuration can generate significant charges due to the unbound nature of the `path` tag.
 
 ```json
-"dogstatsd": {
-  "type": "dogstatsd",
-  "meta": {
-    "address": "localhost:8125",
-    "namespace": "pump",
-    "async_uds": true,
-    "async_uds_write_timeout_seconds": 2,
-    "buffered": true,
-    "buffered_max_messages": 32,
-    "sample_rate": 0.5,
-    "tags": [
-      "method",
-      "response_code",
-      "api_version",
-      "api_name",
-      "api_id",
-      "org_id",
-      "tracked",
-      "path",
-      "oauth_id"
-    ]
+{
+  "dogstatsd": {
+    "type": "dogstatsd",
+    "meta": {
+      "address": "localhost:8125",
+      "namespace": "pump",
+      "async_uds": true,
+      "async_uds_write_timeout_seconds": 2,
+      "buffered": true,
+      "buffered_max_messages": 32,
+      "sample_rate": 0.5,
+      "tags": [
+        "method",
+        "response_code",
+        "api_version",
+        "api_name",
+        "api_id",
+        "org_id",
+        "tracked",
+        "path",
+        "oauth_id"
+      ]
+    }
   }
-},
+}
 ```
 
 On startup, you should see the loaded configs when initializing the dogstatsd pump
@@ -960,12 +966,14 @@ Configuration options:
   - `"description"` - Description of the bucket. This is going to be visible in the Influx UI.
   - `"retention_rules"`- This is a slice of retention rules for this bucket. An example of this would be:
   ```json
-  "retention_rules":[
   {
-  "every_seconds":100000,
-  "type":"expires"
+    "retention_rules": [
+      {
+        "every_seconds":100000,
+        "type":"expires"
+      }
+    ]
   }
-  ]
   ```
   which would mean that the data in the bucket expires every 100000 seconds.
 - `"token"` - Influx DB Auth token
@@ -1031,14 +1039,17 @@ Supported in Tyk Pump v1.0.0+
 When working with FluentD, you should provide a [FluentD Parser](https://docs.fluentd.org/input/syslog) based on the OS you are using so that FluentD can correctly read the logs
 
 ```json
-"syslog": {
-  "name": "syslog",
-  "meta": {
-    "transport": "udp",
-    "network_addr": "localhost:5140",
-    "log_level": 6,
-    "tag": "syslog-pump"
+{
+  "syslog": {
+    "name": "syslog",
+    "meta": {
+      "transport": "udp",
+      "network_addr": "localhost:5140",
+      "log_level": 6,
+      "tag": "syslog-pump"
+    }
   }
+}
 ```
 
 ## Stdout
