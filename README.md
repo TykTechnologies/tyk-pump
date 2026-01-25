@@ -66,8 +66,8 @@ The table below provides details on the fields within each `tyk_analytics` recor
 - [Kafka](#kafka-config)
 - [Stdout](#stdout) (i.e. for use by Datadog logging agent in Kubernetes)
 - [Timestream](#timestream-config)
-- [AWS SQS](#SQS-config)
-- [AWS Kinesis](#Kinesis-config)
+- [AWS SQS](#sqs-config)
+- [AWS Kinesis](#kinesis-config)
 - [Dynatrace](#dynatrace-config)
 
 # Configuration:
@@ -78,7 +78,7 @@ This will be your base config. We will then add 1 or more Pumps based off our se
 
 Create a `pump.conf` file:
 
-```.json
+```json
 {
   "analytics_storage_type": "redis",
   "analytics_storage_config": {
@@ -316,7 +316,7 @@ The only two fields necessary in the pump cofiguration are:
 
 ###### JSON / Conf File Example
 
-```.json
+```json
 
 "resurface": {
     "type": "resurfaceio",
@@ -390,7 +390,7 @@ Available Mongo instances are: Standard Mongo, DocumentDB (AWS), CosmosDB (Azure
 
 ###### JSON / Conf File
 
-```.json
+```json
 {
   ...
   "pumps": {
@@ -502,7 +502,7 @@ A sample config looks like this:
 ```
 
 `table_sharding` - This determines how the sql tables are created, if this is set to true, a new table is created for each day of records for the graph data.
-The name format for each table is <table*name>*<date>. Defaults to false.
+The name format for each table is `<table*name>*<date>`. Defaults to false.
 
 ## Elasticsearch Config
 
@@ -666,7 +666,7 @@ The available values are: `["host","method", "path", "response_code", "api_key",
 
 ###### JSON / Conf File
 
-```.json
+```json
 {
     ...
     "pumps": {
@@ -716,7 +716,7 @@ If no tag is specified the fallback behavior is to use the below tags:
 
 Note that this configuration can generate significant charges due to the unbound nature of the `path` tag.
 
-```.json
+```json
 "dogstatsd": {
   "type": "dogstatsd",
   "meta": {
@@ -859,7 +859,7 @@ Example simplest configuration just needs the token for sending data to your log
 
 ###### JSON / Conf File
 
-```.json
+```json
 "logzio": {
       "type": "logzio",
       "meta": {
@@ -899,7 +899,7 @@ More advanced fields:
 
 ###### JSON / Conf File
 
-```.json
+```json
 {
     ...
     "pumps": {
@@ -967,7 +967,7 @@ Configuration options:
 
 ###### JSON / Conf File
 
-```.json
+```json
 "influx2": {
     "type": "influx2",
     "meta": {
@@ -1022,7 +1022,7 @@ Supported in Tyk Pump v1.0.0+
 
 When working with FluentD, you should provide a [FluentD Parser](https://docs.fluentd.org/input/syslog) based on the OS you are using so that FluentD can correctly read the logs
 
-```.json
+```json
 "syslog": {
   "name": "syslog",
   "meta": {
