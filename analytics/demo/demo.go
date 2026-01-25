@@ -209,38 +209,18 @@ func GenerateDemoData(days, hours, recordsPerHour int, orgID string, demoFutureD
 }
 
 func WriteDemoData(start time.Time, d, h, recordsPerHour int, orgID string, trackPath bool, writer func([]interface{}, *health.Job, time.Time, int)) {
-	set := []interface{}{}
-	ts := start.AddDate(0, 0, d)
-	ts = ts.Add(time.Duration(h) * time.Hour)
-	// Generate daily entries
-	var volume int
-	if recordsPerHour > 0 {
-		volume = recordsPerHour
-	} else {
-		volume = randomInRange(300, 500)
-	}
-	timeDifference := 3600 / volume // this is the difference in seconds between each record
-	nextTimestamp := ts             // this is the timestamp of the next record
-	for i := 0; i < volume; i++ {
-		r := GenerateRandomAnalyticRecord(orgID, trackPath)
-		r.Day = nextTimestamp.Day()
-		r.Month = nextTimestamp.Month()
-		r.Year = nextTimestamp.Year()
-		r.Hour = nextTimestamp.Hour()
-		r.TimeStamp = nextTimestamp
-		nextTimestamp = nextTimestamp.Add(time.Second * time.Duration(timeDifference))
-
-		set = append(set, r)
-	}
-
-	writer(set, nil, time.Now(), 10)
+	ts := start.AddDate(0, 0, d).Add(time.Duration(h) * time.Hour)
+	writeAnalyticsDataForTimestamp(ts, recordsPerHour, orgID, trackPath, writer)
 }
 
 // Generate demo data for a specific hour offset
 func WriteDemoDataByHour(start time.Time, hourOffset, recordsPerHour int, orgID string, trackPath bool, writer func([]interface{}, *health.Job, time.Time, int)) {
-	set := []interface{}{}
 	ts := start.Add(time.Duration(hourOffset) * time.Hour)
-	// Generate hourly entries
+	writeAnalyticsDataForTimestamp(ts, recordsPerHour, orgID, trackPath, writer)
+}
+
+func writeAnalyticsDataForTimestamp(ts time.Time, recordsPerHour int, orgID string, trackPath bool, writer func([]interface{}, *health.Job, time.Time, int)) {
+	set := []interface{}{}
 	var volume int
 	if recordsPerHour > 0 {
 		volume = recordsPerHour
