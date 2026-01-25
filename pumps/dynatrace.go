@@ -79,7 +79,7 @@ type DynatracePumpConfig struct {
 	// "http.client_ip", "api_key", "api_version", "api_name", "api_id", "org_id", "oauth_id",
 	// "raw_request", "request_time", "raw_response"]`.
 	Fields []string `json:"fields" mapstructure:"fields"`
-	// Configures a list of key/value pairs to attach to events.
+	// Configures a list of additional key/value pairs to attach to events.
 	// When configuring it via environment variable, the expected value
 	// is a comma separated list of key-value pairs delimited with a colon.
 	// Example: `TYK_PMP_PUMPS_DYNATRACE_META_PROPERTIES=key1:value1,key2:/value2`

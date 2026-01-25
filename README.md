@@ -1392,7 +1392,95 @@ TYK_PMP_PUMPS_KINESIS_META_KMSKEYID=your-kms-key-id
 
 ## Dynatrace Config
 
-TBD
+Dynatrace is a software intelligence platform that provides application performance management (APM). This pump is for sending events to Dynatrace Logs via the [Log Ingestion API](https://docs.dynatrace.com/docs/analyze-explore-automate/logs/lma-log-ingestion/lma-log-ingestion-via-api).
+
+Note that this integration is different than sending [Open Telemetry data to Dynatrace](https://tyk.io/docs/api-management/logs-metrics#opentelemetry).
+
+- `api_token`: API Token - must have 'Ingest logs' scope.
+- `endpoint_url`: Endpoint the Pump will send analytics too. Should look something like: `https://{your-environment-id}.live.dynatrace.com` or `https://{your-activegate-domain}:9999/e/{your-environment-id}`
+
+- `ssl_insecure_skip_verify`: Controls whether the pump client verifies the Dynatrace server's certificate chain and host name.
+- `ssl_cert_file`: SSL cert file location.
+- `ssl_key_file`: SSL cert key location.
+- `ssl_server_name`: SSL Server name used in the TLS connection.
+- `obfuscate_api_keys`: (optional) Controls whether the pump client should hide the API key. In case you still need substring of the value, check the next option. Type: Boolean. Default value is `false`.
+- `obfuscate_api_keys_length`: (optional) Define the number of the characters from the end of the API key. The `obfuscate_api_keys` should be set to `true`. Type: Integer. Default value is `0`.
+- `fields`: (optional) Define which Analytics fields should participate in the Dynatrace event. Check the available fields in the example below. Type: String Array `[] string`. Default value is `["http.method", "http.url", "http.status_code", "http.client_ip", "api_key", "api_version", "api_name", "api_id", "org_id", "oauth_id", "raw_request", "request_time", "raw_response"]`
+- `properties`: (optional) Configures a list of additional key/value pairs to attach to events. Type: Map `map[string]string`. Default value is `{}`.
+- `ignore_tag_prefix_list`: (optional) Choose which tags to be ignored by the Dynatrace Pump. Keep in mind that the tag name and value are hyphenated. Type: String Array `[] string`. Default value is `[]`
+- `enable_batch`: If this is set to `true`, pump is going to send the analytics records in batch to Dynatrace. Type: Boolean. Default value is `false`.
+- `max_retries`: Max number of retries if failed to send requests to Dynatrace API. Default value is `0` (no retries after failure). Connections, network, timeouts, temporary, too many requests and internal server errors are all considered retryable.
+
+###### JSON / Conf File
+
+```json
+    "dynatrace": {
+      "type": "dynatrace",
+      "meta": {
+        "api_token": "<token>",
+        "endpoint_url": "https://{your-environment-id}.live.dynatrace.com",
+        "ssl_insecure_skip_verify": false,
+        "ssl_cert_file": "<cert-path>",
+        "ssl_key_file": "<key-path>",
+        "ssl_server_name": "<server-name>",
+        "obfuscate_api_keys": true,
+        "obfuscate_api_keys_length": 10,
+        "enable_batch": true,
+        "max_retries": 2,
+        "fields": [
+          "http.method",
+          "http.host",
+          "http.url",
+          "http.status_code",
+          "http.client_ip",
+          "api_key",
+          "geo.city_name",
+          "geo.country_name",
+          "geo.name",
+          "geo.region_name",
+          "content_length",
+          "user_agent",
+          "api_version",
+          "api_name",
+          "api_id",
+          "org_id",
+          "oauth_id",
+          "raw_request",
+          "request_time",
+          "raw_response",
+          "network",
+          "latency",
+          "tags",
+          "alias",
+          "track_path"
+        ],
+        "properties": {
+          "dt.http.application_id": "tyk-pump",
+          "dt.host_group.id": "my-host-group-id"
+        },
+        "ignore_tag_prefix_list": [
+          "key-",
+          "org-",
+          "api-"
+        ]
+      }
+    },
+```
+
+###### Env Variables
+
+```
+TYK_PMP_PUMPS_DYNATRACE_TYPE=dynatrace
+TYK_PMP_PUMPS_DYNATRACE_META_APITOKEN="{TOKEN}"
+TYK_PMP_PUMPS_DYNATRACE_META_ENDPOINTURL="https://{your-environment-id}.live.dynatrace.com"
+TYK_PMP_PUMPS_DYNATRACE_META_SSLINSECURESKIPVERIFY=false
+TYK_PMP_PUMPS_DYNATRACE_META_SSLCERTFILE="{CERT-PATH}"
+TYK_PMP_PUMPS_DYNATRACE_META_SSLKEYFILE="{KEY-PATH}"
+TYK_PMP_PUMPS_DYNATRACE_META_SSLSERVERNAME="{SERVER-NAME}"
+TYK_PMP_PUMPS_DYNATRACE_META_ENABLEBATCH=true
+TYK_PMP_PUMPS_DYNATRACE_META_MAXRETRIES=2
+TYK_PMP_PUMPS_DYNATRACE_META_PROPERTIES=dt.http.application_id:tyk-pump,dt.host_group.id:my-host-group-id
+```
 
 # Base Pump Configurations
 
