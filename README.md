@@ -898,25 +898,26 @@ More advanced fields:
 
 ```json
 {
-    "pumps": {
-      "kafka": {
+  "pumps": {
+    "kafka": {
       "type": "kafka",
       "meta": {
         "broker": [
-            "localhost:9092"
+          "localhost:9092"
         ],
-	"topic": "tyk-pump",
+        "topic": "tyk-pump",
         "use_ssl": true,
         "ssl_insecure_skip_verify": false,
         "client_id": "tyk-pump",
         "timeout": 60,
         "compressed": true,
         "meta_data": {
-            "key": "value"
+          "key": "value"
         },
         "batch_bytes": 1048576
       }
     }
+  }
 }
 ```
 
