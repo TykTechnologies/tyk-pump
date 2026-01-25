@@ -55,7 +55,7 @@ type DynatracePumpConfig struct {
 	// The prefix for the environment variables that will be used to override the configuration.
 	// Defaults to `TYK_PMP_PUMPS_DYNATRACE_META`
 	EnvPrefix string `mapstructure:"meta_env_prefix"`
-	// API Token.
+	// API Token - must have 'Ingest logs' scope.
 	ApiToken string `json:"api_token" mapstructure:"api_token"`
 	// Endpoint the Pump will send analytics too. Should look something like:
 	// `https://{your-environment-id}.live.dynatrace.com` or `https://{your-activegate-domain}:9999/e/{your-environment-id}`.
