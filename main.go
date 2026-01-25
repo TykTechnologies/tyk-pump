@@ -498,7 +498,7 @@ func main() {
 	initialisePumps()
 	if *demoMode != "" {
 		log.Info("BUILDING DEMO DATA AND EXITING...")
-		log.Warning("Starting from date: ", time.Now().AddDate(0, 0, -30))
+		log.Warning("Starting from date: ", time.Now().AddDate(0, 0, -*demoDays))
 		demo.DemoInit(*demoMode, *demoApiMode, *demoApiVersionMode)
 		demo.GenerateDemoData(*demoDays, *demoRecordsPerHour, *demoMode, *demoFutureData, *demoTrackPath, writeToPumps)
 		return
