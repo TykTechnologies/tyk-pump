@@ -412,6 +412,20 @@ func TestDynatraceObfuscateAPIKeys(t *testing.T) {
 	}
 
 	assert.Equal(t, 1, len(handler.responses))
+
+	// Verify the API key was obfuscated
+	var event map[string]interface{}
+	err := json.Unmarshal(handler.responses[0].Body, &event)
+	if err != nil {
+		t.Fatal("Failed to unmarshal event body:", err)
+	}
+
+	// Check that api_key field is present and obfuscated
+	assert.Contains(t, event, "api_key")
+	obfuscatedKey, ok := event["api_key"].(string)
+	assert.True(t, ok, "api_key should be a string")
+
+	assert.Equal(t, "****7890", obfuscatedKey, "API key should be obfuscated showing only last 4 characters")
 }
 
 func TestDynatraceCustomFields(t *testing.T) {
@@ -509,6 +523,27 @@ func TestDynatraceCustomProperties(t *testing.T) {
 	}
 
 	assert.Equal(t, 1, len(handler.responses))
+
+	// Verify the custom properties are present in the event
+	var event map[string]interface{}
+	err := json.Unmarshal(handler.responses[0].Body, &event)
+	if err != nil {
+		t.Fatal("Failed to unmarshal event body:", err)
+	}
+
+	// Check that custom properties are present with correct values
+	assert.Contains(t, event, "environment")
+	assert.Equal(t, "production", event["environment"])
+	assert.Contains(t, event, "region")
+	assert.Equal(t, "us-east-1", event["region"])
+
+	// Verify standard fields are also present
+	assert.Contains(t, event, "http.method")
+	assert.Equal(t, "POST", event["http.method"])
+	assert.Contains(t, event, "http.url")
+	assert.Equal(t, "/test-path", event["http.url"])
+	assert.Contains(t, event, "api_id")
+	assert.Equal(t, "123", event["api_id"])
 }
 
 func TestDynatraceGetName(t *testing.T) {
