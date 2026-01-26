@@ -249,6 +249,7 @@ func GenerateRandomAnalyticRecord(orgID string, trackPath bool) analytics.Analyt
 	api, apiID := randomAPI()
 	ts := time.Now()
 	r := analytics.AnalyticsRecord{
+		Host:          "www.tyk-test.com:8080",
 		Method:        randomMethod(),
 		Path:          p,
 		RawPath:       p,
