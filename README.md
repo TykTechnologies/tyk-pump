@@ -1427,7 +1427,7 @@ TYK_PMP_PUMPS_KINESIS_META_KMSKEYID=your-kms-key-id
 
 Dynatrace is a software intelligence platform that provides application performance management (APM). This pump is for sending events to Dynatrace Logs via the [Log Ingestion API](https://docs.dynatrace.com/docs/analyze-explore-automate/logs/lma-log-ingestion/lma-log-ingestion-via-api).
 
-Note that this integration is different than sending [Open Telemetry data to Dynatrace](https://tyk.io/docs/api-management/logs-metrics#opentelemetry).
+Note that this integration is different than sending [Open Telemetry data to Dynatrace](https://tyk.io/docs/api-management/logs-metrics#opentelemetry), as more detail is provided in Tyk Pump as compared to OTeL.
 
 - `api_token`: API Token - must have 'Ingest logs' scope.
 - `endpoint_url`: Endpoint the Pump will send analytics too. Should look something like: `https://{your-environment-id}.live.dynatrace.com` or `https://{your-activegate-domain}:9999/e/{your-environment-id}`
