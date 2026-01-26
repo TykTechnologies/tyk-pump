@@ -1442,6 +1442,7 @@ Note that this integration is different than sending [Open Telemetry data to Dyn
 - `properties`: (optional) Configures a list of additional key/value pairs to attach to events. Type: Map `map[string]string`. Default value is `{}`.
 - `ignore_tag_prefix_list`: (optional) Choose which tags to be ignored by the Dynatrace Pump. Keep in mind that the tag name and value are hyphenated. Type: String Array `[] string`. Default value is `[]`
 - `enable_batch`: If this is set to `true`, pump is going to send the analytics records in batch to Dynatrace. Type: Boolean. Default value is `false`.
+- `batch_max_content_length`: (optional) Max content length in bytes to be sent in batch requests. If the purged analytics records size don't reach the amount of bytes, they're sent anyways during each purge loop. Type: Integer. Default value is `10485760` (10 MB), the Dynatrace API limit.
 - `max_retries`: Max number of retries if failed to send requests to Dynatrace API. Default value is `0` (no retries after failure). Connections, network, timeouts, temporary, too many requests and internal server errors are all considered retryable.
 
 ###### JSON / Conf File

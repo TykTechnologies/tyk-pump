@@ -91,6 +91,10 @@ type DynatracePumpConfig struct {
 	// If this is set to `true`, pump is going to send the analytics records in batch to Dynatrace.
 	// Default value is `false`.
 	EnableBatch bool `json:"enable_batch" mapstructure:"enable_batch"`
+	// Max content length in bytes to be sent in batch requests. If the purged analytics records size don't reach
+	// the amount of bytes, they're sent anyways during each purge loop. Default value is 10485760
+	// (10 MB), the Dynatrace API limit.
+	BatchMaxContentLength int `json:"batch_max_content_length" mapstructure:"batch_max_content_length"`
 	// MaxRetries represents the maximum amount of retries to attempt if failed to send requests to Dynatrace API.
 	// Default value is `0`
 	MaxRetries uint64 `json:"max_retries" mapstructure:"max_retries"`
@@ -127,6 +131,10 @@ func (p *DynatracePump) Init(config interface{}) error {
 	p.client, err = NewDynatraceClient(p.config.ApiToken, p.config.EndpointUrl, p.config.SSLInsecureSkipVerify, p.config.SSLCertFile, p.config.SSLKeyFile, p.config.SSLServerName)
 	if err != nil {
 		return err
+	}
+
+	if p.config.EnableBatch && p.config.BatchMaxContentLength == 0 {
+		p.config.BatchMaxContentLength = dynatraceMaxContentLength
 	}
 
 	if p.config.MaxRetries > 0 {
@@ -263,22 +271,23 @@ func (p *DynatracePump) WriteData(ctx context.Context, data []interface{}) error
 			return err
 		}
 
-		// Check if single event exceeds max content length
-		var payloadSize int
+		// Check if event will cause max content length to be exceeded
+		maxContentLength := dynatraceMaxContentLength
 		if p.config.EnableBatch {
-			payloadSize = 2 // for JSON array brackets
+			maxContentLength = p.config.BatchMaxContentLength
 		}
-		if len(eventData)+payloadSize > dynatraceMaxContentLength {
+		eventPayloadSize := len(eventData)
+		if p.config.EnableBatch {
+			eventPayloadSize += 2 // for JSON array brackets (if single event in batch) or comma separator and closing bracket (if multiple events in batch)
+		}
+		if eventPayloadSize > maxContentLength {
 			p.log.Warnf("Event with timestamp '%s' too large (%d bytes), skipping", decoded.TimeStamp, len(eventData))
 			continue
 		}
 
 		if p.config.EnableBatch {
-			// Calculate size including comma separator and closing bracket ']'
-			payloadSize = len(eventData) + 2
-
 			// If adding this event would exceed max content length, send current batch first
-			if batchBuffer.Len()+payloadSize > dynatraceMaxContentLength {
+			if batchBuffer.Len()+eventPayloadSize > maxContentLength {
 				// Close the current array and send
 				batchBuffer.WriteByte(']')
 				p.log.Debugf("Mid run - sending %d batch records...", currentBatchCount+1)
