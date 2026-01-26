@@ -20,12 +20,12 @@ import (
 // https://docs.dynatrace.com/docs/discover-dynatrace/references/dynatrace-api/environment-api/log-monitoring-v2/post-ingest-logs
 
 const (
-	dynatraceDefaultPath = "/api/v2/logs/ingest"
-	dynatraceAuthHeaderName = "Authorization"
+	dynatraceDefaultPath      = "/api/v2/logs/ingest"
+	dynatraceAuthHeaderName   = "Authorization"
 	dynatraceAuthHeaderPrefix = "Api-Token "
-	dynatracePumpPrefix = "dynatrace-pump"
-	dynatracePumpName = "Dynatrace Pump"
-	dynatraceDefaultEnv = PUMPS_ENV_PREFIX + "_DYNATRACE" + PUMPS_ENV_META_PREFIX
+	dynatracePumpPrefix       = "dynatrace-pump"
+	dynatracePumpName         = "Dynatrace Pump"
+	dynatraceDefaultEnv       = PUMPS_ENV_PREFIX + "_DYNATRACE" + PUMPS_ENV_META_PREFIX
 	dynatraceMaxContentLength = 10485760 // 10 MB - https://docs.dynatrace.com/docs/analyze-explore-automate/logs/lma-limits
 )
 
@@ -36,7 +36,7 @@ var (
 // DynatraceClient contains Dynatrace client methods.
 type DynatraceClient struct {
 	Token         string
-	EndpointUrl  string
+	EndpointUrl   string
 	TLSSkipVerify bool
 	httpClient    *http.Client
 	retry         *retry.BackoffHTTPRetry
@@ -355,9 +355,9 @@ func NewDynatraceClient(token string, endpointUrl string, skipVerify bool, certF
 	}
 	u.Path = dynatraceDefaultPath // Append the default endpoint API path
 	c = &DynatraceClient{
-		Token:        token,
-		EndpointUrl:  u.String(),
-		httpClient:   http.DefaultClient,
+		Token:       token,
+		EndpointUrl: u.String(),
+		httpClient:  http.DefaultClient,
 	}
 	return c, nil
 }
