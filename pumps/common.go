@@ -1,7 +1,11 @@
 package pumps
 
 import (
+	"crypto/tls"
+	"crypto/x509"
+	"errors"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
@@ -178,4 +182,54 @@ func MigrateAllShardedTables(db *gorm.DB, tablePrefix, logPrefix string, model i
 
 	log.Info("Completed migration of sharded " + logPrefix + " tables")
 	return nil
+}
+
+type TLSConfig struct {
+	CertFile           string
+	KeyFile            string
+	CAFile             string
+	ServerName         string
+	InsecureSkipVerify bool
+}
+
+// NewTLSConfig creates a TLS configuration from the provided settings
+func NewTLSConfig(cfg TLSConfig, log *logrus.Entry) (*tls.Config, error) {
+	if (cfg.CertFile == "") != (cfg.KeyFile == "") {
+		return nil, errors.New("both ssl_cert_file and ssl_cert_key must be provided together for mTLS")
+	}
+
+	// #nosec G402
+	tlsConfig := &tls.Config{
+		InsecureSkipVerify: cfg.InsecureSkipVerify,
+		ServerName:         cfg.ServerName,
+	}
+
+	if cfg.CertFile != "" && cfg.KeyFile != "" {
+		cert, err := tls.LoadX509KeyPair(cfg.CertFile, cfg.KeyFile)
+		if err != nil {
+			return nil, err
+		}
+
+		tlsConfig.Certificates = []tls.Certificate{cert}
+	}
+
+	if cfg.CAFile != "" {
+		caPem, err := os.ReadFile(cfg.CAFile)
+		if err != nil {
+			return nil, err
+		}
+
+		certPool := x509.NewCertPool()
+		if !certPool.AppendCertsFromPEM(caPem) {
+			return nil, errors.New("failed to add CA certificate")
+		}
+
+		tlsConfig.RootCAs = certPool
+
+		if tlsConfig.InsecureSkipVerify {
+			log.Warn("ssl_ca_file is set but ssl_insecure_skip_verify is true - CA file will be ignored")
+		}
+	}
+
+	return tlsConfig, nil
 }
