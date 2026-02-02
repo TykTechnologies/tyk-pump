@@ -47,8 +47,9 @@ func TestNewTLSConfig(t *testing.T) {
 	testCases := []struct {
 		name      string
 		cfg       TLSConfig
-		expectErr bool
+		logger    *logrus.Entry
 		validate  func(t *testing.T, cfg *tls.Config)
+		expectErr bool
 	}{
 		{
 			name: "valid config with all files",
@@ -59,7 +60,7 @@ func TestNewTLSConfig(t *testing.T) {
 				ServerName:         "test.something.com",
 				InsecureSkipVerify: false,
 			},
-			expectErr: false,
+			logger: logger,
 			validate: func(t *testing.T, cfg *tls.Config) {
 				assert.NotNil(t, cfg)
 				assert.Len(t, cfg.Certificates, 1)
@@ -67,6 +68,19 @@ func TestNewTLSConfig(t *testing.T) {
 				assert.Equal(t, "test.something.com", cfg.ServerName)
 				assert.False(t, cfg.InsecureSkipVerify)
 			},
+			expectErr: false,
+		},
+		{
+			name:   "valid config with defaults only",
+			cfg:    TLSConfig{},
+			logger: logger,
+			validate: func(t *testing.T, cfg *tls.Config) {
+				assert.NotNil(t, cfg)
+				assert.False(t, cfg.InsecureSkipVerify)
+				assert.Empty(t, cfg.Certificates)
+				assert.Nil(t, cfg.RootCAs)
+			},
+			expectErr: false,
 		},
 		{
 			name: "client cert and key only",
@@ -74,24 +88,26 @@ func TestNewTLSConfig(t *testing.T) {
 				CertFile: certFile,
 				KeyFile:  keyFile,
 			},
-			expectErr: false,
+			logger: logger,
 			validate: func(t *testing.T, cfg *tls.Config) {
 				assert.NotNil(t, cfg)
 				assert.Len(t, cfg.Certificates, 1)
 				assert.Nil(t, cfg.RootCAs)
 			},
+			expectErr: false,
 		},
 		{
 			name: "CA cert only",
 			cfg: TLSConfig{
 				CAFile: caFile,
 			},
-			expectErr: false,
+			logger: logger,
 			validate: func(t *testing.T, cfg *tls.Config) {
 				assert.NotNil(t, cfg)
 				assert.NotNil(t, cfg.RootCAs)
 				assert.Empty(t, cfg.Certificates)
 			},
+			expectErr: false,
 		},
 		{
 			name: "insecure skip verify with CA cert warning",
@@ -99,11 +115,12 @@ func TestNewTLSConfig(t *testing.T) {
 				CAFile:             caFile,
 				InsecureSkipVerify: true,
 			},
-			expectErr: false,
+			logger: logger,
 			validate: func(t *testing.T, cfg *tls.Config) {
 				assert.True(t, cfg.InsecureSkipVerify)
 				assert.NotNil(t, cfg.RootCAs)
 			},
+			expectErr: false,
 		},
 		{
 			name: "cert without key - should fail",
@@ -111,6 +128,7 @@ func TestNewTLSConfig(t *testing.T) {
 				CertFile: certFile,
 			},
 			expectErr: true,
+			logger:    logger,
 		},
 		{
 			name: "key without cert - should fail",
@@ -125,6 +143,7 @@ func TestNewTLSConfig(t *testing.T) {
 				CertFile: "nonexistent_cert.pem",
 				KeyFile:  keyFile,
 			},
+			logger:    logger,
 			expectErr: true,
 		},
 		{
@@ -133,6 +152,7 @@ func TestNewTLSConfig(t *testing.T) {
 				CertFile: certFile,
 				KeyFile:  "nonexistent_key.pem",
 			},
+			logger:    logger,
 			expectErr: true,
 		},
 		{
@@ -142,11 +162,17 @@ func TestNewTLSConfig(t *testing.T) {
 			},
 			expectErr: true,
 		},
+		{
+			name:      "logger must be provided",
+			cfg:       TLSConfig{},
+			logger:    nil,
+			expectErr: true,
+		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			tlsConfig, err := NewTLSConfig(tc.cfg, logger)
+			tlsConfig, err := NewTLSConfig(tc.cfg, tc.logger)
 
 			if tc.expectErr {
 				assert.Error(t, err)

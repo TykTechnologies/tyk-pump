@@ -194,6 +194,10 @@ type TLSConfig struct {
 
 // NewTLSConfig creates a TLS configuration from the provided settings
 func NewTLSConfig(cfg TLSConfig, log *logrus.Entry) (*tls.Config, error) {
+	if log == nil {
+		return nil, errors.New("logger cannot be nil")
+	}
+
 	if (cfg.CertFile == "") != (cfg.KeyFile == "") {
 		return nil, errors.New("both ssl_cert_file and ssl_cert_key must be provided together for mTLS")
 	}
