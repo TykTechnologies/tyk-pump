@@ -208,6 +208,10 @@ func NewTLSConfig(cfg TLSConfig, log *logrus.Entry) (*tls.Config, error) {
 		ServerName:         cfg.ServerName,
 	}
 
+	if tlsConfig.InsecureSkipVerify {
+		log.Warn("ssl_insecure_skip_verify is set to true. Server certificate validation will be skipped.")
+	}
+
 	if cfg.CertFile != "" && cfg.KeyFile != "" {
 		log.Debug("Loading certificates for mTLS")
 		cert, err := tls.LoadX509KeyPair(cfg.CertFile, cfg.KeyFile)
@@ -229,13 +233,13 @@ func NewTLSConfig(cfg TLSConfig, log *logrus.Entry) (*tls.Config, error) {
 
 		certPool := x509.NewCertPool()
 		if !certPool.AppendCertsFromPEM(caPem) {
-			return nil, errors.New("failed to add CA certificate")
+			return nil, errors.New("failed to append CA certificate from PEM data; check if the file contains valid certificates")
 		}
 
 		tlsConfig.RootCAs = certPool
 
 		if tlsConfig.InsecureSkipVerify {
-			log.Warn("ssl_ca_file is set but ssl_insecure_skip_verify is true - CA file will be ignored")
+			log.Warn("ssl_ca_file is set but ssl_insecure_skip_verify is true - server certificate will not be verified against the provided CA")
 		}
 	}
 
