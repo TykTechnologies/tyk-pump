@@ -45,10 +45,10 @@ func TestNewTLSConfig(t *testing.T) {
 	logger := logrus.NewEntry(logrus.New())
 
 	testCases := []struct {
-		name      string
-		cfg       TLSConfig
 		logger    *logrus.Entry
 		validate  func(t *testing.T, cfg *tls.Config)
+		name      string
+		cfg       TLSConfig
 		expectErr bool
 	}{
 		{
