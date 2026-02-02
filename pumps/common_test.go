@@ -48,7 +48,7 @@ func TestNewTLSConfig(t *testing.T) {
 	require.NoError(t, err)
 	defer os.RemoveAll(tempDir)
 
-	caFile, certFile, keyFile := generateTestCerts(t, tempDir)
+	caFile, certFile, keyFile, invalidCAFile := generateTestCerts(t, tempDir)
 
 	logger := logrus.NewEntry(logrus.New())
 
@@ -187,9 +187,17 @@ func TestNewTLSConfig(t *testing.T) {
 			expectErr: true,
 		},
 		{
-			name: "invalid CA cert file",
+			name: "invalid CA cert file - file not found",
 			cfg: TLSConfig{
 				CAFile: "nonexistent_ca.pem",
+			},
+			logger:    logger,
+			expectErr: true,
+		},
+		{
+			name: "invalid CA cert file - malformed PEM data",
+			cfg: TLSConfig{
+				CAFile: invalidCAFile,
 			},
 			logger:    logger,
 			expectErr: true,
@@ -219,7 +227,7 @@ func TestNewTLSConfig(t *testing.T) {
 	}
 }
 
-func generateTestCerts(t *testing.T, tempDir string) (caFile, certFile, keyFile string) {
+func generateTestCerts(t *testing.T, tempDir string) (string, string, string, string) {
 	caPrivateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	require.NoError(t, err)
 
@@ -255,7 +263,7 @@ func generateTestCerts(t *testing.T, tempDir string) (caFile, certFile, keyFile 
 	clientCertDER, err := x509.CreateCertificate(rand.Reader, &clientTemplate, &clientTemplate, clientPrivateKey.Public(), clientPrivateKey)
 	require.NoError(t, err)
 
-	caFile = filepath.Join(tempDir, "ca.pem")
+	caFile := filepath.Join(tempDir, "ca.pem")
 	caOut, err := os.Create(caFile)
 	require.NoError(t, err)
 	defer caOut.Close()
@@ -263,7 +271,7 @@ func generateTestCerts(t *testing.T, tempDir string) (caFile, certFile, keyFile 
 	err = pem.Encode(caOut, &pem.Block{Type: "CERTIFICATE", Bytes: caCertDER})
 	require.NoError(t, err)
 
-	certFile = filepath.Join(tempDir, "client-cert.pem")
+	certFile := filepath.Join(tempDir, "client-cert.pem")
 	certOut, err := os.Create(certFile)
 	require.NoError(t, err)
 	defer certOut.Close()
@@ -271,7 +279,7 @@ func generateTestCerts(t *testing.T, tempDir string) (caFile, certFile, keyFile 
 	err = pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: clientCertDER})
 	require.NoError(t, err)
 
-	keyFile = filepath.Join(tempDir, "client-key.pem")
+	keyFile := filepath.Join(tempDir, "client-key.pem")
 	keyOut, err := os.Create(keyFile)
 	require.NoError(t, err)
 	defer keyOut.Close()
@@ -282,5 +290,9 @@ func generateTestCerts(t *testing.T, tempDir string) (caFile, certFile, keyFile 
 	err = pem.Encode(keyOut, &pem.Block{Type: "PRIVATE KEY", Bytes: clientKeyDER})
 	require.NoError(t, err)
 
-	return caFile, certFile, keyFile
+	invalidCAFile := filepath.Join(tempDir, "invalid_ca.pem")
+	err = os.WriteFile(invalidCAFile, []byte("This is not a valid PEM certificate\n"), 0644)
+	require.NoError(t, err)
+
+	return caFile, certFile, keyFile, invalidCAFile
 }
