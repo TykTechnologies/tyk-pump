@@ -193,10 +193,6 @@ type TLSConfig struct {
 }
 
 // NewTLSConfig creates a TLS configuration from the provided settings
-// Returns an error for invalid configurations (e.g., only one of cert/key provided).
-// Each pump should handle errors according to its needs:
-//   - Some pumps may treat configuration errors as fatal and fail initialization
-//   - Others may log the error as a warning
 func NewTLSConfig(cfg TLSConfig, log *logrus.Entry) (*tls.Config, error) {
 	if log == nil {
 		return nil, errors.New("logger cannot be nil")
