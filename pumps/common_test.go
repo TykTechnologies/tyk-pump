@@ -35,6 +35,14 @@ func TestSetDecodingResponse(t *testing.T) {
 	assert.True(t, actualValue)
 }
 
+// TestNewTLSConfig tests the TLS configuration creation with various settings.
+//
+// Backward Compatibility Testing:
+// Several test cases verify that partial or misconfigured mTLS settings (e.g., cert without key)
+// log warnings but still succeed in creating a TLS config. This behavior is intentional to maintain
+// backward compatibility with existing pump deployments.
+// These tests are marked with "(backward compatible)" in their names to clearly indicate
+// this is expected behavior, not a bug.
 func TestNewTLSConfig(t *testing.T) {
 	tempDir, err := os.MkdirTemp("", "tls_test")
 	require.NoError(t, err)
@@ -110,7 +118,7 @@ func TestNewTLSConfig(t *testing.T) {
 			expectErr: false,
 		},
 		{
-			name: "insecure skip verify with CA cert warning",
+			name: "insecure skip verify with CA cert - CA loaded but verification disabled",
 			cfg: TLSConfig{
 				CAFile:             caFile,
 				InsecureSkipVerify: true,
@@ -123,20 +131,42 @@ func TestNewTLSConfig(t *testing.T) {
 			expectErr: false,
 		},
 		{
-			name: "cert without key - should fail",
+			name: "cert without key - logs warning and creates TLS config without client cert (backward compatible)",
 			cfg: TLSConfig{
 				CertFile: certFile,
 			},
-			logger:    logger,
-			expectErr: true,
+			logger: logger,
+			validate: func(t *testing.T, cfg *tls.Config) {
+				assert.NotNil(t, cfg)
+				assert.Empty(t, cfg.Certificates)
+			},
+			expectErr: false,
 		},
 		{
-			name: "key without cert - should fail",
+			name: "key without cert - logs warning and creates TLS config without client cert (backward compatible)",
 			cfg: TLSConfig{
 				KeyFile: keyFile,
 			},
-			logger:    logger,
-			expectErr: true,
+			logger: logger,
+			validate: func(t *testing.T, cfg *tls.Config) {
+				assert.NotNil(t, cfg)
+				assert.Empty(t, cfg.Certificates)
+			},
+			expectErr: false,
+		},
+		{
+			name: "CA cert with key only - CA loaded, client cert skipped (backward compatible)",
+			cfg: TLSConfig{
+				CAFile:  caFile,
+				KeyFile: keyFile,
+			},
+			logger: logger,
+			validate: func(t *testing.T, cfg *tls.Config) {
+				assert.NotNil(t, cfg)
+				assert.NotNil(t, cfg.RootCAs)
+				assert.Empty(t, cfg.Certificates)
+			},
+			expectErr: false,
 		},
 		{
 			name: "invalid cert file",

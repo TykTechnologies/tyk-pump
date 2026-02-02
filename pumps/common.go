@@ -192,14 +192,16 @@ type TLSConfig struct {
 	InsecureSkipVerify bool
 }
 
-// NewTLSConfig creates a TLS configuration from the provided settings
+// NewTLSConfig creates a TLS configuration from the provided settings.
 func NewTLSConfig(cfg TLSConfig, log *logrus.Entry) (*tls.Config, error) {
 	if log == nil {
 		return nil, errors.New("logger cannot be nil")
 	}
 
+	// Backward compatibility: Some pumps are logging this configuration mismatch instead of returning an error.
+	// The TLS config will still be created with available settings (e.g., CA cert only).
 	if (cfg.CertFile == "") != (cfg.KeyFile == "") {
-		return nil, errors.New("both ssl_cert_file and ssl_cert_key must be provided together for mTLS")
+		log.Warn("Only one of ssl_cert_file and ssl_key_file configuration option is set, you should set both to enable mTLS.")
 	}
 
 	// #nosec G402
@@ -213,10 +215,8 @@ func NewTLSConfig(cfg TLSConfig, log *logrus.Entry) (*tls.Config, error) {
 	}
 
 	if cfg.CertFile != "" && cfg.KeyFile != "" {
-		log.Debug("Loading certificates for mTLS")
 		cert, err := tls.LoadX509KeyPair(cfg.CertFile, cfg.KeyFile)
 		if err != nil {
-			log.Debug("Error loading mTLS certificates:", err)
 			return nil, err
 		}
 
@@ -224,10 +224,8 @@ func NewTLSConfig(cfg TLSConfig, log *logrus.Entry) (*tls.Config, error) {
 	}
 
 	if cfg.CAFile != "" {
-		log.Debug("Loading CA certificate")
 		caPem, err := os.ReadFile(cfg.CAFile)
 		if err != nil {
-			log.Debug("Error loading CA certificate:", err)
 			return nil, err
 		}
 
