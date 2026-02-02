@@ -193,6 +193,10 @@ type TLSConfig struct {
 }
 
 // NewTLSConfig creates a TLS configuration from the provided settings
+// Returns an error for invalid configurations (e.g., only one of cert/key provided).
+// Each pump should handle errors according to its needs:
+//   - Some pumps may treat configuration errors as fatal and fail initialization
+//   - Others may log the error as a warning
 func NewTLSConfig(cfg TLSConfig, log *logrus.Entry) (*tls.Config, error) {
 	if log == nil {
 		return nil, errors.New("logger cannot be nil")
@@ -209,8 +213,10 @@ func NewTLSConfig(cfg TLSConfig, log *logrus.Entry) (*tls.Config, error) {
 	}
 
 	if cfg.CertFile != "" && cfg.KeyFile != "" {
+		log.Debug("Loading certificates for mTLS")
 		cert, err := tls.LoadX509KeyPair(cfg.CertFile, cfg.KeyFile)
 		if err != nil {
+			log.Debug("Error loading mTLS certificates:", err)
 			return nil, err
 		}
 
@@ -218,8 +224,10 @@ func NewTLSConfig(cfg TLSConfig, log *logrus.Entry) (*tls.Config, error) {
 	}
 
 	if cfg.CAFile != "" {
+		log.Debug("Loading CA certificate")
 		caPem, err := os.ReadFile(cfg.CAFile)
 		if err != nil {
+			log.Debug("Error loading CA certificate:", err)
 			return nil, err
 		}
 

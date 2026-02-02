@@ -127,14 +127,15 @@ func TestNewTLSConfig(t *testing.T) {
 			cfg: TLSConfig{
 				CertFile: certFile,
 			},
-			expectErr: true,
 			logger:    logger,
+			expectErr: true,
 		},
 		{
 			name: "key without cert - should fail",
 			cfg: TLSConfig{
 				KeyFile: keyFile,
 			},
+			logger:    logger,
 			expectErr: true,
 		},
 		{
@@ -160,6 +161,7 @@ func TestNewTLSConfig(t *testing.T) {
 			cfg: TLSConfig{
 				CAFile: "nonexistent_ca.pem",
 			},
+			logger:    logger,
 			expectErr: true,
 		},
 		{
