@@ -14,6 +14,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kelseyhightower/envconfig"
+	"github.com/mitchellh/mapstructure"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -33,6 +35,143 @@ func TestSetDecodingResponse(t *testing.T) {
 	actualValue := pump.GetDecodedResponse()
 	assert.Equal(t, actualValue, pump.decodeResponseBase64)
 	assert.True(t, actualValue)
+}
+
+// TestPumpEnvVarOverride tests the generic behavior of environment variable overrides
+// for pump configurations. This test validates that the processPumpEnvVars mechanism
+// (which uses mapstructure.Decode + envconfig.Process) correctly overrides configuration
+// values with environment variables. This behavior is common to all pumps.
+func TestPumpEnvVarOverride(t *testing.T) {
+	type TestPumpConfig struct {
+		Topic       string   `json:"topic" mapstructure:"topic"`
+		SSLCAFile   string   `json:"ssl_ca_file" mapstructure:"ssl_ca_file"`
+		SSLCertFile string   `json:"ssl_cert_file" mapstructure:"ssl_cert_file"`
+		SSLKeyFile  string   `json:"ssl_key_file" mapstructure:"ssl_key_file"`
+		Broker      []string `json:"broker" mapstructure:"broker"`
+		UseSSL      bool     `json:"use_ssl" mapstructure:"use_ssl"`
+		Timeout     int      `json:"timeout" mapstructure:"timeout"`
+	}
+
+	t.Run("environment variable overrides config file setting", func(t *testing.T) {
+		os.Setenv("TEST_PUMP_SSLCAFILE", "env_override_ca.pem")
+		defer os.Unsetenv("TEST_PUMP_SSLCAFILE")
+
+		config := map[string]any{
+			"broker":      []string{"localhost:9092"},
+			"topic":       "test-topic",
+			"ssl_ca_file": "config_file_ca.pem",
+		}
+
+		testConf := &TestPumpConfig{}
+		err := mapstructure.Decode(config, testConf)
+		assert.NoError(t, err)
+
+		// Simulate what processPumpEnvVars does
+		err = envconfig.Process("TEST_PUMP", testConf)
+		assert.NoError(t, err)
+
+		// Environment variable should override config file value
+		assert.Equal(t, "env_override_ca.pem", testConf.SSLCAFile)
+		assert.Equal(t, []string{"localhost:9092"}, testConf.Broker)
+		assert.Equal(t, "test-topic", testConf.Topic)
+	})
+
+	t.Run("loads from environment variable when no config file setting", func(t *testing.T) {
+		os.Setenv("TEST_PUMP_SSLCAFILE", "env_only_ca.pem")
+		defer os.Unsetenv("TEST_PUMP_SSLCAFILE")
+
+		config := map[string]any{
+			"broker": []string{"localhost:9092"},
+			"topic":  "test-topic",
+		}
+
+		testConf := &TestPumpConfig{}
+		err := mapstructure.Decode(config, testConf)
+		assert.NoError(t, err)
+
+		err = envconfig.Process("TEST_PUMP", testConf)
+		assert.NoError(t, err)
+
+		assert.Equal(t, "env_only_ca.pem", testConf.SSLCAFile)
+	})
+
+	t.Run("loads from config file when no environment variable", func(t *testing.T) {
+		config := map[string]any{
+			"broker":      []string{"localhost:9092"},
+			"topic":       "test-topic",
+			"ssl_ca_file": "config_only_ca.pem",
+		}
+
+		testConf := &TestPumpConfig{}
+		err := mapstructure.Decode(config, testConf)
+		assert.NoError(t, err)
+
+		err = envconfig.Process("TEST_PUMP", testConf)
+		assert.NoError(t, err)
+
+		assert.Equal(t, "config_only_ca.pem", testConf.SSLCAFile)
+	})
+
+	t.Run("environment variable overrides multiple SSL config fields", func(t *testing.T) {
+		os.Setenv("TEST_PUMP_SSLCAFILE", "env_ca.pem")
+		os.Setenv("TEST_PUMP_SSLCERTFILE", "env_cert.pem")
+		os.Setenv("TEST_PUMP_SSLKEYFILE", "env_key.pem")
+		os.Setenv("TEST_PUMP_USESSL", "true")
+		defer func() {
+			os.Unsetenv("TEST_PUMP_SSLCAFILE")
+			os.Unsetenv("TEST_PUMP_SSLCERTFILE")
+			os.Unsetenv("TEST_PUMP_SSLKEYFILE")
+			os.Unsetenv("TEST_PUMP_USESSL")
+		}()
+
+		config := map[string]any{
+			"broker":        []string{"localhost:9092"},
+			"topic":         "test-topic",
+			"ssl_ca_file":   "config_ca.pem",
+			"ssl_cert_file": "config_cert.pem",
+			"ssl_key_file":  "config_key.pem",
+			"use_ssl":       false,
+		}
+
+		testConf := &TestPumpConfig{}
+		err := mapstructure.Decode(config, testConf)
+		assert.NoError(t, err)
+
+		err = envconfig.Process("TEST_PUMP", testConf)
+		assert.NoError(t, err)
+
+		// All SSL fields should be overridden by environment variables
+		assert.Equal(t, "env_ca.pem", testConf.SSLCAFile)
+		assert.Equal(t, "env_cert.pem", testConf.SSLCertFile)
+		assert.Equal(t, "env_key.pem", testConf.SSLKeyFile)
+		assert.True(t, testConf.UseSSL)
+	})
+
+	t.Run("environment variable does not affect other config fields", func(t *testing.T) {
+		os.Setenv("TEST_PUMP_SSLCAFILE", "env_ca.pem")
+		defer os.Unsetenv("TEST_PUMP_SSLCAFILE")
+
+		config := map[string]any{
+			"broker":      []string{"localhost:9092", "localhost:9093"},
+			"topic":       "analytics-topic",
+			"ssl_ca_file": "config_ca.pem",
+			"timeout":     30,
+		}
+
+		testConf := &TestPumpConfig{}
+		err := mapstructure.Decode(config, testConf)
+		assert.NoError(t, err)
+
+		err = envconfig.Process("TEST_PUMP", testConf)
+		assert.NoError(t, err)
+
+		// Only SSLCAFile should be overridden
+		assert.Equal(t, "env_ca.pem", testConf.SSLCAFile)
+		// Other fields should remain unchanged
+		assert.Equal(t, []string{"localhost:9092", "localhost:9093"}, testConf.Broker)
+		assert.Equal(t, "analytics-topic", testConf.Topic)
+		assert.Equal(t, 30, testConf.Timeout)
+	})
 }
 
 // TestNewTLSConfig tests the TLS configuration creation with various settings.
