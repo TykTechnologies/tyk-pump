@@ -430,7 +430,7 @@ func generateTestCerts(t *testing.T, tempDir string) (string, string, string, st
 	require.NoError(t, err)
 
 	invalidCAFile := filepath.Join(tempDir, "invalid_ca.pem")
-	err = os.WriteFile(invalidCAFile, []byte("This is not a valid PEM certificate\n"), 0644)
+	err = os.WriteFile(invalidCAFile, []byte("This is not a valid PEM certificate\n"), 0o600)
 	require.NoError(t, err)
 
 	return caFile, certFile, keyFile, invalidCAFile
