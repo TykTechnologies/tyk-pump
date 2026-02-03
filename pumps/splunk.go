@@ -315,18 +315,17 @@ func newSplunkClient(cfg *splunkClientConfig, log *logrus.Entry) (c *SplunkClien
 		return c, fmt.Errorf("failed to configure TLS for splunk client: %w", err)
 	}
 
-	client := &http.Client{
-		Transport: &http.Transport{
-			Proxy:           http.ProxyFromEnvironment,
-			TLSClientConfig: tlsConfig,
-		},
+	http.DefaultClient.Transport = &http.Transport{
+		Proxy:           http.ProxyFromEnvironment,
+		TLSClientConfig: tlsConfig,
 	}
+
 	// Append the default collector API path:
 	u.Path = defaultPath
 	c = &SplunkClient{
 		Token:        cfg.token,
 		CollectorURL: u.String(),
-		httpClient:   client,
+		httpClient:   http.DefaultClient,
 	}
 	return c, nil
 }
