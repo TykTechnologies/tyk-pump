@@ -34,6 +34,8 @@ type testHandler struct {
 	reqCount     int
 }
 
+var splunkTestLog = log.WithField("prefix", "splunk_test")
+
 func (h *testHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.reqCount++
 
@@ -84,15 +86,27 @@ func (h *testHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func TestSplunkInit(t *testing.T) {
-	_, err := NewSplunkClient("", testEndpointURL, true, "", "", "")
+	_, err := newSplunkClient(
+		splunkClientConfig{collectorURL: testEndpointURL},
+		splunkTestLog,
+	)
 	if err == nil {
 		t.Fatal("A token needs to be present")
 	}
-	_, err = NewSplunkClient(testToken, "", true, "", "", "")
+
+	_, err = newSplunkClient(
+		splunkClientConfig{token: testToken},
+		splunkTestLog,
+	)
+
 	if err == nil {
 		t.Fatal("An endpoint needs to be present", "", "")
 	}
-	_, err = NewSplunkClient("", "", true, "", "", "")
+
+	_, err = newSplunkClient(
+		splunkClientConfig{},
+		splunkTestLog,
+	)
 	if err == nil {
 		t.Fatal("Empty parameters should return an error")
 	}
@@ -110,7 +124,16 @@ func Test_SplunkProxyFromEnvironment(t *testing.T) {
 	defer os.Unsetenv("HTTP_PROXY")
 
 	// Initialize client
-	client, err := NewSplunkClient("token", "https://example.com", true, "", "", "")
+	client, err := newSplunkClient(
+		splunkClientConfig{
+			token:        "token",
+			collectorURL: "https://example.com",
+			tlsConfig: TLSConfig{
+				InsecureSkipVerify: true,
+			},
+		},
+		splunkTestLog,
+	)
 	if err != nil {
 		t.Fatal("Failed to create client:", err)
 	}
@@ -139,7 +162,16 @@ func Test_SplunkInvalidProxyURL(t *testing.T) {
 	defer os.Unsetenv("HTTP_PROXY")
 
 	// Initialize client
-	client, err := NewSplunkClient("token", "https://example.com", true, "", "", "")
+	client, err := newSplunkClient(
+		splunkClientConfig{
+			token:        "token",
+			collectorURL: "https://example.com",
+			tlsConfig: TLSConfig{
+				InsecureSkipVerify: true,
+			},
+		},
+		splunkTestLog,
+	)
 	if err != nil {
 		t.Fatal("Failed to create client:", err)
 	}

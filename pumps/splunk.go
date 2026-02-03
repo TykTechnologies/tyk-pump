@@ -3,7 +3,6 @@ package pumps
 import (
 	"bytes"
 	"context"
-	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -12,6 +11,7 @@ import (
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/TykTechnologies/tyk-pump/retry"
+	"github.com/sirupsen/logrus"
 
 	"github.com/mitchellh/mapstructure"
 )
@@ -64,6 +64,8 @@ type SplunkPumpConfig struct {
 	SSLCertFile string `json:"ssl_cert_file" mapstructure:"ssl_cert_file"`
 	// SSL cert key location.
 	SSLKeyFile string `json:"ssl_key_file" mapstructure:"ssl_key_file"`
+	// Path to the PEM file with trusted root certificates
+	SSLCAFile string `json:"ssl_ca_file" mapstructure:"ssl_ca_file"`
 	// SSL Server name used in the TLS connection.
 	SSLServerName string `json:"ssl_server_name" mapstructure:"ssl_server_name"`
 	// Controls whether the pump client should hide the API key. In case you still need substring
@@ -121,7 +123,17 @@ func (p *SplunkPump) Init(config interface{}) error {
 
 	p.log.Infof("%s Endpoint: %s", splunkPumpName, p.config.CollectorURL)
 
-	p.client, err = NewSplunkClient(p.config.CollectorToken, p.config.CollectorURL, p.config.SSLInsecureSkipVerify, p.config.SSLCertFile, p.config.SSLKeyFile, p.config.SSLServerName)
+	p.client, err = newSplunkClient(splunkClientConfig{
+		token:        p.config.CollectorToken,
+		collectorURL: p.config.CollectorURL,
+		tlsConfig: TLSConfig{
+			CertFile:           p.config.SSLCertFile,
+			KeyFile:            p.config.SSLKeyFile,
+			CAFile:             p.config.SSLCAFile,
+			InsecureSkipVerify: p.config.SSLInsecureSkipVerify,
+			ServerName:         p.config.SSLServerName,
+		},
+	}, p.log)
 	if err != nil {
 		return err
 	}
@@ -281,27 +293,27 @@ func (p *SplunkPump) WriteData(ctx context.Context, data []interface{}) error {
 	return nil
 }
 
-// NewSplunkClient initializes a new SplunkClient.
-func NewSplunkClient(token string, collectorURL string, skipVerify bool, certFile string, keyFile string, serverName string) (c *SplunkClient, err error) {
-	if token == "" || collectorURL == "" {
+type splunkClientConfig struct {
+	token        string
+	collectorURL string
+	tlsConfig    TLSConfig
+}
+
+func newSplunkClient(cfg splunkClientConfig, log *logrus.Entry) (c *SplunkClient, err error) {
+	if cfg.token == "" || cfg.collectorURL == "" {
 		return c, errInvalidSettings
 	}
-	u, err := url.Parse(collectorURL)
+
+	u, err := url.Parse(cfg.collectorURL)
 	if err != nil {
 		return c, err
 	}
-	tlsConfig := &tls.Config{InsecureSkipVerify: skipVerify}
-	if !skipVerify {
-		if certFile == "" && keyFile == "" {
-			return c, errors.New("ssl_insecure_skip_verify set to false but no ssl_cert_file or ssl_key_file specified")
-		}
-		// Load certificates:
-		cert, err := tls.LoadX509KeyPair(certFile, keyFile)
-		if err != nil {
-			return c, err
-		}
-		tlsConfig = &tls.Config{Certificates: []tls.Certificate{cert}, ServerName: serverName}
+
+	tlsConfig, err := NewTLSConfig(cfg.tlsConfig, log)
+	if err != nil {
+		return c, err
 	}
+
 	http.DefaultClient.Transport = &http.Transport{
 		Proxy:           http.ProxyFromEnvironment,
 		TLSClientConfig: tlsConfig,
@@ -309,7 +321,7 @@ func NewSplunkClient(token string, collectorURL string, skipVerify bool, certFil
 	// Append the default collector API path:
 	u.Path = defaultPath
 	c = &SplunkClient{
-		Token:        token,
+		Token:        cfg.token,
 		CollectorURL: u.String(),
 		httpClient:   http.DefaultClient,
 	}
