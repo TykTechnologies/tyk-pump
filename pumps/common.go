@@ -217,7 +217,7 @@ func NewTLSConfig(cfg TLSConfig, log *logrus.Entry) (*tls.Config, error) {
 	if cfg.CertFile != "" && cfg.KeyFile != "" {
 		cert, err := tls.LoadX509KeyPair(cfg.CertFile, cfg.KeyFile)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to load cert/key pair(cert: %q, key: %q): %w", cfg.CertFile, cfg.KeyFile, err)
 		}
 
 		tlsConfig.Certificates = []tls.Certificate{cert}
@@ -226,12 +226,12 @@ func NewTLSConfig(cfg TLSConfig, log *logrus.Entry) (*tls.Config, error) {
 	if cfg.CAFile != "" {
 		caPem, err := os.ReadFile(cfg.CAFile)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to read CA certificate file %q: %w", cfg.CAFile, err)
 		}
 
 		certPool := x509.NewCertPool()
 		if !certPool.AppendCertsFromPEM(caPem) {
-			return nil, errors.New("failed to append CA certificate from PEM data; check if the file contains valid certificates")
+			return nil, fmt.Errorf("failed to parse CA certificate from file %q: invalid PEM data", cfg.CAFile)
 		}
 
 		tlsConfig.RootCAs = certPool

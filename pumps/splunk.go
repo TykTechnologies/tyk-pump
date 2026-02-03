@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
@@ -311,7 +312,7 @@ func newSplunkClient(cfg *splunkClientConfig, log *logrus.Entry) (c *SplunkClien
 
 	tlsConfig, err := NewTLSConfig(cfg.tlsConfig, log)
 	if err != nil {
-		return c, err
+		return c, fmt.Errorf("failed to configure TLS for splunk client: %w", err)
 	}
 
 	client := &http.Client{

@@ -163,8 +163,7 @@ func (e *ElasticsearchPump) getOperator() (ElasticsearchOperator, error) {
 			InsecureSkipVerify: conf.SSLInsecureSkipVerify,
 		}, e.log)
 		if err != nil {
-			e.log.WithError(err).Error("Failed to get TLS config")
-			return nil, err
+			return nil, fmt.Errorf("failed to configure TLS for Elasticsearch connection: %w", err)
 		}
 		httpClient = &http.Client{Transport: &http.Transport{TLSClientConfig: tlsConf}}
 	}

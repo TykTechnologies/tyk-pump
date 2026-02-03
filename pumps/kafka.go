@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"fmt"
 	"os"
 	"strconv"
 	"time"
@@ -113,7 +114,7 @@ func (k *KafkaPump) Init(config interface{}) error {
 			InsecureSkipVerify: k.kafkaConf.SSLInsecureSkipVerify,
 		}, k.log)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to initialize Kafka pump SSL configuration: %w", err)
 		}
 	} else if k.kafkaConf.SASLMechanism != "" {
 		k.log.WithField("SASL-Mechanism", k.kafkaConf.SASLMechanism).Warn("SASL-Mechanism is setted but use_ssl is false.")
