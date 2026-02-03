@@ -123,7 +123,7 @@ func (p *SplunkPump) Init(config interface{}) error {
 
 	p.log.Infof("%s Endpoint: %s", splunkPumpName, p.config.CollectorURL)
 
-	p.client, err = newSplunkClient(splunkClientConfig{
+	p.client, err = newSplunkClient(&splunkClientConfig{
 		token:        p.config.CollectorToken,
 		collectorURL: p.config.CollectorURL,
 		tlsConfig: TLSConfig{
@@ -299,7 +299,7 @@ type splunkClientConfig struct {
 	tlsConfig    TLSConfig
 }
 
-func newSplunkClient(cfg splunkClientConfig, log *logrus.Entry) (c *SplunkClient, err error) {
+func newSplunkClient(cfg *splunkClientConfig, log *logrus.Entry) (c *SplunkClient, err error) {
 	if cfg.token == "" || cfg.collectorURL == "" {
 		return c, errInvalidSettings
 	}
@@ -314,16 +314,18 @@ func newSplunkClient(cfg splunkClientConfig, log *logrus.Entry) (c *SplunkClient
 		return c, err
 	}
 
-	http.DefaultClient.Transport = &http.Transport{
-		Proxy:           http.ProxyFromEnvironment,
-		TLSClientConfig: tlsConfig,
+	client := &http.Client{
+		Transport: &http.Transport{
+			Proxy:           http.ProxyFromEnvironment,
+			TLSClientConfig: tlsConfig,
+		},
 	}
 	// Append the default collector API path:
 	u.Path = defaultPath
 	c = &SplunkClient{
 		Token:        cfg.token,
 		CollectorURL: u.String(),
-		httpClient:   http.DefaultClient,
+		httpClient:   client,
 	}
 	return c, nil
 }

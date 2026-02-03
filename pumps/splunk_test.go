@@ -87,7 +87,7 @@ func (h *testHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func TestSplunkInit(t *testing.T) {
 	_, err := newSplunkClient(
-		splunkClientConfig{collectorURL: testEndpointURL},
+		&splunkClientConfig{collectorURL: testEndpointURL},
 		splunkTestLog,
 	)
 	if err == nil {
@@ -95,7 +95,7 @@ func TestSplunkInit(t *testing.T) {
 	}
 
 	_, err = newSplunkClient(
-		splunkClientConfig{token: testToken},
+		&splunkClientConfig{token: testToken},
 		splunkTestLog,
 	)
 
@@ -104,7 +104,7 @@ func TestSplunkInit(t *testing.T) {
 	}
 
 	_, err = newSplunkClient(
-		splunkClientConfig{},
+		&splunkClientConfig{},
 		splunkTestLog,
 	)
 	if err == nil {
@@ -125,7 +125,7 @@ func Test_SplunkProxyFromEnvironment(t *testing.T) {
 
 	// Initialize client
 	client, err := newSplunkClient(
-		splunkClientConfig{
+		&splunkClientConfig{
 			token:        "token",
 			collectorURL: "https://example.com",
 			tlsConfig: TLSConfig{
@@ -163,7 +163,7 @@ func Test_SplunkInvalidProxyURL(t *testing.T) {
 
 	// Initialize client
 	client, err := newSplunkClient(
-		splunkClientConfig{
+		&splunkClientConfig{
 			token:        "token",
 			collectorURL: "https://example.com",
 			tlsConfig: TLSConfig{
