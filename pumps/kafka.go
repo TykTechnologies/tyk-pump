@@ -111,7 +111,7 @@ func (k *KafkaPump) Init(config interface{}) error {
 			KeyFile:            k.kafkaConf.SSLKeyFile,
 			CAFile:             k.kafkaConf.SSLCAFile,
 			InsecureSkipVerify: k.kafkaConf.SSLInsecureSkipVerify,
-		}, nil)
+		}, k.log)
 		if err != nil {
 			return err
 		}
