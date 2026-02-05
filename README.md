@@ -533,7 +533,7 @@ The name format for each table is <table*name>*<date>. Defaults to false.
 
 `"ssl_insecure_skip_verify"` - Controls whether the pump client verifies the Elasticsearch server's certificate chain and hostname.
 
-`"ssl_cert_file"` - Path to the PEM file with Tyk's client certificate for authentication with the Elasticsearch server.
+`"ssl_cert_file"` - Path to the PEM file with client certificate for authentication with the Elasticsearch server.
 
 `"ssl_key_file"` - Path to the client certificate private key file for authentication with Elasticsearch.
 
@@ -797,6 +797,8 @@ Setting up Splunk with a _HTTP Event Collector_
 - `enable_batch`: If this is set to `true`, pump is going to send the analytics records in batch to Splunk. Type: Boolean. Default value is `false`.
 - `max_content_length`: Max content length in bytes to be sent in batch requests. It should match the `max_content_length` configured in Splunk. If the purged analytics records size don't reach the amount of bytes, they're send anyways in each `purge_loop`. Type: Integer. Default value is 838860800 (~ 800 MB), the same default value as Splunk config.
 - `max_retries`: Max number of retries if failed to send requests to splunk HEC. Default value is `0` (no retries after failure). Connections, network, timeouts, temporary, too many requests and internal server errors are all considered retryable.
+- `ssl_cert_file`: Can be used to set custom certificate file for authentication with Splunk.
+- `ssl_key_file`: Can be used to set custom key file for authentication with Splunk.
 - `ssl_ca_file`: Path to the file with trusted root certificates for verifying the Splunk server's certificate.
 
 ###### JSON / Conf File
