@@ -537,7 +537,7 @@ The name format for each table is <table*name>*<date>. Defaults to false.
 
 `"ssl_key_file"` - Path to the client certificate private key file for authentication with Elasticsearch.
 
-`"ssl_ca_file"` - Path to the file with trusted root certificates for verifying the Elasticsearch server's certificate.
+`"ssl_ca_file"` - Path to the PEM file with trusted CA certificates that will be used to verify the Elasticsearch server's certificate.
 
 ###### Env Variables
 
