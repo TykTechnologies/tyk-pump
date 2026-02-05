@@ -60,7 +60,7 @@ type KafkaConf struct {
 	SSLCertFile string `json:"ssl_cert_file" mapstructure:"ssl_cert_file"`
 	// Can be used to set custom key file for authentication with kafka.
 	SSLKeyFile string `json:"ssl_key_file" mapstructure:"ssl_key_file"`
-	// Can be used to set the file with CA certificates for verifying the kafka server's certificate.
+	// Path to the PEM file with trusted CA certificates that will be used to verify the Kafka server's certificate.
 	SSLCAFile string `json:"ssl_ca_file" mapstructure:"ssl_ca_file"`
 	// SASL mechanism configuration. Only "plain" and "scram" are supported.
 	SASLMechanism string `json:"sasl_mechanism" mapstructure:"sasl_mechanism"`
