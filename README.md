@@ -915,7 +915,7 @@ More advanced fields:
 - `meta_data`: Can be used to set custom metadata inside the kafka message
 - `ssl_cert_file`: Path to the PEM file with Tyk's client certificate for authentication with the Kafka server.
 - `ssl_key_file`: Path to the PEM file with Tyk's private key for authentication with the Kafka server.
-- `ssl_ca_file`: Path to the file with trusted root certificates for verifying the Kafka server's certificate.
+- `ssl_ca_file`: Path to the PEM file with trusted CA certificates that will be used to verify the Kafka server's certificate.
 - `batch_bytes`: The maximum size of the batch to be sent to the kafka cluster.
 
 ###### JSON / Conf File
