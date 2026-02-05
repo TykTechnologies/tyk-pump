@@ -799,7 +799,7 @@ Setting up Splunk with a _HTTP Event Collector_
 - `max_retries`: Max number of retries if failed to send requests to splunk HEC. Default value is `0` (no retries after failure). Connections, network, timeouts, temporary, too many requests and internal server errors are all considered retryable.
 - `ssl_cert_file`: Can be used to set custom certificate file for authentication with Splunk.
 - `ssl_key_file`: Can be used to set custom key file for authentication with Splunk.
-- `ssl_ca_file`: Path to the file with trusted root certificates for verifying the Splunk server's certificate.
+- `ssl_ca_file`: Path to the PEM file with trusted CA certificates that will be used to verify the Splunk server's certificate.
 
 ###### JSON / Conf File
 
