@@ -81,7 +81,7 @@ type ElasticsearchConf struct {
 	SSLCertFile string `json:"ssl_cert_file" mapstructure:"ssl_cert_file"`
 	// Can be used to set custom key file for authentication with Elastic Search.
 	SSLKeyFile string `json:"ssl_key_file" mapstructure:"ssl_key_file"`
-	// Path to the PEM file with trusted root certificates
+	// Can be used to set the file with CA certificates for verifying the Elastic Search server's certificate.
 	SSLCAFile string `json:"ssl_ca_file" mapstructure:"ssl_ca_file"`
 }
 
