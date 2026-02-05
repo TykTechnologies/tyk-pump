@@ -533,7 +533,7 @@ The name format for each table is <table*name>*<date>. Defaults to false.
 
 `"ssl_insecure_skip_verify"` - Controls whether the pump client verifies the Elasticsearch server's certificate chain and hostname.
 
-`"ssl_cert_file"` - Path to the client certificate file for authentication with Elasticsearch.
+`"ssl_cert_file"` - Path to the PEM file with Tyk's client certificate for authentication with the Elasticsearch server.
 
 `"ssl_key_file"` - Path to the client certificate private key file for authentication with Elasticsearch.
 
