@@ -535,7 +535,7 @@ The name format for each table is <table*name>*<date>. Defaults to false.
 
 `"ssl_cert_file"` - Path to the PEM file with client certificate for authentication with the Elasticsearch server.
 
-`"ssl_key_file"` - Path to the client certificate private key file for authentication with Elasticsearch.
+`"ssl_key_file"` - Path to the PEM file with Tyk's private key for authentication with the Elasticsearch server.
 
 `"ssl_ca_file"` - Path to the PEM file with trusted CA certificates that will be used to verify the Elasticsearch server's certificate.
 
