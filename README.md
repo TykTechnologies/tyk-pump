@@ -797,8 +797,8 @@ Setting up Splunk with a _HTTP Event Collector_
 - `enable_batch`: If this is set to `true`, pump is going to send the analytics records in batch to Splunk. Type: Boolean. Default value is `false`.
 - `max_content_length`: Max content length in bytes to be sent in batch requests. It should match the `max_content_length` configured in Splunk. If the purged analytics records size don't reach the amount of bytes, they're send anyways in each `purge_loop`. Type: Integer. Default value is 838860800 (~ 800 MB), the same default value as Splunk config.
 - `max_retries`: Max number of retries if failed to send requests to splunk HEC. Default value is `0` (no retries after failure). Connections, network, timeouts, temporary, too many requests and internal server errors are all considered retryable.
-- `ssl_cert_file`: Can be used to set custom certificate file for authentication with Splunk.
-- `ssl_key_file`: Can be used to set custom key file for authentication with Splunk.
+- `"ssl_cert_file"` - Path to the PEM file with client certificate for authentication with the Splunk server.
+- `"ssl_key_file"` - Path to the PEM file with Tyk's private key for authentication with the Splunk server.
 - `ssl_ca_file`: Path to the PEM file with trusted CA certificates that will be used to verify the Splunk server's certificate.
 
 ###### JSON / Conf File
