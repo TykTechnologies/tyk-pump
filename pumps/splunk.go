@@ -65,7 +65,7 @@ type SplunkPumpConfig struct {
 	SSLCertFile string `json:"ssl_cert_file" mapstructure:"ssl_cert_file"`
 	// SSL cert key location.
 	SSLKeyFile string `json:"ssl_key_file" mapstructure:"ssl_key_file"`
-	// Can be used to set the file with CA certificates for verifying the Splunk server's certificate.
+	// Path to the PEM file with trusted CA certificates that will be used to verify the Splunk server's certificate.
 	SSLCAFile string `json:"ssl_ca_file" mapstructure:"ssl_ca_file"`
 	// SSL Server name used in the TLS connection.
 	SSLServerName string `json:"ssl_server_name" mapstructure:"ssl_server_name"`
