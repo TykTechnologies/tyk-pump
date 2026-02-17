@@ -18,16 +18,79 @@ env:
 
 jobs:
   gotest:
-    uses: TykTechnologies/github-actions/.github/workflows/gotest.yaml@main
+    name: Go Test
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         go: [1.24]
-    with:
-      go: ${{ matrix.go }}
-      redis: 5
-      mongo: 4.2
-      test-options: "-count=1 -failfast -v"
+    services:
+      redis:
+        image: redis:5
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      mongo:
+        image: mongo:4.2
+        ports:
+          - 27017:27017
+    steps:
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go }}
+      - uses: actions/checkout@v4
+
+      - name: Cache
+        uses: actions/cache@v4
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Set up test tooling
+        run: |
+          go install gotest.tools/gotestsum@latest
+
+      - name: Go Test
+        id: test
+        run: |
+          PKGS="$(go list ./...)"
+          OPTS="-count=1 -failfast -v"
+
+          for pkg in ${PKGS}; do
+              tags=""
+              if [[ ${pkg} == *"goplugin" ]]; then
+                  tags="--tags 'goplugin'"
+              fi
+
+              coveragefile=`echo "$pkg" | awk -F/ '{print $NF}'`
+
+              echo go test ${OPTS} -json -timeout 15m -coverprofile=${coveragefile}.cov ${pkg} ${tags}
+
+              gotestsum --junitfile ${coveragefile}.xml --raw-command go test ${OPTS} --json -timeout 15m -coverprofile=${coveragefile}.cov ${pkg} ${tags}
+          done
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: "*cov"
+      - uses: actions/upload-artifact@v4
+        if: ${{ always() }}
+        with:
+          name: junit
+          path: "*xml"
+      - name: Github report view
+        if: ${{ always() }}
+        uses: phoenix-actions/test-reporting@v8
+        with:
+          name: Unit Test Results
+          path: "*.xml"
+          reporter: java-junit
   golangci:
     runs-on: ubuntu-latest
     needs: gotest
