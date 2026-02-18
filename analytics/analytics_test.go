@@ -109,7 +109,7 @@ func TestAnalyticsRecord_GetFieldNames(t *testing.T) {
 
 	fields := rec.GetFieldNames()
 
-	assert.Equal(t, 40, len(fields))
+	assert.Equal(t, 42, len(fields))
 
 	expectedFields := []string{
 		"Method",
@@ -134,7 +134,7 @@ func TestAnalyticsRecord_GetFieldNames(t *testing.T) {
 		"RawRequest",
 		"RawResponse",
 		"IPAddress",
-		"Tags", "Alias", "TrackPath", "ExpireAt", "ApiSchema",
+		"Tags", "Alias", "TrackPath", "ExpireAt", "ApiSchema", "OriginalPath", "ListenPath",
 		"GeoData.Country.ISOCode",
 		"GeoData.City.GeoNameID",
 		"GeoData.City.Names",
@@ -170,7 +170,7 @@ func TestAnalyticsRecord_GetLineValues(t *testing.T) {
 
 	fields := rec.GetLineValues()
 
-	assert.Equal(t, 40, len(fields))
+	assert.Equal(t, 42, len(fields))
 
 	for _, field := range structs.Fields(rec) {
 		if field.IsExported() && !field.IsZero() {
