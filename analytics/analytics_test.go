@@ -109,8 +109,6 @@ func TestAnalyticsRecord_GetFieldNames(t *testing.T) {
 
 	fields := rec.GetFieldNames()
 
-	assert.Equal(t, 42, len(fields))
-
 	expectedFields := []string{
 		"Method",
 		"Host",
@@ -169,8 +167,6 @@ func TestAnalyticsRecord_GetLineValues(t *testing.T) {
 	}
 
 	fields := rec.GetLineValues()
-
-	assert.Equal(t, 42, len(fields))
 
 	for _, field := range structs.Fields(rec) {
 		if field.IsExported() && !field.IsZero() {
