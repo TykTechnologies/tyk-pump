@@ -155,15 +155,17 @@ func TestAnalyticsRecord_GetFieldNames(t *testing.T) {
 
 func TestAnalyticsRecord_GetLineValues(t *testing.T) {
 	rec := &AnalyticsRecord{
-		APIID:      "api123",
-		OrgID:      "org123",
-		APIKey:     "key123",
-		Path:       "/path",
-		RawPath:    "/rawpath",
-		APIVersion: "v1",
-		APIName:    "api_name",
-		TimeStamp:  time.Now(),
-		ApiSchema:  "http",
+		APIID:        "api123",
+		OrgID:        "org123",
+		APIKey:       "key123",
+		Path:         "/path",
+		RawPath:      "/rawpath",
+		APIVersion:   "v1",
+		APIName:      "api_name",
+		TimeStamp:    time.Now(),
+		ApiSchema:    "http",
+		OriginalPath: "/original",
+		ListenPath:   "/listen",
 	}
 
 	fields := rec.GetLineValues()
