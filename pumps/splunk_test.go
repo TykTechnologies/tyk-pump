@@ -34,6 +34,8 @@ type testHandler struct {
 	reqCount     int
 }
 
+var splunkTestLog = log.WithField("prefix", "splunk_test")
+
 func (h *testHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.reqCount++
 
@@ -84,18 +86,148 @@ func (h *testHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func TestSplunkInit(t *testing.T) {
-	_, err := NewSplunkClient("", testEndpointURL, true, "", "", "")
-	if err == nil {
-		t.Fatal("A token needs to be present")
-	}
-	_, err = NewSplunkClient(testToken, "", true, "", "", "")
-	if err == nil {
-		t.Fatal("An endpoint needs to be present", "", "")
-	}
-	_, err = NewSplunkClient("", "", true, "", "", "")
-	if err == nil {
-		t.Fatal("Empty parameters should return an error")
-	}
+	t.Run("missing token", func(t *testing.T) {
+		_, err := newSplunkClient(
+			&splunkClientConfig{collectorURL: testEndpointURL},
+			splunkTestLog,
+		)
+		assert.Error(t, err, "A token needs to be present")
+		assert.Equal(t, errInvalidSettings, err)
+	})
+
+	t.Run("missing collector URL", func(t *testing.T) {
+		_, err := newSplunkClient(
+			&splunkClientConfig{token: testToken},
+			splunkTestLog,
+		)
+		assert.Error(t, err, "An endpoint needs to be present")
+		assert.Equal(t, errInvalidSettings, err)
+	})
+
+	t.Run("empty parameters", func(t *testing.T) {
+		_, err := newSplunkClient(
+			&splunkClientConfig{},
+			splunkTestLog,
+		)
+		assert.Error(t, err, "Empty parameters should return an error")
+		assert.Equal(t, errInvalidSettings, err)
+	})
+
+	t.Run("invalid collector URL format", func(t *testing.T) {
+		_, err := newSplunkClient(
+			&splunkClientConfig{
+				token:        testToken,
+				collectorURL: "://invalid-url",
+			},
+			splunkTestLog,
+		)
+		assert.Error(t, err, "Invalid URL should return an error")
+	})
+
+	t.Run("valid configuration with minimal settings", func(t *testing.T) {
+		client, err := newSplunkClient(
+			&splunkClientConfig{
+				token:        testToken,
+				collectorURL: testEndpointURL,
+			},
+			splunkTestLog,
+		)
+		assert.NoError(t, err)
+		assert.NotNil(t, client)
+		assert.Equal(t, testToken, client.Token)
+		assert.Equal(t, "http://localhost:8088"+defaultPath, client.CollectorURL)
+		assert.NotNil(t, client.httpClient)
+	})
+
+	t.Run("URL path is replaced with default path", func(t *testing.T) {
+		customURL := "http://localhost:8088/some/custom/path"
+		client, err := newSplunkClient(
+			&splunkClientConfig{
+				token:        testToken,
+				collectorURL: customURL,
+			},
+			splunkTestLog,
+		)
+		assert.NoError(t, err)
+		assert.NotNil(t, client)
+		assert.Equal(t, "http://localhost:8088"+defaultPath, client.CollectorURL)
+	})
+
+	t.Run("URL with query parameters", func(t *testing.T) {
+		urlWithQuery := "http://localhost:8088?param=value"
+		client, err := newSplunkClient(
+			&splunkClientConfig{
+				token:        testToken,
+				collectorURL: urlWithQuery,
+			},
+			splunkTestLog,
+		)
+		assert.NoError(t, err)
+		assert.NotNil(t, client)
+		assert.Contains(t, client.CollectorURL, "param=value")
+		assert.Contains(t, client.CollectorURL, defaultPath)
+	})
+
+	t.Run("HTTPS URL scheme", func(t *testing.T) {
+		httpsURL := "https://splunk.example.com:8088"
+		client, err := newSplunkClient(
+			&splunkClientConfig{
+				token:        testToken,
+				collectorURL: httpsURL,
+			},
+			splunkTestLog,
+		)
+		assert.NoError(t, err)
+		assert.NotNil(t, client)
+		assert.Equal(t, httpsURL+defaultPath, client.CollectorURL)
+	})
+
+	t.Run("valid configuration with TLS skip verify", func(t *testing.T) {
+		client, err := newSplunkClient(
+			&splunkClientConfig{
+				token:        testToken,
+				collectorURL: "https://splunk.example.com:8088",
+				tlsConfig: TLSConfig{
+					InsecureSkipVerify: true,
+				},
+			},
+			splunkTestLog,
+		)
+		assert.NoError(t, err)
+		assert.NotNil(t, client)
+		assert.NotNil(t, client.httpClient)
+	})
+
+	t.Run("TLS configuration with invalid cert file", func(t *testing.T) {
+		_, err := newSplunkClient(
+			&splunkClientConfig{
+				token:        testToken,
+				collectorURL: testEndpointURL,
+				tlsConfig: TLSConfig{
+					CertFile: "/nonexistent/cert.pem",
+					KeyFile:  "/nonexistent/key.pem",
+				},
+			},
+			splunkTestLog,
+		)
+		assert.Error(t, err, "Invalid cert file should return an error")
+		assert.Contains(t, err.Error(), "failed to configure TLS")
+	})
+
+	t.Run("TLS configuration with invalid CA file", func(t *testing.T) {
+		_, err := newSplunkClient(
+			&splunkClientConfig{
+				token:        testToken,
+				collectorURL: testEndpointURL,
+				tlsConfig: TLSConfig{
+					CAFile: "/nonexistent/ca.pem",
+				},
+			},
+			splunkTestLog,
+		)
+		assert.Error(t, err, "Invalid CA file should return an error")
+		assert.Contains(t, err.Error(), "failed to configure TLS")
+	})
 }
 
 func Test_SplunkProxyFromEnvironment(t *testing.T) {
@@ -110,7 +242,16 @@ func Test_SplunkProxyFromEnvironment(t *testing.T) {
 	defer os.Unsetenv("HTTP_PROXY")
 
 	// Initialize client
-	client, err := NewSplunkClient("token", "https://example.com", true, "", "", "")
+	client, err := newSplunkClient(
+		&splunkClientConfig{
+			token:        "token",
+			collectorURL: "https://example.com",
+			tlsConfig: TLSConfig{
+				InsecureSkipVerify: true,
+			},
+		},
+		splunkTestLog,
+	)
 	if err != nil {
 		t.Fatal("Failed to create client:", err)
 	}
@@ -139,7 +280,16 @@ func Test_SplunkInvalidProxyURL(t *testing.T) {
 	defer os.Unsetenv("HTTP_PROXY")
 
 	// Initialize client
-	client, err := NewSplunkClient("token", "https://example.com", true, "", "", "")
+	client, err := newSplunkClient(
+		&splunkClientConfig{
+			token:        "token",
+			collectorURL: "https://example.com",
+			tlsConfig: TLSConfig{
+				InsecureSkipVerify: true,
+			},
+		},
+		splunkTestLog,
+	)
 	if err != nil {
 		t.Fatal("Failed to create client:", err)
 	}

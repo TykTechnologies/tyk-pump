@@ -24,14 +24,37 @@ jobs:
         postgres-version: [15]
         go: [1.24]
 
+    services:
+      redis:
+        image: redis:${{ matrix.redis-version }}
+        ports:
+          - 6379:6379
+      mongodb:
+        image: mongo:${{ matrix.mongodb-version }}
+        ports:
+          - 27017:27017
+      postgres:
+        image: postgres:${{ matrix.postgres-version }}
+        env:
+          POSTGRES_DB: tyk_analytics
+          POSTGRES_USER: tyk
+          POSTGRES_PASSWORD: tyk123
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - name: Checkout Tyk Pump
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 2
 
       - name: Setup Golang
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v5
         with:
           go-version: ${{ matrix.go }}
 
@@ -43,24 +66,6 @@ jobs:
       - name: Fetch base branch
         if: ${{ github.event_name == 'pull_request' }}
         run: git fetch origin ${{ github.base_ref }}
-
-      - name: Start Redis
-        uses: supercharge/redis-github-action@1.2.0
-        with:
-          redis-version: ${{ matrix.redis-version }}
-
-      - name: Start MongoDB
-        uses: supercharge/mongodb-github-action@1.2.0
-        with:
-          mongodb-version: "${{ matrix.mongodb-version }}"
-
-      - name: Start PostgreSQL
-        uses: harmon758/postgresql-action@v1
-        with:
-          postgresql version: "${{ matrix.postgres-version }}"
-          postgresql db: "tyk_analytics"
-          postgresql user: "tyk"
-          postgresql password: "tyk123"
 
       - name: Cache
         uses: actions/cache@v4

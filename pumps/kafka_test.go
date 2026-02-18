@@ -3,6 +3,7 @@ package pumps
 import (
 	"os"
 	"testing"
+	"time"
 
 	"github.com/mitchellh/mapstructure"
 	"github.com/segmentio/kafka-go"
@@ -224,4 +225,136 @@ func TestKafkaPump_Init_NegativeBatchBytes(t *testing.T) {
 	assert.NoError(t, err, "Init should succeed with negative batch_bytes")
 	// The negative value should NOT be set, instead it should use default (0)
 	assert.Equal(t, 0, pump.writerConfig.BatchBytes, "Should use default value (0) when batch_bytes is negative")
+}
+
+func TestKafkaPump_InitTLSConfig(t *testing.T) {
+	t.Run("should not initialize TLS config when use_ssl is false", func(t *testing.T) {
+		config := map[string]any{
+			"broker":      []string{"localhost:9092"},
+			"topic":       "test-topic",
+			"batch_bytes": 1024,
+			"use_ssl":     false,
+			"ssl_ca_file": "nonexistent.pem",
+		}
+
+		pump := &KafkaPump{}
+		err := pump.Init(config)
+
+		assert.NoError(t, err)
+		assert.Nil(t, pump.writerConfig.Dialer.TLS, "TLS config should be missing")
+	})
+
+	t.Run("should initialize TLS config with InsecureSkipVerify enabled", func(t *testing.T) {
+		config := map[string]any{
+			"broker":                   []string{"localhost:9092"},
+			"topic":                    "test-topic",
+			"batch_bytes":              1024,
+			"use_ssl":                  true,
+			"ssl_insecure_skip_verify": true,
+		}
+
+		pump := KafkaPump{}
+		err := pump.Init(config)
+
+		assert.NoError(t, err)
+		assert.NotNil(t, pump.writerConfig.Dialer.TLS, "TLS config should be set")
+		assert.True(t, pump.writerConfig.Dialer.TLS.InsecureSkipVerify)
+	})
+
+	t.Run("should apply TLS config to Dialer with SASL and other settings", func(t *testing.T) {
+		config := map[string]any{
+			"broker":                   []string{"localhost:9092"},
+			"topic":                    "secure-sasl-topic",
+			"client_id":                "tyk-pump-sasl-client",
+			"timeout":                  "10s",
+			"use_ssl":                  true,
+			"ssl_insecure_skip_verify": true,
+			"sasl_mechanism":           "plain",
+			"sasl_username":            "test-user",
+			"sasl_password":            "test-pass",
+		}
+
+		pump := &KafkaPump{}
+		err := pump.Init(config)
+
+		assert.NoError(t, err)
+
+		assert.NotNil(t, pump.writerConfig.Dialer.TLS, "TLS config should be set")
+		assert.True(t, pump.writerConfig.Dialer.TLS.InsecureSkipVerify)
+
+		assert.NotNil(t, pump.writerConfig.Dialer.SASLMechanism, "SASL mechanism should be set")
+		assert.Equal(t, "PLAIN", pump.writerConfig.Dialer.SASLMechanism.Name())
+
+		assert.Equal(t, "tyk-pump-sasl-client", pump.writerConfig.Dialer.ClientID)
+		assert.Equal(t, 10*time.Second, pump.writerConfig.Dialer.Timeout)
+	})
+
+	t.Run("should initialize TLS with SASL PLAIN mechanism", func(t *testing.T) {
+		config := map[string]any{
+			"broker":         []string{"localhost:9092"},
+			"topic":          "test-topic",
+			"batch_bytes":    1024,
+			"use_ssl":        true,
+			"sasl_mechanism": "plain",
+		}
+
+		pump := KafkaPump{}
+		err := pump.Init(config)
+
+		assert.NoError(t, err)
+		assert.NotNil(t, pump.writerConfig.Dialer.TLS, "TLS config should be set")
+		assert.NotNil(t, pump.writerConfig.Dialer.SASLMechanism, "SASL mechanism should be set")
+		assert.Equal(t, "PLAIN", pump.writerConfig.Dialer.SASLMechanism.Name())
+	})
+
+	t.Run("should initialize TLS with SASL SCRAM SHA-256 mechanism", func(t *testing.T) {
+		config := map[string]any{
+			"broker":         []string{"localhost:9092"},
+			"topic":          "test-topic",
+			"batch_bytes":    1024,
+			"use_ssl":        true,
+			"sasl_mechanism": "scram",
+		}
+
+		pump := KafkaPump{}
+		err := pump.Init(config)
+
+		assert.NoError(t, err)
+		assert.NotNil(t, pump.writerConfig.Dialer.TLS, "TLS config should be set")
+		assert.NotNil(t, pump.writerConfig.Dialer.SASLMechanism, "SASL mechanism should be set")
+		assert.Equal(t, "SCRAM-SHA-256", pump.writerConfig.Dialer.SASLMechanism.Name())
+	})
+
+	t.Run("should return wrapped error when ssl_cert_file is invalid", func(t *testing.T) {
+		config := map[string]any{
+			"broker":        []string{"localhost:9092"},
+			"topic":         "test-topic",
+			"batch_bytes":   1024,
+			"use_ssl":       true,
+			"ssl_cert_file": "/nonexistent/cert.pem",
+			"ssl_key_file":  "/nonexistent/key.pem",
+		}
+
+		pump := KafkaPump{}
+		err := pump.Init(config)
+
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "failed to initialize Kafka pump SSL configuration")
+	})
+
+	t.Run("should return wrapped error when ssl_ca_file is invalid", func(t *testing.T) {
+		config := map[string]any{
+			"broker":      []string{"localhost:9092"},
+			"topic":       "test-topic",
+			"batch_bytes": 1024,
+			"use_ssl":     true,
+			"ssl_ca_file": "/nonexistent/cert.pem",
+		}
+
+		pump := KafkaPump{}
+		err := pump.Init(config)
+
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "failed to initialize Kafka pump SSL configuration")
+	})
 }

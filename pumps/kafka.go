@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"fmt"
 	"os"
 	"strconv"
 	"time"
@@ -59,6 +60,8 @@ type KafkaConf struct {
 	SSLCertFile string `json:"ssl_cert_file" mapstructure:"ssl_cert_file"`
 	// Can be used to set custom key file for authentication with kafka.
 	SSLKeyFile string `json:"ssl_key_file" mapstructure:"ssl_key_file"`
+	// Path to the PEM file with trusted CA certificates that will be used to verify the Kafka server's certificate.
+	SSLCAFile string `json:"ssl_ca_file" mapstructure:"ssl_ca_file"`
 	// SASL mechanism configuration. Only "plain" and "scram" are supported.
 	SASLMechanism string `json:"sasl_mechanism" mapstructure:"sasl_mechanism"`
 	// SASL username.
@@ -104,24 +107,14 @@ func (k *KafkaPump) Init(config interface{}) error {
 
 	var tlsConfig *tls.Config
 	if k.kafkaConf.UseSSL {
-		if k.kafkaConf.SSLCertFile != "" && k.kafkaConf.SSLKeyFile != "" {
-			var cert tls.Certificate
-			k.log.Debug("Loading certificates for mTLS.")
-			cert, err = tls.LoadX509KeyPair(k.kafkaConf.SSLCertFile, k.kafkaConf.SSLKeyFile)
-			if err != nil {
-				k.log.Debug("Error loading mTLS certificates:", err)
-				return err
-			}
-			tlsConfig = &tls.Config{
-				Certificates:       []tls.Certificate{cert},
-				InsecureSkipVerify: k.kafkaConf.SSLInsecureSkipVerify,
-			}
-		} else if k.kafkaConf.SSLCertFile != "" || k.kafkaConf.SSLKeyFile != "" {
-			k.log.Error("Only one of ssl_cert_file and ssl_cert_key configuration option is setted, you should set both to enable mTLS.")
-		} else {
-			tlsConfig = &tls.Config{
-				InsecureSkipVerify: k.kafkaConf.SSLInsecureSkipVerify,
-			}
+		tlsConfig, err = NewTLSConfig(TLSConfig{
+			CertFile:           k.kafkaConf.SSLCertFile,
+			KeyFile:            k.kafkaConf.SSLKeyFile,
+			CAFile:             k.kafkaConf.SSLCAFile,
+			InsecureSkipVerify: k.kafkaConf.SSLInsecureSkipVerify,
+		}, k.log)
+		if err != nil {
+			return fmt.Errorf("failed to initialize Kafka pump SSL configuration: %w", err)
 		}
 	} else if k.kafkaConf.SASLMechanism != "" {
 		k.log.WithField("SASL-Mechanism", k.kafkaConf.SASLMechanism).Warn("SASL-Mechanism is setted but use_ssl is false.")
