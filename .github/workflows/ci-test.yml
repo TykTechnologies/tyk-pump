@@ -22,7 +22,7 @@ jobs:
         redis-version: [5]
         mongodb-version: [4.2]
         postgres-version: [15]
-        go: [1.24]
+        go: [1.25]
 
     services:
       redis:
