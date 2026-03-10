@@ -239,6 +239,7 @@ func (c *SQLPump) WriteData(ctx context.Context, data []interface{}) error {
 
 	startIndex := 0
 	endIndex := dataLen
+	table := analytics.SQLTable
 	// We iterate dataLen +1 times since we're writing the data after the date change on sharding_table:true
 	for i := 0; i <= dataLen; i++ {
 		if c.SQLConf.TableSharding && startIndex < len(typedData) {
@@ -258,8 +259,7 @@ func (c *SQLPump) WriteData(ctx context.Context, data []interface{}) error {
 
 			endIndex = i
 
-			table := analytics.SQLTable + "_" + recDate
-			c.db = c.db.Table(table)
+			table = analytics.SQLTable + "_" + recDate
 			if errTable := c.ensureTable(table); errTable != nil {
 				return errTable
 			}
@@ -274,7 +274,7 @@ func (c *SQLPump) WriteData(ctx context.Context, data []interface{}) error {
 			if ends > len(recs) {
 				ends = len(recs)
 			}
-			tx := c.db.WithContext(ctx).Create(recs[i:ends])
+			tx := c.db.WithContext(ctx).Table(table).Create(recs[i:ends])
 			if tx.Error != nil {
 				c.log.Error(tx.Error)
 			}
@@ -466,8 +466,8 @@ func (c *SQLPump) ensureIndex(tableName string, background bool) error {
 // ensureTable creates the table if it doesn't exist
 func (c *SQLPump) ensureTable(tableName string) error {
 	if !c.db.Migrator().HasTable(tableName) {
-		c.db = c.db.Table(tableName)
-		if err := c.db.Migrator().CreateTable(&analytics.AnalyticsRecord{}); err != nil {
+		db := c.db.Table(tableName)
+		if err := db.Migrator().CreateTable(&analytics.AnalyticsRecord{}); err != nil {
 			c.log.Error("error creating table", err)
 			return err
 		}

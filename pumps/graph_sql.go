@@ -139,6 +139,7 @@ func (g *GraphSQLPump) WriteData(ctx context.Context, data []interface{}) error 
 
 	startIndex := 0
 	endIndex := dataLen
+	table := g.tableName
 	// We iterate dataLen +1 times since we're writing the data after the date change on sharding_table:true
 	if dataLen == 0 {
 		g.log.Debug("no graphql records")
@@ -163,10 +164,9 @@ func (g *GraphSQLPump) WriteData(ctx context.Context, data []interface{}) error 
 
 			endIndex = i
 
-			table := g.tableName + "_" + recDate
-			g.db = g.db.Table(table)
+			table = g.tableName + "_" + recDate
 			if !g.db.Migrator().HasTable(table) {
-				if err := g.db.AutoMigrate(&analytics.GraphRecord{}); err != nil {
+				if err := g.db.Table(table).AutoMigrate(&analytics.GraphRecord{}); err != nil {
 					g.log.Error("error creating table for record")
 					g.log.WithError(err).Debug("error creating table for record")
 				}
@@ -182,7 +182,7 @@ func (g *GraphSQLPump) WriteData(ctx context.Context, data []interface{}) error 
 			if ends > len(recs) {
 				ends = len(recs)
 			}
-			tx := g.db.WithContext(ctx).Create(recs[ri:ends])
+			tx := g.db.WithContext(ctx).Table(table).Create(recs[ri:ends])
 			if tx.Error != nil {
 				g.log.Error(tx.Error)
 			}
