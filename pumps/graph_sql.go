@@ -177,7 +177,11 @@ func (g *GraphSQLPump) WriteData(ctx context.Context, data []interface{}) error 
 
 		recs := graphRecords[startIndex:endIndex]
 
-		for ri := 0; ri < len(recs); ri += g.Conf.BatchSize {
+				batchSize := g.Conf.BatchSize
+		if batchSize == 0 {
+			batchSize = SQLDefaultQueryBatchSize
+		}
+		for ri := 0; ri < len(recs); ri += batchSize {
 			ends := ri + g.Conf.BatchSize
 			if ends > len(recs) {
 				ends = len(recs)

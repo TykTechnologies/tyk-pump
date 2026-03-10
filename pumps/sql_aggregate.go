@@ -317,7 +317,12 @@ func (c *SQLAggregatePump) DoAggregatedWriting(ctx context.Context, table, orgID
 		recs = append(recs, rec)
 	}
 
-	for i := 0; i < len(recs); i += c.SQLConf.BatchSize {
+		batchSize := c.SQLConf.BatchSize
+	if batchSize == 0 {
+		batchSize = SQLDefaultQueryBatchSize
+	}
+
+	for i := 0; i < len(recs); i += batchSize {
 		ends := i + c.SQLConf.BatchSize
 		if ends > len(recs) {
 			ends = len(recs)
