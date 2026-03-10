@@ -293,11 +293,6 @@ func (c *SQLPump) WriteData(ctx context.Context, data []interface{}) error {
 	return nil
 }
 
-	c.log.Info("Purged ", len(data), " records...")
-
-	return nil
-}
-
 func (c *SQLPump) WriteUptimeData(data []interface{}) {
 	dataLen := len(data)
 	c.log.Debug("Attempting to write ", dataLen, " records...")
@@ -398,7 +393,7 @@ func (c *SQLPump) WriteUptimeData(data []interface{}) {
 }
 
 func (c *SQLPump) buildIndexName(indexBaseName, tableName string) string {
-	ends := i + batchSize
+	return tableName + indexBaseName
 }
 
 func (c *SQLPump) createIndex(indexBaseName, tableName, column string) error {

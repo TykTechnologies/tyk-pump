@@ -341,6 +341,3 @@ func (c *SQLAggregatePump) DoAggregatedWriting(ctx context.Context, table, orgID
 
 	return nil
 }
-
-	return nil
-}
