@@ -367,7 +367,7 @@ func (c *SQLPump) WriteUptimeData(data []interface{}) {
 				recs = append(recs, rec)
 			}
 
-						batchSize := c.SQLConf.BatchSize
+			batchSize := c.SQLConf.BatchSize
 			if batchSize == 0 {
 				batchSize = SQLDefaultQueryBatchSize
 			}

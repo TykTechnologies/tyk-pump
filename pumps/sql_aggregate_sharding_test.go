@@ -30,8 +30,8 @@ func TestSQLAggregateWriteData_Sharding_GormV2_Bug(t *testing.T) {
 	}
 
 	pmp := &SQLAggregatePump{
-		db:      gormDB,
-		dbType:  "postgres",
+		db:     gormDB,
+		dbType: "postgres",
 		SQLConf: &SQLAggregatePumpConf{
 			SQLConf: SQLConf{
 				TableSharding: true,
@@ -66,15 +66,10 @@ func TestSQLAggregateWriteData_Sharding_GormV2_Bug(t *testing.T) {
 	mock.ExpectExec(regexp.QuoteMeta(fmt.Sprintf("CREATE INDEX %s IF NOT EXISTS %s ON %s (dimension, timestamp, org_id, dimension_value)", "CONCURRENTLY", table+"_idx_dimension", table))).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 
-
 	mock.ExpectBegin()
 	mock.ExpectExec(regexp.QuoteMeta(`INSERT INTO "` + table + `"`)).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 	mock.ExpectCommit()
-
-
-
-
 
 	err = pmp.WriteData(context.TODO(), keys)
 	assert.NoError(t, err)

@@ -259,7 +259,7 @@ func (c *SQLAggregatePump) WriteData(ctx context.Context, data []interface{}) er
 			endIndex = i
 
 			table = analytics.AggregateSQLTable + "_" + recDate
-			
+
 			if errTable := c.ensureTable(table); errTable != nil {
 				return errTable
 			}
@@ -317,7 +317,7 @@ func (c *SQLAggregatePump) DoAggregatedWriting(ctx context.Context, table, orgID
 		recs = append(recs, rec)
 	}
 
-		batchSize := c.SQLConf.BatchSize
+	batchSize := c.SQLConf.BatchSize
 	if batchSize == 0 {
 		batchSize = SQLDefaultQueryBatchSize
 	}
