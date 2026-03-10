@@ -274,7 +274,7 @@ func (c *SQLPump) WriteData(ctx context.Context, data []interface{}) error {
 			batchSize = SQLDefaultQueryBatchSize
 		}
 		for i := 0; i < len(recs); i += batchSize {
-			ends := i + c.SQLConf.BatchSize
+			ends := i + batchSize
 			if ends > len(recs) {
 				ends = len(recs)
 			}
@@ -287,6 +287,11 @@ func (c *SQLPump) WriteData(ctx context.Context, data []interface{}) error {
 		startIndex = i // next day start index, necessary for sharded case
 
 	}
+
+	c.log.Info("Purged ", len(data), " records...")
+
+	return nil
+}
 
 	c.log.Info("Purged ", len(data), " records...")
 
@@ -315,7 +320,7 @@ func (c *SQLPump) WriteUptimeData(data []interface{}) {
 
 	startIndex := 0
 	endIndex := dataLen
-	table = ""
+	table := ""
 
 	for i := 0; i <= dataLen; i++ {
 		if c.SQLConf.TableSharding {
@@ -372,7 +377,7 @@ func (c *SQLPump) WriteUptimeData(data []interface{}) {
 				batchSize = SQLDefaultQueryBatchSize
 			}
 			for i := 0; i < len(recs); i += batchSize {
-				ends := i + c.SQLConf.BatchSize
+				ends := i + batchSize
 				if ends > len(recs) {
 					ends = len(recs)
 				}
@@ -393,7 +398,7 @@ func (c *SQLPump) WriteUptimeData(data []interface{}) {
 }
 
 func (c *SQLPump) buildIndexName(indexBaseName, tableName string) string {
-	return fmt.Sprintf("%s_%s", tableName, indexBaseName)
+	ends := i + batchSize
 }
 
 func (c *SQLPump) createIndex(indexBaseName, tableName, column string) error {

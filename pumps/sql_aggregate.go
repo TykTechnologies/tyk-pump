@@ -323,7 +323,7 @@ func (c *SQLAggregatePump) DoAggregatedWriting(ctx context.Context, table, orgID
 	}
 
 	for i := 0; i < len(recs); i += batchSize {
-		ends := i + c.SQLConf.BatchSize
+		ends := i + batchSize
 		if ends > len(recs) {
 			ends = len(recs)
 		}
@@ -338,6 +338,9 @@ func (c *SQLAggregatePump) DoAggregatedWriting(ctx context.Context, table, orgID
 			return tx.Error
 		}
 	}
+
+	return nil
+}
 
 	return nil
 }

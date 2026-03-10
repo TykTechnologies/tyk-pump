@@ -182,7 +182,7 @@ func (g *GraphSQLPump) WriteData(ctx context.Context, data []interface{}) error 
 			batchSize = SQLDefaultQueryBatchSize
 		}
 		for ri := 0; ri < len(recs); ri += batchSize {
-			ends := ri + g.Conf.BatchSize
+			ends := ri + batchSize
 			if ends > len(recs) {
 				ends = len(recs)
 			}
