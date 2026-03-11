@@ -238,13 +238,13 @@ func TestMCPSQLAggregatePump_WriteData_Sharded(t *testing.T) {
 
 	record1 := analytics.AnalyticsRecord{
 		TimeStamp: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
-		APIID: "test-api", APIName: "test-api", OrgID: "test-org",
+		APIID:     "test-api", APIName: "test-api", OrgID: "test-org",
 		ResponseCode: 200, Day: 1, Month: 1, Year: 2025,
 		MCPStats: analytics.MCPStats{IsMCP: true, JSONRPCMethod: "tools/call", PrimitiveType: "tool", PrimitiveName: "t1"},
 	}
 	record2 := analytics.AnalyticsRecord{
 		TimeStamp: time.Date(2025, 2, 1, 0, 0, 0, 0, time.UTC),
-		APIID: "test-api", APIName: "test-api", OrgID: "test-org",
+		APIID:     "test-api", APIName: "test-api", OrgID: "test-org",
 		ResponseCode: 200, Day: 1, Month: 2, Year: 2025,
 		MCPStats: analytics.MCPStats{IsMCP: true, JSONRPCMethod: "tools/call", PrimitiveType: "tool", PrimitiveName: "t2"},
 	}
