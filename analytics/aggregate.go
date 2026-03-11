@@ -208,45 +208,45 @@ func OnConflictAssignments(tableName, tempTable string) map[string]interface{} {
 	baseFields := structs.Fields(f.Code)
 	for _, field := range baseFields {
 		jsonTag := field.Tag("json")
-		colName := "code_" + jsonTag
-		assignments[colName] = gorm.Expr(tableName + "." + colName + " + " + tempTable + "." + colName)
+		colName := "code" + jsonTag
+		assignments[colName] = gorm.Expr(colName + " + " + tempTable + "." + colName)
 
 	}
 
 	fields := structs.Fields(f.Counter)
 	for _, field := range fields {
 		jsonTag := field.Tag("json")
-		colName := "counter_" + jsonTag
+		colName := jsonTag
 
 		switch jsonTag {
 		// hits, error, success"s, open_connections, closed_connections, bytes_in, bytes_out,total_request_time, total_upstream_latency, total_latency
 		case "hits", "error", "success", "open_connections", "closed_connections", "bytes_in", "bytes_out", "total_request_time", "total_latency", "total_upstream_latency":
-			assignments[colName] = gorm.Expr(tableName + "." + colName + " + " + tempTable + "." + colName)
+			assignments[colName] = gorm.Expr(colName + " + " + tempTable + "." + colName)
 		// request_time, upstream_latency,latency
 		case "request_time", "upstream_latency", "latency":
 			// AVG = (oldTotal + newTotal ) / (oldHits + newHits)
 			var totalVal, totalCol string
 			switch jsonTag {
 			case "request_time":
-				totalCol = "counter_total_request_time"
+				totalCol = "total_request_time"
 			case "upstream_latency":
-				totalCol = "counter_total_upstream_latency"
+				totalCol = "total_upstream_latency"
 			case "latency":
-				totalCol = "counter_total_latency"
+				totalCol = "total_latency"
 			}
 			totalVal = tempTable + "." + totalCol
 
-			assignments[colName] = gorm.Expr("(" + tableName + "." + totalCol + "  +" + totalVal + ")/CAST( " + tableName + ".counter_hits + " + tempTable + ".counter_hits" + " AS REAL)")
+			assignments[colName] = gorm.Expr("(" + totalCol + "  +" + totalVal + ")/CAST( hits + " + tempTable + ".hits" + " AS REAL)")
 
 		case "max_upstream_latency", "max_latency":
 			// math max: 0.5 * ((@val1 + @val2) + ABS(@val1 - @val2))
-			val1 := tableName + "." + colName
+			val1 := colName
 			val2 := tempTable + "." + colName
 			assignments[colName] = gorm.Expr("0.5 * ((" + val1 + " + " + val2 + ") + ABS(" + val1 + " - " + val2 + "))")
 
 		case "min_latency", "min_upstream_latency":
 			// math min: 0.5 * ((@val1 + @val2) - ABS(@val1 - @val2))
-			val1 := tableName + "." + colName
+			val1 := colName
 			val2 := tempTable + "." + colName
 			assignments[colName] = gorm.Expr("0.5 * ((" + val1 + " + " + val2 + ") - ABS(" + val1 + " - " + val2 + ")) ")
 

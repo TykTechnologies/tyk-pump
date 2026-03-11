@@ -403,7 +403,7 @@ func (c *SQLPump) createIndex(indexBaseName, tableName, column string) error {
 		option = "CONCURRENTLY"
 	}
 
-	columnExist := c.db.Migrator().HasColumn(&analytics.AnalyticsRecord{}, column)
+	columnExist := c.db.Table(tableName).Migrator().HasColumn(&analytics.AnalyticsRecord{}, column)
 	if !columnExist {
 		return errors.New("cannot create index for non existent column " + column)
 	}
@@ -435,9 +435,6 @@ func (c *SQLPump) ensureIndex(tableName string, background bool) error {
 
 	// waitgroup to facilitate testing and track when all indexes are created
 	var wg sync.WaitGroup
-	if background {
-		wg.Add(len(indexes))
-	}
 
 	for _, idx := range indexes {
 		indexName := tableName + idx.baseName
@@ -451,6 +448,7 @@ func (c *SQLPump) ensureIndex(tableName string, background bool) error {
 		}
 
 		if background {
+			wg.Add(1)
 			go func(baseName, cols string) {
 				defer wg.Done()
 				if err := c.createIndex(baseName, tableName, cols); err != nil {

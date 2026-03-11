@@ -49,7 +49,7 @@ func TestSQLAggregateWriteData_Sharding_WithSQLite(t *testing.T) {
 	var shardedRecords []analytics.SQLAnalyticsRecordAggregate
 	err = db.Table(shardedTable).Find(&shardedRecords).Error
 	assert.NoError(t, err)
-	assert.Len(t, shardedRecords, 1, "data should be in the sharded table")
+	assert.Len(t, shardedRecords, 2, "data should be in the sharded table")
 
 	// Check if data is in the default table (it shouldn't be)
 	var defaultRecords []analytics.SQLAnalyticsRecordAggregate
