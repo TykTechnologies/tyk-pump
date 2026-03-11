@@ -329,7 +329,7 @@ func TestAggregateUptimeData(t *testing.T) {
 }
 
 func TestOnConflictUptimeAssignments(t *testing.T) {
-	assignments := OnConflictAssignments("uptime_reports", "excluded")
+	assignments := OnConflictAssignments("", "excluded")
 
 	expectedAssignmets := map[string]interface{}{
 		"code_1x":                        clause.Expr{SQL: "code_1x + excluded.code_1x"},

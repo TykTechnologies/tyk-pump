@@ -59,14 +59,14 @@ func (a *UptimeReportData) TableName() string {
 	return UptimeSQLTable
 }
 
-func OnConflictUptimeAssignments(tableName, tempTable string) map[string]interface{} {
+func OnConflictUptimeAssignments(targetPrefix, tempTable string) map[string]interface{} {
 	assignments := make(map[string]interface{})
 	f := UptimeReportAggregateSQL{}
 	baseFields := structs.Fields(f.Code)
 	for _, field := range baseFields {
 		jsonTag := field.Tag("json")
 		colName := "code_" + jsonTag
-		assignments[colName] = gorm.Expr(colName + " + " + tempTable + "." + colName)
+		assignments[colName] = gorm.Expr(targetPrefix + colName + " + " + tempTable + "." + colName)
 
 	}
 
@@ -76,10 +76,10 @@ func OnConflictUptimeAssignments(tableName, tempTable string) map[string]interfa
 		colName := "counter_" + jsonTag
 		switch jsonTag {
 		case "hits", "error", "success", "total_request_time":
-			assignments[colName] = gorm.Expr(colName + " + " + tempTable + "." + colName)
+			assignments[colName] = gorm.Expr(targetPrefix + colName + " + " + tempTable + "." + colName)
 		case "request_time":
 			if !field.IsZero() {
-				assignments[colName] = gorm.Expr("(counter_total_request_time  +" + tempTable + "." + "counter_total_request_time" + ")/( counter_hits + " + tempTable + ".counter_hits" + ")")
+				assignments[colName] = gorm.Expr("(" + targetPrefix + "counter_total_request_time  +" + tempTable + "." + "counter_total_request_time" + ")/( " + targetPrefix + "counter_hits + " + tempTable + ".counter_hits" + ")")
 			}
 		case "last_time":
 			assignments[colName] = gorm.Expr(tempTable + "." + colName)

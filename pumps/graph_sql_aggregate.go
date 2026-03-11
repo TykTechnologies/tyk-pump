@@ -117,9 +117,9 @@ func (s *GraphSQLAggregatePump) WriteData(ctx context.Context, data []interface{
 			endIndex = i
 
 			table = analytics.AggregateGraphSQLTable + "_" + recDate
-			s.db = s.db.Table(table)
-			if !s.db.Migrator().HasTable(table) {
-				if err := s.db.AutoMigrate(&analytics.GraphSQLAnalyticsRecordAggregate{}); err != nil {
+			db := s.db.Table(table)
+			if !db.Migrator().HasTable(table) {
+				if err := db.AutoMigrate(&analytics.GraphSQLAnalyticsRecordAggregate{}); err != nil {
 					s.log.WithError(err).Warn("error running auto migration")
 				}
 			}
@@ -181,9 +181,14 @@ func (s *GraphSQLAggregatePump) DoAggregatedWriting(ctx context.Context, table, 
 		}
 
 		// we use excluded as temp  table since it's supported by our SQL storages https://www.postgresql.org/docs/9.5/sql-insert.html#SQL-ON-CONFLICT
+		targetPrefix := ""
+		if s.db.Dialector.Name() != "sqlite" {
+			targetPrefix = table + "."
+		}
+
 		tx := s.db.WithContext(ctx).Table(table).Clauses(clause.OnConflict{
 			Columns:   []clause.Column{{Name: "id"}},
-			DoUpdates: clause.Assignments(analytics.OnConflictAssignments(table, "excluded")),
+			DoUpdates: clause.Assignments(analytics.OnConflictAssignments(targetPrefix, "excluded")),
 		}).Create(recs[i:ends])
 		if tx.Error != nil {
 			s.log.Error("error writing aggregated records into "+table+":", tx.Error)

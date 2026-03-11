@@ -336,9 +336,9 @@ func (c *SQLPump) WriteUptimeData(data []interface{}) {
 			endIndex = i
 
 			table = analytics.UptimeSQLTable + "_" + recDate
-			c.db = c.db.Table(table)
-			if !c.db.Migrator().HasTable(table) {
-				c.db.AutoMigrate(&analytics.UptimeReportAggregateSQL{})
+			db := c.db.Table(table)
+			if !db.Migrator().HasTable(table) {
+				db.AutoMigrate(&analytics.UptimeReportAggregateSQL{})
 			}
 		} else {
 			i = dataLen // write all records at once for non-sharded case, stop for loop after 1 iteration
@@ -376,9 +376,13 @@ func (c *SQLPump) WriteUptimeData(data []interface{}) {
 				if ends > len(recs) {
 					ends = len(recs)
 				}
-				tx := c.db.Clauses(clause.OnConflict{
+				targetPrefix := ""
+				if c.dbType != "sqlite" {
+					targetPrefix = table + "."
+				}
+				tx := c.db.Table(table).Clauses(clause.OnConflict{
 					Columns:   []clause.Column{{Name: "id"}},
-					DoUpdates: clause.Assignments(analytics.OnConflictUptimeAssignments(table, "excluded")),
+					DoUpdates: clause.Assignments(analytics.OnConflictUptimeAssignments(targetPrefix, "excluded")),
 				}).Create(recs[i:ends])
 				if tx.Error != nil {
 					c.log.Error(tx.Error)
