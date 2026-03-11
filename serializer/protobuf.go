@@ -17,7 +17,7 @@ func (pb *ProtobufSerializer) GetSuffix() string {
 
 func (pb *ProtobufSerializer) Encode(record *analytics.AnalyticsRecord) ([]byte, error) {
 	protoRecord := pb.TransformSingleRecordToProto(*record)
-	return proto.Marshal(&protoRecord)
+	return proto.Marshal(protoRecord)
 }
 
 func (pb *ProtobufSerializer) Decode(analyticsData interface{}, record *analytics.AnalyticsRecord) error {
@@ -26,10 +26,10 @@ func (pb *ProtobufSerializer) Decode(analyticsData interface{}, record *analytic
 	if err != nil {
 		return err
 	}
-	return pb.TransformSingleProtoToAnalyticsRecord(protoData, record)
+	return pb.TransformSingleProtoToAnalyticsRecord(&protoData, record)
 }
 
-func (pb *ProtobufSerializer) TransformSingleRecordToProto(rec analytics.AnalyticsRecord) analyticsproto.AnalyticsRecord {
+func (pb *ProtobufSerializer) TransformSingleRecordToProto(rec analytics.AnalyticsRecord) *analyticsproto.AnalyticsRecord {
 	latency := analyticsproto.Latency{
 		Total:    rec.Latency.Total,
 		Upstream: rec.Latency.Upstream,
@@ -120,10 +120,10 @@ func (pb *ProtobufSerializer) TransformSingleRecordToProto(rec analytics.Analyti
 		}
 	}
 
-	return record
+	return &record
 }
 
-func (pb *ProtobufSerializer) TransformSingleProtoToAnalyticsRecord(rec analyticsproto.AnalyticsRecord, record *analytics.AnalyticsRecord) error {
+func (pb *ProtobufSerializer) TransformSingleProtoToAnalyticsRecord(rec *analyticsproto.AnalyticsRecord, record *analytics.AnalyticsRecord) error {
 	tmpRecord := analytics.AnalyticsRecord{
 		Method:        rec.Method,
 		Host:          rec.Host,

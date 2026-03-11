@@ -337,7 +337,7 @@ func (a *AnalyticsRecord) TimestampToProto(newRecord *analyticsproto.AnalyticsRe
 	newRecord.TimeZone = a.TimeStamp.Location().String()
 }
 
-func (a *AnalyticsRecord) TimeStampFromProto(protoRecord analyticsproto.AnalyticsRecord) {
+func (a *AnalyticsRecord) TimeStampFromProto(protoRecord *analyticsproto.AnalyticsRecord) {
 	// get timestamp in original location
 	loc, err := time.LoadLocation(protoRecord.TimeZone)
 	if err != nil {
