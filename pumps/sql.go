@@ -436,19 +436,25 @@ func (c *SQLPump) ensureIndex(tableName string, background bool) error {
 	// waitgroup to facilitate testing and track when all indexes are created
 	var wg sync.WaitGroup
 
+	if background {
+		wg.Add(len(indexes))
+	}
+
 	for _, idx := range indexes {
-		indexName := tableName + idx.baseName
+		indexName := c.buildIndexName(idx.baseName, tableName)
 
 		if c.db.Migrator().HasIndex(tableName, indexName) {
 			c.log.WithFields(logrus.Fields{
 				"index": indexName,
 				"table": tableName,
 			}).Info("Index already exists")
+			if background {
+				wg.Done()
+			}
 			continue
 		}
 
 		if background {
-			wg.Add(1)
 			go func(baseName, cols string) {
 				defer wg.Done()
 				if err := c.createIndex(baseName, tableName, cols); err != nil {
