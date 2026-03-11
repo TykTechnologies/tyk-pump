@@ -52,11 +52,11 @@ func TestSQLAggregateWriteData_Sharding_WithSQLite(t *testing.T) {
 	var shardedRecords []analytics.SQLAnalyticsRecordAggregate
 	err = db.Table(shardedTable).Find(&shardedRecords).Error
 	assert.NoError(t, err)
-	assert.Len(t, shardedRecords, 2, "data should be in the sharded table")
+	assert.Len(t, shardedRecords, 2, "data should be in the sharded table (1 for apiid, 1 for total)")
 
 	// Check if data is in the default table (it shouldn't be)
 	var defaultRecords []analytics.SQLAnalyticsRecordAggregate
 	err = db.Table(defaultTable).Find(&defaultRecords).Error
-	assert.Len(t, shardedRecords, 2, "data should be in the sharded table (1 for apiid, 1 for total)")
+	assert.Error(t, err, "default table should not exist") // Expecting an error because the table should not have been created
 	assert.Len(t, defaultRecords, 0)
 }
