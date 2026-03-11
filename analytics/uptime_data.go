@@ -65,7 +65,7 @@ func OnConflictUptimeAssignments(tableName, tempTable string) map[string]interfa
 	baseFields := structs.Fields(f.Code)
 	for _, field := range baseFields {
 		jsonTag := field.Tag("json")
-		colName := "code" + jsonTag
+		colName := "code_" + jsonTag
 		assignments[colName] = gorm.Expr(colName + " + " + tempTable + "." + colName)
 
 	}
@@ -73,13 +73,13 @@ func OnConflictUptimeAssignments(tableName, tempTable string) map[string]interfa
 	fields := structs.Fields(f.Counter)
 	for _, field := range fields {
 		jsonTag := field.Tag("json")
-		colName := jsonTag
+		colName := "counter_" + jsonTag
 		switch jsonTag {
 		case "hits", "error", "success", "total_request_time":
 			assignments[colName] = gorm.Expr(colName + " + " + tempTable + "." + colName)
 		case "request_time":
 			if !field.IsZero() {
-				assignments[colName] = gorm.Expr("(total_request_time  +" + tempTable + "." + "total_request_time" + ")/( hits + " + tempTable + ".hits" + ")")
+				assignments[colName] = gorm.Expr("(counter_total_request_time  +" + tempTable + "." + "counter_total_request_time" + ")/( counter_hits + " + tempTable + ".counter_hits" + ")")
 			}
 		case "last_time":
 			assignments[colName] = gorm.Expr(tempTable + "." + colName)

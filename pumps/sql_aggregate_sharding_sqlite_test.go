@@ -12,7 +12,10 @@ import (
 )
 
 func TestSQLAggregateWriteData_Sharding_WithSQLite(t *testing.T) {
-	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{})
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
+		AutoEmbedd:  true,
+		UseJSONTags: true,
+	})
 	if err != nil {
 		t.Fatalf("failed to connect database: %v", err)
 	}

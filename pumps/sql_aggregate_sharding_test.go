@@ -24,7 +24,10 @@ func TestSQLAggregateWriteData_Sharding_GormV2_Bug(t *testing.T) {
 
 	gormDB, err := gorm.Open(postgres.New(postgres.Config{
 		Conn: db,
-	}), &gorm.Config{})
+	}), &gorm.Config{
+		AutoEmbedd:  true,
+		UseJSONTags: true,
+	})
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a gorm database", err)
 	}

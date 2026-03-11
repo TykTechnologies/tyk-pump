@@ -208,7 +208,7 @@ func OnConflictAssignments(tableName, tempTable string) map[string]interface{} {
 	baseFields := structs.Fields(f.Code)
 	for _, field := range baseFields {
 		jsonTag := field.Tag("json")
-		colName := "code" + jsonTag
+		colName := "code_" + jsonTag
 		assignments[colName] = gorm.Expr(colName + " + " + tempTable + "." + colName)
 
 	}
@@ -216,7 +216,7 @@ func OnConflictAssignments(tableName, tempTable string) map[string]interface{} {
 	fields := structs.Fields(f.Counter)
 	for _, field := range fields {
 		jsonTag := field.Tag("json")
-		colName := jsonTag
+		colName := "counter_" + jsonTag
 
 		switch jsonTag {
 		// hits, error, success"s, open_connections, closed_connections, bytes_in, bytes_out,total_request_time, total_upstream_latency, total_latency
@@ -228,15 +228,15 @@ func OnConflictAssignments(tableName, tempTable string) map[string]interface{} {
 			var totalVal, totalCol string
 			switch jsonTag {
 			case "request_time":
-				totalCol = "total_request_time"
+				totalCol = "counter_total_request_time"
 			case "upstream_latency":
-				totalCol = "total_upstream_latency"
+				totalCol = "counter_total_upstream_latency"
 			case "latency":
-				totalCol = "total_latency"
+				totalCol = "counter_total_latency"
 			}
 			totalVal = tempTable + "." + totalCol
 
-			assignments[colName] = gorm.Expr("(" + totalCol + "  +" + totalVal + ")/CAST( hits + " + tempTable + ".hits" + " AS REAL)")
+			assignments[colName] = gorm.Expr("(" + totalCol + "  +" + totalVal + ")/CAST( counter_hits + " + tempTable + ".counter_hits" + " AS REAL)")
 
 		case "max_upstream_latency", "max_latency":
 			// math max: 0.5 * ((@val1 + @val2) + ABS(@val1 - @val2))
