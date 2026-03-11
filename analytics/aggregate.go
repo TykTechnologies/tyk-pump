@@ -711,6 +711,11 @@ func AggregateData(data []interface{}, trackAllPaths bool, ignoreTagPrefixList [
 			continue
 		}
 
+		// We don't want to aggregate MCP Data with REST data - there is a different type for that.
+		if thisV.IsMCPRecord() {
+			continue
+		}
+
 		thisAggregate, found := analyticsPerOrg[orgID]
 
 		if !found {
