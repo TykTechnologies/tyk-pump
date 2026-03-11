@@ -393,7 +393,7 @@ func (c *SQLPump) WriteUptimeData(data []interface{}) {
 }
 
 func (c *SQLPump) buildIndexName(indexBaseName, tableName string) string {
-	return tableName + indexBaseName
+	return fmt.Sprintf("%s_%s", tableName, indexBaseName)
 }
 
 func (c *SQLPump) createIndex(indexBaseName, tableName, column string) error {
