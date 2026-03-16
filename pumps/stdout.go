@@ -33,8 +33,8 @@ type StdOutConf struct {
 	Format string `json:"format" mapstructure:"format"`
 	// Root name of the JSON object the analytics record is nested in.
 	LogFieldName string `json:"log_field_name" mapstructure:"log_field_name"`
-	// CleanJSON formats raw_request and raw_response as valid JSON objects instead of escaped strings.
-	CleanJSON bool `json:"clean_json" mapstructure:"clean_json"`
+	// RawPayloadsAsJson formats raw_request and raw_response as valid JSON objects instead of escaped strings.
+	RawPayloadsAsJson bool `json:"raw_payloads_as_json" mapstructure:"raw_payloads_as_json"`
 }
 
 func (s *StdOutPump) GetName() string {
@@ -90,7 +90,7 @@ func (s *StdOutPump) WriteData(ctx context.Context, data []interface{}) error {
 			if s.conf.Format == "json" {
 				formatter := &logrus.JSONFormatter{}
 
-				if s.conf.CleanJSON {
+				if s.conf.RawPayloadsAsJson {
 					decoded.RawRequest = transformHTTPPayload(decoded.RawRequest)
 					decoded.RawResponse = transformHTTPPayload(decoded.RawResponse)
 				}
