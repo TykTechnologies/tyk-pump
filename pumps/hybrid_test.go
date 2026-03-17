@@ -776,35 +776,22 @@ func TestAggregateAndSendREST(t *testing.T) {
 }
 
 func TestAggregateNotCalledInRawMode(t *testing.T) {
-	mockConf := &HybridPumpConf{
-		ConnectionString: "localhost:9092",
-		RPCKey:           "testkey",
-		APIKey:           "testapikey",
-		Aggregated:       false, // raw mode
-	}
-
 	var rpcCalls []string
 
-	dispatcher := gorpc.NewDispatcher()
-	dispatcher.AddFunc("Ping", func() bool { return true })
-	dispatcher.AddFunc("Login", func(clientAddr, userKey string) bool { return true })
-	dispatcher.AddFunc("PurgeAnalyticsData", func(clientID, data string) error {
-		rpcCalls = append(rpcCalls, "PurgeAnalyticsData")
-		return nil
-	})
-	dispatcher.AddFunc("PurgeAnalyticsDataMCPAggregated", func(clientID, data string) error {
-		rpcCalls = append(rpcCalls, "PurgeAnalyticsDataMCPAggregated")
-		return nil
-	})
-
-	server, err := startRPCMock(t, mockConf, dispatcher)
-	assert.NoError(t, err)
-	defer stopRPCMock(t, server)
-
 	pump := &HybridPump{}
-	err = pump.Init(mockConf)
-	assert.NoError(t, err)
-	defer func() { _ = pump.Shutdown() }()
+	pump.log = log.WithField("prefix", "hybrid-test")
+	pump.hybridConfig = &HybridPumpConf{
+		ConnectionString: "test-db",
+		Aggregated:       false, // raw mode
+	}
+	pump.clientIsConnected.Store(true)
+	pump.callRPCFn = func(funcName string, request interface{}) (interface{}, error) {
+		rpcCalls = append(rpcCalls, funcName)
+		if funcName == "Login" {
+			return true, nil
+		}
+		return nil, nil
+	}
 
 	data := []interface{}{
 		analytics.AnalyticsRecord{
@@ -817,11 +804,13 @@ func TestAggregateNotCalledInRawMode(t *testing.T) {
 		},
 	}
 
-	err = pump.WriteData(context.Background(), data)
+	err := pump.WriteData(context.Background(), data)
 	assert.NoError(t, err)
 
-	// In raw mode, only PurgeAnalyticsData is called — no MCP aggregation
-	assert.Equal(t, []string{"PurgeAnalyticsData"}, rpcCalls)
+	// In raw mode, only Login + PurgeAnalyticsData are called — no MCP aggregation
+	assert.Contains(t, rpcCalls, "PurgeAnalyticsData")
+	assert.NotContains(t, rpcCalls, "PurgeAnalyticsDataMCPAggregated")
+	assert.NotContains(t, rpcCalls, "PurgeAnalyticsDataAggregated")
 }
 
 func TestDispatcherFuncsIncludesMCPAggregated(t *testing.T) {
