@@ -227,6 +227,9 @@ func TestHybridPumpWriteData(t *testing.T) {
 					}
 					return nil
 				},
+				"PurgeAnalyticsDataMCPAggregated": func(clientID, data string) error {
+					return nil
+				},
 			},
 			givenData: []interface{}{
 				analytics.AnalyticsRecord{
@@ -258,6 +261,9 @@ func TestHybridPumpWriteData(t *testing.T) {
 					if data == "" {
 						return errors.New("empty data")
 					}
+					return nil
+				},
+				"PurgeAnalyticsDataMCPAggregated": func(clientID, data string) error {
 					return nil
 				},
 			},
@@ -602,6 +608,13 @@ func TestDispatcherFuncs(t *testing.T) {
 			expectedOutput: nil,
 			expectedError:  nil,
 		},
+		{
+			testName:       "PurgeAnalyticsDataMCPAggregated",
+			function:       "PurgeAnalyticsDataMCPAggregated",
+			input:          []interface{}{"test data"},
+			expectedOutput: nil,
+			expectedError:  nil,
+		},
 	}
 
 	for _, tc := range tcs {
@@ -627,6 +640,199 @@ func TestDispatcherFuncs(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestSendAggregated(t *testing.T) {
+	t.Run("marshals data and calls RPC function", func(t *testing.T) {
+		var receivedFn string
+		var receivedPayload string
+
+		pump := &HybridPump{}
+		pump.log = log.WithField("prefix", "hybrid-test")
+		pump.callRPCFn = func(funcName string, request interface{}) (interface{}, error) {
+			receivedFn = funcName
+			receivedPayload = request.(string)
+			return nil, nil
+		}
+
+		data := map[string]string{"key": "value"}
+		err := pump.sendAggregated("TestRPCFn", data)
+
+		assert.NoError(t, err)
+		assert.Equal(t, "TestRPCFn", receivedFn)
+		assert.JSONEq(t, `{"key":"value"}`, receivedPayload)
+	})
+
+	t.Run("returns error on marshal failure", func(t *testing.T) {
+		pump := &HybridPump{}
+		pump.log = log.WithField("prefix", "hybrid-test")
+
+		// channels cannot be marshaled to JSON
+		err := pump.sendAggregated("TestRPCFn", make(chan int))
+		assert.Error(t, err)
+	})
+
+	t.Run("returns error on RPC failure", func(t *testing.T) {
+		pump := &HybridPump{}
+		pump.log = log.WithField("prefix", "hybrid-test")
+		pump.callRPCFn = func(funcName string, request interface{}) (interface{}, error) {
+			return nil, errors.New("rpc connection lost")
+		}
+
+		err := pump.sendAggregated("TestRPCFn", map[string]string{"k": "v"})
+		assert.Error(t, err)
+		assert.Equal(t, "rpc connection lost", err.Error())
+	})
+}
+
+func TestAggregateAndSendMCP(t *testing.T) {
+	t.Run("sends MCP aggregates when MCP records exist", func(t *testing.T) {
+		var calledFn string
+
+		pump := &HybridPump{}
+		pump.log = log.WithField("prefix", "hybrid-test")
+		pump.hybridConfig = &HybridPumpConf{
+			ConnectionString: "test-db",
+			aggregationTime:  60,
+		}
+		pump.callRPCFn = func(funcName string, request interface{}) (interface{}, error) {
+			calledFn = funcName
+			return nil, nil
+		}
+
+		data := []interface{}{
+			analytics.AnalyticsRecord{
+				APIID: "api-1",
+				OrgID: "org-1",
+				MCPStats: analytics.MCPStats{
+					IsMCP:         true,
+					JSONRPCMethod: "tools/call",
+					PrimitiveType: "tool",
+					PrimitiveName: "get_weather",
+				},
+			},
+		}
+
+		err := pump.aggregateAndSendMCP(data)
+		assert.NoError(t, err)
+		assert.Equal(t, "PurgeAnalyticsDataMCPAggregated", calledFn)
+	})
+
+	t.Run("skips RPC call when no MCP records", func(t *testing.T) {
+		rpcCalled := false
+
+		pump := &HybridPump{}
+		pump.log = log.WithField("prefix", "hybrid-test")
+		pump.hybridConfig = &HybridPumpConf{
+			ConnectionString: "test-db",
+			aggregationTime:  60,
+		}
+		pump.callRPCFn = func(funcName string, request interface{}) (interface{}, error) {
+			rpcCalled = true
+			return nil, nil
+		}
+
+		data := []interface{}{
+			analytics.AnalyticsRecord{
+				APIID:   "api-1",
+				OrgID:   "org-1",
+				APIName: "REST API",
+			},
+		}
+
+		err := pump.aggregateAndSendMCP(data)
+		assert.NoError(t, err)
+		assert.False(t, rpcCalled, "RPC should not be called when there are no MCP records")
+	})
+}
+
+func TestAggregateAndSendREST(t *testing.T) {
+	t.Run("sends REST aggregates via RPC", func(t *testing.T) {
+		var calledFn string
+
+		pump := &HybridPump{}
+		pump.log = log.WithField("prefix", "hybrid-test")
+		pump.hybridConfig = &HybridPumpConf{
+			ConnectionString: "test-db",
+			aggregationTime:  60,
+		}
+		pump.callRPCFn = func(funcName string, request interface{}) (interface{}, error) {
+			calledFn = funcName
+			return nil, nil
+		}
+
+		data := []interface{}{
+			analytics.AnalyticsRecord{
+				APIID:   "api-1",
+				OrgID:   "org-1",
+				APIName: "My API",
+			},
+		}
+
+		err := pump.aggregateAndSendREST(data)
+		assert.NoError(t, err)
+		assert.Equal(t, "PurgeAnalyticsDataAggregated", calledFn)
+	})
+}
+
+func TestAggregateNotCalledInRawMode(t *testing.T) {
+	mockConf := &HybridPumpConf{
+		ConnectionString: "localhost:9092",
+		RPCKey:           "testkey",
+		APIKey:           "testapikey",
+		Aggregated:       false, // raw mode
+	}
+
+	var rpcCalls []string
+
+	dispatcher := gorpc.NewDispatcher()
+	dispatcher.AddFunc("Ping", func() bool { return true })
+	dispatcher.AddFunc("Login", func(clientAddr, userKey string) bool { return true })
+	dispatcher.AddFunc("PurgeAnalyticsData", func(clientID, data string) error {
+		rpcCalls = append(rpcCalls, "PurgeAnalyticsData")
+		return nil
+	})
+	dispatcher.AddFunc("PurgeAnalyticsDataMCPAggregated", func(clientID, data string) error {
+		rpcCalls = append(rpcCalls, "PurgeAnalyticsDataMCPAggregated")
+		return nil
+	})
+
+	server, err := startRPCMock(t, mockConf, dispatcher)
+	assert.NoError(t, err)
+	defer stopRPCMock(t, server)
+
+	pump := &HybridPump{}
+	err = pump.Init(mockConf)
+	assert.NoError(t, err)
+	defer func() { _ = pump.Shutdown() }()
+
+	data := []interface{}{
+		analytics.AnalyticsRecord{
+			APIID: "api-1",
+			OrgID: "org-1",
+			MCPStats: analytics.MCPStats{
+				IsMCP:         true,
+				JSONRPCMethod: "tools/call",
+			},
+		},
+	}
+
+	err = pump.WriteData(context.Background(), data)
+	assert.NoError(t, err)
+
+	// In raw mode, only PurgeAnalyticsData is called — no MCP aggregation
+	assert.Equal(t, []string{"PurgeAnalyticsData"}, rpcCalls)
+}
+
+func TestDispatcherFuncsIncludesMCPAggregated(t *testing.T) {
+	fn, ok := dispatcherFuncs["PurgeAnalyticsDataMCPAggregated"]
+	assert.True(t, ok, "dispatcherFuncs must include PurgeAnalyticsDataMCPAggregated")
+
+	typedFn, ok := fn.(func(string) error)
+	assert.True(t, ok, "PurgeAnalyticsDataMCPAggregated must be func(string) error")
+
+	err := typedFn("test")
+	assert.NoError(t, err)
 }
 
 func TestRetryAndLog(t *testing.T) {

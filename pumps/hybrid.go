@@ -35,6 +35,9 @@ var (
 		"PurgeAnalyticsDataAggregated": func(data string) error {
 			return nil
 		},
+		"PurgeAnalyticsDataMCPAggregated": func(data string) error {
+			return nil
+		},
 	}
 	DefaultRPCCallTimeout = 10
 	ErrRPCLogin           = errors.New("RPC login incorrect")
@@ -58,6 +61,10 @@ type HybridPump struct {
 	funcClientSingleton *gorpc.DispatcherClient
 
 	hybridConfig *HybridPumpConf
+
+	// callRPCFn is the function used to make RPC calls. It defaults to the
+	// real dispatcher call and can be replaced in tests.
+	callRPCFn func(funcName string, request interface{}) (interface{}, error)
 }
 
 // @PumpConf Hybrid
@@ -159,6 +166,7 @@ func (p *HybridPump) startDispatcher() {
 	}
 
 	p.funcClientSingleton = p.dispatcher.NewFuncClient(p.clientSingleton)
+	p.callRPCFn = p.callRPC
 }
 
 func (p *HybridPump) connectRPC() error {
@@ -213,7 +221,7 @@ func (p *HybridPump) onConnectFunc(conn net.Conn) (net.Conn, string, error) {
 	return conn, remoteAddr, nil
 }
 
-func (p *HybridPump) callRPCFn(funcName string, request interface{}) (interface{}, error) {
+func (p *HybridPump) callRPC(funcName string, request interface{}) (interface{}, error) {
 	return p.funcClientSingleton.CallTimeout(funcName, request, time.Duration(p.hybridConfig.CallTimeout)*time.Second)
 }
 
@@ -291,26 +299,46 @@ func (p *HybridPump) WriteData(ctx context.Context, data []interface{}) error {
 			return err
 		}
 	} else {
-		// aggregate analytics records
-		aggregates := analytics.AggregateData(data, p.hybridConfig.TrackAllPaths, p.hybridConfig.IgnoreTagPrefixList, p.hybridConfig.ConnectionString, p.hybridConfig.aggregationTime)
-
-		// turn map with analytics aggregates into JSON payload
-		jsonData, err := json.Marshal(aggregates)
-		if err != nil {
-			p.log.WithError(err).Error("Failed to marshal analytics aggregates data")
+		if err := p.aggregateAndSendREST(data); err != nil {
 			return err
 		}
-
-		p.log.Debug("Sending aggregated analytics data to Tyk MDCB")
-
-		// send aggregated data
-		if _, err := p.callRPCFn("PurgeAnalyticsDataAggregated", string(jsonData)); err != nil {
-			p.log.WithError(err).Error("Failed to call PurgeAnalyticsDataAggregated")
+		if err := p.aggregateAndSendMCP(data); err != nil {
 			return err
 		}
 	}
 	p.log.Info("Purged ", len(data), " records...")
 
+	return nil
+}
+
+// aggregateAndSendREST aggregates REST analytics and sends via RPC.
+func (p *HybridPump) aggregateAndSendREST(data []interface{}) error {
+	aggregates := analytics.AggregateData(data, p.hybridConfig.TrackAllPaths, p.hybridConfig.IgnoreTagPrefixList, p.hybridConfig.ConnectionString, p.hybridConfig.aggregationTime)
+	return p.sendAggregated("PurgeAnalyticsDataAggregated", aggregates)
+}
+
+// aggregateAndSendMCP aggregates MCP analytics and sends via RPC.
+// Returns nil without making an RPC call when there are no MCP records.
+func (p *HybridPump) aggregateAndSendMCP(data []interface{}) error {
+	mcpAggregates := analytics.AggregateMCPData(data, p.hybridConfig.ConnectionString, p.hybridConfig.aggregationTime)
+	if len(mcpAggregates) == 0 {
+		return nil
+	}
+	return p.sendAggregated("PurgeAnalyticsDataMCPAggregated", mcpAggregates)
+}
+
+// sendAggregated marshals data and sends it via the named RPC function.
+func (p *HybridPump) sendAggregated(rpcFn string, data interface{}) error {
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		p.log.WithError(err).Errorf("Failed to marshal %s data", rpcFn)
+		return err
+	}
+	p.log.Debugf("Sending %s data to Tyk MDCB", rpcFn)
+	if _, err := p.callRPCFn(rpcFn, string(jsonData)); err != nil {
+		p.log.WithError(err).Errorf("Failed to call %s", rpcFn)
+		return err
+	}
 	return nil
 }
 
