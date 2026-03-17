@@ -111,7 +111,7 @@ func TestAddMCPDimensionUpdates_MinLatencyWhenNotAllErrors(t *testing.T) {
 		analytics.AnalyticsRecord{
 			OrgID: "org1", APIID: "api1", TimeStamp: ts,
 			ResponseCode: 200, RequestTime: 100,
-			Latency: analytics.Latency{Total: 100, Upstream: 50},
+			Latency:  analytics.Latency{Total: 100, Upstream: 50},
 			MCPStats: analytics.MCPStats{IsMCP: true, JSONRPCMethod: "tools/call", PrimitiveType: "tool", PrimitiveName: "t1"},
 		},
 	}
@@ -137,7 +137,7 @@ func TestAddMCPDimensionUpdates_NoMinWhenAllErrors(t *testing.T) {
 		analytics.AnalyticsRecord{
 			OrgID: "org1", APIID: "api1", TimeStamp: ts,
 			ResponseCode: 500, RequestTime: 100,
-			Latency: analytics.Latency{Total: 100, Upstream: 50},
+			Latency:  analytics.Latency{Total: 100, Upstream: 50},
 			MCPStats: analytics.MCPStats{IsMCP: true, JSONRPCMethod: "tools/call", PrimitiveType: "tool", PrimitiveName: "t1"},
 		},
 	}
