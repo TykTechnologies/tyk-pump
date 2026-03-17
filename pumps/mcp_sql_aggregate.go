@@ -99,8 +99,8 @@ func (s *MCPSQLAggregatePump) ensureMCPAggregateShardedTable(recDate string) str
 	table := analytics.AggregateMCPSQLTable + "_" + recDate
 	s.db = s.db.Table(table)
 	if !s.db.Migrator().HasTable(table) {
-		if err := s.db.AutoMigrate(&analytics.MCPSQLAnalyticsRecordAggregate{}); err != nil {
-			s.log.WithError(err).Warn("error running auto migration")
+		if err := s.db.Migrator().CreateTable(&analytics.MCPSQLAnalyticsRecordAggregate{}); err != nil {
+			s.log.WithError(err).Warn("error creating sharded table")
 		}
 	}
 	return table
