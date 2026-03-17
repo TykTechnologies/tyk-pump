@@ -304,7 +304,7 @@ jobs:
     needs:
       - test-controller-api
       - goreleaser
-    runs-on: warp-ubuntu-latest-x64-2x
+    runs-on: warp-ubuntu-latest-x64-4x
     env:
       XUNIT_REPORT_PATH: ${{ github.workspace}}/test-results.xml
     permissions:
