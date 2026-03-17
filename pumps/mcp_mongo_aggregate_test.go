@@ -139,4 +139,3 @@ func TestAddMCPDimensionUpdates_NoMinWhenAllErrors(t *testing.T) {
 			"$min should not contain MCP dimension minlatency when all requests are errors")
 	}
 }
-

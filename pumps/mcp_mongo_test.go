@@ -110,4 +110,3 @@ func TestMCPMongoPump_WriteData_EmptyData(t *testing.T) {
 	err := p.WriteData(context.Background(), []interface{}{})
 	assert.NoError(t, err)
 }
-

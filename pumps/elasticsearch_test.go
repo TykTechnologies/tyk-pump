@@ -158,4 +158,3 @@ func TestGetMapping_ExtendedStatistics(t *testing.T) {
 		assert.NotEmpty(t, id)
 	})
 }
-
