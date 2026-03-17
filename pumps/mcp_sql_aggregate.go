@@ -12,6 +12,8 @@ import (
 	gorm_logger "gorm.io/gorm/logger"
 )
 
+const mcpSQLAggregatePrefix = "sql-mcp-aggregate-pump"
+
 var SQLMCPAggregateDefaultENV = PUMPS_ENV_PREFIX + "_SQLMCPAGGREGATE" + PUMPS_ENV_META_PREFIX
 
 // MCPSQLAggregatePump writes aggregated MCP analytics to a dedicated SQL table.
@@ -36,7 +38,7 @@ func (s *MCPSQLAggregatePump) New() Pump {
 
 func (s *MCPSQLAggregatePump) Init(conf interface{}) error {
 	s.SQLConf = &SQLAggregatePumpConf{}
-	s.log = log.WithField("prefix", SQLAggregatePumpPrefix)
+	s.log = log.WithField("prefix", mcpSQLAggregatePrefix)
 
 	err := mapstructure.Decode(conf, s.SQLConf)
 	if err != nil {

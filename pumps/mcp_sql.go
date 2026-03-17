@@ -2,7 +2,6 @@ package pumps
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/mitchellh/mapstructure"
@@ -48,8 +47,8 @@ func (g *MCPSQLPump) Init(conf interface{}) error {
 	g.log = log.WithField("prefix", MCPSQLPrefix)
 
 	if err := mapstructure.Decode(conf, g.Conf); err != nil {
-		g.log.WithError(err).Error("error decoding conf")
-		return fmt.Errorf("error decoding conf: %w", err)
+		g.log.Error("Failed to decode configuration: ", err)
+		return err
 	}
 
 	processPumpEnvVars(g, g.log, g.Conf, MCPSQLDefaultENV)

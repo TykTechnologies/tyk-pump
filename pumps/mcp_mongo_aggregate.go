@@ -10,6 +10,8 @@ import (
 	"github.com/TykTechnologies/tyk-pump/analytics"
 )
 
+const mongoMCPAggregatePrefix = "mongo-mcp-aggregate-pump"
+
 var mongoMCPAggregateDefaultEnv = PUMPS_ENV_PREFIX + "_MONGOMCPAGGREGATE" + PUMPS_ENV_META_PREFIX
 
 // MCPMongoAggregatePump writes aggregated MCP analytics to MongoDB.
@@ -47,7 +49,7 @@ func (m *MCPMongoAggregatePump) SetDecodingResponse(decoding bool) {
 
 func (m *MCPMongoAggregatePump) Init(config interface{}) error {
 	m.dbConf = &MongoAggregateConf{}
-	m.log = log.WithField("prefix", analytics.MongoAggregatePrefix)
+	m.log = log.WithField("prefix", mongoMCPAggregatePrefix)
 	m.MongoAggregatePump.log = m.log
 
 	err := mapstructure.Decode(config, &m.dbConf)

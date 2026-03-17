@@ -52,7 +52,7 @@ func (g *MCPMongoPump) Init(config interface{}) error {
 
 	err := mapstructure.Decode(config, &g.dbConf)
 	if err != nil {
-		g.log.WithError(err).Warn("Failed to decode configuration: ")
+		g.log.Error("Failed to decode configuration: ", err)
 		return err
 	}
 	g.log.WithFields(logrus.Fields{

@@ -201,7 +201,7 @@ func TestMCPSQLAggregatePump_WriteData(t *testing.T) {
 			pump := MCPSQLAggregatePump{}
 			require.NoError(t, pump.Init(conf))
 			t.Cleanup(func() {
-				pump.db.Exec(fmt.Sprintf("DELETE FROM %s", tableName))
+				pump.db.Exec(fmt.Sprintf("DROP TABLE IF EXISTS %q", tableName))
 			})
 
 			records := tc.recordGenerator()
