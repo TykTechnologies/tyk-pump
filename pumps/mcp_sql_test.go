@@ -52,7 +52,7 @@ func TestMCPSQLPump_Init(t *testing.T) {
 		conf := map[string]interface{}{
 			"table_name": 1,
 		}
-		assert.ErrorContains(t, pump.Init(conf), "error decoding conf")
+		assert.ErrorContains(t, pump.Init(conf), "expected type")
 	})
 
 	t.Run("decode from map", func(t *testing.T) {
