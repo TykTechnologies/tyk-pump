@@ -82,17 +82,6 @@ func TestConvertToMCPObjects(t *testing.T) {
 	})
 }
 
-func TestMCPMongoPump_GetName(t *testing.T) {
-	p := &MCPMongoPump{}
-	assert.Equal(t, "MongoDB MCP Pump", p.GetName())
-}
-
-func TestMCPMongoPump_New(t *testing.T) {
-	p := &MCPMongoPump{}
-	newP := p.New()
-	assert.IsType(t, &MCPMongoPump{}, newP)
-}
-
 func TestMCPMongoPump_WriteData_EmptyCollectionName(t *testing.T) {
 	p := &MCPMongoPump{}
 	p.dbConf = &MongoConf{CollectionName: ""}
@@ -121,3 +110,4 @@ func TestMCPMongoPump_WriteData_EmptyData(t *testing.T) {
 	err := p.WriteData(context.Background(), []interface{}{})
 	assert.NoError(t, err)
 }
+

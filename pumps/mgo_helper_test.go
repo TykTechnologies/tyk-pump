@@ -23,12 +23,10 @@ func (c *Conn) TableName() string {
 	return colName
 }
 
-// SetObjectID is a dummy function to satisfy the interface
 func (*Conn) GetObjectID() model.ObjectID {
 	return ""
 }
 
-// SetObjectID is a dummy function to satisfy the interface
 func (*Conn) SetObjectID(model.ObjectID) {
 	// empty
 }

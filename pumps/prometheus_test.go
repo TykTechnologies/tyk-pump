@@ -1,6 +1,7 @@
 package pumps
 
 import (
+	"context"
 	"errors"
 	"io"
 	"os"
@@ -915,134 +916,6 @@ func TestPrometheusDisablingMetrics(t *testing.T) {
 	assert.NotContains(t, metricMap, "tyk_http_status_per_path")
 }
 
-func TestPrometheusPump_observeLatencyMetrics(_ *testing.T) {
-	p := &PrometheusPump{}
-	loggerInstance := logrus.New()
-	loggerInstance.Out = io.Discard
-	p.log = logrus.NewEntry(loggerInstance)
-
-	// Create a test metric
-	metric := &PrometheusMetric{
-		Name:       "tyk_latency",
-		MetricType: histogramType,
-		Labels:     []string{"type", "api"},
-	}
-
-	// Initialize the histogram vector
-	metric.histogramVec = prometheus.NewHistogramVec(
-		prometheus.HistogramOpts{
-			Name: metric.Name,
-			Help: "Test histogram",
-		},
-		metric.Labels,
-	)
-
-	// Create test analytics record
-	record := analytics.AnalyticsRecord{
-		RequestTime: 100,
-		Latency: analytics.Latency{
-			Total:    100,
-			Upstream: 80,
-			Gateway:  20,
-		},
-	}
-
-	values := []string{"api123"}
-
-	// Test the function
-	p.observeLatencyMetrics(metric, &record, values)
-
-	// Verify that the metric was observed correctly by checking the histogram
-	// We can't directly test the internal state, but we can verify no errors occurred
-	// The actual metric observation is tested through integration tests
-}
-
-func TestPrometheusPump_observeHistogramMetric(_ *testing.T) {
-	p := &PrometheusPump{}
-	loggerInstance := logrus.New()
-	loggerInstance.Out = io.Discard
-	p.log = logrus.NewEntry(loggerInstance)
-
-	// Create a test metric
-	metric := &PrometheusMetric{
-		Name:       "test_histogram",
-		MetricType: histogramType,
-		Labels:     []string{"type", "api"},
-	}
-
-	// Initialize the histogram vector
-	metric.histogramVec = prometheus.NewHistogramVec(
-		prometheus.HistogramOpts{
-			Name: metric.Name,
-			Help: "Test histogram",
-		},
-		metric.Labels,
-	)
-
-	requestTime := int64(150)
-	values := []string{"api123"}
-
-	// Test the function
-	p.observeHistogramMetric(metric, requestTime, values)
-
-	// Verify that the metric was observed correctly
-	// The actual metric observation is tested through integration tests
-}
-
-func TestPrometheusPump_observeLatencyMetrics_ErrorHandling(_ *testing.T) {
-	p := &PrometheusPump{}
-	loggerInstance := logrus.New()
-	loggerInstance.Out = io.Discard
-	p.log = logrus.NewEntry(loggerInstance)
-
-	// Create a test metric with nil histogram vector to trigger error
-	metric := &PrometheusMetric{
-		Name:       "tyk_latency",
-		MetricType: histogramType,
-		Labels:     []string{"type", "api"},
-		// histogramVec is nil, which should cause an error
-	}
-
-	record := analytics.AnalyticsRecord{
-		RequestTime: 100,
-		Latency: analytics.Latency{
-			Total:    100,
-			Upstream: 80,
-			Gateway:  20,
-		},
-	}
-
-	values := []string{"api123"}
-
-	// Test the function - should handle error gracefully
-	p.observeLatencyMetrics(metric, &record, values)
-
-	// The function should not panic and should log the error
-}
-
-func TestPrometheusPump_observeHistogramMetric_ErrorHandling(_ *testing.T) {
-	p := &PrometheusPump{}
-	loggerInstance := logrus.New()
-	loggerInstance.Out = io.Discard
-	p.log = logrus.NewEntry(loggerInstance)
-
-	// Create a test metric with nil histogram vector to trigger error
-	metric := &PrometheusMetric{
-		Name:       "test_histogram",
-		MetricType: histogramType,
-		Labels:     []string{"type", "api"},
-		// histogramVec is nil, which should cause an error
-	}
-
-	requestTime := int64(150)
-	values := []string{"api123"}
-
-	// Test the function - should handle error gracefully
-	p.observeHistogramMetric(metric, requestTime, values)
-
-	// The function should not panic and should log the error
-}
-
 // TestPrometheusGetLabelsValues_MCPLabels verifies that mcp_method, mcp_primitive_type,
 // and mcp_primitive_name labels resolve to the correct values from MCPStats on MCP records,
 // and to empty strings on non-MCP records.
@@ -1209,4 +1082,123 @@ func TestPrometheusMCPBaseMetrics_DisabledViaConfig(t *testing.T) {
 	assert.False(t, names[metricTykMCPCallsTotal], "tyk_mcp_calls_total must be excluded")
 	assert.True(t, names[metricTykMCPLatencyMs], "tyk_mcp_latency_milliseconds must still be present")
 	assert.True(t, names["tyk_http_status"], "existing REST metrics must be unaffected")
+}
+
+func newTestPrometheusPump(t *testing.T) *PrometheusPump {
+	t.Helper()
+	p := &PrometheusPump{}
+	loggerInstance := logrus.New()
+	loggerInstance.Out = io.Discard
+	p.log = logrus.NewEntry(loggerInstance)
+	p.conf = &PrometheusConf{}
+	return p
+}
+
+func TestProcessMetric_DisabledMetric(t *testing.T) {
+	p := newTestPrometheusPump(t)
+	metric := &PrometheusMetric{Name: "disabled_metric", MetricType: counterType, enabled: false}
+	// must not panic and must be a no-op
+	p.processMetric(metric, analytics.AnalyticsRecord{APIID: "api1"})
+}
+
+func TestProcessMetric_UnknownType(t *testing.T) {
+	p := newTestPrometheusPump(t)
+	metric := &PrometheusMetric{Name: "unknown_type_metric", MetricType: "unknown", enabled: true}
+	// hits the default branch — must not panic
+	p.processMetric(metric, analytics.AnalyticsRecord{APIID: "api1"})
+}
+
+func TestWriteData_ProcessesCounterMetric(t *testing.T) {
+	metric := &PrometheusMetric{
+		Name:       "test_write_data_counter",
+		Help:       "test",
+		MetricType: counterType,
+		Labels:     []string{"api"},
+	}
+	require.NoError(t, metric.InitVec())
+	defer prometheus.Unregister(metric.counterVec)
+
+	p := newTestPrometheusPump(t)
+	p.allMetrics = []*PrometheusMetric{metric}
+
+	err := p.WriteData(context.Background(), []interface{}{
+		analytics.AnalyticsRecord{APIID: "api1", ResponseCode: 200},
+	})
+	assert.NoError(t, err)
+}
+
+func TestWriteData_ContextCancellation(t *testing.T) {
+	metric := &PrometheusMetric{
+		Name:       "test_write_data_ctx_cancel",
+		Help:       "test",
+		MetricType: counterType,
+		Labels:     []string{"api"},
+	}
+	require.NoError(t, metric.InitVec())
+	defer prometheus.Unregister(metric.counterVec)
+
+	p := newTestPrometheusPump(t)
+	p.allMetrics = []*PrometheusMetric{metric}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // cancel immediately
+
+	err := p.WriteData(ctx, []interface{}{
+		analytics.AnalyticsRecord{APIID: "api1"},
+	})
+	assert.Error(t, err)
+}
+
+func TestCustomMetrics_Set(t *testing.T) {
+	var metrics CustomMetrics
+	err := metrics.Set(`[{"name":"test_metric","metric_type":"counter","labels":["api_id"]}]`)
+	assert.NoError(t, err)
+	require.Len(t, metrics, 1)
+	assert.Equal(t, "test_metric", metrics[0].Name)
+	assert.Equal(t, "counter", metrics[0].MetricType)
+
+	assert.Error(t, metrics.Set(`not-json`))
+}
+
+func TestProcessMetric_HistogramType_NonLatency(t *testing.T) {
+	metric := &PrometheusMetric{
+		Name:       "test_process_histogram_nonlatency",
+		Help:       "test",
+		MetricType: histogramType,
+		Labels:     []string{"type", "api"},
+	}
+	require.NoError(t, metric.InitVec())
+	defer prometheus.Unregister(metric.histogramVec)
+
+	p := newTestPrometheusPump(t)
+	// hits the histogramType branch → observeHistogramMetric (non-tyk_latency name)
+	p.processMetric(metric, analytics.AnalyticsRecord{APIID: "api1", RequestTime: 50})
+}
+
+func TestProcessMetric_HistogramType_LatencyMetric(t *testing.T) {
+	// Create histogram vec with a unique name to avoid global registry conflicts.
+	// Set the metric Name to metricTykLatency to trigger observeLatencyMetrics path.
+	histVec := prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Name:    "test_custom_latency_metric_v2",
+		Help:    "test",
+		Buckets: buckets,
+	}, []string{"type", "api"})
+	prometheus.MustRegister(histVec)
+	defer prometheus.Unregister(histVec)
+
+	metric := &PrometheusMetric{
+		Name:         metricTykLatency,
+		MetricType:   histogramType,
+		Labels:       []string{"api"},
+		enabled:      true,
+		histogramVec: histVec,
+	}
+
+	p := newTestPrometheusPump(t)
+	// hits the histogramType branch → observeLatencyMetrics
+	p.processMetric(metric, analytics.AnalyticsRecord{
+		APIID:       "api1",
+		RequestTime: 100,
+		Latency:     analytics.Latency{Upstream: 50, Gateway: 10},
+	})
 }

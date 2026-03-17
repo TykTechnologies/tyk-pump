@@ -131,3 +131,31 @@ func TestElasticsearchPump_TLSConfig_ErrorCases(t *testing.T) {
 		assert.Contains(t, err.Error(), "failed to configure TLS for Elasticsearch connection")
 	})
 }
+
+func TestGetMapping_ExtendedStatistics(t *testing.T) {
+	record := analytics.AnalyticsRecord{
+		APIID:       "api1",
+		RawRequest:  "cmF3LXJlcXVlc3Q=", // base64 "raw-request"
+		RawResponse: "cmF3LXJlc3BvbnNl", // base64 "raw-response"
+		UserAgent:   "test-agent",
+	}
+
+	t.Run("extended stats with base64 decode", func(t *testing.T) {
+		mapping, _ := getMapping(record, true, false, true)
+		assert.Equal(t, "raw-request", mapping["raw_request"])
+		assert.Equal(t, "raw-response", mapping["raw_response"])
+		assert.Equal(t, "test-agent", mapping["user_agent"])
+	})
+
+	t.Run("extended stats without base64 decode", func(t *testing.T) {
+		mapping, _ := getMapping(record, true, false, false)
+		assert.Equal(t, record.RawRequest, mapping["raw_request"])
+		assert.Equal(t, record.RawResponse, mapping["raw_response"])
+	})
+
+	t.Run("generate ID returns non-empty hash", func(t *testing.T) {
+		_, id := getMapping(record, false, true, false)
+		assert.NotEmpty(t, id)
+	})
+}
+

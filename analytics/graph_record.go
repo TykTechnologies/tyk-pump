@@ -32,12 +32,10 @@ func (g *GraphRecord) TableName() string {
 	return GraphSQLTableName
 }
 
-// GetObjectID is a dummy function to satisfy the interface
 func (*GraphRecord) GetObjectID() model.ObjectID {
 	return ""
 }
 
-// SetObjectID is a dummy function to satisfy the interface
 func (*GraphRecord) SetObjectID(model.ObjectID) {
 	// empty
 }

@@ -24,10 +24,7 @@ const (
 	AggregateGraphSQLTable            = "tyk_graph_aggregated"
 )
 
-// lastDocumentTimestamp is a map to store the last document timestamps of different Mongo Aggregators
 var lastDocumentTimestamp = make(map[string]time.Time)
-
-// mutex is used to prevent concurrent writes to the same key
 var mutex sync.RWMutex
 
 type ErrorData struct {
@@ -517,7 +514,6 @@ func (f *AnalyticsRecordAggregate) AsTimeUpdate() model.DBM {
 
 	// We need to create lists of API data so that we can aggregate across the list
 	// in order to present top-20 style lists of APIs, Tokens etc.
-	// apis := make([]Counter, 0)
 	newUpdate["$set"].(model.DBM)["lists.apiid"] = f.getRecords("apiid", f.APIID, newUpdate)
 
 	newUpdate["$set"].(model.DBM)["lists.errors"] = f.getRecords("errors", f.Errors, newUpdate)

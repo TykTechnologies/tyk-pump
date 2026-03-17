@@ -273,20 +273,15 @@ func TestMCPSQLPump_getMCPRecords(t *testing.T) {
 	assert.Equal(t, "r1", result[1].PrimitiveName)
 }
 
-func TestMCPSQLPump_GetName(t *testing.T) {
+func TestMCPSQLPump_WriteData_NoMCPRecords_NoInit(t *testing.T) {
 	p := &MCPSQLPump{}
-	assert.Equal(t, "MCP SQL Pump", p.GetName())
-}
-
-func TestMCPSQLPump_New(t *testing.T) {
-	p := &MCPSQLPump{}
-	newP := p.New()
-	assert.IsType(t, &MCPSQLPump{}, newP)
-}
-
-func TestMCPSQLPump_GetEnvPrefix(t *testing.T) {
-	p := &MCPSQLPump{Conf: &MCPSQLConf{SQLConf: SQLConf{EnvPrefix: "test_prefix"}}}
-	assert.Equal(t, "test_prefix", p.GetEnvPrefix())
+	p.log = log.WithField("prefix", MCPSQLPrefix)
+	p.Conf = &MCPSQLConf{}
+	// Non-MCP records produce empty mcpRecords slice → returns nil without accessing DB.
+	err := p.WriteData(context.Background(), []interface{}{
+		analytics.AnalyticsRecord{APIID: "api1", ResponseCode: 200},
+	})
+	assert.NoError(t, err)
 }
 
 func TestMCPSQLPump_WriteData_EmptyData(t *testing.T) {

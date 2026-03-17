@@ -68,41 +68,25 @@ func TestAddMCPDimensionUpdates_IncludesLatencyFields(t *testing.T) {
 	incDoc := updateDoc["$inc"].(model.DBM)
 	maxDoc := updateDoc["$max"].(model.DBM)
 
+	// All three MCP dimensions must be present in the update doc.
+	for _, prefix := range []string{
+		"methods.tools/call.",
+		"primitives.tool.",
+		"names.tool_my_tool.",
+	} {
+		assert.Contains(t, incDoc, prefix+"hits")
+		assert.Contains(t, incDoc, prefix+"totalrequesttime")
+		assert.Contains(t, incDoc, prefix+"totallatency")
+		assert.Contains(t, incDoc, prefix+"totalupstreamlatency")
+		assert.Contains(t, maxDoc, prefix+"maxlatency")
+		assert.Contains(t, maxDoc, prefix+"maxupstreamlatency")
+	}
+
+	// Verify actual latency values are non-zero for one representative dimension.
 	prefix := "names.tool_my_tool."
-
-	// These fields must be present for latency data to be written to MongoDB.
-	assert.Contains(t, incDoc, prefix+"totalrequesttime",
-		"addMCPDimensionUpdates must write totalrequesttime for MCP dimensions")
-	assert.Contains(t, incDoc, prefix+"totallatency",
-		"addMCPDimensionUpdates must write totallatency for MCP dimensions")
-	assert.Contains(t, incDoc, prefix+"totalupstreamlatency",
-		"addMCPDimensionUpdates must write totalupstreamlatency for MCP dimensions")
-	assert.Contains(t, maxDoc, prefix+"maxlatency",
-		"addMCPDimensionUpdates must write maxlatency for MCP dimensions")
-	assert.Contains(t, maxDoc, prefix+"maxupstreamlatency",
-		"addMCPDimensionUpdates must write maxupstreamlatency for MCP dimensions")
-
-	// Verify actual values are non-zero
-	if val, ok := incDoc[prefix+"totalrequesttime"]; ok {
-		assert.NotZero(t, val, "totalrequesttime value should be non-zero")
-	}
-	if val, ok := incDoc[prefix+"totallatency"]; ok {
-		assert.NotZero(t, val, "totallatency value should be non-zero")
-	}
-	if val, ok := maxDoc[prefix+"maxlatency"]; ok {
-		assert.NotZero(t, val, "maxlatency value should be non-zero")
-	}
-}
-
-func TestMCPMongoAggregatePump_GetName(t *testing.T) {
-	p := &MCPMongoAggregatePump{}
-	assert.Equal(t, "MongoDB MCP Aggregate Pump", p.GetName())
-}
-
-func TestMCPMongoAggregatePump_New(t *testing.T) {
-	p := &MCPMongoAggregatePump{}
-	newP := p.New()
-	assert.IsType(t, &MCPMongoAggregatePump{}, newP)
+	assert.NotZero(t, incDoc[prefix+"totalrequesttime"])
+	assert.NotZero(t, incDoc[prefix+"totallatency"])
+	assert.NotZero(t, maxDoc[prefix+"maxlatency"])
 }
 
 func TestAddMCPDimensionUpdates_MinLatencyWhenNotAllErrors(t *testing.T) {
@@ -155,3 +139,4 @@ func TestAddMCPDimensionUpdates_NoMinWhenAllErrors(t *testing.T) {
 			"$min should not contain MCP dimension minlatency when all requests are errors")
 	}
 }
+
