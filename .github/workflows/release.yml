@@ -33,7 +33,7 @@ jobs:
   goreleaser:
     if: github.event.pull_request.draft == false
     name: '${{ matrix.golang_cross }}'
-    runs-on: ubuntu-latest-m
+    runs-on: warp-ubuntu-latest-x64-4x
     permissions:
       id-token: write # AWS OIDC JWT
       contents: read # actions/checkout
@@ -80,7 +80,7 @@ jobs:
           registry: docker.tyk.io
           username: ${{ secrets.CLOUDSMITH_USERNAME }}
           password: ${{ secrets.CLOUDSMITH_API_KEY }}
-      - uses: actions/cache@v4
+      - uses: WarpBuilds/cache@v1
         with:
           path: |
             ~/.cache/go-build
@@ -100,6 +100,7 @@ jobs:
           git config --global --add safe.directory /go/src/github.com/TykTechnologies/tyk-pump
           goreleaser release --clean -f ${{ matrix.goreleaser }} ${{ !startsWith(github.ref, 'refs/tags/') && ' --snapshot --skip=sign,docker' || '--skip=docker' }}' | tee /tmp/build.sh
           chmod +x /tmp/build.sh
+          mkdir -p ~/.docker && echo "{}" > ~/.docker/config.json
           docker run --rm --privileged -e GITHUB_TOKEN=${{ github.token }} \
           -e GOPRIVATE=github.com/TykTechnologies                                \
           -e DEBVERS='${{ matrix.debvers }}'                               \
@@ -286,7 +287,7 @@ jobs:
     if: github.event.pull_request.draft == false
     needs:
       - goreleaser
-    runs-on: ubuntu-latest
+    runs-on: warp-ubuntu-latest-x64-2x
     outputs:
       envfiles: ${{ steps.params.outputs.envfiles }}
       pump: ${{ steps.params.outputs.pump }}
@@ -303,7 +304,7 @@ jobs:
     needs:
       - test-controller-api
       - goreleaser
-    runs-on: ubuntu-latest-m-2
+    runs-on: warp-ubuntu-latest-x64-2x
     env:
       XUNIT_REPORT_PATH: ${{ github.workspace}}/test-results.xml
     permissions:
@@ -365,7 +366,7 @@ jobs:
           execution_status: ${{ steps.test_execution.outcome }}
   aggregator-ci-test:
     name: Aggregated CI Status
-    runs-on: ubuntu-latest
+    runs-on: warp-ubuntu-latest-x64-2x
     # Dynamically determine which jobs to depend on based on repository configuration
     needs: [goreleaser, api-tests]
     if: ${{ always() && github.event_name == 'pull_request' }}
@@ -397,7 +398,7 @@ jobs:
     if: github.event.pull_request.draft == false
     needs:
       - goreleaser
-    runs-on: ubuntu-latest
+    runs-on: warp-ubuntu-latest-x64-2x
     outputs:
       deb: ${{ steps.params.outputs.deb }}
       rpm: ${{ steps.params.outputs.rpm }}
@@ -418,7 +419,7 @@ jobs:
     services:
       httpbin.org:
         image: kennethreitz/httpbin
-    runs-on: ubuntu-latest
+    runs-on: warp-ubuntu-latest-x64-2x
     needs:
       - test-controller-distros
     strategy:
@@ -464,7 +465,7 @@ jobs:
     services:
       httpbin.org:
         image: kennethreitz/httpbin
-    runs-on: ubuntu-latest
+    runs-on: warp-ubuntu-latest-x64-2x
     needs:
       - test-controller-distros
     strategy:
