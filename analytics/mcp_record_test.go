@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/TykTechnologies/storage/persistent/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -112,4 +113,16 @@ func TestAnalyticsRecord_ToMCPRecord(t *testing.T) {
 		assert.Equal(t, "custom_mcp_table", mr.TableName())
 		MCPSQLTableName = "" // reset
 	})
+}
+
+func TestMCPRecord_GetObjectID(t *testing.T) {
+	r := &MCPRecord{}
+	assert.Equal(t, model.ObjectID(""), r.GetObjectID())
+}
+
+func TestMCPRecord_SetObjectID(t *testing.T) {
+	r := &MCPRecord{}
+	r.SetObjectID("test-id")
+	// SetObjectID is a no-op, so GetObjectID should still return ""
+	assert.Equal(t, model.ObjectID(""), r.GetObjectID())
 }

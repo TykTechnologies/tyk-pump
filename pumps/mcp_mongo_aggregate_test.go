@@ -93,3 +93,65 @@ func TestAddMCPDimensionUpdates_IncludesLatencyFields(t *testing.T) {
 		assert.NotZero(t, val, "maxlatency value should be non-zero")
 	}
 }
+
+func TestMCPMongoAggregatePump_GetName(t *testing.T) {
+	p := &MCPMongoAggregatePump{}
+	assert.Equal(t, "MongoDB MCP Aggregate Pump", p.GetName())
+}
+
+func TestMCPMongoAggregatePump_New(t *testing.T) {
+	p := &MCPMongoAggregatePump{}
+	newP := p.New()
+	assert.IsType(t, &MCPMongoAggregatePump{}, newP)
+}
+
+func TestAddMCPDimensionUpdates_MinLatencyWhenNotAllErrors(t *testing.T) {
+	ts := time.Date(2024, 6, 15, 10, 0, 0, 0, time.UTC)
+	data := []interface{}{
+		analytics.AnalyticsRecord{
+			OrgID: "org1", APIID: "api1", TimeStamp: ts,
+			ResponseCode: 200, RequestTime: 100,
+			Latency: analytics.Latency{Total: 100, Upstream: 50},
+			MCPStats: analytics.MCPStats{IsMCP: true, JSONRPCMethod: "tools/call", PrimitiveType: "tool", PrimitiveName: "t1"},
+		},
+	}
+
+	result := analytics.AggregateMCPData(data, "", 60)
+	ag := result["api1"]
+
+	updateDoc := ag.AnalyticsRecordAggregate.AsChange()
+	addMCPDimensionUpdates(&ag, updateDoc)
+
+	// When not all requests are errors, $min should be present
+	minDoc, hasMin := updateDoc["$min"]
+	if hasMin {
+		minDBM := minDoc.(model.DBM)
+		assert.Contains(t, minDBM, "names.tool_t1.minlatency")
+		assert.Contains(t, minDBM, "names.tool_t1.minupstreamlatency")
+	}
+}
+
+func TestAddMCPDimensionUpdates_NoMinWhenAllErrors(t *testing.T) {
+	ts := time.Date(2024, 6, 15, 10, 0, 0, 0, time.UTC)
+	data := []interface{}{
+		analytics.AnalyticsRecord{
+			OrgID: "org1", APIID: "api1", TimeStamp: ts,
+			ResponseCode: 500, RequestTime: 100,
+			Latency: analytics.Latency{Total: 100, Upstream: 50},
+			MCPStats: analytics.MCPStats{IsMCP: true, JSONRPCMethod: "tools/call", PrimitiveType: "tool", PrimitiveName: "t1"},
+		},
+	}
+
+	result := analytics.AggregateMCPData(data, "", 60)
+	ag := result["api1"]
+
+	updateDoc := ag.AnalyticsRecordAggregate.AsChange()
+	addMCPDimensionUpdates(&ag, updateDoc)
+
+	// When all requests are errors, $min for MCP dimensions should NOT be present
+	if minDoc, hasMin := updateDoc["$min"]; hasMin {
+		minDBM := minDoc.(model.DBM)
+		assert.NotContains(t, minDBM, "names.tool_t1.minlatency",
+			"$min should not contain MCP dimension minlatency when all requests are errors")
+	}
+}

@@ -279,3 +279,32 @@ func TestMCPSQLAggregatePump_aggregationTimeMinutes(t *testing.T) {
 		assert.Equal(t, 1, pump.aggregationTimeMinutes())
 	})
 }
+
+func TestMCPSQLAggregatePump_GetName(t *testing.T) {
+	p := &MCPSQLAggregatePump{}
+	assert.Equal(t, "SQL MCP Aggregate Pump", p.GetName())
+}
+
+func TestMCPSQLAggregatePump_New(t *testing.T) {
+	p := &MCPSQLAggregatePump{}
+	newP := p.New()
+	assert.IsType(t, &MCPSQLAggregatePump{}, newP)
+}
+
+func TestMCPSQLAggregatePump_GetEnvPrefix(t *testing.T) {
+	p := &MCPSQLAggregatePump{SQLConf: &SQLAggregatePumpConf{EnvPrefix: "test_prefix"}}
+	assert.Equal(t, "test_prefix", p.GetEnvPrefix())
+}
+
+func TestMCPSQLAggregatePump_WriteData_EmptyData(t *testing.T) {
+	skipTestIfNoPostgres(t)
+	pump := MCPSQLAggregatePump{}
+	require.NoError(t, pump.Init(SQLAggregatePumpConf{
+		SQLConf: SQLConf{
+			Type:             "postgres",
+			ConnectionString: getTestPostgresConnectionString(),
+		},
+	}))
+	err := pump.WriteData(context.Background(), []interface{}{})
+	assert.NoError(t, err)
+}

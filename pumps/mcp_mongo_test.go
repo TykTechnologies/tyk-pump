@@ -1,10 +1,12 @@
 package pumps
 
 import (
+	"context"
 	"testing"
 
 	"github.com/TykTechnologies/storage/persistent/model"
 	"github.com/TykTechnologies/tyk-pump/analytics"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -78,4 +80,44 @@ func TestConvertToMCPObjects(t *testing.T) {
 		result := convertToMCPObjects([]model.DBObject{})
 		assert.Empty(t, result)
 	})
+}
+
+func TestMCPMongoPump_GetName(t *testing.T) {
+	p := &MCPMongoPump{}
+	assert.Equal(t, "MongoDB MCP Pump", p.GetName())
+}
+
+func TestMCPMongoPump_New(t *testing.T) {
+	p := &MCPMongoPump{}
+	newP := p.New()
+	assert.IsType(t, &MCPMongoPump{}, newP)
+}
+
+func TestMCPMongoPump_WriteData_EmptyCollectionName(t *testing.T) {
+	p := &MCPMongoPump{}
+	p.dbConf = &MongoConf{CollectionName: ""}
+	p.log = logrus.WithField("prefix", "test")
+	err := p.WriteData(context.Background(), []interface{}{
+		analytics.AnalyticsRecord{MCPStats: analytics.MCPStats{IsMCP: true}},
+	})
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "no collection name")
+}
+
+func TestMCPMongoPump_WriteData_NoMCPRecords(t *testing.T) {
+	p := &MCPMongoPump{}
+	p.dbConf = &MongoConf{CollectionName: "test"}
+	p.log = logrus.WithField("prefix", "test")
+	err := p.WriteData(context.Background(), []interface{}{
+		analytics.AnalyticsRecord{APIID: "rest-api", ResponseCode: 200},
+	})
+	assert.NoError(t, err)
+}
+
+func TestMCPMongoPump_WriteData_EmptyData(t *testing.T) {
+	p := &MCPMongoPump{}
+	p.dbConf = &MongoConf{CollectionName: "test"}
+	p.log = logrus.WithField("prefix", "test")
+	err := p.WriteData(context.Background(), []interface{}{})
+	assert.NoError(t, err)
 }

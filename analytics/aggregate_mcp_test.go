@@ -429,3 +429,114 @@ func TestAggregateData_SkipsMCPRecords(t *testing.T) {
 	// Only the REST record should be aggregated — MCP record must be excluded
 	assert.Equal(t, 1, result["org1"].Total.Hits)
 }
+
+func TestNewMCPRecordAggregate_InitializesMaps(t *testing.T) {
+	agg := NewMCPRecordAggregate()
+	assert.NotNil(t, agg.Methods)
+	assert.NotNil(t, agg.Primitives)
+	assert.NotNil(t, agg.Names)
+	assert.Empty(t, agg.Methods)
+	assert.Empty(t, agg.Primitives)
+	assert.Empty(t, agg.Names)
+}
+
+func TestMCPSQLAnalyticsRecordAggregate_TableName(t *testing.T) {
+	r := &MCPSQLAnalyticsRecordAggregate{}
+	assert.Equal(t, AggregateMCPSQLTable, r.TableName())
+}
+
+func TestAggregateMCPData_MultipleAPIs(t *testing.T) {
+	ts := time.Date(2024, 1, 15, 10, 0, 0, 0, time.UTC)
+	data := []interface{}{
+		AnalyticsRecord{
+			OrgID: "org1", APIID: "api1", TimeStamp: ts, ResponseCode: 200,
+			MCPStats: MCPStats{IsMCP: true, JSONRPCMethod: "tools/call", PrimitiveType: "tool", PrimitiveName: "t1"},
+		},
+		AnalyticsRecord{
+			OrgID: "org1", APIID: "api2", TimeStamp: ts, ResponseCode: 200,
+			MCPStats: MCPStats{IsMCP: true, JSONRPCMethod: "resources/read", PrimitiveType: "resource", PrimitiveName: "r1"},
+		},
+		AnalyticsRecord{
+			OrgID: "org1", APIID: "api1", TimeStamp: ts, ResponseCode: 200,
+			MCPStats: MCPStats{IsMCP: true, JSONRPCMethod: "tools/call", PrimitiveType: "tool", PrimitiveName: "t1"},
+		},
+	}
+
+	result := AggregateMCPData(data, "", 60)
+	require.Len(t, result, 2)
+
+	assert.Equal(t, 2, result["api1"].Total.Hits)
+	assert.Equal(t, 1, result["api2"].Total.Hits)
+}
+
+func TestAggregateMCPData_ErrorTracking(t *testing.T) {
+	ts := time.Date(2024, 1, 15, 10, 0, 0, 0, time.UTC)
+	data := []interface{}{
+		AnalyticsRecord{
+			OrgID: "org1", APIID: "api1", TimeStamp: ts, ResponseCode: 200,
+			MCPStats: MCPStats{IsMCP: true, JSONRPCMethod: "tools/call", PrimitiveType: "tool", PrimitiveName: "t1"},
+		},
+		AnalyticsRecord{
+			OrgID: "org1", APIID: "api1", TimeStamp: ts, ResponseCode: 500,
+			MCPStats: MCPStats{IsMCP: true, JSONRPCMethod: "tools/call", PrimitiveType: "tool", PrimitiveName: "t1"},
+		},
+		AnalyticsRecord{
+			OrgID: "org1", APIID: "api1", TimeStamp: ts, ResponseCode: 429,
+			MCPStats: MCPStats{IsMCP: true, JSONRPCMethod: "tools/call", PrimitiveType: "tool", PrimitiveName: "t1"},
+		},
+	}
+
+	result := AggregateMCPData(data, "", 60)
+	agg := result["api1"]
+
+	assert.Equal(t, 3, agg.Total.Hits)
+	assert.Equal(t, 1, agg.Total.Success)
+	assert.Equal(t, 2, agg.Total.ErrorTotal)
+	assert.Contains(t, agg.Total.ErrorMap, "500")
+	assert.Contains(t, agg.Total.ErrorMap, "429")
+}
+
+func TestAggregateMCPData_EmptyMethodSkipsDimension(t *testing.T) {
+	ts := time.Date(2024, 1, 15, 10, 0, 0, 0, time.UTC)
+	data := []interface{}{
+		AnalyticsRecord{
+			OrgID: "org1", APIID: "api1", TimeStamp: ts, ResponseCode: 200,
+			MCPStats: MCPStats{IsMCP: true, JSONRPCMethod: "", PrimitiveType: "", PrimitiveName: ""},
+		},
+	}
+
+	result := AggregateMCPData(data, "", 60)
+	agg := result["api1"]
+
+	assert.Equal(t, 1, agg.Total.Hits)
+	assert.Empty(t, agg.Methods, "empty method should not create a Methods entry")
+	assert.Empty(t, agg.Primitives, "empty type should not create a Primitives entry")
+	assert.Empty(t, agg.Names, "empty name should not create a Names entry")
+}
+
+func TestInitMCPAggregateForRecord_SetsTimeID(t *testing.T) {
+	ts := time.Date(2024, 6, 15, 14, 30, 0, 0, time.UTC)
+	rec := AnalyticsRecord{
+		OrgID:     "org1",
+		APIID:     "api1",
+		TimeStamp: ts,
+	}
+
+	agg := initMCPAggregateForRecord(rec, "", 60)
+
+	assert.Equal(t, 2024, agg.TimeID.Year)
+	assert.Equal(t, 6, agg.TimeID.Month)
+	assert.Equal(t, 15, agg.TimeID.Day)
+	assert.Equal(t, 14, agg.TimeID.Hour)
+	assert.Equal(t, "org1", agg.OrgID)
+}
+
+func TestAggregateMCPData_EmptyInput(t *testing.T) {
+	result := AggregateMCPData([]interface{}{}, "", 60)
+	assert.Empty(t, result)
+}
+
+func TestAggregateMCPData_NilInput(t *testing.T) {
+	result := AggregateMCPData(nil, "", 60)
+	assert.Empty(t, result)
+}

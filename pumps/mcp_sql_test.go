@@ -272,3 +272,37 @@ func TestMCPSQLPump_getMCPRecords(t *testing.T) {
 	assert.Equal(t, "t1", result[0].PrimitiveName)
 	assert.Equal(t, "r1", result[1].PrimitiveName)
 }
+
+func TestMCPSQLPump_GetName(t *testing.T) {
+	p := &MCPSQLPump{}
+	assert.Equal(t, "MCP SQL Pump", p.GetName())
+}
+
+func TestMCPSQLPump_New(t *testing.T) {
+	p := &MCPSQLPump{}
+	newP := p.New()
+	assert.IsType(t, &MCPSQLPump{}, newP)
+}
+
+func TestMCPSQLPump_GetEnvPrefix(t *testing.T) {
+	p := &MCPSQLPump{Conf: &MCPSQLConf{SQLConf: SQLConf{EnvPrefix: "test_prefix"}}}
+	assert.Equal(t, "test_prefix", p.GetEnvPrefix())
+}
+
+func TestMCPSQLPump_WriteData_EmptyData(t *testing.T) {
+	skipTestIfNoPostgres(t)
+	pump := &MCPSQLPump{}
+	conf := MCPSQLConf{
+		SQLConf: SQLConf{
+			Type:             "postgres",
+			ConnectionString: getTestPostgresConnectionString(),
+		},
+		TableName: "test_mcp_empty",
+	}
+	require.NoError(t, pump.Init(conf))
+	t.Cleanup(func() {
+		pump.db.Exec(fmt.Sprintf("DROP TABLE IF EXISTS %q", conf.TableName))
+	})
+	err := pump.WriteData(context.Background(), []interface{}{})
+	assert.NoError(t, err)
+}
