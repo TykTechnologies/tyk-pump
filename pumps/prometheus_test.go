@@ -10,6 +10,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestPrometheusInitVec(t *testing.T) {
@@ -797,7 +798,7 @@ func TestPrometheusCreateBasicMetrics(t *testing.T) {
 	p := PrometheusPump{}
 	newPump := p.New().(*PrometheusPump)
 
-	assert.Len(t, newPump.allMetrics, 5)
+	assert.Len(t, newPump.allMetrics, 7)
 
 	actualMetricsNames := []string{}
 	actualMetricTypeCounter := make(map[string]int)
@@ -806,10 +807,18 @@ func TestPrometheusCreateBasicMetrics(t *testing.T) {
 		actualMetricTypeCounter[metric.MetricType] += 1
 	}
 
-	assert.EqualValues(t, actualMetricsNames, []string{"tyk_http_status", "tyk_http_status_per_path", "tyk_http_status_per_key", "tyk_http_status_per_oauth_client", "tyk_latency"})
+	assert.EqualValues(t, actualMetricsNames, []string{
+		"tyk_http_status",
+		"tyk_http_status_per_path",
+		"tyk_http_status_per_key",
+		"tyk_http_status_per_oauth_client",
+		metricTykLatency,
+		metricTykMCPCallsTotal,
+		metricTykMCPLatencyMs,
+	})
 
-	assert.Equal(t, 4, actualMetricTypeCounter[counterType])
-	assert.Equal(t, 1, actualMetricTypeCounter[histogramType])
+	assert.Equal(t, 5, actualMetricTypeCounter[counterType])
+	assert.Equal(t, 2, actualMetricTypeCounter[histogramType])
 }
 
 func TestPrometheusEnsureLabels(t *testing.T) {
@@ -1032,4 +1041,172 @@ func TestPrometheusPump_observeHistogramMetric_ErrorHandling(_ *testing.T) {
 	p.observeHistogramMetric(metric, requestTime, values)
 
 	// The function should not panic and should log the error
+}
+
+// TestPrometheusGetLabelsValues_MCPLabels verifies that mcp_method, mcp_primitive_type,
+// and mcp_primitive_name labels resolve to the correct values from MCPStats on MCP records,
+// and to empty strings on non-MCP records.
+func TestPrometheusGetLabelsValues_MCPLabels(t *testing.T) {
+	mcpRecord := analytics.AnalyticsRecord{
+		APIID:        "api_mcp",
+		ResponseCode: 200,
+		MCPStats: analytics.MCPStats{
+			IsMCP:         true,
+			JSONRPCMethod: "tools/call",
+			PrimitiveType: "tool",
+			PrimitiveName: "get_weather",
+		},
+	}
+	restRecord := analytics.AnalyticsRecord{
+		APIID:        "api_rest",
+		ResponseCode: 200,
+	}
+
+	metric := PrometheusMetric{
+		Name:       "test_mcp_labels",
+		MetricType: counterType,
+		Labels:     []string{"api_id", "mcp_method", "mcp_primitive_type", "mcp_primitive_name"},
+	}
+
+	t.Run("MCP record returns MCP label values", func(t *testing.T) {
+		got := metric.GetLabelsValues(mcpRecord)
+		assert.Equal(t, []string{"api_mcp", "tools/call", "tool", "get_weather"}, got)
+	})
+
+	t.Run("non-MCP record returns empty strings for MCP labels", func(t *testing.T) {
+		got := metric.GetLabelsValues(restRecord)
+		assert.Equal(t, []string{"api_rest", "", "", ""}, got)
+	})
+}
+
+// TestPrometheusCreateBasicMetrics_IncludesMCPMetrics verifies that CreateBasicMetrics
+// adds tyk_mcp_calls_total and tyk_mcp_latency_milliseconds to allMetrics.
+func TestPrometheusCreateBasicMetrics_IncludesMCPMetrics(t *testing.T) {
+	p := PrometheusPump{}
+	p.CreateBasicMetrics()
+
+	names := make(map[string]bool)
+	for _, m := range p.allMetrics {
+		names[m.Name] = true
+	}
+
+	assert.True(t, names[metricTykMCPCallsTotal], "tyk_mcp_calls_total must be a base metric")
+	assert.True(t, names[metricTykMCPLatencyMs], "tyk_mcp_latency_milliseconds must be a base metric")
+}
+
+// TestPrometheusMCPBaseMetrics_AreMCPOnly verifies that the MCP base metrics have mcpOnly=true.
+func TestPrometheusMCPBaseMetrics_AreMCPOnly(t *testing.T) {
+	p := PrometheusPump{}
+	p.CreateBasicMetrics()
+
+	for _, m := range p.allMetrics {
+		switch m.Name {
+		case metricTykMCPCallsTotal, metricTykMCPLatencyMs:
+			assert.True(t, m.mcpOnly, "%s must have mcpOnly=true", m.Name)
+		default:
+			assert.False(t, m.mcpOnly, "%s must not have mcpOnly=true", m.Name)
+		}
+	}
+}
+
+// TestPrometheusMCPOnlyMetric_SkipsNonMCPRecords verifies that a metric with mcpOnly=true
+// is not incremented for non-MCP analytics records.
+// It tests the filtering by calling Inc() directly (simulating what WriteData does),
+// so counterMap reflects only records that passed the filter.
+func TestPrometheusMCPOnlyMetric_SkipsNonMCPRecords(t *testing.T) {
+	metric := &PrometheusMetric{
+		Name:       "test_mcp_only_counter_skip",
+		Help:       "test",
+		MetricType: counterType,
+		Labels:     []string{"api_id", "mcp_method"},
+		mcpOnly:    true,
+	}
+	require.NoError(t, metric.InitVec())
+	defer prometheus.Unregister(metric.counterVec)
+
+	p := &PrometheusPump{}
+	loggerInstance := logrus.New()
+	loggerInstance.Out = io.Discard
+	p.log = logrus.NewEntry(loggerInstance)
+	p.conf = &PrometheusConf{}
+	p.allMetrics = []*PrometheusMetric{metric}
+
+	records := []analytics.AnalyticsRecord{
+		{APIID: "api1", ResponseCode: 200}, // REST — must be skipped
+		{APIID: "api2", ResponseCode: 404}, // REST — must be skipped
+		{APIID: "api3", ResponseCode: 200, MCPStats: analytics.MCPStats{ // MCP — must be counted
+			IsMCP: true, JSONRPCMethod: "tools/call",
+		}},
+	}
+
+	// Simulate what WriteData does per record, exercising the mcpOnly guard.
+	for _, record := range records {
+		if metric.mcpOnly && !record.IsMCPRecord() {
+			continue
+		}
+		values := metric.GetLabelsValues(record)
+		require.NoError(t, metric.Inc(values...))
+	}
+
+	assert.Len(t, metric.counterMap, 1, "only the MCP record should be counted")
+	assert.Contains(t, metric.counterMap, "api3--tools/call")
+}
+
+// TestPrometheusMCPOnlyMetric_CountsMCPRecords verifies that a metric with mcpOnly=true
+// is incremented only for MCP analytics records.
+func TestPrometheusMCPOnlyMetric_CountsMCPRecords(t *testing.T) {
+	metric := &PrometheusMetric{
+		Name:       "test_mcp_only_counter_counts",
+		Help:       "test",
+		MetricType: counterType,
+		Labels:     []string{"api_id", "mcp_method", "mcp_primitive_type", "mcp_primitive_name", "response_code"},
+		mcpOnly:    true,
+	}
+	require.NoError(t, metric.InitVec())
+	defer prometheus.Unregister(metric.counterVec)
+
+	records := []analytics.AnalyticsRecord{
+		{APIID: "api1", ResponseCode: 200, MCPStats: analytics.MCPStats{
+			IsMCP: true, JSONRPCMethod: "tools/call", PrimitiveType: "tool", PrimitiveName: "get_weather",
+		}},
+		{APIID: "api1", ResponseCode: 200, MCPStats: analytics.MCPStats{
+			IsMCP: true, JSONRPCMethod: "tools/call", PrimitiveType: "tool", PrimitiveName: "get_weather",
+		}},
+		{APIID: "api1", ResponseCode: 500, MCPStats: analytics.MCPStats{
+			IsMCP: true, JSONRPCMethod: "resources/read", PrimitiveType: "resource", PrimitiveName: "docs",
+		}},
+	}
+
+	for _, record := range records {
+		if metric.mcpOnly && !record.IsMCPRecord() {
+			continue
+		}
+		values := metric.GetLabelsValues(record)
+		require.NoError(t, metric.Inc(values...))
+	}
+
+	assert.Len(t, metric.counterMap, 2)
+	assert.Equal(t, uint64(2), metric.counterMap["api1--tools/call--tool--get_weather--200"].count)
+	assert.Equal(t, uint64(1), metric.counterMap["api1--resources/read--resource--docs--500"].count)
+}
+
+// TestPrometheusMCPBaseMetrics_DisabledViaConfig verifies that MCP base metrics can be
+// excluded from exposition via the DisabledMetrics config field.
+func TestPrometheusMCPBaseMetrics_DisabledViaConfig(t *testing.T) {
+	p := PrometheusPump{}
+	p.CreateBasicMetrics()
+	p.log = log.WithField("prefix", prometheusPrefix)
+	p.conf = &PrometheusConf{
+		DisabledMetrics: []string{"tyk_mcp_calls_total"},
+	}
+	p.initBaseMetrics()
+
+	names := make(map[string]bool)
+	for _, m := range p.allMetrics {
+		names[m.Name] = true
+	}
+
+	assert.False(t, names[metricTykMCPCallsTotal], "tyk_mcp_calls_total must be excluded")
+	assert.True(t, names[metricTykMCPLatencyMs], "tyk_mcp_latency_milliseconds must still be present")
+	assert.True(t, names["tyk_http_status"], "existing REST metrics must be unaffected")
 }
