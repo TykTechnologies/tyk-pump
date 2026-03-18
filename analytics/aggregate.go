@@ -24,7 +24,10 @@ const (
 	AggregateGraphSQLTable            = "tyk_graph_aggregated"
 )
 
+// lastDocumentTimestamp is a map to store the last document timestamps of different Mongo Aggregators
 var lastDocumentTimestamp = make(map[string]time.Time)
+
+// mutex is used to prevent concurrent writes to the same key
 var mutex sync.RWMutex
 
 type ErrorData struct {

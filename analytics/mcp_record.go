@@ -25,10 +25,12 @@ func (m *MCPRecord) TableName() string {
 	return MCPSQLTableName
 }
 
+// GetObjectID satisfies the model.DBObject interface.
 func (*MCPRecord) GetObjectID() model.ObjectID {
 	return ""
 }
 
+// SetObjectID satisfies the model.DBObject interface.
 func (*MCPRecord) SetObjectID(model.ObjectID) {}
 
 // ToMCPRecord converts an AnalyticsRecord to an MCPRecord.
