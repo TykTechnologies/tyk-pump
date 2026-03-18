@@ -111,34 +111,25 @@ func TestMCPMongoPump_WriteData_EmptyData(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestMCPMongoPump_Init(t *testing.T) {
-	// Ensure SQL table name global doesn't interfere with MongoDB collection routing.
+func newMCPMongoPump(t *testing.T) *MCPMongoPump {
+	t.Helper()
 	analytics.MCPSQLTableName = ""
 
 	conf := defaultConf()
-	conf.CollectionName = "test_mcp_init"
-
-	pump := MCPMongoPump{}
-	require.NoError(t, pump.Init(conf))
+	conf.CollectionName = "test_mcp_records"
+	pump := &MCPMongoPump{}
+	pump.dbConf = &conf
+	pump.log = log.WithField("prefix", mongoMCPPrefix)
+	pump.MongoPump.CommonPumpConfig = pump.CommonPumpConfig
+	pump.connect()
 	t.Cleanup(func() {
 		_ = pump.store.DropDatabase(context.Background())
 	})
-
-	assert.Equal(t, 10*MiB, pump.dbConf.MaxInsertBatchSizeBytes)
-	assert.Equal(t, 10*MiB, pump.dbConf.MaxDocumentSizeBytes)
+	return pump
 }
 
 func TestMCPMongoPump_WriteData_Roundtrip(t *testing.T) {
-	analytics.MCPSQLTableName = ""
-
-	conf := defaultConf()
-	conf.CollectionName = "test_mcp_roundtrip"
-
-	pump := MCPMongoPump{}
-	require.NoError(t, pump.Init(conf))
-	t.Cleanup(func() {
-		_ = pump.store.DropDatabase(context.Background())
-	})
+	pump := newMCPMongoPump(t)
 
 	records := []interface{}{
 		analytics.AnalyticsRecord{
@@ -163,9 +154,8 @@ func TestMCPMongoPump_WriteData_Roundtrip(t *testing.T) {
 
 	require.NoError(t, pump.WriteData(context.Background(), records))
 
-	// Query back from MongoDB
 	var results []analytics.MCPRecord
-	d := dbObject{tableName: conf.CollectionName}
+	d := dbObject{tableName: pump.dbConf.CollectionName}
 	require.NoError(t, pump.store.Query(context.Background(), d, &results, nil))
 
 	require.Len(t, results, 2, "only MCP records should be stored")

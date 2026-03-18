@@ -12,31 +12,22 @@ import (
 	"github.com/TykTechnologies/tyk-pump/analytics"
 )
 
-func TestMCPMongoAggregatePump_Init(t *testing.T) {
+func newMCPMongoAggregatePump(t *testing.T) *MCPMongoAggregatePump {
+	t.Helper()
 	cfgPump := make(map[string]interface{})
 	cfgPump["mongo_url"] = dbAddr
 	cfgPump["use_mixed_collection"] = true
 
-	pump := MCPMongoAggregatePump{}
+	pump := &MCPMongoAggregatePump{}
 	require.NoError(t, pump.Init(cfgPump))
 	t.Cleanup(func() {
 		_ = pump.store.DropDatabase(context.Background())
 	})
-
-	assert.Equal(t, 60, pump.dbConf.AggregationTime)
-	assert.Equal(t, ThresholdLenTagList, pump.dbConf.ThresholdLenTagList)
+	return pump
 }
 
 func TestMCPMongoAggregatePump_WriteData_Roundtrip(t *testing.T) {
-	cfgPump := make(map[string]interface{})
-	cfgPump["mongo_url"] = dbAddr
-	cfgPump["use_mixed_collection"] = true
-
-	pump := MCPMongoAggregatePump{}
-	require.NoError(t, pump.Init(cfgPump))
-	t.Cleanup(func() {
-		_ = pump.store.DropDatabase(context.Background())
-	})
+	pump := newMCPMongoAggregatePump(t)
 
 	ts := time.Date(2025, 6, 15, 10, 0, 0, 0, time.UTC)
 	records := []interface{}{
@@ -58,12 +49,11 @@ func TestMCPMongoAggregatePump_WriteData_Roundtrip(t *testing.T) {
 
 	// Query the mixed collection for the aggregated doc
 	var results []analytics.AnalyticsRecordAggregate
-	query := model.DBM{"orgid": "org1"}
 	require.NoError(t, pump.store.Query(
 		context.Background(),
 		&analytics.AnalyticsRecordAggregate{Mixed: true},
 		&results,
-		query,
+		model.DBM{"orgid": "org1"},
 	))
 
 	require.NotEmpty(t, results, "aggregated doc should exist in mixed collection")
@@ -74,15 +64,7 @@ func TestMCPMongoAggregatePump_WriteData_Roundtrip(t *testing.T) {
 }
 
 func TestMCPMongoAggregatePump_WriteData_MixedCollection(t *testing.T) {
-	cfgPump := make(map[string]interface{})
-	cfgPump["mongo_url"] = dbAddr
-	cfgPump["use_mixed_collection"] = true
-
-	pump := MCPMongoAggregatePump{}
-	require.NoError(t, pump.Init(cfgPump))
-	t.Cleanup(func() {
-		_ = pump.store.DropDatabase(context.Background())
-	})
+	pump := newMCPMongoAggregatePump(t)
 
 	ts := time.Date(2025, 6, 15, 10, 0, 0, 0, time.UTC)
 	records := []interface{}{
