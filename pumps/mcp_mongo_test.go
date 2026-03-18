@@ -112,6 +112,9 @@ func TestMCPMongoPump_WriteData_EmptyData(t *testing.T) {
 }
 
 func TestMCPMongoPump_Init(t *testing.T) {
+	// Ensure SQL table name global doesn't interfere with MongoDB collection routing.
+	analytics.MCPSQLTableName = ""
+
 	conf := defaultConf()
 	conf.CollectionName = "test_mcp_init"
 
@@ -126,6 +129,8 @@ func TestMCPMongoPump_Init(t *testing.T) {
 }
 
 func TestMCPMongoPump_WriteData_Roundtrip(t *testing.T) {
+	analytics.MCPSQLTableName = ""
+
 	conf := defaultConf()
 	conf.CollectionName = "test_mcp_roundtrip"
 

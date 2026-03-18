@@ -310,7 +310,9 @@ func newMCPSQLPumpWithSQLite(t *testing.T, tableName string, batchSize int, shar
 	if tableName == "" {
 		tableName = "test_mcp_records"
 	}
+	oldTableName := analytics.MCPSQLTableName
 	analytics.MCPSQLTableName = tableName
+	t.Cleanup(func() { analytics.MCPSQLTableName = oldTableName })
 
 	require.NoError(t, db.Table(tableName).AutoMigrate(&analytics.MCPRecord{}))
 
