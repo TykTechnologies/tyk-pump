@@ -410,10 +410,10 @@ func TestMCPSQLAggregatePump_WriteData_SmallBatchSize(t *testing.T) {
 
 	require.NoError(t, pump.WriteData(context.Background(), []interface{}{rec}))
 
-	// 3 dimensions: methods, primitives, names — each inserted in its own batch
+	// 5 dimensions per API: apiid, total, methods, primitives, names
 	var count int64
 	pump.db.Table(tableName).Count(&count)
-	assert.Equal(t, int64(3), count, "batch size 1 should still write all 3 dimensions")
+	assert.Equal(t, int64(5), count, "batch size 1 should still write all 5 dimensions")
 }
 
 func TestMCPSQLAggregatePump_WriteData_MultipleAPIs(t *testing.T) {
@@ -447,17 +447,17 @@ func TestMCPSQLAggregatePump_WriteData_MultipleAPIs(t *testing.T) {
 
 	require.NoError(t, pump.WriteData(context.Background(), records))
 
-	// Each API produces 3 dimensions = 6 total rows
+	// Each API produces 5 dimensions (apiid, total, methods, primitives, names) = 10 total rows
 	var count int64
 	pump.db.Table(tableName).Count(&count)
-	assert.Equal(t, int64(6), count, "2 APIs × 3 dimensions = 6 rows")
+	assert.Equal(t, int64(10), count, "2 APIs × 5 dimensions = 10 rows")
 
 	// Verify API-specific data
 	var api1Recs []analytics.MCPSQLAnalyticsRecordAggregate
 	pump.db.Table(tableName).Where("api_id = ?", "api-1").Find(&api1Recs)
-	assert.Len(t, api1Recs, 3)
+	assert.Len(t, api1Recs, 5)
 
 	var api2Recs []analytics.MCPSQLAnalyticsRecordAggregate
 	pump.db.Table(tableName).Where("api_id = ?", "api-2").Find(&api2Recs)
-	assert.Len(t, api2Recs, 3)
+	assert.Len(t, api2Recs, 5)
 }
