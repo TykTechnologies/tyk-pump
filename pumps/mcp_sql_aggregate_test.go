@@ -306,6 +306,19 @@ func newMCPSQLAggregatePumpWithSQLite(t *testing.T, batchSize int, sharding bool
 	return pump
 }
 
+func TestMCPSQLAggregatePump_ensureMCPAggregateShardedTable_SQLite(t *testing.T) {
+	pump := newMCPSQLAggregatePumpWithSQLite(t, 100, true)
+
+	table := pump.ensureMCPAggregateShardedTable("20250615")
+	expected := analytics.AggregateMCPSQLTable + "_20250615"
+	assert.Equal(t, expected, table)
+	assert.True(t, pump.db.Migrator().HasTable(expected), "shard table should be created")
+
+	// Calling again should not error (table already exists)
+	table2 := pump.ensureMCPAggregateShardedTable("20250615")
+	assert.Equal(t, expected, table2)
+}
+
 func TestMCPSQLAggregatePump_WriteData_SkipsNonMCP_SQLite(t *testing.T) {
 	pump := newMCPSQLAggregatePumpWithSQLite(t, 100, false)
 	ts := time.Date(2025, 6, 15, 10, 0, 0, 0, time.UTC)
@@ -335,4 +348,116 @@ func TestMCPSQLAggregatePump_WriteData_EmptyData(t *testing.T) {
 	}))
 	err := pump.WriteData(context.Background(), []interface{}{})
 	assert.NoError(t, err)
+}
+
+func TestMCPSQLAggregatePump_WriteData_Upsert(t *testing.T) {
+	skipTestIfNoPostgres(t)
+	tableName := analytics.AggregateMCPSQLTable
+
+	pump := MCPSQLAggregatePump{}
+	require.NoError(t, pump.Init(SQLAggregatePumpConf{
+		SQLConf: SQLConf{
+			Type:             "postgres",
+			ConnectionString: getTestPostgresConnectionString(),
+		},
+	}))
+	t.Cleanup(func() {
+		pump.db.Exec(fmt.Sprintf("DROP TABLE IF EXISTS %q", tableName))
+	})
+
+	rec := analytics.AnalyticsRecord{
+		TimeStamp: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+		APIID:     "test-api", APIName: "test-api", OrgID: "test-org",
+		ResponseCode: 200, Day: 1, Month: 1, Year: 2025,
+		MCPStats: analytics.MCPStats{IsMCP: true, JSONRPCMethod: "tools/call", PrimitiveType: "tool", PrimitiveName: "t1"},
+	}
+
+	// First write: 2 records
+	require.NoError(t, pump.WriteData(context.Background(), []interface{}{rec, rec}))
+
+	// Second write: 1 more record — upsert should accumulate
+	require.NoError(t, pump.WriteData(context.Background(), []interface{}{rec}))
+
+	var resp []analytics.MCPSQLAnalyticsRecordAggregate
+	tx := pump.db.Table(tableName).Where("dimension = ? AND dimension_value = ?", "names", "tool_t1").Find(&resp)
+	require.NoError(t, tx.Error)
+	require.Len(t, resp, 1)
+	assert.Equal(t, 3, resp[0].Counter.Hits, "upsert should accumulate hits: 2 + 1 = 3")
+}
+
+func TestMCPSQLAggregatePump_WriteData_SmallBatchSize(t *testing.T) {
+	skipTestIfNoPostgres(t)
+	tableName := analytics.AggregateMCPSQLTable
+
+	pump := MCPSQLAggregatePump{}
+	require.NoError(t, pump.Init(SQLAggregatePumpConf{
+		SQLConf: SQLConf{
+			Type:             "postgres",
+			ConnectionString: getTestPostgresConnectionString(),
+			BatchSize:        1, // force 1-record batches to exercise batch loop
+		},
+	}))
+	t.Cleanup(func() {
+		pump.db.Exec(fmt.Sprintf("DROP TABLE IF EXISTS %q", tableName))
+	})
+
+	rec := analytics.AnalyticsRecord{
+		TimeStamp: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+		APIID:     "test-api", APIName: "test-api", OrgID: "test-org",
+		ResponseCode: 200, Day: 1, Month: 1, Year: 2025,
+		MCPStats: analytics.MCPStats{IsMCP: true, JSONRPCMethod: "tools/call", PrimitiveType: "tool", PrimitiveName: "t1"},
+	}
+
+	require.NoError(t, pump.WriteData(context.Background(), []interface{}{rec}))
+
+	// 3 dimensions: methods, primitives, names — each inserted in its own batch
+	var count int64
+	pump.db.Table(tableName).Count(&count)
+	assert.Equal(t, int64(3), count, "batch size 1 should still write all 3 dimensions")
+}
+
+func TestMCPSQLAggregatePump_WriteData_MultipleAPIs(t *testing.T) {
+	skipTestIfNoPostgres(t)
+	tableName := analytics.AggregateMCPSQLTable
+
+	pump := MCPSQLAggregatePump{}
+	require.NoError(t, pump.Init(SQLAggregatePumpConf{
+		SQLConf: SQLConf{
+			Type:             "postgres",
+			ConnectionString: getTestPostgresConnectionString(),
+		},
+	}))
+	t.Cleanup(func() {
+		pump.db.Exec(fmt.Sprintf("DROP TABLE IF EXISTS %q", tableName))
+	})
+
+	ts := time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)
+	records := []interface{}{
+		analytics.AnalyticsRecord{
+			TimeStamp: ts, APIID: "api-1", APIName: "api-1", OrgID: "org1",
+			ResponseCode: 200, Day: 1, Month: 1, Year: 2025,
+			MCPStats: analytics.MCPStats{IsMCP: true, JSONRPCMethod: "tools/call", PrimitiveType: "tool", PrimitiveName: "t1"},
+		},
+		analytics.AnalyticsRecord{
+			TimeStamp: ts, APIID: "api-2", APIName: "api-2", OrgID: "org1",
+			ResponseCode: 200, Day: 1, Month: 1, Year: 2025,
+			MCPStats: analytics.MCPStats{IsMCP: true, JSONRPCMethod: "resources/read", PrimitiveType: "resource", PrimitiveName: "r1"},
+		},
+	}
+
+	require.NoError(t, pump.WriteData(context.Background(), records))
+
+	// Each API produces 3 dimensions = 6 total rows
+	var count int64
+	pump.db.Table(tableName).Count(&count)
+	assert.Equal(t, int64(6), count, "2 APIs × 3 dimensions = 6 rows")
+
+	// Verify API-specific data
+	var api1Recs []analytics.MCPSQLAnalyticsRecordAggregate
+	pump.db.Table(tableName).Where("api_id = ?", "api-1").Find(&api1Recs)
+	assert.Len(t, api1Recs, 3)
+
+	var api2Recs []analytics.MCPSQLAnalyticsRecordAggregate
+	pump.db.Table(tableName).Where("api_id = ?", "api-2").Find(&api2Recs)
+	assert.Len(t, api2Recs, 3)
 }
