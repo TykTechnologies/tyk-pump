@@ -13,6 +13,7 @@ import (
 	"github.com/TykTechnologies/tyk-pump/analytics/demo"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type dummyObject struct {
@@ -188,6 +189,9 @@ func TestAggregationTime(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.testName, func(t *testing.T) {
+			// Reset shared state so -count=N runs start clean.
+			analytics.SetlastTimestampAgggregateRecord(cfgPump1["mongo_url"].(string), time.Time{})
+
 			cfgPump1["aggregation_time"] = test.AggregationTime
 			errInit1 := pmp1.Init(cfgPump1)
 			if errInit1 != nil {
@@ -195,15 +199,11 @@ func TestAggregationTime(t *testing.T) {
 				return
 			}
 
-			defer func() {
-				// we clean the db after we finish every test case
-				defer func() {
-					err := pmp1.store.DropDatabase(context.Background())
-					if err != nil {
-						t.Fatal(err)
-					}
-				}()
-			}()
+			// Drop the DB before AND after the test to ensure isolation across -count runs.
+			require.NoError(t, pmp1.store.DropDatabase(context.Background()))
+			t.Cleanup(func() {
+				_ = pmp1.store.DropDatabase(context.Background())
+			})
 
 			ctx := context.TODO()
 			for i := 0; i < test.WantedNumberOfRecords; i++ {
