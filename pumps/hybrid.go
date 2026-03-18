@@ -191,49 +191,61 @@ func (p *HybridPump) WriteData(ctx context.Context, data []interface{}) error {
 			return err
 		}
 	} else { // send aggregated data
-		aggTime := p.aggregationTime()
+		aggregationTime := 60
+		if p.storeAnalyticPerMinute {
+			aggregationTime = 1
+		}
 
-		// calculate and send REST aggregates
-		aggregates := analytics.AggregateData(data, p.trackAllPaths, p.ignoreTagPrefixList, p.rpcConfig.ConnectionString, aggTime)
-		if err := marshalAndSendRPC("PurgeAnalyticsDataAggregated", aggregates); err != nil {
+		// calculate aggregates
+		aggregates := analytics.AggregateData(data, p.trackAllPaths, p.ignoreTagPrefixList, p.rpcConfig.ConnectionString, aggregationTime)
+
+		// turn map with analytics aggregates into JSON payload
+		jsonData, err := json.Marshal(aggregates)
+		if err != nil {
+			log.WithFields(logrus.Fields{
+				"prefix": hybridPrefix,
+			}).WithError(err).Error("Failed to marshal analytics aggregates data")
 			return err
 		}
 
-		// calculate and send MCP aggregates (if any MCP records exist)
-		mcpAggregates := analytics.AggregateMCPData(data, p.rpcConfig.ConnectionString, aggTime)
-		if len(mcpAggregates) > 0 {
-			if err := marshalAndSendRPC("PurgeAnalyticsDataMCPAggregated", mcpAggregates); err != nil {
-				return err
-			}
+		if _, err := rpc.FuncClientSingleton("PurgeAnalyticsDataAggregated", string(jsonData)); err != nil {
+			log.WithFields(logrus.Fields{
+				"prefix": hybridPrefix,
+			}).WithError(err).Error("Failed to call PurgeAnalyticsDataAggregated")
+			return err
+		}
+
+		// send MCP aggregates (if any MCP records exist)
+		if err := p.sendMCPAggregates(data, aggregationTime); err != nil {
+			return err
 		}
 	}
 
 	return nil
 }
 
-// aggregationTime returns the aggregation window in minutes based on config.
-func (p *HybridPump) aggregationTime() int {
-	if p.storeAnalyticPerMinute {
-		return 1
+// sendMCPAggregates aggregates MCP analytics from data and sends them to MDCB via RPC.
+// Returns nil without making an RPC call when there are no MCP records.
+func (p *HybridPump) sendMCPAggregates(data []interface{}, aggregationTime int) error {
+	mcpAggregates := analytics.AggregateMCPData(data, p.rpcConfig.ConnectionString, aggregationTime)
+	if len(mcpAggregates) == 0 {
+		return nil
 	}
-	return 60
-}
 
-// marshalAndSendRPC marshals data to JSON and sends it via the named RPC function.
-func marshalAndSendRPC(rpcFn string, data interface{}) error {
-	jsonData, err := json.Marshal(data)
+	mcpJsonData, err := json.Marshal(mcpAggregates)
 	if err != nil {
 		log.WithFields(logrus.Fields{
 			"prefix": hybridPrefix,
-		}).WithError(err).Errorf("Failed to marshal %s data", rpcFn)
+		}).WithError(err).Error("Failed to marshal MCP analytics aggregates data")
 		return err
 	}
 
-	if _, err := rpc.FuncClientSingleton(rpcFn, string(jsonData)); err != nil {
+	if _, err := rpc.FuncClientSingleton("PurgeAnalyticsDataMCPAggregated", string(mcpJsonData)); err != nil {
 		log.WithFields(logrus.Fields{
 			"prefix": hybridPrefix,
-		}).WithError(err).Errorf("Failed to call %s", rpcFn)
+		}).WithError(err).Error("Failed to call PurgeAnalyticsDataMCPAggregated")
 		return err
 	}
+
 	return nil
 }
