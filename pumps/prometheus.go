@@ -76,8 +76,14 @@ type PrometheusMetric struct {
 	// Defines the partitions in the metrics. For example: ['response_code','api_name'].
 	// The available labels are: `["host","method",
 	// "path", "response_code", "api_key", "time_stamp", "api_version", "api_name", "api_id",
-	// "org_id", "oauth_id","request_time", "ip_address", "alias"]`.
+	// "org_id", "oauth_id","request_time", "ip_address", "alias",
+	// "mcp_method", "mcp_primitive_type", "mcp_primitive_name"]`.
+	// MCP labels are only populated for MCP records; non-MCP records produce empty strings.
 	Labels []string `json:"labels" mapstructure:"labels"`
+
+	// mcpOnly marks a metric as MCP-specific: it is only processed for records where IsMCPRecord() is true.
+	// This is an internal field and is not user-configurable.
+	mcpOnly bool
 
 	enabled      bool
 	counterVec   *prometheus.CounterVec
@@ -105,6 +111,13 @@ const (
 	counterType           = "counter"
 	histogramType         = "histogram"
 	prometheusUnknownPath = "unknown"
+
+	// metricTykLatency is the name of the built-in latency histogram for REST/GraphQL.
+	metricTykLatency = "tyk_latency"
+	// metricTykMCPCallsTotal is the name of the MCP-specific call counter base metric.
+	metricTykMCPCallsTotal = "tyk_mcp_calls_total"
+	// metricTykMCPLatencyMs is the name of the MCP-specific latency histogram base metric.
+	metricTykMCPLatencyMs = "tyk_mcp_latency_milliseconds"
 )
 
 var (
@@ -159,7 +172,24 @@ func (p *PrometheusPump) CreateBasicMetrics() {
 		Labels:     []string{"type", "api"},
 	}
 
-	p.allMetrics = append(p.allMetrics, totalStatusMetric, pathStatusMetrics, keyStatusMetrics, oauthStatusMetrics, totalLatencyMetrics)
+	// MCP-specific metrics: only emitted for records where IsMCPRecord() is true.
+	mcpCallsMetric := &PrometheusMetric{
+		Name:       metricTykMCPCallsTotal,
+		Help:       "MCP call counts per API, JSON-RPC method, primitive type, primitive name, and response code",
+		MetricType: counterType,
+		Labels:     []string{"api_id", "mcp_method", "mcp_primitive_type", "mcp_primitive_name", "response_code"},
+		mcpOnly:    true,
+	}
+	mcpLatencyMetric := &PrometheusMetric{
+		Name:       metricTykMCPLatencyMs,
+		Help:       "Latency for MCP calls per API, JSON-RPC method, primitive type, and primitive name",
+		MetricType: histogramType,
+		Buckets:    buckets,
+		Labels:     []string{"type", "api_id", "mcp_method", "mcp_primitive_type", "mcp_primitive_name"},
+		mcpOnly:    true,
+	}
+
+	p.allMetrics = append(p.allMetrics, totalStatusMetric, pathStatusMetrics, keyStatusMetrics, oauthStatusMetrics, totalLatencyMetrics, mcpCallsMetric, mcpLatencyMetric)
 }
 
 func (p *PrometheusPump) GetName() string {
@@ -280,6 +310,42 @@ func (p *PrometheusPump) observeHistogramMetric(metric *PrometheusMetric, reques
 	}
 }
 
+// processMetric updates a single metric for a single analytics record.
+// It is a no-op when the metric is MCP-only and the record is not an MCP record.
+func (p *PrometheusPump) processMetric(metric *PrometheusMetric, record analytics.AnalyticsRecord) {
+	if !metric.enabled {
+		return
+	}
+	if metric.mcpOnly && !record.IsMCPRecord() {
+		return
+	}
+
+	p.log.Debug("Processing metric:", metric.Name)
+	values := metric.GetLabelsValues(record)
+
+	switch metric.MetricType {
+	case counterType:
+		if metric.counterVec != nil {
+			if err := metric.Inc(values...); err != nil {
+				p.log.WithFields(logrus.Fields{
+					"metric_type": metric.MetricType,
+					"metric_name": metric.Name,
+				}).Error("error incrementing prometheus metric value:", err)
+			}
+		}
+	case histogramType:
+		if metric.histogramVec != nil {
+			if metric.Name == metricTykLatency || metric.Name == metricTykMCPLatencyMs {
+				p.observeLatencyMetrics(metric, &record, values)
+			} else {
+				p.observeHistogramMetric(metric, record.RequestTime, values)
+			}
+		}
+	default:
+		p.log.Debug("trying to process an invalid prometheus metric type:", metric.MetricType)
+	}
+}
+
 func (p *PrometheusPump) WriteData(ctx context.Context, data []interface{}) error {
 	p.log.Debug("Attempting to write ", len(data), " records...")
 
@@ -296,44 +362,14 @@ func (p *PrometheusPump) WriteData(ctx context.Context, data []interface{}) erro
 			record.Path = prometheusUnknownPath
 		}
 
-		// we loop through all the metrics available.
 		for _, metric := range p.allMetrics {
-			if metric.enabled {
-				p.log.Debug("Processing metric:", metric.Name)
-				// we get the values for that metric required labels
-				values := metric.GetLabelsValues(record)
-
-				switch metric.MetricType {
-				case counterType:
-					if metric.counterVec != nil {
-						// if the metric is a counter, we increment the counter memory map
-						err := metric.Inc(values...)
-						if err != nil {
-							p.log.WithFields(logrus.Fields{
-								"metric_type": metric.MetricType,
-								"metric_name": metric.Name,
-							}).Error("error incrementing prometheus metric value:", err)
-						}
-					}
-				case histogramType:
-					if metric.histogramVec != nil {
-						if metric.Name == "tyk_latency" {
-							p.observeLatencyMetrics(metric, &record, values)
-						} else {
-							p.observeHistogramMetric(metric, record.RequestTime, values)
-						}
-					}
-				default:
-					p.log.Debug("trying to process an invalid prometheus metric type:", metric.MetricType)
-				}
-			}
+			p.processMetric(metric, record)
 		}
 	}
 
 	// after looping through all the analytics records, we expose the metrics to prometheus endpoint
 	for _, customMetric := range p.allMetrics {
-		err := customMetric.Expose()
-		if err != nil {
+		if err := customMetric.Expose(); err != nil {
 			p.log.WithFields(logrus.Fields{
 				"metric_type": customMetric.MetricType,
 				"metric_name": customMetric.Name,
@@ -411,27 +447,30 @@ func (pm *PrometheusMetric) GetLabelsValues(decoded analytics.AnalyticsRecord) [
 	// If API Key obfuscation is enabled, we only show the last <ObfuscateAPIKeysLength> characters of the API Key
 	apiKey := pm.obfuscateAPIKey(decoded.APIKey)
 	mapping := map[string]interface{}{
-		"host":             decoded.Host,
-		"method":           decoded.Method,
-		"path":             decoded.Path,
-		"code":             decoded.ResponseCode,
-		"response_code":    decoded.ResponseCode,
-		"api_key":          apiKey,
-		"key":              apiKey,
-		"time_stamp":       decoded.TimeStamp,
-		"api_version":      decoded.APIVersion,
-		"api_name":         decoded.APIName,
-		"api":              decoded.APIID,
-		"api_id":           decoded.APIID,
-		"org_id":           decoded.OrgID,
-		"client_id":        decoded.OauthID,
-		"oauth_id":         decoded.OauthID,
-		"request_time":     decoded.RequestTime,
-		"latency_total":    decoded.Latency.Total,
-		"latency_upstream": decoded.Latency.Upstream,
-		"latency_gateway":  decoded.Latency.Gateway,
-		"ip_address":       decoded.IPAddress,
-		"alias":            decoded.Alias,
+		"host":               decoded.Host,
+		"method":             decoded.Method,
+		"path":               decoded.Path,
+		"code":               decoded.ResponseCode,
+		"response_code":      decoded.ResponseCode,
+		"api_key":            apiKey,
+		"key":                apiKey,
+		"time_stamp":         decoded.TimeStamp,
+		"api_version":        decoded.APIVersion,
+		"api_name":           decoded.APIName,
+		"api":                decoded.APIID,
+		"api_id":             decoded.APIID,
+		"org_id":             decoded.OrgID,
+		"client_id":          decoded.OauthID,
+		"oauth_id":           decoded.OauthID,
+		"request_time":       decoded.RequestTime,
+		"latency_total":      decoded.Latency.Total,
+		"latency_upstream":   decoded.Latency.Upstream,
+		"latency_gateway":    decoded.Latency.Gateway,
+		"ip_address":         decoded.IPAddress,
+		"alias":              decoded.Alias,
+		"mcp_method":         decoded.MCPStats.JSONRPCMethod,
+		"mcp_primitive_type": decoded.MCPStats.PrimitiveType,
+		"mcp_primitive_name": decoded.MCPStats.PrimitiveName,
 	}
 
 	for _, label := range pm.Labels {

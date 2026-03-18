@@ -35,6 +35,9 @@ var (
 		"PurgeAnalyticsDataAggregated": func(data string) error {
 			return nil
 		},
+		"PurgeAnalyticsDataMCPAggregated": func(data string) error {
+			return nil
+		},
 	}
 	DefaultRPCCallTimeout = 10
 	ErrRPCLogin           = errors.New("RPC login incorrect")
@@ -308,6 +311,11 @@ func (p *HybridPump) WriteData(ctx context.Context, data []interface{}) error {
 			p.log.WithError(err).Error("Failed to call PurgeAnalyticsDataAggregated")
 			return err
 		}
+
+		// send MCP aggregates (if any MCP records exist)
+		if err := p.sendMCPAggregates(data); err != nil {
+			return err
+		}
 	}
 	p.log.Info("Purged ", len(data), " records...")
 
@@ -341,6 +349,28 @@ func (p *HybridPump) RPCLogin() error {
 
 	if !logged.(bool) {
 		return ErrRPCLogin
+	}
+
+	return nil
+}
+
+// sendMCPAggregates aggregates MCP analytics from data and sends them to MDCB via RPC.
+// Returns nil without making an RPC call when there are no MCP records.
+func (p *HybridPump) sendMCPAggregates(data []interface{}) error {
+	mcpAggregates := analytics.AggregateMCPData(data, p.hybridConfig.ConnectionString, p.hybridConfig.aggregationTime)
+	if len(mcpAggregates) == 0 {
+		return nil
+	}
+
+	mcpJsonData, err := json.Marshal(mcpAggregates)
+	if err != nil {
+		p.log.WithError(err).Error("Failed to marshal MCP analytics aggregates data")
+		return err
+	}
+
+	if _, err := p.callRPCFn("PurgeAnalyticsDataMCPAggregated", string(mcpJsonData)); err != nil {
+		p.log.WithError(err).Error("Failed to call PurgeAnalyticsDataMCPAggregated")
+		return err
 	}
 
 	return nil

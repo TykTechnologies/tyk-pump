@@ -602,6 +602,13 @@ func TestDispatcherFuncs(t *testing.T) {
 			expectedOutput: nil,
 			expectedError:  nil,
 		},
+		{
+			testName:       "PurgeAnalyticsDataMCPAggregated",
+			function:       "PurgeAnalyticsDataMCPAggregated",
+			input:          []interface{}{"test data"},
+			expectedOutput: nil,
+			expectedError:  nil,
+		},
 	}
 
 	for _, tc := range tcs {
