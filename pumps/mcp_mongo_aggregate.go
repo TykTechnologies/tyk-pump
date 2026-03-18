@@ -57,7 +57,8 @@ func (m *MCPMongoAggregatePump) Init(config interface{}) error {
 		err = mapstructure.Decode(config, &m.dbConf.BaseMongoConf)
 	}
 	if err != nil {
-		m.log.Fatal("Failed to decode configuration: ", err)
+		m.log.Error("Failed to decode configuration: ", err)
+		return err
 	}
 
 	// Share the decoded conf with the embedded MongoAggregatePump so that

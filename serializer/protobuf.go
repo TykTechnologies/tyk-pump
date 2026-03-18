@@ -120,6 +120,15 @@ func (pb *ProtobufSerializer) TransformSingleRecordToProto(rec analytics.Analyti
 		}
 	}
 
+	if rec.MCPStats.IsMCP {
+		record.MCPStats = &analyticsproto.MCPStats{
+			IsMCP:         true,
+			JSONRPCMethod: rec.MCPStats.JSONRPCMethod,
+			PrimitiveType: rec.MCPStats.PrimitiveType,
+			PrimitiveName: rec.MCPStats.PrimitiveName,
+		}
+	}
+
 	return &record
 }
 
@@ -208,6 +217,15 @@ func (pb *ProtobufSerializer) TransformSingleProtoToAnalyticsRecord(rec *analyti
 			Types:         types,
 			Variables:     rec.GraphQLStats.Variables,
 			Errors:        errors,
+		}
+	}
+
+	if rec.MCPStats != nil {
+		tmpRecord.MCPStats = analytics.MCPStats{
+			IsMCP:         rec.MCPStats.IsMCP,
+			JSONRPCMethod: rec.MCPStats.JSONRPCMethod,
+			PrimitiveType: rec.MCPStats.PrimitiveType,
+			PrimitiveName: rec.MCPStats.PrimitiveName,
 		}
 	}
 

@@ -26,6 +26,12 @@ func newMCPMongoAggregatePump(t *testing.T) *MCPMongoAggregatePump {
 	return pump
 }
 
+func TestMCPMongoAggregatePump_Init_InvalidConfig(t *testing.T) {
+	pump := &MCPMongoAggregatePump{}
+	err := pump.Init("not-a-map")
+	require.Error(t, err, "Init should return error for invalid config")
+}
+
 func TestMCPMongoAggregatePump_WriteData_Roundtrip(t *testing.T) {
 	pump := newMCPMongoAggregatePump(t)
 
