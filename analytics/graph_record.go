@@ -32,12 +32,10 @@ func (g *GraphRecord) TableName() string {
 	return GraphSQLTableName
 }
 
-// GetObjectID satisfies the model.DBObject interface.
 func (*GraphRecord) GetObjectID() model.ObjectID {
 	return ""
 }
 
-// SetObjectID satisfies the model.DBObject interface.
 func (*GraphRecord) SetObjectID(model.ObjectID) {
 	// empty
 }
