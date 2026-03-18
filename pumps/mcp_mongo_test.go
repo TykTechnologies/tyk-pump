@@ -110,3 +110,64 @@ func TestMCPMongoPump_WriteData_EmptyData(t *testing.T) {
 	err := p.WriteData(context.Background(), []interface{}{})
 	assert.NoError(t, err)
 }
+
+func TestMCPMongoPump_Init(t *testing.T) {
+	conf := defaultConf()
+	conf.CollectionName = "test_mcp_init"
+
+	pump := MCPMongoPump{}
+	require.NoError(t, pump.Init(conf))
+	t.Cleanup(func() {
+		_ = pump.store.DropDatabase(context.Background())
+	})
+
+	assert.Equal(t, 10*MiB, pump.dbConf.MaxInsertBatchSizeBytes)
+	assert.Equal(t, 10*MiB, pump.dbConf.MaxDocumentSizeBytes)
+}
+
+func TestMCPMongoPump_WriteData_Roundtrip(t *testing.T) {
+	conf := defaultConf()
+	conf.CollectionName = "test_mcp_roundtrip"
+
+	pump := MCPMongoPump{}
+	require.NoError(t, pump.Init(conf))
+	t.Cleanup(func() {
+		_ = pump.store.DropDatabase(context.Background())
+	})
+
+	records := []interface{}{
+		analytics.AnalyticsRecord{
+			APIID: "api1", OrgID: "org1", ResponseCode: 200,
+			MCPStats: analytics.MCPStats{
+				IsMCP: true, JSONRPCMethod: "tools/call",
+				PrimitiveType: "tool", PrimitiveName: "get_weather",
+			},
+		},
+		analytics.AnalyticsRecord{
+			APIID: "api1", OrgID: "org1", ResponseCode: 500,
+			MCPStats: analytics.MCPStats{
+				IsMCP: true, JSONRPCMethod: "resources/read",
+				PrimitiveType: "resource", PrimitiveName: "docs",
+			},
+		},
+		// non-MCP record — must NOT appear in the collection
+		analytics.AnalyticsRecord{
+			APIID: "api1", OrgID: "org1", ResponseCode: 200,
+		},
+	}
+
+	require.NoError(t, pump.WriteData(context.Background(), records))
+
+	// Query back from MongoDB
+	var results []analytics.MCPRecord
+	d := dbObject{tableName: conf.CollectionName}
+	require.NoError(t, pump.store.Query(context.Background(), d, &results, nil))
+
+	require.Len(t, results, 2, "only MCP records should be stored")
+	assert.Equal(t, "tools/call", results[0].JSONRPCMethod)
+	assert.Equal(t, "tool", results[0].PrimitiveType)
+	assert.Equal(t, "get_weather", results[0].PrimitiveName)
+	assert.Equal(t, "resources/read", results[1].JSONRPCMethod)
+	assert.Equal(t, "resource", results[1].PrimitiveType)
+	assert.Equal(t, "docs", results[1].PrimitiveName)
+}

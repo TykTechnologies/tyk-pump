@@ -277,7 +277,6 @@ func TestMCPSQLPump_WriteData_NoMCPRecords_NoInit(t *testing.T) {
 	p := &MCPSQLPump{}
 	p.log = log.WithField("prefix", MCPSQLPrefix)
 	p.Conf = &MCPSQLConf{}
-	// Non-MCP records produce empty mcpRecords slice → returns nil without accessing DB.
 	err := p.WriteData(context.Background(), []interface{}{
 		analytics.AnalyticsRecord{APIID: "api1", ResponseCode: 200},
 	})
@@ -300,4 +299,134 @@ func TestMCPSQLPump_WriteData_EmptyData(t *testing.T) {
 	})
 	err := pump.WriteData(context.Background(), []interface{}{})
 	assert.NoError(t, err)
+}
+
+// newMCPSQLPumpWithSQLite creates an MCPSQLPump backed by in-memory SQLite.
+// No Postgres needed — tests the actual write logic, batching, and sharding.
+func newMCPSQLPumpWithSQLite(t *testing.T, tableName string, batchSize int, sharding bool) *MCPSQLPump {
+	t.Helper()
+	db := setupTestDB(t)
+
+	if tableName == "" {
+		tableName = "test_mcp_records"
+	}
+	analytics.MCPSQLTableName = tableName
+
+	require.NoError(t, db.Table(tableName).AutoMigrate(&analytics.MCPRecord{}))
+
+	pump := &MCPSQLPump{
+		db:        db.Table(tableName),
+		tableName: tableName,
+		Conf: &MCPSQLConf{
+			TableName: tableName,
+			SQLConf:   SQLConf{BatchSize: batchSize, TableSharding: sharding},
+		},
+	}
+	pump.log = log.WithField("prefix", MCPSQLPrefix)
+	return pump
+}
+
+func mcpRecord(ts time.Time, method, primType, primName string, code int) analytics.AnalyticsRecord {
+	return analytics.AnalyticsRecord{
+		TimeStamp: ts, Method: "POST", Path: "/mcp",
+		APIID: "api1", APIName: "api1", OrgID: "org1",
+		ResponseCode: code,
+		MCPStats: analytics.MCPStats{
+			IsMCP: true, JSONRPCMethod: method,
+			PrimitiveType: primType, PrimitiveName: primName,
+		},
+	}
+}
+
+func TestMCPSQLPump_WriteMCPBatch_SQLite(t *testing.T) {
+	pump := newMCPSQLPumpWithSQLite(t, "", 2, false)
+
+	recs := []*analytics.MCPRecord{
+		{JSONRPCMethod: "tools/call", PrimitiveType: "tool", PrimitiveName: "t1",
+			AnalyticsRecord: analytics.AnalyticsRecord{APIID: "a1", OrgID: "o1", ResponseCode: 200, TimeStamp: time.Now()}},
+		{JSONRPCMethod: "tools/call", PrimitiveType: "tool", PrimitiveName: "t2",
+			AnalyticsRecord: analytics.AnalyticsRecord{APIID: "a1", OrgID: "o1", ResponseCode: 200, TimeStamp: time.Now()}},
+		{JSONRPCMethod: "resources/read", PrimitiveType: "resource", PrimitiveName: "r1",
+			AnalyticsRecord: analytics.AnalyticsRecord{APIID: "a1", OrgID: "o1", ResponseCode: 200, TimeStamp: time.Now()}},
+	}
+
+	pump.writeMCPBatch(context.Background(), recs)
+
+	var count int64
+	pump.db.Count(&count)
+	assert.Equal(t, int64(3), count, "all 3 records should be written despite batch size 2")
+}
+
+func TestMCPSQLPump_WriteData_SQLite(t *testing.T) {
+	pump := newMCPSQLPumpWithSQLite(t, "", 100, false)
+	ts := time.Date(2025, 6, 15, 10, 0, 0, 0, time.UTC)
+
+	data := []interface{}{
+		mcpRecord(ts, "tools/call", "tool", "weather", 200),
+		analytics.AnalyticsRecord{APIID: "rest", OrgID: "org1", ResponseCode: 200, TimeStamp: ts}, // non-MCP, must be skipped
+		mcpRecord(ts, "resources/read", "resource", "docs", 500),
+	}
+
+	require.NoError(t, pump.WriteData(context.Background(), data))
+
+	var count int64
+	pump.db.Count(&count)
+	assert.Equal(t, int64(2), count, "only MCP records should be written")
+
+	// Verify the actual field values persisted correctly.
+	var results []analytics.MCPRecord
+	pump.db.Find(&results)
+	require.Len(t, results, 2)
+	assert.Equal(t, "tools/call", results[0].JSONRPCMethod)
+	assert.Equal(t, "resources/read", results[1].JSONRPCMethod)
+}
+
+func TestMCPSQLPump_WriteData_Sharded_SQLite(t *testing.T) {
+	tableName := "test_mcp_shard"
+	pump := newMCPSQLPumpWithSQLite(t, tableName, 100, true)
+
+	day1 := time.Date(2025, 1, 15, 10, 0, 0, 0, time.UTC)
+	day2 := time.Date(2025, 3, 1, 14, 0, 0, 0, time.UTC)
+
+	data := []interface{}{
+		mcpRecord(day1, "tools/call", "tool", "t1", 200),
+		mcpRecord(day1, "tools/call", "tool", "t2", 200),
+		mcpRecord(day2, "resources/read", "resource", "r1", 200),
+	}
+
+	require.NoError(t, pump.WriteData(context.Background(), data))
+
+	shard1 := tableName + "_20250115"
+	shard2 := tableName + "_20250301"
+
+	assert.True(t, pump.db.Migrator().HasTable(shard1), "shard for day1 should exist")
+	assert.True(t, pump.db.Migrator().HasTable(shard2), "shard for day2 should exist")
+
+	var count1, count2 int64
+	pump.db.Table(shard1).Count(&count1)
+	pump.db.Table(shard2).Count(&count2)
+	assert.Equal(t, int64(2), count1, "day1 shard should have 2 records")
+	assert.Equal(t, int64(1), count2, "day2 shard should have 1 record")
+}
+
+func TestMCPSQLPump_WriteMCPBatch_BatchSizeOne(t *testing.T) {
+	pump := newMCPSQLPumpWithSQLite(t, "", 1, false)
+	ts := time.Now()
+
+	recs := make([]*analytics.MCPRecord, 5)
+	for i := range recs {
+		recs[i] = &analytics.MCPRecord{
+			JSONRPCMethod: "tools/call", PrimitiveType: "tool",
+			PrimitiveName: fmt.Sprintf("t%d", i),
+			AnalyticsRecord: analytics.AnalyticsRecord{
+				APIID: "a1", OrgID: "o1", ResponseCode: 200, TimeStamp: ts,
+			},
+		}
+	}
+
+	pump.writeMCPBatch(context.Background(), recs)
+
+	var count int64
+	pump.db.Count(&count)
+	assert.Equal(t, int64(5), count, "batch size 1 should still write all records")
 }

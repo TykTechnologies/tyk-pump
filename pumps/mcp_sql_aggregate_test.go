@@ -289,6 +289,41 @@ func TestMCPSQLAggregatePump_WriteData_EmptyData_NoInit(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func newMCPSQLAggregatePumpWithSQLite(t *testing.T, batchSize int, sharding bool) *MCPSQLAggregatePump {
+	t.Helper()
+	db := setupTestDB(t)
+	tableName := analytics.AggregateMCPSQLTable
+
+	require.NoError(t, db.Table(tableName).AutoMigrate(&analytics.MCPSQLAnalyticsRecordAggregate{}))
+
+	pump := &MCPSQLAggregatePump{
+		db: db,
+		SQLConf: &SQLAggregatePumpConf{
+			SQLConf: SQLConf{BatchSize: batchSize, TableSharding: sharding},
+		},
+	}
+	pump.log = log.WithField("prefix", mcpSQLAggregatePrefix)
+	return pump
+}
+
+func TestMCPSQLAggregatePump_WriteData_SkipsNonMCP_SQLite(t *testing.T) {
+	pump := newMCPSQLAggregatePumpWithSQLite(t, 100, false)
+	ts := time.Date(2025, 6, 15, 10, 0, 0, 0, time.UTC)
+	tableName := analytics.AggregateMCPSQLTable
+
+	// All non-MCP records
+	data := []interface{}{
+		analytics.AnalyticsRecord{TimeStamp: ts, APIID: "api1", OrgID: "org1", ResponseCode: 200},
+		analytics.AnalyticsRecord{TimeStamp: ts, APIID: "api2", OrgID: "org1", ResponseCode: 200},
+	}
+
+	require.NoError(t, pump.WriteData(context.Background(), data))
+
+	var count int64
+	pump.db.Table(tableName).Count(&count)
+	assert.Zero(t, count, "non-MCP records should not produce any aggregate rows")
+}
+
 func TestMCPSQLAggregatePump_WriteData_EmptyData(t *testing.T) {
 	skipTestIfNoPostgres(t)
 	pump := MCPSQLAggregatePump{}

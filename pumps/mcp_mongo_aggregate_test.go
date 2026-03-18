@@ -1,6 +1,7 @@
 package pumps
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -10,6 +11,109 @@ import (
 	"github.com/TykTechnologies/storage/persistent/model"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 )
+
+func TestMCPMongoAggregatePump_Init(t *testing.T) {
+	cfgPump := make(map[string]interface{})
+	cfgPump["mongo_url"] = dbAddr
+	cfgPump["use_mixed_collection"] = true
+
+	pump := MCPMongoAggregatePump{}
+	require.NoError(t, pump.Init(cfgPump))
+	t.Cleanup(func() {
+		_ = pump.store.DropDatabase(context.Background())
+	})
+
+	assert.Equal(t, 60, pump.dbConf.AggregationTime)
+	assert.Equal(t, ThresholdLenTagList, pump.dbConf.ThresholdLenTagList)
+}
+
+func TestMCPMongoAggregatePump_WriteData_Roundtrip(t *testing.T) {
+	cfgPump := make(map[string]interface{})
+	cfgPump["mongo_url"] = dbAddr
+	cfgPump["use_mixed_collection"] = true
+
+	pump := MCPMongoAggregatePump{}
+	require.NoError(t, pump.Init(cfgPump))
+	t.Cleanup(func() {
+		_ = pump.store.DropDatabase(context.Background())
+	})
+
+	ts := time.Date(2025, 6, 15, 10, 0, 0, 0, time.UTC)
+	records := []interface{}{
+		analytics.AnalyticsRecord{
+			TimeStamp: ts, APIID: "api1", OrgID: "org1", ResponseCode: 200,
+			MCPStats: analytics.MCPStats{IsMCP: true, JSONRPCMethod: "tools/call", PrimitiveType: "tool", PrimitiveName: "weather"},
+		},
+		analytics.AnalyticsRecord{
+			TimeStamp: ts, APIID: "api1", OrgID: "org1", ResponseCode: 500,
+			MCPStats: analytics.MCPStats{IsMCP: true, JSONRPCMethod: "tools/call", PrimitiveType: "tool", PrimitiveName: "weather"},
+		},
+		// non-MCP record — must not appear
+		analytics.AnalyticsRecord{
+			TimeStamp: ts, APIID: "api1", OrgID: "org1", ResponseCode: 200,
+		},
+	}
+
+	require.NoError(t, pump.WriteData(context.Background(), records))
+
+	// Query the mixed collection for the aggregated doc
+	var results []analytics.AnalyticsRecordAggregate
+	query := model.DBM{"orgid": "org1"}
+	require.NoError(t, pump.store.Query(
+		context.Background(),
+		&analytics.AnalyticsRecordAggregate{Mixed: true},
+		&results,
+		query,
+	))
+
+	require.NotEmpty(t, results, "aggregated doc should exist in mixed collection")
+	ag := results[0]
+	assert.Equal(t, 2, ag.Total.Hits, "total hits should be 2 (only MCP records)")
+	assert.Equal(t, 1, ag.Total.Success)
+	assert.Equal(t, 1, ag.Total.ErrorTotal)
+}
+
+func TestMCPMongoAggregatePump_WriteData_MixedCollection(t *testing.T) {
+	cfgPump := make(map[string]interface{})
+	cfgPump["mongo_url"] = dbAddr
+	cfgPump["use_mixed_collection"] = true
+
+	pump := MCPMongoAggregatePump{}
+	require.NoError(t, pump.Init(cfgPump))
+	t.Cleanup(func() {
+		_ = pump.store.DropDatabase(context.Background())
+	})
+
+	ts := time.Date(2025, 6, 15, 10, 0, 0, 0, time.UTC)
+	records := []interface{}{
+		analytics.AnalyticsRecord{
+			TimeStamp: ts, APIID: "api1", OrgID: "org1", ResponseCode: 200,
+			MCPStats: analytics.MCPStats{IsMCP: true, JSONRPCMethod: "tools/call", PrimitiveType: "tool", PrimitiveName: "t1"},
+		},
+	}
+
+	require.NoError(t, pump.WriteData(context.Background(), records))
+
+	// Verify org-specific collection has data
+	var orgResults []analytics.AnalyticsRecordAggregate
+	require.NoError(t, pump.store.Query(
+		context.Background(),
+		&analytics.AnalyticsRecordAggregate{OrgID: "org1"},
+		&orgResults,
+		model.DBM{"orgid": "org1"},
+	))
+	assert.NotEmpty(t, orgResults, "org-specific collection should have data")
+
+	// Verify mixed collection also has data
+	var mixedResults []analytics.AnalyticsRecordAggregate
+	require.NoError(t, pump.store.Query(
+		context.Background(),
+		&analytics.AnalyticsRecordAggregate{Mixed: true},
+		&mixedResults,
+		model.DBM{"orgid": "org1"},
+	))
+	assert.NotEmpty(t, mixedResults, "mixed collection should also have data")
+}
 
 func TestAddMCPDimensionUpdates_IncludesLatencyFields(t *testing.T) {
 	// Create MCP analytics records with non-zero latency and request time.
