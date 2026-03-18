@@ -161,7 +161,7 @@ func (g *MCPMongoPump) WriteData(ctx context.Context, data []interface{}) error 
 		return nil
 	}
 
-	accumulateSet := g.AccumulateSet(mcpData, true)
+	accumulateSet := g.AccumulateSet(mcpData, false)
 	errCh := make(chan error, len(accumulateSet))
 	for _, dataSet := range accumulateSet {
 		go g.insertMCPDataSet(dataSet, collectionName, errCh)

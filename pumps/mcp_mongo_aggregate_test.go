@@ -51,7 +51,7 @@ func TestMCPMongoAggregatePump_WriteData_Roundtrip(t *testing.T) {
 	var results []analytics.AnalyticsRecordAggregate
 	require.NoError(t, pump.store.Query(
 		context.Background(),
-		&analytics.AnalyticsRecordAggregate{Mixed: true},
+		&analytics.MCPRecordAggregate{AnalyticsRecordAggregate: analytics.AnalyticsRecordAggregate{Mixed: true}},
 		&results,
 		model.DBM{"orgid": "org1"},
 	))
@@ -80,7 +80,7 @@ func TestMCPMongoAggregatePump_WriteData_MixedCollection(t *testing.T) {
 	var orgResults []analytics.AnalyticsRecordAggregate
 	require.NoError(t, pump.store.Query(
 		context.Background(),
-		&analytics.AnalyticsRecordAggregate{OrgID: "org1"},
+		&analytics.MCPRecordAggregate{AnalyticsRecordAggregate: analytics.AnalyticsRecordAggregate{OrgID: "org1"}},
 		&orgResults,
 		model.DBM{"orgid": "org1"},
 	))
@@ -90,7 +90,7 @@ func TestMCPMongoAggregatePump_WriteData_MixedCollection(t *testing.T) {
 	var mixedResults []analytics.AnalyticsRecordAggregate
 	require.NoError(t, pump.store.Query(
 		context.Background(),
-		&analytics.AnalyticsRecordAggregate{Mixed: true},
+		&analytics.MCPRecordAggregate{AnalyticsRecordAggregate: analytics.AnalyticsRecordAggregate{Mixed: true}},
 		&mixedResults,
 		model.DBM{"orgid": "org1"},
 	))
