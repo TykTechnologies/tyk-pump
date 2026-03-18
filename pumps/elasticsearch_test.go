@@ -135,22 +135,22 @@ func TestElasticsearchPump_TLSConfig_ErrorCases(t *testing.T) {
 func TestGetMapping_BasicFields(t *testing.T) {
 	ts := time.Date(2025, 6, 15, 10, 0, 0, 0, time.UTC)
 	record := analytics.AnalyticsRecord{
-		TimeStamp:    ts,
-		Method:       "GET",
-		Path:         "/api/v1/users",
-		RawPath:      "/api/v1/users?page=1",
-		ResponseCode: 200,
-		IPAddress:    "10.0.0.1",
-		APIKey:       "key123",
-		APIVersion:   "v1",
-		APIName:      "users-api",
-		APIID:        "api1",
-		OrgID:        "org1",
-		OauthID:      "oauth1",
-		RequestTime:  42,
-		Alias:        "users",
+		TimeStamp:     ts,
+		Method:        "GET",
+		Path:          "/api/v1/users",
+		RawPath:       "/api/v1/users?page=1",
+		ResponseCode:  200,
+		IPAddress:     "10.0.0.1",
+		APIKey:        "key123",
+		APIVersion:    "v1",
+		APIName:       "users-api",
+		APIID:         "api1",
+		OrgID:         "org1",
+		OauthID:       "oauth1",
+		RequestTime:   42,
+		Alias:         "users",
 		ContentLength: 1024,
-		Tags:         []string{"tag1", "tag2"},
+		Tags:          []string{"tag1", "tag2"},
 	}
 
 	mapping, id := getMapping(record, false, false, false)
