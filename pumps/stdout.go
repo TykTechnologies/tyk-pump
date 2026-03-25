@@ -1,8 +1,11 @@
 package pumps
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
@@ -30,6 +33,9 @@ type StdOutConf struct {
 	Format string `json:"format" mapstructure:"format"`
 	// Root name of the JSON object the analytics record is nested in.
 	LogFieldName string `json:"log_field_name" mapstructure:"log_field_name"`
+	// UseLegacyPayloadFormat skips formatting of raw_request and raw_response as valid JSON objects instead of escaped strings.
+	// This config variable exists for backward compatibility.
+	UseLegacyPayloadFormat bool `json:"use_legacy_payload_format" mapstructure:"use_legacy_payload_format"`
 }
 
 func (s *StdOutPump) GetName() string {
@@ -82,9 +88,15 @@ func (s *StdOutPump) WriteData(ctx context.Context, data []interface{}) error {
 			return nil
 		default:
 			decoded := v.(analytics.AnalyticsRecord)
-
 			if s.conf.Format == "json" {
 				formatter := &logrus.JSONFormatter{}
+
+				// Skip formatting if legacy mode is enabled.
+				if !s.conf.UseLegacyPayloadFormat {
+					decoded.RawRequest = transformHTTPPayload(decoded.RawRequest)
+					decoded.RawResponse = transformHTTPPayload(decoded.RawResponse)
+				}
+
 				entry := log.WithField(s.conf.LogFieldName, decoded)
 				entry.Level = logrus.InfoLevel
 				entry.Time = time.Now().UTC()
@@ -99,4 +111,50 @@ func (s *StdOutPump) WriteData(ctx context.Context, data []interface{}) error {
 	s.log.Info("Purged ", len(data), " records...")
 
 	return nil
+}
+
+// transformHTTPPayload separates HTTP headers from the body using the standard
+// HTTP separator (\r\n\r). It removes unnecessary whitespaces from the headers
+// and compacts the JSON body if it is valid.
+func transformHTTPPayload(raw string) string {
+	if raw == "" {
+		return raw
+	}
+
+	sep := "\r\n\r\n"
+	parts := strings.SplitN(raw, sep, 2)
+
+	if len(parts) == 2 {
+		headers := parts[0]
+		bodyBytes := []byte(parts[1])
+
+		if json.Valid(bodyBytes) {
+			var compacted bytes.Buffer
+			if err := json.Compact(&compacted, bodyBytes); err == nil {
+				return fmt.Sprintf("%s %s", removeWhitespaces(headers), compacted.String())
+			}
+		}
+	}
+
+	return removeWhitespaces(raw)
+}
+
+// removeWhitespaces removes carriage returns ('\r') and tabs ('\t'),
+// and replaces newlines with a single space to create a single-line output.
+func removeWhitespaces(s string) string {
+	var b strings.Builder
+	b.Grow(len(s))
+
+	for i := 0; i < len(s); i++ {
+		switch s[i] {
+		case '\n':
+			b.WriteString(" ")
+		case '\r', '\t':
+			// skip
+		default:
+			b.WriteByte(s[i])
+		}
+	}
+
+	return b.String()
 }
