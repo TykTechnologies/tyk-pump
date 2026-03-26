@@ -411,6 +411,36 @@ func TestMCPSQLPump_WriteData_Sharded_SQLite(t *testing.T) {
 	assert.Equal(t, int64(1), count2, "day2 shard should have 1 record")
 }
 
+func TestMCPSQLPump_New(t *testing.T) {
+	p := &MCPSQLPump{}
+	newP := p.New()
+	assert.NotNil(t, newP)
+	_, ok := newP.(*MCPSQLPump)
+	assert.True(t, ok)
+}
+
+func TestMCPSQLPump_GetName(t *testing.T) {
+	p := &MCPSQLPump{}
+	assert.Equal(t, "MCP SQL Pump", p.GetName())
+}
+
+func TestMCPSQLPump_GetEnvPrefix(t *testing.T) {
+	p := &MCPSQLPump{Conf: &MCPSQLConf{SQLConf: SQLConf{EnvPrefix: "test_prefix"}}}
+	assert.Equal(t, "test_prefix", p.GetEnvPrefix())
+}
+
+func TestMCPSQLPump_ensureMCPShardedTable_SQLite(t *testing.T) {
+	pump := newMCPSQLPumpWithSQLite(t, "test_shard_ensure", 100, true)
+
+	pump.ensureMCPShardedTable("20250615")
+	expected := "test_shard_ensure_20250615"
+	assert.True(t, pump.db.Migrator().HasTable(expected), "shard table should be created")
+
+	// Calling again should not error
+	pump.ensureMCPShardedTable("20250615")
+	assert.True(t, pump.db.Migrator().HasTable(expected), "shard table should still exist")
+}
+
 func TestMCPSQLPump_WriteMCPBatch_BatchSizeOne(t *testing.T) {
 	pump := newMCPSQLPumpWithSQLite(t, "", 1, false)
 	ts := time.Now()

@@ -103,6 +103,39 @@ func TestMCPMongoPump_WriteData_NoMCPRecords(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestMCPMongoPump_New(t *testing.T) {
+	p := &MCPMongoPump{}
+	newP := p.New()
+	assert.NotNil(t, newP)
+	_, ok := newP.(*MCPMongoPump)
+	assert.True(t, ok)
+}
+
+func TestMCPMongoPump_GetName(t *testing.T) {
+	p := &MCPMongoPump{}
+	assert.Equal(t, "MongoDB MCP Pump", p.GetName())
+}
+
+func TestMCPMongoPump_SetDecodingRequest(t *testing.T) {
+	p := &MCPMongoPump{}
+	// Should not panic with false
+	p.SetDecodingRequest(false)
+	// Should log warning with true (no panic)
+	p.SetDecodingRequest(true)
+}
+
+func TestMCPMongoPump_SetDecodingResponse(t *testing.T) {
+	p := &MCPMongoPump{}
+	p.SetDecodingResponse(false)
+	p.SetDecodingResponse(true)
+}
+
+func TestMCPMongoPump_Init_InvalidConfig(t *testing.T) {
+	p := &MCPMongoPump{}
+	err := p.Init("not-a-map")
+	assert.Error(t, err)
+}
+
 func TestMCPMongoPump_WriteData_EmptyData(t *testing.T) {
 	p := &MCPMongoPump{}
 	p.dbConf = &MongoConf{CollectionName: "test"}

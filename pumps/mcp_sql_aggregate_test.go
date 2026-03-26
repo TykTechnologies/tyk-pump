@@ -416,6 +416,24 @@ func TestMCPSQLAggregatePump_WriteData_SmallBatchSize(t *testing.T) {
 	assert.Equal(t, int64(5), count, "batch size 1 should still write all 5 dimensions")
 }
 
+func TestMCPSQLAggregatePump_New(t *testing.T) {
+	p := &MCPSQLAggregatePump{}
+	newP := p.New()
+	assert.NotNil(t, newP)
+	_, ok := newP.(*MCPSQLAggregatePump)
+	assert.True(t, ok)
+}
+
+func TestMCPSQLAggregatePump_GetName(t *testing.T) {
+	p := &MCPSQLAggregatePump{}
+	assert.Equal(t, "SQL MCP Aggregate Pump", p.GetName())
+}
+
+func TestMCPSQLAggregatePump_GetEnvPrefix(t *testing.T) {
+	p := &MCPSQLAggregatePump{SQLConf: &SQLAggregatePumpConf{EnvPrefix: "test"}}
+	assert.Equal(t, "test", p.GetEnvPrefix())
+}
+
 func TestMCPSQLAggregatePump_aggregationTimeMinutes_Defaults(t *testing.T) {
 	// Verify default batch size is set
 	pump := MCPSQLAggregatePump{SQLConf: &SQLAggregatePumpConf{}}

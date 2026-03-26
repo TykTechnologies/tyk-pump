@@ -26,6 +26,31 @@ func newMCPMongoAggregatePump(t *testing.T) *MCPMongoAggregatePump {
 	return pump
 }
 
+func TestMCPMongoAggregatePump_New(t *testing.T) {
+	p := &MCPMongoAggregatePump{}
+	newP := p.New()
+	assert.NotNil(t, newP)
+	_, ok := newP.(*MCPMongoAggregatePump)
+	assert.True(t, ok)
+}
+
+func TestMCPMongoAggregatePump_GetName(t *testing.T) {
+	p := &MCPMongoAggregatePump{}
+	assert.Equal(t, "MongoDB MCP Aggregate Pump", p.GetName())
+}
+
+func TestMCPMongoAggregatePump_SetDecodingRequest(t *testing.T) {
+	p := &MCPMongoAggregatePump{}
+	p.SetDecodingRequest(false) // no-op
+	p.SetDecodingRequest(true)  // logs warning
+}
+
+func TestMCPMongoAggregatePump_SetDecodingResponse(t *testing.T) {
+	p := &MCPMongoAggregatePump{}
+	p.SetDecodingResponse(false)
+	p.SetDecodingResponse(true)
+}
+
 func TestMCPMongoAggregatePump_Init_InvalidConfig(t *testing.T) {
 	pump := &MCPMongoAggregatePump{}
 	err := pump.Init("not-a-map")

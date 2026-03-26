@@ -243,6 +243,75 @@ func TestHybridPumpWriteData(t *testing.T) {
 			expectedError: nil,
 		},
 		{
+			testName: "write aggregated data with MCP records",
+			givenConfig: &HybridPumpConf{
+				ConnectionString: "localhost:12345",
+				APIKey:           "valid_credentials",
+				Aggregated:       true,
+			},
+			givenDispatcherFuncs: map[string]interface{}{
+				"Ping": func() bool { return true },
+				"Login": func(clientAddr, userKey string) bool {
+					return userKey == "valid_credentials"
+				},
+				"PurgeAnalyticsDataAggregated": func(clientID, data string) error {
+					return nil
+				},
+				"PurgeAnalyticsDataMCPAggregated": func(clientID, data string) error {
+					return nil
+				},
+			},
+			givenData: []interface{}{
+				analytics.AnalyticsRecord{
+					APIID:        "testAPIID",
+					OrgID:        "testOrg",
+					APIName:      "testAPIName",
+					ResponseCode: 200,
+					TimeStamp:    time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+					MCPStats: analytics.MCPStats{
+						IsMCP:         true,
+						JSONRPCMethod: "tools/call",
+						PrimitiveType: "tool",
+						PrimitiveName: "weather",
+					},
+				},
+				analytics.AnalyticsRecord{
+					APIID:        "testAPIID",
+					OrgID:        "testOrg",
+					APIName:      "testAPIName",
+					ResponseCode: 200,
+				},
+			},
+			expectedError: nil,
+		},
+		{
+			testName: "write aggregated data with only non-MCP records skips MCP RPC",
+			givenConfig: &HybridPumpConf{
+				ConnectionString: "localhost:12345",
+				APIKey:           "valid_credentials",
+				Aggregated:       true,
+			},
+			givenDispatcherFuncs: map[string]interface{}{
+				"Ping": func() bool { return true },
+				"Login": func(clientAddr, userKey string) bool {
+					return userKey == "valid_credentials"
+				},
+				"PurgeAnalyticsDataAggregated": func(clientID, data string) error {
+					return nil
+				},
+				// PurgeAnalyticsDataMCPAggregated NOT registered - sendMCPAggregates
+				// should return nil without calling it because there are no MCP records
+			},
+			givenData: []interface{}{
+				analytics.AnalyticsRecord{
+					APIID:   "testAPIID",
+					OrgID:   "testOrg",
+					APIName: "testAPIName",
+				},
+			},
+			expectedError: nil,
+		},
+		{
 			testName: "write aggregated data - no records",
 			givenConfig: &HybridPumpConf{
 				ConnectionString: "localhost:12345",
