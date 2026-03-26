@@ -9,7 +9,6 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
-	gorm_logger "gorm.io/gorm/logger"
 )
 
 const mcpSQLAggregatePrefix = "sql-mcp-aggregate-pump"
@@ -48,28 +47,8 @@ func (s *MCPSQLAggregatePump) Init(conf interface{}) error {
 
 	processPumpEnvVars(s, s.log, s.SQLConf, SQLMCPAggregateDefaultENV)
 
-	logLevel := gorm_logger.Silent
-	switch s.SQLConf.LogLevel {
-	case "debug":
-		logLevel = gorm_logger.Info
-	case "info":
-		logLevel = gorm_logger.Warn
-	case "warning":
-		logLevel = gorm_logger.Error
-	}
-
-	dialect, errDialect := Dialect(&s.SQLConf.SQLConf)
-	if errDialect != nil {
-		s.log.Error(errDialect)
-		return errDialect
-	}
-	db, err := gorm.Open(dialect, &gorm.Config{
-		AutoEmbedd:  true,
-		UseJSONTags: true,
-		Logger:      gorm_logger.Default.LogMode(logLevel),
-	})
+	db, err := OpenGormDB(&s.SQLConf.SQLConf, s.log)
 	if err != nil {
-		s.log.Error(err)
 		return err
 	}
 	s.db = db

@@ -416,6 +416,34 @@ func TestMCPSQLAggregatePump_WriteData_SmallBatchSize(t *testing.T) {
 	assert.Equal(t, int64(5), count, "batch size 1 should still write all 5 dimensions")
 }
 
+func TestMCPSQLAggregatePump_aggregationTimeMinutes_Defaults(t *testing.T) {
+	// Verify default batch size is set
+	pump := MCPSQLAggregatePump{SQLConf: &SQLAggregatePumpConf{}}
+	assert.Equal(t, 60, pump.aggregationTimeMinutes())
+
+	pump.SQLConf.StoreAnalyticsPerMinute = true
+	assert.Equal(t, 1, pump.aggregationTimeMinutes())
+}
+
+func TestMCPSQLAggregatePump_ensureMCPAggregateShardedTable_CreatesAndReuses(t *testing.T) {
+	pump := newMCPSQLAggregatePumpWithSQLite(t, 100, true)
+
+	table1 := pump.ensureMCPAggregateShardedTable("20250615")
+	expected := analytics.AggregateMCPSQLTable + "_20250615"
+	assert.Equal(t, expected, table1)
+	assert.True(t, pump.db.Migrator().HasTable(expected))
+
+	// Second call should not error (table already exists)
+	table2 := pump.ensureMCPAggregateShardedTable("20250615")
+	assert.Equal(t, expected, table2)
+
+	// Different date should create new table
+	table3 := pump.ensureMCPAggregateShardedTable("20250616")
+	expected2 := analytics.AggregateMCPSQLTable + "_20250616"
+	assert.Equal(t, expected2, table3)
+	assert.True(t, pump.db.Migrator().HasTable(expected2))
+}
+
 func TestMCPSQLAggregatePump_WriteData_MultipleAPIs(t *testing.T) {
 	skipTestIfNoPostgres(t)
 	tableName := analytics.AggregateMCPSQLTable
