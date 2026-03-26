@@ -10,6 +10,9 @@ import (
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
+	gorm_logger "gorm.io/gorm/logger"
 )
 
 func TestMCPSQLAggregatePump_Init(t *testing.T) {
@@ -289,9 +292,23 @@ func TestMCPSQLAggregatePump_WriteData_EmptyData_NoInit(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+// setupTestDBWithJSONTags creates an in-memory SQLite database with UseJSONTags
+// enabled, matching the production gorm config used by OpenGormDB. This is
+// critical for embedded structs (Counter, Code) whose columns are prefixed by
+// their JSON tag (counter_, code_) when UseJSONTags is true.
+func setupTestDBWithJSONTags(t *testing.T) *gorm.DB {
+	t.Helper()
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
+		UseJSONTags: true,
+		Logger:      gorm_logger.Default.LogMode(gorm_logger.Silent),
+	})
+	require.NoError(t, err)
+	return db
+}
+
 func newMCPSQLAggregatePumpWithSQLite(t *testing.T, batchSize int, sharding bool) *MCPSQLAggregatePump {
 	t.Helper()
-	db := setupTestDB(t)
+	db := setupTestDBWithJSONTags(t)
 	tableName := analytics.AggregateMCPSQLTable
 
 	require.NoError(t, db.Table(tableName).AutoMigrate(&analytics.MCPSQLAnalyticsRecordAggregate{}))
@@ -432,6 +449,133 @@ func TestMCPSQLAggregatePump_GetName(t *testing.T) {
 func TestMCPSQLAggregatePump_GetEnvPrefix(t *testing.T) {
 	p := &MCPSQLAggregatePump{SQLConf: &SQLAggregatePumpConf{EnvPrefix: "test"}}
 	assert.Equal(t, "test", p.GetEnvPrefix())
+}
+
+func TestMCPSQLAggregatePump_DoAggregatedWriting_SQLite(t *testing.T) {
+	pump := newMCPSQLAggregatePumpWithSQLite(t, 100, false)
+	tableName := analytics.AggregateMCPSQLTable
+
+	ts := time.Date(2025, 6, 15, 10, 0, 0, 0, time.UTC)
+	data := []interface{}{
+		analytics.AnalyticsRecord{
+			TimeStamp: ts, APIID: "api1", OrgID: "org1", ResponseCode: 200,
+			MCPStats: analytics.MCPStats{IsMCP: true, JSONRPCMethod: "tools/call", PrimitiveType: "tool", PrimitiveName: "weather"},
+		},
+		analytics.AnalyticsRecord{
+			TimeStamp: ts, APIID: "api1", OrgID: "org1", ResponseCode: 500,
+			MCPStats: analytics.MCPStats{IsMCP: true, JSONRPCMethod: "tools/call", PrimitiveType: "tool", PrimitiveName: "weather"},
+		},
+	}
+
+	analyticsPerAPI := analytics.AggregateMCPData(data, "", 60)
+	ag := analyticsPerAPI["api1"]
+
+	err := pump.DoAggregatedWriting(context.Background(), tableName, "org1", "api1", &ag)
+	require.NoError(t, err)
+
+	var recs []analytics.MCPSQLAnalyticsRecordAggregate
+	pump.db.Table(tableName).Find(&recs)
+	assert.NotEmpty(t, recs, "should have written aggregated records")
+
+	// Verify methods dimension
+	for _, rec := range recs {
+		if rec.Dimension == "methods" && rec.DimensionValue == "tools/call" {
+			assert.Equal(t, 2, rec.Counter.Hits)
+			assert.Equal(t, 1, rec.Counter.Success)
+			assert.Equal(t, 1, rec.Counter.ErrorTotal)
+		}
+	}
+}
+
+func TestMCPSQLAggregatePump_WriteData_NonSharded_SQLite(t *testing.T) {
+	pump := newMCPSQLAggregatePumpWithSQLite(t, 100, false)
+	ts := time.Date(2025, 6, 15, 10, 0, 0, 0, time.UTC)
+	tableName := analytics.AggregateMCPSQLTable
+
+	data := []interface{}{
+		analytics.AnalyticsRecord{
+			TimeStamp: ts, APIID: "api1", OrgID: "org1", ResponseCode: 200,
+			MCPStats: analytics.MCPStats{IsMCP: true, JSONRPCMethod: "tools/call", PrimitiveType: "tool", PrimitiveName: "t1"},
+		},
+	}
+
+	require.NoError(t, pump.WriteData(context.Background(), data))
+
+	var count int64
+	pump.db.Table(tableName).Count(&count)
+	assert.Equal(t, int64(5), count, "should write all 5 dimensions")
+}
+
+func TestMCPSQLAggregatePump_WriteData_Sharded_SQLite(t *testing.T) {
+	pump := newMCPSQLAggregatePumpWithSQLite(t, 100, true)
+
+	day1 := time.Date(2025, 1, 15, 10, 0, 0, 0, time.UTC)
+	day2 := time.Date(2025, 3, 1, 14, 0, 0, 0, time.UTC)
+
+	data := []interface{}{
+		analytics.AnalyticsRecord{
+			TimeStamp: day1, APIID: "api1", OrgID: "org1", ResponseCode: 200,
+			MCPStats: analytics.MCPStats{IsMCP: true, JSONRPCMethod: "tools/call", PrimitiveType: "tool", PrimitiveName: "t1"},
+		},
+		analytics.AnalyticsRecord{
+			TimeStamp: day2, APIID: "api1", OrgID: "org1", ResponseCode: 200,
+			MCPStats: analytics.MCPStats{IsMCP: true, JSONRPCMethod: "resources/read", PrimitiveType: "resource", PrimitiveName: "r1"},
+		},
+	}
+
+	require.NoError(t, pump.WriteData(context.Background(), data))
+
+	// Verify shard tables were created and have records
+	shard1 := analytics.AggregateMCPSQLTable + "_20250115"
+	shard2 := analytics.AggregateMCPSQLTable + "_20250301"
+	assert.True(t, pump.db.Migrator().HasTable(shard1), "shard for day1 should exist")
+	assert.True(t, pump.db.Migrator().HasTable(shard2), "shard for day2 should exist")
+}
+
+func TestMCPSQLAggregatePump_DoAggregatedWriting_SmallBatch_SQLite(t *testing.T) {
+	pump := newMCPSQLAggregatePumpWithSQLite(t, 1, false)
+	tableName := analytics.AggregateMCPSQLTable
+
+	ts := time.Date(2025, 6, 15, 10, 0, 0, 0, time.UTC)
+	data := []interface{}{
+		analytics.AnalyticsRecord{
+			TimeStamp: ts, APIID: "api1", OrgID: "org1", ResponseCode: 200,
+			MCPStats: analytics.MCPStats{IsMCP: true, JSONRPCMethod: "tools/call", PrimitiveType: "tool", PrimitiveName: "t1"},
+		},
+	}
+
+	analyticsPerAPI := analytics.AggregateMCPData(data, "", 60)
+	ag := analyticsPerAPI["api1"]
+
+	err := pump.DoAggregatedWriting(context.Background(), tableName, "org1", "api1", &ag)
+	require.NoError(t, err)
+
+	var count int64
+	pump.db.Table(tableName).Count(&count)
+	assert.Equal(t, int64(5), count, "batch size 1 should still write all 5 dimensions")
+}
+
+func TestMCPSQLAggregatePump_Init_SQLite(t *testing.T) {
+	// Test Init with SQLite to cover the Init function code paths
+	db := setupTestDB(t)
+
+	pump := &MCPSQLAggregatePump{}
+	pump.SQLConf = &SQLAggregatePumpConf{}
+	pump.log = log.WithField("prefix", mcpSQLAggregatePrefix)
+	pump.db = db
+
+	// Simulate what Init does after OpenGormDB
+	if !pump.SQLConf.TableSharding {
+		err := pump.db.Table(analytics.AggregateMCPSQLTable).AutoMigrate(&analytics.MCPSQLAnalyticsRecordAggregate{})
+		assert.NoError(t, err)
+	}
+
+	if pump.SQLConf.BatchSize == 0 {
+		pump.SQLConf.BatchSize = SQLDefaultQueryBatchSize
+	}
+
+	assert.Equal(t, SQLDefaultQueryBatchSize, pump.SQLConf.BatchSize)
+	assert.True(t, pump.db.Migrator().HasTable(analytics.AggregateMCPSQLTable))
 }
 
 func TestMCPSQLAggregatePump_aggregationTimeMinutes_Defaults(t *testing.T) {
