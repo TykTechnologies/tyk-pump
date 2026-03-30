@@ -33,7 +33,7 @@ jobs:
   goreleaser:
     if: github.event.pull_request.draft == false
     name: '${{ matrix.golang_cross }}'
-    runs-on: warp-ubuntu-latest-x64-4x
+    runs-on: ${{ vars.DEFAULT_RUNNER }}
     permissions:
       id-token: write # AWS OIDC JWT
       contents: read # actions/checkout
@@ -41,9 +41,9 @@ jobs:
       fail-fast: false
       matrix:
         golang_cross:
-          - 1.25-bookworm
+          - 1.24-bookworm
         include:
-          - golang_cross: 1.25-bookworm
+          - golang_cross: 1.24-bookworm
             goreleaser: 'ci/goreleaser/goreleaser.yml'
             cgo: 0
             rpmvers: 'el/7 el/8 el/9 amazon/2 amazon/2023'
@@ -80,6 +80,18 @@ jobs:
           registry: docker.tyk.io
           username: ${{ secrets.CLOUDSMITH_USERNAME }}
           password: ${{ secrets.CLOUDSMITH_API_KEY }}
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::754489498669:role/ecr_rw_tyk
+          role-session-name: cipush
+          aws-region: eu-central-1
+          # Don't mask to pass it across job boundaries
+          mask-aws-account-id: false
+      - uses: aws-actions/amazon-ecr-login@v2
+        id: ecr
+        if: ${{ matrix.golang_cross == '1.24-bookworm' }}
+        with:
+          mask-password: 'true'
       - uses: WarpBuilds/cache@v1
         with:
           path: |
@@ -100,7 +112,6 @@ jobs:
           git config --global --add safe.directory /go/src/github.com/TykTechnologies/tyk-pump
           goreleaser release --clean -f ${{ matrix.goreleaser }} ${{ !startsWith(github.ref, 'refs/tags/') && ' --snapshot --skip=sign,docker' || '--skip=docker' }}' | tee /tmp/build.sh
           chmod +x /tmp/build.sh
-          mkdir -p ~/.docker && echo "{}" > ~/.docker/config.json
           docker run --rm --privileged -e GITHUB_TOKEN=${{ github.token }} \
           -e GOPRIVATE=github.com/TykTechnologies                                \
           -e DEBVERS='${{ matrix.debvers }}'                               \
@@ -120,21 +131,9 @@ jobs:
           -v /tmp/build.sh:/tmp/build.sh                                         \
           -w /go/src/github.com/TykTechnologies/tyk-pump                      \
           tykio/golang-cross:${{ matrix.golang_cross }} /tmp/build.sh
-      - uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: arn:aws:iam::754489498669:role/ecr_rw_tyk
-          role-session-name: cipush
-          aws-region: eu-central-1
-          # Don't mask to pass it across job boundaries
-          mask-aws-account-id: false
-      - uses: aws-actions/amazon-ecr-login@v2
-        id: ecr
-        if: ${{ matrix.golang_cross == '1.25-bookworm' }}
-        with:
-          mask-password: 'true'
       - name: Docker metadata for fips CI
         id: ci_metadata_fips
-        if: ${{ matrix.golang_cross == '1.25-bookworm' }}
+        if: ${{ matrix.golang_cross == '1.24-bookworm' }}
         uses: docker/metadata-action@v5
         with:
           images: |
@@ -149,7 +148,7 @@ jobs:
             type=semver,pattern={{major}}.{{minor}},prefix=v
             type=semver,pattern={{version}},prefix=v
       - name: push fips image to CI
-        if: ${{ matrix.golang_cross == '1.25-bookworm' }}
+        if: ${{ matrix.golang_cross == '1.24-bookworm' }}
         uses: docker/build-push-action@v6
         with:
           context: "dist"
@@ -182,7 +181,7 @@ jobs:
             org.opencontainers.image.vendor=tyk.io
             org.opencontainers.image.version=${{ github.ref_name }}
       - name: push fips image to prod
-        if: ${{ matrix.golang_cross == '1.25-bookworm' }}
+        if: ${{ matrix.golang_cross == '1.24-bookworm' }}
         uses: docker/build-push-action@v6
         with:
           context: "dist"
@@ -199,7 +198,7 @@ jobs:
             BUILD_PACKAGE_NAME=tyk-pump-fips
       - name: Docker metadata for std CI
         id: ci_metadata_std
-        if: ${{ matrix.golang_cross == '1.25-bookworm' }}
+        if: ${{ matrix.golang_cross == '1.24-bookworm' }}
         uses: docker/metadata-action@v5
         with:
           images: |
@@ -214,7 +213,7 @@ jobs:
             type=semver,pattern={{major}}.{{minor}},prefix=v
             type=semver,pattern={{version}},prefix=v
       - name: push std image to CI
-        if: ${{ matrix.golang_cross == '1.25-bookworm' }}
+        if: ${{ matrix.golang_cross == '1.24-bookworm' }}
         uses: docker/build-push-action@v6
         with:
           context: "dist"
@@ -248,7 +247,7 @@ jobs:
             org.opencontainers.image.vendor=tyk.io
             org.opencontainers.image.version=${{ github.ref_name }}
       - name: push std image to prod
-        if: ${{ matrix.golang_cross == '1.25-bookworm' }}
+        if: ${{ matrix.golang_cross == '1.24-bookworm' }}
         uses: docker/build-push-action@v6
         with:
           context: "dist"
@@ -265,7 +264,7 @@ jobs:
             BUILD_PACKAGE_NAME=tyk-pump
       - name: save deb
         uses: actions/upload-artifact@v4
-        if: ${{ matrix.golang_cross == '1.25-bookworm' }}
+        if: ${{ matrix.golang_cross == '1.24-bookworm' }}
         with:
           name: deb
           retention-days: 1
@@ -275,7 +274,7 @@ jobs:
             !dist/*fips*.deb
       - name: save rpm
         uses: actions/upload-artifact@v4
-        if: ${{ matrix.golang_cross == '1.25-bookworm' }}
+        if: ${{ matrix.golang_cross == '1.24-bookworm' }}
         with:
           name: rpm
           retention-days: 1
@@ -287,7 +286,7 @@ jobs:
     if: github.event.pull_request.draft == false
     needs:
       - goreleaser
-    runs-on: warp-ubuntu-latest-x64-2x
+    runs-on: ${{ vars.DEFAULT_RUNNER }}
     outputs:
       envfiles: ${{ steps.params.outputs.envfiles }}
       pump: ${{ steps.params.outputs.pump }}
@@ -304,7 +303,7 @@ jobs:
     needs:
       - test-controller-api
       - goreleaser
-    runs-on: warp-ubuntu-latest-x64-4x
+    runs-on: ${{ vars.DEFAULT_RUNNER }}
     env:
       XUNIT_REPORT_PATH: ${{ github.workspace}}/test-results.xml
     permissions:
@@ -366,7 +365,7 @@ jobs:
           execution_status: ${{ steps.test_execution.outcome }}
   aggregator-ci-test:
     name: Aggregated CI Status
-    runs-on: warp-ubuntu-latest-x64-2x
+    runs-on: ${{ vars.DEFAULT_RUNNER }}
     # Dynamically determine which jobs to depend on based on repository configuration
     needs: [goreleaser, api-tests]
     if: ${{ always() && github.event_name == 'pull_request' }}
@@ -398,7 +397,7 @@ jobs:
     if: github.event.pull_request.draft == false
     needs:
       - goreleaser
-    runs-on: warp-ubuntu-latest-x64-2x
+    runs-on: ${{ vars.DEFAULT_RUNNER }}
     outputs:
       deb: ${{ steps.params.outputs.deb }}
       rpm: ${{ steps.params.outputs.rpm }}
@@ -419,7 +418,7 @@ jobs:
     services:
       httpbin.org:
         image: kennethreitz/httpbin
-    runs-on: warp-ubuntu-latest-x64-2x
+    runs-on: ${{ vars.DEFAULT_RUNNER }}
     needs:
       - test-controller-distros
     strategy:
@@ -465,7 +464,7 @@ jobs:
     services:
       httpbin.org:
         image: kennethreitz/httpbin
-    runs-on: warp-ubuntu-latest-x64-2x
+    runs-on: ${{ vars.DEFAULT_RUNNER }}
     needs:
       - test-controller-distros
     strategy:
