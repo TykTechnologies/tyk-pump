@@ -56,15 +56,12 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
 
-      - name: Set up test tooling
-        run: |
-          go install gotest.tools/gotestsum@v1.12.1
-
       - name: Go Test
         id: test
         run: |
           PKGS="$(go list ./...)"
           OPTS="-count=1 -failfast -v"
+          GOTESTSUM="go run gotest.tools/gotestsum@v1.12.1"
 
           for pkg in ${PKGS}; do
               tags=""
@@ -76,7 +73,7 @@ jobs:
 
               echo go test ${OPTS} -json -timeout 15m -coverprofile=${coveragefile}.cov ${pkg} ${tags}
 
-              gotestsum --junitfile ${coveragefile}.xml --raw-command go test ${OPTS} --json -timeout 15m -coverprofile=${coveragefile}.cov ${pkg} ${tags}
+              ${GOTESTSUM} --junitfile ${coveragefile}.xml --raw-command go test ${OPTS} --json -timeout 15m -coverprofile=${coveragefile}.cov ${pkg} ${tags}
           done
 
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

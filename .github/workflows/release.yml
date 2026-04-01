@@ -450,8 +450,7 @@ jobs:
           ARG TARGETARCH
           COPY tyk-pump*_${TARGETARCH}.deb /tyk-pump.deb
           RUN apt-get update && apt-get install -y curl
-          # WARNING: curl piped to shell - pinning not possible for packagecloud install script
-          RUN curl -fsSL https://packagecloud.io/install/repositories/tyk/tyk-pump/script.deb.sh | bash || echo "Repository setup failed, but continuing"
+          RUN curl -fsSL https://packagecloud.io/install/repositories/tyk/tyk-pump/script.deb.sh | bash || echo "Repository setup failed, but continuing" # WARNING: curl piped to shell - pinning not possible for packagecloud install script
           RUN apt-get install -y tyk-pump=1.6.0 || echo "Previous version not found, testing fresh install"
           RUN dpkg -i /tyk-pump.deb
 
@@ -498,8 +497,7 @@ jobs:
           COPY tyk-pump*.${RHELARCH}.rpm /tyk-pump.rpm
           RUN command -v curl || yum install -y curl
           RUN command -v useradd || yum install -y shadow-utils
-          # WARNING: curl piped to shell - pinning not possible for packagecloud install script
-          RUN curl -fsSL https://packagecloud.io/install/repositories/tyk/tyk-pump/script.rpm.sh | bash || echo "Repository setup failed, but continuing"
+          RUN curl -fsSL https://packagecloud.io/install/repositories/tyk/tyk-pump/script.rpm.sh | bash || echo "Repository setup failed, but continuing" # WARNING: curl piped to shell - pinning not possible for packagecloud install script
           RUN yum install -y tyk-pump-1.6.0-1 || echo "Previous version not found, testing fresh install"
           RUN curl https://keyserver.tyk.io/tyk.io.rpm.signing.key.2020 -o tyk-pump.key && rpm --import tyk-pump.key
           RUN rpm --checksig /tyk-pump.rpm
