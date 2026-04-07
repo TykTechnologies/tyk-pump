@@ -41,6 +41,8 @@ message AnalyticsRecord {
   string TimeZone = 30;
   string ApiSchema = 31;
   GraphQLStats GraphQLStats = 32;
+  string OriginalPath = 33;
+  string ListenPath = 34;
 }
 
 message Latency {

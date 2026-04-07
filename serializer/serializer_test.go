@@ -106,6 +106,46 @@ func TestSerializer_GetSuffix(t *testing.T) {
 	}
 }
 
+func TestSerializer_OriginalPathAndListenPathRoundTrip(t *testing.T) {
+	tcs := []struct {
+		testName   string
+		serializer AnalyticsSerializer
+	}{
+		{
+			testName:   "msgpack",
+			serializer: NewAnalyticsSerializer(MSGP_SERIALIZER),
+		},
+		{
+			testName:   "protobuf",
+			serializer: NewAnalyticsSerializer(PROTOBUF_SERIALIZER),
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.testName, func(t *testing.T) {
+			record := analytics.AnalyticsRecord{
+				APIID:        "api_1",
+				OrgID:        "org_1",
+				Path:         "/upstream/widgets",
+				OriginalPath: "/listen-path/widgets?page=2",
+				ListenPath:   "/listen-path",
+				ExpireAt:     time.Now().Add(time.Hour).Round(0),
+				TimeStamp:    time.Now().Round(0),
+			}
+
+			encoded, err := tc.serializer.Encode(&record)
+			assert.NoError(t, err)
+
+			decoded := &analytics.AnalyticsRecord{}
+			err = tc.serializer.Decode(encoded, decoded)
+			assert.NoError(t, err)
+
+			assert.Equal(t, "/listen-path/widgets?page=2", decoded.OriginalPath)
+			assert.Equal(t, "/listen-path", decoded.ListenPath)
+		})
+	}
+}
+
 func BenchmarkProtobufEncoding(b *testing.B) {
 	serializer := NewAnalyticsSerializer(PROTOBUF_SERIALIZER)
 	records := []analytics.AnalyticsRecord{

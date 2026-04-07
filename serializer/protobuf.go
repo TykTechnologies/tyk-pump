@@ -86,6 +86,8 @@ func (pb *ProtobufSerializer) TransformSingleRecordToProto(rec analytics.Analyti
 		TrackPath:     rec.TrackPath,
 		OauthID:       rec.OauthID,
 		ApiSchema:     rec.ApiSchema,
+		OriginalPath:  rec.OriginalPath,
+		ListenPath:    rec.ListenPath,
 	}
 	rec.TimestampToProto(&record)
 	if rec.GraphQLStats.IsGraphQL {
@@ -170,10 +172,12 @@ func (pb *ProtobufSerializer) TransformSingleProtoToAnalyticsRecord(rec analytic
 			Total:    rec.Latency.Total,
 			Upstream: rec.Latency.Upstream,
 		},
-		Tags:      rec.Tags,
-		Alias:     rec.Alias,
-		TrackPath: rec.TrackPath,
-		ApiSchema: rec.ApiSchema,
+		Tags:         rec.Tags,
+		Alias:        rec.Alias,
+		TrackPath:    rec.TrackPath,
+		ApiSchema:    rec.ApiSchema,
+		OriginalPath: rec.OriginalPath,
+		ListenPath:   rec.ListenPath,
 	}
 	tmpRecord.TimeStampFromProto(rec)
 
