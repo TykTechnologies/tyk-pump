@@ -215,9 +215,8 @@ func (c *SQLAggregatePump) ensureIndex(tableName string, background bool) error 
 // ensureTable creates the table if it doesn't exist
 func (c *SQLAggregatePump) ensureTable(tableName string) error {
 	if !c.db.Migrator().HasTable(tableName) {
-		c.db = c.db.Table(tableName)
-
-		if err := c.db.Migrator().CreateTable(&analytics.SQLAnalyticsRecordAggregate{}); err != nil {
+		db := c.db.Table(tableName)
+		if err := db.Migrator().CreateTable(&analytics.SQLAnalyticsRecordAggregate{}); err != nil {
 			c.log.Error("error creating table", err)
 			return err
 		}
@@ -260,7 +259,7 @@ func (c *SQLAggregatePump) WriteData(ctx context.Context, data []interface{}) er
 			endIndex = i
 
 			table = analytics.AggregateSQLTable + "_" + recDate
-			c.db = c.db.Table(table)
+
 			if errTable := c.ensureTable(table); errTable != nil {
 				return errTable
 			}
@@ -318,22 +317,31 @@ func (c *SQLAggregatePump) DoAggregatedWriting(ctx context.Context, table, orgID
 		recs = append(recs, rec)
 	}
 
-	for i := 0; i < len(recs); i += c.SQLConf.BatchSize {
-		ends := i + c.SQLConf.BatchSize
+	batchSize := c.SQLConf.BatchSize
+	if batchSize == 0 {
+		batchSize = SQLDefaultQueryBatchSize
+	}
+
+	for i := 0; i < len(recs); i += batchSize {
+		ends := i + batchSize
 		if ends > len(recs) {
 			ends = len(recs)
 		}
 
 		// we use excluded as temp  table since it's supported by our SQL storages https://www.postgresql.org/docs/9.5/sql-insert.html#SQL-ON-CONFLICT
-		tx := c.db.WithContext(ctx).Clauses(clause.OnConflict{
+		targetPrefix := ""
+		if c.dbType != "sqlite" {
+			targetPrefix = table + "."
+		}
+
+		tx := c.db.WithContext(ctx).Table(table).Clauses(clause.OnConflict{
 			Columns:   []clause.Column{{Name: "id"}},
-			DoUpdates: clause.Assignments(analytics.OnConflictAssignments(table, "excluded")),
+			DoUpdates: clause.Assignments(analytics.OnConflictAssignments(targetPrefix, "excluded")),
 		}).Create(recs[i:ends])
 		if tx.Error != nil {
 			c.log.Error("error writing aggregated records into "+table+":", tx.Error)
 			return tx.Error
 		}
 	}
-
 	return nil
 }

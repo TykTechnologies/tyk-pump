@@ -239,6 +239,7 @@ func (c *SQLPump) WriteData(ctx context.Context, data []interface{}) error {
 
 	startIndex := 0
 	endIndex := dataLen
+	table := analytics.SQLTable
 	// We iterate dataLen +1 times since we're writing the data after the date change on sharding_table:true
 	for i := 0; i <= dataLen; i++ {
 		if c.SQLConf.TableSharding && startIndex < len(typedData) {
@@ -258,8 +259,7 @@ func (c *SQLPump) WriteData(ctx context.Context, data []interface{}) error {
 
 			endIndex = i
 
-			table := analytics.SQLTable + "_" + recDate
-			c.db = c.db.Table(table)
+			table = analytics.SQLTable + "_" + recDate
 			if errTable := c.ensureTable(table); errTable != nil {
 				return errTable
 			}
@@ -269,12 +269,16 @@ func (c *SQLPump) WriteData(ctx context.Context, data []interface{}) error {
 
 		recs := typedData[startIndex:endIndex]
 
-		for i := 0; i < len(recs); i += c.SQLConf.BatchSize {
-			ends := i + c.SQLConf.BatchSize
+		batchSize := c.SQLConf.BatchSize
+		if batchSize == 0 {
+			batchSize = SQLDefaultQueryBatchSize
+		}
+		for i := 0; i < len(recs); i += batchSize {
+			ends := i + batchSize
 			if ends > len(recs) {
 				ends = len(recs)
 			}
-			tx := c.db.WithContext(ctx).Create(recs[i:ends])
+			tx := c.db.WithContext(ctx).Table(table).Create(recs[i:ends])
 			if tx.Error != nil {
 				c.log.Error(tx.Error)
 			}
@@ -311,7 +315,7 @@ func (c *SQLPump) WriteUptimeData(data []interface{}) {
 
 	startIndex := 0
 	endIndex := dataLen
-	table = ""
+	table := ""
 
 	for i := 0; i <= dataLen; i++ {
 		if c.SQLConf.TableSharding {
@@ -332,9 +336,9 @@ func (c *SQLPump) WriteUptimeData(data []interface{}) {
 			endIndex = i
 
 			table = analytics.UptimeSQLTable + "_" + recDate
-			c.db = c.db.Table(table)
-			if !c.db.Migrator().HasTable(table) {
-				c.db.AutoMigrate(&analytics.UptimeReportAggregateSQL{})
+			db := c.db.Table(table)
+			if !db.Migrator().HasTable(table) {
+				db.AutoMigrate(&analytics.UptimeReportAggregateSQL{})
 			}
 		} else {
 			i = dataLen // write all records at once for non-sharded case, stop for loop after 1 iteration
@@ -363,14 +367,22 @@ func (c *SQLPump) WriteUptimeData(data []interface{}) {
 				recs = append(recs, rec)
 			}
 
-			for i := 0; i < len(recs); i += c.SQLConf.BatchSize {
-				ends := i + c.SQLConf.BatchSize
+			batchSize := c.SQLConf.BatchSize
+			if batchSize == 0 {
+				batchSize = SQLDefaultQueryBatchSize
+			}
+			for i := 0; i < len(recs); i += batchSize {
+				ends := i + batchSize
 				if ends > len(recs) {
 					ends = len(recs)
 				}
-				tx := c.db.Clauses(clause.OnConflict{
+				targetPrefix := ""
+				if c.dbType != "sqlite" {
+					targetPrefix = table + "."
+				}
+				tx := c.db.Table(table).Clauses(clause.OnConflict{
 					Columns:   []clause.Column{{Name: "id"}},
-					DoUpdates: clause.Assignments(analytics.OnConflictUptimeAssignments(table, "excluded")),
+					DoUpdates: clause.Assignments(analytics.OnConflictUptimeAssignments(targetPrefix, "excluded")),
 				}).Create(recs[i:ends])
 				if tx.Error != nil {
 					c.log.Error(tx.Error)
@@ -395,7 +407,7 @@ func (c *SQLPump) createIndex(indexBaseName, tableName, column string) error {
 		option = "CONCURRENTLY"
 	}
 
-	columnExist := c.db.Migrator().HasColumn(&analytics.AnalyticsRecord{}, column)
+	columnExist := c.db.Table(tableName).Migrator().HasColumn(&analytics.AnalyticsRecord{}, column)
 	if !columnExist {
 		return errors.New("cannot create index for non existent column " + column)
 	}
@@ -427,18 +439,22 @@ func (c *SQLPump) ensureIndex(tableName string, background bool) error {
 
 	// waitgroup to facilitate testing and track when all indexes are created
 	var wg sync.WaitGroup
+
 	if background {
 		wg.Add(len(indexes))
 	}
 
 	for _, idx := range indexes {
-		indexName := tableName + idx.baseName
+		indexName := c.buildIndexName(idx.baseName, tableName)
 
 		if c.db.Migrator().HasIndex(tableName, indexName) {
 			c.log.WithFields(logrus.Fields{
 				"index": indexName,
 				"table": tableName,
 			}).Info("Index already exists")
+			if background {
+				wg.Done()
+			}
 			continue
 		}
 
@@ -466,8 +482,8 @@ func (c *SQLPump) ensureIndex(tableName string, background bool) error {
 // ensureTable creates the table if it doesn't exist
 func (c *SQLPump) ensureTable(tableName string) error {
 	if !c.db.Migrator().HasTable(tableName) {
-		c.db = c.db.Table(tableName)
-		if err := c.db.Migrator().CreateTable(&analytics.AnalyticsRecord{}); err != nil {
+		db := c.db.Table(tableName)
+		if err := db.Migrator().CreateTable(&analytics.AnalyticsRecord{}); err != nil {
 			c.log.Error("error creating table", err)
 			return err
 		}
