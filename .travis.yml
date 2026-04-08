@@ -1,0 +1,24 @@
+sudo: false
+language: go
+
+notifications:
+  on_success: never
+  on_failure: always
+
+services:
+  - mongodb
+  - redis-server
+
+matrix:
+  include:
+    - go: 1.15.x
+      env: 
+        - LATEST_GO=true # run linters and report coverage
+        - GO111MODULE=on
+
+install:
+  - go get golang.org/x/tools/cmd/goimports
+  - go get
+
+script:
+  - ./utils/ci-test.sh

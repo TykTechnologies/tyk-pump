@@ -1,0 +1,6 @@
+user="tyk"
+group="tyk"
+chroot="/"
+chdir="/opt/tyk-pump"
+nice=""
+

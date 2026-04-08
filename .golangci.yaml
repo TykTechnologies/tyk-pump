@@ -1,0 +1,112 @@
+version: "2"
+linters:
+  enable:
+    - bodyclose
+    - depguard
+    - dupl
+    - gocritic
+    - gosec
+    - misspell
+    - revive
+    - whitespace
+  settings:
+    depguard:
+      rules:
+        main:
+          deny:
+            - pkg: "io/ioutil"
+              desc: "Use os and io packages instead (deprecated since Go 1.16)"
+            - pkg: "github.com/pkg/errors"
+              desc: "Use fmt.Errorf with %w verb for error wrapping"
+    dupl:
+      # tokens count to trigger issue, 150 by default
+      threshold: 100
+    errcheck:
+      # Report about not checking of errors in type assertions: `a := b.(MyStruct)`.
+      check-type-assertions: true
+      # Report about assignment of errors to blank identifier: `num, _ := strconv.Atoi(numStr)`.
+      check-blank: true
+    gocritic:
+      # See https://go-critic.github.io/overview#checks-overview
+      # To check which checks are enabled run `GL_DEBUG=gocritic golangci-lint run`
+      enabled-tags:
+        - performance
+    govet:
+      enable-all: true
+    lll:
+      # Max line length; lines longer will be reported
+      # '\t' is counted as 1 character by default, and can be changed with the 'tab-width' option
+      line-length: 120
+      # Tab width in spaces
+      tab-width: 2
+    staticcheck:
+      # https://staticcheck.io/docs/options#checks
+      checks: [\"all\"]
+    whitespace:
+      multi-if: false # Enforces newlines (or comments) after every multi-line if statement
+      multi-func: false # Enforces newlines (or comments) after every multi-line function signature
+    wsl:
+      # Append is only allowed to be cuddled if appending value is matching variables, fields or types on line above.
+      # Default is true.
+      strict-append: true
+      # Allow calls and assignments to be cuddled as long as the lines have any matching variables, fields or types.
+      # Default is true.
+      allow-assign-and-call: true
+      # Controls if you may cuddle assignments and anything without needing an empty line between them.
+      allow-assign-and-anything: false
+      # Allow multiline assignments to be cuddled. Default is true.
+      allow-multiline-assign: true
+      # Force newlines in end of case at this limit (0 = never).
+      force-case-trailing-whitespace: 0
+      # Allow trailing comments in ending of blocks
+      allow-trailing-comment: false
+      # This option allows whitespace after each comment group that begins a block.
+      allow-separated-leading-comment: false
+      # Allow declarations (var) to be cuddled.
+      allow-cuddle-declarations: true
+      # Enforces that an assignment which is actually a short declaration (using :=) is only allowed to cuddle with other short declarations, and not plain assignments, blocks, etc.
+      force-short-decl-cuddling: false
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      - linters:
+          - dupl
+        path: _test\.go
+      - path: (.+)\.go$
+        text: '^exported: exported var Err[A-Za-z0-9]+ should have comment or be unexported$'
+      - path: (.+)\.go$
+        text: 'shadow: declaration of .err. shadows declaration'
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+issues:
+  # Show only new issues created since branching away from default branch on the remote
+  new-from-rev: origin/master
+output:
+  formats:
+    checkstyle:
+      path: golanglint.xml
+formatters:
+  enable:
+    - gofmt
+    - gofumpt
+    - goimports
+  settings:
+    gofmt:
+      # Simplify code with '-s' option
+      simplify: true
+    gofumpt:
+      # Choose whether or not to use the extra rules that are disabled by default
+      extra-rules: true
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
