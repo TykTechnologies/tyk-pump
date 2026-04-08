@@ -1,0 +1,119 @@
+name: CI tests
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+
+permissions:
+  contents: read
+
+env:
+  TYK_PMP_ANALYTICSSTORAGETYPE: redis
+  TYK_PMP_ANALYTICSSTORAGECONFIG_TYPE: redis
+  TYK_PMP_ANALYTICSSTORAGECONFIG_HOST: localhost
+  TYK_PMP_ANALYTICSSTORAGECONFIG_PORT: 6379
+
+jobs:
+  test:
+    name: Go ${{ matrix.go }} tests
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        redis-version: [5]
+        mongodb-version: [4.2]
+        postgres-version: [15]
+        go: [1.25]
+
+    services:
+      redis:
+        image: redis:${{ matrix.redis-version }}
+        ports:
+          - 6379:6379
+      mongodb:
+        image: mongo:${{ matrix.mongodb-version }}
+        ports:
+          - 27017:27017
+      postgres:
+        image: postgres:${{ matrix.postgres-version }}
+        env:
+          POSTGRES_DB: tyk_analytics
+          POSTGRES_USER: tyk
+          POSTGRES_PASSWORD: tyk123
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout Tyk Pump
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 2
+
+      - name: Setup Golang
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version: ${{ matrix.go }}
+
+      - name: Install Dependencies and basic hygiene test
+        id: hygiene
+        run: |
+          go run golang.org/x/tools/cmd/goimports@v0.33.0 -l .
+
+      - name: Fetch base branch
+        if: ${{ github.event_name == 'pull_request' }}
+        run: git fetch origin ${{ github.base_ref }}
+
+      - name: Cache
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Run Pump Tests
+        id: ci-tests
+        env:
+          TYK_TEST_POSTGRES: "host=localhost user=tyk password=tyk123 dbname=tyk_analytics port=5432 sslmode=disable"
+        run: |
+          ./bin/ci-test.sh 2>&1 | tee test.log
+          result_code=${PIPESTATUS[0]}
+          echo "log=$(sed -ze 's/%/%25/g;s/\n/%0A/g' test.log)" >> $GITHUB_OUTPUT
+          exit $result_code
+
+  aggregator-ci-test:
+    name: Unit Tests & Linting
+    runs-on: ubuntu-latest
+    if: ${{ always() && github.event_name == 'pull_request' }}
+    needs: [ test ]
+    steps:
+      - name: Aggregate results
+        run: |
+          failed=()
+          # Get the needs context as JSON once
+          needs_json='${{ toJSON(needs) }}'
+
+          # Loop through all jobs in the needs context
+          for job in $(echo "$needs_json" | jq -r 'keys[]'); do
+            job_result=$(echo "$needs_json" | jq -r --arg job "$job" '.[$job].result')
+
+            if [[ "$job_result" != "success" ]]; then
+              failed+=("$job")
+            fi
+          done
+
+          if (( ${#failed[@]} )); then
+            # Join the failed job names with commas
+            failed_jobs=$(IFS=", "; echo "${failed[*]}")
+            echo "Failed jobs ----- : $failed_jobs"
+            exit 1
+          fi
+
+          echo "All required jobs succeeded"

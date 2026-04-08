@@ -1,0 +1,9 @@
+{
+  "quota_max": 60,
+  "quota_renews": 1406121006,
+  "quota_renewal_rate": 60,
+  "allowance": 100,
+  "rate": 100,
+  "per": 5,
+  "org_id": "st"
+}

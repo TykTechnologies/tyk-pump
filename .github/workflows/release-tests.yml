@@ -1,0 +1,47 @@
+name: Smoke Tests
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  smoke-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 1
+
+      - uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4
+        with:
+          role-to-assume: arn:aws:iam::754489498669:role/ecr_rw_tyk
+          role-session-name: cipush
+          aws-region: eu-central-1
+
+      - id: ecr
+        uses: aws-actions/amazon-ecr-login@183a1442edf41672e66566b7fc560e297a290896 # v2
+        with:
+          mask-password: 'true'
+
+      - name: Run smoke tests
+        shell: bash
+        working-directory: ci
+        run: |
+          set -eaxo pipefail
+          if [ ! -d smoke-tests ]; then
+              echo "::warning No repo specific smoke tests defined"
+              exit 0
+          fi
+          for d in smoke-tests/*/
+          do
+              echo Attempting to test $d
+              if [ -d $d ] && [ -e $d/test.sh ]; then
+                  cd $d
+                  ./test.sh ${{ steps.ecr.outputs.registry }}/tyk-pump:sha-${{ github.sha }}
+                  cd -
+              fi
+          done
