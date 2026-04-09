@@ -30,6 +30,15 @@ type ElasticsearchPump struct {
 var elasticsearchPrefix = "elasticsearch-pump"
 var elasticsearchDefaultENV = PUMPS_ENV_PREFIX + "_ELASTICSEARCH" + PUMPS_ENV_META_PREFIX
 
+const (
+	// esMCPMethod is the Elasticsearch field name for the MCP JSON-RPC method.
+	esMCPMethod = "mcp_method"
+	// esMCPPrimitiveType is the Elasticsearch field name for the MCP primitive type.
+	esMCPPrimitiveType = "mcp_primitive_type"
+	// esMCPPrimitiveName is the Elasticsearch field name for the MCP primitive name.
+	esMCPPrimitiveName = "mcp_primitive_name"
+)
+
 // @PumpConf Elasticsearch
 type ElasticsearchConf struct {
 	// The prefix for the environment variables that will be used to override the configuration.
@@ -83,6 +92,10 @@ type ElasticsearchConf struct {
 	SSLKeyFile string `json:"ssl_key_file" mapstructure:"ssl_key_file"`
 	// Path to the PEM file with trusted CA certificates that will be used to verify the Elasticsearch server's certificate.
 	SSLCAFile string `json:"ssl_ca_file" mapstructure:"ssl_ca_file"`
+	// When set, MCP records are written to this index instead of the default IndexName.
+	// Supports the same rolling-index date suffix as IndexName when RollingIndex is enabled.
+	// Defaults to "" (empty), which means all records are written to IndexName as before.
+	MCPIndexName string `json:"mcp_index_name" mapstructure:"mcp_index_name"`
 }
 
 type ElasticsearchBulkConfig struct {
@@ -423,6 +436,21 @@ func getIndexName(esConf *ElasticsearchConf) string {
 	return indexName
 }
 
+// getIndexNameForRecord returns the ES index to write a single record to.
+// When MCPIndexName is set and the record is an MCP record, the MCP index is
+// returned (with date suffix when RollingIndex is enabled). Otherwise the
+// standard index is returned, preserving backward-compatible behaviour.
+func getIndexNameForRecord(esConf *ElasticsearchConf, record analytics.AnalyticsRecord) string {
+	if esConf.MCPIndexName != "" && record.IsMCPRecord() {
+		indexName := esConf.MCPIndexName
+		if esConf.RollingIndex {
+			indexName += "-" + time.Now().Format("2006.01.02")
+		}
+		return indexName
+	}
+	return getIndexName(esConf)
+}
+
 func getMapping(datum analytics.AnalyticsRecord, extendedStatistics bool, generateID bool, decodeBase64 bool) (map[string]interface{}, string) {
 	record := datum
 
@@ -458,6 +486,12 @@ func getMapping(datum analytics.AnalyticsRecord, extendedStatistics bool, genera
 		mapping["user_agent"] = record.UserAgent
 	}
 
+	if datum.IsMCPRecord() {
+		mapping[esMCPMethod] = record.MCPStats.JSONRPCMethod
+		mapping[esMCPPrimitiveType] = record.MCPStats.PrimitiveType
+		mapping[esMCPPrimitiveName] = record.MCPStats.PrimitiveName
+	}
+
 	if generateID {
 		hasher := murmur3.New64()
 		hasher.Write([]byte(fmt.Sprintf("%d%s%s%s%s%s%d%s", record.TimeStamp.UnixNano(), record.Method, record.Path, record.IPAddress, record.APIID, record.OauthID, record.RequestTime, record.Alias)))
@@ -483,9 +517,10 @@ func (e Elasticsearch3Operator) processData(ctx context.Context, data []interfac
 		}
 
 		mapping, id := getMapping(d, esConf.ExtendedStatistics, esConf.GenerateID, esConf.DecodeBase64)
+		recordIndex := getIndexNameForRecord(esConf, d)
 
 		if !esConf.DisableBulk {
-			r := elasticv3.NewBulkIndexRequest().Index(getIndexName(esConf)).Type(esConf.DocumentType).Id(id).Doc(mapping)
+			r := elasticv3.NewBulkIndexRequest().Index(recordIndex).Type(esConf.DocumentType).Id(id).Doc(mapping)
 			e.bulkProcessor.Add(r)
 		} else {
 			_, err := index.BodyJson(mapping).Type(esConf.DocumentType).Id(id).DoC(ctx)
@@ -519,9 +554,10 @@ func (e Elasticsearch5Operator) processData(ctx context.Context, data []interfac
 		}
 
 		mapping, id := getMapping(d, esConf.ExtendedStatistics, esConf.GenerateID, esConf.DecodeBase64)
+		recordIndex := getIndexNameForRecord(esConf, d)
 
 		if !esConf.DisableBulk {
-			r := elasticv5.NewBulkIndexRequest().Index(getIndexName(esConf)).Type(esConf.DocumentType).Id(id).Doc(mapping)
+			r := elasticv5.NewBulkIndexRequest().Index(recordIndex).Type(esConf.DocumentType).Id(id).Doc(mapping)
 			e.bulkProcessor.Add(r)
 		} else {
 			_, err := index.BodyJson(mapping).Type(esConf.DocumentType).Id(id).Do(ctx)
@@ -555,9 +591,10 @@ func (e Elasticsearch6Operator) processData(ctx context.Context, data []interfac
 		}
 
 		mapping, id := getMapping(d, esConf.ExtendedStatistics, esConf.GenerateID, esConf.DecodeBase64)
+		recordIndex := getIndexNameForRecord(esConf, d)
 
 		if !esConf.DisableBulk {
-			r := elasticv6.NewBulkIndexRequest().Index(getIndexName(esConf)).Type(esConf.DocumentType).Id(id).Doc(mapping)
+			r := elasticv6.NewBulkIndexRequest().Index(recordIndex).Type(esConf.DocumentType).Id(id).Doc(mapping)
 			e.bulkProcessor.Add(r)
 		} else {
 			_, err := index.BodyJson(mapping).Type(esConf.DocumentType).Id(id).Do(ctx)
@@ -595,9 +632,10 @@ func (e Elasticsearch7Operator) processData(ctx context.Context, data []interfac
 		}
 
 		mapping, id := getMapping(d, esConf.ExtendedStatistics, esConf.GenerateID, esConf.DecodeBase64)
+		recordIndex := getIndexNameForRecord(esConf, d)
 
 		if !esConf.DisableBulk {
-			r := elasticv7.NewBulkIndexRequest().Index(getIndexName(esConf)).Id(id).Doc(mapping)
+			r := elasticv7.NewBulkIndexRequest().Index(recordIndex).Id(id).Doc(mapping)
 			e.bulkProcessor.Add(r)
 		} else {
 			_, err := index.BodyJson(mapping).Id(id).Do(ctx)

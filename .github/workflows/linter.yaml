@@ -61,7 +61,7 @@ jobs:
         run: |
           PKGS="$(go list ./...)"
           OPTS="-count=1 -failfast -v"
-          GOTESTSUM="go run gotest.tools/gotestsum@v1.12.1"
+          GOTESTSUM="go run gotest.tools/gotestsum@v1.13.0"
 
           for pkg in ${PKGS}; do
               tags=""
@@ -124,7 +124,7 @@ jobs:
     needs: [gotest, golangci]
     uses: TykTechnologies/github-actions/.github/workflows/sonarcloud.yaml@d3fa20888fa2878e877e22bb7702141217290e7c # main
     with:
-      exclusions: ""
+      exclusions: "analytics/proto/**/*.pb.go"
     secrets:
       GH_TOKEN: ${{ secrets.ORG_GH_TOKEN }}
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
