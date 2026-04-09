@@ -61,7 +61,7 @@ jobs:
         run: |
           PKGS="$(go list ./...)"
           OPTS="-count=1 -failfast -v"
-          GOTESTSUM="go run gotest.tools/gotestsum@v1.12.1"
+          GOTESTSUM="go run gotest.tools/gotestsum@v1.13.0"
 
           for pkg in ${PKGS}; do
               tags=""
