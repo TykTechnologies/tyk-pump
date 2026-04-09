@@ -799,7 +799,7 @@ func TestPrometheusCreateBasicMetrics(t *testing.T) {
 	p := PrometheusPump{}
 	newPump := p.New().(*PrometheusPump)
 
-	assert.Len(t, newPump.allMetrics, 7)
+	assert.Len(t, newPump.allMetrics, 5)
 
 	actualMetricsNames := []string{}
 	actualMetricTypeCounter := make(map[string]int)
@@ -814,12 +814,10 @@ func TestPrometheusCreateBasicMetrics(t *testing.T) {
 		"tyk_http_status_per_key",
 		"tyk_http_status_per_oauth_client",
 		metricTykLatency,
-		metricTykMCPCallsTotal,
-		metricTykMCPLatencyMs,
 	})
 
-	assert.Equal(t, 5, actualMetricTypeCounter[counterType])
-	assert.Equal(t, 2, actualMetricTypeCounter[histogramType])
+	assert.Equal(t, 4, actualMetricTypeCounter[counterType])
+	assert.Equal(t, 1, actualMetricTypeCounter[histogramType])
 }
 
 func TestPrometheusEnsureLabels(t *testing.T) {
@@ -953,36 +951,18 @@ func TestPrometheusGetLabelsValues_MCPLabels(t *testing.T) {
 }
 
 // TestPrometheusCreateBasicMetrics_IncludesMCPMetrics verifies that CreateBasicMetrics
-// adds tyk_mcp_calls_total and tyk_mcp_latency_milliseconds to allMetrics.
-func TestPrometheusCreateBasicMetrics_IncludesMCPMetrics(t *testing.T) {
-	p := PrometheusPump{}
-	p.CreateBasicMetrics()
-
-	names := make(map[string]bool)
-	for _, m := range p.allMetrics {
-		names[m.Name] = true
-	}
-
-	assert.True(t, names[metricTykMCPCallsTotal], "tyk_mcp_calls_total must be a base metric")
-	assert.True(t, names[metricTykMCPLatencyMs], "tyk_mcp_latency_milliseconds must be a base metric")
-}
-
-// TestPrometheusMCPBaseMetrics_AreMCPOnly verifies that the MCP base metrics have mcpOnly=true.
-func TestPrometheusMCPBaseMetrics_AreMCPOnly(t *testing.T) {
+// TestPrometheusCreateBasicMetrics_DoesNotIncludeMCPMetrics verifies that CreateBasicMetrics
+// does not include MCP metrics, as they should be configured as custom metrics.
+func TestPrometheusCreateBasicMetrics_DoesNotIncludeMCPMetrics(t *testing.T) {
 	p := PrometheusPump{}
 	p.CreateBasicMetrics()
 
 	for _, m := range p.allMetrics {
-		switch m.Name {
-		case metricTykMCPCallsTotal, metricTykMCPLatencyMs:
-			assert.True(t, m.mcpOnly, "%s must have mcpOnly=true", m.Name)
-		default:
-			assert.False(t, m.mcpOnly, "%s must not have mcpOnly=true", m.Name)
-		}
+		assert.False(t, m.MCPOnly, "%s must not have MCPOnly=true in base metrics", m.Name)
 	}
 }
 
-// TestPrometheusMCPOnlyMetric_SkipsNonMCPRecords verifies that a metric with mcpOnly=true
+// TestPrometheusMCPOnlyMetric_SkipsNonMCPRecords verifies that a metric with MCPOnly=true
 // is not incremented for non-MCP analytics records.
 // It tests the filtering by calling Inc() directly (simulating what WriteData does),
 // so counterMap reflects only records that passed the filter.
@@ -992,7 +972,7 @@ func TestPrometheusMCPOnlyMetric_SkipsNonMCPRecords(t *testing.T) {
 		Help:       "test",
 		MetricType: counterType,
 		Labels:     []string{"api_id", "mcp_method"},
-		mcpOnly:    true,
+		MCPOnly:    true,
 	}
 	require.NoError(t, metric.InitVec())
 	defer prometheus.Unregister(metric.counterVec)
@@ -1014,7 +994,7 @@ func TestPrometheusMCPOnlyMetric_SkipsNonMCPRecords(t *testing.T) {
 
 	// Simulate what WriteData does per record, exercising the mcpOnly guard.
 	for _, record := range records {
-		if metric.mcpOnly && !record.IsMCPRecord() {
+		if metric.MCPOnly && !record.IsMCPRecord() {
 			continue
 		}
 		values := metric.GetLabelsValues(record)
@@ -1033,7 +1013,7 @@ func TestPrometheusMCPOnlyMetric_CountsMCPRecords(t *testing.T) {
 		Help:       "test",
 		MetricType: counterType,
 		Labels:     []string{"api_id", "mcp_method", "mcp_primitive_type", "mcp_primitive_name", "response_code"},
-		mcpOnly:    true,
+		MCPOnly:    true,
 	}
 	require.NoError(t, metric.InitVec())
 	defer prometheus.Unregister(metric.counterVec)
@@ -1051,7 +1031,7 @@ func TestPrometheusMCPOnlyMetric_CountsMCPRecords(t *testing.T) {
 	}
 
 	for _, record := range records {
-		if metric.mcpOnly && !record.IsMCPRecord() {
+		if metric.MCPOnly && !record.IsMCPRecord() {
 			continue
 		}
 		values := metric.GetLabelsValues(record)
@@ -1063,25 +1043,35 @@ func TestPrometheusMCPOnlyMetric_CountsMCPRecords(t *testing.T) {
 	assert.Equal(t, uint64(1), metric.counterMap["api1--resources/read--resource--docs--500"].count)
 }
 
-// TestPrometheusMCPBaseMetrics_DisabledViaConfig verifies that MCP base metrics can be
-// excluded from exposition via the DisabledMetrics config field.
-func TestPrometheusMCPBaseMetrics_DisabledViaConfig(t *testing.T) {
-	p := PrometheusPump{}
-	p.CreateBasicMetrics()
-	p.log = log.WithField("prefix", prometheusPrefix)
-	p.conf = &PrometheusConf{
-		DisabledMetrics: []string{"tyk_mcp_calls_total"},
+// TestPrometheusMCPCustomMetric_MCPOnly verifies that a custom metric with MCPOnly=true
+// is only processed for MCP records when configured as a custom metric.
+func TestPrometheusMCPCustomMetric_MCPOnly(t *testing.T) {
+	metric := &PrometheusMetric{
+		Name:       "test_mcp_custom_counter",
+		Help:       "MCP call counts",
+		MetricType: counterType,
+		Labels:     []string{"api_id", "mcp_method"},
+		MCPOnly:    true,
 	}
-	p.initBaseMetrics()
+	require.NoError(t, metric.InitVec())
+	defer prometheus.Unregister(metric.counterVec)
 
-	names := make(map[string]bool)
-	for _, m := range p.allMetrics {
-		names[m.Name] = true
+	p := newTestPrometheusPump(t)
+	p.allMetrics = []*PrometheusMetric{metric}
+
+	records := []analytics.AnalyticsRecord{
+		{APIID: "api1", ResponseCode: 200},
+		{APIID: "api2", ResponseCode: 200, MCPStats: analytics.MCPStats{
+			IsMCP: true, JSONRPCMethod: "tools/call",
+		}},
 	}
 
-	assert.False(t, names[metricTykMCPCallsTotal], "tyk_mcp_calls_total must be excluded")
-	assert.True(t, names[metricTykMCPLatencyMs], "tyk_mcp_latency_milliseconds must still be present")
-	assert.True(t, names["tyk_http_status"], "existing REST metrics must be unaffected")
+	for _, record := range records {
+		p.processMetric(metric, record)
+	}
+
+	assert.Len(t, metric.counterMap, 1, "only the MCP record should be counted")
+	assert.Contains(t, metric.counterMap, "api2--tools/call")
 }
 
 func newTestPrometheusPump(t *testing.T) *PrometheusPump {
@@ -1187,11 +1177,12 @@ func TestProcessMetric_HistogramType_LatencyMetric(t *testing.T) {
 	defer prometheus.Unregister(histVec)
 
 	metric := &PrometheusMetric{
-		Name:         metricTykLatency,
-		MetricType:   histogramType,
-		Labels:       []string{"api"},
-		enabled:      true,
-		histogramVec: histVec,
+		Name:             metricTykLatency,
+		MetricType:       histogramType,
+		Labels:           []string{"api"},
+		enabled:          true,
+		histogramVec:     histVec,
+		LatencyBreakdown: true,
 	}
 
 	p := newTestPrometheusPump(t)

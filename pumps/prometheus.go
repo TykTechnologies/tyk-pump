@@ -81,9 +81,13 @@ type PrometheusMetric struct {
 	// MCP labels are only populated for MCP records; non-MCP records produce empty strings.
 	Labels []string `json:"labels" mapstructure:"labels"`
 
-	// mcpOnly marks a metric as MCP-specific: it is only processed for records where IsMCPRecord() is true.
-	// This is an internal field and is not user-configurable.
-	mcpOnly bool
+	// MCPOnly marks a metric as MCP-specific: it is only processed for records where IsMCPRecord() is true.
+	// When set to true on a custom metric, the metric will only be updated for MCP analytics records.
+	MCPOnly bool `json:"mcp_only" mapstructure:"mcp_only"`
+	// LatencyBreakdown enables per-type latency observations for histogram metrics.
+	// When true, each record produces three observations (total, upstream, gateway) with
+	// the "type" label set accordingly. Requires the "type" label to be present.
+	LatencyBreakdown bool `json:"latency_breakdown" mapstructure:"latency_breakdown"`
 
 	enabled      bool
 	counterVec   *prometheus.CounterVec
@@ -114,10 +118,6 @@ const (
 
 	// metricTykLatency is the name of the built-in latency histogram for REST/GraphQL.
 	metricTykLatency = "tyk_latency"
-	// metricTykMCPCallsTotal is the name of the MCP-specific call counter base metric.
-	metricTykMCPCallsTotal = "tyk_mcp_calls_total"
-	// metricTykMCPLatencyMs is the name of the MCP-specific latency histogram base metric.
-	metricTykMCPLatencyMs = "tyk_mcp_latency_milliseconds"
 )
 
 var (
@@ -165,31 +165,15 @@ func (p *PrometheusPump) CreateBasicMetrics() {
 
 	// histogram metrics
 	totalLatencyMetrics := &PrometheusMetric{
-		Name:       "tyk_latency",
-		Help:       "Latency added by Tyk, Total Latency, upstream latency, and gateway latency per API",
-		MetricType: histogramType,
-		Buckets:    buckets,
-		Labels:     []string{"type", "api"},
+		Name:             "tyk_latency",
+		Help:             "Latency added by Tyk, Total Latency, upstream latency, and gateway latency per API",
+		MetricType:       histogramType,
+		Buckets:          buckets,
+		LatencyBreakdown: true,
+		Labels:           []string{"type", "api"},
 	}
 
-	// MCP-specific metrics: only emitted for records where IsMCPRecord() is true.
-	mcpCallsMetric := &PrometheusMetric{
-		Name:       metricTykMCPCallsTotal,
-		Help:       "MCP call counts per API, JSON-RPC method, primitive type, primitive name, and response code",
-		MetricType: counterType,
-		Labels:     []string{"api_id", "mcp_method", "mcp_primitive_type", "mcp_primitive_name", "response_code"},
-		mcpOnly:    true,
-	}
-	mcpLatencyMetric := &PrometheusMetric{
-		Name:       metricTykMCPLatencyMs,
-		Help:       "Latency for MCP calls per API, JSON-RPC method, primitive type, and primitive name",
-		MetricType: histogramType,
-		Buckets:    buckets,
-		Labels:     []string{"type", "api_id", "mcp_method", "mcp_primitive_type", "mcp_primitive_name"},
-		mcpOnly:    true,
-	}
-
-	p.allMetrics = append(p.allMetrics, totalStatusMetric, pathStatusMetrics, keyStatusMetrics, oauthStatusMetrics, totalLatencyMetrics, mcpCallsMetric, mcpLatencyMetric)
+	p.allMetrics = append(p.allMetrics, totalStatusMetric, pathStatusMetrics, keyStatusMetrics, oauthStatusMetrics, totalLatencyMetrics)
 }
 
 func (p *PrometheusPump) GetName() string {
@@ -316,7 +300,7 @@ func (p *PrometheusPump) processMetric(metric *PrometheusMetric, record analytic
 	if !metric.enabled {
 		return
 	}
-	if metric.mcpOnly && !record.IsMCPRecord() {
+	if metric.MCPOnly && !record.IsMCPRecord() {
 		return
 	}
 
@@ -335,7 +319,7 @@ func (p *PrometheusPump) processMetric(metric *PrometheusMetric, record analytic
 		}
 	case histogramType:
 		if metric.histogramVec != nil {
-			if metric.Name == metricTykLatency || metric.Name == metricTykMCPLatencyMs {
+			if metric.LatencyBreakdown {
 				p.observeLatencyMetrics(metric, &record, values)
 			} else {
 				p.observeHistogramMetric(metric, record.RequestTime, values)
