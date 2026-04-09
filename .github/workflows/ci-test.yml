@@ -64,7 +64,8 @@ jobs:
       - name: Install Dependencies and basic hygiene test
         id: hygiene
         run: |
-          go run golang.org/x/tools/cmd/goimports@v0.33.0 -l .
+          go install golang.org/x/tools/cmd/goimports@v0.33.0
+          goimports -l .
 
       - name: Fetch base branch
         if: ${{ github.event_name == 'pull_request' }}
