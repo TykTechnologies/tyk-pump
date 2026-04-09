@@ -108,6 +108,13 @@ func (s *MCPSQLAggregatePump) WriteData(ctx context.Context, data []interface{})
 		return nil
 	}
 
+	mcpRecordCount := 0
+	for _, item := range data {
+		if r, ok := item.(analytics.AnalyticsRecord); ok && r.IsMCPRecord() {
+			mcpRecordCount++
+		}
+	}
+
 	startIndex := 0
 	endIndex := dataLen
 	table := ""
@@ -138,7 +145,7 @@ func (s *MCPSQLAggregatePump) WriteData(ctx context.Context, data []interface{})
 		startIndex = i
 	}
 
-	s.log.Info("Purged ", dataLen, " records...")
+	s.log.Info("Purged ", mcpRecordCount, " records...")
 	return nil
 }
 

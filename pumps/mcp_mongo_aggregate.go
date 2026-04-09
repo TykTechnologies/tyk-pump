@@ -90,8 +90,10 @@ func (m *MCPMongoAggregatePump) WriteData(ctx context.Context, data []interface{
 		writingAttempts = append(writingAttempts, true)
 	}
 
+	mcpRecordCount := 0
 	for apiID := range analyticsPerAPI {
 		ag := analyticsPerAPI[apiID]
+		mcpRecordCount += ag.Total.Hits
 		for _, isMixedCollection := range writingAttempts {
 			err := m.DoMCPAggregatedWriting(ctx, &ag, isMixedCollection)
 			if err != nil {
@@ -101,7 +103,7 @@ func (m *MCPMongoAggregatePump) WriteData(ctx context.Context, data []interface{
 		m.log.Debug("Processed aggregated MCP data for API ", apiID)
 	}
 
-	m.log.Info("Purged ", len(data), " records...")
+	m.log.Info("Purged ", mcpRecordCount, " records...")
 	return nil
 }
 
