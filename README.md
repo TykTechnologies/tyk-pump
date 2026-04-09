@@ -671,35 +671,13 @@ For example:
 
 This will create a metric for HTTP status code and API name.
 
-To create an MCP-specific custom metric, use the `mcp_only` flag along with MCP labels:
-
-```json
-"custom_metrics":[
-  {
-    "name":"tyk_mcp_requests_total",
-    "description":"Total MCP requests per method and primitive",
-    "metric_type":"counter",
-    "labels":["api_id", "mcp_method", "mcp_primitive_type", "mcp_primitive_name"],
-    "mcp_only": true
-  }
-]
-```
-
-This creates a counter that only tracks MCP traffic, partitioned by API, method, and primitive type/name.
-
 There are 2 types of `metric_type`: `counter` and `histogram`.
 
 If you are using `histogram`, its always going to use the `request_time` to observe, and you can also set the configuration option `buckets` where you can define the buckets into which observations are counted.
 `buckets` type is an array of float64 and its default value is `[1, 2, 5, 7, 10, 15, 20, 25, 30, 40, 50, 60, 70, 80, 90, 100, 200, 300, 400, 500, 1000, 2000, 5000, 10000, 30000, 60000]`.
 
 The `labels` configuration determines the label name and value extracted from the analytic record.
-The available values are: `["host","method", "path", "response_code", "api_key", "time_stamp", "api_version", "api_name", "api_id", "org_id", "oauth_id", "request_time", "ip_address", "alias", "mcp_method", "mcp_primitive_type", "mcp_primitive_name"]`
-
-The MCP labels (`mcp_method`, `mcp_primitive_type`, `mcp_primitive_name`) are only populated for MCP analytics records. Non-MCP records will produce empty strings for these labels.
-
-Setting `mcp_only` to `true` on a custom metric restricts it to MCP analytics records only. Non-MCP records are skipped entirely for that metric.
-
-Setting `latency_breakdown` to `true` on a histogram metric enables per-type latency observations (total, upstream, gateway). Each record produces three observations with the `type` label set accordingly. Requires the `type` label to be present in `labels`.
+The available values are: `["host","method", "path", "response_code", "api_key", "time_stamp", "api_version", "api_name", "api_id", "org_id", "oauth_id", "request_time", "ip_address", "alias"]`
 
 ###### JSON / Conf File
 
