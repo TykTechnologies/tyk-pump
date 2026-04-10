@@ -38,4 +38,5 @@ func init() {
 	AvailablePumps["resurfaceio"] = &ResurfacePump{}
 	AvailablePumps["sqs"] = &SQSPump{}
 	AvailablePumps["kinesis"] = &KinesisPump{}
+	AvailablePumps["dynatrace"] = &DynatracePump{}
 }
