@@ -46,7 +46,7 @@ require (
 	gopkg.in/olivere/elastic.v6 v6.2.31
 	gopkg.in/vmihailenco/msgpack.v2 v2.9.1
 	gorm.io/driver/mysql v1.0.3
-	gorm.io/driver/postgres v1.2.0
+	gorm.io/driver/postgres v1.5.0
 	gorm.io/driver/sqlite v1.1.0
 	gorm.io/gorm v1.30.1
 )
@@ -80,14 +80,10 @@ require (
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/helloeave/json v1.15.3 // indirect
 	github.com/influxdata/line-protocol v0.0.0-20200327222509-2487e7298839 // indirect
-	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
-	github.com/jackc/pgconn v1.14.3 // indirect
-	github.com/jackc/pgio v1.0.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
-	github.com/jackc/pgproto3/v2 v2.3.3 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
-	github.com/jackc/pgtype v1.14.0 // indirect
-	github.com/jackc/pgx/v4 v4.18.3 // indirect
+	github.com/jackc/pgx/v5 v5.6.0 // indirect
+	github.com/jackc/puddle/v2 v2.2.2 // indirect
 	github.com/jehiah/go-strftime v0.0.0-20151206194810-2efbe75097a5 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
