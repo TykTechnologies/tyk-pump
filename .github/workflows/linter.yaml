@@ -10,6 +10,10 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: read
+  checks: write
+
 env:
   TYK_PMP_ANALYTICSSTORAGETYPE: redis
   TYK_PMP_ANALYTICSSTORAGECONFIG_TYPE: redis
@@ -18,27 +22,87 @@ env:
 
 jobs:
   gotest:
-    uses: TykTechnologies/github-actions/.github/workflows/gotest.yaml@main
+    name: Go Test
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        go: [1.24]
-    with:
-      go: ${{ matrix.go }}
-      redis: 5
-      mongo: 4.2
-      test-options: "-count=1 -failfast -v"
+        go: [1.25]
+    services:
+      redis:
+        image: redis:5
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      mongo:
+        image: mongo:4.2
+        ports:
+          - 27017:27017
+    steps:
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version: ${{ matrix.go }}
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Cache
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Go Test
+        id: test
+        run: |
+          PKGS="$(go list ./...)"
+          OPTS="-count=1 -failfast -v"
+          GOTESTSUM="go run gotest.tools/gotestsum@v1.12.1"
+
+          for pkg in ${PKGS}; do
+              tags=""
+              if [[ ${pkg} == *"goplugin" ]]; then
+                  tags="--tags 'goplugin'"
+              fi
+
+              coveragefile=`echo "$pkg" | awk -F/ '{print $NF}'`
+
+              echo go test ${OPTS} -json -timeout 15m -coverprofile=${coveragefile}.cov ${pkg} ${tags}
+
+              ${GOTESTSUM} --junitfile ${coveragefile}.xml --raw-command go test ${OPTS} --json -timeout 15m -coverprofile=${coveragefile}.cov ${pkg} ${tags}
+          done
+
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: coverage
+          path: "*cov"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: ${{ always() }}
+        with:
+          name: junit
+          path: "*xml"
+      - name: Github report view
+        if: ${{ always() }}
+        uses: phoenix-actions/test-reporting@1e9b578818d03d6df50ce8e60d024a000bf3ab63 # v8
+        with:
+          name: Unit Test Results
+          path: "*.xml"
+          reporter: java-junit
   golangci:
     runs-on: ubuntu-latest
     needs: gotest
     if: ${{ always() }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           fetch-depth: 0
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v8
+        uses: golangci/golangci-lint-action@4afd733a84b1f43292c63897423277bb7f4313a9 # v8
         timeout-minutes: 20
         with:
           version: v2.5.0
@@ -49,7 +113,7 @@ jobs:
           skip-cache: false
           skip-save-cache: false
       - name: Upload golangci-lint report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
         with:
           name: golangci-report
@@ -58,7 +122,7 @@ jobs:
   sonarcloud:
     if: ${{ always() }}
     needs: [gotest, golangci]
-    uses: TykTechnologies/github-actions/.github/workflows/sonarcloud.yaml@main
+    uses: TykTechnologies/github-actions/.github/workflows/sonarcloud.yaml@d3fa20888fa2878e877e22bb7702141217290e7c # main
     with:
       exclusions: ""
     secrets:

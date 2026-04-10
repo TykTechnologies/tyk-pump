@@ -2,7 +2,6 @@ package pumps
 
 import (
 	"context"
-	"crypto/tls"
 	"encoding/base64"
 	"errors"
 	"fmt"
@@ -82,6 +81,8 @@ type ElasticsearchConf struct {
 	SSLCertFile string `json:"ssl_cert_file" mapstructure:"ssl_cert_file"`
 	// Can be used to set custom key file for authentication with Elastic Search.
 	SSLKeyFile string `json:"ssl_key_file" mapstructure:"ssl_key_file"`
+	// Path to the PEM file with trusted CA certificates that will be used to verify the Elasticsearch server's certificate.
+	SSLCAFile string `json:"ssl_ca_file" mapstructure:"ssl_ca_file"`
 }
 
 type ElasticsearchBulkConfig struct {
@@ -155,10 +156,14 @@ func (e *ElasticsearchPump) getOperator() (ElasticsearchOperator, error) {
 	}
 
 	if conf.UseSSL {
-		tlsConf, err := e.GetTLSConfig()
+		tlsConf, err := NewTLSConfig(TLSConfig{
+			CertFile:           conf.SSLCertFile,
+			KeyFile:            conf.SSLKeyFile,
+			CAFile:             conf.SSLCAFile,
+			InsecureSkipVerify: conf.SSLInsecureSkipVerify,
+		}, e.log)
 		if err != nil {
-			e.log.WithError(err).Error("Failed to get TLS config")
-			return nil, err
+			return nil, fmt.Errorf("failed to configure TLS for Elasticsearch connection: %w", err)
 		}
 		httpClient = &http.Client{Transport: &http.Transport{TLSClientConfig: tlsConf}}
 	}
@@ -379,37 +384,6 @@ func (e *ElasticsearchPump) Init(config interface{}) error {
 
 	e.log.Info(e.GetName() + " Initialized")
 	return nil
-}
-
-// GetTLSConfig sets the TLS config for the pump
-func (e *ElasticsearchPump) GetTLSConfig() (*tls.Config, error) {
-	var tlsConfig *tls.Config
-	// If the user has not specified a CA file nor a key file, we'll use a tls config with no certs
-	if e.esConf.SSLCertFile == "" && e.esConf.SSLKeyFile == "" {
-		// #nosec G402
-		tlsConfig = &tls.Config{
-			InsecureSkipVerify: e.esConf.SSLInsecureSkipVerify,
-		}
-		return tlsConfig, nil
-	}
-
-	// If the user has specified both a SSL cert file and a key file, we'll use them to create a tls config
-	if e.esConf.SSLCertFile != "" && e.esConf.SSLKeyFile != "" {
-		cert, err := tls.LoadX509KeyPair(e.esConf.SSLCertFile, e.esConf.SSLKeyFile)
-		if err != nil {
-			return tlsConfig, err
-		}
-		// #nosec G402
-		tlsConfig = &tls.Config{
-			Certificates:       []tls.Certificate{cert},
-			InsecureSkipVerify: e.esConf.SSLInsecureSkipVerify,
-		}
-		return tlsConfig, nil
-	}
-
-	// If the user has specified a SSL cert file or a key file, but not both, we'll return an error
-	err := errors.New("only one of ssl_cert_file and ssl_cert_key configuration option is setted, you should set both to enable mTLS")
-	return tlsConfig, err
 }
 
 func (e *ElasticsearchPump) connect() {
