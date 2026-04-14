@@ -83,12 +83,7 @@ type PrometheusMetric struct {
 
 	// MCPOnly marks a metric as MCP-specific: it is only processed for records where IsMCPRecord() is true.
 	// When set to true on a custom metric, the metric will only be updated for MCP analytics records.
-	MCPOnly bool `json:"mcp_only" mapstructure:"mcp_only"`
-	// LatencyBreakdown enables per-type latency observations for histogram metrics.
-	// When true, each record produces three observations (total, upstream, gateway) with
-	// the "type" label set accordingly. Requires the "type" label to be present.
-	LatencyBreakdown bool `json:"latency_breakdown" mapstructure:"latency_breakdown"`
-
+	MCPOnly      bool `json:"mcp_only" mapstructure:"mcp_only"`
 	enabled      bool
 	counterVec   *prometheus.CounterVec
 	histogramVec *prometheus.HistogramVec
@@ -165,12 +160,11 @@ func (p *PrometheusPump) CreateBasicMetrics() {
 
 	// histogram metrics
 	totalLatencyMetrics := &PrometheusMetric{
-		Name:             "tyk_latency",
-		Help:             "Latency added by Tyk, Total Latency, upstream latency, and gateway latency per API",
-		MetricType:       histogramType,
-		Buckets:          buckets,
-		LatencyBreakdown: true,
-		Labels:           []string{"type", "api"},
+		Name:       "tyk_latency",
+		Help:       "Latency added by Tyk, Total Latency, upstream latency, and gateway latency per API",
+		MetricType: histogramType,
+		Buckets:    buckets,
+		Labels:     []string{"type", "api"},
 	}
 
 	p.allMetrics = append(p.allMetrics, totalStatusMetric, pathStatusMetrics, keyStatusMetrics, oauthStatusMetrics, totalLatencyMetrics)
@@ -319,7 +313,7 @@ func (p *PrometheusPump) processMetric(metric *PrometheusMetric, record analytic
 		}
 	case histogramType:
 		if metric.histogramVec != nil {
-			if metric.LatencyBreakdown {
+			if metric.Name == metricTykLatency {
 				p.observeLatencyMetrics(metric, &record, values)
 			} else {
 				p.observeHistogramMetric(metric, record.RequestTime, values)

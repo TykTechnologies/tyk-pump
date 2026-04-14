@@ -1177,12 +1177,11 @@ func TestProcessMetric_HistogramType_LatencyMetric(t *testing.T) {
 	defer prometheus.Unregister(histVec)
 
 	metric := &PrometheusMetric{
-		Name:             metricTykLatency,
-		MetricType:       histogramType,
-		Labels:           []string{"api"},
-		enabled:          true,
-		histogramVec:     histVec,
-		LatencyBreakdown: true,
+		Name:         metricTykLatency,
+		MetricType:   histogramType,
+		Labels:       []string{"api"},
+		enabled:      true,
+		histogramVec: histVec,
 	}
 
 	p := newTestPrometheusPump(t)
