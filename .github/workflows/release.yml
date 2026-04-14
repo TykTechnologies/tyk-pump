@@ -515,10 +515,3 @@ jobs:
           cache-to: type=gha,mode=max
           file: Dockerfile
           push: false
-  sbom:
-    needs: goreleaser
-    uses: TykTechnologies/github-actions/.github/workflows/sbom.yaml@d3fa20888fa2878e877e22bb7702141217290e7c # main
-    secrets:
-      DEPDASH_URL: ${{ secrets.DEPDASH_URL }}
-      DEPDASH_KEY: ${{ secrets.DEPDASH_KEY }}
-      ORG_GH_TOKEN: ${{ secrets.ORG_GH_TOKEN }}
