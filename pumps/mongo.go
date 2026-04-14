@@ -470,6 +470,11 @@ func (m *MongoPump) shouldProcessItem(item interface{}, isForGraphRecords bool) 
 		return &thisItem, true
 	}
 
+	// MCP records are handled by dedicated MCP pumps, skip them here.
+	if thisItem.IsMCPRecord() {
+		return &thisItem, true
+	}
+
 	isGraphRecord := thisItem.IsGraphRecord()
 	if isForGraphRecords && !isGraphRecord {
 		return &thisItem, true

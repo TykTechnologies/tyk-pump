@@ -196,7 +196,12 @@ func (m *MongoSelectivePump) WriteData(ctx context.Context, data []interface{}) 
 	analyticsPerOrg := make(map[string][]interface{})
 
 	for _, v := range data {
-		orgID := v.(analytics.AnalyticsRecord).OrgID
+		rec := v.(analytics.AnalyticsRecord)
+		// MCP records are handled by dedicated MCP pumps, skip them here.
+		if rec.IsMCPRecord() {
+			continue
+		}
+		orgID := rec.OrgID
 		collectionName, collErr := m.GetCollectionName(orgID)
 		skip := false
 		if collErr != nil {

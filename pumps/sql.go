@@ -209,6 +209,10 @@ func (c *SQLPump) WriteData(ctx context.Context, data []interface{}) error {
 	for _, r := range data {
 		if r != nil {
 			rec := r.(analytics.AnalyticsRecord)
+			// MCP records are handled by dedicated MCP pumps, skip them here.
+			if rec.IsMCPRecord() {
+				continue
+			}
 			typedData = append(typedData, &rec)
 		}
 	}
