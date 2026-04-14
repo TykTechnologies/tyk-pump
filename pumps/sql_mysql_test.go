@@ -69,6 +69,7 @@ func TestMySQLWriteData(t *testing.T) {
 			APIID:     fmt.Sprintf("mysql-api-%d", i),
 			OrgID:     "mysql-write-test",
 			TimeStamp: now,
+			ExpireAt:  now.Add(24 * time.Hour),
 		}
 	}
 
@@ -132,10 +133,12 @@ func TestMySQLConnectionMethod(t *testing.T) {
 	}
 	t.Cleanup(func() { pmp.db.Migrator().DropTable(analytics.SQLTable) })
 
+	now := time.Now()
 	rec := analytics.AnalyticsRecord{
 		APIID:     "connection-method-test",
 		OrgID:     "mysql-conn-test",
-		TimeStamp: time.Now(),
+		TimeStamp: now,
+		ExpireAt:  now.Add(24 * time.Hour),
 	}
 
 	// DB.Connection() executes its callback on a single dedicated connection from the pool,
