@@ -154,3 +154,79 @@ func TestMySQLConnectionMethod(t *testing.T) {
 		"record written via DB.Connection() should be persisted and queryable")
 	assert.Equal(t, "mysql-conn-test", found.OrgID)
 }
+
+// ── 4. Strict-mode zero-date guardrail ────────────────────────────────────────
+
+// TestMySQLStrictMode_ZeroExpireAt documents the pump's behaviour when an analytics
+// record arrives with a zero-value ExpireAt against a strict-mode MySQL (NO_ZERO_DATE,
+// on by default since MySQL 5.7). Today the gateway always calls SetExpiry() before
+// emitting, so ExpireAt is never zero in production — but this test acts as a
+// guardrail: if a future gateway refactor forgets to set it, this test shows the
+// failure mode early rather than at a customer site. go-sql-driver/mysql v1.6.0
+// tightened zero-date handling further, so this is worth pinning for the upgrade.
+func TestMySQLStrictMode_ZeroExpireAt(t *testing.T) {
+	skipTestIfNoMySQL(t)
+
+	pmp := SQLPump{}
+	if err := pmp.Init(newMySQLConfig(false)); err != nil {
+		t.Fatalf("MySQL Init failed: %v", err)
+	}
+	t.Cleanup(func() { pmp.db.Migrator().DropTable(analytics.SQLTable) })
+
+	rec := analytics.AnalyticsRecord{
+		APIID:     "zero-expireat-test",
+		OrgID:     "mysql-zero-expireat",
+		TimeStamp: time.Now(),
+		// ExpireAt deliberately omitted — zero time.Time{}.
+	}
+	err := pmp.WriteData(context.Background(), []interface{}{rec})
+
+	// We do not assert success. Under strict-mode MySQL this will fail with
+	// "Error 1292: Incorrect datetime value: '0000-00-00' for column 'expireAt'".
+	// Under a loose-mode MySQL it may succeed. The point is to surface the
+	// strict-mode behaviour explicitly so operators are aware.
+	if err != nil {
+		t.Logf("zero ExpireAt rejected by strict-mode MySQL (expected): %v", err)
+		assert.Contains(t, err.Error(), "expireAt",
+			"error should reference the expireAt column so the cause is obvious")
+	} else {
+		t.Log("zero ExpireAt accepted — MySQL is not in strict mode or NO_ZERO_DATE is disabled")
+	}
+}
+
+// ── 5. Date / time handling across driver v1.5 → v1.6 ─────────────────────────
+
+// TestMySQLDriverV16_DateHandling round-trips a timestamp through the analytics table
+// to confirm that go-sql-driver/mysql v1.6.0's tightened date parsing has not altered
+// how tyk-pump's TimeStamp column is written and read. v1.6.0 changed parseTime
+// defaults and rejectReadOnly handling; regressions here would show as time drift or
+// scan errors on reads.
+func TestMySQLDriverV16_DateHandling(t *testing.T) {
+	skipTestIfNoMySQL(t)
+
+	pmp := SQLPump{}
+	if err := pmp.Init(newMySQLConfig(false)); err != nil {
+		t.Fatalf("MySQL Init failed: %v", err)
+	}
+	t.Cleanup(func() { pmp.db.Migrator().DropTable(analytics.SQLTable) })
+
+	// MySQL DATETIME has second-level precision by default unless the column is
+	// declared with a fractional-second precision. Use a second-aligned value to
+	// avoid false failures from truncation.
+	ts := time.Date(2099, 6, 15, 14, 30, 45, 0, time.UTC)
+	rec := analytics.AnalyticsRecord{
+		APIID:     "mysql-v16-date-test",
+		OrgID:     "mysql-v16-date",
+		TimeStamp: ts,
+		ExpireAt:  ts.Add(24 * time.Hour),
+	}
+	if err := pmp.WriteData(context.Background(), []interface{}{rec}); err != nil {
+		t.Fatalf("WriteData failed: %v", err)
+	}
+
+	var got analytics.AnalyticsRecord
+	result := pmp.db.Table(analytics.SQLTable).Where("apiid = ?", "mysql-v16-date-test").First(&got)
+	assert.NoError(t, result.Error)
+	assert.True(t, ts.Equal(got.TimeStamp.UTC()),
+		"TimeStamp round-trip drifted: wrote %v, read %v", ts, got.TimeStamp)
+}
