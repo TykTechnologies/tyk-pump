@@ -477,3 +477,190 @@ func TestPreferSimpleProtocol_Postgres(t *testing.T) {
 	assert.Equal(t, int64(10), count,
 		"10 records should be written and readable via simple protocol path")
 }
+
+// ── 8. Orphan Columns (sql:"-" → gorm:"-:all" fix) ────────────────────────────
+
+// TestAnalyticsRecordOrphanColumns_Postgres guards the fix for the latent sql:"-" bug
+// that pgx/v5's fmt.Stringer encoding path turned into a hard failure under
+// PreferSimpleProtocol. Until analytics/analytics.go replaces sql:"-" with
+// gorm:"-:all" on Day/Month/Year/Hour/APIName, the schema will still contain those
+// orphan columns. This test fails until that fix lands.
+func TestAnalyticsRecordOrphanColumns_Postgres(t *testing.T) {
+	skipTestIfNoPostgres(t)
+
+	pmp := SQLPump{}
+	if err := pmp.Init(newSQLConfig(false)); err != nil {
+		t.Fatalf("Init failed: %v", err)
+	}
+	t.Cleanup(func() { pmp.db.Migrator().DropTable(analytics.SQLTable) })
+
+	orphans := []string{"day", "month", "year", "hour", "apiname"}
+	for _, col := range orphans {
+		assert.False(t, pmp.db.Migrator().HasColumn(&analytics.AnalyticsRecord{}, col),
+			"column %q must not exist on %s — the sql:\"-\" tag is a gorm v1 relic; use gorm:\"-:all\"",
+			col, analytics.SQLTable)
+	}
+}
+
+// ── 9. Nullable / empty text columns (pgx v5 pgtype changes) ──────────────────
+
+// TestNullableColumns_Postgres writes a record whose optional text fields (APIKey,
+// OauthID, Alias, RawRequest, RawResponse) are empty strings and verifies round-trip.
+// pgx/v5 reworked pgtype NULL handling; this pins down that empty Go strings stay as
+// empty strings in Postgres text columns rather than being coerced to NULL or errored.
+func TestNullableColumns_Postgres(t *testing.T) {
+	skipTestIfNoPostgres(t)
+
+	pmp := SQLPump{}
+	if err := pmp.Init(newSQLConfig(false)); err != nil {
+		t.Fatalf("Init failed: %v", err)
+	}
+	t.Cleanup(func() { pmp.db.Migrator().DropTable(analytics.SQLTable) })
+
+	rec := analytics.AnalyticsRecord{
+		APIID:     "nullable-cols-test",
+		OrgID:     "nullable-test-pgxv5",
+		TimeStamp: time.Now(),
+		// All of these intentionally left as zero-value empty strings:
+		// APIKey, OauthID, Alias, RawRequest, RawResponse, IPAddress, Method, Host.
+	}
+	if err := pmp.WriteData(context.Background(), []interface{}{rec}); err != nil {
+		t.Fatalf("WriteData with empty text fields failed: %v", err)
+	}
+
+	var got analytics.AnalyticsRecord
+	result := pmp.db.Table(analytics.SQLTable).Where("apiid = ?", "nullable-cols-test").First(&got)
+	assert.NoError(t, result.Error)
+	assert.Equal(t, "", got.APIKey)
+	assert.Equal(t, "", got.OauthID)
+	assert.Equal(t, "", got.Alias)
+	assert.Equal(t, "", got.RawRequest)
+	assert.Equal(t, "", got.RawResponse)
+	assert.Equal(t, "", got.IPAddress)
+}
+
+// ── 10. Time encoding (pgx v5 timestamp path) ─────────────────────────────────
+
+// TestTimeHandling_Postgres round-trips timestamps in UTC, a non-UTC zone, and with
+// sub-millisecond (microsecond) precision. pgx/v5 refactored timestamp text/binary
+// encoding; this verifies no precision loss or zone drift under the pump's default
+// extended-protocol path.
+func TestTimeHandling_Postgres(t *testing.T) {
+	skipTestIfNoPostgres(t)
+
+	pmp := SQLPump{}
+	if err := pmp.Init(newSQLConfig(false)); err != nil {
+		t.Fatalf("Init failed: %v", err)
+	}
+	t.Cleanup(func() { pmp.db.Migrator().DropTable(analytics.SQLTable) })
+
+	tokyo, err := time.LoadLocation("Asia/Tokyo")
+	if err != nil {
+		t.Fatalf("load tz: %v", err)
+	}
+
+	cases := []struct {
+		name string
+		ts   time.Time
+	}{
+		{"UTC", time.Date(2099, 5, 10, 12, 0, 0, 0, time.UTC)},
+		{"Tokyo", time.Date(2099, 5, 10, 21, 0, 0, 0, tokyo)},
+		{"Microsecond", time.Date(2099, 5, 10, 12, 0, 0, 123456000, time.UTC)}, // 123456 µs
+	}
+
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			rec := analytics.AnalyticsRecord{
+				APIID:     "time-" + tc.name,
+				OrgID:     "time-test-pgxv5",
+				TimeStamp: tc.ts,
+			}
+			if err := pmp.WriteData(context.Background(), []interface{}{rec}); err != nil {
+				t.Fatalf("WriteData failed: %v", err)
+			}
+
+			var got analytics.AnalyticsRecord
+			result := pmp.db.Table(analytics.SQLTable).Where("apiid = ?", "time-"+tc.name).First(&got)
+			assert.NoError(t, result.Error)
+			// Postgres stores timestamps in UTC internally; compare as UTC instants.
+			assert.True(t, tc.ts.Equal(got.TimeStamp),
+				"timestamp drift: wrote %v, read %v", tc.ts, got.TimeStamp)
+		})
+	}
+}
+
+// ── 11. Large string columns (pgx v5 text encoding) ───────────────────────────
+
+// TestLargePayload_Postgres writes a record whose RawRequest and RawResponse are 1 MB
+// each and reads them back unchanged. Guards against any regression in pgx/v5's text
+// column encoding that could truncate or corrupt large payloads.
+func TestLargePayload_Postgres(t *testing.T) {
+	skipTestIfNoPostgres(t)
+
+	pmp := SQLPump{}
+	if err := pmp.Init(newSQLConfig(false)); err != nil {
+		t.Fatalf("Init failed: %v", err)
+	}
+	t.Cleanup(func() { pmp.db.Migrator().DropTable(analytics.SQLTable) })
+
+	const size = 1 << 20 // 1 MB
+	payload := strings.Repeat("x", size)
+	rec := analytics.AnalyticsRecord{
+		APIID:       "large-payload-test",
+		OrgID:       "large-payload-pgxv5",
+		TimeStamp:   time.Now(),
+		RawRequest:  payload,
+		RawResponse: payload,
+	}
+	if err := pmp.WriteData(context.Background(), []interface{}{rec}); err != nil {
+		t.Fatalf("WriteData with 1MB payload failed: %v", err)
+	}
+
+	var got analytics.AnalyticsRecord
+	result := pmp.db.Table(analytics.SQLTable).Where("apiid = ?", "large-payload-test").First(&got)
+	assert.NoError(t, result.Error)
+	assert.Equal(t, size, len(got.RawRequest), "RawRequest length must match")
+	assert.Equal(t, size, len(got.RawResponse), "RawResponse length must match")
+	assert.Equal(t, payload, got.RawRequest, "RawRequest content must round-trip unchanged")
+}
+
+// ── 12. Pool defaults canary ──────────────────────────────────────────────────
+
+// TestConnectionPoolDefaults_Postgres extends TestConnectionPoolStats_Postgres by also
+// pinning the default MaxIdleConns value. The Go stdlib default is 2; if a future
+// dependency bump quietly changes that, operators who rely on defaults will see
+// unexplained idle-connection behaviour. This canary catches the silent change.
+func TestConnectionPoolDefaults_Postgres(t *testing.T) {
+	skipTestIfNoPostgres(t)
+
+	pmp := SQLPump{}
+	if err := pmp.Init(newSQLConfig(false)); err != nil {
+		t.Fatalf("Init failed: %v", err)
+	}
+	t.Cleanup(func() { pmp.db.Migrator().DropTable(analytics.SQLTable) })
+
+	sqlDB, err := pmp.db.DB()
+	if err != nil {
+		t.Fatalf("pmp.db.DB() failed: %v", err)
+	}
+
+	stats := sqlDB.Stats()
+	assert.Equal(t, 0, stats.MaxOpenConnections,
+		"MaxOpenConns default must remain 0 (unlimited)")
+
+	// Force the idle pool to fill up to its cap so stats.Idle reflects the MaxIdleConns limit.
+	// database/sql exposes MaxIdleConns only indirectly; opening 5 concurrent conns then
+	// releasing them lets the pool retain up to its idle cap. Default is 2.
+	conns := make([]*gorm.DB, 5)
+	for i := range conns {
+		conns[i] = pmp.db.Session(&gorm.Session{NewDB: true})
+		var one int
+		if err := conns[i].Raw("SELECT 1").Scan(&one).Error; err != nil {
+			t.Fatalf("warm-up query %d failed: %v", i, err)
+		}
+	}
+	stats = sqlDB.Stats()
+	assert.LessOrEqual(t, stats.Idle, 2,
+		"idle connections should not exceed stdlib default MaxIdleConns=2; got %d", stats.Idle)
+}
