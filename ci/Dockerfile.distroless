@@ -14,7 +14,7 @@ RUN dpkg -i /${BUILD_PACKAGE_NAME}_*${TARGETARCH}.deb && rm /*.deb
 
 FROM ${BASE_IMAGE}
 
-COPY --from=deb /opt/tyk-pump /opt/tyk-pump
+COPY --chown=65532:65532 --from=deb /opt/tyk-pump /opt/tyk-pump
 
 ARG PORTS
 EXPOSE $PORTS
