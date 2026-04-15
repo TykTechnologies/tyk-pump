@@ -512,3 +512,16 @@ func TestDefaultDriverAggregate(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, persistent.OfficialMongo, newPump.dbConf.MongoDriverType)
 }
+
+func TestMongoAggregatePump_SkipsMCPRecords(t *testing.T) {
+	pmp := &MongoAggregatePump{}
+	pmp.log = logrus.NewEntry(logrus.New())
+
+	data := []interface{}{
+		analytics.AnalyticsRecord{MCPStats: analytics.MCPStats{IsMCP: true}},
+		analytics.AnalyticsRecord{MCPStats: analytics.MCPStats{IsMCP: true}},
+	}
+
+	err := pmp.WriteData(context.Background(), data)
+	assert.NoError(t, err, "all-MCP payload must short-circuit before touching the store")
+}
