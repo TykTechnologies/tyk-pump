@@ -386,9 +386,21 @@ func (m *MongoPump) WriteData(ctx context.Context, data []interface{}) error {
 		m.log.Fatal("No collection name!")
 	}
 
-	m.log.Debug("Attempting to write ", len(data), " records...")
+	// MCP records are handled by dedicated MCP pumps, skip them here.
+	filtered := make([]interface{}, 0, len(data))
+	for _, d := range data {
+		if rec, ok := d.(analytics.AnalyticsRecord); ok && rec.IsMCPRecord() {
+			continue
+		}
+		filtered = append(filtered, d)
+	}
+	if len(filtered) == 0 {
+		return nil
+	}
 
-	accumulateSet := m.AccumulateSet(data, false)
+	m.log.Debug("Attempting to write ", len(filtered), " records...")
+
+	accumulateSet := m.AccumulateSet(filtered, false)
 	if len(accumulateSet) == 0 {
 		return nil
 	}
@@ -422,7 +434,7 @@ func (m *MongoPump) WriteData(ctx context.Context, data []interface{}) error {
 			}
 		}
 	}
-	m.log.Info("Purged ", len(data), " records...")
+	m.log.Info("Purged ", len(filtered), " records...")
 
 	return nil
 }
@@ -470,11 +482,6 @@ func (m *MongoPump) shouldProcessItem(item interface{}, isForGraphRecords bool) 
 		return nil, true
 	}
 	if thisItem.ResponseCode == -1 {
-		return &thisItem, true
-	}
-
-	// MCP records are handled by dedicated MCP pumps, skip them here.
-	if thisItem.IsMCPRecord() {
 		return &thisItem, true
 	}
 
