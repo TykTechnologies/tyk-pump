@@ -217,6 +217,9 @@ func (c *SQLPump) WriteData(ctx context.Context, data []interface{}) error {
 		}
 	}
 	dataLen := len(typedData)
+	if dataLen == 0 {
+		return nil
+	}
 
 	startIndex := 0
 	endIndex := dataLen
@@ -265,7 +268,7 @@ func (c *SQLPump) WriteData(ctx context.Context, data []interface{}) error {
 
 	}
 
-	c.log.Info("Purged ", len(data), " records...")
+	c.log.Info("Purged ", dataLen, " records...")
 
 	return nil
 }

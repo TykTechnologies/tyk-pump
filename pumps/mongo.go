@@ -389,6 +389,9 @@ func (m *MongoPump) WriteData(ctx context.Context, data []interface{}) error {
 	m.log.Debug("Attempting to write ", len(data), " records...")
 
 	accumulateSet := m.AccumulateSet(data, false)
+	if len(accumulateSet) == 0 {
+		return nil
+	}
 
 	errCh := make(chan error, len(accumulateSet))
 	for _, dataSet := range accumulateSet {

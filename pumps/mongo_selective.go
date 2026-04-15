@@ -219,6 +219,10 @@ func (m *MongoSelectivePump) WriteData(ctx context.Context, data []interface{}) 
 		}
 	}
 
+	if len(analyticsPerOrg) == 0 {
+		return nil
+	}
+
 	for colName, filteredData := range analyticsPerOrg {
 		for _, dataSet := range m.AccumulateSet(filteredData, colName) {
 			indexCreateErr := m.ensureIndexes(colName)
