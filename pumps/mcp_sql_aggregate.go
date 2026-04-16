@@ -19,6 +19,10 @@ var SQLMCPAggregateDefaultENV = PUMPS_ENV_PREFIX + "_SQLMCPAGGREGATE" + PUMPS_EN
 type MCPSQLAggregatePump struct {
 	SQLConf *SQLAggregatePumpConf
 	db      *gorm.DB
+	dbType  string
+
+	// this channel is used to signal that the background index creation has finished - this is used for testing
+	backgroundIndexCreated chan bool
 
 	CommonPumpConfig
 }
@@ -52,10 +56,22 @@ func (s *MCPSQLAggregatePump) Init(conf interface{}) error {
 		return err
 	}
 	s.db = db
+	s.dbType = s.SQLConf.Type
 
 	if !s.SQLConf.TableSharding {
-		if err := s.db.Table(analytics.AggregateMCPSQLTable).AutoMigrate(&analytics.MCPSQLAnalyticsRecordAggregate{}); err != nil {
-			s.log.WithError(err).Warn("error migrating table")
+		if err := s.ensureTable(analytics.AggregateMCPSQLTable); err != nil {
+			return err
+		}
+
+		shouldRunOnBackground := false
+		if s.dbType == "postgres" {
+			shouldRunOnBackground = true
+			s.backgroundIndexCreated = make(chan bool, 1)
+		}
+
+		if err := s.ensureIndex(analytics.AggregateMCPSQLTable, shouldRunOnBackground); err != nil {
+			s.log.Error(err)
+			return err
 		}
 	}
 
@@ -64,6 +80,64 @@ func (s *MCPSQLAggregatePump) Init(conf interface{}) error {
 	}
 
 	s.log.Debug("MCP SQL Aggregate Pump Initialized")
+	return nil
+}
+
+// ensureTable creates the table if it doesn't exist.
+func (s *MCPSQLAggregatePump) ensureTable(tableName string) error {
+	if !s.db.Migrator().HasTable(tableName) {
+		s.db = s.db.Table(tableName)
+		if err := s.db.Migrator().CreateTable(&analytics.MCPSQLAnalyticsRecordAggregate{}); err != nil {
+			s.log.Error("error creating table", err)
+			return err
+		}
+	}
+	return nil
+}
+
+// ensureIndex creates the composite index on (dimension, timestamp, org_id, dimension_value).
+// For PostgreSQL it uses CONCURRENTLY to avoid locking the table.
+func (s *MCPSQLAggregatePump) ensureIndex(tableName string, background bool) error {
+	if s.SQLConf.OmitIndexCreation {
+		s.log.Info("omit_index_creation set to true, omitting index creation..")
+		return nil
+	}
+	indexName := fmt.Sprintf("%s_%s", tableName, newAggregatedIndexName)
+	if !s.db.Migrator().HasIndex(tableName, indexName) {
+		createIndexFn := func() error {
+			option := ""
+			if s.dbType == "postgres" {
+				option = "CONCURRENTLY"
+			}
+
+			err := s.db.Table(tableName).Exec(fmt.Sprintf("CREATE INDEX %s IF NOT EXISTS %s ON %s (dimension, timestamp, org_id, dimension_value)", option, indexName, tableName)).Error
+			if err != nil {
+				s.log.Errorf("error creating index for table %s : %s", tableName, err.Error())
+				return err
+			}
+
+			if background {
+				s.backgroundIndexCreated <- true
+			}
+
+			s.log.Info("Index ", indexName, " for table ", tableName, " created successfully")
+			return nil
+		}
+
+		if background {
+			s.log.Info("Creating index for table ", tableName, " on background...")
+			go func() {
+				if err := createIndexFn(); err != nil {
+					s.log.Error(err)
+				}
+			}()
+			return nil
+		}
+
+		s.log.Info("Creating index for table ", tableName, "...")
+		return createIndexFn()
+	}
+
 	return nil
 }
 
