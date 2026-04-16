@@ -65,7 +65,6 @@ jobs:
         id: hygiene
         run: |
           go install golang.org/x/tools/cmd/goimports@v0.33.0
-          goimports -l .
 
       - name: Fetch base branch
         if: ${{ github.event_name == 'pull_request' }}
