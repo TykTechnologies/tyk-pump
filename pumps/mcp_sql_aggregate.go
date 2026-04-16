@@ -58,6 +58,14 @@ func (s *MCPSQLAggregatePump) Init(conf interface{}) error {
 	s.db = db
 	s.dbType = s.SQLConf.Type
 
+	migrateShardedTables := func() error {
+		return MigrateAllShardedTables(s.db, analytics.AggregateMCPSQLTable, "mcp-aggregate", &analytics.MCPSQLAnalyticsRecordAggregate{}, s.log)
+	}
+
+	if err := HandleTableMigration(s.db, &s.SQLConf.SQLConf, analytics.AggregateMCPSQLTable, &analytics.MCPSQLAnalyticsRecordAggregate{}, s.log, migrateShardedTables); err != nil {
+		return err
+	}
+
 	if !s.SQLConf.TableSharding {
 		if err := s.ensureTable(analytics.AggregateMCPSQLTable); err != nil {
 			return err
