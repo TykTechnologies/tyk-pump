@@ -10,6 +10,7 @@ import (
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
 	gorm_logger "gorm.io/gorm/logger"
 )
@@ -448,11 +449,6 @@ func TestDuplicateKeyError_Postgres(t *testing.T) {
 // the driver that must not regress.
 func TestPreferSimpleProtocol_Postgres(t *testing.T) {
 	skipTestIfNoPostgres(t)
-	t.Skip("prefer_simple_protocol=true is unsupported with pgx v5: " +
-		"pgx v5's TryWrapBuiltinTypeEncodePlan adds an fmt.Stringer branch that " +
-		"text-encodes time.Month as a month name (e.g. 'May') instead of an integer, " +
-		"which PostgreSQL rejects against bigint columns. The test body below is " +
-		"preserved so it can be re-enabled if a driver/model fix is shipped. See TT-16932.")
 
 	cfg := newSQLConfig(false)
 	cfg["postgres"] = map[string]interface{}{"prefer_simple_protocol": true}
@@ -644,4 +640,43 @@ func TestConnectionPoolDefaults_Postgres(t *testing.T) {
 	stats = sqlDB.Stats()
 	assert.LessOrEqual(t, stats.Idle, 2,
 		"idle connections should not exceed stdlib default MaxIdleConns=2; got %d", stats.Idle)
+}
+
+func TestSQLWriteData_PreferSimpleProtocol_Month(t *testing.T) {
+	skipTestIfNoPostgres(t)
+
+	pmp := SQLPump{}
+	cfg := newSQLConfig(false)
+	cfg["postgres"] = map[string]interface{}{"prefer_simple_protocol": true}
+
+	err := pmp.Init(cfg)
+	if err != nil {
+		t.Fatal("SQL Pump couldn't be initialized with err:", err)
+	}
+
+	defer func() {
+		require.NoError(t, pmp.db.Migrator().DropTable(analytics.SQLTable))
+	}()
+
+	rec := analytics.AnalyticsRecord{
+		APIID:     "api-simple-proto",
+		OrgID:     "org-simple-proto",
+		TimeStamp: time.Now(),
+		Month:     time.May,
+	}
+
+	errWrite := pmp.WriteData(context.TODO(), []interface{}{rec})
+	if errWrite != nil {
+		t.Fatal("SQL Pump couldn't write records with err:", errWrite)
+	}
+
+	var dbRecords []analytics.AnalyticsRecord
+	err = pmp.db.Table(analytics.SQLTable).Find(&dbRecords).Error
+	if err != nil {
+		t.Fatal("couldn't read records back:", err)
+	}
+
+	if assert.Equal(t, 1, len(dbRecords), "expected 1 record in DB -- insert likely failed due to pgx v5 time.Month encoding bug") {
+		assert.Equal(t, time.May, dbRecords[0].Month, "month should round-trip as integer 5, not a string")
+	}
 }
