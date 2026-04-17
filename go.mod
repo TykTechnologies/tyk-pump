@@ -129,4 +129,4 @@ require (
 )
 
 //replace gorm.io/gorm => ../gorm
-replace gorm.io/gorm => github.com/TykTechnologies/gorm v1.20.7-0.20260413162114-95e095f8d8f2
+replace gorm.io/gorm => github.com/TykTechnologies/gorm v1.20.7-0.20260417144542-d6d1a2e12d9d

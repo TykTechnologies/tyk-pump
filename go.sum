@@ -7,8 +7,8 @@ github.com/Microsoft/go-winio v0.5.2/go.mod h1:WpS1mjBmmwHBEWmogvA2mj8546UReBk4v
 github.com/PuerkitoBio/goquery v1.5.1/go.mod h1:GsLWisAFVj4WgDibEWF4pvYnkVQBpKBKeU+7zCJoLcc=
 github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d h1:G0m3OIz70MZUWq3EgK3CesDbo8upS2Vm9/P3FtgI+Jk=
 github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d/go.mod h1:3eOhrUMpNV+6aFIbp5/iudMxNCF27Vw2OZgy4xEx0Fg=
-github.com/TykTechnologies/gorm v1.20.7-0.20260413162114-95e095f8d8f2 h1:dz/NN3TeW8LPgTbKCf8UCPM9IZSMXoKnL38tRcnnsR0=
-github.com/TykTechnologies/gorm v1.20.7-0.20260413162114-95e095f8d8f2/go.mod h1:hz0d/E0QBTYarOnYtdcNnBWN/NYxVMP7nZNDT6E/fFM=
+github.com/TykTechnologies/gorm v1.20.7-0.20260417144542-d6d1a2e12d9d h1:wePfwBWzjkC+lc/jEQsvcbQ3Rt0u+7MIj3jXWPnU6Qo=
+github.com/TykTechnologies/gorm v1.20.7-0.20260417144542-d6d1a2e12d9d/go.mod h1:hz0d/E0QBTYarOnYtdcNnBWN/NYxVMP7nZNDT6E/fFM=
 github.com/TykTechnologies/gorpc v0.0.0-20210624160652-fe65bda0ccb9 h1:fbxHiuw/244CQ4TEirzgL/CIMXDUx2szZn8cuuMlCy0=
 github.com/TykTechnologies/gorpc v0.0.0-20210624160652-fe65bda0ccb9/go.mod h1:v6v7Mlj08+EmEcXOfpuTxGt2qYU9yhqqtv4QF9Wf50E=
 github.com/TykTechnologies/murmur3 v0.0.0-20230310161213-aad17efd5632 h1:T5NWziFusj8au5nxAqMMh/bZyX9CAyYnBkaMSsfH6BA=
