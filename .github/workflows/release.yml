@@ -307,9 +307,12 @@ jobs:
             !dist/*PAYG*.rpm
             !dist/*fips*.rpm
   test-controller-api:
-    if: github.event.pull_request.draft == false
     needs:
       - goreleaser
+    if: |
+      !cancelled() &&
+      needs.goreleaser.result == 'success' &&
+      github.event.pull_request.draft == false
     runs-on: ${{ vars.DEFAULT_RUNNER }}
     outputs:
       envfiles: ${{ steps.params.outputs.envfiles }}
@@ -327,6 +330,10 @@ jobs:
     needs:
       - test-controller-api
       - goreleaser
+    if: |
+      !cancelled() &&
+      needs.goreleaser.result == 'success' &&
+      needs.test-controller-api.result == 'success'
     runs-on: ${{ vars.DEFAULT_RUNNER }}
     env:
       XUNIT_REPORT_PATH: ${{ github.workspace}}/test-results.xml
@@ -391,7 +398,7 @@ jobs:
     name: Aggregated CI Status
     runs-on: ${{ vars.DEFAULT_RUNNER }}
     # Dynamically determine which jobs to depend on based on repository configuration
-    needs: [goreleaser, api-tests]
+    needs: [dep-guard, goreleaser, api-tests]
     if: ${{ always() && github.event_name == 'pull_request' }}
     steps:
       - name: Aggregate results
@@ -418,9 +425,12 @@ jobs:
 
           echo "✅ All required jobs succeeded"
   test-controller-distros:
-    if: github.event.pull_request.draft == false
     needs:
       - goreleaser
+    if: |
+      !cancelled() &&
+      needs.goreleaser.result == 'success' &&
+      github.event.pull_request.draft == false
     runs-on: ${{ vars.DEFAULT_RUNNER }}
     outputs:
       deb: ${{ steps.params.outputs.deb }}
@@ -445,6 +455,9 @@ jobs:
     runs-on: ${{ vars.DEFAULT_RUNNER }}
     needs:
       - test-controller-distros
+    if: |
+      !cancelled() &&
+      needs.test-controller-distros.result == 'success'
     strategy:
       fail-fast: true
       matrix:
@@ -492,6 +505,9 @@ jobs:
     runs-on: ${{ vars.DEFAULT_RUNNER }}
     needs:
       - test-controller-distros
+    if: |
+      !cancelled() &&
+      needs.test-controller-distros.result == 'success'
     strategy:
       fail-fast: true
       matrix:
