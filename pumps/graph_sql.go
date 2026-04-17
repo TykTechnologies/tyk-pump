@@ -8,7 +8,6 @@ import (
 	"github.com/mitchellh/mapstructure"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
-	gorm_logger "gorm.io/gorm/logger"
 )
 
 const (
@@ -51,30 +50,8 @@ func (g *GraphSQLPump) Init(conf interface{}) error {
 
 	processPumpEnvVars(g, g.log, g.Conf, GraphSQLDefaultENV)
 
-	logLevel := gorm_logger.Silent
-
-	switch g.Conf.LogLevel {
-	case "debug":
-		logLevel = gorm_logger.Info
-	case "info":
-		logLevel = gorm_logger.Warn
-	case "warning":
-		logLevel = gorm_logger.Error
-	}
-
-	dialect, errDialect := Dialect(&g.Conf.SQLConf)
-	if errDialect != nil {
-		g.log.Error(errDialect)
-		return errDialect
-	}
-
-	db, err := gorm.Open(dialect, &gorm.Config{
-		AutoEmbedd:  true,
-		UseJSONTags: true,
-		Logger:      gorm_logger.Default.LogMode(logLevel),
-	})
+	db, err := OpenGormDB(&g.Conf.SQLConf, g.log)
 	if err != nil {
-		g.log.WithError(err).Error("error opening gorm connection")
 		return err
 	}
 	g.db = db

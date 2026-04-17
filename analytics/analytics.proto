@@ -41,6 +41,7 @@ message AnalyticsRecord {
   string TimeZone = 30;
   string ApiSchema = 31;
   GraphQLStats GraphQLStats = 32;
+  MCPStats MCPStats = 33;
 }
 
 message Latency {
@@ -95,4 +96,12 @@ message GraphQLStats{
 
 message RepeatedFields{
   repeated string fields = 1;
+}
+
+// Run: protoc --go_out=. analytics.proto to regenerate
+message MCPStats {
+  bool IsMCP = 1;
+  string JSONRPCMethod = 2;
+  string PrimitiveType = 3;
+  string PrimitiveName = 4;
 }

@@ -12,6 +12,7 @@ import (
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
+	gorm_logger "gorm.io/gorm/logger"
 )
 
 type CommonPumpConfig struct {
@@ -182,6 +183,39 @@ func MigrateAllShardedTables(db *gorm.DB, tablePrefix, logPrefix string, model i
 
 	log.Info("Completed migration of sharded " + logPrefix + " tables")
 	return nil
+}
+
+// OpenGormDB resolves the GORM log level, builds the dialect, and opens
+// a *gorm.DB connection. It centralises the boilerplate shared by every SQL
+// pump's Init method.
+func OpenGormDB(conf *SQLConf, log *logrus.Entry) (*gorm.DB, error) {
+	logLevel := gorm_logger.Silent
+	switch conf.LogLevel {
+	case "debug":
+		logLevel = gorm_logger.Info
+	case "info":
+		logLevel = gorm_logger.Warn
+	case "warning":
+		logLevel = gorm_logger.Error
+	}
+
+	dialect, err := Dialect(conf)
+	if err != nil {
+		log.Error(err)
+		return nil, err
+	}
+
+	db, err := gorm.Open(dialect, &gorm.Config{
+		AutoEmbedd:  true,
+		UseJSONTags: true,
+		Logger:      gorm_logger.Default.LogMode(logLevel),
+	})
+	if err != nil {
+		log.WithError(err).Error("error opening gorm connection")
+		return nil, err
+	}
+
+	return db, nil
 }
 
 type TLSConfig struct {

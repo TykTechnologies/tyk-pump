@@ -1,0 +1,464 @@
+package pumps
+
+import (
+	"context"
+	"fmt"
+	"os"
+	"testing"
+	"time"
+
+	"github.com/TykTechnologies/tyk-pump/analytics"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
+
+func TestMCPSQLPump_Init(t *testing.T) {
+	skipTestIfNoPostgres(t)
+	pump := &MCPSQLPump{}
+
+	t.Run("successful", func(t *testing.T) {
+		conf := MCPSQLConf{
+			SQLConf: SQLConf{
+				Type:             "postgres",
+				ConnectionString: getTestPostgresConnectionString(),
+			},
+			TableName: "test_mcp_init",
+		}
+		require.NoError(t, pump.Init(conf))
+		t.Cleanup(func() {
+			pump.db.Exec(fmt.Sprintf("DROP TABLE IF EXISTS %q", conf.TableName))
+		})
+		assert.True(t, pump.db.Migrator().HasTable(conf.TableName))
+	})
+
+	t.Run("invalid connection details", func(t *testing.T) {
+		conf := MCPSQLConf{
+			SQLConf: SQLConf{
+				Type:             "postgres",
+				ConnectionString: "host=localhost user=gorm password=gorm DB.name=gorm port=9920 sslmode=disable",
+			},
+		}
+		assert.Error(t, pump.Init(conf))
+	})
+
+	t.Run("should fail with unsupported type", func(t *testing.T) {
+		conf := MCPSQLConf{
+			SQLConf: SQLConf{ConnectionString: "random"},
+		}
+		assert.ErrorContains(t, pump.Init(conf), "Unsupported `config_storage.type` value:")
+	})
+
+	t.Run("invalid config", func(t *testing.T) {
+		conf := map[string]interface{}{
+			"table_name": 1,
+		}
+		assert.ErrorContains(t, pump.Init(conf), "expected type")
+	})
+
+	t.Run("decode from map", func(t *testing.T) {
+		conf := map[string]interface{}{
+			"table_name":        "test_mcp_map",
+			"type":              "postgres",
+			"table_sharding":    true,
+			"connection_string": getTestPostgresConnectionString(),
+		}
+		require.NoError(t, pump.Init(conf))
+		assert.Equal(t, "test_mcp_map", pump.Conf.TableName)
+		assert.Equal(t, "postgres", pump.Conf.Type)
+		assert.True(t, pump.Conf.TableSharding)
+	})
+
+	t.Run("sharded table does not create base table", func(t *testing.T) {
+		conf := MCPSQLConf{
+			SQLConf: SQLConf{
+				Type:             "postgres",
+				ConnectionString: getTestPostgresConnectionString(),
+				TableSharding:    true,
+			},
+			TableName: "test_mcp_sharded",
+		}
+		require.NoError(t, pump.Init(conf))
+		assert.False(t, pump.db.Migrator().HasTable(conf.TableName))
+	})
+
+	t.Run("init from env", func(t *testing.T) {
+		envPrefix := fmt.Sprintf("%s_MCP_SQL%s", PUMPS_ENV_PREFIX, PUMPS_ENV_META_PREFIX) + "_%s"
+		envKeyVal := map[string]string{
+			"TYPE":          "postgres",
+			"TABLENAME":     "test_mcp_env",
+			"TABLESHARDING": "true",
+		}
+		for key, val := range envKeyVal {
+			require.NoError(t, os.Setenv(fmt.Sprintf(envPrefix, key), val))
+		}
+		t.Cleanup(func() {
+			for k := range envKeyVal {
+				os.Unsetenv(fmt.Sprintf(envPrefix, k))
+			}
+		})
+
+		conf := MCPSQLConf{
+			SQLConf: SQLConf{
+				Type:             "postgres",
+				ConnectionString: getTestPostgresConnectionString(),
+				TableSharding:    false,
+			},
+			TableName: "wrong-name",
+		}
+		require.NoError(t, pump.Init(conf))
+		assert.Equal(t, "postgres", pump.Conf.Type)
+		assert.Equal(t, "test_mcp_env", pump.Conf.TableName)
+		assert.True(t, pump.Conf.TableSharding)
+	})
+}
+
+func TestMCPSQLPump_WriteData(t *testing.T) {
+	skipTestIfNoPostgres(t)
+	tableName := "test_mcp_write"
+
+	conf := MCPSQLConf{
+		SQLConf: SQLConf{
+			Type:             "postgres",
+			ConnectionString: getTestPostgresConnectionString(),
+		},
+		TableName: tableName,
+	}
+
+	mcpRecord := func(method, primType, primName string, code int) analytics.AnalyticsRecord {
+		return analytics.AnalyticsRecord{
+			TimeStamp:    time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+			Method:       "POST",
+			Path:         "/mcp",
+			APIName:      "test-api",
+			APIID:        "test-api",
+			ResponseCode: code,
+			OrgID:        "test-org",
+			MCPStats: analytics.MCPStats{
+				IsMCP:         true,
+				JSONRPCMethod: method,
+				PrimitiveType: primType,
+				PrimitiveName: primName,
+			},
+		}
+	}
+
+	testCases := []struct {
+		name            string
+		records         []interface{}
+		expectedMCPRows int
+	}{
+		{
+			name: "writes MCP records only",
+			records: []interface{}{
+				mcpRecord("tools/call", "tool", "my_tool", 200),
+				// non-MCP record should be skipped
+				analytics.AnalyticsRecord{
+					TimeStamp:    time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+					APIName:      "test-api",
+					APIID:        "test-api",
+					ResponseCode: 200,
+					OrgID:        "test-org",
+				},
+				mcpRecord("resources/read", "resource", "users", 200),
+			},
+			expectedMCPRows: 2,
+		},
+		{
+			name:            "no MCP records writes nothing",
+			records:         []interface{}{analytics.AnalyticsRecord{APIID: "test-api", ResponseCode: 200, OrgID: "test-org"}},
+			expectedMCPRows: 0,
+		},
+		{
+			name:            "empty data",
+			records:         []interface{}{},
+			expectedMCPRows: 0,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			pump := &MCPSQLPump{}
+			require.NoError(t, pump.Init(conf))
+			t.Cleanup(func() {
+				pump.db.Exec(fmt.Sprintf("DROP TABLE IF EXISTS %q", tableName))
+			})
+
+			err := pump.WriteData(context.Background(), tc.records)
+			require.NoError(t, err)
+
+			var count int64
+			pump.db.Table(tableName).Count(&count)
+			assert.Equal(t, int64(tc.expectedMCPRows), count)
+		})
+	}
+}
+
+func TestMCPSQLPump_Sharded(t *testing.T) {
+	skipTestIfNoPostgres(t)
+	tableName := "test_mcp_shard"
+
+	conf := MCPSQLConf{
+		SQLConf: SQLConf{
+			Type:             "postgres",
+			ConnectionString: getTestPostgresConnectionString(),
+			TableSharding:    true,
+		},
+		TableName: tableName,
+	}
+
+	pump := &MCPSQLPump{}
+	require.NoError(t, pump.Init(conf))
+
+	records := []interface{}{
+		analytics.AnalyticsRecord{
+			TimeStamp:    time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+			APIID:        "test-api",
+			APIName:      "test-api",
+			OrgID:        "test-org",
+			ResponseCode: 200,
+			Month:        1, Day: 1, Year: 2025,
+			MCPStats: analytics.MCPStats{IsMCP: true, JSONRPCMethod: "tools/call", PrimitiveType: "tool", PrimitiveName: "t1"},
+		},
+		analytics.AnalyticsRecord{
+			TimeStamp:    time.Date(2025, 2, 1, 0, 0, 0, 0, time.UTC),
+			APIID:        "test-api",
+			APIName:      "test-api",
+			OrgID:        "test-org",
+			ResponseCode: 200,
+			Month:        2, Day: 1, Year: 2025,
+			MCPStats: analytics.MCPStats{IsMCP: true, JSONRPCMethod: "tools/call", PrimitiveType: "tool", PrimitiveName: "t2"},
+		},
+	}
+
+	expectedTables := []string{
+		tableName + "_20250101",
+		tableName + "_20250201",
+	}
+	t.Cleanup(func() {
+		for _, tbl := range expectedTables {
+			pump.db.Exec(fmt.Sprintf("DROP TABLE IF EXISTS %q", tbl))
+		}
+	})
+
+	require.NoError(t, pump.WriteData(context.Background(), records))
+
+	for _, tbl := range expectedTables {
+		assert.Truef(t, pump.db.Migrator().HasTable(tbl), "table %s should exist", tbl)
+		var count int64
+		pump.db.Table(tbl).Count(&count)
+		assert.Equalf(t, int64(1), count, "table %s should have 1 record", tbl)
+	}
+}
+
+func TestMCPSQLPump_getMCPRecords(t *testing.T) {
+	pump := &MCPSQLPump{}
+
+	records := []interface{}{
+		analytics.AnalyticsRecord{
+			MCPStats: analytics.MCPStats{IsMCP: true, PrimitiveType: "tool", PrimitiveName: "t1"},
+		},
+		analytics.AnalyticsRecord{
+			MCPStats: analytics.MCPStats{IsMCP: false},
+		},
+		nil,
+		"invalid type",
+		analytics.AnalyticsRecord{
+			MCPStats: analytics.MCPStats{IsMCP: true, PrimitiveType: "resource", PrimitiveName: "r1"},
+		},
+	}
+
+	result := pump.getMCPRecords(records)
+	assert.Len(t, result, 2)
+	assert.Equal(t, "t1", result[0].PrimitiveName)
+	assert.Equal(t, "r1", result[1].PrimitiveName)
+}
+
+func TestMCPSQLPump_WriteData_NoMCPRecords_NoInit(t *testing.T) {
+	p := &MCPSQLPump{}
+	p.log = log.WithField("prefix", MCPSQLPrefix)
+	p.Conf = &MCPSQLConf{}
+	err := p.WriteData(context.Background(), []interface{}{
+		analytics.AnalyticsRecord{APIID: "api1", ResponseCode: 200},
+	})
+	assert.NoError(t, err)
+}
+
+func TestMCPSQLPump_WriteData_EmptyData(t *testing.T) {
+	skipTestIfNoPostgres(t)
+	pump := &MCPSQLPump{}
+	conf := MCPSQLConf{
+		SQLConf: SQLConf{
+			Type:             "postgres",
+			ConnectionString: getTestPostgresConnectionString(),
+		},
+		TableName: "test_mcp_empty",
+	}
+	require.NoError(t, pump.Init(conf))
+	t.Cleanup(func() {
+		pump.db.Exec(fmt.Sprintf("DROP TABLE IF EXISTS %q", conf.TableName))
+	})
+	err := pump.WriteData(context.Background(), []interface{}{})
+	assert.NoError(t, err)
+}
+
+// newMCPSQLPumpWithSQLite creates an MCPSQLPump backed by in-memory SQLite.
+// No Postgres needed — tests the actual write logic, batching, and sharding.
+func newMCPSQLPumpWithSQLite(t *testing.T, tableName string, batchSize int, sharding bool) *MCPSQLPump {
+	t.Helper()
+	db := setupTestDB(t)
+
+	if tableName == "" {
+		tableName = "test_mcp_records"
+	}
+	oldTableName := analytics.MCPSQLTableName
+	analytics.MCPSQLTableName = tableName
+	t.Cleanup(func() { analytics.MCPSQLTableName = oldTableName })
+
+	require.NoError(t, db.Table(tableName).AutoMigrate(&analytics.MCPRecord{}))
+
+	pump := &MCPSQLPump{
+		db:        db.Table(tableName),
+		tableName: tableName,
+		Conf: &MCPSQLConf{
+			TableName: tableName,
+			SQLConf:   SQLConf{BatchSize: batchSize, TableSharding: sharding},
+		},
+	}
+	pump.log = log.WithField("prefix", MCPSQLPrefix)
+	return pump
+}
+
+func mcpRecord(ts time.Time, method, primType, primName string, code int) analytics.AnalyticsRecord {
+	return analytics.AnalyticsRecord{
+		TimeStamp: ts, Method: "POST", Path: "/mcp",
+		APIID: "api1", APIName: "api1", OrgID: "org1",
+		ResponseCode: code,
+		MCPStats: analytics.MCPStats{
+			IsMCP: true, JSONRPCMethod: method,
+			PrimitiveType: primType, PrimitiveName: primName,
+		},
+	}
+}
+
+func TestMCPSQLPump_WriteMCPBatch_SQLite(t *testing.T) {
+	pump := newMCPSQLPumpWithSQLite(t, "", 2, false)
+
+	recs := []*analytics.MCPRecord{
+		{JSONRPCMethod: "tools/call", PrimitiveType: "tool", PrimitiveName: "t1",
+			AnalyticsRecord: analytics.AnalyticsRecord{APIID: "a1", OrgID: "o1", ResponseCode: 200, TimeStamp: time.Now()}},
+		{JSONRPCMethod: "tools/call", PrimitiveType: "tool", PrimitiveName: "t2",
+			AnalyticsRecord: analytics.AnalyticsRecord{APIID: "a1", OrgID: "o1", ResponseCode: 200, TimeStamp: time.Now()}},
+		{JSONRPCMethod: "resources/read", PrimitiveType: "resource", PrimitiveName: "r1",
+			AnalyticsRecord: analytics.AnalyticsRecord{APIID: "a1", OrgID: "o1", ResponseCode: 200, TimeStamp: time.Now()}},
+	}
+
+	pump.writeMCPBatch(context.Background(), recs)
+
+	var count int64
+	pump.db.Count(&count)
+	assert.Equal(t, int64(3), count, "all 3 records should be written despite batch size 2")
+}
+
+func TestMCPSQLPump_WriteData_SQLite(t *testing.T) {
+	pump := newMCPSQLPumpWithSQLite(t, "", 100, false)
+	ts := time.Date(2025, 6, 15, 10, 0, 0, 0, time.UTC)
+
+	data := []interface{}{
+		mcpRecord(ts, "tools/call", "tool", "weather", 200),
+		analytics.AnalyticsRecord{APIID: "rest", OrgID: "org1", ResponseCode: 200, TimeStamp: ts}, // non-MCP, must be skipped
+		mcpRecord(ts, "resources/read", "resource", "docs", 500),
+	}
+
+	require.NoError(t, pump.WriteData(context.Background(), data))
+
+	var count int64
+	pump.db.Count(&count)
+	assert.Equal(t, int64(2), count, "only MCP records should be written")
+
+	// Verify the actual field values persisted correctly.
+	var results []analytics.MCPRecord
+	pump.db.Find(&results)
+	require.Len(t, results, 2)
+	assert.Equal(t, "tools/call", results[0].JSONRPCMethod)
+	assert.Equal(t, "resources/read", results[1].JSONRPCMethod)
+}
+
+func TestMCPSQLPump_WriteData_Sharded_SQLite(t *testing.T) {
+	tableName := "test_mcp_shard"
+	pump := newMCPSQLPumpWithSQLite(t, tableName, 100, true)
+
+	day1 := time.Date(2025, 1, 15, 10, 0, 0, 0, time.UTC)
+	day2 := time.Date(2025, 3, 1, 14, 0, 0, 0, time.UTC)
+
+	data := []interface{}{
+		mcpRecord(day1, "tools/call", "tool", "t1", 200),
+		mcpRecord(day1, "tools/call", "tool", "t2", 200),
+		mcpRecord(day2, "resources/read", "resource", "r1", 200),
+	}
+
+	require.NoError(t, pump.WriteData(context.Background(), data))
+
+	shard1 := tableName + "_20250115"
+	shard2 := tableName + "_20250301"
+
+	assert.True(t, pump.db.Migrator().HasTable(shard1), "shard for day1 should exist")
+	assert.True(t, pump.db.Migrator().HasTable(shard2), "shard for day2 should exist")
+
+	var count1, count2 int64
+	pump.db.Table(shard1).Count(&count1)
+	pump.db.Table(shard2).Count(&count2)
+	assert.Equal(t, int64(2), count1, "day1 shard should have 2 records")
+	assert.Equal(t, int64(1), count2, "day2 shard should have 1 record")
+}
+
+func TestMCPSQLPump_New(t *testing.T) {
+	p := &MCPSQLPump{}
+	newP := p.New()
+	assert.NotNil(t, newP)
+	_, ok := newP.(*MCPSQLPump)
+	assert.True(t, ok)
+}
+
+func TestMCPSQLPump_GetName(t *testing.T) {
+	p := &MCPSQLPump{}
+	assert.Equal(t, "MCP SQL Pump", p.GetName())
+}
+
+func TestMCPSQLPump_GetEnvPrefix(t *testing.T) {
+	p := &MCPSQLPump{Conf: &MCPSQLConf{SQLConf: SQLConf{EnvPrefix: "test_prefix"}}}
+	assert.Equal(t, "test_prefix", p.GetEnvPrefix())
+}
+
+func TestMCPSQLPump_ensureMCPShardedTable_SQLite(t *testing.T) {
+	pump := newMCPSQLPumpWithSQLite(t, "test_shard_ensure", 100, true)
+
+	pump.ensureMCPShardedTable("20250615")
+	expected := "test_shard_ensure_20250615"
+	assert.True(t, pump.db.Migrator().HasTable(expected), "shard table should be created")
+
+	// Calling again should not error
+	pump.ensureMCPShardedTable("20250615")
+	assert.True(t, pump.db.Migrator().HasTable(expected), "shard table should still exist")
+}
+
+func TestMCPSQLPump_WriteMCPBatch_BatchSizeOne(t *testing.T) {
+	pump := newMCPSQLPumpWithSQLite(t, "", 1, false)
+	ts := time.Now()
+
+	recs := make([]*analytics.MCPRecord, 5)
+	for i := range recs {
+		recs[i] = &analytics.MCPRecord{
+			JSONRPCMethod: "tools/call", PrimitiveType: "tool",
+			PrimitiveName: fmt.Sprintf("t%d", i),
+			AnalyticsRecord: analytics.AnalyticsRecord{
+				APIID: "a1", OrgID: "o1", ResponseCode: 200, TimeStamp: ts,
+			},
+		}
+	}
+
+	pump.writeMCPBatch(context.Background(), recs)
+
+	var count int64
+	pump.db.Count(&count)
+	assert.Equal(t, int64(5), count, "batch size 1 should still write all records")
+}
