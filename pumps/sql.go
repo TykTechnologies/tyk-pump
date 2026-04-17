@@ -5,11 +5,16 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"regexp"
 	"sync"
+	"time"
 
 	"github.com/sirupsen/logrus"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/jackc/pgx/v5/stdlib"
 	"github.com/mitchellh/mapstructure"
 	"gopkg.in/vmihailenco/msgpack.v2"
 	"gorm.io/gorm/clause"
@@ -85,14 +90,63 @@ type SQLConf struct {
 	MigrateShardedTables bool `json:"migrate_sharded_tables" mapstructure:"migrate_sharded_tables"`
 }
 
+var timeZoneMatcher = regexp.MustCompile("(time_zone|TimeZone)=(.*?)($|&| )")
+
+// monthEncodePlan converts time.Month to int for pgx encoding.
+// pgx v5's TryWrapBuiltinTypeEncodePlan matches time.Month as fmt.Stringer
+// (producing "May") before TryWrapFindUnderlyingTypeEncodePlan can convert it
+// to its underlying int. This plan is prepended to the encode chain so the
+// int conversion happens first. See TT-16980 and https://github.com/jackc/pgx/issues/2157
+type monthEncodePlan struct {
+	next pgtype.EncodePlan
+}
+
+func (p *monthEncodePlan) SetNext(next pgtype.EncodePlan) { p.next = next }
+
+func (p *monthEncodePlan) Encode(value any, buf []byte) ([]byte, error) {
+	return p.next.Encode(int(value.(time.Month)), buf)
+}
+
 func Dialect(cfg *SQLConf) (gorm.Dialector, error) {
 	switch cfg.Type {
 	case "postgres":
-		// Example connection_string: `"host=localhost user=gorm password=gorm DB.name=gorm port=9920 sslmode=disable TimeZone=Asia/Shanghai"`
-		return postgres.New(postgres.Config{
-			DSN:                  cfg.ConnectionString,
-			PreferSimpleProtocol: cfg.Postgres.PreferSimpleProtocol,
-		}), nil
+		// We build the *sql.DB ourselves instead of letting the gorm postgres
+		// driver do it. So we can inject an AfterConnect callback that registers
+		// time.Month as PostgreSQL int8. Without this, pgx v5's simple protocol
+		// encodes time.Month via String() ("May") instead of the underlying int,
+		// which PostgreSQL rejects for bigint columns.
+		// See TT-16980 and https://github.com/jackc/pgx/issues/2157
+		pgxConfig, err := pgx.ParseConfig(cfg.ConnectionString)
+		if err != nil {
+			return nil, err
+		}
+		if cfg.Postgres.PreferSimpleProtocol {
+			pgxConfig.DefaultQueryExecMode = pgx.QueryExecModeSimpleProtocol
+		}
+		// Replicate timezone handling from gorm.io/driver/postgres.
+		if result := timeZoneMatcher.FindStringSubmatch(cfg.ConnectionString); len(result) > 2 {
+			pgxConfig.RuntimeParams["timezone"] = result[2]
+		}
+		sqlDB := stdlib.OpenDB(*pgxConfig,
+			stdlib.OptionAfterConnect(func(ctx context.Context, conn *pgx.Conn) error {
+				tm := conn.TypeMap()
+				// Prepend a custom encode plan that converts time.Month to int
+				// before pgx's fmt.Stringer wrapper can fire.
+				tm.TryWrapEncodePlanFuncs = append(
+					[]pgtype.TryWrapEncodePlanFunc{
+						func(value any) (pgtype.WrappedEncodePlanNextSetter, any, bool) {
+							if m, ok := value.(time.Month); ok {
+								return &monthEncodePlan{}, int(m), true
+							}
+							return nil, nil, false
+						},
+					},
+					tm.TryWrapEncodePlanFuncs...,
+				)
+				return nil
+			}),
+		)
+		return postgres.New(postgres.Config{Conn: sqlDB}), nil
 	case "mysql":
 		return mysql.New(mysql.Config{
 			DSN:                       cfg.ConnectionString,
