@@ -6,7 +6,7 @@ require (
 	github.com/DataDog/datadog-go v4.7.0+incompatible
 	github.com/TykTechnologies/gorpc v0.0.0-20210624160652-fe65bda0ccb9
 	github.com/TykTechnologies/murmur3 v0.0.0-20230310161213-aad17efd5632
-	github.com/TykTechnologies/storage v1.3.0
+	github.com/TykTechnologies/storage v1.3.1
 	github.com/aws/aws-sdk-go-v2 v1.31.0
 	github.com/aws/aws-sdk-go-v2/config v1.9.0
 	github.com/aws/aws-sdk-go-v2/credentials v1.6.1
@@ -129,4 +129,4 @@ require (
 )
 
 //replace gorm.io/gorm => ../gorm
-replace gorm.io/gorm => github.com/TykTechnologies/gorm v1.20.7-0.20260413162114-95e095f8d8f2
+replace gorm.io/gorm => github.com/TykTechnologies/gorm v1.20.7-0.20260417144542-d6d1a2e12d9d
