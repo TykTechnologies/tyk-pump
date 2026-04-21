@@ -22,7 +22,45 @@ jobs:
         redis-version: [5]
         mongodb-version: [4.2]
         postgres-version: [15]
-        go: [1.24]
+        mysql-version: ["8.0"]
+        go: [1.25]
+
+    services:
+      redis:
+        image: redis:${{ matrix.redis-version }}
+        ports:
+          - 6379:6379
+      mongodb:
+        image: mongo:${{ matrix.mongodb-version }}
+        ports:
+          - 27017:27017
+      postgres:
+        image: postgres:${{ matrix.postgres-version }}
+        env:
+          POSTGRES_DB: tyk_analytics
+          POSTGRES_USER: tyk
+          POSTGRES_PASSWORD: tyk123
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      mysql:
+        image: mysql:${{ matrix.mysql-version }}
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: tyk_analytics
+          MYSQL_USER: tyk
+          MYSQL_PASSWORD: tyk123
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
 
     steps:
       - name: Checkout Tyk Pump
@@ -44,24 +82,6 @@ jobs:
         if: ${{ github.event_name == 'pull_request' }}
         run: git fetch origin ${{ github.base_ref }}
 
-      - name: Start Redis
-        uses: supercharge/redis-github-action@1.2.0
-        with:
-          redis-version: ${{ matrix.redis-version }}
-
-      - name: Start MongoDB
-        uses: supercharge/mongodb-github-action@1.2.0
-        with:
-          mongodb-version: "${{ matrix.mongodb-version }}"
-
-      - name: Start PostgreSQL
-        uses: harmon758/postgresql-action@v1
-        with:
-          postgresql version: "${{ matrix.postgres-version }}"
-          postgresql db: "tyk_analytics"
-          postgresql user: "tyk"
-          postgresql password: "tyk123"
-
       - name: Cache
         uses: actions/cache@v4
         with:
@@ -74,6 +94,7 @@ jobs:
         id: ci-tests
         env:
           TYK_TEST_POSTGRES: "host=localhost user=tyk password=tyk123 dbname=tyk_analytics port=5432 sslmode=disable"
+          TYK_TEST_MYSQL: "tyk:tyk123@tcp(localhost:3306)/tyk_analytics?parseTime=true"
         run: |
           ./bin/ci-test.sh 2>&1 | tee test.log
           result_code=${PIPESTATUS[0]}
