@@ -119,12 +119,27 @@ jobs:
           name: golangci-report
           retention-days: 1
           path: golanglint.xml
-  sonarcloud:
+  generate-token:
     if: ${{ always() }}
     needs: [gotest, golangci]
+    runs-on: ubuntu-latest
+    outputs:
+      token: ${{ steps.app-token.outputs.token }}
+    steps:
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547 # v1
+        with:
+          app-id: ${{ secrets.PROBE_APP_ID }}
+          private-key: ${{ secrets.PROBE_APP_PRIVATE_KEY }}
+          owner: TykTechnologies
+
+  sonarcloud:
+    if: ${{ always() }}
+    needs: [gotest, golangci, generate-token]
     uses: TykTechnologies/github-actions/.github/workflows/sonarcloud.yaml@d3fa20888fa2878e877e22bb7702141217290e7c # main
     with:
       exclusions: "analytics/proto/**/*.pb.go"
     secrets:
-      GH_TOKEN: ${{ secrets.ORG_GH_TOKEN }}
+      GH_TOKEN: ${{ needs.generate-token.outputs.token }}
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

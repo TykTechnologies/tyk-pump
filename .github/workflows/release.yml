@@ -16,6 +16,7 @@ on:
   schedule:
     - cron: "0 0 * * 1"
   pull_request:
+    types: [opened, synchronize, reopened, labeled]
   push:
     branches:
       - master
@@ -63,6 +64,13 @@ jobs:
       std_tags: ${{ steps.ci_metadata_std.outputs.tags }}
       commit_author: ${{ steps.set_outputs.outputs.commit_author}}
     steps:
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547 # v1
+        with:
+          app-id: ${{ secrets.PROBE_APP_ID }}
+          private-key: ${{ secrets.PROBE_APP_PRIVATE_KEY }}
+          owner: TykTechnologies
       - name: Checkout of tyk-pump
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
@@ -118,7 +126,7 @@ jobs:
         run: |
           echo '#!/bin/sh
           ci/bin/unlock-agent.sh
-          git config --global url."https://${{ secrets.ORG_GH_TOKEN }}@github.com".insteadOf "https://github.com"
+          git config --global url."https://x-access-token:${{ steps.app-token.outputs.token }}@github.com/".insteadOf "https://github.com/"
           git config --global --add safe.directory /go/src/github.com/TykTechnologies/tyk-pump
           goreleaser release --clean -f ${{ matrix.goreleaser }} ${{ !startsWith(github.ref, 'refs/tags/') && ' --snapshot --skip=sign,docker' || '--skip=docker' }}' | tee /tmp/build.sh
           chmod +x /tmp/build.sh
@@ -174,6 +182,7 @@ jobs:
           build-args: |
             BUILD_PACKAGE_NAME=tyk-pump-fips
             BASE_IMAGE=tykio/dhi-busybox:1.37-fips
+            NONROOT_CHOWN=true
       - name: Docker metadata for fips tag push
         id: tag_metadata_fips
         uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051 # v5
@@ -208,6 +217,7 @@ jobs:
           build-args: |
             BUILD_PACKAGE_NAME=tyk-pump-fips
             BASE_IMAGE=tykio/dhi-busybox:1.37-fips
+            NONROOT_CHOWN=true
       - name: Attach base image VEX to fips
         if: ${{ matrix.golang_cross == '1.25-bookworm' && startsWith(github.ref, 'refs/tags') }}
         run: |
@@ -307,9 +317,12 @@ jobs:
             !dist/*PAYG*.rpm
             !dist/*fips*.rpm
   test-controller-api:
-    if: github.event.pull_request.draft == false
     needs:
       - goreleaser
+    if: |
+      !cancelled() &&
+      needs.goreleaser.result == 'success' &&
+      github.event.pull_request.draft == false
     runs-on: ${{ vars.DEFAULT_RUNNER }}
     outputs:
       envfiles: ${{ steps.params.outputs.envfiles }}
@@ -327,6 +340,10 @@ jobs:
     needs:
       - test-controller-api
       - goreleaser
+    if: |
+      !cancelled() &&
+      needs.goreleaser.result == 'success' &&
+      needs.test-controller-api.result == 'success'
     runs-on: ${{ vars.DEFAULT_RUNNER }}
     env:
       XUNIT_REPORT_PATH: ${{ github.workspace}}/test-results.xml
@@ -339,6 +356,13 @@ jobs:
         envfiles: ${{ fromJson(needs.test-controller-api.outputs.envfiles) }}
         sink: ${{ fromJson(needs.test-controller-api.outputs.sink) }}
     steps:
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547 # v1
+        with:
+          app-id: ${{ secrets.PROBE_APP_ID }}
+          private-key: ${{ secrets.PROBE_APP_PRIVATE_KEY }}
+          owner: TykTechnologies
       - uses: aws-actions/configure-aws-credentials@ff717079ee2060e4bcee96c4779b553acc87447c # v4
         with:
           role-to-assume: arn:aws:iam::754489498669:role/ecr_rw_tyk
@@ -367,14 +391,14 @@ jobs:
         with:
           base_ref: ${{ env.BASE_REF }}
           tags: ${{ needs.goreleaser.outputs.ee_tags || needs.goreleaser.outputs.std_tags || format('{0}/tyk-ee:master', steps.ecr.outputs.registry) }}
-          github_token: ${{ secrets.ORG_GH_TOKEN }}
+          github_token: ${{ steps.app-token.outputs.token }}
           TYK_DB_LICENSEKEY: ${{ secrets.DASH_LICENSE }}
           TYK_MDCB_LICENSE: ${{ secrets.MDCB_LICENSE }}
       - name: Choose test code branch
         uses: TykTechnologies/github-actions/.github/actions/tests/choose-test-branch@42304edda365365e0a887cf018d8edc34b960b82 # main
         with:
           test_folder: api
-          org_gh_token: ${{ secrets.ORG_GH_TOKEN }}
+          org_gh_token: ${{ steps.app-token.outputs.token }}
       - name: Run API tests
         uses: TykTechnologies/github-actions/.github/actions/tests/api-tests@42304edda365365e0a887cf018d8edc34b960b82 # main
         timeout-minutes: 30
@@ -391,7 +415,7 @@ jobs:
     name: Aggregated CI Status
     runs-on: ${{ vars.DEFAULT_RUNNER }}
     # Dynamically determine which jobs to depend on based on repository configuration
-    needs: [goreleaser, api-tests]
+    needs: [dep-guard, goreleaser, api-tests]
     if: ${{ always() && github.event_name == 'pull_request' }}
     steps:
       - name: Aggregate results
@@ -418,9 +442,12 @@ jobs:
 
           echo "✅ All required jobs succeeded"
   test-controller-distros:
-    if: github.event.pull_request.draft == false
     needs:
       - goreleaser
+    if: |
+      !cancelled() &&
+      needs.goreleaser.result == 'success' &&
+      github.event.pull_request.draft == false
     runs-on: ${{ vars.DEFAULT_RUNNER }}
     outputs:
       deb: ${{ steps.params.outputs.deb }}
@@ -445,6 +472,9 @@ jobs:
     runs-on: ${{ vars.DEFAULT_RUNNER }}
     needs:
       - test-controller-distros
+    if: |
+      !cancelled() &&
+      needs.test-controller-distros.result == 'success'
     strategy:
       fail-fast: true
       matrix:
@@ -492,6 +522,9 @@ jobs:
     runs-on: ${{ vars.DEFAULT_RUNNER }}
     needs:
       - test-controller-distros
+    if: |
+      !cancelled() &&
+      needs.test-controller-distros.result == 'success'
     strategy:
       fail-fast: true
       matrix:
