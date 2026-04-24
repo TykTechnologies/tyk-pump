@@ -284,9 +284,20 @@ func (m *MongoAggregatePump) ensureIndexes(collectionName string) error {
 }
 
 func (m *MongoAggregatePump) WriteData(ctx context.Context, data []interface{}) error {
-	m.log.Debug("Attempting to write ", len(data), " records")
+	filtered := make([]interface{}, 0, len(data))
+	for _, d := range data {
+		if rec, ok := d.(analytics.AnalyticsRecord); ok && rec.IsMCPRecord() {
+			continue
+		}
+		filtered = append(filtered, d)
+	}
+	if len(filtered) == 0 {
+		return nil
+	}
+
+	m.log.Debug("Attempting to write ", len(filtered), " records")
 	// calculate aggregates
-	analyticsPerOrg := analytics.AggregateData(data, m.dbConf.TrackAllPaths, m.dbConf.IgnoreTagPrefixList, m.dbConf.MongoURL, m.dbConf.AggregationTime)
+	analyticsPerOrg := analytics.AggregateData(filtered, m.dbConf.TrackAllPaths, m.dbConf.IgnoreTagPrefixList, m.dbConf.MongoURL, m.dbConf.AggregationTime)
 	// put aggregated data into MongoDB
 	writingAttempts := []bool{false}
 	if m.dbConf.UseMixedCollection {
@@ -312,7 +323,7 @@ func (m *MongoAggregatePump) WriteData(ctx context.Context, data []interface{}) 
 		m.log.Debug("Processed aggregated data for ", orgID)
 	}
 
-	m.log.Info("Purged ", len(data), " records...")
+	m.log.Info("Purged ", len(filtered), " records...")
 
 	return nil
 }

@@ -139,7 +139,7 @@ jobs:
     needs: [gotest, golangci, generate-token]
     uses: TykTechnologies/github-actions/.github/workflows/sonarcloud.yaml@d3fa20888fa2878e877e22bb7702141217290e7c # main
     with:
-      exclusions: ""
+      exclusions: "analytics/proto/**/*.pb.go"
     secrets:
       GH_TOKEN: ${{ needs.generate-token.outputs.token }}
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

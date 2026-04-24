@@ -22,7 +22,6 @@ import (
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	gorm_logger "gorm.io/gorm/logger"
 )
 
 type PostgresConfig struct {
@@ -222,30 +221,8 @@ func (c *SQLPump) Init(conf interface{}) error {
 		processPumpEnvVars(c, c.log, c.SQLConf, SQLDefaultENV)
 	}
 
-	logLevel := gorm_logger.Silent
-
-	switch c.SQLConf.LogLevel {
-	case "debug":
-		logLevel = gorm_logger.Info
-	case "info":
-		logLevel = gorm_logger.Warn
-	case "warning":
-		logLevel = gorm_logger.Error
-	}
-
-	dialect, errDialect := Dialect(c.SQLConf)
-	if errDialect != nil {
-		c.log.Error(errDialect)
-		return errDialect
-	}
-
-	db, err := gorm.Open(dialect, &gorm.Config{
-		AutoEmbedd:  true,
-		UseJSONTags: true,
-		Logger:      gorm_logger.Default.LogMode(logLevel),
-	})
+	db, err := OpenGormDB(c.SQLConf, c.log)
 	if err != nil {
-		c.log.Error(err)
 		return err
 	}
 	c.db = db
@@ -286,10 +263,17 @@ func (c *SQLPump) WriteData(ctx context.Context, data []interface{}) error {
 	for _, r := range data {
 		if r != nil {
 			rec := r.(analytics.AnalyticsRecord)
+			// MCP records are handled by dedicated MCP pumps, skip them here.
+			if rec.IsMCPRecord() {
+				continue
+			}
 			typedData = append(typedData, &rec)
 		}
 	}
 	dataLen := len(typedData)
+	if dataLen == 0 {
+		return nil
+	}
 
 	startIndex := 0
 	endIndex := dataLen
@@ -338,7 +322,7 @@ func (c *SQLPump) WriteData(ctx context.Context, data []interface{}) error {
 
 	}
 
-	c.log.Info("Purged ", len(data), " records...")
+	c.log.Info("Purged ", dataLen, " records...")
 
 	return nil
 }

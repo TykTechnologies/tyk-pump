@@ -35,6 +35,10 @@ func init() {
 	AvailablePumps["mongo-graph"] = &GraphMongoPump{}
 	AvailablePumps["sql-graph"] = &GraphSQLPump{}
 	AvailablePumps["sql-graph-aggregate"] = &GraphSQLAggregatePump{}
+	AvailablePumps["mongo-mcp"] = &MCPMongoPump{}
+	AvailablePumps["mongo-mcp-aggregate"] = &MCPMongoAggregatePump{}
+	AvailablePumps["sql-mcp"] = &MCPSQLPump{}
+	AvailablePumps["sql-mcp-aggregate"] = &MCPSQLAggregatePump{}
 	AvailablePumps["resurfaceio"] = &ResurfacePump{}
 	AvailablePumps["sqs"] = &SQSPump{}
 	AvailablePumps["kinesis"] = &KinesisPump{}
