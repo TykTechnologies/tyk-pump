@@ -14,8 +14,17 @@ const (
 // MCPRecordAggregate holds aggregated MCP analytics grouped by API.
 // It embeds AnalyticsRecordAggregate for all standard dimensions and adds
 // MCP-specific dimension maps for method, primitive type, and primitive name.
+//
+// OwnerAPIID identifies which API this aggregate belongs to. It partitions
+// MongoDB documents per (org, timestamp, api) so per-api Names/Methods/
+// Primitives counters from one proxy don't merge with another's via the
+// upsert in MCPMongoAggregatePump. The embedded AnalyticsRecordAggregate
+// already carries an APIID map[string]*Counter for cross-API roll-ups, so
+// this is a separately named scalar to avoid a field collision.
 type MCPRecordAggregate struct {
 	AnalyticsRecordAggregate `bson:",inline"`
+
+	OwnerAPIID string `bson:"owner_apiid"`
 
 	Methods    map[string]*Counter // keyed by JSONRPCMethod
 	Primitives map[string]*Counter // keyed by PrimitiveType
@@ -91,6 +100,7 @@ func initMCPAggregateForRecord(record AnalyticsRecord, dbIdentifier string, aggr
 	agg.TimeID.Day = asTime.Day()
 	agg.TimeID.Hour = asTime.Hour()
 	agg.OrgID = record.OrgID
+	agg.OwnerAPIID = record.APIID
 	agg.LastTime = record.TimeStamp
 	agg.Total.ErrorMap = make(map[string]int)
 	return agg
