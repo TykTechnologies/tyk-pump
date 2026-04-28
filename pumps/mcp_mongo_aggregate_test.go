@@ -57,6 +57,39 @@ func TestMCPMongoAggregatePump_Init_InvalidConfig(t *testing.T) {
 	require.Error(t, err, "Init should return error for invalid config")
 }
 
+func TestMCPMongoAggregatePump_WriteData_PerAPIPartitioning(t *testing.T) {
+	pump := newMCPMongoAggregatePump(t)
+
+	ts := time.Date(2025, 6, 15, 10, 0, 0, 0, time.UTC)
+	records := []interface{}{
+		analytics.AnalyticsRecord{TimeStamp: ts, APIID: "api-A", OrgID: "org1", ResponseCode: 200, MCPStats: analytics.MCPStats{IsMCP: true, JSONRPCMethod: "tools/call", PrimitiveType: "tool", PrimitiveName: "get_anything"}},
+		analytics.AnalyticsRecord{TimeStamp: ts, APIID: "api-A", OrgID: "org1", ResponseCode: 200, MCPStats: analytics.MCPStats{IsMCP: true, JSONRPCMethod: "tools/call", PrimitiveType: "tool", PrimitiveName: "get_anything"}},
+		analytics.AnalyticsRecord{TimeStamp: ts, APIID: "api-A", OrgID: "org1", ResponseCode: 200, MCPStats: analytics.MCPStats{IsMCP: true, JSONRPCMethod: "tools/call", PrimitiveType: "tool", PrimitiveName: "get_anything"}},
+		analytics.AnalyticsRecord{TimeStamp: ts, APIID: "api-A", OrgID: "org1", ResponseCode: 200, MCPStats: analytics.MCPStats{IsMCP: true, JSONRPCMethod: "tools/call", PrimitiveType: "tool", PrimitiveName: "get_anything"}},
+		analytics.AnalyticsRecord{TimeStamp: ts, APIID: "api-A", OrgID: "org1", ResponseCode: 200, MCPStats: analytics.MCPStats{IsMCP: true, JSONRPCMethod: "tools/call", PrimitiveType: "tool", PrimitiveName: "get_anything"}},
+		analytics.AnalyticsRecord{TimeStamp: ts, APIID: "api-B", OrgID: "org1", ResponseCode: 200, MCPStats: analytics.MCPStats{IsMCP: true, JSONRPCMethod: "tools/call", PrimitiveType: "tool", PrimitiveName: "get_anything"}},
+		analytics.AnalyticsRecord{TimeStamp: ts, APIID: "api-B", OrgID: "org1", ResponseCode: 200, MCPStats: analytics.MCPStats{IsMCP: true, JSONRPCMethod: "tools/call", PrimitiveType: "tool", PrimitiveName: "get_anything"}},
+	}
+
+	require.NoError(t, pump.WriteData(context.Background(), records))
+
+	var results []analytics.MCPRecordAggregate
+	require.NoError(t, pump.store.Query(
+		context.Background(),
+		&analytics.MCPRecordAggregate{AnalyticsRecordAggregate: analytics.AnalyticsRecordAggregate{Mixed: true}},
+		&results,
+		model.DBM{"orgid": "org1"},
+	))
+
+	require.Len(t, results, 2, "expected one mixed-collection doc per api, got %d (cross-api merge regression)", len(results))
+
+	hits := []int{results[0].Total.Hits, results[1].Total.Hits}
+	if hits[0] > hits[1] {
+		hits[0], hits[1] = hits[1], hits[0]
+	}
+	assert.Equal(t, []int{2, 5}, hits, "expected per-api hit counts {2,5}, got %v (a single merged doc would show 7)", hits)
+}
+
 func TestMCPMongoAggregatePump_WriteData_Roundtrip(t *testing.T) {
 	pump := newMCPMongoAggregatePump(t)
 

@@ -191,8 +191,9 @@ func (m *MCPMongoAggregatePump) DoMCPAggregatedWriting(ctx context.Context, ag *
 	}
 
 	query := model.DBM{
-		"orgid":     ag.OrgID,
-		"timestamp": ag.TimeStamp,
+		"orgid":       ag.OrgID,
+		"timestamp":   ag.TimeStamp,
+		"owner_apiid": ag.OwnerAPIID,
 	}
 
 	updateDoc := ag.AnalyticsRecordAggregate.AsChange()
