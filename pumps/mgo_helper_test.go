@@ -23,7 +23,6 @@ func (c *Conn) TableName() string {
 	return colName
 }
 
-// SetObjectID is a dummy function to satisfy the interface
 func (*Conn) GetObjectID() model.ObjectID {
 	return ""
 }
@@ -76,6 +75,7 @@ func (d Doc) GetObjectID() model.ObjectID {
 	return d.ID
 }
 
+// SetObjectID is a dummy function to satisfy the interface
 func (d *Doc) SetObjectID(id model.ObjectID) {
 	d.ID = id
 }

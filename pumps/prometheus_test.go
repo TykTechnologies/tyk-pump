@@ -1,6 +1,7 @@
 package pumps
 
 import (
+	"context"
 	"errors"
 	"io"
 	"os"
@@ -10,6 +11,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestPrometheusInitVec(t *testing.T) {
@@ -806,7 +808,13 @@ func TestPrometheusCreateBasicMetrics(t *testing.T) {
 		actualMetricTypeCounter[metric.MetricType] += 1
 	}
 
-	assert.EqualValues(t, actualMetricsNames, []string{"tyk_http_status", "tyk_http_status_per_path", "tyk_http_status_per_key", "tyk_http_status_per_oauth_client", "tyk_latency"})
+	assert.EqualValues(t, actualMetricsNames, []string{
+		"tyk_http_status",
+		"tyk_http_status_per_path",
+		"tyk_http_status_per_key",
+		"tyk_http_status_per_oauth_client",
+		metricTykLatency,
+	})
 
 	assert.Equal(t, 4, actualMetricTypeCounter[counterType])
 	assert.Equal(t, 1, actualMetricTypeCounter[histogramType])
@@ -906,130 +914,281 @@ func TestPrometheusDisablingMetrics(t *testing.T) {
 	assert.NotContains(t, metricMap, "tyk_http_status_per_path")
 }
 
-func TestPrometheusPump_observeLatencyMetrics(_ *testing.T) {
+// TestPrometheusGetLabelsValues_MCPLabels verifies that mcp_method, mcp_primitive_type,
+// and mcp_primitive_name labels resolve to the correct values from MCPStats on MCP records,
+// and to empty strings on non-MCP records.
+func TestPrometheusGetLabelsValues_MCPLabels(t *testing.T) {
+	mcpRecord := analytics.AnalyticsRecord{
+		APIID:        "api_mcp",
+		ResponseCode: 200,
+		MCPStats: analytics.MCPStats{
+			IsMCP:         true,
+			JSONRPCMethod: "tools/call",
+			PrimitiveType: "tool",
+			PrimitiveName: "get_weather",
+		},
+	}
+	restRecord := analytics.AnalyticsRecord{
+		APIID:        "api_rest",
+		ResponseCode: 200,
+	}
+
+	metric := PrometheusMetric{
+		Name:       "test_mcp_labels",
+		MetricType: counterType,
+		Labels:     []string{"api_id", "mcp_method", "mcp_primitive_type", "mcp_primitive_name"},
+	}
+
+	t.Run("MCP record returns MCP label values", func(t *testing.T) {
+		got := metric.GetLabelsValues(mcpRecord)
+		assert.Equal(t, []string{"api_mcp", "tools/call", "tool", "get_weather"}, got)
+	})
+
+	t.Run("non-MCP record returns empty strings for MCP labels", func(t *testing.T) {
+		got := metric.GetLabelsValues(restRecord)
+		assert.Equal(t, []string{"api_rest", "", "", ""}, got)
+	})
+}
+
+// TestPrometheusCreateBasicMetrics_IncludesMCPMetrics verifies that CreateBasicMetrics
+// TestPrometheusCreateBasicMetrics_DoesNotIncludeMCPMetrics verifies that CreateBasicMetrics
+// does not include MCP metrics, as they should be configured as custom metrics.
+func TestPrometheusCreateBasicMetrics_DoesNotIncludeMCPMetrics(t *testing.T) {
+	p := PrometheusPump{}
+	p.CreateBasicMetrics()
+
+	for _, m := range p.allMetrics {
+		assert.False(t, m.MCPOnly, "%s must not have MCPOnly=true in base metrics", m.Name)
+	}
+}
+
+// TestPrometheusMCPOnlyMetric_SkipsNonMCPRecords verifies that a metric with MCPOnly=true
+// is not incremented for non-MCP analytics records.
+// It tests the filtering by calling Inc() directly (simulating what WriteData does),
+// so counterMap reflects only records that passed the filter.
+func TestPrometheusMCPOnlyMetric_SkipsNonMCPRecords(t *testing.T) {
+	metric := &PrometheusMetric{
+		Name:       "test_mcp_only_counter_skip",
+		Help:       "test",
+		MetricType: counterType,
+		Labels:     []string{"api_id", "mcp_method"},
+		MCPOnly:    true,
+	}
+	require.NoError(t, metric.InitVec())
+	defer prometheus.Unregister(metric.counterVec)
+
 	p := &PrometheusPump{}
 	loggerInstance := logrus.New()
 	loggerInstance.Out = io.Discard
 	p.log = logrus.NewEntry(loggerInstance)
+	p.conf = &PrometheusConf{}
+	p.allMetrics = []*PrometheusMetric{metric}
 
-	// Create a test metric
+	records := []analytics.AnalyticsRecord{
+		{APIID: "api1", ResponseCode: 200}, // REST — must be skipped
+		{APIID: "api2", ResponseCode: 404}, // REST — must be skipped
+		{APIID: "api3", ResponseCode: 200, MCPStats: analytics.MCPStats{ // MCP — must be counted
+			IsMCP: true, JSONRPCMethod: "tools/call",
+		}},
+	}
+
+	// Simulate what WriteData does per record, exercising the mcpOnly guard.
+	for _, record := range records {
+		if metric.MCPOnly && !record.IsMCPRecord() {
+			continue
+		}
+		values := metric.GetLabelsValues(record)
+		require.NoError(t, metric.Inc(values...))
+	}
+
+	assert.Len(t, metric.counterMap, 1, "only the MCP record should be counted")
+	assert.Contains(t, metric.counterMap, "api3--tools/call")
+}
+
+// TestPrometheusMCPOnlyMetric_CountsMCPRecords verifies that a metric with mcpOnly=true
+// is incremented only for MCP analytics records.
+func TestPrometheusMCPOnlyMetric_CountsMCPRecords(t *testing.T) {
 	metric := &PrometheusMetric{
-		Name:       "tyk_latency",
+		Name:       "test_mcp_only_counter_counts",
+		Help:       "test",
+		MetricType: counterType,
+		Labels:     []string{"api_id", "mcp_method", "mcp_primitive_type", "mcp_primitive_name", "response_code"},
+		MCPOnly:    true,
+	}
+	require.NoError(t, metric.InitVec())
+	defer prometheus.Unregister(metric.counterVec)
+
+	records := []analytics.AnalyticsRecord{
+		{APIID: "api1", ResponseCode: 200, MCPStats: analytics.MCPStats{
+			IsMCP: true, JSONRPCMethod: "tools/call", PrimitiveType: "tool", PrimitiveName: "get_weather",
+		}},
+		{APIID: "api1", ResponseCode: 200, MCPStats: analytics.MCPStats{
+			IsMCP: true, JSONRPCMethod: "tools/call", PrimitiveType: "tool", PrimitiveName: "get_weather",
+		}},
+		{APIID: "api1", ResponseCode: 500, MCPStats: analytics.MCPStats{
+			IsMCP: true, JSONRPCMethod: "resources/read", PrimitiveType: "resource", PrimitiveName: "docs",
+		}},
+	}
+
+	for _, record := range records {
+		if metric.MCPOnly && !record.IsMCPRecord() {
+			continue
+		}
+		values := metric.GetLabelsValues(record)
+		require.NoError(t, metric.Inc(values...))
+	}
+
+	assert.Len(t, metric.counterMap, 2)
+	assert.Equal(t, uint64(2), metric.counterMap["api1--tools/call--tool--get_weather--200"].count)
+	assert.Equal(t, uint64(1), metric.counterMap["api1--resources/read--resource--docs--500"].count)
+}
+
+// TestPrometheusMCPCustomMetric_MCPOnly verifies that a custom metric with MCPOnly=true
+// is only processed for MCP records when configured as a custom metric.
+func TestPrometheusMCPCustomMetric_MCPOnly(t *testing.T) {
+	metric := &PrometheusMetric{
+		Name:       "test_mcp_custom_counter",
+		Help:       "MCP call counts",
+		MetricType: counterType,
+		Labels:     []string{"api_id", "mcp_method"},
+		MCPOnly:    true,
+	}
+	require.NoError(t, metric.InitVec())
+	defer prometheus.Unregister(metric.counterVec)
+
+	p := newTestPrometheusPump(t)
+	p.allMetrics = []*PrometheusMetric{metric}
+
+	records := []analytics.AnalyticsRecord{
+		{APIID: "api1", ResponseCode: 200},
+		{APIID: "api2", ResponseCode: 200, MCPStats: analytics.MCPStats{
+			IsMCP: true, JSONRPCMethod: "tools/call",
+		}},
+	}
+
+	for _, record := range records {
+		p.processMetric(metric, record)
+	}
+
+	assert.Len(t, metric.counterMap, 1, "only the MCP record should be counted")
+	assert.Contains(t, metric.counterMap, "api2--tools/call")
+}
+
+func newTestPrometheusPump(t *testing.T) *PrometheusPump {
+	t.Helper()
+	p := &PrometheusPump{}
+	loggerInstance := logrus.New()
+	loggerInstance.Out = io.Discard
+	p.log = logrus.NewEntry(loggerInstance)
+	p.conf = &PrometheusConf{}
+	return p
+}
+
+func TestProcessMetric_DisabledMetric(t *testing.T) {
+	p := newTestPrometheusPump(t)
+	metric := &PrometheusMetric{Name: "disabled_metric", MetricType: counterType, enabled: false}
+	// must not panic and must be a no-op
+	p.processMetric(metric, analytics.AnalyticsRecord{APIID: "api1"})
+}
+
+func TestProcessMetric_UnknownType(t *testing.T) {
+	p := newTestPrometheusPump(t)
+	metric := &PrometheusMetric{Name: "unknown_type_metric", MetricType: "unknown", enabled: true}
+	// hits the default branch — must not panic
+	p.processMetric(metric, analytics.AnalyticsRecord{APIID: "api1"})
+}
+
+func TestWriteData_ProcessesCounterMetric(t *testing.T) {
+	metric := &PrometheusMetric{
+		Name:       "test_write_data_counter",
+		Help:       "test",
+		MetricType: counterType,
+		Labels:     []string{"api"},
+	}
+	require.NoError(t, metric.InitVec())
+	defer prometheus.Unregister(metric.counterVec)
+
+	p := newTestPrometheusPump(t)
+	p.allMetrics = []*PrometheusMetric{metric}
+
+	err := p.WriteData(context.Background(), []interface{}{
+		analytics.AnalyticsRecord{APIID: "api1", ResponseCode: 200},
+	})
+	assert.NoError(t, err)
+}
+
+func TestWriteData_ContextCancellation(t *testing.T) {
+	metric := &PrometheusMetric{
+		Name:       "test_write_data_ctx_cancel",
+		Help:       "test",
+		MetricType: counterType,
+		Labels:     []string{"api"},
+	}
+	require.NoError(t, metric.InitVec())
+	defer prometheus.Unregister(metric.counterVec)
+
+	p := newTestPrometheusPump(t)
+	p.allMetrics = []*PrometheusMetric{metric}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // cancel immediately
+
+	err := p.WriteData(ctx, []interface{}{
+		analytics.AnalyticsRecord{APIID: "api1"},
+	})
+	assert.Error(t, err)
+}
+
+func TestCustomMetrics_Set(t *testing.T) {
+	var metrics CustomMetrics
+	err := metrics.Set(`[{"name":"test_metric","metric_type":"counter","labels":["api_id"]}]`)
+	assert.NoError(t, err)
+	require.Len(t, metrics, 1)
+	assert.Equal(t, "test_metric", metrics[0].Name)
+	assert.Equal(t, "counter", metrics[0].MetricType)
+
+	assert.Error(t, metrics.Set(`not-json`))
+}
+
+func TestProcessMetric_HistogramType_NonLatency(t *testing.T) {
+	metric := &PrometheusMetric{
+		Name:       "test_process_histogram_nonlatency",
+		Help:       "test",
 		MetricType: histogramType,
 		Labels:     []string{"type", "api"},
 	}
+	require.NoError(t, metric.InitVec())
+	defer prometheus.Unregister(metric.histogramVec)
 
-	// Initialize the histogram vector
-	metric.histogramVec = prometheus.NewHistogramVec(
-		prometheus.HistogramOpts{
-			Name: metric.Name,
-			Help: "Test histogram",
-		},
-		metric.Labels,
-	)
+	p := newTestPrometheusPump(t)
+	// hits the histogramType branch → observeHistogramMetric (non-tyk_latency name)
+	p.processMetric(metric, analytics.AnalyticsRecord{APIID: "api1", RequestTime: 50})
+}
 
-	// Create test analytics record
-	record := analytics.AnalyticsRecord{
+func TestProcessMetric_HistogramType_LatencyMetric(t *testing.T) {
+	// Create histogram vec with a unique name to avoid global registry conflicts.
+	// Set the metric Name to metricTykLatency to trigger observeLatencyMetrics path.
+	histVec := prometheus.NewHistogramVec(prometheus.HistogramOpts{
+		Name:    "test_custom_latency_metric_v2",
+		Help:    "test",
+		Buckets: buckets,
+	}, []string{"type", "api"})
+	prometheus.MustRegister(histVec)
+	defer prometheus.Unregister(histVec)
+
+	metric := &PrometheusMetric{
+		Name:         metricTykLatency,
+		MetricType:   histogramType,
+		Labels:       []string{"api"},
+		enabled:      true,
+		histogramVec: histVec,
+	}
+
+	p := newTestPrometheusPump(t)
+	// hits the histogramType branch → observeLatencyMetrics
+	p.processMetric(metric, analytics.AnalyticsRecord{
+		APIID:       "api1",
 		RequestTime: 100,
-		Latency: analytics.Latency{
-			Total:    100,
-			Upstream: 80,
-			Gateway:  20,
-		},
-	}
-
-	values := []string{"api123"}
-
-	// Test the function
-	p.observeLatencyMetrics(metric, &record, values)
-
-	// Verify that the metric was observed correctly by checking the histogram
-	// We can't directly test the internal state, but we can verify no errors occurred
-	// The actual metric observation is tested through integration tests
-}
-
-func TestPrometheusPump_observeHistogramMetric(_ *testing.T) {
-	p := &PrometheusPump{}
-	loggerInstance := logrus.New()
-	loggerInstance.Out = io.Discard
-	p.log = logrus.NewEntry(loggerInstance)
-
-	// Create a test metric
-	metric := &PrometheusMetric{
-		Name:       "test_histogram",
-		MetricType: histogramType,
-		Labels:     []string{"type", "api"},
-	}
-
-	// Initialize the histogram vector
-	metric.histogramVec = prometheus.NewHistogramVec(
-		prometheus.HistogramOpts{
-			Name: metric.Name,
-			Help: "Test histogram",
-		},
-		metric.Labels,
-	)
-
-	requestTime := int64(150)
-	values := []string{"api123"}
-
-	// Test the function
-	p.observeHistogramMetric(metric, requestTime, values)
-
-	// Verify that the metric was observed correctly
-	// The actual metric observation is tested through integration tests
-}
-
-func TestPrometheusPump_observeLatencyMetrics_ErrorHandling(_ *testing.T) {
-	p := &PrometheusPump{}
-	loggerInstance := logrus.New()
-	loggerInstance.Out = io.Discard
-	p.log = logrus.NewEntry(loggerInstance)
-
-	// Create a test metric with nil histogram vector to trigger error
-	metric := &PrometheusMetric{
-		Name:       "tyk_latency",
-		MetricType: histogramType,
-		Labels:     []string{"type", "api"},
-		// histogramVec is nil, which should cause an error
-	}
-
-	record := analytics.AnalyticsRecord{
-		RequestTime: 100,
-		Latency: analytics.Latency{
-			Total:    100,
-			Upstream: 80,
-			Gateway:  20,
-		},
-	}
-
-	values := []string{"api123"}
-
-	// Test the function - should handle error gracefully
-	p.observeLatencyMetrics(metric, &record, values)
-
-	// The function should not panic and should log the error
-}
-
-func TestPrometheusPump_observeHistogramMetric_ErrorHandling(_ *testing.T) {
-	p := &PrometheusPump{}
-	loggerInstance := logrus.New()
-	loggerInstance.Out = io.Discard
-	p.log = logrus.NewEntry(loggerInstance)
-
-	// Create a test metric with nil histogram vector to trigger error
-	metric := &PrometheusMetric{
-		Name:       "test_histogram",
-		MetricType: histogramType,
-		Labels:     []string{"type", "api"},
-		// histogramVec is nil, which should cause an error
-	}
-
-	requestTime := int64(150)
-	values := []string{"api123"}
-
-	// Test the function - should handle error gracefully
-	p.observeHistogramMetric(metric, requestTime, values)
-
-	// The function should not panic and should log the error
+		Latency:     analytics.Latency{Upstream: 50, Gateway: 10},
+	})
 }

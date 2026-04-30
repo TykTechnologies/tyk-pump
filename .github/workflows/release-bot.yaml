@@ -5,8 +5,9 @@ on:
     types: [created]
 
 permissions:
-  contents: read
-  issues: read
+  contents: write
+  pull-requests: write
+  issues: write
 
 jobs:
   release_bot:

@@ -176,6 +176,45 @@ func TestStatsdPump_sendTimingMetric(_ *testing.T) {
 	client.Close()
 }
 
+func TestGetMappings_LatencyFields(t *testing.T) {
+	ts := time.Now()
+
+	record := analytics.AnalyticsRecord{
+		Path:         "/test",
+		Method:       "GET",
+		APIID:        "test",
+		ResponseCode: 200,
+		TimeStamp:    ts,
+		RequestTime:  150,
+		Latency: analytics.Latency{
+			Total:    200,
+			Upstream: 180,
+			Gateway:  20,
+		},
+	}
+
+	pmp := StatsdPump{dbConf: &StatsdConf{}}
+	mappings := pmp.getMappings(record)
+
+	assert.Equal(t, int64(150), mappings["request_time"])
+	assert.Equal(t, int64(200), mappings["latency_total"])
+	assert.Equal(t, int64(180), mappings["latency_upstream"])
+	assert.Equal(t, int64(20), mappings["latency_gateway"])
+}
+
+func TestGetMappings_SeparatedMethod(t *testing.T) {
+	record := analytics.AnalyticsRecord{
+		Path:   "/api/v1",
+		Method: "POST",
+	}
+
+	pmp := StatsdPump{dbConf: &StatsdConf{SeparatedMethod: true}}
+	mappings := pmp.getMappings(record)
+
+	assert.Equal(t, "/api/v1", mappings["path"])
+	assert.Equal(t, "POST", mappings["method"])
+}
+
 func TestStatsdPump_sendTimingMetric_ErrorHandling(_ *testing.T) {
 	// Create a StatsD client with an invalid address to trigger connection error
 	client := statsd.NewStatsdClient("invalid:address", "")

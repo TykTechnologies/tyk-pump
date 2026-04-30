@@ -30,9 +30,9 @@ fi
 
 echo "gofmt check is ok!"
 
-IMP_FILES="$(goimports -l ${GO_FILES})"
+IMP_FILES="$(go run golang.org/x/tools/cmd/goimports@v0.33.0 -l ${GO_FILES})"
 if [[ -n ${IMP_FILES} ]]; then
-    fatal "Run 'goimports -w' on these files:\n$IMP_FILES"
+    fatal "Run 'go run golang.org/x/tools/cmd/goimports@v0.33.0 -w' on these files:\n$IMP_FILES"
 fi
 
 echo "goimports check is ok!"
