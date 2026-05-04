@@ -87,7 +87,7 @@ jobs:
           path: "*xml"
       - name: Github report view
         if: ${{ always() }}
-        uses: phoenix-actions/test-reporting@1e9b578818d03d6df50ce8e60d024a000bf3ab63 # v8
+        uses: phoenix-actions/test-reporting@7317eea6e13c47348dd0bb318669485157c518d6 # v16
         with:
           name: Unit Test Results
           path: "*.xml"
