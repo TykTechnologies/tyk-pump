@@ -4,7 +4,9 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
+	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/kinesis"
 	"github.com/aws/aws-sdk-go-v2/service/kinesis/types"
@@ -202,14 +204,7 @@ func TestKinesisPump_StreamName_Required(t *testing.T) {
 	assert.Equal(t, "us-east-1", kinesisConf.Region)
 }
 
-// KinesisClientInterface defines the interface for Kinesis client operations
-type KinesisClientInterface interface {
-	DescribeStream(ctx context.Context, params *kinesis.DescribeStreamInput, optFns ...func(*kinesis.Options)) (*kinesis.DescribeStreamOutput, error)
-	StartStreamEncryption(ctx context.Context, params *kinesis.StartStreamEncryptionInput, optFns ...func(*kinesis.Options)) (*kinesis.StartStreamEncryptionOutput, error)
-	PutRecords(ctx context.Context, params *kinesis.PutRecordsInput, optFns ...func(*kinesis.Options)) (*kinesis.PutRecordsOutput, error)
-}
-
-// MockKinesisClient is a mock implementation of KinesisClientInterface
+// MockKinesisClient is a mock implementation of KinesisClient.
 type MockKinesisClient struct {
 	mock.Mock
 }
@@ -255,11 +250,11 @@ func (m *MockKinesisClient) PutRecords(ctx context.Context, params *kinesis.PutR
 
 // TestableKinesisPump extends KinesisPump for testing with dependency injection
 type TestableKinesisPump struct {
-	mockClient KinesisClientInterface
+	mockClient KinesisClient
 	KinesisPump
 }
 
-func (p *TestableKinesisPump) InitWithMock(config interface{}, mockClient KinesisClientInterface) error {
+func (p *TestableKinesisPump) InitWithMock(config interface{}, mockClient KinesisClient) error {
 	p.log = logrus.NewEntry(logrus.New())
 	p.log.Logger.SetLevel(logrus.FatalLevel) // Suppress logs during testing
 
@@ -546,5 +541,59 @@ func TestKinesisPump_NoKMSKeyID_SkipsEncryption(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Equal(t, "", pump.kinesisConf.KMSKeyID)
+	mockClient.AssertExpectations(t)
+}
+
+// newWriteDataPump returns a KinesisPump wired to the given mock client, ready for WriteData tests.
+func newWriteDataPump(mockClient KinesisClient, batchSize int) *KinesisPump {
+	logger := logrus.New()
+	logger.SetLevel(logrus.FatalLevel)
+	return &KinesisPump{
+		client: mockClient,
+		kinesisConf: &KinesisConf{
+			StreamName: "test-stream",
+			Region:     "us-east-1",
+			BatchSize:  batchSize,
+		},
+		log: logrus.NewEntry(logger),
+	}
+}
+
+func sampleRecords(n int) []interface{} {
+	records := make([]interface{}, n)
+	for i := range records {
+		records[i] = analytics.AnalyticsRecord{
+			APIID:        "api123",
+			OrgID:        "org456",
+			Method:       "GET",
+			Path:         "/test",
+			ResponseCode: 200,
+			TimeStamp:    time.Now(),
+		}
+	}
+	return records
+}
+
+func TestKinesisPump_WriteData_EmptyInput(t *testing.T) {
+	mockClient := &MockKinesisClient{}
+	mockClient.AssertNotCalled(t, "PutRecords")
+
+	pump := newWriteDataPump(mockClient, 100)
+	err := pump.WriteData(context.Background(), []interface{}{})
+
+	assert.NoError(t, err)
+	mockClient.AssertExpectations(t)
+}
+
+func TestKinesisPump_WriteData_AllInvalidRecordsSkipped(t *testing.T) {
+	mockClient := &MockKinesisClient{}
+	// No valid AnalyticsRecords → entries stays empty → PutRecords never called
+	mockClient.AssertNotCalled(t, "PutRecords")
+
+	pump := newWriteDataPump(mockClient, 100)
+	records := []interface{}{"bad", 42, struct{}{}}
+	err := pump.WriteData(context.Background(), records)
+
+	assert.NoError(t, err)
 	mockClient.AssertExpectations(t)
 }
