@@ -574,6 +574,34 @@ func sampleRecords(n int) []interface{} {
 	return records
 }
 
+func TestKinesisPump_WriteData_ValidRecordsSent(t *testing.T) {
+	mockClient := &MockKinesisClient{}
+	mockClient.On("PutRecords", mock.Anything, mock.MatchedBy(func(input *kinesis.PutRecordsInput) bool {
+		return aws.ToString(input.StreamName) == "test-stream" && len(input.Records) == 3
+	})).Return(&kinesis.PutRecordsOutput{
+		Records: []types.PutRecordsResultEntry{{}, {}, {}},
+	}, nil)
+
+	pump := newWriteDataPump(mockClient, 100)
+	err := pump.WriteData(context.Background(), sampleRecords(3))
+
+	assert.NoError(t, err)
+	mockClient.AssertExpectations(t)
+}
+
+func TestKinesisPump_WriteData_FilteredAPIIDsEmptyBatch(t *testing.T) {
+	mockClient := &MockKinesisClient{}
+	// The pump framework filters records by API ID before calling WriteData.
+	// When no records match the configured filter, WriteData receives an empty slice.
+	mockClient.AssertNotCalled(t, "PutRecords")
+
+	pump := newWriteDataPump(mockClient, 100)
+	err := pump.WriteData(context.Background(), sampleRecords(0))
+
+	assert.NoError(t, err)
+	mockClient.AssertExpectations(t)
+}
+
 func TestKinesisPump_WriteData_EmptyInput(t *testing.T) {
 	mockClient := &MockKinesisClient{}
 	mockClient.AssertNotCalled(t, "PutRecords")
@@ -593,6 +621,59 @@ func TestKinesisPump_WriteData_AllInvalidRecordsSkipped(t *testing.T) {
 	pump := newWriteDataPump(mockClient, 100)
 	records := []interface{}{"bad", 42, struct{}{}}
 	err := pump.WriteData(context.Background(), records)
+
+	assert.NoError(t, err)
+	mockClient.AssertExpectations(t)
+}
+
+func TestKinesisPump_WriteData_InvalidRecordSkipped(t *testing.T) {
+	mockClient := &MockKinesisClient{}
+	// One invalid record is skipped; the one valid record is still sent
+	mockClient.On("PutRecords", mock.Anything, mock.MatchedBy(func(input *kinesis.PutRecordsInput) bool {
+		return aws.ToString(input.StreamName) == "test-stream" && len(input.Records) == 1
+	})).Return(&kinesis.PutRecordsOutput{
+		Records: []types.PutRecordsResultEntry{{}},
+	}, nil)
+
+	pump := newWriteDataPump(mockClient, 100)
+	records := []interface{}{
+		"not-an-analytics-record",
+		analytics.AnalyticsRecord{APIID: "api123", OrgID: "org456"},
+	}
+	err := pump.WriteData(context.Background(), records)
+
+	assert.NoError(t, err)
+	mockClient.AssertExpectations(t)
+}
+
+func TestKinesisPump_WriteData_MultiBatch(t *testing.T) {
+	mockClient := &MockKinesisClient{}
+	// batch size 2 with 5 records → 3 calls: (2, 2, 1)
+	mockClient.On("PutRecords", mock.Anything, mock.MatchedBy(func(input *kinesis.PutRecordsInput) bool {
+		return aws.ToString(input.StreamName) == "test-stream" && len(input.Records) == 2
+	})).Return(&kinesis.PutRecordsOutput{
+		Records: []types.PutRecordsResultEntry{{}, {}},
+	}, nil).Times(2)
+	mockClient.On("PutRecords", mock.Anything, mock.MatchedBy(func(input *kinesis.PutRecordsInput) bool {
+		return aws.ToString(input.StreamName) == "test-stream" && len(input.Records) == 1
+	})).Return(&kinesis.PutRecordsOutput{
+		Records: []types.PutRecordsResultEntry{{}},
+	}, nil).Once()
+
+	pump := newWriteDataPump(mockClient, 2)
+	err := pump.WriteData(context.Background(), sampleRecords(5))
+
+	assert.NoError(t, err)
+	mockClient.AssertExpectations(t)
+}
+
+func TestKinesisPump_WriteData_PutRecordsError(t *testing.T) {
+	mockClient := &MockKinesisClient{}
+	// PutRecords returns an error — WriteData logs it but still returns nil
+	mockClient.On("PutRecords", mock.Anything, mock.Anything).Return(nil, errors.New("stream throughput exceeded"))
+
+	pump := newWriteDataPump(mockClient, 100)
+	err := pump.WriteData(context.Background(), sampleRecords(1))
 
 	assert.NoError(t, err)
 	mockClient.AssertExpectations(t)
