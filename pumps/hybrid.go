@@ -94,10 +94,8 @@ type HybridPumpConf struct {
 	TrackAllPaths bool `mapstructure:"track_all_paths"`
 	// Determines if the aggregations should be made per minute (true) or per hour (false) if `aggregated` is set to `true`.
 	StoreAnalyticsPerMinute bool `json:"store_analytics_per_minute" mapstructure:"store_analytics_per_minute"`
-	// EnableMCPAggregation controls whether MCP analytics are aggregated and sent
-	// to MDCB via a separate RPC call. Only applies when `aggregated` is `true`.
+	// Controls whether MCP (Model Context Protocol) analytics are aggregated and sent to MDCB via a separate RPC call. Only applies when `aggregated` is `true`.
 	EnableMCPAggregation bool `json:"enable_mcp_aggregation" mapstructure:"enable_mcp_aggregation"`
-
 	// Use SSL to connect to Tyk MDCB
 	UseSSL bool `mapstructure:"use_ssl"`
 	// Skip SSL verification
