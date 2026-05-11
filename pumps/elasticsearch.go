@@ -92,9 +92,9 @@ type ElasticsearchConf struct {
 	SSLKeyFile string `json:"ssl_key_file" mapstructure:"ssl_key_file"`
 	// Path to the PEM file with trusted CA certificates that will be used to verify the Elasticsearch server's certificate.
 	SSLCAFile string `json:"ssl_ca_file" mapstructure:"ssl_ca_file"`
-	// When set, MCP records are written to this index instead of the default IndexName.
-	// Supports the same rolling-index date suffix as IndexName when RollingIndex is enabled.
-	// Defaults to "" (empty), which means all records are written to IndexName as before.
+	// When set, Model Context Protocol (MCP) records are written to this index instead of the default `IndexName`.
+	// Supports the same rolling-index date suffix as `IndexName` when `RollingIndex` is enabled.
+	// Defaults to `""` (empty string), meaning all records go to `IndexName`.
 	MCPIndexName string `json:"mcp_index_name" mapstructure:"mcp_index_name"`
 }
 

@@ -78,6 +78,8 @@ type BaseMongoConf struct {
 	// Path to the PEM file which contains both client certificate and private key. This is
 	// required for Mutual TLS.
 	MongoSSLPEMKeyfile string `json:"mongo_ssl_pem_keyfile" mapstructure:"mongo_ssl_pem_keyfile"`
+	// ENV: TYK_PMP_PUMPS_MONGO_META_MONGODBTYPE
+	// Type: int
 	// Specifies the mongo DB Type. If it's 0, it means that you are using standard mongo db. If it's 1 it means you are using AWS Document DB. If it's 2, it means you are using CosmosDB.
 	// Defaults to Standard mongo (0).
 	MongoDBType MongoType `json:"mongo_db_type" mapstructure:"mongo_db_type"`
