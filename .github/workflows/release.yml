@@ -29,7 +29,7 @@ env:
   DOCKER_BUILD_SUMMARY: false
   DOCKER_BUILD_RECORD_UPLOAD: false
   # startsWith covers pull_request_target too
-  BASE_REF: ${{startsWith(github.event_name, 'pull_request') && github.base_ref || github.ref_name}}
+  BASE_REF: ${{ (github.base_ref == 'release-1.15.0' || github.ref_name == 'release-1.15.0') && 'master' || (startsWith(github.event_name, 'pull_request') && github.base_ref || github.ref_name) }}
 jobs:
   dep-guard:
     if: github.event_name == 'pull_request'
@@ -458,7 +458,7 @@ jobs:
         shell: bash
         env:
           # startsWith covers pull_request_target too
-          BASE_REF: ${{startsWith(github.event_name, 'pull_request') && github.base_ref || github.ref_name}}
+          BASE_REF: ${{ (github.base_ref == 'release-1.15.0' || github.ref_name == 'release-1.15.0') && 'master' || (startsWith(github.event_name, 'pull_request') && github.base_ref || github.ref_name) }}
         run: |
           set -eo pipefail
           curl -s --retry 5 --retry-delay 10 --fail-with-body "http://tui.internal.dev.tyk.technology/v2/$VARIATION/tyk-pump/$BASE_REF/${{ github.event_name}}/api/Distros.gho" | tee -a "$GITHUB_OUTPUT"
