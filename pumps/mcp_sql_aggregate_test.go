@@ -203,6 +203,7 @@ func TestMCPSQLAggregatePump_WriteData(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			pump := MCPSQLAggregatePump{}
 			require.NoError(t, pump.Init(conf))
+			pump.db.Exec(fmt.Sprintf("DELETE FROM %q", tableName))
 			t.Cleanup(func() {
 				pump.db.Exec(fmt.Sprintf("DROP TABLE IF EXISTS %q", tableName))
 			})
@@ -238,6 +239,7 @@ func TestMCPSQLAggregatePump_WriteData_Sharded(t *testing.T) {
 			TableSharding:    true,
 		},
 	}))
+	pump.db.Exec(fmt.Sprintf("DROP TABLE IF EXISTS %q", tableName))
 
 	record1 := analytics.AnalyticsRecord{
 		TimeStamp: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
@@ -363,6 +365,7 @@ func TestMCPSQLAggregatePump_WriteData_EmptyData(t *testing.T) {
 			ConnectionString: getTestPostgresConnectionString(),
 		},
 	}))
+	pump.db.Exec(fmt.Sprintf("DELETE FROM %q", analytics.AggregateMCPSQLTable))
 	err := pump.WriteData(context.Background(), []interface{}{})
 	assert.NoError(t, err)
 }
@@ -378,6 +381,7 @@ func TestMCPSQLAggregatePump_WriteData_Upsert(t *testing.T) {
 			ConnectionString: getTestPostgresConnectionString(),
 		},
 	}))
+	pump.db.Exec(fmt.Sprintf("DELETE FROM %q", tableName))
 	t.Cleanup(func() {
 		pump.db.Exec(fmt.Sprintf("DROP TABLE IF EXISTS %q", tableName))
 	})
@@ -414,6 +418,7 @@ func TestMCPSQLAggregatePump_WriteData_SmallBatchSize(t *testing.T) {
 			BatchSize:        1, // force 1-record batches to exercise batch loop
 		},
 	}))
+	pump.db.Exec(fmt.Sprintf("DELETE FROM %q", tableName))
 	t.Cleanup(func() {
 		pump.db.Exec(fmt.Sprintf("DROP TABLE IF EXISTS %q", tableName))
 	})
@@ -617,6 +622,7 @@ func TestMCPSQLAggregatePump_WriteData_MultipleAPIs(t *testing.T) {
 			ConnectionString: getTestPostgresConnectionString(),
 		},
 	}))
+	pump.db.Exec(fmt.Sprintf("DELETE FROM %q", tableName))
 	t.Cleanup(func() {
 		pump.db.Exec(fmt.Sprintf("DROP TABLE IF EXISTS %q", tableName))
 	})
