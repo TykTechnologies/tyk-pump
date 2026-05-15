@@ -210,21 +210,22 @@ type TykPumpConfiguration struct {
 	LogFormat string `json:"log_format"`
 	// TYKCONFIGHEADERSTART
 	// HEADER Health Check
-	// From v2.9.4, we have introduced a `/health` endpoint to confirm the Pump is running. You
-	// need to configure the following settings. This returns a HTTP 200 OK response if the Pump is
-	// running.
+	// The Health Check Endpoint acts as a Liveness probe to confirm that Pump is running.
+	// This returns a HTTP 200 OK response if the Pump is running.
+	// You can configure both endpoint name and port if required.
 	// TYKCONFIGHEADEREND
-	// The default is "hello".
+	// The endpoint name for the Health Check (default: "health").
 	HealthCheckEndpointName string `json:"health_check_endpoint_name"`
-
+	// The port where the Health Check endpoint is exposed (default: 8083).
+	HealthCheckEndpointPort int `json:"health_check_endpoint_port"`
+	
 	// Controls the frequency at which Tyk Pump should perform regular collection and purge
 	// of traffic logs from the temporal storage (typically Redis). Set the time between purges (in seconds).
 	// Be careful to ensure that this is long enough for the transfer of records to the target data sink (e.g.
 	// persistent storage or external APM) to complete to avoid data loss, but short enough to optimise
 	// your temporal storage size.
 	PurgeDelay int `json:"purge_delay"`
-	// The default port is 8083.
-	HealthCheckEndpointPort int `json:"health_check_endpoint_port"`
+
 	// Defines maximum size (in bytes) for Raw Request and Raw Response logs, this value defaults
 	// to 0. If it is not set then tyk-pump will not trim any data and will store the full
 	// information. This can also be set at a pump level. For example:
