@@ -74,7 +74,7 @@ func Init() {
 
 	showDecodeDeprecationWarnings()
 
-	logger.SetupFormatter(SystemConfig.LogFormat, logger.ENV_TYK_LOGLEVEL)
+	logger.SetupFormatter(SystemConfig.LogFormat, logger.EnvTykLogformat)
 
 	envDemo := os.Getenv("TYK_PMP_BUILDDEMODATA")
 	if envDemo != "" {

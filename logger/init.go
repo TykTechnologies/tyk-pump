@@ -25,18 +25,23 @@ const (
 )
 
 const (
-	ENV_TYK_LOGLEVEL = "TYK_LOGLEVEL"
+	EnvTykLoglevel  = "TYK_LOGLEVEL"
+	EnvTykLogformat = "TYK_LOGFORMAT"
 )
 
 func init() {
-	log.Level = level(os.Getenv(ENV_TYK_LOGLEVEL))
+	log.Level = level(os.Getenv(EnvTykLoglevel))
 
 	formatter := NewFormatter(FormatText)
 	log.SetFormatter(formatter)
 }
 
 func SetupFormatter(format Format, env ...string) {
-	envFormat := Format(lo.CoalesceOrEmpty(env...))
+	envValuers := lo.Map(env, func(item string, _ int) Format {
+		return Format(os.Getenv(item))
+	})
+
+	envFormat := lo.CoalesceOrEmpty(envValuers...)
 
 	if len(envFormat) != 0 {
 		format = envFormat
