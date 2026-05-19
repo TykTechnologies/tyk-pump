@@ -5,7 +5,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/samber/lo"
 	"github.com/sirupsen/logrus"
 )
 
@@ -29,28 +28,32 @@ const (
 	EnvTykLogformat = "TYK_LOGFORMAT"
 )
 
+const (
+	TimeFormatLegacy  = "Jan 02 15:04:05"
+	TimeFormatRFC3339 = time.RFC3339
+)
+
 func init() {
 	log.Level = level(os.Getenv(EnvTykLoglevel))
 
-	formatter := NewFormatter(FormatText)
+	formatter := newFormatter(FormatText)
 	log.SetFormatter(formatter)
 }
 
-func SetupFormatter(format Format, env ...string) {
-	envValuers := lo.Map(env, func(item string, _ int) Format {
-		return Format(os.Getenv(item))
-	})
+func SetupFormatter(format Format, envVars ...string) {
+	resolvedFormat := format
 
-	envFormat := lo.CoalesceOrEmpty(envValuers...)
-
-	if len(envFormat) != 0 {
-		format = envFormat
+	for _, envVar := range envVars {
+		if val := os.Getenv(envVar); val != "" {
+			resolvedFormat = Format(val)
+			break
+		}
 	}
 
-	formatter := NewFormatter(format)
-	log.SetFormatter(formatter)
+	formatter := newFormatter(resolvedFormat)
 
-	if format != FormatLegacy {
+	log.SetFormatter(formatter)
+	if resolvedFormat != FormatLegacy {
 		logrus.StandardLogger().SetFormatter(formatter)
 	}
 }
@@ -59,25 +62,25 @@ func GetLogger() *logrus.Logger {
 	return log
 }
 
-func NewFormatter(format Format) logrus.Formatter {
+func newFormatter(format Format) logrus.Formatter {
 	switch format {
 	case FormatLegacy:
 		return &logrus.TextFormatter{
-			TimestampFormat: `Jan 02 15:04:05`,
+			TimestampFormat: TimeFormatLegacy,
 			FullTimestamp:   true,
 			DisableColors:   true,
 		}
 	case FormatJSON:
 		return &logrus.JSONFormatter{
 			FieldMap:        fieldMapperDefault,
-			TimestampFormat: time.RFC3339,
+			TimestampFormat: TimeFormatRFC3339,
 		}
 	case FormatText:
 		fallthrough
 	default:
 		return &logrus.TextFormatter{
 			FieldMap:        fieldMapperDefault,
-			TimestampFormat: time.RFC3339,
+			TimestampFormat: TimeFormatRFC3339,
 			FullTimestamp:   true,
 			DisableColors:   true,
 		}
