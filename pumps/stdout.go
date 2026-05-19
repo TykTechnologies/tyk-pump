@@ -34,7 +34,6 @@ type StdOutConf struct {
 	// Root name of the JSON object the analytics record is nested in.
 	LogFieldName string `json:"log_field_name" mapstructure:"log_field_name"`
 	// Use the legacy formatting of raw_request and raw_response as escaped strings rather than JSON formatting.
-	// This config variable exists for backward compatibility.
 	UseLegacyPayloadFormat bool `json:"use_legacy_payload_format" mapstructure:"use_legacy_payload_format"`
 }
 
