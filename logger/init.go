@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/sirupsen/logrus"
 )
 
@@ -30,18 +31,18 @@ const (
 func init() {
 	log.Level = level(os.Getenv(ENV_TYK_LOGLEVEL))
 
-	formatter := newFormatter(FormatText)
+	formatter := NewFormatter(FormatText)
 	log.SetFormatter(formatter)
 }
 
 func SetupFormatter(format Format, env ...string) {
-	envFormat := Format(coalesce(env...))
+	envFormat := Format(lo.CoalesceOrEmpty(env...))
 
 	if len(envFormat) != 0 {
 		format = envFormat
 	}
 
-	formatter := newFormatter(format)
+	formatter := NewFormatter(format)
 	log.SetFormatter(formatter)
 
 	if format != FormatLegacy {
@@ -53,20 +54,7 @@ func GetLogger() *logrus.Logger {
 	return log
 }
 
-func level(level string) logrus.Level {
-	switch strings.ToLower(level) {
-	case "error":
-		return logrus.ErrorLevel
-	case "warn":
-		return logrus.WarnLevel
-	case "debug":
-		return logrus.DebugLevel
-	default:
-		return logrus.InfoLevel
-	}
-}
-
-func newFormatter(format Format) logrus.Formatter {
+func NewFormatter(format Format) logrus.Formatter {
 	switch format {
 	case FormatLegacy:
 		return &logrus.TextFormatter{
@@ -91,14 +79,15 @@ func newFormatter(format Format) logrus.Formatter {
 	}
 }
 
-func coalesce[T comparable](values ...T) T {
-	var zero T
-
-	for _, v := range values {
-		if zero != v {
-			return v
-		}
+func level(level string) logrus.Level {
+	switch strings.ToLower(level) {
+	case "error":
+		return logrus.ErrorLevel
+	case "warn":
+		return logrus.WarnLevel
+	case "debug":
+		return logrus.DebugLevel
+	default:
+		return logrus.InfoLevel
 	}
-
-	return zero
 }
