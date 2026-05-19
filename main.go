@@ -74,6 +74,7 @@ func Init() {
 
 	showDecodeDeprecationWarnings()
 
+	logger.SetupFormatter(SystemConfig.LogFormat, logger.ENV_TYK_LOGLEVEL)
 	if SystemConfig.LogFormat == "json" {
 		log.Formatter = &logrus.JSONFormatter{}
 	}
