@@ -2,6 +2,7 @@ package logger
 
 import (
 	"os"
+	"slices"
 	"strings"
 	"time"
 
@@ -53,9 +54,9 @@ func SetupFormatter(format Format, envVars ...string) {
 	}
 
 	formatter := newFormatter(resolvedFormat)
-
 	log.SetFormatter(formatter)
-	if resolvedFormat != FormatLegacyText {
+
+	if !slices.Contains([]Format{FormatLegacyText, FormatLegacyJSON, FormatLegacy}, resolvedFormat) {
 		logrus.StandardLogger().SetFormatter(formatter)
 	}
 }
