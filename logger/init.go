@@ -18,9 +18,11 @@ var (
 type Format string
 
 const (
-	FormatJSON   Format = "json"
-	FormatText   Format = "text"
-	FormatLegacy Format = "legacy"
+	FormatJSON       Format = "json"
+	FormatText       Format = "text"
+	FormatLegacy     Format = "legacy"
+	FormatLegacyText Format = "legacy_text"
+	FormatLegacyJSON Format = "legacy_json"
 )
 
 const (
@@ -53,7 +55,7 @@ func SetupFormatter(format Format, envVars ...string) {
 	formatter := newFormatter(resolvedFormat)
 
 	log.SetFormatter(formatter)
-	if resolvedFormat != FormatLegacy {
+	if resolvedFormat != FormatLegacyText {
 		logrus.StandardLogger().SetFormatter(formatter)
 	}
 }
@@ -64,12 +66,14 @@ func GetLogger() *logrus.Logger {
 
 func newFormatter(format Format) logrus.Formatter {
 	switch format {
-	case FormatLegacy:
+	case FormatLegacyText, FormatLegacy:
 		return &logrus.TextFormatter{
 			TimestampFormat: TimeFormatLegacy,
 			FullTimestamp:   true,
 			DisableColors:   true,
 		}
+	case FormatLegacyJSON:
+		return &logrus.JSONFormatter{}
 	case FormatJSON:
 		return &logrus.JSONFormatter{
 			FieldMap:        fieldMapperDefault,

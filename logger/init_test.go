@@ -114,9 +114,21 @@ func TestNewFormatter(t *testing.T) {
 			expectedTime: TimeFormatRFC3339,
 		},
 		{
+			name:         "Format Legacy Text",
+			format:       FormatLegacyText,
+			expectedType: &logrus.TextFormatter{},
+			expectedTime: TimeFormatLegacy,
+		},
+		{
 			name:         "Format Legacy",
 			format:       FormatLegacy,
 			expectedType: &logrus.TextFormatter{},
+			expectedTime: TimeFormatLegacy,
+		},
+		{
+			name:         "Format Legacy JSON",
+			format:       FormatLegacyJSON,
+			expectedType: &logrus.JSONFormatter{},
 			expectedTime: TimeFormatLegacy,
 		},
 		{
@@ -187,7 +199,7 @@ func TestSetupFormatter(t *testing.T) {
 		},
 		{
 			name:        "Legacy format blocks propagation to global logrus",
-			inputFormat: FormatLegacy,
+			inputFormat: FormatLegacyText,
 			envSetup:    func(t *testing.T) {},
 			envVars:     []string{},
 			expectJSON:  false,
