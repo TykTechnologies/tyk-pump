@@ -185,6 +185,14 @@ func TestSetupFormatter(t *testing.T) {
 			expectJSON: true,
 			expectSync: true,
 		},
+		{
+			name:        "Skips sync when legacy format is provided",
+			inputFormat: FormatLegacy,
+			envSetup:    func(t *testing.T) {},
+			envVars:     []string{},
+			expectJSON:  false,
+			expectSync:  false,
+		},
 	}
 
 	for _, tt := range tests {
