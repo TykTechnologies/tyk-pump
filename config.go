@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/TykTechnologies/tyk-pump/logger"
 	"github.com/TykTechnologies/tyk-pump/pumps"
 	"github.com/kelseyhightower/envconfig"
 
@@ -205,9 +206,10 @@ type TykPumpConfiguration struct {
 	// Set the logger details for tyk-pump. The posible values are: `info`,`debug`,`error` and
 	// `warn`. By default, the log level is `info`.
 	LogLevel string `json:"log_level"`
-	// Set the logger format. The possible values are: `text` and `json`. By default, the log
-	// format is `text`.
-	LogFormat string `json:"log_format"`
+	// Set the logger format. The possible values are: `text`, `json`, `legacy_json`,`legacy_text`, `legacy`.
+	// The `legacy` format is an alias for `legacy_text`.
+	// By default, the log format is `text`.
+	LogFormat logger.Format `json:"log_format"`
 	// TYKCONFIGHEADERSTART
 	// HEADER Health Check
 	// From v2.9.4, we have introduced a `/health` endpoint to confirm the Pump is running. You
