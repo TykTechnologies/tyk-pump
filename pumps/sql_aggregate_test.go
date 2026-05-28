@@ -11,6 +11,7 @@ import (
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
@@ -111,6 +112,38 @@ func TestSQLAggregateWriteData_Sharded(t *testing.T) {
 			assert.Equal(t, data.RowsLen, len(dbRecords))
 		})
 	}
+}
+
+func TestSQLAggregateDoAggregatedWriting_UsesProvidedTable_SQLite(t *testing.T) {
+	// TT-16778 coverage for CI environments that do not provide PostgreSQL:
+	// DoAggregatedWriting must use the caller-provided table for the insert
+	// target instead of falling back to the model's tyk_aggregated table.
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
+		UseJSONTags: true,
+		Logger:      logger.Default.LogMode(logger.Silent),
+	})
+	require.NoError(t, err)
+
+	ts := time.Date(2026, 3, 5, 12, 0, 0, 0, time.UTC)
+	table := analytics.AggregateSQLTable + "_" + ts.Format("20060102")
+	require.NoError(t, db.Table(table).AutoMigrate(&analytics.SQLAnalyticsRecordAggregate{}))
+	require.False(t, db.Migrator().HasTable(analytics.AggregateSQLTable))
+
+	pmp := &SQLAggregatePump{
+		SQLConf: &SQLAggregatePumpConf{
+			SQLConf: SQLConf{BatchSize: 1000},
+		},
+		db: db,
+	}
+	pmp.log = log.WithField("prefix", SQLAggregatePumpPrefix)
+
+	ag := aggregateRecordsForTest(t, "sqlite-direct-shard", ts)
+	require.NoError(t, pmp.DoAggregatedWriting(context.Background(), table, ag.OrgID, ag))
+
+	var shardCount int64
+	require.NoError(t, db.Table(table).Count(&shardCount).Error)
+	assert.Greater(t, shardCount, int64(0))
+	assert.False(t, db.Migrator().HasTable(analytics.AggregateSQLTable))
 }
 
 func TestSQLAggregateDoAggregatedWriting_Sharded(t *testing.T) {
