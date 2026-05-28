@@ -301,7 +301,7 @@ func (c *SQLAggregatePump) DoAggregatedWriting(ctx context.Context, table, orgID
 		}
 
 		// we use excluded as temp  table since it's supported by our SQL storages https://www.postgresql.org/docs/9.5/sql-insert.html#SQL-ON-CONFLICT
-		tx := c.db.WithContext(ctx).Clauses(clause.OnConflict{
+		tx := c.db.WithContext(ctx).Table(table).Clauses(clause.OnConflict{
 			Columns:   []clause.Column{{Name: "id"}},
 			DoUpdates: clause.Assignments(analytics.OnConflictAssignments(table, "excluded")),
 		}).Create(recs[i:ends])
