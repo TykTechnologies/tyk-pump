@@ -32,6 +32,9 @@ project:
             server:
                 language: go
                 command: go test -count=1 -coverprofile=../cover.out ./server
+            storage:
+                language: go
+                command: go test -count=1 -timeout=180s -coverprofile=../cover.out ./storage
     lint:
         exclude:
             - '**/*.pb.go'
@@ -73,6 +76,11 @@ project:
                   scope: ./server
                   test_command: server
                   test_packages: ./server
+                - id: storage
+                  language: go
+                  scope: ./storage
+                  test_command: storage
+                  test_packages: ./storage
         evidence_diversity:
             min_classes:
                 B: 2

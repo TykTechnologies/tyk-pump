@@ -1,0 +1,14 @@
+{
+  "name": "write_within_timeout_z3_boundary_01___",
+  "property": "write_within_timeout",
+  "source": "z3-boundary",
+  "inputs": [
+    {
+      "elapsed_ns": 1,
+      "timeout_ns": 1
+    }
+  ],
+  "expected": {
+    "write_within_timeout": true
+  }
+}

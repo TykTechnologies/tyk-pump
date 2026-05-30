@@ -4,6 +4,35 @@ variables:
       type: bool
       direction: input
       description: Tyk gateway publishes analytics under the tyk-system-analytics(_0..9) keys.
+      # Maps to KI analytics-key-shard-ceiling-hardcoded: the pump hardcodes shard_modulus = 10,
+      # so any gateway sharding scheme with modulus > 10 leaves the upper shards unread.
+      # Z3 will surface this when paired requirements assume a larger ceiling.
+      data_constraint:
+        domain: integer
+        variable: shard_index
+        condition: "shard_index >= 0 && shard_index < shard_modulus"
+        parameters:
+          - name: shard_index
+            type: int
+            constraint: ">= 0"
+          - name: shard_modulus
+            type: int
+            constraint: ">= 1"
+    - name: gateway_keys_outside_shard_range
+      type: bool
+      direction: input
+      description: Complement of gateway_publishes_keys — shard_index falls outside the [0, shard_modulus) range. Paired with gateway_publishes_keys so the partition over the integer domain is total + exclusive.
+      data_constraint:
+        domain: integer
+        variable: shard_index
+        condition: "shard_index < 0 || shard_index >= shard_modulus"
+        parameters:
+          - name: shard_index
+            type: int
+            constraint: ">= 0"
+          - name: shard_modulus
+            type: int
+            constraint: ">= 1"
     - name: gateway_uses_msgpack_or_protobuf
       type: bool
       direction: input

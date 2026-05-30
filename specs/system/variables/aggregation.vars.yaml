@@ -16,6 +16,26 @@ variables:
       type: bool
       direction: input
       description: Records have been aggregated within the configured window.
+      data_constraint:
+        domain: integer
+        variable: aggregated_count
+        condition: "aggregated_count >= 1"
+        parameters:
+          - name: aggregated_count
+            type: int
+            constraint: ">= 0"
+    - name: records_unaggregated
+      type: bool
+      direction: input
+      description: No records have been aggregated within the configured window (complement of records_aggregated).
+      data_constraint:
+        domain: integer
+        variable: aggregated_count
+        condition: "aggregated_count == 0"
+        parameters:
+          - name: aggregated_count
+            type: int
+            constraint: ">= 0"
     - name: hits_errors_latency_counted
       type: bool
       direction: output

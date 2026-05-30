@@ -1,0 +1,13 @@
+{
+  "name": "instrumentation_disabled_z3_constraint_true",
+  "property": "instrumentation_disabled",
+  "source": "z3-boundary",
+  "inputs": [
+    {
+      "statsd_addr_length": 0
+    }
+  ],
+  "expected": {
+    "instrumentation_disabled": true
+  }
+}

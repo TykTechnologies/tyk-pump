@@ -1,0 +1,14 @@
+{
+  "name": "env_override_present_z3_constraint_true",
+  "property": "env_override_present",
+  "source": "z3-boundary",
+  "inputs": [
+    {
+      "env_key_length": 1,
+      "env_value_length": 1
+    }
+  ],
+  "expected": {
+    "env_override_present": true
+  }
+}

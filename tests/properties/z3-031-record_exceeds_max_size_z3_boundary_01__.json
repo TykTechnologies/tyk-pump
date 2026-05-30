@@ -1,0 +1,14 @@
+{
+  "name": "record_exceeds_max_size_z3_boundary_01__",
+  "property": "record_exceeds_max_size",
+  "source": "z3-boundary",
+  "inputs": [
+    {
+      "max_record_size": 1,
+      "record_size": 1
+    }
+  ],
+  "expected": {
+    "record_exceeds_max_size": false
+  }
+}

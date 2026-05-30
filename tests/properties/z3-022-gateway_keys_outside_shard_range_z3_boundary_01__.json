@@ -1,0 +1,14 @@
+{
+  "name": "gateway_keys_outside_shard_range_z3_boundary_01__",
+  "property": "gateway_keys_outside_shard_range",
+  "source": "z3-boundary",
+  "inputs": [
+    {
+      "shard_index": 0,
+      "shard_modulus": 1
+    }
+  ],
+  "expected": {
+    "gateway_keys_outside_shard_range": false
+  }
+}

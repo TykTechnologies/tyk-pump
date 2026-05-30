@@ -1,0 +1,13 @@
+{
+  "name": "go_125_or_later_z3_constraint_true",
+  "property": "go_125_or_later",
+  "source": "z3-boundary",
+  "inputs": [
+    {
+      "go_version_code": 1025
+    }
+  ],
+  "expected": {
+    "go_125_or_later": true
+  }
+}

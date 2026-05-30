@@ -1,0 +1,15 @@
+{
+  "name": "record_truncated_z3_boundary_02___",
+  "property": "record_truncated",
+  "source": "z3-boundary",
+  "inputs": [
+    {
+      "max_record_size": 1,
+      "original_size": 0,
+      "truncated_size": 0
+    }
+  ],
+  "expected": {
+    "record_truncated": true
+  }
+}

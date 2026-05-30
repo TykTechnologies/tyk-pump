@@ -4,10 +4,52 @@ variables:
       type: bool
       direction: input
       description: A record exceeds the configured maximum size.
+      data_constraint:
+        domain: integer
+        variable: record_size
+        condition: "record_size > max_record_size"
+        parameters:
+          - name: record_size
+            type: int
+            constraint: ">= 0"
+          - name: max_record_size
+            type: int
+            constraint: "> 0"
+    - name: record_within_max_size
+      type: bool
+      direction: input
+      description: A record is within the configured maximum size (complement of record_exceeds_max_size).
+      data_constraint:
+        domain: integer
+        variable: record_size
+        condition: "record_size <= max_record_size"
+        parameters:
+          - name: record_size
+            type: int
+            constraint: ">= 0"
+          - name: max_record_size
+            type: int
+            constraint: "> 0"
     - name: record_truncated
       type: bool
       direction: output
       description: The record is truncated before forwarding.
+      data_constraint:
+        domain: integer
+        variable: truncated_size
+        condition: "truncated_size <= max_record_size && truncated_size <= original_size"
+        # Producer axiom: truncate to the lesser of max_record_size and original_size.
+        assignment: "(= truncated_size (ite (<= max_record_size original_size) max_record_size original_size))"
+        parameters:
+          - name: truncated_size
+            type: int
+            constraint: ">= 0"
+          - name: max_record_size
+            type: int
+            constraint: "> 0"
+          - name: original_size
+            type: int
+            constraint: ">= 0"
     - name: decode_enabled
       type: bool
       direction: input

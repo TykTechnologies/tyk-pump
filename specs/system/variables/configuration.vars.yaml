@@ -4,6 +4,32 @@ variables:
       type: bool
       direction: input
       description: An environment variable overrides a configuration field.
+      data_constraint:
+        domain: integer
+        variable: env_key_length
+        condition: "env_key_length > 0 && env_value_length > 0"
+        parameters:
+          - name: env_key_length
+            type: int
+            constraint: ">= 0"
+          - name: env_value_length
+            type: int
+            constraint: ">= 0"
+    - name: env_override_absent
+      type: bool
+      direction: input
+      description: No environment variable is set to override a configuration field — either the key or the value is empty (complement of env_override_present).
+      data_constraint:
+        domain: integer
+        variable: env_key_length
+        condition: "env_key_length == 0 || env_value_length == 0"
+        parameters:
+          - name: env_key_length
+            type: int
+            constraint: ">= 0"
+          - name: env_value_length
+            type: int
+            constraint: ">= 0"
     - name: config_reflects_env
       type: bool
       direction: output

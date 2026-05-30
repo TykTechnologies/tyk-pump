@@ -45,11 +45,12 @@ var testData = []struct {
 // Verifies: SYS-REQ-007
 // Verifies: INT-REQ-005
 func TestRedisClusterStorageManager_GetAndDeleteSet(t *testing.T) {
+	host, port := redisHostPort(t)
 	conf := make(map[string]interface{})
-	conf["host"] = "localhost"
-	conf["port"] = 6379
+	conf["host"] = host
+	conf["port"] = port
 
-	r, err := NewTemporalStorageHandler(conf, false)
+	r, err := NewTemporalStorageHandler(conf, true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -106,6 +107,7 @@ func TestRedisClusterStorageManager_GetAndDeleteSet(t *testing.T) {
 
 // Verifies: SW-REQ-006
 func TestNewTemporalClusterStorageHandler(t *testing.T) {
+	host, port := redisHostPort(t)
 	testCases := []struct {
 		config           *TemporalStorageConfig
 		testName         string
@@ -113,19 +115,19 @@ func TestNewTemporalClusterStorageHandler(t *testing.T) {
 		expectConnection bool
 	}{
 		{
-			testName:         "Connect to localhost:6379",
-			config:           &TemporalStorageConfig{Host: "localhost", Port: 6379},
+			testName:         "Connect to live Redis",
+			config:           &TemporalStorageConfig{Host: host, Port: port},
 			expectConnection: true,
 		},
 		{
 			testName:         "Force reconnect with existing singleton",
 			forceReconnect:   true,
-			config:           &TemporalStorageConfig{Host: "localhost", Port: 6379},
+			config:           &TemporalStorageConfig{Host: host, Port: port},
 			expectConnection: true,
 		},
 		{
 			testName:         "Invalid configuration",
-			config:           &TemporalStorageConfig{Host: "invalid-host", Port: 6379},
+			config:           &TemporalStorageConfig{Host: "invalid-host", Port: port},
 			expectConnection: false,
 			forceReconnect:   true,
 		},
@@ -159,11 +161,12 @@ func TestNewTemporalClusterStorageHandler(t *testing.T) {
 // Verifies: SW-REQ-007
 // SYS-REQ-007:atomicity:negative
 func TestTemporalStorageHandler_ensureConnection(t *testing.T) {
+	host, port := redisHostPort(t)
 	conf := make(map[string]interface{})
-	conf["host"] = "localhost"
-	conf["port"] = 6379
+	conf["host"] = host
+	conf["port"] = port
 
-	r, err := NewTemporalStorageHandler(conf, false)
+	r, err := NewTemporalStorageHandler(conf, true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -191,11 +194,12 @@ func TestTemporalStorageHandler_ensureConnection(t *testing.T) {
 
 // Verifies: SW-REQ-006
 func TestTemporalStorageHandler_SetKey(t *testing.T) {
+	host, port := redisHostPort(t)
 	conf := make(map[string]interface{})
-	conf["host"] = "localhost"
-	conf["port"] = 6379
+	conf["host"] = host
+	conf["port"] = port
 
-	r, err := NewTemporalStorageHandler(conf, false)
+	r, err := NewTemporalStorageHandler(conf, true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -230,11 +234,12 @@ func TestTemporalStorageHandler_SetKey(t *testing.T) {
 
 // Verifies: SW-REQ-006
 func TestTemporalStorageHandler_GetName(t *testing.T) {
+	host, port := redisHostPort(t)
 	conf := make(map[string]interface{})
-	conf["host"] = "localhost"
-	conf["port"] = 6379
+	conf["host"] = host
+	conf["port"] = port
 
-	r, err := NewTemporalStorageHandler(conf, false)
+	r, err := NewTemporalStorageHandler(conf, true)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -257,6 +262,7 @@ func TestTemporalStorageHandler_GetName(t *testing.T) {
 
 // Verifies: SW-REQ-006
 func TestTemporalStorageHandler_Init(t *testing.T) {
+	host, port := redisHostPort(t)
 	testCases := []struct {
 		conf           map[string]interface{}
 		errExpected    error
@@ -266,15 +272,15 @@ func TestTemporalStorageHandler_Init(t *testing.T) {
 		{
 			name: "Valid configuration",
 			conf: map[string]interface{}{
-				"host": "localhost",
-				"port": 6379,
+				"host": host,
+				"port": port,
 			},
 		},
 		{
 			name: "Invalid configuration",
 			conf: map[string]interface{}{
 				"host": "abc",
-				"port": 6379,
+				"port": port,
 				"type": "invalid",
 			},
 			forceReconnect: true,

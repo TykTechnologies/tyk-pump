@@ -1,0 +1,14 @@
+{
+  "name": "retry_attempts_remaining_z3_constraint_true",
+  "property": "retry_attempts_remaining",
+  "source": "z3-boundary",
+  "inputs": [
+    {
+      "attempts": 0,
+      "max_attempts": 1
+    }
+  ],
+  "expected": {
+    "retry_attempts_remaining": true
+  }
+}

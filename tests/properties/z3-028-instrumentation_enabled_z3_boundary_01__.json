@@ -1,0 +1,13 @@
+{
+  "name": "instrumentation_enabled_z3_boundary_01__",
+  "property": "instrumentation_enabled",
+  "source": "z3-boundary",
+  "inputs": [
+    {
+      "statsd_addr_length": 0
+    }
+  ],
+  "expected": {
+    "instrumentation_enabled": false
+  }
+}

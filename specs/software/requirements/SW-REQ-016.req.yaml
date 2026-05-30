@@ -29,8 +29,8 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-05-30T10:36:05Z"
-        comment: 'Phase 0.7 review: applied SW review findings (description honesty for SW-006/007/008/016/031, obligation downgrades for SW-006/023/035/064, SW-007 retargeting, new SW-071 for GeoIP split) and SYS-side trace extensions (SW-001/002/007/011/015 now satisfy Phase 0.6-split SYS reqs); content factual against current code.'
+        reviewed_at: "2026-05-30T20:22:55Z"
+        comment: 'Phase B: SW-016 carries boundary now to honestly cover record-size truncation Z3 boundary tests (analytics/z3_property_test.go).'
         fingerprint: sha256:ac22913a24ad1ba5b22876e9559370476a4bf06f5ea4357776051027e5dfe5bb
         ai_generated: false
     impact_reviews:
@@ -48,8 +48,9 @@ history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:15Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-30T10:36:05Z"
+    last_modified_at: "2026-05-30T20:22:55Z"
 obligation_checklist:
+    - boundary
     - nominal
 lifecycle:
     change_history:
@@ -62,4 +63,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-05-30T07:43:08Z comment="Software-component design reviewed as part of feat/reqproof-coverage PR; each maps to verified code paths per the Phase 0 file-by-file verification (see PR description for code-verified corrections SW-016/017/023/027/028/033).")'
+          changed_by: human:cli
+        - date: "2026-05-30T20:22:55Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-05-30T10:36:05Z comment="Phase 0.7 review: applied SW review findings (description honesty for SW-006/007/008/016/031, obligation downgrades for SW-006/023/035/064, SW-007 retargeting, new SW-071 for GeoIP split) and SYS-side trace extensions (SW-001/002/007/011/015 now satisfy Phase 0.6-split SYS reqs); content factual against current code.")'
           changed_by: human:cli

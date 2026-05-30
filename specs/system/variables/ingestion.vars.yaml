@@ -4,6 +4,26 @@ variables:
       type: bool
       direction: input
       description: Unconsumed analytics records are present in the temporal store.
+      data_constraint:
+        domain: integer
+        variable: pending_count
+        condition: "pending_count > 0"
+        parameters:
+          - name: pending_count
+            type: int
+            constraint: ">= 0"
+    - name: records_drained
+      type: bool
+      direction: input
+      description: The temporal store has no unconsumed analytics records (complement of records_pending).
+      data_constraint:
+        domain: integer
+        variable: pending_count
+        condition: "pending_count == 0"
+        parameters:
+          - name: pending_count
+            type: int
+            constraint: ">= 0"
     - name: records_consumed
       type: bool
       direction: input

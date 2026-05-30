@@ -12,6 +12,32 @@ variables:
       type: bool
       direction: input
       description: A backend write has exceeded its configured timeout.
+      data_constraint:
+        domain: integer
+        variable: elapsed_ns
+        condition: "elapsed_ns > timeout_ns"
+        parameters:
+          - name: elapsed_ns
+            type: int
+            constraint: ">= 0"
+          - name: timeout_ns
+            type: int
+            constraint: "> 0"
+    - name: write_within_timeout
+      type: bool
+      direction: input
+      description: A backend write completes within its configured timeout (complement of write_exceeds_timeout).
+      data_constraint:
+        domain: integer
+        variable: elapsed_ns
+        condition: "elapsed_ns <= timeout_ns"
+        parameters:
+          - name: elapsed_ns
+            type: int
+            constraint: ">= 0"
+          - name: timeout_ns
+            type: int
+            constraint: "> 0"
     - name: write_aborted
       type: bool
       direction: output
@@ -36,6 +62,32 @@ variables:
       type: bool
       direction: input
       description: The configured maximum retry attempts have been used for a transient failure.
+      data_constraint:
+        domain: integer
+        variable: attempts
+        condition: "attempts >= max_attempts"
+        parameters:
+          - name: attempts
+            type: int
+            constraint: ">= 0"
+          - name: max_attempts
+            type: int
+            constraint: ">= 1"
+    - name: retry_attempts_remaining
+      type: bool
+      direction: input
+      description: Retry attempts are still available below the configured maximum (complement of retry_attempts_exhausted).
+      data_constraint:
+        domain: integer
+        variable: attempts
+        condition: "attempts < max_attempts"
+        parameters:
+          - name: attempts
+            type: int
+            constraint: ">= 0"
+          - name: max_attempts
+            type: int
+            constraint: ">= 1"
     - name: error_surfaced_to_caller
       type: bool
       direction: output

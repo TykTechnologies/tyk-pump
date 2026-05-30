@@ -12,6 +12,26 @@ variables:
       type: bool
       direction: input
       description: Instrumentation is enabled.
+      data_constraint:
+        domain: integer
+        variable: statsd_addr_length
+        condition: "statsd_addr_length > 0"
+        parameters:
+          - name: statsd_addr_length
+            type: int
+            constraint: ">= 0"
+    - name: instrumentation_disabled
+      type: bool
+      direction: input
+      description: Instrumentation is disabled because no statsd address is configured (complement of instrumentation_enabled).
+      data_constraint:
+        domain: integer
+        variable: statsd_addr_length
+        condition: "statsd_addr_length == 0"
+        parameters:
+          - name: statsd_addr_length
+            type: int
+            constraint: ">= 0"
     - name: metrics_emitted
       type: bool
       direction: output

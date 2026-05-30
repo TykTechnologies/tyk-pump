@@ -1,0 +1,13 @@
+{
+  "name": "records_aggregated_z3_constraint_true",
+  "property": "records_aggregated",
+  "source": "z3-boundary",
+  "inputs": [
+    {
+      "aggregated_count": 1
+    }
+  ],
+  "expected": {
+    "records_aggregated": true
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "name": "gateway_publishes_keys_z3_boundary_01___",
+  "property": "gateway_publishes_keys",
+  "source": "z3-boundary",
+  "inputs": [
+    {
+      "shard_index": 0,
+      "shard_modulus": 1
+    }
+  ],
+  "expected": {
+    "gateway_publishes_keys": true
+  }
+}

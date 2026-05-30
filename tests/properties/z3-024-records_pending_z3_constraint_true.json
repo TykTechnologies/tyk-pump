@@ -1,0 +1,13 @@
+{
+  "name": "records_pending_z3_constraint_true",
+  "property": "records_pending",
+  "source": "z3-boundary",
+  "inputs": [
+    {
+      "pending_count": 1
+    }
+  ],
+  "expected": {
+    "records_pending": true
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "name": "records_drained_z3_constraint_true",
+  "property": "records_drained",
+  "source": "z3-boundary",
+  "inputs": [
+    {
+      "pending_count": 0
+    }
+  ],
+  "expected": {
+    "records_drained": true
+  }
+}

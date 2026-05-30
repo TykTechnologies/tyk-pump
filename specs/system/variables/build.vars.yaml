@@ -4,6 +4,16 @@ variables:
       type: bool
       direction: output
       description: Go toolchain version is 1.25 or later.
+      # Postcondition over the satisfying domain: a toolchain version
+      # code (major*1000 + minor) of 1025+ encodes Go 1.25+.
+      data_constraint:
+        domain: integer
+        variable: go_version_code
+        condition: "go_version_code >= 1025"
+        parameters:
+          - name: go_version_code
+            type: int
+            constraint: ">= 1025"
     - name: fips_build_available
       type: bool
       direction: output
