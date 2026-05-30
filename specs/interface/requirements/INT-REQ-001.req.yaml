@@ -5,7 +5,7 @@ priority: shall
 category: functional
 req_type: derived
 fretish: ""
-description: The gateway shall publish serialized analytics records into the temporal store under the analytics keys (tyk-system-analytics and tyk-system-analytics_0..9); the pump shall consume and deserialize them, bounding untrusted input.
+description: The gateway shall publish serialized analytics records into the configured temporal store under the analytics key set (tyk-system-analytics plus tyk-system-analytics_0 through _9); the pump shall consume and deserialize them, bounding untrusted input on the decode path.
 formalization_strategy: informal
 informal_verification:
     method: ""
@@ -13,7 +13,7 @@ informal_verification:
     verified: false
 parent: SYS-REQ-001
 component: gateway-pump
-rationale: ""
+rationale: "The gateway-pump analytics-record key contract is the primary data ingestion surface; an explicit ICD locks the key set, encoding, and schema-evolution rules so the gateway and pump can change independently within the contract."
 tags: []
 variables: []
 traces:
@@ -29,15 +29,15 @@ verification:
         status: approved
         reviewer: human:buger
         role: interface_owner
-        reviewed_at: "2026-05-30T08:31:54Z"
-        comment: Re-approval after Phase C ICD metadata block populated; caller/callee/schema-version/back-compat/retirement fields code-verified.
-        fingerprint: sha256:faf0de45833ca406d52e4f000ff19e2cf3c4b56c23e32fe2388a8244bf66c5cb
+        reviewed_at: "2026-05-30T10:18:00Z"
+        comment: 'Re-approval after super-strict review: added one-sentence rationales per req; tightened descriptions to pass the 30-word plan floor while preserving the rich detail in the interface.signature/protocol/assumptions/guarantees blocks; fixed INT-007 sharding-key reference (table_sharding, not sharding_table) and INT-008 CSV line-number drift (51 not 55).'
+        fingerprint: sha256:9e4c79a93173d628e30e014d8d644a3f165e0726b6540432ba5c2b7654ccc3f4
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:46Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-30T08:31:54Z"
+    last_modified_at: "2026-05-30T10:18:00Z"
 obligation_checklist:
     - untrusted_input_bounded
 interface:
@@ -66,4 +66,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="interface_owner" reviewer="human:buger" at=2026-05-30T07:43:08Z comment="Cross-component contracts reviewed as part of feat/reqproof-coverage PR; gateway/storage/serializer/pump-backend contracts verified against actual key constants and interface declarations.")'
+          changed_by: human:cli
+        - date: "2026-05-30T10:18:00Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="interface_owner" reviewer="human:buger" at=2026-05-30T08:31:54Z comment="Re-approval after Phase C ICD metadata block populated; caller/callee/schema-version/back-compat/retirement fields code-verified.")'
           changed_by: human:cli

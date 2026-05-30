@@ -5,7 +5,7 @@ priority: shall
 category: functional
 req_type: derived
 fretish: ""
-description: The storage retry strategy shall retry storage operations on transient failures using bounded exponential backoff.
+description: The storage retry strategy shall return a bounded-per-attempt-interval exponential backoff (10s cap, 2x multiplier) for storage operations; when MaxElapsedTime is left at the zero default the total retry duration is unbounded — tracked by KI storage-retry-maxelapsed-zero-is-unbounded.
 formalization_strategy: informal
 informal_verification:
     method: ""
@@ -29,9 +29,9 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-05-30T07:43:08Z"
-        comment: Software-component design reviewed as part of feat/reqproof-coverage PR; each maps to verified code paths per the Phase 0 file-by-file verification (see PR description for code-verified corrections SW-016/017/023/027/028/033).
-        fingerprint: sha256:959db2920c0d6402163fa27091c289c9e4d7c0f4f01fe50effa23e64d3916c53
+        reviewed_at: "2026-05-30T10:36:05Z"
+        comment: 'Phase 0.7 review: applied SW review findings (description honesty for SW-006/007/008/016/031, obligation downgrades for SW-006/023/035/064, SW-007 retargeting, new SW-071 for GeoIP split) and SYS-side trace extensions (SW-001/002/007/011/015 now satisfy Phase 0.6-split SYS reqs); content factual against current code.'
+        fingerprint: sha256:408fd10f02a27c27b6f2f41e8c24131fd115059be124a72d373b34bb6904df97
         ai_generated: false
     impact_reviews:
         - requirement: SW-REQ-031
@@ -48,7 +48,7 @@ history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:17Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-30T07:43:08Z"
+    last_modified_at: "2026-05-30T10:36:05Z"
 obligation_checklist:
     - error_handling
 lifecycle:
@@ -57,4 +57,9 @@ lifecycle:
           from: draft
           to: review
           reason: ""
+          changed_by: human:cli
+        - date: "2026-05-30T10:36:05Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-05-30T07:43:08Z comment="Software-component design reviewed as part of feat/reqproof-coverage PR; each maps to verified code paths per the Phase 0 file-by-file verification (see PR description for code-verified corrections SW-016/017/023/027/028/033).")'
           changed_by: human:cli

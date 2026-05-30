@@ -16,3 +16,7 @@ variables:
       type: bool
       direction: output
       description: The configuration has been parsed from the JSON file.
+    - name: config_loading_robust_to_malformed_input
+      type: bool
+      direction: output
+      description: True iff config loading completes without crashing when given malformed/missing inputs (missing file, bad JSON, unknown env var, missing required field).

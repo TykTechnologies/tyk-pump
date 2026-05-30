@@ -3,7 +3,7 @@ version: 1
 status: approved
 priority: shall
 category: functional
-req_type: guarantee
+req_type: derived
 fretish: when retry_attempts_exhausted delivery shall always satisfy error_surfaced_to_caller
 description: When the configured maximum retry attempts have been exhausted for a transient failure, the pump shall surface the error to its caller without further retries.
 formalization_strategy: fretish
@@ -19,9 +19,9 @@ variables: []
 traces:
     satisfies:
         - STK-REQ-002
-    reviewed_at: "2026-05-30T07:57:15.487595Z"
+    reviewed_at: "2026-05-30T10:53:50.223775Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:4beb812c01ec42d69bb7e433e25125d32933b7d49c4733e806b9569f777784be
+    reviewed_fingerprint: sha256:ae4aa911f01a71a7a715ee33fc61cff1dabf1f714f2082f30f5d1994f43bb30a
 verification:
     assurance_level: B
     formalization_status: valid
@@ -29,15 +29,15 @@ verification:
         status: approved
         reviewer: human:buger
         role: system_engineer
-        reviewed_at: "2026-05-30T07:55:47Z"
-        comment: 'New SYS req from Phase 0.6 split of SYS-006 (error surfaced when retry attempts exhausted); code-verified: backoff.RetryNotify with WithMaxRetries returns error after exhaustion in retry/http-retry.go Send.'
-        fingerprint: sha256:5dc63b39028d598706437db1f4ad78ba1050a3efd34de54f1878b8fd9b3c4a78
+        reviewed_at: "2026-05-30T10:36:06Z"
+        comment: 'Phase 0.7 review: applied SYS review findings — obligation class re-aligned (SYS-011→nominal, SYS-013→error_handling, SYS-019→atomicity), req_type guarantee→derived for SYS-018..023, SYS-024 rationale honest about go.mod toolchain, SYS-032 narrowed to pure assumption, SYS-034 added for GeoIP short-circuit guarantee. SW children re-linked.'
+        fingerprint: sha256:aa328830ee402fb0e37c117f60cd557d2fd368bdcbeef5cf57ffd6b0174a27e8
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-30T07:52:53Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-30T07:55:47Z"
+    last_modified_at: "2026-05-30T10:36:06Z"
 obligation_class: error_handling
 lifecycle:
     change_history:
@@ -45,4 +45,9 @@ lifecycle:
           from: draft
           to: review
           reason: ""
+          changed_by: human:cli
+        - date: "2026-05-30T10:36:06Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="system_engineer" reviewer="human:buger" at=2026-05-30T07:55:47Z comment="New SYS req from Phase 0.6 split of SYS-006 (error surfaced when retry attempts exhausted); code-verified: backoff.RetryNotify with WithMaxRetries returns error after exhaustion in retry/http-retry.go Send.")'
           changed_by: human:cli

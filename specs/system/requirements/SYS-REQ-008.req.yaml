@@ -29,18 +29,20 @@ verification:
         status: approved
         reviewer: human:buger
         role: system_engineer
-        reviewed_at: "2026-05-30T07:55:47Z"
-        comment: 'Re-approval after Phase 0.6 narrowing: original descriptions split into atomic SYS reqs (consume/fan-out, windowing/dimensions/counters, retry-attempt/exhaust-surface, JSON-load/env-override, uptime-consume/forward). Narrowed descriptions remain code-accurate; companion split reqs added (SYS-018..023).'
+        reviewed_at: "2026-05-30T10:45:01Z"
+        comment: 'Phase 0.7: SYS-008 carries malformed_input obligation now (closing STK-REQ-003 malformed_input gap via SW-REQ-002 child + config_test.go TestIgnoreConfig ''Config file does not exist'').'
         fingerprint: sha256:5448ec3fb542afff763ea6706636f6b363c8063d12fce32ef4d4c1506a012db5
         ai_generated: false
-    gaps_reviewed_at: "2026-05-30T07:58:08.271903Z"
+    gaps_reviewed_at: "2026-05-30T10:53:05.547903Z"
     gaps_reviewed_by: buger
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:11:41Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-30T07:55:47Z"
+    last_modified_at: "2026-05-30T10:45:01Z"
 obligation_class: nominal
+obligation_checklist:
+    - malformed_input
 lifecycle:
     change_history:
         - date: "2026-05-29T15:46:45Z"
@@ -52,4 +54,14 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="system_engineer" reviewer="human:buger" at=2026-05-30T07:43:08Z comment="System-level behavior reviewed as part of feat/reqproof-coverage PR; FRETish + obligation + satisfies linkage verified against tyk-pump architecture and code in Phase 0 code-verification pass.")'
+          changed_by: human:cli
+        - date: "2026-05-30T10:43:40Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="system_engineer" reviewer="human:buger" at=2026-05-30T07:55:47Z comment="Re-approval after Phase 0.6 narrowing: original descriptions split into atomic SYS reqs (consume/fan-out, windowing/dimensions/counters, retry-attempt/exhaust-surface, JSON-load/env-override, uptime-consume/forward). Narrowed descriptions remain code-accurate; companion split reqs added (SYS-018..023).")'
+          changed_by: human:cli
+        - date: "2026-05-30T10:45:01Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="system_engineer" reviewer="human:buger" at=2026-05-30T10:43:40Z comment="Phase 0.7: SYS-008 obligation_checklist extended with malformed_input to satisfy STK-003 malformed_input coverage; evidenced via SW-002 child + config_test.go TestIgnoreConfig.")'
           changed_by: human:cli

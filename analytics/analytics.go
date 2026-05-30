@@ -368,7 +368,7 @@ func (a *AnalyticsRecord) TimeStampFromProto(protoRecord *analyticsproto.Analyti
 	a.ExpireAt = protoRecord.ExpireAt.AsTime().In(loc)
 }
 
-// reqproof:implements SW-REQ-009
+// reqproof:implements SW-REQ-071
 func (a *AnalyticsRecord) GetGeo(ipStr string, GeoIPDB *maxminddb.Reader) {
 	// Not great, tightly coupled
 	if GeoIPDB == nil {
@@ -395,7 +395,7 @@ func (a *AnalyticsRecord) GetGeo(ipStr string, GeoIPDB *maxminddb.Reader) {
 	a.Geo.City = geo.City
 }
 
-// reqproof:implements SW-REQ-009
+// reqproof:implements SW-REQ-071
 func GeoIPLookup(ipStr string, GeoIPDB *maxminddb.Reader) (*GeoData, error) {
 	if ipStr == "" {
 		return nil, nil

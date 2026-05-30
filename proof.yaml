@@ -14,6 +14,8 @@ project:
           prefix: INT-REQ
           type: interface
     default_assurance_level: B
+    catalog:
+        version: 1.0.0
     commands:
         build: go build ./...
         test: go test -count=1 ./analytics ./analytics/demo ./serializer ./storage ./logger .
@@ -35,12 +37,17 @@ project:
             - '**/*.pb.go'
             - vendor/**
     checks:
-        slow_tests: {}
+        solver_latency_clean:
+            threshold: 30
+        coverage_threshold:
+            threshold: 95
+        slow_tests:
+            threshold_seconds: 1
         mcdc_coverage: {}
+        under_modeled_requirements:
+            code_rich_max_meaningful_vars: 2
         code_mcdc:
             advisory: false
-            min_decision_percent: 95
-            min_condition_percent: 95
             languages:
                 go:
                     test_args:
@@ -74,3 +81,6 @@ project:
             assurance_levels:
                 - A
                 - B
+    audit:
+        fail_level: info
+        scope: full

@@ -23,9 +23,11 @@ traces:
         - SYS-REQ-015
         - SYS-REQ-016
         - SYS-REQ-011
-    reviewed_at: "2026-05-30T07:45:50.274618Z"
+        - SYS-REQ-022
+        - SYS-REQ-005
+    reviewed_at: "2026-05-30T10:53:48.693868Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:f045c16877e4d6691aadb42fc3b6f1e8f8dd922c2c81491ad98cdeaa93b9d02c
+    reviewed_fingerprint: sha256:d012b69c0c9bd9fb409fb2d4010fe0bdedb8f235885b88be7bf16cead4a48871
 verification:
     assurance_level: B
     formalization_status: none
@@ -33,26 +35,26 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-05-30T07:43:08Z"
-        comment: Software-component design reviewed as part of feat/reqproof-coverage PR; each maps to verified code paths per the Phase 0 file-by-file verification (see PR description for code-verified corrections SW-016/017/023/027/028/033).
-        fingerprint: sha256:46fa2f414005f8f0134548990c276fd391aa961f9289af5eb0936d95efbcd3cb
+        reviewed_at: "2026-05-30T10:36:05Z"
+        comment: 'Phase 0.7 review: applied SW review findings (description honesty for SW-006/007/008/016/031, obligation downgrades for SW-006/023/035/064, SW-007 retargeting, new SW-071 for GeoIP split) and SYS-side trace extensions (SW-001/002/007/011/015 now satisfy Phase 0.6-split SYS reqs); content factual against current code.'
+        fingerprint: sha256:44a6b50eb637581327356f6028f8c727562103cbe4c331689783e0160461941a
         ai_generated: false
     impact_reviews:
         - requirement: SW-REQ-001
           artifact: main.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Production files added reqproof requirement-traceability annotations only (// reqproof:implements / // Verifies: / triple-form evidence). No runtime behavior change.'
+          reason: 'Phase 0.7 SYS+SW review: traced files (analytics/analytics.go GeoIP retarget to SW-071, storage/temporal_storage.go SW-006↔SW-007 split, config.go SW-002 satisfies SYS-035 add) — production code semantics unchanged; only annotations/links/obligations updated. Verified by go build ./... and re-run of affected tests.'
           base: origin/master
-          requirement_fingerprint: sha256:f045c16877e4d6691aadb42fc3b6f1e8f8dd922c2c81491ad98cdeaa93b9d02c
-          approval_fingerprint: sha256:46fa2f414005f8f0134548990c276fd391aa961f9289af5eb0936d95efbcd3cb
+          requirement_fingerprint: sha256:d012b69c0c9bd9fb409fb2d4010fe0bdedb8f235885b88be7bf16cead4a48871
+          approval_fingerprint: sha256:44a6b50eb637581327356f6028f8c727562103cbe4c331689783e0160461941a
           artifact_fingerprint: sha256:4b683cd5715feffd7356231f04999400c4067164b6d478c53513559c0459a7cf
-          reviewed_at: "2026-05-30T07:45:39Z"
+          reviewed_at: "2026-05-30T10:52:28Z"
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:13Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-30T07:43:08Z"
+    last_modified_at: "2026-05-30T10:36:05Z"
 obligation_checklist:
     - nominal
 lifecycle:
@@ -61,4 +63,9 @@ lifecycle:
           from: draft
           to: review
           reason: ""
+          changed_by: human:cli
+        - date: "2026-05-30T10:36:05Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-05-30T07:43:08Z comment="Software-component design reviewed as part of feat/reqproof-coverage PR; each maps to verified code paths per the Phase 0 file-by-file verification (see PR description for code-verified corrections SW-016/017/023/027/028/033).")'
           changed_by: human:cli

@@ -3,7 +3,7 @@ version: 1
 status: approved
 priority: shall
 category: functional
-req_type: guarantee
+req_type: derived
 fretish: when record_available_for_dispatch delivery shall always satisfy record_dispatched_to_all_backends
 description: When the pump has consumed an analytics record from the temporal store, it shall dispatch the record to every configured backend pump on that purge cycle.
 formalization_strategy: fretish
@@ -19,9 +19,9 @@ variables: []
 traces:
     satisfies:
         - STK-REQ-001
-    reviewed_at: "2026-05-30T07:57:15.485173Z"
+    reviewed_at: "2026-05-30T10:53:50.156215Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:1d573464c2096d165f9efb1e7035cfa9d0f7e51d72cdcf79196996fdd552860e
+    reviewed_fingerprint: sha256:70d5079280edeccf20859d3b0eb4745daf593297fef3e6afb233023abc89c62d
 verification:
     assurance_level: B
     formalization_status: valid
@@ -29,15 +29,15 @@ verification:
         status: approved
         reviewer: human:buger
         role: system_engineer
-        reviewed_at: "2026-05-30T07:55:47Z"
-        comment: 'New SYS reqs from Phase 0.6 split of SYS-003 (dimensions+counters) and SYS-001 (fan-out); each is code-verified: dimensions/counters realised in analytics/aggregate.go incrementAggregate+incrementOrSetUnit, fan-out realised in main.writeToPumps goroutine-per-pump.'
-        fingerprint: sha256:e0ecab255af969d0e3fb362c8987b38cba65dc148cfa57fb09a42fa285353610
+        reviewed_at: "2026-05-30T10:36:06Z"
+        comment: 'Phase 0.7 review: applied SYS review findings — obligation class re-aligned (SYS-011→nominal, SYS-013→error_handling, SYS-019→atomicity), req_type guarantee→derived for SYS-018..023, SYS-024 rationale honest about go.mod toolchain, SYS-032 narrowed to pure assumption, SYS-034 added for GeoIP short-circuit guarantee. SW children re-linked.'
+        fingerprint: sha256:487471f42d1f4237903d047aff04154ef0b8d62e7c6c3e6920aab164b6d1d2e7
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-30T07:52:52Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-30T07:55:47Z"
+    last_modified_at: "2026-05-30T10:36:06Z"
 obligation_class: nominal
 lifecycle:
     change_history:
@@ -45,4 +45,9 @@ lifecycle:
           from: draft
           to: review
           reason: ""
+          changed_by: human:cli
+        - date: "2026-05-30T10:36:06Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="system_engineer" reviewer="human:buger" at=2026-05-30T07:55:47Z comment="New SYS reqs from Phase 0.6 split of SYS-003 (dimensions+counters) and SYS-001 (fan-out); each is code-verified: dimensions/counters realised in analytics/aggregate.go incrementAggregate+incrementOrSetUnit, fan-out realised in main.writeToPumps goroutine-per-pump.")'
           changed_by: human:cli

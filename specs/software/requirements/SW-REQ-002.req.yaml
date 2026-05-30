@@ -19,9 +19,11 @@ variables: []
 traces:
     satisfies:
         - SYS-REQ-008
-    reviewed_at: "2026-05-30T07:45:50.318058Z"
+        - SYS-REQ-020
+        - SYS-REQ-035
+    reviewed_at: "2026-05-30T10:53:48.936822Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:ba165c700a4a75c9b644aaac2450c0db3994aef28399123fa289fa300391d503
+    reviewed_fingerprint: sha256:666f6680ec16b52b5af7d082152e36d2b33ce1c508a9fe5280604026028ab3c3
 verification:
     assurance_level: B
     formalization_status: none
@@ -29,37 +31,38 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-05-30T07:43:08Z"
-        comment: Software-component design reviewed as part of feat/reqproof-coverage PR; each maps to verified code paths per the Phase 0 file-by-file verification (see PR description for code-verified corrections SW-016/017/023/027/028/033).
-        fingerprint: sha256:a46f3e7f2b5ecfc3aa7de49686eb46e77ec3de43fea9478057a422f7b9ea7b1c
+        reviewed_at: "2026-05-30T10:47:54Z"
+        comment: 'Phase 0.7: SW-002 also satisfies new SYS-035 (malformed config input handling).'
+        fingerprint: sha256:1f47f80af1e7ba5f73a4439ece02ef45396b0dd54853aa0a8d465a0eb2c9f83a
         ai_generated: false
     impact_reviews:
         - requirement: SW-REQ-002
           artifact: config.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Production files added reqproof requirement-traceability annotations only (// reqproof:implements / // Verifies: / triple-form evidence). No runtime behavior change.'
+          reason: 'Phase 0.7 SYS+SW review: traced files (analytics/analytics.go GeoIP retarget to SW-071, storage/temporal_storage.go SW-006↔SW-007 split, config.go SW-002 satisfies SYS-035 add) — production code semantics unchanged; only annotations/links/obligations updated. Verified by go build ./... and re-run of affected tests.'
           base: origin/master
-          requirement_fingerprint: sha256:ba165c700a4a75c9b644aaac2450c0db3994aef28399123fa289fa300391d503
-          approval_fingerprint: sha256:a46f3e7f2b5ecfc3aa7de49686eb46e77ec3de43fea9478057a422f7b9ea7b1c
+          requirement_fingerprint: sha256:666f6680ec16b52b5af7d082152e36d2b33ce1c508a9fe5280604026028ab3c3
+          approval_fingerprint: sha256:1f47f80af1e7ba5f73a4439ece02ef45396b0dd54853aa0a8d465a0eb2c9f83a
           artifact_fingerprint: sha256:9e792c1eb47195f9b6dc56e61d718012812eb0a68fa814ba904c911e0046bc35
-          reviewed_at: "2026-05-30T07:45:39Z"
+          reviewed_at: "2026-05-30T10:52:29Z"
         - requirement: SW-REQ-002
           artifact: main.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Production files added reqproof requirement-traceability annotations only (// reqproof:implements / // Verifies: / triple-form evidence). No runtime behavior change.'
+          reason: 'Phase 0.7 SYS+SW review: traced files (analytics/analytics.go GeoIP retarget to SW-071, storage/temporal_storage.go SW-006↔SW-007 split, config.go SW-002 satisfies SYS-035 add) — production code semantics unchanged; only annotations/links/obligations updated. Verified by go build ./... and re-run of affected tests.'
           base: origin/master
-          requirement_fingerprint: sha256:ba165c700a4a75c9b644aaac2450c0db3994aef28399123fa289fa300391d503
-          approval_fingerprint: sha256:a46f3e7f2b5ecfc3aa7de49686eb46e77ec3de43fea9478057a422f7b9ea7b1c
+          requirement_fingerprint: sha256:666f6680ec16b52b5af7d082152e36d2b33ce1c508a9fe5280604026028ab3c3
+          approval_fingerprint: sha256:1f47f80af1e7ba5f73a4439ece02ef45396b0dd54853aa0a8d465a0eb2c9f83a
           artifact_fingerprint: sha256:4b683cd5715feffd7356231f04999400c4067164b6d478c53513559c0459a7cf
-          reviewed_at: "2026-05-30T07:45:39Z"
+          reviewed_at: "2026-05-30T10:52:29Z"
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:13Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-30T07:49:09Z"
+    last_modified_at: "2026-05-30T10:51:49Z"
 obligation_checklist:
+    - malformed_input
     - nominal
 lifecycle:
     change_history:
@@ -67,4 +70,19 @@ lifecycle:
           from: draft
           to: review
           reason: ""
+          changed_by: human:cli
+        - date: "2026-05-30T10:36:05Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-05-30T07:43:08Z comment="Software-component design reviewed as part of feat/reqproof-coverage PR; each maps to verified code paths per the Phase 0 file-by-file verification (see PR description for code-verified corrections SW-016/017/023/027/028/033).")'
+          changed_by: human:cli
+        - date: "2026-05-30T10:43:40Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-05-30T10:36:05Z comment="Phase 0.7 review: applied SW review findings (description honesty for SW-006/007/008/016/031, obligation downgrades for SW-006/023/035/064, SW-007 retargeting, new SW-071 for GeoIP split) and SYS-side trace extensions (SW-001/002/007/011/015 now satisfy Phase 0.6-split SYS reqs); content factual against current code.")'
+          changed_by: human:cli
+        - date: "2026-05-30T10:47:54Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-05-30T10:43:40Z comment="Phase 0.7: SW-002 obligation_checklist extended with malformed_input to cover config ''file missing'' / typo path, evidenced by config_test.go TestIgnoreConfig ''Config file does not exist'' subtest.")'
           changed_by: human:cli

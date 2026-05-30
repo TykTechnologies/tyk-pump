@@ -29,20 +29,25 @@ verification:
         status: approved
         reviewer: human:buger
         role: system_engineer
-        reviewed_at: "2026-05-30T07:43:08Z"
-        comment: System-level behavior reviewed as part of feat/reqproof-coverage PR; FRETish + obligation + satisfies linkage verified against tyk-pump architecture and code in Phase 0 code-verification pass.
-        fingerprint: sha256:92c8523d582b61f6652e18505de6afcbfc5df16e3d3b1438ad46e7226eebaedb
+        reviewed_at: "2026-05-30T10:36:05Z"
+        comment: 'Phase 0.7 review: applied SYS review findings — obligation class re-aligned (SYS-011→nominal, SYS-013→error_handling, SYS-019→atomicity), req_type guarantee→derived for SYS-018..023, SYS-024 rationale honest about go.mod toolchain, SYS-032 narrowed to pure assumption, SYS-034 added for GeoIP short-circuit guarantee. SW children re-linked.'
+        fingerprint: sha256:3c7475c08d67e5f27e328462eafdaf0dcfffedfd6d485b82c488d991bc034f51
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:11:41Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-30T07:43:08Z"
-obligation_class: malformed_input
+    last_modified_at: "2026-05-30T10:36:05Z"
+obligation_class: nominal
 lifecycle:
     change_history:
         - date: "2026-05-29T15:46:45Z"
           from: draft
           to: review
           reason: ""
+          changed_by: human:cli
+        - date: "2026-05-30T10:36:05Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="system_engineer" reviewer="human:buger" at=2026-05-30T07:43:08Z comment="System-level behavior reviewed as part of feat/reqproof-coverage PR; FRETish + obligation + satisfies linkage verified against tyk-pump architecture and code in Phase 0 code-verification pass.")'
           changed_by: human:cli

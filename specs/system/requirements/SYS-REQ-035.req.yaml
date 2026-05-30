@@ -1,0 +1,48 @@
+id: SYS-REQ-035
+version: 1
+status: approved
+priority: shall
+category: functional
+req_type: derived
+fretish: configuration shall always satisfy config_loading_robust_to_malformed_input
+description: When the pump encounters a malformed or missing configuration input (config file does not exist, JSON parse error, missing required field, or unknown environment-variable typo), it shall continue without crashing — falling back to defaults for missing values and surfacing an informational log for unknown overrides.
+formalization_strategy: fretish
+informal_verification:
+    method: ""
+    evidence: ""
+    verified: false
+parent: STK-REQ-003
+component: configuration
+rationale: "Closes STK-REQ-003 malformed_input slot. Covers: TestIgnoreConfig 'Config file does not exist' subtest, mapstructure decode silently dropping unknown keys (tracked by KI mapstructure-decode-silently-drops-unknown-keys), and the env-var-prefix typo path. Implemented in config.go LoadConfig and the env-override loop."
+tags: []
+variables: []
+traces:
+    satisfies:
+        - STK-REQ-003
+    reviewed_at: "2026-05-30T10:53:50.338508Z"
+    reviewed_by: human:buger
+    reviewed_fingerprint: sha256:2df8985633b1e1a16988805cb9c76995f96f88f483deb652a8c0119529025621
+verification:
+    assurance_level: B
+    formalization_status: valid
+    review:
+        status: approved
+        reviewer: human:buger
+        role: system_engineer
+        reviewed_at: "2026-05-30T10:47:21Z"
+        comment: 'Phase 0.7: new SYS-035 closes the STK-REQ-003 malformed_input slot. Verified by config_test.go TestIgnoreConfig ''Config file does not exist'' subtest + SW-REQ-002 child.'
+        fingerprint: sha256:467290471d5a124b4f87cdf094b7c6a4836ca0496b68fb275114b0921d6f49be
+        ai_generated: false
+history:
+    created_by: human:cli
+    created_at: "2026-05-30T10:45:42Z"
+    last_modified_by: human:cli
+    last_modified_at: "2026-05-30T10:47:21Z"
+obligation_class: malformed_input
+lifecycle:
+    change_history:
+        - date: "2026-05-30T10:47:21Z"
+          from: draft
+          to: review
+          reason: 'Phase 0.7: promote new SYS-035 for review'
+          changed_by: human:cli

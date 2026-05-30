@@ -3,7 +3,7 @@ version: 1
 status: approved
 priority: shall
 category: functional
-req_type: guarantee
+req_type: derived
 fretish: when env_override_present configuration shall always satisfy config_reflects_env
 description: Every configuration field shall be overridable by an environment variable of the form TYK_PMP_<FIELD>; the effective configuration shall reflect the env override when present.
 formalization_strategy: fretish
@@ -19,9 +19,9 @@ variables: []
 traces:
     satisfies:
         - STK-REQ-003
-    reviewed_at: "2026-05-30T07:57:15.478936Z"
+    reviewed_at: "2026-05-30T10:53:50.146664Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:64fa22581ccc39d791a0a30356c48f3035d8d5cc358463df5e8be53b46e6fc18
+    reviewed_fingerprint: sha256:37b7e6e55088c6a3c11cb13da7bee2bd0d80147b76be7c1b3768ff1021421ad9
 verification:
     assurance_level: B
     formalization_status: valid
@@ -29,15 +29,15 @@ verification:
         status: approved
         reviewer: human:buger
         role: system_engineer
-        reviewed_at: "2026-05-30T07:55:47Z"
-        comment: New SYS req from Phase 0.6 split of SYS-008 (env override); code-verified in config.go envconfig.Process(ENV_PREVIX, ...) called after json.Unmarshal.
-        fingerprint: sha256:98f315af9a7b1300ae232edf4c550a8919ecf0c3fbc6379e2e1fa4a5eb0985f0
+        reviewed_at: "2026-05-30T10:36:05Z"
+        comment: 'Phase 0.7 review: applied SYS review findings — obligation class re-aligned (SYS-011→nominal, SYS-013→error_handling, SYS-019→atomicity), req_type guarantee→derived for SYS-018..023, SYS-024 rationale honest about go.mod toolchain, SYS-032 narrowed to pure assumption, SYS-034 added for GeoIP short-circuit guarantee. SW children re-linked.'
+        fingerprint: sha256:1ab6847800d9c21c65b59567620b0a57a7eb5dd68f308d1706b35efb927dc6ad
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-30T07:52:52Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-30T07:55:47Z"
+    last_modified_at: "2026-05-30T10:36:05Z"
 obligation_class: nominal
 lifecycle:
     change_history:
@@ -45,4 +45,9 @@ lifecycle:
           from: draft
           to: review
           reason: ""
+          changed_by: human:cli
+        - date: "2026-05-30T10:36:05Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="system_engineer" reviewer="human:buger" at=2026-05-30T07:55:47Z comment="New SYS req from Phase 0.6 split of SYS-008 (env override); code-verified in config.go envconfig.Process(ENV_PREVIX, ...) called after json.Unmarshal.")'
           changed_by: human:cli

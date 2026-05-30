@@ -106,6 +106,9 @@ func TestConfigEnv(t *testing.T) {
 
 // Verifies: SW-REQ-002
 // Verifies: INT-REQ-008
+// Verifies: SYS-REQ-008
+// SW-REQ-002:malformed_input:negative
+// SYS-REQ-008:malformed_input:negative
 func TestIgnoreConfig(t *testing.T) {
 	defaultPath := "pump.example.conf"
 

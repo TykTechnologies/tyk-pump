@@ -5,7 +5,7 @@ priority: shall
 category: functional
 req_type: derived
 fretish: ""
-description: Temporal storage shall establish and re-establish its backend connection using bounded exponential backoff.
+description: Temporal storage shall construct, lazily establish, and re-establish its backend connection (NewTemporalStorageHandler, Init, connect, ensureConnection, resetConnection, createConnector, getKVFromConnector, getListFromConnector, fixKey, SetKey, GetName), using bounded exponential backoff for retried connect attempts via retry.GetTemporalStorageExponentialBackoff.
 formalization_strategy: informal
 informal_verification:
     method: ""
@@ -19,9 +19,10 @@ variables: []
 traces:
     satisfies:
         - SYS-REQ-006
-    reviewed_at: "2026-05-30T07:45:50.440025Z"
+        - SYS-REQ-023
+    reviewed_at: "2026-05-30T10:53:49.147536Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:65a254aeaaba6cdc008aaa211c6e7640f6deb763626cef5f32f58fed6868153a
+    reviewed_fingerprint: sha256:3567ce36ffaca886d60a28f93d6b49c9bc7c6db75d20689b21604d9dbe3beecf
 verification:
     assurance_level: B
     formalization_status: none
@@ -29,36 +30,46 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-05-30T07:43:08Z"
-        comment: Software-component design reviewed as part of feat/reqproof-coverage PR; each maps to verified code paths per the Phase 0 file-by-file verification (see PR description for code-verified corrections SW-016/017/023/027/028/033).
-        fingerprint: sha256:725f3af3531569dd935811f459ae897a0300ab98211494887f28de12479763eb
+        reviewed_at: "2026-05-30T10:36:05Z"
+        comment: 'Phase 0.7 review: applied SW review findings (description honesty for SW-006/007/008/016/031, obligation downgrades for SW-006/023/035/064, SW-007 retargeting, new SW-071 for GeoIP split) and SYS-side trace extensions (SW-001/002/007/011/015 now satisfy Phase 0.6-split SYS reqs); content factual against current code.'
+        fingerprint: sha256:0c3c5c97740bac396c4b9824b5711bd48106131932977ed731d962f59e454c94
         ai_generated: false
     impact_reviews:
         - requirement: SW-REQ-007
           artifact: docs/fmea.md
           decision: no-authored-change
           reviewer: buger
-          reason: 'docs/fmea.md authored as part of Phase D (FMEA + obligation re-tune); it documents failure modes including storage-reconnect / temporal-store-unreachable scenarios that SW-REQ-007 implements. The FMEA is read-only documentation; no runtime behaviour change to storage/temporal_storage.go.'
+          reason: 'Phase 0.7 SYS+SW review: traced files (analytics/analytics.go GeoIP retarget to SW-071, storage/temporal_storage.go SW-006↔SW-007 split, config.go SW-002 satisfies SYS-035 add) — production code semantics unchanged; only annotations/links/obligations updated. Verified by go build ./... and re-run of affected tests.'
           base: origin/master
-          requirement_fingerprint: sha256:65a254aeaaba6cdc008aaa211c6e7640f6deb763626cef5f32f58fed6868153a
-          approval_fingerprint: sha256:725f3af3531569dd935811f459ae897a0300ab98211494887f28de12479763eb
+          requirement_fingerprint: sha256:3567ce36ffaca886d60a28f93d6b49c9bc7c6db75d20689b21604d9dbe3beecf
+          approval_fingerprint: sha256:0c3c5c97740bac396c4b9824b5711bd48106131932977ed731d962f59e454c94
           artifact_fingerprint: sha256:10ed755ac172d68a5082fa28ddf21676d210bcbfaca858747213607c75a51920
-          reviewed_at: "2026-05-30T08:55:50Z"
+          reviewed_at: "2026-05-30T10:52:29Z"
         - requirement: SW-REQ-007
           artifact: storage/store.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Production files added reqproof requirement-traceability annotations only (// reqproof:implements / // Verifies: / triple-form evidence). No runtime behavior change.'
+          reason: 'Phase 0.7 SYS+SW review: traced files (analytics/analytics.go GeoIP retarget to SW-071, storage/temporal_storage.go SW-006↔SW-007 split, config.go SW-002 satisfies SYS-035 add) — production code semantics unchanged; only annotations/links/obligations updated. Verified by go build ./... and re-run of affected tests.'
           base: origin/master
-          requirement_fingerprint: sha256:65a254aeaaba6cdc008aaa211c6e7640f6deb763626cef5f32f58fed6868153a
-          approval_fingerprint: sha256:725f3af3531569dd935811f459ae897a0300ab98211494887f28de12479763eb
+          requirement_fingerprint: sha256:3567ce36ffaca886d60a28f93d6b49c9bc7c6db75d20689b21604d9dbe3beecf
+          approval_fingerprint: sha256:0c3c5c97740bac396c4b9824b5711bd48106131932977ed731d962f59e454c94
           artifact_fingerprint: sha256:e3e96b335a7f110f632eb0cf1980fc8f592e018ca4124e69232f016ffec0219c
-          reviewed_at: "2026-05-30T07:45:40Z"
+          reviewed_at: "2026-05-30T10:52:29Z"
+        - requirement: SW-REQ-007
+          artifact: storage/temporal_storage.go
+          decision: no-authored-change
+          reviewer: buger
+          reason: 'Phase 0.7 SYS+SW review: traced files (analytics/analytics.go GeoIP retarget to SW-071, storage/temporal_storage.go SW-006↔SW-007 split, config.go SW-002 satisfies SYS-035 add) — production code semantics unchanged; only annotations/links/obligations updated. Verified by go build ./... and re-run of affected tests.'
+          base: origin/master
+          requirement_fingerprint: sha256:3567ce36ffaca886d60a28f93d6b49c9bc7c6db75d20689b21604d9dbe3beecf
+          approval_fingerprint: sha256:0c3c5c97740bac396c4b9824b5711bd48106131932977ed731d962f59e454c94
+          artifact_fingerprint: sha256:e7f62fa6671d3b3d9d73cde3ad93779b943a2ed5e82e55f8fdd958bb89cce637
+          reviewed_at: "2026-05-30T10:52:29Z"
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:14Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-30T09:26:43Z"
+    last_modified_at: "2026-05-30T10:36:05Z"
 obligation_checklist:
     - cancellation_observed
     - error_handling
@@ -68,4 +79,9 @@ lifecycle:
           from: draft
           to: review
           reason: ""
+          changed_by: human:cli
+        - date: "2026-05-30T10:36:05Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-05-30T07:43:08Z comment="Software-component design reviewed as part of feat/reqproof-coverage PR; each maps to verified code paths per the Phase 0 file-by-file verification (see PR description for code-verified corrections SW-016/017/023/027/028/033).")'
           changed_by: human:cli

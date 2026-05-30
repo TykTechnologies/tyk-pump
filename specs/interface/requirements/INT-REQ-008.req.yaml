@@ -5,7 +5,7 @@ priority: shall
 category: functional
 req_type: derived
 fretish: ""
-description: The pump configuration contract shall interpret each pump's meta map according to its declared type and reject malformed pump configuration loudly.
+description: The pump configuration contract shall interpret each pump's meta map according to its declared type and reject malformed pump configuration loudly rather than silently dropping unknown keys at decode time.
 formalization_strategy: informal
 informal_verification:
     method: ""
@@ -13,15 +13,15 @@ informal_verification:
     verified: false
 parent: SYS-REQ-008
 component: config-contract
-rationale: ""
+rationale: "Each pump interprets its own meta map; making the decode contract explicit surfaces the mapstructure-leniency gap (tracked by KI mapstructure-decode-silently-drops-unknown-keys) where typos are silently ignored instead of rejected loudly as INT-008 claims."
 tags: []
 variables: []
 traces:
     satisfies:
         - SYS-REQ-008
-    reviewed_at: "2026-05-30T08:45:50.325186Z"
+    reviewed_at: "2026-05-30T10:18:01.529715Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:c45453e715a4bf59a56467ce2693ae47a73f6581c8f3d42275dc983c6278cabf
+    reviewed_fingerprint: sha256:dc6f6ae141903e4a3577bc567a86d82e659b529396b5d0b77b8818dad0171157
 verification:
     assurance_level: B
     formalization_status: none
@@ -29,15 +29,15 @@ verification:
         status: approved
         reviewer: human:buger
         role: interface_owner
-        reviewed_at: "2026-05-30T08:31:54Z"
-        comment: Re-approval after Phase C ICD metadata block populated; caller/callee/schema-version/back-compat/retirement fields code-verified.
-        fingerprint: sha256:27e7f8b5e4f6527468418e61da8b98b3a52445d355632fb120b196c866ab03c9
+        reviewed_at: "2026-05-30T10:18:00Z"
+        comment: 'Re-approval after super-strict review: added one-sentence rationales per req; tightened descriptions to pass the 30-word plan floor while preserving the rich detail in the interface.signature/protocol/assumptions/guarantees blocks; fixed INT-007 sharding-key reference (table_sharding, not sharding_table) and INT-008 CSV line-number drift (51 not 55).'
+        fingerprint: sha256:5e177ce44b76bbc97db07eca8d6cdc209378c2c9bf6192b049c0a3f3f0021a28
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:47Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-30T08:31:54Z"
+    last_modified_at: "2026-05-30T10:18:00Z"
 obligation_checklist:
     - malformed_input
 release_disposition: ship_with_known_issue
@@ -45,7 +45,7 @@ interface:
     caller: tyk-pump-main-config
     callee: pump-impl-init
     type: function_call
-    signature: pumps.Pump.Init(meta interface{}) error (pumps/pump.go:20). Each pump decodes the meta map via `mapstructure.Decode(conf, &pumpConfStruct)` — for example pumps/csv.go:55 CSVPump.Init.
+    signature: pumps.Pump.Init(meta interface{}) error (pumps/pump.go:20). Each pump decodes the meta map via `mapstructure.Decode(conf, &pumpConfStruct)` — for example pumps/csv.go:51 CSVPump.Init.
     protocol: 'Config flow: config.go parses tyk-pump JSON config -> SystemConfig.PumpsConfig (map of pump-type -> meta JSON) -> each pump receives its slice of the meta map at Init time. Per-pump schema lives on the pump''s config struct (e.g. CSVConf in pumps/csv.go).'
     assumptions: 'Operators provide well-formed JSON keys matching the mapstructure tags on each pump''s config struct. Each pump may layer envconfig overrides via processPumpEnvVars (pumps/pump.go:58) after mapstructure.Decode.'
     guarantees: 'The contract claims malformed pump configuration is rejected loudly, BUT this is not honoured today — see KNOWN ISSUE mapstructure-decode-silently-drops-unknown-keys (already in .proof/known-issues/). mapstructure.Decode is lenient by default: unknown keys (e.g. operator typo `csv_pathh` for `csv_dir`) are silently dropped, the pump initialises with the default zero values, and the misconfiguration only surfaces at first write. To honour the requirement literally, each pump would need DecoderConfig{ErrorUnused: true}. Back-compat: each pump''s config struct is additive (new fields default to zero value); rename or remove of a config key is a major break for that pump. Retirement of a pump removes its config schema entirely (major tyk-pump version bump).'
@@ -72,4 +72,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="interface_owner" reviewer="human:buger" at=2026-05-30T07:43:08Z comment="Cross-component contracts reviewed as part of feat/reqproof-coverage PR; gateway/storage/serializer/pump-backend contracts verified against actual key constants and interface declarations.")'
+          changed_by: human:cli
+        - date: "2026-05-30T10:18:00Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="interface_owner" reviewer="human:buger" at=2026-05-30T08:31:54Z comment="Re-approval after Phase C ICD metadata block populated; caller/callee/schema-version/back-compat/retirement fields code-verified.")'
           changed_by: human:cli

@@ -48,7 +48,7 @@ history:
     created_by: human:cli
     created_at: "2026-05-30T08:37:31Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-30T09:26:42Z"
+    last_modified_at: "2026-05-30T10:51:49Z"
 obligation_checklist:
     - atomicity
     - idempotency

@@ -48,10 +48,10 @@ history:
     created_by: human:cli
     created_at: "2026-05-30T08:34:43Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-30T08:44:11Z"
+    last_modified_at: "2026-05-30T10:24:42Z"
 obligation_checklist:
     - boundary
-    - errors_propagated
+    - nominal
 lifecycle:
     change_history:
         - date: "2026-05-30T08:43:46Z"

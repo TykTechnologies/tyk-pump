@@ -3,7 +3,7 @@ version: 1
 status: approved
 priority: shall
 category: functional
-req_type: guarantee
+req_type: derived
 fretish: when uptime_data_consumed uptime shall eventually satisfy uptime_forwarded
 description: When uptime data has been consumed from the temporal store and uptime purging is enabled, the pump shall forward the uptime data to the configured uptime backend.
 formalization_strategy: fretish
@@ -19,9 +19,9 @@ variables: []
 traces:
     satisfies:
         - STK-REQ-005
-    reviewed_at: "2026-05-30T07:57:15.482692Z"
+    reviewed_at: "2026-05-30T10:53:50.151182Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:9c4a8f050425f6b7eb332bd57dda4c6baec4d138d27eb6f298ee4752f75170f1
+    reviewed_fingerprint: sha256:c91d2a483fcf6450a846b617b6cc02c3be94d1a43f876a13fc56ac3782bed76f
 verification:
     assurance_level: B
     formalization_status: valid
@@ -29,15 +29,15 @@ verification:
         status: approved
         reviewer: human:buger
         role: system_engineer
-        reviewed_at: "2026-05-30T07:55:47Z"
-        comment: New SYS req from Phase 0.6 split of SYS-014 (forward after consume); code-verified in main.go UptimePump.WriteUptimeData call gated by !DontPurgeUptimeData.
-        fingerprint: sha256:87dbc0c93b60858e434b46e0e1215b42844820f50d1a26a4d2f4cb7deacfc099
+        reviewed_at: "2026-05-30T10:36:06Z"
+        comment: 'Phase 0.7 review: applied SYS review findings — obligation class re-aligned (SYS-011→nominal, SYS-013→error_handling, SYS-019→atomicity), req_type guarantee→derived for SYS-018..023, SYS-024 rationale honest about go.mod toolchain, SYS-032 narrowed to pure assumption, SYS-034 added for GeoIP short-circuit guarantee. SW children re-linked.'
+        fingerprint: sha256:f248fa23daf5a5ced75b9fe734c1d77ed5b22b16f55dcba12172e207a3406265
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-30T07:52:52Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-30T07:55:47Z"
+    last_modified_at: "2026-05-30T10:36:06Z"
 obligation_class: nominal
 lifecycle:
     change_history:
@@ -45,4 +45,9 @@ lifecycle:
           from: draft
           to: review
           reason: ""
+          changed_by: human:cli
+        - date: "2026-05-30T10:36:06Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="system_engineer" reviewer="human:buger" at=2026-05-30T07:55:47Z comment="New SYS req from Phase 0.6 split of SYS-014 (forward after consume); code-verified in main.go UptimePump.WriteUptimeData call gated by !DontPurgeUptimeData.")'
           changed_by: human:cli

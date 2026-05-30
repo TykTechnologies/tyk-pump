@@ -5,7 +5,7 @@ priority: shall
 category: functional
 req_type: derived
 fretish: ""
-description: The AnalyticsStorage.GetAndDeleteSet contract between the core and the temporal store shall return a chunk of records and remove exactly those records atomically.
+description: The AnalyticsStorage.GetAndDeleteSet contract between the pump core and the temporal store shall return up to a chunk of records and remove exactly those records atomically with retrieval; partial-failure semantics on the remainder shall be documented as known issues.
 formalization_strategy: informal
 informal_verification:
     method: ""
@@ -13,7 +13,7 @@ informal_verification:
     verified: false
 parent: SYS-REQ-007
 component: storage-contract
-rationale: ""
+rationale: "The temporal-store contract is the atomicity boundary for at-most-once delivery; without a first-class ICD the Pop+Expire two-step (and its partial-failure mode tracked by KI getanddeleteset-expire-fail-loses-records) is invisible."
 tags: []
 variables: []
 traces:
@@ -29,15 +29,15 @@ verification:
         status: approved
         reviewer: human:buger
         role: interface_owner
-        reviewed_at: "2026-05-30T08:31:54Z"
-        comment: Re-approval after Phase C ICD metadata block populated; caller/callee/schema-version/back-compat/retirement fields code-verified.
-        fingerprint: sha256:f37f69669095549ea4bc572e1d9021c711e20bcdd03f298691b89c786da07f25
+        reviewed_at: "2026-05-30T10:18:00Z"
+        comment: 'Re-approval after super-strict review: added one-sentence rationales per req; tightened descriptions to pass the 30-word plan floor while preserving the rich detail in the interface.signature/protocol/assumptions/guarantees blocks; fixed INT-007 sharding-key reference (table_sharding, not sharding_table) and INT-008 CSV line-number drift (51 not 55).'
+        fingerprint: sha256:dfad018e272fd5b2a75cc9d7569b1da6f64ff9411463b448745d1328dc162bff
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:46Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-30T08:31:54Z"
+    last_modified_at: "2026-05-30T10:18:00Z"
 obligation_checklist:
     - atomicity
 release_disposition: ship_with_known_issue
@@ -72,4 +72,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="interface_owner" reviewer="human:buger" at=2026-05-30T07:43:08Z comment="Cross-component contracts reviewed as part of feat/reqproof-coverage PR; gateway/storage/serializer/pump-backend contracts verified against actual key constants and interface declarations.")'
+          changed_by: human:cli
+        - date: "2026-05-30T10:18:00Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="interface_owner" reviewer="human:buger" at=2026-05-30T08:31:54Z comment="Re-approval after Phase C ICD metadata block populated; caller/callee/schema-version/back-compat/retirement fields code-verified.")'
           changed_by: human:cli

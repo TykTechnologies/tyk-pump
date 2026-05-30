@@ -7,7 +7,7 @@ import (
 
 // Verifies: SW-REQ-006
 // Verifies: SW-REQ-007
-// SW-REQ-006:atomicity:negative
+// SW-REQ-006:nominal:negative
 // SW-REQ-007:error_handling:negative
 // SW-REQ-031:error_handling:negative
 func TestTemporalStorageHandler_GetAndDeleteSet_BackendUnreachable(t *testing.T) {

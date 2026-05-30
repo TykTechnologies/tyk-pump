@@ -38,12 +38,12 @@ verification:
           artifact: analytics/analytics.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'analytics/analytics.go: added //mcdc:ignore on GeoIP DB-bound branches in GetGeo and GeoIPLookup (MaxMind GeoIP DB required to provoke; not available in unit tests). No runtime behavior change.'
+          reason: 'Phase 0.7 SYS+SW review: traced files (analytics/analytics.go GeoIP retarget to SW-071, storage/temporal_storage.go SW-006↔SW-007 split, config.go SW-002 satisfies SYS-035 add) — production code semantics unchanged; only annotations/links/obligations updated. Verified by go build ./... and re-run of affected tests.'
           base: origin/master
           requirement_fingerprint: sha256:b6680ae3f05863b23cfe0e310e9d7f6bcc49a4248f670c3fcbe2647c0e70f7c9
           approval_fingerprint: sha256:dcb340afcbb9e13ffdacd5e19cfc1298d0ecb055b20f96329128505768bec6f4
-          artifact_fingerprint: sha256:939b7ea13ca32f3b5a4614ffbcb4c0d1f9ff184e74edc388e6ffb89dbacde47d
-          reviewed_at: "2026-05-30T07:45:37Z"
+          artifact_fingerprint: sha256:41a2a8e7ff36a958fa315e03cd7e70423454e7447f7787aad74230d92a3d8a43
+          reviewed_at: "2026-05-30T10:52:30Z"
         - requirement: SW-REQ-009
           artifact: analytics/demo/demo.go
           decision: no-authored-change

@@ -5,7 +5,7 @@ priority: shall
 category: constraint
 req_type: assumption
 fretish: analytics_geo shall always satisfy geo_db_is_optional
-description: The MaxMind GeoIP database is operator-supplied and may not be present; GeoIP lookup code shall short-circuit cleanly when the database handle is nil.
+description: The MaxMind GeoIP database is operator-supplied and may be absent at runtime; the system relies on the operator to provide or omit it via the analytics-config.
 formalization_strategy: fretish
 informal_verification:
     method: inspection
@@ -29,15 +29,15 @@ verification:
         status: approved
         reviewer: human:buger
         role: system_engineer
-        reviewed_at: "2026-05-30T08:22:48Z"
-        comment: 'Phase B assumption reqs: external-owner reviewed (Redis protocol / MongoDB / Tyk gateway / MaxMind), linked to KI for failed assumption A6, FRETish formalized as environment-input invariants. Trust boundaries now explicit.'
-        fingerprint: sha256:c5dc3eaa091fcc37d92a243247e1c4bbb5ef756a0143d3da133dbb052f5f628c
+        reviewed_at: "2026-05-30T10:36:06Z"
+        comment: 'Phase 0.7 review: applied SYS review findings — obligation class re-aligned (SYS-011→nominal, SYS-013→error_handling, SYS-019→atomicity), req_type guarantee→derived for SYS-018..023, SYS-024 rationale honest about go.mod toolchain, SYS-032 narrowed to pure assumption, SYS-034 added for GeoIP short-circuit guarantee. SW children re-linked.'
+        fingerprint: sha256:7b96d00356c95f9e8b12cac31633eff72c96c69c8c32eb6768b005df55ba2cbb
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:13:46Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-30T08:22:48Z"
+    last_modified_at: "2026-05-30T10:36:06Z"
 obligation_class: nominal
 assumption:
     status: open
@@ -55,4 +55,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="system_engineer" reviewer="human:buger" at=2026-05-30T08:14:23Z comment="Phase B assumption reqs: explicit trust boundaries that the spec previously left implicit. Each names what dependency or external behavior tyk-pump assumes (Redis LPOP atomicity, Mongo $inc atomicity, gateway publishing model + encoding, GeoIP DB optionality, mongo capped-collection size type — the latter is a currently-failed assumption tracked by Phase E known-issue mongo-test-panic-under-mongo6).")'
+          changed_by: human:cli
+        - date: "2026-05-30T10:36:06Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="system_engineer" reviewer="human:buger" at=2026-05-30T08:22:48Z comment="Phase B assumption reqs: external-owner reviewed (Redis protocol / MongoDB / Tyk gateway / MaxMind), linked to KI for failed assumption A6, FRETish formalized as environment-input invariants. Trust boundaries now explicit.")'
           changed_by: human:cli

@@ -5,7 +5,7 @@ priority: shall
 category: functional
 req_type: derived
 fretish: ""
-description: The SQL pump schema (day-sharded analytics tables and aggregate tables) shall be migratable while older pump versions still write, following expand-then-contract.
+description: The SQL pump schema (day-sharded analytics tables and aggregate tables) shall be migratable while older pump versions still write to it, following an expand-then-contract policy on every column rename or removal.
 formalization_strategy: informal
 informal_verification:
     method: ""
@@ -13,15 +13,15 @@ informal_verification:
     verified: false
 parent: SYS-REQ-003
 component: sql-schema
-rationale: ""
+rationale: "Day-sharded SQL tables co-exist across pump versions; the expand-then-contract migration policy is the contract that lets operators upgrade pumps without dropping data, and is currently not enforced by any CI check (tracked by KI sql-schema-no-version-policy)."
 tags: []
 variables: []
 traces:
     satisfies:
         - SYS-REQ-003
-    reviewed_at: "2026-05-30T08:45:50.285503Z"
+    reviewed_at: "2026-05-30T10:18:01.429153Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:11ed8d9dbcf536216a0828a0b29b5230d57f00fdab745244e7512bb0bb6b3699
+    reviewed_fingerprint: sha256:673e202908a96bbc9026fe1cf397b8012c29511f04897b70c98bc9a2e97705e0
 verification:
     assurance_level: B
     formalization_status: none
@@ -29,23 +29,23 @@ verification:
         status: approved
         reviewer: human:buger
         role: interface_owner
-        reviewed_at: "2026-05-30T08:31:54Z"
-        comment: Re-approval after Phase C ICD metadata block populated; caller/callee/schema-version/back-compat/retirement fields code-verified.
-        fingerprint: sha256:42de3a458b2f8fdce5ca6ccbd22db7ecc7e0a5321adc8aa464cabb02a3429107
+        reviewed_at: "2026-05-30T10:18:00Z"
+        comment: 'Re-approval after super-strict review: added one-sentence rationales per req; tightened descriptions to pass the 30-word plan floor while preserving the rich detail in the interface.signature/protocol/assumptions/guarantees blocks; fixed INT-007 sharding-key reference (table_sharding, not sharding_table) and INT-008 CSV line-number drift (51 not 55).'
+        fingerprint: sha256:b0d68d5e3174128c7d3676ba0ce12e1f6b38803d93369c38a4e55dbb39627bbd
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:46Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-30T08:31:54Z"
+    last_modified_at: "2026-05-30T10:18:00Z"
 obligation_checklist:
     - forward_compatible
 interface:
     caller: tyk-pump-sql-pumps
     callee: sql-backend
     type: data
-    signature: 'SQL tables: `tyk_analytics` (base, standard schema) and optionally day-sharded as `tyk_analytics_YYYYMMDD` when sharding_table=true (pumps/sql.go AnalyticsRecord-derived schema). Indexes named `<table>_<column>_idx`, created via CREATE INDEX IF NOT EXISTS (CONCURRENTLY for postgres) during Init / on day-rollover.'
-    protocol: 'gorm AutoMigrate + raw DDL via SQL driver (postgres / mysql / sqlite). Migration runs at pump Init time and again per day when sharding_table=true. New columns are added by re-running AutoMigrate against the AnalyticsRecord struct.'
+    signature: 'SQL tables: `tyk_analytics` (base, standard schema) and optionally day-sharded as `tyk_analytics_YYYYMMDD` when table_sharding=true (pumps/sql.go AnalyticsRecord-derived schema). Indexes named `<table>_<column>_idx`, created via CREATE INDEX IF NOT EXISTS (CONCURRENTLY for postgres) during Init / on day-rollover.'
+    protocol: 'gorm AutoMigrate + raw DDL via SQL driver (postgres / mysql / sqlite). Migration runs at pump Init time and again per day when table_sharding=true. New columns are added by re-running AutoMigrate against the AnalyticsRecord struct.'
     assumptions: 'Operators run schema changes expand-then-contract: add columns first (compatible with older pumps still writing), backfill, then drop. Older pump versions tolerate the presence of extra columns. With MigrateShardedTables=false (default; pumps/sql.go:89), AutoMigrate runs ONLY against today''s shard — older day-shards do not pick up new columns.'
     guarantees: 'Schema is migratable in-place via additive column changes while older pump versions still write. NOT FORMALLY ENFORCED: there is no CI check that rejects non-additive AnalyticsRecord changes — expand-then-contract is a convention only; flagged as risk. KNOWN GAP: with MigrateShardedTables=false (the default), late-arriving records dated to a prior day can fail to write into older shards that lack the new columns; operators must set migrate_sharded_tables=true to backfill schema across all shards. Schema version is implicit via column presence (no schema_version table). Back-compat: additive columns only; rename/drop requires a multi-stage rollout. Retirement of a table requires a major tyk-pump version bump. Flagged for follow-up KI creation: "sql-pump-migrate-sharded-tables-default-false-causes-late-record-write-failure".'
     producer: tyk-pump-sql-pumps
@@ -66,4 +66,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="interface_owner" reviewer="human:buger" at=2026-05-30T07:43:08Z comment="Cross-component contracts reviewed as part of feat/reqproof-coverage PR; gateway/storage/serializer/pump-backend contracts verified against actual key constants and interface declarations.")'
+          changed_by: human:cli
+        - date: "2026-05-30T10:18:00Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="interface_owner" reviewer="human:buger" at=2026-05-30T08:31:54Z comment="Re-approval after Phase C ICD metadata block populated; caller/callee/schema-version/back-compat/retirement fields code-verified.")'
           changed_by: human:cli

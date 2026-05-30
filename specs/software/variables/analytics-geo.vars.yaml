@@ -1,9 +1,5 @@
 component: analytics-geo
 variables:
-    - name: geo_db_is_optional
-      type: bool
-      direction: input
-      description: MaxMind GeoIP DB is operator-supplied and may be absent.
     - name: geo_lookup_short_circuits_when_db_absent
       type: bool
       direction: output

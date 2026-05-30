@@ -5,7 +5,7 @@ priority: shall
 category: functional
 req_type: derived
 fretish: ""
-description: The gateway shall publish uptime report data under the tyk-uptime-analytics key; the pump shall consume and forward it to the configured uptime backend.
+description: The gateway shall publish uptime report data into the temporal store under the tyk-uptime-analytics key; the pump shall consume and forward it to the configured uptime backend, unless uptime purging has been disabled in pump configuration.
 formalization_strategy: informal
 informal_verification:
     method: ""
@@ -13,7 +13,7 @@ informal_verification:
     verified: false
 parent: SYS-REQ-014
 component: gateway-pump
-rationale: ""
+rationale: "Uptime data flows on a separate key and is consumed only when uptime purging is enabled; making the key contract explicit prevents accidental overlap with the analytics record stream and clarifies the disable knob's surface."
 tags: []
 variables: []
 traces:
@@ -29,15 +29,15 @@ verification:
         status: approved
         reviewer: human:buger
         role: interface_owner
-        reviewed_at: "2026-05-30T08:31:54Z"
-        comment: Re-approval after Phase C ICD metadata block populated; caller/callee/schema-version/back-compat/retirement fields code-verified.
-        fingerprint: sha256:ee3ed8e9fd3b7fc5845c0a17c362552d42b105fb2ff951c863bf7acb2a203c00
+        reviewed_at: "2026-05-30T10:18:00Z"
+        comment: 'Re-approval after super-strict review: added one-sentence rationales per req; tightened descriptions to pass the 30-word plan floor while preserving the rich detail in the interface.signature/protocol/assumptions/guarantees blocks; fixed INT-007 sharding-key reference (table_sharding, not sharding_table) and INT-008 CSV line-number drift (51 not 55).'
+        fingerprint: sha256:f0dd0dc64a40b7f0d2752410c9739f7db0e211d59435484c4ec451a407b4ba6f
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:46Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-30T08:31:54Z"
+    last_modified_at: "2026-05-30T10:18:00Z"
 obligation_checklist:
     - errors_propagated
 release_disposition: ship_with_known_issue
@@ -72,4 +72,9 @@ lifecycle:
           from: release_disposition=
           to: release_disposition=ship_with_known_issue
           reason: 'KI uptime-write-has-no-error-return: UptimePump interface lacks error return'
+          changed_by: human:cli
+        - date: "2026-05-30T10:18:00Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="interface_owner" reviewer="human:buger" at=2026-05-30T08:31:54Z comment="Re-approval after Phase C ICD metadata block populated; caller/callee/schema-version/back-compat/retirement fields code-verified.")'
           changed_by: human:cli

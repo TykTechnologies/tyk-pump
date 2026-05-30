@@ -13,7 +13,7 @@ informal_verification:
     verified: true
 parent: STK-REQ-001
 component: build
-rationale: "tyk-pump uses Go-1.25-specific language features (generics, error wrapping, structured concurrency primitives) per go.mod; building with an older toolchain would fail."
+rationale: "go.mod declares go 1.25.0; that toolchain version is required to build tyk-pump as released. Lower toolchain versions are out of scope."
 tags: []
 variables: []
 traces:
@@ -29,15 +29,15 @@ verification:
         status: approved
         reviewer: human:buger
         role: system_engineer
-        reviewed_at: "2026-05-30T08:22:48Z"
-        comment: 'Phase B constraint reqs: linked to satisfying STK, rationale added, FRETish formalized as project-level invariants, formalized:false reverted to fretish-strategy via the invariant form. Verified against go.mod / storage code / Makefile / runtime model.'
-        fingerprint: sha256:fa2e22b9e13199e15c3cc49e676479888bee7da03e1381a3c8882f68cf0bf1fb
+        reviewed_at: "2026-05-30T10:36:06Z"
+        comment: 'Phase 0.7 review: applied SYS review findings — obligation class re-aligned (SYS-011→nominal, SYS-013→error_handling, SYS-019→atomicity), req_type guarantee→derived for SYS-018..023, SYS-024 rationale honest about go.mod toolchain, SYS-032 narrowed to pure assumption, SYS-034 added for GeoIP short-circuit guarantee. SW children re-linked.'
+        fingerprint: sha256:c2cb7fc263bbc1e3f0935370050d69db50c1795a5db7b5485f1030c40469544e
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:13:45Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-30T08:22:48Z"
+    last_modified_at: "2026-05-30T10:36:06Z"
 obligation_class: nominal
 lifecycle:
     change_history:
@@ -50,4 +50,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="system_engineer" reviewer="human:buger" at=2026-05-30T08:14:23Z comment="Phase B constraint reqs: project-level constraints derived from go.mod, storage code, Makefile, and deployment model. Each is code-verifiable: Go version in go.mod, Redis dep in storage/temporal_storage.go imports, FIPS in Makefile, single-process in main.go runtime.")'
+          changed_by: human:cli
+        - date: "2026-05-30T10:36:06Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="system_engineer" reviewer="human:buger" at=2026-05-30T08:22:48Z comment="Phase B constraint reqs: linked to satisfying STK, rationale added, FRETish formalized as project-level invariants, formalized:false reverted to fretish-strategy via the invariant form. Verified against go.mod / storage code / Makefile / runtime model.")'
           changed_by: human:cli

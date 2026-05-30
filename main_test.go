@@ -346,7 +346,7 @@ func TestIgnoreFieldsFilterData(t *testing.T) {
 
 // Verifies: SW-REQ-001
 // Verifies: SYS-REQ-011
-// SYS-REQ-011:malformed_input:negative
+// SYS-REQ-011:nominal:negative
 func TestDecodedKey(t *testing.T) {
 	keys := make([]interface{}, 1)
 	record := analytics.AnalyticsRecord{APIID: "api111", RawResponse: "RGVjb2RlZFJlc3BvbnNl", RawRequest: "RGVjb2RlZFJlcXVlc3Q="}
