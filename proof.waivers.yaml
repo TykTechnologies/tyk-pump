@@ -24,27 +24,6 @@ waivers:
       role: assumption_owner
       created_at: "2026-05-30"
       expires: "2026-11-30"
-    - check: code_mcdc_coverage
-      scope: analytics
-      reason: Gap tracked by KI mcdc-analytics-below-95 with concrete remediation plan; threshold 95/95 retained.
-      by: leo@tyk.io
-      role: test_owner
-      created_at: "2026-05-30"
-      expires: "2026-11-30"
-    - check: code_mcdc_coverage
-      scope: serializer
-      reason: Gap tracked by KI mcdc-serializer-below-95; threshold 95/95 retained.
-      by: leo@tyk.io
-      role: test_owner
-      created_at: "2026-05-30"
-      expires: "2026-11-30"
-    - check: code_mcdc_coverage
-      scope: retry
-      reason: Gap tracked by KI mcdc-retry-below-95; threshold 95/95 retained.
-      by: leo@tyk.io
-      role: test_owner
-      created_at: "2026-05-30"
-      expires: "2026-11-30"
     - check: evidence_diversity
       scope: SW-REQ-018
       reason: Superseded by Phase A per-implementation decomposition; obligations and evidence are now carried by per-pump children (SW-REQ-034..057). This anchor retained for back-compat history; per-child reqs each carry their own evidence diversity.
@@ -201,7 +180,14 @@ waivers:
       expires: "2026-11-30"
     - check: code_mcdc_coverage
       scope: storage
-      reason: Gap tracked by KI mcdc-storage-below-95; threshold 95/95 retained.
+      reason: 'Storage at 85.3%/86.5% after Phase C MC/DC drive. The remaining 5 ''err != nil'' decisions are structurally unreachable from external tests: tracked by KIs storage-createconnector-kv-list-err-unreachable (connector-factory seam needed) and storage-ensureconnection-error-path-unreachable (bounded-backoff / permanent-error wrapping needed). Threshold 95/95 retained; both KIs name the concrete production refactor required.'
+      by: leo@tyk.io
+      role: test_owner
+      created_at: "2026-05-30"
+      expires: "2026-11-30"
+    - check: code_mcdc_coverage
+      scope: analytics
+      reason: 'Analytics at 91.1%/93.0% after Phase C MC/DC drive. The remaining 9 decisions are structurally unreachable: tracked by KIs aggregate-mcdc-unreachable-string-assertion-ok (4), setaggregatetimestamp-mcdc-unreachable-not-ok (1), uptime-onconflict-request-time-is-zero-unreachable (1), uptime-aggregate-erasstr-itoa-always-nonempty (1), geoip-non-nil-db-branch-requires-maxmind (2). Threshold 95/95 retained; each KI names the concrete reason (string-type assertion can''t fail, map zero-value short-circuit, MaxMind DB needed).'
       by: leo@tyk.io
       role: test_owner
       created_at: "2026-05-30"

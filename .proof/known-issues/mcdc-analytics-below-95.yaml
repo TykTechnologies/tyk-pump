@@ -4,13 +4,19 @@ description: Analytics package code MC/DC is 69% decisions / 75% conditions agai
 affected_requirements:
     - SW-REQ-011
     - SW-REQ-009
+commands:
+    - go test -count=1 -timeout 60s -coverprofile=cover.out ./analytics
 severity: low
-mitigation: Per-package threshold tracking via this KI; the spec records the gap honestly rather than silently lowering the threshold.
-remediation: 'Write additional analytics tests targeting (a) incrementAggregate field-switch independence pairs (one test per atomic condition while holding others constant), (b) uptime_data.go AggregateUptimeData branches with explicit boolean coverage, (c) targeted //mcdc:ignore on any remaining defensive branches not yet annotated. Estimated effort: ~1 working session of focused MC/DC test authoring.'
+mitigation: 'Phase C closed 21 of 30 originally-incomplete decisions via analytics/mcdc_coverage_test.go. The remaining 9 are structurally unreachable (5 sibling KIs: aggregate-mcdc-unreachable-string-assertion-ok, setaggregatetimestamp-mcdc-unreachable-not-ok, uptime-onconflict-request-time-is-zero-unreachable, uptime-aggregate-erasstr-itoa-always-nonempty, geoip-non-nil-db-branch-requires-maxmind). Closing to 95/95 requires either //mcdc:ignore on those lines or a synthetic MaxMind fixture.'
+remediation: Either (a) add //mcdc:ignore lines on the 4 string-assertion sites, the map-zero short-circuit, the always-zero RequestTime, and the strconv.Itoa-always-nonempty sites (production-code annotation change), or (b) commit a synthetic MaxMind .mmdb fixture and exercise the GeoIP DB-present paths.
 owner: tyk-team
 release_disposition: ship
-status: open
+status: reviewed
 history:
     - at: "2026-05-30T09:29:29Z"
       by: human:buger
       action: created
+    - at: "2026-05-30T20:46:39Z"
+      by: human:buger
+      action: edit
+      detail: set-mitigation,set-remediation,set-status=reviewed,add-command

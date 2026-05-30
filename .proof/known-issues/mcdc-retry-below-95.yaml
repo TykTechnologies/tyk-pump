@@ -4,13 +4,19 @@ description: Retry package code MC/DC is 58% decisions / 69% conditions against 
 affected_requirements:
     - SW-REQ-030
     - SW-REQ-031
+commands:
+    - go test -count=1 -timeout 60s -coverprofile=cover.out ./retry
 severity: low
-mitigation: Per-package threshold tracking via this KI.
-remediation: 'Add targeted tests for: (a) each compound-condition independence pair in isErrorRetryable (one test per atomic condition); (b) Send with request body that returns read error; (c) Send paths exercising the resp.Body discard + close paths; (d) //mcdc:ignore on any defensive io.Discard-error branches if they''re genuinely unreachable. Estimated effort: ~30 minutes.'
+mitigation: 'Resolved by retry/http_retry_mcdc_test.go (Phase C): 8 new tests close isErrorRetryable, handleErr, and Send body-read error paths. retry now at 100/100.'
+remediation: Done.
 owner: tyk-team
 release_disposition: ship
-status: open
+status: fixed
 history:
     - at: "2026-05-30T09:29:29Z"
       by: human:buger
       action: created
+    - at: "2026-05-30T20:30:49Z"
+      by: human:buger
+      action: edit
+      detail: set-mitigation,set-remediation,set-status=fixed,add-command
