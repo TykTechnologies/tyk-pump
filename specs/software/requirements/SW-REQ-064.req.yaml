@@ -48,9 +48,10 @@ history:
     created_by: human:cli
     created_at: "2026-05-30T08:38:24Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-30T08:44:11Z"
+    last_modified_at: "2026-05-30T09:26:43Z"
 obligation_checklist:
     - boundary
+    - forward_compatible
     - nominal
 lifecycle:
     change_history:

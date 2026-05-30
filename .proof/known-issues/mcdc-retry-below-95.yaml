@@ -1,0 +1,16 @@
+id: mcdc-retry-below-95
+title: Retry package code MC/DC below 95% threshold
+description: Retry package code MC/DC is 58% decisions / 69% conditions against the strict 95/95 bar. Gaps are in retry/http-retry.go isErrorRetryable (compound-condition independence pairs across errors.As-based type switches) and BackoffHTTPRetry.Send (req.Body nil/non-nil branches, response body close path, retry decision paths).
+affected_requirements:
+    - SW-REQ-030
+    - SW-REQ-031
+severity: low
+mitigation: Per-package threshold tracking via this KI.
+remediation: 'Add targeted tests for: (a) each compound-condition independence pair in isErrorRetryable (one test per atomic condition); (b) Send with request body that returns read error; (c) Send paths exercising the resp.Body discard + close paths; (d) //mcdc:ignore on any defensive io.Discard-error branches if they''re genuinely unreachable. Estimated effort: ~30 minutes.'
+owner: tyk-team
+release_disposition: ship
+status: open
+history:
+    - at: "2026-05-30T09:29:29Z"
+      by: human:buger
+      action: created

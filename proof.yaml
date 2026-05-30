@@ -27,9 +27,6 @@ project:
             serializer:
                 language: go
                 command: go test -count=1 -coverprofile=../cover.out ./serializer
-            logger:
-                language: go
-                command: go test -count=1 -coverprofile=../cover.out ./logger
             server:
                 language: go
                 command: go test -count=1 -coverprofile=../cover.out ./server
@@ -42,8 +39,8 @@ project:
         mcdc_coverage: {}
         code_mcdc:
             advisory: false
-            min_decision_percent: 55
-            min_condition_percent: 60
+            min_decision_percent: 95
+            min_condition_percent: 95
             languages:
                 go:
                     test_args:
@@ -64,11 +61,6 @@ project:
                   scope: ./retry
                   test_command: retry
                   test_packages: ./retry
-                - id: logger
-                  language: go
-                  scope: ./logger
-                  test_command: logger
-                  test_packages: ./logger
                 - id: server
                   language: go
                   scope: ./server

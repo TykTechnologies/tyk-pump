@@ -1,0 +1,15 @@
+id: mcdc-serializer-below-95
+title: Serializer package code MC/DC below 95% threshold
+description: Serializer package code MC/DC is 60% decisions / 60% conditions against the strict 95/95 bar. The bulk of uncovered decisions is in serializer/protobuf.go TransformSingleRecordToProto / TransformSingleProtoToAnalyticsRecord — long field-by-field copy paths where each non-nil-check is its own decision.
+affected_requirements:
+    - SW-REQ-008
+severity: low
+mitigation: Per-package threshold tracking via this KI.
+remediation: 'Write a richer round-trip test that constructs a fully-populated AnalyticsRecord with every nullable field set, plus a complementary test with every nullable field zero, to exercise both sides of each per-field nil-check decision in protobuf transforms. Estimated effort: ~30-60 minutes.'
+owner: tyk-team
+release_disposition: ship
+status: open
+history:
+    - at: "2026-05-30T09:29:29Z"
+      by: human:buger
+      action: created
