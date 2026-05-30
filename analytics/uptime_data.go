@@ -43,22 +43,27 @@ type UptimeReportAggregateSQL struct {
 	Code `json:"code" gorm:"embedded"`
 }
 
+// reqproof:implements SW-REQ-015
 func (a *UptimeReportAggregateSQL) TableName() string {
 	return UptimeSQLTable
 }
 
+// reqproof:implements SW-REQ-015
 func (a *UptimeReportData) GetObjectID() model.ObjectID {
 	return a.ID
 }
 
+// reqproof:implements SW-REQ-015
 func (a *UptimeReportData) SetObjectID(id model.ObjectID) {
 	a.ID = id
 }
 
+// reqproof:implements SW-REQ-015
 func (a *UptimeReportData) TableName() string {
 	return UptimeSQLTable
 }
 
+// reqproof:implements SW-REQ-015
 func OnConflictUptimeAssignments(tableName, tempTable string) map[string]interface{} {
 	assignments := make(map[string]interface{})
 	f := UptimeReportAggregateSQL{}
@@ -88,6 +93,7 @@ func OnConflictUptimeAssignments(tableName, tempTable string) map[string]interfa
 	return assignments
 }
 
+// reqproof:implements SW-REQ-015
 func (u *UptimeReportAggregate) Dimensions() (dimensions []Dimension) {
 	for key, inc := range u.URL {
 		dimensions = append(dimensions, Dimension{"url", key, inc})
@@ -121,6 +127,7 @@ type UptimeReportAggregate struct {
 	LastTime time.Time
 }
 
+// reqproof:implements SW-REQ-015
 func (u UptimeReportAggregate) New() UptimeReportAggregate {
 	agg := UptimeReportAggregate{}
 
@@ -130,6 +137,7 @@ func (u UptimeReportAggregate) New() UptimeReportAggregate {
 	return agg
 }
 
+// reqproof:implements SW-REQ-015
 func AggregateUptimeData(data []UptimeReportData) map[string]UptimeReportAggregate {
 	analyticsPerOrg := make(map[string]UptimeReportAggregate)
 

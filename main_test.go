@@ -22,18 +22,22 @@ type MockedPump struct {
 	pumps.CommonPumpConfig
 }
 
+// Verifies: SW-REQ-001
 func (p *MockedPump) GetName() string {
 	return "Mocked Pump"
 }
 
+// Verifies: SW-REQ-001
 func (p *MockedPump) New() pumps.Pump {
 	return &MockedPump{}
 }
 
+// Verifies: SW-REQ-001
 func (p *MockedPump) Init(config interface{}) error {
 	return nil
 }
 
+// Verifies: SW-REQ-001
 func (p *MockedPump) WriteData(ctx context.Context, keys []interface{}) error {
 	for range keys {
 		p.CounterRequest++
@@ -41,11 +45,13 @@ func (p *MockedPump) WriteData(ctx context.Context, keys []interface{}) error {
 	return nil
 }
 
+// Verifies: SW-REQ-001
 func (p *MockedPump) Shutdown() error {
 	p.TurnedOff = true
 	return nil
 }
 
+// Verifies: SW-REQ-001
 func TestFilterData(t *testing.T) {
 	mockedPump := &MockedPump{}
 
@@ -67,6 +73,8 @@ func TestFilterData(t *testing.T) {
 }
 
 // TestTrimData check the correct functionality of max_record_size
+// Verifies: SW-REQ-001
+// Verifies: SYS-REQ-010
 func TestTrimData(t *testing.T) {
 	loremIpsum := "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua"
 
@@ -131,6 +139,9 @@ func TestTrimData(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-001
+// Verifies: SYS-REQ-015
+// SYS-REQ-015:nominal:negative
 func TestOmitDetailsFilterData(t *testing.T) {
 	mockedPump := &MockedPump{}
 	mockedPump.SetOmitDetailedRecording(true)
@@ -148,6 +159,11 @@ func TestOmitDetailsFilterData(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-001
+// Verifies: SYS-REQ-001
+// Verifies: STK-REQ-001
+// Verifies: SYS-REQ-004
+// Verifies: SW-REQ-003
 func TestWriteDataWithFilters(t *testing.T) {
 	mockedPump := &MockedPump{}
 	mockedPump.SetFilters(
@@ -235,6 +251,8 @@ func TestWriteDataWithFilters(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-004
+// SW-REQ-004:error_handling:negative
 func TestShutdown(t *testing.T) {
 	mockedPump := &MockedPump{}
 	mockedPump.SetFilters(
@@ -273,6 +291,9 @@ func TestShutdown(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-001
+// Verifies: SYS-REQ-016
+// SYS-REQ-016:nominal:negative
 func TestIgnoreFieldsFilterData(t *testing.T) {
 	keys := make([]interface{}, 1)
 	record := analytics.AnalyticsRecord{APIID: "api111", RawResponse: "test", RawRequest: "test", OrgID: "321", ResponseCode: 200, RequestTime: 123}
@@ -322,6 +343,9 @@ func TestIgnoreFieldsFilterData(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-001
+// Verifies: SYS-REQ-011
+// SYS-REQ-011:malformed_input:negative
 func TestDecodedKey(t *testing.T) {
 	keys := make([]interface{}, 1)
 	record := analytics.AnalyticsRecord{APIID: "api111", RawResponse: "RGVjb2RlZFJlc3BvbnNl", RawRequest: "RGVjb2RlZFJlcXVlc3Q="}
@@ -379,6 +403,7 @@ func TestDecodedKey(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-002
 func TestDeprecationWarnings(t *testing.T) {
 	originalOutput := log.Out
 	originalLevel := log.Level

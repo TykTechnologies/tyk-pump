@@ -31,19 +31,23 @@ type CSVConf struct {
 var csvPrefix = "csv-pump"
 var csvDefaultENV = PUMPS_ENV_PREFIX + "_CSV" + PUMPS_ENV_META_PREFIX
 
+// reqproof:implements SW-REQ-025
 func (c *CSVPump) New() Pump {
 	newPump := CSVPump{}
 	return &newPump
 }
 
+// reqproof:implements SW-REQ-025
 func (c *CSVPump) GetName() string {
 	return "CSV Pump"
 }
 
+// reqproof:implements SW-REQ-025
 func (c *CSVPump) GetEnvPrefix() string {
 	return c.csvConf.EnvPrefix
 }
 
+// reqproof:implements SW-REQ-025
 func (c *CSVPump) Init(conf interface{}) error {
 	c.csvConf = &CSVConf{}
 	c.log = log.WithField("prefix", csvPrefix)
@@ -64,6 +68,7 @@ func (c *CSVPump) Init(conf interface{}) error {
 	return nil
 }
 
+// reqproof:implements SW-REQ-025
 func (c *CSVPump) WriteData(ctx context.Context, data []interface{}) error {
 	c.log.Debug("Attempting to write ", len(data), " records...")
 

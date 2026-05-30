@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// Verifies: SW-REQ-019
 func TestMCPSQLPump_Init(t *testing.T) {
 	skipTestIfNoPostgres(t)
 	pump := &MCPSQLPump{}
@@ -112,6 +113,7 @@ func TestMCPSQLPump_Init(t *testing.T) {
 	})
 }
 
+// Verifies: SW-REQ-019
 func TestMCPSQLPump_WriteData(t *testing.T) {
 	skipTestIfNoPostgres(t)
 	tableName := "test_mcp_write"
@@ -193,6 +195,7 @@ func TestMCPSQLPump_WriteData(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-019
 func TestMCPSQLPump_Sharded(t *testing.T) {
 	skipTestIfNoPostgres(t)
 	tableName := "test_mcp_shard"
@@ -250,6 +253,7 @@ func TestMCPSQLPump_Sharded(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-019
 func TestMCPSQLPump_getMCPRecords(t *testing.T) {
 	pump := &MCPSQLPump{}
 
@@ -273,6 +277,7 @@ func TestMCPSQLPump_getMCPRecords(t *testing.T) {
 	assert.Equal(t, "r1", result[1].PrimitiveName)
 }
 
+// Verifies: SW-REQ-019
 func TestMCPSQLPump_WriteData_NoMCPRecords_NoInit(t *testing.T) {
 	p := &MCPSQLPump{}
 	p.log = log.WithField("prefix", MCPSQLPrefix)
@@ -283,6 +288,7 @@ func TestMCPSQLPump_WriteData_NoMCPRecords_NoInit(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+// Verifies: SW-REQ-019
 func TestMCPSQLPump_WriteData_EmptyData(t *testing.T) {
 	skipTestIfNoPostgres(t)
 	pump := &MCPSQLPump{}
@@ -303,6 +309,7 @@ func TestMCPSQLPump_WriteData_EmptyData(t *testing.T) {
 
 // newMCPSQLPumpWithSQLite creates an MCPSQLPump backed by in-memory SQLite.
 // No Postgres needed — tests the actual write logic, batching, and sharding.
+// Verifies: SW-REQ-019
 func newMCPSQLPumpWithSQLite(t *testing.T, tableName string, batchSize int, sharding bool) *MCPSQLPump {
 	t.Helper()
 	db := setupTestDB(t)
@@ -328,6 +335,7 @@ func newMCPSQLPumpWithSQLite(t *testing.T, tableName string, batchSize int, shar
 	return pump
 }
 
+// Verifies: SW-REQ-019
 func mcpRecord(ts time.Time, method, primType, primName string, code int) analytics.AnalyticsRecord {
 	return analytics.AnalyticsRecord{
 		TimeStamp: ts, Method: "POST", Path: "/mcp",
@@ -340,6 +348,7 @@ func mcpRecord(ts time.Time, method, primType, primName string, code int) analyt
 	}
 }
 
+// Verifies: SW-REQ-019
 func TestMCPSQLPump_WriteMCPBatch_SQLite(t *testing.T) {
 	pump := newMCPSQLPumpWithSQLite(t, "", 2, false)
 
@@ -359,6 +368,7 @@ func TestMCPSQLPump_WriteMCPBatch_SQLite(t *testing.T) {
 	assert.Equal(t, int64(3), count, "all 3 records should be written despite batch size 2")
 }
 
+// Verifies: SW-REQ-019
 func TestMCPSQLPump_WriteData_SQLite(t *testing.T) {
 	pump := newMCPSQLPumpWithSQLite(t, "", 100, false)
 	ts := time.Date(2025, 6, 15, 10, 0, 0, 0, time.UTC)
@@ -383,6 +393,7 @@ func TestMCPSQLPump_WriteData_SQLite(t *testing.T) {
 	assert.Equal(t, "resources/read", results[1].JSONRPCMethod)
 }
 
+// Verifies: SW-REQ-019
 func TestMCPSQLPump_WriteData_Sharded_SQLite(t *testing.T) {
 	tableName := "test_mcp_shard"
 	pump := newMCPSQLPumpWithSQLite(t, tableName, 100, true)
@@ -411,6 +422,7 @@ func TestMCPSQLPump_WriteData_Sharded_SQLite(t *testing.T) {
 	assert.Equal(t, int64(1), count2, "day2 shard should have 1 record")
 }
 
+// Verifies: SW-REQ-019
 func TestMCPSQLPump_New(t *testing.T) {
 	p := &MCPSQLPump{}
 	newP := p.New()
@@ -419,16 +431,19 @@ func TestMCPSQLPump_New(t *testing.T) {
 	assert.True(t, ok)
 }
 
+// Verifies: SW-REQ-019
 func TestMCPSQLPump_GetName(t *testing.T) {
 	p := &MCPSQLPump{}
 	assert.Equal(t, "MCP SQL Pump", p.GetName())
 }
 
+// Verifies: SW-REQ-019
 func TestMCPSQLPump_GetEnvPrefix(t *testing.T) {
 	p := &MCPSQLPump{Conf: &MCPSQLConf{SQLConf: SQLConf{EnvPrefix: "test_prefix"}}}
 	assert.Equal(t, "test_prefix", p.GetEnvPrefix())
 }
 
+// Verifies: SW-REQ-019
 func TestMCPSQLPump_ensureMCPShardedTable_SQLite(t *testing.T) {
 	pump := newMCPSQLPumpWithSQLite(t, "test_shard_ensure", 100, true)
 
@@ -441,6 +456,7 @@ func TestMCPSQLPump_ensureMCPShardedTable_SQLite(t *testing.T) {
 	assert.True(t, pump.db.Migrator().HasTable(expected), "shard table should still exist")
 }
 
+// Verifies: SW-REQ-019
 func TestMCPSQLPump_WriteMCPBatch_BatchSizeOne(t *testing.T) {
 	pump := newMCPSQLPumpWithSQLite(t, "", 1, false)
 	ts := time.Now()

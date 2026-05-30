@@ -45,19 +45,23 @@ type InfluxConf struct {
 	Tags []string `json:"tags" mapstructure:"tags"`
 }
 
+// reqproof:implements SW-REQ-022
 func (i *InfluxPump) New() Pump {
 	newPump := InfluxPump{}
 	return &newPump
 }
 
+// reqproof:implements SW-REQ-022
 func (i *InfluxPump) GetName() string {
 	return "InfluxDB Pump"
 }
 
+// reqproof:implements SW-REQ-022
 func (i *InfluxPump) GetEnvPrefix() string {
 	return i.dbConf.EnvPrefix
 }
 
+// reqproof:implements SW-REQ-022
 func (i *InfluxPump) Init(config interface{}) error {
 	i.dbConf = &InfluxConf{}
 	i.log = log.WithField("prefix", influxPrefix)
@@ -77,6 +81,7 @@ func (i *InfluxPump) Init(config interface{}) error {
 	return nil
 }
 
+// reqproof:implements SW-REQ-022
 func (i *InfluxPump) connect() client.Client {
 	c, err := client.NewHTTPClient(client.HTTPConfig{
 		Addr:     i.dbConf.Addr,
@@ -93,6 +98,7 @@ func (i *InfluxPump) connect() client.Client {
 	return c
 }
 
+// reqproof:implements SW-REQ-022
 func (i *InfluxPump) WriteData(ctx context.Context, data []interface{}) error {
 	c := i.connect()
 	defer c.Close()

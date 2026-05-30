@@ -19,6 +19,7 @@ var (
 	log        = logger.GetLogger()
 )
 
+// reqproof:implements SW-REQ-009
 func DemoInit(orgId, apiId, version string) {
 	apiID = apiId
 	GenerateAPIKeys(orgId)
@@ -28,11 +29,13 @@ func DemoInit(orgId, apiId, version string) {
 	}
 }
 
+// reqproof:implements SW-REQ-009
 func randomInRange(min, max int) int {
 	rand.Seed(time.Now().UnixNano())
 	return rand.Intn(max-min) + min
 }
 
+// reqproof:implements SW-REQ-009
 func randomMethod() string {
 	methods := []string{"GET", "PUT", "POST", "DELETE", "OPTIONS", "HEAD"}
 
@@ -40,6 +43,7 @@ func randomMethod() string {
 	return methods[rand.Intn(len(methods))]
 }
 
+// reqproof:implements SW-REQ-009
 func randomPath() string {
 	seedSet := []string{"/widget", "/foo", "/beep", "/boop"}
 	wordset := []string{
@@ -74,6 +78,7 @@ func randomPath() string {
 	return path
 }
 
+// reqproof:implements SW-REQ-009
 func randomAPI() (string, string) {
 	if apiID != "" {
 		return "Foo Bar", apiID
@@ -88,6 +93,7 @@ func randomAPI() (string, string) {
 	return api[0], api[1]
 }
 
+// reqproof:implements SW-REQ-009
 func getUA() string {
 	userAgents := []string{
 		"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36",
@@ -103,6 +109,7 @@ func getUA() string {
 	return userAgents[rand.Intn(len(userAgents))]
 }
 
+// reqproof:implements SW-REQ-009
 func responseCode() int {
 	codes := []int{
 		200,
@@ -120,6 +127,7 @@ func responseCode() int {
 	return codes[rand.Intn(len(codes))]
 }
 
+// reqproof:implements SW-REQ-009
 func GenerateAPIKeys(orgId string) {
 	set := make([]string, 50)
 	for i := 0; i < len(set); i++ {
@@ -128,6 +136,7 @@ func GenerateAPIKeys(orgId string) {
 	apiKeys = set
 }
 
+// reqproof:implements SW-REQ-009
 func generateAPIKey(orgId string) string {
 	u1, err := uuid.NewV4()
 	if err != nil {
@@ -137,6 +146,7 @@ func generateAPIKey(orgId string) string {
 	return orgId + id
 }
 
+// reqproof:implements SW-REQ-009
 func getRandomKey(orgId string) string {
 	if len(apiKeys) == 0 {
 		GenerateAPIKeys(orgId)
@@ -144,6 +154,7 @@ func getRandomKey(orgId string) string {
 	return apiKeys[rand.Intn(len(apiKeys))]
 }
 
+// reqproof:implements SW-REQ-009
 func country() string {
 	codes := []string{
 		"RU",
@@ -153,6 +164,7 @@ func country() string {
 	return codes[rand.Intn(len(codes))]
 }
 
+// reqproof:implements SW-REQ-009
 func GenerateDemoData(days, recordsPerHour int, orgID string, demoFutureData, trackPath bool, writer func([]interface{}, *health.Job, time.Time, int)) {
 	t := time.Now()
 	start := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC)
@@ -179,6 +191,7 @@ func GenerateDemoData(days, recordsPerHour int, orgID string, demoFutureData, tr
 	}
 }
 
+// reqproof:implements SW-REQ-009
 func WriteDemoData(start time.Time, d, h, recordsPerHour int, orgID string, trackPath bool, writer func([]interface{}, *health.Job, time.Time, int)) {
 	set := []interface{}{}
 	ts := start.AddDate(0, 0, d)
@@ -207,6 +220,7 @@ func WriteDemoData(start time.Time, d, h, recordsPerHour int, orgID string, trac
 	writer(set, nil, time.Now(), 10)
 }
 
+// reqproof:implements SW-REQ-009
 func GenerateRandomAnalyticRecord(orgID string, trackPath bool) analytics.AnalyticsRecord {
 	p := randomPath()
 	api, apiID := randomAPI()

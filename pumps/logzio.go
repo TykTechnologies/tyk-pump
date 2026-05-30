@@ -48,6 +48,7 @@ type LogzioPumpConfig struct {
 	URL string `json:"url" mapstructure:"url"`
 }
 
+// reqproof:implements SW-REQ-027
 func NewLogzioPumpConfig() *LogzioPumpConfig {
 	return &LogzioPumpConfig{
 		CheckDiskSpace: defaultLogzioCheckDiskSpace,
@@ -65,6 +66,7 @@ type LogzioPump struct {
 	CommonPumpConfig
 }
 
+// reqproof:implements SW-REQ-027
 func NewLogzioClient(conf *LogzioPumpConfig) (*lg.LogzioSender, error) {
 	if conf.Token == "" {
 		return nil, fmt.Errorf("token is required")
@@ -97,18 +99,22 @@ func NewLogzioClient(conf *LogzioPumpConfig) (*lg.LogzioSender, error) {
 	return l, nil
 }
 
+// reqproof:implements SW-REQ-027
 func (p *LogzioPump) New() Pump {
 	return &LogzioPump{}
 }
 
+// reqproof:implements SW-REQ-027
 func (p *LogzioPump) GetName() string {
 	return LogzioPumpName
 }
 
+// reqproof:implements SW-REQ-027
 func (p *LogzioPump) GetEnvPrefix() string {
 	return p.config.EnvPrefix
 }
 
+// reqproof:implements SW-REQ-027
 func (p *LogzioPump) Init(config interface{}) error {
 	p.config = NewLogzioPumpConfig()
 	p.log = log.WithField("prefix", LogzioPumpPrefix)
@@ -131,6 +137,7 @@ func (p *LogzioPump) Init(config interface{}) error {
 	return nil
 }
 
+// reqproof:implements SW-REQ-027
 func (p *LogzioPump) WriteData(ctx context.Context, data []interface{}) error {
 	p.log.Debug("Attempting to write ", len(data), " records...")
 

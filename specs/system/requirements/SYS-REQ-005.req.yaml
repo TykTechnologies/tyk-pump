@@ -1,0 +1,45 @@
+id: SYS-REQ-005
+version: 1
+status: review
+priority: shall
+category: functional
+req_type: guarantee
+fretish: when write_exceeds_timeout delivery shall immediately satisfy write_aborted
+description: The pump shall enforce a configurable per-backend write timeout and abandon a write that exceeds it without blocking writes to other backends.
+formalization_strategy: fretish
+informal_verification:
+    method: ""
+    evidence: ""
+    verified: false
+parent: STK-REQ-002
+component: delivery
+rationale: ""
+tags: []
+variables: []
+traces:
+    satisfies:
+        - STK-REQ-002
+    reviewed_at: "2026-05-29T21:30:11.830042Z"
+    reviewed_by: human:buger
+    reviewed_fingerprint: sha256:384d5ca651012888bacd325c05ce7b0c4ecd1e0df747a366946f1317ac642661
+verification:
+    assurance_level: B
+    formalization_status: valid
+    review:
+        status: approved
+        reviewer: leo@tyk.io
+        reviewed_at: "2026-05-29T15:47:47Z"
+        ai_generated: false
+history:
+    created_by: human:cli
+    created_at: "2026-05-29T15:11:41Z"
+    last_modified_by: human:cli
+    last_modified_at: "2026-05-29T15:52:22Z"
+obligation_class: boundary
+lifecycle:
+    change_history:
+        - date: "2026-05-29T15:46:45Z"
+          from: draft
+          to: review
+          reason: ""
+          changed_by: human:cli

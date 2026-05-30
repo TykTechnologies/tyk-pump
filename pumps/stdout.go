@@ -37,19 +37,23 @@ type StdOutConf struct {
 	UseLegacyPayloadFormat bool `json:"use_legacy_payload_format" mapstructure:"use_legacy_payload_format"`
 }
 
+// reqproof:implements SW-REQ-026
 func (s *StdOutPump) GetName() string {
 	return "Stdout Pump"
 }
 
+// reqproof:implements SW-REQ-026
 func (s *StdOutPump) GetEnvPrefix() string {
 	return s.conf.EnvPrefix
 }
 
+// reqproof:implements SW-REQ-026
 func (s *StdOutPump) New() Pump {
 	newPump := StdOutPump{}
 	return &newPump
 }
 
+// reqproof:implements SW-REQ-026
 func (s *StdOutPump) Init(config interface{}) error {
 
 	s.log = log.WithField("prefix", stdOutPrefix)
@@ -76,6 +80,7 @@ func (s *StdOutPump) Init(config interface{}) error {
 /**
 ** Write the actual Data to Stdout Here
  */
+// reqproof:implements SW-REQ-026
 func (s *StdOutPump) WriteData(ctx context.Context, data []interface{}) error {
 	s.log.Debug("Attempting to write ", len(data), " records...")
 
@@ -115,6 +120,7 @@ func (s *StdOutPump) WriteData(ctx context.Context, data []interface{}) error {
 // transformHTTPPayload separates HTTP headers from the body using the standard
 // HTTP separator (\r\n\r). It removes unnecessary whitespaces from the headers
 // and compacts the JSON body if it is valid.
+// reqproof:implements SW-REQ-026
 func transformHTTPPayload(raw string) string {
 	if raw == "" {
 		return raw
@@ -140,6 +146,7 @@ func transformHTTPPayload(raw string) string {
 
 // removeWhitespaces removes carriage returns ('\r') and tabs ('\t'),
 // and replaces newlines with a single space to create a single-line output.
+// reqproof:implements SW-REQ-026
 func removeWhitespaces(s string) string {
 	var b strings.Builder
 	b.Grow(len(s))

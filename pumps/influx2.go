@@ -71,19 +71,23 @@ type Influx2Conf struct {
 	NewBucketConfig NewBucket `mapstructure:"new_bucket_config" json:"new_bucket_config"`
 }
 
+// reqproof:implements SW-REQ-022
 func (i *Influx2Pump) New() Pump {
 	newPump := Influx2Pump{}
 	return &newPump
 }
 
+// reqproof:implements SW-REQ-022
 func (i *Influx2Pump) GetName() string {
 	return "InfluxDB2 Pump"
 }
 
+// reqproof:implements SW-REQ-022
 func (i *Influx2Pump) GetEnvPrefix() string {
 	return i.dbConf.EnvPrefix
 }
 
+// reqproof:implements SW-REQ-022
 func (i *Influx2Pump) Init(config interface{}) error {
 	i.dbConf = &Influx2Conf{}
 	i.log = log.WithField("prefix", influx2Prefix)
@@ -143,18 +147,21 @@ func (i *Influx2Pump) Init(config interface{}) error {
 	return nil
 }
 
+// reqproof:implements SW-REQ-022
 func (i *Influx2Pump) Shutdown() error {
 	i.client.WriteAPI(i.dbConf.OrgName, i.dbConf.BucketName).Flush()
 	i.client.Close()
 	return nil
 }
 
+// reqproof:implements SW-REQ-022
 func (i *Influx2Pump) connect() influxdb2.Client {
 	opts := influxdb2.DefaultOptions()
 	opts = opts.SetPrecision(time.Microsecond)
 	return influxdb2.NewClientWithOptions(i.dbConf.Addr, i.dbConf.Token, opts)
 }
 
+// reqproof:implements SW-REQ-022
 func (i *Influx2Pump) createBucket(ctx context.Context, orgID *string) (*domain.Bucket, error) {
 	bucketConf := i.dbConf.NewBucketConfig
 	rp := ""
@@ -183,6 +190,7 @@ func (i *Influx2Pump) createBucket(ctx context.Context, orgID *string) (*domain.
 	return bucket, nil
 }
 
+// reqproof:implements SW-REQ-022
 func (i *Influx2Pump) WriteData(ctx context.Context, data []interface{}) error {
 	i.log.Debug("Attempting to write ", len(data), " records...")
 

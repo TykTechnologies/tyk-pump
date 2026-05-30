@@ -1,0 +1,67 @@
+id: SW-REQ-022
+version: 1
+status: review
+priority: shall
+category: functional
+req_type: guarantee
+fretish: ""
+description: The InfluxDB pump family shall write analytics points to InfluxDB v1 and v2 backends.
+formalization_strategy: informal
+informal_verification:
+    method: ""
+    evidence: ""
+    verified: false
+parent: SYS-REQ-004
+component: pumps-influx
+rationale: ""
+tags: []
+variables: []
+traces:
+    satisfies:
+        - SYS-REQ-004
+    reviewed_at: "2026-05-29T21:30:11.34851Z"
+    reviewed_by: human:buger
+    reviewed_fingerprint: sha256:3665c5de71e404733a68ae83b98831697e73cb06deb4f43592a17b1c5888fd97
+verification:
+    assurance_level: B
+    formalization_status: none
+    review:
+        status: approved
+        reviewer: leo@tyk.io
+        reviewed_at: "2026-05-29T15:47:45Z"
+        ai_generated: false
+    impact_reviews:
+        - requirement: SW-REQ-022
+          artifact: pumps/influx.go
+          decision: no-authored-change
+          reviewer: buger
+          reason: Annotated MC/DC ignore on unreachable GeoIP and defensive type-assertion branches plus added unit tests; runtime behavior and authored requirement intent are unchanged.
+          base: origin/master
+          requirement_fingerprint: sha256:3665c5de71e404733a68ae83b98831697e73cb06deb4f43592a17b1c5888fd97
+          approval_fingerprint: sha256:f850f76981caa2dd248d3baa0951c4f35f467ea897cb8743cce125175670aec8
+          artifact_fingerprint: sha256:d4b3955b7565e6788e51ae780039c63532667c2c6b132a300659ff811c1084af
+          reviewed_at: "2026-05-29T21:13:18Z"
+        - requirement: SW-REQ-022
+          artifact: pumps/influx2.go
+          decision: no-authored-change
+          reviewer: buger
+          reason: Annotated MC/DC ignore on unreachable GeoIP and defensive type-assertion branches plus added unit tests; runtime behavior and authored requirement intent are unchanged.
+          base: origin/master
+          requirement_fingerprint: sha256:3665c5de71e404733a68ae83b98831697e73cb06deb4f43592a17b1c5888fd97
+          approval_fingerprint: sha256:f850f76981caa2dd248d3baa0951c4f35f467ea897cb8743cce125175670aec8
+          artifact_fingerprint: sha256:60cc8a8966bc101c77a614a0b02a5b05f8588841972bcaca20978ef4b88fe9a0
+          reviewed_at: "2026-05-29T21:13:18Z"
+history:
+    created_by: human:cli
+    created_at: "2026-05-29T15:20:15Z"
+    last_modified_by: human:cli
+    last_modified_at: "2026-05-29T15:47:45Z"
+obligation_checklist:
+    - errors_propagated
+lifecycle:
+    change_history:
+        - date: "2026-05-29T15:46:44Z"
+          from: draft
+          to: review
+          reason: ""
+          changed_by: human:cli

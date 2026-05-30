@@ -1,0 +1,57 @@
+id: SW-REQ-007
+version: 1
+status: review
+priority: shall
+category: functional
+req_type: guarantee
+fretish: ""
+description: Temporal storage shall establish and re-establish its backend connection using bounded exponential backoff.
+formalization_strategy: informal
+informal_verification:
+    method: ""
+    evidence: ""
+    verified: false
+parent: SYS-REQ-006
+component: storage
+rationale: ""
+tags: []
+variables: []
+traces:
+    satisfies:
+        - SYS-REQ-006
+    reviewed_at: "2026-05-29T21:30:10.712799Z"
+    reviewed_by: human:buger
+    reviewed_fingerprint: sha256:0060aeb7ebf037dfce186a245261470003a3049ba9bf9e5a8ede05c9901d5ca9
+verification:
+    assurance_level: B
+    formalization_status: none
+    review:
+        status: approved
+        reviewer: leo@tyk.io
+        reviewed_at: "2026-05-29T15:47:45Z"
+        ai_generated: false
+    impact_reviews:
+        - requirement: SW-REQ-007
+          artifact: storage/store.go
+          decision: no-authored-change
+          reviewer: buger
+          reason: Annotated MC/DC ignore on unreachable GeoIP and defensive type-assertion branches plus added unit tests; runtime behavior and authored requirement intent are unchanged.
+          base: origin/master
+          requirement_fingerprint: sha256:0060aeb7ebf037dfce186a245261470003a3049ba9bf9e5a8ede05c9901d5ca9
+          approval_fingerprint: sha256:d4ac10c66c903ab0ce4033c68e0c69515a7a2b7e5cf4342a2995271e374f5385
+          artifact_fingerprint: sha256:e3e96b335a7f110f632eb0cf1980fc8f592e018ca4124e69232f016ffec0219c
+          reviewed_at: "2026-05-29T21:13:16Z"
+history:
+    created_by: human:cli
+    created_at: "2026-05-29T15:20:14Z"
+    last_modified_by: human:cli
+    last_modified_at: "2026-05-29T15:47:45Z"
+obligation_checklist:
+    - error_handling
+lifecycle:
+    change_history:
+        - date: "2026-05-29T15:46:44Z"
+          from: draft
+          to: review
+          reason: ""
+          changed_by: human:cli

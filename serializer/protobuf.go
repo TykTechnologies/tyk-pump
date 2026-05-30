@@ -11,15 +11,18 @@ import (
 type ProtobufSerializer struct {
 }
 
+// reqproof:implements SW-REQ-008
 func (pb *ProtobufSerializer) GetSuffix() string {
 	return "_protobuf"
 }
 
+// reqproof:implements SW-REQ-008
 func (pb *ProtobufSerializer) Encode(record *analytics.AnalyticsRecord) ([]byte, error) {
 	protoRecord := pb.TransformSingleRecordToProto(*record)
 	return proto.Marshal(protoRecord)
 }
 
+// reqproof:implements SW-REQ-008
 func (pb *ProtobufSerializer) Decode(analyticsData interface{}, record *analytics.AnalyticsRecord) error {
 	protoData := analyticsproto.AnalyticsRecord{}
 	err := proto.Unmarshal(analyticsData.([]byte), &protoData)
@@ -29,6 +32,7 @@ func (pb *ProtobufSerializer) Decode(analyticsData interface{}, record *analytic
 	return pb.TransformSingleProtoToAnalyticsRecord(&protoData, record)
 }
 
+// reqproof:implements SW-REQ-008
 func (pb *ProtobufSerializer) TransformSingleRecordToProto(rec analytics.AnalyticsRecord) *analyticsproto.AnalyticsRecord {
 	latency := analyticsproto.Latency{
 		Total:    rec.Latency.Total,
@@ -132,6 +136,7 @@ func (pb *ProtobufSerializer) TransformSingleRecordToProto(rec analytics.Analyti
 	return &record
 }
 
+// reqproof:implements SW-REQ-008
 func (pb *ProtobufSerializer) TransformSingleProtoToAnalyticsRecord(rec *analyticsproto.AnalyticsRecord, record *analytics.AnalyticsRecord) error {
 	tmpRecord := analytics.AnalyticsRecord{
 		Method:        rec.Method,

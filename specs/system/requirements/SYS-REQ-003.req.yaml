@@ -1,0 +1,47 @@
+id: SYS-REQ-003
+version: 1
+status: review
+priority: shall
+category: functional
+req_type: guarantee
+fretish: when aggregation_enabled aggregation shall eventually satisfy aggregates_emitted
+description: The pump shall support forwarding time-windowed aggregated analytics, computing per-organisation and per-API counters (hits, successes, errors, latency) over a configurable time window.
+formalization_strategy: fretish
+informal_verification:
+    method: ""
+    evidence: ""
+    verified: false
+parent: STK-REQ-001
+component: aggregation
+rationale: ""
+tags: []
+variables: []
+traces:
+    satisfies:
+        - STK-REQ-001
+    reviewed_at: "2026-05-29T21:30:11.825432Z"
+    reviewed_by: human:buger
+    reviewed_fingerprint: sha256:7493d37b47a3b763f19f5d9b1d8083dd0d00719143aa325e7d0f935de1500637
+verification:
+    assurance_level: B
+    formalization_status: valid
+    review:
+        status: approved
+        reviewer: leo@tyk.io
+        reviewed_at: "2026-05-29T15:47:46Z"
+        ai_generated: false
+    gaps_reviewed_at: "2026-05-29T21:30:12.874322Z"
+    gaps_reviewed_by: buger
+history:
+    created_by: human:cli
+    created_at: "2026-05-29T15:11:41Z"
+    last_modified_by: human:cli
+    last_modified_at: "2026-05-29T15:52:22Z"
+obligation_class: nominal
+lifecycle:
+    change_history:
+        - date: "2026-05-29T15:46:44Z"
+          from: draft
+          to: review
+          reason: ""
+          changed_by: human:cli

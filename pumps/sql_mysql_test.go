@@ -12,10 +12,12 @@ import (
 	"gorm.io/gorm"
 )
 
+// Verifies: SW-REQ-019
 func getTestMySQLConnectionString() string {
 	return os.Getenv("TYK_TEST_MYSQL")
 }
 
+// Verifies: SW-REQ-019
 func skipTestIfNoMySQL(t *testing.T) {
 	t.Helper()
 	if os.Getenv("TYK_TEST_MYSQL") == "" {
@@ -23,6 +25,7 @@ func skipTestIfNoMySQL(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-019
 func newMySQLConfig(sharded bool) map[string]interface{} {
 	cfg := make(map[string]interface{})
 	cfg["type"] = "mysql"
@@ -35,6 +38,7 @@ func newMySQLConfig(sharded bool) map[string]interface{} {
 
 // TestMySQLInit verifies that the pump initialises correctly against MySQL after the
 // driver upgrade (gorm.io/driver/mysql v1.0.3 → v1.3.2, go-sql-driver/mysql v1.5 → v1.6).
+// Verifies: SW-REQ-019
 func TestMySQLInit(t *testing.T) {
 	skipTestIfNoMySQL(t)
 
@@ -52,6 +56,7 @@ func TestMySQLInit(t *testing.T) {
 
 // TestMySQLWriteData writes 100 records and verifies count plus data integrity for three
 // spot-checked records.
+// Verifies: SW-REQ-019
 func TestMySQLWriteData(t *testing.T) {
 	skipTestIfNoMySQL(t)
 
@@ -101,6 +106,7 @@ func TestMySQLWriteData(t *testing.T) {
 // This is independent of the pgx/v5 upgrade — MySQL was bumped separately
 // (gorm.io/driver/mysql v1.0.3 → v1.3.2). MySQL's ColumnType implementation may report
 // these metadata fields differently, so the check must be validated for MySQL too.
+// Verifies: SW-REQ-019
 func TestMigrationIdempotency_MySQL(t *testing.T) {
 	skipTestIfNoMySQL(t)
 
@@ -124,6 +130,7 @@ func TestMigrationIdempotency_MySQL(t *testing.T) {
 // fork commit 95e095f, which was required because gorm.io/driver/mysql v1.3.2 calls
 // this method internally. If the method is missing or broken, the mysql driver fails
 // to initialise or panics on the first real query.
+// Verifies: SW-REQ-019
 func TestMySQLConnectionMethod(t *testing.T) {
 	skipTestIfNoMySQL(t)
 
@@ -164,6 +171,7 @@ func TestMySQLConnectionMethod(t *testing.T) {
 // guardrail: if a future gateway refactor forgets to set it, this test shows the
 // failure mode early rather than at a customer site. go-sql-driver/mysql v1.6.0
 // tightened zero-date handling further, so this is worth pinning for the upgrade.
+// Verifies: SW-REQ-019
 func TestMySQLStrictMode_ZeroExpireAt(t *testing.T) {
 	skipTestIfNoMySQL(t)
 
@@ -201,6 +209,7 @@ func TestMySQLStrictMode_ZeroExpireAt(t *testing.T) {
 // how tyk-pump's TimeStamp column is written and read. v1.6.0 changed parseTime
 // defaults and rejectReadOnly handling; regressions here would show as time drift or
 // scan errors on reads.
+// Verifies: SW-REQ-019
 func TestMySQLDriverV16_DateHandling(t *testing.T) {
 	skipTestIfNoMySQL(t)
 

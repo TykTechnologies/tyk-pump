@@ -21,14 +21,17 @@ type MockSQSSendMessageBatchAPI struct {
 	SendMessageBatchFunc func(ctx context.Context, params *sqs.SendMessageBatchInput, optFns ...func(*sqs.Options)) (*sqs.SendMessageBatchOutput, error)
 }
 
+// Verifies: SW-REQ-028
 func (m *MockSQSSendMessageBatchAPI) GetQueueUrl(ctx context.Context, params *sqs.GetQueueUrlInput, optFns ...func(*sqs.Options)) (*sqs.GetQueueUrlOutput, error) {
 	return m.GetQueueUrlFunc(ctx, params, optFns...)
 }
 
+// Verifies: SW-REQ-028
 func (m *MockSQSSendMessageBatchAPI) SendMessageBatch(ctx context.Context, params *sqs.SendMessageBatchInput, optFns ...func(*sqs.Options)) (*sqs.SendMessageBatchOutput, error) {
 	return m.SendMessageBatchFunc(ctx, params, optFns...)
 }
 
+// Verifies: SW-REQ-028
 func TestSQSPump_WriteData(t *testing.T) {
 	// Mock SQS client
 	mockSQS := &MockSQSSendMessageBatchAPI{
@@ -71,6 +74,7 @@ func TestSQSPump_WriteData(t *testing.T) {
 	assert.NoError(t, err, "Unexpected error during WriteData")
 }
 
+// Verifies: SW-REQ-028
 func TestSQSPump_Chunks(t *testing.T) {
 	var Calls int
 	// Mock SQS client

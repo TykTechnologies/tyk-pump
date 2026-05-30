@@ -66,11 +66,13 @@ type MongoAggregateConf struct {
 	IgnoreAggregationsList []string `json:"ignore_aggregations" mapstructure:"ignore_aggregations"`
 }
 
+// reqproof:implements SW-REQ-018
 func (m *MongoAggregatePump) New() Pump {
 	newPump := MongoAggregatePump{}
 	return &newPump
 }
 
+// reqproof:implements SW-REQ-018
 func getListOfCommonPrefix(list []string) []string {
 	count := make(map[string]int)
 	result := make([]string, 0)
@@ -116,6 +118,7 @@ func getListOfCommonPrefix(list []string) []string {
 	return result
 }
 
+// reqproof:implements SW-REQ-018
 func (m *MongoAggregatePump) printAlert(doc analytics.AnalyticsRecordAggregate, thresholdLenTagList int) {
 	var listofTags []string
 
@@ -134,20 +137,24 @@ func (m *MongoAggregatePump) printAlert(doc analytics.AnalyticsRecordAggregate, 
 	m.log.Warnf("WARNING: Found more than %v tag entries per document, which may cause performance issues with aggregate logs. List of most common tag-prefix: [%v]. You can ignore these tags using ignore_tag_prefix_list option", thresholdLenTagList, strings.Join(listOfCommonPrefix[:l], ", "))
 }
 
+// reqproof:implements SW-REQ-018
 func (m *MongoAggregatePump) doHash(in string) string {
 	sEnc := b64.StdEncoding.EncodeToString([]byte(in))
 	search := strings.TrimRight(sEnc, "=")
 	return search
 }
 
+// reqproof:implements SW-REQ-018
 func (m *MongoAggregatePump) GetName() string {
 	return "MongoDB Aggregate Pump"
 }
 
+// reqproof:implements SW-REQ-018
 func (m *MongoAggregatePump) GetEnvPrefix() string {
 	return m.dbConf.EnvPrefix
 }
 
+// reqproof:implements SW-REQ-018
 func (m *MongoAggregatePump) GetCollectionName(orgid string) (string, error) {
 	if orgid == "" {
 		return "", errors.New("OrgID cannot be empty")
@@ -156,18 +163,21 @@ func (m *MongoAggregatePump) GetCollectionName(orgid string) (string, error) {
 	return "z_tyk_analyticz_aggregate_" + orgid, nil
 }
 
+// reqproof:implements SW-REQ-018
 func (m *MongoAggregatePump) SetDecodingRequest(decoding bool) {
 	if decoding {
 		log.WithField("pump", m.GetName()).Warn("Decoding request is not supported for Mongo Aggregate pump")
 	}
 }
 
+// reqproof:implements SW-REQ-018
 func (m *MongoAggregatePump) SetDecodingResponse(decoding bool) {
 	if decoding {
 		log.WithField("pump", m.GetName()).Warn("Decoding response is not supported for Mongo Aggregate pump")
 	}
 }
 
+// reqproof:implements SW-REQ-018
 func (m *MongoAggregatePump) Init(config interface{}) error {
 	m.dbConf = &MongoAggregateConf{}
 	m.log = log.WithField("prefix", analytics.MongoAggregatePrefix)
@@ -212,6 +222,7 @@ func (m *MongoAggregatePump) Init(config interface{}) error {
 	return nil
 }
 
+// reqproof:implements SW-REQ-018
 func (m *MongoAggregatePump) connect() {
 	var err error
 
@@ -234,6 +245,7 @@ func (m *MongoAggregatePump) connect() {
 	}
 }
 
+// reqproof:implements SW-REQ-018
 func (m *MongoAggregatePump) ensureIndexes(collectionName string) error {
 	if m.dbConf.OmitIndexCreation {
 		m.log.Debug("omit_index_creation set to true, omitting index creation..")
@@ -283,6 +295,7 @@ func (m *MongoAggregatePump) ensureIndexes(collectionName string) error {
 	return m.store.CreateIndex(context.Background(), d, orgIndex)
 }
 
+// reqproof:implements SW-REQ-018
 func (m *MongoAggregatePump) WriteData(ctx context.Context, data []interface{}) error {
 	filtered := make([]interface{}, 0, len(data))
 	for _, d := range data {
@@ -328,6 +341,7 @@ func (m *MongoAggregatePump) WriteData(ctx context.Context, data []interface{}) 
 	return nil
 }
 
+// reqproof:implements SW-REQ-018
 func (m *MongoAggregatePump) DoAggregatedWriting(ctx context.Context, filteredData *analytics.AnalyticsRecordAggregate, mixed bool) error {
 	filteredData.Mixed = mixed
 	indexCreateErr := m.ensureIndexes(filteredData.TableName())
@@ -382,16 +396,19 @@ func (m *MongoAggregatePump) DoAggregatedWriting(ctx context.Context, filteredDa
 }
 
 // collectionExists checks to see if a collection name exists in the db.
+// reqproof:implements SW-REQ-018
 func (m *MongoAggregatePump) collectionExists(name string) (bool, error) {
 	return m.store.HasTable(context.Background(), name)
 }
 
 // WriteUptimeData will pull the data from the in-memory store and drop it into the specified MongoDB collection
+// reqproof:implements SW-REQ-018
 func (m *MongoAggregatePump) WriteUptimeData(data []interface{}) {
 	m.log.Warning("Mongo Aggregate should not be writing uptime data!")
 }
 
 // getLastDocumentTimestamp will return the timestamp of the last document in the collection
+// reqproof:implements SW-REQ-018
 func (m *MongoAggregatePump) getLastDocumentTimestamp() (time.Time, error) {
 	d := dbObject{
 		tableName: analytics.AgggregateMixedCollectionName,
@@ -409,6 +426,7 @@ func (m *MongoAggregatePump) getLastDocumentTimestamp() (time.Time, error) {
 }
 
 // divideAggregationTime divides by two the analytics stored per minute setting
+// reqproof:implements SW-REQ-018
 func (m *MongoAggregatePump) divideAggregationTime() {
 	if m.dbConf.AggregationTime == 1 {
 		m.log.Debug("Analytics Stored Per Minute is set to 1, unable to divide")
@@ -420,6 +438,7 @@ func (m *MongoAggregatePump) divideAggregationTime() {
 }
 
 // ShouldSelfHeal returns true if the pump should self heal
+// reqproof:implements SW-REQ-018
 func (m *MongoAggregatePump) ShouldSelfHeal(err error) bool {
 	const StandardMongoSizeError = "Size must be between 0 and"
 	const CosmosSizeError = "Request size is too large"
@@ -444,6 +463,7 @@ func (m *MongoAggregatePump) ShouldSelfHeal(err error) bool {
 }
 
 // SetAggregationTime sets the aggregation time for the pump
+// reqproof:implements SW-REQ-018
 func (m *MongoAggregatePump) SetAggregationTime() {
 	// if StoreAnalyticsPerMinute is set to true, the aggregation time will be set to 1.
 	// if not, the aggregation time will be set to the value of the field AggregationTime.

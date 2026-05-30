@@ -11,10 +11,12 @@ import (
 	"gopkg.in/vmihailenco/msgpack.v2"
 )
 
+// Verifies: SW-REQ-019
 func getTestPostgresConnectionString() string {
 	return os.Getenv("TYK_TEST_POSTGRES")
 }
 
+// Verifies: SW-REQ-019
 func skipTestIfNoPostgres(t *testing.T) {
 	t.Helper()
 	if os.Getenv("TYK_TEST_POSTGRES") == "" {
@@ -22,6 +24,7 @@ func skipTestIfNoPostgres(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-019
 func newSQLConfig(sharded bool) map[string]interface{} {
 	cfg := make(map[string]interface{})
 	cfg["type"] = "postgres"
@@ -30,6 +33,7 @@ func newSQLConfig(sharded bool) map[string]interface{} {
 	return cfg
 }
 
+// Verifies: SW-REQ-019
 func TestSQLInit(t *testing.T) {
 	skipTestIfNoPostgres(t)
 	pmp := SQLPump{}
@@ -53,6 +57,7 @@ func TestSQLInit(t *testing.T) {
 	assert.NotNil(t, invalidDialectErr)
 }
 
+// Verifies: SW-REQ-019
 func TestSQLWriteData(t *testing.T) {
 	skipTestIfNoPostgres(t)
 	pmp := SQLPump{}
@@ -103,6 +108,7 @@ func TestSQLWriteData(t *testing.T) {
 	})
 }
 
+// Verifies: SW-REQ-019
 func TestSQLWriteDataSharded(t *testing.T) {
 	skipTestIfNoPostgres(t)
 	pmp := SQLPump{}
@@ -185,6 +191,7 @@ func TestSQLWriteDataSharded(t *testing.T) {
 	})
 }
 
+// Verifies: SW-REQ-019
 func TestSQLWriteUptimeData(t *testing.T) {
 	skipTestIfNoPostgres(t)
 	pmp := SQLPump{IsUptime: true}
@@ -268,6 +275,7 @@ func TestSQLWriteUptimeData(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-019
 func TestSQLWriteUptimeDataSharded(t *testing.T) {
 	skipTestIfNoPostgres(t)
 	pmp := SQLPump{}
@@ -328,6 +336,7 @@ func TestSQLWriteUptimeDataSharded(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-019
 func TestSQLWriteUptimeDataAggregations(t *testing.T) {
 	skipTestIfNoPostgres(t)
 	pmp := SQLPump{IsUptime: true}
@@ -373,6 +382,7 @@ func TestSQLWriteUptimeDataAggregations(t *testing.T) {
 	assert.Equal(t, 70.0, dbRecords[0].TotalRequestTime)
 }
 
+// Verifies: SW-REQ-019
 func TestDecodeRequestAndDecodeResponseSQL(t *testing.T) {
 	skipTestIfNoPostgres(t)
 	newPump := &SQLPump{}
@@ -393,6 +403,7 @@ func TestDecodeRequestAndDecodeResponseSQL(t *testing.T) {
 	assert.False(t, newPump.GetDecodedResponse())
 }
 
+// Verifies: SW-REQ-019
 func setupSQLPump(t *testing.T, tableName string, useBackground bool) *SQLPump {
 	skipTestIfNoPostgres(t)
 	t.Helper()
@@ -412,6 +423,7 @@ func setupSQLPump(t *testing.T, tableName string, useBackground bool) *SQLPump {
 	return pmp
 }
 
+// Verifies: SW-REQ-019
 func TestEnsureIndexSQL(t *testing.T) {
 	skipTestIfNoPostgres(t)
 	//nolint:govet
@@ -480,6 +492,7 @@ func TestEnsureIndexSQL(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-019
 func TestBuildIndexName(t *testing.T) {
 	tests := []struct {
 		indexBaseName string

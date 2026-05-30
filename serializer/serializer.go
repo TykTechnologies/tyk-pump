@@ -16,6 +16,7 @@ type AnalyticsSerializer interface {
 const MSGP_SERIALIZER = "msgpack"
 const PROTOBUF_SERIALIZER = "protobuf"
 
+// reqproof:implements SW-REQ-008
 func NewAnalyticsSerializer(serializerType string) AnalyticsSerializer {
 	switch serializerType {
 	case PROTOBUF_SERIALIZER:

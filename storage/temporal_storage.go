@@ -36,6 +36,7 @@ type TemporalStorageHandler struct {
 	forceReconnect bool
 }
 
+// reqproof:implements SW-REQ-006
 func NewTemporalStorageHandler(config interface{}, forceReconnect bool) (*TemporalStorageHandler, error) {
 	r := &TemporalStorageHandler{
 		forceReconnect: forceReconnect,
@@ -65,6 +66,7 @@ func NewTemporalStorageHandler(config interface{}, forceReconnect bool) (*Tempor
 	}
 }
 
+// reqproof:implements SW-REQ-006
 func (r *TemporalStorageHandler) Init() error {
 	if r.Config == nil {
 		r.Config = &TemporalStorageConfig{}
@@ -100,6 +102,7 @@ func (r *TemporalStorageHandler) Init() error {
 }
 
 // Connect will establish a connection to the r.db
+// reqproof:implements SW-REQ-006
 func (r *TemporalStorageHandler) connect() error {
 	var err error
 	if connectorSingleton == nil || r.forceReconnect {
@@ -135,6 +138,7 @@ func (r *TemporalStorageHandler) connect() error {
 	return nil
 }
 
+// reqproof:implements SW-REQ-006
 func (r *TemporalStorageHandler) resetConnection(config *TemporalStorageConfig) error {
 	if connectorSingleton != nil {
 		if err := connectorSingleton.Disconnect(ctx); err != nil {
@@ -194,6 +198,7 @@ func (r *TemporalStorageHandler) resetConnection(config *TemporalStorageConfig) 
 	return nil
 }
 
+// reqproof:implements SW-REQ-006
 func createConnector(opts *model.RedisOptions, tlsOptions *model.TLS) (model.Connector, model.KeyValue, model.List, error) {
 	conn, err := connector.NewConnector(model.RedisV9Type, model.WithRedisConfig(opts), model.WithTLS(tlsOptions))
 	if err != nil {
@@ -213,6 +218,7 @@ func createConnector(opts *model.RedisOptions, tlsOptions *model.TLS) (model.Con
 	return conn, kv, l, nil
 }
 
+// reqproof:implements SW-REQ-006
 func getKVFromConnector() (model.KeyValue, error) {
 	kv, err := keyvalue.NewKeyValue(connectorSingleton)
 	if err != nil {
@@ -222,6 +228,7 @@ func getKVFromConnector() (model.KeyValue, error) {
 	return kv, nil
 }
 
+// reqproof:implements SW-REQ-006
 func getListFromConnector() (model.List, error) {
 	l, err := list.NewList(connectorSingleton)
 	if err != nil {
@@ -231,6 +238,7 @@ func getListFromConnector() (model.List, error) {
 	return l, nil
 }
 
+// reqproof:implements SW-REQ-006
 func (r *TemporalStorageHandler) GetName() string {
 	if r.Config.Type != "" {
 		return r.Config.Type
@@ -239,6 +247,7 @@ func (r *TemporalStorageHandler) GetName() string {
 	return "redis"
 }
 
+// reqproof:implements SW-REQ-006
 func (r *TemporalStorageHandler) fixKey(keyName string) string {
 	setKeyName := r.Config.KeyPrefix + keyName
 
@@ -249,6 +258,7 @@ func (r *TemporalStorageHandler) fixKey(keyName string) string {
 	return setKeyName
 }
 
+// reqproof:implements SW-REQ-006
 func (r *TemporalStorageHandler) GetAndDeleteSet(keyName string, chunkSize int64, expire time.Duration) ([]interface{}, error) {
 	log.WithFields(logrus.Fields{
 		"prefix": logPrefix,
@@ -296,6 +306,7 @@ func (r *TemporalStorageHandler) GetAndDeleteSet(keyName string, chunkSize int64
 }
 
 // SetKey will create (or update) a key value in the store
+// reqproof:implements SW-REQ-006
 func (r *TemporalStorageHandler) SetKey(keyName, session string, timeout int64) error {
 	log.Debug("[STORE] SET Raw key is: ", keyName)
 	log.Debug("[STORE] Setting key: ", r.fixKey(keyName))
@@ -313,6 +324,7 @@ func (r *TemporalStorageHandler) SetKey(keyName, session string, timeout int64) 
 	return nil
 }
 
+// reqproof:implements SW-REQ-006
 func (r *TemporalStorageHandler) ensureConnection() error {
 	if connectorSingleton != nil {
 		return nil

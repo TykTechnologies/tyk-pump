@@ -1,0 +1,14 @@
+component: filtering
+variables:
+    - name: record_matches_block_filter
+      type: bool
+      direction: input
+      description: A record matches a configured block or allow filter that excludes it.
+    - name: record_excluded
+      type: bool
+      direction: output
+      description: The record is not forwarded to that backend.
+    - name: record_outside_allow_list
+      type: bool
+      direction: input
+      description: At least one non-empty allow list (org/api/response-code) is configured and the record does not satisfy it.

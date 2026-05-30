@@ -15,6 +15,7 @@ var defaultHealthPort = 8083
 var serverPrefix = "server"
 var log = logger.GetLogger()
 
+// reqproof:implements SW-REQ-032
 func ServeHealthCheck(configHealthEndpoint string, configHealthPort int, enableProfiling bool) {
 	healthEndpoint := configHealthEndpoint
 	if healthEndpoint == "" {
@@ -44,6 +45,7 @@ func ServeHealthCheck(configHealthEndpoint string, configHealthPort int, enableP
 	}
 }
 
+// reqproof:implements SW-REQ-032
 func Healthcheck(rw http.ResponseWriter, r *http.Request) {
 	rw.Header().Set("Content-type", "application/json")
 	rw.WriteHeader(http.StatusOK)

@@ -76,19 +76,23 @@ type KafkaConf struct {
 	BatchBytes int `json:"batch_bytes" mapstructure:"batch_bytes"`
 }
 
+// reqproof:implements SW-REQ-021
 func (k *KafkaPump) New() Pump {
 	newPump := KafkaPump{}
 	return &newPump
 }
 
+// reqproof:implements SW-REQ-021
 func (k *KafkaPump) GetName() string {
 	return "Kafka Pump"
 }
 
+// reqproof:implements SW-REQ-021
 func (k *KafkaPump) GetEnvPrefix() string {
 	return k.kafkaConf.EnvPrefix
 }
 
+// reqproof:implements SW-REQ-021
 func (k *KafkaPump) Init(config interface{}) error {
 	k.log = log.WithField("prefix", kafkaPrefix)
 
@@ -187,6 +191,7 @@ func (k *KafkaPump) Init(config interface{}) error {
 	return nil
 }
 
+// reqproof:implements SW-REQ-021
 func (k *KafkaPump) WriteData(ctx context.Context, data []interface{}) error {
 	startTime := time.Now()
 	k.log.Debug("Attempting to write ", len(data), " records...")
@@ -243,6 +248,7 @@ func (k *KafkaPump) WriteData(ctx context.Context, data []interface{}) error {
 	return nil
 }
 
+// reqproof:implements SW-REQ-021
 func (k *KafkaPump) write(ctx context.Context, messages []kafka.Message) error {
 	kafkaWriter := kafka.NewWriter(k.writerConfig)
 	defer kafkaWriter.Close()

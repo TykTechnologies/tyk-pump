@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// Verifies: SW-REQ-025
 func TestCSVPump_New(t *testing.T) {
 	type fields struct {
 		csvConf          *CSVConf
@@ -49,6 +50,7 @@ func TestCSVPump_New(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-025
 func TestCSVPump_GetName(t *testing.T) {
 	type fields struct {
 		csvConf          *CSVConf
@@ -85,6 +87,7 @@ func TestCSVPump_GetName(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-025
 func TestCSVPump_Init(t *testing.T) {
 	type fields struct {
 		csvConf          *CSVConf
@@ -136,6 +139,7 @@ func TestCSVPump_Init(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-025
 func TestCSVPump_WriteData(t *testing.T) {
 	type fields struct {
 		csvConf      *CSVConf
@@ -237,6 +241,7 @@ func TestCSVPump_WriteData(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-025
 func GetFileAndRows(fname string) (*os.File, int, error) {
 	// checking if the file exists
 	openfile, err := os.Open("./testingDirectory/" + fname)

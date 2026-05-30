@@ -10,6 +10,7 @@ import (
 )
 
 // TestFormatterWithForcedPrefixFileOutput check if the prefix is stored in not TTY outputs
+// Verifies: SW-REQ-033
 func TestFormatterWithForcedPrefixFileOutput(t *testing.T) {
 	outputFile := "test.log"
 	var f *os.File
@@ -51,6 +52,7 @@ func TestFormatterWithForcedPrefixFileOutput(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-033
 func Test_GetLogger(t *testing.T) {
 	tests := []struct {
 		name          string

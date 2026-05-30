@@ -33,14 +33,17 @@ type MCPSQLPump struct {
 	CommonPumpConfig
 }
 
+// reqproof:implements SW-REQ-019
 func (g *MCPSQLPump) GetName() string {
 	return "MCP SQL Pump"
 }
 
+// reqproof:implements SW-REQ-019
 func (g *MCPSQLPump) New() Pump {
 	return &MCPSQLPump{}
 }
 
+// reqproof:implements SW-REQ-019
 func (g *MCPSQLPump) Init(conf interface{}) error {
 	g.Conf = &MCPSQLConf{}
 	g.log = log.WithField("prefix", MCPSQLPrefix)
@@ -87,6 +90,7 @@ func (g *MCPSQLPump) Init(conf interface{}) error {
 	return nil
 }
 
+// reqproof:implements SW-REQ-019
 func (g *MCPSQLPump) getMCPRecords(data []interface{}) []*analytics.MCPRecord {
 	var mcpRecords []*analytics.MCPRecord
 	for _, r := range data {
@@ -103,11 +107,13 @@ func (g *MCPSQLPump) getMCPRecords(data []interface{}) []*analytics.MCPRecord {
 	return mcpRecords
 }
 
+// reqproof:implements SW-REQ-019
 func (g *MCPSQLPump) GetEnvPrefix() string {
 	return g.Conf.EnvPrefix
 }
 
 // writeMCPBatch writes a slice of MCP records to the DB in batches.
+// reqproof:implements SW-REQ-019
 func (g *MCPSQLPump) writeMCPBatch(ctx context.Context, recs []*analytics.MCPRecord) {
 	for ri := 0; ri < len(recs); ri += g.Conf.BatchSize {
 		ends := ri + g.Conf.BatchSize
@@ -122,6 +128,7 @@ func (g *MCPSQLPump) writeMCPBatch(ctx context.Context, recs []*analytics.MCPRec
 
 // ensureMCPShardedTable switches the DB handle to the date-specific shard table,
 // creating it via AutoMigrate if it does not yet exist.
+// reqproof:implements SW-REQ-019
 func (g *MCPSQLPump) ensureMCPShardedTable(recDate string) {
 	table := g.tableName + "_" + recDate
 	g.db = g.db.Table(table)
@@ -132,6 +139,7 @@ func (g *MCPSQLPump) ensureMCPShardedTable(recDate string) {
 	}
 }
 
+// reqproof:implements SW-REQ-019
 func (g *MCPSQLPump) WriteData(ctx context.Context, data []interface{}) error {
 	g.log.Debug("Attempting to write ", len(data), " records...")
 
@@ -173,6 +181,7 @@ func (g *MCPSQLPump) WriteData(ctx context.Context, data []interface{}) error {
 	return nil
 }
 
+// reqproof:implements SW-REQ-019
 func (g *MCPSQLPump) SetLogLevel(level logrus.Level) {
 	g.log.Level = level
 }

@@ -81,6 +81,7 @@ type AnalyticsRecord struct {
 	CollectionName string       `json:"-" bson:"-" gorm:"-:all"`
 }
 
+// reqproof:implements SW-REQ-009
 func (a *AnalyticsRecord) TableName() string {
 	if a.CollectionName != "" {
 		return a.CollectionName
@@ -88,15 +89,18 @@ func (a *AnalyticsRecord) TableName() string {
 	return SQLTable
 }
 
+// reqproof:implements SW-REQ-009
 func (a *AnalyticsRecord) GetObjectID() model.ObjectID {
 	return a.id
 }
 
+// reqproof:implements SW-REQ-009
 func (a *AnalyticsRecord) SetObjectID(id model.ObjectID) {
 	a.id = id
 }
 
 // IsMCPRecord returns true if this analytics record originated from an MCP request.
+// reqproof:implements SW-REQ-009
 func (a *AnalyticsRecord) IsMCPRecord() bool {
 	return a.MCPStats.IsMCP
 }
@@ -152,6 +156,7 @@ type GeoData struct {
 	Location Location `maxminddb:"location" json:"location"`
 }
 
+// reqproof:implements SW-REQ-009
 func (n *NetworkStats) GetFieldNames() []string {
 	return []string{
 		"NetworkStats.OpenConnections",
@@ -161,6 +166,7 @@ func (n *NetworkStats) GetFieldNames() []string {
 	}
 }
 
+// reqproof:implements SW-REQ-009
 func (l *Latency) GetFieldNames() []string {
 	return []string{
 		"Latency.Total",
@@ -169,6 +175,7 @@ func (l *Latency) GetFieldNames() []string {
 	}
 }
 
+// reqproof:implements SW-REQ-009
 func (g *GeoData) GetFieldNames() []string {
 	return []string{
 		"GeoData.Country.ISOCode",
@@ -180,6 +187,7 @@ func (g *GeoData) GetFieldNames() []string {
 	}
 }
 
+// reqproof:implements SW-REQ-009
 func (a *AnalyticsRecord) GetFieldNames() []string {
 	fields := []string{
 		"Method",
@@ -211,6 +219,7 @@ func (a *AnalyticsRecord) GetFieldNames() []string {
 	return append(fields, "Tags", "Alias", "TrackPath", "ExpireAt", "ApiSchema")
 }
 
+// reqproof:implements SW-REQ-009
 func (n *NetworkStats) GetLineValues() []string {
 	fields := []string{}
 	fields = append(fields, strconv.FormatUint(uint64(n.OpenConnections), 10))
@@ -219,6 +228,7 @@ func (n *NetworkStats) GetLineValues() []string {
 	return append(fields, strconv.FormatUint(uint64(n.BytesOut), 10))
 }
 
+// reqproof:implements SW-REQ-009
 func (l *Latency) GetLineValues() []string {
 	return []string{
 		strconv.FormatInt(l.Total, 10),
@@ -227,6 +237,7 @@ func (l *Latency) GetLineValues() []string {
 	}
 }
 
+// reqproof:implements SW-REQ-009
 func (g *GeoData) GetLineValues() []string {
 	fields := []string{}
 	fields = append(fields, g.Country.ISOCode)
@@ -253,6 +264,7 @@ func (g *GeoData) GetLineValues() []string {
 	return append(fields, g.Location.TimeZone)
 }
 
+// reqproof:implements SW-REQ-009
 func (a *AnalyticsRecord) GetLineValues() []string {
 	fields := []string{}
 	fields = append(fields, a.Method, a.Host, a.Path, a.RawPath)
@@ -280,6 +292,7 @@ func (a *AnalyticsRecord) GetLineValues() []string {
 	return fields
 }
 
+// reqproof:implements SW-REQ-009
 func (a *AnalyticsRecord) TrimRawData(size int) {
 	// trim RawResponse
 	a.RawResponse = trimString(size, a.RawResponse)
@@ -288,6 +301,7 @@ func (a *AnalyticsRecord) TrimRawData(size int) {
 	a.RawRequest = trimString(size, a.RawRequest)
 }
 
+// reqproof:implements SW-REQ-009
 func (n *NetworkStats) Flush() NetworkStats {
 	s := NetworkStats{
 		OpenConnections:  atomic.LoadInt64(&n.OpenConnections),
@@ -302,6 +316,7 @@ func (n *NetworkStats) Flush() NetworkStats {
 	return s
 }
 
+// reqproof:implements SW-REQ-009
 func (a *AnalyticsRecord) SetExpiry(expiresInSeconds int64) {
 	expiry := time.Duration(expiresInSeconds) * time.Second
 	if expiresInSeconds == 0 {
@@ -314,6 +329,7 @@ func (a *AnalyticsRecord) SetExpiry(expiresInSeconds int64) {
 	a.ExpireAt = t2
 }
 
+// reqproof:implements SW-REQ-009
 func trimString(size int, value string) string {
 	trimBuffer := bytes.Buffer{}
 	defer trimBuffer.Reset()
@@ -330,6 +346,7 @@ func trimString(size int, value string) string {
 // TimestampToProto will process timestamps and assign them to the proto record
 // protobuf converts all timestamps to UTC so we need to ensure that we keep
 // the same original location, in order to do so, we store the location
+// reqproof:implements SW-REQ-009
 func (a *AnalyticsRecord) TimestampToProto(newRecord *analyticsproto.AnalyticsRecord) {
 	// save original location
 	newRecord.TimeStamp = timestamppb.New(a.TimeStamp)
@@ -337,6 +354,7 @@ func (a *AnalyticsRecord) TimestampToProto(newRecord *analyticsproto.AnalyticsRe
 	newRecord.TimeZone = a.TimeStamp.Location().String()
 }
 
+// reqproof:implements SW-REQ-009
 func (a *AnalyticsRecord) TimeStampFromProto(protoRecord *analyticsproto.AnalyticsRecord) {
 	// get timestamp in original location
 	loc, err := time.LoadLocation(protoRecord.TimeZone)
@@ -350,6 +368,7 @@ func (a *AnalyticsRecord) TimeStampFromProto(protoRecord *analyticsproto.Analyti
 	a.ExpireAt = protoRecord.ExpireAt.AsTime().In(loc)
 }
 
+// reqproof:implements SW-REQ-009
 func (a *AnalyticsRecord) GetGeo(ipStr string, GeoIPDB *maxminddb.Reader) {
 	// Not great, tightly coupled
 	if GeoIPDB == nil {
@@ -357,11 +376,11 @@ func (a *AnalyticsRecord) GetGeo(ipStr string, GeoIPDB *maxminddb.Reader) {
 	}
 
 	geo, err := GeoIPLookup(ipStr, GeoIPDB)
-	if err != nil {
+	if err != nil { //mcdc:ignore requires a real MaxMind GeoIP database to provoke; not available in unit tests
 		log.Error("GeoIP Failure (not recorded): ", err)
 		return
 	}
-	if geo == nil {
+	if geo == nil { //mcdc:ignore depends on MaxMind DB Lookup outcome; not reachable without a real GeoIP DB
 		return
 	}
 
@@ -376,6 +395,7 @@ func (a *AnalyticsRecord) GetGeo(ipStr string, GeoIPDB *maxminddb.Reader) {
 	a.Geo.City = geo.City
 }
 
+// reqproof:implements SW-REQ-009
 func GeoIPLookup(ipStr string, GeoIPDB *maxminddb.Reader) (*GeoData, error) {
 	if ipStr == "" {
 		return nil, nil
@@ -385,16 +405,18 @@ func GeoIPLookup(ipStr string, GeoIPDB *maxminddb.Reader) (*GeoData, error) {
 		return nil, fmt.Errorf("invalid IP address %q", ipStr)
 	}
 	record := new(GeoData)
-	if err := GeoIPDB.Lookup(ip, record); err != nil {
+	if err := GeoIPDB.Lookup(ip, record); err != nil { //mcdc:ignore Lookup failure requires a real MaxMind GeoIP database to provoke; not available in unit tests
 		return nil, fmt.Errorf("geoIPDB lookup of %q failed: %v", ipStr, err)
 	}
 	return record, nil
 }
 
+// reqproof:implements SW-REQ-009
 func (a *AnalyticsRecord) IsGraphRecord() bool {
 	return a.GraphQLStats.IsGraphQL
 }
 
+// reqproof:implements SW-REQ-009
 func (a *AnalyticsRecord) RemoveIgnoredFields(ignoreFields []string) {
 	for _, fieldToIgnore := range ignoreFields {
 		found := false

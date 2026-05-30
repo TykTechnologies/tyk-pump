@@ -1,0 +1,57 @@
+id: SW-REQ-016
+version: 1
+status: review
+priority: shall
+category: functional
+req_type: guarantee
+fretish: ""
+description: The common pump base shall provide uniform setters and getters for filters, per-pump write timeout, max record size, omit-detailed-recording, ignore-fields, and base64-decoding flags so the core can configure every pump consistently before each write.
+formalization_strategy: informal
+informal_verification:
+    method: ""
+    evidence: ""
+    verified: false
+parent: SYS-REQ-004
+component: pumps-common
+rationale: ""
+tags: []
+variables: []
+traces:
+    satisfies:
+        - SYS-REQ-004
+    reviewed_at: "2026-05-29T21:30:10.963682Z"
+    reviewed_by: human:buger
+    reviewed_fingerprint: sha256:36d4699b9bb3c9d6c548c937694248405acdef2940b663d40755b6b8176e8635
+verification:
+    assurance_level: B
+    formalization_status: none
+    review:
+        status: approved
+        reviewer: leo@tyk.io
+        reviewed_at: "2026-05-29T15:47:45Z"
+        ai_generated: false
+    impact_reviews:
+        - requirement: SW-REQ-016
+          artifact: pumps/common.go
+          decision: no-authored-change
+          reviewer: buger
+          reason: Annotated MC/DC ignore on unreachable GeoIP and defensive type-assertion branches plus added unit tests; runtime behavior and authored requirement intent are unchanged.
+          base: origin/master
+          requirement_fingerprint: sha256:36d4699b9bb3c9d6c548c937694248405acdef2940b663d40755b6b8176e8635
+          approval_fingerprint: sha256:a82a07688443f6b1fd729426f5ded89a29efcd658a3a083f86eaf05d038213de
+          artifact_fingerprint: sha256:976d96aa9bbee394c2010ec4c3fe0ffd58b0b2d74be71d181b8540f46c7ebc6b
+          reviewed_at: "2026-05-29T21:13:17Z"
+history:
+    created_by: human:cli
+    created_at: "2026-05-29T15:20:15Z"
+    last_modified_by: human:cli
+    last_modified_at: "2026-05-29T21:27:58Z"
+obligation_checklist:
+    - nominal
+lifecycle:
+    change_history:
+        - date: "2026-05-29T15:46:44Z"
+          from: draft
+          to: review
+          reason: ""
+          changed_by: human:cli

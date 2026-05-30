@@ -44,6 +44,7 @@ type UptimePump interface {
 	WriteUptimeData(data []interface{})
 }
 
+// reqproof:implements SW-REQ-017
 func GetPumpByName(name string) (Pump, error) {
 
 	if pump, ok := AvailablePumps[strings.ToLower(name)]; ok && pump != nil {
@@ -53,6 +54,7 @@ func GetPumpByName(name string) (Pump, error) {
 	return nil, errors.New(name + " Not found")
 }
 
+// reqproof:implements SW-REQ-017
 func processPumpEnvVars(pump Pump, log *logrus.Entry, cfg interface{}, defaultEnv string) {
 	if envVar := pump.GetEnvPrefix(); envVar != "" {
 		log.Debug(fmt.Sprintf("Checking %s env variables with prefix %s", pump.GetName(), envVar))

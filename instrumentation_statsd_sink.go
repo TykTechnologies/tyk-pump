@@ -89,6 +89,7 @@ type statsdEmitCmd struct {
 const cmdChanBuffSize = 8192 // random-ass-guess
 const maxUdpBytes = 1440     // 1500(Ethernet MTU) - 60(Max UDP header size
 
+// reqproof:implements SW-REQ-005
 func NewStatsDSink(addr string, options *StatsDSinkOptions) (*StatsDSink, error) {
 	c, err := net.ListenPacket("udp", ":0")
 	if err != nil {
@@ -124,36 +125,44 @@ func NewStatsDSink(addr string, options *StatsDSinkOptions) (*StatsDSink, error)
 	return s, nil
 }
 
+// reqproof:implements SW-REQ-005
 func (s *StatsDSink) Stop() {
 	s.cmdChan <- statsdEmitCmd{Kind: statsdCmdKindStop}
 	<-s.stopDoneChan
 }
 
+// reqproof:implements SW-REQ-005
 func (s *StatsDSink) Drain() {
 	s.cmdChan <- statsdEmitCmd{Kind: statsdCmdKindDrain}
 	<-s.drainDoneChan
 }
 
+// reqproof:implements SW-REQ-005
 func (s *StatsDSink) EmitEvent(job string, event string, kvs map[string]string) {
 	s.cmdChan <- statsdEmitCmd{Kind: statsdCmdKindEvent, Job: job, Event: event}
 }
 
+// reqproof:implements SW-REQ-005
 func (s *StatsDSink) EmitEventErr(job string, event string, inputErr error, kvs map[string]string) {
 	s.cmdChan <- statsdEmitCmd{Kind: statsdCmdKindEventErr, Job: job, Event: event}
 }
 
+// reqproof:implements SW-REQ-005
 func (s *StatsDSink) EmitTiming(job string, event string, nanos int64, kvs map[string]string) {
 	s.cmdChan <- statsdEmitCmd{Kind: statsdCmdKindTiming, Job: job, Event: event, Nanos: nanos}
 }
 
+// reqproof:implements SW-REQ-005
 func (s *StatsDSink) EmitGauge(job string, event string, value float64, kvs map[string]string) {
 	s.cmdChan <- statsdEmitCmd{Kind: statsdCmdKindGauge, Job: job, Event: event, Value: value}
 }
 
+// reqproof:implements SW-REQ-005
 func (s *StatsDSink) EmitComplete(job string, status health.CompletionStatus, nanos int64, kvs map[string]string) {
 	s.cmdChan <- statsdEmitCmd{Kind: statsdCmdKindComplete, Job: job, Status: status, Nanos: nanos}
 }
 
+// reqproof:implements SW-REQ-005
 func (s *StatsDSink) loop() {
 	cmdChan := s.cmdChan
 
@@ -192,6 +201,7 @@ LOOP:
 	ticker.Stop()
 }
 
+// reqproof:implements SW-REQ-005
 func (s *StatsDSink) processCmd(cmd *statsdEmitCmd) {
 	switch cmd.Kind {
 	case statsdCmdKindEvent:
@@ -207,6 +217,7 @@ func (s *StatsDSink) processCmd(cmd *statsdEmitCmd) {
 	}
 }
 
+// reqproof:implements SW-REQ-005
 func (s *StatsDSink) processEvent(job string, event string) {
 	if !s.options.SkipTopLevelEvents {
 		pb := s.getPrefixBuffer("", event, "")
@@ -221,6 +232,7 @@ func (s *StatsDSink) processEvent(job string, event string) {
 	}
 }
 
+// reqproof:implements SW-REQ-005
 func (s *StatsDSink) processEventErr(job string, event string) {
 	if !s.options.SkipTopLevelEvents {
 		pb := s.getPrefixBuffer("", event, "error")
@@ -235,6 +247,7 @@ func (s *StatsDSink) processEventErr(job string, event string) {
 	}
 }
 
+// reqproof:implements SW-REQ-005
 func (s *StatsDSink) processTiming(job string, event string, nanos int64) {
 	s.writeNanosToTimingBuf(nanos)
 
@@ -253,6 +266,7 @@ func (s *StatsDSink) processTiming(job string, event string, nanos int64) {
 	}
 }
 
+// reqproof:implements SW-REQ-005
 func (s *StatsDSink) processGauge(job string, event string, value float64) {
 	s.timingBuf = s.timingBuf[0:0]
 	prec := 2
@@ -276,6 +290,7 @@ func (s *StatsDSink) processGauge(job string, event string, value float64) {
 	}
 }
 
+// reqproof:implements SW-REQ-005
 func (s *StatsDSink) processComplete(job string, status health.CompletionStatus, nanos int64) {
 	s.writeNanosToTimingBuf(nanos)
 	statusString := status.String()
@@ -286,6 +301,7 @@ func (s *StatsDSink) processComplete(job string, status health.CompletionStatus,
 	s.writeStatsDMetric(pb.Bytes())
 }
 
+// reqproof:implements SW-REQ-005
 func (s *StatsDSink) flush() {
 	if s.udpBuf.Len() > 0 {
 		s.udpConn.WriteToUDP(s.udpBuf.Bytes(), s.udpAddr)
@@ -294,6 +310,7 @@ func (s *StatsDSink) flush() {
 }
 
 // assumes b is a well-formed statsd metric like "job.event:1|c\n" (including newline)
+// reqproof:implements SW-REQ-005
 func (s *StatsDSink) writeStatsDMetric(b []byte) {
 	lenb := len(b)
 
@@ -316,6 +333,7 @@ func (s *StatsDSink) writeStatsDMetric(b []byte) {
 	s.udpBuf.Write(b)
 }
 
+// reqproof:implements SW-REQ-005
 func (s *StatsDSink) getPrefixBuffer(job, event, suffix string) prefixBuffer {
 	key := eventKey{job, event, suffix}
 
@@ -336,6 +354,7 @@ func (s *StatsDSink) getPrefixBuffer(job, event, suffix string) prefixBuffer {
 	return b
 }
 
+// reqproof:implements SW-REQ-005
 func (s *StatsDSink) writeSanitizedKeys(b *bytes.Buffer, keys ...string) {
 	needDot := false
 	for _, k := range keys {
@@ -349,6 +368,7 @@ func (s *StatsDSink) writeSanitizedKeys(b *bytes.Buffer, keys ...string) {
 	}
 }
 
+// reqproof:implements SW-REQ-005
 func (s *StatsDSink) writeNanosToTimingBuf(nanos int64) {
 	s.timingBuf = s.timingBuf[0:0]
 	if nanos >= 10e6 {
@@ -359,6 +379,7 @@ func (s *StatsDSink) writeNanosToTimingBuf(nanos int64) {
 	}
 }
 
+// reqproof:implements SW-REQ-005
 func sanitizeKey(b *bytes.Buffer, s string) {
 	b.Grow(len(s) + 1)
 	for i := 0; i < len(s); i++ {

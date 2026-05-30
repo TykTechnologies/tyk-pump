@@ -1,0 +1,67 @@
+id: SW-REQ-023
+version: 1
+status: review
+priority: shall
+category: functional
+req_type: guarantee
+fretish: ""
+description: The StatsD pump shall emit a per-record timing metric to a StatsD server, and the DogStatsD pump shall emit a per-record request_time histogram with operator-configurable tags.
+formalization_strategy: informal
+informal_verification:
+    method: ""
+    evidence: ""
+    verified: false
+parent: SYS-REQ-004
+component: pumps-statsd
+rationale: ""
+tags: []
+variables: []
+traces:
+    satisfies:
+        - SYS-REQ-004
+    reviewed_at: "2026-05-29T21:30:11.383117Z"
+    reviewed_by: human:buger
+    reviewed_fingerprint: sha256:a4883391a9ac14a8642992b260f187510c6e52a7adeaaaa557a3fb3c61f29fea
+verification:
+    assurance_level: B
+    formalization_status: none
+    review:
+        status: approved
+        reviewer: leo@tyk.io
+        reviewed_at: "2026-05-29T15:47:45Z"
+        ai_generated: false
+    impact_reviews:
+        - requirement: SW-REQ-023
+          artifact: pumps/dogstatsd.go
+          decision: no-authored-change
+          reviewer: buger
+          reason: Annotated MC/DC ignore on unreachable GeoIP and defensive type-assertion branches plus added unit tests; runtime behavior and authored requirement intent are unchanged.
+          base: origin/master
+          requirement_fingerprint: sha256:a4883391a9ac14a8642992b260f187510c6e52a7adeaaaa557a3fb3c61f29fea
+          approval_fingerprint: sha256:ff58721ad157ee79409ce1e3b903c5a978d58bf620fb87ea3badcb1bcc689a67
+          artifact_fingerprint: sha256:1e0ae55dbe373d698c2f34d544a8e17955f7424be4b1cc8288b7f23561c4b666
+          reviewed_at: "2026-05-29T21:13:19Z"
+        - requirement: SW-REQ-023
+          artifact: pumps/statsd.go
+          decision: no-authored-change
+          reviewer: buger
+          reason: Annotated MC/DC ignore on unreachable GeoIP and defensive type-assertion branches plus added unit tests; runtime behavior and authored requirement intent are unchanged.
+          base: origin/master
+          requirement_fingerprint: sha256:a4883391a9ac14a8642992b260f187510c6e52a7adeaaaa557a3fb3c61f29fea
+          approval_fingerprint: sha256:ff58721ad157ee79409ce1e3b903c5a978d58bf620fb87ea3badcb1bcc689a67
+          artifact_fingerprint: sha256:74bb261441e939a4871b5cefbb37d7963cd8c2d17ceca2f42b039a8e3d9e3e04
+          reviewed_at: "2026-05-29T21:13:19Z"
+history:
+    created_by: human:cli
+    created_at: "2026-05-29T15:20:16Z"
+    last_modified_by: human:cli
+    last_modified_at: "2026-05-30T05:49:18Z"
+obligation_checklist:
+    - errors_propagated
+lifecycle:
+    change_history:
+        - date: "2026-05-29T15:46:44Z"
+          from: draft
+          to: review
+          reason: ""
+          changed_by: human:cli

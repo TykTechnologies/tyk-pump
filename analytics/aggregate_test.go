@@ -21,6 +21,7 @@ const graphErrorResponse = `{
   ]
 }`
 
+// Verifies: SW-REQ-011
 func TestCode_ProcessStatusCodes(t *testing.T) {
 	errorMap := map[string]int{
 		"400": 4,
@@ -36,6 +37,7 @@ func TestCode_ProcessStatusCodes(t *testing.T) {
 	assert.Equal(t, 5, c.Code4x)
 }
 
+// Verifies: SW-REQ-011
 func TestAggregate_Tags(t *testing.T) {
 	recordsEmptyTag := []interface{}{
 		AnalyticsRecord{
@@ -70,6 +72,7 @@ func TestAggregate_Tags(t *testing.T) {
 	runTestAggregatedTags(t, "dot", recordsDot)
 }
 
+// Verifies: SW-REQ-011
 func runTestAggregatedTags(t *testing.T, name string, records []interface{}) {
 	aggregations := AggregateData(records, false, []string{}, "", 60)
 
@@ -80,6 +83,7 @@ func runTestAggregatedTags(t *testing.T, name string, records []interface{}) {
 	})
 }
 
+// Verifies: SW-REQ-011
 func TestTrimTag(t *testing.T) {
 	assert.Equal(t, "", TrimTag("..."))
 	assert.Equal(t, "helloworld", TrimTag("hello.world"))
@@ -87,6 +91,8 @@ func TestTrimTag(t *testing.T) {
 	assert.Equal(t, "hello world", TrimTag(" hello world "))
 }
 
+// Verifies: SW-REQ-011
+// Verifies: SYS-REQ-003
 func TestAggregateGraphData(t *testing.T) {
 	sampleRecord := AnalyticsRecord{
 		TimeStamp:    time.Date(2022, 1, 1, 0, 0, 0, 0, time.UTC),
@@ -271,6 +277,7 @@ func TestAggregateGraphData(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-011
 func TestAggregateGraphData_Dimension(t *testing.T) {
 	sampleRecord := AnalyticsRecord{
 		TimeStamp:    time.Date(2022, 1, 1, 0, 0, 0, 0, time.UTC),
@@ -340,6 +347,7 @@ func TestAggregateGraphData_Dimension(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-011
 func TestAggregateData_SkipGraphRecords(t *testing.T) {
 	run := func(records []AnalyticsRecord, expectedAggregatedRecordCount int, expectedExistingOrgKeys, expectedNonExistingOrgKeys []string) func(t *testing.T) {
 		return func(t *testing.T) {
@@ -402,6 +410,7 @@ func TestAggregateData_SkipGraphRecords(t *testing.T) {
 	))
 }
 
+// Verifies: SW-REQ-011
 func TestSetAggregateTimestamp(t *testing.T) {
 	asTime := time.Now()
 
@@ -442,6 +451,7 @@ func TestSetAggregateTimestamp(t *testing.T) {
 	assert.Equal(t, time.Date(asTime.Year(), asTime.Month(), asTime.Day(), asTime.Hour(), asTime.Minute(), 0, 0, asTime.Location()), ts)
 }
 
+// Verifies: SW-REQ-011
 func TestAggregatedRecord_TableName(t *testing.T) {
 	tcs := []struct {
 		testName          string
@@ -473,6 +483,7 @@ func TestAggregatedRecord_TableName(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-011
 func TestAggregatedRecord_GetObjectID(t *testing.T) {
 	t.Run("should return the ID field", func(t *testing.T) {
 		id := model.NewObjectID()
@@ -483,6 +494,7 @@ func TestAggregatedRecord_GetObjectID(t *testing.T) {
 	})
 }
 
+// Verifies: SW-REQ-011
 func TestAggregatedRecord_SetObjectID(t *testing.T) {
 	t.Run("should set the ID field", func(t *testing.T) {
 		id := model.NewObjectID()
@@ -492,6 +504,7 @@ func TestAggregatedRecord_SetObjectID(t *testing.T) {
 	})
 }
 
+// Verifies: SW-REQ-011
 func TestSQLAnalyticsRecordAggregate_TableName(t *testing.T) {
 	t.Run("should return the SQL table name", func(t *testing.T) {
 		record := SQLAnalyticsRecordAggregate{}
@@ -499,6 +512,7 @@ func TestSQLAnalyticsRecordAggregate_TableName(t *testing.T) {
 	})
 }
 
+// Verifies: SW-REQ-011
 func TestAnalyticsRecordAggregate_generateBSONFromProperty(t *testing.T) {
 	currentTime := time.Date(2023, 0o4, 0o4, 10, 0, 0, 0, time.UTC)
 
@@ -676,6 +690,7 @@ func TestAnalyticsRecordAggregate_generateBSONFromProperty(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-011
 func TestAnalyticsRecordAggregate_generateSetterForTime(t *testing.T) {
 	tcs := []struct {
 		expected model.DBM
@@ -725,6 +740,7 @@ func TestAnalyticsRecordAggregate_generateSetterForTime(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-011
 func TestAnalyticsRecordAggregate_latencySetter(t *testing.T) {
 	tcs := []struct {
 		givenCounter *Counter
@@ -801,6 +817,7 @@ func TestAnalyticsRecordAggregate_latencySetter(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-011
 func TestAnalyticsRecordAggregate_AsChange(t *testing.T) {
 	currentTime := time.Date(2023, 0o4, 0o4, 10, 0, 0, 0, time.UTC)
 
@@ -1083,6 +1100,7 @@ func TestAnalyticsRecordAggregate_AsChange(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-011
 func TestAnalyticsRecordAggregate_AsTimeUpdate(t *testing.T) {
 	currentTime := time.Date(2023, 0o4, 0o4, 10, 0, 0, 0, time.UTC)
 

@@ -53,6 +53,7 @@ type PrometheusConf struct {
 
 type CustomMetrics []PrometheusMetric
 
+// reqproof:implements SW-REQ-024
 func (metrics *CustomMetrics) Set(data string) error {
 	return json.Unmarshal([]byte(data), &metrics)
 }
@@ -122,6 +123,7 @@ var (
 
 var buckets = []float64{1, 2, 5, 7, 10, 15, 20, 25, 30, 40, 50, 60, 70, 80, 90, 100, 200, 300, 400, 500, 1000, 2000, 5000, 10000, 30000, 60000}
 
+// reqproof:implements SW-REQ-024
 func (p *PrometheusPump) New() Pump {
 	newPump := PrometheusPump{}
 
@@ -131,6 +133,7 @@ func (p *PrometheusPump) New() Pump {
 }
 
 // CreateBasicMetrics stores all the predefined pump metrics in allMetrics slice
+// reqproof:implements SW-REQ-024
 func (p *PrometheusPump) CreateBasicMetrics() {
 	// counter metrics
 	totalStatusMetric := &PrometheusMetric{
@@ -170,14 +173,17 @@ func (p *PrometheusPump) CreateBasicMetrics() {
 	p.allMetrics = append(p.allMetrics, totalStatusMetric, pathStatusMetrics, keyStatusMetrics, oauthStatusMetrics, totalLatencyMetrics)
 }
 
+// reqproof:implements SW-REQ-024
 func (p *PrometheusPump) GetName() string {
 	return "Prometheus Pump"
 }
 
+// reqproof:implements SW-REQ-024
 func (p *PrometheusPump) GetEnvPrefix() string {
 	return p.conf.EnvPrefix
 }
 
+// reqproof:implements SW-REQ-024
 func (p *PrometheusPump) Init(conf interface{}) error {
 	p.conf = &PrometheusConf{}
 	p.log = log.WithField("prefix", prometheusPrefix)
@@ -214,6 +220,7 @@ func (p *PrometheusPump) Init(conf interface{}) error {
 	return nil
 }
 
+// reqproof:implements SW-REQ-024
 func (p *PrometheusPump) initBaseMetrics() {
 	toDisableSet := map[string]struct{}{}
 	for _, metric := range p.conf.DisabledMetrics {
@@ -235,6 +242,7 @@ func (p *PrometheusPump) initBaseMetrics() {
 }
 
 // InitCustomMetrics initialise custom prometheus metrics based on p.conf.CustomMetrics and add them into p.allMetrics
+// reqproof:implements SW-REQ-024
 func (p *PrometheusPump) InitCustomMetrics() {
 	if len(p.conf.CustomMetrics) > 0 {
 		customMetrics := []*PrometheusMetric{}
@@ -255,6 +263,7 @@ func (p *PrometheusPump) InitCustomMetrics() {
 }
 
 // observeLatencyMetrics handles the special case of tyk_latency metric with multiple latency types
+// reqproof:implements SW-REQ-024
 func (p *PrometheusPump) observeLatencyMetrics(metric *PrometheusMetric, record *analytics.AnalyticsRecord, values []string) {
 	latencyTypes := []struct {
 		name  string
@@ -278,6 +287,7 @@ func (p *PrometheusPump) observeLatencyMetrics(metric *PrometheusMetric, record 
 }
 
 // observeHistogramMetric handles standard histogram metrics
+// reqproof:implements SW-REQ-024
 func (p *PrometheusPump) observeHistogramMetric(metric *PrometheusMetric, requestTime int64, values []string) {
 	err := metric.Observe(requestTime, values...)
 	if err != nil {
@@ -290,6 +300,7 @@ func (p *PrometheusPump) observeHistogramMetric(metric *PrometheusMetric, reques
 
 // processMetric updates a single metric for a single analytics record.
 // It is a no-op when the metric is MCP-only and the record is not an MCP record.
+// reqproof:implements SW-REQ-024
 func (p *PrometheusPump) processMetric(metric *PrometheusMetric, record analytics.AnalyticsRecord) {
 	if !metric.enabled {
 		return
@@ -324,6 +335,7 @@ func (p *PrometheusPump) processMetric(metric *PrometheusMetric, record analytic
 	}
 }
 
+// reqproof:implements SW-REQ-024
 func (p *PrometheusPump) WriteData(ctx context.Context, data []interface{}) error {
 	p.log.Debug("Attempting to write ", len(data), " records...")
 
@@ -362,6 +374,7 @@ func (p *PrometheusPump) WriteData(ctx context.Context, data []interface{}) erro
 
 // InitVec inits the prometheus metric based on the metric_type. It only can create counter and histogram,
 // if the metric_type is anything else it returns an error
+// reqproof:implements SW-REQ-024
 func (pm *PrometheusMetric) InitVec() error {
 	switch pm.MetricType {
 	case counterType:
@@ -400,6 +413,7 @@ func (pm *PrometheusMetric) InitVec() error {
 }
 
 // EnsureLabels ensure the data validity and consistency of the metric labels
+// reqproof:implements SW-REQ-024
 func (pm *PrometheusMetric) ensureLabels() {
 	// for histograms we need to be sure that type was added
 	if pm.MetricType == histogramType {
@@ -420,6 +434,7 @@ func (pm *PrometheusMetric) ensureLabels() {
 }
 
 // GetLabelsValues return a list of string values based on the custom metric labels.
+// reqproof:implements SW-REQ-024
 func (pm *PrometheusMetric) GetLabelsValues(decoded analytics.AnalyticsRecord) []string {
 	values := []string{}
 	// If API Key obfuscation is enabled, we only show the last <ObfuscateAPIKeysLength> characters of the API Key
@@ -459,6 +474,7 @@ func (pm *PrometheusMetric) GetLabelsValues(decoded analytics.AnalyticsRecord) [
 	return values
 }
 
+// reqproof:implements SW-REQ-024
 func (pm *PrometheusMetric) obfuscateAPIKey(apiKey string) string {
 	if !pm.ObfuscateAPIKeys {
 		return apiKey
@@ -471,6 +487,7 @@ func (pm *PrometheusMetric) obfuscateAPIKey(apiKey string) string {
 }
 
 // Inc is going to fill counterMap and histogramMap with the data from record.
+// reqproof:implements SW-REQ-024
 func (pm *PrometheusMetric) Inc(values ...string) error {
 	switch pm.MetricType {
 	case counterType:
@@ -493,6 +510,7 @@ func (pm *PrometheusMetric) Inc(values ...string) error {
 }
 
 // Observe will fill hitogramMap with the sum of totalRequest and hits per label value if aggregate_observations is true. If aggregate_observations is set to false (default) it will execute prometheus Observe directly.
+// reqproof:implements SW-REQ-024
 func (pm *PrometheusMetric) Observe(requestTime int64, values ...string) error {
 	switch pm.MetricType {
 	case histogramType:
@@ -538,6 +556,7 @@ func (pm *PrometheusMetric) Observe(requestTime int64, values ...string) error {
 // If the PrometheusMetric is counterType, it will execute prometheus client Add function to add the counters from counterMap to the labels value metric
 // If the PrometheusMetric is histogramType and aggregate_observations config is true, it will calculate the average value of the metrics in the histogramMap and execute prometheus Observe.
 // If aggregate_observations is false, it won't do anything since it means that we already exposed the metric.
+// reqproof:implements SW-REQ-024
 func (pm *PrometheusMetric) Expose() error {
 	switch pm.MetricType {
 	case counterType:
@@ -559,6 +578,7 @@ func (pm *PrometheusMetric) Expose() error {
 }
 
 // getAverageRequestTime returns the average request time of an histogramCounter dividing the sum of all the RequestTimes by the hits.
+// reqproof:implements SW-REQ-024
 func (c histogramCounter) getAverageRequestTime() float64 {
 	return float64(c.totalRequestTime / c.hits)
 }

@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// Verifies: SW-REQ-024
 func TestPrometheusInitVec(t *testing.T) {
 	tcs := []struct {
 		testName     string
@@ -86,6 +87,7 @@ func TestPrometheusInitVec(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-024
 func TestPrometheusInitCustomMetrics(t *testing.T) {
 	tcs := []struct {
 		testName              string
@@ -186,6 +188,7 @@ func TestPrometheusInitCustomMetrics(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-024
 func TestInitCustomMetricsEnv(t *testing.T) {
 	tcs := []struct {
 		testName        string
@@ -283,6 +286,7 @@ func TestInitCustomMetricsEnv(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-024
 func TestPrometheusGetLabelsValues(t *testing.T) {
 	tcs := []struct {
 		testName       string
@@ -436,6 +440,7 @@ func TestPrometheusGetLabelsValues(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-024
 func TestPrometheusCounterMetric(t *testing.T) {
 	tcs := []struct {
 		testName string
@@ -641,6 +646,7 @@ func TestPrometheusCounterMetric(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-024
 func TestPrometheusHistogramMetric(t *testing.T) {
 	tcs := []struct {
 		testName string
@@ -795,6 +801,7 @@ func TestPrometheusHistogramMetric(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-024
 func TestPrometheusCreateBasicMetrics(t *testing.T) {
 	p := PrometheusPump{}
 	newPump := p.New().(*PrometheusPump)
@@ -820,6 +827,7 @@ func TestPrometheusCreateBasicMetrics(t *testing.T) {
 	assert.Equal(t, 1, actualMetricTypeCounter[histogramType])
 }
 
+// Verifies: SW-REQ-024
 func TestPrometheusEnsureLabels(t *testing.T) {
 	testCases := []struct {
 		name                 string
@@ -883,6 +891,7 @@ func TestPrometheusEnsureLabels(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-024
 func TestPrometheusDisablingMetrics(t *testing.T) {
 	p := &PrometheusPump{}
 	newPump := p.New().(*PrometheusPump)
@@ -917,6 +926,7 @@ func TestPrometheusDisablingMetrics(t *testing.T) {
 // TestPrometheusGetLabelsValues_MCPLabels verifies that mcp_method, mcp_primitive_type,
 // and mcp_primitive_name labels resolve to the correct values from MCPStats on MCP records,
 // and to empty strings on non-MCP records.
+// Verifies: SW-REQ-024
 func TestPrometheusGetLabelsValues_MCPLabels(t *testing.T) {
 	mcpRecord := analytics.AnalyticsRecord{
 		APIID:        "api_mcp",
@@ -953,6 +963,7 @@ func TestPrometheusGetLabelsValues_MCPLabels(t *testing.T) {
 // TestPrometheusCreateBasicMetrics_IncludesMCPMetrics verifies that CreateBasicMetrics
 // TestPrometheusCreateBasicMetrics_DoesNotIncludeMCPMetrics verifies that CreateBasicMetrics
 // does not include MCP metrics, as they should be configured as custom metrics.
+// Verifies: SW-REQ-024
 func TestPrometheusCreateBasicMetrics_DoesNotIncludeMCPMetrics(t *testing.T) {
 	p := PrometheusPump{}
 	p.CreateBasicMetrics()
@@ -966,6 +977,7 @@ func TestPrometheusCreateBasicMetrics_DoesNotIncludeMCPMetrics(t *testing.T) {
 // is not incremented for non-MCP analytics records.
 // It tests the filtering by calling Inc() directly (simulating what WriteData does),
 // so counterMap reflects only records that passed the filter.
+// Verifies: SW-REQ-024
 func TestPrometheusMCPOnlyMetric_SkipsNonMCPRecords(t *testing.T) {
 	metric := &PrometheusMetric{
 		Name:       "test_mcp_only_counter_skip",
@@ -1007,6 +1019,7 @@ func TestPrometheusMCPOnlyMetric_SkipsNonMCPRecords(t *testing.T) {
 
 // TestPrometheusMCPOnlyMetric_CountsMCPRecords verifies that a metric with mcpOnly=true
 // is incremented only for MCP analytics records.
+// Verifies: SW-REQ-024
 func TestPrometheusMCPOnlyMetric_CountsMCPRecords(t *testing.T) {
 	metric := &PrometheusMetric{
 		Name:       "test_mcp_only_counter_counts",
@@ -1045,6 +1058,7 @@ func TestPrometheusMCPOnlyMetric_CountsMCPRecords(t *testing.T) {
 
 // TestPrometheusMCPCustomMetric_MCPOnly verifies that a custom metric with MCPOnly=true
 // is only processed for MCP records when configured as a custom metric.
+// Verifies: SW-REQ-024
 func TestPrometheusMCPCustomMetric_MCPOnly(t *testing.T) {
 	metric := &PrometheusMetric{
 		Name:       "test_mcp_custom_counter",
@@ -1074,6 +1088,7 @@ func TestPrometheusMCPCustomMetric_MCPOnly(t *testing.T) {
 	assert.Contains(t, metric.counterMap, "api2--tools/call")
 }
 
+// Verifies: SW-REQ-024
 func newTestPrometheusPump(t *testing.T) *PrometheusPump {
 	t.Helper()
 	p := &PrometheusPump{}
@@ -1084,6 +1099,7 @@ func newTestPrometheusPump(t *testing.T) *PrometheusPump {
 	return p
 }
 
+// Verifies: SW-REQ-024
 func TestProcessMetric_DisabledMetric(t *testing.T) {
 	p := newTestPrometheusPump(t)
 	metric := &PrometheusMetric{Name: "disabled_metric", MetricType: counterType, enabled: false}
@@ -1091,6 +1107,7 @@ func TestProcessMetric_DisabledMetric(t *testing.T) {
 	p.processMetric(metric, analytics.AnalyticsRecord{APIID: "api1"})
 }
 
+// Verifies: SW-REQ-024
 func TestProcessMetric_UnknownType(t *testing.T) {
 	p := newTestPrometheusPump(t)
 	metric := &PrometheusMetric{Name: "unknown_type_metric", MetricType: "unknown", enabled: true}
@@ -1098,6 +1115,7 @@ func TestProcessMetric_UnknownType(t *testing.T) {
 	p.processMetric(metric, analytics.AnalyticsRecord{APIID: "api1"})
 }
 
+// Verifies: SW-REQ-024
 func TestWriteData_ProcessesCounterMetric(t *testing.T) {
 	metric := &PrometheusMetric{
 		Name:       "test_write_data_counter",
@@ -1117,6 +1135,7 @@ func TestWriteData_ProcessesCounterMetric(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+// Verifies: SW-REQ-024
 func TestWriteData_ContextCancellation(t *testing.T) {
 	metric := &PrometheusMetric{
 		Name:       "test_write_data_ctx_cancel",
@@ -1139,6 +1158,7 @@ func TestWriteData_ContextCancellation(t *testing.T) {
 	assert.Error(t, err)
 }
 
+// Verifies: SW-REQ-024
 func TestCustomMetrics_Set(t *testing.T) {
 	var metrics CustomMetrics
 	err := metrics.Set(`[{"name":"test_metric","metric_type":"counter","labels":["api_id"]}]`)
@@ -1150,6 +1170,7 @@ func TestCustomMetrics_Set(t *testing.T) {
 	assert.Error(t, metrics.Set(`not-json`))
 }
 
+// Verifies: SW-REQ-024
 func TestProcessMetric_HistogramType_NonLatency(t *testing.T) {
 	metric := &PrometheusMetric{
 		Name:       "test_process_histogram_nonlatency",
@@ -1165,6 +1186,7 @@ func TestProcessMetric_HistogramType_NonLatency(t *testing.T) {
 	p.processMetric(metric, analytics.AnalyticsRecord{APIID: "api1", RequestTime: 50})
 }
 
+// Verifies: SW-REQ-024
 func TestProcessMetric_HistogramType_LatencyMetric(t *testing.T) {
 	// Create histogram vec with a unique name to avoid global registry conflicts.
 	// Set the metric Name to metricTykLatency to trigger observeLatencyMetrics path.

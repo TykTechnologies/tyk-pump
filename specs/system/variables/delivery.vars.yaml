@@ -1,0 +1,26 @@
+component: delivery
+variables:
+    - name: a_backend_failed
+      type: bool
+      direction: input
+      description: A write to one backend has failed or timed out.
+    - name: other_backends_written
+      type: bool
+      direction: output
+      description: The remaining configured backends still receive the records.
+    - name: write_exceeds_timeout
+      type: bool
+      direction: input
+      description: A backend write has exceeded its configured timeout.
+    - name: write_aborted
+      type: bool
+      direction: output
+      description: The over-time write is abandoned without blocking other backends.
+    - name: transient_failure
+      type: bool
+      direction: input
+      description: A transient store or backend failure has occurred.
+    - name: retry_attempted
+      type: bool
+      direction: output
+      description: The operation is retried with bounded exponential backoff.

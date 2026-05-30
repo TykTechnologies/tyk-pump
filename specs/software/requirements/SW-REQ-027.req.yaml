@@ -1,0 +1,117 @@
+id: SW-REQ-027
+version: 1
+status: review
+priority: shall
+category: functional
+req_type: guarantee
+fretish: ""
+description: The HTTP logging pump family (Splunk, Graylog, Logz.io, Syslog, Moesif, Segment, Resurface) shall forward records to remote logging services over HTTP, propagating connection and HTTP write errors; TLS verification policy is operator-configurable per pump.
+formalization_strategy: informal
+informal_verification:
+    method: ""
+    evidence: ""
+    verified: false
+parent: SYS-REQ-004
+component: pumps-httplog
+rationale: ""
+tags: []
+variables: []
+traces:
+    satisfies:
+        - SYS-REQ-004
+    reviewed_at: "2026-05-29T21:30:11.49765Z"
+    reviewed_by: human:buger
+    reviewed_fingerprint: sha256:77c9234d3a831e255316b3262fd9ce86bee68fc552ecdb26cb42335736c2bce0
+verification:
+    assurance_level: B
+    formalization_status: none
+    review:
+        status: approved
+        reviewer: leo@tyk.io
+        reviewed_at: "2026-05-29T15:47:46Z"
+        ai_generated: false
+    impact_reviews:
+        - requirement: SW-REQ-027
+          artifact: pumps/graylog.go
+          decision: no-authored-change
+          reviewer: buger
+          reason: Annotated MC/DC ignore on unreachable GeoIP and defensive type-assertion branches plus added unit tests; runtime behavior and authored requirement intent are unchanged.
+          base: origin/master
+          requirement_fingerprint: sha256:77c9234d3a831e255316b3262fd9ce86bee68fc552ecdb26cb42335736c2bce0
+          approval_fingerprint: sha256:058e595da5dbc627d621941bfa1ff314386fd3c325d8b757f4df4b7e4c894cce
+          artifact_fingerprint: sha256:bcd223cc3786ab883c07b6c46513744ca7080ab788f96a19b41d1e8ace046e04
+          reviewed_at: "2026-05-29T21:13:19Z"
+        - requirement: SW-REQ-027
+          artifact: pumps/logzio.go
+          decision: no-authored-change
+          reviewer: buger
+          reason: Annotated MC/DC ignore on unreachable GeoIP and defensive type-assertion branches plus added unit tests; runtime behavior and authored requirement intent are unchanged.
+          base: origin/master
+          requirement_fingerprint: sha256:77c9234d3a831e255316b3262fd9ce86bee68fc552ecdb26cb42335736c2bce0
+          approval_fingerprint: sha256:058e595da5dbc627d621941bfa1ff314386fd3c325d8b757f4df4b7e4c894cce
+          artifact_fingerprint: sha256:42d53b4370ba04fc7bed8eb9b173a16aa07ff1bbcf2dfafb1d4e2d9196cd8fa3
+          reviewed_at: "2026-05-29T21:13:19Z"
+        - requirement: SW-REQ-027
+          artifact: pumps/moesif.go
+          decision: no-authored-change
+          reviewer: buger
+          reason: Annotated MC/DC ignore on unreachable GeoIP and defensive type-assertion branches plus added unit tests; runtime behavior and authored requirement intent are unchanged.
+          base: origin/master
+          requirement_fingerprint: sha256:77c9234d3a831e255316b3262fd9ce86bee68fc552ecdb26cb42335736c2bce0
+          approval_fingerprint: sha256:058e595da5dbc627d621941bfa1ff314386fd3c325d8b757f4df4b7e4c894cce
+          artifact_fingerprint: sha256:8dc908a75961d50a3386cb19bbdc536801cfec83d72320e8157af1c24a73459f
+          reviewed_at: "2026-05-29T21:13:19Z"
+        - requirement: SW-REQ-027
+          artifact: pumps/resurface.go
+          decision: no-authored-change
+          reviewer: buger
+          reason: Annotated MC/DC ignore on unreachable GeoIP and defensive type-assertion branches plus added unit tests; runtime behavior and authored requirement intent are unchanged.
+          base: origin/master
+          requirement_fingerprint: sha256:77c9234d3a831e255316b3262fd9ce86bee68fc552ecdb26cb42335736c2bce0
+          approval_fingerprint: sha256:058e595da5dbc627d621941bfa1ff314386fd3c325d8b757f4df4b7e4c894cce
+          artifact_fingerprint: sha256:98ac864b45962a60a691dc077ac94fd808bbc0181699eb9168b912afce4f80c7
+          reviewed_at: "2026-05-29T21:13:19Z"
+        - requirement: SW-REQ-027
+          artifact: pumps/segment.go
+          decision: no-authored-change
+          reviewer: buger
+          reason: Annotated MC/DC ignore on unreachable GeoIP and defensive type-assertion branches plus added unit tests; runtime behavior and authored requirement intent are unchanged.
+          base: origin/master
+          requirement_fingerprint: sha256:77c9234d3a831e255316b3262fd9ce86bee68fc552ecdb26cb42335736c2bce0
+          approval_fingerprint: sha256:058e595da5dbc627d621941bfa1ff314386fd3c325d8b757f4df4b7e4c894cce
+          artifact_fingerprint: sha256:b30bdad34a269a76a7b3e6d14070a876493790d5a29f30e967802a436638dee6
+          reviewed_at: "2026-05-29T21:13:19Z"
+        - requirement: SW-REQ-027
+          artifact: pumps/splunk.go
+          decision: no-authored-change
+          reviewer: buger
+          reason: Annotated MC/DC ignore on unreachable GeoIP and defensive type-assertion branches plus added unit tests; runtime behavior and authored requirement intent are unchanged.
+          base: origin/master
+          requirement_fingerprint: sha256:77c9234d3a831e255316b3262fd9ce86bee68fc552ecdb26cb42335736c2bce0
+          approval_fingerprint: sha256:058e595da5dbc627d621941bfa1ff314386fd3c325d8b757f4df4b7e4c894cce
+          artifact_fingerprint: sha256:38665790e13d91d24da0259bf0a969a10e920f8009b62aacf9bd13e3f73a0ad7
+          reviewed_at: "2026-05-29T21:13:19Z"
+        - requirement: SW-REQ-027
+          artifact: pumps/syslog.go
+          decision: no-authored-change
+          reviewer: buger
+          reason: Annotated MC/DC ignore on unreachable GeoIP and defensive type-assertion branches plus added unit tests; runtime behavior and authored requirement intent are unchanged.
+          base: origin/master
+          requirement_fingerprint: sha256:77c9234d3a831e255316b3262fd9ce86bee68fc552ecdb26cb42335736c2bce0
+          approval_fingerprint: sha256:058e595da5dbc627d621941bfa1ff314386fd3c325d8b757f4df4b7e4c894cce
+          artifact_fingerprint: sha256:8b5a0e85d1814294677d75886710534ef23bbce198b7b0d858d2aa8e3dc706cc
+          reviewed_at: "2026-05-29T21:13:19Z"
+history:
+    created_by: human:cli
+    created_at: "2026-05-29T15:20:16Z"
+    last_modified_by: human:cli
+    last_modified_at: "2026-05-29T21:27:58Z"
+obligation_checklist:
+    - errors_propagated
+lifecycle:
+    change_history:
+        - date: "2026-05-29T15:46:44Z"
+          from: draft
+          to: review
+          reason: ""
+          changed_by: human:cli

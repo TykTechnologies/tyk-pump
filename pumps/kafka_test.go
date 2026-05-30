@@ -10,16 +10,19 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// Verifies: SW-REQ-021
 func TestKafkaPump_New(t *testing.T) {
 	pump := (&KafkaPump{}).New()
 	assert.IsType(t, &KafkaPump{}, pump)
 }
 
+// Verifies: SW-REQ-021
 func TestKafkaPump_GetName(t *testing.T) {
 	pump := &KafkaPump{}
 	assert.Equal(t, "Kafka Pump", pump.GetName())
 }
 
+// Verifies: SW-REQ-021
 func TestKafkaPump_Init_BatchBytesConfiguration(t *testing.T) {
 	//nolint:govet
 	tests := []struct {
@@ -80,6 +83,7 @@ func TestKafkaPump_Init_BatchBytesConfiguration(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-021
 func TestKafkaPump_Init_BatchBytesWithOtherConfigs(t *testing.T) {
 	config := map[string]interface{}{
 		"broker":                   []string{"localhost:9092"},
@@ -106,6 +110,7 @@ func TestKafkaPump_Init_BatchBytesWithOtherConfigs(t *testing.T) {
 	assert.IsType(t, &kafka.LeastBytes{}, pump.writerConfig.Balancer)
 }
 
+// Verifies: SW-REQ-021
 func TestKafkaPump_BatchBytesEnvironmentVariable(t *testing.T) {
 	// Test that BatchBytes can be overridden via environment variables
 	// This follows the same pattern as other configuration fields
@@ -122,6 +127,7 @@ func TestKafkaPump_BatchBytesEnvironmentVariable(t *testing.T) {
 	assert.Equal(t, 1024000, pump.writerConfig.BatchBytes)
 }
 
+// Verifies: SW-REQ-021
 func TestKafkaPump_WriterConfigIntegrity(t *testing.T) {
 	// Test that BatchBytes configuration doesn't interfere with other writer config fields
 	config := map[string]interface{}{
@@ -149,6 +155,7 @@ func TestKafkaPump_WriterConfigIntegrity(t *testing.T) {
 	assert.IsType(t, &kafka.LeastBytes{}, pump.writerConfig.Balancer)
 }
 
+// Verifies: SW-REQ-021
 func TestKafkaPump_BatchBytesEnvironmentVariableOverride(t *testing.T) {
 	// Test that BatchBytes can be overridden via environment variables
 	// This follows the same pattern as other configuration fields
@@ -168,6 +175,7 @@ func TestKafkaPump_BatchBytesEnvironmentVariableOverride(t *testing.T) {
 	assert.Equal(t, 2048000, pump.writerConfig.BatchBytes)
 }
 
+// Verifies: SW-REQ-021
 func TestKafkaPump_BatchBytesEnvironmentVariableInvalid(t *testing.T) {
 	// Test that BatchBytes environment variable is ignored if it's not a valid integer
 	// This follows the same pattern as other configuration fields
@@ -187,6 +195,7 @@ func TestKafkaPump_BatchBytesEnvironmentVariableInvalid(t *testing.T) {
 	assert.Equal(t, 1024000, pump.writerConfig.BatchBytes)
 }
 
+// Verifies: SW-REQ-021
 func TestKafkaPump_BatchBytesConfigAndEnvironmentVariableBothInvalid(t *testing.T) {
 	// Test that mapstructure.Decode fails when batch_bytes is a non-integer string
 	config := map[string]interface{}{
@@ -209,6 +218,7 @@ func TestKafkaPump_BatchBytesConfigAndEnvironmentVariableBothInvalid(t *testing.
 	assert.Contains(t, err.Error(), "expected type 'int'", "Error should mention type conversion issue")
 }
 
+// Verifies: SW-REQ-021
 func TestKafkaPump_Init_NegativeBatchBytes(t *testing.T) {
 	// Test that negative batch_bytes values are handled properly
 	// The pump should log an error and use the default value (0) instead of the negative value
@@ -227,6 +237,7 @@ func TestKafkaPump_Init_NegativeBatchBytes(t *testing.T) {
 	assert.Equal(t, 0, pump.writerConfig.BatchBytes, "Should use default value (0) when batch_bytes is negative")
 }
 
+// Verifies: SW-REQ-021
 func TestKafkaPump_InitTLSConfig(t *testing.T) {
 	t.Run("should not initialize TLS config when use_ssl is false", func(t *testing.T) {
 		config := map[string]any{

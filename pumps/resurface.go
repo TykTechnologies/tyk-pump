@@ -39,19 +39,23 @@ const (
 	resurfaceDefaultEnv = PUMPS_ENV_PREFIX + "_RESURFACEIO" + PUMPS_ENV_META_PREFIX
 )
 
+// reqproof:implements SW-REQ-027
 func (rp *ResurfacePump) New() Pump {
 	newPump := ResurfacePump{}
 	return &newPump
 }
 
+// reqproof:implements SW-REQ-027
 func (rp *ResurfacePump) GetName() string {
 	return resurfacePumpName
 }
 
+// reqproof:implements SW-REQ-027
 func (rp *ResurfacePump) GetEnvPrefix() string {
 	return rp.config.EnvPrefix
 }
 
+// reqproof:implements SW-REQ-027
 func (rp *ResurfacePump) Init(config interface{}) error {
 	rp.wg = sync.WaitGroup{}
 	rp.config = &ResurfacePumpConfig{}
@@ -84,6 +88,7 @@ func (rp *ResurfacePump) Init(config interface{}) error {
 	return nil
 }
 
+// reqproof:implements SW-REQ-027
 func (rp *ResurfacePump) initWorker() {
 	rp.data = make(chan []interface{}, 5)
 	rp.wg.Add(1)
@@ -91,14 +96,17 @@ func (rp *ResurfacePump) initWorker() {
 	rp.enable()
 }
 
+// reqproof:implements SW-REQ-027
 func (rp *ResurfacePump) disable() {
 	rp.enabled = false
 }
 
+// reqproof:implements SW-REQ-027
 func (rp *ResurfacePump) enable() {
 	rp.enabled = true
 }
 
+// reqproof:implements SW-REQ-027
 func parseHeaders(headersString string, existingHeaders http.Header) (headers http.Header) {
 	if existingHeaders != nil {
 		headers = http.Header.Clone(existingHeaders)
@@ -115,6 +123,7 @@ func parseHeaders(headersString string, existingHeaders http.Header) (headers ht
 	return
 }
 
+// reqproof:implements SW-REQ-027
 func mapRawData(rec *analytics.AnalyticsRecord) (httpReq http.Request, httpResp http.Response, customFields map[string]string, err error) {
 	var req [3]string
 	var res [3]string
@@ -231,6 +240,7 @@ func mapRawData(rec *analytics.AnalyticsRecord) (httpReq http.Request, httpResp 
 	return
 }
 
+// reqproof:implements SW-REQ-027
 func (rp *ResurfacePump) writeData() {
 	defer rp.wg.Done()
 	for data := range rp.data {
@@ -257,6 +267,7 @@ func (rp *ResurfacePump) writeData() {
 	}
 }
 
+// reqproof:implements SW-REQ-027
 func (rp *ResurfacePump) WriteData(ctx context.Context, data []interface{}) error {
 	rp.log.Debug("Writing ", len(data), " records")
 	if rp.enabled {
@@ -285,6 +296,7 @@ func (rp *ResurfacePump) WriteData(ctx context.Context, data []interface{}) erro
 	return nil
 }
 
+// reqproof:implements SW-REQ-027
 func (rp *ResurfacePump) Flush() error {
 	rp.disable()
 	err := rp.WriteData(context.Background(), []interface{}{})
@@ -297,6 +309,7 @@ func (rp *ResurfacePump) Flush() error {
 	return nil
 }
 
+// reqproof:implements SW-REQ-027
 func (rp *ResurfacePump) Shutdown() error {
 	rp.logger.Stop()
 

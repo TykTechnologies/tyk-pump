@@ -12,6 +12,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// Verifies: SW-REQ-008
+// Verifies: SYS-REQ-002
+// Verifies: INT-REQ-003
 func TestSerializer_Encode(t *testing.T) {
 	tcs := []struct {
 		testName   string
@@ -42,6 +45,8 @@ func TestSerializer_Encode(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-008
+// Verifies: INT-REQ-001
 func TestSerializer_Decode(t *testing.T) {
 	tcs := []struct {
 		testName   string
@@ -81,6 +86,7 @@ func TestSerializer_Decode(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-008
 func TestSerializer_MCPStats_Roundtrip(t *testing.T) {
 	tcs := []struct {
 		testName   string
@@ -123,6 +129,7 @@ func TestSerializer_MCPStats_Roundtrip(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-008
 func TestSerializer_NonMCP_NoMCPStats(t *testing.T) {
 	serializer := NewAnalyticsSerializer(PROTOBUF_SERIALIZER)
 
@@ -142,6 +149,7 @@ func TestSerializer_NonMCP_NoMCPStats(t *testing.T) {
 	assert.Equal(t, analytics.MCPStats{}, decoded.MCPStats)
 }
 
+// Verifies: SW-REQ-008
 func TestSerializer_GetSuffix(t *testing.T) {
 	tcs := []struct {
 		testName       string
@@ -167,6 +175,7 @@ func TestSerializer_GetSuffix(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-008
 func BenchmarkProtobufEncoding(b *testing.B) {
 	serializer := NewAnalyticsSerializer(PROTOBUF_SERIALIZER)
 	records := []analytics.AnalyticsRecord{
@@ -194,6 +203,7 @@ func BenchmarkProtobufEncoding(b *testing.B) {
 	b.ReportMetric(float64(serialSize)/float64(b.N), "B/serial")
 }
 
+// Verifies: SW-REQ-008
 func BenchmarkMsgpEncoding(b *testing.B) {
 	serializer := NewAnalyticsSerializer(MSGP_SERIALIZER)
 	records := []analytics.AnalyticsRecord{

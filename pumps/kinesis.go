@@ -53,12 +53,14 @@ var (
 	kinesisDefaultENV = PUMPS_ENV_PREFIX + "_KINESIS" + PUMPS_ENV_META_PREFIX
 )
 
+// reqproof:implements SW-REQ-028
 func (p *KinesisPump) New() Pump {
 	newPump := KinesisPump{}
 	return &newPump
 }
 
 // Init initializes the pump with configuration settings.
+// reqproof:implements SW-REQ-028
 func (p *KinesisPump) Init(config interface{}) error {
 	p.log = log.WithField("prefix", kinesisPrefix)
 
@@ -138,6 +140,7 @@ func (p *KinesisPump) Init(config interface{}) error {
 }
 
 // WriteData writes the analytics records to AWS Kinesis in batches.
+// reqproof:implements SW-REQ-028
 func (p *KinesisPump) WriteData(ctx context.Context, records []interface{}) error {
 	batches := splitIntoBatches(records, p.kinesisConf.BatchSize)
 	for _, batch := range batches {
@@ -218,6 +221,7 @@ func (p *KinesisPump) WriteData(ctx context.Context, records []interface{}) erro
 }
 
 // splitIntoBatches splits the records into batches of the specified size.
+// reqproof:implements SW-REQ-028
 func splitIntoBatches(records []interface{}, batchSize int) [][]interface{} {
 	var batches [][]interface{}
 	for batchSize < len(records) {
@@ -227,10 +231,12 @@ func splitIntoBatches(records []interface{}, batchSize int) [][]interface{} {
 }
 
 // GetName returns the name of the pump.
+// reqproof:implements SW-REQ-028
 func (p *KinesisPump) GetName() string {
 	return "Kinesis Pump"
 }
 
+// reqproof:implements SW-REQ-028
 func (p *KinesisPump) GetEnvPrefix() string {
 	return p.kinesisConf.EnvPrefix
 }

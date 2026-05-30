@@ -47,6 +47,7 @@ const (
 		"hwaXJlczogV2VkLCAyMSBPY3QgMjAxNSAwNzoyODowMCBHTVQNCg0K"
 )
 
+// Verifies: SW-REQ-027
 func SetUp(t *testing.T, url string, queue []string, rules string) (*ResurfacePump, map[string]interface{}) {
 	pmp := ResurfacePump{}
 	cfg := make(map[string]interface{})
@@ -60,6 +61,7 @@ func SetUp(t *testing.T, url string, queue []string, rules string) (*ResurfacePu
 	return &pmp, cfg
 }
 
+// Verifies: SW-REQ-027
 func TestResurfaceInit(t *testing.T) {
 	pmp, cfg := SetUp(t, "http://localhost:7701/message", nil, "include debug")
 	assert.NotNil(t, pmp.logger)
@@ -73,6 +75,7 @@ func TestResurfaceInit(t *testing.T) {
 	assert.False(t, pmp2.logger.Enabled())
 }
 
+// Verifies: SW-REQ-027
 func TestResurfaceWriteData(t *testing.T) {
 	const MockHost = "test0"
 
@@ -187,6 +190,7 @@ func TestResurfaceWriteData(t *testing.T) {
 	assert.NotContains(t, message, "Yours Truly")
 }
 
+// Verifies: SW-REQ-027
 func TestResurfaceWriteCustomFields(t *testing.T) {
 	pmp, _ := SetUp(t, "", make([]string, 0), "include debug")
 
@@ -261,6 +265,7 @@ func TestResurfaceWriteCustomFields(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-027
 func TestResurfaceWriteChunkedResponse(t *testing.T) {
 	pmp, _ := SetUp(t, "", make([]string, 0), "include debug")
 
@@ -313,6 +318,7 @@ func TestResurfaceWriteChunkedResponse(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-027
 func TestResurfaceSkipWrite(t *testing.T) {
 	pmp, _ := SetUp(t, "", make([]string, 0), "include debug")
 

@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// Verifies: SW-REQ-018
 func TestFilterMCPData(t *testing.T) {
 	mcpRecord := analytics.AnalyticsRecord{
 		APIID: "api1",
@@ -52,6 +53,7 @@ func TestFilterMCPData(t *testing.T) {
 	})
 }
 
+// Verifies: SW-REQ-018
 func TestConvertToMCPObjects(t *testing.T) {
 	t.Run("converts AnalyticsRecord to MCPRecord", func(t *testing.T) {
 		rec := &analytics.AnalyticsRecord{
@@ -82,6 +84,7 @@ func TestConvertToMCPObjects(t *testing.T) {
 	})
 }
 
+// Verifies: SW-REQ-018
 func TestMCPMongoPump_WriteData_EmptyCollectionName(t *testing.T) {
 	p := &MCPMongoPump{}
 	p.dbConf = &MongoConf{CollectionName: ""}
@@ -93,6 +96,7 @@ func TestMCPMongoPump_WriteData_EmptyCollectionName(t *testing.T) {
 	assert.Contains(t, err.Error(), "no collection name")
 }
 
+// Verifies: SW-REQ-018
 func TestMCPMongoPump_WriteData_NoMCPRecords(t *testing.T) {
 	p := &MCPMongoPump{}
 	p.dbConf = &MongoConf{CollectionName: "test"}
@@ -103,6 +107,7 @@ func TestMCPMongoPump_WriteData_NoMCPRecords(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+// Verifies: SW-REQ-018
 func TestMCPMongoPump_New(t *testing.T) {
 	p := &MCPMongoPump{}
 	newP := p.New()
@@ -111,11 +116,13 @@ func TestMCPMongoPump_New(t *testing.T) {
 	assert.True(t, ok)
 }
 
+// Verifies: SW-REQ-018
 func TestMCPMongoPump_GetName(t *testing.T) {
 	p := &MCPMongoPump{}
 	assert.Equal(t, "MongoDB MCP Pump", p.GetName())
 }
 
+// Verifies: SW-REQ-018
 func TestMCPMongoPump_SetDecodingRequest(t *testing.T) {
 	p := &MCPMongoPump{}
 	// Should not panic with false
@@ -124,18 +131,21 @@ func TestMCPMongoPump_SetDecodingRequest(t *testing.T) {
 	p.SetDecodingRequest(true)
 }
 
+// Verifies: SW-REQ-018
 func TestMCPMongoPump_SetDecodingResponse(t *testing.T) {
 	p := &MCPMongoPump{}
 	p.SetDecodingResponse(false)
 	p.SetDecodingResponse(true)
 }
 
+// Verifies: SW-REQ-018
 func TestMCPMongoPump_Init_InvalidConfig(t *testing.T) {
 	p := &MCPMongoPump{}
 	err := p.Init("not-a-map")
 	assert.Error(t, err)
 }
 
+// Verifies: SW-REQ-018
 func TestMCPMongoPump_WriteData_EmptyData(t *testing.T) {
 	p := &MCPMongoPump{}
 	p.dbConf = &MongoConf{CollectionName: "test"}
@@ -144,6 +154,7 @@ func TestMCPMongoPump_WriteData_EmptyData(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+// Verifies: SW-REQ-018
 func newMCPMongoPump(t *testing.T) *MCPMongoPump {
 	t.Helper()
 	analytics.MCPSQLTableName = ""
@@ -161,6 +172,7 @@ func newMCPMongoPump(t *testing.T) *MCPMongoPump {
 	return pump
 }
 
+// Verifies: SW-REQ-018
 func TestMCPMongoPump_WriteData_Roundtrip(t *testing.T) {
 	pump := newMCPMongoPump(t)
 

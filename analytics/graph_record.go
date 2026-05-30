@@ -25,6 +25,7 @@ type GraphRecord struct {
 
 // TableName is used by both the sql orm and mongo driver the table name and collection name used for operations on this model
 // the conditional return is to ensure the right value is used for both the sql and mongo operations
+// reqproof:implements SW-REQ-013
 func (g *GraphRecord) TableName() string {
 	if GraphSQLTableName == "" {
 		return g.AnalyticsRecord.TableName()
@@ -33,15 +34,18 @@ func (g *GraphRecord) TableName() string {
 }
 
 // GetObjectID is a dummy function to satisfy the interface
+// reqproof:implements SW-REQ-013
 func (*GraphRecord) GetObjectID() model.ObjectID {
 	return ""
 }
 
 // SetObjectID is a dummy function to satisfy the interface
+// reqproof:implements SW-REQ-013
 func (*GraphRecord) SetObjectID(model.ObjectID) {
 	// empty
 }
 
+// reqproof:implements SW-REQ-013
 func (a *AnalyticsRecord) ToGraphRecord() GraphRecord {
 	if !a.IsGraphRecord() {
 		return GraphRecord{}

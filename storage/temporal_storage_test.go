@@ -41,6 +41,9 @@ var testData = []struct {
 	{in: []string{"one", "two", "three", "four", "five"}, chunk: int64(3)},
 }
 
+// Verifies: SW-REQ-006
+// Verifies: SYS-REQ-007
+// Verifies: INT-REQ-005
 func TestRedisClusterStorageManager_GetAndDeleteSet(t *testing.T) {
 	conf := make(map[string]interface{})
 	conf["host"] = "localhost"
@@ -101,6 +104,7 @@ func TestRedisClusterStorageManager_GetAndDeleteSet(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-006
 func TestNewTemporalClusterStorageHandler(t *testing.T) {
 	testCases := []struct {
 		config           *TemporalStorageConfig
@@ -151,6 +155,9 @@ func TestNewTemporalClusterStorageHandler(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-006
+// Verifies: SW-REQ-007
+// SYS-REQ-007:atomicity:negative
 func TestTemporalStorageHandler_ensureConnection(t *testing.T) {
 	conf := make(map[string]interface{})
 	conf["host"] = "localhost"
@@ -182,6 +189,7 @@ func TestTemporalStorageHandler_ensureConnection(t *testing.T) {
 	})
 }
 
+// Verifies: SW-REQ-006
 func TestTemporalStorageHandler_SetKey(t *testing.T) {
 	conf := make(map[string]interface{})
 	conf["host"] = "localhost"
@@ -220,6 +228,7 @@ func TestTemporalStorageHandler_SetKey(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-006
 func TestTemporalStorageHandler_GetName(t *testing.T) {
 	conf := make(map[string]interface{})
 	conf["host"] = "localhost"
@@ -246,6 +255,7 @@ func TestTemporalStorageHandler_GetName(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-006
 func TestTemporalStorageHandler_Init(t *testing.T) {
 	testCases := []struct {
 		conf           map[string]interface{}

@@ -52,6 +52,7 @@ var (
 	version = kingpin.Version(pumps.Version)
 )
 
+// reqproof:implements SW-REQ-002
 func showDecodeDeprecationWarnings() {
 	if SystemConfig.DecodeRawRequest {
 		log.WithFields(logrus.Fields{
@@ -66,6 +67,7 @@ func showDecodeDeprecationWarnings() {
 	}
 }
 
+// reqproof:implements SW-REQ-003
 func Init() {
 	SystemConfig = TykPumpConfiguration{}
 
@@ -116,6 +118,7 @@ func Init() {
 	}
 }
 
+// reqproof:implements SW-REQ-003
 func setupAnalyticsStore() {
 	switch SystemConfig.AnalyticsStorageType {
 	case "redis", "":
@@ -159,6 +162,7 @@ func setupAnalyticsStore() {
 	}
 }
 
+// reqproof:implements SW-REQ-003
 func storeVersion() {
 	versionConf := SystemConfig.AnalyticsStorageConfig
 	versionConf.KeyPrefix = "version-check-"
@@ -184,6 +188,7 @@ func storeVersion() {
 	}
 }
 
+// reqproof:implements SW-REQ-003
 func initialisePumps() {
 	Pumps = []pumps.Pump{}
 
@@ -230,6 +235,7 @@ func initialisePumps() {
 	}
 }
 
+// reqproof:implements SW-REQ-003
 func initialiseUptimePump() {
 	log.WithFields(logrus.Fields{
 		"prefix": mainPrefix,
@@ -251,6 +257,7 @@ func initialiseUptimePump() {
 	}).Info("Init Uptime Pump: ", UptimePump.GetName())
 }
 
+// reqproof:implements SW-REQ-001
 func StartPurgeLoop(wg *sync.WaitGroup, ctx context.Context, secInterval int, chunkSize int64, expire time.Duration, omitDetails bool) {
 	for range time.Tick(time.Duration(secInterval) * time.Second) {
 
@@ -299,6 +306,7 @@ func StartPurgeLoop(wg *sync.WaitGroup, ctx context.Context, secInterval int, ch
 	}
 }
 
+// reqproof:implements SW-REQ-001
 func PreprocessAnalyticsValues(AnalyticsValues []interface{}, serializerMethod serializer.AnalyticsSerializer, analyticsKeyName string, omitDetails bool, job *health.Job, startTime time.Time, secInterval int) {
 	keys := make([]interface{}, len(AnalyticsValues))
 
@@ -323,6 +331,7 @@ func PreprocessAnalyticsValues(AnalyticsValues []interface{}, serializerMethod s
 	writeToPumps(keys, job, startTime, int(secInterval))
 }
 
+// reqproof:implements SW-REQ-004
 func checkShutdown(ctx context.Context, wg *sync.WaitGroup) bool {
 	shutdown := false
 	select {
@@ -348,6 +357,7 @@ func checkShutdown(ctx context.Context, wg *sync.WaitGroup) bool {
 	return shutdown
 }
 
+// reqproof:implements SW-REQ-001
 func writeToPumps(keys []interface{}, job *health.Job, startTime time.Time, purgeDelay int) {
 	// Send to pumps
 	if Pumps != nil {
@@ -364,6 +374,7 @@ func writeToPumps(keys []interface{}, job *health.Job, startTime time.Time, purg
 	}
 }
 
+// reqproof:implements SW-REQ-001
 func filterData(pump pumps.Pump, keys []interface{}) []interface{} {
 	shouldTrim := SystemConfig.MaxRecordSize != 0 || pump.GetMaxRecordSize() != 0
 	filters := pump.GetFilters()
@@ -420,6 +431,7 @@ func filterData(pump pumps.Pump, keys []interface{}) []interface{} {
 	return filteredKeys
 }
 
+// reqproof:implements SW-REQ-001
 func execPumpWriting(wg *sync.WaitGroup, pmp pumps.Pump, keys *[]interface{}, purgeDelay int, startTime time.Time, job *health.Job) {
 	timer := time.AfterFunc(time.Duration(purgeDelay)*time.Second, func() {
 		if pmp.GetTimeout() == 0 {
@@ -482,6 +494,7 @@ func execPumpWriting(wg *sync.WaitGroup, pmp pumps.Pump, keys *[]interface{}, pu
 	}
 }
 
+// reqproof:implements SW-REQ-001
 func main() {
 	Init()
 	SetupInstrumentation()

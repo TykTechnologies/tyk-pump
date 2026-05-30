@@ -1,0 +1,47 @@
+id: SYS-REQ-013
+version: 1
+status: review
+priority: shall
+category: functional
+req_type: guarantee
+fretish: when instrumentation_enabled observability shall eventually satisfy metrics_emitted
+description: When instrumentation is enabled, the pump shall emit purge-timing and record-count metrics to the configured metrics sink.
+formalization_strategy: fretish
+informal_verification:
+    method: ""
+    evidence: ""
+    verified: false
+parent: STK-REQ-004
+component: observability
+rationale: ""
+tags: []
+variables: []
+traces:
+    satisfies:
+        - STK-REQ-004
+    reviewed_at: "2026-05-29T21:30:11.846576Z"
+    reviewed_by: human:buger
+    reviewed_fingerprint: sha256:aeaa9d7ce7a871de57a783a397472f3a4a6ef04c0a181b642689613c17d9675b
+verification:
+    assurance_level: B
+    formalization_status: valid
+    review:
+        status: approved
+        reviewer: leo@tyk.io
+        reviewed_at: "2026-05-29T15:47:47Z"
+        ai_generated: false
+    gaps_reviewed_at: "2026-05-29T21:30:13.12793Z"
+    gaps_reviewed_by: buger
+history:
+    created_by: human:cli
+    created_at: "2026-05-29T15:11:41Z"
+    last_modified_by: human:cli
+    last_modified_at: "2026-05-29T21:25:35Z"
+obligation_class: nominal
+lifecycle:
+    change_history:
+        - date: "2026-05-29T15:46:45Z"
+          from: draft
+          to: review
+          reason: ""
+          changed_by: human:cli

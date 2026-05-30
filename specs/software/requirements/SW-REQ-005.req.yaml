@@ -1,0 +1,68 @@
+id: SW-REQ-005
+version: 1
+status: review
+priority: shall
+category: functional
+req_type: guarantee
+fretish: ""
+description: The instrumentation sink shall emit purge-timing and record-count metrics to StatsD when instrumentation is enabled, without failing the purge loop on sink errors.
+formalization_strategy: informal
+informal_verification:
+    method: ""
+    evidence: ""
+    verified: false
+parent: SYS-REQ-013
+component: pump-core
+rationale: ""
+tags: []
+variables: []
+traces:
+    satisfies:
+        - SYS-REQ-013
+        - SYS-REQ-017
+    reviewed_at: "2026-05-29T21:30:10.658391Z"
+    reviewed_by: human:buger
+    reviewed_fingerprint: sha256:3631f967677a8b6835977a53a6a0047a3b4309335d358ec409b7104f3d5345d4
+verification:
+    assurance_level: B
+    formalization_status: none
+    review:
+        status: approved
+        reviewer: leo@tyk.io
+        reviewed_at: "2026-05-29T15:47:44Z"
+        ai_generated: false
+    impact_reviews:
+        - requirement: SW-REQ-005
+          artifact: instrumentation_helpers.go
+          decision: no-authored-change
+          reviewer: buger
+          reason: Content re-review of requirements (FRETish strengthening, decomposition fixes); no runtime behavior changes.
+          base: origin/master
+          requirement_fingerprint: sha256:3631f967677a8b6835977a53a6a0047a3b4309335d358ec409b7104f3d5345d4
+          approval_fingerprint: sha256:95115c4243114e621546cd8d57ba3b523d85257be2e70f13fb5878aab553cfc8
+          artifact_fingerprint: sha256:72a2bad60b43c8be4c92e5cd92985614bf1e924b0e1ee2277f667ce4c736a988
+          reviewed_at: "2026-05-29T21:30:15Z"
+        - requirement: SW-REQ-005
+          artifact: instrumentation_statsd_sink.go
+          decision: no-authored-change
+          reviewer: buger
+          reason: Content re-review of requirements (FRETish strengthening, decomposition fixes); no runtime behavior changes.
+          base: origin/master
+          requirement_fingerprint: sha256:3631f967677a8b6835977a53a6a0047a3b4309335d358ec409b7104f3d5345d4
+          approval_fingerprint: sha256:95115c4243114e621546cd8d57ba3b523d85257be2e70f13fb5878aab553cfc8
+          artifact_fingerprint: sha256:a562aab524243ed4291065f319b0a198374c1bd10938c27f9c14e2df702af87c
+          reviewed_at: "2026-05-29T21:30:15Z"
+history:
+    created_by: human:cli
+    created_at: "2026-05-29T15:20:14Z"
+    last_modified_by: human:cli
+    last_modified_at: "2026-05-29T21:27:58Z"
+obligation_checklist:
+    - error_handling
+lifecycle:
+    change_history:
+        - date: "2026-05-29T15:46:43Z"
+          from: draft
+          to: review
+          reason: ""
+          changed_by: human:cli

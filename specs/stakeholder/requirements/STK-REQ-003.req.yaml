@@ -1,0 +1,66 @@
+id: STK-REQ-003
+version: 1
+status: review
+priority: shall
+category: functional
+req_type: guarantee
+fretish: ""
+description: Operators need to control which analytics are collected and forwarded and to which systems, including filtering by organisation, API and response code, omitting sensitive request and response bodies, and bounding record size, configured via file and environment variables.
+formalization_strategy: informal
+informal_verification:
+    method: ""
+    evidence: ""
+    verified: false
+component: configuration
+rationale: "Data-governance, privacy, and cost constraints require operators to control what analytics leave the system and where they go."
+tags:
+    - configuration
+    - privacy
+    - filtering
+variables: []
+traces:
+    reviewed_at: "2026-05-29T21:30:11.814411Z"
+    reviewed_by: human:buger
+    reviewed_fingerprint: sha256:93d469862e6bb329bce1b456174c78e0facabfbb33318f0c1c5e72316b83e642
+verification:
+    assurance_level: B
+    formalization_status: none
+    review:
+        status: approved
+        reviewer: leo@tyk.io
+        reviewed_at: "2026-05-29T15:47:46Z"
+        ai_generated: false
+history:
+    created_by: human:cli
+    created_at: "2026-05-29T15:10:49Z"
+    last_modified_by: human:cli
+    last_modified_at: "2026-05-29T15:47:46Z"
+obligation_checklist:
+    - nominal
+    - boundary
+    - malformed_input
+stakeholder:
+    persona: Platform operator with data-governance obligations
+    story: As an operator I want fine-grained, per-backend control over what analytics data leaves my system so that I meet privacy and cost constraints.
+    acceptance_criteria:
+        - id: AC-001
+          text: Operators can restrict, per backend, which records are forwarded using allow and block lists on organisation, API, and response code.
+          testable: true
+          derived_reqs:
+            - SYS-REQ-008
+            - SYS-REQ-009
+        - id: AC-002
+          text: Operators can omit detailed request/response payloads and cap record size to protect sensitive data and downstream storage.
+          testable: true
+          derived_reqs:
+            - SYS-REQ-010
+            - SYS-REQ-011
+            - SYS-REQ-015
+            - SYS-REQ-016
+lifecycle:
+    change_history:
+        - date: "2026-05-29T15:46:44Z"
+          from: draft
+          to: review
+          reason: ""
+          changed_by: human:cli

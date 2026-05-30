@@ -1,0 +1,18 @@
+component: ingestion
+variables:
+    - name: records_pending
+      type: bool
+      direction: input
+      description: Unconsumed analytics records are present in the temporal store.
+    - name: records_forwarded
+      type: bool
+      direction: output
+      description: Consumed records have been dispatched to every configured pump.
+    - name: records_consumed
+      type: bool
+      direction: input
+      description: Records have been retrieved from the temporal store.
+    - name: records_removed_once
+      type: bool
+      direction: output
+      description: Exactly those records are removed from the store atomically.

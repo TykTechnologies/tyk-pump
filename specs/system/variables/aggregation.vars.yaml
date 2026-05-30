@@ -1,0 +1,10 @@
+component: aggregation
+variables:
+    - name: aggregation_enabled
+      type: bool
+      direction: input
+      description: Aggregated analytics output is enabled.
+    - name: aggregates_emitted
+      type: bool
+      direction: output
+      description: Per-organisation and per-API counters are emitted for the window.

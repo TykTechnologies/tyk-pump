@@ -83,6 +83,7 @@ type TemporalStorageConfig struct {
 
 type EnvMapString map[string]string
 
+// reqproof:implements SW-REQ-007
 func (e *EnvMapString) Decode(value string) error {
 	units := strings.Split(value, ",")
 	m := make(map[string]string)

@@ -102,6 +102,7 @@ type HybridPumpConf struct {
 	SSLInsecureSkipVerify bool `mapstructure:"ssl_insecure_skip_verify"`
 }
 
+// reqproof:implements SW-REQ-029
 func (conf *HybridPumpConf) CheckDefaults() {
 	if conf.CallTimeout == 0 {
 		conf.CallTimeout = DefaultRPCCallTimeout
@@ -119,14 +120,17 @@ func (conf *HybridPumpConf) CheckDefaults() {
 	}
 }
 
+// reqproof:implements SW-REQ-029
 func (p *HybridPump) GetName() string {
 	return "Hybrid pump"
 }
 
+// reqproof:implements SW-REQ-029
 func (p *HybridPump) New() Pump {
 	return &HybridPump{}
 }
 
+// reqproof:implements SW-REQ-029
 func (p *HybridPump) Init(config interface{}) error {
 	p.log = log.WithField("prefix", hybridPrefix)
 
@@ -155,6 +159,7 @@ func (p *HybridPump) Init(config interface{}) error {
 	return nil
 }
 
+// reqproof:implements SW-REQ-029
 func (p *HybridPump) startDispatcher() {
 	p.dispatcher = gorpc.NewDispatcher()
 
@@ -165,6 +170,7 @@ func (p *HybridPump) startDispatcher() {
 	p.funcClientSingleton = p.dispatcher.NewFuncClient(p.clientSingleton)
 }
 
+// reqproof:implements SW-REQ-029
 func (p *HybridPump) connectRPC() error {
 	p.log.Debug("Setting new MDCB connection!")
 
@@ -209,6 +215,7 @@ func (p *HybridPump) connectRPC() error {
 	return err
 }
 
+// reqproof:implements SW-REQ-029
 func (p *HybridPump) onConnectFunc(conn net.Conn) (net.Conn, string, error) {
 	p.clientIsConnected.Store(true)
 	remoteAddr := conn.RemoteAddr().String()
@@ -217,10 +224,12 @@ func (p *HybridPump) onConnectFunc(conn net.Conn) (net.Conn, string, error) {
 	return conn, remoteAddr, nil
 }
 
+// reqproof:implements SW-REQ-029
 func (p *HybridPump) callRPCFn(funcName string, request interface{}) (interface{}, error) {
 	return p.funcClientSingleton.CallTimeout(funcName, request, time.Duration(p.hybridConfig.CallTimeout)*time.Second)
 }
 
+// reqproof:implements SW-REQ-029
 func getDialFn(connID string, config *HybridPumpConf) func(addr string) (conn net.Conn, err error) {
 	return func(addr string) (conn net.Conn, err error) {
 		dialer := &net.Dialer{
@@ -257,6 +266,7 @@ func getDialFn(connID string, config *HybridPumpConf) func(addr string) (conn ne
 	}
 }
 
+// reqproof:implements SW-REQ-029
 func (p *HybridPump) WriteData(ctx context.Context, data []interface{}) error {
 	if len(data) == 0 {
 		return nil
@@ -325,6 +335,7 @@ func (p *HybridPump) WriteData(ctx context.Context, data []interface{}) error {
 	return nil
 }
 
+// reqproof:implements SW-REQ-029
 func (p *HybridPump) Shutdown() error {
 	p.log.Info("Shutting down...")
 	p.clientSingleton.Stop()
@@ -337,6 +348,7 @@ func (p *HybridPump) Shutdown() error {
 	return nil
 }
 
+// reqproof:implements SW-REQ-029
 func (p *HybridPump) RPCLogin() error {
 	if val, ok := p.clientIsConnected.Load().(bool); !ok || !val {
 		p.log.Debug("Client is not connected to RPC server")
@@ -359,6 +371,7 @@ func (p *HybridPump) RPCLogin() error {
 
 // sendMCPAggregates aggregates MCP analytics from data and sends them to MDCB via RPC.
 // Returns nil without making an RPC call when there are no MCP records.
+// reqproof:implements SW-REQ-029
 func (p *HybridPump) sendMCPAggregates(data []interface{}) error {
 	mcpAggregates := analytics.AggregateMCPData(data, p.hybridConfig.ConnectionString, p.hybridConfig.aggregationTime)
 	if len(mcpAggregates) == 0 {
@@ -380,6 +393,7 @@ func (p *HybridPump) sendMCPAggregates(data []interface{}) error {
 }
 
 // connectAndLogin connects to RPC server and logs in if retry is true, it will retry with retryAndLog func
+// reqproof:implements SW-REQ-029
 func (p *HybridPump) connectAndLogin(retry bool) error {
 	connectFn := p.connectRPC
 	loginFn := p.RPCLogin

@@ -1,0 +1,10 @@
+component: uptime
+variables:
+    - name: uptime_purging_enabled
+      type: bool
+      direction: input
+      description: Uptime purging is enabled in configuration.
+    - name: uptime_forwarded
+      type: bool
+      direction: output
+      description: Uptime report data is forwarded to the uptime backend.

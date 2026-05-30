@@ -26,73 +26,94 @@ type CommonPumpConfig struct {
 	decodeRequestBase64   bool
 }
 
+// reqproof:implements SW-REQ-016
 func (p *CommonPumpConfig) SetFilters(filters analytics.AnalyticsFilters) {
 	p.filters = filters
 }
+
+// reqproof:implements SW-REQ-016
 func (p *CommonPumpConfig) GetFilters() analytics.AnalyticsFilters {
 	return p.filters
 }
+
+// reqproof:implements SW-REQ-016
 func (p *CommonPumpConfig) SetTimeout(timeout int) {
 	p.timeout = timeout
 }
 
+// reqproof:implements SW-REQ-016
 func (p *CommonPumpConfig) GetTimeout() int {
 	return p.timeout
 }
 
+// reqproof:implements SW-REQ-016
 func (p *CommonPumpConfig) SetOmitDetailedRecording(OmitDetailedRecording bool) {
 	p.OmitDetailedRecording = OmitDetailedRecording
 }
+
+// reqproof:implements SW-REQ-016
 func (p *CommonPumpConfig) GetOmitDetailedRecording() bool {
 	return p.OmitDetailedRecording
 }
 
+// reqproof:implements SW-REQ-016
 func (p *CommonPumpConfig) GetEnvPrefix() string {
 	return ""
 }
 
+// reqproof:implements SW-REQ-016
 func (p *CommonPumpConfig) Shutdown() error {
 	return nil
 }
 
+// reqproof:implements SW-REQ-016
 func (p *CommonPumpConfig) SetMaxRecordSize(size int) {
 	p.maxRecordSize = size
 }
 
+// reqproof:implements SW-REQ-016
 func (p *CommonPumpConfig) GetMaxRecordSize() int {
 	return p.maxRecordSize
 }
 
+// reqproof:implements SW-REQ-016
 func (p *CommonPumpConfig) SetLogLevel(level logrus.Level) {
 	p.log.Level = level
 }
 
+// reqproof:implements SW-REQ-016
 func (p *CommonPumpConfig) SetIgnoreFields(fields []string) {
 	p.ignoreFields = fields
 }
 
+// reqproof:implements SW-REQ-016
 func (p *CommonPumpConfig) GetIgnoreFields() []string {
 	return p.ignoreFields
 }
 
+// reqproof:implements SW-REQ-016
 func (p *CommonPumpConfig) SetDecodingResponse(decoding bool) {
 	p.decodeResponseBase64 = decoding
 }
 
+// reqproof:implements SW-REQ-016
 func (p *CommonPumpConfig) SetDecodingRequest(decoding bool) {
 	p.decodeRequestBase64 = decoding
 }
 
+// reqproof:implements SW-REQ-016
 func (p *CommonPumpConfig) GetDecodedRequest() bool {
 	return p.decodeRequestBase64
 }
 
+// reqproof:implements SW-REQ-016
 func (p *CommonPumpConfig) GetDecodedResponse() bool {
 	return p.decodeResponseBase64
 }
 
 // HandleTableMigration handles the table migration logic for SQL pumps
 // It migrates either all sharded tables or just the current day's table based on configuration
+// reqproof:implements SW-REQ-016
 func HandleTableMigration(db *gorm.DB, conf *SQLConf, tableName string, model interface{}, log *logrus.Entry, migrateAllFunc func() error) error {
 	switch {
 	case !conf.TableSharding:
@@ -122,6 +143,7 @@ func HandleTableMigration(db *gorm.DB, conf *SQLConf, tableName string, model in
 
 // MigrateAllShardedTables is a generic function that migrates all existing sharded tables
 // matching the given table prefix and model type
+// reqproof:implements SW-REQ-016
 func MigrateAllShardedTables(db *gorm.DB, tablePrefix, logPrefix string, model interface{}, log *logrus.Entry) error {
 	log.Info("Scanning for existing sharded " + logPrefix + " tables to migrate...")
 
@@ -188,6 +210,7 @@ func MigrateAllShardedTables(db *gorm.DB, tablePrefix, logPrefix string, model i
 // OpenGormDB resolves the GORM log level, builds the dialect, and opens
 // a *gorm.DB connection. It centralises the boilerplate shared by every SQL
 // pump's Init method.
+// reqproof:implements SW-REQ-016
 func OpenGormDB(conf *SQLConf, log *logrus.Entry) (*gorm.DB, error) {
 	logLevel := gorm_logger.Silent
 	switch conf.LogLevel {
@@ -227,6 +250,7 @@ type TLSConfig struct {
 }
 
 // NewTLSConfig creates a TLS configuration from the provided settings.
+// reqproof:implements SW-REQ-016
 func NewTLSConfig(cfg TLSConfig, log *logrus.Entry) (*tls.Config, error) {
 	if log == nil {
 		return nil, errors.New("logger cannot be nil")

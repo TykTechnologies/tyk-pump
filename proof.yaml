@@ -1,0 +1,69 @@
+project:
+    name: tyk-pump
+    specs:
+        - path: specs/stakeholder
+          prefix: STK-REQ
+          type: stakeholder
+        - path: specs/system
+          prefix: SYS-REQ
+          type: system
+        - path: specs/software
+          prefix: SW-REQ
+          type: software
+        - path: specs/interface
+          prefix: INT-REQ
+          type: interface
+    default_assurance_level: B
+    commands:
+        build: go build ./...
+        test: go test -count=1 ./analytics ./analytics/demo ./serializer ./storage ./logger .
+        tests:
+            go:
+                language: go
+                command: go test -count=1 -coverprofile=../cover.out ./analytics
+            retry:
+                language: go
+                command: go test -count=1 -coverprofile=../cover.out ./retry
+            serializer:
+                language: go
+                command: go test -count=1 -coverprofile=../cover.out ./serializer
+    lint:
+        exclude:
+            - '**/*.pb.go'
+            - vendor/**
+    checks:
+        code_mcdc:
+            advisory: false
+            min_decision_percent: 55
+            min_condition_percent: 60
+            languages:
+                go:
+                    test_args:
+                        - -timeout=20m
+            targets:
+                - id: analytics
+                  language: go
+                  scope: ./analytics
+                  test_command: go
+                  test_packages: ./analytics
+                - id: serializer
+                  language: go
+                  scope: ./serializer
+                  test_command: serializer
+                  test_packages: ./serializer
+                - id: retry
+                  language: go
+                  scope: ./retry
+                  test_command: retry
+                  test_packages: ./retry
+        evidence_diversity:
+            min_classes:
+                B: 2
+    approval:
+        agent_autonomous_for:
+            assurance_levels:
+                - A
+                - B
+                - C
+                - D
+                - E

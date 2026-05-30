@@ -258,6 +258,7 @@ type TykPumpConfiguration struct {
 	DecodeRawResponse bool `json:"raw_response_decoded"`
 }
 
+// reqproof:implements SW-REQ-002
 func LoadConfig(filePath *string, configStruct *TykPumpConfiguration) {
 	if !configStruct.shouldOmitConfigFile() {
 		configuration, err := ioutil.ReadFile(*filePath)
@@ -289,11 +290,13 @@ func LoadConfig(filePath *string, configStruct *TykPumpConfiguration) {
 	}
 }
 
+// reqproof:implements SW-REQ-002
 func (cfg *TykPumpConfiguration) shouldOmitConfigFile() bool {
 	shouldOmit, omitEnvExist := os.LookupEnv(ENV_PREVIX + "_OMITCONFIGFILE")
 	return omitEnvExist && strings.EqualFold(shouldOmit, "true")
 }
 
+// reqproof:implements SW-REQ-002
 func (cfg *TykPumpConfiguration) LoadPumpsByEnv() error {
 	if len(cfg.Pumps) == 0 {
 		cfg.Pumps = make(map[string]PumpConfig)

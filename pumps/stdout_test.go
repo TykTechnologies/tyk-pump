@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// Verifies: SW-REQ-026
 func TestRemoveWhitespaces(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -58,6 +59,7 @@ func TestRemoveWhitespaces(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-026
 func TestTransformHTTPPayload(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -111,6 +113,7 @@ func TestTransformHTTPPayload(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-026
 func newStdOutPump(t *testing.T, format string, legacy bool) *StdOutPump {
 	t.Helper()
 	pump := &StdOutPump{}
@@ -123,6 +126,8 @@ func newStdOutPump(t *testing.T, format string, legacy bool) *StdOutPump {
 	return pump
 }
 
+// Verifies: SW-REQ-026
+// Verifies: INT-REQ-006
 func TestStdOutPump_WriteData_JSON(t *testing.T) {
 	pump := newStdOutPump(t, "json", false)
 
@@ -139,6 +144,7 @@ func TestStdOutPump_WriteData_JSON(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+// Verifies: SW-REQ-026
 func TestStdOutPump_WriteData_JSON_Legacy(t *testing.T) {
 	pump := newStdOutPump(t, "json", true)
 
@@ -155,6 +161,7 @@ func TestStdOutPump_WriteData_JSON_Legacy(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+// Verifies: SW-REQ-026
 func TestStdOutPump_WriteData_Text(t *testing.T) {
 	pump := newStdOutPump(t, "text", false)
 
@@ -170,12 +177,15 @@ func TestStdOutPump_WriteData_Text(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+// Verifies: SW-REQ-026
 func TestStdOutPump_WriteData_EmptyData(t *testing.T) {
 	pump := newStdOutPump(t, "json", false)
 	err := pump.WriteData(context.Background(), []interface{}{})
 	assert.NoError(t, err)
 }
 
+// Verifies: SW-REQ-026
+// Verifies: SYS-REQ-005
 func TestStdOutPump_WriteData_ContextCancelled(t *testing.T) {
 	pump := newStdOutPump(t, "json", false)
 

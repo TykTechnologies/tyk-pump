@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// Verifies: SW-REQ-002
 func TestToUpperPumps(t *testing.T) {
 	pumpNames := []string{"test1", "test2", "tEst3", "Test4"}
 	initialConfig := &TykPumpConfiguration{
@@ -35,6 +36,7 @@ func TestToUpperPumps(t *testing.T) {
 	assert.Equal(t, initialConfig.Pumps[strings.ToUpper(pumpNames[2])].Type, "sql-aggregate")
 }
 
+// Verifies: SW-REQ-002
 func TestLoadExampleConf(t *testing.T) {
 	defaultPath := "./pump.example.conf"
 	initialConfig := &TykPumpConfiguration{}
@@ -48,6 +50,8 @@ func TestLoadExampleConf(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-002
+// Verifies: SYS-REQ-008
 func TestConfigEnv(t *testing.T) {
 	pumpNameCSV := "CSV"
 	pumpNameTest := "TEST"
@@ -99,6 +103,8 @@ func TestConfigEnv(t *testing.T) {
 	assert.Len(t, cfg.Pumps[pumpNameCSV].Filters.APIIDs, 3)
 }
 
+// Verifies: SW-REQ-002
+// Verifies: INT-REQ-008
 func TestIgnoreConfig(t *testing.T) {
 	defaultPath := "pump.example.conf"
 
@@ -132,6 +138,7 @@ func TestIgnoreConfig(t *testing.T) {
 	})
 }
 
+// Verifies: SW-REQ-002
 func TestTykPumpConfiguration_LoadPumpsByEnv(t *testing.T) {
 	tcs := []struct {
 		cfg      *TykPumpConfiguration
@@ -245,6 +252,7 @@ func TestTykPumpConfiguration_LoadPumpsByEnv(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-002
 func TestLoadPumpsByEnv(t *testing.T) {
 	t.Run("preserves existing meta config and adds env prefix", func(t *testing.T) {
 		os.Setenv("TYK_PMP_PUMPS_ELASTICSEARCH_META_SSLCAFILE", "env_var_nonexistent_ca.pem")

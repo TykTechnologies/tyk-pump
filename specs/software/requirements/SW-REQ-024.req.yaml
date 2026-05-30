@@ -1,0 +1,57 @@
+id: SW-REQ-024
+version: 1
+status: review
+priority: shall
+category: functional
+req_type: guarantee
+fretish: ""
+description: The Prometheus pump shall expose analytics as Prometheus metrics for scraping.
+formalization_strategy: informal
+informal_verification:
+    method: ""
+    evidence: ""
+    verified: false
+parent: SYS-REQ-004
+component: pumps-prometheus
+rationale: ""
+tags: []
+variables: []
+traces:
+    satisfies:
+        - SYS-REQ-004
+    reviewed_at: "2026-05-29T21:30:11.416913Z"
+    reviewed_by: human:buger
+    reviewed_fingerprint: sha256:b62f34e0d68be3afae18af62b7ffa1360f999f168f380d91555a4c567f555491
+verification:
+    assurance_level: B
+    formalization_status: none
+    review:
+        status: approved
+        reviewer: leo@tyk.io
+        reviewed_at: "2026-05-29T15:47:45Z"
+        ai_generated: false
+    impact_reviews:
+        - requirement: SW-REQ-024
+          artifact: pumps/prometheus.go
+          decision: no-authored-change
+          reviewer: buger
+          reason: Annotated MC/DC ignore on unreachable GeoIP and defensive type-assertion branches plus added unit tests; runtime behavior and authored requirement intent are unchanged.
+          base: origin/master
+          requirement_fingerprint: sha256:b62f34e0d68be3afae18af62b7ffa1360f999f168f380d91555a4c567f555491
+          approval_fingerprint: sha256:3a18962ef461dd4456abe092e571d8efabf99c30c112e48f44466a3e183bb4f7
+          artifact_fingerprint: sha256:0c17a532f46f6b817965fe7a379f6901ae176fd3fe07c2f78798f1434812dd10
+          reviewed_at: "2026-05-29T21:13:19Z"
+history:
+    created_by: human:cli
+    created_at: "2026-05-29T15:20:16Z"
+    last_modified_by: human:cli
+    last_modified_at: "2026-05-29T15:47:45Z"
+obligation_checklist:
+    - errors_propagated
+lifecycle:
+    change_history:
+        - date: "2026-05-29T15:46:44Z"
+          from: draft
+          to: review
+          reason: ""
+          changed_by: human:cli

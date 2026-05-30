@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// Verifies: SW-REQ-009
 func TestAnalyticsRecord_IsGraphRecord(t *testing.T) {
 	t.Run("should return false when no tags are available", func(t *testing.T) {
 		record := AnalyticsRecord{}
@@ -34,6 +35,7 @@ func TestAnalyticsRecord_IsGraphRecord(t *testing.T) {
 	})
 }
 
+// Verifies: SW-REQ-009
 func TestAnalyticsRecord_RemoveIgnoredFields(t *testing.T) {
 	defaultRecord := AnalyticsRecord{
 		APIID:      "api123",
@@ -94,6 +96,7 @@ func TestAnalyticsRecord_RemoveIgnoredFields(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-009
 func TestAnalyticsRecord_Base(t *testing.T) {
 	rec := &AnalyticsRecord{}
 
@@ -104,6 +107,7 @@ func TestAnalyticsRecord_Base(t *testing.T) {
 	assert.Equal(t, newID, rec.GetObjectID())
 }
 
+// Verifies: SW-REQ-009
 func TestAnalyticsRecord_GetFieldNames(t *testing.T) {
 	rec := &AnalyticsRecord{}
 
@@ -155,6 +159,7 @@ func TestAnalyticsRecord_GetFieldNames(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-009
 func TestAnalyticsRecord_GetLineValues(t *testing.T) {
 	rec := &AnalyticsRecord{
 		APIID:      "api123",
@@ -179,6 +184,7 @@ func TestAnalyticsRecord_GetLineValues(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-009
 func TestLatency_GetFieldNames(t *testing.T) {
 	latency := &Latency{}
 	fieldNames := latency.GetFieldNames()
@@ -193,6 +199,7 @@ func TestLatency_GetFieldNames(t *testing.T) {
 	assert.Len(t, fieldNames, 3)
 }
 
+// Verifies: SW-REQ-009
 func TestLatency_GetLineValues(t *testing.T) {
 	tcs := []struct { //nolint:govet // field alignment here is not performance-critical
 		latency      Latency
@@ -246,6 +253,7 @@ func TestLatency_GetLineValues(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-009
 func TestLatency_Struct(t *testing.T) {
 	// Test that the Latency struct has the Gateway field
 	latency := Latency{
@@ -259,6 +267,7 @@ func TestLatency_Struct(t *testing.T) {
 	assert.Equal(t, int64(20), latency.Gateway)
 }
 
+// Verifies: SW-REQ-009
 func TestLatency_JSONSerialization(t *testing.T) {
 	latency := Latency{
 		Total:    100,

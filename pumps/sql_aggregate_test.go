@@ -14,6 +14,7 @@ import (
 	"gorm.io/gorm/logger"
 )
 
+// Verifies: SW-REQ-019
 func TestSQLAggregateInit(t *testing.T) {
 	skipTestIfNoPostgres(t)
 	pmp := SQLAggregatePump{}
@@ -48,6 +49,7 @@ func TestSQLAggregateInit(t *testing.T) {
 	// TODO check how to test postgres connection - it's going to requiere to have some postgres up
 }
 
+// Verifies: SW-REQ-019
 func TestSQLAggregateWriteData_Sharded(t *testing.T) {
 	skipTestIfNoPostgres(t)
 	pmp := SQLAggregatePump{}
@@ -112,6 +114,7 @@ func TestSQLAggregateWriteData_Sharded(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-019
 func TestSQLAggregateWriteData(t *testing.T) {
 	skipTestIfNoPostgres(t)
 	pmp := &SQLAggregatePump{}
@@ -199,6 +202,7 @@ func TestSQLAggregateWriteData(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-019
 func TestSQLAggregateWriteDataValues(t *testing.T) {
 	skipTestIfNoPostgres(t)
 	table := analytics.AggregateSQLTable
@@ -329,6 +333,7 @@ func TestSQLAggregateWriteDataValues(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-019
 func TestDecodeRequestAndDecodeResponseSQLAggregate(t *testing.T) {
 	skipTestIfNoPostgres(t)
 	newPump := &SQLAggregatePump{}
@@ -349,6 +354,7 @@ func TestDecodeRequestAndDecodeResponseSQLAggregate(t *testing.T) {
 	assert.False(t, newPump.GetDecodedResponse())
 }
 
+// Verifies: SW-REQ-019
 func TestEnsureIndexSQLAggregate(t *testing.T) {
 	skipTestIfNoPostgres(t)
 	//nolint:govet

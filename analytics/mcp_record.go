@@ -18,6 +18,7 @@ type MCPRecord struct {
 }
 
 // TableName returns the table/collection name for MCPRecord.
+// reqproof:implements SW-REQ-014
 func (m *MCPRecord) TableName() string {
 	if MCPSQLTableName == "" {
 		return m.AnalyticsRecord.TableName()
@@ -25,14 +26,17 @@ func (m *MCPRecord) TableName() string {
 	return MCPSQLTableName
 }
 
+// reqproof:implements SW-REQ-014
 func (*MCPRecord) GetObjectID() model.ObjectID {
 	return ""
 }
 
+// reqproof:implements SW-REQ-014
 func (*MCPRecord) SetObjectID(model.ObjectID) {}
 
 // ToMCPRecord converts an AnalyticsRecord to an MCPRecord.
 // Returns a zero-value MCPRecord if the record is not an MCP record.
+// reqproof:implements SW-REQ-014
 func (a *AnalyticsRecord) ToMCPRecord() MCPRecord {
 	if !a.IsMCPRecord() {
 		return MCPRecord{}

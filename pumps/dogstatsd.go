@@ -101,19 +101,23 @@ type DogStatsdConf struct {
 	Tags []string `json:"tags" mapstructure:"tags"`
 }
 
+// reqproof:implements SW-REQ-023
 func (s *DogStatsdPump) New() Pump {
 	newPump := DogStatsdPump{}
 	return &newPump
 }
 
+// reqproof:implements SW-REQ-023
 func (s *DogStatsdPump) GetName() string {
 	return "DogStatsd Pump"
 }
 
+// reqproof:implements SW-REQ-023
 func (s *DogStatsdPump) GetEnvPrefix() string {
 	return s.conf.EnvPrefix
 }
 
+// reqproof:implements SW-REQ-023
 func (s *DogStatsdPump) Init(conf interface{}) error {
 
 	s.log = log.WithField("prefix", dogstatPrefix)
@@ -166,6 +170,7 @@ func (s *DogStatsdPump) Init(conf interface{}) error {
 	return nil
 }
 
+// reqproof:implements SW-REQ-023
 func (s *DogStatsdPump) connect(options []statsd.Option) error {
 	c, err := statsd.New(s.conf.Address, options...)
 	if err != nil {
@@ -180,6 +185,7 @@ func (s *DogStatsdPump) connect(options []statsd.Option) error {
 	return nil
 }
 
+// reqproof:implements SW-REQ-023
 func (s *DogStatsdPump) WriteData(ctx context.Context, data []interface{}) error {
 	if len(data) == 0 {
 		return nil
@@ -255,6 +261,7 @@ func (s *DogStatsdPump) WriteData(ctx context.Context, data []interface{}) error
 	return nil
 }
 
+// reqproof:implements SW-REQ-023
 func (s *DogStatsdPump) Shutdown() error {
 	if s.conf.Buffered {
 		return s.client.Flush()

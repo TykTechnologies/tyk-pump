@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// Verifies: SW-REQ-023
 func TestGetMappings(t *testing.T) {
 	ts := time.Now()
 	unixTime := time.Unix(ts.Unix(), 0)
@@ -96,6 +97,7 @@ func TestGetMappings(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-023
 func TestStatsdPump_isTimingField(t *testing.T) {
 	pmp := &StatsdPump{}
 
@@ -154,6 +156,7 @@ func TestStatsdPump_isTimingField(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-023
 func TestStatsdPump_sendTimingMetric(_ *testing.T) {
 	// Create a real StatsD client with a dummy address
 	client := statsd.NewStatsdClient("127.0.0.1:8125", "")
@@ -176,6 +179,7 @@ func TestStatsdPump_sendTimingMetric(_ *testing.T) {
 	client.Close()
 }
 
+// Verifies: SW-REQ-023
 func TestGetMappings_LatencyFields(t *testing.T) {
 	ts := time.Now()
 
@@ -202,6 +206,7 @@ func TestGetMappings_LatencyFields(t *testing.T) {
 	assert.Equal(t, int64(20), mappings["latency_gateway"])
 }
 
+// Verifies: SW-REQ-023
 func TestGetMappings_SeparatedMethod(t *testing.T) {
 	record := analytics.AnalyticsRecord{
 		Path:   "/api/v1",
@@ -215,6 +220,7 @@ func TestGetMappings_SeparatedMethod(t *testing.T) {
 	assert.Equal(t, "POST", mappings["method"])
 }
 
+// Verifies: SW-REQ-023
 func TestStatsdPump_sendTimingMetric_ErrorHandling(_ *testing.T) {
 	// Create a StatsD client with an invalid address to trigger connection error
 	client := statsd.NewStatsdClient("invalid:address", "")

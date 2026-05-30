@@ -1,0 +1,46 @@
+id: INT-REQ-005
+version: 1
+status: review
+priority: shall
+category: functional
+req_type: guarantee
+fretish: ""
+description: The AnalyticsStorage.GetAndDeleteSet contract between the core and the temporal store shall return a chunk of records and remove exactly those records atomically.
+formalization_strategy: informal
+informal_verification:
+    method: ""
+    evidence: ""
+    verified: false
+parent: SYS-REQ-007
+component: storage-contract
+rationale: ""
+tags: []
+variables: []
+traces:
+    satisfies:
+        - SYS-REQ-007
+    reviewed_at: "2026-05-29T21:30:10.569774Z"
+    reviewed_by: human:buger
+    reviewed_fingerprint: sha256:b2adab96e5d6d10dff572a4af2bb66797ae547a755b7d0dab646544bf5b9ca19
+verification:
+    assurance_level: B
+    formalization_status: none
+    review:
+        status: approved
+        reviewer: leo@tyk.io
+        reviewed_at: "2026-05-29T15:47:44Z"
+        ai_generated: false
+history:
+    created_by: human:cli
+    created_at: "2026-05-29T15:20:46Z"
+    last_modified_by: human:cli
+    last_modified_at: "2026-05-29T15:47:44Z"
+obligation_checklist:
+    - atomicity
+lifecycle:
+    change_history:
+        - date: "2026-05-29T15:46:43Z"
+          from: draft
+          to: review
+          reason: ""
+          changed_by: human:cli

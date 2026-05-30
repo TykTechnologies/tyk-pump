@@ -1,0 +1,77 @@
+id: SW-REQ-028
+version: 1
+status: review
+priority: shall
+category: functional
+req_type: guarantee
+fretish: ""
+description: 'The AWS pump family shall forward records to AWS services: SQS sends batched messages with a configured static message group ID, Kinesis writes record entries with random partition keys for even shard distribution, and Timestream writes time-series records.'
+formalization_strategy: informal
+informal_verification:
+    method: ""
+    evidence: ""
+    verified: false
+parent: SYS-REQ-004
+component: pumps-aws
+rationale: ""
+tags: []
+variables: []
+traces:
+    satisfies:
+        - SYS-REQ-004
+    reviewed_at: "2026-05-29T21:30:11.630964Z"
+    reviewed_by: human:buger
+    reviewed_fingerprint: sha256:fe5b965e9564844f2980f56b54b867443ee4a9677162179af24806593b0ca2a6
+verification:
+    assurance_level: B
+    formalization_status: none
+    review:
+        status: approved
+        reviewer: leo@tyk.io
+        reviewed_at: "2026-05-29T15:47:46Z"
+        ai_generated: false
+    impact_reviews:
+        - requirement: SW-REQ-028
+          artifact: pumps/kinesis.go
+          decision: no-authored-change
+          reviewer: buger
+          reason: Annotated MC/DC ignore on unreachable GeoIP and defensive type-assertion branches plus added unit tests; runtime behavior and authored requirement intent are unchanged.
+          base: origin/master
+          requirement_fingerprint: sha256:fe5b965e9564844f2980f56b54b867443ee4a9677162179af24806593b0ca2a6
+          approval_fingerprint: sha256:5d8bd000c4ad04728fa36cc829ce728670fdd829273ce9540a69c6802ed851e1
+          artifact_fingerprint: sha256:937cc874099ae7126f019d9d96abc58533cbdffface557b168ace4e7285950a5
+          reviewed_at: "2026-05-29T21:13:20Z"
+        - requirement: SW-REQ-028
+          artifact: pumps/sqs.go
+          decision: no-authored-change
+          reviewer: buger
+          reason: Annotated MC/DC ignore on unreachable GeoIP and defensive type-assertion branches plus added unit tests; runtime behavior and authored requirement intent are unchanged.
+          base: origin/master
+          requirement_fingerprint: sha256:fe5b965e9564844f2980f56b54b867443ee4a9677162179af24806593b0ca2a6
+          approval_fingerprint: sha256:5d8bd000c4ad04728fa36cc829ce728670fdd829273ce9540a69c6802ed851e1
+          artifact_fingerprint: sha256:4fab552ba85f8e1d6e026c384d3a708431878a146c5f0bebde703390847bb696
+          reviewed_at: "2026-05-29T21:13:20Z"
+        - requirement: SW-REQ-028
+          artifact: pumps/timestream.go
+          decision: no-authored-change
+          reviewer: buger
+          reason: Annotated MC/DC ignore on unreachable GeoIP and defensive type-assertion branches plus added unit tests; runtime behavior and authored requirement intent are unchanged.
+          base: origin/master
+          requirement_fingerprint: sha256:fe5b965e9564844f2980f56b54b867443ee4a9677162179af24806593b0ca2a6
+          approval_fingerprint: sha256:5d8bd000c4ad04728fa36cc829ce728670fdd829273ce9540a69c6802ed851e1
+          artifact_fingerprint: sha256:3cae9b53b38ec2dea64932fdd81495c861d3b20592481a330bac5e95cfc6a6d8
+          reviewed_at: "2026-05-29T21:13:20Z"
+history:
+    created_by: human:cli
+    created_at: "2026-05-29T15:20:16Z"
+    last_modified_by: human:cli
+    last_modified_at: "2026-05-30T05:49:18Z"
+obligation_checklist:
+    - errors_propagated
+lifecycle:
+    change_history:
+        - date: "2026-05-29T15:46:44Z"
+          from: draft
+          to: review
+          reason: ""
+          changed_by: human:cli

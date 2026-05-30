@@ -36,19 +36,23 @@ type StatsdConf struct {
 	SeparatedMethod bool `json:"separated_method" mapstructure:"separated_method"`
 }
 
+// reqproof:implements SW-REQ-023
 func (s *StatsdPump) New() Pump {
 	newPump := StatsdPump{}
 	return &newPump
 }
 
+// reqproof:implements SW-REQ-023
 func (s *StatsdPump) GetName() string {
 	return "Statsd Pump"
 }
 
+// reqproof:implements SW-REQ-023
 func (s *StatsdPump) GetEnvPrefix() string {
 	return s.dbConf.EnvPrefix
 }
 
+// reqproof:implements SW-REQ-023
 func (s *StatsdPump) Init(config interface{}) error {
 	s.dbConf = &StatsdConf{}
 	s.log = log.WithField("prefix", statsdPrefix)
@@ -68,6 +72,7 @@ func (s *StatsdPump) Init(config interface{}) error {
 	return nil
 }
 
+// reqproof:implements SW-REQ-023
 func (s *StatsdPump) connect() *statsd.StatsdClient {
 
 	client := statsd.NewStatsdClient(s.dbConf.Address, "")
@@ -89,6 +94,7 @@ func (s *StatsdPump) connect() *statsd.StatsdClient {
 }
 
 // isTimingField checks if a field should be sent as a timing metric
+// reqproof:implements SW-REQ-023
 func (s *StatsdPump) isTimingField(field string) bool {
 	timingFields := []string{"request_time", "latency_total", "latency_upstream", "latency_gateway"}
 	for _, f := range timingFields {
@@ -100,6 +106,7 @@ func (s *StatsdPump) isTimingField(field string) bool {
 }
 
 // sendTimingMetric sends a timing metric to StatsD with proper error handling
+// reqproof:implements SW-REQ-023
 func (s *StatsdPump) sendTimingMetric(client *statsd.StatsdClient, field, metricTags string, value int64) {
 	metric := field + "." + metricTags
 	if err := client.Timing(metric, value); err != nil {
@@ -111,6 +118,7 @@ func (s *StatsdPump) sendTimingMetric(client *statsd.StatsdClient, field, metric
 	}
 }
 
+// reqproof:implements SW-REQ-023
 func (s *StatsdPump) WriteData(ctx context.Context, data []interface{}) error {
 
 	if len(data) == 0 {
@@ -173,6 +181,7 @@ func (s *StatsdPump) WriteData(ctx context.Context, data []interface{}) error {
 	return nil
 }
 
+// reqproof:implements SW-REQ-023
 func (s *StatsdPump) getMappings(decoded analytics.AnalyticsRecord) map[string]interface{} {
 	// Format TimeStamp to Unix Time
 	unixTime := time.Unix(decoded.TimeStamp.Unix(), 0)

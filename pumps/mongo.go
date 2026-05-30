@@ -101,24 +101,29 @@ type dbObject struct {
 	tableName string
 }
 
+// reqproof:implements SW-REQ-018
 func (d dbObject) TableName() string {
 	return d.tableName
 }
 
 // GetObjectID is a dummy function to satisfy the interface
+// reqproof:implements SW-REQ-018
 func (dbObject) GetObjectID() model.ObjectID {
 	return ""
 }
 
 // SetObjectID is a dummy function to satisfy the interface
+// reqproof:implements SW-REQ-018
 func (dbObject) SetObjectID(model.ObjectID) {
 	// empty
 }
 
+// reqproof:implements SW-REQ-018
 func createDBObject(tableName string) dbObject {
 	return dbObject{tableName: tableName}
 }
 
+// reqproof:implements SW-REQ-018
 func (b *BaseMongoConf) GetBlurredURL() string {
 	// mongo uri match with regex ^(mongodb\S*(+srv)*:(?:\/{2})?)((\w+?):(\w+?)@|:?@?)(\S+?):(\d+)(\/(\S+?))?(\?replicaSet=(\S+?))?$
 	// but we need only a segment, so regex explanation: https://regex101.com/r/C4GQvi/1
@@ -149,6 +154,7 @@ type MongoConf struct {
 	CollectionCapEnable bool `json:"collection_cap_enable" mapstructure:"collection_cap_enable"`
 }
 
+// reqproof:implements SW-REQ-018
 func parsePrivateKey(der []byte) (crypto.PrivateKey, error) {
 	if key, err := x509.ParsePKCS1PrivateKey(der); err == nil {
 		return key, nil
@@ -167,31 +173,37 @@ func parsePrivateKey(der []byte) (crypto.PrivateKey, error) {
 	return nil, fmt.Errorf("Failed to parse private key")
 }
 
+// reqproof:implements SW-REQ-018
 func (m *MongoPump) New() Pump {
 	newPump := MongoPump{}
 	return &newPump
 }
 
+// reqproof:implements SW-REQ-018
 func (m *MongoPump) GetName() string {
 	return "MongoDB Pump"
 }
 
+// reqproof:implements SW-REQ-018
 func (m *MongoPump) GetEnvPrefix() string {
 	return m.dbConf.EnvPrefix
 }
 
+// reqproof:implements SW-REQ-018
 func (m *MongoPump) SetDecodingRequest(decoding bool) {
 	if decoding {
 		log.WithField("pump", m.GetName()).Warn("Decoding request is not supported for Mongo pump")
 	}
 }
 
+// reqproof:implements SW-REQ-018
 func (m *MongoPump) SetDecodingResponse(decoding bool) {
 	if decoding {
 		log.WithField("pump", m.GetName()).Warn("Decoding response is not supported for Mongo pump")
 	}
 }
 
+// reqproof:implements SW-REQ-018
 func (m *MongoPump) Init(config interface{}) error {
 	m.dbConf = &MongoConf{}
 	m.log = log.WithField("prefix", mongoPrefix)
@@ -258,6 +270,7 @@ func (m *MongoPump) Init(config interface{}) error {
 	return nil
 }
 
+// reqproof:implements SW-REQ-018
 func (m *MongoPump) capCollection() (ok bool) {
 	colName := m.dbConf.CollectionName
 	colCapMaxSizeBytes := m.dbConf.CollectionCapMaxSizeBytes
@@ -310,10 +323,12 @@ func (m *MongoPump) capCollection() (ok bool) {
 }
 
 // collectionExists checks to see if a collection name exists in the db.
+// reqproof:implements SW-REQ-018
 func (m *MongoPump) collectionExists(name string) (bool, error) {
 	return m.store.HasTable(context.Background(), name)
 }
 
+// reqproof:implements SW-REQ-018
 func (m *MongoPump) ensureIndexes(collectionName string) error {
 	if m.dbConf.OmitIndexCreation {
 		m.log.Debug("omit_index_creation set to true, omitting index creation..")
@@ -360,6 +375,7 @@ func (m *MongoPump) ensureIndexes(collectionName string) error {
 	return m.store.CreateIndex(context.Background(), d, logBrowserIndex)
 }
 
+// reqproof:implements SW-REQ-018
 func (m *MongoPump) connect() {
 	m.dbConf.MongoDriverType = getMongoDriverType(m.dbConf.MongoDriverType)
 
@@ -382,6 +398,7 @@ func (m *MongoPump) connect() {
 	m.store = store
 }
 
+// reqproof:implements SW-REQ-018
 func (m *MongoPump) WriteData(ctx context.Context, data []interface{}) error {
 	collectionName := m.dbConf.CollectionName
 	if collectionName == "" {
@@ -443,6 +460,7 @@ func (m *MongoPump) WriteData(ctx context.Context, data []interface{}) error {
 
 // AccumulateSet groups data items into chunks based on the max batch size limit while handling graph analytics records separately.
 // It returns a 2D array of DBObjects.
+// reqproof:implements SW-REQ-018
 func (m *MongoPump) AccumulateSet(data []interface{}, isForGraphRecords bool) [][]model.DBObject {
 	accumulatorTotal := 0
 	returnArray := make([][]model.DBObject, 0)
@@ -477,6 +495,7 @@ func (m *MongoPump) AccumulateSet(data []interface{}, isForGraphRecords bool) []
 
 // shouldProcessItem checks if the item should be processed based on its ResponseCode and if it's a graph record.
 // It returns the processed item and a boolean indicating if the item should be skipped.
+// reqproof:implements SW-REQ-018
 func (m *MongoPump) shouldProcessItem(item interface{}, isForGraphRecords bool) (records *analytics.AnalyticsRecord, shouldSKip bool) {
 	thisItem, ok := item.(analytics.AnalyticsRecord)
 	if !ok {
@@ -495,12 +514,14 @@ func (m *MongoPump) shouldProcessItem(item interface{}, isForGraphRecords bool) 
 }
 
 // getItemSizeBytes calculates the size of the item in bytes, including an additional 1 KB for metadata.
+// reqproof:implements SW-REQ-018
 func (m *MongoPump) getItemSizeBytes(thisItem *analytics.AnalyticsRecord) int {
 	// Add 1 KB for metadata as average
 	return len(thisItem.RawRequest) + len(thisItem.RawResponse) + 1024
 }
 
 // handleLargeDocuments checks if the item size exceeds the max document size limit and modifies the item if necessary.
+// reqproof:implements SW-REQ-018
 func (m *MongoPump) handleLargeDocuments(thisItem *analytics.AnalyticsRecord, sizeBytes int, isGraphRecord bool) {
 	if sizeBytes > m.dbConf.MaxDocumentSizeBytes && !isGraphRecord {
 		m.log.Warning("Document too large, not writing raw request and raw response!")
@@ -512,6 +533,7 @@ func (m *MongoPump) handleLargeDocuments(thisItem *analytics.AnalyticsRecord, si
 
 // accumulate processes the given item and updates the accumulator total, result set, and return array.
 // It manages chunking the data into separate sets based on the max batch size limit, and appends the last item when necessary.
+// reqproof:implements SW-REQ-018
 func (m *MongoPump) accumulate(thisResultSet []model.DBObject, returnArray [][]model.DBObject, thisItem *analytics.AnalyticsRecord, sizeBytes, accumulatorTotal int, isLastItem bool) (int, []model.DBObject, [][]model.DBObject) {
 	if (accumulatorTotal + sizeBytes) <= m.dbConf.MaxInsertBatchSizeBytes {
 		accumulatorTotal += sizeBytes
@@ -538,6 +560,7 @@ func (m *MongoPump) accumulate(thisResultSet []model.DBObject, returnArray [][]m
 }
 
 // WriteUptimeData will pull the data from the in-memory store and drop it into the specified MongoDB collection
+// reqproof:implements SW-REQ-018
 func (m *MongoPump) WriteUptimeData(data []interface{}) {
 	m.log.Debug("Uptime Data: ", len(data))
 
@@ -568,6 +591,7 @@ func (m *MongoPump) WriteUptimeData(data []interface{}) {
 	}
 }
 
+// reqproof:implements SW-REQ-018
 func getMongoDriverType(driverType string) string {
 	if driverType == "" {
 		// Default to mongo-go

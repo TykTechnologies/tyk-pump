@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// Verifies: SW-REQ-009
 func TestGenerateDemoData(t *testing.T) {
 	type args struct {
 		writer         func([]interface{}, *health.Job, time.Time, int)

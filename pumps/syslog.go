@@ -55,19 +55,23 @@ type SyslogConf struct {
 	Tag string `json:"tag" mapstructure:"tag"`
 }
 
+// reqproof:implements SW-REQ-027
 func (s *SyslogPump) GetName() string {
 	return "Syslog Pump"
 }
 
+// reqproof:implements SW-REQ-027
 func (s *SyslogPump) New() Pump {
 	newPump := SyslogPump{}
 	return &newPump
 }
 
+// reqproof:implements SW-REQ-027
 func (s *SyslogPump) GetEnvPrefix() string {
 	return s.syslogConf.EnvPrefix
 }
 
+// reqproof:implements SW-REQ-027
 func (s *SyslogPump) Init(config interface{}) error {
 	//Read configuration file
 	s.syslogConf = &SyslogConf{}
@@ -90,6 +94,7 @@ func (s *SyslogPump) Init(config interface{}) error {
 	return nil
 }
 
+// reqproof:implements SW-REQ-027
 func (s *SyslogPump) initWriter() {
 	tag := syslogPrefix
 	if s.syslogConf.Tag != "" {
@@ -110,6 +115,7 @@ func (s *SyslogPump) initWriter() {
 
 // Set default values if they are not explicitly given
 // And perform validation
+// reqproof:implements SW-REQ-027
 func (s *SyslogPump) initConfigs() {
 	if s.syslogConf.Transport == "" {
 		s.syslogConf.Transport = "udp"
@@ -135,6 +141,7 @@ func (s *SyslogPump) initConfigs() {
 /**
 ** Write the actual Data to Syslog Here
  */
+// reqproof:implements SW-REQ-027
 func (s *SyslogPump) WriteData(ctx context.Context, data []interface{}) error {
 	s.log.Debug("Attempting to write ", len(data), " records...")
 
@@ -183,17 +190,22 @@ func (s *SyslogPump) WriteData(ctx context.Context, data []interface{}) error {
 	return nil
 }
 
+// reqproof:implements SW-REQ-027
 func (s *SyslogPump) SetTimeout(timeout int) {
 	s.timeout = timeout
 }
 
+// reqproof:implements SW-REQ-027
 func (s *SyslogPump) GetTimeout() int {
 	return s.timeout
 }
 
+// reqproof:implements SW-REQ-027
 func (s *SyslogPump) SetFilters(filters analytics.AnalyticsFilters) {
 	s.filters = filters
 }
+
+// reqproof:implements SW-REQ-027
 func (s *SyslogPump) GetFilters() analytics.AnalyticsFilters {
 	return s.filters
 }

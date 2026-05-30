@@ -1,0 +1,45 @@
+id: SYS-REQ-011
+version: 1
+status: review
+priority: shall
+category: functional
+req_type: guarantee
+fretish: when decode_enabled privacy shall always satisfy payload_decoded
+description: The pump shall, when the operator enables payload decoding for a backend, base64-decode the raw request and response payloads before forwarding.
+formalization_strategy: fretish
+informal_verification:
+    method: ""
+    evidence: ""
+    verified: false
+parent: STK-REQ-003
+component: privacy
+rationale: ""
+tags: []
+variables: []
+traces:
+    satisfies:
+        - STK-REQ-003
+    reviewed_at: "2026-05-29T21:30:11.841996Z"
+    reviewed_by: human:buger
+    reviewed_fingerprint: sha256:704b762e7154ad8af8c692f98cc6fcc808c3c73f84b25c90a8c7d23761772234
+verification:
+    assurance_level: B
+    formalization_status: valid
+    review:
+        status: approved
+        reviewer: leo@tyk.io
+        reviewed_at: "2026-05-29T15:47:47Z"
+        ai_generated: false
+history:
+    created_by: human:cli
+    created_at: "2026-05-29T15:11:41Z"
+    last_modified_by: human:cli
+    last_modified_at: "2026-05-29T21:25:35Z"
+obligation_class: malformed_input
+lifecycle:
+    change_history:
+        - date: "2026-05-29T15:46:45Z"
+          from: draft
+          to: review
+          reason: ""
+          changed_by: human:cli

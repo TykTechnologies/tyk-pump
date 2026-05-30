@@ -1,0 +1,57 @@
+id: SW-REQ-010
+version: 1
+status: review
+priority: shall
+category: functional
+req_type: guarantee
+fretish: ""
+description: AnalyticsFilters.ShouldFilter shall exclude records by organisation, API and response code, with block lists taking precedence over allow lists.
+formalization_strategy: informal
+informal_verification:
+    method: ""
+    evidence: ""
+    verified: false
+parent: SYS-REQ-009
+component: analytics
+rationale: ""
+tags: []
+variables: []
+traces:
+    satisfies:
+        - SYS-REQ-009
+    reviewed_at: "2026-05-29T21:30:10.821196Z"
+    reviewed_by: human:buger
+    reviewed_fingerprint: sha256:375d6485a90eb3ca0e4bab390884187166cd6f51b855ed8715f24f14f1e98167
+verification:
+    assurance_level: B
+    formalization_status: none
+    review:
+        status: approved
+        reviewer: leo@tyk.io
+        reviewed_at: "2026-05-29T15:47:45Z"
+        ai_generated: false
+    impact_reviews:
+        - requirement: SW-REQ-010
+          artifact: analytics/analytics_filters.go
+          decision: no-authored-change
+          reviewer: buger
+          reason: Annotated MC/DC ignore on unreachable GeoIP and defensive type-assertion branches plus added unit tests; runtime behavior and authored requirement intent are unchanged.
+          base: origin/master
+          requirement_fingerprint: sha256:375d6485a90eb3ca0e4bab390884187166cd6f51b855ed8715f24f14f1e98167
+          approval_fingerprint: sha256:a6b11f642faed3ab84ba8d4920d89d19949c81e05b6ffe7a699f272dd1a4e5b8
+          artifact_fingerprint: sha256:35eee15326a29211f9813e20526188d189896ff382c794170f36931c6375dfd4
+          reviewed_at: "2026-05-29T21:13:16Z"
+history:
+    created_by: human:cli
+    created_at: "2026-05-29T15:20:14Z"
+    last_modified_by: human:cli
+    last_modified_at: "2026-05-29T15:47:45Z"
+obligation_checklist:
+    - boundary
+lifecycle:
+    change_history:
+        - date: "2026-05-29T15:46:44Z"
+          from: draft
+          to: review
+          reason: ""
+          changed_by: human:cli

@@ -12,6 +12,7 @@ var applicationGCStats = debug.GCStats{}
 var instrument = health.NewStream()
 
 // SetupInstrumentation handles all the intialisation of the instrumentation handler
+// reqproof:implements SW-REQ-005
 func SetupInstrumentation() {
 	var enabled bool
 	//instrument.AddSink(&health.WriterSink{os.Stdout})
@@ -45,6 +46,7 @@ func SetupInstrumentation() {
 	MonitorApplicationInstrumentation()
 }
 
+// reqproof:implements SW-REQ-005
 func MonitorApplicationInstrumentation() {
 	log.Info("Starting application monitoring...")
 	go func() {

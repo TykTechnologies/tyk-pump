@@ -1,0 +1,59 @@
+id: STK-REQ-005
+version: 1
+status: review
+priority: shall
+category: functional
+req_type: guarantee
+fretish: ""
+description: Operators need API availability (uptime) data captured by the gateway to be forwarded to the configured uptime backend so that dashboards can show per-API health, unless the operator disables uptime purging.
+formalization_strategy: informal
+informal_verification:
+    method: ""
+    evidence: ""
+    verified: false
+component: uptime
+rationale: "Per-API availability dashboards depend on uptime data being forwarded by the pump."
+tags:
+    - uptime
+    - availability
+variables: []
+traces:
+    reviewed_at: "2026-05-29T21:30:11.819067Z"
+    reviewed_by: human:buger
+    reviewed_fingerprint: sha256:3d670e092aac0501529244b8475edd7c5be05db5622c9fd0ee5d4dabc7d6642d
+verification:
+    assurance_level: B
+    formalization_status: none
+    review:
+        status: approved
+        reviewer: leo@tyk.io
+        reviewed_at: "2026-05-29T15:47:46Z"
+        ai_generated: false
+history:
+    created_by: human:cli
+    created_at: "2026-05-29T15:10:49Z"
+    last_modified_by: human:cli
+    last_modified_at: "2026-05-29T15:47:46Z"
+obligation_checklist:
+    - nominal
+stakeholder:
+    persona: Platform operator
+    story: As an operator I want API uptime data forwarded so that availability dashboards stay current.
+    acceptance_criteria:
+        - id: AC-001
+          text: Uptime report data is forwarded to the configured uptime backend so dashboards can display per-API availability.
+          testable: true
+          derived_reqs:
+            - SYS-REQ-014
+        - id: AC-002
+          text: Operators can disable uptime data purging via configuration.
+          testable: true
+          derived_reqs:
+            - SYS-REQ-014
+lifecycle:
+    change_history:
+        - date: "2026-05-29T15:46:44Z"
+          from: draft
+          to: review
+          reason: ""
+          changed_by: human:cli

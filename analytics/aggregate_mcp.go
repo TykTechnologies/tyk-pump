@@ -46,11 +46,13 @@ type MCPSQLAnalyticsRecordAggregate struct {
 	TimeStamp int64 `json:"timestamp"`
 }
 
+// reqproof:implements SW-REQ-012
 func (m *MCPSQLAnalyticsRecordAggregate) TableName() string {
 	return AggregateMCPSQLTable
 }
 
 // TableName returns the MongoDB collection name for this aggregate.
+// reqproof:implements SW-REQ-012
 func (a *MCPRecordAggregate) TableName() string {
 	if a.Mixed {
 		return MCPAggregateMixedCollectionName
@@ -60,6 +62,7 @@ func (a *MCPRecordAggregate) TableName() string {
 
 // Dimensions returns all dimensions for MCP records, including MCP-specific
 // dimension maps. This is required for AsChange() and AsTimeUpdate() to work.
+// reqproof:implements SW-REQ-012
 func (a *MCPRecordAggregate) Dimensions() []Dimension {
 	dims := a.AnalyticsRecordAggregate.Dimensions()
 
@@ -79,6 +82,7 @@ func (a *MCPRecordAggregate) Dimensions() []Dimension {
 }
 
 // NewMCPRecordAggregate creates a new MCPRecordAggregate with all maps initialized.
+// reqproof:implements SW-REQ-012
 func NewMCPRecordAggregate() MCPRecordAggregate {
 	return MCPRecordAggregate{
 		AnalyticsRecordAggregate: AnalyticsRecordAggregate{}.New(),
@@ -90,6 +94,7 @@ func NewMCPRecordAggregate() MCPRecordAggregate {
 
 // initMCPAggregateForRecord creates and initialises a new MCPRecordAggregate
 // seeded from the first record seen for a given API.
+// reqproof:implements SW-REQ-012
 func initMCPAggregateForRecord(record AnalyticsRecord, dbIdentifier string, aggregationTime int) MCPRecordAggregate {
 	agg := NewMCPRecordAggregate()
 	asTime := record.TimeStamp
@@ -108,6 +113,7 @@ func initMCPAggregateForRecord(record AnalyticsRecord, dbIdentifier string, aggr
 
 // incrementMCPDimensions updates the MCP-specific dimension counters (method,
 // primitive type, primitive name) for a single record.
+// reqproof:implements SW-REQ-012
 func (a *MCPRecordAggregate) incrementMCPDimensions(counter Counter, rec MCPRecord) {
 	if method := rec.JSONRPCMethod; method != "" {
 		c := incrementOrSetUnit(&counter, a.Methods[method])
@@ -137,6 +143,7 @@ func (a *MCPRecordAggregate) incrementMCPDimensions(counter Counter, rec MCPReco
 
 // AsTimeUpdate builds the MongoDB $set document for recalculating averages and lists.
 // It extends the base AsTimeUpdate with MCP-specific lists for methods, primitives, and names.
+// reqproof:implements SW-REQ-012
 func (a *MCPRecordAggregate) AsTimeUpdate() model.DBM {
 	newUpdate := a.AnalyticsRecordAggregate.AsTimeUpdate()
 
@@ -148,6 +155,7 @@ func (a *MCPRecordAggregate) AsTimeUpdate() model.DBM {
 }
 
 // AggregateMCPData collects MCP records into a map of MCPRecordAggregate keyed by APIID.
+// reqproof:implements SW-REQ-012
 func AggregateMCPData(data []interface{}, dbIdentifier string, aggregationTime int) map[string]MCPRecordAggregate {
 	aggregateMap := make(map[string]MCPRecordAggregate)
 

@@ -1,0 +1,57 @@
+id: SW-REQ-006
+version: 1
+status: review
+priority: shall
+category: functional
+req_type: guarantee
+fretish: ""
+description: Temporal storage GetAndDeleteSet shall pop up to a chunk of records and re-apply expiry to any remainder as a single atomic operation.
+formalization_strategy: informal
+informal_verification:
+    method: ""
+    evidence: ""
+    verified: false
+parent: SYS-REQ-007
+component: storage
+rationale: ""
+tags: []
+variables: []
+traces:
+    satisfies:
+        - SYS-REQ-007
+    reviewed_at: "2026-05-29T21:30:10.690703Z"
+    reviewed_by: human:buger
+    reviewed_fingerprint: sha256:fddb94ea803ae07642ae791553eaa34534e89269402dccb84fdc3f6e19dd41b9
+verification:
+    assurance_level: B
+    formalization_status: none
+    review:
+        status: approved
+        reviewer: leo@tyk.io
+        reviewed_at: "2026-05-29T15:47:45Z"
+        ai_generated: false
+    impact_reviews:
+        - requirement: SW-REQ-006
+          artifact: storage/temporal_storage.go
+          decision: no-authored-change
+          reviewer: buger
+          reason: Annotated MC/DC ignore on unreachable GeoIP and defensive type-assertion branches plus added unit tests; runtime behavior and authored requirement intent are unchanged.
+          base: origin/master
+          requirement_fingerprint: sha256:fddb94ea803ae07642ae791553eaa34534e89269402dccb84fdc3f6e19dd41b9
+          approval_fingerprint: sha256:f94b1f8e39e77b0a38bc4e10142fc4ccc201a0a4ccf31bdc00b7dab8827657ad
+          artifact_fingerprint: sha256:906044ca49d1d64331edcbcfe3c2852ebdd278f1b41d1f4c4eb9ce6f556c1b7b
+          reviewed_at: "2026-05-29T21:13:15Z"
+history:
+    created_by: human:cli
+    created_at: "2026-05-29T15:20:14Z"
+    last_modified_by: human:cli
+    last_modified_at: "2026-05-29T15:47:45Z"
+obligation_checklist:
+    - atomicity
+lifecycle:
+    change_history:
+        - date: "2026-05-29T15:46:43Z"
+          from: draft
+          to: review
+          reason: ""
+          changed_by: human:cli

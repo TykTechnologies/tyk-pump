@@ -1,0 +1,34 @@
+component: privacy
+variables:
+    - name: record_exceeds_max_size
+      type: bool
+      direction: input
+      description: A record exceeds the configured maximum size.
+    - name: record_truncated
+      type: bool
+      direction: output
+      description: The record is truncated before forwarding.
+    - name: decode_enabled
+      type: bool
+      direction: input
+      description: Payload decoding is enabled for the backend.
+    - name: payload_decoded
+      type: bool
+      direction: output
+      description: The base64 request/response payloads are decoded before forwarding.
+    - name: omit_detailed_recording_enabled
+      type: bool
+      direction: input
+      description: The omit-detailed-recording policy is enabled for this backend.
+    - name: detailed_payloads_omitted
+      type: bool
+      direction: output
+      description: The raw request and response payloads have been dropped from the forwarded record.
+    - name: ignore_fields_configured
+      type: bool
+      direction: input
+      description: The operator has configured an ignore-fields list for this backend.
+    - name: listed_fields_removed
+      type: bool
+      direction: output
+      description: The operator-listed fields have been removed from the forwarded record.

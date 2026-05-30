@@ -1,0 +1,57 @@
+id: SW-REQ-004
+version: 1
+status: review
+priority: shall
+category: functional
+req_type: guarantee
+fretish: ""
+description: The shutdown handler shall stop the purge loop and shut down all pumps cleanly on termination signal or context cancellation.
+formalization_strategy: informal
+informal_verification:
+    method: ""
+    evidence: ""
+    verified: false
+parent: SYS-REQ-001
+component: pump-core
+rationale: ""
+tags: []
+variables: []
+traces:
+    satisfies:
+        - SYS-REQ-001
+    reviewed_at: "2026-05-29T21:30:10.656277Z"
+    reviewed_by: human:buger
+    reviewed_fingerprint: sha256:3d3327042ed9f3936b2f27b200b8c1ba8fca18a9e8fb2ada2f0f13e1972e3606
+verification:
+    assurance_level: B
+    formalization_status: none
+    review:
+        status: approved
+        reviewer: leo@tyk.io
+        reviewed_at: "2026-05-29T15:47:44Z"
+        ai_generated: false
+    impact_reviews:
+        - requirement: SW-REQ-004
+          artifact: main.go
+          decision: no-authored-change
+          reviewer: buger
+          reason: Annotated MC/DC ignore on unreachable GeoIP and defensive type-assertion branches plus added unit tests; runtime behavior and authored requirement intent are unchanged.
+          base: origin/master
+          requirement_fingerprint: sha256:3d3327042ed9f3936b2f27b200b8c1ba8fca18a9e8fb2ada2f0f13e1972e3606
+          approval_fingerprint: sha256:38e10238a0212646c00d21682a2cc4bf57cbb5768433d80b65dc359e7e7a4315
+          artifact_fingerprint: sha256:4b683cd5715feffd7356231f04999400c4067164b6d478c53513559c0459a7cf
+          reviewed_at: "2026-05-29T21:13:15Z"
+history:
+    created_by: human:cli
+    created_at: "2026-05-29T15:20:13Z"
+    last_modified_by: human:cli
+    last_modified_at: "2026-05-29T15:47:44Z"
+obligation_checklist:
+    - error_handling
+lifecycle:
+    change_history:
+        - date: "2026-05-29T15:46:43Z"
+          from: draft
+          to: review
+          reason: ""
+          changed_by: human:cli

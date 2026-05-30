@@ -20,16 +20,20 @@ type dummyObject struct {
 	tableName string
 }
 
+// Verifies: SW-REQ-018
 func (dummyObject) GetObjectID() model.ObjectID {
 	return ""
 }
 
+// Verifies: SW-REQ-018
 func (dummyObject) SetObjectID(model.ObjectID) {}
 
+// Verifies: SW-REQ-018
 func (d dummyObject) TableName() string {
 	return d.tableName
 }
 
+// Verifies: SW-REQ-018
 func TestDoAggregatedWritingWithIgnoredAggregations(t *testing.T) {
 	cfgPump1 := make(map[string]interface{})
 	cfgPump1["mongo_url"] = "mongodb://localhost:27017/tyk_analytics"
@@ -139,6 +143,7 @@ func TestDoAggregatedWritingWithIgnoredAggregations(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-018
 func TestAggregationTime(t *testing.T) {
 	cfgPump1 := make(map[string]interface{})
 	cfgPump1["mongo_url"] = "mongodb://localhost:27017/tyk_analytics"
@@ -242,6 +247,7 @@ func TestAggregationTime(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-018
 func TestMongoAggregatePump_divideAggregationTime(t *testing.T) {
 	tests := []struct {
 		name                   string
@@ -285,6 +291,7 @@ func TestMongoAggregatePump_divideAggregationTime(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-018
 func TestMongoAggregatePump_SelfHealing(t *testing.T) {
 	cfgPump1 := make(map[string]interface{})
 	cfgPump1["mongo_url"] = "mongodb://localhost:27017/tyk_analytics"
@@ -337,6 +344,7 @@ func TestMongoAggregatePump_SelfHealing(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-018
 func TestMongoAggregatePump_ShouldSelfHeal(t *testing.T) {
 	type fields struct {
 		dbConf           *MongoAggregateConf
@@ -467,6 +475,7 @@ func TestMongoAggregatePump_ShouldSelfHeal(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-018
 func TestMongoAggregatePump_StoreAnalyticsPerMinute(t *testing.T) {
 	cfgPump1 := make(map[string]interface{})
 	cfgPump1["mongo_url"] = "mongodb://localhost:27017/tyk_analytics"
@@ -485,6 +494,7 @@ func TestMongoAggregatePump_StoreAnalyticsPerMinute(t *testing.T) {
 	assert.True(t, pmp1.dbConf.AggregationTime == 1)
 }
 
+// Verifies: SW-REQ-018
 func TestDecodeRequestAndDecodeResponseMongoAggregate(t *testing.T) {
 	newPump := &MongoAggregatePump{}
 	conf := defaultConf()
@@ -504,6 +514,7 @@ func TestDecodeRequestAndDecodeResponseMongoAggregate(t *testing.T) {
 	assert.False(t, newPump.GetDecodedResponse())
 }
 
+// Verifies: SW-REQ-018
 func TestDefaultDriverAggregate(t *testing.T) {
 	newPump := &MongoAggregatePump{}
 	defaultConf := defaultConf()
@@ -513,6 +524,7 @@ func TestDefaultDriverAggregate(t *testing.T) {
 	assert.Equal(t, persistent.OfficialMongo, newPump.dbConf.MongoDriverType)
 }
 
+// Verifies: SW-REQ-018
 func TestMongoAggregatePump_SkipsMCPRecords(t *testing.T) {
 	pmp := &MongoAggregatePump{}
 	pmp.log = logrus.NewEntry(logrus.New())

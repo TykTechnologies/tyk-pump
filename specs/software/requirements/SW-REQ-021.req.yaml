@@ -1,0 +1,57 @@
+id: SW-REQ-021
+version: 1
+status: review
+priority: shall
+category: functional
+req_type: guarantee
+fretish: ""
+description: The Kafka pump shall produce JSON analytics messages to the configured topic with optional SASL and TLS.
+formalization_strategy: informal
+informal_verification:
+    method: ""
+    evidence: ""
+    verified: false
+parent: SYS-REQ-004
+component: pumps-kafka
+rationale: ""
+tags: []
+variables: []
+traces:
+    satisfies:
+        - SYS-REQ-004
+    reviewed_at: "2026-05-29T21:30:11.326138Z"
+    reviewed_by: human:buger
+    reviewed_fingerprint: sha256:439e62bf35673819550ecfe50c317dd56197bf840f0008e68d05c7434e93299e
+verification:
+    assurance_level: B
+    formalization_status: none
+    review:
+        status: approved
+        reviewer: leo@tyk.io
+        reviewed_at: "2026-05-29T15:47:45Z"
+        ai_generated: false
+    impact_reviews:
+        - requirement: SW-REQ-021
+          artifact: pumps/kafka.go
+          decision: no-authored-change
+          reviewer: buger
+          reason: Annotated MC/DC ignore on unreachable GeoIP and defensive type-assertion branches plus added unit tests; runtime behavior and authored requirement intent are unchanged.
+          base: origin/master
+          requirement_fingerprint: sha256:439e62bf35673819550ecfe50c317dd56197bf840f0008e68d05c7434e93299e
+          approval_fingerprint: sha256:71145e7b8f87ab122c2ffadd76d48493ee3d82d60d934280cd82f15872a76ab1
+          artifact_fingerprint: sha256:3039d527df718fa2a62df2156dad1f1fbed9bc6a01e8a62c8746047f97464602
+          reviewed_at: "2026-05-29T21:13:18Z"
+history:
+    created_by: human:cli
+    created_at: "2026-05-29T15:20:15Z"
+    last_modified_by: human:cli
+    last_modified_at: "2026-05-29T15:47:45Z"
+obligation_checklist:
+    - errors_propagated
+lifecycle:
+    change_history:
+        - date: "2026-05-29T15:46:44Z"
+          from: draft
+          to: review
+          reason: ""
+          changed_by: human:cli

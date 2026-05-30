@@ -15,6 +15,7 @@ type AnalyticsFilters struct {
 	SkippedResponseCodes []int `json:"skip_response_codes"`
 }
 
+// reqproof:implements SW-REQ-010
 func (filters AnalyticsFilters) ShouldFilter(record AnalyticsRecord) bool {
 	switch {
 	case len(filters.SkippedAPIIDs) > 0 && stringInSlice(record.APIID, filters.SkippedAPIIDs):
@@ -33,6 +34,7 @@ func (filters AnalyticsFilters) ShouldFilter(record AnalyticsRecord) bool {
 	return false
 }
 
+// reqproof:implements SW-REQ-010
 func (filters AnalyticsFilters) HasFilter() bool {
 	if len(filters.SkippedAPIIDs) == 0 && len(filters.SkippedOrgsIDs) == 0 && len(filters.ResponseCodes) == 0 && len(filters.APIIDs) == 0 && len(filters.OrgsIDs) == 0 && len(filters.SkippedResponseCodes) == 0 {
 		return false
@@ -40,6 +42,7 @@ func (filters AnalyticsFilters) HasFilter() bool {
 	return true
 }
 
+// reqproof:implements SW-REQ-010
 func stringInSlice(a string, list []string) bool {
 	for _, b := range list {
 		if b == a {
@@ -49,6 +52,7 @@ func stringInSlice(a string, list []string) bool {
 	return false
 }
 
+// reqproof:implements SW-REQ-010
 func intInSlice(a int, list []int) bool {
 	for _, b := range list {
 		if b == a {

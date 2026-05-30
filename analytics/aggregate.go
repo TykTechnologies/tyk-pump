@@ -119,6 +119,7 @@ type AnalyticsRecordAggregate struct {
 	Mixed    bool `bson:"-" json:"-"`
 }
 
+// reqproof:implements SW-REQ-011
 func (f *AnalyticsRecordAggregate) TableName() string {
 	if f.Mixed {
 		return AgggregateMixedCollectionName
@@ -126,10 +127,12 @@ func (f *AnalyticsRecordAggregate) TableName() string {
 	return "z_tyk_analyticz_aggregate_" + f.OrgID
 }
 
+// reqproof:implements SW-REQ-011
 func (f *AnalyticsRecordAggregate) GetObjectID() model.ObjectID {
 	return f.id
 }
 
+// reqproof:implements SW-REQ-011
 func (f *AnalyticsRecordAggregate) SetObjectID(id model.ObjectID) {
 	f.id = id
 }
@@ -185,6 +188,7 @@ type Code struct {
 	Code5x  int `json:"5x" gorm:"5x"`
 }
 
+// reqproof:implements SW-REQ-011
 func (c *Code) ProcessStatusCodes(errorMap map[string]int) {
 	codeStruct := structs.New(c)
 	for k, v := range errorMap {
@@ -198,10 +202,12 @@ func (c *Code) ProcessStatusCodes(errorMap map[string]int) {
 	}
 }
 
+// reqproof:implements SW-REQ-011
 func (f *SQLAnalyticsRecordAggregate) TableName() string {
 	return AggregateSQLTable
 }
 
+// reqproof:implements SW-REQ-011
 func OnConflictAssignments(tableName, tempTable string) map[string]interface{} {
 	assignments := make(map[string]interface{})
 	f := SQLAnalyticsRecordAggregate{}
@@ -259,6 +265,7 @@ func OnConflictAssignments(tableName, tempTable string) map[string]interface{} {
 	return assignments
 }
 
+// reqproof:implements SW-REQ-011
 func NewGraphRecordAggregate() GraphRecordAggregate {
 	analyticsAggregate := AnalyticsRecordAggregate{}.New()
 
@@ -271,6 +278,7 @@ func NewGraphRecordAggregate() GraphRecordAggregate {
 	}
 }
 
+// reqproof:implements SW-REQ-011
 func (f AnalyticsRecordAggregate) New() AnalyticsRecordAggregate {
 	thisF := AnalyticsRecordAggregate{}
 	thisF.APIID = make(map[string]*Counter)
@@ -288,6 +296,7 @@ func (f AnalyticsRecordAggregate) New() AnalyticsRecordAggregate {
 	return thisF
 }
 
+// reqproof:implements SW-REQ-011
 func (f *AnalyticsRecordAggregate) generateBSONFromProperty(parent, thisUnit string, incVal *Counter, newUpdate model.DBM) model.DBM {
 	constructor := parent + "." + thisUnit + "."
 	if parent == "" {
@@ -324,6 +333,7 @@ func (f *AnalyticsRecordAggregate) generateBSONFromProperty(parent, thisUnit str
 	return newUpdate
 }
 
+// reqproof:implements SW-REQ-011
 func (f *AnalyticsRecordAggregate) generateSetterForTime(parent, thisUnit string, realTime float64, newUpdate model.DBM) model.DBM {
 	constructor := parent + "." + thisUnit + "."
 	if parent == "" {
@@ -334,6 +344,7 @@ func (f *AnalyticsRecordAggregate) generateSetterForTime(parent, thisUnit string
 	return newUpdate
 }
 
+// reqproof:implements SW-REQ-011
 func (f *AnalyticsRecordAggregate) latencySetter(parent, thisUnit string, newUpdate model.DBM, counter *Counter) model.DBM {
 	if counter.Hits > 0 {
 		counter.Latency = float64(counter.TotalLatency) / float64(counter.Hits)
@@ -359,6 +370,7 @@ type Dimension struct {
 	Counter *Counter
 }
 
+// reqproof:implements SW-REQ-011
 func fnLatencySetter(counter *Counter) *Counter {
 	if counter.Hits > 0 {
 		counter.Latency = float64(counter.TotalLatency) / float64(counter.Hits)
@@ -367,6 +379,7 @@ func fnLatencySetter(counter *Counter) *Counter {
 	return counter
 }
 
+// reqproof:implements SW-REQ-011
 func (g *GraphRecordAggregate) Dimensions() []Dimension {
 	dimensions := g.AnalyticsRecordAggregate.Dimensions()
 	for key, inc := range g.Types {
@@ -388,6 +401,7 @@ func (g *GraphRecordAggregate) Dimensions() []Dimension {
 	return dimensions
 }
 
+// reqproof:implements SW-REQ-011
 func (f *AnalyticsRecordAggregate) Dimensions() (dimensions []Dimension) {
 	for key, inc := range f.APIID {
 		dimensions = append(dimensions, Dimension{"apiid", key, fnLatencySetter(inc)})
@@ -442,6 +456,7 @@ func (f *AnalyticsRecordAggregate) Dimensions() (dimensions []Dimension) {
 	return
 }
 
+// reqproof:implements SW-REQ-011
 func (f *AnalyticsRecordAggregate) AsChange() (newUpdate model.DBM) {
 	newUpdate = model.DBM{
 		"$inc": model.DBM{},
@@ -468,6 +483,7 @@ func (f *AnalyticsRecordAggregate) AsChange() (newUpdate model.DBM) {
 	return newUpdate
 }
 
+// reqproof:implements SW-REQ-011
 func (f *AnalyticsRecordAggregate) SetErrorList(parent, thisUnit string, counter *Counter, newUpdate model.DBM) {
 	constructor := parent + "." + thisUnit + "."
 	if parent == "" {
@@ -492,6 +508,7 @@ func (f *AnalyticsRecordAggregate) SetErrorList(parent, thisUnit string, counter
 	newUpdate["$set"].(model.DBM)[constructor+"errorlist"] = counter.ErrorList
 }
 
+// reqproof:implements SW-REQ-011
 func (f *AnalyticsRecordAggregate) getRecords(fieldName string, data map[string]*Counter, newUpdate model.DBM) []Counter {
 	result := make([]Counter, 0)
 
@@ -510,6 +527,7 @@ func (f *AnalyticsRecordAggregate) getRecords(fieldName string, data map[string]
 	return result
 }
 
+// reqproof:implements SW-REQ-011
 func (f *AnalyticsRecordAggregate) AsTimeUpdate() model.DBM {
 	newUpdate := model.DBM{
 		"$set": model.DBM{},
@@ -558,6 +576,7 @@ func (f *AnalyticsRecordAggregate) AsTimeUpdate() model.DBM {
 }
 
 // DiscardAggregations this method discard the aggregations of X field specified in the aggregated pump configuration
+// reqproof:implements SW-REQ-011
 func (f *AnalyticsRecordAggregate) DiscardAggregations(fields []string) {
 	for _, field := range fields {
 		switch field {
@@ -592,12 +611,14 @@ func (f *AnalyticsRecordAggregate) DiscardAggregations(fields []string) {
 	}
 }
 
+// reqproof:implements SW-REQ-011
 func doHash(in string) string {
 	sEnc := b64.StdEncoding.EncodeToString([]byte(in))
 	search := strings.TrimRight(sEnc, "=")
 	return search
 }
 
+// reqproof:implements SW-REQ-011
 func ignoreTag(tag string, ignoreTagPrefixList []string) bool {
 	// ignore tag added for key by gateway
 	if strings.HasPrefix(tag, "key-") {
@@ -613,6 +634,7 @@ func ignoreTag(tag string, ignoreTagPrefixList []string) bool {
 	return false
 }
 
+// reqproof:implements SW-REQ-011
 func replaceUnsupportedChars(path string) string {
 	result := path
 
@@ -625,6 +647,7 @@ func replaceUnsupportedChars(path string) string {
 }
 
 // AggregateGraphData collects the graph records into a map of GraphRecordAggregate to apiID
+// reqproof:implements SW-REQ-011
 func AggregateGraphData(data []interface{}, dbIdentifier string, aggregationTime int) map[string]GraphRecordAggregate {
 	aggregateMap := make(map[string]GraphRecordAggregate)
 
@@ -695,6 +718,7 @@ func AggregateGraphData(data []interface{}, dbIdentifier string, aggregationTime
 }
 
 // AggregateData calculates aggregated data, returns map orgID => aggregated analytics data
+// reqproof:implements SW-REQ-011
 func AggregateData(data []interface{}, trackAllPaths bool, ignoreTagPrefixList []string, dbIdentifier string, aggregationTime int) map[string]AnalyticsRecordAggregate {
 	analyticsPerOrg := make(map[string]AnalyticsRecordAggregate)
 	for _, v := range data {
@@ -740,6 +764,7 @@ func AggregateData(data []interface{}, trackAllPaths bool, ignoreTagPrefixList [
 }
 
 // incrementAggregate increments the analytic record aggregate fields using the analytics record
+// reqproof:implements SW-REQ-011
 func incrementAggregate(aggregate *AnalyticsRecordAggregate, record *AnalyticsRecord, trackAllPaths bool, ignoreTagPrefixList []string) (AnalyticsRecordAggregate, Counter) {
 	// Always update the last timestamp
 	aggregate.LastTime = record.TimeStamp
@@ -850,11 +875,12 @@ func incrementAggregate(aggregate *AnalyticsRecordAggregate, record *AnalyticsRe
 				}
 			case "ResponseCode":
 				val, ok := value.(int)
-				if !ok {
+				if !ok { //mcdc:ignore defensive: ResponseCode is an int in AnalyticsRecord; structs.Map preserves the int type so the assertion cannot fail
 					break
 				}
 				errAsStr := strconv.Itoa(val)
-				if errAsStr != "" {
+				if errAsStr != "" { //mcdc:ignore strconv.Itoa of an int value is always a non-empty string
+
 					c := incrementOrSetUnit(&thisCounter, aggregate.Errors[errAsStr])
 					if c.ErrorTotal > 0 {
 						aggregate.Errors[errAsStr] = c
@@ -938,7 +964,7 @@ func incrementAggregate(aggregate *AnalyticsRecordAggregate, record *AnalyticsRe
 
 			case "TrackPath":
 				val, ok := value.(bool)
-				if !ok {
+				if !ok { //mcdc:ignore defensive: TrackPath is a bool in AnalyticsRecord; structs.Map preserves the bool type so the assertion cannot fail
 					break
 				}
 				log.Debug("TrackPath=", val)
@@ -962,6 +988,7 @@ func incrementAggregate(aggregate *AnalyticsRecordAggregate, record *AnalyticsRe
 }
 
 // incrementOrSetUnit is a Mini function to handle incrementing a specific counter in our object
+// reqproof:implements SW-REQ-011
 func incrementOrSetUnit(b, c *Counter) *Counter {
 	base := *b
 	if c == nil {
@@ -1007,6 +1034,7 @@ func incrementOrSetUnit(b, c *Counter) *Counter {
 	return c
 }
 
+// reqproof:implements SW-REQ-011
 func TrimTag(thisTag string) string {
 	trimmedTag := strings.TrimSpace(thisTag)
 
@@ -1015,6 +1043,7 @@ func TrimTag(thisTag string) string {
 }
 
 // SetlastTimestampAgggregateRecord sets the last timestamp for the aggregate record
+// reqproof:implements SW-REQ-011
 func SetlastTimestampAgggregateRecord(id string, date time.Time) {
 	mutex.Lock()
 	defer mutex.Unlock()
@@ -1022,6 +1051,7 @@ func SetlastTimestampAgggregateRecord(id string, date time.Time) {
 }
 
 // getLastDocumentTimestamp gets the last timestamp for the aggregate record
+// reqproof:implements SW-REQ-011
 func getLastDocumentTimestamp(id string) (time.Time, bool) {
 	mutex.RLock()
 	defer mutex.RUnlock()
@@ -1029,6 +1059,7 @@ func getLastDocumentTimestamp(id string) (time.Time, bool) {
 	return ts, ok
 }
 
+// reqproof:implements SW-REQ-011
 func setAggregateTimestamp(dbIdentifier string, asTime time.Time, aggregationTime int) time.Time {
 	// if aggregationTime is set to 60, use asTime.Hour() and group every record by hour
 	if aggregationTime == 60 {

@@ -1,0 +1,67 @@
+id: SW-REQ-026
+version: 1
+status: review
+priority: shall
+category: functional
+req_type: guarantee
+fretish: ""
+description: The stdout and dummy pumps shall emit records to stdout or discard them, for debugging and testing.
+formalization_strategy: informal
+informal_verification:
+    method: ""
+    evidence: ""
+    verified: false
+parent: SYS-REQ-004
+component: pumps-stdout
+rationale: ""
+tags: []
+variables: []
+traces:
+    satisfies:
+        - SYS-REQ-004
+    reviewed_at: "2026-05-29T21:30:11.465388Z"
+    reviewed_by: human:buger
+    reviewed_fingerprint: sha256:cc1e5442614657517b386a62bb060e03cfad77829087eeb2e4754db921d20835
+verification:
+    assurance_level: B
+    formalization_status: none
+    review:
+        status: approved
+        reviewer: leo@tyk.io
+        reviewed_at: "2026-05-29T15:47:46Z"
+        ai_generated: false
+    impact_reviews:
+        - requirement: SW-REQ-026
+          artifact: pumps/dummy.go
+          decision: no-authored-change
+          reviewer: buger
+          reason: Annotated MC/DC ignore on unreachable GeoIP and defensive type-assertion branches plus added unit tests; runtime behavior and authored requirement intent are unchanged.
+          base: origin/master
+          requirement_fingerprint: sha256:cc1e5442614657517b386a62bb060e03cfad77829087eeb2e4754db921d20835
+          approval_fingerprint: sha256:d468e67567102fbdedf7f0656b7a456b3abf43659357bd6c7bbfbbe39045c2cd
+          artifact_fingerprint: sha256:86e6d0947546b5d3efd7cb43a1d720500ac92b8bdb14340aabb5ebd78e7150bf
+          reviewed_at: "2026-05-29T21:13:19Z"
+        - requirement: SW-REQ-026
+          artifact: pumps/stdout.go
+          decision: no-authored-change
+          reviewer: buger
+          reason: Annotated MC/DC ignore on unreachable GeoIP and defensive type-assertion branches plus added unit tests; runtime behavior and authored requirement intent are unchanged.
+          base: origin/master
+          requirement_fingerprint: sha256:cc1e5442614657517b386a62bb060e03cfad77829087eeb2e4754db921d20835
+          approval_fingerprint: sha256:d468e67567102fbdedf7f0656b7a456b3abf43659357bd6c7bbfbbe39045c2cd
+          artifact_fingerprint: sha256:e4973cbed6551b57ef82ca7c27d4042858e42e8558e57a5af0305a03d15abf24
+          reviewed_at: "2026-05-29T21:13:19Z"
+history:
+    created_by: human:cli
+    created_at: "2026-05-29T15:20:16Z"
+    last_modified_by: human:cli
+    last_modified_at: "2026-05-29T15:47:46Z"
+obligation_checklist:
+    - nominal
+lifecycle:
+    change_history:
+        - date: "2026-05-29T15:46:44Z"
+          from: draft
+          to: review
+          reason: ""
+          changed_by: human:cli

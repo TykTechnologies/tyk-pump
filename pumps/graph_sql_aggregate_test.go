@@ -73,6 +73,7 @@ const (
 	sampleResponse = `{"data":{"characters":{"info":{"count":758}}}}`
 )
 
+// Verifies: SW-REQ-019
 func TestSqlGraphAggregatePump_Init(t *testing.T) {
 	skipTestIfNoPostgres(t)
 	tableName := analytics.AggregateGraphSQLTable
@@ -169,6 +170,7 @@ func TestSqlGraphAggregatePump_Init(t *testing.T) {
 	})
 }
 
+// Verifies: SW-REQ-019
 func TestSqlGraphAggregatePump_WriteData(t *testing.T) {
 	skipTestIfNoPostgres(t)
 	r := require.New(t)
@@ -590,6 +592,7 @@ func TestSqlGraphAggregatePump_WriteData(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-019
 func TestGraphSQLAggregatePump_WriteData_Sharded(t *testing.T) {
 	skipTestIfNoPostgres(t)
 	pump := GraphSQLAggregatePump{}

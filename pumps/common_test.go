@@ -21,6 +21,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// Verifies: SW-REQ-016
 func TestDecodingRequest(t *testing.T) {
 	pump := &CommonPumpConfig{}
 	pump.SetDecodingRequest(true)
@@ -29,6 +30,7 @@ func TestDecodingRequest(t *testing.T) {
 	assert.True(t, actualValue)
 }
 
+// Verifies: SW-REQ-016
 func TestSetDecodingResponse(t *testing.T) {
 	pump := &CommonPumpConfig{}
 	pump.SetDecodingResponse(true)
@@ -41,6 +43,7 @@ func TestSetDecodingResponse(t *testing.T) {
 // for pump configurations. This test validates that the processPumpEnvVars mechanism
 // (which uses mapstructure.Decode + envconfig.Process) correctly overrides configuration
 // values with environment variables. This behavior is common to all pumps.
+// Verifies: SW-REQ-016
 func TestPumpEnvVarOverride(t *testing.T) {
 	type TestPumpConfig struct {
 		Topic       string   `json:"topic" mapstructure:"topic"`
@@ -182,6 +185,7 @@ func TestPumpEnvVarOverride(t *testing.T) {
 // backward compatibility with existing pump deployments.
 // These tests are marked with "(backward compatible)" in their names to clearly indicate
 // this is expected behavior, not a bug.
+// Verifies: SW-REQ-016
 func TestNewTLSConfig(t *testing.T) {
 	tempDir, err := os.MkdirTemp("", "tls_test")
 	require.NoError(t, err)
@@ -366,6 +370,7 @@ func TestNewTLSConfig(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-016
 func generateTestCerts(t *testing.T, tempDir string) (string, string, string, string) {
 	caPrivateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	require.NoError(t, err)

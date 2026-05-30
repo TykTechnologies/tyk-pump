@@ -15,6 +15,7 @@ import (
 	gorm_logger "gorm.io/gorm/logger"
 )
 
+// Verifies: SW-REQ-019
 func TestMCPSQLAggregatePump_Init(t *testing.T) {
 	skipTestIfNoPostgres(t)
 	tableName := analytics.AggregateMCPSQLTable
@@ -106,6 +107,7 @@ func TestMCPSQLAggregatePump_Init(t *testing.T) {
 	})
 }
 
+// Verifies: SW-REQ-019
 func TestMCPSQLAggregatePump_WriteData(t *testing.T) {
 	skipTestIfNoPostgres(t)
 	tableName := analytics.AggregateMCPSQLTable
@@ -226,6 +228,7 @@ func TestMCPSQLAggregatePump_WriteData(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-019
 func TestMCPSQLAggregatePump_WriteData_Sharded(t *testing.T) {
 	skipTestIfNoPostgres(t)
 	tableName := analytics.AggregateMCPSQLTable
@@ -271,6 +274,7 @@ func TestMCPSQLAggregatePump_WriteData_Sharded(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-019
 func TestMCPSQLAggregatePump_aggregationTimeMinutes(t *testing.T) {
 	t.Run("default is 60 minutes", func(t *testing.T) {
 		pump := MCPSQLAggregatePump{SQLConf: &SQLAggregatePumpConf{}}
@@ -283,6 +287,7 @@ func TestMCPSQLAggregatePump_aggregationTimeMinutes(t *testing.T) {
 	})
 }
 
+// Verifies: SW-REQ-019
 func TestMCPSQLAggregatePump_WriteData_EmptyData_NoInit(t *testing.T) {
 	pump := &MCPSQLAggregatePump{}
 	pump.log = log.WithField("prefix", mcpSQLAggregatePrefix)
@@ -296,6 +301,7 @@ func TestMCPSQLAggregatePump_WriteData_EmptyData_NoInit(t *testing.T) {
 // enabled, matching the production gorm config used by OpenGormDB. This is
 // critical for embedded structs (Counter, Code) whose columns are prefixed by
 // their JSON tag (counter_, code_) when UseJSONTags is true.
+// Verifies: SW-REQ-019
 func setupTestDBWithJSONTags(t *testing.T) *gorm.DB {
 	t.Helper()
 	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
@@ -306,6 +312,7 @@ func setupTestDBWithJSONTags(t *testing.T) *gorm.DB {
 	return db
 }
 
+// Verifies: SW-REQ-019
 func newMCPSQLAggregatePumpWithSQLite(t *testing.T, batchSize int, sharding bool) *MCPSQLAggregatePump {
 	t.Helper()
 	db := setupTestDBWithJSONTags(t)
@@ -323,6 +330,7 @@ func newMCPSQLAggregatePumpWithSQLite(t *testing.T, batchSize int, sharding bool
 	return pump
 }
 
+// Verifies: SW-REQ-019
 func TestMCPSQLAggregatePump_ensureMCPAggregateShardedTable_SQLite(t *testing.T) {
 	pump := newMCPSQLAggregatePumpWithSQLite(t, 100, true)
 
@@ -336,6 +344,7 @@ func TestMCPSQLAggregatePump_ensureMCPAggregateShardedTable_SQLite(t *testing.T)
 	assert.Equal(t, expected, table2)
 }
 
+// Verifies: SW-REQ-019
 func TestMCPSQLAggregatePump_WriteData_SkipsNonMCP_SQLite(t *testing.T) {
 	pump := newMCPSQLAggregatePumpWithSQLite(t, 100, false)
 	ts := time.Date(2025, 6, 15, 10, 0, 0, 0, time.UTC)
@@ -354,6 +363,7 @@ func TestMCPSQLAggregatePump_WriteData_SkipsNonMCP_SQLite(t *testing.T) {
 	assert.Zero(t, count, "non-MCP records should not produce any aggregate rows")
 }
 
+// Verifies: SW-REQ-019
 func TestMCPSQLAggregatePump_WriteData_EmptyData(t *testing.T) {
 	skipTestIfNoPostgres(t)
 	pump := MCPSQLAggregatePump{}
@@ -367,6 +377,7 @@ func TestMCPSQLAggregatePump_WriteData_EmptyData(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+// Verifies: SW-REQ-019
 func TestMCPSQLAggregatePump_WriteData_Upsert(t *testing.T) {
 	skipTestIfNoPostgres(t)
 	tableName := analytics.AggregateMCPSQLTable
@@ -402,6 +413,7 @@ func TestMCPSQLAggregatePump_WriteData_Upsert(t *testing.T) {
 	assert.Equal(t, 3, resp[0].Counter.Hits, "upsert should accumulate hits: 2 + 1 = 3")
 }
 
+// Verifies: SW-REQ-019
 func TestMCPSQLAggregatePump_WriteData_SmallBatchSize(t *testing.T) {
 	skipTestIfNoPostgres(t)
 	tableName := analytics.AggregateMCPSQLTable
@@ -433,6 +445,7 @@ func TestMCPSQLAggregatePump_WriteData_SmallBatchSize(t *testing.T) {
 	assert.Equal(t, int64(5), count, "batch size 1 should still write all 5 dimensions")
 }
 
+// Verifies: SW-REQ-019
 func TestMCPSQLAggregatePump_New(t *testing.T) {
 	p := &MCPSQLAggregatePump{}
 	newP := p.New()
@@ -441,16 +454,19 @@ func TestMCPSQLAggregatePump_New(t *testing.T) {
 	assert.True(t, ok)
 }
 
+// Verifies: SW-REQ-019
 func TestMCPSQLAggregatePump_GetName(t *testing.T) {
 	p := &MCPSQLAggregatePump{}
 	assert.Equal(t, "SQL MCP Aggregate Pump", p.GetName())
 }
 
+// Verifies: SW-REQ-019
 func TestMCPSQLAggregatePump_GetEnvPrefix(t *testing.T) {
 	p := &MCPSQLAggregatePump{SQLConf: &SQLAggregatePumpConf{EnvPrefix: "test"}}
 	assert.Equal(t, "test", p.GetEnvPrefix())
 }
 
+// Verifies: SW-REQ-019
 func TestMCPSQLAggregatePump_DoAggregatedWriting_SQLite(t *testing.T) {
 	pump := newMCPSQLAggregatePumpWithSQLite(t, 100, false)
 	tableName := analytics.AggregateMCPSQLTable
@@ -487,6 +503,7 @@ func TestMCPSQLAggregatePump_DoAggregatedWriting_SQLite(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-019
 func TestMCPSQLAggregatePump_WriteData_NonSharded_SQLite(t *testing.T) {
 	pump := newMCPSQLAggregatePumpWithSQLite(t, 100, false)
 	ts := time.Date(2025, 6, 15, 10, 0, 0, 0, time.UTC)
@@ -506,6 +523,7 @@ func TestMCPSQLAggregatePump_WriteData_NonSharded_SQLite(t *testing.T) {
 	assert.Equal(t, int64(5), count, "should write all 5 dimensions")
 }
 
+// Verifies: SW-REQ-019
 func TestMCPSQLAggregatePump_WriteData_Sharded_SQLite(t *testing.T) {
 	pump := newMCPSQLAggregatePumpWithSQLite(t, 100, true)
 
@@ -532,6 +550,7 @@ func TestMCPSQLAggregatePump_WriteData_Sharded_SQLite(t *testing.T) {
 	assert.True(t, pump.db.Migrator().HasTable(shard2), "shard for day2 should exist")
 }
 
+// Verifies: SW-REQ-019
 func TestMCPSQLAggregatePump_DoAggregatedWriting_SmallBatch_SQLite(t *testing.T) {
 	pump := newMCPSQLAggregatePumpWithSQLite(t, 1, false)
 	tableName := analytics.AggregateMCPSQLTable
@@ -555,6 +574,7 @@ func TestMCPSQLAggregatePump_DoAggregatedWriting_SmallBatch_SQLite(t *testing.T)
 	assert.Equal(t, int64(5), count, "batch size 1 should still write all 5 dimensions")
 }
 
+// Verifies: SW-REQ-019
 func TestMCPSQLAggregatePump_Init_SQLite(t *testing.T) {
 	// Test Init with SQLite to cover the Init function code paths
 	db := setupTestDB(t)
@@ -578,6 +598,7 @@ func TestMCPSQLAggregatePump_Init_SQLite(t *testing.T) {
 	assert.True(t, pump.db.Migrator().HasTable(analytics.AggregateMCPSQLTable))
 }
 
+// Verifies: SW-REQ-019
 func TestMCPSQLAggregatePump_aggregationTimeMinutes_Defaults(t *testing.T) {
 	// Verify default batch size is set
 	pump := MCPSQLAggregatePump{SQLConf: &SQLAggregatePumpConf{}}
@@ -587,6 +608,7 @@ func TestMCPSQLAggregatePump_aggregationTimeMinutes_Defaults(t *testing.T) {
 	assert.Equal(t, 1, pump.aggregationTimeMinutes())
 }
 
+// Verifies: SW-REQ-019
 func TestMCPSQLAggregatePump_ensureMCPAggregateShardedTable_CreatesAndReuses(t *testing.T) {
 	pump := newMCPSQLAggregatePumpWithSQLite(t, 100, true)
 
@@ -606,6 +628,7 @@ func TestMCPSQLAggregatePump_ensureMCPAggregateShardedTable_CreatesAndReuses(t *
 	assert.True(t, pump.db.Migrator().HasTable(expected2))
 }
 
+// Verifies: SW-REQ-019
 func TestMCPSQLAggregatePump_WriteData_MultipleAPIs(t *testing.T) {
 	skipTestIfNoPostgres(t)
 	tableName := analytics.AggregateMCPSQLTable

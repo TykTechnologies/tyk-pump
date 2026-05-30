@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// Verifies: SW-REQ-022
 func TestInflux2PumpMappingIncludesLatency(t *testing.T) {
 	// Create a sample analytics record
 	ar := analytics.AnalyticsRecord{

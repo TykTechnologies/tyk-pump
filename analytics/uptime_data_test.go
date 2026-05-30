@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// Verifies: SW-REQ-015
 func TestUptimeReportData_GetObjectID(t *testing.T) {
 	t.Run("should return the ID field", func(t *testing.T) {
 		id := model.NewObjectID()
@@ -21,6 +22,7 @@ func TestUptimeReportData_GetObjectID(t *testing.T) {
 	})
 }
 
+// Verifies: SW-REQ-015
 func TestUptimeReportData_SetObjectID(t *testing.T) {
 	t.Run("should set the ID field", func(t *testing.T) {
 		id := model.NewObjectID()
@@ -30,6 +32,7 @@ func TestUptimeReportData_SetObjectID(t *testing.T) {
 	})
 }
 
+// Verifies: SW-REQ-015
 func TestUptimeReportData_TableName(t *testing.T) {
 	t.Run("should return the uptime SQL table name", func(t *testing.T) {
 		record := UptimeReportData{}
@@ -37,6 +40,7 @@ func TestUptimeReportData_TableName(t *testing.T) {
 	})
 }
 
+// Verifies: SW-REQ-015
 func TestUptimeReportAggregateSQL_TableName(t *testing.T) {
 	t.Run("should return the uptime aggregate SQL table name", func(t *testing.T) {
 		record := UptimeReportAggregateSQL{}
@@ -44,6 +48,7 @@ func TestUptimeReportAggregateSQL_TableName(t *testing.T) {
 	})
 }
 
+// Verifies: SW-REQ-015
 func TestUptimeReportAggregate_New(t *testing.T) {
 	t.Run("should return a new UptimeReportAggregate", func(t *testing.T) {
 		expected := UptimeReportAggregate{}
@@ -56,6 +61,7 @@ func TestUptimeReportAggregate_New(t *testing.T) {
 	})
 }
 
+// Verifies: SW-REQ-015
 func TestUptimeReportAggregate_Dimensions(t *testing.T) {
 	tcs := []struct {
 		testName string
@@ -113,6 +119,10 @@ func TestUptimeReportAggregate_Dimensions(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-015
+// Verifies: SYS-REQ-014
+// Verifies: STK-REQ-005
+// Verifies: INT-REQ-002
 func TestAggregateUptimeData(t *testing.T) {
 	currentTime := time.Date(2023, 0o4, 0o4, 10, 0, 0, 0, time.UTC)
 
@@ -328,6 +338,7 @@ func TestAggregateUptimeData(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-015
 func TestOnConflictUptimeAssignments(t *testing.T) {
 	assignments := OnConflictAssignments("uptime_reports", "excluded")
 

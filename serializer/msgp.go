@@ -8,10 +8,12 @@ import (
 type MsgpSerializer struct {
 }
 
+// reqproof:implements SW-REQ-008
 func (serializer *MsgpSerializer) Encode(record *analytics.AnalyticsRecord) ([]byte, error) {
 	return msgpack.Marshal(record)
 }
 
+// reqproof:implements SW-REQ-008
 func (serializer *MsgpSerializer) Decode(analyticsData interface{}, record *analytics.AnalyticsRecord) error {
 	data := []byte{}
 	switch analyticsData.(type) {
@@ -24,6 +26,7 @@ func (serializer *MsgpSerializer) Decode(analyticsData interface{}, record *anal
 	return msgpack.Unmarshal(data, record)
 }
 
+// reqproof:implements SW-REQ-008
 func (serializer *MsgpSerializer) GetSuffix() string {
 	return ""
 }

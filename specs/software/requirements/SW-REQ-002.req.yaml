@@ -1,0 +1,67 @@
+id: SW-REQ-002
+version: 1
+status: review
+priority: shall
+category: functional
+req_type: guarantee
+fretish: ""
+description: The configuration loader shall read the JSON config file and then override every field from TYK_PMP_* environment variables.
+formalization_strategy: informal
+informal_verification:
+    method: ""
+    evidence: ""
+    verified: false
+parent: SYS-REQ-008
+component: pump-core
+rationale: ""
+tags: []
+variables: []
+traces:
+    satisfies:
+        - SYS-REQ-008
+    reviewed_at: "2026-05-29T21:30:10.640645Z"
+    reviewed_by: human:buger
+    reviewed_fingerprint: sha256:384e3531ddafbfcb6980e949a9ebbd78e4a809ebcd3ffb1402957f9c31b1baef
+verification:
+    assurance_level: B
+    formalization_status: none
+    review:
+        status: approved
+        reviewer: leo@tyk.io
+        reviewed_at: "2026-05-29T15:47:44Z"
+        ai_generated: false
+    impact_reviews:
+        - requirement: SW-REQ-002
+          artifact: config.go
+          decision: no-authored-change
+          reviewer: buger
+          reason: Annotated MC/DC ignore on unreachable GeoIP and defensive type-assertion branches plus added unit tests; runtime behavior and authored requirement intent are unchanged.
+          base: origin/master
+          requirement_fingerprint: sha256:384e3531ddafbfcb6980e949a9ebbd78e4a809ebcd3ffb1402957f9c31b1baef
+          approval_fingerprint: sha256:af92da8a14837e074e95bbcbf1ee4d69dece22927949ff26b4a92a7e3d1ca649
+          artifact_fingerprint: sha256:9e792c1eb47195f9b6dc56e61d718012812eb0a68fa814ba904c911e0046bc35
+          reviewed_at: "2026-05-29T21:13:15Z"
+        - requirement: SW-REQ-002
+          artifact: main.go
+          decision: no-authored-change
+          reviewer: buger
+          reason: Annotated MC/DC ignore on unreachable GeoIP and defensive type-assertion branches plus added unit tests; runtime behavior and authored requirement intent are unchanged.
+          base: origin/master
+          requirement_fingerprint: sha256:384e3531ddafbfcb6980e949a9ebbd78e4a809ebcd3ffb1402957f9c31b1baef
+          approval_fingerprint: sha256:af92da8a14837e074e95bbcbf1ee4d69dece22927949ff26b4a92a7e3d1ca649
+          artifact_fingerprint: sha256:4b683cd5715feffd7356231f04999400c4067164b6d478c53513559c0459a7cf
+          reviewed_at: "2026-05-29T21:13:15Z"
+history:
+    created_by: human:cli
+    created_at: "2026-05-29T15:20:13Z"
+    last_modified_by: human:cli
+    last_modified_at: "2026-05-29T15:47:44Z"
+obligation_checklist:
+    - nominal
+lifecycle:
+    change_history:
+        - date: "2026-05-29T15:46:43Z"
+          from: draft
+          to: review
+          reason: ""
+          changed_by: human:cli

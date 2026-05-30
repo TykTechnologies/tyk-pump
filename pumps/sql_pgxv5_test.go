@@ -25,10 +25,19 @@ type capturingLogger struct {
 	queries []string
 }
 
-func (l *capturingLogger) LogMode(gorm_logger.LogLevel) gorm_logger.Interface  { return l }
-func (l *capturingLogger) Info(_ context.Context, _ string, _ ...interface{})  {}
-func (l *capturingLogger) Warn(_ context.Context, _ string, _ ...interface{})  {}
+// Verifies: SW-REQ-019
+func (l *capturingLogger) LogMode(gorm_logger.LogLevel) gorm_logger.Interface { return l }
+
+// Verifies: SW-REQ-019
+func (l *capturingLogger) Info(_ context.Context, _ string, _ ...interface{}) {}
+
+// Verifies: SW-REQ-019
+func (l *capturingLogger) Warn(_ context.Context, _ string, _ ...interface{}) {}
+
+// Verifies: SW-REQ-019
 func (l *capturingLogger) Error(_ context.Context, _ string, _ ...interface{}) {}
+
+// Verifies: SW-REQ-019
 func (l *capturingLogger) Trace(_ context.Context, _ time.Time, fc func() (string, int64), _ error) {
 	sql, _ := fc()
 	l.mu.Lock()
@@ -37,6 +46,7 @@ func (l *capturingLogger) Trace(_ context.Context, _ time.Time, fc func() (strin
 }
 
 // hasAlterTable returns true if any captured SQL contains ALTER TABLE (case-insensitive).
+// Verifies: SW-REQ-019
 func (l *capturingLogger) hasAlterTable() bool {
 	l.mu.Lock()
 	defer l.mu.Unlock()
@@ -50,6 +60,7 @@ func (l *capturingLogger) hasAlterTable() bool {
 
 // captureSession wraps db with a capturing logger and returns both.
 // The original db is not modified.
+// Verifies: SW-REQ-019
 func captureSession(db *gorm.DB) (*gorm.DB, *capturingLogger) {
 	cl := &capturingLogger{}
 	return db.Session(&gorm.Session{Logger: cl}), cl
@@ -62,6 +73,7 @@ func captureSession(db *gorm.DB) (*gorm.DB, *capturingLogger) {
 //
 // This guards against the new MigrateColumn() checks (Unique / DefaultValue / Comment)
 // in the gorm fork misfiring when pgx/v5 reports column metadata differently from pgx/v4.
+// Verifies: SW-REQ-019
 func TestMigrationIdempotency_Postgres(t *testing.T) {
 	skipTestIfNoPostgres(t)
 
@@ -125,6 +137,7 @@ func TestMigrationIdempotency_Postgres(t *testing.T) {
 
 // TestShardedMigrationIdempotency_Postgres verifies that running MigrateAllShardedTables
 // on already-migrated shards does not emit ALTER TABLE on the second call.
+// Verifies: SW-REQ-019
 func TestShardedMigrationIdempotency_Postgres(t *testing.T) {
 	skipTestIfNoPostgres(t)
 
@@ -163,6 +176,7 @@ func TestShardedMigrationIdempotency_Postgres(t *testing.T) {
 
 // TestBatchInsertLargePayload_Postgres writes 5000 records in a single WriteData call
 // (5 × batch_size=1000) and verifies count and data integrity.
+// Verifies: SW-REQ-019
 func TestBatchInsertLargePayload_Postgres(t *testing.T) {
 	skipTestIfNoPostgres(t)
 
@@ -212,6 +226,7 @@ func TestBatchInsertLargePayload_Postgres(t *testing.T) {
 // references in its on-conflict assignment expressions. If pgx/v5 rejects or silently
 // drops the conflict clause, the second write would insert duplicate rows instead of
 // merging, and the hit count would not accumulate.
+// Verifies: SW-REQ-019
 func TestUpsertOnConflict_Postgres(t *testing.T) {
 	skipTestIfNoPostgres(t)
 
@@ -269,6 +284,7 @@ func TestUpsertOnConflict_Postgres(t *testing.T) {
 // TestConcurrentWrites_Postgres exercises the pool under genuine contention by capping
 // MaxOpenConns to 5 while running 50 concurrent goroutines. Each goroutine writes 50
 // records. Validates that no errors occur and all 2500 records are persisted.
+// Verifies: SW-REQ-019
 func TestConcurrentWrites_Postgres(t *testing.T) {
 	skipTestIfNoPostgres(t)
 
@@ -334,6 +350,7 @@ func TestConcurrentWrites_Postgres(t *testing.T) {
 // upgrade. tyk-pump intentionally does not call SetMaxOpenConns, so the default must
 // remain 0 (unlimited). This test acts as a canary: if a future driver version silently
 // imposes a default cap, this test will catch it.
+// Verifies: SW-REQ-019
 func TestConnectionPoolStats_Postgres(t *testing.T) {
 	skipTestIfNoPostgres(t)
 
@@ -358,6 +375,7 @@ func TestConnectionPoolStats_Postgres(t *testing.T) {
 // TestShardedTableLifecycle_Postgres writes records spanning 5 different dates, verifies
 // that 5 sharded tables are created with all 6 expected indexes, then runs
 // MigrateAllShardedTables and confirms no ALTER TABLE is emitted.
+// Verifies: SW-REQ-019
 func TestShardedTableLifecycle_Postgres(t *testing.T) {
 	skipTestIfNoPostgres(t)
 
@@ -421,6 +439,8 @@ func TestShardedTableLifecycle_Postgres(t *testing.T) {
 // by gorm fork commit 61fd065:
 //
 //	pgx/v5 UniqueViolation → ErrorTranslator.Translate → gorm.ErrDuplicatedKey
+//
+// Verifies: SW-REQ-019
 func TestDuplicateKeyError_Postgres(t *testing.T) {
 	skipTestIfNoPostgres(t)
 
@@ -447,6 +467,7 @@ func TestDuplicateKeyError_Postgres(t *testing.T) {
 // pgx/v5 (PreferSimpleProtocol: true). This disables pgx's extended query protocol and
 // routes all queries through the simple protocol, hitting a different code path in
 // the driver that must not regress.
+// Verifies: SW-REQ-019
 func TestPreferSimpleProtocol_Postgres(t *testing.T) {
 	skipTestIfNoPostgres(t)
 
@@ -485,6 +506,7 @@ func TestPreferSimpleProtocol_Postgres(t *testing.T) {
 // OauthID, Alias, RawRequest, RawResponse) are empty strings and verifies round-trip.
 // pgx/v5 reworked pgtype NULL handling; this pins down that empty Go strings stay as
 // empty strings in Postgres text columns rather than being coerced to NULL or errored.
+// Verifies: SW-REQ-019
 func TestNullableColumns_Postgres(t *testing.T) {
 	skipTestIfNoPostgres(t)
 
@@ -522,6 +544,7 @@ func TestNullableColumns_Postgres(t *testing.T) {
 // sub-millisecond (microsecond) precision. pgx/v5 refactored timestamp text/binary
 // encoding; this verifies no precision loss or zone drift under the pump's default
 // extended-protocol path.
+// Verifies: SW-REQ-019
 func TestTimeHandling_Postgres(t *testing.T) {
 	skipTestIfNoPostgres(t)
 
@@ -572,6 +595,7 @@ func TestTimeHandling_Postgres(t *testing.T) {
 // TestLargePayload_Postgres writes a record whose RawRequest and RawResponse are 1 MB
 // each and reads them back unchanged. Guards against any regression in pgx/v5's text
 // column encoding that could truncate or corrupt large payloads.
+// Verifies: SW-REQ-019
 func TestLargePayload_Postgres(t *testing.T) {
 	skipTestIfNoPostgres(t)
 
@@ -608,6 +632,7 @@ func TestLargePayload_Postgres(t *testing.T) {
 // pinning the default MaxIdleConns value. The Go stdlib default is 2; if a future
 // dependency bump quietly changes that, operators who rely on defaults will see
 // unexplained idle-connection behaviour. This canary catches the silent change.
+// Verifies: SW-REQ-019
 func TestConnectionPoolDefaults_Postgres(t *testing.T) {
 	skipTestIfNoPostgres(t)
 
@@ -642,6 +667,7 @@ func TestConnectionPoolDefaults_Postgres(t *testing.T) {
 		"idle connections should not exceed stdlib default MaxIdleConns=2; got %d", stats.Idle)
 }
 
+// Verifies: SW-REQ-019
 func TestSQLWriteData_PreferSimpleProtocol_Month(t *testing.T) {
 	skipTestIfNoPostgres(t)
 

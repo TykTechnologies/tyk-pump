@@ -1,0 +1,57 @@
+id: SW-REQ-032
+version: 1
+status: review
+priority: shall
+category: functional
+req_type: guarantee
+fretish: ""
+description: The health-check server shall respond with a liveness payload on the configured endpoint and optionally serve pprof profiles.
+formalization_strategy: informal
+informal_verification:
+    method: ""
+    evidence: ""
+    verified: false
+parent: SYS-REQ-012
+component: server
+rationale: ""
+tags: []
+variables: []
+traces:
+    satisfies:
+        - SYS-REQ-012
+    reviewed_at: "2026-05-29T21:30:11.766832Z"
+    reviewed_by: human:buger
+    reviewed_fingerprint: sha256:84243a99e96d5be53271745686889c4f39225fce5c05f2f775cb846a8ac4c3a4
+verification:
+    assurance_level: B
+    formalization_status: none
+    review:
+        status: approved
+        reviewer: leo@tyk.io
+        reviewed_at: "2026-05-29T15:47:46Z"
+        ai_generated: false
+    impact_reviews:
+        - requirement: SW-REQ-032
+          artifact: server/server.go
+          decision: no-authored-change
+          reviewer: buger
+          reason: Annotated MC/DC ignore on unreachable GeoIP and defensive type-assertion branches plus added unit tests; runtime behavior and authored requirement intent are unchanged.
+          base: origin/master
+          requirement_fingerprint: sha256:84243a99e96d5be53271745686889c4f39225fce5c05f2f775cb846a8ac4c3a4
+          approval_fingerprint: sha256:5ece4dff3fdb3719a3c02b7a4fefee0dca77a60b16cad8cdf62db2644b4eba2e
+          artifact_fingerprint: sha256:64b2c191808d844c26e3a04d4310d6beee45c6c162c9f1e4ded4be4ee69f836e
+          reviewed_at: "2026-05-29T21:13:20Z"
+history:
+    created_by: human:cli
+    created_at: "2026-05-29T15:20:17Z"
+    last_modified_by: human:cli
+    last_modified_at: "2026-05-29T15:47:46Z"
+obligation_checklist:
+    - nominal
+lifecycle:
+    change_history:
+        - date: "2026-05-29T15:46:44Z"
+          from: draft
+          to: review
+          reason: ""
+          changed_by: human:cli

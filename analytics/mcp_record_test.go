@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// Verifies: SW-REQ-014
 func TestAnalyticsRecord_IsMCPRecord(t *testing.T) {
 	t.Run("returns false for empty record", func(t *testing.T) {
 		record := AnalyticsRecord{}
@@ -31,6 +32,7 @@ func TestAnalyticsRecord_IsMCPRecord(t *testing.T) {
 	})
 }
 
+// Verifies: SW-REQ-014
 func TestAnalyticsRecord_MCPStatsJSONMarshal(t *testing.T) {
 	record := AnalyticsRecord{
 		MCPStats: MCPStats{
@@ -58,6 +60,7 @@ func TestAnalyticsRecord_MCPStatsJSONMarshal(t *testing.T) {
 	assert.Equal(t, "my_tool", statsMap["primitive_name"])
 }
 
+// Verifies: SW-REQ-014
 func TestAnalyticsRecord_ToMCPRecord(t *testing.T) {
 	t.Run("returns zero-value for non-MCP record", func(t *testing.T) {
 		record := AnalyticsRecord{
@@ -115,11 +118,13 @@ func TestAnalyticsRecord_ToMCPRecord(t *testing.T) {
 	})
 }
 
+// Verifies: SW-REQ-014
 func TestMCPRecord_GetObjectID(t *testing.T) {
 	r := &MCPRecord{}
 	assert.Equal(t, model.ObjectID(""), r.GetObjectID())
 }
 
+// Verifies: SW-REQ-014
 func TestMCPRecord_SetObjectID(t *testing.T) {
 	r := &MCPRecord{}
 	r.SetObjectID("test-id")

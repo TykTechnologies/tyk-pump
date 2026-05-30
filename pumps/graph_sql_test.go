@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// Verifies: SW-REQ-019
 func TestGraphSQLPump_Init(t *testing.T) {
 	skipTestIfNoPostgres(t)
 	r := require.New(t)
@@ -114,6 +115,7 @@ func TestGraphSQLPump_Init(t *testing.T) {
 	})
 }
 
+// Verifies: SW-REQ-019
 func TestGraphSQLPump_WriteData(t *testing.T) {
 	skipTestIfNoPostgres(t)
 	conf := GraphSQLConf{
@@ -313,6 +315,7 @@ func TestGraphSQLPump_WriteData(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-019
 func TestGraphSQLPump_Sharded(t *testing.T) {
 	skipTestIfNoPostgres(t)
 	r := require.New(t)

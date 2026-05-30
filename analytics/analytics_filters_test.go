@@ -6,6 +6,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// Verifies: SW-REQ-010
+// Verifies: SYS-REQ-009
+// Verifies: STK-REQ-003
 func TestShouldFilter(t *testing.T) {
 	record := AnalyticsRecord{
 		APIID:        "apiid123",
@@ -104,6 +107,7 @@ func TestShouldFilter(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-010
 func TestHasFilter(t *testing.T) {
 	filter := AnalyticsFilters{}
 

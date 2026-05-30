@@ -1,0 +1,45 @@
+id: SYS-REQ-017
+version: 1
+status: review
+priority: shall
+category: functional
+req_type: guarantee
+fretish: when metrics_sink_failure observability shall always satisfy purge_loop_continues
+description: When the metrics sink emission fails, the pump shall continue the purge loop and not propagate the sink error to records being forwarded.
+formalization_strategy: fretish
+informal_verification:
+    method: ""
+    evidence: ""
+    verified: false
+parent: STK-REQ-004
+component: observability
+rationale: ""
+tags: []
+variables: []
+traces:
+    satisfies:
+        - STK-REQ-004
+    reviewed_at: "2026-05-29T21:30:11.854334Z"
+    reviewed_by: human:buger
+    reviewed_fingerprint: sha256:cf69f9d2db7523c9c42de8fab630c3e2277a0353b479a1bb4ff9715c955c0a67
+verification:
+    assurance_level: B
+    formalization_status: valid
+    review:
+        status: approved
+        reviewer: leo@tyk.io
+        reviewed_at: "2026-05-29T21:30:06Z"
+        ai_generated: false
+history:
+    created_by: human:cli
+    created_at: "2026-05-29T21:25:35Z"
+    last_modified_by: human:cli
+    last_modified_at: "2026-05-29T21:30:06Z"
+obligation_class: error_handling
+lifecycle:
+    change_history:
+        - date: "2026-05-29T21:30:06Z"
+          from: draft
+          to: review
+          reason: ""
+          changed_by: human:cli

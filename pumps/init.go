@@ -5,6 +5,7 @@ import "github.com/TykTechnologies/tyk-pump/logger"
 var log = logger.GetLogger()
 var AvailablePumps map[string]Pump
 
+// reqproof:implements SW-REQ-017
 func init() {
 	AvailablePumps = make(map[string]Pump)
 

@@ -30,10 +30,12 @@ type (
 
 // NewBackoffRetry Creates an exponential backoff retry to use httpClient for connections. Will retry if a temporary error or
 // 5xx or 429 status code in response.
+// reqproof:implements SW-REQ-030
 func NewBackoffRetry(errMsg string, maxRetries uint64, httpClient *http.Client, logger *logrus.Entry) *BackoffHTTPRetry {
 	return &BackoffHTTPRetry{errMsg: errMsg, maxRetries: maxRetries, httpclient: httpClient, logger: logger}
 }
 
+// reqproof:implements SW-REQ-030
 func (s *BackoffHTTPRetry) Send(req *http.Request) error {
 	var reqBody []byte
 	if req.Body != nil {
@@ -96,6 +98,7 @@ func (s *BackoffHTTPRetry) Send(req *http.Request) error {
 	})
 }
 
+// reqproof:implements SW-REQ-030
 func (s *BackoffHTTPRetry) handleErr(err error) error {
 	if isErrorRetryable(err) {
 		return err
@@ -104,6 +107,7 @@ func (s *BackoffHTTPRetry) handleErr(err error) error {
 	return backoff.Permanent(err)
 }
 
+// reqproof:implements SW-REQ-030
 func isErrorRetryable(err error) bool {
 	if err == nil {
 		return false

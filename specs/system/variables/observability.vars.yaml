@@ -1,0 +1,26 @@
+component: observability
+variables:
+    - name: health_probe_received
+      type: bool
+      direction: input
+      description: An HTTP health-check probe is received.
+    - name: liveness_reported
+      type: bool
+      direction: output
+      description: A liveness payload is returned to the probe.
+    - name: instrumentation_enabled
+      type: bool
+      direction: input
+      description: Instrumentation is enabled.
+    - name: metrics_emitted
+      type: bool
+      direction: output
+      description: Purge-timing and record-count metrics are emitted to the sink.
+    - name: metrics_sink_failure
+      type: bool
+      direction: input
+      description: The metrics sink has failed to accept an emission.
+    - name: purge_loop_continues
+      type: bool
+      direction: output
+      description: The purge loop continues processing records irrespective of the sink failure.

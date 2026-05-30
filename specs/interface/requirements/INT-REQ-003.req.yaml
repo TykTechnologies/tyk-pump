@@ -1,0 +1,46 @@
+id: INT-REQ-003
+version: 1
+status: review
+priority: shall
+category: functional
+req_type: guarantee
+fretish: ""
+description: The serialization format between gateway and pump (msgpack or protobuf, selected by analytics key suffix) shall round-trip every analytics record field without loss.
+formalization_strategy: informal
+informal_verification:
+    method: ""
+    evidence: ""
+    verified: false
+parent: SYS-REQ-002
+component: serializer-contract
+rationale: ""
+tags: []
+variables: []
+traces:
+    satisfies:
+        - SYS-REQ-002
+    reviewed_at: "2026-05-29T21:30:10.55466Z"
+    reviewed_by: human:buger
+    reviewed_fingerprint: sha256:8c605ea1ef34fdaaf4f951273dac1899332bdb3fa9fc69d6c57568d93417fb9f
+verification:
+    assurance_level: B
+    formalization_status: none
+    review:
+        status: approved
+        reviewer: leo@tyk.io
+        reviewed_at: "2026-05-29T15:47:44Z"
+        ai_generated: false
+history:
+    created_by: human:cli
+    created_at: "2026-05-29T15:20:46Z"
+    last_modified_by: human:cli
+    last_modified_at: "2026-05-29T15:47:44Z"
+obligation_checklist:
+    - encoding_safety
+lifecycle:
+    change_history:
+        - date: "2026-05-29T15:46:43Z"
+          from: draft
+          to: review
+          reason: ""
+          changed_by: human:cli

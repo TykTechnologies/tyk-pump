@@ -1,0 +1,10 @@
+component: model
+variables:
+    - name: record_forwarded
+      type: bool
+      direction: input
+      description: A record is being dispatched to a backend.
+    - name: record_fields_preserved
+      type: bool
+      direction: output
+      description: All analytics record fields are preserved in the dispatched record.

@@ -6,6 +6,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// Verifies: SW-REQ-017
+// Verifies: INT-REQ-004
 func TestGetPumpByName(t *testing.T) {
 
 	dummyType, err := GetPumpByName("dummy")

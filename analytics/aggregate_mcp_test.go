@@ -12,6 +12,7 @@ import (
 	"github.com/TykTechnologies/storage/persistent/model"
 )
 
+// Verifies: SW-REQ-012
 func TestAggregateMCPData_SkipsNonMCPRecords(t *testing.T) {
 	data := []interface{}{
 		AnalyticsRecord{
@@ -51,6 +52,7 @@ func TestAggregateMCPData_SkipsNonMCPRecords(t *testing.T) {
 	assert.Equal(t, 1, agg.Total.Hits)
 }
 
+// Verifies: SW-REQ-012
 func TestAggregateMCPData_AggregatesByMethod(t *testing.T) {
 	ts := time.Date(2024, 1, 15, 10, 0, 0, 0, time.UTC)
 	data := []interface{}{
@@ -81,6 +83,7 @@ func TestAggregateMCPData_AggregatesByMethod(t *testing.T) {
 	assert.Equal(t, 1, agg.Methods["resources/read"].Hits)
 }
 
+// Verifies: SW-REQ-012
 func TestAggregateMCPData_AggregatesByPrimitiveType(t *testing.T) {
 	ts := time.Date(2024, 1, 15, 10, 0, 0, 0, time.UTC)
 	data := []interface{}{
@@ -104,6 +107,7 @@ func TestAggregateMCPData_AggregatesByPrimitiveType(t *testing.T) {
 	assert.Equal(t, 1, agg.Primitives["resource"].Hits)
 }
 
+// Verifies: SW-REQ-012
 func TestAggregateMCPData_AggregatesByPrimitiveName(t *testing.T) {
 	ts := time.Date(2024, 1, 15, 10, 0, 0, 0, time.UTC)
 	data := []interface{}{
@@ -124,6 +128,7 @@ func TestAggregateMCPData_AggregatesByPrimitiveName(t *testing.T) {
 	assert.Equal(t, 2, agg.Names["tool_my_tool"].Hits)
 }
 
+// Verifies: SW-REQ-012
 func TestMCPRecordAggregate_TableName(t *testing.T) {
 	t.Run("returns MCP-specific mixed collection when Mixed=true", func(t *testing.T) {
 		agg := MCPRecordAggregate{}
@@ -138,6 +143,7 @@ func TestMCPRecordAggregate_TableName(t *testing.T) {
 	})
 }
 
+// Verifies: SW-REQ-012
 func TestMCPRecordAggregate_Dimensions(t *testing.T) {
 	ts := time.Date(2024, 1, 15, 10, 0, 0, 0, time.UTC)
 	data := []interface{}{
@@ -166,6 +172,7 @@ func TestMCPRecordAggregate_Dimensions(t *testing.T) {
 // MCP aggregate produces non-empty lists.apiid. If lists.apiid is empty in the
 // MongoDB document, the /api/usage/mcp/ endpoint returns null because the
 // $unwind on $lists.apiid produces no results.
+// Verifies: SW-REQ-012
 func TestMCPAsTimeUpdate_ProducesListsAPIID(t *testing.T) {
 	ts := time.Date(2024, 6, 15, 10, 0, 0, 0, time.UTC)
 	data := []interface{}{
@@ -242,6 +249,7 @@ func TestMCPAsTimeUpdate_ProducesListsAPIID(t *testing.T) {
 // correctly populates errorlist for each entry in lists.names. The
 // /api/activity/mcp/primitives/errors/ endpoint $unwinds lists.names.errorlist
 // and if errorlist is empty, no error data appears.
+// Verifies: SW-REQ-012
 func TestMCPAsTimeUpdate_ProducesErrorListForNames(t *testing.T) {
 	ts := time.Date(2024, 6, 15, 10, 0, 0, 0, time.UTC)
 	data := []interface{}{
@@ -304,6 +312,7 @@ func TestMCPAsTimeUpdate_ProducesErrorListForNames(t *testing.T) {
 // produces empty lists.apiid, causing /api/usage/mcp/ to return null.
 //
 // This test simulates the scenario by calling AsTimeUpdate on an empty aggregate.
+// Verifies: SW-REQ-012
 func TestMCPUpsertReadback_EmptyDocProducesEmptyLists(t *testing.T) {
 	// This is what upsertMCPAggregate creates BEFORE the Upsert readback:
 	doc := &MCPRecordAggregate{
@@ -333,6 +342,7 @@ func TestMCPUpsertReadback_EmptyDocProducesEmptyLists(t *testing.T) {
 // This test creates a BSON document mimicking what MongoDB produces after the
 // first upsert, then decodes it into MCPRecordAggregate and checks if APIID
 // and Names are both populated.
+// Verifies: SW-REQ-012
 func TestMCPBSONRoundTrip_APIIDMapSurvivesReadback(t *testing.T) {
 	// Simulate the MongoDB document after the first upsert ($inc/$set).
 	// This is what FindOneAndUpdate returns.
@@ -412,6 +422,7 @@ func TestMCPBSONRoundTrip_APIIDMapSurvivesReadback(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-012
 func TestAggregateData_SkipsMCPRecords(t *testing.T) {
 	data := []interface{}{
 		AnalyticsRecord{
@@ -430,6 +441,7 @@ func TestAggregateData_SkipsMCPRecords(t *testing.T) {
 	assert.Equal(t, 1, result["org1"].Total.Hits)
 }
 
+// Verifies: SW-REQ-012
 func TestNewMCPRecordAggregate_InitializesMaps(t *testing.T) {
 	agg := NewMCPRecordAggregate()
 	assert.NotNil(t, agg.Methods)
@@ -440,11 +452,13 @@ func TestNewMCPRecordAggregate_InitializesMaps(t *testing.T) {
 	assert.Empty(t, agg.Names)
 }
 
+// Verifies: SW-REQ-012
 func TestMCPSQLAnalyticsRecordAggregate_TableName(t *testing.T) {
 	r := &MCPSQLAnalyticsRecordAggregate{}
 	assert.Equal(t, AggregateMCPSQLTable, r.TableName())
 }
 
+// Verifies: SW-REQ-012
 func TestAggregateMCPData_MultipleAPIs(t *testing.T) {
 	ts := time.Date(2024, 1, 15, 10, 0, 0, 0, time.UTC)
 	data := []interface{}{
@@ -469,6 +483,7 @@ func TestAggregateMCPData_MultipleAPIs(t *testing.T) {
 	assert.Equal(t, 1, result["api2"].Total.Hits)
 }
 
+// Verifies: SW-REQ-012
 func TestAggregateMCPData_ErrorTracking(t *testing.T) {
 	ts := time.Date(2024, 1, 15, 10, 0, 0, 0, time.UTC)
 	data := []interface{}{
@@ -496,6 +511,7 @@ func TestAggregateMCPData_ErrorTracking(t *testing.T) {
 	assert.Contains(t, agg.Total.ErrorMap, "429")
 }
 
+// Verifies: SW-REQ-012
 func TestAggregateMCPData_EmptyMethodSkipsDimension(t *testing.T) {
 	ts := time.Date(2024, 1, 15, 10, 0, 0, 0, time.UTC)
 	data := []interface{}{
@@ -514,6 +530,7 @@ func TestAggregateMCPData_EmptyMethodSkipsDimension(t *testing.T) {
 	assert.Empty(t, agg.Names, "empty name should not create a Names entry")
 }
 
+// Verifies: SW-REQ-012
 func TestInitMCPAggregateForRecord_SetsTimeID(t *testing.T) {
 	ts := time.Date(2024, 6, 15, 14, 30, 0, 0, time.UTC)
 	rec := AnalyticsRecord{
@@ -531,11 +548,13 @@ func TestInitMCPAggregateForRecord_SetsTimeID(t *testing.T) {
 	assert.Equal(t, "org1", agg.OrgID)
 }
 
+// Verifies: SW-REQ-012
 func TestAggregateMCPData_EmptyInput(t *testing.T) {
 	result := AggregateMCPData([]interface{}{}, "", 60)
 	assert.Empty(t, result)
 }
 
+// Verifies: SW-REQ-012
 func TestAggregateMCPData_NilInput(t *testing.T) {
 	result := AggregateMCPData(nil, "", 60)
 	assert.Empty(t, result)

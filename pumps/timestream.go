@@ -75,19 +75,23 @@ type TimestreamPumpConf struct {
 	NameMappings map[string]string `mapstructure:"field_name_mappings"`
 }
 
+// reqproof:implements SW-REQ-028
 func (t *TimestreamPump) New() Pump {
 	newPump := TimestreamPump{}
 	return &newPump
 }
 
+// reqproof:implements SW-REQ-028
 func (t *TimestreamPump) GetName() string {
 	return timestreamPumpName
 }
 
+// reqproof:implements SW-REQ-028
 func (t *TimestreamPump) GetEnvPrefix() string {
 	return t.config.EnvPrefix
 }
 
+// reqproof:implements SW-REQ-028
 func (t *TimestreamPump) Init(config interface{}) error {
 	t.config = &TimestreamPumpConf{}
 	t.log = log.WithField("prefix", timestreamPumpPrefix)
@@ -114,6 +118,7 @@ func (t *TimestreamPump) Init(config interface{}) error {
 	return nil
 }
 
+// reqproof:implements SW-REQ-028
 func (t *TimestreamPump) WriteData(ctx context.Context, data []interface{}) error {
 	t.log.Debug("Attempting to write ", len(data), " records...")
 
@@ -142,6 +147,7 @@ func (t *TimestreamPump) WriteData(ctx context.Context, data []interface{}) erro
 	return nil
 }
 
+// reqproof:implements SW-REQ-028
 func (t *TimestreamPump) BuildTimestreamInputIterator(data []interface{}) (func() (records []types.Record, hasNext bool), bool) {
 	curr := -1
 	max := int(math.Ceil((float64(len(data)) / float64(timestreamMaxRecordsCount)))) - 1
@@ -160,6 +166,7 @@ func (t *TimestreamPump) BuildTimestreamInputIterator(data []interface{}) (func(
 	return next, curr < max
 }
 
+// reqproof:implements SW-REQ-028
 func (t *TimestreamPump) MapAnalyticRecord2TimestreamMultimeasureRecord(decoded *analytics.AnalyticsRecord) types.Record {
 	timestramDimensions := t.GetAnalyticsRecordDimensions(decoded)
 	timestreamMeasures := t.GetAnalyticsRecordMeasures(decoded)
@@ -174,6 +181,7 @@ func (t *TimestreamPump) MapAnalyticRecord2TimestreamMultimeasureRecord(decoded 
 	return multimeasureRecord
 }
 
+// reqproof:implements SW-REQ-028
 func (t *TimestreamPump) nameMap(fieldName string) string {
 	if value, ok := t.config.NameMappings[fieldName]; ok {
 		return value
@@ -181,6 +189,7 @@ func (t *TimestreamPump) nameMap(fieldName string) string {
 	return fieldName
 }
 
+// reqproof:implements SW-REQ-028
 func (t *TimestreamPump) GetAnalyticsRecordMeasures(decoded *analytics.AnalyticsRecord) (measureValues []types.MeasureValue) {
 
 	measureFieldsMapping := map[string]types.MeasureValue{}
@@ -310,6 +319,8 @@ func (t *TimestreamPump) GetAnalyticsRecordMeasures(decoded *analytics.Analytics
 
 	return measureValues
 }
+
+// reqproof:implements SW-REQ-028
 func LoadHeadersFromRawRequest(rawRequest string) (http.Header, error) {
 	requestBytes, err := base64.StdEncoding.DecodeString(rawRequest)
 	if err != nil {
@@ -321,6 +332,8 @@ func LoadHeadersFromRawRequest(rawRequest string) (http.Header, error) {
 	}
 	return request.Header, nil
 }
+
+// reqproof:implements SW-REQ-028
 func LoadHeadersFromRawResponse(rawResponse string) (http.Header, error) {
 	responseBytes, err := base64.StdEncoding.DecodeString(rawResponse)
 	if err != nil {
@@ -332,6 +345,8 @@ func LoadHeadersFromRawResponse(rawResponse string) (http.Header, error) {
 	}
 	return resp.Header, nil
 }
+
+// reqproof:implements SW-REQ-028
 func Min(a, b int) int {
 	if a > b {
 		return b
@@ -339,6 +354,7 @@ func Min(a, b int) int {
 	return a
 }
 
+// reqproof:implements SW-REQ-028
 func chunkString(chars string, chunkSize int) []string {
 	if chunkSize <= 0 {
 		return []string{chars}
@@ -353,6 +369,7 @@ func chunkString(chars string, chunkSize int) []string {
 	return output
 }
 
+// reqproof:implements SW-REQ-028
 func mapToVarChar(dictionary map[string]string) string {
 	keys := make([]string, 0, len(dictionary))
 	for k := range dictionary {
@@ -373,6 +390,7 @@ func mapToVarChar(dictionary map[string]string) string {
 	return output
 }
 
+// reqproof:implements SW-REQ-028
 func (t *TimestreamPump) GetAnalyticsRecordDimensions(decoded *analytics.AnalyticsRecord) (dimensions []types.Dimension) {
 
 	var dimensionFields = map[string]string{
@@ -411,6 +429,7 @@ func (t *TimestreamPump) GetAnalyticsRecordDimensions(decoded *analytics.Analyti
 	return dimensions
 }
 
+// reqproof:implements SW-REQ-028
 func (t *TimestreamPump) NewTimestreamWriter() (c *timestreamwrite.Client, err error) {
 	timeout := t.CommonPumpConfig.timeout * int(time.Second)
 	if timeout <= 0 {

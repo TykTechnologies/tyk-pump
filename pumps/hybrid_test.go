@@ -16,6 +16,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// Verifies: SW-REQ-029
 func setupKeepalive(conn net.Conn) error {
 	tcpConn, ok := conn.(*net.TCPConn)
 	if !ok {
@@ -35,11 +36,13 @@ type testListener struct {
 	L net.Listener
 }
 
+// Verifies: SW-REQ-029
 func (ln *testListener) Init(addr string) (err error) {
 	ln.L, err = net.Listen("tcp", addr)
 	return
 }
 
+// Verifies: SW-REQ-029
 func (ln *testListener) Accept() (conn net.Conn, err error) {
 	c, err := ln.L.Accept()
 	if err != nil {
@@ -70,10 +73,12 @@ func (ln *testListener) Accept() (conn net.Conn, err error) {
 	return c, nil
 }
 
+// Verifies: SW-REQ-029
 func (ln *testListener) Close() error {
 	return ln.L.Close()
 }
 
+// Verifies: SW-REQ-029
 func startRPCMock(t *testing.T, config *HybridPumpConf, dispatcher *gorpc.Dispatcher) (*gorpc.Server, error) {
 	server := gorpc.NewTCPServer(config.ConnectionString, dispatcher.NewHandlerFunc())
 	list := &testListener{}
@@ -88,6 +93,7 @@ func startRPCMock(t *testing.T, config *HybridPumpConf, dispatcher *gorpc.Dispat
 	return server, nil
 }
 
+// Verifies: SW-REQ-029
 func stopRPCMock(t *testing.T, server *gorpc.Server) {
 	t.Helper()
 	if server != nil {
@@ -96,6 +102,7 @@ func stopRPCMock(t *testing.T, server *gorpc.Server) {
 	}
 }
 
+// Verifies: SW-REQ-029
 func TestHybridPumpInit(t *testing.T) {
 	//nolint:govet
 	tcs := []struct {
@@ -168,6 +175,7 @@ func TestHybridPumpInit(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-029
 func TestHybridPumpWriteData(t *testing.T) {
 	//nolint:govet
 	tcs := []struct {
@@ -405,6 +413,7 @@ func TestHybridPumpWriteData(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-029
 func TestHybridPumpShutdown(t *testing.T) {
 	mockConf := &HybridPumpConf{
 		ConnectionString: "localhost:9092",
@@ -435,6 +444,7 @@ func TestHybridPumpShutdown(t *testing.T) {
 	assert.Nil(t, hybridPump.clientSingleton)
 }
 
+// Verifies: SW-REQ-029
 func TestWriteLicenseExpire(t *testing.T) {
 	mockConf := &HybridPumpConf{
 		ConnectionString: "localhost:9092",
@@ -480,6 +490,7 @@ func TestWriteLicenseExpire(t *testing.T) {
 	assert.Equal(t, ErrRPCLogin, err)
 }
 
+// Verifies: SW-REQ-029
 func TestHybridConfigCheckDefaults(t *testing.T) {
 	//nolint:govet
 	tcs := []struct {
@@ -558,6 +569,7 @@ func TestHybridConfigCheckDefaults(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-029
 func TestHybridConfigParsing(t *testing.T) {
 	svAddress := "localhost:9099"
 
@@ -672,6 +684,7 @@ func TestHybridConfigParsing(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-029
 func TestDispatcherFuncs(t *testing.T) {
 	//nolint:govet
 	tcs := []struct {
@@ -741,6 +754,7 @@ func TestDispatcherFuncs(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-029
 func TestRetryAndLog(t *testing.T) {
 	buf := bytes.Buffer{}
 	testLogger := logrus.New()
@@ -761,6 +775,7 @@ func TestRetryAndLog(t *testing.T) {
 	assert.Contains(t, buf.String(), "retrying")
 }
 
+// Verifies: SW-REQ-029
 func TestConnectAndLogin(t *testing.T) {
 	//nolint:govet
 	tcs := []struct {

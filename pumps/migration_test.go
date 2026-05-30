@@ -14,6 +14,7 @@ import (
 )
 
 // setupTestDB creates an in-memory SQLite database for testing
+// Verifies: SW-REQ-019
 func setupTestDB(t *testing.T) *gorm.DB {
 	t.Helper()
 
@@ -41,12 +42,14 @@ func setupTestDB(t *testing.T) *gorm.DB {
 }
 
 // setupTestLogger creates a test logger
+// Verifies: SW-REQ-019
 func setupTestLogger(t *testing.T) *logrus.Entry {
 	t.Helper()
 	return logrus.NewEntry(logrus.New())
 }
 
 // createTestShardedTables creates test tables with sharded naming pattern
+// Verifies: SW-REQ-019
 func createTestShardedTables(t *testing.T, db *gorm.DB, tablePrefix string, model interface{}, dates []string) {
 	t.Helper()
 
@@ -66,6 +69,7 @@ func createTestShardedTables(t *testing.T, db *gorm.DB, tablePrefix string, mode
 }
 
 // createTestNonShardedTables creates test tables that don't match the sharded pattern
+// Verifies: SW-REQ-019
 func createTestNonShardedTables(t *testing.T, db *gorm.DB, tablePrefix string, model interface{}) {
 	t.Helper()
 
@@ -91,6 +95,8 @@ func createTestNonShardedTables(t *testing.T, db *gorm.DB, tablePrefix string, m
 	}
 }
 
+// Verifies: SW-REQ-019
+// Verifies: INT-REQ-007
 func TestMigrateAllShardedTables(t *testing.T) {
 	t.Run("successful_migration", func(t *testing.T) {
 		db := setupTestDB(t)
@@ -197,6 +203,7 @@ func TestMigrateAllShardedTables(t *testing.T) {
 	})
 }
 
+// Verifies: SW-REQ-019
 func TestMigrateAllShardedTablesWithDifferentModels(t *testing.T) {
 	t.Run("analytics_record", func(t *testing.T) {
 		db := setupTestDB(t)
@@ -241,6 +248,7 @@ func TestMigrateAllShardedTablesWithDifferentModels(t *testing.T) {
 	})
 }
 
+// Verifies: SW-REQ-019
 func TestMigrateAllShardedTablesEdgeCases(t *testing.T) {
 	t.Run("single_character_prefix", func(t *testing.T) {
 		db := setupTestDB(t)
@@ -285,6 +293,7 @@ func TestMigrateAllShardedTablesEdgeCases(t *testing.T) {
 	})
 }
 
+// Verifies: SW-REQ-019
 func TestMigrateAllShardedTablesLogging(t *testing.T) {
 	t.Run("log_messages_contain_prefix", func(t *testing.T) {
 		db := setupTestDB(t)
@@ -307,6 +316,7 @@ func TestMigrateAllShardedTablesLogging(t *testing.T) {
 	})
 }
 
+// Verifies: SW-REQ-019
 func TestHandleTableMigration(t *testing.T) {
 	t.Run("non-sharded migrates main table", func(t *testing.T) {
 		db := setupTestDB(t)
@@ -363,6 +373,7 @@ func TestHandleTableMigration(t *testing.T) {
 	})
 }
 
+// Verifies: SW-REQ-019
 func TestMigrateAllShardedTables_MCPRecord(t *testing.T) {
 	db := setupTestDB(t)
 	logger := setupTestLogger(t)
@@ -382,6 +393,7 @@ func TestMigrateAllShardedTables_MCPRecord(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-019
 func TestMigrateAllShardedTables_UnsupportedDialect(t *testing.T) {
 	logger := setupTestLogger(t)
 
@@ -392,6 +404,7 @@ func TestMigrateAllShardedTables_UnsupportedDialect(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+// Verifies: SW-REQ-019
 func TestOpenGormDB(t *testing.T) {
 	t.Run("unsupported type returns error", func(t *testing.T) {
 		logger := setupTestLogger(t)
@@ -433,6 +446,7 @@ func TestOpenGormDB(t *testing.T) {
 	})
 }
 
+// Verifies: SW-REQ-019
 func TestMigrateAllShardedTablesPerformance(t *testing.T) {
 	t.Run("many_tables", func(t *testing.T) {
 		db := setupTestDB(t)

@@ -1,0 +1,107 @@
+id: SW-REQ-018
+version: 1
+status: review
+priority: shall
+category: functional
+req_type: guarantee
+fretish: ""
+description: The MongoDB pump family shall write records and aggregates to MongoDB collections, propagating connection and write errors to the caller.
+formalization_strategy: informal
+informal_verification:
+    method: ""
+    evidence: ""
+    verified: false
+parent: SYS-REQ-004
+component: pumps-mongo
+rationale: ""
+tags: []
+variables: []
+traces:
+    satisfies:
+        - SYS-REQ-004
+    reviewed_at: "2026-05-29T21:30:11.012398Z"
+    reviewed_by: human:buger
+    reviewed_fingerprint: sha256:37fb7a91df52073ae1c80a7f7170a7184778de7612e9ee8ab63e2e022581aa98
+verification:
+    assurance_level: B
+    formalization_status: none
+    review:
+        status: approved
+        reviewer: leo@tyk.io
+        reviewed_at: "2026-05-29T15:47:45Z"
+        ai_generated: false
+    impact_reviews:
+        - requirement: SW-REQ-018
+          artifact: pumps/graph_mongo.go
+          decision: no-authored-change
+          reviewer: buger
+          reason: Annotated MC/DC ignore on unreachable GeoIP and defensive type-assertion branches plus added unit tests; runtime behavior and authored requirement intent are unchanged.
+          base: origin/master
+          requirement_fingerprint: sha256:37fb7a91df52073ae1c80a7f7170a7184778de7612e9ee8ab63e2e022581aa98
+          approval_fingerprint: sha256:aaf3394b17b09fa14a21ffc055864a1fbd67b42c2ed04af6352ff5fabe37391a
+          artifact_fingerprint: sha256:7c5e64ff5c7104d1fce532db6f02efdbce7e7a9bb68af5a09d74fc4276664790
+          reviewed_at: "2026-05-29T21:13:18Z"
+        - requirement: SW-REQ-018
+          artifact: pumps/mcp_mongo.go
+          decision: no-authored-change
+          reviewer: buger
+          reason: Annotated MC/DC ignore on unreachable GeoIP and defensive type-assertion branches plus added unit tests; runtime behavior and authored requirement intent are unchanged.
+          base: origin/master
+          requirement_fingerprint: sha256:37fb7a91df52073ae1c80a7f7170a7184778de7612e9ee8ab63e2e022581aa98
+          approval_fingerprint: sha256:aaf3394b17b09fa14a21ffc055864a1fbd67b42c2ed04af6352ff5fabe37391a
+          artifact_fingerprint: sha256:f2f119fdd8eaa23ba8c357f6d8c0226c1032e252e484eced005561ca0003cdfa
+          reviewed_at: "2026-05-29T21:13:18Z"
+        - requirement: SW-REQ-018
+          artifact: pumps/mcp_mongo_aggregate.go
+          decision: no-authored-change
+          reviewer: buger
+          reason: Annotated MC/DC ignore on unreachable GeoIP and defensive type-assertion branches plus added unit tests; runtime behavior and authored requirement intent are unchanged.
+          base: origin/master
+          requirement_fingerprint: sha256:37fb7a91df52073ae1c80a7f7170a7184778de7612e9ee8ab63e2e022581aa98
+          approval_fingerprint: sha256:aaf3394b17b09fa14a21ffc055864a1fbd67b42c2ed04af6352ff5fabe37391a
+          artifact_fingerprint: sha256:1c9877140afcd3cb497a7c52a39d453bcd580bd482809963924ffbd8d4f1c128
+          reviewed_at: "2026-05-29T21:13:18Z"
+        - requirement: SW-REQ-018
+          artifact: pumps/mongo.go
+          decision: no-authored-change
+          reviewer: buger
+          reason: Annotated MC/DC ignore on unreachable GeoIP and defensive type-assertion branches plus added unit tests; runtime behavior and authored requirement intent are unchanged.
+          base: origin/master
+          requirement_fingerprint: sha256:37fb7a91df52073ae1c80a7f7170a7184778de7612e9ee8ab63e2e022581aa98
+          approval_fingerprint: sha256:aaf3394b17b09fa14a21ffc055864a1fbd67b42c2ed04af6352ff5fabe37391a
+          artifact_fingerprint: sha256:42233baa5772c9c0e1ac9343caac584d93d947f1a7756371a137d3f569d39dd7
+          reviewed_at: "2026-05-29T21:13:18Z"
+        - requirement: SW-REQ-018
+          artifact: pumps/mongo_aggregate.go
+          decision: no-authored-change
+          reviewer: buger
+          reason: Annotated MC/DC ignore on unreachable GeoIP and defensive type-assertion branches plus added unit tests; runtime behavior and authored requirement intent are unchanged.
+          base: origin/master
+          requirement_fingerprint: sha256:37fb7a91df52073ae1c80a7f7170a7184778de7612e9ee8ab63e2e022581aa98
+          approval_fingerprint: sha256:aaf3394b17b09fa14a21ffc055864a1fbd67b42c2ed04af6352ff5fabe37391a
+          artifact_fingerprint: sha256:52da9eed0a51d5e514a72408ff01978f9243639559cd57dac426678cfc64d3ff
+          reviewed_at: "2026-05-29T21:13:18Z"
+        - requirement: SW-REQ-018
+          artifact: pumps/mongo_selective.go
+          decision: no-authored-change
+          reviewer: buger
+          reason: Annotated MC/DC ignore on unreachable GeoIP and defensive type-assertion branches plus added unit tests; runtime behavior and authored requirement intent are unchanged.
+          base: origin/master
+          requirement_fingerprint: sha256:37fb7a91df52073ae1c80a7f7170a7184778de7612e9ee8ab63e2e022581aa98
+          approval_fingerprint: sha256:aaf3394b17b09fa14a21ffc055864a1fbd67b42c2ed04af6352ff5fabe37391a
+          artifact_fingerprint: sha256:f2dca90282b416525c1346a688d8cc771d85f9587be42e27014e311127c97b38
+          reviewed_at: "2026-05-29T21:13:18Z"
+history:
+    created_by: human:cli
+    created_at: "2026-05-29T15:20:15Z"
+    last_modified_by: human:cli
+    last_modified_at: "2026-05-29T15:47:45Z"
+obligation_checklist:
+    - errors_propagated
+lifecycle:
+    change_history:
+        - date: "2026-05-29T15:46:44Z"
+          from: draft
+          to: review
+          reason: ""
+          changed_by: human:cli

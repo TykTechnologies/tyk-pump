@@ -1,0 +1,62 @@
+id: STK-REQ-004
+version: 1
+status: review
+priority: shall
+category: functional
+req_type: guarantee
+fretish: ""
+description: Operators need to observe the health and throughput of the pump process itself, via a health-check endpoint suitable for orchestration probes and optional operational metrics, so they can detect when the pump is unhealthy or falling behind.
+formalization_strategy: informal
+informal_verification:
+    method: ""
+    evidence: ""
+    verified: false
+component: observability
+rationale: "Operators must detect when the pump itself is unhealthy or falling behind, independently of the gateway."
+tags:
+    - health
+    - metrics
+    - observability
+variables: []
+traces:
+    reviewed_at: "2026-05-29T21:30:11.816503Z"
+    reviewed_by: human:buger
+    reviewed_fingerprint: sha256:e107a16996f58ca0365e4dc8bce0c5f95907beebecdd4848f612b3a512138998
+verification:
+    assurance_level: B
+    formalization_status: none
+    review:
+        status: approved
+        reviewer: leo@tyk.io
+        reviewed_at: "2026-05-29T15:47:46Z"
+        ai_generated: false
+history:
+    created_by: human:cli
+    created_at: "2026-05-29T15:10:49Z"
+    last_modified_by: human:cli
+    last_modified_at: "2026-05-29T15:47:46Z"
+obligation_checklist:
+    - nominal
+    - error_handling
+stakeholder:
+    persona: Platform / SRE operator
+    story: As an SRE I want pump health and throughput signals so that I can alert when analytics delivery degrades.
+    acceptance_criteria:
+        - id: AC-001
+          text: An HTTP health-check endpoint reports process liveness for orchestration and load balancers.
+          testable: true
+          derived_reqs:
+            - SYS-REQ-012
+        - id: AC-002
+          text: When instrumentation is enabled, the pump emits purge timing and record-count metrics.
+          testable: true
+          derived_reqs:
+            - SYS-REQ-013
+            - SYS-REQ-017
+lifecycle:
+    change_history:
+        - date: "2026-05-29T15:46:44Z"
+          from: draft
+          to: review
+          reason: ""
+          changed_by: human:cli
