@@ -1,0 +1,48 @@
+id: SYS-REQ-023
+version: 1
+status: approved
+priority: shall
+category: functional
+req_type: guarantee
+fretish: when retry_attempts_exhausted delivery shall always satisfy error_surfaced_to_caller
+description: When the configured maximum retry attempts have been exhausted for a transient failure, the pump shall surface the error to its caller without further retries.
+formalization_strategy: fretish
+informal_verification:
+    method: ""
+    evidence: ""
+    verified: false
+parent: STK-REQ-002
+component: delivery
+rationale: ""
+tags: []
+variables: []
+traces:
+    satisfies:
+        - STK-REQ-002
+    reviewed_at: "2026-05-30T07:57:15.487595Z"
+    reviewed_by: human:buger
+    reviewed_fingerprint: sha256:4beb812c01ec42d69bb7e433e25125d32933b7d49c4733e806b9569f777784be
+verification:
+    assurance_level: B
+    formalization_status: valid
+    review:
+        status: approved
+        reviewer: human:buger
+        role: system_engineer
+        reviewed_at: "2026-05-30T07:55:47Z"
+        comment: 'New SYS req from Phase 0.6 split of SYS-006 (error surfaced when retry attempts exhausted); code-verified: backoff.RetryNotify with WithMaxRetries returns error after exhaustion in retry/http-retry.go Send.'
+        fingerprint: sha256:5dc63b39028d598706437db1f4ad78ba1050a3efd34de54f1878b8fd9b3c4a78
+        ai_generated: false
+history:
+    created_by: human:cli
+    created_at: "2026-05-30T07:52:53Z"
+    last_modified_by: human:cli
+    last_modified_at: "2026-05-30T07:55:47Z"
+obligation_class: error_handling
+lifecycle:
+    change_history:
+        - date: "2026-05-30T07:55:47Z"
+          from: draft
+          to: review
+          reason: ""
+          changed_by: human:cli

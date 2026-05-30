@@ -1,0 +1,15 @@
+id: sql-default-migration-today-only
+title: SQL pump default MigrateShardedTables=false only migrates current day's table
+description: 'pumps/sql.go declares the MigrateShardedTables config flag (line 89: ''json:"migrate_sharded_tables"'') which defaults to false. With the default, only the table for the current day picks up new columns added by AutoMigrate; older sharded tables retain the old schema. Late-arriving records dated to a prior day (e.g. backfill from a delayed gateway, or NTP correction crossing a midnight boundary) fail to write into older shards because GORM''s INSERT references the new columns. INT-REQ-007''s expand-then-contract claim breaks in the default configuration.'
+affected_requirements:
+    - INT-REQ-007
+severity: medium
+mitigation: Set MigrateShardedTables=true in operator config to migrate every existing shard. Document this as the recommended default in deployment guides.
+remediation: Flip the default for MigrateShardedTables to true, or detect missing columns on per-shard insert failure and migrate that shard on demand.
+owner: tyk-team
+release_disposition: ship_with_known_issue
+status: open
+history:
+    - at: "2026-05-30T08:32:23Z"
+      by: human:buger
+      action: created

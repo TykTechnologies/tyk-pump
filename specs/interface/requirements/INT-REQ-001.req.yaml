@@ -1,9 +1,9 @@
 id: INT-REQ-001
 version: 1
-status: review
+status: approved
 priority: shall
 category: functional
-req_type: guarantee
+req_type: derived
 fretish: ""
 description: The gateway shall publish serialized analytics records into the temporal store under the analytics keys (tyk-system-analytics and tyk-system-analytics_0..9); the pump shall consume and deserialize them, bounding untrusted input.
 formalization_strategy: informal
@@ -19,28 +19,51 @@ variables: []
 traces:
     satisfies:
         - SYS-REQ-001
-    reviewed_at: "2026-05-29T21:30:10.517235Z"
+    reviewed_at: "2026-05-30T08:45:50.023519Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:34232bf9c851d5df856f7cda9c0afb900a774137449aebc7564e5145c457b3e0
+    reviewed_fingerprint: sha256:a15219470c4ed9f492818062c361b6cedd5bbbbb01620e79d591fbf7d2d5f9e1
 verification:
     assurance_level: B
     formalization_status: none
     review:
         status: approved
-        reviewer: leo@tyk.io
-        reviewed_at: "2026-05-29T15:47:44Z"
+        reviewer: human:buger
+        role: interface_owner
+        reviewed_at: "2026-05-30T08:31:54Z"
+        comment: Re-approval after Phase C ICD metadata block populated; caller/callee/schema-version/back-compat/retirement fields code-verified.
+        fingerprint: sha256:faf0de45833ca406d52e4f000ff19e2cf3c4b56c23e32fe2388a8244bf66c5cb
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:46Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-29T15:47:44Z"
+    last_modified_at: "2026-05-30T08:31:54Z"
 obligation_checklist:
     - untrusted_input_bounded
+interface:
+    caller: tyk-gateway
+    callee: tyk-pump
+    type: data
+    signature: Redis LIST<bytes> at keys "tyk-system-analytics" and "tyk-system-analytics_0..9" (constants storage.ANALYTICS_KEYNAME at storage/store.go:18); records consumed via AnalyticsStorage.GetAndDeleteSet (LPOP)
+    protocol: 'Redis LIST; producer LPUSH/RPUSH; consumer LPOP via storage/temporal_storage.go:262 GetAndDeleteSet; encoding selected by key suffix: bare key = msgpack (serializer/msgp.go:30 GetSuffix returns ""), _protobuf suffix = protobuf (serializer/protobuf.go:15)'
+    assumptions: 'Gateway uses the same AnalyticsRecord struct shape (analytics/analytics.go:46-82) and msgpack or protobuf encoding. Sharded key suffixes are decimal 0..9 only (consumer hard-codes the ceiling at main.go:267 `for i := -1; i < 10; i++`). Unknown record fields are tolerated (msgpack/protobuf decoders silently ignore unknown fields); back-compat is therefore additive-only on AnalyticsRecord.'
+    guarantees: 'Pump consumes and deserializes every record published under these keys; bounds untrusted input per SW-REQ-001. Schema is implicit version 1 (no version field on AnalyticsRecord today — see RISK note). Retirement of these keys would require a coordinated major-version bump of tyk-pump and tyk-gateway. RISK: hard-coded 10-shard ceiling at main.go:267 — any future gateway analytics_config sharding fan-out beyond 0..9 would be silently dropped by the consumer. RISK: AnalyticsRecord has no schema_version field, so unknown-field tolerance is the only forward-compat mechanism.'
+    producer: tyk-gateway
+    consumer:
+        - tyk-pump
+    owner: team:tyk-pump-maintainers
+    version: v1
+    compatibility_policy: semver-strict
+    risk_tier: 0
 lifecycle:
     change_history:
         - date: "2026-05-29T15:46:43Z"
           from: draft
           to: review
           reason: ""
+          changed_by: human:cli
+        - date: "2026-05-30T08:31:54Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="interface_owner" reviewer="human:buger" at=2026-05-30T07:43:08Z comment="Cross-component contracts reviewed as part of feat/reqproof-coverage PR; gateway/storage/serializer/pump-backend contracts verified against actual key constants and interface declarations.")'
           changed_by: human:cli

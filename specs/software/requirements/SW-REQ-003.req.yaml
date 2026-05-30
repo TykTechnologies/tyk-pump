@@ -1,9 +1,9 @@
 id: SW-REQ-003
 version: 1
-status: review
+status: approved
 priority: shall
 category: functional
-req_type: guarantee
+req_type: derived
 fretish: ""
 description: Pump initialisation shall construct and initialise each configured pump and the uptime pump from configuration before the purge loop starts.
 formalization_strategy: informal
@@ -19,33 +19,36 @@ variables: []
 traces:
     satisfies:
         - SYS-REQ-001
-    reviewed_at: "2026-05-29T21:30:10.653774Z"
+    reviewed_at: "2026-05-30T07:45:50.340386Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:d84799a9b5ce4ac8c486303ee431e4c2d82a69b427892e44242ba950145a793a
+    reviewed_fingerprint: sha256:dc5f1513d597db3d3a50ffd982f13809535bfb1c620cefa41817374b098fd6be
 verification:
     assurance_level: B
     formalization_status: none
     review:
         status: approved
-        reviewer: leo@tyk.io
-        reviewed_at: "2026-05-29T15:47:44Z"
+        reviewer: human:buger
+        role: software_engineer
+        reviewed_at: "2026-05-30T07:43:08Z"
+        comment: Software-component design reviewed as part of feat/reqproof-coverage PR; each maps to verified code paths per the Phase 0 file-by-file verification (see PR description for code-verified corrections SW-016/017/023/027/028/033).
+        fingerprint: sha256:98579edfa6eba5d668103cbf405b97e33e91ea652c81ec99e0e584cf7e3aa9ca
         ai_generated: false
     impact_reviews:
         - requirement: SW-REQ-003
           artifact: main.go
           decision: no-authored-change
           reviewer: buger
-          reason: Annotated MC/DC ignore on unreachable GeoIP and defensive type-assertion branches plus added unit tests; runtime behavior and authored requirement intent are unchanged.
+          reason: 'Production files added reqproof requirement-traceability annotations only (// reqproof:implements / // Verifies: / triple-form evidence). No runtime behavior change.'
           base: origin/master
-          requirement_fingerprint: sha256:d84799a9b5ce4ac8c486303ee431e4c2d82a69b427892e44242ba950145a793a
-          approval_fingerprint: sha256:bfb56f45b54172d61a99045efa87d05126287aade65322b8a7fc711a9730dae5
+          requirement_fingerprint: sha256:dc5f1513d597db3d3a50ffd982f13809535bfb1c620cefa41817374b098fd6be
+          approval_fingerprint: sha256:98579edfa6eba5d668103cbf405b97e33e91ea652c81ec99e0e584cf7e3aa9ca
           artifact_fingerprint: sha256:4b683cd5715feffd7356231f04999400c4067164b6d478c53513559c0459a7cf
-          reviewed_at: "2026-05-29T21:13:15Z"
+          reviewed_at: "2026-05-30T07:45:39Z"
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:13Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-29T15:47:44Z"
+    last_modified_at: "2026-05-30T07:43:08Z"
 obligation_checklist:
     - nominal
 lifecycle:

@@ -1,0 +1,18 @@
+id: serializer-protobuf-city-names-data-loss
+title: Protobuf serializer round-trip drops City.Names map
+description: Accept the known lossy round-trip for analytics.Geo.City.Names in the protobuf serializer (serializer/protobuf.go:169). Operators downstream of the protobuf decoder will see nil for the localized city-name map.
+affected_requirements:
+    - INT-REQ-003
+mitigation: Operators reading City.Names from pump-side records will see nil. Use gateway-side records or re-derive city name from GeoNameID via the GeoIP DB.
+customer_impact: Localized city-name strings are not available to downstream pumps when the protobuf serializer is in use; numeric city IDs remain available.
+owner: tyk-team
+review_date: "2026-08-30"
+release_disposition: ship_with_known_issue
+accepted_by: human:leo
+accepted_at: "2026-05-30T08:30:25Z"
+status: active
+history:
+    - at: "2026-05-30T08:30:25Z"
+      by: human:buger
+      action: accepted
+      detail: accepted_by=human:leo

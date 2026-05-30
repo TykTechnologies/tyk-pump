@@ -1,0 +1,18 @@
+id: pump-config-typos-silently-ignored
+title: mapstructure.Decode in every pump Init silently drops unknown config keys
+description: 'Accept the current lenient pump-config decoding: operator typos in pump meta blocks (e.g. csv.go:55 mapstructure.Decode) are silently ignored, contradicting INT-REQ-008''s ''reject malformed pump configuration loudly'' claim.'
+affected_requirements:
+    - INT-REQ-008
+mitigation: Recommend strict YAML review and integration smoke-tests that confirm each pump writes a probe record before declaring deploy success.
+customer_impact: A typo in a pump field can cause a pump to use defaults (or write to the wrong destination) without any operator-visible error.
+owner: tyk-team
+review_date: "2026-08-30"
+release_disposition: ship_with_known_issue
+accepted_by: human:leo
+accepted_at: "2026-05-30T08:31:01Z"
+status: active
+history:
+    - at: "2026-05-30T08:31:01Z"
+      by: human:buger
+      action: accepted
+      detail: accepted_by=human:leo

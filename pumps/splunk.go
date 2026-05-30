@@ -97,24 +97,24 @@ type SplunkPumpConfig struct {
 }
 
 // New initializes a new pump.
-// reqproof:implements SW-REQ-027
+// reqproof:implements SW-REQ-048
 func (p *SplunkPump) New() Pump {
 	return &SplunkPump{}
 }
 
 // GetName returns the pump name.
-// reqproof:implements SW-REQ-027
+// reqproof:implements SW-REQ-048
 func (p *SplunkPump) GetName() string {
 	return splunkPumpName
 }
 
-// reqproof:implements SW-REQ-027
+// reqproof:implements SW-REQ-048
 func (p *SplunkPump) GetEnvPrefix() string {
 	return p.config.EnvPrefix
 }
 
 // Init performs the initialization of the SplunkClient.
-// reqproof:implements SW-REQ-027
+// reqproof:implements SW-REQ-048
 func (p *SplunkPump) Init(config interface{}) error {
 	p.config = &SplunkPumpConfig{}
 	p.log = log.WithField("prefix", splunkPumpPrefix)
@@ -158,7 +158,7 @@ func (p *SplunkPump) Init(config interface{}) error {
 }
 
 // Filters the tags based on config rule
-// reqproof:implements SW-REQ-027
+// reqproof:implements SW-REQ-048
 func (p *SplunkPump) FilterTags(filteredTags []string) []string {
 	// Loop all explicitly ignored tags
 	for _, excludeTag := range p.config.IgnoreTagPrefixList {
@@ -177,7 +177,7 @@ func (p *SplunkPump) FilterTags(filteredTags []string) []string {
 }
 
 // WriteData prepares an appropriate data structure and sends it to the HTTP Event Collector.
-// reqproof:implements SW-REQ-027
+// reqproof:implements SW-REQ-048
 func (p *SplunkPump) WriteData(ctx context.Context, data []interface{}) error {
 	p.log.Debug("Attempting to write ", len(data), " records...")
 
@@ -306,7 +306,7 @@ type splunkClientConfig struct {
 	tlsConfig    TLSConfig
 }
 
-// reqproof:implements SW-REQ-027
+// reqproof:implements SW-REQ-048
 func newSplunkClient(cfg *splunkClientConfig, log *logrus.Entry) (c *SplunkClient, err error) {
 	if cfg.token == "" || cfg.collectorURL == "" {
 		return c, errInvalidSettings
@@ -337,7 +337,7 @@ func newSplunkClient(cfg *splunkClientConfig, log *logrus.Entry) (c *SplunkClien
 	return c, nil
 }
 
-// reqproof:implements SW-REQ-027
+// reqproof:implements SW-REQ-048
 func (p *SplunkPump) send(ctx context.Context, data []byte) error {
 	reader := bytes.NewReader(data)
 	req, err := http.NewRequest(http.MethodPost, p.client.CollectorURL, reader)

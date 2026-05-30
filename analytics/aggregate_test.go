@@ -278,6 +278,7 @@ func TestAggregateGraphData(t *testing.T) {
 }
 
 // Verifies: SW-REQ-011
+// Verifies: SYS-REQ-018
 func TestAggregateGraphData_Dimension(t *testing.T) {
 	sampleRecord := AnalyticsRecord{
 		TimeStamp:    time.Date(2022, 1, 1, 0, 0, 0, 0, time.UTC),

@@ -1,11 +1,11 @@
 id: SW-REQ-022
 version: 1
-status: review
+status: approved
 priority: shall
 category: functional
-req_type: guarantee
+req_type: derived
 fretish: ""
-description: The InfluxDB pump family shall write analytics points to InfluxDB v1 and v2 backends.
+description: '[SUPERSEDED by Phase A decomposition: SW-REQ-046 (influx-v1), SW-REQ-047 (influx-v2)] The InfluxDB pump family shall write each purge''s records to an InfluxDB v1 or v2 backend; per-batch write errors are not surfaced by either implementation (v1 swallows them, v2 uses an asynchronous WriteAPI).'
 formalization_strategy: informal
 informal_verification:
     method: ""
@@ -19,49 +19,66 @@ variables: []
 traces:
     satisfies:
         - SYS-REQ-004
-    reviewed_at: "2026-05-29T21:30:11.34851Z"
+    reviewed_at: "2026-05-30T07:45:51.587611Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:3665c5de71e404733a68ae83b98831697e73cb06deb4f43592a17b1c5888fd97
+    reviewed_fingerprint: sha256:107c2a508633880821c2530f9d9c3bd7b8bae857e6681e2a1b815befb054fc86
 verification:
     assurance_level: B
     formalization_status: none
     review:
         status: approved
-        reviewer: leo@tyk.io
-        reviewed_at: "2026-05-29T15:47:45Z"
+        reviewer: human:buger
+        role: software_engineer
+        reviewed_at: "2026-05-30T08:44:54Z"
+        comment: Re-approve superseded anchor reqs after Phase A decomposition; descriptions amended with SUPERSEDED prefix listing new SW reqs that replace them.
+        fingerprint: sha256:a052b01bedbc93fbb507cdacf05ea9c0eced53c1d56c76cc37e37b7f9a02d6a5
         ai_generated: false
     impact_reviews:
         - requirement: SW-REQ-022
           artifact: pumps/influx.go
           decision: no-authored-change
           reviewer: buger
-          reason: Annotated MC/DC ignore on unreachable GeoIP and defensive type-assertion branches plus added unit tests; runtime behavior and authored requirement intent are unchanged.
+          reason: 'Production files added reqproof requirement-traceability annotations only (// reqproof:implements / // Verifies: / triple-form evidence). No runtime behavior change.'
           base: origin/master
-          requirement_fingerprint: sha256:3665c5de71e404733a68ae83b98831697e73cb06deb4f43592a17b1c5888fd97
-          approval_fingerprint: sha256:f850f76981caa2dd248d3baa0951c4f35f467ea897cb8743cce125175670aec8
+          requirement_fingerprint: sha256:107c2a508633880821c2530f9d9c3bd7b8bae857e6681e2a1b815befb054fc86
+          approval_fingerprint: sha256:2bc5358c0de28f5441adeeba39ec0c5babc6d78ba2792017547a9255d1664cd5
           artifact_fingerprint: sha256:d4b3955b7565e6788e51ae780039c63532667c2c6b132a300659ff811c1084af
-          reviewed_at: "2026-05-29T21:13:18Z"
+          reviewed_at: "2026-05-30T07:45:43Z"
         - requirement: SW-REQ-022
           artifact: pumps/influx2.go
           decision: no-authored-change
           reviewer: buger
-          reason: Annotated MC/DC ignore on unreachable GeoIP and defensive type-assertion branches plus added unit tests; runtime behavior and authored requirement intent are unchanged.
+          reason: 'Production files added reqproof requirement-traceability annotations only (// reqproof:implements / // Verifies: / triple-form evidence). No runtime behavior change.'
           base: origin/master
-          requirement_fingerprint: sha256:3665c5de71e404733a68ae83b98831697e73cb06deb4f43592a17b1c5888fd97
-          approval_fingerprint: sha256:f850f76981caa2dd248d3baa0951c4f35f467ea897cb8743cce125175670aec8
+          requirement_fingerprint: sha256:107c2a508633880821c2530f9d9c3bd7b8bae857e6681e2a1b815befb054fc86
+          approval_fingerprint: sha256:2bc5358c0de28f5441adeeba39ec0c5babc6d78ba2792017547a9255d1664cd5
           artifact_fingerprint: sha256:60cc8a8966bc101c77a614a0b02a5b05f8588841972bcaca20978ef4b88fe9a0
-          reviewed_at: "2026-05-29T21:13:18Z"
+          reviewed_at: "2026-05-30T07:45:43Z"
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:15Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-29T15:47:45Z"
+    last_modified_at: "2026-05-30T08:45:17Z"
 obligation_checklist:
     - errors_propagated
+obligation_suppressions:
+    - id: errors_propagated
+      reason: Phase A decomposition superseded this family req; obligations are now carried by per-implementation children with implemented_by traces.
+      suppressed_by: buger
+      suppressed_at: "2026-05-30T08:45:17Z"
+      framework_refs:
+        - CWE CWE-703,CWE-252,CWE-754
+        - NIST-800-53 SI-11
+        - OWASP-ASVS-v4 V7.4.1,V7.4.2,V7.4.3
 lifecycle:
     change_history:
         - date: "2026-05-29T15:46:44Z"
           from: draft
           to: review
           reason: ""
+          changed_by: human:cli
+        - date: "2026-05-30T08:44:54Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="leo@tyk.io" at=2026-05-30T08:44:53Z comment="Software-component design reviewed as part of feat/reqproof-coverage PR; each maps to verified code paths per the Phase 0 file-by-file verification (see PR description for code-verified corrections SW-016/017/023/027/028/033).")'
           changed_by: human:cli

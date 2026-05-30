@@ -123,6 +123,7 @@ func TestUptimeReportAggregate_Dimensions(t *testing.T) {
 // Verifies: SYS-REQ-014
 // Verifies: STK-REQ-005
 // Verifies: INT-REQ-002
+// Verifies: SYS-REQ-021
 func TestAggregateUptimeData(t *testing.T) {
 	currentTime := time.Date(2023, 0o4, 0o4, 10, 0, 0, 0, time.UTC)
 

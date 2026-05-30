@@ -4,10 +4,6 @@ variables:
       type: bool
       direction: input
       description: Unconsumed analytics records are present in the temporal store.
-    - name: records_forwarded
-      type: bool
-      direction: output
-      description: Consumed records have been dispatched to every configured pump.
     - name: records_consumed
       type: bool
       direction: input
@@ -16,3 +12,7 @@ variables:
       type: bool
       direction: output
       description: Exactly those records are removed from the store atomically.
+    - name: records_consumed_from_store
+      type: bool
+      direction: output
+      description: Records have been retrieved from the temporal store on this purge cycle.

@@ -1,11 +1,11 @@
 id: SYS-REQ-003
 version: 1
-status: review
+status: approved
 priority: shall
 category: functional
-req_type: guarantee
-fretish: when aggregation_enabled aggregation shall eventually satisfy aggregates_emitted
-description: The pump shall support forwarding time-windowed aggregated analytics, computing per-organisation and per-API counters (hits, successes, errors, latency) over a configurable time window.
+req_type: derived
+fretish: when aggregation_enabled aggregation shall always satisfy aggregates_emitted
+description: The pump shall window aggregated analytics over a configurable time window (default hourly, optionally per-minute).
 formalization_strategy: fretish
 informal_verification:
     method: ""
@@ -19,24 +19,27 @@ variables: []
 traces:
     satisfies:
         - STK-REQ-001
-    reviewed_at: "2026-05-29T21:30:11.825432Z"
+    reviewed_at: "2026-05-30T07:57:15.389758Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:7493d37b47a3b763f19f5d9b1d8083dd0d00719143aa325e7d0f935de1500637
+    reviewed_fingerprint: sha256:6add9fe2ccdfef45cdda32f11bfc6c6d87fb1b02f44340a5c512a869ffb53a81
 verification:
     assurance_level: B
     formalization_status: valid
     review:
         status: approved
-        reviewer: leo@tyk.io
-        reviewed_at: "2026-05-29T15:47:46Z"
+        reviewer: human:buger
+        role: system_engineer
+        reviewed_at: "2026-05-30T07:55:47Z"
+        comment: 'Re-approval after Phase 0.6 narrowing: original descriptions split into atomic SYS reqs (consume/fan-out, windowing/dimensions/counters, retry-attempt/exhaust-surface, JSON-load/env-override, uptime-consume/forward). Narrowed descriptions remain code-accurate; companion split reqs added (SYS-018..023).'
+        fingerprint: sha256:50091fde1efa12e01209a1838f051b66cfa042f01bc62c543fead8471d3c5f59
         ai_generated: false
-    gaps_reviewed_at: "2026-05-29T21:30:12.874322Z"
+    gaps_reviewed_at: "2026-05-30T07:57:14.91392Z"
     gaps_reviewed_by: buger
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:11:41Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-29T15:52:22Z"
+    last_modified_at: "2026-05-30T07:55:47Z"
 obligation_class: nominal
 lifecycle:
     change_history:
@@ -44,4 +47,9 @@ lifecycle:
           from: draft
           to: review
           reason: ""
+          changed_by: human:cli
+        - date: "2026-05-30T07:55:47Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="system_engineer" reviewer="human:buger" at=2026-05-30T07:43:08Z comment="System-level behavior reviewed as part of feat/reqproof-coverage PR; FRETish + obligation + satisfies linkage verified against tyk-pump architecture and code in Phase 0 code-verification pass.")'
           changed_by: human:cli

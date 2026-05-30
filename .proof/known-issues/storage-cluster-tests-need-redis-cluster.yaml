@@ -1,0 +1,15 @@
+id: storage-cluster-tests-need-redis-cluster
+title: Storage cluster tests need Redis cluster on :6390; storage excluded from code MC/DC scope
+description: 'storage/temporal_storage_test.go:47 TestRedisClusterStorageManager_GetAndDeleteSet and storage/temporal_storage_test.go:108 TestNewTemporalClusterStorageHandler are named for cluster-mode validation; the unreachable-backend negative case at storage/temporal_storage_negative_test.go:18 expects a port-6390 listener (per task scope: a Redis CLUSTER on :6390). The standalone tykpump-redis container on port 6379 does not satisfy a cluster-mode peer on :6390. As a consequence, ./storage is excluded from the code-MC/DC targets in proof.yaml (the code_mcdc targets list only analytics, serializer, retry, logger, server, root) so the SW-REQ-007 backoff/reconnect evidence is not MC/DC-measured locally. This is a test-environment limitation, not a code defect. Workaround: spin up Redis cluster on port 6390 for the test environment, or refactor the tests to t.Skip when cluster mode is unavailable.'
+affected_requirements:
+    - SW-REQ-007
+severity: low
+mitigation: Run cluster-dependent storage tests only in environments that provision Redis cluster on :6390; standalone runs accept storage as advisory for code MC/DC.
+remediation: Either add a docker-compose service exposing Redis cluster on :6390 and add storage to proof.yaml's code_mcdc targets, or guard the cluster tests with t.Skip when the cluster endpoint is not reachable.
+owner: tyk-team
+release_disposition: ship
+status: open
+history:
+    - at: "2026-05-30T08:12:25Z"
+      by: human:buger
+      action: created

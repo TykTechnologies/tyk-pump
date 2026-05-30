@@ -1,0 +1,48 @@
+id: SYS-REQ-020
+version: 1
+status: approved
+priority: shall
+category: functional
+req_type: guarantee
+fretish: when env_override_present configuration shall always satisfy config_reflects_env
+description: Every configuration field shall be overridable by an environment variable of the form TYK_PMP_<FIELD>; the effective configuration shall reflect the env override when present.
+formalization_strategy: fretish
+informal_verification:
+    method: ""
+    evidence: ""
+    verified: false
+parent: STK-REQ-003
+component: configuration
+rationale: ""
+tags: []
+variables: []
+traces:
+    satisfies:
+        - STK-REQ-003
+    reviewed_at: "2026-05-30T07:57:15.478936Z"
+    reviewed_by: human:buger
+    reviewed_fingerprint: sha256:64fa22581ccc39d791a0a30356c48f3035d8d5cc358463df5e8be53b46e6fc18
+verification:
+    assurance_level: B
+    formalization_status: valid
+    review:
+        status: approved
+        reviewer: human:buger
+        role: system_engineer
+        reviewed_at: "2026-05-30T07:55:47Z"
+        comment: New SYS req from Phase 0.6 split of SYS-008 (env override); code-verified in config.go envconfig.Process(ENV_PREVIX, ...) called after json.Unmarshal.
+        fingerprint: sha256:98f315af9a7b1300ae232edf4c550a8919ecf0c3fbc6379e2e1fa4a5eb0985f0
+        ai_generated: false
+history:
+    created_by: human:cli
+    created_at: "2026-05-30T07:52:52Z"
+    last_modified_by: human:cli
+    last_modified_at: "2026-05-30T07:55:47Z"
+obligation_class: nominal
+lifecycle:
+    change_history:
+        - date: "2026-05-30T07:55:46Z"
+          from: draft
+          to: review
+          reason: ""
+          changed_by: human:cli

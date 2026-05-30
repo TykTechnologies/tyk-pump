@@ -1,9 +1,9 @@
 id: INT-REQ-005
 version: 1
-status: review
+status: approved
 priority: shall
 category: functional
-req_type: guarantee
+req_type: derived
 fretish: ""
 description: The AnalyticsStorage.GetAndDeleteSet contract between the core and the temporal store shall return a chunk of records and remove exactly those records atomically.
 formalization_strategy: informal
@@ -19,28 +19,57 @@ variables: []
 traces:
     satisfies:
         - SYS-REQ-007
-    reviewed_at: "2026-05-29T21:30:10.569774Z"
+    reviewed_at: "2026-05-30T08:45:50.19501Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:b2adab96e5d6d10dff572a4af2bb66797ae547a755b7d0dab646544bf5b9ca19
+    reviewed_fingerprint: sha256:8a0fb08c6325447741457680ca397b2c08a8fa51a78c1243360827a31de1c3c3
 verification:
     assurance_level: B
     formalization_status: none
     review:
         status: approved
-        reviewer: leo@tyk.io
-        reviewed_at: "2026-05-29T15:47:44Z"
+        reviewer: human:buger
+        role: interface_owner
+        reviewed_at: "2026-05-30T08:31:54Z"
+        comment: Re-approval after Phase C ICD metadata block populated; caller/callee/schema-version/back-compat/retirement fields code-verified.
+        fingerprint: sha256:f37f69669095549ea4bc572e1d9021c711e20bcdd03f298691b89c786da07f25
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:46Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-29T15:47:44Z"
+    last_modified_at: "2026-05-30T08:31:54Z"
 obligation_checklist:
     - atomicity
+release_disposition: ship_with_known_issue
+interface:
+    caller: tyk-pump-core
+    callee: temporal-storage-backend
+    type: function_call
+    signature: 'AnalyticsStorage interface at storage/store.go:10-14: `GetAndDeleteSet(setName string, chunkSize int64, expire time.Duration) ([]interface{}, error)`. Implementation TemporalStorageHandler.GetAndDeleteSet at storage/temporal_storage.go:262-306.'
+    protocol: 'In-process Go interface backed by a Redis-compatible store. The implementation issues r.list.Pop(ctx, fixedKey, chunkSize) (atomic LPOP of up to chunkSize entries) followed by a best-effort r.kv.Expire(ctx, fixedKey, expire) TTL refresh when chunkSize != -1.'
+    assumptions: 'Caller treats each returned chunk as already removed from the backing store (at-most-once delivery semantics). Caller (main.go:278) tolerates ([]nil, err) on connection failure and re-tries on the next purge tick.'
+    guarantees: 'Records are returned and removed atomically by the Pop call (Redis LPOP). NOTE: the subsequent Expire (TTL refresh) is NOT part of the atomic set and is best-effort — an Expire error returns ([]nil, err) AFTER the Pop has already removed records, so the caller sees an error and zero records but the records are gone. This is a silent at-most-once-becomes-zero-times edge case (see RISK note). Back-compat: signature change requires a major tyk-pump version bump; the interface itself is in-process Go so there is no wire schema. Retirement of GetAndDeleteSet requires a major version bump. RISK: Pop+Expire is not transactional; on Expire failure the consumer can lose visibility into records that were already popped. Flagged for follow-up KI creation: "storage-GetAndDeleteSet-expire-failure-loses-popped-records".'
+    producer: tyk-pump-core
+    consumer:
+        - temporal-storage-backend
+    owner: team:tyk-pump-maintainers
+    version: v1
+    compatibility_policy: semver-strict
+    risk_tier: 1
 lifecycle:
     change_history:
         - date: "2026-05-29T15:46:43Z"
           from: draft
           to: review
           reason: ""
+          changed_by: human:cli
+        - date: "2026-05-30T08:30:37Z"
+          from: release_disposition=
+          to: release_disposition=ship_with_known_issue
+          reason: 'KI getanddeleteset-expire-fail-loses-records: Pop+Expire is not atomic; Expire failure loses already-popped records'
+          changed_by: human:cli
+        - date: "2026-05-30T08:31:54Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="interface_owner" reviewer="human:buger" at=2026-05-30T07:43:08Z comment="Cross-component contracts reviewed as part of feat/reqproof-coverage PR; gateway/storage/serializer/pump-backend contracts verified against actual key constants and interface declarations.")'
           changed_by: human:cli

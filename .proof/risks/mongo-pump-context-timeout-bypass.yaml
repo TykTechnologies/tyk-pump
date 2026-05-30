@@ -1,0 +1,18 @@
+id: mongo-pump-context-timeout-bypass
+title: Ship mongo pump without per-pump write-timeout enforcement
+description: 'Per KnownIssue mongo-pump-ignores-caller-context: pumps/mongo.go:435 passes context.Background() to m.store.Insert, dropping the per-pump timeout context set by main.go:execPumpWriting (main.go:461). The mongo pump family therefore does not honor SYS-REQ-005''s per-pump write timeout. The carve-out is accepted for the upcoming release because operators can mitigate via mongo client-side timeouts in the connection string; remediation is tracked.'
+affected_requirements:
+    - SYS-REQ-005
+mitigation: Configure mongo client-side timeouts (connectTimeoutMS, socketTimeoutMS) in the connection string until ctx is propagated through MongoPump.WriteData.
+customer_impact: A hung mongo backend will not be cancelled by the configured per-pump timeout; pump goroutine for that backend may stay blocked on the mongo client's own timeouts.
+owner: tyk-team
+review_date: "2026-08-30"
+release_disposition: ship_with_known_issue
+accepted_by: human:leo
+accepted_at: "2026-05-30T08:12:55Z"
+status: active
+history:
+    - at: "2026-05-30T08:12:55Z"
+      by: human:buger
+      action: accepted
+      detail: accepted_by=human:leo

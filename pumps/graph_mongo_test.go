@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// Verifies: SW-REQ-018
+// Verifies: SW-REQ-037
 func TestGraphMongoPump_WriteData(t *testing.T) {
 	conf := defaultConf()
 	pump := GraphMongoPump{
@@ -174,7 +174,7 @@ func TestGraphMongoPump_WriteData(t *testing.T) {
 	}
 }
 
-// Verifies: SW-REQ-018
+// Verifies: SW-REQ-037
 func TestGraphMongoPump_Init(t *testing.T) {
 	pump := GraphMongoPump{}
 	t.Run("successful init", func(t *testing.T) {
@@ -195,7 +195,7 @@ func TestGraphMongoPump_Init(t *testing.T) {
 	})
 }
 
-// Verifies: SW-REQ-018
+// Verifies: SW-REQ-037
 func TestDecodeRequestAndDecodeResponseGraphMongo(t *testing.T) {
 	newPump := &GraphMongoPump{}
 	conf := defaultConf()

@@ -1,9 +1,9 @@
 id: SW-REQ-009
 version: 1
-status: review
+status: approved
 priority: shall
 category: functional
-req_type: guarantee
+req_type: derived
 fretish: ""
 description: The analytics record model shall expose its field names and helper accessors deterministically regardless of map ordering.
 formalization_strategy: informal
@@ -19,43 +19,46 @@ variables: []
 traces:
     satisfies:
         - SYS-REQ-002
-    reviewed_at: "2026-05-29T21:30:10.756049Z"
+    reviewed_at: "2026-05-30T07:45:50.538448Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:d89418eea94b7e70c045e67412bff2fa1c42868bd0c19339e0eec67451252f02
+    reviewed_fingerprint: sha256:b6680ae3f05863b23cfe0e310e9d7f6bcc49a4248f670c3fcbe2647c0e70f7c9
 verification:
     assurance_level: B
     formalization_status: none
     review:
         status: approved
-        reviewer: leo@tyk.io
-        reviewed_at: "2026-05-29T15:47:45Z"
+        reviewer: human:buger
+        role: software_engineer
+        reviewed_at: "2026-05-30T07:43:08Z"
+        comment: Software-component design reviewed as part of feat/reqproof-coverage PR; each maps to verified code paths per the Phase 0 file-by-file verification (see PR description for code-verified corrections SW-016/017/023/027/028/033).
+        fingerprint: sha256:dcb340afcbb9e13ffdacd5e19cfc1298d0ecb055b20f96329128505768bec6f4
         ai_generated: false
     impact_reviews:
         - requirement: SW-REQ-009
           artifact: analytics/analytics.go
           decision: no-authored-change
           reviewer: buger
-          reason: Annotated MC/DC ignore on unreachable GeoIP and defensive type-assertion branches plus added unit tests; runtime behavior and authored requirement intent are unchanged.
+          reason: 'analytics/analytics.go: added //mcdc:ignore on GeoIP DB-bound branches in GetGeo and GeoIPLookup (MaxMind GeoIP DB required to provoke; not available in unit tests). No runtime behavior change.'
           base: origin/master
-          requirement_fingerprint: sha256:d89418eea94b7e70c045e67412bff2fa1c42868bd0c19339e0eec67451252f02
-          approval_fingerprint: sha256:5b3de46c2b65bfda73aefd76ce0cff88deec7322000638260e0e60785ac760a0
+          requirement_fingerprint: sha256:b6680ae3f05863b23cfe0e310e9d7f6bcc49a4248f670c3fcbe2647c0e70f7c9
+          approval_fingerprint: sha256:dcb340afcbb9e13ffdacd5e19cfc1298d0ecb055b20f96329128505768bec6f4
           artifact_fingerprint: sha256:939b7ea13ca32f3b5a4614ffbcb4c0d1f9ff184e74edc388e6ffb89dbacde47d
-          reviewed_at: "2026-05-29T21:13:16Z"
+          reviewed_at: "2026-05-30T07:45:37Z"
         - requirement: SW-REQ-009
           artifact: analytics/demo/demo.go
           decision: no-authored-change
           reviewer: buger
-          reason: Annotated MC/DC ignore on unreachable GeoIP and defensive type-assertion branches plus added unit tests; runtime behavior and authored requirement intent are unchanged.
+          reason: 'analytics/analytics.go: added //mcdc:ignore on GeoIP DB-bound branches in GetGeo and GeoIPLookup (MaxMind GeoIP DB required to provoke; not available in unit tests). No runtime behavior change.'
           base: origin/master
-          requirement_fingerprint: sha256:d89418eea94b7e70c045e67412bff2fa1c42868bd0c19339e0eec67451252f02
-          approval_fingerprint: sha256:5b3de46c2b65bfda73aefd76ce0cff88deec7322000638260e0e60785ac760a0
+          requirement_fingerprint: sha256:b6680ae3f05863b23cfe0e310e9d7f6bcc49a4248f670c3fcbe2647c0e70f7c9
+          approval_fingerprint: sha256:dcb340afcbb9e13ffdacd5e19cfc1298d0ecb055b20f96329128505768bec6f4
           artifact_fingerprint: sha256:7ae0f109763ca16e8f54c2532c92a11a165795a7dcf8ce6722e53a847255ef81
-          reviewed_at: "2026-05-29T21:13:16Z"
+          reviewed_at: "2026-05-30T07:45:37Z"
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:14Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-29T15:47:45Z"
+    last_modified_at: "2026-05-30T07:43:08Z"
 obligation_checklist:
     - determinism
 lifecycle:

@@ -39,23 +39,23 @@ type MongoSelectiveConf struct {
 	MaxDocumentSizeBytes int `json:"max_document_size_bytes" mapstructure:"max_document_size_bytes"`
 }
 
-// reqproof:implements SW-REQ-018
+// reqproof:implements SW-REQ-035
 func (m *MongoSelectivePump) New() Pump {
 	newPump := MongoSelectivePump{}
 	return &newPump
 }
 
-// reqproof:implements SW-REQ-018
+// reqproof:implements SW-REQ-035
 func (m *MongoSelectivePump) GetName() string {
 	return "MongoDB Selective Pump"
 }
 
-// reqproof:implements SW-REQ-018
+// reqproof:implements SW-REQ-035
 func (m *MongoSelectivePump) GetEnvPrefix() string {
 	return m.dbConf.EnvPrefix
 }
 
-// reqproof:implements SW-REQ-018
+// reqproof:implements SW-REQ-035
 func (m *MongoSelectivePump) GetCollectionName(orgid string) (string, error) {
 	if orgid == "" {
 		return "", errors.New("OrgID cannot be empty")
@@ -63,21 +63,21 @@ func (m *MongoSelectivePump) GetCollectionName(orgid string) (string, error) {
 	return "z_tyk_analyticz_" + orgid, nil
 }
 
-// reqproof:implements SW-REQ-018
+// reqproof:implements SW-REQ-035
 func (m *MongoSelectivePump) SetDecodingRequest(decoding bool) {
 	if decoding {
 		log.WithField("pump", m.GetName()).Warn("Decoding request is not supported for Mongo Selective pump")
 	}
 }
 
-// reqproof:implements SW-REQ-018
+// reqproof:implements SW-REQ-035
 func (m *MongoSelectivePump) SetDecodingResponse(decoding bool) {
 	if decoding {
 		log.WithField("pump", m.GetName()).Warn("Decoding response is not supported for Mongo Selective pump")
 	}
 }
 
-// reqproof:implements SW-REQ-018
+// reqproof:implements SW-REQ-035
 func (m *MongoSelectivePump) Init(config interface{}) error {
 	m.dbConf = &MongoSelectiveConf{}
 	m.log = log.WithField("prefix", mongoSelectivePrefix)
@@ -117,7 +117,7 @@ func (m *MongoSelectivePump) Init(config interface{}) error {
 	return nil
 }
 
-// reqproof:implements SW-REQ-018
+// reqproof:implements SW-REQ-035
 func (m *MongoSelectivePump) connect() {
 	var err error
 
@@ -140,7 +140,7 @@ func (m *MongoSelectivePump) connect() {
 	}
 }
 
-// reqproof:implements SW-REQ-018
+// reqproof:implements SW-REQ-035
 func (m *MongoSelectivePump) ensureIndexes(collectionName string) error {
 	if m.dbConf.OmitIndexCreation {
 		m.log.Debug("omit_index_creation set to true, omitting index creation..")
@@ -199,7 +199,7 @@ func (m *MongoSelectivePump) ensureIndexes(collectionName string) error {
 	return nil
 }
 
-// reqproof:implements SW-REQ-018
+// reqproof:implements SW-REQ-035
 func (m *MongoSelectivePump) WriteData(ctx context.Context, data []interface{}) error {
 	m.log.Debug("Attempting to write ", len(data), " records...")
 
@@ -252,7 +252,7 @@ func (m *MongoSelectivePump) WriteData(ctx context.Context, data []interface{}) 
 }
 
 // AccumulateSet organizes analytics data into a set of chunks based on their size.
-// reqproof:implements SW-REQ-018
+// reqproof:implements SW-REQ-035
 func (m *MongoSelectivePump) AccumulateSet(data []interface{}, collectionName string) [][]model.DBObject {
 	accumulatorTotal := 0
 	returnArray := make([][]model.DBObject, 0)
@@ -275,7 +275,7 @@ func (m *MongoSelectivePump) AccumulateSet(data []interface{}, collectionName st
 }
 
 // processItem checks if the item should be skipped or processed.
-// reqproof:implements SW-REQ-018
+// reqproof:implements SW-REQ-035
 func (m *MongoSelectivePump) processItem(item interface{}) (*analytics.AnalyticsRecord, bool) {
 	thisItem, ok := item.(analytics.AnalyticsRecord)
 	if !ok {
@@ -292,7 +292,7 @@ func (m *MongoSelectivePump) processItem(item interface{}) (*analytics.Analytics
 }
 
 // getItemSizeBytes calculates the size of the analytics item in bytes and checks if it's within the allowed limit.
-// reqproof:implements SW-REQ-018
+// reqproof:implements SW-REQ-035
 func (m *MongoSelectivePump) getItemSizeBytes(thisItem *analytics.AnalyticsRecord) int {
 	// Add 1 KB for metadata as average.
 	sizeBytes := len([]byte(thisItem.RawRequest)) + len([]byte(thisItem.RawResponse)) + 1024
@@ -309,7 +309,7 @@ func (m *MongoSelectivePump) getItemSizeBytes(thisItem *analytics.AnalyticsRecor
 
 // accumulate processes the given item and updates the accumulator total, result set, and return array.
 // It manages chunking the data into separate sets based on the max batch size limit, and appends the last item when necessary.
-// reqproof:implements SW-REQ-018
+// reqproof:implements SW-REQ-035
 func (m *MongoSelectivePump) accumulate(thisResultSet []model.DBObject, returnArray [][]model.DBObject, thisItem *analytics.AnalyticsRecord, sizeBytes, accumulatorTotal int, isLastItem bool) (int, []model.DBObject, [][]model.DBObject) {
 	// If the item size is invalid (negative), return the current state
 	if sizeBytes < 0 {
@@ -345,7 +345,7 @@ func (m *MongoSelectivePump) accumulate(thisResultSet []model.DBObject, returnAr
 }
 
 // WriteUptimeData will pull the data from the in-memory store and drop it into the specified MongoDB collection
-// reqproof:implements SW-REQ-018
+// reqproof:implements SW-REQ-035
 func (m *MongoSelectivePump) WriteUptimeData(data []interface{}) {
 	m.log.Info("MONGO Selective Should not be writing uptime data!")
 	m.log.Debug("Uptime Data: ", len(data))
@@ -378,7 +378,7 @@ func (m *MongoSelectivePump) WriteUptimeData(data []interface{}) {
 }
 
 // collectionExists checks to see if a collection name exists in the db.
-// reqproof:implements SW-REQ-018
+// reqproof:implements SW-REQ-035
 func (m *MongoSelectivePump) collectionExists(name string) (bool, error) {
 	return m.store.HasTable(context.Background(), name)
 }

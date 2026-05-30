@@ -1,0 +1,6 @@
+component: runtime
+variables:
+    - name: single_process_only
+      type: bool
+      direction: output
+      description: tyk-pump runs as a single-process daemon (no clustering).

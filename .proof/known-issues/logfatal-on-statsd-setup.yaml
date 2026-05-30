@@ -1,0 +1,15 @@
+id: logfatal-on-statsd-setup
+title: log.Fatal on StatsD sink setup failure crashes process at startup
+description: 'instrumentation_helpers.go:38 ''log.Fatal("Failed to start StatsD check: ", err)'' aborts the entire pump process at startup if statsd setup fails. SYS-REQ-017 says ''purge loop shall continue when sink emission fails'' — the spec covers runtime emission failures but the startup Fatal contradicts the intent that telemetry must not affect the data plane. A misconfigured or temporarily unreachable statsd endpoint at boot prevents tyk-pump from running at all.'
+affected_requirements:
+    - SYS-REQ-017
+severity: medium
+mitigation: Operators must ensure statsd_connection_string points at a reachable sink before starting tyk-pump, or disable instrumentation in config.
+remediation: Replace log.Fatal at instrumentation_helpers.go:38 with log.Error and 'return' so the pump continues without instrumentation. Optionally emit a periodic warning log so the missing telemetry is not forgotten.
+owner: tyk-team
+release_disposition: ship_with_known_issue
+status: open
+history:
+    - at: "2026-05-30T08:33:37Z"
+      by: human:buger
+      action: created

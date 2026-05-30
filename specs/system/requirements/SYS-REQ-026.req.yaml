@@ -1,0 +1,53 @@
+id: SYS-REQ-026
+version: 1
+status: approved
+priority: shall
+category: constraint
+req_type: constraint
+fretish: build shall always satisfy fips_build_available
+description: A FIPS-compliant binary build shall be available via 'make build-fips', producing a binary with the boringcrypto GOEXPERIMENT.
+formalization_strategy: fretish
+informal_verification:
+    method: inspection
+    evidence: see rationale and parent STK linkage; constraint/assumption reviewed in Phase B of feat/reqproof-coverage PR
+    verified: true
+parent: STK-REQ-002
+component: build
+rationale: "Tyk customers in regulated environments (US Federal, healthcare) require FIPS-validated cryptography; the Makefile build-fips target enables boringcrypto to meet that need."
+tags: []
+variables: []
+traces:
+    satisfies:
+        - STK-REQ-002
+    reviewed_at: "2026-05-30T08:22:48.966154Z"
+    reviewed_by: human:buger
+    reviewed_fingerprint: sha256:90f325c79f8e5d239ccf3df2eec03e3669b4d5e2feba47a04fa9650fe9095174
+verification:
+    assurance_level: B
+    formalization_status: valid
+    review:
+        status: approved
+        reviewer: human:buger
+        role: system_engineer
+        reviewed_at: "2026-05-30T08:22:48Z"
+        comment: 'Phase B constraint reqs: linked to satisfying STK, rationale added, FRETish formalized as project-level invariants, formalized:false reverted to fretish-strategy via the invariant form. Verified against go.mod / storage code / Makefile / runtime model.'
+        fingerprint: sha256:ed8ab983e9a38ddb1ee4d14b73f62b6113dccc49edab45bd23f38b6e371e2c32
+        ai_generated: false
+history:
+    created_by: human:cli
+    created_at: "2026-05-30T08:13:45Z"
+    last_modified_by: human:cli
+    last_modified_at: "2026-05-30T08:22:48Z"
+obligation_class: nominal
+lifecycle:
+    change_history:
+        - date: "2026-05-30T08:14:23Z"
+          from: draft
+          to: review
+          reason: ""
+          changed_by: human:cli
+        - date: "2026-05-30T08:22:48Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="system_engineer" reviewer="human:buger" at=2026-05-30T08:14:23Z comment="Phase B constraint reqs: project-level constraints derived from go.mod, storage code, Makefile, and deployment model. Each is code-verifiable: Go version in go.mod, Redis dep in storage/temporal_storage.go imports, FIPS in Makefile, single-process in main.go runtime.")'
+          changed_by: human:cli

@@ -1,0 +1,48 @@
+id: SYS-REQ-021
+version: 1
+status: approved
+priority: shall
+category: functional
+req_type: guarantee
+fretish: when uptime_data_consumed uptime shall eventually satisfy uptime_forwarded
+description: When uptime data has been consumed from the temporal store and uptime purging is enabled, the pump shall forward the uptime data to the configured uptime backend.
+formalization_strategy: fretish
+informal_verification:
+    method: ""
+    evidence: ""
+    verified: false
+parent: STK-REQ-005
+component: uptime
+rationale: ""
+tags: []
+variables: []
+traces:
+    satisfies:
+        - STK-REQ-005
+    reviewed_at: "2026-05-30T07:57:15.482692Z"
+    reviewed_by: human:buger
+    reviewed_fingerprint: sha256:9c4a8f050425f6b7eb332bd57dda4c6baec4d138d27eb6f298ee4752f75170f1
+verification:
+    assurance_level: B
+    formalization_status: valid
+    review:
+        status: approved
+        reviewer: human:buger
+        role: system_engineer
+        reviewed_at: "2026-05-30T07:55:47Z"
+        comment: New SYS req from Phase 0.6 split of SYS-014 (forward after consume); code-verified in main.go UptimePump.WriteUptimeData call gated by !DontPurgeUptimeData.
+        fingerprint: sha256:87dbc0c93b60858e434b46e0e1215b42844820f50d1a26a4d2f4cb7deacfc099
+        ai_generated: false
+history:
+    created_by: human:cli
+    created_at: "2026-05-30T07:52:52Z"
+    last_modified_by: human:cli
+    last_modified_at: "2026-05-30T07:55:47Z"
+obligation_class: nominal
+lifecycle:
+    change_history:
+        - date: "2026-05-30T07:55:47Z"
+          from: draft
+          to: review
+          reason: ""
+          changed_by: human:cli

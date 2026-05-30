@@ -1,9 +1,9 @@
 id: SYS-REQ-009
 version: 1
-status: review
+status: approved
 priority: shall
 category: functional
-req_type: guarantee
+req_type: derived
 fretish: when (record_matches_block_filter | record_outside_allow_list) filtering shall always satisfy record_excluded
 description: The pump shall, per backend, exclude a record before forwarding when (a) it matches an operator-configured block list on organisation ID, API ID, or response code, OR (b) at least one non-empty allow list is configured and the record does not satisfy it; block-list matches take precedence.
 formalization_strategy: fretish
@@ -19,24 +19,27 @@ variables: []
 traces:
     satisfies:
         - STK-REQ-003
-    reviewed_at: "2026-05-29T21:30:11.838212Z"
+    reviewed_at: "2026-05-30T07:45:52.409178Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:3a373f9c68592e29e19e2be00c5c84feeba150ac565575aa76dd0155a9ff78e4
+    reviewed_fingerprint: sha256:2848ef2df2a6cce19916a5ccd3792a6c41e9d558cca8326e57ee0337de0c99d8
 verification:
     assurance_level: B
     formalization_status: valid
     review:
         status: approved
-        reviewer: leo@tyk.io
-        reviewed_at: "2026-05-29T15:47:47Z"
+        reviewer: human:buger
+        role: system_engineer
+        reviewed_at: "2026-05-30T07:43:08Z"
+        comment: System-level behavior reviewed as part of feat/reqproof-coverage PR; FRETish + obligation + satisfies linkage verified against tyk-pump architecture and code in Phase 0 code-verification pass.
+        fingerprint: sha256:7bab3b482ce6cd39e60fd1445c360cae4d22e4afa3146a4ae622191bf4884d15
         ai_generated: false
-    gaps_reviewed_at: "2026-05-29T21:30:13.022943Z"
+    gaps_reviewed_at: "2026-05-30T07:49:26.892114Z"
     gaps_reviewed_by: buger
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:11:41Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-29T21:25:55Z"
+    last_modified_at: "2026-05-30T07:43:08Z"
 obligation_class: boundary
 lifecycle:
     change_history:

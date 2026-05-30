@@ -1,0 +1,10 @@
+component: build
+variables:
+    - name: go_125_or_later
+      type: bool
+      direction: output
+      description: Go toolchain version is 1.25 or later.
+    - name: fips_build_available
+      type: bool
+      direction: output
+      description: A FIPS-compliant binary is producible via 'make build-fips'.

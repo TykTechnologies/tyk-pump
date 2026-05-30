@@ -1,0 +1,60 @@
+id: SW-REQ-036
+version: 1
+status: approved
+priority: shall
+category: functional
+req_type: derived
+fretish: ""
+description: The MongoAggregate pump shall aggregate non-MCP analytics records into per-organisation aggregate documents and upsert them into MongoDB; the substantive behaviors (windowing, sharding, $inc semantics, tag bounding, self-healing, index ensure) are decomposed into the six mongo-aggregate sub-reqs below.
+formalization_strategy: informal
+informal_verification:
+    method: ""
+    evidence: ""
+    verified: false
+parent: SYS-REQ-003
+component: pumps-mongo-aggregate
+rationale: ""
+tags: []
+variables: []
+traces:
+    satisfies:
+        - SYS-REQ-003
+    reviewed_at: "2026-05-30T08:45:50.413831Z"
+    reviewed_by: human:buger
+    reviewed_fingerprint: sha256:f1b50f150e979da29450653dae54165dde484b5f7d728b7b63998ca0195bb450
+verification:
+    assurance_level: B
+    formalization_status: none
+    review:
+        status: approved
+        reviewer: human:buger
+        role: software_engineer
+        reviewed_at: "2026-05-30T08:44:11Z"
+        comment: Phase A per-implementation/per-significant-behavior decomposition; descriptions code-verified against the named files per docs/phase-a-proposed-reqs.md. Pump-family family-level reqs are retained as superseded anchor reqs.
+        fingerprint: sha256:865fea411dd0f2003cac8bc2f5616f184dc4a86564d657f43f41bd947c75a66e
+        ai_generated: false
+    impact_reviews:
+        - requirement: SW-REQ-036
+          artifact: pumps/mongo_aggregate.go
+          decision: no-authored-change
+          reviewer: buger
+          reason: Phase A re-annotated this file to point at the atomic per-implementation/per-behavior SW req (was previously SW-REQ-018/019/020/022/027/028); no runtime behavior change.
+          base: origin/master
+          requirement_fingerprint: sha256:f1b50f150e979da29450653dae54165dde484b5f7d728b7b63998ca0195bb450
+          approval_fingerprint: sha256:865fea411dd0f2003cac8bc2f5616f184dc4a86564d657f43f41bd947c75a66e
+          artifact_fingerprint: sha256:552b82df798df00f1235f41008f165964976f0e145fcd095ad023101228fa58b
+          reviewed_at: "2026-05-30T08:48:39Z"
+history:
+    created_by: human:cli
+    created_at: "2026-05-30T08:34:49Z"
+    last_modified_by: human:cli
+    last_modified_at: "2026-05-30T08:44:11Z"
+obligation_checklist:
+    - nominal
+lifecycle:
+    change_history:
+        - date: "2026-05-30T08:43:46Z"
+          from: draft
+          to: review
+          reason: ""
+          changed_by: human:cli

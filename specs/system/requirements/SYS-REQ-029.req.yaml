@@ -1,0 +1,58 @@
+id: SYS-REQ-029
+version: 1
+status: approved
+priority: shall
+category: constraint
+req_type: assumption
+fretish: pumps_mongo_aggregate shall always satisfy inc_is_atomic
+description: The MongoDB Go driver guarantees atomic application of $inc update operators on a single document under concurrent writers.
+formalization_strategy: fretish
+informal_verification:
+    method: inspection
+    evidence: see rationale and parent STK linkage; constraint/assumption reviewed in Phase B of feat/reqproof-coverage PR
+    verified: true
+parent: STK-REQ-001
+component: pumps-mongo-aggregate
+rationale: "mongo-aggregate (SW-018 family) relies on $inc atomicity for accurate counter aggregation under concurrent writers; this is a MongoDB driver/server guarantee."
+tags: []
+variables: []
+traces:
+    satisfies:
+        - STK-REQ-001
+    reviewed_at: "2026-05-30T08:22:48.974589Z"
+    reviewed_by: human:buger
+    reviewed_fingerprint: sha256:62624bf6347679c9dd820e399ca15fe7d556f15416932a4b08e3a50e8f6ef53a
+verification:
+    assurance_level: B
+    formalization_status: valid
+    review:
+        status: approved
+        reviewer: human:buger
+        role: system_engineer
+        reviewed_at: "2026-05-30T08:22:48Z"
+        comment: 'Phase B assumption reqs: external-owner reviewed (Redis protocol / MongoDB / Tyk gateway / MaxMind), linked to KI for failed assumption A6, FRETish formalized as environment-input invariants. Trust boundaries now explicit.'
+        fingerprint: sha256:9bfdef68de97dbdc914ea640f717ba22e3c6ec98a8983d77a2f67ef24a916824
+        ai_generated: false
+history:
+    created_by: human:cli
+    created_at: "2026-05-30T08:13:45Z"
+    last_modified_by: human:cli
+    last_modified_at: "2026-05-30T08:22:48Z"
+obligation_class: nominal
+assumption:
+    status: open
+    external_owner: team:mongodb
+    review_date: "2026-11-30"
+    rationale: Single-document $inc atomicity is guaranteed by MongoDB; reviewed against current driver docs.
+lifecycle:
+    change_history:
+        - date: "2026-05-30T08:14:23Z"
+          from: draft
+          to: review
+          reason: ""
+          changed_by: human:cli
+        - date: "2026-05-30T08:22:48Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="system_engineer" reviewer="human:buger" at=2026-05-30T08:14:23Z comment="Phase B assumption reqs: explicit trust boundaries that the spec previously left implicit. Each names what dependency or external behavior tyk-pump assumes (Redis LPOP atomicity, Mongo $inc atomicity, gateway publishing model + encoding, GeoIP DB optionality, mongo capped-collection size type — the latter is a currently-failed assumption tracked by Phase E known-issue mongo-test-panic-under-mongo6).")'
+          changed_by: human:cli

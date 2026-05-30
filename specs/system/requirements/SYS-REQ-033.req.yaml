@@ -1,0 +1,60 @@
+id: SYS-REQ-033
+version: 1
+status: approved
+priority: shall
+category: constraint
+req_type: assumption
+fretish: pumps_mongo shall always satisfy capped_collection_size_is_int64
+description: The MongoDB Go driver returns capped-collection size values typed as int64. (Currently FALSE under mongo-server v6, which returns int — tracked as known-issue mongo-test-panic-under-mongo6.)
+formalization_strategy: fretish
+informal_verification:
+    method: inspection
+    evidence: see rationale and parent STK linkage; constraint/assumption reviewed in Phase B of feat/reqproof-coverage PR
+    verified: true
+parent: STK-REQ-002
+component: pumps-mongo
+rationale: "The mongo pump test TestMongoPump_capCollection_OverrideSize asserts int64 typing; under mongo:6 this assumption fails (returns int). Documenting it explicitly makes the regression first-class rather than hidden in a test bug."
+tags: []
+variables: []
+traces:
+    satisfies:
+        - STK-REQ-002
+    reviewed_at: "2026-05-30T08:22:49.003705Z"
+    reviewed_by: human:buger
+    reviewed_fingerprint: sha256:57ac1c12d5d0d155e910f004359980fe98d1dcd9d4739a60c9fb641f55a42e07
+verification:
+    assurance_level: B
+    formalization_status: valid
+    review:
+        status: approved
+        reviewer: human:buger
+        role: system_engineer
+        reviewed_at: "2026-05-30T08:22:48Z"
+        comment: 'Phase B assumption reqs: external-owner reviewed (Redis protocol / MongoDB / Tyk gateway / MaxMind), linked to KI for failed assumption A6, FRETish formalized as environment-input invariants. Trust boundaries now explicit.'
+        fingerprint: sha256:b2d52e25d4fcdcf4bb07fb68967c11cee7cbe9171c4368b4cf17a7e4c2a01255
+        ai_generated: false
+history:
+    created_by: human:cli
+    created_at: "2026-05-30T08:13:46Z"
+    last_modified_by: human:cli
+    last_modified_at: "2026-05-30T08:22:48Z"
+obligation_class: nominal
+assumption:
+    status: known_issue
+    external_owner: team:mongodb
+    review_date: "2026-11-30"
+    linked_known_issue:
+        - mongo-test-panic-under-mongo6
+    rationale: This assumption is currently violated under mongo-server v6; linked to KI.
+lifecycle:
+    change_history:
+        - date: "2026-05-30T08:14:23Z"
+          from: draft
+          to: review
+          reason: ""
+          changed_by: human:cli
+        - date: "2026-05-30T08:22:48Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="system_engineer" reviewer="human:buger" at=2026-05-30T08:14:23Z comment="Phase B assumption reqs: explicit trust boundaries that the spec previously left implicit. Each names what dependency or external behavior tyk-pump assumes (Redis LPOP atomicity, Mongo $inc atomicity, gateway publishing model + encoding, GeoIP DB optionality, mongo capped-collection size type — the latter is a currently-failed assumption tracked by Phase E known-issue mongo-test-panic-under-mongo6).")'
+          changed_by: human:cli

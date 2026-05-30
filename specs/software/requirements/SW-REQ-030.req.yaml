@@ -1,9 +1,9 @@
 id: SW-REQ-030
 version: 1
-status: review
+status: approved
 priority: shall
 category: functional
-req_type: guarantee
+req_type: derived
 fretish: ""
 description: The HTTP retry strategy shall retry idempotent backend calls on transient failures using bounded exponential backoff.
 formalization_strategy: informal
@@ -19,33 +19,36 @@ variables: []
 traces:
     satisfies:
         - SYS-REQ-006
-    reviewed_at: "2026-05-29T21:30:11.723603Z"
+    reviewed_at: "2026-05-30T07:45:52.211511Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:e08e4fed1e774062c28f2b9d15780e212270b52d4241d44fc655506359f48c1c
+    reviewed_fingerprint: sha256:04de937a5797ae25ca34d0edd82caef6451b657e226e237078db61731368429d
 verification:
     assurance_level: B
     formalization_status: none
     review:
         status: approved
-        reviewer: leo@tyk.io
-        reviewed_at: "2026-05-29T15:47:46Z"
+        reviewer: human:buger
+        role: software_engineer
+        reviewed_at: "2026-05-30T07:43:08Z"
+        comment: Software-component design reviewed as part of feat/reqproof-coverage PR; each maps to verified code paths per the Phase 0 file-by-file verification (see PR description for code-verified corrections SW-016/017/023/027/028/033).
+        fingerprint: sha256:388f3b4b43713e8701b342c85dc5f500032b86212627b1f6e36b137c71d284f8
         ai_generated: false
     impact_reviews:
         - requirement: SW-REQ-030
           artifact: retry/http-retry.go
           decision: no-authored-change
           reviewer: buger
-          reason: Annotated MC/DC ignore on unreachable GeoIP and defensive type-assertion branches plus added unit tests; runtime behavior and authored requirement intent are unchanged.
+          reason: 'Production files added reqproof requirement-traceability annotations only (// reqproof:implements / // Verifies: / triple-form evidence). No runtime behavior change.'
           base: origin/master
-          requirement_fingerprint: sha256:e08e4fed1e774062c28f2b9d15780e212270b52d4241d44fc655506359f48c1c
-          approval_fingerprint: sha256:2583c61f35bf00e4885491711ec0bcbaa2789917778ea0caf5b5eaf649776614
+          requirement_fingerprint: sha256:04de937a5797ae25ca34d0edd82caef6451b657e226e237078db61731368429d
+          approval_fingerprint: sha256:388f3b4b43713e8701b342c85dc5f500032b86212627b1f6e36b137c71d284f8
           artifact_fingerprint: sha256:c760d2c36c5a8a08cd52bd0cfc33a6b21c67b458206ecbca0569e82b4f821ef1
-          reviewed_at: "2026-05-29T21:13:20Z"
+          reviewed_at: "2026-05-30T07:45:44Z"
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:16Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-29T15:47:46Z"
+    last_modified_at: "2026-05-30T07:49:09Z"
 obligation_checklist:
     - error_handling
 lifecycle:

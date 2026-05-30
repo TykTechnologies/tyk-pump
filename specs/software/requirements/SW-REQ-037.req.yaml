@@ -1,0 +1,60 @@
+id: SW-REQ-037
+version: 1
+status: approved
+priority: shall
+category: functional
+req_type: derived
+fretish: ""
+description: The Graph MongoDB pump shall, on each purge, accumulate incoming records into size-bounded batches via the embedded MongoPump.AccumulateSet (in graph-only mode skipping records whose GraphQLStats.IsGraphQL is false from conversion), convert each surviving AnalyticsRecord to a GraphRecord (assigning a fresh ObjectID), and concurrently insert each batch into the single configured graph collection; the first per-batch insert error shall be returned to the caller, and connection-closed conditions shall be logged with a 'Detected connection failure!' warning.
+formalization_strategy: informal
+informal_verification:
+    method: ""
+    evidence: ""
+    verified: false
+parent: SYS-REQ-004
+component: pumps-mongo-graph
+rationale: ""
+tags: []
+variables: []
+traces:
+    satisfies:
+        - SYS-REQ-004
+    reviewed_at: "2026-05-30T08:45:50.429561Z"
+    reviewed_by: human:buger
+    reviewed_fingerprint: sha256:fe8467ea89d5b32a45b43493c63fb654268017dcf7b31eb40a5309f282c30eab
+verification:
+    assurance_level: B
+    formalization_status: none
+    review:
+        status: approved
+        reviewer: human:buger
+        role: software_engineer
+        reviewed_at: "2026-05-30T08:44:11Z"
+        comment: Phase A per-implementation/per-significant-behavior decomposition; descriptions code-verified against the named files per docs/phase-a-proposed-reqs.md. Pump-family family-level reqs are retained as superseded anchor reqs.
+        fingerprint: sha256:8a45c7336766dc82f14b77f34544679cdc465a4efc36e03de2b806b18ceb578c
+        ai_generated: false
+    impact_reviews:
+        - requirement: SW-REQ-037
+          artifact: pumps/graph_mongo.go
+          decision: no-authored-change
+          reviewer: buger
+          reason: Phase A re-annotated this file to point at the atomic per-implementation/per-behavior SW req (was previously SW-REQ-018/019/020/022/027/028); no runtime behavior change.
+          base: origin/master
+          requirement_fingerprint: sha256:fe8467ea89d5b32a45b43493c63fb654268017dcf7b31eb40a5309f282c30eab
+          approval_fingerprint: sha256:8a45c7336766dc82f14b77f34544679cdc465a4efc36e03de2b806b18ceb578c
+          artifact_fingerprint: sha256:ea0d01bc2cf1958e2c42d69e4a0eaf07bfe686af6b41d65a8a3b46ef2c01e008
+          reviewed_at: "2026-05-30T08:48:39Z"
+history:
+    created_by: human:cli
+    created_at: "2026-05-30T08:34:55Z"
+    last_modified_by: human:cli
+    last_modified_at: "2026-05-30T08:44:11Z"
+obligation_checklist:
+    - errors_propagated
+lifecycle:
+    change_history:
+        - date: "2026-05-30T08:43:46Z"
+          from: draft
+          to: review
+          reason: ""
+          changed_by: human:cli

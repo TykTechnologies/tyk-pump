@@ -1,9 +1,9 @@
 id: INT-REQ-008
 version: 1
-status: review
+status: approved
 priority: shall
 category: functional
-req_type: guarantee
+req_type: derived
 fretish: ""
 description: The pump configuration contract shall interpret each pump's meta map according to its declared type and reject malformed pump configuration loudly.
 formalization_strategy: informal
@@ -19,28 +19,57 @@ variables: []
 traces:
     satisfies:
         - SYS-REQ-008
-    reviewed_at: "2026-05-29T21:30:10.606717Z"
+    reviewed_at: "2026-05-30T08:45:50.325186Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:9ac869268d1e4cbcc6585b06a15727c35d0e4b0dcdecfdfd3af12b00ebc2bc1f
+    reviewed_fingerprint: sha256:c45453e715a4bf59a56467ce2693ae47a73f6581c8f3d42275dc983c6278cabf
 verification:
     assurance_level: B
     formalization_status: none
     review:
         status: approved
-        reviewer: leo@tyk.io
-        reviewed_at: "2026-05-29T15:47:44Z"
+        reviewer: human:buger
+        role: interface_owner
+        reviewed_at: "2026-05-30T08:31:54Z"
+        comment: Re-approval after Phase C ICD metadata block populated; caller/callee/schema-version/back-compat/retirement fields code-verified.
+        fingerprint: sha256:27e7f8b5e4f6527468418e61da8b98b3a52445d355632fb120b196c866ab03c9
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:47Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-29T15:47:44Z"
+    last_modified_at: "2026-05-30T08:31:54Z"
 obligation_checklist:
     - malformed_input
+release_disposition: ship_with_known_issue
+interface:
+    caller: tyk-pump-main-config
+    callee: pump-impl-init
+    type: function_call
+    signature: pumps.Pump.Init(meta interface{}) error (pumps/pump.go:20). Each pump decodes the meta map via `mapstructure.Decode(conf, &pumpConfStruct)` — for example pumps/csv.go:55 CSVPump.Init.
+    protocol: 'Config flow: config.go parses tyk-pump JSON config -> SystemConfig.PumpsConfig (map of pump-type -> meta JSON) -> each pump receives its slice of the meta map at Init time. Per-pump schema lives on the pump''s config struct (e.g. CSVConf in pumps/csv.go).'
+    assumptions: 'Operators provide well-formed JSON keys matching the mapstructure tags on each pump''s config struct. Each pump may layer envconfig overrides via processPumpEnvVars (pumps/pump.go:58) after mapstructure.Decode.'
+    guarantees: 'The contract claims malformed pump configuration is rejected loudly, BUT this is not honoured today — see KNOWN ISSUE mapstructure-decode-silently-drops-unknown-keys (already in .proof/known-issues/). mapstructure.Decode is lenient by default: unknown keys (e.g. operator typo `csv_pathh` for `csv_dir`) are silently dropped, the pump initialises with the default zero values, and the misconfiguration only surfaces at first write. To honour the requirement literally, each pump would need DecoderConfig{ErrorUnused: true}. Back-compat: each pump''s config struct is additive (new fields default to zero value); rename or remove of a config key is a major break for that pump. Retirement of a pump removes its config schema entirely (major tyk-pump version bump).'
+    producer: tyk-pump-main-config
+    consumer:
+        - pump-impl-init
+    owner: team:tyk-pump-maintainers
+    version: v1
+    compatibility_policy: semver-strict
+    risk_tier: 2
 lifecycle:
     change_history:
         - date: "2026-05-29T15:46:43Z"
           from: draft
           to: review
           reason: ""
+          changed_by: human:cli
+        - date: "2026-05-30T08:30:57Z"
+          from: release_disposition=
+          to: release_disposition=ship_with_known_issue
+          reason: 'KI mapstructure-decode-silently-drops-unknown-keys: pump configs silently ignore unknown keys'
+          changed_by: human:cli
+        - date: "2026-05-30T08:31:54Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="interface_owner" reviewer="human:buger" at=2026-05-30T07:43:08Z comment="Cross-component contracts reviewed as part of feat/reqproof-coverage PR; gateway/storage/serializer/pump-backend contracts verified against actual key constants and interface declarations.")'
           changed_by: human:cli

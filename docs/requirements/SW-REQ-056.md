@@ -1,0 +1,44 @@
+# SW-REQ-056: AWS Kinesis pump — batched PutRecords with random partition keys
+
+## Intent
+The `KinesisPump` shall, on each purge, split records into batches of
+`BatchSize` (default 100, bounded by AWS's 500-record per-`PutRecords`
+limit), JSON-marshal each record into a Kinesis `PutRecordsRequestEntry`
+with `PartitionKey` set to a fresh `crypto/rand` integer (for even
+MD5-based shard distribution), and submit each batch via `PutRecords` to
+the configured `StreamName`. When `KMSKeyID` is configured at Init, the
+pump shall verify the stream's current encryption mode/key, enable KMS
+server-side encryption if not already enabled with that key, and fail Init
+if the stream is already encrypted with a different key. Derived from
+SYS-REQ-004 via Phase A decomposition of SW-REQ-028.
+
+## Motivation
+Kinesis is the AWS streaming option for analytics pipelines that need
+per-shard ordering and high throughput. The random partition key
+distributes records evenly across shards (Kinesis maps partition keys via
+MD5 to shard hash ranges); operators who need per-org or per-API ordering
+must implement their own partitioning downstream. Splitting Kinesis out of
+SW-REQ-028 makes the random-partition-key choice and the KMS-key Init
+verification explicit, and surfaces the per-batch error swallowing as an
+honest `nominal` rather than the family-level `errors_propagated`.
+
+## Code references
+- `pumps/kinesis.go:23-49` — `KinesisPump`, `KinesisConf`.
+- `pumps/kinesis.go:96-135` — `Init` KMS encryption verification path.
+- `pumps/kinesis.go:144-221` — `WriteData`; partition-key generation at
+  lines 185-194 uses `rand.Int(rand.Reader, big.NewInt(1000000000))`.
+- `pumps/kinesis.go:splitIntoBatches` — `BatchSize` clamping.
+
+## Evidence
+- `pumps/kinesis_test.go` (re-annotated `Verifies: SW-REQ-056`).
+- Live-Kinesis tests need real AWS credentials and are excluded from the
+  local audit MC/DC scope (known issue).
+
+## Open questions
+- `WriteData` always returns `nil` even when `PutRecords` errors (line
+  205-207 only logs) — cannot honestly claim `errors_propagated` at the
+  WriteData level. Per-record `ErrorCode` responses are debug-logged only.
+  Honest obligation_class is `nominal`.
+- Init does propagate errors (KMS verification, stream lookup).
+- `crypto/rand` partition key is good for distribution but expensive at
+  high throughput (one syscall per record).

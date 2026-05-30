@@ -1,9 +1,9 @@
 id: SW-REQ-033
 version: 1
-status: review
+status: approved
 priority: shall
 category: functional
-req_type: guarantee
+req_type: derived
 fretish: ""
 description: Logger initialisation in package logger shall set the default log level from the TYK_LOGLEVEL environment variable at package init (defaulting to info) and install a fixed text formatter; JSON-configured log_level and log_format overrides are applied at startup by package main.
 formalization_strategy: informal
@@ -19,33 +19,36 @@ variables: []
 traces:
     satisfies:
         - SYS-REQ-008
-    reviewed_at: "2026-05-29T21:30:11.788497Z"
+    reviewed_at: "2026-05-30T07:45:52.35451Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:46d4557b8b80c22e8c19b51c56b0faa6f6655c8cd4776b1b2a1c8d1148076379
+    reviewed_fingerprint: sha256:c097cb86a0a67f9b45004871d74382330b32a9c68806f7366aa1647bccdbbf25
 verification:
     assurance_level: B
     formalization_status: none
     review:
         status: approved
-        reviewer: leo@tyk.io
-        reviewed_at: "2026-05-29T15:47:46Z"
+        reviewer: human:buger
+        role: software_engineer
+        reviewed_at: "2026-05-30T07:43:08Z"
+        comment: Software-component design reviewed as part of feat/reqproof-coverage PR; each maps to verified code paths per the Phase 0 file-by-file verification (see PR description for code-verified corrections SW-016/017/023/027/028/033).
+        fingerprint: sha256:b61e457e7675bcb3349b79e31ea61388c88c80024f62ced61e36063d916c1c60
         ai_generated: false
     impact_reviews:
         - requirement: SW-REQ-033
           artifact: logger/init.go
           decision: no-authored-change
           reviewer: buger
-          reason: Annotated MC/DC ignore on unreachable GeoIP and defensive type-assertion branches plus added unit tests; runtime behavior and authored requirement intent are unchanged.
+          reason: 'Production files added reqproof requirement-traceability annotations only (// reqproof:implements / // Verifies: / triple-form evidence). No runtime behavior change.'
           base: origin/master
-          requirement_fingerprint: sha256:46d4557b8b80c22e8c19b51c56b0faa6f6655c8cd4776b1b2a1c8d1148076379
-          approval_fingerprint: sha256:a380ca1450ee740943a81882c0a5f6cf327f9ae19cfe9d98baaf678186fec6bc
+          requirement_fingerprint: sha256:c097cb86a0a67f9b45004871d74382330b32a9c68806f7366aa1647bccdbbf25
+          approval_fingerprint: sha256:b61e457e7675bcb3349b79e31ea61388c88c80024f62ced61e36063d916c1c60
           artifact_fingerprint: sha256:9d3dd83e337390d18f6763deb950af20441c5d7afdbf09fe5dff89cd363f23d4
-          reviewed_at: "2026-05-29T21:13:21Z"
+          reviewed_at: "2026-05-30T07:45:45Z"
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:17Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-30T05:47:14Z"
+    last_modified_at: "2026-05-30T07:43:08Z"
 obligation_checklist:
     - nominal
 lifecycle:

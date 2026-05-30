@@ -1,0 +1,67 @@
+id: SW-REQ-067
+version: 1
+status: approved
+priority: shall
+category: functional
+req_type: derived
+fretish: ""
+description: The SQL Aggregate pump shall, per (orgID, dimension) row in each aggregated batch, issue a parameter-bound INSERT ... ON CONFLICT (id) DO UPDATE SET ... using clause.OnConflict with analytics.OnConflictAssignments(table, "excluded") so that monotonic counter columns are incremented rather than overwritten; insert failures shall be returned to the caller. Records are batched in slices of BatchSize.
+formalization_strategy: informal
+informal_verification:
+    method: ""
+    evidence: ""
+    verified: false
+parent: SYS-REQ-019
+component: pumps-sql-aggregate
+rationale: ""
+tags: []
+variables: []
+traces:
+    satisfies:
+        - SYS-REQ-019
+    reviewed_at: "2026-05-30T08:45:50.777213Z"
+    reviewed_by: human:buger
+    reviewed_fingerprint: sha256:40b96aee0be8239ac81d69b952e01613b7180a10b08fdbba8cb32015afb0cd34
+verification:
+    assurance_level: B
+    formalization_status: none
+    review:
+        status: approved
+        reviewer: human:buger
+        role: software_engineer
+        reviewed_at: "2026-05-30T08:44:11Z"
+        comment: Phase A per-implementation/per-significant-behavior decomposition; descriptions code-verified against the named files per docs/phase-a-proposed-reqs.md. Pump-family family-level reqs are retained as superseded anchor reqs.
+        fingerprint: sha256:c16b58887e50a3a045df8280101be7bce45f324a7244fc0b27fa8d58c76ea1c0
+        ai_generated: false
+    impact_reviews:
+        - requirement: SW-REQ-067
+          artifact: pumps/sql_aggregate.go
+          decision: no-authored-change
+          reviewer: buger
+          reason: Phase A re-annotated this file to point at the atomic per-implementation/per-behavior SW req (was previously SW-REQ-018/019/020/022/027/028); no runtime behavior change.
+          base: origin/master
+          requirement_fingerprint: sha256:40b96aee0be8239ac81d69b952e01613b7180a10b08fdbba8cb32015afb0cd34
+          approval_fingerprint: sha256:c16b58887e50a3a045df8280101be7bce45f324a7244fc0b27fa8d58c76ea1c0
+          artifact_fingerprint: sha256:daecf1078f03de965668bf69f0bf85be384c0d96365c37d4ca5906f0c80c2561
+          reviewed_at: "2026-05-30T08:48:40Z"
+history:
+    created_by: human:cli
+    created_at: "2026-05-30T08:39:51Z"
+    last_modified_by: human:cli
+    last_modified_at: "2026-05-30T09:03:14Z"
+obligation_checklist:
+    - atomicity
+    - monotonicity
+    - parameterized_only_write
+obligation_suppressions:
+    - id: atomicity
+      reason: 'SQL aggregate upsert atomicity (via gorm clause.OnConflict on id) negative evidence requires injecting a transaction failure mid-upsert (e.g. constraint violation on the unique index, connection drop between insert and update), which the local Postgres testcontainer is not configured to do. The closest existing assertion is TestEnsureIndexSQLAggregate negative case for index creation on missing tables, but that exercises DDL not DML atomicity. Future work: chaos-injection wrapper around the GORM session.'
+      suppressed_by: buger
+      suppressed_at: "2026-05-30T09:03:14Z"
+lifecycle:
+    change_history:
+        - date: "2026-05-30T08:43:47Z"
+          from: draft
+          to: review
+          reason: ""
+          changed_by: human:cli

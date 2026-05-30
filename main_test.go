@@ -164,6 +164,7 @@ func TestOmitDetailsFilterData(t *testing.T) {
 // Verifies: STK-REQ-001
 // Verifies: SYS-REQ-004
 // Verifies: SW-REQ-003
+// Verifies: SYS-REQ-022
 func TestWriteDataWithFilters(t *testing.T) {
 	mockedPump := &MockedPump{}
 	mockedPump.SetFilters(

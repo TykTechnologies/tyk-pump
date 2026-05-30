@@ -21,22 +21,22 @@ type GraphSQLAggregatePump struct {
 	CommonPumpConfig
 }
 
-// reqproof:implements SW-REQ-019
+// reqproof:implements SW-REQ-043
 func (s *GraphSQLAggregatePump) GetName() string {
 	return "Sql Graph Aggregate Pump"
 }
 
-// reqproof:implements SW-REQ-019
+// reqproof:implements SW-REQ-043
 func (s *GraphSQLAggregatePump) GetEnvPrefix() string {
 	return s.SQLConf.EnvPrefix
 }
 
-// reqproof:implements SW-REQ-019
+// reqproof:implements SW-REQ-043
 func (s *GraphSQLAggregatePump) New() Pump {
 	return &GraphSQLAggregatePump{}
 }
 
-// reqproof:implements SW-REQ-019
+// reqproof:implements SW-REQ-043
 func (s *GraphSQLAggregatePump) Init(conf interface{}) error {
 	s.SQLConf = &SQLAggregatePumpConf{}
 	s.log = log.WithField("prefix", SQLAggregatePumpPrefix)
@@ -89,7 +89,7 @@ func (s *GraphSQLAggregatePump) Init(conf interface{}) error {
 	return nil
 }
 
-// reqproof:implements SW-REQ-019
+// reqproof:implements SW-REQ-043
 func (s *GraphSQLAggregatePump) WriteData(ctx context.Context, data []interface{}) error {
 	dataLen := len(data)
 	s.log.Debug("Attempting to write ", dataLen, " records...")
@@ -159,7 +159,7 @@ func (s *GraphSQLAggregatePump) WriteData(ctx context.Context, data []interface{
 	return nil
 }
 
-// reqproof:implements SW-REQ-019
+// reqproof:implements SW-REQ-043
 func (s *GraphSQLAggregatePump) DoAggregatedWriting(ctx context.Context, table, orgID, apiID string, ag *analytics.GraphRecordAggregate) error {
 	var recs []analytics.GraphSQLAnalyticsRecordAggregate
 

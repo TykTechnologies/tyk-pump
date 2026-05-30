@@ -1,9 +1,9 @@
 id: INT-REQ-007
 version: 1
-status: review
+status: approved
 priority: shall
 category: functional
-req_type: guarantee
+req_type: derived
 fretish: ""
 description: The SQL pump schema (day-sharded analytics tables and aggregate tables) shall be migratable while older pump versions still write, following expand-then-contract.
 formalization_strategy: informal
@@ -19,28 +19,51 @@ variables: []
 traces:
     satisfies:
         - SYS-REQ-003
-    reviewed_at: "2026-05-29T21:30:10.594702Z"
+    reviewed_at: "2026-05-30T08:45:50.285503Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:2e8075f2f4d904b299fdd8bee7d8d74a653794608f403c1b10a14323c891b753
+    reviewed_fingerprint: sha256:11ed8d9dbcf536216a0828a0b29b5230d57f00fdab745244e7512bb0bb6b3699
 verification:
     assurance_level: B
     formalization_status: none
     review:
         status: approved
-        reviewer: leo@tyk.io
-        reviewed_at: "2026-05-29T15:47:44Z"
+        reviewer: human:buger
+        role: interface_owner
+        reviewed_at: "2026-05-30T08:31:54Z"
+        comment: Re-approval after Phase C ICD metadata block populated; caller/callee/schema-version/back-compat/retirement fields code-verified.
+        fingerprint: sha256:42de3a458b2f8fdce5ca6ccbd22db7ecc7e0a5321adc8aa464cabb02a3429107
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:46Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-29T15:47:44Z"
+    last_modified_at: "2026-05-30T08:31:54Z"
 obligation_checklist:
     - forward_compatible
+interface:
+    caller: tyk-pump-sql-pumps
+    callee: sql-backend
+    type: data
+    signature: 'SQL tables: `tyk_analytics` (base, standard schema) and optionally day-sharded as `tyk_analytics_YYYYMMDD` when sharding_table=true (pumps/sql.go AnalyticsRecord-derived schema). Indexes named `<table>_<column>_idx`, created via CREATE INDEX IF NOT EXISTS (CONCURRENTLY for postgres) during Init / on day-rollover.'
+    protocol: 'gorm AutoMigrate + raw DDL via SQL driver (postgres / mysql / sqlite). Migration runs at pump Init time and again per day when sharding_table=true. New columns are added by re-running AutoMigrate against the AnalyticsRecord struct.'
+    assumptions: 'Operators run schema changes expand-then-contract: add columns first (compatible with older pumps still writing), backfill, then drop. Older pump versions tolerate the presence of extra columns. With MigrateShardedTables=false (default; pumps/sql.go:89), AutoMigrate runs ONLY against today''s shard — older day-shards do not pick up new columns.'
+    guarantees: 'Schema is migratable in-place via additive column changes while older pump versions still write. NOT FORMALLY ENFORCED: there is no CI check that rejects non-additive AnalyticsRecord changes — expand-then-contract is a convention only; flagged as risk. KNOWN GAP: with MigrateShardedTables=false (the default), late-arriving records dated to a prior day can fail to write into older shards that lack the new columns; operators must set migrate_sharded_tables=true to backfill schema across all shards. Schema version is implicit via column presence (no schema_version table). Back-compat: additive columns only; rename/drop requires a multi-stage rollout. Retirement of a table requires a major tyk-pump version bump. Flagged for follow-up KI creation: "sql-pump-migrate-sharded-tables-default-false-causes-late-record-write-failure".'
+    producer: tyk-pump-sql-pumps
+    consumer:
+        - sql-backend
+    owner: team:tyk-pump-maintainers
+    version: v1
+    compatibility_policy: breaking-allowed-with-migration
+    risk_tier: 1
 lifecycle:
     change_history:
         - date: "2026-05-29T15:46:43Z"
           from: draft
           to: review
           reason: ""
+          changed_by: human:cli
+        - date: "2026-05-30T08:31:54Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="interface_owner" reviewer="human:buger" at=2026-05-30T07:43:08Z comment="Cross-component contracts reviewed as part of feat/reqproof-coverage PR; gateway/storage/serializer/pump-backend contracts verified against actual key constants and interface declarations.")'
           changed_by: human:cli

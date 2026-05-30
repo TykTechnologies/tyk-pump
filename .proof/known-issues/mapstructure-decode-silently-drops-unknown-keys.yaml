@@ -1,0 +1,15 @@
+id: mapstructure-decode-silently-drops-unknown-keys
+title: Pump configs use mapstructure.Decode which silently ignores unknown keys
+description: 'Every pump Init uses mapstructure.Decode (e.g. pumps/csv.go:55 ''mapstructure.Decode(conf, &c.csvConf)'') which is lenient by default. Unknown keys — including operator typos like ''csv_pathh'' instead of ''csv_path'' — are silently dropped. INT-REQ-008''s claim that the system rejects malformed pump configuration loudly is therefore false: no exit code, no health-check failure, no metric is emitted; the misconfigured pump simply uses defaults for the misspelled field. The same pattern appears across all pumps in pumps/*.go (kafka, sql, elasticsearch, mongo, statsd, prometheus, hybrid, etc.).'
+affected_requirements:
+    - INT-REQ-008
+severity: medium
+mitigation: Operators have no warning until they notice data is not flowing or is using unexpected defaults. Suggest code-reviewing pump YAML against documented field names before rollout.
+remediation: 'Replace mapstructure.Decode with mapstructure.NewDecoder using a DecoderConfig that sets ErrorUnused: true, so unknown keys cause Init to return an error and the pump is skipped (with a clear log line).'
+owner: tyk-team
+release_disposition: ship_with_known_issue
+status: open
+history:
+    - at: "2026-05-30T08:30:52Z"
+      by: human:buger
+      action: created

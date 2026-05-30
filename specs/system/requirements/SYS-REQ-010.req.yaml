@@ -1,9 +1,9 @@
 id: SYS-REQ-010
 version: 1
-status: review
+status: approved
 priority: shall
 category: functional
-req_type: guarantee
+req_type: derived
 fretish: when record_exceeds_max_size privacy shall always satisfy record_truncated
 description: The pump shall truncate any record whose serialized size exceeds the configured maximum size before forwarding.
 formalization_strategy: fretish
@@ -19,22 +19,27 @@ variables: []
 traces:
     satisfies:
         - STK-REQ-003
-    reviewed_at: "2026-05-29T21:30:11.840075Z"
+    reviewed_at: "2026-05-30T07:45:52.411495Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:a84e125e6138cb60dfdbccd61a0c4db3406a7f355fdb85ae817932d346dc2486
+    reviewed_fingerprint: sha256:08b1c215ebda7aa550c69f4e89adfcbc802c86a3125fe351b5b5903afd2edd1d
 verification:
     assurance_level: B
     formalization_status: valid
     review:
         status: approved
-        reviewer: leo@tyk.io
-        reviewed_at: "2026-05-29T15:47:47Z"
+        reviewer: human:buger
+        role: system_engineer
+        reviewed_at: "2026-05-30T07:43:08Z"
+        comment: System-level behavior reviewed as part of feat/reqproof-coverage PR; FRETish + obligation + satisfies linkage verified against tyk-pump architecture and code in Phase 0 code-verification pass.
+        fingerprint: sha256:3840920c7c53450e3a1f9a4ca759f8809e69c880653e553dee83887b9fe884b9
         ai_generated: false
+    gaps_reviewed_at: "2026-05-30T08:46:07.194057Z"
+    gaps_reviewed_by: buger
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:11:41Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-29T21:25:35Z"
+    last_modified_at: "2026-05-30T07:43:08Z"
 obligation_class: boundary
 lifecycle:
     change_history:

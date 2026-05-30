@@ -52,6 +52,7 @@ func TestLoadExampleConf(t *testing.T) {
 
 // Verifies: SW-REQ-002
 // Verifies: SYS-REQ-008
+// Verifies: SYS-REQ-020
 func TestConfigEnv(t *testing.T) {
 	pumpNameCSV := "CSV"
 	pumpNameTest := "TEST"

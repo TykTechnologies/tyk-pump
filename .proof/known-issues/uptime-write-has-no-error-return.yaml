@@ -1,0 +1,16 @@
+id: uptime-write-has-no-error-return
+title: UptimePump.WriteUptimeData returns no error; backend failures silently dropped
+description: pumps/pump.go:44 declares 'WriteUptimeData(data []interface{})' with no error return. The call site at main.go:300 'UptimePump.WriteUptimeData(UptimeValues)' has no error to handle. Any backend failure on the uptime path (e.g. mongo down) is therefore silently dropped. This is asymmetric vs pumps/pump.go's Pump.WriteData which returns error and is checked. STK-REQ-005 and INT-REQ-002 both assert error-propagation/observability for the uptime sub-system that the interface cannot deliver.
+affected_requirements:
+    - STK-REQ-005
+    - INT-REQ-002
+severity: low
+mitigation: Operators must rely on backend-side monitoring (e.g. mongo write rate, error logs in mongo) to detect uptime-pump failures rather than tyk-pump's logs/metrics.
+remediation: Add 'error' return to UptimePump.WriteUptimeData; update implementations to return real errors; update the main.go:300 call site to log and metric-emit on failure.
+owner: tyk-team
+release_disposition: ship_with_known_issue
+status: open
+history:
+    - at: "2026-05-30T08:31:55Z"
+      by: human:buger
+      action: created

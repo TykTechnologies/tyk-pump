@@ -1,0 +1,61 @@
+id: SW-REQ-052
+version: 1
+status: approved
+priority: shall
+category: functional
+req_type: derived
+fretish: ""
+description: The Moesif pump shall, on each purge, parse each analytics record's base64-encoded raw request/response, apply operator-configured header/body masking and capture toggles, identify the user via the configured UserIDHeader (or fall back to record Alias / OauthID / parsed Authorization header), apply per-user / per-company sample-rate filtering fetched from the Moesif app-config endpoint, and enqueue qualifying events into the Moesif SDK with a weight equal to floor(100/samplingPercentage). The app-config sampling rules shall be refreshed once per minute when the SDK's X-Moesif-Config-Etag differs from the cached eTag.
+formalization_strategy: informal
+informal_verification:
+    method: ""
+    evidence: ""
+    verified: false
+parent: SYS-REQ-004
+component: pumps-http-moesif
+rationale: ""
+tags: []
+variables: []
+traces:
+    satisfies:
+        - SYS-REQ-004
+    reviewed_at: "2026-05-30T08:45:50.659925Z"
+    reviewed_by: human:buger
+    reviewed_fingerprint: sha256:3f8b8dd5f2d1f4ec5cdebb1a83ed83fd3785a3558ebb875c15f2d4ff944c32c0
+verification:
+    assurance_level: B
+    formalization_status: none
+    review:
+        status: approved
+        reviewer: human:buger
+        role: software_engineer
+        reviewed_at: "2026-05-30T08:44:11Z"
+        comment: Phase A per-implementation/per-significant-behavior decomposition; descriptions code-verified against the named files per docs/phase-a-proposed-reqs.md. Pump-family family-level reqs are retained as superseded anchor reqs.
+        fingerprint: sha256:e7d241dae2e0ed39a54fb6f0f14cd2136440bf1db21fbf1552a55c5495ccdef1
+        ai_generated: false
+    impact_reviews:
+        - requirement: SW-REQ-052
+          artifact: pumps/moesif.go
+          decision: no-authored-change
+          reviewer: buger
+          reason: Phase A re-annotated this file to point at the atomic per-implementation/per-behavior SW req (was previously SW-REQ-018/019/020/022/027/028); no runtime behavior change.
+          base: origin/master
+          requirement_fingerprint: sha256:3f8b8dd5f2d1f4ec5cdebb1a83ed83fd3785a3558ebb875c15f2d4ff944c32c0
+          approval_fingerprint: sha256:e7d241dae2e0ed39a54fb6f0f14cd2136440bf1db21fbf1552a55c5495ccdef1
+          artifact_fingerprint: sha256:4e7af251782c321f489b150e5889ec53f5aaff7a993fa18ddb91fb6cdc628093
+          reviewed_at: "2026-05-30T08:48:43Z"
+history:
+    created_by: human:cli
+    created_at: "2026-05-30T08:36:29Z"
+    last_modified_by: human:cli
+    last_modified_at: "2026-05-30T08:44:11Z"
+obligation_checklist:
+    - nominal
+    - untrusted_input_bounded
+lifecycle:
+    change_history:
+        - date: "2026-05-30T08:43:46Z"
+          from: draft
+          to: review
+          reason: ""
+          changed_by: human:cli

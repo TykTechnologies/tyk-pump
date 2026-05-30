@@ -1,9 +1,9 @@
 id: SW-REQ-023
 version: 1
-status: review
+status: approved
 priority: shall
 category: functional
-req_type: guarantee
+req_type: derived
 fretish: ""
 description: The StatsD pump shall emit a per-record timing metric to a StatsD server, and the DogStatsD pump shall emit a per-record request_time histogram with operator-configurable tags.
 formalization_strategy: informal
@@ -19,43 +19,46 @@ variables: []
 traces:
     satisfies:
         - SYS-REQ-004
-    reviewed_at: "2026-05-29T21:30:11.383117Z"
+    reviewed_at: "2026-05-30T07:45:51.646179Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:a4883391a9ac14a8642992b260f187510c6e52a7adeaaaa557a3fb3c61f29fea
+    reviewed_fingerprint: sha256:d5ecf0f7cf8e3ef89dc3feca502b177d77cad345fb7e8db6eb12ba245b1a6976
 verification:
     assurance_level: B
     formalization_status: none
     review:
         status: approved
-        reviewer: leo@tyk.io
-        reviewed_at: "2026-05-29T15:47:45Z"
+        reviewer: human:buger
+        role: software_engineer
+        reviewed_at: "2026-05-30T07:43:08Z"
+        comment: Software-component design reviewed as part of feat/reqproof-coverage PR; each maps to verified code paths per the Phase 0 file-by-file verification (see PR description for code-verified corrections SW-016/017/023/027/028/033).
+        fingerprint: sha256:2ff45fb28e2b8a681210a4d394a9d5966cb2559eee1c3df9599cec3049e8c0a4
         ai_generated: false
     impact_reviews:
         - requirement: SW-REQ-023
           artifact: pumps/dogstatsd.go
           decision: no-authored-change
           reviewer: buger
-          reason: Annotated MC/DC ignore on unreachable GeoIP and defensive type-assertion branches plus added unit tests; runtime behavior and authored requirement intent are unchanged.
+          reason: 'Production files added reqproof requirement-traceability annotations only (// reqproof:implements / // Verifies: / triple-form evidence). No runtime behavior change.'
           base: origin/master
-          requirement_fingerprint: sha256:a4883391a9ac14a8642992b260f187510c6e52a7adeaaaa557a3fb3c61f29fea
-          approval_fingerprint: sha256:ff58721ad157ee79409ce1e3b903c5a978d58bf620fb87ea3badcb1bcc689a67
+          requirement_fingerprint: sha256:d5ecf0f7cf8e3ef89dc3feca502b177d77cad345fb7e8db6eb12ba245b1a6976
+          approval_fingerprint: sha256:2ff45fb28e2b8a681210a4d394a9d5966cb2559eee1c3df9599cec3049e8c0a4
           artifact_fingerprint: sha256:1e0ae55dbe373d698c2f34d544a8e17955f7424be4b1cc8288b7f23561c4b666
-          reviewed_at: "2026-05-29T21:13:19Z"
+          reviewed_at: "2026-05-30T07:45:43Z"
         - requirement: SW-REQ-023
           artifact: pumps/statsd.go
           decision: no-authored-change
           reviewer: buger
-          reason: Annotated MC/DC ignore on unreachable GeoIP and defensive type-assertion branches plus added unit tests; runtime behavior and authored requirement intent are unchanged.
+          reason: 'Production files added reqproof requirement-traceability annotations only (// reqproof:implements / // Verifies: / triple-form evidence). No runtime behavior change.'
           base: origin/master
-          requirement_fingerprint: sha256:a4883391a9ac14a8642992b260f187510c6e52a7adeaaaa557a3fb3c61f29fea
-          approval_fingerprint: sha256:ff58721ad157ee79409ce1e3b903c5a978d58bf620fb87ea3badcb1bcc689a67
+          requirement_fingerprint: sha256:d5ecf0f7cf8e3ef89dc3feca502b177d77cad345fb7e8db6eb12ba245b1a6976
+          approval_fingerprint: sha256:2ff45fb28e2b8a681210a4d394a9d5966cb2559eee1c3df9599cec3049e8c0a4
           artifact_fingerprint: sha256:74bb261441e939a4871b5cefbb37d7963cd8c2d17ceca2f42b039a8e3d9e3e04
-          reviewed_at: "2026-05-29T21:13:19Z"
+          reviewed_at: "2026-05-30T07:45:43Z"
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:16Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-30T05:49:18Z"
+    last_modified_at: "2026-05-30T07:43:08Z"
 obligation_checklist:
     - errors_propagated
 lifecycle:

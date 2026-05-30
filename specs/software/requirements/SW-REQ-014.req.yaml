@@ -1,9 +1,9 @@
 id: SW-REQ-014
 version: 1
-status: review
+status: approved
 priority: shall
 category: functional
-req_type: guarantee
+req_type: derived
 fretish: ""
 description: MCP record extraction shall capture JSON-RPC method, primitive type and primitive name from MCP analytics records.
 formalization_strategy: informal
@@ -19,33 +19,36 @@ variables: []
 traces:
     satisfies:
         - SYS-REQ-002
-    reviewed_at: "2026-05-29T21:30:10.925373Z"
+    reviewed_at: "2026-05-30T07:45:50.839249Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:b30897bd1cfb8588dccc2658a35bbfb14a3ad0c9d99e06736c8fa45365cbe72b
+    reviewed_fingerprint: sha256:0980a943d80c45966d144071df21fd78c646b3c7f9667dbd2cec35a0e8bfed59
 verification:
     assurance_level: B
     formalization_status: none
     review:
         status: approved
-        reviewer: leo@tyk.io
-        reviewed_at: "2026-05-29T15:47:45Z"
+        reviewer: human:buger
+        role: software_engineer
+        reviewed_at: "2026-05-30T07:43:08Z"
+        comment: Software-component design reviewed as part of feat/reqproof-coverage PR; each maps to verified code paths per the Phase 0 file-by-file verification (see PR description for code-verified corrections SW-016/017/023/027/028/033).
+        fingerprint: sha256:7f6c3547c0bfa028719468e6450689fa60310a972e5306a003375c0098a0b4be
         ai_generated: false
     impact_reviews:
         - requirement: SW-REQ-014
           artifact: analytics/mcp_record.go
           decision: no-authored-change
           reviewer: buger
-          reason: Annotated MC/DC ignore on unreachable GeoIP and defensive type-assertion branches plus added unit tests; runtime behavior and authored requirement intent are unchanged.
+          reason: 'Production files added reqproof requirement-traceability annotations only (// reqproof:implements / // Verifies: / triple-form evidence). No runtime behavior change.'
           base: origin/master
-          requirement_fingerprint: sha256:b30897bd1cfb8588dccc2658a35bbfb14a3ad0c9d99e06736c8fa45365cbe72b
-          approval_fingerprint: sha256:70e5cc4c2adc11ecc25518bd4accf6e3d6d74724117ed84ff3bcc29524083526
+          requirement_fingerprint: sha256:0980a943d80c45966d144071df21fd78c646b3c7f9667dbd2cec35a0e8bfed59
+          approval_fingerprint: sha256:7f6c3547c0bfa028719468e6450689fa60310a972e5306a003375c0098a0b4be
           artifact_fingerprint: sha256:1e7fb4e1659a948e4a4133b162e407e853727d2ce11bdb2292954bd4e25d3986
-          reviewed_at: "2026-05-29T21:13:17Z"
+          reviewed_at: "2026-05-30T07:45:41Z"
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:15Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-29T15:47:45Z"
+    last_modified_at: "2026-05-30T07:43:08Z"
 obligation_checklist:
     - nominal
 lifecycle:

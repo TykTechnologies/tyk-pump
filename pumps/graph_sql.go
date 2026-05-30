@@ -32,17 +32,17 @@ type GraphSQLPump struct {
 	CommonPumpConfig
 }
 
-// reqproof:implements SW-REQ-019
+// reqproof:implements SW-REQ-042
 func (g *GraphSQLPump) GetName() string {
 	return "Graph SQL Pump"
 }
 
-// reqproof:implements SW-REQ-019
+// reqproof:implements SW-REQ-042
 func (g *GraphSQLPump) New() Pump {
 	return &GraphSQLPump{}
 }
 
-// reqproof:implements SW-REQ-019
+// reqproof:implements SW-REQ-042
 func (g *GraphSQLPump) Init(conf interface{}) error {
 	g.log = log.WithField("prefix", GraphSQLPrefix)
 
@@ -89,7 +89,7 @@ func (g *GraphSQLPump) Init(conf interface{}) error {
 	return nil
 }
 
-// reqproof:implements SW-REQ-019
+// reqproof:implements SW-REQ-042
 func (g *GraphSQLPump) getGraphRecords(data []interface{}) []*analytics.GraphRecord {
 	var graphRecords []*analytics.GraphRecord
 	for _, r := range data {
@@ -108,12 +108,12 @@ func (g *GraphSQLPump) getGraphRecords(data []interface{}) []*analytics.GraphRec
 	return graphRecords
 }
 
-// reqproof:implements SW-REQ-019
+// reqproof:implements SW-REQ-042
 func (g *GraphSQLPump) GetEnvPrefix() string {
 	return g.Conf.EnvPrefix
 }
 
-// reqproof:implements SW-REQ-019
+// reqproof:implements SW-REQ-042
 func (g *GraphSQLPump) WriteData(ctx context.Context, data []interface{}) error {
 	g.log.Debug("Attempting to write ", len(data), " records...")
 
@@ -179,7 +179,7 @@ func (g *GraphSQLPump) WriteData(ctx context.Context, data []interface{}) error 
 	return nil
 }
 
-// reqproof:implements SW-REQ-019
+// reqproof:implements SW-REQ-042
 func (g *GraphSQLPump) SetLogLevel(level logrus.Level) {
 	g.log.Level = level
 }

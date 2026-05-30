@@ -1,0 +1,10 @@
+component: gateway-integration
+variables:
+    - name: gateway_publishes_keys
+      type: bool
+      direction: input
+      description: Tyk gateway publishes analytics under the tyk-system-analytics(_0..9) keys.
+    - name: gateway_uses_msgpack_or_protobuf
+      type: bool
+      direction: input
+      description: Tyk gateway encodes analytics records with msgpack or protobuf, selected by key suffix.

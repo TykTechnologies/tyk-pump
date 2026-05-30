@@ -1,9 +1,9 @@
 id: SW-REQ-026
 version: 1
-status: review
+status: approved
 priority: shall
 category: functional
-req_type: guarantee
+req_type: derived
 fretish: ""
 description: The stdout and dummy pumps shall emit records to stdout or discard them, for debugging and testing.
 formalization_strategy: informal
@@ -19,43 +19,46 @@ variables: []
 traces:
     satisfies:
         - SYS-REQ-004
-    reviewed_at: "2026-05-29T21:30:11.465388Z"
+    reviewed_at: "2026-05-30T07:45:51.783724Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:cc1e5442614657517b386a62bb060e03cfad77829087eeb2e4754db921d20835
+    reviewed_fingerprint: sha256:a927ea0c9cb4e1eaec0aefb8379f21f3bf1895a594a14fa0133e98e3ce3101cb
 verification:
     assurance_level: B
     formalization_status: none
     review:
         status: approved
-        reviewer: leo@tyk.io
-        reviewed_at: "2026-05-29T15:47:46Z"
+        reviewer: human:buger
+        role: software_engineer
+        reviewed_at: "2026-05-30T07:43:08Z"
+        comment: Software-component design reviewed as part of feat/reqproof-coverage PR; each maps to verified code paths per the Phase 0 file-by-file verification (see PR description for code-verified corrections SW-016/017/023/027/028/033).
+        fingerprint: sha256:bef92021dc688c2091bec13a702a7a50f5fba8a8226de1f466bfc87f443181f1
         ai_generated: false
     impact_reviews:
         - requirement: SW-REQ-026
           artifact: pumps/dummy.go
           decision: no-authored-change
           reviewer: buger
-          reason: Annotated MC/DC ignore on unreachable GeoIP and defensive type-assertion branches plus added unit tests; runtime behavior and authored requirement intent are unchanged.
+          reason: 'Production files added reqproof requirement-traceability annotations only (// reqproof:implements / // Verifies: / triple-form evidence). No runtime behavior change.'
           base: origin/master
-          requirement_fingerprint: sha256:cc1e5442614657517b386a62bb060e03cfad77829087eeb2e4754db921d20835
-          approval_fingerprint: sha256:d468e67567102fbdedf7f0656b7a456b3abf43659357bd6c7bbfbbe39045c2cd
+          requirement_fingerprint: sha256:a927ea0c9cb4e1eaec0aefb8379f21f3bf1895a594a14fa0133e98e3ce3101cb
+          approval_fingerprint: sha256:bef92021dc688c2091bec13a702a7a50f5fba8a8226de1f466bfc87f443181f1
           artifact_fingerprint: sha256:86e6d0947546b5d3efd7cb43a1d720500ac92b8bdb14340aabb5ebd78e7150bf
-          reviewed_at: "2026-05-29T21:13:19Z"
+          reviewed_at: "2026-05-30T07:45:44Z"
         - requirement: SW-REQ-026
           artifact: pumps/stdout.go
           decision: no-authored-change
           reviewer: buger
-          reason: Annotated MC/DC ignore on unreachable GeoIP and defensive type-assertion branches plus added unit tests; runtime behavior and authored requirement intent are unchanged.
+          reason: 'Production files added reqproof requirement-traceability annotations only (// reqproof:implements / // Verifies: / triple-form evidence). No runtime behavior change.'
           base: origin/master
-          requirement_fingerprint: sha256:cc1e5442614657517b386a62bb060e03cfad77829087eeb2e4754db921d20835
-          approval_fingerprint: sha256:d468e67567102fbdedf7f0656b7a456b3abf43659357bd6c7bbfbbe39045c2cd
+          requirement_fingerprint: sha256:a927ea0c9cb4e1eaec0aefb8379f21f3bf1895a594a14fa0133e98e3ce3101cb
+          approval_fingerprint: sha256:bef92021dc688c2091bec13a702a7a50f5fba8a8226de1f466bfc87f443181f1
           artifact_fingerprint: sha256:e4973cbed6551b57ef82ca7c27d4042858e42e8558e57a5af0305a03d15abf24
-          reviewed_at: "2026-05-29T21:13:19Z"
+          reviewed_at: "2026-05-30T07:45:44Z"
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:16Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-29T15:47:46Z"
+    last_modified_at: "2026-05-30T07:43:08Z"
 obligation_checklist:
     - nominal
 lifecycle:

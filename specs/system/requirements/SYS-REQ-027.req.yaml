@@ -1,0 +1,53 @@
+id: SYS-REQ-027
+version: 1
+status: approved
+priority: shall
+category: constraint
+req_type: constraint
+fretish: runtime shall always satisfy single_process_only
+description: tyk-pump shall run as a single-process daemon; clustered or sharded multi-process deployments are out of scope.
+formalization_strategy: fretish
+informal_verification:
+    method: inspection
+    evidence: see rationale and parent STK linkage; constraint/assumption reviewed in Phase B of feat/reqproof-coverage PR
+    verified: true
+parent: STK-REQ-004
+component: runtime
+rationale: "Single-process is the operational shape Tyk operators deploy and the codebase assumes (global Pumps slice, single AnalyticsStorage singleton). Clustering would require significant rework."
+tags: []
+variables: []
+traces:
+    satisfies:
+        - STK-REQ-004
+    reviewed_at: "2026-05-30T08:22:48.968742Z"
+    reviewed_by: human:buger
+    reviewed_fingerprint: sha256:b02348bb0ea87c11528def40ca8b368483bcbeb56e744a77103caf4113a3425e
+verification:
+    assurance_level: B
+    formalization_status: valid
+    review:
+        status: approved
+        reviewer: human:buger
+        role: system_engineer
+        reviewed_at: "2026-05-30T08:22:48Z"
+        comment: 'Phase B constraint reqs: linked to satisfying STK, rationale added, FRETish formalized as project-level invariants, formalized:false reverted to fretish-strategy via the invariant form. Verified against go.mod / storage code / Makefile / runtime model.'
+        fingerprint: sha256:a666b6e836770114a96adfee0daaf05680cdb93710d0ec3ef1b4e1e4943795dc
+        ai_generated: false
+history:
+    created_by: human:cli
+    created_at: "2026-05-30T08:13:45Z"
+    last_modified_by: human:cli
+    last_modified_at: "2026-05-30T08:22:48Z"
+obligation_class: nominal
+lifecycle:
+    change_history:
+        - date: "2026-05-30T08:14:23Z"
+          from: draft
+          to: review
+          reason: ""
+          changed_by: human:cli
+        - date: "2026-05-30T08:22:48Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="system_engineer" reviewer="human:buger" at=2026-05-30T08:14:23Z comment="Phase B constraint reqs: project-level constraints derived from go.mod, storage code, Makefile, and deployment model. Each is code-verifiable: Go version in go.mod, Redis dep in storage/temporal_storage.go imports, FIPS in Makefile, single-process in main.go runtime.")'
+          changed_by: human:cli

@@ -1,0 +1,50 @@
+id: SYS-REQ-019
+version: 1
+status: approved
+priority: shall
+category: functional
+req_type: guarantee
+fretish: when records_aggregated aggregation shall always satisfy hits_errors_latency_counted
+description: When records have been aggregated within the configured window, the pump shall maintain hits, successes, errors and latency counters per aggregated unit.
+formalization_strategy: fretish
+informal_verification:
+    method: ""
+    evidence: ""
+    verified: false
+parent: STK-REQ-001
+component: aggregation
+rationale: ""
+tags: []
+variables: []
+traces:
+    satisfies:
+        - STK-REQ-001
+    reviewed_at: "2026-05-30T07:57:15.475071Z"
+    reviewed_by: human:buger
+    reviewed_fingerprint: sha256:94dc67bb88693414abf77a7e25fd63b3e093abc9319a8c7e7f0d713a0e3b35c0
+verification:
+    assurance_level: B
+    formalization_status: valid
+    review:
+        status: approved
+        reviewer: human:buger
+        role: system_engineer
+        reviewed_at: "2026-05-30T07:55:47Z"
+        comment: 'New SYS reqs from Phase 0.6 split of SYS-003 (dimensions+counters) and SYS-001 (fan-out); each is code-verified: dimensions/counters realised in analytics/aggregate.go incrementAggregate+incrementOrSetUnit, fan-out realised in main.writeToPumps goroutine-per-pump.'
+        fingerprint: sha256:bbbadd36e1185876a329f061c19ea0cf1112287f4569a8e092281792687278f7
+        ai_generated: false
+    gaps_reviewed_at: "2026-05-30T08:46:07.234656Z"
+    gaps_reviewed_by: buger
+history:
+    created_by: human:cli
+    created_at: "2026-05-30T07:52:52Z"
+    last_modified_by: human:cli
+    last_modified_at: "2026-05-30T07:55:47Z"
+obligation_class: nominal
+lifecycle:
+    change_history:
+        - date: "2026-05-30T07:55:46Z"
+          from: draft
+          to: review
+          reason: ""
+          changed_by: human:cli

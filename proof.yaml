@@ -27,11 +27,19 @@ project:
             serializer:
                 language: go
                 command: go test -count=1 -coverprofile=../cover.out ./serializer
+            logger:
+                language: go
+                command: go test -count=1 -coverprofile=../cover.out ./logger
+            server:
+                language: go
+                command: go test -count=1 -coverprofile=../cover.out ./server
     lint:
         exclude:
             - '**/*.pb.go'
             - vendor/**
     checks:
+        slow_tests: {}
+        mcdc_coverage: {}
         code_mcdc:
             advisory: false
             min_decision_percent: 55
@@ -56,14 +64,21 @@ project:
                   scope: ./retry
                   test_command: retry
                   test_packages: ./retry
+                - id: logger
+                  language: go
+                  scope: ./logger
+                  test_command: logger
+                  test_packages: ./logger
+                - id: server
+                  language: go
+                  scope: ./server
+                  test_command: server
+                  test_packages: ./server
         evidence_diversity:
             min_classes:
                 B: 2
     approval:
-        agent_autonomous_for:
+        required_for:
             assurance_levels:
                 - A
                 - B
-                - C
-                - D
-                - E

@@ -16,29 +16,44 @@ var serverPrefix = "server"
 var log = logger.GetLogger()
 
 // reqproof:implements SW-REQ-032
-func ServeHealthCheck(configHealthEndpoint string, configHealthPort int, enableProfiling bool) {
-	healthEndpoint := configHealthEndpoint
-	if healthEndpoint == "" {
-		healthEndpoint = defaultHealthEndpoint
+// resolveHealthCheckParams applies endpoint+port defaults and returns the
+// effective values, decoupled from the blocking ListenAndServe call so the
+// defaulting decisions can be unit-tested without binding a port.
+func resolveHealthCheckParams(configHealthEndpoint string, configHealthPort int) (endpoint string, port int) {
+	endpoint = configHealthEndpoint
+	if endpoint == "" {
+		endpoint = defaultHealthEndpoint
 	}
-	healthPort := configHealthPort
-	if healthPort == 0 {
-		healthPort = defaultHealthPort
+	port = configHealthPort
+	if port == 0 {
+		port = defaultHealthPort
 	}
+	return endpoint, port
+}
 
+// reqproof:implements SW-REQ-032
+// buildHealthCheckRouter constructs the health-check + optional pprof router,
+// decoupled from ListenAndServe so route registration can be unit-tested.
+func buildHealthCheckRouter(endpoint string, enableProfiling bool) *mux.Router {
 	r := mux.NewRouter()
-
-	r.HandleFunc("/"+healthEndpoint, Healthcheck).Methods("GET")
+	r.HandleFunc("/"+endpoint, Healthcheck).Methods("GET")
 	if enableProfiling {
 		r.HandleFunc("/debug/pprof/profile", pprof_http.Profile)
 		r.HandleFunc("/debug/pprof/{_:.*}", pprof_http.Index)
 	}
+	return r
+}
+
+// reqproof:implements SW-REQ-032
+func ServeHealthCheck(configHealthEndpoint string, configHealthPort int, enableProfiling bool) {
+	endpoint, port := resolveHealthCheckParams(configHealthEndpoint, configHealthPort)
+	r := buildHealthCheckRouter(endpoint, enableProfiling)
 
 	log.WithFields(logrus.Fields{
 		"prefix": serverPrefix,
-	}).Info("Serving health check endpoint at http://localhost:", healthPort, "/", healthEndpoint, " ...")
+	}).Info("Serving health check endpoint at http://localhost:", port, "/", endpoint, " ...")
 
-	if err := http.ListenAndServe(":"+fmt.Sprint(healthPort), r); err != nil {
+	if err := http.ListenAndServe(":"+fmt.Sprint(port), r); err != nil { //mcdc:ignore http.ListenAndServe is a blocking IO call whose error path cannot be unit-tested without binding a real port
 		log.WithFields(logrus.Fields{
 			"prefix": serverPrefix,
 		}).Fatal("Error serving health check endpoint", err)

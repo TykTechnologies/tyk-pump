@@ -6,7 +6,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
-// Verifies: SW-REQ-027
+// Verifies: SW-REQ-051
 func TestLogzioInit(t *testing.T) {
 	conf := NewLogzioPumpConfig()
 
@@ -38,7 +38,7 @@ func TestLogzioInit(t *testing.T) {
 	}
 }
 
-// Verifies: SW-REQ-027
+// Verifies: SW-REQ-051
 func TestLogzioDecodeWithDefaults(t *testing.T) {
 	config := map[string]interface{}{
 		"token": "123456789",
@@ -54,7 +54,7 @@ func TestLogzioDecodeWithDefaults(t *testing.T) {
 	}
 }
 
-// Verifies: SW-REQ-027
+// Verifies: SW-REQ-051
 func TestLogzioDecodeOverrideDefaults(t *testing.T) {
 	config := map[string]interface{}{
 		"token":            "123456789",

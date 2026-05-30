@@ -1,0 +1,61 @@
+id: SW-REQ-056
+version: 1
+status: approved
+priority: shall
+category: functional
+req_type: derived
+fretish: ""
+description: The Kinesis pump shall, on each purge, split records into batches of BatchSize (default 100, bounded by AWS's 500-record per-PutRecords limit), JSON-marshal each record into a Kinesis PutRecordsRequestEntry with PartitionKey set to a fresh crypto/rand integer (for even MD5-based shard distribution), and submit each batch via PutRecords to the configured StreamName. When KMSKeyID is configured at Init, the pump shall verify the stream's current encryption mode/key, enable KMS server-side encryption if not already enabled with that key, and fail Init if the stream is already encrypted with a different key.
+formalization_strategy: informal
+informal_verification:
+    method: ""
+    evidence: ""
+    verified: false
+parent: SYS-REQ-004
+component: pumps-aws-kinesis
+rationale: ""
+tags: []
+variables: []
+traces:
+    satisfies:
+        - SYS-REQ-004
+    reviewed_at: "2026-05-30T08:45:50.718919Z"
+    reviewed_by: human:buger
+    reviewed_fingerprint: sha256:672db7423b5743274bbe40c4579b3abf387fb1846e6039511826c9ed1f349d72
+verification:
+    assurance_level: B
+    formalization_status: none
+    review:
+        status: approved
+        reviewer: human:buger
+        role: software_engineer
+        reviewed_at: "2026-05-30T08:44:11Z"
+        comment: Phase A per-implementation/per-significant-behavior decomposition; descriptions code-verified against the named files per docs/phase-a-proposed-reqs.md. Pump-family family-level reqs are retained as superseded anchor reqs.
+        fingerprint: sha256:e9d4f6045874e926d4ab279e82e3197825a1ab5df1a38e3bb5b9e6d66a5967b1
+        ai_generated: false
+    impact_reviews:
+        - requirement: SW-REQ-056
+          artifact: pumps/kinesis.go
+          decision: no-authored-change
+          reviewer: buger
+          reason: Phase A re-annotated this file to point at the atomic per-implementation/per-behavior SW req (was previously SW-REQ-018/019/020/022/027/028); no runtime behavior change.
+          base: origin/master
+          requirement_fingerprint: sha256:672db7423b5743274bbe40c4579b3abf387fb1846e6039511826c9ed1f349d72
+          approval_fingerprint: sha256:e9d4f6045874e926d4ab279e82e3197825a1ab5df1a38e3bb5b9e6d66a5967b1
+          artifact_fingerprint: sha256:a54ff86b7d637b073001748c7c50b3c778ccf3e007cdd8c94c92a2fdbd6b27d8
+          reviewed_at: "2026-05-30T08:48:45Z"
+history:
+    created_by: human:cli
+    created_at: "2026-05-30T08:37:04Z"
+    last_modified_by: human:cli
+    last_modified_at: "2026-05-30T08:44:11Z"
+obligation_checklist:
+    - monotonicity
+    - nominal
+lifecycle:
+    change_history:
+        - date: "2026-05-30T08:43:46Z"
+          from: draft
+          to: review
+          reason: ""
+          changed_by: human:cli

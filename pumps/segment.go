@@ -24,23 +24,23 @@ type SegmentConf struct {
 	WriteKey  string `json:"segment_write_key" mapstructure:"segment_write_key"`
 }
 
-// reqproof:implements SW-REQ-027
+// reqproof:implements SW-REQ-053
 func (s *SegmentPump) New() Pump {
 	newPump := SegmentPump{}
 	return &newPump
 }
 
-// reqproof:implements SW-REQ-027
+// reqproof:implements SW-REQ-053
 func (s *SegmentPump) GetName() string {
 	return "Segment Pump"
 }
 
-// reqproof:implements SW-REQ-027
+// reqproof:implements SW-REQ-053
 func (s *SegmentPump) GetEnvPrefix() string {
 	return s.segmentConf.EnvPrefix
 }
 
-// reqproof:implements SW-REQ-027
+// reqproof:implements SW-REQ-053
 func (s *SegmentPump) Init(config interface{}) error {
 	s.segmentConf = &SegmentConf{}
 	s.log = log.WithField("prefix", segmentPrefix)
@@ -58,7 +58,7 @@ func (s *SegmentPump) Init(config interface{}) error {
 	return nil
 }
 
-// reqproof:implements SW-REQ-027
+// reqproof:implements SW-REQ-053
 func (s *SegmentPump) WriteData(ctx context.Context, data []interface{}) error {
 	s.log.Debug("Attempting to write ", len(data), " records...")
 
@@ -70,7 +70,7 @@ func (s *SegmentPump) WriteData(ctx context.Context, data []interface{}) error {
 	return nil
 }
 
-// reqproof:implements SW-REQ-027
+// reqproof:implements SW-REQ-053
 func (s *SegmentPump) WriteDataRecord(record analytics.AnalyticsRecord) error {
 	key := record.APIKey
 	properties, err := s.ToJSONMap(record)
@@ -91,7 +91,7 @@ func (s *SegmentPump) WriteDataRecord(record analytics.AnalyticsRecord) error {
 	return nil
 }
 
-// reqproof:implements SW-REQ-027
+// reqproof:implements SW-REQ-053
 func (s *SegmentPump) ToJSONMap(obj interface{}) (map[string]interface{}, error) {
 	ev, err := json.Marshal(obj)
 	if err != nil {

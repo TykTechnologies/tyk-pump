@@ -1,0 +1,18 @@
+id: graylog-moesif-record-fatal
+title: Graylog and Moesif pumps log.Fatal on per-record errors, crashing the whole process
+description: Accept that per-record decode failures in pumps/graylog.go (lines 120, 126, 155, 168) and pumps/moesif.go (lines 349, 356, 379, 386) call log.Fatal, terminating the pump process for one bad record.
+affected_requirements:
+    - SYS-REQ-004
+mitigation: Filter risky orgs before they reach these pumps; rely on process supervisor for restart.
+customer_impact: A single malformed record can cause a brief outage of the entire analytics pipeline until pod restart.
+owner: tyk-team
+review_date: "2026-08-30"
+release_disposition: ship_with_known_issue
+accepted_by: human:leo
+accepted_at: "2026-05-30T08:34:49Z"
+status: active
+history:
+    - at: "2026-05-30T08:34:49Z"
+      by: human:buger
+      action: accepted
+      detail: accepted_by=human:leo

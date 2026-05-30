@@ -1,9 +1,9 @@
 id: INT-REQ-004
 version: 1
-status: review
+status: approved
 priority: shall
 category: functional
-req_type: guarantee
+req_type: derived
 fretish: ""
 description: Every backend pump shall implement the Pump interface declared in pumps/pump.go (lifecycle, configuration, write and shutdown) so the core can drive any pump uniformly and surface write errors.
 formalization_strategy: informal
@@ -19,28 +19,51 @@ variables: []
 traces:
     satisfies:
         - SYS-REQ-004
-    reviewed_at: "2026-05-29T21:30:10.556861Z"
+    reviewed_at: "2026-05-30T08:45:50.14285Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:5e864d8e2043c3032621f1beb12f4d01d205a1aed4cbdbc924a64486d832d09d
+    reviewed_fingerprint: sha256:77b7a12bebc998e4e2c6730d3f2697ce97acf128f8dceddf86e60cd321840ddf
 verification:
     assurance_level: B
     formalization_status: none
     review:
         status: approved
-        reviewer: leo@tyk.io
-        reviewed_at: "2026-05-29T15:47:44Z"
+        reviewer: human:buger
+        role: interface_owner
+        reviewed_at: "2026-05-30T08:31:54Z"
+        comment: Re-approval after Phase C ICD metadata block populated; caller/callee/schema-version/back-compat/retirement fields code-verified.
+        fingerprint: sha256:ff1438596b9ab2f182c96d500f1d8899df90c2ac73d976db565447ad7b9d3ddb
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:46Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-29T21:27:58Z"
+    last_modified_at: "2026-05-30T08:31:54Z"
 obligation_checklist:
     - errors_propagated
+interface:
+    caller: tyk-pump-core
+    callee: pump-implementation
+    type: function_call
+    signature: Go interface `Pump` at pumps/pump.go:17-39 — 21 methods covering lifecycle (New, Init, Shutdown), config (GetName, GetEnvPrefix, SetTimeout/GetTimeout, SetMaxRecordSize/GetMaxRecordSize, SetLogLevel, SetOmitDetailedRecording/GetOmitDetailedRecording, SetFilters/GetFilters, SetIgnoreFields/GetIgnoreFields, SetDecodingResponse/GetDecodedResponse, SetDecodingRequest/GetDecodedRequest), and write (WriteData(ctx context.Context, []interface{}) error).
+    protocol: 'In-process Go interface; the core dispatches via main.go:execPumpWriting and selects on ctx.Done() to enforce per-pump timeouts.'
+    assumptions: 'Each pump implementation honours the ctx passed to WriteData (cancels in-flight work on ctx.Done) and returns a non-nil error when the underlying backend write fails. Methods may be added; callers obtain pumps via GetPumpByName (pumps/pump.go:48).'
+    guarantees: 'The core can drive any Pump uniformly. Back-compat: adding a method to the Pump interface is a MAJOR break (every implementation must update); per-pump struct field additions are minor. Retirement of any interface method requires a major tyk-pump version bump. KNOWN ISSUE: mongo-pump-ignores-caller-context — MongoPump.WriteData passes context.Background() to m.store.Insert instead of the caller ctx (pumps/mongo.go:435), so per-pump timeouts are ineffective for mongo (.proof/known-issues/mongo-pump-ignores-caller-context.yaml). BROADER PATTERN: many pumps (mongo*, kinesis, sql-standard, graylog, syslog, logzio, segment, influx*) log per-batch errors but return nil from WriteData, breaking the errors-surfaced-via-return-value side of the contract — see docs/phase-a-proposed-reqs.md for the per-pump error-propagation matrix; flagged for follow-up KI creation (a single "pump-WriteData-swallows-per-batch-errors" KI covering the family is recommended).'
+    producer: tyk-pump-core
+    consumer:
+        - pump-implementation
+    owner: team:tyk-pump-maintainers
+    version: v1
+    compatibility_policy: semver-strict
+    risk_tier: 1
 lifecycle:
     change_history:
         - date: "2026-05-29T15:46:43Z"
           from: draft
           to: review
           reason: ""
+          changed_by: human:cli
+        - date: "2026-05-30T08:31:54Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="interface_owner" reviewer="human:buger" at=2026-05-30T07:43:08Z comment="Cross-component contracts reviewed as part of feat/reqproof-coverage PR; gateway/storage/serializer/pump-backend contracts verified against actual key constants and interface declarations.")'
           changed_by: human:cli

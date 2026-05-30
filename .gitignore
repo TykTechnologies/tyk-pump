@@ -23,3 +23,10 @@ utils/release_rc.sh
 .claude/settings.local.json
 dist/
 .proof/
+# but DO track first-class spec artifacts that proof persists under .proof/
+!.proof/known-issues/
+!.proof/risks/
+!.proof/changes/
+!.proof/manual-evidence/
+!.proof/releases/
+!.proof/workspace.yaml

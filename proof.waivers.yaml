@@ -1,0 +1,26 @@
+# proof.waivers.yaml — explicit project waivers.
+# Authored via `proof waive <check> --scope ... --reason ... --by ... --role ... --expires YYYY-MM-DD`.
+# See `proof help waive` for the schema.
+
+waivers:
+    - check: spec_lint_assumption_disposition
+      scope: SYS-REQ-030
+      reason: FRETish has no natural environment-precondition shape for declarative input-only assumptions; the assumption is properly discharged via proof req assumptions review with external_owner=team:tyk-gateway and a 2026-11-30 review date. Removing the FRETish would just shift the audit failure to system_formalization_complete; the documented review is the honest discharge.
+      by: leo@tyk.io
+      role: assumption_owner
+      created_at: "2026-05-30"
+      expires: "2026-11-30"
+    - check: spec_lint_assumption_disposition
+      scope: SYS-REQ-031
+      reason: FRETish has no natural environment-precondition shape for declarative input-only assumptions; the assumption is properly discharged via proof req assumptions review with external_owner=team:tyk-gateway and a 2026-11-30 review date.
+      by: leo@tyk.io
+      role: assumption_owner
+      created_at: "2026-05-30"
+      expires: "2026-11-30"
+    - check: spec_lint_assumption_disposition
+      scope: SYS-REQ-033
+      reason: FRETish has no natural environment-precondition shape; this assumption is currently violated under mongo:6 and is linked to KI mongo-test-panic-under-mongo6 — the assumption is properly discharged via that KI.
+      by: leo@tyk.io
+      role: assumption_owner
+      created_at: "2026-05-30"
+      expires: "2026-11-30"

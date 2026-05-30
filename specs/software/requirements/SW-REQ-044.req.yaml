@@ -1,0 +1,61 @@
+id: SW-REQ-044
+version: 1
+status: approved
+priority: shall
+category: functional
+req_type: derived
+fretish: ""
+description: The MCP SQL pump shall, on each purge, retain only records for which IsMCPRecord() is true, convert each to an MCPRecord, then if TableSharding is true split on each YYYYMMDD boundary and route each day-slice to a <TableName>_<YYYYMMDD> table (auto-migrated when missing), otherwise route all records to the configured TableName (default tyk_analytics_mcp); within each table it shall issue parameter-bound batched inserts of BatchSize records using gorm.Create.
+formalization_strategy: informal
+informal_verification:
+    method: ""
+    evidence: ""
+    verified: false
+parent: SYS-REQ-004
+component: pumps-sql-mcp
+rationale: ""
+tags: []
+variables: []
+traces:
+    satisfies:
+        - SYS-REQ-004
+    reviewed_at: "2026-05-30T08:45:50.536509Z"
+    reviewed_by: human:buger
+    reviewed_fingerprint: sha256:ca5d56dd072c62abb74a7897abb765f2bf5ffc4e3985ba86005a5ccadd1ac33c
+verification:
+    assurance_level: B
+    formalization_status: none
+    review:
+        status: approved
+        reviewer: human:buger
+        role: software_engineer
+        reviewed_at: "2026-05-30T08:44:11Z"
+        comment: Phase A per-implementation/per-significant-behavior decomposition; descriptions code-verified against the named files per docs/phase-a-proposed-reqs.md. Pump-family family-level reqs are retained as superseded anchor reqs.
+        fingerprint: sha256:663dbb76c267aec9ddacd263468aade16da718571f5346215c352676dac0d5a7
+        ai_generated: false
+    impact_reviews:
+        - requirement: SW-REQ-044
+          artifact: pumps/mcp_sql.go
+          decision: no-authored-change
+          reviewer: buger
+          reason: Phase A re-annotated this file to point at the atomic per-implementation/per-behavior SW req (was previously SW-REQ-018/019/020/022/027/028); no runtime behavior change.
+          base: origin/master
+          requirement_fingerprint: sha256:ca5d56dd072c62abb74a7897abb765f2bf5ffc4e3985ba86005a5ccadd1ac33c
+          approval_fingerprint: sha256:663dbb76c267aec9ddacd263468aade16da718571f5346215c352676dac0d5a7
+          artifact_fingerprint: sha256:f92857d3d380dd43c747f13da321179c0bdf28439a155485d595404ab79261c8
+          reviewed_at: "2026-05-30T08:48:41Z"
+history:
+    created_by: human:cli
+    created_at: "2026-05-30T08:35:43Z"
+    last_modified_by: human:cli
+    last_modified_at: "2026-05-30T08:44:11Z"
+obligation_checklist:
+    - connection_leak_free
+    - parameterized_only_write
+lifecycle:
+    change_history:
+        - date: "2026-05-30T08:43:46Z"
+          from: draft
+          to: review
+          reason: ""
+          changed_by: human:cli

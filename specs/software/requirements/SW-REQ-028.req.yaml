@@ -1,11 +1,11 @@
 id: SW-REQ-028
 version: 1
-status: review
+status: approved
 priority: shall
 category: functional
-req_type: guarantee
+req_type: derived
 fretish: ""
-description: 'The AWS pump family shall forward records to AWS services: SQS sends batched messages with a configured static message group ID, Kinesis writes record entries with random partition keys for even shard distribution, and Timestream writes time-series records.'
+description: '[SUPERSEDED by Phase A decomposition: SW-REQ-055 (aws-sqs), SW-REQ-056 (aws-kinesis), SW-REQ-057 (aws-timestream)] The AWS pump family shall ship analytics records to SQS, Kinesis, or Timestream; SQS and Timestream propagate batch errors, Kinesis logs and discards them.'
 formalization_strategy: informal
 informal_verification:
     method: ""
@@ -19,59 +19,76 @@ variables: []
 traces:
     satisfies:
         - SYS-REQ-004
-    reviewed_at: "2026-05-29T21:30:11.630964Z"
+    reviewed_at: "2026-05-30T07:45:52.054356Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:fe5b965e9564844f2980f56b54b867443ee4a9677162179af24806593b0ca2a6
+    reviewed_fingerprint: sha256:f0e6b2cd07711725ec0165ffaf984aabb6b6099978f9110da02eaadc77726993
 verification:
     assurance_level: B
     formalization_status: none
     review:
         status: approved
-        reviewer: leo@tyk.io
-        reviewed_at: "2026-05-29T15:47:46Z"
+        reviewer: human:buger
+        role: software_engineer
+        reviewed_at: "2026-05-30T08:44:54Z"
+        comment: Re-approve superseded anchor reqs after Phase A decomposition; descriptions amended with SUPERSEDED prefix listing new SW reqs that replace them.
+        fingerprint: sha256:0f2d20b1aeb28bd81cb478546989832c2574a773d81f82f2dbc66a4ff195b002
         ai_generated: false
     impact_reviews:
         - requirement: SW-REQ-028
           artifact: pumps/kinesis.go
           decision: no-authored-change
           reviewer: buger
-          reason: Annotated MC/DC ignore on unreachable GeoIP and defensive type-assertion branches plus added unit tests; runtime behavior and authored requirement intent are unchanged.
+          reason: 'Production files added reqproof requirement-traceability annotations only (// reqproof:implements / // Verifies: / triple-form evidence). No runtime behavior change.'
           base: origin/master
-          requirement_fingerprint: sha256:fe5b965e9564844f2980f56b54b867443ee4a9677162179af24806593b0ca2a6
-          approval_fingerprint: sha256:5d8bd000c4ad04728fa36cc829ce728670fdd829273ce9540a69c6802ed851e1
+          requirement_fingerprint: sha256:f0e6b2cd07711725ec0165ffaf984aabb6b6099978f9110da02eaadc77726993
+          approval_fingerprint: sha256:b5315112b34dfa06052af9afd4dfe14bcdad1ffbd94d742ce65a4ef112cac94d
           artifact_fingerprint: sha256:937cc874099ae7126f019d9d96abc58533cbdffface557b168ace4e7285950a5
-          reviewed_at: "2026-05-29T21:13:20Z"
+          reviewed_at: "2026-05-30T07:45:44Z"
         - requirement: SW-REQ-028
           artifact: pumps/sqs.go
           decision: no-authored-change
           reviewer: buger
-          reason: Annotated MC/DC ignore on unreachable GeoIP and defensive type-assertion branches plus added unit tests; runtime behavior and authored requirement intent are unchanged.
+          reason: 'Production files added reqproof requirement-traceability annotations only (// reqproof:implements / // Verifies: / triple-form evidence). No runtime behavior change.'
           base: origin/master
-          requirement_fingerprint: sha256:fe5b965e9564844f2980f56b54b867443ee4a9677162179af24806593b0ca2a6
-          approval_fingerprint: sha256:5d8bd000c4ad04728fa36cc829ce728670fdd829273ce9540a69c6802ed851e1
+          requirement_fingerprint: sha256:f0e6b2cd07711725ec0165ffaf984aabb6b6099978f9110da02eaadc77726993
+          approval_fingerprint: sha256:b5315112b34dfa06052af9afd4dfe14bcdad1ffbd94d742ce65a4ef112cac94d
           artifact_fingerprint: sha256:4fab552ba85f8e1d6e026c384d3a708431878a146c5f0bebde703390847bb696
-          reviewed_at: "2026-05-29T21:13:20Z"
+          reviewed_at: "2026-05-30T07:45:44Z"
         - requirement: SW-REQ-028
           artifact: pumps/timestream.go
           decision: no-authored-change
           reviewer: buger
-          reason: Annotated MC/DC ignore on unreachable GeoIP and defensive type-assertion branches plus added unit tests; runtime behavior and authored requirement intent are unchanged.
+          reason: 'Production files added reqproof requirement-traceability annotations only (// reqproof:implements / // Verifies: / triple-form evidence). No runtime behavior change.'
           base: origin/master
-          requirement_fingerprint: sha256:fe5b965e9564844f2980f56b54b867443ee4a9677162179af24806593b0ca2a6
-          approval_fingerprint: sha256:5d8bd000c4ad04728fa36cc829ce728670fdd829273ce9540a69c6802ed851e1
+          requirement_fingerprint: sha256:f0e6b2cd07711725ec0165ffaf984aabb6b6099978f9110da02eaadc77726993
+          approval_fingerprint: sha256:b5315112b34dfa06052af9afd4dfe14bcdad1ffbd94d742ce65a4ef112cac94d
           artifact_fingerprint: sha256:3cae9b53b38ec2dea64932fdd81495c861d3b20592481a330bac5e95cfc6a6d8
-          reviewed_at: "2026-05-29T21:13:20Z"
+          reviewed_at: "2026-05-30T07:45:44Z"
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:16Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-30T05:49:18Z"
+    last_modified_at: "2026-05-30T08:45:17Z"
 obligation_checklist:
     - errors_propagated
+obligation_suppressions:
+    - id: errors_propagated
+      reason: Phase A decomposition superseded this family req; obligations are now carried by per-implementation children with implemented_by traces.
+      suppressed_by: buger
+      suppressed_at: "2026-05-30T08:45:17Z"
+      framework_refs:
+        - CWE CWE-703,CWE-252,CWE-754
+        - NIST-800-53 SI-11
+        - OWASP-ASVS-v4 V7.4.1,V7.4.2,V7.4.3
 lifecycle:
     change_history:
         - date: "2026-05-29T15:46:44Z"
           from: draft
           to: review
           reason: ""
+          changed_by: human:cli
+        - date: "2026-05-30T08:44:54Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="leo@tyk.io" at=2026-05-30T08:44:54Z comment="Software-component design reviewed as part of feat/reqproof-coverage PR; each maps to verified code paths per the Phase 0 file-by-file verification (see PR description for code-verified corrections SW-016/017/023/027/028/033).")'
           changed_by: human:cli

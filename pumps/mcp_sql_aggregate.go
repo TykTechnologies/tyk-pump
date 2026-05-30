@@ -27,22 +27,22 @@ type MCPSQLAggregatePump struct {
 	CommonPumpConfig
 }
 
-// reqproof:implements SW-REQ-019
+// reqproof:implements SW-REQ-045
 func (s *MCPSQLAggregatePump) GetName() string {
 	return "SQL MCP Aggregate Pump"
 }
 
-// reqproof:implements SW-REQ-019
+// reqproof:implements SW-REQ-045
 func (s *MCPSQLAggregatePump) GetEnvPrefix() string {
 	return s.SQLConf.EnvPrefix
 }
 
-// reqproof:implements SW-REQ-019
+// reqproof:implements SW-REQ-045
 func (s *MCPSQLAggregatePump) New() Pump {
 	return &MCPSQLAggregatePump{}
 }
 
-// reqproof:implements SW-REQ-019
+// reqproof:implements SW-REQ-045
 func (s *MCPSQLAggregatePump) Init(conf interface{}) error {
 	s.SQLConf = &SQLAggregatePumpConf{}
 	s.log = log.WithField("prefix", mcpSQLAggregatePrefix)
@@ -96,7 +96,7 @@ func (s *MCPSQLAggregatePump) Init(conf interface{}) error {
 }
 
 // ensureTable creates the table if it doesn't exist.
-// reqproof:implements SW-REQ-019
+// reqproof:implements SW-REQ-045
 func (s *MCPSQLAggregatePump) ensureTable(tableName string) error {
 	if !s.db.Migrator().HasTable(tableName) {
 		s.db = s.db.Table(tableName)
@@ -110,7 +110,7 @@ func (s *MCPSQLAggregatePump) ensureTable(tableName string) error {
 
 // ensureIndex creates the composite index on (dimension, timestamp, org_id, dimension_value).
 // For PostgreSQL it uses CONCURRENTLY to avoid locking the table.
-// reqproof:implements SW-REQ-019
+// reqproof:implements SW-REQ-045
 func (s *MCPSQLAggregatePump) ensureIndex(tableName string, background bool) error {
 	if s.SQLConf.OmitIndexCreation {
 		s.log.Info("omit_index_creation set to true, omitting index creation..")
@@ -156,7 +156,7 @@ func (s *MCPSQLAggregatePump) ensureIndex(tableName string, background bool) err
 }
 
 // aggregationTimeMinutes returns the aggregation window in minutes based on config.
-// reqproof:implements SW-REQ-019
+// reqproof:implements SW-REQ-045
 func (s *MCPSQLAggregatePump) aggregationTimeMinutes() int {
 	if s.SQLConf.StoreAnalyticsPerMinute {
 		return 1
@@ -165,7 +165,7 @@ func (s *MCPSQLAggregatePump) aggregationTimeMinutes() int {
 }
 
 // ensureMCPAggregateShardedTable switches to the date-specific shard and creates it if absent.
-// reqproof:implements SW-REQ-019
+// reqproof:implements SW-REQ-045
 func (s *MCPSQLAggregatePump) ensureMCPAggregateShardedTable(recDate string) string {
 	table := analytics.AggregateMCPSQLTable + "_" + recDate
 	s.db = s.db.Table(table)
@@ -178,7 +178,7 @@ func (s *MCPSQLAggregatePump) ensureMCPAggregateShardedTable(recDate string) str
 }
 
 // writeAggregatedSlice aggregates and writes a slice of records to the given table.
-// reqproof:implements SW-REQ-019
+// reqproof:implements SW-REQ-045
 func (s *MCPSQLAggregatePump) writeAggregatedSlice(ctx context.Context, data []interface{}, table string) error {
 	analyticsPerAPI := analytics.AggregateMCPData(data, "", s.aggregationTimeMinutes())
 	for apiID := range analyticsPerAPI {
@@ -191,7 +191,7 @@ func (s *MCPSQLAggregatePump) writeAggregatedSlice(ctx context.Context, data []i
 	return nil
 }
 
-// reqproof:implements SW-REQ-019
+// reqproof:implements SW-REQ-045
 func (s *MCPSQLAggregatePump) WriteData(ctx context.Context, data []interface{}) error {
 	dataLen := len(data)
 	s.log.Debug("Attempting to write ", dataLen, " records...")
@@ -241,7 +241,7 @@ func (s *MCPSQLAggregatePump) WriteData(ctx context.Context, data []interface{})
 	return nil
 }
 
-// reqproof:implements SW-REQ-019
+// reqproof:implements SW-REQ-045
 func (s *MCPSQLAggregatePump) DoAggregatedWriting(ctx context.Context, table, orgID, apiID string, ag *analytics.MCPRecordAggregate) error {
 	var recs []analytics.MCPSQLAnalyticsRecordAggregate
 

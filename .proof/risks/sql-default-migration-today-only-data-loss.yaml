@@ -1,0 +1,18 @@
+id: sql-default-migration-today-only-data-loss
+title: SQL default migration covers only current day; late-arriving records to older shards fail
+description: Accept that the default MigrateShardedTables=false in pumps/sql.go means schema changes are only applied to the current day's sharded table. Late or backfilled records targeting older shards fail to write after a schema expansion.
+affected_requirements:
+    - INT-REQ-007
+mitigation: 'Set migrate_sharded_tables: true in deployed SQL pump configs.'
+customer_impact: Late-arriving analytics records may fail to persist after a schema change, until operator manually migrates older shards.
+owner: tyk-team
+review_date: "2026-08-30"
+release_disposition: ship_with_known_issue
+accepted_by: human:leo
+accepted_at: "2026-05-30T08:32:25Z"
+status: active
+history:
+    - at: "2026-05-30T08:32:25Z"
+      by: human:buger
+      action: accepted
+      detail: accepted_by=human:leo

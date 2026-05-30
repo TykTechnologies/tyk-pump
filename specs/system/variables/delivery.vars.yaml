@@ -24,3 +24,19 @@ variables:
       type: bool
       direction: output
       description: The operation is retried with bounded exponential backoff.
+    - name: record_available_for_dispatch
+      type: bool
+      direction: input
+      description: An analytics record consumed from the temporal store is available for dispatch.
+    - name: record_dispatched_to_all_backends
+      type: bool
+      direction: output
+      description: The record has been dispatched to every configured backend pump on this purge cycle.
+    - name: retry_attempts_exhausted
+      type: bool
+      direction: input
+      description: The configured maximum retry attempts have been used for a transient failure.
+    - name: error_surfaced_to_caller
+      type: bool
+      direction: output
+      description: The transient failure has been surfaced to the caller without further retries.

@@ -11,7 +11,7 @@ import (
 
 // TestGetMapping_MCPFieldsForMCPRecord verifies that MCP records produce
 // mcp_method, mcp_primitive_type, and mcp_primitive_name fields in the ES mapping.
-// Verifies: SW-REQ-020
+// Verifies: SW-REQ-068
 func TestGetMapping_MCPFieldsForMCPRecord(t *testing.T) {
 	record := analytics.AnalyticsRecord{
 		APIID:        "api1",
@@ -37,7 +37,7 @@ func TestGetMapping_MCPFieldsForMCPRecord(t *testing.T) {
 
 // TestGetMapping_NoMCPFieldsForNonMCPRecord verifies backward compatibility:
 // non-MCP records must not include any MCP fields in the ES mapping.
-// Verifies: SW-REQ-020
+// Verifies: SW-REQ-068
 func TestGetMapping_NoMCPFieldsForNonMCPRecord(t *testing.T) {
 	record := analytics.AnalyticsRecord{
 		APIID:        "api1",
@@ -54,7 +54,7 @@ func TestGetMapping_NoMCPFieldsForNonMCPRecord(t *testing.T) {
 
 // TestGetIndexNameForRecord_MCPIndexSet verifies that MCP records are routed to
 // the configured MCPIndexName when it is set.
-// Verifies: SW-REQ-020
+// Verifies: SW-REQ-069
 func TestGetIndexNameForRecord_MCPIndexSet(t *testing.T) {
 	conf := &ElasticsearchConf{
 		IndexName:    "tyk_analytics",
@@ -69,7 +69,7 @@ func TestGetIndexNameForRecord_MCPIndexSet(t *testing.T) {
 
 // TestGetIndexNameForRecord_MCPIndexNotSet verifies backward compatibility:
 // when MCPIndexName is empty, all records (MCP and REST) use the default index.
-// Verifies: SW-REQ-020
+// Verifies: SW-REQ-069
 func TestGetIndexNameForRecord_MCPIndexNotSet(t *testing.T) {
 	conf := &ElasticsearchConf{
 		IndexName: "tyk_analytics",
@@ -83,7 +83,7 @@ func TestGetIndexNameForRecord_MCPIndexNotSet(t *testing.T) {
 
 // TestGetIndexNameForRecord_RollingIndex verifies that rolling index date suffix
 // is applied to both the default index and the MCP index.
-// Verifies: SW-REQ-020
+// Verifies: SW-REQ-069
 func TestGetIndexNameForRecord_RollingIndex(t *testing.T) {
 	conf := &ElasticsearchConf{
 		IndexName:    "tyk_analytics",
@@ -98,7 +98,7 @@ func TestGetIndexNameForRecord_RollingIndex(t *testing.T) {
 	assert.Equal(t, "tyk_analytics-"+today, getIndexNameForRecord(conf, restRecord))
 }
 
-// Verifies: SW-REQ-020
+// Verifies: SW-REQ-068
 func TestElasticsearchPump_TLSConfig_ErrorCases(t *testing.T) {
 	t.Run("should return wrapped error with invalid cert file", func(t *testing.T) {
 		pump := &ElasticsearchPump{}
@@ -138,7 +138,7 @@ func TestElasticsearchPump_TLSConfig_ErrorCases(t *testing.T) {
 	})
 }
 
-// Verifies: SW-REQ-020
+// Verifies: SW-REQ-068
 func TestGetMapping_BasicFields(t *testing.T) {
 	ts := time.Date(2025, 6, 15, 10, 0, 0, 0, time.UTC)
 	record := analytics.AnalyticsRecord{
@@ -186,7 +186,7 @@ func TestGetMapping_BasicFields(t *testing.T) {
 	assert.NotContains(t, mapping, "user_agent")
 }
 
-// Verifies: SW-REQ-020
+// Verifies: SW-REQ-068
 func TestGetMapping_GenerateID(t *testing.T) {
 	record := analytics.AnalyticsRecord{
 		TimeStamp:   time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
@@ -212,7 +212,7 @@ func TestGetMapping_GenerateID(t *testing.T) {
 	assert.NotEqual(t, id1, id3)
 }
 
-// Verifies: SW-REQ-020
+// Verifies: SW-REQ-068
 func TestGetMapping_MCPWithExtendedAndGenerateID(t *testing.T) {
 	record := analytics.AnalyticsRecord{
 		TimeStamp:    time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
@@ -245,7 +245,7 @@ func TestGetMapping_MCPWithExtendedAndGenerateID(t *testing.T) {
 	assert.NotEmpty(t, id)
 }
 
-// Verifies: SW-REQ-020
+// Verifies: SW-REQ-069
 func TestGetIndexName_NoRolling(t *testing.T) {
 	conf := &ElasticsearchConf{
 		IndexName: "tyk_analytics",
@@ -253,7 +253,7 @@ func TestGetIndexName_NoRolling(t *testing.T) {
 	assert.Equal(t, "tyk_analytics", getIndexName(conf))
 }
 
-// Verifies: SW-REQ-020
+// Verifies: SW-REQ-069
 func TestGetIndexName_Rolling(t *testing.T) {
 	conf := &ElasticsearchConf{
 		IndexName:    "tyk_analytics",
@@ -263,7 +263,7 @@ func TestGetIndexName_Rolling(t *testing.T) {
 	assert.Equal(t, "tyk_analytics-"+today, getIndexName(conf))
 }
 
-// Verifies: SW-REQ-020
+// Verifies: SW-REQ-068
 func TestGetMapping_ExtendedStatistics(t *testing.T) {
 	record := analytics.AnalyticsRecord{
 		APIID:       "api1",

@@ -1,0 +1,18 @@
+id: no-dlq-on-pump-write-failure
+title: 'No dead-letter queue: pump write failures after successful Redis pop lose records'
+description: 'Accept that tyk-pump provides at-most-once delivery: when all pump WriteData calls fail for a batch popped at main.go:278, records are dropped with only a log message (see PreprocessAnalyticsValues/writeToPumps in main.go:280-300).'
+affected_requirements:
+    - STK-REQ-002
+mitigation: Configure multiple pumps so that at least one is highly available; treat CSV pump as a local spool of last resort.
+customer_impact: Sustained backend outages can result in lost analytics records with no automatic replay.
+owner: tyk-team
+review_date: "2026-08-30"
+release_disposition: ship_with_known_issue
+accepted_by: human:leo
+accepted_at: "2026-05-30T08:31:24Z"
+status: active
+history:
+    - at: "2026-05-30T08:31:24Z"
+      by: human:buger
+      action: accepted
+      detail: accepted_by=human:leo

@@ -1,0 +1,15 @@
+id: write-failure-after-pop-loses-records
+title: Pump write failure after successful Redis Pop loses records (no DLQ)
+description: STK-REQ-002 promises records are neither lost nor duplicated in normal operation. main.go:278 successfully pops a batch via GetAndDeleteSet; main.go:285 calls PreprocessAnalyticsValues which fans out to writeToPumps. If every pump fails its WriteData call (e.g. all backends are down), the records are not re-enqueued, written to a dead-letter queue, or otherwise retained — they are simply lost. The implementation provides at-most-once delivery, while STK-REQ-002 reads as at-least-once.
+affected_requirements:
+    - STK-REQ-002
+severity: medium
+mitigation: Operators see WriteData error logs but the underlying batch is gone. Maintain redundant pumps (e.g. an always-available local file pump such as CSV) so at least one sink succeeds.
+remediation: Implement a dead-letter queue or local on-disk spool for records whose pump writes all fail; surface a metric for DLQ depth.
+owner: tyk-team
+release_disposition: ship_with_known_issue
+status: open
+history:
+    - at: "2026-05-30T08:31:16Z"
+      by: human:buger
+      action: created

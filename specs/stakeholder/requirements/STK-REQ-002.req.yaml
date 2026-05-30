@@ -1,6 +1,6 @@
 id: STK-REQ-002
 version: 1
-status: review
+status: approved
 priority: shall
 category: functional
 req_type: guarantee
@@ -19,26 +19,30 @@ tags:
     - resilience
 variables: []
 traces:
-    reviewed_at: "2026-05-29T21:30:11.812328Z"
+    reviewed_at: "2026-05-30T08:00:51.487463Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:1fc897bf213e2497e989918874e0c66fd991a55c5f906433354f616014e01ab6
+    reviewed_fingerprint: sha256:1850a169bf992351ae27b3c657e47ea132cf4908f9b20d3131c5155947d1165d
 verification:
     assurance_level: B
     formalization_status: none
     review:
         status: approved
-        reviewer: leo@tyk.io
-        reviewed_at: "2026-05-29T15:47:46Z"
+        reviewer: human:buger
+        role: system_owner
+        reviewed_at: "2026-05-30T08:00:50Z"
+        comment: 'Re-approval after Phase 0.6: acceptance-criteria derived_reqs extended to include the new SYS reqs from the splits (SYS-018, 019, 020, 021, 022, 023). Stakeholder intent unchanged.'
+        fingerprint: sha256:7761e82cd68cd294fada0becf1c499d8122b443b0a72edf21449a63f43e5bc9e
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:10:49Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-29T15:47:46Z"
+    last_modified_at: "2026-05-30T08:00:50Z"
 obligation_checklist:
     - error_handling
     - boundary
     - atomicity
+release_disposition: ship_with_known_issue
 stakeholder:
     persona: Platform operator
     story: As an operator I want resilient multi-backend delivery so that one unhealthy sink does not take down my whole analytics pipeline.
@@ -55,10 +59,21 @@ stakeholder:
           derived_reqs:
             - SYS-REQ-006
             - SYS-REQ-007
+            - SYS-REQ-023
 lifecycle:
     change_history:
         - date: "2026-05-29T15:46:44Z"
           from: draft
           to: review
           reason: ""
+          changed_by: human:cli
+        - date: "2026-05-30T08:00:50Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="system_owner" reviewer="human:buger" at=2026-05-30T07:43:08Z comment="Stakeholder intent reviewed as part of feat/reqproof-coverage PR; each persona/story/acceptance-criteria matches operator/business reality for tyk-pump.")'
+          changed_by: human:cli
+        - date: "2026-05-30T08:31:20Z"
+          from: release_disposition=
+          to: release_disposition=ship_with_known_issue
+          reason: 'KI write-failure-after-pop-loses-records: no DLQ; failed pump writes lose the batch'
           changed_by: human:cli

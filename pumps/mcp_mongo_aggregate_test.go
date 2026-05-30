@@ -12,7 +12,7 @@ import (
 	"github.com/TykTechnologies/tyk-pump/analytics"
 )
 
-// Verifies: SW-REQ-018
+// Verifies: SW-REQ-039
 func newMCPMongoAggregatePump(t *testing.T) *MCPMongoAggregatePump {
 	t.Helper()
 	cfgPump := make(map[string]interface{})
@@ -27,7 +27,7 @@ func newMCPMongoAggregatePump(t *testing.T) *MCPMongoAggregatePump {
 	return pump
 }
 
-// Verifies: SW-REQ-018
+// Verifies: SW-REQ-039
 func TestMCPMongoAggregatePump_New(t *testing.T) {
 	p := &MCPMongoAggregatePump{}
 	newP := p.New()
@@ -36,34 +36,34 @@ func TestMCPMongoAggregatePump_New(t *testing.T) {
 	assert.True(t, ok)
 }
 
-// Verifies: SW-REQ-018
+// Verifies: SW-REQ-039
 func TestMCPMongoAggregatePump_GetName(t *testing.T) {
 	p := &MCPMongoAggregatePump{}
 	assert.Equal(t, "MongoDB MCP Aggregate Pump", p.GetName())
 }
 
-// Verifies: SW-REQ-018
+// Verifies: SW-REQ-039
 func TestMCPMongoAggregatePump_SetDecodingRequest(t *testing.T) {
 	p := &MCPMongoAggregatePump{}
 	p.SetDecodingRequest(false) // no-op
 	p.SetDecodingRequest(true)  // logs warning
 }
 
-// Verifies: SW-REQ-018
+// Verifies: SW-REQ-039
 func TestMCPMongoAggregatePump_SetDecodingResponse(t *testing.T) {
 	p := &MCPMongoAggregatePump{}
 	p.SetDecodingResponse(false)
 	p.SetDecodingResponse(true)
 }
 
-// Verifies: SW-REQ-018
+// Verifies: SW-REQ-039
 func TestMCPMongoAggregatePump_Init_InvalidConfig(t *testing.T) {
 	pump := &MCPMongoAggregatePump{}
 	err := pump.Init("not-a-map")
 	require.Error(t, err, "Init should return error for invalid config")
 }
 
-// Verifies: SW-REQ-018
+// Verifies: SW-REQ-039
 func TestMCPMongoAggregatePump_WriteData_PerAPIPartitioning(t *testing.T) {
 	pump := newMCPMongoAggregatePump(t)
 
@@ -97,7 +97,7 @@ func TestMCPMongoAggregatePump_WriteData_PerAPIPartitioning(t *testing.T) {
 	assert.Equal(t, []int{2, 5}, hits, "expected per-api hit counts {2,5}, got %v (a single merged doc would show 7)", hits)
 }
 
-// Verifies: SW-REQ-018
+// Verifies: SW-REQ-039
 func TestMCPMongoAggregatePump_WriteData_Roundtrip(t *testing.T) {
 	pump := newMCPMongoAggregatePump(t)
 
@@ -135,7 +135,7 @@ func TestMCPMongoAggregatePump_WriteData_Roundtrip(t *testing.T) {
 	assert.Equal(t, 1, ag.Total.ErrorTotal)
 }
 
-// Verifies: SW-REQ-018
+// Verifies: SW-REQ-039
 func TestMCPMongoAggregatePump_WriteData_MixedCollection(t *testing.T) {
 	pump := newMCPMongoAggregatePump(t)
 
@@ -170,7 +170,7 @@ func TestMCPMongoAggregatePump_WriteData_MixedCollection(t *testing.T) {
 	assert.NotEmpty(t, mixedResults, "mixed collection should also have data")
 }
 
-// Verifies: SW-REQ-018
+// Verifies: SW-REQ-039
 func TestAddMCPDimensionUpdates_IncludesLatencyFields(t *testing.T) {
 	// Create MCP analytics records with non-zero latency and request time.
 	ts := time.Date(2024, 6, 15, 10, 0, 0, 0, time.UTC)
@@ -249,7 +249,7 @@ func TestAddMCPDimensionUpdates_IncludesLatencyFields(t *testing.T) {
 	assert.NotZero(t, maxDoc[prefix+"maxlatency"])
 }
 
-// Verifies: SW-REQ-018
+// Verifies: SW-REQ-039
 func TestAddMCPDimensionUpdates_MinLatencyWhenNotAllErrors(t *testing.T) {
 	ts := time.Date(2024, 6, 15, 10, 0, 0, 0, time.UTC)
 	data := []interface{}{
@@ -276,7 +276,7 @@ func TestAddMCPDimensionUpdates_MinLatencyWhenNotAllErrors(t *testing.T) {
 	}
 }
 
-// Verifies: SW-REQ-018
+// Verifies: SW-REQ-039
 func TestAddMCPDimensionUpdates_NoMinWhenAllErrors(t *testing.T) {
 	ts := time.Date(2024, 6, 15, 10, 0, 0, 0, time.UTC)
 	data := []interface{}{

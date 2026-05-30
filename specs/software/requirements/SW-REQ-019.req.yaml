@@ -1,11 +1,11 @@
 id: SW-REQ-019
 version: 1
-status: review
+status: approved
 priority: shall
 category: functional
-req_type: guarantee
+req_type: derived
 fretish: ""
-description: The SQL pump family shall write records and aggregates to SQL backends using parameter-bound statements with day-sharded tables.
+description: '[SUPERSEDED by Phase A decomposition: SW-REQ-040 (sql-standard), SW-REQ-041 (sql-aggregate), SW-REQ-042 (graph-sql), SW-REQ-043 (graph-sql-aggregate), SW-REQ-044 (mcp-sql), SW-REQ-045 (mcp-sql-aggregate), and sql-aggregate sub-reqs SW-REQ-064..SW-REQ-067] The SQL pump family shall write analytics records and aggregates to SQL backends using parameter-bound queries; per-batch insert errors are logged but not propagated upward for non-aggregate variants.'
 formalization_strategy: informal
 informal_verification:
     method: ""
@@ -19,89 +19,106 @@ variables: []
 traces:
     satisfies:
         - SYS-REQ-004
-    reviewed_at: "2026-05-29T21:30:11.156693Z"
+    reviewed_at: "2026-05-30T07:45:51.231926Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:c984ea50a1a53b34e0b79c4d2557408dbe5f45ee8da483d22dd316f941b1b48f
+    reviewed_fingerprint: sha256:a4995346c0a9f648fbed74739b2b170f910d1faf5665c1469f15c22a57a38e9a
 verification:
     assurance_level: B
     formalization_status: none
     review:
         status: approved
-        reviewer: leo@tyk.io
-        reviewed_at: "2026-05-29T15:47:45Z"
+        reviewer: human:buger
+        role: software_engineer
+        reviewed_at: "2026-05-30T08:44:54Z"
+        comment: Re-approve superseded anchor reqs after Phase A decomposition; descriptions amended with SUPERSEDED prefix listing new SW reqs that replace them.
+        fingerprint: sha256:b5ec8e9e77a63faab4230cf5fdad066a2a6152810eda8bb301e4fe78b844bb45
         ai_generated: false
     impact_reviews:
         - requirement: SW-REQ-019
           artifact: pumps/graph_sql.go
           decision: no-authored-change
           reviewer: buger
-          reason: Annotated MC/DC ignore on unreachable GeoIP and defensive type-assertion branches plus added unit tests; runtime behavior and authored requirement intent are unchanged.
+          reason: 'Production files added reqproof requirement-traceability annotations only (// reqproof:implements / // Verifies: / triple-form evidence). No runtime behavior change.'
           base: origin/master
-          requirement_fingerprint: sha256:c984ea50a1a53b34e0b79c4d2557408dbe5f45ee8da483d22dd316f941b1b48f
-          approval_fingerprint: sha256:d44a3c8d681ff0ade5d7b23a1a3843332bae4e48439890fa0019dcee73d3c9a4
+          requirement_fingerprint: sha256:a4995346c0a9f648fbed74739b2b170f910d1faf5665c1469f15c22a57a38e9a
+          approval_fingerprint: sha256:7afc3fd8f21de4034b432a6043a0f72c3b3d952a301f0f3eff1030415f51611c
           artifact_fingerprint: sha256:5f5432641b4467cbc4127bc8807df61aeed746d65b43ae10660247b270500da7
-          reviewed_at: "2026-05-29T21:13:18Z"
+          reviewed_at: "2026-05-30T07:45:42Z"
         - requirement: SW-REQ-019
           artifact: pumps/graph_sql_aggregate.go
           decision: no-authored-change
           reviewer: buger
-          reason: Annotated MC/DC ignore on unreachable GeoIP and defensive type-assertion branches plus added unit tests; runtime behavior and authored requirement intent are unchanged.
+          reason: 'Production files added reqproof requirement-traceability annotations only (// reqproof:implements / // Verifies: / triple-form evidence). No runtime behavior change.'
           base: origin/master
-          requirement_fingerprint: sha256:c984ea50a1a53b34e0b79c4d2557408dbe5f45ee8da483d22dd316f941b1b48f
-          approval_fingerprint: sha256:d44a3c8d681ff0ade5d7b23a1a3843332bae4e48439890fa0019dcee73d3c9a4
+          requirement_fingerprint: sha256:a4995346c0a9f648fbed74739b2b170f910d1faf5665c1469f15c22a57a38e9a
+          approval_fingerprint: sha256:7afc3fd8f21de4034b432a6043a0f72c3b3d952a301f0f3eff1030415f51611c
           artifact_fingerprint: sha256:7ab935b8369bdf6b209b545d29cc611a3facbdc9270494742fd36ff291a58b24
-          reviewed_at: "2026-05-29T21:13:18Z"
+          reviewed_at: "2026-05-30T07:45:42Z"
         - requirement: SW-REQ-019
           artifact: pumps/mcp_sql.go
           decision: no-authored-change
           reviewer: buger
-          reason: Annotated MC/DC ignore on unreachable GeoIP and defensive type-assertion branches plus added unit tests; runtime behavior and authored requirement intent are unchanged.
+          reason: 'Production files added reqproof requirement-traceability annotations only (// reqproof:implements / // Verifies: / triple-form evidence). No runtime behavior change.'
           base: origin/master
-          requirement_fingerprint: sha256:c984ea50a1a53b34e0b79c4d2557408dbe5f45ee8da483d22dd316f941b1b48f
-          approval_fingerprint: sha256:d44a3c8d681ff0ade5d7b23a1a3843332bae4e48439890fa0019dcee73d3c9a4
+          requirement_fingerprint: sha256:a4995346c0a9f648fbed74739b2b170f910d1faf5665c1469f15c22a57a38e9a
+          approval_fingerprint: sha256:7afc3fd8f21de4034b432a6043a0f72c3b3d952a301f0f3eff1030415f51611c
           artifact_fingerprint: sha256:d288c38425cc46921a19b753f82ed6d5ed358a6f89889925acfb7671776bbf02
-          reviewed_at: "2026-05-29T21:13:18Z"
+          reviewed_at: "2026-05-30T07:45:42Z"
         - requirement: SW-REQ-019
           artifact: pumps/mcp_sql_aggregate.go
           decision: no-authored-change
           reviewer: buger
-          reason: Annotated MC/DC ignore on unreachable GeoIP and defensive type-assertion branches plus added unit tests; runtime behavior and authored requirement intent are unchanged.
+          reason: 'Production files added reqproof requirement-traceability annotations only (// reqproof:implements / // Verifies: / triple-form evidence). No runtime behavior change.'
           base: origin/master
-          requirement_fingerprint: sha256:c984ea50a1a53b34e0b79c4d2557408dbe5f45ee8da483d22dd316f941b1b48f
-          approval_fingerprint: sha256:d44a3c8d681ff0ade5d7b23a1a3843332bae4e48439890fa0019dcee73d3c9a4
+          requirement_fingerprint: sha256:a4995346c0a9f648fbed74739b2b170f910d1faf5665c1469f15c22a57a38e9a
+          approval_fingerprint: sha256:7afc3fd8f21de4034b432a6043a0f72c3b3d952a301f0f3eff1030415f51611c
           artifact_fingerprint: sha256:efce07b7adb55e4c42d46a76f77c10216c0e4a84ba80119a870f95cbcc0822d6
-          reviewed_at: "2026-05-29T21:13:18Z"
+          reviewed_at: "2026-05-30T07:45:42Z"
         - requirement: SW-REQ-019
           artifact: pumps/sql.go
           decision: no-authored-change
           reviewer: buger
-          reason: Annotated MC/DC ignore on unreachable GeoIP and defensive type-assertion branches plus added unit tests; runtime behavior and authored requirement intent are unchanged.
+          reason: 'Production files added reqproof requirement-traceability annotations only (// reqproof:implements / // Verifies: / triple-form evidence). No runtime behavior change.'
           base: origin/master
-          requirement_fingerprint: sha256:c984ea50a1a53b34e0b79c4d2557408dbe5f45ee8da483d22dd316f941b1b48f
-          approval_fingerprint: sha256:d44a3c8d681ff0ade5d7b23a1a3843332bae4e48439890fa0019dcee73d3c9a4
+          requirement_fingerprint: sha256:a4995346c0a9f648fbed74739b2b170f910d1faf5665c1469f15c22a57a38e9a
+          approval_fingerprint: sha256:7afc3fd8f21de4034b432a6043a0f72c3b3d952a301f0f3eff1030415f51611c
           artifact_fingerprint: sha256:8d83169cf61d152dfb7998c0cf8199b7165599298b0d487e9bf31fe56713918e
-          reviewed_at: "2026-05-29T21:13:18Z"
+          reviewed_at: "2026-05-30T07:45:42Z"
         - requirement: SW-REQ-019
           artifact: pumps/sql_aggregate.go
           decision: no-authored-change
           reviewer: buger
-          reason: Annotated MC/DC ignore on unreachable GeoIP and defensive type-assertion branches plus added unit tests; runtime behavior and authored requirement intent are unchanged.
+          reason: 'Production files added reqproof requirement-traceability annotations only (// reqproof:implements / // Verifies: / triple-form evidence). No runtime behavior change.'
           base: origin/master
-          requirement_fingerprint: sha256:c984ea50a1a53b34e0b79c4d2557408dbe5f45ee8da483d22dd316f941b1b48f
-          approval_fingerprint: sha256:d44a3c8d681ff0ade5d7b23a1a3843332bae4e48439890fa0019dcee73d3c9a4
+          requirement_fingerprint: sha256:a4995346c0a9f648fbed74739b2b170f910d1faf5665c1469f15c22a57a38e9a
+          approval_fingerprint: sha256:7afc3fd8f21de4034b432a6043a0f72c3b3d952a301f0f3eff1030415f51611c
           artifact_fingerprint: sha256:1b61b84e10c434f679cf0deb81fe33d67f059a666276de77304860802ecebad4
-          reviewed_at: "2026-05-29T21:13:18Z"
+          reviewed_at: "2026-05-30T07:45:42Z"
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:15Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-29T15:47:45Z"
+    last_modified_at: "2026-05-30T08:45:17Z"
 obligation_checklist:
     - parameterized_only_write
+obligation_suppressions:
+    - id: parameterized_only_write
+      reason: Phase A decomposition superseded this family req; obligations are now carried by per-implementation children with implemented_by traces.
+      suppressed_by: buger
+      suppressed_at: "2026-05-30T08:45:17Z"
+      framework_refs:
+        - CWE CWE-89
+        - NIST-800-53 SI-10
+        - OWASP-ASVS-v4 V5.3.4,V5.3.5
 lifecycle:
     change_history:
         - date: "2026-05-29T15:46:44Z"
           from: draft
           to: review
           reason: ""
+          changed_by: human:cli
+        - date: "2026-05-30T08:44:54Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="leo@tyk.io" at=2026-05-30T08:44:53Z comment="Software-component design reviewed as part of feat/reqproof-coverage PR; each maps to verified code paths per the Phase 0 file-by-file verification (see PR description for code-verified corrections SW-016/017/023/027/028/033).")'
           changed_by: human:cli

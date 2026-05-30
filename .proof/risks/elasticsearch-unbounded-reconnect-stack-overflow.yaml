@@ -1,0 +1,19 @@
+id: elasticsearch-unbounded-reconnect-stack-overflow
+title: Elasticsearch pump's unbounded reconnect recursion can stack-overflow the process
+description: Accept that pumps/elasticsearch.go:407-415 connect() recurses without bound on failure and pumps/elasticsearch.go:419-432 WriteData re-enters it, eventually overflowing the goroutine stack on persistent ES outage.
+affected_requirements:
+    - SYS-REQ-004
+    - SYS-REQ-005
+mitigation: Monitor ES availability externally; restart tyk-pump if reconnect-loop log noise persists.
+customer_impact: Sustained ES outage can crash the whole pump process via stack overflow, taking down all pumps.
+owner: tyk-team
+review_date: "2026-08-30"
+release_disposition: ship_with_known_issue
+accepted_by: human:leo
+accepted_at: "2026-05-30T08:34:45Z"
+status: active
+history:
+    - at: "2026-05-30T08:34:45Z"
+      by: human:buger
+      action: accepted
+      detail: accepted_by=human:leo

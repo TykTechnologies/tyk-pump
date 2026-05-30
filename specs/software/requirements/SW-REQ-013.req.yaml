@@ -1,9 +1,9 @@
 id: SW-REQ-013
 version: 1
-status: review
+status: approved
 priority: shall
 category: functional
-req_type: guarantee
+req_type: derived
 fretish: ""
 description: GraphQL record extraction shall capture operation type, root fields, types and errors from GraphQL analytics records.
 formalization_strategy: informal
@@ -19,33 +19,36 @@ variables: []
 traces:
     satisfies:
         - SYS-REQ-002
-    reviewed_at: "2026-05-29T21:30:10.902419Z"
+    reviewed_at: "2026-05-30T07:45:50.798082Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:3d7ca17eaf4ac6211ca48457a65765211a0cef99cb082c86cd9f988fea4cc2c7
+    reviewed_fingerprint: sha256:f39c491c7d776926f4c6951716bebf2cc8860d07c52ae0e24ef34b3a95c05b64
 verification:
     assurance_level: B
     formalization_status: none
     review:
         status: approved
-        reviewer: leo@tyk.io
-        reviewed_at: "2026-05-29T15:47:45Z"
+        reviewer: human:buger
+        role: software_engineer
+        reviewed_at: "2026-05-30T07:43:08Z"
+        comment: Software-component design reviewed as part of feat/reqproof-coverage PR; each maps to verified code paths per the Phase 0 file-by-file verification (see PR description for code-verified corrections SW-016/017/023/027/028/033).
+        fingerprint: sha256:56dab40bc01b174fcae9997cfe70f30c0872561d05877c0624536b2f461deda8
         ai_generated: false
     impact_reviews:
         - requirement: SW-REQ-013
           artifact: analytics/graph_record.go
           decision: no-authored-change
           reviewer: buger
-          reason: Annotated MC/DC ignore on unreachable GeoIP and defensive type-assertion branches plus added unit tests; runtime behavior and authored requirement intent are unchanged.
+          reason: 'Production files added reqproof requirement-traceability annotations only (// reqproof:implements / // Verifies: / triple-form evidence). No runtime behavior change.'
           base: origin/master
-          requirement_fingerprint: sha256:3d7ca17eaf4ac6211ca48457a65765211a0cef99cb082c86cd9f988fea4cc2c7
-          approval_fingerprint: sha256:e2d2f1068b52736417568f0912812e5955f03fa054b41c9d0003a03b6c8234ca
+          requirement_fingerprint: sha256:f39c491c7d776926f4c6951716bebf2cc8860d07c52ae0e24ef34b3a95c05b64
+          approval_fingerprint: sha256:56dab40bc01b174fcae9997cfe70f30c0872561d05877c0624536b2f461deda8
           artifact_fingerprint: sha256:261ee109613887f8af1327330d36dea6a7eb6d4f42d51bc414310e3ab60583eb
-          reviewed_at: "2026-05-29T21:13:17Z"
+          reviewed_at: "2026-05-30T07:45:41Z"
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:14Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-29T15:47:45Z"
+    last_modified_at: "2026-05-30T07:43:08Z"
 obligation_checklist:
     - nominal
 lifecycle:

@@ -1,0 +1,18 @@
+id: storage-pop-expire-non-atomic-data-loss
+title: 'Redis Pop+Expire non-atomic: Expire failure silently loses popped records'
+description: Accept the known race in storage/temporal_storage.go GetAndDeleteSet where a successful LPOP followed by a failing Expire returns (nil, err) and the popped records are silently lost. main.go:278 simply logs the error and continues, so the batch is dropped.
+affected_requirements:
+    - INT-REQ-005
+mitigation: Operators see Purge Loop errors but lost batches require external buffering (e.g., gateway-side retention) to replay. Recommend monitoring 'Error on Purge Loop' log lines.
+customer_impact: Under transient Redis failures, a single batch of analytics records may be lost. Frequency depends on Expire reliability under load.
+owner: tyk-team
+review_date: "2026-08-30"
+release_disposition: ship_with_known_issue
+accepted_by: human:leo
+accepted_at: "2026-05-30T08:30:45Z"
+status: active
+history:
+    - at: "2026-05-30T08:30:45Z"
+      by: human:buger
+      action: accepted
+      detail: accepted_by=human:leo

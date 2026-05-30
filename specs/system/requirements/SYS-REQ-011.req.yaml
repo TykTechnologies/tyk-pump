@@ -1,9 +1,9 @@
 id: SYS-REQ-011
 version: 1
-status: review
+status: approved
 priority: shall
 category: functional
-req_type: guarantee
+req_type: derived
 fretish: when decode_enabled privacy shall always satisfy payload_decoded
 description: The pump shall, when the operator enables payload decoding for a backend, base64-decode the raw request and response payloads before forwarding.
 formalization_strategy: fretish
@@ -19,22 +19,25 @@ variables: []
 traces:
     satisfies:
         - STK-REQ-003
-    reviewed_at: "2026-05-29T21:30:11.841996Z"
+    reviewed_at: "2026-05-30T07:45:52.413491Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:704b762e7154ad8af8c692f98cc6fcc808c3c73f84b25c90a8c7d23761772234
+    reviewed_fingerprint: sha256:00a7118c3640107c2bd1e7b82c34d47df619e0a0bc1bac01d0e819fb10c3070c
 verification:
     assurance_level: B
     formalization_status: valid
     review:
         status: approved
-        reviewer: leo@tyk.io
-        reviewed_at: "2026-05-29T15:47:47Z"
+        reviewer: human:buger
+        role: system_engineer
+        reviewed_at: "2026-05-30T07:43:08Z"
+        comment: System-level behavior reviewed as part of feat/reqproof-coverage PR; FRETish + obligation + satisfies linkage verified against tyk-pump architecture and code in Phase 0 code-verification pass.
+        fingerprint: sha256:92c8523d582b61f6652e18505de6afcbfc5df16e3d3b1438ad46e7226eebaedb
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:11:41Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-29T21:25:35Z"
+    last_modified_at: "2026-05-30T07:43:08Z"
 obligation_class: malformed_input
 lifecycle:
     change_history:

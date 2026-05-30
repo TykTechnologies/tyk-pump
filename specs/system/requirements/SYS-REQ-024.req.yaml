@@ -1,0 +1,53 @@
+id: SYS-REQ-024
+version: 1
+status: approved
+priority: shall
+category: constraint
+req_type: constraint
+fretish: build shall always satisfy go_125_or_later
+description: The tyk-pump Go module shall be built with Go toolchain version 1.25 or later, as declared in go.mod.
+formalization_strategy: fretish
+informal_verification:
+    method: inspection
+    evidence: see rationale and parent STK linkage; constraint/assumption reviewed in Phase B of feat/reqproof-coverage PR
+    verified: true
+parent: STK-REQ-001
+component: build
+rationale: "tyk-pump uses Go-1.25-specific language features (generics, error wrapping, structured concurrency primitives) per go.mod; building with an older toolchain would fail."
+tags: []
+variables: []
+traces:
+    satisfies:
+        - STK-REQ-001
+    reviewed_at: "2026-05-30T08:22:48.959897Z"
+    reviewed_by: human:buger
+    reviewed_fingerprint: sha256:eabc8a6341fc99853c3db83e4cb9fe14127b99e2d38d994414e60a0666f416d6
+verification:
+    assurance_level: B
+    formalization_status: valid
+    review:
+        status: approved
+        reviewer: human:buger
+        role: system_engineer
+        reviewed_at: "2026-05-30T08:22:48Z"
+        comment: 'Phase B constraint reqs: linked to satisfying STK, rationale added, FRETish formalized as project-level invariants, formalized:false reverted to fretish-strategy via the invariant form. Verified against go.mod / storage code / Makefile / runtime model.'
+        fingerprint: sha256:fa2e22b9e13199e15c3cc49e676479888bee7da03e1381a3c8882f68cf0bf1fb
+        ai_generated: false
+history:
+    created_by: human:cli
+    created_at: "2026-05-30T08:13:45Z"
+    last_modified_by: human:cli
+    last_modified_at: "2026-05-30T08:22:48Z"
+obligation_class: nominal
+lifecycle:
+    change_history:
+        - date: "2026-05-30T08:14:23Z"
+          from: draft
+          to: review
+          reason: ""
+          changed_by: human:cli
+        - date: "2026-05-30T08:22:48Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="system_engineer" reviewer="human:buger" at=2026-05-30T08:14:23Z comment="Phase B constraint reqs: project-level constraints derived from go.mod, storage code, Makefile, and deployment model. Each is code-verifiable: Go version in go.mod, Redis dep in storage/temporal_storage.go imports, FIPS in Makefile, single-process in main.go runtime.")'
+          changed_by: human:cli

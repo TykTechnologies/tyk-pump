@@ -26,6 +26,7 @@ func mcdcRecord(org, apiID, apiVer, apiKey, oauth, iso string, code int, total, 
 // Verifies: SW-REQ-011
 // Verifies: SYS-REQ-003
 // SW-REQ-011:monotonicity:negative
+// Verifies: SYS-REQ-019
 func TestAggregateData_MCDCBranches(t *testing.T) {
 	// Records crafted to exercise incrementAggregate / incrementOrSetUnit decision
 	// branches: success vs error codes, min/max latency updates in both directions,

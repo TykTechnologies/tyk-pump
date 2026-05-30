@@ -8,3 +8,11 @@ variables:
       type: bool
       direction: output
       description: The effective configuration reflects the environment override.
+    - name: json_config_file_present
+      type: bool
+      direction: input
+      description: A JSON configuration file has been provided at startup.
+    - name: config_loaded_from_json
+      type: bool
+      direction: output
+      description: The configuration has been parsed from the JSON file.

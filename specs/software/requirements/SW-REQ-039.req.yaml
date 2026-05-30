@@ -1,0 +1,67 @@
+id: SW-REQ-039
+version: 1
+status: approved
+priority: shall
+category: functional
+req_type: derived
+fretish: ""
+description: 'The MCP MongoDB Aggregate pump shall aggregate MCP-classified analytics records per API via analytics.AggregateMCPData, then for each API perform a two-step MongoDB upsert keyed by {orgid, timestamp, owner_apiid}: first applying $inc/$set/$max counters for both standard dimensions (via AsChange) and MCP-specific dimensions (methods, primitives, names via addMCPDimensionUpdates), then recalculating averages via AsTimeUpdate; the first upsert error per API shall be returned to the caller. When UseMixedCollection is true, both the per-org and mixed-collection variants shall be written.'
+formalization_strategy: informal
+informal_verification:
+    method: ""
+    evidence: ""
+    verified: false
+parent: SYS-REQ-003
+component: pumps-mongo-mcp-aggregate
+rationale: ""
+tags: []
+variables: []
+traces:
+    satisfies:
+        - SYS-REQ-003
+    reviewed_at: "2026-05-30T08:45:50.460989Z"
+    reviewed_by: human:buger
+    reviewed_fingerprint: sha256:495d3d7f139f8268fc8cc7c0d716f2c9e7de9f9fdfaacc1a5566afec576c278b
+verification:
+    assurance_level: B
+    formalization_status: none
+    review:
+        status: approved
+        reviewer: human:buger
+        role: software_engineer
+        reviewed_at: "2026-05-30T08:44:11Z"
+        comment: Phase A per-implementation/per-significant-behavior decomposition; descriptions code-verified against the named files per docs/phase-a-proposed-reqs.md. Pump-family family-level reqs are retained as superseded anchor reqs.
+        fingerprint: sha256:c37e4c5f93526ca3e54cf2b487df9cf89af598f46d2a0ff7192bd36d488527c8
+        ai_generated: false
+    impact_reviews:
+        - requirement: SW-REQ-039
+          artifact: pumps/mcp_mongo_aggregate.go
+          decision: no-authored-change
+          reviewer: buger
+          reason: Phase A re-annotated this file to point at the atomic per-implementation/per-behavior SW req (was previously SW-REQ-018/019/020/022/027/028); no runtime behavior change.
+          base: origin/master
+          requirement_fingerprint: sha256:495d3d7f139f8268fc8cc7c0d716f2c9e7de9f9fdfaacc1a5566afec576c278b
+          approval_fingerprint: sha256:c37e4c5f93526ca3e54cf2b487df9cf89af598f46d2a0ff7192bd36d488527c8
+          artifact_fingerprint: sha256:288fa229c3dd6b97bb3f242715e1cfe611867a18a17d7b06fba4e7a0161884ce
+          reviewed_at: "2026-05-30T08:48:40Z"
+history:
+    created_by: human:cli
+    created_at: "2026-05-30T08:35:08Z"
+    last_modified_by: human:cli
+    last_modified_at: "2026-05-30T09:03:00Z"
+obligation_checklist:
+    - atomicity
+    - errors_propagated
+    - nominal
+obligation_suppressions:
+    - id: atomicity
+      reason: MCP-mongo-aggregate upsert atomicity negative evidence requires a fault-injecting MongoDB harness (e.g. force write-concern failure or storage error) that is not available in local test infrastructure. Production behavior delegates to the bundled mongo  atomicity assumption (SYS-REQ-029); a Mongo testcontainer with fault injection is the honest path. Tracked as future test work alongside the broader mongo-pump test coverage gap.
+      suppressed_by: buger
+      suppressed_at: "2026-05-30T09:03:00Z"
+lifecycle:
+    change_history:
+        - date: "2026-05-30T08:43:46Z"
+          from: draft
+          to: review
+          reason: ""
+          changed_by: human:cli

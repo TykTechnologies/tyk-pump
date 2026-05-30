@@ -1,0 +1,61 @@
+id: SW-REQ-034
+version: 1
+status: approved
+priority: shall
+category: functional
+req_type: derived
+fretish: ""
+description: The standard MongoDB pump shall, on each purge, filter out MCP-classified analytics records, accumulate the remaining records into batches bounded by MaxInsertBatchSizeBytes (default 10 MiB) while rewriting raw bodies of documents whose serialized size exceeds MaxDocumentSizeBytes, then concurrently insert each batch into the single configured collection, returning the first per-batch insert error to the caller; when CollectionCapEnable is true on a 64-bit host with a non-existing collection, it shall create the collection as a capped collection of CollectionCapMaxSizeBytes (default 5 GiB).
+formalization_strategy: informal
+informal_verification:
+    method: ""
+    evidence: ""
+    verified: false
+parent: SYS-REQ-004
+component: pumps-mongo-standard
+rationale: ""
+tags: []
+variables: []
+traces:
+    satisfies:
+        - SYS-REQ-004
+    reviewed_at: "2026-05-30T08:45:50.383542Z"
+    reviewed_by: human:buger
+    reviewed_fingerprint: sha256:398eeff57265e3dbe1239b4cbacfd3a3673d3d5f1d64ba8bb8eece681f191fee
+verification:
+    assurance_level: B
+    formalization_status: none
+    review:
+        status: approved
+        reviewer: human:buger
+        role: software_engineer
+        reviewed_at: "2026-05-30T08:44:11Z"
+        comment: Phase A per-implementation/per-significant-behavior decomposition; descriptions code-verified against the named files per docs/phase-a-proposed-reqs.md. Pump-family family-level reqs are retained as superseded anchor reqs.
+        fingerprint: sha256:7454bbd25af7c5251fe99d9a38fa28e53dd09aedcad324fd45b85eac924b4448
+        ai_generated: false
+    impact_reviews:
+        - requirement: SW-REQ-034
+          artifact: pumps/mongo.go
+          decision: no-authored-change
+          reviewer: buger
+          reason: Phase A re-annotated this file to point at the atomic per-implementation/per-behavior SW req (was previously SW-REQ-018/019/020/022/027/028); no runtime behavior change.
+          base: origin/master
+          requirement_fingerprint: sha256:398eeff57265e3dbe1239b4cbacfd3a3673d3d5f1d64ba8bb8eece681f191fee
+          approval_fingerprint: sha256:7454bbd25af7c5251fe99d9a38fa28e53dd09aedcad324fd45b85eac924b4448
+          artifact_fingerprint: sha256:8a133a8471051719738fe8eda1a855cb8d92902f00033d0951f42e46c1aa513d
+          reviewed_at: "2026-05-30T08:48:38Z"
+history:
+    created_by: human:cli
+    created_at: "2026-05-30T08:33:59Z"
+    last_modified_by: human:cli
+    last_modified_at: "2026-05-30T08:44:11Z"
+obligation_checklist:
+    - boundary
+    - errors_propagated
+lifecycle:
+    change_history:
+        - date: "2026-05-30T08:43:46Z"
+          from: draft
+          to: review
+          reason: ""
+          changed_by: human:cli

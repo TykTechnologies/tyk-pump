@@ -1,0 +1,15 @@
+id: health-endpoint-is-liveness-only
+title: Health endpoint always returns 200 (liveness only, not readiness)
+description: 'server/server.go:49 Healthcheck always writes HTTP 200 with body {"status": "ok"} regardless of pump-process state. Even during startup when setupAnalyticsStore is still failing or before any pump has initialised, the endpoint reports healthy. Operators using /health as a Kubernetes readiness probe will see false positives. STK-REQ-004''s observability claim is therefore liveness-only, not readiness-capable.'
+affected_requirements:
+    - STK-REQ-004
+severity: low
+mitigation: Use process-level liveness (e.g. pod restart on crash) rather than /health for readiness. Layer external probes (e.g. Redis-backed lag metric) for readiness signals.
+remediation: Add a separate /ready endpoint that returns non-200 until setupAnalyticsStore completes and the first purge cycle has succeeded.
+owner: tyk-team
+release_disposition: ship
+status: open
+history:
+    - at: "2026-05-30T08:31:47Z"
+      by: human:buger
+      action: created

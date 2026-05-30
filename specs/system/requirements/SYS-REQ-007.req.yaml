@@ -1,9 +1,9 @@
 id: SYS-REQ-007
 version: 1
-status: review
+status: approved
 priority: shall
 category: functional
-req_type: guarantee
+req_type: derived
 fretish: when records_consumed ingestion shall always satisfy records_removed_once
 description: The pump shall remove consumed records from the temporal store atomically with their retrieval so that each record is forwarded at most once per pump run.
 formalization_strategy: fretish
@@ -19,24 +19,27 @@ variables: []
 traces:
     satisfies:
         - STK-REQ-002
-    reviewed_at: "2026-05-29T21:30:11.834196Z"
+    reviewed_at: "2026-05-30T07:45:52.405146Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:4fd6a3d522fcb1487055d69b30023983253d54ad70754574654bd840223db3a3
+    reviewed_fingerprint: sha256:d57dd17531fbb9f8339039e5406ecc922aaccccb0f064c9c83ec94a282a8b747
 verification:
     assurance_level: B
     formalization_status: valid
     review:
         status: approved
-        reviewer: leo@tyk.io
-        reviewed_at: "2026-05-29T15:47:47Z"
+        reviewer: human:buger
+        role: system_engineer
+        reviewed_at: "2026-05-30T07:43:08Z"
+        comment: System-level behavior reviewed as part of feat/reqproof-coverage PR; FRETish + obligation + satisfies linkage verified against tyk-pump architecture and code in Phase 0 code-verification pass.
+        fingerprint: sha256:60c95001e6b0e383adf3a0db6278075214aee43146984251dc59ec9bd18aaaf2
         ai_generated: false
-    gaps_reviewed_at: "2026-05-29T21:30:12.968191Z"
+    gaps_reviewed_at: "2026-05-30T07:49:26.763672Z"
     gaps_reviewed_by: buger
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:11:41Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-29T15:52:22Z"
+    last_modified_at: "2026-05-30T07:43:08Z"
 obligation_class: atomicity
 lifecycle:
     change_history:

@@ -1,11 +1,11 @@
 id: SW-REQ-020
 version: 1
-status: review
+status: approved
 priority: shall
 category: functional
-req_type: guarantee
+req_type: derived
 fretish: ""
-description: The Elasticsearch pump shall write records via the bulk API to rolling indices across supported Elasticsearch versions.
+description: '[SUPERSEDED by Phase A decomposition: SW-REQ-068 (es-version-dispatch), SW-REQ-069 (es-rolling-index-naming), SW-REQ-070 (es-bulk-flush-policy)] The Elasticsearch pump shall dispatch a per-version BulkProcessor, support rolling-index naming, and flush bulk records per operator-configured policy.'
 formalization_strategy: informal
 informal_verification:
     method: ""
@@ -19,39 +19,56 @@ variables: []
 traces:
     satisfies:
         - SYS-REQ-004
-    reviewed_at: "2026-05-29T21:30:11.302165Z"
+    reviewed_at: "2026-05-30T07:45:51.50596Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:8c12776289cd80cceba42b1b67d6c441ad227513d856421aabc2e4c194f48dd1
+    reviewed_fingerprint: sha256:6e68b21f0e758426bf5b05abd840bba5dae88db16292469e1672e3da807c1346
 verification:
     assurance_level: B
     formalization_status: none
     review:
         status: approved
-        reviewer: leo@tyk.io
-        reviewed_at: "2026-05-29T15:47:45Z"
+        reviewer: human:buger
+        role: software_engineer
+        reviewed_at: "2026-05-30T08:44:54Z"
+        comment: Re-approve superseded anchor reqs after Phase A decomposition; descriptions amended with SUPERSEDED prefix listing new SW reqs that replace them.
+        fingerprint: sha256:5cbf1155d130144cb8a50e38becfb6740dd4795749c0077b6f3204330bc4401a
         ai_generated: false
     impact_reviews:
         - requirement: SW-REQ-020
           artifact: pumps/elasticsearch.go
           decision: no-authored-change
           reviewer: buger
-          reason: Annotated MC/DC ignore on unreachable GeoIP and defensive type-assertion branches plus added unit tests; runtime behavior and authored requirement intent are unchanged.
+          reason: 'Production files added reqproof requirement-traceability annotations only (// reqproof:implements / // Verifies: / triple-form evidence). No runtime behavior change.'
           base: origin/master
-          requirement_fingerprint: sha256:8c12776289cd80cceba42b1b67d6c441ad227513d856421aabc2e4c194f48dd1
-          approval_fingerprint: sha256:593d629f02cecd1dbb9cb3cfa188104b7a46bf1f3712b6d60538ec08d9140655
+          requirement_fingerprint: sha256:6e68b21f0e758426bf5b05abd840bba5dae88db16292469e1672e3da807c1346
+          approval_fingerprint: sha256:8d2e9ec166f7f4087381883cccc28d46e4de0ba012dc8a4deccb65153579ff5c
           artifact_fingerprint: sha256:6511bbee613eb740fc4eb570929154ceaf475b883c5876396925d86b854f6356
-          reviewed_at: "2026-05-29T21:13:18Z"
+          reviewed_at: "2026-05-30T07:45:42Z"
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:15Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-29T15:47:45Z"
+    last_modified_at: "2026-05-30T08:45:17Z"
 obligation_checklist:
     - errors_propagated
+obligation_suppressions:
+    - id: errors_propagated
+      reason: Phase A decomposition superseded this family req; obligations are now carried by per-implementation children with implemented_by traces.
+      suppressed_by: buger
+      suppressed_at: "2026-05-30T08:45:17Z"
+      framework_refs:
+        - CWE CWE-703,CWE-252,CWE-754
+        - NIST-800-53 SI-11
+        - OWASP-ASVS-v4 V7.4.1,V7.4.2,V7.4.3
 lifecycle:
     change_history:
         - date: "2026-05-29T15:46:44Z"
           from: draft
           to: review
           reason: ""
+          changed_by: human:cli
+        - date: "2026-05-30T08:44:54Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="leo@tyk.io" at=2026-05-30T08:44:53Z comment="Software-component design reviewed as part of feat/reqproof-coverage PR; each maps to verified code paths per the Phase 0 file-by-file verification (see PR description for code-verified corrections SW-016/017/023/027/028/033).")'
           changed_by: human:cli

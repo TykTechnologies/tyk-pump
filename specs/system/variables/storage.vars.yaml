@@ -1,0 +1,10 @@
+component: storage
+variables:
+    - name: redis_protocol_compatible
+      type: bool
+      direction: output
+      description: Configured temporal store speaks the Redis protocol.
+    - name: lpop_is_atomic
+      type: bool
+      direction: input
+      description: Redis LPOP semantics atomic on the configured store.

@@ -90,23 +90,23 @@ type MoesifConf struct {
 	AuthorizationUserIdField string `json:"authorization_user_id_field" mapstructure:"authorization_user_id_field"`
 }
 
-// reqproof:implements SW-REQ-027
+// reqproof:implements SW-REQ-052
 func (p *MoesifPump) New() Pump {
 	newPump := MoesifPump{}
 	return &newPump
 }
 
-// reqproof:implements SW-REQ-027
+// reqproof:implements SW-REQ-052
 func (p *MoesifPump) GetName() string {
 	return "Moesif Pump"
 }
 
-// reqproof:implements SW-REQ-027
+// reqproof:implements SW-REQ-052
 func (p *MoesifPump) GetEnvPrefix() string {
 	return p.moesifConf.EnvPrefix
 }
 
-// reqproof:implements SW-REQ-027
+// reqproof:implements SW-REQ-052
 func (p *MoesifPump) parseConfiguration(response *http.Response) (int, string, time.Time) {
 	// Get X-Moesif-Config-Etag header from response
 	if configETag, ok := response.Header["X-Moesif-Config-Etag"]; ok {
@@ -146,7 +146,7 @@ func (p *MoesifPump) parseConfiguration(response *http.Response) (int, string, t
 	return p.samplingPercentage, p.eTag, time.Now().UTC()
 }
 
-// reqproof:implements SW-REQ-027
+// reqproof:implements SW-REQ-052
 func (p *MoesifPump) getSamplingPercentage(userID string, companyID string) int {
 	if userID != "" {
 		if userRate, ok := p.userSampleRateMap[userID].(float64); ok {
@@ -169,7 +169,7 @@ func (p *MoesifPump) getSamplingPercentage(userID string, companyID string) int 
 	return 100
 }
 
-// reqproof:implements SW-REQ-027
+// reqproof:implements SW-REQ-052
 func fetchIDFromHeader(requestHeaders map[string]interface{}, responseHeaders map[string]interface{}, headerName string) string {
 	var id string
 	if requid, ok := requestHeaders[strings.ToLower(headerName)].(string); ok {
@@ -181,7 +181,7 @@ func fetchIDFromHeader(requestHeaders map[string]interface{}, responseHeaders ma
 	return id
 }
 
-// reqproof:implements SW-REQ-027
+// reqproof:implements SW-REQ-052
 func toLowerCase(headers map[string]interface{}) map[string]interface{} {
 	transformMap := make(map[string]interface{}, len(headers))
 	for k, v := range headers {
@@ -190,7 +190,7 @@ func toLowerCase(headers map[string]interface{}) map[string]interface{} {
 	return transformMap
 }
 
-// reqproof:implements SW-REQ-027
+// reqproof:implements SW-REQ-052
 func contains(arr []string, str string) bool {
 	for _, value := range arr {
 		if value == str {
@@ -200,7 +200,7 @@ func contains(arr []string, str string) bool {
 	return false
 }
 
-// reqproof:implements SW-REQ-027
+// reqproof:implements SW-REQ-052
 func maskData(data map[string]interface{}, maskBody []string) map[string]interface{} {
 	for key, val := range data {
 		switch val.(type) {
@@ -219,7 +219,7 @@ func maskData(data map[string]interface{}, maskBody []string) map[string]interfa
 	return data
 }
 
-// reqproof:implements SW-REQ-027
+// reqproof:implements SW-REQ-052
 func maskRawBody(rawBody string, maskBody []string) string {
 	// Mask body
 	var maskedBody map[string]interface{}
@@ -236,7 +236,7 @@ func maskRawBody(rawBody string, maskBody []string) string {
 	return base64.StdEncoding.EncodeToString([]byte(rawBody))
 }
 
-// reqproof:implements SW-REQ-027
+// reqproof:implements SW-REQ-052
 func buildURI(raw string, defaultPath string) string {
 	pathHeadersBody := strings.SplitN(raw, "\r\n", 2)
 
@@ -251,12 +251,12 @@ func buildURI(raw string, defaultPath string) string {
 	return defaultPath
 }
 
-// reqproof:implements SW-REQ-027
+// reqproof:implements SW-REQ-052
 func fetchTokenPayload(token string, tokenType string) string {
 	return strings.TrimSpace(strings.SplitAfter(token, tokenType)[1])
 }
 
-// reqproof:implements SW-REQ-027
+// reqproof:implements SW-REQ-052
 func parseAuthorizationHeader(token string, field string) string {
 	if token != "" {
 		data, err := base64.RawURLEncoding.DecodeString(token)
@@ -272,7 +272,7 @@ func parseAuthorizationHeader(token string, field string) string {
 	return ""
 }
 
-// reqproof:implements SW-REQ-027
+// reqproof:implements SW-REQ-052
 func (p *MoesifPump) Init(config interface{}) error {
 	p.moesifConf = &MoesifConf{}
 	p.log = log.WithField("prefix", moesifPrefix)
@@ -332,7 +332,7 @@ func (p *MoesifPump) Init(config interface{}) error {
 	return nil
 }
 
-// reqproof:implements SW-REQ-027
+// reqproof:implements SW-REQ-052
 func (p *MoesifPump) WriteData(ctx context.Context, data []interface{}) error {
 	p.log.Debug("Attempting to write ", len(data), " records...")
 
@@ -525,7 +525,7 @@ func (p *MoesifPump) WriteData(ctx context.Context, data []interface{}) error {
 	return nil
 }
 
-// reqproof:implements SW-REQ-027
+// reqproof:implements SW-REQ-052
 func decodeRawData(raw string, maskHeaders []string, maskBody []string, disableCaptureBody bool) (*rawDecoded, error) {
 	headersBody := strings.SplitN(raw, "\r\n\r\n", 2)
 
@@ -548,7 +548,7 @@ func decodeRawData(raw string, maskHeaders []string, maskBody []string, disableC
 	return ret, nil
 }
 
-// reqproof:implements SW-REQ-027
+// reqproof:implements SW-REQ-052
 func decodeHeaders(headers string, maskHeaders []string) map[string]interface{} {
 	scanner := bufio.NewScanner(strings.NewReader(headers))
 	ret := make(map[string]interface{}, strings.Count(headers, "\r\n"))
@@ -575,17 +575,17 @@ func decodeHeaders(headers string, maskHeaders []string) map[string]interface{} 
 	return ret
 }
 
-// reqproof:implements SW-REQ-027
+// reqproof:implements SW-REQ-052
 func (p *MoesifPump) SetTimeout(timeout int) {
 	p.timeout = timeout
 }
 
-// reqproof:implements SW-REQ-027
+// reqproof:implements SW-REQ-052
 func (p *MoesifPump) GetTimeout() int {
 	return p.timeout
 }
 
-// reqproof:implements SW-REQ-027
+// reqproof:implements SW-REQ-052
 func (p *MoesifPump) Shutdown() error {
 	if p.moesifConf.EnableBulk {
 		p.log.Info("Flushing bulked records...")

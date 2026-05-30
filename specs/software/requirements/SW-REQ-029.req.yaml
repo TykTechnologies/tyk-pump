@@ -1,9 +1,9 @@
 id: SW-REQ-029
 version: 1
-status: review
+status: approved
 priority: shall
 category: functional
-req_type: guarantee
+req_type: derived
 fretish: ""
 description: The hybrid pump shall forward records to a remote Tyk RPC/MDCB endpoint.
 formalization_strategy: informal
@@ -19,33 +19,36 @@ variables: []
 traces:
     satisfies:
         - SYS-REQ-004
-    reviewed_at: "2026-05-29T21:30:11.698457Z"
+    reviewed_at: "2026-05-30T07:45:52.168479Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:e301fe7c44796a069375415d6781a3011a0ca62aed47c98bb1046a5dd95b4173
+    reviewed_fingerprint: sha256:d754b761f35c6b742978029bea4cbf1f6fe6bec75e314fafb8f555c1453bd00b
 verification:
     assurance_level: B
     formalization_status: none
     review:
         status: approved
-        reviewer: leo@tyk.io
-        reviewed_at: "2026-05-29T15:47:46Z"
+        reviewer: human:buger
+        role: software_engineer
+        reviewed_at: "2026-05-30T07:43:08Z"
+        comment: Software-component design reviewed as part of feat/reqproof-coverage PR; each maps to verified code paths per the Phase 0 file-by-file verification (see PR description for code-verified corrections SW-016/017/023/027/028/033).
+        fingerprint: sha256:8e335b66c4304a004c0699faf404e04b3d9de907df8893eae36901ac5c1b04cd
         ai_generated: false
     impact_reviews:
         - requirement: SW-REQ-029
           artifact: pumps/hybrid.go
           decision: no-authored-change
           reviewer: buger
-          reason: Annotated MC/DC ignore on unreachable GeoIP and defensive type-assertion branches plus added unit tests; runtime behavior and authored requirement intent are unchanged.
+          reason: 'Production files added reqproof requirement-traceability annotations only (// reqproof:implements / // Verifies: / triple-form evidence). No runtime behavior change.'
           base: origin/master
-          requirement_fingerprint: sha256:e301fe7c44796a069375415d6781a3011a0ca62aed47c98bb1046a5dd95b4173
-          approval_fingerprint: sha256:96cf5418a6d6c730f35ca97cd6cf73a482524e35d75ac0031d207723903eafcf
+          requirement_fingerprint: sha256:d754b761f35c6b742978029bea4cbf1f6fe6bec75e314fafb8f555c1453bd00b
+          approval_fingerprint: sha256:8e335b66c4304a004c0699faf404e04b3d9de907df8893eae36901ac5c1b04cd
           artifact_fingerprint: sha256:58ba6152e6905b7fd4d5ac03eabf09b94ea8446c60d522d66339a7b8c6ca8a0e
-          reviewed_at: "2026-05-29T21:13:20Z"
+          reviewed_at: "2026-05-30T07:45:44Z"
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:16Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-29T15:47:46Z"
+    last_modified_at: "2026-05-30T07:43:08Z"
 obligation_checklist:
     - errors_propagated
 lifecycle:

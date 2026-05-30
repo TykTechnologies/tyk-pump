@@ -77,23 +77,23 @@ type SQSConf struct {
 	AWSSQSBatchLimit int `mapstructure:"aws_sqs_batch_limit"`
 }
 
-// reqproof:implements SW-REQ-028
+// reqproof:implements SW-REQ-055
 func (s *SQSPump) New() Pump {
 	newPump := SQSPump{}
 	return &newPump
 }
 
-// reqproof:implements SW-REQ-028
+// reqproof:implements SW-REQ-055
 func (s *SQSPump) GetName() string {
 	return "SQS Pump"
 }
 
-// reqproof:implements SW-REQ-028
+// reqproof:implements SW-REQ-055
 func (s *SQSPump) GetEnvPrefix() string {
 	return s.SQSConf.EnvPrefix
 }
 
-// reqproof:implements SW-REQ-028
+// reqproof:implements SW-REQ-055
 func (s *SQSPump) Init(config interface{}) error {
 	s.SQSConf = &SQSConf{}
 	s.log = log.WithField("prefix", SQSPrefix)
@@ -127,7 +127,7 @@ func (s *SQSPump) Init(config interface{}) error {
 	return nil
 }
 
-// reqproof:implements SW-REQ-028
+// reqproof:implements SW-REQ-055
 func (s *SQSPump) WriteData(ctx context.Context, data []interface{}) error {
 	s.log.Info("Attempting to write ", len(data), " records...")
 	startTime := time.Now()
@@ -174,7 +174,7 @@ func (s *SQSPump) WriteData(ctx context.Context, data []interface{}) error {
 	return nil
 }
 
-// reqproof:implements SW-REQ-028
+// reqproof:implements SW-REQ-055
 func (s *SQSPump) write(c context.Context, messages []types.SendMessageBatchRequestEntry) error {
 	log.Debug(messages)
 	for i := 0; i < len(messages); i += s.SQSConf.AWSSQSBatchLimit {
@@ -196,7 +196,7 @@ func (s *SQSPump) write(c context.Context, messages []types.SendMessageBatchRequ
 	return nil
 }
 
-// reqproof:implements SW-REQ-028
+// reqproof:implements SW-REQ-055
 func (s *SQSPump) NewSQSPublisher() (c *sqs.Client, err error) {
 	cfg, err := config.LoadDefaultConfig(context.TODO(),
 		config.WithRegion(s.SQSConf.AWSRegion),

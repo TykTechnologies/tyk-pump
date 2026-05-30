@@ -55,37 +55,37 @@ const (
 	newAggregatedIndexName = "idx_dimension"
 )
 
-// reqproof:implements SW-REQ-019
+// reqproof:implements SW-REQ-041
 func (c *SQLAggregatePump) New() Pump {
 	newPump := SQLAggregatePump{}
 	return &newPump
 }
 
-// reqproof:implements SW-REQ-019
+// reqproof:implements SW-REQ-041
 func (c *SQLAggregatePump) GetName() string {
 	return "SQL Aggregate Pump"
 }
 
-// reqproof:implements SW-REQ-019
+// reqproof:implements SW-REQ-041
 func (c *SQLAggregatePump) GetEnvPrefix() string {
 	return c.SQLConf.EnvPrefix
 }
 
-// reqproof:implements SW-REQ-019
+// reqproof:implements SW-REQ-041
 func (c *SQLAggregatePump) SetDecodingRequest(decoding bool) {
 	if decoding {
 		log.WithField("pump", c.GetName()).Warn("Decoding request is not supported for SQL Aggregate pump")
 	}
 }
 
-// reqproof:implements SW-REQ-019
+// reqproof:implements SW-REQ-041
 func (c *SQLAggregatePump) SetDecodingResponse(decoding bool) {
 	if decoding {
 		log.WithField("pump", c.GetName()).Warn("Decoding response is not supported for SQL Aggregate pump")
 	}
 }
 
-// reqproof:implements SW-REQ-019
+// reqproof:implements SW-REQ-041
 func (c *SQLAggregatePump) Init(conf interface{}) error {
 	c.SQLConf = &SQLAggregatePumpConf{}
 	c.log = log.WithField("prefix", SQLAggregatePumpPrefix)
@@ -147,7 +147,7 @@ func (c *SQLAggregatePump) Init(conf interface{}) error {
 // it uses CONCURRENTLY to avoid locking the table for a long time - postgresql.org/docs/current/sql-createindex.html#SQL-CREATEINDEX-CONCURRENTLY
 // if background is true, it will run the index creation in a goroutine
 // if not, it will block until it finishes
-// reqproof:implements SW-REQ-019
+// reqproof:implements SW-REQ-066
 func (c *SQLAggregatePump) ensureIndex(tableName string, background bool) error {
 	if c.SQLConf.OmitIndexCreation {
 		c.log.Info("omit_index_creation set to true, omitting index creation..")
@@ -196,7 +196,7 @@ func (c *SQLAggregatePump) ensureIndex(tableName string, background bool) error 
 }
 
 // ensureTable creates the table if it doesn't exist
-// reqproof:implements SW-REQ-019
+// reqproof:implements SW-REQ-065
 func (c *SQLAggregatePump) ensureTable(tableName string) error {
 	if !c.db.Migrator().HasTable(tableName) {
 		c.db = c.db.Table(tableName)
@@ -214,7 +214,7 @@ func (c *SQLAggregatePump) ensureTable(tableName string) error {
 // Then, the data is passed to AggregateData function and written to database day by day on different tables. However,
 // if table sharding is not enabled, the for loop iterates one time and all data is passed at once to the AggregateData
 // function and written to database on single table.
-// reqproof:implements SW-REQ-019
+// reqproof:implements SW-REQ-064
 func (c *SQLAggregatePump) WriteData(ctx context.Context, data []interface{}) error {
 	dataLen := len(data)
 	c.log.Debug("Attempting to write ", dataLen, " records...")
@@ -283,7 +283,7 @@ func (c *SQLAggregatePump) WriteData(ctx context.Context, data []interface{}) er
 	return nil
 }
 
-// reqproof:implements SW-REQ-019
+// reqproof:implements SW-REQ-067
 func (c *SQLAggregatePump) DoAggregatedWriting(ctx context.Context, table, orgID string, ag analytics.AnalyticsRecordAggregate) error {
 	recs := []analytics.SQLAnalyticsRecordAggregate{}
 

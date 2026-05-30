@@ -1,9 +1,9 @@
 id: SYS-REQ-005
 version: 1
-status: review
+status: approved
 priority: shall
 category: functional
-req_type: guarantee
+req_type: derived
 fretish: when write_exceeds_timeout delivery shall immediately satisfy write_aborted
 description: The pump shall enforce a configurable per-backend write timeout and abandon a write that exceeds it without blocking writes to other backends.
 formalization_strategy: fretish
@@ -19,27 +19,41 @@ variables: []
 traces:
     satisfies:
         - STK-REQ-002
-    reviewed_at: "2026-05-29T21:30:11.830042Z"
+    reviewed_at: "2026-05-30T07:45:52.401183Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:384d5ca651012888bacd325c05ce7b0c4ecd1e0df747a366946f1317ac642661
+    reviewed_fingerprint: sha256:d2f69f2bc06d0653b649bcd0b96f5f2d0352de1e5457f97642e6443fa43bf2fb
 verification:
     assurance_level: B
     formalization_status: valid
     review:
         status: approved
-        reviewer: leo@tyk.io
-        reviewed_at: "2026-05-29T15:47:47Z"
+        reviewer: human:buger
+        role: system_engineer
+        reviewed_at: "2026-05-30T07:43:08Z"
+        comment: System-level behavior reviewed as part of feat/reqproof-coverage PR; FRETish + obligation + satisfies linkage verified against tyk-pump architecture and code in Phase 0 code-verification pass.
+        fingerprint: sha256:b8279c2adda8232d0ac8f19bce196b57a4b81a2a2ab6f1b04a4a2b267eb8c6f4
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:11:41Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-29T15:52:22Z"
+    last_modified_at: "2026-05-30T07:43:08Z"
 obligation_class: boundary
+release_disposition: ship_with_known_issue
 lifecycle:
     change_history:
         - date: "2026-05-29T15:46:45Z"
           from: draft
           to: review
           reason: ""
+          changed_by: human:cli
+        - date: "2026-05-30T08:12:44Z"
+          from: release_disposition=
+          to: release_disposition=ship_with_known_issue
+          reason: 'KnownIssue mongo-pump-ignores-caller-context: mongo pump does not honor per-pump write timeout; ship with carve-out tracked in .proof/known-issues/mongo-pump-ignores-caller-context.yaml and AcceptedRisk to follow.'
+          changed_by: human:cli
+        - date: "2026-05-30T08:31:34Z"
+          from: release_disposition=ship_with_known_issue
+          to: release_disposition=ship_with_known_issue
+          reason: 'KI pump-no-timeout-can-block-purge-cycle: per-pump timeout is operator-conditional, not enforced when timeout=0'
           changed_by: human:cli

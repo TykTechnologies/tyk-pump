@@ -1,9 +1,9 @@
 id: SW-REQ-001
 version: 1
-status: review
+status: approved
 priority: shall
 category: functional
-req_type: guarantee
+req_type: derived
 fretish: ""
 description: 'The purge loop and surrounding main startup shall: load configuration, apply JSON-configured log level and format overrides on top of logger init defaults, then on each cycle read records from every analytics key, deserialize them, apply per-pump filters and the configured privacy operations (omit detailed recording, truncate oversize, remove operator-listed fields, base64-decode payloads) in main.filterData, and dispatch the resulting records to all configured pumps.'
 formalization_strategy: informal
@@ -23,33 +23,36 @@ traces:
         - SYS-REQ-015
         - SYS-REQ-016
         - SYS-REQ-011
-    reviewed_at: "2026-05-29T21:30:10.618722Z"
+    reviewed_at: "2026-05-30T07:45:50.274618Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:2a254704f773b9d308e85dc7799635cdf585603b1ca4f0293130e24b96d77e38
+    reviewed_fingerprint: sha256:f045c16877e4d6691aadb42fc3b6f1e8f8dd922c2c81491ad98cdeaa93b9d02c
 verification:
     assurance_level: B
     formalization_status: none
     review:
         status: approved
-        reviewer: leo@tyk.io
-        reviewed_at: "2026-05-29T15:47:44Z"
+        reviewer: human:buger
+        role: software_engineer
+        reviewed_at: "2026-05-30T07:43:08Z"
+        comment: Software-component design reviewed as part of feat/reqproof-coverage PR; each maps to verified code paths per the Phase 0 file-by-file verification (see PR description for code-verified corrections SW-016/017/023/027/028/033).
+        fingerprint: sha256:46fa2f414005f8f0134548990c276fd391aa961f9289af5eb0936d95efbcd3cb
         ai_generated: false
     impact_reviews:
         - requirement: SW-REQ-001
           artifact: main.go
           decision: no-authored-change
           reviewer: buger
-          reason: Content re-review of requirements (FRETish strengthening, decomposition fixes); no runtime behavior changes.
+          reason: 'Production files added reqproof requirement-traceability annotations only (// reqproof:implements / // Verifies: / triple-form evidence). No runtime behavior change.'
           base: origin/master
-          requirement_fingerprint: sha256:2a254704f773b9d308e85dc7799635cdf585603b1ca4f0293130e24b96d77e38
-          approval_fingerprint: sha256:61f565f0011ac9da819e9801b7b9e38f11833231cb314137a0df108458fd9f00
+          requirement_fingerprint: sha256:f045c16877e4d6691aadb42fc3b6f1e8f8dd922c2c81491ad98cdeaa93b9d02c
+          approval_fingerprint: sha256:46fa2f414005f8f0134548990c276fd391aa961f9289af5eb0936d95efbcd3cb
           artifact_fingerprint: sha256:4b683cd5715feffd7356231f04999400c4067164b6d478c53513559c0459a7cf
-          reviewed_at: "2026-05-29T21:30:14Z"
+          reviewed_at: "2026-05-30T07:45:39Z"
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:13Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-30T05:47:14Z"
+    last_modified_at: "2026-05-30T07:43:08Z"
 obligation_checklist:
     - nominal
 lifecycle:

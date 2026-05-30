@@ -1,0 +1,15 @@
+id: analytics-key-shard-ceiling-hardcoded
+title: Analytics multi-shard ingest hardcodes a ceiling of 10 shards
+description: main.go:267 iterates 'for i := -1; i < 10; i++' to drain tyk-system-analytics_0 through tyk-system-analytics_9 (plus the legacy unsharded key at i=-1). If a gateway is configured with enable_multiple_analytics_keys and a modulus greater than 10, shards 10+ are never drained by tyk-pump and their records accumulate in Redis indefinitely. SYS-REQ-030 (the assumption that the gateway publishes to tyk-system-analytics_0..9 keys) is operator-conditional; this code embeds that assumption as a hardcoded ceiling.
+affected_requirements:
+    - SYS-REQ-030
+severity: low
+mitigation: Operators must keep the gateway's analytics-shard count at or below 10 (the documented assumption). Verify gateway config does not customise modulus above 10 before enabling multiple analytics keys.
+remediation: Read the shard ceiling from configuration (e.g. SystemConfig.AnalyticsShardCount) or discover it dynamically via Redis KEYS scan.
+owner: tyk-team
+release_disposition: ship
+status: open
+history:
+    - at: "2026-05-30T08:31:10Z"
+      by: human:buger
+      action: created

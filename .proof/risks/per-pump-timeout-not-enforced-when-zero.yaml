@@ -1,0 +1,18 @@
+id: per-pump-timeout-not-enforced-when-zero
+title: Per-pump timeout=0 disables timeout enforcement entirely
+description: Accept that SYS-REQ-005's per-pump timeout guarantee is conditional on operator-supplied non-zero timeout values. With timeout=0 (the implicit default), main.go:463 uses context.WithCancel (no deadline) and the goroutine can block forever.
+affected_requirements:
+    - SYS-REQ-005
+mitigation: Set non-zero timeouts for every pump in production. Use the operator-runbook checklist for pump deployment.
+customer_impact: Misconfigured operator deployments can have a single misbehaving backend stall the purge cycle for that pump indefinitely.
+owner: tyk-team
+review_date: "2026-08-30"
+release_disposition: ship_with_known_issue
+accepted_by: human:leo
+accepted_at: "2026-05-30T08:31:42Z"
+status: active
+history:
+    - at: "2026-05-30T08:31:42Z"
+      by: human:buger
+      action: accepted
+      detail: accepted_by=human:leo

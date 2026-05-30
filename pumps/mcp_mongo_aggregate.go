@@ -23,36 +23,36 @@ type MCPMongoAggregatePump struct {
 	MongoAggregatePump
 }
 
-// reqproof:implements SW-REQ-018
+// reqproof:implements SW-REQ-039
 func (m *MCPMongoAggregatePump) New() Pump {
 	return &MCPMongoAggregatePump{}
 }
 
-// reqproof:implements SW-REQ-018
+// reqproof:implements SW-REQ-039
 func (m *MCPMongoAggregatePump) GetName() string {
 	return "MongoDB MCP Aggregate Pump"
 }
 
-// reqproof:implements SW-REQ-018
+// reqproof:implements SW-REQ-039
 func (m *MCPMongoAggregatePump) GetEnvPrefix() string {
 	return m.dbConf.EnvPrefix
 }
 
-// reqproof:implements SW-REQ-018
+// reqproof:implements SW-REQ-039
 func (m *MCPMongoAggregatePump) SetDecodingRequest(decoding bool) {
 	if decoding {
 		log.WithField("pump", m.GetName()).Warn("Decoding request is not supported for MCP Mongo Aggregate pump")
 	}
 }
 
-// reqproof:implements SW-REQ-018
+// reqproof:implements SW-REQ-039
 func (m *MCPMongoAggregatePump) SetDecodingResponse(decoding bool) {
 	if decoding {
 		log.WithField("pump", m.GetName()).Warn("Decoding response is not supported for MCP Mongo Aggregate pump")
 	}
 }
 
-// reqproof:implements SW-REQ-018
+// reqproof:implements SW-REQ-039
 func (m *MCPMongoAggregatePump) Init(config interface{}) error {
 	m.dbConf = &MongoAggregateConf{}
 	m.log = log.WithField("prefix", mongoMCPAggregatePrefix)
@@ -86,7 +86,7 @@ func (m *MCPMongoAggregatePump) Init(config interface{}) error {
 	return nil
 }
 
-// reqproof:implements SW-REQ-018
+// reqproof:implements SW-REQ-039
 func (m *MCPMongoAggregatePump) WriteData(ctx context.Context, data []interface{}) error {
 	m.log.Debug("Attempting to write ", len(data), " records")
 
@@ -125,7 +125,7 @@ var mcpDimensionNames = map[string]bool{
 // addMCPDimensionUpdates appends $inc/$set/$max/$min operators for MCP-specific
 // dimensions (methods, primitives, names) into an existing MongoDB update document.
 // This mirrors what generateBSONFromProperty does for standard dimensions.
-// reqproof:implements SW-REQ-018
+// reqproof:implements SW-REQ-039
 func addMCPDimensionUpdates(ag *analytics.MCPRecordAggregate, updateDoc model.DBM) {
 	for _, d := range ag.Dimensions() {
 		if !mcpDimensionNames[d.Name] {
@@ -168,7 +168,7 @@ func addMCPDimensionUpdates(ag *analytics.MCPRecordAggregate, updateDoc model.DB
 
 // upsertMCPAggregate performs the two-step MongoDB upsert for one aggregate document:
 // first applying counters ($inc/$set/$max), then recalculating averages and lists.
-// reqproof:implements SW-REQ-018
+// reqproof:implements SW-REQ-039
 func (m *MCPMongoAggregatePump) upsertMCPAggregate(ctx context.Context, ag *analytics.MCPRecordAggregate, query, updateDoc model.DBM) error {
 	doc := &analytics.MCPRecordAggregate{
 		AnalyticsRecordAggregate: analytics.AnalyticsRecordAggregate{OrgID: ag.OrgID, Mixed: ag.Mixed},
@@ -191,7 +191,7 @@ func (m *MCPMongoAggregatePump) upsertMCPAggregate(ctx context.Context, ag *anal
 	return nil
 }
 
-// reqproof:implements SW-REQ-018
+// reqproof:implements SW-REQ-039
 func (m *MCPMongoAggregatePump) DoMCPAggregatedWriting(ctx context.Context, ag *analytics.MCPRecordAggregate, mixed bool) error {
 	ag.Mixed = mixed
 	collectionName := ag.TableName()

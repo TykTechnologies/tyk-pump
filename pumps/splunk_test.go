@@ -36,7 +36,7 @@ type testHandler struct {
 
 var splunkTestLog = log.WithField("prefix", "splunk_test")
 
-// Verifies: SW-REQ-027
+// Verifies: SW-REQ-048
 func (h *testHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.reqCount++
 
@@ -86,7 +86,7 @@ func (h *testHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.responses = append(h.responses, status)
 }
 
-// Verifies: SW-REQ-027
+// Verifies: SW-REQ-048
 func TestSplunkInit(t *testing.T) {
 	t.Run("missing token", func(t *testing.T) {
 		_, err := newSplunkClient(
@@ -232,7 +232,7 @@ func TestSplunkInit(t *testing.T) {
 	})
 }
 
-// Verifies: SW-REQ-027
+// Verifies: SW-REQ-048
 func Test_SplunkProxyFromEnvironment(t *testing.T) {
 	// Setup a test server to act as a proxy
 	proxyServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -277,7 +277,7 @@ func Test_SplunkProxyFromEnvironment(t *testing.T) {
 
 }
 
-// Verifies: SW-REQ-027
+// Verifies: SW-REQ-048
 func Test_SplunkInvalidProxyURL(t *testing.T) {
 	// Set an invalid proxy URL
 	os.Setenv("HTTP_PROXY", "htttp://invalid-url")
@@ -305,7 +305,7 @@ func Test_SplunkInvalidProxyURL(t *testing.T) {
 	}
 }
 
-// Verifies: SW-REQ-027
+// Verifies: SW-REQ-048
 func Test_SplunkBackoffRetry(t *testing.T) {
 	go t.Run("max_retries=1", func(t *testing.T) {
 		handler := &testHandler{test: t, batched: false, returnErrors: 1}
@@ -416,7 +416,7 @@ func Test_SplunkBackoffRetry(t *testing.T) {
 	})
 }
 
-// Verifies: SW-REQ-027
+// Verifies: SW-REQ-048
 func Test_SplunkWriteData(t *testing.T) {
 	handler := &testHandler{test: t, batched: false}
 	server := httptest.NewServer(handler)
@@ -451,7 +451,7 @@ func Test_SplunkWriteData(t *testing.T) {
 	assert.Equal(t, int32(0), response.Code)
 }
 
-// Verifies: SW-REQ-027
+// Verifies: SW-REQ-048
 func Test_SplunkWriteDataBatch(t *testing.T) {
 	handler := &testHandler{test: t, batched: true}
 	server := httptest.NewServer(handler)
@@ -489,7 +489,7 @@ func Test_SplunkWriteDataBatch(t *testing.T) {
 }
 
 // getEventBytes returns the bytes amount of the marshalled events struct
-// Verifies: SW-REQ-027
+// Verifies: SW-REQ-048
 func getEventBytes(records []interface{}, t *testing.T) int {
 	result := 0
 

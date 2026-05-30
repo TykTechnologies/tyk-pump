@@ -13,7 +13,7 @@ import (
 )
 
 // mockSyslogServer creates a simple UDP syslog server for testing
-// Verifies: SW-REQ-027
+// Verifies: SW-REQ-050
 func mockSyslogServer(t *testing.T) (string, chan string) {
 	addr, err := net.ResolveUDPAddr("udp", "127.0.0.1:0")
 	require.NoError(t, err)
@@ -39,7 +39,7 @@ func mockSyslogServer(t *testing.T) (string, chan string) {
 }
 
 // Helper function to create a SyslogPump with test configuration
-// Verifies: SW-REQ-027
+// Verifies: SW-REQ-050
 func createTestSyslogPump(addr string) *SyslogPump {
 	pump := &SyslogPump{
 		syslogConf: &SyslogConf{
@@ -58,7 +58,7 @@ func createTestSyslogPump(addr string) *SyslogPump {
 	return pump
 }
 
-// Verifies: SW-REQ-027
+// Verifies: SW-REQ-050
 func TestSyslogPump_WriteData(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -155,7 +155,7 @@ func TestSyslogPump_WriteData(t *testing.T) {
 	}
 }
 
-// Verifies: SW-REQ-027
+// Verifies: SW-REQ-050
 func TestSyslogPump_WriteData_WithMultilineHTTP(t *testing.T) {
 	// Test data with realistic multiline HTTP requests/responses that would cause fragmentation
 	record := analytics.AnalyticsRecord{
@@ -243,7 +243,7 @@ Content-Length: 156
 	}
 }
 
-// Verifies: SW-REQ-027
+// Verifies: SW-REQ-050
 func TestSyslogPump_WriteData_SpecialCharacters(t *testing.T) {
 	// Test data with special characters that could break output
 	record := analytics.AnalyticsRecord{
@@ -288,7 +288,7 @@ func TestSyslogPump_WriteData_SpecialCharacters(t *testing.T) {
 	}
 }
 
-// Verifies: SW-REQ-027
+// Verifies: SW-REQ-050
 func TestSyslogPump_WriteData_ContextCancellation(t *testing.T) {
 	record := analytics.AnalyticsRecord{
 		Method:       "GET",

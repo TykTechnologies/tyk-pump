@@ -8,7 +8,7 @@ import (
 	"github.com/TykTechnologies/tyk-pump/analytics"
 )
 
-// Verifies: SW-REQ-027
+// Verifies: SW-REQ-053
 func CreateAnalyticsRecord() analytics.AnalyticsRecord {
 	a := analytics.AnalyticsRecord{}
 	a.Method = "POST"
@@ -37,7 +37,7 @@ func CreateAnalyticsRecord() analytics.AnalyticsRecord {
 	return a
 }
 
-// Verifies: SW-REQ-027
+// Verifies: SW-REQ-053
 func TestSegmentPump(t *testing.T) {
 	t.Skip("Set the tWriteKey and remove Skip to test.")
 

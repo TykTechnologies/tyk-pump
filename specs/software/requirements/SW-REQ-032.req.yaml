@@ -1,9 +1,9 @@
 id: SW-REQ-032
 version: 1
-status: review
+status: approved
 priority: shall
 category: functional
-req_type: guarantee
+req_type: derived
 fretish: ""
 description: The health-check server shall respond with a liveness payload on the configured endpoint and optionally serve pprof profiles.
 formalization_strategy: informal
@@ -19,33 +19,36 @@ variables: []
 traces:
     satisfies:
         - SYS-REQ-012
-    reviewed_at: "2026-05-29T21:30:11.766832Z"
+    reviewed_at: "2026-05-30T07:45:52.316602Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:84243a99e96d5be53271745686889c4f39225fce5c05f2f775cb846a8ac4c3a4
+    reviewed_fingerprint: sha256:36db3d4c54e0d2b3a04978c1229727b5bdb0c35a7f3888a0960142e560079e73
 verification:
     assurance_level: B
     formalization_status: none
     review:
         status: approved
-        reviewer: leo@tyk.io
-        reviewed_at: "2026-05-29T15:47:46Z"
+        reviewer: human:buger
+        role: software_engineer
+        reviewed_at: "2026-05-30T07:43:08Z"
+        comment: Software-component design reviewed as part of feat/reqproof-coverage PR; each maps to verified code paths per the Phase 0 file-by-file verification (see PR description for code-verified corrections SW-016/017/023/027/028/033).
+        fingerprint: sha256:0edae23162d4c78b33e903333d8bff1f61f7d316b757e3339c57a8d3726b3fc9
         ai_generated: false
     impact_reviews:
         - requirement: SW-REQ-032
           artifact: server/server.go
           decision: no-authored-change
           reviewer: buger
-          reason: Annotated MC/DC ignore on unreachable GeoIP and defensive type-assertion branches plus added unit tests; runtime behavior and authored requirement intent are unchanged.
+          reason: 'Refactored server.go to extract resolveHealthCheckParams + buildHealthCheckRouter helpers from ServeHealthCheck. The refactor is purely for unit-testability (the helpers expose param-defaulting + route-registration decisions that were previously buried inside the ListenAndServe call). Runtime behaviour and Healthcheck handler unchanged; added //mcdc:ignore on the ListenAndServe error branch which is genuinely unreachable in unit tests.'
           base: origin/master
-          requirement_fingerprint: sha256:84243a99e96d5be53271745686889c4f39225fce5c05f2f775cb846a8ac4c3a4
-          approval_fingerprint: sha256:5ece4dff3fdb3719a3c02b7a4fefee0dca77a60b16cad8cdf62db2644b4eba2e
-          artifact_fingerprint: sha256:64b2c191808d844c26e3a04d4310d6beee45c6c162c9f1e4ded4be4ee69f836e
-          reviewed_at: "2026-05-29T21:13:20Z"
+          requirement_fingerprint: sha256:36db3d4c54e0d2b3a04978c1229727b5bdb0c35a7f3888a0960142e560079e73
+          approval_fingerprint: sha256:0edae23162d4c78b33e903333d8bff1f61f7d316b757e3339c57a8d3726b3fc9
+          artifact_fingerprint: sha256:5c4ea4acd5fbc87a7c6e0dfe361e9fce9627b49e2e190420d5628aa5789a1bae
+          reviewed_at: "2026-05-30T08:55:34Z"
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:17Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-29T15:47:46Z"
+    last_modified_at: "2026-05-30T07:49:09Z"
 obligation_checklist:
     - nominal
 lifecycle:

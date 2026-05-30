@@ -6,7 +6,7 @@ import (
 	"github.com/TykTechnologies/tyk-pump/analytics"
 )
 
-// Verifies: SW-REQ-028
+// Verifies: SW-REQ-057
 func TestChunkString(t *testing.T) {
 	tests := []struct {
 		testName    string
@@ -66,7 +66,7 @@ func TestChunkString(t *testing.T) {
 	}
 }
 
-// Verifies: SW-REQ-028
+// Verifies: SW-REQ-057
 func TestGetAnalyticsRecordMeasuresAndDimensions(t *testing.T) {
 	pump := TimestreamPump{}
 	cfg := make(map[string]interface{})
@@ -95,7 +95,7 @@ func TestGetAnalyticsRecordMeasuresAndDimensions(t *testing.T) {
 	}
 }
 
-// Verifies: SW-REQ-028
+// Verifies: SW-REQ-057
 func TestGetAnalyticsRecordMeasureWithRawResponse(t *testing.T) {
 	pump := TimestreamPump{}
 	cfg := make(map[string]interface{})

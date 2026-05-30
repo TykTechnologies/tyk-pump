@@ -1,0 +1,6 @@
+component: pumps-mongo-aggregate
+variables:
+    - name: inc_is_atomic
+      type: bool
+      direction: input
+      description: MongoDB driver guarantees atomic $inc on a single document.

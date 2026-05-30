@@ -8,3 +8,15 @@ variables:
       type: bool
       direction: output
       description: Per-organisation and per-API counters are emitted for the window.
+    - name: records_grouped_by_dimension
+      type: bool
+      direction: output
+      description: Aggregated counters are grouped per organisation and per API dimension.
+    - name: records_aggregated
+      type: bool
+      direction: input
+      description: Records have been aggregated within the configured window.
+    - name: hits_errors_latency_counted
+      type: bool
+      direction: output
+      description: Per-aggregated-unit counters (hits, successes, errors, latency) are maintained.

@@ -1,0 +1,61 @@
+id: SW-REQ-040
+version: 1
+status: approved
+priority: shall
+category: functional
+req_type: derived
+fretish: ""
+description: The standard SQL pump shall, on each purge, drop MCP-classified analytics records, then if TableSharding is true split the remaining records on each YYYYMMDD timestamp boundary and route each day-slice to a tyk_analytics_<YYYYMMDD> table (auto-created and indexed via ensureTable/ensureIndex), otherwise route all records to the default tyk_analytics table; within each table it shall issue parameter-bound batched inserts of BatchSize records (default 1000) using gorm.Create on the request context. Postgres uses a custom monthEncodePlan AfterConnect to encode time.Month as int8 (TT-16980). Writes log per-batch errors but do not propagate them upward.
+formalization_strategy: informal
+informal_verification:
+    method: ""
+    evidence: ""
+    verified: false
+parent: SYS-REQ-004
+component: pumps-sql-standard
+rationale: ""
+tags: []
+variables: []
+traces:
+    satisfies:
+        - SYS-REQ-004
+    reviewed_at: "2026-05-30T08:45:50.475627Z"
+    reviewed_by: human:buger
+    reviewed_fingerprint: sha256:3bc21a3a119d8cb9c42c62553e7173da08dd83683a8445b38ba6bd6215ec1ee3
+verification:
+    assurance_level: B
+    formalization_status: none
+    review:
+        status: approved
+        reviewer: human:buger
+        role: software_engineer
+        reviewed_at: "2026-05-30T08:44:11Z"
+        comment: Phase A per-implementation/per-significant-behavior decomposition; descriptions code-verified against the named files per docs/phase-a-proposed-reqs.md. Pump-family family-level reqs are retained as superseded anchor reqs.
+        fingerprint: sha256:bc9774d210e73850e317586a7017cb520d4362b790d7c7998369f1bd69954968
+        ai_generated: false
+    impact_reviews:
+        - requirement: SW-REQ-040
+          artifact: pumps/sql.go
+          decision: no-authored-change
+          reviewer: buger
+          reason: Phase A re-annotated this file to point at the atomic per-implementation/per-behavior SW req (was previously SW-REQ-018/019/020/022/027/028); no runtime behavior change.
+          base: origin/master
+          requirement_fingerprint: sha256:3bc21a3a119d8cb9c42c62553e7173da08dd83683a8445b38ba6bd6215ec1ee3
+          approval_fingerprint: sha256:bc9774d210e73850e317586a7017cb520d4362b790d7c7998369f1bd69954968
+          artifact_fingerprint: sha256:b8d9c0b5958274124782a01addb3cbc41f4837933776ba33fec473aa22fa3fc7
+          reviewed_at: "2026-05-30T08:48:40Z"
+history:
+    created_by: human:cli
+    created_at: "2026-05-30T08:35:20Z"
+    last_modified_by: human:cli
+    last_modified_at: "2026-05-30T08:44:11Z"
+obligation_checklist:
+    - connection_leak_free
+    - parameterized_only_write
+lifecycle:
+    change_history:
+        - date: "2026-05-30T08:43:46Z"
+          from: draft
+          to: review
+          reason: ""
+          changed_by: human:cli

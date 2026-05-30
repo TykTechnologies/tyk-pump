@@ -144,7 +144,7 @@ type ApiKeyTransport struct {
 }
 
 // RoundTrip for ApiKeyTransport auth
-// reqproof:implements SW-REQ-020
+// reqproof:implements SW-REQ-068
 func (t *ApiKeyTransport) RoundTrip(r *http.Request) (*http.Response, error) {
 	auth := t.APIKeyID + ":" + t.APIKey
 	key := base64.StdEncoding.EncodeToString([]byte(auth))
@@ -154,7 +154,7 @@ func (t *ApiKeyTransport) RoundTrip(r *http.Request) (*http.Response, error) {
 	return http.DefaultTransport.RoundTrip(r)
 }
 
-// reqproof:implements SW-REQ-020
+// reqproof:implements SW-REQ-068
 func (e *ElasticsearchPump) getOperator() (ElasticsearchOperator, error) {
 	conf := *e.esConf
 	var err error
@@ -338,23 +338,23 @@ func (e *ElasticsearchPump) getOperator() (ElasticsearchOperator, error) {
 	return nil, err
 }
 
-// reqproof:implements SW-REQ-020
+// reqproof:implements SW-REQ-068
 func (e *ElasticsearchPump) New() Pump {
 	newPump := ElasticsearchPump{}
 	return &newPump
 }
 
-// reqproof:implements SW-REQ-020
+// reqproof:implements SW-REQ-068
 func (e *ElasticsearchPump) GetName() string {
 	return "Elasticsearch Pump"
 }
 
-// reqproof:implements SW-REQ-020
+// reqproof:implements SW-REQ-068
 func (e *ElasticsearchPump) GetEnvPrefix() string {
 	return e.esConf.EnvPrefix
 }
 
-// reqproof:implements SW-REQ-020
+// reqproof:implements SW-REQ-068
 func (e *ElasticsearchPump) Init(config interface{}) error {
 	e.esConf = &ElasticsearchConf{}
 	e.log = log.WithField("prefix", elasticsearchPrefix)
@@ -403,7 +403,7 @@ func (e *ElasticsearchPump) Init(config interface{}) error {
 	return nil
 }
 
-// reqproof:implements SW-REQ-020
+// reqproof:implements SW-REQ-068
 func (e *ElasticsearchPump) connect() {
 	var err error
 
@@ -415,7 +415,7 @@ func (e *ElasticsearchPump) connect() {
 	}
 }
 
-// reqproof:implements SW-REQ-020
+// reqproof:implements SW-REQ-068
 func (e *ElasticsearchPump) WriteData(ctx context.Context, data []interface{}) error {
 	e.log.Debug("Attempting to write ", len(data), " records...")
 
@@ -431,7 +431,7 @@ func (e *ElasticsearchPump) WriteData(ctx context.Context, data []interface{}) e
 	return nil
 }
 
-// reqproof:implements SW-REQ-020
+// reqproof:implements SW-REQ-069
 func getIndexName(esConf *ElasticsearchConf) string {
 	indexName := esConf.IndexName
 
@@ -447,7 +447,7 @@ func getIndexName(esConf *ElasticsearchConf) string {
 // When MCPIndexName is set and the record is an MCP record, the MCP index is
 // returned (with date suffix when RollingIndex is enabled). Otherwise the
 // standard index is returned, preserving backward-compatible behaviour.
-// reqproof:implements SW-REQ-020
+// reqproof:implements SW-REQ-069
 func getIndexNameForRecord(esConf *ElasticsearchConf, record analytics.AnalyticsRecord) string {
 	if esConf.MCPIndexName != "" && record.IsMCPRecord() {
 		indexName := esConf.MCPIndexName
@@ -459,7 +459,7 @@ func getIndexNameForRecord(esConf *ElasticsearchConf, record analytics.Analytics
 	return getIndexName(esConf)
 }
 
-// reqproof:implements SW-REQ-020
+// reqproof:implements SW-REQ-068
 func getMapping(datum analytics.AnalyticsRecord, extendedStatistics bool, generateID bool, decodeBase64 bool) (map[string]interface{}, string) {
 	record := datum
 
@@ -511,7 +511,7 @@ func getMapping(datum analytics.AnalyticsRecord, extendedStatistics bool, genera
 	return mapping, ""
 }
 
-// reqproof:implements SW-REQ-020
+// reqproof:implements SW-REQ-070
 func (e Elasticsearch3Operator) processData(ctx context.Context, data []interface{}, esConf *ElasticsearchConf) error {
 	index := e.esClient.Index().Index(getIndexName(esConf))
 
@@ -545,12 +545,12 @@ func (e Elasticsearch3Operator) processData(ctx context.Context, data []interfac
 	return nil
 }
 
-// reqproof:implements SW-REQ-020
+// reqproof:implements SW-REQ-070
 func (e Elasticsearch3Operator) flushRecords() error {
 	return e.bulkProcessor.Flush()
 }
 
-// reqproof:implements SW-REQ-020
+// reqproof:implements SW-REQ-070
 func (e Elasticsearch5Operator) processData(ctx context.Context, data []interface{}, esConf *ElasticsearchConf) error {
 	index := e.esClient.Index().Index(getIndexName(esConf))
 
@@ -584,12 +584,12 @@ func (e Elasticsearch5Operator) processData(ctx context.Context, data []interfac
 	return nil
 }
 
-// reqproof:implements SW-REQ-020
+// reqproof:implements SW-REQ-070
 func (e Elasticsearch5Operator) flushRecords() error {
 	return e.bulkProcessor.Flush()
 }
 
-// reqproof:implements SW-REQ-020
+// reqproof:implements SW-REQ-070
 func (e Elasticsearch6Operator) processData(ctx context.Context, data []interface{}, esConf *ElasticsearchConf) error {
 	index := e.esClient.Index().Index(getIndexName(esConf))
 
@@ -627,12 +627,12 @@ func (e Elasticsearch6Operator) processData(ctx context.Context, data []interfac
 	return nil
 }
 
-// reqproof:implements SW-REQ-020
+// reqproof:implements SW-REQ-070
 func (e Elasticsearch6Operator) flushRecords() error {
 	return e.bulkProcessor.Flush()
 }
 
-// reqproof:implements SW-REQ-020
+// reqproof:implements SW-REQ-070
 func (e Elasticsearch7Operator) processData(ctx context.Context, data []interface{}, esConf *ElasticsearchConf) error {
 	index := e.esClient.Index().Index(getIndexName(esConf))
 
@@ -667,13 +667,13 @@ func (e Elasticsearch7Operator) processData(ctx context.Context, data []interfac
 	return nil
 }
 
-// reqproof:implements SW-REQ-020
+// reqproof:implements SW-REQ-070
 func (e Elasticsearch7Operator) flushRecords() error {
 	return e.bulkProcessor.Flush()
 }
 
 // printPurgedBulkRecords print the purged records = bulk size when bulk is enabled
-// reqproof:implements SW-REQ-020
+// reqproof:implements SW-REQ-070
 func printPurgedBulkRecords(bulkSize int, err error, logger *logrus.Entry) {
 	if err != nil {
 		logger.WithError(err).Errorf("Error Purging %+v records", bulkSize)
@@ -682,7 +682,7 @@ func printPurgedBulkRecords(bulkSize int, err error, logger *logrus.Entry) {
 	logger.Infof("Purged %+v records", bulkSize)
 }
 
-// reqproof:implements SW-REQ-020
+// reqproof:implements SW-REQ-070
 func (e *ElasticsearchPump) Shutdown() error {
 	if !e.esConf.DisableBulk {
 		e.log.Info("Flushing bulked records...")

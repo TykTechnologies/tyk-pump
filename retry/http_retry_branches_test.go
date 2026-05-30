@@ -89,3 +89,25 @@ func TestBackoffHTTPRetry_Send_WithBody_RetriesOn5xx(t *testing.T) {
 		t.Fatalf("expected at least one retry on 5xx, saw %d call(s)", calls)
 	}
 }
+
+// Verifies: SW-REQ-030
+// Verifies: SYS-REQ-023
+// SYS-REQ-023:error_handling:negative
+func TestBackoffHTTPRetry_Send_ErrorSurfacedAfterRetriesExhausted(t *testing.T) {
+	calls := 0
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls++
+		w.WriteHeader(http.StatusInternalServerError) // 5xx every time
+	}))
+	defer srv.Close()
+
+	const maxRetries = 2
+	r := NewBackoffRetry("test", maxRetries, srv.Client(), testLogger())
+	req, _ := http.NewRequest(http.MethodGet, srv.URL, nil)
+	if err := r.Send(req); err == nil {
+		t.Fatal("expected error after retries exhausted")
+	}
+	if calls != int(maxRetries)+1 {
+		t.Fatalf("expected %d total attempts (initial + %d retries), got %d", maxRetries+1, maxRetries, calls)
+	}
+}

@@ -1,9 +1,9 @@
 id: SYS-REQ-013
 version: 1
-status: review
+status: approved
 priority: shall
 category: functional
-req_type: guarantee
+req_type: derived
 fretish: when instrumentation_enabled observability shall eventually satisfy metrics_emitted
 description: When instrumentation is enabled, the pump shall emit purge-timing and record-count metrics to the configured metrics sink.
 formalization_strategy: fretish
@@ -19,24 +19,27 @@ variables: []
 traces:
     satisfies:
         - STK-REQ-004
-    reviewed_at: "2026-05-29T21:30:11.846576Z"
+    reviewed_at: "2026-05-30T07:45:52.417426Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:aeaa9d7ce7a871de57a783a397472f3a4a6ef04c0a181b642689613c17d9675b
+    reviewed_fingerprint: sha256:0238276fccde2d8829c1472f5964e928e69cf76482912e927b928215ca4cc119
 verification:
     assurance_level: B
     formalization_status: valid
     review:
         status: approved
-        reviewer: leo@tyk.io
-        reviewed_at: "2026-05-29T15:47:47Z"
+        reviewer: human:buger
+        role: system_engineer
+        reviewed_at: "2026-05-30T07:43:08Z"
+        comment: System-level behavior reviewed as part of feat/reqproof-coverage PR; FRETish + obligation + satisfies linkage verified against tyk-pump architecture and code in Phase 0 code-verification pass.
+        fingerprint: sha256:2cd2294443ce46f21d93daeab75153663ae91ac3f96d6b5dc84ea6fdd5f4a8d8
         ai_generated: false
-    gaps_reviewed_at: "2026-05-29T21:30:13.12793Z"
+    gaps_reviewed_at: "2026-05-30T07:50:08.292078Z"
     gaps_reviewed_by: buger
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:11:41Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-29T21:25:35Z"
+    last_modified_at: "2026-05-30T07:43:08Z"
 obligation_class: nominal
 lifecycle:
     change_history:

@@ -49,23 +49,23 @@ type GraylogConf struct {
 var graylogPrefix = "graylog-pump"
 var graylogDefaultENV = PUMPS_ENV_PREFIX + "_GRAYLOG" + PUMPS_ENV_META_PREFIX
 
-// reqproof:implements SW-REQ-027
+// reqproof:implements SW-REQ-049
 func (p *GraylogPump) New() Pump {
 	newPump := GraylogPump{}
 	return &newPump
 }
 
-// reqproof:implements SW-REQ-027
+// reqproof:implements SW-REQ-049
 func (p *GraylogPump) GetName() string {
 	return "Graylog Pump"
 }
 
-// reqproof:implements SW-REQ-027
+// reqproof:implements SW-REQ-049
 func (p *GraylogPump) GetEnvPrefix() string {
 	return p.conf.EnvPrefix
 }
 
-// reqproof:implements SW-REQ-027
+// reqproof:implements SW-REQ-049
 func (p *GraylogPump) Init(conf interface{}) error {
 	p.conf = &GraylogConf{}
 
@@ -95,7 +95,7 @@ func (p *GraylogPump) Init(conf interface{}) error {
 	return nil
 }
 
-// reqproof:implements SW-REQ-027
+// reqproof:implements SW-REQ-049
 func (p *GraylogPump) connect() {
 	p.client = gelf.New(gelf.Config{
 		GraylogPort:     p.conf.GraylogPort,
@@ -103,7 +103,7 @@ func (p *GraylogPump) connect() {
 	})
 }
 
-// reqproof:implements SW-REQ-027
+// reqproof:implements SW-REQ-049
 func (p *GraylogPump) WriteData(ctx context.Context, data []interface{}) error {
 	p.log.Debug("Attempting to write ", len(data), " records...")
 

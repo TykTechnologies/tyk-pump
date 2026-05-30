@@ -1,0 +1,61 @@
+id: SW-REQ-035
+version: 1
+status: approved
+priority: shall
+category: functional
+req_type: derived
+fretish: ""
+description: The MongoSelective pump shall partition incoming non-MCP analytics records by OrgID and route each org's records into a per-organisation collection named z_tyk_analyticz_<orgid>, dropping records with empty OrgID; for each org collection it shall ensure baseline indexes (apiid, TTL on expireAt (skipped for CosmosDB), and a composite logBrowserIndex) and then insert records in size-bounded batches up to MaxInsertBatchSizeBytes (default 10 MiB), skipping individual documents larger than MaxDocumentSizeBytes.
+formalization_strategy: informal
+informal_verification:
+    method: ""
+    evidence: ""
+    verified: false
+parent: SYS-REQ-004
+component: pumps-mongo-selective
+rationale: ""
+tags: []
+variables: []
+traces:
+    satisfies:
+        - SYS-REQ-004
+    reviewed_at: "2026-05-30T08:45:50.39928Z"
+    reviewed_by: human:buger
+    reviewed_fingerprint: sha256:2204158cb2a9e8ea79ccb5304ba7890722f8c1bb5c0c3e48300d72d589a38429
+verification:
+    assurance_level: B
+    formalization_status: none
+    review:
+        status: approved
+        reviewer: human:buger
+        role: software_engineer
+        reviewed_at: "2026-05-30T08:44:11Z"
+        comment: Phase A per-implementation/per-significant-behavior decomposition; descriptions code-verified against the named files per docs/phase-a-proposed-reqs.md. Pump-family family-level reqs are retained as superseded anchor reqs.
+        fingerprint: sha256:95db4253125f4b270b2527dfaf4632270ac3d3f22df051a6b30a35255aa2c640
+        ai_generated: false
+    impact_reviews:
+        - requirement: SW-REQ-035
+          artifact: pumps/mongo_selective.go
+          decision: no-authored-change
+          reviewer: buger
+          reason: Phase A re-annotated this file to point at the atomic per-implementation/per-behavior SW req (was previously SW-REQ-018/019/020/022/027/028); no runtime behavior change.
+          base: origin/master
+          requirement_fingerprint: sha256:2204158cb2a9e8ea79ccb5304ba7890722f8c1bb5c0c3e48300d72d589a38429
+          approval_fingerprint: sha256:95db4253125f4b270b2527dfaf4632270ac3d3f22df051a6b30a35255aa2c640
+          artifact_fingerprint: sha256:d29fa333f5b5d14059684bc4039e163529d6939222b86949a125175ec35e7936
+          reviewed_at: "2026-05-30T08:48:39Z"
+history:
+    created_by: human:cli
+    created_at: "2026-05-30T08:34:43Z"
+    last_modified_by: human:cli
+    last_modified_at: "2026-05-30T08:44:11Z"
+obligation_checklist:
+    - boundary
+    - errors_propagated
+lifecycle:
+    change_history:
+        - date: "2026-05-30T08:43:46Z"
+          from: draft
+          to: review
+          reason: ""
+          changed_by: human:cli

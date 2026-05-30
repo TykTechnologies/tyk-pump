@@ -1,0 +1,61 @@
+id: SW-REQ-069
+version: 1
+status: approved
+priority: shall
+category: functional
+req_type: derived
+fretish: ""
+description: 'When RollingIndex is true, the Elasticsearch pump shall append -YYYY.MM.DD (UTC system time) to the target index name. Per-record routing shall use getIndexNameForRecord: when MCPIndexName is non-empty and the record is an MCP record, the MCP-specific index name is used (with the same rolling suffix when enabled); otherwise the standard IndexName is used.'
+formalization_strategy: informal
+informal_verification:
+    method: ""
+    evidence: ""
+    verified: false
+parent: SYS-REQ-004
+component: pumps-es
+rationale: ""
+tags: []
+variables: []
+traces:
+    satisfies:
+        - SYS-REQ-004
+    reviewed_at: "2026-05-30T08:45:50.794939Z"
+    reviewed_by: human:buger
+    reviewed_fingerprint: sha256:989f8ec29086cd3f6c7adf8f9560b71adac9d937797336a1c1f8e66985b74c71
+verification:
+    assurance_level: B
+    formalization_status: none
+    review:
+        status: approved
+        reviewer: human:buger
+        role: software_engineer
+        reviewed_at: "2026-05-30T08:44:11Z"
+        comment: Phase A per-implementation/per-significant-behavior decomposition; descriptions code-verified against the named files per docs/phase-a-proposed-reqs.md. Pump-family family-level reqs are retained as superseded anchor reqs.
+        fingerprint: sha256:9c0dc0c96df9038320efa147800c87f33f18ff38dd7f58757f28a18a530119f2
+        ai_generated: false
+    impact_reviews:
+        - requirement: SW-REQ-069
+          artifact: pumps/elasticsearch.go
+          decision: no-authored-change
+          reviewer: buger
+          reason: Phase A re-annotated this file to point at the atomic per-implementation/per-behavior SW req (was previously SW-REQ-018/019/020/022/027/028); no runtime behavior change.
+          base: origin/master
+          requirement_fingerprint: sha256:989f8ec29086cd3f6c7adf8f9560b71adac9d937797336a1c1f8e66985b74c71
+          approval_fingerprint: sha256:9c0dc0c96df9038320efa147800c87f33f18ff38dd7f58757f28a18a530119f2
+          artifact_fingerprint: sha256:54219f17a2b15e8a628f2455b688ef38d72c6515229e98f89e220bf32e720e17
+          reviewed_at: "2026-05-30T08:48:45Z"
+history:
+    created_by: human:cli
+    created_at: "2026-05-30T08:40:01Z"
+    last_modified_by: human:cli
+    last_modified_at: "2026-05-30T08:44:11Z"
+obligation_checklist:
+    - determinism
+    - nominal
+lifecycle:
+    change_history:
+        - date: "2026-05-30T08:43:47Z"
+          from: draft
+          to: review
+          reason: ""
+          changed_by: human:cli

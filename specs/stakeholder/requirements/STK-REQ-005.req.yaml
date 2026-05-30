@@ -1,6 +1,6 @@
 id: STK-REQ-005
 version: 1
-status: review
+status: approved
 priority: shall
 category: functional
 req_type: guarantee
@@ -18,24 +18,28 @@ tags:
     - availability
 variables: []
 traces:
-    reviewed_at: "2026-05-29T21:30:11.819067Z"
+    reviewed_at: "2026-05-30T08:00:51.546986Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:3d670e092aac0501529244b8475edd7c5be05db5622c9fd0ee5d4dabc7d6642d
+    reviewed_fingerprint: sha256:6ed85d70649fca644a3b835b66a9238d3b0ecf321ee72c800aba4e5099af1769
 verification:
     assurance_level: B
     formalization_status: none
     review:
         status: approved
-        reviewer: leo@tyk.io
-        reviewed_at: "2026-05-29T15:47:46Z"
+        reviewer: human:buger
+        role: system_owner
+        reviewed_at: "2026-05-30T08:00:50Z"
+        comment: 'Re-approval after Phase 0.6: acceptance-criteria derived_reqs extended to include the new SYS reqs from the splits (SYS-018, 019, 020, 021, 022, 023). Stakeholder intent unchanged.'
+        fingerprint: sha256:687d3635b09798851ed54eb78c85ef554f2037fc149ce715a2029837300cea5b
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:10:49Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-29T15:47:46Z"
+    last_modified_at: "2026-05-30T08:00:50Z"
 obligation_checklist:
     - nominal
+release_disposition: ship_with_known_issue
 stakeholder:
     persona: Platform operator
     story: As an operator I want API uptime data forwarded so that availability dashboards stay current.
@@ -45,6 +49,7 @@ stakeholder:
           testable: true
           derived_reqs:
             - SYS-REQ-014
+            - SYS-REQ-021
         - id: AC-002
           text: Operators can disable uptime data purging via configuration.
           testable: true
@@ -56,4 +61,14 @@ lifecycle:
           from: draft
           to: review
           reason: ""
+          changed_by: human:cli
+        - date: "2026-05-30T08:00:50Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="system_owner" reviewer="human:buger" at=2026-05-30T07:43:08Z comment="Stakeholder intent reviewed as part of feat/reqproof-coverage PR; each persona/story/acceptance-criteria matches operator/business reality for tyk-pump.")'
+          changed_by: human:cli
+        - date: "2026-05-30T08:31:57Z"
+          from: release_disposition=
+          to: release_disposition=ship_with_known_issue
+          reason: 'KI uptime-write-has-no-error-return: WriteUptimeData has no error return path'
           changed_by: human:cli

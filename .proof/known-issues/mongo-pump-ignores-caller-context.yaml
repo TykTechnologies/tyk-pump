@@ -1,0 +1,20 @@
+id: mongo-pump-ignores-caller-context
+title: MongoPump.WriteData ignores caller ctx, bypassing per-pump write timeout
+description: 'The whole mongo pump family ignores the caller ctx and passes context.Background() to the temporal store: pumps/mongo.go:435 (MongoPump.WriteData), pumps/mongo_selective.go:242 and :375 (MongoSelectivePump.WriteData / WriteUptimeData), pumps/graph_mongo.go:148 (GraphMongoPump.WriteData), and pumps/mcp_mongo.go:138 (MCPMongoPump.WriteData) all call store.Insert(context.Background(), ...). main.go:execPumpWriting (main.go:435-471) sets context.WithTimeout per pump and selects on ctx.Done(), but mongo writes ignore that ctx. SYS-REQ-005''s per-pump-timeout claim is therefore false for every mongo variant: a mongo write that hangs will not be cancelled by the configured per-pump timeout, and the Pump-interface contract from INT-REQ-004 of surfacing write errors via ctx is broken. Workaround: operators relying on per-pump timeouts for mongo today have no recourse; tune mongo client-side timeouts via the mongo connection string instead.'
+affected_requirements:
+    - SYS-REQ-005
+    - INT-REQ-004
+severity: medium
+mitigation: Configure mongo client-side timeouts via the connection string (connectTimeoutMS, socketTimeoutMS) until the pump forwards the caller ctx to m.store.Insert.
+remediation: Replace context.Background() with the ctx parameter received by WriteData in all four files — pumps/mongo.go:435, pumps/mongo_selective.go:242 and :375, pumps/graph_mongo.go:148, pumps/mcp_mongo.go:138. Add a test that cancels ctx and asserts WriteData returns promptly with ctx.Err() for each variant.
+owner: tyk-team
+release_disposition: ship_with_known_issue
+status: open
+history:
+    - at: "2026-05-30T08:11:50Z"
+      by: human:buger
+      action: created
+    - at: "2026-05-30T08:33:58Z"
+      by: human:buger
+      action: edit
+      detail: add-requirement

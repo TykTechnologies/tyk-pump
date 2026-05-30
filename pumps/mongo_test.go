@@ -19,12 +19,12 @@ import (
 	"github.com/TykTechnologies/tyk-pump/analytics"
 )
 
-// Verifies: SW-REQ-018
+// Verifies: SW-REQ-034
 func newPump() Pump {
 	return (&MongoPump{}).New()
 }
 
-// Verifies: SW-REQ-018
+// Verifies: SW-REQ-034
 func TestMongoPump_capCollection_Enabled(t *testing.T) {
 	pump := newPump()
 	conf := defaultConf()
@@ -41,7 +41,7 @@ func TestMongoPump_capCollection_Enabled(t *testing.T) {
 	}
 }
 
-// Verifies: SW-REQ-018
+// Verifies: SW-REQ-034
 func TestMongoPumpOmitIndexCreation(t *testing.T) {
 	pump := newPump()
 	conf := defaultConf()
@@ -178,7 +178,7 @@ func TestMongoPumpOmitIndexCreation(t *testing.T) {
 	}
 }
 
-// Verifies: SW-REQ-018
+// Verifies: SW-REQ-034
 func CreateCollectionIfNeeded(t *testing.T, mPump *MongoPump, dbObject model.DBObject) {
 	t.Helper()
 	if !HasTable(t, mPump, dbObject) {
@@ -189,7 +189,7 @@ func CreateCollectionIfNeeded(t *testing.T, mPump *MongoPump, dbObject model.DBO
 	}
 }
 
-// Verifies: SW-REQ-018
+// Verifies: SW-REQ-034
 func HasTable(t *testing.T, mPump *MongoPump, dbObject model.DBObject) bool {
 	t.Helper()
 	hasTable, err := mPump.store.HasTable(context.Background(), dbObject.TableName())
@@ -200,7 +200,7 @@ func HasTable(t *testing.T, mPump *MongoPump, dbObject model.DBObject) bool {
 	return hasTable
 }
 
-// Verifies: SW-REQ-018
+// Verifies: SW-REQ-034
 func TestMongoPump_capCollection_Exists(t *testing.T) {
 	c := Conn{}
 	c.ConnectDb()
@@ -224,7 +224,7 @@ func TestMongoPump_capCollection_Exists(t *testing.T) {
 	}
 }
 
-// Verifies: SW-REQ-018
+// Verifies: SW-REQ-034
 func TestMongoPump_capCollection_Not64arch(t *testing.T) {
 	c := Conn{}
 	c.ConnectDb()
@@ -250,7 +250,7 @@ func TestMongoPump_capCollection_Not64arch(t *testing.T) {
 	}
 }
 
-// Verifies: SW-REQ-018
+// Verifies: SW-REQ-034
 func TestMongoPump_capCollection_SensibleDefaultSize(t *testing.T) {
 	if strconv.IntSize < 64 {
 		t.Skip("skipping as < 64bit arch")
@@ -284,7 +284,7 @@ func TestMongoPump_capCollection_SensibleDefaultSize(t *testing.T) {
 	}
 }
 
-// Verifies: SW-REQ-018
+// Verifies: SW-REQ-034
 func TestMongoPump_capCollection_OverrideSize(t *testing.T) {
 	if strconv.IntSize < 64 {
 		t.Skip("skipping as < 64bit arch")
@@ -318,7 +318,7 @@ func TestMongoPump_capCollection_OverrideSize(t *testing.T) {
 	}
 }
 
-// Verifies: SW-REQ-018
+// Verifies: SW-REQ-034
 func TestMongoPump_AccumulateSet(t *testing.T) {
 	run := func(recordsGenerator func(numRecords int) []interface{}, expectedRecordsCount int) func(t *testing.T) {
 		return func(t *testing.T) {
@@ -380,7 +380,7 @@ func TestMongoPump_AccumulateSet(t *testing.T) {
 	))
 }
 
-// Verifies: SW-REQ-018
+// Verifies: SW-REQ-034
 func TestMongoPump_AccumulateSetIgnoreDocSize(t *testing.T) {
 	bloat := base64.StdEncoding.EncodeToString(make([]byte, 2048))
 	pump := newPump()
@@ -416,7 +416,7 @@ func TestMongoPump_AccumulateSetIgnoreDocSize(t *testing.T) {
 	}
 }
 
-// Verifies: SW-REQ-018
+// Verifies: SW-REQ-034
 func TestGetBlurredURL(t *testing.T) {
 	tcs := []struct {
 		testName           string
@@ -489,7 +489,7 @@ func TestGetBlurredURL(t *testing.T) {
 	}
 }
 
-// Verifies: SW-REQ-018
+// Verifies: SW-REQ-034
 func TestWriteUptimeData(t *testing.T) {
 	now := time.Now()
 
@@ -553,7 +553,7 @@ func TestWriteUptimeData(t *testing.T) {
 	}
 }
 
-// Verifies: SW-REQ-018
+// Verifies: SW-REQ-034
 func TestDecodeRequestAndDecodeResponseMongo(t *testing.T) {
 	newPump := &MongoPump{}
 	conf := defaultConf()
@@ -573,7 +573,7 @@ func TestDecodeRequestAndDecodeResponseMongo(t *testing.T) {
 	assert.False(t, newPump.GetDecodedResponse())
 }
 
-// Verifies: SW-REQ-018
+// Verifies: SW-REQ-034
 func TestDefaultDriver(t *testing.T) {
 	newPump := &MongoPump{}
 	defaultConf := defaultConf()
@@ -583,7 +583,7 @@ func TestDefaultDriver(t *testing.T) {
 	assert.Equal(t, persistent.OfficialMongo, newPump.dbConf.MongoDriverType)
 }
 
-// Verifies: SW-REQ-018
+// Verifies: SW-REQ-034
 func TestMongoPump_WriteData(t *testing.T) {
 	sampleRecord := analytics.AnalyticsRecord{
 		Method:       "GET",
@@ -674,7 +674,7 @@ func TestMongoPump_WriteData(t *testing.T) {
 	}))
 }
 
-// Verifies: SW-REQ-018
+// Verifies: SW-REQ-034
 func TestGetMongoDriverType(t *testing.T) {
 	tests := []struct {
 		name       string

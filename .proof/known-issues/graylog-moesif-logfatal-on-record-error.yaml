@@ -1,0 +1,15 @@
+id: graylog-moesif-logfatal-on-record-error
+title: Graylog and Moesif pumps log.Fatal on per-record base64 decode errors
+description: pumps/graylog.go uses log.Fatal on per-record errors at lines 120, 126, 155, and 168. pumps/moesif.go uses log.Fatal at lines 349, 356, 379, and 386 for similar per-record decode/parse failures. A single malformed record crashes the entire tyk-pump process via log.Fatal, taking down every other pump and the purge loop. Violates SYS-REQ-004's independent-failures requirement because one record's parsing issue is fatal to all pumps.
+affected_requirements:
+    - SYS-REQ-004
+severity: medium
+mitigation: Pre-validate analytics records or filter out suspect orgs before they reach graylog/moesif. Use a process supervisor to auto-restart after a crash.
+remediation: Replace per-record log.Fatal calls in pumps/graylog.go and pumps/moesif.go with log.Error + 'continue' so the bad record is skipped, not fatal.
+owner: tyk-team
+release_disposition: ship_with_known_issue
+status: open
+history:
+    - at: "2026-05-30T08:34:38Z"
+      by: human:buger
+      action: created

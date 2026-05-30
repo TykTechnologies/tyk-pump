@@ -1,9 +1,9 @@
 id: SW-REQ-007
 version: 1
-status: review
+status: approved
 priority: shall
 category: functional
-req_type: guarantee
+req_type: derived
 fretish: ""
 description: Temporal storage shall establish and re-establish its backend connection using bounded exponential backoff.
 formalization_strategy: informal
@@ -19,33 +19,46 @@ variables: []
 traces:
     satisfies:
         - SYS-REQ-006
-    reviewed_at: "2026-05-29T21:30:10.712799Z"
+    reviewed_at: "2026-05-30T07:45:50.440025Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:0060aeb7ebf037dfce186a245261470003a3049ba9bf9e5a8ede05c9901d5ca9
+    reviewed_fingerprint: sha256:65a254aeaaba6cdc008aaa211c6e7640f6deb763626cef5f32f58fed6868153a
 verification:
     assurance_level: B
     formalization_status: none
     review:
         status: approved
-        reviewer: leo@tyk.io
-        reviewed_at: "2026-05-29T15:47:45Z"
+        reviewer: human:buger
+        role: software_engineer
+        reviewed_at: "2026-05-30T07:43:08Z"
+        comment: Software-component design reviewed as part of feat/reqproof-coverage PR; each maps to verified code paths per the Phase 0 file-by-file verification (see PR description for code-verified corrections SW-016/017/023/027/028/033).
+        fingerprint: sha256:725f3af3531569dd935811f459ae897a0300ab98211494887f28de12479763eb
         ai_generated: false
     impact_reviews:
+        - requirement: SW-REQ-007
+          artifact: docs/fmea.md
+          decision: no-authored-change
+          reviewer: buger
+          reason: 'docs/fmea.md authored as part of Phase D (FMEA + obligation re-tune); it documents failure modes including storage-reconnect / temporal-store-unreachable scenarios that SW-REQ-007 implements. The FMEA is read-only documentation; no runtime behaviour change to storage/temporal_storage.go.'
+          base: origin/master
+          requirement_fingerprint: sha256:65a254aeaaba6cdc008aaa211c6e7640f6deb763626cef5f32f58fed6868153a
+          approval_fingerprint: sha256:725f3af3531569dd935811f459ae897a0300ab98211494887f28de12479763eb
+          artifact_fingerprint: sha256:10ed755ac172d68a5082fa28ddf21676d210bcbfaca858747213607c75a51920
+          reviewed_at: "2026-05-30T08:55:50Z"
         - requirement: SW-REQ-007
           artifact: storage/store.go
           decision: no-authored-change
           reviewer: buger
-          reason: Annotated MC/DC ignore on unreachable GeoIP and defensive type-assertion branches plus added unit tests; runtime behavior and authored requirement intent are unchanged.
+          reason: 'Production files added reqproof requirement-traceability annotations only (// reqproof:implements / // Verifies: / triple-form evidence). No runtime behavior change.'
           base: origin/master
-          requirement_fingerprint: sha256:0060aeb7ebf037dfce186a245261470003a3049ba9bf9e5a8ede05c9901d5ca9
-          approval_fingerprint: sha256:d4ac10c66c903ab0ce4033c68e0c69515a7a2b7e5cf4342a2995271e374f5385
+          requirement_fingerprint: sha256:65a254aeaaba6cdc008aaa211c6e7640f6deb763626cef5f32f58fed6868153a
+          approval_fingerprint: sha256:725f3af3531569dd935811f459ae897a0300ab98211494887f28de12479763eb
           artifact_fingerprint: sha256:e3e96b335a7f110f632eb0cf1980fc8f592e018ca4124e69232f016ffec0219c
-          reviewed_at: "2026-05-29T21:13:16Z"
+          reviewed_at: "2026-05-30T07:45:40Z"
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:14Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-29T15:47:45Z"
+    last_modified_at: "2026-05-30T07:43:08Z"
 obligation_checklist:
     - error_handling
 lifecycle:

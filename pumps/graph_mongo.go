@@ -20,36 +20,36 @@ type GraphMongoPump struct {
 	MongoPump
 }
 
-// reqproof:implements SW-REQ-018
+// reqproof:implements SW-REQ-037
 func (g *GraphMongoPump) New() Pump {
 	return &GraphMongoPump{}
 }
 
-// reqproof:implements SW-REQ-018
+// reqproof:implements SW-REQ-037
 func (g *GraphMongoPump) GetEnvPrefix() string {
 	return g.dbConf.EnvPrefix
 }
 
-// reqproof:implements SW-REQ-018
+// reqproof:implements SW-REQ-037
 func (g *GraphMongoPump) GetName() string {
 	return "MongoDB Graph Pump"
 }
 
-// reqproof:implements SW-REQ-018
+// reqproof:implements SW-REQ-037
 func (g *GraphMongoPump) SetDecodingRequest(decoding bool) {
 	if decoding {
 		log.WithField("pump", g.GetName()).Warn("Decoding request is not supported for Graph Mongo pump")
 	}
 }
 
-// reqproof:implements SW-REQ-018
+// reqproof:implements SW-REQ-037
 func (g *GraphMongoPump) SetDecodingResponse(decoding bool) {
 	if decoding {
 		log.WithField("pump", g.GetName()).Warn("Decoding response is not supported for Graph Mongo pump")
 	}
 }
 
-// reqproof:implements SW-REQ-018
+// reqproof:implements SW-REQ-037
 func (g *GraphMongoPump) Init(config interface{}) error {
 	g.dbConf = &MongoConf{}
 	g.log = log.WithField("prefix", mongoGraphPrefix)
@@ -97,7 +97,7 @@ func (g *GraphMongoPump) Init(config interface{}) error {
 	return nil
 }
 
-// reqproof:implements SW-REQ-018
+// reqproof:implements SW-REQ-037
 func (g *GraphMongoPump) WriteData(ctx context.Context, data []interface{}) error {
 	collectionName := g.dbConf.CollectionName
 	if collectionName == "" {

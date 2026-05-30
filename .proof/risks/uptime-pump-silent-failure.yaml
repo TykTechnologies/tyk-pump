@@ -1,0 +1,19 @@
+id: uptime-pump-silent-failure
+title: UptimePump.WriteUptimeData has no error return; backend failures silently dropped
+description: Accept the asymmetric uptime-write interface (pumps/pump.go:44) until a wider refactor adds an error return. main.go:300 cannot surface backend write failures.
+affected_requirements:
+    - STK-REQ-005
+    - INT-REQ-002
+mitigation: Monitor the uptime backend (typically mongo) externally; cross-check uptime ingest volume against gateway-emitted uptime samples.
+customer_impact: Operators may not be notified when uptime data is failing to persist; SLA reports could silently miss data.
+owner: tyk-team
+review_date: "2026-08-30"
+release_disposition: ship_with_known_issue
+accepted_by: human:leo
+accepted_at: "2026-05-30T08:32:05Z"
+status: active
+history:
+    - at: "2026-05-30T08:32:05Z"
+      by: human:buger
+      action: accepted
+      detail: accepted_by=human:leo

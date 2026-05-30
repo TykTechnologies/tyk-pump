@@ -21,36 +21,36 @@ type MCPMongoPump struct {
 	MongoPump
 }
 
-// reqproof:implements SW-REQ-018
+// reqproof:implements SW-REQ-038
 func (g *MCPMongoPump) New() Pump {
 	return &MCPMongoPump{}
 }
 
-// reqproof:implements SW-REQ-018
+// reqproof:implements SW-REQ-038
 func (g *MCPMongoPump) GetEnvPrefix() string {
 	return g.dbConf.EnvPrefix
 }
 
-// reqproof:implements SW-REQ-018
+// reqproof:implements SW-REQ-038
 func (g *MCPMongoPump) GetName() string {
 	return "MongoDB MCP Pump"
 }
 
-// reqproof:implements SW-REQ-018
+// reqproof:implements SW-REQ-038
 func (g *MCPMongoPump) SetDecodingRequest(decoding bool) {
 	if decoding {
 		log.WithField("pump", g.GetName()).Warn("Decoding request is not supported for MCP Mongo pump")
 	}
 }
 
-// reqproof:implements SW-REQ-018
+// reqproof:implements SW-REQ-038
 func (g *MCPMongoPump) SetDecodingResponse(decoding bool) {
 	if decoding {
 		log.WithField("pump", g.GetName()).Warn("Decoding response is not supported for MCP Mongo pump")
 	}
 }
 
-// reqproof:implements SW-REQ-018
+// reqproof:implements SW-REQ-038
 func (g *MCPMongoPump) Init(config interface{}) error {
 	g.dbConf = &MongoConf{}
 	g.log = log.WithField("prefix", mongoMCPPrefix)
@@ -97,7 +97,7 @@ func (g *MCPMongoPump) Init(config interface{}) error {
 }
 
 // filterMCPData returns only the MCP analytics records from data.
-// reqproof:implements SW-REQ-018
+// reqproof:implements SW-REQ-038
 func filterMCPData(data []interface{}) []interface{} {
 	mcpData := make([]interface{}, 0, len(data))
 	for _, d := range data {
@@ -110,7 +110,7 @@ func filterMCPData(data []interface{}) []interface{} {
 
 // convertToMCPObjects converts a batch of DBObjects to MCPRecord objects,
 // assigning new ObjectIDs in the process.
-// reqproof:implements SW-REQ-018
+// reqproof:implements SW-REQ-038
 func convertToMCPObjects(dataSet []model.DBObject) []model.DBObject {
 	finalSet := make([]model.DBObject, 0, len(dataSet))
 	for _, d := range dataSet {
@@ -126,7 +126,7 @@ func convertToMCPObjects(dataSet []model.DBObject) []model.DBObject {
 }
 
 // insertMCPDataSet converts and inserts one accumulated batch into MongoDB.
-// reqproof:implements SW-REQ-018
+// reqproof:implements SW-REQ-038
 func (g *MCPMongoPump) insertMCPDataSet(dataSet []model.DBObject, collectionName string, errCh chan error) {
 	finalSet := convertToMCPObjects(dataSet)
 
@@ -155,7 +155,7 @@ func (g *MCPMongoPump) insertMCPDataSet(dataSet []model.DBObject, collectionName
 	}).Info("Completed purging the records")
 }
 
-// reqproof:implements SW-REQ-018
+// reqproof:implements SW-REQ-038
 func (g *MCPMongoPump) WriteData(ctx context.Context, data []interface{}) error {
 	collectionName := g.dbConf.CollectionName
 	if collectionName == "" {

@@ -1,9 +1,9 @@
 id: SW-REQ-025
 version: 1
-status: review
+status: approved
 priority: shall
 category: functional
-req_type: guarantee
+req_type: derived
 fretish: ""
 description: The CSV pump shall append analytics records to hourly CSV files.
 formalization_strategy: informal
@@ -19,33 +19,36 @@ variables: []
 traces:
     satisfies:
         - SYS-REQ-004
-    reviewed_at: "2026-05-29T21:30:11.441342Z"
+    reviewed_at: "2026-05-30T07:45:51.743971Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:2b445d17d96a179fc1d48e50f4139f4b9d95cf68b691b2ab6f65511081c55736
+    reviewed_fingerprint: sha256:4fe9f217b6ba86e1912f51c48f58cfa3da8ac50ac003df1b497b4d988be8318e
 verification:
     assurance_level: B
     formalization_status: none
     review:
         status: approved
-        reviewer: leo@tyk.io
-        reviewed_at: "2026-05-29T15:47:46Z"
+        reviewer: human:buger
+        role: software_engineer
+        reviewed_at: "2026-05-30T07:43:08Z"
+        comment: Software-component design reviewed as part of feat/reqproof-coverage PR; each maps to verified code paths per the Phase 0 file-by-file verification (see PR description for code-verified corrections SW-016/017/023/027/028/033).
+        fingerprint: sha256:f368fb02b2d1fa4b128492160525fa81cbaf03382bfbe99a0aee13762c35830d
         ai_generated: false
     impact_reviews:
         - requirement: SW-REQ-025
           artifact: pumps/csv.go
           decision: no-authored-change
           reviewer: buger
-          reason: Annotated MC/DC ignore on unreachable GeoIP and defensive type-assertion branches plus added unit tests; runtime behavior and authored requirement intent are unchanged.
+          reason: 'Production files added reqproof requirement-traceability annotations only (// reqproof:implements / // Verifies: / triple-form evidence). No runtime behavior change.'
           base: origin/master
-          requirement_fingerprint: sha256:2b445d17d96a179fc1d48e50f4139f4b9d95cf68b691b2ab6f65511081c55736
-          approval_fingerprint: sha256:530f87e7f9245f726d86e870901f9bbdeef6a2e641ee44fa3f019e63bf156599
+          requirement_fingerprint: sha256:4fe9f217b6ba86e1912f51c48f58cfa3da8ac50ac003df1b497b4d988be8318e
+          approval_fingerprint: sha256:f368fb02b2d1fa4b128492160525fa81cbaf03382bfbe99a0aee13762c35830d
           artifact_fingerprint: sha256:e7c8226ae89ce2c8edc8930f2daa15b6ab831502d8e64b07c39448a50309a159
-          reviewed_at: "2026-05-29T21:13:19Z"
+          reviewed_at: "2026-05-30T07:45:43Z"
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:16Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-29T15:47:46Z"
+    last_modified_at: "2026-05-30T07:43:08Z"
 obligation_checklist:
     - errors_propagated
 lifecycle:

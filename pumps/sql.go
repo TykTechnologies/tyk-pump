@@ -100,15 +100,15 @@ type monthEncodePlan struct {
 	next pgtype.EncodePlan
 }
 
-// reqproof:implements SW-REQ-019
+// reqproof:implements SW-REQ-040
 func (p *monthEncodePlan) SetNext(next pgtype.EncodePlan) { p.next = next }
 
-// reqproof:implements SW-REQ-019
+// reqproof:implements SW-REQ-040
 func (p *monthEncodePlan) Encode(value any, buf []byte) ([]byte, error) {
 	return p.next.Encode(int(value.(time.Month)), buf)
 }
 
-// reqproof:implements SW-REQ-019
+// reqproof:implements SW-REQ-040
 func Dialect(cfg *SQLConf) (gorm.Dialector, error) {
 	switch cfg.Type {
 	case "postgres":
@@ -181,37 +181,37 @@ var (
 	}
 )
 
-// reqproof:implements SW-REQ-019
+// reqproof:implements SW-REQ-040
 func (c *SQLPump) New() Pump {
 	newPump := SQLPump{}
 	return &newPump
 }
 
-// reqproof:implements SW-REQ-019
+// reqproof:implements SW-REQ-040
 func (c *SQLPump) GetName() string {
 	return "SQL Pump"
 }
 
-// reqproof:implements SW-REQ-019
+// reqproof:implements SW-REQ-040
 func (c *SQLPump) GetEnvPrefix() string {
 	return c.SQLConf.EnvPrefix
 }
 
-// reqproof:implements SW-REQ-019
+// reqproof:implements SW-REQ-040
 func (c *SQLPump) SetDecodingRequest(decoding bool) {
 	if decoding {
 		log.WithField("pump", c.GetName()).Warn("Decoding request is not supported for SQL pump")
 	}
 }
 
-// reqproof:implements SW-REQ-019
+// reqproof:implements SW-REQ-040
 func (c *SQLPump) SetDecodingResponse(decoding bool) {
 	if decoding {
 		log.WithField("pump", c.GetName()).Warn("Decoding response is not supported for SQL pump")
 	}
 }
 
-// reqproof:implements SW-REQ-019
+// reqproof:implements SW-REQ-040
 func (c *SQLPump) Init(conf interface{}) error {
 	c.SQLConf = &SQLConf{}
 	if c.IsUptime {
@@ -265,7 +265,7 @@ func (c *SQLPump) Init(conf interface{}) error {
 	return nil
 }
 
-// reqproof:implements SW-REQ-019
+// reqproof:implements SW-REQ-040
 func (c *SQLPump) WriteData(ctx context.Context, data []interface{}) error {
 	c.log.Debug("Attempting to write ", len(data), " records...")
 
@@ -337,7 +337,7 @@ func (c *SQLPump) WriteData(ctx context.Context, data []interface{}) error {
 	return nil
 }
 
-// reqproof:implements SW-REQ-019
+// reqproof:implements SW-REQ-040
 func (c *SQLPump) WriteUptimeData(data []interface{}) {
 	dataLen := len(data)
 	c.log.Debug("Attempting to write ", dataLen, " records...")
@@ -433,12 +433,12 @@ func (c *SQLPump) WriteUptimeData(data []interface{}) {
 	c.log.Debug("Purged ", len(data), " records...")
 }
 
-// reqproof:implements SW-REQ-019
+// reqproof:implements SW-REQ-040
 func (c *SQLPump) buildIndexName(indexBaseName, tableName string) string {
 	return fmt.Sprintf("%s_%s", tableName, indexBaseName)
 }
 
-// reqproof:implements SW-REQ-019
+// reqproof:implements SW-REQ-040
 func (c *SQLPump) createIndex(indexBaseName, tableName, column string) error {
 	indexName := c.buildIndexName(indexBaseName, tableName)
 	option := ""
@@ -471,7 +471,7 @@ func (c *SQLPump) createIndex(indexBaseName, tableName, column string) error {
 }
 
 // ensureIndex check that all indexes for the analytics SQL table are in place
-// reqproof:implements SW-REQ-019
+// reqproof:implements SW-REQ-040
 func (c *SQLPump) ensureIndex(tableName string, background bool) error {
 	if !c.db.Migrator().HasTable(tableName) {
 		return errors.New("cannot create indexes as table doesn't exist: " + tableName)
@@ -516,7 +516,7 @@ func (c *SQLPump) ensureIndex(tableName string, background bool) error {
 }
 
 // ensureTable creates the table if it doesn't exist
-// reqproof:implements SW-REQ-019
+// reqproof:implements SW-REQ-040
 func (c *SQLPump) ensureTable(tableName string) error {
 	if !c.db.Migrator().HasTable(tableName) {
 		c.db = c.db.Table(tableName)

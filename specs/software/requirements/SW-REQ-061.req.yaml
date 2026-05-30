@@ -1,0 +1,71 @@
+id: SW-REQ-061
+version: 1
+status: approved
+priority: shall
+category: functional
+req_type: derived
+fretish: ""
+description: When the count of tags on an aggregated document exceeds ThresholdLenTagList (default 1000), the MongoAggregate pump shall emit a Warn-level alert listing up to CommonTagsCount (5) common tag prefixes computed by getListOfCommonPrefix, instructing the operator to suppress noisy tags via ignore_tag_prefix_list. A configured value of -1 shall disable the alert entirely.
+formalization_strategy: informal
+informal_verification:
+    method: ""
+    evidence: ""
+    verified: false
+parent: SYS-REQ-010
+component: pumps-mongo-aggregate
+rationale: ""
+tags: []
+variables: []
+traces:
+    satisfies:
+        - SYS-REQ-010
+    reviewed_at: "2026-05-30T08:45:50.756448Z"
+    reviewed_by: human:buger
+    reviewed_fingerprint: sha256:a0d45f73d93b50b82b4ae657dbb46166725fa74aa94f57e63d12fbfef326e77b
+verification:
+    assurance_level: B
+    formalization_status: none
+    review:
+        status: approved
+        reviewer: human:buger
+        role: software_engineer
+        reviewed_at: "2026-05-30T08:44:11Z"
+        comment: Phase A per-implementation/per-significant-behavior decomposition; descriptions code-verified against the named files per docs/phase-a-proposed-reqs.md. Pump-family family-level reqs are retained as superseded anchor reqs.
+        fingerprint: sha256:d38470211ea00c6ff93a2ef83964fdb7ae75252bc22e76e3ac05ee98ea3a609f
+        ai_generated: false
+    impact_reviews:
+        - requirement: SW-REQ-061
+          artifact: pumps/mongo_aggregate.go
+          decision: no-authored-change
+          reviewer: buger
+          reason: Phase A re-annotated this file to point at the atomic per-implementation/per-behavior SW req (was previously SW-REQ-018/019/020/022/027/028); no runtime behavior change.
+          base: origin/master
+          requirement_fingerprint: sha256:a0d45f73d93b50b82b4ae657dbb46166725fa74aa94f57e63d12fbfef326e77b
+          approval_fingerprint: sha256:d38470211ea00c6ff93a2ef83964fdb7ae75252bc22e76e3ac05ee98ea3a609f
+          artifact_fingerprint: sha256:552b82df798df00f1235f41008f165964976f0e145fcd095ad023101228fa58b
+          reviewed_at: "2026-05-30T08:48:39Z"
+history:
+    created_by: human:cli
+    created_at: "2026-05-30T08:37:50Z"
+    last_modified_by: human:cli
+    last_modified_at: "2026-05-30T09:03:11Z"
+obligation_checklist:
+    - boundary
+    - denial_of_service_resistant
+obligation_suppressions:
+    - id: denial_of_service_resistant
+      reason: Tag-list bounding is enforced via the fact-based ThresholdLenTagList constant (default 1000) checked in DoAggregatedWriting; the path emits a Warn-level alert rather than truncating or rejecting input. A fuzz harness exercising the printAlert/getListOfCommonPrefix path with adversarial tag distributions would be valuable future work but does not exist today. The current implementation does not allocate per-tag; pathological inputs are bounded by the size of the inbound batch, which is upstream-bounded by SYS-REQ-010.
+      suppressed_by: buger
+      suppressed_at: "2026-05-30T09:03:11Z"
+      framework_refs:
+        - CWE CWE-400,CWE-1333
+        - MISRA-C Rule 17.2
+        - NIST-800-53 SC-5
+        - OWASP-ASVS-v4 V11.1.4
+lifecycle:
+    change_history:
+        - date: "2026-05-30T08:43:47Z"
+          from: draft
+          to: review
+          reason: ""
+          changed_by: human:cli

@@ -1,0 +1,18 @@
+id: statsd-setup-fatal-aborts-pump
+title: StatsD setup failure log.Fatals the pump at startup
+description: Accept that instrumentation_helpers.go:38 log.Fatal aborts tyk-pump if statsd_connection_string is unreachable at boot, contradicting the data-plane-independence intent of SYS-REQ-017.
+affected_requirements:
+    - SYS-REQ-017
+mitigation: Ensure statsd endpoint reachability before pump start; otherwise disable instrumentation.
+customer_impact: Mis-pointed statsd connection string prevents the entire analytics pipeline from running on startup.
+owner: tyk-team
+review_date: "2026-08-30"
+release_disposition: ship_with_known_issue
+accepted_by: human:leo
+accepted_at: "2026-05-30T08:33:53Z"
+status: active
+history:
+    - at: "2026-05-30T08:33:53Z"
+      by: human:buger
+      action: accepted
+      detail: accepted_by=human:leo

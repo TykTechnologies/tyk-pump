@@ -1,0 +1,61 @@
+id: SW-REQ-057
+version: 1
+status: approved
+priority: shall
+category: functional
+req_type: derived
+fretish: ""
+description: The Timestream pump shall, on each purge, split records into batches of timestreamMaxRecordsCount=100 (AWS hard limit), convert each record into a multimeasure types.Record with operator-configured Dimensions and Measures (with optional NameMappings rename, optional zero-value emission, and optional RateLimit measure inclusion), and submit each batch via WriteRecords to the configured DatabaseName/TableName. The first batch error shall be returned to the caller; RejectedRecordsException shall be logged with the first rejection reason.
+formalization_strategy: informal
+informal_verification:
+    method: ""
+    evidence: ""
+    verified: false
+parent: SYS-REQ-004
+component: pumps-aws-timestream
+rationale: ""
+tags: []
+variables: []
+traces:
+    satisfies:
+        - SYS-REQ-004
+    reviewed_at: "2026-05-30T08:45:50.733252Z"
+    reviewed_by: human:buger
+    reviewed_fingerprint: sha256:37dbdce8b624c17f816990a324220841491bc5a2810bae1a67c2349f57ff373a
+verification:
+    assurance_level: B
+    formalization_status: none
+    review:
+        status: approved
+        reviewer: human:buger
+        role: software_engineer
+        reviewed_at: "2026-05-30T08:44:11Z"
+        comment: Phase A per-implementation/per-significant-behavior decomposition; descriptions code-verified against the named files per docs/phase-a-proposed-reqs.md. Pump-family family-level reqs are retained as superseded anchor reqs.
+        fingerprint: sha256:f982a90d51115fde05e5d682ad3f8f4d32ccd4d1ba4103e1abf03ff63d8df29a
+        ai_generated: false
+    impact_reviews:
+        - requirement: SW-REQ-057
+          artifact: pumps/timestream.go
+          decision: no-authored-change
+          reviewer: buger
+          reason: Phase A re-annotated this file to point at the atomic per-implementation/per-behavior SW req (was previously SW-REQ-018/019/020/022/027/028); no runtime behavior change.
+          base: origin/master
+          requirement_fingerprint: sha256:37dbdce8b624c17f816990a324220841491bc5a2810bae1a67c2349f57ff373a
+          approval_fingerprint: sha256:f982a90d51115fde05e5d682ad3f8f4d32ccd4d1ba4103e1abf03ff63d8df29a
+          artifact_fingerprint: sha256:33c9999299cee8554bd5b70b45c6832dd0a8d85d6a96414c2c3e291a8a888e56
+          reviewed_at: "2026-05-30T08:48:45Z"
+history:
+    created_by: human:cli
+    created_at: "2026-05-30T08:37:10Z"
+    last_modified_by: human:cli
+    last_modified_at: "2026-05-30T08:44:11Z"
+obligation_checklist:
+    - boundary
+    - errors_propagated
+lifecycle:
+    change_history:
+        - date: "2026-05-30T08:43:46Z"
+          from: draft
+          to: review
+          reason: ""
+          changed_by: human:cli

@@ -1,9 +1,9 @@
 id: SW-REQ-002
 version: 1
-status: review
+status: approved
 priority: shall
 category: functional
-req_type: guarantee
+req_type: derived
 fretish: ""
 description: The configuration loader shall read the JSON config file and then override every field from TYK_PMP_* environment variables.
 formalization_strategy: informal
@@ -19,43 +19,46 @@ variables: []
 traces:
     satisfies:
         - SYS-REQ-008
-    reviewed_at: "2026-05-29T21:30:10.640645Z"
+    reviewed_at: "2026-05-30T07:45:50.318058Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:384e3531ddafbfcb6980e949a9ebbd78e4a809ebcd3ffb1402957f9c31b1baef
+    reviewed_fingerprint: sha256:ba165c700a4a75c9b644aaac2450c0db3994aef28399123fa289fa300391d503
 verification:
     assurance_level: B
     formalization_status: none
     review:
         status: approved
-        reviewer: leo@tyk.io
-        reviewed_at: "2026-05-29T15:47:44Z"
+        reviewer: human:buger
+        role: software_engineer
+        reviewed_at: "2026-05-30T07:43:08Z"
+        comment: Software-component design reviewed as part of feat/reqproof-coverage PR; each maps to verified code paths per the Phase 0 file-by-file verification (see PR description for code-verified corrections SW-016/017/023/027/028/033).
+        fingerprint: sha256:a46f3e7f2b5ecfc3aa7de49686eb46e77ec3de43fea9478057a422f7b9ea7b1c
         ai_generated: false
     impact_reviews:
         - requirement: SW-REQ-002
           artifact: config.go
           decision: no-authored-change
           reviewer: buger
-          reason: Annotated MC/DC ignore on unreachable GeoIP and defensive type-assertion branches plus added unit tests; runtime behavior and authored requirement intent are unchanged.
+          reason: 'Production files added reqproof requirement-traceability annotations only (// reqproof:implements / // Verifies: / triple-form evidence). No runtime behavior change.'
           base: origin/master
-          requirement_fingerprint: sha256:384e3531ddafbfcb6980e949a9ebbd78e4a809ebcd3ffb1402957f9c31b1baef
-          approval_fingerprint: sha256:af92da8a14837e074e95bbcbf1ee4d69dece22927949ff26b4a92a7e3d1ca649
+          requirement_fingerprint: sha256:ba165c700a4a75c9b644aaac2450c0db3994aef28399123fa289fa300391d503
+          approval_fingerprint: sha256:a46f3e7f2b5ecfc3aa7de49686eb46e77ec3de43fea9478057a422f7b9ea7b1c
           artifact_fingerprint: sha256:9e792c1eb47195f9b6dc56e61d718012812eb0a68fa814ba904c911e0046bc35
-          reviewed_at: "2026-05-29T21:13:15Z"
+          reviewed_at: "2026-05-30T07:45:39Z"
         - requirement: SW-REQ-002
           artifact: main.go
           decision: no-authored-change
           reviewer: buger
-          reason: Annotated MC/DC ignore on unreachable GeoIP and defensive type-assertion branches plus added unit tests; runtime behavior and authored requirement intent are unchanged.
+          reason: 'Production files added reqproof requirement-traceability annotations only (// reqproof:implements / // Verifies: / triple-form evidence). No runtime behavior change.'
           base: origin/master
-          requirement_fingerprint: sha256:384e3531ddafbfcb6980e949a9ebbd78e4a809ebcd3ffb1402957f9c31b1baef
-          approval_fingerprint: sha256:af92da8a14837e074e95bbcbf1ee4d69dece22927949ff26b4a92a7e3d1ca649
+          requirement_fingerprint: sha256:ba165c700a4a75c9b644aaac2450c0db3994aef28399123fa289fa300391d503
+          approval_fingerprint: sha256:a46f3e7f2b5ecfc3aa7de49686eb46e77ec3de43fea9478057a422f7b9ea7b1c
           artifact_fingerprint: sha256:4b683cd5715feffd7356231f04999400c4067164b6d478c53513559c0459a7cf
-          reviewed_at: "2026-05-29T21:13:15Z"
+          reviewed_at: "2026-05-30T07:45:39Z"
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:13Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-29T15:47:44Z"
+    last_modified_at: "2026-05-30T07:49:09Z"
 obligation_checklist:
     - nominal
 lifecycle:

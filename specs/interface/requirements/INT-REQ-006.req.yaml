@@ -1,9 +1,9 @@
 id: INT-REQ-006
 version: 1
-status: review
+status: approved
 priority: shall
 category: functional
-req_type: guarantee
+req_type: derived
 fretish: ""
 description: Each pump shall map analytics records onto its backend's schema and tolerate unknown or future record fields without failing the write.
 formalization_strategy: informal
@@ -19,28 +19,51 @@ variables: []
 traces:
     satisfies:
         - SYS-REQ-004
-    reviewed_at: "2026-05-29T21:30:10.581359Z"
+    reviewed_at: "2026-05-30T08:45:50.246012Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:8de684c71a313544d749bedc1201ddf543e10c182cda5499f4b484abf0f1607d
+    reviewed_fingerprint: sha256:2f5a0e39369e92a6291404f38f278ab3f189a3c70d8b3c2700bdf96bbc697118
 verification:
     assurance_level: B
     formalization_status: none
     review:
         status: approved
-        reviewer: leo@tyk.io
-        reviewed_at: "2026-05-29T15:47:44Z"
+        reviewer: human:buger
+        role: interface_owner
+        reviewed_at: "2026-05-30T08:31:54Z"
+        comment: Re-approval after Phase C ICD metadata block populated; caller/callee/schema-version/back-compat/retirement fields code-verified.
+        fingerprint: sha256:1f274a251cb3b44e045973044984c5398f0b6e629e20b7404cdd25690ba65d77
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:46Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-29T15:47:44Z"
+    last_modified_at: "2026-05-30T08:31:54Z"
 obligation_checklist:
     - errors_propagated
+interface:
+    caller: tyk-pump-pump-impl
+    callee: pump-backend
+    type: data
+    signature: 'Per-backend record schema produced by each pump''s WriteData. Mongo: BSON documents in a configured collection (pumps/mongo.go). SQL: tyk_analytics table via gorm AutoMigrate on the analytics.AnalyticsRecord struct (pumps/sql.go; see also INT-REQ-007). Kafka: JSON-marshalled records (pumps/kafka.go). InfluxDB: line-protocol points. Each pump cherry-picks fields from analytics.AnalyticsRecord.'
+    protocol: 'Per-backend protocol (BSON insert, SQL INSERT, Kafka produce, Influx write, HTTP POST, etc.). The mapping from analytics.AnalyticsRecord -> backend record is bespoke in each pump.'
+    assumptions: 'Each pump tolerates unknown or future fields on analytics.AnalyticsRecord (no pump fails the write on field presence). The set of fields persisted per backend is whatever that pump explicitly copies; pumps that use struct-wide marshalling (mongo, kafka JSON) implicitly forward all fields.'
+    guarantees: 'Each pump maps records onto its backend schema and does not fail the write on unrecognised record fields. PLANNED: a per-backend ICD split is a Phase A artifact — this single INT-REQ aggregates contracts that should eventually decompose into one INT-REQ per backend pump (mongo, sql-standard, sql-aggregate, kafka, influx[v2], elasticsearch, prometheus, statsd, dogstatsd, splunk, syslog, graylog, logzio, segment, hybrid, csv, stdout, mcp-sql*, graph-*). Back-compat is per-backend: mongo requires collection-schema migrations, SQL pumps follow INT-REQ-007''s expand-then-contract policy, kafka/JSON is forward-compatible by JSON''s rules. Retirement of an entire pump (removing a backend) requires a major tyk-pump version bump.'
+    producer: tyk-pump-pump-impl
+    consumer:
+        - pump-backend
+    owner: team:tyk-pump-maintainers
+    version: v1
+    compatibility_policy: semver-lax
+    risk_tier: 2
 lifecycle:
     change_history:
         - date: "2026-05-29T15:46:43Z"
           from: draft
           to: review
           reason: ""
+          changed_by: human:cli
+        - date: "2026-05-30T08:31:54Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="interface_owner" reviewer="human:buger" at=2026-05-30T07:43:08Z comment="Cross-component contracts reviewed as part of feat/reqproof-coverage PR; gateway/storage/serializer/pump-backend contracts verified against actual key constants and interface declarations.")'
           changed_by: human:cli

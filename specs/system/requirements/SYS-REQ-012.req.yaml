@@ -1,9 +1,9 @@
 id: SYS-REQ-012
 version: 1
-status: review
+status: approved
 priority: shall
 category: functional
-req_type: guarantee
+req_type: derived
 fretish: when health_probe_received observability shall immediately satisfy liveness_reported
 description: The pump shall expose an HTTP health-check endpoint that reports process liveness for orchestration and load-balancer probes.
 formalization_strategy: fretish
@@ -19,24 +19,27 @@ variables: []
 traces:
     satisfies:
         - STK-REQ-004
-    reviewed_at: "2026-05-29T21:30:11.843992Z"
+    reviewed_at: "2026-05-30T07:45:52.415506Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:3fc12a42994b60fbdf932d71259c9ed1563402a9dad34997e17ffa0fc0823324
+    reviewed_fingerprint: sha256:e0dec3c1dbd5dbf80818337edc8eb005fdd98136b99c1a41313e6439a07d5b5f
 verification:
     assurance_level: B
     formalization_status: valid
     review:
         status: approved
-        reviewer: leo@tyk.io
-        reviewed_at: "2026-05-29T15:47:47Z"
+        reviewer: human:buger
+        role: system_engineer
+        reviewed_at: "2026-05-30T07:43:08Z"
+        comment: System-level behavior reviewed as part of feat/reqproof-coverage PR; FRETish + obligation + satisfies linkage verified against tyk-pump architecture and code in Phase 0 code-verification pass.
+        fingerprint: sha256:8b444072a820eceafb500a131ecf9eafe97b783cccdf2b1248976241d5e26727
         ai_generated: false
-    gaps_reviewed_at: "2026-05-29T21:30:13.099905Z"
+    gaps_reviewed_at: "2026-05-30T07:49:26.937814Z"
     gaps_reviewed_by: buger
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:11:41Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-29T15:52:22Z"
+    last_modified_at: "2026-05-30T07:43:08Z"
 obligation_class: nominal
 lifecycle:
     change_history:

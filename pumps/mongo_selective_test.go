@@ -13,7 +13,7 @@ import (
 	"gopkg.in/vmihailenco/msgpack.v2"
 )
 
-// Verifies: SW-REQ-018
+// Verifies: SW-REQ-035
 func TestMongoSelectivePump_AccumulateSet(t *testing.T) {
 	run := func(recordsGenerator func(numRecords int) []interface{}, expectedRecordsCount, maxDocumentSizeBytes int) func(t *testing.T) {
 		return func(t *testing.T) {
@@ -104,7 +104,7 @@ func TestMongoSelectivePump_AccumulateSet(t *testing.T) {
 	))
 }
 
-// Verifies: SW-REQ-018
+// Verifies: SW-REQ-035
 func TestConnection(t *testing.T) {
 	mPump := MongoSelectivePump{}
 	conf := defaultSelectiveConf()
@@ -123,7 +123,7 @@ func TestConnection(t *testing.T) {
 	})
 }
 
-// Verifies: SW-REQ-018
+// Verifies: SW-REQ-035
 func TestEnsureIndexes(t *testing.T) {
 	mPump := MongoSelectivePump{}
 	conf := defaultSelectiveConf()
@@ -243,7 +243,7 @@ func TestEnsureIndexes(t *testing.T) {
 	})
 }
 
-// Verifies: SW-REQ-018
+// Verifies: SW-REQ-035
 func TestWriteData(t *testing.T) {
 	mPump := MongoSelectivePump{}
 	conf := defaultSelectiveConf()
@@ -311,7 +311,7 @@ func TestWriteData(t *testing.T) {
 	})
 }
 
-// Verifies: SW-REQ-018
+// Verifies: SW-REQ-035
 func TestWriteUptimeDataMongoSelective(t *testing.T) {
 	now := time.Now()
 
@@ -369,7 +369,7 @@ func TestWriteUptimeDataMongoSelective(t *testing.T) {
 	}
 }
 
-// Verifies: SW-REQ-018
+// Verifies: SW-REQ-035
 func TestDecodeRequestAndDecodeResponseMongoSelective(t *testing.T) {
 	newPump := &MongoSelectivePump{}
 	conf := defaultConf()
@@ -389,7 +389,7 @@ func TestDecodeRequestAndDecodeResponseMongoSelective(t *testing.T) {
 	assert.False(t, newPump.GetDecodedResponse())
 }
 
-// Verifies: SW-REQ-018
+// Verifies: SW-REQ-035
 func TestDefaultDriverSelective(t *testing.T) {
 	newPump := &MongoSelectivePump{}
 	defaultConf := defaultConf()

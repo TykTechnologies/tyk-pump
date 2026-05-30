@@ -1,9 +1,9 @@
 id: SYS-REQ-002
 version: 1
-status: review
+status: approved
 priority: shall
 category: functional
-req_type: guarantee
+req_type: derived
 fretish: when record_forwarded model shall always satisfy record_fields_preserved
 description: The pump shall preserve the fields of each analytics record (HTTP request metadata, identity, geo, latency, network, tags, GraphQL and MCP statistics) when forwarding it to a backend.
 formalization_strategy: fretish
@@ -19,24 +19,27 @@ variables: []
 traces:
     satisfies:
         - STK-REQ-001
-    reviewed_at: "2026-05-29T21:30:11.823383Z"
+    reviewed_at: "2026-05-30T07:45:52.394163Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:135296fe15ac92c6a23657bf4ba16d74af726901b8ab82052f12c21f3190d99c
+    reviewed_fingerprint: sha256:f337f5a07f19881cca12763418b1aee5e5973b57f8186c6ea8f077c7047b3b4e
 verification:
     assurance_level: B
     formalization_status: valid
     review:
         status: approved
-        reviewer: leo@tyk.io
-        reviewed_at: "2026-05-29T15:47:46Z"
+        reviewer: human:buger
+        role: system_engineer
+        reviewed_at: "2026-05-30T07:43:08Z"
+        comment: System-level behavior reviewed as part of feat/reqproof-coverage PR; FRETish + obligation + satisfies linkage verified against tyk-pump architecture and code in Phase 0 code-verification pass.
+        fingerprint: sha256:f1f1c05c6fc1076c6d762eb39675141c62f7a42cb3ac06b1b9a5b84e36efd54b
         ai_generated: false
-    gaps_reviewed_at: "2026-05-29T21:30:12.850002Z"
+    gaps_reviewed_at: "2026-05-30T07:46:08.879905Z"
     gaps_reviewed_by: buger
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:11:41Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-29T15:52:22Z"
+    last_modified_at: "2026-05-30T07:43:08Z"
 obligation_class: determinism
 lifecycle:
     change_history:

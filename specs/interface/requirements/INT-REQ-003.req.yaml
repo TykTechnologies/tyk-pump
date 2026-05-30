@@ -1,9 +1,9 @@
 id: INT-REQ-003
 version: 1
-status: review
+status: approved
 priority: shall
 category: functional
-req_type: guarantee
+req_type: derived
 fretish: ""
 description: The serialization format between gateway and pump (msgpack or protobuf, selected by analytics key suffix) shall round-trip every analytics record field without loss.
 formalization_strategy: informal
@@ -19,28 +19,57 @@ variables: []
 traces:
     satisfies:
         - SYS-REQ-002
-    reviewed_at: "2026-05-29T21:30:10.55466Z"
+    reviewed_at: "2026-05-30T08:45:50.11443Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:8c605ea1ef34fdaaf4f951273dac1899332bdb3fa9fc69d6c57568d93417fb9f
+    reviewed_fingerprint: sha256:2c3d20a532097ac8822721e0800d18cf05c39970141c680aa2d5fb7a7139ce6a
 verification:
     assurance_level: B
     formalization_status: none
     review:
         status: approved
-        reviewer: leo@tyk.io
-        reviewed_at: "2026-05-29T15:47:44Z"
+        reviewer: human:buger
+        role: interface_owner
+        reviewed_at: "2026-05-30T08:31:54Z"
+        comment: Re-approval after Phase C ICD metadata block populated; caller/callee/schema-version/back-compat/retirement fields code-verified.
+        fingerprint: sha256:beae692d2b2ee7caaa2d9766b56a72c905b65c32ee002efd9f5e26a9efaf7896
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:46Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-29T15:47:44Z"
+    last_modified_at: "2026-05-30T08:31:54Z"
 obligation_checklist:
     - encoding_safety
+release_disposition: ship_with_known_issue
+interface:
+    caller: tyk-gateway
+    callee: tyk-pump
+    type: data
+    signature: 'Wire formats keyed by analytics-key suffix: "" -> msgpack (serializer/msgp.go:30 MsgpSerializer.GetSuffix returns ""); "_protobuf" -> protobuf (serializer/protobuf.go:15 ProtobufSerializer.GetSuffix returns "_protobuf"). Schema source for protobuf: analytics/proto/analytics.proto.'
+    protocol: 'Two parallel serializers selected per-key by GetSuffix; no in-band version handshake — the producer''s choice of suffix is the entire negotiation. AnalyticsSerializers loop at main.go:276 attempts each format per key.'
+    assumptions: 'Both ends agree on the on-the-wire struct layout. Msgpack relies on field tags (untagged Go-struct positional order); protobuf relies on field numbers in analytics/proto/analytics.proto. Both decoders silently ignore unknown fields, so additive evolution is safe on either side independently.'
+    guarantees: 'Round-trip preservation of every analytics record field via the chosen format. Schema version is implicit (protobuf: numbered fields in analytics.proto; msgpack: structural). PER-FIELD EXCEPTION: protobuf round-trip is LOSSY for analytics.AnalyticsRecord.Geo.City.Names — serializer/protobuf.go:169 in TransformSingleProtoToAnalyticsRecord sets `Names: nil` unconditionally on decode, so any City.Names map populated on the producer side is dropped. This violates the requirement''s round-trip claim for that one field and is flagged as a defect for follow-up KI creation. RISK: no formal version handshake between gateway and pump (FMEA-006); a format-incompatible upgrade on one side would surface as decode errors at runtime only. Retirement of a format requires both sides upgraded; back-compat is additive on protobuf (new field numbers) and additive on the msgpack-encoded Go struct.'
+    producer: tyk-gateway
+    consumer:
+        - tyk-pump
+    owner: team:tyk-pump-maintainers
+    version: v1
+    compatibility_policy: semver-strict
+    risk_tier: 0
 lifecycle:
     change_history:
         - date: "2026-05-29T15:46:43Z"
           from: draft
           to: review
           reason: ""
+          changed_by: human:cli
+        - date: "2026-05-30T08:30:14Z"
+          from: release_disposition=
+          to: release_disposition=ship_with_known_issue
+          reason: 'KI serializer-protobuf-loses-city-names: protobuf decode drops Geo.City.Names map'
+          changed_by: human:cli
+        - date: "2026-05-30T08:31:54Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="interface_owner" reviewer="human:buger" at=2026-05-30T07:43:08Z comment="Cross-component contracts reviewed as part of feat/reqproof-coverage PR; gateway/storage/serializer/pump-backend contracts verified against actual key constants and interface declarations.")'
           changed_by: human:cli
