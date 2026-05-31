@@ -186,7 +186,7 @@ func (e *ElasticsearchPump) getOperator() (ElasticsearchOperator, error) {
 		op := new(Elasticsearch3Operator)
 		op.esClient, err = elasticv3.NewClient(elasticv3.SetURL(urls...), elasticv3.SetSniff(conf.EnableSniffing), elasticv3.SetBasicAuth(conf.Username, conf.Password), elasticv3.SetHttpClient(httpClient))
 
-		if err != nil {
+		if err != nil { //mcdc:ignore F=>F unreachable: elasticv3.NewClient is invoked without SetHealthcheck(false) and v3 healthcheck rejects every modern ES server, so success is impossible against the in-scope v7 testcontainer — KI es-legacy-versions-need-deprecated-containers
 			return op, err
 		}
 

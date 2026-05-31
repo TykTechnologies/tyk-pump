@@ -38,12 +38,12 @@ verification:
           artifact: pumps/elasticsearch.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Phase E MC/DC drive: //mcdc:ignore annotations added on documented-unreachable branches with KI cross-refs; production behaviour unchanged, only coverage-tool guidance.'
+          reason: 'Phase E kafka+ES MC/DC drive: //mcdc:ignore for documented-unreachable branches'
           base: origin/master
           requirement_fingerprint: sha256:2eba359f5909ff5ce4d3edb25a2dab24d7c0e351e1207db2d88c3279d1ee2868
           approval_fingerprint: sha256:4bdd1e27dd87f75d957c97e2df29b8ec8693171ae268807d89ad37a50913f6a6
-          artifact_fingerprint: sha256:6f218a469b19e92ee48d42487d00b66f87d98d871a28f71deb380d038d7a194b
-          reviewed_at: "2026-05-31T11:40:59Z"
+          artifact_fingerprint: sha256:bed01de375baec71c5054532e66cd43659c128ab3bb96b697da84fb3b8b8ba8e
+          reviewed_at: "2026-05-31T18:15:22Z"
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:39:57Z"
