@@ -38,12 +38,12 @@ verification:
           artifact: pumps/segment.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Phase E MC/DC drive: //mcdc:ignore annotations added on documented-unreachable branches with KI cross-refs; production behaviour unchanged, only coverage-tool guidance.'
+          reason: 'Phase E HTTP-family MC/DC drive: //mcdc:ignore annotations added on documented-unreachable branches with KI cross-refs; production behaviour unchanged, only coverage-tool guidance.'
           base: origin/master
           requirement_fingerprint: sha256:22b90f337b5f8013b3efac09e200bdc4395d8eeb5fa9baa9af2ad28258ed3d32
           approval_fingerprint: sha256:a89004af5dbe462595f48872f29fd2314dc436f61d34412764f9c002456d6980
-          artifact_fingerprint: sha256:82077a4e2484bfe07ec09416399d8819f83133fe4312599b779d7d029843a02f
-          reviewed_at: "2026-05-31T11:40:17Z"
+          artifact_fingerprint: sha256:c39533c28b07284f40db5e48de8aa0e28fc758634e48509ce57b3fe431e9653c
+          reviewed_at: "2026-05-31T13:05:21Z"
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:36:34Z"

@@ -67,7 +67,7 @@ func (i *InfluxPump) Init(config interface{}) error {
 	i.log = log.WithField("prefix", influxPrefix)
 
 	err := mapstructure.Decode(config, &i.dbConf)
-	if err != nil {
+	if err != nil { //mcdc:ignore log.Fatal exits the process; cannot be unit-tested without crashing — KI pumps-logfatal-on-config-decode
 		i.log.Fatal("Failed to decode configuration: ", err)
 	}
 

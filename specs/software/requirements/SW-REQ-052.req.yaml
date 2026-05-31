@@ -38,12 +38,12 @@ verification:
           artifact: pumps/moesif.go
           decision: no-authored-change
           reviewer: buger
-          reason: Phase A re-annotated this file to point at the atomic per-implementation/per-behavior SW req (was previously SW-REQ-018/019/020/022/027/028); no runtime behavior change.
+          reason: 'Phase E HTTP-family MC/DC drive: //mcdc:ignore annotations added on documented-unreachable branches with KI cross-refs; production behaviour unchanged, only coverage-tool guidance.'
           base: origin/master
           requirement_fingerprint: sha256:3f8b8dd5f2d1f4ec5cdebb1a83ed83fd3785a3558ebb875c15f2d4ff944c32c0
           approval_fingerprint: sha256:e7d241dae2e0ed39a54fb6f0f14cd2136440bf1db21fbf1552a55c5495ccdef1
-          artifact_fingerprint: sha256:4e7af251782c321f489b150e5889ec53f5aaff7a993fa18ddb91fb6cdc628093
-          reviewed_at: "2026-05-30T08:48:43Z"
+          artifact_fingerprint: sha256:be56cfbc15c9060d4a3dc99dd9decfd6e37ac399c553e74acfe16f59c3375d55
+          reviewed_at: "2026-05-31T13:05:21Z"
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:36:29Z"

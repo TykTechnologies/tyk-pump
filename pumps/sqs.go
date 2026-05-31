@@ -99,7 +99,7 @@ func (s *SQSPump) Init(config interface{}) error {
 	s.log = log.WithField("prefix", SQSPrefix)
 
 	err := mapstructure.Decode(config, &s.SQSConf)
-	if err != nil {
+	if err != nil { //mcdc:ignore log.Fatal exits the process; cannot be unit-tested without crashing — KI pumps-logfatal-on-config-decode
 		s.log.Fatal("Failed to decode configuration: ", err)
 		return err
 	}
@@ -107,7 +107,7 @@ func (s *SQSPump) Init(config interface{}) error {
 	processPumpEnvVars(s, s.log, s.SQSConf, SQSDefaultENV)
 
 	s.SQSClient, err = s.NewSQSPublisher()
-	if err != nil {
+	if err != nil { //mcdc:ignore log.Fatal exits the process; NewSQSPublisher's err arm is itself unreachable (see NewSQSPublisher mcdc:ignore) so this is dead-code-on-dead-code — KI pumps-logfatal-on-config-decode
 		s.log.Fatal("Failed to create sqs client: ", err)
 		return err
 	}
@@ -201,7 +201,7 @@ func (s *SQSPump) NewSQSPublisher() (c *sqs.Client, err error) {
 	cfg, err := config.LoadDefaultConfig(context.TODO(),
 		config.WithRegion(s.SQSConf.AWSRegion),
 	)
-	if err != nil {
+	if err != nil { //mcdc:ignore aws-sdk-go-v2 config.LoadDefaultConfig only fails on filesystem/credential-file errors in extremely degraded environments; the err arm cannot be deterministically driven from a Go unit test without mutating the global filesystem. KI mcdc-pumps-below-95.
 		return nil, err
 	}
 

@@ -38,12 +38,12 @@ verification:
           artifact: pumps/resurface.go
           decision: no-authored-change
           reviewer: buger
-          reason: Phase A re-annotated this file to point at the atomic per-implementation/per-behavior SW req (was previously SW-REQ-018/019/020/022/027/028); no runtime behavior change.
+          reason: 'Phase E HTTP-family MC/DC drive: //mcdc:ignore annotations added on documented-unreachable branches with KI cross-refs; production behaviour unchanged, only coverage-tool guidance.'
           base: origin/master
           requirement_fingerprint: sha256:275dd87478b987c37b94a6fa2e4c9968b7121c7b6b8f1b6223f38c049e04f704
           approval_fingerprint: sha256:19fb15d3231ba13acdc4888e521b459569b54a6a560b9d403cbff15fe73f55ff
-          artifact_fingerprint: sha256:222e36a237600e356e6b40aeea1c59faac49df2981a8a743ce3c8f1d56fc0b47
-          reviewed_at: "2026-05-30T08:48:44Z"
+          artifact_fingerprint: sha256:c47515208804c9a49d927138bf00966467648c3de09a6af5d7026cd90fc22ffb
+          reviewed_at: "2026-05-31T13:05:22Z"
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:36:45Z"

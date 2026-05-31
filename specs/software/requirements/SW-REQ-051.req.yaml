@@ -38,12 +38,12 @@ verification:
           artifact: pumps/logzio.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Phase E MC/DC drive: //mcdc:ignore annotations added on documented-unreachable branches with KI cross-refs; production behaviour unchanged, only coverage-tool guidance.'
+          reason: 'Phase E HTTP-family MC/DC drive: //mcdc:ignore annotations added on documented-unreachable branches with KI cross-refs; production behaviour unchanged, only coverage-tool guidance.'
           base: origin/master
           requirement_fingerprint: sha256:48aa782baaace9d2ecb54ff652468e964dcc0ae23e0d347a8aedff4a3e28bb0f
           approval_fingerprint: sha256:fa2e18711c6b68cf1f5fa798792b60392517adcb21eec1c0c3d9376451609cdc
-          artifact_fingerprint: sha256:871bb0fe4b4714805c4eec7e737d36cf36c4af577f18082c6718e71ae3993ba9
-          reviewed_at: "2026-05-31T11:40:17Z"
+          artifact_fingerprint: sha256:7976a8d8f601467471c7aa66047af4c7bfa4e319652afd2305ab0ede42987cae
+          reviewed_at: "2026-05-31T13:05:21Z"
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:36:24Z"

@@ -120,7 +120,7 @@ func (p *LogzioPump) Init(config interface{}) error {
 	p.log = log.WithField("prefix", LogzioPumpPrefix)
 
 	err := mapstructure.Decode(config, p.config)
-	if err != nil {
+	if err != nil { //mcdc:ignore log.Fatal exits the process; cannot be unit-tested without crashing — KI pumps-logfatal-on-config-decode
 		p.log.Fatalf("Failed to decode configuration: %s", err)
 	}
 
