@@ -23,6 +23,9 @@ project:
             go:
                 language: go
                 command: go test -count=1 -coverprofile=../cover.out ./analytics
+            pumps:
+                language: go
+                command: go test -count=1 -timeout=300s -coverprofile=../cover.out ./pumps
             retry:
                 language: go
                 command: go test -count=1 -coverprofile=../cover.out ./retry
@@ -35,23 +38,20 @@ project:
             storage:
                 language: go
                 command: go test -count=1 -timeout=180s -coverprofile=../cover.out ./storage
-            pumps:
-                language: go
-                command: go test -count=1 -timeout=300s -coverprofile=../cover.out ./pumps
     lint:
         exclude:
             - '**/*.pb.go'
             - vendor/**
     checks:
         solver_latency_clean:
-            threshold: 30
+            threshold: 1
         coverage_threshold:
-            threshold: 95
+            threshold: 100
         slow_tests:
+            enabled: true
             threshold_seconds: 1
-        mcdc_coverage: {}
         under_modeled_requirements:
-            code_rich_max_meaningful_vars: 2
+            code_rich_max_meaningful_vars: 1
         code_mcdc:
             advisory: false
             languages:
@@ -100,3 +100,10 @@ project:
     audit:
         fail_level: info
         scope: full
+    workflow:
+        fail_level: info
+    documentation:
+        sources:
+            - path: docs/
+              type: auto
+        threshold: 100

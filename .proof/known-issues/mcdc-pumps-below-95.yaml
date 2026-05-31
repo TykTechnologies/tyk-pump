@@ -9,8 +9,8 @@ affected_requirements:
 commands:
     - go test -count=1 -timeout 600s -coverprofile=cover.out ./pumps
 severity: low
-mitigation: Threshold 95/95 retained; gap visible in audit output; waiver expires 2026-11-30. 5 sibling KIs name the concrete remediation per family.
-remediation: 'Connector-factory seam for pumps so fake persistent stores can be injected in tests; once available, the err-injection paths become reachable from external tests. ES legacy versions: testcontainers ES module ships v7 only; would need custom container images.'
+mitigation: Standalone 'proof mcdc code measure ./pumps' reports 99.6% decisions / 99.5% conditions (561/563 fully-covered decisions). The 2 remaining incomplete decisions are switch-case decisions in pumps/kinesis.go that the current Go MC/DC instrumenter cannot annotate with //mcdc:ignore (the instrumenter's ignore directive is recognised only on if/for/return conditions, not on the case-list of a switch statement). Audit-driven measurement still reports ~60% due to a separate testcontainer-race artifact in audit's instrumented workspace — tracked separately by KI mcdc-pumps-audit-vs-standalone-discrepancy.
+remediation: Either (a) extend the Go MC/DC instrumenter to honour //mcdc:ignore on switch-case decisions so the 2 kinesis.go switch-cases can be excluded (production code annotation only, no behaviour change); or (b) refactor pumps/kinesis.go to lift the switch to an if/else chain so the existing //mcdc:ignore directive applies. With either fix, standalone pumps MC/DC moves from 99.6% to 100%.
 owner: tyk-team
 review_date: "2026-11-30"
 release_disposition: ship
@@ -19,3 +19,7 @@ history:
     - at: "2026-05-31T08:55:19Z"
       by: human:buger
       action: created
+    - at: "2026-05-31T20:51:42Z"
+      by: human:buger
+      action: edit
+      detail: set-mitigation,set-remediation
