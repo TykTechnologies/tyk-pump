@@ -29,8 +29,8 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-05-31T11:27:45Z"
-        comment: 'Phase E: SW-REQ-038 checklist extended with errors_propagated to cover mongo pump container-stop / bad-env error-propagation tests in pumps/mongo_mcdc_100_test.go.'
+        reviewed_at: "2026-05-31T19:21:32Z"
+        comment: 'Phase E5: extend SW-REQ-038 checklist with nominal for explicit-batch-size config test'
         fingerprint: sha256:96f1ec5b2c9053156c814cb93c6f0c3859f0caece70a7be17e1ab999a465374a
         ai_generated: false
     impact_reviews:
@@ -38,19 +38,20 @@ verification:
           artifact: pumps/mcp_mongo.go
           decision: no-authored-change
           reviewer: buger
-          reason: Phase A re-annotated this file to point at the atomic per-implementation/per-behavior SW req (was previously SW-REQ-018/019/020/022/027/028); no runtime behavior change.
+          reason: 'Phase E mongo MC/DC drive: //mcdc:ignore for documented-unreachable branches'
           base: origin/master
           requirement_fingerprint: sha256:28cfcf23c6e7dc3f4595cee1454594d8d418fe9b5509a5d3e67cc5687aa1edd1
           approval_fingerprint: sha256:96f1ec5b2c9053156c814cb93c6f0c3859f0caece70a7be17e1ab999a465374a
-          artifact_fingerprint: sha256:36d4c7ae14865af78f5c99552afe171ff180accf1d9427394bed64cd78d2f681
-          reviewed_at: "2026-05-30T08:48:39Z"
+          artifact_fingerprint: sha256:2f2c4e6adae967675d60beb12d69831c675cebde2676742d717aa193d171a5e3
+          reviewed_at: "2026-05-31T18:55:35Z"
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:35:01Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-31T11:27:45Z"
+    last_modified_at: "2026-05-31T19:21:32Z"
 obligation_checklist:
     - errors_propagated
+    - nominal
 lifecycle:
     change_history:
         - date: "2026-05-30T08:43:46Z"
@@ -62,4 +63,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-05-30T08:44:11Z comment="Phase A per-implementation/per-significant-behavior decomposition; descriptions code-verified against the named files per docs/phase-a-proposed-reqs.md. Pump-family family-level reqs are retained as superseded anchor reqs.")'
+          changed_by: human:cli
+        - date: "2026-05-31T19:21:32Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-05-31T11:27:45Z comment="Phase E: SW-REQ-038 checklist extended with errors_propagated to cover mongo pump container-stop / bad-env error-propagation tests in pumps/mongo_mcdc_100_test.go.")'
           changed_by: human:cli

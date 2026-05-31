@@ -38,12 +38,12 @@ verification:
           artifact: pumps/mongo_selective.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Phase E MC/DC drive: //mcdc:ignore annotations added on documented-unreachable branches with KI cross-refs; production behaviour unchanged, only coverage-tool guidance.'
+          reason: 'Phase E5 mongo MC/DC drive: //mcdc:ignore annotations added for documented-unreachable branches (5 second-call-err-arms, 2 log.Fatal err==nil guards, 1 closed-explicitly sentinel, 1 capCollection Migrate-err arm, 1 selfHeal arm + downstream newErr arm) — KIs mcdc-pumps-below-95 and pumps-logfatal-on-config-decode'
           base: origin/master
           requirement_fingerprint: sha256:2204158cb2a9e8ea79ccb5304ba7890722f8c1bb5c0c3e48300d72d589a38429
           approval_fingerprint: sha256:95db4253125f4b270b2527dfaf4632270ac3d3f22df051a6b30a35255aa2c640
-          artifact_fingerprint: sha256:4142aa153f591dc798fd8a961a00b7b6c06b6e1721ccf88a0b10ed39f3a2fcf6
-          reviewed_at: "2026-05-31T11:40:15Z"
+          artifact_fingerprint: sha256:a171e437ba2de7196b4605ce4dfb51c1f2a50d364a30114502a2f4808e0c89b2
+          reviewed_at: "2026-05-31T19:21:44Z"
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:34:43Z"

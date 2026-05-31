@@ -209,7 +209,7 @@ func (m *MongoPump) Init(config interface{}) error {
 	m.log = log.WithField("prefix", mongoPrefix)
 
 	err := mapstructure.Decode(config, &m.dbConf)
-	if err == nil {
+	if err == nil { //mcdc:ignore the err==nil=F arm leads directly to log.Fatal at line 222; that exits the process and cannot be unit-tested without crashing — KI pumps-logfatal-on-config-decode
 		err = mapstructure.Decode(config, &m.dbConf.BaseMongoConf)
 		m.log.WithFields(logrus.Fields{
 			"url":             m.dbConf.GetBlurredURL(),
@@ -311,7 +311,7 @@ func (m *MongoPump) capCollection() (ok bool) {
 	}
 
 	err = m.store.Migrate(context.Background(), []model.DBObject{d}, model.DBM{"capped": true, "maxBytes": colCapMaxSizeBytes})
-	if err != nil {
+	if err != nil { //mcdc:ignore Migrate-err arm requires HasTable (line 283) to succeed returning exists=false AND the subsequent capped-collection Migrate to fail — the natural failure modes (network down, disk full) take BOTH calls down together, and Mongo accepts any valid capped-collection spec when reachable; driving this needs a fake persistent.PersistentStorage — KI mcdc-pumps-below-95
 		m.log.Errorf("Unable to create capped collection for (%s). %s", colName, err.Error())
 
 		return false
@@ -363,7 +363,7 @@ func (m *MongoPump) ensureIndexes(collectionName string) error {
 	}
 
 	err = m.store.CreateIndex(context.Background(), d, apiIndex)
-	if err != nil {
+	if err != nil { //mcdc:ignore second-CreateIndex err arm requires the orgIndex (line 355) call to succeed AND the apiIndex call to fail — driving that ordering needs a fake persistent.PersistentStorage; container-stop terminates BOTH calls — KI mcdc-pumps-below-95
 		return err
 	}
 

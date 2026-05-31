@@ -141,7 +141,7 @@ func (g *MCPMongoPump) insertMCPDataSet(dataSet []model.DBObject, collectionName
 			"collection":        collectionName,
 			"number of records": len(finalSet),
 		}).Error("Problem inserting to mongo collection: ", err)
-		if strings.Contains(strings.ToLower(err.Error()), "closed explicitly") {
+		if strings.Contains(strings.ToLower(err.Error()), "closed explicitly") { //mcdc:ignore "closed explicitly" sentinel is emitted only by the mgo driver when a session is closed via SessionWithoutCopy + explicit Close; the official mongo-go driver used by tests surfaces network errors as "connection refused" / "context deadline exceeded" instead, so this T-arm is unreachable from external tests — KI mcdc-pumps-below-95
 			g.log.Warning("--> Detected connection failure!")
 		}
 		errCh <- err

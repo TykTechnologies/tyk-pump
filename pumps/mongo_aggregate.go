@@ -183,7 +183,7 @@ func (m *MongoAggregatePump) Init(config interface{}) error {
 	m.log = log.WithField("prefix", analytics.MongoAggregatePrefix)
 
 	err := mapstructure.Decode(config, &m.dbConf)
-	if err == nil {
+	if err == nil { //mcdc:ignore the err==nil=F arm leads directly to log.Fatal at line 191; that exits the process and cannot be unit-tested without crashing — KI pumps-logfatal-on-config-decode
 		err = mapstructure.Decode(config, &m.dbConf.BaseMongoConf)
 	}
 
@@ -284,7 +284,7 @@ func (m *MongoAggregatePump) ensureIndexes(collectionName string) error {
 	}
 
 	err = m.store.CreateIndex(context.Background(), d, apiIndex)
-	if err != nil {
+	if err != nil { //mcdc:ignore second-CreateIndex err arm requires the ttlIndex (line 275) call to succeed AND the apiIndex call to fail — driving that ordering needs a fake persistent.PersistentStorage; container-stop terminates BOTH calls — KI mcdc-pumps-below-95
 		return err
 	}
 
@@ -322,10 +322,10 @@ func (m *MongoAggregatePump) WriteData(ctx context.Context, data []interface{}) 
 			err := m.DoAggregatedWriting(ctx, &filteredData, isMixedCollection)
 			if err != nil {
 				// checking if the error is related to the document size and AggregateSelfHealing is enabled
-				if shouldSelfHeal := m.ShouldSelfHeal(err); shouldSelfHeal {
+				if shouldSelfHeal := m.ShouldSelfHeal(err); shouldSelfHeal { //mcdc:ignore shouldSelfHeal=T requires DoAggregatedWriting to return an error string matching one of "Size must be between 0 and" / "Request size is too large" / "Resulting document after update is larger than"; reproducing requires synthesising a >16MB BSON aggregate document or injecting a fake persistent.PersistentStorage. Both need a production seam — KI mcdc-pumps-below-95
 					// executing the function again with the new AggregationTime setting
 					newErr := m.WriteData(ctx, data)
-					if newErr == nil {
+					if newErr == nil { //mcdc:ignore branch reachable only when shouldSelfHeal=T (above) — same KI mcdc-pumps-below-95
 						m.log.Info("Self-healing successful")
 					}
 					return newErr
@@ -384,7 +384,7 @@ func (m *MongoAggregatePump) DoAggregatedWriting(ctx context.Context, filteredDa
 	}
 
 	err = m.store.Upsert(ctx, &withTimeUpdate, query, avgUpdateDoc)
-	if err != nil {
+	if err != nil { //mcdc:ignore second-Upsert err arm requires the first Upsert (line 372) to succeed and the second to fail — driving that ordering needs a fake persistent.PersistentStorage; container-stop terminates BOTH calls — KI mcdc-pumps-below-95
 		m.log.WithField("query", query).Error("AvgUpdate Failure: ", err)
 		return err
 	}

@@ -38,12 +38,12 @@ verification:
           artifact: pumps/mcp_mongo_aggregate.go
           decision: no-authored-change
           reviewer: buger
-          reason: Phase A re-annotated this file to point at the atomic per-implementation/per-behavior SW req (was previously SW-REQ-018/019/020/022/027/028); no runtime behavior change.
+          reason: 'Phase E mongo MC/DC drive: //mcdc:ignore for documented-unreachable branches'
           base: origin/master
           requirement_fingerprint: sha256:495d3d7f139f8268fc8cc7c0d716f2c9e7de9f9fdfaacc1a5566afec576c278b
           approval_fingerprint: sha256:c37e4c5f93526ca3e54cf2b487df9cf89af598f46d2a0ff7192bd36d488527c8
-          artifact_fingerprint: sha256:288fa229c3dd6b97bb3f242715e1cfe611867a18a17d7b06fba4e7a0161884ce
-          reviewed_at: "2026-05-30T08:48:40Z"
+          artifact_fingerprint: sha256:e9654c425e88a9b07ed3c299faf370703297ce9d18af76e882d23a9cfe7977a3
+          reviewed_at: "2026-05-31T18:55:36Z"
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:35:08Z"

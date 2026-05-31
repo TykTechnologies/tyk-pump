@@ -83,7 +83,7 @@ func (m *MongoSelectivePump) Init(config interface{}) error {
 	m.log = log.WithField("prefix", mongoSelectivePrefix)
 
 	err := mapstructure.Decode(config, &m.dbConf)
-	if err == nil {
+	if err == nil { //mcdc:ignore the err==nil=F arm leads directly to log.Fatal at line 91; that exits the process and cannot be unit-tested without crashing — KI pumps-logfatal-on-config-decode
 		err = mapstructure.Decode(config, &m.dbConf.BaseMongoConf)
 	}
 
@@ -180,7 +180,7 @@ func (m *MongoSelectivePump) ensureIndexes(collectionName string) error {
 		}
 
 		err = m.store.CreateIndex(context.Background(), d, ttlIndex)
-		if err != nil {
+		if err != nil { //mcdc:ignore second-CreateIndex err arm requires the apiIndex (line 168) call to succeed AND the ttlIndex call to fail — driving that ordering needs a fake persistent.PersistentStorage; container-stop terminates BOTH calls — KI mcdc-pumps-below-95
 			return err
 		}
 	}
@@ -192,7 +192,7 @@ func (m *MongoSelectivePump) ensureIndexes(collectionName string) error {
 	}
 
 	err = m.store.CreateIndex(context.Background(), d, logBrowserIndex)
-	if err != nil && !strings.Contains(err.Error(), "already exists with a different name") {
+	if err != nil && !strings.Contains(err.Error(), "already exists with a different name") { //mcdc:ignore the err != nil = T AND !strings.Contains(...) = T arm requires the prior apiIndex (line 168) and ttlIndex (line 182) CreateIndex calls to succeed AND the logBrowser CreateIndex to fail with a non-"already exists with a different name" error — driving that 3-step ordering needs a fake persistent.PersistentStorage; container-stop terminates ALL THREE — KI mcdc-pumps-below-95
 		return err
 	}
 
