@@ -144,7 +144,7 @@ func (s *StatsdPump) WriteData(ctx context.Context, data []interface{}) error {
 		for i, t := range s.dbConf.Tags {
 			var tag string
 			b, err := json.Marshal(mapping[t])
-			if err != nil {
+			if err != nil { //mcdc:ignore json.Marshal cannot fail on the canonical mapping values (string/int/int64/time.Time) emitted by getMappings — KI pumps-logfatal-on-config-decode (no behavioural impact)
 				tag = ""
 			} else {
 				tag = string(b)
@@ -166,8 +166,8 @@ func (s *StatsdPump) WriteData(ctx context.Context, data []interface{}) error {
 		// Send timing metrics for each configured field
 		for _, f := range s.dbConf.Fields {
 			if s.isTimingField(f) {
-				if v, ok := mapping[f]; ok {
-					if iv, ok2 := v.(int64); ok2 {
+				if v, ok := mapping[f]; ok { //mcdc:ignore ok=F unreachable: isTimingField returns true only for keys ("request_time","latency_total","latency_upstream","latency_gateway") that are unconditionally inserted into getMappings — ok is always T
+					if iv, ok2 := v.(int64); ok2 { //mcdc:ignore ok2=F unreachable: getMappings stores all four timing-field values as int64 (RequestTime is int64; Latency.* are int64), so the type-assertion always succeeds
 						s.sendTimingMetric(client, f, metricTags, iv)
 					} else {
 						s.log.WithField("field", f).Warn("unexpected type for timing metric value, skipping")

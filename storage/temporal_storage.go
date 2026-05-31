@@ -206,12 +206,12 @@ func createConnector(opts *model.RedisOptions, tlsOptions *model.TLS) (model.Con
 	}
 
 	kv, err := keyvalue.NewKeyValue(conn)
-	if err != nil {
+	if err != nil { //mcdc:ignore structurally unreachable: createConnector always passes a *redisv9.RedisV9 whose Type()/As() succeed - KI storage-createconnector-kv-list-err-unreachable
 		return nil, nil, nil, err
 	}
 
 	l, err := list.NewList(conn)
-	if err != nil {
+	if err != nil { //mcdc:ignore structurally unreachable: createConnector always passes a *redisv9.RedisV9 whose Type()/As() succeed - KI storage-createconnector-kv-list-err-unreachable
 		return nil, nil, nil, err
 	}
 
@@ -265,7 +265,7 @@ func (r *TemporalStorageHandler) GetAndDeleteSet(keyName string, chunkSize int64
 	}).Debug("Getting raw key set: ", keyName)
 
 	err := r.ensureConnection()
-	if err != nil {
+	if err != nil { //mcdc:ignore structurally unreachable: ensureConnection cannot return err with unbounded backoff and non-Permanent errors - KI storage-ensureconnection-error-path-unreachable
 		return nil, err
 	}
 
@@ -312,7 +312,7 @@ func (r *TemporalStorageHandler) SetKey(keyName, session string, timeout int64) 
 	log.Debug("[STORE] Setting key: ", r.fixKey(keyName))
 
 	err := r.ensureConnection()
-	if err != nil {
+	if err != nil { //mcdc:ignore structurally unreachable: ensureConnection cannot return err with unbounded backoff and non-Permanent errors - KI storage-ensureconnection-error-path-unreachable
 		return err
 	}
 
@@ -344,7 +344,7 @@ func (r *TemporalStorageHandler) ensureConnection() error {
 		return nil
 	}
 
-	if err := backoff.Retry(operation, backoffStrategy); err != nil {
+	if err := backoff.Retry(operation, backoffStrategy); err != nil { //mcdc:ignore structurally unreachable: GetTemporalStorageExponentialBackoff has MaxElapsedTime=0 (unbounded) and operation never wraps backoff.Permanent - KI storage-ensureconnection-error-path-unreachable
 		return fmt.Errorf("failed to reconnect after several attempts: %w", err)
 	}
 

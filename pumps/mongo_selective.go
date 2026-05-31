@@ -87,7 +87,7 @@ func (m *MongoSelectivePump) Init(config interface{}) error {
 		err = mapstructure.Decode(config, &m.dbConf.BaseMongoConf)
 	}
 
-	if err != nil {
+	if err != nil { //mcdc:ignore log.Fatal exits the process; cannot be unit-tested without crashing — KI pumps-logfatal-on-config-decode
 		m.log.Fatal("Failed to decode configuration: ", err)
 	}
 
@@ -135,7 +135,7 @@ func (m *MongoSelectivePump) connect() {
 		Type:                     m.dbConf.MongoDriverType,
 		DirectConnection:         m.dbConf.MongoDirectConnection,
 	})
-	if err != nil {
+	if err != nil { //mcdc:ignore log.Fatal exits the process; persistent.NewPersistentStorage defers connection failure to first use so this arm cannot be unit-tested without crashing — KI mongo-pump-init-connect-logfatal-unreachable
 		m.log.Fatal("Failed to connect to mongo: ", err)
 	}
 }

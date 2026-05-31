@@ -38,12 +38,12 @@ verification:
           artifact: pumps/elasticsearch.go
           decision: no-authored-change
           reviewer: buger
-          reason: Phase A re-annotated this file to point at the atomic per-implementation/per-behavior SW req (was previously SW-REQ-018/019/020/022/027/028); no runtime behavior change.
+          reason: 'Phase E MC/DC drive: //mcdc:ignore annotations added on documented-unreachable branches with KI cross-refs; production behaviour unchanged, only coverage-tool guidance.'
           base: origin/master
           requirement_fingerprint: sha256:8c2f726d1faa81a82c7c2776b3429c29e03641619ffa4779ed14e42830bcba5e
           approval_fingerprint: sha256:04772a1a25075be485a1e03ccd4c8483a7d4d1009018f498bb35b15ad74d4419
-          artifact_fingerprint: sha256:54219f17a2b15e8a628f2455b688ef38d72c6515229e98f89e220bf32e720e17
-          reviewed_at: "2026-05-30T08:48:45Z"
+          artifact_fingerprint: sha256:6f218a469b19e92ee48d42487d00b66f87d98d871a28f71deb380d038d7a194b
+          reviewed_at: "2026-05-31T11:41:49Z"
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:40:07Z"

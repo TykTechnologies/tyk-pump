@@ -1,0 +1,18 @@
+id: influx-v1-unbounded-reconnect-recursion
+title: Influx v1 pump uses unbounded recursion on connection failure (mirrors ES KI)
+description: 'pumps/influx.go''s connect() recurses to itself with a 5s sleep on connect failure (same pattern as elasticsearch-unbounded-reconnect-recursion). A persistent influxdb v1 outage causes unbounded goroutine recursion → eventual stack overflow → process death. Surfaced when Phase E tried to drive the err arm: driving err=T forces the test into an infinite recursion.'
+affected_requirements:
+    - SW-REQ-046
+commands:
+    - cat pumps/influx.go | grep -nA8 "func.*connect"
+severity: medium
+mitigation: Operators using influx v1 should watch for process restart loops during sustained influx outages.
+remediation: Cap the recursion via a retry counter or use backoff.Permanent for non-retryable errors. Mirrors the fix needed for elasticsearch-unbounded-reconnect-recursion.
+owner: tyk-team
+review_date: "2026-11-30"
+release_disposition: ship_with_known_issue
+status: open
+history:
+    - at: "2026-05-31T11:13:15Z"
+      by: human:buger
+      action: created

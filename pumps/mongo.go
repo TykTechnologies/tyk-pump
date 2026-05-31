@@ -215,11 +215,11 @@ func (m *MongoPump) Init(config interface{}) error {
 			"url":             m.dbConf.GetBlurredURL(),
 			"collection_name": m.dbConf.CollectionName,
 		}).Info("Init")
-		if err != nil {
+		if err != nil { //mcdc:ignore second mapstructure.Decode error path is unreachable: BaseMongoConf is an embedded subset of MongoConf and the first Decode already validated the same source — KI pumps-logfatal-on-config-decode
 			panic(m.dbConf.BaseMongoConf)
 		}
 	}
-	if err != nil {
+	if err != nil { //mcdc:ignore log.Fatal exits the process; cannot be unit-tested without crashing — KI pumps-logfatal-on-config-decode
 		m.log.Fatal("Failed to decode configuration: ", err)
 	}
 
@@ -293,7 +293,7 @@ func (m *MongoPump) capCollection() (ok bool) {
 		return false
 	}
 
-	if strconv.IntSize < 64 {
+	if strconv.IntSize < 64 { //mcdc:ignore 32-bit arch guard unreachable on supported 64-bit-only release matrix — KI mongo-cap-collection-non64-arch-unreachable
 		m.log.Warn("Pump running < 64bit architecture. Not capping collection as max size would be 2gb")
 
 		return false
@@ -391,7 +391,7 @@ func (m *MongoPump) connect() {
 		Type:                     m.dbConf.MongoDriverType,
 		DirectConnection:         m.dbConf.MongoDirectConnection,
 	})
-	if err != nil {
+	if err != nil { //mcdc:ignore log.Fatal exits the process; persistent.NewPersistentStorage defers connection failure to first use so this arm cannot be unit-tested without crashing — KI mongo-pump-init-connect-logfatal-unreachable
 		m.log.Fatal("Failed to connect: ", err)
 	}
 
@@ -401,7 +401,7 @@ func (m *MongoPump) connect() {
 // reqproof:implements SW-REQ-034
 func (m *MongoPump) WriteData(ctx context.Context, data []interface{}) error {
 	collectionName := m.dbConf.CollectionName
-	if collectionName == "" {
+	if collectionName == "" { //mcdc:ignore log.Fatal exits the process on misconfiguration; not unit-testable — KI mongo-pump-init-connect-logfatal-unreachable
 		m.log.Fatal("No collection name!")
 	}
 

@@ -38,12 +38,12 @@ verification:
           artifact: pumps/graylog.go
           decision: no-authored-change
           reviewer: buger
-          reason: Phase A re-annotated this file to point at the atomic per-implementation/per-behavior SW req (was previously SW-REQ-018/019/020/022/027/028); no runtime behavior change.
+          reason: 'Phase E MC/DC drive: //mcdc:ignore annotations added on documented-unreachable branches with KI cross-refs; production behaviour unchanged, only coverage-tool guidance.'
           base: origin/master
           requirement_fingerprint: sha256:aa4729a653f8102460f93e49bbd0d35b6e223e568b5c55792efff41f6c90a8ff
           approval_fingerprint: sha256:62488abb290e044f59812f340336b7b70e4531648e2d8b2f11dd1ab686383f65
-          artifact_fingerprint: sha256:06b95b81fe5cafaed029121df2851266452eb2879777fab62bd2019d7b9429bb
-          reviewed_at: "2026-05-30T08:48:43Z"
+          artifact_fingerprint: sha256:d4ac79aaaac8b06f3f2700b41cde84cc3614601a29fe9bfd1411ef60f091a95d
+          reviewed_at: "2026-05-31T11:40:16Z"
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:36:11Z"

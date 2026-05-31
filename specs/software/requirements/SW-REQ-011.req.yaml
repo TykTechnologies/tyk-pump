@@ -39,12 +39,12 @@ verification:
           artifact: analytics/aggregate.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Phase 0.7 SYS+SW review: traced files (analytics/analytics.go GeoIP retarget to SW-071, storage/temporal_storage.go SW-006↔SW-007 split, config.go SW-002 satisfies SYS-035 add) — production code semantics unchanged; only annotations/links/obligations updated. Verified by go build ./... and re-run of affected tests.'
+          reason: 'MC/DC //mcdc:ignore annotations added on aggregate.go:871/894/901/925 (string-assertion always-ok, KI aggregate-mcdc-unreachable-string-assertion-ok) and :1072 (map zero-value short-circuit, KI setaggregatetimestamp-mcdc-unreachable-not-ok); production behaviour unchanged'
           base: origin/master
           requirement_fingerprint: sha256:315c62fc6d126295da03ab3fa3759f55fa65b96462c329d5f7671f4bb3ab4538
           approval_fingerprint: sha256:d963dad4006b43b9424a321fbf59f22f89c7def16d260b7417ac9589d7de05ef
-          artifact_fingerprint: sha256:70437dad5f1e51db1cd800f620e5396f2ae0a23c5b83feb4028958ee07acb82b
-          reviewed_at: "2026-05-30T10:52:30Z"
+          artifact_fingerprint: sha256:a8e050d53e1a757df1ebb241c45bd18ee4c562cb214ff38678580e92e3a06479
+          reviewed_at: "2026-05-31T10:24:07Z"
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:14Z"

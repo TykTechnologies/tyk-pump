@@ -38,12 +38,12 @@ verification:
           artifact: pumps/splunk.go
           decision: no-authored-change
           reviewer: buger
-          reason: Phase A re-annotated this file to point at the atomic per-implementation/per-behavior SW req (was previously SW-REQ-018/019/020/022/027/028); no runtime behavior change.
+          reason: 'Phase E MC/DC drive: //mcdc:ignore annotations added on documented-unreachable branches with KI cross-refs; production behaviour unchanged, only coverage-tool guidance.'
           base: origin/master
           requirement_fingerprint: sha256:cff2974112a1ee4e280b7e9e5fcc6fbfa1ba63a64c1a4c156394bdc7f253b1e1
           approval_fingerprint: sha256:6b6c956301b9fa17560aebe8a14ba7aad559e655fd3670d44ba2aecd84427e9c
-          artifact_fingerprint: sha256:e5fa9499d150da7bb70626066506f547fd5765a2be04298c9770c29985914050
-          reviewed_at: "2026-05-30T08:48:42Z"
+          artifact_fingerprint: sha256:e4db3c722f51d37d7f7189251bc695810b2623053bf3d5c6fbb40932b45f9665
+          reviewed_at: "2026-05-31T11:40:16Z"
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:36:07Z"

@@ -161,7 +161,7 @@ func (p *LogzioPump) WriteData(ctx context.Context, data []interface{}) error {
 		}
 
 		event, err := json.Marshal(mapping)
-		if err != nil {
+		if err != nil { //mcdc:ignore json.Marshal on the canonical AnalyticsRecord mapping (string/int/int64/time.Time fields) cannot fail in practice. KI mcdc-pumps-below-95.
 			return fmt.Errorf("failed to marshal decoded data: %s", err)
 		}
 

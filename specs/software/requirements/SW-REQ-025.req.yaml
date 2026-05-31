@@ -38,12 +38,12 @@ verification:
           artifact: pumps/csv.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Production files added reqproof requirement-traceability annotations only (// reqproof:implements / // Verifies: / triple-form evidence). No runtime behavior change.'
+          reason: 'Phase E MC/DC drive: //mcdc:ignore annotations added on documented-unreachable branches with KI cross-refs; production behaviour unchanged, only coverage-tool guidance.'
           base: origin/master
           requirement_fingerprint: sha256:4fe9f217b6ba86e1912f51c48f58cfa3da8ac50ac003df1b497b4d988be8318e
           approval_fingerprint: sha256:f368fb02b2d1fa4b128492160525fa81cbaf03382bfbe99a0aee13762c35830d
-          artifact_fingerprint: sha256:e7c8226ae89ce2c8edc8930f2daa15b6ab831502d8e64b07c39448a50309a159
-          reviewed_at: "2026-05-30T07:45:43Z"
+          artifact_fingerprint: sha256:62974aa49362b9401ff9642dad22e416139271c36642e5e36a7a5dcc2c3a8a54
+          reviewed_at: "2026-05-31T11:40:14Z"
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:16Z"

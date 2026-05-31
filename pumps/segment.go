@@ -100,7 +100,7 @@ func (s *SegmentPump) ToJSONMap(obj interface{}) (map[string]interface{}, error)
 
 	var properties map[string]interface{}
 	err = json.Unmarshal(ev, &properties)
-	if err != nil {
+	if err != nil { //mcdc:ignore json.Unmarshal of bytes just produced by json.Marshal of an AnalyticsRecord into map[string]interface{} cannot fail. KI mcdc-pumps-below-95.
 		return nil, err
 	}
 

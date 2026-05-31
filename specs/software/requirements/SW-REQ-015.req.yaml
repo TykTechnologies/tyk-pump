@@ -39,12 +39,12 @@ verification:
           artifact: analytics/uptime_data.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Phase 0.7 SYS+SW review: traced files (analytics/analytics.go GeoIP retarget to SW-071, storage/temporal_storage.go SW-006↔SW-007 split, config.go SW-002 satisfies SYS-035 add) — production code semantics unchanged; only annotations/links/obligations updated. Verified by go build ./... and re-run of affected tests.'
+          reason: 'MC/DC //mcdc:ignore annotations added on uptime_data.go:86 (RequestTime always zero in locally-built struct, KI uptime-onconflict-request-time-is-zero-unreachable) and :256 (strconv.Itoa is total, KI uptime-aggregate-erasstr-itoa-always-nonempty); production behaviour unchanged'
           base: origin/master
           requirement_fingerprint: sha256:5a15c56c99dffa6c5dbce7289c44a11b36a82b87415871793e50d402f182986d
           approval_fingerprint: sha256:38efd094fd0fa4615dc00d1d9cd1657141c7237c9b0c224da46e447ab1b4ceb6
-          artifact_fingerprint: sha256:e49e48450dc421923cbf11802530166cbc76eb34f4af8128fb9629acc40e1276
-          reviewed_at: "2026-05-30T10:52:31Z"
+          artifact_fingerprint: sha256:ead0777f032e56e0b5e587e0dc9f3d16e41de746ee807fcb937d9faa2c8fb17a
+          reviewed_at: "2026-05-31T10:24:09Z"
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:15Z"

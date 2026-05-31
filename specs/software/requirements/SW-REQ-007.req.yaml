@@ -59,12 +59,12 @@ verification:
           artifact: storage/temporal_storage.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Phase 0.7 SYS+SW review: traced files (analytics/analytics.go GeoIP retarget to SW-071, storage/temporal_storage.go SW-006↔SW-007 split, config.go SW-002 satisfies SYS-035 add) — production code semantics unchanged; only annotations/links/obligations updated. Verified by go build ./... and re-run of affected tests.'
+          reason: 'Phase E MC/DC drive: //mcdc:ignore annotations added on documented-unreachable branches with KI cross-refs; production behaviour unchanged, only coverage-tool guidance.'
           base: origin/master
           requirement_fingerprint: sha256:3567ce36ffaca886d60a28f93d6b49c9bc7c6db75d20689b21604d9dbe3beecf
           approval_fingerprint: sha256:0c3c5c97740bac396c4b9824b5711bd48106131932977ed731d962f59e454c94
-          artifact_fingerprint: sha256:e7f62fa6671d3b3d9d73cde3ad93779b943a2ed5e82e55f8fdd958bb89cce637
-          reviewed_at: "2026-05-30T10:52:29Z"
+          artifact_fingerprint: sha256:6634a473c979dd089b4c3ebf75ec39f8b4e1e94c995e30bb6c41a5f18d301e13
+          reviewed_at: "2026-05-31T11:40:13Z"
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:14Z"

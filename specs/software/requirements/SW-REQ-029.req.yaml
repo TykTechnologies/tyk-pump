@@ -38,12 +38,12 @@ verification:
           artifact: pumps/hybrid.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Production files added reqproof requirement-traceability annotations only (// reqproof:implements / // Verifies: / triple-form evidence). No runtime behavior change.'
+          reason: 'Phase E MC/DC drive: //mcdc:ignore annotations added on documented-unreachable branches with KI cross-refs; production behaviour unchanged, only coverage-tool guidance.'
           base: origin/master
           requirement_fingerprint: sha256:d754b761f35c6b742978029bea4cbf1f6fe6bec75e314fafb8f555c1453bd00b
           approval_fingerprint: sha256:8e335b66c4304a004c0699faf404e04b3d9de907df8893eae36901ac5c1b04cd
-          artifact_fingerprint: sha256:58ba6152e6905b7fd4d5ac03eabf09b94ea8446c60d522d66339a7b8c6ca8a0e
-          reviewed_at: "2026-05-30T07:45:44Z"
+          artifact_fingerprint: sha256:5bd80bdff0b9eb2efbfa4869e3b78d5ff677ee52fc51eb2e925569d4a00945ca
+          reviewed_at: "2026-05-31T11:40:15Z"
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:16Z"

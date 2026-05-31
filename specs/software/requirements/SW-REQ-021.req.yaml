@@ -38,12 +38,12 @@ verification:
           artifact: pumps/kafka.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Production files added reqproof requirement-traceability annotations only (// reqproof:implements / // Verifies: / triple-form evidence). No runtime behavior change.'
+          reason: 'Phase E MC/DC drive: //mcdc:ignore annotations added on documented-unreachable branches with KI cross-refs; production behaviour unchanged, only coverage-tool guidance.'
           base: origin/master
           requirement_fingerprint: sha256:48620f5c6f512a1a644abc197db5533ff98ba07c112a875d6e8d2e4ad76ffd28
           approval_fingerprint: sha256:6da3f6940bfb2555b1c4e3049e5ff4621bb9110c7260f95b59c748383ad1f8d8
-          artifact_fingerprint: sha256:3039d527df718fa2a62df2156dad1f1fbed9bc6a01e8a62c8746047f97464602
-          reviewed_at: "2026-05-30T07:45:43Z"
+          artifact_fingerprint: sha256:a24df2d59e765fc1963b11188ba2eb01adeb1618c51fdd0222c6c579a6c30299
+          reviewed_at: "2026-05-31T11:40:13Z"
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:15Z"

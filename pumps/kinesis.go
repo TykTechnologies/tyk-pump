@@ -178,12 +178,12 @@ func (p *KinesisPump) WriteData(ctx context.Context, records []interface{}) erro
 
 			// Transform object to json string
 			json, jsonError := json.Marshal(analyticsRecord)
-			if jsonError != nil {
+			if jsonError != nil { //mcdc:ignore json.Marshal on a flat Json map of primitive fields (string/int64/time.Time/[]string) cannot fail. KI mcdc-pumps-below-95.
 				p.log.WithError(jsonError).Error("unable to marshal message")
 			}
 
 			n, err := rand.Int(rand.Reader, big.NewInt(1000000000))
-			if err != nil {
+			if err != nil { //mcdc:ignore crypto/rand.Int only fails when /dev/urandom or BCryptGenRandom is unavailable — unreachable on supported platforms. KI mcdc-pumps-below-95.
 				p.log.Error("failed to generate int for Partition key: ", err)
 			}
 

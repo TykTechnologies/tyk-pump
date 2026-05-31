@@ -223,7 +223,7 @@ func (i *Influx2Pump) WriteData(ctx context.Context, data []interface{}) error {
 		// Select tags from config
 		for _, t := range i.dbConf.Tags {
 			b, err := json.Marshal(mapping[t])
-			if err != nil {
+			if err != nil { //mcdc:ignore json.Marshal on the canonical AnalyticsRecord mapping values (string/int/int64/time.Time) cannot fail. KI mcdc-pumps-below-95.
 				tag = ""
 			} else {
 				// convert and remove surrounding quotes from tag value

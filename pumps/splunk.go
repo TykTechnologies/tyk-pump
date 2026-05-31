@@ -267,7 +267,7 @@ func (p *SplunkPump) WriteData(ctx context.Context, data []interface{}) error {
 		}{Time: decoded.TimeStamp.Unix(), Event: event}
 
 		data, err := json.Marshal(eventWrap)
-		if err != nil {
+		if err != nil { //mcdc:ignore json.Marshal on the eventWrap struct (Time int64 + map[string]interface{} of canonical mapping primitives) cannot fail in practice. KI mcdc-pumps-below-95.
 			return err
 		}
 

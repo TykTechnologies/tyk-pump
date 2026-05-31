@@ -1,0 +1,18 @@
+id: mongo-cap-collection-non64-arch-unreachable
+title: MongoPump.capCollection 32-bit arch branch unreachable on supported targets
+description: pumps/mongo.go:296 contains a 32-bit arch guard (strconv.IntSize < 64) to avoid a 2GB int overflow. Tyk Pump only ships 64-bit binaries (linux/amd64, linux/arm64, darwin/amd64, darwin/arm64, windows/amd64); strconv.IntSize is a compile-time constant equal to 64 on every supported platform. The T-side of the comparison is unreachable in CI without a 32-bit runner, which is not part of the test matrix.
+affected_requirements:
+    - SW-REQ-034
+commands:
+    - go test -count=1 -timeout 600s -run TestMongoPump_capCollection_Not64arch ./pumps
+severity: low
+mitigation: Tyk Pump release matrix only ships 64-bit binaries; release notes explicitly call out the unsupported 32-bit configuration.
+remediation: When a 32-bit CI runner is added to the matrix (low priority), retire this KI; otherwise remove the guard as dead code in a future cleanup pass.
+owner: tyk-team
+review_date: "2026-11-30"
+release_disposition: ship
+status: open
+history:
+    - at: "2026-05-31T10:26:10Z"
+      by: human:buger
+      action: created

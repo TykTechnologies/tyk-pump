@@ -228,7 +228,7 @@ func (k *KafkaPump) WriteData(ctx context.Context, data []interface{}) error {
 
 		//Transform object to json string
 		json, jsonError := json.Marshal(message)
-		if jsonError != nil {
+		if jsonError != nil { //mcdc:ignore json.Marshal of map[string]interface{} with basic Go types (string/int/time.Time/[]string/map[string]string) cannot fail — KI kafka-writedata-marshal-err-structurally-unreachable
 			k.log.WithError(jsonError).Error("unable to marshal message")
 		}
 

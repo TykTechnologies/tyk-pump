@@ -38,12 +38,12 @@ verification:
           artifact: pumps/segment.go
           decision: no-authored-change
           reviewer: buger
-          reason: Phase A re-annotated this file to point at the atomic per-implementation/per-behavior SW req (was previously SW-REQ-018/019/020/022/027/028); no runtime behavior change.
+          reason: 'Phase E MC/DC drive: //mcdc:ignore annotations added on documented-unreachable branches with KI cross-refs; production behaviour unchanged, only coverage-tool guidance.'
           base: origin/master
           requirement_fingerprint: sha256:22b90f337b5f8013b3efac09e200bdc4395d8eeb5fa9baa9af2ad28258ed3d32
           approval_fingerprint: sha256:a89004af5dbe462595f48872f29fd2314dc436f61d34412764f9c002456d6980
-          artifact_fingerprint: sha256:b0158d79660ab366de319eec72502ed5bac52b2027e6849ccf7d43b2e1ba67e7
-          reviewed_at: "2026-05-30T08:48:44Z"
+          artifact_fingerprint: sha256:82077a4e2484bfe07ec09416399d8819f83133fe4312599b779d7d029843a02f
+          reviewed_at: "2026-05-31T11:40:17Z"
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:36:34Z"

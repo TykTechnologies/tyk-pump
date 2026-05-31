@@ -38,22 +38,22 @@ verification:
           artifact: pumps/dogstatsd.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Production files added reqproof requirement-traceability annotations only (// reqproof:implements / // Verifies: / triple-form evidence). No runtime behavior change.'
+          reason: 'Phase E MC/DC drive: //mcdc:ignore annotations added on documented-unreachable branches with KI cross-refs; production behaviour unchanged, only coverage-tool guidance.'
           base: origin/master
           requirement_fingerprint: sha256:d5ecf0f7cf8e3ef89dc3feca502b177d77cad345fb7e8db6eb12ba245b1a6976
           approval_fingerprint: sha256:2ff45fb28e2b8a681210a4d394a9d5966cb2559eee1c3df9599cec3049e8c0a4
-          artifact_fingerprint: sha256:1e0ae55dbe373d698c2f34d544a8e17955f7424be4b1cc8288b7f23561c4b666
-          reviewed_at: "2026-05-30T07:45:43Z"
+          artifact_fingerprint: sha256:184e18e555be90f6e47ced4f2a6354faac72c12a37682f099eec3868281e2da5
+          reviewed_at: "2026-05-31T11:40:13Z"
         - requirement: SW-REQ-023
           artifact: pumps/statsd.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Production files added reqproof requirement-traceability annotations only (// reqproof:implements / // Verifies: / triple-form evidence). No runtime behavior change.'
+          reason: 'Phase E MC/DC drive: //mcdc:ignore annotations added on documented-unreachable branches with KI cross-refs; production behaviour unchanged, only coverage-tool guidance.'
           base: origin/master
           requirement_fingerprint: sha256:d5ecf0f7cf8e3ef89dc3feca502b177d77cad345fb7e8db6eb12ba245b1a6976
           approval_fingerprint: sha256:2ff45fb28e2b8a681210a4d394a9d5966cb2559eee1c3df9599cec3049e8c0a4
-          artifact_fingerprint: sha256:74bb261441e939a4871b5cefbb37d7963cd8c2d17ceca2f42b039a8e3d9e3e04
-          reviewed_at: "2026-05-30T07:45:43Z"
+          artifact_fingerprint: sha256:fb345b7fe8f16b4992a5fc6c77283efb1f2a39d0a84c962d3c1e9ae6a1a32c30
+          reviewed_at: "2026-05-31T11:40:13Z"
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:16Z"

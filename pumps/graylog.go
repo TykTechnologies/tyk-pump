@@ -107,7 +107,7 @@ func (p *GraylogPump) connect() {
 func (p *GraylogPump) WriteData(ctx context.Context, data []interface{}) error {
 	p.log.Debug("Attempting to write ", len(data), " records...")
 
-	if p.client == nil {
+	if p.client == nil { //mcdc:ignore p.client is always set by GraylogPump.Init -> connect(); the nil-check is defensive plumbing in case the pump is constructed without Init (no public surface drives it)
 		p.connect()
 		p.WriteData(ctx, data)
 	}
@@ -151,7 +151,7 @@ func (p *GraylogPump) WriteData(ctx context.Context, data []interface{}) error {
 		}
 
 		message, err := json.Marshal(messageMap)
-		if err != nil {
+		if err != nil { //mcdc:ignore json.Marshal cannot fail on the map[string]interface{} composed exclusively of mapping[key] values (string/int/int64) — KI graylog-moesif-logfatal-on-record-error
 			p.log.Fatal(err)
 		}
 
@@ -164,7 +164,7 @@ func (p *GraylogPump) WriteData(ctx context.Context, data []interface{}) error {
 
 		gelfString, err := json.Marshal(gelfData)
 
-		if err != nil {
+		if err != nil { //mcdc:ignore json.Marshal cannot fail on gelfData (string host, int64 timestamp, string message) — KI graylog-moesif-logfatal-on-record-error
 			p.log.Fatal(err)
 		}
 

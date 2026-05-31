@@ -192,23 +192,23 @@ func (e *ElasticsearchPump) getOperator() (ElasticsearchOperator, error) {
 
 		// Setup a bulk processor
 		p := op.esClient.BulkProcessor().Name("TykPumpESv3BackgroundProcessor")
-		if conf.BulkConfig.Workers != 0 {
+		if conf.BulkConfig.Workers != 0 { //mcdc:ignore v3 block is unreachable from getOperator: elasticv3.NewClient is invoked without SetHealthcheck(false) and v3 healthcheck rejects every modern ES server — KI es-legacy-versions-need-deprecated-containers
 			p = p.Workers(conf.BulkConfig.Workers)
 		}
 
-		if conf.BulkConfig.FlushInterval != 0 {
+		if conf.BulkConfig.FlushInterval != 0 { //mcdc:ignore v3 block is unreachable from getOperator — KI es-legacy-versions-need-deprecated-containers
 			p = p.FlushInterval(time.Duration(conf.BulkConfig.FlushInterval) * time.Second)
 		}
 
-		if conf.BulkConfig.BulkActions != 0 {
+		if conf.BulkConfig.BulkActions != 0 { //mcdc:ignore v3 block is unreachable from getOperator — KI es-legacy-versions-need-deprecated-containers
 			p = p.BulkActions(conf.BulkConfig.BulkActions)
 		}
 
-		if conf.BulkConfig.BulkSize != 0 {
+		if conf.BulkConfig.BulkSize != 0 { //mcdc:ignore v3 block is unreachable from getOperator — KI es-legacy-versions-need-deprecated-containers
 			p = p.BulkSize(conf.BulkConfig.BulkSize)
 		}
 
-		if !conf.DisableBulk {
+		if !conf.DisableBulk { //mcdc:ignore v3 block is unreachable from getOperator — KI es-legacy-versions-need-deprecated-containers
 			// After execute a bulk commit call his function to print how many records were purged
 			purgerLogger := func(executionId int64, requests []elasticv3.BulkableRequest, response *elasticv3.BulkResponse, err error) {
 				printPurgedBulkRecords(len(requests), err, op.log)

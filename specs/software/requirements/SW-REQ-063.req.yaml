@@ -29,8 +29,8 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-05-30T08:44:11Z"
-        comment: Phase A per-implementation/per-significant-behavior decomposition; descriptions code-verified against the named files per docs/phase-a-proposed-reqs.md. Pump-family family-level reqs are retained as superseded anchor reqs.
+        reviewed_at: "2026-05-31T11:27:46Z"
+        comment: 'Phase E: SW-REQ-063 checklist extended with errors_propagated to cover mongo pump container-stop / bad-env error-propagation tests in pumps/mongo_mcdc_100_test.go.'
         fingerprint: sha256:d229f02f2bcfa35fbe2bd9d096878ccbaa6788b5742c116e98eb73c818c57ca6
         ai_generated: false
     impact_reviews:
@@ -38,18 +38,19 @@ verification:
           artifact: pumps/mongo_aggregate.go
           decision: no-authored-change
           reviewer: buger
-          reason: Phase A re-annotated this file to point at the atomic per-implementation/per-behavior SW req (was previously SW-REQ-018/019/020/022/027/028); no runtime behavior change.
+          reason: 'Phase E MC/DC drive: //mcdc:ignore annotations added on documented-unreachable branches with KI cross-refs; production behaviour unchanged, only coverage-tool guidance.'
           base: origin/master
           requirement_fingerprint: sha256:40c473d226c6fb36c011ce55b2a876bae6ffc91899e1b8135055e6950ac7b9f2
           approval_fingerprint: sha256:d229f02f2bcfa35fbe2bd9d096878ccbaa6788b5742c116e98eb73c818c57ca6
-          artifact_fingerprint: sha256:552b82df798df00f1235f41008f165964976f0e145fcd095ad023101228fa58b
-          reviewed_at: "2026-05-30T08:48:39Z"
+          artifact_fingerprint: sha256:cb97659f3250990e4b01c93de0a69ff05eb677c45c3bcb56250d32f7dc7b9ddc
+          reviewed_at: "2026-05-31T11:40:59Z"
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:38:05Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-30T08:44:11Z"
+    last_modified_at: "2026-05-31T11:27:46Z"
 obligation_checklist:
+    - errors_propagated
     - idempotency
     - nominal
 lifecycle:
@@ -58,4 +59,9 @@ lifecycle:
           from: draft
           to: review
           reason: ""
+          changed_by: human:cli
+        - date: "2026-05-31T11:27:46Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-05-30T08:44:11Z comment="Phase A per-implementation/per-significant-behavior decomposition; descriptions code-verified against the named files per docs/phase-a-proposed-reqs.md. Pump-family family-level reqs are retained as superseded anchor reqs.")'
           changed_by: human:cli

@@ -868,7 +868,7 @@ func incrementAggregate(aggregate *AnalyticsRecordAggregate, record *AnalyticsRe
 			case "APIID":
 				val, ok := value.(string)
 				c := incrementOrSetUnit(&thisCounter, aggregate.APIID[val])
-				if val != "" && ok {
+				if val != "" && ok { //mcdc:ignore defensive: APIID is a string field on AnalyticsRecord; structs.Map preserves the string type so ok is always T — KI aggregate-mcdc-unreachable-string-assertion-ok
 					aggregate.APIID[val] = c
 					aggregate.APIID[val].Identifier = record.APIID
 					aggregate.APIID[val].HumanIdentifier = record.APIName
@@ -891,14 +891,14 @@ func incrementAggregate(aggregate *AnalyticsRecordAggregate, record *AnalyticsRe
 				val, ok := value.(string)
 				versionStr := doHash(record.APIID + ":" + val)
 				c := incrementOrSetUnit(&thisCounter, aggregate.Versions[versionStr])
-				if val != "" && ok {
+				if val != "" && ok { //mcdc:ignore defensive: APIVersion is a string field on AnalyticsRecord; structs.Map preserves the string type so ok is always T — KI aggregate-mcdc-unreachable-string-assertion-ok
 					aggregate.Versions[versionStr] = c
 					aggregate.Versions[versionStr].Identifier = val
 					aggregate.Versions[versionStr].HumanIdentifier = val
 				}
 			case "APIKey":
 				val, ok := value.(string)
-				if val != "" && ok {
+				if val != "" && ok { //mcdc:ignore defensive: APIKey is a string field on AnalyticsRecord; structs.Map preserves the string type so ok is always T — KI aggregate-mcdc-unreachable-string-assertion-ok
 					c := incrementOrSetUnit(&thisCounter, aggregate.APIKeys[val])
 					aggregate.APIKeys[val] = c
 					aggregate.APIKeys[val].Identifier = val
@@ -922,7 +922,7 @@ func incrementAggregate(aggregate *AnalyticsRecordAggregate, record *AnalyticsRe
 				}
 			case "OauthID":
 				val, ok := value.(string)
-				if val != "" && ok {
+				if val != "" && ok { //mcdc:ignore defensive: OauthID is a string field on AnalyticsRecord; structs.Map preserves the string type so ok is always T — KI aggregate-mcdc-unreachable-string-assertion-ok
 					c := incrementOrSetUnit(&thisCounter, aggregate.OauthIDs[val])
 					aggregate.OauthIDs[val] = c
 					aggregate.OauthIDs[val].Identifier = val
@@ -1069,7 +1069,7 @@ func setAggregateTimestamp(dbIdentifier string, asTime time.Time, aggregationTim
 	// get the last document timestamp
 	lastDocumentTS, ok := getLastDocumentTimestamp(dbIdentifier)
 	emptyTime := time.Time{}
-	if lastDocumentTS == emptyTime || !ok {
+	if lastDocumentTS == emptyTime || !ok { //mcdc:ignore Go map zero-value: when ok=F the returned time.Time IS emptyTime, so the first clause short-circuits; !ok=T with first clause=F is unreachable — KI setaggregatetimestamp-mcdc-unreachable-not-ok
 		// if it's not set, or it's empty, just set it to the current time
 		lastDocumentTS = time.Date(asTime.Year(), asTime.Month(), asTime.Day(), asTime.Hour(), asTime.Minute(), 0, 0, asTime.Location())
 		SetlastTimestampAgggregateRecord(dbIdentifier, lastDocumentTS)

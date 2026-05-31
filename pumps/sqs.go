@@ -140,7 +140,7 @@ func (s *SQSPump) WriteData(ctx context.Context, data []interface{}) error {
 			continue
 		}
 		decodedMessageByteArray, err := json.Marshal(decoded)
-		if err != nil {
+		if err != nil { //mcdc:ignore json.Marshal on an analytics.AnalyticsRecord (all JSON-encodable fields) cannot fail in practice. KI mcdc-pumps-below-95.
 			s.log.Errorf("Unable to marshal message: %v", err)
 			continue
 		}

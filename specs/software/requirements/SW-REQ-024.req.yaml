@@ -38,12 +38,12 @@ verification:
           artifact: pumps/prometheus.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Production files added reqproof requirement-traceability annotations only (// reqproof:implements / // Verifies: / triple-form evidence). No runtime behavior change.'
+          reason: 'Phase E MC/DC drive: //mcdc:ignore annotations added on documented-unreachable branches with KI cross-refs; production behaviour unchanged, only coverage-tool guidance.'
           base: origin/master
           requirement_fingerprint: sha256:e7b681ecd9a46ac38e35283c859e8d48bfc3a56ca1f5cfec622fb8ee71f78a16
           approval_fingerprint: sha256:b00cacb17b12311eb0456cd11ddd27c6569ccc5ea3f7b1bc41b3a4130b6443e0
-          artifact_fingerprint: sha256:0c17a532f46f6b817965fe7a379f6901ae176fd3fe07c2f78798f1434812dd10
-          reviewed_at: "2026-05-30T07:45:43Z"
+          artifact_fingerprint: sha256:99d941c7b4c94efc7abfde6bb6848083175f7d66d72157500b831a36d4593f19
+          reviewed_at: "2026-05-31T11:40:14Z"
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:16Z"

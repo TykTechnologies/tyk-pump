@@ -29,8 +29,8 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-05-30T08:44:11Z"
-        comment: Phase A per-implementation/per-significant-behavior decomposition; descriptions code-verified against the named files per docs/phase-a-proposed-reqs.md. Pump-family family-level reqs are retained as superseded anchor reqs.
+        reviewed_at: "2026-05-31T11:27:45Z"
+        comment: 'Phase E: SW-REQ-038 checklist extended with errors_propagated to cover mongo pump container-stop / bad-env error-propagation tests in pumps/mongo_mcdc_100_test.go.'
         fingerprint: sha256:96f1ec5b2c9053156c814cb93c6f0c3859f0caece70a7be17e1ab999a465374a
         ai_generated: false
     impact_reviews:
@@ -48,7 +48,7 @@ history:
     created_by: human:cli
     created_at: "2026-05-30T08:35:01Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-30T08:44:11Z"
+    last_modified_at: "2026-05-31T11:27:45Z"
 obligation_checklist:
     - errors_propagated
 lifecycle:
@@ -57,4 +57,9 @@ lifecycle:
           from: draft
           to: review
           reason: ""
+          changed_by: human:cli
+        - date: "2026-05-31T11:27:45Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-05-30T08:44:11Z comment="Phase A per-implementation/per-significant-behavior decomposition; descriptions code-verified against the named files per docs/phase-a-proposed-reqs.md. Pump-family family-level reqs are retained as superseded anchor reqs.")'
           changed_by: human:cli

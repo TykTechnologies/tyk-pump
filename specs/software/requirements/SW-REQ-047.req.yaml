@@ -38,12 +38,12 @@ verification:
           artifact: pumps/influx2.go
           decision: no-authored-change
           reviewer: buger
-          reason: Phase A re-annotated this file to point at the atomic per-implementation/per-behavior SW req (was previously SW-REQ-018/019/020/022/027/028); no runtime behavior change.
+          reason: 'Phase E MC/DC drive: //mcdc:ignore annotations added on documented-unreachable branches with KI cross-refs; production behaviour unchanged, only coverage-tool guidance.'
           base: origin/master
           requirement_fingerprint: sha256:1ad8c2ff0be3b7405a51e2feaea5de3aaed169eea095c984ae1bfe8371c96b9a
           approval_fingerprint: sha256:c21168bae4b41eca6b9d1dfca02a4330319144d7c61713b6e70a3124d8501bd8
-          artifact_fingerprint: sha256:82f7d76de58c2652281e99bfc38859acaca1a6b724e33b7d45588240c34fd87d
-          reviewed_at: "2026-05-30T08:48:42Z"
+          artifact_fingerprint: sha256:03a15adc76040d80d6e9a2f2439bb3a9f9c7132255fde356dca8fef5f0971c75
+          reviewed_at: "2026-05-31T11:40:16Z"
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:36:01Z"
