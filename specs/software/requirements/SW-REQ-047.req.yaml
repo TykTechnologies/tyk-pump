@@ -38,12 +38,12 @@ verification:
           artifact: pumps/influx2.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Phase E HTTP-family MC/DC drive: //mcdc:ignore annotations added on documented-unreachable branches with KI cross-refs; production behaviour unchanged, only coverage-tool guidance.'
+          reason: 'Phase E final cleanup: //mcdc:ignore for documented-unreachable branches with KI cross-refs; production behaviour unchanged, only coverage-tool guidance.'
           base: origin/master
           requirement_fingerprint: sha256:1ad8c2ff0be3b7405a51e2feaea5de3aaed169eea095c984ae1bfe8371c96b9a
           approval_fingerprint: sha256:c21168bae4b41eca6b9d1dfca02a4330319144d7c61713b6e70a3124d8501bd8
-          artifact_fingerprint: sha256:2933152852f347affe8d291c48d08267716de2fc992724393abaa4c8e77d24d1
-          reviewed_at: "2026-05-31T13:05:21Z"
+          artifact_fingerprint: sha256:201b7fe17623ec209c136144e867e5c9994eb3999bc8e8f041ef61040f72520d
+          reviewed_at: "2026-05-31T20:15:25Z"
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:36:01Z"

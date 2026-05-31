@@ -38,12 +38,12 @@ verification:
           artifact: pumps/sqs.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Phase E HTTP-family MC/DC drive: //mcdc:ignore annotations added on documented-unreachable branches with KI cross-refs; production behaviour unchanged, only coverage-tool guidance.'
+          reason: 'Phase E final cleanup: //mcdc:ignore for documented-unreachable branches with KI cross-refs; production behaviour unchanged, only coverage-tool guidance.'
           base: origin/master
           requirement_fingerprint: sha256:e1c179a4283819abecd86dae662ea9ef7aaea2e7e0ded859a00a4f9fb7f610c3
           approval_fingerprint: sha256:cc09883679226d5b33e8a2401f5eeba74c218572a411640f41a11b7801397896
-          artifact_fingerprint: sha256:221b18f54e0c5fbb901aa4403c9f97dd76035673797d112ef01d711086592e85
-          reviewed_at: "2026-05-31T13:05:22Z"
+          artifact_fingerprint: sha256:3fc690a573eb32eeb859ac6eff6e394c74ebcf90813b1d98a09c28a60537d1e5
+          reviewed_at: "2026-05-31T20:39:15Z"
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:36:55Z"

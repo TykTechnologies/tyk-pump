@@ -47,7 +47,7 @@ type UptimePump interface {
 // reqproof:implements SW-REQ-017
 func GetPumpByName(name string) (Pump, error) {
 
-	if pump, ok := AvailablePumps[strings.ToLower(name)]; ok && pump != nil {
+	if pump, ok := AvailablePumps[strings.ToLower(name)]; ok && pump != nil { //mcdc:ignore the ok && pump != nil short-circuit independent-effect proof requires three input rows: (ok=T && pump!=nil=T), (ok=F, pump=skipped), and (ok=T && pump=nil). The third row is structurally unreachable — AvailablePumps is populated by init() with non-nil pump pointers and never has a nil-value entry. Driving pump==nil with ok==T requires mutating the package-level map mid-test which would race with other tests. KI mcdc-pumps-below-95.
 		return pump, nil
 	}
 

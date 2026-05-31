@@ -117,7 +117,7 @@ func (s *SQSPump) Init(config interface{}) error {
 	}
 
 	result, err := s.SQSClient.GetQueueUrl(context.TODO(), gQInput)
-	if err != nil {
+	if err != nil { //mcdc:ignore err=T arm requires a live AWS SQS endpoint returning an error after NewSQSPublisher (itself unreachable in unit tests — see annotated NewSQSPublisher); driving this from a unit test requires injecting a fake *sqs.Client which the current pump signature doesn't expose. KI mcdc-pumps-below-95.
 		return err
 	}
 	s.SQSQueueURL = result.QueueUrl

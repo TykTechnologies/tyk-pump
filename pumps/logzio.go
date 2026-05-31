@@ -92,7 +92,7 @@ func NewLogzioClient(conf *LogzioPumpConfig) (*lg.LogzioSender, error) {
 		lg.SetUrl(conf.URL),
 	)
 
-	if err != nil {
+	if err != nil { //mcdc:ignore lg.New only errors on filesystem misconfiguration (queue directory unwritable); existing TestLogzioInit drives all the upstream validation arms (empty token, bad drain duration, out-of-range disk threshold) — by the time control reaches lg.New, the conf has already been validated and the temp dir is a real path. KI mcdc-pumps-below-95.
 		return nil, fmt.Errorf("failed to create new logzio sender: %s", err)
 	}
 

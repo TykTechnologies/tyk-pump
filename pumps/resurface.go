@@ -281,7 +281,7 @@ func (rp *ResurfacePump) WriteData(ctx context.Context, data []interface{}) erro
 	} else {
 		select {
 		case peek, open := <-rp.data:
-			if open {
+			if open { //mcdc:ignore the open=F arm (recv on a closed-and-empty channel) is structurally unreachable from a deterministic unit test: the only path that closes rp.data is the Shutdown/Flush sequence which terminates the pump entirely, so a subsequent WriteData call wouldn't be made. open=T is driven by TestResurfacePump_WriteData_Open_BranchAfterDisable_Force in pumps/final_cleanup_mcdc_test.go. KI mcdc-pumps-below-95.
 				rp.data <- peek
 				close(rp.data)
 			}

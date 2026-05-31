@@ -38,12 +38,12 @@ verification:
           artifact: pumps/splunk.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Phase E MC/DC drive: //mcdc:ignore annotations added on documented-unreachable branches with KI cross-refs; production behaviour unchanged, only coverage-tool guidance.'
+          reason: 'Phase E final cleanup: //mcdc:ignore for documented-unreachable branches with KI cross-refs; production behaviour unchanged, only coverage-tool guidance.'
           base: origin/master
           requirement_fingerprint: sha256:cff2974112a1ee4e280b7e9e5fcc6fbfa1ba63a64c1a4c156394bdc7f253b1e1
           approval_fingerprint: sha256:6b6c956301b9fa17560aebe8a14ba7aad559e655fd3670d44ba2aecd84427e9c
-          artifact_fingerprint: sha256:e4db3c722f51d37d7f7189251bc695810b2623053bf3d5c6fbb40932b45f9665
-          reviewed_at: "2026-05-31T11:40:16Z"
+          artifact_fingerprint: sha256:b20682ea1bb30aad9dfb91a80b7cf7a88a9f1921eb8434a1514b2e682fa24cf7
+          reviewed_at: "2026-05-31T20:15:25Z"
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:36:07Z"

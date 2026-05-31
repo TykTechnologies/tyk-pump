@@ -78,7 +78,7 @@ func (s *SyslogPump) Init(config interface{}) error {
 	s.log = log.WithField("prefix", syslogPrefix)
 
 	err := mapstructure.Decode(config, &s.syslogConf)
-	if err != nil {
+	if err != nil { //mcdc:ignore log.Fatal exits the process; cannot be unit-tested without crashing — KI pumps-logfatal-on-config-decode
 		s.log.Fatal("Failed to decode configuration: ", err)
 	}
 

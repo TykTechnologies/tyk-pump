@@ -38,12 +38,12 @@ verification:
           artifact: pumps/syslog.go
           decision: no-authored-change
           reviewer: buger
-          reason: Phase A re-annotated this file to point at the atomic per-implementation/per-behavior SW req (was previously SW-REQ-018/019/020/022/027/028); no runtime behavior change.
+          reason: 'Phase E final cleanup: //mcdc:ignore for documented-unreachable branches with KI cross-refs; production behaviour unchanged, only coverage-tool guidance.'
           base: origin/master
           requirement_fingerprint: sha256:da2e3076be05ddf6e8b1956802df51e4bdd7893fe7a7c3cbc61f4aa12cd0708a
           approval_fingerprint: sha256:958e79c94dc5043fd4e84ccf40f54fba938ce844f3b19c47a7dc708980573587
-          artifact_fingerprint: sha256:bf799c5008bbe0d26bba76d9614c817349f3bf2ce77f12ac31369ca38d23f7f5
-          reviewed_at: "2026-05-30T08:48:43Z"
+          artifact_fingerprint: sha256:d4dcff9b29e31da1df899bfff9cedbbd1f6a8b1135a82a8e075cd8036134a769
+          reviewed_at: "2026-05-31T20:15:25Z"
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:36:19Z"

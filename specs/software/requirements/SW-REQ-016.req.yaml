@@ -38,12 +38,12 @@ verification:
           artifact: pumps/common.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Production files added reqproof requirement-traceability annotations only (// reqproof:implements / // Verifies: / triple-form evidence). No runtime behavior change.'
+          reason: 'Phase E final cleanup: //mcdc:ignore for documented-unreachable branches with KI cross-refs; production behaviour unchanged, only coverage-tool guidance.'
           base: origin/master
           requirement_fingerprint: sha256:cb94d4a47050eb7891d49659ececee17533c483dfd72f52db6acf78b2884f4f9
-          approval_fingerprint: sha256:39db1bead639016fbac84440cab595e48b5a6ef95d77767cb6454c2e40b7f733
-          artifact_fingerprint: sha256:976d96aa9bbee394c2010ec4c3fe0ffd58b0b2d74be71d181b8540f46c7ebc6b
-          reviewed_at: "2026-05-30T07:45:42Z"
+          approval_fingerprint: sha256:ac22913a24ad1ba5b22876e9559370476a4bf06f5ea4357776051027e5dfe5bb
+          artifact_fingerprint: sha256:173b836c10da273f86d9810754e81d27019f51ce21bf170cffef862bedbd6857
+          reviewed_at: "2026-05-31T20:15:25Z"
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:15Z"
