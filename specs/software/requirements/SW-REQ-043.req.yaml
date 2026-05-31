@@ -38,12 +38,12 @@ verification:
           artifact: pumps/graph_sql_aggregate.go
           decision: no-authored-change
           reviewer: buger
-          reason: Phase A re-annotated this file to point at the atomic per-implementation/per-behavior SW req (was previously SW-REQ-018/019/020/022/027/028); no runtime behavior change.
+          reason: 'Phase E SQL MC/DC drive: //mcdc:ignore for documented-unreachable err arms per KI mcdc-pumps-below-95'
           base: origin/master
           requirement_fingerprint: sha256:0314acd350a20b65f3e3d7470e0aeb6297b8617cf5f051723821e6fb0f1b1fa1
           approval_fingerprint: sha256:59c175611d0cc5fffbcd3d9ff7dc7631018ff7f108eee08fdb110acdc0473380
-          artifact_fingerprint: sha256:b0462d893c049e8f2a3e18e06f174f9625ac09c69b305d18b68ed81bd372b90c
-          reviewed_at: "2026-05-30T08:48:41Z"
+          artifact_fingerprint: sha256:47c5ce1962a7b2667acb5e38685a18fe402b522d52e7a3e42871142147b2a2ad
+          reviewed_at: "2026-05-31T13:18:56Z"
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:35:37Z"

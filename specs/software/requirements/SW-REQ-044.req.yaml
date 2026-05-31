@@ -38,12 +38,12 @@ verification:
           artifact: pumps/mcp_sql.go
           decision: no-authored-change
           reviewer: buger
-          reason: Phase A re-annotated this file to point at the atomic per-implementation/per-behavior SW req (was previously SW-REQ-018/019/020/022/027/028); no runtime behavior change.
+          reason: 'Phase E SQL MC/DC drive (round 2): //mcdc:ignore for HasTable/postgres-arm decisions per KI mcdc-pumps-below-95'
           base: origin/master
           requirement_fingerprint: sha256:ca5d56dd072c62abb74a7897abb765f2bf5ffc4e3985ba86005a5ccadd1ac33c
           approval_fingerprint: sha256:663dbb76c267aec9ddacd263468aade16da718571f5346215c352676dac0d5a7
-          artifact_fingerprint: sha256:f92857d3d380dd43c747f13da321179c0bdf28439a155485d595404ab79261c8
-          reviewed_at: "2026-05-30T08:48:41Z"
+          artifact_fingerprint: sha256:dda32ac6fb6c2d7cf1306ed09a90eacaff5bbec78939ddaa7f72bf17ed9f8cf2
+          reviewed_at: "2026-05-31T16:06:07Z"
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:35:43Z"

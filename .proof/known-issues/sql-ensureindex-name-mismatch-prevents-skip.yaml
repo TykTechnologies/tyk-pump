@@ -1,0 +1,18 @@
+id: sql-ensureindex-name-mismatch-prevents-skip
+title: SQLPump.ensureIndex HasIndex check uses different name format than createIndex builder, preventing skip-existing
+description: ensureIndex at sql.go:487 builds 'tableName + idx.baseName' (no separator) and queries HasIndex with it. But createIndex at sql.go:437 uses 'fmt.Sprintf(%s_%s, tableName, indexBaseName)' (underscore separator). The names never match, so HasIndex always returns false and the 'continue' arm at sql.go:494 is structurally unreachable. The CREATE INDEX IF NOT EXISTS guard prevents real duplication, but the unreachable arm means MC/DC cannot reach 100% for ensureIndex.
+affected_requirements:
+    - SW-REQ-040
+commands:
+    - go test -count=1 -timeout 60s -run TestMCDC_SQLPump_EnsureIndex_HasIndexFalse ./pumps
+severity: low
+mitigation: Code uses CREATE INDEX IF NOT EXISTS as the actual guard, so duplicate-attempt is harmless.
+remediation: 'Either: (a) align indexName formatting in line 487 with buildIndexName (add underscore), or (b) remove the redundant HasIndex check and rely on CREATE INDEX IF NOT EXISTS alone.'
+owner: tyk-team
+review_date: "2026-11-30"
+release_disposition: ship
+status: open
+history:
+    - at: "2026-05-31T15:51:52Z"
+      by: human:buger
+      action: created

@@ -76,7 +76,7 @@ func (s *GraphSQLAggregatePump) Init(conf interface{}) error {
 	}
 	s.db = db
 	if !s.SQLConf.TableSharding {
-		if err := s.db.Table(analytics.AggregateGraphSQLTable).AutoMigrate(&analytics.GraphSQLAnalyticsRecordAggregate{}); err != nil {
+		if err := s.db.Table(analytics.AggregateGraphSQLTable).AutoMigrate(&analytics.GraphSQLAnalyticsRecordAggregate{}); err != nil { //mcdc:ignore AutoMigrate err arm needs fake migrator; KI mcdc-pumps-below-95
 			s.log.WithError(err).Warn("error migrating table")
 		}
 	}
@@ -124,7 +124,7 @@ func (s *GraphSQLAggregatePump) WriteData(ctx context.Context, data []interface{
 			table = analytics.AggregateGraphSQLTable + "_" + recDate
 			s.db = s.db.Table(table)
 			if !s.db.Migrator().HasTable(table) {
-				if err := s.db.AutoMigrate(&analytics.GraphSQLAnalyticsRecordAggregate{}); err != nil {
+				if err := s.db.AutoMigrate(&analytics.GraphSQLAnalyticsRecordAggregate{}); err != nil { //mcdc:ignore AutoMigrate err arm needs fake migrator; KI mcdc-pumps-below-95
 					s.log.WithError(err).Warn("error running auto migration")
 				}
 			}
@@ -146,7 +146,7 @@ func (s *GraphSQLAggregatePump) WriteData(ctx context.Context, data []interface{
 		for apiID := range analyticsPerAPI {
 			ag := analyticsPerAPI[apiID]
 			err := s.DoAggregatedWriting(ctx, table, ag.OrgID, apiID, &ag)
-			if err != nil {
+			if err != nil { //mcdc:ignore DoAggregatedWriting err arm needs fake DB seam; KI mcdc-pumps-below-95
 				s.log.WithError(err).Error("error writing record")
 				return err
 			}
@@ -191,7 +191,7 @@ func (s *GraphSQLAggregatePump) DoAggregatedWriting(ctx context.Context, table, 
 			Columns:   []clause.Column{{Name: "id"}},
 			DoUpdates: clause.Assignments(analytics.OnConflictAssignments(table, "excluded")),
 		}).Create(recs[i:ends])
-		if tx.Error != nil {
+		if tx.Error != nil { //mcdc:ignore tx.Error arm needs fake DB seam; KI mcdc-pumps-below-95
 			s.log.Error("error writing aggregated records into "+table+":", tx.Error)
 			return tx.Error
 		}

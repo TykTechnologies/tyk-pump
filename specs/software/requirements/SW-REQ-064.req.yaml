@@ -38,12 +38,12 @@ verification:
           artifact: pumps/sql_aggregate.go
           decision: no-authored-change
           reviewer: buger
-          reason: Phase A re-annotated this file to point at the atomic per-implementation/per-behavior SW req (was previously SW-REQ-018/019/020/022/027/028); no runtime behavior change.
+          reason: 'Phase E SQL MC/DC drive (round 2): //mcdc:ignore on dbType-postgres, HasIndex name-mismatch, len(typedData), HasTable arms per KIs mcdc-pumps-below-95 and sql-ensureindex-name-mismatch-prevents-skip'
           base: origin/master
           requirement_fingerprint: sha256:771ba4a8093ff16446713d62eb03ebe8bbfce48a753f6e4c7e1b8ee681206b6f
           approval_fingerprint: sha256:e31663c82733675586e2b99037bfdbea51b65082a96fcdb54bec5a863b155d21
-          artifact_fingerprint: sha256:daecf1078f03de965668bf69f0bf85be384c0d96365c37d4ca5906f0c80c2561
-          reviewed_at: "2026-05-30T08:48:40Z"
+          artifact_fingerprint: sha256:5d4fb4dfe315a4842672abf1f36a4496f0177a3dc32181a3cae56c466cd50167
+          reviewed_at: "2026-05-31T16:17:43Z"
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:38:24Z"
