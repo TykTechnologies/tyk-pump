@@ -1,0 +1,21 @@
+id: mcdc-pumps-below-95
+title: Pumps code MC/DC at 58%/60% (below 95/95 policy) — structural error-path gaps
+description: After adding ./pumps to proof.yaml's code_mcdc targets and driving real backend tests via testcontainers (mongo, mysql, postgres, kafka, ES) + httptest fakes (HTTP pumps) + UDP listeners (statsd, syslog, graylog) + tempdir (csv/stdout), measured MC/DC is 57.9%/59.7% across 38 pump implementations. Most remaining decisions are 'err != nil = F' arms behind a real backend — driving F-side requires injecting fake persistent.PersistentStorage / fake GORM / fake HTTP transports, which require a connector-factory seam (production refactor). Driving T-side via real backend errors is sometimes infeasible (e.g. legacy ES v3/v5/v6 paths require running those legacy ES versions; SQL aggregate MySQL paths blocked by existing KIs sql-aggregate-mysql-excluded-keyword-broken and mcp-sql-aggregate-mysql-create-index-syntax-broken).
+affected_requirements:
+    - SW-REQ-034
+    - SW-REQ-019
+    - SW-REQ-021
+    - SW-REQ-022
+commands:
+    - go test -count=1 -timeout 600s -coverprofile=cover.out ./pumps
+severity: low
+mitigation: Threshold 95/95 retained; gap visible in audit output; waiver expires 2026-11-30. 5 sibling KIs name the concrete remediation per family.
+remediation: 'Connector-factory seam for pumps so fake persistent stores can be injected in tests; once available, the err-injection paths become reachable from external tests. ES legacy versions: testcontainers ES module ships v7 only; would need custom container images.'
+owner: tyk-team
+review_date: "2026-11-30"
+release_disposition: ship
+status: open
+history:
+    - at: "2026-05-31T08:55:19Z"
+      by: human:buger
+      action: created

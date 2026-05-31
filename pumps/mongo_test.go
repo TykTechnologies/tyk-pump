@@ -27,7 +27,8 @@ func newPump() Pump {
 // Verifies: SW-REQ-034
 func TestMongoPump_capCollection_Enabled(t *testing.T) {
 	pump := newPump()
-	conf := defaultConf()
+	conf := defaultConf(t)
+	conf.CollectionName = uniqueCollection(t)
 
 	mPump := pump.(*MongoPump)
 	mPump.dbConf = &conf
@@ -44,7 +45,8 @@ func TestMongoPump_capCollection_Enabled(t *testing.T) {
 // Verifies: SW-REQ-034
 func TestMongoPumpOmitIndexCreation(t *testing.T) {
 	pump := newPump()
-	conf := defaultConf()
+	conf := defaultConf(t)
+	conf.CollectionName = uniqueCollection(t)
 
 	mPump := pump.(*MongoPump)
 
@@ -56,6 +58,7 @@ func TestMongoPumpOmitIndexCreation(t *testing.T) {
 	records := []interface{}{record, record}
 	dbObject := createDBObject(conf.CollectionName)
 	mPump.connect()
+	t.Cleanup(func() { _ = mPump.store.DropDatabase(context.Background()) })
 
 	tcs := []struct {
 		testName             string
@@ -203,13 +206,13 @@ func HasTable(t *testing.T, mPump *MongoPump, dbObject model.DBObject) bool {
 // Verifies: SW-REQ-034
 func TestMongoPump_capCollection_Exists(t *testing.T) {
 	c := Conn{}
-	c.ConnectDb()
+	c.ConnectDb(t)
 	defer c.CleanDb()
 
 	c.InsertDoc()
 
 	pump := newPump()
-	conf := defaultConf()
+	conf := defaultConf(t)
 
 	mPump := pump.(*MongoPump)
 	mPump.dbConf = &conf
@@ -226,16 +229,16 @@ func TestMongoPump_capCollection_Exists(t *testing.T) {
 
 // Verifies: SW-REQ-034
 func TestMongoPump_capCollection_Not64arch(t *testing.T) {
-	c := Conn{}
-	c.ConnectDb()
-	defer c.CleanDb()
-
 	if strconv.IntSize >= 64 {
 		t.Skip("skipping as >= 64bit arch")
 	}
 
+	c := Conn{}
+	c.ConnectDb(t)
+	defer c.CleanDb()
+
 	pump := newPump()
-	conf := defaultConf()
+	conf := defaultConf(t)
 
 	mPump := pump.(*MongoPump)
 	mPump.dbConf = &conf
@@ -257,11 +260,11 @@ func TestMongoPump_capCollection_SensibleDefaultSize(t *testing.T) {
 	}
 
 	c := Conn{}
-	c.ConnectDb()
+	c.ConnectDb(t)
 	defer c.CleanDb()
 
 	pump := newPump()
-	conf := defaultConf()
+	conf := defaultConf(t)
 
 	mPump := pump.(*MongoPump)
 	mPump.dbConf = &conf
@@ -279,8 +282,26 @@ func TestMongoPump_capCollection_SensibleDefaultSize(t *testing.T) {
 	colStats := c.GetCollectionStats()
 
 	defSize := 5
-	if colStats["maxSize"].(int64) != int64(defSize*GiB) {
+	if asInt64(colStats["maxSize"]) != int64(defSize*GiB) {
 		t.Errorf("wrong sized capped collection created. Expected (%d), got (%d)", mPump.dbConf.CollectionCapMaxSizeBytes, colStats["maxSize"])
+	}
+}
+
+// asInt64 normalizes a mongo collection stat value that may come back as
+// int, int32, int64, or float64 depending on the driver/server version.
+// Verifies: SW-REQ-034
+func asInt64(v interface{}) int64 {
+	switch n := v.(type) {
+	case int:
+		return int64(n)
+	case int32:
+		return int64(n)
+	case int64:
+		return n
+	case float64:
+		return int64(n)
+	default:
+		return 0
 	}
 }
 
@@ -291,11 +312,11 @@ func TestMongoPump_capCollection_OverrideSize(t *testing.T) {
 	}
 
 	c := Conn{}
-	c.ConnectDb()
+	c.ConnectDb(t)
 	defer c.CleanDb()
 
 	pump := newPump()
-	conf := defaultConf()
+	conf := defaultConf(t)
 
 	mPump := pump.(*MongoPump)
 	mPump.dbConf = &conf
@@ -313,7 +334,7 @@ func TestMongoPump_capCollection_OverrideSize(t *testing.T) {
 
 	colStats := c.GetCollectionStats()
 
-	if colStats["maxSize"].(int64) != int64(mPump.dbConf.CollectionCapMaxSizeBytes) {
+	if asInt64(colStats["maxSize"]) != int64(mPump.dbConf.CollectionCapMaxSizeBytes) {
 		t.Errorf("wrong sized capped collection created. Expected (%d), got (%d)", mPump.dbConf.CollectionCapMaxSizeBytes, colStats["maxSize"])
 	}
 }
@@ -323,7 +344,7 @@ func TestMongoPump_AccumulateSet(t *testing.T) {
 	run := func(recordsGenerator func(numRecords int) []interface{}, expectedRecordsCount int) func(t *testing.T) {
 		return func(t *testing.T) {
 			pump := newPump()
-			conf := defaultConf()
+			conf := defaultConf(nil)
 			conf.MaxInsertBatchSizeBytes = 5120
 
 			numRecords := 100
@@ -384,7 +405,7 @@ func TestMongoPump_AccumulateSet(t *testing.T) {
 func TestMongoPump_AccumulateSetIgnoreDocSize(t *testing.T) {
 	bloat := base64.StdEncoding.EncodeToString(make([]byte, 2048))
 	pump := newPump()
-	conf := defaultConf()
+	conf := defaultConf(nil)
 	conf.MaxDocumentSizeBytes = 2048
 	mPump, ok := pump.(*MongoPump)
 	assert.True(t, ok)
@@ -518,7 +539,7 @@ func TestWriteUptimeData(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			newPump := &MongoPump{IsUptime: true}
-			conf := defaultConf()
+			conf := defaultConf(t)
 			err := newPump.Init(conf)
 			assert.Nil(t, err)
 
@@ -556,9 +577,10 @@ func TestWriteUptimeData(t *testing.T) {
 // Verifies: SW-REQ-034
 func TestDecodeRequestAndDecodeResponseMongo(t *testing.T) {
 	newPump := &MongoPump{}
-	conf := defaultConf()
+	conf := defaultConf(t)
 	err := newPump.Init(conf)
 	assert.Nil(t, err)
+	t.Cleanup(func() { _ = newPump.store.DropDatabase(context.Background()) })
 
 	// checking if the default values are false
 	assert.False(t, newPump.GetDecodedRequest())
@@ -576,10 +598,11 @@ func TestDecodeRequestAndDecodeResponseMongo(t *testing.T) {
 // Verifies: SW-REQ-034
 func TestDefaultDriver(t *testing.T) {
 	newPump := &MongoPump{}
-	defaultConf := defaultConf()
+	defaultConf := defaultConf(t)
 	defaultConf.MongoDriverType = ""
 	err := newPump.Init(defaultConf)
 	assert.Nil(t, err)
+	t.Cleanup(func() { _ = newPump.store.DropDatabase(context.Background()) })
 	assert.Equal(t, persistent.OfficialMongo, newPump.dbConf.MongoDriverType)
 }
 
@@ -609,7 +632,8 @@ func TestMongoPump_WriteData(t *testing.T) {
 	run := func(recordGenerator func(count int) []analytics.AnalyticsRecord) func(t *testing.T) {
 		return func(t *testing.T) {
 			pump := &MongoPump{}
-			conf := defaultConf()
+			conf := defaultConf(t)
+			conf.CollectionName = uniqueCollection(t)
 			pump.dbConf = &conf
 			pump.log = log.WithField("prefix", mongoPrefix)
 

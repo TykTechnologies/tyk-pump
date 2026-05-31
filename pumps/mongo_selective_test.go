@@ -18,7 +18,7 @@ func TestMongoSelectivePump_AccumulateSet(t *testing.T) {
 	run := func(recordsGenerator func(numRecords int) []interface{}, expectedRecordsCount, maxDocumentSizeBytes int) func(t *testing.T) {
 		return func(t *testing.T) {
 			mPump := MongoSelectivePump{}
-			conf := defaultSelectiveConf()
+			conf := defaultSelectiveConf(nil)
 			conf.MaxDocumentSizeBytes = maxDocumentSizeBytes
 
 			numRecords := 100
@@ -107,13 +107,13 @@ func TestMongoSelectivePump_AccumulateSet(t *testing.T) {
 // Verifies: SW-REQ-035
 func TestConnection(t *testing.T) {
 	mPump := MongoSelectivePump{}
-	conf := defaultSelectiveConf()
+	conf := defaultSelectiveConf(t)
 	mPump.dbConf = &conf
 	// Checking if the connection is nil before connecting
 	assert.Nil(t, mPump.store)
 	mPump.log = log.WithField("prefix", mongoPrefix)
 
-	t.Run("should connect to mgo", func(t *testing.T) {
+	t.Run("should connect to mongo", func(t *testing.T) {
 		// If connect fails, it will stop the execution with a fatal error
 		mPump.connect()
 		// Checking if the connection is not nil after connecting
@@ -126,10 +126,11 @@ func TestConnection(t *testing.T) {
 // Verifies: SW-REQ-035
 func TestEnsureIndexes(t *testing.T) {
 	mPump := MongoSelectivePump{}
-	conf := defaultSelectiveConf()
+	conf := defaultSelectiveConf(t)
 	mPump.dbConf = &conf
 	mPump.log = log.WithField("prefix", mongoPrefix)
 	mPump.connect()
+	t.Cleanup(func() { _ = mPump.store.DropDatabase(context.Background()) })
 
 	// _id, apiid_1, expireAt_1, logBrowserIndex are the current indexes
 	numberOfCreatedIndexes := 4
@@ -246,7 +247,7 @@ func TestEnsureIndexes(t *testing.T) {
 // Verifies: SW-REQ-035
 func TestWriteData(t *testing.T) {
 	mPump := MongoSelectivePump{}
-	conf := defaultSelectiveConf()
+	conf := defaultSelectiveConf(t)
 	mPump.dbConf = &conf
 	mPump.log = log.WithField("prefix", mongoPrefix)
 	mPump.connect()
@@ -340,7 +341,7 @@ func TestWriteUptimeDataMongoSelective(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			newPump := &MongoSelectivePump{}
-			conf := defaultConf()
+			conf := defaultConf(t)
 			err := newPump.Init(conf)
 			assert.Nil(t, err)
 
@@ -372,9 +373,10 @@ func TestWriteUptimeDataMongoSelective(t *testing.T) {
 // Verifies: SW-REQ-035
 func TestDecodeRequestAndDecodeResponseMongoSelective(t *testing.T) {
 	newPump := &MongoSelectivePump{}
-	conf := defaultConf()
+	conf := defaultConf(t)
 	err := newPump.Init(conf)
 	assert.Nil(t, err)
+	t.Cleanup(func() { _ = newPump.store.DropDatabase(context.Background()) })
 
 	// checking if the default values are false
 	assert.False(t, newPump.GetDecodedRequest())
@@ -392,9 +394,10 @@ func TestDecodeRequestAndDecodeResponseMongoSelective(t *testing.T) {
 // Verifies: SW-REQ-035
 func TestDefaultDriverSelective(t *testing.T) {
 	newPump := &MongoSelectivePump{}
-	defaultConf := defaultConf()
+	defaultConf := defaultConf(t)
 	defaultConf.MongoDriverType = ""
 	err := newPump.Init(defaultConf)
 	assert.Nil(t, err)
+	t.Cleanup(func() { _ = newPump.store.DropDatabase(context.Background()) })
 	assert.Equal(t, persistent.OfficialMongo, newPump.dbConf.MongoDriverType)
 }

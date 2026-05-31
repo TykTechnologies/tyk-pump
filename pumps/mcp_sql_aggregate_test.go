@@ -205,8 +205,13 @@ func TestMCPSQLAggregatePump_WriteData(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			pump := MCPSQLAggregatePump{}
 			require.NoError(t, pump.Init(conf))
+			// TRUNCATE before the write so the stable per-day ID never
+			// sees rows left over by a previous subtest if its cleanup
+			// raced the next Init's CREATE TABLE (the prior cleanup did
+			// not assert success, so any DROP TABLE error went unseen).
+			_ = pump.db.Exec(fmt.Sprintf("TRUNCATE TABLE %q", tableName)).Error
 			t.Cleanup(func() {
-				pump.db.Exec(fmt.Sprintf("DROP TABLE IF EXISTS %q", tableName))
+				_ = pump.db.Exec(fmt.Sprintf("DROP TABLE IF EXISTS %q CASCADE", tableName)).Error
 			})
 
 			records := tc.recordGenerator()
@@ -232,6 +237,22 @@ func TestMCPSQLAggregatePump_WriteData(t *testing.T) {
 func TestMCPSQLAggregatePump_WriteData_Sharded(t *testing.T) {
 	skipTestIfNoPostgres(t)
 	tableName := analytics.AggregateMCPSQLTable
+
+	// Defensive: previous non-sharded tests in this file (or in other
+	// files sharing the AggregateMCPSQLTable constant) may leave the base
+	// table behind if their cleanup raced an in-flight CONCURRENTLY index
+	// goroutine. Init with TableSharding=true does NOT (re)create the
+	// base table, so the `HasTable(tableName)` assertion below needs a
+	// clean slate.
+	cleanupPump := MCPSQLAggregatePump{}
+	require.NoError(t, cleanupPump.Init(SQLAggregatePumpConf{
+		SQLConf: SQLConf{
+			Type:             "postgres",
+			ConnectionString: getTestPostgresConnectionString(),
+			TableSharding:    false,
+		},
+	}))
+	_ = cleanupPump.db.Exec(fmt.Sprintf("DROP TABLE IF EXISTS %q CASCADE", tableName)).Error
 
 	pump := MCPSQLAggregatePump{}
 	require.NoError(t, pump.Init(SQLAggregatePumpConf{

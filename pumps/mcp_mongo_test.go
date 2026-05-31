@@ -159,8 +159,8 @@ func newMCPMongoPump(t *testing.T) *MCPMongoPump {
 	t.Helper()
 	analytics.MCPSQLTableName = ""
 
-	conf := defaultConf()
-	conf.CollectionName = "test_mcp_records"
+	conf := defaultConf(t)
+	conf.CollectionName = uniqueCollection(t)
 	pump := &MCPMongoPump{}
 	pump.dbConf = &conf
 	pump.log = log.WithField("prefix", mongoMCPPrefix)

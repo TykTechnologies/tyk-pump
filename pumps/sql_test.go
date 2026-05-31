@@ -11,17 +11,41 @@ import (
 	"gopkg.in/vmihailenco/msgpack.v2"
 )
 
+// sharedPostgresDSN caches the per-process Postgres DSN once resolved by
+// skipTestIfNoPostgres so the no-arg getTestPostgresConnectionString helper
+// keeps working without threading *testing.T through every call site.
+// Verifies: SW-REQ-040
+var sharedPostgresDSN string
+
 // Verifies: SW-REQ-040
 func getTestPostgresConnectionString() string {
+	if sharedPostgresDSN != "" {
+		return sharedPostgresDSN
+	}
 	return os.Getenv("TYK_TEST_POSTGRES")
 }
 
+// skipTestIfNoPostgres resolves a Postgres DSN for the running test.
+// Source priority:
+//  1. TYK_TEST_POSTGRES env var (preserves existing CI behaviour)
+//  2. Shared testcontainer (postgresConnectionDSN) - boots a per-process
+//     Postgres container the first time it is requested.
+//  3. Skip the test if Docker is unavailable and no env var was supplied.
+//
 // Verifies: SW-REQ-040
 func skipTestIfNoPostgres(t *testing.T) {
 	t.Helper()
-	if os.Getenv("TYK_TEST_POSTGRES") == "" {
-		t.Skip("Skipping test because TYK_TEST_POSTGRES environment variable is not set")
+	if dsn := os.Getenv("TYK_TEST_POSTGRES"); dsn != "" {
+		sharedPostgresDSN = dsn
+		return
 	}
+	if sharedPostgresDSN != "" {
+		return
+	}
+	// postgresConnectionDSN will t.Skip when Docker is not available so this
+	// preserves the original "skip when no Postgres" semantics.
+	dsn := postgresConnectionDSN(t)
+	sharedPostgresDSN = dsn
 }
 
 // Verifies: SW-REQ-040

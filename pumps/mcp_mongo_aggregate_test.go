@@ -16,7 +16,7 @@ import (
 func newMCPMongoAggregatePump(t *testing.T) *MCPMongoAggregatePump {
 	t.Helper()
 	cfgPump := make(map[string]interface{})
-	cfgPump["mongo_url"] = dbAddr
+	cfgPump["mongo_url"] = testMongoURI(t)
 	cfgPump["use_mixed_collection"] = true
 
 	pump := &MCPMongoAggregatePump{}

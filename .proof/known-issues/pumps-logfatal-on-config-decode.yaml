@@ -1,0 +1,16 @@
+id: pumps-logfatal-on-config-decode
+title: Pump Init log.Fatals on mapstructure.Decode error, crashing tyk-pump
+description: 'pumps/statsd.go:62, pumps/syslog.go:82, pumps/graylog.go:76, pumps/prometheus.go:193, pumps/csv.go:57, pumps/stdout.go:65 all use s.log.Fatal("Failed to decode configuration: ", err) inside Init when mapstructure.Decode returns an error. log.Fatal calls os.Exit(1), which kills the entire tyk-pump process instead of disabling the offending pump and letting siblings continue. SYS-REQ-004 (per-backend failure independence) is violated: a single misconfigured pump entry in pump_conf prevents the rest of the pump fleet from starting. Contrast with pumps/dogstatsd.go which returns a wrapped error from Init — that is the desired contract.'
+affected_requirements:
+    - SYS-REQ-004
+severity: medium
+mitigation: Validate pump configs (especially type-compatibility against mapstructure tags) before deploying tyk-pump; pin pump configs in source control with schema checks.
+remediation: Replace s.log.Fatal at pumps/statsd.go:62, pumps/syslog.go:82, pumps/graylog.go:76, pumps/prometheus.go:193, pumps/csv.go:57, pumps/stdout.go:65 with s.log.WithError(err).Error(...) + return err. The pump runner (main.go execPumpWriting) already handles a non-nil Init error gracefully — it skips the failing pump and continues.
+owner: tyk-team
+review_date: "2026-08-30"
+release_disposition: ship_with_known_issue
+status: open
+history:
+    - at: "2026-05-31T08:04:19Z"
+      by: human:leo
+      action: created

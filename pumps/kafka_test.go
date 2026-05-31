@@ -85,8 +85,9 @@ func TestKafkaPump_Init_BatchBytesConfiguration(t *testing.T) {
 
 // Verifies: SW-REQ-021
 func TestKafkaPump_Init_BatchBytesWithOtherConfigs(t *testing.T) {
+	brokers := kafkaBrokerAddrs(t)
 	config := map[string]interface{}{
-		"broker":                   []string{"localhost:9092"},
+		"broker":                   brokers,
 		"topic":                    "test-topic",
 		"batch_bytes":              512000, // 500KB
 		"client_id":                "test-client",
@@ -104,7 +105,7 @@ func TestKafkaPump_Init_BatchBytesWithOtherConfigs(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Equal(t, 512000, pump.writerConfig.BatchBytes)
-	assert.Equal(t, []string{"localhost:9092"}, pump.writerConfig.Brokers)
+	assert.Equal(t, brokers, pump.writerConfig.Brokers)
 	assert.Equal(t, "test-topic", pump.writerConfig.Topic)
 	assert.NotNil(t, pump.writerConfig.CompressionCodec)
 	assert.IsType(t, &kafka.LeastBytes{}, pump.writerConfig.Balancer)
@@ -129,9 +130,12 @@ func TestKafkaPump_BatchBytesEnvironmentVariable(t *testing.T) {
 
 // Verifies: SW-REQ-021
 func TestKafkaPump_WriterConfigIntegrity(t *testing.T) {
-	// Test that BatchBytes configuration doesn't interfere with other writer config fields
+	// Test that BatchBytes configuration doesn't interfere with other writer config fields.
+	// Uses the live testcontainer broker addresses so the configured brokers are
+	// realistic (still no produce traffic — this is a config-shape integrity test).
+	brokers := kafkaBrokerAddrs(t)
 	config := map[string]interface{}{
-		"broker":      []string{"localhost:9092", "localhost:9093"},
+		"broker":      brokers,
 		"topic":       "analytics-topic",
 		"batch_bytes": 2097152, // 2MB
 		"client_id":   "tyk-pump-test",
@@ -148,7 +152,7 @@ func TestKafkaPump_WriterConfigIntegrity(t *testing.T) {
 	assert.Equal(t, 2097152, pump.writerConfig.BatchBytes)
 
 	// Verify other configurations are not affected
-	assert.Equal(t, []string{"localhost:9092", "localhost:9093"}, pump.writerConfig.Brokers)
+	assert.Equal(t, brokers, pump.writerConfig.Brokers)
 	assert.Equal(t, "analytics-topic", pump.writerConfig.Topic)
 	assert.NotNil(t, pump.writerConfig.CompressionCodec)
 	assert.NotNil(t, pump.writerConfig.Dialer)

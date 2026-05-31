@@ -35,6 +35,9 @@ project:
             storage:
                 language: go
                 command: go test -count=1 -timeout=180s -coverprofile=../cover.out ./storage
+            pumps:
+                language: go
+                command: go test -count=1 -timeout=300s -coverprofile=../cover.out ./pumps
     lint:
         exclude:
             - '**/*.pb.go'
@@ -81,6 +84,11 @@ project:
                   scope: ./storage
                   test_command: storage
                   test_packages: ./storage
+                - id: pumps
+                  language: go
+                  scope: ./pumps
+                  test_command: pumps
+                  test_packages: ./pumps
         evidence_diversity:
             min_classes:
                 B: 2

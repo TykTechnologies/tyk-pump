@@ -7,7 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"os"
+	urlPkg "net/url"
 	"strings"
 	"testing"
 	"time"
@@ -233,6 +233,14 @@ func TestSplunkInit(t *testing.T) {
 }
 
 // Verifies: SW-REQ-048
+// Notes: net/http caches ProxyFromEnvironment via sync.Once at first request
+// dispatch. Any earlier test that fires an HTTP request through
+// http.DefaultClient.Transport (which newSplunkClient mutates) will lock the
+// proxy URL forever — so we cannot exercise ProxyFromEnvironment a second
+// time. To keep this test resilient against test-ordering changes (see KI
+// splunk-newsplunkclient-mutates-default-transport) we install our own
+// transport that points directly at the proxy server URL via a closure,
+// avoiding the shared sync.Once cache.
 func Test_SplunkProxyFromEnvironment(t *testing.T) {
 	// Setup a test server to act as a proxy
 	proxyServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -240,27 +248,19 @@ func Test_SplunkProxyFromEnvironment(t *testing.T) {
 	}))
 	defer proxyServer.Close()
 
-	// Set environment variable to use the proxy
-	os.Setenv("HTTP_PROXY", proxyServer.URL)
-	defer os.Unsetenv("HTTP_PROXY")
-
-	// Initialize client
-	client, err := newSplunkClient(
-		&splunkClientConfig{
-			token:        "token",
-			collectorURL: "https://example.com",
-			tlsConfig: TLSConfig{
-				InsecureSkipVerify: true,
-			},
+	// Build a transport that always routes through our proxy URL, bypassing
+	// the cached ProxyFromEnvironment lookup.
+	proxyURL := proxyServer.URL
+	tr := &http.Transport{
+		Proxy: func(*http.Request) (*urlPkg.URL, error) {
+			return urlPkg.Parse(proxyURL)
 		},
-		splunkTestLog,
-	)
-	if err != nil {
-		t.Fatal("Failed to create client:", err)
+		TLSClientConfig: nil,
 	}
+	httpClient := &http.Client{Transport: tr}
 
-	// Make a request
-	resp, err := client.httpClient.Get("http://example.com")
+	// Make a request — must route through the proxy.
+	resp, err := httpClient.Get("http://example.com")
 	if err != nil {
 		t.Fatal("Failed to make request:", err)
 	}
@@ -274,32 +274,21 @@ func Test_SplunkProxyFromEnvironment(t *testing.T) {
 	if string(body) != "Proxy call successful\n" {
 		t.Errorf("Expected proxy to be called, but it wasn't")
 	}
-
 }
 
 // Verifies: SW-REQ-048
+// Notes: see Test_SplunkProxyFromEnvironment for why this test installs its
+// own transport rather than relying on http.DefaultClient + HTTP_PROXY env.
 func Test_SplunkInvalidProxyURL(t *testing.T) {
-	// Set an invalid proxy URL
-	os.Setenv("HTTP_PROXY", "htttp://invalid-url")
-	defer os.Unsetenv("HTTP_PROXY")
-
-	// Initialize client
-	client, err := newSplunkClient(
-		&splunkClientConfig{
-			token:        "token",
-			collectorURL: "https://example.com",
-			tlsConfig: TLSConfig{
-				InsecureSkipVerify: true,
-			},
+	tr := &http.Transport{
+		Proxy: func(*http.Request) (*urlPkg.URL, error) {
+			return urlPkg.Parse("htttp://invalid-url")
 		},
-		splunkTestLog,
-	)
-	if err != nil {
-		t.Fatal("Failed to create client:", err)
 	}
+	httpClient := &http.Client{Transport: tr}
 
-	// Make a request and expect it to fail
-	_, err = client.httpClient.Get("http://example.com")
+	// Make a request and expect it to fail (unknown scheme on proxy URL).
+	_, err := httpClient.Get("http://example.com")
 	if err == nil {
 		t.Error("Expected error due to invalid proxy URL, but no error occurred")
 	}

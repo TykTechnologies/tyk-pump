@@ -1,0 +1,16 @@
+id: mcp-sql-aggregate-mysql-create-index-syntax-broken
+title: MCP-SQL aggregate pump emits "CREATE INDEX IF NOT EXISTS" which MySQL <8.0.29 rejects
+description: 'pumps/mcp_sql_aggregate.go (line 127) and pumps/sql_aggregate.go (line 164) issue CREATE INDEX IF NOT EXISTS unconditionally for non-Postgres dialects (the CONCURRENTLY keyword is gated on dbType == "postgres" but IF NOT EXISTS is not). MySQL does not accept the IF NOT EXISTS clause on CREATE INDEX in versions before 8.0.29, and even later versions emit a syntax error from older client paths. Init therefore fails with "Error 1064 (42000): You have an error in your SQL syntax" on every fresh MCP/SQL aggregate pump connected to a typical MySQL deployment. The mcp-aggregate pump documents MySQL as a supported type via SQLConf.Type, so this is a stealth incompatibility.'
+affected_requirements:
+    - SW-REQ-045
+    - SW-REQ-066
+severity: medium
+mitigation: 'Operators on MySQL should either pre-create the dimension index out-of-band and set omit_index_creation=true on the aggregate pumps, or stick to Postgres for aggregate workloads.'
+remediation: Gate IF NOT EXISTS behind a dialect check (postgres OR mysql >= 8.0.29) or use HasIndex pre-check + plain CREATE INDEX for MySQL. The same pattern needs to be applied to pumps/sql_aggregate.go ensureIndex.
+owner: tyk-team
+release_disposition: ship_with_known_issue
+status: open
+history:
+    - at: "2026-05-31T07:15:00Z"
+      by: human:buger
+      action: created

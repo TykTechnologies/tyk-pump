@@ -3,14 +3,20 @@ title: TestMongoPump_capCollection_OverrideSize panics under mongo6 (int vs int6
 description: 'pumps/mongo_test.go:316 TestMongoPump_capCollection_OverrideSize panics with ''interface conversion: interface {} is int, not int64'' when run against a mongo:6 server. Mongo client v6 returns capped-collection size as int; the test asserts int64 via colStats["maxSize"].(int64). The panic crashes the whole pumps package test run, taking down the evidence set for SW-REQ-018. Workaround: run mongo tests against the older mongo:4 / mongo:5 server image, or fix the assertion to accept both int and int64.'
 affected_requirements:
     - SW-REQ-018
+commands:
+    - go test -count=1 -timeout 60s -run TestMongoPump_capCollection_OverrideSize ./pumps
 severity: medium
 reproducer_command: MONGO_DRIVER=mongo-go go test -run TestMongoPump_capCollection_OverrideSize -count=1 ./pumps
-mitigation: Pin the mongo server image used in CI to mongo:4 or mongo:5 so the type assertion at pumps/mongo_test.go:316 stays valid.
+mitigation: 'Fixed at test level: the assertion now uses an asInt64(v interface{}) helper in pumps/mongo_test.go that accepts int, int32, int64, and float64. Test passes against both mongo:6 and mongo:7 via the testcontainer harness.'
 remediation: Coerce the type assertion to accept both int and int64 (switch on colStats["maxSize"].(type)) so the test passes against mongo 4/5/6 driver/server pairings.
 owner: tyk-team
 release_disposition: ship
-status: open
+status: fixed
 history:
     - at: "2026-05-30T08:12:00Z"
       by: human:buger
       action: created
+    - at: "2026-05-31T08:43:41Z"
+      by: human:leo
+      action: edit
+      detail: set-mitigation,set-status=fixed,add-command

@@ -12,17 +12,39 @@ import (
 	"gorm.io/gorm"
 )
 
+// sharedMySQLDSN caches the per-process MySQL DSN once resolved by
+// skipTestIfNoMySQL. Mirrors sharedPostgresDSN in sql_test.go so the no-arg
+// getTestMySQLConnectionString keeps working without test-wide refactors.
+// Verifies: SW-REQ-040
+var sharedMySQLDSN string
+
 // Verifies: SW-REQ-040
 func getTestMySQLConnectionString() string {
+	if sharedMySQLDSN != "" {
+		return sharedMySQLDSN
+	}
 	return os.Getenv("TYK_TEST_MYSQL")
 }
 
+// skipTestIfNoMySQL resolves a MySQL DSN for the running test.
+// Source priority:
+//  1. TYK_TEST_MYSQL env var (preserves existing CI behaviour)
+//  2. Shared testcontainer (mysqlConnectionDSN) - boots a per-process
+//     MySQL container the first time it is requested.
+//  3. Skip the test if Docker is unavailable and no env var was supplied.
+//
 // Verifies: SW-REQ-040
 func skipTestIfNoMySQL(t *testing.T) {
 	t.Helper()
-	if os.Getenv("TYK_TEST_MYSQL") == "" {
-		t.Skip("Skipping test because TYK_TEST_MYSQL environment variable is not set")
+	if dsn := os.Getenv("TYK_TEST_MYSQL"); dsn != "" {
+		sharedMySQLDSN = dsn
+		return
 	}
+	if sharedMySQLDSN != "" {
+		return
+	}
+	dsn := mysqlConnectionDSN(t)
+	sharedMySQLDSN = dsn
 }
 
 // Verifies: SW-REQ-040

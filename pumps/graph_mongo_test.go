@@ -12,7 +12,8 @@ import (
 
 // Verifies: SW-REQ-037
 func TestGraphMongoPump_WriteData(t *testing.T) {
-	conf := defaultConf()
+	conf := defaultConf(t)
+	conf.CollectionName = uniqueCollection(t)
 	pump := GraphMongoPump{
 		MongoPump: MongoPump{
 			dbConf: &conf,
@@ -24,6 +25,7 @@ func TestGraphMongoPump_WriteData(t *testing.T) {
 	pump.dbConf.CollectionCapMaxSizeBytes = 0
 
 	pump.connect()
+	t.Cleanup(func() { _ = pump.store.DropDatabase(context.Background()) })
 
 	sampleRecord := analytics.AnalyticsRecord{
 		APIName: "Test API",
@@ -177,15 +179,22 @@ func TestGraphMongoPump_WriteData(t *testing.T) {
 // Verifies: SW-REQ-037
 func TestGraphMongoPump_Init(t *testing.T) {
 	pump := GraphMongoPump{}
+	t.Cleanup(func() {
+		if pump.store != nil {
+			_ = pump.store.DropDatabase(context.Background())
+		}
+	})
 	t.Run("successful init", func(t *testing.T) {
-		conf := defaultConf()
+		conf := defaultConf(t)
+		conf.CollectionName = uniqueCollection(t)
 		assert.NoError(t, pump.Init(conf))
 	})
 	t.Run("invalid conf type", func(t *testing.T) {
 		assert.ErrorContains(t, pump.Init("test"), "expected a map")
 	})
 	t.Run("max document and insert size set", func(t *testing.T) {
-		conf := defaultConf()
+		conf := defaultConf(t)
+		conf.CollectionName = uniqueCollection(t)
 		conf.MaxInsertBatchSizeBytes = 0
 		conf.MaxDocumentSizeBytes = 0
 		err := pump.Init(conf)
@@ -198,9 +207,11 @@ func TestGraphMongoPump_Init(t *testing.T) {
 // Verifies: SW-REQ-037
 func TestDecodeRequestAndDecodeResponseGraphMongo(t *testing.T) {
 	newPump := &GraphMongoPump{}
-	conf := defaultConf()
+	conf := defaultConf(t)
+	conf.CollectionName = uniqueCollection(t)
 	err := newPump.Init(conf)
 	assert.Nil(t, err)
+	t.Cleanup(func() { _ = newPump.store.DropDatabase(context.Background()) })
 
 	// checking if the default values are false
 	assert.False(t, newPump.GetDecodedRequest())
