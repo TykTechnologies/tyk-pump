@@ -5,7 +5,7 @@ priority: shall
 category: constraint
 req_type: constraint
 fretish: runtime shall always satisfy single_process_only
-description: tyk-pump shall run as a single-process daemon; clustered or sharded multi-process deployments are out of scope.
+description: 'Each tyk-pump instance runs as a single-process daemon: there is no internal clustering, no leader election, and no inter-instance coordination machinery. Operators may deploy multiple independent tyk-pump instances against the same Redis/backends as an operational scaling pattern (each instance reads from the shared queue and routes records via its own filter configuration), but tyk-pump itself provides no clustering or sharding machinery; capacity scaling is operator-deployed via process replication, not built into the pump.'
 formalization_strategy: fretish
 informal_verification:
     method: inspection
@@ -29,15 +29,15 @@ verification:
         status: approved
         reviewer: human:buger
         role: system_engineer
-        reviewed_at: "2026-05-30T08:22:48Z"
-        comment: 'Phase B constraint reqs: linked to satisfying STK, rationale added, FRETish formalized as project-level invariants, formalized:false reverted to fretish-strategy via the invariant form. Verified against go.mod / storage code / Makefile / runtime model.'
-        fingerprint: sha256:a666b6e836770114a96adfee0daaf05680cdb93710d0ec3ef1b4e1e4943795dc
+        reviewed_at: "2026-06-01T17:21:19Z"
+        comment: 'Phase F: clarify single-process-per-instance wording — operators may run multiple instances against shared backends as an operational scaling pattern, but tyk-pump itself has no clustering machinery.'
+        fingerprint: sha256:3e622d1804efd418d7e75868d2eae6c037cfc8e676a6c2252a15b975bf88c92b
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:13:45Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-30T08:22:48Z"
+    last_modified_at: "2026-06-01T17:21:19Z"
 obligation_class: nominal
 lifecycle:
     change_history:
@@ -50,4 +50,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="system_engineer" reviewer="human:buger" at=2026-05-30T08:14:23Z comment="Phase B constraint reqs: project-level constraints derived from go.mod, storage code, Makefile, and deployment model. Each is code-verifiable: Go version in go.mod, Redis dep in storage/temporal_storage.go imports, FIPS in Makefile, single-process in main.go runtime.")'
+          changed_by: human:cli
+        - date: "2026-06-01T17:21:19Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="system_engineer" reviewer="human:buger" at=2026-05-30T08:22:48Z comment="Phase B constraint reqs: linked to satisfying STK, rationale added, FRETish formalized as project-level invariants, formalized:false reverted to fretish-strategy via the invariant form. Verified against go.mod / storage code / Makefile / runtime model.")'
           changed_by: human:cli
