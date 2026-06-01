@@ -4,6 +4,8 @@ description: 'pumps/elasticsearch.go:407-415 connect() recurses to itself on fai
 affected_requirements:
     - SYS-REQ-004
     - SYS-REQ-005
+evidence_manifests:
+    - code_signal:opengrep:go.recursion.unbounded-on-error:pumps/elasticsearch.go:407
 severity: medium
 mitigation: Avoid persistent ES outages; monitor ES uptime out-of-band. Stop and restart tyk-pump if recurring ES errors appear in logs.
 remediation: Replace recursion with the retry package's bounded ExponentialBackoff and a retry-count limit; on exhaustion, return an error from WriteData so the batch is logged-and-skipped rather than recursing.
@@ -17,17 +19,11 @@ history:
     - at: "2026-05-31T07:30:00Z"
       by: agent:claude
       action: regression_test_added
-      note: |
-        Added regression test pumps/elasticsearch_mcdc_test.go:TestElasticsearchPump_KI_UnboundedReconnectRecursion.
-        It points the pump at 127.0.0.1:1 (immediate ECONNREFUSED), launches connect()
-        in a goroutine, captures a goroutine stack snapshot after ~8s and asserts
-        that the symbol
-        github.com/TykTechnologies/tyk-pump/pumps.(*ElasticsearchPump).connect
-        appears in the live stack — proving the recursive self-call is active.
-        The goroutine is deliberately leaked because connect() has no
-        cancellation mechanism; this is bounded by the test-process lifetime.
-        Observation: after ~8s the goroutine is inside the first time.Sleep
-        between iterations (depth=1 frame); further depth grows by 1 every 5s
-        until a stack-overflow finally kills the process under sustained
-        outage. The test asserts presence-of-recursion, not depth, to keep
-        the wall-clock cost bounded.
+    - at: "2026-06-01T19:12:26Z"
+      by: human:leo
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-01T19:12:45Z"
+      by: human:leo
+      action: edit
+      detail: add-evidence-manifest

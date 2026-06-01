@@ -1,0 +1,372 @@
+rules:
+  - id: go.log.fatal-in-init
+    severity: WARNING
+    languages: [go]
+    message: |
+      log.Fatal / os.Exit called from a non-main constructor or processing function.
+      This aborts the entire process and bypasses caller error handling - return
+      an error instead so the caller can recover. log.Fatal is acceptable only
+      in package main.
+    metadata:
+      proof:
+        signal_id: process.log_fatal_in_init
+        provider: opengrep
+        tags: [logging, error_handling]
+        obligations: [errors_propagated]
+        confidence: high
+    patterns:
+      - pattern-either:
+          - pattern: |
+              func ($RECV $T) Init(...) error {
+                ...
+                log.Fatal(...)
+                ...
+              }
+          - pattern: |
+              func ($RECV $T) Init(...) error {
+                ...
+                $L.Fatal(...)
+                ...
+              }
+          - pattern: |
+              func ($RECV $T) Init(...) error {
+                ...
+                log.Fatalf(...)
+                ...
+              }
+          - pattern: |
+              func ($RECV $T) Init(...) error {
+                ...
+                $L.Fatalf(...)
+                ...
+              }
+          - pattern: |
+              func ($RECV $T) WriteData(...) error {
+                ...
+                log.Fatal(...)
+                ...
+              }
+          - pattern: |
+              func ($RECV $T) WriteData(...) error {
+                ...
+                $L.Fatal(...)
+                ...
+              }
+          - pattern: |
+              func ($RECV $T) WriteData(...) error {
+                ...
+                log.Fatalf(...)
+                ...
+              }
+          - pattern: |
+              func ($RECV $T) WriteData(...) error {
+                ...
+                $L.Fatalf(...)
+                ...
+              }
+
+  - id: go.context.dropped-on-floor
+    severity: WARNING
+    languages: [go]
+    message: |
+      Function receives a context.Context parameter but creates a fresh
+      context.Background() / context.TODO() inside the body and uses that
+      instead. The caller-supplied ctx (with its deadline and cancellation)
+      is silently dropped. Pass the parameter ctx downstream, or document
+      why a fresh context is intentional.
+    metadata:
+      proof:
+        signal_id: context.dropped_on_floor
+        provider: opengrep
+        tags: [concurrent, error_propagation]
+        obligations: [cancellation_observed]
+        confidence: medium
+    patterns:
+      - pattern-either:
+          - pattern: |
+              func $F(..., $CTX context.Context, ...) error {
+                ...
+                context.Background()
+                ...
+              }
+          - pattern: |
+              func ($RECV $T) $M(..., $CTX context.Context, ...) error {
+                ...
+                context.Background()
+                ...
+              }
+          - pattern: |
+              func $F(..., $CTX context.Context, ...) error {
+                ...
+                context.TODO()
+                ...
+              }
+          - pattern: |
+              func ($RECV $T) $M(..., $CTX context.Context, ...) error {
+                ...
+                context.TODO()
+                ...
+              }
+      - pattern-not: context.WithoutCancel($CTX)
+
+  - id: go.recursion.unbounded-on-error
+    severity: WARNING
+    languages: [go]
+    message: |
+      Function calls itself recursively after a sleep on the error arm with
+      no retry counter, no max-attempts, and no context-deadline check.
+      Each recursion adds a stack frame; under sustained failure the
+      goroutine eventually stack-overflows. Use a bounded loop or a
+      backoff library (e.g. cenkalti/backoff) with MaxElapsedTime/Permanent.
+    metadata:
+      proof:
+        signal_id: recursion.unbounded_on_error
+        provider: opengrep
+        tags: [error_handling, concurrent]
+        obligations: [errors_propagated]
+        confidence: medium
+    patterns:
+      - pattern-either:
+          - pattern: |
+              func ($RECV $T) $M() {
+                ...
+                if $ERR != nil {
+                    ...
+                    time.Sleep(...)
+                    $RECV.$M()
+                    ...
+                }
+                ...
+              }
+          - pattern: |
+              func $F() {
+                ...
+                if $ERR != nil {
+                    ...
+                    time.Sleep(...)
+                    $F()
+                    ...
+                }
+                ...
+              }
+      - pattern-not: |
+          if $N < $MAX {
+              ...
+              time.Sleep(...)
+              $F()
+          }
+
+  - id: go.mapstructure.lenient-decode
+    severity: INFO
+    languages: [go]
+    message: |
+      mapstructure.Decode silently ignores unknown keys in the input map.
+      For configuration parsing this hides typos (e.g. csv_pathh instead of
+      csv_path). Use mapstructure.NewDecoder with a DecoderConfig that sets
+      ErrorUnused: true so unknown keys produce an error.
+    metadata:
+      proof:
+        signal_id: deserializer.mapstructure_lenient
+        provider: opengrep
+        tags: [deserializer, structured_data_parser]
+        obligations: [malformed_recovers_or_errors_loudly]
+        confidence: high
+    patterns:
+      - pattern-either:
+          - pattern: mapstructure.Decode($IN, $OUT)
+          - pattern: mapstructure.WeakDecode($IN, $OUT)
+      - pattern-not-inside: |
+          &mapstructure.DecoderConfig{..., ErrorUnused: true, ...}
+
+  - id: go.http.default-transport-mutation
+    severity: WARNING
+    languages: [go]
+    message: |
+      Assignment mutates http.DefaultClient or http.DefaultTransport from a
+      library/constructor. These are process-wide globals - mutating them
+      affects every other consumer in the process, makes tests order-
+      dependent, and can permanently bind cached env-derived state like
+      ProxyFromEnvironment. Build a private *http.Client/*http.Transport
+      and store it on your struct instead.
+    metadata:
+      proof:
+        signal_id: http.default_transport_mutation
+        provider: opengrep
+        tags: [http_client, process_local]
+        obligations: [request_timeout_bounded]
+        confidence: high
+    patterns:
+      - pattern-either:
+          - pattern: http.DefaultClient.Transport = $X
+          - pattern: http.DefaultClient.Timeout = $X
+          - pattern: http.DefaultClient = $X
+          - pattern: http.DefaultTransport = $X
+      - pattern-not-inside: |
+          func TestMain($T *testing.M) {
+              ...
+          }
+      - pattern-not-inside: |
+          func main() {
+              ...
+          }
+
+  - id: go.backoff.maxelapsed-zero-is-unbounded
+    severity: INFO
+    languages: [go]
+    message: |
+      cenkalti/backoff ExponentialBackOff treats MaxElapsedTime = 0 as
+      "retry forever", not "no retry". If unbounded retry is the intent,
+      add a comment documenting it; otherwise set a finite duration (e.g.
+      a few minutes) so the process can fail-fast and a supervisor can
+      restart it.
+    metadata:
+      proof:
+        signal_id: backoff.maxelapsed_zero
+        provider: opengrep
+        tags: [error_handling, scheduler]
+        obligations: [external_call_timeout_bounded]
+        confidence: medium
+    patterns:
+      - pattern-either:
+          - pattern: $B.MaxElapsedTime = 0
+          - pattern: |
+              backoff.ExponentialBackOff{..., MaxElapsedTime: 0, ...}
+          - pattern: |
+              &backoff.ExponentialBackOff{..., MaxElapsedTime: 0, ...}
+
+  - id: go.goroutine.no-recover
+    severity: INFO
+    languages: [go]
+    message: |
+      Goroutine launched without a deferred recover at the top of its body.
+      A panic inside the goroutine cannot be caught by the launching frame
+      and will crash the whole process. For fan-out / long-lived / per-
+      request goroutines, add `defer func() { if r := recover(); r != nil
+      { log + metric } }()` at the start of the body.
+    metadata:
+      proof:
+        signal_id: concurrency.goroutine_no_recover
+        provider: opengrep
+        tags: [concurrent, panic_safety]
+        obligations: [panic_free_input_handling]
+        confidence: low
+    patterns:
+      - pattern-either:
+          - pattern: |
+              go func() {
+                  ...
+              }()
+          - pattern: |
+              go func(...) {
+                  ...
+              }(...)
+      - pattern-not: |
+          go func() {
+              defer func() {
+                  if r := recover(); r != nil {
+                      ...
+                  }
+              }()
+              ...
+          }()
+      - pattern-not: |
+          go func(...) {
+              defer func() {
+                  if r := recover(); r != nil {
+                      ...
+                  }
+              }()
+              ...
+          }(...)
+
+  - id: go.http.health-handler-unconditional-200
+    severity: INFO
+    languages: [go]
+    message: |
+      HTTP handler appears to return 200 unconditionally. If this is mounted
+      as a readiness probe it will report ready even before dependencies are
+      reachable. Either gate the 200 on a real readiness check, or rename
+      the route to /livez and add a separate /readyz with a real check.
+    metadata:
+      proof:
+        signal_id: http.health_unconditional_200
+        provider: opengrep
+        tags: [http_server]
+        obligations: [external_call_failure_observable]
+        confidence: low
+    patterns:
+      - pattern-either:
+          - pattern: |
+              func $H($W http.ResponseWriter, $R *http.Request) {
+                  $W.WriteHeader(http.StatusOK)
+              }
+          - pattern: |
+              func $H($W http.ResponseWriter, $R *http.Request) {
+                  $W.Write([]byte($S))
+              }
+          - pattern: |
+              func $H($W http.ResponseWriter, $R *http.Request) {
+                  fmt.Fprint($W, $S)
+              }
+          - pattern: |
+              func $H($W http.ResponseWriter, $R *http.Request) {
+                  $W.WriteHeader(http.StatusOK)
+                  $W.Write([]byte($S))
+              }
+
+  - id: go.slice.preallocated-with-continue-on-error
+    severity: INFO
+    languages: [go]
+    message: |
+      Slice is pre-allocated with len() (not cap), filled by indexed
+      assignment, but the loop body uses continue on error - leaving
+      zero/nil-valued holes in the result. Downstream consumers that
+      assume every slot is valid will dereference the nil. Either use
+      make([]T, 0, len(input)) with append, or resize the slice after
+      the loop with the count of successful entries.
+    metadata:
+      proof:
+        signal_id: slice.preallocated_continue_on_error
+        provider: opengrep
+        tags: [error_handling, panic_safety]
+        obligations: [nil_safety]
+        confidence: medium
+    patterns:
+      - pattern: |
+          $S := make([]$T, len($IN))
+          ...
+          for $I, $V := range $IN {
+              ...
+              if $ERR != nil {
+                  ...
+                  continue
+              }
+              ...
+              $S[$I] = $X
+              ...
+          }
+
+  - id: go.context.zero-timeout
+    severity: WARNING
+    languages: [go]
+    message: |
+      context.WithTimeout / WithDeadline called with a zero/already-passed
+      deadline. This returns an already-cancelled context - work guarded by
+      it will either short-circuit immediately or, if the caller only checks
+      for DeadlineExceeded (not Canceled), proceed unbounded. Pass a
+      positive duration, or use context.WithCancel if "no timeout" is the
+      real intent.
+    metadata:
+      proof:
+        signal_id: context.zero_timeout
+        provider: opengrep
+        tags: [concurrent, scheduler]
+        obligations: [external_call_timeout_bounded]
+        confidence: high
+    patterns:
+      - pattern-either:
+          - pattern: context.WithTimeout($CTX, 0)
+          - pattern: context.WithTimeout($CTX, time.Duration(0))
+          - pattern: context.WithTimeout($CTX, 0 * time.Second)
+          - pattern: context.WithTimeout($CTX, 0 * time.Millisecond)
+          - pattern: context.WithDeadline($CTX, time.Time{})

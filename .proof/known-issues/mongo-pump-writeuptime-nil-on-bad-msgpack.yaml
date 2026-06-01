@@ -7,6 +7,11 @@ affected_requirements:
 commands:
     - go test -count=1 -timeout 60s -run TestMongoPump_WriteUptimeData_BadMsgpack_KI ./pumps
     - go test -count=1 -timeout 60s -run TestMongoSelectivePump_WriteUptimeData_BadMsgpack_KI ./pumps
+evidence_manifests:
+    - code_signal:opengrep:go.slice.preallocated-with-continue-on-error:pumps/mongo.go:571
+    - code_signal:opengrep:go.slice.preallocated-with-continue-on-error:pumps/mongo_selective.go:357
+    - code_signal:opengrep:go.slice.preallocated-with-continue-on-error:pumps/sql.go:345
+    - code_signal:opengrep:go.slice.preallocated-with-continue-on-error:pumps/sqs.go:135
 severity: medium
 mitigation: Operators avoid relying on uptime-pump WriteUptimeData with mixed-validity payloads. Upstream callers only feed msgpack data produced by tyk-pump itself, so triggering this path requires a corrupted store.
 remediation: Append to keys only on successful decode (or skip the Insert entirely when no valid records were decoded). See pumps/mongo.go WriteUptimeData lines 571-589 and pumps/mongo_selective.go WriteUptimeData lines 363-377.
@@ -18,3 +23,23 @@ history:
     - at: "2026-05-31T07:53:47Z"
       by: human:buger
       action: created
+    - at: "2026-06-01T19:12:26Z"
+      by: human:leo
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-01T19:12:45Z"
+      by: human:leo
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-01T19:12:45Z"
+      by: human:leo
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-01T19:12:45Z"
+      by: human:leo
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-01T19:12:45Z"
+      by: human:leo
+      action: edit
+      detail: add-evidence-manifest

@@ -5,6 +5,8 @@ affected_requirements:
     - SW-REQ-046
 commands:
     - cat pumps/influx.go | grep -nA8 "func.*connect"
+evidence_manifests:
+    - code_signal:opengrep:go.recursion.unbounded-on-error:pumps/influx.go:85
 severity: medium
 mitigation: Operators using influx v1 should watch for process restart loops during sustained influx outages.
 remediation: Cap the recursion via a retry counter or use backoff.Permanent for non-retryable errors. Mirrors the fix needed for elasticsearch-unbounded-reconnect-recursion.
@@ -16,3 +18,11 @@ history:
     - at: "2026-05-31T11:13:15Z"
       by: human:buger
       action: created
+    - at: "2026-06-01T19:12:26Z"
+      by: human:leo
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-01T19:12:45Z"
+      by: human:leo
+      action: edit
+      detail: add-evidence-manifest

@@ -48,12 +48,22 @@ history:
     created_by: human:cli
     created_at: "2026-05-30T08:36:07Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-01T18:33:16Z"
+    last_modified_at: "2026-06-01T19:11:47Z"
 obligation_checklist:
     - cert_validation_strict
     - errors_propagated
     - external_call_failure_observable
 obligation_suppressions:
+    - id: malformed_recovers_or_errors_loudly
+      reason: 'Phase H custom opengrep rule go.mapstructure.lenient-decode surfaces lenient mapstructure.Decode calls. Tracked under KI mapstructure-decode-silently-drops-unknown-keys with mitigation (validate configs before deploy) and remediation (NewDecoder with ErrorUnused: true) filed.'
+      suppressed_by: human:leo
+      suppressed_at: "2026-06-01T19:11:47Z"
+      framework_refs:
+        - CWE CWE-20,CWE-755
+        - IEC-62304 §5.3.1
+        - MISRA-C Dir 4.14
+        - NIST-800-53 SI-10,SI-11
+        - OWASP-ASVS-v4 V5.1.3,V5.5.3
     - id: request_timeout_bounded
       reason: 'Phase G: code_signal ''go.http.request-without-context'' at pumps/splunk.go:343 is a false positive — http.NewRequest is followed by req.WithContext(ctx) on line 347, so the request DOES observe caller cancellation. Splunk client itself sets its own HTTP timeout via NewSplunkClient; per-request timeout is bounded by caller-supplied context. Not a real obligation gap.'
       suppressed_by: buger

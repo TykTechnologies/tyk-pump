@@ -48,10 +48,19 @@ history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:17Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-30T20:22:55Z"
+    last_modified_at: "2026-06-01T19:11:43Z"
 obligation_checklist:
     - boundary
     - error_handling
+obligation_suppressions:
+    - id: external_call_timeout_bounded
+      reason: Phase H custom opengrep rule go.backoff.maxelapsed-zero-is-unbounded surfaces ExponentialBackOff.MaxElapsedTime = 0 (retry forever). Tracked under KI storage-retry-maxelapsed-zero-is-unbounded with mitigation and remediation filed.
+      suppressed_by: human:leo
+      suppressed_at: "2026-06-01T19:11:43Z"
+      framework_refs:
+        - CWE CWE-1088,CWE-400
+        - NIST-800-53 SC-5
+        - OWASP-ASVS-v4 V11.1.4
 lifecycle:
     change_history:
         - date: "2026-05-29T15:46:44Z"

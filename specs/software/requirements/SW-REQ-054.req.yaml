@@ -48,7 +48,7 @@ history:
     created_by: human:cli
     created_at: "2026-05-30T08:36:45Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-01T18:36:32Z"
+    last_modified_at: "2026-06-01T19:11:49Z"
 obligation_checklist:
     - concurrent
     - nominal
@@ -57,6 +57,16 @@ obligation_suppressions:
       reason: 'Phase G: code_signal ''go.concurrency.goroutine-spawn'' + ''go.concurrency.channel-send'' at pumps/resurface.go:95/275 are the Resurface pump worker pattern: a single writeData goroutine consumes from rp.data channel; WriteData sends via select { case rp.data <- data; case <-ctx.Done() }. Sender is ctx-guarded; receiver is single-consumer. Worker lifetime is managed by sync.WaitGroup (rp.wg). Not a data-race obligation gap.'
       suppressed_by: buger
       suppressed_at: "2026-06-01T18:36:32Z"
+    - id: malformed_recovers_or_errors_loudly
+      reason: 'Phase H custom opengrep rule go.mapstructure.lenient-decode surfaces lenient mapstructure.Decode calls. Tracked under KI mapstructure-decode-silently-drops-unknown-keys with mitigation (validate configs before deploy) and remediation (NewDecoder with ErrorUnused: true) filed.'
+      suppressed_by: human:leo
+      suppressed_at: "2026-06-01T19:11:49Z"
+      framework_refs:
+        - CWE CWE-20,CWE-755
+        - IEC-62304 §5.3.1
+        - MISRA-C Dir 4.14
+        - NIST-800-53 SI-10,SI-11
+        - OWASP-ASVS-v4 V5.1.3,V5.5.3
 lifecycle:
     change_history:
         - date: "2026-05-30T08:43:46Z"

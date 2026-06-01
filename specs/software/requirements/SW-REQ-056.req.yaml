@@ -48,7 +48,7 @@ history:
     created_by: human:cli
     created_at: "2026-05-30T08:37:04Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-01T18:33:33Z"
+    last_modified_at: "2026-06-01T19:11:49Z"
 obligation_checklist:
     - monotonicity
     - nominal
@@ -57,6 +57,24 @@ obligation_suppressions:
       reason: 'Phase G: code_signal ''go.random.math-rand'' at pumps/kinesis.go:185 is a false positive — the call is crypto/rand.Int(rand.Reader, big.NewInt(...)), not math/rand. Partition key generation uses cryptographic randomness intentionally. Opengrep pattern matched the bare rand.* qualifier without distinguishing math/rand vs crypto/rand. Not a determinism obligation gap.'
       suppressed_by: buger
       suppressed_at: "2026-06-01T18:33:33Z"
+    - id: errors_propagated
+      reason: Phase H custom opengrep rule go.log.fatal-in-init / go.recursion.unbounded-on-error surfaces log.Fatal in Init and unbounded reconnect recursion; both are tracked under KIs pumps-logfatal-on-config-decode, elasticsearch-unbounded-reconnect-recursion, and influx-v1-unbounded-reconnect-recursion with mitigation and remediation already filed.
+      suppressed_by: human:leo
+      suppressed_at: "2026-06-01T19:11:49Z"
+      framework_refs:
+        - CWE CWE-703,CWE-252,CWE-754
+        - NIST-800-53 SI-11
+        - OWASP-ASVS-v4 V7.4.1,V7.4.2,V7.4.3
+    - id: malformed_recovers_or_errors_loudly
+      reason: 'Phase H custom opengrep rule go.mapstructure.lenient-decode surfaces lenient mapstructure.Decode calls. Tracked under KI mapstructure-decode-silently-drops-unknown-keys with mitigation (validate configs before deploy) and remediation (NewDecoder with ErrorUnused: true) filed.'
+      suppressed_by: human:leo
+      suppressed_at: "2026-06-01T19:11:49Z"
+      framework_refs:
+        - CWE CWE-20,CWE-755
+        - IEC-62304 §5.3.1
+        - MISRA-C Dir 4.14
+        - NIST-800-53 SI-10,SI-11
+        - OWASP-ASVS-v4 V5.1.3,V5.5.3
 lifecycle:
     change_history:
         - date: "2026-05-30T08:43:46Z"

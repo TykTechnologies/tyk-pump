@@ -1,0 +1,106 @@
+rules:
+  - id: go.fs.process-local-api
+    message: Process-local filesystem API use requires path-boundary, lifetime, and error-handling evidence.
+    languages: [go]
+    severity: WARNING
+    metadata:
+      proof:
+        signal_id: filesystem.dependency
+        provider: opengrep
+        tags: [fs_io, process_local]
+        confidence: medium
+    pattern-either:
+      - pattern: os.ReadFile(...)
+      - pattern: os.WriteFile(...)
+      - pattern: os.Open(...)
+      - pattern: os.OpenFile(...)
+      - pattern: os.Create(...)
+      - pattern: os.CreateTemp(...)
+      - pattern: os.Mkdir(...)
+      - pattern: os.MkdirAll(...)
+      - pattern: os.Remove(...)
+      - pattern: os.RemoveAll(...)
+      - pattern: os.Rename(...)
+      - pattern: ioutil.ReadFile(...)
+      - pattern: ioutil.WriteFile(...)
+      - pattern: ioutil.TempFile(...)
+      - pattern: ioutil.TempDir(...)
+
+  - id: go.fs.path-check-then-use
+    message: Filesystem path is checked and then reused; require handle-based TOCTOU-safe behavior.
+    languages: [go]
+    severity: WARNING
+    metadata:
+      proof:
+        signal_id: fs.path_check_then_use
+        provider: opengrep
+        tags: [filesystem, toctou_safe]
+        obligations: [filesystem_operations_use_handle]
+        confidence: high
+    pattern-either:
+      - pattern: |
+          os.Stat($P)
+          ...
+          os.Open($P)
+      - pattern: |
+          os.Lstat($P)
+          ...
+          os.Open($P)
+      - pattern: |
+          os.Stat($P)
+          ...
+          os.MkdirAll($P, ...)
+      - pattern: |
+          os.Lstat($P)
+          ...
+          os.MkdirAll($P, ...)
+      - pattern: |
+          os.Stat($P)
+          ...
+          os.RemoveAll($P)
+      - pattern: |
+          os.Lstat($P)
+          ...
+          os.RemoveAll($P)
+
+  - id: go.fs.removeall-path
+    message: Recursive delete on a path may require containment and traversal review when the path is externally influenced.
+    languages: [go]
+    severity: WARNING
+    metadata:
+      proof:
+        signal_id: fs.recursive_delete_path
+        provider: opengrep
+        tags: [filesystem]
+        confidence: low
+    pattern: os.RemoveAll($P)
+
+  - id: go.fs.archive-member-path
+    message: Archive member name is used in filesystem path construction; require archive path confinement.
+    languages: [go]
+    severity: WARNING
+    metadata:
+      proof:
+        signal_id: fs.archive_member_path
+        provider: opengrep
+        tags: [filesystem, archive_extraction]
+        obligations: [path_traversal_prevented, path_identity_canonicalized]
+        confidence: high
+    pattern-either:
+      - pattern: $DEST.Join(newRemotePath(...))
+      - pattern: $DEST.Join(newLocalPath(...))
+
+  - id: go.fs.http-servefile-path
+    message: HTTP request path is served from the filesystem; require path containment and canonicalization evidence.
+    languages: [go]
+    severity: WARNING
+    metadata:
+      proof:
+        signal_id: fs.http_servefile_path
+        provider: opengrep
+        tags: [filesystem]
+        obligations: [path_traversal_prevented, path_identity_canonicalized]
+        confidence: high
+    pattern-either:
+      - pattern: http.ServeFile($W, $R, $P)
+      - pattern: http.FileServer(...)

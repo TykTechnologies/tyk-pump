@@ -5,6 +5,8 @@ affected_requirements:
     - SW-REQ-048
 commands:
     - go test -count=1 -run 'TestSplunkPump_|Test_SplunkProxyFromEnvironment' ./pumps
+evidence_manifests:
+    - code_signal:opengrep:go.http.default-transport-mutation:pumps/splunk.go:325
 severity: low
 mitigation: Tests use per-test http.Transport with explicit Proxy func to bypass the cached ProxyFromEnvironment lookup.
 remediation: Stop mutating http.DefaultClient.Transport in newSplunkClient. Build a private *http.Client on the SplunkClient with its own *http.Transport so the global default is never touched. Remove the runtime mutation and store the client on c.httpClient directly.
@@ -16,3 +18,11 @@ history:
     - at: "2026-05-31T07:21:56Z"
       by: human:buger
       action: created
+    - at: "2026-06-01T19:12:26Z"
+      by: human:leo
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-01T19:12:45Z"
+      by: human:leo
+      action: edit
+      detail: add-evidence-manifest

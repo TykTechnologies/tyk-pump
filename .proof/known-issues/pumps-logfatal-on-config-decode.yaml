@@ -5,6 +5,28 @@ affected_requirements:
     - SYS-REQ-004
 evidence_manifests:
     - code_signal:opengrep:go.runtime.panic-call:pumps/mongo.go:219
+    - code_signal:opengrep:go.log.fatal-in-init:pumps/csv.go:51
+    - code_signal:opengrep:go.log.fatal-in-init:pumps/elasticsearch.go:358
+    - code_signal:opengrep:go.log.fatal-in-init:pumps/graylog.go:69
+    - code_signal:opengrep:go.log.fatal-in-init:pumps/graylog.go:107
+    - code_signal:opengrep:go.log.fatal-in-init:pumps/influx.go:65
+    - code_signal:opengrep:go.log.fatal-in-init:pumps/influx2.go:91
+    - code_signal:opengrep:go.log.fatal-in-init:pumps/kafka.go:96
+    - code_signal:opengrep:go.log.fatal-in-init:pumps/kinesis.go:64
+    - code_signal:opengrep:go.log.fatal-in-init:pumps/logzio.go:118
+    - code_signal:opengrep:go.log.fatal-in-init:pumps/moesif.go:276
+    - code_signal:opengrep:go.log.fatal-in-init:pumps/moesif.go:336
+    - code_signal:opengrep:go.log.fatal-in-init:pumps/mongo.go:207
+    - code_signal:opengrep:go.log.fatal-in-init:pumps/mongo.go:402
+    - code_signal:opengrep:go.log.fatal-in-init:pumps/mongo_aggregate.go:181
+    - code_signal:opengrep:go.log.fatal-in-init:pumps/mongo_selective.go:81
+    - code_signal:opengrep:go.log.fatal-in-init:pumps/prometheus.go:187
+    - code_signal:opengrep:go.log.fatal-in-init:pumps/segment.go:44
+    - code_signal:opengrep:go.log.fatal-in-init:pumps/sqs.go:97
+    - code_signal:opengrep:go.log.fatal-in-init:pumps/statsd.go:56
+    - code_signal:opengrep:go.log.fatal-in-init:pumps/stdout.go:57
+    - code_signal:opengrep:go.log.fatal-in-init:pumps/syslog.go:75
+    - code_signal:opengrep:go.log.fatal-in-init:pumps/timestream.go:95
 severity: medium
 mitigation: Validate pump configs (especially type-compatibility against mapstructure tags) before deploying tyk-pump; pin pump configs in source control with schema checks.
 remediation: Replace s.log.Fatal at pumps/statsd.go:62, pumps/syslog.go:82, pumps/graylog.go:76, pumps/prometheus.go:193, pumps/csv.go:57, pumps/stdout.go:65, pumps/kafka.go:103, pumps/elasticsearch.go:364 with s.log.WithError(err).Error(...) + return err. The pump runner (main.go execPumpWriting) already handles a non-nil Init error gracefully — it skips the failing pump and continues.
@@ -18,5 +40,97 @@ history:
       action: created
     - at: "2026-06-01T18:34:12Z"
       by: human:buger
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-01T19:12:26Z"
+      by: human:leo
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-01T19:12:43Z"
+      by: human:leo
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-01T19:12:43Z"
+      by: human:leo
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-01T19:12:43Z"
+      by: human:leo
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-01T19:12:43Z"
+      by: human:leo
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-01T19:12:43Z"
+      by: human:leo
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-01T19:12:43Z"
+      by: human:leo
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-01T19:12:43Z"
+      by: human:leo
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-01T19:12:43Z"
+      by: human:leo
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-01T19:12:44Z"
+      by: human:leo
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-01T19:12:44Z"
+      by: human:leo
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-01T19:12:44Z"
+      by: human:leo
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-01T19:12:44Z"
+      by: human:leo
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-01T19:12:44Z"
+      by: human:leo
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-01T19:12:44Z"
+      by: human:leo
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-01T19:12:44Z"
+      by: human:leo
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-01T19:12:44Z"
+      by: human:leo
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-01T19:12:44Z"
+      by: human:leo
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-01T19:12:44Z"
+      by: human:leo
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-01T19:12:44Z"
+      by: human:leo
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-01T19:12:44Z"
+      by: human:leo
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-01T19:12:44Z"
+      by: human:leo
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-01T19:12:44Z"
+      by: human:leo
       action: edit
       detail: add-evidence-manifest

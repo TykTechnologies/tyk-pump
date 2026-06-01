@@ -3,6 +3,46 @@ title: Pump configs use mapstructure.Decode which silently ignores unknown keys
 description: 'Every pump Init uses mapstructure.Decode (e.g. pumps/csv.go:55 ''mapstructure.Decode(conf, &c.csvConf)'') which is lenient by default. Unknown keys — including operator typos like ''csv_pathh'' instead of ''csv_path'' — are silently dropped. INT-REQ-008''s claim that the system rejects malformed pump configuration loudly is therefore false: no exit code, no health-check failure, no metric is emitted; the misconfigured pump simply uses defaults for the misspelled field. The same pattern appears across all pumps in pumps/*.go (kafka, sql, elasticsearch, mongo, statsd, prometheus, hybrid, etc.).'
 affected_requirements:
     - INT-REQ-008
+evidence_manifests:
+    - code_signal:opengrep:go.mapstructure.lenient-decode:pumps/csv.go:55
+    - code_signal:opengrep:go.mapstructure.lenient-decode:pumps/dogstatsd.go:125
+    - code_signal:opengrep:go.mapstructure.lenient-decode:pumps/elasticsearch.go:362
+    - code_signal:opengrep:go.mapstructure.lenient-decode:pumps/graph_mongo.go:58
+    - code_signal:opengrep:go.mapstructure.lenient-decode:pumps/graph_mongo.go:68
+    - code_signal:opengrep:go.mapstructure.lenient-decode:pumps/graph_sql.go:49
+    - code_signal:opengrep:go.mapstructure.lenient-decode:pumps/graph_sql_aggregate.go:44
+    - code_signal:opengrep:go.mapstructure.lenient-decode:pumps/graylog.go:74
+    - code_signal:opengrep:go.mapstructure.lenient-decode:pumps/hybrid.go:139
+    - code_signal:opengrep:go.mapstructure.lenient-decode:pumps/influx.go:69
+    - code_signal:opengrep:go.mapstructure.lenient-decode:pumps/influx2.go:95
+    - code_signal:opengrep:go.mapstructure.lenient-decode:pumps/kafka.go:101
+    - code_signal:opengrep:go.mapstructure.lenient-decode:pumps/kinesis.go:69
+    - code_signal:opengrep:go.mapstructure.lenient-decode:pumps/logzio.go:122
+    - code_signal:opengrep:go.mapstructure.lenient-decode:pumps/mcp_mongo.go:59
+    - code_signal:opengrep:go.mapstructure.lenient-decode:pumps/mcp_mongo.go:69
+    - code_signal:opengrep:go.mapstructure.lenient-decode:pumps/mcp_mongo_aggregate.go:61
+    - code_signal:opengrep:go.mapstructure.lenient-decode:pumps/mcp_mongo_aggregate.go:63
+    - code_signal:opengrep:go.mapstructure.lenient-decode:pumps/mcp_sql.go:51
+    - code_signal:opengrep:go.mapstructure.lenient-decode:pumps/mcp_sql_aggregate.go:50
+    - code_signal:opengrep:go.mapstructure.lenient-decode:pumps/moesif.go:280
+    - code_signal:opengrep:go.mapstructure.lenient-decode:pumps/mongo.go:211
+    - code_signal:opengrep:go.mapstructure.lenient-decode:pumps/mongo.go:213
+    - code_signal:opengrep:go.mapstructure.lenient-decode:pumps/mongo_aggregate.go:185
+    - code_signal:opengrep:go.mapstructure.lenient-decode:pumps/mongo_aggregate.go:187
+    - code_signal:opengrep:go.mapstructure.lenient-decode:pumps/mongo_selective.go:85
+    - code_signal:opengrep:go.mapstructure.lenient-decode:pumps/mongo_selective.go:87
+    - code_signal:opengrep:go.mapstructure.lenient-decode:pumps/prometheus.go:191
+    - code_signal:opengrep:go.mapstructure.lenient-decode:pumps/resurface.go:64
+    - code_signal:opengrep:go.mapstructure.lenient-decode:pumps/segment.go:48
+    - code_signal:opengrep:go.mapstructure.lenient-decode:pumps/splunk.go:122
+    - code_signal:opengrep:go.mapstructure.lenient-decode:pumps/sql.go:223
+    - code_signal:opengrep:go.mapstructure.lenient-decode:pumps/sql_aggregate.go:93
+    - code_signal:opengrep:go.mapstructure.lenient-decode:pumps/sqs.go:101
+    - code_signal:opengrep:go.mapstructure.lenient-decode:pumps/statsd.go:60
+    - code_signal:opengrep:go.mapstructure.lenient-decode:pumps/stdout.go:62
+    - code_signal:opengrep:go.mapstructure.lenient-decode:pumps/syslog.go:80
+    - code_signal:opengrep:go.mapstructure.lenient-decode:pumps/timestream.go:99
+    - code_signal:opengrep:go.mapstructure.lenient-decode:storage/temporal_storage.go:47
 severity: medium
 mitigation: Operators have no warning until they notice data is not flowing or is using unexpected defaults. Suggest code-reviewing pump YAML against documented field names before rollout.
 remediation: 'Replace mapstructure.Decode with mapstructure.NewDecoder using a DecoderConfig that sets ErrorUnused: true, so unknown keys cause Init to return an error and the pump is skipped (with a clear log line).'
@@ -13,3 +53,163 @@ history:
     - at: "2026-05-30T08:30:52Z"
       by: human:buger
       action: created
+    - at: "2026-06-01T19:12:26Z"
+      by: human:leo
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-01T19:12:44Z"
+      by: human:leo
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-01T19:12:44Z"
+      by: human:leo
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-01T19:12:44Z"
+      by: human:leo
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-01T19:12:44Z"
+      by: human:leo
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-01T19:12:44Z"
+      by: human:leo
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-01T19:12:44Z"
+      by: human:leo
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-01T19:12:44Z"
+      by: human:leo
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-01T19:12:44Z"
+      by: human:leo
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-01T19:12:44Z"
+      by: human:leo
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-01T19:12:44Z"
+      by: human:leo
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-01T19:12:44Z"
+      by: human:leo
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-01T19:12:44Z"
+      by: human:leo
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-01T19:12:44Z"
+      by: human:leo
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-01T19:12:44Z"
+      by: human:leo
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-01T19:12:44Z"
+      by: human:leo
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-01T19:12:44Z"
+      by: human:leo
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-01T19:12:44Z"
+      by: human:leo
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-01T19:12:44Z"
+      by: human:leo
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-01T19:12:44Z"
+      by: human:leo
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-01T19:12:44Z"
+      by: human:leo
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-01T19:12:44Z"
+      by: human:leo
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-01T19:12:44Z"
+      by: human:leo
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-01T19:12:44Z"
+      by: human:leo
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-01T19:12:44Z"
+      by: human:leo
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-01T19:12:44Z"
+      by: human:leo
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-01T19:12:44Z"
+      by: human:leo
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-01T19:12:44Z"
+      by: human:leo
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-01T19:12:44Z"
+      by: human:leo
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-01T19:12:44Z"
+      by: human:leo
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-01T19:12:44Z"
+      by: human:leo
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-01T19:12:44Z"
+      by: human:leo
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-01T19:12:45Z"
+      by: human:leo
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-01T19:12:45Z"
+      by: human:leo
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-01T19:12:45Z"
+      by: human:leo
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-01T19:12:45Z"
+      by: human:leo
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-01T19:12:45Z"
+      by: human:leo
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-01T19:12:45Z"
+      by: human:leo
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-01T19:12:45Z"
+      by: human:leo
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-01T19:12:45Z"
+      by: human:leo
+      action: edit
+      detail: add-evidence-manifest

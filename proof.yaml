@@ -96,6 +96,8 @@ project:
             enabled: true
     signals:
         defaults: auto
+        rule_packs:
+            - signal-rules/tyk-pump-go-patterns.yaml
         providers:
             opengrep:
                 enabled: true

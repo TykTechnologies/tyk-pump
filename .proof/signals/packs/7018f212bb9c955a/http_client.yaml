@@ -1,0 +1,104 @@
+rules:
+  - id: go.security.insecure-tls
+    message: TLS certificate verification is disabled.
+    languages: [go]
+    severity: ERROR
+    metadata:
+      proof:
+        signal_id: tls.certificate_validation_disabled
+        provider: opengrep
+        tags: [http_client]
+        obligations: [cert_validation_strict]
+        confidence: high
+    patterns:
+      - pattern: |
+          tls.Config{..., InsecureSkipVerify: true, ...}
+
+  - id: go.http.default-client-call
+    message: Package-level HTTP client call uses the default client; require documented timeout/retry/TLS behavior.
+    languages: [go]
+    severity: WARNING
+    metadata:
+      proof:
+        signal_id: http.default_client_call
+        provider: opengrep
+        tags: [http_client]
+        obligations: [request_timeout_bounded, external_call_failure_observable]
+        confidence: high
+    pattern-either:
+      - pattern: http.Get(...)
+      - pattern: http.Head(...)
+      - pattern: http.Post(...)
+      - pattern: http.PostForm(...)
+
+  - id: go.http.request-without-context
+    message: HTTP request is constructed without context; require documented deadline/cancellation behavior.
+    languages: [go]
+    severity: WARNING
+    metadata:
+      proof:
+        signal_id: http.request_without_cancellation
+        provider: opengrep
+        tags: [http_client]
+        obligations: [request_timeout_bounded]
+        confidence: high
+    pattern: http.NewRequest(...)
+
+  - id: go.http.client-api
+    message: HTTP client API use requires external-call timeout, cancellation, TLS, and failure-observation evidence.
+    languages: [go]
+    severity: WARNING
+    metadata:
+      proof:
+        signal_id: http.client_dependency
+        provider: opengrep
+        tags: [http_client]
+        confidence: medium
+    pattern-either:
+      - pattern: http.Get(...)
+      - pattern: http.Head(...)
+      - pattern: http.Post(...)
+      - pattern: http.PostForm(...)
+      - pattern: http.NewRequest(...)
+      - pattern: http.NewRequestWithContext(...)
+      - pattern: http.DefaultClient
+      - pattern: http.Client{...}
+      - pattern: http.Transport{...}
+      - pattern: http.Request{...}
+
+  - id: go.http.server-api
+    message: HTTP server API use requires listener, request-boundary, timeout, and static-file review evidence.
+    languages: [go]
+    severity: WARNING
+    metadata:
+      proof:
+        signal_id: http.server_dependency
+        provider: opengrep
+        tags: [http_server]
+        confidence: medium
+    pattern-either:
+      - pattern: http.FileServer(...)
+      - pattern: http.Handle(...)
+      - pattern: http.HandleFunc(...)
+      - pattern: http.ListenAndServe(...)
+      - pattern: http.ListenAndServeTLS(...)
+      - pattern: http.Serve(...)
+      - pattern: http.StripPrefix(...)
+      - pattern: http.NewServeMux(...)
+      - pattern: http.Server{...}
+      - pattern: http.ServeMux{...}
+
+  - id: go.http.client-without-timeout
+    message: http.Client created without explicit Timeout; requests may hang indefinitely.
+    languages: [go]
+    severity: WARNING
+    metadata:
+      proof:
+        signal_id: http.client_without_timeout
+        provider: opengrep
+        tags: [http_client]
+        obligations: [request_timeout_bounded]
+        confidence: medium
+    patterns:
+      - pattern: '&http.Client{...}'
+      - pattern-not: '&http.Client{..., Timeout: ..., ...}'
