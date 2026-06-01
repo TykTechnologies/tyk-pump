@@ -48,10 +48,26 @@ history:
     created_by: human:cli
     created_at: "2026-05-30T08:36:29Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-30T08:44:11Z"
+    last_modified_at: "2026-06-01T18:34:22Z"
 obligation_checklist:
     - nominal
     - untrusted_input_bounded
+obligation_suppressions:
+    - id: determinism
+      reason: 'Phase G: code_signal ''go.random.math-rand'' at pumps/moesif.go:472 is the sampling-percentage RNG (rand.Intn(100) compared to user-configured samplingPercentage). Sampling is by-design non-deterministic — that is the moesif user/company-level sampling contract. Not a determinism obligation gap.'
+      suppressed_by: buger
+      suppressed_at: "2026-06-01T18:33:37Z"
+    - id: input_size_bounded
+      reason: 'Phase G: code_signal ''go.deserializer.request-body-readall'' at pumps/moesif.go:117 reads the moesif sampling-config HTTP RESPONSE body (not a request body / not attacker input). The upstream is moesif''s own API service — body size is bounded by moesif''s API contract, not by pump policy. Existing KI graylog-moesif-logfatal-on-record-error documents the log.Fatal mishandling of err arm. Not an input-size obligation gap on the pump.'
+      suppressed_by: buger
+      suppressed_at: "2026-06-01T18:34:22Z"
+      framework_refs:
+        - CWE CWE-130
+        - OWASP-ASVS-v4 V13.1.4
+    - id: malformed_input
+      reason: 'Phase G: code_signal ''go.deserializer.request-body-readall'' at pumps/moesif.go:117 reads the moesif sampling-config HTTP RESPONSE body (controlled upstream). Malformed-input handling for that response is documented in KI graylog-moesif-logfatal-on-record-error (the log.Fatal err arm). Not an input-malformed obligation gap on the pump-side input surface.'
+      suppressed_by: buger
+      suppressed_at: "2026-06-01T18:34:22Z"
 lifecycle:
     change_history:
         - date: "2026-05-30T08:43:46Z"

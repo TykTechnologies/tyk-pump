@@ -48,11 +48,20 @@ history:
     created_by: human:cli
     created_at: "2026-05-30T08:36:07Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-30T08:44:11Z"
+    last_modified_at: "2026-06-01T18:33:16Z"
 obligation_checklist:
     - cert_validation_strict
     - errors_propagated
     - external_call_failure_observable
+obligation_suppressions:
+    - id: request_timeout_bounded
+      reason: 'Phase G: code_signal ''go.http.request-without-context'' at pumps/splunk.go:343 is a false positive — http.NewRequest is followed by req.WithContext(ctx) on line 347, so the request DOES observe caller cancellation. Splunk client itself sets its own HTTP timeout via NewSplunkClient; per-request timeout is bounded by caller-supplied context. Not a real obligation gap.'
+      suppressed_by: buger
+      suppressed_at: "2026-06-01T18:33:16Z"
+      framework_refs:
+        - CWE CWE-400,CWE-404
+        - NIST-800-53 SC-5
+        - OWASP-ASVS-v4 V11.1.4
 lifecycle:
     change_history:
         - date: "2026-05-30T08:43:46Z"

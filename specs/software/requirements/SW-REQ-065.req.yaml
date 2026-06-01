@@ -48,10 +48,24 @@ history:
     created_by: human:cli
     created_at: "2026-05-30T08:39:32Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-30T08:44:11Z"
+    last_modified_at: "2026-06-01T18:36:37Z"
 obligation_checklist:
+    - concurrent
     - idempotency
     - nominal
+obligation_suppressions:
+    - id: concurrent
+      reason: 'Phase G: code_signal ''go.concurrency.goroutine-spawn'' + ''go.concurrency.channel-send'' at pumps/sql_aggregate.go:171/182 are the optional background-index creation pattern (single goroutine wrapping createIndexFn, signals via backgroundIndexCreated channel after wg.Wait synchronization). gorm db handle is concurrency-safe. Not a data-race obligation gap.'
+      suppressed_by: buger
+      suppressed_at: "2026-06-01T18:36:37Z"
+    - id: parameterized_only_write
+      reason: 'Phase G: code_signal ''go.sql.formatted-write-exec'' at pumps/sql_aggregate.go:164 is a CREATE INDEX DDL where the index name and table name are derived from internal sharding logic (not user input). Identifier escaping is documented as TODO in KI sql-aggregate-mysql-excluded-keyword-broken; this is DDL, not data write — parameter binding is not applicable to identifiers in standard SQL. Not a parameterized-write obligation gap.'
+      suppressed_by: buger
+      suppressed_at: "2026-06-01T18:33:52Z"
+      framework_refs:
+        - CWE CWE-89
+        - NIST-800-53 SI-10
+        - OWASP-ASVS-v4 V5.3.4,V5.3.5
 lifecycle:
     change_history:
         - date: "2026-05-30T08:43:47Z"

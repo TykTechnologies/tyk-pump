@@ -48,10 +48,19 @@ history:
     created_by: human:cli
     created_at: "2026-05-30T08:40:01Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-30T08:44:11Z"
+    last_modified_at: "2026-06-01T18:34:40Z"
 obligation_checklist:
     - determinism
     - nominal
+obligation_suppressions:
+    - id: request_timeout_bounded
+      reason: 'Phase G: code_signal ''go.http.client-without-timeout'' at pumps/elasticsearch.go:168 re-discovers existing KI pump-no-timeout-can-block-purge-cycle: the elasticsearch http.Client constructed in connect() lacks an explicit per-request Timeout; bounding is delegated to the pump-level PurgeDelay loop. Already tracked; remediation noted in KI. Not a new obligation gap.'
+      suppressed_by: buger
+      suppressed_at: "2026-06-01T18:34:40Z"
+      framework_refs:
+        - CWE CWE-400,CWE-404
+        - NIST-800-53 SC-5
+        - OWASP-ASVS-v4 V11.1.4
 lifecycle:
     change_history:
         - date: "2026-05-30T08:43:47Z"

@@ -48,9 +48,21 @@ history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:16Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-30T07:49:09Z"
+    last_modified_at: "2026-06-01T18:35:40Z"
 obligation_checklist:
     - error_handling
+obligation_suppressions:
+    - id: input_size_bounded
+      reason: 'Phase G: code_signal ''go.deserializer.request-body-readall'' at retry/http-retry.go:43 is filed as new KI retry-buffers-full-request-body-in-memory. The retry middleware buffers the full outbound request body once before the retry loop so it can be replayed; size is bounded in practice by the pump-level batch caps that originate the body. Tracked in the new KI; not duplicated as a checklist gap.'
+      suppressed_by: buger
+      suppressed_at: "2026-06-01T18:35:40Z"
+      framework_refs:
+        - CWE CWE-130
+        - OWASP-ASVS-v4 V13.1.4
+    - id: malformed_input
+      reason: 'Phase G: code_signal ''go.deserializer.request-body-readall'' at retry/http-retry.go:43 — io.ReadAll on the OUTBOUND request body (pump-emitted, not attacker input). Read-error path is handled (returns err on line 46). Body is not parsed by the retry layer; the upstream pump owns shape validation. Not a malformed-input obligation gap on the retry surface.'
+      suppressed_by: buger
+      suppressed_at: "2026-06-01T18:35:40Z"
 lifecycle:
     change_history:
         - date: "2026-05-29T15:46:44Z"

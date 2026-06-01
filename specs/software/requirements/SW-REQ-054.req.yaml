@@ -48,9 +48,15 @@ history:
     created_by: human:cli
     created_at: "2026-05-30T08:36:45Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-30T08:45:37Z"
+    last_modified_at: "2026-06-01T18:36:32Z"
 obligation_checklist:
+    - concurrent
     - nominal
+obligation_suppressions:
+    - id: concurrent
+      reason: 'Phase G: code_signal ''go.concurrency.goroutine-spawn'' + ''go.concurrency.channel-send'' at pumps/resurface.go:95/275 are the Resurface pump worker pattern: a single writeData goroutine consumes from rp.data channel; WriteData sends via select { case rp.data <- data; case <-ctx.Done() }. Sender is ctx-guarded; receiver is single-consumer. Worker lifetime is managed by sync.WaitGroup (rp.wg). Not a data-race obligation gap.'
+      suppressed_by: buger
+      suppressed_at: "2026-06-01T18:36:32Z"
 lifecycle:
     change_history:
         - date: "2026-05-30T08:43:46Z"

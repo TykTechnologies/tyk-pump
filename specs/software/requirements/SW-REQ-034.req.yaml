@@ -48,11 +48,34 @@ history:
     created_by: human:cli
     created_at: "2026-05-30T08:33:59Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-31T11:28:58Z"
+    last_modified_at: "2026-06-01T18:36:22Z"
 obligation_checklist:
     - boundary
+    - concurrent
     - errors_propagated
     - nominal
+obligation_suppressions:
+    - id: cancellation_observed
+      reason: 'Phase G: code_signal ''go.concurrency.unguarded-channel-send'' at pumps/mongo.go:438 re-discovers KI mongo-pump-ignores-caller-context: the purge fan-out goroutine uses context.Background() for the Insert and writes to a buffered errCh without ctx.Done() guard. The buffer is sized len(accumulateSet) so the send cannot block; cancellation is observed at the pump-purge-loop level, not the per-batch level. Documented gap tracked in mongo-pump-ignores-caller-context KI. Not a new obligation gap.'
+      suppressed_by: buger
+      suppressed_at: "2026-06-01T18:34:57Z"
+      framework_refs:
+        - CWE CWE-672,CWE-410
+        - DO-178C §6.3.3
+        - ISO-26262 Part 6 §7.4.13
+        - NIST-800-53 SC-5
+    - id: concurrent
+      reason: 'Phase G: code_signal ''go.concurrency.goroutine-spawn'' + ''go.concurrency.channel-send'' at pumps/mongo.go:429/438 are the documented purge fan-out: one goroutine per accumulateSet batch, each writing its result to a buffered errCh sized len(accumulateSet) (cannot block). No shared mutable state across goroutines — each batch is disjoint and the mongo driver session is concurrency-safe. The caller-context concern is already tracked in KI mongo-pump-ignores-caller-context. Not a data-race obligation gap on the pump.'
+      suppressed_by: buger
+      suppressed_at: "2026-06-01T18:36:22Z"
+    - id: panic_free_input_handling
+      reason: 'Phase G: code_signal ''go.runtime.panic-call'' at pumps/mongo.go:219 is the documented-unreachable arm of the second mapstructure.Decode pair (KI pumps-logfatal-on-config-decode). The first Decode validates the same source so the panic arm cannot be reached from external input; //mcdc:ignore annotation already in place. Not a real panic-on-input gap.'
+      suppressed_by: buger
+      suppressed_at: "2026-06-01T18:34:12Z"
+      framework_refs:
+        - CWE CWE-248,CWE-754
+        - MISRA-C Rule 17.2
+        - OWASP-ASVS-v4 V7.4.1
 lifecycle:
     change_history:
         - date: "2026-05-30T08:43:46Z"

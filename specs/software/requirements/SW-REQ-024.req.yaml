@@ -48,9 +48,15 @@ history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:16Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-30T07:43:08Z"
+    last_modified_at: "2026-06-01T18:36:11Z"
 obligation_checklist:
+    - concurrent
     - errors_propagated
+obligation_suppressions:
+    - id: concurrent
+      reason: 'Phase G: code_signal ''go.concurrency.goroutine-spawn'' at pumps/prometheus.go:215 is a single fire-and-forget goroutine that runs the prometheus HTTP exporter (http.ListenAndServe) for the lifetime of the pump. No shared mutable state across goroutines: the goroutine only owns the listener socket, and prometheus metric updates are guarded by the prometheus client library''s internal locks. No race surface to test against pump code; race-detector evidence would only exercise the prometheus library. Documented as worker-style spawn; not a data-race obligation gap.'
+      suppressed_by: buger
+      suppressed_at: "2026-06-01T18:36:11Z"
 lifecycle:
     change_history:
         - date: "2026-05-29T15:46:44Z"

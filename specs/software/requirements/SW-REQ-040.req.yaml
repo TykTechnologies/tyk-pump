@@ -48,11 +48,17 @@ history:
     created_by: human:cli
     created_at: "2026-05-30T08:35:20Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-31T08:52:45Z"
+    last_modified_at: "2026-06-01T18:36:32Z"
 obligation_checklist:
     - boundary
+    - concurrent
     - connection_leak_free
     - parameterized_only_write
+obligation_suppressions:
+    - id: concurrent
+      reason: 'Phase G: code_signal ''go.concurrency.goroutine-spawn'' + ''go.concurrency.channel-send'' at pumps/sql.go:498/513 are the optional background-index creation pattern: when background=true, createIndex runs in a goroutine and signals completion via the buffered backgroundIndexCreated channel. wg.Wait() synchronizes before the channel send. Channel send is guarded by wg.Wait; no shared mutables across goroutines (gorm db handle is concurrency-safe per its docs). Not a data-race obligation gap.'
+      suppressed_by: buger
+      suppressed_at: "2026-06-01T18:36:32Z"
 lifecycle:
     change_history:
         - date: "2026-05-30T08:43:46Z"

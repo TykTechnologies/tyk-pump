@@ -92,6 +92,30 @@ project:
         evidence_diversity:
             min_classes:
                 B: 2
+        code_signal_obligations_reviewed:
+            enabled: true
+    signals:
+        defaults: auto
+        providers:
+            opengrep:
+                enabled: true
+                mode: run
+                managed: true
+                format: sarif
+                include_paths:
+                    - analytics
+                    - pumps
+                    - storage
+                    - retry
+                    - serializer
+                    - server
+                    - logger
+                exclude_paths:
+                    - '**/*_test.go'
+                    - '**/testdata/**'
+                    - '**/*.pb.go'
+                fail_if_missing: false
+                timeout_seconds: 600
     approval:
         required_for:
             assurance_levels:

@@ -4,8 +4,10 @@ description: 'pumps/mcp_sql_aggregate.go (line 127) and pumps/sql_aggregate.go (
 affected_requirements:
     - SW-REQ-045
     - SW-REQ-066
+evidence_manifests:
+    - code_signal:opengrep:go.sql.formatted-write-exec:pumps/mcp_sql_aggregate.go:127
 severity: medium
-mitigation: 'Operators on MySQL should either pre-create the dimension index out-of-band and set omit_index_creation=true on the aggregate pumps, or stick to Postgres for aggregate workloads.'
+mitigation: Operators on MySQL should either pre-create the dimension index out-of-band and set omit_index_creation=true on the aggregate pumps, or stick to Postgres for aggregate workloads.
 remediation: Gate IF NOT EXISTS behind a dialect check (postgres OR mysql >= 8.0.29) or use HasIndex pre-check + plain CREATE INDEX for MySQL. The same pattern needs to be applied to pumps/sql_aggregate.go ensureIndex.
 owner: tyk-team
 release_disposition: ship_with_known_issue
@@ -14,3 +16,7 @@ history:
     - at: "2026-05-31T07:15:00Z"
       by: human:buger
       action: created
+    - at: "2026-06-01T18:34:02Z"
+      by: human:buger
+      action: edit
+      detail: add-evidence-manifest

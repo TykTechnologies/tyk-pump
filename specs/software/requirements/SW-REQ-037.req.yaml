@@ -48,9 +48,24 @@ history:
     created_by: human:cli
     created_at: "2026-05-30T08:34:55Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-31T11:27:45Z"
+    last_modified_at: "2026-06-01T18:36:22Z"
 obligation_checklist:
+    - concurrent
     - errors_propagated
+obligation_suppressions:
+    - id: cancellation_observed
+      reason: 'Phase G: code_signal ''go.concurrency.unguarded-channel-send'' at pumps/graph_mongo.go:135 re-discovers the same context.Background() purge-fan-out pattern as mongo.go (KI mongo-pump-ignores-caller-context). errCh is buffered to len(accumulateSet) so sends cannot block; cancellation is observed at the pump-purge-loop. Documented gap. Not a new obligation gap.'
+      suppressed_by: buger
+      suppressed_at: "2026-06-01T18:34:57Z"
+      framework_refs:
+        - CWE CWE-672,CWE-410
+        - DO-178C §6.3.3
+        - ISO-26262 Part 6 §7.4.13
+        - NIST-800-53 SC-5
+    - id: concurrent
+      reason: 'Phase G: code_signal ''go.concurrency.goroutine-spawn'' + ''go.concurrency.channel-send'' at pumps/graph_mongo.go:114/135 mirror the pumps/mongo.go purge fan-out (one goroutine per batch, buffered errCh sized to len(accumulateSet)). Disjoint per-batch state; no shared mutables. Caller-context gap tracked in KI mongo-pump-ignores-caller-context. Not a data-race obligation gap.'
+      suppressed_by: buger
+      suppressed_at: "2026-06-01T18:36:22Z"
 lifecycle:
     change_history:
         - date: "2026-05-30T08:43:46Z"

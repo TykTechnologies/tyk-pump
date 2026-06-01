@@ -48,10 +48,16 @@ history:
     created_by: human:cli
     created_at: "2026-05-30T08:35:01Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-31T19:21:32Z"
+    last_modified_at: "2026-06-01T18:36:22Z"
 obligation_checklist:
+    - concurrent
     - errors_propagated
     - nominal
+obligation_suppressions:
+    - id: concurrent
+      reason: 'Phase G: code_signal ''go.concurrency.goroutine-spawn'' + ''go.concurrency.channel-send'' at pumps/mcp_mongo.go:147/177 are the same purge fan-out as standard mongo pump (per-batch goroutine, buffered errCh sized to len(accumulateSet)). Disjoint per-batch state. Not a data-race obligation gap.'
+      suppressed_by: buger
+      suppressed_at: "2026-06-01T18:36:22Z"
 lifecycle:
     change_history:
         - date: "2026-05-30T08:43:46Z"

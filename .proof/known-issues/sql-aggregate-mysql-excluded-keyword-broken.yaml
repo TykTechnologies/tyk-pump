@@ -5,8 +5,10 @@ affected_requirements:
     - SW-REQ-041
     - SW-REQ-043
     - SW-REQ-045
+evidence_manifests:
+    - code_signal:opengrep:go.sql.formatted-write-exec:pumps/sql_aggregate.go:164
 severity: medium
-mitigation: 'Operators using MySQL must avoid sql_aggregate, graph_sql_aggregate, and mcp_sql_aggregate pumps; only the non-aggregating sql and graph_sql and mcp_sql pumps work end-to-end on MySQL.'
+mitigation: Operators using MySQL must avoid sql_aggregate, graph_sql_aggregate, and mcp_sql_aggregate pumps; only the non-aggregating sql and graph_sql and mcp_sql pumps work end-to-end on MySQL.
 remediation: Detect the MySQL dialect in DoAggregatedWriting and rebuild the assignment map using gorm''s clause.Values("col") or VALUES(col) instead of excluded.col. Alternatively expose a dialect-aware on-conflict helper in analytics that returns the correct assignment form per dialect.
 owner: tyk-team
 release_disposition: ship_with_known_issue
@@ -15,3 +17,7 @@ history:
     - at: "2026-05-31T07:14:00Z"
       by: human:buger
       action: created
+    - at: "2026-06-01T18:34:02Z"
+      by: human:buger
+      action: edit
+      detail: add-evidence-manifest
