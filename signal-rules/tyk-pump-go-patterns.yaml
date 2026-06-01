@@ -14,6 +14,15 @@ rules:
         tags: [logging, error_handling]
         obligations: [errors_propagated]
         confidence: high
+        notes: |
+          Scoped to library-shaped methods (Init / WriteData / WriteUptimeData)
+          on a receiver. Excludes func main(), func TestMain, and *_test.go and
+          cmd/** entry points where log.Fatal is idiomatic.
+    paths:
+      exclude:
+        - "*_test.go"
+        - "cmd/**"
+        - "main.go"
     patterns:
       - pattern-either:
           - pattern: |
@@ -64,6 +73,14 @@ rules:
                 $L.Fatalf(...)
                 ...
               }
+      - pattern-not-inside: |
+          func main() {
+            ...
+          }
+      - pattern-not-inside: |
+          func TestMain($M *testing.M) {
+            ...
+          }
 
   - id: go.context.dropped-on-floor
     severity: WARNING
@@ -81,6 +98,15 @@ rules:
         tags: [concurrent, error_propagation]
         obligations: [cancellation_observed]
         confidence: medium
+        notes: |
+          Excludes top-level entry points (func main, func init, TestMain),
+          and goroutine-detach patterns wrapped in context.WithoutCancel.
+          Tests are excluded outright via paths.exclude.
+    paths:
+      exclude:
+        - "*_test.go"
+        - "cmd/**"
+        - "main.go"
     patterns:
       - pattern-either:
           - pattern: |
@@ -108,6 +134,14 @@ rules:
                 ...
               }
       - pattern-not: context.WithoutCancel($CTX)
+      - pattern-not-inside: |
+          func main() {
+            ...
+          }
+      - pattern-not-inside: |
+          func init() {
+            ...
+          }
 
   - id: go.recursion.unbounded-on-error
     severity: WARNING
@@ -125,6 +159,12 @@ rules:
         tags: [error_handling, concurrent]
         obligations: [errors_propagated]
         confidence: medium
+        notes: |
+          Excludes the bounded-retry shape (counter < MAX) and any function
+          body that contains a context-Done select arm (context-aware retry).
+    paths:
+      exclude:
+        - "*_test.go"
     patterns:
       - pattern-either:
           - pattern: |
@@ -155,6 +195,15 @@ rules:
               time.Sleep(...)
               $F()
           }
+      - pattern-not: |
+          if $N >= $MAX {
+              return $ERR
+          }
+      - pattern-not-inside: |
+          select {
+              case <-$CTX.Done():
+                  ...
+          }
 
   - id: go.mapstructure.lenient-decode
     severity: INFO
@@ -171,6 +220,14 @@ rules:
         tags: [deserializer, structured_data_parser]
         obligations: [malformed_recovers_or_errors_loudly]
         confidence: high
+        notes: |
+          INFO severity: this is an opinionated config-hygiene rule.
+          mapstructure's default IS lenient and many projects intentionally
+          want forward-compat. Suppress on a per-call basis when the input
+          is not a user-supplied config (e.g. internal struct re-encode).
+    paths:
+      exclude:
+        - "*_test.go"
     patterns:
       - pattern-either:
           - pattern: mapstructure.Decode($IN, $OUT)
@@ -195,6 +252,13 @@ rules:
         tags: [http_client, process_local]
         obligations: [request_timeout_bounded]
         confidence: high
+        notes: |
+          Excludes main() / TestMain since process-wide mutation at top
+          level is a known integration pattern. Library code should never
+          touch the DefaultClient/DefaultTransport.
+    paths:
+      exclude:
+        - "*_test.go"
     patterns:
       - pattern-either:
           - pattern: http.DefaultClient.Transport = $X
@@ -226,6 +290,13 @@ rules:
         tags: [error_handling, scheduler]
         obligations: [external_call_timeout_bounded]
         confidence: medium
+        notes: |
+          Specific to github.com/cenkalti/backoff (v2/v3/v4). Other retry
+          libraries (e.g. jpillora/backoff) have different semantics for a
+          zero MaxElapsedTime and are NOT covered by this rule.
+    paths:
+      exclude:
+        - "*_test.go"
     patterns:
       - pattern-either:
           - pattern: $B.MaxElapsedTime = 0
@@ -241,8 +312,9 @@ rules:
       Goroutine launched without a deferred recover at the top of its body.
       A panic inside the goroutine cannot be caught by the launching frame
       and will crash the whole process. For fan-out / long-lived / per-
-      request goroutines, add `defer func() { if r := recover(); r != nil
-      { log + metric } }()` at the start of the body.
+      request goroutines, add
+      `defer func() { if r := recover(); r != nil { log + metric } }()`
+      at the start of the body.
     metadata:
       proof:
         signal_id: concurrency.goroutine_no_recover
@@ -250,6 +322,22 @@ rules:
         tags: [concurrent, panic_safety]
         obligations: [panic_free_input_handling]
         confidence: low
+        notes: |
+          INFO severity. Flags every goroutine that lacks `defer recover`.
+          On a strict reading (no panic should ever take down the whole
+          process), every spawned goroutine needs a recover - even short
+          fan-outs - because a panic in any one of them tears down the
+          parent process. Project teams that prefer the lenient reading
+          (recover is only required for long-lived / unknown-input
+          goroutines) should narrow this rule with `pattern-inside: for`
+          or downgrade severity. Tests, examples/, and testutil/ are
+          excluded outright since demo goroutines are intentionally simple.
+    paths:
+      exclude:
+        - "*_test.go"
+        - "examples/**"
+        - "testutil/**"
+        - "internal/awstesting/**"
     patterns:
       - pattern-either:
           - pattern: |
@@ -294,25 +382,47 @@ rules:
         tags: [http_server]
         obligations: [external_call_failure_observable]
         confidence: low
+        notes: |
+          Fires on any *http.ResponseWriter handler that writes 200 with no
+          conditional. A conditional WriteHeader, a status switch, or a
+          gating if-statement suppresses the finding.
+    paths:
+      exclude:
+        - "*_test.go"
     patterns:
       - pattern-either:
           - pattern: |
               func $H($W http.ResponseWriter, $R *http.Request) {
+                  ...
                   $W.WriteHeader(http.StatusOK)
+                  ...
               }
           - pattern: |
-              func $H($W http.ResponseWriter, $R *http.Request) {
-                  $W.Write([]byte($S))
-              }
-          - pattern: |
-              func $H($W http.ResponseWriter, $R *http.Request) {
-                  fmt.Fprint($W, $S)
-              }
-          - pattern: |
-              func $H($W http.ResponseWriter, $R *http.Request) {
+              func ($RECV $T) $H($W http.ResponseWriter, $R *http.Request) {
+                  ...
                   $W.WriteHeader(http.StatusOK)
-                  $W.Write([]byte($S))
+                  ...
               }
+      - pattern-not-inside: |
+          if $COND {
+              ...
+              $W.WriteHeader(http.StatusOK)
+              ...
+          }
+      - pattern-not-inside: |
+          switch $V {
+              case $C:
+                  ...
+          }
+      - pattern-not: |
+          if $ERR != nil {
+              ...
+              $W.WriteHeader($S)
+              ...
+              return
+          }
+          ...
+          $W.WriteHeader(http.StatusOK)
 
   - id: go.slice.preallocated-with-continue-on-error
     severity: INFO
@@ -331,6 +441,13 @@ rules:
         tags: [error_handling, panic_safety]
         obligations: [nil_safety]
         confidence: medium
+        notes: |
+          May false-positive when the consumer is index-aligned with the
+          input and expects sparse output. Suppress per-call if the zero
+          value is intentional (and document why).
+    paths:
+      exclude:
+        - "*_test.go"
     patterns:
       - pattern: |
           $S := make([]$T, len($IN))
@@ -363,6 +480,9 @@ rules:
         tags: [concurrent, scheduler]
         obligations: [external_call_timeout_bounded]
         confidence: high
+    paths:
+      exclude:
+        - "*_test.go"
     patterns:
       - pattern-either:
           - pattern: context.WithTimeout($CTX, 0)
@@ -370,3 +490,42 @@ rules:
           - pattern: context.WithTimeout($CTX, 0 * time.Second)
           - pattern: context.WithTimeout($CTX, 0 * time.Millisecond)
           - pattern: context.WithDeadline($CTX, time.Time{})
+
+  - id: go.context.cancel-where-timeout-expected
+    severity: INFO
+    languages: [go]
+    message: |
+      context.WithCancel called inside a function that also has a
+      time.Duration parameter or a 0-timeout fallback - the intent appears
+      to be "no timeout" but using WithCancel hides the absent deadline
+      from downstream callers that may rely on a Deadline() value.
+      Consider passing the timeout through as a real deadline, or document
+      the unbounded path explicitly.
+    metadata:
+      proof:
+        signal_id: context.cancel_where_timeout_expected
+        provider: opengrep
+        tags: [concurrent, scheduler]
+        obligations: [external_call_timeout_bounded]
+        confidence: low
+        notes: |
+          Sibling of go.context.zero-timeout. Bounded operations sometimes
+          legitimately use WithCancel + an external watchdog goroutine -
+          this is a stylistic flag, not a defect.
+    paths:
+      exclude:
+        - "*_test.go"
+    patterns:
+      - pattern-either:
+          - pattern: |
+              if $X == 0 {
+                  ...
+                  $CTX, $CANCEL = context.WithCancel($PARENT)
+                  ...
+              }
+          - pattern: |
+              if $X == 0 {
+                  ...
+                  $CTX, $CANCEL := context.WithCancel($PARENT)
+                  ...
+              }

@@ -1,8 +1,8 @@
 {
   "schema_version": "proof.code_signals.report.v1",
   "provider": "opengrep",
-  "generated_at": "2026-06-01T19:03:27Z",
-  "input_hash": "sha256:bd66e5116cb6b568313a99c7a1445a5bae1f436657ccbcbc7abd55bd77dddebb",
+  "generated_at": "2026-06-01T19:44:27Z",
+  "input_hash": "sha256:5bbd2991f44dbe5609a35f423eb6ab5189e5bbb48290e9d1108c6c705a22d52e",
   "mode": "run",
   "source": "stdout",
   "format": "sarif",
@@ -1212,8 +1212,8 @@
       "obligations": [
         "panic_free_input_handling"
       ],
-      "message": "Goroutine launched without a deferred recover at the top of its body.\nA panic inside the goroutine cannot be caught by the launching frame\nand will crash the whole process. For fan-out / long-lived / per-\nrequest goroutines, add `defer func() { if r := recover(); r != nil\n{ log + metric } }()` at the start of the body.\n",
-      "fingerprint": "sha256:edc7f86340f2999173d9b3d2ac4106f11164d830500daafb904048142cb5a766",
+      "message": "Goroutine launched without a deferred recover at the top of its body.\nA panic inside the goroutine cannot be caught by the launching frame\nand will crash the whole process. For fan-out / long-lived / per-\nrequest goroutines, add\n`defer func() { if r := recover(); r != nil { log + metric } }()`\nat the start of the body.\n",
+      "fingerprint": "sha256:fd977a9fca1ba4d720e67c9023a67d8b9ab4516e735c15aa11643883ca8a2ad8",
       "source_hash": "sha256:ea0d01bc2cf1958e2c42d69e4a0eaf07bfe686af6b41d65a8a3b46ef2c01e008"
     },
     {
@@ -2385,8 +2385,8 @@
       "obligations": [
         "panic_free_input_handling"
       ],
-      "message": "Goroutine launched without a deferred recover at the top of its body.\nA panic inside the goroutine cannot be caught by the launching frame\nand will crash the whole process. For fan-out / long-lived / per-\nrequest goroutines, add `defer func() { if r := recover(); r != nil\n{ log + metric } }()` at the start of the body.\n",
-      "fingerprint": "sha256:30839109f3cf131abea30ce8a6d9df3eedaf5a64923f7a0126cc51389a6c583c",
+      "message": "Goroutine launched without a deferred recover at the top of its body.\nA panic inside the goroutine cannot be caught by the launching frame\nand will crash the whole process. For fan-out / long-lived / per-\nrequest goroutines, add\n`defer func() { if r := recover(); r != nil { log + metric } }()`\nat the start of the body.\n",
+      "fingerprint": "sha256:77a889bc62adcbc2feb4cfe9c4b5602d78788cd619cc02d89d048a8a335efbc9",
       "source_hash": "sha256:2c3d418cb9ea0e57f5b9408764a80849151188cb53d1ab2baa09118d0ebef391"
     },
     {
@@ -2792,8 +2792,8 @@
       "obligations": [
         "panic_free_input_handling"
       ],
-      "message": "Goroutine launched without a deferred recover at the top of its body.\nA panic inside the goroutine cannot be caught by the launching frame\nand will crash the whole process. For fan-out / long-lived / per-\nrequest goroutines, add `defer func() { if r := recover(); r != nil\n{ log + metric } }()` at the start of the body.\n",
-      "fingerprint": "sha256:9bcabe6dbf12403312d43d46682a3c349036126387da658fc9c641a61291867c",
+      "message": "Goroutine launched without a deferred recover at the top of its body.\nA panic inside the goroutine cannot be caught by the launching frame\nand will crash the whole process. For fan-out / long-lived / per-\nrequest goroutines, add\n`defer func() { if r := recover(); r != nil { log + metric } }()`\nat the start of the body.\n",
+      "fingerprint": "sha256:fb09d19ea1b83358395671069e21bc9030acfdb91b4fac5c3f2edc8aaf14976d",
       "source_hash": "sha256:e19a13d34f72969e26f9fe4183283061067371d1a60238e3f8c4ccb65669020e"
     },
     {
@@ -3215,8 +3215,8 @@
       "obligations": [
         "panic_free_input_handling"
       ],
-      "message": "Goroutine launched without a deferred recover at the top of its body.\nA panic inside the goroutine cannot be caught by the launching frame\nand will crash the whole process. For fan-out / long-lived / per-\nrequest goroutines, add `defer func() { if r := recover(); r != nil\n{ log + metric } }()` at the start of the body.\n",
-      "fingerprint": "sha256:863d5163e2cd30c9963ff23451083f684907dee7fce03074e148e39b7d66a8ee",
+      "message": "Goroutine launched without a deferred recover at the top of its body.\nA panic inside the goroutine cannot be caught by the launching frame\nand will crash the whole process. For fan-out / long-lived / per-\nrequest goroutines, add\n`defer func() { if r := recover(); r != nil { log + metric } }()`\nat the start of the body.\n",
+      "fingerprint": "sha256:db7b795ea15cfa30a001a13c4b9bc20ef1e8b78671657803dbb44cd1b35fc9c7",
       "source_hash": "sha256:99d941c7b4c94efc7abfde6bb6848083175f7d66d72157500b831a36d4593f19"
     },
     {
@@ -3676,8 +3676,8 @@
       "obligations": [
         "panic_free_input_handling"
       ],
-      "message": "Goroutine launched without a deferred recover at the top of its body.\nA panic inside the goroutine cannot be caught by the launching frame\nand will crash the whole process. For fan-out / long-lived / per-\nrequest goroutines, add `defer func() { if r := recover(); r != nil\n{ log + metric } }()` at the start of the body.\n",
-      "fingerprint": "sha256:6b0ad0c66b6af1dcce351dc57d178319f814ed9701708d7c0f4eab8d23253ab7",
+      "message": "Goroutine launched without a deferred recover at the top of its body.\nA panic inside the goroutine cannot be caught by the launching frame\nand will crash the whole process. For fan-out / long-lived / per-\nrequest goroutines, add\n`defer func() { if r := recover(); r != nil { log + metric } }()`\nat the start of the body.\n",
+      "fingerprint": "sha256:1dfb31356fe448a9900f03293bc09e25dfea1d7239b1c235e2d696d380600e36",
       "source_hash": "sha256:829de65785cdd04edeea4ea3f663143e46b0bcdf0412fcadd52f1fbef24383a3"
     },
     {
@@ -3837,8 +3837,8 @@
       "obligations": [
         "panic_free_input_handling"
       ],
-      "message": "Goroutine launched without a deferred recover at the top of its body.\nA panic inside the goroutine cannot be caught by the launching frame\nand will crash the whole process. For fan-out / long-lived / per-\nrequest goroutines, add `defer func() { if r := recover(); r != nil\n{ log + metric } }()` at the start of the body.\n",
-      "fingerprint": "sha256:ce35b9e38b5132e4d99fee46d0762c2cc7dee80b1ace6fcef78b0271a5e7cfc1",
+      "message": "Goroutine launched without a deferred recover at the top of its body.\nA panic inside the goroutine cannot be caught by the launching frame\nand will crash the whole process. For fan-out / long-lived / per-\nrequest goroutines, add\n`defer func() { if r := recover(); r != nil { log + metric } }()`\nat the start of the body.\n",
+      "fingerprint": "sha256:cca57b2528cb750ed9b8829d8abdde53182f9228e1f92e75fc98e4a73cdfa746",
       "source_hash": "sha256:5d4fb4dfe315a4842672abf1f36a4496f0177a3dc32181a3cae56c466cd50167"
     },
     {
@@ -4419,6 +4419,27 @@
       ],
       "message": "HTTP server API use requires listener, request-boundary, timeout, and static-file review evidence.",
       "fingerprint": "sha256:c38e2b1fd2028504e8a381cdf17f3ca041735bcc28ac594a8812c69528ff2b47",
+      "source_hash": "sha256:5c4ea4acd5fbc87a7c6e0dfe361e9fce9627b49e2e190420d5628aa5789a1bae"
+    },
+    {
+      "schema_version": "proof.code_signals.v1",
+      "provider": "opengrep",
+      "provider_rule_id": "go.http.health-handler-unconditional-200",
+      "signal_id": "http.health_unconditional_200",
+      "artifact": "server/server.go",
+      "span": {
+        "start_line": 64,
+        "end_line": 68
+      },
+      "confidence": "low",
+      "tags": [
+        "http_server"
+      ],
+      "obligations": [
+        "external_call_failure_observable"
+      ],
+      "message": "HTTP handler appears to return 200 unconditionally. If this is mounted\nas a readiness probe it will report ready even before dependencies are\nreachable. Either gate the 200 on a real readiness check, or rename\nthe route to /livez and add a separate /readyz with a real check.\n",
+      "fingerprint": "sha256:c289c02e8faaf46a5860979bdb7bd244a54bff23457f5564e9150df09223e1f4",
       "source_hash": "sha256:5c4ea4acd5fbc87a7c6e0dfe361e9fce9627b49e2e190420d5628aa5789a1bae"
     },
     {
