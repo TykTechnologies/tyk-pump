@@ -2,7 +2,7 @@ id: uptime-aggregate-nil-errormap-on-tcp-then-http
 title: AggregateUptimeData panics if TCPError record precedes HTTP record for the same URL
 description: When AggregateUptimeData processes a ResponseCode==-1 (TCPError) record for a URL before any HTTP record for that same URL, it inserts a Counter into UptimeReportAggregate.URL[url] whose ErrorMap is nil. A subsequent HTTP record (ResponseCode!=-1) for the same URL then tries to increment ErrorMap[code] on that existing counter and panics with a nil-map assignment. Existing tests happen to feed the HTTP record first, masking the bug.
 affected_requirements:
-    - SW-REQ-015
+    - SW-REQ-073
 commands:
     - go test -count=1 -run TestAggregateUptimeData_TCPErrorBeforeHTTP ./analytics
 severity: medium
@@ -16,3 +16,7 @@ history:
     - at: "2026-05-30T20:31:01Z"
       by: human:buger
       action: created
+    - at: "2026-06-01T20:47:57Z"
+      by: human:buger
+      action: edit
+      detail: add-requirement,remove-requirement

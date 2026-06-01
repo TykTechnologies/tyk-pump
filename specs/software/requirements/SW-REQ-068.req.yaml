@@ -5,7 +5,7 @@ priority: shall
 category: functional
 req_type: derived
 fretish: ""
-description: The Elasticsearch pump shall, at Init, select an ElasticsearchOperator implementation per configured Version ("3", "5", "6", or "7", defaulting to "3" when unset) — instantiating the corresponding elastic.v3 / elastic.v5 / elastic.v6 / elastic/v7 client (with sniffing toggle, basic auth, optional ApiKey-auth via ApiKeyTransport, and optional custom TLS) and corresponding BulkProcessor. Versions other than 3/5/6/7 shall be rejected at Init via log.Fatal.
+description: 'The Elasticsearch pump shall, at Init, select an ElasticsearchOperator implementation per configured Version ("3", "5", "6", or "7", defaulting to "3" when unset) — instantiating the corresponding elastic.v3 / elastic.v5 / elastic.v6 / elastic/v7 client (with sniffing toggle, basic auth, optional ApiKey-auth via ApiKeyTransport, and optional custom TLS) and corresponding BulkProcessor. Versions other than 3/5/6/7 shall be rejected at Init via log.Fatal. Known issue: the log.Fatal-on-bad-config behaviour is shared with other pumps and tracked as pumps-logfatal-on-config-decode.'
 formalization_strategy: informal
 informal_verification:
     method: ""
@@ -29,9 +29,9 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-05-30T08:44:11Z"
-        comment: Phase A per-implementation/per-significant-behavior decomposition; descriptions code-verified against the named files per docs/phase-a-proposed-reqs.md. Pump-family family-level reqs are retained as superseded anchor reqs.
-        fingerprint: sha256:4bdd1e27dd87f75d957c97e2df29b8ec8693171ae268807d89ad37a50913f6a6
+        reviewed_at: "2026-06-01T20:53:21Z"
+        comment: 'Phase I: cross-referenced pumps-logfatal-on-config-decode KI in description.'
+        fingerprint: sha256:ef52124d7276484a0ca52528f09be96879891dcf32bb466055d83d98d1273f48
         ai_generated: false
     impact_reviews:
         - requirement: SW-REQ-068
@@ -48,7 +48,7 @@ history:
     created_by: human:cli
     created_at: "2026-05-30T08:39:57Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-01T19:11:53Z"
+    last_modified_at: "2026-06-01T20:53:21Z"
 obligation_checklist:
     - cert_validation_strict
     - nominal
@@ -85,4 +85,9 @@ lifecycle:
           from: draft
           to: review
           reason: ""
+          changed_by: human:cli
+        - date: "2026-06-01T20:53:21Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-05-30T08:44:11Z comment="Phase A per-implementation/per-significant-behavior decomposition; descriptions code-verified against the named files per docs/phase-a-proposed-reqs.md. Pump-family family-level reqs are retained as superseded anchor reqs.")'
           changed_by: human:cli

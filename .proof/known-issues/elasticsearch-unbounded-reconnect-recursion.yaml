@@ -4,6 +4,7 @@ description: 'pumps/elasticsearch.go:407-415 connect() recurses to itself on fai
 affected_requirements:
     - SYS-REQ-004
     - SYS-REQ-005
+    - SW-REQ-072
 evidence_manifests:
     - code_signal:opengrep:go.recursion.unbounded-on-error:pumps/elasticsearch.go:407
 severity: medium
@@ -27,3 +28,7 @@ history:
       by: human:leo
       action: edit
       detail: add-evidence-manifest
+    - at: "2026-06-01T20:26:45Z"
+      by: human:buger
+      action: edit
+      detail: add-requirement

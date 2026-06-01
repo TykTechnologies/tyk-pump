@@ -1,0 +1,75 @@
+id: SW-REQ-072
+version: 1
+status: approved
+priority: shall
+category: functional
+req_type: derived
+fretish: when write_exceeds_timeout delivery shall immediately satisfy write_aborted
+description: 'Each pump goroutine spawned by execPumpWriting shall receive a context bounded by the per-pump configured timeout (PumpConfig.Timeout). The pump''s WriteData implementation shall honour ctx cancellation: when ctx.Done() fires, the pump shall stop the in-flight write and return ctx.Err().'
+formalization_strategy: fretish
+informal_verification:
+    method: ""
+    evidence: ""
+    verified: false
+parent: SYS-REQ-005
+component: delivery
+rationale: "Implements SYS-REQ-005 at the design level. Today the mongo family ignores caller ctx (KI mongo-pump-ignores-caller-context), elasticsearch recurses unbounded on connect failure (KI elasticsearch-unbounded-reconnect-recursion), and PumpConfig.Timeout=0 disables enforcement entirely (KI pump-no-timeout-can-block-purge-cycle); this SW req is the contract those KIs are reported against."
+tags: []
+variables: []
+traces:
+    satisfies:
+        - SYS-REQ-005
+    reviewed_at: "2026-06-01T20:50:03.974099Z"
+    reviewed_by: human:buger
+    reviewed_fingerprint: sha256:6988181c111fc6b3de3adb62a87f4e9b35c3a486fd1bab0d4d71b5e11b5caeba
+verification:
+    assurance_level: B
+    formalization_status: valid
+    review:
+        status: approved
+        reviewer: human:buger
+        role: software_engineer
+        reviewed_at: "2026-06-01T20:30:10Z"
+        comment: 'Phase I: per-pump write-timeout / ctx-propagation design point added under SYS-REQ-005; component=delivery, FRETish reuses parent''s write_exceeds_timeout/write_aborted vars; 3 affixed KIs (mongo-pump-ignores-caller-context, elasticsearch-unbounded-reconnect-recursion, pump-no-timeout-can-block-purge-cycle) now have a SW-level home.'
+        fingerprint: sha256:cb3ae1f4998dd574bcb6de5d1c02085834e1b73fddc80ce01806d801ba2cdba0
+        ai_generated: false
+history:
+    created_by: human:cli
+    created_at: "2026-06-01T20:24:19Z"
+    last_modified_by: human:cli
+    last_modified_at: "2026-06-01T20:30:11Z"
+obligation_checklist:
+    - cancellation_observed
+    - error_handling
+obligation_suppressions:
+    - id: cancellation_observed
+      reason: 'Phase I: SW-REQ-072 is a contract-only design point under SYS-REQ-005; the actual cancellation_observed implementation is broken today and is captured by KIs mongo-pump-ignores-caller-context, elasticsearch-unbounded-reconnect-recursion, and pump-no-timeout-can-block-purge-cycle. Suppression with rationale per ship_with_known_issue disposition until those KIs are remediated.'
+      suppressed_by: human:buger
+      suppressed_at: "2026-06-01T20:27:38Z"
+      framework_refs:
+        - CWE CWE-672,CWE-410
+        - DO-178C §6.3.3
+        - ISO-26262 Part 6 §7.4.13
+        - NIST-800-53 SC-5
+    - id: error_handling
+      reason: 'Phase I: SW-REQ-072 is a contract-only design point under SYS-REQ-005; the actual error_handling on ctx-cancellation is broken today and is captured by KIs mongo-pump-ignores-caller-context, elasticsearch-unbounded-reconnect-recursion, and pump-no-timeout-can-block-purge-cycle. Suppression with rationale per ship_with_known_issue disposition until those KIs are remediated.'
+      suppressed_by: human:buger
+      suppressed_at: "2026-06-01T20:27:40Z"
+release_disposition: ship_with_known_issue
+lifecycle:
+    change_history:
+        - date: "2026-06-01T20:24:34Z"
+          from: release_disposition=
+          to: release_disposition=ship_with_known_issue
+          reason: 'Phase I: 3 affixed KIs (mongo-pump-ignores-caller-context, elasticsearch-unbounded-reconnect-recursion, pump-no-timeout-can-block-purge-cycle)'
+          changed_by: human:buger
+        - date: "2026-06-01T20:24:34Z"
+          from: draft
+          to: review
+          reason: Phase I
+          changed_by: human:buger
+        - date: "2026-06-01T20:30:10Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-01T20:26:30Z comment="Phase I: per-pump write-timeout / ctx-propagation design point added under SYS-REQ-005; 3 affixed KIs (mongo-pump-ignores-caller-context, elasticsearch-unbounded-reconnect-recursion, pump-no-timeout-can-block-purge-cycle) now have a SW-level home.")'
+          changed_by: human:cli

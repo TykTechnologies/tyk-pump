@@ -4,6 +4,7 @@ description: 'The whole mongo pump family ignores the caller ctx and passes cont
 affected_requirements:
     - SYS-REQ-005
     - INT-REQ-004
+    - SW-REQ-072
 evidence_manifests:
     - code_signal:opengrep:go.concurrency.unguarded-channel-send:pumps/mongo.go:438
     - code_signal:opengrep:go.concurrency.unguarded-channel-send:pumps/graph_mongo.go:135
@@ -44,3 +45,7 @@ history:
       by: human:leo
       action: edit
       detail: add-evidence-manifest
+    - at: "2026-06-01T20:26:45Z"
+      by: human:buger
+      action: edit
+      detail: add-requirement

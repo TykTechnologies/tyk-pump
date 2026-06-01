@@ -29,8 +29,8 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-05-30T07:43:08Z"
-        comment: Software-component design reviewed as part of feat/reqproof-coverage PR; each maps to verified code paths per the Phase 0 file-by-file verification (see PR description for code-verified corrections SW-016/017/023/027/028/033).
+        reviewed_at: "2026-06-01T20:22:32Z"
+        comment: 'Phase I: suppressed external_call_failure_observable on health-handler signal — /health is liveness-only per KI health-endpoint-is-liveness-only.'
         fingerprint: sha256:0edae23162d4c78b33e903333d8bff1f61f7d316b757e3339c57a8d3726b3fc9
         ai_generated: false
     impact_reviews:
@@ -48,13 +48,27 @@ history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:17Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-30T07:49:09Z"
+    last_modified_at: "2026-06-01T20:22:32Z"
 obligation_checklist:
     - nominal
+obligation_suppressions:
+    - id: external_call_failure_observable
+      reason: 'Phase I: /health is intentionally a liveness-only endpoint per KI health-endpoint-is-liveness-only (status=open, ship). It does not gate readiness on external dependencies; the rule''s external_call_failure_observable obligation does not apply. STK-REQ-004 has the matching narrative.'
+      suppressed_by: human:buger
+      suppressed_at: "2026-06-01T20:22:28Z"
+      framework_refs:
+        - CWE CWE-754
+        - NIST-800-53 SI-11
+        - OWASP-ASVS-v4 V7.4.1
 lifecycle:
     change_history:
         - date: "2026-05-29T15:46:44Z"
           from: draft
           to: review
           reason: ""
+          changed_by: human:cli
+        - date: "2026-06-01T20:22:32Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-05-30T07:43:08Z comment="Software-component design reviewed as part of feat/reqproof-coverage PR; each maps to verified code paths per the Phase 0 file-by-file verification (see PR description for code-verified corrections SW-016/017/023/027/028/033).")'
           changed_by: human:cli

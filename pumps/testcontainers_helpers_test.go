@@ -95,7 +95,7 @@ func mongoConnectionURI(t *testing.T) string {
 	return uri
 }
 
-// Verifies: SW-REQ-019
+// Verifies: SW-REQ-040
 func startSharedMySQL(ctx context.Context) (string, error) {
 	mysqlOnce.Do(func() {
 		c, err := tcmysql.Run(ctx, "mysql:8-oracle",
@@ -118,7 +118,7 @@ func startSharedMySQL(ctx context.Context) (string, error) {
 	return mysqlDSN, mysqlErr
 }
 
-// Verifies: SW-REQ-019
+// Verifies: SW-REQ-040
 func mysqlConnectionDSN(t *testing.T) string {
 	t.Helper()
 	dsn, err := startSharedMySQL(t.Context())
@@ -131,7 +131,7 @@ func mysqlConnectionDSN(t *testing.T) string {
 	return dsn
 }
 
-// Verifies: SW-REQ-019
+// Verifies: SW-REQ-040
 func startSharedPostgres(ctx context.Context) (string, error) {
 	postgresOnce.Do(func() {
 		c, err := tcpostgres.Run(ctx, "postgres:15-alpine",
@@ -155,7 +155,7 @@ func startSharedPostgres(ctx context.Context) (string, error) {
 	return postgresDSN, postgresErr
 }
 
-// Verifies: SW-REQ-019
+// Verifies: SW-REQ-040
 func postgresConnectionDSN(t *testing.T) string {
 	t.Helper()
 	dsn, err := startSharedPostgres(t.Context())
@@ -200,7 +200,7 @@ func kafkaBrokerAddrs(t *testing.T) []string {
 	return brokers
 }
 
-// Verifies: SW-REQ-022
+// Verifies: SW-REQ-046
 //
 // Cap the JVM heap at 256MB (default is 1GB) — the pump test fixtures index a
 // handful of documents at most; a larger heap is pure memory tax. discovery.type
@@ -223,7 +223,7 @@ func startSharedElastic(ctx context.Context) (string, error) {
 	return elasticURL, elasticErr
 }
 
-// Verifies: SW-REQ-022
+// Verifies: SW-REQ-046
 func elasticsearchURL(t *testing.T) string {
 	t.Helper()
 	url, err := startSharedElastic(t.Context())

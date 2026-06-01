@@ -5,7 +5,7 @@ priority: shall
 category: functional
 req_type: derived
 fretish: ""
-description: 'When RollingIndex is true, the Elasticsearch pump shall append -YYYY.MM.DD (UTC system time) to the target index name. Per-record routing shall use getIndexNameForRecord: when MCPIndexName is non-empty and the record is an MCP record, the MCP-specific index name is used (with the same rolling suffix when enabled); otherwise the standard IndexName is used.'
+description: 'When RollingIndex is true, the Elasticsearch pump shall append -YYYY.MM.DD (UTC system time) to the target index name. Per-record MCP routing shall use getIndexNameForRecord and apply ONLY in bulk mode: when MCPIndexName is non-empty and the record is an MCP record, the MCP-specific index name is used (with the same rolling suffix when enabled); otherwise the standard IndexName is used. Known issue: non-bulk mode currently ignores MCP routing (KI elasticsearch-mcp-routing-non-bulk-ignored).'
 formalization_strategy: informal
 informal_verification:
     method: ""
@@ -29,9 +29,9 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-05-30T08:44:11Z"
-        comment: Phase A per-implementation/per-significant-behavior decomposition; descriptions code-verified against the named files per docs/phase-a-proposed-reqs.md. Pump-family family-level reqs are retained as superseded anchor reqs.
-        fingerprint: sha256:9c0dc0c96df9038320efa147800c87f33f18ff38dd7f58757f28a18a530119f2
+        reviewed_at: "2026-06-01T20:53:09Z"
+        comment: 'Phase I: scoped MCP-routing guarantee to bulk mode (KI elasticsearch-mcp-routing-non-bulk-ignored).'
+        fingerprint: sha256:81a660073001d0f10be525a7f1a2646025844105fa126968cfc5f9df35a57c7a
         ai_generated: false
     impact_reviews:
         - requirement: SW-REQ-069
@@ -48,7 +48,7 @@ history:
     created_by: human:cli
     created_at: "2026-05-30T08:40:01Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-01T19:11:53Z"
+    last_modified_at: "2026-06-01T20:53:09Z"
 obligation_checklist:
     - determinism
     - nominal
@@ -79,10 +79,26 @@ obligation_suppressions:
         - CWE CWE-400,CWE-404
         - NIST-800-53 SC-5
         - OWASP-ASVS-v4 V11.1.4
+release_disposition: ship_with_known_issue
 lifecycle:
     change_history:
         - date: "2026-05-30T08:43:47Z"
           from: draft
           to: review
           reason: ""
+          changed_by: human:cli
+        - date: "2026-06-01T20:13:08Z"
+          from: release_disposition=
+          to: release_disposition=ship_with_known_issue
+          reason: 'Phase I: explicit SWKI disposition added to match affixed KIs (gate-tightening readiness)'
+          changed_by: human:buger
+        - date: "2026-06-01T20:13:13Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-05-30T08:44:11Z comment="Phase A per-implementation/per-significant-behavior decomposition; descriptions code-verified against the named files per docs/phase-a-proposed-reqs.md. Pump-family family-level reqs are retained as superseded anchor reqs.")'
+          changed_by: human:cli
+        - date: "2026-06-01T20:53:09Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-01T20:13:13Z comment="Phase I: explicit SWKI disposition added to match affixed KIs (gate-tightening readiness).")'
           changed_by: human:cli

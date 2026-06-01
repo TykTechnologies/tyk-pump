@@ -29,8 +29,8 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-05-30T20:22:55Z"
-        comment: 'Phase B: SW-031 carries boundary now to honestly cover retry-exhaustion Z3 boundary tests (retry/z3_property_test.go).'
+        reviewed_at: "2026-06-01T20:13:13Z"
+        comment: 'Phase I: explicit SWKI disposition added to match affixed KIs (gate-tightening readiness).'
         fingerprint: sha256:408fd10f02a27c27b6f2f41e8c24131fd115059be124a72d373b34bb6904df97
         ai_generated: false
     impact_reviews:
@@ -48,7 +48,7 @@ history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:17Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-01T19:11:43Z"
+    last_modified_at: "2026-06-01T20:13:13Z"
 obligation_checklist:
     - boundary
     - error_handling
@@ -61,6 +61,7 @@ obligation_suppressions:
         - CWE CWE-1088,CWE-400
         - NIST-800-53 SC-5
         - OWASP-ASVS-v4 V11.1.4
+release_disposition: ship_with_known_issue
 lifecycle:
     change_history:
         - date: "2026-05-29T15:46:44Z"
@@ -77,4 +78,14 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-05-30T10:36:05Z comment="Phase 0.7 review: applied SW review findings (description honesty for SW-006/007/008/016/031, obligation downgrades for SW-006/023/035/064, SW-007 retargeting, new SW-071 for GeoIP split) and SYS-side trace extensions (SW-001/002/007/011/015 now satisfy Phase 0.6-split SYS reqs); content factual against current code.")'
+          changed_by: human:cli
+        - date: "2026-06-01T20:13:08Z"
+          from: release_disposition=
+          to: release_disposition=ship_with_known_issue
+          reason: 'Phase I: explicit SWKI disposition added to match affixed KIs (gate-tightening readiness)'
+          changed_by: human:buger
+        - date: "2026-06-01T20:13:13Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-05-30T20:22:55Z comment="Phase B: SW-031 carries boundary now to honestly cover retry-exhaustion Z3 boundary tests (retry/z3_property_test.go).")'
           changed_by: human:cli

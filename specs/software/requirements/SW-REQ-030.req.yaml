@@ -29,8 +29,8 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-05-30T07:43:08Z"
-        comment: Software-component design reviewed as part of feat/reqproof-coverage PR; each maps to verified code paths per the Phase 0 file-by-file verification (see PR description for code-verified corrections SW-016/017/023/027/028/033).
+        reviewed_at: "2026-06-01T20:13:13Z"
+        comment: 'Phase I: explicit SWKI disposition added to match affixed KIs (gate-tightening readiness).'
         fingerprint: sha256:388f3b4b43713e8701b342c85dc5f500032b86212627b1f6e36b137c71d284f8
         ai_generated: false
     impact_reviews:
@@ -48,7 +48,7 @@ history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:16Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-01T18:35:40Z"
+    last_modified_at: "2026-06-01T20:13:13Z"
 obligation_checklist:
     - error_handling
 obligation_suppressions:
@@ -63,10 +63,21 @@ obligation_suppressions:
       reason: 'Phase G: code_signal ''go.deserializer.request-body-readall'' at retry/http-retry.go:43 — io.ReadAll on the OUTBOUND request body (pump-emitted, not attacker input). Read-error path is handled (returns err on line 46). Body is not parsed by the retry layer; the upstream pump owns shape validation. Not a malformed-input obligation gap on the retry surface.'
       suppressed_by: buger
       suppressed_at: "2026-06-01T18:35:40Z"
+release_disposition: ship_with_known_issue
 lifecycle:
     change_history:
         - date: "2026-05-29T15:46:44Z"
           from: draft
           to: review
           reason: ""
+          changed_by: human:cli
+        - date: "2026-06-01T20:13:08Z"
+          from: release_disposition=
+          to: release_disposition=ship_with_known_issue
+          reason: 'Phase I: explicit SWKI disposition added to match affixed KIs (gate-tightening readiness)'
+          changed_by: human:buger
+        - date: "2026-06-01T20:13:13Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-05-30T07:43:08Z comment="Software-component design reviewed as part of feat/reqproof-coverage PR; each maps to verified code paths per the Phase 0 file-by-file verification (see PR description for code-verified corrections SW-016/017/023/027/028/033).")'
           changed_by: human:cli

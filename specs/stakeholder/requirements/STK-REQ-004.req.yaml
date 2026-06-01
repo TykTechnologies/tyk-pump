@@ -5,7 +5,7 @@ priority: shall
 category: functional
 req_type: guarantee
 fretish: ""
-description: Operators need to observe the health and throughput of the pump process itself, via a health-check endpoint suitable for orchestration probes and optional operational metrics, so they can detect when the pump is unhealthy or falling behind.
+description: Operators need to observe the health and throughput of the pump process itself, via a liveness health-check endpoint suitable for orchestration probes (today /health is liveness-only per KI health-endpoint-is-liveness-only — it does not gate on dependency readiness) and optional operational metrics, so they can detect when the pump is unhealthy or falling behind.
 formalization_strategy: informal
 informal_verification:
     method: ""
@@ -28,16 +28,16 @@ verification:
     review:
         status: approved
         reviewer: human:buger
-        role: system_owner
-        reviewed_at: "2026-05-30T07:43:08Z"
-        comment: Stakeholder intent reviewed as part of feat/reqproof-coverage PR; each persona/story/acceptance-criteria matches operator/business reality for tyk-pump.
-        fingerprint: sha256:670ea3c48928154fd2555480a1590b94c97c116da63765a91544d9667960954c
+        role: customer
+        reviewed_at: "2026-06-01T20:51:37Z"
+        comment: 'Phase I: acknowledged liveness-only nature of /health via KI health-endpoint-is-liveness-only.'
+        fingerprint: sha256:0422c03e7309129fcd6d6372c52f4d8dbfa9bc76e567cc5c7fb8b63726a60419
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:10:49Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-30T07:43:08Z"
+    last_modified_at: "2026-06-01T20:51:37Z"
 obligation_checklist:
     - nominal
     - error_handling
@@ -62,4 +62,9 @@ lifecycle:
           from: draft
           to: review
           reason: ""
+          changed_by: human:cli
+        - date: "2026-06-01T20:51:37Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="system_owner" reviewer="human:buger" at=2026-05-30T07:43:08Z comment="Stakeholder intent reviewed as part of feat/reqproof-coverage PR; each persona/story/acceptance-criteria matches operator/business reality for tyk-pump.")'
           changed_by: human:cli

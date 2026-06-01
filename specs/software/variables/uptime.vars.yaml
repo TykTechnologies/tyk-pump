@@ -1,0 +1,10 @@
+component: uptime
+variables:
+    - name: uptime_data_consumed
+      type: bool
+      direction: internal
+      description: Uptime data has been retrieved from the temporal store on this purge cycle (mirror of the SYS-level uptime variable, scoped to the software component).
+    - name: uptime_forwarded
+      type: bool
+      direction: output
+      description: Uptime report data is forwarded to the uptime backend (mirror of the SYS-level uptime variable, scoped to the software component).

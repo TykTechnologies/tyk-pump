@@ -1,0 +1,10 @@
+component: delivery
+variables:
+    - name: write_exceeds_timeout
+      type: bool
+      direction: input
+      description: A backend write has exceeded its configured timeout (mirror of the SYS-level delivery variable, scoped to the software component).
+    - name: write_aborted
+      type: bool
+      direction: output
+      description: The over-time write is abandoned without blocking other backends (mirror of the SYS-level delivery variable, scoped to the software component).

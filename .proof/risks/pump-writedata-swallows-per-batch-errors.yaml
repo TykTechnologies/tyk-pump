@@ -1,0 +1,18 @@
+id: pump-writedata-swallows-per-batch-errors
+title: Pump.WriteData per-batch error swallowing across 11 pumps
+description: 'Mirror of KI pump-writedata-swallows-per-batch-errors: 11 pumps (mongo family, kinesis, sql, graylog, syslog, logzio, segment, influx, influx2) log per-batch errors but return nil from WriteData, breaking the INT-REQ-004 error-return contract. Accepting this risk because the workaround (operators tail pump logs) is in place; the refactor is tracked.'
+affected_requirements:
+    - INT-REQ-004
+mitigation: Operators must inspect pump logs for per-batch errors; the WriteData return value is currently a weak signal.
+customer_impact: Backend write failures may not propagate to caller; success counters can mislead.
+owner: tyk-team
+review_date: "2026-11-30"
+release_disposition: ship_with_known_issue
+accepted_by: human:leo
+accepted_at: "2026-06-01T20:23:31Z"
+status: active
+history:
+    - at: "2026-06-01T20:23:31Z"
+      by: human:buger
+      action: accepted
+      detail: accepted_by=human:leo

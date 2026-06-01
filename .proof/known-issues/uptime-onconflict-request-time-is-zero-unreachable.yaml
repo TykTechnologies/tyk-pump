@@ -2,7 +2,7 @@ id: uptime-onconflict-request-time-is-zero-unreachable
 title: MC/DC F-side of '!field.IsZero()' on Counter.RequestTime is unreachable
 description: analytics/uptime_data.go:86 inside OnConflictUptimeAssignments iterates the embedded Counter fields and tests '!field.IsZero()' for the request_time field. The function constructs an empty UptimeReportAggregateSQL{} via 'f := UptimeReportAggregateSQL{}', so f.Counter.RequestTime is always the zero float and IsZero() is always true. The F side of IsZero() (== T side of !IsZero()) is therefore structurally unreachable without restructuring the function.
 affected_requirements:
-    - SW-REQ-015
+    - SW-REQ-073
 commands:
     - go test -count=1 -run TestOnConflictUptimeAssignments_RequestTimeZeroSkipped ./analytics
 severity: low
@@ -16,3 +16,7 @@ history:
     - at: "2026-05-30T20:37:38Z"
       by: human:buger
       action: created
+    - at: "2026-06-01T20:47:57Z"
+      by: human:buger
+      action: edit
+      detail: add-requirement,remove-requirement

@@ -1,6 +1,6 @@
 id: SW-REQ-027
 version: 1
-status: approved
+status: superseded
 priority: shall
 category: functional
 req_type: derived
@@ -108,7 +108,7 @@ history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:16Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-30T08:45:17Z"
+    last_modified_at: "2026-06-01T20:31:32Z"
 obligation_checklist:
     - errors_propagated
 obligation_suppressions:
@@ -121,6 +121,11 @@ obligation_suppressions:
         - NIST-800-53 SI-11
         - OWASP-ASVS-v4 V7.4.1,V7.4.2,V7.4.3
 lifecycle:
+    deprecated_by: SW-REQ-048
+    deprecated_at: "2026-06-01T20:31:31Z"
+    retired_by: SW-REQ-048
+    retired_at: "2026-06-01T20:31:31Z"
+    superseded_by: SW-REQ-048
     change_history:
         - date: "2026-05-29T15:46:44Z"
           from: draft
@@ -131,4 +136,14 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="leo@tyk.io" at=2026-05-30T08:44:53Z comment="Software-component design reviewed as part of feat/reqproof-coverage PR; each maps to verified code paths per the Phase 0 file-by-file verification (see PR description for code-verified corrections SW-016/017/023/027/028/033).")'
+          changed_by: human:cli
+        - date: "2026-06-01T20:31:31Z"
+          from: approved
+          to: deprecated
+          reason: 'Force-superseded: Phase A decomposition: behaviors now carried by per-pump children (see prose); SW-REQ-048 is the first replacement and is approved.'
+          changed_by: human:cli
+        - date: "2026-06-01T20:31:31Z"
+          from: deprecated
+          to: superseded
+          reason: 'Phase A decomposition: behaviors now carried by per-pump children (see prose); SW-REQ-048 is the first replacement and is approved. (replaced by SW-REQ-048)'
           changed_by: human:cli
