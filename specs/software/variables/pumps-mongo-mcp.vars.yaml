@@ -1,0 +1,10 @@
+component: pumps-mongo-mcp
+variables:
+    - name: is_mcp_record
+      type: bool
+      direction: input
+      description: True when rec.IsMCPRecord() is true on the analytics record (MCP-only retain predicate).
+    - name: retained_for_mcp_insert
+      type: bool
+      direction: output
+      description: True iff the record is retained into the MCP insert set after filterMCPData.

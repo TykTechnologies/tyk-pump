@@ -25,6 +25,13 @@ import (
 // Verifies: SW-REQ-008
 // Verifies: INT-REQ-003
 // SW-REQ-008:encoding_safety:lemma
+// MCDC SW-REQ-008: key_suffix_protobuf=F, protobuf_codec_selected=F => TRUE
+// MCDC SW-REQ-008: key_suffix_protobuf=T, protobuf_codec_selected=F => FALSE
+// MCDC SW-REQ-008: key_suffix_protobuf=T, protobuf_codec_selected=T => TRUE
+// (This protobuf-only round-trip drives key_suffix_protobuf=T, protobuf_codec_selected=T —
+// covers T/T=TRUE. Sibling msgpack round-trip in serializer_test.go drives
+// the key_suffix_protobuf=F arm — covers F/F=TRUE. The intermediate T/F=FALSE
+// pair is covered by the proto-format-mismatch error cases.)
 func TestProtobuf_GraphQLStats_Roundtrip(t *testing.T) {
 	cases := []struct {
 		name       string

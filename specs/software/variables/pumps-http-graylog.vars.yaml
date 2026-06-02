@@ -1,0 +1,10 @@
+component: pumps-http-graylog
+variables:
+    - name: graylog_url_configured
+      type: bool
+      direction: input
+      description: True when GraylogConf.GraylogConnectionString and Tags slice are non-empty (operator wired Graylog endpoint).
+    - name: record_forwarded
+      type: bool
+      direction: output
+      description: True iff each analytics record is encoded as GELF and sent to the gelf client (false means WriteData short-circuits).

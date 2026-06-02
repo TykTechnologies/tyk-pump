@@ -156,6 +156,15 @@ func TestSyslogPump_WriteData(t *testing.T) {
 }
 
 // Verifies: SW-REQ-050
+// MCDC SW-REQ-050: tcp_writer_used=F, transport_tcp=F => TRUE
+// MCDC SW-REQ-050: tcp_writer_used=F, transport_tcp=T => FALSE
+// MCDC SW-REQ-050: tcp_writer_used=T, transport_tcp=T => TRUE
+// (mockSyslogServer + createTestSyslogPump above default to Transport='udp'
+// — F/F=TRUE. The TCP-transport subtest at TestSyslogPump_Init_TCPTransport
+// drives Transport='tcp' and asserts the writer is constructed for tcp —
+// T/T=TRUE. The F/T=FALSE pair is the Dial-error baseline where
+// Transport='tcp' but the syslog.Dial call fails — covered by the
+// Init-error subtests with an unreachable NetworkAddr.)
 func TestSyslogPump_WriteData_WithMultilineHTTP(t *testing.T) {
 	// Test data with realistic multiline HTTP requests/responses that would cause fragmentation
 	record := analytics.AnalyticsRecord{

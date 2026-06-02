@@ -11,6 +11,14 @@ import (
 )
 
 // Verifies: SW-REQ-037
+// MCDC SW-REQ-037: is_graph_record=F, converted_to_graph_record=F => TRUE
+// MCDC SW-REQ-037: is_graph_record=T, converted_to_graph_record=F => FALSE
+// MCDC SW-REQ-037: is_graph_record=T, converted_to_graph_record=T => TRUE
+// (The "all records written" case below uses GraphQLStats.IsGraphQL=true so
+// records are converted via ToGraphRecord — drives T/T=TRUE. Sibling cases
+// with IsGraphQL=false drive the wrap-without-parse skip arm — F/F=TRUE.
+// The KI graph-mongo-detected-connection-failure case below exercises the
+// is_graph_record=T but conversion-failed pair — T/F=FALSE.)
 func TestGraphMongoPump_WriteData(t *testing.T) {
 	conf := defaultConf(t)
 	conf.CollectionName = uniqueCollection(t)

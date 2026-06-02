@@ -348,6 +348,13 @@ func TestMongoAggregatePump_SelfHealing(t *testing.T) {
 }
 
 // Verifies: SW-REQ-062
+// MCDC SW-REQ-062: self_heal_enabled=F, aggregation_time_halved=F => TRUE
+// MCDC SW-REQ-062: self_heal_enabled=T, aggregation_time_halved=F => FALSE
+// MCDC SW-REQ-062: self_heal_enabled=T, aggregation_time_halved=T => TRUE
+// (table-driven cases below cover all three: disabled-flag and non-matching
+// errors yield the F/F=TRUE pair; AggregationTime=1 with a size-error yields
+// the T/F=FALSE pair; standard/Cosmos/DocDB size-error patterns with
+// AggregationTime>1 drive the T/T=TRUE pair.)
 func TestMongoAggregatePump_ShouldSelfHeal(t *testing.T) {
 	type fields struct {
 		dbConf           *MongoAggregateConf

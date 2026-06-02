@@ -1,0 +1,10 @@
+component: pumps-mongo-standard
+variables:
+    - name: mcp_record_present
+      type: bool
+      direction: input
+      description: True when the current AnalyticsRecord satisfies IsMCPRecord() (record classified as MCP).
+    - name: record_filtered_out
+      type: bool
+      direction: output
+      description: True iff the record is dropped from the insert set during shouldProcessItem (MCP filter or graph-only mode skip).

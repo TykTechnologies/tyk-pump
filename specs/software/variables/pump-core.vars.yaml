@@ -1,0 +1,10 @@
+component: pump-core
+variables:
+    - name: instrumentation_enabled
+      type: bool
+      direction: input
+      description: True when TYK_INSTRUMENTATION env var is '1' (instrumentation feature gate).
+    - name: statsd_sink_added
+      type: bool
+      direction: output
+      description: True iff a StatsD sink is added to the health stream and MonitorApplicationInstrumentation is invoked.

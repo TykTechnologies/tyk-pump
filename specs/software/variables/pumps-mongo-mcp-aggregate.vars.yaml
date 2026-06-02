@@ -1,0 +1,10 @@
+component: pumps-mongo-mcp-aggregate
+variables:
+    - name: use_mixed_collection
+      type: bool
+      direction: input
+      description: True when UseMixedCollection is true in the MCP aggregate config.
+    - name: mixed_collection_write_attempted
+      type: bool
+      direction: output
+      description: True iff the pump attempts a second write to the mixed collection on top of the per-org write.

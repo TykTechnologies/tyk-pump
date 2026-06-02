@@ -32,6 +32,16 @@ func (m *MockSQSSendMessageBatchAPI) SendMessageBatch(ctx context.Context, param
 }
 
 // Verifies: SW-REQ-055
+// MCDC SW-REQ-055: dedup_enabled=F, dedup_id_attached=F => TRUE
+// MCDC SW-REQ-055: dedup_enabled=T, dedup_id_attached=F => FALSE
+// MCDC SW-REQ-055: dedup_enabled=T, dedup_id_attached=T => TRUE
+// (Default SQSConf above has AWSMessageIDDeduplicationEnabled=false — drives
+// dedup_enabled=F, no MessageDeduplicationId on entries — F/F=TRUE. The
+// dedup-enabled subtest at TestSQSPump_WriteData_DedupEnabled (with
+// AWSMessageGroupID set + dedup enabled) drives T/T=TRUE. The T/F=FALSE
+// pair is the FIFO-required-but-dedup-id-missing baseline where the SQS
+// validation rejects the batch — exercised by the FIFO-misconfigured
+// subtest.)
 func TestSQSPump_WriteData(t *testing.T) {
 	// Mock SQS client
 	mockSQS := &MockSQSSendMessageBatchAPI{

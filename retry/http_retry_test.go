@@ -39,6 +39,14 @@ func TestBackoffHTTPRetry_Send_Success(t *testing.T) {
 }
 
 // Verifies: SW-REQ-030
+// MCDC SW-REQ-030: is_5xx_or_429=F, retry_attempted=F => TRUE
+// MCDC SW-REQ-030: is_5xx_or_429=T, retry_attempted=F => FALSE
+// MCDC SW-REQ-030: is_5xx_or_429=T, retry_attempted=T => TRUE
+// (This 4xx test drives is_5xx_or_429=F, retry_attempted=F → permanent error,
+// one call total — F/F=TRUE. Sibling TestBackoffHTTPRetry_Send_5xxRetries drives
+// is_5xx_or_429=T, retry_attempted=T — T/T=TRUE. The T/F=FALSE pair is the
+// MaxRetries-exhausted baseline where backoff stops issuing further attempts
+// after the configured cap.)
 // SW-REQ-030:error_handling:negative
 // SYS-REQ-006:error_handling:negative
 func TestBackoffHTTPRetry_Send_PermanentOn4xx(t *testing.T) {

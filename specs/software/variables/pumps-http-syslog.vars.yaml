@@ -1,0 +1,10 @@
+component: pumps-http-syslog
+variables:
+    - name: transport_tcp
+      type: bool
+      direction: input
+      description: True when SyslogConf.Transport == 'tcp' (otherwise udp/tls).
+    - name: tcp_writer_used
+      type: bool
+      direction: output
+      description: True iff the syslog writer is constructed for a TCP transport (false means udp/tls writer).

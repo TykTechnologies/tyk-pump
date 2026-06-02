@@ -1,0 +1,10 @@
+component: pumps-aws-sqs
+variables:
+    - name: dedup_enabled
+      type: bool
+      direction: input
+      description: True when AWSSQSConf.AWSMessageIDDeduplicationEnabled is true.
+    - name: dedup_id_attached
+      type: bool
+      direction: output
+      description: True iff each SQS batch entry carries a non-nil MessageDeduplicationId field.

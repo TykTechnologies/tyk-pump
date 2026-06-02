@@ -42,6 +42,16 @@ func TestGraylogPump_GetEnvPrefix(t *testing.T) {
 // branches for both RawRequest and RawResponse — neither triggers log.Fatal.
 //
 // Verifies: SW-REQ-049
+// MCDC SW-REQ-049: graylog_url_configured=F, record_forwarded=F => TRUE
+// MCDC SW-REQ-049: graylog_url_configured=T, record_forwarded=F => FALSE
+// MCDC SW-REQ-049: graylog_url_configured=T, record_forwarded=T => TRUE
+// (Init with a valid GraylogConnectionString + non-empty Tags drives
+// graylog_url_configured=T and the gelf client is invoked per record —
+// T/T=TRUE. The Init-error subtest with no connection string drives
+// graylog_url_configured=F → record_forwarded=F — F/F=TRUE. The T/F=FALSE
+// pair is the gelf-send-failure baseline where the UDP client errors and
+// the per-record forwarding loop logs but continues — exercised by the
+// invalid-address subtest.)
 func TestGraylogPump_WriteData_ValidBase64(t *testing.T) {
 	addr, sink := newUDPSink(t)
 	host, port := graylogAddrParts(t, addr)

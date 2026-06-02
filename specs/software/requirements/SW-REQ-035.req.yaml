@@ -4,9 +4,9 @@ status: approved
 priority: shall
 category: functional
 req_type: guarantee
-fretish: ""
+fretish: when org_id_present pumps_mongo_selective shall always satisfy record_routed_to_org_collection
 description: The MongoSelective pump shall partition incoming non-MCP analytics records by OrgID and route each org's records into a per-organisation collection named z_tyk_analyticz_<orgid>, dropping records with empty OrgID; for each org collection it shall ensure baseline indexes (apiid, TTL on expireAt (skipped for CosmosDB), and a composite logBrowserIndex) and then insert records in size-bounded batches up to MaxInsertBatchSizeBytes (default 10 MiB), skipping individual documents larger than MaxDocumentSizeBytes.
-formalization_strategy: informal
+formalization_strategy: fretish
 informal_verification:
     method: ""
     evidence: ""
@@ -19,36 +19,36 @@ variables: []
 traces:
     satisfies:
         - SYS-REQ-004
-    reviewed_at: "2026-06-02T05:03:35.240382Z"
+    reviewed_at: "2026-06-02T13:41:35.733964Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:4b0e24f17863e5751e36ae58947a5c8fe9634532f9b1a6123326e8d8394c094e
+    reviewed_fingerprint: sha256:ac85949453cf0c5bffc23ac9e1359b4aeeab24d1fb14bd59162eb79d7ec80804
 verification:
     assurance_level: B
-    formalization_status: none
+    formalization_status: valid
     review:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-02T05:02:45Z"
-        comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
-        fingerprint: sha256:6db1e7734ebf998e4bcb7a54575673db56203d09cc59c0565bf68285799f17af
+        reviewed_at: "2026-06-02T13:35:02Z"
+        comment: 'Phase L2: aggressive formalization — encodes empty-OrgID drop decision (mongo_selective.go:218 ''No OrgID for AnalyticsRecord, skipping''); variables in pumps-mongo-selective.vars.yaml; user directive: force MCDC witnesses.'
+        fingerprint: sha256:2bb0e060facf82980ac9e5eeaf241c3c483a64b444747bfc04981061f601aa7d
         ai_generated: false
     impact_reviews:
         - requirement: SW-REQ-035
           artifact: pumps/mongo_selective.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Phase J: req_type field flipped derived to guarantee per probelabs/reqproof#88 (category error fix). Production .go files were not modified for this change; only req YAML metadata. Re-recording no-authored-change impact.'
+          reason: 'Phase L2: formalization-only change (informal -> fretish + per-component boolean variables). Production .go files were not modified; only req YAML metadata, component vars YAMLs, and // MCDC test comment witnesses.'
           base: origin/master
-          requirement_fingerprint: sha256:4b0e24f17863e5751e36ae58947a5c8fe9634532f9b1a6123326e8d8394c094e
-          approval_fingerprint: sha256:6db1e7734ebf998e4bcb7a54575673db56203d09cc59c0565bf68285799f17af
+          requirement_fingerprint: sha256:ac85949453cf0c5bffc23ac9e1359b4aeeab24d1fb14bd59162eb79d7ec80804
+          approval_fingerprint: sha256:2bb0e060facf82980ac9e5eeaf241c3c483a64b444747bfc04981061f601aa7d
           artifact_fingerprint: sha256:a171e437ba2de7196b4605ce4dfb51c1f2a50d364a30114502a2f4808e0c89b2
-          reviewed_at: "2026-06-02T05:13:05Z"
+          reviewed_at: "2026-06-02T13:35:48Z"
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:34:43Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-02T05:02:46Z"
+    last_modified_at: "2026-06-02T13:35:02Z"
 obligation_checklist:
     - boundary
     - errors_propagated
@@ -111,4 +111,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-05-31T11:27:47Z comment="Phase E: SW-035 checklist normalised to [boundary,nominal,errors_propagated].")'
+          changed_by: human:cli
+        - date: "2026-06-02T13:35:02Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T05:02:45Z comment="Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.")'
           changed_by: human:cli

@@ -4,9 +4,9 @@ status: approved
 priority: shall
 category: functional
 req_type: guarantee
-fretish: ""
+fretish: when kms_key_configured pumps_aws_kinesis shall always satisfy stream_encryption_verified
 description: The Kinesis pump shall, on each purge, split records into batches of BatchSize (default 100, bounded by AWS's 500-record per-PutRecords limit), JSON-marshal each record into a Kinesis PutRecordsRequestEntry with PartitionKey set to a fresh crypto/rand integer (for even MD5-based shard distribution), and submit each batch via PutRecords to the configured StreamName. When KMSKeyID is configured at Init, the pump shall verify the stream's current encryption mode/key, enable KMS server-side encryption if not already enabled with that key, and fail Init if the stream is already encrypted with a different key.
-formalization_strategy: informal
+formalization_strategy: fretish
 informal_verification:
     method: ""
     evidence: ""
@@ -19,36 +19,36 @@ variables: []
 traces:
     satisfies:
         - SYS-REQ-004
-    reviewed_at: "2026-06-02T05:03:37.314703Z"
+    reviewed_at: "2026-06-02T13:56:59.930332Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:482aabf4d395f6ad7911112b0b47f420b3d15ce35e66b487d1c7fafe106c3024
+    reviewed_fingerprint: sha256:2abc7ad2c76bcab77282423454ba0143d15fbd4e4d5f3c739fa3786f47e9eb6d
 verification:
     assurance_level: B
-    formalization_status: none
+    formalization_status: valid
     review:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-02T08:49:56Z"
-        comment: 'Cleanup: removed obligation_suppression for opengrep FP at pumps/kinesis.go:185 (go.random.math-rand); upstream reqproof landed the rule refinement (probelabs/reqproof#86) so the FP no longer fires.'
-        fingerprint: sha256:1516ebf73ee4b038f00b5df04c9fe170278564cabff8ffc6146dc9d35da98001
+        reviewed_at: "2026-06-02T13:51:46Z"
+        comment: 'Phase L2: aggressive formalization — encodes logzio Token-required and kinesis KMS-key gate decisions; variables in component vars files.'
+        fingerprint: sha256:b45ea2553796d2371ae3785a514306ee469e82bd3853acbd5864d5af34196826
         ai_generated: false
     impact_reviews:
         - requirement: SW-REQ-056
           artifact: pumps/kinesis.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Phase J: req_type field flipped derived to guarantee per probelabs/reqproof#88 (category error fix). Production .go files were not modified for this change; only req YAML metadata. Re-recording no-authored-change impact.'
+          reason: 'Phase L2: formalization-only change (informal -> fretish + per-component boolean variables). Production .go files were not modified; only req YAML metadata, component vars YAMLs, and // MCDC test comment witnesses.'
           base: origin/master
-          requirement_fingerprint: sha256:482aabf4d395f6ad7911112b0b47f420b3d15ce35e66b487d1c7fafe106c3024
-          approval_fingerprint: sha256:1516ebf73ee4b038f00b5df04c9fe170278564cabff8ffc6146dc9d35da98001
+          requirement_fingerprint: sha256:2abc7ad2c76bcab77282423454ba0143d15fbd4e4d5f3c739fa3786f47e9eb6d
+          approval_fingerprint: sha256:b45ea2553796d2371ae3785a514306ee469e82bd3853acbd5864d5af34196826
           artifact_fingerprint: sha256:03d0ccb4d2d45c5c72fe96379297167e0f6dcdc6223fd103a455150878de6911
-          reviewed_at: "2026-06-02T05:13:05Z"
+          reviewed_at: "2026-06-02T13:52:27Z"
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:37:04Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-02T08:49:56Z"
+    last_modified_at: "2026-06-02T13:51:46Z"
 obligation_checklist:
     - monotonicity
     - nominal
@@ -87,4 +87,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T05:02:45Z comment="Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.")'
+          changed_by: human:cli
+        - date: "2026-06-02T13:51:46Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T08:49:56Z comment="Cleanup: removed obligation_suppression for opengrep FP at pumps/kinesis.go:185 (go.random.math-rand); upstream reqproof landed the rule refinement (probelabs/reqproof#86) so the FP no longer fires.")'
           changed_by: human:cli

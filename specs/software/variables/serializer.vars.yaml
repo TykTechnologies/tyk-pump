@@ -1,0 +1,10 @@
+component: serializer
+variables:
+    - name: key_suffix_protobuf
+      type: bool
+      direction: input
+      description: True when the analytics-key suffix selects protobuf encoding (otherwise msgpack).
+    - name: protobuf_codec_selected
+      type: bool
+      direction: output
+      description: True iff the serializer dispatches to the protobuf codec for encode/decode.

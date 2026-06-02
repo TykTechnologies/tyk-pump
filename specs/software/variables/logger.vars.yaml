@@ -1,0 +1,10 @@
+component: logger
+variables:
+    - name: env_level_recognised
+      type: bool
+      direction: input
+      description: True when TYK_LOGLEVEL environment variable matches one of 'error','warn','debug' (case-insensitive).
+    - name: level_set_from_env
+      type: bool
+      direction: output
+      description: True iff log.Level is set from the env value (false means the InfoLevel default branch is taken).

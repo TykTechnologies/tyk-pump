@@ -1,0 +1,10 @@
+component: pumps-http-splunk
+variables:
+    - name: enable_batch
+      type: bool
+      direction: input
+      description: True when SplunkConf.EnableBatch is true.
+    - name: batched_send_used
+      type: bool
+      direction: output
+      description: True iff per-record JSON is buffered into batchBuffer and a single batch POST is issued (false means a per-record POST is used).

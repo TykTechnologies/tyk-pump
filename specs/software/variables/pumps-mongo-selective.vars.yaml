@@ -1,0 +1,10 @@
+component: pumps-mongo-selective
+variables:
+    - name: org_id_present
+      type: bool
+      direction: input
+      description: True when the AnalyticsRecord has a non-empty OrgID.
+    - name: record_routed_to_org_collection
+      type: bool
+      direction: output
+      description: True iff the record is appended to the per-org analytics collection (false means the record is dropped with 'No OrgID for AnalyticsRecord, skipping').

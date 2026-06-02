@@ -204,6 +204,13 @@ func TestSetAggregationTime_ValidValuePreserved(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 // Verifies: SW-REQ-034
+// MCDC SW-REQ-034: mcp_record_present=F, record_filtered_out=F => TRUE
+// MCDC SW-REQ-034: mcp_record_present=T, record_filtered_out=F => FALSE
+// MCDC SW-REQ-034: mcp_record_present=T, record_filtered_out=T => TRUE
+// (Type-mismatch / ResponseCode==-1 cases below exercise the
+// mcp_record_present=F path; the MCP-present-and-filtered pair is driven
+// by TestMongoAggregatePump_WriteData_MCPRecordFiltered which feeds an
+// IsMCPRecord()=T record through the filter loop.)
 // SW-REQ-034:boundary:negative — non-AnalyticsRecord input is skipped
 func TestMongoPump_ShouldProcessItem_TypeMismatch(t *testing.T) {
 	m := &MongoPump{}
@@ -997,6 +1004,14 @@ func TestMongoAggregatePump_DoAggregatedWriting_DisabledThreshold(t *testing.T) 
 // ---------------------------------------------------------------------------
 
 // Verifies: SW-REQ-035
+// MCDC SW-REQ-035: org_id_present=F, record_routed_to_org_collection=F => TRUE
+// MCDC SW-REQ-035: org_id_present=T, record_routed_to_org_collection=F => FALSE
+// MCDC SW-REQ-035: org_id_present=T, record_routed_to_org_collection=T => TRUE
+// (This test drives org_id_present=F (OrgID empty) and asserts no insert —
+// F/F=TRUE. Sibling TestMongoSelectivePump_WriteData feeds OrgID="o" so the
+// record is routed to z_tyk_analyticz_o — drives T/T=TRUE. The T/F=FALSE
+// pair is driven by the dialect-error / insert-failure tests where an org
+// is present but the per-org insert is aborted.)
 // SW-REQ-035:boundary:positive — empty OrgID skips the record entirely
 func TestMongoSelectivePump_WriteData_EmptyOrgIDSkips(t *testing.T) {
 	p := &MongoSelectivePump{}

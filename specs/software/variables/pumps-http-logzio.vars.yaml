@@ -1,0 +1,10 @@
+component: pumps-http-logzio
+variables:
+    - name: token_set
+      type: bool
+      direction: input
+      description: True when LogzioPumpConfig.Token is non-empty.
+    - name: client_constructed
+      type: bool
+      direction: output
+      description: True iff NewLogzioClient returns a non-nil sender (false means an error is returned and no SDK is constructed).

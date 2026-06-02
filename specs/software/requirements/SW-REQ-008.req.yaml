@@ -4,9 +4,9 @@ status: approved
 priority: shall
 category: functional
 req_type: guarantee
-fretish: ""
+fretish: when key_suffix_protobuf serializer shall always satisfy protobuf_codec_selected
 description: The analytics serializer shall encode and decode records via msgpack or protobuf and select the format by analytics-key suffix; msgpack round-trips losslessly, while protobuf has per-field exceptions tracked by KI serializer-protobuf-loses-city-names.
-formalization_strategy: informal
+formalization_strategy: fretish
 informal_verification:
     method: ""
     evidence: ""
@@ -19,56 +19,56 @@ variables: []
 traces:
     satisfies:
         - SYS-REQ-002
-    reviewed_at: "2026-06-02T05:03:32.373941Z"
+    reviewed_at: "2026-06-02T13:56:58.75449Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:ce21f53947e44fd1268cb036a864507a16a3d5f69f278f3f2ffa014f3fb4df32
+    reviewed_fingerprint: sha256:bb67e2acb061d54b4a421eca0021ac7dedf1dd515374e0b6a148ead511632a07
 verification:
     assurance_level: B
-    formalization_status: none
+    formalization_status: valid
     review:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-02T05:02:45Z"
-        comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
-        fingerprint: sha256:983af742af237cfeb4aedd47127a338013e4c3d54fe53c38da4786844f5fcc86
+        reviewed_at: "2026-06-02T13:44:34Z"
+        comment: 'Phase L2: aggressive formalization — encodes per-component primary decision (instrumentation gate, codec select, SSL/SASL, dataset_empty, default-path, file-append, retry-status, log-level, flush, batch, transport, dedup); variables in <component>.vars.yaml; user directive: force MCDC witnesses to drive verifying tests.'
+        fingerprint: sha256:8e552855b69d941243ee283b13ef8e6945cfbf23773101e115e205a3f5f37dbf
         ai_generated: false
     impact_reviews:
         - requirement: SW-REQ-008
           artifact: serializer/msgp.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Phase J: req_type field flipped derived to guarantee per probelabs/reqproof#88 (category error fix). Production .go files were not modified for this change; only req YAML metadata. Re-recording no-authored-change impact.'
+          reason: 'Phase L2: formalization-only change (informal -> fretish + per-component boolean variables). Production .go files were not modified; only req YAML metadata, component vars YAMLs, and // MCDC test comment witnesses.'
           base: origin/master
-          requirement_fingerprint: sha256:ce21f53947e44fd1268cb036a864507a16a3d5f69f278f3f2ffa014f3fb4df32
-          approval_fingerprint: sha256:983af742af237cfeb4aedd47127a338013e4c3d54fe53c38da4786844f5fcc86
+          requirement_fingerprint: sha256:bb67e2acb061d54b4a421eca0021ac7dedf1dd515374e0b6a148ead511632a07
+          approval_fingerprint: sha256:8e552855b69d941243ee283b13ef8e6945cfbf23773101e115e205a3f5f37dbf
           artifact_fingerprint: sha256:4b82c8573766d5112364c15a440f1abd9e7eee3ec7df90ab899e8a3d1a216bd2
-          reviewed_at: "2026-06-02T05:13:05Z"
+          reviewed_at: "2026-06-02T13:44:40Z"
         - requirement: SW-REQ-008
           artifact: serializer/protobuf.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Phase J: req_type field flipped derived to guarantee per probelabs/reqproof#88 (category error fix). Production .go files were not modified for this change; only req YAML metadata. Re-recording no-authored-change impact.'
+          reason: 'Phase L2: formalization-only change (informal -> fretish + per-component boolean variables). Production .go files were not modified; only req YAML metadata, component vars YAMLs, and // MCDC test comment witnesses.'
           base: origin/master
-          requirement_fingerprint: sha256:ce21f53947e44fd1268cb036a864507a16a3d5f69f278f3f2ffa014f3fb4df32
-          approval_fingerprint: sha256:983af742af237cfeb4aedd47127a338013e4c3d54fe53c38da4786844f5fcc86
+          requirement_fingerprint: sha256:bb67e2acb061d54b4a421eca0021ac7dedf1dd515374e0b6a148ead511632a07
+          approval_fingerprint: sha256:8e552855b69d941243ee283b13ef8e6945cfbf23773101e115e205a3f5f37dbf
           artifact_fingerprint: sha256:1232203f6eff952cba22722f8caca4575afb7fd6fc20ab35618d3db75d67d09b
-          reviewed_at: "2026-06-02T05:13:05Z"
+          reviewed_at: "2026-06-02T13:44:40Z"
         - requirement: SW-REQ-008
           artifact: serializer/serializer.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Phase J: req_type field flipped derived to guarantee per probelabs/reqproof#88 (category error fix). Production .go files were not modified for this change; only req YAML metadata. Re-recording no-authored-change impact.'
+          reason: 'Phase L2: formalization-only change (informal -> fretish + per-component boolean variables). Production .go files were not modified; only req YAML metadata, component vars YAMLs, and // MCDC test comment witnesses.'
           base: origin/master
-          requirement_fingerprint: sha256:ce21f53947e44fd1268cb036a864507a16a3d5f69f278f3f2ffa014f3fb4df32
-          approval_fingerprint: sha256:983af742af237cfeb4aedd47127a338013e4c3d54fe53c38da4786844f5fcc86
+          requirement_fingerprint: sha256:bb67e2acb061d54b4a421eca0021ac7dedf1dd515374e0b6a148ead511632a07
+          approval_fingerprint: sha256:8e552855b69d941243ee283b13ef8e6945cfbf23773101e115e205a3f5f37dbf
           artifact_fingerprint: sha256:0cb5c145c1a3945600018323cd882a1466cac41191dea424ea37599736cfadd2
-          reviewed_at: "2026-06-02T05:13:05Z"
+          reviewed_at: "2026-06-02T13:44:40Z"
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:14Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-02T05:02:46Z"
+    last_modified_at: "2026-06-02T13:44:34Z"
 obligation_checklist:
     - encoding_safety
 lifecycle:
@@ -87,4 +87,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-05-30T10:36:05Z comment="Phase 0.7 review: applied SW review findings (description honesty for SW-006/007/008/016/031, obligation downgrades for SW-006/023/035/064, SW-007 retargeting, new SW-071 for GeoIP split) and SYS-side trace extensions (SW-001/002/007/011/015 now satisfy Phase 0.6-split SYS reqs); content factual against current code.")'
+          changed_by: human:cli
+        - date: "2026-06-02T13:44:34Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T05:02:45Z comment="Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.")'
           changed_by: human:cli

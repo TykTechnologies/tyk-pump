@@ -4,9 +4,9 @@ status: approved
 priority: shall
 category: functional
 req_type: guarantee
-fretish: ""
+fretish: when enable_batch pumps_http_splunk shall always satisfy batched_send_used
 description: 'The Splunk pump shall POST each analytics record (or a batch up to BatchMaxContentLength bytes when EnableBatch is true) as a Splunk HEC event JSON to CollectorURL with Authorization: Splunk <token>; TLS configuration (server-name, CA, client cert/key, and the SSLInsecureSkipVerify operator override) shall be applied via NewTLSConfig; transient send failures shall be retried up to MaxRetries via retry.BackoffHTTPRetry. Send errors shall be returned to the caller. When ObfuscateAPIKeys is true, API keys are masked with **** plus the trailing ObfuscateAPIKeysLength characters.'
-formalization_strategy: informal
+formalization_strategy: fretish
 informal_verification:
     method: ""
     evidence: ""
@@ -19,36 +19,36 @@ variables: []
 traces:
     satisfies:
         - SYS-REQ-004
-    reviewed_at: "2026-06-02T05:03:36.690796Z"
+    reviewed_at: "2026-06-02T13:56:59.657843Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:f8614948ee7a6f12a73c840d3af3e28b7c15903e752e1103335b0e99378efb29
+    reviewed_fingerprint: sha256:a34dce93e458c421b19ffdb40ab7f0b9cb8ddc3e5ee75de51e30e2eebe99956c
 verification:
     assurance_level: B
-    formalization_status: none
+    formalization_status: valid
     review:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-02T09:01:44Z"
-        comment: 'Phase K: principled re-suppression after #86 fix surfaced the real bug (was previously a FP-cover suppression). request_timeout_bounded obligation maps to KI splunk-newsplunkclient-mutates-default-transport (the production mutation of http.DefaultClient.Transport).'
-        fingerprint: sha256:68b20b8c50cb4a5e85bea89ee5500b6c897f4d1cbca92fd276fcafe79f7fd28d
+        reviewed_at: "2026-06-02T13:44:34Z"
+        comment: 'Phase L2: aggressive formalization — encodes per-component primary decision (instrumentation gate, codec select, SSL/SASL, dataset_empty, default-path, file-append, retry-status, log-level, flush, batch, transport, dedup); variables in <component>.vars.yaml; user directive: force MCDC witnesses to drive verifying tests.'
+        fingerprint: sha256:0ff4b42642b3e57e2f1297cbdde5064ff75f6da45a875b601748635401d3f7ff
         ai_generated: false
     impact_reviews:
         - requirement: SW-REQ-048
           artifact: pumps/splunk.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Phase J: req_type field flipped derived to guarantee per probelabs/reqproof#88 (category error fix). Production .go files were not modified for this change; only req YAML metadata. Re-recording no-authored-change impact.'
+          reason: 'Phase L2: formalization-only change (informal -> fretish + per-component boolean variables). Production .go files were not modified; only req YAML metadata, component vars YAMLs, and // MCDC test comment witnesses.'
           base: origin/master
-          requirement_fingerprint: sha256:f8614948ee7a6f12a73c840d3af3e28b7c15903e752e1103335b0e99378efb29
-          approval_fingerprint: sha256:68b20b8c50cb4a5e85bea89ee5500b6c897f4d1cbca92fd276fcafe79f7fd28d
+          requirement_fingerprint: sha256:a34dce93e458c421b19ffdb40ab7f0b9cb8ddc3e5ee75de51e30e2eebe99956c
+          approval_fingerprint: sha256:0ff4b42642b3e57e2f1297cbdde5064ff75f6da45a875b601748635401d3f7ff
           artifact_fingerprint: sha256:b20682ea1bb30aad9dfb91a80b7cf7a88a9f1921eb8434a1514b2e682fa24cf7
-          reviewed_at: "2026-06-02T05:13:05Z"
+          reviewed_at: "2026-06-02T13:44:40Z"
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:36:07Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-02T09:01:44Z"
+    last_modified_at: "2026-06-02T13:44:35Z"
 obligation_checklist:
     - cert_validation_strict
     - errors_propagated
@@ -93,4 +93,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T08:49:58Z comment="Cleanup: removed obligation_suppression for opengrep FP at pumps/splunk.go:343 (go.http.request-without-context); upstream reqproof landed the rule refinement (probelabs/reqproof#86) so the FP no longer fires (a different broader go.http.client-api signal now applies and is handled via standard obligation flow).")'
+          changed_by: human:cli
+        - date: "2026-06-02T13:44:34Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T09:01:44Z comment="Phase K: principled re-suppression after #86 fix surfaced the real bug (was previously a FP-cover suppression). request_timeout_bounded obligation maps to KI splunk-newsplunkclient-mutates-default-transport (the production mutation of http.DefaultClient.Transport).")'
           changed_by: human:cli

@@ -97,6 +97,14 @@ func TestMCPMongoPump_WriteData_EmptyCollectionName(t *testing.T) {
 }
 
 // Verifies: SW-REQ-038
+// MCDC SW-REQ-038: is_mcp_record=F, retained_for_mcp_insert=F => TRUE
+// MCDC SW-REQ-038: is_mcp_record=T, retained_for_mcp_insert=F => FALSE
+// MCDC SW-REQ-038: is_mcp_record=T, retained_for_mcp_insert=T => TRUE
+// (This test feeds a non-MCP record (IsMCPRecord=F) and asserts no insert
+// happens — F/F=TRUE. Sibling TestMCPMongoPump_WriteData_WithMCPRecords
+// feeds an IsMCP=true record so filterMCPData retains it and the insert
+// path runs — T/T=TRUE. The KI-tracked closed-explicitly path drives the
+// T/F=FALSE pair where the record is MCP but the insert is aborted.)
 func TestMCPMongoPump_WriteData_NoMCPRecords(t *testing.T) {
 	p := &MCPMongoPump{}
 	p.dbConf = &MongoConf{CollectionName: "test"}

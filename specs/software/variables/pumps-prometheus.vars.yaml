@@ -1,0 +1,10 @@
+component: pumps-prometheus
+variables:
+    - name: listen_path_empty
+      type: bool
+      direction: input
+      description: True when PrometheusConf.Path is empty on Init.
+    - name: default_path_applied
+      type: bool
+      direction: output
+      description: True iff Path is defaulted to '/metrics' before promhttp.Handler() registration.

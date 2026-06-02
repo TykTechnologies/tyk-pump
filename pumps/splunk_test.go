@@ -441,6 +441,16 @@ func Test_SplunkWriteData(t *testing.T) {
 }
 
 // Verifies: SW-REQ-048
+// MCDC SW-REQ-048: batched_send_used=F, enable_batch=F => TRUE
+// MCDC SW-REQ-048: batched_send_used=F, enable_batch=T => FALSE
+// MCDC SW-REQ-048: batched_send_used=T, enable_batch=T => TRUE
+// (Sibling Test_SplunkWriteData (enable_batch=false above) drives the
+// per-record POST path — F/F=TRUE. This batch test sets enable_batch=true
+// with a non-empty batchBuffer — T/T=TRUE. The F/T=FALSE pair is the
+// EnableBatch=T && batchBuffer.Len()==0 short-circuit, structurally
+// unreachable per the //mcdc:ignore at splunk.go:291 (KI mcdc-pumps-below-95)
+// because the for-loop always writes data into the batch buffer when
+// EnableBatch=T.)
 func Test_SplunkWriteDataBatch(t *testing.T) {
 	handler := &testHandler{test: t, batched: true}
 	server := httptest.NewServer(handler)

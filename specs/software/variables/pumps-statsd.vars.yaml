@@ -1,0 +1,10 @@
+component: pumps-statsd
+variables:
+    - name: dataset_empty
+      type: bool
+      direction: input
+      description: True when len(data)==0 on a purge call (no records to emit).
+    - name: write_skipped
+      type: bool
+      direction: output
+      description: True iff WriteData returns early (no StatsD client connect, no per-record timing emit).

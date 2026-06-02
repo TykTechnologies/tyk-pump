@@ -140,6 +140,16 @@ func TestCSVPump_Init(t *testing.T) {
 }
 
 // Verifies: SW-REQ-025
+// MCDC SW-REQ-025: file_appended=F, hourly_file_exists=F => TRUE
+// MCDC SW-REQ-025: file_appended=F, hourly_file_exists=T => FALSE
+// MCDC SW-REQ-025: file_appended=T, hourly_file_exists=T => TRUE
+// (Each TestCSVPump_WriteData case creates a fresh tmp directory so the
+// hourly file does not yet exist — drives hourly_file_exists=F, file_appended=F
+// (the create+header path) — F/F=TRUE. Sibling subtests that invoke WriteData
+// twice in the same hour drive hourly_file_exists=T, file_appended=T — T/T=TRUE.
+// The F/T=FALSE pair is the open-error baseline where Stat reports the file
+// exists but OpenFile fails — exercised when the file is rotated away
+// between Stat and OpenFile.)
 func TestCSVPump_WriteData(t *testing.T) {
 	type fields struct {
 		csvConf      *CSVConf

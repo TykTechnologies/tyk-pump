@@ -1,0 +1,10 @@
+component: pumps-hybrid
+variables:
+    - name: use_ssl_configured
+      type: bool
+      direction: input
+      description: True when HybridConf.UseSSL is true.
+    - name: tls_dialer_used
+      type: bool
+      direction: output
+      description: True iff gorpc.NewTLSClient is used (vs. plain gorpc.NewClient).

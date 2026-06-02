@@ -1,0 +1,10 @@
+component: pumps-influx-v2
+variables:
+    - name: flush_enabled
+      type: bool
+      direction: input
+      description: True when InfluxConf.Flush is true.
+    - name: sync_drain_invoked
+      type: bool
+      direction: output
+      description: True iff WriteAPI.Flush() is invoked synchronously before WriteData returns.

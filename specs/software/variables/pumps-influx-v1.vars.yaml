@@ -1,0 +1,10 @@
+component: pumps-influx-v1
+variables:
+    - name: connect_err
+      type: bool
+      direction: input
+      description: True when influxdb.NewHTTPClient returns an error during WriteData (transient connect failure).
+    - name: reconnect_attempted
+      type: bool
+      direction: output
+      description: True iff WriteData sleeps and recursively re-invokes itself after a connect error (KI influx-v1-unbounded-reconnect-recursion).

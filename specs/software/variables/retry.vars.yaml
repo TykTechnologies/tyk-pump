@@ -1,0 +1,18 @@
+component: retry
+variables:
+    - name: is_5xx_or_429
+      type: bool
+      direction: input
+      description: True when the HTTP response StatusCode is >=500 or ==429 (retryable status).
+    - name: retry_attempted
+      type: bool
+      direction: output
+      description: True iff backoff retries the request (false means backoff.Permanent is returned and the operation is abandoned).
+    - name: max_elapsed_zero
+      type: bool
+      direction: input
+      description: True when MaxElapsedTime is left at zero (the default) in the backoff config (KI storage-retry-maxelapsed-zero-is-unbounded).
+    - name: unbounded_retry
+      type: bool
+      direction: output
+      description: True iff total retry duration is unbounded (no permanent stop until success). False when a finite MaxElapsedTime caps the total retry duration.

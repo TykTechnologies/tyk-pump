@@ -15,6 +15,15 @@ import (
 )
 
 // Verifies: SW-REQ-024
+// MCDC SW-REQ-024: default_path_applied=F, listen_path_empty=F => TRUE
+// MCDC SW-REQ-024: default_path_applied=F, listen_path_empty=T => FALSE
+// MCDC SW-REQ-024: default_path_applied=T, listen_path_empty=T => TRUE
+// (Tests configuring path=/metrics explicitly cover the listen_path_empty=F arm
+// — F/F=TRUE. The default-path branch at prometheus.go:197 'if p.conf.Path == ""'
+// covers listen_path_empty=T, default_path_applied=T — T/T=TRUE. The F/T=FALSE
+// pair is the operator-error baseline where Addr is also unset and Init returns
+// the 'Prometheus listen_addr not set' error before the path default takes
+// effect — exercised by the Init-error subtest.)
 func TestPrometheusInitVec(t *testing.T) {
 	tcs := []struct {
 		testName     string

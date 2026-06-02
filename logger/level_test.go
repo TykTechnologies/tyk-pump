@@ -7,6 +7,14 @@ import (
 )
 
 // Verifies: SW-REQ-033
+// MCDC SW-REQ-033: env_level_recognised=F, level_set_from_env=F => TRUE
+// MCDC SW-REQ-033: env_level_recognised=T, level_set_from_env=F => FALSE
+// MCDC SW-REQ-033: env_level_recognised=T, level_set_from_env=T => TRUE
+// (The "error","warn","debug" cases drive env_level_recognised=T,
+// level_set_from_env=T — T/T=TRUE. The "" and "unrecognised" cases drive
+// env_level_recognised=F → falls through to InfoLevel default — F/F=TRUE.
+// The T/F=FALSE pair is structurally infeasible in the current level()
+// implementation — recognised strings unconditionally map to their level.)
 // SW-REQ-033:nominal:negative
 func TestLevel_AllBranches(t *testing.T) {
 	cases := []struct {

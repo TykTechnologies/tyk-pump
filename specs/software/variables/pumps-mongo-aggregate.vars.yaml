@@ -1,0 +1,10 @@
+component: pumps-mongo-aggregate
+variables:
+    - name: self_heal_enabled
+      type: bool
+      direction: input
+      description: True when EnableAggregateSelfHealing is true AND the upsert error matches one of the size-error markers (StandardMongoSizeError / CosmosSizeError / DocDBSizeError).
+    - name: aggregation_time_halved
+      type: bool
+      direction: output
+      description: True iff ShouldSelfHeal halves AggregationTime and re-invokes WriteData (false when AggregationTime is already 1 or when self-healing is not triggered).

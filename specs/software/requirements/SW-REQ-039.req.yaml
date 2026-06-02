@@ -4,9 +4,9 @@ status: approved
 priority: shall
 category: functional
 req_type: guarantee
-fretish: ""
+fretish: when use_mixed_collection pumps_mongo_mcp_aggregate shall always satisfy mixed_collection_write_attempted
 description: 'The MCP MongoDB Aggregate pump shall aggregate MCP-classified analytics records per API via analytics.AggregateMCPData, then for each API perform a two-step MongoDB upsert keyed by {orgid, timestamp, owner_apiid}: first applying $inc/$set/$max counters for both standard dimensions (via AsChange) and MCP-specific dimensions (methods, primitives, names via addMCPDimensionUpdates), then recalculating averages via AsTimeUpdate; the first upsert error per API shall be returned to the caller. When UseMixedCollection is true, both the per-org and mixed-collection variants shall be written.'
-formalization_strategy: informal
+formalization_strategy: fretish
 informal_verification:
     method: ""
     evidence: ""
@@ -19,36 +19,36 @@ variables: []
 traces:
     satisfies:
         - SYS-REQ-003
-    reviewed_at: "2026-06-02T05:03:35.73333Z"
+    reviewed_at: "2026-06-02T13:41:35.916473Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:c4eb5d64149cbf4ccca1b8f4ccbaca1edcff411768c5dd5cb983d07a6c403d76
+    reviewed_fingerprint: sha256:255ecd648cade9bdb4b8a1d39c8ff74c46956cf2ce563e5c707406d7bbd96832
 verification:
     assurance_level: B
-    formalization_status: none
+    formalization_status: valid
     review:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-02T05:02:45Z"
-        comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
-        fingerprint: sha256:827dfdb6d4274bcd5bcd19c2ee0a8af011fa8d74c89dbf98e05d35500415f9d2
+        reviewed_at: "2026-06-02T13:20:41Z"
+        comment: 'Phase L2: aggressive formalization — encodes per-pump MCP/graph/mixed-collection/self-heal decisions; variables in pumps-mongo-*.vars.yaml; user directive: force MCDC witnesses on these decisions to drive verifying tests.'
+        fingerprint: sha256:3a309d95fe59be104c667592df123db97613b4db593cb963a8a8a2ca6213b7e8
         ai_generated: false
     impact_reviews:
         - requirement: SW-REQ-039
           artifact: pumps/mcp_mongo_aggregate.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Phase J: req_type field flipped derived to guarantee per probelabs/reqproof#88 (category error fix). Production .go files were not modified for this change; only req YAML metadata. Re-recording no-authored-change impact.'
+          reason: 'Phase L2: formalization-only change (informal -> fretish + per-component boolean variables). Production .go files were not modified; only req YAML metadata, component vars YAMLs, and // MCDC test comment witnesses.'
           base: origin/master
-          requirement_fingerprint: sha256:c4eb5d64149cbf4ccca1b8f4ccbaca1edcff411768c5dd5cb983d07a6c403d76
-          approval_fingerprint: sha256:827dfdb6d4274bcd5bcd19c2ee0a8af011fa8d74c89dbf98e05d35500415f9d2
+          requirement_fingerprint: sha256:255ecd648cade9bdb4b8a1d39c8ff74c46956cf2ce563e5c707406d7bbd96832
+          approval_fingerprint: sha256:3a309d95fe59be104c667592df123db97613b4db593cb963a8a8a2ca6213b7e8
           artifact_fingerprint: sha256:e9654c425e88a9b07ed3c299faf370703297ce9d18af76e882d23a9cfe7977a3
-          reviewed_at: "2026-06-02T05:13:05Z"
+          reviewed_at: "2026-06-02T13:35:48Z"
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:35:08Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-02T05:02:46Z"
+    last_modified_at: "2026-06-02T13:20:41Z"
 obligation_checklist:
     - atomicity
     - errors_propagated
@@ -84,4 +84,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-05-31T11:27:45Z comment="Phase E: SW-REQ-039 checklist extended with errors_propagated to cover mongo pump container-stop / bad-env error-propagation tests in pumps/mongo_mcdc_100_test.go.")'
+          changed_by: human:cli
+        - date: "2026-06-02T13:20:41Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T05:02:45Z comment="Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.")'
           changed_by: human:cli

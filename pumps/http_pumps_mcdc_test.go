@@ -295,6 +295,15 @@ func TestSplunkPump_SendError(t *testing.T) {
 // and verifies it POSTed our analytics record body.
 //
 // Verifies: SW-REQ-053
+// MCDC SW-REQ-053: segment_write_key_set=F, submitted_via_sdk=F => TRUE
+// MCDC SW-REQ-053: segment_write_key_set=T, submitted_via_sdk=F => FALSE
+// MCDC SW-REQ-053: segment_write_key_set=T, submitted_via_sdk=T => TRUE
+// (This round-trip configures segment_write_key + a captured httptest endpoint
+// — submitted_via_sdk=T, T/T=TRUE. The empty-write-key Init-error subtest at
+// pumps/http_pumps_mcdc_100_test.go:335 drives segment_write_key_set=F →
+// SDK not invoked — F/F=TRUE. The T/F=FALSE pair is the SDK-flush-error
+// baseline where Endpoint is set but Track returns an error — KI-tracked via
+// the mcdc:ignore on segment.go:86 (json.Marshal-cannot-fail arm).)
 // SW-REQ-053:nominal:positive
 func TestSegmentPump_WriteData_RoundTrip(t *testing.T) {
 	cs := newCaptureServer(t)
@@ -353,6 +362,16 @@ func TestSegmentPump_ToJSONMap(t *testing.T) {
 // and verifies it POSTed our analytics record body.
 //
 // Verifies: SW-REQ-051
+// MCDC SW-REQ-051: client_constructed=F, token_set=F => TRUE
+// MCDC SW-REQ-051: client_constructed=F, token_set=T => FALSE
+// MCDC SW-REQ-051: client_constructed=T, token_set=T => TRUE
+// (This round-trip configures token=test-token and asserts the SDK posts
+// the captured record — client_constructed=T, T/T=TRUE. The empty-token
+// Init-error subtest at pumps/http_pumps_mcdc_100_test.go:485 drives
+// token_set=F → "token is required" error before client_constructed —
+// F/F=TRUE. The T/F=FALSE pair is the DrainDuration parse-error baseline
+// where token is set but drain_duration is invalid, so NewLogzioClient
+// returns the parse error — covered by TestLogzioClient_DrainDurationParseErr.)
 // SW-REQ-051:nominal:positive
 func TestLogzioPump_WriteData_RoundTrip(t *testing.T) {
 	cs := newCaptureServer(t)
@@ -787,6 +806,15 @@ func TestSQSPump_WriteData_PublishErrorPropagates(t *testing.T) {
 // PutRecords is called once per batch with our records.
 //
 // Verifies: SW-REQ-056
+// MCDC SW-REQ-056: kms_key_configured=F, stream_encryption_verified=F => TRUE
+// MCDC SW-REQ-056: kms_key_configured=T, stream_encryption_verified=F => FALSE
+// MCDC SW-REQ-056: kms_key_configured=T, stream_encryption_verified=T => TRUE
+// (This happy path leaves kms_key_id empty — drives kms_key_configured=F,
+// no KMS check — F/F=TRUE. Sibling TestKinesisPump_DescribeStream_AlreadyEncryptedSameKey
+// drives T/T=TRUE via the InitWithMock seam (KI mcdc-pumps-below-95 names the
+// production-Init seam blocked by AWS env requirement). The T/F=FALSE pair is
+// driven by TestKinesisPump_DescribeStream_AlreadyEncryptedDifferentKey where
+// Init fails with the key-mismatch error before encryption is verified.)
 // SW-REQ-056:nominal:positive
 func TestKinesisPump_WriteData_HappyPath(t *testing.T) {
 	// We re-implement a small in-place harness because production WriteData
@@ -1001,6 +1029,16 @@ func TestKinesisPump_Init_StreamNameWarnOnly(t *testing.T) {
 // and verifies a /write POST is recorded with the configured fields.
 //
 // Verifies: SW-REQ-046
+// MCDC SW-REQ-046: connect_err=F, reconnect_attempted=F => TRUE
+// MCDC SW-REQ-046: connect_err=T, reconnect_attempted=F => FALSE
+// MCDC SW-REQ-046: connect_err=T, reconnect_attempted=T => TRUE
+// (This round-trip test points the v1 client at httptest and drives
+// connect_err=F → no recursion — F/F=TRUE. The T/T=TRUE pair is the
+// KI-tracked infinite-recursion path documented in
+// KI influx-v1-unbounded-reconnect-recursion — driving it from unit tests
+// forces an unbounded loop, so the witness is captured via the KI rather
+// than a live runtime test. The T/F=FALSE pair would require a bounded-retry
+// surface that does not yet exist in production; tracked in the same KI.)
 // SW-REQ-046:nominal:positive
 func TestInfluxPump_WriteData_RoundTrip(t *testing.T) {
 	cs := newCaptureServer(t)

@@ -1,0 +1,10 @@
+component: pumps-kafka
+variables:
+    - name: use_ssl_configured
+      type: bool
+      direction: input
+      description: True when KafkaConf.UseSSL is true (TLS gate).
+    - name: tls_attached
+      type: bool
+      direction: output
+      description: True iff a non-nil tlsConfig is built via NewTLSConfig and attached to the kafka Dialer.

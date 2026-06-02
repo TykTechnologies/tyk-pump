@@ -1,0 +1,10 @@
+component: pumps-http-segment
+variables:
+    - name: segment_write_key_set
+      type: bool
+      direction: input
+      description: True when SegmentConf.segment_write_key is non-empty (Segment SDK target configured).
+    - name: submitted_via_sdk
+      type: bool
+      direction: output
+      description: True iff WriteData submits each record as a Segment Track event via the segmentio/analytics-go SDK (false means WriteData errors out early).

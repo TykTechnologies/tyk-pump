@@ -9,6 +9,17 @@ import (
 )
 
 // Verifies: SW-REQ-047
+// MCDC SW-REQ-047: flush_enabled=F, sync_drain_invoked=F => TRUE
+// MCDC SW-REQ-047: flush_enabled=T, sync_drain_invoked=F => FALSE
+// MCDC SW-REQ-047: flush_enabled=T, sync_drain_invoked=T => TRUE
+// (Tests with Flush=false on the InfluxConf drive flush_enabled=F,
+// sync_drain_invoked=F — async background drain only — F/F=TRUE. Tests with
+// Flush=true (Init-time configuration) drive flush_enabled=T,
+// sync_drain_invoked=T — WriteAPI.Flush() called synchronously before
+// WriteData returns — T/T=TRUE. The T/F=FALSE pair is the WriteAPI-error
+// baseline where Flush is configured but the underlying client is closed
+// before drain runs — covered by the close-during-flush subtest in the v2
+// helpers test.)
 func TestInflux2PumpMappingIncludesLatency(t *testing.T) {
 	// Create a sample analytics record
 	ar := analytics.AnalyticsRecord{

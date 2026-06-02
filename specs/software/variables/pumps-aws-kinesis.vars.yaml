@@ -1,0 +1,10 @@
+component: pumps-aws-kinesis
+variables:
+    - name: kms_key_configured
+      type: bool
+      direction: input
+      description: True when KinesisConf.KMSKeyID is non-empty at Init.
+    - name: stream_encryption_verified
+      type: bool
+      direction: output
+      description: True iff Init calls DescribeStream + StartStreamEncryption (KMS server-side encryption verified/initialised). False means the no-KMS path is taken.

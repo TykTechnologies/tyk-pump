@@ -64,6 +64,14 @@ func TestMCPMongoAggregatePump_Init_InvalidConfig(t *testing.T) {
 }
 
 // Verifies: SW-REQ-039
+// MCDC SW-REQ-039: use_mixed_collection=F, mixed_collection_write_attempted=F => TRUE
+// MCDC SW-REQ-039: use_mixed_collection=T, mixed_collection_write_attempted=F => FALSE
+// MCDC SW-REQ-039: use_mixed_collection=T, mixed_collection_write_attempted=T => TRUE
+// (newMCPMongoAggregatePump sets use_mixed_collection=true so writingAttempts
+// gains the isMixedCollection=true entry — drives T/T=TRUE. Sibling tests
+// using use_mixed_collection=false drive F/F=TRUE. The T/F=FALSE pair is
+// driven by injecting a per-org write error before the mixed-collection
+// attempt fires — see TestMCPMongoAggregatePump_WriteData_OrgWriteFailsBeforeMixed.)
 func TestMCPMongoAggregatePump_WriteData_PerAPIPartitioning(t *testing.T) {
 	pump := newMCPMongoAggregatePump(t)
 

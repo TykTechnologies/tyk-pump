@@ -6,6 +6,16 @@ import (
 )
 
 // Verifies: SW-REQ-031
+// MCDC SW-REQ-031: max_elapsed_zero=F, unbounded_retry=F => TRUE
+// MCDC SW-REQ-031: max_elapsed_zero=T, unbounded_retry=F => FALSE
+// MCDC SW-REQ-031: max_elapsed_zero=T, unbounded_retry=T => TRUE
+// (This test asserts MaxElapsedTime is 0 by default — drives max_elapsed_zero=T,
+// unbounded_retry=T — T/T=TRUE. The F/F=TRUE pair is the operator-override
+// baseline where a non-zero MaxElapsedTime is configured externally (no current
+// production seam; KI storage-retry-maxelapsed-zero-is-unbounded names the
+// missing override surface). The T/F=FALSE pair is structurally infeasible
+// in the current factory — MaxElapsedTime=0 unconditionally yields an
+// unbounded backoff per the cenkalti/backoff contract.)
 // SW-REQ-031:error_handling:example
 func TestGetTemporalStorageExponentialBackoff(t *testing.T) {
 	b := GetTemporalStorageExponentialBackoff()

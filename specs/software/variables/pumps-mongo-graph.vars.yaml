@@ -1,0 +1,10 @@
+component: pumps-mongo-graph
+variables:
+    - name: is_graph_record
+      type: bool
+      direction: input
+      description: True when r.GraphQLStats.IsGraphQL is true on the analytics record (graph-only mode predicate).
+    - name: converted_to_graph_record
+      type: bool
+      direction: output
+      description: True iff the AnalyticsRecord is converted via ToGraphRecord to a populated GraphRecord (false means the record is wrapped without parsing).

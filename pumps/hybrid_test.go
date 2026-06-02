@@ -103,6 +103,14 @@ func stopRPCMock(t *testing.T, server *gorpc.Server) {
 }
 
 // Verifies: SW-REQ-029
+// MCDC SW-REQ-029: tls_dialer_used=F, use_ssl_configured=F => TRUE
+// MCDC SW-REQ-029: tls_dialer_used=F, use_ssl_configured=T => FALSE
+// MCDC SW-REQ-029: tls_dialer_used=T, use_ssl_configured=T => TRUE
+// (Plain-RPC subtests (UseSSL=false) construct gorpc.NewClient directly —
+// F/F=TRUE. TLS subtests (UseSSL=true with cert files) construct gorpc.NewTLSClient
+// — T/T=TRUE. The F/T=FALSE pair is the cert-failure baseline where UseSSL=true
+// but cert/key are missing so NewTLSClient is not invoked — covered by the
+// Login-failure subtest below.)
 func TestHybridPumpInit(t *testing.T) {
 	//nolint:govet
 	tcs := []struct {

@@ -4,9 +4,9 @@ status: approved
 priority: shall
 category: functional
 req_type: guarantee
-fretish: ""
+fretish: when instrumentation_enabled pump_core shall always satisfy statsd_sink_added
 description: The instrumentation sink shall emit purge-timing and record-count metrics to StatsD when instrumentation is enabled, without failing the purge loop on sink errors.
-formalization_strategy: informal
+formalization_strategy: fretish
 informal_verification:
     method: ""
     evidence: ""
@@ -20,46 +20,46 @@ traces:
     satisfies:
         - SYS-REQ-013
         - SYS-REQ-017
-    reviewed_at: "2026-06-02T05:03:31.975659Z"
+    reviewed_at: "2026-06-02T13:56:58.638834Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:3631f967677a8b6835977a53a6a0047a3b4309335d358ec409b7104f3d5345d4
+    reviewed_fingerprint: sha256:d8daf5da54f7916e3faa41ab60037055762e230fbfc51055605e22086aa58c8a
 verification:
     assurance_level: B
-    formalization_status: none
+    formalization_status: valid
     review:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-02T05:02:45Z"
-        comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
-        fingerprint: sha256:95115c4243114e621546cd8d57ba3b523d85257be2e70f13fb5878aab553cfc8
+        reviewed_at: "2026-06-02T13:44:34Z"
+        comment: 'Phase L2: aggressive formalization — encodes per-component primary decision (instrumentation gate, codec select, SSL/SASL, dataset_empty, default-path, file-append, retry-status, log-level, flush, batch, transport, dedup); variables in <component>.vars.yaml; user directive: force MCDC witnesses to drive verifying tests.'
+        fingerprint: sha256:36f4767586639c5846103bad73d439bd009e717e601be7750553346655a2f784
         ai_generated: false
     impact_reviews:
         - requirement: SW-REQ-005
           artifact: instrumentation_helpers.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Phase J: req_type field flipped derived to guarantee per probelabs/reqproof#88 (category error fix). Production .go files were not modified for this change; only req YAML metadata. Re-recording no-authored-change impact.'
+          reason: 'Phase L2: formalization-only change (informal -> fretish + per-component boolean variables). Production .go files were not modified; only req YAML metadata, component vars YAMLs, and // MCDC test comment witnesses.'
           base: origin/master
-          requirement_fingerprint: sha256:3631f967677a8b6835977a53a6a0047a3b4309335d358ec409b7104f3d5345d4
-          approval_fingerprint: sha256:95115c4243114e621546cd8d57ba3b523d85257be2e70f13fb5878aab553cfc8
+          requirement_fingerprint: sha256:d8daf5da54f7916e3faa41ab60037055762e230fbfc51055605e22086aa58c8a
+          approval_fingerprint: sha256:36f4767586639c5846103bad73d439bd009e717e601be7750553346655a2f784
           artifact_fingerprint: sha256:72a2bad60b43c8be4c92e5cd92985614bf1e924b0e1ee2277f667ce4c736a988
-          reviewed_at: "2026-06-02T05:13:05Z"
+          reviewed_at: "2026-06-02T13:44:40Z"
         - requirement: SW-REQ-005
           artifact: instrumentation_statsd_sink.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Phase J: req_type field flipped derived to guarantee per probelabs/reqproof#88 (category error fix). Production .go files were not modified for this change; only req YAML metadata. Re-recording no-authored-change impact.'
+          reason: 'Phase L2: formalization-only change (informal -> fretish + per-component boolean variables). Production .go files were not modified; only req YAML metadata, component vars YAMLs, and // MCDC test comment witnesses.'
           base: origin/master
-          requirement_fingerprint: sha256:3631f967677a8b6835977a53a6a0047a3b4309335d358ec409b7104f3d5345d4
-          approval_fingerprint: sha256:95115c4243114e621546cd8d57ba3b523d85257be2e70f13fb5878aab553cfc8
+          requirement_fingerprint: sha256:d8daf5da54f7916e3faa41ab60037055762e230fbfc51055605e22086aa58c8a
+          approval_fingerprint: sha256:36f4767586639c5846103bad73d439bd009e717e601be7750553346655a2f784
           artifact_fingerprint: sha256:a562aab524243ed4291065f319b0a198374c1bd10938c27f9c14e2df702af87c
-          reviewed_at: "2026-06-02T05:13:05Z"
+          reviewed_at: "2026-06-02T13:44:40Z"
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:14Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-02T05:02:46Z"
+    last_modified_at: "2026-06-02T13:44:34Z"
 obligation_checklist:
     - error_handling
 lifecycle:
@@ -73,4 +73,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-05-30T07:43:08Z comment="Software-component design reviewed as part of feat/reqproof-coverage PR; each maps to verified code paths per the Phase 0 file-by-file verification (see PR description for code-verified corrections SW-016/017/023/027/028/033).")'
+          changed_by: human:cli
+        - date: "2026-06-02T13:44:34Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T05:02:45Z comment="Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.")'
           changed_by: human:cli

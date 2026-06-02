@@ -1,0 +1,10 @@
+component: pumps-csv
+variables:
+    - name: hourly_file_exists
+      type: bool
+      direction: input
+      description: True when the per-hour CSV file already exists on disk for the current curtime.
+    - name: file_appended
+      type: bool
+      direction: output
+      description: True iff WriteData opens the file with O_APPEND|O_WRONLY (false means a new file is created and a header is written first).

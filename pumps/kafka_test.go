@@ -242,6 +242,13 @@ func TestKafkaPump_Init_NegativeBatchBytes(t *testing.T) {
 }
 
 // Verifies: SW-REQ-021
+// MCDC SW-REQ-021: tls_attached=F, use_ssl_configured=F => TRUE
+// MCDC SW-REQ-021: tls_attached=F, use_ssl_configured=T => FALSE
+// MCDC SW-REQ-021: tls_attached=T, use_ssl_configured=T => TRUE
+// (The "use_ssl=false" subtest below covers F/F=TRUE. The "use_ssl=true with
+// CA file" subtests cover T/T=TRUE. The intermediate F/T=FALSE pair is
+// driven by the use_ssl=true + bad cert subtests where NewTLSConfig errors
+// and Init returns the wrapped failure before TLS is attached to the dialer.)
 func TestKafkaPump_InitTLSConfig(t *testing.T) {
 	t.Run("should not initialize TLS config when use_ssl is false", func(t *testing.T) {
 		config := map[string]any{
