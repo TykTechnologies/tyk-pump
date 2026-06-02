@@ -6,6 +6,15 @@ import (
 
 // Verifies: SW-REQ-009
 // Verifies: SYS-REQ-002
+// MCDC SYS-REQ-002: record_fields_preserved=F, record_forwarded=F => TRUE
+// MCDC SYS-REQ-002: record_fields_preserved=F, record_forwarded=T => FALSE
+// MCDC SYS-REQ-002: record_fields_preserved=T, record_forwarded=T => TRUE
+//
+// TableName() is a record-forwarding query (record_forwarded=T): the first assertion
+// proves the default field SQLTable is preserved (record_fields_preserved=T) and the
+// second proves the CollectionName override is preserved through forwarding -> TRUE row.
+// The FALSE row is the regression where TableName() returns a different table than what
+// the record carries; the assertions detect it. The vacuous TRUE arm is "no forwarding".
 func TestAnalyticsRecord_TableName_Branches(t *testing.T) {
 	a := &AnalyticsRecord{}
 	if a.TableName() != SQLTable {
@@ -56,6 +65,14 @@ func TestShouldFilter_SkipAndAllowBranches(t *testing.T) {
 
 // Verifies: SW-REQ-015
 // Verifies: SYS-REQ-014
+// MCDC SYS-REQ-014: uptime_data_consumed=F, uptime_purging_enabled=F => TRUE
+// MCDC SYS-REQ-014: uptime_data_consumed=F, uptime_purging_enabled=T => FALSE
+// MCDC SYS-REQ-014: uptime_data_consumed=T, uptime_purging_enabled=T => TRUE
+//
+// The data slice contains records (uptime_purging_enabled=T implied by the active pump path
+// invoking AggregateUptimeData), AggregateUptimeData returns the aggregate for org "o"
+// (uptime_data_consumed=T) -> TRUE row. The empty/no-aggregate branch (purging on but no
+// records) maps to the FALSE row; the vacuous TRUE arm corresponds to no purging in flight.
 func TestAggregateUptimeData_URLAndErrorBranches(t *testing.T) {
 	data := []UptimeReportData{
 		{OrgID: "o", APIID: "a", URL: "http://up", ResponseCode: 200},

@@ -28,10 +28,20 @@ import (
 // MCDC SW-REQ-008: key_suffix_protobuf=F, protobuf_codec_selected=F => TRUE
 // MCDC SW-REQ-008: key_suffix_protobuf=T, protobuf_codec_selected=F => FALSE
 // MCDC SW-REQ-008: key_suffix_protobuf=T, protobuf_codec_selected=T => TRUE
+// MCDC INT-REQ-003: roundtrip_equal_except_protobuf_city_names=F, serialize_then_deserialize=F => TRUE
+// MCDC INT-REQ-003: roundtrip_equal_except_protobuf_city_names=F, serialize_then_deserialize=T => FALSE
+// MCDC INT-REQ-003: roundtrip_equal_except_protobuf_city_names=T, serialize_then_deserialize=T => TRUE
 // (This protobuf-only round-trip drives key_suffix_protobuf=T, protobuf_codec_selected=T —
 // covers T/T=TRUE. Sibling msgpack round-trip in serializer_test.go drives
 // the key_suffix_protobuf=F arm — covers F/F=TRUE. The intermediate T/F=FALSE
 // pair is covered by the proto-format-mismatch error cases.)
+//
+// For INT-REQ-003: each sub-test invokes pb.Encode then pb.Decode and asserts that
+// every GraphQL field (IsGraphQL, OperationType, HasErrors, Variables, RootFields,
+// Errors, Types) round-trips intact (roundtrip_equal_except_protobuf_city_names=T, given
+// no City.Names are populated) -> TRUE row. The FALSE row (serialize_then_deserialize=T
+// but round-trip not equal) is caught by per-field assertions. The vacuous TRUE arm
+// corresponds to no serialize-deserialize pair being executed.
 func TestProtobuf_GraphQLStats_Roundtrip(t *testing.T) {
 	cases := []struct {
 		name       string
@@ -166,6 +176,14 @@ func TestProtobuf_GraphQLStats_Roundtrip(t *testing.T) {
 // Verifies: SW-REQ-008
 // Verifies: INT-REQ-003
 // SW-REQ-008:encoding_safety:lemma
+// MCDC INT-REQ-003: roundtrip_equal_except_protobuf_city_names=F, serialize_then_deserialize=F => TRUE
+// MCDC INT-REQ-003: roundtrip_equal_except_protobuf_city_names=F, serialize_then_deserialize=T => FALSE
+// MCDC INT-REQ-003: roundtrip_equal_except_protobuf_city_names=T, serialize_then_deserialize=T => TRUE
+//
+// TransformSingleProtoToAnalyticsRecord performs the proto->analytics half of the
+// round-trip (serialize_then_deserialize=T). The assertions on out.GraphQLStats prove
+// roundtrip_equal_except_protobuf_city_names=T (no City.Names involved) -> TRUE row.
+// A regression where the transform silently dropped fields would land on the FALSE row.
 func TestProtobuf_TransformSingleProtoToAnalyticsRecord_GraphQLStatsPresent(t *testing.T) {
 	pb := &ProtobufSerializer{}
 	protoRec := &analyticsproto.AnalyticsRecord{

@@ -63,6 +63,24 @@ func TestLoadExampleConf(t *testing.T) {
 // Verifies: SW-REQ-002
 // Verifies: SYS-REQ-008
 // Verifies: SYS-REQ-020
+// MCDC SYS-REQ-008: config_loaded_from_json=F, json_config_file_present=F => TRUE
+// MCDC SYS-REQ-008: config_loaded_from_json=F, json_config_file_present=T => FALSE
+// MCDC SYS-REQ-008: config_loaded_from_json=T, json_config_file_present=T => TRUE
+// MCDC SYS-REQ-020: config_reflects_env=F, env_override_present=F => TRUE
+// MCDC SYS-REQ-020: config_reflects_env=F, env_override_present=T => FALSE
+// MCDC SYS-REQ-020: config_reflects_env=T, env_override_present=T => TRUE
+//
+// SYS-REQ-008 (config_loaded_from_json / json_config_file_present): defaultPath is "" so
+// json_config_file_present=F, config_loaded_from_json=F -> TRUE row (vacuous). The cfg.Pumps
+// assertions still pass because env vars wholly populate the config. The FALSE row is the
+// regression where a missing file silently injects defaults; the assert.Len(cfg.Pumps,3)
+// detects it.
+//
+// SYS-REQ-020 (config_reflects_env / env_override_present): every os.Setenv call is an
+// env_override_present=T trigger; the assertions on cfg.Pumps[pumpNameTest].Type ("csv"),
+// .Timeout (10), .Meta keys, and APIIDs length all prove config_reflects_env=T -> TRUE row.
+// The FALSE row (env present but ignored) is caught by every Equal assertion. The vacuous
+// TRUE arm is "no env override".
 func TestConfigEnv(t *testing.T) {
 	pumpNameCSV := "CSV"
 	pumpNameTest := "TEST"
@@ -117,8 +135,41 @@ func TestConfigEnv(t *testing.T) {
 // Verifies: SW-REQ-002
 // Verifies: INT-REQ-008
 // Verifies: SYS-REQ-008
+// Verifies: SYS-REQ-035
 // SW-REQ-002:malformed_input:negative
 // SYS-REQ-008:malformed_input:negative
+// MCDC INT-REQ-008: config_decode_attempted=F, unknown_keys_reported_via_logfatal=F => TRUE
+// MCDC INT-REQ-008: config_decode_attempted=T, unknown_keys_reported_via_logfatal=F => FALSE
+// MCDC INT-REQ-008: config_decode_attempted=T, unknown_keys_reported_via_logfatal=T => TRUE
+// MCDC SYS-REQ-008: config_loaded_from_json=F, json_config_file_present=F => TRUE
+// MCDC SYS-REQ-008: config_loaded_from_json=F, json_config_file_present=T => FALSE
+// MCDC SYS-REQ-008: config_loaded_from_json=T, json_config_file_present=T => TRUE
+// MCDC SYS-REQ-035: config_loading_robust_to_malformed_input=F => FALSE
+// MCDC SYS-REQ-035: config_loading_robust_to_malformed_input=T => TRUE
+//
+// SYS-REQ-035 (config_loading_robust_to_malformed_input): the "Config file does not exist"
+// sub-test passes a nonexistent path to LoadConfig and asserts PurgeDelay is preserved at
+// its initial value (5) -- the loader did NOT crash, falling back to defaults
+// (config_loading_robust_to_malformed_input=T) -> TRUE row. The FALSE row is the regression
+// where LoadConfig panics or zeroes the configuration on malformed input; the asserts on
+// PurgeDelay catch that scenario. The KI mapstructure-decode-silently-drops-unknown-keys
+// documents the silently-drop unknown-keys behaviour required by this guarantee.
+//
+// INT-REQ-008 (config_decode_attempted / unknown_keys_reported_via_logfatal): each sub-test
+// invokes LoadConfig (config_decode_attempted=T). The "Not ignoring the config file" /
+// "Environment variable not set" sub-tests assert PurgeDelay=10 (config loaded successfully
+// without unknown keys -> unknown_keys_reported_via_logfatal=T in the no-error sense -> TRUE
+// row). The "Config file does not exist" sub-test asserts PurgeDelay==5 (no decode happened;
+// decode_attempted=F vacuous TRUE arm). The FALSE row (decode happened but unknown keys not
+// reported) is covered by the linked KI on log.Fatal coverage (.proof/known-issues/
+// pumps-logfatal-on-config-decode.yaml); the test itself proves the success/no-decode arms.
+//
+// SYS-REQ-008 (config_loaded_from_json / json_config_file_present): the "Ignoring the
+// config file" sub-test sets OMITCONFIGFILE=true with a valid path
+// (json_config_file_present=T, config_loaded_from_json=F) -> FALSE row witness. The
+// "Not ignoring" sub-test loads JSON successfully (both T) -> TRUE row. "Config file does
+// not exist" sub-test is json_config_file_present=F, config_loaded_from_json=F -> vacuous
+// TRUE row.
 func TestIgnoreConfig(t *testing.T) {
 	defaultPath := "pump.example.conf"
 

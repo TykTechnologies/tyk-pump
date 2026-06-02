@@ -10,6 +10,14 @@ import (
 // Verifies: SW-REQ-008
 // Verifies: SYS-REQ-002
 // SW-REQ-008:encoding_safety:negative
+// MCDC SYS-REQ-002: record_fields_preserved=F, record_forwarded=F => TRUE
+// MCDC SYS-REQ-002: record_fields_preserved=F, record_forwarded=T => FALSE
+// MCDC SYS-REQ-002: record_fields_preserved=T, record_forwarded=T => TRUE
+//
+// Encode forwards a fully-populated record through both codecs (record_forwarded=T) and
+// Decode reverses; the per-field assertions on `out` (Method/Host/Path/Geo/Latency/etc.)
+// prove record_fields_preserved=T -> TRUE row. A regression where a field silently zeroed
+// would fail the assertion, witnessing the FALSE row. The vacuous TRUE arm is no forwarding.
 func TestSerializer_RichRecordRoundtrip(t *testing.T) {
 	// Fully populated record drives TransformSingleRecordToProto field branches
 	// (each non-zero field exercises its assignment), then the inverse.

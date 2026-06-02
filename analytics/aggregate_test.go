@@ -279,6 +279,15 @@ func TestAggregateGraphData(t *testing.T) {
 
 // Verifies: SW-REQ-011
 // Verifies: SYS-REQ-018
+// MCDC SYS-REQ-018: aggregation_enabled=F, records_grouped_by_dimension=F => TRUE
+// MCDC SYS-REQ-018: aggregation_enabled=T, records_grouped_by_dimension=F => FALSE
+// MCDC SYS-REQ-018: aggregation_enabled=T, records_grouped_by_dimension=T => TRUE
+//
+// AggregateData(...) is invoked (aggregation_enabled=T) and the resulting aggregate is
+// indexed by dimension (APIID/path/etc.) -- the per-dimension Counter assertions prove
+// records_grouped_by_dimension=T -> TRUE row. The FALSE row is the regression where
+// aggregation runs but dimension grouping silently collapses (caught by dimension lookup
+// failure in the assertion). The vacuous TRUE arm is the aggregation-disabled default.
 func TestAggregateGraphData_Dimension(t *testing.T) {
 	sampleRecord := AnalyticsRecord{
 		TimeStamp:    time.Date(2022, 1, 1, 0, 0, 0, 0, time.UTC),

@@ -11,6 +11,13 @@ import (
 // SW-REQ-071:nominal:negative
 // SW-REQ-071:error_handling:negative
 // SYS-REQ-034:nominal:negative
+// MCDC SW-REQ-071: geo_lookup_short_circuits_when_db_absent=T => TRUE
+// MCDC SYS-REQ-034: geo_lookup_short_circuits_when_db_absent=T => TRUE
+//
+// GeoIPLookup("", nil) and GeoIPLookup("not-an-ip", nil) are both invoked with a nil
+// GeoIPDB. The empty-IP and invalid-IP assertions confirm that the lookup short-circuits
+// (returns (nil,nil) or (nil,err)) before touching the DB ->
+// geo_lookup_short_circuits_when_db_absent=T -> TRUE row.
 func TestGeoIPLookup_Coverable(t *testing.T) {
 	// Empty IP returns (nil, nil) before touching the DB.
 	geo, err := GeoIPLookup("", nil)
@@ -57,9 +64,14 @@ func openSampleGeoIPDB(t *testing.T) *maxminddb.Reader {
 // Verifies: SYS-REQ-034
 // SW-REQ-071:nominal:positive
 // SYS-REQ-034:nominal:positive
+// MCDC SW-REQ-071: geo_lookup_short_circuits_when_db_absent=F => FALSE
+// MCDC SYS-REQ-034: geo_lookup_short_circuits_when_db_absent=F => FALSE
+//
 // Drives the F-side of `GeoIPDB == nil` in GetGeo (analytics.go:374) by
 // providing a real *maxminddb.Reader and a valid IP that the synthetic
-// fixture maps to a known city record. Together with the existing
+// fixture maps to a known city record. With db != nil, the lookup does NOT short-circuit
+// (geo_lookup_short_circuits_when_db_absent=F) -> FALSE row (the guarantee about
+// short-circuiting only applies when db is absent). Together with the existing
 // TestGetGeo_NilDatabase, this closes the MC/DC pair for the nil-DB guard.
 func TestGetGeo_RealDatabase_PopulatesGeo(t *testing.T) {
 	db := openSampleGeoIPDB(t)

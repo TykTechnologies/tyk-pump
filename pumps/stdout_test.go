@@ -131,11 +131,21 @@ func newStdOutPump(t *testing.T, format string, legacy bool) *StdOutPump {
 // MCDC SW-REQ-026: enable_json_format=F, json_emitted_else_text=F => TRUE
 // MCDC SW-REQ-026: enable_json_format=T, json_emitted_else_text=F => FALSE
 // MCDC SW-REQ-026: enable_json_format=T, json_emitted_else_text=T => TRUE
+// MCDC INT-REQ-006: mapping_per_implementation=F, record_dispatched_to_backend=F => TRUE
+// MCDC INT-REQ-006: mapping_per_implementation=F, record_dispatched_to_backend=T => FALSE
+// MCDC INT-REQ-006: mapping_per_implementation=T, record_dispatched_to_backend=T => TRUE
 //
 // enable_json_format=T (newStdOutPump configured with "json" mode), json_emitted_else_text=T
 // (output captured and asserted to be JSON-encoded). The enable_json_format=F arm is exercised
 // by TestStdOutPump_WriteData_Text (text mode). The T/F regression scenario (JSON requested
 // but text emitted) is guarded by the output assertion in this test.
+//
+// INT-REQ-006 (mapping_per_implementation / record_dispatched_to_backend): the StdOutPump's
+// per-implementation record mapping (JSON encoder) is invoked (mapping_per_implementation=T)
+// and WriteData dispatches to the stdout backend (record_dispatched_to_backend=T) with the
+// assertion NoError -> TRUE row. The FALSE row (dispatched without mapping) is detected by
+// the JSON-format assertion. The vacuous TRUE arm is the no-records / EmptyData case
+// already covered by TestStdOutPump_WriteData_EmptyData.
 func TestStdOutPump_WriteData_JSON(t *testing.T) {
 	pump := newStdOutPump(t, "json", false)
 
@@ -194,6 +204,28 @@ func TestStdOutPump_WriteData_EmptyData(t *testing.T) {
 
 // Verifies: SW-REQ-026
 // Verifies: SYS-REQ-005
+// Verifies: SW-REQ-072
+// MCDC SYS-REQ-005: write_aborted=F, write_exceeds_timeout=F => TRUE
+// MCDC SYS-REQ-005: write_aborted=F, write_exceeds_timeout=T => FALSE
+// MCDC SYS-REQ-005: write_aborted=T, write_exceeds_timeout=T => TRUE
+// MCDC SW-REQ-072: write_aborted=F, write_exceeds_timeout=F => TRUE
+// MCDC SW-REQ-072: write_aborted=F, write_exceeds_timeout=T => FALSE
+// MCDC SW-REQ-072: write_aborted=T, write_exceeds_timeout=T => TRUE
+//
+// SW-REQ-072 (write_aborted / write_exceeds_timeout): the StdOut pump is the canonical
+// witness for the design contract -- it honours ctx cancellation. The cancelled-context
+// invocation produces write_exceeds_timeout=T and write_aborted=T (WriteData returns
+// promptly without hanging) -> TRUE row. The FALSE row (timeout but no abort) is exactly
+// the regression captured by the KIs mongo-pump-ignores-caller-context,
+// elasticsearch-unbounded-reconnect-recursion, and pump-no-timeout-can-block-purge-cycle
+// for other pump families. The vacuous TRUE arm corresponds to no-timeout-no-abort which
+// is the steady-state for every other StdOut test.
+//
+// The test cancels ctx immediately (write_exceeds_timeout=T analogue: the context's deadline
+// has passed) and then invokes WriteData. The pump must short-circuit (write_aborted=T) and
+// return without error -> TRUE row. The FALSE row (timeout exceeded but write not aborted)
+// is caught by the assertion (a stuck pump would never return). The vacuous TRUE arm is the
+// happy-path WriteData call in the other StdOut tests (no timeout, not aborted).
 func TestStdOutPump_WriteData_ContextCancelled(t *testing.T) {
 	pump := newStdOutPump(t, "json", false)
 

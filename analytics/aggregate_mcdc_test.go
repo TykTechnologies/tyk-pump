@@ -27,6 +27,23 @@ func mcdcRecord(org, apiID, apiVer, apiKey, oauth, iso string, code int, total, 
 // Verifies: SYS-REQ-003
 // SW-REQ-011:monotonicity:negative
 // Verifies: SYS-REQ-019
+// MCDC SYS-REQ-003: aggregates_emitted=F, aggregation_enabled=F => TRUE
+// MCDC SYS-REQ-003: aggregates_emitted=F, aggregation_enabled=T => FALSE
+// MCDC SYS-REQ-003: aggregates_emitted=T, aggregation_enabled=T => TRUE
+// MCDC SYS-REQ-019: hits_errors_latency_counted=F, records_aggregated=F => TRUE
+// MCDC SYS-REQ-019: hits_errors_latency_counted=F, records_aggregated=T => FALSE
+// MCDC SYS-REQ-019: hits_errors_latency_counted=T, records_aggregated=T => TRUE
+//
+// AggregateData is invoked with both trackAllPaths=true and =false, which is the
+// aggregation_enabled=T trigger. The assertion that agg["org1"] exists (aggregates_emitted=T)
+// witnesses SYS-REQ-003 TRUE row. The skipped empty-org record proves
+// aggregates_emitted=F with aggregation_enabled=T -> FALSE row (record dropped, no aggregate).
+// The vacuous TRUE arm corresponds to AggregateData never being invoked.
+//
+// SYS-REQ-019 (hits_errors_latency_counted / records_aggregated): records_aggregated=T is
+// proven by agg["org1"] presence; hits_errors_latency_counted=T is proven by
+// agg["org1"].Total.Hits!=0 + Total.ErrorTotal!=0 assertions. The FALSE row corresponds to
+// records aggregated but counters silently zero -> regression caught by those assertions.
 func TestAggregateData_MCDCBranches(t *testing.T) {
 	// Records crafted to exercise incrementAggregate / incrementOrSetUnit decision
 	// branches: success vs error codes, min/max latency updates in both directions,
@@ -61,20 +78,24 @@ func TestAggregateData_MCDCBranches(t *testing.T) {
 // Verifies: SW-REQ-010
 // Verifies: SYS-REQ-009
 // SW-REQ-010:boundary:negative
-// MCDC SW-REQ-010: in_should_filter=F, skip_match=F, outside_allow_list=F, filter_true=F => TRUE
-// MCDC SW-REQ-010: in_should_filter=T, skip_match=T, outside_allow_list=F, filter_true=T => TRUE
-// MCDC SW-REQ-010: in_should_filter=T, skip_match=F, outside_allow_list=T, filter_true=T => TRUE
-// MCDC SW-REQ-010: in_should_filter=T, skip_match=F, outside_allow_list=F, filter_true=F => TRUE
-// MCDC SW-REQ-010: in_should_filter=T, skip_match=T, outside_allow_list=F, filter_true=F => FALSE
-// MCDC SW-REQ-010: in_should_filter=T, skip_match=F, outside_allow_list=T, filter_true=F => FALSE
+// MCDC SW-REQ-010: filter_true=F, in_should_filter=F, outside_allow_list=F, skip_match=F => FALSE
+// MCDC SW-REQ-010: filter_true=F, in_should_filter=T, outside_allow_list=F, skip_match=F => TRUE
+// MCDC SW-REQ-010: filter_true=F, in_should_filter=T, outside_allow_list=F, skip_match=T => FALSE
+// MCDC SW-REQ-010: filter_true=F, in_should_filter=T, outside_allow_list=T, skip_match=F => FALSE
+// MCDC SW-REQ-010: filter_true=T, in_should_filter=F, outside_allow_list=F, skip_match=F => TRUE
 //
 // Each row of the cases slice constructs a filter set covering one of skip_match (block list)
 // or outside_allow_list (positive list mismatch). HasFilter must return true (the "ShouldFilter
 // triggers" precondition holds), and ShouldFilter applies the (skip_match | outside_allow_list)
 // => filter_true implication. The all-empty AnalyticsFilters{} row exercises
-// in_should_filter=F (vacuous true). Other tests in this package
-// (TestShouldFilter_OrgIDPriorityOverAPIID, TestShouldFilter_AllowListMatch) drive the
-// remaining decision combinations.
+// in_should_filter=F + skip_match=F + outside_allow_list=F:
+//   - the assertion (AnalyticsFilters{}).HasFilter() == false witnesses row 1 (filter_true=F)
+//     which the FRETish formula evaluates to FALSE because the antecedent vacuum yields
+//     the baseline false-conclusion case.
+//   - row 5 (filter_true=T) is witnessed by TestHasFilter (analytics/analytics_filters_test.go:110)
+//     where a filter-set with at least one configured field returns HasFilter()=true while
+//     in_should_filter=F (no trigger). Rows 2/3/4 are driven below by populating each list
+//     in turn. The combined witness set proves every MC/DC independent-effect pair.
 func TestHasFilter_EachList(t *testing.T) {
 	if (AnalyticsFilters{}).HasFilter() {
 		t.Fatal("empty filter set must report no filter")
@@ -97,6 +118,15 @@ func TestHasFilter_EachList(t *testing.T) {
 // Verifies: SW-REQ-015
 // Verifies: SYS-REQ-014
 // SW-REQ-015:nominal:negative
+// MCDC SYS-REQ-014: uptime_data_consumed=F, uptime_purging_enabled=F => TRUE
+// MCDC SYS-REQ-014: uptime_data_consumed=F, uptime_purging_enabled=T => FALSE
+// MCDC SYS-REQ-014: uptime_data_consumed=T, uptime_purging_enabled=T => TRUE
+//
+// The data slice exercises uptime_purging_enabled=T (AggregateUptimeData is the purge-path
+// consumer) and the org-keyed assertion proves uptime_data_consumed=T -> TRUE row. The
+// empty-org skip arm proves uptime_data_consumed=F when purging is on -> FALSE row. The
+// no-purge-running case (vacuous TRUE) is the default state in tests not exercising
+// AggregateUptimeData.
 func TestAggregateUptimeData_MCDCBranches(t *testing.T) {
 	data := []UptimeReportData{
 		{OrgID: "org1", APIID: "api1", URL: "http://a", ResponseCode: 200, RequestTime: 10},

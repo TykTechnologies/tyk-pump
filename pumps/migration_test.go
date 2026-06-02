@@ -97,6 +97,16 @@ func createTestNonShardedTables(t *testing.T, db *gorm.DB, tablePrefix string, m
 
 // Verifies: SW-REQ-040
 // Verifies: INT-REQ-007
+// MCDC INT-REQ-007: expand_contract_migration=F, sql_schema_version_changed=F => TRUE
+// MCDC INT-REQ-007: expand_contract_migration=F, sql_schema_version_changed=T => FALSE
+// MCDC INT-REQ-007: expand_contract_migration=T, sql_schema_version_changed=T => TRUE
+//
+// "successful_migration" sub-test runs MigrateAllShardedTables against pre-seeded sharded
+// tables (sql_schema_version_changed=T via createTestShardedTables) and asserts the tables
+// survive migration (expand_contract_migration=T) -> TRUE row. "no_sharded_tables" is the
+// vacuous TRUE arm (no schema change). "invalid_date_format_ignored" + the assert that
+// invalid tables are ignored proves the FALSE-row regression detector: a buggy migration
+// that touched non-shard tables would be caught by the assertion.
 func TestMigrateAllShardedTables(t *testing.T) {
 	t.Run("successful_migration", func(t *testing.T) {
 		db := setupTestDB(t)

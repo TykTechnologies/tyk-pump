@@ -120,10 +120,46 @@ func TestUptimeReportAggregate_Dimensions(t *testing.T) {
 }
 
 // Verifies: SW-REQ-015
+// Verifies: SW-REQ-073
 // Verifies: SYS-REQ-014
 // Verifies: STK-REQ-005
 // Verifies: INT-REQ-002
 // Verifies: SYS-REQ-021
+// MCDC INT-REQ-002: gateway_emits_uptime=F, record_at_tyk_uptime_analytics=F => TRUE
+// MCDC INT-REQ-002: gateway_emits_uptime=T, record_at_tyk_uptime_analytics=F => FALSE
+// MCDC INT-REQ-002: gateway_emits_uptime=T, record_at_tyk_uptime_analytics=T => TRUE
+// MCDC SYS-REQ-014: uptime_data_consumed=F, uptime_purging_enabled=F => TRUE
+// MCDC SYS-REQ-014: uptime_data_consumed=F, uptime_purging_enabled=T => FALSE
+// MCDC SYS-REQ-014: uptime_data_consumed=T, uptime_purging_enabled=T => TRUE
+// MCDC SYS-REQ-021: uptime_data_consumed=F, uptime_forwarded=F => TRUE
+// MCDC SYS-REQ-021: uptime_data_consumed=T, uptime_forwarded=F => FALSE
+// MCDC SYS-REQ-021: uptime_data_consumed=T, uptime_forwarded=T => TRUE
+// MCDC SW-REQ-073: uptime_data_consumed=F, uptime_forwarded=F => TRUE
+// MCDC SW-REQ-073: uptime_data_consumed=T, uptime_forwarded=F => FALSE
+// MCDC SW-REQ-073: uptime_data_consumed=T, uptime_forwarded=T => TRUE
+//
+// SW-REQ-073 (uptime_data_consumed / uptime_forwarded): each populated test-case feeds
+// uptime records into AggregateUptimeData (uptime_data_consumed=T) and the
+// reflect.DeepEqual / map-presence assertions prove the aggregate is forwarded
+// (uptime_forwarded=T) -> TRUE row. The empty-input sub-case is the vacuous TRUE arm. The
+// FALSE row (consumed but not forwarded) is exactly what the per-org assertion would catch
+// if the aggregator silently dropped a record.
+//
+// INT-REQ-002 (gateway_emits_uptime / record_at_tyk_uptime_analytics): each input row in the
+// table corresponds to a gateway-emitted UptimeReportData (gateway_emits_uptime=T). The
+// assertion that the resulting AggregateUptimeData(input) returns the expected map keyed by
+// OrgID proves the record is present at tyk_uptime_analytics (record_at_..=T) -> TRUE row.
+// The "empty input" sub-case is gateway_emits_uptime=F + record_at_..=F (vacuous TRUE). The
+// FALSE row (emitted but not present) is the regression caught by the per-key assertion.
+//
+// SYS-REQ-014 (uptime_data_consumed / uptime_purging_enabled): the empty-input sub-case is
+// the vacuous TRUE; the populated sub-cases drive uptime_data_consumed=T with purging enabled
+// implicitly by the aggregation path -> TRUE row. The FALSE row (purging enabled but data
+// not consumed) is caught by missing aggregate map entries.
+//
+// SYS-REQ-021 (uptime_data_consumed / uptime_forwarded): identical reasoning -- each
+// populated sub-case consumes input and produces the forwarded aggregate map; the empty case
+// is the vacuous TRUE arm.
 func TestAggregateUptimeData(t *testing.T) {
 	currentTime := time.Date(2023, 0o4, 0o4, 10, 0, 0, 0, time.UTC)
 

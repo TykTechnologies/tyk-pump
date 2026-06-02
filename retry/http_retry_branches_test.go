@@ -92,7 +92,21 @@ func TestBackoffHTTPRetry_Send_WithBody_RetriesOn5xx(t *testing.T) {
 
 // Verifies: SW-REQ-030
 // Verifies: SYS-REQ-023
+// Verifies: SYS-REQ-006
 // SYS-REQ-023:error_handling:negative
+// MCDC SYS-REQ-023: error_surfaced_to_caller=F, retry_attempts_exhausted=F => TRUE
+// MCDC SYS-REQ-023: error_surfaced_to_caller=F, retry_attempts_exhausted=T => FALSE
+// MCDC SYS-REQ-023: error_surfaced_to_caller=T, retry_attempts_exhausted=T => TRUE
+// MCDC SYS-REQ-006: retry_attempted=F, transient_failure=F => TRUE
+// MCDC SYS-REQ-006: retry_attempted=F, transient_failure=T => FALSE
+// MCDC SYS-REQ-006: retry_attempted=T, transient_failure=T => TRUE
+//
+// 5xx-every-time forces transient_failure=T and the maxRetries cap is hit
+// (retry_attempts_exhausted=T). The err==nil assertion fails iff the error wasn't
+// surfaced -> proves error_surfaced_to_caller=T -> TRUE row. The calls=maxRetries+1
+// assertion proves retry_attempted=T -> TRUE row for SYS-REQ-006 too. The FALSE row
+// (exhausted but no error returned) is exactly what the err==nil assertion blocks.
+// The vacuous TRUE arm corresponds to the success path (TestBackoffHTTPRetry_Send_Success).
 func TestBackoffHTTPRetry_Send_ErrorSurfacedAfterRetriesExhausted(t *testing.T) {
 	calls := 0
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

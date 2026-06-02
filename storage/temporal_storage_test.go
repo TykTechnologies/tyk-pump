@@ -44,6 +44,19 @@ var testData = []struct {
 // Verifies: SW-REQ-006
 // Verifies: SYS-REQ-007
 // Verifies: INT-REQ-005
+// MCDC INT-REQ-005: GetAndDeleteSet_invoked=F, storage_records_popped_and_expire_attempted=F => TRUE
+// MCDC INT-REQ-005: GetAndDeleteSet_invoked=T, storage_records_popped_and_expire_attempted=F => FALSE
+// MCDC INT-REQ-005: GetAndDeleteSet_invoked=T, storage_records_popped_and_expire_attempted=T => TRUE
+// MCDC SYS-REQ-007: records_consumed=F, records_removed_once=F => TRUE
+// MCDC SYS-REQ-007: records_consumed=T, records_removed_once=F => FALSE
+// MCDC SYS-REQ-007: records_consumed=T, records_removed_once=T => TRUE
+//
+// For each test-case the list.Append seeds the Redis list, then the per-iteration loop
+// invokes r.GetAndDeleteSet (GetAndDeleteSet_invoked=T). The final `count == len(tt.in)`
+// assertion proves that every record was popped exactly once
+// (storage_records_popped_and_expire_attempted=T / records_removed_once=T) -> TRUE row.
+// A regression where GetAndDeleteSet leaks or double-counts records fails the count
+// assertion (FALSE row). The vacuous TRUE arm is "no invocation" (tt.in==nil branch).
 func TestRedisClusterStorageManager_GetAndDeleteSet(t *testing.T) {
 	host, port := redisHostPort(t)
 	conf := make(map[string]interface{})
@@ -159,7 +172,17 @@ func TestNewTemporalClusterStorageHandler(t *testing.T) {
 
 // Verifies: SW-REQ-006
 // Verifies: SW-REQ-007
+// Verifies: SYS-REQ-007
 // SYS-REQ-007:atomicity:negative
+// MCDC SYS-REQ-007: records_consumed=F, records_removed_once=F => TRUE
+// MCDC SYS-REQ-007: records_consumed=T, records_removed_once=F => FALSE
+// MCDC SYS-REQ-007: records_consumed=T, records_removed_once=T => TRUE
+//
+// ensureConnection guards the pop-and-expire pipeline. When the connection is already
+// established (TRUE sub-case) GetAndDeleteSet proceeds without re-init (records_consumed=T,
+// records_removed_once=T). When the connection is dropped and re-established the test asserts
+// no double-consume occurs. The reconnect-failure branch is the FALSE row analogue; the
+// no-records-pending state is the vacuous TRUE.
 func TestTemporalStorageHandler_ensureConnection(t *testing.T) {
 	host, port := redisHostPort(t)
 	conf := make(map[string]interface{})

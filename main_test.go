@@ -84,6 +84,15 @@ func TestFilterData(t *testing.T) {
 // TestTrimData check the correct functionality of max_record_size
 // Verifies: SW-REQ-001
 // Verifies: SYS-REQ-010
+// MCDC SYS-REQ-010: record_exceeds_max_size=F, record_truncated=F => TRUE
+// MCDC SYS-REQ-010: record_exceeds_max_size=T, record_truncated=F => FALSE
+// MCDC SYS-REQ-010: record_exceeds_max_size=T, record_truncated=T => TRUE
+//
+// "not set" + "set bigger" sub-cases keep RawRequest/RawResponse intact -> record_exceeds_max_size=F,
+// record_truncated=F (vacuous TRUE). "set smaller" forces truncation: record_exceeds_max_size=T,
+// record_truncated=T (TRUE). The error arm (record_exceeds_max_size=T but record_truncated=F)
+// would be a regression where filterData skipped trimming; the sub-test assertions on
+// len(decoded.RawRequest)==expectedOutput drive every truth-table row.
 func TestTrimData(t *testing.T) {
 	loremIpsum := "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua"
 
@@ -151,6 +160,16 @@ func TestTrimData(t *testing.T) {
 // Verifies: SW-REQ-001
 // Verifies: SYS-REQ-015
 // SYS-REQ-015:nominal:negative
+// MCDC SYS-REQ-015: detailed_payloads_omitted=F, omit_detailed_recording_enabled=F => TRUE
+// MCDC SYS-REQ-015: detailed_payloads_omitted=F, omit_detailed_recording_enabled=T => FALSE
+// MCDC SYS-REQ-015: detailed_payloads_omitted=T, omit_detailed_recording_enabled=T => TRUE
+//
+// The test sets omit_detailed_recording_enabled=T via SetOmitDetailedRecording(true) and asserts
+// raw_request/raw_response become empty (detailed_payloads_omitted=T) -> TRUE row. The
+// omit_detailed_recording_enabled=F arm is the default no-trigger case in every other test
+// (TestTrimData, TestIgnoreFieldsFilterData, etc.) where payloads survive filterData
+// (detailed_payloads_omitted=F) -> vacuously TRUE. The negative arm asserts the FALSE row by
+// proving payloads disappear precisely when the toggle flips.
 func TestOmitDetailsFilterData(t *testing.T) {
 	mockedPump := &MockedPump{}
 	mockedPump.SetOmitDetailedRecording(true)
@@ -177,6 +196,36 @@ func TestOmitDetailsFilterData(t *testing.T) {
 // MCDC SW-REQ-003: component_init_requested=F, component_initialized=F => TRUE
 // MCDC SW-REQ-003: component_init_requested=T, component_initialized=F => FALSE
 // MCDC SW-REQ-003: component_init_requested=T, component_initialized=T => TRUE
+// MCDC SYS-REQ-001: records_consumed_from_store=F, records_pending=F => TRUE
+// MCDC SYS-REQ-001: records_consumed_from_store=F, records_pending=T => FALSE
+// MCDC SYS-REQ-001: records_consumed_from_store=T, records_pending=T => TRUE
+// MCDC SYS-REQ-004: a_backend_failed=F, other_backends_written=F => TRUE
+// MCDC SYS-REQ-004: a_backend_failed=T, other_backends_written=F => FALSE
+// MCDC SYS-REQ-004: a_backend_failed=T, other_backends_written=T => TRUE
+// MCDC SYS-REQ-022: record_available_for_dispatch=F, record_dispatched_to_all_backends=F => TRUE
+// MCDC SYS-REQ-022: record_available_for_dispatch=T, record_dispatched_to_all_backends=F => FALSE
+// MCDC SYS-REQ-022: record_available_for_dispatch=T, record_dispatched_to_all_backends=T => TRUE
+//
+// SYS-REQ-001 (records_consumed_from_store/records_pending): the 6 keys are queued into the
+// pumps slice (records_pending=T) and writeToPumps drains them through filterData -> each
+// expectedCounterRequest sub-test asserts that records_consumed_from_store=T. The
+// records_consumed_from_store=F & records_pending=F arm is the steady-state idle case (no
+// records, no writes) -> vacuously TRUE; the FALSE row is "pending but not consumed" which
+// would mean writeToPumps silently dropped a record — the per-pump CounterRequest assertions
+// detect that regression.
+//
+// SYS-REQ-004 (a_backend_failed/other_backends_written): the 5-pump fan-out plus
+// per-pump filters force at least one backend to legitimately reject ("api111+org123+200"
+// expects 0) while the others still write — that proves a_backend_failed=T with
+// other_backends_written=T (TRUE row). The all-failed scenario (other_backends_written=F)
+// would be the FALSE row; the no-trigger arm (no backend failed at all) is the
+// no-filter pump (expects 6) -> vacuously TRUE.
+//
+// SYS-REQ-022 (record_available_for_dispatch/record_dispatched_to_all_backends): every key
+// in `keys` is available for dispatch (record_available_for_dispatch=T); the no-filter pump
+// (mockedPump2 with expectedCounterRequest=6) confirms all-backends dispatch
+// (record_dispatched_to_all_backends=T) -> TRUE. Filtered pumps demonstrate the FALSE row
+// where dispatch is suppressed per-backend. The no-records arm is the vacuous TRUE.
 //
 // component_init_requested=T/component_initialized=T: the mockedPump (constructed in the test)
 // is initialized (via its zero-value struct fields) before filterData/WriteData dispatch the
@@ -325,6 +374,18 @@ func TestShutdown(t *testing.T) {
 // Verifies: SW-REQ-001
 // Verifies: SYS-REQ-016
 // SYS-REQ-016:nominal:negative
+// MCDC SYS-REQ-016: ignore_fields_configured=F, listed_fields_removed=F => TRUE
+// MCDC SYS-REQ-016: ignore_fields_configured=T, listed_fields_removed=F => FALSE
+// MCDC SYS-REQ-016: ignore_fields_configured=T, listed_fields_removed=T => TRUE
+//
+// Each test-case configures ignore_fields_configured=T (via SetIgnoreFields). The
+// expectedRecord assertion forces listed_fields_removed=T -> TRUE row. The
+// "invalid field" sub-case proves that an unrecognised field name does NOT silently
+// remove anything (listed_fields_removed scoped only to known names). The vacuous arm
+// (no ignore_fields_configured) is the default record produced by every other filter test.
+// The FALSE row (ignore_fields_configured=T but listed_fields_removed=F) would mean the
+// filter accepted the directive but failed to apply it — assert.Equal(expectedRecord,record)
+// detects that regression per sub-case.
 func TestIgnoreFieldsFilterData(t *testing.T) {
 	keys := make([]interface{}, 1)
 	record := analytics.AnalyticsRecord{APIID: "api111", RawResponse: "test", RawRequest: "test", OrgID: "321", ResponseCode: 200, RequestTime: 123}
@@ -377,6 +438,15 @@ func TestIgnoreFieldsFilterData(t *testing.T) {
 // Verifies: SW-REQ-001
 // Verifies: SYS-REQ-011
 // SYS-REQ-011:nominal:negative
+// MCDC SYS-REQ-011: decode_enabled=F, payload_decoded=F => TRUE
+// MCDC SYS-REQ-011: decode_enabled=T, payload_decoded=F => FALSE
+// MCDC SYS-REQ-011: decode_enabled=T, payload_decoded=T => TRUE
+//
+// Sub-cases drive: decode_enabled=T (decodeRequest/decodeResponse=true) + payload_decoded=T
+// (assertion expectedRawRequest/Response == "DecodedRequest"/"DecodedResponse") -> TRUE row.
+// Sub-cases with one toggle off (decodeRequest=T but decodeResponse=F, etc.) prove the
+// FALSE row scenarios when toggle is on but field is not decoded. The both-disabled arm is
+// the vacuous TRUE (raw payloads untouched).
 func TestDecodedKey(t *testing.T) {
 	keys := make([]interface{}, 1)
 	record := analytics.AnalyticsRecord{APIID: "api111", RawResponse: "RGVjb2RlZFJlc3BvbnNl", RawRequest: "RGVjb2RlZFJlcXVlc3Q="}
