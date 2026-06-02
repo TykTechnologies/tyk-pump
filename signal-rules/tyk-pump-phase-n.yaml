@@ -1,0 +1,512 @@
+rules:
+  - id: go.pkgvar.mutated-without-sync
+    severity: WARNING
+    languages: [go]
+    message: |
+      Package-level mutable variable is assigned from a method body. Without
+      explicit synchronisation (sync.Mutex, atomic, or channel ownership) the
+      read/write pair is a data race when the method may be invoked from
+      multiple goroutines. Move the state behind a Mutex, use sync/atomic, or
+      scope it to a struct field with a documented owner.
+    metadata:
+      proof:
+        signal_id: concurrency.pkgvar_mutated_without_sync
+        provider: opengrep
+        tags: [concurrent, process_local]
+        obligations: [concurrent]
+        confidence: medium
+        notes: |
+          Fires when an identifier matching a singleton-style suffix
+          (Singleton/Instance/Global/Connector/Conn/Pool/Once/Registry) is
+          assigned via `=` (not `:=`) inside a receiver method. FP risk: a
+          local variable that happens to end in one of those suffixes
+          (e.g. `httpClient` is safe, but `customSingleton :=` followed by
+          `customSingleton =` would match). To minimise FPs the rule pairs
+          with metavariable-regex on the LHS identifier and excludes calls
+          inside sync.Once.Do, atomic.Store*, and any function whose body
+          opens with a Mutex.Lock.
+    paths:
+      exclude:
+        - "*_test.go"
+        - "cmd/**"
+        - "main.go"
+    patterns:
+      - pattern-either:
+          - pattern: |
+              func ($RECV $T) $M(...) error {
+                ...
+                $PKGVAR = $V
+                ...
+              }
+          - pattern: |
+              func ($RECV $T) $M(...) {
+                ...
+                $PKGVAR = $V
+                ...
+              }
+          - pattern: |
+              func ($RECV $T) $M(...) ($A, $B) {
+                ...
+                $PKGVAR = $V
+                ...
+              }
+      - metavariable-regex:
+          metavariable: $PKGVAR
+          regex: '^[a-z][A-Za-z0-9]*(Singleton|Instance|Connector|Registry|Global)$'
+      - pattern-not-inside: |
+          func ($RECV $T) $M(...) {
+            ...
+            $MU.Lock()
+            ...
+          }
+      - pattern-not-inside: |
+          func ($RECV $T) $M(...) error {
+            ...
+            $MU.Lock()
+            ...
+          }
+      - pattern-not-inside: |
+          $ONCE.Do(func() {
+            ...
+          })
+      - pattern-not: atomic.StorePointer(...)
+      - pattern-not: atomic.StoreInt32(...)
+      - pattern-not: atomic.StoreInt64(...)
+      - pattern-not: atomic.StoreUint32(...)
+      - pattern-not: atomic.StoreUint64(...)
+
+  - id: go.deferred-close-on-possibly-nil
+    severity: ERROR
+    languages: [go]
+    message: |
+      A creator that returns (handle, error) is called; the error is only
+      logged (no return / continue / fatal); execution then falls through to
+      a "defer $X.Close()". When the creator fails the handle is nil and the
+      deferred Close panics with a nil-pointer dereference, masking the
+      original failure with a confusing stack trace. Return on the error arm
+      or guard the defer behind "if outfile != nil".
+    metadata:
+      proof:
+        signal_id: filesystem.deferred_close_on_possibly_nil
+        provider: opengrep
+        tags: [error_handling, panic_safety, filesystem]
+        obligations: [panic_free_input_handling, errors_propagated]
+        confidence: high
+        notes: |
+          Anchored on the enclosing function body so the assignment, the
+          log-only error arm, and the defer can be matched even when the
+          assignment is nested inside an if/else (real bug shape in csv.go).
+          pattern-not excludes the safe shape where the error arm ends with
+          a `return`. FP risk: low; tests can legitimately ignore Create
+          errors when running on a guaranteed-writable temp dir, but tests
+          are excluded by paths.
+    paths:
+      exclude:
+        - "*_test.go"
+        - "cmd/**"
+        - "main.go"
+    patterns:
+      - pattern-either:
+          - pattern: |
+              func ($R $T) $M(...) error {
+                ...
+                $X, $E = os.Create(...)
+                if $E != nil {
+                  $LOG.Error(...)
+                }
+                ...
+                defer $X.Close()
+                ...
+              }
+          - pattern: |
+              func ($R $T) $M(...) error {
+                ...
+                $X, $E = os.OpenFile(...)
+                if $E != nil {
+                  $LOG.Error(...)
+                }
+                ...
+                defer $X.Close()
+                ...
+              }
+          - pattern: |
+              func ($R $T) $M(...) error {
+                ...
+                $X, $E = os.Open(...)
+                if $E != nil {
+                  $LOG.Error(...)
+                }
+                ...
+                defer $X.Close()
+                ...
+              }
+      - pattern-not: |
+          if $E != nil {
+            $LOG.Error(...)
+            return $RET
+          }
+      - pattern-not: |
+          if $E != nil {
+            $LOG.Error(...)
+            return
+          }
+
+  - id: go.loop.increment-from-mutable-config
+    severity: WARNING
+    languages: [go]
+    message: |
+      A for loop uses a struct field as its stride: `for i := 0; i < N; i +=
+      cfg.BatchSize`, OR a shrink-loop uses a parameter as its slice step:
+      `for batchSize < len(s) { s = s[batchSize:] ... }`. When the field /
+      parameter is zero (default-constructed config, missing YAML key,
+      misconfigured caller) the loop hangs the goroutine forever and produces
+      no observable failure. Validate the field at init time and substitute a
+      non-zero default, OR guard the loop with `if cfg.BatchSize == 0 {
+      cfg.BatchSize = N }` immediately before the loop.
+    metadata:
+      proof:
+        signal_id: control_flow.loop_stride_from_config
+        provider: opengrep
+        tags: [error_handling]
+        obligations: [malformed_input, input_size_bounded]
+        confidence: high
+        notes: |
+          Two shapes: (a) classic 3-clause `for i := 0; i < N; i += $RECV.$F`
+          with a config-field stride, and (b) shrink loops
+          `for $C < len($S) { ... append(...) }` where the cursor is a
+          caller-supplied parameter. Excluded when a guard `if $RECV.$F == 0`
+          precedes the loop. FP risk: low when the stride is a literal or
+          local int; both rule shapes restrict to selector-field strides or
+          to len-shrink loops respectively.
+    paths:
+      exclude:
+        - "*_test.go"
+        - "cmd/**"
+        - "main.go"
+    patterns:
+      - pattern-either:
+          - pattern: |
+              for $I := 0; $I < $N; $I += $RECV.$X.$F {
+                ...
+              }
+          - pattern: |
+              for $I := 0; $I < $N; $I += $RECV.$F {
+                ...
+              }
+          - pattern: |
+              for $C < len($S) {
+                $S, $B = $S[$C:], append($B, $S[0:$C:$C])
+              }
+      - pattern-not-inside: |
+          if $RECV.$X.$F == 0 {
+            ...
+          }
+          ...
+          for $I := 0; $I < $N; $I += $RECV.$X.$F {
+            ...
+          }
+      - pattern-not-inside: |
+          if $RECV.$F == 0 {
+            ...
+          }
+          ...
+          for $I := 0; $I < $N; $I += $RECV.$F {
+            ...
+          }
+
+  - id: go.range.mutate-iteratee
+    severity: ERROR
+    languages: [go]
+    message: |
+      The body of `for k, v := range slice` reassigns `slice` itself via
+      `slice = append(slice[:k], slice[k+1:]...)` or via in-place compaction
+      (`copy(slice[k:], slice[k+1:]); slice = slice[:len(slice)-1]`). The Go
+      spec captures the range expression once at loop entry, so deleting
+      element k shifts element k+1 into position k while the loop counter
+      advances past it — every other matching element is skipped. Iterate
+      backwards, build a fresh result slice, or use slices.DeleteFunc.
+    metadata:
+      proof:
+        signal_id: control_flow.range_mutate_iteratee
+        provider: opengrep
+        tags: [error_handling]
+        obligations: [determinism]
+        confidence: high
+        notes: |
+          Fires when the range subject and the assignment LHS are the same
+          identifier. The safe shape `fresh = append(fresh, ...)` does not
+          match because the LHS differs from the range subject. FP risk:
+          intentional in-place compaction with skip-acknowledged (rare).
+    paths:
+      exclude:
+        - "*_test.go"
+        - "cmd/**"
+        - "main.go"
+    patterns:
+      - pattern-either:
+          - pattern: |
+              for $K, $V := range $S {
+                ...
+                $S = append($S[:$K], $S[$K+1:]...)
+                ...
+              }
+          - pattern: |
+              for $K := range $S {
+                ...
+                $S = append($S[:$K], $S[$K+1:]...)
+                ...
+              }
+          - pattern: |
+              for $K, $V := range $S {
+                ...
+                copy($S[$K:], $S[$K+1:])
+                ...
+                $S = $S[:len($S)-1]
+                ...
+              }
+      - pattern-not: |
+          for $_ := range $S {
+            ...
+            $S = append($S[:$_], $S[$_+1:]...)
+            ...
+            break
+          }
+      - pattern-not: |
+          for $_ := range $S {
+            ...
+            $S = append($S[:$_], $S[$_+1:]...)
+            ...
+            return $RET
+          }
+      - pattern-not: |
+          for $_ := range $S {
+            ...
+            $S = append($S[:$_], $S[$_+1:]...)
+            ...
+            return
+          }
+      - pattern-not: |
+          for $_, $V := range $S {
+            ...
+            $S = append($S[:$_], $S[$_+1:]...)
+            ...
+            return $RET
+          }
+      - pattern-not: |
+          for $_, $V := range $S {
+            ...
+            $S = append($S[:$_], $S[$_+1:]...)
+            ...
+            return
+          }
+      - pattern-not: |
+          for $_, $V := range $S {
+            ...
+            $S = append($S[:$_], $S[$_+1:]...)
+            ...
+            break
+          }
+      - pattern-not: |
+          for $_, $V := range $S {
+            ...
+            copy($S[$_:], $S[$_+1:])
+            ...
+            $S = $S[:len($S)-1]
+            ...
+            return
+          }
+      - pattern-not: |
+          for $_, $V := range $S {
+            ...
+            copy($S[$_:], $S[$_+1:])
+            ...
+            $S = $S[:len($S)-1]
+            ...
+            return $RET
+          }
+      - pattern-not: |
+          for $_, $V := range $S {
+            ...
+            copy($S[$_:], $S[$_+1:])
+            ...
+            $S = $S[:len($S)-1]
+            ...
+            break
+          }
+
+  - id: go.recursive-call-without-return
+    severity: ERROR
+    languages: [go]
+    message: |
+      A method invokes itself recursively but the result is discarded — the
+      call is not prefixed with `return` and not captured into a variable.
+      Execution falls through to the original code path after the recursive
+      call completes, so any work performed by the inner call is duplicated
+      (the outer frame then runs the same loop a second time). Idiomatic
+      recursion uses `return r.MethodName(...)`.
+    metadata:
+      proof:
+        signal_id: control_flow.recursive_call_without_return
+        provider: opengrep
+        tags: [error_handling]
+        obligations: [determinism, errors_propagated]
+        confidence: high
+        notes: |
+          Targets the specific shape of a defensive-reconnect path:
+          `if r.client == nil { r.reconnect(); r.WriteData(...) }`. We do
+          NOT match `return r.WriteData(...)` (idiomatic), nor `$X :=
+          r.WriteData(...)` / `$X = r.WriteData(...)` where the caller
+          captures the result for inspection. FP risk: low; the only
+          remaining shape is exactly the bug shape.
+    paths:
+      exclude:
+        - "*_test.go"
+        - "cmd/**"
+        - "main.go"
+    patterns:
+      - pattern: |
+          func ($R $T) $M(...) error {
+            ...
+            if $COND {
+              ...
+              $R.$M(...)
+            }
+            ...
+          }
+      - pattern-not: |
+          func ($R $T) $M(...) error {
+            ...
+            if $COND {
+              ...
+              $X := $R.$M(...)
+              ...
+            }
+            ...
+          }
+      - pattern-not: |
+          func ($R $T) $M(...) error {
+            ...
+            if $COND {
+              ...
+              $X = $R.$M(...)
+              ...
+            }
+            ...
+          }
+      - pattern-not: |
+          func ($R $T) $M(...) error {
+            ...
+            if $COND {
+              ...
+              return $R.$M(...)
+              ...
+            }
+            ...
+          }
+
+  - id: go.http.uses-default-servemux
+    severity: WARNING
+    languages: [go]
+    message: |
+      Library code registers handlers on or serves http.DefaultServeMux
+      (http.Handle / http.HandleFunc / http.ListenAndServe(..., nil)). The
+      DefaultServeMux is process-global; a second init in the same process
+      (re-init after config reload, parallel tests, two pumps configured for
+      different ports) panics with "http: multiple registrations for /metrics".
+      Construct an explicit *http.ServeMux and wire it through a private
+      *http.Server.
+    metadata:
+      proof:
+        signal_id: http.uses_default_servemux
+        provider: opengrep
+        tags: [http_server, process_local]
+        obligations: [request_timeout_bounded]
+        confidence: high
+        notes: |
+          Excludes test wiring (`*_test.go` and `func TestMain`) where the
+          default mux is conventionally acceptable for short-lived servers.
+          Library binaries that ARE the process entry point and only run
+          once still match — this is intentional, because the moment such a
+          binary is embedded as a sidecar or hot-reloaded the global state
+          becomes a bug.
+    paths:
+      exclude:
+        - "*_test.go"
+        - "cmd/**"
+        - "main.go"
+    patterns:
+      - pattern-either:
+          - pattern: http.Handle($P, $H)
+          - pattern: http.HandleFunc($P, $H)
+          - pattern: http.ListenAndServe($A, nil)
+          - pattern: http.ListenAndServeTLS($A, $C, $K, nil)
+      - pattern-not-inside: |
+          func TestMain($T *testing.M) {
+            ...
+          }
+      - pattern-not-inside: |
+          func main() {
+            ...
+          }
+
+  - id: go.dial-return-without-close
+    severity: ERROR
+    languages: [go]
+    message: |
+      A net.Conn returned by a custom dialer (closure-shaped, where conn IS
+      the success-return value) writes a setup payload in a loop. The
+      Write's error arm returns `(nil, err)` without first calling
+      `conn.Close()`. The connection (and its socket / FD / TLS session)
+      leaks. Add `defer conn.Close()` immediately after the successful dial,
+      OR explicit Close() before the return-on-error in the loop.
+    metadata:
+      proof:
+        signal_id: network.dial_return_without_close
+        provider: opengrep
+        tags: [http_client, network_boundary]
+        obligations: [external_call_failure_observable]
+        confidence: high
+        notes: |
+          Anchored on the closure / method shape that returns
+          `(conn net.Conn, err error)` and contains a `for $_, $V := range
+          $INIT { if $_, $E := conn.Write($V); $E != nil { return nil, $E
+          } }` initialiser. pattern-not handles the safe case where defer
+          conn.Close() appears between the dial and the write. Custom
+          dialer callbacks (the tyk-pump hybrid dialer) where the conn IS
+          the returned value to the caller still match — that is the bug
+          shape we want.
+    paths:
+      exclude:
+        - "*_test.go"
+        - "cmd/**"
+        - "main.go"
+    patterns:
+      - pattern-either:
+          - pattern: |
+              return func($A string) (conn net.Conn, err error) {
+                ...
+                for $K, $V := range $INIT {
+                  if $X, $E2 := conn.Write($V); $E2 != nil {
+                    return nil, $E2
+                  }
+                }
+                ...
+              }
+          - pattern: |
+              func ($R $RT) $M(...) (conn net.Conn, err error) {
+                ...
+                for $K, $V := range $INIT {
+                  if $X, $E2 := conn.Write($V); $E2 != nil {
+                    return nil, $E2
+                  }
+                }
+                ...
+              }
+      - pattern-not: |
+          conn, err = $D.Dial(...)
+          ...
+          defer conn.Close()
+      - pattern-not: |
+          conn, err = tls.DialWithDialer(...)
+          ...
+          defer conn.Close()

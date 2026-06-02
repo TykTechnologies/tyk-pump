@@ -100,6 +100,8 @@ project:
             enabled: true
     signals:
         defaults: auto
+        rule_packs:
+            - signal-rules/tyk-pump-phase-n.yaml
         providers:
             opengrep:
                 enabled: true

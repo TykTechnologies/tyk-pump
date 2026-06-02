@@ -48,7 +48,7 @@ history:
     created_by: human:cli
     created_at: "2026-05-30T08:37:04Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-02T13:51:46Z"
+    last_modified_at: "2026-06-02T18:29:51Z"
 obligation_checklist:
     - monotonicity
     - nominal
@@ -61,6 +61,17 @@ obligation_suppressions:
         - CWE CWE-703,CWE-252,CWE-754
         - NIST-800-53 SI-11
         - OWASP-ASVS-v4 V7.4.1,V7.4.2,V7.4.3
+    - id: input_size_bounded
+      reason: 'Phase N opengrep rule go.loop.increment-from-mutable-config flags pumps/kinesis.go:227 splitIntoBatches shrink-loop where batchSize parameter can be 0 from caller, causing infinite loop. Documented in KI kinesis-splitintobatches-zero-infinite-loop with mitigation and remediation tracked. Not a new obligation gap.'
+      suppressed_by: buger
+      suppressed_at: "2026-06-02T18:29:51Z"
+      framework_refs:
+        - CWE CWE-130
+        - OWASP-ASVS-v4 V13.1.4
+    - id: malformed_input
+      reason: 'Phase N opengrep rule go.loop.increment-from-mutable-config flags pumps/kinesis.go:227 — paired malformed_input obligation: zero batchSize parameter is a malformed input that causes hang instead of erroring loudly. KI kinesis-splitintobatches-zero-infinite-loop.'
+      suppressed_by: buger
+      suppressed_at: "2026-06-02T18:29:51Z"
     - id: malformed_recovers_or_errors_loudly
       reason: 'Phase H custom opengrep rule go.mapstructure.lenient-decode surfaces lenient mapstructure.Decode calls. Tracked under KI mapstructure-decode-silently-drops-unknown-keys with mitigation (validate configs before deploy) and remediation (NewDecoder with ErrorUnused: true) filed.'
       suppressed_by: human:leo

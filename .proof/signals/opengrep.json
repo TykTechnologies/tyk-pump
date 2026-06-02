@@ -1,8 +1,8 @@
 {
   "schema_version": "proof.code_signals.report.v1",
   "provider": "opengrep",
-  "generated_at": "2026-06-02T08:48:32Z",
-  "input_hash": "sha256:c7875f9b7b72c3e5d7efda72704207414e79b9e9aa6f2e843590210027a135cf",
+  "generated_at": "2026-06-02T18:18:04Z",
+  "input_hash": "sha256:ba9350f0edc4e78b6f0d8d2a08bd7dea0f543abf6270ee27943ffed06ef4b4c6",
   "mode": "run",
   "source": "stdout",
   "format": "sarif",
@@ -11,6 +11,8 @@
     "scan",
     "--config",
     ".proof/signals/packs/2fcf19a866f102b2",
+    "--config",
+    "signal-rules/tyk-pump-phase-n.yaml",
     "--taint-intrafile",
     "--sarif",
     "--quiet",
@@ -490,6 +492,30 @@
     {
       "schema_version": "proof.code_signals.v1",
       "provider": "opengrep",
+      "provider_rule_id": "go.deferred-close-on-possibly-nil",
+      "signal_id": "filesystem.deferred_close_on_possibly_nil",
+      "artifact": "pumps/csv.go",
+      "span": {
+        "start_line": 72,
+        "end_line": 141
+      },
+      "confidence": "high",
+      "tags": [
+        "error_handling",
+        "filesystem",
+        "panic_safety"
+      ],
+      "obligations": [
+        "errors_propagated",
+        "panic_free_input_handling"
+      ],
+      "message": "A creator that returns (handle, error) is called; the error is only\nlogged (no return / continue / fatal); execution then falls through to\na \"defer outfile.Close()\". When the creator fails the handle is nil and the\ndeferred Close panics with a nil-pointer dereference, masking the\noriginal failure with a confusing stack trace. Return on the error arm\nor guard the defer behind \"if outfile != nil\".\n",
+      "fingerprint": "sha256:c2be1d9fc4fdea9ddfc7c56996bf692c86a50e241717c91f45243a2470731a2a",
+      "source_hash": "sha256:62974aa49362b9401ff9642dad22e416139271c36642e5e36a7a5dcc2c3a8a54"
+    },
+    {
+      "schema_version": "proof.code_signals.v1",
+      "provider": "opengrep",
       "provider_rule_id": "go.time.dependency",
       "signal_id": "time.dependency",
       "artifact": "pumps/csv.go",
@@ -779,6 +805,28 @@
       ],
       "message": "Time-dependent behavior requires determinism, timeout, or scheduling evidence.",
       "fingerprint": "sha256:fa7802228188225c52ec66ba46fe243fd580624f57562e8542c8967bcd5a428a",
+      "source_hash": "sha256:bed01de375baec71c5054532e66cd43659c128ab3bb96b697da84fb3b8b8ba8e"
+    },
+    {
+      "schema_version": "proof.code_signals.v1",
+      "provider": "opengrep",
+      "provider_rule_id": "go.recursive-call-without-return",
+      "signal_id": "control_flow.recursive_call_without_return",
+      "artifact": "pumps/elasticsearch.go",
+      "span": {
+        "start_line": 419,
+        "end_line": 432
+      },
+      "confidence": "high",
+      "tags": [
+        "error_handling"
+      ],
+      "obligations": [
+        "determinism",
+        "errors_propagated"
+      ],
+      "message": "A method invokes itself recursively but the result is discarded — the\ncall is not prefixed with `return` and not captured into a variable.\nExecution falls through to the original code path after the recursive\ncall completes, so any work performed by the inner call is duplicated\n(the outer frame then runs the same loop a second time). Idiomatic\nrecursion uses `return r.MethodName(...)`.\n",
+      "fingerprint": "sha256:c34cb562d8fe1087b075caf1dcbedfca3cf7a5a059541f11f97f8915d3dcf5fa",
       "source_hash": "sha256:bed01de375baec71c5054532e66cd43659c128ab3bb96b697da84fb3b8b8ba8e"
     },
     {
@@ -1185,6 +1233,28 @@
     {
       "schema_version": "proof.code_signals.v1",
       "provider": "opengrep",
+      "provider_rule_id": "go.loop.increment-from-mutable-config",
+      "signal_id": "control_flow.loop_stride_from_config",
+      "artifact": "pumps/graph_sql.go",
+      "span": {
+        "start_line": 163,
+        "end_line": 172
+      },
+      "confidence": "high",
+      "tags": [
+        "error_handling"
+      ],
+      "obligations": [
+        "input_size_bounded",
+        "malformed_input"
+      ],
+      "message": "A for loop uses a struct field as its stride: `for i := 0; i \u003c N; i +=\ncfg.BatchSize`, OR a shrink-loop uses a parameter as its slice step:\n`for batchSize \u003c len(s) { s = s[batchSize:] ... }`. When the field /\nparameter is zero (default-constructed config, missing YAML key,\nmisconfigured caller) the loop hangs the goroutine forever and produces\nno observable failure. Validate the field at init time and substitute a\nnon-zero default, OR guard the loop with `if cfg.BatchSize == 0 {\ncfg.BatchSize = N }` immediately before the loop.\n",
+      "fingerprint": "sha256:0040cb617bf6fe2de9283a7df5d230ff278b9097059ba95a7d36297ed3e06d2b",
+      "source_hash": "sha256:0c0b86faafd08711b4094b80074720dcbbb927b022aec5d221671edf51b1c1ad"
+    },
+    {
+      "schema_version": "proof.code_signals.v1",
+      "provider": "opengrep",
       "provider_rule_id": "go.mapstructure.lenient-decode",
       "signal_id": "deserializer.mapstructure_lenient",
       "artifact": "pumps/graph_sql_aggregate.go",
@@ -1202,6 +1272,28 @@
       ],
       "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
       "fingerprint": "sha256:e752d9d20548cd454b3cca96e4cff3f102797c6c36f6fd25b2c4aac8e415094a",
+      "source_hash": "sha256:47c5ce1962a7b2667acb5e38685a18fe402b522d52e7a3e42871142147b2a2ad"
+    },
+    {
+      "schema_version": "proof.code_signals.v1",
+      "provider": "opengrep",
+      "provider_rule_id": "go.loop.increment-from-mutable-config",
+      "signal_id": "control_flow.loop_stride_from_config",
+      "artifact": "pumps/graph_sql_aggregate.go",
+      "span": {
+        "start_line": 183,
+        "end_line": 198
+      },
+      "confidence": "high",
+      "tags": [
+        "error_handling"
+      ],
+      "obligations": [
+        "input_size_bounded",
+        "malformed_input"
+      ],
+      "message": "A for loop uses a struct field as its stride: `for i := 0; i \u003c N; i +=\ncfg.BatchSize`, OR a shrink-loop uses a parameter as its slice step:\n`for batchSize \u003c len(s) { s = s[batchSize:] ... }`. When the field /\nparameter is zero (default-constructed config, missing YAML key,\nmisconfigured caller) the loop hangs the goroutine forever and produces\nno observable failure. Validate the field at init time and substitute a\nnon-zero default, OR guard the loop with `if cfg.BatchSize == 0 {\ncfg.BatchSize = N }` immediately before the loop.\n",
+      "fingerprint": "sha256:4e472f2c43e193d8ab2b4a45bd3843450dac9ed079321560d9d2e970cf7eec19",
       "source_hash": "sha256:47c5ce1962a7b2667acb5e38685a18fe402b522d52e7a3e42871142147b2a2ad"
     },
     {
@@ -1273,6 +1365,28 @@
     {
       "schema_version": "proof.code_signals.v1",
       "provider": "opengrep",
+      "provider_rule_id": "go.recursive-call-without-return",
+      "signal_id": "control_flow.recursive_call_without_return",
+      "artifact": "pumps/graylog.go",
+      "span": {
+        "start_line": 107,
+        "end_line": 178
+      },
+      "confidence": "high",
+      "tags": [
+        "error_handling"
+      ],
+      "obligations": [
+        "determinism",
+        "errors_propagated"
+      ],
+      "message": "A method invokes itself recursively but the result is discarded — the\ncall is not prefixed with `return` and not captured into a variable.\nExecution falls through to the original code path after the recursive\ncall completes, so any work performed by the inner call is duplicated\n(the outer frame then runs the same loop a second time). Idiomatic\nrecursion uses `return r.MethodName(...)`.\n",
+      "fingerprint": "sha256:7478cded38efa3e8e760d73e1158e2a2254fcdf02988bfc63559a447fa9b9b19",
+      "source_hash": "sha256:d4ac79aaaac8b06f3f2700b41cde84cc3614601a29fe9bfd1411ef60f091a95d"
+    },
+    {
+      "schema_version": "proof.code_signals.v1",
+      "provider": "opengrep",
       "provider_rule_id": "go.mapstructure.lenient-decode",
       "signal_id": "deserializer.mapstructure_lenient",
       "artifact": "pumps/hybrid.go",
@@ -1308,6 +1422,28 @@
       ],
       "message": "Discarded call result requires explicit propagation or ignore-policy evidence.",
       "fingerprint": "sha256:e360dfadc7fad18d231b70d9f3e3b359568f10443bd37f00718aa093872973e3",
+      "source_hash": "sha256:8cc6cd2d50341814886b9bf6c69c93906ee990d5b5e37e166f2d16dc6813f754"
+    },
+    {
+      "schema_version": "proof.code_signals.v1",
+      "provider": "opengrep",
+      "provider_rule_id": "go.dial-return-without-close",
+      "signal_id": "network.dial_return_without_close",
+      "artifact": "pumps/hybrid.go",
+      "span": {
+        "start_line": 234,
+        "end_line": 266
+      },
+      "confidence": "high",
+      "tags": [
+        "http_client",
+        "network_boundary"
+      ],
+      "obligations": [
+        "external_call_failure_observable"
+      ],
+      "message": "A net.Conn returned by a custom dialer (closure-shaped, where conn IS\nthe success-return value) writes a setup payload in a loop. The\nWrite's error arm returns `(nil, err)` without first calling\n`conn.Close()`. The connection (and its socket / FD / TLS session)\nleaks. Add `defer conn.Close()` immediately after the successful dial,\nOR explicit Close() before the return-on-error in the loop.\n",
+      "fingerprint": "sha256:a9bef743ee34e75be42eb5990445bf839aefe7ea490880a8fe32ba69440898c1",
       "source_hash": "sha256:8cc6cd2d50341814886b9bf6c69c93906ee990d5b5e37e166f2d16dc6813f754"
     },
     {
@@ -1799,6 +1935,28 @@
     {
       "schema_version": "proof.code_signals.v1",
       "provider": "opengrep",
+      "provider_rule_id": "go.loop.increment-from-mutable-config",
+      "signal_id": "control_flow.loop_stride_from_config",
+      "artifact": "pumps/kinesis.go",
+      "span": {
+        "start_line": 227,
+        "end_line": 229
+      },
+      "confidence": "high",
+      "tags": [
+        "error_handling"
+      ],
+      "obligations": [
+        "input_size_bounded",
+        "malformed_input"
+      ],
+      "message": "A for loop uses a struct field as its stride: `for i := 0; i \u003c N; i +=\ncfg.BatchSize`, OR a shrink-loop uses a parameter as its slice step:\n`for batchSize \u003c len(s) { s = s[batchSize:] ... }`. When the field /\nparameter is zero (default-constructed config, missing YAML key,\nmisconfigured caller) the loop hangs the goroutine forever and produces\nno observable failure. Validate the field at init time and substitute a\nnon-zero default, OR guard the loop with `if cfg.BatchSize == 0 {\ncfg.BatchSize = N }` immediately before the loop.\n",
+      "fingerprint": "sha256:52576bc78616fc9546aa8caa33fa4fbe453bd7391d94fb15ddc1bdeb55b5e5dc",
+      "source_hash": "sha256:03d0ccb4d2d45c5c72fe96379297167e0f6dcdc6223fd103a455150878de6911"
+    },
+    {
+      "schema_version": "proof.code_signals.v1",
+      "provider": "opengrep",
       "provider_rule_id": "go.time.dependency",
       "signal_id": "time.dependency",
       "artifact": "pumps/logzio.go",
@@ -2052,6 +2210,28 @@
     {
       "schema_version": "proof.code_signals.v1",
       "provider": "opengrep",
+      "provider_rule_id": "go.loop.increment-from-mutable-config",
+      "signal_id": "control_flow.loop_stride_from_config",
+      "artifact": "pumps/mcp_sql.go",
+      "span": {
+        "start_line": 118,
+        "end_line": 126
+      },
+      "confidence": "high",
+      "tags": [
+        "error_handling"
+      ],
+      "obligations": [
+        "input_size_bounded",
+        "malformed_input"
+      ],
+      "message": "A for loop uses a struct field as its stride: `for i := 0; i \u003c N; i +=\ncfg.BatchSize`, OR a shrink-loop uses a parameter as its slice step:\n`for batchSize \u003c len(s) { s = s[batchSize:] ... }`. When the field /\nparameter is zero (default-constructed config, missing YAML key,\nmisconfigured caller) the loop hangs the goroutine forever and produces\nno observable failure. Validate the field at init time and substitute a\nnon-zero default, OR guard the loop with `if cfg.BatchSize == 0 {\ncfg.BatchSize = N }` immediately before the loop.\n",
+      "fingerprint": "sha256:9dbd0f9c1c8ad14e2a5da3e515ed79dbb3d6ffc08e3d5e25066626017bfaf655",
+      "source_hash": "sha256:dda32ac6fb6c2d7cf1306ed09a90eacaff5bbec78939ddaa7f72bf17ed9f8cf2"
+    },
+    {
+      "schema_version": "proof.code_signals.v1",
+      "provider": "opengrep",
       "provider_rule_id": "go.mapstructure.lenient-decode",
       "signal_id": "deserializer.mapstructure_lenient",
       "artifact": "pumps/mcp_sql_aggregate.go",
@@ -2165,6 +2345,28 @@
       ],
       "message": "Goroutine spawn lacks an obvious local lifecycle or cancellation cue.",
       "fingerprint": "sha256:d1eabe1073f9d31fe35541be3be42108d60b7aaab9fd6ebf4c3543b53862004e",
+      "source_hash": "sha256:2c3d418cb9ea0e57f5b9408764a80849151188cb53d1ab2baa09118d0ebef391"
+    },
+    {
+      "schema_version": "proof.code_signals.v1",
+      "provider": "opengrep",
+      "provider_rule_id": "go.loop.increment-from-mutable-config",
+      "signal_id": "control_flow.loop_stride_from_config",
+      "artifact": "pumps/mcp_sql_aggregate.go",
+      "span": {
+        "start_line": 265,
+        "end_line": 279
+      },
+      "confidence": "high",
+      "tags": [
+        "error_handling"
+      ],
+      "obligations": [
+        "input_size_bounded",
+        "malformed_input"
+      ],
+      "message": "A for loop uses a struct field as its stride: `for i := 0; i \u003c N; i +=\ncfg.BatchSize`, OR a shrink-loop uses a parameter as its slice step:\n`for batchSize \u003c len(s) { s = s[batchSize:] ... }`. When the field /\nparameter is zero (default-constructed config, missing YAML key,\nmisconfigured caller) the loop hangs the goroutine forever and produces\nno observable failure. Validate the field at init time and substitute a\nnon-zero default, OR guard the loop with `if cfg.BatchSize == 0 {\ncfg.BatchSize = N }` immediately before the loop.\n",
+      "fingerprint": "sha256:bf7010c37480f5f16ff48034845629ac529305689d749f3b444ffaf4b9dcdf75",
       "source_hash": "sha256:2c3d418cb9ea0e57f5b9408764a80849151188cb53d1ab2baa09118d0ebef391"
     },
     {
@@ -2899,6 +3101,28 @@
     {
       "schema_version": "proof.code_signals.v1",
       "provider": "opengrep",
+      "provider_rule_id": "go.http.uses-default-servemux",
+      "signal_id": "http.uses_default_servemux",
+      "artifact": "pumps/prometheus.go",
+      "span": {
+        "start_line": 213,
+        "end_line": 213
+      },
+      "confidence": "high",
+      "tags": [
+        "http_server",
+        "process_local"
+      ],
+      "obligations": [
+        "request_timeout_bounded"
+      ],
+      "message": "Library code registers handlers on or serves http.DefaultServeMux\n(http.Handle / http.HandleFunc / http.ListenAndServe(..., nil)). The\nDefaultServeMux is process-global; a second init in the same process\n(re-init after config reload, parallel tests, two pumps configured for\ndifferent ports) panics with \"http: multiple registrations for /metrics\".\nConstruct an explicit *http.ServeMux and wire it through a private\n*http.Server.\n",
+      "fingerprint": "sha256:aded8fa152ca6aecdd033da2972d9130b1a711ec10b8580c01c6352377a52f8e",
+      "source_hash": "sha256:99d941c7b4c94efc7abfde6bb6848083175f7d66d72157500b831a36d4593f19"
+    },
+    {
+      "schema_version": "proof.code_signals.v1",
+      "provider": "opengrep",
       "provider_rule_id": "go.concurrency.goroutine-spawn",
       "signal_id": "concurrency.spawn",
       "artifact": "pumps/prometheus.go",
@@ -2951,6 +3175,28 @@
       ],
       "message": "HTTP server API use requires listener, request-boundary, timeout, and static-file review evidence.",
       "fingerprint": "sha256:dcbe06d8e2774ace247722f3dd31c49a16e5862f19b826926a0f145010abfaa2",
+      "source_hash": "sha256:99d941c7b4c94efc7abfde6bb6848083175f7d66d72157500b831a36d4593f19"
+    },
+    {
+      "schema_version": "proof.code_signals.v1",
+      "provider": "opengrep",
+      "provider_rule_id": "go.http.uses-default-servemux",
+      "signal_id": "http.uses_default_servemux",
+      "artifact": "pumps/prometheus.go",
+      "span": {
+        "start_line": 216,
+        "end_line": 216
+      },
+      "confidence": "high",
+      "tags": [
+        "http_server",
+        "process_local"
+      ],
+      "obligations": [
+        "request_timeout_bounded"
+      ],
+      "message": "Library code registers handlers on or serves http.DefaultServeMux\n(http.Handle / http.HandleFunc / http.ListenAndServe(..., nil)). The\nDefaultServeMux is process-global; a second init in the same process\n(re-init after config reload, parallel tests, two pumps configured for\ndifferent ports) panics with \"http: multiple registrations for /metrics\".\nConstruct an explicit *http.ServeMux and wire it through a private\n*http.Server.\n",
+      "fingerprint": "sha256:6c5e23e7d7197ed9c1ac8cc1bec3cb87033c45c994ecb53e6c62ebd0e7a70c92",
       "source_hash": "sha256:99d941c7b4c94efc7abfde6bb6848083175f7d66d72157500b831a36d4593f19"
     },
     {
@@ -3179,6 +3425,27 @@
     {
       "schema_version": "proof.code_signals.v1",
       "provider": "opengrep",
+      "provider_rule_id": "go.range.mutate-iteratee",
+      "signal_id": "control_flow.range_mutate_iteratee",
+      "artifact": "pumps/splunk.go",
+      "span": {
+        "start_line": 166,
+        "end_line": 173
+      },
+      "confidence": "high",
+      "tags": [
+        "error_handling"
+      ],
+      "obligations": [
+        "determinism"
+      ],
+      "message": "The body of `for k, v := range slice` reassigns `slice` itself via\n`slice = append(slice[:k], slice[k+1:]...)` or via in-place compaction\n(`copy(slice[k:], slice[k+1:]); slice = slice[:len(slice)-1]`). The Go\nspec captures the range expression once at loop entry, so deleting\nelement k shifts element k+1 into position k while the loop counter\nadvances past it — every other matching element is skipped. Iterate\nbackwards, build a fresh result slice, or use slices.DeleteFunc.\n",
+      "fingerprint": "sha256:74a0fbaaf1be4a7aa20d90e7540b7da0928341d9c558a6a72e1ad6aa8015d64e",
+      "source_hash": "sha256:b20682ea1bb30aad9dfb91a80b7cf7a88a9f1921eb8434a1514b2e682fa24cf7"
+    },
+    {
+      "schema_version": "proof.code_signals.v1",
+      "provider": "opengrep",
       "provider_rule_id": "go.http.client-api",
       "signal_id": "http.client_dependency",
       "artifact": "pumps/splunk.go",
@@ -3295,6 +3562,28 @@
     {
       "schema_version": "proof.code_signals.v1",
       "provider": "opengrep",
+      "provider_rule_id": "go.loop.increment-from-mutable-config",
+      "signal_id": "control_flow.loop_stride_from_config",
+      "artifact": "pumps/sql.go",
+      "span": {
+        "start_line": 320,
+        "end_line": 329
+      },
+      "confidence": "high",
+      "tags": [
+        "error_handling"
+      ],
+      "obligations": [
+        "input_size_bounded",
+        "malformed_input"
+      ],
+      "message": "A for loop uses a struct field as its stride: `for i := 0; i \u003c N; i +=\ncfg.BatchSize`, OR a shrink-loop uses a parameter as its slice step:\n`for batchSize \u003c len(s) { s = s[batchSize:] ... }`. When the field /\nparameter is zero (default-constructed config, missing YAML key,\nmisconfigured caller) the loop hangs the goroutine forever and produces\nno observable failure. Validate the field at init time and substitute a\nnon-zero default, OR guard the loop with `if cfg.BatchSize == 0 {\ncfg.BatchSize = N }` immediately before the loop.\n",
+      "fingerprint": "sha256:b54d010f8b51080f8cbadf90165d1c02b4709392c77e275af2f8286fbd5d8815",
+      "source_hash": "sha256:829de65785cdd04edeea4ea3f663143e46b0bcdf0412fcadd52f1fbef24383a3"
+    },
+    {
+      "schema_version": "proof.code_signals.v1",
+      "provider": "opengrep",
       "provider_rule_id": "go.slice.preallocated-with-continue-on-error",
       "signal_id": "slice.preallocated_continue_on_error",
       "artifact": "pumps/sql.go",
@@ -3312,6 +3601,28 @@
       ],
       "message": "Slice is preallocated with len(), filled by indexed assignment, and the\nloop body can continue on error. That can leave zero-value holes in the\nresult; append to a zero-length slice when sparse output is not intended.\n",
       "fingerprint": "sha256:bae40c858adfd6da2f6a5cb90bca7c8c8dffd3e9399bc8450e9eea7d65d19e86",
+      "source_hash": "sha256:829de65785cdd04edeea4ea3f663143e46b0bcdf0412fcadd52f1fbef24383a3"
+    },
+    {
+      "schema_version": "proof.code_signals.v1",
+      "provider": "opengrep",
+      "provider_rule_id": "go.loop.increment-from-mutable-config",
+      "signal_id": "control_flow.loop_stride_from_config",
+      "artifact": "pumps/sql.go",
+      "span": {
+        "start_line": 415,
+        "end_line": 427
+      },
+      "confidence": "high",
+      "tags": [
+        "error_handling"
+      ],
+      "obligations": [
+        "input_size_bounded",
+        "malformed_input"
+      ],
+      "message": "A for loop uses a struct field as its stride: `for i := 0; i \u003c N; i +=\ncfg.BatchSize`, OR a shrink-loop uses a parameter as its slice step:\n`for batchSize \u003c len(s) { s = s[batchSize:] ... }`. When the field /\nparameter is zero (default-constructed config, missing YAML key,\nmisconfigured caller) the loop hangs the goroutine forever and produces\nno observable failure. Validate the field at init time and substitute a\nnon-zero default, OR guard the loop with `if cfg.BatchSize == 0 {\ncfg.BatchSize = N }` immediately before the loop.\n",
+      "fingerprint": "sha256:d2addc9ec4e67ec81e1eaa2dc631ea0ce513cefe784ea081edf82da2c4234ba8",
       "source_hash": "sha256:829de65785cdd04edeea4ea3f663143e46b0bcdf0412fcadd52f1fbef24383a3"
     },
     {
@@ -3495,6 +3806,28 @@
     {
       "schema_version": "proof.code_signals.v1",
       "provider": "opengrep",
+      "provider_rule_id": "go.loop.increment-from-mutable-config",
+      "signal_id": "control_flow.loop_stride_from_config",
+      "artifact": "pumps/sql_aggregate.go",
+      "span": {
+        "start_line": 307,
+        "end_line": 322
+      },
+      "confidence": "high",
+      "tags": [
+        "error_handling"
+      ],
+      "obligations": [
+        "input_size_bounded",
+        "malformed_input"
+      ],
+      "message": "A for loop uses a struct field as its stride: `for i := 0; i \u003c N; i +=\ncfg.BatchSize`, OR a shrink-loop uses a parameter as its slice step:\n`for batchSize \u003c len(s) { s = s[batchSize:] ... }`. When the field /\nparameter is zero (default-constructed config, missing YAML key,\nmisconfigured caller) the loop hangs the goroutine forever and produces\nno observable failure. Validate the field at init time and substitute a\nnon-zero default, OR guard the loop with `if cfg.BatchSize == 0 {\ncfg.BatchSize = N }` immediately before the loop.\n",
+      "fingerprint": "sha256:42caf07884eedad4d6264937d12e4ef3d3d4bad02256e43641ba328cd85dd296",
+      "source_hash": "sha256:5d4fb4dfe315a4842672abf1f36a4496f0177a3dc32181a3cae56c466cd50167"
+    },
+    {
+      "schema_version": "proof.code_signals.v1",
+      "provider": "opengrep",
       "provider_rule_id": "go.log.fatal-in-init",
       "signal_id": "process.log_fatal_in_init",
       "artifact": "pumps/sqs.go",
@@ -3592,6 +3925,28 @@
       ],
       "message": "Time-dependent behavior requires determinism, timeout, or scheduling evidence.",
       "fingerprint": "sha256:10b425e5b5214f67f4d86d752b34732533683afb1712a3adaa06dac1975f30fd",
+      "source_hash": "sha256:3fc690a573eb32eeb859ac6eff6e394c74ebcf90813b1d98a09c28a60537d1e5"
+    },
+    {
+      "schema_version": "proof.code_signals.v1",
+      "provider": "opengrep",
+      "provider_rule_id": "go.loop.increment-from-mutable-config",
+      "signal_id": "control_flow.loop_stride_from_config",
+      "artifact": "pumps/sqs.go",
+      "span": {
+        "start_line": 180,
+        "end_line": 194
+      },
+      "confidence": "high",
+      "tags": [
+        "error_handling"
+      ],
+      "obligations": [
+        "input_size_bounded",
+        "malformed_input"
+      ],
+      "message": "A for loop uses a struct field as its stride: `for i := 0; i \u003c N; i +=\ncfg.BatchSize`, OR a shrink-loop uses a parameter as its slice step:\n`for batchSize \u003c len(s) { s = s[batchSize:] ... }`. When the field /\nparameter is zero (default-constructed config, missing YAML key,\nmisconfigured caller) the loop hangs the goroutine forever and produces\nno observable failure. Validate the field at init time and substitute a\nnon-zero default, OR guard the loop with `if cfg.BatchSize == 0 {\ncfg.BatchSize = N }` immediately before the loop.\n",
+      "fingerprint": "sha256:3d2d27c213a96dda19adf6caf0303784c287749b142d64210ef38a55e02206c8",
       "source_hash": "sha256:3fc690a573eb32eeb859ac6eff6e394c74ebcf90813b1d98a09c28a60537d1e5"
     },
     {
@@ -4113,6 +4468,28 @@
       ],
       "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
       "fingerprint": "sha256:7008b56f8fb214642b33c872f5a562564ea4492688e7373d5c8166177301ddbf",
+      "source_hash": "sha256:6634a473c979dd089b4c3ebf75ec39f8b4e1e94c995e30bb6c41a5f18d301e13"
+    },
+    {
+      "schema_version": "proof.code_signals.v1",
+      "provider": "opengrep",
+      "provider_rule_id": "go.pkgvar.mutated-without-sync",
+      "signal_id": "concurrency.pkgvar_mutated_without_sync",
+      "artifact": "storage/temporal_storage.go",
+      "span": {
+        "start_line": 142,
+        "end_line": 199
+      },
+      "confidence": "medium",
+      "tags": [
+        "concurrent",
+        "process_local"
+      ],
+      "obligations": [
+        "concurrent"
+      ],
+      "message": "Package-level mutable variable is assigned from a method body. Without\nexplicit synchronisation (sync.Mutex, atomic, or channel ownership) the\nread/write pair is a data race when the method may be invoked from\nmultiple goroutines. Move the state behind a Mutex, use sync/atomic, or\nscope it to a struct field with a documented owner.\n",
+      "fingerprint": "sha256:64c073ed9261b22f87012c0aa5441b6b2852118273c8d68906e9249a999e6571",
       "source_hash": "sha256:6634a473c979dd089b4c3ebf75ec39f8b4e1e94c995e30bb6c41a5f18d301e13"
     }
   ]

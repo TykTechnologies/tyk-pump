@@ -48,7 +48,7 @@ history:
     created_by: human:cli
     created_at: "2026-05-30T08:39:51Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-02T14:19:01Z"
+    last_modified_at: "2026-06-02T18:29:54Z"
 obligation_checklist:
     - atomicity
     - concurrent
@@ -63,6 +63,17 @@ obligation_suppressions:
       reason: 'Phase G: code_signal ''go.concurrency.goroutine-spawn'' + ''go.concurrency.channel-send'' at pumps/sql_aggregate.go:171/182 are the optional background-index creation pattern (single goroutine wrapping createIndexFn, signals via backgroundIndexCreated channel after wg.Wait synchronization). gorm db handle is concurrency-safe. Not a data-race obligation gap.'
       suppressed_by: buger
       suppressed_at: "2026-06-01T18:36:37Z"
+    - id: input_size_bounded
+      reason: 'Phase N opengrep rule go.loop.increment-from-mutable-config flags pumps/sql*.go for-loops with i += c.SQLConf.BatchSize stride. SQL family DOES guard at Init (sql.go:260 sets default if 0) but the rule prefers co-located guards. Same bug class as KIs sqs-batchlimit-zero-infinite-loop and kinesis-splitintobatches-zero-infinite-loop with mitigation (Init-level guard) tracked. Not a new obligation gap.'
+      suppressed_by: buger
+      suppressed_at: "2026-06-02T18:29:53Z"
+      framework_refs:
+        - CWE CWE-130
+        - OWASP-ASVS-v4 V13.1.4
+    - id: malformed_input
+      reason: 'Phase N opengrep rule go.loop.increment-from-mutable-config — paired malformed_input on pumps/sql*.go BatchSize loops. Init-level zero-guard at sql.go:260 already mitigates; rule flags for co-located guard preference. Same class as KIs sqs/kinesis batch-limit zero-loop.'
+      suppressed_by: buger
+      suppressed_at: "2026-06-02T18:29:54Z"
     - id: malformed_recovers_or_errors_loudly
       reason: 'Phase H custom opengrep rule go.mapstructure.lenient-decode surfaces lenient mapstructure.Decode calls. Tracked under KI mapstructure-decode-silently-drops-unknown-keys with mitigation (validate configs before deploy) and remediation (NewDecoder with ErrorUnused: true) filed.'
       suppressed_by: human:leo

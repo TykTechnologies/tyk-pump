@@ -48,7 +48,7 @@ history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:16Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-02T13:44:34Z"
+    last_modified_at: "2026-06-02T18:29:50Z"
 obligation_checklist:
     - concurrent
     - errors_propagated
@@ -83,6 +83,14 @@ obligation_suppressions:
         - CWE CWE-248,CWE-754
         - MISRA-C Rule 17.2
         - OWASP-ASVS-v4 V7.4.1
+    - id: request_timeout_bounded
+      reason: Phase N opengrep rule go.http.uses-default-servemux flags pumps/prometheus.go:213,216 (http.Handle on DefaultServeMux, http.ListenAndServe(addr, nil)). Documented in KI prometheus-init-mutates-default-mux with mitigation (single-process binary) and remediation (private mux+server) tracked. Not a new obligation gap.
+      suppressed_by: buger
+      suppressed_at: "2026-06-02T18:29:50Z"
+      framework_refs:
+        - CWE CWE-400,CWE-404
+        - NIST-800-53 SC-5
+        - OWASP-ASVS-v4 V11.1.4
 lifecycle:
     change_history:
         - date: "2026-05-29T15:46:44Z"

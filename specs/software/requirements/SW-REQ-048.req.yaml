@@ -48,12 +48,16 @@ history:
     created_by: human:cli
     created_at: "2026-05-30T08:36:07Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-02T13:44:35Z"
+    last_modified_at: "2026-06-02T18:29:50Z"
 obligation_checklist:
     - cert_validation_strict
     - errors_propagated
     - external_call_failure_observable
 obligation_suppressions:
+    - id: determinism
+      reason: 'Phase N opengrep rule go.range.mutate-iteratee flags pumps/splunk.go:166 FilterTags doing copy/append-shrink while ranging the same slice, skipping consecutive matches. Documented in KI splunk-filtertags-skips-consecutive-matches with mitigation and remediation tracked. Not a new obligation gap.'
+      suppressed_by: buger
+      suppressed_at: "2026-06-02T18:29:50Z"
     - id: malformed_recovers_or_errors_loudly
       reason: 'Phase H custom opengrep rule go.mapstructure.lenient-decode surfaces lenient mapstructure.Decode calls. Tracked under KI mapstructure-decode-silently-drops-unknown-keys with mitigation (validate configs before deploy) and remediation (NewDecoder with ErrorUnused: true) filed.'
       suppressed_by: human:leo

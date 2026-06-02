@@ -48,11 +48,15 @@ history:
     created_by: human:cli
     created_at: "2026-05-30T08:40:07Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-02T14:19:01Z"
+    last_modified_at: "2026-06-02T18:29:50Z"
 obligation_checklist:
     - boundary
     - nominal
 obligation_suppressions:
+    - id: determinism
+      reason: 'Phase N opengrep rule go.recursive-call-without-return flags pumps/elasticsearch.go:419 WriteData calling e.WriteData(ctx, data) without return prefix on the nil-operator reconnect arm. Documented in KI elasticsearch-unbounded-reconnect-recursion with mitigation (operator non-nil after Init) and remediation (return prefix or remove defensive recursion) tracked. Not a new obligation gap.'
+      suppressed_by: buger
+      suppressed_at: "2026-06-02T18:29:50Z"
     - id: errors_propagated
       reason: 'Phase H custom opengrep rule go.log.fatal-in-init / go.recursion.unbounded-on-error surfaces log.Fatal in Init and unbounded reconnect recursion; both are tracked under KIs pumps-logfatal-on-config-decode, elasticsearch-unbounded-reconnect-recursion, and influx-v1-unbounded-reconnect-recursion with mitigation and remediation already filed.'
       suppressed_by: human:leo
