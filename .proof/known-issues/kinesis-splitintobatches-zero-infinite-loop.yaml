@@ -1,0 +1,15 @@
+id: kinesis-splitintobatches-zero-infinite-loop
+title: Kinesis splitIntoBatches infinite-loops when batchSize=0
+description: 'pumps/kinesis.go:225-231 (splitIntoBatches helper): ''for batchSize < len(records) { records, batches = records[batchSize:], append(batches, records[0:batchSize:batchSize]) }''. When batchSize == 0, the loop is ''0 < len(records)'' (always true for non-empty input), and the body sets ''records = records[0:]'' (no shrink) and appends an empty slice. Result: infinite loop + unbounded memory growth. KinesisPump.Init defaults BatchSize to 100 (pumps/kinesis.go:84-87), so the production-Init path is safe, but splitIntoBatches is a package-level helper with no defense — any future caller or mock-init test that skips the default suffers the infinite loop. The mcdc:ignore on line 85 admits that the ''BatchSize==0'' production branch is only verified via the TestableKinesisPump mock seam, which underscores that the production safety is one-coding-pattern-deep.'
+affected_requirements:
+    - SW-REQ-056
+severity: low
+mitigation: Production code always sets BatchSize=100 default before calling splitIntoBatches. The bug is dormant unless a future code change bypasses the default.
+remediation: Add 'if batchSize <= 0 { batchSize = 100 }' at the top of splitIntoBatches, making the helper self-defending against caller misuse.
+owner: tyk-team
+release_disposition: ship_with_known_issue
+status: open
+history:
+    - at: "2026-06-02T16:38:48Z"
+      by: human:buger
+      action: created

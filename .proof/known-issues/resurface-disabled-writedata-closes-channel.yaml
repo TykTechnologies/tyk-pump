@@ -1,0 +1,15 @@
+id: resurface-disabled-writedata-closes-channel
+title: Resurface disabled-path WriteData closes rp.data; concurrent enabled-path send panics 'send on closed channel'
+description: 'pumps/resurface.go:282-294: when rp.enabled is false, WriteData calls close(rp.data) in three branches (lines 286, 290, 293). This is called from Flush() at line 302 which goes Flush -> disable() -> WriteData -> close(rp.data). Then initWorker() at line 307 reassigns rp.data = make(chan []interface{}, 5). The window between close(rp.data) and rp.data = make(...) is not synchronized: if another goroutine calls WriteData(enabled=true) concurrently, the ''rp.data <- data'' in the enabled branch can either (a) send on the closed channel and PANIC (''send on closed channel'') if it observes the pre-close value, or (b) send on the newly-created channel and succeed. The rp.enabled flag is also not atomic, so the enabled-path read can race with disable()''s write. The combined effect is that Flush + concurrent WriteData panics tyk-pump.'
+affected_requirements:
+    - SW-REQ-054
+severity: medium
+mitigation: main.execPumpWriting calls pump.WriteData inside per-pump goroutines but only one purge cycle is active at a time, so production rarely triggers the race. The risk surfaces during testing or if a future code change calls Flush() while a purge cycle is in flight.
+remediation: Guard rp.data/rp.enabled with sync.RWMutex; or replace the close-then-recreate pattern with a sentinel 'shutdown signal' channel; or use sync/atomic for rp.enabled and protect rp.data swap under a lock.
+owner: tyk-team
+release_disposition: ship_with_known_issue
+status: open
+history:
+    - at: "2026-06-02T16:38:01Z"
+      by: human:buger
+      action: created

@@ -1,0 +1,15 @@
+id: graylog-nil-client-recursive-writedata-duplicates-data
+title: Graylog WriteData re-runs the for-loop after recursive recovery, duplicating data
+description: 'pumps/graylog.go:107-114 (WriteData): if p.client == nil, the code calls p.connect() then RECURSIVELY p.WriteData(ctx, data) — but there is NO return after the recursive call. Control falls through to the line-115 ''for _, item := range data'' loop and processes the records a SECOND time, sending each gelf message twice to graylog. This only fires when Init was bypassed (defensive plumbing, per the mcdc:ignore on line 110) but as soon as it does, every record is double-shipped. Also if gelf.New ever returns nil (it currently doesn''t, but the SDK signature doesn''t promise non-nil), the connect() call leaves client nil and the recursive WriteData would infinite-loop.'
+affected_requirements:
+    - SW-REQ-049
+severity: low
+mitigation: The nil-client branch is defensive plumbing; production Init always calls connect() so the branch is dormant. Operators do not need to take action unless they observe duplicated graylog events.
+remediation: 'Add ''return p.WriteData(ctx, data)'' (with explicit return) so the recursive call''s result is returned and control does not fall through. Better: drop the defensive nil-check entirely and require Init to have run.'
+owner: tyk-team
+release_disposition: ship_with_known_issue
+status: open
+history:
+    - at: "2026-06-02T16:39:10Z"
+      by: human:buger
+      action: created

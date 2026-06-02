@@ -1,0 +1,16 @@
+id: stdout-writedata-swallows-ctx-error
+title: stdout WriteData returns nil on ctx.Done, not ctx.Err — caller cannot distinguish cancellation from success
+description: 'pumps/stdout.go:90-92 (WriteData inner select): ''case <-ctx.Done(): return nil''. The caller (main.execPumpWriting at main.go:474-490) cannot distinguish ''pump finished normally'' from ''pump cancelled mid-batch''. The cancelled-pump branch in execPumpWriting only fires when select observes ctx.Done() BEFORE the ch arm; if the goroutine completes WriteData and pushes nil onto ch before the ctx-done case is selected, the caller logs ''success'' for what was actually a cancelled batch.'
+affected_requirements:
+    - SW-REQ-026
+    - INT-REQ-004
+severity: low
+mitigation: stdout pump is typically used for development; ctx-cancellation on stdout is rare. Operators using stdout for production audit log should not rely on per-record success counts.
+remediation: Replace 'return nil' on line 92 with 'return ctx.Err()' so cancellation propagates through the Pump.WriteData error return as INT-REQ-004 contracts.
+owner: tyk-team
+release_disposition: ship_with_known_issue
+status: open
+history:
+    - at: "2026-06-02T16:39:22Z"
+      by: human:buger
+      action: created

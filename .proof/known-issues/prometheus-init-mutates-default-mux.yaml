@@ -1,0 +1,15 @@
+id: prometheus-init-mutates-default-mux
+title: Prometheus pump Init registers handler on http.DefaultServeMux; re-init panics
+description: 'pumps/prometheus.go:213 ''http.Handle(p.conf.Path, promhttp.Handler())'' registers on the package-global http.DefaultServeMux. If Init is called twice (during tests or after a transient reconfigure), the second http.Handle PANICS with ''http: multiple registrations for /metrics''. Additionally, the listener at line 215 ''go func() { log.Fatal(http.ListenAndServe(p.conf.Addr, nil)) }'' uses ''nil'' as the handler — that means the DefaultServeMux is used. Two PrometheusPump instances with different listen_addr but the same Path collide at the global mux even if listen_addr differs.'
+affected_requirements:
+    - SW-REQ-024
+severity: low
+mitigation: Operators only configure one prometheus pump per tyk-pump process. Re-init is rare; the docs do not advertise hot reconfigure.
+remediation: 'Create a local mux: ''mux := http.NewServeMux(); mux.Handle(p.conf.Path, promhttp.Handler()); go func() { log.Fatal(http.ListenAndServe(p.conf.Addr, mux)) }()''. The same change isolates Prometheus from any other component that touches the default mux.'
+owner: tyk-team
+release_disposition: ship_with_known_issue
+status: open
+history:
+    - at: "2026-06-02T16:39:47Z"
+      by: human:buger
+      action: created

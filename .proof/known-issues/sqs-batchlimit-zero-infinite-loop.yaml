@@ -1,0 +1,15 @@
+id: sqs-batchlimit-zero-infinite-loop
+title: SQS pump infinite-loops when AWSSQSBatchLimit is unset (default 0)
+description: 'pumps/sqs.go:178-197 (write method): the batching loop is ''for i := 0; i < len(messages); i += s.SQSConf.AWSSQSBatchLimit''. When AWSSQSBatchLimit is the int zero-value (not set in YAML or env), i never advances and the loop runs forever — sending the same batch every iteration. There is NO default applied in Init (pumps/sqs.go:97-128 has no defaulting); only AWSSQSBatchLimit is read from config and passed through. Furthermore the AWS SQS API caps SendMessageBatch entries at 10; any value > 10 will be rejected per-call. No validation enforces the 1..10 range.'
+affected_requirements:
+    - SW-REQ-055
+severity: high
+mitigation: Operators MUST set 'aws_sqs_batch_limit' to a value between 1 and 10 in pump_conf.json under the sqs pump. Failure to set it crashes the pump cycle (infinite loop).
+remediation: 'In SQSPump.Init: ''if s.SQSConf.AWSSQSBatchLimit <= 0 || s.SQSConf.AWSSQSBatchLimit > 10 { s.SQSConf.AWSSQSBatchLimit = 10 }''. Document the AWS 10-entry cap in the docs config snippet.'
+owner: tyk-team
+release_disposition: ship_with_known_issue
+status: open
+history:
+    - at: "2026-06-02T16:38:37Z"
+      by: human:buger
+      action: created

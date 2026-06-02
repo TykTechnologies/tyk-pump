@@ -1,0 +1,16 @@
+id: main-shutdown-pumps-serial-no-timeout
+title: main.checkShutdown shuts down pumps sequentially with no per-pump timeout
+description: 'main.go:342-352 (checkShutdown): iterates ''for _, pmp := range Pumps { if err := pmp.Shutdown(); ... }''. Pumps are shut down SEQUENTIALLY in registration order, with NO per-pump deadline. If one pump''s Shutdown blocks (e.g. mongo''s Disconnect waiting on in-flight ops, resurface''s wg.Wait waiting on a stuck worker, logzio''s queue drain timing out), every subsequent pump waits behind it, and the entire tyk-pump process cannot reach graceful exit. SYS-REQ-002''s bounded-shutdown intent is therefore implicit on every pump cooperating; one misbehaving pump blocks the whole sequence. Separately: the per-pump goroutine launched in execPumpWriting at main.go:468 is LEAKED on ctx-done (main.go:480 returns from the select without joining the inner goroutine), so timed-out WriteData calls accumulate goroutines across purge cycles.'
+affected_requirements:
+    - SW-REQ-004
+    - SYS-REQ-002
+severity: medium
+mitigation: Operators using mongo + logzio + resurface together should set short per-pump connection/drain timeouts so each Shutdown returns within seconds.
+remediation: Parallelise shutdown via 'for _, pmp := range Pumps { wg.Add(1); go func(p Pump) { defer wg.Done(); pmp.ShutdownWithTimeout(ctx) }(pmp) }; wg.Wait()'. For the goroutine leak, signal cancellation downward (the inner goroutine already has ctx) and join with a defensive deadline.
+owner: tyk-team
+release_disposition: ship_with_known_issue
+status: open
+history:
+    - at: "2026-06-02T16:39:36Z"
+      by: human:buger
+      action: created
