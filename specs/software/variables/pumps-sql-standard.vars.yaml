@@ -1,0 +1,10 @@
+component: pumps-sql-standard
+variables:
+    - name: table_sharding
+      type: bool
+      direction: input
+      description: True when SQL pump configuration enables TableSharding (per-day routing to tyk_analytics_<YYYYMMDD> tables).
+    - name: day_sliced_routing
+      type: bool
+      direction: output
+      description: True iff per-day-slice records are routed to a tyk_analytics_<YYYYMMDD> table when TableSharding is enabled, otherwise all records to the default tyk_analytics table.

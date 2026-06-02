@@ -7,12 +7,16 @@ project:
         - path: specs/system
           prefix: SYS-REQ
           type: system
+          parent_spec: specs/stakeholder
         - path: specs/software
           prefix: SW-REQ
           type: software
+          parent_spec: specs/system
         - path: specs/interface
           prefix: INT-REQ
           type: interface
+          parent_spec: specs/system
+          cross_component: true
     default_assurance_level: B
     catalog:
         version: 1.0.0

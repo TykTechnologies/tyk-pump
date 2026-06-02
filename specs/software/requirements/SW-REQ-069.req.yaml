@@ -4,9 +4,9 @@ status: approved
 priority: shall
 category: functional
 req_type: guarantee
-fretish: ""
+fretish: when mcp_record_with_mcp_index pumps_es shall always satisfy index_eq_mcp
 description: 'When RollingIndex is true, the Elasticsearch pump shall append -YYYY.MM.DD (UTC system time) to the target index name. Per-record MCP routing shall use getIndexNameForRecord and apply ONLY in bulk mode: when MCPIndexName is non-empty and the record is an MCP record, the MCP-specific index name is used (with the same rolling suffix when enabled); otherwise the standard IndexName is used. Known issue: non-bulk mode currently ignores MCP routing (KI elasticsearch-mcp-routing-non-bulk-ignored).'
-formalization_strategy: informal
+formalization_strategy: fretish
 informal_verification:
     method: ""
     evidence: ""
@@ -19,36 +19,36 @@ variables: []
 traces:
     satisfies:
         - SYS-REQ-004
-    reviewed_at: "2026-06-02T05:03:37.764765Z"
+    reviewed_at: "2026-06-02T12:53:40.295749Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:55e254671f45fd292e9e85fc796b98710ee9bcc9e5cb05d334f41f03e9299b39
+    reviewed_fingerprint: sha256:7c4d74ed7f55a59c7fe1cbe1c835893bae9eb7f3c81aaa5dd434f08273279a98
 verification:
     assurance_level: B
-    formalization_status: none
+    formalization_status: valid
     review:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-02T05:02:45Z"
-        comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
-        fingerprint: sha256:58b0206a7270c2b760dc3357582abbf4cdcf4cefca58f16585e02d6861043c20
+        reviewed_at: "2026-06-02T12:50:34Z"
+        comment: 'Phase L1: formalize via FRETish; introduced per-component boolean vars in *.vars.yaml; FRETish captures the headline routing/windowing decision per req (table-sharding for SW-040/041, graph-routing for SW-042, minute-window for SW-043/045, mcp-routing for SW-044/069, date-boundary slice-flush for SW-064).'
+        fingerprint: sha256:43f76e091755cb475d464b1435a2368cf933dc4bac6ee44ab1b839c0bfed6088
         ai_generated: false
     impact_reviews:
         - requirement: SW-REQ-069
           artifact: pumps/elasticsearch.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Phase J: req_type field flipped derived to guarantee per probelabs/reqproof#88 (category error fix). Production .go files were not modified for this change; only req YAML metadata. Re-recording no-authored-change impact.'
+          reason: 'Phase L1: formalization-only change (informal -> fretish + per-req boolean variables). Production .go files were not modified; only req YAML metadata and component vars YAMLs were added. Re-recording no-authored-change impact after fingerprint roll.'
           base: origin/master
-          requirement_fingerprint: sha256:55e254671f45fd292e9e85fc796b98710ee9bcc9e5cb05d334f41f03e9299b39
-          approval_fingerprint: sha256:58b0206a7270c2b760dc3357582abbf4cdcf4cefca58f16585e02d6861043c20
+          requirement_fingerprint: sha256:7c4d74ed7f55a59c7fe1cbe1c835893bae9eb7f3c81aaa5dd434f08273279a98
+          approval_fingerprint: sha256:43f76e091755cb475d464b1435a2368cf933dc4bac6ee44ab1b839c0bfed6088
           artifact_fingerprint: sha256:bed01de375baec71c5054532e66cd43659c128ab3bb96b697da84fb3b8b8ba8e
-          reviewed_at: "2026-06-02T05:13:05Z"
+          reviewed_at: "2026-06-02T12:52:01Z"
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:40:01Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-02T05:02:46Z"
+    last_modified_at: "2026-06-02T12:50:34Z"
 obligation_checklist:
     - determinism
     - nominal
@@ -106,4 +106,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-01T20:53:09Z comment="Phase I: scoped MCP-routing guarantee to bulk mode (KI elasticsearch-mcp-routing-non-bulk-ignored).")'
+          changed_by: human:cli
+        - date: "2026-06-02T12:50:34Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T05:02:45Z comment="Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.")'
           changed_by: human:cli

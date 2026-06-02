@@ -1,0 +1,10 @@
+component: pumps-sql-graph
+variables:
+    - name: graph_record_present
+      type: bool
+      direction: input
+      description: True when a record in the incoming batch satisfies IsGraphRecord() (graph-shaped analytics record).
+    - name: graph_record_routed
+      type: bool
+      direction: output
+      description: True iff each retained graph-record is converted to a GraphRecord and routed to the configured TableName (sharded per day when TableSharding is enabled).

@@ -4,9 +4,9 @@ status: approved
 priority: shall
 category: functional
 req_type: guarantee
-fretish: ""
+fretish: when table_sharding pumps_sql_standard shall always satisfy day_sliced_routing
 description: The standard SQL pump shall, on each purge, drop MCP-classified analytics records, then if TableSharding is true split the remaining records on each YYYYMMDD timestamp boundary and route each day-slice to a tyk_analytics_<YYYYMMDD> table (auto-created and indexed via ensureTable/ensureIndex), otherwise route all records to the default tyk_analytics table; within each table it shall issue parameter-bound batched inserts of BatchSize records (default 1000) using gorm.Create on the request context. Postgres uses a custom monthEncodePlan AfterConnect to encode time.Month as int8 (TT-16980). Writes log per-batch errors but do not propagate them upward.
-formalization_strategy: informal
+formalization_strategy: fretish
 informal_verification:
     method: ""
     evidence: ""
@@ -19,36 +19,36 @@ variables: []
 traces:
     satisfies:
         - SYS-REQ-004
-    reviewed_at: "2026-06-02T05:03:35.814946Z"
+    reviewed_at: "2026-06-02T12:53:39.782002Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:49341cdb1b5ce7d822b9101c508fbc432a5fc40950dfbb8f845bb8aa997f950a
+    reviewed_fingerprint: sha256:666d56532db7879baf79f75b9a9ebaef342fab2173904f946474e6d57311598a
 verification:
     assurance_level: B
-    formalization_status: none
+    formalization_status: valid
     review:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-02T05:02:45Z"
-        comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
-        fingerprint: sha256:b06175e0765855d6911de5a833a810fc254b1549ff24abc81b3809935ef5d2da
+        reviewed_at: "2026-06-02T12:50:34Z"
+        comment: 'Phase L1: formalize via FRETish; introduced per-component boolean vars in *.vars.yaml; FRETish captures the headline routing/windowing decision per req (table-sharding for SW-040/041, graph-routing for SW-042, minute-window for SW-043/045, mcp-routing for SW-044/069, date-boundary slice-flush for SW-064).'
+        fingerprint: sha256:97856408e14843e1a4889da5e54c7b39bd2c8bac339304a48ea78e38651d6ada
         ai_generated: false
     impact_reviews:
         - requirement: SW-REQ-040
           artifact: pumps/sql.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Phase J: req_type field flipped derived to guarantee per probelabs/reqproof#88 (category error fix). Production .go files were not modified for this change; only req YAML metadata. Re-recording no-authored-change impact.'
+          reason: 'Phase L1: formalization-only change (informal -> fretish + per-req boolean variables). Production .go files were not modified; only req YAML metadata and component vars YAMLs were added. Re-recording no-authored-change impact after fingerprint roll.'
           base: origin/master
-          requirement_fingerprint: sha256:49341cdb1b5ce7d822b9101c508fbc432a5fc40950dfbb8f845bb8aa997f950a
-          approval_fingerprint: sha256:b06175e0765855d6911de5a833a810fc254b1549ff24abc81b3809935ef5d2da
+          requirement_fingerprint: sha256:666d56532db7879baf79f75b9a9ebaef342fab2173904f946474e6d57311598a
+          approval_fingerprint: sha256:97856408e14843e1a4889da5e54c7b39bd2c8bac339304a48ea78e38651d6ada
           artifact_fingerprint: sha256:829de65785cdd04edeea4ea3f663143e46b0bcdf0412fcadd52f1fbef24383a3
-          reviewed_at: "2026-06-02T05:13:05Z"
+          reviewed_at: "2026-06-02T12:52:01Z"
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:35:20Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-02T05:02:46Z"
+    last_modified_at: "2026-06-02T12:50:34Z"
 obligation_checklist:
     - boundary
     - concurrent
@@ -97,4 +97,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-05-31T08:52:45Z comment="Phase D: SW-040 obligation_checklist extended with boundary to cover MigrateShardedTables=false/true boundary tests in pumps/sql_mcdc_test.go (KI sql-default-migration-today-only regression).")'
+          changed_by: human:cli
+        - date: "2026-06-02T12:50:34Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T05:02:45Z comment="Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.")'
           changed_by: human:cli

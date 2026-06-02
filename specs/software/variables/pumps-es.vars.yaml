@@ -1,0 +1,10 @@
+component: pumps-es
+variables:
+    - name: mcp_record_with_mcp_index
+      type: bool
+      direction: input
+      description: True when MCPIndexName is non-empty AND the current record satisfies IsMCPRecord() AND DisableBulk is false (bulk mode), gating MCP-specific index routing per getIndexNameForRecord.
+    - name: index_eq_mcp
+      type: bool
+      direction: output
+      description: True iff getIndexNameForRecord routes the record to the MCPIndexName (with -YYYY.MM.DD suffix when RollingIndex is true), otherwise the default IndexName is used.

@@ -108,6 +108,13 @@ func TestMCPSQLAggregatePump_Init(t *testing.T) {
 }
 
 // Verifies: SW-REQ-045
+// MCDC SW-REQ-045: minute_window_used=F, store_per_minute=F => TRUE
+// MCDC SW-REQ-045: minute_window_used=F, store_per_minute=T => FALSE
+// MCDC SW-REQ-045: minute_window_used=T, store_per_minute=T => TRUE
+// (StoreAnalyticsPerMinute=false (hour window) covered here; the per-minute
+// branch is driven by TestMCPSQLAggregatePump_aggregationTimeMinutes which
+// toggles StoreAnalyticsPerMinute=true and asserts minute-windowed
+// AggregateMCPData output.)
 func TestMCPSQLAggregatePump_WriteData(t *testing.T) {
 	skipTestIfNoPostgres(t)
 	tableName := analytics.AggregateMCPSQLTable

@@ -4,9 +4,9 @@ status: approved
 priority: shall
 category: functional
 req_type: guarantee
-fretish: ""
+fretish: when mcp_record_present pumps_sql_mcp shall always satisfy mcp_record_routed
 description: The MCP SQL pump shall, on each purge, retain only records for which IsMCPRecord() is true, convert each to an MCPRecord, then if TableSharding is true split on each YYYYMMDD boundary and route each day-slice to a <TableName>_<YYYYMMDD> table (auto-migrated when missing), otherwise route all records to the configured TableName (default tyk_analytics_mcp); within each table it shall issue parameter-bound batched inserts of BatchSize records using gorm.Create.
-formalization_strategy: informal
+formalization_strategy: fretish
 informal_verification:
     method: ""
     evidence: ""
@@ -19,36 +19,36 @@ variables: []
 traces:
     satisfies:
         - SYS-REQ-004
-    reviewed_at: "2026-06-02T05:03:36.392968Z"
+    reviewed_at: "2026-06-02T12:53:40.208277Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:6161a24ac50f1c5b5681abcc13fad5a173ce23e40f084f237e82d68b192d1955
+    reviewed_fingerprint: sha256:2866cef9c29751c1ffead0a54fe8b49f5932c11112a925b84053afe29ed36803
 verification:
     assurance_level: B
-    formalization_status: none
+    formalization_status: valid
     review:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-02T05:02:45Z"
-        comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
-        fingerprint: sha256:c1b3edf2b8fe0ea6c1d5c4950b213cc91c0b8715771c69e4648a279f2281165a
+        reviewed_at: "2026-06-02T12:50:34Z"
+        comment: 'Phase L1: formalize via FRETish; introduced per-component boolean vars in *.vars.yaml; FRETish captures the headline routing/windowing decision per req (table-sharding for SW-040/041, graph-routing for SW-042, minute-window for SW-043/045, mcp-routing for SW-044/069, date-boundary slice-flush for SW-064).'
+        fingerprint: sha256:a23d5043964f30a795ca7d6baa40e1015f8ecfb3bfab9ff5dc94e6265935f0f8
         ai_generated: false
     impact_reviews:
         - requirement: SW-REQ-044
           artifact: pumps/mcp_sql.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Phase J: req_type field flipped derived to guarantee per probelabs/reqproof#88 (category error fix). Production .go files were not modified for this change; only req YAML metadata. Re-recording no-authored-change impact.'
+          reason: 'Phase L1: formalization-only change (informal -> fretish + per-req boolean variables). Production .go files were not modified; only req YAML metadata and component vars YAMLs were added. Re-recording no-authored-change impact after fingerprint roll.'
           base: origin/master
-          requirement_fingerprint: sha256:6161a24ac50f1c5b5681abcc13fad5a173ce23e40f084f237e82d68b192d1955
-          approval_fingerprint: sha256:c1b3edf2b8fe0ea6c1d5c4950b213cc91c0b8715771c69e4648a279f2281165a
+          requirement_fingerprint: sha256:2866cef9c29751c1ffead0a54fe8b49f5932c11112a925b84053afe29ed36803
+          approval_fingerprint: sha256:a23d5043964f30a795ca7d6baa40e1015f8ecfb3bfab9ff5dc94e6265935f0f8
           artifact_fingerprint: sha256:dda32ac6fb6c2d7cf1306ed09a90eacaff5bbec78939ddaa7f72bf17ed9f8cf2
-          reviewed_at: "2026-06-02T05:13:05Z"
+          reviewed_at: "2026-06-02T12:52:01Z"
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:35:43Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-02T05:02:46Z"
+    last_modified_at: "2026-06-02T12:50:34Z"
 obligation_checklist:
     - connection_leak_free
     - parameterized_only_write
@@ -74,4 +74,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-05-30T08:44:11Z comment="Phase A per-implementation/per-significant-behavior decomposition; descriptions code-verified against the named files per docs/phase-a-proposed-reqs.md. Pump-family family-level reqs are retained as superseded anchor reqs.")'
+          changed_by: human:cli
+        - date: "2026-06-02T12:50:34Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T05:02:45Z comment="Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.")'
           changed_by: human:cli

@@ -1,0 +1,10 @@
+component: pumps-sql-graph-aggregate
+variables:
+    - name: store_per_minute
+      type: bool
+      direction: input
+      description: True when StoreAnalyticsPerMinute is enabled (minute-windowed aggregation; false means hourly windows).
+    - name: minute_window_used
+      type: bool
+      direction: output
+      description: True iff analytics.AggregateGraphData is invoked with a per-minute window (matching StoreAnalyticsPerMinute=true); per-hour otherwise.

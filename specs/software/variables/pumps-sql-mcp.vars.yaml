@@ -1,0 +1,10 @@
+component: pumps-sql-mcp
+variables:
+    - name: mcp_record_present
+      type: bool
+      direction: input
+      description: True when a record in the incoming batch satisfies IsMCPRecord() (Model Context Protocol shaped analytics record).
+    - name: mcp_record_routed
+      type: bool
+      direction: output
+      description: True iff each retained MCP-record is converted to an MCPRecord and routed to the configured TableName (sharded per day when TableSharding is enabled).

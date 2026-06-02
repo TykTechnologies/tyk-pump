@@ -1,0 +1,18 @@
+component: pumps-sql-aggregate
+variables:
+    - name: table_sharding
+      type: bool
+      direction: input
+      description: True when SQL Aggregate pump configuration enables TableSharding (per-day routing to tyk_aggregated_<YYYYMMDD> tables).
+    - name: day_sliced_routing
+      type: bool
+      direction: output
+      description: True iff per-day-slice aggregated rows are routed to a tyk_aggregated_<YYYYMMDD> table when TableSharding is enabled, otherwise all rows to the single tyk_aggregated table.
+    - name: date_boundary_detected
+      type: bool
+      direction: input
+      description: 'True at a YYYYMMDD boundary while scanning incoming records: the next record''s date differs from the current contiguous slice''s date.'
+    - name: slice_flushed_to_sharded_table
+      type: bool
+      direction: output
+      description: True iff the contiguous preceding slice is flushed (ensureTable + ensureIndex + Create) to its tyk_aggregated_<YYYYMMDD> table when a date boundary is detected.

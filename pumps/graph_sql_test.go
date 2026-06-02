@@ -116,6 +116,12 @@ func TestGraphSQLPump_Init(t *testing.T) {
 }
 
 // Verifies: SW-REQ-042
+// MCDC SW-REQ-042: graph_record_present=F, graph_record_routed=F => TRUE
+// MCDC SW-REQ-042: graph_record_present=T, graph_record_routed=F => FALSE
+// MCDC SW-REQ-042: graph_record_present=T, graph_record_routed=T => TRUE
+// (graph_record_present=T/graph_record_routed=T path also driven by
+// TestGraphSQLPump_Sharded which sets TableSharding=true and asserts records
+// land in <TableName>_<YYYYMMDD> shards.)
 func TestGraphSQLPump_WriteData(t *testing.T) {
 	skipTestIfNoPostgres(t)
 	conf := GraphSQLConf{

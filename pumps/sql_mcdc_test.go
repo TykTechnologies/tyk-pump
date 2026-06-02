@@ -198,6 +198,12 @@ func newSQLPumpForDialect(t *testing.T, dc dialectCase, table string, sharded bo
 //   - The MCP-record skip branch in WriteData (rec.IsMCPRecord() == true)
 //
 // Verifies: SW-REQ-040
+// MCDC SW-REQ-040: day_sliced_routing=F, table_sharding=F => TRUE
+// MCDC SW-REQ-040: day_sliced_routing=F, table_sharding=T => FALSE
+// MCDC SW-REQ-040: day_sliced_routing=T, table_sharding=T => TRUE
+// (TableSharding=false branch covered here; the day_sliced_routing=T pair is
+// driven by the sibling TestMCDC_SQLPump_ShardedBoundary test which sets
+// TableSharding=true and asserts per-day-slice routing to tyk_analytics_<YYYYMMDD>.)
 func TestMCDC_SQLPump_WriteRoundTrip(t *testing.T) {
 	for _, dc := range dialectCases() {
 		dc := dc
@@ -676,6 +682,15 @@ func newSQLAggregatePumpForDialect(t *testing.T, dc dialectCase, sharded bool) *
 //
 // Verifies: SW-REQ-041
 // Verifies: SW-REQ-064
+// MCDC SW-REQ-041: day_sliced_routing=F, table_sharding=F => TRUE
+// MCDC SW-REQ-041: day_sliced_routing=F, table_sharding=T => FALSE
+// MCDC SW-REQ-041: day_sliced_routing=T, table_sharding=T => TRUE
+// MCDC SW-REQ-064: date_boundary_detected=F, slice_flushed_to_sharded_table=F => TRUE
+// MCDC SW-REQ-064: date_boundary_detected=T, slice_flushed_to_sharded_table=F => FALSE
+// MCDC SW-REQ-064: date_boundary_detected=T, slice_flushed_to_sharded_table=T => TRUE
+// (Non-sharded path exercised in-test; the sharded day-boundary path is driven
+// by TestSQLAggregateWriteData_Sharded which writes records spanning multiple
+// YYYYMMDD days and asserts tyk_aggregated_<YYYYMMDD> shards exist.)
 func TestMCDC_SQLAggregatePump_WriteRoundTrip(t *testing.T) {
 	for _, dc := range dialectCases() {
 		dc := dc

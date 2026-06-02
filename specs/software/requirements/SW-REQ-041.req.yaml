@@ -4,9 +4,9 @@ status: approved
 priority: shall
 category: functional
 req_type: guarantee
-fretish: ""
+fretish: when table_sharding pumps_sql_aggregate shall always satisfy day_sliced_routing
 description: The SQL Aggregate pump shall aggregate records per organisation and per dimension and upsert them into a SQL table (sharded per day when TableSharding is enabled), with the four substantive behaviors decomposed in the sub-reqs below.
-formalization_strategy: informal
+formalization_strategy: fretish
 informal_verification:
     method: ""
     evidence: ""
@@ -19,36 +19,36 @@ variables: []
 traces:
     satisfies:
         - SYS-REQ-003
-    reviewed_at: "2026-06-02T05:03:35.999988Z"
+    reviewed_at: "2026-06-02T12:53:40.003448Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:5655410ec155869b597b04cd0cd807c3a8e52eb12a5ab16a65f221572aad03e5
+    reviewed_fingerprint: sha256:ca5ac9942cdb8c64bb7b02a387a94e3705d1ffe0fdbc841a8fde8c21472fe244
 verification:
     assurance_level: B
-    formalization_status: none
+    formalization_status: valid
     review:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-02T05:02:45Z"
-        comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
-        fingerprint: sha256:63dc50092b17c84619c803edaceb04d1776efa985a1721fe87a50bef53d94557
+        reviewed_at: "2026-06-02T12:50:34Z"
+        comment: 'Phase L1: formalize via FRETish; introduced per-component boolean vars in *.vars.yaml; FRETish captures the headline routing/windowing decision per req (table-sharding for SW-040/041, graph-routing for SW-042, minute-window for SW-043/045, mcp-routing for SW-044/069, date-boundary slice-flush for SW-064).'
+        fingerprint: sha256:cbb21a109c946e9966ab2c4c2986bb6a7238e0f3b66da99096f5b84e9fd292ee
         ai_generated: false
     impact_reviews:
         - requirement: SW-REQ-041
           artifact: pumps/sql_aggregate.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Phase J: req_type field flipped derived to guarantee per probelabs/reqproof#88 (category error fix). Production .go files were not modified for this change; only req YAML metadata. Re-recording no-authored-change impact.'
+          reason: 'Phase L1: formalization-only change (informal -> fretish + per-req boolean variables). Production .go files were not modified; only req YAML metadata and component vars YAMLs were added. Re-recording no-authored-change impact after fingerprint roll.'
           base: origin/master
-          requirement_fingerprint: sha256:5655410ec155869b597b04cd0cd807c3a8e52eb12a5ab16a65f221572aad03e5
-          approval_fingerprint: sha256:63dc50092b17c84619c803edaceb04d1776efa985a1721fe87a50bef53d94557
+          requirement_fingerprint: sha256:ca5ac9942cdb8c64bb7b02a387a94e3705d1ffe0fdbc841a8fde8c21472fe244
+          approval_fingerprint: sha256:cbb21a109c946e9966ab2c4c2986bb6a7238e0f3b66da99096f5b84e9fd292ee
           artifact_fingerprint: sha256:5d4fb4dfe315a4842672abf1f36a4496f0177a3dc32181a3cae56c466cd50167
-          reviewed_at: "2026-06-02T05:13:05Z"
+          reviewed_at: "2026-06-02T12:52:01Z"
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:35:25Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-02T05:02:46Z"
+    last_modified_at: "2026-06-02T12:50:34Z"
 obligation_checklist:
     - concurrent
     - nominal
@@ -105,4 +105,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-01T20:13:13Z comment="Phase I: explicit SWKI disposition added to match affixed KIs (gate-tightening readiness).")'
+          changed_by: human:cli
+        - date: "2026-06-02T12:50:34Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T05:02:45Z comment="Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.")'
           changed_by: human:cli

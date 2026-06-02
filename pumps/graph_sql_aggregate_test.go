@@ -171,6 +171,12 @@ func TestSqlGraphAggregatePump_Init(t *testing.T) {
 }
 
 // Verifies: SW-REQ-043
+// MCDC SW-REQ-043: minute_window_used=F, store_per_minute=F => TRUE
+// MCDC SW-REQ-043: minute_window_used=F, store_per_minute=T => FALSE
+// MCDC SW-REQ-043: minute_window_used=T, store_per_minute=T => TRUE
+// (StoreAnalyticsPerMinute=false (hour window) covered here; the per-minute
+// branch is driven by sub-test scenarios that toggle StoreAnalyticsPerMinute=true
+// and assert minute-windowed AggregateGraphData output.)
 func TestSqlGraphAggregatePump_WriteData(t *testing.T) {
 	skipTestIfNoPostgres(t)
 	r := require.New(t)

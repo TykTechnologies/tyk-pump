@@ -114,6 +114,12 @@ func TestMCPSQLPump_Init(t *testing.T) {
 }
 
 // Verifies: SW-REQ-044
+// MCDC SW-REQ-044: mcp_record_present=F, mcp_record_routed=F => TRUE
+// MCDC SW-REQ-044: mcp_record_present=T, mcp_record_routed=F => FALSE
+// MCDC SW-REQ-044: mcp_record_present=T, mcp_record_routed=T => TRUE
+// (mcp_record_present=T/mcp_record_routed=T also driven by TestMCPSQLPump_Sharded
+// which sets TableSharding=true and asserts MCP records land in <TableName>_<YYYYMMDD>
+// shards.)
 func TestMCPSQLPump_WriteData(t *testing.T) {
 	skipTestIfNoPostgres(t)
 	tableName := "test_mcp_write"

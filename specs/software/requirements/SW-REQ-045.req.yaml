@@ -4,9 +4,9 @@ status: approved
 priority: shall
 category: functional
 req_type: guarantee
-fretish: ""
+fretish: when store_per_minute pumps_sql_mcp_aggregate shall always satisfy minute_window_used
 description: The MCP SQL Aggregate pump shall, on each purge, day-bucket records when TableSharding is enabled and route each day-slice to a <AggregateMCPSQLTable>_<YYYYMMDD> table (auto-created via CreateTable when missing); within each table it shall aggregate MCP records via analytics.AggregateMCPData (windowed per minute when StoreAnalyticsPerMinute is true, otherwise per hour) and upsert each per-(API, dimension) row with clause.OnConflict on id using analytics.OnConflictAssignments; per-batch errors shall be returned to the caller. On initialisation, a composite index on (dimension, timestamp, org_id, dimension_value) is created (Postgres uses CONCURRENTLY and creates it on a background goroutine).
-formalization_strategy: informal
+formalization_strategy: fretish
 informal_verification:
     method: ""
     evidence: ""
@@ -19,36 +19,36 @@ variables: []
 traces:
     satisfies:
         - SYS-REQ-003
-    reviewed_at: "2026-06-02T05:03:36.457004Z"
+    reviewed_at: "2026-06-02T12:53:40.249664Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:0980be0bf4d0efe675de786fd78ec4c1cb97c7e492468b0f7bef733b4e73dfe9
+    reviewed_fingerprint: sha256:4f9c56a1f0b6bb609bd4ce90acd2de52b72565761b21937f0a2d70d69bc9a2b6
 verification:
     assurance_level: B
-    formalization_status: none
+    formalization_status: valid
     review:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-02T05:02:45Z"
-        comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
-        fingerprint: sha256:65fd3837048aade19850e10297f04d3e4f59e33a94ef1dab9af823c2f2c9f11a
+        reviewed_at: "2026-06-02T12:50:34Z"
+        comment: 'Phase L1: formalize via FRETish; introduced per-component boolean vars in *.vars.yaml; FRETish captures the headline routing/windowing decision per req (table-sharding for SW-040/041, graph-routing for SW-042, minute-window for SW-043/045, mcp-routing for SW-044/069, date-boundary slice-flush for SW-064).'
+        fingerprint: sha256:ff3d19bca5868163e5f94ad9363381421d9138e3a55955ae8c58fa52a9b6040d
         ai_generated: false
     impact_reviews:
         - requirement: SW-REQ-045
           artifact: pumps/mcp_sql_aggregate.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Phase J: req_type field flipped derived to guarantee per probelabs/reqproof#88 (category error fix). Production .go files were not modified for this change; only req YAML metadata. Re-recording no-authored-change impact.'
+          reason: 'Phase L1: formalization-only change (informal -> fretish + per-req boolean variables). Production .go files were not modified; only req YAML metadata and component vars YAMLs were added. Re-recording no-authored-change impact after fingerprint roll.'
           base: origin/master
-          requirement_fingerprint: sha256:0980be0bf4d0efe675de786fd78ec4c1cb97c7e492468b0f7bef733b4e73dfe9
-          approval_fingerprint: sha256:65fd3837048aade19850e10297f04d3e4f59e33a94ef1dab9af823c2f2c9f11a
+          requirement_fingerprint: sha256:4f9c56a1f0b6bb609bd4ce90acd2de52b72565761b21937f0a2d70d69bc9a2b6
+          approval_fingerprint: sha256:ff3d19bca5868163e5f94ad9363381421d9138e3a55955ae8c58fa52a9b6040d
           artifact_fingerprint: sha256:2c3d418cb9ea0e57f5b9408764a80849151188cb53d1ab2baa09118d0ebef391
-          reviewed_at: "2026-06-02T05:13:05Z"
+          reviewed_at: "2026-06-02T12:52:01Z"
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:35:48Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-02T05:02:46Z"
+    last_modified_at: "2026-06-02T12:50:34Z"
 obligation_checklist:
     - concurrent
     - connection_leak_free
@@ -106,4 +106,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-01T20:13:13Z comment="Phase I: explicit SWKI disposition added to match affixed KIs (gate-tightening readiness).")'
+          changed_by: human:cli
+        - date: "2026-06-02T12:50:34Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T05:02:45Z comment="Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.")'
           changed_by: human:cli
