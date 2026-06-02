@@ -37,6 +37,16 @@ func TestToUpperPumps(t *testing.T) {
 }
 
 // Verifies: SW-REQ-002
+// MCDC SW-REQ-002: config_file_enabled=F, json_loaded_before_env_override=F => TRUE
+// MCDC SW-REQ-002: config_file_enabled=T, json_loaded_before_env_override=F => FALSE
+// MCDC SW-REQ-002: config_file_enabled=T, json_loaded_before_env_override=T => TRUE
+//
+// config_file_enabled=T (a defaultPath is passed and the file exists) and
+// json_loaded_before_env_override=T: LoadConfig parses the JSON example config and the assertions
+// see populated initialConfig.Pumps before any env override is read. The
+// config_file_enabled=F arm is exercised by TestIgnoreConfig (--omit-config-file path). The
+// config_file_enabled=T/json_loaded=F arm is exercised by TestIgnoreConfig's "Config file does
+// not exist" subtest where the JSON file fails to load.
 func TestLoadExampleConf(t *testing.T) {
 	defaultPath := "./pump.example.conf"
 	initialConfig := &TykPumpConfiguration{}

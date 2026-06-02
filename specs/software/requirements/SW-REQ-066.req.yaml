@@ -4,9 +4,9 @@ status: approved
 priority: shall
 category: functional
 req_type: guarantee
-fretish: ""
+fretish: when sql_omit_index_creation pumps_sql_aggregate shall always satisfy sql_create_index_skipped
 description: The SQL Aggregate pump shall, unless OmitIndexCreation is true, ensure a composite index named <table>_idx_dimension on (dimension, timestamp, org_id, dimension_value) via CREATE INDEX [CONCURRENTLY] IF NOT EXISTS. For PostgreSQL the CONCURRENTLY option shall be used and, in the non-sharded mode, the index creation shall run on a background goroutine signalling backgroundIndexCreated on completion; for MySQL the index creation shall run synchronously without CONCURRENTLY. Index creation is skipped when the index already exists.
-formalization_strategy: informal
+formalization_strategy: fretish
 informal_verification:
     method: ""
     evidence: ""
@@ -19,36 +19,36 @@ variables: []
 traces:
     satisfies:
         - SYS-REQ-004
-    reviewed_at: "2026-06-02T05:03:37.586223Z"
+    reviewed_at: "2026-06-02T14:31:02.49867Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:9f691df3c834d7baf638d1d35ccf7232ff0ab616a91bb977e75bedade5c7ee63
+    reviewed_fingerprint: sha256:9f49ea699133fb894dd0a37f0bb5732e70dbbb16f2d8815b486c2007cd6a8abe
 verification:
     assurance_level: B
-    formalization_status: none
+    formalization_status: valid
     review:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-02T05:02:45Z"
-        comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
-        fingerprint: sha256:bcfe342f4119eb6f338947d8badd7a8bb2bdce01eda3f1d786a07451d8b4d3e2
+        reviewed_at: "2026-06-02T14:19:01Z"
+        comment: 'Phase L3 aggressive: flip remaining decision-bearing SW reqs to FRETish per L3 plan; vars added per-component; MC/DC witnesses to be annotated in tests.'
+        fingerprint: sha256:6aba7162bb5033ac83f7cede0da8d60c617be024f4989388341129531a16c602
         ai_generated: false
     impact_reviews:
         - requirement: SW-REQ-066
           artifact: pumps/sql_aggregate.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Phase J: req_type field flipped derived to guarantee per probelabs/reqproof#88 (category error fix). Production .go files were not modified for this change; only req YAML metadata. Re-recording no-authored-change impact.'
+          reason: 'Phase L3 aggressive: FRETish formalization added per L3 plan; production .go behaviour and code paths unchanged — only requirement metadata (fretish text + formalization_strategy + variables) altered. Test annotations may follow but do not change runtime behaviour.'
           base: origin/master
-          requirement_fingerprint: sha256:9f691df3c834d7baf638d1d35ccf7232ff0ab616a91bb977e75bedade5c7ee63
-          approval_fingerprint: sha256:bcfe342f4119eb6f338947d8badd7a8bb2bdce01eda3f1d786a07451d8b4d3e2
+          requirement_fingerprint: sha256:9f49ea699133fb894dd0a37f0bb5732e70dbbb16f2d8815b486c2007cd6a8abe
+          approval_fingerprint: sha256:6aba7162bb5033ac83f7cede0da8d60c617be024f4989388341129531a16c602
           artifact_fingerprint: sha256:5d4fb4dfe315a4842672abf1f36a4496f0177a3dc32181a3cae56c466cd50167
-          reviewed_at: "2026-06-02T05:13:05Z"
+          reviewed_at: "2026-06-02T14:30:20Z"
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:39:46Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-02T05:02:46Z"
+    last_modified_at: "2026-06-02T14:19:01Z"
 obligation_checklist:
     - concurrent
     - idempotency
@@ -106,4 +106,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-01T20:13:13Z comment="Phase I: explicit SWKI disposition added to match affixed KIs (gate-tightening readiness).")'
+          changed_by: human:cli
+        - date: "2026-06-02T14:19:01Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T05:02:45Z comment="Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.")'
           changed_by: human:cli

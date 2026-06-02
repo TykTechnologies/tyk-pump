@@ -1,0 +1,10 @@
+component: config-contract
+variables:
+    - name: config_decode_attempted
+      type: bool
+      direction: input
+      description: True when a pump's meta-map is decoded into its typed struct at LoadConfig/decode time.
+    - name: unknown_keys_reported_via_logfatal
+      type: bool
+      direction: output
+      description: True iff a malformed pump configuration (unknown/typed-mismatch keys) is reported loudly via log.Fatal rather than silently dropped (KI pumps-logfatal-on-config-decode documents the per-pump variation).

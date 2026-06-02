@@ -4,9 +4,9 @@ status: approved
 priority: shall
 category: functional
 req_type: guarantee
-fretish: ""
+fretish: when config_decode_attempted config_contract shall always satisfy unknown_keys_reported_via_logfatal
 description: The pump configuration contract shall interpret each pump's meta map according to its declared type and reject malformed pump configuration loudly rather than silently dropping unknown keys at decode time.
-formalization_strategy: informal
+formalization_strategy: fretish
 informal_verification:
     method: ""
     evidence: ""
@@ -20,25 +20,25 @@ traces:
     satisfies:
         - SYS-REQ-008
         - SYS-REQ-035
-    reviewed_at: "2026-06-02T05:03:31.563154Z"
+    reviewed_at: "2026-06-02T14:31:00.899686Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:005dcc1887a17670212ed75ae3d88c8b731784fd5124b01c27a01bfbcd51ef9d
+    reviewed_fingerprint: sha256:08bfbfc8ebf815784d0120953daaab40078b40ca447ea58167398dfa01bd7dda
 verification:
     assurance_level: B
-    formalization_status: none
+    formalization_status: valid
     review:
         status: approved
         reviewer: human:buger
         role: interface_engineer
-        reviewed_at: "2026-06-02T05:02:48Z"
-        comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
-        fingerprint: sha256:6d411ecf37e86a4d4cf85392cbef3149084b26d0e5e4ca9ca3af82b5deca2181
+        reviewed_at: "2026-06-02T14:19:05Z"
+        comment: 'Phase L3 aggressive: flip 8 INT interface contracts to FRETish (positive when-shall-always-satisfy form); per-contract var pairs added in specs/interface/variables/.'
+        fingerprint: sha256:2d7d470621951f204abb6321c13e181a8c244c474c9518351a70e093f219621a
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:47Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-02T05:02:48Z"
+    last_modified_at: "2026-06-02T14:19:05Z"
 obligation_checklist:
     - malformed_input
 release_disposition: ship_with_known_issue
@@ -93,4 +93,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="interface_engineer" reviewer="human:buger" at=2026-06-01T20:50:48Z comment="Phase I: kept parent=SYS-REQ-008 and added satisfies SYS-REQ-035 (INT-REQ-008 is the pump-meta-decode contract, properly covered by both — SYS-008 for load-order, SYS-035 for malformed-input robustness).")'
+          changed_by: human:cli
+        - date: "2026-06-02T14:19:05Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="interface_engineer" reviewer="human:buger" at=2026-06-02T05:02:48Z comment="Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.")'
           changed_by: human:cli

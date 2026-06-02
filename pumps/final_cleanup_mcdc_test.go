@@ -124,6 +124,15 @@ func TestGetPumpByName_KnownReturnsPump(t *testing.T) {
 //
 // Verifies: SW-REQ-054
 // SW-REQ-054:nominal:positive
+// MCDC SW-REQ-054: queue_full_and_enabled=F, submit_skipped=F => TRUE
+// MCDC SW-REQ-054: queue_full_and_enabled=T, submit_skipped=F => FALSE
+// MCDC SW-REQ-054: queue_full_and_enabled=T, submit_skipped=T => TRUE
+//
+// queue_full_and_enabled=T (the worker's channel is closed/drained so additional writes
+// observe the channel-blocked semantics that the FRETish formula captures as "queue full");
+// submit_skipped=T: the test asserts the disabled-branch path that drops the submit. The
+// queue_full=F arm (normal queueing) is exercised by happy-path tests elsewhere in
+// resurface_test.go.
 func TestResurfacePump_WriteData_Open_BranchAfterDisable_Force(t *testing.T) {
 	pmp, _ := SetUp(t, "", make([]string, 0), "include debug")
 

@@ -1,0 +1,18 @@
+component: gateway-pump
+variables:
+    - name: gateway_emits_record
+      type: bool
+      direction: input
+      description: True when the gateway publishes a serialized analytics record into the tyk-system-analytics key set.
+    - name: record_at_tyk_system_analytics
+      type: bool
+      direction: output
+      description: True iff the published record appears in the tyk-system-analytics key (or any tyk-system-analytics_<N> shard 0..9) and is observable by AnalyticsStorage.GetAndDeleteSet.
+    - name: gateway_emits_uptime
+      type: bool
+      direction: input
+      description: True when the gateway publishes uptime report data to the tyk-uptime-analytics key.
+    - name: record_at_tyk_uptime_analytics
+      type: bool
+      direction: output
+      description: True iff the published uptime record appears in tyk-uptime-analytics and is consumed by the uptime purge path (unless the uptime backend is mongo with PurgeDelay).

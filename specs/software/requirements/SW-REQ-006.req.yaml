@@ -4,9 +4,9 @@ status: approved
 priority: shall
 category: functional
 req_type: guarantee
-fretish: ""
+fretish: when records_present storage shall always satisfy records_popped_and_expire_attempted
 description: Temporal storage GetAndDeleteSet shall pop up to a chunk of records from the configured analytics list and re-apply the expiry to any remainder; the Pop side is atomic at the Redis protocol level, while the subsequent Expire of the remainder is a best-effort follow-up. The Pop+Expire pair is not a single atomic transaction — that gap is tracked by KI getanddeleteset-expire-fail-loses-records.
-formalization_strategy: informal
+formalization_strategy: fretish
 informal_verification:
     method: ""
     evidence: ""
@@ -19,36 +19,36 @@ variables: []
 traces:
     satisfies:
         - SYS-REQ-007
-    reviewed_at: "2026-06-02T05:03:32.111199Z"
+    reviewed_at: "2026-06-02T14:31:01.196694Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:fddb94ea803ae07642ae791553eaa34534e89269402dccb84fdc3f6e19dd41b9
+    reviewed_fingerprint: sha256:86efb1f24622c792d0a1f9bcf732bfcb8fb7408871bfbf2f52fbdf9b9a33f741
 verification:
     assurance_level: B
-    formalization_status: none
+    formalization_status: valid
     review:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-02T05:02:45Z"
-        comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
-        fingerprint: sha256:104ccb597ea44332003531dc345cb7cbbed36ec3d69745d5abef6107ff2d7dbb
+        reviewed_at: "2026-06-02T14:19:01Z"
+        comment: 'Phase L3 aggressive: flip remaining decision-bearing SW reqs to FRETish per L3 plan; vars added per-component; MC/DC witnesses to be annotated in tests.'
+        fingerprint: sha256:78bc1fdc0d89e799a8ad872a0a5c1503d2f7c27dc4c074b1a9633f9e30d6c6df
         ai_generated: false
     impact_reviews:
         - requirement: SW-REQ-006
           artifact: storage/temporal_storage.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Phase J: req_type field flipped derived to guarantee per probelabs/reqproof#88 (category error fix). Production .go files were not modified for this change; only req YAML metadata. Re-recording no-authored-change impact.'
+          reason: 'Phase L3 aggressive: FRETish formalization added per L3 plan; production .go behaviour and code paths unchanged — only requirement metadata (fretish text + formalization_strategy + variables) altered. Test annotations may follow but do not change runtime behaviour.'
           base: origin/master
-          requirement_fingerprint: sha256:fddb94ea803ae07642ae791553eaa34534e89269402dccb84fdc3f6e19dd41b9
-          approval_fingerprint: sha256:104ccb597ea44332003531dc345cb7cbbed36ec3d69745d5abef6107ff2d7dbb
+          requirement_fingerprint: sha256:86efb1f24622c792d0a1f9bcf732bfcb8fb7408871bfbf2f52fbdf9b9a33f741
+          approval_fingerprint: sha256:78bc1fdc0d89e799a8ad872a0a5c1503d2f7c27dc4c074b1a9633f9e30d6c6df
           artifact_fingerprint: sha256:6634a473c979dd089b4c3ebf75ec39f8b4e1e94c995e30bb6c41a5f18d301e13
-          reviewed_at: "2026-06-02T05:13:05Z"
+          reviewed_at: "2026-06-02T14:30:20Z"
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:14Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-02T05:02:46Z"
+    last_modified_at: "2026-06-02T14:19:01Z"
 obligation_checklist:
     - error_handling
     - nominal
@@ -84,4 +84,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-05-30T20:46:12Z comment="Phase C: SW-006 checklist extended with error_handling for the GetAndDeleteSet Expire-failure test (expireFailingKV wrapper) added in storage/temporal_storage_mcdc_test.go.")'
+          changed_by: human:cli
+        - date: "2026-06-02T14:19:01Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T05:02:45Z comment="Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.")'
           changed_by: human:cli

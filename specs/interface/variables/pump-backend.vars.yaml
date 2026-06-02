@@ -1,0 +1,10 @@
+component: pump-backend
+variables:
+    - name: record_dispatched_to_backend
+      type: bool
+      direction: input
+      description: True when an analytics record is dispatched to a pump implementation's WriteData for backend persistence.
+    - name: mapping_per_implementation
+      type: bool
+      direction: output
+      description: True iff each pump implementation maps the AnalyticsRecord onto its backend schema (per Phase A SW reqs 023..070) and tolerates unknown/future record fields (no write failure on unknown fields).

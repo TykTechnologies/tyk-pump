@@ -4,9 +4,9 @@ status: approved
 priority: shall
 category: functional
 req_type: guarantee
-fretish: ""
+fretish: when row_conflict_detected pumps_sql_aggregate shall always satisfy on_conflict_assignments_applied
 description: The SQL Aggregate pump shall, per (orgID, dimension) row in each aggregated batch, issue a parameter-bound INSERT ... ON CONFLICT (id) DO UPDATE SET ... using clause.OnConflict with analytics.OnConflictAssignments(table, "excluded") so that monotonic counter columns are incremented rather than overwritten; insert failures shall be returned to the caller. Records are batched in slices of BatchSize.
-formalization_strategy: informal
+formalization_strategy: fretish
 informal_verification:
     method: ""
     evidence: ""
@@ -19,36 +19,36 @@ variables: []
 traces:
     satisfies:
         - SYS-REQ-019
-    reviewed_at: "2026-06-02T05:03:37.598241Z"
+    reviewed_at: "2026-06-02T14:31:02.594091Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:66e200686fcc36d5a46c4c63ba57ddc949bfdea331d1e0b8ffb6eae6f8891085
+    reviewed_fingerprint: sha256:270d3c2d441c8a0c1528c4dbc5dace302abca9f66490169eed75e6426b6abc11
 verification:
     assurance_level: B
-    formalization_status: none
+    formalization_status: valid
     review:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-02T05:02:45Z"
-        comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
-        fingerprint: sha256:1826b07ed24b8edecffa6cff121de5f1df4d4b908ba8e5cd1879a956684cd731
+        reviewed_at: "2026-06-02T14:19:01Z"
+        comment: 'Phase L3 aggressive: flip remaining decision-bearing SW reqs to FRETish per L3 plan; vars added per-component; MC/DC witnesses to be annotated in tests.'
+        fingerprint: sha256:968b3900a86a7ee6e30c99bf81ef47b273f54833dba113cf4d2acc92ed32a1c4
         ai_generated: false
     impact_reviews:
         - requirement: SW-REQ-067
           artifact: pumps/sql_aggregate.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Phase J: req_type field flipped derived to guarantee per probelabs/reqproof#88 (category error fix). Production .go files were not modified for this change; only req YAML metadata. Re-recording no-authored-change impact.'
+          reason: 'Phase L3 aggressive: FRETish formalization added per L3 plan; production .go behaviour and code paths unchanged — only requirement metadata (fretish text + formalization_strategy + variables) altered. Test annotations may follow but do not change runtime behaviour.'
           base: origin/master
-          requirement_fingerprint: sha256:66e200686fcc36d5a46c4c63ba57ddc949bfdea331d1e0b8ffb6eae6f8891085
-          approval_fingerprint: sha256:1826b07ed24b8edecffa6cff121de5f1df4d4b908ba8e5cd1879a956684cd731
+          requirement_fingerprint: sha256:270d3c2d441c8a0c1528c4dbc5dace302abca9f66490169eed75e6426b6abc11
+          approval_fingerprint: sha256:968b3900a86a7ee6e30c99bf81ef47b273f54833dba113cf4d2acc92ed32a1c4
           artifact_fingerprint: sha256:5d4fb4dfe315a4842672abf1f36a4496f0177a3dc32181a3cae56c466cd50167
-          reviewed_at: "2026-06-02T05:13:05Z"
+          reviewed_at: "2026-06-02T14:30:20Z"
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:39:51Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-02T05:02:46Z"
+    last_modified_at: "2026-06-02T14:19:01Z"
 obligation_checklist:
     - atomicity
     - concurrent
@@ -100,4 +100,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-05-30T08:44:11Z comment="Phase A per-implementation/per-significant-behavior decomposition; descriptions code-verified against the named files per docs/phase-a-proposed-reqs.md. Pump-family family-level reqs are retained as superseded anchor reqs.")'
+          changed_by: human:cli
+        - date: "2026-06-02T14:19:01Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T05:02:45Z comment="Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.")'
           changed_by: human:cli

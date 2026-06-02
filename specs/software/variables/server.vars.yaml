@@ -1,0 +1,10 @@
+component: server
+variables:
+    - name: enable_profiling
+      type: bool
+      direction: input
+      description: True when the server config enables pprof routes (Profiling=true).
+    - name: pprof_route_registered
+      type: bool
+      direction: output
+      description: True iff pprof handlers are mounted on the health-check server when Profiling is enabled.

@@ -8,3 +8,35 @@ variables:
       type: bool
       direction: output
       description: True iff a StatsD sink is added to the health stream and MonitorApplicationInstrumentation is invoked.
+    - name: purge_tick
+      type: bool
+      direction: input
+      description: True at each purge cycle tick (PurgeLoop iteration when StartPurgeLoop schedules WriteToPumps).
+    - name: records_dispatched
+      type: bool
+      direction: output
+      description: True iff all configured pumps received the filterData-processed batch for the current cycle.
+    - name: json_loaded_before_env_override
+      type: bool
+      direction: output
+      description: True iff config.go LoadConfig parses the JSON config file before TYK_PMP_* env overrides are applied.
+    - name: component_init_requested
+      type: bool
+      direction: input
+      description: True when SetupPumpsConfig and uptime pump are scheduled to be wired by main.initialise* paths.
+    - name: component_initialized
+      type: bool
+      direction: output
+      description: True iff each configured pump's Init returns nil (or it is recorded as failed) and the uptime pump is initialised before PurgeLoop starts.
+    - name: shutdown_signal
+      type: bool
+      direction: input
+      description: True when SIGINT/SIGTERM or context cancellation reaches main's shutdown handler.
+    - name: purge_stopped_and_pumps_shutdown
+      type: bool
+      direction: output
+      description: True iff the purge loop exits and every pump.Shutdown is invoked once on termination.
+    - name: config_file_enabled
+      type: bool
+      direction: input
+      description: True when --omit-config-file is NOT set (the operator is using a JSON config file alongside env overrides).

@@ -1,0 +1,10 @@
+component: pumps-common
+variables:
+    - name: set_invoked
+      type: bool
+      direction: input
+      description: True when any of the pumps/CommonPumpConfig setters (SetFilters/SetTimeout/SetMaxRecordSize/SetOmitDetailedRecording/SetIgnoreFields/SetDecodingRequest/SetDecodingResponse) is called with the corresponding argument.
+    - name: field_persisted_on_struct
+      type: bool
+      direction: output
+      description: True iff the matching CommonPumpConfig field reflects the set value on subsequent reads from the same instance.

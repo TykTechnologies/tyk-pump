@@ -16,3 +16,27 @@ variables:
       type: bool
       direction: output
       description: True iff the contiguous preceding slice is flushed (ensureTable + ensureIndex + Create) to its tyk_aggregated_<YYYYMMDD> table when a date boundary is detected.
+    - name: table_missing
+      type: bool
+      direction: input
+      description: True when the target aggregate table (tyk_aggregated or tyk_aggregated_<YYYYMMDD>) does not exist at WriteData time (HasTable returns false).
+    - name: table_created
+      type: bool
+      direction: output
+      description: True iff GORM CreateTable is invoked for the missing target aggregate table before INSERT.
+    - name: sql_omit_index_creation
+      type: bool
+      direction: input
+      description: True when the SQL Aggregate pump's OmitIndexCreation config is true (operator opted out of auto composite-index ensure).
+    - name: sql_create_index_skipped
+      type: bool
+      direction: output
+      description: True iff the per-table <table>_idx_dimension composite-index ensure step is skipped when OmitIndexCreation is true.
+    - name: row_conflict_detected
+      type: bool
+      direction: input
+      description: True when the per-(orgID,dimension,id) row's upsert hits an ON CONFLICT (id) DO UPDATE path (existing row matches the conflict key).
+    - name: on_conflict_assignments_applied
+      type: bool
+      direction: output
+      description: True iff the SET assignment list (counter-add deltas + max/min updates + tags upsert) is executed when row_conflict_detected.

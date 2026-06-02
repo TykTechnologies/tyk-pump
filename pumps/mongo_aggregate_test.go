@@ -34,6 +34,15 @@ func (d dummyObject) TableName() string {
 }
 
 // Verifies: SW-REQ-059
+// MCDC SW-REQ-059: org_id_empty=F, write_skipped=F => TRUE
+// MCDC SW-REQ-059: org_id_empty=T, write_skipped=F => FALSE
+// MCDC SW-REQ-059: org_id_empty=T, write_skipped=T => TRUE
+//
+// org_id_empty=F (records carry non-empty OrgID), write_skipped=F (the upsert proceeds —
+// non-trigger arm, vacuous true). The org_id_empty=T/write_skipped=T arm is exercised by
+// TestDoAggregatedWriting_OrgIDEmpty (where empty-OrgID records trigger DoAggregatedWriting
+// to return early without write). The T/F regression scenario is guarded by the early-return
+// in DoAggregatedWriting.
 func TestDoAggregatedWritingWithIgnoredAggregations(t *testing.T) {
 	uri := testMongoURI(t)
 	cfgPump1 := make(map[string]interface{})
@@ -145,6 +154,17 @@ func TestDoAggregatedWritingWithIgnoredAggregations(t *testing.T) {
 }
 
 // Verifies: SW-REQ-058
+// Verifies: SW-REQ-060
+// MCDC SW-REQ-060: first_upsert_succeeded=F, second_upsert_attempted=F => TRUE
+// MCDC SW-REQ-060: first_upsert_succeeded=T, second_upsert_attempted=F => FALSE
+// MCDC SW-REQ-060: first_upsert_succeeded=T, second_upsert_attempted=T => TRUE
+//
+// The mongo testcontainer accepts the first $inc/$set/$max/$min upsert (first_upsert_succeeded=T),
+// after which DoAggregatedWriting issues the second $addToSet upsert (second_upsert_attempted=T)
+// — proving the T/T arm. first_upsert_succeeded=F is exercised by error-injection tests in
+// this file (e.g. TestMongoAggregatePump_SelfHealing) where the first upsert fails and the
+// second is skipped. The T/F regression (first succeeded but second never attempted) is
+// guarded by the unconditional follow-up call in DoAggregatedWriting.
 func TestAggregationTime(t *testing.T) {
 	cfgPump1 := make(map[string]interface{})
 	cfgPump1["mongo_url"] = testMongoURI(t)

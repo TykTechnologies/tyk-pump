@@ -1,0 +1,18 @@
+component: analytics
+variables:
+    - name: in_should_filter
+      type: bool
+      direction: input
+      description: True while AnalyticsFilters.ShouldFilter is evaluating a record (Phase boundary for the filter decision).
+    - name: skip_match
+      type: bool
+      direction: input
+      description: True iff the record matches any of skip_orgs / skip_apis / skip_response_codes lists (block list precedence).
+    - name: outside_allow_list
+      type: bool
+      direction: input
+      description: True iff a non-empty allow list exists (orgs/apis/response_codes) and the record falls outside ALL configured allow lists.
+    - name: filter_true
+      type: bool
+      direction: output
+      description: True iff AnalyticsFilters.ShouldFilter returns true (record is dropped before reaching pumps).

@@ -4,9 +4,9 @@ status: approved
 priority: shall
 category: functional
 req_type: guarantee
-fretish: ""
+fretish: when config_file_enabled pump_core shall always satisfy json_loaded_before_env_override
 description: The configuration loader shall read the JSON config file and then override every field from TYK_PMP_* environment variables.
-formalization_strategy: informal
+formalization_strategy: fretish
 informal_verification:
     method: ""
     evidence: ""
@@ -21,46 +21,46 @@ traces:
         - SYS-REQ-008
         - SYS-REQ-020
         - SYS-REQ-035
-    reviewed_at: "2026-06-02T05:03:31.776362Z"
+    reviewed_at: "2026-06-02T14:31:01.056386Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:8a9495ab39e8ba395cc2d28a7e1d2fa4fd6f3fcd0b69bdc8f80b40c1c777e645
+    reviewed_fingerprint: sha256:5a27db91949d9dc6d3e4a628347969a4b40a0c593be25ed636d55ae67d4b4f1b
 verification:
     assurance_level: B
-    formalization_status: none
+    formalization_status: valid
     review:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-02T05:02:45Z"
-        comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
-        fingerprint: sha256:994468092ac25c745731d6e5397e5d288502955c6c16d5da7473a362e35507a3
+        reviewed_at: "2026-06-02T14:19:01Z"
+        comment: 'Phase L3 aggressive: flip remaining decision-bearing SW reqs to FRETish per L3 plan; vars added per-component; MC/DC witnesses to be annotated in tests.'
+        fingerprint: sha256:67c2cb8692888e3b4045f39ad18c87dbe9c3771d2bd8f390b4ba6c93339e6b69
         ai_generated: false
     impact_reviews:
         - requirement: SW-REQ-002
           artifact: config.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Phase J: req_type field flipped derived to guarantee per probelabs/reqproof#88 (category error fix). Production .go files were not modified for this change; only req YAML metadata. Re-recording no-authored-change impact.'
+          reason: 'Phase L3 aggressive: FRETish formalization added per L3 plan; production .go behaviour and code paths unchanged — only requirement metadata (fretish text + formalization_strategy + variables) altered. Test annotations may follow but do not change runtime behaviour.'
           base: origin/master
-          requirement_fingerprint: sha256:8a9495ab39e8ba395cc2d28a7e1d2fa4fd6f3fcd0b69bdc8f80b40c1c777e645
-          approval_fingerprint: sha256:994468092ac25c745731d6e5397e5d288502955c6c16d5da7473a362e35507a3
+          requirement_fingerprint: sha256:5a27db91949d9dc6d3e4a628347969a4b40a0c593be25ed636d55ae67d4b4f1b
+          approval_fingerprint: sha256:67c2cb8692888e3b4045f39ad18c87dbe9c3771d2bd8f390b4ba6c93339e6b69
           artifact_fingerprint: sha256:9e792c1eb47195f9b6dc56e61d718012812eb0a68fa814ba904c911e0046bc35
-          reviewed_at: "2026-06-02T05:13:05Z"
+          reviewed_at: "2026-06-02T14:30:20Z"
         - requirement: SW-REQ-002
           artifact: main.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Phase J: req_type field flipped derived to guarantee per probelabs/reqproof#88 (category error fix). Production .go files were not modified for this change; only req YAML metadata. Re-recording no-authored-change impact.'
+          reason: 'Phase L3 aggressive: FRETish formalization added per L3 plan; production .go behaviour and code paths unchanged — only requirement metadata (fretish text + formalization_strategy + variables) altered. Test annotations may follow but do not change runtime behaviour.'
           base: origin/master
-          requirement_fingerprint: sha256:8a9495ab39e8ba395cc2d28a7e1d2fa4fd6f3fcd0b69bdc8f80b40c1c777e645
-          approval_fingerprint: sha256:994468092ac25c745731d6e5397e5d288502955c6c16d5da7473a362e35507a3
+          requirement_fingerprint: sha256:5a27db91949d9dc6d3e4a628347969a4b40a0c593be25ed636d55ae67d4b4f1b
+          approval_fingerprint: sha256:67c2cb8692888e3b4045f39ad18c87dbe9c3771d2bd8f390b4ba6c93339e6b69
           artifact_fingerprint: sha256:4b683cd5715feffd7356231f04999400c4067164b6d478c53513559c0459a7cf
-          reviewed_at: "2026-06-02T05:13:05Z"
+          reviewed_at: "2026-06-02T14:30:20Z"
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:13Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-02T05:02:45Z"
+    last_modified_at: "2026-06-02T14:19:01Z"
 obligation_checklist:
     - malformed_input
     - nominal
@@ -90,4 +90,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-05-30T10:47:54Z comment="Phase 0.7: SW-002 also satisfies new SYS-035 (malformed config input handling).")'
+          changed_by: human:cli
+        - date: "2026-06-02T14:19:01Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T05:02:45Z comment="Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.")'
           changed_by: human:cli

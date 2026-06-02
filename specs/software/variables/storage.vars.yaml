@@ -1,0 +1,18 @@
+component: storage
+variables:
+    - name: records_present
+      type: bool
+      direction: input
+      description: True when the temporal storage GetAndDeleteSet input list contains at least one record at call time.
+    - name: records_popped_and_expire_attempted
+      type: bool
+      direction: output
+      description: 'True iff the chunk-sized batch is popped via LRange+LTrim and the remainder receives an Expire call (KI tracks atomicity gap: see known-issues/mongo-mcdc-storage).'
+    - name: connect_err
+      type: bool
+      direction: input
+      description: True when storage.connect() returns a non-nil error and ensureConnection schedules a retried attempt.
+    - name: connection_retried_with_bounded_backoff
+      type: bool
+      direction: output
+      description: True iff retry.GetTemporalStorageExponentialBackoff drives the retried connect attempts to completion within bounded backoff (eventual ensureConnection success).

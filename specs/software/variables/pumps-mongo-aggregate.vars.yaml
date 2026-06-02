@@ -8,3 +8,43 @@ variables:
       type: bool
       direction: output
       description: True iff ShouldSelfHeal halves AggregationTime and re-invokes WriteData (false when AggregationTime is already 1 or when self-healing is not triggered).
+    - name: store_per_minute
+      type: bool
+      direction: input
+      description: True when StoreAnalyticsPerMinute is true (drives 1-min aggregation window vs hourly default).
+    - name: window_eq_1_min
+      type: bool
+      direction: output
+      description: True iff SetAggregationTime sets AggregationTime to 1 minute when StoreAnalyticsPerMinute is true (otherwise 60-min default).
+    - name: org_id_empty
+      type: bool
+      direction: input
+      description: True when the aggregate record's OrgID is empty (write skipped to avoid writing to default collection).
+    - name: write_skipped
+      type: bool
+      direction: output
+      description: True iff DoAggregatedWriting returns early with no write attempt when OrgID is empty.
+    - name: first_upsert_succeeded
+      type: bool
+      direction: input
+      description: True when the first $inc/$set/$max/$min upsert against {orgid,timestamp} returns no error.
+    - name: second_upsert_attempted
+      type: bool
+      direction: output
+      description: True iff the second $addToSet upsert for the same {orgid,timestamp} is attempted following first_upsert_succeeded.
+    - name: tag_list_len_gt_threshold
+      type: bool
+      direction: input
+      description: True when the aggregated document's tag list length exceeds ThresholdLenTagList (default 1000).
+    - name: alert_emitted
+      type: bool
+      direction: output
+      description: True iff the pump emits a Warn-level alert listing up to N tags (and orgid+timestamp context) when tag_list_len_gt_threshold.
+    - name: omit_index_creation
+      type: bool
+      direction: input
+      description: True when the pump's OmitIndexCreation config is true (operator opted out of auto index ensure).
+    - name: create_index_skipped
+      type: bool
+      direction: output
+      description: True iff the per-call ensureIndex step is skipped when OmitIndexCreation is true.

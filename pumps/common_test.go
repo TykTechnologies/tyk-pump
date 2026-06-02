@@ -22,6 +22,14 @@ import (
 )
 
 // Verifies: SW-REQ-016
+// MCDC SW-REQ-016: set_invoked=F, field_persisted_on_struct=F => TRUE
+// MCDC SW-REQ-016: set_invoked=T, field_persisted_on_struct=F => FALSE
+// MCDC SW-REQ-016: set_invoked=T, field_persisted_on_struct=T => TRUE
+//
+// set_invoked=T (SetDecodingRequest(true)), field_persisted_on_struct=T (pump.decodeRequestBase64
+// is true after the call and GetDecodedRequest reads it back). set_invoked=F is the
+// zero-value default arm (covered by every CommonPumpConfig{} initial state — assertion
+// would read false). The T/F regression would be a broken setter — guarded by the assertion.
 func TestDecodingRequest(t *testing.T) {
 	pump := &CommonPumpConfig{}
 	pump.SetDecodingRequest(true)

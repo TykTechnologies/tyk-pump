@@ -1,0 +1,10 @@
+component: pumps-stdout
+variables:
+    - name: enable_json_format
+      type: bool
+      direction: input
+      description: True when the stdout pump's EnableJSONFormat config is true.
+    - name: json_emitted_else_text
+      type: bool
+      direction: output
+      description: True iff records are emitted as JSON lines when EnableJSONFormat is true, otherwise text format.

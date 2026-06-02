@@ -4,9 +4,9 @@ status: approved
 priority: shall
 category: functional
 req_type: guarantee
-fretish: ""
+fretish: when version_eq_3 pumps_es shall always satisfy v3_operator_constructed
 description: 'The Elasticsearch pump shall, at Init, select an ElasticsearchOperator implementation per configured Version ("3", "5", "6", or "7", defaulting to "3" when unset) — instantiating the corresponding elastic.v3 / elastic.v5 / elastic.v6 / elastic/v7 client (with sniffing toggle, basic auth, optional ApiKey-auth via ApiKeyTransport, and optional custom TLS) and corresponding BulkProcessor. Versions other than 3/5/6/7 shall be rejected at Init via log.Fatal. Known issue: the log.Fatal-on-bad-config behaviour is shared with other pumps and tracked as pumps-logfatal-on-config-decode.'
-formalization_strategy: informal
+formalization_strategy: fretish
 informal_verification:
     method: ""
     evidence: ""
@@ -19,36 +19,36 @@ variables: []
 traces:
     satisfies:
         - SYS-REQ-004
-    reviewed_at: "2026-06-02T05:03:37.611261Z"
+    reviewed_at: "2026-06-02T14:31:02.596697Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:5935c93c620368259999330f50de1815f5248fb24e020efede81a0fd58666249
+    reviewed_fingerprint: sha256:6f5d526c968fe5b7eb91a9c1583d52c0f8d7e3cbe8e534bcaf0e4227b84f2b63
 verification:
     assurance_level: B
-    formalization_status: none
+    formalization_status: valid
     review:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-02T05:02:45Z"
-        comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
-        fingerprint: sha256:6b0e6b71653064b230797f1c06e77c002c1f79b3e9ee51a5d8463fd2e1dd3bbf
+        reviewed_at: "2026-06-02T14:19:01Z"
+        comment: 'Phase L3 aggressive: flip remaining decision-bearing SW reqs to FRETish per L3 plan; vars added per-component; MC/DC witnesses to be annotated in tests.'
+        fingerprint: sha256:c234ca5105f633eb0c97347f469b80d90bad760f4bdb2c21d018e680923683ed
         ai_generated: false
     impact_reviews:
         - requirement: SW-REQ-068
           artifact: pumps/elasticsearch.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Phase J: req_type field flipped derived to guarantee per probelabs/reqproof#88 (category error fix). Production .go files were not modified for this change; only req YAML metadata. Re-recording no-authored-change impact.'
+          reason: 'Phase L3 aggressive: FRETish formalization added per L3 plan; production .go behaviour and code paths unchanged — only requirement metadata (fretish text + formalization_strategy + variables) altered. Test annotations may follow but do not change runtime behaviour.'
           base: origin/master
-          requirement_fingerprint: sha256:5935c93c620368259999330f50de1815f5248fb24e020efede81a0fd58666249
-          approval_fingerprint: sha256:6b0e6b71653064b230797f1c06e77c002c1f79b3e9ee51a5d8463fd2e1dd3bbf
+          requirement_fingerprint: sha256:6f5d526c968fe5b7eb91a9c1583d52c0f8d7e3cbe8e534bcaf0e4227b84f2b63
+          approval_fingerprint: sha256:c234ca5105f633eb0c97347f469b80d90bad760f4bdb2c21d018e680923683ed
           artifact_fingerprint: sha256:bed01de375baec71c5054532e66cd43659c128ab3bb96b697da84fb3b8b8ba8e
-          reviewed_at: "2026-06-02T05:13:05Z"
+          reviewed_at: "2026-06-02T14:30:20Z"
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:39:57Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-02T05:02:46Z"
+    last_modified_at: "2026-06-02T14:19:01Z"
 obligation_checklist:
     - cert_validation_strict
     - nominal
@@ -95,4 +95,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-01T20:53:21Z comment="Phase I: cross-referenced pumps-logfatal-on-config-decode KI in description.")'
+          changed_by: human:cli
+        - date: "2026-06-02T14:19:01Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T05:02:45Z comment="Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.")'
           changed_by: human:cli

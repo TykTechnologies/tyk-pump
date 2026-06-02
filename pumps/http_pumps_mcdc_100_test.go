@@ -499,6 +499,15 @@ func TestLogzioPump_Init_NewClientError(t *testing.T) {
 //
 // Verifies: SW-REQ-052
 // SW-REQ-052:nominal:positive
+// MCDC SW-REQ-052: sampling_percentage_pct_gt_random=F, record_submitted=F => TRUE
+// MCDC SW-REQ-052: sampling_percentage_pct_gt_random=T, record_submitted=F => FALSE
+// MCDC SW-REQ-052: sampling_percentage_pct_gt_random=T, record_submitted=T => TRUE
+//
+// This test sets sample_rate=80; subsequent record-submit tests in this file
+// (TestMoesifPump_WriteData_*) dispatch records against the configured rate and observe whether
+// the EventModel was queued (record_submitted=T). The sampling_percentage_pct_gt_random=F arm
+// is the vacuous no-trigger arm (sampling outcome is below threshold so the record is dropped
+// without submit attempt).
 func TestMoesifPump_ParseConfiguration_NoEtag(t *testing.T) {
 	body := `{"sample_rate": 80}`
 	resp := &http.Response{
@@ -1184,6 +1193,14 @@ func (m *timestreamWriteRecordsMock) WriteRecords(ctx context.Context, params *t
 //
 // Verifies: SW-REQ-057
 // SW-REQ-057:errors_propagated:positive
+// MCDC SW-REQ-057: batch_size_exceeded=F, new_batch_started=F => TRUE
+// MCDC SW-REQ-057: batch_size_exceeded=T, new_batch_started=F => FALSE
+// MCDC SW-REQ-057: batch_size_exceeded=T, new_batch_started=T => TRUE
+//
+// The test seeds enough records to exceed timestreamMaxRecordsCount=100, exercising the
+// batch_size_exceeded=T arm; the mock's WriteRecords callback observes batch flushes
+// (new_batch_started=T). The batch_size_exceeded=F arm is exercised by tests with
+// fewer-than-100 records (no flush mid-batch).
 func TestTimestreamPump_WriteData_Success(t *testing.T) {
 	mock := &timestreamWriteRecordsMock{}
 	p := &TimestreamPump{

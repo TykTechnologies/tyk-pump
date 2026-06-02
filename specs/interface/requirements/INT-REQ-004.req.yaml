@@ -4,9 +4,9 @@ status: approved
 priority: shall
 category: functional
 req_type: guarantee
-fretish: ""
+fretish: when pump_methods_called pump_contract shall always satisfy contract_honoured
 description: Every backend pump implementation shall conform to the Pump interface declared in pumps/pump.go (lifecycle, configuration, write, and shutdown surfaces) so the pump host can drive any registered pump uniformly and surface write errors to the caller.
-formalization_strategy: informal
+formalization_strategy: fretish
 informal_verification:
     method: ""
     evidence: ""
@@ -19,25 +19,25 @@ variables: []
 traces:
     satisfies:
         - SYS-REQ-004
-    reviewed_at: "2026-06-02T05:03:31.276073Z"
+    reviewed_at: "2026-06-02T14:31:00.685608Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:bfa30efdfa21638f977bcfe375448b0591fcd307ab64f40ef505a2ad9817e24f
+    reviewed_fingerprint: sha256:20e1eaf36e85b4014667091dfacc6f87d5b5fb8bab831722440c8b2a990aa7e6
 verification:
     assurance_level: B
-    formalization_status: none
+    formalization_status: valid
     review:
         status: approved
         reviewer: human:buger
         role: interface_engineer
-        reviewed_at: "2026-06-02T05:02:48Z"
-        comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
-        fingerprint: sha256:a09fab813cc7873ccdb2878cc8490c181b32d73428b5b25f0768925a58e4143b
+        reviewed_at: "2026-06-02T14:19:05Z"
+        comment: 'Phase L3 aggressive: flip 8 INT interface contracts to FRETish (positive when-shall-always-satisfy form); per-contract var pairs added in specs/interface/variables/.'
+        fingerprint: sha256:f4b0ad1310f177bee3595e7113f5631f0c95cf11e0d49734ddda398887dffa06
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:46Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-02T05:02:48Z"
+    last_modified_at: "2026-06-02T14:19:05Z"
 obligation_checklist:
     - errors_propagated
 release_disposition: ship_with_known_issue
@@ -87,4 +87,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="interface_engineer" reviewer="human:buger" at=2026-06-01T20:13:14Z comment="Phase I: explicit SWKI disposition added to match affixed KIs (gate-tightening readiness).")'
+          changed_by: human:cli
+        - date: "2026-06-02T14:19:05Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="interface_engineer" reviewer="human:buger" at=2026-06-02T05:02:48Z comment="Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.")'
           changed_by: human:cli

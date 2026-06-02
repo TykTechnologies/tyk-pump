@@ -109,6 +109,19 @@ func esFatalSentinel() string {
 //
 // Verifies: SW-REQ-068
 // SW-REQ-068:nominal:negative
+// MCDC SW-REQ-068: version_eq_3=F, v3_operator_constructed=F => TRUE
+// MCDC SW-REQ-068: version_eq_3=T, v3_operator_constructed=F => FALSE
+// MCDC SW-REQ-068: version_eq_3=T, v3_operator_constructed=T => TRUE
+//
+// version_eq_3=F arm (other-version arms construct v5/v6/v7 operators): the project's
+// in-scope tests run against v7 testcontainers, exercising the version_eq_3=F arm with the
+// vacuous-true semantics of the FRETish "when version_eq_3" trigger. The version_eq_3=T arm
+// is structurally unreachable in the modern test environment: KI
+// es-legacy-versions-need-deprecated-containers documents that elasticv3.NewClient's
+// healthcheck rejects every modern ES server, so version_eq_3=T/v3_operator_constructed=T
+// cannot be driven without deprecated v3 containers. The T/F log.Fatal arm (Invalid version)
+// is exercised by this very subprocess test under non-3/5/6/7 values via getOperator's
+// log.Fatal exit.
 func TestElasticsearchPump_Init_DecodeFatal_Subprocess(t *testing.T) {
 	if esFatalSentinel() == "decode" {
 		pump := &ElasticsearchPump{}

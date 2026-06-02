@@ -1,0 +1,10 @@
+component: serializer-contract
+variables:
+    - name: serialize_then_deserialize
+      type: bool
+      direction: input
+      description: True when a deserialize(serialize(record)) round-trip is performed on an AnalyticsRecord by the serializer.
+    - name: roundtrip_equal_except_protobuf_city_names
+      type: bool
+      direction: output
+      description: True iff the round-tripped record equals the original on every field; protobuf city_names omission documented as a known structural gap (lossy on city_names only).

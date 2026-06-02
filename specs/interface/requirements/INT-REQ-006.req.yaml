@@ -4,9 +4,9 @@ status: approved
 priority: shall
 category: functional
 req_type: guarantee
-fretish: ""
+fretish: when record_dispatched_to_backend pump_backend shall always satisfy mapping_per_implementation
 description: Each pump shall map analytics records onto its backend's schema and tolerate unknown or future record fields without failing the write. Phase A's per-implementation SW reqs (SW-REQ-034..057, 068..070) are the contract-bearing artifacts for per-backend schema-mapping behaviour; this INT-REQ-006 remains as the cross-cutting aggregate ICD and is intentionally not further split per-backend at the INT level.
-formalization_strategy: informal
+formalization_strategy: fretish
 informal_verification:
     method: ""
     evidence: ""
@@ -19,25 +19,25 @@ variables: []
 traces:
     satisfies:
         - SYS-REQ-004
-    reviewed_at: "2026-06-02T05:03:31.444209Z"
+    reviewed_at: "2026-06-02T14:31:00.807483Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:bac0f7c5839f48c3982e94ce6c3ebca0aab9c9ca8944e46feb0913dce41ea547
+    reviewed_fingerprint: sha256:7d82024dd50e352ed840000373674ccdb783da4acb889ef7537e88eac60cc57d
 verification:
     assurance_level: B
-    formalization_status: none
+    formalization_status: valid
     review:
         status: approved
         reviewer: human:buger
         role: interface_engineer
-        reviewed_at: "2026-06-02T05:02:48Z"
-        comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
-        fingerprint: sha256:997aef3ab3b1f8ffe4507c9e28a86e81b91c74fe80f39ea90a9e2d9ff4a424d6
+        reviewed_at: "2026-06-02T14:19:05Z"
+        comment: 'Phase L3 aggressive: flip 8 INT interface contracts to FRETish (positive when-shall-always-satisfy form); per-contract var pairs added in specs/interface/variables/.'
+        fingerprint: sha256:1819c02d74a685e8a18ab82c44b9552d6d873d3b5c4b5c72f9d36b35c70981b7
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:46Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-02T05:02:48Z"
+    last_modified_at: "2026-06-02T14:19:05Z"
 obligation_checklist:
     - errors_propagated
 interface:
@@ -81,4 +81,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="interface_engineer" reviewer="human:buger" at=2026-06-01T20:52:45Z comment="Phase I: marked Phase A''s per-pump SW children as the contract-bearing artifacts; no per-backend INT split.")'
+          changed_by: human:cli
+        - date: "2026-06-02T14:19:05Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="interface_engineer" reviewer="human:buger" at=2026-06-02T05:02:48Z comment="Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.")'
           changed_by: human:cli

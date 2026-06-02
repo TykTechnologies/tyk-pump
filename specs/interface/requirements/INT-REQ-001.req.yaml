@@ -4,9 +4,9 @@ status: approved
 priority: shall
 category: functional
 req_type: guarantee
-fretish: ""
+fretish: when gateway_emits_record gateway_pump shall always satisfy record_at_tyk_system_analytics
 description: The gateway shall publish serialized analytics records into the configured temporal store under the analytics key set (tyk-system-analytics plus tyk-system-analytics_0 through _9); the pump shall consume and deserialize them, bounding untrusted input on the decode path.
-formalization_strategy: informal
+formalization_strategy: fretish
 informal_verification:
     method: ""
     evidence: ""
@@ -19,25 +19,25 @@ variables: []
 traces:
     satisfies:
         - SYS-REQ-001
-    reviewed_at: "2026-06-02T05:03:31.035247Z"
+    reviewed_at: "2026-06-02T14:31:00.528847Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:c80c4ac987b845a3bf82a2bc57cb0c41c320fb84d9a298242237c3d21845e630
+    reviewed_fingerprint: sha256:2d8e4aee2d1e5da0392f31783b5432a42a8ca28794eb1bc548659cdbc3deb736
 verification:
     assurance_level: B
-    formalization_status: none
+    formalization_status: valid
     review:
         status: approved
         reviewer: human:buger
         role: interface_engineer
-        reviewed_at: "2026-06-02T05:02:48Z"
-        comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
-        fingerprint: sha256:ad76937e5768e0589fb1ce78008dcfcd0fefb716c5c26fde704c07d04ef91805
+        reviewed_at: "2026-06-02T14:19:05Z"
+        comment: 'Phase L3 aggressive: flip 8 INT interface contracts to FRETish (positive when-shall-always-satisfy form); per-contract var pairs added in specs/interface/variables/.'
+        fingerprint: sha256:243664f9bd86599b66400d690804f705d5947a05c98f2a5631e286644e9724b0
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:46Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-02T05:02:48Z"
+    last_modified_at: "2026-06-02T14:19:05Z"
 obligation_checklist:
     - untrusted_input_bounded
 interface:
@@ -76,4 +76,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="interface_owner" reviewer="human:buger" at=2026-05-30T10:18:00Z comment="Re-approval after super-strict review: added one-sentence rationales per req; tightened descriptions to pass the 30-word plan floor while preserving the rich detail in the interface.signature/protocol/assumptions/guarantees blocks; fixed INT-007 sharding-key reference (table_sharding, not sharding_table) and INT-008 CSV line-number drift (51 not 55).")'
+          changed_by: human:cli
+        - date: "2026-06-02T14:19:05Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="interface_engineer" reviewer="human:buger" at=2026-06-02T05:02:48Z comment="Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.")'
           changed_by: human:cli

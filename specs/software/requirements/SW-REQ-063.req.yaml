@@ -4,9 +4,9 @@ status: approved
 priority: shall
 category: functional
 req_type: guarantee
-fretish: ""
+fretish: when omit_index_creation pumps_mongo_aggregate shall always satisfy create_index_skipped
 description: 'On each DoAggregatedWriting call (per-org), the MongoAggregate pump shall idempotently ensure baseline indexes on the target aggregate collection: (a) a TTL index on expireAt with TTL=0 (skipped for CosmosDB), (b) a timestamp index, (c) an orgid index. Index creation shall be skipped when OmitIndexCreation is true or, for StandardMongo, when the collection already exists. Background index creation is used for StandardMongo; foreground for CosmosDB/DocumentDB.'
-formalization_strategy: informal
+formalization_strategy: fretish
 informal_verification:
     method: ""
     evidence: ""
@@ -19,36 +19,36 @@ variables: []
 traces:
     satisfies:
         - SYS-REQ-004
-    reviewed_at: "2026-06-02T05:03:37.549238Z"
+    reviewed_at: "2026-06-02T14:31:02.416262Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:6f2f5b9fae7ec72a0b524754b18409f8e90ab9f623dedc52ced2a1d47e33f2e1
+    reviewed_fingerprint: sha256:452bd4245ce6f44fdb066f28ce2c1053f279e21fa7272174a4915cd5a5dce348
 verification:
     assurance_level: B
-    formalization_status: none
+    formalization_status: valid
     review:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-02T05:02:45Z"
-        comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
-        fingerprint: sha256:42367d78a7065ee73212e2e47a1ad37165e987cbc0c59d188490a5483c46381d
+        reviewed_at: "2026-06-02T14:19:01Z"
+        comment: 'Phase L3 aggressive: flip remaining decision-bearing SW reqs to FRETish per L3 plan; vars added per-component; MC/DC witnesses to be annotated in tests.'
+        fingerprint: sha256:d1bf1f25a5a41b51fbcd51af0da5b087bab749b914df260fdd374f7d49ff1ba9
         ai_generated: false
     impact_reviews:
         - requirement: SW-REQ-063
           artifact: pumps/mongo_aggregate.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Phase J: req_type field flipped derived to guarantee per probelabs/reqproof#88 (category error fix). Production .go files were not modified for this change; only req YAML metadata. Re-recording no-authored-change impact.'
+          reason: 'Phase L3 aggressive: FRETish formalization added per L3 plan; production .go behaviour and code paths unchanged — only requirement metadata (fretish text + formalization_strategy + variables) altered. Test annotations may follow but do not change runtime behaviour.'
           base: origin/master
-          requirement_fingerprint: sha256:6f2f5b9fae7ec72a0b524754b18409f8e90ab9f623dedc52ced2a1d47e33f2e1
-          approval_fingerprint: sha256:42367d78a7065ee73212e2e47a1ad37165e987cbc0c59d188490a5483c46381d
+          requirement_fingerprint: sha256:452bd4245ce6f44fdb066f28ce2c1053f279e21fa7272174a4915cd5a5dce348
+          approval_fingerprint: sha256:d1bf1f25a5a41b51fbcd51af0da5b087bab749b914df260fdd374f7d49ff1ba9
           artifact_fingerprint: sha256:dbad5d36c1f182c7c46b96b648d01065563938e23243987ed06b1f8dc02d6171
-          reviewed_at: "2026-06-02T05:13:05Z"
+          reviewed_at: "2026-06-02T14:30:20Z"
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:38:05Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-02T05:02:46Z"
+    last_modified_at: "2026-06-02T14:19:01Z"
 obligation_checklist:
     - errors_propagated
     - idempotency
@@ -88,4 +88,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-05-31T11:27:46Z comment="Phase E: SW-REQ-063 checklist extended with errors_propagated to cover mongo pump container-stop / bad-env error-propagation tests in pumps/mongo_mcdc_100_test.go.")'
+          changed_by: human:cli
+        - date: "2026-06-02T14:19:01Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T05:02:45Z comment="Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.")'
           changed_by: human:cli

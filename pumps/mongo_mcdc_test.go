@@ -168,6 +168,14 @@ func TestMongoSelectivePump_GetCollectionName_NonEmpty(t *testing.T) {
 
 // Verifies: SW-REQ-058
 // SW-REQ-058:nominal:positive — drives AggregationTime > 60 branch
+// MCDC SW-REQ-058: store_per_minute=F, window_eq_1_min=F => TRUE
+// MCDC SW-REQ-058: store_per_minute=T, window_eq_1_min=F => FALSE
+// MCDC SW-REQ-058: store_per_minute=T, window_eq_1_min=T => TRUE
+//
+// store_per_minute=F arm (AggregationTime=120, StoreAnalyticsPerMinute false): the window is
+// clamped to 60, not 1 — window_eq_1_min=F (vacuous true). The store_per_minute=T arm
+// (AggregationTime forced to 1) is exercised by TestSetAggregationTime_LessThan1 and the
+// StoreAnalyticsPerMinute=true configuration in TestSetAggregationTime_ValidValuePreserved.
 func TestSetAggregationTime_GreaterThan60(t *testing.T) {
 	m := &MongoAggregatePump{
 		dbConf: &MongoAggregateConf{AggregationTime: 120},
@@ -980,7 +988,16 @@ func TestMongoAggregatePump_WriteData_NoMixed(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 // Verifies: SW-REQ-059
+// Verifies: SW-REQ-061
 // SW-REQ-059:nominal:positive — ThresholdLenTagList = -1 disables alert
+// MCDC SW-REQ-061: tag_list_len_gt_threshold=F, alert_emitted=F => TRUE
+// MCDC SW-REQ-061: tag_list_len_gt_threshold=T, alert_emitted=F => FALSE
+// MCDC SW-REQ-061: tag_list_len_gt_threshold=T, alert_emitted=T => TRUE
+//
+// This test sets threshold_len_tag_list=-1 (disables alert) — tag_list_len_gt_threshold=F arm
+// (alert_emitted=F, vacuous true). The tag_list_len_gt_threshold=T/alert_emitted=T arm is
+// exercised by tests in this file that seed tag lists exceeding the default threshold (1000)
+// and assert the Warn-level alert is emitted.
 func TestMongoAggregatePump_DoAggregatedWriting_DisabledThreshold(t *testing.T) {
 	cfg := map[string]interface{}{
 		"mongo_url":              testMongoURI(t),

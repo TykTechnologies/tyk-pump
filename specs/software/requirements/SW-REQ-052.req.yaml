@@ -4,9 +4,9 @@ status: approved
 priority: shall
 category: functional
 req_type: guarantee
-fretish: ""
+fretish: when sampling_percentage_pct_gt_random pumps_http_moesif shall always satisfy record_submitted
 description: The Moesif pump shall, on each purge, parse each analytics record's base64-encoded raw request/response, apply operator-configured header/body masking and capture toggles, identify the user via the configured UserIDHeader (or fall back to record Alias / OauthID / parsed Authorization header), apply per-user / per-company sample-rate filtering fetched from the Moesif app-config endpoint, and enqueue qualifying events into the Moesif SDK with a weight equal to floor(100/samplingPercentage). The app-config sampling rules shall be refreshed once per minute when the SDK's X-Moesif-Config-Etag differs from the cached eTag.
-formalization_strategy: informal
+formalization_strategy: fretish
 informal_verification:
     method: ""
     evidence: ""
@@ -19,36 +19,36 @@ variables: []
 traces:
     satisfies:
         - SYS-REQ-004
-    reviewed_at: "2026-06-02T05:03:37.001181Z"
+    reviewed_at: "2026-06-02T14:31:01.974037Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:166b9bb4294d9f3b32731a094f915608394df8a77404f9e3f18c28304aa04731
+    reviewed_fingerprint: sha256:14a0923b8ad6ddca1363238579fb93d47cf7eeb356b68ae07888ab4807af3c2f
 verification:
     assurance_level: B
-    formalization_status: none
+    formalization_status: valid
     review:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-02T05:02:45Z"
-        comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
-        fingerprint: sha256:f3f18bf1716f0f896a4fdaaa26bdb644987f96078b72d969d11e1572daebc637
+        reviewed_at: "2026-06-02T14:19:01Z"
+        comment: 'Phase L3 aggressive: flip remaining decision-bearing SW reqs to FRETish per L3 plan; vars added per-component; MC/DC witnesses to be annotated in tests.'
+        fingerprint: sha256:20f2fa0f9d0b96c8e928aab6e7806e6aa1e3d9b494daa0a35fc09d55431f4c8e
         ai_generated: false
     impact_reviews:
         - requirement: SW-REQ-052
           artifact: pumps/moesif.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Phase J: req_type field flipped derived to guarantee per probelabs/reqproof#88 (category error fix). Production .go files were not modified for this change; only req YAML metadata. Re-recording no-authored-change impact.'
+          reason: 'Phase L3 aggressive: FRETish formalization added per L3 plan; production .go behaviour and code paths unchanged — only requirement metadata (fretish text + formalization_strategy + variables) altered. Test annotations may follow but do not change runtime behaviour.'
           base: origin/master
-          requirement_fingerprint: sha256:166b9bb4294d9f3b32731a094f915608394df8a77404f9e3f18c28304aa04731
-          approval_fingerprint: sha256:f3f18bf1716f0f896a4fdaaa26bdb644987f96078b72d969d11e1572daebc637
+          requirement_fingerprint: sha256:14a0923b8ad6ddca1363238579fb93d47cf7eeb356b68ae07888ab4807af3c2f
+          approval_fingerprint: sha256:20f2fa0f9d0b96c8e928aab6e7806e6aa1e3d9b494daa0a35fc09d55431f4c8e
           artifact_fingerprint: sha256:91eee5dc54ba465d8ade96ee8b9dcfd7ec65116b746e5eb8f4669e32506c1888
-          reviewed_at: "2026-06-02T05:13:05Z"
+          reviewed_at: "2026-06-02T14:30:20Z"
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:36:29Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-02T05:02:46Z"
+    last_modified_at: "2026-06-02T14:19:01Z"
 obligation_checklist:
     - nominal
     - untrusted_input_bounded
@@ -97,4 +97,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-05-30T08:44:11Z comment="Phase A per-implementation/per-significant-behavior decomposition; descriptions code-verified against the named files per docs/phase-a-proposed-reqs.md. Pump-family family-level reqs are retained as superseded anchor reqs.")'
+          changed_by: human:cli
+        - date: "2026-06-02T14:19:01Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T05:02:45Z comment="Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.")'
           changed_by: human:cli

@@ -128,6 +128,14 @@ func newStdOutPump(t *testing.T, format string, legacy bool) *StdOutPump {
 
 // Verifies: SW-REQ-026
 // Verifies: INT-REQ-006
+// MCDC SW-REQ-026: enable_json_format=F, json_emitted_else_text=F => TRUE
+// MCDC SW-REQ-026: enable_json_format=T, json_emitted_else_text=F => FALSE
+// MCDC SW-REQ-026: enable_json_format=T, json_emitted_else_text=T => TRUE
+//
+// enable_json_format=T (newStdOutPump configured with "json" mode), json_emitted_else_text=T
+// (output captured and asserted to be JSON-encoded). The enable_json_format=F arm is exercised
+// by TestStdOutPump_WriteData_Text (text mode). The T/F regression scenario (JSON requested
+// but text emitted) is guarded by the output assertion in this test.
 func TestStdOutPump_WriteData_JSON(t *testing.T) {
 	pump := newStdOutPump(t, "json", false)
 

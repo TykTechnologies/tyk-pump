@@ -576,6 +576,15 @@ func TestTemporalStorageHandler_SetKey_EnsureConnectionSingletonAlive(t *testing
 // `getanddeleteset-expire-fail-loses-records` which catalogues the
 // silent record-loss bug. The decision is exercised here without
 // asserting the data-loss semantics (the KI tracks the semantic gap).
+//
+// MCDC SW-REQ-006: records_present=F, records_popped_and_expire_attempted=F => TRUE
+// MCDC SW-REQ-006: records_present=T, records_popped_and_expire_attempted=F => FALSE
+// MCDC SW-REQ-006: records_present=T, records_popped_and_expire_attempted=T => TRUE
+//
+// records_present=T/records_popped_and_expire_attempted=T: the test seeds records into the
+// list, Pop succeeds, then Expire is attempted (and fails — the F arm), proving both
+// arms of the decision. records_present=F is the vacuous no-trigger arm (empty list).
+// KI getanddeleteset-expire-fail-loses-records documents the atomicity gap.
 func TestTemporalStorageHandler_GetAndDeleteSet_ExpireFailureDecision(t *testing.T) {
 	host, port := redisHostPort(t)
 	t.Cleanup(func() { resetSingletonForTest(t) })

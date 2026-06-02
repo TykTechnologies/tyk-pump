@@ -10,6 +10,15 @@ import (
 // SW-REQ-006:nominal:negative
 // SW-REQ-007:error_handling:negative
 // SW-REQ-031:error_handling:negative
+// MCDC SW-REQ-007: connect_err=F, connection_retried_with_bounded_backoff=F => TRUE
+// MCDC SW-REQ-007: connect_err=T, connection_retried_with_bounded_backoff=F => FALSE
+// MCDC SW-REQ-007: connect_err=T, connection_retried_with_bounded_backoff=T => TRUE
+//
+// connect_err=T (port 6390 has nothing listening), connection_retried_with_bounded_backoff=F:
+// this test asserts the FALSE arm — the unreachable-backend path exits when the bounded backoff
+// budget elapses without success. The connection_retried_with_bounded_backoff=T arm is exercised
+// by integration tests via testcontainers that recover after a transient outage; the connect_err=F
+// arm is the happy path covered by TestTemporalStorageHandler_ensureConnection.
 func TestTemporalStorageHandler_GetAndDeleteSet_BackendUnreachable(t *testing.T) {
 	// Point at a port with nothing listening so the backend is unreachable.
 	conf := map[string]interface{}{

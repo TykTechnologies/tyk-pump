@@ -1,0 +1,10 @@
+component: pump-contract
+variables:
+    - name: pump_methods_called
+      type: bool
+      direction: input
+      description: True when any of the Pump interface methods (Init/New/GetName/GetEnvPrefix/SetFilters/GetFilters/SetTimeout/GetTimeout/SetMaxRecordSize/GetMaxRecordSize/SetOmitDetailedRecording/GetOmitDetailedRecording/SetIgnoreFields/GetIgnoreFields/WriteData/SetDecodingRequest/SetDecodingResponse/Shutdown) is invoked on a Pump impl from pumps/pump.go.
+    - name: contract_honoured
+      type: bool
+      direction: output
+      description: True iff the Pump impl performs the method's contract (no panics, returns the declared values; lifecycle/configure/write/shutdown surface honoured).

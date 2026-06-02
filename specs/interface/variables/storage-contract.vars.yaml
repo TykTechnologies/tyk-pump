@@ -1,0 +1,10 @@
+component: storage-contract
+variables:
+    - name: GetAndDeleteSet_invoked
+      type: bool
+      direction: input
+      description: True when AnalyticsStorage.GetAndDeleteSet is called by the pump core for the configured analytics key.
+    - name: storage_records_popped_and_expire_attempted
+      type: bool
+      direction: output
+      description: True iff the storage implementation returns up to a chunk of records and re-applies the expiry to remainders (KI storage-getanddeleteset-atomicity-gap documents the non-atomic window).

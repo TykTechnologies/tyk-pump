@@ -4,9 +4,9 @@ status: approved
 priority: shall
 category: functional
 req_type: guarantee
-fretish: ""
+fretish: when connect_err storage shall eventually satisfy connection_retried_with_bounded_backoff
 description: Temporal storage shall construct, lazily establish, and re-establish its backend connection (NewTemporalStorageHandler, Init, connect, ensureConnection, resetConnection, createConnector, getKVFromConnector, getListFromConnector, fixKey, SetKey, GetName), using bounded exponential backoff for retried connect attempts via retry.GetTemporalStorageExponentialBackoff.
-formalization_strategy: informal
+formalization_strategy: fretish
 informal_verification:
     method: ""
     evidence: ""
@@ -20,56 +20,56 @@ traces:
     satisfies:
         - SYS-REQ-006
         - SYS-REQ-023
-    reviewed_at: "2026-06-02T05:03:32.239879Z"
+    reviewed_at: "2026-06-02T14:31:01.291424Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:5bc46303936a4570666965ccd62eb42ab52f836a5fe35122d4ec190b6b945c89
+    reviewed_fingerprint: sha256:39d127ea0b6ed5dbca621f814282992de1156b91be1ad88819f8cfe11223074e
 verification:
     assurance_level: B
-    formalization_status: none
+    formalization_status: valid
     review:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-02T05:02:45Z"
-        comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
-        fingerprint: sha256:faeb829f088426ff533509c54ff765a65ea13397223b7a30e7b6051c62326bc9
+        reviewed_at: "2026-06-02T14:19:01Z"
+        comment: 'Phase L3 aggressive: flip remaining decision-bearing SW reqs to FRETish per L3 plan; vars added per-component; MC/DC witnesses to be annotated in tests.'
+        fingerprint: sha256:dafee3e0b05570650179985d446a8c97cd97e3dd0d07a199b277ffcc359285ea
         ai_generated: false
     impact_reviews:
         - requirement: SW-REQ-007
           artifact: docs/fmea.md
           decision: no-authored-change
           reviewer: buger
-          reason: 'Phase J: req_type field flipped derived to guarantee per probelabs/reqproof#88 (category error fix). Production .go files were not modified for this change; only req YAML metadata. Re-recording no-authored-change impact.'
+          reason: 'Phase L3 aggressive: FRETish formalization added per L3 plan; production .go behaviour and code paths unchanged — only requirement metadata (fretish text + formalization_strategy + variables) altered. Test annotations may follow but do not change runtime behaviour.'
           base: origin/master
-          requirement_fingerprint: sha256:5bc46303936a4570666965ccd62eb42ab52f836a5fe35122d4ec190b6b945c89
-          approval_fingerprint: sha256:faeb829f088426ff533509c54ff765a65ea13397223b7a30e7b6051c62326bc9
+          requirement_fingerprint: sha256:39d127ea0b6ed5dbca621f814282992de1156b91be1ad88819f8cfe11223074e
+          approval_fingerprint: sha256:dafee3e0b05570650179985d446a8c97cd97e3dd0d07a199b277ffcc359285ea
           artifact_fingerprint: sha256:10ed755ac172d68a5082fa28ddf21676d210bcbfaca858747213607c75a51920
-          reviewed_at: "2026-06-02T05:13:05Z"
+          reviewed_at: "2026-06-02T14:30:20Z"
         - requirement: SW-REQ-007
           artifact: storage/store.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Phase J: req_type field flipped derived to guarantee per probelabs/reqproof#88 (category error fix). Production .go files were not modified for this change; only req YAML metadata. Re-recording no-authored-change impact.'
+          reason: 'Phase L3 aggressive: FRETish formalization added per L3 plan; production .go behaviour and code paths unchanged — only requirement metadata (fretish text + formalization_strategy + variables) altered. Test annotations may follow but do not change runtime behaviour.'
           base: origin/master
-          requirement_fingerprint: sha256:5bc46303936a4570666965ccd62eb42ab52f836a5fe35122d4ec190b6b945c89
-          approval_fingerprint: sha256:faeb829f088426ff533509c54ff765a65ea13397223b7a30e7b6051c62326bc9
+          requirement_fingerprint: sha256:39d127ea0b6ed5dbca621f814282992de1156b91be1ad88819f8cfe11223074e
+          approval_fingerprint: sha256:dafee3e0b05570650179985d446a8c97cd97e3dd0d07a199b277ffcc359285ea
           artifact_fingerprint: sha256:e3e96b335a7f110f632eb0cf1980fc8f592e018ca4124e69232f016ffec0219c
-          reviewed_at: "2026-06-02T05:13:05Z"
+          reviewed_at: "2026-06-02T14:30:20Z"
         - requirement: SW-REQ-007
           artifact: storage/temporal_storage.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Phase J: req_type field flipped derived to guarantee per probelabs/reqproof#88 (category error fix). Production .go files were not modified for this change; only req YAML metadata. Re-recording no-authored-change impact.'
+          reason: 'Phase L3 aggressive: FRETish formalization added per L3 plan; production .go behaviour and code paths unchanged — only requirement metadata (fretish text + formalization_strategy + variables) altered. Test annotations may follow but do not change runtime behaviour.'
           base: origin/master
-          requirement_fingerprint: sha256:5bc46303936a4570666965ccd62eb42ab52f836a5fe35122d4ec190b6b945c89
-          approval_fingerprint: sha256:faeb829f088426ff533509c54ff765a65ea13397223b7a30e7b6051c62326bc9
+          requirement_fingerprint: sha256:39d127ea0b6ed5dbca621f814282992de1156b91be1ad88819f8cfe11223074e
+          approval_fingerprint: sha256:dafee3e0b05570650179985d446a8c97cd97e3dd0d07a199b277ffcc359285ea
           artifact_fingerprint: sha256:6634a473c979dd089b4c3ebf75ec39f8b4e1e94c995e30bb6c41a5f18d301e13
-          reviewed_at: "2026-06-02T05:13:05Z"
+          reviewed_at: "2026-06-02T14:30:20Z"
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:14Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-02T05:02:46Z"
+    last_modified_at: "2026-06-02T14:19:01Z"
 obligation_checklist:
     - boundary
     - cancellation_observed
@@ -112,4 +112,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-05-30T20:46:12Z comment="Phase C: SW-007 checklist extended with boundary to cover the MaxActive/MaxIdle/Timeout/SSL-Version boundary tests added in storage/temporal_storage_mcdc_test.go.")'
+          changed_by: human:cli
+        - date: "2026-06-02T14:19:01Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T05:02:45Z comment="Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.")'
           changed_by: human:cli

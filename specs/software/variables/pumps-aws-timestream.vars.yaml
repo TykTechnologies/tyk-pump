@@ -1,0 +1,10 @@
+component: pumps-aws-timestream
+variables:
+    - name: batch_size_exceeded
+      type: bool
+      direction: input
+      description: True when the accumulating Timestream batch length reaches the AWS hard limit timestreamMaxRecordsCount=100.
+    - name: new_batch_started
+      type: bool
+      direction: output
+      description: True iff the pump flushes the current batch via WriteRecords and starts a fresh batch for the next records when batch_size_exceeded.

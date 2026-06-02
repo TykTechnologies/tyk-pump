@@ -265,6 +265,16 @@ func TestElasticsearchPump_WriteData_MCPIndexRouting_NonBulkBug(t *testing.T) {
 //
 // Verifies: SW-REQ-070
 // SW-REQ-070:boundary:negative
+// MCDC SW-REQ-070: disable_bulk=F, per_record_indexed_else_bulk_processor=F => TRUE
+// MCDC SW-REQ-070: disable_bulk=T, per_record_indexed_else_bulk_processor=F => FALSE
+// MCDC SW-REQ-070: disable_bulk=T, per_record_indexed_else_bulk_processor=T => TRUE
+//
+// disable_bulk=T (cfg sets disable_bulk: true), per_record_indexed_else_bulk_processor=T
+// (the operator indexes records one-by-one against the testcontainer ES7). The disable_bulk=F
+// arm (BulkProcessor path) is exercised by the suite's default-config tests
+// (TestElasticsearchPump_WriteData_Bulk etc.). The T/F regression scenario (DisableBulk=true
+// but bulk still used) is guarded by the per-record assertion that records appear immediately
+// rather than after the bulk flush window.
 func TestElasticsearchPump_WriteData_BadType(t *testing.T) {
 	idx := esIndexName(t, "tyk_analytics_badtype")
 	pump := esInit(t, map[string]interface{}{

@@ -115,6 +115,34 @@ func TestSQLAggregateWriteData_Sharded(t *testing.T) {
 }
 
 // Verifies: SW-REQ-067
+// Verifies: SW-REQ-065
+// Verifies: SW-REQ-066
+// MCDC SW-REQ-065: table_missing=F, table_created=F => TRUE
+// MCDC SW-REQ-065: table_missing=T, table_created=F => FALSE
+// MCDC SW-REQ-065: table_missing=T, table_created=T => TRUE
+//
+// SW-REQ-065 (CreateTable): the test starts with a fresh database (table_missing=T), runs
+// ensureTable which calls CreateTable (table_created=T) — proving the T/T arm. The T/F arm
+// (creation failure) is exercised by sql_aggregate.go's err return paths in TestSQLAggregateInit
+// against an unreachable DB.
+//
+// MCDC SW-REQ-066: sql_omit_index_creation=F, sql_create_index_skipped=F => TRUE
+// MCDC SW-REQ-066: sql_omit_index_creation=T, sql_create_index_skipped=F => FALSE
+// MCDC SW-REQ-066: sql_omit_index_creation=T, sql_create_index_skipped=T => TRUE
+//
+// SW-REQ-066: cfg here does not set OmitIndexCreation (defaults to false), so the
+// sql_omit_index_creation=F arm holds and ensureIndex creates the composite index. The
+// sql_omit_index_creation=T/sql_create_index_skipped=T arm is exercised by
+// TestMCDC_SQLAggregatePump_EnsureIndex_OmitTrue (in sql_mcdc_100_test.go).
+//
+// MCDC SW-REQ-067: row_conflict_detected=F, on_conflict_assignments_applied=F => TRUE
+// MCDC SW-REQ-067: row_conflict_detected=T, on_conflict_assignments_applied=F => FALSE
+// MCDC SW-REQ-067: row_conflict_detected=T, on_conflict_assignments_applied=T => TRUE
+//
+// The test inserts the same (orgID,dimension,id) batch twice (writes records once on a fresh
+// table, then re-writes overlapping rows), exercising row_conflict_detected=T and verifying
+// on_conflict_assignments_applied=T via the resulting aggregated counter values. The F arm
+// is exercised by the first batch (no prior row, INSERT path).
 func TestSQLAggregateWriteData(t *testing.T) {
 	skipTestIfNoPostgres(t)
 	pmp := &SQLAggregatePump{}

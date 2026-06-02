@@ -1,0 +1,10 @@
+component: sql-schema
+variables:
+    - name: sql_schema_version_changed
+      type: bool
+      direction: input
+      description: True when the SQL pump schema migrates (day-sharded analytics or aggregate tables get new columns/indexes).
+    - name: expand_contract_migration
+      type: bool
+      direction: output
+      description: True iff the schema change follows expand-then-contract (add new column nullable, dual-write window, drop legacy after older pump versions stop writing).

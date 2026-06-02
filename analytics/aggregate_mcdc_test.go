@@ -61,6 +61,20 @@ func TestAggregateData_MCDCBranches(t *testing.T) {
 // Verifies: SW-REQ-010
 // Verifies: SYS-REQ-009
 // SW-REQ-010:boundary:negative
+// MCDC SW-REQ-010: in_should_filter=F, skip_match=F, outside_allow_list=F, filter_true=F => TRUE
+// MCDC SW-REQ-010: in_should_filter=T, skip_match=T, outside_allow_list=F, filter_true=T => TRUE
+// MCDC SW-REQ-010: in_should_filter=T, skip_match=F, outside_allow_list=T, filter_true=T => TRUE
+// MCDC SW-REQ-010: in_should_filter=T, skip_match=F, outside_allow_list=F, filter_true=F => TRUE
+// MCDC SW-REQ-010: in_should_filter=T, skip_match=T, outside_allow_list=F, filter_true=F => FALSE
+// MCDC SW-REQ-010: in_should_filter=T, skip_match=F, outside_allow_list=T, filter_true=F => FALSE
+//
+// Each row of the cases slice constructs a filter set covering one of skip_match (block list)
+// or outside_allow_list (positive list mismatch). HasFilter must return true (the "ShouldFilter
+// triggers" precondition holds), and ShouldFilter applies the (skip_match | outside_allow_list)
+// => filter_true implication. The all-empty AnalyticsFilters{} row exercises
+// in_should_filter=F (vacuous true). Other tests in this package
+// (TestShouldFilter_OrgIDPriorityOverAPIID, TestShouldFilter_AllowListMatch) drive the
+// remaining decision combinations.
 func TestHasFilter_EachList(t *testing.T) {
 	if (AnalyticsFilters{}).HasFilter() {
 		t.Fatal("empty filter set must report no filter")

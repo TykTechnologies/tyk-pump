@@ -4,9 +4,9 @@ status: approved
 priority: shall
 category: functional
 req_type: guarantee
-fretish: ""
+fretish: when shutdown_signal pump_core shall eventually satisfy purge_stopped_and_pumps_shutdown
 description: The shutdown handler shall stop the purge loop and shut down all pumps cleanly on termination signal or context cancellation.
-formalization_strategy: informal
+formalization_strategy: fretish
 informal_verification:
     method: ""
     evidence: ""
@@ -19,36 +19,36 @@ variables: []
 traces:
     satisfies:
         - SYS-REQ-001
-    reviewed_at: "2026-06-02T05:03:31.940701Z"
+    reviewed_at: "2026-06-02T14:31:01.174756Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:3d3327042ed9f3936b2f27b200b8c1ba8fca18a9e8fb2ada2f0f13e1972e3606
+    reviewed_fingerprint: sha256:cd339de505466c52193f062f0a5e4caa4a9953a36846c8fc5719551fe14b574a
 verification:
     assurance_level: B
-    formalization_status: none
+    formalization_status: valid
     review:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-02T05:02:45Z"
-        comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
-        fingerprint: sha256:38e10238a0212646c00d21682a2cc4bf57cbb5768433d80b65dc359e7e7a4315
+        reviewed_at: "2026-06-02T14:19:01Z"
+        comment: 'Phase L3 aggressive: flip remaining decision-bearing SW reqs to FRETish per L3 plan; vars added per-component; MC/DC witnesses to be annotated in tests.'
+        fingerprint: sha256:4bfbe9cb1f5a4509997c0e93850d16fbc612d92c97f76d933f0ed90967164c3b
         ai_generated: false
     impact_reviews:
         - requirement: SW-REQ-004
           artifact: main.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Phase J: req_type field flipped derived to guarantee per probelabs/reqproof#88 (category error fix). Production .go files were not modified for this change; only req YAML metadata. Re-recording no-authored-change impact.'
+          reason: 'Phase L3 aggressive: FRETish formalization added per L3 plan; production .go behaviour and code paths unchanged — only requirement metadata (fretish text + formalization_strategy + variables) altered. Test annotations may follow but do not change runtime behaviour.'
           base: origin/master
-          requirement_fingerprint: sha256:3d3327042ed9f3936b2f27b200b8c1ba8fca18a9e8fb2ada2f0f13e1972e3606
-          approval_fingerprint: sha256:38e10238a0212646c00d21682a2cc4bf57cbb5768433d80b65dc359e7e7a4315
+          requirement_fingerprint: sha256:cd339de505466c52193f062f0a5e4caa4a9953a36846c8fc5719551fe14b574a
+          approval_fingerprint: sha256:4bfbe9cb1f5a4509997c0e93850d16fbc612d92c97f76d933f0ed90967164c3b
           artifact_fingerprint: sha256:4b683cd5715feffd7356231f04999400c4067164b6d478c53513559c0459a7cf
-          reviewed_at: "2026-06-02T05:13:05Z"
+          reviewed_at: "2026-06-02T14:30:20Z"
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:13Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-02T05:02:46Z"
+    last_modified_at: "2026-06-02T14:19:01Z"
 obligation_checklist:
     - error_handling
 lifecycle:
@@ -62,4 +62,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-05-30T07:43:08Z comment="Software-component design reviewed as part of feat/reqproof-coverage PR; each maps to verified code paths per the Phase 0 file-by-file verification (see PR description for code-verified corrections SW-016/017/023/027/028/033).")'
+          changed_by: human:cli
+        - date: "2026-06-02T14:19:01Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T05:02:45Z comment="Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.")'
           changed_by: human:cli

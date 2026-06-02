@@ -1,0 +1,10 @@
+component: pumps-http-moesif
+variables:
+    - name: sampling_percentage_pct_gt_random
+      type: bool
+      direction: input
+      description: True when the operator-configured SamplingPercentage exceeds a uniform[0,100) draw for the current record (per-record sample admission).
+    - name: record_submitted
+      type: bool
+      direction: output
+      description: True iff the Moesif EventModel for the current record is queued for submission (PostEvents/AddEvent).

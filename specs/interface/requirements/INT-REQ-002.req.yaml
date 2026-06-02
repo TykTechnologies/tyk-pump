@@ -4,9 +4,9 @@ status: approved
 priority: shall
 category: functional
 req_type: guarantee
-fretish: ""
+fretish: when gateway_emits_uptime gateway_pump shall always satisfy record_at_tyk_uptime_analytics
 description: The gateway shall publish uptime report data into the temporal store under the tyk-uptime-analytics key; the pump shall consume and forward it to the configured uptime backend, unless uptime purging has been disabled in pump configuration.
-formalization_strategy: informal
+formalization_strategy: fretish
 informal_verification:
     method: ""
     evidence: ""
@@ -19,25 +19,25 @@ variables: []
 traces:
     satisfies:
         - SYS-REQ-014
-    reviewed_at: "2026-06-02T05:03:31.153744Z"
+    reviewed_at: "2026-06-02T14:31:00.604757Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:b9ddcc5768b95a17d92fa562b74dfb6802c96674b3af6f56787bc9d5645b036d
+    reviewed_fingerprint: sha256:2839d541904a6435e852f43ac6dfdf56dbea2cae3bc7bbfb1c875b2ed7e0ff75
 verification:
     assurance_level: B
-    formalization_status: none
+    formalization_status: valid
     review:
         status: approved
         reviewer: human:buger
         role: interface_engineer
-        reviewed_at: "2026-06-02T05:02:48Z"
-        comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
-        fingerprint: sha256:80e8b5daecf895ddc92141712f85afaa4ea811a5bf21a2160239233e3e5514b1
+        reviewed_at: "2026-06-02T14:19:05Z"
+        comment: 'Phase L3 aggressive: flip 8 INT interface contracts to FRETish (positive when-shall-always-satisfy form); per-contract var pairs added in specs/interface/variables/.'
+        fingerprint: sha256:dd59a3cc540586df041a047de02b12b9626ba6f2381aabb94893e33dc6b86be5
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:46Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-02T05:02:48Z"
+    last_modified_at: "2026-06-02T14:19:05Z"
 obligation_checklist:
     - errors_propagated
 release_disposition: ship_with_known_issue
@@ -82,4 +82,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="interface_owner" reviewer="human:buger" at=2026-05-30T10:18:00Z comment="Re-approval after super-strict review: added one-sentence rationales per req; tightened descriptions to pass the 30-word plan floor while preserving the rich detail in the interface.signature/protocol/assumptions/guarantees blocks; fixed INT-007 sharding-key reference (table_sharding, not sharding_table) and INT-008 CSV line-number drift (51 not 55).")'
+          changed_by: human:cli
+        - date: "2026-06-02T14:19:05Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="interface_engineer" reviewer="human:buger" at=2026-06-02T05:02:48Z comment="Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.")'
           changed_by: human:cli

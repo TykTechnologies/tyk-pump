@@ -1,0 +1,10 @@
+component: pumps-http-resurface
+variables:
+    - name: queue_full_and_enabled
+      type: bool
+      direction: input
+      description: True when the Resurface internal goroutine's buffered channel (cap=5) is full AND the pump is in enabled state for the current record.
+    - name: submit_skipped
+      type: bool
+      direction: output
+      description: True iff the current record is dropped (queue overflow) rather than enqueued to the Resurface worker.

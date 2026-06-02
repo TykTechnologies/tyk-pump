@@ -8,3 +8,19 @@ variables:
       type: bool
       direction: output
       description: True iff getIndexNameForRecord routes the record to the MCPIndexName (with -YYYY.MM.DD suffix when RollingIndex is true), otherwise the default IndexName is used.
+    - name: version_eq_3
+      type: bool
+      direction: input
+      description: True when the ES pump configuration's Version field equals "3" (or unset/defaulted to 3).
+    - name: v3_operator_constructed
+      type: bool
+      direction: output
+      description: True iff Init constructs the Elasticsearch3Operator instance when Version==3 (other version arms construct v5/v6/v7 operator respectively; KI mcp-routing-non-bulk-ignored and KI pumps-logfatal-on-config-decode document the structural arms for unsupported Version).
+    - name: disable_bulk
+      type: bool
+      direction: input
+      description: True when the ES pump's DisableBulk config is true (forces per-record indexing instead of BulkProcessor).
+    - name: per_record_indexed_else_bulk_processor
+      type: bool
+      direction: output
+      description: True iff WriteData indexes each record one-by-one (Index call per record) when DisableBulk is true, otherwise BulkProcessor is used with operator-supplied workers/flushInterval/bulkActions/bulkSize.
