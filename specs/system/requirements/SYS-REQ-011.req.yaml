@@ -3,7 +3,7 @@ version: 1
 status: approved
 priority: shall
 category: functional
-req_type: derived
+req_type: guarantee
 fretish: when decode_enabled privacy shall always satisfy payload_decoded
 description: The pump shall, when the operator enables payload decoding for a backend, base64-decode the raw request and response payloads before forwarding.
 formalization_strategy: fretish
@@ -19,9 +19,9 @@ variables: []
 traces:
     satisfies:
         - STK-REQ-003
-    reviewed_at: "2026-05-30T07:45:52.413491Z"
+    reviewed_at: "2026-06-02T05:03:38.290389Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:00a7118c3640107c2bd1e7b82c34d47df619e0a0bc1bac01d0e819fb10c3070c
+    reviewed_fingerprint: sha256:704b762e7154ad8af8c692f98cc6fcc808c3c73f84b25c90a8c7d23761772234
 verification:
     assurance_level: B
     formalization_status: valid
@@ -29,15 +29,15 @@ verification:
         status: approved
         reviewer: human:buger
         role: system_engineer
-        reviewed_at: "2026-05-30T10:36:05Z"
-        comment: 'Phase 0.7 review: applied SYS review findings — obligation class re-aligned (SYS-011→nominal, SYS-013→error_handling, SYS-019→atomicity), req_type guarantee→derived for SYS-018..023, SYS-024 rationale honest about go.mod toolchain, SYS-032 narrowed to pure assumption, SYS-034 added for GeoIP short-circuit guarantee. SW children re-linked.'
-        fingerprint: sha256:3c7475c08d67e5f27e328462eafdaf0dcfffedfd6d485b82c488d991bc034f51
+        reviewed_at: "2026-06-02T05:02:36Z"
+        comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
+        fingerprint: sha256:c7fdfa9a462a4a60eac41054e8899091726d6280ceeef5ef4daa968a758d8608
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:11:41Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-30T10:36:05Z"
+    last_modified_at: "2026-06-02T05:02:36Z"
 obligation_class: nominal
 lifecycle:
     change_history:
@@ -50,4 +50,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="system_engineer" reviewer="human:buger" at=2026-05-30T07:43:08Z comment="System-level behavior reviewed as part of feat/reqproof-coverage PR; FRETish + obligation + satisfies linkage verified against tyk-pump architecture and code in Phase 0 code-verification pass.")'
+          changed_by: human:cli
+        - date: "2026-06-02T05:02:36Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="system_engineer" reviewer="human:buger" at=2026-05-30T10:36:05Z comment="Phase 0.7 review: applied SYS review findings — obligation class re-aligned (SYS-011→nominal, SYS-013→error_handling, SYS-019→atomicity), req_type guarantee→derived for SYS-018..023, SYS-024 rationale honest about go.mod toolchain, SYS-032 narrowed to pure assumption, SYS-034 added for GeoIP short-circuit guarantee. SW children re-linked.")'
           changed_by: human:cli

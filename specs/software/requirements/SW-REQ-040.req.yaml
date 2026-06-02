@@ -3,7 +3,7 @@ version: 1
 status: approved
 priority: shall
 category: functional
-req_type: derived
+req_type: guarantee
 fretish: ""
 description: The standard SQL pump shall, on each purge, drop MCP-classified analytics records, then if TableSharding is true split the remaining records on each YYYYMMDD timestamp boundary and route each day-slice to a tyk_analytics_<YYYYMMDD> table (auto-created and indexed via ensureTable/ensureIndex), otherwise route all records to the default tyk_analytics table; within each table it shall issue parameter-bound batched inserts of BatchSize records (default 1000) using gorm.Create on the request context. Postgres uses a custom monthEncodePlan AfterConnect to encode time.Month as int8 (TT-16980). Writes log per-batch errors but do not propagate them upward.
 formalization_strategy: informal
@@ -19,9 +19,9 @@ variables: []
 traces:
     satisfies:
         - SYS-REQ-004
-    reviewed_at: "2026-05-30T08:45:50.475627Z"
+    reviewed_at: "2026-06-02T05:03:35.814946Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:3bc21a3a119d8cb9c42c62553e7173da08dd83683a8445b38ba6bd6215ec1ee3
+    reviewed_fingerprint: sha256:49341cdb1b5ce7d822b9101c508fbc432a5fc40950dfbb8f845bb8aa997f950a
 verification:
     assurance_level: B
     formalization_status: none
@@ -29,26 +29,26 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-05-31T08:52:45Z"
-        comment: 'Phase D: SW-040 obligation_checklist extended with boundary to cover MigrateShardedTables=false/true boundary tests in pumps/sql_mcdc_test.go (KI sql-default-migration-today-only regression).'
-        fingerprint: sha256:bc9774d210e73850e317586a7017cb520d4362b790d7c7998369f1bd69954968
+        reviewed_at: "2026-06-02T05:02:45Z"
+        comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
+        fingerprint: sha256:b06175e0765855d6911de5a833a810fc254b1549ff24abc81b3809935ef5d2da
         ai_generated: false
     impact_reviews:
         - requirement: SW-REQ-040
           artifact: pumps/sql.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Phase E SQL MC/DC drive (round 2): //mcdc:ignore on dbType-postgres, HasIndex name-mismatch, len(typedData), HasTable arms per KIs mcdc-pumps-below-95 and sql-ensureindex-name-mismatch-prevents-skip'
+          reason: 'Phase J: req_type field flipped derived to guarantee per probelabs/reqproof#88 (category error fix). Production .go files were not modified for this change; only req YAML metadata. Re-recording no-authored-change impact.'
           base: origin/master
-          requirement_fingerprint: sha256:3bc21a3a119d8cb9c42c62553e7173da08dd83683a8445b38ba6bd6215ec1ee3
-          approval_fingerprint: sha256:bc9774d210e73850e317586a7017cb520d4362b790d7c7998369f1bd69954968
+          requirement_fingerprint: sha256:49341cdb1b5ce7d822b9101c508fbc432a5fc40950dfbb8f845bb8aa997f950a
+          approval_fingerprint: sha256:b06175e0765855d6911de5a833a810fc254b1549ff24abc81b3809935ef5d2da
           artifact_fingerprint: sha256:829de65785cdd04edeea4ea3f663143e46b0bcdf0412fcadd52f1fbef24383a3
-          reviewed_at: "2026-05-31T16:17:43Z"
+          reviewed_at: "2026-06-02T05:13:05Z"
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:35:20Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-01T19:11:45Z"
+    last_modified_at: "2026-06-02T05:02:46Z"
 obligation_checklist:
     - boundary
     - concurrent
@@ -92,4 +92,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-05-30T08:44:11Z comment="Phase A per-implementation/per-significant-behavior decomposition; descriptions code-verified against the named files per docs/phase-a-proposed-reqs.md. Pump-family family-level reqs are retained as superseded anchor reqs.")'
+          changed_by: human:cli
+        - date: "2026-06-02T05:02:45Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-05-31T08:52:45Z comment="Phase D: SW-040 obligation_checklist extended with boundary to cover MigrateShardedTables=false/true boundary tests in pumps/sql_mcdc_test.go (KI sql-default-migration-today-only regression).")'
           changed_by: human:cli

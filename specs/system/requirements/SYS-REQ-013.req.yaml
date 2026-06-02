@@ -3,7 +3,7 @@ version: 1
 status: approved
 priority: shall
 category: functional
-req_type: derived
+req_type: guarantee
 fretish: when instrumentation_enabled observability shall eventually satisfy metrics_emitted
 description: When instrumentation is enabled, the pump shall emit purge-timing and record-count metrics to the configured metrics sink.
 formalization_strategy: fretish
@@ -19,9 +19,9 @@ variables: []
 traces:
     satisfies:
         - STK-REQ-004
-    reviewed_at: "2026-05-30T07:45:52.417426Z"
+    reviewed_at: "2026-06-02T05:03:38.314425Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:0238276fccde2d8829c1472f5964e928e69cf76482912e927b928215ca4cc119
+    reviewed_fingerprint: sha256:aeaa9d7ce7a871de57a783a397472f3a4a6ef04c0a181b642689613c17d9675b
 verification:
     assurance_level: B
     formalization_status: valid
@@ -29,17 +29,17 @@ verification:
         status: approved
         reviewer: human:buger
         role: system_engineer
-        reviewed_at: "2026-05-30T10:43:40Z"
-        comment: 'Phase 0.7: SYS-013 obligation aligned to error_handling (instrumentation sink swallows errors without failing the purge loop). Re-approve after Phase 0.7 review applied.'
-        fingerprint: sha256:87849c29aabaa6ea508a969ddd767d54036fff5a8be5961f34144831dce0af40
+        reviewed_at: "2026-06-02T05:02:36Z"
+        comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
+        fingerprint: sha256:88fbee27862205cb88e34eac5196e025a5202cf57badd8e052ff4369b1e35d28
         ai_generated: false
-    gaps_reviewed_at: "2026-05-30T10:53:05.586357Z"
+    gaps_reviewed_at: "2026-06-02T05:05:48.911641Z"
     gaps_reviewed_by: buger
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:11:41Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-30T10:43:40Z"
+    last_modified_at: "2026-06-02T05:02:36Z"
 obligation_class: error_handling
 lifecycle:
     change_history:
@@ -62,4 +62,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="system_engineer" reviewer="human:buger" at=2026-05-30T10:42:19Z comment="Phase 0.7: SYS-013 obligation re-aligned (error_handling class + malformed_input checklist) to honestly capture both correctness paths in config loading; satisfies STK-003 now explicit for malformed_input coverage.")'
+          changed_by: human:cli
+        - date: "2026-06-02T05:02:36Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="system_engineer" reviewer="human:buger" at=2026-05-30T10:43:40Z comment="Phase 0.7: SYS-013 obligation aligned to error_handling (instrumentation sink swallows errors without failing the purge loop). Re-approve after Phase 0.7 review applied.")'
           changed_by: human:cli

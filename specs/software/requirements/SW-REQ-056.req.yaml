@@ -3,7 +3,7 @@ version: 1
 status: approved
 priority: shall
 category: functional
-req_type: derived
+req_type: guarantee
 fretish: ""
 description: The Kinesis pump shall, on each purge, split records into batches of BatchSize (default 100, bounded by AWS's 500-record per-PutRecords limit), JSON-marshal each record into a Kinesis PutRecordsRequestEntry with PartitionKey set to a fresh crypto/rand integer (for even MD5-based shard distribution), and submit each batch via PutRecords to the configured StreamName. When KMSKeyID is configured at Init, the pump shall verify the stream's current encryption mode/key, enable KMS server-side encryption if not already enabled with that key, and fail Init if the stream is already encrypted with a different key.
 formalization_strategy: informal
@@ -19,9 +19,9 @@ variables: []
 traces:
     satisfies:
         - SYS-REQ-004
-    reviewed_at: "2026-05-30T08:45:50.718919Z"
+    reviewed_at: "2026-06-02T05:03:37.314703Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:672db7423b5743274bbe40c4579b3abf387fb1846e6039511826c9ed1f349d72
+    reviewed_fingerprint: sha256:482aabf4d395f6ad7911112b0b47f420b3d15ce35e66b487d1c7fafe106c3024
 verification:
     assurance_level: B
     formalization_status: none
@@ -29,26 +29,26 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-05-30T08:44:11Z"
-        comment: Phase A per-implementation/per-significant-behavior decomposition; descriptions code-verified against the named files per docs/phase-a-proposed-reqs.md. Pump-family family-level reqs are retained as superseded anchor reqs.
-        fingerprint: sha256:e9d4f6045874e926d4ab279e82e3197825a1ab5df1a38e3bb5b9e6d66a5967b1
+        reviewed_at: "2026-06-02T05:02:45Z"
+        comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
+        fingerprint: sha256:1516ebf73ee4b038f00b5df04c9fe170278564cabff8ffc6146dc9d35da98001
         ai_generated: false
     impact_reviews:
         - requirement: SW-REQ-056
           artifact: pumps/kinesis.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Phase E final cleanup: //mcdc:ignore for documented-unreachable branches with KI cross-refs; production behaviour unchanged, only coverage-tool guidance.'
+          reason: 'Phase J: req_type field flipped derived to guarantee per probelabs/reqproof#88 (category error fix). Production .go files were not modified for this change; only req YAML metadata. Re-recording no-authored-change impact.'
           base: origin/master
-          requirement_fingerprint: sha256:672db7423b5743274bbe40c4579b3abf387fb1846e6039511826c9ed1f349d72
-          approval_fingerprint: sha256:e9d4f6045874e926d4ab279e82e3197825a1ab5df1a38e3bb5b9e6d66a5967b1
+          requirement_fingerprint: sha256:482aabf4d395f6ad7911112b0b47f420b3d15ce35e66b487d1c7fafe106c3024
+          approval_fingerprint: sha256:1516ebf73ee4b038f00b5df04c9fe170278564cabff8ffc6146dc9d35da98001
           artifact_fingerprint: sha256:03d0ccb4d2d45c5c72fe96379297167e0f6dcdc6223fd103a455150878de6911
-          reviewed_at: "2026-05-31T20:39:15Z"
+          reviewed_at: "2026-06-02T05:13:05Z"
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:37:04Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-01T19:11:49Z"
+    last_modified_at: "2026-06-02T05:02:46Z"
 obligation_checklist:
     - monotonicity
     - nominal
@@ -81,4 +81,9 @@ lifecycle:
           from: draft
           to: review
           reason: ""
+          changed_by: human:cli
+        - date: "2026-06-02T05:02:45Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-05-30T08:44:11Z comment="Phase A per-implementation/per-significant-behavior decomposition; descriptions code-verified against the named files per docs/phase-a-proposed-reqs.md. Pump-family family-level reqs are retained as superseded anchor reqs.")'
           changed_by: human:cli

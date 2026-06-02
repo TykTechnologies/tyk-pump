@@ -3,7 +3,7 @@ version: 1
 status: approved
 priority: shall
 category: functional
-req_type: derived
+req_type: guarantee
 fretish: ""
 description: The uptime report data model shall carry URL, response code, error flags and timestamp required for availability reporting.
 formalization_strategy: informal
@@ -20,9 +20,9 @@ traces:
     satisfies:
         - SYS-REQ-014
         - SYS-REQ-021
-    reviewed_at: "2026-05-30T10:53:49.755958Z"
+    reviewed_at: "2026-06-02T05:03:33.311431Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:5a15c56c99dffa6c5dbce7289c44a11b36a82b87415871793e50d402f182986d
+    reviewed_fingerprint: sha256:6409890eeea986a1cad2c8360d25c95292e98adfa718387df23e3d49bf02d595
 verification:
     assurance_level: B
     formalization_status: none
@@ -30,26 +30,26 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-05-30T10:36:05Z"
-        comment: 'Phase 0.7 review: applied SW review findings (description honesty for SW-006/007/008/016/031, obligation downgrades for SW-006/023/035/064, SW-007 retargeting, new SW-071 for GeoIP split) and SYS-side trace extensions (SW-001/002/007/011/015 now satisfy Phase 0.6-split SYS reqs); content factual against current code.'
-        fingerprint: sha256:38efd094fd0fa4615dc00d1d9cd1657141c7237c9b0c224da46e447ab1b4ceb6
+        reviewed_at: "2026-06-02T05:02:45Z"
+        comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
+        fingerprint: sha256:ea9cda7d3a3f22a915798e115a8794f339f65ca2e895171e8755133427c5131a
         ai_generated: false
     impact_reviews:
         - requirement: SW-REQ-015
           artifact: analytics/uptime_data.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'MC/DC //mcdc:ignore annotations added on uptime_data.go:86 (RequestTime always zero in locally-built struct, KI uptime-onconflict-request-time-is-zero-unreachable) and :256 (strconv.Itoa is total, KI uptime-aggregate-erasstr-itoa-always-nonempty); production behaviour unchanged'
+          reason: 'Phase J: req_type field flipped derived to guarantee per probelabs/reqproof#88 (category error fix). Production .go files were not modified for this change; only req YAML metadata. Re-recording no-authored-change impact.'
           base: origin/master
-          requirement_fingerprint: sha256:5a15c56c99dffa6c5dbce7289c44a11b36a82b87415871793e50d402f182986d
-          approval_fingerprint: sha256:38efd094fd0fa4615dc00d1d9cd1657141c7237c9b0c224da46e447ab1b4ceb6
+          requirement_fingerprint: sha256:6409890eeea986a1cad2c8360d25c95292e98adfa718387df23e3d49bf02d595
+          approval_fingerprint: sha256:ea9cda7d3a3f22a915798e115a8794f339f65ca2e895171e8755133427c5131a
           artifact_fingerprint: sha256:ead0777f032e56e0b5e587e0dc9f3d16e41de746ee807fcb937d9faa2c8fb17a
-          reviewed_at: "2026-05-31T10:24:09Z"
+          reviewed_at: "2026-06-02T05:13:05Z"
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:15Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-30T10:36:05Z"
+    last_modified_at: "2026-06-02T05:02:46Z"
 obligation_checklist:
     - nominal
 lifecycle:
@@ -63,4 +63,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-05-30T07:43:08Z comment="Software-component design reviewed as part of feat/reqproof-coverage PR; each maps to verified code paths per the Phase 0 file-by-file verification (see PR description for code-verified corrections SW-016/017/023/027/028/033).")'
+          changed_by: human:cli
+        - date: "2026-06-02T05:02:45Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-05-30T10:36:05Z comment="Phase 0.7 review: applied SW review findings (description honesty for SW-006/007/008/016/031, obligation downgrades for SW-006/023/035/064, SW-007 retargeting, new SW-071 for GeoIP split) and SYS-side trace extensions (SW-001/002/007/011/015 now satisfy Phase 0.6-split SYS reqs); content factual against current code.")'
           changed_by: human:cli

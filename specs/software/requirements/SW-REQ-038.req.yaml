@@ -3,7 +3,7 @@ version: 1
 status: approved
 priority: shall
 category: functional
-req_type: derived
+req_type: guarantee
 fretish: ""
 description: The MCP MongoDB pump shall, on each purge, retain only AnalyticsRecords for which IsMCPRecord() is true, accumulate them into size-bounded batches via the embedded MongoPump.AccumulateSet, convert each batch to MCPRecord instances with fresh ObjectIDs, and concurrently insert each batch into the single configured MCP collection; the first per-batch insert error shall be returned to the caller, and 'closed explicitly' errors shall be reported as a connection failure warning.
 formalization_strategy: informal
@@ -19,9 +19,9 @@ variables: []
 traces:
     satisfies:
         - SYS-REQ-004
-    reviewed_at: "2026-05-30T08:45:50.445074Z"
+    reviewed_at: "2026-06-02T05:03:35.627741Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:28cfcf23c6e7dc3f4595cee1454594d8d418fe9b5509a5d3e67cc5687aa1edd1
+    reviewed_fingerprint: sha256:e5ece72f60238484fe3bd77891c538485cd0e441a8b6306d39d2853b9d0d56a5
 verification:
     assurance_level: B
     formalization_status: none
@@ -29,26 +29,26 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-05-31T19:21:32Z"
-        comment: 'Phase E5: extend SW-REQ-038 checklist with nominal for explicit-batch-size config test'
-        fingerprint: sha256:96f1ec5b2c9053156c814cb93c6f0c3859f0caece70a7be17e1ab999a465374a
+        reviewed_at: "2026-06-02T05:02:45Z"
+        comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
+        fingerprint: sha256:2e03f822adf7a3d5f17db8aa7e5ba7a30a0d407911d91129c820e9923daeb783
         ai_generated: false
     impact_reviews:
         - requirement: SW-REQ-038
           artifact: pumps/mcp_mongo.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Phase E mongo MC/DC drive: //mcdc:ignore for documented-unreachable branches'
+          reason: 'Phase J: req_type field flipped derived to guarantee per probelabs/reqproof#88 (category error fix). Production .go files were not modified for this change; only req YAML metadata. Re-recording no-authored-change impact.'
           base: origin/master
-          requirement_fingerprint: sha256:28cfcf23c6e7dc3f4595cee1454594d8d418fe9b5509a5d3e67cc5687aa1edd1
-          approval_fingerprint: sha256:96f1ec5b2c9053156c814cb93c6f0c3859f0caece70a7be17e1ab999a465374a
+          requirement_fingerprint: sha256:e5ece72f60238484fe3bd77891c538485cd0e441a8b6306d39d2853b9d0d56a5
+          approval_fingerprint: sha256:2e03f822adf7a3d5f17db8aa7e5ba7a30a0d407911d91129c820e9923daeb783
           artifact_fingerprint: sha256:2f2c4e6adae967675d60beb12d69831c675cebde2676742d717aa193d171a5e3
-          reviewed_at: "2026-05-31T18:55:35Z"
+          reviewed_at: "2026-06-02T05:13:05Z"
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:35:01Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-01T19:11:45Z"
+    last_modified_at: "2026-06-02T05:02:46Z"
 obligation_checklist:
     - concurrent
     - errors_propagated
@@ -84,4 +84,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-05-31T11:27:45Z comment="Phase E: SW-REQ-038 checklist extended with errors_propagated to cover mongo pump container-stop / bad-env error-propagation tests in pumps/mongo_mcdc_100_test.go.")'
+          changed_by: human:cli
+        - date: "2026-06-02T05:02:45Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-05-31T19:21:32Z comment="Phase E5: extend SW-REQ-038 checklist with nominal for explicit-batch-size config test")'
           changed_by: human:cli

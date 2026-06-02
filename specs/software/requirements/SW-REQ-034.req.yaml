@@ -3,7 +3,7 @@ version: 1
 status: approved
 priority: shall
 category: functional
-req_type: derived
+req_type: guarantee
 fretish: ""
 description: 'The standard MongoDB pump shall, on each purge, filter out MCP-classified analytics records, accumulate the remaining records into batches bounded by MaxInsertBatchSizeBytes (default 10 MiB) while rewriting raw bodies of documents whose serialized size exceeds MaxDocumentSizeBytes, then concurrently insert each batch into the single configured collection, returning the first per-batch insert error to the caller; when CollectionCapEnable is true on a 64-bit host with a non-existing collection, it shall create the collection as a capped collection of CollectionCapMaxSizeBytes (default 5 GiB). Known issues affecting this requirement: mongo-pump-ignores-caller-context (ctx propagation gap; see SW-REQ-072) and pumps-logfatal-on-config-decode (log.Fatalf on config decode error).'
 formalization_strategy: informal
@@ -19,9 +19,9 @@ variables: []
 traces:
     satisfies:
         - SYS-REQ-004
-    reviewed_at: "2026-05-30T08:45:50.383542Z"
+    reviewed_at: "2026-06-02T05:03:35.04307Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:398eeff57265e3dbe1239b4cbacfd3a3673d3d5f1d64ba8bb8eece681f191fee
+    reviewed_fingerprint: sha256:4b6c0d8f5ed27e616fac78a43a06c2a0b2f0fd01e5623ffad5247c69bb8a5484
 verification:
     assurance_level: B
     formalization_status: none
@@ -29,26 +29,26 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-01T20:52:58Z"
-        comment: 'Phase I: added cross-refs to KIs mongo-pump-ignores-caller-context and pumps-logfatal-on-config-decode in description.'
-        fingerprint: sha256:2b3ad53e73c3a329b7c6a43a56a29b69130f0b0c0955232d4df66ac9c77d8b52
+        reviewed_at: "2026-06-02T05:02:45Z"
+        comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
+        fingerprint: sha256:8e397aa2f8ace40a01e3bcc62c667d95e3ebe293fc3ce69b9f42ca272989748b
         ai_generated: false
     impact_reviews:
         - requirement: SW-REQ-034
           artifact: pumps/mongo.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Phase E5 mongo MC/DC drive: //mcdc:ignore annotations added for documented-unreachable branches (5 second-call-err-arms, 2 log.Fatal err==nil guards, 1 closed-explicitly sentinel, 1 capCollection Migrate-err arm, 1 selfHeal arm + downstream newErr arm) — KIs mcdc-pumps-below-95 and pumps-logfatal-on-config-decode'
+          reason: 'Phase J: req_type field flipped derived to guarantee per probelabs/reqproof#88 (category error fix). Production .go files were not modified for this change; only req YAML metadata. Re-recording no-authored-change impact.'
           base: origin/master
-          requirement_fingerprint: sha256:398eeff57265e3dbe1239b4cbacfd3a3673d3d5f1d64ba8bb8eece681f191fee
-          approval_fingerprint: sha256:7454bbd25af7c5251fe99d9a38fa28e53dd09aedcad324fd45b85eac924b4448
+          requirement_fingerprint: sha256:4b6c0d8f5ed27e616fac78a43a06c2a0b2f0fd01e5623ffad5247c69bb8a5484
+          approval_fingerprint: sha256:8e397aa2f8ace40a01e3bcc62c667d95e3ebe293fc3ce69b9f42ca272989748b
           artifact_fingerprint: sha256:e19a13d34f72969e26f9fe4183283061067371d1a60238e3f8c4ccb65669020e
-          reviewed_at: "2026-05-31T19:21:44Z"
+          reviewed_at: "2026-06-02T05:13:05Z"
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:33:59Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-01T20:52:58Z"
+    last_modified_at: "2026-06-02T05:02:46Z"
 obligation_checklist:
     - boundary
     - concurrent
@@ -119,4 +119,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-05-31T11:28:58Z comment="Phase E: SW-034 +nominal for mongo happy-path tests.")'
+          changed_by: human:cli
+        - date: "2026-06-02T05:02:45Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-01T20:52:58Z comment="Phase I: added cross-refs to KIs mongo-pump-ignores-caller-context and pumps-logfatal-on-config-decode in description.")'
           changed_by: human:cli

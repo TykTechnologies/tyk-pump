@@ -3,7 +3,7 @@ version: 1
 status: approved
 priority: shall
 category: functional
-req_type: derived
+req_type: guarantee
 fretish: when aggregation_enabled aggregation shall always satisfy records_grouped_by_dimension
 description: When aggregation is enabled, the pump shall group aggregated counters per organisation and per API dimension.
 formalization_strategy: fretish
@@ -19,9 +19,9 @@ variables: []
 traces:
     satisfies:
         - STK-REQ-001
-    reviewed_at: "2026-05-30T10:53:50.013626Z"
+    reviewed_at: "2026-06-02T05:03:38.40042Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:98b4338692dcf47455343f254e5fdedc7eca61038536f8c5dd4a74b8993fb680
+    reviewed_fingerprint: sha256:31027c59a07e78c7ca106169f2954308de634dec4189c6ea523420924d19dd9f
 verification:
     assurance_level: B
     formalization_status: valid
@@ -29,15 +29,15 @@ verification:
         status: approved
         reviewer: human:buger
         role: system_engineer
-        reviewed_at: "2026-05-30T10:36:05Z"
-        comment: 'Phase 0.7 review: applied SYS review findings — obligation class re-aligned (SYS-011→nominal, SYS-013→error_handling, SYS-019→atomicity), req_type guarantee→derived for SYS-018..023, SYS-024 rationale honest about go.mod toolchain, SYS-032 narrowed to pure assumption, SYS-034 added for GeoIP short-circuit guarantee. SW children re-linked.'
-        fingerprint: sha256:826e12baedc68fdd49fafa5d7e88941cfc0cfd0f3a39acaf3c9c87aa5758cd8a
+        reviewed_at: "2026-06-02T05:02:36Z"
+        comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
+        fingerprint: sha256:f13a624d66ea509788d84a043adc3a89b013bc942b00dc64172a79d51478dc82
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-30T07:52:52Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-30T10:36:05Z"
+    last_modified_at: "2026-06-02T05:02:36Z"
 obligation_class: nominal
 lifecycle:
     change_history:
@@ -50,4 +50,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="system_engineer" reviewer="human:buger" at=2026-05-30T07:55:47Z comment="New SYS reqs from Phase 0.6 split of SYS-003 (dimensions+counters) and SYS-001 (fan-out); each is code-verified: dimensions/counters realised in analytics/aggregate.go incrementAggregate+incrementOrSetUnit, fan-out realised in main.writeToPumps goroutine-per-pump.")'
+          changed_by: human:cli
+        - date: "2026-06-02T05:02:36Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="system_engineer" reviewer="human:buger" at=2026-05-30T10:36:05Z comment="Phase 0.7 review: applied SYS review findings — obligation class re-aligned (SYS-011→nominal, SYS-013→error_handling, SYS-019→atomicity), req_type guarantee→derived for SYS-018..023, SYS-024 rationale honest about go.mod toolchain, SYS-032 narrowed to pure assumption, SYS-034 added for GeoIP short-circuit guarantee. SW children re-linked.")'
           changed_by: human:cli

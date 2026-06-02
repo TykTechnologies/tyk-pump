@@ -3,7 +3,7 @@ version: 1
 status: approved
 priority: shall
 category: functional
-req_type: derived
+req_type: guarantee
 fretish: when record_exceeds_max_size privacy shall always satisfy record_truncated
 description: The pump shall truncate any record whose serialized size exceeds the configured maximum size before forwarding.
 formalization_strategy: fretish
@@ -19,9 +19,9 @@ variables: []
 traces:
     satisfies:
         - STK-REQ-003
-    reviewed_at: "2026-05-30T07:45:52.411495Z"
+    reviewed_at: "2026-06-02T05:03:38.278422Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:08b1c215ebda7aa550c69f4e89adfcbc802c86a3125fe351b5b5903afd2edd1d
+    reviewed_fingerprint: sha256:a84e125e6138cb60dfdbccd61a0c4db3406a7f355fdb85ae817932d346dc2486
 verification:
     assurance_level: B
     formalization_status: valid
@@ -29,17 +29,17 @@ verification:
         status: approved
         reviewer: human:buger
         role: system_engineer
-        reviewed_at: "2026-05-30T07:43:08Z"
-        comment: System-level behavior reviewed as part of feat/reqproof-coverage PR; FRETish + obligation + satisfies linkage verified against tyk-pump architecture and code in Phase 0 code-verification pass.
-        fingerprint: sha256:3840920c7c53450e3a1f9a4ca759f8809e69c880653e553dee83887b9fe884b9
+        reviewed_at: "2026-06-02T05:02:36Z"
+        comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
+        fingerprint: sha256:a2ceb9d41afc5e87bfabab64cd2116cd1e5b0f3b09d2b95fe46ec56ba62e75cc
         ai_generated: false
-    gaps_reviewed_at: "2026-05-30T08:46:07.194057Z"
+    gaps_reviewed_at: "2026-06-02T05:05:48.911641Z"
     gaps_reviewed_by: buger
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:11:41Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-30T07:43:08Z"
+    last_modified_at: "2026-06-02T05:02:36Z"
 obligation_class: boundary
 lifecycle:
     change_history:
@@ -47,4 +47,9 @@ lifecycle:
           from: draft
           to: review
           reason: ""
+          changed_by: human:cli
+        - date: "2026-06-02T05:02:36Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="system_engineer" reviewer="human:buger" at=2026-05-30T07:43:08Z comment="System-level behavior reviewed as part of feat/reqproof-coverage PR; FRETish + obligation + satisfies linkage verified against tyk-pump architecture and code in Phase 0 code-verification pass.")'
           changed_by: human:cli

@@ -3,7 +3,7 @@ version: 1
 status: approved
 priority: shall
 category: functional
-req_type: derived
+req_type: guarantee
 fretish: ""
 description: The SQL pump schema (day-sharded analytics tables and aggregate tables) shall be migratable while older pump versions still write to it, following an expand-then-contract policy on every column rename or removal.
 formalization_strategy: informal
@@ -19,9 +19,9 @@ variables: []
 traces:
     satisfies:
         - SYS-REQ-003
-    reviewed_at: "2026-05-30T10:18:01.429153Z"
+    reviewed_at: "2026-06-02T05:03:31.504085Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:673e202908a96bbc9026fe1cf397b8012c29511f04897b70c98bc9a2e97705e0
+    reviewed_fingerprint: sha256:f531ce523cf853064e53e8054b45006953c5bb492a051e28926261d93dace76f
 verification:
     assurance_level: B
     formalization_status: none
@@ -29,15 +29,15 @@ verification:
         status: approved
         reviewer: human:buger
         role: interface_engineer
-        reviewed_at: "2026-06-01T20:13:14Z"
-        comment: 'Phase I: explicit SWKI disposition added to match affixed KIs (gate-tightening readiness).'
-        fingerprint: sha256:b0d68d5e3174128c7d3676ba0ce12e1f6b38803d93369c38a4e55dbb39627bbd
+        reviewed_at: "2026-06-02T05:02:48Z"
+        comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
+        fingerprint: sha256:26894fab780f23c134f54e2c40825c7be68f931f92825c0fffe34fe7a3f3e884
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:46Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-01T20:13:14Z"
+    last_modified_at: "2026-06-02T05:02:48Z"
 obligation_checklist:
     - forward_compatible
 release_disposition: ship_with_known_issue
@@ -82,4 +82,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="interface_owner" reviewer="human:buger" at=2026-05-30T10:18:00Z comment="Re-approval after super-strict review: added one-sentence rationales per req; tightened descriptions to pass the 30-word plan floor while preserving the rich detail in the interface.signature/protocol/assumptions/guarantees blocks; fixed INT-007 sharding-key reference (table_sharding, not sharding_table) and INT-008 CSV line-number drift (51 not 55).")'
+          changed_by: human:cli
+        - date: "2026-06-02T05:02:48Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="interface_engineer" reviewer="human:buger" at=2026-06-01T20:13:14Z comment="Phase I: explicit SWKI disposition added to match affixed KIs (gate-tightening readiness).")'
           changed_by: human:cli

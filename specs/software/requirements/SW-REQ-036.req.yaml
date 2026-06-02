@@ -3,7 +3,7 @@ version: 1
 status: approved
 priority: shall
 category: functional
-req_type: derived
+req_type: guarantee
 fretish: ""
 description: The MongoAggregate pump shall aggregate non-MCP analytics records into per-organisation aggregate documents and upsert them into MongoDB; the substantive behaviors (windowing, sharding, $inc semantics, tag bounding, self-healing, index ensure) are decomposed into the six mongo-aggregate sub-reqs below.
 formalization_strategy: informal
@@ -19,9 +19,9 @@ variables: []
 traces:
     satisfies:
         - SYS-REQ-003
-    reviewed_at: "2026-05-30T08:45:50.413831Z"
+    reviewed_at: "2026-06-02T05:03:35.347578Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:f1b50f150e979da29450653dae54165dde484b5f7d728b7b63998ca0195bb450
+    reviewed_fingerprint: sha256:2d2ca912493cf57dbb943df5f9a9f01efd2dbdffb80a37be7fbd1676bc885b86
 verification:
     assurance_level: B
     formalization_status: none
@@ -29,26 +29,26 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-05-31T11:27:47Z"
-        comment: 'Phase E: SW-036 checklist normalised to [nominal,errors_propagated].'
-        fingerprint: sha256:865fea411dd0f2003cac8bc2f5616f184dc4a86564d657f43f41bd947c75a66e
+        reviewed_at: "2026-06-02T05:02:45Z"
+        comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
+        fingerprint: sha256:cd9054202bb57521328cc38649a003a66d97a4b40078e4a2e38da409a4d9e944
         ai_generated: false
     impact_reviews:
         - requirement: SW-REQ-036
           artifact: pumps/mongo_aggregate.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Phase E5 mongo MC/DC drive: //mcdc:ignore annotations added for documented-unreachable branches (5 second-call-err-arms, 2 log.Fatal err==nil guards, 1 closed-explicitly sentinel, 1 capCollection Migrate-err arm, 1 selfHeal arm + downstream newErr arm) — KIs mcdc-pumps-below-95 and pumps-logfatal-on-config-decode'
+          reason: 'Phase J: req_type field flipped derived to guarantee per probelabs/reqproof#88 (category error fix). Production .go files were not modified for this change; only req YAML metadata. Re-recording no-authored-change impact.'
           base: origin/master
-          requirement_fingerprint: sha256:f1b50f150e979da29450653dae54165dde484b5f7d728b7b63998ca0195bb450
-          approval_fingerprint: sha256:865fea411dd0f2003cac8bc2f5616f184dc4a86564d657f43f41bd947c75a66e
+          requirement_fingerprint: sha256:2d2ca912493cf57dbb943df5f9a9f01efd2dbdffb80a37be7fbd1676bc885b86
+          approval_fingerprint: sha256:cd9054202bb57521328cc38649a003a66d97a4b40078e4a2e38da409a4d9e944
           artifact_fingerprint: sha256:dbad5d36c1f182c7c46b96b648d01065563938e23243987ed06b1f8dc02d6171
-          reviewed_at: "2026-05-31T19:21:45Z"
+          reviewed_at: "2026-06-02T05:13:05Z"
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:34:49Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-01T19:11:44Z"
+    last_modified_at: "2026-06-02T05:02:46Z"
 obligation_checklist:
     - errors_propagated
     - nominal
@@ -92,4 +92,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-05-31T11:27:44Z comment="Phase E: SW-REQ-036 checklist extended with errors_propagated to cover mongo pump container-stop / bad-env error-propagation tests in pumps/mongo_mcdc_100_test.go.")'
+          changed_by: human:cli
+        - date: "2026-06-02T05:02:45Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-05-31T11:27:47Z comment="Phase E: SW-036 checklist normalised to [nominal,errors_propagated].")'
           changed_by: human:cli

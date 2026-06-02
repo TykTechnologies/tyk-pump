@@ -3,7 +3,7 @@ version: 1
 status: approved
 priority: shall
 category: functional
-req_type: derived
+req_type: guarantee
 fretish: ""
 description: MCP record extraction shall capture JSON-RPC method, primitive type and primitive name from MCP analytics records.
 formalization_strategy: informal
@@ -19,9 +19,9 @@ variables: []
 traces:
     satisfies:
         - SYS-REQ-002
-    reviewed_at: "2026-05-30T07:45:50.839249Z"
+    reviewed_at: "2026-06-02T05:03:33.22545Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:0980a943d80c45966d144071df21fd78c646b3c7f9667dbd2cec35a0e8bfed59
+    reviewed_fingerprint: sha256:b30897bd1cfb8588dccc2658a35bbfb14a3ad0c9d99e06736c8fa45365cbe72b
 verification:
     assurance_level: B
     formalization_status: none
@@ -29,26 +29,26 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-05-30T07:43:08Z"
-        comment: Software-component design reviewed as part of feat/reqproof-coverage PR; each maps to verified code paths per the Phase 0 file-by-file verification (see PR description for code-verified corrections SW-016/017/023/027/028/033).
-        fingerprint: sha256:7f6c3547c0bfa028719468e6450689fa60310a972e5306a003375c0098a0b4be
+        reviewed_at: "2026-06-02T05:02:45Z"
+        comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
+        fingerprint: sha256:70e5cc4c2adc11ecc25518bd4accf6e3d6d74724117ed84ff3bcc29524083526
         ai_generated: false
     impact_reviews:
         - requirement: SW-REQ-014
           artifact: analytics/mcp_record.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Production files added reqproof requirement-traceability annotations only (// reqproof:implements / // Verifies: / triple-form evidence). No runtime behavior change.'
+          reason: 'Phase J: req_type field flipped derived to guarantee per probelabs/reqproof#88 (category error fix). Production .go files were not modified for this change; only req YAML metadata. Re-recording no-authored-change impact.'
           base: origin/master
-          requirement_fingerprint: sha256:0980a943d80c45966d144071df21fd78c646b3c7f9667dbd2cec35a0e8bfed59
-          approval_fingerprint: sha256:7f6c3547c0bfa028719468e6450689fa60310a972e5306a003375c0098a0b4be
+          requirement_fingerprint: sha256:b30897bd1cfb8588dccc2658a35bbfb14a3ad0c9d99e06736c8fa45365cbe72b
+          approval_fingerprint: sha256:70e5cc4c2adc11ecc25518bd4accf6e3d6d74724117ed84ff3bcc29524083526
           artifact_fingerprint: sha256:1e7fb4e1659a948e4a4133b162e407e853727d2ce11bdb2292954bd4e25d3986
-          reviewed_at: "2026-05-30T07:45:41Z"
+          reviewed_at: "2026-06-02T05:13:05Z"
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:15Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-30T07:43:08Z"
+    last_modified_at: "2026-06-02T05:02:46Z"
 obligation_checklist:
     - nominal
 lifecycle:
@@ -57,4 +57,9 @@ lifecycle:
           from: draft
           to: review
           reason: ""
+          changed_by: human:cli
+        - date: "2026-06-02T05:02:45Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-05-30T07:43:08Z comment="Software-component design reviewed as part of feat/reqproof-coverage PR; each maps to verified code paths per the Phase 0 file-by-file verification (see PR description for code-verified corrections SW-016/017/023/027/028/033).")'
           changed_by: human:cli

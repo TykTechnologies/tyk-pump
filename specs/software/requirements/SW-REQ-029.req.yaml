@@ -3,7 +3,7 @@ version: 1
 status: approved
 priority: shall
 category: functional
-req_type: derived
+req_type: guarantee
 fretish: ""
 description: The hybrid pump shall forward records to a remote Tyk RPC/MDCB endpoint.
 formalization_strategy: informal
@@ -19,9 +19,9 @@ variables: []
 traces:
     satisfies:
         - SYS-REQ-004
-    reviewed_at: "2026-05-30T07:45:52.168479Z"
+    reviewed_at: "2026-06-02T05:03:34.428891Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:d754b761f35c6b742978029bea4cbf1f6fe6bec75e314fafb8f555c1453bd00b
+    reviewed_fingerprint: sha256:e301fe7c44796a069375415d6781a3011a0ca62aed47c98bb1046a5dd95b4173
 verification:
     assurance_level: B
     formalization_status: none
@@ -29,26 +29,26 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-05-30T07:43:08Z"
-        comment: Software-component design reviewed as part of feat/reqproof-coverage PR; each maps to verified code paths per the Phase 0 file-by-file verification (see PR description for code-verified corrections SW-016/017/023/027/028/033).
-        fingerprint: sha256:8e335b66c4304a004c0699faf404e04b3d9de907df8893eae36901ac5c1b04cd
+        reviewed_at: "2026-06-02T05:02:45Z"
+        comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
+        fingerprint: sha256:96cf5418a6d6c730f35ca97cd6cf73a482524e35d75ac0031d207723903eafcf
         ai_generated: false
     impact_reviews:
         - requirement: SW-REQ-029
           artifact: pumps/hybrid.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Phase E final cleanup: //mcdc:ignore for documented-unreachable branches with KI cross-refs; production behaviour unchanged, only coverage-tool guidance.'
+          reason: 'Phase J: req_type field flipped derived to guarantee per probelabs/reqproof#88 (category error fix). Production .go files were not modified for this change; only req YAML metadata. Re-recording no-authored-change impact.'
           base: origin/master
-          requirement_fingerprint: sha256:d754b761f35c6b742978029bea4cbf1f6fe6bec75e314fafb8f555c1453bd00b
-          approval_fingerprint: sha256:8e335b66c4304a004c0699faf404e04b3d9de907df8893eae36901ac5c1b04cd
+          requirement_fingerprint: sha256:e301fe7c44796a069375415d6781a3011a0ca62aed47c98bb1046a5dd95b4173
+          approval_fingerprint: sha256:96cf5418a6d6c730f35ca97cd6cf73a482524e35d75ac0031d207723903eafcf
           artifact_fingerprint: sha256:8cc6cd2d50341814886b9bf6c69c93906ee990d5b5e37e166f2d16dc6813f754
-          reviewed_at: "2026-05-31T20:15:25Z"
+          reviewed_at: "2026-06-02T05:13:05Z"
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:16Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-01T19:11:43Z"
+    last_modified_at: "2026-06-02T05:02:46Z"
 obligation_checklist:
     - errors_propagated
 obligation_suppressions:
@@ -68,4 +68,9 @@ lifecycle:
           from: draft
           to: review
           reason: ""
+          changed_by: human:cli
+        - date: "2026-06-02T05:02:45Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-05-30T07:43:08Z comment="Software-component design reviewed as part of feat/reqproof-coverage PR; each maps to verified code paths per the Phase 0 file-by-file verification (see PR description for code-verified corrections SW-016/017/023/027/028/033).")'
           changed_by: human:cli

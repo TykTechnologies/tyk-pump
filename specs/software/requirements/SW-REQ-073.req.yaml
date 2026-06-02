@@ -3,7 +3,7 @@ version: 1
 status: approved
 priority: shall
 category: functional
-req_type: derived
+req_type: guarantee
 fretish: when uptime_data_consumed uptime shall eventually satisfy uptime_forwarded
 description: The uptime-aggregate path (analytics/uptime_data.go AggregateUptimeData + uptime_aggregate_sql/mongo) shall aggregate uptime records into per-URL counters with hits/errors/latency and write the aggregated rows to the uptime-aggregate backend.
 formalization_strategy: fretish
@@ -21,9 +21,9 @@ traces:
         - SYS-REQ-021
     verified_by_extra:
         - analytics/uptime_data_test.go
-    reviewed_at: "2026-06-01T20:50:04.002113Z"
+    reviewed_at: "2026-06-02T05:03:37.912726Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:62e7ad9e6538d0b349a735cbf2ad9f7fe50f005be6abf574e498a165ad72f700
+    reviewed_fingerprint: sha256:4be5c98b444573bc60f7d22ab98412c40428e6156107eb0f95d022b06135c5c3
 verification:
     assurance_level: B
     formalization_status: valid
@@ -31,15 +31,15 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-01T20:48:47Z"
-        comment: 'Phase I: uptime-aggregate path SW req split out of SW-REQ-015; obligations suppressed with KI rationale; docs filed.'
-        fingerprint: sha256:567446e00f31f16c0fec583ab5daeae71853cb97edefa34509c6797933e1d7ed
+        reviewed_at: "2026-06-02T05:02:45Z"
+        comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
+        fingerprint: sha256:68da2243d7ba8b5779fe25e2b270569bedacd797693bb868dcff8b73289ac943
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-06-01T20:46:34Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-01T20:48:47Z"
+    last_modified_at: "2026-06-02T05:02:46Z"
 obligation_checklist:
     - atomicity
     - monotonicity
@@ -84,4 +84,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-01T20:47:52Z comment="Phase I: uptime-aggregate path SW req split out of SW-REQ-015.")'
+          changed_by: human:cli
+        - date: "2026-06-02T05:02:45Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-01T20:48:47Z comment="Phase I: uptime-aggregate path SW req split out of SW-REQ-015; obligations suppressed with KI rationale; docs filed.")'
           changed_by: human:cli

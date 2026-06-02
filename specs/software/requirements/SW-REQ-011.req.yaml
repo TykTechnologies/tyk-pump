@@ -3,7 +3,7 @@ version: 1
 status: approved
 priority: shall
 category: functional
-req_type: derived
+req_type: guarantee
 fretish: ""
 description: Aggregate counters shall accumulate hits, successes, errors and latency such that running totals never decrease as more records are added.
 formalization_strategy: informal
@@ -20,9 +20,9 @@ traces:
     satisfies:
         - SYS-REQ-003
         - SYS-REQ-018
-    reviewed_at: "2026-05-30T10:53:49.413101Z"
+    reviewed_at: "2026-06-02T05:03:32.882795Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:315c62fc6d126295da03ab3fa3759f55fa65b96462c329d5f7671f4bb3ab4538
+    reviewed_fingerprint: sha256:63b0e06dbdc500500237234a50a50b63fb22c70f603405bfd941756c1a8e7b0c
 verification:
     assurance_level: B
     formalization_status: none
@@ -30,26 +30,26 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-05-30T10:36:05Z"
-        comment: 'Phase 0.7 review: applied SW review findings (description honesty for SW-006/007/008/016/031, obligation downgrades for SW-006/023/035/064, SW-007 retargeting, new SW-071 for GeoIP split) and SYS-side trace extensions (SW-001/002/007/011/015 now satisfy Phase 0.6-split SYS reqs); content factual against current code.'
-        fingerprint: sha256:d963dad4006b43b9424a321fbf59f22f89c7def16d260b7417ac9589d7de05ef
+        reviewed_at: "2026-06-02T05:02:45Z"
+        comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
+        fingerprint: sha256:11fcad0e4cb1feb51f652f986e044f6881fa74420e618b5093f6aa443fb54841
         ai_generated: false
     impact_reviews:
         - requirement: SW-REQ-011
           artifact: analytics/aggregate.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'MC/DC //mcdc:ignore annotations added on aggregate.go:871/894/901/925 (string-assertion always-ok, KI aggregate-mcdc-unreachable-string-assertion-ok) and :1072 (map zero-value short-circuit, KI setaggregatetimestamp-mcdc-unreachable-not-ok); production behaviour unchanged'
+          reason: 'Phase J: req_type field flipped derived to guarantee per probelabs/reqproof#88 (category error fix). Production .go files were not modified for this change; only req YAML metadata. Re-recording no-authored-change impact.'
           base: origin/master
-          requirement_fingerprint: sha256:315c62fc6d126295da03ab3fa3759f55fa65b96462c329d5f7671f4bb3ab4538
-          approval_fingerprint: sha256:d963dad4006b43b9424a321fbf59f22f89c7def16d260b7417ac9589d7de05ef
+          requirement_fingerprint: sha256:63b0e06dbdc500500237234a50a50b63fb22c70f603405bfd941756c1a8e7b0c
+          approval_fingerprint: sha256:11fcad0e4cb1feb51f652f986e044f6881fa74420e618b5093f6aa443fb54841
           artifact_fingerprint: sha256:a8e050d53e1a757df1ebb241c45bd18ee4c562cb214ff38678580e92e3a06479
-          reviewed_at: "2026-05-31T10:24:07Z"
+          reviewed_at: "2026-06-02T05:13:05Z"
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:14Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-30T10:36:05Z"
+    last_modified_at: "2026-06-02T05:02:46Z"
 obligation_checklist:
     - idempotency
     - monotonicity
@@ -64,4 +64,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-05-30T07:43:08Z comment="Software-component design reviewed as part of feat/reqproof-coverage PR; each maps to verified code paths per the Phase 0 file-by-file verification (see PR description for code-verified corrections SW-016/017/023/027/028/033).")'
+          changed_by: human:cli
+        - date: "2026-06-02T05:02:45Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-05-30T10:36:05Z comment="Phase 0.7 review: applied SW review findings (description honesty for SW-006/007/008/016/031, obligation downgrades for SW-006/023/035/064, SW-007 retargeting, new SW-071 for GeoIP split) and SYS-side trace extensions (SW-001/002/007/011/015 now satisfy Phase 0.6-split SYS reqs); content factual against current code.")'
           changed_by: human:cli

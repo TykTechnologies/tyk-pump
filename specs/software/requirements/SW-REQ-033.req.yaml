@@ -3,7 +3,7 @@ version: 1
 status: approved
 priority: shall
 category: functional
-req_type: derived
+req_type: guarantee
 fretish: ""
 description: Logger initialisation in package logger shall set the default log level from the TYK_LOGLEVEL environment variable at package init (defaulting to info) and install a fixed text formatter; JSON-configured log_level and log_format overrides are applied at startup by package main.
 formalization_strategy: informal
@@ -19,9 +19,9 @@ variables: []
 traces:
     satisfies:
         - SYS-REQ-008
-    reviewed_at: "2026-05-30T07:45:52.35451Z"
+    reviewed_at: "2026-06-02T05:03:34.937138Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:c097cb86a0a67f9b45004871d74382330b32a9c68806f7366aa1647bccdbbf25
+    reviewed_fingerprint: sha256:46d4557b8b80c22e8c19b51c56b0faa6f6655c8cd4776b1b2a1c8d1148076379
 verification:
     assurance_level: B
     formalization_status: none
@@ -29,26 +29,26 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-05-30T07:43:08Z"
-        comment: Software-component design reviewed as part of feat/reqproof-coverage PR; each maps to verified code paths per the Phase 0 file-by-file verification (see PR description for code-verified corrections SW-016/017/023/027/028/033).
-        fingerprint: sha256:b61e457e7675bcb3349b79e31ea61388c88c80024f62ced61e36063d916c1c60
+        reviewed_at: "2026-06-02T05:02:45Z"
+        comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
+        fingerprint: sha256:a3f1f6df580a06d691029ecf8ee0482a9d7f119dcfa8004dc397275a761eb85c
         ai_generated: false
     impact_reviews:
         - requirement: SW-REQ-033
           artifact: logger/init.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Production files added reqproof requirement-traceability annotations only (// reqproof:implements / // Verifies: / triple-form evidence). No runtime behavior change.'
+          reason: 'Phase J: req_type field flipped derived to guarantee per probelabs/reqproof#88 (category error fix). Production .go files were not modified for this change; only req YAML metadata. Re-recording no-authored-change impact.'
           base: origin/master
-          requirement_fingerprint: sha256:c097cb86a0a67f9b45004871d74382330b32a9c68806f7366aa1647bccdbbf25
-          approval_fingerprint: sha256:b61e457e7675bcb3349b79e31ea61388c88c80024f62ced61e36063d916c1c60
+          requirement_fingerprint: sha256:46d4557b8b80c22e8c19b51c56b0faa6f6655c8cd4776b1b2a1c8d1148076379
+          approval_fingerprint: sha256:a3f1f6df580a06d691029ecf8ee0482a9d7f119dcfa8004dc397275a761eb85c
           artifact_fingerprint: sha256:9d3dd83e337390d18f6763deb950af20441c5d7afdbf09fe5dff89cd363f23d4
-          reviewed_at: "2026-05-30T07:45:45Z"
+          reviewed_at: "2026-06-02T05:13:05Z"
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:17Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-30T07:43:08Z"
+    last_modified_at: "2026-06-02T05:02:46Z"
 obligation_checklist:
     - nominal
 lifecycle:
@@ -57,4 +57,9 @@ lifecycle:
           from: draft
           to: review
           reason: ""
+          changed_by: human:cli
+        - date: "2026-06-02T05:02:45Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-05-30T07:43:08Z comment="Software-component design reviewed as part of feat/reqproof-coverage PR; each maps to verified code paths per the Phase 0 file-by-file verification (see PR description for code-verified corrections SW-016/017/023/027/028/033).")'
           changed_by: human:cli

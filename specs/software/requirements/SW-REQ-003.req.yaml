@@ -3,7 +3,7 @@ version: 1
 status: approved
 priority: shall
 category: functional
-req_type: derived
+req_type: guarantee
 fretish: ""
 description: Pump initialisation shall construct and initialise each configured pump and the uptime pump from configuration before the purge loop starts.
 formalization_strategy: informal
@@ -19,9 +19,9 @@ variables: []
 traces:
     satisfies:
         - SYS-REQ-001
-    reviewed_at: "2026-05-30T07:45:50.340386Z"
+    reviewed_at: "2026-06-02T05:03:31.904619Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:dc5f1513d597db3d3a50ffd982f13809535bfb1c620cefa41817374b098fd6be
+    reviewed_fingerprint: sha256:d84799a9b5ce4ac8c486303ee431e4c2d82a69b427892e44242ba950145a793a
 verification:
     assurance_level: B
     formalization_status: none
@@ -29,26 +29,26 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-05-30T07:43:08Z"
-        comment: Software-component design reviewed as part of feat/reqproof-coverage PR; each maps to verified code paths per the Phase 0 file-by-file verification (see PR description for code-verified corrections SW-016/017/023/027/028/033).
-        fingerprint: sha256:98579edfa6eba5d668103cbf405b97e33e91ea652c81ec99e0e584cf7e3aa9ca
+        reviewed_at: "2026-06-02T05:02:45Z"
+        comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
+        fingerprint: sha256:bfb56f45b54172d61a99045efa87d05126287aade65322b8a7fc711a9730dae5
         ai_generated: false
     impact_reviews:
         - requirement: SW-REQ-003
           artifact: main.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Production files added reqproof requirement-traceability annotations only (// reqproof:implements / // Verifies: / triple-form evidence). No runtime behavior change.'
+          reason: 'Phase J: req_type field flipped derived to guarantee per probelabs/reqproof#88 (category error fix). Production .go files were not modified for this change; only req YAML metadata. Re-recording no-authored-change impact.'
           base: origin/master
-          requirement_fingerprint: sha256:dc5f1513d597db3d3a50ffd982f13809535bfb1c620cefa41817374b098fd6be
-          approval_fingerprint: sha256:98579edfa6eba5d668103cbf405b97e33e91ea652c81ec99e0e584cf7e3aa9ca
+          requirement_fingerprint: sha256:d84799a9b5ce4ac8c486303ee431e4c2d82a69b427892e44242ba950145a793a
+          approval_fingerprint: sha256:bfb56f45b54172d61a99045efa87d05126287aade65322b8a7fc711a9730dae5
           artifact_fingerprint: sha256:4b683cd5715feffd7356231f04999400c4067164b6d478c53513559c0459a7cf
-          reviewed_at: "2026-05-30T07:45:39Z"
+          reviewed_at: "2026-06-02T05:13:05Z"
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:13Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-30T07:43:08Z"
+    last_modified_at: "2026-06-02T05:02:46Z"
 obligation_checklist:
     - nominal
 lifecycle:
@@ -57,4 +57,9 @@ lifecycle:
           from: draft
           to: review
           reason: ""
+          changed_by: human:cli
+        - date: "2026-06-02T05:02:45Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-05-30T07:43:08Z comment="Software-component design reviewed as part of feat/reqproof-coverage PR; each maps to verified code paths per the Phase 0 file-by-file verification (see PR description for code-verified corrections SW-016/017/023/027/028/033).")'
           changed_by: human:cli

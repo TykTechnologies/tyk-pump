@@ -3,7 +3,7 @@ version: 1
 status: approved
 priority: shall
 category: functional
-req_type: derived
+req_type: guarantee
 fretish: when omit_detailed_recording_enabled privacy shall always satisfy detailed_payloads_omitted
 description: The pump shall, when the operator enables omit-detailed-recording, drop the raw request and response payloads from each analytics record before forwarding.
 formalization_strategy: fretish
@@ -19,9 +19,9 @@ variables: []
 traces:
     satisfies:
         - STK-REQ-003
-    reviewed_at: "2026-05-30T07:45:52.421262Z"
+    reviewed_at: "2026-06-02T05:03:38.339414Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:0af44fa10b7ce617f5b9c83bb4dcb6516ae83a1521e12901e009dadc816c207f
+    reviewed_fingerprint: sha256:5fc78ecf6755ea4d646cfdd2f1b39bfaa1fc371f078f8ee9866628782534c957
 verification:
     assurance_level: B
     formalization_status: valid
@@ -29,15 +29,15 @@ verification:
         status: approved
         reviewer: human:buger
         role: system_engineer
-        reviewed_at: "2026-05-30T07:43:08Z"
-        comment: System-level behavior reviewed as part of feat/reqproof-coverage PR; FRETish + obligation + satisfies linkage verified against tyk-pump architecture and code in Phase 0 code-verification pass.
-        fingerprint: sha256:b02e9d3616618f67e7ce455352919fd64e6a2644a9c3f323916008a4e8095ee6
+        reviewed_at: "2026-06-02T05:02:36Z"
+        comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
+        fingerprint: sha256:fad51c1affff8885d9432a9046f8eea4f7b7b10a8589d4b6f07924d4f080b8a0
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-29T21:25:35Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-30T07:43:08Z"
+    last_modified_at: "2026-06-02T05:02:36Z"
 obligation_class: nominal
 lifecycle:
     change_history:
@@ -45,4 +45,9 @@ lifecycle:
           from: draft
           to: review
           reason: ""
+          changed_by: human:cli
+        - date: "2026-06-02T05:02:36Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="system_engineer" reviewer="human:buger" at=2026-05-30T07:43:08Z comment="System-level behavior reviewed as part of feat/reqproof-coverage PR; FRETish + obligation + satisfies linkage verified against tyk-pump architecture and code in Phase 0 code-verification pass.")'
           changed_by: human:cli

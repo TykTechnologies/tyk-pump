@@ -3,7 +3,7 @@ version: 1
 status: approved
 priority: shall
 category: functional
-req_type: derived
+req_type: guarantee
 fretish: ""
 description: The SQL Aggregate pump shall, per (orgID, dimension) row in each aggregated batch, issue a parameter-bound INSERT ... ON CONFLICT (id) DO UPDATE SET ... using clause.OnConflict with analytics.OnConflictAssignments(table, "excluded") so that monotonic counter columns are incremented rather than overwritten; insert failures shall be returned to the caller. Records are batched in slices of BatchSize.
 formalization_strategy: informal
@@ -19,9 +19,9 @@ variables: []
 traces:
     satisfies:
         - SYS-REQ-019
-    reviewed_at: "2026-05-30T08:45:50.777213Z"
+    reviewed_at: "2026-06-02T05:03:37.598241Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:40b96aee0be8239ac81d69b952e01613b7180a10b08fdbba8cb32015afb0cd34
+    reviewed_fingerprint: sha256:66e200686fcc36d5a46c4c63ba57ddc949bfdea331d1e0b8ffb6eae6f8891085
 verification:
     assurance_level: B
     formalization_status: none
@@ -29,26 +29,26 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-05-30T08:44:11Z"
-        comment: Phase A per-implementation/per-significant-behavior decomposition; descriptions code-verified against the named files per docs/phase-a-proposed-reqs.md. Pump-family family-level reqs are retained as superseded anchor reqs.
-        fingerprint: sha256:c16b58887e50a3a045df8280101be7bce45f324a7244fc0b27fa8d58c76ea1c0
+        reviewed_at: "2026-06-02T05:02:45Z"
+        comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
+        fingerprint: sha256:1826b07ed24b8edecffa6cff121de5f1df4d4b908ba8e5cd1879a956684cd731
         ai_generated: false
     impact_reviews:
         - requirement: SW-REQ-067
           artifact: pumps/sql_aggregate.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Phase E SQL MC/DC drive (round 2): //mcdc:ignore on dbType-postgres, HasIndex name-mismatch, len(typedData), HasTable arms per KIs mcdc-pumps-below-95 and sql-ensureindex-name-mismatch-prevents-skip'
+          reason: 'Phase J: req_type field flipped derived to guarantee per probelabs/reqproof#88 (category error fix). Production .go files were not modified for this change; only req YAML metadata. Re-recording no-authored-change impact.'
           base: origin/master
-          requirement_fingerprint: sha256:40b96aee0be8239ac81d69b952e01613b7180a10b08fdbba8cb32015afb0cd34
-          approval_fingerprint: sha256:c16b58887e50a3a045df8280101be7bce45f324a7244fc0b27fa8d58c76ea1c0
+          requirement_fingerprint: sha256:66e200686fcc36d5a46c4c63ba57ddc949bfdea331d1e0b8ffb6eae6f8891085
+          approval_fingerprint: sha256:1826b07ed24b8edecffa6cff121de5f1df4d4b908ba8e5cd1879a956684cd731
           artifact_fingerprint: sha256:5d4fb4dfe315a4842672abf1f36a4496f0177a3dc32181a3cae56c466cd50167
-          reviewed_at: "2026-05-31T16:17:43Z"
+          reviewed_at: "2026-06-02T05:13:05Z"
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:39:51Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-01T19:11:52Z"
+    last_modified_at: "2026-06-02T05:02:46Z"
 obligation_checklist:
     - atomicity
     - concurrent
@@ -95,4 +95,9 @@ lifecycle:
           from: draft
           to: review
           reason: ""
+          changed_by: human:cli
+        - date: "2026-06-02T05:02:45Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-05-30T08:44:11Z comment="Phase A per-implementation/per-significant-behavior decomposition; descriptions code-verified against the named files per docs/phase-a-proposed-reqs.md. Pump-family family-level reqs are retained as superseded anchor reqs.")'
           changed_by: human:cli

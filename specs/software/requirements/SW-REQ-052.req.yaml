@@ -3,7 +3,7 @@ version: 1
 status: approved
 priority: shall
 category: functional
-req_type: derived
+req_type: guarantee
 fretish: ""
 description: The Moesif pump shall, on each purge, parse each analytics record's base64-encoded raw request/response, apply operator-configured header/body masking and capture toggles, identify the user via the configured UserIDHeader (or fall back to record Alias / OauthID / parsed Authorization header), apply per-user / per-company sample-rate filtering fetched from the Moesif app-config endpoint, and enqueue qualifying events into the Moesif SDK with a weight equal to floor(100/samplingPercentage). The app-config sampling rules shall be refreshed once per minute when the SDK's X-Moesif-Config-Etag differs from the cached eTag.
 formalization_strategy: informal
@@ -19,9 +19,9 @@ variables: []
 traces:
     satisfies:
         - SYS-REQ-004
-    reviewed_at: "2026-05-30T08:45:50.659925Z"
+    reviewed_at: "2026-06-02T05:03:37.001181Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:3f8b8dd5f2d1f4ec5cdebb1a83ed83fd3785a3558ebb875c15f2d4ff944c32c0
+    reviewed_fingerprint: sha256:166b9bb4294d9f3b32731a094f915608394df8a77404f9e3f18c28304aa04731
 verification:
     assurance_level: B
     formalization_status: none
@@ -29,26 +29,26 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-05-30T08:44:11Z"
-        comment: Phase A per-implementation/per-significant-behavior decomposition; descriptions code-verified against the named files per docs/phase-a-proposed-reqs.md. Pump-family family-level reqs are retained as superseded anchor reqs.
-        fingerprint: sha256:e7d241dae2e0ed39a54fb6f0f14cd2136440bf1db21fbf1552a55c5495ccdef1
+        reviewed_at: "2026-06-02T05:02:45Z"
+        comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
+        fingerprint: sha256:f3f18bf1716f0f896a4fdaaa26bdb644987f96078b72d969d11e1572daebc637
         ai_generated: false
     impact_reviews:
         - requirement: SW-REQ-052
           artifact: pumps/moesif.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Phase E final cleanup: //mcdc:ignore for documented-unreachable branches with KI cross-refs; production behaviour unchanged, only coverage-tool guidance.'
+          reason: 'Phase J: req_type field flipped derived to guarantee per probelabs/reqproof#88 (category error fix). Production .go files were not modified for this change; only req YAML metadata. Re-recording no-authored-change impact.'
           base: origin/master
-          requirement_fingerprint: sha256:3f8b8dd5f2d1f4ec5cdebb1a83ed83fd3785a3558ebb875c15f2d4ff944c32c0
-          approval_fingerprint: sha256:e7d241dae2e0ed39a54fb6f0f14cd2136440bf1db21fbf1552a55c5495ccdef1
+          requirement_fingerprint: sha256:166b9bb4294d9f3b32731a094f915608394df8a77404f9e3f18c28304aa04731
+          approval_fingerprint: sha256:f3f18bf1716f0f896a4fdaaa26bdb644987f96078b72d969d11e1572daebc637
           artifact_fingerprint: sha256:91eee5dc54ba465d8ade96ee8b9dcfd7ec65116b746e5eb8f4669e32506c1888
-          reviewed_at: "2026-05-31T20:15:25Z"
+          reviewed_at: "2026-06-02T05:13:05Z"
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:36:29Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-01T19:11:48Z"
+    last_modified_at: "2026-06-02T05:02:46Z"
 obligation_checklist:
     - nominal
     - untrusted_input_bounded
@@ -92,4 +92,9 @@ lifecycle:
           from: draft
           to: review
           reason: ""
+          changed_by: human:cli
+        - date: "2026-06-02T05:02:45Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-05-30T08:44:11Z comment="Phase A per-implementation/per-significant-behavior decomposition; descriptions code-verified against the named files per docs/phase-a-proposed-reqs.md. Pump-family family-level reqs are retained as superseded anchor reqs.")'
           changed_by: human:cli

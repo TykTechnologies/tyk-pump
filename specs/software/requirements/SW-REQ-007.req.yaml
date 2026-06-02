@@ -3,7 +3,7 @@ version: 1
 status: approved
 priority: shall
 category: functional
-req_type: derived
+req_type: guarantee
 fretish: ""
 description: Temporal storage shall construct, lazily establish, and re-establish its backend connection (NewTemporalStorageHandler, Init, connect, ensureConnection, resetConnection, createConnector, getKVFromConnector, getListFromConnector, fixKey, SetKey, GetName), using bounded exponential backoff for retried connect attempts via retry.GetTemporalStorageExponentialBackoff.
 formalization_strategy: informal
@@ -20,9 +20,9 @@ traces:
     satisfies:
         - SYS-REQ-006
         - SYS-REQ-023
-    reviewed_at: "2026-05-30T10:53:49.147536Z"
+    reviewed_at: "2026-06-02T05:03:32.239879Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:3567ce36ffaca886d60a28f93d6b49c9bc7c6db75d20689b21604d9dbe3beecf
+    reviewed_fingerprint: sha256:5bc46303936a4570666965ccd62eb42ab52f836a5fe35122d4ec190b6b945c89
 verification:
     assurance_level: B
     formalization_status: none
@@ -30,46 +30,46 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-05-30T20:46:12Z"
-        comment: 'Phase C: SW-007 checklist extended with boundary to cover the MaxActive/MaxIdle/Timeout/SSL-Version boundary tests added in storage/temporal_storage_mcdc_test.go.'
-        fingerprint: sha256:0c3c5c97740bac396c4b9824b5711bd48106131932977ed731d962f59e454c94
+        reviewed_at: "2026-06-02T05:02:45Z"
+        comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
+        fingerprint: sha256:faeb829f088426ff533509c54ff765a65ea13397223b7a30e7b6051c62326bc9
         ai_generated: false
     impact_reviews:
         - requirement: SW-REQ-007
           artifact: docs/fmea.md
           decision: no-authored-change
           reviewer: buger
-          reason: 'Phase 0.7 SYS+SW review: traced files (analytics/analytics.go GeoIP retarget to SW-071, storage/temporal_storage.go SW-006↔SW-007 split, config.go SW-002 satisfies SYS-035 add) — production code semantics unchanged; only annotations/links/obligations updated. Verified by go build ./... and re-run of affected tests.'
+          reason: 'Phase J: req_type field flipped derived to guarantee per probelabs/reqproof#88 (category error fix). Production .go files were not modified for this change; only req YAML metadata. Re-recording no-authored-change impact.'
           base: origin/master
-          requirement_fingerprint: sha256:3567ce36ffaca886d60a28f93d6b49c9bc7c6db75d20689b21604d9dbe3beecf
-          approval_fingerprint: sha256:0c3c5c97740bac396c4b9824b5711bd48106131932977ed731d962f59e454c94
+          requirement_fingerprint: sha256:5bc46303936a4570666965ccd62eb42ab52f836a5fe35122d4ec190b6b945c89
+          approval_fingerprint: sha256:faeb829f088426ff533509c54ff765a65ea13397223b7a30e7b6051c62326bc9
           artifact_fingerprint: sha256:10ed755ac172d68a5082fa28ddf21676d210bcbfaca858747213607c75a51920
-          reviewed_at: "2026-05-30T10:52:29Z"
+          reviewed_at: "2026-06-02T05:13:05Z"
         - requirement: SW-REQ-007
           artifact: storage/store.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Phase 0.7 SYS+SW review: traced files (analytics/analytics.go GeoIP retarget to SW-071, storage/temporal_storage.go SW-006↔SW-007 split, config.go SW-002 satisfies SYS-035 add) — production code semantics unchanged; only annotations/links/obligations updated. Verified by go build ./... and re-run of affected tests.'
+          reason: 'Phase J: req_type field flipped derived to guarantee per probelabs/reqproof#88 (category error fix). Production .go files were not modified for this change; only req YAML metadata. Re-recording no-authored-change impact.'
           base: origin/master
-          requirement_fingerprint: sha256:3567ce36ffaca886d60a28f93d6b49c9bc7c6db75d20689b21604d9dbe3beecf
-          approval_fingerprint: sha256:0c3c5c97740bac396c4b9824b5711bd48106131932977ed731d962f59e454c94
+          requirement_fingerprint: sha256:5bc46303936a4570666965ccd62eb42ab52f836a5fe35122d4ec190b6b945c89
+          approval_fingerprint: sha256:faeb829f088426ff533509c54ff765a65ea13397223b7a30e7b6051c62326bc9
           artifact_fingerprint: sha256:e3e96b335a7f110f632eb0cf1980fc8f592e018ca4124e69232f016ffec0219c
-          reviewed_at: "2026-05-30T10:52:29Z"
+          reviewed_at: "2026-06-02T05:13:05Z"
         - requirement: SW-REQ-007
           artifact: storage/temporal_storage.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Phase E MC/DC drive: //mcdc:ignore annotations added on documented-unreachable branches with KI cross-refs; production behaviour unchanged, only coverage-tool guidance.'
+          reason: 'Phase J: req_type field flipped derived to guarantee per probelabs/reqproof#88 (category error fix). Production .go files were not modified for this change; only req YAML metadata. Re-recording no-authored-change impact.'
           base: origin/master
-          requirement_fingerprint: sha256:3567ce36ffaca886d60a28f93d6b49c9bc7c6db75d20689b21604d9dbe3beecf
-          approval_fingerprint: sha256:0c3c5c97740bac396c4b9824b5711bd48106131932977ed731d962f59e454c94
+          requirement_fingerprint: sha256:5bc46303936a4570666965ccd62eb42ab52f836a5fe35122d4ec190b6b945c89
+          approval_fingerprint: sha256:faeb829f088426ff533509c54ff765a65ea13397223b7a30e7b6051c62326bc9
           artifact_fingerprint: sha256:6634a473c979dd089b4c3ebf75ec39f8b4e1e94c995e30bb6c41a5f18d301e13
-          reviewed_at: "2026-05-31T11:40:13Z"
+          reviewed_at: "2026-06-02T05:13:05Z"
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:14Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-01T19:11:41Z"
+    last_modified_at: "2026-06-02T05:02:46Z"
 obligation_checklist:
     - boundary
     - cancellation_observed
@@ -107,4 +107,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-05-30T20:45:14Z comment="Phase C: SW-007 checklist extended with nominal to cover the happy-path Init/connect tests added in storage/temporal_storage_mcdc_test.go.")'
+          changed_by: human:cli
+        - date: "2026-06-02T05:02:45Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-05-30T20:46:12Z comment="Phase C: SW-007 checklist extended with boundary to cover the MaxActive/MaxIdle/Timeout/SSL-Version boundary tests added in storage/temporal_storage_mcdc_test.go.")'
           changed_by: human:cli

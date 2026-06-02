@@ -3,7 +3,7 @@ version: 1
 status: approved
 priority: shall
 category: functional
-req_type: derived
+req_type: guarantee
 fretish: ""
 description: The AnalyticsStorage.GetAndDeleteSet contract between the pump core and the temporal store shall return up to a chunk of records and remove exactly those records atomically with retrieval; partial-failure semantics on the remainder shall be documented as known issues.
 formalization_strategy: informal
@@ -19,25 +19,25 @@ variables: []
 traces:
     satisfies:
         - SYS-REQ-007
-    reviewed_at: "2026-05-30T08:45:50.19501Z"
+    reviewed_at: "2026-06-02T05:03:31.360186Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:8a0fb08c6325447741457680ca397b2c08a8fa51a78c1243360827a31de1c3c3
+    reviewed_fingerprint: sha256:179b855d8324b4a981ef0fbdfc945b4b763d4ade2063f41a23cffa1abfffcea8
 verification:
     assurance_level: B
     formalization_status: none
     review:
         status: approved
         reviewer: human:buger
-        role: interface_owner
-        reviewed_at: "2026-05-30T10:18:00Z"
-        comment: 'Re-approval after super-strict review: added one-sentence rationales per req; tightened descriptions to pass the 30-word plan floor while preserving the rich detail in the interface.signature/protocol/assumptions/guarantees blocks; fixed INT-007 sharding-key reference (table_sharding, not sharding_table) and INT-008 CSV line-number drift (51 not 55).'
-        fingerprint: sha256:dfad018e272fd5b2a75cc9d7569b1da6f64ff9411463b448745d1328dc162bff
+        role: interface_engineer
+        reviewed_at: "2026-06-02T05:02:48Z"
+        comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
+        fingerprint: sha256:5904fdd56f5e50e8ee266af67b59b2985eeb18b8f5e9167cbd4028ab1c903581
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:46Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-30T10:18:00Z"
+    last_modified_at: "2026-06-02T05:02:48Z"
 obligation_checklist:
     - atomicity
 release_disposition: ship_with_known_issue
@@ -77,4 +77,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="interface_owner" reviewer="human:buger" at=2026-05-30T08:31:54Z comment="Re-approval after Phase C ICD metadata block populated; caller/callee/schema-version/back-compat/retirement fields code-verified.")'
+          changed_by: human:cli
+        - date: "2026-06-02T05:02:48Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="interface_owner" reviewer="human:buger" at=2026-05-30T10:18:00Z comment="Re-approval after super-strict review: added one-sentence rationales per req; tightened descriptions to pass the 30-word plan floor while preserving the rich detail in the interface.signature/protocol/assumptions/guarantees blocks; fixed INT-007 sharding-key reference (table_sharding, not sharding_table) and INT-008 CSV line-number drift (51 not 55).")'
           changed_by: human:cli

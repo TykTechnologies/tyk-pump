@@ -3,7 +3,7 @@ version: 1
 status: approved
 priority: shall
 category: functional
-req_type: derived
+req_type: guarantee
 fretish: ""
 description: The serialization format between gateway and pump (msgpack on the bare key, protobuf on the _protobuf-suffixed key) shall round-trip every analytics record field without loss; per-field exceptions shall be tracked as named known-issues.
 formalization_strategy: informal
@@ -19,25 +19,25 @@ variables: []
 traces:
     satisfies:
         - SYS-REQ-002
-    reviewed_at: "2026-05-30T08:45:50.11443Z"
+    reviewed_at: "2026-06-02T05:03:31.191664Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:2c3d20a532097ac8822721e0800d18cf05c39970141c680aa2d5fb7a7139ce6a
+    reviewed_fingerprint: sha256:b8b92c3de2769f3aac9e0052744e0e604683d316ed146e7b3c98aa08daf8d036
 verification:
     assurance_level: B
     formalization_status: none
     review:
         status: approved
         reviewer: human:buger
-        role: interface_owner
-        reviewed_at: "2026-05-30T10:18:00Z"
-        comment: 'Re-approval after super-strict review: added one-sentence rationales per req; tightened descriptions to pass the 30-word plan floor while preserving the rich detail in the interface.signature/protocol/assumptions/guarantees blocks; fixed INT-007 sharding-key reference (table_sharding, not sharding_table) and INT-008 CSV line-number drift (51 not 55).'
-        fingerprint: sha256:04fc5b1cca9555baf79c11a5826f9fc9d56b92fc7948bf1b7e439cb1a642d689
+        role: interface_engineer
+        reviewed_at: "2026-06-02T05:02:48Z"
+        comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
+        fingerprint: sha256:2250c9507a0d36475e11cbe207b0720a4c68eec419a7e294552fe326ae63c880
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:46Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-30T10:18:00Z"
+    last_modified_at: "2026-06-02T05:02:48Z"
 obligation_checklist:
     - encoding_safety
 release_disposition: ship_with_known_issue
@@ -77,4 +77,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="interface_owner" reviewer="human:buger" at=2026-05-30T08:31:54Z comment="Re-approval after Phase C ICD metadata block populated; caller/callee/schema-version/back-compat/retirement fields code-verified.")'
+          changed_by: human:cli
+        - date: "2026-06-02T05:02:48Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="interface_owner" reviewer="human:buger" at=2026-05-30T10:18:00Z comment="Re-approval after super-strict review: added one-sentence rationales per req; tightened descriptions to pass the 30-word plan floor while preserving the rich detail in the interface.signature/protocol/assumptions/guarantees blocks; fixed INT-007 sharding-key reference (table_sharding, not sharding_table) and INT-008 CSV line-number drift (51 not 55).")'
           changed_by: human:cli

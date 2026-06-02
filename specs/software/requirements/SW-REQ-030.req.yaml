@@ -3,7 +3,7 @@ version: 1
 status: approved
 priority: shall
 category: functional
-req_type: derived
+req_type: guarantee
 fretish: ""
 description: The HTTP retry strategy shall retry idempotent backend calls on transient failures using bounded exponential backoff.
 formalization_strategy: informal
@@ -19,9 +19,9 @@ variables: []
 traces:
     satisfies:
         - SYS-REQ-006
-    reviewed_at: "2026-05-30T07:45:52.211511Z"
+    reviewed_at: "2026-06-02T05:03:34.537921Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:04de937a5797ae25ca34d0edd82caef6451b657e226e237078db61731368429d
+    reviewed_fingerprint: sha256:e08e4fed1e774062c28f2b9d15780e212270b52d4241d44fc655506359f48c1c
 verification:
     assurance_level: B
     formalization_status: none
@@ -29,26 +29,26 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-01T20:13:13Z"
-        comment: 'Phase I: explicit SWKI disposition added to match affixed KIs (gate-tightening readiness).'
-        fingerprint: sha256:388f3b4b43713e8701b342c85dc5f500032b86212627b1f6e36b137c71d284f8
+        reviewed_at: "2026-06-02T05:02:45Z"
+        comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
+        fingerprint: sha256:2583c61f35bf00e4885491711ec0bcbaa2789917778ea0caf5b5eaf649776614
         ai_generated: false
     impact_reviews:
         - requirement: SW-REQ-030
           artifact: retry/http-retry.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Production files added reqproof requirement-traceability annotations only (// reqproof:implements / // Verifies: / triple-form evidence). No runtime behavior change.'
+          reason: 'Phase J: req_type field flipped derived to guarantee per probelabs/reqproof#88 (category error fix). Production .go files were not modified for this change; only req YAML metadata. Re-recording no-authored-change impact.'
           base: origin/master
-          requirement_fingerprint: sha256:04de937a5797ae25ca34d0edd82caef6451b657e226e237078db61731368429d
-          approval_fingerprint: sha256:388f3b4b43713e8701b342c85dc5f500032b86212627b1f6e36b137c71d284f8
+          requirement_fingerprint: sha256:e08e4fed1e774062c28f2b9d15780e212270b52d4241d44fc655506359f48c1c
+          approval_fingerprint: sha256:2583c61f35bf00e4885491711ec0bcbaa2789917778ea0caf5b5eaf649776614
           artifact_fingerprint: sha256:c760d2c36c5a8a08cd52bd0cfc33a6b21c67b458206ecbca0569e82b4f821ef1
-          reviewed_at: "2026-05-30T07:45:44Z"
+          reviewed_at: "2026-06-02T05:13:05Z"
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:16Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-01T20:13:13Z"
+    last_modified_at: "2026-06-02T05:02:46Z"
 obligation_checklist:
     - error_handling
 obligation_suppressions:
@@ -80,4 +80,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-05-30T07:43:08Z comment="Software-component design reviewed as part of feat/reqproof-coverage PR; each maps to verified code paths per the Phase 0 file-by-file verification (see PR description for code-verified corrections SW-016/017/023/027/028/033).")'
+          changed_by: human:cli
+        - date: "2026-06-02T05:02:45Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-01T20:13:13Z comment="Phase I: explicit SWKI disposition added to match affixed KIs (gate-tightening readiness).")'
           changed_by: human:cli

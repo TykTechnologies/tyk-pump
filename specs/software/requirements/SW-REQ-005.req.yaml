@@ -3,7 +3,7 @@ version: 1
 status: approved
 priority: shall
 category: functional
-req_type: derived
+req_type: guarantee
 fretish: ""
 description: The instrumentation sink shall emit purge-timing and record-count metrics to StatsD when instrumentation is enabled, without failing the purge loop on sink errors.
 formalization_strategy: informal
@@ -20,9 +20,9 @@ traces:
     satisfies:
         - SYS-REQ-013
         - SYS-REQ-017
-    reviewed_at: "2026-05-30T07:45:50.345213Z"
+    reviewed_at: "2026-06-02T05:03:31.975659Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:20ac36121cc108876f6a06ffd3e9d4e8d0f78e9742c0322d0762cde52415659f
+    reviewed_fingerprint: sha256:3631f967677a8b6835977a53a6a0047a3b4309335d358ec409b7104f3d5345d4
 verification:
     assurance_level: B
     formalization_status: none
@@ -30,36 +30,36 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-05-30T07:43:08Z"
-        comment: Software-component design reviewed as part of feat/reqproof-coverage PR; each maps to verified code paths per the Phase 0 file-by-file verification (see PR description for code-verified corrections SW-016/017/023/027/028/033).
-        fingerprint: sha256:9ecb7b37e1977571d5e25d5724ce1706cc550b5c0790bd843967a7d19c799911
+        reviewed_at: "2026-06-02T05:02:45Z"
+        comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
+        fingerprint: sha256:95115c4243114e621546cd8d57ba3b523d85257be2e70f13fb5878aab553cfc8
         ai_generated: false
     impact_reviews:
         - requirement: SW-REQ-005
           artifact: instrumentation_helpers.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Production files added reqproof requirement-traceability annotations only (// reqproof:implements / // Verifies: / triple-form evidence). No runtime behavior change.'
+          reason: 'Phase J: req_type field flipped derived to guarantee per probelabs/reqproof#88 (category error fix). Production .go files were not modified for this change; only req YAML metadata. Re-recording no-authored-change impact.'
           base: origin/master
-          requirement_fingerprint: sha256:20ac36121cc108876f6a06ffd3e9d4e8d0f78e9742c0322d0762cde52415659f
-          approval_fingerprint: sha256:9ecb7b37e1977571d5e25d5724ce1706cc550b5c0790bd843967a7d19c799911
+          requirement_fingerprint: sha256:3631f967677a8b6835977a53a6a0047a3b4309335d358ec409b7104f3d5345d4
+          approval_fingerprint: sha256:95115c4243114e621546cd8d57ba3b523d85257be2e70f13fb5878aab553cfc8
           artifact_fingerprint: sha256:72a2bad60b43c8be4c92e5cd92985614bf1e924b0e1ee2277f667ce4c736a988
-          reviewed_at: "2026-05-30T07:45:40Z"
+          reviewed_at: "2026-06-02T05:13:05Z"
         - requirement: SW-REQ-005
           artifact: instrumentation_statsd_sink.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Production files added reqproof requirement-traceability annotations only (// reqproof:implements / // Verifies: / triple-form evidence). No runtime behavior change.'
+          reason: 'Phase J: req_type field flipped derived to guarantee per probelabs/reqproof#88 (category error fix). Production .go files were not modified for this change; only req YAML metadata. Re-recording no-authored-change impact.'
           base: origin/master
-          requirement_fingerprint: sha256:20ac36121cc108876f6a06ffd3e9d4e8d0f78e9742c0322d0762cde52415659f
-          approval_fingerprint: sha256:9ecb7b37e1977571d5e25d5724ce1706cc550b5c0790bd843967a7d19c799911
+          requirement_fingerprint: sha256:3631f967677a8b6835977a53a6a0047a3b4309335d358ec409b7104f3d5345d4
+          approval_fingerprint: sha256:95115c4243114e621546cd8d57ba3b523d85257be2e70f13fb5878aab553cfc8
           artifact_fingerprint: sha256:a562aab524243ed4291065f319b0a198374c1bd10938c27f9c14e2df702af87c
-          reviewed_at: "2026-05-30T07:45:40Z"
+          reviewed_at: "2026-06-02T05:13:05Z"
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:14Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-30T10:51:49Z"
+    last_modified_at: "2026-06-02T05:02:46Z"
 obligation_checklist:
     - error_handling
 lifecycle:
@@ -68,4 +68,9 @@ lifecycle:
           from: draft
           to: review
           reason: ""
+          changed_by: human:cli
+        - date: "2026-06-02T05:02:45Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-05-30T07:43:08Z comment="Software-component design reviewed as part of feat/reqproof-coverage PR; each maps to verified code paths per the Phase 0 file-by-file verification (see PR description for code-verified corrections SW-016/017/023/027/028/033).")'
           changed_by: human:cli

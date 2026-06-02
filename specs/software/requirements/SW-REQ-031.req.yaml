@@ -3,7 +3,7 @@ version: 1
 status: approved
 priority: shall
 category: functional
-req_type: derived
+req_type: guarantee
 fretish: ""
 description: The storage retry strategy shall return a bounded-per-attempt-interval exponential backoff (10s cap, 2x multiplier) for storage operations; when MaxElapsedTime is left at the zero default the total retry duration is unbounded — tracked by KI storage-retry-maxelapsed-zero-is-unbounded.
 formalization_strategy: informal
@@ -19,9 +19,9 @@ variables: []
 traces:
     satisfies:
         - SYS-REQ-006
-    reviewed_at: "2026-05-30T07:45:52.274195Z"
+    reviewed_at: "2026-06-02T05:03:34.720751Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:65e7f89cf60198dbef77df2365fa1f2623fd1ef5e9392dcc570cc81c62ec7afa
+    reviewed_fingerprint: sha256:fb153f148b488cdde10553223ee974fbbc03cf02c2b149aaefb17f9421526c42
 verification:
     assurance_level: B
     formalization_status: none
@@ -29,26 +29,26 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-01T20:13:13Z"
-        comment: 'Phase I: explicit SWKI disposition added to match affixed KIs (gate-tightening readiness).'
-        fingerprint: sha256:408fd10f02a27c27b6f2f41e8c24131fd115059be124a72d373b34bb6904df97
+        reviewed_at: "2026-06-02T05:02:45Z"
+        comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
+        fingerprint: sha256:0767d59487cb56135c5af437daef5259efc1e2d6822c16bab72d0ccf93fac719
         ai_generated: false
     impact_reviews:
         - requirement: SW-REQ-031
           artifact: retry/storage-retry.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Production files added reqproof requirement-traceability annotations only (// reqproof:implements / // Verifies: / triple-form evidence). No runtime behavior change.'
+          reason: 'Phase J: req_type field flipped derived to guarantee per probelabs/reqproof#88 (category error fix). Production .go files were not modified for this change; only req YAML metadata. Re-recording no-authored-change impact.'
           base: origin/master
-          requirement_fingerprint: sha256:65e7f89cf60198dbef77df2365fa1f2623fd1ef5e9392dcc570cc81c62ec7afa
-          approval_fingerprint: sha256:959db2920c0d6402163fa27091c289c9e4d7c0f4f01fe50effa23e64d3916c53
+          requirement_fingerprint: sha256:fb153f148b488cdde10553223ee974fbbc03cf02c2b149aaefb17f9421526c42
+          approval_fingerprint: sha256:0767d59487cb56135c5af437daef5259efc1e2d6822c16bab72d0ccf93fac719
           artifact_fingerprint: sha256:1e77253d88dc5081305160e9eb1eb5b8a8ba333ee66238eed4e8bf93c7a86e79
-          reviewed_at: "2026-05-30T07:45:45Z"
+          reviewed_at: "2026-06-02T05:13:05Z"
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:17Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-01T20:13:13Z"
+    last_modified_at: "2026-06-02T05:02:46Z"
 obligation_checklist:
     - boundary
     - error_handling
@@ -88,4 +88,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-05-30T20:22:55Z comment="Phase B: SW-031 carries boundary now to honestly cover retry-exhaustion Z3 boundary tests (retry/z3_property_test.go).")'
+          changed_by: human:cli
+        - date: "2026-06-02T05:02:45Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-01T20:13:13Z comment="Phase I: explicit SWKI disposition added to match affixed KIs (gate-tightening readiness).")'
           changed_by: human:cli

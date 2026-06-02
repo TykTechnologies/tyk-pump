@@ -3,7 +3,7 @@ version: 1
 status: approved
 priority: shall
 category: functional
-req_type: derived
+req_type: guarantee
 fretish: ""
 description: The Graph MongoDB pump shall, on each purge, accumulate incoming records into size-bounded batches via the embedded MongoPump.AccumulateSet (in graph-only mode skipping records whose GraphQLStats.IsGraphQL is false from conversion), convert each surviving AnalyticsRecord to a GraphRecord (assigning a fresh ObjectID), and concurrently insert each batch into the single configured graph collection; the first per-batch insert error shall be returned to the caller, and connection-closed conditions shall be logged with a 'Detected connection failure!' warning.
 formalization_strategy: informal
@@ -19,9 +19,9 @@ variables: []
 traces:
     satisfies:
         - SYS-REQ-004
-    reviewed_at: "2026-05-30T08:45:50.429561Z"
+    reviewed_at: "2026-06-02T05:03:35.545712Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:fe8467ea89d5b32a45b43493c63fb654268017dcf7b31eb40a5309f282c30eab
+    reviewed_fingerprint: sha256:d0a4376906b0e077bfbb6b79db460afa14aecae710e648ab1a667d2f0bee5fa1
 verification:
     assurance_level: B
     formalization_status: none
@@ -29,26 +29,26 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-05-31T11:27:45Z"
-        comment: 'Phase E: SW-REQ-037 checklist extended with errors_propagated to cover mongo pump container-stop / bad-env error-propagation tests in pumps/mongo_mcdc_100_test.go.'
-        fingerprint: sha256:8a45c7336766dc82f14b77f34544679cdc465a4efc36e03de2b806b18ceb578c
+        reviewed_at: "2026-06-02T05:02:45Z"
+        comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
+        fingerprint: sha256:bc58f1b81bceadc1ff89a12d10c15847b85dd7410de3e4f01b3a444ae5650054
         ai_generated: false
     impact_reviews:
         - requirement: SW-REQ-037
           artifact: pumps/graph_mongo.go
           decision: no-authored-change
           reviewer: buger
-          reason: Phase A re-annotated this file to point at the atomic per-implementation/per-behavior SW req (was previously SW-REQ-018/019/020/022/027/028); no runtime behavior change.
+          reason: 'Phase J: req_type field flipped derived to guarantee per probelabs/reqproof#88 (category error fix). Production .go files were not modified for this change; only req YAML metadata. Re-recording no-authored-change impact.'
           base: origin/master
-          requirement_fingerprint: sha256:fe8467ea89d5b32a45b43493c63fb654268017dcf7b31eb40a5309f282c30eab
-          approval_fingerprint: sha256:8a45c7336766dc82f14b77f34544679cdc465a4efc36e03de2b806b18ceb578c
+          requirement_fingerprint: sha256:d0a4376906b0e077bfbb6b79db460afa14aecae710e648ab1a667d2f0bee5fa1
+          approval_fingerprint: sha256:bc58f1b81bceadc1ff89a12d10c15847b85dd7410de3e4f01b3a444ae5650054
           artifact_fingerprint: sha256:ea0d01bc2cf1958e2c42d69e4a0eaf07bfe686af6b41d65a8a3b46ef2c01e008
-          reviewed_at: "2026-05-30T08:48:39Z"
+          reviewed_at: "2026-06-02T05:13:05Z"
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:34:55Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-01T19:11:45Z"
+    last_modified_at: "2026-06-02T05:02:46Z"
 obligation_checklist:
     - concurrent
     - errors_propagated
@@ -95,4 +95,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-05-30T08:44:11Z comment="Phase A per-implementation/per-significant-behavior decomposition; descriptions code-verified against the named files per docs/phase-a-proposed-reqs.md. Pump-family family-level reqs are retained as superseded anchor reqs.")'
+          changed_by: human:cli
+        - date: "2026-06-02T05:02:45Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-05-31T11:27:45Z comment="Phase E: SW-REQ-037 checklist extended with errors_propagated to cover mongo pump container-stop / bad-env error-propagation tests in pumps/mongo_mcdc_100_test.go.")'
           changed_by: human:cli

@@ -3,7 +3,7 @@ version: 1
 status: approved
 priority: shall
 category: functional
-req_type: derived
+req_type: guarantee
 fretish: when a_backend_failed delivery shall always satisfy other_backends_written
 description: When writing a batch to backends, the pump shall write to each configured backend independently so that a failure or timeout on one backend does not prevent writes to the others.
 formalization_strategy: fretish
@@ -19,9 +19,9 @@ variables: []
 traces:
     satisfies:
         - STK-REQ-002
-    reviewed_at: "2026-05-30T07:45:52.399044Z"
+    reviewed_at: "2026-06-02T05:03:38.012796Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:8da196e678160d41bd2d5a6baab69a6af99443f2cd2db0ed1ebd6243a6aef743
+    reviewed_fingerprint: sha256:9669f51826fb11ba04c5780b574cac91e0a62892e67e52d2ed558545dcb722cf
 verification:
     assurance_level: B
     formalization_status: valid
@@ -29,17 +29,17 @@ verification:
         status: approved
         reviewer: human:buger
         role: system_engineer
-        reviewed_at: "2026-05-30T07:43:08Z"
-        comment: System-level behavior reviewed as part of feat/reqproof-coverage PR; FRETish + obligation + satisfies linkage verified against tyk-pump architecture and code in Phase 0 code-verification pass.
-        fingerprint: sha256:d68bded43c319f78b42509010a901c5c0d25b8658c3206c13ceb6f7c39869e75
+        reviewed_at: "2026-06-02T05:02:36Z"
+        comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
+        fingerprint: sha256:eaedb01506a298607084eb9bd6efcfd527dffab1581174bffbfbd36601442847
         ai_generated: false
-    gaps_reviewed_at: "2026-05-30T07:49:26.547508Z"
+    gaps_reviewed_at: "2026-06-02T05:05:48.911641Z"
     gaps_reviewed_by: buger
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:11:41Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-30T07:43:08Z"
+    last_modified_at: "2026-06-02T05:02:36Z"
 obligation_class: error_handling
 release_disposition: ship_with_known_issue
 lifecycle:
@@ -53,4 +53,9 @@ lifecycle:
           from: release_disposition=
           to: release_disposition=ship_with_known_issue
           reason: 'KI no-panic-recovery-in-exec-pump-writing: panicking pump crashes whole process'
+          changed_by: human:cli
+        - date: "2026-06-02T05:02:36Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="system_engineer" reviewer="human:buger" at=2026-05-30T07:43:08Z comment="System-level behavior reviewed as part of feat/reqproof-coverage PR; FRETish + obligation + satisfies linkage verified against tyk-pump architecture and code in Phase 0 code-verification pass.")'
           changed_by: human:cli

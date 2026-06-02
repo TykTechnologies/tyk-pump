@@ -3,7 +3,7 @@ version: 1
 status: approved
 priority: shall
 category: functional
-req_type: derived
+req_type: guarantee
 fretish: ""
 description: The Graph SQL pump shall, on each purge, retain only records for which IsGraphRecord() is true, convert each to a GraphRecord, then if TableSharding is true split on each YYYYMMDD boundary and route each day-slice to a <TableName>_<YYYYMMDD> table (auto-migrated when missing), otherwise route all records to the configured TableName (default tyk_analytics_graph); within each table it shall issue parameter-bound batched inserts of BatchSize records using gorm.Create.
 formalization_strategy: informal
@@ -19,9 +19,9 @@ variables: []
 traces:
     satisfies:
         - SYS-REQ-004
-    reviewed_at: "2026-05-30T08:45:50.506266Z"
+    reviewed_at: "2026-06-02T05:03:36.240733Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:6f65f4fb8c31d9a31597772cc5605d88ba8eedb9b0710391993de394a75f3998
+    reviewed_fingerprint: sha256:8166267d9f9a1f7978b89415da94854cdaa1db68d1d1ff1503191763ed1100eb
 verification:
     assurance_level: B
     formalization_status: none
@@ -29,26 +29,26 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-05-30T08:44:11Z"
-        comment: Phase A per-implementation/per-significant-behavior decomposition; descriptions code-verified against the named files per docs/phase-a-proposed-reqs.md. Pump-family family-level reqs are retained as superseded anchor reqs.
-        fingerprint: sha256:9cf9362a7b98d17220e5b65b42474a0252f969f13a7528f1f192f537462554ae
+        reviewed_at: "2026-06-02T05:02:45Z"
+        comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
+        fingerprint: sha256:f3165f6f3e7f9dcfc9cf69bc27123b0a87900aa6556176e92873fc46f4556af7
         ai_generated: false
     impact_reviews:
         - requirement: SW-REQ-042
           artifact: pumps/graph_sql.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Phase E SQL MC/DC drive (round 2): //mcdc:ignore for HasTable/postgres-arm decisions per KI mcdc-pumps-below-95'
+          reason: 'Phase J: req_type field flipped derived to guarantee per probelabs/reqproof#88 (category error fix). Production .go files were not modified for this change; only req YAML metadata. Re-recording no-authored-change impact.'
           base: origin/master
-          requirement_fingerprint: sha256:6f65f4fb8c31d9a31597772cc5605d88ba8eedb9b0710391993de394a75f3998
-          approval_fingerprint: sha256:9cf9362a7b98d17220e5b65b42474a0252f969f13a7528f1f192f537462554ae
+          requirement_fingerprint: sha256:8166267d9f9a1f7978b89415da94854cdaa1db68d1d1ff1503191763ed1100eb
+          approval_fingerprint: sha256:f3165f6f3e7f9dcfc9cf69bc27123b0a87900aa6556176e92873fc46f4556af7
           artifact_fingerprint: sha256:0c0b86faafd08711b4094b80074720dcbbb927b022aec5d221671edf51b1c1ad
-          reviewed_at: "2026-05-31T16:06:07Z"
+          reviewed_at: "2026-06-02T05:13:05Z"
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:35:31Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-01T19:11:46Z"
+    last_modified_at: "2026-06-02T05:02:46Z"
 obligation_checklist:
     - connection_leak_free
     - parameterized_only_write
@@ -69,4 +69,9 @@ lifecycle:
           from: draft
           to: review
           reason: ""
+          changed_by: human:cli
+        - date: "2026-06-02T05:02:45Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-05-30T08:44:11Z comment="Phase A per-implementation/per-significant-behavior decomposition; descriptions code-verified against the named files per docs/phase-a-proposed-reqs.md. Pump-family family-level reqs are retained as superseded anchor reqs.")'
           changed_by: human:cli

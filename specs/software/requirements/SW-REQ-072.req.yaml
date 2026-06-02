@@ -3,7 +3,7 @@ version: 1
 status: approved
 priority: shall
 category: functional
-req_type: derived
+req_type: guarantee
 fretish: when write_exceeds_timeout delivery shall immediately satisfy write_aborted
 description: 'Each pump goroutine spawned by execPumpWriting shall receive a context bounded by the per-pump configured timeout (PumpConfig.Timeout). The pump''s WriteData implementation shall honour ctx cancellation: when ctx.Done() fires, the pump shall stop the in-flight write and return ctx.Err().'
 formalization_strategy: fretish
@@ -19,9 +19,9 @@ variables: []
 traces:
     satisfies:
         - SYS-REQ-005
-    reviewed_at: "2026-06-01T20:50:03.974099Z"
+    reviewed_at: "2026-06-02T05:03:37.875681Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:6988181c111fc6b3de3adb62a87f4e9b35c3a486fd1bab0d4d71b5e11b5caeba
+    reviewed_fingerprint: sha256:1f56b24a2471782c7f6b979a54f7243343ce0181ee86c4278ff873c9aec89c03
 verification:
     assurance_level: B
     formalization_status: valid
@@ -29,15 +29,15 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-01T20:30:10Z"
-        comment: 'Phase I: per-pump write-timeout / ctx-propagation design point added under SYS-REQ-005; component=delivery, FRETish reuses parent''s write_exceeds_timeout/write_aborted vars; 3 affixed KIs (mongo-pump-ignores-caller-context, elasticsearch-unbounded-reconnect-recursion, pump-no-timeout-can-block-purge-cycle) now have a SW-level home.'
-        fingerprint: sha256:cb3ae1f4998dd574bcb6de5d1c02085834e1b73fddc80ce01806d801ba2cdba0
+        reviewed_at: "2026-06-02T05:02:45Z"
+        comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
+        fingerprint: sha256:7c76a5936c17456c26602bc266b4b18bca491f28a00f95a80c2f54cbfc7db006
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-06-01T20:24:19Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-01T20:30:11Z"
+    last_modified_at: "2026-06-02T05:02:46Z"
 obligation_checklist:
     - cancellation_observed
     - error_handling
@@ -72,4 +72,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-01T20:26:30Z comment="Phase I: per-pump write-timeout / ctx-propagation design point added under SYS-REQ-005; 3 affixed KIs (mongo-pump-ignores-caller-context, elasticsearch-unbounded-reconnect-recursion, pump-no-timeout-can-block-purge-cycle) now have a SW-level home.")'
+          changed_by: human:cli
+        - date: "2026-06-02T05:02:45Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-01T20:30:10Z comment="Phase I: per-pump write-timeout / ctx-propagation design point added under SYS-REQ-005; component=delivery, FRETish reuses parent''s write_exceeds_timeout/write_aborted vars; 3 affixed KIs (mongo-pump-ignores-caller-context, elasticsearch-unbounded-reconnect-recursion, pump-no-timeout-can-block-purge-cycle) now have a SW-level home.")'
           changed_by: human:cli

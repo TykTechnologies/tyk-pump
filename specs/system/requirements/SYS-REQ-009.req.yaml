@@ -3,7 +3,7 @@ version: 1
 status: approved
 priority: shall
 category: functional
-req_type: derived
+req_type: guarantee
 fretish: when (record_matches_block_filter | record_outside_allow_list) filtering shall always satisfy record_excluded
 description: The pump shall, per backend, exclude a record before forwarding when (a) it matches an operator-configured block list on organisation ID, API ID, or response code, OR (b) at least one non-empty allow list is configured and the record does not satisfy it; block-list matches take precedence.
 formalization_strategy: fretish
@@ -19,9 +19,9 @@ variables: []
 traces:
     satisfies:
         - STK-REQ-003
-    reviewed_at: "2026-05-30T07:45:52.409178Z"
+    reviewed_at: "2026-06-02T05:03:38.267409Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:2848ef2df2a6cce19916a5ccd3792a6c41e9d558cca8326e57ee0337de0c99d8
+    reviewed_fingerprint: sha256:3a373f9c68592e29e19e2be00c5c84feeba150ac565575aa76dd0155a9ff78e4
 verification:
     assurance_level: B
     formalization_status: valid
@@ -29,17 +29,17 @@ verification:
         status: approved
         reviewer: human:buger
         role: system_engineer
-        reviewed_at: "2026-05-30T07:43:08Z"
-        comment: System-level behavior reviewed as part of feat/reqproof-coverage PR; FRETish + obligation + satisfies linkage verified against tyk-pump architecture and code in Phase 0 code-verification pass.
-        fingerprint: sha256:7bab3b482ce6cd39e60fd1445c360cae4d22e4afa3146a4ae622191bf4884d15
+        reviewed_at: "2026-06-02T05:02:36Z"
+        comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
+        fingerprint: sha256:cbffd6dfcefcdf881bb5dad7ae7f5cae5cf25b08b02a59afdde28805e065f458
         ai_generated: false
-    gaps_reviewed_at: "2026-05-30T07:49:26.892114Z"
+    gaps_reviewed_at: "2026-06-02T05:05:48.911641Z"
     gaps_reviewed_by: buger
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:11:41Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-30T07:43:08Z"
+    last_modified_at: "2026-06-02T05:02:36Z"
 obligation_class: boundary
 lifecycle:
     change_history:
@@ -47,4 +47,9 @@ lifecycle:
           from: draft
           to: review
           reason: ""
+          changed_by: human:cli
+        - date: "2026-06-02T05:02:36Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="system_engineer" reviewer="human:buger" at=2026-05-30T07:43:08Z comment="System-level behavior reviewed as part of feat/reqproof-coverage PR; FRETish + obligation + satisfies linkage verified against tyk-pump architecture and code in Phase 0 code-verification pass.")'
           changed_by: human:cli

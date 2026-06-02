@@ -3,7 +3,7 @@ version: 1
 status: approved
 priority: shall
 category: functional
-req_type: derived
+req_type: guarantee
 fretish: analytics_geo shall always satisfy geo_lookup_short_circuits_when_db_absent
 description: Analytics GeoIP enrichment functions (GetGeo, GeoIPLookup) shall return an empty result without panic when the GeoIP DB handle is nil or returns no record for an IP.
 formalization_strategy: fretish
@@ -20,9 +20,9 @@ traces:
     satisfies:
         - SYS-REQ-034
         - SYS-REQ-032
-    reviewed_at: "2026-05-30T10:53:49.942893Z"
+    reviewed_at: "2026-06-02T05:03:37.81476Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:07cc95e510b2c9b2f111d363da55077aea4b33e6ba989cef5188e80da56828c0
+    reviewed_fingerprint: sha256:f4e332bd7ce5e9d47021dfeb340a97ac2ed2519745efa5a16c723c8a4e64e98c
 verification:
     assurance_level: B
     formalization_status: valid
@@ -30,26 +30,26 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-05-30T10:36:30Z"
-        comment: Phase 0.7 new req for GeoIP short-circuit guarantee split out from SYS-REQ-032. Implementation analytics/analytics.go GetGeo/GeoIPLookup verified via analytics/geoip_test.go.
-        fingerprint: sha256:890654ce5386520a313dc3299c3278fed51374dc8c8cf38d4b10132ec3b5caf1
+        reviewed_at: "2026-06-02T05:02:45Z"
+        comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
+        fingerprint: sha256:fe9bd9928a12177e5d28d6409d3cefdc2c20147160563b3f010ca6235a0a5582
         ai_generated: false
     impact_reviews:
         - requirement: SW-REQ-071
           artifact: analytics/analytics.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Phase 0.7 SYS+SW review: traced files (analytics/analytics.go GeoIP retarget to SW-071, storage/temporal_storage.go SW-006↔SW-007 split, config.go SW-002 satisfies SYS-035 add) — production code semantics unchanged; only annotations/links/obligations updated. Verified by go build ./... and re-run of affected tests.'
+          reason: 'Phase J: req_type field flipped derived to guarantee per probelabs/reqproof#88 (category error fix). Production .go files were not modified for this change; only req YAML metadata. Re-recording no-authored-change impact.'
           base: origin/master
-          requirement_fingerprint: sha256:07cc95e510b2c9b2f111d363da55077aea4b33e6ba989cef5188e80da56828c0
-          approval_fingerprint: sha256:890654ce5386520a313dc3299c3278fed51374dc8c8cf38d4b10132ec3b5caf1
+          requirement_fingerprint: sha256:f4e332bd7ce5e9d47021dfeb340a97ac2ed2519745efa5a16c723c8a4e64e98c
+          approval_fingerprint: sha256:fe9bd9928a12177e5d28d6409d3cefdc2c20147160563b3f010ca6235a0a5582
           artifact_fingerprint: sha256:41a2a8e7ff36a958fa315e03cd7e70423454e7447f7787aad74230d92a3d8a43
-          reviewed_at: "2026-05-30T10:52:31Z"
+          reviewed_at: "2026-06-02T05:13:05Z"
 history:
     created_by: human:cli
     created_at: "2026-05-30T10:31:33Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-30T10:41:43Z"
+    last_modified_at: "2026-06-02T05:02:46Z"
 obligation_checklist:
     - error_handling
     - nominal
@@ -59,4 +59,9 @@ lifecycle:
           from: draft
           to: review
           reason: Phase 0.7 promote new GeoIP split reqs for review
+          changed_by: human:cli
+        - date: "2026-06-02T05:02:45Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-05-30T10:36:30Z comment="Phase 0.7 new req for GeoIP short-circuit guarantee split out from SYS-REQ-032. Implementation analytics/analytics.go GetGeo/GeoIPLookup verified via analytics/geoip_test.go.")'
           changed_by: human:cli

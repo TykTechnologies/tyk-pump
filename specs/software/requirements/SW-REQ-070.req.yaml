@@ -3,7 +3,7 @@ version: 1
 status: approved
 priority: shall
 category: functional
-req_type: derived
+req_type: guarantee
 fretish: ""
 description: For each ES version operator, when DisableBulk is false the BulkProcessor shall be configured with operator-supplied BulkConfig.Workers, FlushInterval (seconds), BulkActions (record count, default 1000, -1 to disable), BulkSize (bytes, default 5 MB, -1 to disable), and an After callback that logs the purged record count via printPurgedBulkRecords. When DisableBulk is true, each record is indexed individually via the per-version Index().BodyJson(...).Do(ctx) call. Shutdown flushes the bulk processor when bulk is enabled.
 formalization_strategy: informal
@@ -19,9 +19,9 @@ variables: []
 traces:
     satisfies:
         - SYS-REQ-004
-    reviewed_at: "2026-05-30T08:45:50.7982Z"
+    reviewed_at: "2026-06-02T05:03:37.801682Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:8c2f726d1faa81a82c7c2776b3429c29e03641619ffa4779ed14e42830bcba5e
+    reviewed_fingerprint: sha256:cf8ffbd3b5d838f8dd4fed90fbc576ea53425d65fd3a43a4249888c5c3c9b25c
 verification:
     assurance_level: B
     formalization_status: none
@@ -29,26 +29,26 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-01T20:13:13Z"
-        comment: 'Phase I: explicit SWKI disposition added to match affixed KIs (gate-tightening readiness).'
-        fingerprint: sha256:04772a1a25075be485a1e03ccd4c8483a7d4d1009018f498bb35b15ad74d4419
+        reviewed_at: "2026-06-02T05:02:45Z"
+        comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
+        fingerprint: sha256:e49c66a7bcd03f74d5ed571e65946301ec2c266e7b6651791d9e12c765c3cde6
         ai_generated: false
     impact_reviews:
         - requirement: SW-REQ-070
           artifact: pumps/elasticsearch.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Phase E kafka+ES MC/DC drive: //mcdc:ignore for documented-unreachable branches'
+          reason: 'Phase J: req_type field flipped derived to guarantee per probelabs/reqproof#88 (category error fix). Production .go files were not modified for this change; only req YAML metadata. Re-recording no-authored-change impact.'
           base: origin/master
-          requirement_fingerprint: sha256:8c2f726d1faa81a82c7c2776b3429c29e03641619ffa4779ed14e42830bcba5e
-          approval_fingerprint: sha256:04772a1a25075be485a1e03ccd4c8483a7d4d1009018f498bb35b15ad74d4419
+          requirement_fingerprint: sha256:cf8ffbd3b5d838f8dd4fed90fbc576ea53425d65fd3a43a4249888c5c3c9b25c
+          approval_fingerprint: sha256:e49c66a7bcd03f74d5ed571e65946301ec2c266e7b6651791d9e12c765c3cde6
           artifact_fingerprint: sha256:bed01de375baec71c5054532e66cd43659c128ab3bb96b697da84fb3b8b8ba8e
-          reviewed_at: "2026-05-31T18:15:27Z"
+          reviewed_at: "2026-06-02T05:13:05Z"
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:40:07Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-01T20:13:13Z"
+    last_modified_at: "2026-06-02T05:02:46Z"
 obligation_checklist:
     - boundary
     - nominal
@@ -96,4 +96,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-05-30T08:44:11Z comment="Phase A per-implementation/per-significant-behavior decomposition; descriptions code-verified against the named files per docs/phase-a-proposed-reqs.md. Pump-family family-level reqs are retained as superseded anchor reqs.")'
+          changed_by: human:cli
+        - date: "2026-06-02T05:02:45Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-01T20:13:13Z comment="Phase I: explicit SWKI disposition added to match affixed KIs (gate-tightening readiness).")'
           changed_by: human:cli
