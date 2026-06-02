@@ -3,7 +3,7 @@ version: 1
 status: superseded
 priority: shall
 category: functional
-req_type: derived
+req_type: guarantee
 fretish: ""
 description: '[SUPERSEDED by Phase A decomposition: SW-REQ-068 (es-version-dispatch), SW-REQ-069 (es-rolling-index-naming), SW-REQ-070 (es-bulk-flush-policy)] The Elasticsearch pump shall dispatch a per-version BulkProcessor, support rolling-index naming, and flush bulk records per operator-configured policy.'
 formalization_strategy: informal
@@ -48,7 +48,7 @@ history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:15Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-01T20:31:31Z"
+    last_modified_at: "2026-06-02T08:58:03Z"
 obligation_checklist:
     - errors_propagated
 obligation_suppressions:

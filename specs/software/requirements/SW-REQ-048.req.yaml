@@ -29,8 +29,8 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-02T05:02:45Z"
-        comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
+        reviewed_at: "2026-06-02T09:01:44Z"
+        comment: 'Phase K: principled re-suppression after #86 fix surfaced the real bug (was previously a FP-cover suppression). request_timeout_bounded obligation maps to KI splunk-newsplunkclient-mutates-default-transport (the production mutation of http.DefaultClient.Transport).'
         fingerprint: sha256:68b20b8c50cb4a5e85bea89ee5500b6c897f4d1cbca92fd276fcafe79f7fd28d
         ai_generated: false
     impact_reviews:
@@ -48,7 +48,7 @@ history:
     created_by: human:cli
     created_at: "2026-05-30T08:36:07Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-02T05:02:46Z"
+    last_modified_at: "2026-06-02T09:01:44Z"
 obligation_checklist:
     - cert_validation_strict
     - errors_propagated
@@ -65,9 +65,9 @@ obligation_suppressions:
         - NIST-800-53 SI-10,SI-11
         - OWASP-ASVS-v4 V5.1.3,V5.5.3
     - id: request_timeout_bounded
-      reason: 'Phase G: code_signal ''go.http.request-without-context'' at pumps/splunk.go:343 is a false positive — http.NewRequest is followed by req.WithContext(ctx) on line 347, so the request DOES observe caller cancellation. Splunk client itself sets its own HTTP timeout via NewSplunkClient; per-request timeout is bounded by caller-supplied context. Not a real obligation gap.'
+      reason: 'Phase K post-#86: go.http.default-transport-mutation at pumps/splunk.go:325 is the GENUINE production bug filed as KI splunk-newsplunkclient-mutates-default-transport — newSplunkClient writes to http.DefaultClient.Transport globally. KI tracks the upstream remediation; per-req suppression here acknowledges that the rule''s obligation is the bug we already documented, not a new spec gap.'
       suppressed_by: buger
-      suppressed_at: "2026-06-01T18:33:16Z"
+      suppressed_at: "2026-06-02T09:01:36Z"
       framework_refs:
         - CWE CWE-400,CWE-404
         - NIST-800-53 SC-5
@@ -83,4 +83,14 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-05-30T08:44:11Z comment="Phase A per-implementation/per-significant-behavior decomposition; descriptions code-verified against the named files per docs/phase-a-proposed-reqs.md. Pump-family family-level reqs are retained as superseded anchor reqs.")'
+          changed_by: human:cli
+        - date: "2026-06-02T08:49:58Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T05:02:45Z comment="Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.")'
+          changed_by: human:cli
+        - date: "2026-06-02T09:01:44Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T08:49:58Z comment="Cleanup: removed obligation_suppression for opengrep FP at pumps/splunk.go:343 (go.http.request-without-context); upstream reqproof landed the rule refinement (probelabs/reqproof#86) so the FP no longer fires (a different broader go.http.client-api signal now applies and is handled via standard obligation flow).")'
           changed_by: human:cli

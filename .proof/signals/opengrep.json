@@ -1,8 +1,8 @@
 {
   "schema_version": "proof.code_signals.report.v1",
   "provider": "opengrep",
-  "generated_at": "2026-06-01T19:44:27Z",
-  "input_hash": "sha256:5bbd2991f44dbe5609a35f423eb6ab5189e5bbb48290e9d1108c6c705a22d52e",
+  "generated_at": "2026-06-02T08:48:32Z",
+  "input_hash": "sha256:c7875f9b7b72c3e5d7efda72704207414e79b9e9aa6f2e843590210027a135cf",
   "mode": "run",
   "source": "stdout",
   "format": "sarif",
@@ -10,9 +10,7 @@
     "opengrep",
     "scan",
     "--config",
-    ".proof/signals/packs/7018f212bb9c955a",
-    "--config",
-    "signal-rules/tyk-pump-go-patterns.yaml",
+    ".proof/signals/packs/2fcf19a866f102b2",
     "--taint-intrafile",
     "--sarif",
     "--quiet",
@@ -234,15 +232,15 @@
       "signal_id": "random.dependency",
       "artifact": "analytics/demo/demo.go",
       "span": {
-        "start_line": 34,
-        "end_line": 34
+        "start_line": 3,
+        "end_line": 4
       },
       "confidence": "medium",
       "obligations": [
         "determinism"
       ],
       "message": "Randomness requires determinism or cryptographic-strength evidence depending on use.",
-      "fingerprint": "sha256:35cd10fbfb6545e624655e4a22adfefa0b0426158aa6381624babefa9c86a3fd",
+      "fingerprint": "sha256:c8d5371e78af101d2249f0e0825f306900e780f77b22273d2bd30719c4992877",
       "source_hash": "sha256:7ae0f109763ca16e8f54c2532c92a11a165795a7dcf8ce6722e53a847255ef81"
     },
     {
@@ -266,42 +264,6 @@
     {
       "schema_version": "proof.code_signals.v1",
       "provider": "opengrep",
-      "provider_rule_id": "go.random.math-rand",
-      "signal_id": "random.dependency",
-      "artifact": "analytics/demo/demo.go",
-      "span": {
-        "start_line": 35,
-        "end_line": 35
-      },
-      "confidence": "medium",
-      "obligations": [
-        "determinism"
-      ],
-      "message": "Randomness requires determinism or cryptographic-strength evidence depending on use.",
-      "fingerprint": "sha256:599e486ce45291e17835f7b4277ec8488046f56f4026f9003f67fc5f0610299e",
-      "source_hash": "sha256:7ae0f109763ca16e8f54c2532c92a11a165795a7dcf8ce6722e53a847255ef81"
-    },
-    {
-      "schema_version": "proof.code_signals.v1",
-      "provider": "opengrep",
-      "provider_rule_id": "go.random.math-rand",
-      "signal_id": "random.dependency",
-      "artifact": "analytics/demo/demo.go",
-      "span": {
-        "start_line": 42,
-        "end_line": 42
-      },
-      "confidence": "medium",
-      "obligations": [
-        "determinism"
-      ],
-      "message": "Randomness requires determinism or cryptographic-strength evidence depending on use.",
-      "fingerprint": "sha256:980b081e7d69ffd38cf147c1b2356819b1c790af73bdaec416222cae58cf8fe7",
-      "source_hash": "sha256:7ae0f109763ca16e8f54c2532c92a11a165795a7dcf8ce6722e53a847255ef81"
-    },
-    {
-      "schema_version": "proof.code_signals.v1",
-      "provider": "opengrep",
       "provider_rule_id": "go.time.dependency",
       "signal_id": "time.dependency",
       "artifact": "analytics/demo/demo.go",
@@ -315,150 +277,6 @@
       ],
       "message": "Time-dependent behavior requires determinism, timeout, or scheduling evidence.",
       "fingerprint": "sha256:1570586543f03ad6d1995df7fe298a29876cc306470cd97bc4b666bf58c18273",
-      "source_hash": "sha256:7ae0f109763ca16e8f54c2532c92a11a165795a7dcf8ce6722e53a847255ef81"
-    },
-    {
-      "schema_version": "proof.code_signals.v1",
-      "provider": "opengrep",
-      "provider_rule_id": "go.random.math-rand",
-      "signal_id": "random.dependency",
-      "artifact": "analytics/demo/demo.go",
-      "span": {
-        "start_line": 43,
-        "end_line": 43
-      },
-      "confidence": "medium",
-      "obligations": [
-        "determinism"
-      ],
-      "message": "Randomness requires determinism or cryptographic-strength evidence depending on use.",
-      "fingerprint": "sha256:e61e5dc721b0cea746a9a666e32a7bd8f39b990b295c94a4d1ab9707d13e85da",
-      "source_hash": "sha256:7ae0f109763ca16e8f54c2532c92a11a165795a7dcf8ce6722e53a847255ef81"
-    },
-    {
-      "schema_version": "proof.code_signals.v1",
-      "provider": "opengrep",
-      "provider_rule_id": "go.random.math-rand",
-      "signal_id": "random.dependency",
-      "artifact": "analytics/demo/demo.go",
-      "span": {
-        "start_line": 73,
-        "end_line": 73
-      },
-      "confidence": "medium",
-      "obligations": [
-        "determinism"
-      ],
-      "message": "Randomness requires determinism or cryptographic-strength evidence depending on use.",
-      "fingerprint": "sha256:e1cf7285b84a7fd0dec0d231a22497fc0889881f73446353bf33f26254b7e2e0",
-      "source_hash": "sha256:7ae0f109763ca16e8f54c2532c92a11a165795a7dcf8ce6722e53a847255ef81"
-    },
-    {
-      "schema_version": "proof.code_signals.v1",
-      "provider": "opengrep",
-      "provider_rule_id": "go.random.math-rand",
-      "signal_id": "random.dependency",
-      "artifact": "analytics/demo/demo.go",
-      "span": {
-        "start_line": 75,
-        "end_line": 75
-      },
-      "confidence": "medium",
-      "obligations": [
-        "determinism"
-      ],
-      "message": "Randomness requires determinism or cryptographic-strength evidence depending on use.",
-      "fingerprint": "sha256:a77fc0240239e2162a2813ae2e73b6b915c251de8304f78b1a9d10d500fc2c52",
-      "source_hash": "sha256:7ae0f109763ca16e8f54c2532c92a11a165795a7dcf8ce6722e53a847255ef81"
-    },
-    {
-      "schema_version": "proof.code_signals.v1",
-      "provider": "opengrep",
-      "provider_rule_id": "go.random.math-rand",
-      "signal_id": "random.dependency",
-      "artifact": "analytics/demo/demo.go",
-      "span": {
-        "start_line": 92,
-        "end_line": 92
-      },
-      "confidence": "medium",
-      "obligations": [
-        "determinism"
-      ],
-      "message": "Randomness requires determinism or cryptographic-strength evidence depending on use.",
-      "fingerprint": "sha256:9bbebfeeb583194ad16dc3837471d6d59efad391b932ffe52725f5dc8b02c127",
-      "source_hash": "sha256:7ae0f109763ca16e8f54c2532c92a11a165795a7dcf8ce6722e53a847255ef81"
-    },
-    {
-      "schema_version": "proof.code_signals.v1",
-      "provider": "opengrep",
-      "provider_rule_id": "go.random.math-rand",
-      "signal_id": "random.dependency",
-      "artifact": "analytics/demo/demo.go",
-      "span": {
-        "start_line": 109,
-        "end_line": 109
-      },
-      "confidence": "medium",
-      "obligations": [
-        "determinism"
-      ],
-      "message": "Randomness requires determinism or cryptographic-strength evidence depending on use.",
-      "fingerprint": "sha256:8973eb882463e47d0564915427ce1f6179eb1e67524207603fdb7c13788b5bdc",
-      "source_hash": "sha256:7ae0f109763ca16e8f54c2532c92a11a165795a7dcf8ce6722e53a847255ef81"
-    },
-    {
-      "schema_version": "proof.code_signals.v1",
-      "provider": "opengrep",
-      "provider_rule_id": "go.random.math-rand",
-      "signal_id": "random.dependency",
-      "artifact": "analytics/demo/demo.go",
-      "span": {
-        "start_line": 127,
-        "end_line": 127
-      },
-      "confidence": "medium",
-      "obligations": [
-        "determinism"
-      ],
-      "message": "Randomness requires determinism or cryptographic-strength evidence depending on use.",
-      "fingerprint": "sha256:42fcc7a59213e610d136877f40c4c450e20a77c79953b08bb160ae8f28ae8f60",
-      "source_hash": "sha256:7ae0f109763ca16e8f54c2532c92a11a165795a7dcf8ce6722e53a847255ef81"
-    },
-    {
-      "schema_version": "proof.code_signals.v1",
-      "provider": "opengrep",
-      "provider_rule_id": "go.random.math-rand",
-      "signal_id": "random.dependency",
-      "artifact": "analytics/demo/demo.go",
-      "span": {
-        "start_line": 154,
-        "end_line": 154
-      },
-      "confidence": "medium",
-      "obligations": [
-        "determinism"
-      ],
-      "message": "Randomness requires determinism or cryptographic-strength evidence depending on use.",
-      "fingerprint": "sha256:1c1c89ee764b4c2d1dc5a3f36bb49e6d61204d7f2849db2cc200e1f2d160dd41",
-      "source_hash": "sha256:7ae0f109763ca16e8f54c2532c92a11a165795a7dcf8ce6722e53a847255ef81"
-    },
-    {
-      "schema_version": "proof.code_signals.v1",
-      "provider": "opengrep",
-      "provider_rule_id": "go.random.math-rand",
-      "signal_id": "random.dependency",
-      "artifact": "analytics/demo/demo.go",
-      "span": {
-        "start_line": 164,
-        "end_line": 164
-      },
-      "confidence": "medium",
-      "obligations": [
-        "determinism"
-      ],
-      "message": "Randomness requires determinism or cryptographic-strength evidence depending on use.",
-      "fingerprint": "sha256:bcfce57c7435ea404a5ca266f9d721203b5e43eb5a1c9acb2216eb100a4afe38",
       "source_hash": "sha256:7ae0f109763ca16e8f54c2532c92a11a165795a7dcf8ce6722e53a847255ef81"
     },
     {
@@ -624,8 +442,8 @@
       "obligations": [
         "errors_propagated"
       ],
-      "message": "log.Fatal / os.Exit called from a non-main constructor or processing function.\nThis aborts the entire process and bypasses caller error handling - return\nan error instead so the caller can recover. log.Fatal is acceptable only\nin package main.\n",
-      "fingerprint": "sha256:7a5cf6c76aae1047563c527d48553a751f82e51e580213657a297c7e40ecef17",
+      "message": "log.Fatal / os.Exit called from a non-main constructor or processing function.\nThis aborts the entire process and bypasses caller error handling; return\nan error instead so the caller can recover.\n",
+      "fingerprint": "sha256:4ad9b80b5bb1248665847c08c57c40f543d6e63981d317839da5a01fcfb60d4d",
       "source_hash": "sha256:62974aa49362b9401ff9642dad22e416139271c36642e5e36a7a5dcc2c3a8a54"
     },
     {
@@ -646,8 +464,8 @@
       "obligations": [
         "malformed_recovers_or_errors_loudly"
       ],
-      "message": "mapstructure.Decode silently ignores unknown keys in the input map.\nFor configuration parsing this hides typos (e.g. csv_pathh instead of\ncsv_path). Use mapstructure.NewDecoder with a DecoderConfig that sets\nErrorUnused: true so unknown keys produce an error.\n",
-      "fingerprint": "sha256:dd32ecfb66b334dd4d13463cfb63d956a84b89feaa8af0beac27f42e49dffb81",
+      "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
+      "fingerprint": "sha256:9d2548b4c58aa97bd9f675e4748c198e4225575d9f277d471aeb0bd4ed097eff",
       "source_hash": "sha256:62974aa49362b9401ff9642dad22e416139271c36642e5e36a7a5dcc2c3a8a54"
     },
     {
@@ -761,8 +579,8 @@
       "obligations": [
         "malformed_recovers_or_errors_loudly"
       ],
-      "message": "mapstructure.Decode silently ignores unknown keys in the input map.\nFor configuration parsing this hides typos (e.g. csv_pathh instead of\ncsv_path). Use mapstructure.NewDecoder with a DecoderConfig that sets\nErrorUnused: true so unknown keys produce an error.\n",
-      "fingerprint": "sha256:e9badc29a5dc1ad7354978b3516983355d9926ece36687e45006931d414f77fc",
+      "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
+      "fingerprint": "sha256:a2d99966d782ce0ecb6cea0914052d283c6482c4ee02f3623654ae3d1b644e0f",
       "source_hash": "sha256:184e18e555be90f6e47ced4f2a6354faac72c12a37682f099eec3868281e2da5"
     },
     {
@@ -897,8 +715,8 @@
       "obligations": [
         "errors_propagated"
       ],
-      "message": "log.Fatal / os.Exit called from a non-main constructor or processing function.\nThis aborts the entire process and bypasses caller error handling - return\nan error instead so the caller can recover. log.Fatal is acceptable only\nin package main.\n",
-      "fingerprint": "sha256:380d7cb9adaaaace7410d6ade7aa836bd117aa575125fc6a76d943aee00fbae6",
+      "message": "log.Fatal / os.Exit called from a non-main constructor or processing function.\nThis aborts the entire process and bypasses caller error handling; return\nan error instead so the caller can recover.\n",
+      "fingerprint": "sha256:79a6c9bf65f03e9e15ca74622ac01cca11fac15b1274f65762130d91300bfaf6",
       "source_hash": "sha256:bed01de375baec71c5054532e66cd43659c128ab3bb96b697da84fb3b8b8ba8e"
     },
     {
@@ -919,8 +737,8 @@
       "obligations": [
         "malformed_recovers_or_errors_loudly"
       ],
-      "message": "mapstructure.Decode silently ignores unknown keys in the input map.\nFor configuration parsing this hides typos (e.g. csv_pathh instead of\ncsv_path). Use mapstructure.NewDecoder with a DecoderConfig that sets\nErrorUnused: true so unknown keys produce an error.\n",
-      "fingerprint": "sha256:dae23a99f92616417bf9801c77e89a316046480393a16122d93e7cc735a0a7f0",
+      "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
+      "fingerprint": "sha256:8b1ff5ef14c2519eec8ff4fe38fc34aa529042175824bc7975196ce23df0d3c9",
       "source_hash": "sha256:bed01de375baec71c5054532e66cd43659c128ab3bb96b697da84fb3b8b8ba8e"
     },
     {
@@ -941,8 +759,8 @@
       "obligations": [
         "errors_propagated"
       ],
-      "message": "Function calls itself recursively after a sleep on the error arm with\nno retry counter, no max-attempts, and no context-deadline check.\nEach recursion adds a stack frame; under sustained failure the\ngoroutine eventually stack-overflows. Use a bounded loop or a\nbackoff library (e.g. cenkalti/backoff) with MaxElapsedTime/Permanent.\n",
-      "fingerprint": "sha256:2a24d9aa66fb4deefe977698470e16f70f9354b340fe6f45dd16a4e1051bc480",
+      "message": "Function calls itself recursively after a sleep on the error arm with\nno retry counter, max-attempt guard, or context-deadline check. Sustained\nfailure can grow the goroutine stack without bound.\n",
+      "fingerprint": "sha256:45fc8a0fe2f61f7119fec26a45a0d8ad50e2339096139fdfcb08aca67269d57a",
       "source_hash": "sha256:bed01de375baec71c5054532e66cd43659c128ab3bb96b697da84fb3b8b8ba8e"
     },
     {
@@ -1125,8 +943,8 @@
       "obligations": [
         "malformed_recovers_or_errors_loudly"
       ],
-      "message": "mapstructure.Decode silently ignores unknown keys in the input map.\nFor configuration parsing this hides typos (e.g. csv_pathh instead of\ncsv_path). Use mapstructure.NewDecoder with a DecoderConfig that sets\nErrorUnused: true so unknown keys produce an error.\n",
-      "fingerprint": "sha256:2049508fbc269f79cca444c80b6d101c0482e0f329030e3c805b60c6b2984170",
+      "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
+      "fingerprint": "sha256:48212fdbdd41118eb4e95bb1895b0a123960521b9410b999d5f7de9ac07aeac0",
       "source_hash": "sha256:ea0d01bc2cf1958e2c42d69e4a0eaf07bfe686af6b41d65a8a3b46ef2c01e008"
     },
     {
@@ -1147,8 +965,8 @@
       "obligations": [
         "malformed_recovers_or_errors_loudly"
       ],
-      "message": "mapstructure.Decode silently ignores unknown keys in the input map.\nFor configuration parsing this hides typos (e.g. csv_pathh instead of\ncsv_path). Use mapstructure.NewDecoder with a DecoderConfig that sets\nErrorUnused: true so unknown keys produce an error.\n",
-      "fingerprint": "sha256:834c235fa1d5e1e44fd1762c5b656ee38ee58c5b6dd75131d679d5f1e514e4b3",
+      "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
+      "fingerprint": "sha256:9cc69a89c1536912b4732a4ce54ab7c73bc15f282746901a9f2d31a18bbe3f10",
       "source_hash": "sha256:ea0d01bc2cf1958e2c42d69e4a0eaf07bfe686af6b41d65a8a3b46ef2c01e008"
     },
     {
@@ -1169,8 +987,8 @@
       "obligations": [
         "cancellation_observed"
       ],
-      "message": "Function receives a context.Context parameter but creates a fresh\ncontext.Background() / context.TODO() inside the body and uses that\ninstead. The caller-supplied ctx (with its deadline and cancellation)\nis silently dropped. Pass the parameter ctx downstream, or document\nwhy a fresh context is intentional.\n",
-      "fingerprint": "sha256:52447f3bd71c20497566794f81df665974350bf58e1148e07c923feab68da02d",
+      "message": "Function receives a context.Context parameter but creates a fresh\ncontext.Background() / context.TODO() inside the body and uses that\ninstead. Caller deadlines and cancellation can be silently dropped.\n",
+      "fingerprint": "sha256:55dc12c983199ef13edde6740c09882c21c1fc72cd9d9b9bb27158167657204b",
       "source_hash": "sha256:ea0d01bc2cf1958e2c42d69e4a0eaf07bfe686af6b41d65a8a3b46ef2c01e008"
     },
     {
@@ -1204,7 +1022,7 @@
         "start_line": 114,
         "end_line": 163
       },
-      "confidence": "low",
+      "confidence": "medium",
       "tags": [
         "concurrent",
         "panic_safety"
@@ -1212,8 +1030,8 @@
       "obligations": [
         "panic_free_input_handling"
       ],
-      "message": "Goroutine launched without a deferred recover at the top of its body.\nA panic inside the goroutine cannot be caught by the launching frame\nand will crash the whole process. For fan-out / long-lived / per-\nrequest goroutines, add\n`defer func() { if r := recover(); r != nil { log + metric } }()`\nat the start of the body.\n",
-      "fingerprint": "sha256:fd977a9fca1ba4d720e67c9023a67d8b9ab4516e735c15aa11643883ca8a2ad8",
+      "message": "Loop-backed goroutine launched without a deferred recover at the top of\nits body. A panic in a long-lived worker goroutine cannot be caught by\nthe launching frame and will crash the process.\n",
+      "fingerprint": "sha256:2bd45172726f6c49220dccf0a62e559d2f2e28d93eb4c574280fe13dd496b06a",
       "source_hash": "sha256:ea0d01bc2cf1958e2c42d69e4a0eaf07bfe686af6b41d65a8a3b46ef2c01e008"
     },
     {
@@ -1360,8 +1178,8 @@
       "obligations": [
         "malformed_recovers_or_errors_loudly"
       ],
-      "message": "mapstructure.Decode silently ignores unknown keys in the input map.\nFor configuration parsing this hides typos (e.g. csv_pathh instead of\ncsv_path). Use mapstructure.NewDecoder with a DecoderConfig that sets\nErrorUnused: true so unknown keys produce an error.\n",
-      "fingerprint": "sha256:b9e21212b0a8f4683f70e5edb769319c90fd42c3299684a9b302d90c78d42173",
+      "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
+      "fingerprint": "sha256:5ea6a86181a470598136bdfebc1529309804d8252b42e3f9895f09351aaa3e71",
       "source_hash": "sha256:0c0b86faafd08711b4094b80074720dcbbb927b022aec5d221671edf51b1c1ad"
     },
     {
@@ -1382,8 +1200,8 @@
       "obligations": [
         "malformed_recovers_or_errors_loudly"
       ],
-      "message": "mapstructure.Decode silently ignores unknown keys in the input map.\nFor configuration parsing this hides typos (e.g. csv_pathh instead of\ncsv_path). Use mapstructure.NewDecoder with a DecoderConfig that sets\nErrorUnused: true so unknown keys produce an error.\n",
-      "fingerprint": "sha256:3635048bd85425be97f6b0a208b2810f7bff9a118bfa47df9e16385efc17d9d3",
+      "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
+      "fingerprint": "sha256:e752d9d20548cd454b3cca96e4cff3f102797c6c36f6fd25b2c4aac8e415094a",
       "source_hash": "sha256:47c5ce1962a7b2667acb5e38685a18fe402b522d52e7a3e42871142147b2a2ad"
     },
     {
@@ -1404,8 +1222,8 @@
       "obligations": [
         "errors_propagated"
       ],
-      "message": "log.Fatal / os.Exit called from a non-main constructor or processing function.\nThis aborts the entire process and bypasses caller error handling - return\nan error instead so the caller can recover. log.Fatal is acceptable only\nin package main.\n",
-      "fingerprint": "sha256:3521aed708fe761fbdf179a18e2c3a295188f0161a9bc683dcda9837e9377d06",
+      "message": "log.Fatal / os.Exit called from a non-main constructor or processing function.\nThis aborts the entire process and bypasses caller error handling; return\nan error instead so the caller can recover.\n",
+      "fingerprint": "sha256:fb96b0aa5bceb2d09e2a6587d304edf13a287eb3946ec758b0b05e593e3e60f7",
       "source_hash": "sha256:d4ac79aaaac8b06f3f2700b41cde84cc3614601a29fe9bfd1411ef60f091a95d"
     },
     {
@@ -1426,8 +1244,8 @@
       "obligations": [
         "malformed_recovers_or_errors_loudly"
       ],
-      "message": "mapstructure.Decode silently ignores unknown keys in the input map.\nFor configuration parsing this hides typos (e.g. csv_pathh instead of\ncsv_path). Use mapstructure.NewDecoder with a DecoderConfig that sets\nErrorUnused: true so unknown keys produce an error.\n",
-      "fingerprint": "sha256:1e84b9b1422b94c9b020d63118ce2d20d136f1dbc8c0e57978e1cc88fb682693",
+      "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
+      "fingerprint": "sha256:40dc159091074101f01e06a3c074c4e4bc818822a3eec18e5fd19d7c83f0717d",
       "source_hash": "sha256:d4ac79aaaac8b06f3f2700b41cde84cc3614601a29fe9bfd1411ef60f091a95d"
     },
     {
@@ -1448,8 +1266,8 @@
       "obligations": [
         "errors_propagated"
       ],
-      "message": "log.Fatal / os.Exit called from a non-main constructor or processing function.\nThis aborts the entire process and bypasses caller error handling - return\nan error instead so the caller can recover. log.Fatal is acceptable only\nin package main.\n",
-      "fingerprint": "sha256:c53cf1b322938dd995c3bd6c83d16c60d4bfb51f9b24a920a9ffea77cb8d591f",
+      "message": "log.Fatal / os.Exit called from a non-main constructor or processing function.\nThis aborts the entire process and bypasses caller error handling; return\nan error instead so the caller can recover.\n",
+      "fingerprint": "sha256:74bc02deddfc293f84d94de697f8a8203970b328c354e1534ba342cd5b4a0817",
       "source_hash": "sha256:d4ac79aaaac8b06f3f2700b41cde84cc3614601a29fe9bfd1411ef60f091a95d"
     },
     {
@@ -1470,8 +1288,8 @@
       "obligations": [
         "malformed_recovers_or_errors_loudly"
       ],
-      "message": "mapstructure.Decode silently ignores unknown keys in the input map.\nFor configuration parsing this hides typos (e.g. csv_pathh instead of\ncsv_path). Use mapstructure.NewDecoder with a DecoderConfig that sets\nErrorUnused: true so unknown keys produce an error.\n",
-      "fingerprint": "sha256:ff10ad932333e7265d7604ef9ef18a313357bd9a97a34800502db6e6572dce66",
+      "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
+      "fingerprint": "sha256:c23a999af99d072b7039a6b766287601e297968ea12bd6ea7658384dec998ea0",
       "source_hash": "sha256:8cc6cd2d50341814886b9bf6c69c93906ee990d5b5e37e166f2d16dc6813f754"
     },
     {
@@ -1582,8 +1400,8 @@
       "obligations": [
         "errors_propagated"
       ],
-      "message": "log.Fatal / os.Exit called from a non-main constructor or processing function.\nThis aborts the entire process and bypasses caller error handling - return\nan error instead so the caller can recover. log.Fatal is acceptable only\nin package main.\n",
-      "fingerprint": "sha256:09d55f582198de3ea847593f6e103cc03cec6318171ff33463ccaed08f323722",
+      "message": "log.Fatal / os.Exit called from a non-main constructor or processing function.\nThis aborts the entire process and bypasses caller error handling; return\nan error instead so the caller can recover.\n",
+      "fingerprint": "sha256:d8a1f4c07ec6894b7cffa3a9ec8140a16c0c2cb5384114566b815f60c83091e6",
       "source_hash": "sha256:bbe0135ad0220ffc276cbe49191da29c24d7fc4814b4366079993f79fb3a250e"
     },
     {
@@ -1604,8 +1422,8 @@
       "obligations": [
         "malformed_recovers_or_errors_loudly"
       ],
-      "message": "mapstructure.Decode silently ignores unknown keys in the input map.\nFor configuration parsing this hides typos (e.g. csv_pathh instead of\ncsv_path). Use mapstructure.NewDecoder with a DecoderConfig that sets\nErrorUnused: true so unknown keys produce an error.\n",
-      "fingerprint": "sha256:4c41bbf39aa832d3e875b0bfbe35ae64c3f625688d3163f789d751a8a5dc199f",
+      "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
+      "fingerprint": "sha256:640c0eb7fb1f5ab37111734a5d0f6ebca990a2cb10c2ac137748884f30c98086",
       "source_hash": "sha256:bbe0135ad0220ffc276cbe49191da29c24d7fc4814b4366079993f79fb3a250e"
     },
     {
@@ -1626,8 +1444,8 @@
       "obligations": [
         "errors_propagated"
       ],
-      "message": "Function calls itself recursively after a sleep on the error arm with\nno retry counter, no max-attempts, and no context-deadline check.\nEach recursion adds a stack frame; under sustained failure the\ngoroutine eventually stack-overflows. Use a bounded loop or a\nbackoff library (e.g. cenkalti/backoff) with MaxElapsedTime/Permanent.\n",
-      "fingerprint": "sha256:0063d8ddc11ee9461a5dda87a312de6de3ed1de5e6e6c8d51437909b0ad1d3e4",
+      "message": "Function calls itself recursively after a sleep on the error arm with\nno retry counter, max-attempt guard, or context-deadline check. Sustained\nfailure can grow the goroutine stack without bound.\n",
+      "fingerprint": "sha256:dbd2c2c2cb09e756c4b477f68213d65da5da2b77b72938df03b23519d93cac72",
       "source_hash": "sha256:bbe0135ad0220ffc276cbe49191da29c24d7fc4814b4366079993f79fb3a250e"
     },
     {
@@ -1702,8 +1520,8 @@
       "obligations": [
         "errors_propagated"
       ],
-      "message": "log.Fatal / os.Exit called from a non-main constructor or processing function.\nThis aborts the entire process and bypasses caller error handling - return\nan error instead so the caller can recover. log.Fatal is acceptable only\nin package main.\n",
-      "fingerprint": "sha256:40a193e37948b2f0e7181a2c6148ca124563049442a962df1602724e162562b7",
+      "message": "log.Fatal / os.Exit called from a non-main constructor or processing function.\nThis aborts the entire process and bypasses caller error handling; return\nan error instead so the caller can recover.\n",
+      "fingerprint": "sha256:582bc899b34cc112e37fd7463b5665759d0e89d2d75aee54b7178e748fb3c8fc",
       "source_hash": "sha256:201b7fe17623ec209c136144e867e5c9994eb3999bc8e8f041ef61040f72520d"
     },
     {
@@ -1724,8 +1542,8 @@
       "obligations": [
         "malformed_recovers_or_errors_loudly"
       ],
-      "message": "mapstructure.Decode silently ignores unknown keys in the input map.\nFor configuration parsing this hides typos (e.g. csv_pathh instead of\ncsv_path). Use mapstructure.NewDecoder with a DecoderConfig that sets\nErrorUnused: true so unknown keys produce an error.\n",
-      "fingerprint": "sha256:279a97423d770a4a69a336b1e5701d66ba3e5ab256fa607d3cf9679b674989c6",
+      "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
+      "fingerprint": "sha256:d3e9e4cc1abf0fc12cac69d4256f383de9d94b636ea6183eb4eccf056e785b15",
       "source_hash": "sha256:201b7fe17623ec209c136144e867e5c9994eb3999bc8e8f041ef61040f72520d"
     },
     {
@@ -1800,8 +1618,8 @@
       "obligations": [
         "errors_propagated"
       ],
-      "message": "log.Fatal / os.Exit called from a non-main constructor or processing function.\nThis aborts the entire process and bypasses caller error handling - return\nan error instead so the caller can recover. log.Fatal is acceptable only\nin package main.\n",
-      "fingerprint": "sha256:039292056694a49140fa3d2995c4b7125991c69dc9c8b04ddc545a3aba3a22d7",
+      "message": "log.Fatal / os.Exit called from a non-main constructor or processing function.\nThis aborts the entire process and bypasses caller error handling; return\nan error instead so the caller can recover.\n",
+      "fingerprint": "sha256:98f3faa4ed2b07815afd6e7b2f3419b75c1025b1b5703e3cc32124c91ea6c19f",
       "source_hash": "sha256:a24df2d59e765fc1963b11188ba2eb01adeb1618c51fdd0222c6c579a6c30299"
     },
     {
@@ -1822,8 +1640,8 @@
       "obligations": [
         "malformed_recovers_or_errors_loudly"
       ],
-      "message": "mapstructure.Decode silently ignores unknown keys in the input map.\nFor configuration parsing this hides typos (e.g. csv_pathh instead of\ncsv_path). Use mapstructure.NewDecoder with a DecoderConfig that sets\nErrorUnused: true so unknown keys produce an error.\n",
-      "fingerprint": "sha256:352631312c180a305f9123a2b45e6581d2e81af92361803094b4e32c1d69d525",
+      "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
+      "fingerprint": "sha256:42d8b6b14206e4f5662b8630b96afd5a5271103e5840ef8e9e6afd123cc51206",
       "source_hash": "sha256:a24df2d59e765fc1963b11188ba2eb01adeb1618c51fdd0222c6c579a6c30299"
     },
     {
@@ -1934,8 +1752,8 @@
       "obligations": [
         "errors_propagated"
       ],
-      "message": "log.Fatal / os.Exit called from a non-main constructor or processing function.\nThis aborts the entire process and bypasses caller error handling - return\nan error instead so the caller can recover. log.Fatal is acceptable only\nin package main.\n",
-      "fingerprint": "sha256:0446912461666c1cf9782f5b55fee3b87a9059ee3be93d262d9445fa8e8647e7",
+      "message": "log.Fatal / os.Exit called from a non-main constructor or processing function.\nThis aborts the entire process and bypasses caller error handling; return\nan error instead so the caller can recover.\n",
+      "fingerprint": "sha256:46254a24a61fa56fb4a61c76b45f8c280d0161191f2b73fd45e8a3006a1b7fcb",
       "source_hash": "sha256:03d0ccb4d2d45c5c72fe96379297167e0f6dcdc6223fd103a455150878de6911"
     },
     {
@@ -1956,8 +1774,8 @@
       "obligations": [
         "malformed_recovers_or_errors_loudly"
       ],
-      "message": "mapstructure.Decode silently ignores unknown keys in the input map.\nFor configuration parsing this hides typos (e.g. csv_pathh instead of\ncsv_path). Use mapstructure.NewDecoder with a DecoderConfig that sets\nErrorUnused: true so unknown keys produce an error.\n",
-      "fingerprint": "sha256:ef52b3664e0030c009733989735e3330d66f7e5257614f6c45f40eaffcf6a553",
+      "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
+      "fingerprint": "sha256:7799913aa22f86f2d18510595564ee940b0f9392a48c06060ddc21015e9054d0",
       "source_hash": "sha256:03d0ccb4d2d45c5c72fe96379297167e0f6dcdc6223fd103a455150878de6911"
     },
     {
@@ -1976,24 +1794,6 @@
       ],
       "message": "Discarded call result requires explicit propagation or ignore-policy evidence.",
       "fingerprint": "sha256:0a92023891e11dc0f9522c35dcedcb9620ba10ebe2ec1f6cc1c884755e57964f",
-      "source_hash": "sha256:03d0ccb4d2d45c5c72fe96379297167e0f6dcdc6223fd103a455150878de6911"
-    },
-    {
-      "schema_version": "proof.code_signals.v1",
-      "provider": "opengrep",
-      "provider_rule_id": "go.random.math-rand",
-      "signal_id": "random.dependency",
-      "artifact": "pumps/kinesis.go",
-      "span": {
-        "start_line": 185,
-        "end_line": 185
-      },
-      "confidence": "medium",
-      "obligations": [
-        "determinism"
-      ],
-      "message": "Randomness requires determinism or cryptographic-strength evidence depending on use.",
-      "fingerprint": "sha256:92c92386641f2ec3bd108d4297b8f8f2800d75cb48a743724da3e3b165042742",
       "source_hash": "sha256:03d0ccb4d2d45c5c72fe96379297167e0f6dcdc6223fd103a455150878de6911"
     },
     {
@@ -2032,8 +1832,8 @@
       "obligations": [
         "errors_propagated"
       ],
-      "message": "log.Fatal / os.Exit called from a non-main constructor or processing function.\nThis aborts the entire process and bypasses caller error handling - return\nan error instead so the caller can recover. log.Fatal is acceptable only\nin package main.\n",
-      "fingerprint": "sha256:7f9080ef5afeb42942465921690ae9c709b165d3a11528ecc3ca2d129a92972e",
+      "message": "log.Fatal / os.Exit called from a non-main constructor or processing function.\nThis aborts the entire process and bypasses caller error handling; return\nan error instead so the caller can recover.\n",
+      "fingerprint": "sha256:c972e42691735b98e5fc32cdc84e743f69250e7fe5db9b09480d2869e22792b8",
       "source_hash": "sha256:f5e57b8c6eaac846548d67fb0a12da0d91617ade75260f878f47354947aa4e8c"
     },
     {
@@ -2054,8 +1854,8 @@
       "obligations": [
         "malformed_recovers_or_errors_loudly"
       ],
-      "message": "mapstructure.Decode silently ignores unknown keys in the input map.\nFor configuration parsing this hides typos (e.g. csv_pathh instead of\ncsv_path). Use mapstructure.NewDecoder with a DecoderConfig that sets\nErrorUnused: true so unknown keys produce an error.\n",
-      "fingerprint": "sha256:2dcfd53173bd382841aeda921c3e95b6b524ef13b76af628bd38a862a0aeb2de",
+      "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
+      "fingerprint": "sha256:3ea2b322fb2bd65ae6026cafcc61fcff9da11d9a2e132f5463787d4740911ab8",
       "source_hash": "sha256:f5e57b8c6eaac846548d67fb0a12da0d91617ade75260f878f47354947aa4e8c"
     },
     {
@@ -2076,8 +1876,8 @@
       "obligations": [
         "malformed_recovers_or_errors_loudly"
       ],
-      "message": "mapstructure.Decode silently ignores unknown keys in the input map.\nFor configuration parsing this hides typos (e.g. csv_pathh instead of\ncsv_path). Use mapstructure.NewDecoder with a DecoderConfig that sets\nErrorUnused: true so unknown keys produce an error.\n",
-      "fingerprint": "sha256:ef563e29c15e9b1c2a795150ade9e9ab9256870f4c909c0e63da814c1e78bc91",
+      "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
+      "fingerprint": "sha256:6fc7eb953385b27195208ca9eab772965650820d7d10c2a533448d9a1648346a",
       "source_hash": "sha256:2f2c4e6adae967675d60beb12d69831c675cebde2676742d717aa193d171a5e3"
     },
     {
@@ -2098,8 +1898,8 @@
       "obligations": [
         "malformed_recovers_or_errors_loudly"
       ],
-      "message": "mapstructure.Decode silently ignores unknown keys in the input map.\nFor configuration parsing this hides typos (e.g. csv_pathh instead of\ncsv_path). Use mapstructure.NewDecoder with a DecoderConfig that sets\nErrorUnused: true so unknown keys produce an error.\n",
-      "fingerprint": "sha256:462bea2ef04d54dbf41f8e88592b3a525f8f80dee21496a1eb98cdb865f8dd39",
+      "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
+      "fingerprint": "sha256:e6f815e0f8d9cfb2ba5a0fe60b7b86cdd36fbc521fd8878d9d5a3468d5601e5b",
       "source_hash": "sha256:2f2c4e6adae967675d60beb12d69831c675cebde2676742d717aa193d171a5e3"
     },
     {
@@ -2201,8 +2001,8 @@
       "obligations": [
         "malformed_recovers_or_errors_loudly"
       ],
-      "message": "mapstructure.Decode silently ignores unknown keys in the input map.\nFor configuration parsing this hides typos (e.g. csv_pathh instead of\ncsv_path). Use mapstructure.NewDecoder with a DecoderConfig that sets\nErrorUnused: true so unknown keys produce an error.\n",
-      "fingerprint": "sha256:431a430c1f1784a655e2a4b5447ddaa7c24cd09b681b5b608e72e6820bbd1a9d",
+      "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
+      "fingerprint": "sha256:a1feacad8efc92a62263959e6c8b46f7431b814c61b5981d2fcbd355ab9b6a46",
       "source_hash": "sha256:e9654c425e88a9b07ed3c299faf370703297ce9d18af76e882d23a9cfe7977a3"
     },
     {
@@ -2223,8 +2023,8 @@
       "obligations": [
         "malformed_recovers_or_errors_loudly"
       ],
-      "message": "mapstructure.Decode silently ignores unknown keys in the input map.\nFor configuration parsing this hides typos (e.g. csv_pathh instead of\ncsv_path). Use mapstructure.NewDecoder with a DecoderConfig that sets\nErrorUnused: true so unknown keys produce an error.\n",
-      "fingerprint": "sha256:2cbdc2f5775a22e8a637787b7aea66418dff0890ab2fb4b13f393817cb6f8762",
+      "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
+      "fingerprint": "sha256:bae85327791095efed4b04e9011b86c8db2028fce75e1af5af2937a6305f512f",
       "source_hash": "sha256:e9654c425e88a9b07ed3c299faf370703297ce9d18af76e882d23a9cfe7977a3"
     },
     {
@@ -2245,8 +2045,8 @@
       "obligations": [
         "malformed_recovers_or_errors_loudly"
       ],
-      "message": "mapstructure.Decode silently ignores unknown keys in the input map.\nFor configuration parsing this hides typos (e.g. csv_pathh instead of\ncsv_path). Use mapstructure.NewDecoder with a DecoderConfig that sets\nErrorUnused: true so unknown keys produce an error.\n",
-      "fingerprint": "sha256:10fef7844f8f55f77be66e4e4ce96ff22b192da256eb9e9703d147a996945e70",
+      "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
+      "fingerprint": "sha256:e63cb14ed9e51d09e97967b9de109f5d551a5f5c9c880f0c09bb3bc447fe88ad",
       "source_hash": "sha256:dda32ac6fb6c2d7cf1306ed09a90eacaff5bbec78939ddaa7f72bf17ed9f8cf2"
     },
     {
@@ -2267,8 +2067,8 @@
       "obligations": [
         "malformed_recovers_or_errors_loudly"
       ],
-      "message": "mapstructure.Decode silently ignores unknown keys in the input map.\nFor configuration parsing this hides typos (e.g. csv_pathh instead of\ncsv_path). Use mapstructure.NewDecoder with a DecoderConfig that sets\nErrorUnused: true so unknown keys produce an error.\n",
-      "fingerprint": "sha256:69061fc375fe0bfdc15c598e6ab62c773cb0b3c0b82e3f37035e95b74fcd717f",
+      "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
+      "fingerprint": "sha256:966340b9a3447c72e3bb535f8ace0314b0bdbdd0ae03fd101e1d7323229cbf2a",
       "source_hash": "sha256:2c3d418cb9ea0e57f5b9408764a80849151188cb53d1ab2baa09118d0ebef391"
     },
     {
@@ -2370,24 +2170,20 @@
     {
       "schema_version": "proof.code_signals.v1",
       "provider": "opengrep",
-      "provider_rule_id": "go.goroutine.no-recover",
-      "signal_id": "concurrency.goroutine_no_recover",
-      "artifact": "pumps/mcp_sql_aggregate.go",
+      "provider_rule_id": "go.random.math-rand",
+      "signal_id": "random.dependency",
+      "artifact": "pumps/moesif.go",
       "span": {
-        "start_line": 143,
-        "end_line": 147
+        "start_line": 3,
+        "end_line": 11
       },
-      "confidence": "low",
-      "tags": [
-        "concurrent",
-        "panic_safety"
-      ],
+      "confidence": "medium",
       "obligations": [
-        "panic_free_input_handling"
+        "determinism"
       ],
-      "message": "Goroutine launched without a deferred recover at the top of its body.\nA panic inside the goroutine cannot be caught by the launching frame\nand will crash the whole process. For fan-out / long-lived / per-\nrequest goroutines, add\n`defer func() { if r := recover(); r != nil { log + metric } }()`\nat the start of the body.\n",
-      "fingerprint": "sha256:77a889bc62adcbc2feb4cfe9c4b5602d78788cd619cc02d89d048a8a335efbc9",
-      "source_hash": "sha256:2c3d418cb9ea0e57f5b9408764a80849151188cb53d1ab2baa09118d0ebef391"
+      "message": "Randomness requires determinism or cryptographic-strength evidence depending on use.",
+      "fingerprint": "sha256:7c7c4ff84267c9a38dff74725683cd232240070ac87dfe205cf5930bd984618b",
+      "source_hash": "sha256:91eee5dc54ba465d8ade96ee8b9dcfd7ec65116b746e5eb8f4669e32506c1888"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -2484,8 +2280,8 @@
       "obligations": [
         "errors_propagated"
       ],
-      "message": "log.Fatal / os.Exit called from a non-main constructor or processing function.\nThis aborts the entire process and bypasses caller error handling - return\nan error instead so the caller can recover. log.Fatal is acceptable only\nin package main.\n",
-      "fingerprint": "sha256:a1039d8913701bbb98c6802cf557bac6e99d4d7a7cfe8f829516cc31328b599d",
+      "message": "log.Fatal / os.Exit called from a non-main constructor or processing function.\nThis aborts the entire process and bypasses caller error handling; return\nan error instead so the caller can recover.\n",
+      "fingerprint": "sha256:8154d9d49af69c992be793eac761ec7c3dc3c41952d0d1500ccaac00a3c69d27",
       "source_hash": "sha256:91eee5dc54ba465d8ade96ee8b9dcfd7ec65116b746e5eb8f4669e32506c1888"
     },
     {
@@ -2506,8 +2302,8 @@
       "obligations": [
         "malformed_recovers_or_errors_loudly"
       ],
-      "message": "mapstructure.Decode silently ignores unknown keys in the input map.\nFor configuration parsing this hides typos (e.g. csv_pathh instead of\ncsv_path). Use mapstructure.NewDecoder with a DecoderConfig that sets\nErrorUnused: true so unknown keys produce an error.\n",
-      "fingerprint": "sha256:ffcea7db0c518551812ebcc4d28e0d27b858e99ef9b83712177a8b30bc09c9e7",
+      "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
+      "fingerprint": "sha256:2cf29c5e15ceba41377d26bef63f5d1b2f6894833776a1aaf524610ed4866725",
       "source_hash": "sha256:91eee5dc54ba465d8ade96ee8b9dcfd7ec65116b746e5eb8f4669e32506c1888"
     },
     {
@@ -2546,26 +2342,8 @@
       "obligations": [
         "errors_propagated"
       ],
-      "message": "log.Fatal / os.Exit called from a non-main constructor or processing function.\nThis aborts the entire process and bypasses caller error handling - return\nan error instead so the caller can recover. log.Fatal is acceptable only\nin package main.\n",
-      "fingerprint": "sha256:f3847c79fcaf933c8f76cf5170c2780d3b4f1713a0c7f5d20db5822cd94d7648",
-      "source_hash": "sha256:91eee5dc54ba465d8ade96ee8b9dcfd7ec65116b746e5eb8f4669e32506c1888"
-    },
-    {
-      "schema_version": "proof.code_signals.v1",
-      "provider": "opengrep",
-      "provider_rule_id": "go.random.math-rand",
-      "signal_id": "random.dependency",
-      "artifact": "pumps/moesif.go",
-      "span": {
-        "start_line": 472,
-        "end_line": 472
-      },
-      "confidence": "medium",
-      "obligations": [
-        "determinism"
-      ],
-      "message": "Randomness requires determinism or cryptographic-strength evidence depending on use.",
-      "fingerprint": "sha256:acc90637f07e1d50b75f132f2619826cb504d92007d75c6b639d448a496c5f07",
+      "message": "log.Fatal / os.Exit called from a non-main constructor or processing function.\nThis aborts the entire process and bypasses caller error handling; return\nan error instead so the caller can recover.\n",
+      "fingerprint": "sha256:2bc5fdc8bd27415c61f9d90e4b14cbd7339388e770360d1feb25e3ea8ac7f5b2",
       "source_hash": "sha256:91eee5dc54ba465d8ade96ee8b9dcfd7ec65116b746e5eb8f4669e32506c1888"
     },
     {
@@ -2584,24 +2362,6 @@
       ],
       "message": "Time-dependent behavior requires determinism, timeout, or scheduling evidence.",
       "fingerprint": "sha256:47e0815817e5d6b1fc867a9128cda6f902ed77a85fee919416f1d3a3b054aa9e",
-      "source_hash": "sha256:91eee5dc54ba465d8ade96ee8b9dcfd7ec65116b746e5eb8f4669e32506c1888"
-    },
-    {
-      "schema_version": "proof.code_signals.v1",
-      "provider": "opengrep",
-      "provider_rule_id": "go.random.math-rand",
-      "signal_id": "random.dependency",
-      "artifact": "pumps/moesif.go",
-      "span": {
-        "start_line": 473,
-        "end_line": 473
-      },
-      "confidence": "medium",
-      "obligations": [
-        "determinism"
-      ],
-      "message": "Randomness requires determinism or cryptographic-strength evidence depending on use.",
-      "fingerprint": "sha256:7b3ba7542f3b9d475d0954083fc4e9ac6d41e1c1c16b69b0f3bf5813e2acf1b7",
       "source_hash": "sha256:91eee5dc54ba465d8ade96ee8b9dcfd7ec65116b746e5eb8f4669e32506c1888"
     },
     {
@@ -2640,8 +2400,8 @@
       "obligations": [
         "errors_propagated"
       ],
-      "message": "log.Fatal / os.Exit called from a non-main constructor or processing function.\nThis aborts the entire process and bypasses caller error handling - return\nan error instead so the caller can recover. log.Fatal is acceptable only\nin package main.\n",
-      "fingerprint": "sha256:2e89165a5aa64f57f3e504ce6ee5497ba9dd61d83e613d09b6977844aec46029",
+      "message": "log.Fatal / os.Exit called from a non-main constructor or processing function.\nThis aborts the entire process and bypasses caller error handling; return\nan error instead so the caller can recover.\n",
+      "fingerprint": "sha256:68e786afa31d2737193104c3fe2e82f943786897ac3a70e1680a6b93cab4b35e",
       "source_hash": "sha256:e19a13d34f72969e26f9fe4183283061067371d1a60238e3f8c4ccb65669020e"
     },
     {
@@ -2662,8 +2422,8 @@
       "obligations": [
         "malformed_recovers_or_errors_loudly"
       ],
-      "message": "mapstructure.Decode silently ignores unknown keys in the input map.\nFor configuration parsing this hides typos (e.g. csv_pathh instead of\ncsv_path). Use mapstructure.NewDecoder with a DecoderConfig that sets\nErrorUnused: true so unknown keys produce an error.\n",
-      "fingerprint": "sha256:4a0a27f9a7fcfea3207f55ff2c05e7920a741ec347a9b35503133007b55cc6d7",
+      "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
+      "fingerprint": "sha256:99afcd3cea71fb2eeda921bd081c724e60ecc4e265d46930c3ea8f192b162f9e",
       "source_hash": "sha256:e19a13d34f72969e26f9fe4183283061067371d1a60238e3f8c4ccb65669020e"
     },
     {
@@ -2684,8 +2444,8 @@
       "obligations": [
         "malformed_recovers_or_errors_loudly"
       ],
-      "message": "mapstructure.Decode silently ignores unknown keys in the input map.\nFor configuration parsing this hides typos (e.g. csv_pathh instead of\ncsv_path). Use mapstructure.NewDecoder with a DecoderConfig that sets\nErrorUnused: true so unknown keys produce an error.\n",
-      "fingerprint": "sha256:6245adc07e560e04f675507042f8d3331e3ac0c8fb6fc87bc416e8a80f75fee7",
+      "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
+      "fingerprint": "sha256:e47a22433b536a55a78bc0f7a0fc1b16f1a09c5fe69872f8306381d4ecf074f9",
       "source_hash": "sha256:e19a13d34f72969e26f9fe4183283061067371d1a60238e3f8c4ccb65669020e"
     },
     {
@@ -2727,8 +2487,8 @@
       "obligations": [
         "cancellation_observed"
       ],
-      "message": "Function receives a context.Context parameter but creates a fresh\ncontext.Background() / context.TODO() inside the body and uses that\ninstead. The caller-supplied ctx (with its deadline and cancellation)\nis silently dropped. Pass the parameter ctx downstream, or document\nwhy a fresh context is intentional.\n",
-      "fingerprint": "sha256:d04479c6a2598eabc1b35295c768171a20dd917576227306ad3b8ee0580f2452",
+      "message": "Function receives a context.Context parameter but creates a fresh\ncontext.Background() / context.TODO() inside the body and uses that\ninstead. Caller deadlines and cancellation can be silently dropped.\n",
+      "fingerprint": "sha256:ce88140a45facad37606f015fd53d68f9c87489ff2904dd476a1be083d9036b7",
       "source_hash": "sha256:e19a13d34f72969e26f9fe4183283061067371d1a60238e3f8c4ccb65669020e"
     },
     {
@@ -2749,8 +2509,8 @@
       "obligations": [
         "errors_propagated"
       ],
-      "message": "log.Fatal / os.Exit called from a non-main constructor or processing function.\nThis aborts the entire process and bypasses caller error handling - return\nan error instead so the caller can recover. log.Fatal is acceptable only\nin package main.\n",
-      "fingerprint": "sha256:8477cb3f5db3df28dc895e28d433a994ee2d8ad9755d0a050a03e89c995896e0",
+      "message": "log.Fatal / os.Exit called from a non-main constructor or processing function.\nThis aborts the entire process and bypasses caller error handling; return\nan error instead so the caller can recover.\n",
+      "fingerprint": "sha256:a15c9fe4d13ce5b836bb2c5bf5b5474a88e44c18cc52d30693de2266f8bae819",
       "source_hash": "sha256:e19a13d34f72969e26f9fe4183283061067371d1a60238e3f8c4ccb65669020e"
     },
     {
@@ -2772,28 +2532,6 @@
       ],
       "message": "Goroutine spawn requires lifecycle, cancellation, and shutdown ownership evidence.",
       "fingerprint": "sha256:1dcd90f41440414b552f859c5f2998575ceb13e4e0d387b2355a5a4b107daabb",
-      "source_hash": "sha256:e19a13d34f72969e26f9fe4183283061067371d1a60238e3f8c4ccb65669020e"
-    },
-    {
-      "schema_version": "proof.code_signals.v1",
-      "provider": "opengrep",
-      "provider_rule_id": "go.goroutine.no-recover",
-      "signal_id": "concurrency.goroutine_no_recover",
-      "artifact": "pumps/mongo.go",
-      "span": {
-        "start_line": 429,
-        "end_line": 445
-      },
-      "confidence": "low",
-      "tags": [
-        "concurrent",
-        "panic_safety"
-      ],
-      "obligations": [
-        "panic_free_input_handling"
-      ],
-      "message": "Goroutine launched without a deferred recover at the top of its body.\nA panic inside the goroutine cannot be caught by the launching frame\nand will crash the whole process. For fan-out / long-lived / per-\nrequest goroutines, add\n`defer func() { if r := recover(); r != nil { log + metric } }()`\nat the start of the body.\n",
-      "fingerprint": "sha256:fb09d19ea1b83358395671069e21bc9030acfdb91b4fac5c3f2edc8aaf14976d",
       "source_hash": "sha256:e19a13d34f72969e26f9fe4183283061067371d1a60238e3f8c4ccb65669020e"
     },
     {
@@ -2887,8 +2625,8 @@
       "signal_id": "slice.preallocated_continue_on_error",
       "artifact": "pumps/mongo.go",
       "span": {
-        "start_line": 571,
-        "end_line": 585
+        "start_line": 582,
+        "end_line": 582
       },
       "confidence": "medium",
       "tags": [
@@ -2898,8 +2636,8 @@
       "obligations": [
         "nil_safety"
       ],
-      "message": "Slice is pre-allocated with len() (not cap), filled by indexed\nassignment, but the loop body uses continue on error - leaving\nzero/nil-valued holes in the result. Downstream consumers that\nassume every slot is valid will dereference the nil. Either use\nmake([]T, 0, len(input)) with append, or resize the slice after\nthe loop with the count of successful entries.\n",
-      "fingerprint": "sha256:5a690a33628f548d07e33be90ebca378cb45a44ebf5aff4e9447d6c54eddf657",
+      "message": "Slice is preallocated with len(), filled by indexed assignment, and the\nloop body can continue on error. That can leave zero-value holes in the\nresult; append to a zero-length slice when sparse output is not intended.\n",
+      "fingerprint": "sha256:dc9ecd03d1a31f753ab07747613c8a5035d9cbaebe010f2fe35c372bbb39c9fc",
       "source_hash": "sha256:e19a13d34f72969e26f9fe4183283061067371d1a60238e3f8c4ccb65669020e"
     },
     {
@@ -2920,8 +2658,8 @@
       "obligations": [
         "errors_propagated"
       ],
-      "message": "log.Fatal / os.Exit called from a non-main constructor or processing function.\nThis aborts the entire process and bypasses caller error handling - return\nan error instead so the caller can recover. log.Fatal is acceptable only\nin package main.\n",
-      "fingerprint": "sha256:31773860351b39629d16a5a9c9d00aadb4a12908cf1799121b4c419c4afde75d",
+      "message": "log.Fatal / os.Exit called from a non-main constructor or processing function.\nThis aborts the entire process and bypasses caller error handling; return\nan error instead so the caller can recover.\n",
+      "fingerprint": "sha256:6aa3b948a3651f2905becc173ef0d931146d9456de4fe62cd1b5ec34f0de5436",
       "source_hash": "sha256:dbad5d36c1f182c7c46b96b648d01065563938e23243987ed06b1f8dc02d6171"
     },
     {
@@ -2942,8 +2680,8 @@
       "obligations": [
         "malformed_recovers_or_errors_loudly"
       ],
-      "message": "mapstructure.Decode silently ignores unknown keys in the input map.\nFor configuration parsing this hides typos (e.g. csv_pathh instead of\ncsv_path). Use mapstructure.NewDecoder with a DecoderConfig that sets\nErrorUnused: true so unknown keys produce an error.\n",
-      "fingerprint": "sha256:5bd91f00cf6b83768ac486d9918586a54bed14ab3d47ef8d2f31384ee3fd2044",
+      "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
+      "fingerprint": "sha256:e339fe24266e5ed6302178253c7fbe9482c38061e673045a528f070eed60303f",
       "source_hash": "sha256:dbad5d36c1f182c7c46b96b648d01065563938e23243987ed06b1f8dc02d6171"
     },
     {
@@ -2964,8 +2702,8 @@
       "obligations": [
         "malformed_recovers_or_errors_loudly"
       ],
-      "message": "mapstructure.Decode silently ignores unknown keys in the input map.\nFor configuration parsing this hides typos (e.g. csv_pathh instead of\ncsv_path). Use mapstructure.NewDecoder with a DecoderConfig that sets\nErrorUnused: true so unknown keys produce an error.\n",
-      "fingerprint": "sha256:2cbae8f7f8bb56f341b856da83529d61adf92439ad9a8c80825d4233eb8daafa",
+      "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
+      "fingerprint": "sha256:e0d97e20e52c7a6bda34f8ced00654f62a848cbfff7caa11cfd8b327d270e2f6",
       "source_hash": "sha256:dbad5d36c1f182c7c46b96b648d01065563938e23243987ed06b1f8dc02d6171"
     },
     {
@@ -3004,8 +2742,8 @@
       "obligations": [
         "errors_propagated"
       ],
-      "message": "log.Fatal / os.Exit called from a non-main constructor or processing function.\nThis aborts the entire process and bypasses caller error handling - return\nan error instead so the caller can recover. log.Fatal is acceptable only\nin package main.\n",
-      "fingerprint": "sha256:bba2a700852d28988434039a119e930794a95625def836ba91c53f258d56ea6b",
+      "message": "log.Fatal / os.Exit called from a non-main constructor or processing function.\nThis aborts the entire process and bypasses caller error handling; return\nan error instead so the caller can recover.\n",
+      "fingerprint": "sha256:95eb6b96a25d60525c14d6652651a7332526dbfc1d8e1c2ffea902a997826b1d",
       "source_hash": "sha256:a171e437ba2de7196b4605ce4dfb51c1f2a50d364a30114502a2f4808e0c89b2"
     },
     {
@@ -3026,8 +2764,8 @@
       "obligations": [
         "malformed_recovers_or_errors_loudly"
       ],
-      "message": "mapstructure.Decode silently ignores unknown keys in the input map.\nFor configuration parsing this hides typos (e.g. csv_pathh instead of\ncsv_path). Use mapstructure.NewDecoder with a DecoderConfig that sets\nErrorUnused: true so unknown keys produce an error.\n",
-      "fingerprint": "sha256:7e579fb4b92da62f6d08ac3ca242c27b8341d7871bf0459ec60cb7d2cbaeec05",
+      "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
+      "fingerprint": "sha256:0e6c97eaed7ed5b0aa8d6d8ca31788e35016446f421f8eabdb3aff114e1338b1",
       "source_hash": "sha256:a171e437ba2de7196b4605ce4dfb51c1f2a50d364a30114502a2f4808e0c89b2"
     },
     {
@@ -3048,8 +2786,8 @@
       "obligations": [
         "malformed_recovers_or_errors_loudly"
       ],
-      "message": "mapstructure.Decode silently ignores unknown keys in the input map.\nFor configuration parsing this hides typos (e.g. csv_pathh instead of\ncsv_path). Use mapstructure.NewDecoder with a DecoderConfig that sets\nErrorUnused: true so unknown keys produce an error.\n",
-      "fingerprint": "sha256:6cd92a6c05d986c703b0d29ca2a8e093a97643e7fb59a22b069077bc5a021140",
+      "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
+      "fingerprint": "sha256:ae55b4aa02f63ab219780b0ff5a1971dc7f3575d9e506ea2a7875905e29e230a",
       "source_hash": "sha256:a171e437ba2de7196b4605ce4dfb51c1f2a50d364a30114502a2f4808e0c89b2"
     },
     {
@@ -3070,8 +2808,8 @@
       "obligations": [
         "cancellation_observed"
       ],
-      "message": "Function receives a context.Context parameter but creates a fresh\ncontext.Background() / context.TODO() inside the body and uses that\ninstead. The caller-supplied ctx (with its deadline and cancellation)\nis silently dropped. Pass the parameter ctx downstream, or document\nwhy a fresh context is intentional.\n",
-      "fingerprint": "sha256:1ef65eb4eec4674e0ccaaea87f7b5282a7f821353259b6bb113ad3a330988cd8",
+      "message": "Function receives a context.Context parameter but creates a fresh\ncontext.Background() / context.TODO() inside the body and uses that\ninstead. Caller deadlines and cancellation can be silently dropped.\n",
+      "fingerprint": "sha256:55315cff990264a3f82dce57779b039a7295fe365b26c7b87437d10d4c43f5f2",
       "source_hash": "sha256:a171e437ba2de7196b4605ce4dfb51c1f2a50d364a30114502a2f4808e0c89b2"
     },
     {
@@ -3081,8 +2819,8 @@
       "signal_id": "slice.preallocated_continue_on_error",
       "artifact": "pumps/mongo_selective.go",
       "span": {
-        "start_line": 357,
-        "end_line": 371
+        "start_line": 368,
+        "end_line": 368
       },
       "confidence": "medium",
       "tags": [
@@ -3092,8 +2830,8 @@
       "obligations": [
         "nil_safety"
       ],
-      "message": "Slice is pre-allocated with len() (not cap), filled by indexed\nassignment, but the loop body uses continue on error - leaving\nzero/nil-valued holes in the result. Downstream consumers that\nassume every slot is valid will dereference the nil. Either use\nmake([]T, 0, len(input)) with append, or resize the slice after\nthe loop with the count of successful entries.\n",
-      "fingerprint": "sha256:262ad150e5ff21730a4168f3ef1ce6f867b2e9b2a718d93fa4ec3707e7abeb0e",
+      "message": "Slice is preallocated with len(), filled by indexed assignment, and the\nloop body can continue on error. That can leave zero-value holes in the\nresult; append to a zero-length slice when sparse output is not intended.\n",
+      "fingerprint": "sha256:ac2d41044d31ccf333d672bc503ea8692feb937f34696234a156059e0faae0b5",
       "source_hash": "sha256:a171e437ba2de7196b4605ce4dfb51c1f2a50d364a30114502a2f4808e0c89b2"
     },
     {
@@ -3114,8 +2852,8 @@
       "obligations": [
         "errors_propagated"
       ],
-      "message": "log.Fatal / os.Exit called from a non-main constructor or processing function.\nThis aborts the entire process and bypasses caller error handling - return\nan error instead so the caller can recover. log.Fatal is acceptable only\nin package main.\n",
-      "fingerprint": "sha256:04f3100bd6927368431b52642e6f7dd440b17125f63a8b0a62bca97fae76b6ed",
+      "message": "log.Fatal / os.Exit called from a non-main constructor or processing function.\nThis aborts the entire process and bypasses caller error handling; return\nan error instead so the caller can recover.\n",
+      "fingerprint": "sha256:2d0b59ac79404a1d69ab876f847e3060277f902bbb94c07fd2b8ef94682629f9",
       "source_hash": "sha256:99d941c7b4c94efc7abfde6bb6848083175f7d66d72157500b831a36d4593f19"
     },
     {
@@ -3136,8 +2874,8 @@
       "obligations": [
         "malformed_recovers_or_errors_loudly"
       ],
-      "message": "mapstructure.Decode silently ignores unknown keys in the input map.\nFor configuration parsing this hides typos (e.g. csv_pathh instead of\ncsv_path). Use mapstructure.NewDecoder with a DecoderConfig that sets\nErrorUnused: true so unknown keys produce an error.\n",
-      "fingerprint": "sha256:8789341a1a7140b444dc7dc368cef310d98cf2a71d8dca9e50d8c719c2c852a7",
+      "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
+      "fingerprint": "sha256:edab113255d823fcaf03d95457ee642df3a7b0e527c107b96f2096a41a1350b0",
       "source_hash": "sha256:99d941c7b4c94efc7abfde6bb6848083175f7d66d72157500b831a36d4593f19"
     },
     {
@@ -3200,28 +2938,6 @@
     {
       "schema_version": "proof.code_signals.v1",
       "provider": "opengrep",
-      "provider_rule_id": "go.goroutine.no-recover",
-      "signal_id": "concurrency.goroutine_no_recover",
-      "artifact": "pumps/prometheus.go",
-      "span": {
-        "start_line": 215,
-        "end_line": 217
-      },
-      "confidence": "low",
-      "tags": [
-        "concurrent",
-        "panic_safety"
-      ],
-      "obligations": [
-        "panic_free_input_handling"
-      ],
-      "message": "Goroutine launched without a deferred recover at the top of its body.\nA panic inside the goroutine cannot be caught by the launching frame\nand will crash the whole process. For fan-out / long-lived / per-\nrequest goroutines, add\n`defer func() { if r := recover(); r != nil { log + metric } }()`\nat the start of the body.\n",
-      "fingerprint": "sha256:db7b795ea15cfa30a001a13c4b9bc20ef1e8b78671657803dbb44cd1b35fc9c7",
-      "source_hash": "sha256:99d941c7b4c94efc7abfde6bb6848083175f7d66d72157500b831a36d4593f19"
-    },
-    {
-      "schema_version": "proof.code_signals.v1",
-      "provider": "opengrep",
       "provider_rule_id": "go.http.server-api",
       "signal_id": "http.server_dependency",
       "artifact": "pumps/prometheus.go",
@@ -3273,8 +2989,8 @@
       "obligations": [
         "malformed_recovers_or_errors_loudly"
       ],
-      "message": "mapstructure.Decode silently ignores unknown keys in the input map.\nFor configuration parsing this hides typos (e.g. csv_pathh instead of\ncsv_path). Use mapstructure.NewDecoder with a DecoderConfig that sets\nErrorUnused: true so unknown keys produce an error.\n",
-      "fingerprint": "sha256:c07a01be8b3a1f519d00322ccede19e73bcb9395e9fa33e6046a2ee4c67f669b",
+      "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
+      "fingerprint": "sha256:6c1e29dc52605cb94648d1e9b28d30abc9e1e81295d4038b69c080781b2446c0",
       "source_hash": "sha256:faecbf0844be21d1f3546da51679c3efe325b04e0f4be2ad53fbf15fc2b6fc10"
     },
     {
@@ -3412,8 +3128,8 @@
       "obligations": [
         "errors_propagated"
       ],
-      "message": "log.Fatal / os.Exit called from a non-main constructor or processing function.\nThis aborts the entire process and bypasses caller error handling - return\nan error instead so the caller can recover. log.Fatal is acceptable only\nin package main.\n",
-      "fingerprint": "sha256:f8ffdc7c0601e13ea136a7bf65765dd834cc639ee785cddfef6999358f278c17",
+      "message": "log.Fatal / os.Exit called from a non-main constructor or processing function.\nThis aborts the entire process and bypasses caller error handling; return\nan error instead so the caller can recover.\n",
+      "fingerprint": "sha256:cbab8cc915f7f0d5173fc9e655658ee59a41151845025a74a195dcfdf0447514",
       "source_hash": "sha256:c39533c28b07284f40db5e48de8aa0e28fc758634e48509ce57b3fe431e9653c"
     },
     {
@@ -3434,8 +3150,8 @@
       "obligations": [
         "malformed_recovers_or_errors_loudly"
       ],
-      "message": "mapstructure.Decode silently ignores unknown keys in the input map.\nFor configuration parsing this hides typos (e.g. csv_pathh instead of\ncsv_path). Use mapstructure.NewDecoder with a DecoderConfig that sets\nErrorUnused: true so unknown keys produce an error.\n",
-      "fingerprint": "sha256:738533fc5b2619c2518bf6dec840be952b3212d1bd3ad48b101a9f660b1a48f6",
+      "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
+      "fingerprint": "sha256:bf7c9ca2482c9ddde4a7025c72ceed0beb08c6210d5ccdea0db6969f9ea54017",
       "source_hash": "sha256:c39533c28b07284f40db5e48de8aa0e28fc758634e48509ce57b3fe431e9653c"
     },
     {
@@ -3456,8 +3172,8 @@
       "obligations": [
         "malformed_recovers_or_errors_loudly"
       ],
-      "message": "mapstructure.Decode silently ignores unknown keys in the input map.\nFor configuration parsing this hides typos (e.g. csv_pathh instead of\ncsv_path). Use mapstructure.NewDecoder with a DecoderConfig that sets\nErrorUnused: true so unknown keys produce an error.\n",
-      "fingerprint": "sha256:285d458bf8df0913c5648403635652b151e05ef050bd6b3981c76ee7aeed0bb7",
+      "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
+      "fingerprint": "sha256:113be8fae68d26f36d265561c4ed2c3383050d150ddee892b29be2159648ff0e",
       "source_hash": "sha256:b20682ea1bb30aad9dfb91a80b7cf7a88a9f1921eb8434a1514b2e682fa24cf7"
     },
     {
@@ -3514,8 +3230,8 @@
       "obligations": [
         "request_timeout_bounded"
       ],
-      "message": "Assignment mutates http.DefaultClient or http.DefaultTransport from a\nlibrary/constructor. These are process-wide globals - mutating them\naffects every other consumer in the process, makes tests order-\ndependent, and can permanently bind cached env-derived state like\nProxyFromEnvironment. Build a private *http.Client/*http.Transport\nand store it on your struct instead.\n",
-      "fingerprint": "sha256:bd1c9f5e136959165befec3d45775179dc76f3f8f5f335dd4eae389c2f184f94",
+      "message": "Assignment mutates http.DefaultClient or http.DefaultTransport from\nnon-entrypoint code. These globals are process-wide and can make caller\nbehavior and tests order-dependent.\n",
+      "fingerprint": "sha256:f580731e5c64596b236950e6ea6f1ad36b2e562f2a07dfdc582d4703ea180c35",
       "source_hash": "sha256:b20682ea1bb30aad9dfb91a80b7cf7a88a9f1921eb8434a1514b2e682fa24cf7"
     },
     {
@@ -3557,27 +3273,6 @@
     {
       "schema_version": "proof.code_signals.v1",
       "provider": "opengrep",
-      "provider_rule_id": "go.http.request-without-context",
-      "signal_id": "http.request_without_cancellation",
-      "artifact": "pumps/splunk.go",
-      "span": {
-        "start_line": 343,
-        "end_line": 343
-      },
-      "confidence": "high",
-      "tags": [
-        "http_client"
-      ],
-      "obligations": [
-        "request_timeout_bounded"
-      ],
-      "message": "HTTP request is constructed without context; require documented deadline/cancellation behavior.",
-      "fingerprint": "sha256:b9894df6572f76c672588048adff2736d6f88462738848ec01422c21e985987c",
-      "source_hash": "sha256:b20682ea1bb30aad9dfb91a80b7cf7a88a9f1921eb8434a1514b2e682fa24cf7"
-    },
-    {
-      "schema_version": "proof.code_signals.v1",
-      "provider": "opengrep",
       "provider_rule_id": "go.mapstructure.lenient-decode",
       "signal_id": "deserializer.mapstructure_lenient",
       "artifact": "pumps/sql.go",
@@ -3593,8 +3288,8 @@
       "obligations": [
         "malformed_recovers_or_errors_loudly"
       ],
-      "message": "mapstructure.Decode silently ignores unknown keys in the input map.\nFor configuration parsing this hides typos (e.g. csv_pathh instead of\ncsv_path). Use mapstructure.NewDecoder with a DecoderConfig that sets\nErrorUnused: true so unknown keys produce an error.\n",
-      "fingerprint": "sha256:416230877db0e02f286503b81137275e9d6ea2d4d7b3f4b85e9e5e479d169736",
+      "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
+      "fingerprint": "sha256:650ec871fddb952cd67b87b65357d7c47d27a7391d7b7e8b2a589d3a280b4865",
       "source_hash": "sha256:829de65785cdd04edeea4ea3f663143e46b0bcdf0412fcadd52f1fbef24383a3"
     },
     {
@@ -3604,8 +3299,8 @@
       "signal_id": "slice.preallocated_continue_on_error",
       "artifact": "pumps/sql.go",
       "span": {
-        "start_line": 345,
-        "end_line": 355
+        "start_line": 354,
+        "end_line": 354
       },
       "confidence": "medium",
       "tags": [
@@ -3615,8 +3310,8 @@
       "obligations": [
         "nil_safety"
       ],
-      "message": "Slice is pre-allocated with len() (not cap), filled by indexed\nassignment, but the loop body uses continue on error - leaving\nzero/nil-valued holes in the result. Downstream consumers that\nassume every slot is valid will dereference the nil. Either use\nmake([]T, 0, len(input)) with append, or resize the slice after\nthe loop with the count of successful entries.\n",
-      "fingerprint": "sha256:7ee874255b8421ef40aac35e31c6dbec9558680b6c629850618c7fcb20f651cd",
+      "message": "Slice is preallocated with len(), filled by indexed assignment, and the\nloop body can continue on error. That can leave zero-value holes in the\nresult; append to a zero-length slice when sparse output is not intended.\n",
+      "fingerprint": "sha256:bae40c858adfd6da2f6a5cb90bca7c8c8dffd3e9399bc8450e9eea7d65d19e86",
       "source_hash": "sha256:829de65785cdd04edeea4ea3f663143e46b0bcdf0412fcadd52f1fbef24383a3"
     },
     {
@@ -3661,28 +3356,6 @@
     {
       "schema_version": "proof.code_signals.v1",
       "provider": "opengrep",
-      "provider_rule_id": "go.goroutine.no-recover",
-      "signal_id": "concurrency.goroutine_no_recover",
-      "artifact": "pumps/sql.go",
-      "span": {
-        "start_line": 498,
-        "end_line": 503
-      },
-      "confidence": "low",
-      "tags": [
-        "concurrent",
-        "panic_safety"
-      ],
-      "obligations": [
-        "panic_free_input_handling"
-      ],
-      "message": "Goroutine launched without a deferred recover at the top of its body.\nA panic inside the goroutine cannot be caught by the launching frame\nand will crash the whole process. For fan-out / long-lived / per-\nrequest goroutines, add\n`defer func() { if r := recover(); r != nil { log + metric } }()`\nat the start of the body.\n",
-      "fingerprint": "sha256:1dfb31356fe448a9900f03293bc09e25dfea1d7239b1c235e2d696d380600e36",
-      "source_hash": "sha256:829de65785cdd04edeea4ea3f663143e46b0bcdf0412fcadd52f1fbef24383a3"
-    },
-    {
-      "schema_version": "proof.code_signals.v1",
-      "provider": "opengrep",
       "provider_rule_id": "go.concurrency.channel-send",
       "signal_id": "concurrency.channel_communication",
       "artifact": "pumps/sql.go",
@@ -3719,8 +3392,8 @@
       "obligations": [
         "malformed_recovers_or_errors_loudly"
       ],
-      "message": "mapstructure.Decode silently ignores unknown keys in the input map.\nFor configuration parsing this hides typos (e.g. csv_pathh instead of\ncsv_path). Use mapstructure.NewDecoder with a DecoderConfig that sets\nErrorUnused: true so unknown keys produce an error.\n",
-      "fingerprint": "sha256:a2be76ac00c4f796158c8e97e7fb3a13d1ae37bcf9946cc795aa516e007c6bda",
+      "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
+      "fingerprint": "sha256:7a7c1d6913242a652d0c2f30ed6d3af9263283deeb2b5cba5ecb360100c9a930",
       "source_hash": "sha256:5d4fb4dfe315a4842672abf1f36a4496f0177a3dc32181a3cae56c466cd50167"
     },
     {
@@ -3822,28 +3495,6 @@
     {
       "schema_version": "proof.code_signals.v1",
       "provider": "opengrep",
-      "provider_rule_id": "go.goroutine.no-recover",
-      "signal_id": "concurrency.goroutine_no_recover",
-      "artifact": "pumps/sql_aggregate.go",
-      "span": {
-        "start_line": 182,
-        "end_line": 186
-      },
-      "confidence": "low",
-      "tags": [
-        "concurrent",
-        "panic_safety"
-      ],
-      "obligations": [
-        "panic_free_input_handling"
-      ],
-      "message": "Goroutine launched without a deferred recover at the top of its body.\nA panic inside the goroutine cannot be caught by the launching frame\nand will crash the whole process. For fan-out / long-lived / per-\nrequest goroutines, add\n`defer func() { if r := recover(); r != nil { log + metric } }()`\nat the start of the body.\n",
-      "fingerprint": "sha256:cca57b2528cb750ed9b8829d8abdde53182f9228e1f92e75fc98e4a73cdfa746",
-      "source_hash": "sha256:5d4fb4dfe315a4842672abf1f36a4496f0177a3dc32181a3cae56c466cd50167"
-    },
-    {
-      "schema_version": "proof.code_signals.v1",
-      "provider": "opengrep",
       "provider_rule_id": "go.log.fatal-in-init",
       "signal_id": "process.log_fatal_in_init",
       "artifact": "pumps/sqs.go",
@@ -3859,8 +3510,8 @@
       "obligations": [
         "errors_propagated"
       ],
-      "message": "log.Fatal / os.Exit called from a non-main constructor or processing function.\nThis aborts the entire process and bypasses caller error handling - return\nan error instead so the caller can recover. log.Fatal is acceptable only\nin package main.\n",
-      "fingerprint": "sha256:dce67bf4337f4baf661bbdd110635d07ba949c78ec2861bbb91524821eb3b84a",
+      "message": "log.Fatal / os.Exit called from a non-main constructor or processing function.\nThis aborts the entire process and bypasses caller error handling; return\nan error instead so the caller can recover.\n",
+      "fingerprint": "sha256:11f3bf7bac02b80512fdcfeadc215d9b5eea69e0b9dd14f7b8eff0a07f371c62",
       "source_hash": "sha256:3fc690a573eb32eeb859ac6eff6e394c74ebcf90813b1d98a09c28a60537d1e5"
     },
     {
@@ -3881,8 +3532,8 @@
       "obligations": [
         "malformed_recovers_or_errors_loudly"
       ],
-      "message": "mapstructure.Decode silently ignores unknown keys in the input map.\nFor configuration parsing this hides typos (e.g. csv_pathh instead of\ncsv_path). Use mapstructure.NewDecoder with a DecoderConfig that sets\nErrorUnused: true so unknown keys produce an error.\n",
-      "fingerprint": "sha256:6eaab6aa766cee54332a1423a5eb8f1f69614389287d3a717476a418d5bed33a",
+      "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
+      "fingerprint": "sha256:35d7b4eb1240f34db9f5aa130e4b5d8fdf6093121783071ff62d2f86a9c50488",
       "source_hash": "sha256:3fc690a573eb32eeb859ac6eff6e394c74ebcf90813b1d98a09c28a60537d1e5"
     },
     {
@@ -3910,8 +3561,8 @@
       "signal_id": "slice.preallocated_continue_on_error",
       "artifact": "pumps/sqs.go",
       "span": {
-        "start_line": 135,
-        "end_line": 165
+        "start_line": 147,
+        "end_line": 150
       },
       "confidence": "medium",
       "tags": [
@@ -3921,8 +3572,8 @@
       "obligations": [
         "nil_safety"
       ],
-      "message": "Slice is pre-allocated with len() (not cap), filled by indexed\nassignment, but the loop body uses continue on error - leaving\nzero/nil-valued holes in the result. Downstream consumers that\nassume every slot is valid will dereference the nil. Either use\nmake([]T, 0, len(input)) with append, or resize the slice after\nthe loop with the count of successful entries.\n",
-      "fingerprint": "sha256:c66fb3844e025382cc84682bdce3be6424e13bb09292c2530f92913db2e19b82",
+      "message": "Slice is preallocated with len(), filled by indexed assignment, and the\nloop body can continue on error. That can leave zero-value holes in the\nresult; append to a zero-length slice when sparse output is not intended.\n",
+      "fingerprint": "sha256:9b370aa170bb0f46f175f05494a8a290a0b50fec0f55e6f5197a03e3031a5594",
       "source_hash": "sha256:3fc690a573eb32eeb859ac6eff6e394c74ebcf90813b1d98a09c28a60537d1e5"
     },
     {
@@ -3979,8 +3630,8 @@
       "obligations": [
         "errors_propagated"
       ],
-      "message": "log.Fatal / os.Exit called from a non-main constructor or processing function.\nThis aborts the entire process and bypasses caller error handling - return\nan error instead so the caller can recover. log.Fatal is acceptable only\nin package main.\n",
-      "fingerprint": "sha256:ab3ee0e220bbdf7fdebd2a740cbb1ca83e8ff3591cd38c4861c872eadbf40362",
+      "message": "log.Fatal / os.Exit called from a non-main constructor or processing function.\nThis aborts the entire process and bypasses caller error handling; return\nan error instead so the caller can recover.\n",
+      "fingerprint": "sha256:72cfd0de1c3af1e2c2deb9a0abbe4eb7a70cad537e971838fec208d083a61797",
       "source_hash": "sha256:fb345b7fe8f16b4992a5fc6c77283efb1f2a39d0a84c962d3c1e9ae6a1a32c30"
     },
     {
@@ -4001,8 +3652,8 @@
       "obligations": [
         "malformed_recovers_or_errors_loudly"
       ],
-      "message": "mapstructure.Decode silently ignores unknown keys in the input map.\nFor configuration parsing this hides typos (e.g. csv_pathh instead of\ncsv_path). Use mapstructure.NewDecoder with a DecoderConfig that sets\nErrorUnused: true so unknown keys produce an error.\n",
-      "fingerprint": "sha256:7f0f66d3eb0eb9c8442a48c798941dc163fb48a24cc259d37a9ed854a859b713",
+      "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
+      "fingerprint": "sha256:f32dbcfa3c694561a165270dd3f333203e880012fc94f75ed12cf74a4f43f82b",
       "source_hash": "sha256:fb345b7fe8f16b4992a5fc6c77283efb1f2a39d0a84c962d3c1e9ae6a1a32c30"
     },
     {
@@ -4041,8 +3692,8 @@
       "obligations": [
         "errors_propagated"
       ],
-      "message": "log.Fatal / os.Exit called from a non-main constructor or processing function.\nThis aborts the entire process and bypasses caller error handling - return\nan error instead so the caller can recover. log.Fatal is acceptable only\nin package main.\n",
-      "fingerprint": "sha256:7fbb04b7064e480aa6056d093f955bdf92a99ae125468d285c9c3c6febf374ea",
+      "message": "log.Fatal / os.Exit called from a non-main constructor or processing function.\nThis aborts the entire process and bypasses caller error handling; return\nan error instead so the caller can recover.\n",
+      "fingerprint": "sha256:eedbae5c328d8ab99a4dcbd34aca8a732a726357b9146c51500f9c2a90e369e5",
       "source_hash": "sha256:217f98f97bd52305ba921d8b5d3e867fde7aa9f73037ce941e045c60d83f2ef7"
     },
     {
@@ -4063,8 +3714,8 @@
       "obligations": [
         "malformed_recovers_or_errors_loudly"
       ],
-      "message": "mapstructure.Decode silently ignores unknown keys in the input map.\nFor configuration parsing this hides typos (e.g. csv_pathh instead of\ncsv_path). Use mapstructure.NewDecoder with a DecoderConfig that sets\nErrorUnused: true so unknown keys produce an error.\n",
-      "fingerprint": "sha256:2c57d2593128a9f0a785c6a83d891bc7196391224c55b2468772dbc3de494c2b",
+      "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
+      "fingerprint": "sha256:9b07f2e9953a00c1e518891f10853b38cdc897c92c9e940688f39d81e3bc7e5e",
       "source_hash": "sha256:217f98f97bd52305ba921d8b5d3e867fde7aa9f73037ce941e045c60d83f2ef7"
     },
     {
@@ -4121,8 +3772,8 @@
       "obligations": [
         "errors_propagated"
       ],
-      "message": "log.Fatal / os.Exit called from a non-main constructor or processing function.\nThis aborts the entire process and bypasses caller error handling - return\nan error instead so the caller can recover. log.Fatal is acceptable only\nin package main.\n",
-      "fingerprint": "sha256:8dcfd88d7b4378c2965a2277e1ae50df263a199278ec040cc881bc6e94b98360",
+      "message": "log.Fatal / os.Exit called from a non-main constructor or processing function.\nThis aborts the entire process and bypasses caller error handling; return\nan error instead so the caller can recover.\n",
+      "fingerprint": "sha256:99d06e871b3aa7aa8a807eb29eccaeed0ceb384b31c2836759f754a659f6abc5",
       "source_hash": "sha256:d4dcff9b29e31da1df899bfff9cedbbd1f6a8b1135a82a8e075cd8036134a769"
     },
     {
@@ -4143,8 +3794,8 @@
       "obligations": [
         "malformed_recovers_or_errors_loudly"
       ],
-      "message": "mapstructure.Decode silently ignores unknown keys in the input map.\nFor configuration parsing this hides typos (e.g. csv_pathh instead of\ncsv_path). Use mapstructure.NewDecoder with a DecoderConfig that sets\nErrorUnused: true so unknown keys produce an error.\n",
-      "fingerprint": "sha256:5d0595f94a80808910fffa03b0e9239dfb5ff050bf383e6381f21af2fae1ffa3",
+      "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
+      "fingerprint": "sha256:d9a48b2732a2d1bddb855d41c04af87c2fc4becb21a5b462abf114e8de045918",
       "source_hash": "sha256:d4dcff9b29e31da1df899bfff9cedbbd1f6a8b1135a82a8e075cd8036134a769"
     },
     {
@@ -4183,8 +3834,8 @@
       "obligations": [
         "errors_propagated"
       ],
-      "message": "log.Fatal / os.Exit called from a non-main constructor or processing function.\nThis aborts the entire process and bypasses caller error handling - return\nan error instead so the caller can recover. log.Fatal is acceptable only\nin package main.\n",
-      "fingerprint": "sha256:30eb8eae93c7fb0cc8419b9551d99acf58f4adf6e483c96f1d74cd4026bc4e83",
+      "message": "log.Fatal / os.Exit called from a non-main constructor or processing function.\nThis aborts the entire process and bypasses caller error handling; return\nan error instead so the caller can recover.\n",
+      "fingerprint": "sha256:787d5f828f0f92a4d0d3fc32b93074c5b00102404be93c35fc14cb1a1fe121d7",
       "source_hash": "sha256:cc6d52ed2a972f2d53e46ee3db70d4ff2a77d305cc19db67c6059c35f80f59b2"
     },
     {
@@ -4205,8 +3856,8 @@
       "obligations": [
         "malformed_recovers_or_errors_loudly"
       ],
-      "message": "mapstructure.Decode silently ignores unknown keys in the input map.\nFor configuration parsing this hides typos (e.g. csv_pathh instead of\ncsv_path). Use mapstructure.NewDecoder with a DecoderConfig that sets\nErrorUnused: true so unknown keys produce an error.\n",
-      "fingerprint": "sha256:5e0cda0747d9040aa35a5a270f6c569514227bcca3b41b897a9d4af56a8bc96c",
+      "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
+      "fingerprint": "sha256:47169f0b158db815ae0ab73b38ca06be6e36d860c9b59f794ea5655dc09825c7",
       "source_hash": "sha256:cc6d52ed2a972f2d53e46ee3db70d4ff2a77d305cc19db67c6059c35f80f59b2"
     },
     {
@@ -4399,8 +4050,8 @@
       "obligations": [
         "external_call_timeout_bounded"
       ],
-      "message": "cenkalti/backoff ExponentialBackOff treats MaxElapsedTime = 0 as\n\"retry forever\", not \"no retry\". If unbounded retry is the intent,\nadd a comment documenting it; otherwise set a finite duration (e.g.\na few minutes) so the process can fail-fast and a supervisor can\nrestart it.\n",
-      "fingerprint": "sha256:23b9d32265bee841733a2ac00d59d171083a26d459d58380093fa1d754a51576",
+      "message": "cenkalti/backoff ExponentialBackOff treats MaxElapsedTime = 0 as retry\nforever. If unbounded retry is not intended, set a finite duration.\n",
+      "fingerprint": "sha256:57e7d79c3a28877491aea80635f25ff4814a7c52b7e81e12e9261d7e1ed391ac",
       "source_hash": "sha256:1e77253d88dc5081305160e9eb1eb5b8a8ba333ee66238eed4e8bf93c7a86e79"
     },
     {
@@ -4438,8 +4089,8 @@
       "obligations": [
         "external_call_failure_observable"
       ],
-      "message": "HTTP handler appears to return 200 unconditionally. If this is mounted\nas a readiness probe it will report ready even before dependencies are\nreachable. Either gate the 200 on a real readiness check, or rename\nthe route to /livez and add a separate /readyz with a real check.\n",
-      "fingerprint": "sha256:c289c02e8faaf46a5860979bdb7bd244a54bff23457f5564e9150df09223e1f4",
+      "message": "HTTP handler appears to return 200 unconditionally. If mounted as a\nreadiness probe, it may report ready before dependencies are reachable.\n",
+      "fingerprint": "sha256:24fb0ad3e2bcc1c49119e536abcbbd4fb61b297fa0199cbaac0164405dead3b8",
       "source_hash": "sha256:5c4ea4acd5fbc87a7c6e0dfe361e9fce9627b49e2e190420d5628aa5789a1bae"
     },
     {
@@ -4460,8 +4111,8 @@
       "obligations": [
         "malformed_recovers_or_errors_loudly"
       ],
-      "message": "mapstructure.Decode silently ignores unknown keys in the input map.\nFor configuration parsing this hides typos (e.g. csv_pathh instead of\ncsv_path). Use mapstructure.NewDecoder with a DecoderConfig that sets\nErrorUnused: true so unknown keys produce an error.\n",
-      "fingerprint": "sha256:102358ab6220b835833cb36335a0049cb7252999dae659b43d890dbee2330e55",
+      "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
+      "fingerprint": "sha256:7008b56f8fb214642b33c872f5a562564ea4492688e7373d5c8166177301ddbf",
       "source_hash": "sha256:6634a473c979dd089b4c3ebf75ec39f8b4e1e94c995e30bb6c41a5f18d301e13"
     }
   ]

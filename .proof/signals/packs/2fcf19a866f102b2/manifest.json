@@ -1,0 +1,58 @@
+{
+  "schema_version": "proof.signal_packs.v1",
+  "proof_version": "0.1.0-dev",
+  "pack_ref": "builtin:go/default",
+  "pack_hash": "sha256:2fcf19a866f102b2a93d80f05413aa1497e229bb9a3121bda63ccbadef01303a",
+  "files": [
+    {
+      "source_path": "data/go/boundary.yaml",
+      "path": "boundary.yaml",
+      "sha256": "sha256:5f617fe97c502338a763a6aa9c4cf923bea611ad0532f0a23199c7b3dad090ff"
+    },
+    {
+      "source_path": "data/go/bug_vectors.yaml",
+      "path": "bug_vectors.yaml",
+      "sha256": "sha256:785d8c88dee36fbe40af79efe2e01560471c2379f13a0c850d21a573d6cc621c"
+    },
+    {
+      "source_path": "data/go/concurrency.yaml",
+      "path": "concurrency.yaml",
+      "sha256": "sha256:118414848a67f71082099681fdee85dd7852953e8289917f0d41e6e374ce8f0b"
+    },
+    {
+      "source_path": "data/go/db.yaml",
+      "path": "db.yaml",
+      "sha256": "sha256:6bca6819945180267a5e3f248b0345ff82cd78c3b5190d7aef4570f03bdaf23b"
+    },
+    {
+      "source_path": "data/go/deserializer.yaml",
+      "path": "deserializer.yaml",
+      "sha256": "sha256:6365d2aab184141a0a86c18b764bedc43057b9fbbf1ad74ec892026974453f72"
+    },
+    {
+      "source_path": "data/go/filesystem.yaml",
+      "path": "filesystem.yaml",
+      "sha256": "sha256:8a60c008546ebdad12047add437b029c42da1f781b19f9b62b731ff96aea2d90"
+    },
+    {
+      "source_path": "data/go/http_client.yaml",
+      "path": "http_client.yaml",
+      "sha256": "sha256:26ad4d4689849829321718e83265dc96e6b8b61f012c9992ad6e528edec90545"
+    },
+    {
+      "source_path": "data/go/logging.yaml",
+      "path": "logging.yaml",
+      "sha256": "sha256:7e913ba6447ea1f7b37cc77242b11feea64d593ec19af35d05d6a3ab589edd4e"
+    },
+    {
+      "source_path": "data/go/process.yaml",
+      "path": "process.yaml",
+      "sha256": "sha256:177ca51d46288a9c8630ef1ed50df49ae8b505eb0f908a67bd89b729f37ed4ea"
+    },
+    {
+      "source_path": "data/go/runtime.yaml",
+      "path": "runtime.yaml",
+      "sha256": "sha256:d993fcdcbcd61705e296187248503e651dc0f57a920cdc53e97b7d8f9ba9f24a"
+    }
+  ]
+}

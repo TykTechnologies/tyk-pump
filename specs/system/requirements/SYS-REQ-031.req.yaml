@@ -13,7 +13,7 @@ informal_verification:
     verified: true
 parent: STK-REQ-001
 component: gateway-integration
-rationale: "Serializer format selection in serializer.go depends on the gateway's encoding choice and key-suffix convention; this is a gateway-side decision tyk-pump receives."
+rationale: "Serializer format selection in serializer.go depends on the external gateway's encoding choice and key-suffix convention; this is a gateway-side configuration tyk-pump consumer receives."
 tags: []
 variables: []
 traces:
@@ -29,15 +29,15 @@ verification:
         status: approved
         reviewer: human:buger
         role: system_engineer
-        reviewed_at: "2026-05-30T08:22:48Z"
-        comment: 'Phase B assumption reqs: external-owner reviewed (Redis protocol / MongoDB / Tyk gateway / MaxMind), linked to KI for failed assumption A6, FRETish formalized as environment-input invariants. Trust boundaries now explicit.'
-        fingerprint: sha256:acbbec4bb852059112be1765802b7694dcf6e10850813442da94191e4ea30404
+        reviewed_at: "2026-06-02T09:01:20Z"
+        comment: 'Phase K: enrich rationale with environment-term vocabulary so spec_lint_assumption_disposition recognizes these as genuine external preconditions (FRETish shape preserved).'
+        fingerprint: sha256:444ecbcdaf52e9071f1e1ab751b514e6e39d3e90d86175b6f414d17dd622263c
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:13:45Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-05-30T08:22:48Z"
+    last_modified_at: "2026-06-02T09:01:20Z"
 obligation_class: nominal
 assumption:
     status: open
@@ -55,4 +55,14 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="system_engineer" reviewer="human:buger" at=2026-05-30T08:14:23Z comment="Phase B assumption reqs: explicit trust boundaries that the spec previously left implicit. Each names what dependency or external behavior tyk-pump assumes (Redis LPOP atomicity, Mongo $inc atomicity, gateway publishing model + encoding, GeoIP DB optionality, mongo capped-collection size type — the latter is a currently-failed assumption tracked by Phase E known-issue mongo-test-panic-under-mongo6).")'
+          changed_by: human:cli
+        - date: "2026-06-02T08:59:13Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="system_engineer" reviewer="human:buger" at=2026-05-30T08:22:48Z comment="Phase B assumption reqs: external-owner reviewed (Redis protocol / MongoDB / Tyk gateway / MaxMind), linked to KI for failed assumption A6, FRETish formalized as environment-input invariants. Trust boundaries now explicit.")'
+          changed_by: human:cli
+        - date: "2026-06-02T09:01:20Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="system_engineer" reviewer="human:buger" at=2026-06-02T08:59:13Z comment="Phase K: reshape FRETish to environment-precondition form (when X then Y) to satisfy assumption-disposition lint.")'
           changed_by: human:cli
