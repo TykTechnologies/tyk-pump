@@ -29,18 +29,30 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-02T05:02:45Z"
-        comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
+        reviewed_at: "2026-06-03T07:45:25Z"
+        comment: 'Phase Q3: add external_call_timeout_bounded obligation (pushed from SYS-REQ-005, which carries it at system level; SW-REQ-072 is the per-pump timeout child).'
         fingerprint: sha256:7c76a5936c17456c26602bc266b4b18bca491f28a00f95a80c2f54cbfc7db006
         ai_generated: false
+    impact_reviews:
+        - requirement: SW-REQ-072
+          artifact: main.go
+          decision: no-authored-change
+          reviewer: buger
+          reason: 'Phase Q3: added reqproof:implements SW-REQ-072 annotation to execPumpWriting so SW-REQ-072 has an implemented_by trace; other linked SW reqs (001-004) unchanged, no requirement intent change.'
+          base: origin/master
+          requirement_fingerprint: sha256:1f56b24a2471782c7f6b979a54f7243343ce0181ee86c4278ff873c9aec89c03
+          approval_fingerprint: sha256:7c76a5936c17456c26602bc266b4b18bca491f28a00f95a80c2f54cbfc7db006
+          artifact_fingerprint: sha256:41bc4cbbf03d222d0cdd571a0b04710b232a4f7707c04d3d6f56fda2b92058d6
+          reviewed_at: "2026-06-03T07:55:57Z"
 history:
     created_by: human:cli
     created_at: "2026-06-01T20:24:19Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-02T05:02:46Z"
+    last_modified_at: "2026-06-03T07:45:25Z"
 obligation_checklist:
     - cancellation_observed
     - error_handling
+    - external_call_timeout_bounded
 obligation_suppressions:
     - id: cancellation_observed
       reason: 'Phase I: SW-REQ-072 is a contract-only design point under SYS-REQ-005; the actual cancellation_observed implementation is broken today and is captured by KIs mongo-pump-ignores-caller-context, elasticsearch-unbounded-reconnect-recursion, and pump-no-timeout-can-block-purge-cycle. Suppression with rationale per ship_with_known_issue disposition until those KIs are remediated.'
@@ -77,4 +89,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-01T20:30:10Z comment="Phase I: per-pump write-timeout / ctx-propagation design point added under SYS-REQ-005; component=delivery, FRETish reuses parent''s write_exceeds_timeout/write_aborted vars; 3 affixed KIs (mongo-pump-ignores-caller-context, elasticsearch-unbounded-reconnect-recursion, pump-no-timeout-can-block-purge-cycle) now have a SW-level home.")'
+          changed_by: human:cli
+        - date: "2026-06-03T07:45:25Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T05:02:45Z comment="Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.")'
           changed_by: human:cli

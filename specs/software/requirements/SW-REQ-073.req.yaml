@@ -31,19 +31,31 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-02T05:02:45Z"
-        comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
+        reviewed_at: "2026-06-03T07:45:14Z"
+        comment: 'Phase Q3: add implemented_by trace to analytics/uptime_data.go to close obligation_decomposition_complete on parameterized_only_read.'
         fingerprint: sha256:68da2243d7ba8b5779fe25e2b270569bedacd797693bb868dcff8b73289ac943
         ai_generated: false
+    impact_reviews:
+        - requirement: SW-REQ-073
+          artifact: analytics/uptime_data.go
+          decision: no-authored-change
+          reviewer: buger
+          reason: 'Phase Q3: added reqproof:implements SW-REQ-073 annotation to AggregateUptimeData so SW-REQ-073 has an implemented_by trace; SW-REQ-015 still owns the same surface, no requirement intent change.'
+          base: origin/master
+          requirement_fingerprint: sha256:4be5c98b444573bc60f7d22ab98412c40428e6156107eb0f95d022b06135c5c3
+          approval_fingerprint: sha256:68da2243d7ba8b5779fe25e2b270569bedacd797693bb868dcff8b73289ac943
+          artifact_fingerprint: sha256:d6e83286abc9394d0a08d7652fed433049fa82bd214c396bea98c02ab60d2273
+          reviewed_at: "2026-06-03T07:55:55Z"
 history:
     created_by: human:cli
     created_at: "2026-06-01T20:46:34Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-02T05:02:46Z"
+    last_modified_at: "2026-06-03T07:45:14Z"
 obligation_checklist:
     - atomicity
     - monotonicity
     - nominal
+    - parameterized_only_read
 obligation_suppressions:
     - id: atomicity
       reason: 'Phase I: SW-REQ-073 is the contract surface for the uptime-aggregate path; the per-obligation failure modes are captured by KIs uptime-aggregate-erasstr-itoa-always-nonempty, uptime-aggregate-nil-errormap-on-tcp-then-http, uptime-onconflict-request-time-is-zero-unreachable. Suppressed with rationale per ship_with_known_issue disposition until KIs are remediated.'
@@ -89,4 +101,14 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-01T20:48:47Z comment="Phase I: uptime-aggregate path SW req split out of SW-REQ-015; obligations suppressed with KI rationale; docs filed.")'
+          changed_by: human:cli
+        - date: "2026-06-03T07:40:32Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T05:02:45Z comment="Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.")'
+          changed_by: human:cli
+        - date: "2026-06-03T07:45:14Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-03T07:40:32Z comment="Phase Q: catalog obligation attachments — adds errors_propagated, parameterized_only_read (uptime aggregate writes + reads, KI uptime-write-has-no-error-return). See .proof/catalog-obligation-proposals.md.")'
           changed_by: human:cli

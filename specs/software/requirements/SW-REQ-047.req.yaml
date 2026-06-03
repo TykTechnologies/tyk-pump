@@ -29,8 +29,8 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-02T13:44:34Z"
-        comment: 'Phase L2: aggressive formalization — encodes per-component primary decision (instrumentation gate, codec select, SSL/SASL, dataset_empty, default-path, file-append, retry-status, log-level, flush, batch, transport, dedup); variables in <component>.vars.yaml; user directive: force MCDC witnesses to drive verifying tests.'
+        reviewed_at: "2026-06-03T07:39:13Z"
+        comment: 'Phase Q: catalog obligation attachments — adds external_call_timeout_bounded, external_call_failure_observable, errors_propagated, back_pressure_bounded, cancellation_observed, ssrf_protection (Influx v2 async WriteAPI surface). See .proof/catalog-obligation-proposals.md.'
         fingerprint: sha256:09dcad9b5d639c0ad2346cb2af655e1118e9f6234a0a1f8c30ab7849bf9b7324
         ai_generated: false
     impact_reviews:
@@ -48,9 +48,10 @@ history:
     created_by: human:cli
     created_at: "2026-05-30T08:36:01Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-02T13:44:35Z"
+    last_modified_at: "2026-06-03T07:39:13Z"
 obligation_checklist:
     - nominal
+    - ssrf_protection
 obligation_suppressions:
     - id: errors_propagated
       reason: Phase H custom opengrep rule go.log.fatal-in-init / go.recursion.unbounded-on-error surfaces log.Fatal in Init and unbounded reconnect recursion; both are tracked under KIs pumps-logfatal-on-config-decode, elasticsearch-unbounded-reconnect-recursion, and influx-v1-unbounded-reconnect-recursion with mitigation and remediation already filed.
@@ -86,4 +87,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T05:02:45Z comment="Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.")'
+          changed_by: human:cli
+        - date: "2026-06-03T07:39:13Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T13:44:34Z comment="Phase L2: aggressive formalization — encodes per-component primary decision (instrumentation gate, codec select, SSL/SASL, dataset_empty, default-path, file-append, retry-status, log-level, flush, batch, transport, dedup); variables in <component>.vars.yaml; user directive: force MCDC witnesses to drive verifying tests.")'
           changed_by: human:cli

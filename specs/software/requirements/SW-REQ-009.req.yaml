@@ -29,8 +29,8 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-02T05:02:45Z"
-        comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
+        reviewed_at: "2026-06-03T07:38:13Z"
+        comment: 'Phase Q: catalog obligation attachments — adds hash_format_deterministic (aggregate dimension key projection). See .proof/catalog-obligation-proposals.md.'
         fingerprint: sha256:5b3de46c2b65bfda73aefd76ce0cff88deec7322000638260e0e60785ac760a0
         ai_generated: false
     impact_reviews:
@@ -58,9 +58,10 @@ history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:14Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-02T05:02:46Z"
+    last_modified_at: "2026-06-03T07:38:13Z"
 obligation_checklist:
     - determinism
+    - hash_format_deterministic
 obligation_suppressions:
     - id: binary_data_preserved
       reason: 'Phase G: code_signal ''go.encoding.lossy-string-conversion'' at analytics/analytics.go:343 is the trimBuffer.Bytes() coerced to string after deliberate UTF-8 Truncate boundary handling. Analytics RawRequest/RawResponse are by-design UTF-8 strings on the wire (base64 transport for binary); the string conversion is part of the trimming contract and not a lossy boundary. Not a real obligation gap.'
@@ -84,4 +85,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-05-30T07:43:08Z comment="Software-component design reviewed as part of feat/reqproof-coverage PR; each maps to verified code paths per the Phase 0 file-by-file verification (see PR description for code-verified corrections SW-016/017/023/027/028/033).")'
+          changed_by: human:cli
+        - date: "2026-06-03T07:38:13Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T05:02:45Z comment="Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.")'
           changed_by: human:cli

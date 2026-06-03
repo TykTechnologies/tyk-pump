@@ -29,8 +29,8 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-02T12:50:34Z"
-        comment: 'Phase L1: formalize via FRETish; introduced per-component boolean vars in *.vars.yaml; FRETish captures the headline routing/windowing decision per req (table-sharding for SW-040/041, graph-routing for SW-042, minute-window for SW-043/045, mcp-routing for SW-044/069, date-boundary slice-flush for SW-064).'
+        reviewed_at: "2026-06-03T07:39:00Z"
+        comment: 'Phase Q: catalog obligation attachments — adds external_call_timeout_bounded, external_call_concurrency_bounded, errors_propagated, query_timeout_bounded, deadlock_recovery, forward_compatible, reversible_or_documented (SQL standard; KIs pump-writedata-swallows-per-batch-errors, sql-schema-no-version-policy). See .proof/catalog-obligation-proposals.md.'
         fingerprint: sha256:97856408e14843e1a4889da5e54c7b39bd2c8bac339304a48ea78e38651d6ada
         ai_generated: false
     impact_reviews:
@@ -48,12 +48,13 @@ history:
     created_by: human:cli
     created_at: "2026-05-30T08:35:20Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-02T18:29:51Z"
+    last_modified_at: "2026-06-03T07:39:00Z"
 obligation_checklist:
     - boundary
     - concurrent
     - connection_leak_free
     - parameterized_only_write
+    - reversible_or_documented
 obligation_suppressions:
     - id: concurrent
       reason: 'Phase G: code_signal ''go.concurrency.goroutine-spawn'' + ''go.concurrency.channel-send'' at pumps/sql.go:498/513 are the optional background-index creation pattern: when background=true, createIndex runs in a goroutine and signals completion via the buffered backgroundIndexCreated channel. wg.Wait() synchronizes before the channel send. Channel send is guarded by wg.Wait; no shared mutables across goroutines (gorm db handle is concurrency-safe per its docs). Not a data-race obligation gap.'
@@ -113,4 +114,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T05:02:45Z comment="Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.")'
+          changed_by: human:cli
+        - date: "2026-06-03T07:39:00Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T12:50:34Z comment="Phase L1: formalize via FRETish; introduced per-component boolean vars in *.vars.yaml; FRETish captures the headline routing/windowing decision per req (table-sharding for SW-040/041, graph-routing for SW-042, minute-window for SW-043/045, mcp-routing for SW-044/069, date-boundary slice-flush for SW-064).")'
           changed_by: human:cli

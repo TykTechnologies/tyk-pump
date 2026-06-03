@@ -29,8 +29,8 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-02T12:50:34Z"
-        comment: 'Phase L1: formalize via FRETish; introduced per-component boolean vars in *.vars.yaml; FRETish captures the headline routing/windowing decision per req (table-sharding for SW-040/041, graph-routing for SW-042, minute-window for SW-043/045, mcp-routing for SW-044/069, date-boundary slice-flush for SW-064).'
+        reviewed_at: "2026-06-03T07:39:02Z"
+        comment: 'Phase Q: catalog obligation attachments — adds deadlock_recovery (SQL aggregate upsert deadlock handling). See .proof/catalog-obligation-proposals.md.'
         fingerprint: sha256:cbb21a109c946e9966ab2c4c2986bb6a7238e0f3b66da99096f5b84e9fd292ee
         ai_generated: false
     impact_reviews:
@@ -48,9 +48,10 @@ history:
     created_by: human:cli
     created_at: "2026-05-30T08:35:25Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-02T18:29:52Z"
+    last_modified_at: "2026-06-03T07:39:02Z"
 obligation_checklist:
     - concurrent
+    - deadlock_recovery
     - nominal
 obligation_suppressions:
     - id: concurrent
@@ -121,4 +122,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T05:02:45Z comment="Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.")'
+          changed_by: human:cli
+        - date: "2026-06-03T07:39:02Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T12:50:34Z comment="Phase L1: formalize via FRETish; introduced per-component boolean vars in *.vars.yaml; FRETish captures the headline routing/windowing decision per req (table-sharding for SW-040/041, graph-routing for SW-042, minute-window for SW-043/045, mcp-routing for SW-044/069, date-boundary slice-flush for SW-064).")'
           changed_by: human:cli

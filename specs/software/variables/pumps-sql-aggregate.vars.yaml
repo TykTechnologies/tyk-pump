@@ -28,10 +28,14 @@ variables:
       type: bool
       direction: input
       description: True when the SQL Aggregate pump's OmitIndexCreation config is true (operator opted out of auto composite-index ensure).
+    - name: sql_index_already_exists
+      type: bool
+      direction: input
+      description: True when c.db.Migrator().HasIndex(tableName, indexName) returns true — the idempotency-skip arm in ensureIndex that satisfies sql_create_index_skipped independently of sql_omit_index_creation (description names both skip conditions).
     - name: sql_create_index_skipped
       type: bool
       direction: output
-      description: True iff the per-table <table>_idx_dimension composite-index ensure step is skipped when OmitIndexCreation is true.
+      description: True iff the per-table <table>_idx_dimension composite-index ensure step is skipped because sql_omit_index_creation OR sql_index_already_exists.
     - name: row_conflict_detected
       type: bool
       direction: input

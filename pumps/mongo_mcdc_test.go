@@ -990,9 +990,10 @@ func TestMongoAggregatePump_WriteData_NoMixed(t *testing.T) {
 // Verifies: SW-REQ-059
 // Verifies: SW-REQ-061
 // SW-REQ-059:nominal:positive — ThresholdLenTagList = -1 disables alert
-// MCDC SW-REQ-061: tag_list_len_gt_threshold=F, alert_emitted=F => TRUE
-// MCDC SW-REQ-061: tag_list_len_gt_threshold=T, alert_emitted=F => FALSE
-// MCDC SW-REQ-061: tag_list_len_gt_threshold=T, alert_emitted=T => TRUE
+// MCDC SW-REQ-061: alert_emitted=F, alert_not_disabled=F, tag_list_len_gt_threshold=F => FALSE
+// MCDC SW-REQ-061: alert_emitted=F, alert_not_disabled=F, tag_list_len_gt_threshold=T => TRUE
+// MCDC SW-REQ-061: alert_emitted=F, alert_not_disabled=T, tag_list_len_gt_threshold=T => FALSE
+// MCDC SW-REQ-061: alert_emitted=T, alert_not_disabled=F, tag_list_len_gt_threshold=F => TRUE
 //
 // This test sets threshold_len_tag_list=-1 (disables alert) — tag_list_len_gt_threshold=F arm
 // (alert_emitted=F, vacuous true). The tag_list_len_gt_threshold=T/alert_emitted=T arm is

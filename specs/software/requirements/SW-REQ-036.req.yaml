@@ -29,8 +29,8 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-02T05:02:45Z"
-        comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
+        reviewed_at: "2026-06-03T07:38:53Z"
+        comment: 'Phase Q: catalog obligation attachments — adds cert_validation_strict, cancellation_observed, connection_leak_free, query_timeout_bounded (Mongo aggregate pump surface). See .proof/catalog-obligation-proposals.md.'
         fingerprint: sha256:cd9054202bb57521328cc38649a003a66d97a4b40078e4a2e38da409a4d9e944
         ai_generated: false
     impact_reviews:
@@ -48,10 +48,11 @@ history:
     created_by: human:cli
     created_at: "2026-05-30T08:34:49Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-02T05:02:46Z"
+    last_modified_at: "2026-06-03T07:38:53Z"
 obligation_checklist:
     - errors_propagated
     - nominal
+    - query_timeout_bounded
 obligation_suppressions:
     - id: errors_propagated
       reason: Phase H custom opengrep rule go.log.fatal-in-init / go.recursion.unbounded-on-error surfaces log.Fatal in Init and unbounded reconnect recursion; both are tracked under KIs pumps-logfatal-on-config-decode, elasticsearch-unbounded-reconnect-recursion, and influx-v1-unbounded-reconnect-recursion with mitigation and remediation already filed.
@@ -97,4 +98,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-05-31T11:27:47Z comment="Phase E: SW-036 checklist normalised to [nominal,errors_propagated].")'
+          changed_by: human:cli
+        - date: "2026-06-03T07:38:53Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T05:02:45Z comment="Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.")'
           changed_by: human:cli

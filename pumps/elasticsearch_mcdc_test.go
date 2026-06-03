@@ -162,9 +162,10 @@ func TestElasticsearchPump_WriteData_RoundTripBulk(t *testing.T) {
 //
 // Verifies: SW-REQ-069
 // SW-REQ-069:nominal:negative
-// MCDC SW-REQ-069: index_eq_mcp=F, mcp_record_with_mcp_index=F => TRUE
-// MCDC SW-REQ-069: index_eq_mcp=F, mcp_record_with_mcp_index=T => FALSE
-// MCDC SW-REQ-069: index_eq_mcp=T, mcp_record_with_mcp_index=T => TRUE
+// MCDC SW-REQ-069: index_eq_mcp=F, is_mcp_record=F, mcp_index_configured=F => FALSE
+// MCDC SW-REQ-069: index_eq_mcp=F, is_mcp_record=T, mcp_index_configured=F => TRUE
+// MCDC SW-REQ-069: index_eq_mcp=F, is_mcp_record=T, mcp_index_configured=T => FALSE
+// MCDC SW-REQ-069: index_eq_mcp=T, is_mcp_record=F, mcp_index_configured=F => TRUE
 // (This test drives both: a standard record (mcp_record_with_mcp_index=F) lands
 // in IndexName, and an MCP record (mcp_record_with_mcp_index=T) lands in
 // MCPIndexName — covering both halves of the getIndexNameForRecord decision.)

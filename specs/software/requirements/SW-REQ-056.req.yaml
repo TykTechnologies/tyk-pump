@@ -29,8 +29,8 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-02T13:51:46Z"
-        comment: 'Phase L2: aggressive formalization — encodes logzio Token-required and kinesis KMS-key gate decisions; variables in component vars files.'
+        reviewed_at: "2026-06-03T07:40:02Z"
+        comment: 'Phase Q: catalog obligation attachments — adds external_call_timeout_bounded, idempotency_key_honored (Kinesis partition-key dedup contract). See .proof/catalog-obligation-proposals.md.'
         fingerprint: sha256:b45ea2553796d2371ae3785a514306ee469e82bd3853acbd5864d5af34196826
         ai_generated: false
     impact_reviews:
@@ -48,8 +48,9 @@ history:
     created_by: human:cli
     created_at: "2026-05-30T08:37:04Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-02T18:29:51Z"
+    last_modified_at: "2026-06-03T07:40:02Z"
 obligation_checklist:
+    - idempotency_key_honored
     - monotonicity
     - nominal
 obligation_suppressions:
@@ -103,4 +104,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T08:49:56Z comment="Cleanup: removed obligation_suppression for opengrep FP at pumps/kinesis.go:185 (go.random.math-rand); upstream reqproof landed the rule refinement (probelabs/reqproof#86) so the FP no longer fires.")'
+          changed_by: human:cli
+        - date: "2026-06-03T07:40:02Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T13:51:46Z comment="Phase L2: aggressive formalization — encodes logzio Token-required and kinesis KMS-key gate decisions; variables in component vars files.")'
           changed_by: human:cli

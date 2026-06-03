@@ -188,9 +188,10 @@ func TestMongoSelectivePump_EnsureIndexes_ErrAfterContainerStop(t *testing.T) {
 // Verifies: SW-REQ-063
 // SW-REQ-063:errors_propagated:negative — aggregate ensureIndexes propagates
 // CreateIndex error after stop.
-// MCDC SW-REQ-063: omit_index_creation=F, create_index_skipped=F => TRUE
-// MCDC SW-REQ-063: omit_index_creation=T, create_index_skipped=F => FALSE
-// MCDC SW-REQ-063: omit_index_creation=T, create_index_skipped=T => TRUE
+// MCDC SW-REQ-063: collection_already_exists=F, create_index_skipped=F, omit_index_creation=F => TRUE
+// MCDC SW-REQ-063: collection_already_exists=F, create_index_skipped=F, omit_index_creation=T => FALSE
+// MCDC SW-REQ-063: collection_already_exists=F, create_index_skipped=T, omit_index_creation=T => TRUE
+// MCDC SW-REQ-063: collection_already_exists=T, create_index_skipped=F, omit_index_creation=T => TRUE
 //
 // omit_index_creation=F arm (default): ensureIndexes is invoked and propagates the
 // CreateIndex error after the container stops — create_index_skipped=F (vacuous true under

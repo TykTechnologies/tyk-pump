@@ -29,8 +29,8 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-02T14:19:01Z"
-        comment: 'Phase L3 aggressive: flip remaining decision-bearing SW reqs to FRETish per L3 plan; vars added per-component; MC/DC witnesses to be annotated in tests.'
+        reviewed_at: "2026-06-03T07:38:21Z"
+        comment: 'Phase Q: catalog obligation attachments — adds polymorphic_type_whitelist (mapstructure-driven pumps-common config decode). See .proof/catalog-obligation-proposals.md.'
         fingerprint: sha256:e780c4d63bd802ceaad1a731c2e85f0aadd70934c6ba90ffabb4cc281f87bce8
         ai_generated: false
     impact_reviews:
@@ -48,10 +48,11 @@ history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:15Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-02T14:19:01Z"
+    last_modified_at: "2026-06-03T07:38:21Z"
 obligation_checklist:
     - boundary
     - nominal
+    - polymorphic_type_whitelist
 lifecycle:
     change_history:
         - date: "2026-05-29T15:46:44Z"
@@ -78,4 +79,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T05:02:45Z comment="Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.")'
+          changed_by: human:cli
+        - date: "2026-06-03T07:38:21Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T14:19:01Z comment="Phase L3 aggressive: flip remaining decision-bearing SW reqs to FRETish per L3 plan; vars added per-component; MC/DC witnesses to be annotated in tests.")'
           changed_by: human:cli

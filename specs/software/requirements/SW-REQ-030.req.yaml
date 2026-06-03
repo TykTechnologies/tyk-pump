@@ -4,7 +4,7 @@ status: approved
 priority: shall
 category: functional
 req_type: guarantee
-fretish: when is_5xx_or_429 retry shall always satisfy retry_attempted
+fretish: when is_5xx_or_429 | transport_transient_err retry shall always satisfy retry_attempted
 description: The HTTP retry strategy shall retry idempotent backend calls on transient failures using bounded exponential backoff.
 formalization_strategy: fretish
 informal_verification:
@@ -15,13 +15,16 @@ parent: SYS-REQ-006
 component: retry
 rationale: ""
 tags: []
-variables: []
+variables:
+    - is_5xx_or_429
+    - transport_transient_err
+    - retry_attempted
 traces:
     satisfies:
         - SYS-REQ-006
-    reviewed_at: "2026-06-02T13:56:59.230373Z"
+    reviewed_at: "2026-06-03T07:18:16.764619Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:6b541532db9ecfd107d6f8b2404a2858ef0dd0d46a4b43dbc4c34b860f8a136b
+    reviewed_fingerprint: sha256:43ba00d609dc56212d54c560ee47ded73fd01f41fa52324d85542a4917ef7899
 verification:
     assurance_level: B
     formalization_status: valid
@@ -29,28 +32,29 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-02T13:44:34Z"
-        comment: 'Phase L2: aggressive formalization — encodes per-component primary decision (instrumentation gate, codec select, SSL/SASL, dataset_empty, default-path, file-append, retry-status, log-level, flush, batch, transport, dedup); variables in <component>.vars.yaml; user directive: force MCDC witnesses to drive verifying tests.'
-        fingerprint: sha256:ce56f4deff00bc2df55fff03aa0fc0de6c05773f011b9b90318095101beaa8d5
+        reviewed_at: "2026-06-03T07:38:40Z"
+        comment: 'Phase Q: catalog obligation attachments — adds request_timeout_bounded, retry_policy_explicit (HTTP retry policy declared, KI retry-4xx-bodyread-fail-causes-retry). See .proof/catalog-obligation-proposals.md.'
+        fingerprint: sha256:99d059827ae853b5fb4d29238c82c92fac4e00276ef839eaf10bd1fa5d90faa6
         ai_generated: false
     impact_reviews:
         - requirement: SW-REQ-030
           artifact: retry/http-retry.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Phase L2: formalization-only change (informal -> fretish + per-component boolean variables). Production .go files were not modified; only req YAML metadata, component vars YAMLs, and // MCDC test comment witnesses.'
+          reason: 'Phase P: FRETish enrichment per per-req review pass — added decision variables expose existing code branches; production code paths unchanged, only requirement metadata altered. Test annotations updated to match new MC/DC truth tables.'
           base: origin/master
-          requirement_fingerprint: sha256:6b541532db9ecfd107d6f8b2404a2858ef0dd0d46a4b43dbc4c34b860f8a136b
-          approval_fingerprint: sha256:ce56f4deff00bc2df55fff03aa0fc0de6c05773f011b9b90318095101beaa8d5
+          requirement_fingerprint: sha256:43ba00d609dc56212d54c560ee47ded73fd01f41fa52324d85542a4917ef7899
+          approval_fingerprint: sha256:99d059827ae853b5fb4d29238c82c92fac4e00276ef839eaf10bd1fa5d90faa6
           artifact_fingerprint: sha256:c760d2c36c5a8a08cd52bd0cfc33a6b21c67b458206ecbca0569e82b4f821ef1
-          reviewed_at: "2026-06-02T13:44:40Z"
+          reviewed_at: "2026-06-03T07:17:20Z"
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:16Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-02T13:44:34Z"
+    last_modified_at: "2026-06-03T07:38:40Z"
 obligation_checklist:
     - error_handling
+    - retry_policy_explicit
 obligation_suppressions:
     - id: input_size_bounded
       reason: 'Phase G: code_signal ''go.deserializer.request-body-readall'' at retry/http-retry.go:43 is filed as new KI retry-buffers-full-request-body-in-memory. The retry middleware buffers the full outbound request body once before the retry loop so it can be replayed; size is bounded in practice by the pump-level batch caps that originate the body. Tracked in the new KI; not duplicated as a checklist gap.'
@@ -90,4 +94,14 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T05:02:45Z comment="Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.")'
+          changed_by: human:cli
+        - date: "2026-06-03T06:55:58Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T13:44:34Z comment="Phase L2: aggressive formalization — encodes per-component primary decision (instrumentation gate, codec select, SSL/SASL, dataset_empty, default-path, file-append, retry-status, log-level, flush, batch, transport, dedup); variables in <component>.vars.yaml; user directive: force MCDC witnesses to drive verifying tests.")'
+          changed_by: human:cli
+        - date: "2026-06-03T07:38:40Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-03T06:55:58Z comment="Phase P: FRETish enrichment per per-req review pass — adds transport_transient_err to when disjunct so MC/DC splits the retry-classification surface — transport-transient (isErrorRetryable) and HTTP-status arms have distinct fixture surfaces (network injection vs HTTP 503).")'
           changed_by: human:cli

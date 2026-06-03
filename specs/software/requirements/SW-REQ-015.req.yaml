@@ -39,12 +39,12 @@ verification:
           artifact: analytics/uptime_data.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Phase J: req_type field flipped derived to guarantee per probelabs/reqproof#88 (category error fix). Production .go files were not modified for this change; only req YAML metadata. Re-recording no-authored-change impact.'
+          reason: 'Phase Q3: added reqproof:implements SW-REQ-073 annotation to AggregateUptimeData so SW-REQ-073 has an implemented_by trace; SW-REQ-015 still owns the same surface, no requirement intent change.'
           base: origin/master
           requirement_fingerprint: sha256:6409890eeea986a1cad2c8360d25c95292e98adfa718387df23e3d49bf02d595
           approval_fingerprint: sha256:ea9cda7d3a3f22a915798e115a8794f339f65ca2e895171e8755133427c5131a
-          artifact_fingerprint: sha256:ead0777f032e56e0b5e587e0dc9f3d16e41de746ee807fcb937d9faa2c8fb17a
-          reviewed_at: "2026-06-02T05:13:05Z"
+          artifact_fingerprint: sha256:d6e83286abc9394d0a08d7652fed433049fa82bd214c396bea98c02ab60d2273
+          reviewed_at: "2026-06-03T07:55:55Z"
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:15Z"

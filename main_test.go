@@ -438,9 +438,10 @@ func TestIgnoreFieldsFilterData(t *testing.T) {
 // Verifies: SW-REQ-001
 // Verifies: SYS-REQ-011
 // SYS-REQ-011:nominal:negative
-// MCDC SYS-REQ-011: decode_enabled=F, payload_decoded=F => TRUE
-// MCDC SYS-REQ-011: decode_enabled=T, payload_decoded=F => FALSE
-// MCDC SYS-REQ-011: decode_enabled=T, payload_decoded=T => TRUE
+// MCDC SYS-REQ-011: decode_request_enabled=F, decode_response_enabled=F, enabled_payloads_decoded=F => TRUE
+// MCDC SYS-REQ-011: decode_request_enabled=T, decode_response_enabled=F, enabled_payloads_decoded=F => FALSE
+// MCDC SYS-REQ-011: decode_request_enabled=T, decode_response_enabled=F, enabled_payloads_decoded=T => TRUE
+// MCDC SYS-REQ-011: decode_request_enabled=T, decode_response_enabled=T, enabled_payloads_decoded=F => TRUE
 //
 // Sub-cases drive: decode_enabled=T (decodeRequest/decodeResponse=true) + payload_decoded=T
 // (assertion expectedRawRequest/Response == "DecodedRequest"/"DecodedResponse") -> TRUE row.
@@ -600,4 +601,59 @@ func TestDeprecationWarnings(t *testing.T) {
 			}
 		})
 	}
+}
+
+// Verifies: SW-REQ-011
+// SW-REQ-011:encoding_aware:negative
+//
+// Negative-path evidence for the base64-decode arm of filterData (main.go:415-419
+// and 421-425). When SystemConfig.DecodeRawRequest=true (or DecodeRawResponse=true)
+// and the record's RawRequest/RawResponse field carries non-base64 input, the
+// production code calls base64.StdEncoding.DecodeString which returns an err;
+// the documented (and current, KI-tracked) behavior is the silent no-op: the
+// original field is preserved unchanged because the `if err == nil` guard skips
+// the reassignment. This test pins that observable contract so that any future
+// behavior change (loud error, partial overwrite, panic) surfaces immediately.
+//
+// Companion known-issue: filterdata-base64-decode-silent-noop (the silent no-op
+// is broken-by-design — the contract honors "encoding_aware" by NOT corrupting
+// the field on malformed input, but it also does not surface the decode failure
+// to the operator). This test is the negative-evidence carrier the audit needs;
+// the remediation lives with the KI.
+func TestFilterDataBase64DecodeFailurePreservesField(t *testing.T) {
+	originalSystemConfig := SystemConfig
+	t.Cleanup(func() {
+		SystemConfig = originalSystemConfig
+	})
+
+	const invalidBase64 = "!!!notbase64!!!"
+
+	SystemConfig = TykPumpConfiguration{
+		DecodeRawRequest:  true,
+		DecodeRawResponse: true,
+	}
+
+	mockedPump := &MockedPump{}
+
+	keys := make([]interface{}, 1)
+	keys[0] = analytics.AnalyticsRecord{
+		APIID:       "api-encoding-aware",
+		RawRequest:  invalidBase64,
+		RawResponse: invalidBase64,
+	}
+
+	filteredKeys := filterData(mockedPump, keys)
+	if len(filteredKeys) != 1 {
+		t.Fatalf("expected 1 record to survive filterData, got %d", len(filteredKeys))
+	}
+
+	record := filteredKeys[0].(analytics.AnalyticsRecord)
+
+	// Negative-evidence: base64.StdEncoding.DecodeString MUST have returned an
+	// error on this input, so the `if err == nil` branch in main.go was NOT
+	// taken, and the field is preserved verbatim.
+	assert.Equal(t, invalidBase64, record.RawRequest,
+		"RawRequest should be preserved unchanged when base64 decode fails (silent no-op contract)")
+	assert.Equal(t, invalidBase64, record.RawResponse,
+		"RawResponse should be preserved unchanged when base64 decode fails (silent no-op contract)")
 }

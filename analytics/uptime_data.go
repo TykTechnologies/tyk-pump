@@ -138,6 +138,7 @@ func (u UptimeReportAggregate) New() UptimeReportAggregate {
 }
 
 // reqproof:implements SW-REQ-015
+// reqproof:implements SW-REQ-073
 func AggregateUptimeData(data []UptimeReportData) map[string]UptimeReportAggregate {
 	analyticsPerOrg := make(map[string]UptimeReportAggregate)
 

@@ -368,9 +368,12 @@ func TestMongoAggregatePump_SelfHealing(t *testing.T) {
 }
 
 // Verifies: SW-REQ-062
-// MCDC SW-REQ-062: self_heal_enabled=F, aggregation_time_halved=F => TRUE
-// MCDC SW-REQ-062: self_heal_enabled=T, aggregation_time_halved=F => FALSE
-// MCDC SW-REQ-062: self_heal_enabled=T, aggregation_time_halved=T => TRUE
+// MCDC SW-REQ-062: aggregation_time_above_floor=F, aggregation_time_halved=F, self_heal_enabled=F, size_error_detected=F => FALSE
+// MCDC SW-REQ-062: aggregation_time_above_floor=F, aggregation_time_halved=F, self_heal_enabled=F, size_error_detected=T => FALSE
+// MCDC SW-REQ-062: aggregation_time_above_floor=F, aggregation_time_halved=T, self_heal_enabled=F, size_error_detected=F => TRUE
+// MCDC SW-REQ-062: aggregation_time_above_floor=T, aggregation_time_halved=F, self_heal_enabled=F, size_error_detected=F => FALSE
+// MCDC SW-REQ-062: aggregation_time_above_floor=T, aggregation_time_halved=F, self_heal_enabled=F, size_error_detected=T => TRUE
+// MCDC SW-REQ-062: aggregation_time_above_floor=T, aggregation_time_halved=F, self_heal_enabled=T, size_error_detected=T => FALSE
 // (table-driven cases below cover all three: disabled-flag and non-matching
 // errors yield the F/F=TRUE pair; AggregationTime=1 with a size-error yields
 // the T/F=FALSE pair; standard/Cosmos/DocDB size-error patterns with

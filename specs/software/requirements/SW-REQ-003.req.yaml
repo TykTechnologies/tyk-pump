@@ -38,12 +38,12 @@ verification:
           artifact: main.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Phase L3 aggressive: FRETish formalization added per L3 plan; production .go behaviour and code paths unchanged — only requirement metadata (fretish text + formalization_strategy + variables) altered. Test annotations may follow but do not change runtime behaviour.'
+          reason: 'Phase Q3: added reqproof:implements SW-REQ-072 annotation to execPumpWriting so SW-REQ-072 has an implemented_by trace; other linked SW reqs (001-004) unchanged, no requirement intent change.'
           base: origin/master
           requirement_fingerprint: sha256:2d45d96d614fa74cfee3a4e0e3895d40ccedb67cab5d223a0b0cc1ac78464f66
           approval_fingerprint: sha256:6d3531a2cb5ce3f33986a3370681c4c0631ed4c10f436c601d5e808388029938
-          artifact_fingerprint: sha256:4b683cd5715feffd7356231f04999400c4067164b6d478c53513559c0459a7cf
-          reviewed_at: "2026-06-02T14:30:20Z"
+          artifact_fingerprint: sha256:41bc4cbbf03d222d0cdd571a0b04710b232a4f7707c04d3d6f56fda2b92058d6
+          reviewed_at: "2026-06-03T07:55:57Z"
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:13Z"

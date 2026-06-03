@@ -16,3 +16,7 @@ variables:
       type: bool
       direction: output
       description: True iff the published uptime record appears in tyk-uptime-analytics and is consumed by the uptime purge path (unless the uptime backend is mongo with PurgeDelay).
+    - name: uptime_purging_enabled
+      type: bool
+      direction: input
+      description: True when SystemConfig.DontPurgeUptimeData is false — the operator-controlled toggle that gates whether StartPurgeLoop drains the tyk-uptime-analytics key and forwards records to the configured uptime backend.

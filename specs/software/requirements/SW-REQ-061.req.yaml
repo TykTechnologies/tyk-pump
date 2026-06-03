@@ -4,7 +4,7 @@ status: approved
 priority: shall
 category: functional
 req_type: guarantee
-fretish: when tag_list_len_gt_threshold pumps_mongo_aggregate shall always satisfy alert_emitted
+fretish: when alert_not_disabled & tag_list_len_gt_threshold pumps_mongo_aggregate shall always satisfy alert_emitted
 description: When the count of tags on an aggregated document exceeds ThresholdLenTagList (default 1000), the MongoAggregate pump shall emit a Warn-level alert listing up to CommonTagsCount (5) common tag prefixes computed by getListOfCommonPrefix, instructing the operator to suppress noisy tags via ignore_tag_prefix_list. A configured value of -1 shall disable the alert entirely.
 formalization_strategy: fretish
 informal_verification:
@@ -15,13 +15,16 @@ parent: SYS-REQ-010
 component: pumps-mongo-aggregate
 rationale: ""
 tags: []
-variables: []
+variables:
+    - alert_not_disabled
+    - tag_list_len_gt_threshold
+    - alert_emitted
 traces:
     satisfies:
         - SYS-REQ-010
-    reviewed_at: "2026-06-02T14:31:02.393981Z"
+    reviewed_at: "2026-06-03T07:18:16.926091Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:97116f0b853458cf3c9f5ab18dee54eb31259d8502424db0e6e00d80a066766e
+    reviewed_fingerprint: sha256:817cd36e3feeb7e87e260ac285eb23fafab0b8db44e2ed880d1d2dffd6b44c1f
 verification:
     assurance_level: B
     formalization_status: valid
@@ -29,26 +32,26 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-02T14:19:01Z"
-        comment: 'Phase L3 aggressive: flip remaining decision-bearing SW reqs to FRETish per L3 plan; vars added per-component; MC/DC witnesses to be annotated in tests.'
-        fingerprint: sha256:e84ea413a1f31dd0cc05e5605fe903805e0418ef702c2c74bfcb46503d0cdf0d
+        reviewed_at: "2026-06-03T06:56:05Z"
+        comment: 'Phase P: FRETish enrichment per per-req review pass — adds alert_not_disabled to when conjunct so MC/DC exposes the operator-controlled disable arm (ThresholdLenTagList=-1) named in the description but currently smuggled into the threshold-comparison Boolean.'
+        fingerprint: sha256:9a7c7b389250040ce1499e78071e3cd1c01f1af2394e7d1ff5c3d4eb37cbf0fd
         ai_generated: false
     impact_reviews:
         - requirement: SW-REQ-061
           artifact: pumps/mongo_aggregate.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Phase L3 aggressive: FRETish formalization added per L3 plan; production .go behaviour and code paths unchanged — only requirement metadata (fretish text + formalization_strategy + variables) altered. Test annotations may follow but do not change runtime behaviour.'
+          reason: 'Phase P: FRETish enrichment per per-req review pass — added decision variables expose existing code branches; production code paths unchanged, only requirement metadata altered. Test annotations updated to match new MC/DC truth tables.'
           base: origin/master
-          requirement_fingerprint: sha256:97116f0b853458cf3c9f5ab18dee54eb31259d8502424db0e6e00d80a066766e
-          approval_fingerprint: sha256:e84ea413a1f31dd0cc05e5605fe903805e0418ef702c2c74bfcb46503d0cdf0d
+          requirement_fingerprint: sha256:817cd36e3feeb7e87e260ac285eb23fafab0b8db44e2ed880d1d2dffd6b44c1f
+          approval_fingerprint: sha256:9a7c7b389250040ce1499e78071e3cd1c01f1af2394e7d1ff5c3d4eb37cbf0fd
           artifact_fingerprint: sha256:dbad5d36c1f182c7c46b96b648d01065563938e23243987ed06b1f8dc02d6171
-          reviewed_at: "2026-06-02T14:30:20Z"
+          reviewed_at: "2026-06-03T07:17:20Z"
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:37:50Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-02T14:19:01Z"
+    last_modified_at: "2026-06-03T06:56:05Z"
 obligation_checklist:
     - boundary
     - denial_of_service_resistant
@@ -96,4 +99,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T05:02:45Z comment="Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.")'
+          changed_by: human:cli
+        - date: "2026-06-03T06:56:05Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T14:19:01Z comment="Phase L3 aggressive: flip remaining decision-bearing SW reqs to FRETish per L3 plan; vars added per-component; MC/DC witnesses to be annotated in tests.")'
           changed_by: human:cli

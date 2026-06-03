@@ -29,18 +29,20 @@ verification:
         status: approved
         reviewer: human:buger
         role: system_engineer
-        reviewed_at: "2026-06-02T05:02:36Z"
-        comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
+        reviewed_at: "2026-06-03T07:40:42Z"
+        comment: 'Phase Q: catalog obligation attachments — adds rate_limit_respected (health endpoint cap, KI health-endpoint-is-liveness-only). See .proof/catalog-obligation-proposals.md.'
         fingerprint: sha256:21922ec79bd1376ff2129cb5bbca8ca3c86586e831cd75d218f0c78193cb377e
         ai_generated: false
-    gaps_reviewed_at: "2026-06-02T05:05:48.911641Z"
-    gaps_reviewed_by: buger
+    gaps_reviewed_at: "2026-06-03T10:24:45.288369Z"
+    gaps_reviewed_by: human:buger
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:11:41Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-02T05:02:36Z"
+    last_modified_at: "2026-06-03T07:40:42Z"
 obligation_class: nominal
+obligation_checklist:
+    - rate_limit_respected
 lifecycle:
     change_history:
         - date: "2026-05-29T15:46:45Z"
@@ -52,4 +54,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="system_engineer" reviewer="human:buger" at=2026-05-30T07:43:08Z comment="System-level behavior reviewed as part of feat/reqproof-coverage PR; FRETish + obligation + satisfies linkage verified against tyk-pump architecture and code in Phase 0 code-verification pass.")'
+          changed_by: human:cli
+        - date: "2026-06-03T07:40:42Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="system_engineer" reviewer="human:buger" at=2026-06-02T05:02:36Z comment="Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.")'
           changed_by: human:cli

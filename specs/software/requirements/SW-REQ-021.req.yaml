@@ -29,8 +29,8 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-02T13:44:34Z"
-        comment: 'Phase L2: aggressive formalization — encodes per-component primary decision (instrumentation gate, codec select, SSL/SASL, dataset_empty, default-path, file-append, retry-status, log-level, flush, batch, transport, dedup); variables in <component>.vars.yaml; user directive: force MCDC witnesses to drive verifying tests.'
+        reviewed_at: "2026-06-03T07:38:23Z"
+        comment: 'Phase Q: catalog obligation attachments — adds external_call_timeout_bounded, external_call_failure_observable, cert_validation_strict, cancellation_observed (Kafka per-write deadline, TLS posture, ctx). See .proof/catalog-obligation-proposals.md.'
         fingerprint: sha256:62d7058b5742fba4efd4378375ab1ff2159d9619aafbb634a8e59c40899e0cb8
         ai_generated: false
     impact_reviews:
@@ -48,8 +48,9 @@ history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:15Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-02T13:44:34Z"
+    last_modified_at: "2026-06-03T07:38:23Z"
 obligation_checklist:
+    - cancellation_observed
     - errors_propagated
 obligation_suppressions:
     - id: errors_propagated
@@ -86,4 +87,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T05:02:45Z comment="Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.")'
+          changed_by: human:cli
+        - date: "2026-06-03T07:38:23Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T13:44:34Z comment="Phase L2: aggressive formalization — encodes per-component primary decision (instrumentation gate, codec select, SSL/SASL, dataset_empty, default-path, file-append, retry-status, log-level, flush, batch, transport, dedup); variables in <component>.vars.yaml; user directive: force MCDC witnesses to drive verifying tests.")'
           changed_by: human:cli

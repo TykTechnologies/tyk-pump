@@ -29,16 +29,18 @@ verification:
         status: approved
         reviewer: human:buger
         role: system_engineer
-        reviewed_at: "2026-06-02T05:02:36Z"
-        comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
+        reviewed_at: "2026-06-03T07:40:46Z"
+        comment: 'Phase Q: catalog obligation attachments — adds malformed_recovers_or_errors_loudly (system-level malformed config policy). See .proof/catalog-obligation-proposals.md.'
         fingerprint: sha256:c1fd11bf7a5990802c22327ed1035a16f80105255cd1b21b9f8f1e66e838ac5a
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-30T10:45:42Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-02T05:02:36Z"
+    last_modified_at: "2026-06-03T07:40:46Z"
 obligation_class: malformed_input
+obligation_checklist:
+    - malformed_recovers_or_errors_loudly
 lifecycle:
     change_history:
         - date: "2026-05-30T10:47:21Z"
@@ -50,4 +52,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="system_engineer" reviewer="human:buger" at=2026-05-30T10:47:21Z comment="Phase 0.7: new SYS-035 closes the STK-REQ-003 malformed_input slot. Verified by config_test.go TestIgnoreConfig ''Config file does not exist'' subtest + SW-REQ-002 child.")'
+          changed_by: human:cli
+        - date: "2026-06-03T07:40:46Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="system_engineer" reviewer="human:buger" at=2026-06-02T05:02:36Z comment="Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.")'
           changed_by: human:cli

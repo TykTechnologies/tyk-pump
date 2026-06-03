@@ -432,6 +432,7 @@ func filterData(pump pumps.Pump, keys []interface{}) []interface{} {
 }
 
 // reqproof:implements SW-REQ-001
+// reqproof:implements SW-REQ-072
 func execPumpWriting(wg *sync.WaitGroup, pmp pumps.Pump, keys *[]interface{}, purgeDelay int, startTime time.Time, job *health.Job) {
 	timer := time.AfterFunc(time.Duration(purgeDelay)*time.Second, func() {
 		if pmp.GetTimeout() == 0 {

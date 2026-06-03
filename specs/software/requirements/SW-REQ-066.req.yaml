@@ -4,7 +4,7 @@ status: approved
 priority: shall
 category: functional
 req_type: guarantee
-fretish: when sql_omit_index_creation pumps_sql_aggregate shall always satisfy sql_create_index_skipped
+fretish: when sql_omit_index_creation | sql_index_already_exists pumps_sql_aggregate shall always satisfy sql_create_index_skipped
 description: The SQL Aggregate pump shall, unless OmitIndexCreation is true, ensure a composite index named <table>_idx_dimension on (dimension, timestamp, org_id, dimension_value) via CREATE INDEX [CONCURRENTLY] IF NOT EXISTS. For PostgreSQL the CONCURRENTLY option shall be used and, in the non-sharded mode, the index creation shall run on a background goroutine signalling backgroundIndexCreated on completion; for MySQL the index creation shall run synchronously without CONCURRENTLY. Index creation is skipped when the index already exists.
 formalization_strategy: fretish
 informal_verification:
@@ -15,13 +15,16 @@ parent: SYS-REQ-004
 component: pumps-sql-aggregate
 rationale: ""
 tags: []
-variables: []
+variables:
+    - sql_omit_index_creation
+    - sql_index_already_exists
+    - sql_create_index_skipped
 traces:
     satisfies:
         - SYS-REQ-004
-    reviewed_at: "2026-06-02T14:31:02.49867Z"
+    reviewed_at: "2026-06-03T07:18:17.108029Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:9f49ea699133fb894dd0a37f0bb5732e70dbbb16f2d8815b486c2007cd6a8abe
+    reviewed_fingerprint: sha256:1be8d3a7d7c82d85924188902e61f6d4743d80511533ac0bcad6a74ded9cce8b
 verification:
     assurance_level: B
     formalization_status: valid
@@ -29,30 +32,31 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-02T14:19:01Z"
-        comment: 'Phase L3 aggressive: flip remaining decision-bearing SW reqs to FRETish per L3 plan; vars added per-component; MC/DC witnesses to be annotated in tests.'
-        fingerprint: sha256:6aba7162bb5033ac83f7cede0da8d60c617be024f4989388341129531a16c602
+        reviewed_at: "2026-06-03T07:40:18Z"
+        comment: 'Phase Q: catalog obligation attachments — adds parameterized_only_write (Index DDL fmt.Sprintf allowlist contract). See .proof/catalog-obligation-proposals.md.'
+        fingerprint: sha256:5a4265525c1df1b4403519ddcb293cada24508e04db9b3a82fa1b5da49bb9495
         ai_generated: false
     impact_reviews:
         - requirement: SW-REQ-066
           artifact: pumps/sql_aggregate.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Phase L3 aggressive: FRETish formalization added per L3 plan; production .go behaviour and code paths unchanged — only requirement metadata (fretish text + formalization_strategy + variables) altered. Test annotations may follow but do not change runtime behaviour.'
+          reason: 'Phase P: FRETish enrichment per per-req review pass — added decision variables expose existing code branches; production code paths unchanged, only requirement metadata altered. Test annotations updated to match new MC/DC truth tables.'
           base: origin/master
-          requirement_fingerprint: sha256:9f49ea699133fb894dd0a37f0bb5732e70dbbb16f2d8815b486c2007cd6a8abe
-          approval_fingerprint: sha256:6aba7162bb5033ac83f7cede0da8d60c617be024f4989388341129531a16c602
+          requirement_fingerprint: sha256:1be8d3a7d7c82d85924188902e61f6d4743d80511533ac0bcad6a74ded9cce8b
+          approval_fingerprint: sha256:5a4265525c1df1b4403519ddcb293cada24508e04db9b3a82fa1b5da49bb9495
           artifact_fingerprint: sha256:5d4fb4dfe315a4842672abf1f36a4496f0177a3dc32181a3cae56c466cd50167
-          reviewed_at: "2026-06-02T14:30:20Z"
+          reviewed_at: "2026-06-03T07:17:20Z"
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:39:46Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-02T18:29:53Z"
+    last_modified_at: "2026-06-03T07:40:18Z"
 obligation_checklist:
     - concurrent
     - idempotency
     - nominal
+    - parameterized_only_write
 obligation_suppressions:
     - id: concurrent
       reason: 'Phase G: code_signal ''go.concurrency.goroutine-spawn'' + ''go.concurrency.channel-send'' at pumps/sql_aggregate.go:171/182 are the optional background-index creation pattern (single goroutine wrapping createIndexFn, signals via backgroundIndexCreated channel after wg.Wait synchronization). gorm db handle is concurrency-safe. Not a data-race obligation gap.'
@@ -122,4 +126,14 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T05:02:45Z comment="Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.")'
+          changed_by: human:cli
+        - date: "2026-06-03T06:56:31Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T14:19:01Z comment="Phase L3 aggressive: flip remaining decision-bearing SW reqs to FRETish per L3 plan; vars added per-component; MC/DC witnesses to be annotated in tests.")'
+          changed_by: human:cli
+        - date: "2026-06-03T07:40:18Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-03T06:56:31Z comment="Phase P: FRETish enrichment per per-req review pass — adds sql_index_already_exists to when disjunct so MC/DC mirrors SW-063 for SQL aggregate — exposes the HasIndex idempotency-skip arm beside the operator toggle.")'
           changed_by: human:cli

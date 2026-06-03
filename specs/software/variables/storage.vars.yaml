@@ -8,6 +8,10 @@ variables:
       type: bool
       direction: output
       description: 'True iff the chunk-sized batch is popped via LRange+LTrim and the remainder receives an Expire call (KI tracks atomicity gap: see known-issues/mongo-mcdc-storage).'
+    - name: chunk_partial
+      type: bool
+      direction: input
+      description: True when chunkSize (after the GetAndDeleteSet 0→-1 normalization) is non-(-1), i.e. partial-drain mode where Expire is invoked on the remainder. False means full-drain mode (chunkSize=-1 post-normalize, from operator's purge_chunk=0 config) where Expire is intentionally skipped after Pop.
     - name: connect_err
       type: bool
       direction: input

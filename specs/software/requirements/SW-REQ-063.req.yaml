@@ -4,7 +4,7 @@ status: approved
 priority: shall
 category: functional
 req_type: guarantee
-fretish: when omit_index_creation pumps_mongo_aggregate shall always satisfy create_index_skipped
+fretish: when omit_index_creation | collection_already_exists pumps_mongo_aggregate shall always satisfy create_index_skipped
 description: 'On each DoAggregatedWriting call (per-org), the MongoAggregate pump shall idempotently ensure baseline indexes on the target aggregate collection: (a) a TTL index on expireAt with TTL=0 (skipped for CosmosDB), (b) a timestamp index, (c) an orgid index. Index creation shall be skipped when OmitIndexCreation is true or, for StandardMongo, when the collection already exists. Background index creation is used for StandardMongo; foreground for CosmosDB/DocumentDB.'
 formalization_strategy: fretish
 informal_verification:
@@ -15,13 +15,16 @@ parent: SYS-REQ-004
 component: pumps-mongo-aggregate
 rationale: ""
 tags: []
-variables: []
+variables:
+    - omit_index_creation
+    - collection_already_exists
+    - create_index_skipped
 traces:
     satisfies:
         - SYS-REQ-004
-    reviewed_at: "2026-06-02T14:31:02.416262Z"
+    reviewed_at: "2026-06-03T07:18:17.05605Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:452bd4245ce6f44fdb066f28ce2c1053f279e21fa7272174a4915cd5a5dce348
+    reviewed_fingerprint: sha256:f48d7d072508be9e57ba3f5093423ba7466d7467e18888086b7c06a59d93e042
 verification:
     assurance_level: B
     formalization_status: valid
@@ -29,26 +32,26 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-02T14:19:01Z"
-        comment: 'Phase L3 aggressive: flip remaining decision-bearing SW reqs to FRETish per L3 plan; vars added per-component; MC/DC witnesses to be annotated in tests.'
-        fingerprint: sha256:d1bf1f25a5a41b51fbcd51af0da5b087bab749b914df260fdd374f7d49ff1ba9
+        reviewed_at: "2026-06-03T06:56:24Z"
+        comment: 'Phase P: FRETish enrichment per per-req review pass — adds collection_already_exists to when disjunct so MC/DC exposes the idempotency-skip arm (StandardMongo + collectionExists short-circuit) — description names both skip conditions but FRETish modeled only the operator toggle.'
+        fingerprint: sha256:8c279ec24749e7738522bfe4f0a7bdaddf726ca8262764c97ca775fceb9127b9
         ai_generated: false
     impact_reviews:
         - requirement: SW-REQ-063
           artifact: pumps/mongo_aggregate.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Phase L3 aggressive: FRETish formalization added per L3 plan; production .go behaviour and code paths unchanged — only requirement metadata (fretish text + formalization_strategy + variables) altered. Test annotations may follow but do not change runtime behaviour.'
+          reason: 'Phase P: FRETish enrichment per per-req review pass — added decision variables expose existing code branches; production code paths unchanged, only requirement metadata altered. Test annotations updated to match new MC/DC truth tables.'
           base: origin/master
-          requirement_fingerprint: sha256:452bd4245ce6f44fdb066f28ce2c1053f279e21fa7272174a4915cd5a5dce348
-          approval_fingerprint: sha256:d1bf1f25a5a41b51fbcd51af0da5b087bab749b914df260fdd374f7d49ff1ba9
+          requirement_fingerprint: sha256:f48d7d072508be9e57ba3f5093423ba7466d7467e18888086b7c06a59d93e042
+          approval_fingerprint: sha256:8c279ec24749e7738522bfe4f0a7bdaddf726ca8262764c97ca775fceb9127b9
           artifact_fingerprint: sha256:dbad5d36c1f182c7c46b96b648d01065563938e23243987ed06b1f8dc02d6171
-          reviewed_at: "2026-06-02T14:30:20Z"
+          reviewed_at: "2026-06-03T07:17:20Z"
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:38:05Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-02T14:19:01Z"
+    last_modified_at: "2026-06-03T06:56:24Z"
 obligation_checklist:
     - errors_propagated
     - idempotency
@@ -93,4 +96,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T05:02:45Z comment="Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.")'
+          changed_by: human:cli
+        - date: "2026-06-03T06:56:24Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T14:19:01Z comment="Phase L3 aggressive: flip remaining decision-bearing SW reqs to FRETish per L3 plan; vars added per-component; MC/DC witnesses to be annotated in tests.")'
           changed_by: human:cli

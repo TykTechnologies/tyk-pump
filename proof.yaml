@@ -22,26 +22,11 @@ project:
         version: 1.0.0
     commands:
         build: go build ./...
-        test: go test -count=1 ./analytics ./analytics/demo ./serializer ./storage ./logger .
+        test: go test -count=1 -timeout=20m -coverprofile=../cover.out ./...
         tests:
             go:
                 language: go
-                command: go test -count=1 -coverprofile=../cover.out ./analytics
-            pumps:
-                language: go
-                command: go test -count=1 -timeout=300s -coverprofile=../cover.out ./pumps
-            retry:
-                language: go
-                command: go test -count=1 -coverprofile=../cover.out ./retry
-            serializer:
-                language: go
-                command: go test -count=1 -coverprofile=../cover.out ./serializer
-            server:
-                language: go
-                command: go test -count=1 -coverprofile=../cover.out ./server
-            storage:
-                language: go
-                command: go test -count=1 -timeout=180s -coverprofile=../cover.out ./storage
+                command: go test -count=1 -timeout=20m -coverprofile=../cover.out ./...
     lint:
         exclude:
             - '**/*.pb.go'
@@ -63,36 +48,11 @@ project:
                     test_args:
                         - -timeout=20m
             targets:
-                - id: analytics
+                - id: tyk-pump
                   language: go
-                  scope: ./analytics
+                  scope: ./...
                   test_command: go
-                  test_packages: ./analytics
-                - id: serializer
-                  language: go
-                  scope: ./serializer
-                  test_command: serializer
-                  test_packages: ./serializer
-                - id: retry
-                  language: go
-                  scope: ./retry
-                  test_command: retry
-                  test_packages: ./retry
-                - id: server
-                  language: go
-                  scope: ./server
-                  test_command: server
-                  test_packages: ./server
-                - id: storage
-                  language: go
-                  scope: ./storage
-                  test_command: storage
-                  test_packages: ./storage
-                - id: pumps
-                  language: go
-                  scope: ./pumps
-                  test_command: pumps
-                  test_packages: ./pumps
+                  test_packages: ./...
         evidence_diversity:
             min_classes:
                 B: 2
@@ -108,14 +68,6 @@ project:
                 mode: run
                 managed: true
                 format: sarif
-                include_paths:
-                    - analytics
-                    - pumps
-                    - storage
-                    - retry
-                    - serializer
-                    - server
-                    - logger
                 exclude_paths:
                     - '**/*_test.go'
                     - '**/testdata/**'

@@ -29,8 +29,8 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-02T14:19:01Z"
-        comment: 'Phase L3 aggressive: flip remaining decision-bearing SW reqs to FRETish per L3 plan; vars added per-component; MC/DC witnesses to be annotated in tests.'
+        reviewed_at: "2026-06-03T07:37:58Z"
+        comment: 'Phase Q: catalog obligation attachments — adds resource_lifetime_released (serial-shutdown timeout policy, KI main-shutdown-pumps-serial-no-timeout). See .proof/catalog-obligation-proposals.md.'
         fingerprint: sha256:4bfbe9cb1f5a4509997c0e93850d16fbc612d92c97f76d933f0ed90967164c3b
         ai_generated: false
     impact_reviews:
@@ -38,19 +38,20 @@ verification:
           artifact: main.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Phase L3 aggressive: FRETish formalization added per L3 plan; production .go behaviour and code paths unchanged — only requirement metadata (fretish text + formalization_strategy + variables) altered. Test annotations may follow but do not change runtime behaviour.'
+          reason: 'Phase Q3: added reqproof:implements SW-REQ-072 annotation to execPumpWriting so SW-REQ-072 has an implemented_by trace; other linked SW reqs (001-004) unchanged, no requirement intent change.'
           base: origin/master
           requirement_fingerprint: sha256:cd339de505466c52193f062f0a5e4caa4a9953a36846c8fc5719551fe14b574a
           approval_fingerprint: sha256:4bfbe9cb1f5a4509997c0e93850d16fbc612d92c97f76d933f0ed90967164c3b
-          artifact_fingerprint: sha256:4b683cd5715feffd7356231f04999400c4067164b6d478c53513559c0459a7cf
-          reviewed_at: "2026-06-02T14:30:20Z"
+          artifact_fingerprint: sha256:41bc4cbbf03d222d0cdd571a0b04710b232a4f7707c04d3d6f56fda2b92058d6
+          reviewed_at: "2026-06-03T07:55:57Z"
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:13Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-02T14:19:01Z"
+    last_modified_at: "2026-06-03T07:37:58Z"
 obligation_checklist:
     - error_handling
+    - resource_lifetime_released
 lifecycle:
     change_history:
         - date: "2026-05-29T15:46:43Z"
@@ -67,4 +68,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T05:02:45Z comment="Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.")'
+          changed_by: human:cli
+        - date: "2026-06-03T07:37:58Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T14:19:01Z comment="Phase L3 aggressive: flip remaining decision-bearing SW reqs to FRETish per L3 plan; vars added per-component; MC/DC witnesses to be annotated in tests.")'
           changed_by: human:cli

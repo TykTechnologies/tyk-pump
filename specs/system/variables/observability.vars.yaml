@@ -36,6 +36,10 @@ variables:
       type: bool
       direction: output
       description: Purge-timing and record-count metrics are emitted to the sink.
+    - name: statsd_endpoint_configured
+      type: bool
+      direction: input
+      description: True when SystemConfig.StatsdConnectionString is non-empty — the operator-controlled config gate that, alongside instrumentation_enabled, must hold for SetupInstrumentation to add a StatsD sink and emit metrics.
     - name: metrics_sink_failure
       type: bool
       direction: input

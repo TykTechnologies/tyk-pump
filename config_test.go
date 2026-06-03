@@ -137,7 +137,9 @@ func TestConfigEnv(t *testing.T) {
 // Verifies: SYS-REQ-008
 // Verifies: SYS-REQ-035
 // SW-REQ-002:malformed_input:negative
+// SW-REQ-002:malformed_recovers_or_errors_loudly:negative
 // SYS-REQ-008:malformed_input:negative
+// SYS-REQ-035:malformed_recovers_or_errors_loudly:negative
 // MCDC INT-REQ-008: config_decode_attempted=F, unknown_keys_reported_via_logfatal=F => TRUE
 // MCDC INT-REQ-008: config_decode_attempted=T, unknown_keys_reported_via_logfatal=F => FALSE
 // MCDC INT-REQ-008: config_decode_attempted=T, unknown_keys_reported_via_logfatal=T => TRUE

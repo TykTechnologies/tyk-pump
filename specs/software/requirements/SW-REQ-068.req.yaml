@@ -29,8 +29,8 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-02T14:19:01Z"
-        comment: 'Phase L3 aggressive: flip remaining decision-bearing SW reqs to FRETish per L3 plan; vars added per-component; MC/DC witnesses to be annotated in tests.'
+        reviewed_at: "2026-06-03T07:40:27Z"
+        comment: 'Phase Q: catalog obligation attachments — adds external_call_timeout_bounded, request_timeout_bounded, external_call_failure_observable, retry_policy_explicit, panic_free_input_handling, recursion_depth_bounded, back_pressure_bounded, connection_leak_free, secrets_not_logged, tls_required_for_secrets, redirect_policy_explicit, ssrf_protection (ES surface; KI elasticsearch-unbounded-reconnect-recursion). See .proof/catalog-obligation-proposals.md.'
         fingerprint: sha256:c234ca5105f633eb0c97347f469b80d90bad760f4bdb2c21d018e680923683ed
         ai_generated: false
     impact_reviews:
@@ -48,10 +48,11 @@ history:
     created_by: human:cli
     created_at: "2026-05-30T08:39:57Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-02T18:29:50Z"
+    last_modified_at: "2026-06-03T07:40:27Z"
 obligation_checklist:
     - cert_validation_strict
     - nominal
+    - ssrf_protection
 obligation_suppressions:
     - id: determinism
       reason: 'Phase N opengrep rule go.recursive-call-without-return flags pumps/elasticsearch.go:419 WriteData calling e.WriteData(ctx, data) without return prefix on the nil-operator reconnect arm. Documented in KI elasticsearch-unbounded-reconnect-recursion with mitigation (operator non-nil after Init) and remediation (return prefix or remove defensive recursion) tracked. Not a new obligation gap.'
@@ -104,4 +105,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T05:02:45Z comment="Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.")'
+          changed_by: human:cli
+        - date: "2026-06-03T07:40:27Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T14:19:01Z comment="Phase L3 aggressive: flip remaining decision-bearing SW reqs to FRETish per L3 plan; vars added per-component; MC/DC witnesses to be annotated in tests.")'
           changed_by: human:cli

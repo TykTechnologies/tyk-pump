@@ -29,8 +29,8 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-02T14:19:01Z"
-        comment: 'Phase L3 aggressive: flip remaining decision-bearing SW reqs to FRETish per L3 plan; vars added per-component; MC/DC witnesses to be annotated in tests.'
+        reviewed_at: "2026-06-03T07:39:53Z"
+        comment: 'Phase Q: catalog obligation attachments — adds external_call_failure_observable, external_call_concurrency_bounded, errors_propagated, panic_free_input_handling, binary_data_preserved, back_pressure_bounded, resource_lifetime_released (Resurface chan, goroutine, MapRawData; KIs resurface-writedata-blocks-on-queue-full, resurface-maprawdata-empty-request-panic). See .proof/catalog-obligation-proposals.md.'
         fingerprint: sha256:dac47ca256762825ccc739495c370bdd511da231e8b89a1bbc5f4cbec0d156db
         ai_generated: false
     impact_reviews:
@@ -48,10 +48,11 @@ history:
     created_by: human:cli
     created_at: "2026-05-30T08:36:45Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-02T14:19:01Z"
+    last_modified_at: "2026-06-03T07:39:54Z"
 obligation_checklist:
     - concurrent
     - nominal
+    - resource_lifetime_released
 obligation_suppressions:
     - id: concurrent
       reason: 'Phase G: code_signal ''go.concurrency.goroutine-spawn'' + ''go.concurrency.channel-send'' at pumps/resurface.go:95/275 are the Resurface pump worker pattern: a single writeData goroutine consumes from rp.data channel; WriteData sends via select { case rp.data <- data; case <-ctx.Done() }. Sender is ctx-guarded; receiver is single-consumer. Worker lifetime is managed by sync.WaitGroup (rp.wg). Not a data-race obligation gap.'
@@ -99,4 +100,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T05:02:45Z comment="Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.")'
+          changed_by: human:cli
+        - date: "2026-06-03T07:39:53Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T14:19:01Z comment="Phase L3 aggressive: flip remaining decision-bearing SW reqs to FRETish per L3 plan; vars added per-component; MC/DC witnesses to be annotated in tests.")'
           changed_by: human:cli

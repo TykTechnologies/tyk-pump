@@ -4,7 +4,7 @@ status: approved
 priority: shall
 category: functional
 req_type: guarantee
-fretish: when self_heal_enabled pumps_mongo_aggregate shall always satisfy aggregation_time_halved
+fretish: when self_heal_enabled & size_error_detected & aggregation_time_above_floor pumps_mongo_aggregate shall always satisfy aggregation_time_halved
 description: When EnableAggregateSelfHealing is true and an upsert fails with a max-document-size error from MongoDB ('Size must be between 0 and'), CosmosDB ('Request size is too large'), or DocumentDB ('Resulting document after update is larger than'), the MongoAggregate pump shall (a) halve AggregationTime (unless already 1, in which case it skips self-healing and returns the error), (b) reset the last-document-timestamp tracker so subsequent writes form a new document, and (c) recursively re-invoke WriteData once with the same input data. Self-healing only triggers on the listed size errors, not on arbitrary write failures.
 formalization_strategy: fretish
 informal_verification:
@@ -15,13 +15,17 @@ parent: SYS-REQ-004
 component: pumps-mongo-aggregate
 rationale: ""
 tags: []
-variables: []
+variables:
+    - self_heal_enabled
+    - size_error_detected
+    - aggregation_time_above_floor
+    - aggregation_time_halved
 traces:
     satisfies:
         - SYS-REQ-004
-    reviewed_at: "2026-06-02T13:41:35.995606Z"
+    reviewed_at: "2026-06-03T07:18:17.006011Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:0c9c582a3481e2ecad213a00db71bd1168150f8834e6b7c62a454a282f41b375
+    reviewed_fingerprint: sha256:ec800e39e607a660b29a0be5325cc3561af825f69195dc6de61f937953ee11c3
 verification:
     assurance_level: B
     formalization_status: valid
@@ -29,26 +33,26 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-02T13:20:41Z"
-        comment: 'Phase L2: aggressive formalization — encodes per-pump MCP/graph/mixed-collection/self-heal decisions; variables in pumps-mongo-*.vars.yaml; user directive: force MCDC witnesses on these decisions to drive verifying tests.'
-        fingerprint: sha256:e7dc8b20b8818f58d829870f7a12b1cb6fa1f02398ab9ef96aec36ca4d09c167
+        reviewed_at: "2026-06-03T06:56:13Z"
+        comment: 'Phase P: FRETish enrichment per per-req review pass — adds size_error_detected & aggregation_time_above_floor to when conjunct so MC/DC exposes the three independent self-heal preconditions (operator-enabled, size-error classification, floor-reached) — description explicitly names all three.'
+        fingerprint: sha256:1b7ec1faf41ca669fb52776bc97f56115b8771e4a1935edae9e06846589bec8e
         ai_generated: false
     impact_reviews:
         - requirement: SW-REQ-062
           artifact: pumps/mongo_aggregate.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Phase L2: formalization-only change (informal -> fretish + per-component boolean variables). Production .go files were not modified; only req YAML metadata, component vars YAMLs, and // MCDC test comment witnesses.'
+          reason: 'Phase P: FRETish enrichment per per-req review pass — added decision variables expose existing code branches; production code paths unchanged, only requirement metadata altered. Test annotations updated to match new MC/DC truth tables.'
           base: origin/master
-          requirement_fingerprint: sha256:0c9c582a3481e2ecad213a00db71bd1168150f8834e6b7c62a454a282f41b375
-          approval_fingerprint: sha256:e7dc8b20b8818f58d829870f7a12b1cb6fa1f02398ab9ef96aec36ca4d09c167
+          requirement_fingerprint: sha256:ec800e39e607a660b29a0be5325cc3561af825f69195dc6de61f937953ee11c3
+          approval_fingerprint: sha256:1b7ec1faf41ca669fb52776bc97f56115b8771e4a1935edae9e06846589bec8e
           artifact_fingerprint: sha256:dbad5d36c1f182c7c46b96b648d01065563938e23243987ed06b1f8dc02d6171
-          reviewed_at: "2026-06-02T13:35:48Z"
+          reviewed_at: "2026-06-03T07:17:20Z"
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:37:57Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-02T13:20:41Z"
+    last_modified_at: "2026-06-03T06:56:13Z"
 obligation_checklist:
     - boundary
     - denial_of_service_resistant
@@ -104,4 +108,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T05:02:45Z comment="Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.")'
+          changed_by: human:cli
+        - date: "2026-06-03T06:56:13Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T13:20:41Z comment="Phase L2: aggressive formalization — encodes per-pump MCP/graph/mixed-collection/self-heal decisions; variables in pumps-mongo-*.vars.yaml; user directive: force MCDC witnesses on these decisions to drive verifying tests.")'
           changed_by: human:cli

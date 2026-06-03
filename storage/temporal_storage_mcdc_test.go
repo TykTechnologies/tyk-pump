@@ -577,9 +577,10 @@ func TestTemporalStorageHandler_SetKey_EnsureConnectionSingletonAlive(t *testing
 // silent record-loss bug. The decision is exercised here without
 // asserting the data-loss semantics (the KI tracks the semantic gap).
 //
-// MCDC SW-REQ-006: records_present=F, records_popped_and_expire_attempted=F => TRUE
-// MCDC SW-REQ-006: records_present=T, records_popped_and_expire_attempted=F => FALSE
-// MCDC SW-REQ-006: records_present=T, records_popped_and_expire_attempted=T => TRUE
+// MCDC SW-REQ-006: chunk_partial=F, records_popped_and_expire_attempted=F, records_present=F => FALSE
+// MCDC SW-REQ-006: chunk_partial=F, records_popped_and_expire_attempted=T, records_present=F => TRUE
+// MCDC SW-REQ-006: chunk_partial=T, records_popped_and_expire_attempted=F, records_present=F => TRUE
+// MCDC SW-REQ-006: chunk_partial=T, records_popped_and_expire_attempted=F, records_present=T => FALSE
 //
 // records_present=T/records_popped_and_expire_attempted=T: the test seeds records into the
 // list, Pop succeeds, then Expire is attempted (and fails — the F arm), proving both

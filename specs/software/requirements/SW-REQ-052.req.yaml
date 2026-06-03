@@ -29,8 +29,8 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-02T14:19:01Z"
-        comment: 'Phase L3 aggressive: flip remaining decision-bearing SW reqs to FRETish per L3 plan; vars added per-component; MC/DC witnesses to be annotated in tests.'
+        reviewed_at: "2026-06-03T07:39:47Z"
+        comment: 'Phase Q: catalog obligation attachments — adds request_timeout_bounded, panic_free_input_handling, encoding_aware, recursion_depth_bounded, secrets_not_logged, redirect_policy_explicit (Moesif rawBody+JSON masking surface). See .proof/catalog-obligation-proposals.md.'
         fingerprint: sha256:20f2fa0f9d0b96c8e928aab6e7806e6aa1e3d9b494daa0a35fc09d55431f4c8e
         ai_generated: false
     impact_reviews:
@@ -48,9 +48,10 @@ history:
     created_by: human:cli
     created_at: "2026-05-30T08:36:29Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-02T14:19:01Z"
+    last_modified_at: "2026-06-03T07:39:47Z"
 obligation_checklist:
     - nominal
+    - redirect_policy_explicit
     - untrusted_input_bounded
 obligation_suppressions:
     - id: determinism
@@ -102,4 +103,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T05:02:45Z comment="Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.")'
+          changed_by: human:cli
+        - date: "2026-06-03T07:39:47Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T14:19:01Z comment="Phase L3 aggressive: flip remaining decision-bearing SW reqs to FRETish per L3 plan; vars added per-component; MC/DC witnesses to be annotated in tests.")'
           changed_by: human:cli

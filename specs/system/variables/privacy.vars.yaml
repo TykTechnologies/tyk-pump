@@ -50,14 +50,18 @@ variables:
           - name: original_size
             type: int
             constraint: ">= 0"
-    - name: decode_enabled
+    - name: decode_request_enabled
       type: bool
       direction: input
-      description: Payload decoding is enabled for the backend.
-    - name: payload_decoded
+      description: True when SystemConfig.DecodeRawRequest is true — gates whether filterData base64-decodes the RawRequest field before forwarding.
+    - name: decode_response_enabled
+      type: bool
+      direction: input
+      description: True when SystemConfig.DecodeRawResponse is true — gates whether filterData base64-decodes the RawResponse field before forwarding (independent operator toggle from decode_request_enabled).
+    - name: enabled_payloads_decoded
       type: bool
       direction: output
-      description: The base64 request/response payloads are decoded before forwarding.
+      description: True iff every payload whose decode toggle is enabled has been base64-decoded in place (RawRequest when decode_request_enabled, RawResponse when decode_response_enabled); per-payload decode silently no-ops on base64.DecodeString errors.
     - name: omit_detailed_recording_enabled
       type: bool
       direction: input

@@ -8,6 +8,10 @@ variables:
       type: bool
       direction: output
       description: True iff a StatsD sink is added to the health stream and MonitorApplicationInstrumentation is invoked.
+    - name: statsd_endpoint_configured
+      type: bool
+      direction: input
+      description: True when SystemConfig.StatsdConnectionString is non-empty — the operator-controlled config gate that, alongside instrumentation_enabled (TYK_INSTRUMENTATION=1), must hold for SetupInstrumentation to add a StatsD sink. Mirrors observability.statsd_endpoint_configured at SW layer.
     - name: purge_tick
       type: bool
       direction: input

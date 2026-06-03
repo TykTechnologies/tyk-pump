@@ -125,9 +125,10 @@ func TestUptimeReportAggregate_Dimensions(t *testing.T) {
 // Verifies: STK-REQ-005
 // Verifies: INT-REQ-002
 // Verifies: SYS-REQ-021
-// MCDC INT-REQ-002: gateway_emits_uptime=F, record_at_tyk_uptime_analytics=F => TRUE
-// MCDC INT-REQ-002: gateway_emits_uptime=T, record_at_tyk_uptime_analytics=F => FALSE
-// MCDC INT-REQ-002: gateway_emits_uptime=T, record_at_tyk_uptime_analytics=T => TRUE
+// MCDC INT-REQ-002: gateway_emits_uptime=F, record_at_tyk_uptime_analytics=F, uptime_purging_enabled=F => FALSE
+// MCDC INT-REQ-002: gateway_emits_uptime=F, record_at_tyk_uptime_analytics=F, uptime_purging_enabled=T => TRUE
+// MCDC INT-REQ-002: gateway_emits_uptime=F, record_at_tyk_uptime_analytics=T, uptime_purging_enabled=F => TRUE
+// MCDC INT-REQ-002: gateway_emits_uptime=T, record_at_tyk_uptime_analytics=F, uptime_purging_enabled=T => FALSE
 // MCDC SYS-REQ-014: uptime_data_consumed=F, uptime_purging_enabled=F => TRUE
 // MCDC SYS-REQ-014: uptime_data_consumed=F, uptime_purging_enabled=T => FALSE
 // MCDC SYS-REQ-014: uptime_data_consumed=T, uptime_purging_enabled=T => TRUE

@@ -29,8 +29,8 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-02T14:19:01Z"
-        comment: 'Phase L3 aggressive: flip remaining decision-bearing SW reqs to FRETish per L3 plan; vars added per-component; MC/DC witnesses to be annotated in tests.'
+        reviewed_at: "2026-06-03T07:45:28Z"
+        comment: 'Phase Q3: add rate_limit_respected obligation (pushed from SYS-REQ-012; SW-REQ-032 is the SW-level health endpoint implementer).'
         fingerprint: sha256:c040080cd465058e6f0d59649fc13399027377464a13f2311951bdc75c3cf173
         ai_generated: false
     impact_reviews:
@@ -48,9 +48,11 @@ history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:17Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-02T14:19:01Z"
+    last_modified_at: "2026-06-03T07:45:28Z"
 obligation_checklist:
+    - auth_required
     - nominal
+    - rate_limit_respected
 obligation_suppressions:
     - id: external_call_failure_observable
       reason: 'Phase I: /health is intentionally a liveness-only endpoint per KI health-endpoint-is-liveness-only (status=open, ship). It does not gate readiness on external dependencies; the rule''s external_call_failure_observable obligation does not apply. STK-REQ-004 has the matching narrative.'
@@ -81,4 +83,14 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T05:02:45Z comment="Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.")'
+          changed_by: human:cli
+        - date: "2026-06-03T07:38:44Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T14:19:01Z comment="Phase L3 aggressive: flip remaining decision-bearing SW reqs to FRETish per L3 plan; vars added per-component; MC/DC witnesses to be annotated in tests.")'
+          changed_by: human:cli
+        - date: "2026-06-03T07:45:28Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-03T07:38:44Z comment="Phase Q: catalog obligation attachments — adds auth_required (health endpoint + pprof posture, KI health-endpoint-is-liveness-only). See .proof/catalog-obligation-proposals.md.")'
           changed_by: human:cli

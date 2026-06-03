@@ -4,7 +4,7 @@ status: approved
 priority: shall
 category: functional
 req_type: guarantee
-fretish: when mcp_record_with_mcp_index pumps_es shall always satisfy index_eq_mcp
+fretish: when mcp_index_configured & is_mcp_record pumps_es shall always satisfy index_eq_mcp
 description: 'When RollingIndex is true, the Elasticsearch pump shall append -YYYY.MM.DD (UTC system time) to the target index name. Per-record MCP routing shall use getIndexNameForRecord and apply ONLY in bulk mode: when MCPIndexName is non-empty and the record is an MCP record, the MCP-specific index name is used (with the same rolling suffix when enabled); otherwise the standard IndexName is used. Known issue: non-bulk mode currently ignores MCP routing (KI elasticsearch-mcp-routing-non-bulk-ignored).'
 formalization_strategy: fretish
 informal_verification:
@@ -15,13 +15,16 @@ parent: SYS-REQ-004
 component: pumps-es
 rationale: ""
 tags: []
-variables: []
+variables:
+    - mcp_index_configured
+    - is_mcp_record
+    - index_eq_mcp
 traces:
     satisfies:
         - SYS-REQ-004
-    reviewed_at: "2026-06-02T12:53:40.295749Z"
+    reviewed_at: "2026-06-03T07:18:17.26312Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:7c4d74ed7f55a59c7fe1cbe1c835893bae9eb7f3c81aaa5dd434f08273279a98
+    reviewed_fingerprint: sha256:b3cbdd4980798aab049680ce217f3535e00caea6067e8d9180c95f3754f29102
 verification:
     assurance_level: B
     formalization_status: valid
@@ -29,26 +32,26 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-02T12:50:34Z"
-        comment: 'Phase L1: formalize via FRETish; introduced per-component boolean vars in *.vars.yaml; FRETish captures the headline routing/windowing decision per req (table-sharding for SW-040/041, graph-routing for SW-042, minute-window for SW-043/045, mcp-routing for SW-044/069, date-boundary slice-flush for SW-064).'
-        fingerprint: sha256:43f76e091755cb475d464b1435a2368cf933dc4bac6ee44ab1b839c0bfed6088
+        reviewed_at: "2026-06-03T06:56:39Z"
+        comment: 'Phase P: FRETish enrichment per per-req review pass — adds mcp_index_configured & is_mcp_record conjunct so MC/DC exposes the two-conjunct independence (operator-configured MCPIndexName vs per-record IsMCPRecord) — current single Boolean smuggles AND of both into one var.'
+        fingerprint: sha256:709ab02f41d24d313052ed40d35644787a4123529da4887b72daf82d4052423a
         ai_generated: false
     impact_reviews:
         - requirement: SW-REQ-069
           artifact: pumps/elasticsearch.go
           decision: no-authored-change
           reviewer: buger
-          reason: 'Phase L1: formalization-only change (informal -> fretish + per-req boolean variables). Production .go files were not modified; only req YAML metadata and component vars YAMLs were added. Re-recording no-authored-change impact after fingerprint roll.'
+          reason: 'Phase P: FRETish enrichment per per-req review pass — added decision variables expose existing code branches; production code paths unchanged, only requirement metadata altered. Test annotations updated to match new MC/DC truth tables.'
           base: origin/master
-          requirement_fingerprint: sha256:7c4d74ed7f55a59c7fe1cbe1c835893bae9eb7f3c81aaa5dd434f08273279a98
-          approval_fingerprint: sha256:43f76e091755cb475d464b1435a2368cf933dc4bac6ee44ab1b839c0bfed6088
+          requirement_fingerprint: sha256:b3cbdd4980798aab049680ce217f3535e00caea6067e8d9180c95f3754f29102
+          approval_fingerprint: sha256:709ab02f41d24d313052ed40d35644787a4123529da4887b72daf82d4052423a
           artifact_fingerprint: sha256:bed01de375baec71c5054532e66cd43659c128ab3bb96b697da84fb3b8b8ba8e
-          reviewed_at: "2026-06-02T12:52:01Z"
+          reviewed_at: "2026-06-03T07:17:20Z"
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:40:01Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-02T18:29:50Z"
+    last_modified_at: "2026-06-03T06:56:39Z"
 obligation_checklist:
     - determinism
     - nominal
@@ -115,4 +118,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T05:02:45Z comment="Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.")'
+          changed_by: human:cli
+        - date: "2026-06-03T06:56:39Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T12:50:34Z comment="Phase L1: formalize via FRETish; introduced per-component boolean vars in *.vars.yaml; FRETish captures the headline routing/windowing decision per req (table-sharding for SW-040/041, graph-routing for SW-042, minute-window for SW-043/045, mcp-routing for SW-044/069, date-boundary slice-flush for SW-064).")'
           changed_by: human:cli

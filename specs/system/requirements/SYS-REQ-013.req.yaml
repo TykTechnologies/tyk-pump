@@ -4,7 +4,7 @@ status: approved
 priority: shall
 category: functional
 req_type: guarantee
-fretish: when instrumentation_enabled observability shall eventually satisfy metrics_emitted
+fretish: when instrumentation_enabled & statsd_endpoint_configured observability shall eventually satisfy metrics_emitted
 description: When instrumentation is enabled, the pump shall emit purge-timing and record-count metrics to the configured metrics sink.
 formalization_strategy: fretish
 informal_verification:
@@ -15,13 +15,16 @@ parent: STK-REQ-004
 component: observability
 rationale: ""
 tags: []
-variables: []
+variables:
+    - instrumentation_enabled
+    - statsd_endpoint_configured
+    - metrics_emitted
 traces:
     satisfies:
         - STK-REQ-004
-    reviewed_at: "2026-06-02T05:03:38.314425Z"
+    reviewed_at: "2026-06-03T07:18:17.39092Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:aeaa9d7ce7a871de57a783a397472f3a4a6ef04c0a181b642689613c17d9675b
+    reviewed_fingerprint: sha256:92207db7e0d18d12293c45a0f6dd05fc6d7254ce334200fc519d160f6d038df3
 verification:
     assurance_level: B
     formalization_status: valid
@@ -29,17 +32,17 @@ verification:
         status: approved
         reviewer: human:buger
         role: system_engineer
-        reviewed_at: "2026-06-02T05:02:36Z"
-        comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
-        fingerprint: sha256:88fbee27862205cb88e34eac5196e025a5202cf57badd8e052ff4369b1e35d28
+        reviewed_at: "2026-06-03T06:55:28Z"
+        comment: 'Phase P: FRETish enrichment per per-req review pass — adds statsd_endpoint_configured to when conjunct so MC/DC forces a witness for the missing-StatsdConnectionString path (TYK_INSTRUMENTATION=1 set but endpoint empty → no sink, no metrics emitted).'
+        fingerprint: sha256:8ba959c57fa3e25e4875d5bc8c0ff285ad1040e34b91c73102b7f35e6959cff7
         ai_generated: false
-    gaps_reviewed_at: "2026-06-02T05:05:48.911641Z"
+    gaps_reviewed_at: "2026-06-03T07:19:03.281839Z"
     gaps_reviewed_by: buger
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:11:41Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-02T05:02:36Z"
+    last_modified_at: "2026-06-03T06:55:28Z"
 obligation_class: error_handling
 lifecycle:
     change_history:
@@ -67,4 +70,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="system_engineer" reviewer="human:buger" at=2026-05-30T10:43:40Z comment="Phase 0.7: SYS-013 obligation aligned to error_handling (instrumentation sink swallows errors without failing the purge loop). Re-approve after Phase 0.7 review applied.")'
+          changed_by: human:cli
+        - date: "2026-06-03T06:55:28Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="system_engineer" reviewer="human:buger" at=2026-06-02T05:02:36Z comment="Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.")'
           changed_by: human:cli

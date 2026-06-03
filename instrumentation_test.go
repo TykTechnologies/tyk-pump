@@ -8,12 +8,14 @@ import "testing"
 // SYS-REQ-013:error_handling:negative
 // Verifies: SYS-REQ-017
 // SYS-REQ-017:error_handling:negative
-// MCDC SW-REQ-005: instrumentation_enabled=F, statsd_sink_added=F => TRUE
-// MCDC SW-REQ-005: instrumentation_enabled=T, statsd_sink_added=F => FALSE
-// MCDC SW-REQ-005: instrumentation_enabled=T, statsd_sink_added=T => TRUE
-// MCDC SYS-REQ-013: instrumentation_enabled=F, metrics_emitted=F => TRUE
-// MCDC SYS-REQ-013: instrumentation_enabled=T, metrics_emitted=F => FALSE
-// MCDC SYS-REQ-013: instrumentation_enabled=T, metrics_emitted=T => TRUE
+// MCDC SW-REQ-005: instrumentation_enabled=F, statsd_endpoint_configured=F, statsd_sink_added=F => FALSE
+// MCDC SW-REQ-005: instrumentation_enabled=F, statsd_endpoint_configured=F, statsd_sink_added=T => TRUE
+// MCDC SW-REQ-005: instrumentation_enabled=F, statsd_endpoint_configured=T, statsd_sink_added=F => TRUE
+// MCDC SW-REQ-005: instrumentation_enabled=T, statsd_endpoint_configured=T, statsd_sink_added=F => FALSE
+// MCDC SYS-REQ-013: instrumentation_enabled=F, metrics_emitted=F, statsd_endpoint_configured=T => TRUE
+// MCDC SYS-REQ-013: instrumentation_enabled=T, metrics_emitted=F, statsd_endpoint_configured=F => TRUE
+// MCDC SYS-REQ-013: instrumentation_enabled=T, metrics_emitted=F, statsd_endpoint_configured=T => FALSE
+// MCDC SYS-REQ-013: instrumentation_enabled=T, metrics_emitted=T, statsd_endpoint_configured=T => TRUE
 // MCDC SYS-REQ-017: metrics_sink_failure=F, purge_loop_continues=F => TRUE
 // MCDC SYS-REQ-017: metrics_sink_failure=T, purge_loop_continues=F => FALSE
 // MCDC SYS-REQ-017: metrics_sink_failure=T, purge_loop_continues=T => TRUE

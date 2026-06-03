@@ -1,9 +1,13 @@
 component: pumps-es
 variables:
-    - name: mcp_record_with_mcp_index
+    - name: mcp_index_configured
       type: bool
       direction: input
-      description: True when MCPIndexName is non-empty AND the current record satisfies IsMCPRecord() AND DisableBulk is false (bulk mode), gating MCP-specific index routing per getIndexNameForRecord.
+      description: True when esConf.MCPIndexName is non-empty — the operator-configured MCP-index toggle that, alongside is_mcp_record, gates MCP-specific index routing in getIndexNameForRecord (independent from is_mcp_record).
+    - name: is_mcp_record
+      type: bool
+      direction: input
+      description: True when the current record satisfies record.IsMCPRecord() — the per-record record-class classification independent of mcp_index_configured.
     - name: index_eq_mcp
       type: bool
       direction: output

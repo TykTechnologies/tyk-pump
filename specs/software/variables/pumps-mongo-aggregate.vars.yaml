@@ -3,11 +3,19 @@ variables:
     - name: self_heal_enabled
       type: bool
       direction: input
-      description: True when EnableAggregateSelfHealing is true AND the upsert error matches one of the size-error markers (StandardMongoSizeError / CosmosSizeError / DocDBSizeError).
+      description: True when EnableAggregateSelfHealing is true — the operator toggle for size-error self-healing (independent from size_error_detected and aggregation_time_above_floor; all three must hold for ShouldSelfHeal to halve).
+    - name: size_error_detected
+      type: bool
+      direction: input
+      description: True when the upsert error string matches one of the listed size-error markers (StandardMongoSizeError "is over max BSON object size" / CosmosSizeError / DocDBSizeError) — the error-class gate independent from self_heal_enabled.
+    - name: aggregation_time_above_floor
+      type: bool
+      direction: input
+      description: True when m.dbConf.AggregationTime > 1 — the floor-reached guard; when AggregationTime==1, ShouldSelfHeal returns false even with self_heal_enabled and size_error_detected, because halving 1 would round to 0.
     - name: aggregation_time_halved
       type: bool
       direction: output
-      description: True iff ShouldSelfHeal halves AggregationTime and re-invokes WriteData (false when AggregationTime is already 1 or when self-healing is not triggered).
+      description: True iff ShouldSelfHeal halves AggregationTime and re-invokes WriteData (false when AggregationTime is already at the floor or when self-healing is not triggered).
     - name: store_per_minute
       type: bool
       direction: input
@@ -36,15 +44,23 @@ variables:
       type: bool
       direction: input
       description: True when the aggregated document's tag list length exceeds ThresholdLenTagList (default 1000).
+    - name: alert_not_disabled
+      type: bool
+      direction: input
+      description: 'True when m.dbConf.ThresholdLenTagList != -1 — the operator-controlled disable gate; setting -1 disables the tag-list alert entirely (description explicitly names "A configured value of -1 shall disable the alert entirely").'
     - name: alert_emitted
       type: bool
       direction: output
-      description: True iff the pump emits a Warn-level alert listing up to N tags (and orgid+timestamp context) when tag_list_len_gt_threshold.
+      description: True iff the pump emits a Warn-level alert listing up to N tags (and orgid+timestamp context) when both alert_not_disabled AND tag_list_len_gt_threshold.
     - name: omit_index_creation
       type: bool
       direction: input
       description: True when the pump's OmitIndexCreation config is true (operator opted out of auto index ensure).
+    - name: collection_already_exists
+      type: bool
+      direction: input
+      description: True when MongoDBType==StandardMongo AND collectionExists returns ok — the idempotency-skip arm in ensureIndexes that satisfies create_index_skipped independently of omit_index_creation (description names both skip conditions).
     - name: create_index_skipped
       type: bool
       direction: output
-      description: True iff the per-call ensureIndex step is skipped when OmitIndexCreation is true.
+      description: True iff the per-call ensureIndex step is skipped because omit_index_creation OR collection_already_exists.

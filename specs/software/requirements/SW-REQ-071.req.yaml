@@ -30,8 +30,8 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-02T05:02:45Z"
-        comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
+        reviewed_at: "2026-06-03T07:40:30Z"
+        comment: 'Phase Q: catalog obligation attachments — adds panic_free_input_handling (GeoIP enrichment input safety). See .proof/catalog-obligation-proposals.md.'
         fingerprint: sha256:fe9bd9928a12177e5d28d6409d3cefdc2c20147160563b3f010ca6235a0a5582
         ai_generated: false
     impact_reviews:
@@ -49,10 +49,11 @@ history:
     created_by: human:cli
     created_at: "2026-05-30T10:31:33Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-02T05:02:46Z"
+    last_modified_at: "2026-06-03T07:40:30Z"
 obligation_checklist:
     - error_handling
     - nominal
+    - panic_free_input_handling
 lifecycle:
     change_history:
         - date: "2026-05-30T10:36:30Z"
@@ -64,4 +65,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-05-30T10:36:30Z comment="Phase 0.7 new req for GeoIP short-circuit guarantee split out from SYS-REQ-032. Implementation analytics/analytics.go GetGeo/GeoIPLookup verified via analytics/geoip_test.go.")'
+          changed_by: human:cli
+        - date: "2026-06-03T07:40:30Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T05:02:45Z comment="Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.")'
           changed_by: human:cli

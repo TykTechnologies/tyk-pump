@@ -8,6 +8,10 @@ variables:
       type: bool
       direction: output
       description: True iff backoff retries the request (false means backoff.Permanent is returned and the operation is abandoned).
+    - name: transport_transient_err
+      type: bool
+      direction: input
+      description: True when handleErr → isErrorRetryable classifies the transport error as retryable (one of conError.ConnectionError, "connection reset" substring, url.Error+"connection refused", net.OpError.Op=="dial"||Temporary, tempErr.Temporary, timeoutErr.Timeout). Distinct from is_5xx_or_429 — different code arm and fixture surface (network-error injection vs HTTP response).
     - name: max_elapsed_zero
       type: bool
       direction: input

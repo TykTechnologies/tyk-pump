@@ -29,16 +29,18 @@ verification:
         status: approved
         reviewer: human:buger
         role: system_engineer
-        reviewed_at: "2026-06-02T05:02:36Z"
-        comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
+        reviewed_at: "2026-06-03T07:40:44Z"
+        comment: 'Phase Q: catalog obligation attachments — adds secrets_not_logged (operator-listed ignore fields kept out of logs). See .proof/catalog-obligation-proposals.md.'
         fingerprint: sha256:b97744c1c55e16758e247a488b090a5ba36e9385e5609e3ea921c28c50eba7a7
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-29T21:25:35Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-02T05:02:36Z"
+    last_modified_at: "2026-06-03T07:40:44Z"
 obligation_class: nominal
+obligation_checklist:
+    - secrets_not_logged
 lifecycle:
     change_history:
         - date: "2026-05-29T21:30:06Z"
@@ -50,4 +52,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="system_engineer" reviewer="human:buger" at=2026-05-30T07:43:08Z comment="System-level behavior reviewed as part of feat/reqproof-coverage PR; FRETish + obligation + satisfies linkage verified against tyk-pump architecture and code in Phase 0 code-verification pass.")'
+          changed_by: human:cli
+        - date: "2026-06-03T07:40:44Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="system_engineer" reviewer="human:buger" at=2026-06-02T05:02:36Z comment="Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.")'
           changed_by: human:cli
