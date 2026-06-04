@@ -35,8 +35,8 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-03T07:45:29Z"
-        comment: 'Phase Q3: add secrets_not_logged obligation (pushed from SYS-REQ-016; SW-REQ-001 is the omnibus that implements ignore-fields filtering).'
+        reviewed_at: "2026-06-04T16:53:35Z"
+        comment: 'Phase S Wave 2 fix: failure_independence_proven decomposes from SYS-REQ-004 into SW-REQ-016 (CommonPumpConfig sets the per-pump bulkhead), not SW-REQ-001 (which doesn''t satisfy SYS-REQ-004)'
         fingerprint: sha256:42f7b00e4909e8819929902eedb40da2775cd9c028d18713beccf89db9d69050
         ai_generated: false
     impact_reviews:
@@ -54,10 +54,14 @@ history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:13Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-03T07:45:29Z"
+    last_modified_at: "2026-06-04T16:53:35Z"
 obligation_checklist:
     - boundary
+    - cascade_circuit_breaker
+    - fanout_panic_isolated
     - nominal
+    - partial_progress_observable
+    - per_pump_circuit_breaker
     - rate_limit_respected
     - secrets_not_logged
 lifecycle:
@@ -96,4 +100,19 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-03T07:37:46Z comment="Phase Q: catalog obligation attachments per per-req mapping — adds external_call_concurrency_bounded, secrets_not_logged, rate_limit_respected to expose obligation surface (purge fan-out cap, secret-not-logged contract, purge rate cap). See .proof/catalog-obligation-proposals.md for rationale + KI cross-refs.")'
+          changed_by: human:cli
+        - date: "2026-06-04T16:50:31Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-03T07:45:29Z comment="Phase Q3: add secrets_not_logged obligation (pushed from SYS-REQ-016; SW-REQ-001 is the omnibus that implements ignore-fields filtering).")'
+          changed_by: human:cli
+        - date: "2026-06-04T16:52:30Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-04T16:50:31Z comment="Phase S Wave 2: attach blind-spot obligations from Wave 1 promote (cascade/fanout/clock_skew/dst/tz/temporal_window/process_exit/tls_verification/partial_progress)")'
+          changed_by: human:cli
+        - date: "2026-06-04T16:53:35Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-04T16:52:30Z comment="Phase S Wave 2: decompose SYS-REQ-004''s failure_independence_proven into SW-REQ-001 (purge fanout implements the independence claim)")'
           changed_by: human:cli

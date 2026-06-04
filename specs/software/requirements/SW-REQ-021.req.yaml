@@ -29,8 +29,8 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-03T07:38:23Z"
-        comment: 'Phase Q: catalog obligation attachments — adds external_call_timeout_bounded, external_call_failure_observable, cert_validation_strict, cancellation_observed (Kafka per-write deadline, TLS posture, ctx). See .proof/catalog-obligation-proposals.md.'
+        reviewed_at: "2026-06-04T16:50:31Z"
+        comment: 'Phase S Wave 2: attach blind-spot obligations from Wave 1 promote (cascade/fanout/clock_skew/dst/tz/temporal_window/process_exit/tls_verification/partial_progress)'
         fingerprint: sha256:62d7058b5742fba4efd4378375ab1ff2159d9619aafbb634a8e59c40899e0cb8
         ai_generated: false
     impact_reviews:
@@ -48,10 +48,11 @@ history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:15Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-03T07:38:23Z"
+    last_modified_at: "2026-06-04T16:50:31Z"
 obligation_checklist:
     - cancellation_observed
     - errors_propagated
+    - tls_verification_explicit
 obligation_suppressions:
     - id: errors_propagated
       reason: Phase H custom opengrep rule go.log.fatal-in-init / go.recursion.unbounded-on-error surfaces log.Fatal in Init and unbounded reconnect recursion; both are tracked under KIs pumps-logfatal-on-config-decode, elasticsearch-unbounded-reconnect-recursion, and influx-v1-unbounded-reconnect-recursion with mitigation and remediation already filed.
@@ -92,4 +93,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T13:44:34Z comment="Phase L2: aggressive formalization — encodes per-component primary decision (instrumentation gate, codec select, SSL/SASL, dataset_empty, default-path, file-append, retry-status, log-level, flush, batch, transport, dedup); variables in <component>.vars.yaml; user directive: force MCDC witnesses to drive verifying tests.")'
+          changed_by: human:cli
+        - date: "2026-06-04T16:50:31Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-03T07:38:23Z comment="Phase Q: catalog obligation attachments — adds external_call_timeout_bounded, external_call_failure_observable, cert_validation_strict, cancellation_observed (Kafka per-write deadline, TLS posture, ctx). See .proof/catalog-obligation-proposals.md.")'
           changed_by: human:cli

@@ -32,8 +32,8 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-03T07:38:05Z"
-        comment: 'Phase Q: catalog obligation attachments — adds ordering_guarantees_documented, parameterized_only_read, query_timeout_bounded, snapshot_wire_format_compatible (LPOP FIFO contract, bound reads, on-wire format). See .proof/catalog-obligation-proposals.md.'
+        reviewed_at: "2026-06-04T16:50:31Z"
+        comment: 'Phase S Wave 2: attach blind-spot obligations from Wave 1 promote (cascade/fanout/clock_skew/dst/tz/temporal_window/process_exit/tls_verification/partial_progress)'
         fingerprint: sha256:7ebc2b9737af0462b8c39271e6f99397b739affd6ababf92f656487bb7e0912a
         ai_generated: false
     impact_reviews:
@@ -51,8 +51,9 @@ history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:14Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-03T07:38:05Z"
+    last_modified_at: "2026-06-04T16:50:31Z"
 obligation_checklist:
+    - clock_skew_tolerated
     - error_handling
     - nominal
     - snapshot_wire_format_compatible
@@ -103,4 +104,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-03T06:55:46Z comment="Phase P: FRETish enrichment per per-req review pass — adds chunk_partial to when conjunct so MC/DC exposes operator-controlled chunk_partial fork (purge_chunk config) — full-drain mode intentionally skips Expire and must NOT satisfy the AND-postcondition.")'
+          changed_by: human:cli
+        - date: "2026-06-04T16:50:31Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-03T07:38:05Z comment="Phase Q: catalog obligation attachments — adds ordering_guarantees_documented, parameterized_only_read, query_timeout_bounded, snapshot_wire_format_compatible (LPOP FIFO contract, bound reads, on-wire format). See .proof/catalog-obligation-proposals.md.")'
           changed_by: human:cli

@@ -29,8 +29,8 @@ verification:
         status: approved
         reviewer: human:buger
         role: system_engineer
-        reviewed_at: "2026-06-03T07:40:38Z"
-        comment: 'Phase Q: catalog obligation attachments — adds external_call_concurrency_bounded (per-backend independence + bulkhead). See .proof/catalog-obligation-proposals.md.'
+        reviewed_at: "2026-06-04T16:50:33Z"
+        comment: 'Phase S Wave 2: attach failure_independence_proven from blind-spot detection loop'
         fingerprint: sha256:eaedb01506a298607084eb9bd6efcfd527dffab1581174bffbfbd36601442847
         ai_generated: false
     gaps_reviewed_at: "2026-06-03T10:24:45.221097Z"
@@ -39,10 +39,11 @@ history:
     created_by: human:cli
     created_at: "2026-05-29T15:11:41Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-03T07:40:38Z"
+    last_modified_at: "2026-06-04T16:50:33Z"
 obligation_class: error_handling
 obligation_checklist:
     - external_call_concurrency_bounded
+    - failure_independence_proven
 release_disposition: ship_with_known_issue
 lifecycle:
     change_history:
@@ -65,4 +66,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="system_engineer" reviewer="human:buger" at=2026-06-02T05:02:36Z comment="Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.")'
+          changed_by: human:cli
+        - date: "2026-06-04T16:50:33Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="system_engineer" reviewer="human:buger" at=2026-06-03T07:40:38Z comment="Phase Q: catalog obligation attachments — adds external_call_concurrency_bounded (per-backend independence + bulkhead). See .proof/catalog-obligation-proposals.md.")'
           changed_by: human:cli
