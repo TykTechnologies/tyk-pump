@@ -1,13 +1,14 @@
 id: graylog-moesif-logfatal-on-record-error
-title: Graylog and Moesif pumps log.Fatal on per-record base64 decode errors
-description: pumps/graylog.go uses log.Fatal on per-record errors at lines 120, 126, 155, and 168. pumps/moesif.go uses log.Fatal at lines 349, 356, 379, and 386 for similar per-record decode/parse failures. A single malformed record crashes the entire tyk-pump process via log.Fatal, taking down every other pump and the purge loop. Violates SYS-REQ-004's independent-failures requirement because one record's parsing issue is fatal to all pumps.
+title: Graylog and Moesif pumps log.Fatal on per-record (and Moesif getConfig) decode errors
+description: 'pumps/graylog.go uses log.Fatal on per-record errors at lines 120, 126, 155, and 168. pumps/moesif.go uses log.Fatal at lines 349, 356, 379, and 386 for similar per-record decode/parse failures, plus line 121 in parseConfiguration (the getConfig sampling-rate fetch surface — Wave 3a AST scanner finding) where a malformed Moesif API response body crashes the host process. A single malformed record (or one bad sampling-config response) crashes the entire tyk-pump process via log.Fatal, taking down every other pump and the purge loop. Violates SYS-REQ-004''s independent-failures requirement because one record''s (or one transient API response''s) parsing issue is fatal to all pumps.'
 affected_requirements:
     - SYS-REQ-004
 evidence_manifests:
     - code_signal:opengrep:go.deserializer.request-body-readall:pumps/moesif.go:117
+    - code_signal:opengrep:go.log.fatal-in-init:pumps/moesif.go:121
 severity: medium
-mitigation: Pre-validate analytics records or filter out suspect orgs before they reach graylog/moesif. Use a process supervisor to auto-restart after a crash.
-remediation: Replace per-record log.Fatal calls in pumps/graylog.go and pumps/moesif.go with log.Error + 'continue' so the bad record is skipped, not fatal.
+mitigation: Pre-validate analytics records or filter out suspect orgs before they reach graylog/moesif. Ensure the Moesif sampling-config API endpoint returns parseable bodies (the response.Body in parseConfiguration is read via ioutil.ReadAll — in production this is over the network and can fail, even though in unit-test httptest fixtures the in-memory buffer never fails). Use a process supervisor to auto-restart after a crash.
+remediation: Replace per-record log.Fatal calls in pumps/graylog.go and pumps/moesif.go with log.Error + 'continue' so the bad record is skipped, not fatal. For pumps/moesif.go:121 (parseConfiguration), replace log.Fatal with log.Error + return the previous sampling values so the next purge cycle re-attempts — the function already has a fallback return statement after the log.Fatal call.
 owner: tyk-team
 release_disposition: ship_with_known_issue
 status: open
@@ -19,3 +20,7 @@ history:
       by: human:buger
       action: edit
       detail: add-evidence-manifest
+    - at: "2026-06-04T00:00:00Z"
+      by: human:buger
+      action: edit
+      detail: phase-s-wave-4-extend-with-moesif-go-121-getConfig-surface

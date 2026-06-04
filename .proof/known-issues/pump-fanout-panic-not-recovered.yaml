@@ -1,0 +1,30 @@
+id: pump-fanout-panic-not-recovered
+title: execPumpWriting inner goroutine lacks defer recover; a pump panic crashes the host process
+description: 'main.go:469 spawns an inner goroutine per pump per purge cycle to invoke pmp.WriteData. The goroutine body has no defer recover(). Per Go semantics ("an unrecovered panic in a goroutine terminates the program"), a panic inside any pump implementation (commonly third-party SDK bugs in mongo driver, kafka client, prometheus client, etc.) crashes the entire tyk-pump host process — taking down every other pump and the purge loop with it. Wave 3c TestFanoutPanicIsolated_PanicInOneDoesNotStallOthers (subprocess re-exec harness) confirmed the missing recover empirically. This is a re-confirmation + test-anchored verification of the existing KI no-panic-recovery-in-exec-pump-writing (which describes the same surface but does not yet have a verifying test reference). Filed as a sibling so the Wave 3c test has a 1:1 KI mapping; both should be remediated together.'
+affected_requirements:
+    - SW-REQ-001
+    - SYS-REQ-004
+evidence_manifests:
+    - test:pumps/fanout_panic_isolated_test.go:TestFanoutPanicIsolated_PanicInOneDoesNotStallOthers
+verifying_test: pumps/fanout_panic_isolated_test.go::TestFanoutPanicIsolated_PanicInOneDoesNotStallOthers
+severity: medium
+mitigation: 'Pumps are expected to be well-behaved; panics typically originate in third-party SDK code paths (mongo driver, kafka client, prometheus client) rather than the pump glue. Operators rely on container/orchestrator restart to recover from host-process crash. Run with restart=always under systemd/docker/k8s.'
+remediation: |-
+  Trivial fix at main.go:469 — wrap the goroutine body in:
+    defer func() {
+        if r := recover(); r != nil {
+            log.WithField("pump", pmp.GetName()).Errorf("pump panicked: %v", r)
+            ch <- fmt.Errorf("pump panic: %v", r)
+        }
+    }()
+  This converts a host-process crash into a per-pump WriteData error, which execPumpWriting already handles (logs + continues). Same surface as KI no-panic-recovery-in-exec-pump-writing; remediation should land in one PR.
+references:
+    - related-ki:no-panic-recovery-in-exec-pump-writing
+owner: tyk-team
+release_disposition: fix
+status: open
+history:
+    - at: "2026-06-04T00:00:00Z"
+      by: human:buger
+      action: created
+      detail: phase-s-wave-4-from-reproducer-test-findings
