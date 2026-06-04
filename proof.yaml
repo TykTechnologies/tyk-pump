@@ -20,6 +20,21 @@ project:
     default_assurance_level: B
     catalog:
         version: 1.0.0
+    signals:
+        defaults: auto
+        rule_packs:
+            - signal-rules/tyk-pump-phase-n.yaml
+        providers:
+            opengrep:
+                enabled: true
+                mode: run
+                managed: true
+                format: sarif
+                exclude_paths:
+                    - '**/*_test.go'
+                    - '**/testdata/**'
+                    - '**/*.pb.go'
+                timeout_seconds: 600
     commands:
         build: go build ./...
         test: go test -count=1 -timeout=20m -coverprofile=../cover.out ./...
@@ -39,6 +54,7 @@ project:
         slow_tests:
             enabled: true
             threshold_seconds: 1
+        mcdc_coverage: {}
         under_modeled_requirements:
             code_rich_max_meaningful_vars: 1
         code_mcdc:
@@ -58,22 +74,8 @@ project:
                 B: 2
         code_signal_obligations_reviewed:
             enabled: true
-    signals:
-        defaults: auto
-        rule_packs:
-            - signal-rules/tyk-pump-phase-n.yaml
-        providers:
-            opengrep:
-                enabled: true
-                mode: run
-                managed: true
-                format: sarif
-                exclude_paths:
-                    - '**/*_test.go'
-                    - '**/testdata/**'
-                    - '**/*.pb.go'
-                fail_if_missing: false
-                timeout_seconds: 600
+        code_signal_unbindable:
+            enabled: true
     approval:
         required_for:
             assurance_levels:

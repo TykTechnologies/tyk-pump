@@ -510,3 +510,500 @@ rules:
           conn, err = tls.DialWithDialer(...)
           ...
           defer conn.Close()
+
+  # ──────────────────────────────────────────────────────────────────────
+  # Phase R dogfood: pure-proposal rules carrying proposes_class drafts.
+  # These rules intentionally have NO obligations: field — they exist to
+  # surface a blind-spot via the code_signal_unbindable audit check, and
+  # to seed a catalog draft via `proof catalog draft --from-signal <id>`.
+  # ──────────────────────────────────────────────────────────────────────
+
+  - id: go.wall-clock-arithmetic
+    severity: INFO
+    languages: [go]
+    message: |
+      Code measures elapsed duration with `time.Since(...)` or
+      `time.Now().Sub(...)` against a wall-clock instant. On DST transitions,
+      manual clock adjustments, or NTP step events the returned Duration can
+      go negative or jump by hours, producing nonsense timings, fake SLA
+      breaches, or — when used as a loop guard — instant time-outs.
+      Prefer `time.Now()` paired with a monotonic-clock-safe helper, or
+      explicitly check `d < 0` and clamp.
+    metadata:
+      proof:
+        signal_id: go.wall_clock_arithmetic
+        provider: opengrep
+        confidence: medium
+        proposes_class:
+          - id: dst_transition_safe
+            summary: Duration arithmetic shall be monotonic across DST, NTP-step, and manual-clock adjustments; negative or hour-scale jumps shall not be returned to callers.
+            kind: property
+            applies_when: code performs wall-clock arithmetic (time.Since / time.Now().Sub) and uses the duration as a metric, SLA bound, or loop step
+        framework_hints:
+          - CWE-1247
+          - NIST-SP-800-160-3.2.4
+        notes: |
+          Pure-proposal rule. The proposed class `dst_transition_safe` is
+          not yet in the shipped catalog; code_signal_unbindable surfaces
+          it and `proof catalog draft --from-signal go.wall_clock_arithmetic`
+          renders the YAML stub.
+    paths:
+      exclude:
+        - "*_test.go"
+        - "cmd/**"
+        - "vendor/**"
+    patterns:
+      - pattern-either:
+          - pattern: time.Since($T)
+          - pattern: time.Now().Sub($T)
+
+  - id: go.multi-pump-fanout
+    severity: INFO
+    languages: [go]
+    message: |
+      A per-element goroutine fanout is launched without an explicit
+      failure-independence barrier: each pump runs `go execPumpWriting(...)`
+      and the outer loop simply `wg.Wait()`s on completion. A single pump
+      that panics, hangs, or saturates a shared dependency (DNS resolver
+      cache, default HTTP transport pool, root logger) can corrupt
+      sibling-pump output or starve them. Document the independence claim
+      (process isolation, dedicated client, panic-recovery) AND wire a
+      cascade circuit-breaker per pump.
+    metadata:
+      proof:
+        signal_id: go.multi_pump_fanout
+        provider: opengrep
+        confidence: medium
+        proposes_class:
+          - id: failure_independence_proven
+            summary: Sibling consumers of a shared input stream shall be proven independent — a failure in one shall not corrupt, starve, or cascade into others; the independence assumption shall be explicit and testable.
+            kind: property
+            applies_when: code fans out work to multiple peer consumers via per-element goroutines and waits on a shared barrier
+          - id: cascade_circuit_breaker
+            summary: When one consumer in a peer-fanout repeatedly fails or saturates, downstream / sibling consumers shall be circuit-broken — the failure shall not propagate indefinitely.
+            kind: domain
+            applies_when: code fans out to multiple peer consumers and any single consumer failure could affect throughput, latency, or correctness of the others
+        framework_hints:
+          - CWE-1088
+          - CWE-770
+          - NIST-SP-800-53-SC-5
+        notes: |
+          Pure-proposal rule. Carries TWO proposed classes on a single
+          signal (the schema supports a list). Pattern matches the
+          tyk-pump main.go:367 fanout shape: `wg.Add(len(...))` followed
+          by `for ... { go <selector_call>(&wg, ...) }`. FP risk: low —
+          the wg.Add(len(...)) precedent narrows to the per-element
+          fanout shape.
+    paths:
+      exclude:
+        - "*_test.go"
+        - "cmd/**"
+        - "vendor/**"
+    patterns:
+      - pattern-either:
+          - pattern: |
+              wg.Add(len($PUMPS))
+              for $_, $P := range $PUMPS {
+                go $F(&wg, $P, ...)
+              }
+          - pattern: |
+              $WG.Add(len($PUMPS))
+              for $_, $P := range $PUMPS {
+                go $F(&$WG, $P, ...)
+              }
+
+  # ──────────────────────────────────────────────────────────────────────
+  # Phase R-expanded dogfood: 8 additional pure-proposal rules covering
+  # the time-correctness and failure-cascade blind-spot families called
+  # out in plan §0.3 and §F.
+  # ──────────────────────────────────────────────────────────────────────
+
+  - id: go.time-field-untagged-tz
+    severity: INFO
+    languages: [go]
+    message: |
+      A struct field carries `time.Time` without a documented timezone marker
+      (no explicit UTC convention, no sibling string `tz` field, no method
+      annotating the field's location). When the producer and consumer run
+      in different timezones — or when a producer marshals "Local" time and
+      a consumer unmarshals it as wall-clock — aggregation windows shift,
+      audit logs misorder, and SQL `WHERE timestamp BETWEEN` queries silently
+      drop records. Either pin the field to UTC (a Validate-on-construct
+      step that calls `t.UTC()`), document the convention in the struct doc
+      comment, or store epoch nanoseconds.
+    metadata:
+      proof:
+        signal_id: go.time_field_untagged_tz
+        provider: opengrep
+        confidence: medium
+        proposes_class:
+          - id: tz_explicit
+            summary: Stored or serialized timestamps shall carry an explicit, unambiguous timezone (UTC convention pinned at construction, sibling tz field, or epoch-nanosecond representation); silent reliance on the producer's local clock is prohibited.
+            kind: property
+            applies_when: code persists or transmits a time.Time across a process boundary (struct field with json/bson/gorm tag) and the field has no documented timezone convention
+        framework_hints:
+          - CWE-1278
+          - NIST-SP-800-160-3.2.4
+        notes: |
+          Pure-proposal rule. Real surfaces in tyk-pump:
+            - analytics/uptime_data.go:27-28 (TimeStamp, ExpireAt)
+            - analytics/uptime_data.go:126-127 (ExpireAt, LastTime in Aggregate)
+            - analytics/aggregate.go:46 (LastTime in Aggregate)
+            - analytics/aggregate.go:117-118
+          Pattern: time.Time struct field with json/bson/gorm tag.
+    paths:
+      exclude:
+        - "*_test.go"
+        - "cmd/**"
+        - "vendor/**"
+    patterns:
+      - pattern-either:
+          - pattern-regex: '\b\w+\s+time\.Time\s+`json:"[^"]+"`'
+          - pattern-regex: '\b\w+\s+time\.Time\s+`bson:"[^"]+"`'
+          - pattern-regex: '\b\w+\s+time\.Time\s+`bson:"[^"]+" json:"[^"]+"`'
+
+  - id: go.sql-table-sharding-by-date
+    severity: INFO
+    languages: [go]
+    message: |
+      Code routes records into per-day SQL tables (`tyk_aggregated_YYYYMMDD`
+      shape) based on the wall-clock instant of the record. Two failure
+      modes: (a) the window boundary is interpreted half-open in one path
+      and closed in another, so a single record either lands in two shards
+      or none; (b) records arriving after a DST or clock-skew event get
+      routed to a stale shard, breaking range queries. The sharding
+      function must declare its boundary semantics (UTC-day, [start, end)
+      half-open) and a Validate step must enforce that the chosen instant
+      maps to exactly one shard.
+    metadata:
+      proof:
+        signal_id: go.sql_table_sharding_by_date
+        provider: opengrep
+        confidence: medium
+        proposes_class:
+          - id: temporal_window_inclusive
+            summary: Temporal-window shard routing shall declare its inclusivity (half-open [start, end), UTC-anchored) AND a Validate step shall enforce that each record maps to exactly one shard; double-counted or dropped records at window boundaries are prohibited.
+            kind: property
+            applies_when: code routes data into per-window storage shards (per-day SQL tables, per-hour buckets) based on a timestamp field
+        framework_hints:
+          - CWE-1287
+          - CWE-1126
+        notes: |
+          Pure-proposal rule. Real surface in tyk-pump:
+            - pumps/sql.go:498 — `go func(baseName, cols string) { ... }`
+              spawned per sharded table when TableSharding is enabled,
+              table names ending in `_YYYYMMDD`.
+          Pattern: TableSharding-conditional code path that mints a
+          per-date table name suffix.
+    paths:
+      exclude:
+        - "*_test.go"
+        - "cmd/**"
+        - "vendor/**"
+    patterns:
+      - pattern-either:
+          - pattern: |
+              if $X.TableSharding {
+                ...
+              }
+          - pattern: |
+              $X.TableSharding = true
+
+  - id: go.purge-cycle-no-per-pump-result
+    severity: INFO
+    languages: [go]
+    message: |
+      The purge cycle fans work out to N pumps via `go execPumpWriting(&wg, pmp, ...)`
+      and waits on a single `wg.Wait()`. The outer loop has no per-pump
+      success/fail accounting — partial-progress is invisible to operators,
+      health probes, or downstream alerting. When 7 of 8 pumps drop a
+      batch but the 8th succeeds, the purge cycle reports "done" with no
+      diagnosable signal. Expose per-pump result (records-written,
+      records-dropped, last-error) via a metric, log line, or job event.
+    metadata:
+      proof:
+        signal_id: go.purge_cycle_no_per_pump_result
+        provider: opengrep
+        confidence: medium
+        proposes_class:
+          - id: partial_progress_observable
+            summary: When work is fanned out to N sibling consumers, per-consumer success / failure / partial-progress shall be individually observable; a successful outer barrier shall not mask silent per-consumer drops.
+            kind: property
+            applies_when: code fans out work to peer consumers and reports completion via a single barrier (sync.WaitGroup, error channel, context cancellation)
+        framework_hints:
+          - CWE-1295
+          - NIST-SP-800-160-3.2.4
+        notes: |
+          Pure-proposal rule. Real surface in tyk-pump:
+            - main.go:365-369 — `wg.Add(len(Pumps)); for ... { go execPumpWriting(&wg, pmp, ...) }; wg.Wait()`
+          The wg.Wait() returns without per-pump results.
+    paths:
+      exclude:
+        - "*_test.go"
+        - "cmd/**"
+        - "vendor/**"
+    patterns:
+      - pattern-either:
+          - pattern: |
+              wg.Add(len($P))
+              for $_, $X := range $P {
+                go $F(&wg, ...)
+              }
+              wg.Wait()
+          - pattern: |
+              $WG.Add(len($P))
+              for $_, $X := range $P {
+                go $F(&$WG, ...)
+              }
+              $WG.Wait()
+
+  - id: go.redis-expire-shared-key
+    severity: INFO
+    languages: [go]
+    message: |
+      Code calls `kv.Expire(ctx, key, expire)` on a Redis key whose lifetime
+      is governed by an absolute duration computed on the local clock. Two
+      failure modes: (a) the pump and Redis clocks disagree by ε, so the
+      pump's "this key is still alive" assumption races Redis's actual
+      eviction; (b) when the pump's clock jumps backwards (NTP step,
+      virtualization pause), the EXPIRE writes an expiration timestamp
+      that's already in the past, causing immediate eviction. Document
+      the clock-skew tolerance (`|pump.now - redis.now| < δ`) and either
+      assert it on init or switch to relative-TTL semantics validated by
+      a probe.
+    metadata:
+      proof:
+        signal_id: go.redis_expire_shared_key
+        provider: opengrep
+        confidence: medium
+        proposes_class:
+          - id: clock_skew_tolerated
+            summary: Components whose correctness depends on clock agreement with a peer (Redis EXPIRE, JWT exp, distributed-lock lease) shall declare an explicit skew tolerance (δ) and either probe-validate it at init or use clock-agnostic semantics (relative TTL with server-side time).
+            kind: property
+            applies_when: code computes an absolute expiration / lease / token-validity instant using the local clock and stores it for a peer to interpret
+        framework_hints:
+          - NIST-SP-800-160-3.2.4
+          - CWE-1247
+        notes: |
+          Pure-proposal rule. Real surface in tyk-pump:
+            - storage/temporal_storage.go:294 — `r.kv.Expire(ctx, fixedKey, expire)`
+          The `expire` duration is computed by the pump and shipped to
+          Redis without a documented skew bound.
+    paths:
+      exclude:
+        - "*_test.go"
+        - "cmd/**"
+        - "vendor/**"
+    patterns:
+      - pattern-either:
+          - pattern: $X.Expire($CTX, $KEY, $D)
+          - pattern: $X.kv.Expire($CTX, $KEY, $D)
+
+  - id: go.exponential-backoff-no-deadline
+    severity: INFO
+    languages: [go]
+    message: |
+      Code wraps an operation with `backoff.RetryNotify(fn,
+      backoff.WithMaxRetries(backoff.NewExponentialBackOff(), N))`. The
+      max-retries count bounds the number of attempts but NOT the wall-clock
+      time spent — at default exponential growth (initial 500ms, multiplier
+      1.5, max-interval 1 minute) N=3 can take up to 90 seconds but N=10
+      can take over 15 minutes. A purge loop running at a 1-second interval
+      that retries for 15 minutes accumulates 900 missed purge slots; the
+      next successful purge is now flushing a saturated upstream. Bound the
+      retry budget with an absolute deadline (`backoff.WithContext(ctx,...)`,
+      `MaxElapsedTime`) so retries do not consume the whole interval.
+    metadata:
+      proof:
+        signal_id: go.exponential_backoff_no_deadline
+        provider: opengrep
+        confidence: medium
+        proposes_class:
+          - id: retry_budget_bounded
+            summary: Retry loops shall be bounded by an absolute wall-clock or context deadline, not just an attempt count; the worst-case elapsed time at maximum retries shall be explicit and shall not exceed the surrounding cycle interval.
+            kind: property
+            applies_when: code uses bounded-retry-with-backoff (cenkalti/backoff, aws/retry, custom while-loop) where the bound is a count rather than a deadline
+        framework_hints:
+          - CWE-1088
+          - CWE-1322
+          - NIST-SP-800-53-SC-5
+        notes: |
+          Pure-proposal rule. Real surfaces in tyk-pump:
+            - pumps/hybrid.go:45 — `backoff.WithMaxRetries(backoff.NewExponentialBackOff(), 3)` (no context, no MaxElapsedTime override)
+            - retry/http-retry.go:96 — same shape with caller-supplied maxRetries
+        match_rationale: |
+          The exponential backoff has default MaxElapsedTime of 15 minutes
+          unless caller overrides; combined with WithMaxRetries(N) the
+          actual bound is min(N attempts, 15min) — usually the latter.
+    paths:
+      exclude:
+        - "*_test.go"
+        - "cmd/**"
+        - "vendor/**"
+    patterns:
+      - pattern-either:
+          - pattern: backoff.WithMaxRetries(backoff.NewExponentialBackOff(), $N)
+          - pattern: backoff.RetryNotify($FN, backoff.WithMaxRetries(backoff.NewExponentialBackOff(), $N), $NOTIFY)
+
+  - id: go.tls-skip-verify-config
+    severity: INFO
+    languages: [go]
+    message: |
+      A TLS client config sets `InsecureSkipVerify: $CFG.SSLInsecureSkipVerify`
+      from a config struct. The field is reachable from operator YAML
+      with no audit trail — a single misconfiguration disables certificate
+      validation across the deployment, MITM becomes trivially possible,
+      and there is no runtime warning. Either restrict the flag to an
+      explicit "development mode" that emits a startup WARN, or require a
+      paired `RootCAs` override so skipping verification AND ignoring the
+      system trust store cannot both happen by default.
+    metadata:
+      proof:
+        signal_id: go.tls_skip_verify_config
+        provider: opengrep
+        confidence: medium
+        proposes_class:
+          - id: tls_verification_explicit
+            summary: TLS peer verification shall be enabled by default; any code path that disables verification (InsecureSkipVerify, custom verifier returning nil) shall be guarded by an explicit, audited config option and shall emit a startup WARN or audit event.
+            kind: property
+            applies_when: code constructs a *tls.Config from operator-supplied configuration and the InsecureSkipVerify field is driven by a config struct field
+        framework_hints:
+          - CWE-295
+          - CWE-297
+          - NIST-SP-800-53-SC-8
+        notes: |
+          Pure-proposal rule. Real surfaces in tyk-pump:
+            - pumps/elasticsearch.go:176
+            - pumps/hybrid.go:191, 245
+            - pumps/kafka.go:118
+            - pumps/splunk.go:138
+            - pumps/common.go:249
+          All set InsecureSkipVerify from operator config with no startup
+          warning or audit signal.
+    paths:
+      exclude:
+        - "*_test.go"
+        - "cmd/**"
+        - "vendor/**"
+    patterns:
+      - pattern-either:
+          - pattern: |
+              InsecureSkipVerify: $CFG.$F
+          - pattern: |
+              InsecureSkipVerify: $CFG.$X.$F
+
+  - id: go.logfatal-on-config-decode
+    severity: INFO
+    languages: [go]
+    message: |
+      A pump's `Init(config)` method calls `log.Fatal(...)` on a config
+      decode or connection failure. log.Fatal calls os.Exit(1), bypassing
+      every deferred cleanup AND every sibling pump's chance to keep
+      working. A single misconfigured pump in a multi-pump deployment
+      takes down the whole process. Either return the error to the caller
+      (the pump-init driver should decide whether the failure is fatal
+      for the WHOLE process, or just for THIS pump), or recover into a
+      degraded "this pump is inert" mode while others continue.
+    metadata:
+      proof:
+        signal_id: go.logfatal_on_config_decode
+        provider: opengrep
+        confidence: high
+        proposes_class:
+          - id: process_exit_on_recoverable
+            summary: A subsystem-local failure (one pump's config decode, one connection failure) shall not call os.Exit / log.Fatal; the process shall either return the error to a coordinator that decides, or enter a per-subsystem inert mode preserving sibling-subsystem availability.
+            kind: property
+            applies_when: code calls log.Fatal / log.Fatalf / os.Exit from a per-subsystem initializer (pump.Init, plugin.Load) rather than from main / a top-level coordinator
+        framework_hints:
+          - CWE-755
+          - CWE-1357
+          - NIST-SP-800-53-SI-13
+        notes: |
+          Pure-proposal rule. Real surfaces in tyk-pump:
+            - pumps/sqs.go:103 — Fatal on config decode
+            - pumps/mongo.go:223 — Fatal on config decode
+            - pumps/logzio.go:124 — Fatal on config decode
+            - pumps/elasticsearch.go:364 — Fatal on config decode
+            - pumps/mongo.go:395 — Fatal on connect
+        match_rationale: |
+          The known-issues file mcdc-pumps-below-95 acknowledges these
+          surfaces as untestable (the process exits during the unit test),
+          which is itself the symptom of the violation. A proper
+          degraded_mode_declared design would make these arms testable.
+    paths:
+      exclude:
+        - "*_test.go"
+        - "cmd/**"
+        - "main.go"
+    patterns:
+      - pattern-either:
+          - pattern: |
+              func ($R $T) New(...) (...) {
+                ...
+                $LOG.Fatal(...)
+                ...
+              }
+          - pattern: |
+              func ($R $T) Init(...) error {
+                ...
+                $LOG.Fatal(...)
+                ...
+              }
+          - pattern: |
+              func ($R $T) Init(...) error {
+                ...
+                $LOG.Fatalf(...)
+                ...
+              }
+
+  - id: go.fanout-goroutine-no-recover
+    severity: INFO
+    languages: [go]
+    message: |
+      A goroutine spawned from a fanout (`go execPumpWriting(...)`,
+      `go func(){ ch <- pmp.WriteData(...) }()`) has no `defer
+      recover()` at the goroutine boundary. A panic inside any one pump's
+      WriteData (nil-pointer deref in a marshaller, divide-by-zero in
+      an aggregator) propagates up the goroutine stack, terminates the
+      process — taking sibling pumps and the purge loop with it.
+      The independence claim from `failure_independence_proven`
+      cannot hold without a per-fanout-goroutine recover barrier.
+    metadata:
+      proof:
+        signal_id: go.fanout_goroutine_no_recover
+        provider: opengrep
+        confidence: medium
+        proposes_class:
+          - id: fanout_panic_isolated
+            summary: Each goroutine spawned in a fanout shall recover from panics at its top frame; an unrecovered panic in any sibling shall not terminate the process or other siblings.
+            kind: property
+            applies_when: code spawns goroutines in a per-peer fanout (worker pool, per-pump dispatch, scatter-gather) and the goroutine top-frame does NOT begin with `defer func() { recover() }()`
+          - id: per_pump_circuit_breaker
+            summary: Each per-dependency consumer (one pump, one external sink) shall be wrapped in its own circuit breaker — repeated failure of one shall trip its breaker without affecting siblings; the breaker state shall be individually observable.
+            kind: domain
+            applies_when: code dispatches work to multiple per-dependency consumers (per-pump, per-sink, per-tenant) without a per-consumer failure-isolation mechanism
+        framework_hints:
+          - CWE-755
+          - CWE-1088
+          - NIST-SP-800-53-SC-5
+        notes: |
+          Pure-proposal rule. Real surface in tyk-pump:
+            - main.go:469 — `go func(ch chan error, ctx context.Context, pmp pumps.Pump, keys *[]interface{}) { ... ch <- pmp.WriteData(ctx, filteredKeys) }(ch, ctx, pmp, keys)`
+          No defer-recover at the goroutine top.
+    paths:
+      exclude:
+        - "*_test.go"
+        - "cmd/**"
+        - "vendor/**"
+    patterns:
+      - pattern-either:
+          - pattern: |
+              go func($CH chan error, $CTX context.Context, $P $PT, $K $KT) {
+                $FILT := $FILTER($P, *$K)
+                $CH <- $P.WriteData($CTX, $FILT)
+              }($CH, $CTX, $P, $K)
+          - pattern: |
+              go func($CH chan error, $CTX context.Context, $P pumps.Pump, $K *[]interface{}) {
+                ...
+                $CH <- $P.WriteData(...)
+              }(...)
