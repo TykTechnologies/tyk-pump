@@ -189,7 +189,7 @@ jobs:
           TAG=$(echo "${{ steps.ci_metadata_fips.outputs.tags }}" | tr ',' '\n' | head -n1)
           echo "Inspecting layer compression for tag: $TAG"
 
-          docker buildx imagetools inspect --raw "$TAG" > manifest.json
+          docker buildx imagetools inspect --raw -- "$TAG" > manifest.json
           if grep -q "tar+zstd" manifest.json; then
             echo "::error::Image contains zstd-compressed layers! This is incompatible with legacy registries."
             cat manifest.json | grep mediaType
@@ -237,7 +237,7 @@ jobs:
           TAG=$(echo "${{ steps.tag_metadata_fips.outputs.tags }}" | tr ',' '\n' | head -n1)
           echo "Inspecting layer compression for tag: $TAG"
 
-          docker buildx imagetools inspect --raw "$TAG" > manifest.json
+          docker buildx imagetools inspect --raw -- "$TAG" > manifest.json
           if grep -q "tar+zstd" manifest.json; then
             echo "::error::Image contains zstd-compressed layers! This is incompatible with legacy registries."
             cat manifest.json | grep mediaType
@@ -294,7 +294,7 @@ jobs:
           TAG=$(echo "${{ steps.ci_metadata_std.outputs.tags }}" | tr ',' '\n' | head -n1)
           echo "Inspecting layer compression for tag: $TAG"
 
-          docker buildx imagetools inspect --raw "$TAG" > manifest.json
+          docker buildx imagetools inspect --raw -- "$TAG" > manifest.json
           if grep -q "tar+zstd" manifest.json; then
             echo "::error::Image contains zstd-compressed layers! This is incompatible with legacy registries."
             cat manifest.json | grep mediaType
@@ -341,7 +341,7 @@ jobs:
           TAG=$(echo "${{ steps.tag_metadata_std.outputs.tags }}" | tr ',' '\n' | head -n1)
           echo "Inspecting layer compression for tag: $TAG"
 
-          docker buildx imagetools inspect --raw "$TAG" > manifest.json
+          docker buildx imagetools inspect --raw -- "$TAG" > manifest.json
           if grep -q "tar+zstd" manifest.json; then
             echo "::error::Image contains zstd-compressed layers! This is incompatible with legacy registries."
             cat manifest.json | grep mediaType
