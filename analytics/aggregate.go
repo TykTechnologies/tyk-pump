@@ -517,7 +517,6 @@ func (f *AnalyticsRecordAggregate) AsTimeUpdate() model.DBM {
 
 	// We need to create lists of API data so that we can aggregate across the list
 	// in order to present top-20 style lists of APIs, Tokens etc.
-	// apis := make([]Counter, 0)
 	newUpdate["$set"].(model.DBM)["lists.apiid"] = f.getRecords("apiid", f.APIID, newUpdate)
 
 	newUpdate["$set"].(model.DBM)["lists.errors"] = f.getRecords("errors", f.Errors, newUpdate)
@@ -708,6 +707,11 @@ func AggregateData(data []interface{}, trackAllPaths bool, ignoreTagPrefixList [
 
 		// We don't want to aggregate Graph Data with REST data - there is a different type for that.
 		if thisV.IsGraphRecord() {
+			continue
+		}
+
+		// We don't want to aggregate MCP Data with REST data - there is a different type for that.
+		if thisV.IsMCPRecord() {
 			continue
 		}
 

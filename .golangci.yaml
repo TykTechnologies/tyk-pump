@@ -2,6 +2,7 @@ version: "2"
 linters:
   enable:
     - bodyclose
+    - depguard
     - dupl
     - gocritic
     - gosec
@@ -9,6 +10,14 @@ linters:
     - revive
     - whitespace
   settings:
+    depguard:
+      rules:
+        main:
+          deny:
+            - pkg: "io/ioutil"
+              desc: "Use os and io packages instead (deprecated since Go 1.16)"
+            - pkg: "github.com/pkg/errors"
+              desc: "Use fmt.Errorf with %w verb for error wrapping"
     dupl:
       # tokens count to trigger issue, 150 by default
       threshold: 100

@@ -11,7 +11,6 @@ import (
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
-	gorm_logger "gorm.io/gorm/logger"
 )
 
 // @PumpConf SQLAggregate
@@ -93,34 +92,11 @@ func (c *SQLAggregatePump) Init(conf interface{}) error {
 
 	processPumpEnvVars(c, c.log, c.SQLConf, SQLAggregateDefaultENV)
 
-	logLevel := gorm_logger.Silent
-
-	switch c.SQLConf.LogLevel {
-	case "debug":
-		logLevel = gorm_logger.Info
-	case "info":
-		logLevel = gorm_logger.Warn
-	case "warning":
-		logLevel = gorm_logger.Error
-	}
-
-	dialect, errDialect := Dialect(&c.SQLConf.SQLConf)
-	if errDialect != nil {
-		c.log.Error(errDialect)
-		return errDialect
-	}
-	c.dbType = c.SQLConf.Type
-
-	db, err := gorm.Open(dialect, &gorm.Config{
-		AutoEmbedd:  true,
-		UseJSONTags: true,
-		Logger:      gorm_logger.Default.LogMode(logLevel),
-	})
+	db, err := OpenGormDB(&c.SQLConf.SQLConf, c.log)
 	if err != nil {
-		c.log.Error(err)
 		return err
 	}
-
+	c.dbType = c.SQLConf.Type
 	c.db = db
 
 	// Handle table migration

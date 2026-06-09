@@ -81,6 +81,67 @@ func TestSerializer_Decode(t *testing.T) {
 	}
 }
 
+func TestSerializer_MCPStats_Roundtrip(t *testing.T) {
+	tcs := []struct {
+		testName   string
+		serializer AnalyticsSerializer
+	}{
+		{
+			testName:   "msgpack",
+			serializer: NewAnalyticsSerializer(MSGP_SERIALIZER),
+		},
+		{
+			testName:   "protobuf",
+			serializer: NewAnalyticsSerializer(PROTOBUF_SERIALIZER),
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.testName, func(t *testing.T) {
+			record := analytics.AnalyticsRecord{
+				APIID:    "api_1",
+				OrgID:    "org_1",
+				ExpireAt: time.Now().Add(time.Hour).Round(0),
+				MCPStats: analytics.MCPStats{
+					IsMCP:         true,
+					JSONRPCMethod: "tools/call",
+					PrimitiveType: "tool",
+					PrimitiveName: "get_weather",
+				},
+			}
+
+			encoded, err := tc.serializer.Encode(&record)
+			assert.NoError(t, err)
+
+			decoded := &analytics.AnalyticsRecord{}
+			err = tc.serializer.Decode(encoded, decoded)
+			assert.NoError(t, err)
+
+			assert.True(t, decoded.IsMCPRecord(), "decoded record should be identified as MCP")
+			assert.Equal(t, record.MCPStats, decoded.MCPStats)
+		})
+	}
+}
+
+func TestSerializer_NonMCP_NoMCPStats(t *testing.T) {
+	serializer := NewAnalyticsSerializer(PROTOBUF_SERIALIZER)
+
+	record := analytics.AnalyticsRecord{
+		APIID: "api_1",
+		OrgID: "org_1",
+	}
+
+	encoded, err := serializer.Encode(&record)
+	assert.NoError(t, err)
+
+	decoded := &analytics.AnalyticsRecord{}
+	err = serializer.Decode(encoded, decoded)
+	assert.NoError(t, err)
+
+	assert.False(t, decoded.IsMCPRecord(), "non-MCP record should not be identified as MCP")
+	assert.Equal(t, analytics.MCPStats{}, decoded.MCPStats)
+}
+
 func TestSerializer_GetSuffix(t *testing.T) {
 	tcs := []struct {
 		testName       string

@@ -6,6 +6,9 @@ on:
     branches:
       - master
 
+permissions:
+  contents: read
+
 env:
   TYK_PMP_ANALYTICSSTORAGETYPE: redis
   TYK_PMP_ANALYTICSSTORAGECONFIG_TYPE: redis
@@ -22,7 +25,8 @@ jobs:
         redis-version: [5]
         mongodb-version: [4.2]
         postgres-version: [15]
-        go: [1.24]
+        mysql-version: ["8.0"]
+        go: [1.25]
 
     services:
       redis:
@@ -46,29 +50,43 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+      mysql:
+        image: mysql:${{ matrix.mysql-version }}
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: tyk_analytics
+          MYSQL_USER: tyk
+          MYSQL_PASSWORD: tyk123
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
 
     steps:
       - name: Checkout Tyk Pump
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           fetch-depth: 2
 
       - name: Setup Golang
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
         with:
           go-version: ${{ matrix.go }}
 
       - name: Install Dependencies and basic hygiene test
         id: hygiene
         run: |
-          go install golang.org/x/tools/cmd/goimports@latest
+          go install golang.org/x/tools/cmd/goimports@v0.33.0
 
       - name: Fetch base branch
         if: ${{ github.event_name == 'pull_request' }}
         run: git fetch origin ${{ github.base_ref }}
 
       - name: Cache
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: ~/go/pkg/mod
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
@@ -79,6 +97,7 @@ jobs:
         id: ci-tests
         env:
           TYK_TEST_POSTGRES: "host=localhost user=tyk password=tyk123 dbname=tyk_analytics port=5432 sslmode=disable"
+          TYK_TEST_MYSQL: "tyk:tyk123@tcp(localhost:3306)/tyk_analytics?parseTime=true"
         run: |
           ./bin/ci-test.sh 2>&1 | tee test.log
           result_code=${PIPESTATUS[0]}
@@ -109,8 +128,8 @@ jobs:
           if (( ${#failed[@]} )); then
             # Join the failed job names with commas
             failed_jobs=$(IFS=", "; echo "${failed[*]}")
-            echo "❌ Failed jobs ----- : $failed_jobs"
+            echo "Failed jobs ----- : $failed_jobs"
             exit 1
           fi
 
-          echo "✅ All required jobs succeeded"
+          echo "All required jobs succeeded"

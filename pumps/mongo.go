@@ -78,9 +78,11 @@ type BaseMongoConf struct {
 	// Path to the PEM file which contains both client certificate and private key. This is
 	// required for Mutual TLS.
 	MongoSSLPEMKeyfile string `json:"mongo_ssl_pem_keyfile" mapstructure:"mongo_ssl_pem_keyfile"`
-	// Specifies the mongo DB Type. If it's 0, it means that you are using standard mongo db. If it's 1 it means you are using AWS Document DB. If it's 2, it means you are using CosmosDB.
-	// Defaults to Standard mongo (0).
-	MongoDBType MongoType `json:"mongo_db_type" mapstructure:"mongo_db_type"`
+	// Specify the target MongoDB compatible database:
+	// - set to `0` for MongoDB (default)
+	// - set to `1` for AWS Document DB
+	// - set to `2` for CosmosDB
+	MongoDBType MongoType `json:"mongo_db_type" mapstructure:"mongo_db_type" envconfig:"MONGO_DB_TYPE" type:"int"`
 	// Set to true to disable the default tyk index creation.
 	OmitIndexCreation bool `json:"omit_index_creation" mapstructure:"omit_index_creation"`
 	// Set the consistency mode for the session, it defaults to `Strong`. The valid values are: strong, monotonic, eventual.
@@ -386,9 +388,24 @@ func (m *MongoPump) WriteData(ctx context.Context, data []interface{}) error {
 		m.log.Fatal("No collection name!")
 	}
 
-	m.log.Debug("Attempting to write ", len(data), " records...")
+	// MCP records are handled by dedicated MCP pumps, skip them here.
+	filtered := make([]interface{}, 0, len(data))
+	for _, d := range data {
+		if rec, ok := d.(analytics.AnalyticsRecord); ok && rec.IsMCPRecord() {
+			continue
+		}
+		filtered = append(filtered, d)
+	}
+	if len(filtered) == 0 {
+		return nil
+	}
 
-	accumulateSet := m.AccumulateSet(data, false)
+	m.log.Debug("Attempting to write ", len(filtered), " records...")
+
+	accumulateSet := m.AccumulateSet(filtered, false)
+	if len(accumulateSet) == 0 {
+		return nil
+	}
 
 	errCh := make(chan error, len(accumulateSet))
 	for _, dataSet := range accumulateSet {
@@ -419,7 +436,7 @@ func (m *MongoPump) WriteData(ctx context.Context, data []interface{}) error {
 			}
 		}
 	}
-	m.log.Info("Purged ", len(data), " records...")
+	m.log.Info("Purged ", len(filtered), " records...")
 
 	return nil
 }
