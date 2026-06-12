@@ -48,13 +48,21 @@ history:
     created_by: human:cli
     created_at: "2026-05-30T08:36:07Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-03T07:39:38Z"
+    last_modified_at: "2026-06-11T16:09:14Z"
 obligation_checklist:
     - cert_validation_strict
     - errors_propagated
     - external_call_failure_observable
     - ssrf_protection
 obligation_suppressions:
+    - id: cert_validation_strict
+      reason: 'cert_validation_strict code signal at pumps/splunk.go:138: Splunk HTTP client TLS config derives InsecureSkipVerify from p.config.SSLInsecureSkipVerify (default false => verification ON), honoring CA/cert/key files and SSLServerName for hostname pinning. Default-secure, operator-opt-in boundary. Reviewed: in-contract behavior is strict verification by default. Not a defect.'
+      suppressed_by: human:leo
+      suppressed_at: "2026-06-11T16:09:14Z"
+      framework_refs:
+        - CWE CWE-295,CWE-297
+        - NIST-800-53 SC-23,SC-17
+        - OWASP-ASVS-v4 V9.1.1,V9.2.1
     - id: determinism
       reason: 'Phase N opengrep rule go.range.mutate-iteratee flags pumps/splunk.go:166 FilterTags doing copy/append-shrink while ranging the same slice, skipping consecutive matches. Documented in KI splunk-filtertags-skips-consecutive-matches with mitigation and remediation tracked. Not a new obligation gap.'
       suppressed_by: buger

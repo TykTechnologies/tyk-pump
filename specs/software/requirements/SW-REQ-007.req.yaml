@@ -69,7 +69,7 @@ history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:14Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-03T07:38:07Z"
+    last_modified_at: "2026-06-11T16:16:53Z"
 obligation_checklist:
     - boundary
     - cancellation_observed
@@ -77,6 +77,10 @@ obligation_checklist:
     - nominal
     - resource_lifetime_released
 obligation_suppressions:
+    - id: clock_skew_tolerated
+      reason: 'clock_skew_tolerated code signal at storage/temporal_storage.go:294: the kv.Expire TTL refresh applies a relative duration against Redis''s clock while the pump reasons on its local clock, so clock skew or backward jumps can mis-expire the key. This genuine surface is now documented and dispositioned by KI getanddeleteset-expire-ttl-assumes-clock-sync (affects SW-REQ-007, ship_with_known_issue; the runtime counterpart of the open SYS-REQ-028 redis-protocol assumption; mitigation: NTP-synced clocks). Not an undocumented gap.'
+      suppressed_by: human:leo
+      suppressed_at: "2026-06-11T16:16:53Z"
     - id: concurrent
       reason: 'Phase N opengrep rule go.pkgvar.mutated-without-sync flags storage/temporal_storage.go:142 resetConnection writing to package-level connectorSingleton without sync primitive. Documented in KI storage-connector-singleton-race with mitigation (Init called once per process) and remediation (sync.Once/Mutex wrap) tracked. Not a new obligation gap.'
       suppressed_by: buger

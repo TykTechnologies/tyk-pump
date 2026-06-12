@@ -22,11 +22,14 @@ utils/release_rc.sh
 .terraform**
 .claude/settings.local.json
 dist/
-.proof/
+.proof/*
 # but DO track first-class spec artifacts that proof persists under .proof/
+# (ignore direct children only with .proof/* so these negations can re-include dirs)
 !.proof/known-issues/
 !.proof/risks/
 !.proof/changes/
 !.proof/manual-evidence/
 !.proof/releases/
+!.proof/catalog/
+!.proof/problem-reports/
 !.proof/workspace.yaml

@@ -358,6 +358,7 @@ func checkShutdown(ctx context.Context, wg *sync.WaitGroup) bool {
 }
 
 // reqproof:implements SW-REQ-001
+// reqproof:implements SW-REQ-075
 func writeToPumps(keys []interface{}, job *health.Job, startTime time.Time, purgeDelay int) {
 	// Send to pumps
 	if Pumps != nil {
@@ -375,6 +376,7 @@ func writeToPumps(keys []interface{}, job *health.Job, startTime time.Time, purg
 }
 
 // reqproof:implements SW-REQ-001
+// reqproof:implements SW-REQ-076
 func filterData(pump pumps.Pump, keys []interface{}) []interface{} {
 	shouldTrim := SystemConfig.MaxRecordSize != 0 || pump.GetMaxRecordSize() != 0
 	filters := pump.GetFilters()
@@ -433,6 +435,7 @@ func filterData(pump pumps.Pump, keys []interface{}) []interface{} {
 
 // reqproof:implements SW-REQ-001
 // reqproof:implements SW-REQ-072
+// reqproof:implements SW-REQ-075
 func execPumpWriting(wg *sync.WaitGroup, pmp pumps.Pump, keys *[]interface{}, purgeDelay int, startTime time.Time, job *health.Job) {
 	timer := time.AfterFunc(time.Duration(purgeDelay)*time.Second, func() {
 		if pmp.GetTimeout() == 0 {

@@ -48,7 +48,7 @@ history:
     created_by: human:cli
     created_at: "2026-05-30T08:35:48Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-03T07:39:06Z"
+    last_modified_at: "2026-06-11T16:11:15Z"
 obligation_checklist:
     - concurrent
     - connection_leak_free
@@ -95,6 +95,10 @@ obligation_suppressions:
         - CWE CWE-89
         - NIST-800-53 SI-10
         - OWASP-ASVS-v4 V5.3.4,V5.3.5
+    - id: temporal_window_inclusive
+      reason: 'temporal_window_inclusive code signal at pumps/mcp_sql_aggregate.go:215: this pump routes records into a per-day shard via AnalyticsRecord.TimeStamp.Format("20060102"), which inherits the record''s (possibly non-UTC) location. The unpinned-timezone root cause and its date-shard boundary ambiguity are filed as KI analytics-timestamp-timezone-convention-unpinned (ship_with_known_issue; mitigation: run gateway+pump with TZ=UTC; remediation: pin TimeStamp to UTC on decode). Genuine surface, documented and dispositioned — not an undocumented gap.'
+      suppressed_by: human:leo
+      suppressed_at: "2026-06-11T16:11:15Z"
 release_disposition: ship_with_known_issue
 lifecycle:
     change_history:

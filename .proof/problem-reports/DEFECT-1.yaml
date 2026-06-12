@@ -1,0 +1,90 @@
+schema_version: 1
+id: DEFECT-1
+title: MCP Mongo aggregate cross-API document merge
+description: |
+  MCPMongoAggregatePump.DoMCPAggregatedWriting built its upsert match query
+  on only (orgid, timestamp), so concurrent aggregate writes from two MCP
+  proxies that landed in the same time bucket merged into a single MongoDB
+  document. The dashboard's per-api_id filter (apiid.<X>: $exists) still
+  matched that merged document; unwinding lists.names then returned counters
+  from BOTH proxies, and a query scoped to one proxy reported the sum
+  (e.g. 5+2=7) instead of just that proxy's traffic — silent cross-tenant
+  metric corruption.
+  Fixed by adding OwnerAPIID (bson "owner_apiid") to MCPRecordAggregate,
+  populating it from record.APIID in initMCPAggregateForRecord, and adding
+  it to the upsert match query so each (org, timestamp, api) gets its own
+  document. Original ticket TT-17004 (#989), tag v1.15.0-rc1.
+source:
+    type: upstream_commit
+    repo: TykTechnologies/tyk-pump
+    commit: be39ad3
+    reference: TT-17004
+    date: "2026-04-28"
+classification:
+    surface: data_integrity
+    defect_class: incorrect_upsert_key
+    severity: high
+    security_relevant: false
+root_cause:
+    missing_requirement: false
+    missing_test_partition: true
+    missing_mcdc_variable: false
+    notes: |
+      A requirement for the MCP-mongo-aggregate upsert existed conceptually but
+      the per-(org,timestamp,api) document-partitioning key was never asserted
+      by a test partition: no test wrote two records from different APIs sharing
+      one (org,timestamp) and checked they produced two distinct documents.
+      The regression test added in the fix (PerAPIPartitioning) closes that gap.
+impact_analysis:
+    affected_requirements:
+        - SW-REQ-039
+    affected_code:
+        - pumps/mcp_mongo_aggregate.go
+        - analytics/aggregate_mcp.go
+hardening:
+    # Coverage pre-existed (SW-REQ-039 already models the MCP-mongo-aggregate
+    # per-{orgid,timestamp,owner_apiid} upsert), so no NEW requirement was
+    # authored. root_cause.missing_test_partition was the real gap: no test
+    # asserted that two APIs in one (org,timestamp) bucket produce two distinct
+    # documents. Strengthened by attaching the edge_case obligation (the
+    # cross-api same-bucket interaction) and annotating the regression test as
+    # its example evidence so the audit enforces it henceforth.
+    new_requirements: []
+    strengthened_requirements:
+        - SW-REQ-039
+    added_obligations:
+        - requirement: SW-REQ-039
+          obligation_class: edge_case
+    regression_tests:
+        - pumps/mcp_mongo_aggregate_test.go:TestMCPMongoAggregatePump_WriteData_PerAPIPartitioning
+disposition:
+    status: covered_by_requirement
+    requirements:
+        - SW-REQ-039
+    evidence:
+        verified_by:
+            - pumps/mcp_mongo_aggregate_test.go:TestMCPMongoAggregatePump_WriteData_PerAPIPartitioning
+        obligation_evidence:
+            - requirement: SW-REQ-039
+              obligation_class: edge_case
+              evidence_type: example
+    reviewer: agent:claude-opus-4-8
+    reviewed_at: "2026-06-10T17:00:00Z"
+history:
+    - at: "2026-06-10T07:25:21Z"
+      by: human:buger
+      action: created
+    - at: "2026-06-10T07:40:00Z"
+      by: human:buger
+      action: dispositioned
+      detail: covered_by_requirement SW-REQ-039 with PerAPIPartitioning regression test
+    - at: "2026-06-10T17:00:00Z"
+      by: agent:claude-opus-4-8
+      action: hardened
+      detail: |
+        Recorded hardening: closed the missing_test_partition gap. Attached the
+        edge_case obligation to SW-REQ-039 and annotated
+        TestMCPMongoAggregatePump_WriteData_PerAPIPartitioning with
+        // SW-REQ-039:edge_case:example. Test PASSES against current code (the
+        owner_apiid upsert key holds): two APIs sharing one (org,timestamp)
+        produce two docs with per-api hit counts {2,5}, not one merged {7}.

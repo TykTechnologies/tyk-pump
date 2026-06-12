@@ -189,15 +189,13 @@ func TestMongoSelectivePump_EnsureIndexes_ErrAfterContainerStop(t *testing.T) {
 // SW-REQ-063:errors_propagated:negative — aggregate ensureIndexes propagates
 // CreateIndex error after stop.
 // MCDC SW-REQ-063: collection_already_exists=F, create_index_skipped=F, omit_index_creation=F => TRUE
-// MCDC SW-REQ-063: collection_already_exists=F, create_index_skipped=F, omit_index_creation=T => FALSE
-// MCDC SW-REQ-063: collection_already_exists=F, create_index_skipped=T, omit_index_creation=T => TRUE
-// MCDC SW-REQ-063: collection_already_exists=T, create_index_skipped=F, omit_index_creation=T => TRUE
 //
-// omit_index_creation=F arm (default): ensureIndexes is invoked and propagates the
-// CreateIndex error after the container stops — create_index_skipped=F (vacuous true under
-// the FRETish "when omit_index_creation" trigger). The omit_index_creation=T/skipped=T arm is
-// exercised by tests setting OmitIndexCreation=true in the cfg (see
-// TestMongoAggregatePump_EnsureIndexes_OmittedSkipsCreate in this file).
+// omit_index_creation=F (default) and DocumentDB type so the collectionExists
+// check is bypassed (collection_already_exists=F): ensureIndexes attempts the
+// CreateIndex calls (create_index_skipped=F) and propagates the error after the
+// container stops. The antecedent (omit | exists) is false, so the guarantee is
+// vacuously satisfied — row 1. The skipped=T (row 5) case is driven by
+// TestMongoAggregatePump_EnsureIndexes_OmitOnExisting below.
 func TestMongoAggregatePump_EnsureIndexes_ErrAfterContainerStop(t *testing.T) {
 	uri, teardown := startDedicatedMongo(t)
 	p := &MongoAggregatePump{}

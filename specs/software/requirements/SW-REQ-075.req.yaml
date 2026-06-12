@@ -1,0 +1,60 @@
+id: SW-REQ-075
+version: 1
+status: approved
+priority: shall
+category: functional
+req_type: guarantee
+fretish: when a_backend_failed delivery shall always satisfy other_backends_written
+description: main.writeToPumps shall write to each configured backend in its own execPumpWriting goroutine and wait for all of them, so a failure, error, or timeout contained within one pump's goroutine (logged as a Warning, not propagated) does not prevent the records being written to the remaining backends.
+formalization_strategy: fretish
+informal_verification:
+    method: ""
+    evidence: ""
+    verified: false
+parent: SYS-REQ-004
+component: delivery
+rationale: 'Software decomposition of SYS-REQ-004 other_backends_written: the per-backend fan-out independence lives in main.writeToPumps/execPumpWriting (pump-core), distinct from the per-pump timeout abort modeled by SW-REQ-072.'
+tags: []
+variables:
+    - a_backend_failed
+    - other_backends_written
+traces:
+    satisfies:
+        - SYS-REQ-004
+    reviewed_at: "2026-06-11T17:06:55.655402Z"
+    reviewed_by: agent:claude-opus-4-8
+    reviewed_fingerprint: sha256:39a980102d8ae707b24632c32c05951c3a9564eb2599886460937b4591b866be
+verification:
+    assurance_level: B
+    formalization_status: valid
+    review:
+        status: approved
+        reviewer: human:agent:claude-opus-4-8
+        role: software_engineer
+        reviewed_at: "2026-06-11T16:42:59Z"
+        comment: 'Software decomposition of SYS-REQ-004 other_backends_written: per-backend fan-out independence in main.writeToPumps (one execPumpWriting goroutine per pump; per-goroutine error/timeout containment, logged not propagated). Verified by TestWriteDataWithFilters with all 3 MC/DC rows covered; implemented_by writeToPumps/execPumpWriting.'
+        fingerprint: sha256:d0f8a8202e3014b27d9335def90918cef5827667147b38bf2c6f5f4cf750eed1
+        ai_generated: false
+    impact_reviews:
+        - requirement: SW-REQ-075
+          artifact: main.go
+          decision: no-authored-change
+          reviewer: agent:claude-opus-4-8
+          reason: 'Consolidation pass: the prior ReqProof-coverage agents'' changes to these production files are behavior-preserving only — added // reqproof:implements trace annotations and trailing //mcdc:ignore comments on existing branches; no executable code path, signature, or logic changed. Requirement intent and formalization are unchanged.'
+          base: origin/master
+          requirement_fingerprint: sha256:39a980102d8ae707b24632c32c05951c3a9564eb2599886460937b4591b866be
+          approval_fingerprint: sha256:d0f8a8202e3014b27d9335def90918cef5827667147b38bf2c6f5f4cf750eed1
+          artifact_fingerprint: sha256:454d0a615fe12f372232c9e594a331e7651473dc3d607f8350fac761abeaa882
+          reviewed_at: "2026-06-11T18:47:54Z"
+history:
+    created_by: human:cli
+    created_at: "2026-06-11T16:41:40Z"
+    last_modified_by: human:cli
+    last_modified_at: "2026-06-11T16:42:59Z"
+lifecycle:
+    change_history:
+        - date: "2026-06-11T16:42:53Z"
+          from: draft
+          to: review
+          reason: Software decomposition child for SYS-REQ-004 other_backends_written
+          changed_by: human:cli

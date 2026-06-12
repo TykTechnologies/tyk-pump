@@ -16,7 +16,6 @@ project:
           prefix: INT-REQ
           type: interface
           parent_spec: specs/system
-          cross_component: true
     default_assurance_level: B
     catalog:
         version: 1.0.0

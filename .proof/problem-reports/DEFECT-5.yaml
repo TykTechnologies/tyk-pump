@@ -1,0 +1,132 @@
+schema_version: 1
+id: DEFECT-5
+title: Prometheus pump exposed full API keys as metric label values
+description: |
+  PrometheusMetric.GetLabelsValues mapped decoded.APIKey verbatim into the
+  "api_key"/"key" Prometheus label values. Any operator scraping /metrics — and
+  any downstream metrics store / dashboard — therefore received cleartext API
+  keys as high-cardinality label values, a credential-exposure / secrets-in-
+  telemetry problem. TT-13937 (#866, commit 09aaa8d) added the ObfuscateAPIKeys
+  (default false) and ObfuscateAPIKeysLength (default 4) config and an
+  obfuscateAPIKey() helper that, when enabled, masks the key to "****" + last 4
+  chars (or "--" for keys <= 4 chars).
+  Security note: the masking is OPT-IN; the default (ObfuscateAPIKeys=false)
+  still emits full keys, so the secrets-in-telemetry exposure persists unless an
+  operator turns it on.
+source:
+    type: upstream_commit
+    repo: TykTechnologies/tyk-pump
+    commit: 09aaa8d
+    reference: TT-13937
+    date: "2026-02-12"
+classification:
+    surface: security_behavior
+    defect_class: secret_exposed_in_telemetry
+    severity: high
+    security_relevant: true
+root_cause:
+    missing_requirement: true
+    missing_test_partition: false
+    missing_mcdc_variable: false
+    notes: |
+      No requirement in the corpus covers API-key obfuscation for the Prometheus
+      pump. SW-REQ-024 only states the pump "shall expose analytics as
+      Prometheus metrics for scraping" and carries an auth_required obligation
+      for the exposition endpoint — it says nothing about masking secret label
+      values. SW-REQ-048 (Splunk) is the only requirement mentioning
+      ObfuscateAPIKeys, and it is scoped to the Splunk pump, not Prometheus.
+      The behavior is exercised by tests (TestPrometheusGetLabelsValues has
+      obfuscation cases) but there is no requirement to anchor those tests to a
+      security guarantee, and the insecure default is unspecified.
+
+      HARDENING (2026-06-10, agent:claude-opus-4-8): the assurance gap was
+      closed end-to-end, not just recorded:
+        * NEW requirement SW-REQ-074 (first authored under a placeholder id
+          in the 209 range, then renumbered to close the 074-208 numbering
+          gap so ids are contiguous 001-074) (component pumps-prometheus,
+          assurance_level B, parent SYS-REQ-016 / privacy) models the masking
+          guarantee in FRETish: "when obfuscate_api_keys_enabled
+          pumps_prometheus shall always satisfy api_key_label_masked", with
+          acceptance criteria pinning the ****+last-N contract, the "--"
+          fully-masked branch, and the documented opt-in (off) default.
+        * OBLIGATION class secrets_not_logged (CWE-532, OWASP-ASVS-v4 V7.1.1)
+          attached to SW-REQ-074's obligation_checklist — the catalog's
+          "secrets/PII never appear in logs/telemetry" class, the exact failure
+          mode of this defect.
+        * CODE annotated: pumps/prometheus.go obfuscateAPIKey carries
+          // reqproof:implements SW-REQ-074 (implemented_by trace).
+        * REGRESSION TEST + MC/DC: pumps/prometheus_test.go
+          TestPrometheusObfuscateAPIKey asserts (a) enabled+long key masks to
+          ****+last4 with the raw key NotContains the label, (b) enabled+short
+          key fully masks to "--", (c) disabled returns the raw key (the
+          documented opt-in default). All three SW-REQ-074 MC/DC witness rows
+          are covered (// MCDC SW-REQ-074: ...). The F/T=FALSE violation row
+          (obfuscation on yet label unmasked) is guarded by the NotContains
+          assertions, so a regression that re-leaked the key fails the test and
+          the mcdc_coverage obligation.
+      SW-REQ-074 is audit-clean (approvals_current, suspect_clean,
+      coverage_met, mcdc_coverage, obligation_evidence_complete,
+      variables_declared, cross_level_complete all pass for it).
+impact_analysis:
+    # Originally attributed to SW-REQ-024 ("expose analytics as Prometheus
+    # metrics") because that was the only Prometheus requirement at intake.
+    # The hardening loop authored SW-REQ-074, which is the requirement that
+    # actually models this defect's surface (the api_key/key label masking
+    # guarantee). SW-REQ-024 is intentionally NOT relisted here: its only
+    # remaining open concern is the unrelated http.DefaultServeMux KI
+    # (prometheus-init-mutates-default-mux), which has nothing to do with
+    # API-key exposure. The SW-REQ-024 provenance is retained in root_cause.notes.
+    affected_requirements:
+        - SW-REQ-074
+    affected_code:
+        - pumps/prometheus.go
+hardening:
+    new_requirements:
+        - SW-REQ-074
+    added_obligations:
+        - requirement: SW-REQ-074
+          obligation_class: secrets_not_logged
+    regression_tests:
+        - pumps/prometheus_test.go:TestPrometheusObfuscateAPIKey
+    mcdc_witnesses:
+        - requirement: SW-REQ-074
+          witness: "api_key_label_masked=T, obfuscate_api_keys_enabled=T => TRUE"
+disposition:
+    status: covered_by_requirement
+    requirements:
+        - SW-REQ-074
+    evidence:
+        verified_by:
+            - pumps/prometheus_test.go:TestPrometheusObfuscateAPIKey
+        requirement_mcdc_witnesses:
+            - requirement: SW-REQ-074
+              witness: "api_key_label_masked=F, obfuscate_api_keys_enabled=F => TRUE (gate off: documented opt-in default, masking vacuously satisfied)"
+            - requirement: SW-REQ-074
+              witness: "api_key_label_masked=F, obfuscate_api_keys_enabled=T => FALSE (violation row: gate on yet label unmasked; guarded by NotContains assertions)"
+            - requirement: SW-REQ-074
+              witness: "api_key_label_masked=T, obfuscate_api_keys_enabled=T => TRUE (gate on: ****+last-N or '--', raw key absent)"
+        obligation_evidence:
+            - requirement: SW-REQ-074
+              obligation_class: secrets_not_logged
+              evidence_type: example
+    reviewer: agent:claude-opus-4-8
+    reviewed_at: "2026-06-10T12:30:00Z"
+history:
+    - at: "2026-06-10T08:00:00Z"
+      by: human:buger
+      action: created
+    - at: "2026-06-10T08:01:00Z"
+      by: human:buger
+      action: triaged
+      detail: genuine open coverage gap — no Prometheus obfuscation requirement exists
+    - at: "2026-06-10T12:30:00Z"
+      by: agent:claude-opus-4-8
+      action: dispositioned
+      detail: |
+        covered_by_requirement via NEW SW-REQ-074 (Prometheus API-key masking
+        guarantee, obligation secrets_not_logged). Hardened end-to-end: code
+        annotation (obfuscateAPIKey), regression test
+        TestPrometheusObfuscateAPIKey with all 3 MC/DC witness rows, approved
+        at assurance_level B. The recurrence guard is the mcdc_coverage +
+        obligation evidence on SW-REQ-074: removing the masking test/witness
+        re-opens an audit finding.

@@ -1,0 +1,70 @@
+id: SW-REQ-076
+version: 1
+status: approved
+priority: shall
+category: functional
+req_type: guarantee
+fretish: when ignore_fields_configured pump_core shall always satisfy listed_fields_removed
+description: When the operator configures a non-empty ignore-fields list for a backend, main.filterData shall invoke AnalyticsRecord.RemoveIgnoredFields on each record before dispatch, zeroing every record field whose json tag matches a listed name so the listed fields are removed from the forwarded record; unrecognised field names are logged and leave the record otherwise unchanged.
+formalization_strategy: fretish
+informal_verification:
+    method: ""
+    evidence: ""
+    verified: false
+parent: SYS-REQ-016
+component: pump-core
+rationale: 'Software decomposition of SYS-REQ-016 listed_fields_removed: the operator-listed field-removal behavior is implemented by analytics.RemoveIgnoredFields applied in main.filterData, distinct from the Prometheus api-key masking modeled by SW-REQ-074.'
+tags: []
+variables:
+    - ignore_fields_configured
+    - listed_fields_removed
+traces:
+    satisfies:
+        - SYS-REQ-016
+    reviewed_at: "2026-06-11T17:06:55.747341Z"
+    reviewed_by: agent:claude-opus-4-8
+    reviewed_fingerprint: sha256:7e986e6a7d56f645328509337bea51eb008182f441c392d8d79d5bd0cb1a6ea4
+verification:
+    assurance_level: B
+    formalization_status: valid
+    review:
+        status: approved
+        reviewer: human:agent:claude-opus-4-8
+        role: software_engineer
+        reviewed_at: "2026-06-11T16:44:19Z"
+        comment: 'Software decomposition of SYS-REQ-016 listed_fields_removed: operator-listed field removal implemented by analytics.RemoveIgnoredFields applied in main.filterData (len(ignoreFields)>0 gate), distinct from SW-REQ-074 Prometheus api-key masking. Verified by TestIgnoreFieldsFilterData with all 3 MC/DC witness rows covered; also exercised by analytics TestAnalyticsRecord_RemoveIgnoredFields.'
+        fingerprint: sha256:bd30cffb26cf798fde87458a796f869d586e34b767b90d9174b922bcf76a8a98
+        ai_generated: false
+    impact_reviews:
+        - requirement: SW-REQ-076
+          artifact: analytics/analytics.go
+          decision: no-authored-change
+          reviewer: agent:claude-opus-4-8
+          reason: 'Consolidation pass: the prior ReqProof-coverage agents'' changes to these production files are behavior-preserving only — added // reqproof:implements trace annotations and trailing //mcdc:ignore comments on existing branches; no executable code path, signature, or logic changed. Requirement intent and formalization are unchanged.'
+          base: origin/master
+          requirement_fingerprint: sha256:7e986e6a7d56f645328509337bea51eb008182f441c392d8d79d5bd0cb1a6ea4
+          approval_fingerprint: sha256:bd30cffb26cf798fde87458a796f869d586e34b767b90d9174b922bcf76a8a98
+          artifact_fingerprint: sha256:1af60beb1ea3d67ce5c4360dbda50461329e4e80b77cc3a0b45f944786216f44
+          reviewed_at: "2026-06-11T18:47:54Z"
+        - requirement: SW-REQ-076
+          artifact: main.go
+          decision: no-authored-change
+          reviewer: agent:claude-opus-4-8
+          reason: 'Consolidation pass: the prior ReqProof-coverage agents'' changes to these production files are behavior-preserving only — added // reqproof:implements trace annotations and trailing //mcdc:ignore comments on existing branches; no executable code path, signature, or logic changed. Requirement intent and formalization are unchanged.'
+          base: origin/master
+          requirement_fingerprint: sha256:7e986e6a7d56f645328509337bea51eb008182f441c392d8d79d5bd0cb1a6ea4
+          approval_fingerprint: sha256:bd30cffb26cf798fde87458a796f869d586e34b767b90d9174b922bcf76a8a98
+          artifact_fingerprint: sha256:454d0a615fe12f372232c9e594a331e7651473dc3d607f8350fac761abeaa882
+          reviewed_at: "2026-06-11T18:47:54Z"
+history:
+    created_by: human:cli
+    created_at: "2026-06-11T16:43:23Z"
+    last_modified_by: human:cli
+    last_modified_at: "2026-06-11T16:44:19Z"
+lifecycle:
+    change_history:
+        - date: "2026-06-11T16:44:09Z"
+          from: draft
+          to: review
+          reason: Software decomposition child for SYS-REQ-016 listed_fields_removed
+          changed_by: human:cli

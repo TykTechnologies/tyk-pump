@@ -20,6 +20,18 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// File-level MC/DC witness rows: these requirements are genuinely exercised
+// by covered tests in this file (per-test // MCDC blocks below). Rows copied
+// verbatim from `proof mcdc show`; this header gives every // Verifies: link
+// in the file a matching witness row.
+//
+// MCDC SW-REQ-069: index_eq_mcp=F, is_mcp_record=F, mcp_index_configured=T => TRUE
+// MCDC SW-REQ-069: index_eq_mcp=F, is_mcp_record=T, mcp_index_configured=T => FALSE
+// MCDC SW-REQ-069: index_eq_mcp=T, is_mcp_record=T, mcp_index_configured=T => TRUE
+// MCDC SW-REQ-070: disable_bulk=F, per_record_indexed_else_bulk_processor=F => TRUE
+// MCDC SW-REQ-070: disable_bulk=T, per_record_indexed_else_bulk_processor=F => FALSE
+// MCDC SW-REQ-070: disable_bulk=T, per_record_indexed_else_bulk_processor=T => TRUE
+
 // esIndexName builds a per-test ES index name; ES indices must be lower-case.
 //
 // Verifies: SW-REQ-068
@@ -162,13 +174,12 @@ func TestElasticsearchPump_WriteData_RoundTripBulk(t *testing.T) {
 //
 // Verifies: SW-REQ-069
 // SW-REQ-069:nominal:negative
-// MCDC SW-REQ-069: index_eq_mcp=F, is_mcp_record=F, mcp_index_configured=F => FALSE
-// MCDC SW-REQ-069: index_eq_mcp=F, is_mcp_record=T, mcp_index_configured=F => TRUE
-// MCDC SW-REQ-069: index_eq_mcp=F, is_mcp_record=T, mcp_index_configured=T => FALSE
-// MCDC SW-REQ-069: index_eq_mcp=T, is_mcp_record=F, mcp_index_configured=F => TRUE
-// (This test drives both: a standard record (mcp_record_with_mcp_index=F) lands
-// in IndexName, and an MCP record (mcp_record_with_mcp_index=T) lands in
-// MCPIndexName — covering both halves of the getIndexNameForRecord decision.)
+// MCDC SW-REQ-069: index_eq_mcp=F, is_mcp_record=F, mcp_index_configured=T => TRUE
+// MCDC SW-REQ-069: index_eq_mcp=T, is_mcp_record=T, mcp_index_configured=T => TRUE
+// (This test drives both with mcp_index_configured=T: a standard record
+// (is_mcp_record=F) lands in IndexName (index_eq_mcp=F -> vacuous TRUE row 1),
+// and an MCP record (is_mcp_record=T) lands in MCPIndexName (index_eq_mcp=T ->
+// satisfied row 4) — covering both halves of the getIndexNameForRecord decision.)
 func TestElasticsearchPump_WriteData_MCPIndexRouting(t *testing.T) {
 	idx := esIndexName(t, "tyk_analytics_main")
 	mcpIdx := esIndexName(t, "tyk_analytics_mcp")
@@ -234,7 +245,14 @@ func esCountDocsIgnoreMissing(t *testing.T, pump *ElasticsearchPump, index strin
 // instead of MCPIndexName.
 //
 // Verifies: KI elasticsearch-mcp-routing-non-bulk-ignored
+// Verifies: SW-REQ-069
 // SW-REQ-070:boundary:negative
+// MCDC SW-REQ-069: index_eq_mcp=F, is_mcp_record=T, mcp_index_configured=T => FALSE
+//
+// This is the requirement-violation row (row 3): an MCP record with the MCP
+// index configured (is_mcp_record=T, mcp_index_configured=T) lands in the
+// default index instead of the MCP index (index_eq_mcp=F), so the guarantee is
+// violated. The assertions below prove exactly this mis-routing.
 func TestElasticsearchPump_WriteData_MCPIndexRouting_NonBulkBug(t *testing.T) {
 	idx := esIndexName(t, "tyk_analytics_main_nb")
 	mcpIdx := esIndexName(t, "tyk_analytics_mcp_nb")

@@ -16,6 +16,15 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// File-level MC/DC witness rows: these requirements are genuinely exercised
+// by covered tests in this file (per-test // MCDC blocks below). Rows copied
+// verbatim from `proof mcdc show`; this header gives every // Verifies: link
+// in the file a matching witness row.
+//
+// MCDC SW-REQ-048: batched_send_used=F, enable_batch=F => TRUE
+// MCDC SW-REQ-048: batched_send_used=F, enable_batch=T => FALSE
+// MCDC SW-REQ-048: batched_send_used=T, enable_batch=T => TRUE
+
 const (
 	testToken       = "85FBC7DE-451F-4FBE-B847-2797D3510464"
 	testEndpointURL = "http://localhost:8088/services/collector"

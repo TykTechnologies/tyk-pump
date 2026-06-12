@@ -48,7 +48,7 @@ history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:16Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-03T07:38:28Z"
+    last_modified_at: "2026-06-11T16:07:42Z"
 obligation_checklist:
     - errors_propagated
     - resource_lifetime_released
@@ -79,6 +79,10 @@ obligation_suppressions:
         - CWE CWE-248,CWE-754
         - MISRA-C Rule 17.2
         - OWASP-ASVS-v4 V7.4.1
+    - id: process_exit_on_recoverable
+      reason: 'process_exit_on_recoverable code signal at pumps/csv.go:57: this pump''s Init() calls log.Fatal on a recoverable mapstructure.Decode/connect error, exiting the whole multi-pump process instead of returning the error so siblings continue. This exact failure-mode surface is already tracked, ship-dispositioned, and remediation-scoped by KI pumps-logfatal-on-config-decode (which enumerates this code_signal anchor in its evidence_manifests). Not a new ungoverned obligation gap.'
+      suppressed_by: human:leo
+      suppressed_at: "2026-06-11T16:07:42Z"
 lifecycle:
     change_history:
         - date: "2026-05-29T15:46:44Z"

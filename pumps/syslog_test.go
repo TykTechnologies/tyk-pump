@@ -12,6 +12,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// File-level MC/DC witness rows: these requirements are genuinely exercised
+// by covered tests in this file (per-test // MCDC blocks below). Rows copied
+// verbatim from `proof mcdc show`; this header gives every // Verifies: link
+// in the file a matching witness row.
+//
+// MCDC SW-REQ-050: tcp_writer_used=F, transport_tcp=F => TRUE
+// MCDC SW-REQ-050: tcp_writer_used=F, transport_tcp=T => FALSE
+// MCDC SW-REQ-050: tcp_writer_used=T, transport_tcp=T => TRUE
+
 // mockSyslogServer creates a simple UDP syslog server for testing
 // Verifies: SW-REQ-050
 func mockSyslogServer(t *testing.T) (string, chan string) {
@@ -165,6 +174,14 @@ func TestSyslogPump_WriteData(t *testing.T) {
 // T/T=TRUE. The F/T=FALSE pair is the Dial-error baseline where
 // Transport='tcp' but the syslog.Dial call fails — covered by the
 // Init-error subtests with an unreachable NetworkAddr.)
+//
+// SW-REQ-050:encoding_safety:example
+// DEFECT-2 regression (TT-15532): raw_request / raw_response payloads contain
+// embedded newlines from real HTTP traffic. The syslog daemon treats every \n
+// as a record boundary, so an un-escaped record fragments into many entries.
+// This test feeds a multiline record and asserts the emitted syslog message is
+// a single line (\n escaped to \\n), preserving one-record-per-entry across the
+// serialization boundary. A regression that re-leaked raw newlines fails it.
 func TestSyslogPump_WriteData_WithMultilineHTTP(t *testing.T) {
 	// Test data with realistic multiline HTTP requests/responses that would cause fragmentation
 	record := analytics.AnalyticsRecord{

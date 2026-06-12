@@ -78,24 +78,12 @@ func TestAggregateData_MCDCBranches(t *testing.T) {
 // Verifies: SW-REQ-010
 // Verifies: SYS-REQ-009
 // SW-REQ-010:boundary:negative
-// MCDC SW-REQ-010: filter_true=F, in_should_filter=F, outside_allow_list=F, skip_match=F => FALSE
-// MCDC SW-REQ-010: filter_true=F, in_should_filter=T, outside_allow_list=F, skip_match=F => TRUE
-// MCDC SW-REQ-010: filter_true=F, in_should_filter=T, outside_allow_list=F, skip_match=T => FALSE
-// MCDC SW-REQ-010: filter_true=F, in_should_filter=T, outside_allow_list=T, skip_match=F => FALSE
-// MCDC SW-REQ-010: filter_true=T, in_should_filter=F, outside_allow_list=F, skip_match=F => TRUE
 //
-// Each row of the cases slice constructs a filter set covering one of skip_match (block list)
-// or outside_allow_list (positive list mismatch). HasFilter must return true (the "ShouldFilter
-// triggers" precondition holds), and ShouldFilter applies the (skip_match | outside_allow_list)
-// => filter_true implication. The all-empty AnalyticsFilters{} row exercises
-// in_should_filter=F + skip_match=F + outside_allow_list=F:
-//   - the assertion (AnalyticsFilters{}).HasFilter() == false witnesses row 1 (filter_true=F)
-//     which the FRETish formula evaluates to FALSE because the antecedent vacuum yields
-//     the baseline false-conclusion case.
-//   - row 5 (filter_true=T) is witnessed by TestHasFilter (analytics/analytics_filters_test.go:110)
-//     where a filter-set with at least one configured field returns HasFilter()=true while
-//     in_should_filter=F (no trigger). Rows 2/3/4 are driven below by populating each list
-//     in turn. The combined witness set proves every MC/DC independent-effect pair.
+// TestHasFilter_EachList exercises AnalyticsFilters.HasFilter across each list
+// type (part of the SW-REQ-010 surface). It does not invoke ShouldFilter, so it
+// does not drive the (skip_match | outside_allow_list) => filter_true decision
+// rows; those MC/DC witnesses are annotated on TestShouldFilter
+// (analytics/analytics_filters_test.go).
 func TestHasFilter_EachList(t *testing.T) {
 	if (AnalyticsFilters{}).HasFilter() {
 		t.Fatal("empty filter set must report no filter")

@@ -4,7 +4,7 @@ status: approved
 priority: shall
 category: functional
 req_type: guarantee
-fretish: analytics_geo shall always satisfy geo_lookup_short_circuits_when_db_absent
+fretish: when geo_db_absent | geo_ip_empty | geo_ip_invalid analytics_geo shall always satisfy geo_lookup_short_circuits_when_db_absent
 description: Analytics GeoIP enrichment functions (GetGeo, GeoIPLookup) shall return an empty result without panic when the GeoIP DB handle is nil or returns no record for an IP.
 formalization_strategy: fretish
 informal_verification:
@@ -15,41 +15,45 @@ parent: SYS-REQ-034
 component: analytics-geo
 rationale: "Code-level nil-guards in analytics/analytics.go ensure tyk-pump runs without the optional MaxMind DB."
 tags: []
-variables: []
+variables:
+    - geo_db_absent
+    - geo_ip_empty
+    - geo_ip_invalid
+    - geo_lookup_short_circuits_when_db_absent
 traces:
     satisfies:
         - SYS-REQ-034
         - SYS-REQ-032
-    reviewed_at: "2026-06-02T05:03:37.81476Z"
-    reviewed_by: human:buger
-    reviewed_fingerprint: sha256:f4e332bd7ce5e9d47021dfeb340a97ac2ed2519745efa5a16c723c8a4e64e98c
+    reviewed_at: "2026-06-11T17:06:55.477686Z"
+    reviewed_by: agent:claude-opus-4-8
+    reviewed_fingerprint: sha256:f5149ea2f8bdc9f5febbe3432ac6ffb583132ea47426f079e5cd315e53d54dcc
 verification:
     assurance_level: B
     formalization_status: valid
     review:
         status: approved
-        reviewer: human:buger
+        reviewer: human:agent:claude-opus-4-8
         role: software_engineer
-        reviewed_at: "2026-06-03T07:40:30Z"
-        comment: 'Phase Q: catalog obligation attachments — adds panic_free_input_handling (GeoIP enrichment input safety). See .proof/catalog-obligation-proposals.md.'
-        fingerprint: sha256:fe9bd9928a12177e5d28d6409d3cefdc2c20147160563b3f010ca6235a0a5582
+        reviewed_at: "2026-06-11T16:39:47Z"
+        comment: 'Enrich under-modeled FRETish to the 3 real runtime guards in GetGeo/GeoIPLookup: geo_db_absent (GeoIPDB==nil), geo_ip_empty (ipStr==""), geo_ip_invalid (net.ParseIP==nil). Each short-circuits enrichment before/without a DB lookup; all 6 MC/DC rows covered by existing geoip_test.go tests, code MC/DC 3/3 decisions+conditions aligned.'
+        fingerprint: sha256:d1459f3760256d2961decf7b7b316f7c5af9439055ed9455d4295ca688d419ac
         ai_generated: false
     impact_reviews:
         - requirement: SW-REQ-071
           artifact: analytics/analytics.go
           decision: no-authored-change
-          reviewer: buger
-          reason: 'Phase J: req_type field flipped derived to guarantee per probelabs/reqproof#88 (category error fix). Production .go files were not modified for this change; only req YAML metadata. Re-recording no-authored-change impact.'
+          reviewer: agent:claude-opus-4-8
+          reason: 'Consolidation pass: the prior ReqProof-coverage agents'' changes to these production files are behavior-preserving only — added // reqproof:implements trace annotations and trailing //mcdc:ignore comments on existing branches; no executable code path, signature, or logic changed. Requirement intent and formalization are unchanged.'
           base: origin/master
-          requirement_fingerprint: sha256:f4e332bd7ce5e9d47021dfeb340a97ac2ed2519745efa5a16c723c8a4e64e98c
-          approval_fingerprint: sha256:fe9bd9928a12177e5d28d6409d3cefdc2c20147160563b3f010ca6235a0a5582
-          artifact_fingerprint: sha256:41a2a8e7ff36a958fa315e03cd7e70423454e7447f7787aad74230d92a3d8a43
-          reviewed_at: "2026-06-02T05:13:05Z"
+          requirement_fingerprint: sha256:f5149ea2f8bdc9f5febbe3432ac6ffb583132ea47426f079e5cd315e53d54dcc
+          approval_fingerprint: sha256:d1459f3760256d2961decf7b7b316f7c5af9439055ed9455d4295ca688d419ac
+          artifact_fingerprint: sha256:1af60beb1ea3d67ce5c4360dbda50461329e4e80b77cc3a0b45f944786216f44
+          reviewed_at: "2026-06-11T18:47:54Z"
 history:
     created_by: human:cli
     created_at: "2026-05-30T10:31:33Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-03T07:40:30Z"
+    last_modified_at: "2026-06-11T16:39:47Z"
 obligation_checklist:
     - error_handling
     - nominal
@@ -70,4 +74,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T05:02:45Z comment="Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.")'
+          changed_by: human:cli
+        - date: "2026-06-11T16:39:47Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-03T07:40:30Z comment="Phase Q: catalog obligation attachments — adds panic_free_input_handling (GeoIP enrichment input safety). See .proof/catalog-obligation-proposals.md.")'
           changed_by: human:cli

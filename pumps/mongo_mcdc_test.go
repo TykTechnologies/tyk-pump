@@ -31,6 +31,7 @@ import (
 	"github.com/TykTechnologies/storage/persistent/model"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/sirupsen/logrus"
+	logrustest "github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -606,6 +607,8 @@ func TestMongoAggregatePump_WriteData_EmptyData(t *testing.T) {
 
 // Verifies: SW-REQ-063
 // SW-REQ-063:nominal:positive — OmitIndexCreation=true short-circuits
+//mcdc:ignore SW-REQ-063: collection_already_exists=F, create_index_skipped=F, omit_index_creation=T => FALSE — mongo_aggregate.go:250-252 returns nil immediately when OmitIndexCreation is true (before any CreateIndex call), so create_index_skipped is always T; the "omit set yet index created anyway" violation has no branch to reach it [reviewed: human:leo]
+//mcdc:ignore SW-REQ-063: collection_already_exists=T, create_index_skipped=F, omit_index_creation=T => FALSE — mongo_aggregate.go:250-252 short-circuits on OmitIndexCreation before the collectionExists check at line 256, so when omit is set the index is always skipped regardless of collection existence; create_index_skipped is always T [reviewed: human:leo]
 func TestMongoAggregatePump_EnsureIndexes_Omit(t *testing.T) {
 	p := &MongoAggregatePump{}
 	p.dbConf = &MongoAggregateConf{}
@@ -944,6 +947,7 @@ func TestMongoAggregatePump_EnsureIndexes_DocDB(t *testing.T) {
 // Verifies: SW-REQ-063
 // SW-REQ-063:nominal:negative — collection already exists short-circuits
 // (StandardMongo path).
+//mcdc:ignore SW-REQ-063: collection_already_exists=T, create_index_skipped=F, omit_index_creation=F => FALSE — mongo_aggregate.go:256-261 returns nil once the StandardMongo collectionExists check reports the collection exists (before any CreateIndex call), so create_index_skipped is always T; the "collection exists yet index created anyway" violation has no branch to reach it [reviewed: human:leo]
 func TestMongoAggregatePump_EnsureIndexes_AlreadyExists(t *testing.T) {
 	cfg := map[string]interface{}{
 		"mongo_url": testMongoURI(t),
@@ -959,6 +963,43 @@ func TestMongoAggregatePump_EnsureIndexes_AlreadyExists(t *testing.T) {
 
 	err := p.ensureIndexes(colName)
 	assert.NoError(t, err, "early-return when collection exists must not error")
+}
+
+// Verifies: SW-REQ-063
+// SW-REQ-063:nominal:positive — OmitIndexCreation=true on an already-existing
+// collection still skips index creation (both triggers true).
+// MCDC SW-REQ-063: collection_already_exists=T, create_index_skipped=T, omit_index_creation=T => TRUE
+//
+// This drives the row where both guarantee triggers hold simultaneously: the
+// collection already exists (collection_already_exists=T) AND OmitIndexCreation
+// is set (omit_index_creation=T). mongo_aggregate.go:250-252 short-circuits on
+// the omit guard first and returns nil without creating any index
+// (create_index_skipped=T) — the satisfied row 5.
+func TestMongoAggregatePump_EnsureIndexes_OmitOnExisting(t *testing.T) {
+	cfg := map[string]interface{}{
+		"mongo_url":           testMongoURI(t),
+		"omit_index_creation": true,
+	}
+	p := &MongoAggregatePump{}
+	require.NoError(t, p.Init(cfg))
+	t.Cleanup(func() { _ = p.store.DropDatabase(context.Background()) })
+
+	colName := uniqueCollection(t) + "_omit_exists"
+	// Pre-create the collection so collection_already_exists=T.
+	obj := dbObject{tableName: colName}
+	require.NoError(t, p.store.Migrate(context.Background(), []model.DBObject{obj}))
+
+	// With omit=true the omit guard wins before the collectionExists check;
+	// index creation is skipped without error.
+	err := p.ensureIndexes(colName)
+	assert.NoError(t, err, "omit_index_creation on an existing collection must skip creation without error")
+
+	idxs, err := p.store.GetIndexes(context.Background(), dbObject{tableName: colName})
+	require.NoError(t, err)
+	for _, idx := range idxs {
+		assert.NotEqual(t, "expireAt_1", idx.Name,
+			"no TTL index must be created when omit_index_creation is set")
+	}
 }
 
 // ---------------------------------------------------------------------------
@@ -990,15 +1031,15 @@ func TestMongoAggregatePump_WriteData_NoMixed(t *testing.T) {
 // Verifies: SW-REQ-059
 // Verifies: SW-REQ-061
 // SW-REQ-059:nominal:positive — ThresholdLenTagList = -1 disables alert
-// MCDC SW-REQ-061: alert_emitted=F, alert_not_disabled=F, tag_list_len_gt_threshold=F => FALSE
 // MCDC SW-REQ-061: alert_emitted=F, alert_not_disabled=F, tag_list_len_gt_threshold=T => TRUE
-// MCDC SW-REQ-061: alert_emitted=F, alert_not_disabled=T, tag_list_len_gt_threshold=T => FALSE
-// MCDC SW-REQ-061: alert_emitted=T, alert_not_disabled=F, tag_list_len_gt_threshold=F => TRUE
 //
-// This test sets threshold_len_tag_list=-1 (disables alert) — tag_list_len_gt_threshold=F arm
-// (alert_emitted=F, vacuous true). The tag_list_len_gt_threshold=T/alert_emitted=T arm is
-// exercised by tests in this file that seed tag lists exceeding the default threshold (1000)
-// and assert the Warn-level alert is emitted.
+// mongo_aggregate.go:391 gates the alert on
+// `ThresholdLenTagList != -1 && len(Tags) > ThresholdLenTagList`. With
+// threshold_len_tag_list=-1 the first conjunct is false, so alert_not_disabled=F
+// and no alert is emitted (alert_emitted=F) even though the 3 tags exceed -1
+// (tag_list_len_gt_threshold=T) — the disable knob makes the guarantee hold
+// vacuously: row 1. The enabled-but-below-threshold arm (row 2) and the
+// alert-emitted arm (row 4) are driven by the two tests immediately below.
 func TestMongoAggregatePump_DoAggregatedWriting_DisabledThreshold(t *testing.T) {
 	cfg := map[string]interface{}{
 		"mongo_url":              testMongoURI(t),
@@ -1015,6 +1056,83 @@ func TestMongoAggregatePump_DoAggregatedWriting_DisabledThreshold(t *testing.T) 
 		Tags: []string{"a", "b", "c"},
 	}
 	require.NoError(t, p.WriteData(context.Background(), []interface{}{rec}))
+}
+
+// tagAlertFired reports whether DoAggregatedWriting emitted the
+// "Found more than ... tag entries per document" Warn alert via printAlert.
+func tagAlertFired(entries []*logrus.Entry) bool {
+	for _, e := range entries {
+		if e.Level == logrus.WarnLevel && strings.Contains(e.Message, "tag entries per document") {
+			return true
+		}
+	}
+	return false
+}
+
+// Verifies: SW-REQ-061
+// SW-REQ-061:boundary:negative — alerting enabled but tag count below threshold.
+// MCDC SW-REQ-061: alert_emitted=F, alert_not_disabled=T, tag_list_len_gt_threshold=F => TRUE
+//
+// mongo_aggregate.go:391 gates the alert on
+// `ThresholdLenTagList != -1 && len(Tags) > ThresholdLenTagList`. Here the
+// threshold is 100 (alert_not_disabled=T because != -1) and the record carries
+// only 3 tags, so `len(Tags) > 100` is false (tag_list_len_gt_threshold=F) and
+// no alert is emitted (alert_emitted=F). With alerting enabled but the tag list
+// under the threshold, the guarantee holds vacuously — row 2. The log hook
+// asserts the Warn alert did NOT fire.
+func TestMongoAggregatePump_DoAggregatedWriting_EnabledBelowThreshold(t *testing.T) {
+	cfg := map[string]interface{}{
+		"mongo_url":              testMongoURI(t),
+		"use_mixed_collection":   false,
+		"threshold_len_tag_list": 100,
+	}
+	p := &MongoAggregatePump{}
+	require.NoError(t, p.Init(cfg))
+	t.Cleanup(func() { _ = p.store.DropDatabase(context.Background()) })
+
+	hook := logrustest.NewLocal(p.log.Logger)
+	t.Cleanup(hook.Reset)
+
+	rec := analytics.AnalyticsRecord{
+		APIID: "api61below", OrgID: "org61below", TimeStamp: time.Now(), ResponseCode: 200,
+		Tags: []string{"a", "b", "c"},
+	}
+	require.NoError(t, p.WriteData(context.Background(), []interface{}{rec}))
+	assert.False(t, tagAlertFired(hook.AllEntries()),
+		"alert must NOT fire when tag count (3) is below threshold (100)")
+}
+
+// Verifies: SW-REQ-061
+// SW-REQ-061:boundary:positive — alerting enabled and tag count over threshold.
+// MCDC SW-REQ-061: alert_emitted=T, alert_not_disabled=T, tag_list_len_gt_threshold=T => TRUE
+//mcdc:ignore SW-REQ-061: alert_emitted=F, alert_not_disabled=T, tag_list_len_gt_threshold=T => FALSE — mongo_aggregate.go:391-392 calls printAlert unconditionally once both conjuncts hold (ThresholdLenTagList != -1 and len(Tags) > threshold), with no branch between the guard and the printAlert call, so when alerting is enabled and the tag list exceeds the threshold the alert is always emitted; the "enabled+over-threshold yet no alert" violation has no branch to reach it [reviewed: human:leo]
+//
+// mongo_aggregate.go:391-392 fires printAlert when
+// `ThresholdLenTagList != -1 && len(Tags) > ThresholdLenTagList`. Here the
+// threshold is 1 (alert_not_disabled=T) and the aggregated record carries 3
+// tags, so `len(Tags) > 1` holds (tag_list_len_gt_threshold=T): printAlert is
+// invoked and emits the Warn alert (alert_emitted=T) — the satisfied row 4. The
+// log hook asserts the Warn alert DID fire.
+func TestMongoAggregatePump_DoAggregatedWriting_AlertEmitted(t *testing.T) {
+	cfg := map[string]interface{}{
+		"mongo_url":              testMongoURI(t),
+		"use_mixed_collection":   false,
+		"threshold_len_tag_list": 1,
+	}
+	p := &MongoAggregatePump{}
+	require.NoError(t, p.Init(cfg))
+	t.Cleanup(func() { _ = p.store.DropDatabase(context.Background()) })
+
+	hook := logrustest.NewLocal(p.log.Logger)
+	t.Cleanup(hook.Reset)
+
+	rec := analytics.AnalyticsRecord{
+		APIID: "api61alert", OrgID: "org61alert", TimeStamp: time.Now(), ResponseCode: 200,
+		Tags: []string{"alpha", "beta", "gamma"},
+	}
+	require.NoError(t, p.WriteData(context.Background(), []interface{}{rec}))
+	assert.True(t, tagAlertFired(hook.AllEntries()),
+		"alert must fire when tag count (3) exceeds threshold (1)")
 }
 
 // ---------------------------------------------------------------------------

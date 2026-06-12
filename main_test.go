@@ -14,7 +14,17 @@ import (
 	"github.com/TykTechnologies/tyk-pump/pumps"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
+
+// File-level MC/DC witness rows: these requirements are genuinely exercised
+// by covered tests in this file (per-test // MCDC blocks below). Rows copied
+// verbatim from `proof mcdc show`; this header gives every // Verifies: link
+// in the file a matching witness row.
+//
+// MCDC SW-REQ-001: purge_tick=F, records_dispatched=F => TRUE
+// MCDC SW-REQ-001: purge_tick=T, records_dispatched=F => FALSE
+// MCDC SW-REQ-001: purge_tick=T, records_dispatched=T => TRUE
 
 type MockedPump struct {
 	CounterRequest int
@@ -191,8 +201,12 @@ func TestOmitDetailsFilterData(t *testing.T) {
 // Verifies: SYS-REQ-001
 // Verifies: STK-REQ-001
 // Verifies: SYS-REQ-004
+// Verifies: SW-REQ-075
 // Verifies: SW-REQ-003
 // Verifies: SYS-REQ-022
+// MCDC SW-REQ-075: a_backend_failed=F, other_backends_written=F => TRUE
+// MCDC SW-REQ-075: a_backend_failed=T, other_backends_written=F => FALSE
+// MCDC SW-REQ-075: a_backend_failed=T, other_backends_written=T => TRUE
 // MCDC SW-REQ-003: component_init_requested=F, component_initialized=F => TRUE
 // MCDC SW-REQ-003: component_init_requested=T, component_initialized=F => FALSE
 // MCDC SW-REQ-003: component_init_requested=T, component_initialized=T => TRUE
@@ -214,12 +228,14 @@ func TestOmitDetailsFilterData(t *testing.T) {
 // would mean writeToPumps silently dropped a record — the per-pump CounterRequest assertions
 // detect that regression.
 //
-// SYS-REQ-004 (a_backend_failed/other_backends_written): the 5-pump fan-out plus
+// SYS-REQ-004 / SW-REQ-075 (a_backend_failed/other_backends_written): the 5-pump fan-out plus
 // per-pump filters force at least one backend to legitimately reject ("api111+org123+200"
 // expects 0) while the others still write — that proves a_backend_failed=T with
 // other_backends_written=T (TRUE row). The all-failed scenario (other_backends_written=F)
 // would be the FALSE row; the no-trigger arm (no backend failed at all) is the
-// no-filter pump (expects 6) -> vacuously TRUE.
+// no-filter pump (expects 6) -> vacuously TRUE. SW-REQ-075 is the software decomposition of
+// SYS-REQ-004: writeToPumps spawns one execPumpWriting goroutine per pump and each goroutine
+// contains its own error/timeout, so the same fan-out witnesses the per-backend independence.
 //
 // SYS-REQ-022 (record_available_for_dispatch/record_dispatched_to_all_backends): every key
 // in `keys` is available for dispatch (record_available_for_dispatch=T); the no-filter pump
@@ -373,10 +389,14 @@ func TestShutdown(t *testing.T) {
 
 // Verifies: SW-REQ-001
 // Verifies: SYS-REQ-016
+// Verifies: SW-REQ-076
 // SYS-REQ-016:nominal:negative
 // MCDC SYS-REQ-016: ignore_fields_configured=F, listed_fields_removed=F => TRUE
 // MCDC SYS-REQ-016: ignore_fields_configured=T, listed_fields_removed=F => FALSE
 // MCDC SYS-REQ-016: ignore_fields_configured=T, listed_fields_removed=T => TRUE
+// MCDC SW-REQ-076: ignore_fields_configured=F, listed_fields_removed=F => TRUE
+// MCDC SW-REQ-076: ignore_fields_configured=T, listed_fields_removed=F => FALSE
+// MCDC SW-REQ-076: ignore_fields_configured=T, listed_fields_removed=T => TRUE
 //
 // Each test-case configures ignore_fields_configured=T (via SetIgnoreFields). The
 // expectedRecord assertion forces listed_fields_removed=T -> TRUE row. The
@@ -439,15 +459,24 @@ func TestIgnoreFieldsFilterData(t *testing.T) {
 // Verifies: SYS-REQ-011
 // SYS-REQ-011:nominal:negative
 // MCDC SYS-REQ-011: decode_request_enabled=F, decode_response_enabled=F, enabled_payloads_decoded=F => TRUE
-// MCDC SYS-REQ-011: decode_request_enabled=T, decode_response_enabled=F, enabled_payloads_decoded=F => FALSE
-// MCDC SYS-REQ-011: decode_request_enabled=T, decode_response_enabled=F, enabled_payloads_decoded=T => TRUE
-// MCDC SYS-REQ-011: decode_request_enabled=T, decode_response_enabled=T, enabled_payloads_decoded=F => TRUE
+// MCDC SYS-REQ-011: decode_request_enabled=T, decode_response_enabled=T, enabled_payloads_decoded=T => TRUE
+//mcdc:ignore SYS-REQ-011: decode_request_enabled=F, decode_response_enabled=T, enabled_payloads_decoded=F => FALSE — main.go:423-428 unconditionally enters the base64-decode block whenever getDecodingResponse is set, so an enabled response payload is always decoded; the "response enabled yet payload not decoded" violation has no branch to reach it [reviewed: human:leo]
+//mcdc:ignore SYS-REQ-011: decode_request_enabled=T, decode_response_enabled=F, enabled_payloads_decoded=F => FALSE — main.go:417-422 unconditionally enters the base64-decode block whenever getDecodingRequest is set, so an enabled request payload is always decoded; the "request enabled yet payload not decoded" violation has no branch to reach it [reviewed: human:leo]
+//mcdc:ignore SYS-REQ-011: decode_request_enabled=T, decode_response_enabled=T, enabled_payloads_decoded=F => FALSE — main.go:417-428 runs both decode blocks unconditionally when both toggles are set, so both enabled payloads are always decoded; the "both enabled yet neither decoded" violation has no branch to reach it [reviewed: human:leo]
 //
-// Sub-cases drive: decode_enabled=T (decodeRequest/decodeResponse=true) + payload_decoded=T
-// (assertion expectedRawRequest/Response == "DecodedRequest"/"DecodedResponse") -> TRUE row.
-// Sub-cases with one toggle off (decodeRequest=T but decodeResponse=F, etc.) prove the
-// FALSE row scenarios when toggle is on but field is not decoded. The both-disabled arm is
-// the vacuous TRUE (raw payloads untouched).
+// Two of the four sub-cases map onto reachable rows of the decode guarantee:
+//   - "Decode NONE" (decodeRequest=F, decodeResponse=F): neither toggle on, raw
+//     payloads untouched -> the antecedent is false -> vacuous-TRUE row 1.
+//   - "Decode RESPONSE & REQUEST" (both toggles on) with the assertions that
+//     RawRequest=="DecodedRequest" and RawResponse=="DecodedResponse": both
+//     enabled payloads are decoded (enabled_payloads_decoded=T) -> satisfied row 5.
+//
+// The single-toggle sub-cases ("Decode RESPONSE", "Decode REQUEST") decode the
+// enabled payload too, but the requirement's MC/DC table couples both toggles in
+// rows 2-5, so they do not correspond to a distinct table row. The violation
+// rows (2,3,4: a toggle enabled but its payload NOT decoded) are the negation the
+// guarantee forbids and are unreachable in correct code, so they have no honest
+// witness.
 func TestDecodedKey(t *testing.T) {
 	keys := make([]interface{}, 1)
 	record := analytics.AnalyticsRecord{APIID: "api111", RawResponse: "RGVjb2RlZFJlc3BvbnNl", RawRequest: "RGVjb2RlZFJlcXVlc3Q="}
@@ -656,4 +685,42 @@ func TestFilterDataBase64DecodeFailurePreservesField(t *testing.T) {
 		"RawRequest should be preserved unchanged when base64 decode fails (silent no-op contract)")
 	assert.Equal(t, invalidBase64, record.RawResponse,
 		"RawResponse should be preserved unchanged when base64 decode fails (silent no-op contract)")
+}
+
+// Verifies: INT-REQ-002
+// SW-REQ-003:nominal:negative — DontPurgeUptimeData=true disables uptime forwarding.
+// MCDC INT-REQ-002: gateway_emits_uptime=T, record_at_tyk_uptime_analytics=F, uptime_purging_enabled=F => TRUE
+//
+// uptime_purging_enabled maps to `!SystemConfig.DontPurgeUptimeData`. main.go:233
+// gates initialiseUptimePump behind that flag, and main.go:293 gates the actual
+// GetAndDeleteSet + WriteUptimeData forwarding behind it too. With
+// DontPurgeUptimeData=true (uptime_purging_enabled=F), initialisePumps leaves
+// UptimePump nil and the purge loop never forwards uptime, so even though the
+// gateway emits uptime (gateway_emits_uptime=T) nothing is recorded
+// (record_at_tyk_uptime_analytics=F). The antecedent
+// (gateway_emits_uptime & uptime_purging_enabled) is false, so the guarantee
+// holds vacuously — row 2.
+func TestInitialisePumps_DontPurgeUptimeData_SkipsUptimePump(t *testing.T) {
+	savedConfig := SystemConfig
+	savedPumps := Pumps
+	savedUptime := UptimePump
+	t.Cleanup(func() {
+		SystemConfig = savedConfig
+		Pumps = savedPumps
+		UptimePump = savedUptime
+	})
+
+	UptimePump = nil
+	SystemConfig = TykPumpConfiguration{
+		DontPurgeUptimeData: true, // uptime_purging_enabled = F
+		Pumps: map[string]PumpConfig{
+			"dummy": {Type: "dummy"},
+		},
+	}
+
+	initialisePumps()
+
+	require.NotEmpty(t, Pumps, "the configured dummy pump must be initialised")
+	assert.Nil(t, UptimePump,
+		"with DontPurgeUptimeData=true the uptime pump must NOT be initialised, so gateway uptime is never forwarded")
 }

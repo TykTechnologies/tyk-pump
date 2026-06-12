@@ -1,8 +1,8 @@
 {
   "schema_version": "proof.code_signals.report.v1",
   "provider": "opengrep",
-  "generated_at": "2026-06-04T07:35:27Z",
-  "input_hash": "sha256:0fc1873448db691e716a5c0bcaf4d7a2e3e3419e66d4caee94866b90b3966f0b",
+  "generated_at": "2026-06-11T18:49:10Z",
+  "input_hash": "sha256:c361822d3122936a2d1be7d454373bc338f2c693b13ffdefffd087586349d365",
   "mode": "run",
   "source": "stdout",
   "format": "sarif",
@@ -10,7 +10,7 @@
     "opengrep",
     "scan",
     "--config",
-    ".proof/signals/packs/2fcf19a866f102b2",
+    ".proof/signals/packs/4f53f9b34b085db1",
     "--config",
     "signal-rules/tyk-pump-phase-n.yaml",
     "--taint-intrafile",
@@ -30,13 +30,8 @@
         "end_line": 46
       },
       "confidence": "medium",
-      "proposed_class": [
-        {
-          "id": "tz_explicit",
-          "summary": "Stored or serialized timestamps shall carry an explicit, unambiguous timezone (UTC convention pinned at construction, sibling tz field, or epoch-nanosecond representation); silent reliance on the producer's local clock is prohibited.",
-          "kind": "property",
-          "applies_when": "code persists or transmits a time.Time across a process boundary (struct field with json/bson/gorm tag) and the field has no documented timezone convention"
-        }
+      "obligations": [
+        "tz_explicit"
       ],
       "framework_hints": [
         "CWE-1278",
@@ -57,13 +52,8 @@
         "end_line": 117
       },
       "confidence": "medium",
-      "proposed_class": [
-        {
-          "id": "tz_explicit",
-          "summary": "Stored or serialized timestamps shall carry an explicit, unambiguous timezone (UTC convention pinned at construction, sibling tz field, or epoch-nanosecond representation); silent reliance on the producer's local clock is prohibited.",
-          "kind": "property",
-          "applies_when": "code persists or transmits a time.Time across a process boundary (struct field with json/bson/gorm tag) and the field has no documented timezone convention"
-        }
+      "obligations": [
+        "tz_explicit"
       ],
       "framework_hints": [
         "CWE-1278",
@@ -102,13 +92,8 @@
         "end_line": 76
       },
       "confidence": "medium",
-      "proposed_class": [
-        {
-          "id": "tz_explicit",
-          "summary": "Stored or serialized timestamps shall carry an explicit, unambiguous timezone (UTC convention pinned at construction, sibling tz field, or epoch-nanosecond representation); silent reliance on the producer's local clock is prohibited.",
-          "kind": "property",
-          "applies_when": "code persists or transmits a time.Time across a process boundary (struct field with json/bson/gorm tag) and the field has no documented timezone convention"
-        }
+      "obligations": [
+        "tz_explicit"
       ],
       "framework_hints": [
         "CWE-1278",
@@ -116,7 +101,7 @@
       ],
       "message": "A struct field carries `time.Time` without a documented timezone marker\n(no explicit UTC convention, no sibling string `tz` field, no method\nannotating the field's location). When the producer and consumer run\nin different timezones — or when a producer marshals \"Local\" time and\na consumer unmarshals it as wall-clock — aggregation windows shift,\naudit logs misorder, and SQL `WHERE timestamp BETWEEN` queries silently\ndrop records. Either pin the field to UTC (a Validate-on-construct\nstep that calls `t.UTC()`), document the convention in the struct doc\ncomment, or store epoch nanoseconds.\n",
       "fingerprint": "sha256:43bd4167873f1f34a70b5d9e32d2741ce570b5e51e0bfcd329a110f2700891bc",
-      "source_hash": "sha256:41a2a8e7ff36a958fa315e03cd7e70423454e7447f7787aad74230d92a3d8a43"
+      "source_hash": "sha256:1af60beb1ea3d67ce5c4360dbda50461329e4e80b77cc3a0b45f944786216f44"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -134,7 +119,7 @@
       ],
       "message": "Synchronization primitive use requires concurrency ownership and race/liveness evidence.",
       "fingerprint": "sha256:fc3e7131d17b3c82464cc4f37726efd3485d1888bdee4a59e120b7f9eb371ad0",
-      "source_hash": "sha256:41a2a8e7ff36a958fa315e03cd7e70423454e7447f7787aad74230d92a3d8a43"
+      "source_hash": "sha256:1af60beb1ea3d67ce5c4360dbda50461329e4e80b77cc3a0b45f944786216f44"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -152,7 +137,7 @@
       ],
       "message": "Synchronization primitive use requires concurrency ownership and race/liveness evidence.",
       "fingerprint": "sha256:259eea03ed2b410237bfe8c77272dd78e9df91be377199dced70ec97497a647a",
-      "source_hash": "sha256:41a2a8e7ff36a958fa315e03cd7e70423454e7447f7787aad74230d92a3d8a43"
+      "source_hash": "sha256:1af60beb1ea3d67ce5c4360dbda50461329e4e80b77cc3a0b45f944786216f44"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -170,7 +155,7 @@
       ],
       "message": "Synchronization primitive use requires concurrency ownership and race/liveness evidence.",
       "fingerprint": "sha256:15738c775a69a72bc981d38bba980a55f1e37a79ca8569c2c2644538c9a0f964",
-      "source_hash": "sha256:41a2a8e7ff36a958fa315e03cd7e70423454e7447f7787aad74230d92a3d8a43"
+      "source_hash": "sha256:1af60beb1ea3d67ce5c4360dbda50461329e4e80b77cc3a0b45f944786216f44"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -188,7 +173,7 @@
       ],
       "message": "Synchronization primitive use requires concurrency ownership and race/liveness evidence.",
       "fingerprint": "sha256:6a712e0b74b75687ee2f05283b4d5c6bfeb2ae5d3c6596c0ea8d199c8b33ce61",
-      "source_hash": "sha256:41a2a8e7ff36a958fa315e03cd7e70423454e7447f7787aad74230d92a3d8a43"
+      "source_hash": "sha256:1af60beb1ea3d67ce5c4360dbda50461329e4e80b77cc3a0b45f944786216f44"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -206,7 +191,7 @@
       ],
       "message": "Synchronization primitive use requires concurrency ownership and race/liveness evidence.",
       "fingerprint": "sha256:cdf29e4a36ed4cd041cc78e9357906b0752b7b35487df5e55672497a8ddd0501",
-      "source_hash": "sha256:41a2a8e7ff36a958fa315e03cd7e70423454e7447f7787aad74230d92a3d8a43"
+      "source_hash": "sha256:1af60beb1ea3d67ce5c4360dbda50461329e4e80b77cc3a0b45f944786216f44"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -224,7 +209,7 @@
       ],
       "message": "Synchronization primitive use requires concurrency ownership and race/liveness evidence.",
       "fingerprint": "sha256:448d84545a8b130c40194339a3ad6ecf6aa82b15a487a8eeea725c06965f467d",
-      "source_hash": "sha256:41a2a8e7ff36a958fa315e03cd7e70423454e7447f7787aad74230d92a3d8a43"
+      "source_hash": "sha256:1af60beb1ea3d67ce5c4360dbda50461329e4e80b77cc3a0b45f944786216f44"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -242,7 +227,7 @@
       ],
       "message": "Synchronization primitive use requires concurrency ownership and race/liveness evidence.",
       "fingerprint": "sha256:dff82b859c9274e921969a2209c06aa68d8c486e588a43fdbffdddd8a0744019",
-      "source_hash": "sha256:41a2a8e7ff36a958fa315e03cd7e70423454e7447f7787aad74230d92a3d8a43"
+      "source_hash": "sha256:1af60beb1ea3d67ce5c4360dbda50461329e4e80b77cc3a0b45f944786216f44"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -260,7 +245,7 @@
       ],
       "message": "Synchronization primitive use requires concurrency ownership and race/liveness evidence.",
       "fingerprint": "sha256:3133f3d186a4bf105b1773b09f88a688afec447e85a3465904390d1eb410d57c",
-      "source_hash": "sha256:41a2a8e7ff36a958fa315e03cd7e70423454e7447f7787aad74230d92a3d8a43"
+      "source_hash": "sha256:1af60beb1ea3d67ce5c4360dbda50461329e4e80b77cc3a0b45f944786216f44"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -278,7 +263,7 @@
       ],
       "message": "Time-dependent behavior requires determinism, timeout, or scheduling evidence.",
       "fingerprint": "sha256:36e9e4d459085d737509ea698a5ad29dd77c5eff32e710cdc9bd308674f8a969",
-      "source_hash": "sha256:41a2a8e7ff36a958fa315e03cd7e70423454e7447f7787aad74230d92a3d8a43"
+      "source_hash": "sha256:1af60beb1ea3d67ce5c4360dbda50461329e4e80b77cc3a0b45f944786216f44"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -299,7 +284,7 @@
       ],
       "message": "Byte-to-string conversion may lose binary boundary semantics; require byte-preserving behavior or documented lossy contract.",
       "fingerprint": "sha256:dfa9d9f51d20d88f947d99bddf5bb445e8255958a5b1c4818b246c763d27acc5",
-      "source_hash": "sha256:41a2a8e7ff36a958fa315e03cd7e70423454e7447f7787aad74230d92a3d8a43"
+      "source_hash": "sha256:1af60beb1ea3d67ce5c4360dbda50461329e4e80b77cc3a0b45f944786216f44"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -438,13 +423,8 @@
         "end_line": 27
       },
       "confidence": "medium",
-      "proposed_class": [
-        {
-          "id": "tz_explicit",
-          "summary": "Stored or serialized timestamps shall carry an explicit, unambiguous timezone (UTC convention pinned at construction, sibling tz field, or epoch-nanosecond representation); silent reliance on the producer's local clock is prohibited.",
-          "kind": "property",
-          "applies_when": "code persists or transmits a time.Time across a process boundary (struct field with json/bson/gorm tag) and the field has no documented timezone convention"
-        }
+      "obligations": [
+        "tz_explicit"
       ],
       "framework_hints": [
         "CWE-1278",
@@ -465,13 +445,8 @@
         "end_line": 28
       },
       "confidence": "medium",
-      "proposed_class": [
-        {
-          "id": "tz_explicit",
-          "summary": "Stored or serialized timestamps shall carry an explicit, unambiguous timezone (UTC convention pinned at construction, sibling tz field, or epoch-nanosecond representation); silent reliance on the producer's local clock is prohibited.",
-          "kind": "property",
-          "applies_when": "code persists or transmits a time.Time across a process boundary (struct field with json/bson/gorm tag) and the field has no documented timezone convention"
-        }
+      "obligations": [
+        "tz_explicit"
       ],
       "framework_hints": [
         "CWE-1278",
@@ -492,13 +467,8 @@
         "end_line": 126
       },
       "confidence": "medium",
-      "proposed_class": [
-        {
-          "id": "tz_explicit",
-          "summary": "Stored or serialized timestamps shall carry an explicit, unambiguous timezone (UTC convention pinned at construction, sibling tz field, or epoch-nanosecond representation); silent reliance on the producer's local clock is prohibited.",
-          "kind": "property",
-          "applies_when": "code persists or transmits a time.Time across a process boundary (struct field with json/bson/gorm tag) and the field has no documented timezone convention"
-        }
+      "obligations": [
+        "tz_explicit"
       ],
       "framework_hints": [
         "CWE-1278",
@@ -1058,7 +1028,7 @@
       ],
       "message": "Environment-dependent behavior requires configuration, determinism, and deployment evidence.",
       "fingerprint": "sha256:72a97d3c8f04a4d0147149d29834b3083194db44625d461c3f1174cbe7034ebc",
-      "source_hash": "sha256:41bc4cbbf03d222d0cdd571a0b04710b232a4f7707c04d3d6f56fda2b92058d6"
+      "source_hash": "sha256:454d0a615fe12f372232c9e594a331e7651473dc3d607f8350fac761abeaa882"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -1076,7 +1046,7 @@
       ],
       "message": "Environment-dependent behavior requires configuration, determinism, and deployment evidence.",
       "fingerprint": "sha256:351c1a831821254b644c5a60cf03215293f201db528e5867c016ffaba7697918",
-      "source_hash": "sha256:41bc4cbbf03d222d0cdd571a0b04710b232a4f7707c04d3d6f56fda2b92058d6"
+      "source_hash": "sha256:454d0a615fe12f372232c9e594a331e7651473dc3d607f8350fac761abeaa882"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -1094,7 +1064,7 @@
       ],
       "message": "Time-dependent behavior requires determinism, timeout, or scheduling evidence.",
       "fingerprint": "sha256:429fbdb82abdec962f84ba57ac04f13a673c1443667ef6648897b44ac4353af7",
-      "source_hash": "sha256:41bc4cbbf03d222d0cdd571a0b04710b232a4f7707c04d3d6f56fda2b92058d6"
+      "source_hash": "sha256:454d0a615fe12f372232c9e594a331e7651473dc3d607f8350fac761abeaa882"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -1112,7 +1082,7 @@
       ],
       "message": "Time-dependent behavior requires determinism, timeout, or scheduling evidence.",
       "fingerprint": "sha256:05e91eb7a8c18def97c45b7218b378aab2dd04a49aefbae87fe02c661a3459bf",
-      "source_hash": "sha256:41bc4cbbf03d222d0cdd571a0b04710b232a4f7707c04d3d6f56fda2b92058d6"
+      "source_hash": "sha256:454d0a615fe12f372232c9e594a331e7651473dc3d607f8350fac761abeaa882"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -1130,7 +1100,7 @@
       ],
       "message": "Time-dependent behavior requires determinism, timeout, or scheduling evidence.",
       "fingerprint": "sha256:294f0b468edc319d036535398ea44ef6b911439e766576010343888275e16372",
-      "source_hash": "sha256:41bc4cbbf03d222d0cdd571a0b04710b232a4f7707c04d3d6f56fda2b92058d6"
+      "source_hash": "sha256:454d0a615fe12f372232c9e594a331e7651473dc3d607f8350fac761abeaa882"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -1143,13 +1113,8 @@
         "end_line": 291
       },
       "confidence": "medium",
-      "proposed_class": [
-        {
-          "id": "dst_transition_safe",
-          "summary": "Duration arithmetic shall be monotonic across DST, NTP-step, and manual-clock adjustments; negative or hour-scale jumps shall not be returned to callers.",
-          "kind": "property",
-          "applies_when": "code performs wall-clock arithmetic (time.Since / time.Now().Sub) and uses the duration as a metric, SLA bound, or loop step"
-        }
+      "obligations": [
+        "dst_transition_safe"
       ],
       "framework_hints": [
         "CWE-1247",
@@ -1157,7 +1122,7 @@
       ],
       "message": "Code measures elapsed duration with `time.Since(...)` or\n`time.Now().Sub(...)` against a wall-clock instant. On DST transitions,\nmanual clock adjustments, or NTP step events the returned Duration can\ngo negative or jump by hours, producing nonsense timings, fake SLA\nbreaches, or — when used as a loop guard — instant time-outs.\nPrefer `time.Now()` paired with a monotonic-clock-safe helper, or\nexplicitly check `d \u003c 0` and clamp.\n",
       "fingerprint": "sha256:de450c91be83ae55ee184302901528633c9a92b4bad15a75b1b4a273e5c14a02",
-      "source_hash": "sha256:41bc4cbbf03d222d0cdd571a0b04710b232a4f7707c04d3d6f56fda2b92058d6"
+      "source_hash": "sha256:454d0a615fe12f372232c9e594a331e7651473dc3d607f8350fac761abeaa882"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -1179,7 +1144,7 @@
       ],
       "message": "Slice is preallocated with len(), filled by indexed assignment, and the\nloop body can continue on error. That can leave zero-value holes in the\nresult; append to a zero-length slice when sparse output is not intended.\n",
       "fingerprint": "sha256:8278a9c73e501a7a5b6898da6d3bebaa20a88dcfeb7aedf97c512ed36da75733",
-      "source_hash": "sha256:41bc4cbbf03d222d0cdd571a0b04710b232a4f7707c04d3d6f56fda2b92058d6"
+      "source_hash": "sha256:454d0a615fe12f372232c9e594a331e7651473dc3d607f8350fac761abeaa882"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -1188,23 +1153,13 @@
       "signal_id": "go.multi_pump_fanout",
       "artifact": "main.go",
       "span": {
-        "start_line": 365,
-        "end_line": 368
+        "start_line": 366,
+        "end_line": 369
       },
       "confidence": "medium",
-      "proposed_class": [
-        {
-          "id": "failure_independence_proven",
-          "summary": "Sibling consumers of a shared input stream shall be proven independent — a failure in one shall not corrupt, starve, or cascade into others; the independence assumption shall be explicit and testable.",
-          "kind": "property",
-          "applies_when": "code fans out work to multiple peer consumers via per-element goroutines and waits on a shared barrier"
-        },
-        {
-          "id": "cascade_circuit_breaker",
-          "summary": "When one consumer in a peer-fanout repeatedly fails or saturates, downstream / sibling consumers shall be circuit-broken — the failure shall not propagate indefinitely.",
-          "kind": "domain",
-          "applies_when": "code fans out to multiple peer consumers and any single consumer failure could affect throughput, latency, or correctness of the others"
-        }
+      "obligations": [
+        "cascade_circuit_breaker",
+        "failure_independence_proven"
       ],
       "framework_hints": [
         "CWE-1088",
@@ -1212,8 +1167,8 @@
         "NIST-SP-800-53-SC-5"
       ],
       "message": "A per-element goroutine fanout is launched without an explicit\nfailure-independence barrier: each pump runs `go execPumpWriting(...)`\nand the outer loop simply `wg.Wait()`s on completion. A single pump\nthat panics, hangs, or saturates a shared dependency (DNS resolver\ncache, default HTTP transport pool, root logger) can corrupt\nsibling-pump output or starve them. Document the independence claim\n(process isolation, dedicated client, panic-recovery) AND wire a\ncascade circuit-breaker per pump.\n",
-      "fingerprint": "sha256:88b2d5a3b5555bfa7a5dd7b4a459ed3807877143fd75fb85a945c44a5979bb9a",
-      "source_hash": "sha256:41bc4cbbf03d222d0cdd571a0b04710b232a4f7707c04d3d6f56fda2b92058d6"
+      "fingerprint": "sha256:69277854a5348b90c2b4843855af5f9ec81ace1cfd67002304853ca77e47bcd7",
+      "source_hash": "sha256:454d0a615fe12f372232c9e594a331e7651473dc3d607f8350fac761abeaa882"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -1222,25 +1177,20 @@
       "signal_id": "go.purge_cycle_no_per_pump_result",
       "artifact": "main.go",
       "span": {
-        "start_line": 365,
-        "end_line": 369
+        "start_line": 366,
+        "end_line": 370
       },
       "confidence": "medium",
-      "proposed_class": [
-        {
-          "id": "partial_progress_observable",
-          "summary": "When work is fanned out to N sibling consumers, per-consumer success / failure / partial-progress shall be individually observable; a successful outer barrier shall not mask silent per-consumer drops.",
-          "kind": "property",
-          "applies_when": "code fans out work to peer consumers and reports completion via a single barrier (sync.WaitGroup, error channel, context cancellation)"
-        }
+      "obligations": [
+        "partial_progress_observable"
       ],
       "framework_hints": [
         "CWE-1295",
         "NIST-SP-800-160-3.2.4"
       ],
       "message": "The purge cycle fans work out to N pumps via `go execPumpWriting(\u0026wg, pmp, ...)`\nand waits on a single `wg.Wait()`. The outer loop has no per-pump\nsuccess/fail accounting — partial-progress is invisible to operators,\nhealth probes, or downstream alerting. When 7 of 8 pumps drop a\nbatch but the 8th succeeds, the purge cycle reports \"done\" with no\ndiagnosable signal. Expose per-pump result (records-written,\nrecords-dropped, last-error) via a metric, log line, or job event.\n",
-      "fingerprint": "sha256:183ce08151d1a673f09416679b0b077eea72647460113ab4897fbe2cad4893f0",
-      "source_hash": "sha256:41bc4cbbf03d222d0cdd571a0b04710b232a4f7707c04d3d6f56fda2b92058d6"
+      "fingerprint": "sha256:11b31462562b2b8373e0734ea7e61776fd3f6e1a24c195c8919efe540a73b575",
+      "source_hash": "sha256:454d0a615fe12f372232c9e594a331e7651473dc3d607f8350fac761abeaa882"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -1249,8 +1199,8 @@
       "signal_id": "concurrency.spawn",
       "artifact": "main.go",
       "span": {
-        "start_line": 367,
-        "end_line": 367
+        "start_line": 368,
+        "end_line": 368
       },
       "confidence": "medium",
       "tags": [
@@ -1260,8 +1210,8 @@
         "concurrent"
       ],
       "message": "Goroutine spawn requires lifecycle, cancellation, and shutdown ownership evidence.",
-      "fingerprint": "sha256:d1d8de9f3e1862e422085d92020fa78409bd7edf97600e9b05ba4bb63e6a28ee",
-      "source_hash": "sha256:41bc4cbbf03d222d0cdd571a0b04710b232a4f7707c04d3d6f56fda2b92058d6"
+      "fingerprint": "sha256:11649123f5cf3d90176cffbefedc70398d952209a6557136cc8a2e382008c890",
+      "source_hash": "sha256:454d0a615fe12f372232c9e594a331e7651473dc3d607f8350fac761abeaa882"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -1270,16 +1220,16 @@
       "signal_id": "go.goroutine_without_lifecycle",
       "artifact": "main.go",
       "span": {
-        "start_line": 367,
-        "end_line": 367
+        "start_line": 368,
+        "end_line": 368
       },
       "confidence": "medium",
       "tags": [
         "concurrent"
       ],
       "message": "Goroutine spawn lacks an obvious local lifecycle or cancellation cue.",
-      "fingerprint": "sha256:f30cfe4e136203bcaf688cd322f63c3a36b0324e23d9e77b8d270efa9851a267",
-      "source_hash": "sha256:41bc4cbbf03d222d0cdd571a0b04710b232a4f7707c04d3d6f56fda2b92058d6"
+      "fingerprint": "sha256:295a8e42aaa7aa933231b40bd4c407c0ee9e27f0f30aafc3e7cc8effdc2cca61",
+      "source_hash": "sha256:454d0a615fe12f372232c9e594a331e7651473dc3d607f8350fac761abeaa882"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -1288,16 +1238,16 @@
       "signal_id": "time.dependency",
       "artifact": "main.go",
       "span": {
-        "start_line": 437,
-        "end_line": 447
+        "start_line": 440,
+        "end_line": 450
       },
       "confidence": "medium",
       "tags": [
         "scheduler"
       ],
       "message": "Time-dependent behavior requires determinism, timeout, or scheduling evidence.",
-      "fingerprint": "sha256:a49ffcb0241e4c2666b87d33af9a3b1cb9da7dc3a28a285c950d7e31a9381c2b",
-      "source_hash": "sha256:41bc4cbbf03d222d0cdd571a0b04710b232a4f7707c04d3d6f56fda2b92058d6"
+      "fingerprint": "sha256:ae5ec3502d02384eddc5192ae8a183e00341033ca7d3d6783dfe5404cb31a320",
+      "source_hash": "sha256:454d0a615fe12f372232c9e594a331e7651473dc3d607f8350fac761abeaa882"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -1306,8 +1256,8 @@
       "signal_id": "concurrency.spawn",
       "artifact": "main.go",
       "span": {
-        "start_line": 469,
-        "end_line": 472
+        "start_line": 472,
+        "end_line": 475
       },
       "confidence": "medium",
       "tags": [
@@ -1317,8 +1267,8 @@
         "concurrent"
       ],
       "message": "Goroutine spawn requires lifecycle, cancellation, and shutdown ownership evidence.",
-      "fingerprint": "sha256:f1bed39132bd485dbb31ed19b9149532434d1b0cfa732b5723b713e8289add45",
-      "source_hash": "sha256:41bc4cbbf03d222d0cdd571a0b04710b232a4f7707c04d3d6f56fda2b92058d6"
+      "fingerprint": "sha256:8756a2776d60193e9581b7c08c3aa84ffd8e134b6c663182ca77fdc0fca47688",
+      "source_hash": "sha256:454d0a615fe12f372232c9e594a331e7651473dc3d607f8350fac761abeaa882"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -1327,23 +1277,13 @@
       "signal_id": "go.fanout_goroutine_no_recover",
       "artifact": "main.go",
       "span": {
-        "start_line": 469,
-        "end_line": 472
+        "start_line": 472,
+        "end_line": 475
       },
       "confidence": "medium",
-      "proposed_class": [
-        {
-          "id": "fanout_panic_isolated",
-          "summary": "Each goroutine spawned in a fanout shall recover from panics at its top frame; an unrecovered panic in any sibling shall not terminate the process or other siblings.",
-          "kind": "property",
-          "applies_when": "code spawns goroutines in a per-peer fanout (worker pool, per-pump dispatch, scatter-gather) and the goroutine top-frame does NOT begin with `defer func() { recover() }()`"
-        },
-        {
-          "id": "per_pump_circuit_breaker",
-          "summary": "Each per-dependency consumer (one pump, one external sink) shall be wrapped in its own circuit breaker — repeated failure of one shall trip its breaker without affecting siblings; the breaker state shall be individually observable.",
-          "kind": "domain",
-          "applies_when": "code dispatches work to multiple per-dependency consumers (per-pump, per-sink, per-tenant) without a per-consumer failure-isolation mechanism"
-        }
+      "obligations": [
+        "fanout_panic_isolated",
+        "per_pump_circuit_breaker"
       ],
       "framework_hints": [
         "CWE-755",
@@ -1351,8 +1291,8 @@
         "NIST-SP-800-53-SC-5"
       ],
       "message": "A goroutine spawned from a fanout (`go execPumpWriting(...)`,\n`go func(){ ch \u003c- pmp.WriteData(...) }()`) has no `defer\nrecover()` at the goroutine boundary. A panic inside any one pump's\nWriteData (nil-pointer deref in a marshaller, divide-by-zero in\nan aggregator) propagates up the goroutine stack, terminates the\nprocess — taking sibling pumps and the purge loop with it.\nThe independence claim from `failure_independence_proven`\ncannot hold without a per-fanout-goroutine recover barrier.\n",
-      "fingerprint": "sha256:6d4a6270eba91f42dc0841aa4080accdb115458138f28dabd028b60ef67c6c3d",
-      "source_hash": "sha256:41bc4cbbf03d222d0cdd571a0b04710b232a4f7707c04d3d6f56fda2b92058d6"
+      "fingerprint": "sha256:f148529c09bb9b2ab9495f12b0b665093fa67b058f74a06e7497864cad92bfba",
+      "source_hash": "sha256:454d0a615fe12f372232c9e594a331e7651473dc3d607f8350fac761abeaa882"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -1361,8 +1301,8 @@
       "signal_id": "concurrency.channel_communication",
       "artifact": "main.go",
       "span": {
-        "start_line": 471,
-        "end_line": 471
+        "start_line": 474,
+        "end_line": 474
       },
       "confidence": "medium",
       "tags": [
@@ -1372,8 +1312,8 @@
         "concurrent"
       ],
       "message": "Channel communication requires blocking, cancellation, and ownership evidence.",
-      "fingerprint": "sha256:8426c1bc796f93a0210f9acea7aeac41d97a418f0b4c952d97d5394dc1ea3e7d",
-      "source_hash": "sha256:41bc4cbbf03d222d0cdd571a0b04710b232a4f7707c04d3d6f56fda2b92058d6"
+      "fingerprint": "sha256:d79c36353a6447ec7ba091b49e1bd7fd7f67887bcfd6110cb5fcdd4319015384",
+      "source_hash": "sha256:454d0a615fe12f372232c9e594a331e7651473dc3d607f8350fac761abeaa882"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -1382,16 +1322,16 @@
       "signal_id": "time.dependency",
       "artifact": "main.go",
       "span": {
-        "start_line": 494,
-        "end_line": 494
+        "start_line": 497,
+        "end_line": 497
       },
       "confidence": "medium",
       "tags": [
         "scheduler"
       ],
       "message": "Time-dependent behavior requires determinism, timeout, or scheduling evidence.",
-      "fingerprint": "sha256:3f85f63773b8c3e3ae7d3c20e3904a70d3e9cbbc0cadb80919ce7dc90785c20f",
-      "source_hash": "sha256:41bc4cbbf03d222d0cdd571a0b04710b232a4f7707c04d3d6f56fda2b92058d6"
+      "fingerprint": "sha256:f1fa5ac2b16a9f1f3193f5ddd60f9a18f7dcf127b3404e37ee186701f20cf74a",
+      "source_hash": "sha256:454d0a615fe12f372232c9e594a331e7651473dc3d607f8350fac761abeaa882"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -1400,25 +1340,20 @@
       "signal_id": "go.wall_clock_arithmetic",
       "artifact": "main.go",
       "span": {
-        "start_line": 494,
-        "end_line": 494
+        "start_line": 497,
+        "end_line": 497
       },
       "confidence": "medium",
-      "proposed_class": [
-        {
-          "id": "dst_transition_safe",
-          "summary": "Duration arithmetic shall be monotonic across DST, NTP-step, and manual-clock adjustments; negative or hour-scale jumps shall not be returned to callers.",
-          "kind": "property",
-          "applies_when": "code performs wall-clock arithmetic (time.Since / time.Now().Sub) and uses the duration as a metric, SLA bound, or loop step"
-        }
+      "obligations": [
+        "dst_transition_safe"
       ],
       "framework_hints": [
         "CWE-1247",
         "NIST-SP-800-160-3.2.4"
       ],
       "message": "Code measures elapsed duration with `time.Since(...)` or\n`time.Now().Sub(...)` against a wall-clock instant. On DST transitions,\nmanual clock adjustments, or NTP step events the returned Duration can\ngo negative or jump by hours, producing nonsense timings, fake SLA\nbreaches, or — when used as a loop guard — instant time-outs.\nPrefer `time.Now()` paired with a monotonic-clock-safe helper, or\nexplicitly check `d \u003c 0` and clamp.\n",
-      "fingerprint": "sha256:6377a6c5a33767ac834c20003642536ce8c712a4c3a41cddf32ddeecf76ff451",
-      "source_hash": "sha256:41bc4cbbf03d222d0cdd571a0b04710b232a4f7707c04d3d6f56fda2b92058d6"
+      "fingerprint": "sha256:d88a3b20ebba5f0107db9e2f2e406d1ae5666f0dde6f781c6706e37ef26e5b6f",
+      "source_hash": "sha256:454d0a615fe12f372232c9e594a331e7651473dc3d607f8350fac761abeaa882"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -1427,8 +1362,8 @@
       "signal_id": "concurrency.spawn",
       "artifact": "main.go",
       "span": {
-        "start_line": 502,
-        "end_line": 502
+        "start_line": 505,
+        "end_line": 505
       },
       "confidence": "medium",
       "tags": [
@@ -1438,8 +1373,8 @@
         "concurrent"
       ],
       "message": "Goroutine spawn requires lifecycle, cancellation, and shutdown ownership evidence.",
-      "fingerprint": "sha256:46d22e3c11dedcc7a970e6f2890db38cc7e30661e6affaec0ec0a81209a9236b",
-      "source_hash": "sha256:41bc4cbbf03d222d0cdd571a0b04710b232a4f7707c04d3d6f56fda2b92058d6"
+      "fingerprint": "sha256:5824b2feebd0649f67b3a4fa702bc205a67057191d3503ef35ee94fafb996d5d",
+      "source_hash": "sha256:454d0a615fe12f372232c9e594a331e7651473dc3d607f8350fac761abeaa882"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -1448,16 +1383,16 @@
       "signal_id": "go.goroutine_without_lifecycle",
       "artifact": "main.go",
       "span": {
-        "start_line": 502,
-        "end_line": 502
+        "start_line": 505,
+        "end_line": 505
       },
       "confidence": "medium",
       "tags": [
         "concurrent"
       ],
       "message": "Goroutine spawn lacks an obvious local lifecycle or cancellation cue.",
-      "fingerprint": "sha256:0a86acea408c6f032e2328d26a2ee0fa2916765ac810bbbe38d666c69ba117a6",
-      "source_hash": "sha256:41bc4cbbf03d222d0cdd571a0b04710b232a4f7707c04d3d6f56fda2b92058d6"
+      "fingerprint": "sha256:b6fe8765e6be0789103d5381c119c5bd5674e956735ce13920e01b9344fab8ca",
+      "source_hash": "sha256:454d0a615fe12f372232c9e594a331e7651473dc3d607f8350fac761abeaa882"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -1466,40 +1401,22 @@
       "signal_id": "time.dependency",
       "artifact": "main.go",
       "span": {
-        "start_line": 515,
-        "end_line": 515
+        "start_line": 518,
+        "end_line": 518
       },
       "confidence": "medium",
       "tags": [
         "scheduler"
       ],
       "message": "Time-dependent behavior requires determinism, timeout, or scheduling evidence.",
-      "fingerprint": "sha256:eede81cb5645068cb0ecffe7f8c60a916d0fbb1d6f18670b4afa0319390fa06e",
-      "source_hash": "sha256:41bc4cbbf03d222d0cdd571a0b04710b232a4f7707c04d3d6f56fda2b92058d6"
+      "fingerprint": "sha256:71ce4ebd10a49a448d8f54c8107663f09f96df226d568240f304a0e9dbcd20f0",
+      "source_hash": "sha256:454d0a615fe12f372232c9e594a331e7651473dc3d607f8350fac761abeaa882"
     },
     {
       "schema_version": "proof.code_signals.v1",
       "provider": "opengrep",
       "provider_rule_id": "go.sync.primitive",
       "signal_id": "sync.primitive",
-      "artifact": "main.go",
-      "span": {
-        "start_line": 534,
-        "end_line": 534
-      },
-      "confidence": "medium",
-      "tags": [
-        "concurrent"
-      ],
-      "message": "Synchronization primitive use requires concurrency ownership and race/liveness evidence.",
-      "fingerprint": "sha256:bfc1c4cb3ec1352d213e58eaaf9d700a02213724dc9e7ff7909e83f64dadd324",
-      "source_hash": "sha256:41bc4cbbf03d222d0cdd571a0b04710b232a4f7707c04d3d6f56fda2b92058d6"
-    },
-    {
-      "schema_version": "proof.code_signals.v1",
-      "provider": "opengrep",
-      "provider_rule_id": "go.concurrency.goroutine-spawn",
-      "signal_id": "concurrency.spawn",
       "artifact": "main.go",
       "span": {
         "start_line": 537,
@@ -1509,12 +1426,30 @@
       "tags": [
         "concurrent"
       ],
+      "message": "Synchronization primitive use requires concurrency ownership and race/liveness evidence.",
+      "fingerprint": "sha256:c461aac871b0f9f8d1ab819366c71ecd268a8d2d4b1779c3e5e858940b831f31",
+      "source_hash": "sha256:454d0a615fe12f372232c9e594a331e7651473dc3d607f8350fac761abeaa882"
+    },
+    {
+      "schema_version": "proof.code_signals.v1",
+      "provider": "opengrep",
+      "provider_rule_id": "go.concurrency.goroutine-spawn",
+      "signal_id": "concurrency.spawn",
+      "artifact": "main.go",
+      "span": {
+        "start_line": 540,
+        "end_line": 540
+      },
+      "confidence": "medium",
+      "tags": [
+        "concurrent"
+      ],
       "obligations": [
         "concurrent"
       ],
       "message": "Goroutine spawn requires lifecycle, cancellation, and shutdown ownership evidence.",
-      "fingerprint": "sha256:dbf84b0bf4578e87a57cf194fde346d46127dba9029ab279738ad5dafb5e7d34",
-      "source_hash": "sha256:41bc4cbbf03d222d0cdd571a0b04710b232a4f7707c04d3d6f56fda2b92058d6"
+      "fingerprint": "sha256:887e0f98fafa534717d7a9448d6e8bf89ca1b5895535c24e91297c806c48604c",
+      "source_hash": "sha256:454d0a615fe12f372232c9e594a331e7651473dc3d607f8350fac761abeaa882"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -1563,13 +1498,8 @@
         "end_line": 267
       },
       "confidence": "medium",
-      "proposed_class": [
-        {
-          "id": "tls_verification_explicit",
-          "summary": "TLS peer verification shall be enabled by default; any code path that disables verification (InsecureSkipVerify, custom verifier returning nil) shall be guarded by an explicit, audited config option and shall emit a startup WARN or audit event.",
-          "kind": "property",
-          "applies_when": "code constructs a *tls.Config from operator-supplied configuration and the InsecureSkipVerify field is driven by a config struct field"
-        }
+      "obligations": [
+        "cert_validation_strict"
       ],
       "framework_hints": [
         "CWE-295",
@@ -1632,13 +1562,8 @@
         "end_line": 69
       },
       "confidence": "high",
-      "proposed_class": [
-        {
-          "id": "process_exit_on_recoverable",
-          "summary": "A subsystem-local failure (one pump's config decode, one connection failure) shall not call os.Exit / log.Fatal; the process shall either return the error to a coordinator that decides, or enter a per-subsystem inert mode preserving sibling-subsystem availability.",
-          "kind": "property",
-          "applies_when": "code calls log.Fatal / log.Fatalf / os.Exit from a per-subsystem initializer (pump.Init, plugin.Load) rather than from main / a top-level coordinator"
-        }
+      "obligations": [
+        "process_exit_on_recoverable"
       ],
       "framework_hints": [
         "CWE-755",
@@ -1878,13 +1803,8 @@
         "end_line": 176
       },
       "confidence": "medium",
-      "proposed_class": [
-        {
-          "id": "tls_verification_explicit",
-          "summary": "TLS peer verification shall be enabled by default; any code path that disables verification (InsecureSkipVerify, custom verifier returning nil) shall be guarded by an explicit, audited config option and shall emit a startup WARN or audit event.",
-          "kind": "property",
-          "applies_when": "code constructs a *tls.Config from operator-supplied configuration and the InsecureSkipVerify field is driven by a config struct field"
-        }
+      "obligations": [
+        "cert_validation_strict"
       ],
       "framework_hints": [
         "CWE-295",
@@ -1985,13 +1905,8 @@
         "end_line": 404
       },
       "confidence": "high",
-      "proposed_class": [
-        {
-          "id": "process_exit_on_recoverable",
-          "summary": "A subsystem-local failure (one pump's config decode, one connection failure) shall not call os.Exit / log.Fatal; the process shall either return the error to a coordinator that decides, or enter a per-subsystem inert mode preserving sibling-subsystem availability.",
-          "kind": "property",
-          "applies_when": "code calls log.Fatal / log.Fatalf / os.Exit from a per-subsystem initializer (pump.Init, plugin.Load) rather than from main / a top-level coordinator"
-        }
+      "obligations": [
+        "process_exit_on_recoverable"
       ],
       "framework_hints": [
         "CWE-755",
@@ -2498,13 +2413,8 @@
         "end_line": 159
       },
       "confidence": "medium",
-      "proposed_class": [
-        {
-          "id": "temporal_window_inclusive",
-          "summary": "Temporal-window shard routing shall declare its inclusivity (half-open [start, end), UTC-anchored) AND a Validate step shall enforce that each record maps to exactly one shard; double-counted or dropped records at window boundaries are prohibited.",
-          "kind": "property",
-          "applies_when": "code routes data into per-window storage shards (per-day SQL tables, per-hour buckets) based on a timestamp field"
-        }
+      "obligations": [
+        "temporal_window_inclusive"
       ],
       "framework_hints": [
         "CWE-1287",
@@ -2569,13 +2479,8 @@
         "end_line": 134
       },
       "confidence": "medium",
-      "proposed_class": [
-        {
-          "id": "temporal_window_inclusive",
-          "summary": "Temporal-window shard routing shall declare its inclusivity (half-open [start, end), UTC-anchored) AND a Validate step shall enforce that each record maps to exactly one shard; double-counted or dropped records at window boundaries are prohibited.",
-          "kind": "property",
-          "applies_when": "code routes data into per-window storage shards (per-day SQL tables, per-hour buckets) based on a timestamp field"
-        }
+      "obligations": [
+        "temporal_window_inclusive"
       ],
       "framework_hints": [
         "CWE-1287",
@@ -2640,13 +2545,8 @@
         "end_line": 96
       },
       "confidence": "high",
-      "proposed_class": [
-        {
-          "id": "process_exit_on_recoverable",
-          "summary": "A subsystem-local failure (one pump's config decode, one connection failure) shall not call os.Exit / log.Fatal; the process shall either return the error to a coordinator that decides, or enter a per-subsystem inert mode preserving sibling-subsystem availability.",
-          "kind": "property",
-          "applies_when": "code calls log.Fatal / log.Fatalf / os.Exit from a per-subsystem initializer (pump.Init, plugin.Load) rather than from main / a top-level coordinator"
-        }
+      "obligations": [
+        "process_exit_on_recoverable"
       ],
       "framework_hints": [
         "CWE-755",
@@ -2734,13 +2634,8 @@
         "end_line": 49
       },
       "confidence": "medium",
-      "proposed_class": [
-        {
-          "id": "retry_budget_bounded",
-          "summary": "Retry loops shall be bounded by an absolute wall-clock or context deadline, not just an attempt count; the worst-case elapsed time at maximum retries shall be explicit and shall not exceed the surrounding cycle interval.",
-          "kind": "property",
-          "applies_when": "code uses bounded-retry-with-backoff (cenkalti/backoff, aws/retry, custom while-loop) where the bound is a count rather than a deadline"
-        }
+      "obligations": [
+        "retry_budget_bounded"
       ],
       "framework_hints": [
         "CWE-1088",
@@ -2762,13 +2657,8 @@
         "end_line": 45
       },
       "confidence": "medium",
-      "proposed_class": [
-        {
-          "id": "retry_budget_bounded",
-          "summary": "Retry loops shall be bounded by an absolute wall-clock or context deadline, not just an attempt count; the worst-case elapsed time at maximum retries shall be explicit and shall not exceed the surrounding cycle interval.",
-          "kind": "property",
-          "applies_when": "code uses bounded-retry-with-backoff (cenkalti/backoff, aws/retry, custom while-loop) where the bound is a count rather than a deadline"
-        }
+      "obligations": [
+        "retry_budget_bounded"
       ],
       "framework_hints": [
         "CWE-1088",
@@ -2812,13 +2702,8 @@
         "end_line": 191
       },
       "confidence": "medium",
-      "proposed_class": [
-        {
-          "id": "tls_verification_explicit",
-          "summary": "TLS peer verification shall be enabled by default; any code path that disables verification (InsecureSkipVerify, custom verifier returning nil) shall be guarded by an explicit, audited config option and shall emit a startup WARN or audit event.",
-          "kind": "property",
-          "applies_when": "code constructs a *tls.Config from operator-supplied configuration and the InsecureSkipVerify field is driven by a config struct field"
-        }
+      "obligations": [
+        "cert_validation_strict"
       ],
       "framework_hints": [
         "CWE-295",
@@ -2840,13 +2725,8 @@
         "end_line": 191
       },
       "confidence": "medium",
-      "proposed_class": [
-        {
-          "id": "tls_verification_explicit",
-          "summary": "TLS peer verification shall be enabled by default; any code path that disables verification (InsecureSkipVerify, custom verifier returning nil) shall be guarded by an explicit, audited config option and shall emit a startup WARN or audit event.",
-          "kind": "property",
-          "applies_when": "code constructs a *tls.Config from operator-supplied configuration and the InsecureSkipVerify field is driven by a config struct field"
-        }
+      "obligations": [
+        "cert_validation_strict"
       ],
       "framework_hints": [
         "CWE-295",
@@ -2908,13 +2788,8 @@
         "end_line": 245
       },
       "confidence": "medium",
-      "proposed_class": [
-        {
-          "id": "tls_verification_explicit",
-          "summary": "TLS peer verification shall be enabled by default; any code path that disables verification (InsecureSkipVerify, custom verifier returning nil) shall be guarded by an explicit, audited config option and shall emit a startup WARN or audit event.",
-          "kind": "property",
-          "applies_when": "code constructs a *tls.Config from operator-supplied configuration and the InsecureSkipVerify field is driven by a config struct field"
-        }
+      "obligations": [
+        "cert_validation_strict"
       ],
       "framework_hints": [
         "CWE-295",
@@ -3030,13 +2905,8 @@
         "end_line": 82
       },
       "confidence": "high",
-      "proposed_class": [
-        {
-          "id": "process_exit_on_recoverable",
-          "summary": "A subsystem-local failure (one pump's config decode, one connection failure) shall not call os.Exit / log.Fatal; the process shall either return the error to a coordinator that decides, or enter a per-subsystem inert mode preserving sibling-subsystem availability.",
-          "kind": "property",
-          "applies_when": "code calls log.Fatal / log.Fatalf / os.Exit from a per-subsystem initializer (pump.Init, plugin.Load) rather than from main / a top-level coordinator"
-        }
+      "obligations": [
+        "process_exit_on_recoverable"
       ],
       "framework_hints": [
         "CWE-755",
@@ -3178,13 +3048,8 @@
         "end_line": 148
       },
       "confidence": "high",
-      "proposed_class": [
-        {
-          "id": "process_exit_on_recoverable",
-          "summary": "A subsystem-local failure (one pump's config decode, one connection failure) shall not call os.Exit / log.Fatal; the process shall either return the error to a coordinator that decides, or enter a per-subsystem inert mode preserving sibling-subsystem availability.",
-          "kind": "property",
-          "applies_when": "code calls log.Fatal / log.Fatalf / os.Exit from a per-subsystem initializer (pump.Init, plugin.Load) rather than from main / a top-level coordinator"
-        }
+      "obligations": [
+        "process_exit_on_recoverable"
       ],
       "framework_hints": [
         "CWE-755",
@@ -3304,13 +3169,8 @@
         "end_line": 192
       },
       "confidence": "high",
-      "proposed_class": [
-        {
-          "id": "process_exit_on_recoverable",
-          "summary": "A subsystem-local failure (one pump's config decode, one connection failure) shall not call os.Exit / log.Fatal; the process shall either return the error to a coordinator that decides, or enter a per-subsystem inert mode preserving sibling-subsystem availability.",
-          "kind": "property",
-          "applies_when": "code calls log.Fatal / log.Fatalf / os.Exit from a per-subsystem initializer (pump.Init, plugin.Load) rather than from main / a top-level coordinator"
-        }
+      "obligations": [
+        "process_exit_on_recoverable"
       ],
       "framework_hints": [
         "CWE-755",
@@ -3390,13 +3250,8 @@
         "end_line": 118
       },
       "confidence": "medium",
-      "proposed_class": [
-        {
-          "id": "tls_verification_explicit",
-          "summary": "TLS peer verification shall be enabled by default; any code path that disables verification (InsecureSkipVerify, custom verifier returning nil) shall be guarded by an explicit, audited config option and shall emit a startup WARN or audit event.",
-          "kind": "property",
-          "applies_when": "code constructs a *tls.Config from operator-supplied configuration and the InsecureSkipVerify field is driven by a config struct field"
-        }
+      "obligations": [
+        "cert_validation_strict"
       ],
       "framework_hints": [
         "CWE-295",
@@ -3418,13 +3273,8 @@
         "end_line": 118
       },
       "confidence": "medium",
-      "proposed_class": [
-        {
-          "id": "tls_verification_explicit",
-          "summary": "TLS peer verification shall be enabled by default; any code path that disables verification (InsecureSkipVerify, custom verifier returning nil) shall be guarded by an explicit, audited config option and shall emit a startup WARN or audit event.",
-          "kind": "property",
-          "applies_when": "code constructs a *tls.Config from operator-supplied configuration and the InsecureSkipVerify field is driven by a config struct field"
-        }
+      "obligations": [
+        "cert_validation_strict"
       ],
       "framework_hints": [
         "CWE-295",
@@ -3500,13 +3350,8 @@
         "end_line": 246
       },
       "confidence": "medium",
-      "proposed_class": [
-        {
-          "id": "dst_transition_safe",
-          "summary": "Duration arithmetic shall be monotonic across DST, NTP-step, and manual-clock adjustments; negative or hour-scale jumps shall not be returned to callers.",
-          "kind": "property",
-          "applies_when": "code performs wall-clock arithmetic (time.Since / time.Now().Sub) and uses the duration as a metric, SLA bound, or loop step"
-        }
+      "obligations": [
+        "dst_transition_safe"
       ],
       "framework_hints": [
         "CWE-1247",
@@ -3549,13 +3394,8 @@
         "end_line": 140
       },
       "confidence": "high",
-      "proposed_class": [
-        {
-          "id": "process_exit_on_recoverable",
-          "summary": "A subsystem-local failure (one pump's config decode, one connection failure) shall not call os.Exit / log.Fatal; the process shall either return the error to a coordinator that decides, or enter a per-subsystem inert mode preserving sibling-subsystem availability.",
-          "kind": "property",
-          "applies_when": "code calls log.Fatal / log.Fatalf / os.Exit from a per-subsystem initializer (pump.Init, plugin.Load) rather than from main / a top-level coordinator"
-        }
+      "obligations": [
+        "process_exit_on_recoverable"
       ],
       "framework_hints": [
         "CWE-755",
@@ -3679,13 +3519,8 @@
         "end_line": 138
       },
       "confidence": "high",
-      "proposed_class": [
-        {
-          "id": "process_exit_on_recoverable",
-          "summary": "A subsystem-local failure (one pump's config decode, one connection failure) shall not call os.Exit / log.Fatal; the process shall either return the error to a coordinator that decides, or enter a per-subsystem inert mode preserving sibling-subsystem availability.",
-          "kind": "property",
-          "applies_when": "code calls log.Fatal / log.Fatalf / os.Exit from a per-subsystem initializer (pump.Init, plugin.Load) rather than from main / a top-level coordinator"
-        }
+      "obligations": [
+        "process_exit_on_recoverable"
       ],
       "framework_hints": [
         "CWE-755",
@@ -3942,13 +3777,8 @@
         "end_line": 174
       },
       "confidence": "medium",
-      "proposed_class": [
-        {
-          "id": "temporal_window_inclusive",
-          "summary": "Temporal-window shard routing shall declare its inclusivity (half-open [start, end), UTC-anchored) AND a Validate step shall enforce that each record maps to exactly one shard; double-counted or dropped records at window boundaries are prohibited.",
-          "kind": "property",
-          "applies_when": "code routes data into per-window storage shards (per-day SQL tables, per-hour buckets) based on a timestamp field"
-        }
+      "obligations": [
+        "temporal_window_inclusive"
       ],
       "framework_hints": [
         "CWE-1287",
@@ -4087,13 +3917,8 @@
         "end_line": 232
       },
       "confidence": "medium",
-      "proposed_class": [
-        {
-          "id": "temporal_window_inclusive",
-          "summary": "Temporal-window shard routing shall declare its inclusivity (half-open [start, end), UTC-anchored) AND a Validate step shall enforce that each record maps to exactly one shard; double-counted or dropped records at window boundaries are prohibited.",
-          "kind": "property",
-          "applies_when": "code routes data into per-window storage shards (per-day SQL tables, per-hour buckets) based on a timestamp field"
-        }
+      "obligations": [
+        "temporal_window_inclusive"
       ],
       "framework_hints": [
         "CWE-1287",
@@ -4253,13 +4078,8 @@
         "end_line": 333
       },
       "confidence": "high",
-      "proposed_class": [
-        {
-          "id": "process_exit_on_recoverable",
-          "summary": "A subsystem-local failure (one pump's config decode, one connection failure) shall not call os.Exit / log.Fatal; the process shall either return the error to a coordinator that decides, or enter a per-subsystem inert mode preserving sibling-subsystem availability.",
-          "kind": "property",
-          "applies_when": "code calls log.Fatal / log.Fatalf / os.Exit from a per-subsystem initializer (pump.Init, plugin.Load) rather than from main / a top-level coordinator"
-        }
+      "obligations": [
+        "process_exit_on_recoverable"
       ],
       "framework_hints": [
         "CWE-755",
@@ -4401,13 +4221,8 @@
         "end_line": 271
       },
       "confidence": "high",
-      "proposed_class": [
-        {
-          "id": "process_exit_on_recoverable",
-          "summary": "A subsystem-local failure (one pump's config decode, one connection failure) shall not call os.Exit / log.Fatal; the process shall either return the error to a coordinator that decides, or enter a per-subsystem inert mode preserving sibling-subsystem availability.",
-          "kind": "property",
-          "applies_when": "code calls log.Fatal / log.Fatalf / os.Exit from a per-subsystem initializer (pump.Init, plugin.Load) rather than from main / a top-level coordinator"
-        }
+      "obligations": [
+        "process_exit_on_recoverable"
       ],
       "framework_hints": [
         "CWE-755",
@@ -4687,13 +4502,8 @@
         "end_line": 223
       },
       "confidence": "high",
-      "proposed_class": [
-        {
-          "id": "process_exit_on_recoverable",
-          "summary": "A subsystem-local failure (one pump's config decode, one connection failure) shall not call os.Exit / log.Fatal; the process shall either return the error to a coordinator that decides, or enter a per-subsystem inert mode preserving sibling-subsystem availability.",
-          "kind": "property",
-          "applies_when": "code calls log.Fatal / log.Fatalf / os.Exit from a per-subsystem initializer (pump.Init, plugin.Load) rather than from main / a top-level coordinator"
-        }
+      "obligations": [
+        "process_exit_on_recoverable"
       ],
       "framework_hints": [
         "CWE-755",
@@ -4799,13 +4609,8 @@
         "end_line": 118
       },
       "confidence": "high",
-      "proposed_class": [
-        {
-          "id": "process_exit_on_recoverable",
-          "summary": "A subsystem-local failure (one pump's config decode, one connection failure) shall not call os.Exit / log.Fatal; the process shall either return the error to a coordinator that decides, or enter a per-subsystem inert mode preserving sibling-subsystem availability.",
-          "kind": "property",
-          "applies_when": "code calls log.Fatal / log.Fatalf / os.Exit from a per-subsystem initializer (pump.Init, plugin.Load) rather than from main / a top-level coordinator"
-        }
+      "obligations": [
+        "process_exit_on_recoverable"
       ],
       "framework_hints": [
         "CWE-755",
@@ -4924,7 +4729,7 @@
       ],
       "message": "log.Fatal / os.Exit called from a non-main constructor or processing function.\nThis aborts the entire process and bypasses caller error handling; return\nan error instead so the caller can recover.\n",
       "fingerprint": "sha256:2d0b59ac79404a1d69ab876f847e3060277f902bbb94c07fd2b8ef94682629f9",
-      "source_hash": "sha256:99d941c7b4c94efc7abfde6bb6848083175f7d66d72157500b831a36d4593f19"
+      "source_hash": "sha256:1e85047b5806a40ffa9bda5799890446584eefca1f655c25d25ee846c2184376"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -4937,13 +4742,8 @@
         "end_line": 221
       },
       "confidence": "high",
-      "proposed_class": [
-        {
-          "id": "process_exit_on_recoverable",
-          "summary": "A subsystem-local failure (one pump's config decode, one connection failure) shall not call os.Exit / log.Fatal; the process shall either return the error to a coordinator that decides, or enter a per-subsystem inert mode preserving sibling-subsystem availability.",
-          "kind": "property",
-          "applies_when": "code calls log.Fatal / log.Fatalf / os.Exit from a per-subsystem initializer (pump.Init, plugin.Load) rather than from main / a top-level coordinator"
-        }
+      "obligations": [
+        "process_exit_on_recoverable"
       ],
       "framework_hints": [
         "CWE-755",
@@ -4952,7 +4752,7 @@
       ],
       "message": "A pump's `Init(config)` method calls `log.Fatal(...)` on a config\ndecode or connection failure. log.Fatal calls os.Exit(1), bypassing\nevery deferred cleanup AND every sibling pump's chance to keep\nworking. A single misconfigured pump in a multi-pump deployment\ntakes down the whole process. Either return the error to the caller\n(the pump-init driver should decide whether the failure is fatal\nfor the WHOLE process, or just for THIS pump), or recover into a\ndegraded \"this pump is inert\" mode while others continue.\n",
       "fingerprint": "sha256:951c3923c53a19ff7e0c322fbf14f54274a8c510e231211a15476adaab6e5239",
-      "source_hash": "sha256:99d941c7b4c94efc7abfde6bb6848083175f7d66d72157500b831a36d4593f19"
+      "source_hash": "sha256:1e85047b5806a40ffa9bda5799890446584eefca1f655c25d25ee846c2184376"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -4974,7 +4774,7 @@
       ],
       "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
       "fingerprint": "sha256:edab113255d823fcaf03d95457ee642df3a7b0e527c107b96f2096a41a1350b0",
-      "source_hash": "sha256:99d941c7b4c94efc7abfde6bb6848083175f7d66d72157500b831a36d4593f19"
+      "source_hash": "sha256:1e85047b5806a40ffa9bda5799890446584eefca1f655c25d25ee846c2184376"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -4992,7 +4792,7 @@
       ],
       "message": "HTTP server API use requires listener, request-boundary, timeout, and static-file review evidence.",
       "fingerprint": "sha256:c145a9a569d0d759e66a8ad1ce1d199e760e1331700dc38eb2d8c1c04cbc3d47",
-      "source_hash": "sha256:99d941c7b4c94efc7abfde6bb6848083175f7d66d72157500b831a36d4593f19"
+      "source_hash": "sha256:1e85047b5806a40ffa9bda5799890446584eefca1f655c25d25ee846c2184376"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -5014,7 +4814,7 @@
       ],
       "message": "Library code registers handlers on or serves http.DefaultServeMux\n(http.Handle / http.HandleFunc / http.ListenAndServe(..., nil)). The\nDefaultServeMux is process-global; a second init in the same process\n(re-init after config reload, parallel tests, two pumps configured for\ndifferent ports) panics with \"http: multiple registrations for /metrics\".\nConstruct an explicit *http.ServeMux and wire it through a private\n*http.Server.\n",
       "fingerprint": "sha256:aded8fa152ca6aecdd033da2972d9130b1a711ec10b8580c01c6352377a52f8e",
-      "source_hash": "sha256:99d941c7b4c94efc7abfde6bb6848083175f7d66d72157500b831a36d4593f19"
+      "source_hash": "sha256:1e85047b5806a40ffa9bda5799890446584eefca1f655c25d25ee846c2184376"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -5035,7 +4835,7 @@
       ],
       "message": "Goroutine spawn requires lifecycle, cancellation, and shutdown ownership evidence.",
       "fingerprint": "sha256:d46294425e575f79a194945ef66d696682a3fee00d770bd919efdfe2a669f5dc",
-      "source_hash": "sha256:99d941c7b4c94efc7abfde6bb6848083175f7d66d72157500b831a36d4593f19"
+      "source_hash": "sha256:1e85047b5806a40ffa9bda5799890446584eefca1f655c25d25ee846c2184376"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -5053,7 +4853,7 @@
       ],
       "message": "Goroutine spawn lacks an obvious local lifecycle or cancellation cue.",
       "fingerprint": "sha256:801f07b23c7b18b4b0f9603356d6c082590fc443b063dc30152109f90809aa69",
-      "source_hash": "sha256:99d941c7b4c94efc7abfde6bb6848083175f7d66d72157500b831a36d4593f19"
+      "source_hash": "sha256:1e85047b5806a40ffa9bda5799890446584eefca1f655c25d25ee846c2184376"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -5071,7 +4871,7 @@
       ],
       "message": "HTTP server API use requires listener, request-boundary, timeout, and static-file review evidence.",
       "fingerprint": "sha256:dcbe06d8e2774ace247722f3dd31c49a16e5862f19b826926a0f145010abfaa2",
-      "source_hash": "sha256:99d941c7b4c94efc7abfde6bb6848083175f7d66d72157500b831a36d4593f19"
+      "source_hash": "sha256:1e85047b5806a40ffa9bda5799890446584eefca1f655c25d25ee846c2184376"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -5093,7 +4893,7 @@
       ],
       "message": "Library code registers handlers on or serves http.DefaultServeMux\n(http.Handle / http.HandleFunc / http.ListenAndServe(..., nil)). The\nDefaultServeMux is process-global; a second init in the same process\n(re-init after config reload, parallel tests, two pumps configured for\ndifferent ports) panics with \"http: multiple registrations for /metrics\".\nConstruct an explicit *http.ServeMux and wire it through a private\n*http.Server.\n",
       "fingerprint": "sha256:6c5e23e7d7197ed9c1ac8cc1bec3cb87033c45c994ecb53e6c62ebd0e7a70c92",
-      "source_hash": "sha256:99d941c7b4c94efc7abfde6bb6848083175f7d66d72157500b831a36d4593f19"
+      "source_hash": "sha256:1e85047b5806a40ffa9bda5799890446584eefca1f655c25d25ee846c2184376"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -5285,13 +5085,8 @@
         "end_line": 59
       },
       "confidence": "high",
-      "proposed_class": [
-        {
-          "id": "process_exit_on_recoverable",
-          "summary": "A subsystem-local failure (one pump's config decode, one connection failure) shall not call os.Exit / log.Fatal; the process shall either return the error to a coordinator that decides, or enter a per-subsystem inert mode preserving sibling-subsystem availability.",
-          "kind": "property",
-          "applies_when": "code calls log.Fatal / log.Fatalf / os.Exit from a per-subsystem initializer (pump.Init, plugin.Load) rather than from main / a top-level coordinator"
-        }
+      "obligations": [
+        "process_exit_on_recoverable"
       ],
       "framework_hints": [
         "CWE-755",
@@ -5357,13 +5152,8 @@
         "end_line": 138
       },
       "confidence": "medium",
-      "proposed_class": [
-        {
-          "id": "tls_verification_explicit",
-          "summary": "TLS peer verification shall be enabled by default; any code path that disables verification (InsecureSkipVerify, custom verifier returning nil) shall be guarded by an explicit, audited config option and shall emit a startup WARN or audit event.",
-          "kind": "property",
-          "applies_when": "code constructs a *tls.Config from operator-supplied configuration and the InsecureSkipVerify field is driven by a config struct field"
-        }
+      "obligations": [
+        "cert_validation_strict"
       ],
       "framework_hints": [
         "CWE-295",
@@ -5385,13 +5175,8 @@
         "end_line": 138
       },
       "confidence": "medium",
-      "proposed_class": [
-        {
-          "id": "tls_verification_explicit",
-          "summary": "TLS peer verification shall be enabled by default; any code path that disables verification (InsecureSkipVerify, custom verifier returning nil) shall be guarded by an explicit, audited config option and shall emit a startup WARN or audit event.",
-          "kind": "property",
-          "applies_when": "code constructs a *tls.Config from operator-supplied configuration and the InsecureSkipVerify field is driven by a config struct field"
-        }
+      "obligations": [
+        "cert_validation_strict"
       ],
       "framework_hints": [
         "CWE-295",
@@ -5594,13 +5379,8 @@
         "end_line": 391
       },
       "confidence": "medium",
-      "proposed_class": [
-        {
-          "id": "temporal_window_inclusive",
-          "summary": "Temporal-window shard routing shall declare its inclusivity (half-open [start, end), UTC-anchored) AND a Validate step shall enforce that each record maps to exactly one shard; double-counted or dropped records at window boundaries are prohibited.",
-          "kind": "property",
-          "applies_when": "code routes data into per-window storage shards (per-day SQL tables, per-hour buckets) based on a timestamp field"
-        }
+      "obligations": [
+        "temporal_window_inclusive"
       ],
       "framework_hints": [
         "CWE-1287",
@@ -5821,13 +5601,8 @@
         "end_line": 258
       },
       "confidence": "medium",
-      "proposed_class": [
-        {
-          "id": "temporal_window_inclusive",
-          "summary": "Temporal-window shard routing shall declare its inclusivity (half-open [start, end), UTC-anchored) AND a Validate step shall enforce that each record maps to exactly one shard; double-counted or dropped records at window boundaries are prohibited.",
-          "kind": "property",
-          "applies_when": "code routes data into per-window storage shards (per-day SQL tables, per-hour buckets) based on a timestamp field"
-        }
+      "obligations": [
+        "temporal_window_inclusive"
       ],
       "framework_hints": [
         "CWE-1287",
@@ -5892,13 +5667,8 @@
         "end_line": 128
       },
       "confidence": "high",
-      "proposed_class": [
-        {
-          "id": "process_exit_on_recoverable",
-          "summary": "A subsystem-local failure (one pump's config decode, one connection failure) shall not call os.Exit / log.Fatal; the process shall either return the error to a coordinator that decides, or enter a per-subsystem inert mode preserving sibling-subsystem availability.",
-          "kind": "property",
-          "applies_when": "code calls log.Fatal / log.Fatalf / os.Exit from a per-subsystem initializer (pump.Init, plugin.Load) rather than from main / a top-level coordinator"
-        }
+      "obligations": [
+        "process_exit_on_recoverable"
       ],
       "framework_hints": [
         "CWE-755",
@@ -6000,13 +5770,8 @@
         "end_line": 172
       },
       "confidence": "medium",
-      "proposed_class": [
-        {
-          "id": "dst_transition_safe",
-          "summary": "Duration arithmetic shall be monotonic across DST, NTP-step, and manual-clock adjustments; negative or hour-scale jumps shall not be returned to callers.",
-          "kind": "property",
-          "applies_when": "code performs wall-clock arithmetic (time.Since / time.Now().Sub) and uses the duration as a metric, SLA bound, or loop step"
-        }
+      "obligations": [
+        "dst_transition_safe"
       ],
       "framework_hints": [
         "CWE-1247",
@@ -6089,13 +5854,8 @@
         "end_line": 73
       },
       "confidence": "high",
-      "proposed_class": [
-        {
-          "id": "process_exit_on_recoverable",
-          "summary": "A subsystem-local failure (one pump's config decode, one connection failure) shall not call os.Exit / log.Fatal; the process shall either return the error to a coordinator that decides, or enter a per-subsystem inert mode preserving sibling-subsystem availability.",
-          "kind": "property",
-          "applies_when": "code calls log.Fatal / log.Fatalf / os.Exit from a per-subsystem initializer (pump.Init, plugin.Load) rather than from main / a top-level coordinator"
-        }
+      "obligations": [
+        "process_exit_on_recoverable"
       ],
       "framework_hints": [
         "CWE-755",
@@ -6179,13 +5939,8 @@
         "end_line": 78
       },
       "confidence": "high",
-      "proposed_class": [
-        {
-          "id": "process_exit_on_recoverable",
-          "summary": "A subsystem-local failure (one pump's config decode, one connection failure) shall not call os.Exit / log.Fatal; the process shall either return the error to a coordinator that decides, or enter a per-subsystem inert mode preserving sibling-subsystem availability.",
-          "kind": "property",
-          "applies_when": "code calls log.Fatal / log.Fatalf / os.Exit from a per-subsystem initializer (pump.Init, plugin.Load) rather than from main / a top-level coordinator"
-        }
+      "obligations": [
+        "process_exit_on_recoverable"
       ],
       "framework_hints": [
         "CWE-755",
@@ -6287,13 +6042,8 @@
         "end_line": 95
       },
       "confidence": "high",
-      "proposed_class": [
-        {
-          "id": "process_exit_on_recoverable",
-          "summary": "A subsystem-local failure (one pump's config decode, one connection failure) shall not call os.Exit / log.Fatal; the process shall either return the error to a coordinator that decides, or enter a per-subsystem inert mode preserving sibling-subsystem availability.",
-          "kind": "property",
-          "applies_when": "code calls log.Fatal / log.Fatalf / os.Exit from a per-subsystem initializer (pump.Init, plugin.Load) rather than from main / a top-level coordinator"
-        }
+      "obligations": [
+        "process_exit_on_recoverable"
       ],
       "framework_hints": [
         "CWE-755",
@@ -6377,13 +6127,8 @@
         "end_line": 119
       },
       "confidence": "high",
-      "proposed_class": [
-        {
-          "id": "process_exit_on_recoverable",
-          "summary": "A subsystem-local failure (one pump's config decode, one connection failure) shall not call os.Exit / log.Fatal; the process shall either return the error to a coordinator that decides, or enter a per-subsystem inert mode preserving sibling-subsystem availability.",
-          "kind": "property",
-          "applies_when": "code calls log.Fatal / log.Fatalf / os.Exit from a per-subsystem initializer (pump.Init, plugin.Load) rather than from main / a top-level coordinator"
-        }
+      "obligations": [
+        "process_exit_on_recoverable"
       ],
       "framework_hints": [
         "CWE-755",
@@ -6558,13 +6303,8 @@
         "end_line": 59
       },
       "confidence": "medium",
-      "proposed_class": [
-        {
-          "id": "dst_transition_safe",
-          "summary": "Duration arithmetic shall be monotonic across DST, NTP-step, and manual-clock adjustments; negative or hour-scale jumps shall not be returned to callers.",
-          "kind": "property",
-          "applies_when": "code performs wall-clock arithmetic (time.Since / time.Now().Sub) and uses the duration as a metric, SLA bound, or loop step"
-        }
+      "obligations": [
+        "dst_transition_safe"
       ],
       "framework_hints": [
         "CWE-1247",
@@ -6626,13 +6366,8 @@
         "end_line": 98
       },
       "confidence": "medium",
-      "proposed_class": [
-        {
-          "id": "retry_budget_bounded",
-          "summary": "Retry loops shall be bounded by an absolute wall-clock or context deadline, not just an attempt count; the worst-case elapsed time at maximum retries shall be explicit and shall not exceed the surrounding cycle interval.",
-          "kind": "property",
-          "applies_when": "code uses bounded-retry-with-backoff (cenkalti/backoff, aws/retry, custom while-loop) where the bound is a count rather than a deadline"
-        }
+      "obligations": [
+        "retry_budget_bounded"
       ],
       "framework_hints": [
         "CWE-1088",
@@ -6654,13 +6389,8 @@
         "end_line": 96
       },
       "confidence": "medium",
-      "proposed_class": [
-        {
-          "id": "retry_budget_bounded",
-          "summary": "Retry loops shall be bounded by an absolute wall-clock or context deadline, not just an attempt count; the worst-case elapsed time at maximum retries shall be explicit and shall not exceed the surrounding cycle interval.",
-          "kind": "property",
-          "applies_when": "code uses bounded-retry-with-backoff (cenkalti/backoff, aws/retry, custom while-loop) where the bound is a count rather than a deadline"
-        }
+      "obligations": [
+        "retry_budget_bounded"
       ],
       "framework_hints": [
         "CWE-1088",
@@ -6787,13 +6517,8 @@
         "end_line": 294
       },
       "confidence": "medium",
-      "proposed_class": [
-        {
-          "id": "clock_skew_tolerated",
-          "summary": "Components whose correctness depends on clock agreement with a peer (Redis EXPIRE, JWT exp, distributed-lock lease) shall declare an explicit skew tolerance (δ) and either probe-validate it at init or use clock-agnostic semantics (relative TTL with server-side time).",
-          "kind": "property",
-          "applies_when": "code computes an absolute expiration / lease / token-validity instant using the local clock and stores it for a peer to interpret"
-        }
+      "obligations": [
+        "clock_skew_tolerated"
       ],
       "framework_hints": [
         "NIST-SP-800-160-3.2.4",

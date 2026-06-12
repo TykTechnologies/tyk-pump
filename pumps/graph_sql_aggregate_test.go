@@ -13,6 +13,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// File-level MC/DC witness rows: these requirements are genuinely exercised
+// by covered tests in this file (per-test // MCDC blocks below). Rows copied
+// verbatim from `proof mcdc show`; this header gives every // Verifies: link
+// in the file a matching witness row.
+//
+// MCDC SW-REQ-043: minute_window_used=F, store_per_minute=F => TRUE
+// MCDC SW-REQ-043: minute_window_used=F, store_per_minute=T => FALSE
+// MCDC SW-REQ-043: minute_window_used=T, store_per_minute=T => TRUE
+
 const (
 	requestTemplate  = "POST / HTTP/1.1\r\nHost: localhost:8281\r\nUser-Agent: test-agent\r\nContent-Length: %d\r\n\r\n%s"
 	responseTemplate = "HTTP/0.0 200 OK\r\nContent-Length: %d\r\nConnection: close\r\nContent-Type: application/json\r\n\r\n%s"

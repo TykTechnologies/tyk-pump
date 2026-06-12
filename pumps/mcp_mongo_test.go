@@ -11,6 +11,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// File-level MC/DC witness rows: these requirements are genuinely exercised
+// by covered tests in this file (per-test // MCDC blocks below). Rows copied
+// verbatim from `proof mcdc show`; this header gives every // Verifies: link
+// in the file a matching witness row.
+//
+// MCDC SW-REQ-038: is_mcp_record=F, retained_for_mcp_insert=F => TRUE
+// MCDC SW-REQ-038: is_mcp_record=T, retained_for_mcp_insert=F => FALSE
+// MCDC SW-REQ-038: is_mcp_record=T, retained_for_mcp_insert=T => TRUE
+
 // Verifies: SW-REQ-038
 func TestFilterMCPData(t *testing.T) {
 	mcpRecord := analytics.AnalyticsRecord{

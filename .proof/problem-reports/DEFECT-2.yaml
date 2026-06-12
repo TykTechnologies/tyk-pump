@@ -1,0 +1,87 @@
+schema_version: 1
+id: DEFECT-2
+title: Syslog pump log fragmentation on multiline raw_request/raw_response
+description: |
+  SyslogPump.WriteData emitted each analytics record to the syslog writer with
+  fmt.Fprintf("%s", message) where message was a Go map whose raw_request /
+  raw_response fields contained embedded newlines from real HTTP payloads. The
+  syslog daemon interpreted every newline as a record boundary, so a single
+  analytics record fragmented into many syslog entries — corrupting downstream
+  log ingestion and making records unparseable.
+  First fix (#884, commit df62011) JSON-marshalled the whole message; the
+  shipped backward-compatible fix (TT-15532, #886, commit 0596e82) kept the
+  original map[...] output format and instead escaped \n -> \\n only in
+  raw_request and raw_response, guaranteeing one single-line syslog entry per
+  record. Sibling commits: df62011 (superseded approach) + 0596e82 (final).
+source:
+    type: upstream_commit
+    repo: TykTechnologies/tyk-pump
+    commit: 0596e82
+    reference: TT-15532
+    date: "2026-08-16"
+classification:
+    surface: data_integrity
+    defect_class: unescaped_newline_fragmentation
+    severity: medium
+    security_relevant: false
+root_cause:
+    missing_requirement: false
+    missing_test_partition: true
+    missing_mcdc_variable: false
+    notes: |
+      No test partition fed a record whose raw_request/raw_response contained
+      newlines and asserted single-line syslog output. The requirement's
+      single-line / \n-escaping guarantee was implicit until SW-REQ-050 was
+      written to state it explicitly; the regression test added with the fix
+      (WithMultilineHTTP) now exercises that partition.
+impact_analysis:
+    affected_requirements:
+        - SW-REQ-050
+    affected_code:
+        - pumps/syslog.go
+hardening:
+    # SW-REQ-050 already states the single-line / \n-escaping guarantee, so no
+    # NEW requirement was authored. The gap was missing_test_partition: no test
+    # fed a record with embedded newlines in raw_request/raw_response and
+    # asserted single-line syslog output. Strengthened by attaching the
+    # encoding_safety obligation (newline escaping is a serialization round-trip
+    # safety property) and annotating the regression test as its example.
+    new_requirements: []
+    strengthened_requirements:
+        - SW-REQ-050
+    added_obligations:
+        - requirement: SW-REQ-050
+          obligation_class: encoding_safety
+    regression_tests:
+        - pumps/syslog_test.go:TestSyslogPump_WriteData_WithMultilineHTTP
+disposition:
+    status: covered_by_requirement
+    requirements:
+        - SW-REQ-050
+    evidence:
+        verified_by:
+            - pumps/syslog_test.go:TestSyslogPump_WriteData_WithMultilineHTTP
+        obligation_evidence:
+            - requirement: SW-REQ-050
+              obligation_class: encoding_safety
+              evidence_type: example
+    reviewer: agent:claude-opus-4-8
+    reviewed_at: "2026-06-10T17:00:00Z"
+history:
+    - at: "2026-06-10T07:42:00Z"
+      by: human:buger
+      action: created
+    - at: "2026-06-10T07:43:00Z"
+      by: human:buger
+      action: dispositioned
+      detail: covered_by_requirement SW-REQ-050 (states \n escaping) with WithMultilineHTTP regression test
+    - at: "2026-06-10T17:00:00Z"
+      by: agent:claude-opus-4-8
+      action: hardened
+      detail: |
+        Recorded hardening: closed the missing_test_partition gap. Attached the
+        encoding_safety obligation to SW-REQ-050 and annotated
+        TestSyslogPump_WriteData_WithMultilineHTTP with
+        // SW-REQ-050:encoding_safety:example. Test PASSES against current code:
+        a multiline raw_request/raw_response emits exactly one syslog line with
+        \n escaped to \\n (asserts nonEmptyLines==1 and Contains "\\n").

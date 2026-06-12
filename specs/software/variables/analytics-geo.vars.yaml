@@ -1,6 +1,18 @@
 component: analytics-geo
 variables:
+    - name: geo_db_absent
+      type: bool
+      direction: input
+      description: True when the operator-supplied MaxMind GeoIP DB handle is nil (GetGeo's `GeoIPDB == nil` guard at analytics/analytics.go:374). The optional DB was not configured.
+    - name: geo_ip_empty
+      type: bool
+      direction: input
+      description: True when the IP string passed to enrichment is empty (GeoIPLookup's `ipStr == ""` guard at analytics/analytics.go:400), so the lookup returns (nil,nil) before touching the DB.
+    - name: geo_ip_invalid
+      type: bool
+      direction: input
+      description: True when the non-empty IP string does not parse as an IP (GeoIPLookup's `net.ParseIP(ipStr) == nil` guard at analytics/analytics.go:404), so the lookup returns (nil,error) before touching the DB.
     - name: geo_lookup_short_circuits_when_db_absent
       type: bool
       direction: output
-      description: True iff GeoIP enrichment returns cleanly (empty result, no panic) when the GeoIP DB handle is nil or returns no record for an IP.
+      description: True iff GeoIP enrichment returns cleanly (empty result, no panic) when the GeoIP DB handle is nil, the IP is empty, or the IP is unparseable — i.e. any guard short-circuits before/without a DB lookup.

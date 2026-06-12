@@ -417,6 +417,7 @@ func (a *AnalyticsRecord) IsGraphRecord() bool {
 }
 
 // reqproof:implements SW-REQ-009
+// reqproof:implements SW-REQ-076
 func (a *AnalyticsRecord) RemoveIgnoredFields(ignoreFields []string) {
 	for _, fieldToIgnore := range ignoreFields {
 		found := false

@@ -48,7 +48,7 @@ history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:15Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-04T16:53:35Z"
+    last_modified_at: "2026-06-11T16:09:12Z"
 obligation_checklist:
     - boundary
     - failure_independence_proven
@@ -56,6 +56,15 @@ obligation_checklist:
     - polymorphic_type_whitelist
     - process_exit_on_recoverable
     - tls_verification_explicit
+obligation_suppressions:
+    - id: cert_validation_strict
+      reason: 'cert_validation_strict code signal at pumps/common.go:267: the shared TLS config sets InsecureSkipVerify from operator config cfg.InsecureSkipVerify, defaulting to false (verification ON) and emitting a log.Warn when an operator explicitly opts out. This is an intentional, default-secure, operator-controlled boundary (annotated #nosec G402), not a verification-disabled-by-default defect. Reviewed: in-contract behavior is strict verification; opt-out is a documented operator choice surfaced by a runtime warning. No production default insecurity.'
+      suppressed_by: human:leo
+      suppressed_at: "2026-06-11T16:09:12Z"
+      framework_refs:
+        - CWE CWE-295,CWE-297
+        - NIST-800-53 SC-23,SC-17
+        - OWASP-ASVS-v4 V9.1.1,V9.2.1
 lifecycle:
     change_history:
         - date: "2026-05-29T15:46:44Z"

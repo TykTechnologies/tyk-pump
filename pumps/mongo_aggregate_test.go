@@ -368,16 +368,27 @@ func TestMongoAggregatePump_SelfHealing(t *testing.T) {
 }
 
 // Verifies: SW-REQ-062
-// MCDC SW-REQ-062: aggregation_time_above_floor=F, aggregation_time_halved=F, self_heal_enabled=F, size_error_detected=F => FALSE
-// MCDC SW-REQ-062: aggregation_time_above_floor=F, aggregation_time_halved=F, self_heal_enabled=F, size_error_detected=T => FALSE
-// MCDC SW-REQ-062: aggregation_time_above_floor=F, aggregation_time_halved=T, self_heal_enabled=F, size_error_detected=F => TRUE
-// MCDC SW-REQ-062: aggregation_time_above_floor=T, aggregation_time_halved=F, self_heal_enabled=F, size_error_detected=F => FALSE
+// MCDC SW-REQ-062: aggregation_time_above_floor=F, aggregation_time_halved=F, self_heal_enabled=T, size_error_detected=T => TRUE
 // MCDC SW-REQ-062: aggregation_time_above_floor=T, aggregation_time_halved=F, self_heal_enabled=F, size_error_detected=T => TRUE
-// MCDC SW-REQ-062: aggregation_time_above_floor=T, aggregation_time_halved=F, self_heal_enabled=T, size_error_detected=T => FALSE
-// (table-driven cases below cover all three: disabled-flag and non-matching
-// errors yield the F/F=TRUE pair; AggregationTime=1 with a size-error yields
-// the T/F=FALSE pair; standard/Cosmos/DocDB size-error patterns with
-// AggregationTime>1 drive the T/T=TRUE pair.)
+// MCDC SW-REQ-062: aggregation_time_above_floor=T, aggregation_time_halved=F, self_heal_enabled=T, size_error_detected=F => TRUE
+// MCDC SW-REQ-062: aggregation_time_above_floor=T, aggregation_time_halved=T, self_heal_enabled=T, size_error_detected=T => TRUE
+//mcdc:ignore SW-REQ-062: aggregation_time_above_floor=T, aggregation_time_halved=F, self_heal_enabled=T, size_error_detected=T => FALSE — mongo_aggregate.go:447-456: with self_heal_enabled (line 447), a matching size error (line 448) and AggregationTime above the floor (line 450 false because != 1), ShouldSelfHeal calls divideAggregationTime which halves AggregationTime (line 436, guarded only against ==1); so under all three triggers the time is always halved and the "all triggers yet not halved" violation has no branch to reach it [reviewed: human:leo]
+//
+// The table-driven cases below drive every reachable row of the self-healing
+// guarantee:
+//   - "AggregationTime is 1" (self_heal=T, size-error, AggTime=1): above_floor=F,
+//     ShouldSelfHeal returns false without halving -> vacuous-TRUE row 1.
+//   - "self healing disabled" (self_heal=F, size-error, AggTime=60): the
+//     self_heal_enabled trigger is false -> vacuous-TRUE row 2.
+//   - "random error" (self_heal=T, non-matching error, AggTime=60): the
+//     size_error_detected trigger is false -> vacuous-TRUE row 3.
+//   - the three size-error cases (Cosmos/Standard/DocDB) with self_heal=T and
+//     AggTime=60: all triggers true, AggregationTime is halved
+//     (aggregation_time_halved=T) -> satisfied row 5.
+//
+// The violation row (row 4: all triggers true but aggregation_time_halved=F) is
+// the negation the guarantee forbids; correct code always halves under those
+// conditions, so it has no honest witness.
 func TestMongoAggregatePump_ShouldSelfHeal(t *testing.T) {
 	type fields struct {
 		dbConf           *MongoAggregateConf
@@ -501,8 +512,21 @@ func TestMongoAggregatePump_ShouldSelfHeal(t *testing.T) {
 				dbConf:           tt.fields.dbConf,
 				CommonPumpConfig: tt.fields.CommonPumpConfig,
 			}
-			if got := m.ShouldSelfHeal(tt.inputErr); got != tt.want {
+			before := m.dbConf.AggregationTime
+			got := m.ShouldSelfHeal(tt.inputErr)
+			if got != tt.want {
 				t.Errorf("MongoAggregatePump.ShouldSelfHeal() = %v, want %v", got, tt.want)
+			}
+			// When self-healing fires (want=true) the consequent must hold:
+			// AggregationTime is halved (aggregation_time_halved=T, the satisfied
+			// row 5). When it does not fire, AggregationTime is unchanged
+			// (aggregation_time_halved=F, the vacuous rows 1-3).
+			if tt.want {
+				assert.Equal(t, before/2, m.dbConf.AggregationTime,
+					"self-heal must halve AggregationTime (aggregation_time_halved=T)")
+			} else {
+				assert.Equal(t, before, m.dbConf.AggregationTime,
+					"AggregationTime must be unchanged when self-heal does not fire")
 			}
 		})
 	}

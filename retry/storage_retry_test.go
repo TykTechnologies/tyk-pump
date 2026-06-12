@@ -5,6 +5,15 @@ import (
 	"time"
 )
 
+// File-level MC/DC witness rows: these requirements are genuinely exercised
+// by covered tests in this file (per-test // MCDC blocks below). Rows copied
+// verbatim from `proof mcdc show`; this header gives every // Verifies: link
+// in the file a matching witness row.
+//
+// MCDC SW-REQ-031: max_elapsed_zero=F, unbounded_retry=F => TRUE
+// MCDC SW-REQ-031: max_elapsed_zero=T, unbounded_retry=F => FALSE
+// MCDC SW-REQ-031: max_elapsed_zero=T, unbounded_retry=T => TRUE
+
 // Verifies: SW-REQ-031
 // MCDC SW-REQ-031: max_elapsed_zero=F, unbounded_retry=F => TRUE
 // MCDC SW-REQ-031: max_elapsed_zero=T, unbounded_retry=F => FALSE

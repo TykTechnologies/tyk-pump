@@ -8,3 +8,11 @@ variables:
       type: bool
       direction: output
       description: The over-time write is abandoned without blocking other backends (mirror of the SYS-level delivery variable, scoped to the software component).
+    - name: a_backend_failed
+      type: bool
+      direction: input
+      description: A write to one backend has failed, errored, or timed out inside its own execPumpWriting goroutine (mirror of the SYS-level delivery variable, scoped to the pump-core fan-out in main.writeToPumps).
+    - name: other_backends_written
+      type: bool
+      direction: output
+      description: The remaining configured backends still receive the records — main.writeToPumps spawns one execPumpWriting goroutine per pump and each goroutine contains its own error/timeout (logged, not propagated), so one backend's failure does not prevent writes to the others (mirror of the SYS-level delivery variable, scoped to the software component).

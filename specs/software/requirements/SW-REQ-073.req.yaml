@@ -19,8 +19,6 @@ variables: []
 traces:
     satisfies:
         - SYS-REQ-021
-    verified_by_extra:
-        - analytics/uptime_data_test.go
     reviewed_at: "2026-06-02T05:03:37.912726Z"
     reviewed_by: human:buger
     reviewed_fingerprint: sha256:4be5c98b444573bc60f7d22ab98412c40428e6156107eb0f95d022b06135c5c3

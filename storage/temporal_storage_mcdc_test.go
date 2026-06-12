@@ -8,7 +8,18 @@ import (
 
 	"github.com/TykTechnologies/storage/temporal/model"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
+
+// File-level MC/DC witness rows: these requirements are genuinely exercised
+// by covered tests in this file (per-test // MCDC blocks below). Rows copied
+// verbatim from `proof mcdc show`; this header gives every // Verifies: link
+// in the file a matching witness row.
+//
+// MCDC SW-REQ-006: chunk_partial=F, records_popped_and_expire_attempted=F, records_present=T => TRUE
+// MCDC SW-REQ-006: chunk_partial=T, records_popped_and_expire_attempted=F, records_present=F => TRUE
+// MCDC SW-REQ-006: chunk_partial=T, records_popped_and_expire_attempted=F, records_present=T => FALSE
+// MCDC SW-REQ-006: chunk_partial=T, records_popped_and_expire_attempted=T, records_present=T => TRUE
 
 // brokenConnector is a stub model.Connector that satisfies the interface
 // but rejects As() conversion. This forces NewRedisV9WithConnection to
@@ -577,15 +588,15 @@ func TestTemporalStorageHandler_SetKey_EnsureConnectionSingletonAlive(t *testing
 // silent record-loss bug. The decision is exercised here without
 // asserting the data-loss semantics (the KI tracks the semantic gap).
 //
-// MCDC SW-REQ-006: chunk_partial=F, records_popped_and_expire_attempted=F, records_present=F => FALSE
-// MCDC SW-REQ-006: chunk_partial=F, records_popped_and_expire_attempted=T, records_present=F => TRUE
-// MCDC SW-REQ-006: chunk_partial=T, records_popped_and_expire_attempted=F, records_present=F => TRUE
 // MCDC SW-REQ-006: chunk_partial=T, records_popped_and_expire_attempted=F, records_present=T => FALSE
 //
-// records_present=T/records_popped_and_expire_attempted=T: the test seeds records into the
-// list, Pop succeeds, then Expire is attempted (and fails — the F arm), proving both
-// arms of the decision. records_present=F is the vacuous no-trigger arm (empty list).
-// KI getanddeleteset-expire-fail-loses-records documents the atomicity gap.
+// This is the requirement-violation row (row 3): a record is present
+// (records_present=T) and the chunk is partial (chunk_partial=T, chunkSize=10),
+// but the Expire step fails so the pop+expire operation does NOT complete
+// atomically (records_popped_and_expire_attempted=F) and the popped record is
+// lost. KI getanddeleteset-expire-fail-loses-records documents this atomicity
+// gap; the assertions below prove the failure surfaces. The reachable TRUE rows
+// 1, 2 and 4 are driven by TestTemporalStorageHandler_GetAndDeleteSet_TrueRows.
 func TestTemporalStorageHandler_GetAndDeleteSet_ExpireFailureDecision(t *testing.T) {
 	host, port := redisHostPort(t)
 	t.Cleanup(func() { resetSingletonForTest(t) })
@@ -606,6 +617,69 @@ func TestTemporalStorageHandler_GetAndDeleteSet_ExpireFailureDecision(t *testing
 	res, err := r.GetAndDeleteSet(keyName, 10, time.Second)
 	assert.Error(t, err, "Expire failure must surface from GetAndDeleteSet")
 	assert.Nil(t, res)
+}
+
+// TestTemporalStorageHandler_GetAndDeleteSet_TrueRows drives the three reachable
+// TRUE rows of the pop-and-expire guarantee against a live redis backend.
+//
+// The guarantee is: when records_present & chunk_partial, GetAndDeleteSet shall
+// pop the records and attempt their expiry (records_popped_and_expire_attempted).
+// chunk_partial maps to chunkSize != -1 (a non-zero chunkSize); chunkSize==0 is
+// rewritten to -1 by GetAndDeleteSet, which skips the Expire step entirely.
+//
+// Verifies: SW-REQ-006
+// SW-REQ-006:nominal:positive
+// MCDC SW-REQ-006: chunk_partial=F, records_popped_and_expire_attempted=F, records_present=T => TRUE
+// MCDC SW-REQ-006: chunk_partial=T, records_popped_and_expire_attempted=F, records_present=F => TRUE
+// MCDC SW-REQ-006: chunk_partial=T, records_popped_and_expire_attempted=T, records_present=T => TRUE
+func TestTemporalStorageHandler_GetAndDeleteSet_TrueRows(t *testing.T) {
+	host, port := redisHostPort(t)
+
+	newHandler := func(t *testing.T) *TemporalStorageHandler {
+		t.Helper()
+		t.Cleanup(func() { resetSingletonForTest(t) })
+		cfg := &TemporalStorageConfig{Host: host, Port: port}
+		r, err := NewTemporalStorageHandler(cfg, true)
+		assert.NoError(t, err)
+		assert.NoError(t, r.Init())
+		return r
+	}
+
+	t.Run("chunk_partial=F with records present (row 1)", func(t *testing.T) {
+		r := newHandler(t)
+		key := "mcdc-true-row1"
+		require.NoError(t, r.list.Append(ctx, false, r.fixKey(key), []byte("payload")))
+
+		// chunkSize==0 -> rewritten to -1 -> chunk_partial=F -> Expire skipped.
+		// The antecedent is false (chunk_partial=F) so the guarantee holds
+		// vacuously; the record is still popped.
+		res, err := r.GetAndDeleteSet(key, 0, time.Second)
+		assert.NoError(t, err)
+		assert.Len(t, res, 1, "record must be popped even on the chunk_partial=F path")
+	})
+
+	t.Run("chunk_partial=T with empty list (row 2)", func(t *testing.T) {
+		r := newHandler(t)
+		key := "mcdc-true-row2-empty"
+
+		// No records appended (records_present=F). chunkSize=10 -> chunk_partial=T,
+		// but the antecedent is false (records_present=F) -> vacuous TRUE.
+		res, err := r.GetAndDeleteSet(key, 10, time.Second)
+		assert.NoError(t, err)
+		assert.Empty(t, res, "empty list must pop nothing without error")
+	})
+
+	t.Run("chunk_partial=T with records present, expire succeeds (row 4)", func(t *testing.T) {
+		r := newHandler(t)
+		key := "mcdc-true-row4"
+		require.NoError(t, r.list.Append(ctx, false, r.fixKey(key), []byte("payload")))
+
+		// records_present=T, chunkSize=10 -> chunk_partial=T, Expire succeeds:
+		// records are popped AND expire is attempted -> satisfied row 4.
+		res, err := r.GetAndDeleteSet(key, 10, time.Second)
+		assert.NoError(t, err)
+		assert.Len(t, res, 1, "record must be popped and expire attempted on the satisfied path")
+	})
 }
 
 // expireFailingKV wraps a real KeyValue and forces Expire to fail; all

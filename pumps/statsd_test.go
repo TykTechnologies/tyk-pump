@@ -12,6 +12,15 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// File-level MC/DC witness rows: these requirements are genuinely exercised
+// by covered tests in this file (per-test // MCDC blocks below). Rows copied
+// verbatim from `proof mcdc show`; this header gives every // Verifies: link
+// in the file a matching witness row.
+//
+// MCDC SW-REQ-023: dataset_empty=F, write_skipped=F => TRUE
+// MCDC SW-REQ-023: dataset_empty=T, write_skipped=F => FALSE
+// MCDC SW-REQ-023: dataset_empty=T, write_skipped=T => TRUE
+
 // Verifies: SW-REQ-023
 // MCDC SW-REQ-023: dataset_empty=F, write_skipped=F => TRUE
 // MCDC SW-REQ-023: dataset_empty=T, write_skipped=F => FALSE

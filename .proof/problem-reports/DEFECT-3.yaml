@@ -1,0 +1,107 @@
+schema_version: 1
+id: DEFECT-3
+title: SQL table-sharding pump skipped schema migration of sharded tables
+description: |
+  Before TT-13166 (#905, commit 19fb73d) every SQL pump (standard, aggregate,
+  graph) gated AutoMigrate behind `if !TableSharding { ... }`. With sharding
+  enabled the migration step was therefore skipped entirely, so newly created
+  per-day shard tables (tyk_analytics_<YYYYMMDD>, tyk_aggregated_<YYYYMMDD>,
+  graph shards) never received schema columns added by later releases —
+  inserts referencing the new columns failed against the stale shard. The fix
+  extracts a shared HandleTableMigration / MigrateAllShardedTables helper
+  (pumps/common.go) used by sql.go, sql_aggregate.go and graph_sql.go, adds the
+  MigrateShardedTables config flag, and also fixed a sub-bug where the config
+  flag did not overwrite correctly ("fixed bug that didn't allow for config
+  overwrite").
+  Residual default-mode gap: when MigrateShardedTables defaults to false, only
+  the current day's shard is migrated — tracked as KI
+  sql-default-migration-today-only (open, ship_with_known_issue) and the doc
+  gap as KI docs-sql-migrate-sharded-tables-undocumented.
+source:
+    type: upstream_commit
+    repo: TykTechnologies/tyk-pump
+    commit: 19fb73d
+    reference: TT-13166
+    date: "2026-10-23"
+classification:
+    surface: config_behavior
+    defect_class: migration_skipped_when_sharded
+    severity: high
+    security_relevant: false
+root_cause:
+    missing_requirement: false
+    missing_test_partition: true
+    missing_mcdc_variable: false
+    notes: |
+      The sharding-enabled branch had no test asserting that existing shard
+      tables get migrated to the latest schema; the AutoMigrate skip went
+      unnoticed. The fix adds migration_test.go covering HandleTableMigration's
+      three branches (non-sharded / migrate-all / current-day-only) and
+      MigrateAllShardedTables across dialects.
+impact_analysis:
+    affected_requirements:
+        - SW-REQ-040
+    affected_code:
+        - pumps/common.go
+        - pumps/sql.go
+        - pumps/sql_aggregate.go
+        - pumps/graph_sql.go
+hardening:
+    # SW-REQ-040 already models the SQL standard pump's sharded routing, so no
+    # NEW requirement was authored. The gap was missing_test_partition: no test
+    # asserted that existing shard tables get migrated to the latest schema when
+    # sharding is on. Strengthened by attaching the forward_compatible
+    # obligation (shard tables must receive later-release schema columns —
+    # expand-then-contract) and annotating the regression test as its example.
+    # Residual default-mode-only behavior remains tracked by the open KIs
+    # sql-default-migration-today-only and docs-sql-migrate-sharded-tables-undocumented.
+    new_requirements: []
+    strengthened_requirements:
+        - SW-REQ-040
+    added_obligations:
+        - requirement: SW-REQ-040
+          obligation_class: forward_compatible
+    regression_tests:
+        - pumps/migration_test.go:TestHandleTableMigration
+        - pumps/migration_test.go:TestMigrateAllShardedTables
+disposition:
+    status: covered_by_requirement
+    requirements:
+        - SW-REQ-040
+    known_issues:
+        # Acknowledged overlap on the shared owner SW-REQ-040 (the SQL pump's
+        # sharded routing), NOT the same failure mode. This defect is the
+        # AutoMigrate-skipped-when-sharded gap (now positively tested);
+        # analytics-timestamp-timezone-convention-unpinned is a distinct open
+        # KI about AnalyticsRecord.TimeStamp lacking a UTC convention, which
+        # affects which YYYYMMDD shard a record routes to. Linked for traceability.
+        - analytics-timestamp-timezone-convention-unpinned
+    evidence:
+        verified_by:
+            - pumps/migration_test.go:TestHandleTableMigration
+            - pumps/migration_test.go:TestMigrateAllShardedTables
+        obligation_evidence:
+            - requirement: SW-REQ-040
+              obligation_class: forward_compatible
+              evidence_type: example
+    reviewer: agent:claude-opus-4-8
+    reviewed_at: "2026-06-10T17:00:00Z"
+history:
+    - at: "2026-06-10T07:50:00Z"
+      by: human:buger
+      action: created
+    - at: "2026-06-10T07:51:00Z"
+      by: human:buger
+      action: dispositioned
+      detail: covered_by_requirement SW-REQ-040; residual default-mode behavior tracked by KI sql-default-migration-today-only
+    - at: "2026-06-10T17:00:00Z"
+      by: agent:claude-opus-4-8
+      action: hardened
+      detail: |
+        Recorded hardening: closed the missing_test_partition gap. Attached the
+        forward_compatible obligation to SW-REQ-040 and annotated
+        TestHandleTableMigration with // SW-REQ-040:forward_compatible:example.
+        Tests PASS against current code: under TableSharding=true +
+        MigrateShardedTables=true the migrate-all path is invoked (no longer
+        skipped behind `if !TableSharding`), and the current-day shard is
+        migrated in the default mode.

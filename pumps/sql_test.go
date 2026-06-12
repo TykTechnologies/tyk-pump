@@ -133,6 +133,16 @@ func TestSQLWriteData(t *testing.T) {
 }
 
 // Verifies: SW-REQ-040
+//
+// SW-REQ-040:boundary:example
+// DEFECT-4 regression (TT-12780): the sharding day-slice loop indexed
+// typedData[startIndex] unconditionally inside `if c.SQLConf.TableSharding`.
+// When sharding was enabled and the batch was empty after the skip-api-id / MCP
+// filter drained every record, startIndex (0) was >= len(typedData) (0) and the
+// access panicked (index out of range), crashing the purge cycle. The
+// "empty_keys" sub-test below drives WriteData with a zero-length batch under
+// TableSharding=true and asserts no error and no shard tables are created — the
+// empty/edge-of-range boundary the guard now protects.
 func TestSQLWriteDataSharded(t *testing.T) {
 	skipTestIfNoPostgres(t)
 	pmp := SQLPump{}

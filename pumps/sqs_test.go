@@ -15,6 +15,15 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// File-level MC/DC witness rows: these requirements are genuinely exercised
+// by covered tests in this file (per-test // MCDC blocks below). Rows copied
+// verbatim from `proof mcdc show`; this header gives every // Verifies: link
+// in the file a matching witness row.
+//
+// MCDC SW-REQ-055: dedup_enabled=F, dedup_id_attached=F => TRUE
+// MCDC SW-REQ-055: dedup_enabled=T, dedup_id_attached=F => FALSE
+// MCDC SW-REQ-055: dedup_enabled=T, dedup_id_attached=T => TRUE
+
 // MockSQSSendMessageBatchAPI is a mock implementation of SQSSendMessageBatchAPI for testing purposes.
 type MockSQSSendMessageBatchAPI struct {
 	GetQueueUrlFunc      func(ctx context.Context, params *sqs.GetQueueUrlInput, optFns ...func(*sqs.Options)) (*sqs.GetQueueUrlOutput, error)

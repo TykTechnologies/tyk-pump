@@ -14,6 +14,15 @@ import (
 	"gorm.io/gorm/logger"
 )
 
+// File-level MC/DC witness rows: these requirements are genuinely exercised
+// by covered tests in this file (per-test // MCDC blocks below). Rows copied
+// verbatim from `proof mcdc show`; this header gives every // Verifies: link
+// in the file a matching witness row.
+//
+// MCDC SW-REQ-067: on_conflict_assignments_applied=F, row_conflict_detected=F => TRUE
+// MCDC SW-REQ-067: on_conflict_assignments_applied=F, row_conflict_detected=T => FALSE
+// MCDC SW-REQ-067: on_conflict_assignments_applied=T, row_conflict_detected=T => TRUE
+
 // Verifies: SW-REQ-041
 func TestSQLAggregateInit(t *testing.T) {
 	skipTestIfNoPostgres(t)
@@ -127,14 +136,13 @@ func TestSQLAggregateWriteData_Sharded(t *testing.T) {
 // against an unreachable DB.
 //
 // MCDC SW-REQ-066: sql_create_index_skipped=F, sql_index_already_exists=F, sql_omit_index_creation=F => TRUE
-// MCDC SW-REQ-066: sql_create_index_skipped=F, sql_index_already_exists=F, sql_omit_index_creation=T => FALSE
-// MCDC SW-REQ-066: sql_create_index_skipped=F, sql_index_already_exists=T, sql_omit_index_creation=T => TRUE
-// MCDC SW-REQ-066: sql_create_index_skipped=T, sql_index_already_exists=F, sql_omit_index_creation=T => TRUE
 //
-// SW-REQ-066: cfg here does not set OmitIndexCreation (defaults to false), so the
-// sql_omit_index_creation=F arm holds and ensureIndex creates the composite index. The
-// sql_omit_index_creation=T/sql_create_index_skipped=T arm is exercised by
-// TestMCDC_SQLAggregatePump_EnsureIndex_OmitTrue (in sql_mcdc_100_test.go).
+// SW-REQ-066: cfg here does not set OmitIndexCreation (defaults to false) and the
+// table starts without the composite index (sql_index_already_exists=F), so
+// ensureIndex creates it (sql_create_index_skipped=F). The antecedent
+// (omit | already_exists) is false -> vacuous-TRUE row 1. The both-triggers-true
+// satisfied arm (row 5) is exercised by
+// TestMCDC_SQLAggregatePump_EnsureIndex_OmitOnExisting in sql_mcdc_test.go.
 //
 // MCDC SW-REQ-067: row_conflict_detected=F, on_conflict_assignments_applied=F => TRUE
 // MCDC SW-REQ-067: row_conflict_detected=T, on_conflict_assignments_applied=F => FALSE

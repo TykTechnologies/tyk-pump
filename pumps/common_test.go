@@ -21,6 +21,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// File-level MC/DC witness rows: these requirements are genuinely exercised
+// by covered tests in this file (per-test // MCDC blocks below). Rows copied
+// verbatim from `proof mcdc show`; this header gives every // Verifies: link
+// in the file a matching witness row.
+//
+// MCDC SW-REQ-016: field_persisted_on_struct=F, set_invoked=F => TRUE
+// MCDC SW-REQ-016: field_persisted_on_struct=F, set_invoked=T => FALSE
+// MCDC SW-REQ-016: field_persisted_on_struct=T, set_invoked=T => TRUE
+
 // Verifies: SW-REQ-016
 // MCDC SW-REQ-016: set_invoked=F, field_persisted_on_struct=F => TRUE
 // MCDC SW-REQ-016: set_invoked=T, field_persisted_on_struct=F => FALSE

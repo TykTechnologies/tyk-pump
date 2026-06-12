@@ -51,17 +51,13 @@ func TestBackoffHTTPRetry_Send_Success(t *testing.T) {
 // Verifies: SW-REQ-030
 // Verifies: SYS-REQ-006
 // MCDC SW-REQ-030: is_5xx_or_429=F, retry_attempted=F, transport_transient_err=F => TRUE
-// MCDC SW-REQ-030: is_5xx_or_429=T, retry_attempted=F, transport_transient_err=F => FALSE
-// MCDC SW-REQ-030: is_5xx_or_429=T, retry_attempted=F, transport_transient_err=T => TRUE
-// MCDC SW-REQ-030: is_5xx_or_429=T, retry_attempted=T, transport_transient_err=F => TRUE
 // MCDC SYS-REQ-006: retry_attempted=F, transient_failure=F => TRUE
 // MCDC SYS-REQ-006: retry_attempted=F, transient_failure=T => FALSE
 // MCDC SYS-REQ-006: retry_attempted=T, transient_failure=T => TRUE
-// (This 4xx test drives is_5xx_or_429=F, retry_attempted=F → permanent error,
-// one call total — F/F=TRUE. Sibling TestBackoffHTTPRetry_Send_5xxRetries drives
-// is_5xx_or_429=T, retry_attempted=T — T/T=TRUE. The T/F=FALSE pair is the
-// MaxRetries-exhausted baseline where backoff stops issuing further attempts
-// after the configured cap.)
+// (This 4xx test drives is_5xx_or_429=F, transport_transient_err=F,
+// retry_attempted=F → permanent error, one call total. The antecedent
+// (is_5xx_or_429 | transport_transient_err) is false, so the guarantee holds
+// vacuously — SW-REQ-030 row 1.)
 //
 // SYS-REQ-006: 4xx response is transient_failure=F (4xx is permanent, not transient) and
 // the calls==1 assertion proves retry_attempted=F -> TRUE row (vacuous). The FALSE row

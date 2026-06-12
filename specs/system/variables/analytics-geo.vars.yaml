@@ -4,6 +4,10 @@ variables:
       type: bool
       direction: input
       description: MaxMind GeoIP DB is operator-supplied and may be absent.
+    - name: geo_db_absent
+      type: bool
+      direction: input
+      description: True at runtime when the operator-supplied MaxMind GeoIP DB handle is nil (the DB was not configured for this deployment) — the condition under which enrichment must short-circuit safely.
     - name: geo_lookup_short_circuits_when_db_absent
       type: bool
       direction: output

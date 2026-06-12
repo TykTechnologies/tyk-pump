@@ -1,0 +1,94 @@
+schema_version: 1
+id: DEFECT-4
+title: SQL pump panics (slice index out of range) when sharding enabled and all records skipped
+description: |
+  SQLPump.WriteData's sharding day-slice loop indexed typedData[startIndex]
+  unconditionally inside `if c.SQLConf.TableSharding`. When TableSharding was
+  enabled and the incoming batch was empty after the skip-api-id / MCP filter
+  drained every record (or an empty purge), startIndex (0) was >= len(typedData)
+  (0) and the access panicked with index-out-of-range, crashing the pump's
+  purge cycle. TT-12780 (#860) guards the access with
+  `c.SQLConf.TableSharding && startIndex < len(typedData)`.
+source:
+    type: upstream_commit
+    repo: TykTechnologies/tyk-pump
+    commit: fbcb614
+    reference: TT-12780
+    date: "2026-11-27"
+classification:
+    surface: runtime_code
+    defect_class: slice_index_out_of_range
+    severity: high
+    security_relevant: false
+root_cause:
+    missing_requirement: false
+    missing_test_partition: true
+    missing_mcdc_variable: false
+    notes: |
+      The empty-input partition under TableSharding=true was never tested, so
+      the unguarded slice access shipped. The fix adds the empty_keys subtest
+      to TestSQLWriteDataSharded asserting WriteData returns no error and
+      creates no shard tables for an empty batch. Related but distinct from the
+      fan-out panic-recovery gap tracked by KI
+      no-panic-recovery-in-exec-pump-writing (that concerns missing recover()
+      in goroutines; this is a deterministic bounds bug now positively tested).
+impact_analysis:
+    affected_requirements:
+        - SW-REQ-040
+    affected_code:
+        - pumps/sql.go
+hardening:
+    # SW-REQ-040 already models the sharded day-slice routing, so no NEW
+    # requirement was authored. The gap was missing_test_partition: the
+    # empty-input partition under TableSharding=true (which made startIndex >=
+    # len(typedData) and panicked) was never tested. Strengthened via the
+    # boundary obligation (empty / edge-of-range slice access) — already on
+    # SW-REQ-040's obligation_checklist — and the empty_keys regression subtest
+    # annotated as its example evidence.
+    new_requirements: []
+    strengthened_requirements:
+        - SW-REQ-040
+    added_obligations:
+        - requirement: SW-REQ-040
+          obligation_class: boundary
+    regression_tests:
+        - pumps/sql_test.go:TestSQLWriteDataSharded
+disposition:
+    status: covered_by_requirement
+    requirements:
+        - SW-REQ-040
+    known_issues:
+        # Acknowledged overlap on the shared owner SW-REQ-040 (the SQL pump's
+        # sharded day-slice routing), NOT the same failure mode. This defect is
+        # the empty-batch slice-index-out-of-range panic (now guarded + tested);
+        # analytics-timestamp-timezone-convention-unpinned is a distinct open KI
+        # about AnalyticsRecord.TimeStamp lacking a UTC convention affecting
+        # which shard a record routes to. Linked for traceability.
+        - analytics-timestamp-timezone-convention-unpinned
+    evidence:
+        verified_by:
+            - pumps/sql_test.go:TestSQLWriteDataSharded
+        obligation_evidence:
+            - requirement: SW-REQ-040
+              obligation_class: boundary
+              evidence_type: example
+    reviewer: agent:claude-opus-4-8
+    reviewed_at: "2026-06-10T17:00:00Z"
+history:
+    - at: "2026-06-10T07:55:00Z"
+      by: human:buger
+      action: created
+    - at: "2026-06-10T07:56:00Z"
+      by: human:buger
+      action: dispositioned
+      detail: covered_by_requirement SW-REQ-040 with empty_keys subtest in TestSQLWriteDataSharded
+    - at: "2026-06-10T17:00:00Z"
+      by: agent:claude-opus-4-8
+      action: hardened
+      detail: |
+        Recorded hardening: closed the missing_test_partition gap. Mapped to the
+        boundary obligation (already attached to SW-REQ-040) and annotated
+        TestSQLWriteDataSharded with // SW-REQ-040:boundary:example. Test PASSES
+        against current code: the empty_keys subtest drives WriteData with a
+        zero-length batch under TableSharding=true and asserts no error and no
+        shard tables — the guarded `startIndex < len(typedData)` boundary holds.

@@ -44,3 +44,11 @@ variables:
       type: bool
       direction: input
       description: True when --omit-config-file is NOT set (the operator is using a JSON config file alongside env overrides).
+    - name: ignore_fields_configured
+      type: bool
+      direction: input
+      description: True when the operator has configured a non-empty ignore-fields list for this backend (main.filterData's `len(ignoreFields) > 0` gate at main.go:411).
+    - name: listed_fields_removed
+      type: bool
+      direction: output
+      description: True iff every operator-listed field that matches a known AnalyticsRecord json tag has been zeroed out of the forwarded record by AnalyticsRecord.RemoveIgnoredFields before dispatch; unrecognised field names are logged and leave the record unchanged (mirror of the SYS-level privacy variable, scoped to the software component).

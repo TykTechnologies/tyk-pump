@@ -475,6 +475,12 @@ func (pm *PrometheusMetric) GetLabelsValues(decoded analytics.AnalyticsRecord) [
 }
 
 // reqproof:implements SW-REQ-024
+// reqproof:implements SW-REQ-074
+// obfuscateAPIKey masks the API key before it is placed in the api_key/key
+// metric labels. Decision 1 is the opt-in gate (ObfuscateAPIKeys); decision 2
+// selects masked-suffix ("****"+last 4) for long keys vs. fully-masked ("--")
+// for short keys. When the gate is off the raw key is returned (documented
+// opt-in default). See SW-REQ-074 (secrets_not_logged) and DEFECT-5.
 func (pm *PrometheusMetric) obfuscateAPIKey(apiKey string) string {
 	if !pm.ObfuscateAPIKeys {
 		return apiKey

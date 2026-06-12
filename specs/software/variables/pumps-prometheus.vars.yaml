@@ -8,3 +8,11 @@ variables:
       type: bool
       direction: output
       description: True iff Path is defaulted to '/metrics' before promhttp.Handler() registration.
+    - name: obfuscate_api_keys_enabled
+      type: bool
+      direction: input
+      description: True when PrometheusConf.ObfuscateAPIKeys is true (the opt-in masking gate read by obfuscateAPIKey).
+    - name: api_key_label_masked
+      type: bool
+      direction: output
+      description: True iff the value emitted into the api_key/key Prometheus metric labels masks the raw API key (at most the last ObfuscateAPIKeysLength characters survive; the full raw key is never present) when obfuscation is enabled.

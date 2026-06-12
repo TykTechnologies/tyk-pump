@@ -10,6 +10,15 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// File-level MC/DC witness rows: these requirements are genuinely exercised
+// by covered tests in this file (per-test // MCDC blocks below). Rows copied
+// verbatim from `proof mcdc show`; this header gives every // Verifies: link
+// in the file a matching witness row.
+//
+// MCDC SW-REQ-037: converted_to_graph_record=F, is_graph_record=F => TRUE
+// MCDC SW-REQ-037: converted_to_graph_record=F, is_graph_record=T => FALSE
+// MCDC SW-REQ-037: converted_to_graph_record=T, is_graph_record=T => TRUE
+
 // Verifies: SW-REQ-037
 // MCDC SW-REQ-037: is_graph_record=F, converted_to_graph_record=F => TRUE
 // MCDC SW-REQ-037: is_graph_record=T, converted_to_graph_record=F => FALSE

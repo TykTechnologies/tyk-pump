@@ -37,13 +37,13 @@ verification:
         - requirement: SW-REQ-009
           artifact: analytics/analytics.go
           decision: no-authored-change
-          reviewer: buger
-          reason: 'Phase J: req_type field flipped derived to guarantee per probelabs/reqproof#88 (category error fix). Production .go files were not modified for this change; only req YAML metadata. Re-recording no-authored-change impact.'
+          reviewer: agent:claude-opus-4-8
+          reason: 'Consolidation pass: the prior ReqProof-coverage agents'' changes to these production files are behavior-preserving only — added // reqproof:implements trace annotations and trailing //mcdc:ignore comments on existing branches; no executable code path, signature, or logic changed. Requirement intent and formalization are unchanged.'
           base: origin/master
           requirement_fingerprint: sha256:d89418eea94b7e70c045e67412bff2fa1c42868bd0c19339e0eec67451252f02
           approval_fingerprint: sha256:5b3de46c2b65bfda73aefd76ce0cff88deec7322000638260e0e60785ac760a0
-          artifact_fingerprint: sha256:41a2a8e7ff36a958fa315e03cd7e70423454e7447f7787aad74230d92a3d8a43
-          reviewed_at: "2026-06-02T05:13:05Z"
+          artifact_fingerprint: sha256:1af60beb1ea3d67ce5c4360dbda50461329e4e80b77cc3a0b45f944786216f44
+          reviewed_at: "2026-06-11T18:48:28Z"
         - requirement: SW-REQ-009
           artifact: analytics/demo/demo.go
           decision: no-authored-change
@@ -58,7 +58,7 @@ history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:14Z"
     last_modified_by: human:cli
-    last_modified_at: "2026-06-03T07:38:13Z"
+    last_modified_at: "2026-06-11T16:11:17Z"
 obligation_checklist:
     - determinism
     - hash_format_deterministic
@@ -74,6 +74,10 @@ obligation_suppressions:
       reason: 'Phase G: code_signal ''go.random.math-rand'' at analytics/demo/demo.go:34 is in demo/test-fixture data generator (randomInRange, randomMethod). Non-product code (demo-only); randomness is the intended behavior. Not an analytics output-determinism gap.'
       suppressed_by: buger
       suppressed_at: "2026-06-01T18:33:20Z"
+    - id: tz_explicit
+      reason: 'tz_explicit code signal at analytics/analytics.go:76: this time.Time field serializes without an explicit timezone convention because AnalyticsRecord.TimeStamp is not UTC-pinned on construction (the protobuf path preserves the original Location). Root cause and impact are filed as KI analytics-timestamp-timezone-convention-unpinned (ship_with_known_issue; mitigation TZ=UTC; remediation pin to UTC). Genuine, documented surface — not an undocumented gap.'
+      suppressed_by: human:leo
+      suppressed_at: "2026-06-11T16:11:17Z"
 lifecycle:
     change_history:
         - date: "2026-05-29T15:46:44Z"

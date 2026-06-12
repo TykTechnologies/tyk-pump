@@ -505,12 +505,25 @@ rules:
           ...
           defer conn.Close()
   # ──────────────────────────────────────────────────────────────────────
-  # Phase R dogfood (rules below were seeded as pure-proposal rules carrying
-  # proposes_class drafts; Phase S Wave 1 promoted 11 of them to bind via
-  # obligations: against overlay catalog classes in .proof/catalog/).
-  # The one rule that still carries proposes_class: (go.exponential-backoff-no-deadline
-  # / retry_budget_bounded) has no overlay class yet and remains UNBINDABLE
-  # until its class file is drafted.
+  # Phase R dogfood. Every rule below binds via obligations: (no proposes_class
+  # remains). The bindings fall into two groups:
+  #   (a) Shipped-catalog classes — go.tls-skip-verify-config binds to the
+  #       shipped domain class cert_validation_strict (exact match: a config-
+  #       driven InsecureSkipVerify is precisely "TLS verification disabled").
+  #   (b) Project overlay classes in .proof/catalog/property/ — 11 genuinely
+  #       novel failure-mode classes with no shipped equivalent: the time-
+  #       correctness family (dst_transition_safe, tz_explicit,
+  #       temporal_window_inclusive, clock_skew_tolerated), the fanout-failure
+  #       family (cascade_circuit_breaker, failure_independence_proven,
+  #       partial_progress_observable, fanout_panic_isolated,
+  #       per_pump_circuit_breaker), the component-exit class
+  #       (process_exit_on_recoverable), and the retry-deadline class
+  #       (retry_budget_bounded — distinct from the shipped retry_policy_explicit,
+  #       which is HTTP-client policy declaration, not the count-vs-deadline bound).
+  # These overlay classes are the legitimate blind-spot-loop output; the .gitignore
+  # tracks .proof/catalog/ so they commit and the pack stays bindable on a clean
+  # checkout. obligations: fail-validates at load time, so deleting any overlay
+  # without a shipped replacement would re-block this pack.
   # ──────────────────────────────────────────────────────────────────────
   - id: go.wall-clock-arithmetic
     severity: INFO
@@ -777,11 +790,7 @@ rules:
         signal_id: go.exponential_backoff_no_deadline
         provider: opengrep
         confidence: medium
-        proposes_class:
-          - id: retry_budget_bounded
-            summary: Retry loops shall be bounded by an absolute wall-clock or context deadline, not just an attempt count; the worst-case elapsed time at maximum retries shall be explicit and shall not exceed the surrounding cycle interval.
-            kind: property
-            applies_when: code uses bounded-retry-with-backoff (cenkalti/backoff, aws/retry, custom while-loop) where the bound is a count rather than a deadline
+        obligations: [retry_budget_bounded]
         framework_hints:
           - CWE-1088
           - CWE-1322
@@ -833,7 +842,7 @@ rules:
             - pumps/common.go:249
           All set InsecureSkipVerify from operator config with no startup
           warning or audit signal.
-        obligations: [tls_verification_explicit]
+        obligations: [cert_validation_strict]
     paths:
       exclude:
         - "*_test.go"

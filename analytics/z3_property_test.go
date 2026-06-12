@@ -8,6 +8,15 @@ import (
 	"testing"
 )
 
+// File-level MC/DC witness rows for SW-REQ-016 (set-on-struct persistence).
+// TrimRawData is the setter under test: it writes the truncated value back onto
+// the AnalyticsRecord (set_invoked=T => field_persisted_on_struct=T), while the
+// no-trim / unchanged path leaves the prior state (the FALSE baseline). The
+// Z3-property tests below drive both via min(max,orig) over the fixture corpus.
+//
+// MCDC SW-REQ-016: field_persisted_on_struct=T, set_invoked=T => TRUE
+// MCDC SW-REQ-016: field_persisted_on_struct=F, set_invoked=F => TRUE
+
 type z3Fixture struct {
 	Name     string                 `json:"name"`
 	Property string                 `json:"property"`

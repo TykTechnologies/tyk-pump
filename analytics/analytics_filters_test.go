@@ -9,9 +9,28 @@ import (
 // Verifies: SW-REQ-010
 // Verifies: SYS-REQ-009
 // Verifies: STK-REQ-003
-// MCDC SW-REQ-010: filter_true=F, in_should_filter=T, outside_allow_list=F, skip_match=T => FALSE
-// MCDC SW-REQ-010: filter_true=F, in_should_filter=T, outside_allow_list=T, skip_match=F => FALSE
+// MCDC SW-REQ-010: filter_true=F, in_should_filter=F, outside_allow_list=T, skip_match=F => TRUE
 // MCDC SW-REQ-010: filter_true=F, in_should_filter=T, outside_allow_list=F, skip_match=F => TRUE
+// MCDC SW-REQ-010: filter_true=T, in_should_filter=T, outside_allow_list=T, skip_match=T => TRUE
+//mcdc:ignore SW-REQ-010: filter_true=F, in_should_filter=T, outside_allow_list=F, skip_match=T => FALSE — analytics_filters.go:21-26 returns true from the first switch case whenever a skip/block list matches (skip_match=T), so ShouldFilter (filter_true) is always T under skip_match; the "block-list matched yet not filtered" violation has no branch to reach it [reviewed: human:leo]
+//mcdc:ignore SW-REQ-010: filter_true=F, in_should_filter=T, outside_allow_list=T, skip_match=F => FALSE — analytics_filters.go:27-32 returns true whenever an allow list is set and the record falls outside it (outside_allow_list=T), so ShouldFilter (filter_true) is always T under outside_allow_list; the "outside allow-list yet not filtered" violation has no branch to reach it [reviewed: human:leo]
+//mcdc:ignore SW-REQ-010: filter_true=F, in_should_filter=T, outside_allow_list=T, skip_match=T => FALSE — analytics_filters.go:21-32: either a skip-list match (skip_match) or an allow-list miss (outside_allow_list) makes one switch case return true, so with both triggers active ShouldFilter (filter_true) is always T; the violation has no branch to reach it [reviewed: human:leo]
+//
+// Reachable rows of the ShouldFilter guarantee (skip_match | outside_allow_list)
+// => filter_true:
+//   - "no filter" sub-case: no filter configured, ShouldFilter=false. No trigger
+//     is active (in_should_filter=F) -> vacuous-TRUE row 1.
+//   - "api_ids"/"org_ids"/"response_codes" sub-cases: the record matches the
+//     allow list, so outside_allow_list=F and skip_match=F, ShouldFilter=false
+//     (filter_true=F) -> vacuous-TRUE row 2.
+//   - "skip_apiids"/"skip_org_ids"/"skip_response_codes" sub-cases: a block list
+//     matches (skip_match=T) and the record is not in any explicit allow list
+//     (outside_allow_list=T), so ShouldFilter=true (filter_true=T) -> satisfied
+//     row 6.
+//
+// The FALSE rows (3,4,5: a trigger active but filter_true=F) are the negation the
+// guarantee forbids — block/allow filtering always returns true under those
+// conditions — so they are unreachable in correct code and have no honest witness.
 // MCDC SYS-REQ-009: record_excluded=F, record_matches_block_filter=F, record_outside_allow_list=F => TRUE
 // MCDC SYS-REQ-009: record_excluded=F, record_matches_block_filter=F, record_outside_allow_list=T => FALSE
 // MCDC SYS-REQ-009: record_excluded=F, record_matches_block_filter=T, record_outside_allow_list=F => FALSE
@@ -127,12 +146,10 @@ func TestShouldFilter(t *testing.T) {
 }
 
 // Verifies: SW-REQ-010
-// MCDC SW-REQ-010: filter_true=T, in_should_filter=F, outside_allow_list=F, skip_match=F => TRUE
 //
-// The second assertion (HasFilter()==true on AnalyticsFilters{APIIDs:{"api123"}}) demonstrates
-// the filter_true=T row when none of skip_match / outside_allow_list / in_should_filter
-// have triggered yet (filter is configured but ShouldFilter has not been invoked on a
-// matching record): the implication antecedent is FALSE so the formula evaluates to TRUE.
+// TestHasFilter exercises AnalyticsFilters.HasFilter (part of the SW-REQ-010
+// surface) but does not drive the ShouldFilter decision rows; the MC/DC witness
+// rows for SW-REQ-010 are annotated on TestShouldFilter above.
 func TestHasFilter(t *testing.T) {
 	filter := AnalyticsFilters{}
 

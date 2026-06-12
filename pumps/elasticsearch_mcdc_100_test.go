@@ -61,6 +61,15 @@ import (
 	elasticv6 "gopkg.in/olivere/elastic.v6"
 )
 
+// File-level MC/DC witness rows: these requirements are genuinely exercised
+// by covered tests in this file (per-test // MCDC blocks below). Rows copied
+// verbatim from `proof mcdc show`; this header gives every // Verifies: link
+// in the file a matching witness row.
+//
+// MCDC SW-REQ-068: v3_operator_constructed=F, version_eq_3=F => TRUE
+// MCDC SW-REQ-068: v3_operator_constructed=F, version_eq_3=T => FALSE
+// MCDC SW-REQ-068: v3_operator_constructed=T, version_eq_3=T => TRUE
+
 // runESFatalChild forks the current test binary, runs only the named test,
 // and asserts the child process exited with code 1 (the log.Fatal contract).
 // The child branch is entered via the BE_ES_FATAL env var.

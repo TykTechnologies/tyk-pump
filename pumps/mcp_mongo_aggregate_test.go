@@ -12,6 +12,15 @@ import (
 	"github.com/TykTechnologies/tyk-pump/analytics"
 )
 
+// File-level MC/DC witness rows: these requirements are genuinely exercised
+// by covered tests in this file (per-test // MCDC blocks below). Rows copied
+// verbatim from `proof mcdc show`; this header gives every // Verifies: link
+// in the file a matching witness row.
+//
+// MCDC SW-REQ-039: mixed_collection_write_attempted=F, use_mixed_collection=F => TRUE
+// MCDC SW-REQ-039: mixed_collection_write_attempted=F, use_mixed_collection=T => FALSE
+// MCDC SW-REQ-039: mixed_collection_write_attempted=T, use_mixed_collection=T => TRUE
+
 // Verifies: SW-REQ-039
 func newMCPMongoAggregatePump(t *testing.T) *MCPMongoAggregatePump {
 	t.Helper()
@@ -72,6 +81,14 @@ func TestMCPMongoAggregatePump_Init_InvalidConfig(t *testing.T) {
 // using use_mixed_collection=false drive F/F=TRUE. The T/F=FALSE pair is
 // driven by injecting a per-org write error before the mixed-collection
 // attempt fires — see TestMCPMongoAggregatePump_WriteData_OrgWriteFailsBeforeMixed.)
+//
+// SW-REQ-039:edge_case:example
+// DEFECT-1 regression (TT-17004): two records from different APIs (api-A,
+// api-B) sharing one (orgid, timestamp) bucket must produce two distinct
+// mixed-collection documents — not one merged doc. Before the owner_apiid
+// upsert-key fix, the per-api_id dashboard filter unwound the merged doc and
+// summed both proxies' counters (5+2=7). The require.Len(results, 2) and the
+// per-api {2,5} hit-count assertions below fail if the cross-api merge recurs.
 func TestMCPMongoAggregatePump_WriteData_PerAPIPartitioning(t *testing.T) {
 	pump := newMCPMongoAggregatePump(t)
 

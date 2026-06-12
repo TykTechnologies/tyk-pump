@@ -327,6 +327,18 @@ func TestMigrateAllShardedTablesLogging(t *testing.T) {
 }
 
 // Verifies: SW-REQ-040
+//
+// SW-REQ-040:forward_compatible:example
+// DEFECT-3 regression (TT-13166): before the fix, AutoMigrate was gated behind
+// `if !TableSharding`, so with sharding enabled the schema migration of shard
+// tables was skipped entirely — newly created per-day shards never received
+// columns added by later releases, and inserts referencing those columns failed
+// against the stale shard (an expand-then-contract / forward-compatibility
+// break). The "MigrateShardedTables calls migrateAllFunc" sub-test asserts that
+// under TableSharding=true + MigrateShardedTables=true the migrate-all path is
+// actually invoked; "default sharding migrates current day table" asserts the
+// current day's shard is migrated even in the default mode. A regression that
+// re-skips shard migration fails these assertions.
 func TestHandleTableMigration(t *testing.T) {
 	t.Run("non-sharded migrates main table", func(t *testing.T) {
 		db := setupTestDB(t)

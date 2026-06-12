@@ -18,6 +18,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// File-level MC/DC witness rows: these requirements are genuinely exercised
+// by covered tests in this file (per-test // MCDC blocks below). Rows copied
+// verbatim from `proof mcdc show`; this header gives every // Verifies: link
+// in the file a matching witness row.
+//
+// MCDC SW-REQ-049: graylog_url_configured=F, record_forwarded=F => TRUE
+// MCDC SW-REQ-049: graylog_url_configured=T, record_forwarded=F => FALSE
+// MCDC SW-REQ-049: graylog_url_configured=T, record_forwarded=T => TRUE
+
 // TestGraylogPump_New_GetName covers the New() + GetName() identity helpers.
 //
 // Verifies: SW-REQ-049

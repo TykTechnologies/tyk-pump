@@ -1,0 +1,36 @@
+id: analytics-timestamp-timezone-convention-unpinned
+title: AnalyticsRecord.TimeStamp carries no UTC convention; date-shard routing and time-bucketing inherit the record's location
+description: 'analytics/analytics.go:60 declares TimeStamp as a bare time.Time with json/gorm tags but no documented timezone convention, and no construction-time .UTC() normalization (the protobuf path at analytics/analytics.go:352-367 explicitly preserves and restores the original Location). Consequently: (1) the SQL/Graph/MCP pump families route records into per-day shard tables via TimeStamp.Format("20060102") (pumps/sql.go:366, pumps/sql_aggregate.go:230, pumps/graph_sql.go:131, pumps/graph_sql_aggregate.go:106, pumps/mcp_sql.go:158, pumps/mcp_sql_aggregate.go:215) using the record''s own location, so a producer emitting Local time and a consumer in another zone — or a record straddling a DST transition — can land in the wrong YYYYMMDD shard (temporal_window_inclusive); (2) the aggregate/uptime time fields (analytics/aggregate.go:46 LastTime, analytics/analytics.go:76, analytics/uptime_data.go:27) serialize without an explicit tz convention (tz_explicit); (3) the DST-sensitive write/format paths (main.go:291, pumps/kafka.go:246, pumps/sqs.go:172, retry/http-retry.go:59) format wall-clock instants without DST-safe normalization (dst_transition_safe). Root cause is single: TimeStamp''s timezone convention is implicit.'
+affected_requirements:
+    - SW-REQ-011
+    - SW-REQ-009
+    - SW-REQ-015
+    - SW-REQ-073
+    - SW-REQ-040
+    - SW-REQ-041
+    - SW-REQ-042
+    - SW-REQ-043
+    - SW-REQ-044
+    - SW-REQ-045
+evidence_manifests:
+    - code_signal:opengrep:go.time_field_untagged_tz:analytics/aggregate.go:46
+    - code_signal:opengrep:go.time_field_untagged_tz:analytics/analytics.go:76
+    - code_signal:opengrep:go.time_field_untagged_tz:analytics/uptime_data.go:27
+    - code_signal:opengrep:go.sql_table_sharding_by_date:pumps/sql.go:366
+    - code_signal:opengrep:go.sql_table_sharding_by_date:pumps/sql_aggregate.go:230
+    - code_signal:opengrep:go.sql_table_sharding_by_date:pumps/graph_sql.go:131
+    - code_signal:opengrep:go.sql_table_sharding_by_date:pumps/graph_sql_aggregate.go:106
+    - code_signal:opengrep:go.sql_table_sharding_by_date:pumps/mcp_sql.go:158
+    - code_signal:opengrep:go.sql_table_sharding_by_date:pumps/mcp_sql_aggregate.go:215
+severity: medium
+risk: data_integrity
+mitigation: Operators should run tyk-gateway and tyk-pump with TZ=UTC so emitted AnalyticsRecord.TimeStamp values are already UTC; this makes date-shard routing and aggregation windows deterministic. Avoid table_sharding across DST boundaries in non-UTC deployments.
+remediation: Pin AnalyticsRecord.TimeStamp to UTC on construction/decode (call t.UTC() in the decode path) or document a UTC-only convention in the struct doc comment, and route date shards from the UTC instant.
+owner: tyk-team
+review_date: "2026-11-30"
+release_disposition: ship_with_known_issue
+status: open
+history:
+    - at: "2026-06-11T16:10:46Z"
+      by: human:leo
+      action: created

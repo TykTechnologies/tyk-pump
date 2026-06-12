@@ -10,6 +10,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// File-level MC/DC witness rows: these requirements are genuinely exercised
+// by covered tests in this file (per-test // MCDC blocks below). Rows copied
+// verbatim from `proof mcdc show`; this header gives every // Verifies: link
+// in the file a matching witness row.
+//
+// MCDC SW-REQ-026: enable_json_format=F, json_emitted_else_text=F => TRUE
+// MCDC SW-REQ-026: enable_json_format=T, json_emitted_else_text=F => FALSE
+// MCDC SW-REQ-026: enable_json_format=T, json_emitted_else_text=T => TRUE
+
 // Verifies: SW-REQ-026
 func TestRemoveWhitespaces(t *testing.T) {
 	tests := []struct {
