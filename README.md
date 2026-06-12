@@ -529,6 +529,16 @@ The name format for each table is <table*name>*<date>. Defaults to false.
 - `bulk_actions`: Specifies the number of requests needed to flush the data and send it to ES. Defaults to 1000 requests. If it is needed, can be disabled with -1.
 - `bulk_size`: Specifies the size (in bytes) needed to flush the data and send it to ES. Defaults to 5MB. If it is needed, can be disabled with -1.
 
+`"use_ssl"` - Enables SSL connection.
+
+`"ssl_insecure_skip_verify"` - Controls whether the pump client verifies the Elasticsearch server's certificate chain and hostname.
+
+`"ssl_cert_file"` - Path to the PEM file with client certificate for authentication with the Elasticsearch server.
+
+`"ssl_key_file"` - Path to the PEM file with Tyk's private key for authentication with the Elasticsearch server.
+
+`"ssl_ca_file"` - Path to the PEM file with trusted CA certificates that will be used to verify the Elasticsearch server's certificate.
+
 ###### Env Variables
 
 ```
@@ -540,6 +550,11 @@ TYK_PMP_PUMPS_ELASTICSEARCH_META_DOCUMENTTYPE=tyk_analytics
 TYK_PMP_PUMPS_ELASTICSEARCH_META_ROLLINGINDEX=false
 TYK_PMP_PUMPS_ELASTICSEARCH_META_EXTENDEDSTATISTICS=false
 TYK_PMP_PUMPS_ELASTICSEARCH_META_VERSION=5
+TYK_PMP_PUMPS_ELASTICSEARCH_META_USESSL=true
+TYK_PMP_PUMPS_ELASTICSEARCH_META_SSLINSECURESKIPVERIFY=false
+TYK_PMP_PUMPS_ELASTICSEARCH_META_SSLCERTFILE=/path/to/cert.pem
+TYK_PMP_PUMPS_ELASTICSEARCH_META_SSLKEYFILE=/path/to/key.pem
+TYK_PMP_PUMPS_ELASTICSEARCH_META_SSLCAFILE=/path/to/ca.pem
 TYK_PMP_PUMPS_ELASTICSEARCH_META_BULKCONFIG_WORKERS=2
 TYK_PMP_PUMPS_ELASTICSEARCH_META_BULKCONFIG_FLUSHINTERVAL=60
 ```
@@ -782,6 +797,9 @@ Setting up Splunk with a _HTTP Event Collector_
 - `enable_batch`: If this is set to `true`, pump is going to send the analytics records in batch to Splunk. Type: Boolean. Default value is `false`.
 - `max_content_length`: Max content length in bytes to be sent in batch requests. It should match the `max_content_length` configured in Splunk. If the purged analytics records size don't reach the amount of bytes, they're send anyways in each `purge_loop`. Type: Integer. Default value is 838860800 (~ 800 MB), the same default value as Splunk config.
 - `max_retries`: Max number of retries if failed to send requests to splunk HEC. Default value is `0` (no retries after failure). Connections, network, timeouts, temporary, too many requests and internal server errors are all considered retryable.
+- `"ssl_cert_file"` - Path to the PEM file with client certificate for authentication with the Splunk server.
+- `"ssl_key_file"` - Path to the PEM file with Tyk's private key for authentication with the Splunk server.
+- `ssl_ca_file`: Path to the PEM file with trusted CA certificates that will be used to verify the Splunk server's certificate.
 
 ###### JSON / Conf File
 
@@ -794,6 +812,7 @@ Setting up Splunk with a _HTTP Event Collector_
         "ssl_insecure_skip_verify": false,
         "ssl_cert_file": "<cert-path>",
         "ssl_key_file": "<key-path>",
+        "ssl_ca_file": "<ca-path>",
         "ssl_server_name": "<server-name>",
         "obfuscate_api_keys": true,
         "obfuscate_api_keys_length": 10,
@@ -844,6 +863,7 @@ TYK_PMP_PUMPS_SPLUNK_META_COLLECTORURL="{URL}"
 TYK_PMP_PUMPS_SPLUNK_META_SSLINSECURESKIPVERIFY=false
 TYK_PMP_PUMPS_SPLUNK_META_SSLCERTFILE="{CERT-PATH}"
 TYK_PMP_PUMPS_SPLUNK_META_SSLKEYFILE="{KEY-PATH}"
+TYK_PMP_PUMPS_SPLUNK_META_SSLCAFILE="{CA-PATH}"
 TYK_PMP_PUMPS_SPLUNK_META_SSLSERVERNAME="{SERVER-NAME}"
 TYK_PMP_PUMPS_SPLUNK_META_ENABLEBATCH=true
 TYK_PMP_PUMPS_SPLUNK_META_BATCHMAXCONTENTLENGTH="{MAX-CONTENT-LENGTH}"
@@ -893,8 +913,9 @@ More advanced fields:
 - `timeout`: Timeout is the maximum amount of time will wait for a connect or write to complete.
 - `compressed`: Enable "github.com/golang/snappy" codec to be used to compress Kafka messages. By default is false
 - `meta_data`: Can be used to set custom metadata inside the kafka message
-- `ssl_cert_file`: Can be used to set custom certificate file for authentication with kafka.
-- `ssl_key_file`: Can be used to set custom key file for authentication with kafka.
+- `ssl_cert_file`: Path to the PEM file with Tyk's client certificate for authentication with the Kafka server.
+- `ssl_key_file`: Path to the PEM file with Tyk's private key for authentication with the Kafka server.
+- `ssl_ca_file`: Path to the PEM file with trusted CA certificates that will be used to verify the Kafka server's certificate.
 - `batch_bytes`: The maximum size of the batch to be sent to the kafka cluster.
 
 ###### JSON / Conf File
@@ -932,6 +953,9 @@ TYK_PMP_PUMPS_KAFKA_META_BROKER=localhost:9092
 TYK_PMP_PUMPS_KAFKA_META_TOPIC=tyk-pump
 TYK_PMP_PUMPS_KAFKA_META_USESSL=true
 TYK_PMP_PUMPS_KAFKA_META_SSLINSECURESKIPVERIFY=false
+TYK_PMP_PUMPS_KAFKA_META_SSLCERTFILE=/path/to/cert.pem
+TYK_PMP_PUMPS_KAFKA_META_SSLKEYFILE=/path/to/key.pem
+TYK_PMP_PUMPS_KAFKA_META_SSLCAFILE=/path/to/ca.pem
 TYK_PMP_PUMPS_KAFKA_META_CLIENTID=tyk-pump
 TYK_PMP_PUMPS_KAFKA_META_TIMEOUT=60
 TYK_PMP_PUMPS_KAFKA_META_COMPRESSED=true

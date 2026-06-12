@@ -22,6 +22,7 @@ import (
 
 const (
 	PredefinedTagGraphAnalytics = "tyk-graph-analytics"
+	PredefinedTagMCPAnalytics   = "tyk-mcp-analytics"
 )
 
 var log = logger.GetLogger()
@@ -74,8 +75,11 @@ type AnalyticsRecord struct {
 	TrackPath     bool           `json:"track_path" gorm:"column:trackpath"`
 	ExpireAt      time.Time      `bson:"expireAt" json:"expireAt"`
 	ApiSchema     string         `json:"api_schema" bson:"-" gorm:"-:all"` //nolint
+	OriginalPath  string         `json:"original_path" gorm:"column:originalpath"`
+	ListenPath    string         `json:"listen_path" gorm:"column:listenpath"`
 
 	GraphQLStats   GraphQLStats `json:"graphql_stats" bson:"-" gorm:"-:all"`
+	MCPStats       MCPStats     `json:"mcp_stats" bson:"-" gorm:"-:all"`
 	CollectionName string       `json:"-" bson:"-" gorm:"-:all"`
 }
 
@@ -92,6 +96,11 @@ func (a *AnalyticsRecord) GetObjectID() model.ObjectID {
 
 func (a *AnalyticsRecord) SetObjectID(id model.ObjectID) {
 	a.id = id
+}
+
+// IsMCPRecord returns true if this analytics record originated from an MCP request.
+func (a *AnalyticsRecord) IsMCPRecord() bool {
+	return a.MCPStats.IsMCP
 }
 
 type GraphQLOperations int
@@ -111,6 +120,13 @@ type GraphQLStats struct {
 	OperationType GraphQLOperations
 	HasErrors     bool
 	IsGraphQL     bool
+}
+
+type MCPStats struct {
+	IsMCP         bool   `json:"is_mcp"`
+	JSONRPCMethod string `json:"jsonrpc_method"`
+	PrimitiveType string `json:"primitive_type"`
+	PrimitiveName string `json:"primitive_name"`
 }
 
 type GraphError struct {
@@ -194,7 +210,7 @@ func (a *AnalyticsRecord) GetFieldNames() []string {
 	fields = append(fields, a.Geo.GetFieldNames()...)
 	fields = append(fields, a.Network.GetFieldNames()...)
 	fields = append(fields, a.Latency.GetFieldNames()...)
-	return append(fields, "Tags", "Alias", "TrackPath", "ExpireAt", "ApiSchema")
+	return append(fields, "Tags", "Alias", "TrackPath", "ExpireAt", "ApiSchema", "OriginalPath", "ListenPath")
 }
 
 func (n *NetworkStats) GetLineValues() []string {
@@ -262,6 +278,7 @@ func (a *AnalyticsRecord) GetLineValues() []string {
 	fields = append(fields, strconv.FormatBool(a.TrackPath))
 	fields = append(fields, a.ExpireAt.String())
 	fields = append(fields, a.ApiSchema)
+	fields = append(fields, a.OriginalPath, a.ListenPath)
 
 	return fields
 }
@@ -323,7 +340,7 @@ func (a *AnalyticsRecord) TimestampToProto(newRecord *analyticsproto.AnalyticsRe
 	newRecord.TimeZone = a.TimeStamp.Location().String()
 }
 
-func (a *AnalyticsRecord) TimeStampFromProto(protoRecord analyticsproto.AnalyticsRecord) {
+func (a *AnalyticsRecord) TimeStampFromProto(protoRecord *analyticsproto.AnalyticsRecord) {
 	// get timestamp in original location
 	loc, err := time.LoadLocation(protoRecord.TimeZone)
 	if err != nil {

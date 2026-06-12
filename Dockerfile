@@ -1,4 +1,4 @@
-FROM golang:1.24 as builder
+FROM golang:1.25@sha256:83978e9c0c95d28fe29a9be9095b45d42c8d2ee75c3243f32b0dd1f0daec9043 as builder
 
 WORKDIR /app
 
@@ -9,7 +9,7 @@ COPY . .
 
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GOEXPERIMENT=boringcrypto go build -tags=boringcrypto -o tyk-pump .
 
-FROM debian:bookworm-slim
+FROM debian:bookworm-slim@sha256:8af0e5095f9964007f5ebd11191dfe52dcb51bf3afa2c07f055fc5451b78ba0e
 
 WORKDIR /opt/tyk-pump
 

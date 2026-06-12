@@ -244,3 +244,37 @@ func TestTykPumpConfiguration_LoadPumpsByEnv(t *testing.T) {
 		})
 	}
 }
+
+func TestLoadPumpsByEnv(t *testing.T) {
+	t.Run("preserves existing meta config and adds env prefix", func(t *testing.T) {
+		os.Setenv("TYK_PMP_PUMPS_ELASTICSEARCH_META_SSLCAFILE", "env_var_nonexistent_ca.pem")
+		defer os.Unsetenv("TYK_PMP_PUMPS_ELASTICSEARCH_META_SSLCAFILE")
+
+		// Start with existing config that has ssl_ca_file in Meta
+		cfg := &TykPumpConfiguration{
+			Pumps: map[string]PumpConfig{
+				"ELASTICSEARCH": {
+					Type: "elasticsearch",
+					Meta: map[string]any{
+						"ssl_ca_file":       "conf_nonexistent_ca.pem",
+						"elasticsearch_url": "https://localhost:9200",
+					},
+				},
+			},
+		}
+
+		err := cfg.LoadPumpsByEnv()
+
+		assert.NoError(t, err)
+		assert.Contains(t, cfg.Pumps, "ELASTICSEARCH")
+
+		// Original Meta values should be preserved; pump will override its meta config during Init() -> processPumpEnvVars() calls
+		assert.Contains(t, cfg.Pumps["ELASTICSEARCH"].Meta, "ssl_ca_file")
+		assert.Equal(t, "conf_nonexistent_ca.pem", cfg.Pumps["ELASTICSEARCH"].Meta["ssl_ca_file"])
+		assert.Contains(t, cfg.Pumps["ELASTICSEARCH"].Meta, "elasticsearch_url")
+
+		assert.Contains(t, cfg.Pumps["ELASTICSEARCH"].Meta, "meta_env_prefix")
+		assert.Equal(t, PUMPS_ENV_PREFIX+"_ELASTICSEARCH"+PUMPS_ENV_META_PREFIX,
+			cfg.Pumps["ELASTICSEARCH"].Meta["meta_env_prefix"])
+	})
+}

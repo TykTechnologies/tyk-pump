@@ -1,13 +1,18 @@
 package pumps
 
 import (
+	"crypto/tls"
+	"crypto/x509"
+	"errors"
 	"fmt"
+	"os"
 	"strings"
 	"time"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
+	gorm_logger "gorm.io/gorm/logger"
 )
 
 type CommonPumpConfig struct {
@@ -178,4 +183,97 @@ func MigrateAllShardedTables(db *gorm.DB, tablePrefix, logPrefix string, model i
 
 	log.Info("Completed migration of sharded " + logPrefix + " tables")
 	return nil
+}
+
+// OpenGormDB resolves the GORM log level, builds the dialect, and opens
+// a *gorm.DB connection. It centralises the boilerplate shared by every SQL
+// pump's Init method.
+func OpenGormDB(conf *SQLConf, log *logrus.Entry) (*gorm.DB, error) {
+	logLevel := gorm_logger.Silent
+	switch conf.LogLevel {
+	case "debug":
+		logLevel = gorm_logger.Info
+	case "info":
+		logLevel = gorm_logger.Warn
+	case "warning":
+		logLevel = gorm_logger.Error
+	}
+
+	dialect, err := Dialect(conf)
+	if err != nil {
+		log.Error(err)
+		return nil, err
+	}
+
+	db, err := gorm.Open(dialect, &gorm.Config{
+		AutoEmbedd:  true,
+		UseJSONTags: true,
+		Logger:      gorm_logger.Default.LogMode(logLevel),
+	})
+	if err != nil {
+		log.WithError(err).Error("error opening gorm connection")
+		return nil, err
+	}
+
+	return db, nil
+}
+
+type TLSConfig struct {
+	CertFile           string
+	KeyFile            string
+	CAFile             string
+	ServerName         string
+	InsecureSkipVerify bool
+}
+
+// NewTLSConfig creates a TLS configuration from the provided settings.
+func NewTLSConfig(cfg TLSConfig, log *logrus.Entry) (*tls.Config, error) {
+	if log == nil {
+		return nil, errors.New("logger cannot be nil")
+	}
+
+	// Backward compatibility: Some pumps are logging this configuration mismatch instead of returning an error.
+	// The TLS config will still be created with available settings (e.g., CA cert only).
+	if (cfg.CertFile == "") != (cfg.KeyFile == "") {
+		log.Warn("Only one of ssl_cert_file and ssl_key_file configuration option is set, you should set both to enable mTLS.")
+	}
+
+	// #nosec G402
+	tlsConfig := &tls.Config{
+		InsecureSkipVerify: cfg.InsecureSkipVerify,
+		ServerName:         cfg.ServerName,
+	}
+
+	if tlsConfig.InsecureSkipVerify {
+		log.Warn("ssl_insecure_skip_verify is set to true. Server certificate validation will be skipped.")
+	}
+
+	if cfg.CertFile != "" && cfg.KeyFile != "" {
+		cert, err := tls.LoadX509KeyPair(cfg.CertFile, cfg.KeyFile)
+		if err != nil {
+			return nil, fmt.Errorf("failed to load cert/key pair(cert: %q, key: %q): %w", cfg.CertFile, cfg.KeyFile, err)
+		}
+
+		tlsConfig.Certificates = []tls.Certificate{cert}
+	}
+
+	if cfg.CAFile != "" {
+		caPem, err := os.ReadFile(cfg.CAFile)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read CA certificate file %q: %w", cfg.CAFile, err)
+		}
+
+		certPool := x509.NewCertPool()
+		if !certPool.AppendCertsFromPEM(caPem) {
+			return nil, fmt.Errorf("failed to parse CA certificate from file %q: invalid PEM data", cfg.CAFile)
+		}
+
+		tlsConfig.RootCAs = certPool
+
+		if tlsConfig.InsecureSkipVerify {
+			log.Warn("ssl_ca_file is set but ssl_insecure_skip_verify is true - server certificate will not be verified against the provided CA")
+		}
+	}
+
+	return tlsConfig, nil
 }

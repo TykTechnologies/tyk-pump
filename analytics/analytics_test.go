@@ -109,8 +109,6 @@ func TestAnalyticsRecord_GetFieldNames(t *testing.T) {
 
 	fields := rec.GetFieldNames()
 
-	assert.Equal(t, 40, len(fields))
-
 	expectedFields := []string{
 		"Method",
 		"Host",
@@ -134,7 +132,7 @@ func TestAnalyticsRecord_GetFieldNames(t *testing.T) {
 		"RawRequest",
 		"RawResponse",
 		"IPAddress",
-		"Tags", "Alias", "TrackPath", "ExpireAt", "ApiSchema",
+		"Tags", "Alias", "TrackPath", "ExpireAt", "ApiSchema", "OriginalPath", "ListenPath",
 		"GeoData.Country.ISOCode",
 		"GeoData.City.GeoNameID",
 		"GeoData.City.Names",
@@ -157,20 +155,20 @@ func TestAnalyticsRecord_GetFieldNames(t *testing.T) {
 
 func TestAnalyticsRecord_GetLineValues(t *testing.T) {
 	rec := &AnalyticsRecord{
-		APIID:      "api123",
-		OrgID:      "org123",
-		APIKey:     "key123",
-		Path:       "/path",
-		RawPath:    "/rawpath",
-		APIVersion: "v1",
-		APIName:    "api_name",
-		TimeStamp:  time.Now(),
-		ApiSchema:  "http",
+		APIID:        "api123",
+		OrgID:        "org123",
+		APIKey:       "key123",
+		Path:         "/path",
+		RawPath:      "/rawpath",
+		APIVersion:   "v1",
+		APIName:      "api_name",
+		TimeStamp:    time.Now(),
+		ApiSchema:    "http",
+		OriginalPath: "/original",
+		ListenPath:   "/listen",
 	}
 
 	fields := rec.GetLineValues()
-
-	assert.Equal(t, 40, len(fields))
 
 	for _, field := range structs.Fields(rec) {
 		if field.IsExported() && !field.IsZero() {

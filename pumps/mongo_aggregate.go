@@ -38,9 +38,9 @@ type MongoAggregateConf struct {
 	// TYKCONFIGEXPAND
 	BaseMongoConf
 	// If set to `true` the Mongo Aggregate pump will send analytics to two collections:
-	// - z_tyk_analyticz_aggregate_{ORG ID}
-	// - tyk_analytics_aggregates
-	// When set to 'false' your pump will only store analytics to z_tyk_analyticz_aggregate_{ORG ID}.
+	// - `z_tyk_analyticz_aggregate_{ORG ID}`
+	// - `tyk_analytics_aggregates`
+	// When set to 'false' your pump will only store analytics to `z_tyk_analyticz_aggregate_{ORG ID}`.
 	UseMixedCollection bool `json:"use_mixed_collection" mapstructure:"use_mixed_collection"`
 	// Specifies if it should store aggregated data for all the endpoints. By default, `false`
 	// which means that only store aggregated data for `tracked endpoints`.
@@ -284,9 +284,20 @@ func (m *MongoAggregatePump) ensureIndexes(collectionName string) error {
 }
 
 func (m *MongoAggregatePump) WriteData(ctx context.Context, data []interface{}) error {
-	m.log.Debug("Attempting to write ", len(data), " records")
+	filtered := make([]interface{}, 0, len(data))
+	for _, d := range data {
+		if rec, ok := d.(analytics.AnalyticsRecord); ok && rec.IsMCPRecord() {
+			continue
+		}
+		filtered = append(filtered, d)
+	}
+	if len(filtered) == 0 {
+		return nil
+	}
+
+	m.log.Debug("Attempting to write ", len(filtered), " records")
 	// calculate aggregates
-	analyticsPerOrg := analytics.AggregateData(data, m.dbConf.TrackAllPaths, m.dbConf.IgnoreTagPrefixList, m.dbConf.MongoURL, m.dbConf.AggregationTime)
+	analyticsPerOrg := analytics.AggregateData(filtered, m.dbConf.TrackAllPaths, m.dbConf.IgnoreTagPrefixList, m.dbConf.MongoURL, m.dbConf.AggregationTime)
 	// put aggregated data into MongoDB
 	writingAttempts := []bool{false}
 	if m.dbConf.UseMixedCollection {
@@ -312,7 +323,7 @@ func (m *MongoAggregatePump) WriteData(ctx context.Context, data []interface{}) 
 		m.log.Debug("Processed aggregated data for ", orgID)
 	}
 
-	m.log.Info("Purged ", len(data), " records...")
+	m.log.Info("Purged ", len(filtered), " records...")
 
 	return nil
 }

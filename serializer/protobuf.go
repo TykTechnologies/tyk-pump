@@ -17,7 +17,7 @@ func (pb *ProtobufSerializer) GetSuffix() string {
 
 func (pb *ProtobufSerializer) Encode(record *analytics.AnalyticsRecord) ([]byte, error) {
 	protoRecord := pb.TransformSingleRecordToProto(*record)
-	return proto.Marshal(&protoRecord)
+	return proto.Marshal(protoRecord)
 }
 
 func (pb *ProtobufSerializer) Decode(analyticsData interface{}, record *analytics.AnalyticsRecord) error {
@@ -26,10 +26,10 @@ func (pb *ProtobufSerializer) Decode(analyticsData interface{}, record *analytic
 	if err != nil {
 		return err
 	}
-	return pb.TransformSingleProtoToAnalyticsRecord(protoData, record)
+	return pb.TransformSingleProtoToAnalyticsRecord(&protoData, record)
 }
 
-func (pb *ProtobufSerializer) TransformSingleRecordToProto(rec analytics.AnalyticsRecord) analyticsproto.AnalyticsRecord {
+func (pb *ProtobufSerializer) TransformSingleRecordToProto(rec analytics.AnalyticsRecord) *analyticsproto.AnalyticsRecord {
 	latency := analyticsproto.Latency{
 		Total:    rec.Latency.Total,
 		Upstream: rec.Latency.Upstream,
@@ -86,6 +86,8 @@ func (pb *ProtobufSerializer) TransformSingleRecordToProto(rec analytics.Analyti
 		TrackPath:     rec.TrackPath,
 		OauthID:       rec.OauthID,
 		ApiSchema:     rec.ApiSchema,
+		OriginalPath:  rec.OriginalPath,
+		ListenPath:    rec.ListenPath,
 	}
 	rec.TimestampToProto(&record)
 	if rec.GraphQLStats.IsGraphQL {
@@ -120,10 +122,19 @@ func (pb *ProtobufSerializer) TransformSingleRecordToProto(rec analytics.Analyti
 		}
 	}
 
-	return record
+	if rec.MCPStats.IsMCP {
+		record.MCPStats = &analyticsproto.MCPStats{
+			IsMCP:         true,
+			JSONRPCMethod: rec.MCPStats.JSONRPCMethod,
+			PrimitiveType: rec.MCPStats.PrimitiveType,
+			PrimitiveName: rec.MCPStats.PrimitiveName,
+		}
+	}
+
+	return &record
 }
 
-func (pb *ProtobufSerializer) TransformSingleProtoToAnalyticsRecord(rec analyticsproto.AnalyticsRecord, record *analytics.AnalyticsRecord) error {
+func (pb *ProtobufSerializer) TransformSingleProtoToAnalyticsRecord(rec *analyticsproto.AnalyticsRecord, record *analytics.AnalyticsRecord) error {
 	tmpRecord := analytics.AnalyticsRecord{
 		Method:        rec.Method,
 		Host:          rec.Host,
@@ -170,10 +181,12 @@ func (pb *ProtobufSerializer) TransformSingleProtoToAnalyticsRecord(rec analytic
 			Total:    rec.Latency.Total,
 			Upstream: rec.Latency.Upstream,
 		},
-		Tags:      rec.Tags,
-		Alias:     rec.Alias,
-		TrackPath: rec.TrackPath,
-		ApiSchema: rec.ApiSchema,
+		Tags:         rec.Tags,
+		Alias:        rec.Alias,
+		TrackPath:    rec.TrackPath,
+		ApiSchema:    rec.ApiSchema,
+		OriginalPath: rec.OriginalPath,
+		ListenPath:   rec.ListenPath,
 	}
 	tmpRecord.TimeStampFromProto(rec)
 
@@ -208,6 +221,15 @@ func (pb *ProtobufSerializer) TransformSingleProtoToAnalyticsRecord(rec analytic
 			Types:         types,
 			Variables:     rec.GraphQLStats.Variables,
 			Errors:        errors,
+		}
+	}
+
+	if rec.MCPStats != nil {
+		tmpRecord.MCPStats = analytics.MCPStats{
+			IsMCP:         rec.MCPStats.IsMCP,
+			JSONRPCMethod: rec.MCPStats.JSONRPCMethod,
+			PrimitiveType: rec.MCPStats.PrimitiveType,
+			PrimitiveName: rec.MCPStats.PrimitiveName,
 		}
 	}
 
