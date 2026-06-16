@@ -42,7 +42,7 @@ func goVersionAtLeast125(major, minor int) bool {
 }
 
 // Verifies: SYS-REQ-024
-// SYS-REQ-024:nominal:positive
+// SYS-REQ-024:nominal:nominal
 //
 // MCDC SYS-REQ-024: go_125_or_later=T => TRUE
 //

@@ -32,7 +32,7 @@ import (
 // the boolean field.
 //
 // Verifies: SW-REQ-016
-// SW-REQ-016:nominal:positive
+// SW-REQ-016:nominal:nominal
 func TestCommonPumpConfig_GetOmitDetailedRecording(t *testing.T) {
 	c := &CommonPumpConfig{}
 	assert.False(t, c.GetOmitDetailedRecording())
@@ -106,7 +106,7 @@ func TestGetPumpByName_UnknownReturnsError(t *testing.T) {
 // TestGetPumpByName_KnownReturnsPump drives the ok && pump != nil = T arm.
 //
 // Verifies: SW-REQ-017
-// SW-REQ-017:nominal:positive
+// SW-REQ-017:nominal:nominal
 func TestGetPumpByName_KnownReturnsPump(t *testing.T) {
 	p, err := GetPumpByName("dummy")
 	require.NoError(t, err)
@@ -123,7 +123,7 @@ func TestGetPumpByName_KnownReturnsPump(t *testing.T) {
 // deterministically.
 //
 // Verifies: SW-REQ-054
-// SW-REQ-054:nominal:positive
+// SW-REQ-054:nominal:nominal
 // MCDC SW-REQ-054: queue_full_and_enabled=F, submit_skipped=F => TRUE
 // MCDC SW-REQ-054: queue_full_and_enabled=T, submit_skipped=F => FALSE
 // MCDC SW-REQ-054: queue_full_and_enabled=T, submit_skipped=T => TRUE

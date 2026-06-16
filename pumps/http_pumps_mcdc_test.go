@@ -114,7 +114,7 @@ func newCaptureServer(t *testing.T) *captureServer {
 // + ObfuscateAPIKeysLength branches of WriteData.
 //
 // Verifies: SW-REQ-048
-// SW-REQ-048:errors_propagated:positive
+// SW-REQ-048:errors_propagated:nominal
 func TestSplunkPump_WriteData_ObfuscateAPIKeys(t *testing.T) {
 	tests := []struct {
 		name           string
@@ -189,7 +189,7 @@ func TestSplunkPump_WriteData_ObfuscateAPIKeys(t *testing.T) {
 // TestSplunkPump_FilterTags exercises the ignore-tag filtering paths.
 //
 // Verifies: SW-REQ-048
-// SW-REQ-048:errors_propagated:positive
+// SW-REQ-048:errors_propagated:nominal
 func TestSplunkPump_FilterTags(t *testing.T) {
 	cs := newCaptureServer(t)
 	pmp := SplunkPump{}
@@ -227,7 +227,7 @@ func TestSplunkPump_FilterTags(t *testing.T) {
 // next record would exceed BatchMaxContentLength → flush early.
 //
 // Verifies: SW-REQ-048
-// SW-REQ-048:errors_propagated:positive
+// SW-REQ-048:errors_propagated:nominal
 func TestSplunkPump_BatchBoundary(t *testing.T) {
 	cs := newCaptureServer(t)
 
@@ -269,7 +269,7 @@ func TestSplunkPump_BatchBoundary(t *testing.T) {
 // EnableBatch && BatchMaxContentLength == 0 path which sets the SDK default.
 //
 // Verifies: SW-REQ-048
-// SW-REQ-048:errors_propagated:positive
+// SW-REQ-048:errors_propagated:nominal
 func TestSplunkPump_BatchEnabledDefaultMaxContentLength(t *testing.T) {
 	cs := newCaptureServer(t)
 	pmp := SplunkPump{}
@@ -322,7 +322,7 @@ func TestSplunkPump_SendError(t *testing.T) {
 // SDK not invoked — F/F=TRUE. The T/F=FALSE pair is the SDK-flush-error
 // baseline where Endpoint is set but Track returns an error — KI-tracked via
 // the mcdc:ignore on segment.go:86 (json.Marshal-cannot-fail arm).)
-// SW-REQ-053:nominal:positive
+// SW-REQ-053:nominal:nominal
 func TestSegmentPump_WriteData_RoundTrip(t *testing.T) {
 	cs := newCaptureServer(t)
 
@@ -358,7 +358,7 @@ func TestSegmentPump_WriteData_RoundTrip(t *testing.T) {
 // TestSegmentPump_ToJSONMap covers the marshal failure / success branches.
 //
 // Verifies: SW-REQ-053
-// SW-REQ-053:nominal:positive
+// SW-REQ-053:nominal:nominal
 func TestSegmentPump_ToJSONMap(t *testing.T) {
 	s := SegmentPump{}
 	require.NoError(t, s.Init(map[string]interface{}{"segment_write_key": "k"}))
@@ -390,7 +390,7 @@ func TestSegmentPump_ToJSONMap(t *testing.T) {
 // F/F=TRUE. The T/F=FALSE pair is the DrainDuration parse-error baseline
 // where token is set but drain_duration is invalid, so NewLogzioClient
 // returns the parse error — covered by TestLogzioClient_DrainDurationParseErr.)
-// SW-REQ-051:nominal:positive
+// SW-REQ-051:nominal:nominal
 func TestLogzioPump_WriteData_RoundTrip(t *testing.T) {
 	cs := newCaptureServer(t)
 
@@ -477,7 +477,7 @@ func TestLogzioClient_DrainDurationParseErr(t *testing.T) {
 // fake and asserts Init parses the sampling rate from the config endpoint.
 //
 // Verifies: SW-REQ-052
-// SW-REQ-052:nominal:positive
+// SW-REQ-052:nominal:nominal
 func TestMoesifPump_Init_FetchAppConfigSuccess(t *testing.T) {
 	cs := newCaptureServer(t)
 	cs.bodySeq = [][]byte{[]byte(`{"sample_rate": 50, "user_sample_rate": {"u1": 25}, "company_sample_rate": {"c1": 10}}`)}
@@ -507,7 +507,7 @@ func TestMoesifPump_Init_FetchAppConfigSuccess(t *testing.T) {
 // / app-default fallback chain.
 //
 // Verifies: SW-REQ-052
-// SW-REQ-052:nominal:positive
+// SW-REQ-052:nominal:nominal
 func TestMoesifPump_GetSamplingPercentage(t *testing.T) {
 	p := &MoesifPump{
 		samplingPercentage:   77,
@@ -535,7 +535,7 @@ func TestMoesifPump_GetSamplingPercentage(t *testing.T) {
 // TestMoesifPump_FetchIDFromHeader covers the request-vs-response precedence.
 //
 // Verifies: SW-REQ-052
-// SW-REQ-052:nominal:positive
+// SW-REQ-052:nominal:nominal
 func TestMoesifPump_FetchIDFromHeader(t *testing.T) {
 	req := map[string]interface{}{"x-user-id": "from-req"}
 	resp := map[string]interface{}{"x-user-id": "from-resp"}
@@ -557,7 +557,7 @@ func TestMoesifPump_FetchIDFromHeader(t *testing.T) {
 // the rawBody masker.
 //
 // Verifies: SW-REQ-052
-// SW-REQ-052:nominal:positive
+// SW-REQ-052:nominal:nominal
 func TestMoesifPump_MaskRawBody(t *testing.T) {
 	// JSON success path masks named fields.
 	out := maskRawBody(`{"name":"alice","ssn":"123"}`, []string{"ssn"})
@@ -576,7 +576,7 @@ func TestMoesifPump_MaskRawBody(t *testing.T) {
 // TestMoesifPump_BuildURI covers the multi-part request-line parser.
 //
 // Verifies: SW-REQ-052
-// SW-REQ-052:nominal:positive
+// SW-REQ-052:nominal:nominal
 func TestMoesifPump_BuildURI(t *testing.T) {
 	// Three parts: METHOD URI HTTP/1.1
 	got := buildURI("GET /foo HTTP/1.1\r\nHost: x", "/default")
@@ -594,7 +594,7 @@ func TestMoesifPump_BuildURI(t *testing.T) {
 // TestMoesifPump_DecodeRawData covers empty / valid / disable-capture branches.
 //
 // Verifies: SW-REQ-052
-// SW-REQ-052:nominal:positive
+// SW-REQ-052:nominal:nominal
 func TestMoesifPump_DecodeRawData(t *testing.T) {
 	// Valid: headers + body.
 	d, err := decodeRawData("GET / HTTP/1.1\r\nHost: x\r\nFoo: bar\r\n\r\nhello", nil, nil, false)
@@ -672,7 +672,7 @@ func TestResurfacePump_WriteData_NonAnalyticsRecord(t *testing.T) {
 // TestSQSPump_WriteData_BatchLimitChunking covers the chunk loop boundary.
 //
 // Verifies: SW-REQ-055
-// SW-REQ-055:errors_propagated:positive
+// SW-REQ-055:errors_propagated:nominal
 func TestSQSPump_WriteData_BatchLimitChunking(t *testing.T) {
 	tests := []struct {
 		name       string
@@ -721,7 +721,7 @@ func TestSQSPump_WriteData_BatchLimitChunking(t *testing.T) {
 // AWSMessageIDDeduplicationEnabled branches.
 //
 // Verifies: SW-REQ-055
-// SW-REQ-055:errors_propagated:positive
+// SW-REQ-055:errors_propagated:nominal
 func TestSQSPump_WriteData_FIFOOptions(t *testing.T) {
 	var captured []sqstypes.SendMessageBatchRequestEntry
 	mockSQS := &MockSQSSendMessageBatchAPI{
@@ -833,7 +833,7 @@ func TestSQSPump_WriteData_PublishErrorPropagates(t *testing.T) {
 // production-Init seam blocked by AWS env requirement). The T/F=FALSE pair is
 // driven by TestKinesisPump_DescribeStream_AlreadyEncryptedDifferentKey where
 // Init fails with the key-mismatch error before encryption is verified.)
-// SW-REQ-056:nominal:positive
+// SW-REQ-056:nominal:nominal
 func TestKinesisPump_WriteData_HappyPath(t *testing.T) {
 	// We re-implement a small in-place harness because production WriteData
 	// uses p.client directly (it's a concrete *kinesis.Client). MC/DC of
@@ -872,7 +872,7 @@ func TestKinesisPump_WriteData_HappyPath(t *testing.T) {
 // TestKinesisPump_Init_DefaultBatchSize covers the default-batch-size branch.
 //
 // Verifies: SW-REQ-056
-// SW-REQ-056:nominal:positive
+// SW-REQ-056:nominal:nominal
 func TestKinesisPump_Init_DefaultBatchSize(t *testing.T) {
 	// Use the TestableKinesisPump (uses mock client) which mirrors the real
 	// default-applying logic and never touches AWS.
@@ -893,7 +893,7 @@ func TestKinesisPump_Init_DefaultBatchSize(t *testing.T) {
 // WriteRecordsInput so we can verify chunking + batch-error propagation.
 //
 // Verifies: SW-REQ-057
-// SW-REQ-057:boundary:positive
+// SW-REQ-057:boundary:nominal
 type timestreamMockClient struct {
 	calls    int32
 	failOn   int // 1-indexed call to fail on; 0 means never
@@ -910,7 +910,7 @@ func (m *timestreamMockClient) WriteRecords(ctx context.Context, params *timestr
 // iterator boundary directly (avoids embedding the real AWS SDK type signature).
 //
 // Verifies: SW-REQ-057
-// SW-REQ-057:boundary:positive
+// SW-REQ-057:boundary:nominal
 func TestTimestreamPump_BuildIterator_Boundaries(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -948,7 +948,7 @@ func TestTimestreamPump_BuildIterator_Boundaries(t *testing.T) {
 // TestTimestreamPump_NameMap covers the rename-vs-fallback branch.
 //
 // Verifies: SW-REQ-057
-// SW-REQ-057:boundary:positive
+// SW-REQ-057:boundary:nominal
 func TestTimestreamPump_NameMap(t *testing.T) {
 	pump := &TimestreamPump{
 		config: &TimestreamPumpConf{
@@ -963,7 +963,7 @@ func TestTimestreamPump_NameMap(t *testing.T) {
 // WriteZeroValues=true and false for the int-measure filter.
 //
 // Verifies: SW-REQ-057
-// SW-REQ-057:boundary:positive
+// SW-REQ-057:boundary:nominal
 func TestTimestreamPump_GetMeasures_ZeroValuesBranch(t *testing.T) {
 	rec := &analytics.AnalyticsRecord{
 		ContentLength: 0,
@@ -1016,7 +1016,7 @@ func TestTimestreamPump_Init_MissingDimensionsOrMeasures(t *testing.T) {
 // configured dimension keys are kept and unknown keys are skipped.
 //
 // Verifies: SW-REQ-057
-// SW-REQ-057:boundary:positive
+// SW-REQ-057:boundary:nominal
 func TestTimestreamPump_GetDimensions_FilterByConfig(t *testing.T) {
 	rec := &analytics.AnalyticsRecord{Method: "GET", Host: "h", APIID: "id"}
 	pump := &TimestreamPump{config: &TimestreamPumpConf{
@@ -1031,7 +1031,7 @@ func TestTimestreamPump_GetDimensions_FilterByConfig(t *testing.T) {
 // not abort Init, while still being recorded on the conf.
 //
 // Verifies: SW-REQ-056
-// SW-REQ-056:nominal:positive
+// SW-REQ-056:nominal:nominal
 func TestKinesisPump_Init_StreamNameWarnOnly(t *testing.T) {
 	mockClient := &MockKinesisClient{}
 	p := &TestableKinesisPump{}
@@ -1057,7 +1057,7 @@ func TestKinesisPump_Init_StreamNameWarnOnly(t *testing.T) {
 // forces an unbounded loop, so the witness is captured via the KI rather
 // than a live runtime test. The T/F=FALSE pair would require a bounded-retry
 // surface that does not yet exist in production; tracked in the same KI.)
-// SW-REQ-046:nominal:positive
+// SW-REQ-046:nominal:nominal
 func TestInfluxPump_WriteData_RoundTrip(t *testing.T) {
 	cs := newCaptureServer(t)
 	cs.statusSeq = []int{http.StatusNoContent}
@@ -1141,7 +1141,7 @@ func influx2FakeServer(t *testing.T, overrides map[string]http.HandlerFunc) (*ht
 // to succeed.
 //
 // Verifies: SW-REQ-047
-// SW-REQ-047:nominal:positive
+// SW-REQ-047:nominal:nominal
 func TestInflux2Pump_WriteData_RoundTrip(t *testing.T) {
 	srv, writes := influx2FakeServer(t, nil)
 
@@ -1248,7 +1248,7 @@ var _ = (*timestreamMockClient)(nil)
 // TestSplitIntoBatches_EdgeCases covers boundary conditions.
 //
 // Verifies: SW-REQ-056
-// SW-REQ-056:nominal:positive
+// SW-REQ-056:nominal:nominal
 func TestSplitIntoBatches_EdgeCases(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -1276,7 +1276,7 @@ func TestSplitIntoBatches_EdgeCases(t *testing.T) {
 // TestMin_BranchCoverage exercises both arms of the Min function.
 //
 // Verifies: SW-REQ-057
-// SW-REQ-057:boundary:positive
+// SW-REQ-057:boundary:nominal
 func TestMin_BranchCoverage(t *testing.T) {
 	assert.Equal(t, 1, Min(1, 2))
 	assert.Equal(t, 1, Min(2, 1))
@@ -1290,7 +1290,7 @@ func TestMin_BranchCoverage(t *testing.T) {
 // The Moesif SDK fires async; we focus on the synchronous decode path here.
 //
 // Verifies: SW-REQ-052
-// SW-REQ-052:nominal:positive
+// SW-REQ-052:nominal:nominal
 func TestMoesifPump_WriteData_HappyPath(t *testing.T) {
 	cs := newCaptureServer(t)
 	// Initial /v1/config GET response.
@@ -1333,7 +1333,7 @@ func TestMoesifPump_WriteData_HappyPath(t *testing.T) {
 // and the Alias-vs-OauthID-vs-headers fallback chain.
 //
 // Verifies: SW-REQ-052
-// SW-REQ-052:nominal:positive
+// SW-REQ-052:nominal:nominal
 func TestMoesifPump_WriteData_WithUserIDHeader(t *testing.T) {
 	cs := newCaptureServer(t)
 	cs.bodySeq = [][]byte{[]byte(`{"sample_rate": 100}`)}
@@ -1385,7 +1385,7 @@ func TestMoesifPump_WriteData_WithUserIDHeader(t *testing.T) {
 // / generic-JWT authorization-parse branches.
 //
 // Verifies: SW-REQ-052
-// SW-REQ-052:nominal:positive
+// SW-REQ-052:nominal:nominal
 func TestMoesifPump_WriteData_BasicAndBearerAuth(t *testing.T) {
 	cs := newCaptureServer(t)
 	cs.bodySeq = [][]byte{[]byte(`{"sample_rate": 100}`)}
@@ -1442,7 +1442,7 @@ func TestMoesifPump_WriteData_BasicAndBearerAuth(t *testing.T) {
 // Shutdown.
 //
 // Verifies: SW-REQ-052
-// SW-REQ-052:nominal:positive
+// SW-REQ-052:nominal:nominal
 func TestMoesifPump_Shutdown_FlushesBulk(t *testing.T) {
 	cs := newCaptureServer(t)
 	cs.bodySeq = [][]byte{[]byte(`{"sample_rate": 100}`)}
@@ -1472,7 +1472,7 @@ func TestMoesifPump_Shutdown_FlushesBulk(t *testing.T) {
 // branch and the user_sample_rate / company_sample_rate parsing branches.
 //
 // Verifies: SW-REQ-052
-// SW-REQ-052:nominal:positive
+// SW-REQ-052:nominal:nominal
 func TestMoesifPump_ParseConfiguration_AllFields(t *testing.T) {
 	body := `{"sample_rate": 75, "user_sample_rate": {"u1": 25}, "company_sample_rate": {"c1": 50}}`
 	resp := &http.Response{
@@ -1493,7 +1493,7 @@ func TestMoesifPump_ParseConfiguration_AllFields(t *testing.T) {
 // TestMoesifPump_DecodeHeaders_BadLines covers the len(kv)!=2 skip branch.
 //
 // Verifies: SW-REQ-052
-// SW-REQ-052:nominal:positive
+// SW-REQ-052:nominal:nominal
 func TestMoesifPump_DecodeHeaders_BadLines(t *testing.T) {
 	// Has request-line + valid header + invalid header
 	in := "GET / HTTP/1.1\r\nHost: x\r\ninvalid-line\r\nFoo: bar"
@@ -1510,7 +1510,7 @@ func TestMoesifPump_DecodeHeaders_BadLines(t *testing.T) {
 // flavors of request/response so its decisions all flip.
 //
 // Verifies: SW-REQ-054
-// SW-REQ-054:nominal:positive
+// SW-REQ-054:nominal:nominal
 func TestResurfacePump_MapRawData_AllBranches(t *testing.T) {
 	// 1) standard rec (matches existing tests) — confirms happy path.
 	rec := &analytics.AnalyticsRecord{
@@ -1567,7 +1567,7 @@ func TestResurfacePump_MapRawData_AllBranches(t *testing.T) {
 // for MC/DC of these one-decision functions.
 //
 // Verifies: SW-REQ-054
-// SW-REQ-054:nominal:positive
+// SW-REQ-054:nominal:nominal
 func TestResurfacePump_Flush_Shutdown(t *testing.T) {
 	pmp, _ := SetUp(t, "", make([]string, 0), "include debug")
 	// Use a goroutine-friendly Shutdown that flushes + waits.
@@ -1580,7 +1580,7 @@ func TestResurfacePump_Flush_Shutdown(t *testing.T) {
 // TestResurfaceFlush_AfterDisable covers the Flush re-init path.
 //
 // Verifies: SW-REQ-054
-// SW-REQ-054:nominal:positive
+// SW-REQ-054:nominal:nominal
 func TestResurfaceFlush_AfterDisable(t *testing.T) {
 	pmp, _ := SetUp(t, "", make([]string, 0), "include debug")
 
@@ -1609,7 +1609,7 @@ func TestResurfaceFlush_AfterDisable(t *testing.T) {
 // branches.
 //
 // Verifies: SW-REQ-057
-// SW-REQ-057:boundary:positive
+// SW-REQ-057:boundary:nominal
 func TestTimestreamPump_MapToVarChar(t *testing.T) {
 	// Empty map → no entries.
 	assert.Equal(t, "", mapToVarChar(map[string]string{}))
@@ -1626,7 +1626,7 @@ func TestTimestreamPump_MapToVarChar(t *testing.T) {
 // failure and parser-failure arms.
 //
 // Verifies: SW-REQ-057
-// SW-REQ-057:boundary:positive
+// SW-REQ-057:boundary:nominal
 func TestTimestreamPump_LoadHeadersFromRawRequest_Branches(t *testing.T) {
 	// Happy path — valid HTTP/1.1 request bytes.
 	good := base64.StdEncoding.EncodeToString([]byte("GET / HTTP/1.1\r\nHost: x\r\nFoo: bar\r\n\r\n"))
@@ -1648,7 +1648,7 @@ func TestTimestreamPump_LoadHeadersFromRawRequest_Branches(t *testing.T) {
 // failure and parser failure for ReadResponse.
 //
 // Verifies: SW-REQ-057
-// SW-REQ-057:boundary:positive
+// SW-REQ-057:boundary:nominal
 func TestTimestreamPump_LoadHeadersFromRawResponse_Branches(t *testing.T) {
 	good := base64.StdEncoding.EncodeToString([]byte("HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n"))
 	h, err := LoadHeadersFromRawResponse(good)
@@ -1667,7 +1667,7 @@ func TestTimestreamPump_LoadHeadersFromRawResponse_Branches(t *testing.T) {
 // default branch of NewTimestreamWriter.
 //
 // Verifies: SW-REQ-057
-// SW-REQ-057:boundary:positive
+// SW-REQ-057:boundary:nominal
 func TestTimestreamPump_NewTimestreamWriter_DefaultTimeout(t *testing.T) {
 	pump := &TimestreamPump{
 		config: &TimestreamPumpConf{AWSRegion: "us-east-1"},
@@ -1682,7 +1682,7 @@ func TestTimestreamPump_NewTimestreamWriter_DefaultTimeout(t *testing.T) {
 // reading X-Ratelimit-* headers from the raw response.
 //
 // Verifies: SW-REQ-057
-// SW-REQ-057:boundary:positive
+// SW-REQ-057:boundary:nominal
 func TestTimestreamPump_GetMeasures_RateLimitBranch(t *testing.T) {
 	rawResp := base64.StdEncoding.EncodeToString([]byte(
 		"HTTP/1.1 200 OK\r\n" +
@@ -1710,7 +1710,7 @@ func TestTimestreamPump_GetMeasures_RateLimitBranch(t *testing.T) {
 // ReadGeoFromRequest path with Cloudfront-Viewer-* headers.
 //
 // Verifies: SW-REQ-057
-// SW-REQ-057:boundary:positive
+// SW-REQ-057:boundary:nominal
 func TestTimestreamPump_GetMeasures_ReadGeoFromRequest(t *testing.T) {
 	rawReq := base64.StdEncoding.EncodeToString([]byte(
 		"GET / HTTP/1.1\r\n" +
@@ -1735,7 +1735,7 @@ func TestTimestreamPump_GetMeasures_ReadGeoFromRequest(t *testing.T) {
 // includeRawResponse branch and chunking of large raw responses.
 //
 // Verifies: SW-REQ-057
-// SW-REQ-057:boundary:positive
+// SW-REQ-057:boundary:nominal
 func TestTimestreamPump_GetMeasures_RawResponseChunking(t *testing.T) {
 	big := strings.Repeat("a", 5000) // > timestreamVarcharMaxLength * 2
 	rec := &analytics.AnalyticsRecord{RawResponse: big}
@@ -1776,7 +1776,7 @@ func TestLogzioPump_WriteData_MarshalErrorPath(t *testing.T) {
 // URL log line.
 //
 // Verifies: SW-REQ-051
-// SW-REQ-051:nominal:positive
+// SW-REQ-051:nominal:nominal
 func TestLogzioInit_FullConfig(t *testing.T) {
 	cs := newCaptureServer(t)
 	p := LogzioPump{}
@@ -1797,7 +1797,7 @@ func TestLogzioInit_FullConfig(t *testing.T) {
 // TestKinesisPump_GetEnvPrefix covers GetEnvPrefix.
 //
 // Verifies: SW-REQ-056
-// SW-REQ-056:nominal:positive
+// SW-REQ-056:nominal:nominal
 func TestKinesisPump_GetEnvPrefix(t *testing.T) {
 	mockClient := &MockKinesisClient{}
 	p := &TestableKinesisPump{}
@@ -1838,7 +1838,7 @@ func TestSplunkPump_NonBatched_PerRecordSendError(t *testing.T) {
 // TestInflux2Pump_WriteData_NoFlushPath ensures the !Flush branch runs.
 //
 // Verifies: SW-REQ-047
-// SW-REQ-047:nominal:positive
+// SW-REQ-047:nominal:nominal
 func TestInflux2Pump_WriteData_NoFlushPath(t *testing.T) {
 	srv, _ := influx2FakeServer(t, nil)
 
@@ -1862,7 +1862,7 @@ func TestInflux2Pump_WriteData_NoFlushPath(t *testing.T) {
 // back to bucket lookup.
 //
 // Verifies: SW-REQ-047
-// SW-REQ-047:nominal:positive
+// SW-REQ-047:nominal:nominal
 func TestInflux2Pump_CreateMissingBucket_FailHandled(t *testing.T) {
 	srv, _ := influx2FakeServer(t, map[string]http.HandlerFunc{
 		"/api/v2/buckets": func(w http.ResponseWriter, r *http.Request) {
@@ -1946,7 +1946,7 @@ func TestSQSPump_Init_GetQueueUrlError(t *testing.T) {
 // Init() that occur when bulk_config is missing optional keys.
 //
 // Verifies: SW-REQ-052
-// SW-REQ-052:nominal:positive
+// SW-REQ-052:nominal:nominal
 func TestMoesifPump_Init_PartialBulkConfig(t *testing.T) {
 	cs := newCaptureServer(t)
 	cs.bodySeq = [][]byte{[]byte(`{"sample_rate": 100}`)}
@@ -1983,7 +1983,7 @@ func TestMoesifPump_Init_PartialBulkConfig(t *testing.T) {
 // TestMoesifPump_WriteData_EmptyData covers the early-return-on-empty arm.
 //
 // Verifies: SW-REQ-052
-// SW-REQ-052:nominal:positive
+// SW-REQ-052:nominal:nominal
 func TestMoesifPump_WriteData_EmptyData(t *testing.T) {
 	p := MoesifPump{}
 	require.NoError(t, p.Init(map[string]interface{}{"application_id": "app-id"}))
@@ -1993,7 +1993,7 @@ func TestMoesifPump_WriteData_EmptyData(t *testing.T) {
 // TestMoesifPump_DecodeHeaders_Mask covers the mask path inside decodeHeaders.
 //
 // Verifies: SW-REQ-052
-// SW-REQ-052:nominal:positive
+// SW-REQ-052:nominal:nominal
 func TestMoesifPump_DecodeHeaders_Mask(t *testing.T) {
 	// Request-line + headers with one masked, one normal.
 	in := "GET / HTTP/1.1\r\nAuthorization: secret\r\nX-Other: val"
@@ -2006,7 +2006,7 @@ func TestMoesifPump_DecodeHeaders_Mask(t *testing.T) {
 // token branches of parseAuthorizationHeader.
 //
 // Verifies: SW-REQ-052
-// SW-REQ-052:nominal:positive
+// SW-REQ-052:nominal:nominal
 func TestMoesifPump_ParseAuthHeader_Branches(t *testing.T) {
 	// Empty token: returns ""
 	assert.Equal(t, "", parseAuthorizationHeader("", "sub"))
@@ -2026,7 +2026,7 @@ func TestMoesifPump_ParseAuthHeader_Branches(t *testing.T) {
 // early-error branch.
 //
 // Verifies: SW-REQ-052
-// SW-REQ-052:nominal:positive
+// SW-REQ-052:nominal:nominal
 func TestMoesifPump_DecodeRawData_EmptyInput(t *testing.T) {
 	// "" splits into a single-element slice — not error path.
 	_, err := decodeRawData("", nil, nil, false)
@@ -2037,7 +2037,7 @@ func TestMoesifPump_DecodeRawData_EmptyInput(t *testing.T) {
 // value is itself a map.
 //
 // Verifies: SW-REQ-052
-// SW-REQ-052:nominal:positive
+// SW-REQ-052:nominal:nominal
 func TestMoesifPump_MaskData_NestedMap(t *testing.T) {
 	in := map[string]interface{}{
 		"public": "ok",
@@ -2058,7 +2058,7 @@ func TestMoesifPump_MaskData_NestedMap(t *testing.T) {
 // TestMoesifPump_Contains covers both arms of contains.
 //
 // Verifies: SW-REQ-052
-// SW-REQ-052:nominal:positive
+// SW-REQ-052:nominal:nominal
 func TestMoesifPump_Contains(t *testing.T) {
 	assert.True(t, contains([]string{"a", "b"}, "a"))
 	assert.False(t, contains([]string{"a", "b"}, "c"))
@@ -2068,7 +2068,7 @@ func TestMoesifPump_Contains(t *testing.T) {
 // TestMoesifPump_ToLowerCase covers the toLowerCase helper.
 //
 // Verifies: SW-REQ-052
-// SW-REQ-052:nominal:positive
+// SW-REQ-052:nominal:nominal
 func TestMoesifPump_ToLowerCase(t *testing.T) {
 	got := toLowerCase(map[string]interface{}{"Foo": "1", "BAR": 2})
 	assert.Equal(t, "1", got["foo"])
@@ -2079,7 +2079,7 @@ func TestMoesifPump_ToLowerCase(t *testing.T) {
 // parsing.
 //
 // Verifies: SW-REQ-052
-// SW-REQ-052:nominal:positive
+// SW-REQ-052:nominal:nominal
 func TestMoesifPump_FetchTokenPayload(t *testing.T) {
 	assert.Equal(t, "abc", fetchTokenPayload("Bearer abc", "Bearer"))
 	assert.Equal(t, "xyz", fetchTokenPayload("Basic xyz", "Basic"))
@@ -2109,7 +2109,7 @@ func TestLogzioPump_Init_FailedClient(t *testing.T) {
 // TestInfluxPump_New_GetName covers the small accessors.
 //
 // Verifies: SW-REQ-046
-// SW-REQ-046:nominal:positive
+// SW-REQ-046:nominal:nominal
 func TestInfluxPump_New_GetName(t *testing.T) {
 	p := InfluxPump{}
 	assert.IsType(t, &InfluxPump{}, p.New())
@@ -2121,7 +2121,7 @@ func TestInfluxPump_New_GetName(t *testing.T) {
 // TestInflux2Pump_New_GetName covers the small accessors.
 //
 // Verifies: SW-REQ-047
-// SW-REQ-047:nominal:positive
+// SW-REQ-047:nominal:nominal
 func TestInflux2Pump_New_GetName(t *testing.T) {
 	p := Influx2Pump{}
 	assert.IsType(t, &Influx2Pump{}, p.New())
@@ -2135,7 +2135,7 @@ func TestInflux2Pump_New_GetName(t *testing.T) {
 // TestKinesisPump_GetEnvPrefix_Empty covers the empty prefix branch.
 //
 // Verifies: SW-REQ-056
-// SW-REQ-056:nominal:positive
+// SW-REQ-056:nominal:nominal
 func TestKinesisPump_GetEnvPrefix_Empty(t *testing.T) {
 	mockClient := &MockKinesisClient{}
 	p := &TestableKinesisPump{}
@@ -2150,7 +2150,7 @@ func TestKinesisPump_GetEnvPrefix_Empty(t *testing.T) {
 // TestResurfacePump_Accessors covers GetName / New / GetEnvPrefix.
 //
 // Verifies: SW-REQ-054
-// SW-REQ-054:nominal:positive
+// SW-REQ-054:nominal:nominal
 func TestResurfacePump_Accessors(t *testing.T) {
 	p := ResurfacePump{}
 	assert.IsType(t, &ResurfacePump{}, p.New())
@@ -2164,7 +2164,7 @@ func TestResurfacePump_Accessors(t *testing.T) {
 // TestSQSPump_Accessors covers New / GetName / GetEnvPrefix.
 //
 // Verifies: SW-REQ-055
-// SW-REQ-055:errors_propagated:positive
+// SW-REQ-055:errors_propagated:nominal
 func TestSQSPump_Accessors(t *testing.T) {
 	p := SQSPump{}
 	assert.IsType(t, &SQSPump{}, p.New())
@@ -2178,7 +2178,7 @@ func TestSQSPump_Accessors(t *testing.T) {
 // TestSplunkPump_Accessors covers New / GetName / GetEnvPrefix.
 //
 // Verifies: SW-REQ-048
-// SW-REQ-048:errors_propagated:positive
+// SW-REQ-048:errors_propagated:nominal
 func TestSplunkPump_Accessors(t *testing.T) {
 	p := SplunkPump{}
 	assert.IsType(t, &SplunkPump{}, p.New())
@@ -2192,7 +2192,7 @@ func TestSplunkPump_Accessors(t *testing.T) {
 // TestTimestreamPump_Accessors covers New / GetName / GetEnvPrefix.
 //
 // Verifies: SW-REQ-057
-// SW-REQ-057:boundary:positive
+// SW-REQ-057:boundary:nominal
 func TestTimestreamPump_Accessors(t *testing.T) {
 	p := TimestreamPump{}
 	assert.IsType(t, &TimestreamPump{}, p.New())
@@ -2207,7 +2207,7 @@ func TestTimestreamPump_Accessors(t *testing.T) {
 // / GetTimeout.
 //
 // Verifies: SW-REQ-052
-// SW-REQ-052:nominal:positive
+// SW-REQ-052:nominal:nominal
 func TestMoesifPump_Accessors(t *testing.T) {
 	p := MoesifPump{}
 	assert.IsType(t, &MoesifPump{}, p.New())
@@ -2223,7 +2223,7 @@ func TestMoesifPump_Accessors(t *testing.T) {
 // TestSegmentPump_Accessors covers New / GetName / GetEnvPrefix.
 //
 // Verifies: SW-REQ-053
-// SW-REQ-053:nominal:positive
+// SW-REQ-053:nominal:nominal
 func TestSegmentPump_Accessors(t *testing.T) {
 	p := SegmentPump{}
 	assert.IsType(t, &SegmentPump{}, p.New())
@@ -2237,7 +2237,7 @@ func TestSegmentPump_Accessors(t *testing.T) {
 // TestLogzioPump_Accessors covers New / GetName / GetEnvPrefix.
 //
 // Verifies: SW-REQ-051
-// SW-REQ-051:nominal:positive
+// SW-REQ-051:nominal:nominal
 func TestLogzioPump_Accessors(t *testing.T) {
 	p := LogzioPump{}
 	assert.IsType(t, &LogzioPump{}, p.New())
@@ -2253,7 +2253,7 @@ func TestLogzioPump_Accessors(t *testing.T) {
 // noop when IgnoreTagPrefixList is empty.
 //
 // Verifies: SW-REQ-048
-// SW-REQ-048:errors_propagated:positive
+// SW-REQ-048:errors_propagated:nominal
 func TestSplunkPump_FilterTags_NoOpWhenNoIgnoreList(t *testing.T) {
 	pmp := SplunkPump{config: &SplunkPumpConfig{IgnoreTagPrefixList: nil}}
 	got := pmp.FilterTags([]string{"a", "b", "c"})

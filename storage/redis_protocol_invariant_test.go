@@ -5,7 +5,7 @@ import (
 )
 
 // Verifies: SYS-REQ-025
-// SYS-REQ-025:nominal:positive
+// SYS-REQ-025:nominal:nominal
 //
 // MCDC SYS-REQ-025: redis_protocol_compatible=T => TRUE
 //

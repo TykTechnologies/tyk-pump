@@ -42,7 +42,7 @@ import (
 // mcp_sql_test.go hit only one arm of.
 //
 // Verifies: SW-REQ-044
-// SW-REQ-044:connection_leak_free:positive
+// SW-REQ-044:connection_leak_free:nominal
 func TestMCDC_MCPSQLPump_Init_BatchSizeAndTableName(t *testing.T) {
 	skipTestIfNoPostgres(t)
 
@@ -70,7 +70,7 @@ func TestMCDC_MCPSQLPump_Init_BatchSizeAndTableName(t *testing.T) {
 // `g.Conf.BatchSize == 0` decision in GraphSQLPump.Init.
 //
 // Verifies: SW-REQ-042
-// SW-REQ-042:connection_leak_free:positive
+// SW-REQ-042:connection_leak_free:nominal
 func TestMCDC_GraphSQLPump_Init_BatchSizeNonZero(t *testing.T) {
 	skipTestIfNoPostgres(t)
 
@@ -94,7 +94,7 @@ func TestMCDC_GraphSQLPump_Init_BatchSizeNonZero(t *testing.T) {
 // `c.SQLConf.BatchSize == 0` in SQLPump.Init.
 //
 // Verifies: SW-REQ-040
-// SW-REQ-040:connection_leak_free:positive
+// SW-REQ-040:connection_leak_free:nominal
 func TestMCDC_SQLPump_Init_BatchSizeNonZero(t *testing.T) {
 	skipTestIfNoPostgres(t)
 	p := &SQLPump{}
@@ -111,7 +111,7 @@ func TestMCDC_SQLPump_Init_BatchSizeNonZero(t *testing.T) {
 // `c.SQLConf.BatchSize == 0` in SQLAggregatePump.Init.
 //
 // Verifies: SW-REQ-041
-// SW-REQ-041:nominal:positive
+// SW-REQ-041:nominal:nominal
 func TestMCDC_SQLAggregatePump_Init_BatchSizeNonZero(t *testing.T) {
 	skipTestIfNoPostgres(t)
 	p := &SQLAggregatePump{}
@@ -135,7 +135,7 @@ func TestMCDC_SQLAggregatePump_Init_BatchSizeNonZero(t *testing.T) {
 // `s.SQLConf.BatchSize == 0` in MCPSQLAggregatePump.Init.
 //
 // Verifies: SW-REQ-045
-// SW-REQ-045:connection_leak_free:positive
+// SW-REQ-045:connection_leak_free:nominal
 func TestMCDC_MCPSQLAggregatePump_Init_BatchSizeNonZero(t *testing.T) {
 	skipTestIfNoPostgres(t)
 	p := &MCPSQLAggregatePump{}
@@ -161,7 +161,7 @@ func TestMCDC_MCPSQLAggregatePump_Init_BatchSizeNonZero(t *testing.T) {
 // in MCPSQLAggregatePump.ensureTable.
 //
 // Verifies: SW-REQ-045
-// SW-REQ-045:connection_leak_free:positive
+// SW-REQ-045:connection_leak_free:nominal
 func TestMCDC_MCPSQLAggregatePump_EnsureTable_AlreadyExists(t *testing.T) {
 	pump := newMCPSQLAggregatePumpWithSQLite(t, 100, false)
 
@@ -178,7 +178,7 @@ func TestMCDC_MCPSQLAggregatePump_EnsureTable_AlreadyExists(t *testing.T) {
 // no CONCURRENTLY).
 //
 // Verifies: SW-REQ-045
-// SW-REQ-045:connection_leak_free:positive
+// SW-REQ-045:connection_leak_free:nominal
 func TestMCDC_MCPSQLAggregatePump_EnsureIndex_BackgroundFalse(t *testing.T) {
 	pump := newMCPSQLAggregatePumpWithSQLite(t, 100, false)
 	// First call creates the index synchronously (background=false → F arm).
@@ -193,7 +193,7 @@ func TestMCDC_MCPSQLAggregatePump_EnsureIndex_BackgroundFalse(t *testing.T) {
 // SQLAggregatePump.ensureIndex.
 //
 // Verifies: SW-REQ-066
-// SW-REQ-066:nominal:positive
+// SW-REQ-066:nominal:nominal
 func TestMCDC_SQLAggregatePump_EnsureIndex_AlreadyExists(t *testing.T) {
 	dc := dialectCases()[0] // sqlite
 	db := sqlPumpDB(t, dc)
@@ -247,7 +247,7 @@ func TestMCDC_MCPSQLAggregatePump_WriteData_NonAnalyticsRecord(t *testing.T) {
 // drive WriteData directly with a hand-wired pump on sqlite.
 //
 // Verifies: SW-REQ-043
-// SW-REQ-043:connection_leak_free:positive
+// SW-REQ-043:connection_leak_free:nominal
 func TestMCDC_GraphSQLAggregatePump_StoreAnalyticsPerMinute_True(t *testing.T) {
 	dc := dialectCases()[0] // sqlite
 	db := sqlPumpDB(t, dc)
@@ -282,7 +282,7 @@ func TestMCDC_GraphSQLAggregatePump_StoreAnalyticsPerMinute_True(t *testing.T) {
 // for speed.
 //
 // Verifies: SW-REQ-044
-// SW-REQ-044:connection_leak_free:positive
+// SW-REQ-044:connection_leak_free:nominal
 func TestMCDC_MCPSQLPump_WriteData_SameDayRepeatBoundary(t *testing.T) {
 	dc := dialectCases()[0] // sqlite
 	tableName := sanitizeTableName("mcdc_mcps", t.Name())
@@ -341,7 +341,7 @@ func TestMCDC_MCPSQLPump_WriteData_SameDayRepeatBoundary(t *testing.T) {
 // SQLPump.ensureIndex on sqlite.
 //
 // Verifies: SW-REQ-040
-// SW-REQ-040:connection_leak_free:positive
+// SW-REQ-040:connection_leak_free:nominal
 func TestMCDC_SQLPump_EnsureIndex_HasIndexFalse(t *testing.T) {
 	dc := dialectCases()[0] // sqlite
 	tableName := sanitizeTableName("mcdc_sql_idx", t.Name())
@@ -368,7 +368,7 @@ func TestMCDC_SQLPump_EnsureIndex_HasIndexFalse(t *testing.T) {
 // (table already exists → no-op).
 //
 // Verifies: SW-REQ-040
-// SW-REQ-040:connection_leak_free:positive
+// SW-REQ-040:connection_leak_free:nominal
 func TestMCDC_SQLPump_EnsureTable_AlreadyExists(t *testing.T) {
 	dc := dialectCases()[0] // sqlite
 	tableName := sanitizeTableName("mcdc_sql_et", t.Name())
@@ -394,7 +394,7 @@ func TestMCDC_SQLPump_EnsureTable_AlreadyExists(t *testing.T) {
 //   - the `i == dataLen` boundary branch.
 //
 // Verifies: SW-REQ-040
-// SW-REQ-040:connection_leak_free:positive
+// SW-REQ-040:connection_leak_free:nominal
 func TestMCDC_SQLPump_WriteUptimeData_Sharded(t *testing.T) {
 	dc := dialectCases()[0] // sqlite
 	db := sqlPumpDB(t, dc)
@@ -448,7 +448,7 @@ func TestMCDC_SQLPump_WriteUptimeData_Sharded(t *testing.T) {
 // Run on sqlite so the underlying CREATE INDEX IF NOT EXISTS works.
 //
 // Verifies: SW-REQ-040
-// SW-REQ-040:connection_leak_free:positive
+// SW-REQ-040:connection_leak_free:nominal
 func TestMCDC_SQLPump_CreateIndex_NonPostgres(t *testing.T) {
 	dc := dialectCases()[0] // sqlite
 	tableName := sanitizeTableName("mcdc_ci_np", t.Name())
@@ -473,7 +473,7 @@ func TestMCDC_SQLPump_CreateIndex_NonPostgres(t *testing.T) {
 // via direct sqlite wiring.
 //
 // Verifies: SW-REQ-045
-// SW-REQ-045:connection_leak_free:positive
+// SW-REQ-045:connection_leak_free:nominal
 func TestMCDC_MCPSQLAggregatePump_EnsureIndex_NonPostgres(t *testing.T) {
 	pump := newMCPSQLAggregatePumpWithSQLite(t, 100, false)
 	// dbType is "" by default for the sqlite helper, which is NOT "postgres".
@@ -486,7 +486,7 @@ func TestMCDC_MCPSQLAggregatePump_EnsureIndex_NonPostgres(t *testing.T) {
 // (table already exists → no AutoMigrate). Sqlite-only.
 //
 // Verifies: SW-REQ-044
-// SW-REQ-044:connection_leak_free:positive
+// SW-REQ-044:connection_leak_free:nominal
 func TestMCDC_MCPSQLPump_EnsureMCPShardedTable_AlreadyExists(t *testing.T) {
 	dc := dialectCases()[0] // sqlite
 	tableName := sanitizeTableName("mcdc_mcp_shard", t.Name())
@@ -519,7 +519,7 @@ func TestMCDC_MCPSQLPump_EnsureMCPShardedTable_AlreadyExists(t *testing.T) {
 // iteration must clamp `ends` from 6 down to 5.
 //
 // Verifies: SW-REQ-042
-// SW-REQ-042:connection_leak_free:positive
+// SW-REQ-042:connection_leak_free:nominal
 func TestMCDC_GraphSQLPump_BatchBoundary(t *testing.T) {
 	dc := dialectCases()[0] // sqlite
 	tableName := sanitizeTableName("mcdc_gbb", t.Name())
@@ -562,7 +562,7 @@ func TestMCDC_GraphSQLPump_BatchBoundary(t *testing.T) {
 // errTable / ensureIndex success arms are walked.
 //
 // Verifies: SW-REQ-064
-// SW-REQ-064:nominal:positive
+// SW-REQ-064:nominal:nominal
 func TestMCDC_SQLAggregatePump_Sharded(t *testing.T) {
 	dc := dialectCases()[0] // sqlite
 	db := sqlPumpDB(t, dc)

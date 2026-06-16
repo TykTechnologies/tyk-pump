@@ -8,7 +8,7 @@ import (
 )
 
 // Verifies: SYS-REQ-026
-// SYS-REQ-026:nominal:positive
+// SYS-REQ-026:nominal:nominal
 //
 // MCDC SYS-REQ-026: fips_build_available=T => TRUE
 //

@@ -780,7 +780,7 @@ func TestMCDC_SQLAggregatePump_OmitIndex(t *testing.T) {
 // satisfied row 5.
 //
 // Verifies: SW-REQ-066
-// SW-REQ-066:nominal:positive
+// SW-REQ-066:nominal:nominal
 // MCDC SW-REQ-066: sql_create_index_skipped=T, sql_index_already_exists=T, sql_omit_index_creation=T => TRUE
 //mcdc:ignore SW-REQ-066: sql_create_index_skipped=F, sql_index_already_exists=T, sql_omit_index_creation=F => FALSE — sql_aggregate.go:157 guards creation behind `if !HasIndex(...)`, so when the composite index already exists the CREATE INDEX block is never entered and sql_create_index_skipped is always T; the "index exists yet recreated anyway" violation has no branch to reach it [reviewed: human:leo]
 //mcdc:ignore SW-REQ-066: sql_create_index_skipped=F, sql_index_already_exists=T, sql_omit_index_creation=T => FALSE — sql_aggregate.go:152-154 short-circuits on OmitIndexCreation before the HasIndex check at line 157, so when omit is set creation is always skipped regardless of index existence; sql_create_index_skipped is always T [reviewed: human:leo]

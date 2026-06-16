@@ -261,7 +261,7 @@ func TestMongoPump_CapCollection_OverrideSize(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 // Verifies: SW-REQ-034
-// SW-REQ-034:boundary:positive — payload of only ResponseCode==-1 records
+// SW-REQ-034:boundary:nominal — payload of only ResponseCode==-1 records
 // → AccumulateSet returns empty → WriteData hits len==0 early-return.
 func TestMongoPump_WriteData_EmptyAccumulateSet(t *testing.T) {
 	p := &MongoPump{}
@@ -493,7 +493,7 @@ func TestMongoAggregatePump_ShouldSelfHeal_PathsAndDivides(t *testing.T) {
 }
 
 // Verifies: SW-REQ-062
-// SW-REQ-062:nominal:positive — divideAggregationTime preserves the value
+// SW-REQ-062:nominal:nominal — divideAggregationTime preserves the value
 // when AggregationTime == 1.
 func TestMongoAggregatePump_DivideAggregationTime_NoOp(t *testing.T) {
 	p := &MongoAggregatePump{dbConf: &MongoAggregateConf{AggregationTime: 1}}
@@ -558,7 +558,7 @@ func TestMongoAggregatePump_DoAggregatedWriting_UpsertErrAfterStop(t *testing.T)
 // ---------------------------------------------------------------------------
 
 // Verifies: SW-REQ-036
-// SW-REQ-036:nominal:positive — pre-seed the mixed collection with a doc
+// SW-REQ-036:nominal:nominal — pre-seed the mixed collection with a doc
 // that has a timestamp; getLastDocumentTimestamp returns ts, nil (ok=T).
 func TestMongoAggregatePump_GetLastDocumentTimestamp_OK(t *testing.T) {
 	cfg := map[string]interface{}{
@@ -587,7 +587,7 @@ func TestMongoAggregatePump_GetLastDocumentTimestamp_OK(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 // Verifies: SW-REQ-035
-// SW-REQ-035:errors_propagated:positive — pre-create logBrowserIndex under
+// SW-REQ-035:errors_propagated:nominal — pre-create logBrowserIndex under
 // a *different* name; the second CreateIndex returns the "already exists with
 // a different name" error which the production code swallows (line 195 F-arm).
 func TestMongoSelectivePump_EnsureIndexes_LogBrowserAlreadyExists(t *testing.T) {
@@ -764,7 +764,7 @@ func TestMCPMongoAggregatePump_WriteData_UpsertErrAfterStop(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 // Verifies: SW-REQ-035
-// SW-REQ-035:boundary:positive — AccumulateSet receives an item that
+// SW-REQ-035:boundary:nominal — AccumulateSet receives an item that
 // processItem skips (non-AnalyticsRecord) AND an item that passes through.
 func TestMongoSelectivePump_AccumulateSet_SkipBranch(t *testing.T) {
 	m := &MongoSelectivePump{
@@ -787,7 +787,7 @@ func TestMongoSelectivePump_AccumulateSet_SkipBranch(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 // Verifies: SW-REQ-035
-// SW-REQ-035:boundary:positive — supply a non-empty thisResultSet and an
+// SW-REQ-035:boundary:nominal — supply a non-empty thisResultSet and an
 // item that overflows the batch limit, driving len(thisResultSet) > 0 = T.
 func TestMongoSelectivePump_Accumulate_OverflowFlushesPriorSet(t *testing.T) {
 	m := &MongoSelectivePump{dbConf: &MongoSelectiveConf{MaxInsertBatchSizeBytes: 100}}
@@ -811,7 +811,7 @@ func TestMongoSelectivePump_Accumulate_OverflowFlushesPriorSet(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 // Verifies: SW-REQ-034
-// SW-REQ-034:nominal:positive — happy-path Init drives the err==nil branch
+// SW-REQ-034:nominal:nominal — happy-path Init drives the err==nil branch
 // at line 212 (also covers mongo_aggregate line 186 + mongo_selective line 86
 // through their dedicated tests).
 func TestMongoPump_Init_FirstDecodeOK(t *testing.T) {
@@ -829,7 +829,7 @@ func TestMongoPump_Init_FirstDecodeOK(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 // Verifies: SW-REQ-038
-// SW-REQ-038:nominal:positive — drives the F-arm of
+// SW-REQ-038:nominal:nominal — drives the F-arm of
 // `g.dbConf.MaxInsertBatchSizeBytes == 0` (line 74) by supplying a non-zero
 // batch size in config; the default branch must NOT overwrite it.
 func TestMCPMongoPump_Init_PreservesExplicitBatchSize(t *testing.T) {
@@ -847,7 +847,7 @@ func TestMCPMongoPump_Init_PreservesExplicitBatchSize(t *testing.T) {
 }
 
 // Verifies: SW-REQ-039
-// SW-REQ-039:nominal:positive — drives the F-arm of
+// SW-REQ-039:nominal:nominal — drives the F-arm of
 // `m.dbConf.ThresholdLenTagList == 0` (line 76) by supplying an explicit
 // non-zero threshold; the default-application branch must be skipped.
 func TestMCPMongoAggregatePump_Init_PreservesExplicitThreshold(t *testing.T) {
@@ -863,7 +863,7 @@ func TestMCPMongoAggregatePump_Init_PreservesExplicitThreshold(t *testing.T) {
 }
 
 // Verifies: SW-REQ-058
-// SW-REQ-058:nominal:positive — drives the `ok` short-circuit at
+// SW-REQ-058:nominal:nominal — drives the `ok` short-circuit at
 // mongo_aggregate.go:302 with ok=F (non-AnalyticsRecord input). The condition
 // short-circuits on F so rec.IsMCPRecord() is never evaluated; the item is
 // retained for downstream processing. AggregateData hard-asserts on
@@ -882,7 +882,7 @@ func TestMongoAggregatePump_WriteData_NonAnalyticsRecordOK(t *testing.T) {
 }
 
 // Verifies: SW-REQ-058
-// SW-REQ-058:nominal:positive — feeds an MCP record into MongoAggregatePump
+// SW-REQ-058:nominal:nominal — feeds an MCP record into MongoAggregatePump
 // so the `ok && rec.IsMCPRecord()` filter at line 302 is reached with both
 // conditions true (driving the rec.IsMCPRecord()=T arm — short-circuit
 // requires the inner condition to be exercised).
@@ -952,7 +952,7 @@ func (d *stringTimestampDoc) SetObjectID(id model.ObjectID) {
 }
 
 // Verifies: SW-REQ-036
-// SW-REQ-036:errors_propagated:positive — drives the ok=F arm at
+// SW-REQ-036:errors_propagated:nominal — drives the ok=F arm at
 // mongo_aggregate.go:422 (`if ts, ok := result["timestamp"].(time.Time); ok`)
 // by seeding a doc with a NON-time.Time timestamp value. The decoder will
 // store it as a string and the type-assertion fails.
@@ -978,7 +978,7 @@ func TestMongoAggregatePump_GetLastDocumentTimestamp_NonTimeType(t *testing.T) {
 }
 
 // Verifies: SW-REQ-034
-// SW-REQ-034:nominal:positive — drives the exists=T arm at mongo.go:340 by
+// SW-REQ-034:nominal:nominal — drives the exists=T arm at mongo.go:340 by
 // pre-creating the collection THEN calling ensureIndexes on it. StandardMongo
 // path must short-circuit returning nil.
 func TestMongoPump_EnsureIndexes_CollectionExistsShortCircuit(t *testing.T) {
@@ -1045,7 +1045,7 @@ func TestMongoPump_CapCollection_MigrateErrAfterStop(t *testing.T) {
 }
 
 // Verifies: SW-REQ-035
-// SW-REQ-035:boundary:positive — drives the len(thisResultSet) > 0 = F arm
+// SW-REQ-035:boundary:nominal — drives the len(thisResultSet) > 0 = F arm
 // at mongo_selective.go:327 by supplying an empty initial result-set and an
 // item that overflows the batch size; the inner `if len > 0` branch must NOT
 // fire because the result-set starts empty.
@@ -1087,7 +1087,7 @@ func TestMongoSelectivePump_EnsureIndexes_TTLCreateErr(t *testing.T) {
 }
 
 // Verifies: SW-REQ-035
-// SW-REQ-035:nominal:positive — drive the second-CreateIndex (logBrowser)
+// SW-REQ-035:nominal:nominal — drive the second-CreateIndex (logBrowser)
 // "already exists with a different name" swallow path. We pre-create a
 // logBrowser-keyed index under a DIFFERENT name; ensureIndexes will then
 // try to create one under the canonical name "logBrowserIndex" and the
@@ -1182,7 +1182,7 @@ func TestMongoPump_EnsureIndexes_HasTableErrAfterStop(t *testing.T) {
 }
 
 // Verifies: SW-REQ-036
-// SW-REQ-036:nominal:positive — drives the err != nil = F arm at
+// SW-REQ-036:nominal:nominal — drives the err != nil = F arm at
 // mongo_aggregate.go:216 (`if err != nil { ... } else { SetlastTimestampAgggregateRecord }`)
 // in Init by pre-seeding the mixed collection with a valid time.Time doc
 // then re-initializing a new pump. The else-branch (line 219) must execute.

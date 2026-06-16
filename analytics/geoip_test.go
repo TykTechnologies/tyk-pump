@@ -98,8 +98,8 @@ func openSampleGeoIPDB(t *testing.T) *maxminddb.Reader {
 
 // Verifies: SW-REQ-071
 // Verifies: SYS-REQ-034
-// SW-REQ-071:nominal:positive
-// SYS-REQ-034:nominal:positive
+// SW-REQ-071:nominal:nominal
+// SYS-REQ-034:nominal:nominal
 // MCDC SW-REQ-071: geo_db_absent=F, geo_ip_empty=F, geo_ip_invalid=F, geo_lookup_short_circuits_when_db_absent=F => TRUE
 // MCDC SYS-REQ-034: geo_db_absent=F, geo_lookup_short_circuits_when_db_absent=F => TRUE
 //
@@ -133,8 +133,8 @@ func TestGetGeo_RealDatabase_PopulatesGeo(t *testing.T) {
 
 // Verifies: SW-REQ-071
 // Verifies: SYS-REQ-034
-// SW-REQ-071:error_handling:positive
-// SYS-REQ-034:error_handling:positive
+// SW-REQ-071:error_handling:nominal
+// SYS-REQ-034:error_handling:nominal
 // Drives the F-side of `ip == nil` in GeoIPLookup (analytics.go:404) by
 // providing a real *maxminddb.Reader together with a syntactically valid
 // IP that net.ParseIP can resolve. Pairs with the existing invalid-IP case

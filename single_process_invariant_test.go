@@ -85,7 +85,7 @@ func importsFragment(content, frag string) bool {
 }
 
 // Verifies: SYS-REQ-027
-// SYS-REQ-027:nominal:positive
+// SYS-REQ-027:nominal:nominal
 //
 // MCDC SYS-REQ-027: single_process_only=T => TRUE
 //

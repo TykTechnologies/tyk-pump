@@ -628,7 +628,7 @@ func TestTemporalStorageHandler_GetAndDeleteSet_ExpireFailureDecision(t *testing
 // rewritten to -1 by GetAndDeleteSet, which skips the Expire step entirely.
 //
 // Verifies: SW-REQ-006
-// SW-REQ-006:nominal:positive
+// SW-REQ-006:nominal:nominal
 // MCDC SW-REQ-006: chunk_partial=F, records_popped_and_expire_attempted=F, records_present=T => TRUE
 // MCDC SW-REQ-006: chunk_partial=T, records_popped_and_expire_attempted=F, records_present=F => TRUE
 // MCDC SW-REQ-006: chunk_partial=T, records_popped_and_expire_attempted=T, records_present=T => TRUE

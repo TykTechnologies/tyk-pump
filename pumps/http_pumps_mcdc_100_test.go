@@ -183,7 +183,7 @@ func TestHybridPump_WriteData_LoginFailsErrRPCLogin(t *testing.T) {
 // data, len==0 short-circuit).
 //
 // Verifies: SW-REQ-029
-// SW-REQ-029:errors_propagated:positive
+// SW-REQ-029:errors_propagated:nominal
 func TestHybridPump_WriteData_Aggregated(t *testing.T) {
 	addr := freeTCPPort(t)
 	srv := startHybridMockWithFuncs(t, addr, map[string]interface{}{
@@ -217,7 +217,7 @@ func TestHybridPump_WriteData_Aggregated(t *testing.T) {
 // arm of sendMCPAggregates by passing a record with MCP fields populated.
 //
 // Verifies: SW-REQ-029
-// SW-REQ-029:errors_propagated:positive
+// SW-REQ-029:errors_propagated:nominal
 func TestHybridPump_SendMCPAggregates_NonEmpty(t *testing.T) {
 	addr := freeTCPPort(t)
 	srv := startHybridMockWithFuncs(t, addr, map[string]interface{}{
@@ -269,7 +269,7 @@ func TestHybridPump_SendMCPAggregates_NonEmpty(t *testing.T) {
 // TestHybridPump_Shutdown drives the Shutdown lifecycle.
 //
 // Verifies: SW-REQ-029
-// SW-REQ-029:errors_propagated:positive
+// SW-REQ-029:errors_propagated:nominal
 func TestHybridPump_Shutdown(t *testing.T) {
 	addr := freeTCPPort(t)
 	srv := startHybridMockWithFuncs(t, addr, map[string]interface{}{
@@ -291,7 +291,7 @@ func TestHybridPump_Shutdown(t *testing.T) {
 // branch of connectRPC (skipping the LogError reassignment).
 //
 // Verifies: SW-REQ-029
-// SW-REQ-029:errors_propagated:positive
+// SW-REQ-029:errors_propagated:nominal
 func TestHybridPump_ConnectRPC_DebugLevel(t *testing.T) {
 	addr := freeTCPPort(t)
 	srv := startHybridMockWithFuncs(t, addr, map[string]interface{}{
@@ -345,7 +345,7 @@ func TestHybridPump_ConnectRPC_SSL_FailDial(t *testing.T) {
 // WriteData (which delegates to WriteDataRecord).
 //
 // Verifies: SW-REQ-053
-// SW-REQ-053:nominal:positive
+// SW-REQ-053:nominal:nominal
 func TestSegmentPump_WriteData_LoopOverMultipleRecords(t *testing.T) {
 	s := SegmentPump{}
 	require.NoError(t, s.Init(map[string]interface{}{"segment_write_key": "k"}))
@@ -434,7 +434,7 @@ func TestSplunkPump_WriteData_NonAnalyticsRecord_KI(t *testing.T) {
 // where the default event map is built.
 //
 // Verifies: SW-REQ-048
-// SW-REQ-048:errors_propagated:positive
+// SW-REQ-048:errors_propagated:nominal
 func TestSplunkPump_WriteData_DefaultEventFields(t *testing.T) {
 	cs := newCaptureServer(t)
 	pmp := SplunkPump{}
@@ -453,7 +453,7 @@ func TestSplunkPump_WriteData_DefaultEventFields(t *testing.T) {
 // inner Fields loop (when a configured field isn't in the mapping).
 //
 // Verifies: SW-REQ-048
-// SW-REQ-048:errors_propagated:positive
+// SW-REQ-048:errors_propagated:nominal
 func TestSplunkPump_WriteData_FieldsWithUnknownField(t *testing.T) {
 	cs := newCaptureServer(t)
 	pmp := SplunkPump{}
@@ -472,7 +472,7 @@ func TestSplunkPump_WriteData_FieldsWithUnknownField(t *testing.T) {
 // false→ skip FilterTags).
 //
 // Verifies: SW-REQ-048
-// SW-REQ-048:errors_propagated:positive
+// SW-REQ-048:errors_propagated:nominal
 func TestSplunkPump_WriteData_TagsFieldNoIgnoreList(t *testing.T) {
 	cs := newCaptureServer(t)
 	pmp := SplunkPump{}
@@ -510,7 +510,7 @@ func TestLogzioPump_Init_NewClientError(t *testing.T) {
 // header branch (ok=F).
 //
 // Verifies: SW-REQ-052
-// SW-REQ-052:nominal:positive
+// SW-REQ-052:nominal:nominal
 // MCDC SW-REQ-052: sampling_percentage_pct_gt_random=F, record_submitted=F => TRUE
 // MCDC SW-REQ-052: sampling_percentage_pct_gt_random=T, record_submitted=F => FALSE
 // MCDC SW-REQ-052: sampling_percentage_pct_gt_random=T, record_submitted=T => TRUE
@@ -573,7 +573,7 @@ func TestMoesifPump_ParseConfiguration_BadSampleRateType(t *testing.T) {
 // failure for user/company maps (ok=F) and the appConfig fallback hit/miss.
 //
 // Verifies: SW-REQ-052
-// SW-REQ-052:nominal:positive
+// SW-REQ-052:nominal:nominal
 func TestMoesifPump_GetSamplingPercentage_AppRateBadType(t *testing.T) {
 	p := &MoesifPump{
 		userSampleRateMap:    map[string]interface{}{"u": "not-float"},
@@ -589,7 +589,7 @@ func TestMoesifPump_GetSamplingPercentage_AppRateBadType(t *testing.T) {
 // in the app-config fallback.
 //
 // Verifies: SW-REQ-052
-// SW-REQ-052:nominal:positive
+// SW-REQ-052:nominal:nominal
 func TestMoesifPump_GetSamplingPercentage_NoAppConfig(t *testing.T) {
 	p := &MoesifPump{
 		userSampleRateMap:    map[string]interface{}{},
@@ -603,7 +603,7 @@ func TestMoesifPump_GetSamplingPercentage_NoAppConfig(t *testing.T) {
 // arm for both the map-value-is-map and the default branches.
 //
 // Verifies: SW-REQ-052
-// SW-REQ-052:nominal:positive
+// SW-REQ-052:nominal:nominal
 func TestMoesifPump_MaskData_NoMaskHits(t *testing.T) {
 	in := map[string]interface{}{
 		"public": "ok",
@@ -633,7 +633,7 @@ func TestMoesifPump_ParseAuthorizationHeader_BadJSON(t *testing.T) {
 // OauthID=="" && len(decoded.headers)==0).
 //
 // Verifies: SW-REQ-052
-// SW-REQ-052:nominal:positive
+// SW-REQ-052:nominal:nominal
 func TestMoesifPump_WriteData_NoUserIDHeader_NoRecAlias_HeaderlessReq(t *testing.T) {
 	cs := newCaptureServer(t)
 	cs.bodySeq = [][]byte{[]byte(`{"sample_rate": 100}`)}
@@ -666,7 +666,7 @@ func TestMoesifPump_WriteData_NoUserIDHeader_NoRecAlias_HeaderlessReq(t *testing
 // AuthorizationHeaderName!="" and AuthorizationUserIdField!="" branches.
 //
 // Verifies: SW-REQ-052
-// SW-REQ-052:nominal:positive
+// SW-REQ-052:nominal:nominal
 func TestMoesifPump_WriteData_CustomAuthHeaderAndField(t *testing.T) {
 	cs := newCaptureServer(t)
 	cs.bodySeq = [][]byte{[]byte(`{"sample_rate": 100}`)}
@@ -700,7 +700,7 @@ func TestMoesifPump_WriteData_CustomAuthHeaderAndField(t *testing.T) {
 // branch in WriteData.
 //
 // Verifies: SW-REQ-052
-// SW-REQ-052:nominal:positive
+// SW-REQ-052:nominal:nominal
 func TestMoesifPump_WriteData_CompanyIDHeader(t *testing.T) {
 	cs := newCaptureServer(t)
 	cs.bodySeq = [][]byte{[]byte(`{"sample_rate": 100}`)}
@@ -732,7 +732,7 @@ func TestMoesifPump_WriteData_CompanyIDHeader(t *testing.T) {
 // `p.samplingPercentage == 0` branch where eventWeight defaults to 1.
 //
 // Verifies: SW-REQ-052
-// SW-REQ-052:nominal:positive
+// SW-REQ-052:nominal:nominal
 func TestMoesifPump_WriteData_SamplingZero(t *testing.T) {
 	cs := newCaptureServer(t)
 	cs.bodySeq = [][]byte{[]byte(`{"sample_rate": 0}`)}
@@ -763,7 +763,7 @@ func TestMoesifPump_WriteData_SamplingZero(t *testing.T) {
 // `p.samplingPercentage < randomPercentage` arm (T → skip).
 //
 // Verifies: SW-REQ-052
-// SW-REQ-052:nominal:positive
+// SW-REQ-052:nominal:nominal
 func TestMoesifPump_WriteData_SamplingSkipsRecord(t *testing.T) {
 	cs := newCaptureServer(t)
 	// Sample rate 1 → almost certainly random% > 1 → skip path.
@@ -797,7 +797,7 @@ func TestMoesifPump_WriteData_SamplingSkipsRecord(t *testing.T) {
 // JWT-payload branch where len(splitToken) < 2.
 //
 // Verifies: SW-REQ-052
-// SW-REQ-052:nominal:positive
+// SW-REQ-052:nominal:nominal
 func TestMoesifPump_WriteData_NonJWTBearer(t *testing.T) {
 	cs := newCaptureServer(t)
 	cs.bodySeq = [][]byte{[]byte(`{"sample_rate": 100}`)}
@@ -873,7 +873,7 @@ func TestMoesifPump_WriteData_BadBasicAuthBase64(t *testing.T) {
 // `if auth_header, found := ...; !found` arm.
 //
 // Verifies: SW-REQ-052
-// SW-REQ-052:nominal:positive
+// SW-REQ-052:nominal:nominal
 func TestMoesifPump_WriteData_AuthHeaderMissingField(t *testing.T) {
 	cs := newCaptureServer(t)
 	cs.bodySeq = [][]byte{[]byte(`{"sample_rate": 100}`)}
@@ -907,7 +907,7 @@ func TestMoesifPump_WriteData_AuthHeaderMissingField(t *testing.T) {
 // that key's `if ..., found := ...; found` evaluates F.
 //
 // Verifies: SW-REQ-052
-// SW-REQ-052:nominal:positive
+// SW-REQ-052:nominal:nominal
 func TestMoesifPump_Init_BulkConfig_PartialKeys(t *testing.T) {
 	cs := newCaptureServer(t)
 	cs.bodySeq = [][]byte{[]byte(`{"sample_rate": 100}`)}
@@ -956,7 +956,7 @@ func TestMoesifPump_Init_BulkConfig_PartialKeys(t *testing.T) {
 // where the method is recovered from the request line.
 //
 // Verifies: SW-REQ-054
-// SW-REQ-054:nominal:positive
+// SW-REQ-054:nominal:nominal
 func TestResurfacePump_MapRawData_MethodFromReq(t *testing.T) {
 	rec := &analytics.AnalyticsRecord{
 		// Method left empty → recovery from request-line
@@ -974,7 +974,7 @@ func TestResurfacePump_MapRawData_MethodFromReq(t *testing.T) {
 // raw path on the request line carries a query string.
 //
 // Verifies: SW-REQ-054
-// SW-REQ-054:nominal:positive
+// SW-REQ-054:nominal:nominal
 func TestResurfacePump_MapRawData_RawPathWithQuery(t *testing.T) {
 	// Build a raw request where the request-line path includes a query string
 	// AND the rec.RawPath is also set (so the second arm of the
@@ -998,7 +998,7 @@ func TestResurfacePump_MapRawData_RawPathWithQuery(t *testing.T) {
 // the raw request (so the production code doesn't overwrite it).
 //
 // Verifies: SW-REQ-054
-// SW-REQ-054:nominal:positive
+// SW-REQ-054:nominal:nominal
 func TestResurfacePump_MapRawData_XForwardedForPreset(t *testing.T) {
 	rawReqXFF := base64.StdEncoding.EncodeToString([]byte(
 		"GET /p HTTP/1.1\r\nHost: x\r\nX-Forwarded-For: 1.2.3.4\r\n\r\n"))
@@ -1017,7 +1017,7 @@ func TestResurfacePump_MapRawData_XForwardedForPreset(t *testing.T) {
 // where Host is recovered from the request headers.
 //
 // Verifies: SW-REQ-054
-// SW-REQ-054:nominal:positive
+// SW-REQ-054:nominal:nominal
 func TestResurfacePump_MapRawData_HostFromHeader(t *testing.T) {
 	rec := &analytics.AnalyticsRecord{
 		Method:      "GET", // Host left empty → header fallback
@@ -1033,7 +1033,7 @@ func TestResurfacePump_MapRawData_HostFromHeader(t *testing.T) {
 // branch.
 //
 // Verifies: SW-REQ-054
-// SW-REQ-054:nominal:positive
+// SW-REQ-054:nominal:nominal
 func TestResurfacePump_MapRawData_ChunkedTrailer(t *testing.T) {
 	rawRespChunked := base64.StdEncoding.EncodeToString([]byte(
 		"HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\nTrailer: X-Foo\r\n\r\nbody-content0\r\nX-Foo: bar\r\n",
@@ -1053,7 +1053,7 @@ func TestResurfacePump_MapRawData_ChunkedTrailer(t *testing.T) {
 // status line.
 //
 // Verifies: SW-REQ-054
-// SW-REQ-054:nominal:positive
+// SW-REQ-054:nominal:nominal
 func TestResurfacePump_MapRawData_StatusFromResponseLine(t *testing.T) {
 	rec := &analytics.AnalyticsRecord{
 		Method: "GET", Host: "x",
@@ -1107,7 +1107,7 @@ func TestResurfacePump_MapRawData_BadURL(t *testing.T) {
 // → the peek-and-put-back branch runs.
 //
 // Verifies: SW-REQ-054
-// SW-REQ-054:nominal:positive
+// SW-REQ-054:nominal:nominal
 func TestResurfacePump_WriteData_Open_BranchAfterDisable(t *testing.T) {
 	pmp, _ := SetUp(t, "", make([]string, 0), "include debug")
 
@@ -1165,7 +1165,7 @@ func TestResurfacePump_Init_LoggerError(t *testing.T) {
 // calls mapRawData synchronously).
 //
 // Verifies: SW-REQ-054
-// SW-REQ-054:nominal:positive
+// SW-REQ-054:nominal:nominal
 func TestResurfacePump_writeData_EmptyRawResponse(t *testing.T) {
 	pmp, _ := SetUp(t, "", make([]string, 0), "include debug")
 	rec := analytics.AnalyticsRecord{Method: "GET", Host: "x"} // both empty
@@ -1204,7 +1204,7 @@ func (m *timestreamWriteRecordsMock) WriteRecords(ctx context.Context, params *t
 // arm via the mock.
 //
 // Verifies: SW-REQ-057
-// SW-REQ-057:errors_propagated:positive
+// SW-REQ-057:errors_propagated:nominal
 // MCDC SW-REQ-057: batch_size_exceeded=F, new_batch_started=F => TRUE
 // MCDC SW-REQ-057: batch_size_exceeded=T, new_batch_started=F => FALSE
 // MCDC SW-REQ-057: batch_size_exceeded=T, new_batch_started=T => TRUE
@@ -1279,7 +1279,7 @@ func TestTimestreamPump_WriteData_RejectedRecordsException(t *testing.T) {
 // `stringMeasures["..."]==""` false arm (already populated → don't overwrite).
 //
 // Verifies: SW-REQ-057
-// SW-REQ-057:boundary:positive
+// SW-REQ-057:boundary:nominal
 func TestTimestreamPump_GetMeasures_NonEmptyGeoStringsDoNotOverwrite(t *testing.T) {
 	rawReqGeo := base64.StdEncoding.EncodeToString([]byte(
 		"GET / HTTP/1.1\r\n" +
@@ -1311,7 +1311,7 @@ func TestTimestreamPump_GetMeasures_NonEmptyGeoStringsDoNotOverwrite(t *testing.
 // `decoded.Geo.City.GeoNameID != 0`, Latitude != 0, Longitude != 0 arms.
 //
 // Verifies: SW-REQ-057
-// SW-REQ-057:boundary:positive
+// SW-REQ-057:boundary:nominal
 func TestTimestreamPump_GetMeasures_NonZeroGeo(t *testing.T) {
 	rec := &analytics.AnalyticsRecord{
 		Geo: analytics.GeoData{
@@ -1330,7 +1330,7 @@ func TestTimestreamPump_GetMeasures_NonZeroGeo(t *testing.T) {
 // TestTimestreamPump_Init_LoadConfigFromEnv drives the Init nominal arm.
 //
 // Verifies: SW-REQ-057
-// SW-REQ-057:errors_propagated:positive
+// SW-REQ-057:errors_propagated:nominal
 func TestTimestreamPump_Init_Success(t *testing.T) {
 	p := TimestreamPump{}
 	require.NoError(t, p.Init(map[string]interface{}{
@@ -1343,7 +1343,7 @@ func TestTimestreamPump_Init_Success(t *testing.T) {
 // TestTimestreamPump_ChunkString_BadInputs drives the chunkSize <= 0 arm.
 //
 // Verifies: SW-REQ-057
-// SW-REQ-057:boundary:positive
+// SW-REQ-057:boundary:nominal
 func TestTimestreamPump_ChunkString_BadInputs(t *testing.T) {
 	got := chunkString("hello", 0)
 	assert.Equal(t, []string{"hello"}, got)
@@ -1359,7 +1359,7 @@ func TestTimestreamPump_ChunkString_BadInputs(t *testing.T) {
 // TestKinesisPump_Init_CustomBatchSize drives BatchSize!=0 arm.
 //
 // Verifies: SW-REQ-056
-// SW-REQ-056:nominal:positive
+// SW-REQ-056:nominal:nominal
 func TestKinesisPump_Init_CustomBatchSize(t *testing.T) {
 	mockClient := &MockKinesisClient{}
 	p := &TestableKinesisPump{}
@@ -1379,7 +1379,7 @@ func TestKinesisPump_Init_CustomBatchSize(t *testing.T) {
 // (no err).
 //
 // Verifies: SW-REQ-055
-// SW-REQ-055:errors_propagated:positive
+// SW-REQ-055:errors_propagated:nominal
 func TestSQSPump_NewSQSPublisher_Success(t *testing.T) {
 	pmp := SQSPump{
 		SQSConf: &SQSConf{
@@ -1400,7 +1400,7 @@ func TestSQSPump_NewSQSPublisher_Success(t *testing.T) {
 // no-endpoint branches (both inner ifs false).
 //
 // Verifies: SW-REQ-055
-// SW-REQ-055:errors_propagated:positive
+// SW-REQ-055:errors_propagated:nominal
 func TestSQSPump_NewSQSPublisher_NoEndpointNoCreds(t *testing.T) {
 	pmp := SQSPump{
 		SQSConf: &SQSConf{
@@ -1417,7 +1417,7 @@ func TestSQSPump_NewSQSPublisher_NoEndpointNoCreds(t *testing.T) {
 // to exercise the entry-with-MessageGroupId branch.
 //
 // Verifies: SW-REQ-055
-// SW-REQ-055:errors_propagated:positive
+// SW-REQ-055:errors_propagated:nominal
 func TestSQSPump_WriteData_GetQueueUrlOK_BulkSend(t *testing.T) {
 	var entries []struct{}
 	mockSQS := &MockSQSSendMessageBatchAPI{
@@ -1506,7 +1506,7 @@ func TestInflux2Pump_Init_ReadyErr(t *testing.T) {
 // → the `if bucket == nil` arm is FALSE (the "use existing" else path).
 //
 // Verifies: SW-REQ-047
-// SW-REQ-047:nominal:positive
+// SW-REQ-047:nominal:nominal
 func TestInflux2Pump_Init_CreateMissingBucketSuccess(t *testing.T) {
 	srv, _ := influx2FakeServer(t, map[string]http.HandlerFunc{
 		"/api/v2/buckets": func(w http.ResponseWriter, r *http.Request) {

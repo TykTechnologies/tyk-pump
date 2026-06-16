@@ -1,5 +1,9 @@
 rules:
   - id: go.pkgvar.mutated-without-sync
+    # overrides: intentional replacement of the same-id builtin go/default rule
+    #   (tyk-pump-tuned patterns); declares the provider-rule replacement so the
+    #   signal-rule validator does not abort on the duplicate provider rule id.
+    overrides: ["opengrep:go.pkgvar.mutated-without-sync"]
     severity: WARNING
     languages: [go]
     message: |
@@ -75,6 +79,10 @@ rules:
       - pattern-not: atomic.StoreUint32(...)
       - pattern-not: atomic.StoreUint64(...)
   - id: go.deferred-close-on-possibly-nil
+    # overrides: intentional replacement of the same-id builtin go/default rule
+    #   (tyk-pump-tuned patterns); declares the provider-rule replacement so the
+    #   signal-rule validator does not abort on the duplicate provider rule id.
+    overrides: ["opengrep:go.deferred-close-on-possibly-nil"]
     severity: ERROR
     languages: [go]
     message: |
@@ -150,6 +158,10 @@ rules:
             return
           }
   - id: go.loop.increment-from-mutable-config
+    # overrides: intentional replacement of the same-id builtin go/default rule
+    #   (tyk-pump-tuned patterns); declares the provider-rule replacement so the
+    #   signal-rule validator does not abort on the duplicate provider rule id.
+    overrides: ["opengrep:go.loop.increment-from-mutable-config"]
     severity: WARNING
     languages: [go]
     message: |
@@ -212,6 +224,10 @@ rules:
             ...
           }
   - id: go.range.mutate-iteratee
+    # overrides: intentional replacement of the same-id builtin go/default rule
+    #   (tyk-pump-tuned patterns); declares the provider-rule replacement so the
+    #   signal-rule validator does not abort on the duplicate provider rule id.
+    overrides: ["opengrep:go.range.mutate-iteratee"]
     severity: ERROR
     languages: [go]
     message: |
@@ -331,6 +347,10 @@ rules:
             break
           }
   - id: go.recursive-call-without-return
+    # overrides: intentional replacement of the same-id builtin go/default rule
+    #   (tyk-pump-tuned patterns); declares the provider-rule replacement so the
+    #   signal-rule validator does not abort on the duplicate provider rule id.
+    overrides: ["opengrep:go.recursive-call-without-return"]
     severity: ERROR
     languages: [go]
     message: |
@@ -400,6 +420,10 @@ rules:
             ...
           }
   - id: go.http.uses-default-servemux
+    # overrides: intentional replacement of the same-id builtin go/default rule
+    #   (tyk-pump-tuned patterns); declares the provider-rule replacement so the
+    #   signal-rule validator does not abort on the duplicate provider rule id.
+    overrides: ["opengrep:go.http.uses-default-servemux"]
     severity: WARNING
     languages: [go]
     message: |
@@ -444,6 +468,10 @@ rules:
             ...
           }
   - id: go.dial-return-without-close
+    # overrides: intentional replacement of the same-id builtin go/default rule
+    #   (tyk-pump-tuned patterns); declares the provider-rule replacement so the
+    #   signal-rule validator does not abort on the duplicate provider rule id.
+    overrides: ["opengrep:go.dial-return-without-close"]
     severity: ERROR
     languages: [go]
     message: |
