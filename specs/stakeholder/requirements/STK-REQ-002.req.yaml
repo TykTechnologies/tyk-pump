@@ -19,9 +19,9 @@ tags:
     - resilience
 variables: []
 traces:
-    reviewed_at: "2026-05-30T08:00:51.487463Z"
+    reviewed_at: "2026-06-16T13:43:45.203886Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:1850a169bf992351ae27b3c657e47ea132cf4908f9b20d3131c5155947d1165d
+    reviewed_fingerprint: sha256:6b15bb09f97ae32d5853584d23fcb8f5bfbe4e8a56da0f0bc100379a07765040
 verification:
     assurance_level: B
     formalization_status: none
@@ -50,26 +50,26 @@ stakeholder:
         - id: AC-001
           text: A failure or timeout writing to one backend does not prevent records being written to the other configured backends.
           testable: true
-          witness_deferred:
-            reason: "No end-to-end acceptance test yet; deferred per hybrid disposition"
-            tracking: ".proof/deferred-witness-backlog.md"
           derived_reqs:
             - SYS-REQ-004
             - SYS-REQ-005
             - SYS-REQ-026
             - SYS-REQ-033
+          witness_deferred:
+            reason: "No end-to-end acceptance test yet; deferred per hybrid disposition"
+            tracking: .proof/deferred-witness-backlog.md
         - id: AC-002
           text: Transient storage or backend errors are retried with bounded backoff rather than dropped on first failure.
           testable: true
-          witness_deferred:
-            reason: "No end-to-end acceptance test yet; deferred per hybrid disposition"
-            tracking: ".proof/deferred-witness-backlog.md"
           derived_reqs:
             - SYS-REQ-006
             - SYS-REQ-007
             - SYS-REQ-023
             - SYS-REQ-025
             - SYS-REQ-028
+          witness_deferred:
+            reason: "No end-to-end acceptance test yet; deferred per hybrid disposition"
+            tracking: .proof/deferred-witness-backlog.md
 lifecycle:
     change_history:
         - date: "2026-05-29T15:46:44Z"

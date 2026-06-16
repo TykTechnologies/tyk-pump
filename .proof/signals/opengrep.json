@@ -1,8 +1,8 @@
 {
   "schema_version": "proof.code_signals.report.v1",
   "provider": "opengrep",
-  "generated_at": "2026-06-11T18:49:10Z",
-  "input_hash": "sha256:c361822d3122936a2d1be7d454373bc338f2c693b13ffdefffd087586349d365",
+  "generated_at": "2026-06-16T13:40:52Z",
+  "input_hash": "sha256:a7e687a7cd6173c3a7f30900d5021485af009c5f528ec6f2f29c4dae5daf2147",
   "mode": "run",
   "source": "stdout",
   "format": "sarif",
@@ -10,7 +10,7 @@
     "opengrep",
     "scan",
     "--config",
-    ".proof/signals/packs/4f53f9b34b085db1",
+    ".proof/signals/packs/4699648563f2cdea",
     "--config",
     "signal-rules/tyk-pump-phase-n.yaml",
     "--taint-intrafile",
@@ -2753,6 +2753,28 @@
       ],
       "message": "Discarded call result requires explicit propagation or ignore-policy evidence.",
       "fingerprint": "sha256:e360dfadc7fad18d231b70d9f3e3b359568f10443bd37f00718aa093872973e3",
+      "source_hash": "sha256:8cc6cd2d50341814886b9bf6c69c93906ee990d5b5e37e166f2d16dc6813f754"
+    },
+    {
+      "schema_version": "proof.code_signals.v1",
+      "provider": "opengrep",
+      "provider_rule_id": "go.dial-return-without-close",
+      "signal_id": "network.dial_return_without_close",
+      "artifact": "pumps/hybrid.go",
+      "span": {
+        "start_line": 234,
+        "end_line": 266
+      },
+      "confidence": "high",
+      "tags": [
+        "http_client",
+        "network_boundary"
+      ],
+      "obligations": [
+        "external_call_failure_observable"
+      ],
+      "message": "A net.Conn returned by a custom dialer (closure-shaped, where conn IS\nthe success-return value) writes a setup payload in a loop. The\nWrite's error arm returns `(nil, err)` without first calling\n`conn.Close()`. The connection (and its socket / FD / TLS session)\nleaks. Add `defer conn.Close()` immediately after the successful dial,\nOR an explicit Close() before the return-on-error in the loop.\n",
+      "fingerprint": "sha256:43159208eef007c22115240d73d1456cd6a6c8fdd9534d3db923eae26619d829",
       "source_hash": "sha256:8cc6cd2d50341814886b9bf6c69c93906ee990d5b5e37e166f2d16dc6813f754"
     },
     {
