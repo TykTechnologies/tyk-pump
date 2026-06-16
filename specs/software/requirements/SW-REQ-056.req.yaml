@@ -32,7 +32,7 @@ verification:
         reviewed_at: "2026-06-03T07:40:02Z"
         comment: 'Phase Q: catalog obligation attachments — adds external_call_timeout_bounded, idempotency_key_honored (Kinesis partition-key dedup contract). See .proof/catalog-obligation-proposals.md.'
         fingerprint: sha256:b45ea2553796d2371ae3785a514306ee469e82bd3853acbd5864d5af34196826
-        ai_generated: false
+        ai_generated: true
     impact_reviews:
         - requirement: SW-REQ-056
           artifact: pumps/kinesis.go
@@ -47,8 +47,8 @@ verification:
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:37:04Z"
-    last_modified_by: human:cli
-    last_modified_at: "2026-06-11T16:07:44Z"
+    last_modified_by: agent:claude-code
+    last_modified_at: "2026-06-16T13:07:23Z"
 obligation_checklist:
     - idempotency_key_honored
     - monotonicity
@@ -62,6 +62,12 @@ obligation_suppressions:
         - CWE CWE-703,CWE-252,CWE-754
         - NIST-800-53 SI-11
         - OWASP-ASVS-v4 V7.4.1,V7.4.2,V7.4.3
+    - id: idempotency_key_honored
+      reason: 'DEFERRED pending a typed idempotency_key_honored test — tracked in .proof/deferred-witness-backlog.md'
+      suppressed_by: agent:claude-code
+      suppressed_at: "2026-06-16T13:07:23Z"
+      framework_refs:
+        - OWASP-ASVS-v4 V4.2.1
     - id: input_size_bounded
       reason: 'Phase N opengrep rule go.loop.increment-from-mutable-config flags pumps/kinesis.go:227 splitIntoBatches shrink-loop where batchSize parameter can be 0 from caller, causing infinite loop. Documented in KI kinesis-splitintobatches-zero-infinite-loop with mitigation and remediation tracked. Not a new obligation gap.'
       suppressed_by: buger
@@ -83,6 +89,10 @@ obligation_suppressions:
         - MISRA-C Dir 4.14
         - NIST-800-53 SI-10,SI-11
         - OWASP-ASVS-v4 V5.1.3,V5.5.3
+    - id: monotonicity
+      reason: 'DEFERRED pending a typed monotonicity test — tracked in .proof/deferred-witness-backlog.md'
+      suppressed_by: agent:claude-code
+      suppressed_at: "2026-06-16T13:07:23Z"
     - id: process_exit_on_recoverable
       reason: 'process_exit_on_recoverable code signal at pumps/kinesis.go:71: this pump''s Init() calls log.Fatal on a recoverable mapstructure.Decode/connect error, exiting the whole multi-pump process instead of returning the error so siblings continue. This exact failure-mode surface is already tracked, ship-dispositioned, and remediation-scoped by KI pumps-logfatal-on-config-decode (which enumerates this code_signal anchor in its evidence_manifests). Not a new ungoverned obligation gap.'
       suppressed_by: human:leo

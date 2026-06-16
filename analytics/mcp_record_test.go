@@ -61,6 +61,7 @@ func TestAnalyticsRecord_MCPStatsJSONMarshal(t *testing.T) {
 }
 
 // Verifies: SW-REQ-014
+// SW-REQ-014:nominal:nominal
 func TestAnalyticsRecord_ToMCPRecord(t *testing.T) {
 	t.Run("returns zero-value for non-MCP record", func(t *testing.T) {
 		record := AnalyticsRecord{

@@ -48,11 +48,18 @@ stakeholder:
         - id: AC-001
           text: An HTTP health-check endpoint reports process liveness for orchestration and load balancers.
           testable: true
+          witness_deferred:
+            reason: "No end-to-end acceptance test yet; deferred per hybrid disposition"
+            tracking: ".proof/deferred-witness-backlog.md"
           derived_reqs:
             - SYS-REQ-012
+            - SYS-REQ-027
         - id: AC-002
           text: When instrumentation is enabled, the pump emits purge timing and record-count metrics.
           testable: true
+          witness_deferred:
+            reason: "No end-to-end acceptance test yet; deferred per hybrid disposition"
+            tracking: ".proof/deferred-witness-backlog.md"
           derived_reqs:
             - SYS-REQ-013
             - SYS-REQ-017

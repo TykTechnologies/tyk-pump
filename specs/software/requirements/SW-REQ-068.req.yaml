@@ -32,7 +32,7 @@ verification:
         reviewed_at: "2026-06-03T07:40:27Z"
         comment: 'Phase Q: catalog obligation attachments — adds external_call_timeout_bounded, request_timeout_bounded, external_call_failure_observable, retry_policy_explicit, panic_free_input_handling, recursion_depth_bounded, back_pressure_bounded, connection_leak_free, secrets_not_logged, tls_required_for_secrets, redirect_policy_explicit, ssrf_protection (ES surface; KI elasticsearch-unbounded-reconnect-recursion). See .proof/catalog-obligation-proposals.md.'
         fingerprint: sha256:c234ca5105f633eb0c97347f469b80d90bad760f4bdb2c21d018e680923683ed
-        ai_generated: false
+        ai_generated: true
     impact_reviews:
         - requirement: SW-REQ-068
           artifact: pumps/elasticsearch.go
@@ -47,8 +47,8 @@ verification:
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:39:57Z"
-    last_modified_by: human:cli
-    last_modified_at: "2026-06-11T16:09:13Z"
+    last_modified_by: agent:claude-code
+    last_modified_at: "2026-06-16T13:07:31Z"
 obligation_checklist:
     - cert_validation_strict
     - nominal
@@ -96,6 +96,14 @@ obligation_suppressions:
         - CWE CWE-400,CWE-404
         - NIST-800-53 SC-5
         - OWASP-ASVS-v4 V11.1.4
+    - id: ssrf_protection
+      reason: DEFERRED pending a typed ssrf_protection test — tracked in .proof/deferred-witness-backlog.md
+      suppressed_by: agent:claude-code
+      suppressed_at: "2026-06-16T13:07:31Z"
+      framework_refs:
+        - CWE CWE-918,CWE-441
+        - NIST-800-53 SC-7
+        - OWASP-ASVS-v4 V14.4.1,V12.6.1
 lifecycle:
     change_history:
         - date: "2026-05-30T08:43:47Z"

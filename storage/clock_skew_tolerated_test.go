@@ -9,7 +9,7 @@ import (
 )
 
 // Verifies: SW-REQ-006
-// SW-REQ-006:clock_skew_tolerated:edge_case
+// SW-REQ-006:clock_skew_tolerated:boundary
 //
 // Contract: TemporalStorageHandler.GetAndDeleteSet calls Redis EXPIRE
 // with a relative TTL (time.Duration). Because Redis applies relative

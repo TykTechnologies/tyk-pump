@@ -712,7 +712,7 @@ func TestMongoAggregatePump_GetLastDocumentTimestamp_NoCollection(t *testing.T) 
 
 // Verifies: SW-REQ-034
 // Verifies: KI:mongo-pump-ignores-caller-context
-// SW-REQ-034:errors_propagated:regression — caller context is silently ignored
+// SW-REQ-034:errors_propagated:negative — caller context is silently ignored
 func TestMongoPump_WriteData_IgnoresCallerCtx_KI(t *testing.T) {
 	uri := testMongoURI(t)
 	conf := defaultConf(t)
@@ -1198,7 +1198,7 @@ func TestMongoPump_WriteUptimeData_Empty(t *testing.T) {
 
 // Verifies: SW-REQ-034
 // Verifies: KI:mongo-pump-writeuptime-nil-on-bad-msgpack
-// SW-REQ-034:errors_propagated:regression — the test name carries the _KI
+// SW-REQ-034:errors_propagated:negative — the test name carries the _KI
 // suffix because we expect the panic and recover from it; if the production
 // code is ever fixed to filter out failed-decode entries this test must flip
 // and the KI must be retired.
@@ -1235,7 +1235,7 @@ func TestMongoSelectivePump_WriteUptimeData_Empty(t *testing.T) {
 
 // Verifies: SW-REQ-035
 // Verifies: KI:mongo-pump-writeuptime-nil-on-bad-msgpack
-// SW-REQ-035:boundary:regression — same nil-DBObject bug as MongoPump.
+// SW-REQ-035:boundary:negative — same nil-DBObject bug as MongoPump.
 func TestMongoSelectivePump_WriteUptimeData_BadMsgpack_KI(t *testing.T) {
 	p := &MongoSelectivePump{}
 	conf := defaultSelectiveConf(t)

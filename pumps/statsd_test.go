@@ -32,6 +32,7 @@ import (
 // returns before any timing emit, so the FALSE arm only exists as the
 // truth-table predicate baseline. Coverage of the test-friendly arms is
 // adequate per the FLIP-generated independent-effect rows.)
+// SW-REQ-023:nominal:nominal
 func TestGetMappings(t *testing.T) {
 	ts := time.Now()
 	unixTime := time.Unix(ts.Unix(), 0)

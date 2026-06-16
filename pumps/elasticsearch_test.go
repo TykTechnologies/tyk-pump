@@ -273,6 +273,7 @@ func TestGetIndexName_NoRolling(t *testing.T) {
 }
 
 // Verifies: SW-REQ-069
+// SW-REQ-069:nominal:nominal
 func TestGetIndexName_Rolling(t *testing.T) {
 	conf := &ElasticsearchConf{
 		IndexName:    "tyk_analytics",

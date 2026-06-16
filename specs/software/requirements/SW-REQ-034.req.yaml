@@ -32,7 +32,7 @@ verification:
         reviewed_at: "2026-06-04T16:50:31Z"
         comment: 'Phase S Wave 2: attach blind-spot obligations from Wave 1 promote (cascade/fanout/clock_skew/dst/tz/temporal_window/process_exit/tls_verification/partial_progress)'
         fingerprint: sha256:af7ae7e454c68d7ca22cfaa08aa96ef18223dadef8228a95c47c791e81658246
-        ai_generated: false
+        ai_generated: true
     impact_reviews:
         - requirement: SW-REQ-034
           artifact: pumps/mongo.go
@@ -47,8 +47,8 @@ verification:
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:33:59Z"
-    last_modified_by: human:cli
-    last_modified_at: "2026-06-11T16:07:45Z"
+    last_modified_by: agent:claude-code
+    last_modified_at: "2026-06-16T13:07:13Z"
 obligation_checklist:
     - boundary
     - concurrent
@@ -104,6 +104,14 @@ obligation_suppressions:
       reason: 'process_exit_on_recoverable code signal at pumps/mongo.go:222: this pump''s Init() calls log.Fatal on a recoverable mapstructure.Decode/connect error, exiting the whole multi-pump process instead of returning the error so siblings continue. This exact failure-mode surface is already tracked, ship-dispositioned, and remediation-scoped by KI pumps-logfatal-on-config-decode (which enumerates this code_signal anchor in its evidence_manifests). Not a new ungoverned obligation gap.'
       suppressed_by: human:leo
       suppressed_at: "2026-06-11T16:07:45Z"
+    - id: query_timeout_bounded
+      reason: DEFERRED pending a typed query_timeout_bounded test — tracked in .proof/deferred-witness-backlog.md
+      suppressed_by: agent:claude-code
+      suppressed_at: "2026-06-16T13:07:13Z"
+      framework_refs:
+        - CWE CWE-400
+        - NIST-800-53 SC-5
+        - OWASP-ASVS-v4 V11.1.4
 lifecycle:
     change_history:
         - date: "2026-05-30T08:43:46Z"

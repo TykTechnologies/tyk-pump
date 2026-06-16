@@ -155,6 +155,7 @@ func newStdOutPump(t *testing.T, format string, legacy bool) *StdOutPump {
 // assertion NoError -> TRUE row. The FALSE row (dispatched without mapping) is detected by
 // the JSON-format assertion. The vacuous TRUE arm is the no-records / EmptyData case
 // already covered by TestStdOutPump_WriteData_EmptyData.
+// SW-REQ-026:nominal:nominal
 func TestStdOutPump_WriteData_JSON(t *testing.T) {
 	pump := newStdOutPump(t, "json", false)
 

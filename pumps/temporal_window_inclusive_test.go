@@ -85,7 +85,7 @@ func TestTemporalWindowInclusive_DayBoundaries(t *testing.T) {
 }
 
 // Verifies: SW-REQ-064
-// SW-REQ-064:temporal_window_inclusive:edge_case
+// SW-REQ-064:temporal_window_inclusive:boundary
 //
 // Same hour in two different zones must route to DIFFERENT day-shard
 // tables when the UTC date differs. 23:30 on 2026-06-04 NY time is

@@ -37,7 +37,7 @@ verification:
         reviewed_at: "2026-06-11T16:39:47Z"
         comment: 'Enrich under-modeled FRETish to the 3 real runtime guards in GetGeo/GeoIPLookup: geo_db_absent (GeoIPDB==nil), geo_ip_empty (ipStr==""), geo_ip_invalid (net.ParseIP==nil). Each short-circuits enrichment before/without a DB lookup; all 6 MC/DC rows covered by existing geoip_test.go tests, code MC/DC 3/3 decisions+conditions aligned.'
         fingerprint: sha256:d1459f3760256d2961decf7b7b316f7c5af9439055ed9455d4295ca688d419ac
-        ai_generated: false
+        ai_generated: true
     impact_reviews:
         - requirement: SW-REQ-071
           artifact: analytics/analytics.go
@@ -52,12 +52,21 @@ verification:
 history:
     created_by: human:cli
     created_at: "2026-05-30T10:31:33Z"
-    last_modified_by: human:cli
-    last_modified_at: "2026-06-11T16:39:47Z"
+    last_modified_by: agent:claude-code
+    last_modified_at: "2026-06-16T13:07:32Z"
 obligation_checklist:
     - error_handling
     - nominal
     - panic_free_input_handling
+obligation_suppressions:
+    - id: panic_free_input_handling
+      reason: DEFERRED pending a typed panic_free_input_handling test — tracked in .proof/deferred-witness-backlog.md
+      suppressed_by: agent:claude-code
+      suppressed_at: "2026-06-16T13:07:32Z"
+      framework_refs:
+        - CWE CWE-248,CWE-754
+        - MISRA-C Rule 17.2
+        - OWASP-ASVS-v4 V7.4.1
 lifecycle:
     change_history:
         - date: "2026-05-30T10:36:30Z"

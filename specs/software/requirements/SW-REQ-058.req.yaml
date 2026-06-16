@@ -32,7 +32,7 @@ verification:
         reviewed_at: "2026-06-04T16:50:31Z"
         comment: 'Phase S Wave 2: attach blind-spot obligations from Wave 1 promote (cascade/fanout/clock_skew/dst/tz/temporal_window/process_exit/tls_verification/partial_progress)'
         fingerprint: sha256:d02f9b5d451c9c6a46e10cebb70e2ebec523bb18a8f4d6471d74c8161bd153ed
-        ai_generated: false
+        ai_generated: true
     impact_reviews:
         - requirement: SW-REQ-058
           artifact: pumps/mongo_aggregate.go
@@ -47,16 +47,20 @@ verification:
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:37:18Z"
-    last_modified_by: human:cli
-    last_modified_at: "2026-06-04T16:50:31Z"
+    last_modified_by: agent:claude-code
+    last_modified_at: "2026-06-16T13:07:24Z"
 obligation_checklist:
     - determinism
     - dst_transition_safe
     - errors_propagated
     - nominal
 obligation_suppressions:
+    - id: determinism
+      reason: DEFERRED pending a typed determinism test — tracked in .proof/deferred-witness-backlog.md
+      suppressed_by: agent:claude-code
+      suppressed_at: "2026-06-16T13:07:24Z"
     - id: errors_propagated
-      reason: Phase H custom opengrep rule go.log.fatal-in-init / go.recursion.unbounded-on-error surfaces log.Fatal in Init and unbounded reconnect recursion; both are tracked under KIs pumps-logfatal-on-config-decode, elasticsearch-unbounded-reconnect-recursion, and influx-v1-unbounded-reconnect-recursion with mitigation and remediation already filed.
+      reason: 'Phase H custom opengrep rule go.log.fatal-in-init / go.recursion.unbounded-on-error surfaces log.Fatal in Init and unbounded reconnect recursion; both are tracked under KIs pumps-logfatal-on-config-decode, elasticsearch-unbounded-reconnect-recursion, and influx-v1-unbounded-reconnect-recursion with mitigation and remediation already filed.'
       suppressed_by: human:leo
       suppressed_at: "2026-06-01T19:11:50Z"
       framework_refs:

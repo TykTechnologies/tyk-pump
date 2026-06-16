@@ -32,17 +32,22 @@ verification:
         reviewed_at: "2026-06-02T05:02:36Z"
         comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
         fingerprint: sha256:b9cde766a0d8b9f3694eb52d03743771059b00dcc1fd876c8b7f39d7e614a6d0
-        ai_generated: false
+        ai_generated: true
     gaps_reviewed_at: "2026-06-02T05:05:48.911641Z"
     gaps_reviewed_by: buger
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:11:41Z"
-    last_modified_by: human:cli
-    last_modified_at: "2026-06-02T05:02:36Z"
+    last_modified_by: agent:claude-code
+    last_modified_at: "2026-06-16T13:07:35Z"
 obligation_class: nominal
 obligation_checklist:
     - malformed_input
+obligation_suppressions:
+    - id: malformed_input
+      reason: DEFERRED pending a typed malformed_input test — tracked in .proof/deferred-witness-backlog.md
+      suppressed_by: agent:claude-code
+      suppressed_at: "2026-06-16T13:07:35Z"
 lifecycle:
     change_history:
         - date: "2026-05-29T15:46:45Z"

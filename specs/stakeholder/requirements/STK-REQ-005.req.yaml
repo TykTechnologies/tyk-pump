@@ -47,12 +47,18 @@ stakeholder:
         - id: AC-001
           text: Uptime report data is forwarded to the configured uptime backend so dashboards can display per-API availability.
           testable: true
+          witness_deferred:
+            reason: "No end-to-end acceptance test yet; deferred per hybrid disposition"
+            tracking: ".proof/deferred-witness-backlog.md"
           derived_reqs:
             - SYS-REQ-014
             - SYS-REQ-021
         - id: AC-002
           text: Operators can disable uptime data purging via configuration.
           testable: true
+          witness_deferred:
+            reason: "No end-to-end acceptance test yet; deferred per hybrid disposition"
+            tracking: ".proof/deferred-witness-backlog.md"
           derived_reqs:
             - SYS-REQ-014
 lifecycle:

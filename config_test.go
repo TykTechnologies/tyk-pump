@@ -90,6 +90,7 @@ func TestLoadExampleConf(t *testing.T) {
 // .Timeout (10), .Meta keys, and APIIDs length all prove config_reflects_env=T -> TRUE row.
 // The FALSE row (env present but ignored) is caught by every Equal assertion. The vacuous
 // TRUE arm is "no env override".
+// SW-REQ-002:nominal:nominal
 func TestConfigEnv(t *testing.T) {
 	pumpNameCSV := "CSV"
 	pumpNameTest := "TEST"

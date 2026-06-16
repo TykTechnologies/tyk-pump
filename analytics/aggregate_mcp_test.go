@@ -53,6 +53,7 @@ func TestAggregateMCPData_SkipsNonMCPRecords(t *testing.T) {
 }
 
 // Verifies: SW-REQ-012
+// SW-REQ-012:nominal:nominal
 func TestAggregateMCPData_AggregatesByMethod(t *testing.T) {
 	ts := time.Date(2024, 1, 15, 10, 0, 0, 0, time.UTC)
 	data := []interface{}{

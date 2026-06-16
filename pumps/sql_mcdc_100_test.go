@@ -563,6 +563,7 @@ func TestMCDC_GraphSQLPump_BatchBoundary(t *testing.T) {
 //
 // Verifies: SW-REQ-064
 // SW-REQ-064:nominal:nominal
+// SW-REQ-065:nominal:nominal
 func TestMCDC_SQLAggregatePump_Sharded(t *testing.T) {
 	dc := dialectCases()[0] // sqlite
 	db := sqlPumpDB(t, dc)

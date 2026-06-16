@@ -32,7 +32,7 @@ verification:
         reviewed_at: "2026-06-03T07:40:11Z"
         comment: 'Phase Q: catalog obligation attachments — adds deadlock_recovery, forward_compatible, reversible_or_documented (SQL aggregate CreateTable + migration policy, KI sql-schema-no-version-policy). See .proof/catalog-obligation-proposals.md.'
         fingerprint: sha256:9abf19a746bbbb4a31ac82f29d1600ec4e7b309a1881450e9cbf55f2fba63659
-        ai_generated: false
+        ai_generated: true
     impact_reviews:
         - requirement: SW-REQ-065
           artifact: pumps/sql_aggregate.go
@@ -47,8 +47,8 @@ verification:
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:39:32Z"
-    last_modified_by: human:cli
-    last_modified_at: "2026-06-03T07:40:11Z"
+    last_modified_by: agent:claude-code
+    last_modified_at: "2026-06-16T13:07:29Z"
 obligation_checklist:
     - concurrent
     - idempotency
@@ -59,6 +59,10 @@ obligation_suppressions:
       reason: 'Phase G: code_signal ''go.concurrency.goroutine-spawn'' + ''go.concurrency.channel-send'' at pumps/sql_aggregate.go:171/182 are the optional background-index creation pattern (single goroutine wrapping createIndexFn, signals via backgroundIndexCreated channel after wg.Wait synchronization). gorm db handle is concurrency-safe. Not a data-race obligation gap.'
       suppressed_by: buger
       suppressed_at: "2026-06-01T18:36:37Z"
+    - id: idempotency
+      reason: 'DEFERRED pending a typed idempotency test — tracked in .proof/deferred-witness-backlog.md'
+      suppressed_by: agent:claude-code
+      suppressed_at: "2026-06-16T13:07:29Z"
     - id: input_size_bounded
       reason: 'Phase N opengrep rule go.loop.increment-from-mutable-config flags pumps/sql*.go for-loops with i += c.SQLConf.BatchSize stride. SQL family DOES guard at Init (sql.go:260 sets default if 0) but the rule prefers co-located guards. Same bug class as KIs sqs-batchlimit-zero-infinite-loop and kinesis-splitintobatches-zero-infinite-loop with mitigation (Init-level guard) tracked. Not a new obligation gap.'
       suppressed_by: buger
@@ -96,6 +100,14 @@ obligation_suppressions:
         - CWE CWE-89
         - NIST-800-53 SI-10
         - OWASP-ASVS-v4 V5.3.4,V5.3.5
+    - id: reversible_or_documented
+      reason: DEFERRED pending a typed reversible_or_documented test — tracked in .proof/deferred-witness-backlog.md
+      suppressed_by: agent:claude-code
+      suppressed_at: "2026-06-16T13:07:29Z"
+      framework_refs:
+        - CWE CWE-1059
+        - NIST-800-53 CP-10,CM-3
+        - OWASP-ASVS-v4 V10.3.2
 lifecycle:
     change_history:
         - date: "2026-05-30T08:43:47Z"

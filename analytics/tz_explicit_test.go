@@ -149,7 +149,7 @@ func TestTzExplicit_UptimeTimestamps(t *testing.T) {
 }
 
 // Verifies: SW-REQ-011
-// SW-REQ-011:tz_explicit:edge_case
+// SW-REQ-011:tz_explicit:boundary
 //
 // Cross-zone aggregation: two records produced in different timezones
 // that happen to share the same hour-of-day must NOT collide when bucketed

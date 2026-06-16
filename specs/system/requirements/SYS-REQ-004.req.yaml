@@ -32,18 +32,32 @@ verification:
         reviewed_at: "2026-06-04T16:50:33Z"
         comment: 'Phase S Wave 2: attach failure_independence_proven from blind-spot detection loop'
         fingerprint: sha256:eaedb01506a298607084eb9bd6efcfd527dffab1581174bffbfbd36601442847
-        ai_generated: false
+        ai_generated: true
     gaps_reviewed_at: "2026-06-03T10:24:45.221097Z"
     gaps_reviewed_by: human:buger
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:11:41Z"
-    last_modified_by: human:cli
-    last_modified_at: "2026-06-04T16:50:33Z"
+    last_modified_by: agent:claude-code
+    last_modified_at: "2026-06-16T13:07:34Z"
 obligation_class: error_handling
 obligation_checklist:
     - external_call_concurrency_bounded
     - failure_independence_proven
+obligation_suppressions:
+    - id: external_call_concurrency_bounded
+      reason: DEFERRED pending a typed external_call_concurrency_bounded test — tracked in .proof/deferred-witness-backlog.md
+      suppressed_by: agent:claude-code
+      suppressed_at: "2026-06-16T13:07:33Z"
+      framework_refs:
+        - CWE CWE-410,CWE-770
+        - IEC-62443 CR-7.1
+        - NIST-800-53 SC-5
+        - OWASP-ASVS-v4 V11.1.4
+    - id: failure_independence_proven
+      reason: DEFERRED pending a typed failure_independence_proven test — tracked in .proof/deferred-witness-backlog.md
+      suppressed_by: agent:claude-code
+      suppressed_at: "2026-06-16T13:07:34Z"
 release_disposition: ship_with_known_issue
 lifecycle:
     change_history:

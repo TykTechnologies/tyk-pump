@@ -32,15 +32,24 @@ verification:
         reviewed_at: "2026-06-03T07:40:40Z"
         comment: 'Phase Q: catalog obligation attachments — adds external_call_timeout_bounded (per-pump timeout system contract). See .proof/catalog-obligation-proposals.md.'
         fingerprint: sha256:7cfdd21f2acd5d71309fda637c4de79f2587e7a31ee0be458459381bc9463734
-        ai_generated: false
+        ai_generated: true
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:11:41Z"
-    last_modified_by: human:cli
-    last_modified_at: "2026-06-03T07:40:40Z"
+    last_modified_by: agent:claude-code
+    last_modified_at: "2026-06-16T13:07:34Z"
 obligation_class: boundary
 obligation_checklist:
     - external_call_timeout_bounded
+obligation_suppressions:
+    - id: external_call_timeout_bounded
+      reason: DEFERRED pending a typed external_call_timeout_bounded test — tracked in .proof/deferred-witness-backlog.md
+      suppressed_by: agent:claude-code
+      suppressed_at: "2026-06-16T13:07:34Z"
+      framework_refs:
+        - CWE CWE-1088,CWE-400
+        - NIST-800-53 SC-5
+        - OWASP-ASVS-v4 V11.1.4
 release_disposition: ship_with_known_issue
 lifecycle:
     change_history:

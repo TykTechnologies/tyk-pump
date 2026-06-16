@@ -245,6 +245,7 @@ func TestNewTemporalStorageHandler_UnsupportedConfigType(t *testing.T) {
 // Drives the `case *TemporalStorageConfig` and `case TemporalStorageConfig`
 // arms of NewTemporalStorageHandler. Each must construct successfully
 // without invoking mapstructure.
+// SW-REQ-007:nominal:nominal
 func TestNewTemporalStorageHandler_StructConfigVariants(t *testing.T) {
 	t.Run("pointer", func(t *testing.T) {
 		cfg := &TemporalStorageConfig{Host: "h", Port: 1}

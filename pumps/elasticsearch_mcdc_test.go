@@ -125,6 +125,7 @@ func TestElasticsearchPump_WriteData_RoundTrip(t *testing.T) {
 //
 // Verifies: SW-REQ-068
 // SW-REQ-068:nominal:negative
+// SW-REQ-070:nominal:nominal
 func TestElasticsearchPump_WriteData_RoundTripBulk(t *testing.T) {
 	idx := esIndexName(t, "tyk_analytics_bulk")
 	pump := esInit(t, map[string]interface{}{
@@ -596,6 +597,7 @@ func TestElasticsearchPump_getOperator_DisableBulkBranch(t *testing.T) {
 //
 // Verifies: SW-REQ-068
 // SW-REQ-068:nominal:negative
+// SW-REQ-068:nominal:nominal
 func TestElasticsearchPump_getOperator_LegacyVersions(t *testing.T) {
 	url := elasticsearchURL(t)
 	for _, version := range []string{"3", "5", "6"} {

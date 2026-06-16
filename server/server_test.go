@@ -31,6 +31,7 @@ import (
 // (liveness_reported=T) -> TRUE row. The FALSE row (probe received but liveness not
 // reported) is caught by the rw.Code!=200 and body["status"]!="ok" assertions. The vacuous
 // TRUE arm is the no-probe steady state.
+// SW-REQ-032:nominal:nominal
 func TestHealthcheck_ReportsLiveness(t *testing.T) {
 	rw := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "/hello", nil)

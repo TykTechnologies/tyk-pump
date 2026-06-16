@@ -53,6 +53,7 @@ func TestFormatterWithForcedPrefixFileOutput(t *testing.T) {
 }
 
 // Verifies: SW-REQ-033
+// SW-REQ-033:nominal:nominal
 func Test_GetLogger(t *testing.T) {
 	tests := []struct {
 		name          string

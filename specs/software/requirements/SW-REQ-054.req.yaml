@@ -32,7 +32,7 @@ verification:
         reviewed_at: "2026-06-03T07:39:53Z"
         comment: 'Phase Q: catalog obligation attachments — adds external_call_failure_observable, external_call_concurrency_bounded, errors_propagated, panic_free_input_handling, binary_data_preserved, back_pressure_bounded, resource_lifetime_released (Resurface chan, goroutine, MapRawData; KIs resurface-writedata-blocks-on-queue-full, resurface-maprawdata-empty-request-panic). See .proof/catalog-obligation-proposals.md.'
         fingerprint: sha256:dac47ca256762825ccc739495c370bdd511da231e8b89a1bbc5f4cbec0d156db
-        ai_generated: false
+        ai_generated: true
     impact_reviews:
         - requirement: SW-REQ-054
           artifact: pumps/resurface.go
@@ -47,8 +47,8 @@ verification:
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:36:45Z"
-    last_modified_by: human:cli
-    last_modified_at: "2026-06-03T07:39:54Z"
+    last_modified_by: agent:claude-code
+    last_modified_at: "2026-06-16T13:07:22Z"
 obligation_checklist:
     - concurrent
     - nominal
@@ -68,6 +68,13 @@ obligation_suppressions:
         - MISRA-C Dir 4.14
         - NIST-800-53 SI-10,SI-11
         - OWASP-ASVS-v4 V5.1.3,V5.5.3
+    - id: resource_lifetime_released
+      reason: DEFERRED pending a typed resource_lifetime_released test — tracked in .proof/deferred-witness-backlog.md
+      suppressed_by: agent:claude-code
+      suppressed_at: "2026-06-16T13:07:22Z"
+      framework_refs:
+        - CWE CWE-404,CWE-772
+        - NIST-800-53 SC-5
 release_disposition: ship_with_known_issue
 lifecycle:
     change_history:

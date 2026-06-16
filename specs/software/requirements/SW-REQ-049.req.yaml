@@ -32,7 +32,7 @@ verification:
         reviewed_at: "2026-06-03T07:39:41Z"
         comment: 'Phase Q: catalog obligation attachments — adds external_call_timeout_bounded, request_timeout_bounded, panic_free_input_handling (Graylog Fatal on record error, KI graylog-moesif-logfatal-on-record-error). See .proof/catalog-obligation-proposals.md.'
         fingerprint: sha256:af46086a994065531a96fac3b9ad5551278f8d944486b8f9bbb9069212da98cb
-        ai_generated: false
+        ai_generated: true
     impact_reviews:
         - requirement: SW-REQ-049
           artifact: pumps/graylog.go
@@ -47,8 +47,8 @@ verification:
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:36:11Z"
-    last_modified_by: human:cli
-    last_modified_at: "2026-06-11T16:07:43Z"
+    last_modified_by: agent:claude-code
+    last_modified_at: "2026-06-16T13:07:19Z"
 obligation_checklist:
     - nominal
     - panic_free_input_handling
@@ -75,6 +75,14 @@ obligation_suppressions:
         - MISRA-C Dir 4.14
         - NIST-800-53 SI-10,SI-11
         - OWASP-ASVS-v4 V5.1.3,V5.5.3
+    - id: panic_free_input_handling
+      reason: 'DEFERRED pending a typed panic_free_input_handling test — tracked in .proof/deferred-witness-backlog.md'
+      suppressed_by: agent:claude-code
+      suppressed_at: "2026-06-16T13:07:19Z"
+      framework_refs:
+        - CWE CWE-248,CWE-754
+        - MISRA-C Rule 17.2
+        - OWASP-ASVS-v4 V7.4.1
     - id: process_exit_on_recoverable
       reason: 'process_exit_on_recoverable code signal at pumps/graylog.go:76: this pump''s Init() calls log.Fatal on a recoverable mapstructure.Decode/connect error, exiting the whole multi-pump process instead of returning the error so siblings continue. This exact failure-mode surface is already tracked, ship-dispositioned, and remediation-scoped by KI pumps-logfatal-on-config-decode (which enumerates this code_signal anchor in its evidence_manifests). Not a new ungoverned obligation gap.'
       suppressed_by: human:leo

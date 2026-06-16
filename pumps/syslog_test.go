@@ -68,6 +68,7 @@ func createTestSyslogPump(addr string) *SyslogPump {
 }
 
 // Verifies: SW-REQ-050
+// SW-REQ-050:nominal:nominal
 func TestSyslogPump_WriteData(t *testing.T) {
 	tests := []struct {
 		name     string

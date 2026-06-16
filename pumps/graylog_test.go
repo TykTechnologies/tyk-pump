@@ -61,6 +61,7 @@ func TestGraylogPump_GetEnvPrefix(t *testing.T) {
 // pair is the gelf-send-failure baseline where the UDP client errors and
 // the per-record forwarding loop logs but continues — exercised by the
 // invalid-address subtest.)
+// SW-REQ-049:nominal:nominal
 func TestGraylogPump_WriteData_ValidBase64(t *testing.T) {
 	addr, sink := newUDPSink(t)
 	host, port := graylogAddrParts(t, addr)

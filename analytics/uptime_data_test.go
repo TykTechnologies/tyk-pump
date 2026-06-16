@@ -160,6 +160,7 @@ func TestUptimeReportAggregate_Dimensions(t *testing.T) {
 // SYS-REQ-021 (uptime_data_consumed / uptime_forwarded): identical reasoning -- each
 // populated sub-case consumes input and produces the forwarded aggregate map; the empty case
 // is the vacuous TRUE arm.
+// SW-REQ-015:nominal:nominal
 func TestAggregateUptimeData(t *testing.T) {
 	currentTime := time.Date(2023, 0o4, 0o4, 10, 0, 0, 0, time.UTC)
 

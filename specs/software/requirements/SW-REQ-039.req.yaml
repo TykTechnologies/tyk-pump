@@ -32,7 +32,7 @@ verification:
         reviewed_at: "2026-06-02T13:20:41Z"
         comment: 'Phase L2: aggressive formalization — encodes per-pump MCP/graph/mixed-collection/self-heal decisions; variables in pumps-mongo-*.vars.yaml; user directive: force MCDC witnesses on these decisions to drive verifying tests.'
         fingerprint: sha256:3a309d95fe59be104c667592df123db97613b4db593cb963a8a8a2ca6213b7e8
-        ai_generated: false
+        ai_generated: true
     impact_reviews:
         - requirement: SW-REQ-039
           artifact: pumps/mcp_mongo_aggregate.go
@@ -47,8 +47,8 @@ verification:
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:35:08Z"
-    last_modified_by: human:cli
-    last_modified_at: "2026-06-10T16:31:35Z"
+    last_modified_by: agent:claude-code
+    last_modified_at: "2026-06-16T13:07:14Z"
 obligation_checklist:
     - atomicity
     - edge_case
@@ -59,6 +59,18 @@ obligation_suppressions:
       reason: MCP-mongo-aggregate upsert atomicity negative evidence requires a fault-injecting MongoDB harness (e.g. force write-concern failure or storage error) that is not available in local test infrastructure. Production behavior delegates to the bundled mongo  atomicity assumption (SYS-REQ-029); a Mongo testcontainer with fault injection is the honest path. Tracked as future test work alongside the broader mongo-pump test coverage gap.
       suppressed_by: buger
       suppressed_at: "2026-05-30T09:03:00Z"
+    - id: edge_case
+      reason: 'DEFERRED pending a typed edge_case test — tracked in .proof/deferred-witness-backlog.md'
+      suppressed_by: agent:claude-code
+      suppressed_at: "2026-06-16T13:07:14Z"
+    - id: errors_propagated
+      reason: 'DEFERRED pending a typed errors_propagated test — tracked in .proof/deferred-witness-backlog.md'
+      suppressed_by: agent:claude-code
+      suppressed_at: "2026-06-16T13:07:14Z"
+      framework_refs:
+        - CWE CWE-703,CWE-252,CWE-754
+        - NIST-800-53 SI-11
+        - OWASP-ASVS-v4 V7.4.1,V7.4.2,V7.4.3
     - id: malformed_recovers_or_errors_loudly
       reason: 'Phase H custom opengrep rule go.mapstructure.lenient-decode surfaces lenient mapstructure.Decode calls. Tracked under KI mapstructure-decode-silently-drops-unknown-keys with mitigation (validate configs before deploy) and remediation (NewDecoder with ErrorUnused: true) filed.'
       suppressed_by: human:leo

@@ -56,6 +56,7 @@ type EmptyType{
 
 // TODO fix test coverage
 // Verifies: SW-REQ-013
+// SW-REQ-013:nominal:nominal
 func TestAnalyticsRecord_ToGraphRecordNew(t *testing.T) {
 	recordSample := AnalyticsRecord{
 		TimeStamp:    time.Date(2022, 1, 1, 0, 0, 0, 0, time.UTC),

@@ -49,6 +49,9 @@ stakeholder:
         - id: AC-001
           text: Operators can restrict, per backend, which records are forwarded using allow and block lists on organisation, API, and response code.
           testable: true
+          witness_deferred:
+            reason: "No end-to-end acceptance test yet; deferred per hybrid disposition"
+            tracking: ".proof/deferred-witness-backlog.md"
           derived_reqs:
             - SYS-REQ-008
             - SYS-REQ-009
@@ -56,11 +59,15 @@ stakeholder:
         - id: AC-002
           text: Operators can omit detailed request/response payloads and cap record size to protect sensitive data and downstream storage.
           testable: true
+          witness_deferred:
+            reason: "No end-to-end acceptance test yet; deferred per hybrid disposition"
+            tracking: ".proof/deferred-witness-backlog.md"
           derived_reqs:
             - SYS-REQ-010
             - SYS-REQ-011
             - SYS-REQ-015
             - SYS-REQ-016
+            - SYS-REQ-035
 lifecycle:
     change_history:
         - date: "2026-05-29T15:46:44Z"

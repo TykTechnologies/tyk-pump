@@ -32,7 +32,7 @@ verification:
         reviewed_at: "2026-06-03T07:40:04Z"
         comment: 'Phase Q: catalog obligation attachments — adds external_call_timeout_bounded (Timestream client write deadlines). See .proof/catalog-obligation-proposals.md.'
         fingerprint: sha256:ddc247ac8086a387008b266062f3e04e21bb11a09972e5870ca8e5552ad810a5
-        ai_generated: false
+        ai_generated: true
     impact_reviews:
         - requirement: SW-REQ-057
           artifact: pumps/timestream.go
@@ -47,8 +47,8 @@ verification:
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:37:10Z"
-    last_modified_by: human:cli
-    last_modified_at: "2026-06-11T16:07:48Z"
+    last_modified_by: agent:claude-code
+    last_modified_at: "2026-06-16T13:07:24Z"
 obligation_checklist:
     - boundary
     - errors_propagated
@@ -62,6 +62,14 @@ obligation_suppressions:
         - CWE CWE-703,CWE-252,CWE-754
         - NIST-800-53 SI-11
         - OWASP-ASVS-v4 V7.4.1,V7.4.2,V7.4.3
+    - id: external_call_timeout_bounded
+      reason: 'DEFERRED pending a typed external_call_timeout_bounded test — tracked in .proof/deferred-witness-backlog.md'
+      suppressed_by: agent:claude-code
+      suppressed_at: "2026-06-16T13:07:24Z"
+      framework_refs:
+        - CWE CWE-1088,CWE-400
+        - NIST-800-53 SC-5
+        - OWASP-ASVS-v4 V11.1.4
     - id: malformed_recovers_or_errors_loudly
       reason: 'Phase H custom opengrep rule go.mapstructure.lenient-decode surfaces lenient mapstructure.Decode calls. Tracked under KI mapstructure-decode-silently-drops-unknown-keys with mitigation (validate configs before deploy) and remediation (NewDecoder with ErrorUnused: true) filed.'
       suppressed_by: human:leo

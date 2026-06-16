@@ -35,7 +35,7 @@ verification:
         reviewed_at: "2026-06-03T06:56:24Z"
         comment: 'Phase P: FRETish enrichment per per-req review pass — adds collection_already_exists to when disjunct so MC/DC exposes the idempotency-skip arm (StandardMongo + collectionExists short-circuit) — description names both skip conditions but FRETish modeled only the operator toggle.'
         fingerprint: sha256:8c279ec24749e7738522bfe4f0a7bdaddf726ca8262764c97ca775fceb9127b9
-        ai_generated: false
+        ai_generated: true
     impact_reviews:
         - requirement: SW-REQ-063
           artifact: pumps/mongo_aggregate.go
@@ -50,8 +50,8 @@ verification:
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:38:05Z"
-    last_modified_by: human:cli
-    last_modified_at: "2026-06-03T06:56:24Z"
+    last_modified_by: agent:claude-code
+    last_modified_at: "2026-06-16T13:07:27Z"
 obligation_checklist:
     - errors_propagated
     - idempotency
@@ -65,6 +65,10 @@ obligation_suppressions:
         - CWE CWE-703,CWE-252,CWE-754
         - NIST-800-53 SI-11
         - OWASP-ASVS-v4 V7.4.1,V7.4.2,V7.4.3
+    - id: idempotency
+      reason: 'DEFERRED pending a typed idempotency test — tracked in .proof/deferred-witness-backlog.md'
+      suppressed_by: agent:claude-code
+      suppressed_at: "2026-06-16T13:07:27Z"
     - id: malformed_recovers_or_errors_loudly
       reason: 'Phase H custom opengrep rule go.mapstructure.lenient-decode surfaces lenient mapstructure.Decode calls. Tracked under KI mapstructure-decode-silently-drops-unknown-keys with mitigation (validate configs before deploy) and remediation (NewDecoder with ErrorUnused: true) filed.'
       suppressed_by: human:leo

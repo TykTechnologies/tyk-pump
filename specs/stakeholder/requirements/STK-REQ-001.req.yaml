@@ -48,17 +48,29 @@ stakeholder:
         - id: AC-001
           text: Analytics records produced by the gateway are forwarded to operator-chosen backends without loss of the fields operators rely on for monitoring and reporting.
           testable: true
+          witness_deferred:
+            reason: "No end-to-end acceptance test yet; deferred per hybrid disposition"
+            tracking: ".proof/deferred-witness-backlog.md"
           derived_reqs:
             - SYS-REQ-001
             - SYS-REQ-002
             - SYS-REQ-022
+            - SYS-REQ-024
+            - SYS-REQ-030
+            - SYS-REQ-031
         - id: AC-002
           text: Operators can report on traffic broken down by organisation, API, and response outcome.
           testable: true
+          witness_deferred:
+            reason: "No end-to-end acceptance test yet; deferred per hybrid disposition"
+            tracking: ".proof/deferred-witness-backlog.md"
           derived_reqs:
             - SYS-REQ-003
             - SYS-REQ-018
             - SYS-REQ-019
+            - SYS-REQ-029
+            - SYS-REQ-032
+            - SYS-REQ-034
 lifecycle:
     change_history:
         - date: "2026-05-29T15:46:16Z"

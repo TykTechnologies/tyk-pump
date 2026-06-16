@@ -50,16 +50,26 @@ stakeholder:
         - id: AC-001
           text: A failure or timeout writing to one backend does not prevent records being written to the other configured backends.
           testable: true
+          witness_deferred:
+            reason: "No end-to-end acceptance test yet; deferred per hybrid disposition"
+            tracking: ".proof/deferred-witness-backlog.md"
           derived_reqs:
             - SYS-REQ-004
             - SYS-REQ-005
+            - SYS-REQ-026
+            - SYS-REQ-033
         - id: AC-002
           text: Transient storage or backend errors are retried with bounded backoff rather than dropped on first failure.
           testable: true
+          witness_deferred:
+            reason: "No end-to-end acceptance test yet; deferred per hybrid disposition"
+            tracking: ".proof/deferred-witness-backlog.md"
           derived_reqs:
             - SYS-REQ-006
             - SYS-REQ-007
             - SYS-REQ-023
+            - SYS-REQ-025
+            - SYS-REQ-028
 lifecycle:
     change_history:
         - date: "2026-05-29T15:46:44Z"

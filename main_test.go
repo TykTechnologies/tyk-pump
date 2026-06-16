@@ -71,6 +71,7 @@ func (p *MockedPump) Shutdown() error {
 // implicitly by TestWriteDataWithFilters' filterData path when keys are blocked (filtered out,
 // no dispatch). purge_tick=T/records_dispatched=T is the nominal arm: TestFilterData
 // dispatches the surviving allow-listed record to the mockedPump.
+// SW-REQ-001:nominal:nominal
 func TestFilterData(t *testing.T) {
 	mockedPump := &MockedPump{}
 
@@ -723,4 +724,39 @@ func TestInitialisePumps_DontPurgeUptimeData_SkipsUptimePump(t *testing.T) {
 	require.NotEmpty(t, Pumps, "the configured dummy pump must be initialised")
 	assert.Nil(t, UptimePump,
 		"with DontPurgeUptimeData=true the uptime pump must NOT be initialised, so gateway uptime is never forwarded")
+}
+
+// SW-REQ-003:nominal:nominal
+// initialisePumps must construct (via New()) and initialise (via Init()) every
+// configured pump before the purge loop runs. Two dummy pumps are configured;
+// both must land in the global Pumps slice with their concrete type live,
+// proving the per-pump construct+init loop succeeded on the happy path.
+func TestInitialisePumps_ConstructsAndInitialisesConfiguredPumps(t *testing.T) {
+	savedConfig := SystemConfig
+	savedPumps := Pumps
+	savedUptime := UptimePump
+	t.Cleanup(func() {
+		SystemConfig = savedConfig
+		Pumps = savedPumps
+		UptimePump = savedUptime
+	})
+
+	Pumps = nil
+	UptimePump = nil
+	SystemConfig = TykPumpConfiguration{
+		DontPurgeUptimeData: true, // keep uptime pump offline; focus on configured-pump init
+		Pumps: map[string]PumpConfig{
+			"dummy1": {Type: "dummy"},
+			"dummy2": {Type: "dummy"},
+		},
+	}
+
+	initialisePumps()
+
+	require.Len(t, Pumps, 2, "both configured dummy pumps must be constructed and initialised")
+	for _, p := range Pumps {
+		require.NotNil(t, p, "each constructed pump must be non-nil")
+		assert.Equal(t, "Dummy Pump", p.GetName(),
+			"each pump must be a live, initialised dummy pump")
+	}
 }

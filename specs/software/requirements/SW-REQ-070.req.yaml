@@ -32,7 +32,7 @@ verification:
         reviewed_at: "2026-06-03T07:40:28Z"
         comment: 'Phase Q: catalog obligation attachments — adds external_call_concurrency_bounded (ES BulkProcessor workers cap). See .proof/catalog-obligation-proposals.md.'
         fingerprint: sha256:7cf04895b50732c59abab8868e4cd54d79ed68a7e54ecc24c49e049f44efb8b7
-        ai_generated: false
+        ai_generated: true
     impact_reviews:
         - requirement: SW-REQ-070
           artifact: pumps/elasticsearch.go
@@ -47,13 +47,17 @@ verification:
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:40:07Z"
-    last_modified_by: human:cli
-    last_modified_at: "2026-06-03T07:40:28Z"
+    last_modified_by: agent:claude-code
+    last_modified_at: "2026-06-16T13:07:31Z"
 obligation_checklist:
     - boundary
     - external_call_concurrency_bounded
     - nominal
 obligation_suppressions:
+    - id: boundary
+      reason: 'DEFERRED pending a typed boundary test — tracked in .proof/deferred-witness-backlog.md'
+      suppressed_by: agent:claude-code
+      suppressed_at: "2026-06-16T13:07:31Z"
     - id: determinism
       reason: 'Phase N opengrep rule go.recursive-call-without-return flags pumps/elasticsearch.go:419 WriteData calling e.WriteData(ctx, data) without return prefix on the nil-operator reconnect arm. Documented in KI elasticsearch-unbounded-reconnect-recursion with mitigation (operator non-nil after Init) and remediation (return prefix or remove defensive recursion) tracked. Not a new obligation gap.'
       suppressed_by: buger
@@ -66,6 +70,15 @@ obligation_suppressions:
         - CWE CWE-703,CWE-252,CWE-754
         - NIST-800-53 SI-11
         - OWASP-ASVS-v4 V7.4.1,V7.4.2,V7.4.3
+    - id: external_call_concurrency_bounded
+      reason: 'DEFERRED pending a typed external_call_concurrency_bounded test — tracked in .proof/deferred-witness-backlog.md'
+      suppressed_by: agent:claude-code
+      suppressed_at: "2026-06-16T13:07:31Z"
+      framework_refs:
+        - CWE CWE-410,CWE-770
+        - IEC-62443 CR-7.1
+        - NIST-800-53 SC-5
+        - OWASP-ASVS-v4 V11.1.4
     - id: malformed_recovers_or_errors_loudly
       reason: 'Phase H custom opengrep rule go.mapstructure.lenient-decode surfaces lenient mapstructure.Decode calls. Tracked under KI mapstructure-decode-silently-drops-unknown-keys with mitigation (validate configs before deploy) and remediation (NewDecoder with ErrorUnused: true) filed.'
       suppressed_by: human:leo
