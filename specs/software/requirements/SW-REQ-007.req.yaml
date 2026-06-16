@@ -68,8 +68,8 @@ verification:
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:14Z"
-    last_modified_by: agent:claude-code
-    last_modified_at: "2026-06-16T13:07:03Z"
+    last_modified_by: human:buger
+    last_modified_at: "2026-06-16T20:39:34Z"
 obligation_checklist:
     - boundary
     - cancellation_observed
@@ -77,19 +77,6 @@ obligation_checklist:
     - nominal
     - resource_lifetime_released
 obligation_suppressions:
-    - id: boundary
-      reason: 'DEFERRED pending a typed boundary test — tracked in .proof/deferred-witness-backlog.md'
-      suppressed_by: agent:claude-code
-      suppressed_at: "2026-06-16T13:07:01Z"
-    - id: cancellation_observed
-      reason: 'DEFERRED pending a typed cancellation_observed test — tracked in .proof/deferred-witness-backlog.md'
-      suppressed_by: agent:claude-code
-      suppressed_at: "2026-06-16T13:07:02Z"
-      framework_refs:
-        - CWE CWE-672,CWE-410
-        - DO-178C §6.3.3
-        - ISO-26262 Part 6 §7.4.13
-        - NIST-800-53 SC-5
     - id: clock_skew_tolerated
       reason: 'clock_skew_tolerated code signal at storage/temporal_storage.go:294: the kv.Expire TTL refresh applies a relative duration against Redis''s clock while the pump reasons on its local clock, so clock skew or backward jumps can mis-expire the key. This genuine surface is now documented and dispositioned by KI getanddeleteset-expire-ttl-assumes-clock-sync (affects SW-REQ-007, ship_with_known_issue; the runtime counterpart of the open SYS-REQ-028 redis-protocol assumption; mitigation: NTP-synced clocks). Not an undocumented gap.'
       suppressed_by: human:leo
@@ -98,10 +85,6 @@ obligation_suppressions:
       reason: 'Phase N opengrep rule go.pkgvar.mutated-without-sync flags storage/temporal_storage.go:142 resetConnection writing to package-level connectorSingleton without sync primitive. Documented in KI storage-connector-singleton-race with mitigation (Init called once per process) and remediation (sync.Once/Mutex wrap) tracked. Not a new obligation gap.'
       suppressed_by: buger
       suppressed_at: "2026-06-02T18:29:51Z"
-    - id: error_handling
-      reason: 'DEFERRED pending a typed error_handling test — tracked in .proof/deferred-witness-backlog.md'
-      suppressed_by: agent:claude-code
-      suppressed_at: "2026-06-16T13:07:02Z"
     - id: malformed_recovers_or_errors_loudly
       reason: 'Phase H custom opengrep rule go.mapstructure.lenient-decode surfaces lenient mapstructure.Decode calls. Tracked under KI mapstructure-decode-silently-drops-unknown-keys with mitigation (validate configs before deploy) and remediation (NewDecoder with ErrorUnused: true) filed.'
       suppressed_by: human:leo
@@ -112,13 +95,23 @@ obligation_suppressions:
         - MISRA-C Dir 4.14
         - NIST-800-53 SI-10,SI-11
         - OWASP-ASVS-v4 V5.1.3,V5.5.3
-    - id: resource_lifetime_released
-      reason: DEFERRED pending a typed resource_lifetime_released test — tracked in .proof/deferred-witness-backlog.md
-      suppressed_by: agent:claude-code
-      suppressed_at: "2026-06-16T13:07:03Z"
-      framework_refs:
-        - CWE CWE-404,CWE-772
-        - NIST-800-53 SC-5
+obligation_deferrals:
+    - obligation_class: boundary
+      reason: 'Deferred: required boundary test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'
+      tracking: .proof/deferred-witness-backlog.md
+      owner: human:buger
+    - obligation_class: cancellation_observed
+      reason: 'Deferred: required cancellation_observed test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'
+      tracking: .proof/deferred-witness-backlog.md
+      owner: human:buger
+    - obligation_class: error_handling
+      reason: 'Deferred: required error_handling test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'
+      tracking: .proof/deferred-witness-backlog.md
+      owner: human:buger
+    - obligation_class: resource_lifetime_released
+      reason: 'Deferred: required resource_lifetime_released test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'
+      tracking: .proof/deferred-witness-backlog.md
+      owner: human:buger
 lifecycle:
     change_history:
         - date: "2026-05-29T15:46:44Z"

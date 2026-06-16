@@ -48,35 +48,31 @@ verification:
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:14Z"
-    last_modified_by: agent:claude-code
-    last_modified_at: "2026-06-16T13:07:05Z"
+    last_modified_by: human:buger
+    last_modified_at: "2026-06-16T20:39:22Z"
 obligation_checklist:
     - encoding_aware
     - idempotency
     - monotonicity
     - tz_explicit
 obligation_suppressions:
-    - id: encoding_aware
-      reason: 'DEFERRED pending a typed encoding_aware test — tracked in .proof/deferred-witness-backlog.md'
-      suppressed_by: agent:claude-code
-      suppressed_at: "2026-06-16T13:07:05Z"
-      framework_refs:
-        - CWE CWE-176,CWE-180,CWE-838
-        - MISRA-C Dir 4.14
-        - NIST-800-53 SI-10
-        - OWASP-ASVS-v4 V5.1.4
-    - id: idempotency
-      reason: 'DEFERRED pending a typed idempotency test — tracked in .proof/deferred-witness-backlog.md'
-      suppressed_by: agent:claude-code
-      suppressed_at: "2026-06-16T13:07:05Z"
-    - id: monotonicity
-      reason: 'DEFERRED pending a typed monotonicity test — tracked in .proof/deferred-witness-backlog.md'
-      suppressed_by: agent:claude-code
-      suppressed_at: "2026-06-16T13:07:05Z"
     - id: tz_explicit
       reason: 'tz_explicit code signal at analytics/aggregate.go:46: this time.Time field serializes without an explicit timezone convention because AnalyticsRecord.TimeStamp is not UTC-pinned on construction (the protobuf path preserves the original Location). Root cause and impact are filed as KI analytics-timestamp-timezone-convention-unpinned (ship_with_known_issue; mitigation TZ=UTC; remediation pin to UTC). Genuine, documented surface — not an undocumented gap.'
       suppressed_by: human:leo
       suppressed_at: "2026-06-11T16:11:16Z"
+obligation_deferrals:
+    - obligation_class: encoding_aware
+      reason: 'Deferred: required encoding_aware test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'
+      tracking: .proof/deferred-witness-backlog.md
+      owner: human:buger
+    - obligation_class: idempotency
+      reason: 'Deferred: required idempotency test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'
+      tracking: .proof/deferred-witness-backlog.md
+      owner: human:buger
+    - obligation_class: monotonicity
+      reason: 'Deferred: required monotonicity test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'
+      tracking: .proof/deferred-witness-backlog.md
+      owner: human:buger
 lifecycle:
     change_history:
         - date: "2026-05-29T15:46:44Z"

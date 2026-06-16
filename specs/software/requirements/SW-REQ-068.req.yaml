@@ -47,8 +47,8 @@ verification:
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:39:57Z"
-    last_modified_by: agent:claude-code
-    last_modified_at: "2026-06-16T13:07:31Z"
+    last_modified_by: human:buger
+    last_modified_at: "2026-06-16T20:38:30Z"
 obligation_checklist:
     - cert_validation_strict
     - nominal
@@ -96,14 +96,11 @@ obligation_suppressions:
         - CWE CWE-400,CWE-404
         - NIST-800-53 SC-5
         - OWASP-ASVS-v4 V11.1.4
-    - id: ssrf_protection
-      reason: DEFERRED pending a typed ssrf_protection test — tracked in .proof/deferred-witness-backlog.md
-      suppressed_by: agent:claude-code
-      suppressed_at: "2026-06-16T13:07:31Z"
-      framework_refs:
-        - CWE CWE-918,CWE-441
-        - NIST-800-53 SC-7
-        - OWASP-ASVS-v4 V14.4.1,V12.6.1
+obligation_deferrals:
+    - obligation_class: ssrf_protection
+      reason: 'Deferred: required ssrf_protection test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'
+      tracking: .proof/deferred-witness-backlog.md
+      owner: human:buger
 lifecycle:
     change_history:
         - date: "2026-05-30T08:43:47Z"

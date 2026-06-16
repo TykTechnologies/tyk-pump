@@ -3,23 +3,29 @@
 Tracks every requirement obligation / acceptance criterion that is **deferred**
 (no genuine typed test yet) under the hybrid disposition chosen by the owner for
 the tyk-pump ReqProof coverage initiative. Each entry here is auditable: the
-deferral is recorded either as an `obligation_suppressions` entry on the
-requirement (for typed obligation evidence) whose `reason` points back to this
+deferral is recorded either as an `obligation_deferrals` entry on the
+requirement (for typed obligation evidence) whose `tracking` points back to this
 file, or as a `witness_deferred` block on the stakeholder acceptance criterion.
 
 This is NOT a not-applicable claim. Each item is a real gap to be closed later by
-writing the named typed test, at which point the corresponding suppression /
+writing the named typed test, at which point the corresponding deferral /
 `witness_deferred` should be removed and the test annotated with the proper
 triple form `// <REQ>:<obligation>:<evidence>` (or `// <STK-REQ>:<AC>:acceptance`).
 
-Mechanism note: the `obligation_evidence_complete` check exposes no obligation-level
-`witness_deferred` field (unlike `acceptance_criteria_witnessed`). The only
-auditable obligation-level deferral primitive is `proof req edit <REQ>
---suppress-obligation <class> --reason "..."`, so every typed-obligation deferral
-below is recorded as a tracked suppression whose rationale explicitly says
-"DEFERRED pending a typed <class> test — tracked in .proof/deferred-witness-backlog.md".
-These suppressions are agent-authored (`suppressed_by: agent:claude-code`) and
-require human suppression-review / re-approval (see governance section in the PR).
+Mechanism note (HONEST DEBT, not a hidden pass): obligation-level deferral is now
+recorded with the dedicated `proof req edit <REQ> --defer-obligation <class>
+--reason "..." --tracking ".proof/deferred-witness-backlog.md"` primitive, which
+writes an `obligation_deferrals` entry. Unlike the previously-used
+`--suppress-obligation`, a deferral KEEPS the obligation in the required set and
+raises a **VISIBLE WARNING** in `obligation_evidence_complete` ("N covered, M
+deferred (tracked)") until a real test lands — it never silently drops the
+obligation. The deferred counts below are therefore the honest debt ledger to
+drive down. (Suppression is reserved strictly for obligations that genuinely do
+NOT apply.) The earlier deferral-suppressions that hid these gaps as ✓ covered
+have all been converted to `obligation_deferrals` via `--unsuppress-obligation`
++ `--defer-obligation`. These deferrals are owner-attributed
+(`owner: human:buger`); see the governance section in the PR for suspect-review /
+re-approval.
 
 ---
 
@@ -27,7 +33,8 @@ require human suppression-review / re-approval (see governance section in the PR
 
 Each row: the missing **`nominal`-floor evidence is satisfied separately**; what
 is deferred here is the obligation's **typed** evidence class. Deferred via a
-tracked `--suppress-obligation` entry on the requirement.
+tracked `--defer-obligation` (`obligation_deferrals`) entry on the requirement —
+a visible WARNING in `obligation_evidence_complete`, not a silent suppression.
 
 | Requirement | Obligation class | Deferred test kind | Reason |
 |-------------|------------------|--------------------|--------|

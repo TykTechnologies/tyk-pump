@@ -47,19 +47,13 @@ verification:
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:16Z"
-    last_modified_by: agent:claude-code
-    last_modified_at: "2026-06-16T13:07:08Z"
+    last_modified_by: human:buger
+    last_modified_at: "2026-06-16T20:39:20Z"
 obligation_checklist:
     - auth_required
     - concurrent
     - errors_propagated
 obligation_suppressions:
-    - id: auth_required
-      reason: 'DEFERRED pending a typed auth_required test — tracked in .proof/deferred-witness-backlog.md'
-      suppressed_by: agent:claude-code
-      suppressed_at: "2026-06-16T13:07:08Z"
-      framework_refs:
-        - OWASP-ASVS-v4 V4.1.1
     - id: concurrent
       reason: 'Phase G: code_signal ''go.concurrency.goroutine-spawn'' at pumps/prometheus.go:215 is a single fire-and-forget goroutine that runs the prometheus HTTP exporter (http.ListenAndServe) for the lifetime of the pump. No shared mutable state across goroutines: the goroutine only owns the listener socket, and prometheus metric updates are guarded by the prometheus client library''s internal locks. No race surface to test against pump code; race-detector evidence would only exercise the prometheus library. Documented as worker-style spawn; not a data-race obligation gap.'
       suppressed_by: buger
@@ -95,13 +89,18 @@ obligation_suppressions:
       suppressed_by: human:leo
       suppressed_at: "2026-06-11T16:07:46Z"
     - id: request_timeout_bounded
-      reason: Phase N opengrep rule go.http.uses-default-servemux flags pumps/prometheus.go:213,216 (http.Handle on DefaultServeMux, http.ListenAndServe(addr, nil)). Documented in KI prometheus-init-mutates-default-mux with mitigation (single-process binary) and remediation (private mux+server) tracked. Not a new obligation gap.
+      reason: 'Phase N opengrep rule go.http.uses-default-servemux flags pumps/prometheus.go:213,216 (http.Handle on DefaultServeMux, http.ListenAndServe(addr, nil)). Documented in KI prometheus-init-mutates-default-mux with mitigation (single-process binary) and remediation (private mux+server) tracked. Not a new obligation gap.'
       suppressed_by: buger
       suppressed_at: "2026-06-02T18:29:50Z"
       framework_refs:
         - CWE CWE-400,CWE-404
         - NIST-800-53 SC-5
         - OWASP-ASVS-v4 V11.1.4
+obligation_deferrals:
+    - obligation_class: auth_required
+      reason: 'Deferred: required auth_required test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'
+      tracking: .proof/deferred-witness-backlog.md
+      owner: human:buger
 lifecycle:
     change_history:
         - date: "2026-05-29T15:46:44Z"

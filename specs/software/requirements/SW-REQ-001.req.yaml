@@ -53,8 +53,8 @@ verification:
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:13Z"
-    last_modified_by: agent:claude-code
-    last_modified_at: "2026-06-16T13:06:57Z"
+    last_modified_by: human:buger
+    last_modified_at: "2026-06-16T20:39:05Z"
 obligation_checklist:
     - boundary
     - cascade_circuit_breaker
@@ -65,10 +65,6 @@ obligation_checklist:
     - rate_limit_respected
     - secrets_not_logged
 obligation_suppressions:
-    - id: boundary
-      reason: 'DEFERRED pending a typed boundary test — tracked in .proof/deferred-witness-backlog.md'
-      suppressed_by: agent:claude-code
-      suppressed_at: "2026-06-16T13:06:56Z"
     - id: cascade_circuit_breaker
       reason: 'cascade_circuit_breaker code signal at main.go:365-368: writeToPumps fans out one goroutine per pump and wg.Wait()s; there is no cross-pump cascade breaker. The cascade-containment / repeated-dispatch concern is tracked by KI pump-no-per-pump-circuit-breaker (affects SW-REQ-001, test-anchored). The per-pump goroutine isolation already contains cascades; remaining gap is the missing breaker, dispositioned ship_with_known_issue. Not a new ungoverned obligation.'
       suppressed_by: human:leo
@@ -101,19 +97,19 @@ obligation_suppressions:
       reason: 'per_pump_circuit_breaker code signal at main.go:469-472: the purge dispatcher invokes every pump every cycle with no consecutive-failure cooldown. Tracked and test-anchored by KI pump-no-per-pump-circuit-breaker (affects SW-REQ-001, evidence TestPerPumpCircuitBreaker_NoBackoffOnRepeatedFailure; disposition ship_with_known_issue, severity low: healthy pumps still progress). Not a new ungoverned obligation.'
       suppressed_by: human:leo
       suppressed_at: "2026-06-11T16:08:40Z"
-    - id: rate_limit_respected
-      reason: DEFERRED pending a typed rate_limit_respected test — tracked in .proof/deferred-witness-backlog.md
-      suppressed_by: agent:claude-code
-      suppressed_at: "2026-06-16T13:06:57Z"
-      framework_refs:
-        - OWASP-ASVS-v4 V11.1.4
-    - id: secrets_not_logged
-      reason: DEFERRED pending a typed secrets_not_logged test — tracked in .proof/deferred-witness-backlog.md
-      suppressed_by: agent:claude-code
-      suppressed_at: "2026-06-16T13:06:57Z"
-      framework_refs:
-        - CWE CWE-532
-        - OWASP-ASVS-v4 V7.1.1
+obligation_deferrals:
+    - obligation_class: boundary
+      reason: 'Deferred: required boundary test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'
+      tracking: .proof/deferred-witness-backlog.md
+      owner: human:buger
+    - obligation_class: rate_limit_respected
+      reason: 'Deferred: required rate_limit_respected test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'
+      tracking: .proof/deferred-witness-backlog.md
+      owner: human:buger
+    - obligation_class: secrets_not_logged
+      reason: 'Deferred: required secrets_not_logged test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'
+      tracking: .proof/deferred-witness-backlog.md
+      owner: human:buger
 lifecycle:
     change_history:
         - date: "2026-05-29T15:46:43Z"

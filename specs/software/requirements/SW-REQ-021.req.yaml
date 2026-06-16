@@ -47,22 +47,13 @@ verification:
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:15Z"
-    last_modified_by: agent:claude-code
-    last_modified_at: "2026-06-16T13:07:08Z"
+    last_modified_by: human:buger
+    last_modified_at: "2026-06-16T20:38:31Z"
 obligation_checklist:
     - cancellation_observed
     - errors_propagated
     - tls_verification_explicit
 obligation_suppressions:
-    - id: cancellation_observed
-      reason: 'DEFERRED pending a typed cancellation_observed test — tracked in .proof/deferred-witness-backlog.md'
-      suppressed_by: agent:claude-code
-      suppressed_at: "2026-06-16T13:07:07Z"
-      framework_refs:
-        - CWE CWE-672,CWE-410
-        - DO-178C §6.3.3
-        - ISO-26262 Part 6 §7.4.13
-        - NIST-800-53 SC-5
     - id: cert_validation_strict
       reason: 'cert_validation_strict code signal at pumps/kafka.go:118: Kafka TLS dialer derives InsecureSkipVerify from k.kafkaConf.SSLInsecureSkipVerify (default false => verification ON) via the shared GetTLSConfig helper, honoring CA/cert/key files; SSL setup failure returns a wrapped error. Default-secure, operator-opt-in boundary. Reviewed: in-contract behavior is strict verification by default. Not a defect.'
       suppressed_by: human:leo
@@ -97,10 +88,15 @@ obligation_suppressions:
       reason: 'process_exit_on_recoverable code signal at pumps/kafka.go:103: this pump''s Init() calls log.Fatal on a recoverable mapstructure.Decode/connect error, exiting the whole multi-pump process instead of returning the error so siblings continue. This exact failure-mode surface is already tracked, ship-dispositioned, and remediation-scoped by KI pumps-logfatal-on-config-decode (which enumerates this code_signal anchor in its evidence_manifests). Not a new ungoverned obligation gap.'
       suppressed_by: human:leo
       suppressed_at: "2026-06-11T16:07:44Z"
-    - id: tls_verification_explicit
-      reason: DEFERRED pending a typed tls_verification_explicit test — tracked in .proof/deferred-witness-backlog.md
-      suppressed_by: agent:claude-code
-      suppressed_at: "2026-06-16T13:07:08Z"
+obligation_deferrals:
+    - obligation_class: cancellation_observed
+      reason: 'Deferred: required cancellation_observed test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'
+      tracking: .proof/deferred-witness-backlog.md
+      owner: human:buger
+    - obligation_class: tls_verification_explicit
+      reason: 'Deferred: required tls_verification_explicit test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'
+      tracking: .proof/deferred-witness-backlog.md
+      owner: human:buger
 lifecycle:
     change_history:
         - date: "2026-05-29T15:46:44Z"

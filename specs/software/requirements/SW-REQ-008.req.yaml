@@ -67,23 +67,20 @@ verification:
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:14Z"
-    last_modified_by: agent:claude-code
-    last_modified_at: "2026-06-16T13:07:03Z"
+    last_modified_by: human:buger
+    last_modified_at: "2026-06-16T20:38:36Z"
 obligation_checklist:
     - encoding_safety
     - snapshot_wire_format_compatible
-obligation_suppressions:
-    - id: encoding_safety
-      reason: DEFERRED pending a typed encoding_safety test — tracked in .proof/deferred-witness-backlog.md
-      suppressed_by: agent:claude-code
-      suppressed_at: "2026-06-16T13:07:03Z"
-    - id: snapshot_wire_format_compatible
-      reason: DEFERRED pending a typed snapshot_wire_format_compatible test — tracked in .proof/deferred-witness-backlog.md
-      suppressed_by: agent:claude-code
-      suppressed_at: "2026-06-16T13:07:03Z"
-      framework_refs:
-        - CWE CWE-345,CWE-436,CWE-1059
-        - NIST-800-53 CM-3,SI-7
+obligation_deferrals:
+    - obligation_class: encoding_safety
+      reason: 'Deferred: required encoding_safety test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'
+      tracking: .proof/deferred-witness-backlog.md
+      owner: human:buger
+    - obligation_class: snapshot_wire_format_compatible
+      reason: 'Deferred: required snapshot_wire_format_compatible test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'
+      tracking: .proof/deferred-witness-backlog.md
+      owner: human:buger
 lifecycle:
     change_history:
         - date: "2026-05-29T15:46:44Z"

@@ -49,18 +49,15 @@ verification:
 history:
     created_by: human:cli
     created_at: "2026-06-10T12:19:19Z"
-    last_modified_by: agent:claude-code
-    last_modified_at: "2026-06-16T13:07:33Z"
+    last_modified_by: human:buger
+    last_modified_at: "2026-06-16T20:38:35Z"
 obligation_checklist:
     - secrets_not_logged
-obligation_suppressions:
-    - id: secrets_not_logged
-      reason: DEFERRED pending a typed secrets_not_logged test — tracked in .proof/deferred-witness-backlog.md
-      suppressed_by: agent:claude-code
-      suppressed_at: "2026-06-16T13:07:33Z"
-      framework_refs:
-        - CWE CWE-532
-        - OWASP-ASVS-v4 V7.1.1
+obligation_deferrals:
+    - obligation_class: secrets_not_logged
+      reason: 'Deferred: required secrets_not_logged test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'
+      tracking: .proof/deferred-witness-backlog.md
+      owner: human:buger
 stakeholder:
     acceptance_criteria:
         - id: AC-001

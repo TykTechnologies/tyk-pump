@@ -47,18 +47,14 @@ verification:
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:36:19Z"
-    last_modified_by: agent:claude-code
-    last_modified_at: "2026-06-16T13:07:20Z"
+    last_modified_by: human:buger
+    last_modified_at: "2026-06-16T20:38:57Z"
 obligation_checklist:
     - encoding_safety
     - nominal
 obligation_suppressions:
-    - id: encoding_safety
-      reason: DEFERRED pending a typed encoding_safety test — tracked in .proof/deferred-witness-backlog.md
-      suppressed_by: agent:claude-code
-      suppressed_at: "2026-06-16T13:07:20Z"
     - id: errors_propagated
-      reason: 'Phase H custom opengrep rule go.log.fatal-in-init / go.recursion.unbounded-on-error surfaces log.Fatal in Init and unbounded reconnect recursion; both are tracked under KIs pumps-logfatal-on-config-decode, elasticsearch-unbounded-reconnect-recursion, and influx-v1-unbounded-reconnect-recursion with mitigation and remediation already filed.'
+      reason: Phase H custom opengrep rule go.log.fatal-in-init / go.recursion.unbounded-on-error surfaces log.Fatal in Init and unbounded reconnect recursion; both are tracked under KIs pumps-logfatal-on-config-decode, elasticsearch-unbounded-reconnect-recursion, and influx-v1-unbounded-reconnect-recursion with mitigation and remediation already filed.
       suppressed_by: human:leo
       suppressed_at: "2026-06-01T19:11:47Z"
       framework_refs:
@@ -79,6 +75,11 @@ obligation_suppressions:
       reason: 'process_exit_on_recoverable code signal at pumps/syslog.go:82: this pump''s Init() calls log.Fatal on a recoverable mapstructure.Decode/connect error, exiting the whole multi-pump process instead of returning the error so siblings continue. This exact failure-mode surface is already tracked, ship-dispositioned, and remediation-scoped by KI pumps-logfatal-on-config-decode (which enumerates this code_signal anchor in its evidence_manifests). Not a new ungoverned obligation gap.'
       suppressed_by: human:leo
       suppressed_at: "2026-06-11T16:07:48Z"
+obligation_deferrals:
+    - obligation_class: encoding_safety
+      reason: 'Deferred: required encoding_safety test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'
+      tracking: .proof/deferred-witness-backlog.md
+      owner: human:buger
 lifecycle:
     change_history:
         - date: "2026-05-30T08:43:46Z"
