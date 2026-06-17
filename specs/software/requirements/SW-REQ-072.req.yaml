@@ -48,26 +48,20 @@ history:
     created_by: human:cli
     created_at: "2026-06-01T20:24:19Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-16T20:38:45Z"
+    last_modified_at: "2026-06-17T08:03:11Z"
 obligation_checklist:
     - cancellation_observed
     - error_handling
     - external_call_timeout_bounded
-obligation_suppressions:
-    - id: cancellation_observed
-      reason: 'Phase I: SW-REQ-072 is a contract-only design point under SYS-REQ-005; the actual cancellation_observed implementation is broken today and is captured by KIs mongo-pump-ignores-caller-context, elasticsearch-unbounded-reconnect-recursion, and pump-no-timeout-can-block-purge-cycle. Suppression with rationale per ship_with_known_issue disposition until those KIs are remediated.'
-      suppressed_by: human:buger
-      suppressed_at: "2026-06-01T20:27:38Z"
-      framework_refs:
-        - CWE CWE-672,CWE-410
-        - DO-178C §6.3.3
-        - ISO-26262 Part 6 §7.4.13
-        - NIST-800-53 SC-5
-    - id: error_handling
-      reason: 'Phase I: SW-REQ-072 is a contract-only design point under SYS-REQ-005; the actual error_handling on ctx-cancellation is broken today and is captured by KIs mongo-pump-ignores-caller-context, elasticsearch-unbounded-reconnect-recursion, and pump-no-timeout-can-block-purge-cycle. Suppression with rationale per ship_with_known_issue disposition until those KIs are remediated.'
-      suppressed_by: human:buger
-      suppressed_at: "2026-06-01T20:27:40Z"
 obligation_deferrals:
+    - obligation_class: cancellation_observed
+      reason: 'real untested obligation under known-issue mongo-pump-ignores-caller-context; surfaced as visible tracked debt, not an overclaimed fix'
+      tracking: mongo-pump-ignores-caller-context
+      owner: human:buger
+    - obligation_class: error_handling
+      reason: 'real untested obligation under known-issue mongo-pump-ignores-caller-context; surfaced as visible tracked debt, not an overclaimed fix'
+      tracking: mongo-pump-ignores-caller-context
+      owner: human:buger
     - obligation_class: external_call_timeout_bounded
       reason: 'Deferred: required external_call_timeout_bounded test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'
       tracking: .proof/deferred-witness-backlog.md

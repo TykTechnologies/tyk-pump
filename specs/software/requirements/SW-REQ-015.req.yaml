@@ -48,16 +48,16 @@ verification:
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:15Z"
-    last_modified_by: human:cli
-    last_modified_at: "2026-06-11T16:11:17Z"
+    last_modified_by: human:buger
+    last_modified_at: "2026-06-17T08:00:55Z"
 obligation_checklist:
     - nominal
     - tz_explicit
-obligation_suppressions:
-    - id: tz_explicit
-      reason: 'tz_explicit code signal at analytics/uptime_data.go:27: this time.Time field serializes without an explicit timezone convention because AnalyticsRecord.TimeStamp is not UTC-pinned on construction (the protobuf path preserves the original Location). Root cause and impact are filed as KI analytics-timestamp-timezone-convention-unpinned (ship_with_known_issue; mitigation TZ=UTC; remediation pin to UTC). Genuine, documented surface — not an undocumented gap.'
-      suppressed_by: human:leo
-      suppressed_at: "2026-06-11T16:11:17Z"
+obligation_deferrals:
+    - obligation_class: tz_explicit
+      reason: real untested obligation under known-issue analytics-timestamp-timezone-convention-unpinned; surfaced as visible tracked debt, not an overclaimed fix
+      tracking: analytics-timestamp-timezone-convention-unpinned
+      owner: human:buger
 lifecycle:
     change_history:
         - date: "2026-05-29T15:46:44Z"

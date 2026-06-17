@@ -58,10 +58,11 @@ history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:14Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-16T20:38:37Z"
+    last_modified_at: "2026-06-17T08:02:50Z"
 obligation_checklist:
     - determinism
     - hash_format_deterministic
+    - tz_explicit
 obligation_suppressions:
     - id: binary_data_preserved
       reason: 'Phase G: code_signal ''go.encoding.lossy-string-conversion'' at analytics/analytics.go:343 is the trimBuffer.Bytes() coerced to string after deliberate UTF-8 Truncate boundary handling. Analytics RawRequest/RawResponse are by-design UTF-8 strings on the wire (base64 transport for binary); the string conversion is part of the trimming contract and not a lossy boundary. Not a real obligation gap.'
@@ -74,14 +75,14 @@ obligation_suppressions:
       reason: 'Phase G: code_signal ''go.random.math-rand'' at analytics/demo/demo.go:34 is in demo/test-fixture data generator (randomInRange, randomMethod). Non-product code (demo-only); randomness is the intended behavior. Not an analytics output-determinism gap.'
       suppressed_by: buger
       suppressed_at: "2026-06-01T18:33:20Z"
-    - id: tz_explicit
-      reason: 'tz_explicit code signal at analytics/analytics.go:76: this time.Time field serializes without an explicit timezone convention because AnalyticsRecord.TimeStamp is not UTC-pinned on construction (the protobuf path preserves the original Location). Root cause and impact are filed as KI analytics-timestamp-timezone-convention-unpinned (ship_with_known_issue; mitigation TZ=UTC; remediation pin to UTC). Genuine, documented surface — not an undocumented gap.'
-      suppressed_by: human:leo
-      suppressed_at: "2026-06-11T16:11:17Z"
 obligation_deferrals:
     - obligation_class: hash_format_deterministic
       reason: 'Deferred: required hash_format_deterministic test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'
       tracking: .proof/deferred-witness-backlog.md
+      owner: human:buger
+    - obligation_class: tz_explicit
+      reason: real untested obligation under known-issue analytics-timestamp-timezone-convention-unpinned; surfaced as visible tracked debt, not an overclaimed fix
+      tracking: analytics-timestamp-timezone-convention-unpinned
       owner: human:buger
 lifecycle:
     change_history:

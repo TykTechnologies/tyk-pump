@@ -69,32 +69,16 @@ history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:14Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-16T20:39:34Z"
+    last_modified_at: "2026-06-17T08:05:27Z"
 obligation_checklist:
     - boundary
     - cancellation_observed
+    - clock_skew_tolerated
+    - concurrent
     - error_handling
+    - malformed_recovers_or_errors_loudly
     - nominal
     - resource_lifetime_released
-obligation_suppressions:
-    - id: clock_skew_tolerated
-      reason: 'clock_skew_tolerated code signal at storage/temporal_storage.go:294: the kv.Expire TTL refresh applies a relative duration against Redis''s clock while the pump reasons on its local clock, so clock skew or backward jumps can mis-expire the key. This genuine surface is now documented and dispositioned by KI getanddeleteset-expire-ttl-assumes-clock-sync (affects SW-REQ-007, ship_with_known_issue; the runtime counterpart of the open SYS-REQ-028 redis-protocol assumption; mitigation: NTP-synced clocks). Not an undocumented gap.'
-      suppressed_by: human:leo
-      suppressed_at: "2026-06-11T16:16:53Z"
-    - id: concurrent
-      reason: 'Phase N opengrep rule go.pkgvar.mutated-without-sync flags storage/temporal_storage.go:142 resetConnection writing to package-level connectorSingleton without sync primitive. Documented in KI storage-connector-singleton-race with mitigation (Init called once per process) and remediation (sync.Once/Mutex wrap) tracked. Not a new obligation gap.'
-      suppressed_by: buger
-      suppressed_at: "2026-06-02T18:29:51Z"
-    - id: malformed_recovers_or_errors_loudly
-      reason: 'Phase H custom opengrep rule go.mapstructure.lenient-decode surfaces lenient mapstructure.Decode calls. Tracked under KI mapstructure-decode-silently-drops-unknown-keys with mitigation (validate configs before deploy) and remediation (NewDecoder with ErrorUnused: true) filed.'
-      suppressed_by: human:leo
-      suppressed_at: "2026-06-01T19:11:41Z"
-      framework_refs:
-        - CWE CWE-20,CWE-755
-        - IEC-62304 §5.3.1
-        - MISRA-C Dir 4.14
-        - NIST-800-53 SI-10,SI-11
-        - OWASP-ASVS-v4 V5.1.3,V5.5.3
 obligation_deferrals:
     - obligation_class: boundary
       reason: 'Deferred: required boundary test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'
@@ -104,9 +88,21 @@ obligation_deferrals:
       reason: 'Deferred: required cancellation_observed test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'
       tracking: .proof/deferred-witness-backlog.md
       owner: human:buger
+    - obligation_class: clock_skew_tolerated
+      reason: 'real untested obligation under known-issue getanddeleteset-expire-ttl-assumes-clock-sync; surfaced as visible tracked debt, not an overclaimed fix'
+      tracking: getanddeleteset-expire-ttl-assumes-clock-sync
+      owner: human:buger
+    - obligation_class: concurrent
+      reason: 'real untested obligation under known-issue storage-connector-singleton-race; surfaced as visible tracked debt, not an overclaimed fix'
+      tracking: storage-connector-singleton-race
+      owner: human:buger
     - obligation_class: error_handling
       reason: 'Deferred: required error_handling test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'
       tracking: .proof/deferred-witness-backlog.md
+      owner: human:buger
+    - obligation_class: malformed_recovers_or_errors_loudly
+      reason: 'real untested obligation under known-issue mapstructure-decode-silently-drops-unknown-keys; surfaced as visible tracked debt, not an overclaimed fix'
+      tracking: mapstructure-decode-silently-drops-unknown-keys
       owner: human:buger
     - obligation_class: resource_lifetime_released
       reason: 'Deferred: required resource_lifetime_released test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'

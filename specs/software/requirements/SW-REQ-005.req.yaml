@@ -62,24 +62,17 @@ history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:14Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-16T20:38:43Z"
+    last_modified_at: "2026-06-17T08:03:09Z"
 obligation_checklist:
+    - concurrent
     - error_handling
     - errors_propagated
-obligation_suppressions:
-    - id: concurrent
-      reason: concurrent code signals at instrumentation_helpers.go:52-67 (GC-stats monitor goroutine) and instrumentation_statsd_sink.go:123,130 (StatsDSink loop/flush goroutines + cmdChan sends). The StatsDSink has explicit channel lifecycle (Stop/Drain via cmdChan/stopDoneChan/drainDoneChan); the GC monitor lacks a stop channel. The remaining ownership gap (no recover; GC monitor no shutdown) is documented and dispositioned by KI instrumentation-goroutines-no-recover-or-shutdown (affects SW-REQ-005, ship_with_known_issue, severity low — instrumentation is opt-in and must not affect the purge loop per SW-REQ-005's contract). Governed by that KI; not a new undocumented gap.
-      suppressed_by: human:leo
-      suppressed_at: "2026-06-11T16:14:04Z"
-    - id: panic_free_input_handling
-      reason: 'panic_free_input_handling code signals at instrumentation_helpers.go:52-67 and instrumentation_statsd_sink.go:170-174: loop-backed instrumentation goroutines launched without a top-of-body defer recover(). This exact surface (missing per-goroutine recover on the instrumentation background workers) is documented and dispositioned by KI instrumentation-goroutines-no-recover-or-shutdown (affects SW-REQ-005, ship_with_known_issue; instrumentation is opt-in and per SW-REQ-005 must not fail the purge loop). Genuine, documented surface — not an undocumented gap.'
-      suppressed_by: human:leo
-      suppressed_at: "2026-06-11T16:14:04Z"
-      framework_refs:
-        - CWE CWE-248,CWE-754
-        - MISRA-C Rule 17.2
-        - OWASP-ASVS-v4 V7.4.1
+    - panic_free_input_handling
 obligation_deferrals:
+    - obligation_class: concurrent
+      reason: 'real untested obligation under known-issue instrumentation-goroutines-no-recover-or-shutdown; surfaced as visible tracked debt, not an overclaimed fix'
+      tracking: instrumentation-goroutines-no-recover-or-shutdown
+      owner: human:buger
     - obligation_class: error_handling
       reason: 'Deferred: required error_handling test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'
       tracking: .proof/deferred-witness-backlog.md
@@ -87,6 +80,10 @@ obligation_deferrals:
     - obligation_class: errors_propagated
       reason: 'Deferred: required errors_propagated test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'
       tracking: .proof/deferred-witness-backlog.md
+      owner: human:buger
+    - obligation_class: panic_free_input_handling
+      reason: real untested obligation under known-issue instrumentation-goroutines-no-recover-or-shutdown; surfaced as visible tracked debt, not an overclaimed fix
+      tracking: instrumentation-goroutines-no-recover-or-shutdown
       owner: human:buger
 lifecycle:
     change_history:

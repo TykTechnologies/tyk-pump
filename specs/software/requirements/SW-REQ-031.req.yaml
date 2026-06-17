@@ -48,20 +48,12 @@ history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:17Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-16T20:38:50Z"
+    last_modified_at: "2026-06-17T08:03:23Z"
 obligation_checklist:
     - boundary
     - error_handling
+    - external_call_timeout_bounded
     - retry_policy_explicit
-obligation_suppressions:
-    - id: external_call_timeout_bounded
-      reason: Phase H custom opengrep rule go.backoff.maxelapsed-zero-is-unbounded surfaces ExponentialBackOff.MaxElapsedTime = 0 (retry forever). Tracked under KI storage-retry-maxelapsed-zero-is-unbounded with mitigation and remediation filed.
-      suppressed_by: human:leo
-      suppressed_at: "2026-06-01T19:11:43Z"
-      framework_refs:
-        - CWE CWE-1088,CWE-400
-        - NIST-800-53 SC-5
-        - OWASP-ASVS-v4 V11.1.4
 obligation_deferrals:
     - obligation_class: boundary
       reason: 'Deferred: required boundary test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'
@@ -70,6 +62,10 @@ obligation_deferrals:
     - obligation_class: error_handling
       reason: 'Deferred: required error_handling test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'
       tracking: .proof/deferred-witness-backlog.md
+      owner: human:buger
+    - obligation_class: external_call_timeout_bounded
+      reason: 'real untested obligation under known-issue storage-retry-maxelapsed-zero-is-unbounded; surfaced as visible tracked debt, not an overclaimed fix'
+      tracking: storage-retry-maxelapsed-zero-is-unbounded
       owner: human:buger
     - obligation_class: retry_policy_explicit
       reason: 'Deferred: required retry_policy_explicit test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'

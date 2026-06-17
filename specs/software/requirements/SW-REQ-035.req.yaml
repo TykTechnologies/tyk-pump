@@ -48,49 +48,37 @@ history:
     created_by: human:cli
     created_at: "2026-05-30T08:34:43Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-16T20:39:00Z"
+    last_modified_at: "2026-06-17T08:04:09Z"
 obligation_checklist:
     - boundary
+    - cancellation_observed
     - errors_propagated
+    - malformed_recovers_or_errors_loudly
+    - nil_safety
     - nominal
+    - process_exit_on_recoverable
     - query_timeout_bounded
-obligation_suppressions:
-    - id: cancellation_observed
-      reason: Phase H custom opengrep rule go.context.dropped-on-floor surfaces callers passing context.Background() despite receiving ctx. Tracked under KI mongo-pump-ignores-caller-context with mitigation and remediation filed.
-      suppressed_by: human:leo
-      suppressed_at: "2026-06-01T19:11:44Z"
-      framework_refs:
-        - CWE CWE-672,CWE-410
-        - DO-178C §6.3.3
-        - ISO-26262 Part 6 §7.4.13
-        - NIST-800-53 SC-5
-    - id: errors_propagated
-      reason: Phase H custom opengrep rule go.log.fatal-in-init / go.recursion.unbounded-on-error surfaces log.Fatal in Init and unbounded reconnect recursion; both are tracked under KIs pumps-logfatal-on-config-decode, elasticsearch-unbounded-reconnect-recursion, and influx-v1-unbounded-reconnect-recursion with mitigation and remediation already filed.
-      suppressed_by: human:leo
-      suppressed_at: "2026-06-01T19:11:44Z"
-      framework_refs:
-        - CWE CWE-703,CWE-252,CWE-754
-        - NIST-800-53 SI-11
-        - OWASP-ASVS-v4 V7.4.1,V7.4.2,V7.4.3
-    - id: malformed_recovers_or_errors_loudly
-      reason: 'Phase H custom opengrep rule go.mapstructure.lenient-decode surfaces lenient mapstructure.Decode calls. Tracked under KI mapstructure-decode-silently-drops-unknown-keys with mitigation (validate configs before deploy) and remediation (NewDecoder with ErrorUnused: true) filed.'
-      suppressed_by: human:leo
-      suppressed_at: "2026-06-01T19:11:44Z"
-      framework_refs:
-        - CWE CWE-20,CWE-755
-        - IEC-62304 §5.3.1
-        - MISRA-C Dir 4.14
-        - NIST-800-53 SI-10,SI-11
-        - OWASP-ASVS-v4 V5.1.3,V5.5.3
-    - id: nil_safety
-      reason: Phase H custom opengrep rule go.slice.preallocated-with-continue-on-error surfaces preallocated-with-holes idiom. Tracked under KI mongo-pump-writeuptime-nil-on-bad-msgpack with mitigation and remediation filed.
-      suppressed_by: human:leo
-      suppressed_at: "2026-06-01T19:11:44Z"
-    - id: process_exit_on_recoverable
-      reason: 'process_exit_on_recoverable code signal at pumps/mongo_selective.go:91: this pump''s Init() calls log.Fatal on a recoverable mapstructure.Decode/connect error, exiting the whole multi-pump process instead of returning the error so siblings continue. This exact failure-mode surface is already tracked, ship-dispositioned, and remediation-scoped by KI pumps-logfatal-on-config-decode (which enumerates this code_signal anchor in its evidence_manifests). Not a new ungoverned obligation gap.'
-      suppressed_by: human:leo
-      suppressed_at: "2026-06-11T16:07:46Z"
 obligation_deferrals:
+    - obligation_class: cancellation_observed
+      reason: 'real untested obligation under known-issue mongo-pump-ignores-caller-context; surfaced as visible tracked debt, not an overclaimed fix'
+      tracking: mongo-pump-ignores-caller-context
+      owner: human:buger
+    - obligation_class: errors_propagated
+      reason: 'real untested obligation under known-issue pumps-logfatal-on-config-decode; surfaced as visible tracked debt, not an overclaimed fix'
+      tracking: pumps-logfatal-on-config-decode
+      owner: human:buger
+    - obligation_class: malformed_recovers_or_errors_loudly
+      reason: 'real untested obligation under known-issue mapstructure-decode-silently-drops-unknown-keys; surfaced as visible tracked debt, not an overclaimed fix'
+      tracking: mapstructure-decode-silently-drops-unknown-keys
+      owner: human:buger
+    - obligation_class: nil_safety
+      reason: 'real untested obligation under known-issue mongo-pump-writeuptime-nil-on-bad-msgpack; surfaced as visible tracked debt, not an overclaimed fix'
+      tracking: mongo-pump-writeuptime-nil-on-bad-msgpack
+      owner: human:buger
+    - obligation_class: process_exit_on_recoverable
+      reason: 'real untested obligation under known-issue pumps-logfatal-on-config-decode; surfaced as visible tracked debt, not an overclaimed fix'
+      tracking: pumps-logfatal-on-config-decode
+      owner: human:buger
     - obligation_class: query_timeout_bounded
       reason: 'Deferred: required query_timeout_bounded test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'
       tracking: .proof/deferred-witness-backlog.md

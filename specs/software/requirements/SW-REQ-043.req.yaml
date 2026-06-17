@@ -48,10 +48,12 @@ history:
     created_by: human:cli
     created_at: "2026-05-30T08:35:37Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-16T20:38:59Z"
+    last_modified_at: "2026-06-17T08:04:03Z"
 obligation_checklist:
     - connection_leak_free
+    - malformed_recovers_or_errors_loudly
     - parameterized_only_write
+    - temporal_window_inclusive
 obligation_suppressions:
     - id: input_size_bounded
       reason: 'Phase N opengrep rule go.loop.increment-from-mutable-config flags pumps/sql*.go for-loops with i += c.SQLConf.BatchSize stride. SQL family DOES guard at Init (sql.go:260 sets default if 0) but the rule prefers co-located guards. Same bug class as KIs sqs-batchlimit-zero-infinite-loop and kinesis-splitintobatches-zero-infinite-loop with mitigation (Init-level guard) tracked. Not a new obligation gap.'
@@ -64,24 +66,18 @@ obligation_suppressions:
       reason: 'Phase N opengrep rule go.loop.increment-from-mutable-config — paired malformed_input on pumps/sql*.go BatchSize loops. Init-level zero-guard at sql.go:260 already mitigates; rule flags for co-located guard preference. Same class as KIs sqs/kinesis batch-limit zero-loop.'
       suppressed_by: buger
       suppressed_at: "2026-06-02T18:29:52Z"
-    - id: malformed_recovers_or_errors_loudly
-      reason: 'Phase H custom opengrep rule go.mapstructure.lenient-decode surfaces lenient mapstructure.Decode calls. Tracked under KI mapstructure-decode-silently-drops-unknown-keys with mitigation (validate configs before deploy) and remediation (NewDecoder with ErrorUnused: true) filed.'
-      suppressed_by: human:leo
-      suppressed_at: "2026-06-01T19:11:46Z"
-      framework_refs:
-        - CWE CWE-20,CWE-755
-        - IEC-62304 §5.3.1
-        - MISRA-C Dir 4.14
-        - NIST-800-53 SI-10,SI-11
-        - OWASP-ASVS-v4 V5.1.3,V5.5.3
-    - id: temporal_window_inclusive
-      reason: 'temporal_window_inclusive code signal at pumps/graph_sql_aggregate.go:106: this pump routes records into a per-day shard via AnalyticsRecord.TimeStamp.Format("20060102"), which inherits the record''s (possibly non-UTC) location. The unpinned-timezone root cause and its date-shard boundary ambiguity are filed as KI analytics-timestamp-timezone-convention-unpinned (ship_with_known_issue; mitigation: run gateway+pump with TZ=UTC; remediation: pin TimeStamp to UTC on decode). Genuine surface, documented and dispositioned — not an undocumented gap.'
-      suppressed_by: human:leo
-      suppressed_at: "2026-06-11T16:11:14Z"
 obligation_deferrals:
+    - obligation_class: malformed_recovers_or_errors_loudly
+      reason: 'real untested obligation under known-issue mapstructure-decode-silently-drops-unknown-keys; surfaced as visible tracked debt, not an overclaimed fix'
+      tracking: mapstructure-decode-silently-drops-unknown-keys
+      owner: human:buger
     - obligation_class: parameterized_only_write
       reason: 'Deferred: required parameterized_only_write test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'
       tracking: .proof/deferred-witness-backlog.md
+      owner: human:buger
+    - obligation_class: temporal_window_inclusive
+      reason: real untested obligation under known-issue analytics-timestamp-timezone-convention-unpinned; surfaced as visible tracked debt, not an overclaimed fix
+      tracking: analytics-timestamp-timezone-convention-unpinned
       owner: human:buger
 release_disposition: ship_with_known_issue
 lifecycle:

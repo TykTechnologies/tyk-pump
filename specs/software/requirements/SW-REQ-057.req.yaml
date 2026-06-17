@@ -48,38 +48,29 @@ history:
     created_by: human:cli
     created_at: "2026-05-30T08:37:10Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-16T20:38:29Z"
+    last_modified_at: "2026-06-17T08:02:34Z"
 obligation_checklist:
     - boundary
     - errors_propagated
     - external_call_timeout_bounded
-obligation_suppressions:
-    - id: errors_propagated
-      reason: Phase H custom opengrep rule go.log.fatal-in-init / go.recursion.unbounded-on-error surfaces log.Fatal in Init and unbounded reconnect recursion; both are tracked under KIs pumps-logfatal-on-config-decode, elasticsearch-unbounded-reconnect-recursion, and influx-v1-unbounded-reconnect-recursion with mitigation and remediation already filed.
-      suppressed_by: human:leo
-      suppressed_at: "2026-06-01T19:11:49Z"
-      framework_refs:
-        - CWE CWE-703,CWE-252,CWE-754
-        - NIST-800-53 SI-11
-        - OWASP-ASVS-v4 V7.4.1,V7.4.2,V7.4.3
-    - id: malformed_recovers_or_errors_loudly
-      reason: 'Phase H custom opengrep rule go.mapstructure.lenient-decode surfaces lenient mapstructure.Decode calls. Tracked under KI mapstructure-decode-silently-drops-unknown-keys with mitigation (validate configs before deploy) and remediation (NewDecoder with ErrorUnused: true) filed.'
-      suppressed_by: human:leo
-      suppressed_at: "2026-06-01T19:11:49Z"
-      framework_refs:
-        - CWE CWE-20,CWE-755
-        - IEC-62304 §5.3.1
-        - MISRA-C Dir 4.14
-        - NIST-800-53 SI-10,SI-11
-        - OWASP-ASVS-v4 V5.1.3,V5.5.3
-    - id: process_exit_on_recoverable
-      reason: 'process_exit_on_recoverable code signal at pumps/timestream.go:101: this pump''s Init() calls log.Fatal on a recoverable mapstructure.Decode/connect error, exiting the whole multi-pump process instead of returning the error so siblings continue. This exact failure-mode surface is already tracked, ship-dispositioned, and remediation-scoped by KI pumps-logfatal-on-config-decode (which enumerates this code_signal anchor in its evidence_manifests). Not a new ungoverned obligation gap.'
-      suppressed_by: human:leo
-      suppressed_at: "2026-06-11T16:07:48Z"
+    - malformed_recovers_or_errors_loudly
+    - process_exit_on_recoverable
 obligation_deferrals:
+    - obligation_class: errors_propagated
+      reason: 'real untested obligation under known-issue pumps-logfatal-on-config-decode; surfaced as visible tracked debt, not an overclaimed fix'
+      tracking: pumps-logfatal-on-config-decode
+      owner: human:buger
     - obligation_class: external_call_timeout_bounded
       reason: 'Deferred: required external_call_timeout_bounded test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'
       tracking: .proof/deferred-witness-backlog.md
+      owner: human:buger
+    - obligation_class: malformed_recovers_or_errors_loudly
+      reason: real untested obligation under known-issue mapstructure-decode-silently-drops-unknown-keys; surfaced as visible tracked debt, not an overclaimed fix
+      tracking: mapstructure-decode-silently-drops-unknown-keys
+      owner: human:buger
+    - obligation_class: process_exit_on_recoverable
+      reason: real untested obligation under known-issue pumps-logfatal-on-config-decode; surfaced as visible tracked debt, not an overclaimed fix
+      tracking: pumps-logfatal-on-config-decode
       owner: human:buger
 lifecycle:
     change_history:

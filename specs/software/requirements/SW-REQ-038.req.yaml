@@ -47,27 +47,23 @@ verification:
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:35:01Z"
-    last_modified_by: human:cli
-    last_modified_at: "2026-06-02T13:20:41Z"
+    last_modified_by: human:buger
+    last_modified_at: "2026-06-17T08:05:33Z"
 obligation_checklist:
     - concurrent
     - errors_propagated
+    - malformed_recovers_or_errors_loudly
     - nominal
 obligation_suppressions:
     - id: concurrent
       reason: 'Phase G: code_signal ''go.concurrency.goroutine-spawn'' + ''go.concurrency.channel-send'' at pumps/mcp_mongo.go:147/177 are the same purge fan-out as standard mongo pump (per-batch goroutine, buffered errCh sized to len(accumulateSet)). Disjoint per-batch state. Not a data-race obligation gap.'
       suppressed_by: buger
       suppressed_at: "2026-06-01T18:36:22Z"
-    - id: malformed_recovers_or_errors_loudly
-      reason: 'Phase H custom opengrep rule go.mapstructure.lenient-decode surfaces lenient mapstructure.Decode calls. Tracked under KI mapstructure-decode-silently-drops-unknown-keys with mitigation (validate configs before deploy) and remediation (NewDecoder with ErrorUnused: true) filed.'
-      suppressed_by: human:leo
-      suppressed_at: "2026-06-01T19:11:45Z"
-      framework_refs:
-        - CWE CWE-20,CWE-755
-        - IEC-62304 §5.3.1
-        - MISRA-C Dir 4.14
-        - NIST-800-53 SI-10,SI-11
-        - OWASP-ASVS-v4 V5.1.3,V5.5.3
+obligation_deferrals:
+    - obligation_class: malformed_recovers_or_errors_loudly
+      reason: real untested obligation under known-issue mapstructure-decode-silently-drops-unknown-keys; surfaced as visible tracked debt, not an overclaimed fix
+      tracking: mapstructure-decode-silently-drops-unknown-keys
+      owner: human:buger
 lifecycle:
     change_history:
         - date: "2026-05-30T08:43:46Z"
