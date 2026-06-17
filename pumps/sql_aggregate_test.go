@@ -10,6 +10,8 @@ import (
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
@@ -112,6 +114,148 @@ func TestSQLAggregateWriteData_Sharded(t *testing.T) {
 	}
 }
 
+func TestSQLAggregateDoAggregatedWriting_UsesProvidedTable_SQLite(t *testing.T) {
+	// TT-16778 coverage for CI environments that do not provide PostgreSQL:
+	// DoAggregatedWriting must use the caller-provided table for the insert
+	// target instead of falling back to the model's tyk_aggregated table.
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
+		UseJSONTags: true,
+		Logger:      logger.Default.LogMode(logger.Silent),
+	})
+	require.NoError(t, err)
+
+	ts := time.Date(2026, 3, 5, 12, 0, 0, 0, time.UTC)
+	table := analytics.AggregateSQLTable + "_" + ts.Format("20060102")
+	require.NoError(t, db.Table(table).AutoMigrate(&analytics.SQLAnalyticsRecordAggregate{}))
+	require.False(t, db.Migrator().HasTable(analytics.AggregateSQLTable))
+
+	pmp := &SQLAggregatePump{
+		SQLConf: &SQLAggregatePumpConf{
+			SQLConf: SQLConf{BatchSize: 1000},
+		},
+		db: db,
+	}
+	pmp.log = log.WithField("prefix", SQLAggregatePumpPrefix)
+
+	ag := aggregateRecordsForTest(t, "sqlite-direct-shard", ts)
+	require.NoError(t, pmp.DoAggregatedWriting(context.Background(), table, ag.OrgID, ag))
+
+	var shardCount int64
+	require.NoError(t, db.Table(table).Count(&shardCount).Error)
+	assert.Greater(t, shardCount, int64(0))
+	assert.False(t, db.Migrator().HasTable(analytics.AggregateSQLTable))
+}
+
+func TestSQLAggregateDoAggregatedWriting_Sharded(t *testing.T) {
+	skipTestIfNoPostgres(t)
+
+	// TT-16778 covers the MDCB already-aggregated analytics path: tyk-sink has
+	// already selected the date shard, and DoAggregatedWriting must insert into
+	// that caller-provided table rather than the model's default tyk_aggregated table.
+	ts := time.Date(2026, 3, 5, 12, 0, 0, 0, time.UTC)
+	table := analytics.AggregateSQLTable + "_" + ts.Format("20060102")
+	initTable := analytics.AggregateSQLTable + "_" + time.Now().Format("20060102")
+
+	t.Run("base table absent", func(t *testing.T) {
+		// Before the TT-16778 fix, GORM targeted tyk_aggregated for the insert
+		// and this failed with "relation tyk_aggregated does not exist" even
+		// though the selected shard existed.
+		pmp := SQLAggregatePump{}
+		cfg := newSQLConfig(true)
+		cfg["batch_size"] = 1000
+		require.NoError(t, pmp.Init(cfg))
+		t.Cleanup(func() {
+			_ = pmp.db.Migrator().DropTable(table)
+			_ = pmp.db.Migrator().DropTable(initTable)
+			_ = pmp.db.Migrator().DropTable(analytics.AggregateSQLTable)
+		})
+
+		require.NoError(t, pmp.db.Migrator().DropTable(analytics.AggregateSQLTable))
+		require.NoError(t, pmp.db.Table(table).AutoMigrate(&analytics.SQLAnalyticsRecordAggregate{}))
+		require.True(t, pmp.db.Migrator().HasTable(table))
+
+		ag := aggregateRecordsForTest(t, "direct-shard-no-base", ts)
+		require.NoError(t, pmp.DoAggregatedWriting(context.Background(), table, ag.OrgID, ag))
+
+		var shardCount int64
+		require.NoError(t, pmp.db.Table(table).Count(&shardCount).Error)
+		assert.Greater(t, shardCount, int64(0))
+		assert.False(t, pmp.db.Migrator().HasTable(analytics.AggregateSQLTable))
+	})
+
+	t.Run("base table present", func(t *testing.T) {
+		// TT-16778 also covers the case where the base table exists: the old
+		// insert target and ON CONFLICT update table did not match, producing
+		// the customer-observed missing FROM-clause error. Two writes prove the
+		// shard upsert path works.
+		pmp := SQLAggregatePump{}
+		cfg := newSQLConfig(true)
+		cfg["batch_size"] = 1000
+		require.NoError(t, pmp.Init(cfg))
+		t.Cleanup(func() {
+			_ = pmp.db.Migrator().DropTable(table)
+			_ = pmp.db.Migrator().DropTable(initTable)
+			_ = pmp.db.Migrator().DropTable(analytics.AggregateSQLTable)
+		})
+
+		require.NoError(t, pmp.db.Table(table).AutoMigrate(&analytics.SQLAnalyticsRecordAggregate{}))
+		require.NoError(t, pmp.db.Table(analytics.AggregateSQLTable).AutoMigrate(&analytics.SQLAnalyticsRecordAggregate{}))
+		require.True(t, pmp.db.Migrator().HasTable(table))
+
+		ag := aggregateRecordsForTest(t, "direct-shard-with-base", ts)
+		require.NoError(t, pmp.DoAggregatedWriting(context.Background(), table, ag.OrgID, ag))
+		require.NoError(t, pmp.DoAggregatedWriting(context.Background(), table, ag.OrgID, ag))
+
+		var baseCount int64
+		require.NoError(t, pmp.db.Table(analytics.AggregateSQLTable).Count(&baseCount).Error)
+		assert.Equal(t, int64(0), baseCount)
+
+		var total analytics.SQLAnalyticsRecordAggregate
+		err := pmp.db.Table(table).
+			Where("dimension = ? AND dimension_value = ?", "", "total").
+			First(&total).Error
+		require.NoError(t, err)
+		assert.Equal(t, 4, total.Hits)
+	})
+}
+
+func TestSQLAggregateDoAggregatedWriting_UnshardedWorkaround(t *testing.T) {
+	skipTestIfNoPostgres(t)
+
+	// This documents the confirmed TT-16778 workaround: with table sharding
+	// disabled the already-aggregated write goes to tyk_aggregated, and no date
+	// shard is created or required.
+	ts := time.Date(2026, 3, 5, 12, 0, 0, 0, time.UTC)
+	shardTable := analytics.AggregateSQLTable + "_" + ts.Format("20060102")
+
+	pmp := SQLAggregatePump{}
+	cfg := newSQLConfig(false)
+	cfg["batch_size"] = 1000
+	cfg["omit_index_creation"] = true
+	require.NoError(t, pmp.Init(cfg))
+	t.Cleanup(func() {
+		_ = pmp.db.Migrator().DropTable(shardTable)
+		_ = pmp.db.Migrator().DropTable(analytics.AggregateSQLTable)
+	})
+
+	require.NoError(t, pmp.db.Migrator().DropTable(shardTable))
+	require.NoError(t, pmp.db.Migrator().DropTable(analytics.AggregateSQLTable))
+	require.NoError(t, pmp.db.Table(analytics.AggregateSQLTable).AutoMigrate(&analytics.SQLAnalyticsRecordAggregate{}))
+
+	ag := aggregateRecordsForTest(t, "direct-base-workaround", ts)
+	require.NoError(t, pmp.DoAggregatedWriting(context.Background(), analytics.AggregateSQLTable, ag.OrgID, ag))
+	require.NoError(t, pmp.DoAggregatedWriting(context.Background(), analytics.AggregateSQLTable, ag.OrgID, ag))
+
+	require.False(t, pmp.db.Migrator().HasTable(shardTable))
+
+	var total analytics.SQLAnalyticsRecordAggregate
+	err := pmp.db.Table(analytics.AggregateSQLTable).
+		Where("dimension = ? AND dimension_value = ?", "", "total").
+		First(&total).Error
+	require.NoError(t, err)
+	assert.Equal(t, 4, total.Hits)
+}
+
 func TestSQLAggregateWriteData(t *testing.T) {
 	skipTestIfNoPostgres(t)
 	pmp := &SQLAggregatePump{}
@@ -197,6 +341,30 @@ func TestSQLAggregateWriteData(t *testing.T) {
 			}
 		})
 	}
+}
+
+func aggregateRecordsForTest(t *testing.T, orgID string, ts time.Time) analytics.AnalyticsRecordAggregate {
+	t.Helper()
+
+	records := []interface{}{
+		analytics.AnalyticsRecord{
+			OrgID:        orgID,
+			APIID:        "api-1",
+			ResponseCode: http.StatusOK,
+			TimeStamp:    ts,
+		},
+		analytics.AnalyticsRecord{
+			OrgID:        orgID,
+			APIID:        "api-1",
+			ResponseCode: http.StatusInternalServerError,
+			TimeStamp:    ts.Add(time.Second),
+		},
+	}
+
+	analyticsPerOrg := analytics.AggregateData(records, false, nil, "", 60)
+	ag, ok := analyticsPerOrg[orgID]
+	require.True(t, ok, "AggregateData() must produce an aggregate for org %q", orgID)
+	return ag
 }
 
 func TestSQLAggregateWriteDataValues(t *testing.T) {
