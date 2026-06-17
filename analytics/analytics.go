@@ -75,6 +75,8 @@ type AnalyticsRecord struct {
 	TrackPath     bool           `json:"track_path" gorm:"column:trackpath"`
 	ExpireAt      time.Time      `bson:"expireAt" json:"expireAt"`
 	ApiSchema     string         `json:"api_schema" bson:"-" gorm:"-:all"` //nolint
+	OriginalPath  string         `json:"original_path" gorm:"column:originalpath"`
+	ListenPath    string         `json:"listen_path" gorm:"column:listenpath"`
 
 	GraphQLStats   GraphQLStats `json:"graphql_stats" bson:"-" gorm:"-:all"`
 	MCPStats       MCPStats     `json:"mcp_stats" bson:"-" gorm:"-:all"`
@@ -208,7 +210,7 @@ func (a *AnalyticsRecord) GetFieldNames() []string {
 	fields = append(fields, a.Geo.GetFieldNames()...)
 	fields = append(fields, a.Network.GetFieldNames()...)
 	fields = append(fields, a.Latency.GetFieldNames()...)
-	return append(fields, "Tags", "Alias", "TrackPath", "ExpireAt", "ApiSchema")
+	return append(fields, "Tags", "Alias", "TrackPath", "ExpireAt", "ApiSchema", "OriginalPath", "ListenPath")
 }
 
 func (n *NetworkStats) GetLineValues() []string {
@@ -276,6 +278,7 @@ func (a *AnalyticsRecord) GetLineValues() []string {
 	fields = append(fields, strconv.FormatBool(a.TrackPath))
 	fields = append(fields, a.ExpireAt.String())
 	fields = append(fields, a.ApiSchema)
+	fields = append(fields, a.OriginalPath, a.ListenPath)
 
 	return fields
 }

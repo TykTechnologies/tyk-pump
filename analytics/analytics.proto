@@ -42,6 +42,8 @@ message AnalyticsRecord {
   string ApiSchema = 31;
   GraphQLStats GraphQLStats = 32;
   MCPStats MCPStats = 33;
+  string OriginalPath = 34;
+  string ListenPath = 35;
 }
 
 message Latency {

@@ -74,9 +74,7 @@ func Init() {
 
 	showDecodeDeprecationWarnings()
 
-	if SystemConfig.LogFormat == "json" {
-		log.Formatter = &logrus.JSONFormatter{}
-	}
+	logger.SetupFormatter(SystemConfig.LogFormat, logger.EnvTykLogformat)
 
 	envDemo := os.Getenv("TYK_PMP_BUILDDEMODATA")
 	if envDemo != "" {
