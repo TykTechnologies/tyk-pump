@@ -48,7 +48,7 @@ history:
     created_by: human:cli
     created_at: "2026-05-30T08:39:51Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-16T20:39:27Z"
+    last_modified_at: "2026-06-17T07:17:09Z"
 obligation_checklist:
     - atomicity
     - concurrent
@@ -56,10 +56,6 @@ obligation_checklist:
     - ordering_guarantees_documented
     - parameterized_only_write
 obligation_suppressions:
-    - id: atomicity
-      reason: 'SQL aggregate upsert atomicity (via gorm clause.OnConflict on id) negative evidence requires injecting a transaction failure mid-upsert (e.g. constraint violation on the unique index, connection drop between insert and update), which the local Postgres testcontainer is not configured to do. The closest existing assertion is TestEnsureIndexSQLAggregate negative case for index creation on missing tables, but that exercises DDL not DML atomicity. Future work: chaos-injection wrapper around the GORM session.'
-      suppressed_by: buger
-      suppressed_at: "2026-05-30T09:03:14Z"
     - id: concurrent
       reason: 'Phase G: code_signal ''go.concurrency.goroutine-spawn'' + ''go.concurrency.channel-send'' at pumps/sql_aggregate.go:171/182 are the optional background-index creation pattern (single goroutine wrapping createIndexFn, signals via backgroundIndexCreated channel after wg.Wait synchronization). gorm db handle is concurrency-safe. Not a data-race obligation gap.'
       suppressed_by: buger
@@ -102,6 +98,10 @@ obligation_suppressions:
         - NIST-800-53 SI-10
         - OWASP-ASVS-v4 V5.3.4,V5.3.5
 obligation_deferrals:
+    - obligation_class: atomicity
+      reason: 'SQL aggregate upsert atomicity (gorm OnConflict) negative test needs injected mid-upsert transaction failure the local Postgres testcontainer is not configured for; obligation required, chaos-injection harness is future work.'
+      tracking: .proof/deferred-witness-backlog.md
+      owner: human:buger
     - obligation_class: monotonicity
       reason: 'Deferred: required monotonicity test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'
       tracking: .proof/deferred-witness-backlog.md

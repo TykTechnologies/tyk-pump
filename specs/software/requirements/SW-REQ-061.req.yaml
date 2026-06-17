@@ -50,21 +50,12 @@ verification:
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:37:50Z"
-    last_modified_by: human:cli
-    last_modified_at: "2026-06-03T06:56:05Z"
+    last_modified_by: human:buger
+    last_modified_at: "2026-06-17T07:17:09Z"
 obligation_checklist:
     - boundary
     - denial_of_service_resistant
 obligation_suppressions:
-    - id: denial_of_service_resistant
-      reason: Tag-list bounding is enforced via the fact-based ThresholdLenTagList constant (default 1000) checked in DoAggregatedWriting; the path emits a Warn-level alert rather than truncating or rejecting input. A fuzz harness exercising the printAlert/getListOfCommonPrefix path with adversarial tag distributions would be valuable future work but does not exist today. The current implementation does not allocate per-tag; pathological inputs are bounded by the size of the inbound batch, which is upstream-bounded by SYS-REQ-010.
-      suppressed_by: buger
-      suppressed_at: "2026-05-30T09:03:11Z"
-      framework_refs:
-        - CWE CWE-400,CWE-1333
-        - MISRA-C Rule 17.2
-        - NIST-800-53 SC-5
-        - OWASP-ASVS-v4 V11.1.4
     - id: errors_propagated
       reason: Phase H custom opengrep rule go.log.fatal-in-init / go.recursion.unbounded-on-error surfaces log.Fatal in Init and unbounded reconnect recursion; both are tracked under KIs pumps-logfatal-on-config-decode, elasticsearch-unbounded-reconnect-recursion, and influx-v1-unbounded-reconnect-recursion with mitigation and remediation already filed.
       suppressed_by: human:leo
@@ -83,6 +74,11 @@ obligation_suppressions:
         - MISRA-C Dir 4.14
         - NIST-800-53 SI-10,SI-11
         - OWASP-ASVS-v4 V5.1.3,V5.5.3
+obligation_deferrals:
+    - obligation_class: denial_of_service_resistant
+      reason: 'Tag-list DoS resistance: a fuzz harness exercising printAlert/getListOfCommonPrefix with adversarial tag distributions does not exist today; obligation required, fuzz evidence is future work.'
+      tracking: .proof/deferred-witness-backlog.md
+      owner: human:buger
 lifecycle:
     change_history:
         - date: "2026-05-30T08:43:47Z"

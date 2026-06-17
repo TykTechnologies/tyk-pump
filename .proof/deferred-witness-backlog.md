@@ -143,6 +143,27 @@ a visible WARNING in `obligation_evidence_complete`, not a silent suppression.
 
 ---
 
+## Section A2 — Honesty-pass reclassifications (deeper suppression scan, 6 items)
+
+Deeper scan of the remaining `obligation_suppressions` (post-102-conversion) found
+six entries whose rationale was DEFERRAL-flavored — the obligation genuinely
+applies and a real gap is acknowledged, but the satisfying test/remediation is
+postponed — hiding among the genuine not-applicable set. These were converted from
+`obligation_suppressions` to `obligation_deferrals` (honest, tracked debt) by
+`PROOF_ACTOR=human:buger`. The remaining suppressions on these requirements stay
+as genuine not-applicable.
+
+| Requirement | Obligation | Deciding rationale | Tracking |
+|-------------|------------|--------------------|----------|
+| SW-REQ-001 | fanout_panic_isolated | execPumpWriting inner goroutine has no defer recover(); KI pump-fanout-panic-not-recovered disposition=**fix** (remediation committed, not landed) | KI pump-fanout-panic-not-recovered |
+| SW-REQ-001 | failure_independence_proven | independence proof pends the same fix-dispositioned panic-isolation hole | KI pump-fanout-panic-not-recovered |
+| SW-REQ-039 | atomicity | MCP-mongo-aggregate $inc atomicity negative test needs a fault-injecting Mongo harness not in CI; future work | this backlog |
+| SW-REQ-060 | atomicity | Mongo $inc atomicity negative test needs fault-injection CI cannot provision; future work | this backlog |
+| SW-REQ-067 | atomicity | SQL aggregate upsert atomicity negative test needs chaos-injection the Postgres testcontainer lacks; future work | this backlog |
+| SW-REQ-061 | denial_of_service_resistant | tag-list fuzz harness "does not exist today"; future work | this backlog |
+
+---
+
 ## Section B — End-to-end stakeholder acceptance criteria deferred (10 items)
 
 Deferred via `witness_deferred` on each criterion (mechanism mirrors reqproof
