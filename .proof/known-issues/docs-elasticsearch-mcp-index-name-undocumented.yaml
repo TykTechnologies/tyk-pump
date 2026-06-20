@@ -1,10 +1,13 @@
 id: docs-elasticsearch-mcp-index-name-undocumented
 title: 'Documentation gap: Elasticsearch pump mcp_index_name meta field undocumented in tyk-docs'
+introduced_in: inception
 description: pumps/elasticsearch.go:96 declares MCPIndexName string with mapstructure tag mcp_index_name; lines 452-455 route MCP-classified records to this separate index. tyk-docs/content/shared/pump-config.md's elasticsearch meta section (~lines 740-960) does not mention this field. Operators have no way to learn that MCP records can be routed to a separate index.
 affected_requirements:
     - SW-REQ-069
 commands:
     - grep -n 'mcp_index_name\|MCPIndexName' /Users/buger/go/src/tyk-pump/pumps/elasticsearch.go
+reproducer_command: |-
+  grep -n 'mcp_index_name\|MCPIndexName' /Users/buger/go/src/tyk-pump/pumps/elasticsearch.go
 severity: medium
 mitigation: Default behavior (empty mcp_index_name) routes MCP records to the same index as analytics records.
 remediation: Add pumps.elasticsearch.meta.mcp_index_name entry to pump-config.md.

@@ -75,12 +75,12 @@ func (g *GraphSQLPump) Init(conf interface{}) error {
 		return MigrateAllShardedTables(g.db, g.tableName, "graph", &analytics.GraphRecord{}, g.log)
 	}
 
-	if err := HandleTableMigration(g.db, &g.Conf.SQLConf, g.tableName, &analytics.GraphRecord{}, g.log, migrateShardedTables); err != nil { //mcdc:ignore HandleTableMigration err arm needs fake migrator; KI mcdc-pumps-below-95
+	if err := HandleTableMigration(g.db, &g.Conf.SQLConf, g.tableName, &analytics.GraphRecord{}, g.log, migrateShardedTables); err != nil { //mcdc:ignore:capability-gap HandleTableMigration err arm needs fake migrator; KI mcdc-pumps-below-95 [ki: mcdc-pumps-below-95]
 		return err
 	}
 	g.db = g.db.Table(g.tableName)
 
-	if g.db.Error != nil { //mcdc:ignore db.Error arm unreachable after successful Table(); KI mcdc-pumps-below-95
+	if g.db.Error != nil { //mcdc:ignore:capability-gap db.Error arm unreachable after successful Table(); KI mcdc-pumps-below-95 [ki: mcdc-pumps-below-95]
 		g.log.WithError(err).Error("error initializing pump")
 		return err
 	}
@@ -148,8 +148,8 @@ func (g *GraphSQLPump) WriteData(ctx context.Context, data []interface{}) error 
 
 			table := g.tableName + "_" + recDate
 			g.db = g.db.Table(table)
-			if !g.db.Migrator().HasTable(table) { //mcdc:ignore HasTable=T arm requires same-shard re-write; KI mcdc-pumps-below-95
-				if err := g.db.AutoMigrate(&analytics.GraphRecord{}); err != nil { //mcdc:ignore AutoMigrate err arm needs fake migrator; KI mcdc-pumps-below-95
+			if !g.db.Migrator().HasTable(table) { //mcdc:ignore:capability-gap HasTable=T arm requires same-shard re-write; KI mcdc-pumps-below-95 [ki: mcdc-pumps-below-95]
+				if err := g.db.AutoMigrate(&analytics.GraphRecord{}); err != nil { //mcdc:ignore:capability-gap AutoMigrate err arm needs fake migrator; KI mcdc-pumps-below-95 [ki: mcdc-pumps-below-95]
 					g.log.Error("error creating table for record")
 					g.log.WithError(err).Debug("error creating table for record")
 				}
@@ -166,7 +166,7 @@ func (g *GraphSQLPump) WriteData(ctx context.Context, data []interface{}) error 
 				ends = len(recs)
 			}
 			tx := g.db.WithContext(ctx).Create(recs[ri:ends])
-			if tx.Error != nil { //mcdc:ignore tx.Error arm needs fake DB seam; KI mcdc-pumps-below-95
+			if tx.Error != nil { //mcdc:ignore:capability-gap tx.Error arm needs fake DB seam; KI mcdc-pumps-below-95 [ki: mcdc-pumps-below-95]
 				g.log.Error(tx.Error)
 			}
 		}

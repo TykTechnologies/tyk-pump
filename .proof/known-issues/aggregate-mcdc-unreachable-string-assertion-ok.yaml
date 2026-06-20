@@ -1,10 +1,13 @@
 id: aggregate-mcdc-unreachable-string-assertion-ok
 title: MC/DC F-side of '*.(string)' assertion on AnalyticsRecord string fields is structurally unreachable
+introduced_in: inception
 description: 'Four decisions in incrementAggregate (analytics/aggregate.go:871, :894, :901, :925) use ''val, ok := value.(string)'' where value comes from structs.Map() over the AnalyticsRecord fields APIID, APIVersion, APIKey, OauthID. Those fields are declared as ''string'' in AnalyticsRecord so the type assertion can never fail: ok is always true. The MC/DC tooling therefore can never observe the F side of ''ok'', leaving the && short-circuit decision incomplete without modifying production source to add //mcdc:ignore comments. Two sibling cases in the same switch already carry //mcdc:ignore comments for the same reason (lines 878 and 967).'
 affected_requirements:
     - SW-REQ-011
 commands:
     - go test -count=1 -run TestIncrementAggregate_ResponseCodeMinusOne_NetworkBranch ./analytics
+reproducer_command: |-
+  go test -count=1 -run TestIncrementAggregate_ResponseCodeMinusOne_NetworkBranch ./analytics
 severity: low
 mitigation: These are defensive type assertions whose F branch is reflexively safe (the if-body is skipped, but the c counter is still consistent because the surrounding switch arms only consume val when ok is true).
 remediation: 'Add //mcdc:ignore comments on the same pattern as analytics/aggregate.go:878 and :967 (defensive: APIID/APIVersion/APIKey/OauthID are string fields in AnalyticsRecord; structs.Map preserves the string type so the assertion cannot fail) on lines 871, 894, 901, and 925.'

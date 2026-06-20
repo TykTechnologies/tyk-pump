@@ -1,10 +1,13 @@
 id: storage-ensureconnection-error-path-unreachable
 title: ensureConnection / SetKey / GetAndDeleteSet ensureConnection error paths unreachable due to unbounded backoff
+introduced_in: inception
 description: storage/temporal_storage.go:347 wraps connect() in backoff.Retry using the policy from retry.GetTemporalStorageExponentialBackoff(), whose MaxElapsedTime=0 (see KI storage-retry-maxelapsed-zero-is-unbounded). With unbounded retries, backoff.Retry only returns an error when the operation returns backoff.Permanent(err). The current operation wraps connect() and returns plain errors, so the err != nil arm at line 347 can never fire in a finite-time test. By consequence, the err != nil arms at lines 268 (GetAndDeleteSet ensureConnection failure) and 315 (SetKey ensureConnection failure) are also unreachable from external tests. MC/DC for these three decisions cannot be lifted without either capping MaxElapsedTime or wrapping classify-as-permanent errors in backoff.Permanent().
 affected_requirements:
     - SW-REQ-031
 commands:
     - go test -count=1 -timeout 180s ./storage
+reproducer_command: |-
+  go test -count=1 -timeout 180s ./storage
 severity: low
 mitigation: These guards exist for the case where reconnect retries exhaust. With the current unbounded policy that case never materialises in normal operation; operators rely on log monitoring (see KI storage-retry-maxelapsed-zero-is-unbounded for context).
 remediation: Either set MaxElapsedTime to a finite value in GetTemporalStorageExponentialBackoff (which would also let the failure paths be tested), or wrap the unsupported-database-type error inside ensureConnection's operation with backoff.Permanent() so the loop terminates promptly on permanent errors.

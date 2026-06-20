@@ -45,7 +45,6 @@ type testHandler struct {
 
 var splunkTestLog = log.WithField("prefix", "splunk_test")
 
-// Verifies: SW-REQ-048
 func (h *testHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.reqCount++
 
@@ -96,6 +95,7 @@ func (h *testHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 // Verifies: SW-REQ-048
+// SW-REQ-048:cert_validation_strict:nominal
 func TestSplunkInit(t *testing.T) {
 	t.Run("missing token", func(t *testing.T) {
 		_, err := newSplunkClient(
@@ -191,6 +191,10 @@ func TestSplunkInit(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotNil(t, client)
 		assert.Equal(t, httpsURL+defaultPath, client.CollectorURL)
+		transport, ok := client.httpClient.Transport.(*http.Transport)
+		assert.True(t, ok)
+		assert.NotNil(t, transport.TLSClientConfig)
+		assert.False(t, transport.TLSClientConfig.InsecureSkipVerify)
 	})
 
 	t.Run("valid configuration with TLS skip verify", func(t *testing.T) {
@@ -497,7 +501,6 @@ func Test_SplunkWriteDataBatch(t *testing.T) {
 }
 
 // getEventBytes returns the bytes amount of the marshalled events struct
-// Verifies: SW-REQ-048
 func getEventBytes(records []interface{}, t *testing.T) int {
 	result := 0
 

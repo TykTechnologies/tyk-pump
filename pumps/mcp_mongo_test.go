@@ -171,7 +171,6 @@ func TestMCPMongoPump_WriteData_EmptyData(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-// Verifies: SW-REQ-038
 func newMCPMongoPump(t *testing.T) *MCPMongoPump {
 	t.Helper()
 	analytics.MCPSQLTableName = ""
@@ -190,6 +189,7 @@ func newMCPMongoPump(t *testing.T) *MCPMongoPump {
 }
 
 // Verifies: SW-REQ-038
+// SW-REQ-038:errors_propagated:nominal
 func TestMCPMongoPump_WriteData_Roundtrip(t *testing.T) {
 	pump := newMCPMongoPump(t)
 

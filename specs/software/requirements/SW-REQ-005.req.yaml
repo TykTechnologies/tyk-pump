@@ -19,13 +19,14 @@ variables:
     - instrumentation_enabled
     - statsd_endpoint_configured
     - statsd_sink_added
+    - metrics_emitted
 traces:
     satisfies:
         - SYS-REQ-013
         - SYS-REQ-017
-    reviewed_at: "2026-06-03T07:18:16.506476Z"
-    reviewed_by: human:buger
-    reviewed_fingerprint: sha256:e493e1a4475ff7096289a67c9d183e093797e7df29bcd914a6604d091defecee
+    reviewed_at: "2026-06-19T14:05:37.958641Z"
+    reviewed_by: ai:codex
+    reviewed_fingerprint: sha256:02d07b0c32789b866ef0b4f5b0de3361e536b53746a51fc980f16662195cdcf7
 verification:
     assurance_level: B
     formalization_status: valid
@@ -33,36 +34,15 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-03T07:37:59Z"
-        comment: 'Phase Q: catalog obligation attachments — adds errors_propagated (instrumentation sink declared-swallow contract). See .proof/catalog-obligation-proposals.md.'
-        fingerprint: sha256:5230f903b356f5f042aeb52f06044ad0cb8f0f7c0b5a032d8d36bfe31bddc23a
-        ai_generated: true
-    impact_reviews:
-        - requirement: SW-REQ-005
-          artifact: instrumentation_helpers.go
-          decision: no-authored-change
-          reviewer: buger
-          reason: 'Phase P: FRETish enrichment per per-req review pass — added decision variables expose existing code branches; production code paths unchanged, only requirement metadata altered. Test annotations updated to match new MC/DC truth tables.'
-          base: origin/master
-          requirement_fingerprint: sha256:e493e1a4475ff7096289a67c9d183e093797e7df29bcd914a6604d091defecee
-          approval_fingerprint: sha256:5230f903b356f5f042aeb52f06044ad0cb8f0f7c0b5a032d8d36bfe31bddc23a
-          artifact_fingerprint: sha256:72a2bad60b43c8be4c92e5cd92985614bf1e924b0e1ee2277f667ce4c736a988
-          reviewed_at: "2026-06-03T07:17:20Z"
-        - requirement: SW-REQ-005
-          artifact: instrumentation_statsd_sink.go
-          decision: no-authored-change
-          reviewer: buger
-          reason: 'Phase P: FRETish enrichment per per-req review pass — added decision variables expose existing code branches; production code paths unchanged, only requirement metadata altered. Test annotations updated to match new MC/DC truth tables.'
-          base: origin/master
-          requirement_fingerprint: sha256:e493e1a4475ff7096289a67c9d183e093797e7df29bcd914a6604d091defecee
-          approval_fingerprint: sha256:5230f903b356f5f042aeb52f06044ad0cb8f0f7c0b5a032d8d36bfe31bddc23a
-          artifact_fingerprint: sha256:a562aab524243ed4291065f319b0a198374c1bd10938c27f9c14e2df702af87c
-          reviewed_at: "2026-06-03T07:17:20Z"
+        reviewed_at: "2026-06-19T20:08:14Z"
+        comment: 'Spec evidence-debt refresh: reviewed KI-gated obligation_deferrals added for required-but-unwitnessed obligations. Each deferral links to an open traced KnownIssue and leaves the gap as auto-expiring accepted KI-debt rather than claiming product/test fixes.'
+        fingerprint: sha256:72627351c1ffeac0d7aa81448917c283fee62de9fa185d8c5b1ee9c864241dc0
+        ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:14Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-17T08:03:09Z"
+    last_modified_at: "2026-06-19T20:08:14Z"
 obligation_checklist:
     - concurrent
     - error_handling
@@ -70,21 +50,20 @@ obligation_checklist:
     - panic_free_input_handling
 obligation_deferrals:
     - obligation_class: concurrent
-      reason: 'real untested obligation under known-issue instrumentation-goroutines-no-recover-or-shutdown; surfaced as visible tracked debt, not an overclaimed fix'
-      tracking: instrumentation-goroutines-no-recover-or-shutdown
+      reason: Required concurrency evidence is parked because instrumentation goroutine lifecycle gaps are tracked by this KI.
+      tracking: known-issue:instrumentation-goroutines-no-recover-or-shutdown
       owner: human:buger
-    - obligation_class: error_handling
-      reason: 'Deferred: required error_handling test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'
-      tracking: .proof/deferred-witness-backlog.md
-      owner: human:buger
+      ki_ref: instrumentation-goroutines-no-recover-or-shutdown
     - obligation_class: errors_propagated
-      reason: 'Deferred: required errors_propagated test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'
-      tracking: .proof/deferred-witness-backlog.md
+      reason: Required error-propagation evidence is parked because StatsD setup still calls log.Fatal on failure.
+      tracking: known-issue:logfatal-on-statsd-setup
       owner: human:buger
+      ki_ref: logfatal-on-statsd-setup
     - obligation_class: panic_free_input_handling
-      reason: real untested obligation under known-issue instrumentation-goroutines-no-recover-or-shutdown; surfaced as visible tracked debt, not an overclaimed fix
-      tracking: instrumentation-goroutines-no-recover-or-shutdown
+      reason: Required panic-free evidence is parked because instrumentation goroutines lack recover and shutdown handling.
+      tracking: known-issue:instrumentation-goroutines-no-recover-or-shutdown
       owner: human:buger
+      ki_ref: instrumentation-goroutines-no-recover-or-shutdown
 lifecycle:
     change_history:
         - date: "2026-05-29T15:46:43Z"
@@ -112,3 +91,13 @@ lifecycle:
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-03T06:55:36Z comment="Phase P: FRETish enrichment per per-req review pass — adds statsd_endpoint_configured to when conjunct so MC/DC aligns SW with parent SYS-REQ-013 — adds statsd_endpoint_configured gate forcing the missing-endpoint witness.")'
           changed_by: human:cli
+        - date: "2026-06-19T19:54:58Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-03T07:37:59Z comment="Phase Q: catalog obligation attachments — adds errors_propagated (instrumentation sink declared-swallow contract). See .proof/catalog-obligation-proposals.md.")'
+          changed_by: human:cli
+        - date: "2026-06-19T20:08:14Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-19T19:54:58Z comment="Spec audit stale-approval refresh: reviewed current YAML diffs vs HEAD plus KI/proof metadata; changes are metadata, trace, and evidence-honesty updates that surface gaps via KnownIssues/deferrals without claiming product fixes.")'
+          changed_by: human:buger

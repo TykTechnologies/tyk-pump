@@ -39,7 +39,10 @@ func TestAnalyticsRecord_SetExpiry_Branches(t *testing.T) {
 
 // Verifies: SW-REQ-010
 // Verifies: SYS-REQ-009
+// SW-REQ-010:boundary:nominal
 // SW-REQ-010:boundary:negative
+// MCDC SW-REQ-010: filter_true=F, in_should_filter=T, outside_allow_list=F, skip_match=F => TRUE
+// MCDC SYS-REQ-009: record_excluded=F, record_matches_block_filter=F, record_outside_allow_list=F => TRUE
 func TestShouldFilter_SkipAndAllowBranches(t *testing.T) {
 	rec := AnalyticsRecord{APIID: "api1", OrgID: "org1", ResponseCode: 200}
 	cases := []struct {

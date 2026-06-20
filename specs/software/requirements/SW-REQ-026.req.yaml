@@ -33,27 +33,6 @@ verification:
         comment: 'Phase Q: catalog obligation attachments — adds cancellation_observed (Stdout WriteData swallows ctx err, KI stdout-writedata-swallows-ctx-error). See .proof/catalog-obligation-proposals.md.'
         fingerprint: sha256:a4190fe873fae4c1d9fb7a11daf5ce1f2f0a23e42c1c6bc0e7ca9261519786c1
         ai_generated: true
-    impact_reviews:
-        - requirement: SW-REQ-026
-          artifact: pumps/dummy.go
-          decision: no-authored-change
-          reviewer: buger
-          reason: 'Phase L3 aggressive: FRETish formalization added per L3 plan; production .go behaviour and code paths unchanged — only requirement metadata (fretish text + formalization_strategy + variables) altered. Test annotations may follow but do not change runtime behaviour.'
-          base: origin/master
-          requirement_fingerprint: sha256:84f8aaa8e626800b30a0ff7152ee3a4aa65033a2bbabb85f79d97acce60a79a4
-          approval_fingerprint: sha256:a4190fe873fae4c1d9fb7a11daf5ce1f2f0a23e42c1c6bc0e7ca9261519786c1
-          artifact_fingerprint: sha256:86e6d0947546b5d3efd7cb43a1d720500ac92b8bdb14340aabb5ebd78e7150bf
-          reviewed_at: "2026-06-02T14:30:20Z"
-        - requirement: SW-REQ-026
-          artifact: pumps/stdout.go
-          decision: no-authored-change
-          reviewer: buger
-          reason: 'Phase L3 aggressive: FRETish formalization added per L3 plan; production .go behaviour and code paths unchanged — only requirement metadata (fretish text + formalization_strategy + variables) altered. Test annotations may follow but do not change runtime behaviour.'
-          base: origin/master
-          requirement_fingerprint: sha256:84f8aaa8e626800b30a0ff7152ee3a4aa65033a2bbabb85f79d97acce60a79a4
-          approval_fingerprint: sha256:a4190fe873fae4c1d9fb7a11daf5ce1f2f0a23e42c1c6bc0e7ca9261519786c1
-          artifact_fingerprint: sha256:217f98f97bd52305ba921d8b5d3e867fde7aa9f73037ce941e045c60d83f2ef7
-          reviewed_at: "2026-06-02T14:30:20Z"
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:16Z"
@@ -66,21 +45,25 @@ obligation_checklist:
     - nominal
     - process_exit_on_recoverable
 obligation_deferrals:
-    - obligation_class: cancellation_observed
-      reason: 'Deferred: required cancellation_observed test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'
-      tracking: .proof/deferred-witness-backlog.md
-      owner: human:buger
     - obligation_class: errors_propagated
       reason: real untested obligation under known-issue pumps-logfatal-on-config-decode; surfaced as visible tracked debt, not an overclaimed fix
       tracking: pumps-logfatal-on-config-decode
+      ki_ref: pumps-logfatal-on-config-decode
       owner: human:buger
     - obligation_class: malformed_recovers_or_errors_loudly
       reason: real untested obligation under known-issue mapstructure-decode-silently-drops-unknown-keys; surfaced as visible tracked debt, not an overclaimed fix
       tracking: mapstructure-decode-silently-drops-unknown-keys
+      ki_ref: mapstructure-decode-silently-drops-unknown-keys
       owner: human:buger
     - obligation_class: process_exit_on_recoverable
       reason: real untested obligation under known-issue pumps-logfatal-on-config-decode; surfaced as visible tracked debt, not an overclaimed fix
       tracking: pumps-logfatal-on-config-decode
+      ki_ref: pumps-logfatal-on-config-decode
+      owner: human:buger
+    - obligation_class: cancellation_observed
+      reason: 'real cancellation propagation gap under known-issue stdout-writedata-swallows-ctx-error: stdout WriteData returns nil on ctx.Done instead of ctx.Err, so cancellation can be reported as success; surfaced as visible tracked debt, not an overclaimed fix'
+      tracking: stdout-writedata-swallows-ctx-error
+      ki_ref: stdout-writedata-swallows-ctx-error
       owner: human:buger
 lifecycle:
     change_history:

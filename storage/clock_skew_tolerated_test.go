@@ -10,6 +10,7 @@ import (
 
 // Verifies: SW-REQ-006
 // SW-REQ-006:clock_skew_tolerated:boundary
+// MCDC SW-REQ-006: chunk_partial=T, records_popped_and_expire_attempted=T, records_present=T => TRUE
 //
 // Contract: TemporalStorageHandler.GetAndDeleteSet calls Redis EXPIRE
 // with a relative TTL (time.Duration). Because Redis applies relative
@@ -23,16 +24,16 @@ import (
 // the TTL using its own clock and the client's local clock is
 // irrelevant. The test pins that contract:
 //
-//   1. Connect to a real Redis (via testcontainers, so the test runs
-//      against a true server clock).
-//   2. Pretend the client clock is skewed (we compute the TTL Duration
-//      with arithmetic that would yield a NEGATIVE absolute deadline
-//      if the implementation incorrectly converted it via time.Until
-//      against a skewed local clock).
-//   3. Assert: after a brief wall delay shorter than the TTL, the key
-//      is still alive — proving Redis is honouring the relative TTL
-//      and not silently expiring based on a client-supplied absolute
-//      timestamp.
+//  1. Connect to a real Redis (via testcontainers, so the test runs
+//     against a true server clock).
+//  2. Pretend the client clock is skewed (we compute the TTL Duration
+//     with arithmetic that would yield a NEGATIVE absolute deadline
+//     if the implementation incorrectly converted it via time.Until
+//     against a skewed local clock).
+//  3. Assert: after a brief wall delay shorter than the TTL, the key
+//     is still alive — proving Redis is honouring the relative TTL
+//     and not silently expiring based on a client-supplied absolute
+//     timestamp.
 //
 // If the implementation regressed to passing an absolute deadline
 // derived from the local clock (e.g. via EXPIREAT with time.Now()+ttl
@@ -87,6 +88,7 @@ func TestClockSkewTolerated_ExpireUsesRelativeTTL(t *testing.T) {
 
 // Verifies: SW-REQ-006
 // SW-REQ-006:clock_skew_tolerated:nominal
+// MCDC SW-REQ-006: chunk_partial=T, records_popped_and_expire_attempted=T, records_present=T => TRUE
 //
 // Sanity / structural witness: the public Expire API takes a
 // time.Duration parameter. This is the static guarantee that the

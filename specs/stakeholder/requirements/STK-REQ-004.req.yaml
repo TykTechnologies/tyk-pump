@@ -19,9 +19,8 @@ tags:
     - observability
 variables: []
 traces:
-    reviewed_at: "2026-06-16T13:43:45.752851Z"
+    reviewed_at: "2026-06-19T20:51:38Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:1c033f0edd73c5f35717f80f05d88c408948d83e40f5ecd50dc93f4f4f2d8245
 verification:
     assurance_level: B
     formalization_status: none
@@ -48,21 +47,17 @@ stakeholder:
         - id: AC-001
           text: An HTTP health-check endpoint reports process liveness for orchestration and load balancers.
           testable: true
+          verification_method: test
           derived_reqs:
             - SYS-REQ-012
             - SYS-REQ-027
-          witness_deferred:
-            reason: "No end-to-end acceptance test yet; deferred per hybrid disposition"
-            tracking: .proof/deferred-witness-backlog.md
         - id: AC-002
           text: When instrumentation is enabled, the pump emits purge timing and record-count metrics.
           testable: true
+          verification_method: test
           derived_reqs:
             - SYS-REQ-013
             - SYS-REQ-017
-          witness_deferred:
-            reason: "No end-to-end acceptance test yet; deferred per hybrid disposition"
-            tracking: .proof/deferred-witness-backlog.md
 lifecycle:
     change_history:
         - date: "2026-05-29T15:46:44Z"

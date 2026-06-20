@@ -106,7 +106,7 @@ func importsFragment(content, frag string) bool {
 // the witness is trustworthy without fabricating a build state the module does
 // not have.
 //
-//mcdc:ignore SYS-REQ-027: single_process_only=F => FALSE — single_process_only=F means the shipped module imports internal clustering/leader-election/coordination machinery (raft, memberlist, serf, etcd, olric, consul, k8s leader-election). The tyk-pump source tree imports none of these (scanned above), and this assertion plus CI fail before release if such an import were introduced, so a shipped build with single_process_only=F cannot exist. The violation is structurally prevented by the committed dependency set rather than produced by correct code. [reviewed: human:leo]
+//mcdc:ignore SYS-REQ-027: single_process_only=F => FALSE — single_process_only=F means the shipped module imports internal clustering/leader-election/coordination machinery (raft, memberlist, serf, etcd, olric, consul, k8s leader-election). The tyk-pump source tree imports none of these (scanned above), and this assertion plus CI fail before release if such an import were introduced, so a shipped build with single_process_only=F cannot exist. The violation is structurally prevented by the committed dependency set rather than produced by correct code. [reviewed: human:leo] [category: defensive]
 func TestSingleProcessInvariant_NoClusteringMachinery_SYSREQ027(t *testing.T) {
 	if hit, found := sourceImportsClusteringMachinery(t); found {
 		t.Fatalf("SYS-REQ-027 requires single-process operation with no clustering machinery, but found: %s", hit)

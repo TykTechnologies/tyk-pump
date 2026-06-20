@@ -15,29 +15,31 @@ variables:
       data_constraint:
         domain: integer
         variable: elapsed_ns
-        condition: "elapsed_ns > timeout_ns"
+        condition: elapsed_ns > timeout_ns
         parameters:
-          - name: elapsed_ns
-            type: int
-            constraint: ">= 0"
-          - name: timeout_ns
-            type: int
-            constraint: "> 0"
+            - name: elapsed_ns
+              type: int
+              constraint: '>= 0'
+            - name: timeout_ns
+              type: int
+              constraint: '> 0'
     - name: write_within_timeout
       type: bool
       direction: input
+      proof_auxiliary: true
+      proof_auxiliary_reason: Solver-only complement used for data-constraint completeness and exclusivity; no standalone behavioral requirement consumes it.
       description: A backend write completes within its configured timeout (complement of write_exceeds_timeout).
       data_constraint:
         domain: integer
         variable: elapsed_ns
-        condition: "elapsed_ns <= timeout_ns"
+        condition: elapsed_ns <= timeout_ns
         parameters:
-          - name: elapsed_ns
-            type: int
-            constraint: ">= 0"
-          - name: timeout_ns
-            type: int
-            constraint: "> 0"
+            - name: elapsed_ns
+              type: int
+              constraint: '>= 0'
+            - name: timeout_ns
+              type: int
+              constraint: '> 0'
     - name: write_aborted
       type: bool
       direction: output
@@ -65,30 +67,35 @@ variables:
       data_constraint:
         domain: integer
         variable: attempts
-        condition: "attempts >= max_attempts"
+        condition: attempts >= max_attempts
         parameters:
-          - name: attempts
-            type: int
-            constraint: ">= 0"
-          - name: max_attempts
-            type: int
-            constraint: ">= 1"
+            - name: attempts
+              type: int
+              constraint: '>= 0'
+            - name: max_attempts
+              type: int
+              constraint: '>= 1'
     - name: retry_attempts_remaining
       type: bool
       direction: input
+      proof_auxiliary: true
+      proof_auxiliary_reason: Solver-only complement used for data-constraint completeness and exclusivity; no standalone behavioral requirement consumes it.
       description: Retry attempts are still available below the configured maximum (complement of retry_attempts_exhausted).
       data_constraint:
         domain: integer
         variable: attempts
-        condition: "attempts < max_attempts"
+        condition: attempts < max_attempts
         parameters:
-          - name: attempts
-            type: int
-            constraint: ">= 0"
-          - name: max_attempts
-            type: int
-            constraint: ">= 1"
+            - name: attempts
+              type: int
+              constraint: '>= 0'
+            - name: max_attempts
+              type: int
+              constraint: '>= 1'
     - name: error_surfaced_to_caller
       type: bool
       direction: output
       description: The transient failure has been surfaced to the caller without further retries.
+independence:
+    declared: true
+    reason: 'System delivery requirements cover distinct reliability obligations: backend isolation, timeout abandonment, retry attempt, dispatch fanout, and final error surfacing.'

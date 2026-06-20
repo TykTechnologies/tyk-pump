@@ -1,0 +1,20 @@
+id: hybrid-rpc-retry-duration-not-deadline-bounded
+title: Hybrid RPC login retry budget is attempt-bounded but not tied to an explicit deadline
+introduced_in: inception
+description: 'pumps/hybrid.go:44-49 wraps hybrid RPC connection attempts with backoff.WithMaxRetries(backoff.NewExponentialBackOff(), 3). The attempt count is bounded, but the retry helper is not tied to the caller context or a requirement-level elapsed-time deadline. The retry_budget_bounded obligation for the hybrid RPC connection path is therefore tracked debt until the elapsed retry budget is specified and tested.'
+affected_requirements:
+    - SW-REQ-029
+environment_note: |-
+  Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source or rerunning the exponential-backoff code-signal scan.
+reproducer_command: rg -n "retryAndLog|WithMaxRetries|NewExponentialBackOff" pumps/hybrid.go
+severity: low
+risk: availability
+mitigation: Operators should configure sane RPC endpoints and rely on the three-attempt cap to bound repeated connection attempts in normal conditions.
+remediation: Tie the retry helper to a context/deadline or document the exact maximum elapsed retry window and add a witness for timeout exhaustion.
+owner: tyk-team
+release_disposition: ship_with_known_issue
+status: open
+history:
+    - at: "2026-06-19T00:00:00Z"
+      by: agent:codex
+      action: created

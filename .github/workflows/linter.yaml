@@ -58,6 +58,10 @@ jobs:
 
       - name: Go Test
         id: test
+        env:
+          REDIS_HOST: localhost
+          REDIS_PORT: "6379"
+          TYK_TEST_MONGO: "mongodb://localhost:27017/tyk_analytics"
         run: |
           PKGS="$(go list ./...)"
           OPTS="-count=1 -failfast -v"

@@ -25,7 +25,11 @@ import (
 // missing override surface). The T/F=FALSE pair is structurally infeasible
 // in the current factory — MaxElapsedTime=0 unconditionally yields an
 // unbounded backoff per the cenkalti/backoff contract.)
+// SW-REQ-031:boundary:nominal
 // SW-REQ-031:error_handling:example
+// SW-REQ-031:error_handling:nominal
+// SW-REQ-031:retry_policy_explicit:example
+// SW-REQ-031:retry_policy_explicit:nominal
 func TestGetTemporalStorageExponentialBackoff(t *testing.T) {
 	b := GetTemporalStorageExponentialBackoff()
 	if b.Multiplier != 2 {
@@ -41,6 +45,8 @@ func TestGetTemporalStorageExponentialBackoff(t *testing.T) {
 
 // Verifies: SW-REQ-031
 // SW-REQ-031:error_handling:boundary
+// SW-REQ-031:error_handling:nominal
+// SW-REQ-031:retry_policy_explicit:nominal
 func TestGetTemporalStorageExponentialBackoff_FreshInstances(t *testing.T) {
 	a := GetTemporalStorageExponentialBackoff()
 	b := GetTemporalStorageExponentialBackoff()

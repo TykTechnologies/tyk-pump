@@ -15,13 +15,18 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// File-level MC/DC witness rows for Kafka producer/configuration tests below.
+// Rows copied verbatim from `proof mcdc show SW-REQ-021`.
+//
+// MCDC SW-REQ-021: tls_attached=F, use_ssl_configured=F => TRUE
+// MCDC SW-REQ-021: tls_attached=F, use_ssl_configured=T => FALSE
+// MCDC SW-REQ-021: tls_attached=T, use_ssl_configured=T => TRUE
+
 // kafkaInitWithBroker is a small helper that builds a unique-topic config
 // against the shared testcontainer Kafka broker. Returns the initialised pump
 // and the topic string so the caller can read messages back. The topic is
 // pre-created (auto-create-topics on confluent-local can race with first
 // produce, yielding spurious "Unknown Topic Or Partition" responses).
-//
-// Verifies: SW-REQ-021
 func kafkaInitWithBroker(t *testing.T, extra map[string]interface{}) (*KafkaPump, string) {
 	t.Helper()
 	brokers := kafkaBrokerAddrs(t)
@@ -44,8 +49,6 @@ func kafkaInitWithBroker(t *testing.T, extra map[string]interface{}) (*KafkaPump
 // ensureKafkaTopic creates the topic up-front against the broker controller.
 // The topic is created with NumPartitions=1, ReplicationFactor=1 (single-broker
 // container). Already-exists errors are ignored.
-//
-// Verifies: SW-REQ-021
 func ensureKafkaTopic(t *testing.T, brokers []string, topic string) {
 	t.Helper()
 	require.NotEmpty(t, brokers, "no kafka brokers")
@@ -68,7 +71,6 @@ func ensureKafkaTopic(t *testing.T, brokers []string, topic string) {
 	}
 }
 
-// Verifies: SW-REQ-021
 func sanitizeKafkaTopic(name string) string {
 	// Kafka topics must be alphanumeric with dots, underscores and dashes.
 	// Slashes and other path separators (from sub-tests) are not allowed.
@@ -92,7 +94,6 @@ func sanitizeKafkaTopic(name string) string {
 }
 
 // readKafkaMessages drains up to n messages from topic with a deadline.
-// Verifies: SW-REQ-021
 func readKafkaMessages(t *testing.T, brokers []string, topic string, n int, deadline time.Duration) []kafka.Message {
 	t.Helper()
 	reader := kafka.NewReader(kafka.ReaderConfig{
@@ -125,7 +126,6 @@ func readKafkaMessages(t *testing.T, brokers []string, topic string, n int, dead
 // with the expected JSON payload fields.
 //
 // Verifies: SW-REQ-021
-// SW-REQ-021:errors_propagated:negative
 func TestKafkaPump_WriteData_RoundTrip(t *testing.T) {
 	pump, topic := kafkaInitWithBroker(t, nil)
 	brokers := pump.writerConfig.Brokers
@@ -187,7 +187,6 @@ func TestKafkaPump_WriteData_RoundTrip(t *testing.T) {
 // drives the snappy-compression branch via "compressed": true.
 //
 // Verifies: SW-REQ-021
-// SW-REQ-021:errors_propagated:negative
 func TestKafkaPump_WriteData_RoundTripWithMetadata(t *testing.T) {
 	pump, topic := kafkaInitWithBroker(t, map[string]interface{}{
 		"compressed": true,
@@ -264,7 +263,6 @@ func TestKafkaPump_WriteData_RoundTripWithMetadata(t *testing.T) {
 // WriteMessages call as a no-op.
 //
 // Verifies: SW-REQ-021
-// SW-REQ-021:errors_propagated:negative
 func TestKafkaPump_WriteData_Empty(t *testing.T) {
 	pump, _ := kafkaInitWithBroker(t, nil)
 	ctx, cancel := context.WithTimeout(t.Context(), 10*time.Second)
@@ -277,7 +275,6 @@ func TestKafkaPump_WriteData_Empty(t *testing.T) {
 // strconv.ParseFloat succeeds ("5"); a numeric float value.
 //
 // Verifies: SW-REQ-021
-// SW-REQ-021:errors_propagated:negative
 func TestKafkaPump_Init_TimeoutVariants(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -310,7 +307,6 @@ func TestKafkaPump_Init_TimeoutVariants(t *testing.T) {
 // field is not handled by envconfig).
 //
 // Verifies: SW-REQ-021
-// SW-REQ-021:errors_propagated:negative
 func TestKafkaPump_Init_TimeoutEnvOverride(t *testing.T) {
 	t.Setenv("TYK_PMP_PUMPS_KAFKA_META_TIMEOUT", "12s")
 	pump := &KafkaPump{}
@@ -328,7 +324,6 @@ func TestKafkaPump_Init_TimeoutEnvOverride(t *testing.T) {
 // mechanism (warn + no mechanism set).
 //
 // Verifies: SW-REQ-021
-// SW-REQ-021:errors_propagated:negative
 func TestKafkaPump_Init_SASLMechanismMatrix(t *testing.T) {
 	cases := []struct {
 		name       string
@@ -377,7 +372,6 @@ func TestKafkaPump_Init_SASLMechanismMatrix(t *testing.T) {
 // TestKafkaPump_Init_NegativeBatchBytes).
 //
 // Verifies: SW-REQ-021
-// SW-REQ-021:errors_propagated:negative
 func TestKafkaPump_Init_BatchBytesPositiveBranch(t *testing.T) {
 	pump := &KafkaPump{}
 	require.NoError(t, pump.Init(map[string]interface{}{
@@ -392,7 +386,6 @@ func TestKafkaPump_Init_BatchBytesPositiveBranch(t *testing.T) {
 // compression codec assigned).
 //
 // Verifies: SW-REQ-021
-// SW-REQ-021:errors_propagated:negative
 func TestKafkaPump_Init_CompressedFalse(t *testing.T) {
 	pump := &KafkaPump{}
 	require.NoError(t, pump.Init(map[string]interface{}{
@@ -406,7 +399,6 @@ func TestKafkaPump_Init_CompressedFalse(t *testing.T) {
 // TestKafkaPump_GetEnvPrefix verifies the configured env prefix is returned.
 //
 // Verifies: SW-REQ-021
-// SW-REQ-021:errors_propagated:negative
 func TestKafkaPump_GetEnvPrefix(t *testing.T) {
 	pump := &KafkaPump{}
 	require.NoError(t, pump.Init(map[string]interface{}{
@@ -422,8 +414,10 @@ func TestKafkaPump_GetEnvPrefix(t *testing.T) {
 // production code uses an unchecked v.(analytics.AnalyticsRecord) so a wrong
 // type panics; this test documents that current (brittle) behaviour.
 //
-// Verifies: SW-REQ-021
-// SW-REQ-021:errors_propagated:negative
+// Verifies: KI:kafka-writedata-non-analytics-record-panic
+// Verifies: INT-REQ-004
+// MCDC INT-REQ-004: contract_honoured=F, pump_methods_called=T => FALSE
+// Reproduces: kafka-writedata-non-analytics-record-panic
 func TestKafkaPump_WriteData_BadType(t *testing.T) {
 	pump, _ := kafkaInitWithBroker(t, nil)
 	ctx, cancel := context.WithTimeout(t.Context(), 5*time.Second)
@@ -440,7 +434,6 @@ func TestKafkaPump_WriteData_BadType(t *testing.T) {
 // kafkaDefaultENV constant is propagated as the default env prefix.
 //
 // Verifies: SW-REQ-021
-// SW-REQ-021:errors_propagated:negative
 func TestKafkaPump_Init_DefaultENV(t *testing.T) {
 	// Ensure no stray env from prior tests interferes.
 	os.Unsetenv("TYK_PMP_PUMPS_KAFKA_META_TIMEOUT")
@@ -459,7 +452,6 @@ func TestKafkaPump_Init_DefaultENV(t *testing.T) {
 // than blocking; WriteData logs but still returns nil.
 //
 // Verifies: SW-REQ-021
-// SW-REQ-021:errors_propagated:negative
 func TestKafkaPump_WriteData_WriteErrorPath(t *testing.T) {
 	pump := &KafkaPump{}
 	require.NoError(t, pump.Init(map[string]interface{}{

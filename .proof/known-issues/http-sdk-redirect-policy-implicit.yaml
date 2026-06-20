@@ -1,0 +1,21 @@
+id: http-sdk-redirect-policy-implicit
+title: HTTP SDK pumps rely on implicit redirect handling
+introduced_in: inception
+description: 'The Moesif and Segment pumps construct third-party SDK clients without supplying an explicit HTTP redirect policy. pumps/moesif.go calls moesifapi.NewAPI, whose v1.0.6 client sends requests through ctxhttp.Do(ctx, http.DefaultClient, req). pumps/segment.go calls segment.New, and the pinned segmentio/analytics-go version initializes Client with *http.DefaultClient before calling Client.Do. Neither pump configures CheckRedirect or documents the inherited redirect behavior, so the redirect_policy_explicit obligations are real product gaps rather than merely missing tests.'
+affected_requirements:
+    - SW-REQ-052
+    - SW-REQ-053
+environment_note: |-
+  Static evidence is documented in this KnownIssue description; reproduce by inspecting the pump source and pinned SDK sources.
+reproducer_command: >-
+  rg -n "segment.New|moesifapi.NewAPI|Client:   \*http.DefaultClient|ctxhttp.Do\(ctx, http.DefaultClient" pumps/segment.go pumps/moesif.go "$(go env GOMODCACHE)"/github.com/segmentio/analytics-go@v0.0.0-20160711225931-bdb0aeca8a99/analytics.go "$(go env GOMODCACHE)"/github.com/moesif/moesifapi-go@v1.0.6/client.go
+severity: low
+mitigation: Restrict outbound network paths for these pumps and configure only trusted vendor endpoints.
+remediation: Expose and document an explicit redirect policy for SDK-backed HTTP pumps, or wrap the SDK transport/client with a CheckRedirect policy before satisfying redirect_policy_explicit.
+owner: tyk-team
+release_disposition: ship_with_known_issue
+status: open
+history:
+    - at: "2026-06-19T00:00:00Z"
+      by: agent:codex
+      action: created

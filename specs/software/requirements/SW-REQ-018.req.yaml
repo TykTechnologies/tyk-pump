@@ -32,84 +32,12 @@ verification:
         reviewed_at: "2026-05-30T08:44:54Z"
         comment: Re-approve superseded anchor reqs after Phase A decomposition; descriptions amended with SUPERSEDED prefix listing new SW reqs that replace them.
         fingerprint: sha256:c03f91e2eb6c72d05b378a9058333ffba79482aee46f198f1c3fc2c9fa8a75a7
-        ai_generated: false
-    impact_reviews:
-        - requirement: SW-REQ-018
-          artifact: pumps/graph_mongo.go
-          decision: no-authored-change
-          reviewer: buger
-          reason: 'Production files added reqproof requirement-traceability annotations only (// reqproof:implements / // Verifies: / triple-form evidence). No runtime behavior change.'
-          base: origin/master
-          requirement_fingerprint: sha256:14ce45216ee3c7b57d26d9ef5039ecb073fc1bbaf9ff2f24b8d3df6b517b2306
-          approval_fingerprint: sha256:61b6cce6503f545d163f5aec6270ff8e1bfe02467e8b505bb018838060864f3e
-          artifact_fingerprint: sha256:7c5e64ff5c7104d1fce532db6f02efdbce7e7a9bb68af5a09d74fc4276664790
-          reviewed_at: "2026-05-30T07:45:42Z"
-        - requirement: SW-REQ-018
-          artifact: pumps/mcp_mongo.go
-          decision: no-authored-change
-          reviewer: buger
-          reason: 'Production files added reqproof requirement-traceability annotations only (// reqproof:implements / // Verifies: / triple-form evidence). No runtime behavior change.'
-          base: origin/master
-          requirement_fingerprint: sha256:14ce45216ee3c7b57d26d9ef5039ecb073fc1bbaf9ff2f24b8d3df6b517b2306
-          approval_fingerprint: sha256:61b6cce6503f545d163f5aec6270ff8e1bfe02467e8b505bb018838060864f3e
-          artifact_fingerprint: sha256:f2f119fdd8eaa23ba8c357f6d8c0226c1032e252e484eced005561ca0003cdfa
-          reviewed_at: "2026-05-30T07:45:42Z"
-        - requirement: SW-REQ-018
-          artifact: pumps/mcp_mongo_aggregate.go
-          decision: no-authored-change
-          reviewer: buger
-          reason: 'Production files added reqproof requirement-traceability annotations only (// reqproof:implements / // Verifies: / triple-form evidence). No runtime behavior change.'
-          base: origin/master
-          requirement_fingerprint: sha256:14ce45216ee3c7b57d26d9ef5039ecb073fc1bbaf9ff2f24b8d3df6b517b2306
-          approval_fingerprint: sha256:61b6cce6503f545d163f5aec6270ff8e1bfe02467e8b505bb018838060864f3e
-          artifact_fingerprint: sha256:1c9877140afcd3cb497a7c52a39d453bcd580bd482809963924ffbd8d4f1c128
-          reviewed_at: "2026-05-30T07:45:42Z"
-        - requirement: SW-REQ-018
-          artifact: pumps/mongo.go
-          decision: no-authored-change
-          reviewer: buger
-          reason: 'Production files added reqproof requirement-traceability annotations only (// reqproof:implements / // Verifies: / triple-form evidence). No runtime behavior change.'
-          base: origin/master
-          requirement_fingerprint: sha256:14ce45216ee3c7b57d26d9ef5039ecb073fc1bbaf9ff2f24b8d3df6b517b2306
-          approval_fingerprint: sha256:61b6cce6503f545d163f5aec6270ff8e1bfe02467e8b505bb018838060864f3e
-          artifact_fingerprint: sha256:42233baa5772c9c0e1ac9343caac584d93d947f1a7756371a137d3f569d39dd7
-          reviewed_at: "2026-05-30T07:45:42Z"
-        - requirement: SW-REQ-018
-          artifact: pumps/mongo_aggregate.go
-          decision: no-authored-change
-          reviewer: buger
-          reason: 'Production files added reqproof requirement-traceability annotations only (// reqproof:implements / // Verifies: / triple-form evidence). No runtime behavior change.'
-          base: origin/master
-          requirement_fingerprint: sha256:14ce45216ee3c7b57d26d9ef5039ecb073fc1bbaf9ff2f24b8d3df6b517b2306
-          approval_fingerprint: sha256:61b6cce6503f545d163f5aec6270ff8e1bfe02467e8b505bb018838060864f3e
-          artifact_fingerprint: sha256:52da9eed0a51d5e514a72408ff01978f9243639559cd57dac426678cfc64d3ff
-          reviewed_at: "2026-05-30T07:45:42Z"
-        - requirement: SW-REQ-018
-          artifact: pumps/mongo_selective.go
-          decision: no-authored-change
-          reviewer: buger
-          reason: 'Production files added reqproof requirement-traceability annotations only (// reqproof:implements / // Verifies: / triple-form evidence). No runtime behavior change.'
-          base: origin/master
-          requirement_fingerprint: sha256:14ce45216ee3c7b57d26d9ef5039ecb073fc1bbaf9ff2f24b8d3df6b517b2306
-          approval_fingerprint: sha256:61b6cce6503f545d163f5aec6270ff8e1bfe02467e8b505bb018838060864f3e
-          artifact_fingerprint: sha256:f2dca90282b416525c1346a688d8cc771d85f9587be42e27014e311127c97b38
-          reviewed_at: "2026-05-30T07:45:42Z"
+        ai_generated: true
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:15Z"
-    last_modified_by: human:cli
-    last_modified_at: "2026-06-02T08:58:03Z"
-obligation_checklist:
-    - errors_propagated
-obligation_suppressions:
-    - id: errors_propagated
-      reason: Phase A decomposition superseded this family req; obligations are now carried by per-implementation children with implemented_by traces.
-      suppressed_by: buger
-      suppressed_at: "2026-05-30T08:45:17Z"
-      framework_refs:
-        - CWE CWE-703,CWE-252,CWE-754
-        - NIST-800-53 SI-11
-        - OWASP-ASVS-v4 V7.4.1,V7.4.2,V7.4.3
+    last_modified_by: agent:codex
+    last_modified_at: "2026-06-19T07:23:54Z"
 lifecycle:
     deprecated_by: SW-REQ-034
     deprecated_at: "2026-06-01T20:31:31Z"

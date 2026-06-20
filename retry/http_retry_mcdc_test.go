@@ -11,6 +11,15 @@ import (
 	"github.com/cenkalti/backoff/v4"
 )
 
+// File-level MC/DC witness rows for SW-REQ-030 retry predicate tests. Rows
+// copied verbatim from `proof mcdc show SW-REQ-030`.
+//
+// MCDC SW-REQ-030: is_5xx_or_429=F, retry_attempted=F, transport_transient_err=F => TRUE
+// MCDC SW-REQ-030: is_5xx_or_429=F, retry_attempted=F, transport_transient_err=T => FALSE
+// MCDC SW-REQ-030: is_5xx_or_429=T, retry_attempted=F, transport_transient_err=F => FALSE
+// MCDC SW-REQ-030: is_5xx_or_429=T, retry_attempted=F, transport_transient_err=T => FALSE
+// MCDC SW-REQ-030: is_5xx_or_429=T, retry_attempted=T, transport_transient_err=T => TRUE
+
 // onlyTempFalse implements only the Temporary() interface and returns false.
 // It is used to force the false-side independence proof for the
 // `tempErr.Temporary()` operand of the switch case at http-retry.go:143
@@ -19,10 +28,8 @@ import (
 // and its message does not contain "connection reset").
 type onlyTempFalse struct{ msg string }
 
-// Verifies: SW-REQ-030
 func (e *onlyTempFalse) Error() string { return e.msg }
 
-// Verifies: SW-REQ-030
 func (e *onlyTempFalse) Temporary() bool { return false }
 
 // onlyTimeoutFalse implements only the Timeout() interface and returns false.
@@ -32,10 +39,8 @@ func (e *onlyTempFalse) Temporary() bool { return false }
 // by earlier switch cases.
 type onlyTimeoutFalse struct{ msg string }
 
-// Verifies: SW-REQ-030
 func (e *onlyTimeoutFalse) Error() string { return e.msg }
 
-// Verifies: SW-REQ-030
 func (e *onlyTimeoutFalse) Timeout() bool { return false }
 
 // errReader is an io.Reader that always returns an error on Read. It is used
@@ -43,17 +48,15 @@ func (e *onlyTimeoutFalse) Timeout() bool { return false }
 // io.ReadAll(req.Body) fails before the retry loop ever begins.
 type errReader struct{ err error }
 
-// Verifies: SW-REQ-030
 func (r *errReader) Read(_ []byte) (int, error) { return 0, r.err }
 
-// Verifies: SW-REQ-030
-// SW-REQ-030:error_handling:negative
-//
 // MC/DC: drives the T-side of `isErrorRetryable(errors.Unwrap(urlErr))` at
 // http-retry.go:136. The wrapped url.Error's inner Err is itself retryable
 // (a tempError reporting Temporary()=true), so the recursive call must
 // return true, exiting before falling through to the netOpErr / tempErr /
 // timeoutErr cases.
+//
+// Verifies: SW-REQ-030
 func TestIsErrorRetryable_URLError_WrapsRetryableInner_True(t *testing.T) {
 	inner := &tempErr{"transient"}
 	err := &url.Error{Op: "Get", URL: "http://x", Err: inner}
@@ -62,9 +65,6 @@ func TestIsErrorRetryable_URLError_WrapsRetryableInner_True(t *testing.T) {
 	}
 }
 
-// Verifies: SW-REQ-030
-// SW-REQ-030:error_handling:negative
-//
 // MC/DC: drives the T-side of `isErrorRetryable(errors.Unwrap(netOpErr))` at
 // http-retry.go:142. The outer net.OpError has Op="read" (not dial) and its
 // Temporary() returns false because its immediate inner is itself another
@@ -72,6 +72,8 @@ func TestIsErrorRetryable_URLError_WrapsRetryableInner_True(t *testing.T) {
 // inner then hits the "dial" branch and reports retryable=true. This is the
 // only retryable-inner shape that does not also short-circuit earlier cases
 // (connection-reset substring, url.Error match, or netOpErr.Temporary T).
+//
+// Verifies: SW-REQ-030
 func TestIsErrorRetryable_NetOpError_WrapsRetryableInner_True(t *testing.T) {
 	inner := &net.OpError{Op: "dial", Err: errors.New("inner")}
 	outer := &net.OpError{Op: "read", Err: inner}
@@ -80,13 +82,12 @@ func TestIsErrorRetryable_NetOpError_WrapsRetryableInner_True(t *testing.T) {
 	}
 }
 
-// Verifies: SW-REQ-030
-// SW-REQ-030:error_handling:negative
-//
 // MC/DC: drives the T-side of `netOpErr.Temporary()` at http-retry.go:139.
 // Op != "dial" forces the left operand to false, so the right operand must
 // be evaluated; the wrapped tempError has Temporary()=true so
 // net.OpError.Temporary() also returns true and the overall decision is T.
+//
+// Verifies: SW-REQ-030
 func TestIsErrorRetryable_NetOpError_NonDial_TemporaryTrue(t *testing.T) {
 	err := &net.OpError{Op: "read", Err: &tempErr{"temp-inner"}}
 	if !isErrorRetryable(err) {
@@ -94,14 +95,13 @@ func TestIsErrorRetryable_NetOpError_NonDial_TemporaryTrue(t *testing.T) {
 	}
 }
 
-// Verifies: SW-REQ-030
-// SW-REQ-030:error_handling:negative
-//
 // MC/DC: drives the F-side of `tempErr.Temporary()` at http-retry.go:143.
 // The error implements only Temporary() (so it matches `errors.As(err,
 // &tempErr)`) and returns false, forcing the second operand to be evaluated
 // and produce F. The decision overall must be false and the function must
 // classify it as non-retryable.
+//
+// Verifies: SW-REQ-030
 func TestIsErrorRetryable_TemporaryFalse_NotRetryable(t *testing.T) {
 	err := &onlyTempFalse{"not-temp"}
 	if isErrorRetryable(err) {
@@ -109,14 +109,13 @@ func TestIsErrorRetryable_TemporaryFalse_NotRetryable(t *testing.T) {
 	}
 }
 
-// Verifies: SW-REQ-030
-// SW-REQ-030:error_handling:negative
-//
 // MC/DC: drives the F-side of `timeoutErr.Timeout()` at http-retry.go:147.
 // The error implements only Timeout() (so it matches `errors.As(err,
 // &timeoutErr)`) and returns false, forcing the second operand to be
 // evaluated to F and the case to fall through. The function must classify
 // it as non-retryable.
+//
+// Verifies: SW-REQ-030
 func TestIsErrorRetryable_TimeoutFalse_NotRetryable(t *testing.T) {
 	err := &onlyTimeoutFalse{"not-timeout"}
 	if isErrorRetryable(err) {
@@ -124,12 +123,11 @@ func TestIsErrorRetryable_TimeoutFalse_NotRetryable(t *testing.T) {
 	}
 }
 
-// Verifies: SW-REQ-030
-// SW-REQ-030:error_handling:negative
-//
 // MC/DC: drives the T-side of `isErrorRetryable(err)` at http-retry.go:103
 // inside (*BackoffHTTPRetry).handleErr. When the err is retryable, handleErr
 // must return the original err unchanged (no backoff.Permanent wrapping).
+//
+// Verifies: SW-REQ-030
 func TestBackoffHTTPRetry_handleErr_RetryableReturnsOriginalErr(t *testing.T) {
 	s := NewBackoffRetry("test", 1, http.DefaultClient, testLogger())
 	in := &tempErr{"transient"}
@@ -139,13 +137,12 @@ func TestBackoffHTTPRetry_handleErr_RetryableReturnsOriginalErr(t *testing.T) {
 	}
 }
 
-// Verifies: SW-REQ-030
-// SW-REQ-030:error_handling:negative
-//
 // MC/DC: drives the F-side of `isErrorRetryable(err)` at http-retry.go:103
 // inside (*BackoffHTTPRetry).handleErr. A non-retryable error must be
 // wrapped in backoff.Permanent so the retry loop terminates immediately
 // rather than reissuing the request.
+//
+// Verifies: SW-REQ-030
 func TestBackoffHTTPRetry_handleErr_NonRetryableWrappedPermanent(t *testing.T) {
 	s := NewBackoffRetry("test", 1, http.DefaultClient, testLogger())
 	in := errors.New("plain permanent error")
@@ -165,12 +162,11 @@ func TestBackoffHTTPRetry_handleErr_NonRetryableWrappedPermanent(t *testing.T) {
 	}
 }
 
-// Verifies: SW-REQ-030
-// SW-REQ-030:error_handling:negative
-//
 // MC/DC: drives the T-side of `err != nil` at http-retry.go:44 in Send.
 // A non-nil request body whose Read returns an error must cause Send to
 // abort before the retry loop begins, surfacing the read error directly.
+//
+// Verifies: SW-REQ-030
 func TestBackoffHTTPRetry_Send_BodyReadError_ReturnedImmediately(t *testing.T) {
 	wantErr := errors.New("boom-reading-body")
 	r := NewBackoffRetry("test", 3, http.DefaultClient, testLogger())

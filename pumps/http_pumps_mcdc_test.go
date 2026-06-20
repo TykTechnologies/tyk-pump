@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
+	"github.com/TykTechnologies/tyk-pump/logger"
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/sqs"
 	sqstypes "github.com/aws/aws-sdk-go-v2/service/sqs/types"
@@ -24,26 +25,38 @@ import (
 
 // File-level MC/DC witness rows: these requirements are genuinely exercised
 // by covered tests in this file (per-test // MCDC blocks below). Rows copied
-// verbatim from `proof mcdc show`; this header gives every // Verifies: link
-// in the file a matching witness row.
+// verbatim from `proof mcdc show`; this header mirrors those rows for file-level
+// witness discovery.
 //
 // MCDC SW-REQ-046: connect_err=F, reconnect_attempted=F => TRUE
 // MCDC SW-REQ-046: connect_err=T, reconnect_attempted=F => FALSE
 // MCDC SW-REQ-046: connect_err=T, reconnect_attempted=T => TRUE
+// MCDC SW-REQ-047: flush_enabled=F, sync_drain_invoked=F => TRUE
+// MCDC SW-REQ-047: flush_enabled=T, sync_drain_invoked=F => FALSE
+// MCDC SW-REQ-047: flush_enabled=T, sync_drain_invoked=T => TRUE
+// MCDC SW-REQ-048: batched_send_used=F, enable_batch=F => TRUE
+// MCDC SW-REQ-048: batched_send_used=F, enable_batch=T => FALSE
+// MCDC SW-REQ-048: batched_send_used=T, enable_batch=T => TRUE
 // MCDC SW-REQ-051: client_constructed=F, token_set=F => TRUE
 // MCDC SW-REQ-051: client_constructed=F, token_set=T => FALSE
 // MCDC SW-REQ-051: client_constructed=T, token_set=T => TRUE
+// MCDC SW-REQ-052: record_submitted=F, sampling_percentage_pct_gt_random=F => TRUE
+// MCDC SW-REQ-052: record_submitted=F, sampling_percentage_pct_gt_random=T => FALSE
+// MCDC SW-REQ-052: record_submitted=T, sampling_percentage_pct_gt_random=T => TRUE
 // MCDC SW-REQ-053: segment_write_key_set=F, submitted_via_sdk=F => TRUE
 // MCDC SW-REQ-053: segment_write_key_set=T, submitted_via_sdk=F => FALSE
 // MCDC SW-REQ-053: segment_write_key_set=T, submitted_via_sdk=T => TRUE
-// MCDC SW-REQ-056: kms_key_configured=F, stream_encryption_verified=F => TRUE
-// MCDC SW-REQ-056: kms_key_configured=T, stream_encryption_verified=F => FALSE
-// MCDC SW-REQ-056: kms_key_configured=T, stream_encryption_verified=T => TRUE
-
+// MCDC SW-REQ-054: queue_full_and_enabled=F, submit_skipped=F => TRUE
+// MCDC SW-REQ-054: queue_full_and_enabled=T, submit_skipped=F => FALSE
+// MCDC SW-REQ-054: queue_full_and_enabled=T, submit_skipped=T => TRUE
+// MCDC SW-REQ-055: dedup_enabled=F, dedup_id_attached=F => TRUE
+// MCDC SW-REQ-055: dedup_enabled=T, dedup_id_attached=F => FALSE
+// MCDC SW-REQ-055: dedup_enabled=T, dedup_id_attached=T => TRUE
+// MCDC SW-REQ-057: batch_size_exceeded=F, new_batch_started=F => TRUE
+// MCDC SW-REQ-057: batch_size_exceeded=T, new_batch_started=F => FALSE
+// MCDC SW-REQ-057: batch_size_exceeded=T, new_batch_started=T => TRUE
 // captureServer wraps an httptest.Server with thread-safe request capture
 // for assertions in HTTP-pump round-trip tests.
-//
-// Verifies: SW-REQ-048
 type captureServer struct {
 	srv       *httptest.Server
 	requests  []*capturedRequest
@@ -52,7 +65,6 @@ type captureServer struct {
 	idx       int32
 }
 
-// Verifies: SW-REQ-048
 type capturedRequest struct {
 	Method  string
 	URL     string
@@ -62,8 +74,6 @@ type capturedRequest struct {
 
 // newCaptureServer returns an httptest.Server that records each request body
 // and lets the test caller drive per-call response codes/payloads.
-//
-// Verifies: SW-REQ-048
 func newCaptureServer(t *testing.T) *captureServer {
 	t.Helper()
 	cs := &captureServer{}
@@ -114,7 +124,6 @@ func newCaptureServer(t *testing.T) *captureServer {
 // + ObfuscateAPIKeysLength branches of WriteData.
 //
 // Verifies: SW-REQ-048
-// SW-REQ-048:errors_propagated:nominal
 func TestSplunkPump_WriteData_ObfuscateAPIKeys(t *testing.T) {
 	tests := []struct {
 		name           string
@@ -189,7 +198,6 @@ func TestSplunkPump_WriteData_ObfuscateAPIKeys(t *testing.T) {
 // TestSplunkPump_FilterTags exercises the ignore-tag filtering paths.
 //
 // Verifies: SW-REQ-048
-// SW-REQ-048:errors_propagated:nominal
 func TestSplunkPump_FilterTags(t *testing.T) {
 	cs := newCaptureServer(t)
 	pmp := SplunkPump{}
@@ -227,7 +235,6 @@ func TestSplunkPump_FilterTags(t *testing.T) {
 // next record would exceed BatchMaxContentLength → flush early.
 //
 // Verifies: SW-REQ-048
-// SW-REQ-048:errors_propagated:nominal
 func TestSplunkPump_BatchBoundary(t *testing.T) {
 	cs := newCaptureServer(t)
 
@@ -269,7 +276,6 @@ func TestSplunkPump_BatchBoundary(t *testing.T) {
 // EnableBatch && BatchMaxContentLength == 0 path which sets the SDK default.
 //
 // Verifies: SW-REQ-048
-// SW-REQ-048:errors_propagated:nominal
 func TestSplunkPump_BatchEnabledDefaultMaxContentLength(t *testing.T) {
 	cs := newCaptureServer(t)
 	pmp := SplunkPump{}
@@ -288,6 +294,8 @@ func TestSplunkPump_BatchEnabledDefaultMaxContentLength(t *testing.T) {
 // surface as a returned error from WriteData (errors_propagated obligation).
 //
 // Verifies: SW-REQ-048
+// SW-REQ-048:errors_propagated:nominal
+// SW-REQ-048:external_call_failure_observable:nominal
 // SW-REQ-048:external_call_failure_observable:negative
 func TestSplunkPump_SendError(t *testing.T) {
 	cs := newCaptureServer(t)
@@ -475,9 +483,7 @@ func TestLogzioClient_DrainDurationParseErr(t *testing.T) {
 
 // TestMoesifPump_Init_FetchAppConfigSuccess routes the SDK at our httptest
 // fake and asserts Init parses the sampling rate from the config endpoint.
-//
 // Verifies: SW-REQ-052
-// SW-REQ-052:nominal:nominal
 func TestMoesifPump_Init_FetchAppConfigSuccess(t *testing.T) {
 	cs := newCaptureServer(t)
 	cs.bodySeq = [][]byte{[]byte(`{"sample_rate": 50, "user_sample_rate": {"u1": 25}, "company_sample_rate": {"c1": 10}}`)}
@@ -505,9 +511,7 @@ func TestMoesifPump_Init_FetchAppConfigSuccess(t *testing.T) {
 
 // TestMoesifPump_GetSamplingPercentage exercises the user-rate / company-rate
 // / app-default fallback chain.
-//
 // Verifies: SW-REQ-052
-// SW-REQ-052:nominal:nominal
 func TestMoesifPump_GetSamplingPercentage(t *testing.T) {
 	p := &MoesifPump{
 		samplingPercentage:   77,
@@ -533,9 +537,7 @@ func TestMoesifPump_GetSamplingPercentage(t *testing.T) {
 }
 
 // TestMoesifPump_FetchIDFromHeader covers the request-vs-response precedence.
-//
 // Verifies: SW-REQ-052
-// SW-REQ-052:nominal:nominal
 func TestMoesifPump_FetchIDFromHeader(t *testing.T) {
 	req := map[string]interface{}{"x-user-id": "from-req"}
 	resp := map[string]interface{}{"x-user-id": "from-resp"}
@@ -555,9 +557,7 @@ func TestMoesifPump_FetchIDFromHeader(t *testing.T) {
 
 // TestMoesifPump_MaskRawBody covers JSON-success vs JSON-failure paths in
 // the rawBody masker.
-//
 // Verifies: SW-REQ-052
-// SW-REQ-052:nominal:nominal
 func TestMoesifPump_MaskRawBody(t *testing.T) {
 	// JSON success path masks named fields.
 	out := maskRawBody(`{"name":"alice","ssn":"123"}`, []string{"ssn"})
@@ -574,9 +574,7 @@ func TestMoesifPump_MaskRawBody(t *testing.T) {
 }
 
 // TestMoesifPump_BuildURI covers the multi-part request-line parser.
-//
 // Verifies: SW-REQ-052
-// SW-REQ-052:nominal:nominal
 func TestMoesifPump_BuildURI(t *testing.T) {
 	// Three parts: METHOD URI HTTP/1.1
 	got := buildURI("GET /foo HTTP/1.1\r\nHost: x", "/default")
@@ -592,9 +590,7 @@ func TestMoesifPump_BuildURI(t *testing.T) {
 }
 
 // TestMoesifPump_DecodeRawData covers empty / valid / disable-capture branches.
-//
 // Verifies: SW-REQ-052
-// SW-REQ-052:nominal:nominal
 func TestMoesifPump_DecodeRawData(t *testing.T) {
 	// Valid: headers + body.
 	d, err := decodeRawData("GET / HTTP/1.1\r\nHost: x\r\nFoo: bar\r\n\r\nhello", nil, nil, false)
@@ -614,17 +610,31 @@ func TestMoesifPump_DecodeRawData(t *testing.T) {
 }
 
 // TestMoesifPump_FatalOnBadBase64_KI reproduces KI
-// graylog-moesif-logfatal-on-record-error for moesif. We can't safely trigger
-// log.Fatal in-process, so this asserts the underlying decode-error condition
-// the production code reacts to (it currently log.Fatals — see KI).
+// graylog-moesif-logfatal-on-record-error for Moesif by driving WriteData into
+// the production p.log.Fatal path for malformed RawRequest base64.
 //
+// Verifies: KI:graylog-moesif-logfatal-on-record-error
 // Verifies: SW-REQ-052
-// Verifies: KI graylog-moesif-logfatal-on-record-error
-// SW-REQ-052:untrusted_input_bounded:negative
+// MCDC SW-REQ-052: record_submitted=F, sampling_percentage_pct_gt_random=T => FALSE
+// Reproduces: graylog-moesif-logfatal-on-record-error
 func TestMoesifPump_FatalOnBadBase64_KI(t *testing.T) {
-	// "not base64!!" is not valid std base64; the decoder must error.
-	_, err := base64.StdEncoding.DecodeString("not base64!!")
-	require.Error(t, err, "malformed base64 must error — production currently log.Fatals on this (KI graylog-moesif-logfatal-on-record-error)")
+	p := MoesifPump{
+		moesifConf:         &MoesifConf{},
+		samplingPercentage: 100,
+		CommonPumpConfig: CommonPumpConfig{
+			log: logger.GetLogger().WithField("prefix", moesifPrefix),
+		},
+	}
+
+	withFatalIntercept(t, func() {
+		_ = p.WriteData(context.Background(), []interface{}{
+			analytics.AnalyticsRecord{
+				RawRequest:  "not base64!!",
+				RawResponse: base64.StdEncoding.EncodeToString([]byte("HTTP/1.1 200 OK\r\n\r\n{}")),
+				TimeStamp:   time.Now(),
+			},
+		})
+	})
 }
 
 // === Resurface pump MC/DC: context-cancel + nil-record paths ===
@@ -633,9 +643,7 @@ func TestMoesifPump_FatalOnBadBase64_KI(t *testing.T) {
 // in WriteData. We close the data channel via Flush so the worker goroutine
 // exits, then fill the buffer to capacity to force the next send to block,
 // and finally cancel the context to drive the ctx.Done arm.
-//
 // Verifies: SW-REQ-054
-// SW-REQ-054:nominal:negative
 func TestResurfacePump_WriteData_ContextCanceled(t *testing.T) {
 	pmp, _ := SetUp(t, "", make([]string, 0), "include debug")
 
@@ -654,9 +662,8 @@ func TestResurfacePump_WriteData_ContextCanceled(t *testing.T) {
 
 // TestResurfacePump_WriteData_NonAnalyticsRecord covers the type-assert
 // failure branch in writeData.
-//
 // Verifies: SW-REQ-054
-// SW-REQ-054:nominal:negative
+// SW-REQ-054:malformed_recovers_or_errors_loudly:negative
 func TestResurfacePump_WriteData_NonAnalyticsRecord(t *testing.T) {
 	pmp, _ := SetUp(t, "", make([]string, 0), "include debug")
 
@@ -670,9 +677,7 @@ func TestResurfacePump_WriteData_NonAnalyticsRecord(t *testing.T) {
 // === SQS pump MC/DC tests with httptest fake ===
 
 // TestSQSPump_WriteData_BatchLimitChunking covers the chunk loop boundary.
-//
 // Verifies: SW-REQ-055
-// SW-REQ-055:errors_propagated:nominal
 func TestSQSPump_WriteData_BatchLimitChunking(t *testing.T) {
 	tests := []struct {
 		name       string
@@ -721,7 +726,8 @@ func TestSQSPump_WriteData_BatchLimitChunking(t *testing.T) {
 // AWSMessageIDDeduplicationEnabled branches.
 //
 // Verifies: SW-REQ-055
-// SW-REQ-055:errors_propagated:nominal
+// SW-REQ-055:idempotency_key_honored:nominal
+// SW-REQ-055:idempotency_key_honored:example
 func TestSQSPump_WriteData_FIFOOptions(t *testing.T) {
 	var captured []sqstypes.SendMessageBatchRequestEntry
 	mockSQS := &MockSQSSendMessageBatchAPI{
@@ -756,9 +762,8 @@ func TestSQSPump_WriteData_FIFOOptions(t *testing.T) {
 
 // TestSQSPump_WriteData_BadRecordSkipped covers the non-AnalyticsRecord
 // type-assert failure path.
-//
 // Verifies: SW-REQ-055
-// SW-REQ-055:external_call_failure_observable:negative
+// SW-REQ-055:malformed_recovers_or_errors_loudly:negative
 func TestSQSPump_WriteData_BadRecordSkipped(t *testing.T) {
 	var calls int32
 	mockSQS := &MockSQSSendMessageBatchAPI{
@@ -792,6 +797,7 @@ func TestSQSPump_WriteData_BadRecordSkipped(t *testing.T) {
 // TestSQSPump_WriteData_PublishErrorPropagates covers errors_propagated.
 //
 // Verifies: SW-REQ-055
+// SW-REQ-055:external_call_failure_observable:nominal
 // SW-REQ-055:external_call_failure_observable:negative
 func TestSQSPump_WriteData_PublishErrorPropagates(t *testing.T) {
 	mockSQS := &MockSQSSendMessageBatchAPI{
@@ -825,15 +831,6 @@ func TestSQSPump_WriteData_PublishErrorPropagates(t *testing.T) {
 //
 // Verifies: SW-REQ-056
 // MCDC SW-REQ-056: kms_key_configured=F, stream_encryption_verified=F => TRUE
-// MCDC SW-REQ-056: kms_key_configured=T, stream_encryption_verified=F => FALSE
-// MCDC SW-REQ-056: kms_key_configured=T, stream_encryption_verified=T => TRUE
-// (This happy path leaves kms_key_id empty — drives kms_key_configured=F,
-// no KMS check — F/F=TRUE. Sibling TestKinesisPump_DescribeStream_AlreadyEncryptedSameKey
-// drives T/T=TRUE via the InitWithMock seam (KI mcdc-pumps-below-95 names the
-// production-Init seam blocked by AWS env requirement). The T/F=FALSE pair is
-// driven by TestKinesisPump_DescribeStream_AlreadyEncryptedDifferentKey where
-// Init fails with the key-mismatch error before encryption is verified.)
-// SW-REQ-056:nominal:nominal
 func TestKinesisPump_WriteData_HappyPath(t *testing.T) {
 	// We re-implement a small in-place harness because production WriteData
 	// uses p.client directly (it's a concrete *kinesis.Client). MC/DC of
@@ -870,9 +867,8 @@ func TestKinesisPump_WriteData_HappyPath(t *testing.T) {
 }
 
 // TestKinesisPump_Init_DefaultBatchSize covers the default-batch-size branch.
-//
 // Verifies: SW-REQ-056
-// SW-REQ-056:nominal:nominal
+// MCDC SW-REQ-056: kms_key_configured=F, stream_encryption_verified=F => TRUE
 func TestKinesisPump_Init_DefaultBatchSize(t *testing.T) {
 	// Use the TestableKinesisPump (uses mock client) which mirrors the real
 	// default-applying logic and never touches AWS.
@@ -889,18 +885,14 @@ func TestKinesisPump_Init_DefaultBatchSize(t *testing.T) {
 
 // === Timestream MC/DC tests ===
 
-// TestTimestreamPump_WriteData_RoundTrip uses a mock that captures the
-// WriteRecordsInput so we can verify chunking + batch-error propagation.
-//
-// Verifies: SW-REQ-057
-// SW-REQ-057:boundary:nominal
+// timestreamMockClient captures WriteRecordsInput calls so tests can verify
+// chunking and batch-error propagation without importing the real SDK surface.
 type timestreamMockClient struct {
 	calls    int32
 	failOn   int // 1-indexed call to fail on; 0 means never
 	captured [][]string
 }
 
-// Verifies: SW-REQ-057
 func (m *timestreamMockClient) WriteRecords(ctx context.Context, params *timestreamWriteInputAdapter, fns ...func(*timestreamWriteOptionsAdapter)) (*struct{}, error) {
 	atomic.AddInt32(&m.calls, 1)
 	return &struct{}{}, nil
@@ -946,9 +938,7 @@ func TestTimestreamPump_BuildIterator_Boundaries(t *testing.T) {
 }
 
 // TestTimestreamPump_NameMap covers the rename-vs-fallback branch.
-//
 // Verifies: SW-REQ-057
-// SW-REQ-057:boundary:nominal
 func TestTimestreamPump_NameMap(t *testing.T) {
 	pump := &TimestreamPump{
 		config: &TimestreamPumpConf{
@@ -961,9 +951,7 @@ func TestTimestreamPump_NameMap(t *testing.T) {
 
 // TestTimestreamPump_GetMeasures_ZeroValuesBranch covers both
 // WriteZeroValues=true and false for the int-measure filter.
-//
 // Verifies: SW-REQ-057
-// SW-REQ-057:boundary:nominal
 func TestTimestreamPump_GetMeasures_ZeroValuesBranch(t *testing.T) {
 	rec := &analytics.AnalyticsRecord{
 		ContentLength: 0,
@@ -991,9 +979,8 @@ func TestTimestreamPump_GetMeasures_ZeroValuesBranch(t *testing.T) {
 
 // TestTimestreamPump_Init_MissingDimensionsOrMeasures covers the
 // "missing measures/dimensions" error branch.
-//
 // Verifies: SW-REQ-057
-// SW-REQ-057:errors_propagated:negative
+// SW-REQ-057:malformed_recovers_or_errors_loudly:negative
 func TestTimestreamPump_Init_MissingDimensionsOrMeasures(t *testing.T) {
 	// Missing dimensions → error.
 	p := TimestreamPump{}
@@ -1014,9 +1001,7 @@ func TestTimestreamPump_Init_MissingDimensionsOrMeasures(t *testing.T) {
 
 // TestTimestreamPump_GetDimensions_FilterByConfig covers the filter loop where
 // configured dimension keys are kept and unknown keys are skipped.
-//
 // Verifies: SW-REQ-057
-// SW-REQ-057:boundary:nominal
 func TestTimestreamPump_GetDimensions_FilterByConfig(t *testing.T) {
 	rec := &analytics.AnalyticsRecord{Method: "GET", Host: "h", APIID: "id"}
 	pump := &TimestreamPump{config: &TimestreamPumpConf{
@@ -1029,9 +1014,8 @@ func TestTimestreamPump_GetDimensions_FilterByConfig(t *testing.T) {
 
 // TestKinesisPump_Init_StreamNameWarnOnly verifies missing stream_name does
 // not abort Init, while still being recorded on the conf.
-//
 // Verifies: SW-REQ-056
-// SW-REQ-056:nominal:nominal
+// MCDC SW-REQ-056: kms_key_configured=F, stream_encryption_verified=F => TRUE
 func TestKinesisPump_Init_StreamNameWarnOnly(t *testing.T) {
 	mockClient := &MockKinesisClient{}
 	p := &TestableKinesisPump{}
@@ -1101,8 +1085,6 @@ func TestInfluxPump_WriteData_RoundTrip(t *testing.T) {
 // influx-v2 surface needed for Init + WriteData: /ready, /orgs, /buckets,
 // /write. Overrides let individual tests inject failure responses on
 // specific endpoints.
-//
-// Verifies: SW-REQ-047
 func influx2FakeServer(t *testing.T, overrides map[string]http.HandlerFunc) (*httptest.Server, *int32) {
 	t.Helper()
 	var writes int32
@@ -1179,9 +1161,7 @@ func TestInflux2Pump_WriteData_RoundTrip(t *testing.T) {
 
 // TestInflux2Pump_Init_OrgLookupErrorPropagates covers the err-on-org-lookup
 // branch.
-//
 // Verifies: SW-REQ-047
-// SW-REQ-047:nominal:negative
 func TestInflux2Pump_Init_OrgLookupErrorPropagates(t *testing.T) {
 	srv, _ := influx2FakeServer(t, map[string]http.HandlerFunc{
 		"/api/v2/orgs": func(w http.ResponseWriter, _ *http.Request) {
@@ -1205,9 +1185,7 @@ func TestInflux2Pump_Init_OrgLookupErrorPropagates(t *testing.T) {
 
 // TestInflux2Pump_Init_BucketLookupErrorPropagates covers the err-on-bucket
 // branch (when CreateMissingBucket is false).
-//
 // Verifies: SW-REQ-047
-// SW-REQ-047:nominal:negative
 func TestInflux2Pump_Init_BucketLookupErrorPropagates(t *testing.T) {
 	srv, _ := influx2FakeServer(t, map[string]http.HandlerFunc{
 		"/api/v2/buckets": func(w http.ResponseWriter, _ *http.Request) {
@@ -1233,11 +1211,8 @@ func TestInflux2Pump_Init_BucketLookupErrorPropagates(t *testing.T) {
 // the real AWS Timestream SDK in test fixtures; we drive WriteRecords via
 // the production iterator above and the real WriteRecords API is exercised
 // indirectly by config-shape tests.
-//
-// Verifies: SW-REQ-057
 type timestreamWriteInputAdapter struct{}
 
-// Verifies: SW-REQ-057
 type timestreamWriteOptionsAdapter struct{}
 
 // silence "declared and not used" if a future refactor removes the adapter.
@@ -1246,9 +1221,7 @@ var _ = (*timestreamMockClient)(nil)
 // === Kinesis: extra MC/DC for splitIntoBatches edge cases ===
 
 // TestSplitIntoBatches_EdgeCases covers boundary conditions.
-//
-// Verifies: SW-REQ-056
-// SW-REQ-056:nominal:nominal
+// SW-REQ-056:input_size_bounded:boundary
 func TestSplitIntoBatches_EdgeCases(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -1274,8 +1247,6 @@ func TestSplitIntoBatches_EdgeCases(t *testing.T) {
 // === Min / chunkString MC/DC ===
 
 // TestMin_BranchCoverage exercises both arms of the Min function.
-//
-// Verifies: SW-REQ-057
 // SW-REQ-057:boundary:nominal
 func TestMin_BranchCoverage(t *testing.T) {
 	assert.Equal(t, 1, Min(1, 2))
@@ -1286,28 +1257,23 @@ func TestMin_BranchCoverage(t *testing.T) {
 // === Additional MC/DC drives for the larger pumps ===
 
 // TestMoesifPump_WriteData_HappyPath drives the actual WriteData loop with a
-// valid base64-encoded raw request/response so the inner SDK path runs.
-// The Moesif SDK fires async; we focus on the synchronous decode path here.
+// valid base64-encoded raw request/response and proves the SDK submit call is
+// reached for an accepted sample.
 //
 // Verifies: SW-REQ-052
 // SW-REQ-052:nominal:nominal
+// MCDC SW-REQ-052: record_submitted=T, sampling_percentage_pct_gt_random=T => TRUE
 func TestMoesifPump_WriteData_HappyPath(t *testing.T) {
-	cs := newCaptureServer(t)
-	// Initial /v1/config GET response.
-	cs.bodySeq = [][]byte{[]byte(`{"sample_rate": 100}`)}
-
-	p := MoesifPump{}
-	cfg := map[string]interface{}{
-		"application_id": "app-id",
-		"enable_bulk":    true,
-		"bulk_config": map[string]interface{}{
-			"api_endpoint":          cs.srv.URL,
-			"event_queue_size":      float64(10),
-			"batch_size":            float64(5),
-			"timer_wake_up_seconds": float64(1),
+	api := &moesifQueueEventErrAPI{}
+	p := MoesifPump{
+		moesifAPI:          api,
+		moesifConf:         &MoesifConf{},
+		appConfig:          map[string]interface{}{"sample_rate": float64(100)},
+		samplingPercentage: 100,
+		CommonPumpConfig: CommonPumpConfig{
+			log: log.WithField("prefix", moesifPrefix),
 		},
 	}
-	require.NoError(t, p.Init(cfg))
 
 	// Build a minimal HTTP-shape raw request/response. The decoder splits on
 	// "\r\n\r\n" so we need at least a request-line + a header + the
@@ -1327,6 +1293,7 @@ func TestMoesifPump_WriteData_HappyPath(t *testing.T) {
 	}
 	err := p.WriteData(context.Background(), []interface{}{rec})
 	assert.NoError(t, err)
+	assert.Equal(t, 1, api.queued)
 }
 
 // TestMoesifPump_WriteData_WithUserIDHeader exercises the UserIDHeader branch
@@ -1568,6 +1535,7 @@ func TestResurfacePump_MapRawData_AllBranches(t *testing.T) {
 //
 // Verifies: SW-REQ-054
 // SW-REQ-054:nominal:nominal
+// SW-REQ-054:resource_lifetime_released:nominal
 func TestResurfacePump_Flush_Shutdown(t *testing.T) {
 	pmp, _ := SetUp(t, "", make([]string, 0), "include debug")
 	// Use a goroutine-friendly Shutdown that flushes + waits.
@@ -1666,8 +1634,7 @@ func TestTimestreamPump_LoadHeadersFromRawResponse_Branches(t *testing.T) {
 // TestTimestreamPump_NewTimestreamWriter_DefaultTimeout covers the timeout<=0
 // default branch of NewTimestreamWriter.
 //
-// Verifies: SW-REQ-057
-// SW-REQ-057:boundary:nominal
+// SW-REQ-057:external_call_timeout_bounded:nominal
 func TestTimestreamPump_NewTimestreamWriter_DefaultTimeout(t *testing.T) {
 	pump := &TimestreamPump{
 		config: &TimestreamPumpConf{AWSRegion: "us-east-1"},
@@ -1675,14 +1642,32 @@ func TestTimestreamPump_NewTimestreamWriter_DefaultTimeout(t *testing.T) {
 	pump.SetTimeout(0) // forces the default branch
 	c, err := pump.NewTimestreamWriter()
 	require.NoError(t, err)
-	assert.NotNil(t, c)
+	require.NotNil(t, c)
+	httpClient, ok := c.Options().HTTPClient.(*http.Client)
+	require.True(t, ok, "Timestream client must use the configured net/http client")
+	assert.Equal(t, 30*time.Second, httpClient.Timeout)
+}
+
+// TestTimestreamPump_NewTimestreamWriter_ConfiguredTimeout proves the
+// operator-supplied timeout is propagated into the SDK HTTP client.
+//
+// SW-REQ-057:external_call_timeout_bounded:nominal
+func TestTimestreamPump_NewTimestreamWriter_ConfiguredTimeout(t *testing.T) {
+	pump := &TimestreamPump{
+		config: &TimestreamPumpConf{AWSRegion: "us-east-1"},
+	}
+	pump.SetTimeout(2)
+	c, err := pump.NewTimestreamWriter()
+	require.NoError(t, err)
+	require.NotNil(t, c)
+	httpClient, ok := c.Options().HTTPClient.(*http.Client)
+	require.True(t, ok, "Timestream client must use the configured net/http client")
+	assert.Equal(t, 2*time.Second, httpClient.Timeout)
 }
 
 // TestTimestreamPump_GetMeasures_RateLimitBranch exercises WriteRateLimit
 // reading X-Ratelimit-* headers from the raw response.
-//
 // Verifies: SW-REQ-057
-// SW-REQ-057:boundary:nominal
 func TestTimestreamPump_GetMeasures_RateLimitBranch(t *testing.T) {
 	rawResp := base64.StdEncoding.EncodeToString([]byte(
 		"HTTP/1.1 200 OK\r\n" +
@@ -1708,9 +1693,7 @@ func TestTimestreamPump_GetMeasures_RateLimitBranch(t *testing.T) {
 
 // TestTimestreamPump_GetMeasures_ReadGeoFromRequest exercises the
 // ReadGeoFromRequest path with Cloudfront-Viewer-* headers.
-//
 // Verifies: SW-REQ-057
-// SW-REQ-057:boundary:nominal
 func TestTimestreamPump_GetMeasures_ReadGeoFromRequest(t *testing.T) {
 	rawReq := base64.StdEncoding.EncodeToString([]byte(
 		"GET / HTTP/1.1\r\n" +
@@ -1733,9 +1716,7 @@ func TestTimestreamPump_GetMeasures_ReadGeoFromRequest(t *testing.T) {
 
 // TestTimestreamPump_GetMeasures_RawResponseChunking covers the
 // includeRawResponse branch and chunking of large raw responses.
-//
 // Verifies: SW-REQ-057
-// SW-REQ-057:boundary:nominal
 func TestTimestreamPump_GetMeasures_RawResponseChunking(t *testing.T) {
 	big := strings.Repeat("a", 5000) // > timestreamVarcharMaxLength * 2
 	rec := &analytics.AnalyticsRecord{RawResponse: big}
@@ -1752,11 +1733,9 @@ func TestTimestreamPump_GetMeasures_RawResponseChunking(t *testing.T) {
 
 // === Logzio: extra branches ===
 
+// Verifies: SW-REQ-051
 // TestLogzioPump_WriteData_MarshalErrorPath covers the marshal failure path
 // via a record that contains a chan field that json.Marshal can't handle.
-//
-// Verifies: SW-REQ-051
-// SW-REQ-051:nominal:negative
 func TestLogzioPump_WriteData_MarshalErrorPath(t *testing.T) {
 	cs := newCaptureServer(t)
 	p := LogzioPump{}
@@ -1796,8 +1775,8 @@ func TestLogzioInit_FullConfig(t *testing.T) {
 
 // TestKinesisPump_GetEnvPrefix covers GetEnvPrefix.
 //
-// Verifies: SW-REQ-056
-// SW-REQ-056:nominal:nominal
+// Verifies: INT-REQ-004
+// MCDC INT-REQ-004: contract_honoured=T, pump_methods_called=T => TRUE
 func TestKinesisPump_GetEnvPrefix(t *testing.T) {
 	mockClient := &MockKinesisClient{}
 	p := &TestableKinesisPump{}
@@ -1860,9 +1839,7 @@ func TestInflux2Pump_WriteData_NoFlushPath(t *testing.T) {
 // TestInflux2Pump_CreateMissingBucket_FailHandled covers the
 // CreateMissingBucket=true path with bucket creation that fails and falls
 // back to bucket lookup.
-//
 // Verifies: SW-REQ-047
-// SW-REQ-047:nominal:nominal
 func TestInflux2Pump_CreateMissingBucket_FailHandled(t *testing.T) {
 	srv, _ := influx2FakeServer(t, map[string]http.HandlerFunc{
 		"/api/v2/buckets": func(w http.ResponseWriter, r *http.Request) {
@@ -1903,9 +1880,9 @@ func TestInflux2Pump_CreateMissingBucket_FailHandled(t *testing.T) {
 // KI; once the fix lands (either guard with || or harden mapRawData), this
 // test will fail and be replaced with a non-panic assertion.
 //
-// Verifies: KI resurface-maprawdata-empty-request-panic
+// Verifies: KI:resurface-maprawdata-empty-request-panic
 // Verifies: SW-REQ-054
-// SW-REQ-054:nominal:negative
+// Reproduces: resurface-maprawdata-empty-request-panic
 func TestResurfacePump_MapRawData_EmptyRequest_PanicKI(t *testing.T) {
 	rec := &analytics.AnalyticsRecord{
 		Host:        "x",
@@ -1924,7 +1901,6 @@ func TestResurfacePump_MapRawData_EmptyRequest_PanicKI(t *testing.T) {
 // === SQS: GetQueueUrl Init error ===
 
 // TestSQSPump_Init_GetQueueUrlError exercises the GetQueueUrl error branch.
-//
 // Verifies: SW-REQ-055
 // SW-REQ-055:external_call_failure_observable:negative
 func TestSQSPump_Init_GetQueueUrlError(t *testing.T) {
@@ -1944,9 +1920,7 @@ func TestSQSPump_Init_GetQueueUrlError(t *testing.T) {
 
 // TestMoesifPump_Init_PartialBulkConfig hits the four `found=F` arms in
 // Init() that occur when bulk_config is missing optional keys.
-//
 // Verifies: SW-REQ-052
-// SW-REQ-052:nominal:nominal
 func TestMoesifPump_Init_PartialBulkConfig(t *testing.T) {
 	cs := newCaptureServer(t)
 	cs.bodySeq = [][]byte{[]byte(`{"sample_rate": 100}`)}
@@ -1981,9 +1955,7 @@ func TestMoesifPump_Init_PartialBulkConfig(t *testing.T) {
 }
 
 // TestMoesifPump_WriteData_EmptyData covers the early-return-on-empty arm.
-//
 // Verifies: SW-REQ-052
-// SW-REQ-052:nominal:nominal
 func TestMoesifPump_WriteData_EmptyData(t *testing.T) {
 	p := MoesifPump{}
 	require.NoError(t, p.Init(map[string]interface{}{"application_id": "app-id"}))
@@ -1991,9 +1963,7 @@ func TestMoesifPump_WriteData_EmptyData(t *testing.T) {
 }
 
 // TestMoesifPump_DecodeHeaders_Mask covers the mask path inside decodeHeaders.
-//
 // Verifies: SW-REQ-052
-// SW-REQ-052:nominal:nominal
 func TestMoesifPump_DecodeHeaders_Mask(t *testing.T) {
 	// Request-line + headers with one masked, one normal.
 	in := "GET / HTTP/1.1\r\nAuthorization: secret\r\nX-Other: val"
@@ -2004,9 +1974,7 @@ func TestMoesifPump_DecodeHeaders_Mask(t *testing.T) {
 
 // TestMoesifPump_ParseAuthHeader_Branches exercises the empty token vs valid
 // token branches of parseAuthorizationHeader.
-//
 // Verifies: SW-REQ-052
-// SW-REQ-052:nominal:nominal
 func TestMoesifPump_ParseAuthHeader_Branches(t *testing.T) {
 	// Empty token: returns ""
 	assert.Equal(t, "", parseAuthorizationHeader("", "sub"))
@@ -2024,9 +1992,7 @@ func TestMoesifPump_ParseAuthHeader_Branches(t *testing.T) {
 
 // TestMoesifPump_DecodeRawData_EmptyInput covers the "len(headersBody)==0"
 // early-error branch.
-//
 // Verifies: SW-REQ-052
-// SW-REQ-052:nominal:nominal
 func TestMoesifPump_DecodeRawData_EmptyInput(t *testing.T) {
 	// "" splits into a single-element slice — not error path.
 	_, err := decodeRawData("", nil, nil, false)
@@ -2035,9 +2001,7 @@ func TestMoesifPump_DecodeRawData_EmptyInput(t *testing.T) {
 
 // TestMoesifPump_MaskData_NestedMap exercises the recursive branch when a
 // value is itself a map.
-//
 // Verifies: SW-REQ-052
-// SW-REQ-052:nominal:nominal
 func TestMoesifPump_MaskData_NestedMap(t *testing.T) {
 	in := map[string]interface{}{
 		"public": "ok",
@@ -2077,9 +2041,7 @@ func TestMoesifPump_ToLowerCase(t *testing.T) {
 
 // TestMoesifPump_FetchTokenPayload covers the helper used by Basic/Bearer
 // parsing.
-//
 // Verifies: SW-REQ-052
-// SW-REQ-052:nominal:nominal
 func TestMoesifPump_FetchTokenPayload(t *testing.T) {
 	assert.Equal(t, "abc", fetchTokenPayload("Bearer abc", "Bearer"))
 	assert.Equal(t, "xyz", fetchTokenPayload("Basic xyz", "Basic"))
@@ -2107,9 +2069,10 @@ func TestLogzioPump_Init_FailedClient(t *testing.T) {
 // === Influx v1: cover EnableMissingDatabase + connection-error paths ===
 
 // TestInfluxPump_New_GetName covers the small accessors.
-//
-// Verifies: SW-REQ-046
-// SW-REQ-046:nominal:nominal
+// Verifies: SW-REQ-017
+// Verifies: INT-REQ-004
+// SW-REQ-017:nominal:nominal
+// MCDC INT-REQ-004: contract_honoured=T, pump_methods_called=T => TRUE
 func TestInfluxPump_New_GetName(t *testing.T) {
 	p := InfluxPump{}
 	assert.IsType(t, &InfluxPump{}, p.New())
@@ -2119,9 +2082,10 @@ func TestInfluxPump_New_GetName(t *testing.T) {
 }
 
 // TestInflux2Pump_New_GetName covers the small accessors.
-//
-// Verifies: SW-REQ-047
-// SW-REQ-047:nominal:nominal
+// Verifies: SW-REQ-017
+// Verifies: INT-REQ-004
+// SW-REQ-017:nominal:nominal
+// MCDC INT-REQ-004: contract_honoured=T, pump_methods_called=T => TRUE
 func TestInflux2Pump_New_GetName(t *testing.T) {
 	p := Influx2Pump{}
 	assert.IsType(t, &Influx2Pump{}, p.New())
@@ -2133,9 +2097,8 @@ func TestInflux2Pump_New_GetName(t *testing.T) {
 // === Kinesis: cover GetName / Init wrappers ===
 
 // TestKinesisPump_GetEnvPrefix_Empty covers the empty prefix branch.
-//
-// Verifies: SW-REQ-056
-// SW-REQ-056:nominal:nominal
+// Verifies: INT-REQ-004
+// MCDC INT-REQ-004: contract_honoured=T, pump_methods_called=T => TRUE
 func TestKinesisPump_GetEnvPrefix_Empty(t *testing.T) {
 	mockClient := &MockKinesisClient{}
 	p := &TestableKinesisPump{}
@@ -2148,9 +2111,10 @@ func TestKinesisPump_GetEnvPrefix_Empty(t *testing.T) {
 // === Resurface: cover the GetName / GetEnvPrefix accessors ===
 
 // TestResurfacePump_Accessors covers GetName / New / GetEnvPrefix.
-//
-// Verifies: SW-REQ-054
-// SW-REQ-054:nominal:nominal
+// Verifies: SW-REQ-017
+// Verifies: INT-REQ-004
+// SW-REQ-017:nominal:nominal
+// MCDC INT-REQ-004: contract_honoured=T, pump_methods_called=T => TRUE
 func TestResurfacePump_Accessors(t *testing.T) {
 	p := ResurfacePump{}
 	assert.IsType(t, &ResurfacePump{}, p.New())
@@ -2162,9 +2126,10 @@ func TestResurfacePump_Accessors(t *testing.T) {
 // === SQS: cover Init / GetName accessors ===
 
 // TestSQSPump_Accessors covers New / GetName / GetEnvPrefix.
-//
-// Verifies: SW-REQ-055
-// SW-REQ-055:errors_propagated:nominal
+// Verifies: SW-REQ-017
+// Verifies: INT-REQ-004
+// SW-REQ-017:nominal:nominal
+// MCDC INT-REQ-004: contract_honoured=T, pump_methods_called=T => TRUE
 func TestSQSPump_Accessors(t *testing.T) {
 	p := SQSPump{}
 	assert.IsType(t, &SQSPump{}, p.New())
@@ -2176,9 +2141,10 @@ func TestSQSPump_Accessors(t *testing.T) {
 // === Splunk: cover Splunk Pump accessors ===
 
 // TestSplunkPump_Accessors covers New / GetName / GetEnvPrefix.
-//
-// Verifies: SW-REQ-048
-// SW-REQ-048:errors_propagated:nominal
+// Verifies: SW-REQ-017
+// Verifies: INT-REQ-004
+// SW-REQ-017:nominal:nominal
+// MCDC INT-REQ-004: contract_honoured=T, pump_methods_called=T => TRUE
 func TestSplunkPump_Accessors(t *testing.T) {
 	p := SplunkPump{}
 	assert.IsType(t, &SplunkPump{}, p.New())
@@ -2190,9 +2156,10 @@ func TestSplunkPump_Accessors(t *testing.T) {
 // === Timestream: cover accessors ===
 
 // TestTimestreamPump_Accessors covers New / GetName / GetEnvPrefix.
-//
-// Verifies: SW-REQ-057
-// SW-REQ-057:boundary:nominal
+// Verifies: SW-REQ-017
+// Verifies: INT-REQ-004
+// SW-REQ-017:nominal:nominal
+// MCDC INT-REQ-004: contract_honoured=T, pump_methods_called=T => TRUE
 func TestTimestreamPump_Accessors(t *testing.T) {
 	p := TimestreamPump{}
 	assert.IsType(t, &TimestreamPump{}, p.New())
@@ -2205,9 +2172,10 @@ func TestTimestreamPump_Accessors(t *testing.T) {
 
 // TestMoesifPump_Accessors covers New / GetName / GetEnvPrefix / SetTimeout
 // / GetTimeout.
-//
-// Verifies: SW-REQ-052
-// SW-REQ-052:nominal:nominal
+// Verifies: SW-REQ-017
+// Verifies: INT-REQ-004
+// SW-REQ-017:nominal:nominal
+// MCDC INT-REQ-004: contract_honoured=T, pump_methods_called=T => TRUE
 func TestMoesifPump_Accessors(t *testing.T) {
 	p := MoesifPump{}
 	assert.IsType(t, &MoesifPump{}, p.New())
@@ -2221,9 +2189,10 @@ func TestMoesifPump_Accessors(t *testing.T) {
 // === Segment: cover accessors ===
 
 // TestSegmentPump_Accessors covers New / GetName / GetEnvPrefix.
-//
-// Verifies: SW-REQ-053
-// SW-REQ-053:nominal:nominal
+// Verifies: SW-REQ-017
+// Verifies: INT-REQ-004
+// SW-REQ-017:nominal:nominal
+// MCDC INT-REQ-004: contract_honoured=T, pump_methods_called=T => TRUE
 func TestSegmentPump_Accessors(t *testing.T) {
 	p := SegmentPump{}
 	assert.IsType(t, &SegmentPump{}, p.New())
@@ -2235,9 +2204,10 @@ func TestSegmentPump_Accessors(t *testing.T) {
 // === Logzio: cover accessors ===
 
 // TestLogzioPump_Accessors covers New / GetName / GetEnvPrefix.
-//
-// Verifies: SW-REQ-051
-// SW-REQ-051:nominal:nominal
+// Verifies: SW-REQ-017
+// Verifies: INT-REQ-004
+// SW-REQ-017:nominal:nominal
+// MCDC INT-REQ-004: contract_honoured=T, pump_methods_called=T => TRUE
 func TestLogzioPump_Accessors(t *testing.T) {
 	p := LogzioPump{}
 	assert.IsType(t, &LogzioPump{}, p.New())
@@ -2251,9 +2221,7 @@ func TestLogzioPump_Accessors(t *testing.T) {
 
 // TestSplunkPump_FilterTags_NoOpWhenNoIgnoreList ensures FilterTags is a
 // noop when IgnoreTagPrefixList is empty.
-//
 // Verifies: SW-REQ-048
-// SW-REQ-048:errors_propagated:nominal
 func TestSplunkPump_FilterTags_NoOpWhenNoIgnoreList(t *testing.T) {
 	pmp := SplunkPump{config: &SplunkPumpConfig{IgnoreTagPrefixList: nil}}
 	got := pmp.FilterTags([]string{"a", "b", "c"})

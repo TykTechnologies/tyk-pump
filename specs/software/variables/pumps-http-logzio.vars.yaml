@@ -8,3 +8,4 @@ variables:
       type: bool
       direction: output
       description: True iff NewLogzioClient returns a non-nil sender (false means an error is returned and no SDK is constructed).
+      range: {min: 1, max: 100}

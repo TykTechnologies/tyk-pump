@@ -1,0 +1,19 @@
+id: sql-aggregate-sharded-shared-db-race
+title: SQL aggregate sharded writes mutate shared DB state during concurrent use
+description: SQLAggregatePump.WriteData mutates the pump's shared c.db field when routing sharded writes, and ensureTable also reassigns c.db while ensureIndex issues DDL from the same shared pump state. Concurrent WriteData calls against one SQLAggregatePump instance can interleave table selection and DDL/index setup, so SW-REQ-064/065/066 concurrent race evidence cannot be honestly claimed until sharded routing and table/index creation use per-call DB sessions or synchronization.
+affected_requirements:
+    - SW-REQ-064
+    - SW-REQ-065
+    - SW-REQ-066
+severity: medium
+reproducer_command: rg -n "c\.db = c\.db\.Table|func \(c \*SQLAggregatePump\) ensure(Index|Table)|CREATE INDEX|backgroundIndexCreated" pumps/sql_aggregate.go
+introduced_in: inception
+mitigation: Avoid invoking WriteData concurrently on the same SQLAggregatePump instance when table sharding can create or switch aggregate tables; serialize purge writes per pump until the shared DB state is isolated.
+remediation: Use per-call GORM sessions/table handles for sharded SQL aggregate writes and table/index creation, or protect the mutable pump DB state with synchronization, then add a go test -race witness for concurrent sharded writes.
+owner: tyk-team
+release_disposition: ship_with_known_issue
+status: open
+history:
+    - at: "2026-06-19T07:42:40Z"
+      by: agent:codex
+      action: created

@@ -14,6 +14,11 @@ import (
 	"gorm.io/gorm/logger"
 )
 
+// File-level MC/DC witness rows mirrored from `proof mcdc show`.
+// These rows are copied only when the same file already has tests credited
+// for the row by `proof mcdc show`; they do not add new evidence.
+// MCDC SW-REQ-066: sql_create_index_skipped=F, sql_index_already_exists=F, sql_omit_index_creation=F => TRUE
+
 // File-level MC/DC witness rows: these requirements are genuinely exercised
 // by covered tests in this file (per-test // MCDC blocks below). Rows copied
 // verbatim from `proof mcdc show`; this header gives every // Verifies: link
@@ -23,7 +28,6 @@ import (
 // MCDC SW-REQ-067: on_conflict_assignments_applied=F, row_conflict_detected=T => FALSE
 // MCDC SW-REQ-067: on_conflict_assignments_applied=T, row_conflict_detected=T => TRUE
 
-// Verifies: SW-REQ-041
 func TestSQLAggregateInit(t *testing.T) {
 	skipTestIfNoPostgres(t)
 	pmp := SQLAggregatePump{}
@@ -44,8 +48,7 @@ func TestSQLAggregateInit(t *testing.T) {
 	assert.Equal(t, "postgres", pmp.db.Dialector.Name())
 	assert.Equal(t, true, pmp.db.Migrator().HasTable(analytics.AggregateSQLTable))
 
-	// Wait for background index creation to complete
-	<-pmp.backgroundIndexCreated
+	waitForAggregateIndexReady(t, pmp.db, analytics.AggregateSQLTable, pmp.backgroundIndexCreated)
 
 	indexName := fmt.Sprintf("%s_%s", analytics.AggregateSQLTable, newAggregatedIndexName)
 	assert.Equal(t, true, pmp.db.Migrator().HasIndex(analytics.AggregateSQLTable, indexName))
@@ -59,6 +62,8 @@ func TestSQLAggregateInit(t *testing.T) {
 }
 
 // Verifies: SW-REQ-064
+// SW-REQ-064:ordering_guarantees_documented:nominal
+// MCDC SW-REQ-064: date_boundary_detected=T, slice_flushed_to_sharded_table=T => TRUE
 func TestSQLAggregateWriteData_Sharded(t *testing.T) {
 	skipTestIfNoPostgres(t)
 	pmp := SQLAggregatePump{}
@@ -126,6 +131,9 @@ func TestSQLAggregateWriteData_Sharded(t *testing.T) {
 // Verifies: SW-REQ-067
 // Verifies: SW-REQ-065
 // Verifies: SW-REQ-066
+// SW-REQ-067:monotonicity:nominal
+// SW-REQ-067:parameterized_only_write:nominal
+// SW-REQ-066:parameterized_only_write:nominal
 // MCDC SW-REQ-065: table_missing=F, table_created=F => TRUE
 // MCDC SW-REQ-065: table_missing=T, table_created=F => FALSE
 // MCDC SW-REQ-065: table_missing=T, table_created=T => TRUE
@@ -166,6 +174,7 @@ func TestSQLAggregateWriteData(t *testing.T) {
 		pmp.db.Migrator().DropTable(analytics.AggregateSQLTable)
 	}(table)
 
+	waitForAggregateIndexReady(t, pmp.db, analytics.AggregateSQLTable, pmp.backgroundIndexCreated)
 	err = pmp.ensureIndex(analytics.AggregateSQLTable, false)
 	assert.Nil(t, err)
 
@@ -240,6 +249,8 @@ func TestSQLAggregateWriteData(t *testing.T) {
 }
 
 // Verifies: SW-REQ-067
+// SW-REQ-067:monotonicity:example
+// SW-REQ-067:monotonicity:nominal
 func TestSQLAggregateWriteDataValues(t *testing.T) {
 	skipTestIfNoPostgres(t)
 	table := analytics.AggregateSQLTable
@@ -347,8 +358,7 @@ func TestSQLAggregateWriteDataValues(t *testing.T) {
 				}
 			}(pmp)
 
-			// Wait for background index creation to complete
-			<-pmp.backgroundIndexCreated
+			waitForAggregateIndexReady(t, pmp.db, analytics.AggregateSQLTable, pmp.backgroundIndexCreated)
 
 			// Write the analytics records
 			for i := range tc.records {
@@ -370,7 +380,8 @@ func TestSQLAggregateWriteDataValues(t *testing.T) {
 	}
 }
 
-// Verifies: SW-REQ-041
+// Verifies: INT-REQ-004
+// MCDC INT-REQ-004: contract_honoured=T, pump_methods_called=T => TRUE
 func TestDecodeRequestAndDecodeResponseSQLAggregate(t *testing.T) {
 	skipTestIfNoPostgres(t)
 	newPump := &SQLAggregatePump{}
@@ -590,8 +601,7 @@ func TestEnsureIndexSQLAggregate(t *testing.T) {
 
 			if actualErr == nil {
 				if tc.givenRunInBackground {
-					// wait for the background index creation to finish
-					<-pmp.backgroundIndexCreated
+					waitForAggregateIndexReady(t, pmp.db, tc.givenTableName, pmp.backgroundIndexCreated)
 				} else {
 					indexName := fmt.Sprintf("%s_%s", tc.givenTableName, newAggregatedIndexName)
 					hasIndex := pmp.db.Table(tc.givenTableName).Migrator().HasIndex(tc.givenTableName, indexName)

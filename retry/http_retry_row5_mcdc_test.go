@@ -13,9 +13,6 @@ import (
 // SW-REQ-030:error_handling:negative
 //
 // MCDC SW-REQ-030: is_5xx_or_429=T, retry_attempted=T, transport_transient_err=T => TRUE
-//mcdc:ignore SW-REQ-030: is_5xx_or_429=F, retry_attempted=F, transport_transient_err=T => FALSE — http-retry.go:61-62 routes a transport error through handleErr, and isErrorRetryable (http-retry.go:124-153) returns true for transient transport errors, so opFn returns a plain (non-Permanent) error and backoff.RetryNotify always retries; retry_attempted is always T under a transient transport error [reviewed: human:leo]
-//mcdc:ignore SW-REQ-030: is_5xx_or_429=T, retry_attempted=F, transport_transient_err=F => FALSE — http-retry.go:88-89 returns a plain (non-Permanent) error for any 5xx/429 response, so backoff.RetryNotify always retries; retry_attempted is always T under a 5xx-or-429 response [reviewed: human:leo]
-//mcdc:ignore SW-REQ-030: is_5xx_or_429=T, retry_attempted=F, transport_transient_err=T => FALSE — both the 5xx/429 arm (http-retry.go:88-89) and the transient-transport arm (http-retry.go:61-62 + isErrorRetryable) yield a plain (non-Permanent) error, so backoff.RetryNotify always retries; retry_attempted is always T when either trigger holds [reviewed: human:leo]
 //
 // SW-REQ-030 row 5 is the satisfied row where BOTH retry triggers are present
 // across a single Send lifecycle and a retry is in fact attempted. We drive
@@ -34,6 +31,10 @@ import (
 // Asserting that the server saw exactly three attempts proves retry_attempted=T
 // under the simultaneous presence of the 5xx trigger and the transient-transport
 // trigger -> the requirement holds (TRUE).
+//
+//mcdc:ignore SW-REQ-030: is_5xx_or_429=F, retry_attempted=F, transport_transient_err=T => FALSE — http-retry.go:61-62 routes a transport error through handleErr, and isErrorRetryable (http-retry.go:124-153) returns true for transient transport errors, so opFn returns a plain (non-Permanent) error and backoff.RetryNotify always retries; retry_attempted is always T under a transient transport error [reviewed: human:leo] [category: defensive]
+//mcdc:ignore SW-REQ-030: is_5xx_or_429=T, retry_attempted=F, transport_transient_err=F => FALSE — http-retry.go:88-89 returns a plain (non-Permanent) error for any 5xx/429 response, so backoff.RetryNotify always retries; retry_attempted is always T under a 5xx-or-429 response [reviewed: human:leo] [category: defensive]
+//mcdc:ignore SW-REQ-030: is_5xx_or_429=T, retry_attempted=F, transport_transient_err=T => FALSE — both the 5xx/429 arm (http-retry.go:88-89) and the transient-transport arm (http-retry.go:61-62 + isErrorRetryable) yield a plain (non-Permanent) error, so backoff.RetryNotify always retries; retry_attempted is always T when either trigger holds [reviewed: human:leo] [category: defensive]
 func TestBackoffHTTPRetry_Send_Retries_On5xxThenTransientTransport_Row5(t *testing.T) {
 	var calls int32
 

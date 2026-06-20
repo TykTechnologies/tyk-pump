@@ -387,7 +387,6 @@ func TestNewTLSConfig(t *testing.T) {
 	}
 }
 
-// Verifies: SW-REQ-016
 func generateTestCerts(t *testing.T, tempDir string) (string, string, string, string) {
 	caPrivateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	require.NoError(t, err)

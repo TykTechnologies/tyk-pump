@@ -18,7 +18,6 @@ var nonAlnumRE = regexp.MustCompile(`[^A-Za-z0-9_]`)
 // uniqueCollection produces a deterministic mongo-safe collection name keyed
 // to the running test, so concurrent or repeated runs in the shared
 // testcontainer don't collide.
-// Verifies: SW-REQ-034
 func uniqueCollection(t *testing.T) string {
 	t.Helper()
 	name := nonAlnumRE.ReplaceAllString(t.Name(), "_")
@@ -40,7 +39,6 @@ const (
 // falling back to the static dbAddr only when no test handle is available.
 // The testcontainer module returns a URI without a database segment; the
 // persistent storage layer needs one, so we append /tyk_analytics when missing.
-// Verifies: SW-REQ-034
 func testMongoURI(t *testing.T) string {
 	if t == nil {
 		return dbAddr
@@ -53,7 +51,6 @@ func testMongoURI(t *testing.T) string {
 // database path component. This is required because testcontainers-go's
 // MongoDB module returns a URI like "mongodb://host:port" with no DB segment,
 // but the TykTechnologies persistent storage layer requires one.
-// Verifies: SW-REQ-034
 func ensureMongoDatabase(uri, db string) string {
 	// Split on the scheme://host portion: find the host part end (third "/")
 	if uri == "" {
@@ -89,23 +86,19 @@ type Conn struct {
 	URI   string
 }
 
-// Verifies: SW-REQ-034
 func (c *Conn) TableName() string {
 	return colName
 }
 
-// Verifies: SW-REQ-034
 func (*Conn) GetObjectID() model.ObjectID {
 	return ""
 }
 
 // SetObjectID is a dummy function to satisfy the interface
-// Verifies: SW-REQ-034
 func (*Conn) SetObjectID(model.ObjectID) {
 	// empty
 }
 
-// Verifies: SW-REQ-034
 func (c *Conn) ConnectDb(t *testing.T) {
 	t.Helper()
 	if c.Store == nil {
@@ -125,7 +118,6 @@ func (c *Conn) ConnectDb(t *testing.T) {
 	}
 }
 
-// Verifies: SW-REQ-034
 func (c *Conn) CleanDb() {
 	if c.Store == nil {
 		return
@@ -135,7 +127,6 @@ func (c *Conn) CleanDb() {
 	}
 }
 
-// Verifies: SW-REQ-034
 func (c *Conn) CleanCollection() {
 	err := c.Store.Drop(context.Background(), c)
 	if err != nil {
@@ -143,7 +134,6 @@ func (c *Conn) CleanCollection() {
 	}
 }
 
-// Verifies: SW-REQ-034
 func (c *Conn) CleanIndexes() {
 	err := c.Store.CleanIndexes(context.Background(), c)
 	if err != nil {
@@ -156,23 +146,19 @@ type Doc struct {
 	Foo string         `bson:"foo"`
 }
 
-// Verifies: SW-REQ-034
 func (d Doc) GetObjectID() model.ObjectID {
 	return d.ID
 }
 
 // SetObjectID is a dummy function to satisfy the interface
-// Verifies: SW-REQ-034
 func (d *Doc) SetObjectID(id model.ObjectID) {
 	d.ID = id
 }
 
-// Verifies: SW-REQ-034
 func (d Doc) TableName() string {
 	return colName
 }
 
-// Verifies: SW-REQ-034
 func (c *Conn) InsertDoc() {
 	doc := Doc{
 		Foo: "bar",
@@ -184,7 +170,6 @@ func (c *Conn) InsertDoc() {
 	}
 }
 
-// Verifies: SW-REQ-034
 func (c *Conn) GetCollectionStats() (colStats model.DBM) {
 	var err error
 	colStats, err = c.Store.DBTableStats(context.Background(), c)
@@ -194,13 +179,11 @@ func (c *Conn) GetCollectionStats() (colStats model.DBM) {
 	return colStats
 }
 
-// Verifies: SW-REQ-034
 func (c *Conn) GetIndexes() ([]model.Index, error) {
 	return c.Store.GetIndexes(context.Background(), c)
 }
 
 // defaultConf returns a MongoConf wired to the testcontainer mongo URI.
-// Verifies: SW-REQ-034
 func defaultConf(t *testing.T) MongoConf {
 	conf := MongoConf{
 		CollectionName:          colName,
@@ -220,7 +203,6 @@ func defaultConf(t *testing.T) MongoConf {
 	return conf
 }
 
-// Verifies: SW-REQ-035
 func defaultSelectiveConf(t *testing.T) MongoSelectiveConf {
 	conf := MongoSelectiveConf{
 		MaxInsertBatchSizeBytes: 10 * MiB,

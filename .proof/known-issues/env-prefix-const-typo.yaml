@@ -1,8 +1,11 @@
 id: env-prefix-const-typo
 title: ENV_PREVIX constant misspelling in config.go (typo for ENV_PREFIX)
+introduced_in: inception
 description: 'config.go:17 declares ''const ENV_PREVIX = "TYK_PMP"'' (typo for ENV_PREFIX), and the misspelled identifier is referenced at config.go:282 and config.go:295. The string value is correct so envconfig.Process and os.LookupEnv work as intended, but the misspelled identifier propagates to any generated docs or help that names the constant. Workaround: none needed for behavior; would need a coordinated rename with a Deprecated alias shim kept for one release.'
 affected_requirements:
     - SW-REQ-002
+environment_note: |-
+  Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source or documentation surface and following the described scenario.
 severity: low
 mitigation: None required for runtime behavior; the env-prefix string TYK_PMP is correct.
 remediation: 'Introduce ''const ENV_PREFIX = "TYK_PMP"'' and ''const ENV_PREVIX = ENV_PREFIX // Deprecated: use ENV_PREFIX'', migrate call sites, then drop the alias in the following release.'

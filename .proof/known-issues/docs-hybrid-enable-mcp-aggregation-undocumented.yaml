@@ -1,10 +1,13 @@
 id: docs-hybrid-enable-mcp-aggregation-undocumented
 title: 'Documentation gap: Hybrid pump enable_mcp_aggregation meta field undocumented in tyk-docs'
+introduced_in: inception
 description: pumps/hybrid.go:98 declares EnableMCPAggregation bool with mapstructure tag enable_mcp_aggregation; pumps/hybrid.go:376 invokes analytics.AggregateMCPData when set. tyk-docs/content/shared/pump-config.md hybrid meta section (lines 1293-1372) omits this field.
 affected_requirements:
     - SW-REQ-029
 commands:
     - grep -n 'enable_mcp_aggregation\|EnableMCPAggregation' /Users/buger/go/src/tyk-pump/pumps/hybrid.go
+reproducer_command: |-
+  grep -n 'enable_mcp_aggregation\|EnableMCPAggregation' /Users/buger/go/src/tyk-pump/pumps/hybrid.go
 severity: medium
 mitigation: Default false; existing deployments retain prior behavior.
 remediation: Add pumps.hybrid.meta.enable_mcp_aggregation entry to pump-config.md.

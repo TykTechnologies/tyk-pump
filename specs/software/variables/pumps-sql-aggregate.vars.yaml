@@ -44,3 +44,10 @@ variables:
       type: bool
       direction: output
       description: True iff the SET assignment list (counter-add deltas + max/min updates + tags upsert) is executed when row_conflict_detected.
+    - name: hits_errors_latency_counted
+      type: bool
+      direction: output
+      description: True iff SQL aggregate upsert assignments preserve and increment the hit, success/error, latency, and request-time counters in aggregate rows; this mirrors SYS-REQ-019's aggregation output at the SQL-aggregate software layer.
+independence:
+    declared: true
+    reason: 'SQL aggregate requirements cover separate table routing, schema migration, query execution, graph aggregation, and operator-visible failure surfaces with distinct output variables.'

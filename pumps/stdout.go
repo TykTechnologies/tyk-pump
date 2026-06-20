@@ -135,7 +135,7 @@ func transformHTTPPayload(raw string) string {
 
 		if json.Valid(bodyBytes) {
 			var compacted bytes.Buffer
-			if err := json.Compact(&compacted, bodyBytes); err == nil { //mcdc:ignore err=F unreachable: json.Compact only fails on invalid JSON, but the surrounding json.Valid(bodyBytes) check guarantees the input is well-formed — KI mcdc-pumps-below-95
+			if err := json.Compact(&compacted, bodyBytes); err == nil { //mcdc:ignore:defensive err=F unreachable: json.Compact only fails on invalid JSON, but the surrounding json.Valid(bodyBytes) check guarantees the input is well-formed — KI mcdc-pumps-below-95
 				return fmt.Sprintf("%s %s", removeWhitespaces(headers), compacted.String())
 			}
 		}

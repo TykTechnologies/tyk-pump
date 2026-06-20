@@ -1,10 +1,13 @@
 id: uptime-aggregate-erasstr-itoa-always-nonempty
 title: MC/DC F-side of 'errAsStr != ""' is unreachable (strconv.Itoa is total)
+introduced_in: inception
 description: analytics/uptime_data.go:256 inside AggregateUptimeData wraps 'if errAsStr != ""' around the result of strconv.Itoa(value.(int)). strconv.Itoa always returns a non-empty string for any int, including 0, so errAsStr is always non-empty and the F side cannot be observed by any test.
 affected_requirements:
     - SW-REQ-073
 commands:
     - go test -count=1 -run TestAggregateUptimeData_TCPErrorWithURL ./analytics
+reproducer_command: |-
+  go test -count=1 -run TestAggregateUptimeData_TCPErrorWithURL ./analytics
 severity: low
 mitigation: Defensive non-empty guard whose F branch is impossible to reach; the corresponding guard in incrementAggregate (analytics/aggregate.go:882) already carries //mcdc:ignore for the same reason.
 remediation: Drop the if-guard around strconv.Itoa or add //mcdc:ignore on uptime_data.go:256 mirroring the comment already on aggregate.go:882.

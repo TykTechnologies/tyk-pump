@@ -9,16 +9,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// Verifies: SW-REQ-064
 // SW-REQ-064:temporal_window_inclusive:boundary
 //
 // Contract: SQL aggregate day-sharding routes records to a deterministic
 // per-day table. Boundary semantics:
-//   * a record with timestamp = "2026-06-04T00:00:00.000Z" routes to the
+//   - a record with timestamp = "2026-06-04T00:00:00.000Z" routes to the
 //     2026-06-04 table (INCLUSIVE at start)
-//   * a record with timestamp = "2026-06-04T23:59:59.999Z" also routes to
+//   - a record with timestamp = "2026-06-04T23:59:59.999Z" also routes to
 //     2026-06-04 (EXCLUSIVE at next-day start)
-//   * a record with timestamp = "2026-06-05T00:00:00.000Z" routes to
+//   - a record with timestamp = "2026-06-05T00:00:00.000Z" routes to
 //     2026-06-05 (the boundary is closed-open: [day, day+1))
 //
 // Production routing logic (pumps/sql_aggregate.go WriteData):
@@ -29,6 +28,7 @@ import (
 // This test exercises that exact production expression via a small
 // dayShardTable helper, asserting all four boundary cases plus a
 // nanosecond-before-midnight case.
+// SW-REQ-064:temporal_window_inclusive:nominal
 func TestTemporalWindowInclusive_DayBoundaries(t *testing.T) {
 	mustParse := func(s string) time.Time {
 		ts, err := time.Parse(time.RFC3339Nano, s)
@@ -84,7 +84,6 @@ func TestTemporalWindowInclusive_DayBoundaries(t *testing.T) {
 	}
 }
 
-// Verifies: SW-REQ-064
 // SW-REQ-064:temporal_window_inclusive:boundary
 //
 // Same hour in two different zones must route to DIFFERENT day-shard

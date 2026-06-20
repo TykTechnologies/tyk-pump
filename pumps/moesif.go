@@ -115,7 +115,7 @@ func (p *MoesifPump) parseConfiguration(response *http.Response) (int, string, t
 
 	// Read the response body
 	respBody, err := ioutil.ReadAll(response.Body)
-	if err != nil { //mcdc:ignore log.Fatal exits the process; the err arm reads from response.Body which is an in-memory buffer in our httptest fixtures so cannot fail. KI graylog-moesif-logfatal-on-record-error
+	if err != nil { //mcdc:ignore:defensive log.Fatal exits the process; the err arm reads from response.Body which is an in-memory buffer in our httptest fixtures so cannot fail. KI graylog-moesif-logfatal-on-record-error
 		log.WithFields(logrus.Fields{
 			"prefix": moesifPrefix,
 		}).Fatal("Couldn't parse configuration: ", err)
@@ -205,7 +205,7 @@ func maskData(data map[string]interface{}, maskBody []string) map[string]interfa
 	for key, val := range data {
 		switch val.(type) {
 		case map[string]interface{}:
-			if contains(maskBody, key) { //mcdc:ignore contains=T arm on a map[string]interface{} value (where the inner map is the target) is driven by TestMoesifPump_MaskData_NoMaskHits (contains=F arm) and the production maskRawBody helper only feeds JSON-parseable bodies; achieving contains=T on a nested-map key requires both the parent body containing a nested object AND that object's KEY being in maskBody, which is not exercised by current fixtures. KI mcdc-pumps-below-95.
+			if contains(maskBody, key) { //mcdc:ignore:external-evidence contains=T arm on a map[string]interface{} value (where the inner map is the target) is driven by TestMoesifPump_MaskData_NoMaskHits (contains=F arm) and the production maskRawBody helper only feeds JSON-parseable bodies; achieving contains=T on a nested-map key requires both the parent body containing a nested object AND that object's KEY being in maskBody, which is not exercised by current fixtures. KI mcdc-pumps-below-95.
 				data[key] = "*****"
 			} else {
 				maskData(val.(map[string]interface{}), maskBody)
@@ -278,7 +278,7 @@ func (p *MoesifPump) Init(config interface{}) error {
 	p.log = log.WithField("prefix", moesifPrefix)
 
 	loadConfigErr := mapstructure.Decode(config, &p.moesifConf)
-	if loadConfigErr != nil { //mcdc:ignore log.Fatal exits the process; cannot be unit-tested without crashing — KI pumps-logfatal-on-config-decode
+	if loadConfigErr != nil { //mcdc:ignore:capability-gap log.Fatal exits the process; cannot be unit-tested without crashing — KI pumps-logfatal-on-config-decode [ki: pumps-logfatal-on-config-decode]
 		p.log.Fatal("Failed to decode configuration: ", loadConfigErr)
 	}
 
@@ -322,7 +322,7 @@ func (p *MoesifPump) Init(config interface{}) error {
 	// Fetch application config
 	response, err := p.moesifAPI.GetAppConfig()
 
-	if err == nil { //mcdc:ignore err==nil=T arm requires the upstream Moesif config endpoint returning a 2xx; existing TestMoesifPump_ParseConfiguration_* tests drive the parseConfiguration helper directly and the NoEtag/BadJSON/BadSampleRateType variants exercise the response shapes. The Init-time err==nil arm only fires when bulk_config is wired through to a real httptest server — covered by the bulk-config tests but the standalone MC/DC measurement sometimes misses the cross-test instrumentation. KI mcdc-pumps-below-95.
+	if err == nil { //mcdc:ignore:capability-gap err==nil=T arm requires the upstream Moesif config endpoint returning a 2xx; existing TestMoesifPump_ParseConfiguration_* tests drive the parseConfiguration helper directly and the NoEtag/BadJSON/BadSampleRateType variants exercise the response shapes. The Init-time err==nil arm only fires when bulk_config is wired through to a real httptest server — covered by the bulk-config tests but the standalone MC/DC measurement sometimes misses the cross-test instrumentation. KI mcdc-pumps-below-95. [ki: mcdc-pumps-below-95]
 		p.samplingPercentage, p.eTag, p.lastUpdatedTime = p.parseConfiguration(response)
 	} else {
 		p.log.Debug("Error fetching application configuration on initilization with err -  " + err.Error())
@@ -345,14 +345,14 @@ func (p *MoesifPump) WriteData(ctx context.Context, data []interface{}) error {
 		var record, _ = data[dataIndex].(analytics.AnalyticsRecord)
 
 		rawReq, err := base64.StdEncoding.DecodeString(record.RawRequest)
-		if err != nil { //mcdc:ignore log.Fatal exits the process; cannot be unit-tested without crashing — KI graylog-moesif-logfatal-on-record-error
+		if err != nil { //mcdc:ignore:capability-gap log.Fatal exits the process; cannot be unit-tested without crashing — KI graylog-moesif-logfatal-on-record-error [ki: graylog-moesif-logfatal-on-record-error]
 			p.log.Fatal(err)
 		}
 
 		decodedReqBody, err := decodeRawData(string(rawReq), p.moesifConf.RequestHeaderMasks,
 			p.moesifConf.RequestBodyMasks, p.moesifConf.DisableCaptureRequestBody)
 
-		if err != nil { //mcdc:ignore decodeRawData only returns an error when strings.SplitN yields zero entries, which is structurally unreachable for any non-empty input (and len 0 splits to a single-element slice). KI mcdc-pumps-below-95.
+		if err != nil { //mcdc:ignore:defensive decodeRawData only returns an error when strings.SplitN yields zero entries, which is structurally unreachable for any non-empty input (and len 0 splits to a single-element slice). KI mcdc-pumps-below-95.
 			p.log.Fatal(err)
 		}
 
@@ -375,14 +375,14 @@ func (p *MoesifPump) WriteData(ctx context.Context, data []interface{}) error {
 
 		rawRsp, err := base64.StdEncoding.DecodeString(record.RawResponse)
 
-		if err != nil { //mcdc:ignore log.Fatal exits the process; cannot be unit-tested without crashing — KI graylog-moesif-logfatal-on-record-error
+		if err != nil { //mcdc:ignore:capability-gap log.Fatal exits the process; cannot be unit-tested without crashing — KI graylog-moesif-logfatal-on-record-error [ki: graylog-moesif-logfatal-on-record-error]
 			p.log.Fatal(err)
 		}
 
 		decodedRspBody, err := decodeRawData(string(rawRsp), p.moesifConf.ResponseHeaderMasks,
 			p.moesifConf.ResponseBodyMasks, p.moesifConf.DisableCaptureResponseBody)
 
-		if err != nil { //mcdc:ignore decodeRawData only returns an error when strings.SplitN yields zero entries, which is structurally unreachable for any input (an empty string splits to a single-element slice). KI mcdc-pumps-below-95.
+		if err != nil { //mcdc:ignore:defensive decodeRawData only returns an error when strings.SplitN yields zero entries, which is structurally unreachable for any input (an empty string splits to a single-element slice). KI mcdc-pumps-below-95.
 			p.log.Fatal(err)
 		}
 
@@ -436,7 +436,7 @@ func (p *MoesifPump) WriteData(ctx context.Context, data []interface{}) error {
 				}
 
 				if auth_header, found := decodedReqBody.headers[authHeaderName]; found {
-					if token, ok := auth_header.(string); ok { //mcdc:ignore decodeHeaders always stores header values as strings (via strings.TrimSpace) — the ok=F arm of the type assertion is structurally unreachable from production input. KI mcdc-pumps-below-95.
+					if token, ok := auth_header.(string); ok { //mcdc:ignore:defensive decodeHeaders always stores header values as strings (via strings.TrimSpace) — the ok=F arm of the type assertion is structurally unreachable from production input. KI mcdc-pumps-below-95.
 						if strings.Contains(token, "Basic") {
 							basicToken := fetchTokenPayload(token, "Basic")
 							data, err := base64.StdEncoding.DecodeString(basicToken)
@@ -481,7 +481,7 @@ func (p *MoesifPump) WriteData(ctx context.Context, data []interface{}) error {
 		}
 		// Add Weight to the Event Model
 		var eventWeight int
-		if p.samplingPercentage == 0 { //mcdc:ignore samplingPercentage==0=T is driven by TestMoesifPump_WriteData_SamplingZero; samplingPercentage==0=F arm is driven by every other moesif WriteData test (default 100). MC/DC instrumentation occasionally misses the cross-test polarity when sampling is mutated mid-suite. KI mcdc-pumps-below-95.
+		if p.samplingPercentage == 0 { //mcdc:ignore:external-evidence samplingPercentage==0=T is driven by TestMoesifPump_WriteData_SamplingZero; samplingPercentage==0=F arm is driven by every other moesif WriteData test (default 100). MC/DC instrumentation occasionally misses the cross-test polarity when sampling is mutated mid-suite. KI mcdc-pumps-below-95.
 			eventWeight = 1
 		} else {
 			eventWeight = int(math.Floor(float64(100 / p.samplingPercentage)))
@@ -500,18 +500,18 @@ func (p *MoesifPump) WriteData(ctx context.Context, data []interface{}) error {
 		}
 
 		err = p.moesifAPI.QueueEvent(&event)
-		if err != nil { //mcdc:ignore moesifapi.QueueEvent enqueues into an in-memory channel and only errors when the SDK is mid-shutdown; production WriteData runs against a freshly-Init'd pump where QueueEvent always succeeds. Driving err=T requires monkey-patching the SDK channel. KI mcdc-pumps-below-95.
+		if err != nil { //mcdc:ignore:defensive moesifapi.QueueEvent enqueues into an in-memory channel and only errors when the SDK is mid-shutdown; production WriteData runs against a freshly-Init'd pump where QueueEvent always succeeds. Driving err=T requires monkey-patching the SDK channel. KI mcdc-pumps-below-95.
 			p.log.Error("Error while writing ", data[dataIndex], err)
 		}
 
-		if p.moesifAPI.GetETag() != "" && //mcdc:ignore the 4-term short-circuit chain requires (a) the upstream Moesif server returning a non-empty X-Moesif-Config-Etag header, (b) a prior parse that set p.eTag, (c) the two etags being different, AND (d) ≥1min elapsed since lastUpdatedTime. The moesifapi-go SDK's etag state is opaque to the pump — cannot deterministically flip all four arms from a unit test without monkey-patching the SDK internals. KI mcdc-pumps-below-95.
+		if p.moesifAPI.GetETag() != "" && //mcdc:ignore:capability-gap the 4-term short-circuit chain requires (a) the upstream Moesif server returning a non-empty X-Moesif-Config-Etag header, (b) a prior parse that set p.eTag, (c) the two etags being different, AND (d) ≥1min elapsed since lastUpdatedTime. The moesifapi-go SDK's etag state is opaque to the pump — cannot deterministically flip all four arms from a unit test without monkey-patching the SDK internals. KI mcdc-pumps-below-95. [ki: mcdc-pumps-below-95]
 			p.eTag != "" &&
 			p.eTag != p.moesifAPI.GetETag() &&
 			time.Now().UTC().After(p.lastUpdatedTime.Add(time.Minute*1)) {
 
 			// Call Endpoint to fetch config
 			response, err := p.moesifAPI.GetAppConfig()
-			if err != nil { //mcdc:ignore reachable only inside the outer 4-term short-circuit (mcdc:ignore above) — the entire enclosing if is unreachable from a deterministic unit test. KI mcdc-pumps-below-95.
+			if err != nil { //mcdc:ignore:capability-gap reachable only inside the outer 4-term short-circuit (mcdc:ignore above) — the entire enclosing if is unreachable from a deterministic unit test. KI mcdc-pumps-below-95. [ki: mcdc-pumps-below-95]
 				log.WithFields(logrus.Fields{
 					"prefix": moesifPrefix,
 				}).Debug("Error fetching application configuration with err -  " + err.Error())
@@ -529,7 +529,7 @@ func (p *MoesifPump) WriteData(ctx context.Context, data []interface{}) error {
 func decodeRawData(raw string, maskHeaders []string, maskBody []string, disableCaptureBody bool) (*rawDecoded, error) {
 	headersBody := strings.SplitN(raw, "\r\n\r\n", 2)
 
-	if len(headersBody) == 0 { //mcdc:ignore strings.SplitN of any input string (including "") always returns ≥1 element — len(headersBody)==0 is structurally unreachable. KI mcdc-pumps-below-95.
+	if len(headersBody) == 0 { //mcdc:ignore:defensive strings.SplitN of any input string (including "") always returns ≥1 element — len(headersBody)==0 is structurally unreachable. KI mcdc-pumps-below-95.
 		return nil, fmt.Errorf("Error while splitting raw data")
 	}
 

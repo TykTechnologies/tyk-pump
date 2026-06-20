@@ -34,37 +34,6 @@ verification:
         comment: 'Phase Q: catalog obligation attachments — adds connection_leak_free, resource_lifetime_released (storage connect/disconnect via singleton). See .proof/catalog-obligation-proposals.md.'
         fingerprint: sha256:dafee3e0b05570650179985d446a8c97cd97e3dd0d07a199b277ffcc359285ea
         ai_generated: true
-    impact_reviews:
-        - requirement: SW-REQ-007
-          artifact: docs/fmea.md
-          decision: no-authored-change
-          reviewer: buger
-          reason: 'Phase L3 aggressive: FRETish formalization added per L3 plan; production .go behaviour and code paths unchanged — only requirement metadata (fretish text + formalization_strategy + variables) altered. Test annotations may follow but do not change runtime behaviour.'
-          base: origin/master
-          requirement_fingerprint: sha256:39d127ea0b6ed5dbca621f814282992de1156b91be1ad88819f8cfe11223074e
-          approval_fingerprint: sha256:dafee3e0b05570650179985d446a8c97cd97e3dd0d07a199b277ffcc359285ea
-          artifact_fingerprint: sha256:10ed755ac172d68a5082fa28ddf21676d210bcbfaca858747213607c75a51920
-          reviewed_at: "2026-06-02T14:30:20Z"
-        - requirement: SW-REQ-007
-          artifact: storage/store.go
-          decision: no-authored-change
-          reviewer: buger
-          reason: 'Phase L3 aggressive: FRETish formalization added per L3 plan; production .go behaviour and code paths unchanged — only requirement metadata (fretish text + formalization_strategy + variables) altered. Test annotations may follow but do not change runtime behaviour.'
-          base: origin/master
-          requirement_fingerprint: sha256:39d127ea0b6ed5dbca621f814282992de1156b91be1ad88819f8cfe11223074e
-          approval_fingerprint: sha256:dafee3e0b05570650179985d446a8c97cd97e3dd0d07a199b277ffcc359285ea
-          artifact_fingerprint: sha256:e3e96b335a7f110f632eb0cf1980fc8f592e018ca4124e69232f016ffec0219c
-          reviewed_at: "2026-06-02T14:30:20Z"
-        - requirement: SW-REQ-007
-          artifact: storage/temporal_storage.go
-          decision: no-authored-change
-          reviewer: buger
-          reason: 'Phase L3 aggressive: FRETish formalization added per L3 plan; production .go behaviour and code paths unchanged — only requirement metadata (fretish text + formalization_strategy + variables) altered. Test annotations may follow but do not change runtime behaviour.'
-          base: origin/master
-          requirement_fingerprint: sha256:39d127ea0b6ed5dbca621f814282992de1156b91be1ad88819f8cfe11223074e
-          approval_fingerprint: sha256:dafee3e0b05570650179985d446a8c97cd97e3dd0d07a199b277ffcc359285ea
-          artifact_fingerprint: sha256:6634a473c979dd089b4c3ebf75ec39f8b4e1e94c995e30bb6c41a5f18d301e13
-          reviewed_at: "2026-06-02T14:30:20Z"
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:14Z"
@@ -80,33 +49,25 @@ obligation_checklist:
     - nominal
     - resource_lifetime_released
 obligation_deferrals:
-    - obligation_class: boundary
-      reason: 'Deferred: required boundary test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'
-      tracking: .proof/deferred-witness-backlog.md
-      owner: human:buger
-    - obligation_class: cancellation_observed
-      reason: 'Deferred: required cancellation_observed test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'
-      tracking: .proof/deferred-witness-backlog.md
-      owner: human:buger
     - obligation_class: clock_skew_tolerated
       reason: 'real untested obligation under known-issue getanddeleteset-expire-ttl-assumes-clock-sync; surfaced as visible tracked debt, not an overclaimed fix'
       tracking: getanddeleteset-expire-ttl-assumes-clock-sync
+      ki_ref: getanddeleteset-expire-ttl-assumes-clock-sync
       owner: human:buger
     - obligation_class: concurrent
       reason: 'real untested obligation under known-issue storage-connector-singleton-race; surfaced as visible tracked debt, not an overclaimed fix'
       tracking: storage-connector-singleton-race
-      owner: human:buger
-    - obligation_class: error_handling
-      reason: 'Deferred: required error_handling test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'
-      tracking: .proof/deferred-witness-backlog.md
+      ki_ref: storage-connector-singleton-race
       owner: human:buger
     - obligation_class: malformed_recovers_or_errors_loudly
       reason: 'real untested obligation under known-issue mapstructure-decode-silently-drops-unknown-keys; surfaced as visible tracked debt, not an overclaimed fix'
       tracking: mapstructure-decode-silently-drops-unknown-keys
+      ki_ref: mapstructure-decode-silently-drops-unknown-keys
       owner: human:buger
-    - obligation_class: resource_lifetime_released
-      reason: 'Deferred: required resource_lifetime_released test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'
-      tracking: .proof/deferred-witness-backlog.md
+    - obligation_class: cancellation_observed
+      reason: real product gap under known-issue temporal-storage-operations-ignore-caller-cancellation; surfaced as visible tracked debt, not an overclaimed fix
+      tracking: temporal-storage-operations-ignore-caller-cancellation
+      ki_ref: temporal-storage-operations-ignore-caller-cancellation
       owner: human:buger
 lifecycle:
     change_history:

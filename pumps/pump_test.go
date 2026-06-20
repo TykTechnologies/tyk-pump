@@ -7,6 +7,7 @@ import (
 )
 
 // Verifies: SW-REQ-017
+// SW-REQ-017:nominal:nominal
 // Verifies: INT-REQ-004
 // MCDC INT-REQ-004: contract_honoured=F, pump_methods_called=F => TRUE
 // MCDC INT-REQ-004: contract_honoured=F, pump_methods_called=T => FALSE

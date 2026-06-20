@@ -1,0 +1,20 @@
+id: sw-req-009-demo-randomness-obligation-misattributed
+title: SW-REQ-009 determinism obligation is misattributed to demo data generation randomness
+introduced_in: inception
+description: 'analytics/demo/demo.go imports math/rand for synthetic demo analytics data. SW-REQ-009 covers deterministic analytics record field names and helper accessors, not deterministic demo-data generation. The current reqproof annotations make the demo package part of the SW-REQ-009 owner family, so the random-dependency signal creates a determinism row that is a proof/spec attribution gap rather than missing product behavior.'
+affected_requirements:
+    - SW-REQ-009
+environment_note: |-
+  Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source or rerunning the random-dependency code-signal scan.
+reproducer_command: rg -n "math/rand|reqproof:implements SW-REQ-009" analytics/demo specs/software/requirements/SW-REQ-009.req.yaml
+severity: low
+risk: proof_modeling
+mitigation: Treat analytics/demo as synthetic sample data, not part of the deterministic field-accessor contract.
+remediation: Narrow the demo package trace ownership or split a dedicated demo-data requirement if demo generation needs a deterministic contract.
+owner: tyk-team
+release_disposition: ship_with_known_issue
+status: open
+history:
+    - at: "2026-06-19T00:00:00Z"
+      by: agent:codex
+      action: created

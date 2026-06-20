@@ -5,14 +5,10 @@ import (
 	"time"
 )
 
-// Verifies: SW-REQ-006
 // Verifies: SW-REQ-007
-// SW-REQ-006:nominal:negative
 // SW-REQ-007:error_handling:negative
 // SW-REQ-031:error_handling:negative
-// MCDC SW-REQ-007: connect_err=F, connection_retried_with_bounded_backoff=F => TRUE
 // MCDC SW-REQ-007: connect_err=T, connection_retried_with_bounded_backoff=F => FALSE
-// MCDC SW-REQ-007: connect_err=T, connection_retried_with_bounded_backoff=T => TRUE
 //
 // connect_err=T (port 6390 has nothing listening), connection_retried_with_bounded_backoff=F:
 // this test asserts the FALSE arm — the unreachable-backend path exits when the bounded backoff

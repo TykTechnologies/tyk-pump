@@ -250,13 +250,13 @@ func (rp *ResurfacePump) writeData() {
 				rp.log.Error("Error decoding analytic record")
 				continue
 			}
-			if len(decoded.RawRequest) == 0 && len(decoded.RawResponse) == 0 { //mcdc:ignore the second-arm independent-effect proof requires len(RawRequest)==0=T && len(RawResponse)==0=F (i.e. empty request + non-empty response), which would enter mapRawData and trigger KI resurface-maprawdata-empty-request-panic (out-of-range when accessing strings.Fields(req[0])[0]). Driving the second arm independently is structurally unreachable from a safe unit test. KI mcdc-pumps-below-95.
+			if len(decoded.RawRequest) == 0 && len(decoded.RawResponse) == 0 { //mcdc:ignore:defensive the second-arm independent-effect proof requires len(RawRequest)==0=T && len(RawResponse)==0=F (i.e. empty request + non-empty response), which would enter mapRawData and trigger KI resurface-maprawdata-empty-request-panic (out-of-range when accessing strings.Fields(req[0])[0]). Driving the second arm independently is structurally unreachable from a safe unit test. KI mcdc-pumps-below-95.
 				rp.log.Warn("Record dropped. Please enable Detailed Logging.")
 				continue
 			}
 
 			req, resp, customFields, err := mapRawData(&decoded)
-			if err != nil { //mcdc:ignore err arm of mapRawData inside the worker requires a non-base64 RawRequest/RawResponse passed through WriteData; mapRawData err paths are exhaustively covered synchronously in TestResurfacePump_MapRawData_AllBranches (the worker err arm is the same code path). KI mcdc-pumps-below-95.
+			if err != nil { //mcdc:ignore:capability-gap err arm of mapRawData inside the worker requires a non-base64 RawRequest/RawResponse passed through WriteData; mapRawData err paths are exhaustively covered synchronously in TestResurfacePump_MapRawData_AllBranches (the worker err arm is the same code path). KI mcdc-pumps-below-95. [ki: mcdc-pumps-below-95]
 				rp.log.Error(err)
 				continue
 			}
@@ -281,7 +281,7 @@ func (rp *ResurfacePump) WriteData(ctx context.Context, data []interface{}) erro
 	} else {
 		select {
 		case peek, open := <-rp.data:
-			if open { //mcdc:ignore the open=F arm (recv on a closed-and-empty channel) is structurally unreachable from a deterministic unit test: the only path that closes rp.data is the Shutdown/Flush sequence which terminates the pump entirely, so a subsequent WriteData call wouldn't be made. open=T is driven by TestResurfacePump_WriteData_Open_BranchAfterDisable_Force in pumps/final_cleanup_mcdc_test.go. KI mcdc-pumps-below-95.
+			if open { //mcdc:ignore:external-evidence the open=F arm (recv on a closed-and-empty channel) is structurally unreachable from a deterministic unit test: the only path that closes rp.data is the Shutdown/Flush sequence which terminates the pump entirely, so a subsequent WriteData call wouldn't be made. open=T is driven by TestResurfacePump_WriteData_Open_BranchAfterDisable_Force in pumps/final_cleanup_mcdc_test.go. KI mcdc-pumps-below-95.
 				rp.data <- peek
 				close(rp.data)
 			}
@@ -300,7 +300,7 @@ func (rp *ResurfacePump) WriteData(ctx context.Context, data []interface{}) erro
 func (rp *ResurfacePump) Flush() error {
 	rp.disable()
 	err := rp.WriteData(context.Background(), []interface{}{})
-	if err != nil { //mcdc:ignore WriteData called with context.Background() can only return ctx.Err() which is permanently nil here — the err arm is structurally unreachable. KI mcdc-pumps-below-95.
+	if err != nil { //mcdc:ignore:defensive WriteData called with context.Background() can only return ctx.Err() which is permanently nil here — the err arm is structurally unreachable. KI mcdc-pumps-below-95.
 		return err
 	}
 	rp.wg.Wait()
@@ -314,7 +314,7 @@ func (rp *ResurfacePump) Shutdown() error {
 	rp.logger.Stop()
 
 	err := rp.Flush()
-	if err != nil { //mcdc:ignore Flush's err arm is itself unreachable (see Flush mcdc:ignore) so Shutdown's err propagation is dead-code-on-dead-code. KI mcdc-pumps-below-95.
+	if err != nil { //mcdc:ignore:capability-gap Flush's err arm is itself unreachable (see Flush mcdc:ignore) so Shutdown's err propagation is dead-code-on-dead-code. KI mcdc-pumps-below-95. [ki: mcdc-pumps-below-95]
 		return err
 	}
 

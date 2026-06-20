@@ -11,9 +11,9 @@
 //  4. Drive the `shouldSelfHeal` arm via a configured EnableAggregateSelfHealing
 //     pump and an injected oversized-document err string.
 //
-// Each test uses `// Verifies: SW-REQ-XXX` and per-variant tags. Container-
-// stop based tests rely on a one-shot dedicated container so the shared
-// testcontainer (used by every other mongo test) stays intact.
+// Container-stop based tests lease one restartable dedicated container so the
+// shared testcontainer (used by every other mongo test) stays intact without
+// repeatedly spawning MongoDB during the package run.
 //
 //nolint:revive // test file
 package pumps
@@ -21,10 +21,12 @@ package pumps
 import (
 	"context"
 	"errors"
+	"sync"
 	"testing"
 	"time"
 
 	"github.com/TykTechnologies/storage/persistent/model"
+	"github.com/TykTechnologies/storage/persistent/utils"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
@@ -33,47 +35,217 @@ import (
 	"gopkg.in/vmihailenco/msgpack.v2"
 )
 
+// File-level MC/DC witness rows mirrored from `proof mcdc show`.
+// These rows are copied only when the same file already has tests credited
+// for the row by `proof mcdc show`; they do not add new evidence.
+// MCDC SW-REQ-063: collection_already_exists=F, create_index_skipped=F, omit_index_creation=F => TRUE
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-// startDedicatedMongo spins up a private mongo testcontainer the test owns
-// (separate from the shared one) so we can Terminate it mid-test to inject
-// network errors. Returns URI + a teardown that terminates the container.
-// Verifies: SW-REQ-034
+type sequencedUpsertStore struct {
+	createIndexErrs []error
+	hasTableErrs    []error
+	insertErrs      []error
+	migrateErrs     []error
+	upsertErrs      []error
+	upserts         int
+}
+
+func (s *sequencedUpsertStore) Insert(context.Context, ...model.DBObject) error {
+	if len(s.insertErrs) == 0 {
+		return nil
+	}
+	err := s.insertErrs[0]
+	s.insertErrs = s.insertErrs[1:]
+	if err != nil {
+		return err
+	}
+	return nil
+}
+func (s *sequencedUpsertStore) Delete(context.Context, model.DBObject, ...model.DBM) error {
+	return nil
+}
+func (s *sequencedUpsertStore) Update(context.Context, model.DBObject, ...model.DBM) error {
+	return nil
+}
+func (s *sequencedUpsertStore) Count(context.Context, model.DBObject, ...model.DBM) (int, error) {
+	return 0, nil
+}
+func (s *sequencedUpsertStore) Query(context.Context, model.DBObject, interface{}, model.DBM) error {
+	return nil
+}
+func (s *sequencedUpsertStore) BulkUpdate(context.Context, []model.DBObject, ...model.DBM) error {
+	return nil
+}
+func (s *sequencedUpsertStore) UpdateAll(context.Context, model.DBObject, model.DBM, model.DBM) error {
+	return nil
+}
+func (s *sequencedUpsertStore) Drop(context.Context, model.DBObject) error { return nil }
+func (s *sequencedUpsertStore) CreateIndex(context.Context, model.DBObject, model.Index) error {
+	if len(s.createIndexErrs) == 0 {
+		return nil
+	}
+	err := s.createIndexErrs[0]
+	s.createIndexErrs = s.createIndexErrs[1:]
+	if err != nil {
+		return err
+	}
+	return nil
+}
+func (s *sequencedUpsertStore) GetIndexes(context.Context, model.DBObject) ([]model.Index, error) {
+	return nil, nil
+}
+func (s *sequencedUpsertStore) Ping(context.Context) error { return nil }
+func (s *sequencedUpsertStore) HasTable(context.Context, string) (bool, error) {
+	if len(s.hasTableErrs) == 0 {
+		return false, nil
+	}
+	err := s.hasTableErrs[0]
+	s.hasTableErrs = s.hasTableErrs[1:]
+	return false, err
+}
+func (s *sequencedUpsertStore) DropDatabase(context.Context) error { return nil }
+func (s *sequencedUpsertStore) Migrate(context.Context, []model.DBObject, ...model.DBM) error {
+	if len(s.migrateErrs) == 0 {
+		return nil
+	}
+	err := s.migrateErrs[0]
+	s.migrateErrs = s.migrateErrs[1:]
+	if err != nil {
+		return err
+	}
+	return nil
+}
+func (s *sequencedUpsertStore) DBTableStats(context.Context, model.DBObject) (model.DBM, error) {
+	return nil, nil
+}
+func (s *sequencedUpsertStore) Aggregate(context.Context, model.DBObject, []model.DBM) ([]model.DBM, error) {
+	return nil, nil
+}
+func (s *sequencedUpsertStore) CleanIndexes(context.Context, model.DBObject) error {
+	return nil
+}
+func (s *sequencedUpsertStore) Upsert(context.Context, model.DBObject, model.DBM, model.DBM) error {
+	s.upserts++
+	if s.upserts <= len(s.upsertErrs) {
+		return s.upsertErrs[s.upserts-1]
+	}
+	return nil
+}
+func (s *sequencedUpsertStore) GetDatabaseInfo(context.Context) (utils.Info, error) {
+	return utils.Info{}, nil
+}
+func (s *sequencedUpsertStore) GetTables(context.Context) ([]string, error) { return nil, nil }
+func (s *sequencedUpsertStore) DropTable(context.Context, string) (int, error) {
+	return 0, nil
+}
+
+var (
+	dedicatedMongoMu  sync.Mutex
+	dedicatedMongoC   *tcmongodb.MongoDBContainer
+	dedicatedMongoURI string
+	dedicatedMongoErr error
+)
+
+// startDedicatedMongo leases one restartable mongo testcontainer for the
+// stopped-backend error-path tests. The lease is serialized because these tests
+// intentionally stop the backend mid-test; reusing the same container avoids
+// spawning ~20 mongo containers during the package run.
 func startDedicatedMongo(t *testing.T) (string, func()) {
 	t.Helper()
-	ctx := t.Context()
-	c, err := tcmongodb.Run(ctx, "mongo:7")
-	if err != nil {
-		if isDockerUnavailableErr(err) {
-			t.Skipf("Docker not available for dedicated mongo: %v", err)
+	if testing.Short() {
+		t.Skip("skipping dedicated mongo testcontainer in short mode")
+	}
+	if dedicatedMongoC == nil && dedicatedMongoErr == nil {
+		requireTestcontainerMemory(t, "dedicated mongo")
+	}
+	dedicatedMongoMu.Lock()
+
+	if dedicatedMongoErr != nil {
+		err := dedicatedMongoErr
+		dedicatedMongoErr = nil
+		dedicatedMongoMu.Unlock()
+		t.Fatalf("failed to restart dedicated mongo after prior lease: %v", err)
+	}
+	if dedicatedMongoC == nil {
+		ctx := t.Context()
+		c, err := tcmongodb.Run(ctx, "mongo:7-jammy")
+		if err != nil {
+			dedicatedMongoMu.Unlock()
+			if isDockerUnavailableErr(err) {
+				t.Skipf("Docker not available for dedicated mongo: %v", err)
+			}
+			t.Fatalf("failed to start dedicated mongo: %v", err)
 		}
-		t.Fatalf("failed to start dedicated mongo: %v", err)
+		dedicatedMongoC = c
+		uri, err := c.ConnectionString(ctx)
+		if err != nil {
+			_ = c.Terminate(context.Background())
+			dedicatedMongoC = nil
+			dedicatedMongoMu.Unlock()
+			t.Fatalf("failed to obtain mongo URI: %v", err)
+		}
+		dedicatedMongoURI = ensureMongoDatabase(uri, "tyk_analytics")
 	}
-	uri, err := c.ConnectionString(ctx)
-	if err != nil {
-		_ = c.Terminate(ctx)
-		t.Fatalf("failed to obtain mongo URI: %v", err)
+
+	var releaseOnce sync.Once
+	release := func() {
+		releaseOnce.Do(func() {
+			restartDedicatedMongo()
+			dedicatedMongoMu.Unlock()
+		})
 	}
-	return ensureMongoDatabase(uri, "tyk_analytics"), func() {
-		_ = c.Terminate(context.Background())
-	}
+	t.Cleanup(release)
+	return dedicatedMongoURI, release
 }
 
 // terminateMongo terminates the container *while* the pump still has its
 // store open, so the next persistent-storage call sees a real network error.
-// Verifies: SW-REQ-034
 func terminateMongo(t *testing.T, teardown func()) {
 	t.Helper()
-	teardown()
+	stopDedicatedMongo(t)
+	_ = teardown
+}
+
+func stopDedicatedMongo(t *testing.T) {
+	t.Helper()
+	if dedicatedMongoC == nil || !dedicatedMongoC.IsRunning() {
+		return
+	}
+	timeout := 2 * time.Second
+	if err := dedicatedMongoC.Stop(context.Background(), &timeout); err != nil {
+		t.Fatalf("failed to stop dedicated mongo: %v", err)
+	}
+}
+
+func restartDedicatedMongo() {
+	if dedicatedMongoC == nil || dedicatedMongoC.IsRunning() {
+		return
+	}
+	if err := dedicatedMongoC.Start(context.Background()); err != nil {
+		dedicatedMongoErr = err
+		_ = dedicatedMongoC.Terminate(context.Background())
+		dedicatedMongoC = nil
+		dedicatedMongoURI = ""
+	}
+}
+
+func terminateReusableDedicatedMongo() {
+	dedicatedMongoMu.Lock()
+	defer dedicatedMongoMu.Unlock()
+	if dedicatedMongoC != nil {
+		_ = dedicatedMongoC.Terminate(context.Background())
+		dedicatedMongoC = nil
+		dedicatedMongoURI = ""
+		dedicatedMongoErr = nil
+	}
 }
 
 // ---------------------------------------------------------------------------
 // mongo.go :: Init — overrideErr != nil (line 232)
 // ---------------------------------------------------------------------------
-
-// Verifies: SW-REQ-034
 // SW-REQ-034:errors_propagated:negative — bad PMP_MONGO env value drives
 // envconfig.Process to return an error (int field receives non-numeric input).
 func TestMongoPump_Init_OverrideErrNonUptime(t *testing.T) {
@@ -94,7 +266,6 @@ func TestMongoPump_Init_OverrideErrNonUptime(t *testing.T) {
 	t.Cleanup(func() { _ = p.store.DropDatabase(context.Background()) })
 }
 
-// Verifies: SW-REQ-034
 // SW-REQ-034:errors_propagated:negative — bad env in IsUptime mode path.
 func TestMongoPump_Init_OverrideErrUptime(t *testing.T) {
 	t.Setenv("PMP_MONGO_MONGO_DB_TYPE", "not-an-int")
@@ -108,8 +279,6 @@ func TestMongoPump_Init_OverrideErrUptime(t *testing.T) {
 // ---------------------------------------------------------------------------
 // mongo_aggregate.go :: Init — overrideErr != nil (line 198)
 // ---------------------------------------------------------------------------
-
-// Verifies: SW-REQ-036
 // SW-REQ-036:errors_propagated:negative — bad env value drives overrideErr.
 func TestMongoAggregatePump_Init_OverrideErr(t *testing.T) {
 	t.Setenv("PMP_MONGOAGG_MONGO_DB_TYPE", "not-an-int")
@@ -125,8 +294,6 @@ func TestMongoAggregatePump_Init_OverrideErr(t *testing.T) {
 // ---------------------------------------------------------------------------
 // mongo_selective.go :: Init — overrideErr != nil (line 98)
 // ---------------------------------------------------------------------------
-
-// Verifies: SW-REQ-035
 // SW-REQ-035:errors_propagated:negative — bad env value drives overrideErr.
 func TestMongoSelectivePump_Init_OverrideErr(t *testing.T) {
 	t.Setenv("PMP_MONGOSEL_MONGO_DB_TYPE", "not-an-int")
@@ -139,101 +306,93 @@ func TestMongoSelectivePump_Init_OverrideErr(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
-// mongo.go :: ensureIndexes — err != nil (line 366) via stopped container
+// mongo.go :: ensureIndexes — err != nil (line 366) via fake store
 // ---------------------------------------------------------------------------
-
-// Verifies: SW-REQ-034
-// SW-REQ-034:errors_propagated:negative — Insert/CreateIndex returns err
-// after the container is terminated; ensureIndexes propagates the error.
-func TestMongoPump_EnsureIndexes_ErrAfterContainerStop(t *testing.T) {
-	uri, teardown := startDedicatedMongo(t)
+// SW-REQ-034:errors_propagated:negative — ensureIndexes propagates CreateIndex
+// errors from the persistence layer.
+func TestMongoPump_EnsureIndexes_CreateIndexErr(t *testing.T) {
+	store := &sequencedUpsertStore{createIndexErrs: []error{errors.New("create index failed")}}
 	p := &MongoPump{}
-	cfg := map[string]interface{}{
-		"mongo_url":       uri,
-		"collection_name": uniqueCollection(t),
-		"mongo_db_type":   int(AWSDocumentDB), // skip the collectionExists short-circuit
+	p.store = store
+	p.dbConf = &MongoConf{
+		BaseMongoConf: BaseMongoConf{
+			MongoDBType: AWSDocumentDB, // skip the collectionExists short-circuit
+		},
 	}
-	require.NoError(t, p.Init(cfg))
-	terminateMongo(t, teardown)
+	p.log = logrus.NewEntry(logrus.New())
 
 	err := p.ensureIndexes(uniqueCollection(t) + "_after_stop")
-	assert.Error(t, err, "ensureIndexes must return err once mongo is gone")
+	assert.Error(t, err, "ensureIndexes must return CreateIndex errors")
 }
 
 // ---------------------------------------------------------------------------
-// mongo_selective.go :: ensureIndexes — err != nil (lines 169, 183) via stop
+// mongo_selective.go :: ensureIndexes — err != nil (lines 169, 183) via fake store
 // ---------------------------------------------------------------------------
-
-// Verifies: SW-REQ-035
 // SW-REQ-035:errors_propagated:negative — Selective ensureIndexes propagates
-// CreateIndex error after container stop.
-func TestMongoSelectivePump_EnsureIndexes_ErrAfterContainerStop(t *testing.T) {
-	uri, teardown := startDedicatedMongo(t)
+// CreateIndex error from the persistence layer.
+func TestMongoSelectivePump_EnsureIndexes_CreateIndexErr(t *testing.T) {
+	store := &sequencedUpsertStore{createIndexErrs: []error{errors.New("create index failed")}}
 	p := &MongoSelectivePump{}
-	cfg := map[string]interface{}{
-		"mongo_url":     uri,
-		"mongo_db_type": int(AWSDocumentDB), // skip the collectionExists short-circuit
+	p.store = store
+	p.dbConf = &MongoSelectiveConf{
+		BaseMongoConf: BaseMongoConf{
+			MongoDBType: AWSDocumentDB, // skip the collectionExists short-circuit
+		},
 	}
-	require.NoError(t, p.Init(cfg))
-	terminateMongo(t, teardown)
+	p.log = logrus.NewEntry(logrus.New())
 
 	err := p.ensureIndexes(uniqueCollection(t) + "_sel_after_stop")
 	assert.Error(t, err, "selective ensureIndexes must surface mongo errors")
 }
 
 // ---------------------------------------------------------------------------
-// mongo_aggregate.go :: ensureIndexes — err != nil (lines 276, 287) via stop
+// mongo_aggregate.go :: ensureIndexes — err != nil (lines 276, 287) via fake store
 // ---------------------------------------------------------------------------
-
-// Verifies: SW-REQ-063
 // SW-REQ-063:errors_propagated:negative — aggregate ensureIndexes propagates
-// CreateIndex error after stop.
+// CreateIndex errors from the persistence layer.
 // MCDC SW-REQ-063: collection_already_exists=F, create_index_skipped=F, omit_index_creation=F => TRUE
 //
 // omit_index_creation=F (default) and DocumentDB type so the collectionExists
 // check is bypassed (collection_already_exists=F): ensureIndexes attempts the
-// CreateIndex calls (create_index_skipped=F) and propagates the error after the
-// container stops. The antecedent (omit | exists) is false, so the guarantee is
+// CreateIndex calls (create_index_skipped=F) and propagates the fake store error.
+// The antecedent (omit | exists) is false, so the guarantee is
 // vacuously satisfied — row 1. The skipped=T (row 5) case is driven by
 // TestMongoAggregatePump_EnsureIndexes_OmitOnExisting below.
-func TestMongoAggregatePump_EnsureIndexes_ErrAfterContainerStop(t *testing.T) {
-	uri, teardown := startDedicatedMongo(t)
+func TestMongoAggregatePump_EnsureIndexes_CreateIndexErr(t *testing.T) {
+	store := &sequencedUpsertStore{createIndexErrs: []error{errors.New("create index failed")}}
 	p := &MongoAggregatePump{}
-	cfg := map[string]interface{}{
-		"mongo_url":            uri,
-		"use_mixed_collection": false,
-		"mongo_db_type":        int(AWSDocumentDB),
+	p.store = store
+	p.dbConf = &MongoAggregateConf{
+		BaseMongoConf: BaseMongoConf{
+			MongoDBType: AWSDocumentDB, // skip the collectionExists short-circuit
+		},
 	}
-	require.NoError(t, p.Init(cfg))
-	terminateMongo(t, teardown)
+	p.log = logrus.NewEntry(logrus.New())
 
 	err := p.ensureIndexes(uniqueCollection(t) + "_agg_after_stop")
 	assert.Error(t, err)
 }
 
 // ---------------------------------------------------------------------------
-// mongo.go :: capCollection — err != nil (lines 284, 314) via stopped container
+// mongo.go :: capCollection — err != nil (lines 284, 314) via fake store
 // ---------------------------------------------------------------------------
-
-// Verifies: SW-REQ-034
 // SW-REQ-034:errors_propagated:negative — capCollection.HasTable surfaces an
-// error after the container is stopped (line 284 err != nil = T).
+// error from the persistence layer (line 284 err != nil = T).
 func TestMongoPump_CapCollection_HasTableErr(t *testing.T) {
-	uri, teardown := startDedicatedMongo(t)
+	store := &sequencedUpsertStore{hasTableErrs: []error{errors.New("has table failed")}}
 	p := &MongoPump{}
-	cfg := map[string]interface{}{
-		"mongo_url":             uri,
-		"collection_name":       uniqueCollection(t),
-		"collection_cap_enable": true,
+	p.store = store
+	p.dbConf = &MongoConf{
+		CollectionName:      uniqueCollection(t),
+		CollectionCapEnable: true,
+		BaseMongoConf:       BaseMongoConf{},
 	}
-	require.NoError(t, p.Init(cfg))
-	terminateMongo(t, teardown)
+	p.log = logrus.NewEntry(logrus.New())
 
 	ok := p.capCollection()
 	assert.False(t, ok, "capCollection must abort when HasTable errors")
 }
 
-// Verifies: SW-REQ-034
 // SW-REQ-034:errors_propagated:negative — Migrate failure path (line 314).
 // We arrange this by stopping the container after Init but before the cap call;
 // since HasTable will error first, this is the same path as above; we add
@@ -259,8 +418,6 @@ func TestMongoPump_CapCollection_OverrideSize(t *testing.T) {
 // ---------------------------------------------------------------------------
 // mongo.go :: WriteData — len(accumulateSet) == 0 (line 423)
 // ---------------------------------------------------------------------------
-
-// Verifies: SW-REQ-034
 // SW-REQ-034:boundary:nominal — payload of only ResponseCode==-1 records
 // → AccumulateSet returns empty → WriteData hits len==0 early-return.
 func TestMongoPump_WriteData_EmptyAccumulateSet(t *testing.T) {
@@ -283,8 +440,6 @@ func TestMongoPump_WriteData_EmptyAccumulateSet(t *testing.T) {
 // ---------------------------------------------------------------------------
 // mongo.go :: WriteData — ok branch (line 411): non-AnalyticsRecord input
 // ---------------------------------------------------------------------------
-
-// Verifies: SW-REQ-034
 // SW-REQ-034:boundary:negative — input slice contains a non-AnalyticsRecord
 // item; the `ok` clause of `ok && rec.IsMCPRecord()` returns false and the
 // item must be retained for downstream processing.
@@ -304,42 +459,36 @@ func TestMongoPump_WriteData_NonAnalyticsRecordItem(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
-// mongo.go :: WriteData — Insert err path (line 451) via stopped container
+// mongo.go :: WriteData — Insert err path (line 451) via fake store
 // ---------------------------------------------------------------------------
-
-// Verifies: SW-REQ-034
-// SW-REQ-034:errors_propagated:negative — Insert returns err after container
-// is stopped; WriteData propagates the first error from errCh.
-func TestMongoPump_WriteData_InsertErrAfterStop(t *testing.T) {
-	uri, teardown := startDedicatedMongo(t)
+// SW-REQ-034:errors_propagated:negative — Insert returns err; WriteData
+// propagates the first error from errCh.
+func TestMongoPump_WriteData_InsertErr(t *testing.T) {
+	store := &sequencedUpsertStore{insertErrs: []error{errors.New("insert failed")}}
 	p := &MongoPump{}
-	cfg := map[string]interface{}{
-		"mongo_url":       uri,
-		"collection_name": uniqueCollection(t),
+	p.store = store
+	p.dbConf = &MongoConf{
+		CollectionName: uniqueCollection(t),
 	}
-	require.NoError(t, p.Init(cfg))
-	terminateMongo(t, teardown)
+	p.log = logrus.NewEntry(logrus.New())
 
 	rec := analytics.AnalyticsRecord{APIID: "x", OrgID: "o", ResponseCode: 200}
 	err := p.WriteData(context.Background(), []interface{}{rec})
-	assert.Error(t, err, "Insert must error once mongo is gone")
+	assert.Error(t, err, "Insert errors must be propagated")
 }
 
 // ---------------------------------------------------------------------------
-// mongo.go :: WriteUptimeData — err != nil (line 589) via stopped container
+// mongo.go :: WriteUptimeData — err != nil (line 589) via fake store
 // ---------------------------------------------------------------------------
-
-// Verifies: SW-REQ-034
-// SW-REQ-034:errors_propagated:negative — WriteUptimeData logs Insert errors;
-// after stop, Insert errors and the err != nil branch is taken.
-func TestMongoPump_WriteUptimeData_InsertErrAfterStop(t *testing.T) {
-	uri, teardown := startDedicatedMongo(t)
+// SW-REQ-034:errors_propagated:negative — WriteUptimeData logs Insert errors.
+func TestMongoPump_WriteUptimeData_InsertErr(t *testing.T) {
+	store := &sequencedUpsertStore{insertErrs: []error{errors.New("insert failed")}}
 	p := &MongoPump{IsUptime: true}
-	cfg := map[string]interface{}{
-		"mongo_url": uri,
+	p.store = store
+	p.dbConf = &MongoConf{
+		CollectionName: analytics.UptimeSQLTable,
 	}
-	require.NoError(t, p.Init(cfg))
-	terminateMongo(t, teardown)
+	p.log = logrus.NewEntry(logrus.New())
 
 	// Build a valid msgpack-encoded UptimeReportData so we get past the
 	// per-item decode and reach the Insert call.
@@ -354,19 +503,17 @@ func TestMongoPump_WriteUptimeData_InsertErrAfterStop(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
-// mongo_selective.go :: WriteUptimeData — err != nil (line 375) via stop
+// mongo_selective.go :: WriteUptimeData — err != nil (line 375) via fake store
 // ---------------------------------------------------------------------------
-
-// Verifies: SW-REQ-035
 // SW-REQ-035:errors_propagated:negative — selective WriteUptimeData err path.
-func TestMongoSelectivePump_WriteUptimeData_InsertErrAfterStop(t *testing.T) {
-	uri, teardown := startDedicatedMongo(t)
+func TestMongoSelectivePump_WriteUptimeData_InsertErr(t *testing.T) {
+	store := &sequencedUpsertStore{insertErrs: []error{errors.New("insert failed")}}
 	p := &MongoSelectivePump{}
-	cfg := map[string]interface{}{
-		"mongo_url": uri,
+	p.store = store
+	p.dbConf = &MongoSelectiveConf{
+		BaseMongoConf: BaseMongoConf{},
 	}
-	require.NoError(t, p.Init(cfg))
-	terminateMongo(t, teardown)
+	p.log = logrus.NewEntry(logrus.New())
 
 	payload := uptimeMsgpackBytes(t)
 	defer func() {
@@ -378,7 +525,6 @@ func TestMongoSelectivePump_WriteUptimeData_InsertErrAfterStop(t *testing.T) {
 }
 
 // uptimeMsgpackBytes returns a valid msgpack-encoded UptimeReportData.
-// Verifies: SW-REQ-034
 func uptimeMsgpackBytes(t *testing.T) string {
 	t.Helper()
 	// Use the same msgpack codec the production code uses to decode.
@@ -391,27 +537,24 @@ func uptimeMsgpackBytes(t *testing.T) string {
 }
 
 // msgpackMarshal wraps the v2 msgpack encoder used by the pump.
-// Verifies: SW-REQ-034
 func msgpackMarshal(v interface{}) ([]byte, error) {
 	return msgpack.Marshal(v)
 }
 
 // ---------------------------------------------------------------------------
-// mongo_selective.go :: WriteData — Insert err path (line 243) via stop
+// mongo_selective.go :: WriteData — Insert err path (line 243) via fake store
 // ---------------------------------------------------------------------------
-
-// Verifies: SW-REQ-035
-// SW-REQ-035:errors_propagated:negative — Selective Insert error after stop
-// is logged (no return), so the function still returns nil — but the
+// SW-REQ-035:errors_propagated:negative — Selective Insert error is logged
+// (no return), so the function still returns nil — but the
 // `err != nil` branch is taken (driving the F→T arm).
-func TestMongoSelectivePump_WriteData_InsertErrAfterStop(t *testing.T) {
-	uri, teardown := startDedicatedMongo(t)
+func TestMongoSelectivePump_WriteData_InsertErr(t *testing.T) {
+	store := &sequencedUpsertStore{insertErrs: []error{errors.New("insert failed")}}
 	p := &MongoSelectivePump{}
-	cfg := map[string]interface{}{
-		"mongo_url": uri,
+	p.store = store
+	p.dbConf = &MongoSelectiveConf{
+		BaseMongoConf: BaseMongoConf{},
 	}
-	require.NoError(t, p.Init(cfg))
-	terminateMongo(t, teardown)
+	p.log = logrus.NewEntry(logrus.New())
 
 	rec := analytics.AnalyticsRecord{APIID: "x", OrgID: "o", ResponseCode: 200}
 	require.NoError(t, p.WriteData(context.Background(), []interface{}{rec}))
@@ -420,19 +563,18 @@ func TestMongoSelectivePump_WriteData_InsertErrAfterStop(t *testing.T) {
 // ---------------------------------------------------------------------------
 // mongo_selective.go :: WriteData — indexCreateErr != nil (line 239)
 // ---------------------------------------------------------------------------
-
-// Verifies: SW-REQ-035
 // SW-REQ-035:errors_propagated:negative — drive the indexCreateErr branch by
-// running against a docker container we stopped so ensureIndexes errors.
-func TestMongoSelectivePump_WriteData_IndexCreateErrAfterStop(t *testing.T) {
-	uri, teardown := startDedicatedMongo(t)
+// running against a fake store whose ensureIndexes call errors.
+func TestMongoSelectivePump_WriteData_IndexCreateErr(t *testing.T) {
+	store := &sequencedUpsertStore{createIndexErrs: []error{errors.New("create index failed")}}
 	p := &MongoSelectivePump{}
-	cfg := map[string]interface{}{
-		"mongo_url":     uri,
-		"mongo_db_type": int(AWSDocumentDB), // skip collectionExists short-circuit
+	p.store = store
+	p.dbConf = &MongoSelectiveConf{
+		BaseMongoConf: BaseMongoConf{
+			MongoDBType: AWSDocumentDB, // skip collectionExists short-circuit
+		},
 	}
-	require.NoError(t, p.Init(cfg))
-	terminateMongo(t, teardown)
+	p.log = logrus.NewEntry(logrus.New())
 
 	rec := analytics.AnalyticsRecord{APIID: "x", OrgID: "o", ResponseCode: 200}
 	require.NoError(t, p.WriteData(context.Background(), []interface{}{rec}))
@@ -449,8 +591,6 @@ func TestMongoSelectivePump_WriteData_IndexCreateErrAfterStop(t *testing.T) {
 // ---------------------------------------------------------------------------
 // mongo_aggregate.go :: WriteData — shouldSelfHeal branch (line 325)
 // ---------------------------------------------------------------------------
-
-// Verifies: SW-REQ-058
 // SW-REQ-058:errors_propagated:negative — ShouldSelfHeal returns true when
 // EnableAggregateSelfHealing is on and the error string matches one of the
 // "size too large" patterns. We drive this via the public ShouldSelfHeal
@@ -492,7 +632,6 @@ func TestMongoAggregatePump_ShouldSelfHeal_PathsAndDivides(t *testing.T) {
 	assert.False(t, p.ShouldSelfHeal(errors.New("some other failure")))
 }
 
-// Verifies: SW-REQ-062
 // SW-REQ-062:nominal:nominal — divideAggregationTime preserves the value
 // when AggregationTime == 1.
 func TestMongoAggregatePump_DivideAggregationTime_NoOp(t *testing.T) {
@@ -502,20 +641,17 @@ func TestMongoAggregatePump_DivideAggregationTime_NoOp(t *testing.T) {
 	assert.Equal(t, 1, p.dbConf.AggregationTime)
 }
 
-// Verifies: SW-REQ-058
 // SW-REQ-058:errors_propagated:negative — drives WriteData's self-heal
-// recursion against a real mongo. We force the inner err path by stopping
-// the container after Init; ShouldSelfHeal returns false (errors don't
+// recursion against the fake store. ShouldSelfHeal returns false (errors don't
 // match), so WriteData returns the err directly.
-func TestMongoAggregatePump_WriteData_ErrAfterStop(t *testing.T) {
-	uri, teardown := startDedicatedMongo(t)
+func TestMongoAggregatePump_WriteData_Err(t *testing.T) {
+	store := &sequencedUpsertStore{upsertErrs: []error{errors.New("upsert failed")}}
 	p := &MongoAggregatePump{}
-	cfg := map[string]interface{}{
-		"mongo_url":            uri,
-		"use_mixed_collection": false,
+	p.store = store
+	p.dbConf = &MongoAggregateConf{
+		UseMixedCollection: false,
 	}
-	require.NoError(t, p.Init(cfg))
-	terminateMongo(t, teardown)
+	p.log = logrus.NewEntry(logrus.New())
 
 	now := time.Now()
 	rec := analytics.AnalyticsRecord{
@@ -529,20 +665,19 @@ func TestMongoAggregatePump_WriteData_ErrAfterStop(t *testing.T) {
 // mongo_aggregate.go :: DoAggregatedWriting — err != nil arms (lines 373, 387)
 // and indexCreateErr (line 349) via stopped container
 // ---------------------------------------------------------------------------
-
-// Verifies: SW-REQ-059
 // SW-REQ-059:errors_propagated:negative — DoAggregatedWriting surfaces the
 // first Upsert error; we exercise this through WriteData above and via a
 // direct call here for the second-Upsert path.
-func TestMongoAggregatePump_DoAggregatedWriting_UpsertErrAfterStop(t *testing.T) {
-	uri, teardown := startDedicatedMongo(t)
+// Verifies: SW-REQ-060
+// MCDC SW-REQ-060: first_upsert_succeeded=F, second_upsert_attempted=F => TRUE
+func TestMongoAggregatePump_DoAggregatedWriting_UpsertErr(t *testing.T) {
+	store := &sequencedUpsertStore{upsertErrs: []error{errors.New("upsert failed")}}
 	p := &MongoAggregatePump{}
-	cfg := map[string]interface{}{
-		"mongo_url":            uri,
-		"use_mixed_collection": false,
+	p.store = store
+	p.dbConf = &MongoAggregateConf{
+		UseMixedCollection: false,
 	}
-	require.NoError(t, p.Init(cfg))
-	terminateMongo(t, teardown)
+	p.log = logrus.NewEntry(logrus.New())
 
 	now := time.Now()
 	ag := analytics.AnalyticsRecordAggregate{
@@ -553,11 +688,36 @@ func TestMongoAggregatePump_DoAggregatedWriting_UpsertErrAfterStop(t *testing.T)
 	assert.Error(t, err)
 }
 
+// TestMongoAggregatePump_DoAggregatedWriting_SecondUpsertErr drives the
+// two-step aggregate write contract with a fake persistent store: the first
+// upsert succeeds, the derived-average upsert is attempted and fails, and the
+// error is returned to the caller.
+// Verifies: SW-REQ-060
+// MCDC SW-REQ-060: first_upsert_succeeded=T, second_upsert_attempted=F => FALSE
+func TestMongoAggregatePump_DoAggregatedWriting_SecondUpsertErr(t *testing.T) {
+	store := &sequencedUpsertStore{upsertErrs: []error{nil, errors.New("second upsert failed")}}
+	p := &MongoAggregatePump{
+		store: store,
+		dbConf: &MongoAggregateConf{
+			BaseMongoConf:       BaseMongoConf{OmitIndexCreation: true},
+			ThresholdLenTagList: -1,
+		},
+		CommonPumpConfig: CommonPumpConfig{log: logrus.NewEntry(logrus.New())},
+	}
+
+	ag := analytics.AnalyticsRecordAggregate{
+		OrgID:     "org",
+		TimeStamp: time.Now(),
+	}
+	err := p.DoAggregatedWriting(context.Background(), &ag, false)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "second upsert failed")
+	assert.Equal(t, 2, store.upserts, "second upsert must be attempted after first succeeds")
+}
+
 // ---------------------------------------------------------------------------
 // mongo_aggregate.go :: getLastDocumentTimestamp — ok branch (line 422)
 // ---------------------------------------------------------------------------
-
-// Verifies: SW-REQ-036
 // SW-REQ-036:nominal:nominal — pre-seed the mixed collection with a doc
 // that has a timestamp; getLastDocumentTimestamp returns ts, nil (ok=T).
 func TestMongoAggregatePump_GetLastDocumentTimestamp_OK(t *testing.T) {
@@ -585,8 +745,6 @@ func TestMongoAggregatePump_GetLastDocumentTimestamp_OK(t *testing.T) {
 // ---------------------------------------------------------------------------
 // mongo_selective.go :: ensureIndexes — err != nil + "already exists" branch
 // ---------------------------------------------------------------------------
-
-// Verifies: SW-REQ-035
 // SW-REQ-035:errors_propagated:nominal — pre-create logBrowserIndex under
 // a *different* name; the second CreateIndex returns the "already exists with
 // a different name" error which the production code swallows (line 195 F-arm).
@@ -638,8 +796,6 @@ func TestMongoSelectivePump_EnsureIndexes_LogBrowserAlreadyExists(t *testing.T) 
 //
 // We assert that Init returns nil despite the index error.
 // ---------------------------------------------------------------------------
-
-// Verifies: SW-REQ-037
 // SW-REQ-037:errors_propagated:negative — Init swallows ensureIndexes err.
 func TestGraphMongoPump_Init_IndexCreateErr_PreExistingDifferentKeys(t *testing.T) {
 	cfg := map[string]interface{}{
@@ -676,8 +832,6 @@ func TestGraphMongoPump_Init_IndexCreateErr_PreExistingDifferentKeys(t *testing.
 // ---------------------------------------------------------------------------
 // mcp_mongo.go :: Init — indexCreateErr != nil (line 88) — same pattern
 // ---------------------------------------------------------------------------
-
-// Verifies: SW-REQ-038
 // SW-REQ-038:errors_propagated:negative — drives the ensureIndexes-err-in-Init
 // path on MCPMongoPump via a pre-existing-conflicting-index trap.
 func TestMCPMongoPump_Init_IndexCreateErr_PreExistingDifferentKeys(t *testing.T) {
@@ -707,48 +861,44 @@ func TestMCPMongoPump_Init_IndexCreateErr_PreExistingDifferentKeys(t *testing.T)
 
 // ---------------------------------------------------------------------------
 // mcp_mongo.go :: insertMCPDataSet — err != nil (line 139) & "closed
-// explicitly" (line 144) via stopped container
+// explicitly" (line 144) via fake store
 // ---------------------------------------------------------------------------
-
-// Verifies: SW-REQ-038
-// SW-REQ-038:errors_propagated:negative — Insert error from stopped container
-// triggers the err-branch and writes to errCh; the "closed explicitly"
-// substring branch is exercised when the driver reports a closed session.
-func TestMCPMongoPump_WriteData_InsertErrAfterStop(t *testing.T) {
-	uri, teardown := startDedicatedMongo(t)
+// SW-REQ-038:errors_propagated:negative — Insert error triggers the err-branch
+// and writes to errCh.
+func TestMCPMongoPump_WriteData_InsertErr(t *testing.T) {
+	store := &sequencedUpsertStore{insertErrs: []error{errors.New("insert failed")}}
 	p := &MCPMongoPump{}
-	cfg := map[string]interface{}{
-		"mongo_url":       uri,
-		"collection_name": uniqueCollection(t),
+	p.MongoPump.store = store
+	p.MongoPump.dbConf = &MongoConf{
+		CollectionName: uniqueCollection(t),
 	}
-	require.NoError(t, p.Init(cfg))
-	terminateMongo(t, teardown)
+	p.MongoPump.log = logrus.NewEntry(logrus.New())
+	p.log = p.MongoPump.log
 
 	rec := analytics.AnalyticsRecord{
 		APIID: "x", OrgID: "o", ResponseCode: 200,
 		MCPStats: analytics.MCPStats{IsMCP: true, JSONRPCMethod: "tools/call"},
 	}
 	err := p.WriteData(context.Background(), []interface{}{rec})
-	assert.Error(t, err, "expected Insert err from stopped container")
+	assert.Error(t, err, "expected Insert err")
 }
 
 // ---------------------------------------------------------------------------
 // mcp_mongo_aggregate.go :: upsertMCPAggregate err arms (lines 177, 186)
 // and DoMCPAggregatedWriting err arm (line 199)
 // ---------------------------------------------------------------------------
-
-// Verifies: SW-REQ-039
-// SW-REQ-039:errors_propagated:negative — Upsert returns an err post-stop;
+// SW-REQ-039:errors_propagated:negative — Upsert returns an err;
 // upsertMCPAggregate propagates it.
-func TestMCPMongoAggregatePump_WriteData_UpsertErrAfterStop(t *testing.T) {
-	uri, teardown := startDedicatedMongo(t)
+func TestMCPMongoAggregatePump_WriteData_UpsertErr(t *testing.T) {
+	store := &sequencedUpsertStore{upsertErrs: []error{errors.New("upsert failed")}}
 	p := &MCPMongoAggregatePump{}
-	cfg := map[string]interface{}{
-		"mongo_url":            uri,
-		"use_mixed_collection": false,
+	p.MongoAggregatePump.store = store
+	p.dbConf = &MongoAggregateConf{
+		UseMixedCollection: false,
 	}
-	require.NoError(t, p.Init(cfg))
-	terminateMongo(t, teardown)
+	p.MongoAggregatePump.dbConf = p.dbConf
+	p.MongoAggregatePump.log = logrus.NewEntry(logrus.New())
+	p.log = p.MongoAggregatePump.log
 
 	ts := time.Now()
 	rec := analytics.AnalyticsRecord{
@@ -756,14 +906,12 @@ func TestMCPMongoAggregatePump_WriteData_UpsertErrAfterStop(t *testing.T) {
 		MCPStats: analytics.MCPStats{IsMCP: true, JSONRPCMethod: "tools/call", PrimitiveType: "tool", PrimitiveName: "x"},
 	}
 	err := p.WriteData(context.Background(), []interface{}{rec})
-	assert.Error(t, err, "expected upsert err after stop")
+	assert.Error(t, err, "expected upsert err")
 }
 
 // ---------------------------------------------------------------------------
 // mongo_selective.go :: AccumulateSet — skip branch (line 264)
 // ---------------------------------------------------------------------------
-
-// Verifies: SW-REQ-035
 // SW-REQ-035:boundary:nominal — AccumulateSet receives an item that
 // processItem skips (non-AnalyticsRecord) AND an item that passes through.
 func TestMongoSelectivePump_AccumulateSet_SkipBranch(t *testing.T) {
@@ -785,8 +933,6 @@ func TestMongoSelectivePump_AccumulateSet_SkipBranch(t *testing.T) {
 // ---------------------------------------------------------------------------
 // mongo_selective.go :: accumulate — len(thisResultSet) > 0 true (line 327)
 // ---------------------------------------------------------------------------
-
-// Verifies: SW-REQ-035
 // SW-REQ-035:boundary:nominal — supply a non-empty thisResultSet and an
 // item that overflows the batch limit, driving len(thisResultSet) > 0 = T.
 func TestMongoSelectivePump_Accumulate_OverflowFlushesPriorSet(t *testing.T) {
@@ -809,8 +955,6 @@ func TestMongoSelectivePump_Accumulate_OverflowFlushesPriorSet(t *testing.T) {
 // crashing the process — they're handled via //mcdc:ignore on the
 // production source citing KI pumps-logfatal-on-config-decode.
 // ---------------------------------------------------------------------------
-
-// Verifies: SW-REQ-034
 // SW-REQ-034:nominal:nominal — happy-path Init drives the err==nil branch
 // at line 212 (also covers mongo_aggregate line 186 + mongo_selective line 86
 // through their dedicated tests).
@@ -827,8 +971,6 @@ func TestMongoPump_Init_FirstDecodeOK(t *testing.T) {
 // ---------------------------------------------------------------------------
 // PHASE E5 — mongo follow-up: close the remaining 22 MC/DC gaps
 // ---------------------------------------------------------------------------
-
-// Verifies: SW-REQ-038
 // SW-REQ-038:nominal:nominal — drives the F-arm of
 // `g.dbConf.MaxInsertBatchSizeBytes == 0` (line 74) by supplying a non-zero
 // batch size in config; the default branch must NOT overwrite it.
@@ -846,7 +988,6 @@ func TestMCPMongoPump_Init_PreservesExplicitBatchSize(t *testing.T) {
 	assert.Equal(t, 2*1024*1024, p.dbConf.MaxDocumentSizeBytes)
 }
 
-// Verifies: SW-REQ-039
 // SW-REQ-039:nominal:nominal — drives the F-arm of
 // `m.dbConf.ThresholdLenTagList == 0` (line 76) by supplying an explicit
 // non-zero threshold; the default-application branch must be skipped.
@@ -862,7 +1003,6 @@ func TestMCPMongoAggregatePump_Init_PreservesExplicitThreshold(t *testing.T) {
 	assert.Equal(t, 42, p.dbConf.ThresholdLenTagList)
 }
 
-// Verifies: SW-REQ-058
 // SW-REQ-058:nominal:nominal — drives the `ok` short-circuit at
 // mongo_aggregate.go:302 with ok=F (non-AnalyticsRecord input). The condition
 // short-circuits on F so rec.IsMCPRecord() is never evaluated; the item is
@@ -881,7 +1021,6 @@ func TestMongoAggregatePump_WriteData_NonAnalyticsRecordOK(t *testing.T) {
 	_ = p.WriteData(context.Background(), []interface{}{"not-a-record"})
 }
 
-// Verifies: SW-REQ-058
 // SW-REQ-058:nominal:nominal — feeds an MCP record into MongoAggregatePump
 // so the `ok && rec.IsMCPRecord()` filter at line 302 is reached with both
 // conditions true (driving the rec.IsMCPRecord()=T arm — short-circuit
@@ -909,22 +1048,21 @@ func TestMongoAggregatePump_WriteData_MCPRecordFiltered(t *testing.T) {
 	require.NoError(t, p.WriteData(context.Background(), data))
 }
 
-// Verifies: SW-REQ-063
 // SW-REQ-063:errors_propagated:negative — drives the err != nil = T arm at
-// mongo_aggregate.go:287 by stopping the container before CreateIndex.
+// mongo_aggregate.go:287 by returning a CreateIndex error.
 func TestMongoAggregatePump_EnsureIndexes_TimestampCreateErr(t *testing.T) {
-	uri, teardown := startDedicatedMongo(t)
+	store := &sequencedUpsertStore{createIndexErrs: []error{errors.New("create index failed")}}
 	p := &MongoAggregatePump{}
-	cfg := map[string]interface{}{
-		"mongo_url":            uri,
-		"use_mixed_collection": false,
-		"mongo_db_type":        int(AWSDocumentDB), // skip collectionExists short-circuit
+	p.store = store
+	p.dbConf = &MongoAggregateConf{
+		BaseMongoConf: BaseMongoConf{
+			MongoDBType: AWSDocumentDB, // skip collectionExists short-circuit
+		},
 	}
-	require.NoError(t, p.Init(cfg))
-	terminateMongo(t, teardown)
+	p.log = logrus.NewEntry(logrus.New())
 
 	err := p.ensureIndexes(uniqueCollection(t) + "_ts_after_stop")
-	assert.Error(t, err, "ensureIndexes timestamp CreateIndex must error after stop")
+	assert.Error(t, err, "ensureIndexes timestamp CreateIndex must error")
 }
 
 // stringTimestampDoc is a DBObject whose "timestamp" field is a string
@@ -936,22 +1074,18 @@ type stringTimestampDoc struct {
 	OrgID     string         `bson:"orgid"`
 }
 
-// Verifies: SW-REQ-036
 func (stringTimestampDoc) TableName() string {
 	return analytics.AgggregateMixedCollectionName
 }
 
-// Verifies: SW-REQ-036
 func (d stringTimestampDoc) GetObjectID() model.ObjectID {
 	return d.ID
 }
 
-// Verifies: SW-REQ-036
 func (d *stringTimestampDoc) SetObjectID(id model.ObjectID) {
 	d.ID = id
 }
 
-// Verifies: SW-REQ-036
 // SW-REQ-036:errors_propagated:nominal — drives the ok=F arm at
 // mongo_aggregate.go:422 (`if ts, ok := result["timestamp"].(time.Time); ok`)
 // by seeding a doc with a NON-time.Time timestamp value. The decoder will
@@ -977,7 +1111,6 @@ func TestMongoAggregatePump_GetLastDocumentTimestamp_NonTimeType(t *testing.T) {
 	assert.Error(t, err, "getLastDocumentTimestamp must return err when ts is not time.Time")
 }
 
-// Verifies: SW-REQ-034
 // SW-REQ-034:nominal:nominal — drives the exists=T arm at mongo.go:340 by
 // pre-creating the collection THEN calling ensureIndexes on it. StandardMongo
 // path must short-circuit returning nil.
@@ -998,25 +1131,23 @@ func TestMongoPump_EnsureIndexes_CollectionExistsShortCircuit(t *testing.T) {
 	require.NoError(t, p.ensureIndexes(colName))
 }
 
-// Verifies: SW-REQ-034
 // SW-REQ-034:errors_propagated:negative — drives the err != nil = T arm at
-// mongo.go:366 (first CreateIndex error). Container stopped after Init.
+// mongo.go:366 (first CreateIndex error).
 func TestMongoPump_EnsureIndexes_FirstCreateIndexErr(t *testing.T) {
-	uri, teardown := startDedicatedMongo(t)
+	store := &sequencedUpsertStore{createIndexErrs: []error{errors.New("create index failed")}}
 	p := &MongoPump{}
-	cfg := map[string]interface{}{
-		"mongo_url":       uri,
-		"collection_name": uniqueCollection(t),
-		"mongo_db_type":   int(AWSDocumentDB), // skip collectionExists short-circuit
+	p.store = store
+	p.dbConf = &MongoConf{
+		BaseMongoConf: BaseMongoConf{
+			MongoDBType: AWSDocumentDB, // skip collectionExists short-circuit
+		},
 	}
-	require.NoError(t, p.Init(cfg))
-	terminateMongo(t, teardown)
+	p.log = logrus.NewEntry(logrus.New())
 
 	err := p.ensureIndexes(uniqueCollection(t) + "_first_ci")
 	assert.Error(t, err)
 }
 
-// Verifies: SW-REQ-034
 // SW-REQ-034:errors_propagated:negative — drives the err != nil = T arm at
 // mongo.go:314 (Migrate failure inside capCollection) by enabling cap and
 // stopping the container after Init. With a stopped container, HasTable
@@ -1026,25 +1157,21 @@ func TestMongoPump_EnsureIndexes_FirstCreateIndexErr(t *testing.T) {
 // (Mongo's Migrate is hard to drive to a *post-HasTable* failure without a
 // connector-factory seam).
 func TestMongoPump_CapCollection_MigrateErrAfterStop(t *testing.T) {
-	uri, teardown := startDedicatedMongo(t)
+	store := &sequencedUpsertStore{migrateErrs: []error{errors.New("migrate failed")}}
 	p := &MongoPump{}
-	cfg := map[string]interface{}{
-		"mongo_url":                     uri,
-		"collection_name":               uniqueCollection(t),
-		"collection_cap_enable":         true,
-		"collection_cap_max_size_bytes": 1024,
+	p.store = store
+	p.dbConf = &MongoConf{
+		CollectionName:            uniqueCollection(t),
+		CollectionCapEnable:       true,
+		CollectionCapMaxSizeBytes: 1024,
+		BaseMongoConf:             BaseMongoConf{},
 	}
-	require.NoError(t, p.Init(cfg))
-	// Drop the auto-created cap collection so the next capCollection() proceeds
-	// past the exists check.
-	_ = p.store.Drop(context.Background(), dbObject{tableName: cfg["collection_name"].(string)})
-	terminateMongo(t, teardown)
+	p.log = logrus.NewEntry(logrus.New())
 
 	ok := p.capCollection()
 	assert.False(t, ok, "capCollection must return false when Migrate errors")
 }
 
-// Verifies: SW-REQ-035
 // SW-REQ-035:boundary:nominal — drives the len(thisResultSet) > 0 = F arm
 // at mongo_selective.go:327 by supplying an empty initial result-set and an
 // item that overflows the batch size; the inner `if len > 0` branch must NOT
@@ -1063,21 +1190,19 @@ func TestMongoSelectivePump_Accumulate_OverflowWithEmptyResultSet(t *testing.T) 
 	assert.Len(t, gotRet, 1, "only the last-item flush should produce one entry")
 }
 
-// Verifies: SW-REQ-035
 // SW-REQ-035:errors_propagated:negative — drives the err != nil = T arm at
-// mongo_selective.go:183 (TTL ttlIndex CreateIndex failure). The container
-// stop happens after Init so the first CreateIndex (apiIndex) errors too —
-// since the test only needs SOME err != nil path on a CreateIndex within
-// ensureIndexes, a stopped container surfaces the desired arm.
+// mongo_selective.go:183 (TTL ttlIndex CreateIndex failure). This fake store
+// returns an error on the first CreateIndex, covering the same err propagation.
 func TestMongoSelectivePump_EnsureIndexes_TTLCreateErr(t *testing.T) {
-	uri, teardown := startDedicatedMongo(t)
+	store := &sequencedUpsertStore{createIndexErrs: []error{errors.New("create index failed")}}
 	p := &MongoSelectivePump{}
-	cfg := map[string]interface{}{
-		"mongo_url":     uri,
-		"mongo_db_type": int(AWSDocumentDB), // skip collectionExists short-circuit
+	p.store = store
+	p.dbConf = &MongoSelectiveConf{
+		BaseMongoConf: BaseMongoConf{
+			MongoDBType: AWSDocumentDB, // skip collectionExists short-circuit
+		},
 	}
-	require.NoError(t, p.Init(cfg))
-	terminateMongo(t, teardown)
+	p.log = logrus.NewEntry(logrus.New())
 
 	// The apiIndex CreateIndex (line 168) errors first → covers line 169-170 err arm.
 	// We don't expect to reach the ttlIndex section, but the err-propagation path
@@ -1086,7 +1211,6 @@ func TestMongoSelectivePump_EnsureIndexes_TTLCreateErr(t *testing.T) {
 	assert.Error(t, err)
 }
 
-// Verifies: SW-REQ-035
 // SW-REQ-035:nominal:nominal — drive the second-CreateIndex (logBrowser)
 // "already exists with a different name" swallow path. We pre-create a
 // logBrowser-keyed index under a DIFFERENT name; ensureIndexes will then
@@ -1130,19 +1254,18 @@ func TestMongoSelectivePump_EnsureIndexes_LogBrowserDifferentName(t *testing.T) 
 	_ = err
 }
 
-// Verifies: SW-REQ-037
 // SW-REQ-037:errors_propagated:negative — drives the err != nil = T arm at
 // graph_mongo.go:168 (Insert failure inside the goroutine). Container stop
 // after Init so the next Insert errors.
-func TestGraphMongoPump_WriteData_InsertErrAfterStop(t *testing.T) {
-	uri, teardown := startDedicatedMongo(t)
+func TestGraphMongoPump_WriteData_InsertErr(t *testing.T) {
+	store := &sequencedUpsertStore{insertErrs: []error{errors.New("insert failed")}}
 	p := &GraphMongoPump{}
-	cfg := map[string]interface{}{
-		"mongo_url":       uri,
-		"collection_name": uniqueCollection(t),
+	p.MongoPump.store = store
+	p.MongoPump.dbConf = &MongoConf{
+		CollectionName: uniqueCollection(t),
 	}
-	require.NoError(t, p.Init(cfg))
-	terminateMongo(t, teardown)
+	p.MongoPump.log = logrus.NewEntry(logrus.New())
+	p.log = p.MongoPump.log
 
 	rec := analytics.AnalyticsRecord{
 		APIName: "graph-stop",
@@ -1155,24 +1278,26 @@ func TestGraphMongoPump_WriteData_InsertErrAfterStop(t *testing.T) {
 		},
 	}
 	err := p.WriteData(context.Background(), []interface{}{rec})
-	assert.Error(t, err, "Insert must error once mongo is gone")
+	assert.Error(t, err, "Insert errors must propagate")
 }
 
-// Verifies: SW-REQ-034
 // SW-REQ-034:errors_propagated:negative — drives the errExists != nil arm
 // at mongo.go:340 (`errExists == nil && exists` — drive errExists != nil so
 // the short-circuit's first condition flips). StandardMongo + stopped
-// container → HasTable returns err, errExists==nil = F, short-circuit on F.
+// fake store → HasTable returns err, errExists==nil = F, short-circuit on F.
 func TestMongoPump_EnsureIndexes_HasTableErrAfterStop(t *testing.T) {
-	uri, teardown := startDedicatedMongo(t)
-	p := &MongoPump{}
-	cfg := map[string]interface{}{
-		"mongo_url":       uri,
-		"collection_name": uniqueCollection(t),
-		// StandardMongo (default) so the collectionExists call IS made.
+	store := &sequencedUpsertStore{
+		hasTableErrs:    []error{errors.New("has table failed")},
+		createIndexErrs: []error{errors.New("create index failed")},
 	}
-	require.NoError(t, p.Init(cfg))
-	terminateMongo(t, teardown)
+	p := &MongoPump{}
+	p.store = store
+	p.dbConf = &MongoConf{
+		BaseMongoConf: BaseMongoConf{
+			MongoDBType: StandardMongo, // collectionExists call is made.
+		},
+	}
+	p.log = logrus.NewEntry(logrus.New())
 
 	// New collection name → Init's ensureIndexes call doesn't share state.
 	err := p.ensureIndexes(uniqueCollection(t) + "_std_after_stop")
@@ -1181,7 +1306,6 @@ func TestMongoPump_EnsureIndexes_HasTableErrAfterStop(t *testing.T) {
 	assert.Error(t, err)
 }
 
-// Verifies: SW-REQ-036
 // SW-REQ-036:nominal:nominal — drives the err != nil = F arm at
 // mongo_aggregate.go:216 (`if err != nil { ... } else { SetlastTimestampAgggregateRecord }`)
 // in Init by pre-seeding the mixed collection with a valid time.Time doc

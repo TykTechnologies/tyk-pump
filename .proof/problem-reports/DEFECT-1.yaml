@@ -1,6 +1,7 @@
 schema_version: 1
 id: DEFECT-1
 title: MCP Mongo aggregate cross-API document merge
+introduced_in: be39ad3
 description: |
   MCPMongoAggregatePump.DoMCPAggregatedWriting built its upsert match query
   on only (orgid, timestamp), so concurrent aggregate writes from two MCP
@@ -61,6 +62,9 @@ disposition:
     status: covered_by_requirement
     requirements:
         - SW-REQ-039
+    known_issues:
+        - mapstructure-decode-silently-drops-unknown-keys
+        - mcp-mongo-aggregate-atomicity-fault-injection-missing
     evidence:
         verified_by:
             - pumps/mcp_mongo_aggregate_test.go:TestMCPMongoAggregatePump_WriteData_PerAPIPartitioning

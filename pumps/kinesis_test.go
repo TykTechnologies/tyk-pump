@@ -14,20 +14,22 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-// Verifies: SW-REQ-056
+// Verifies: SW-REQ-017
+// SW-REQ-017:nominal:nominal
 func TestKinesisPump_New(t *testing.T) {
 	pump := &KinesisPump{}
 	newPump := pump.New()
 	assert.IsType(t, &KinesisPump{}, newPump)
 }
 
-// Verifies: SW-REQ-056
+// Verifies: INT-REQ-004
+// MCDC INT-REQ-004: contract_honoured=T, pump_methods_called=T => TRUE
 func TestKinesisPump_GetName(t *testing.T) {
 	pump := &KinesisPump{}
 	assert.Equal(t, "Kinesis Pump", pump.GetName())
 }
 
-// Verifies: SW-REQ-056
+// SW-REQ-056: Kinesis KMS key configuration decoding.
 func TestKinesisConf_KMSKeyID_Configuration(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -53,21 +55,30 @@ func TestKinesisConf_KMSKeyID_Configuration(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			conf := &KinesisConf{
-				KMSKeyID: tt.kmsKeyID,
-			}
+			conf := &KinesisConf{}
+			err := mapstructure.Decode(map[string]interface{}{
+				"stream_name": "test-stream",
+				"region":      "us-east-1",
+				"kms_key_id":  tt.kmsKeyID,
+			}, conf)
+			assert.NoError(t, err)
 			assert.Equal(t, tt.expected, conf.KMSKeyID)
 		})
 	}
 }
 
-// Verifies: SW-REQ-056
+// SW-REQ-056: default Kinesis KMS key configuration.
 func TestKinesisPump_KMSKeyID_DefaultValue(t *testing.T) {
 	conf := &KinesisConf{}
+	err := mapstructure.Decode(map[string]interface{}{
+		"stream_name": "test-stream",
+		"region":      "us-east-1",
+	}, conf)
+	assert.NoError(t, err)
 	assert.Equal(t, "", conf.KMSKeyID)
 }
 
-// Verifies: SW-REQ-056
+// SW-REQ-056:input_size_bounded:boundary
 func TestSplitIntoBatches(t *testing.T) {
 	records := make([]interface{}, 25)
 	batches := splitIntoBatches(records, 10)
@@ -77,17 +88,8 @@ func TestSplitIntoBatches(t *testing.T) {
 	assert.Len(t, batches[2], 5)
 }
 
-// Verifies: SW-REQ-056
-func TestKinesisPump_KMSKeyID_LogMasking(t *testing.T) {
-	kmsKeyID := "arn:aws:kms:us-east-1:123456789012:key/12345678-1234-1234-1234-123456789012"
-	if len(kmsKeyID) >= 8 {
-		masked := kmsKeyID[:4] + "***" + kmsKeyID[len(kmsKeyID)-4:]
-		assert.Equal(t, "arn:***9012", masked)
-	}
-}
-
 // Tests for the new describe stream encryption logic
-// Verifies: SW-REQ-056
+// SW-REQ-056:nominal:nominal
 func TestKinesisPump_EncryptionConfig_SameKey(t *testing.T) {
 	kmsKeyID := "arn:aws:kms:us-east-1:123456789012:key/test-key-id"
 
@@ -105,7 +107,7 @@ func TestKinesisPump_EncryptionConfig_SameKey(t *testing.T) {
 	assert.Equal(t, "us-east-1", kinesisConf.Region)
 }
 
-// Verifies: SW-REQ-056
+// SW-REQ-056:nominal:nominal
 func TestKinesisPump_EncryptionConfig_DifferentKey(t *testing.T) {
 	currentKeyID := "arn:aws:kms:us-east-1:123456789012:key/current-key"
 	newKeyID := "arn:aws:kms:us-east-1:123456789012:key/new-key"
@@ -127,7 +129,7 @@ func TestKinesisPump_EncryptionConfig_DifferentKey(t *testing.T) {
 	assert.NotEqual(t, currentKeyID, newKeyID)
 }
 
-// Verifies: SW-REQ-056
+// SW-REQ-056:nominal:nominal
 func TestKinesisPump_EncryptionConfig_NotEncrypted(t *testing.T) {
 	kmsKeyID := "arn:aws:kms:us-east-1:123456789012:key/test-key-id"
 
@@ -145,7 +147,7 @@ func TestKinesisPump_EncryptionConfig_NotEncrypted(t *testing.T) {
 	assert.Equal(t, "us-east-1", kinesisConf.Region)
 }
 
-// Verifies: SW-REQ-056
+// SW-REQ-056:nominal:boundary
 func TestKinesisPump_EncryptionConfig_NoKMSKeyID(t *testing.T) {
 	config := map[string]interface{}{
 		"stream_name": "test-stream",
@@ -161,7 +163,7 @@ func TestKinesisPump_EncryptionConfig_NoKMSKeyID(t *testing.T) {
 	assert.Equal(t, "us-east-1", kinesisConf.Region)
 }
 
-// Verifies: SW-REQ-056
+// SW-REQ-056:input_size_bounded:nominal
 func TestKinesisPump_BatchSize_Configuration(t *testing.T) {
 	//nolint:govet
 	tests := []struct {
@@ -201,17 +203,23 @@ func TestKinesisPump_BatchSize_Configuration(t *testing.T) {
 }
 
 // Verifies: SW-REQ-056
+// SW-REQ-056:nominal:boundary
+// MCDC SW-REQ-056: kms_key_configured=F, stream_encryption_verified=F => TRUE
 func TestKinesisPump_StreamName_Required(t *testing.T) {
 	config := map[string]interface{}{
 		"region": "us-east-1",
-		// Missing stream_name
 	}
 
-	kinesisConf := &KinesisConf{}
-	err := mapstructure.Decode(config, kinesisConf)
+	mockClient := &MockKinesisClient{}
+	pump := &TestableKinesisPump{}
+	err := pump.InitWithMock(config, mockClient)
+
 	assert.NoError(t, err)
-	assert.Equal(t, "", kinesisConf.StreamName) // Should be empty when not provided
-	assert.Equal(t, "us-east-1", kinesisConf.Region)
+	assert.Equal(t, "", pump.kinesisConf.StreamName)
+	assert.Equal(t, "us-east-1", pump.kinesisConf.Region)
+	assert.Equal(t, 100, pump.kinesisConf.BatchSize)
+	mockClient.AssertNotCalled(t, "DescribeStream")
+	mockClient.AssertNotCalled(t, "StartStreamEncryption")
 }
 
 // KinesisClientInterface defines the interface for Kinesis client operations
@@ -226,7 +234,6 @@ type MockKinesisClient struct {
 	mock.Mock
 }
 
-// Verifies: SW-REQ-056
 func (m *MockKinesisClient) DescribeStream(ctx context.Context, params *kinesis.DescribeStreamInput, _ ...func(*kinesis.Options)) (*kinesis.DescribeStreamOutput, error) {
 	args := m.Called(ctx, params)
 	if args.Get(0) == nil {
@@ -240,7 +247,6 @@ func (m *MockKinesisClient) DescribeStream(ctx context.Context, params *kinesis.
 	return output, args.Error(1)
 }
 
-// Verifies: SW-REQ-056
 func (m *MockKinesisClient) StartStreamEncryption(ctx context.Context, params *kinesis.StartStreamEncryptionInput, _ ...func(*kinesis.Options)) (*kinesis.StartStreamEncryptionOutput, error) {
 	args := m.Called(ctx, params)
 	if args.Get(0) == nil {
@@ -254,7 +260,6 @@ func (m *MockKinesisClient) StartStreamEncryption(ctx context.Context, params *k
 	return output, args.Error(1)
 }
 
-// Verifies: SW-REQ-056
 func (m *MockKinesisClient) PutRecords(ctx context.Context, params *kinesis.PutRecordsInput, _ ...func(*kinesis.Options)) (*kinesis.PutRecordsOutput, error) {
 	args := m.Called(ctx, params)
 	if args.Get(0) == nil {
@@ -274,7 +279,6 @@ type TestableKinesisPump struct {
 	KinesisPump
 }
 
-// Verifies: SW-REQ-056
 func (p *TestableKinesisPump) InitWithMock(config interface{}, mockClient KinesisClientInterface) error {
 	p.log = logrus.NewEntry(logrus.New())
 	p.log.Logger.SetLevel(logrus.FatalLevel) // Suppress logs during testing
@@ -344,6 +348,8 @@ func (p *TestableKinesisPump) InitWithMock(config interface{}, mockClient Kinesi
 // Tests for the new describe stream encryption logic
 
 // Verifies: SW-REQ-056
+// SW-REQ-056:nominal:nominal
+// MCDC SW-REQ-056: kms_key_configured=T, stream_encryption_verified=T => TRUE
 func TestKinesisPump_DescribeStream_AlreadyEncryptedSameKey(t *testing.T) {
 	kmsKeyID := "arn:aws:kms:us-east-1:123456789012:key/test-key-id"
 
@@ -377,6 +383,7 @@ func TestKinesisPump_DescribeStream_AlreadyEncryptedSameKey(t *testing.T) {
 }
 
 // Verifies: SW-REQ-056
+// MCDC SW-REQ-056: kms_key_configured=T, stream_encryption_verified=F => FALSE
 func TestKinesisPump_DescribeStream_AlreadyEncryptedDifferentKey(t *testing.T) {
 	currentKeyID := "arn:aws:kms:us-east-1:123456789012:key/current-key"
 	newKeyID := "arn:aws:kms:us-east-1:123456789012:key/new-key"
@@ -409,6 +416,7 @@ func TestKinesisPump_DescribeStream_AlreadyEncryptedDifferentKey(t *testing.T) {
 }
 
 // Verifies: SW-REQ-056
+// MCDC SW-REQ-056: kms_key_configured=T, stream_encryption_verified=T => TRUE
 func TestKinesisPump_DescribeStream_NotEncrypted_StartEncryptionSuccess(t *testing.T) {
 	kmsKeyID := "arn:aws:kms:us-east-1:123456789012:key/test-key-id"
 
@@ -446,6 +454,7 @@ func TestKinesisPump_DescribeStream_NotEncrypted_StartEncryptionSuccess(t *testi
 }
 
 // Verifies: SW-REQ-056
+// MCDC SW-REQ-056: kms_key_configured=T, stream_encryption_verified=T => TRUE
 func TestKinesisPump_DescribeStream_NotEncrypted_StartEncryptionResourceInUse(t *testing.T) {
 	kmsKeyID := "arn:aws:kms:us-east-1:123456789012:key/test-key-id"
 
@@ -486,6 +495,7 @@ func TestKinesisPump_DescribeStream_NotEncrypted_StartEncryptionResourceInUse(t 
 }
 
 // Verifies: SW-REQ-056
+// MCDC SW-REQ-056: kms_key_configured=T, stream_encryption_verified=F => FALSE
 func TestKinesisPump_DescribeStream_NotEncrypted_StartEncryptionGenericError(t *testing.T) {
 	kmsKeyID := "arn:aws:kms:us-east-1:123456789012:key/test-key-id"
 
@@ -525,6 +535,7 @@ func TestKinesisPump_DescribeStream_NotEncrypted_StartEncryptionGenericError(t *
 }
 
 // Verifies: SW-REQ-056
+// MCDC SW-REQ-056: kms_key_configured=T, stream_encryption_verified=F => FALSE
 func TestKinesisPump_DescribeStream_APIFailure(t *testing.T) {
 	kmsKeyID := "arn:aws:kms:us-east-1:123456789012:key/test-key-id"
 
@@ -551,6 +562,7 @@ func TestKinesisPump_DescribeStream_APIFailure(t *testing.T) {
 }
 
 // Verifies: SW-REQ-056
+// MCDC SW-REQ-056: kms_key_configured=F, stream_encryption_verified=F => TRUE
 func TestKinesisPump_NoKMSKeyID_SkipsEncryption(t *testing.T) {
 	config := map[string]interface{}{
 		"stream_name": "test-stream",

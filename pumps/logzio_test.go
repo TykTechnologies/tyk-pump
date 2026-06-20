@@ -7,6 +7,8 @@ import (
 )
 
 // Verifies: SW-REQ-051
+// MCDC SW-REQ-051: client_constructed=F, token_set=F => TRUE
+// MCDC SW-REQ-051: client_constructed=F, token_set=T => FALSE
 func TestLogzioInit(t *testing.T) {
 	conf := NewLogzioPumpConfig()
 
@@ -38,7 +40,7 @@ func TestLogzioInit(t *testing.T) {
 	}
 }
 
-// Verifies: SW-REQ-051
+// SW-REQ-051:nominal:nominal
 func TestLogzioDecodeWithDefaults(t *testing.T) {
 	config := map[string]interface{}{
 		"token": "123456789",
@@ -54,7 +56,7 @@ func TestLogzioDecodeWithDefaults(t *testing.T) {
 	}
 }
 
-// Verifies: SW-REQ-051
+// SW-REQ-051:nominal:nominal
 func TestLogzioDecodeOverrideDefaults(t *testing.T) {
 	config := map[string]interface{}{
 		"token":            "123456789",

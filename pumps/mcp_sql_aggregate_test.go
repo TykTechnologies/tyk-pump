@@ -338,7 +338,6 @@ func TestMCPSQLAggregatePump_WriteData_EmptyData_NoInit(t *testing.T) {
 // enabled, matching the production gorm config used by OpenGormDB. This is
 // critical for embedded structs (Counter, Code) whose columns are prefixed by
 // their JSON tag (counter_, code_) when UseJSONTags is true.
-// Verifies: SW-REQ-045
 func setupTestDBWithJSONTags(t *testing.T) *gorm.DB {
 	t.Helper()
 	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
@@ -349,7 +348,6 @@ func setupTestDBWithJSONTags(t *testing.T) *gorm.DB {
 	return db
 }
 
-// Verifies: SW-REQ-045
 func newMCPSQLAggregatePumpWithSQLite(t *testing.T, batchSize int, sharding bool) *MCPSQLAggregatePump {
 	t.Helper()
 	db := setupTestDBWithJSONTags(t)

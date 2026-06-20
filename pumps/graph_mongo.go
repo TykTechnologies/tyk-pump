@@ -116,7 +116,7 @@ func (g *GraphMongoPump) WriteData(ctx context.Context, data []interface{}) erro
 			finalSet := make([]model.DBObject, 0)
 			for _, d := range dataSet {
 				r, ok := d.(*analytics.AnalyticsRecord)
-				if !ok {
+				if !ok { //mcdc:ignore:defensive AccumulateSet(data, true) only appends *analytics.AnalyticsRecord values returned by shouldProcessItem; non-record inputs are filtered before this loop. KI mcdc-pumps-below-95.
 					continue
 				}
 
@@ -126,7 +126,7 @@ func (g *GraphMongoPump) WriteData(ctx context.Context, data []interface{}) erro
 					gr  analytics.GraphRecord
 					err error
 				)
-				if !r.GraphQLStats.IsGraphQL {
+				if !r.GraphQLStats.IsGraphQL { //mcdc:ignore:defensive AccumulateSet(data, true) filters non-GraphQL records before this loop via shouldProcessItem; retained records are GraphQL analytics records. KI mcdc-pumps-below-95.
 					g.log.Warn("skipping record parsing")
 					gr = analytics.GraphRecord{AnalyticsRecord: *r}
 				} else {

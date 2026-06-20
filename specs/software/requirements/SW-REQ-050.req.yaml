@@ -33,17 +33,6 @@ verification:
         comment: 'Phase L2: aggressive formalization — encodes per-component primary decision (instrumentation gate, codec select, SSL/SASL, dataset_empty, default-path, file-append, retry-status, log-level, flush, batch, transport, dedup); variables in <component>.vars.yaml; user directive: force MCDC witnesses to drive verifying tests.'
         fingerprint: sha256:cef27de0e4a9279e948d3a2854553a017ad9ce749aa289d519d71c12366e7ed8
         ai_generated: true
-    impact_reviews:
-        - requirement: SW-REQ-050
-          artifact: pumps/syslog.go
-          decision: no-authored-change
-          reviewer: buger
-          reason: 'Phase L2: formalization-only change (informal -> fretish + per-component boolean variables). Production .go files were not modified; only req YAML metadata, component vars YAMLs, and // MCDC test comment witnesses.'
-          base: origin/master
-          requirement_fingerprint: sha256:88885107c8ee0a24d609c5c2e346f5e89d16917cc7e368c42f8da2187ea20b91
-          approval_fingerprint: sha256:cef27de0e4a9279e948d3a2854553a017ad9ce749aa289d519d71c12366e7ed8
-          artifact_fingerprint: sha256:d4dcff9b29e31da1df899bfff9cedbbd1f6a8b1135a82a8e075cd8036134a769
-          reviewed_at: "2026-06-02T13:44:40Z"
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:36:19Z"
@@ -56,21 +45,20 @@ obligation_checklist:
     - nominal
     - process_exit_on_recoverable
 obligation_deferrals:
-    - obligation_class: encoding_safety
-      reason: 'Deferred: required encoding_safety test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'
-      tracking: .proof/deferred-witness-backlog.md
-      owner: human:buger
     - obligation_class: errors_propagated
       reason: real untested obligation under known-issue pumps-logfatal-on-config-decode; surfaced as visible tracked debt, not an overclaimed fix
       tracking: pumps-logfatal-on-config-decode
+      ki_ref: pumps-logfatal-on-config-decode
       owner: human:buger
     - obligation_class: malformed_recovers_or_errors_loudly
       reason: real untested obligation under known-issue mapstructure-decode-silently-drops-unknown-keys; surfaced as visible tracked debt, not an overclaimed fix
       tracking: mapstructure-decode-silently-drops-unknown-keys
+      ki_ref: mapstructure-decode-silently-drops-unknown-keys
       owner: human:buger
     - obligation_class: process_exit_on_recoverable
       reason: real untested obligation under known-issue pumps-logfatal-on-config-decode; surfaced as visible tracked debt, not an overclaimed fix
       tracking: pumps-logfatal-on-config-decode
+      ki_ref: pumps-logfatal-on-config-decode
       owner: human:buger
 lifecycle:
     change_history:

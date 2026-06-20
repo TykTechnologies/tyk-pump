@@ -33,17 +33,6 @@ verification:
         comment: 'Phase L2: aggressive formalization — encodes per-component primary decision (instrumentation gate, codec select, SSL/SASL, dataset_empty, default-path, file-append, retry-status, log-level, flush, batch, transport, dedup); variables in <component>.vars.yaml; user directive: force MCDC witnesses to drive verifying tests.'
         fingerprint: sha256:740e3b25782ad4c2954e17bc38a39762c447e8d70dc41d70e063f658d9cde2cd
         ai_generated: false
-    impact_reviews:
-        - requirement: SW-REQ-033
-          artifact: logger/init.go
-          decision: no-authored-change
-          reviewer: buger
-          reason: 'Phase L2: formalization-only change (informal -> fretish + per-component boolean variables). Production .go files were not modified; only req YAML metadata, component vars YAMLs, and // MCDC test comment witnesses.'
-          base: origin/master
-          requirement_fingerprint: sha256:5160387c40f995b2c9f01e5fb76fb0846396497041be34b29ab5331e3f3271c0
-          approval_fingerprint: sha256:740e3b25782ad4c2954e17bc38a39762c447e8d70dc41d70e063f658d9cde2cd
-          artifact_fingerprint: sha256:9d3dd83e337390d18f6763deb950af20441c5d7afdbf09fe5dff89cd363f23d4
-          reviewed_at: "2026-06-02T13:44:40Z"
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:17Z"

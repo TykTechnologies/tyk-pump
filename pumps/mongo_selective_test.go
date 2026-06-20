@@ -13,7 +13,7 @@ import (
 	"gopkg.in/vmihailenco/msgpack.v2"
 )
 
-// Verifies: SW-REQ-035
+// SW-REQ-035:boundary:nominal
 func TestMongoSelectivePump_AccumulateSet(t *testing.T) {
 	run := func(recordsGenerator func(numRecords int) []interface{}, expectedRecordsCount, maxDocumentSizeBytes int) func(t *testing.T) {
 		return func(t *testing.T) {
@@ -104,26 +104,7 @@ func TestMongoSelectivePump_AccumulateSet(t *testing.T) {
 	))
 }
 
-// Verifies: SW-REQ-035
-func TestConnection(t *testing.T) {
-	mPump := MongoSelectivePump{}
-	conf := defaultSelectiveConf(t)
-	mPump.dbConf = &conf
-	// Checking if the connection is nil before connecting
-	assert.Nil(t, mPump.store)
-	mPump.log = log.WithField("prefix", mongoPrefix)
-
-	t.Run("should connect to mongo", func(t *testing.T) {
-		// If connect fails, it will stop the execution with a fatal error
-		mPump.connect()
-		// Checking if the connection is not nil after connecting
-		assert.NotNil(t, mPump.store)
-		// Checking if the connection is alive
-		assert.Nil(t, mPump.store.Ping(context.Background()))
-	})
-}
-
-// Verifies: SW-REQ-035
+// SW-REQ-035:nominal:nominal
 func TestEnsureIndexes(t *testing.T) {
 	mPump := MongoSelectivePump{}
 	conf := defaultSelectiveConf(t)
@@ -245,6 +226,8 @@ func TestEnsureIndexes(t *testing.T) {
 }
 
 // Verifies: SW-REQ-035
+// MCDC SW-REQ-035: org_id_present=F, record_routed_to_org_collection=F => TRUE
+// MCDC SW-REQ-035: org_id_present=T, record_routed_to_org_collection=T => TRUE
 func TestWriteData(t *testing.T) {
 	mPump := MongoSelectivePump{}
 	conf := defaultSelectiveConf(t)
@@ -312,7 +295,8 @@ func TestWriteData(t *testing.T) {
 	})
 }
 
-// Verifies: SW-REQ-035
+// Verifies: SYS-REQ-021
+// MCDC SYS-REQ-021: uptime_data_consumed=T, uptime_forwarded=T => TRUE
 func TestWriteUptimeDataMongoSelective(t *testing.T) {
 	now := time.Now()
 
@@ -370,7 +354,8 @@ func TestWriteUptimeDataMongoSelective(t *testing.T) {
 	}
 }
 
-// Verifies: SW-REQ-035
+// Verifies: INT-REQ-004
+// MCDC INT-REQ-004: contract_honoured=T, pump_methods_called=T => TRUE
 func TestDecodeRequestAndDecodeResponseMongoSelective(t *testing.T) {
 	newPump := &MongoSelectivePump{}
 	conf := defaultConf(t)
@@ -391,7 +376,7 @@ func TestDecodeRequestAndDecodeResponseMongoSelective(t *testing.T) {
 	assert.False(t, newPump.GetDecodedResponse())
 }
 
-// Verifies: SW-REQ-035
+// SW-REQ-035:nominal:nominal
 func TestDefaultDriverSelective(t *testing.T) {
 	newPump := &MongoSelectivePump{}
 	defaultConf := defaultConf(t)

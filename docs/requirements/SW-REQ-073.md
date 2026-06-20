@@ -27,11 +27,12 @@ existed; this requirement is their proper home:
 
 ## Evidence
 This SW req is a contract surface for the uptime-aggregate path. The
-`atomicity`, `monotonicity`, and `nominal` obligations are SUPPRESSED on this
-requirement because their failure modes are captured by the three named KIs;
-release disposition is `ship_with_known_issue` until those KIs are remediated.
+`atomicity`, `monotonicity`, and `nominal` obligations are tracked on this
+requirement as open KI-backed debt because their failure modes are captured by
+the three named KIs; release disposition is `ship_with_known_issue` until those
+KIs are remediated.
 
 ## Open questions
-- Once each KI is resolved, the matching suppression should be removed and new
+- Once each KI is resolved, the matching deferral should be removed and new
   test triples `// SW-REQ-073:atomicity:negative`, `// SW-REQ-073:monotonicity:positive`,
   `// SW-REQ-073:nominal:positive` should be annotated against the fixed code paths.

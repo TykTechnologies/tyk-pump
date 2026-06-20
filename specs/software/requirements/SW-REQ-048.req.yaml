@@ -33,22 +33,11 @@ verification:
         comment: 'Phase Q: catalog obligation attachments — adds request_timeout_bounded, secrets_not_logged, tls_required_for_secrets, redirect_policy_explicit, ssrf_protection (Splunk HEC: timeout, token, redirects, URL). See .proof/catalog-obligation-proposals.md.'
         fingerprint: sha256:0ff4b42642b3e57e2f1297cbdde5064ff75f6da45a875b601748635401d3f7ff
         ai_generated: true
-    impact_reviews:
-        - requirement: SW-REQ-048
-          artifact: pumps/splunk.go
-          decision: no-authored-change
-          reviewer: buger
-          reason: 'Phase L2: formalization-only change (informal -> fretish + per-component boolean variables). Production .go files were not modified; only req YAML metadata, component vars YAMLs, and // MCDC test comment witnesses.'
-          base: origin/master
-          requirement_fingerprint: sha256:a34dce93e458c421b19ffdb40ab7f0b9cb8ddc3e5ee75de51e30e2eebe99956c
-          approval_fingerprint: sha256:0ff4b42642b3e57e2f1297cbdde5064ff75f6da45a875b601748635401d3f7ff
-          artifact_fingerprint: sha256:b20682ea1bb30aad9dfb91a80b7cf7a88a9f1921eb8434a1514b2e682fa24cf7
-          reviewed_at: "2026-06-02T13:44:40Z"
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:36:07Z"
-    last_modified_by: human:buger
-    last_modified_at: "2026-06-17T08:04:20Z"
+    last_modified_by: agent:codex
+    last_modified_at: "2026-06-19T14:16:42Z"
 obligation_checklist:
     - cert_validation_strict
     - determinism
@@ -57,36 +46,32 @@ obligation_checklist:
     - malformed_recovers_or_errors_loudly
     - request_timeout_bounded
     - ssrf_protection
-obligation_suppressions:
-    - id: cert_validation_strict
-      reason: 'cert_validation_strict code signal at pumps/splunk.go:138: Splunk HTTP client TLS config derives InsecureSkipVerify from p.config.SSLInsecureSkipVerify (default false => verification ON), honoring CA/cert/key files and SSLServerName for hostname pinning. Default-secure, operator-opt-in boundary. Reviewed: in-contract behavior is strict verification by default. Not a defect.'
-      suppressed_by: human:leo
-      suppressed_at: "2026-06-11T16:09:14Z"
-      framework_refs:
-        - CWE CWE-295,CWE-297
-        - NIST-800-53 SC-23,SC-17
-        - OWASP-ASVS-v4 V9.1.1,V9.2.1
 obligation_deferrals:
+    - obligation_class: cert_validation_strict
+      reason: 'real TLS strict-validation gap under known-issue tls-insecure-skip-verify-allowed; surfaced as visible tracked debt, not an overclaimed fix'
+      tracking: tls-insecure-skip-verify-allowed
+      owner: agent:codex
+      ki_ref: tls-insecure-skip-verify-allowed
     - obligation_class: determinism
       reason: 'real untested obligation under known-issue splunk-filtertags-skips-consecutive-matches; surfaced as visible tracked debt, not an overclaimed fix'
       tracking: splunk-filtertags-skips-consecutive-matches
       owner: human:buger
-    - obligation_class: external_call_failure_observable
-      reason: 'Deferred: required external_call_failure_observable test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'
-      tracking: .proof/deferred-witness-backlog.md
-      owner: human:buger
+      ki_ref: splunk-filtertags-skips-consecutive-matches
     - obligation_class: malformed_recovers_or_errors_loudly
       reason: 'real untested obligation under known-issue mapstructure-decode-silently-drops-unknown-keys; surfaced as visible tracked debt, not an overclaimed fix'
       tracking: mapstructure-decode-silently-drops-unknown-keys
       owner: human:buger
+      ki_ref: mapstructure-decode-silently-drops-unknown-keys
     - obligation_class: request_timeout_bounded
-      reason: 'real untested obligation under known-issue splunk-newsplunkclient-mutates-default-transport; surfaced as visible tracked debt, not an overclaimed fix'
+      reason: real untested obligation under known-issue splunk-newsplunkclient-mutates-default-transport; surfaced as visible tracked debt, not an overclaimed fix
       tracking: splunk-newsplunkclient-mutates-default-transport
       owner: human:buger
+      ki_ref: splunk-newsplunkclient-mutates-default-transport
     - obligation_class: ssrf_protection
-      reason: 'Deferred: required ssrf_protection test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'
-      tracking: .proof/deferred-witness-backlog.md
+      reason: real product gap under known-issue external-pump-endpoints-no-ssrf-allowlist; surfaced as visible tracked debt, not an overclaimed fix
+      tracking: external-pump-endpoints-no-ssrf-allowlist
       owner: human:buger
+      ki_ref: external-pump-endpoints-no-ssrf-allowlist
 lifecycle:
     change_history:
         - date: "2026-05-30T08:43:46Z"

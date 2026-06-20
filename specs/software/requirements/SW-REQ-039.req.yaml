@@ -33,17 +33,6 @@ verification:
         comment: 'Phase L2: aggressive formalization — encodes per-pump MCP/graph/mixed-collection/self-heal decisions; variables in pumps-mongo-*.vars.yaml; user directive: force MCDC witnesses on these decisions to drive verifying tests.'
         fingerprint: sha256:3a309d95fe59be104c667592df123db97613b4db593cb963a8a8a2ca6213b7e8
         ai_generated: true
-    impact_reviews:
-        - requirement: SW-REQ-039
-          artifact: pumps/mcp_mongo_aggregate.go
-          decision: no-authored-change
-          reviewer: buger
-          reason: 'Phase L2: formalization-only change (informal -> fretish + per-component boolean variables). Production .go files were not modified; only req YAML metadata, component vars YAMLs, and // MCDC test comment witnesses.'
-          base: origin/master
-          requirement_fingerprint: sha256:255ecd648cade9bdb4b8a1d39c8ff74c46956cf2ce563e5c707406d7bbd96832
-          approval_fingerprint: sha256:3a309d95fe59be104c667592df123db97613b4db593cb963a8a8a2ca6213b7e8
-          artifact_fingerprint: sha256:e9654c425e88a9b07ed3c299faf370703297ce9d18af76e882d23a9cfe7977a3
-          reviewed_at: "2026-06-02T13:35:48Z"
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:35:08Z"
@@ -56,21 +45,15 @@ obligation_checklist:
     - malformed_recovers_or_errors_loudly
     - nominal
 obligation_deferrals:
-    - obligation_class: atomicity
-      reason: 'MCP-mongo-aggregate $inc upsert atomicity negative test needs a fault-injecting MongoDB harness (write-concern/storage failure) not available in local CI; obligation required, test postponed.'
-      tracking: .proof/deferred-witness-backlog.md
-      owner: human:buger
-    - obligation_class: edge_case
-      reason: 'Deferred: required edge_case test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'
-      tracking: .proof/deferred-witness-backlog.md
-      owner: human:buger
-    - obligation_class: errors_propagated
-      reason: 'Deferred: required errors_propagated test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'
-      tracking: .proof/deferred-witness-backlog.md
-      owner: human:buger
     - obligation_class: malformed_recovers_or_errors_loudly
       reason: real untested obligation under known-issue mapstructure-decode-silently-drops-unknown-keys; surfaced as visible tracked debt, not an overclaimed fix
       tracking: mapstructure-decode-silently-drops-unknown-keys
+      ki_ref: mapstructure-decode-silently-drops-unknown-keys
+      owner: human:buger
+    - obligation_class: atomicity
+      reason: proof-harness gap under known-issue mcp-mongo-aggregate-atomicity-fault-injection-missing; surfaced as visible tracked debt, not an overclaimed fix
+      tracking: mcp-mongo-aggregate-atomicity-fault-injection-missing
+      ki_ref: mcp-mongo-aggregate-atomicity-fault-injection-missing
       owner: human:buger
 lifecycle:
     change_history:

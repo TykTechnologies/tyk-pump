@@ -122,7 +122,6 @@ func TestTransformHTTPPayload(t *testing.T) {
 	}
 }
 
-// Verifies: SW-REQ-026
 func newStdOutPump(t *testing.T, format string, legacy bool) *StdOutPump {
 	t.Helper()
 	pump := &StdOutPump{}

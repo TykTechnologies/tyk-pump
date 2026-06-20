@@ -33,62 +33,50 @@ verification:
         comment: 'Phase S Wave 2: attach blind-spot obligations from Wave 1 promote (cascade/fanout/clock_skew/dst/tz/temporal_window/process_exit/tls_verification/partial_progress)'
         fingerprint: sha256:62d7058b5742fba4efd4378375ab1ff2159d9619aafbb634a8e59c40899e0cb8
         ai_generated: true
-    impact_reviews:
-        - requirement: SW-REQ-021
-          artifact: pumps/kafka.go
-          decision: no-authored-change
-          reviewer: buger
-          reason: 'Phase L2: formalization-only change (informal -> fretish + per-component boolean variables). Production .go files were not modified; only req YAML metadata, component vars YAMLs, and // MCDC test comment witnesses.'
-          base: origin/master
-          requirement_fingerprint: sha256:3d960dbc7e76b612907856cb214225ba8f2d925053681df688109a87e2bcc6e6
-          approval_fingerprint: sha256:62d7058b5742fba4efd4378375ab1ff2159d9619aafbb634a8e59c40899e0cb8
-          artifact_fingerprint: sha256:a24df2d59e765fc1963b11188ba2eb01adeb1618c51fdd0222c6c579a6c30299
-          reviewed_at: "2026-06-02T13:44:40Z"
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:15Z"
-    last_modified_by: human:buger
-    last_modified_at: "2026-06-17T08:02:49Z"
+    last_modified_by: agent:codex
+    last_modified_at: "2026-06-19T14:16:01Z"
 obligation_checklist:
     - cancellation_observed
+    - cert_validation_strict
+    - dst_transition_safe
     - errors_propagated
     - malformed_recovers_or_errors_loudly
     - process_exit_on_recoverable
     - tls_verification_explicit
-obligation_suppressions:
-    - id: cert_validation_strict
-      reason: 'cert_validation_strict code signal at pumps/kafka.go:118: Kafka TLS dialer derives InsecureSkipVerify from k.kafkaConf.SSLInsecureSkipVerify (default false => verification ON) via the shared GetTLSConfig helper, honoring CA/cert/key files; SSL setup failure returns a wrapped error. Default-secure, operator-opt-in boundary. Reviewed: in-contract behavior is strict verification by default. Not a defect.'
-      suppressed_by: human:leo
-      suppressed_at: "2026-06-11T16:09:13Z"
-      framework_refs:
-        - CWE CWE-295,CWE-297
-        - NIST-800-53 SC-23,SC-17
-        - OWASP-ASVS-v4 V9.1.1,V9.2.1
-    - id: dst_transition_safe
-      reason: 'dst_transition_safe code signal at pumps/kafka.go:246: reviewed — this site uses time.Now()/time.Since()/Sub() to measure an elapsed DURATION for timing/Debug logging, not to bucket or route a record by wall-clock date. Go durations are computed from the monotonic clock and are immune to DST/timezone transitions, so the dst-transition failure mode (a wall-clock instant shifting across a DST boundary) does not apply here. Intentionally out of contract for this obligation; the genuine wall-clock-bucketing surface is governed separately by KI analytics-timestamp-timezone-convention-unpinned.'
-      suppressed_by: human:leo
-      suppressed_at: "2026-06-11T16:11:35Z"
 obligation_deferrals:
     - obligation_class: cancellation_observed
-      reason: 'Deferred: required cancellation_observed test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'
-      tracking: .proof/deferred-witness-backlog.md
+      reason: 'real cancellation propagation gap under known-issue kafka-writedata-swallows-write-errors; surfaced as visible tracked debt, not an overclaimed fix'
+      tracking: kafka-writedata-swallows-write-errors
       owner: human:buger
+      ki_ref: kafka-writedata-swallows-write-errors
+    - obligation_class: cert_validation_strict
+      reason: 'real TLS strict-validation gap under known-issue tls-insecure-skip-verify-allowed; surfaced as visible tracked debt, not an overclaimed fix'
+      tracking: tls-insecure-skip-verify-allowed
+      owner: agent:codex
+      ki_ref: tls-insecure-skip-verify-allowed
+    - obligation_class: dst_transition_safe
+      reason: 'proof attribution gap under known-issue elapsed-timesince-dst-obligation-misattributed; elapsed Kafka logging metric is tracked debt until signal mapping is narrowed'
+      tracking: elapsed-timesince-dst-obligation-misattributed
+      owner: agent:codex
+      ki_ref: elapsed-timesince-dst-obligation-misattributed
     - obligation_class: errors_propagated
-      reason: 'real untested obligation under known-issue pumps-logfatal-on-config-decode; surfaced as visible tracked debt, not an overclaimed fix'
+      reason: real untested obligation under known-issue pumps-logfatal-on-config-decode; surfaced as visible tracked debt, not an overclaimed fix
       tracking: pumps-logfatal-on-config-decode
       owner: human:buger
+      ki_ref: pumps-logfatal-on-config-decode
     - obligation_class: malformed_recovers_or_errors_loudly
-      reason: 'real untested obligation under known-issue mapstructure-decode-silently-drops-unknown-keys; surfaced as visible tracked debt, not an overclaimed fix'
+      reason: real untested obligation under known-issue mapstructure-decode-silently-drops-unknown-keys; surfaced as visible tracked debt, not an overclaimed fix
       tracking: mapstructure-decode-silently-drops-unknown-keys
       owner: human:buger
+      ki_ref: mapstructure-decode-silently-drops-unknown-keys
     - obligation_class: process_exit_on_recoverable
-      reason: 'real untested obligation under known-issue pumps-logfatal-on-config-decode; surfaced as visible tracked debt, not an overclaimed fix'
+      reason: real untested obligation under known-issue pumps-logfatal-on-config-decode; surfaced as visible tracked debt, not an overclaimed fix
       tracking: pumps-logfatal-on-config-decode
       owner: human:buger
-    - obligation_class: tls_verification_explicit
-      reason: 'Deferred: required tls_verification_explicit test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'
-      tracking: .proof/deferred-witness-backlog.md
-      owner: human:buger
+      ki_ref: pumps-logfatal-on-config-decode
 lifecycle:
     change_history:
         - date: "2026-05-29T15:46:44Z"

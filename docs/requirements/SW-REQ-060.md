@@ -35,10 +35,9 @@ canonical pre-aggregation idiom.
   derived-average recalculation.
 
 ## Evidence
-- The `atomicity` obligation's `negative` evidence is suppressed with
-  rationale (see the req's `obligation_suppressions`): a fault-injecting
-  MongoDB harness is required for an honest negative test and is not
-  available in local CI today.
+- The `atomicity` obligation's `negative` evidence is deferred: a
+  fault-injecting MongoDB harness is required for an honest negative test
+  and is not available in local CI today.
 - Live-Mongo aggregate tests exercise the full pipeline; the on-disk
   representation is verified by `TestDoAggregatedWritingWithIgnoredAggregations`
   (annotated against SW-REQ-059) and the counters by

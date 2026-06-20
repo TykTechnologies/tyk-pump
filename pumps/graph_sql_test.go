@@ -131,6 +131,7 @@ func TestGraphSQLPump_Init(t *testing.T) {
 // (graph_record_present=T/graph_record_routed=T path also driven by
 // TestGraphSQLPump_Sharded which sets TableSharding=true and asserts records
 // land in <TableName>_<YYYYMMDD> shards.)
+// SW-REQ-042:connection_leak_free:nominal
 func TestGraphSQLPump_WriteData(t *testing.T) {
 	skipTestIfNoPostgres(t)
 	conf := GraphSQLConf{
@@ -326,6 +327,11 @@ func TestGraphSQLPump_WriteData(t *testing.T) {
 			if diff := cmp.Diff(expectedResponses, resultRecords, cmpopts.IgnoreFields(analytics.GraphRecord{}, "AnalyticsRecord")); diff != "" {
 				t.Error(diff)
 			}
+
+			sqlDB, err := pump.db.DB()
+			require.NoError(t, err)
+			assert.Equal(t, 0, sqlDB.Stats().InUse,
+				"graph SQL write and read should return every connection to the pool")
 		})
 	}
 }

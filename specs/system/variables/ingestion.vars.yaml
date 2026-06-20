@@ -7,23 +7,25 @@ variables:
       data_constraint:
         domain: integer
         variable: pending_count
-        condition: "pending_count > 0"
+        condition: pending_count > 0
         parameters:
-          - name: pending_count
-            type: int
-            constraint: ">= 0"
+            - name: pending_count
+              type: int
+              constraint: '>= 0'
     - name: records_drained
       type: bool
       direction: input
+      proof_auxiliary: true
+      proof_auxiliary_reason: Solver-only complement used for data-constraint completeness and exclusivity; no standalone behavioral requirement consumes it.
       description: The temporal store has no unconsumed analytics records (complement of records_pending).
       data_constraint:
         domain: integer
         variable: pending_count
-        condition: "pending_count == 0"
+        condition: pending_count == 0
         parameters:
-          - name: pending_count
-            type: int
-            constraint: ">= 0"
+            - name: pending_count
+              type: int
+              constraint: '>= 0'
     - name: records_consumed
       type: bool
       direction: input
@@ -36,3 +38,6 @@ variables:
       type: bool
       direction: output
       description: Records have been retrieved from the temporal store on this purge cycle.
+independence:
+    declared: true
+    reason: Ingestion requirements distinguish pending-record consumption from atomic store removal; the outputs are related in workflow but not contradictory formal states.

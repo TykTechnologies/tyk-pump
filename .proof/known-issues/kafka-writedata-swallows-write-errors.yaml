@@ -1,0 +1,20 @@
+id: kafka-writedata-swallows-write-errors
+title: Kafka WriteData logs producer errors and returns nil, including cancellation errors
+introduced_in: inception
+description: 'pumps/kafka.go calls Writer.WriteMessages with the caller context, but when the call returns an error the implementation logs the error and continues until WriteData returns nil. If the context is canceled or the broker write fails, the caller cannot observe ctx.Err() or the producer error through the Pump.WriteData return value. The SW-REQ-021 cancellation_observed obligation is therefore a real product gap, not only missing test evidence.'
+affected_requirements:
+    - SW-REQ-021
+environment_note: |-
+  Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source and command output.
+reproducer_command: |-
+  rg -n "WriteMessages|log\\.Error|return nil" pumps/kafka.go pumps/kafka_mcdc_test.go
+severity: medium
+mitigation: Operators must monitor Kafka pump logs for write failures; caller-side success accounting cannot distinguish cancellation or broker write failure from success.
+remediation: Return the first WriteMessages error, preserving ctx.Err() on cancellation, and add a fake-writer test proving canceled contexts and broker errors propagate.
+owner: tyk-team
+release_disposition: ship_with_known_issue
+status: open
+history:
+    - at: "2026-06-19T00:00:00Z"
+      by: agent:codex
+      action: created

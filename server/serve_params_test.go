@@ -6,8 +6,7 @@ import (
 	"testing"
 )
 
-// Verifies: SW-REQ-032
-// SW-REQ-032:nominal:negative
+// SW-REQ-032:nominal:boundary
 func TestResolveHealthCheckParams_AllBranches(t *testing.T) {
 	cases := []struct {
 		name     string
@@ -30,6 +29,7 @@ func TestResolveHealthCheckParams_AllBranches(t *testing.T) {
 }
 
 // Verifies: SW-REQ-032
+// MCDC SW-REQ-032: enable_profiling=F, pprof_route_registered=F => TRUE
 func TestBuildHealthCheckRouter_RegistersExpectedRoutes(t *testing.T) {
 	// health-only (no profiling): /<endpoint> registered, /debug/pprof/* not
 	r := buildHealthCheckRouter("alive", false)
@@ -51,6 +51,7 @@ func TestBuildHealthCheckRouter_RegistersExpectedRoutes(t *testing.T) {
 }
 
 // Verifies: SW-REQ-032
+// MCDC SW-REQ-032: enable_profiling=T, pprof_route_registered=T => TRUE
 func TestBuildHealthCheckRouter_RegistersPprofWhenEnabled(t *testing.T) {
 	// With profiling enabled, /debug/pprof/heap should route through the pprof handler
 	// (which serves the heap profile inline). A non-404 response confirms registration.

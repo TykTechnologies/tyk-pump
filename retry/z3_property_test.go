@@ -16,14 +16,13 @@ import (
 )
 
 type z3Fixture struct {
-	Name     string             `json:"name"`
-	Property string             `json:"property"`
-	Source   string             `json:"source"`
-	Inputs   []map[string]any   `json:"inputs"`
-	Expected map[string]any     `json:"expected"`
+	Name     string           `json:"name"`
+	Property string           `json:"property"`
+	Source   string           `json:"source"`
+	Inputs   []map[string]any `json:"inputs"`
+	Expected map[string]any   `json:"expected"`
 }
 
-// Verifies: SW-REQ-031
 func loadZ3Fixtures(t *testing.T, property string) []z3Fixture {
 	t.Helper()
 	dir, err := filepath.Abs(filepath.Join("..", "tests", "properties"))
@@ -57,7 +56,6 @@ func loadZ3Fixtures(t *testing.T, property string) []z3Fixture {
 	return out
 }
 
-// Verifies: SW-REQ-031
 func intVal(t *testing.T, v any, key string) int {
 	t.Helper()
 	switch x := v.(type) {
@@ -71,12 +69,12 @@ func intVal(t *testing.T, v any, key string) int {
 	}
 }
 
-// Verifies: SW-REQ-031
-// SW-REQ-031:boundary:fuzz
-//
 // Z3-derived property: retry_attempts_exhausted holds iff attempts >= max_attempts.
 // Drives BackoffHTTPRetry.Send against a server that always 5xx's, and verifies
 // the production-code stops retrying once the Z3-proven exhaustion boundary is hit.
+//
+// Verifies: SYS-REQ-023
+// MCDC SYS-REQ-023: error_surfaced_to_caller=T, retry_attempts_exhausted=T => TRUE
 func TestBackoffHTTPRetry_Send_HonoursZ3ExhaustionBoundary(t *testing.T) {
 	for _, f := range loadZ3Fixtures(t, "retry_attempts_exhausted") {
 		t.Run(f.Name, func(t *testing.T) {

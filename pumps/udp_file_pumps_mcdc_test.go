@@ -41,14 +41,34 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// File-level MC/DC witness rows for the requirement links below. Rows copied
+// verbatim from `proof mcdc show`.
+//
+// MCDC SW-REQ-023: dataset_empty=F, write_skipped=F => TRUE
+// MCDC SW-REQ-023: dataset_empty=T, write_skipped=F => FALSE
+// MCDC SW-REQ-023: dataset_empty=T, write_skipped=T => TRUE
+// MCDC SW-REQ-024: default_path_applied=F, listen_path_empty=F => TRUE
+// MCDC SW-REQ-024: default_path_applied=F, listen_path_empty=T => FALSE
+// MCDC SW-REQ-024: default_path_applied=T, listen_path_empty=T => TRUE
+// MCDC SW-REQ-025: file_appended=F, hourly_file_exists=F => TRUE
+// MCDC SW-REQ-025: file_appended=F, hourly_file_exists=T => FALSE
+// MCDC SW-REQ-025: file_appended=T, hourly_file_exists=T => TRUE
+// MCDC SW-REQ-026: enable_json_format=F, json_emitted_else_text=F => TRUE
+// MCDC SW-REQ-026: enable_json_format=T, json_emitted_else_text=F => FALSE
+// MCDC SW-REQ-026: enable_json_format=T, json_emitted_else_text=T => TRUE
+// MCDC SW-REQ-049: graylog_url_configured=F, record_forwarded=F => TRUE
+// MCDC SW-REQ-049: graylog_url_configured=T, record_forwarded=F => FALSE
+// MCDC SW-REQ-049: graylog_url_configured=T, record_forwarded=T => TRUE
+// MCDC SW-REQ-050: tcp_writer_used=F, transport_tcp=F => TRUE
+// MCDC SW-REQ-050: tcp_writer_used=F, transport_tcp=T => FALSE
+// MCDC SW-REQ-050: tcp_writer_used=T, transport_tcp=T => TRUE
+
 // -----------------------------------------------------------------------------
 // Test helpers
 // -----------------------------------------------------------------------------
 
 // newUDPSink starts a UDP listener on 127.0.0.1:0 and returns its address plus
 // a channel that receives raw datagrams. The listener is closed at test end.
-//
-// Verifies: SW-REQ-023
 func newUDPSink(t *testing.T) (string, <-chan []byte) {
 	t.Helper()
 	conn, err := net.ListenPacket("udp", "127.0.0.1:0")
@@ -75,8 +95,6 @@ func newUDPSink(t *testing.T) (string, <-chan []byte) {
 
 // silentLog returns a logrus entry that discards all output, suitable for use
 // inside pump tests where we don't want log noise.
-//
-// Verifies: SW-REQ-016
 func silentLog() *logrus.Entry {
 	l := logrus.New()
 	l.Out = io.Discard
@@ -86,8 +104,6 @@ func silentLog() *logrus.Entry {
 // drainBytes reads all available datagrams from the given channel up to the
 // timeout, then returns them. It does NOT require a specific count — callers
 // assert on len() themselves.
-//
-// Verifies: SW-REQ-023
 func drainBytes(ch <-chan []byte, timeout time.Duration) [][]byte {
 	out := [][]byte{}
 	deadline := time.After(timeout)
@@ -278,6 +294,8 @@ func TestStatsdPump_WriteData_TimingFieldZeroValue(t *testing.T) {
 //
 // Reference KI: logfatal-on-statsd-setup (extended).
 //
+// Verifies: KI:logfatal-on-statsd-setup
+// Reproduces: logfatal-on-statsd-setup
 // Verifies: SW-REQ-023
 func TestStatsdPump_Init_FatalContract_KI(t *testing.T) {
 	addr, _ := newUDPSink(t)
@@ -302,7 +320,6 @@ func TestStatsdPump_Init_FatalContract_KI(t *testing.T) {
 // call returns successfully even when the address can't be reached at the
 // instant of init. This is the OPPOSITE of the dogstatsd pump and the syslog
 // pump (which both fatal on connection failure).
-//
 // Verifies: SW-REQ-023
 func TestStatsdPump_Init_UnreachableAddress_DoesNotFail(t *testing.T) {
 	// 127.0.0.1:1 is virtually guaranteed to be unreachable for UDP; quipo's
@@ -319,8 +336,6 @@ func TestStatsdPump_Init_UnreachableAddress_DoesNotFail(t *testing.T) {
 
 // joinBytes concatenates a slice of byte slices with a newline separator. Used
 // for asserting on the aggregated content of multiple UDP datagrams.
-//
-// Verifies: SW-REQ-023
 func joinBytes(in [][]byte) []byte {
 	out := []byte{}
 	for i, b := range in {
@@ -374,7 +389,6 @@ func TestDogStatsdPump_RoundTrip(t *testing.T) {
 // TestDogStatsdPump_Init_DefaultsApplied covers the
 // Namespace/SampleRate/BufferedMaxMessages/AsyncUDSWriteTimeout default
 // branches in Init when the respective config fields are zero.
-//
 // Verifies: SW-REQ-023
 func TestDogStatsdPump_Init_DefaultsApplied(t *testing.T) {
 	addr, _ := newUDPSink(t)
@@ -392,7 +406,6 @@ func TestDogStatsdPump_Init_DefaultsApplied(t *testing.T) {
 
 // TestDogStatsdPump_Init_BufferedDefault covers the
 // `Buffered && BufferedMaxMessages == 0` decision branch.
-//
 // Verifies: SW-REQ-023
 func TestDogStatsdPump_Init_BufferedDefault(t *testing.T) {
 	addr, _ := newUDPSink(t)
@@ -406,7 +419,6 @@ func TestDogStatsdPump_Init_BufferedDefault(t *testing.T) {
 
 // TestDogStatsdPump_Init_AsyncUDS covers the AsyncUDS option branch and
 // verifies the connect path is taken with the alternate option.
-//
 // Verifies: SW-REQ-023
 func TestDogStatsdPump_Init_AsyncUDS(t *testing.T) {
 	addr, _ := newUDPSink(t)
@@ -420,8 +432,8 @@ func TestDogStatsdPump_Init_AsyncUDS(t *testing.T) {
 
 // TestDogStatsdPump_Init_DecodeError covers the early-return path on
 // mapstructure decode failure (Init returns wrapped error, does NOT fatal).
-//
-// Verifies: SW-REQ-023
+// Verifies: INT-REQ-004
+// MCDC INT-REQ-004: contract_honoured=T, pump_methods_called=T => TRUE
 func TestDogStatsdPump_Init_DecodeError(t *testing.T) {
 	pump := &DogStatsdPump{}
 	// Passing a fundamentally-incompatible config (a string) causes
@@ -556,7 +568,6 @@ func TestDogStatsdPump_WriteData_EmptyData(t *testing.T) {
 
 // TestDogStatsdPump_Shutdown_Buffered covers the buffered=true path in
 // Shutdown (calls client.Flush()).
-//
 // Verifies: SW-REQ-023
 func TestDogStatsdPump_Shutdown_Buffered(t *testing.T) {
 	addr, _ := newUDPSink(t)
@@ -570,7 +581,6 @@ func TestDogStatsdPump_Shutdown_Buffered(t *testing.T) {
 
 // TestDogStatsdPump_Shutdown_Unbuffered covers the buffered=false path
 // (returns nil without calling Flush).
-//
 // Verifies: SW-REQ-023
 func TestDogStatsdPump_Shutdown_Unbuffered(t *testing.T) {
 	addr, _ := newUDPSink(t)
@@ -656,8 +666,6 @@ func TestPrometheusPump_RoundTrip_Scrape(t *testing.T) {
 // promHandlerForRegistry returns an http.Handler that serves metrics from the
 // given registry, mimicking promhttp.HandlerFor without importing it for the
 // test file (we keep the dependency surface minimal).
-//
-// Verifies: SW-REQ-024
 func promHandlerForRegistry(reg *prometheus.Registry) http.Handler {
 	return prometheusHTTPHandler{reg: reg}
 }
@@ -666,8 +674,6 @@ type prometheusHTTPHandler struct{ reg *prometheus.Registry }
 
 // ServeHTTP renders the registry's gathered metric families in a minimal
 // Prometheus exposition format suitable for round-trip-test assertions.
-//
-// Verifies: SW-REQ-024
 func (h prometheusHTTPHandler) ServeHTTP(w http.ResponseWriter, _ *http.Request) {
 	families, err := h.reg.Gather()
 	if err != nil {
@@ -698,7 +704,6 @@ func (h prometheusHTTPHandler) ServeHTTP(w http.ResponseWriter, _ *http.Request)
 
 // TestPrometheusPump_Init_MissingAddr covers the
 // `if p.conf.Addr == ""` branch — Init returns an error (no goroutine spawned).
-//
 // Verifies: SW-REQ-024
 func TestPrometheusPump_Init_MissingAddr(t *testing.T) {
 	p := &PrometheusPump{}
@@ -709,7 +714,6 @@ func TestPrometheusPump_Init_MissingAddr(t *testing.T) {
 
 // TestPrometheusPump_Init_DisabledMetrics covers the disabled-metric branch in
 // initBaseMetrics: a disabled metric is dropped from allMetrics.
-//
 // Verifies: SW-REQ-024
 func TestPrometheusPump_Init_DisabledMetrics(t *testing.T) {
 	// We can't call Init() directly because it would bind to a real port and
@@ -790,7 +794,6 @@ func TestSyslogPump_RoundTrip_FieldProjection(t *testing.T) {
 // TestSyslogPump_initConfigs_Defaults covers the
 // Transport == "" → default udp, NetworkAddr == "" → default localhost:5140,
 // and LogLevel == 0 → warn branches.
-//
 // Verifies: SW-REQ-050
 func TestSyslogPump_initConfigs_Defaults(t *testing.T) {
 	pump := &SyslogPump{
@@ -804,7 +807,6 @@ func TestSyslogPump_initConfigs_Defaults(t *testing.T) {
 
 // TestSyslogPump_initConfigs_KeepsConfigured covers the negative branches
 // (Transport != "", NetworkAddr != "", LogLevel != 0).
-//
 // Verifies: SW-REQ-050
 func TestSyslogPump_initConfigs_KeepsConfigured(t *testing.T) {
 	pump := &SyslogPump{
@@ -860,8 +862,6 @@ func TestSyslogPump_WriteData_ManyRecords(t *testing.T) {
 
 // graylogAddrParts splits "host:port" into the (host, port int) pair the
 // graylog pump expects.
-//
-// Verifies: SW-REQ-049
 func graylogAddrParts(t *testing.T, addr string) (string, int) {
 	t.Helper()
 	host, portStr, err := net.SplitHostPort(addr)
@@ -916,8 +916,6 @@ func TestGraylogPump_RoundTrip_TagFiltering(t *testing.T) {
 // decompressGELF attempts to zlib-decompress a GELF datagram. If decompression
 // fails (e.g. the payload was already plain), returns the raw bytes as a
 // string.
-//
-// Verifies: SW-REQ-049
 func decompressGELF(data []byte) string {
 	r, err := zlib.NewReader(bytes.NewReader(data))
 	if err != nil {
@@ -934,7 +932,6 @@ func decompressGELF(data []byte) string {
 // TestGraylogPump_Init_Defaults covers the
 // `GraylogHost == ""` → default "localhost", and
 // `GraylogPort == 0` → default 1000 branches.
-//
 // Verifies: SW-REQ-049
 func TestGraylogPump_Init_Defaults(t *testing.T) {
 	pump := &GraylogPump{}
@@ -950,6 +947,8 @@ func TestGraylogPump_Init_Defaults(t *testing.T) {
 //
 // Reference KI: graylog-moesif-logfatal-on-record-error (extended).
 //
+// Verifies: KI:graylog-moesif-logfatal-on-record-error
+// Reproduces: graylog-moesif-logfatal-on-record-error
 // Verifies: SW-REQ-049
 func TestGraylogPump_WriteData_FatalContract_KI(t *testing.T) {
 	addr, _ := newUDPSink(t)
@@ -1056,7 +1055,6 @@ func TestCSVPump_RoundTrip_AppendToExistingFile(t *testing.T) {
 // TestCSVPump_WriteData_InvalidRecordType covers the
 // `v.(analytics.AnalyticsRecord)` type-assertion-fails branch. The function
 // should return an error.
-//
 // Verifies: SW-REQ-025
 func TestCSVPump_WriteData_InvalidRecordType(t *testing.T) {
 	dir := t.TempDir()
@@ -1072,7 +1070,6 @@ func TestCSVPump_WriteData_InvalidRecordType(t *testing.T) {
 // `os.MkdirAll(...) != nil` branch — Init logs an error but returns nil so
 // the pump remains usable for retry. We use a path inside a regular file to
 // force MkdirAll to fail.
-//
 // Verifies: SW-REQ-025
 func TestCSVPump_Init_BadDirIsTolerated(t *testing.T) {
 	dir := t.TempDir()
@@ -1092,8 +1089,6 @@ func TestCSVPump_Init_BadDirIsTolerated(t *testing.T) {
 
 // captureStdout swaps os.Stdout for an os.Pipe write end during fn, then
 // returns the captured output.
-//
-// Verifies: SW-REQ-026
 func captureStdout(t *testing.T, fn func()) string {
 	t.Helper()
 	r, w, err := os.Pipe()
@@ -1168,7 +1163,6 @@ func TestStdOutPump_RoundTrip_JSON(t *testing.T) {
 
 // TestStdOutPump_Init_DefaultLogFieldName covers the `LogFieldName == ""` →
 // default branch.
-//
 // Verifies: SW-REQ-026
 func TestStdOutPump_Init_DefaultLogFieldName(t *testing.T) {
 	pump := &StdOutPump{}
@@ -1266,7 +1260,6 @@ func TestStdOutPump_RoundTrip_Text(t *testing.T) {
 // -----------------------------------------------------------------------------
 
 // TestDummyPump_Init_WriteData covers the dummy pump's two functions.
-//
 // Verifies: SW-REQ-026
 func TestDummyPump_Init_WriteData(t *testing.T) {
 	p := (&DummyPump{}).New().(*DummyPump)
@@ -1288,7 +1281,6 @@ func TestDummyPump_Init_WriteData(t *testing.T) {
 // TestDogStatsdPump_Init_NonZeroDefaults covers the negative side of each
 // `cfg field == 0` decision in Init (dogstatsd.go:131,137,142,147) — values
 // are provided so the default-application branches are NOT taken.
-//
 // Verifies: SW-REQ-023
 func TestDogStatsdPump_Init_NonZeroDefaults(t *testing.T) {
 	addr, _ := newUDPSink(t)
@@ -1533,8 +1525,6 @@ func TestPrometheusPump_WriteData_TrackedRecord(t *testing.T) {
 // dumpCounter renders a CounterVec's children as a single string of label
 // key="value" pairs (in alphabetic key order), one set per active series. Used
 // for cheap-and-readable assertions in tests.
-//
-// Verifies: SW-REQ-024
 func dumpCounter(t *testing.T, vec *prometheus.CounterVec) string {
 	t.Helper()
 	ch := make(chan prometheus.Metric, 64)
@@ -1560,8 +1550,10 @@ func dumpCounter(t *testing.T, vec *prometheus.CounterVec) string {
 
 // TestSyslogPump_New_GetName_GetEnvPrefix covers the small identity helpers
 // that are otherwise untouched by the round-trip tests.
-//
-// Verifies: SW-REQ-050
+// Verifies: SW-REQ-017
+// Verifies: INT-REQ-004
+// SW-REQ-017:nominal:nominal
+// MCDC INT-REQ-004: contract_honoured=T, pump_methods_called=T => TRUE
 func TestSyslogPump_New_GetName_GetEnvPrefix(t *testing.T) {
 	p := (&SyslogPump{}).New().(*SyslogPump)
 	p.syslogConf = &SyslogConf{EnvPrefix: "FOO"}
@@ -1576,8 +1568,8 @@ func TestSyslogPump_New_GetName_GetEnvPrefix(t *testing.T) {
 }
 
 // TestCSVPump_GetEnvPrefix covers the GetEnvPrefix() reader after Init.
-//
-// Verifies: SW-REQ-025
+// Verifies: INT-REQ-004
+// MCDC INT-REQ-004: contract_honoured=T, pump_methods_called=T => TRUE
 func TestCSVPump_GetEnvPrefix(t *testing.T) {
 	pump := &CSVPump{}
 	pump.log = silentLog()
@@ -1589,8 +1581,10 @@ func TestCSVPump_GetEnvPrefix(t *testing.T) {
 }
 
 // TestStatsdPump_New_GetName_GetEnvPrefix covers the identity helpers.
-//
-// Verifies: SW-REQ-023
+// Verifies: SW-REQ-017
+// Verifies: INT-REQ-004
+// SW-REQ-017:nominal:nominal
+// MCDC INT-REQ-004: contract_honoured=T, pump_methods_called=T => TRUE
 func TestStatsdPump_New_GetName_GetEnvPrefix(t *testing.T) {
 	p := (&StatsdPump{}).New().(*StatsdPump)
 	p.dbConf = &StatsdConf{EnvPrefix: "FOO"}
@@ -1599,8 +1593,10 @@ func TestStatsdPump_New_GetName_GetEnvPrefix(t *testing.T) {
 }
 
 // TestStdOutPump_New_GetName_GetEnvPrefix covers the identity helpers.
-//
-// Verifies: SW-REQ-026
+// Verifies: SW-REQ-017
+// Verifies: INT-REQ-004
+// SW-REQ-017:nominal:nominal
+// MCDC INT-REQ-004: contract_honoured=T, pump_methods_called=T => TRUE
 func TestStdOutPump_New_GetName_GetEnvPrefix(t *testing.T) {
 	p := (&StdOutPump{}).New().(*StdOutPump)
 	p.conf = &StdOutConf{EnvPrefix: "FOO"}
@@ -1610,8 +1606,10 @@ func TestStdOutPump_New_GetName_GetEnvPrefix(t *testing.T) {
 
 // TestPrometheusPump_New_GetName_GetEnvPrefix covers the identity helpers
 // without invoking Init (which would log.Fatal on bind failure).
-//
-// Verifies: SW-REQ-024
+// Verifies: SW-REQ-017
+// Verifies: INT-REQ-004
+// SW-REQ-017:nominal:nominal
+// MCDC INT-REQ-004: contract_honoured=T, pump_methods_called=T => TRUE
 func TestPrometheusPump_New_GetName_GetEnvPrefix(t *testing.T) {
 	p := (&PrometheusPump{}).New().(*PrometheusPump)
 	p.conf = &PrometheusConf{EnvPrefix: "FOO"}
@@ -1703,8 +1701,10 @@ func TestSyslogPump_RoundTrip_TCP(t *testing.T) {
 }
 
 // TestCSVPump_GetName_GetEnvPrefix_New covers identity helpers.
-//
-// Verifies: SW-REQ-025
+// Verifies: SW-REQ-017
+// Verifies: INT-REQ-004
+// SW-REQ-017:nominal:nominal
+// MCDC INT-REQ-004: contract_honoured=T, pump_methods_called=T => TRUE
 func TestCSVPump_GetName_GetEnvPrefix_New(t *testing.T) {
 	p := (&CSVPump{}).New().(*CSVPump)
 	p.csvConf = &CSVConf{EnvPrefix: "FOO"}
@@ -1736,7 +1736,6 @@ func TestStatsdPump_WriteData_NoOpZeroTags(t *testing.T) {
 
 // TestStdOutPump_WriteData_EmptyData covers the per-record loop not entering
 // when data is empty.
-//
 // Verifies: SW-REQ-026
 func TestStdOutPump_WriteData_EmptyData_New(t *testing.T) {
 	pump := &StdOutPump{}

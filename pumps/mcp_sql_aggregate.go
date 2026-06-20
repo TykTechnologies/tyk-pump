@@ -66,22 +66,22 @@ func (s *MCPSQLAggregatePump) Init(conf interface{}) error {
 		return MigrateAllShardedTables(s.db, analytics.AggregateMCPSQLTable, "mcp-aggregate", &analytics.MCPSQLAnalyticsRecordAggregate{}, s.log)
 	}
 
-	if err := HandleTableMigration(s.db, &s.SQLConf.SQLConf, analytics.AggregateMCPSQLTable, &analytics.MCPSQLAnalyticsRecordAggregate{}, s.log, migrateShardedTables); err != nil { //mcdc:ignore HandleTableMigration err arm needs fake migrator; KI mcdc-pumps-below-95
+	if err := HandleTableMigration(s.db, &s.SQLConf.SQLConf, analytics.AggregateMCPSQLTable, &analytics.MCPSQLAnalyticsRecordAggregate{}, s.log, migrateShardedTables); err != nil { //mcdc:ignore:capability-gap HandleTableMigration err arm needs fake migrator; KI mcdc-pumps-below-95 [ki: mcdc-pumps-below-95]
 		return err
 	}
 
 	if !s.SQLConf.TableSharding {
-		if err := s.ensureTable(analytics.AggregateMCPSQLTable); err != nil { //mcdc:ignore ensureTable err arm needs fake migrator; KI mcdc-pumps-below-95
+		if err := s.ensureTable(analytics.AggregateMCPSQLTable); err != nil { //mcdc:ignore:capability-gap ensureTable err arm needs fake migrator; KI mcdc-pumps-below-95 [ki: mcdc-pumps-below-95]
 			return err
 		}
 
 		shouldRunOnBackground := false
-		if s.dbType == "postgres" { //mcdc:ignore non-postgres Init arm requires Dialect(sqlite) which is rejected; covered structurally via direct sqlite wiring; KI mcdc-pumps-below-95
+		if s.dbType == "postgres" { //mcdc:ignore:capability-gap non-postgres Init arm requires Dialect(sqlite) which is rejected; covered structurally via direct sqlite wiring; KI mcdc-pumps-below-95 [ki: mcdc-pumps-below-95]
 			shouldRunOnBackground = true
 			s.backgroundIndexCreated = make(chan bool, 1)
 		}
 
-		if err := s.ensureIndex(analytics.AggregateMCPSQLTable, shouldRunOnBackground); err != nil { //mcdc:ignore ensureIndex err arm needs fake DB seam; KI mcdc-pumps-below-95
+		if err := s.ensureIndex(analytics.AggregateMCPSQLTable, shouldRunOnBackground); err != nil { //mcdc:ignore:capability-gap ensureIndex err arm needs fake DB seam; KI mcdc-pumps-below-95 [ki: mcdc-pumps-below-95]
 			s.log.Error(err)
 			return err
 		}
@@ -98,9 +98,9 @@ func (s *MCPSQLAggregatePump) Init(conf interface{}) error {
 // ensureTable creates the table if it doesn't exist.
 // reqproof:implements SW-REQ-045
 func (s *MCPSQLAggregatePump) ensureTable(tableName string) error {
-	if !s.db.Migrator().HasTable(tableName) { //mcdc:ignore HasTable=T arm exercised by direct test but proof mcdc measure samples single arm; KI mcdc-pumps-below-95
+	if !s.db.Migrator().HasTable(tableName) { //mcdc:ignore:capability-gap HasTable=T arm exercised by direct test but proof mcdc measure samples single arm; KI mcdc-pumps-below-95 [ki: mcdc-pumps-below-95]
 		s.db = s.db.Table(tableName)
-		if err := s.db.Migrator().CreateTable(&analytics.MCPSQLAnalyticsRecordAggregate{}); err != nil { //mcdc:ignore CreateTable err arm needs fake migrator; KI mcdc-pumps-below-95
+		if err := s.db.Migrator().CreateTable(&analytics.MCPSQLAnalyticsRecordAggregate{}); err != nil { //mcdc:ignore:capability-gap CreateTable err arm needs fake migrator; KI mcdc-pumps-below-95 [ki: mcdc-pumps-below-95]
 			s.log.Error("error creating table", err)
 			return err
 		}
@@ -170,7 +170,7 @@ func (s *MCPSQLAggregatePump) ensureMCPAggregateShardedTable(recDate string) str
 	table := analytics.AggregateMCPSQLTable + "_" + recDate
 	s.db = s.db.Table(table)
 	if !s.db.Migrator().HasTable(table) {
-		if err := s.db.Migrator().CreateTable(&analytics.MCPSQLAnalyticsRecordAggregate{}); err != nil { //mcdc:ignore CreateTable err arm needs fake migrator; KI mcdc-pumps-below-95
+		if err := s.db.Migrator().CreateTable(&analytics.MCPSQLAnalyticsRecordAggregate{}); err != nil { //mcdc:ignore:capability-gap CreateTable err arm needs fake migrator; KI mcdc-pumps-below-95 [ki: mcdc-pumps-below-95]
 			s.log.WithError(err).Warn("error creating sharded table")
 		}
 	}
@@ -183,7 +183,7 @@ func (s *MCPSQLAggregatePump) writeAggregatedSlice(ctx context.Context, data []i
 	analyticsPerAPI := analytics.AggregateMCPData(data, "", s.aggregationTimeMinutes())
 	for apiID := range analyticsPerAPI {
 		ag := analyticsPerAPI[apiID]
-		if err := s.DoAggregatedWriting(ctx, table, ag.OrgID, apiID, &ag); err != nil { //mcdc:ignore DoAggregatedWriting err arm needs fake DB seam; KI mcdc-pumps-below-95
+		if err := s.DoAggregatedWriting(ctx, table, ag.OrgID, apiID, &ag); err != nil { //mcdc:ignore:capability-gap DoAggregatedWriting err arm needs fake DB seam; KI mcdc-pumps-below-95 [ki: mcdc-pumps-below-95]
 			s.log.WithError(err).Error("error writing record")
 			return err
 		}
@@ -231,7 +231,7 @@ func (s *MCPSQLAggregatePump) WriteData(ctx context.Context, data []interface{})
 			table = analytics.AggregateMCPSQLTable
 		}
 
-		if err := s.writeAggregatedSlice(ctx, data[startIndex:endIndex], table); err != nil { //mcdc:ignore writeAggregatedSlice err arm needs fake DB seam; KI mcdc-pumps-below-95
+		if err := s.writeAggregatedSlice(ctx, data[startIndex:endIndex], table); err != nil { //mcdc:ignore:capability-gap writeAggregatedSlice err arm needs fake DB seam; KI mcdc-pumps-below-95 [ki: mcdc-pumps-below-95]
 			return err
 		}
 		startIndex = i
@@ -272,7 +272,7 @@ func (s *MCPSQLAggregatePump) DoAggregatedWriting(ctx context.Context, table, or
 			Columns:   []clause.Column{{Name: "id"}},
 			DoUpdates: clause.Assignments(analytics.OnConflictAssignments(table, "excluded")),
 		}).Create(recs[i:ends])
-		if tx.Error != nil { //mcdc:ignore tx.Error arm needs fake DB seam; KI mcdc-pumps-below-95
+		if tx.Error != nil { //mcdc:ignore:capability-gap tx.Error arm needs fake DB seam; KI mcdc-pumps-below-95 [ki: mcdc-pumps-below-95]
 			s.log.Error("error writing aggregated records into "+table+":", tx.Error)
 			return tx.Error
 		}

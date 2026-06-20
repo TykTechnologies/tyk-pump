@@ -1,5 +1,6 @@
 id: instrumentation-goroutines-no-recover-or-shutdown
 title: Instrumentation background goroutines lack defer recover and explicit shutdown
+introduced_in: inception
 description: 'The StatsD/health instrumentation sink spawns long-lived background goroutines without a top-of-body defer recover(): the GC-stats monitor at instrumentation_helpers.go:52-67 is an unbounded for{} loop (ReadGCStats + GaugeKv + time.Sleep) with neither recover nor a stop channel, and the StatsDSink flush/loop goroutines at instrumentation_statsd_sink.go:123,130,170-174 run loop-backed workers driven by cmdChan. A panic inside one of these instrumentation goroutines (e.g. a health-client bug) is not recovered and would terminate the host process, and the GC monitor has no shutdown path so it leaks for the process lifetime. Per SW-REQ-005 the instrumentation path must not affect the purge loop; today an instrumentation-goroutine panic violates that isolation. The StatsDSink path does have channel-based Stop/Drain lifecycle; the gap there is the missing per-goroutine recover, not ownership.'
 affected_requirements:
     - SW-REQ-005
@@ -9,6 +10,8 @@ evidence_manifests:
     - code_signal:opengrep:go.concurrency.channel-send:instrumentation_statsd_sink.go:130
     - code_signal:opengrep:go.goroutine.no-recover:instrumentation_helpers.go:52
     - code_signal:opengrep:go.goroutine.no-recover:instrumentation_statsd_sink.go:170
+environment_note: |-
+  Evidence is tied to the listed evidence_manifests entries; reproduce by rerunning the named test or code-signal scan and inspecting code_signal:opengrep:go.concurrency.goroutine-spawn:instrumentation_helpers.go:52.
 severity: low
 risk: availability
 mitigation: Instrumentation is opt-in (enabled only when instrumentation + a StatsD endpoint are configured); run with instrumentation disabled if goroutine isolation is required.

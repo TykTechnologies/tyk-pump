@@ -376,11 +376,11 @@ func (a *AnalyticsRecord) GetGeo(ipStr string, GeoIPDB *maxminddb.Reader) {
 	}
 
 	geo, err := GeoIPLookup(ipStr, GeoIPDB)
-	if err != nil { //mcdc:ignore requires a real MaxMind GeoIP database to provoke; not available in unit tests
+	if err != nil { //mcdc:ignore:external-evidence requires a real MaxMind GeoIP database to provoke; not available in unit tests
 		log.Error("GeoIP Failure (not recorded): ", err)
 		return
 	}
-	if geo == nil { //mcdc:ignore depends on MaxMind DB Lookup outcome; not reachable without a real GeoIP DB
+	if geo == nil { //mcdc:ignore:defensive depends on MaxMind DB Lookup outcome; not reachable without a real GeoIP DB
 		return
 	}
 
@@ -405,7 +405,7 @@ func GeoIPLookup(ipStr string, GeoIPDB *maxminddb.Reader) (*GeoData, error) {
 		return nil, fmt.Errorf("invalid IP address %q", ipStr)
 	}
 	record := new(GeoData)
-	if err := GeoIPDB.Lookup(ip, record); err != nil { //mcdc:ignore Lookup failure requires a real MaxMind GeoIP database to provoke; not available in unit tests
+	if err := GeoIPDB.Lookup(ip, record); err != nil { //mcdc:ignore:external-evidence Lookup failure requires a real MaxMind GeoIP database to provoke; not available in unit tests
 		return nil, fmt.Errorf("geoIPDB lookup of %q failed: %v", ipStr, err)
 	}
 	return record, nil

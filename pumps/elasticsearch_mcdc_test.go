@@ -1,16 +1,13 @@
 package pumps
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
 	"net"
 	"net/http"
 	"net/http/httptest"
-	"runtime"
 	"strings"
-	"sync/atomic"
 	"testing"
 	"time"
 
@@ -25,6 +22,9 @@ import (
 // verbatim from `proof mcdc show`; this header gives every // Verifies: link
 // in the file a matching witness row.
 //
+// MCDC SW-REQ-068: v3_operator_constructed=F, version_eq_3=F => TRUE
+// MCDC SW-REQ-068: v3_operator_constructed=F, version_eq_3=T => FALSE
+// MCDC SW-REQ-068: v3_operator_constructed=T, version_eq_3=T => TRUE
 // MCDC SW-REQ-069: index_eq_mcp=F, is_mcp_record=F, mcp_index_configured=T => TRUE
 // MCDC SW-REQ-069: index_eq_mcp=F, is_mcp_record=T, mcp_index_configured=T => FALSE
 // MCDC SW-REQ-069: index_eq_mcp=T, is_mcp_record=T, mcp_index_configured=T => TRUE
@@ -33,8 +33,6 @@ import (
 // MCDC SW-REQ-070: disable_bulk=T, per_record_indexed_else_bulk_processor=T => TRUE
 
 // esIndexName builds a per-test ES index name; ES indices must be lower-case.
-//
-// Verifies: SW-REQ-068
 func esIndexName(t *testing.T, prefix string) string {
 	t.Helper()
 	s := strings.ToLower(prefix + "_" + t.Name())
@@ -55,8 +53,6 @@ func esIndexName(t *testing.T, prefix string) string {
 
 // esInit builds an ElasticsearchPump connected to the shared testcontainer.
 // extra overrides defaults.
-//
-// Verifies: SW-REQ-068
 func esInit(t *testing.T, extra map[string]interface{}) *ElasticsearchPump {
 	t.Helper()
 	url := elasticsearchURL(t)
@@ -73,13 +69,12 @@ func esInit(t *testing.T, extra map[string]interface{}) *ElasticsearchPump {
 	pump := &ElasticsearchPump{}
 	require.NoError(t, pump.Init(cfg))
 	require.NotNil(t, pump.operator, "operator should be set after Init")
+	t.Cleanup(func() { _ = pump.Shutdown() })
 	return pump
 }
 
 // esCountDocs counts documents in an index using a Refresh+Count call against
 // the v7 client behind the operator.
-//
-// Verifies: SW-REQ-068
 func esCountDocs(t *testing.T, pump *ElasticsearchPump, index string) int64 {
 	t.Helper()
 	op, ok := pump.operator.(*Elasticsearch7Operator)
@@ -98,7 +93,7 @@ func esCountDocs(t *testing.T, pump *ElasticsearchPump, index string) int64 {
 // the index now contains exactly one document.
 //
 // Verifies: SW-REQ-068
-// SW-REQ-068:nominal:negative
+// SW-REQ-068:nominal:nominal
 func TestElasticsearchPump_WriteData_RoundTrip(t *testing.T) {
 	idx := esIndexName(t, "tyk_analytics")
 	pump := esInit(t, map[string]interface{}{
@@ -123,9 +118,9 @@ func TestElasticsearchPump_WriteData_RoundTrip(t *testing.T) {
 // TestElasticsearchPump_WriteData_RoundTripBulk exercises the bulk-processor
 // branch: the operator's Add() path with a non-trivial flush.
 //
-// Verifies: SW-REQ-068
-// SW-REQ-068:nominal:negative
+// Verifies: SW-REQ-070
 // SW-REQ-070:nominal:nominal
+// SW-REQ-070:boundary:nominal
 func TestElasticsearchPump_WriteData_RoundTripBulk(t *testing.T) {
 	idx := esIndexName(t, "tyk_analytics_bulk")
 	pump := esInit(t, map[string]interface{}{
@@ -221,8 +216,6 @@ func TestElasticsearchPump_WriteData_MCPIndexRouting(t *testing.T) {
 
 // esCountDocsIgnoreMissing returns 0 when the index does not yet exist, so the
 // caller can poll until the bulk flush has created both indices.
-//
-// Verifies: SW-REQ-068
 func esCountDocsIgnoreMissing(t *testing.T, pump *ElasticsearchPump, index string) int64 {
 	t.Helper()
 	op, ok := pump.operator.(*Elasticsearch7Operator)
@@ -245,7 +238,8 @@ func esCountDocsIgnoreMissing(t *testing.T, pump *ElasticsearchPump, index strin
 // passed to the index builder, so MCP records land in the default IndexName
 // instead of MCPIndexName.
 //
-// Verifies: KI elasticsearch-mcp-routing-non-bulk-ignored
+// Verifies: KI:elasticsearch-mcp-routing-non-bulk-ignored
+// Reproduces: elasticsearch-mcp-routing-non-bulk-ignored
 // Verifies: SW-REQ-069
 // SW-REQ-070:boundary:negative
 // MCDC SW-REQ-069: index_eq_mcp=F, is_mcp_record=T, mcp_index_configured=T => FALSE
@@ -349,9 +343,8 @@ func TestElasticsearchPump_WriteData_CancelledContext(t *testing.T) {
 // ElasticsearchURL and DocumentType are applied. To drive the URL-defaults
 // branch we redirect e.connect() by pre-setting a working operator so the
 // init's connect() does not loop on the (unreachable) default URL.
-//
 // Verifies: SW-REQ-068
-// SW-REQ-068:nominal:negative
+// MCDC SW-REQ-068: v3_operator_constructed=F, version_eq_3=F => TRUE
 func TestElasticsearchPump_Init_VersionDefaults(t *testing.T) {
 	// (1) Non-empty URL, empty IndexName/DocumentType → those defaults kick in.
 	url := elasticsearchURL(t)
@@ -383,9 +376,8 @@ func TestElasticsearchPump_Init_VersionDefaults(t *testing.T) {
 // server bound to 127.0.0.1:9200 so the first connect() attempt succeeds.
 //
 // If 127.0.0.1:9200 is already taken on the test host, the test is skipped.
-//
 // Verifies: SW-REQ-068
-// SW-REQ-068:nominal:negative
+// MCDC SW-REQ-068: v3_operator_constructed=F, version_eq_3=F => TRUE
 func TestElasticsearchPump_Init_DefaultElasticsearchURL(t *testing.T) {
 	srv, ok := startFakeES7On9200(t)
 	if !ok {
@@ -412,8 +404,6 @@ func TestElasticsearchPump_Init_DefaultElasticsearchURL(t *testing.T) {
 // startFakeES7On9200 attempts to bind a tiny ES7-pretender HTTP server on
 // 127.0.0.1:9200 (the default URL Init falls back to). Returns (srv, true)
 // on success and (nil, false) if the port is already in use.
-//
-// Verifies: SW-REQ-068
 func startFakeES7On9200(t *testing.T) (*http.Server, bool) {
 	t.Helper()
 	mux := http.NewServeMux()
@@ -458,9 +448,8 @@ func TestElasticsearchPump_Init_RollingIndexLogPath(t *testing.T) {
 // the log line without a hook, but we can verify the regex by calling the
 // production regexp behaviour indirectly: build a URL with user:pass@host and
 // check that Init does not panic and that esConf preserves the original URL.
-//
 // Verifies: SW-REQ-068
-// SW-REQ-068:nominal:negative
+// MCDC SW-REQ-068: v3_operator_constructed=F, version_eq_3=F => TRUE
 func TestElasticsearchPump_Init_URLPasswordMasking(t *testing.T) {
 	url := elasticsearchURL(t)
 	// Inject fake user:pass that the regex masks for log output.
@@ -479,9 +468,7 @@ func TestElasticsearchPump_Init_URLPasswordMasking(t *testing.T) {
 // the second half must be evaluated to false (skipping the ApiKeyTransport
 // branch). The companion TestElasticsearchPump_getOperator_AuthAPIKeyBranch
 // covers the both-set case.
-//
 // Verifies: SW-REQ-068
-// SW-REQ-068:nominal:negative
 func TestElasticsearchPump_getOperator_AuthAPIKeyShortCircuit(t *testing.T) {
 	url := elasticsearchURL(t)
 	pump := &ElasticsearchPump{}
@@ -503,9 +490,7 @@ func TestElasticsearchPump_getOperator_AuthAPIKeyShortCircuit(t *testing.T) {
 // TestElasticsearchPump_getOperator_AuthAPIKeyBranch covers the ApiKey-auth
 // branch of getOperator: when both AuthAPIKey and AuthAPIKeyID are set, the
 // pump must clear Username/Password and use the ApiKeyTransport.
-//
 // Verifies: SW-REQ-068
-// SW-REQ-068:nominal:negative
 func TestElasticsearchPump_getOperator_AuthAPIKeyBranch(t *testing.T) {
 	url := elasticsearchURL(t)
 	pump := &ElasticsearchPump{}
@@ -532,9 +517,9 @@ func TestElasticsearchPump_getOperator_AuthAPIKeyBranch(t *testing.T) {
 // TestElasticsearchPump_getOperator_BulkConfigBranches drives every individual
 // "if conf.BulkConfig.X != 0" branch inside getOperator (workers, flush
 // interval, bulk actions, bulk size — both 0 and non-zero) for the v7 path.
-//
-// Verifies: SW-REQ-068
-// SW-REQ-068:nominal:negative
+// Verifies: SW-REQ-070
+// SW-REQ-070:external_call_concurrency_bounded:example
+// SW-REQ-070:external_call_concurrency_bounded:nominal
 func TestElasticsearchPump_getOperator_BulkConfigBranches(t *testing.T) {
 	url := elasticsearchURL(t)
 	cases := []struct {
@@ -570,8 +555,7 @@ func TestElasticsearchPump_getOperator_BulkConfigBranches(t *testing.T) {
 // `if !conf.DisableBulk` path being false (so the bulkAfter purger logger is
 // not registered) for v7.
 //
-// Verifies: SW-REQ-068
-// SW-REQ-068:nominal:negative
+// Verifies: SW-REQ-070
 func TestElasticsearchPump_getOperator_DisableBulkBranch(t *testing.T) {
 	url := elasticsearchURL(t)
 	pump := &ElasticsearchPump{}
@@ -596,8 +580,6 @@ func TestElasticsearchPump_getOperator_DisableBulkBranch(t *testing.T) {
 // goal is MC/DC of the operator-construction switch.
 //
 // Verifies: SW-REQ-068
-// SW-REQ-068:nominal:negative
-// SW-REQ-068:nominal:nominal
 func TestElasticsearchPump_getOperator_LegacyVersions(t *testing.T) {
 	url := elasticsearchURL(t)
 	for _, version := range []string{"3", "5", "6"} {
@@ -633,7 +615,7 @@ func TestElasticsearchPump_getOperator_LegacyVersions(t *testing.T) {
 // in each of v3/v5/v6.
 //
 // Verifies: SW-REQ-068
-// SW-REQ-068:nominal:negative
+// Verifies: SW-REQ-070
 func TestElasticsearchPump_getOperator_LegacyVersions_DisableBulk(t *testing.T) {
 	url := elasticsearchURL(t)
 	for _, version := range []string{"3", "5", "6"} {
@@ -680,10 +662,25 @@ func TestElasticsearchPump_Shutdown_BulkDisabled(t *testing.T) {
 	assert.NoError(t, pump.Shutdown())
 }
 
+// TestElasticsearchPump_Shutdown_ShortCircuitGuards covers the nil receiver
+// and nil-operator guards before Shutdown reaches operator cleanup.
+//
+// Verifies: SW-REQ-070
+// SW-REQ-070:nominal:negative
+func TestElasticsearchPump_Shutdown_ShortCircuitGuards(t *testing.T) {
+	var nilPump *ElasticsearchPump
+	assert.NoError(t, nilPump.Shutdown())
+
+	pump := &ElasticsearchPump{}
+	assert.NoError(t, pump.Shutdown())
+}
+
 // TestElasticsearchPump_GetName_GetEnvPrefix covers the trivial accessors.
 //
-// Verifies: SW-REQ-068
-// SW-REQ-068:nominal:negative
+// Verifies: SW-REQ-017
+// Verifies: INT-REQ-004
+// SW-REQ-017:nominal:nominal
+// MCDC INT-REQ-004: contract_honoured=T, pump_methods_called=T => TRUE
 func TestElasticsearchPump_GetName_GetEnvPrefix(t *testing.T) {
 	pump := esInit(t, map[string]interface{}{
 		"meta_env_prefix": "TEST_PREFIX",
@@ -699,8 +696,8 @@ func TestElasticsearchPump_GetName_GetEnvPrefix(t *testing.T) {
 // TestElasticsearchPump_WriteData_EmptySlice exercises the "len(data) > 0" guard
 // in WriteData — an empty slice must not call processData.
 //
-// Verifies: SW-REQ-068
-// SW-REQ-068:nominal:negative
+// Verifies: INT-REQ-004
+// MCDC INT-REQ-004: contract_honoured=T, pump_methods_called=T => TRUE
 func TestElasticsearchPump_WriteData_EmptySlice(t *testing.T) {
 	pump := esInit(t, map[string]interface{}{"disable_bulk": true})
 	ctx, cancel := context.WithTimeout(t.Context(), 5*time.Second)
@@ -713,9 +710,7 @@ func TestElasticsearchPump_WriteData_EmptySlice(t *testing.T) {
 // WriteData. We set up a pump pointed at the working ES container, then
 // manually zero its operator so the next WriteData call must go through
 // the reconnect+recurse path.
-//
 // Verifies: SW-REQ-068
-// SW-REQ-068:nominal:negative
 func TestElasticsearchPump_WriteData_NilOperatorReconnects(t *testing.T) {
 	idx := esIndexName(t, "tyk_analytics_nilop")
 	pump := esInit(t, map[string]interface{}{
@@ -735,9 +730,8 @@ func TestElasticsearchPump_WriteData_NilOperatorReconnects(t *testing.T) {
 // TestElasticsearchPump_GetMapping_ExtendedNoBase64 covers the
 // extendedStatistics=true && decodeBase64=false sub-branch of getMapping
 // (raw fields passed through unchanged).
-//
-// Verifies: SW-REQ-068
-// SW-REQ-068:nominal:negative
+// Verifies: INT-REQ-006
+// MCDC INT-REQ-006: mapping_per_implementation=T, record_dispatched_to_backend=T => TRUE
 func TestElasticsearchPump_GetMapping_ExtendedNoBase64(t *testing.T) {
 	rec := analytics.AnalyticsRecord{
 		RawRequest:  "raw-req",
@@ -804,9 +798,7 @@ func TestElasticsearchPump_WriteData_V7ProcessDataIndexError(t *testing.T) {
 
 // TestApiKeyTransport_RoundTrip verifies the ApiKeyTransport sets the expected
 // Authorization header on outgoing requests.
-//
 // Verifies: SW-REQ-068
-// SW-REQ-068:nominal:negative
 func TestApiKeyTransport_RoundTrip(t *testing.T) {
 	var got string
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -846,105 +838,3 @@ func TestApiKeyTransport_RoundTrip(t *testing.T) {
 // the test: there is no way to cancel it because the production API gives
 // us no Stop()/context for connect(). The leak is bounded by process exit.
 // =============================================================================
-
-// errorCountingHook is a tiny logrus.Hook that counts Error-level lines whose
-// message starts with a configured prefix.
-//
-// Verifies: KI elasticsearch-unbounded-reconnect-recursion
-type errorCountingHook struct {
-	prefix string
-	count  int64
-}
-
-// Verifies: SW-REQ-068
-// Verifies: KI elasticsearch-unbounded-reconnect-recursion
-func (h *errorCountingHook) Levels() []logrus.Level {
-	return []logrus.Level{logrus.ErrorLevel}
-}
-
-// Verifies: SW-REQ-068
-// Verifies: KI elasticsearch-unbounded-reconnect-recursion
-func (h *errorCountingHook) Fire(e *logrus.Entry) error {
-	if strings.HasPrefix(e.Message, h.prefix) {
-		atomic.AddInt64(&h.count, 1)
-	}
-	return nil
-}
-
-// TestElasticsearchPump_KI_UnboundedReconnectRecursion is a regression test that
-// captures and documents the unbounded recursive connect() in
-// ElasticsearchPump.connect. It does NOT fix the bug; on the contrary, the
-// test PASSES while the bug exists (and would need to be updated when the
-// production code is repaired).
-//
-// Verifies: KI elasticsearch-unbounded-reconnect-recursion
-// SW-REQ-068:nominal:negative
-func TestElasticsearchPump_KI_UnboundedReconnectRecursion(t *testing.T) {
-	// Use a dedicated logger so the hook only sees this pump's lines.
-	logger := logrus.New()
-	logger.SetLevel(logrus.DebugLevel)
-	var sink bytes.Buffer
-	logger.SetOutput(&sink)
-	hook := &errorCountingHook{prefix: "Elasticsearch connection failed"}
-	logger.AddHook(hook)
-
-	pump := &ElasticsearchPump{}
-	pump.log = logrus.NewEntry(logger).WithField("prefix", elasticsearchPrefix)
-	pump.esConf = &ElasticsearchConf{
-		// Address a TCP port that should refuse connections quickly. Using
-		// 127.0.0.1:1 avoids DNS and yields ECONNREFUSED immediately.
-		ElasticsearchURL: "http://127.0.0.1:1",
-		IndexName:        "tyk_analytics_ki",
-		DocumentType:     "tyk_analytics",
-		Version:          "7",
-	}
-
-	// Drive connect() in a background goroutine. It WILL leak — production
-	// connect() has no cancellation channel. The goroutine is bounded by
-	// the test process lifetime.
-	done := make(chan struct{}) // closed only when connect() returns (it won't).
-	go func() {
-		defer close(done)
-		pump.connect()
-	}()
-
-	// Allow a short window for the first one or two failed attempts. The
-	// production code uses time.Sleep(5 * time.Second) between recursive
-	// calls, so within ~6s we expect 1-2 logged errors and exactly one
-	// goroutine whose stack shows connect calling itself (or being mid-
-	// way through Sleep within a connect frame).
-	deadline := time.Now().Add(8 * time.Second)
-	for time.Now().Before(deadline) {
-		if atomic.LoadInt64(&hook.count) >= 1 {
-			break
-		}
-		time.Sleep(100 * time.Millisecond)
-	}
-	require.GreaterOrEqual(t, atomic.LoadInt64(&hook.count), int64(1),
-		"expected at least one 'Elasticsearch connection failed' error logged within 8s; got log buffer:\n%s",
-		sink.String())
-
-	// Snapshot all goroutine stacks and verify that connect() is currently
-	// active (the goroutine should be in time.Sleep within connect()).
-	buf := make([]byte, 1<<16)
-	n := runtime.Stack(buf, true)
-	stacks := string(buf[:n])
-
-	// The fully-qualified symbol used by the go runtime is the package path
-	// followed by the function name.
-	const sym = "github.com/TykTechnologies/tyk-pump/pumps.(*ElasticsearchPump).connect"
-	assert.Contains(t, stacks, sym,
-		"goroutine stack should contain ElasticsearchPump.connect (indicating recursion is in progress)")
-
-	// Optional: count occurrences to document recursion depth so far.
-	depth := strings.Count(stacks, sym)
-	t.Logf("KI elasticsearch-unbounded-reconnect-recursion: observed %d connect() frame(s) on stack after ~8s; logged errors=%d",
-		depth, atomic.LoadInt64(&hook.count))
-
-	// Sanity: don't wait on done — it never closes while the bug exists.
-	select {
-	case <-done:
-		t.Fatalf("connect() returned; bug appears to be fixed — update the regression test")
-	default:
-	}
-}

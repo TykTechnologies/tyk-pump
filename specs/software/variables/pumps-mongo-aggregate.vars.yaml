@@ -12,6 +12,7 @@ variables:
       type: bool
       direction: input
       description: True when m.dbConf.AggregationTime > 1 — the floor-reached guard; when AggregationTime==1, ShouldSelfHeal returns false even with self_heal_enabled and size_error_detected, because halving 1 would round to 0.
+      range: {min: 1, max: 60}
     - name: aggregation_time_halved
       type: bool
       direction: output
@@ -24,6 +25,14 @@ variables:
       type: bool
       direction: output
       description: True iff SetAggregationTime sets AggregationTime to 1 minute when StoreAnalyticsPerMinute is true (otherwise 60-min default).
+      data_constraint:
+        domain: integer
+        variable: aggregation_window_min
+        condition: "aggregation_window_min == 1"
+        parameters:
+          - name: aggregation_window_min
+            type: int
+            constraint: "== 1"
     - name: org_id_empty
       type: bool
       direction: input
@@ -40,6 +49,10 @@ variables:
       type: bool
       direction: output
       description: True iff the second $addToSet upsert for the same {orgid,timestamp} is attempted following first_upsert_succeeded.
+    - name: hits_errors_latency_counted
+      type: bool
+      direction: output
+      description: True iff Mongo aggregate persistence preserves and accumulates the hit, success/error, latency, and request-time counters in the aggregate document; this mirrors SYS-REQ-019's aggregation output at the Mongo-aggregate software layer.
     - name: tag_list_len_gt_threshold
       type: bool
       direction: input
@@ -64,3 +77,6 @@ variables:
       type: bool
       direction: output
       description: True iff the per-call ensureIndex step is skipped because omit_index_creation OR collection_already_exists.
+independence:
+    declared: true
+    reason: 'Mongo aggregate requirements cover independent behaviors: aggregation window selection, self-heal halving, empty-org skip, two-step upsert, tag-list alerting, and index-skip policy.'

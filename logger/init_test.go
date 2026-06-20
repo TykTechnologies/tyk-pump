@@ -10,7 +10,7 @@ import (
 )
 
 // TestFormatterWithForcedPrefixFileOutput check if the prefix is stored in not TTY outputs
-// Verifies: SW-REQ-033
+// SW-REQ-033:nominal:nominal
 func TestFormatterWithForcedPrefixFileOutput(t *testing.T) {
 	outputFile := "test.log"
 	var f *os.File
@@ -54,6 +54,8 @@ func TestFormatterWithForcedPrefixFileOutput(t *testing.T) {
 
 // Verifies: SW-REQ-033
 // SW-REQ-033:nominal:nominal
+// MCDC SW-REQ-033: env_level_recognised=F, level_set_from_env=F => TRUE
+// MCDC SW-REQ-033: env_level_recognised=T, level_set_from_env=T => TRUE
 func Test_GetLogger(t *testing.T) {
 	tests := []struct {
 		name          string

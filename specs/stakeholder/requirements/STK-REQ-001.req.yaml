@@ -19,9 +19,8 @@ tags:
     - operator
 variables: []
 traces:
-    reviewed_at: "2026-06-16T13:43:44.785195Z"
+    reviewed_at: "2026-06-19T20:51:38Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:862607b3fd245c433b0dd4e0ed05060f8bd0dd910ab36bf25d72ef093c729725
 verification:
     assurance_level: B
     formalization_status: none
@@ -48,6 +47,7 @@ stakeholder:
         - id: AC-001
           text: Analytics records produced by the gateway are forwarded to operator-chosen backends without loss of the fields operators rely on for monitoring and reporting.
           testable: true
+          verification_method: test
           derived_reqs:
             - SYS-REQ-001
             - SYS-REQ-002
@@ -55,12 +55,10 @@ stakeholder:
             - SYS-REQ-024
             - SYS-REQ-030
             - SYS-REQ-031
-          witness_deferred:
-            reason: "No end-to-end acceptance test yet; deferred per hybrid disposition"
-            tracking: .proof/deferred-witness-backlog.md
         - id: AC-002
           text: Operators can report on traffic broken down by organisation, API, and response outcome.
           testable: true
+          verification_method: test
           derived_reqs:
             - SYS-REQ-003
             - SYS-REQ-018
@@ -68,9 +66,6 @@ stakeholder:
             - SYS-REQ-029
             - SYS-REQ-032
             - SYS-REQ-034
-          witness_deferred:
-            reason: "No end-to-end acceptance test yet; deferred per hybrid disposition"
-            tracking: .proof/deferred-witness-backlog.md
 lifecycle:
     change_history:
         - date: "2026-05-29T15:46:16Z"

@@ -61,7 +61,7 @@ func goVersionAtLeast125(major, minor int) bool {
 // pair so the classification logic itself is proven, without fabricating a
 // build state the module does not have.
 //
-//mcdc:ignore SYS-REQ-024: go_125_or_later=F => FALSE — go.mod pins `go 1.25.0`; the Go toolchain refuses to build a module whose declared `go` directive exceeds the running toolchain, so any environment with a sub-1.25 toolchain cannot produce a tyk-pump binary at all, and CI builds/this very assertion reject a go.mod regressed below 1.25 before release. The go_125_or_later=F build state is therefore structurally unreachable in a correct build rather than produced by correct code. [reviewed: human:leo]
+//mcdc:ignore SYS-REQ-024: go_125_or_later=F => FALSE — go.mod pins `go 1.25.0`; the Go toolchain refuses to build a module whose declared `go` directive exceeds the running toolchain, so any environment with a sub-1.25 toolchain cannot produce a tyk-pump binary at all, and CI builds/this very assertion reject a go.mod regressed below 1.25 before release. The go_125_or_later=F build state is therefore structurally unreachable in a correct build rather than produced by correct code. [reviewed: human:leo] [category: defensive]
 func TestBuildInvariant_GoToolchainAtLeast125_SYSREQ024(t *testing.T) {
 	major, minor := goModDeclaredVersion(t)
 	if !goVersionAtLeast125(major, minor) {

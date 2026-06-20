@@ -33,22 +33,11 @@ verification:
         comment: 'Phase Q: catalog obligation attachments — adds deadlock_recovery, forward_compatible, reversible_or_documented (SQL aggregate CreateTable + migration policy, KI sql-schema-no-version-policy). See .proof/catalog-obligation-proposals.md.'
         fingerprint: sha256:9abf19a746bbbb4a31ac82f29d1600ec4e7b309a1881450e9cbf55f2fba63659
         ai_generated: true
-    impact_reviews:
-        - requirement: SW-REQ-065
-          artifact: pumps/sql_aggregate.go
-          decision: no-authored-change
-          reviewer: buger
-          reason: 'Phase L3 aggressive: FRETish formalization added per L3 plan; production .go behaviour and code paths unchanged — only requirement metadata (fretish text + formalization_strategy + variables) altered. Test annotations may follow but do not change runtime behaviour.'
-          base: origin/master
-          requirement_fingerprint: sha256:7de7b3b7b09908edd275ffe490e10c0e61694e6bc11f58b80150cd24db41e9ca
-          approval_fingerprint: sha256:9abf19a746bbbb4a31ac82f29d1600ec4e7b309a1881450e9cbf55f2fba63659
-          artifact_fingerprint: sha256:5d4fb4dfe315a4842672abf1f36a4496f0177a3dc32181a3cae56c466cd50167
-          reviewed_at: "2026-06-02T14:30:20Z"
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:39:32Z"
-    last_modified_by: human:buger
-    last_modified_at: "2026-06-17T08:03:33Z"
+    last_modified_by: agent:codex
+    last_modified_at: "2026-06-19T07:42:55Z"
 obligation_checklist:
     - concurrent
     - idempotency
@@ -56,47 +45,28 @@ obligation_checklist:
     - nominal
     - panic_free_input_handling
     - reversible_or_documented
-obligation_suppressions:
-    - id: concurrent
-      reason: 'Phase G: code_signal ''go.concurrency.goroutine-spawn'' + ''go.concurrency.channel-send'' at pumps/sql_aggregate.go:171/182 are the optional background-index creation pattern (single goroutine wrapping createIndexFn, signals via backgroundIndexCreated channel after wg.Wait synchronization). gorm db handle is concurrency-safe. Not a data-race obligation gap.'
-      suppressed_by: buger
-      suppressed_at: "2026-06-01T18:36:37Z"
-    - id: input_size_bounded
-      reason: 'Phase N opengrep rule go.loop.increment-from-mutable-config flags pumps/sql*.go for-loops with i += c.SQLConf.BatchSize stride. SQL family DOES guard at Init (sql.go:260 sets default if 0) but the rule prefers co-located guards. Same bug class as KIs sqs-batchlimit-zero-infinite-loop and kinesis-splitintobatches-zero-infinite-loop with mitigation (Init-level guard) tracked. Not a new obligation gap.'
-      suppressed_by: buger
-      suppressed_at: "2026-06-02T18:29:53Z"
-      framework_refs:
-        - CWE CWE-130
-        - OWASP-ASVS-v4 V13.1.4
-    - id: malformed_input
-      reason: 'Phase N opengrep rule go.loop.increment-from-mutable-config — paired malformed_input on pumps/sql*.go BatchSize loops. Init-level zero-guard at sql.go:260 already mitigates; rule flags for co-located guard preference. Same class as KIs sqs/kinesis batch-limit zero-loop.'
-      suppressed_by: buger
-      suppressed_at: "2026-06-02T18:29:53Z"
-    - id: parameterized_only_write
-      reason: 'Phase G: code_signal ''go.sql.formatted-write-exec'' at pumps/sql_aggregate.go:164 is a CREATE INDEX DDL where the index name and table name are derived from internal sharding logic (not user input). Identifier escaping is documented as TODO in KI sql-aggregate-mysql-excluded-keyword-broken; this is DDL, not data write — parameter binding is not applicable to identifiers in standard SQL. Not a parameterized-write obligation gap.'
-      suppressed_by: buger
-      suppressed_at: "2026-06-01T18:33:52Z"
-      framework_refs:
-        - CWE CWE-89
-        - NIST-800-53 SI-10
-        - OWASP-ASVS-v4 V5.3.4,V5.3.5
 obligation_deferrals:
-    - obligation_class: idempotency
-      reason: 'Deferred: required idempotency test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'
-      tracking: .proof/deferred-witness-backlog.md
-      owner: human:buger
+    - obligation_class: concurrent
+      reason: 'SQL aggregate table creation shares mutable pump DB state with sharded WriteData, so concurrent table-create evidence is tracked as a known issue until the DB/table handle is isolated or synchronized.'
+      tracking: sql-aggregate-sharded-shared-db-race
+      owner: agent:codex
+      ki_ref: sql-aggregate-sharded-shared-db-race
+      reproducer: rg -n "c\.db = c\.db\.Table|func \(c \*SQLAggregatePump\) ensure(Index|Table)|CREATE INDEX|backgroundIndexCreated" pumps/sql_aggregate.go
     - obligation_class: malformed_recovers_or_errors_loudly
       reason: 'real untested obligation under known-issue mapstructure-decode-silently-drops-unknown-keys; surfaced as visible tracked debt, not an overclaimed fix'
       tracking: mapstructure-decode-silently-drops-unknown-keys
       owner: human:buger
+      ki_ref: mapstructure-decode-silently-drops-unknown-keys
     - obligation_class: panic_free_input_handling
-      reason: 'real untested obligation under known-issue no-panic-recovery-in-exec-pump-writing; surfaced as visible tracked debt, not an overclaimed fix'
+      reason: real untested obligation under known-issue no-panic-recovery-in-exec-pump-writing; surfaced as visible tracked debt, not an overclaimed fix
       tracking: no-panic-recovery-in-exec-pump-writing
       owner: human:buger
+      ki_ref: no-panic-recovery-in-exec-pump-writing
     - obligation_class: reversible_or_documented
-      reason: 'Deferred: required reversible_or_documented test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'
-      tracking: .proof/deferred-witness-backlog.md
+      reason: real product gap under known-issue sql-schema-no-version-policy; surfaced as visible tracked debt, not an overclaimed fix
+      tracking: sql-schema-no-version-policy
       owner: human:buger
+      ki_ref: sql-schema-no-version-policy
 lifecycle:
     change_history:
         - date: "2026-05-30T08:43:47Z"

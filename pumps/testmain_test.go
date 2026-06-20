@@ -5,8 +5,6 @@ import (
 	"testing"
 )
 
-// Verifies: SW-REQ-034
-//
 // TestMain is the single entry point for the pumps test binary. Its job is
 // post-test cleanup: tear down every testcontainer that any test in this
 // package spun up, so a CI worker (or a dev laptop) doesn't leak ~2GB of

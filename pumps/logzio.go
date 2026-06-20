@@ -92,7 +92,7 @@ func NewLogzioClient(conf *LogzioPumpConfig) (*lg.LogzioSender, error) {
 		lg.SetUrl(conf.URL),
 	)
 
-	if err != nil { //mcdc:ignore lg.New only errors on filesystem misconfiguration (queue directory unwritable); existing TestLogzioInit drives all the upstream validation arms (empty token, bad drain duration, out-of-range disk threshold) — by the time control reaches lg.New, the conf has already been validated and the temp dir is a real path. KI mcdc-pumps-below-95.
+	if err != nil { //mcdc:ignore:capability-gap lg.New only errors on filesystem misconfiguration (queue directory unwritable); existing TestLogzioInit drives all the upstream validation arms (empty token, bad drain duration, out-of-range disk threshold) — by the time control reaches lg.New, the conf has already been validated and the temp dir is a real path. KI mcdc-pumps-below-95. [ki: mcdc-pumps-below-95]
 		return nil, fmt.Errorf("failed to create new logzio sender: %s", err)
 	}
 
@@ -120,7 +120,7 @@ func (p *LogzioPump) Init(config interface{}) error {
 	p.log = log.WithField("prefix", LogzioPumpPrefix)
 
 	err := mapstructure.Decode(config, p.config)
-	if err != nil { //mcdc:ignore log.Fatal exits the process; cannot be unit-tested without crashing — KI pumps-logfatal-on-config-decode
+	if err != nil { //mcdc:ignore:capability-gap log.Fatal exits the process; cannot be unit-tested without crashing — KI pumps-logfatal-on-config-decode [ki: pumps-logfatal-on-config-decode]
 		p.log.Fatalf("Failed to decode configuration: %s", err)
 	}
 
@@ -161,7 +161,7 @@ func (p *LogzioPump) WriteData(ctx context.Context, data []interface{}) error {
 		}
 
 		event, err := json.Marshal(mapping)
-		if err != nil { //mcdc:ignore json.Marshal on the canonical AnalyticsRecord mapping (string/int/int64/time.Time fields) cannot fail in practice. KI mcdc-pumps-below-95.
+		if err != nil { //mcdc:ignore:defensive json.Marshal on the canonical AnalyticsRecord mapping (string/int/int64/time.Time fields) cannot fail in practice. KI mcdc-pumps-below-95.
 			return fmt.Errorf("failed to marshal decoded data: %s", err)
 		}
 

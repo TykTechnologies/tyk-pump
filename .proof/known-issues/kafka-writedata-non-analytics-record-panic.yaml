@@ -1,0 +1,22 @@
+id: kafka-writedata-non-analytics-record-panic
+title: Kafka WriteData panics on non-AnalyticsRecord input
+introduced_in: inception
+description: 'pumps/kafka.go performs an unchecked analytics.AnalyticsRecord type assertion for each element passed to KafkaPump.WriteData. A malformed caller input such as []interface{}{"not-a-record"} panics instead of returning an error. In the normal pump fanout path, an unrecovered pump panic can terminate the process and prevent other configured backends from completing the purge cycle.'
+affected_requirements:
+    - INT-REQ-004
+    - SYS-REQ-004
+    - SW-REQ-021
+evidence_manifests:
+    - test:pumps/kafka_mcdc_test.go:TestKafkaPump_WriteData_BadType
+reproducer_command: |-
+  go test -count=1 -run 'TestKafkaPump_WriteData_BadType' ./pumps
+severity: medium
+mitigation: Ensure callers pass only analytics.AnalyticsRecord values to KafkaPump.WriteData and run tyk-pump under a process supervisor.
+remediation: Guard the type assertion in KafkaPump.WriteData and return an error, or skip the malformed entry with an observable log, instead of panicking.
+owner: tyk-team
+release_disposition: ship_with_known_issue
+status: open
+history:
+    - at: "2026-06-19T00:00:00Z"
+      by: agent:codex
+      action: created

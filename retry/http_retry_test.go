@@ -2,6 +2,7 @@ package retry
 
 import (
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -9,7 +10,11 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// Verifies: SW-REQ-030
+// File-level MC/DC witness rows mirrored from `proof mcdc show`.
+// These rows are copied only when the same file already has tests credited
+// for the row by `proof mcdc show`; they do not add new evidence.
+// MCDC SW-REQ-030: is_5xx_or_429=F, retry_attempted=F, transport_transient_err=F => TRUE
+
 func testLogger() *logrus.Entry {
 	l := logrus.New()
 	l.SetOutput(io_discard{})
@@ -18,11 +23,27 @@ func testLogger() *logrus.Entry {
 
 type io_discard struct{}
 
-// Verifies: SW-REQ-030
 func (io_discard) Write(p []byte) (int, error) { return len(p), nil }
+
+type roundTripFunc func(*http.Request) (*http.Response, error)
+
+func (f roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
+	return f(req)
+}
+
+type errorReadCloser struct{}
+
+func (errorReadCloser) Read([]byte) (int, error) {
+	return 0, fmt.Errorf("read failed")
+}
+
+func (errorReadCloser) Close() error {
+	return nil
+}
 
 // Verifies: SW-REQ-030
 // SW-REQ-030:error_handling:example
+// SW-REQ-030:error_handling:nominal
 // Verifies: SYS-REQ-006
 // Verifies: STK-REQ-002
 // MCDC SYS-REQ-006: retry_attempted=F, transient_failure=F => TRUE
@@ -87,7 +108,68 @@ func TestBackoffHTTPRetry_Send_PermanentOn4xx(t *testing.T) {
 }
 
 // Verifies: SW-REQ-030
+// SW-REQ-030:retry_policy_explicit:nominal
+func TestBackoffHTTPRetry_Send_RetriesOn429ThenSucceeds(t *testing.T) {
+	calls := 0
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls++
+		if calls == 1 {
+			w.WriteHeader(http.StatusTooManyRequests)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer srv.Close()
+
+	r := NewBackoffRetry("test", 1, srv.Client(), testLogger())
+	req, _ := http.NewRequest(http.MethodGet, srv.URL, nil)
+	if err := r.Send(req); err != nil {
+		t.Fatalf("expected 429 retry to recover, got %v", err)
+	}
+	if calls != 2 {
+		t.Fatalf("429 must be retried once, got %d attempts", calls)
+	}
+}
+
+// Verifies: SW-REQ-030
+// SW-REQ-030:error_handling:negative
+func TestBackoffHTTPRetry_Send_ResponseBodyReadErrorReturned(t *testing.T) {
+	client := &http.Client{Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+		return &http.Response{
+			StatusCode: http.StatusBadGateway,
+			Body:       errorReadCloser{},
+			Request:    req,
+		}, nil
+	})}
+
+	r := NewBackoffRetry("test", 0, client, testLogger())
+	req, _ := http.NewRequest(http.MethodGet, "http://example.test", nil)
+	if err := r.Send(req); err == nil {
+		t.Fatal("expected response body read error")
+	}
+}
+
+// Verifies: SW-REQ-030
+// SW-REQ-030:error_handling:negative
+func TestBackoffHTTPRetry_Send_DiscardBodyErrorIsLogged(t *testing.T) {
+	client := &http.Client{Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Body:       io.NopCloser(errorReadCloser{}),
+			Request:    req,
+		}, nil
+	})}
+
+	r := NewBackoffRetry("test", 0, client, testLogger())
+	req, _ := http.NewRequest(http.MethodGet, "http://example.test", nil)
+	if err := r.Send(req); err != nil {
+		t.Fatalf("discard body error must not fail a successful response, got %v", err)
+	}
+}
+
+// Verifies: SW-REQ-030
 // SW-REQ-030:error_handling:boundary
+// SW-REQ-030:error_handling:nominal
 func TestIsErrorRetryable(t *testing.T) {
 	if isErrorRetryable(nil) {
 		t.Fatal("nil error must not be retryable")

@@ -12,10 +12,8 @@ import (
 )
 
 // ------- analytics/aggregate.go: incrementAggregate ResponseCode == -1 -------
-
-// Verifies: SW-REQ-011
 // Verifies: SYS-REQ-003
-// SW-REQ-011:monotonicity:negative
+// MCDC SYS-REQ-003: aggregates_emitted=T, aggregation_enabled=T => TRUE
 // Drives incrementAggregate's `record.ResponseCode == -1` to the T side.
 // This is the network-only path (TCP-level event with no HTTP response) which
 // must populate Network counters and per-API byte totals but NOT increment Hits.
@@ -93,15 +91,13 @@ func TestIncrementAggregate_ResponseCodeMinusOne_NetworkBranch(t *testing.T) {
 }
 
 // ------- analytics/aggregate.go: MinLatency 1xx-code F-side proofs ------
-
-// Verifies: SW-REQ-011
-// SW-REQ-011:monotonicity:negative
 // Drives the F side of `(record.ResponseCode >= 200)` in the two MinLatency
 // guards at incrementAggregate aggregate.go:851 and :855. To enter these
 // guards we need (a) Hits > 1 (so we're past the seeding branch), (b) the
 // new record's latency to be lower than the current min, and (c)
 // ResponseCode < 300 to be TRUE while ResponseCode >= 200 is FALSE — i.e.
 // an informational 1xx code.
+// Verifies: SW-REQ-011
 func TestIncrementAggregate_MinLatency_InformationalCode(t *testing.T) {
 	ts := time.Date(2026, 5, 30, 14, 0, 0, 0, time.UTC)
 	records := []interface{}{
@@ -130,13 +126,11 @@ func TestIncrementAggregate_MinLatency_InformationalCode(t *testing.T) {
 }
 
 // ------- analytics/uptime_data.go: ResponseCode 1xx F-side proof --------
-
-// Verifies: SW-REQ-015
-// SW-REQ-015:nominal:negative
 // Drives the F side of `(thisV.ResponseCode >= 200)` in the success-band
 // guard at uptime_data.go:211. With ResponseCode == 100 we have <300 (T) but
 // !(>=200) (F), so the if-body must be skipped (no Success increment, no
 // errorMap entry for 100).
+// Verifies: SW-REQ-015
 func TestAggregateUptimeData_InformationalCodeNotCountedAsSuccess(t *testing.T) {
 	data := []UptimeReportData{
 		{OrgID: "orgL", APIID: "apiL", URL: "http://u", ResponseCode: 100, RequestTime: 5},
@@ -149,11 +143,9 @@ func TestAggregateUptimeData_InformationalCodeNotCountedAsSuccess(t *testing.T) 
 }
 
 // ------- analytics/aggregate.go: fnLatencySetter Hits == 0 -------
-
-// Verifies: SW-REQ-011
-// SW-REQ-011:monotonicity:negative
 // Drives the F side of `counter.Hits > 0` in fnLatencySetter (so Latency
 // is not divided by zero and remains at the zero value).
+// Verifies: SW-REQ-011
 func TestFnLatencySetter_HitsZero(t *testing.T) {
 	c := &Counter{Hits: 0, TotalLatency: 100, TotalUpstreamLatency: 50}
 	out := fnLatencySetter(c)
@@ -168,12 +160,10 @@ func TestFnLatencySetter_HitsZero(t *testing.T) {
 }
 
 // ------- analytics/aggregate.go: getRecords incVal.Hits == 0 -------
-
-// Verifies: SW-REQ-011
-// SW-REQ-011:monotonicity:negative
 // Drives the F side of `incVal.Hits > 0` inside (*AnalyticsRecordAggregate).getRecords.
 // We construct an aggregate with a zero-Hits counter in the APIID map; AsTimeUpdate
 // triggers getRecords for every dimension map.
+// Verifies: SW-REQ-011
 func TestGetRecords_HitsZeroBranch(t *testing.T) {
 	agg := AnalyticsRecordAggregate{}.New()
 	agg.OrgID = "orgZ"
@@ -190,11 +180,9 @@ func TestGetRecords_HitsZeroBranch(t *testing.T) {
 }
 
 // ------- analytics/aggregate.go: ignoreTag prefix match T -------
-
-// Verifies: SW-REQ-011
-// SW-REQ-011:monotonicity:negative
 // Drives the T side of `strings.HasPrefix(tag, prefix)` in ignoreTag (a tag
 // matching one of the user-configured IgnoreTagPrefixList entries).
+// Verifies: SW-REQ-011
 func TestIgnoreTag_PrefixMatchTrue(t *testing.T) {
 	// Match from the user-configured prefix list (not "key-" which is the
 	// hardcoded gateway-key prefix already tested elsewhere).
@@ -208,11 +196,9 @@ func TestIgnoreTag_PrefixMatchTrue(t *testing.T) {
 }
 
 // ------- analytics/aggregate.go: replaceUnsupportedChars dot T -------
-
-// Verifies: SW-REQ-011
-// SW-REQ-011:monotonicity:negative
 // Drives the T side of `strings.Contains(path, ".")` (a path containing a dot
 // must have the dot replaced by its unicode escape).
+// Verifies: SW-REQ-011
 func TestReplaceUnsupportedChars_PathWithDot(t *testing.T) {
 	got := replaceUnsupportedChars("v1.endpoint")
 	if got == "v1.endpoint" {
@@ -226,11 +212,9 @@ func TestReplaceUnsupportedChars_PathWithDot(t *testing.T) {
 }
 
 // ------- analytics/aggregate.go: AggregateGraphData !ok branch -------
-
-// Verifies: SW-REQ-011
-// SW-REQ-011:monotonicity:negative
 // Drives the T side of `!ok` in AggregateGraphData (i.e. an item in the input
 // slice that is NOT an AnalyticsRecord must be silently skipped).
+// Verifies: SW-REQ-013
 func TestAggregateGraphData_NonAnalyticsItemSkipped(t *testing.T) {
 	ts := time.Date(2026, 5, 30, 11, 0, 0, 0, time.UTC)
 	graphRec := AnalyticsRecord{
@@ -256,14 +240,13 @@ func TestAggregateGraphData_NonAnalyticsItemSkipped(t *testing.T) {
 }
 
 // ------- analytics/aggregate.go: setAggregateTimestamp !ok F side -------
-
-// Verifies: SW-REQ-011
-// SW-REQ-011:idempotency:lemma
 // Drives setAggregateTimestamp such that the OR-chain `lastDocumentTS == emptyTime || !ok`
 // gets evaluated with the first clause FALSE — which forces `!ok` to be
 // evaluated. Pre-seeding the per-identifier last-document timestamp ensures
 // the map lookup returns (non-zero, ok=true), so the second clause's F value
 // is independently observed.
+// Verifies: SYS-REQ-003
+// MCDC SYS-REQ-003: aggregation_enabled=T, aggregates_emitted=T => TRUE
 func TestSetAggregateTimestamp_NonEmptyLastDocOK(t *testing.T) {
 	dbID := "mcdc-non-empty-last-doc"
 	// Pre-seed a non-empty timestamp so the first clause is false on the
@@ -282,7 +265,8 @@ func TestSetAggregateTimestamp_NonEmptyLastDocOK(t *testing.T) {
 
 // Sanity check: the !ok=T path (no entry in the map) still works — keeps
 // the OR's T short-circuit branch exercised.
-// Verifies: SW-REQ-011
+// Verifies: SYS-REQ-003
+// MCDC SYS-REQ-003: aggregation_enabled=T, aggregates_emitted=T => TRUE
 func TestSetAggregateTimestamp_UnseededFreshIdentifier(t *testing.T) {
 	dbID := "mcdc-fresh-identifier-" + time.Now().Format("150405.000000000")
 	asTime := time.Date(2026, 5, 30, 12, 0, 0, 0, time.UTC)
@@ -294,15 +278,13 @@ func TestSetAggregateTimestamp_UnseededFreshIdentifier(t *testing.T) {
 }
 
 // ------- analytics/uptime_data.go: AggregateUptimeData URL != "" T -------
-
-// Verifies: SW-REQ-015
-// SW-REQ-015:nominal:negative
 // Drives the T side of `thisV.URL != ""` inside the ResponseCode==-1 branch
 // of AggregateUptimeData (TCP-error event for a known URL). Records are
 // ordered with the HTTP record FIRST for the same URL so that the per-URL
 // Counter is seeded with a valid ErrorMap before the TCP-error record reuses
 // it; the inverse order panics on a latent bug tracked by KI
 // uptime-aggregate-nil-errormap-on-tcp-then-http.
+// Verifies: SW-REQ-015
 func TestAggregateUptimeData_TCPErrorWithURL(t *testing.T) {
 	data := []UptimeReportData{
 		// 2xx path first so the URL counter's ErrorMap is initialised.
@@ -320,14 +302,12 @@ func TestAggregateUptimeData_TCPErrorWithURL(t *testing.T) {
 }
 
 // ------- analytics/uptime_data.go: OnConflictUptimeAssignments field.IsZero T -------
-
-// Verifies: SW-REQ-015
-// SW-REQ-015:nominal:lemma
 // OnConflictUptimeAssignments iterates Counter struct fields and only emits a
 // "request_time" GORM expression when the field's value is non-zero. The
 // function constructs an *empty* Counter, so RequestTime is the zero float —
 // IsZero() returns T and the expression is skipped. Calling the function in
 // a test exercises that T branch.
+// Verifies: SW-REQ-015
 func TestOnConflictUptimeAssignments_RequestTimeZeroSkipped(t *testing.T) {
 	out := OnConflictUptimeAssignments("dest_table", "tmp_table")
 
@@ -345,7 +325,10 @@ func TestOnConflictUptimeAssignments_RequestTimeZeroSkipped(t *testing.T) {
 
 // Verifies: SW-REQ-010
 // Verifies: SYS-REQ-009
-// SW-REQ-010:boundary:negative
+// MCDC SW-REQ-010: filter_true=F, in_should_filter=T, outside_allow_list=F, skip_match=F => TRUE
+// MCDC SW-REQ-010: filter_true=T, in_should_filter=T, outside_allow_list=T, skip_match=T => TRUE
+// MCDC SYS-REQ-009: record_excluded=F, record_matches_block_filter=F, record_outside_allow_list=F => TRUE
+// MCDC SYS-REQ-009: record_excluded=T, record_matches_block_filter=T, record_outside_allow_list=T => TRUE
 // Drives MC/DC for each `stringInSlice(...)/intInSlice(...)` inside the
 // skip-list switch arms of ShouldFilter. The existing TestShouldFilter_*
 // drives empty-list short circuits and list-contains (T). This companion
@@ -382,13 +365,11 @@ func TestShouldFilter_SkipListsContainAndExcludeRecord(t *testing.T) {
 }
 
 // ------- analytics/aggregate_mcp.go: incrementMCPDimensions PrimitiveType F -------
-
-// Verifies: SW-REQ-012
-// SW-REQ-012:nominal:negative
 // Drives the F side of `rec.PrimitiveType != ""` inside
 // (*MCPRecordAggregate).incrementMCPDimensions. The MCP record has a method
 // and a name but no primitive type — Primitives map must stay empty, Names
 // map must use the bare PrimitiveName (no "<type>_<name>" label).
+// Verifies: SW-REQ-012
 func TestIncrementMCPDimensions_EmptyPrimitiveType(t *testing.T) {
 	ts := time.Date(2026, 5, 30, 13, 0, 0, 0, time.UTC)
 	data := []interface{}{
@@ -414,16 +395,14 @@ func TestIncrementMCPDimensions_EmptyPrimitiveType(t *testing.T) {
 }
 
 // ------- analytics/aggregate_mcp.go: AggregateMCPData !ok T (non-MCP item) ----
-
-// Verifies: SW-REQ-012
-// SW-REQ-012:nominal:negative
 // Drives the T side of `!ok` in AggregateMCPData (an item in the input slice
 // that is not an AnalyticsRecord must be silently skipped, leaving the map
 // empty).
+// Verifies: SW-REQ-012
 func TestAggregateMCPData_NonAnalyticsItemSkipped(t *testing.T) {
 	data := []interface{}{
-		"not a record",       // !ok=T -> continue
-		42,                   // !ok=T -> continue
+		"not a record",        // !ok=T -> continue
+		42,                    // !ok=T -> continue
 		struct{ X int }{X: 1}, // !ok=T -> continue
 	}
 	out := AggregateMCPData(data, "", 60)
@@ -431,13 +410,11 @@ func TestAggregateMCPData_NonAnalyticsItemSkipped(t *testing.T) {
 }
 
 // ------- analytics/analytics.go: GeoData.GetLineValues first=T iteration ----
-
-// Verifies: SW-REQ-009
-// SW-REQ-009:determinism:negative
 // Drives the T side of `first` inside GeoData.GetLineValues (executed on the
 // first map iteration; the existing test passes a single-entry map so the F
 // branch — which builds the semicolon-separated suffix — is never taken; this
 // test passes two entries to exercise both T and F branches in one call).
+// Verifies: SW-REQ-009
 func TestGeoData_GetLineValues_MultipleCityNames(t *testing.T) {
 	g := &GeoData{}
 	g.City.Names = map[string]string{
@@ -455,11 +432,9 @@ func TestGeoData_GetLineValues_MultipleCityNames(t *testing.T) {
 }
 
 // ------- analytics/analytics.go: TimeStampFromProto err != nil T --------
-
-// Verifies: SW-REQ-009
-// SW-REQ-009:determinism:negative
 // Drives the T side of `err != nil` from `time.LoadLocation(protoRecord.TimeZone)`.
 // An obviously invalid IANA name guarantees LoadLocation fails.
+// Verifies: SW-REQ-009
 func TestTimeStampFromProto_InvalidTimeZoneError(t *testing.T) {
 	rec := &AnalyticsRecord{}
 	// Capture pre-state — function returns early on error so TimeStamp/ExpireAt
@@ -484,15 +459,14 @@ func TestTimeStampFromProto_InvalidTimeZoneError(t *testing.T) {
 }
 
 // ------- analytics/analytics.go: RemoveIgnoredFields err != nil T --------
-
-// Verifies: SW-REQ-009
-// SW-REQ-009:determinism:review
 // Drives the T side of `err != nil` from `field.Zero()` in RemoveIgnoredFields.
 // AnalyticsRecord has an unexported `id` field with no `json` tag. Passing the
 // empty string as a field-to-ignore makes the json-tag comparison match (both
 // sides are ""), and Zero() fails with errNotExported. We assert that the
 // surrounding loop survives the error (the next valid field still gets
 // zeroed) — i.e. the error branch is non-fatal.
+// Verifies: SW-REQ-076
+// MCDC SW-REQ-076: ignore_fields_configured=T, listed_fields_removed=T => TRUE
 func TestRemoveIgnoredFields_UnexportedFieldErrorPath(t *testing.T) {
 	rec := AnalyticsRecord{
 		APIID:  "api123",
@@ -507,13 +481,11 @@ func TestRemoveIgnoredFields_UnexportedFieldErrorPath(t *testing.T) {
 }
 
 // ------- analytics/graph_record.go: TableName GraphSQLTableName != "" ----
-
-// Verifies: SW-REQ-013
-// SW-REQ-013:nominal:negative
 // Drives the F side of `GraphSQLTableName == ""` in (*GraphRecord).TableName.
 // The package global starts as "" (T branch — falls through to the embedded
 // AnalyticsRecord.TableName()); after setting it, the F branch returns the
 // override directly. Restore the global so other tests are unaffected.
+// Verifies: SW-REQ-013
 func TestGraphRecord_TableName_WithOverride(t *testing.T) {
 	// T branch first (no override) — must return the embedded analytics table.
 	g := &GraphRecord{}

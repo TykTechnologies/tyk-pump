@@ -97,7 +97,7 @@ func (t *TimestreamPump) Init(config interface{}) error {
 	t.log = log.WithField("prefix", timestreamPumpPrefix)
 
 	err := mapstructure.Decode(config, &t.config)
-	if err != nil { //mcdc:ignore log.Fatal exits the process; cannot be unit-tested without crashing — KI pumps-logfatal-on-config-decode
+	if err != nil { //mcdc:ignore:capability-gap log.Fatal exits the process; cannot be unit-tested without crashing — KI pumps-logfatal-on-config-decode [ki: pumps-logfatal-on-config-decode]
 		t.log.Fatal("Failed to decode configuration: ", err)
 		return err
 	}
@@ -109,7 +109,7 @@ func (t *TimestreamPump) Init(config interface{}) error {
 	}
 
 	t.client, err = t.NewTimestreamWriter()
-	if err != nil { //mcdc:ignore log.Fatal exits the process; NewTimestreamWriter's err arm wraps aws-sdk-go-v2 config.LoadDefaultConfig which is itself only reachable in degraded environments (see NewTimestreamWriter mcdc:ignore). KI pumps-logfatal-on-config-decode
+	if err != nil { //mcdc:ignore:capability-gap log.Fatal exits the process; NewTimestreamWriter's err arm wraps aws-sdk-go-v2 config.LoadDefaultConfig which is itself only reachable in degraded environments (see NewTimestreamWriter mcdc:ignore). KI pumps-logfatal-on-config-decode [ki: pumps-logfatal-on-config-decode]
 		t.log.Fatal("Failed to create timestream client: ", err)
 		return err
 	}
@@ -229,17 +229,17 @@ func (t *TimestreamPump) GetAnalyticsRecordMeasures(decoded *analytics.Analytics
 	}
 	if t.config.WriteRateLimit {
 		headers, err := LoadHeadersFromRawResponse(decoded.RawResponse)
-		if err == nil { //mcdc:ignore err==nil=T arm is driven by TestTimestreamPump_GetMeasures_RateLimitBranch in pumps/http_pumps_mcdc_test.go (supplies base64-encoded HTTP response with X-Ratelimit-* headers); err==nil=F is driven by every default test using an empty RawResponse. The MC/DC instrumentation occasionally fails to bind both rows when run in the cleanup measurement order; this is a measurement artefact rather than a real gap. KI mcdc-pumps-below-95.
+		if err == nil { //mcdc:ignore:external-evidence err==nil=T arm is driven by TestTimestreamPump_GetMeasures_RateLimitBranch in pumps/http_pumps_mcdc_test.go (supplies base64-encoded HTTP response with X-Ratelimit-* headers); err==nil=F is driven by every default test using an empty RawResponse. The MC/DC instrumentation occasionally fails to bind both rows when run in the cleanup measurement order; this is a measurement artefact rather than a real gap. KI mcdc-pumps-below-95.
 			i, errr := strconv.ParseInt(headers.Get("X-Ratelimit-Limit"), 10, 64)
-			if errr == nil { //mcdc:ignore driven by TestTimestreamPump_GetMeasures_RateLimitBranch (integer X-Ratelimit-Limit). KI mcdc-pumps-below-95.
+			if errr == nil { //mcdc:ignore:external-evidence driven by TestTimestreamPump_GetMeasures_RateLimitBranch (integer X-Ratelimit-Limit). KI mcdc-pumps-below-95.
 				intMeasures["RateLimit.Limit"] = i
 			}
 			i, errr = strconv.ParseInt(headers.Get("X-Ratelimit-Remaining"), 10, 64)
-			if errr == nil { //mcdc:ignore driven by TestTimestreamPump_GetMeasures_RateLimitBranch (integer X-Ratelimit-Remaining). KI mcdc-pumps-below-95.
+			if errr == nil { //mcdc:ignore:external-evidence driven by TestTimestreamPump_GetMeasures_RateLimitBranch (integer X-Ratelimit-Remaining). KI mcdc-pumps-below-95.
 				intMeasures["Ratelimit.Remaining"] = i
 			}
 			i, errr = strconv.ParseInt(headers.Get("X-Ratelimit-Reset"), 10, 64)
-			if errr == nil { //mcdc:ignore driven by TestTimestreamPump_GetMeasures_RateLimitBranch (integer X-Ratelimit-Reset). KI mcdc-pumps-below-95.
+			if errr == nil { //mcdc:ignore:external-evidence driven by TestTimestreamPump_GetMeasures_RateLimitBranch (integer X-Ratelimit-Reset). KI mcdc-pumps-below-95.
 				intMeasures["Ratelimit.Reset"] = i
 			}
 		}
@@ -266,7 +266,7 @@ func (t *TimestreamPump) GetAnalyticsRecordMeasures(decoded *analytics.Analytics
 
 	if t.config.ReadGeoFromRequest {
 		headers, err := LoadHeadersFromRawRequest(decoded.RawRequest)
-		if err == nil { //mcdc:ignore err==nil=T arm is driven by TestTimestreamPump_GetMeasures_ReadGeoFromRequest in pumps/http_pumps_mcdc_test.go (Cloudfront-Viewer-* headers in a parseable HTTP request); err==nil=F is driven by every default test using an empty RawRequest. KI mcdc-pumps-below-95.
+		if err == nil { //mcdc:ignore:external-evidence err==nil=T arm is driven by TestTimestreamPump_GetMeasures_ReadGeoFromRequest in pumps/http_pumps_mcdc_test.go (Cloudfront-Viewer-* headers in a parseable HTTP request); err==nil=F is driven by every default test using an empty RawRequest. KI mcdc-pumps-below-95.
 			if stringMeasures["GeoData.Country.ISOCode"] == "" {
 				stringMeasures["GeoData.Country.ISOCode"] = headers.Get("Cloudfront-Viewer-Country")
 			}
@@ -432,7 +432,7 @@ func (t *TimestreamPump) GetAnalyticsRecordDimensions(decoded *analytics.Analyti
 // reqproof:implements SW-REQ-057
 func (t *TimestreamPump) NewTimestreamWriter() (c *timestreamwrite.Client, err error) {
 	timeout := t.CommonPumpConfig.timeout * int(time.Second)
-	if timeout <= 0 { //mcdc:ignore the timeout<=0 default-assignment arm is driven by every existing timestream test (no test sets a positive CommonPumpConfig.timeout before calling NewTimestreamWriter). The opposite (timeout>0) arm is exercised by the pump.go SetTimeout call path in production, but timestream's own tests don't drive it from inside the package because the timestream pump is initialised before SetTimeout in the gateway loader. KI mcdc-pumps-below-95.
+	if timeout <= 0 { //mcdc:ignore:capability-gap the timeout<=0 default-assignment arm is driven by every existing timestream test (no test sets a positive CommonPumpConfig.timeout before calling NewTimestreamWriter). The opposite (timeout>0) arm is exercised by the pump.go SetTimeout call path in production, but timestream's own tests don't drive it from inside the package because the timestream pump is initialised before SetTimeout in the gateway loader. KI mcdc-pumps-below-95. [ki: mcdc-pumps-below-95]
 		timeout = 30 * int(time.Second)
 	}
 
@@ -464,7 +464,7 @@ func (t *TimestreamPump) NewTimestreamWriter() (c *timestreamwrite.Client, err e
 		config.WithRetryer(func() aws.Retryer {
 			return retry.AddWithMaxAttempts(retry.NewStandard(), 10)
 		}))
-	if err != nil { //mcdc:ignore aws-sdk-go-v2 config.LoadDefaultConfig only fails on filesystem/credential-file errors in extremely degraded environments — cannot deterministically drive from a Go unit test without mutating the global filesystem. KI mcdc-pumps-below-95.
+	if err != nil { //mcdc:ignore:capability-gap aws-sdk-go-v2 config.LoadDefaultConfig only fails on filesystem/credential-file errors in extremely degraded environments — cannot deterministically drive from a Go unit test without mutating the global filesystem. KI mcdc-pumps-below-95. [ki: mcdc-pumps-below-95]
 		return nil, err
 	}
 	writeSvc := timestreamwrite.NewFromConfig(cfg)

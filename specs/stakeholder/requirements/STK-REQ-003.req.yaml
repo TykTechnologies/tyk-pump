@@ -19,9 +19,8 @@ tags:
     - filtering
 variables: []
 traces:
-    reviewed_at: "2026-06-16T13:43:45.510972Z"
+    reviewed_at: "2026-06-19T20:51:38Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:ace131208f4f6acd70d8c7931680069db91cfa6f69c50dc075a53bb32ebbb0c6
 verification:
     assurance_level: B
     formalization_status: none
@@ -49,25 +48,21 @@ stakeholder:
         - id: AC-001
           text: Operators can restrict, per backend, which records are forwarded using allow and block lists on organisation, API, and response code.
           testable: true
+          verification_method: test
           derived_reqs:
             - SYS-REQ-008
             - SYS-REQ-009
             - SYS-REQ-020
-          witness_deferred:
-            reason: "No end-to-end acceptance test yet; deferred per hybrid disposition"
-            tracking: .proof/deferred-witness-backlog.md
         - id: AC-002
           text: Operators can omit detailed request/response payloads and cap record size to protect sensitive data and downstream storage.
           testable: true
+          verification_method: test
           derived_reqs:
             - SYS-REQ-010
             - SYS-REQ-011
             - SYS-REQ-015
             - SYS-REQ-016
             - SYS-REQ-035
-          witness_deferred:
-            reason: "No end-to-end acceptance test yet; deferred per hybrid disposition"
-            tracking: .proof/deferred-witness-backlog.md
 lifecycle:
     change_history:
         - date: "2026-05-29T15:46:44Z"

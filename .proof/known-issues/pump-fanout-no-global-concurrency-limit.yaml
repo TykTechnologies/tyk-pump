@@ -1,0 +1,20 @@
+id: pump-fanout-no-global-concurrency-limit
+title: Pump fanout starts one goroutine per configured backend without a global concurrency cap
+introduced_in: inception
+description: 'main.go dispatches each purge batch by spawning a goroutine per configured pump, and execPumpWriting starts an inner goroutine for the pump WriteData call. The fanout is bounded only by the number of configured pumps and has no global semaphore, worker pool, or configured maximum. The SYS-REQ-004 external_call_concurrency_bounded obligation is therefore a real product gap for deployments with many configured backends, not only missing test evidence.'
+affected_requirements:
+    - SYS-REQ-004
+environment_note: |-
+  Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source and command output.
+reproducer_command: |-
+  rg -n "go execPumpWriting|go func\\(\\).*WriteData|Pumps" main.go
+severity: low
+mitigation: Operators should keep the configured pump count within host capacity and use per-pump timeouts to reduce stalled goroutine lifetime.
+remediation: Add a configurable fanout concurrency limit or worker pool around backend writes, then add a test proving more configured pumps than the limit do not exceed the cap.
+owner: tyk-team
+release_disposition: ship_with_known_issue
+status: open
+history:
+    - at: "2026-06-19T00:00:00Z"
+      by: agent:codex
+      action: created

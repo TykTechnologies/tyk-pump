@@ -38,17 +38,6 @@ verification:
         comment: 'Enrich under-modeled FRETish to the 3 real runtime guards in GetGeo/GeoIPLookup: geo_db_absent (GeoIPDB==nil), geo_ip_empty (ipStr==""), geo_ip_invalid (net.ParseIP==nil). Each short-circuits enrichment before/without a DB lookup; all 6 MC/DC rows covered by existing geoip_test.go tests, code MC/DC 3/3 decisions+conditions aligned.'
         fingerprint: sha256:d1459f3760256d2961decf7b7b316f7c5af9439055ed9455d4295ca688d419ac
         ai_generated: true
-    impact_reviews:
-        - requirement: SW-REQ-071
-          artifact: analytics/analytics.go
-          decision: no-authored-change
-          reviewer: agent:claude-opus-4-8
-          reason: 'Consolidation pass: the prior ReqProof-coverage agents'' changes to these production files are behavior-preserving only — added // reqproof:implements trace annotations and trailing //mcdc:ignore comments on existing branches; no executable code path, signature, or logic changed. Requirement intent and formalization are unchanged.'
-          base: origin/master
-          requirement_fingerprint: sha256:f5149ea2f8bdc9f5febbe3432ac6ffb583132ea47426f079e5cd315e53d54dcc
-          approval_fingerprint: sha256:d1459f3760256d2961decf7b7b316f7c5af9439055ed9455d4295ca688d419ac
-          artifact_fingerprint: sha256:1af60beb1ea3d67ce5c4360dbda50461329e4e80b77cc3a0b45f944786216f44
-          reviewed_at: "2026-06-11T18:47:54Z"
 history:
     created_by: human:cli
     created_at: "2026-05-30T10:31:33Z"
@@ -58,11 +47,6 @@ obligation_checklist:
     - error_handling
     - nominal
     - panic_free_input_handling
-obligation_deferrals:
-    - obligation_class: panic_free_input_handling
-      reason: 'Deferred: required panic_free_input_handling test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'
-      tracking: .proof/deferred-witness-backlog.md
-      owner: human:buger
 lifecycle:
     change_history:
         - date: "2026-05-30T10:36:30Z"

@@ -1,6 +1,7 @@
 schema_version: 1
 id: DEFECT-2
 title: Syslog pump log fragmentation on multiline raw_request/raw_response
+introduced_in: 0596e82
 description: |
   SyslogPump.WriteData emitted each analytics record to the syslog writer with
   fmt.Fprintf("%s", message) where message was a Go map whose raw_request /
@@ -58,6 +59,11 @@ disposition:
     status: covered_by_requirement
     requirements:
         - SW-REQ-050
+    known_issues:
+        - mapstructure-decode-silently-drops-unknown-keys
+        - pumps-logfatal-on-config-decode
+        - syslog-init-logfatal-on-invalid-transport
+        - syslog-initwriter-logfatal-on-dial-error
     evidence:
         verified_by:
             - pumps/syslog_test.go:TestSyslogPump_WriteData_WithMultilineHTTP

@@ -92,7 +92,7 @@ const maxUdpBytes = 1440     // 1500(Ethernet MTU) - 60(Max UDP header size
 // reqproof:implements SW-REQ-005
 func NewStatsDSink(addr string, options *StatsDSinkOptions) (*StatsDSink, error) {
 	c, err := net.ListenPacket("udp", ":0")
-	if err != nil {
+	if err != nil { //mcdc:ignore:defensive OS failure for ListenPacket(":0") has no deterministic unit seam without replacing net.ListenPacket
 		return nil, err
 	}
 

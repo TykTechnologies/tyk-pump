@@ -1,5 +1,6 @@
 id: retry-buffers-full-request-body-in-memory
 title: retry middleware loads entire HTTP request body into memory before each attempt
+introduced_in: inception
 description: retry/http-retry.go:43 calls io.ReadAll(req.Body) before the retry loop and stores the bytes in a []byte that is re-wrapped via bytes.NewBuffer for each attempt. There is no upper bound on the body size, so an unusually large outbound request (e.g. a pump batch flushing tens of MiB of analytics records) is fully buffered for every retry. On constrained hosts this can pressure the heap or OOM the pump process. The body re-wrap is required because keep-alive may have been disabled and the original Body stream is single-shot, so the buffering pattern itself is intentional — only the absence of a size cap is the gap.
 affected_requirements:
     - SW-REQ-030
@@ -7,6 +8,8 @@ commands:
     - grep -n 'io.ReadAll(req.Body)' retry/http-retry.go
 evidence_manifests:
     - code_signal:opengrep:go.deserializer.request-body-readall:retry/http-retry.go:43
+reproducer_command: |-
+  grep -n 'io.ReadAll(req.Body)' retry/http-retry.go
 severity: medium
 mitigation: Operators size pump batches via existing pump-level MaxRecordSize / batch-bytes settings so the aggregated body fits comfortably in process memory. The pump-level caps bound the retry buffer in practice.
 remediation: Add a configurable MaxRequestBodyBytes (or wire to existing pump-level cap) and reject buffering above the cap; alternatively switch to GetBody (Go 1.8+ httputil pattern) so the body stream can be re-opened without an in-memory copy.

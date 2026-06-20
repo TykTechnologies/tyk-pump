@@ -3,6 +3,7 @@ package pumps
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"strings"
 	"sync"
 	"testing"
@@ -25,19 +26,14 @@ type capturingLogger struct {
 	queries []string
 }
 
-// Verifies: SW-REQ-040
 func (l *capturingLogger) LogMode(gorm_logger.LogLevel) gorm_logger.Interface { return l }
 
-// Verifies: SW-REQ-040
 func (l *capturingLogger) Info(_ context.Context, _ string, _ ...interface{}) {}
 
-// Verifies: SW-REQ-040
 func (l *capturingLogger) Warn(_ context.Context, _ string, _ ...interface{}) {}
 
-// Verifies: SW-REQ-040
 func (l *capturingLogger) Error(_ context.Context, _ string, _ ...interface{}) {}
 
-// Verifies: SW-REQ-040
 func (l *capturingLogger) Trace(_ context.Context, _ time.Time, fc func() (string, int64), _ error) {
 	sql, _ := fc()
 	l.mu.Lock()
@@ -46,7 +42,6 @@ func (l *capturingLogger) Trace(_ context.Context, _ time.Time, fc func() (strin
 }
 
 // hasAlterTable returns true if any captured SQL contains ALTER TABLE (case-insensitive).
-// Verifies: SW-REQ-040
 func (l *capturingLogger) hasAlterTable() bool {
 	l.mu.Lock()
 	defer l.mu.Unlock()
@@ -60,7 +55,6 @@ func (l *capturingLogger) hasAlterTable() bool {
 
 // captureSession wraps db with a capturing logger and returns both.
 // The original db is not modified.
-// Verifies: SW-REQ-040
 func captureSession(db *gorm.DB) (*gorm.DB, *capturingLogger) {
 	cl := &capturingLogger{}
 	return db.Session(&gorm.Session{Logger: cl}), cl
@@ -73,7 +67,9 @@ func captureSession(db *gorm.DB) (*gorm.DB, *capturingLogger) {
 //
 // This guards against the new MigrateColumn() checks (Unique / DefaultValue / Comment)
 // in the gorm fork misfiring when pgx/v5 reports column metadata differently from pgx/v4.
-// Verifies: SW-REQ-040
+//
+// Verifies: INT-REQ-007
+// MCDC INT-REQ-007: expand_contract_migration=F, sql_schema_version_changed=F => TRUE
 func TestMigrationIdempotency_Postgres(t *testing.T) {
 	skipTestIfNoPostgres(t)
 
@@ -82,7 +78,7 @@ func TestMigrationIdempotency_Postgres(t *testing.T) {
 		if err := pmp.Init(newSQLConfig(false)); err != nil {
 			t.Fatalf("Init failed: %v", err)
 		}
-		t.Cleanup(func() { pmp.db.Migrator().DropTable(analytics.SQLTable) })
+		cleanupGormDB(t, pmp.db, analytics.SQLTable)
 
 		captureDB, cl := captureSession(pmp.db)
 		if err := captureDB.Table(analytics.SQLTable).AutoMigrate(&analytics.AnalyticsRecord{}); err != nil {
@@ -98,9 +94,8 @@ func TestMigrationIdempotency_Postgres(t *testing.T) {
 		if err := pmp.Init(newSQLConfig(false)); err != nil {
 			t.Fatalf("Init failed: %v", err)
 		}
-		// Init always starts a background goroutine for index creation on postgres.
-		<-pmp.backgroundIndexCreated
-		t.Cleanup(func() { pmp.db.Migrator().DropTable(analytics.AggregateSQLTable) })
+		waitForAggregateIndexReady(t, pmp.db, analytics.AggregateSQLTable, pmp.backgroundIndexCreated)
+		cleanupGormDB(t, pmp.db, analytics.AggregateSQLTable)
 
 		captureDB, cl := captureSession(pmp.db)
 		if err := captureDB.Table(analytics.AggregateSQLTable).AutoMigrate(&analytics.SQLAnalyticsRecordAggregate{}); err != nil {
@@ -137,7 +132,9 @@ func TestMigrationIdempotency_Postgres(t *testing.T) {
 
 // TestShardedMigrationIdempotency_Postgres verifies that running MigrateAllShardedTables
 // on already-migrated shards does not emit ALTER TABLE on the second call.
-// Verifies: SW-REQ-040
+//
+// Verifies: INT-REQ-007
+// MCDC INT-REQ-007: expand_contract_migration=F, sql_schema_version_changed=F => TRUE
 func TestShardedMigrationIdempotency_Postgres(t *testing.T) {
 	skipTestIfNoPostgres(t)
 
@@ -145,7 +142,7 @@ func TestShardedMigrationIdempotency_Postgres(t *testing.T) {
 	if err := pmp.Init(newSQLConfig(false)); err != nil {
 		t.Fatalf("Init failed: %v", err)
 	}
-	t.Cleanup(func() { pmp.db.Migrator().DropTable(analytics.SQLTable) })
+	cleanupGormDB(t, pmp.db, analytics.SQLTable)
 
 	// Use far-future dates to avoid colliding with any test that uses time.Now().
 	dates := []string{"20990101", "20990102", "20990103"}
@@ -177,6 +174,7 @@ func TestShardedMigrationIdempotency_Postgres(t *testing.T) {
 // TestBatchInsertLargePayload_Postgres writes 5000 records in a single WriteData call
 // (5 × batch_size=1000) and verifies count and data integrity.
 // Verifies: SW-REQ-040
+// MCDC SW-REQ-040: day_sliced_routing=F, table_sharding=F => TRUE
 func TestBatchInsertLargePayload_Postgres(t *testing.T) {
 	skipTestIfNoPostgres(t)
 
@@ -186,7 +184,7 @@ func TestBatchInsertLargePayload_Postgres(t *testing.T) {
 	if err := pmp.Init(cfg); err != nil {
 		t.Fatalf("Init failed: %v", err)
 	}
-	t.Cleanup(func() { pmp.db.Migrator().DropTable(analytics.SQLTable) })
+	cleanupGormDB(t, pmp.db, analytics.SQLTable)
 
 	const total = 5000
 	now := time.Now()
@@ -226,7 +224,9 @@ func TestBatchInsertLargePayload_Postgres(t *testing.T) {
 // references in its on-conflict assignment expressions. If pgx/v5 rejects or silently
 // drops the conflict clause, the second write would insert duplicate rows instead of
 // merging, and the hit count would not accumulate.
-// Verifies: SW-REQ-040
+// Verifies: SW-REQ-067
+// MCDC SW-REQ-067: on_conflict_assignments_applied=F, row_conflict_detected=F => TRUE
+// MCDC SW-REQ-067: on_conflict_assignments_applied=T, row_conflict_detected=T => TRUE
 func TestUpsertOnConflict_Postgres(t *testing.T) {
 	skipTestIfNoPostgres(t)
 
@@ -236,8 +236,8 @@ func TestUpsertOnConflict_Postgres(t *testing.T) {
 	if err := pmp.Init(cfg); err != nil {
 		t.Fatalf("Init failed: %v", err)
 	}
-	<-pmp.backgroundIndexCreated
-	t.Cleanup(func() { pmp.db.Migrator().DropTable(analytics.AggregateSQLTable) })
+	waitForAggregateIndexReady(t, pmp.db, analytics.AggregateSQLTable, pmp.backgroundIndexCreated)
+	cleanupGormDB(t, pmp.db, analytics.AggregateSQLTable)
 
 	// Fixed timestamp ensures all writes land in the same aggregation bucket.
 	fixedTS := time.Date(2099, 6, 1, 10, 0, 0, 0, time.UTC)
@@ -285,6 +285,10 @@ func TestUpsertOnConflict_Postgres(t *testing.T) {
 // MaxOpenConns to 5 while running 50 concurrent goroutines. Each goroutine writes 50
 // records. Validates that no errors occur and all 2500 records are persisted.
 // Verifies: SW-REQ-040
+// SW-REQ-040:concurrent:nominal
+// SW-REQ-040:concurrent:race
+// SW-REQ-040:connection_leak_free:nominal
+// MCDC SW-REQ-040: day_sliced_routing=F, table_sharding=F => TRUE
 func TestConcurrentWrites_Postgres(t *testing.T) {
 	skipTestIfNoPostgres(t)
 
@@ -292,7 +296,7 @@ func TestConcurrentWrites_Postgres(t *testing.T) {
 	if err := pmp.Init(newSQLConfig(false)); err != nil {
 		t.Fatalf("Init failed: %v", err)
 	}
-	t.Cleanup(func() { pmp.db.Migrator().DropTable(analytics.SQLTable) })
+	cleanupGormDB(t, pmp.db, analytics.SQLTable)
 
 	sqlDB, err := pmp.db.DB()
 	if err != nil {
@@ -346,19 +350,22 @@ func TestConcurrentWrites_Postgres(t *testing.T) {
 		"all connections should be returned to pool after completion")
 }
 
-// TestConnectionPoolStats_Postgres documents the default pool settings after the pgx/v5
-// upgrade. tyk-pump intentionally does not call SetMaxOpenConns, so the default must
-// remain 0 (unlimited). This test acts as a canary: if a future driver version silently
-// imposes a default cap, this test will catch it.
+// TestConnectionPoolDefaults_Postgres documents the default database/sql pool
+// settings after the pgx/v5 upgrade. tyk-pump intentionally does not call
+// SetMaxOpenConns in Init, so MaxOpenConnections must remain 0 (unlimited);
+// the idle pool should also stay bounded by the stdlib default.
+//
 // Verifies: SW-REQ-040
-func TestConnectionPoolStats_Postgres(t *testing.T) {
+// SW-REQ-040:connection_leak_free:nominal
+// MCDC SW-REQ-040: day_sliced_routing=F, table_sharding=F => TRUE
+func TestConnectionPoolDefaults_Postgres(t *testing.T) {
 	skipTestIfNoPostgres(t)
 
 	pmp := SQLPump{}
 	if err := pmp.Init(newSQLConfig(false)); err != nil {
 		t.Fatalf("Init failed: %v", err)
 	}
-	t.Cleanup(func() { pmp.db.Migrator().DropTable(analytics.SQLTable) })
+	cleanupGormDB(t, pmp.db, analytics.SQLTable)
 
 	sqlDB, err := pmp.db.DB()
 	if err != nil {
@@ -368,6 +375,166 @@ func TestConnectionPoolStats_Postgres(t *testing.T) {
 	stats := sqlDB.Stats()
 	assert.Equal(t, 0, stats.MaxOpenConnections,
 		"tyk-pump does not configure MaxOpenConns; driver default must remain 0 (unlimited)")
+
+	conns := make([]*gorm.DB, 5)
+	for i := range conns {
+		conns[i] = pmp.db.Session(&gorm.Session{NewDB: true})
+		var one int
+		if err := conns[i].Raw("SELECT 1").Scan(&one).Error; err != nil {
+			t.Fatalf("warm-up query %d failed: %v", i, err)
+		}
+	}
+	stats = sqlDB.Stats()
+	assert.LessOrEqual(t, stats.Idle, 2,
+		"idle connections should not exceed stdlib default MaxIdleConns=2; got %d", stats.Idle)
+}
+
+// Verifies: SW-REQ-041
+// Verifies: SW-REQ-067
+// SW-REQ-041:nominal:nominal
+// SW-REQ-041:concurrent:nominal
+// SW-REQ-041:concurrent:race
+// MCDC SW-REQ-041: day_sliced_routing=F, table_sharding=F => TRUE
+// SW-REQ-067:concurrent:nominal
+// SW-REQ-067:concurrent:race
+// MCDC SW-REQ-067: on_conflict_assignments_applied=T, row_conflict_detected=T => TRUE
+func TestConcurrentAggregateWrites_Postgres(t *testing.T) {
+	skipTestIfNoPostgres(t)
+
+	pmp := SQLAggregatePump{}
+	require.NoError(t, pmp.Init(newSQLConfig(false)))
+	cleanupGormDB(t, pmp.db, analytics.AggregateSQLTable)
+
+	sqlDB, err := pmp.db.DB()
+	require.NoError(t, err)
+	sqlDB.SetMaxOpenConns(5)
+
+	const (
+		workers          = 12
+		recordsPerWorker = 4
+	)
+	now := time.Now().UTC()
+
+	var (
+		wg   sync.WaitGroup
+		mu   sync.Mutex
+		errs []error
+	)
+
+	for i := 0; i < workers; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			keys := make([]interface{}, recordsPerWorker)
+			for j := 0; j < recordsPerWorker; j++ {
+				keys[j] = analytics.AnalyticsRecord{
+					APIID:        "concurrent-agg-api",
+					OrgID:        "concurrent-agg-org",
+					ResponseCode: http.StatusOK,
+					TimeStamp:    now,
+				}
+			}
+			if writeErr := pmp.WriteData(context.Background(), keys); writeErr != nil {
+				mu.Lock()
+				errs = append(errs, writeErr)
+				mu.Unlock()
+			}
+		}()
+	}
+
+	wg.Wait()
+	assert.Empty(t, errs, "aggregate writes should not fail under concurrent use")
+
+	var count int64
+	require.NoError(t, pmp.db.Table(analytics.AggregateSQLTable).
+		Where("org_id = ?", "concurrent-agg-org").
+		Count(&count).Error)
+	assert.Equal(t, int64(2), count,
+		"concurrent writes to the same aggregate key should upsert apiid and total rows in place")
+
+	var total analytics.SQLAnalyticsRecordAggregate
+	require.NoError(t, pmp.db.Table(analytics.AggregateSQLTable).
+		Where("org_id = ? AND dimension_value = ?", "concurrent-agg-org", "total").
+		First(&total).Error)
+	assert.Equal(t, workers*recordsPerWorker, total.Hits,
+		"concurrent ON CONFLICT updates should accumulate hits instead of overwriting")
+}
+
+// Verifies: SW-REQ-045
+// SW-REQ-045:concurrent:nominal
+// SW-REQ-045:concurrent:race
+// SW-REQ-045:connection_leak_free:nominal
+// MCDC SW-REQ-045: minute_window_used=F, store_per_minute=F => TRUE
+func TestConcurrentMCPSQLAggregateWrites_Postgres(t *testing.T) {
+	skipTestIfNoPostgres(t)
+
+	pmp := MCPSQLAggregatePump{}
+	require.NoError(t, pmp.Init(SQLAggregatePumpConf{
+		SQLConf: SQLConf{
+			Type:             "postgres",
+			ConnectionString: getTestPostgresConnectionString(),
+		},
+	}))
+	waitForAggregateIndexReady(t, pmp.db, analytics.AggregateMCPSQLTable, pmp.backgroundIndexCreated)
+	cleanupGormDB(t, pmp.db, analytics.AggregateMCPSQLTable)
+
+	sqlDB, err := pmp.db.DB()
+	require.NoError(t, err)
+	sqlDB.SetMaxOpenConns(5)
+
+	const (
+		workers          = 12
+		recordsPerWorker = 4
+	)
+
+	var (
+		wg   sync.WaitGroup
+		mu   sync.Mutex
+		errs []error
+	)
+
+	for i := 0; i < workers; i++ {
+		wg.Add(1)
+		go func(workerID int) {
+			defer wg.Done()
+			now := time.Now().UTC()
+			keys := make([]interface{}, recordsPerWorker)
+			for j := 0; j < recordsPerWorker; j++ {
+				keys[j] = analytics.AnalyticsRecord{
+					APIID:        fmt.Sprintf("concurrent-mcp-agg-api-%d", workerID),
+					APIName:      fmt.Sprintf("concurrent-mcp-agg-api-%d", workerID),
+					OrgID:        fmt.Sprintf("concurrent-mcp-agg-org-%d", workerID),
+					ResponseCode: http.StatusOK,
+					TimeStamp:    now,
+					MCPStats: analytics.MCPStats{
+						IsMCP:         true,
+						JSONRPCMethod: fmt.Sprintf("tools/call-%d", workerID),
+						PrimitiveType: "tool",
+						PrimitiveName: fmt.Sprintf("tool-%d", workerID),
+					},
+				}
+			}
+			if writeErr := pmp.WriteData(context.Background(), keys); writeErr != nil {
+				mu.Lock()
+				errs = append(errs, writeErr)
+				mu.Unlock()
+			}
+		}(i)
+	}
+
+	wg.Wait()
+	assert.Empty(t, errs, "MCP aggregate writes should not fail under concurrent use")
+
+	var count int64
+	require.NoError(t, pmp.db.Table(analytics.AggregateMCPSQLTable).
+		Where("org_id LIKE ?", "concurrent-mcp-agg-org-%").
+		Count(&count).Error)
+	assert.Equal(t, int64(workers*5), count,
+		"each worker should produce apiid, total, methods, primitives, and names rows")
+
+	stats := sqlDB.Stats()
+	assert.Equal(t, 0, stats.InUse,
+		"all connections should be returned to pool after concurrent MCP aggregate writes")
 }
 
 // ── 5. Sharded Table Lifecycle ────────────────────────────────────────────────
@@ -376,6 +543,7 @@ func TestConnectionPoolStats_Postgres(t *testing.T) {
 // that 5 sharded tables are created with all 6 expected indexes, then runs
 // MigrateAllShardedTables and confirms no ALTER TABLE is emitted.
 // Verifies: SW-REQ-040
+// MCDC SW-REQ-040: day_sliced_routing=T, table_sharding=T => TRUE
 func TestShardedTableLifecycle_Postgres(t *testing.T) {
 	skipTestIfNoPostgres(t)
 
@@ -439,8 +607,7 @@ func TestShardedTableLifecycle_Postgres(t *testing.T) {
 // by gorm fork commit 61fd065:
 //
 //	pgx/v5 UniqueViolation → ErrorTranslator.Translate → gorm.ErrDuplicatedKey
-//
-// Verifies: SW-REQ-040
+// SW-REQ-067: Postgres duplicate-key translation for SQL upsert/error handling.
 func TestDuplicateKeyError_Postgres(t *testing.T) {
 	skipTestIfNoPostgres(t)
 
@@ -448,7 +615,7 @@ func TestDuplicateKeyError_Postgres(t *testing.T) {
 	if err := pmp.Init(newSQLConfig(false)); err != nil {
 		t.Fatalf("Init failed: %v", err)
 	}
-	t.Cleanup(func() { pmp.db.Migrator().DropTable(analytics.UptimeSQLTable) })
+	cleanupGormDB(t, pmp.db, analytics.UptimeSQLTable)
 
 	rec := analytics.UptimeReportAggregateSQL{ID: "dup-key-pgxv5-test"}
 
@@ -467,7 +634,9 @@ func TestDuplicateKeyError_Postgres(t *testing.T) {
 // pgx/v5 (PreferSimpleProtocol: true). This disables pgx's extended query protocol and
 // routes all queries through the simple protocol, hitting a different code path in
 // the driver that must not regress.
+//
 // Verifies: SW-REQ-040
+// MCDC SW-REQ-040: day_sliced_routing=F, table_sharding=F => TRUE
 func TestPreferSimpleProtocol_Postgres(t *testing.T) {
 	skipTestIfNoPostgres(t)
 
@@ -478,7 +647,7 @@ func TestPreferSimpleProtocol_Postgres(t *testing.T) {
 	if err := pmp.Init(cfg); err != nil {
 		t.Fatalf("Init with prefer_simple_protocol failed: %v", err)
 	}
-	t.Cleanup(func() { pmp.db.Migrator().DropTable(analytics.SQLTable) })
+	cleanupGormDB(t, pmp.db, analytics.SQLTable)
 
 	now := time.Now()
 	keys := make([]interface{}, 10)
@@ -506,7 +675,9 @@ func TestPreferSimpleProtocol_Postgres(t *testing.T) {
 // OauthID, Alias, RawRequest, RawResponse) are empty strings and verifies round-trip.
 // pgx/v5 reworked pgtype NULL handling; this pins down that empty Go strings stay as
 // empty strings in Postgres text columns rather than being coerced to NULL or errored.
-// Verifies: SW-REQ-040
+//
+// Verifies: INT-REQ-006
+// MCDC INT-REQ-006: mapping_per_implementation=T, record_dispatched_to_backend=T => TRUE
 func TestNullableColumns_Postgres(t *testing.T) {
 	skipTestIfNoPostgres(t)
 
@@ -514,7 +685,7 @@ func TestNullableColumns_Postgres(t *testing.T) {
 	if err := pmp.Init(newSQLConfig(false)); err != nil {
 		t.Fatalf("Init failed: %v", err)
 	}
-	t.Cleanup(func() { pmp.db.Migrator().DropTable(analytics.SQLTable) })
+	cleanupGormDB(t, pmp.db, analytics.SQLTable)
 
 	rec := analytics.AnalyticsRecord{
 		APIID:     "nullable-cols-test",
@@ -544,7 +715,9 @@ func TestNullableColumns_Postgres(t *testing.T) {
 // sub-millisecond (microsecond) precision. pgx/v5 refactored timestamp text/binary
 // encoding; this verifies no precision loss or zone drift under the pump's default
 // extended-protocol path.
-// Verifies: SW-REQ-040
+//
+// Verifies: INT-REQ-006
+// MCDC INT-REQ-006: mapping_per_implementation=T, record_dispatched_to_backend=T => TRUE
 func TestTimeHandling_Postgres(t *testing.T) {
 	skipTestIfNoPostgres(t)
 
@@ -552,7 +725,7 @@ func TestTimeHandling_Postgres(t *testing.T) {
 	if err := pmp.Init(newSQLConfig(false)); err != nil {
 		t.Fatalf("Init failed: %v", err)
 	}
-	t.Cleanup(func() { pmp.db.Migrator().DropTable(analytics.SQLTable) })
+	cleanupGormDB(t, pmp.db, analytics.SQLTable)
 
 	tokyo, err := time.LoadLocation("Asia/Tokyo")
 	if err != nil {
@@ -595,7 +768,9 @@ func TestTimeHandling_Postgres(t *testing.T) {
 // TestLargePayload_Postgres writes a record whose RawRequest and RawResponse are 1 MB
 // each and reads them back unchanged. Guards against any regression in pgx/v5's text
 // column encoding that could truncate or corrupt large payloads.
-// Verifies: SW-REQ-040
+//
+// Verifies: INT-REQ-006
+// MCDC INT-REQ-006: mapping_per_implementation=T, record_dispatched_to_backend=T => TRUE
 func TestLargePayload_Postgres(t *testing.T) {
 	skipTestIfNoPostgres(t)
 
@@ -603,7 +778,7 @@ func TestLargePayload_Postgres(t *testing.T) {
 	if err := pmp.Init(newSQLConfig(false)); err != nil {
 		t.Fatalf("Init failed: %v", err)
 	}
-	t.Cleanup(func() { pmp.db.Migrator().DropTable(analytics.SQLTable) })
+	cleanupGormDB(t, pmp.db, analytics.SQLTable)
 
 	const size = 1 << 20 // 1 MB
 	payload := strings.Repeat("x", size)
@@ -626,48 +801,8 @@ func TestLargePayload_Postgres(t *testing.T) {
 	assert.Equal(t, payload, got.RawRequest, "RawRequest content must round-trip unchanged")
 }
 
-// ── 12. Pool defaults canary ──────────────────────────────────────────────────
-
-// TestConnectionPoolDefaults_Postgres extends TestConnectionPoolStats_Postgres by also
-// pinning the default MaxIdleConns value. The Go stdlib default is 2; if a future
-// dependency bump quietly changes that, operators who rely on defaults will see
-// unexplained idle-connection behaviour. This canary catches the silent change.
 // Verifies: SW-REQ-040
-func TestConnectionPoolDefaults_Postgres(t *testing.T) {
-	skipTestIfNoPostgres(t)
-
-	pmp := SQLPump{}
-	if err := pmp.Init(newSQLConfig(false)); err != nil {
-		t.Fatalf("Init failed: %v", err)
-	}
-	t.Cleanup(func() { pmp.db.Migrator().DropTable(analytics.SQLTable) })
-
-	sqlDB, err := pmp.db.DB()
-	if err != nil {
-		t.Fatalf("pmp.db.DB() failed: %v", err)
-	}
-
-	stats := sqlDB.Stats()
-	assert.Equal(t, 0, stats.MaxOpenConnections,
-		"MaxOpenConns default must remain 0 (unlimited)")
-
-	// Force the idle pool to fill up to its cap so stats.Idle reflects the MaxIdleConns limit.
-	// database/sql exposes MaxIdleConns only indirectly; opening 5 concurrent conns then
-	// releasing them lets the pool retain up to its idle cap. Default is 2.
-	conns := make([]*gorm.DB, 5)
-	for i := range conns {
-		conns[i] = pmp.db.Session(&gorm.Session{NewDB: true})
-		var one int
-		if err := conns[i].Raw("SELECT 1").Scan(&one).Error; err != nil {
-			t.Fatalf("warm-up query %d failed: %v", i, err)
-		}
-	}
-	stats = sqlDB.Stats()
-	assert.LessOrEqual(t, stats.Idle, 2,
-		"idle connections should not exceed stdlib default MaxIdleConns=2; got %d", stats.Idle)
-}
-
-// Verifies: SW-REQ-040
+// MCDC SW-REQ-040: day_sliced_routing=F, table_sharding=F => TRUE
 func TestSQLWriteData_PreferSimpleProtocol_Month(t *testing.T) {
 	skipTestIfNoPostgres(t)
 

@@ -1,6 +1,7 @@
 id: pump-package-tests-skipped-locally
-title: pumps package excluded from local tests_pass / code MC/DC (needs external backends)
-description: 'The pumps package is excluded from tests_pass and code_mcdc targets in proof.yaml (project.commands.test lists only ./analytics ./analytics/demo ./serializer ./storage ./logger .; code_mcdc.targets enumerate analytics, serializer, retry, logger, server, root) because most pump implementations require external services not available locally: Kafka, Elasticsearch, Influx, Moesif, Segment, Logz.io, Splunk, AWS SQS/Kinesis/Timestream. The mongo pump tests additionally hit known-issue mongo-test-panic-under-mongo6. Locally only the analytics, serializer, retry, logger, server, and root packages are MC/DC-measured. This is a scoping decision, not a code defect; the pump tests still exist and run against their actual backends in proper CI (see bin/ci-test.sh which iterates ''go list github.com/TykTechnologies/tyk-pump/...'' and runs each package against provisioned backends). Workaround: run pump tests in environments with the appropriate backends provisioned.'
+title: pumps package local proof runs need external backends and strict memory guarding
+introduced_in: inception
+description: 'The pumps package is included in proof.yaml tests_pass and code_mcdc targets via ./..., but local proof runs are high-risk without external backend discipline: many pump implementations require Kafka, Elasticsearch, Influx, Moesif, Segment, Logz.io, Splunk, AWS SQS/Kinesis/Timestream, and several tests use testcontainers. Running those packages concurrently can exhaust a developer laptop. The current proof configuration keeps the tests in scope and constrains Go package concurrency with -p=1; local operators must still run proof under bin/run-monitored so the process tree is terminated before OOM. CI remains the authoritative environment for backend-provisioned pump test coverage (see bin/ci-test.sh, which iterates go list github.com/TykTechnologies/tyk-pump/... against provisioned backends).'
 affected_requirements:
     - SW-REQ-018
     - SW-REQ-019
@@ -14,9 +15,11 @@ affected_requirements:
     - SW-REQ-027
     - SW-REQ-028
     - SW-REQ-029
+environment_note: |-
+  Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source or documentation surface and following the described scenario.
 severity: low
-mitigation: Local proof runs treat pump packages as out-of-scope for tests_pass / code MC/DC; CI (bin/ci-test.sh) runs all packages against provisioned backends.
-remediation: Stand up the full backend matrix in a docker-compose for local proof runs, or split pump tests into hermetic unit subsets that can be MC/DC-measured without external services.
+mitigation: Local proof runs keep pump packages in scope but must run with serialized Go package execution and the memory monitor; CI (bin/ci-test.sh) runs all packages against provisioned backends.
+remediation: Stand up the full backend matrix in docker-compose with shared/reused testcontainers for local proof runs, or split pump tests into hermetic unit subsets that can be MC/DC-measured without external services while keeping the full backend suite in CI.
 owner: tyk-team
 release_disposition: ship
 status: open

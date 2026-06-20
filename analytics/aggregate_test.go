@@ -1,6 +1,7 @@
 package analytics
 
 import (
+	"encoding/hex"
 	"testing"
 	"time"
 
@@ -38,6 +39,22 @@ func TestCode_ProcessStatusCodes(t *testing.T) {
 }
 
 // Verifies: SW-REQ-011
+// SW-REQ-011:monotonicity:nominal
+func TestAnalyticsRecordAggregate_SetErrorList_SortsStatusCodes(t *testing.T) {
+	counter := &Counter{ErrorMap: map[string]int{"500": 1, "400": 2}}
+	update := model.DBM{"$set": model.DBM{}}
+
+	aggregate := &AnalyticsRecordAggregate{}
+	aggregate.SetErrorList("", "total", counter, update)
+
+	require.Equal(t, []ErrorData{
+		{Code: "400", Count: 2},
+		{Code: "500", Count: 1},
+	}, counter.ErrorList)
+	require.Equal(t, counter.ErrorList, update["$set"].(model.DBM)["total.errorlist"])
+}
+
+// Verifies: SW-REQ-011
 func TestAggregate_Tags(t *testing.T) {
 	recordsEmptyTag := []interface{}{
 		AnalyticsRecord{
@@ -72,7 +89,6 @@ func TestAggregate_Tags(t *testing.T) {
 	runTestAggregatedTags(t, "dot", recordsDot)
 }
 
-// Verifies: SW-REQ-011
 func runTestAggregatedTags(t *testing.T, name string, records []interface{}) {
 	aggregations := AggregateData(records, false, []string{}, "", 60)
 
@@ -81,6 +97,30 @@ func runTestAggregatedTags(t *testing.T, name string, records []interface{}) {
 			assert.Equal(t, 2, len(aggregation.Tags))
 		}
 	})
+}
+
+// Verifies: SW-REQ-009
+// SW-REQ-009:determinism:nominal
+// SW-REQ-009:hash_format_deterministic:nominal
+func TestAggregateData_ApiEndpointKeyFormatDeterministic(t *testing.T) {
+	record := AnalyticsRecord{
+		OrgID:        "org-1",
+		APIID:        "api-1",
+		APIVersion:   "v1",
+		Path:         "/widgets/{id}",
+		ResponseCode: 200,
+		TimeStamp:    time.Date(2026, 6, 19, 10, 0, 0, 0, time.UTC),
+		TrackPath:    true,
+	}
+
+	aggregations := AggregateData([]interface{}{record}, false, nil, "", 60)
+	aggregate := aggregations[record.OrgID]
+	expectedKey := hex.EncodeToString([]byte(record.APIID + ":" + record.APIVersion + ":" + record.Path))
+
+	counter, ok := aggregate.ApiEndpoint[expectedKey]
+	require.True(t, ok, "API endpoint aggregate key must use the documented deterministic hex projection")
+	require.Equal(t, expectedKey, counter.Identifier)
+	require.Equal(t, record.Path, counter.HumanIdentifier)
 }
 
 // Verifies: SW-REQ-011
@@ -92,7 +132,10 @@ func TestTrimTag(t *testing.T) {
 }
 
 // Verifies: SW-REQ-011
+// SW-REQ-011:monotonicity:example
+// SW-REQ-011:monotonicity:nominal
 // Verifies: SYS-REQ-003
+// MCDC SYS-REQ-003: aggregates_emitted=T, aggregation_enabled=T => TRUE
 func TestAggregateGraphData(t *testing.T) {
 	sampleRecord := AnalyticsRecord{
 		TimeStamp:    time.Date(2022, 1, 1, 0, 0, 0, 0, time.UTC),

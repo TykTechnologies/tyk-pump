@@ -30,12 +30,10 @@ type MockSQSSendMessageBatchAPI struct {
 	SendMessageBatchFunc func(ctx context.Context, params *sqs.SendMessageBatchInput, optFns ...func(*sqs.Options)) (*sqs.SendMessageBatchOutput, error)
 }
 
-// Verifies: SW-REQ-055
 func (m *MockSQSSendMessageBatchAPI) GetQueueUrl(ctx context.Context, params *sqs.GetQueueUrlInput, optFns ...func(*sqs.Options)) (*sqs.GetQueueUrlOutput, error) {
 	return m.GetQueueUrlFunc(ctx, params, optFns...)
 }
 
-// Verifies: SW-REQ-055
 func (m *MockSQSSendMessageBatchAPI) SendMessageBatch(ctx context.Context, params *sqs.SendMessageBatchInput, optFns ...func(*sqs.Options)) (*sqs.SendMessageBatchOutput, error) {
 	return m.SendMessageBatchFunc(ctx, params, optFns...)
 }

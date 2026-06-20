@@ -32,12 +32,12 @@ verification:
         reviewed_at: "2026-06-02T05:02:36Z"
         comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
         fingerprint: sha256:98f315af9a7b1300ae232edf4c550a8919ecf0c3fbc6379e2e1fa4a5eb0985f0
-        ai_generated: false
+        ai_generated: true
 history:
     created_by: human:cli
     created_at: "2026-05-30T07:52:52Z"
-    last_modified_by: human:cli
-    last_modified_at: "2026-06-02T05:02:36Z"
+    last_modified_by: agent:codex
+    last_modified_at: "2026-06-19T08:07:23Z"
 obligation_class: nominal
 lifecycle:
     change_history:

@@ -15,23 +15,25 @@ variables:
       data_constraint:
         domain: integer
         variable: statsd_addr_length
-        condition: "statsd_addr_length > 0"
+        condition: statsd_addr_length > 0
         parameters:
-          - name: statsd_addr_length
-            type: int
-            constraint: ">= 0"
+            - name: statsd_addr_length
+              type: int
+              constraint: '>= 0'
     - name: instrumentation_disabled
       type: bool
       direction: input
+      proof_auxiliary: true
+      proof_auxiliary_reason: Solver-only complement used for data-constraint completeness and exclusivity; no standalone behavioral requirement consumes it.
       description: Instrumentation is disabled because no statsd address is configured (complement of instrumentation_enabled).
       data_constraint:
         domain: integer
         variable: statsd_addr_length
-        condition: "statsd_addr_length == 0"
+        condition: statsd_addr_length == 0
         parameters:
-          - name: statsd_addr_length
-            type: int
-            constraint: ">= 0"
+            - name: statsd_addr_length
+              type: int
+              constraint: '>= 0'
     - name: metrics_emitted
       type: bool
       direction: output
@@ -48,3 +50,6 @@ variables:
       type: bool
       direction: output
       description: The purge loop continues processing records irrespective of the sink failure.
+independence:
+    declared: true
+    reason: Observability requirements cover liveness endpoint response, metrics emission, and metrics-sink failure isolation as separate externally visible behaviors.

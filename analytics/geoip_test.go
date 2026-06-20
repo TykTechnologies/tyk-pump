@@ -60,6 +60,7 @@ func TestGeoIPLookup_Coverable(t *testing.T) {
 // Verifies: SW-REQ-071
 // Verifies: SYS-REQ-034
 // SW-REQ-071:nominal:negative
+// SW-REQ-071:panic_free_input_handling:negative
 // SYS-REQ-034:nominal:negative
 // MCDC SW-REQ-071: geo_db_absent=T, geo_ip_empty=F, geo_ip_invalid=F, geo_lookup_short_circuits_when_db_absent=F => FALSE
 // MCDC SW-REQ-071: geo_db_absent=T, geo_ip_empty=T, geo_ip_invalid=T, geo_lookup_short_circuits_when_db_absent=T => TRUE
@@ -79,7 +80,6 @@ func TestGetGeo_NilDatabase(t *testing.T) {
 	}
 }
 
-// Verifies: SW-REQ-071
 // openSampleGeoIPDB opens analytics/testdata/sample.mmdb, a tiny synthetic
 // MaxMind City database produced by mmdbwriter. It contains a single network
 // 1.2.3.0/24 with iso_code=ZZ / city=Sample City / lat=1 / lon=2 / tz=UTC.
@@ -99,6 +99,7 @@ func openSampleGeoIPDB(t *testing.T) *maxminddb.Reader {
 // Verifies: SW-REQ-071
 // Verifies: SYS-REQ-034
 // SW-REQ-071:nominal:nominal
+// SW-REQ-071:panic_free_input_handling:nominal
 // SYS-REQ-034:nominal:nominal
 // MCDC SW-REQ-071: geo_db_absent=F, geo_ip_empty=F, geo_ip_invalid=F, geo_lookup_short_circuits_when_db_absent=F => TRUE
 // MCDC SYS-REQ-034: geo_db_absent=F, geo_lookup_short_circuits_when_db_absent=F => TRUE

@@ -25,9 +25,7 @@
 //     production contract (lethal log.Fatal) is intact even after the
 //     in-process tests intercept it.
 //
-// All tests carry the SW-REQ-021 annotation (kafka pump parent requirement)
-// plus the triple form (Trigger / Action / Effect) so the audit trail stays
-// continuous.
+// Each test carries the triple form (Trigger / Action / Effect) so the fatal-path audit trail stays continuous.
 package pumps
 
 import (
@@ -39,8 +37,6 @@ import (
 // runKafkaFatalChild forks the current test binary, runs only the named test,
 // and asserts the child process exited with code 1 (the log.Fatal contract).
 // The child branch is entered via the BE_KAFKA_FATAL env var.
-//
-// Verifies: SW-REQ-021
 func runKafkaFatalChild(t *testing.T, sentinel string) {
 	t.Helper()
 	cmd := exec.Command(os.Args[0], "-test.run", "^"+t.Name()+"$", "-test.timeout", "30s")
@@ -61,8 +57,6 @@ func runKafkaFatalChild(t *testing.T, sentinel string) {
 // kafkaFatalSentinel returns the BE_KAFKA_FATAL value the child process
 // should match to enter the lethal-code-path branch. Returns "" if not in
 // child mode.
-//
-// Verifies: SW-REQ-021
 func kafkaFatalSentinel() string {
 	return os.Getenv("BE_KAFKA_FATAL")
 }
@@ -84,8 +78,10 @@ func kafkaFatalSentinel() string {
 //   - Effect: log.Fatal -> os.Exit(1); the parent test asserts the child
 //     exit code is 1.
 //
-// Verifies: SW-REQ-021
-// SW-REQ-021:errors_propagated:negative
+// Verifies: KI:pumps-logfatal-on-config-decode
+// Verifies: SYS-REQ-004
+// MCDC SYS-REQ-004: a_backend_failed=T, other_backends_written=F => FALSE
+// Reproduces: pumps-logfatal-on-config-decode
 func TestKafkaPump_Init_DecodeFatal_Subprocess(t *testing.T) {
 	if kafkaFatalSentinel() == "decode" {
 		pump := &KafkaPump{}
@@ -99,8 +95,10 @@ func TestKafkaPump_Init_DecodeFatal_Subprocess(t *testing.T) {
 // MC/DC coverage tooling records the branch. logger.GetLogger().ExitFunc is
 // temporarily swapped to a panic by withFatalIntercept.
 //
-// Verifies: SW-REQ-021
-// SW-REQ-021:errors_propagated:negative
+// Verifies: KI:pumps-logfatal-on-config-decode
+// Verifies: SYS-REQ-004
+// MCDC SYS-REQ-004: a_backend_failed=T, other_backends_written=F => FALSE
+// Reproduces: pumps-logfatal-on-config-decode
 func TestKafkaPump_Init_DecodeFatal_InProcess(t *testing.T) {
 	withFatalIntercept(t, func() {
 		pump := &KafkaPump{}
@@ -125,8 +123,10 @@ func TestKafkaPump_Init_DecodeFatal_InProcess(t *testing.T) {
 //     error; mechErr != nil.
 //   - Effect: log.Fatal -> os.Exit(1); parent asserts exit code 1.
 //
-// Verifies: SW-REQ-021
-// SW-REQ-021:errors_propagated:negative
+// Verifies: KI:kafka-logfatal-on-init-mech-and-timeout
+// Verifies: SYS-REQ-004
+// MCDC SYS-REQ-004: a_backend_failed=T, other_backends_written=F => FALSE
+// Reproduces: kafka-logfatal-on-init-mech-and-timeout
 func TestKafkaPump_Init_MechFatal_Subprocess(t *testing.T) {
 	if kafkaFatalSentinel() == "mech" {
 		pump := &KafkaPump{}
@@ -146,8 +146,10 @@ func TestKafkaPump_Init_MechFatal_Subprocess(t *testing.T) {
 // TestKafkaPump_Init_MechFatal_InProcess drives the same arm in-process with
 // logger.GetLogger().ExitFunc swapped so MC/DC records the branch entry.
 //
-// Verifies: SW-REQ-021
-// SW-REQ-021:errors_propagated:negative
+// Verifies: KI:kafka-logfatal-on-init-mech-and-timeout
+// Verifies: SYS-REQ-004
+// MCDC SYS-REQ-004: a_backend_failed=T, other_backends_written=F => FALSE
+// Reproduces: kafka-logfatal-on-init-mech-and-timeout
 func TestKafkaPump_Init_MechFatal_InProcess(t *testing.T) {
 	withFatalIntercept(t, func() {
 		pump := &KafkaPump{}
@@ -179,8 +181,10 @@ func TestKafkaPump_Init_MechFatal_InProcess(t *testing.T) {
 //     floatErr != nil.
 //   - Effect: log.Fatal -> os.Exit(1); parent asserts exit code 1.
 //
-// Verifies: SW-REQ-021
-// SW-REQ-021:errors_propagated:negative
+// Verifies: KI:kafka-logfatal-on-init-mech-and-timeout
+// Verifies: SYS-REQ-004
+// MCDC SYS-REQ-004: a_backend_failed=T, other_backends_written=F => FALSE
+// Reproduces: kafka-logfatal-on-init-mech-and-timeout
 func TestKafkaPump_Init_TimeoutFloatFatal_Subprocess(t *testing.T) {
 	if kafkaFatalSentinel() == "timeout" {
 		pump := &KafkaPump{}
@@ -197,8 +201,10 @@ func TestKafkaPump_Init_TimeoutFloatFatal_Subprocess(t *testing.T) {
 // TestKafkaPump_Init_TimeoutFloatFatal_InProcess drives the same arm
 // in-process with ExitFunc swapped so MC/DC records the branch entry.
 //
-// Verifies: SW-REQ-021
-// SW-REQ-021:errors_propagated:negative
+// Verifies: KI:kafka-logfatal-on-init-mech-and-timeout
+// Verifies: SYS-REQ-004
+// MCDC SYS-REQ-004: a_backend_failed=T, other_backends_written=F => FALSE
+// Reproduces: kafka-logfatal-on-init-mech-and-timeout
 func TestKafkaPump_Init_TimeoutFloatFatal_InProcess(t *testing.T) {
 	withFatalIntercept(t, func() {
 		pump := &KafkaPump{}

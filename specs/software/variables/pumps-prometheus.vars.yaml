@@ -16,3 +16,6 @@ variables:
       type: bool
       direction: output
       description: True iff the value emitted into the api_key/key Prometheus metric labels masks the raw API key (at most the last ObfuscateAPIKeysLength characters survive; the full raw key is never present) when obfuscation is enabled.
+independence:
+    declared: true
+    reason: 'Prometheus requirements cover independent metric exposition and optional API-key label masking; the masking guarantee does not alter the exposition liveness variable.'

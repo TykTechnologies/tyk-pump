@@ -7,29 +7,31 @@ variables:
       data_constraint:
         domain: integer
         variable: env_key_length
-        condition: "env_key_length > 0 && env_value_length > 0"
+        condition: env_key_length > 0 && env_value_length > 0
         parameters:
-          - name: env_key_length
-            type: int
-            constraint: ">= 0"
-          - name: env_value_length
-            type: int
-            constraint: ">= 0"
+            - name: env_key_length
+              type: int
+              constraint: '>= 0'
+            - name: env_value_length
+              type: int
+              constraint: '>= 0'
     - name: env_override_absent
       type: bool
       direction: input
-      description: No environment variable is set to override a configuration field — either the key or the value is empty (complement of env_override_present).
+      proof_auxiliary: true
+      proof_auxiliary_reason: Solver-only complement used for data-constraint completeness and exclusivity; no standalone behavioral requirement consumes it.
+      description: No environment variable is set to override a configuration field - either the key or the value is empty (complement of env_override_present).
       data_constraint:
         domain: integer
         variable: env_key_length
-        condition: "env_key_length == 0 || env_value_length == 0"
+        condition: env_key_length == 0 || env_value_length == 0
         parameters:
-          - name: env_key_length
-            type: int
-            constraint: ">= 0"
-          - name: env_value_length
-            type: int
-            constraint: ">= 0"
+            - name: env_key_length
+              type: int
+              constraint: '>= 0'
+            - name: env_value_length
+              type: int
+              constraint: '>= 0'
     - name: config_reflects_env
       type: bool
       direction: output
@@ -46,3 +48,6 @@ variables:
       type: bool
       direction: output
       description: True iff config loading completes without crashing when given malformed/missing inputs (missing file, bad JSON, unknown env var, missing required field).
+independence:
+    declared: true
+    reason: Configuration requirements separate JSON-file loading, environment override reflection, and malformed-input robustness; each guarantee targets a distinct configuration outcome.

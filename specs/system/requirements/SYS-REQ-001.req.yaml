@@ -32,14 +32,20 @@ verification:
         reviewed_at: "2026-06-02T05:02:36Z"
         comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
         fingerprint: sha256:aedd07f8795978779d4e0ea30add1a4e618d3c3cf2dd361c775cc5da50d2d613
-        ai_generated: false
-    gaps_reviewed_at: "2026-06-02T05:05:48.911641Z"
-    gaps_reviewed_by: buger
+        ai_generated: true
+    gaps_reviewed_at: "2026-06-19T12:55:32.21617Z"
+    gaps_reviewed_by: agent:codex
+    gap_reviews:
+        - check: decomposition
+          issue_key: decomposition|SYS-REQ-001|records_consumed_from_store
+          reviewer: agent:codex
+          reason: 'Reviewed active decomposition: SW-REQ-001 owns the purge-loop consumption path; its records_dispatched child output is downstream of records_consumed_from_store and existing SYS-REQ-001 witnesses cover the parent variable directly.'
+          reviewed_at: "2026-06-19T12:55:32.21617Z"
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:11:41Z"
-    last_modified_by: human:cli
-    last_modified_at: "2026-06-02T05:02:36Z"
+    last_modified_by: agent:codex
+    last_modified_at: "2026-06-19T08:07:21Z"
 obligation_class: nominal
 lifecycle:
     change_history:

@@ -18,14 +18,13 @@ import (
 // MCDC SW-REQ-016: field_persisted_on_struct=F, set_invoked=F => TRUE
 
 type z3Fixture struct {
-	Name     string                 `json:"name"`
-	Property string                 `json:"property"`
-	Source   string                 `json:"source"`
-	Inputs   []map[string]any       `json:"inputs"`
-	Expected map[string]any         `json:"expected"`
+	Name     string           `json:"name"`
+	Property string           `json:"property"`
+	Source   string           `json:"source"`
+	Inputs   []map[string]any `json:"inputs"`
+	Expected map[string]any   `json:"expected"`
 }
 
-// Verifies: SW-REQ-016
 func loadZ3Fixtures(t *testing.T, property string) []z3Fixture {
 	t.Helper()
 	dir, err := filepath.Abs(filepath.Join("..", "tests", "properties"))
@@ -59,7 +58,6 @@ func loadZ3Fixtures(t *testing.T, property string) []z3Fixture {
 	return out
 }
 
-// Verifies: SW-REQ-016
 func intVal(t *testing.T, v any, key string) int {
 	t.Helper()
 	switch x := v.(type) {
@@ -75,7 +73,6 @@ func intVal(t *testing.T, v any, key string) int {
 	}
 }
 
-// Verifies: SW-REQ-016
 func boolVal(t *testing.T, v any, key string) bool {
 	t.Helper()
 	if b, ok := v.(bool); ok {
@@ -87,13 +84,17 @@ func boolVal(t *testing.T, v any, key string) bool {
 
 // Verifies: SW-REQ-016
 // SW-REQ-016:boundary:fuzz
+// SW-REQ-016:boundary:nominal
 //
 // Z3-derived property: record_truncated holds iff
-//   truncated_size <= max_record_size && truncated_size <= original_size.
+//
+//	truncated_size <= max_record_size && truncated_size <= original_size.
+//
 // TrimRawData applies trimString which writes value into a bytes.Buffer of
 // len = len(value), then truncates to size. If size > len(value) the buffer
 // is left at len(value). Therefore for any (original, max):
-//   truncated == min(original, max).
+//
+//	truncated == min(original, max).
 func TestTrimRawData_MatchesZ3RecordTruncatedProperty(t *testing.T) {
 	for _, f := range loadZ3Fixtures(t, "record_truncated") {
 		t.Run(f.Name, func(t *testing.T) {

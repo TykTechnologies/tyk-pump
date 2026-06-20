@@ -18,3 +18,6 @@ variables:
       type: bool
       direction: output
       description: A FIPS-compliant binary is producible via 'make build-fips'.
+independence:
+    declared: true
+    reason: 'Build requirements cover different build artifacts and constraints; regular build availability and FIPS build availability do not share mutable runtime state.'

@@ -20,3 +20,6 @@ variables:
       type: bool
       direction: input
       description: True when SystemConfig.DontPurgeUptimeData is false — the operator-controlled toggle that gates whether StartPurgeLoop drains the tyk-uptime-analytics key and forwards records to the configured uptime backend.
+independence:
+    declared: true
+    reason: 'Gateway-pump interface requirements cover separate analytics-record and uptime-record transport contracts; they share the gateway integration boundary but do not constrain the same output state.'

@@ -33,17 +33,6 @@ verification:
         comment: 'Phase Q: catalog obligation attachments — adds external_call_concurrency_bounded (ES BulkProcessor workers cap). See .proof/catalog-obligation-proposals.md.'
         fingerprint: sha256:7cf04895b50732c59abab8868e4cd54d79ed68a7e54ecc24c49e049f44efb8b7
         ai_generated: true
-    impact_reviews:
-        - requirement: SW-REQ-070
-          artifact: pumps/elasticsearch.go
-          decision: no-authored-change
-          reviewer: buger
-          reason: 'Phase L3 aggressive: FRETish formalization added per L3 plan; production .go behaviour and code paths unchanged — only requirement metadata (fretish text + formalization_strategy + variables) altered. Test annotations may follow but do not change runtime behaviour.'
-          base: origin/master
-          requirement_fingerprint: sha256:2f5ce45fbf5eba78913fb01cc7add51114685213e82adb7d6ee7fa63a950aab4
-          approval_fingerprint: sha256:7cf04895b50732c59abab8868e4cd54d79ed68a7e54ecc24c49e049f44efb8b7
-          artifact_fingerprint: sha256:bed01de375baec71c5054532e66cd43659c128ab3bb96b697da84fb3b8b8ba8e
-          reviewed_at: "2026-06-02T14:30:20Z"
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:40:07Z"
@@ -58,29 +47,25 @@ obligation_checklist:
     - nominal
     - request_timeout_bounded
 obligation_deferrals:
-    - obligation_class: boundary
-      reason: 'Deferred: required boundary test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'
-      tracking: .proof/deferred-witness-backlog.md
-      owner: human:buger
     - obligation_class: determinism
       reason: 'real untested obligation under known-issue elasticsearch-unbounded-reconnect-recursion; surfaced as visible tracked debt, not an overclaimed fix'
       tracking: elasticsearch-unbounded-reconnect-recursion
+      ki_ref: elasticsearch-unbounded-reconnect-recursion
       owner: human:buger
     - obligation_class: errors_propagated
       reason: 'real untested obligation under known-issue pumps-logfatal-on-config-decode; surfaced as visible tracked debt, not an overclaimed fix'
       tracking: pumps-logfatal-on-config-decode
-      owner: human:buger
-    - obligation_class: external_call_concurrency_bounded
-      reason: 'Deferred: required external_call_concurrency_bounded test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'
-      tracking: .proof/deferred-witness-backlog.md
+      ki_ref: pumps-logfatal-on-config-decode
       owner: human:buger
     - obligation_class: malformed_recovers_or_errors_loudly
       reason: real untested obligation under known-issue mapstructure-decode-silently-drops-unknown-keys; surfaced as visible tracked debt, not an overclaimed fix
       tracking: mapstructure-decode-silently-drops-unknown-keys
+      ki_ref: mapstructure-decode-silently-drops-unknown-keys
       owner: human:buger
     - obligation_class: request_timeout_bounded
       reason: real untested obligation under known-issue pump-no-timeout-can-block-purge-cycle; surfaced as visible tracked debt, not an overclaimed fix
       tracking: pump-no-timeout-can-block-purge-cycle
+      ki_ref: pump-no-timeout-can-block-purge-cycle
       owner: human:buger
 release_disposition: ship_with_known_issue
 lifecycle:

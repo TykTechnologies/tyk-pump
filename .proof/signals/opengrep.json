@@ -1,8 +1,8 @@
 {
   "schema_version": "proof.code_signals.report.v1",
   "provider": "opengrep",
-  "generated_at": "2026-06-16T13:40:52Z",
-  "input_hash": "sha256:a7e687a7cd6173c3a7f30900d5021485af009c5f528ec6f2f29c4dae5daf2147",
+  "generated_at": "2026-06-20T09:46:58Z",
+  "input_hash": "sha256:56d09cf4d9623698c81f5328d8393d5595e21b7bb420a07512105a4c67114fee",
   "mode": "run",
   "source": "stdout",
   "format": "sarif",
@@ -13,10 +13,21 @@
     ".proof/signals/packs/4699648563f2cdea",
     "--config",
     "signal-rules/tyk-pump-phase-n.yaml",
-    "--taint-intrafile",
     "--sarif",
     "--quiet",
-    "--no-rewrite-rule-ids"
+    "--no-rewrite-rule-ids",
+    "analytics",
+    "api.go",
+    "config.go",
+    "instrumentation_helpers.go",
+    "instrumentation_statsd_sink.go",
+    "logger",
+    "main.go",
+    "pumps",
+    "retry",
+    "serializer",
+    "server",
+    "storage"
   ],
   "signals": [
     {
@@ -39,7 +50,7 @@
       ],
       "message": "A struct field carries `time.Time` without a documented timezone marker\n(no explicit UTC convention, no sibling string `tz` field, no method\nannotating the field's location). When the producer and consumer run\nin different timezones — or when a producer marshals \"Local\" time and\na consumer unmarshals it as wall-clock — aggregation windows shift,\naudit logs misorder, and SQL `WHERE timestamp BETWEEN` queries silently\ndrop records. Either pin the field to UTC (a Validate-on-construct\nstep that calls `t.UTC()`), document the convention in the struct doc\ncomment, or store epoch nanoseconds.\n",
       "fingerprint": "sha256:71cc1483dca9cbdc31c805265a42e08e8f53a23168519f59e681b3af873f6c3d",
-      "source_hash": "sha256:a8e050d53e1a757df1ebb241c45bd18ee4c562cb214ff38678580e92e3a06479"
+      "source_hash": "sha256:92c199ec8ff976bb75ba934a5716d6971b6314180945ee830455093b826617f3"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -61,7 +72,7 @@
       ],
       "message": "A struct field carries `time.Time` without a documented timezone marker\n(no explicit UTC convention, no sibling string `tz` field, no method\nannotating the field's location). When the producer and consumer run\nin different timezones — or when a producer marshals \"Local\" time and\na consumer unmarshals it as wall-clock — aggregation windows shift,\naudit logs misorder, and SQL `WHERE timestamp BETWEEN` queries silently\ndrop records. Either pin the field to UTC (a Validate-on-construct\nstep that calls `t.UTC()`), document the convention in the struct doc\ncomment, or store epoch nanoseconds.\n",
       "fingerprint": "sha256:6a8ed224d2b77eeec76a98969028869d800cb3e938757d79885528a7dd155550",
-      "source_hash": "sha256:a8e050d53e1a757df1ebb241c45bd18ee4c562cb214ff38678580e92e3a06479"
+      "source_hash": "sha256:92c199ec8ff976bb75ba934a5716d6971b6314180945ee830455093b826617f3"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -79,7 +90,7 @@
       ],
       "message": "Discarded call result requires explicit propagation or ignore-policy evidence.",
       "fingerprint": "sha256:e653b841fe189a6b96a8d838122824839e6abb051e58639e234d40ce0cb78020",
-      "source_hash": "sha256:a8e050d53e1a757df1ebb241c45bd18ee4c562cb214ff38678580e92e3a06479"
+      "source_hash": "sha256:92c199ec8ff976bb75ba934a5716d6971b6314180945ee830455093b826617f3"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -101,7 +112,7 @@
       ],
       "message": "A struct field carries `time.Time` without a documented timezone marker\n(no explicit UTC convention, no sibling string `tz` field, no method\nannotating the field's location). When the producer and consumer run\nin different timezones — or when a producer marshals \"Local\" time and\na consumer unmarshals it as wall-clock — aggregation windows shift,\naudit logs misorder, and SQL `WHERE timestamp BETWEEN` queries silently\ndrop records. Either pin the field to UTC (a Validate-on-construct\nstep that calls `t.UTC()`), document the convention in the struct doc\ncomment, or store epoch nanoseconds.\n",
       "fingerprint": "sha256:43bd4167873f1f34a70b5d9e32d2741ce570b5e51e0bfcd329a110f2700891bc",
-      "source_hash": "sha256:1af60beb1ea3d67ce5c4360dbda50461329e4e80b77cc3a0b45f944786216f44"
+      "source_hash": "sha256:c8364178228f27741d17e5e7e620abdfb0ef68a63532c45a56f1ee5a795655f4"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -119,7 +130,7 @@
       ],
       "message": "Synchronization primitive use requires concurrency ownership and race/liveness evidence.",
       "fingerprint": "sha256:fc3e7131d17b3c82464cc4f37726efd3485d1888bdee4a59e120b7f9eb371ad0",
-      "source_hash": "sha256:1af60beb1ea3d67ce5c4360dbda50461329e4e80b77cc3a0b45f944786216f44"
+      "source_hash": "sha256:c8364178228f27741d17e5e7e620abdfb0ef68a63532c45a56f1ee5a795655f4"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -137,7 +148,7 @@
       ],
       "message": "Synchronization primitive use requires concurrency ownership and race/liveness evidence.",
       "fingerprint": "sha256:259eea03ed2b410237bfe8c77272dd78e9df91be377199dced70ec97497a647a",
-      "source_hash": "sha256:1af60beb1ea3d67ce5c4360dbda50461329e4e80b77cc3a0b45f944786216f44"
+      "source_hash": "sha256:c8364178228f27741d17e5e7e620abdfb0ef68a63532c45a56f1ee5a795655f4"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -155,7 +166,7 @@
       ],
       "message": "Synchronization primitive use requires concurrency ownership and race/liveness evidence.",
       "fingerprint": "sha256:15738c775a69a72bc981d38bba980a55f1e37a79ca8569c2c2644538c9a0f964",
-      "source_hash": "sha256:1af60beb1ea3d67ce5c4360dbda50461329e4e80b77cc3a0b45f944786216f44"
+      "source_hash": "sha256:c8364178228f27741d17e5e7e620abdfb0ef68a63532c45a56f1ee5a795655f4"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -173,7 +184,7 @@
       ],
       "message": "Synchronization primitive use requires concurrency ownership and race/liveness evidence.",
       "fingerprint": "sha256:6a712e0b74b75687ee2f05283b4d5c6bfeb2ae5d3c6596c0ea8d199c8b33ce61",
-      "source_hash": "sha256:1af60beb1ea3d67ce5c4360dbda50461329e4e80b77cc3a0b45f944786216f44"
+      "source_hash": "sha256:c8364178228f27741d17e5e7e620abdfb0ef68a63532c45a56f1ee5a795655f4"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -191,7 +202,7 @@
       ],
       "message": "Synchronization primitive use requires concurrency ownership and race/liveness evidence.",
       "fingerprint": "sha256:cdf29e4a36ed4cd041cc78e9357906b0752b7b35487df5e55672497a8ddd0501",
-      "source_hash": "sha256:1af60beb1ea3d67ce5c4360dbda50461329e4e80b77cc3a0b45f944786216f44"
+      "source_hash": "sha256:c8364178228f27741d17e5e7e620abdfb0ef68a63532c45a56f1ee5a795655f4"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -209,7 +220,7 @@
       ],
       "message": "Synchronization primitive use requires concurrency ownership and race/liveness evidence.",
       "fingerprint": "sha256:448d84545a8b130c40194339a3ad6ecf6aa82b15a487a8eeea725c06965f467d",
-      "source_hash": "sha256:1af60beb1ea3d67ce5c4360dbda50461329e4e80b77cc3a0b45f944786216f44"
+      "source_hash": "sha256:c8364178228f27741d17e5e7e620abdfb0ef68a63532c45a56f1ee5a795655f4"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -227,7 +238,7 @@
       ],
       "message": "Synchronization primitive use requires concurrency ownership and race/liveness evidence.",
       "fingerprint": "sha256:dff82b859c9274e921969a2209c06aa68d8c486e588a43fdbffdddd8a0744019",
-      "source_hash": "sha256:1af60beb1ea3d67ce5c4360dbda50461329e4e80b77cc3a0b45f944786216f44"
+      "source_hash": "sha256:c8364178228f27741d17e5e7e620abdfb0ef68a63532c45a56f1ee5a795655f4"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -245,7 +256,7 @@
       ],
       "message": "Synchronization primitive use requires concurrency ownership and race/liveness evidence.",
       "fingerprint": "sha256:3133f3d186a4bf105b1773b09f88a688afec447e85a3465904390d1eb410d57c",
-      "source_hash": "sha256:1af60beb1ea3d67ce5c4360dbda50461329e4e80b77cc3a0b45f944786216f44"
+      "source_hash": "sha256:c8364178228f27741d17e5e7e620abdfb0ef68a63532c45a56f1ee5a795655f4"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -263,7 +274,7 @@
       ],
       "message": "Time-dependent behavior requires determinism, timeout, or scheduling evidence.",
       "fingerprint": "sha256:36e9e4d459085d737509ea698a5ad29dd77c5eff32e710cdc9bd308674f8a969",
-      "source_hash": "sha256:1af60beb1ea3d67ce5c4360dbda50461329e4e80b77cc3a0b45f944786216f44"
+      "source_hash": "sha256:c8364178228f27741d17e5e7e620abdfb0ef68a63532c45a56f1ee5a795655f4"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -284,7 +295,7 @@
       ],
       "message": "Byte-to-string conversion may lose binary boundary semantics; require byte-preserving behavior or documented lossy contract.",
       "fingerprint": "sha256:dfa9d9f51d20d88f947d99bddf5bb445e8255958a5b1c4818b246c763d27acc5",
-      "source_hash": "sha256:1af60beb1ea3d67ce5c4360dbda50461329e4e80b77cc3a0b45f944786216f44"
+      "source_hash": "sha256:c8364178228f27741d17e5e7e620abdfb0ef68a63532c45a56f1ee5a795655f4"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -432,7 +443,7 @@
       ],
       "message": "A struct field carries `time.Time` without a documented timezone marker\n(no explicit UTC convention, no sibling string `tz` field, no method\nannotating the field's location). When the producer and consumer run\nin different timezones — or when a producer marshals \"Local\" time and\na consumer unmarshals it as wall-clock — aggregation windows shift,\naudit logs misorder, and SQL `WHERE timestamp BETWEEN` queries silently\ndrop records. Either pin the field to UTC (a Validate-on-construct\nstep that calls `t.UTC()`), document the convention in the struct doc\ncomment, or store epoch nanoseconds.\n",
       "fingerprint": "sha256:a0a7aca904e48244c47329cb2f4f677b171636b7266de20315a9b1779796803f",
-      "source_hash": "sha256:d6e83286abc9394d0a08d7652fed433049fa82bd214c396bea98c02ab60d2273"
+      "source_hash": "sha256:9643b4b0d1217d1644255eefd8da842fcbb2f192c79053d2a546ae02d090ed28"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -454,7 +465,7 @@
       ],
       "message": "A struct field carries `time.Time` without a documented timezone marker\n(no explicit UTC convention, no sibling string `tz` field, no method\nannotating the field's location). When the producer and consumer run\nin different timezones — or when a producer marshals \"Local\" time and\na consumer unmarshals it as wall-clock — aggregation windows shift,\naudit logs misorder, and SQL `WHERE timestamp BETWEEN` queries silently\ndrop records. Either pin the field to UTC (a Validate-on-construct\nstep that calls `t.UTC()`), document the convention in the struct doc\ncomment, or store epoch nanoseconds.\n",
       "fingerprint": "sha256:aca8bd94b594ad0c1bb16ad6ba2f9180454e9b915d8a20369107f0820dfb5993",
-      "source_hash": "sha256:d6e83286abc9394d0a08d7652fed433049fa82bd214c396bea98c02ab60d2273"
+      "source_hash": "sha256:9643b4b0d1217d1644255eefd8da842fcbb2f192c79053d2a546ae02d090ed28"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -476,7 +487,7 @@
       ],
       "message": "A struct field carries `time.Time` without a documented timezone marker\n(no explicit UTC convention, no sibling string `tz` field, no method\nannotating the field's location). When the producer and consumer run\nin different timezones — or when a producer marshals \"Local\" time and\na consumer unmarshals it as wall-clock — aggregation windows shift,\naudit logs misorder, and SQL `WHERE timestamp BETWEEN` queries silently\ndrop records. Either pin the field to UTC (a Validate-on-construct\nstep that calls `t.UTC()`), document the convention in the struct doc\ncomment, or store epoch nanoseconds.\n",
       "fingerprint": "sha256:cbf05d14de85fbe08f8b2e33ae5c2deb2803e1a93a9af30b257fe3b3bde2aa04",
-      "source_hash": "sha256:d6e83286abc9394d0a08d7652fed433049fa82bd214c396bea98c02ab60d2273"
+      "source_hash": "sha256:9643b4b0d1217d1644255eefd8da842fcbb2f192c79053d2a546ae02d090ed28"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -495,7 +506,7 @@
       ],
       "message": "Process-local filesystem API use requires path-boundary, lifetime, and error-handling evidence.",
       "fingerprint": "sha256:336d69091517bc56940175e9ef74f5a55a6a2fcdb64e624b312cd2aafdadc2b2",
-      "source_hash": "sha256:9e792c1eb47195f9b6dc56e61d718012812eb0a68fa814ba904c911e0046bc35"
+      "source_hash": "sha256:242b58ee9a0c3d8bca15d6f94f6e8a1e2f8a7ecbed9209ea0a0aa95724c8c683"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -513,7 +524,7 @@
       ],
       "message": "Environment-dependent behavior requires configuration, determinism, and deployment evidence.",
       "fingerprint": "sha256:a9e0a1e8116ccf35cfb860bc6234912ad9a7ee8e45e889d8ecf159b83240267f",
-      "source_hash": "sha256:9e792c1eb47195f9b6dc56e61d718012812eb0a68fa814ba904c911e0046bc35"
+      "source_hash": "sha256:242b58ee9a0c3d8bca15d6f94f6e8a1e2f8a7ecbed9209ea0a0aa95724c8c683"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -531,7 +542,7 @@
       ],
       "message": "Environment-dependent behavior requires configuration, determinism, and deployment evidence.",
       "fingerprint": "sha256:17214f2eeb1957c25e0ab9d8186be747343d13b91815032540d142b8444b9161",
-      "source_hash": "sha256:9e792c1eb47195f9b6dc56e61d718012812eb0a68fa814ba904c911e0046bc35"
+      "source_hash": "sha256:242b58ee9a0c3d8bca15d6f94f6e8a1e2f8a7ecbed9209ea0a0aa95724c8c683"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -549,7 +560,7 @@
       ],
       "message": "Environment-dependent behavior requires configuration, determinism, and deployment evidence.",
       "fingerprint": "sha256:97e67b3527a612b6c912aac74e016c26bf63972fb6a0bc7f5dd2b36c5e0d2f8e",
-      "source_hash": "sha256:72a2bad60b43c8be4c92e5cd92985614bf1e924b0e1ee2277f667ce4c736a988"
+      "source_hash": "sha256:cf0e1cc72388465f8d1346d3f9b0d874a5e7649c7dcd368e09a032df942b6e27"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -570,7 +581,7 @@
       ],
       "message": "Goroutine spawn requires lifecycle, cancellation, and shutdown ownership evidence.",
       "fingerprint": "sha256:19d9499eb36b01867fc9a5112b963888fea1a38b42b0a3ccb82c9acef93e46d8",
-      "source_hash": "sha256:72a2bad60b43c8be4c92e5cd92985614bf1e924b0e1ee2277f667ce4c736a988"
+      "source_hash": "sha256:cf0e1cc72388465f8d1346d3f9b0d874a5e7649c7dcd368e09a032df942b6e27"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -588,7 +599,7 @@
       ],
       "message": "Goroutine spawn lacks an obvious local lifecycle or cancellation cue.",
       "fingerprint": "sha256:c7b7c78b460839b51d505ebd8e5649cdf37484be6d378506c61217f18aef4b26",
-      "source_hash": "sha256:72a2bad60b43c8be4c92e5cd92985614bf1e924b0e1ee2277f667ce4c736a988"
+      "source_hash": "sha256:cf0e1cc72388465f8d1346d3f9b0d874a5e7649c7dcd368e09a032df942b6e27"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -610,7 +621,7 @@
       ],
       "message": "Loop-backed goroutine launched without a deferred recover at the top of\nits body. A panic in a long-lived worker goroutine cannot be caught by\nthe launching frame and will crash the process.\n",
       "fingerprint": "sha256:7c55f977e0573e42f0caec3d41336295c153ca38aa6adda9f2e70d0167b72bef",
-      "source_hash": "sha256:72a2bad60b43c8be4c92e5cd92985614bf1e924b0e1ee2277f667ce4c736a988"
+      "source_hash": "sha256:cf0e1cc72388465f8d1346d3f9b0d874a5e7649c7dcd368e09a032df942b6e27"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -628,7 +639,7 @@
       ],
       "message": "Time-dependent behavior requires determinism, timeout, or scheduling evidence.",
       "fingerprint": "sha256:bf2f8db60b650152c4b3d1162376a7edcd8e89ad8a588b4528be9be690e7449b",
-      "source_hash": "sha256:72a2bad60b43c8be4c92e5cd92985614bf1e924b0e1ee2277f667ce4c736a988"
+      "source_hash": "sha256:cf0e1cc72388465f8d1346d3f9b0d874a5e7649c7dcd368e09a032df942b6e27"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -646,7 +657,7 @@
       ],
       "message": "Raw network API use requires timeout, address-boundary, and failure-observation evidence.",
       "fingerprint": "sha256:31d3dd147ca7948ceb5125d608178b368d22a1c4499032bf8d522080461101be",
-      "source_hash": "sha256:a562aab524243ed4291065f319b0a198374c1bd10938c27f9c14e2df702af87c"
+      "source_hash": "sha256:043632e0a676c4f9f25d759d1cce618c031e631fddcdee0d2942ccc3b4705bf9"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -664,7 +675,7 @@
       ],
       "message": "Raw network API use requires timeout, address-boundary, and failure-observation evidence.",
       "fingerprint": "sha256:028cc2ed51954be45284b28f4056a7f53c7367c469774ea8cb63393d0a4c9daf",
-      "source_hash": "sha256:a562aab524243ed4291065f319b0a198374c1bd10938c27f9c14e2df702af87c"
+      "source_hash": "sha256:043632e0a676c4f9f25d759d1cce618c031e631fddcdee0d2942ccc3b4705bf9"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -685,7 +696,7 @@
       ],
       "message": "Goroutine spawn requires lifecycle, cancellation, and shutdown ownership evidence.",
       "fingerprint": "sha256:2d981f617ba6e37b569b90a6e6293af6f0bba4ea95d068312ea520c6f2e49ef3",
-      "source_hash": "sha256:a562aab524243ed4291065f319b0a198374c1bd10938c27f9c14e2df702af87c"
+      "source_hash": "sha256:043632e0a676c4f9f25d759d1cce618c031e631fddcdee0d2942ccc3b4705bf9"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -703,7 +714,7 @@
       ],
       "message": "Goroutine spawn lacks an obvious local lifecycle or cancellation cue.",
       "fingerprint": "sha256:87c5071a3bdf2d4fb1ee15c9721ff38b284cb024572f9ae2a2db532a4d5b7e49",
-      "source_hash": "sha256:a562aab524243ed4291065f319b0a198374c1bd10938c27f9c14e2df702af87c"
+      "source_hash": "sha256:043632e0a676c4f9f25d759d1cce618c031e631fddcdee0d2942ccc3b4705bf9"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -724,7 +735,7 @@
       ],
       "message": "Channel communication requires blocking, cancellation, and ownership evidence.",
       "fingerprint": "sha256:ee7549b2ae4f89d8a502ac2f401952c4f127885b6b80c7a012f9607ba35e3b93",
-      "source_hash": "sha256:a562aab524243ed4291065f319b0a198374c1bd10938c27f9c14e2df702af87c"
+      "source_hash": "sha256:043632e0a676c4f9f25d759d1cce618c031e631fddcdee0d2942ccc3b4705bf9"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -745,7 +756,7 @@
       ],
       "message": "Channel communication requires blocking, cancellation, and ownership evidence.",
       "fingerprint": "sha256:748fddfa45a06b1ae7b6de120229e6594eb3c82de46887ac9c106b67ae4316ca",
-      "source_hash": "sha256:a562aab524243ed4291065f319b0a198374c1bd10938c27f9c14e2df702af87c"
+      "source_hash": "sha256:043632e0a676c4f9f25d759d1cce618c031e631fddcdee0d2942ccc3b4705bf9"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -766,7 +777,7 @@
       ],
       "message": "Channel communication requires blocking, cancellation, and ownership evidence.",
       "fingerprint": "sha256:c6a3e03b1294dd41bf136dedd784f0972abb1e7e722f4694f1d894d75b7d52da",
-      "source_hash": "sha256:a562aab524243ed4291065f319b0a198374c1bd10938c27f9c14e2df702af87c"
+      "source_hash": "sha256:043632e0a676c4f9f25d759d1cce618c031e631fddcdee0d2942ccc3b4705bf9"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -787,7 +798,7 @@
       ],
       "message": "Channel communication requires blocking, cancellation, and ownership evidence.",
       "fingerprint": "sha256:4cff603522807ca4ad29c6403510380af07cad120e7257fff74cb9e438aad76a",
-      "source_hash": "sha256:a562aab524243ed4291065f319b0a198374c1bd10938c27f9c14e2df702af87c"
+      "source_hash": "sha256:043632e0a676c4f9f25d759d1cce618c031e631fddcdee0d2942ccc3b4705bf9"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -808,7 +819,7 @@
       ],
       "message": "Channel communication requires blocking, cancellation, and ownership evidence.",
       "fingerprint": "sha256:a81f8ff08840b0cb6d2e9be1c7b7a880b0cf8132faf84e03a929f441294546c6",
-      "source_hash": "sha256:a562aab524243ed4291065f319b0a198374c1bd10938c27f9c14e2df702af87c"
+      "source_hash": "sha256:043632e0a676c4f9f25d759d1cce618c031e631fddcdee0d2942ccc3b4705bf9"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -829,7 +840,7 @@
       ],
       "message": "Channel communication requires blocking, cancellation, and ownership evidence.",
       "fingerprint": "sha256:e5a4326097e44e5bc7a58c43f575e57b911b18dc38a388f4126293118155ea79",
-      "source_hash": "sha256:a562aab524243ed4291065f319b0a198374c1bd10938c27f9c14e2df702af87c"
+      "source_hash": "sha256:043632e0a676c4f9f25d759d1cce618c031e631fddcdee0d2942ccc3b4705bf9"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -850,7 +861,7 @@
       ],
       "message": "Channel communication requires blocking, cancellation, and ownership evidence.",
       "fingerprint": "sha256:ae528215cd2b7bb81708d2a75addd5653a7bd9ddfc6d36477eeed8e15849417f",
-      "source_hash": "sha256:a562aab524243ed4291065f319b0a198374c1bd10938c27f9c14e2df702af87c"
+      "source_hash": "sha256:043632e0a676c4f9f25d759d1cce618c031e631fddcdee0d2942ccc3b4705bf9"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -868,7 +879,7 @@
       ],
       "message": "Time-dependent behavior requires determinism, timeout, or scheduling evidence.",
       "fingerprint": "sha256:0eb64312668e0410de23930ea6f45c019bd7d637177943703a6af5e89b58e80b",
-      "source_hash": "sha256:a562aab524243ed4291065f319b0a198374c1bd10938c27f9c14e2df702af87c"
+      "source_hash": "sha256:043632e0a676c4f9f25d759d1cce618c031e631fddcdee0d2942ccc3b4705bf9"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -889,7 +900,7 @@
       ],
       "message": "Goroutine spawn requires lifecycle, cancellation, and shutdown ownership evidence.",
       "fingerprint": "sha256:d5bd77f57da05ea7d5aeda7d1b01804e8651f4c9920b0a602296e015366fa4a9",
-      "source_hash": "sha256:a562aab524243ed4291065f319b0a198374c1bd10938c27f9c14e2df702af87c"
+      "source_hash": "sha256:043632e0a676c4f9f25d759d1cce618c031e631fddcdee0d2942ccc3b4705bf9"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -907,7 +918,7 @@
       ],
       "message": "Goroutine spawn lacks an obvious local lifecycle or cancellation cue.",
       "fingerprint": "sha256:bf9af3151acfe7eb896ec3653184e57236ede1b20c94edd159f49ac615cc7dbb",
-      "source_hash": "sha256:a562aab524243ed4291065f319b0a198374c1bd10938c27f9c14e2df702af87c"
+      "source_hash": "sha256:043632e0a676c4f9f25d759d1cce618c031e631fddcdee0d2942ccc3b4705bf9"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -929,7 +940,7 @@
       ],
       "message": "Loop-backed goroutine launched without a deferred recover at the top of\nits body. A panic in a long-lived worker goroutine cannot be caught by\nthe launching frame and will crash the process.\n",
       "fingerprint": "sha256:999163ad2eba5041c1335bac9bf9f568355b6f7c8b7e009802caad5c3bf03a61",
-      "source_hash": "sha256:a562aab524243ed4291065f319b0a198374c1bd10938c27f9c14e2df702af87c"
+      "source_hash": "sha256:043632e0a676c4f9f25d759d1cce618c031e631fddcdee0d2942ccc3b4705bf9"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -950,7 +961,7 @@
       ],
       "message": "Channel communication requires blocking, cancellation, and ownership evidence.",
       "fingerprint": "sha256:4eae4c2653881fdd0de56aac75df4673b0293c53f583dc49280bd7bb40b754dc",
-      "source_hash": "sha256:a562aab524243ed4291065f319b0a198374c1bd10938c27f9c14e2df702af87c"
+      "source_hash": "sha256:043632e0a676c4f9f25d759d1cce618c031e631fddcdee0d2942ccc3b4705bf9"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -971,7 +982,7 @@
       ],
       "message": "Channel communication requires blocking, cancellation, and ownership evidence.",
       "fingerprint": "sha256:3cc5b39c509933e2e08780d4c20722ff30607302778880fcf823beac27e66dc2",
-      "source_hash": "sha256:a562aab524243ed4291065f319b0a198374c1bd10938c27f9c14e2df702af87c"
+      "source_hash": "sha256:043632e0a676c4f9f25d759d1cce618c031e631fddcdee0d2942ccc3b4705bf9"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -992,7 +1003,7 @@
       ],
       "message": "Channel communication requires blocking, cancellation, and ownership evidence.",
       "fingerprint": "sha256:10da1344b87ff221e82ee6039b0208cba33adbc62e5b9c459fd5bd21c50f42c1",
-      "source_hash": "sha256:a562aab524243ed4291065f319b0a198374c1bd10938c27f9c14e2df702af87c"
+      "source_hash": "sha256:043632e0a676c4f9f25d759d1cce618c031e631fddcdee0d2942ccc3b4705bf9"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -1028,7 +1039,7 @@
       ],
       "message": "Environment-dependent behavior requires configuration, determinism, and deployment evidence.",
       "fingerprint": "sha256:72a97d3c8f04a4d0147149d29834b3083194db44625d461c3f1174cbe7034ebc",
-      "source_hash": "sha256:454d0a615fe12f372232c9e594a331e7651473dc3d607f8350fac761abeaa882"
+      "source_hash": "sha256:3bbaa0e7d9237530b1976744ab2def6f1dd99cdcb053865dd76d62800920bac9"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -1046,7 +1057,7 @@
       ],
       "message": "Environment-dependent behavior requires configuration, determinism, and deployment evidence.",
       "fingerprint": "sha256:351c1a831821254b644c5a60cf03215293f201db528e5867c016ffaba7697918",
-      "source_hash": "sha256:454d0a615fe12f372232c9e594a331e7651473dc3d607f8350fac761abeaa882"
+      "source_hash": "sha256:3bbaa0e7d9237530b1976744ab2def6f1dd99cdcb053865dd76d62800920bac9"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -1064,7 +1075,7 @@
       ],
       "message": "Time-dependent behavior requires determinism, timeout, or scheduling evidence.",
       "fingerprint": "sha256:429fbdb82abdec962f84ba57ac04f13a673c1443667ef6648897b44ac4353af7",
-      "source_hash": "sha256:454d0a615fe12f372232c9e594a331e7651473dc3d607f8350fac761abeaa882"
+      "source_hash": "sha256:3bbaa0e7d9237530b1976744ab2def6f1dd99cdcb053865dd76d62800920bac9"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -1082,7 +1093,7 @@
       ],
       "message": "Time-dependent behavior requires determinism, timeout, or scheduling evidence.",
       "fingerprint": "sha256:05e91eb7a8c18def97c45b7218b378aab2dd04a49aefbae87fe02c661a3459bf",
-      "source_hash": "sha256:454d0a615fe12f372232c9e594a331e7651473dc3d607f8350fac761abeaa882"
+      "source_hash": "sha256:3bbaa0e7d9237530b1976744ab2def6f1dd99cdcb053865dd76d62800920bac9"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -1100,7 +1111,7 @@
       ],
       "message": "Time-dependent behavior requires determinism, timeout, or scheduling evidence.",
       "fingerprint": "sha256:294f0b468edc319d036535398ea44ef6b911439e766576010343888275e16372",
-      "source_hash": "sha256:454d0a615fe12f372232c9e594a331e7651473dc3d607f8350fac761abeaa882"
+      "source_hash": "sha256:3bbaa0e7d9237530b1976744ab2def6f1dd99cdcb053865dd76d62800920bac9"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -1122,7 +1133,7 @@
       ],
       "message": "Code measures elapsed duration with `time.Since(...)` or\n`time.Now().Sub(...)` against a wall-clock instant. On DST transitions,\nmanual clock adjustments, or NTP step events the returned Duration can\ngo negative or jump by hours, producing nonsense timings, fake SLA\nbreaches, or — when used as a loop guard — instant time-outs.\nPrefer `time.Now()` paired with a monotonic-clock-safe helper, or\nexplicitly check `d \u003c 0` and clamp.\n",
       "fingerprint": "sha256:de450c91be83ae55ee184302901528633c9a92b4bad15a75b1b4a273e5c14a02",
-      "source_hash": "sha256:454d0a615fe12f372232c9e594a331e7651473dc3d607f8350fac761abeaa882"
+      "source_hash": "sha256:3bbaa0e7d9237530b1976744ab2def6f1dd99cdcb053865dd76d62800920bac9"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -1144,7 +1155,7 @@
       ],
       "message": "Slice is preallocated with len(), filled by indexed assignment, and the\nloop body can continue on error. That can leave zero-value holes in the\nresult; append to a zero-length slice when sparse output is not intended.\n",
       "fingerprint": "sha256:8278a9c73e501a7a5b6898da6d3bebaa20a88dcfeb7aedf97c512ed36da75733",
-      "source_hash": "sha256:454d0a615fe12f372232c9e594a331e7651473dc3d607f8350fac761abeaa882"
+      "source_hash": "sha256:3bbaa0e7d9237530b1976744ab2def6f1dd99cdcb053865dd76d62800920bac9"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -1168,7 +1179,7 @@
       ],
       "message": "A per-element goroutine fanout is launched without an explicit\nfailure-independence barrier: each pump runs `go execPumpWriting(...)`\nand the outer loop simply `wg.Wait()`s on completion. A single pump\nthat panics, hangs, or saturates a shared dependency (DNS resolver\ncache, default HTTP transport pool, root logger) can corrupt\nsibling-pump output or starve them. Document the independence claim\n(process isolation, dedicated client, panic-recovery) AND wire a\ncascade circuit-breaker per pump.\n",
       "fingerprint": "sha256:69277854a5348b90c2b4843855af5f9ec81ace1cfd67002304853ca77e47bcd7",
-      "source_hash": "sha256:454d0a615fe12f372232c9e594a331e7651473dc3d607f8350fac761abeaa882"
+      "source_hash": "sha256:3bbaa0e7d9237530b1976744ab2def6f1dd99cdcb053865dd76d62800920bac9"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -1190,7 +1201,7 @@
       ],
       "message": "The purge cycle fans work out to N pumps via `go execPumpWriting(\u0026wg, pmp, ...)`\nand waits on a single `wg.Wait()`. The outer loop has no per-pump\nsuccess/fail accounting — partial-progress is invisible to operators,\nhealth probes, or downstream alerting. When 7 of 8 pumps drop a\nbatch but the 8th succeeds, the purge cycle reports \"done\" with no\ndiagnosable signal. Expose per-pump result (records-written,\nrecords-dropped, last-error) via a metric, log line, or job event.\n",
       "fingerprint": "sha256:11b31462562b2b8373e0734ea7e61776fd3f6e1a24c195c8919efe540a73b575",
-      "source_hash": "sha256:454d0a615fe12f372232c9e594a331e7651473dc3d607f8350fac761abeaa882"
+      "source_hash": "sha256:3bbaa0e7d9237530b1976744ab2def6f1dd99cdcb053865dd76d62800920bac9"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -1211,7 +1222,7 @@
       ],
       "message": "Goroutine spawn requires lifecycle, cancellation, and shutdown ownership evidence.",
       "fingerprint": "sha256:11649123f5cf3d90176cffbefedc70398d952209a6557136cc8a2e382008c890",
-      "source_hash": "sha256:454d0a615fe12f372232c9e594a331e7651473dc3d607f8350fac761abeaa882"
+      "source_hash": "sha256:3bbaa0e7d9237530b1976744ab2def6f1dd99cdcb053865dd76d62800920bac9"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -1229,7 +1240,7 @@
       ],
       "message": "Goroutine spawn lacks an obvious local lifecycle or cancellation cue.",
       "fingerprint": "sha256:295a8e42aaa7aa933231b40bd4c407c0ee9e27f0f30aafc3e7cc8effdc2cca61",
-      "source_hash": "sha256:454d0a615fe12f372232c9e594a331e7651473dc3d607f8350fac761abeaa882"
+      "source_hash": "sha256:3bbaa0e7d9237530b1976744ab2def6f1dd99cdcb053865dd76d62800920bac9"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -1247,7 +1258,7 @@
       ],
       "message": "Time-dependent behavior requires determinism, timeout, or scheduling evidence.",
       "fingerprint": "sha256:ae5ec3502d02384eddc5192ae8a183e00341033ca7d3d6783dfe5404cb31a320",
-      "source_hash": "sha256:454d0a615fe12f372232c9e594a331e7651473dc3d607f8350fac761abeaa882"
+      "source_hash": "sha256:3bbaa0e7d9237530b1976744ab2def6f1dd99cdcb053865dd76d62800920bac9"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -1268,7 +1279,7 @@
       ],
       "message": "Goroutine spawn requires lifecycle, cancellation, and shutdown ownership evidence.",
       "fingerprint": "sha256:8756a2776d60193e9581b7c08c3aa84ffd8e134b6c663182ca77fdc0fca47688",
-      "source_hash": "sha256:454d0a615fe12f372232c9e594a331e7651473dc3d607f8350fac761abeaa882"
+      "source_hash": "sha256:3bbaa0e7d9237530b1976744ab2def6f1dd99cdcb053865dd76d62800920bac9"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -1292,7 +1303,7 @@
       ],
       "message": "A goroutine spawned from a fanout (`go execPumpWriting(...)`,\n`go func(){ ch \u003c- pmp.WriteData(...) }()`) has no `defer\nrecover()` at the goroutine boundary. A panic inside any one pump's\nWriteData (nil-pointer deref in a marshaller, divide-by-zero in\nan aggregator) propagates up the goroutine stack, terminates the\nprocess — taking sibling pumps and the purge loop with it.\nThe independence claim from `failure_independence_proven`\ncannot hold without a per-fanout-goroutine recover barrier.\n",
       "fingerprint": "sha256:f148529c09bb9b2ab9495f12b0b665093fa67b058f74a06e7497864cad92bfba",
-      "source_hash": "sha256:454d0a615fe12f372232c9e594a331e7651473dc3d607f8350fac761abeaa882"
+      "source_hash": "sha256:3bbaa0e7d9237530b1976744ab2def6f1dd99cdcb053865dd76d62800920bac9"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -1313,7 +1324,7 @@
       ],
       "message": "Channel communication requires blocking, cancellation, and ownership evidence.",
       "fingerprint": "sha256:d79c36353a6447ec7ba091b49e1bd7fd7f67887bcfd6110cb5fcdd4319015384",
-      "source_hash": "sha256:454d0a615fe12f372232c9e594a331e7651473dc3d607f8350fac761abeaa882"
+      "source_hash": "sha256:3bbaa0e7d9237530b1976744ab2def6f1dd99cdcb053865dd76d62800920bac9"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -1331,7 +1342,7 @@
       ],
       "message": "Time-dependent behavior requires determinism, timeout, or scheduling evidence.",
       "fingerprint": "sha256:f1fa5ac2b16a9f1f3193f5ddd60f9a18f7dcf127b3404e37ee186701f20cf74a",
-      "source_hash": "sha256:454d0a615fe12f372232c9e594a331e7651473dc3d607f8350fac761abeaa882"
+      "source_hash": "sha256:3bbaa0e7d9237530b1976744ab2def6f1dd99cdcb053865dd76d62800920bac9"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -1353,7 +1364,7 @@
       ],
       "message": "Code measures elapsed duration with `time.Since(...)` or\n`time.Now().Sub(...)` against a wall-clock instant. On DST transitions,\nmanual clock adjustments, or NTP step events the returned Duration can\ngo negative or jump by hours, producing nonsense timings, fake SLA\nbreaches, or — when used as a loop guard — instant time-outs.\nPrefer `time.Now()` paired with a monotonic-clock-safe helper, or\nexplicitly check `d \u003c 0` and clamp.\n",
       "fingerprint": "sha256:d88a3b20ebba5f0107db9e2f2e406d1ae5666f0dde6f781c6706e37ef26e5b6f",
-      "source_hash": "sha256:454d0a615fe12f372232c9e594a331e7651473dc3d607f8350fac761abeaa882"
+      "source_hash": "sha256:3bbaa0e7d9237530b1976744ab2def6f1dd99cdcb053865dd76d62800920bac9"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -1374,7 +1385,7 @@
       ],
       "message": "Goroutine spawn requires lifecycle, cancellation, and shutdown ownership evidence.",
       "fingerprint": "sha256:5824b2feebd0649f67b3a4fa702bc205a67057191d3503ef35ee94fafb996d5d",
-      "source_hash": "sha256:454d0a615fe12f372232c9e594a331e7651473dc3d607f8350fac761abeaa882"
+      "source_hash": "sha256:3bbaa0e7d9237530b1976744ab2def6f1dd99cdcb053865dd76d62800920bac9"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -1392,7 +1403,7 @@
       ],
       "message": "Goroutine spawn lacks an obvious local lifecycle or cancellation cue.",
       "fingerprint": "sha256:b6fe8765e6be0789103d5381c119c5bd5674e956735ce13920e01b9344fab8ca",
-      "source_hash": "sha256:454d0a615fe12f372232c9e594a331e7651473dc3d607f8350fac761abeaa882"
+      "source_hash": "sha256:3bbaa0e7d9237530b1976744ab2def6f1dd99cdcb053865dd76d62800920bac9"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -1410,7 +1421,7 @@
       ],
       "message": "Time-dependent behavior requires determinism, timeout, or scheduling evidence.",
       "fingerprint": "sha256:71ce4ebd10a49a448d8f54c8107663f09f96df226d568240f304a0e9dbcd20f0",
-      "source_hash": "sha256:454d0a615fe12f372232c9e594a331e7651473dc3d607f8350fac761abeaa882"
+      "source_hash": "sha256:3bbaa0e7d9237530b1976744ab2def6f1dd99cdcb053865dd76d62800920bac9"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -1428,7 +1439,7 @@
       ],
       "message": "Synchronization primitive use requires concurrency ownership and race/liveness evidence.",
       "fingerprint": "sha256:c461aac871b0f9f8d1ab819366c71ecd268a8d2d4b1779c3e5e858940b831f31",
-      "source_hash": "sha256:454d0a615fe12f372232c9e594a331e7651473dc3d607f8350fac761abeaa882"
+      "source_hash": "sha256:3bbaa0e7d9237530b1976744ab2def6f1dd99cdcb053865dd76d62800920bac9"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -1449,7 +1460,7 @@
       ],
       "message": "Goroutine spawn requires lifecycle, cancellation, and shutdown ownership evidence.",
       "fingerprint": "sha256:887e0f98fafa534717d7a9448d6e8bf89ca1b5895535c24e91297c806c48604c",
-      "source_hash": "sha256:454d0a615fe12f372232c9e594a331e7651473dc3d607f8350fac761abeaa882"
+      "source_hash": "sha256:3bbaa0e7d9237530b1976744ab2def6f1dd99cdcb053865dd76d62800920bac9"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -1467,7 +1478,7 @@
       ],
       "message": "Time-dependent behavior requires determinism, timeout, or scheduling evidence.",
       "fingerprint": "sha256:a8c398a685e1ef6aa0775ca21023692d9577c9a63ee6a511258f662e9fac9484",
-      "source_hash": "sha256:173b836c10da273f86d9810754e81d27019f51ce21bf170cffef862bedbd6857"
+      "source_hash": "sha256:04e1dfb799a500df4f5d28a2b84d53c30448d53725ded26f6db356a6e61efaa1"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -1485,7 +1496,7 @@
       ],
       "message": "Discarded call result requires explicit propagation or ignore-policy evidence.",
       "fingerprint": "sha256:f22c28cd610d5eb85e6dbbd9b2982c7c778cbeb0b622bc0bdb0184605e624687",
-      "source_hash": "sha256:173b836c10da273f86d9810754e81d27019f51ce21bf170cffef862bedbd6857"
+      "source_hash": "sha256:04e1dfb799a500df4f5d28a2b84d53c30448d53725ded26f6db356a6e61efaa1"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -1508,7 +1519,7 @@
       ],
       "message": "A TLS client config sets `InsecureSkipVerify: cfg.SSLInsecureSkipVerify`\nfrom a config struct. The field is reachable from operator YAML\nwith no audit trail — a single misconfiguration disables certificate\nvalidation across the deployment, MITM becomes trivially possible,\nand there is no runtime warning. Either restrict the flag to an\nexplicit \"development mode\" that emits a startup WARN, or require a\npaired `RootCAs` override so skipping verification AND ignoring the\nsystem trust store cannot both happen by default.\n",
       "fingerprint": "sha256:f8fec3463bd2fe97504d7c1ee34d2b828835d556520b90d9ad04c12be2aa60f4",
-      "source_hash": "sha256:173b836c10da273f86d9810754e81d27019f51ce21bf170cffef862bedbd6857"
+      "source_hash": "sha256:04e1dfb799a500df4f5d28a2b84d53c30448d53725ded26f6db356a6e61efaa1"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -1527,7 +1538,7 @@
       ],
       "message": "Process-local filesystem API use requires path-boundary, lifetime, and error-handling evidence.",
       "fingerprint": "sha256:7419e09006e5b6a03bdca246a3f6abfa156d6f832895daa3e2bd663d9073aad0",
-      "source_hash": "sha256:173b836c10da273f86d9810754e81d27019f51ce21bf170cffef862bedbd6857"
+      "source_hash": "sha256:04e1dfb799a500df4f5d28a2b84d53c30448d53725ded26f6db356a6e61efaa1"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -1549,7 +1560,7 @@
       ],
       "message": "log.Fatal / os.Exit called from a non-main constructor or processing function.\nThis aborts the entire process and bypasses caller error handling; return\nan error instead so the caller can recover.\n",
       "fingerprint": "sha256:4ad9b80b5bb1248665847c08c57c40f543d6e63981d317839da5a01fcfb60d4d",
-      "source_hash": "sha256:62974aa49362b9401ff9642dad22e416139271c36642e5e36a7a5dcc2c3a8a54"
+      "source_hash": "sha256:49385ee92b136d5ece9822db83b84fe5080e7ced64783a62f7a82b6e2fab03d6"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -1572,7 +1583,7 @@
       ],
       "message": "A pump's `Init(config)` method calls `log.Fatal(...)` on a config\ndecode or connection failure. log.Fatal calls os.Exit(1), bypassing\nevery deferred cleanup AND every sibling pump's chance to keep\nworking. A single misconfigured pump in a multi-pump deployment\ntakes down the whole process. Either return the error to the caller\n(the pump-init driver should decide whether the failure is fatal\nfor the WHOLE process, or just for THIS pump), or recover into a\ndegraded \"this pump is inert\" mode while others continue.\n",
       "fingerprint": "sha256:94b34527c296efe075d17d13c8a60bfad312d8bee855866970a626b5bf25fc27",
-      "source_hash": "sha256:62974aa49362b9401ff9642dad22e416139271c36642e5e36a7a5dcc2c3a8a54"
+      "source_hash": "sha256:49385ee92b136d5ece9822db83b84fe5080e7ced64783a62f7a82b6e2fab03d6"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -1594,7 +1605,7 @@
       ],
       "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
       "fingerprint": "sha256:9d2548b4c58aa97bd9f675e4748c198e4225575d9f277d471aeb0bd4ed097eff",
-      "source_hash": "sha256:62974aa49362b9401ff9642dad22e416139271c36642e5e36a7a5dcc2c3a8a54"
+      "source_hash": "sha256:49385ee92b136d5ece9822db83b84fe5080e7ced64783a62f7a82b6e2fab03d6"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -1613,7 +1624,7 @@
       ],
       "message": "Process-local filesystem API use requires path-boundary, lifetime, and error-handling evidence.",
       "fingerprint": "sha256:1ee5d3643cac2b33e899ca2a2abf9f41c275de513893bb6edf3ac992d691c13f",
-      "source_hash": "sha256:62974aa49362b9401ff9642dad22e416139271c36642e5e36a7a5dcc2c3a8a54"
+      "source_hash": "sha256:49385ee92b136d5ece9822db83b84fe5080e7ced64783a62f7a82b6e2fab03d6"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -1637,7 +1648,7 @@
       ],
       "message": "A creator that returns (handle, error) is called; the error is only\nlogged (no return / continue / fatal); execution then falls through to\na \"defer outfile.Close()\". When the creator fails the handle is nil and the\ndeferred Close panics with a nil-pointer dereference, masking the\noriginal failure with a confusing stack trace. Return on the error arm\nor guard the defer behind \"if outfile != nil\".\n",
       "fingerprint": "sha256:c2be1d9fc4fdea9ddfc7c56996bf692c86a50e241717c91f45243a2470731a2a",
-      "source_hash": "sha256:62974aa49362b9401ff9642dad22e416139271c36642e5e36a7a5dcc2c3a8a54"
+      "source_hash": "sha256:49385ee92b136d5ece9822db83b84fe5080e7ced64783a62f7a82b6e2fab03d6"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -1655,7 +1666,7 @@
       ],
       "message": "Time-dependent behavior requires determinism, timeout, or scheduling evidence.",
       "fingerprint": "sha256:81ae8ec2e2f2321ed453cf9fe55c21fbfc5c71f5c1c474c06030040ba224cd56",
-      "source_hash": "sha256:62974aa49362b9401ff9642dad22e416139271c36642e5e36a7a5dcc2c3a8a54"
+      "source_hash": "sha256:49385ee92b136d5ece9822db83b84fe5080e7ced64783a62f7a82b6e2fab03d6"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -1673,7 +1684,7 @@
       ],
       "message": "Discarded call result requires explicit propagation or ignore-policy evidence.",
       "fingerprint": "sha256:29c2f6c7f896793518889e04594ae83162cfb69e548627ed439b56cc736d26dd",
-      "source_hash": "sha256:62974aa49362b9401ff9642dad22e416139271c36642e5e36a7a5dcc2c3a8a54"
+      "source_hash": "sha256:49385ee92b136d5ece9822db83b84fe5080e7ced64783a62f7a82b6e2fab03d6"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -1692,7 +1703,7 @@
       ],
       "message": "Process-local filesystem API use requires path-boundary, lifetime, and error-handling evidence.",
       "fingerprint": "sha256:9951635ffa1bd91f06d1161307070546cfe365a9714462a86c618f9cd23411a0",
-      "source_hash": "sha256:62974aa49362b9401ff9642dad22e416139271c36642e5e36a7a5dcc2c3a8a54"
+      "source_hash": "sha256:49385ee92b136d5ece9822db83b84fe5080e7ced64783a62f7a82b6e2fab03d6"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -1711,7 +1722,7 @@
       ],
       "message": "Process-local filesystem API use requires path-boundary, lifetime, and error-handling evidence.",
       "fingerprint": "sha256:d8024764fbfcaa08719c941f2a80e08f0e2041c25f9602021e103c5617e975fd",
-      "source_hash": "sha256:62974aa49362b9401ff9642dad22e416139271c36642e5e36a7a5dcc2c3a8a54"
+      "source_hash": "sha256:49385ee92b136d5ece9822db83b84fe5080e7ced64783a62f7a82b6e2fab03d6"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -1733,7 +1744,7 @@
       ],
       "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
       "fingerprint": "sha256:a2d99966d782ce0ecb6cea0914052d283c6482c4ee02f3623654ae3d1b644e0f",
-      "source_hash": "sha256:184e18e555be90f6e47ced4f2a6354faac72c12a37682f099eec3868281e2da5"
+      "source_hash": "sha256:aa02899d7d79a86454fe6e3e80e250cde84febd38c88b18ad6478216abd4010d"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -1742,16 +1753,16 @@
       "signal_id": "http.client_dependency",
       "artifact": "pumps/elasticsearch.go",
       "span": {
-        "start_line": 164,
-        "end_line": 164
+        "start_line": 166,
+        "end_line": 166
       },
       "confidence": "medium",
       "tags": [
         "http_client"
       ],
       "message": "HTTP client API use requires external-call timeout, cancellation, TLS, and failure-observation evidence.",
-      "fingerprint": "sha256:b74e0ee723466f447fff4dcd72bb2116556b7595615f4c337e7078c91ee5bab2",
-      "source_hash": "sha256:bed01de375baec71c5054532e66cd43659c128ab3bb96b697da84fb3b8b8ba8e"
+      "fingerprint": "sha256:daeb1b5ce4698fecf1c82e7a54cbfd02bbdca71b134c2367e00ed21cc9cda3c4",
+      "source_hash": "sha256:a7e726c4b44bd87ac1b0c5276b71dbc03f24f9ad66c79d24956cc4a6796eea20"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -1760,16 +1771,16 @@
       "signal_id": "http.client_dependency",
       "artifact": "pumps/elasticsearch.go",
       "span": {
-        "start_line": 168,
-        "end_line": 168
+        "start_line": 170,
+        "end_line": 170
       },
       "confidence": "medium",
       "tags": [
         "http_client"
       ],
       "message": "HTTP client API use requires external-call timeout, cancellation, TLS, and failure-observation evidence.",
-      "fingerprint": "sha256:104a5474ff3117dbbdd70e4d34185ad7d7234c8dff5566342199f1da419ba11c",
-      "source_hash": "sha256:bed01de375baec71c5054532e66cd43659c128ab3bb96b697da84fb3b8b8ba8e"
+      "fingerprint": "sha256:9a39f132eb8b42cfb3e415acfbf4839788d806d69e746f4af44c62d78aef6995",
+      "source_hash": "sha256:a7e726c4b44bd87ac1b0c5276b71dbc03f24f9ad66c79d24956cc4a6796eea20"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -1778,8 +1789,8 @@
       "signal_id": "http.client_without_timeout",
       "artifact": "pumps/elasticsearch.go",
       "span": {
-        "start_line": 168,
-        "end_line": 168
+        "start_line": 170,
+        "end_line": 170
       },
       "confidence": "medium",
       "tags": [
@@ -1789,8 +1800,8 @@
         "request_timeout_bounded"
       ],
       "message": "http.Client created without explicit Timeout; requests may hang indefinitely.",
-      "fingerprint": "sha256:8c551c91cfb280c3c0e128907959523e16fe4d826859a24e3cfd8e545d1997d3",
-      "source_hash": "sha256:bed01de375baec71c5054532e66cd43659c128ab3bb96b697da84fb3b8b8ba8e"
+      "fingerprint": "sha256:acc6a59f17eaa153ee8de6c87c682377733e2df5e70eeb54ece6fe4d62006373",
+      "source_hash": "sha256:a7e726c4b44bd87ac1b0c5276b71dbc03f24f9ad66c79d24956cc4a6796eea20"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -1799,8 +1810,8 @@
       "signal_id": "go.tls_skip_verify_config",
       "artifact": "pumps/elasticsearch.go",
       "span": {
-        "start_line": 176,
-        "end_line": 176
+        "start_line": 178,
+        "end_line": 178
       },
       "confidence": "medium",
       "obligations": [
@@ -1812,8 +1823,8 @@
         "NIST-SP-800-53-SC-8"
       ],
       "message": "A TLS client config sets `InsecureSkipVerify: conf.SSLInsecureSkipVerify`\nfrom a config struct. The field is reachable from operator YAML\nwith no audit trail — a single misconfiguration disables certificate\nvalidation across the deployment, MITM becomes trivially possible,\nand there is no runtime warning. Either restrict the flag to an\nexplicit \"development mode\" that emits a startup WARN, or require a\npaired `RootCAs` override so skipping verification AND ignoring the\nsystem trust store cannot both happen by default.\n",
-      "fingerprint": "sha256:ad261781cadc411d4e1753f67707096c74bbb27cb33965caad126de786a7d53b",
-      "source_hash": "sha256:bed01de375baec71c5054532e66cd43659c128ab3bb96b697da84fb3b8b8ba8e"
+      "fingerprint": "sha256:904fc49e960daee6fcb519327f3996690a9160e87af4dad6f9dacb793d6d6da1",
+      "source_hash": "sha256:a7e726c4b44bd87ac1b0c5276b71dbc03f24f9ad66c79d24956cc4a6796eea20"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -1822,16 +1833,16 @@
       "signal_id": "http.client_dependency",
       "artifact": "pumps/elasticsearch.go",
       "span": {
-        "start_line": 181,
-        "end_line": 181
+        "start_line": 183,
+        "end_line": 183
       },
       "confidence": "medium",
       "tags": [
         "http_client"
       ],
       "message": "HTTP client API use requires external-call timeout, cancellation, TLS, and failure-observation evidence.",
-      "fingerprint": "sha256:88718628e8771d4cd2047e86134746eb56bf381eb593d19e7d7a7b0a41315731",
-      "source_hash": "sha256:bed01de375baec71c5054532e66cd43659c128ab3bb96b697da84fb3b8b8ba8e"
+      "fingerprint": "sha256:009ca2f0668941c1a71ca89cca8d6a15894a1b8c7eef0644afdd492dd7164c90",
+      "source_hash": "sha256:a7e726c4b44bd87ac1b0c5276b71dbc03f24f9ad66c79d24956cc4a6796eea20"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -1840,16 +1851,16 @@
       "signal_id": "http.client_dependency",
       "artifact": "pumps/elasticsearch.go",
       "span": {
-        "start_line": 181,
-        "end_line": 181
+        "start_line": 183,
+        "end_line": 183
       },
       "confidence": "medium",
       "tags": [
         "http_client"
       ],
       "message": "HTTP client API use requires external-call timeout, cancellation, TLS, and failure-observation evidence.",
-      "fingerprint": "sha256:88718628e8771d4cd2047e86134746eb56bf381eb593d19e7d7a7b0a41315731",
-      "source_hash": "sha256:bed01de375baec71c5054532e66cd43659c128ab3bb96b697da84fb3b8b8ba8e"
+      "fingerprint": "sha256:009ca2f0668941c1a71ca89cca8d6a15894a1b8c7eef0644afdd492dd7164c90",
+      "source_hash": "sha256:a7e726c4b44bd87ac1b0c5276b71dbc03f24f9ad66c79d24956cc4a6796eea20"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -1858,8 +1869,8 @@
       "signal_id": "http.client_without_timeout",
       "artifact": "pumps/elasticsearch.go",
       "span": {
-        "start_line": 181,
-        "end_line": 181
+        "start_line": 183,
+        "end_line": 183
       },
       "confidence": "medium",
       "tags": [
@@ -1869,8 +1880,8 @@
         "request_timeout_bounded"
       ],
       "message": "http.Client created without explicit Timeout; requests may hang indefinitely.",
-      "fingerprint": "sha256:767023c62fb524603da23407d43bbb398b0ba044d7365734888b82103c191391",
-      "source_hash": "sha256:bed01de375baec71c5054532e66cd43659c128ab3bb96b697da84fb3b8b8ba8e"
+      "fingerprint": "sha256:076c827b3b8d89117a477b72c212e74d1fa7d81b2447fc20a6cf94bb5e467c58",
+      "source_hash": "sha256:a7e726c4b44bd87ac1b0c5276b71dbc03f24f9ad66c79d24956cc4a6796eea20"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -1879,8 +1890,8 @@
       "signal_id": "process.log_fatal_in_init",
       "artifact": "pumps/elasticsearch.go",
       "span": {
-        "start_line": 358,
-        "end_line": 404
+        "start_line": 360,
+        "end_line": 407
       },
       "confidence": "high",
       "tags": [
@@ -1891,8 +1902,8 @@
         "errors_propagated"
       ],
       "message": "log.Fatal / os.Exit called from a non-main constructor or processing function.\nThis aborts the entire process and bypasses caller error handling; return\nan error instead so the caller can recover.\n",
-      "fingerprint": "sha256:79a6c9bf65f03e9e15ca74622ac01cca11fac15b1274f65762130d91300bfaf6",
-      "source_hash": "sha256:bed01de375baec71c5054532e66cd43659c128ab3bb96b697da84fb3b8b8ba8e"
+      "fingerprint": "sha256:05f6428e4a9f7dec8b591a7951f0689938e4dcea7a6bec46fb2ca61a98884fc6",
+      "source_hash": "sha256:a7e726c4b44bd87ac1b0c5276b71dbc03f24f9ad66c79d24956cc4a6796eea20"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -1901,8 +1912,8 @@
       "signal_id": "go.logfatal_on_config_decode",
       "artifact": "pumps/elasticsearch.go",
       "span": {
-        "start_line": 358,
-        "end_line": 404
+        "start_line": 360,
+        "end_line": 407
       },
       "confidence": "high",
       "obligations": [
@@ -1914,8 +1925,8 @@
         "NIST-SP-800-53-SI-13"
       ],
       "message": "A pump's `Init(config)` method calls `log.Fatal(...)` on a config\ndecode or connection failure. log.Fatal calls os.Exit(1), bypassing\nevery deferred cleanup AND every sibling pump's chance to keep\nworking. A single misconfigured pump in a multi-pump deployment\ntakes down the whole process. Either return the error to the caller\n(the pump-init driver should decide whether the failure is fatal\nfor the WHOLE process, or just for THIS pump), or recover into a\ndegraded \"this pump is inert\" mode while others continue.\n",
-      "fingerprint": "sha256:004887e295be50bcf6d6d8e6dba4b8f7eaa67293f6fcdc50bc9f501f38f334bc",
-      "source_hash": "sha256:bed01de375baec71c5054532e66cd43659c128ab3bb96b697da84fb3b8b8ba8e"
+      "fingerprint": "sha256:3b6cecb18aff109e8f3c50a887a0115509b66ea0a4e8c5a240a6cf1294b59aa6",
+      "source_hash": "sha256:a7e726c4b44bd87ac1b0c5276b71dbc03f24f9ad66c79d24956cc4a6796eea20"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -1924,8 +1935,8 @@
       "signal_id": "deserializer.mapstructure_lenient",
       "artifact": "pumps/elasticsearch.go",
       "span": {
-        "start_line": 362,
-        "end_line": 362
+        "start_line": 365,
+        "end_line": 365
       },
       "confidence": "high",
       "tags": [
@@ -1936,8 +1947,8 @@
         "malformed_recovers_or_errors_loudly"
       ],
       "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
-      "fingerprint": "sha256:8b1ff5ef14c2519eec8ff4fe38fc34aa529042175824bc7975196ce23df0d3c9",
-      "source_hash": "sha256:bed01de375baec71c5054532e66cd43659c128ab3bb96b697da84fb3b8b8ba8e"
+      "fingerprint": "sha256:8f615896b80584472b923815a7de793f260d11affbc274469e91b308e0c28a22",
+      "source_hash": "sha256:a7e726c4b44bd87ac1b0c5276b71dbc03f24f9ad66c79d24956cc4a6796eea20"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -1946,8 +1957,8 @@
       "signal_id": "recursion.unbounded_on_error",
       "artifact": "pumps/elasticsearch.go",
       "span": {
-        "start_line": 407,
-        "end_line": 416
+        "start_line": 410,
+        "end_line": 419
       },
       "confidence": "medium",
       "tags": [
@@ -1958,8 +1969,8 @@
         "errors_propagated"
       ],
       "message": "Function calls itself recursively after a sleep on the error arm with\nno retry counter, max-attempt guard, or context-deadline check. Sustained\nfailure can grow the goroutine stack without bound.\n",
-      "fingerprint": "sha256:45fc8a0fe2f61f7119fec26a45a0d8ad50e2339096139fdfcb08aca67269d57a",
-      "source_hash": "sha256:bed01de375baec71c5054532e66cd43659c128ab3bb96b697da84fb3b8b8ba8e"
+      "fingerprint": "sha256:70205c963c3c7ea1eb0f203f2a256761719917fc4200f049cd6287261803dac7",
+      "source_hash": "sha256:a7e726c4b44bd87ac1b0c5276b71dbc03f24f9ad66c79d24956cc4a6796eea20"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -1968,16 +1979,16 @@
       "signal_id": "time.dependency",
       "artifact": "pumps/elasticsearch.go",
       "span": {
-        "start_line": 413,
-        "end_line": 413
+        "start_line": 416,
+        "end_line": 416
       },
       "confidence": "medium",
       "tags": [
         "scheduler"
       ],
       "message": "Time-dependent behavior requires determinism, timeout, or scheduling evidence.",
-      "fingerprint": "sha256:fa7802228188225c52ec66ba46fe243fd580624f57562e8542c8967bcd5a428a",
-      "source_hash": "sha256:bed01de375baec71c5054532e66cd43659c128ab3bb96b697da84fb3b8b8ba8e"
+      "fingerprint": "sha256:e31485f4b0c8e1d4f267e3a7694daca378045acba3a60743963ba917438b4856",
+      "source_hash": "sha256:a7e726c4b44bd87ac1b0c5276b71dbc03f24f9ad66c79d24956cc4a6796eea20"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -1986,8 +1997,8 @@
       "signal_id": "control_flow.recursive_call_without_return",
       "artifact": "pumps/elasticsearch.go",
       "span": {
-        "start_line": 419,
-        "end_line": 432
+        "start_line": 422,
+        "end_line": 435
       },
       "confidence": "high",
       "tags": [
@@ -1998,8 +2009,8 @@
         "errors_propagated"
       ],
       "message": "A method invokes itself recursively but the result is discarded — the\ncall is not prefixed with `return` and not captured into a variable.\nExecution falls through to the original code path after the recursive\ncall completes, so any work performed by the inner call is duplicated\n(the outer frame then runs the same loop a second time). Idiomatic\nrecursion uses `return r.MethodName(...)`.\n",
-      "fingerprint": "sha256:c34cb562d8fe1087b075caf1dcbedfca3cf7a5a059541f11f97f8915d3dcf5fa",
-      "source_hash": "sha256:bed01de375baec71c5054532e66cd43659c128ab3bb96b697da84fb3b8b8ba8e"
+      "fingerprint": "sha256:e0488ae4d2a103f8ae03e17f2afb509264a6a23348c6e26093e4790a1942d2e7",
+      "source_hash": "sha256:a7e726c4b44bd87ac1b0c5276b71dbc03f24f9ad66c79d24956cc4a6796eea20"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -2008,16 +2019,16 @@
       "signal_id": "time.dependency",
       "artifact": "pumps/elasticsearch.go",
       "span": {
-        "start_line": 439,
-        "end_line": 439
+        "start_line": 442,
+        "end_line": 442
       },
       "confidence": "medium",
       "tags": [
         "scheduler"
       ],
       "message": "Time-dependent behavior requires determinism, timeout, or scheduling evidence.",
-      "fingerprint": "sha256:979a8188237ee755c978f296bf12714dd3fa5fd7a44f1faf5234a8385fefe6c5",
-      "source_hash": "sha256:bed01de375baec71c5054532e66cd43659c128ab3bb96b697da84fb3b8b8ba8e"
+      "fingerprint": "sha256:a9158e2d8b8a2499f8f983f54e1e3aed5bc4c1c4e1d92f5d3d8e2a315881d0e7",
+      "source_hash": "sha256:a7e726c4b44bd87ac1b0c5276b71dbc03f24f9ad66c79d24956cc4a6796eea20"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -2026,16 +2037,16 @@
       "signal_id": "time.dependency",
       "artifact": "pumps/elasticsearch.go",
       "span": {
-        "start_line": 455,
-        "end_line": 455
+        "start_line": 458,
+        "end_line": 458
       },
       "confidence": "medium",
       "tags": [
         "scheduler"
       ],
       "message": "Time-dependent behavior requires determinism, timeout, or scheduling evidence.",
-      "fingerprint": "sha256:59ee988c6c939cecd6098194078d1de528a228c7f18adb3736bfbe6c601dfa5a",
-      "source_hash": "sha256:bed01de375baec71c5054532e66cd43659c128ab3bb96b697da84fb3b8b8ba8e"
+      "fingerprint": "sha256:94ff6b36db19eb49a8ed7c4322d112fcf29819bca106f73fb0d7031e66572c71",
+      "source_hash": "sha256:a7e726c4b44bd87ac1b0c5276b71dbc03f24f9ad66c79d24956cc4a6796eea20"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -2044,16 +2055,16 @@
       "signal_id": "error.discarded",
       "artifact": "pumps/elasticsearch.go",
       "span": {
-        "start_line": 487,
-        "end_line": 487
+        "start_line": 490,
+        "end_line": 490
       },
       "confidence": "medium",
       "tags": [
         "error_propagation"
       ],
       "message": "Discarded call result requires explicit propagation or ignore-policy evidence.",
-      "fingerprint": "sha256:68b33853ff262ab8b204fa5fb0a99e0ab6c6a933fc9056824222e3b2e82f0b21",
-      "source_hash": "sha256:bed01de375baec71c5054532e66cd43659c128ab3bb96b697da84fb3b8b8ba8e"
+      "fingerprint": "sha256:07439638af81b33a1bc3b9829a1b1c24ba39160727f8798422b03d80348a04e2",
+      "source_hash": "sha256:a7e726c4b44bd87ac1b0c5276b71dbc03f24f9ad66c79d24956cc4a6796eea20"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -2062,16 +2073,16 @@
       "signal_id": "error.discarded",
       "artifact": "pumps/elasticsearch.go",
       "span": {
-        "start_line": 489,
-        "end_line": 489
+        "start_line": 492,
+        "end_line": 492
       },
       "confidence": "medium",
       "tags": [
         "error_propagation"
       ],
       "message": "Discarded call result requires explicit propagation or ignore-policy evidence.",
-      "fingerprint": "sha256:43712378ba94bff481ffbeab8a0a9fa5f8d4da4adfa8c23e2afaf9d79fc37fcc",
-      "source_hash": "sha256:bed01de375baec71c5054532e66cd43659c128ab3bb96b697da84fb3b8b8ba8e"
+      "fingerprint": "sha256:ea0f86f8fccae7e85bbf33d7e3bf0169306f48b74940d05941bb54ab7a696b34",
+      "source_hash": "sha256:a7e726c4b44bd87ac1b0c5276b71dbc03f24f9ad66c79d24956cc4a6796eea20"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -2080,16 +2091,16 @@
       "signal_id": "error.discarded",
       "artifact": "pumps/elasticsearch.go",
       "span": {
-        "start_line": 536,
-        "end_line": 536
+        "start_line": 539,
+        "end_line": 539
       },
       "confidence": "medium",
       "tags": [
         "error_propagation"
       ],
       "message": "Discarded call result requires explicit propagation or ignore-policy evidence.",
-      "fingerprint": "sha256:b55e36db024054f568a1baf406ad0d310e68c265157f11d24e348222f9d4797b",
-      "source_hash": "sha256:bed01de375baec71c5054532e66cd43659c128ab3bb96b697da84fb3b8b8ba8e"
+      "fingerprint": "sha256:23d5482e0e534390fa7189293c5885313f405e3b8018050588b246d02ff57565",
+      "source_hash": "sha256:a7e726c4b44bd87ac1b0c5276b71dbc03f24f9ad66c79d24956cc4a6796eea20"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -2098,16 +2109,16 @@
       "signal_id": "error.discarded",
       "artifact": "pumps/elasticsearch.go",
       "span": {
-        "start_line": 575,
-        "end_line": 575
+        "start_line": 590,
+        "end_line": 590
       },
       "confidence": "medium",
       "tags": [
         "error_propagation"
       ],
       "message": "Discarded call result requires explicit propagation or ignore-policy evidence.",
-      "fingerprint": "sha256:b68524411de886fbb543144d7e11fce78a8a179e9e84d8453dfae7dfd552b00b",
-      "source_hash": "sha256:bed01de375baec71c5054532e66cd43659c128ab3bb96b697da84fb3b8b8ba8e"
+      "fingerprint": "sha256:e8dad6af59d5d456078967de7fb835840a18c7b2a6f19c77bbf14afbf5cacbc7",
+      "source_hash": "sha256:a7e726c4b44bd87ac1b0c5276b71dbc03f24f9ad66c79d24956cc4a6796eea20"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -2116,16 +2127,16 @@
       "signal_id": "error.discarded",
       "artifact": "pumps/elasticsearch.go",
       "span": {
-        "start_line": 614,
-        "end_line": 614
+        "start_line": 641,
+        "end_line": 641
       },
       "confidence": "medium",
       "tags": [
         "error_propagation"
       ],
       "message": "Discarded call result requires explicit propagation or ignore-policy evidence.",
-      "fingerprint": "sha256:30e21e1d5cb25c6e7f43272b892ca5d1f3969481ee6415fb935914f2eab06745",
-      "source_hash": "sha256:bed01de375baec71c5054532e66cd43659c128ab3bb96b697da84fb3b8b8ba8e"
+      "fingerprint": "sha256:734d1923b7ecdc36ee5f6134d5893b42e728a3f4b66463ae91f71dca4402ca93",
+      "source_hash": "sha256:a7e726c4b44bd87ac1b0c5276b71dbc03f24f9ad66c79d24956cc4a6796eea20"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -2134,16 +2145,16 @@
       "signal_id": "error.discarded",
       "artifact": "pumps/elasticsearch.go",
       "span": {
-        "start_line": 657,
-        "end_line": 657
+        "start_line": 696,
+        "end_line": 696
       },
       "confidence": "medium",
       "tags": [
         "error_propagation"
       ],
       "message": "Discarded call result requires explicit propagation or ignore-policy evidence.",
-      "fingerprint": "sha256:a51c47e803055313d31925fb5060e98a02887a82a697ee9483a87a4b3b17a414",
-      "source_hash": "sha256:bed01de375baec71c5054532e66cd43659c128ab3bb96b697da84fb3b8b8ba8e"
+      "fingerprint": "sha256:32fbc52ecb4f70491b712859190f9907651315aa0c4ad8fb38d90e8d5c3694fa",
+      "source_hash": "sha256:a7e726c4b44bd87ac1b0c5276b71dbc03f24f9ad66c79d24956cc4a6796eea20"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -2165,7 +2176,7 @@
       ],
       "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
       "fingerprint": "sha256:48212fdbdd41118eb4e95bb1895b0a123960521b9410b999d5f7de9ac07aeac0",
-      "source_hash": "sha256:ea0d01bc2cf1958e2c42d69e4a0eaf07bfe686af6b41d65a8a3b46ef2c01e008"
+      "source_hash": "sha256:7a787f75a436d28eddd26b9a1d01e23ec1a7d565530f4a01639be602b4cc20ba"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -2187,7 +2198,7 @@
       ],
       "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
       "fingerprint": "sha256:9cc69a89c1536912b4732a4ce54ab7c73bc15f282746901a9f2d31a18bbe3f10",
-      "source_hash": "sha256:ea0d01bc2cf1958e2c42d69e4a0eaf07bfe686af6b41d65a8a3b46ef2c01e008"
+      "source_hash": "sha256:7a787f75a436d28eddd26b9a1d01e23ec1a7d565530f4a01639be602b4cc20ba"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -2209,7 +2220,7 @@
       ],
       "message": "Function receives a context.Context parameter but creates a fresh\ncontext.Background() / context.TODO() inside the body and uses that\ninstead. Caller deadlines and cancellation can be silently dropped.\n",
       "fingerprint": "sha256:55dc12c983199ef13edde6740c09882c21c1fc72cd9d9b9bb27158167657204b",
-      "source_hash": "sha256:ea0d01bc2cf1958e2c42d69e4a0eaf07bfe686af6b41d65a8a3b46ef2c01e008"
+      "source_hash": "sha256:7a787f75a436d28eddd26b9a1d01e23ec1a7d565530f4a01639be602b4cc20ba"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -2230,7 +2241,7 @@
       ],
       "message": "Goroutine spawn requires lifecycle, cancellation, and shutdown ownership evidence.",
       "fingerprint": "sha256:83342683e28f9e0aa31ff0b10632507dad235e9ee8c0d49313876c09bb997245",
-      "source_hash": "sha256:ea0d01bc2cf1958e2c42d69e4a0eaf07bfe686af6b41d65a8a3b46ef2c01e008"
+      "source_hash": "sha256:7a787f75a436d28eddd26b9a1d01e23ec1a7d565530f4a01639be602b4cc20ba"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -2252,7 +2263,7 @@
       ],
       "message": "Loop-backed goroutine launched without a deferred recover at the top of\nits body. A panic in a long-lived worker goroutine cannot be caught by\nthe launching frame and will crash the process.\n",
       "fingerprint": "sha256:2bd45172726f6c49220dccf0a62e559d2f2e28d93eb4c574280fe13dd496b06a",
-      "source_hash": "sha256:ea0d01bc2cf1958e2c42d69e4a0eaf07bfe686af6b41d65a8a3b46ef2c01e008"
+      "source_hash": "sha256:7a787f75a436d28eddd26b9a1d01e23ec1a7d565530f4a01639be602b4cc20ba"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -2273,7 +2284,7 @@
       ],
       "message": "Channel communication requires blocking, cancellation, and ownership evidence.",
       "fingerprint": "sha256:14de0d02c106047eada85ac05c0a91a8722d3d35f50cf2f6755337d25cea79ae",
-      "source_hash": "sha256:ea0d01bc2cf1958e2c42d69e4a0eaf07bfe686af6b41d65a8a3b46ef2c01e008"
+      "source_hash": "sha256:7a787f75a436d28eddd26b9a1d01e23ec1a7d565530f4a01639be602b4cc20ba"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -2294,7 +2305,7 @@
       ],
       "message": "Channel send without select guard on context; may block forever if receiver goroutine exits.",
       "fingerprint": "sha256:6b4211a083f0eb7f65a4351983d44e57da8d7ecff766ebf9f7568241ae35780d",
-      "source_hash": "sha256:ea0d01bc2cf1958e2c42d69e4a0eaf07bfe686af6b41d65a8a3b46ef2c01e008"
+      "source_hash": "sha256:7a787f75a436d28eddd26b9a1d01e23ec1a7d565530f4a01639be602b4cc20ba"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -2315,7 +2326,7 @@
       ],
       "message": "Channel communication requires blocking, cancellation, and ownership evidence.",
       "fingerprint": "sha256:8fa7063cbde8e3a811639d54b702d90f817fe921b2ca67421f86a60963b97efa",
-      "source_hash": "sha256:ea0d01bc2cf1958e2c42d69e4a0eaf07bfe686af6b41d65a8a3b46ef2c01e008"
+      "source_hash": "sha256:7a787f75a436d28eddd26b9a1d01e23ec1a7d565530f4a01639be602b4cc20ba"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -2336,7 +2347,7 @@
       ],
       "message": "Channel send without select guard on context; may block forever if receiver goroutine exits.",
       "fingerprint": "sha256:083ce90037e8228f37547f07b63bb9d3d5e6fa987471b95fae777e7bbeaaebc9",
-      "source_hash": "sha256:ea0d01bc2cf1958e2c42d69e4a0eaf07bfe686af6b41d65a8a3b46ef2c01e008"
+      "source_hash": "sha256:7a787f75a436d28eddd26b9a1d01e23ec1a7d565530f4a01639be602b4cc20ba"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -2357,7 +2368,7 @@
       ],
       "message": "Channel communication requires blocking, cancellation, and ownership evidence.",
       "fingerprint": "sha256:736ea54e514b548cf32ec91b624c46ff6b8f187af08a48cdeb3dcd5049c9a370",
-      "source_hash": "sha256:ea0d01bc2cf1958e2c42d69e4a0eaf07bfe686af6b41d65a8a3b46ef2c01e008"
+      "source_hash": "sha256:7a787f75a436d28eddd26b9a1d01e23ec1a7d565530f4a01639be602b4cc20ba"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -2378,7 +2389,7 @@
       ],
       "message": "Channel send without select guard on context; may block forever if receiver goroutine exits.",
       "fingerprint": "sha256:54effc4c71d2c83d9cb7adf3b584c6a42814657079280786ec5aa9a139df752e",
-      "source_hash": "sha256:ea0d01bc2cf1958e2c42d69e4a0eaf07bfe686af6b41d65a8a3b46ef2c01e008"
+      "source_hash": "sha256:7a787f75a436d28eddd26b9a1d01e23ec1a7d565530f4a01639be602b4cc20ba"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -2400,7 +2411,7 @@
       ],
       "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
       "fingerprint": "sha256:5ea6a86181a470598136bdfebc1529309804d8252b42e3f9895f09351aaa3e71",
-      "source_hash": "sha256:0c0b86faafd08711b4094b80074720dcbbb927b022aec5d221671edf51b1c1ad"
+      "source_hash": "sha256:16d92c2248d22bdde4e691c7cf605ff5a68b9d76bf9b0bb3f470fa7fa539d38d"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -2422,7 +2433,7 @@
       ],
       "message": "Code routes records into per-day SQL tables (`tyk_aggregated_YYYYMMDD`\nshape) based on the wall-clock instant of the record. Two failure\nmodes: (a) the window boundary is interpreted half-open in one path\nand closed in another, so a single record either lands in two shards\nor none; (b) records arriving after a DST or clock-skew event get\nrouted to a stale shard, breaking range queries. The sharding\nfunction must declare its boundary semantics (UTC-day, [start, end)\nhalf-open) and a Validate step must enforce that the chosen instant\nmaps to exactly one shard.\n",
       "fingerprint": "sha256:3e3defc71e270f173f4172bc0a31de4bef62b97cb05c486468b54c43baf4fbd0",
-      "source_hash": "sha256:0c0b86faafd08711b4094b80074720dcbbb927b022aec5d221671edf51b1c1ad"
+      "source_hash": "sha256:16d92c2248d22bdde4e691c7cf605ff5a68b9d76bf9b0bb3f470fa7fa539d38d"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -2444,7 +2455,7 @@
       ],
       "message": "A for loop uses a struct field as its stride: `for i := 0; i \u003c N; i +=\ncfg.BatchSize`, OR a shrink-loop uses a parameter as its slice step:\n`for batchSize \u003c len(s) { s = s[batchSize:] ... }`. When the field /\nparameter is zero (default-constructed config, missing YAML key,\nmisconfigured caller) the loop hangs the goroutine forever and produces\nno observable failure. Validate the field at init time and substitute a\nnon-zero default, OR guard the loop with `if cfg.BatchSize == 0 {\ncfg.BatchSize = N }` immediately before the loop.\n",
       "fingerprint": "sha256:0040cb617bf6fe2de9283a7df5d230ff278b9097059ba95a7d36297ed3e06d2b",
-      "source_hash": "sha256:0c0b86faafd08711b4094b80074720dcbbb927b022aec5d221671edf51b1c1ad"
+      "source_hash": "sha256:16d92c2248d22bdde4e691c7cf605ff5a68b9d76bf9b0bb3f470fa7fa539d38d"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -2466,7 +2477,7 @@
       ],
       "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
       "fingerprint": "sha256:e752d9d20548cd454b3cca96e4cff3f102797c6c36f6fd25b2c4aac8e415094a",
-      "source_hash": "sha256:47c5ce1962a7b2667acb5e38685a18fe402b522d52e7a3e42871142147b2a2ad"
+      "source_hash": "sha256:9bc8e3b20a271aaf9545b01b0dcd32833c0f57b448f5c6483781256905856cd6"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -2488,7 +2499,7 @@
       ],
       "message": "Code routes records into per-day SQL tables (`tyk_aggregated_YYYYMMDD`\nshape) based on the wall-clock instant of the record. Two failure\nmodes: (a) the window boundary is interpreted half-open in one path\nand closed in another, so a single record either lands in two shards\nor none; (b) records arriving after a DST or clock-skew event get\nrouted to a stale shard, breaking range queries. The sharding\nfunction must declare its boundary semantics (UTC-day, [start, end)\nhalf-open) and a Validate step must enforce that the chosen instant\nmaps to exactly one shard.\n",
       "fingerprint": "sha256:2fe90f15b87b0da5393603fc3415cf4a4dc4a44389a2cc292c136db15b7d6944",
-      "source_hash": "sha256:47c5ce1962a7b2667acb5e38685a18fe402b522d52e7a3e42871142147b2a2ad"
+      "source_hash": "sha256:9bc8e3b20a271aaf9545b01b0dcd32833c0f57b448f5c6483781256905856cd6"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -2510,7 +2521,7 @@
       ],
       "message": "A for loop uses a struct field as its stride: `for i := 0; i \u003c N; i +=\ncfg.BatchSize`, OR a shrink-loop uses a parameter as its slice step:\n`for batchSize \u003c len(s) { s = s[batchSize:] ... }`. When the field /\nparameter is zero (default-constructed config, missing YAML key,\nmisconfigured caller) the loop hangs the goroutine forever and produces\nno observable failure. Validate the field at init time and substitute a\nnon-zero default, OR guard the loop with `if cfg.BatchSize == 0 {\ncfg.BatchSize = N }` immediately before the loop.\n",
       "fingerprint": "sha256:4e472f2c43e193d8ab2b4a45bd3843450dac9ed079321560d9d2e970cf7eec19",
-      "source_hash": "sha256:47c5ce1962a7b2667acb5e38685a18fe402b522d52e7a3e42871142147b2a2ad"
+      "source_hash": "sha256:9bc8e3b20a271aaf9545b01b0dcd32833c0f57b448f5c6483781256905856cd6"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -2532,7 +2543,7 @@
       ],
       "message": "log.Fatal / os.Exit called from a non-main constructor or processing function.\nThis aborts the entire process and bypasses caller error handling; return\nan error instead so the caller can recover.\n",
       "fingerprint": "sha256:fb96b0aa5bceb2d09e2a6587d304edf13a287eb3946ec758b0b05e593e3e60f7",
-      "source_hash": "sha256:d4ac79aaaac8b06f3f2700b41cde84cc3614601a29fe9bfd1411ef60f091a95d"
+      "source_hash": "sha256:3267a8647738fa57f0916b61339bd61edc4cf6e311bc96fdf21cbab6b9dfe421"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -2555,7 +2566,7 @@
       ],
       "message": "A pump's `Init(config)` method calls `log.Fatal(...)` on a config\ndecode or connection failure. log.Fatal calls os.Exit(1), bypassing\nevery deferred cleanup AND every sibling pump's chance to keep\nworking. A single misconfigured pump in a multi-pump deployment\ntakes down the whole process. Either return the error to the caller\n(the pump-init driver should decide whether the failure is fatal\nfor the WHOLE process, or just for THIS pump), or recover into a\ndegraded \"this pump is inert\" mode while others continue.\n",
       "fingerprint": "sha256:2965b64fb7def332ed72620e8485cec46bdd9ec1879ce90014b2280be3429ac1",
-      "source_hash": "sha256:d4ac79aaaac8b06f3f2700b41cde84cc3614601a29fe9bfd1411ef60f091a95d"
+      "source_hash": "sha256:3267a8647738fa57f0916b61339bd61edc4cf6e311bc96fdf21cbab6b9dfe421"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -2577,7 +2588,7 @@
       ],
       "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
       "fingerprint": "sha256:40dc159091074101f01e06a3c074c4e4bc818822a3eec18e5fd19d7c83f0717d",
-      "source_hash": "sha256:d4ac79aaaac8b06f3f2700b41cde84cc3614601a29fe9bfd1411ef60f091a95d"
+      "source_hash": "sha256:3267a8647738fa57f0916b61339bd61edc4cf6e311bc96fdf21cbab6b9dfe421"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -2599,7 +2610,7 @@
       ],
       "message": "log.Fatal / os.Exit called from a non-main constructor or processing function.\nThis aborts the entire process and bypasses caller error handling; return\nan error instead so the caller can recover.\n",
       "fingerprint": "sha256:74bc02deddfc293f84d94de697f8a8203970b328c354e1534ba342cd5b4a0817",
-      "source_hash": "sha256:d4ac79aaaac8b06f3f2700b41cde84cc3614601a29fe9bfd1411ef60f091a95d"
+      "source_hash": "sha256:3267a8647738fa57f0916b61339bd61edc4cf6e311bc96fdf21cbab6b9dfe421"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -2621,7 +2632,7 @@
       ],
       "message": "A method invokes itself recursively but the result is discarded — the\ncall is not prefixed with `return` and not captured into a variable.\nExecution falls through to the original code path after the recursive\ncall completes, so any work performed by the inner call is duplicated\n(the outer frame then runs the same loop a second time). Idiomatic\nrecursion uses `return r.MethodName(...)`.\n",
       "fingerprint": "sha256:7478cded38efa3e8e760d73e1158e2a2254fcdf02988bfc63559a447fa9b9b19",
-      "source_hash": "sha256:d4ac79aaaac8b06f3f2700b41cde84cc3614601a29fe9bfd1411ef60f091a95d"
+      "source_hash": "sha256:3267a8647738fa57f0916b61339bd61edc4cf6e311bc96fdf21cbab6b9dfe421"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -2644,7 +2655,7 @@
       ],
       "message": "Code wraps an operation with `backoff.RetryNotify(fn,\nbackoff.WithMaxRetries(backoff.NewExponentialBackOff(), N))`. The\nmax-retries count bounds the number of attempts but NOT the wall-clock\ntime spent — at default exponential growth (initial 500ms, multiplier\n1.5, max-interval 1 minute) N=3 can take up to 90 seconds but N=10\ncan take over 15 minutes. A purge loop running at a 1-second interval\nthat retries for 15 minutes accumulates 900 missed purge slots; the\nnext successful purge is now flushing a saturated upstream. Bound the\nretry budget with an absolute deadline (`backoff.WithContext(ctx,...)`,\n`MaxElapsedTime`) so retries do not consume the whole interval.\n",
       "fingerprint": "sha256:ccbdcc9fc4e74462c9ad44d73709dbdd36ed267a05cfabc7ca2cefffc3c0b1f6",
-      "source_hash": "sha256:8cc6cd2d50341814886b9bf6c69c93906ee990d5b5e37e166f2d16dc6813f754"
+      "source_hash": "sha256:101b7105d0f1f9d8fbb949587451294d6ae455d1b5d4e4af1823a3bada6b8af3"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -2667,7 +2678,7 @@
       ],
       "message": "Code wraps an operation with `backoff.RetryNotify(fn,\nbackoff.WithMaxRetries(backoff.NewExponentialBackOff(), N))`. The\nmax-retries count bounds the number of attempts but NOT the wall-clock\ntime spent — at default exponential growth (initial 500ms, multiplier\n1.5, max-interval 1 minute) N=3 can take up to 90 seconds but N=10\ncan take over 15 minutes. A purge loop running at a 1-second interval\nthat retries for 15 minutes accumulates 900 missed purge slots; the\nnext successful purge is now flushing a saturated upstream. Bound the\nretry budget with an absolute deadline (`backoff.WithContext(ctx,...)`,\n`MaxElapsedTime`) so retries do not consume the whole interval.\n",
       "fingerprint": "sha256:37f625089d6d08a9e1ebe4da6a916a195292f8e1cc13e385689b0960a386ffdd",
-      "source_hash": "sha256:8cc6cd2d50341814886b9bf6c69c93906ee990d5b5e37e166f2d16dc6813f754"
+      "source_hash": "sha256:101b7105d0f1f9d8fbb949587451294d6ae455d1b5d4e4af1823a3bada6b8af3"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -2689,7 +2700,7 @@
       ],
       "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
       "fingerprint": "sha256:c23a999af99d072b7039a6b766287601e297968ea12bd6ea7658384dec998ea0",
-      "source_hash": "sha256:8cc6cd2d50341814886b9bf6c69c93906ee990d5b5e37e166f2d16dc6813f754"
+      "source_hash": "sha256:101b7105d0f1f9d8fbb949587451294d6ae455d1b5d4e4af1823a3bada6b8af3"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -2712,7 +2723,7 @@
       ],
       "message": "A TLS client config sets `InsecureSkipVerify: p.SSLInsecureSkipVerify`\nfrom a config struct. The field is reachable from operator YAML\nwith no audit trail — a single misconfiguration disables certificate\nvalidation across the deployment, MITM becomes trivially possible,\nand there is no runtime warning. Either restrict the flag to an\nexplicit \"development mode\" that emits a startup WARN, or require a\npaired `RootCAs` override so skipping verification AND ignoring the\nsystem trust store cannot both happen by default.\n",
       "fingerprint": "sha256:81f3b69fa0c8c8684bedfc0001874cd4edfd6e0f84eba4a0dde816e70fa871c8",
-      "source_hash": "sha256:8cc6cd2d50341814886b9bf6c69c93906ee990d5b5e37e166f2d16dc6813f754"
+      "source_hash": "sha256:101b7105d0f1f9d8fbb949587451294d6ae455d1b5d4e4af1823a3bada6b8af3"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -2735,7 +2746,7 @@
       ],
       "message": "A TLS client config sets `InsecureSkipVerify: p.hybridConfig.SSLInsecureSkipVerify`\nfrom a config struct. The field is reachable from operator YAML\nwith no audit trail — a single misconfiguration disables certificate\nvalidation across the deployment, MITM becomes trivially possible,\nand there is no runtime warning. Either restrict the flag to an\nexplicit \"development mode\" that emits a startup WARN, or require a\npaired `RootCAs` override so skipping verification AND ignoring the\nsystem trust store cannot both happen by default.\n",
       "fingerprint": "sha256:8b40f484934932766da3e3d0e543bc91e43776fc85451df8d5e0da5dd57352b1",
-      "source_hash": "sha256:8cc6cd2d50341814886b9bf6c69c93906ee990d5b5e37e166f2d16dc6813f754"
+      "source_hash": "sha256:101b7105d0f1f9d8fbb949587451294d6ae455d1b5d4e4af1823a3bada6b8af3"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -2753,13 +2764,13 @@
       ],
       "message": "Discarded call result requires explicit propagation or ignore-policy evidence.",
       "fingerprint": "sha256:e360dfadc7fad18d231b70d9f3e3b359568f10443bd37f00718aa093872973e3",
-      "source_hash": "sha256:8cc6cd2d50341814886b9bf6c69c93906ee990d5b5e37e166f2d16dc6813f754"
+      "source_hash": "sha256:101b7105d0f1f9d8fbb949587451294d6ae455d1b5d4e4af1823a3bada6b8af3"
     },
     {
       "schema_version": "proof.code_signals.v1",
       "provider": "opengrep",
       "provider_rule_id": "go.dial-return-without-close",
-      "signal_id": "network.dial_return_without_close",
+      "signal_id": "tyk_pump.dial_return_without_close_tuned",
       "artifact": "pumps/hybrid.go",
       "span": {
         "start_line": 234,
@@ -2775,13 +2786,13 @@
       ],
       "message": "A net.Conn returned by a custom dialer (closure-shaped, where conn IS\nthe success-return value) writes a setup payload in a loop. The\nWrite's error arm returns `(nil, err)` without first calling\n`conn.Close()`. The connection (and its socket / FD / TLS session)\nleaks. Add `defer conn.Close()` immediately after the successful dial,\nOR an explicit Close() before the return-on-error in the loop.\n",
       "fingerprint": "sha256:43159208eef007c22115240d73d1456cd6a6c8fdd9534d3db923eae26619d829",
-      "source_hash": "sha256:8cc6cd2d50341814886b9bf6c69c93906ee990d5b5e37e166f2d16dc6813f754"
+      "source_hash": "sha256:101b7105d0f1f9d8fbb949587451294d6ae455d1b5d4e4af1823a3bada6b8af3"
     },
     {
       "schema_version": "proof.code_signals.v1",
       "provider": "opengrep",
       "provider_rule_id": "go.dial-return-without-close",
-      "signal_id": "network.dial_return_without_close",
+      "signal_id": "tyk_pump.dial_return_without_close_tuned",
       "artifact": "pumps/hybrid.go",
       "span": {
         "start_line": 234,
@@ -2797,7 +2808,7 @@
       ],
       "message": "A net.Conn returned by a custom dialer (closure-shaped, where conn IS\nthe success-return value) writes a setup payload in a loop. The\nWrite's error arm returns `(nil, err)` without first calling\n`conn.Close()`. The connection (and its socket / FD / TLS session)\nleaks. Add `defer conn.Close()` immediately after the successful dial,\nOR explicit Close() before the return-on-error in the loop.\n",
       "fingerprint": "sha256:a9bef743ee34e75be42eb5990445bf839aefe7ea490880a8fe32ba69440898c1",
-      "source_hash": "sha256:8cc6cd2d50341814886b9bf6c69c93906ee990d5b5e37e166f2d16dc6813f754"
+      "source_hash": "sha256:101b7105d0f1f9d8fbb949587451294d6ae455d1b5d4e4af1823a3bada6b8af3"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -2820,7 +2831,7 @@
       ],
       "message": "A TLS client config sets `InsecureSkipVerify: config.SSLInsecureSkipVerify`\nfrom a config struct. The field is reachable from operator YAML\nwith no audit trail — a single misconfiguration disables certificate\nvalidation across the deployment, MITM becomes trivially possible,\nand there is no runtime warning. Either restrict the flag to an\nexplicit \"development mode\" that emits a startup WARN, or require a\npaired `RootCAs` override so skipping verification AND ignoring the\nsystem trust store cannot both happen by default.\n",
       "fingerprint": "sha256:4f932290ff543473516124f08867c198bc03bb1310cbb6ac25b3640ec2d6f584",
-      "source_hash": "sha256:8cc6cd2d50341814886b9bf6c69c93906ee990d5b5e37e166f2d16dc6813f754"
+      "source_hash": "sha256:101b7105d0f1f9d8fbb949587451294d6ae455d1b5d4e4af1823a3bada6b8af3"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -2838,7 +2849,7 @@
       ],
       "message": "Discarded call result requires explicit propagation or ignore-policy evidence.",
       "fingerprint": "sha256:6d0ae7df642a50fe53ec57af8cf93dedb5e609503cdda7575365d23b531a6b99",
-      "source_hash": "sha256:8cc6cd2d50341814886b9bf6c69c93906ee990d5b5e37e166f2d16dc6813f754"
+      "source_hash": "sha256:101b7105d0f1f9d8fbb949587451294d6ae455d1b5d4e4af1823a3bada6b8af3"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -2856,7 +2867,7 @@
       ],
       "message": "Discarded call result requires explicit propagation or ignore-policy evidence.",
       "fingerprint": "sha256:d3af2fc63a373ab5c7986923d19fe89fc825e37384ed8bd4fe07e6b37292cfcf",
-      "source_hash": "sha256:8cc6cd2d50341814886b9bf6c69c93906ee990d5b5e37e166f2d16dc6813f754"
+      "source_hash": "sha256:101b7105d0f1f9d8fbb949587451294d6ae455d1b5d4e4af1823a3bada6b8af3"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -2874,7 +2885,7 @@
       ],
       "message": "Discarded call result requires explicit propagation or ignore-policy evidence.",
       "fingerprint": "sha256:f2aa221dc28a982fecd5c1726956150530925bd3b32cd06520b87da396d70e71",
-      "source_hash": "sha256:8cc6cd2d50341814886b9bf6c69c93906ee990d5b5e37e166f2d16dc6813f754"
+      "source_hash": "sha256:101b7105d0f1f9d8fbb949587451294d6ae455d1b5d4e4af1823a3bada6b8af3"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -2892,7 +2903,7 @@
       ],
       "message": "Discarded call result requires explicit propagation or ignore-policy evidence.",
       "fingerprint": "sha256:ece05996be3c61c641468b0ad19a0ed72bc3496f1214dbd499686f833b70b05b",
-      "source_hash": "sha256:8cc6cd2d50341814886b9bf6c69c93906ee990d5b5e37e166f2d16dc6813f754"
+      "source_hash": "sha256:101b7105d0f1f9d8fbb949587451294d6ae455d1b5d4e4af1823a3bada6b8af3"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -2914,7 +2925,7 @@
       ],
       "message": "log.Fatal / os.Exit called from a non-main constructor or processing function.\nThis aborts the entire process and bypasses caller error handling; return\nan error instead so the caller can recover.\n",
       "fingerprint": "sha256:d8a1f4c07ec6894b7cffa3a9ec8140a16c0c2cb5384114566b815f60c83091e6",
-      "source_hash": "sha256:bbe0135ad0220ffc276cbe49191da29c24d7fc4814b4366079993f79fb3a250e"
+      "source_hash": "sha256:e4d4359346eb73edc33f13fece0f5b690b051da3038043da90807e145ad8dcbe"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -2937,7 +2948,7 @@
       ],
       "message": "A pump's `Init(config)` method calls `log.Fatal(...)` on a config\ndecode or connection failure. log.Fatal calls os.Exit(1), bypassing\nevery deferred cleanup AND every sibling pump's chance to keep\nworking. A single misconfigured pump in a multi-pump deployment\ntakes down the whole process. Either return the error to the caller\n(the pump-init driver should decide whether the failure is fatal\nfor the WHOLE process, or just for THIS pump), or recover into a\ndegraded \"this pump is inert\" mode while others continue.\n",
       "fingerprint": "sha256:a6b0daad3cf96ddbe3c821f43186558a0ee15a184cda6339bc66724ca549a741",
-      "source_hash": "sha256:bbe0135ad0220ffc276cbe49191da29c24d7fc4814b4366079993f79fb3a250e"
+      "source_hash": "sha256:e4d4359346eb73edc33f13fece0f5b690b051da3038043da90807e145ad8dcbe"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -2959,7 +2970,7 @@
       ],
       "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
       "fingerprint": "sha256:640c0eb7fb1f5ab37111734a5d0f6ebca990a2cb10c2ac137748884f30c98086",
-      "source_hash": "sha256:bbe0135ad0220ffc276cbe49191da29c24d7fc4814b4366079993f79fb3a250e"
+      "source_hash": "sha256:e4d4359346eb73edc33f13fece0f5b690b051da3038043da90807e145ad8dcbe"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -2981,7 +2992,7 @@
       ],
       "message": "Function calls itself recursively after a sleep on the error arm with\nno retry counter, max-attempt guard, or context-deadline check. Sustained\nfailure can grow the goroutine stack without bound.\n",
       "fingerprint": "sha256:dbd2c2c2cb09e756c4b477f68213d65da5da2b77b72938df03b23519d93cac72",
-      "source_hash": "sha256:bbe0135ad0220ffc276cbe49191da29c24d7fc4814b4366079993f79fb3a250e"
+      "source_hash": "sha256:e4d4359346eb73edc33f13fece0f5b690b051da3038043da90807e145ad8dcbe"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -2999,7 +3010,7 @@
       ],
       "message": "Time-dependent behavior requires determinism, timeout, or scheduling evidence.",
       "fingerprint": "sha256:dc57c08c6f8923a6651d41a87ad49c74af85f9f66c33cecb24119a0b30773b7c",
-      "source_hash": "sha256:bbe0135ad0220ffc276cbe49191da29c24d7fc4814b4366079993f79fb3a250e"
+      "source_hash": "sha256:e4d4359346eb73edc33f13fece0f5b690b051da3038043da90807e145ad8dcbe"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -3017,7 +3028,7 @@
       ],
       "message": "Discarded call result requires explicit propagation or ignore-policy evidence.",
       "fingerprint": "sha256:06e6e0c05d91639239a444db3853ca752341031fa38182fd695caf601c3f6fac",
-      "source_hash": "sha256:bbe0135ad0220ffc276cbe49191da29c24d7fc4814b4366079993f79fb3a250e"
+      "source_hash": "sha256:e4d4359346eb73edc33f13fece0f5b690b051da3038043da90807e145ad8dcbe"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -3035,7 +3046,7 @@
       ],
       "message": "Time-dependent behavior requires determinism, timeout, or scheduling evidence.",
       "fingerprint": "sha256:9e535422951c8d1250a5b18f942385d47ef4540fb62feff7089f7a29cf40cf37",
-      "source_hash": "sha256:bbe0135ad0220ffc276cbe49191da29c24d7fc4814b4366079993f79fb3a250e"
+      "source_hash": "sha256:e4d4359346eb73edc33f13fece0f5b690b051da3038043da90807e145ad8dcbe"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -3057,7 +3068,7 @@
       ],
       "message": "log.Fatal / os.Exit called from a non-main constructor or processing function.\nThis aborts the entire process and bypasses caller error handling; return\nan error instead so the caller can recover.\n",
       "fingerprint": "sha256:582bc899b34cc112e37fd7463b5665759d0e89d2d75aee54b7178e748fb3c8fc",
-      "source_hash": "sha256:201b7fe17623ec209c136144e867e5c9994eb3999bc8e8f041ef61040f72520d"
+      "source_hash": "sha256:6ae1cf74fc76fdf8c55eaf8d15a5eeaa2f0fac54a448e4894cb2b320e5786af5"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -3080,7 +3091,7 @@
       ],
       "message": "A pump's `Init(config)` method calls `log.Fatal(...)` on a config\ndecode or connection failure. log.Fatal calls os.Exit(1), bypassing\nevery deferred cleanup AND every sibling pump's chance to keep\nworking. A single misconfigured pump in a multi-pump deployment\ntakes down the whole process. Either return the error to the caller\n(the pump-init driver should decide whether the failure is fatal\nfor the WHOLE process, or just for THIS pump), or recover into a\ndegraded \"this pump is inert\" mode while others continue.\n",
       "fingerprint": "sha256:fa9413a9d82df21a56590642a77c0b20e4bff739884c17302c5231d1978b47a9",
-      "source_hash": "sha256:201b7fe17623ec209c136144e867e5c9994eb3999bc8e8f041ef61040f72520d"
+      "source_hash": "sha256:6ae1cf74fc76fdf8c55eaf8d15a5eeaa2f0fac54a448e4894cb2b320e5786af5"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -3102,7 +3113,7 @@
       ],
       "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
       "fingerprint": "sha256:d3e9e4cc1abf0fc12cac69d4256f383de9d94b636ea6183eb4eccf056e785b15",
-      "source_hash": "sha256:201b7fe17623ec209c136144e867e5c9994eb3999bc8e8f041ef61040f72520d"
+      "source_hash": "sha256:6ae1cf74fc76fdf8c55eaf8d15a5eeaa2f0fac54a448e4894cb2b320e5786af5"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -3120,7 +3131,7 @@
       ],
       "message": "Discarded call result requires explicit propagation or ignore-policy evidence.",
       "fingerprint": "sha256:205b01c1dfa84cbf7b89729e59d30c98aca740830d6dbffa7354d1f42e77c4a3",
-      "source_hash": "sha256:201b7fe17623ec209c136144e867e5c9994eb3999bc8e8f041ef61040f72520d"
+      "source_hash": "sha256:6ae1cf74fc76fdf8c55eaf8d15a5eeaa2f0fac54a448e4894cb2b320e5786af5"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -3138,7 +3149,7 @@
       ],
       "message": "Close result is ignored; require explicit propagation or documented close-error policy.",
       "fingerprint": "sha256:b66da896420f747acaa6bdd415265bab75664fe28ca2208c05ffb4b588719d30",
-      "source_hash": "sha256:201b7fe17623ec209c136144e867e5c9994eb3999bc8e8f041ef61040f72520d"
+      "source_hash": "sha256:6ae1cf74fc76fdf8c55eaf8d15a5eeaa2f0fac54a448e4894cb2b320e5786af5"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -3156,7 +3167,7 @@
       ],
       "message": "Time-dependent behavior requires determinism, timeout, or scheduling evidence.",
       "fingerprint": "sha256:48165704c25d2627b6be3210e0cb3defd4739292803bf989bc5aa514ff60cebf",
-      "source_hash": "sha256:201b7fe17623ec209c136144e867e5c9994eb3999bc8e8f041ef61040f72520d"
+      "source_hash": "sha256:6ae1cf74fc76fdf8c55eaf8d15a5eeaa2f0fac54a448e4894cb2b320e5786af5"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -3178,7 +3189,7 @@
       ],
       "message": "log.Fatal / os.Exit called from a non-main constructor or processing function.\nThis aborts the entire process and bypasses caller error handling; return\nan error instead so the caller can recover.\n",
       "fingerprint": "sha256:98f3faa4ed2b07815afd6e7b2f3419b75c1025b1b5703e3cc32124c91ea6c19f",
-      "source_hash": "sha256:a24df2d59e765fc1963b11188ba2eb01adeb1618c51fdd0222c6c579a6c30299"
+      "source_hash": "sha256:d35132d63d4aea1ee2091ec9e5463dfd171b9a963d2e373d74c89357edf5d04c"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -3201,7 +3212,7 @@
       ],
       "message": "A pump's `Init(config)` method calls `log.Fatal(...)` on a config\ndecode or connection failure. log.Fatal calls os.Exit(1), bypassing\nevery deferred cleanup AND every sibling pump's chance to keep\nworking. A single misconfigured pump in a multi-pump deployment\ntakes down the whole process. Either return the error to the caller\n(the pump-init driver should decide whether the failure is fatal\nfor the WHOLE process, or just for THIS pump), or recover into a\ndegraded \"this pump is inert\" mode while others continue.\n",
       "fingerprint": "sha256:11afb67aafeec82d24e6d8a685aa652276b3a55301f3c14a5236973e3e3f31d9",
-      "source_hash": "sha256:a24df2d59e765fc1963b11188ba2eb01adeb1618c51fdd0222c6c579a6c30299"
+      "source_hash": "sha256:d35132d63d4aea1ee2091ec9e5463dfd171b9a963d2e373d74c89357edf5d04c"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -3223,7 +3234,7 @@
       ],
       "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
       "fingerprint": "sha256:42d8b6b14206e4f5662b8630b96afd5a5271103e5840ef8e9e6afd123cc51206",
-      "source_hash": "sha256:a24df2d59e765fc1963b11188ba2eb01adeb1618c51fdd0222c6c579a6c30299"
+      "source_hash": "sha256:d35132d63d4aea1ee2091ec9e5463dfd171b9a963d2e373d74c89357edf5d04c"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -3241,7 +3252,7 @@
       ],
       "message": "Environment-dependent behavior requires configuration, determinism, and deployment evidence.",
       "fingerprint": "sha256:856cb62d92bf12a0f75caea084b796635adaf15dfa069fa6e5a73bccb0396cd4",
-      "source_hash": "sha256:a24df2d59e765fc1963b11188ba2eb01adeb1618c51fdd0222c6c579a6c30299"
+      "source_hash": "sha256:d35132d63d4aea1ee2091ec9e5463dfd171b9a963d2e373d74c89357edf5d04c"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -3259,7 +3270,7 @@
       ],
       "message": "Environment-dependent behavior requires configuration, determinism, and deployment evidence.",
       "fingerprint": "sha256:8f95cfd194353dae5603cf3734e07f7526c2f5e7e77762566652c1d2aac7dde0",
-      "source_hash": "sha256:a24df2d59e765fc1963b11188ba2eb01adeb1618c51fdd0222c6c579a6c30299"
+      "source_hash": "sha256:d35132d63d4aea1ee2091ec9e5463dfd171b9a963d2e373d74c89357edf5d04c"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -3282,7 +3293,7 @@
       ],
       "message": "A TLS client config sets `InsecureSkipVerify: k.SSLInsecureSkipVerify`\nfrom a config struct. The field is reachable from operator YAML\nwith no audit trail — a single misconfiguration disables certificate\nvalidation across the deployment, MITM becomes trivially possible,\nand there is no runtime warning. Either restrict the flag to an\nexplicit \"development mode\" that emits a startup WARN, or require a\npaired `RootCAs` override so skipping verification AND ignoring the\nsystem trust store cannot both happen by default.\n",
       "fingerprint": "sha256:b7c76236d64b9383ecb25b1d79c1e58538328496449d98edf090f76bc5f25b5c",
-      "source_hash": "sha256:a24df2d59e765fc1963b11188ba2eb01adeb1618c51fdd0222c6c579a6c30299"
+      "source_hash": "sha256:d35132d63d4aea1ee2091ec9e5463dfd171b9a963d2e373d74c89357edf5d04c"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -3305,7 +3316,7 @@
       ],
       "message": "A TLS client config sets `InsecureSkipVerify: k.kafkaConf.SSLInsecureSkipVerify`\nfrom a config struct. The field is reachable from operator YAML\nwith no audit trail — a single misconfiguration disables certificate\nvalidation across the deployment, MITM becomes trivially possible,\nand there is no runtime warning. Either restrict the flag to an\nexplicit \"development mode\" that emits a startup WARN, or require a\npaired `RootCAs` override so skipping verification AND ignoring the\nsystem trust store cannot both happen by default.\n",
       "fingerprint": "sha256:f4bde24fa2570c85d76d962152a36b2260a9e54f1963d8ca79852fb0251b0a78",
-      "source_hash": "sha256:a24df2d59e765fc1963b11188ba2eb01adeb1618c51fdd0222c6c579a6c30299"
+      "source_hash": "sha256:d35132d63d4aea1ee2091ec9e5463dfd171b9a963d2e373d74c89357edf5d04c"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -3323,7 +3334,7 @@
       ],
       "message": "Time-dependent behavior requires determinism, timeout, or scheduling evidence.",
       "fingerprint": "sha256:18d66d560546ba4dea9111314b580862dbd6445370d9c06280e87782640029be",
-      "source_hash": "sha256:a24df2d59e765fc1963b11188ba2eb01adeb1618c51fdd0222c6c579a6c30299"
+      "source_hash": "sha256:d35132d63d4aea1ee2091ec9e5463dfd171b9a963d2e373d74c89357edf5d04c"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -3341,7 +3352,7 @@
       ],
       "message": "Time-dependent behavior requires determinism, timeout, or scheduling evidence.",
       "fingerprint": "sha256:047dc3ca996ac8a4a9e0b6bf626fc25a07ff8acdbd11510f6f3310289bada073",
-      "source_hash": "sha256:a24df2d59e765fc1963b11188ba2eb01adeb1618c51fdd0222c6c579a6c30299"
+      "source_hash": "sha256:d35132d63d4aea1ee2091ec9e5463dfd171b9a963d2e373d74c89357edf5d04c"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -3359,7 +3370,7 @@
       ],
       "message": "Time-dependent behavior requires determinism, timeout, or scheduling evidence.",
       "fingerprint": "sha256:2277911da7027b294d8c41e6fefc89beb6f995d6f36ca4623d3fc398cfad0964",
-      "source_hash": "sha256:a24df2d59e765fc1963b11188ba2eb01adeb1618c51fdd0222c6c579a6c30299"
+      "source_hash": "sha256:d35132d63d4aea1ee2091ec9e5463dfd171b9a963d2e373d74c89357edf5d04c"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -3381,7 +3392,7 @@
       ],
       "message": "Code measures elapsed duration with `time.Since(...)` or\n`time.Now().Sub(...)` against a wall-clock instant. On DST transitions,\nmanual clock adjustments, or NTP step events the returned Duration can\ngo negative or jump by hours, producing nonsense timings, fake SLA\nbreaches, or — when used as a loop guard — instant time-outs.\nPrefer `time.Now()` paired with a monotonic-clock-safe helper, or\nexplicitly check `d \u003c 0` and clamp.\n",
       "fingerprint": "sha256:cfb5415937b11120926d400bd75564c9560e543c882a85623de964eb1b195976",
-      "source_hash": "sha256:a24df2d59e765fc1963b11188ba2eb01adeb1618c51fdd0222c6c579a6c30299"
+      "source_hash": "sha256:d35132d63d4aea1ee2091ec9e5463dfd171b9a963d2e373d74c89357edf5d04c"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -3403,7 +3414,7 @@
       ],
       "message": "log.Fatal / os.Exit called from a non-main constructor or processing function.\nThis aborts the entire process and bypasses caller error handling; return\nan error instead so the caller can recover.\n",
       "fingerprint": "sha256:46254a24a61fa56fb4a61c76b45f8c280d0161191f2b73fd45e8a3006a1b7fcb",
-      "source_hash": "sha256:03d0ccb4d2d45c5c72fe96379297167e0f6dcdc6223fd103a455150878de6911"
+      "source_hash": "sha256:b61591b951469cebf0b153e5ccb9a6f8648f7f81ae5106d65ca686941b11d5d1"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -3426,7 +3437,7 @@
       ],
       "message": "A pump's `Init(config)` method calls `log.Fatal(...)` on a config\ndecode or connection failure. log.Fatal calls os.Exit(1), bypassing\nevery deferred cleanup AND every sibling pump's chance to keep\nworking. A single misconfigured pump in a multi-pump deployment\ntakes down the whole process. Either return the error to the caller\n(the pump-init driver should decide whether the failure is fatal\nfor the WHOLE process, or just for THIS pump), or recover into a\ndegraded \"this pump is inert\" mode while others continue.\n",
       "fingerprint": "sha256:7257061730fcfdd8fb4a059e180f0a51fd5dcf46826250637ed49d33e34f72a4",
-      "source_hash": "sha256:03d0ccb4d2d45c5c72fe96379297167e0f6dcdc6223fd103a455150878de6911"
+      "source_hash": "sha256:b61591b951469cebf0b153e5ccb9a6f8648f7f81ae5106d65ca686941b11d5d1"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -3448,7 +3459,7 @@
       ],
       "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
       "fingerprint": "sha256:7799913aa22f86f2d18510595564ee940b0f9392a48c06060ddc21015e9054d0",
-      "source_hash": "sha256:03d0ccb4d2d45c5c72fe96379297167e0f6dcdc6223fd103a455150878de6911"
+      "source_hash": "sha256:b61591b951469cebf0b153e5ccb9a6f8648f7f81ae5106d65ca686941b11d5d1"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -3466,7 +3477,7 @@
       ],
       "message": "Discarded call result requires explicit propagation or ignore-policy evidence.",
       "fingerprint": "sha256:0a92023891e11dc0f9522c35dcedcb9620ba10ebe2ec1f6cc1c884755e57964f",
-      "source_hash": "sha256:03d0ccb4d2d45c5c72fe96379297167e0f6dcdc6223fd103a455150878de6911"
+      "source_hash": "sha256:b61591b951469cebf0b153e5ccb9a6f8648f7f81ae5106d65ca686941b11d5d1"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -3488,7 +3499,7 @@
       ],
       "message": "A for loop uses a struct field as its stride: `for i := 0; i \u003c N; i +=\ncfg.BatchSize`, OR a shrink-loop uses a parameter as its slice step:\n`for batchSize \u003c len(s) { s = s[batchSize:] ... }`. When the field /\nparameter is zero (default-constructed config, missing YAML key,\nmisconfigured caller) the loop hangs the goroutine forever and produces\nno observable failure. Validate the field at init time and substitute a\nnon-zero default, OR guard the loop with `if cfg.BatchSize == 0 {\ncfg.BatchSize = N }` immediately before the loop.\n",
       "fingerprint": "sha256:52576bc78616fc9546aa8caa33fa4fbe453bd7391d94fb15ddc1bdeb55b5e5dc",
-      "source_hash": "sha256:03d0ccb4d2d45c5c72fe96379297167e0f6dcdc6223fd103a455150878de6911"
+      "source_hash": "sha256:b61591b951469cebf0b153e5ccb9a6f8648f7f81ae5106d65ca686941b11d5d1"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -3506,7 +3517,7 @@
       ],
       "message": "Time-dependent behavior requires determinism, timeout, or scheduling evidence.",
       "fingerprint": "sha256:0ebe7e9f4be528bc7f9758f6d84dbfd69a08bf5821bff5fe7e07de6b892d314c",
-      "source_hash": "sha256:f5e57b8c6eaac846548d67fb0a12da0d91617ade75260f878f47354947aa4e8c"
+      "source_hash": "sha256:b912c5b3b49ac3b0ab31ffc01b97d7bb6598324c599cf776e48541fe75b2a949"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -3528,7 +3539,7 @@
       ],
       "message": "log.Fatal / os.Exit called from a non-main constructor or processing function.\nThis aborts the entire process and bypasses caller error handling; return\nan error instead so the caller can recover.\n",
       "fingerprint": "sha256:c972e42691735b98e5fc32cdc84e743f69250e7fe5db9b09480d2869e22792b8",
-      "source_hash": "sha256:f5e57b8c6eaac846548d67fb0a12da0d91617ade75260f878f47354947aa4e8c"
+      "source_hash": "sha256:b912c5b3b49ac3b0ab31ffc01b97d7bb6598324c599cf776e48541fe75b2a949"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -3551,7 +3562,7 @@
       ],
       "message": "A pump's `Init(config)` method calls `log.Fatal(...)` on a config\ndecode or connection failure. log.Fatal calls os.Exit(1), bypassing\nevery deferred cleanup AND every sibling pump's chance to keep\nworking. A single misconfigured pump in a multi-pump deployment\ntakes down the whole process. Either return the error to the caller\n(the pump-init driver should decide whether the failure is fatal\nfor the WHOLE process, or just for THIS pump), or recover into a\ndegraded \"this pump is inert\" mode while others continue.\n",
       "fingerprint": "sha256:9de0b141673cfb4aa7a03e83f8c4a9330c8e9d429f489e304184ca6f5bf5de9e",
-      "source_hash": "sha256:f5e57b8c6eaac846548d67fb0a12da0d91617ade75260f878f47354947aa4e8c"
+      "source_hash": "sha256:b912c5b3b49ac3b0ab31ffc01b97d7bb6598324c599cf776e48541fe75b2a949"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -3573,7 +3584,7 @@
       ],
       "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
       "fingerprint": "sha256:3ea2b322fb2bd65ae6026cafcc61fcff9da11d9a2e132f5463787d4740911ab8",
-      "source_hash": "sha256:f5e57b8c6eaac846548d67fb0a12da0d91617ade75260f878f47354947aa4e8c"
+      "source_hash": "sha256:b912c5b3b49ac3b0ab31ffc01b97d7bb6598324c599cf776e48541fe75b2a949"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -3595,7 +3606,7 @@
       ],
       "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
       "fingerprint": "sha256:6fc7eb953385b27195208ca9eab772965650820d7d10c2a533448d9a1648346a",
-      "source_hash": "sha256:2f2c4e6adae967675d60beb12d69831c675cebde2676742d717aa193d171a5e3"
+      "source_hash": "sha256:448aa80208d2efecbff99caa3fa92adeac166f2831fbcb63d3e9263d85e37cc7"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -3617,7 +3628,7 @@
       ],
       "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
       "fingerprint": "sha256:e6f815e0f8d9cfb2ba5a0fe60b7b86cdd36fbc521fd8878d9d5a3468d5601e5b",
-      "source_hash": "sha256:2f2c4e6adae967675d60beb12d69831c675cebde2676742d717aa193d171a5e3"
+      "source_hash": "sha256:448aa80208d2efecbff99caa3fa92adeac166f2831fbcb63d3e9263d85e37cc7"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -3638,7 +3649,7 @@
       ],
       "message": "Channel communication requires blocking, cancellation, and ownership evidence.",
       "fingerprint": "sha256:f2d133d10a74c7edfb77ff970e00cd981be8e53a23175b30fcec6a01134f925b",
-      "source_hash": "sha256:2f2c4e6adae967675d60beb12d69831c675cebde2676742d717aa193d171a5e3"
+      "source_hash": "sha256:448aa80208d2efecbff99caa3fa92adeac166f2831fbcb63d3e9263d85e37cc7"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -3659,7 +3670,7 @@
       ],
       "message": "Channel communication requires blocking, cancellation, and ownership evidence.",
       "fingerprint": "sha256:e54531cdd21f274beaf6817777d0a2e134b2690226084e636402b9e899f5fb52",
-      "source_hash": "sha256:2f2c4e6adae967675d60beb12d69831c675cebde2676742d717aa193d171a5e3"
+      "source_hash": "sha256:448aa80208d2efecbff99caa3fa92adeac166f2831fbcb63d3e9263d85e37cc7"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -3680,7 +3691,7 @@
       ],
       "message": "Goroutine spawn requires lifecycle, cancellation, and shutdown ownership evidence.",
       "fingerprint": "sha256:e731b270dca2de6bfc0f00f3b33709e2ecfddd54a4e1cd792089fa0970d24fdc",
-      "source_hash": "sha256:2f2c4e6adae967675d60beb12d69831c675cebde2676742d717aa193d171a5e3"
+      "source_hash": "sha256:448aa80208d2efecbff99caa3fa92adeac166f2831fbcb63d3e9263d85e37cc7"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -3698,7 +3709,7 @@
       ],
       "message": "Goroutine spawn lacks an obvious local lifecycle or cancellation cue.",
       "fingerprint": "sha256:2cf8ebfff6a866ba94d991bb5ffc0140d4e494676315de195cd449ecf31c26ca",
-      "source_hash": "sha256:2f2c4e6adae967675d60beb12d69831c675cebde2676742d717aa193d171a5e3"
+      "source_hash": "sha256:448aa80208d2efecbff99caa3fa92adeac166f2831fbcb63d3e9263d85e37cc7"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -3720,7 +3731,7 @@
       ],
       "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
       "fingerprint": "sha256:a1feacad8efc92a62263959e6c8b46f7431b814c61b5981d2fcbd355ab9b6a46",
-      "source_hash": "sha256:e9654c425e88a9b07ed3c299faf370703297ce9d18af76e882d23a9cfe7977a3"
+      "source_hash": "sha256:ef2a34b9d5be5767ad59b17031fb6026a1d5013da4ae215124e679f4fb1aaa6c"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -3742,7 +3753,7 @@
       ],
       "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
       "fingerprint": "sha256:bae85327791095efed4b04e9011b86c8db2028fce75e1af5af2937a6305f512f",
-      "source_hash": "sha256:e9654c425e88a9b07ed3c299faf370703297ce9d18af76e882d23a9cfe7977a3"
+      "source_hash": "sha256:ef2a34b9d5be5767ad59b17031fb6026a1d5013da4ae215124e679f4fb1aaa6c"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -3764,7 +3775,7 @@
       ],
       "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
       "fingerprint": "sha256:e63cb14ed9e51d09e97967b9de109f5d551a5f5c9c880f0c09bb3bc447fe88ad",
-      "source_hash": "sha256:dda32ac6fb6c2d7cf1306ed09a90eacaff5bbec78939ddaa7f72bf17ed9f8cf2"
+      "source_hash": "sha256:b4431893b8ca83abe52baf537dbb12d1a62418003d0e8d5863b8a9c2fff4000f"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -3786,7 +3797,7 @@
       ],
       "message": "A for loop uses a struct field as its stride: `for i := 0; i \u003c N; i +=\ncfg.BatchSize`, OR a shrink-loop uses a parameter as its slice step:\n`for batchSize \u003c len(s) { s = s[batchSize:] ... }`. When the field /\nparameter is zero (default-constructed config, missing YAML key,\nmisconfigured caller) the loop hangs the goroutine forever and produces\nno observable failure. Validate the field at init time and substitute a\nnon-zero default, OR guard the loop with `if cfg.BatchSize == 0 {\ncfg.BatchSize = N }` immediately before the loop.\n",
       "fingerprint": "sha256:9dbd0f9c1c8ad14e2a5da3e515ed79dbb3d6ffc08e3d5e25066626017bfaf655",
-      "source_hash": "sha256:dda32ac6fb6c2d7cf1306ed09a90eacaff5bbec78939ddaa7f72bf17ed9f8cf2"
+      "source_hash": "sha256:b4431893b8ca83abe52baf537dbb12d1a62418003d0e8d5863b8a9c2fff4000f"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -3808,7 +3819,7 @@
       ],
       "message": "Code routes records into per-day SQL tables (`tyk_aggregated_YYYYMMDD`\nshape) based on the wall-clock instant of the record. Two failure\nmodes: (a) the window boundary is interpreted half-open in one path\nand closed in another, so a single record either lands in two shards\nor none; (b) records arriving after a DST or clock-skew event get\nrouted to a stale shard, breaking range queries. The sharding\nfunction must declare its boundary semantics (UTC-day, [start, end)\nhalf-open) and a Validate step must enforce that the chosen instant\nmaps to exactly one shard.\n",
       "fingerprint": "sha256:607945fa33c510db0949f4b5ead899fbc9593cf9fe9537272186d67eb8100244",
-      "source_hash": "sha256:dda32ac6fb6c2d7cf1306ed09a90eacaff5bbec78939ddaa7f72bf17ed9f8cf2"
+      "source_hash": "sha256:b4431893b8ca83abe52baf537dbb12d1a62418003d0e8d5863b8a9c2fff4000f"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -3830,7 +3841,7 @@
       ],
       "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
       "fingerprint": "sha256:966340b9a3447c72e3bb535f8ace0314b0bdbdd0ae03fd101e1d7323229cbf2a",
-      "source_hash": "sha256:2c3d418cb9ea0e57f5b9408764a80849151188cb53d1ab2baa09118d0ebef391"
+      "source_hash": "sha256:09d7a3aed4565bf640779c594eca5b4453ee80b358956db16cd5ca563e4802d9"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -3848,7 +3859,7 @@
       ],
       "message": "SQL write statement is dynamically formatted; require parameterization evidence.",
       "fingerprint": "sha256:0f076b89cf4c2a67681c8d9b22b535123c7c729b039a892fb41553270cf99b08",
-      "source_hash": "sha256:2c3d418cb9ea0e57f5b9408764a80849151188cb53d1ab2baa09118d0ebef391"
+      "source_hash": "sha256:09d7a3aed4565bf640779c594eca5b4453ee80b358956db16cd5ca563e4802d9"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -3866,7 +3877,7 @@
       ],
       "message": "Database write or transaction API use requires transactional, timeout, and error-propagation evidence.",
       "fingerprint": "sha256:7f8aaf5191d8644f5fda9832949335f395466e5d051a31707d767111de091b78",
-      "source_hash": "sha256:2c3d418cb9ea0e57f5b9408764a80849151188cb53d1ab2baa09118d0ebef391"
+      "source_hash": "sha256:09d7a3aed4565bf640779c594eca5b4453ee80b358956db16cd5ca563e4802d9"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -3887,7 +3898,7 @@
       ],
       "message": "Channel communication requires blocking, cancellation, and ownership evidence.",
       "fingerprint": "sha256:30ed7e0cbdd47f966614b157ec5f865666d10cdfc2f04a2413c65e7b0a80ea61",
-      "source_hash": "sha256:2c3d418cb9ea0e57f5b9408764a80849151188cb53d1ab2baa09118d0ebef391"
+      "source_hash": "sha256:09d7a3aed4565bf640779c594eca5b4453ee80b358956db16cd5ca563e4802d9"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -3908,7 +3919,7 @@
       ],
       "message": "Goroutine spawn requires lifecycle, cancellation, and shutdown ownership evidence.",
       "fingerprint": "sha256:737c1cee5bf235be6e4f65d04f8f79b84b2d60e6190911608fdf391e8eb1e3eb",
-      "source_hash": "sha256:2c3d418cb9ea0e57f5b9408764a80849151188cb53d1ab2baa09118d0ebef391"
+      "source_hash": "sha256:09d7a3aed4565bf640779c594eca5b4453ee80b358956db16cd5ca563e4802d9"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -3926,7 +3937,7 @@
       ],
       "message": "Goroutine spawn lacks an obvious local lifecycle or cancellation cue.",
       "fingerprint": "sha256:d1eabe1073f9d31fe35541be3be42108d60b7aaab9fd6ebf4c3543b53862004e",
-      "source_hash": "sha256:2c3d418cb9ea0e57f5b9408764a80849151188cb53d1ab2baa09118d0ebef391"
+      "source_hash": "sha256:09d7a3aed4565bf640779c594eca5b4453ee80b358956db16cd5ca563e4802d9"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -3948,7 +3959,7 @@
       ],
       "message": "Code routes records into per-day SQL tables (`tyk_aggregated_YYYYMMDD`\nshape) based on the wall-clock instant of the record. Two failure\nmodes: (a) the window boundary is interpreted half-open in one path\nand closed in another, so a single record either lands in two shards\nor none; (b) records arriving after a DST or clock-skew event get\nrouted to a stale shard, breaking range queries. The sharding\nfunction must declare its boundary semantics (UTC-day, [start, end)\nhalf-open) and a Validate step must enforce that the chosen instant\nmaps to exactly one shard.\n",
       "fingerprint": "sha256:9b04e23acb3a923742c58b6ce97d998e69ac95ac496c378995cedb3705b7c5a9",
-      "source_hash": "sha256:2c3d418cb9ea0e57f5b9408764a80849151188cb53d1ab2baa09118d0ebef391"
+      "source_hash": "sha256:09d7a3aed4565bf640779c594eca5b4453ee80b358956db16cd5ca563e4802d9"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -3970,7 +3981,7 @@
       ],
       "message": "A for loop uses a struct field as its stride: `for i := 0; i \u003c N; i +=\ncfg.BatchSize`, OR a shrink-loop uses a parameter as its slice step:\n`for batchSize \u003c len(s) { s = s[batchSize:] ... }`. When the field /\nparameter is zero (default-constructed config, missing YAML key,\nmisconfigured caller) the loop hangs the goroutine forever and produces\nno observable failure. Validate the field at init time and substitute a\nnon-zero default, OR guard the loop with `if cfg.BatchSize == 0 {\ncfg.BatchSize = N }` immediately before the loop.\n",
       "fingerprint": "sha256:bf7010c37480f5f16ff48034845629ac529305689d749f3b444ffaf4b9dcdf75",
-      "source_hash": "sha256:2c3d418cb9ea0e57f5b9408764a80849151188cb53d1ab2baa09118d0ebef391"
+      "source_hash": "sha256:09d7a3aed4565bf640779c594eca5b4453ee80b358956db16cd5ca563e4802d9"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -3988,7 +3999,7 @@
       ],
       "message": "Randomness requires determinism or cryptographic-strength evidence depending on use.",
       "fingerprint": "sha256:7c7c4ff84267c9a38dff74725683cd232240070ac87dfe205cf5930bd984618b",
-      "source_hash": "sha256:91eee5dc54ba465d8ade96ee8b9dcfd7ec65116b746e5eb8f4669e32506c1888"
+      "source_hash": "sha256:8c931352943067f1c554e5e2bc32521e05fd33fdde6885d4dd9949091518ad32"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -4011,7 +4022,7 @@
       ],
       "message": "Whole request body is read into memory; require an explicit request-size bound.",
       "fingerprint": "sha256:8eb7ad1f0c9022f7eca1c993adeb7e63594089305f345cbac7541d0c547815fd",
-      "source_hash": "sha256:91eee5dc54ba465d8ade96ee8b9dcfd7ec65116b746e5eb8f4669e32506c1888"
+      "source_hash": "sha256:8c931352943067f1c554e5e2bc32521e05fd33fdde6885d4dd9949091518ad32"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -4029,7 +4040,7 @@
       ],
       "message": "Time-dependent behavior requires determinism, timeout, or scheduling evidence.",
       "fingerprint": "sha256:3f8b4390023494a2ee67ed67858be7537f8bbfc56656c67b4737fb9a3aa4539a",
-      "source_hash": "sha256:91eee5dc54ba465d8ade96ee8b9dcfd7ec65116b746e5eb8f4669e32506c1888"
+      "source_hash": "sha256:8c931352943067f1c554e5e2bc32521e05fd33fdde6885d4dd9949091518ad32"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -4047,7 +4058,7 @@
       ],
       "message": "Time-dependent behavior requires determinism, timeout, or scheduling evidence.",
       "fingerprint": "sha256:63f80f881015bafe2b909e8983e36bf8f7dd39cf0959e896f2a85aa3cc0c976c",
-      "source_hash": "sha256:91eee5dc54ba465d8ade96ee8b9dcfd7ec65116b746e5eb8f4669e32506c1888"
+      "source_hash": "sha256:8c931352943067f1c554e5e2bc32521e05fd33fdde6885d4dd9949091518ad32"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -4065,7 +4076,7 @@
       ],
       "message": "Discarded call result requires explicit propagation or ignore-policy evidence.",
       "fingerprint": "sha256:09272625afcd9bb42db4f6f4b0285754555bae80374df8f6feaf01d19c450029",
-      "source_hash": "sha256:91eee5dc54ba465d8ade96ee8b9dcfd7ec65116b746e5eb8f4669e32506c1888"
+      "source_hash": "sha256:8c931352943067f1c554e5e2bc32521e05fd33fdde6885d4dd9949091518ad32"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -4087,7 +4098,7 @@
       ],
       "message": "log.Fatal / os.Exit called from a non-main constructor or processing function.\nThis aborts the entire process and bypasses caller error handling; return\nan error instead so the caller can recover.\n",
       "fingerprint": "sha256:8154d9d49af69c992be793eac761ec7c3dc3c41952d0d1500ccaac00a3c69d27",
-      "source_hash": "sha256:91eee5dc54ba465d8ade96ee8b9dcfd7ec65116b746e5eb8f4669e32506c1888"
+      "source_hash": "sha256:8c931352943067f1c554e5e2bc32521e05fd33fdde6885d4dd9949091518ad32"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -4110,7 +4121,7 @@
       ],
       "message": "A pump's `Init(config)` method calls `log.Fatal(...)` on a config\ndecode or connection failure. log.Fatal calls os.Exit(1), bypassing\nevery deferred cleanup AND every sibling pump's chance to keep\nworking. A single misconfigured pump in a multi-pump deployment\ntakes down the whole process. Either return the error to the caller\n(the pump-init driver should decide whether the failure is fatal\nfor the WHOLE process, or just for THIS pump), or recover into a\ndegraded \"this pump is inert\" mode while others continue.\n",
       "fingerprint": "sha256:a2cb33d2c4917eaac1cbe34cf1b3ff4e0602b5be4c08d97e457b94868c0325dc",
-      "source_hash": "sha256:91eee5dc54ba465d8ade96ee8b9dcfd7ec65116b746e5eb8f4669e32506c1888"
+      "source_hash": "sha256:8c931352943067f1c554e5e2bc32521e05fd33fdde6885d4dd9949091518ad32"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -4132,7 +4143,7 @@
       ],
       "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
       "fingerprint": "sha256:2cf29c5e15ceba41377d26bef63f5d1b2f6894833776a1aaf524610ed4866725",
-      "source_hash": "sha256:91eee5dc54ba465d8ade96ee8b9dcfd7ec65116b746e5eb8f4669e32506c1888"
+      "source_hash": "sha256:8c931352943067f1c554e5e2bc32521e05fd33fdde6885d4dd9949091518ad32"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -4150,7 +4161,7 @@
       ],
       "message": "Time-dependent behavior requires determinism, timeout, or scheduling evidence.",
       "fingerprint": "sha256:139492acea4210658453d82932ed0cbed81a1e3a51b00de81f95012fe5c2cde0",
-      "source_hash": "sha256:91eee5dc54ba465d8ade96ee8b9dcfd7ec65116b746e5eb8f4669e32506c1888"
+      "source_hash": "sha256:8c931352943067f1c554e5e2bc32521e05fd33fdde6885d4dd9949091518ad32"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -4172,7 +4183,7 @@
       ],
       "message": "log.Fatal / os.Exit called from a non-main constructor or processing function.\nThis aborts the entire process and bypasses caller error handling; return\nan error instead so the caller can recover.\n",
       "fingerprint": "sha256:2bc5fdc8bd27415c61f9d90e4b14cbd7339388e770360d1feb25e3ea8ac7f5b2",
-      "source_hash": "sha256:91eee5dc54ba465d8ade96ee8b9dcfd7ec65116b746e5eb8f4669e32506c1888"
+      "source_hash": "sha256:8c931352943067f1c554e5e2bc32521e05fd33fdde6885d4dd9949091518ad32"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -4190,7 +4201,7 @@
       ],
       "message": "Time-dependent behavior requires determinism, timeout, or scheduling evidence.",
       "fingerprint": "sha256:47e0815817e5d6b1fc867a9128cda6f902ed77a85fee919416f1d3a3b054aa9e",
-      "source_hash": "sha256:91eee5dc54ba465d8ade96ee8b9dcfd7ec65116b746e5eb8f4669e32506c1888"
+      "source_hash": "sha256:8c931352943067f1c554e5e2bc32521e05fd33fdde6885d4dd9949091518ad32"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -4208,7 +4219,7 @@
       ],
       "message": "Time-dependent behavior requires determinism, timeout, or scheduling evidence.",
       "fingerprint": "sha256:fd6fb949aed60818c602ba3a9c9258ccb3e42c4965bf0ac8159b3e7a4b0f34af",
-      "source_hash": "sha256:91eee5dc54ba465d8ade96ee8b9dcfd7ec65116b746e5eb8f4669e32506c1888"
+      "source_hash": "sha256:8c931352943067f1c554e5e2bc32521e05fd33fdde6885d4dd9949091518ad32"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -4230,7 +4241,7 @@
       ],
       "message": "log.Fatal / os.Exit called from a non-main constructor or processing function.\nThis aborts the entire process and bypasses caller error handling; return\nan error instead so the caller can recover.\n",
       "fingerprint": "sha256:68e786afa31d2737193104c3fe2e82f943786897ac3a70e1680a6b93cab4b35e",
-      "source_hash": "sha256:e19a13d34f72969e26f9fe4183283061067371d1a60238e3f8c4ccb65669020e"
+      "source_hash": "sha256:084ebd4bdd4c3fd1b7e2fe0ab634ab15cf97a4d6f51f02492637c348262ad425"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -4253,7 +4264,7 @@
       ],
       "message": "A pump's `Init(config)` method calls `log.Fatal(...)` on a config\ndecode or connection failure. log.Fatal calls os.Exit(1), bypassing\nevery deferred cleanup AND every sibling pump's chance to keep\nworking. A single misconfigured pump in a multi-pump deployment\ntakes down the whole process. Either return the error to the caller\n(the pump-init driver should decide whether the failure is fatal\nfor the WHOLE process, or just for THIS pump), or recover into a\ndegraded \"this pump is inert\" mode while others continue.\n",
       "fingerprint": "sha256:da8af0acfcfb5fa6212901a98491e544cca1842f5435990067572afb51ed34af",
-      "source_hash": "sha256:e19a13d34f72969e26f9fe4183283061067371d1a60238e3f8c4ccb65669020e"
+      "source_hash": "sha256:084ebd4bdd4c3fd1b7e2fe0ab634ab15cf97a4d6f51f02492637c348262ad425"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -4275,7 +4286,7 @@
       ],
       "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
       "fingerprint": "sha256:99afcd3cea71fb2eeda921bd081c724e60ecc4e265d46930c3ea8f192b162f9e",
-      "source_hash": "sha256:e19a13d34f72969e26f9fe4183283061067371d1a60238e3f8c4ccb65669020e"
+      "source_hash": "sha256:084ebd4bdd4c3fd1b7e2fe0ab634ab15cf97a4d6f51f02492637c348262ad425"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -4297,7 +4308,7 @@
       ],
       "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
       "fingerprint": "sha256:e47a22433b536a55a78bc0f7a0fc1b16f1a09c5fe69872f8306381d4ecf074f9",
-      "source_hash": "sha256:e19a13d34f72969e26f9fe4183283061067371d1a60238e3f8c4ccb65669020e"
+      "source_hash": "sha256:084ebd4bdd4c3fd1b7e2fe0ab634ab15cf97a4d6f51f02492637c348262ad425"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -4318,7 +4329,7 @@
       ],
       "message": "panic outside test code requires proof that hostile or malformed input cannot reach it.",
       "fingerprint": "sha256:79f16db9166fcc742f840b9d2d1a1119e37fe47e3193fd87aff719c3c1ef6fa7",
-      "source_hash": "sha256:e19a13d34f72969e26f9fe4183283061067371d1a60238e3f8c4ccb65669020e"
+      "source_hash": "sha256:084ebd4bdd4c3fd1b7e2fe0ab634ab15cf97a4d6f51f02492637c348262ad425"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -4340,7 +4351,7 @@
       ],
       "message": "Function receives a context.Context parameter but creates a fresh\ncontext.Background() / context.TODO() inside the body and uses that\ninstead. Caller deadlines and cancellation can be silently dropped.\n",
       "fingerprint": "sha256:ce88140a45facad37606f015fd53d68f9c87489ff2904dd476a1be083d9036b7",
-      "source_hash": "sha256:e19a13d34f72969e26f9fe4183283061067371d1a60238e3f8c4ccb65669020e"
+      "source_hash": "sha256:084ebd4bdd4c3fd1b7e2fe0ab634ab15cf97a4d6f51f02492637c348262ad425"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -4362,7 +4373,7 @@
       ],
       "message": "log.Fatal / os.Exit called from a non-main constructor or processing function.\nThis aborts the entire process and bypasses caller error handling; return\nan error instead so the caller can recover.\n",
       "fingerprint": "sha256:a15c9fe4d13ce5b836bb2c5bf5b5474a88e44c18cc52d30693de2266f8bae819",
-      "source_hash": "sha256:e19a13d34f72969e26f9fe4183283061067371d1a60238e3f8c4ccb65669020e"
+      "source_hash": "sha256:084ebd4bdd4c3fd1b7e2fe0ab634ab15cf97a4d6f51f02492637c348262ad425"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -4383,7 +4394,7 @@
       ],
       "message": "Goroutine spawn requires lifecycle, cancellation, and shutdown ownership evidence.",
       "fingerprint": "sha256:1dcd90f41440414b552f859c5f2998575ceb13e4e0d387b2355a5a4b107daabb",
-      "source_hash": "sha256:e19a13d34f72969e26f9fe4183283061067371d1a60238e3f8c4ccb65669020e"
+      "source_hash": "sha256:084ebd4bdd4c3fd1b7e2fe0ab634ab15cf97a4d6f51f02492637c348262ad425"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -4404,7 +4415,7 @@
       ],
       "message": "Channel communication requires blocking, cancellation, and ownership evidence.",
       "fingerprint": "sha256:47a438692f245434720c5dde8cd909f39a47a6dd1d8bba8dd05ef42a7694db33",
-      "source_hash": "sha256:e19a13d34f72969e26f9fe4183283061067371d1a60238e3f8c4ccb65669020e"
+      "source_hash": "sha256:084ebd4bdd4c3fd1b7e2fe0ab634ab15cf97a4d6f51f02492637c348262ad425"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -4425,7 +4436,7 @@
       ],
       "message": "Channel send without select guard on context; may block forever if receiver goroutine exits.",
       "fingerprint": "sha256:dc4b0b0b8f9b0415b913e2e5a26a425a2ef89d166a9bc672b6ca8e08f5c69cba",
-      "source_hash": "sha256:e19a13d34f72969e26f9fe4183283061067371d1a60238e3f8c4ccb65669020e"
+      "source_hash": "sha256:084ebd4bdd4c3fd1b7e2fe0ab634ab15cf97a4d6f51f02492637c348262ad425"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -4446,7 +4457,7 @@
       ],
       "message": "Channel communication requires blocking, cancellation, and ownership evidence.",
       "fingerprint": "sha256:f05cc7068302ce1f4f8038422b357c56092c7be52282dc887072c17b181d0e15",
-      "source_hash": "sha256:e19a13d34f72969e26f9fe4183283061067371d1a60238e3f8c4ccb65669020e"
+      "source_hash": "sha256:084ebd4bdd4c3fd1b7e2fe0ab634ab15cf97a4d6f51f02492637c348262ad425"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -4467,7 +4478,7 @@
       ],
       "message": "Channel send without select guard on context; may block forever if receiver goroutine exits.",
       "fingerprint": "sha256:2db71466d9b8a97519a509535cf383ac96025236ca4a86abfbff54ecfe4dfe4d",
-      "source_hash": "sha256:e19a13d34f72969e26f9fe4183283061067371d1a60238e3f8c4ccb65669020e"
+      "source_hash": "sha256:084ebd4bdd4c3fd1b7e2fe0ab634ab15cf97a4d6f51f02492637c348262ad425"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -4489,7 +4500,7 @@
       ],
       "message": "Slice is preallocated with len(), filled by indexed assignment, and the\nloop body can continue on error. That can leave zero-value holes in the\nresult; append to a zero-length slice when sparse output is not intended.\n",
       "fingerprint": "sha256:dc9ecd03d1a31f753ab07747613c8a5035d9cbaebe010f2fe35c372bbb39c9fc",
-      "source_hash": "sha256:e19a13d34f72969e26f9fe4183283061067371d1a60238e3f8c4ccb65669020e"
+      "source_hash": "sha256:084ebd4bdd4c3fd1b7e2fe0ab634ab15cf97a4d6f51f02492637c348262ad425"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -4511,7 +4522,7 @@
       ],
       "message": "log.Fatal / os.Exit called from a non-main constructor or processing function.\nThis aborts the entire process and bypasses caller error handling; return\nan error instead so the caller can recover.\n",
       "fingerprint": "sha256:6aa3b948a3651f2905becc173ef0d931146d9456de4fe62cd1b5ec34f0de5436",
-      "source_hash": "sha256:dbad5d36c1f182c7c46b96b648d01065563938e23243987ed06b1f8dc02d6171"
+      "source_hash": "sha256:3d8d6b3fd32ac22b94679ec8118c8b8d0a5fc91b23012f44dd834ce45d36c017"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -4534,7 +4545,7 @@
       ],
       "message": "A pump's `Init(config)` method calls `log.Fatal(...)` on a config\ndecode or connection failure. log.Fatal calls os.Exit(1), bypassing\nevery deferred cleanup AND every sibling pump's chance to keep\nworking. A single misconfigured pump in a multi-pump deployment\ntakes down the whole process. Either return the error to the caller\n(the pump-init driver should decide whether the failure is fatal\nfor the WHOLE process, or just for THIS pump), or recover into a\ndegraded \"this pump is inert\" mode while others continue.\n",
       "fingerprint": "sha256:04cb0f9a5f2402978a4c5f91e3be8118352e38f875a6e583705b7a16745c49c3",
-      "source_hash": "sha256:dbad5d36c1f182c7c46b96b648d01065563938e23243987ed06b1f8dc02d6171"
+      "source_hash": "sha256:3d8d6b3fd32ac22b94679ec8118c8b8d0a5fc91b23012f44dd834ce45d36c017"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -4556,7 +4567,7 @@
       ],
       "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
       "fingerprint": "sha256:e339fe24266e5ed6302178253c7fbe9482c38061e673045a528f070eed60303f",
-      "source_hash": "sha256:dbad5d36c1f182c7c46b96b648d01065563938e23243987ed06b1f8dc02d6171"
+      "source_hash": "sha256:3d8d6b3fd32ac22b94679ec8118c8b8d0a5fc91b23012f44dd834ce45d36c017"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -4578,7 +4589,7 @@
       ],
       "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
       "fingerprint": "sha256:e0d97e20e52c7a6bda34f8ced00654f62a848cbfff7caa11cfd8b327d270e2f6",
-      "source_hash": "sha256:dbad5d36c1f182c7c46b96b648d01065563938e23243987ed06b1f8dc02d6171"
+      "source_hash": "sha256:3d8d6b3fd32ac22b94679ec8118c8b8d0a5fc91b23012f44dd834ce45d36c017"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -4596,7 +4607,7 @@
       ],
       "message": "Database read API use requires parameterization, timeout, consistency, and error-propagation evidence.",
       "fingerprint": "sha256:382545c9b3bc6e0782c3c39efaef21c0b795498c443827f508985053c559c2f2",
-      "source_hash": "sha256:dbad5d36c1f182c7c46b96b648d01065563938e23243987ed06b1f8dc02d6171"
+      "source_hash": "sha256:3d8d6b3fd32ac22b94679ec8118c8b8d0a5fc91b23012f44dd834ce45d36c017"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -4618,7 +4629,7 @@
       ],
       "message": "log.Fatal / os.Exit called from a non-main constructor or processing function.\nThis aborts the entire process and bypasses caller error handling; return\nan error instead so the caller can recover.\n",
       "fingerprint": "sha256:95eb6b96a25d60525c14d6652651a7332526dbfc1d8e1c2ffea902a997826b1d",
-      "source_hash": "sha256:a171e437ba2de7196b4605ce4dfb51c1f2a50d364a30114502a2f4808e0c89b2"
+      "source_hash": "sha256:dbabb9648d9735025283b8a3768660cafd7219e1befaa3fd2701324b39dce981"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -4641,7 +4652,7 @@
       ],
       "message": "A pump's `Init(config)` method calls `log.Fatal(...)` on a config\ndecode or connection failure. log.Fatal calls os.Exit(1), bypassing\nevery deferred cleanup AND every sibling pump's chance to keep\nworking. A single misconfigured pump in a multi-pump deployment\ntakes down the whole process. Either return the error to the caller\n(the pump-init driver should decide whether the failure is fatal\nfor the WHOLE process, or just for THIS pump), or recover into a\ndegraded \"this pump is inert\" mode while others continue.\n",
       "fingerprint": "sha256:f819c3c8d8d3f17fec3b6eb12e769d89b1fc60262aad726d22d2d5deb8cfef06",
-      "source_hash": "sha256:a171e437ba2de7196b4605ce4dfb51c1f2a50d364a30114502a2f4808e0c89b2"
+      "source_hash": "sha256:dbabb9648d9735025283b8a3768660cafd7219e1befaa3fd2701324b39dce981"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -4663,7 +4674,7 @@
       ],
       "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
       "fingerprint": "sha256:0e6c97eaed7ed5b0aa8d6d8ca31788e35016446f421f8eabdb3aff114e1338b1",
-      "source_hash": "sha256:a171e437ba2de7196b4605ce4dfb51c1f2a50d364a30114502a2f4808e0c89b2"
+      "source_hash": "sha256:dbabb9648d9735025283b8a3768660cafd7219e1befaa3fd2701324b39dce981"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -4685,7 +4696,7 @@
       ],
       "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
       "fingerprint": "sha256:ae55b4aa02f63ab219780b0ff5a1971dc7f3575d9e506ea2a7875905e29e230a",
-      "source_hash": "sha256:a171e437ba2de7196b4605ce4dfb51c1f2a50d364a30114502a2f4808e0c89b2"
+      "source_hash": "sha256:dbabb9648d9735025283b8a3768660cafd7219e1befaa3fd2701324b39dce981"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -4707,7 +4718,7 @@
       ],
       "message": "Function receives a context.Context parameter but creates a fresh\ncontext.Background() / context.TODO() inside the body and uses that\ninstead. Caller deadlines and cancellation can be silently dropped.\n",
       "fingerprint": "sha256:55315cff990264a3f82dce57779b039a7295fe365b26c7b87437d10d4c43f5f2",
-      "source_hash": "sha256:a171e437ba2de7196b4605ce4dfb51c1f2a50d364a30114502a2f4808e0c89b2"
+      "source_hash": "sha256:dbabb9648d9735025283b8a3768660cafd7219e1befaa3fd2701324b39dce981"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -4729,7 +4740,7 @@
       ],
       "message": "Slice is preallocated with len(), filled by indexed assignment, and the\nloop body can continue on error. That can leave zero-value holes in the\nresult; append to a zero-length slice when sparse output is not intended.\n",
       "fingerprint": "sha256:ac2d41044d31ccf333d672bc503ea8692feb937f34696234a156059e0faae0b5",
-      "source_hash": "sha256:a171e437ba2de7196b4605ce4dfb51c1f2a50d364a30114502a2f4808e0c89b2"
+      "source_hash": "sha256:dbabb9648d9735025283b8a3768660cafd7219e1befaa3fd2701324b39dce981"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -4751,7 +4762,7 @@
       ],
       "message": "log.Fatal / os.Exit called from a non-main constructor or processing function.\nThis aborts the entire process and bypasses caller error handling; return\nan error instead so the caller can recover.\n",
       "fingerprint": "sha256:2d0b59ac79404a1d69ab876f847e3060277f902bbb94c07fd2b8ef94682629f9",
-      "source_hash": "sha256:1e85047b5806a40ffa9bda5799890446584eefca1f655c25d25ee846c2184376"
+      "source_hash": "sha256:9ddf2f7d56bd32feb15d202fabdde7ca2425a0ff00763ff5f07e2c7bd1e3c592"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -4774,7 +4785,7 @@
       ],
       "message": "A pump's `Init(config)` method calls `log.Fatal(...)` on a config\ndecode or connection failure. log.Fatal calls os.Exit(1), bypassing\nevery deferred cleanup AND every sibling pump's chance to keep\nworking. A single misconfigured pump in a multi-pump deployment\ntakes down the whole process. Either return the error to the caller\n(the pump-init driver should decide whether the failure is fatal\nfor the WHOLE process, or just for THIS pump), or recover into a\ndegraded \"this pump is inert\" mode while others continue.\n",
       "fingerprint": "sha256:951c3923c53a19ff7e0c322fbf14f54274a8c510e231211a15476adaab6e5239",
-      "source_hash": "sha256:1e85047b5806a40ffa9bda5799890446584eefca1f655c25d25ee846c2184376"
+      "source_hash": "sha256:9ddf2f7d56bd32feb15d202fabdde7ca2425a0ff00763ff5f07e2c7bd1e3c592"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -4796,7 +4807,7 @@
       ],
       "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
       "fingerprint": "sha256:edab113255d823fcaf03d95457ee642df3a7b0e527c107b96f2096a41a1350b0",
-      "source_hash": "sha256:1e85047b5806a40ffa9bda5799890446584eefca1f655c25d25ee846c2184376"
+      "source_hash": "sha256:9ddf2f7d56bd32feb15d202fabdde7ca2425a0ff00763ff5f07e2c7bd1e3c592"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -4814,7 +4825,7 @@
       ],
       "message": "HTTP server API use requires listener, request-boundary, timeout, and static-file review evidence.",
       "fingerprint": "sha256:c145a9a569d0d759e66a8ad1ce1d199e760e1331700dc38eb2d8c1c04cbc3d47",
-      "source_hash": "sha256:1e85047b5806a40ffa9bda5799890446584eefca1f655c25d25ee846c2184376"
+      "source_hash": "sha256:9ddf2f7d56bd32feb15d202fabdde7ca2425a0ff00763ff5f07e2c7bd1e3c592"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -4836,7 +4847,7 @@
       ],
       "message": "Library code registers handlers on or serves http.DefaultServeMux\n(http.Handle / http.HandleFunc / http.ListenAndServe(..., nil)). The\nDefaultServeMux is process-global; a second init in the same process\n(re-init after config reload, parallel tests, two pumps configured for\ndifferent ports) panics with \"http: multiple registrations for /metrics\".\nConstruct an explicit *http.ServeMux and wire it through a private\n*http.Server.\n",
       "fingerprint": "sha256:aded8fa152ca6aecdd033da2972d9130b1a711ec10b8580c01c6352377a52f8e",
-      "source_hash": "sha256:1e85047b5806a40ffa9bda5799890446584eefca1f655c25d25ee846c2184376"
+      "source_hash": "sha256:9ddf2f7d56bd32feb15d202fabdde7ca2425a0ff00763ff5f07e2c7bd1e3c592"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -4857,7 +4868,7 @@
       ],
       "message": "Goroutine spawn requires lifecycle, cancellation, and shutdown ownership evidence.",
       "fingerprint": "sha256:d46294425e575f79a194945ef66d696682a3fee00d770bd919efdfe2a669f5dc",
-      "source_hash": "sha256:1e85047b5806a40ffa9bda5799890446584eefca1f655c25d25ee846c2184376"
+      "source_hash": "sha256:9ddf2f7d56bd32feb15d202fabdde7ca2425a0ff00763ff5f07e2c7bd1e3c592"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -4875,7 +4886,7 @@
       ],
       "message": "Goroutine spawn lacks an obvious local lifecycle or cancellation cue.",
       "fingerprint": "sha256:801f07b23c7b18b4b0f9603356d6c082590fc443b063dc30152109f90809aa69",
-      "source_hash": "sha256:1e85047b5806a40ffa9bda5799890446584eefca1f655c25d25ee846c2184376"
+      "source_hash": "sha256:9ddf2f7d56bd32feb15d202fabdde7ca2425a0ff00763ff5f07e2c7bd1e3c592"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -4893,7 +4904,7 @@
       ],
       "message": "HTTP server API use requires listener, request-boundary, timeout, and static-file review evidence.",
       "fingerprint": "sha256:dcbe06d8e2774ace247722f3dd31c49a16e5862f19b826926a0f145010abfaa2",
-      "source_hash": "sha256:1e85047b5806a40ffa9bda5799890446584eefca1f655c25d25ee846c2184376"
+      "source_hash": "sha256:9ddf2f7d56bd32feb15d202fabdde7ca2425a0ff00763ff5f07e2c7bd1e3c592"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -4915,7 +4926,7 @@
       ],
       "message": "Library code registers handlers on or serves http.DefaultServeMux\n(http.Handle / http.HandleFunc / http.ListenAndServe(..., nil)). The\nDefaultServeMux is process-global; a second init in the same process\n(re-init after config reload, parallel tests, two pumps configured for\ndifferent ports) panics with \"http: multiple registrations for /metrics\".\nConstruct an explicit *http.ServeMux and wire it through a private\n*http.Server.\n",
       "fingerprint": "sha256:6c5e23e7d7197ed9c1ac8cc1bec3cb87033c45c994ecb53e6c62ebd0e7a70c92",
-      "source_hash": "sha256:1e85047b5806a40ffa9bda5799890446584eefca1f655c25d25ee846c2184376"
+      "source_hash": "sha256:9ddf2f7d56bd32feb15d202fabdde7ca2425a0ff00763ff5f07e2c7bd1e3c592"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -4933,7 +4944,7 @@
       ],
       "message": "Synchronization primitive use requires concurrency ownership and race/liveness evidence.",
       "fingerprint": "sha256:e5827e641cdc6ceb55ea50f18131cb05b9cfc6dddbe2f6f7f393855836634a50",
-      "source_hash": "sha256:faecbf0844be21d1f3546da51679c3efe325b04e0f4be2ad53fbf15fc2b6fc10"
+      "source_hash": "sha256:9b0145546fc42643886b0cbfe52169f342c16555a668e0b856d994c313b9d28d"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -4955,7 +4966,7 @@
       ],
       "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
       "fingerprint": "sha256:6c1e29dc52605cb94648d1e9b28d30abc9e1e81295d4038b69c080781b2446c0",
-      "source_hash": "sha256:faecbf0844be21d1f3546da51679c3efe325b04e0f4be2ad53fbf15fc2b6fc10"
+      "source_hash": "sha256:9b0145546fc42643886b0cbfe52169f342c16555a668e0b856d994c313b9d28d"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -4976,7 +4987,7 @@
       ],
       "message": "Goroutine spawn requires lifecycle, cancellation, and shutdown ownership evidence.",
       "fingerprint": "sha256:40fc9675eabd16d732e65974ae6c5aaa87601f14510105b11e0e461ece066c56",
-      "source_hash": "sha256:faecbf0844be21d1f3546da51679c3efe325b04e0f4be2ad53fbf15fc2b6fc10"
+      "source_hash": "sha256:9b0145546fc42643886b0cbfe52169f342c16555a668e0b856d994c313b9d28d"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -4994,7 +5005,7 @@
       ],
       "message": "Goroutine spawn lacks an obvious local lifecycle or cancellation cue.",
       "fingerprint": "sha256:996c29bd7249e3d8f51757e2a721bb2d912b9c422db3c02614d9ccda6d9c11e1",
-      "source_hash": "sha256:faecbf0844be21d1f3546da51679c3efe325b04e0f4be2ad53fbf15fc2b6fc10"
+      "source_hash": "sha256:9b0145546fc42643886b0cbfe52169f342c16555a668e0b856d994c313b9d28d"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -5012,7 +5023,7 @@
       ],
       "message": "Loop follows reference or pointer fields without an obvious visited/depth/limit guard.",
       "fingerprint": "sha256:eea86d91aaf8e82efec23a769125a31573377b33e37a36a2fc5cc282fb5086d1",
-      "source_hash": "sha256:faecbf0844be21d1f3546da51679c3efe325b04e0f4be2ad53fbf15fc2b6fc10"
+      "source_hash": "sha256:9b0145546fc42643886b0cbfe52169f342c16555a668e0b856d994c313b9d28d"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -5030,7 +5041,7 @@
       ],
       "message": "HTTP client API use requires external-call timeout, cancellation, TLS, and failure-observation evidence.",
       "fingerprint": "sha256:7f8b13d110fd4ccd1a04eb903ea98fdfc6bb30a53d5dc3a644268dbb4cc3ab67",
-      "source_hash": "sha256:faecbf0844be21d1f3546da51679c3efe325b04e0f4be2ad53fbf15fc2b6fc10"
+      "source_hash": "sha256:9b0145546fc42643886b0cbfe52169f342c16555a668e0b856d994c313b9d28d"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -5051,7 +5062,7 @@
       ],
       "message": "Channel communication requires blocking, cancellation, and ownership evidence.",
       "fingerprint": "sha256:f3c1c71edeae9b2bb9bff9e54bfd3a767988e4179a101d2f4c31ab2645f00337",
-      "source_hash": "sha256:faecbf0844be21d1f3546da51679c3efe325b04e0f4be2ad53fbf15fc2b6fc10"
+      "source_hash": "sha256:9b0145546fc42643886b0cbfe52169f342c16555a668e0b856d994c313b9d28d"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -5072,7 +5083,7 @@
       ],
       "message": "Channel communication requires blocking, cancellation, and ownership evidence.",
       "fingerprint": "sha256:8a7cfdad54f1348ee03abec01791fe6210d482de716a3d643009acd14935e631",
-      "source_hash": "sha256:faecbf0844be21d1f3546da51679c3efe325b04e0f4be2ad53fbf15fc2b6fc10"
+      "source_hash": "sha256:9b0145546fc42643886b0cbfe52169f342c16555a668e0b856d994c313b9d28d"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -5094,7 +5105,7 @@
       ],
       "message": "log.Fatal / os.Exit called from a non-main constructor or processing function.\nThis aborts the entire process and bypasses caller error handling; return\nan error instead so the caller can recover.\n",
       "fingerprint": "sha256:cbab8cc915f7f0d5173fc9e655658ee59a41151845025a74a195dcfdf0447514",
-      "source_hash": "sha256:c39533c28b07284f40db5e48de8aa0e28fc758634e48509ce57b3fe431e9653c"
+      "source_hash": "sha256:2842d988645d7f37d956b16eae980d5ccb851ac0cd0c0be715073482bd51cc71"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -5117,7 +5128,7 @@
       ],
       "message": "A pump's `Init(config)` method calls `log.Fatal(...)` on a config\ndecode or connection failure. log.Fatal calls os.Exit(1), bypassing\nevery deferred cleanup AND every sibling pump's chance to keep\nworking. A single misconfigured pump in a multi-pump deployment\ntakes down the whole process. Either return the error to the caller\n(the pump-init driver should decide whether the failure is fatal\nfor the WHOLE process, or just for THIS pump), or recover into a\ndegraded \"this pump is inert\" mode while others continue.\n",
       "fingerprint": "sha256:03d19fc7026d4da372d99a66dcc119810aee6842fedcf1807f6ed341c7177bd9",
-      "source_hash": "sha256:c39533c28b07284f40db5e48de8aa0e28fc758634e48509ce57b3fe431e9653c"
+      "source_hash": "sha256:2842d988645d7f37d956b16eae980d5ccb851ac0cd0c0be715073482bd51cc71"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -5139,7 +5150,7 @@
       ],
       "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
       "fingerprint": "sha256:bf7c9ca2482c9ddde4a7025c72ceed0beb08c6210d5ccdea0db6969f9ea54017",
-      "source_hash": "sha256:c39533c28b07284f40db5e48de8aa0e28fc758634e48509ce57b3fe431e9653c"
+      "source_hash": "sha256:2842d988645d7f37d956b16eae980d5ccb851ac0cd0c0be715073482bd51cc71"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -5161,7 +5172,7 @@
       ],
       "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
       "fingerprint": "sha256:113be8fae68d26f36d265561c4ed2c3383050d150ddee892b29be2159648ff0e",
-      "source_hash": "sha256:b20682ea1bb30aad9dfb91a80b7cf7a88a9f1921eb8434a1514b2e682fa24cf7"
+      "source_hash": "sha256:e95f1a88f9c739245280836c3dce55ae95d1266f59dc67d7126620639a753288"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -5184,7 +5195,7 @@
       ],
       "message": "A TLS client config sets `InsecureSkipVerify: p.SSLInsecureSkipVerify`\nfrom a config struct. The field is reachable from operator YAML\nwith no audit trail — a single misconfiguration disables certificate\nvalidation across the deployment, MITM becomes trivially possible,\nand there is no runtime warning. Either restrict the flag to an\nexplicit \"development mode\" that emits a startup WARN, or require a\npaired `RootCAs` override so skipping verification AND ignoring the\nsystem trust store cannot both happen by default.\n",
       "fingerprint": "sha256:44860a04ae478839adb6d0993cdc3729292f87c0d00a795523f26715262670b3",
-      "source_hash": "sha256:b20682ea1bb30aad9dfb91a80b7cf7a88a9f1921eb8434a1514b2e682fa24cf7"
+      "source_hash": "sha256:e95f1a88f9c739245280836c3dce55ae95d1266f59dc67d7126620639a753288"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -5207,7 +5218,7 @@
       ],
       "message": "A TLS client config sets `InsecureSkipVerify: p.config.SSLInsecureSkipVerify`\nfrom a config struct. The field is reachable from operator YAML\nwith no audit trail — a single misconfiguration disables certificate\nvalidation across the deployment, MITM becomes trivially possible,\nand there is no runtime warning. Either restrict the flag to an\nexplicit \"development mode\" that emits a startup WARN, or require a\npaired `RootCAs` override so skipping verification AND ignoring the\nsystem trust store cannot both happen by default.\n",
       "fingerprint": "sha256:a9d9bf5fdf6466c522ae212232ba714779cfc59a35e8a0b4e140a0a8f93824f9",
-      "source_hash": "sha256:b20682ea1bb30aad9dfb91a80b7cf7a88a9f1921eb8434a1514b2e682fa24cf7"
+      "source_hash": "sha256:e95f1a88f9c739245280836c3dce55ae95d1266f59dc67d7126620639a753288"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -5228,7 +5239,7 @@
       ],
       "message": "The body of `for k, v := range slice` reassigns `slice` itself via\n`slice = append(slice[:k], slice[k+1:]...)` or via in-place compaction\n(`copy(slice[k:], slice[k+1:]); slice = slice[:len(slice)-1]`). The Go\nspec captures the range expression once at loop entry, so deleting\nelement k shifts element k+1 into position k while the loop counter\nadvances past it — every other matching element is skipped. Iterate\nbackwards, build a fresh result slice, or use slices.DeleteFunc.\n",
       "fingerprint": "sha256:74a0fbaaf1be4a7aa20d90e7540b7da0928341d9c558a6a72e1ad6aa8015d64e",
-      "source_hash": "sha256:b20682ea1bb30aad9dfb91a80b7cf7a88a9f1921eb8434a1514b2e682fa24cf7"
+      "source_hash": "sha256:e95f1a88f9c739245280836c3dce55ae95d1266f59dc67d7126620639a753288"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -5246,7 +5257,7 @@
       ],
       "message": "HTTP client API use requires external-call timeout, cancellation, TLS, and failure-observation evidence.",
       "fingerprint": "sha256:48744f1be04940cd502ca1630d3ed9982bb8e3fec16d0838067a6eadc7f3ada5",
-      "source_hash": "sha256:b20682ea1bb30aad9dfb91a80b7cf7a88a9f1921eb8434a1514b2e682fa24cf7"
+      "source_hash": "sha256:e95f1a88f9c739245280836c3dce55ae95d1266f59dc67d7126620639a753288"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -5264,7 +5275,7 @@
       ],
       "message": "HTTP client API use requires external-call timeout, cancellation, TLS, and failure-observation evidence.",
       "fingerprint": "sha256:ebbdb86c724d95ff607c39970bdc4b69c8fe594c2acaafb5872d70c826b1291d",
-      "source_hash": "sha256:b20682ea1bb30aad9dfb91a80b7cf7a88a9f1921eb8434a1514b2e682fa24cf7"
+      "source_hash": "sha256:e95f1a88f9c739245280836c3dce55ae95d1266f59dc67d7126620639a753288"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -5286,7 +5297,7 @@
       ],
       "message": "Assignment mutates http.DefaultClient or http.DefaultTransport from\nnon-entrypoint code. These globals are process-wide and can make caller\nbehavior and tests order-dependent.\n",
       "fingerprint": "sha256:f580731e5c64596b236950e6ea6f1ad36b2e562f2a07dfdc582d4703ea180c35",
-      "source_hash": "sha256:b20682ea1bb30aad9dfb91a80b7cf7a88a9f1921eb8434a1514b2e682fa24cf7"
+      "source_hash": "sha256:e95f1a88f9c739245280836c3dce55ae95d1266f59dc67d7126620639a753288"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -5304,7 +5315,7 @@
       ],
       "message": "HTTP client API use requires external-call timeout, cancellation, TLS, and failure-observation evidence.",
       "fingerprint": "sha256:584e08e3f08da6dc8c222bf0a0677fe67b228dd2bcb7aec415330e8a5180782e",
-      "source_hash": "sha256:b20682ea1bb30aad9dfb91a80b7cf7a88a9f1921eb8434a1514b2e682fa24cf7"
+      "source_hash": "sha256:e95f1a88f9c739245280836c3dce55ae95d1266f59dc67d7126620639a753288"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -5322,7 +5333,7 @@
       ],
       "message": "HTTP client API use requires external-call timeout, cancellation, TLS, and failure-observation evidence.",
       "fingerprint": "sha256:0f5f7cecf6f18ae44f28b7b2b340bb9a1798edb54fbdc72c4da5f85b626d77f6",
-      "source_hash": "sha256:b20682ea1bb30aad9dfb91a80b7cf7a88a9f1921eb8434a1514b2e682fa24cf7"
+      "source_hash": "sha256:e95f1a88f9c739245280836c3dce55ae95d1266f59dc67d7126620639a753288"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -5344,7 +5355,7 @@
       ],
       "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
       "fingerprint": "sha256:650ec871fddb952cd67b87b65357d7c47d27a7391d7b7e8b2a589d3a280b4865",
-      "source_hash": "sha256:829de65785cdd04edeea4ea3f663143e46b0bcdf0412fcadd52f1fbef24383a3"
+      "source_hash": "sha256:f91170d0a2aa1c527df86cb02872797cf730304e9e765decd11561626dfac33a"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -5366,7 +5377,7 @@
       ],
       "message": "A for loop uses a struct field as its stride: `for i := 0; i \u003c N; i +=\ncfg.BatchSize`, OR a shrink-loop uses a parameter as its slice step:\n`for batchSize \u003c len(s) { s = s[batchSize:] ... }`. When the field /\nparameter is zero (default-constructed config, missing YAML key,\nmisconfigured caller) the loop hangs the goroutine forever and produces\nno observable failure. Validate the field at init time and substitute a\nnon-zero default, OR guard the loop with `if cfg.BatchSize == 0 {\ncfg.BatchSize = N }` immediately before the loop.\n",
       "fingerprint": "sha256:b54d010f8b51080f8cbadf90165d1c02b4709392c77e275af2f8286fbd5d8815",
-      "source_hash": "sha256:829de65785cdd04edeea4ea3f663143e46b0bcdf0412fcadd52f1fbef24383a3"
+      "source_hash": "sha256:f91170d0a2aa1c527df86cb02872797cf730304e9e765decd11561626dfac33a"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -5388,7 +5399,7 @@
       ],
       "message": "Slice is preallocated with len(), filled by indexed assignment, and the\nloop body can continue on error. That can leave zero-value holes in the\nresult; append to a zero-length slice when sparse output is not intended.\n",
       "fingerprint": "sha256:bae40c858adfd6da2f6a5cb90bca7c8c8dffd3e9399bc8450e9eea7d65d19e86",
-      "source_hash": "sha256:829de65785cdd04edeea4ea3f663143e46b0bcdf0412fcadd52f1fbef24383a3"
+      "source_hash": "sha256:f91170d0a2aa1c527df86cb02872797cf730304e9e765decd11561626dfac33a"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -5410,7 +5421,7 @@
       ],
       "message": "Code routes records into per-day SQL tables (`tyk_aggregated_YYYYMMDD`\nshape) based on the wall-clock instant of the record. Two failure\nmodes: (a) the window boundary is interpreted half-open in one path\nand closed in another, so a single record either lands in two shards\nor none; (b) records arriving after a DST or clock-skew event get\nrouted to a stale shard, breaking range queries. The sharding\nfunction must declare its boundary semantics (UTC-day, [start, end)\nhalf-open) and a Validate step must enforce that the chosen instant\nmaps to exactly one shard.\n",
       "fingerprint": "sha256:c6f0982f535c2a6cefb7f60b3978590c317460a4792c6e19673ca3581379ad5f",
-      "source_hash": "sha256:829de65785cdd04edeea4ea3f663143e46b0bcdf0412fcadd52f1fbef24383a3"
+      "source_hash": "sha256:f91170d0a2aa1c527df86cb02872797cf730304e9e765decd11561626dfac33a"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -5432,7 +5443,7 @@
       ],
       "message": "A for loop uses a struct field as its stride: `for i := 0; i \u003c N; i +=\ncfg.BatchSize`, OR a shrink-loop uses a parameter as its slice step:\n`for batchSize \u003c len(s) { s = s[batchSize:] ... }`. When the field /\nparameter is zero (default-constructed config, missing YAML key,\nmisconfigured caller) the loop hangs the goroutine forever and produces\nno observable failure. Validate the field at init time and substitute a\nnon-zero default, OR guard the loop with `if cfg.BatchSize == 0 {\ncfg.BatchSize = N }` immediately before the loop.\n",
       "fingerprint": "sha256:d2addc9ec4e67ec81e1eaa2dc631ea0ce513cefe784ea081edf82da2c4234ba8",
-      "source_hash": "sha256:829de65785cdd04edeea4ea3f663143e46b0bcdf0412fcadd52f1fbef24383a3"
+      "source_hash": "sha256:f91170d0a2aa1c527df86cb02872797cf730304e9e765decd11561626dfac33a"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -5450,7 +5461,7 @@
       ],
       "message": "Database write or transaction API use requires transactional, timeout, and error-propagation evidence.",
       "fingerprint": "sha256:a3b16c5c2ad8fda193fd4f8135dd787a245c85f1604497fd7f75939289084e44",
-      "source_hash": "sha256:829de65785cdd04edeea4ea3f663143e46b0bcdf0412fcadd52f1fbef24383a3"
+      "source_hash": "sha256:f91170d0a2aa1c527df86cb02872797cf730304e9e765decd11561626dfac33a"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -5471,7 +5482,7 @@
       ],
       "message": "Goroutine spawn requires lifecycle, cancellation, and shutdown ownership evidence.",
       "fingerprint": "sha256:b38e94dae0883532bb368a987c5907722fb7b8d189e3a63c90132ff352877597",
-      "source_hash": "sha256:829de65785cdd04edeea4ea3f663143e46b0bcdf0412fcadd52f1fbef24383a3"
+      "source_hash": "sha256:f91170d0a2aa1c527df86cb02872797cf730304e9e765decd11561626dfac33a"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -5492,7 +5503,7 @@
       ],
       "message": "Channel communication requires blocking, cancellation, and ownership evidence.",
       "fingerprint": "sha256:e44981580de12d5ccdb8a7c221c3f411c336f497f8bb554323d162e01708eda2",
-      "source_hash": "sha256:829de65785cdd04edeea4ea3f663143e46b0bcdf0412fcadd52f1fbef24383a3"
+      "source_hash": "sha256:f91170d0a2aa1c527df86cb02872797cf730304e9e765decd11561626dfac33a"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -5514,7 +5525,7 @@
       ],
       "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
       "fingerprint": "sha256:7a7c1d6913242a652d0c2f30ed6d3af9263283deeb2b5cba5ecb360100c9a930",
-      "source_hash": "sha256:5d4fb4dfe315a4842672abf1f36a4496f0177a3dc32181a3cae56c466cd50167"
+      "source_hash": "sha256:85f542163368da6dc4bd0eaa0aa74bc0b04e3ec69bf64df49ab67a8742b7c92a"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -5532,7 +5543,7 @@
       ],
       "message": "SQL write statement is dynamically formatted; require parameterization evidence.",
       "fingerprint": "sha256:8a9a045544bddfd05c54cb5adb1c73a254d77b3b0c705c8e7c48e10ad4b94707",
-      "source_hash": "sha256:5d4fb4dfe315a4842672abf1f36a4496f0177a3dc32181a3cae56c466cd50167"
+      "source_hash": "sha256:85f542163368da6dc4bd0eaa0aa74bc0b04e3ec69bf64df49ab67a8742b7c92a"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -5550,7 +5561,7 @@
       ],
       "message": "Database write or transaction API use requires transactional, timeout, and error-propagation evidence.",
       "fingerprint": "sha256:1cc06f4b38ba861f184aac76b5efbfa53caa76bdcb5676b4a7cb14906da71b54",
-      "source_hash": "sha256:5d4fb4dfe315a4842672abf1f36a4496f0177a3dc32181a3cae56c466cd50167"
+      "source_hash": "sha256:85f542163368da6dc4bd0eaa0aa74bc0b04e3ec69bf64df49ab67a8742b7c92a"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -5571,7 +5582,7 @@
       ],
       "message": "Channel communication requires blocking, cancellation, and ownership evidence.",
       "fingerprint": "sha256:c5f347dd2377b4edfc16ce2dc6859ce731f4b2f1090be3729f023da8da7a620b",
-      "source_hash": "sha256:5d4fb4dfe315a4842672abf1f36a4496f0177a3dc32181a3cae56c466cd50167"
+      "source_hash": "sha256:85f542163368da6dc4bd0eaa0aa74bc0b04e3ec69bf64df49ab67a8742b7c92a"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -5592,7 +5603,7 @@
       ],
       "message": "Goroutine spawn requires lifecycle, cancellation, and shutdown ownership evidence.",
       "fingerprint": "sha256:a7c9e6d5e28a822e6dbf9d36471aa8a34bce89329ae2e3e7a7d421fd1c616e02",
-      "source_hash": "sha256:5d4fb4dfe315a4842672abf1f36a4496f0177a3dc32181a3cae56c466cd50167"
+      "source_hash": "sha256:85f542163368da6dc4bd0eaa0aa74bc0b04e3ec69bf64df49ab67a8742b7c92a"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -5610,7 +5621,7 @@
       ],
       "message": "Goroutine spawn lacks an obvious local lifecycle or cancellation cue.",
       "fingerprint": "sha256:3fc92cdd773f2662f564e12da2ac0e09e55f391791a82e6391aa750a1e96eb93",
-      "source_hash": "sha256:5d4fb4dfe315a4842672abf1f36a4496f0177a3dc32181a3cae56c466cd50167"
+      "source_hash": "sha256:85f542163368da6dc4bd0eaa0aa74bc0b04e3ec69bf64df49ab67a8742b7c92a"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -5632,7 +5643,7 @@
       ],
       "message": "Code routes records into per-day SQL tables (`tyk_aggregated_YYYYMMDD`\nshape) based on the wall-clock instant of the record. Two failure\nmodes: (a) the window boundary is interpreted half-open in one path\nand closed in another, so a single record either lands in two shards\nor none; (b) records arriving after a DST or clock-skew event get\nrouted to a stale shard, breaking range queries. The sharding\nfunction must declare its boundary semantics (UTC-day, [start, end)\nhalf-open) and a Validate step must enforce that the chosen instant\nmaps to exactly one shard.\n",
       "fingerprint": "sha256:00a499a7508ce79483a16e7d15224667bd499df0f0d110736bbbf521628e6937",
-      "source_hash": "sha256:5d4fb4dfe315a4842672abf1f36a4496f0177a3dc32181a3cae56c466cd50167"
+      "source_hash": "sha256:85f542163368da6dc4bd0eaa0aa74bc0b04e3ec69bf64df49ab67a8742b7c92a"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -5654,7 +5665,7 @@
       ],
       "message": "A for loop uses a struct field as its stride: `for i := 0; i \u003c N; i +=\ncfg.BatchSize`, OR a shrink-loop uses a parameter as its slice step:\n`for batchSize \u003c len(s) { s = s[batchSize:] ... }`. When the field /\nparameter is zero (default-constructed config, missing YAML key,\nmisconfigured caller) the loop hangs the goroutine forever and produces\nno observable failure. Validate the field at init time and substitute a\nnon-zero default, OR guard the loop with `if cfg.BatchSize == 0 {\ncfg.BatchSize = N }` immediately before the loop.\n",
       "fingerprint": "sha256:42caf07884eedad4d6264937d12e4ef3d3d4bad02256e43641ba328cd85dd296",
-      "source_hash": "sha256:5d4fb4dfe315a4842672abf1f36a4496f0177a3dc32181a3cae56c466cd50167"
+      "source_hash": "sha256:85f542163368da6dc4bd0eaa0aa74bc0b04e3ec69bf64df49ab67a8742b7c92a"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -5676,7 +5687,7 @@
       ],
       "message": "log.Fatal / os.Exit called from a non-main constructor or processing function.\nThis aborts the entire process and bypasses caller error handling; return\nan error instead so the caller can recover.\n",
       "fingerprint": "sha256:11f3bf7bac02b80512fdcfeadc215d9b5eea69e0b9dd14f7b8eff0a07f371c62",
-      "source_hash": "sha256:3fc690a573eb32eeb859ac6eff6e394c74ebcf90813b1d98a09c28a60537d1e5"
+      "source_hash": "sha256:d4dc9d89d872093e8fef4d2d160ec27a0462beb9fdd42bd1cbefcfd75fcec7d4"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -5699,7 +5710,7 @@
       ],
       "message": "A pump's `Init(config)` method calls `log.Fatal(...)` on a config\ndecode or connection failure. log.Fatal calls os.Exit(1), bypassing\nevery deferred cleanup AND every sibling pump's chance to keep\nworking. A single misconfigured pump in a multi-pump deployment\ntakes down the whole process. Either return the error to the caller\n(the pump-init driver should decide whether the failure is fatal\nfor the WHOLE process, or just for THIS pump), or recover into a\ndegraded \"this pump is inert\" mode while others continue.\n",
       "fingerprint": "sha256:efc3b95eacdb74d494c59828f91ac42836dd62e8447623f7f3d2175b2f80a7a9",
-      "source_hash": "sha256:3fc690a573eb32eeb859ac6eff6e394c74ebcf90813b1d98a09c28a60537d1e5"
+      "source_hash": "sha256:d4dc9d89d872093e8fef4d2d160ec27a0462beb9fdd42bd1cbefcfd75fcec7d4"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -5721,7 +5732,7 @@
       ],
       "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
       "fingerprint": "sha256:35d7b4eb1240f34db9f5aa130e4b5d8fdf6093121783071ff62d2f86a9c50488",
-      "source_hash": "sha256:3fc690a573eb32eeb859ac6eff6e394c74ebcf90813b1d98a09c28a60537d1e5"
+      "source_hash": "sha256:d4dc9d89d872093e8fef4d2d160ec27a0462beb9fdd42bd1cbefcfd75fcec7d4"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -5739,7 +5750,7 @@
       ],
       "message": "Time-dependent behavior requires determinism, timeout, or scheduling evidence.",
       "fingerprint": "sha256:070de8975bb4fbaded51c92c0fdf2fef9342b2bd3a11386aa1a42c0035a5b88f",
-      "source_hash": "sha256:3fc690a573eb32eeb859ac6eff6e394c74ebcf90813b1d98a09c28a60537d1e5"
+      "source_hash": "sha256:d4dc9d89d872093e8fef4d2d160ec27a0462beb9fdd42bd1cbefcfd75fcec7d4"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -5761,7 +5772,7 @@
       ],
       "message": "Slice is preallocated with len(), filled by indexed assignment, and the\nloop body can continue on error. That can leave zero-value holes in the\nresult; append to a zero-length slice when sparse output is not intended.\n",
       "fingerprint": "sha256:9b370aa170bb0f46f175f05494a8a290a0b50fec0f55e6f5197a03e3031a5594",
-      "source_hash": "sha256:3fc690a573eb32eeb859ac6eff6e394c74ebcf90813b1d98a09c28a60537d1e5"
+      "source_hash": "sha256:d4dc9d89d872093e8fef4d2d160ec27a0462beb9fdd42bd1cbefcfd75fcec7d4"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -5779,7 +5790,7 @@
       ],
       "message": "Time-dependent behavior requires determinism, timeout, or scheduling evidence.",
       "fingerprint": "sha256:10b425e5b5214f67f4d86d752b34732533683afb1712a3adaa06dac1975f30fd",
-      "source_hash": "sha256:3fc690a573eb32eeb859ac6eff6e394c74ebcf90813b1d98a09c28a60537d1e5"
+      "source_hash": "sha256:d4dc9d89d872093e8fef4d2d160ec27a0462beb9fdd42bd1cbefcfd75fcec7d4"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -5801,7 +5812,7 @@
       ],
       "message": "Code measures elapsed duration with `time.Since(...)` or\n`time.Now().Sub(...)` against a wall-clock instant. On DST transitions,\nmanual clock adjustments, or NTP step events the returned Duration can\ngo negative or jump by hours, producing nonsense timings, fake SLA\nbreaches, or — when used as a loop guard — instant time-outs.\nPrefer `time.Now()` paired with a monotonic-clock-safe helper, or\nexplicitly check `d \u003c 0` and clamp.\n",
       "fingerprint": "sha256:8af81347391084fa94a4be3e987896ac4526372b449102647a9408cd42172043",
-      "source_hash": "sha256:3fc690a573eb32eeb859ac6eff6e394c74ebcf90813b1d98a09c28a60537d1e5"
+      "source_hash": "sha256:d4dc9d89d872093e8fef4d2d160ec27a0462beb9fdd42bd1cbefcfd75fcec7d4"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -5823,7 +5834,7 @@
       ],
       "message": "A for loop uses a struct field as its stride: `for i := 0; i \u003c N; i +=\ncfg.BatchSize`, OR a shrink-loop uses a parameter as its slice step:\n`for batchSize \u003c len(s) { s = s[batchSize:] ... }`. When the field /\nparameter is zero (default-constructed config, missing YAML key,\nmisconfigured caller) the loop hangs the goroutine forever and produces\nno observable failure. Validate the field at init time and substitute a\nnon-zero default, OR guard the loop with `if cfg.BatchSize == 0 {\ncfg.BatchSize = N }` immediately before the loop.\n",
       "fingerprint": "sha256:3d2d27c213a96dda19adf6caf0303784c287749b142d64210ef38a55e02206c8",
-      "source_hash": "sha256:3fc690a573eb32eeb859ac6eff6e394c74ebcf90813b1d98a09c28a60537d1e5"
+      "source_hash": "sha256:d4dc9d89d872093e8fef4d2d160ec27a0462beb9fdd42bd1cbefcfd75fcec7d4"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -5841,7 +5852,7 @@
       ],
       "message": "Discarded call result requires explicit propagation or ignore-policy evidence.",
       "fingerprint": "sha256:af262121183b64fb8ed5bb0bb397cbe0310849e34886d4e16c20b8c21bac65d5",
-      "source_hash": "sha256:3fc690a573eb32eeb859ac6eff6e394c74ebcf90813b1d98a09c28a60537d1e5"
+      "source_hash": "sha256:d4dc9d89d872093e8fef4d2d160ec27a0462beb9fdd42bd1cbefcfd75fcec7d4"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -5863,7 +5874,7 @@
       ],
       "message": "log.Fatal / os.Exit called from a non-main constructor or processing function.\nThis aborts the entire process and bypasses caller error handling; return\nan error instead so the caller can recover.\n",
       "fingerprint": "sha256:72cfd0de1c3af1e2c2deb9a0abbe4eb7a70cad537e971838fec208d083a61797",
-      "source_hash": "sha256:fb345b7fe8f16b4992a5fc6c77283efb1f2a39d0a84c962d3c1e9ae6a1a32c30"
+      "source_hash": "sha256:f7ee570c92540d5e807f0f59fc7d48bdca8299eca5d6f970f257b2c555023136"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -5886,7 +5897,7 @@
       ],
       "message": "A pump's `Init(config)` method calls `log.Fatal(...)` on a config\ndecode or connection failure. log.Fatal calls os.Exit(1), bypassing\nevery deferred cleanup AND every sibling pump's chance to keep\nworking. A single misconfigured pump in a multi-pump deployment\ntakes down the whole process. Either return the error to the caller\n(the pump-init driver should decide whether the failure is fatal\nfor the WHOLE process, or just for THIS pump), or recover into a\ndegraded \"this pump is inert\" mode while others continue.\n",
       "fingerprint": "sha256:b2026a2b3dcd334150fef4822ca79febfdfc4ae12a2fb6c46b9f4214398c2243",
-      "source_hash": "sha256:fb345b7fe8f16b4992a5fc6c77283efb1f2a39d0a84c962d3c1e9ae6a1a32c30"
+      "source_hash": "sha256:f7ee570c92540d5e807f0f59fc7d48bdca8299eca5d6f970f257b2c555023136"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -5908,7 +5919,7 @@
       ],
       "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
       "fingerprint": "sha256:f32dbcfa3c694561a165270dd3f333203e880012fc94f75ed12cf74a4f43f82b",
-      "source_hash": "sha256:fb345b7fe8f16b4992a5fc6c77283efb1f2a39d0a84c962d3c1e9ae6a1a32c30"
+      "source_hash": "sha256:f7ee570c92540d5e807f0f59fc7d48bdca8299eca5d6f970f257b2c555023136"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -5926,7 +5937,7 @@
       ],
       "message": "Time-dependent behavior requires determinism, timeout, or scheduling evidence.",
       "fingerprint": "sha256:701822d51a276eeb6884ca26c2453cc4965bda633961059028c321f554f355c6",
-      "source_hash": "sha256:fb345b7fe8f16b4992a5fc6c77283efb1f2a39d0a84c962d3c1e9ae6a1a32c30"
+      "source_hash": "sha256:f7ee570c92540d5e807f0f59fc7d48bdca8299eca5d6f970f257b2c555023136"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -5948,7 +5959,7 @@
       ],
       "message": "log.Fatal / os.Exit called from a non-main constructor or processing function.\nThis aborts the entire process and bypasses caller error handling; return\nan error instead so the caller can recover.\n",
       "fingerprint": "sha256:eedbae5c328d8ab99a4dcbd34aca8a732a726357b9146c51500f9c2a90e369e5",
-      "source_hash": "sha256:217f98f97bd52305ba921d8b5d3e867fde7aa9f73037ce941e045c60d83f2ef7"
+      "source_hash": "sha256:419ee11a2804212bf4bcd5af3ba5593b9a3f27be208c923a92d8e8ea878e21e8"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -5971,7 +5982,7 @@
       ],
       "message": "A pump's `Init(config)` method calls `log.Fatal(...)` on a config\ndecode or connection failure. log.Fatal calls os.Exit(1), bypassing\nevery deferred cleanup AND every sibling pump's chance to keep\nworking. A single misconfigured pump in a multi-pump deployment\ntakes down the whole process. Either return the error to the caller\n(the pump-init driver should decide whether the failure is fatal\nfor the WHOLE process, or just for THIS pump), or recover into a\ndegraded \"this pump is inert\" mode while others continue.\n",
       "fingerprint": "sha256:704686daab71ba408b5962ba75dca53f9f29376f80ff2dac97d5682fee690aac",
-      "source_hash": "sha256:217f98f97bd52305ba921d8b5d3e867fde7aa9f73037ce941e045c60d83f2ef7"
+      "source_hash": "sha256:419ee11a2804212bf4bcd5af3ba5593b9a3f27be208c923a92d8e8ea878e21e8"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -5993,7 +6004,7 @@
       ],
       "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
       "fingerprint": "sha256:9b07f2e9953a00c1e518891f10853b38cdc897c92c9e940688f39d81e3bc7e5e",
-      "source_hash": "sha256:217f98f97bd52305ba921d8b5d3e867fde7aa9f73037ce941e045c60d83f2ef7"
+      "source_hash": "sha256:419ee11a2804212bf4bcd5af3ba5593b9a3f27be208c923a92d8e8ea878e21e8"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -6011,7 +6022,7 @@
       ],
       "message": "Time-dependent behavior requires determinism, timeout, or scheduling evidence.",
       "fingerprint": "sha256:ee3f1d7a37c2be8ca4185aa7e96a7dd935903488d97f9a397743ae3801974655",
-      "source_hash": "sha256:217f98f97bd52305ba921d8b5d3e867fde7aa9f73037ce941e045c60d83f2ef7"
+      "source_hash": "sha256:419ee11a2804212bf4bcd5af3ba5593b9a3f27be208c923a92d8e8ea878e21e8"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -6029,7 +6040,7 @@
       ],
       "message": "Discarded call result requires explicit propagation or ignore-policy evidence.",
       "fingerprint": "sha256:5234dd3f3c4e3d7044a2d9b05616dec911b294f487d1ea28221b36f88999bf57",
-      "source_hash": "sha256:217f98f97bd52305ba921d8b5d3e867fde7aa9f73037ce941e045c60d83f2ef7"
+      "source_hash": "sha256:419ee11a2804212bf4bcd5af3ba5593b9a3f27be208c923a92d8e8ea878e21e8"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -6051,7 +6062,7 @@
       ],
       "message": "log.Fatal / os.Exit called from a non-main constructor or processing function.\nThis aborts the entire process and bypasses caller error handling; return\nan error instead so the caller can recover.\n",
       "fingerprint": "sha256:99d06e871b3aa7aa8a807eb29eccaeed0ceb384b31c2836759f754a659f6abc5",
-      "source_hash": "sha256:d4dcff9b29e31da1df899bfff9cedbbd1f6a8b1135a82a8e075cd8036134a769"
+      "source_hash": "sha256:92163313b13d356bde7bda39ded915878fee3afc9ffc68151525bcb75390913f"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -6074,7 +6085,7 @@
       ],
       "message": "A pump's `Init(config)` method calls `log.Fatal(...)` on a config\ndecode or connection failure. log.Fatal calls os.Exit(1), bypassing\nevery deferred cleanup AND every sibling pump's chance to keep\nworking. A single misconfigured pump in a multi-pump deployment\ntakes down the whole process. Either return the error to the caller\n(the pump-init driver should decide whether the failure is fatal\nfor the WHOLE process, or just for THIS pump), or recover into a\ndegraded \"this pump is inert\" mode while others continue.\n",
       "fingerprint": "sha256:f54b873e5551f2e8d277b956faf9493ff17638951b84e882f783a25a8cd5410c",
-      "source_hash": "sha256:d4dcff9b29e31da1df899bfff9cedbbd1f6a8b1135a82a8e075cd8036134a769"
+      "source_hash": "sha256:92163313b13d356bde7bda39ded915878fee3afc9ffc68151525bcb75390913f"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -6096,7 +6107,7 @@
       ],
       "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
       "fingerprint": "sha256:d9a48b2732a2d1bddb855d41c04af87c2fc4becb21a5b462abf114e8de045918",
-      "source_hash": "sha256:d4dcff9b29e31da1df899bfff9cedbbd1f6a8b1135a82a8e075cd8036134a769"
+      "source_hash": "sha256:92163313b13d356bde7bda39ded915878fee3afc9ffc68151525bcb75390913f"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -6114,7 +6125,7 @@
       ],
       "message": "Discarded call result requires explicit propagation or ignore-policy evidence.",
       "fingerprint": "sha256:c79f31a8d8b6f40ad272fec08c4834b2615cc74e8b2c281b25c45fbc46211902",
-      "source_hash": "sha256:d4dcff9b29e31da1df899bfff9cedbbd1f6a8b1135a82a8e075cd8036134a769"
+      "source_hash": "sha256:92163313b13d356bde7bda39ded915878fee3afc9ffc68151525bcb75390913f"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -6136,7 +6147,7 @@
       ],
       "message": "log.Fatal / os.Exit called from a non-main constructor or processing function.\nThis aborts the entire process and bypasses caller error handling; return\nan error instead so the caller can recover.\n",
       "fingerprint": "sha256:787d5f828f0f92a4d0d3fc32b93074c5b00102404be93c35fc14cb1a1fe121d7",
-      "source_hash": "sha256:cc6d52ed2a972f2d53e46ee3db70d4ff2a77d305cc19db67c6059c35f80f59b2"
+      "source_hash": "sha256:2a948ed622934fbc90be63dcf373b063188cb0e38828074cf06b01b27c8b37cd"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -6159,7 +6170,7 @@
       ],
       "message": "A pump's `Init(config)` method calls `log.Fatal(...)` on a config\ndecode or connection failure. log.Fatal calls os.Exit(1), bypassing\nevery deferred cleanup AND every sibling pump's chance to keep\nworking. A single misconfigured pump in a multi-pump deployment\ntakes down the whole process. Either return the error to the caller\n(the pump-init driver should decide whether the failure is fatal\nfor the WHOLE process, or just for THIS pump), or recover into a\ndegraded \"this pump is inert\" mode while others continue.\n",
       "fingerprint": "sha256:034d502e0fff08a78e7a1d457108c91f5070c6d0fd2e2e61410c8c855d1b0660",
-      "source_hash": "sha256:cc6d52ed2a972f2d53e46ee3db70d4ff2a77d305cc19db67c6059c35f80f59b2"
+      "source_hash": "sha256:2a948ed622934fbc90be63dcf373b063188cb0e38828074cf06b01b27c8b37cd"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -6181,7 +6192,7 @@
       ],
       "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
       "fingerprint": "sha256:47169f0b158db815ae0ab73b38ca06be6e36d860c9b59f794ea5655dc09825c7",
-      "source_hash": "sha256:cc6d52ed2a972f2d53e46ee3db70d4ff2a77d305cc19db67c6059c35f80f59b2"
+      "source_hash": "sha256:2a948ed622934fbc90be63dcf373b063188cb0e38828074cf06b01b27c8b37cd"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -6199,7 +6210,7 @@
       ],
       "message": "Discarded call result requires explicit propagation or ignore-policy evidence.",
       "fingerprint": "sha256:7aebe9b625df7f57f090626625a62caff77ef62e0e112a0ac0779bebe9adc300",
-      "source_hash": "sha256:cc6d52ed2a972f2d53e46ee3db70d4ff2a77d305cc19db67c6059c35f80f59b2"
+      "source_hash": "sha256:2a948ed622934fbc90be63dcf373b063188cb0e38828074cf06b01b27c8b37cd"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -6217,7 +6228,7 @@
       ],
       "message": "HTTP client API use requires external-call timeout, cancellation, TLS, and failure-observation evidence.",
       "fingerprint": "sha256:59db6cf6579c7d21eb653006e51797d7a22303b790932d31eba4c8bf3d4bfceb",
-      "source_hash": "sha256:cc6d52ed2a972f2d53e46ee3db70d4ff2a77d305cc19db67c6059c35f80f59b2"
+      "source_hash": "sha256:2a948ed622934fbc90be63dcf373b063188cb0e38828074cf06b01b27c8b37cd"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -6235,7 +6246,7 @@
       ],
       "message": "HTTP client API use requires external-call timeout, cancellation, TLS, and failure-observation evidence.",
       "fingerprint": "sha256:36e0f649069c2df6bf86e22301e9d46bf51e1179a98bf0b2dc77fd1bed785879",
-      "source_hash": "sha256:cc6d52ed2a972f2d53e46ee3db70d4ff2a77d305cc19db67c6059c35f80f59b2"
+      "source_hash": "sha256:2a948ed622934fbc90be63dcf373b063188cb0e38828074cf06b01b27c8b37cd"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -6461,7 +6472,7 @@
       ],
       "message": "HTTP server API use requires listener, request-boundary, timeout, and static-file review evidence.",
       "fingerprint": "sha256:c38e2b1fd2028504e8a381cdf17f3ca041735bcc28ac594a8812c69528ff2b47",
-      "source_hash": "sha256:5c4ea4acd5fbc87a7c6e0dfe361e9fce9627b49e2e190420d5628aa5789a1bae"
+      "source_hash": "sha256:a78d6c279acc080410279facdf87502c8d4940f32a40a2435bf12eafefed2dee"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -6482,7 +6493,7 @@
       ],
       "message": "HTTP handler appears to return 200 unconditionally. If mounted as a\nreadiness probe, it may report ready before dependencies are reachable.\n",
       "fingerprint": "sha256:24fb0ad3e2bcc1c49119e536abcbbd4fb61b297fa0199cbaac0164405dead3b8",
-      "source_hash": "sha256:5c4ea4acd5fbc87a7c6e0dfe361e9fce9627b49e2e190420d5628aa5789a1bae"
+      "source_hash": "sha256:a78d6c279acc080410279facdf87502c8d4940f32a40a2435bf12eafefed2dee"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -6504,13 +6515,13 @@
       ],
       "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
       "fingerprint": "sha256:7008b56f8fb214642b33c872f5a562564ea4492688e7373d5c8166177301ddbf",
-      "source_hash": "sha256:6634a473c979dd089b4c3ebf75ec39f8b4e1e94c995e30bb6c41a5f18d301e13"
+      "source_hash": "sha256:28a37f20cabcfd7f832654ea6d74e858691c31eeaf77e130382978486e01de6c"
     },
     {
       "schema_version": "proof.code_signals.v1",
       "provider": "opengrep",
       "provider_rule_id": "go.pkgvar.mutated-without-sync",
-      "signal_id": "concurrency.pkgvar_mutated_without_sync",
+      "signal_id": "tyk_pump.pkgvar_mutated_without_sync_tuned",
       "artifact": "storage/temporal_storage.go",
       "span": {
         "start_line": 142,
@@ -6526,7 +6537,7 @@
       ],
       "message": "Package-level mutable variable is assigned from a method body. Without\nexplicit synchronisation (sync.Mutex, atomic, or channel ownership) the\nread/write pair is a data race when the method may be invoked from\nmultiple goroutines. Move the state behind a Mutex, use sync/atomic, or\nscope it to a struct field with a documented owner.\n",
       "fingerprint": "sha256:64c073ed9261b22f87012c0aa5441b6b2852118273c8d68906e9249a999e6571",
-      "source_hash": "sha256:6634a473c979dd089b4c3ebf75ec39f8b4e1e94c995e30bb6c41a5f18d301e13"
+      "source_hash": "sha256:28a37f20cabcfd7f832654ea6d74e858691c31eeaf77e130382978486e01de6c"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -6548,7 +6559,7 @@
       ],
       "message": "Code calls `kv.Expire(ctx, key, expire)` on a Redis key whose lifetime\nis governed by an absolute duration computed on the local clock. Two\nfailure modes: (a) the pump and Redis clocks disagree by ε, so the\npump's \"this key is still alive\" assumption races Redis's actual\neviction; (b) when the pump's clock jumps backwards (NTP step,\nvirtualization pause), the EXPIRE writes an expiration timestamp\nthat's already in the past, causing immediate eviction. Document\nthe clock-skew tolerance (`|pump.now - redis.now| \u003c δ`) and either\nassert it on init or switch to relative-TTL semantics validated by\na probe.\n",
       "fingerprint": "sha256:f8345d7278fc06163ebf1257e9d15efd1f130a19053a2f4f435c19f834ccd9ab",
-      "source_hash": "sha256:6634a473c979dd089b4c3ebf75ec39f8b4e1e94c995e30bb6c41a5f18d301e13"
+      "source_hash": "sha256:28a37f20cabcfd7f832654ea6d74e858691c31eeaf77e130382978486e01de6c"
     }
   ]
 }

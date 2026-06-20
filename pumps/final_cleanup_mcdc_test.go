@@ -25,6 +25,12 @@ import (
 	gorm_logger "gorm.io/gorm/logger"
 )
 
+// File-level MC/DC witness rows for retained requirement links below.
+//
+// MCDC SW-REQ-016: field_persisted_on_struct=F, set_invoked=F => TRUE
+// MCDC SW-REQ-016: field_persisted_on_struct=F, set_invoked=T => FALSE
+// MCDC SW-REQ-016: field_persisted_on_struct=T, set_invoked=T => TRUE
+
 // === common.go ===
 
 // TestCommonPumpConfig_GetOmitDetailedRecording drives the lone return
@@ -43,9 +49,7 @@ func TestCommonPumpConfig_GetOmitDetailedRecording(t *testing.T) {
 // TestMigrateAllShardedTables_RawQueryErr drives the err != nil = T arm at
 // common.go:170 by closing the underlying *sql.DB before invocation so the
 // Raw query returns an error.
-//
 // Verifies: SW-REQ-016
-// SW-REQ-016:nominal:negative
 func TestMigrateAllShardedTables_RawQueryErr(t *testing.T) {
 	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
 		Logger: gorm_logger.Default.LogMode(gorm_logger.Silent),
@@ -69,9 +73,7 @@ func TestMigrateAllShardedTables_RawQueryErr(t *testing.T) {
 // matches the sharded prefix and has an 8-character suffix that is NOT a
 // valid YYYYMMDD date (e.g. "99999999"). time.Parse returns an error, so
 // the table is skipped and not appended to shardedTables.
-//
 // Verifies: SW-REQ-016
-// SW-REQ-016:nominal:negative
 func TestMigrateAllShardedTables_EightCharNonDateSuffix(t *testing.T) {
 	db := setupTestDB(t)
 	logger := logrus.NewEntry(logrus.New())
@@ -94,9 +96,7 @@ func TestMigrateAllShardedTables_EightCharNonDateSuffix(t *testing.T) {
 
 // TestGetPumpByName_UnknownReturnsError drives the ok==F arm of the
 // short-circuit ok && pump != nil at pump.go:50.
-//
 // Verifies: SW-REQ-017
-// SW-REQ-017:nominal:negative
 func TestGetPumpByName_UnknownReturnsError(t *testing.T) {
 	p, err := GetPumpByName("definitely-not-a-pump")
 	assert.Nil(t, p)
@@ -104,9 +104,7 @@ func TestGetPumpByName_UnknownReturnsError(t *testing.T) {
 }
 
 // TestGetPumpByName_KnownReturnsPump drives the ok && pump != nil = T arm.
-//
 // Verifies: SW-REQ-017
-// SW-REQ-017:nominal:nominal
 func TestGetPumpByName_KnownReturnsPump(t *testing.T) {
 	p, err := GetPumpByName("dummy")
 	require.NoError(t, err)

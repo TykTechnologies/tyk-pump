@@ -21,7 +21,6 @@ import (
 // MCDC SW-REQ-039: mixed_collection_write_attempted=F, use_mixed_collection=T => FALSE
 // MCDC SW-REQ-039: mixed_collection_write_attempted=T, use_mixed_collection=T => TRUE
 
-// Verifies: SW-REQ-039
 func newMCPMongoAggregatePump(t *testing.T) *MCPMongoAggregatePump {
 	t.Helper()
 	cfgPump := make(map[string]interface{})
@@ -83,6 +82,7 @@ func TestMCPMongoAggregatePump_Init_InvalidConfig(t *testing.T) {
 // attempt fires — see TestMCPMongoAggregatePump_WriteData_OrgWriteFailsBeforeMixed.)
 //
 // SW-REQ-039:edge_case:example
+// SW-REQ-039:edge_case:nominal
 // DEFECT-1 regression (TT-17004): two records from different APIs (api-A,
 // api-B) sharing one (orgid, timestamp) bucket must produce two distinct
 // mixed-collection documents — not one merged doc. Before the owner_apiid
@@ -123,6 +123,7 @@ func TestMCPMongoAggregatePump_WriteData_PerAPIPartitioning(t *testing.T) {
 }
 
 // Verifies: SW-REQ-039
+// SW-REQ-039:errors_propagated:nominal
 func TestMCPMongoAggregatePump_WriteData_Roundtrip(t *testing.T) {
 	pump := newMCPMongoAggregatePump(t)
 

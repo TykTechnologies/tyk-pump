@@ -7,7 +7,7 @@ commands:
     - go test -count=1 -timeout 60s -coverprofile=cover.out ./serializer
 severity: low
 mitigation: 'Resolved by serializer/protobuf_mcdc_test.go (Phase C): GraphQLStats encode/decode round-trip tests close TransformSingleRecordToProto + TransformSingleProtoToAnalyticsRecord MC/DC; serializer now at 100/100.'
-remediation: Done. MC/DC waiver for serializer dropped in same PR.
+remediation: Done. MC/DC serializer exception removed in same PR.
 owner: tyk-team
 release_disposition: ship
 status: fixed

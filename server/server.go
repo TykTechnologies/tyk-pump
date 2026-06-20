@@ -53,7 +53,7 @@ func ServeHealthCheck(configHealthEndpoint string, configHealthPort int, enableP
 		"prefix": serverPrefix,
 	}).Info("Serving health check endpoint at http://localhost:", port, "/", endpoint, " ...")
 
-	if err := http.ListenAndServe(":"+fmt.Sprint(port), r); err != nil { //mcdc:ignore http.ListenAndServe is a blocking IO call whose error path cannot be unit-tested without binding a real port
+	if err := http.ListenAndServe(":"+fmt.Sprint(port), r); err != nil { //mcdc:ignore:defensive http.ListenAndServe is a blocking IO call whose error path cannot be unit-tested without binding a real port
 		log.WithFields(logrus.Fields{
 			"prefix": serverPrefix,
 		}).Fatal("Error serving health check endpoint", err)

@@ -33,17 +33,6 @@ verification:
         comment: 'Phase Q: catalog obligation attachments — adds external_call_timeout_bounded, request_timeout_bounded, external_call_failure_observable, cancellation_observed, redirect_policy_explicit (Segment client surface). See .proof/catalog-obligation-proposals.md.'
         fingerprint: sha256:3cf87ed515fc578450d4351703b044c7888a7ebf6f7befc619a6a99b25217120
         ai_generated: true
-    impact_reviews:
-        - requirement: SW-REQ-053
-          artifact: pumps/segment.go
-          decision: no-authored-change
-          reviewer: buger
-          reason: 'Phase L2: formalization-only change (informal -> fretish + per-component boolean variables). Production .go files were not modified; only req YAML metadata, component vars YAMLs, and // MCDC test comment witnesses.'
-          base: origin/master
-          requirement_fingerprint: sha256:fc8b51997bb5345dab883ec64c80ff1d0c960a6f919b03e183e959926ac2fcf9
-          approval_fingerprint: sha256:3cf87ed515fc578450d4351703b044c7888a7ebf6f7befc619a6a99b25217120
-          artifact_fingerprint: sha256:c39533c28b07284f40db5e48de8aa0e28fc758634e48509ce57b3fe431e9653c
-          reviewed_at: "2026-06-02T13:44:40Z"
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:36:34Z"
@@ -59,18 +48,22 @@ obligation_deferrals:
     - obligation_class: errors_propagated
       reason: 'real untested obligation under known-issue pumps-logfatal-on-config-decode; surfaced as visible tracked debt, not an overclaimed fix'
       tracking: pumps-logfatal-on-config-decode
+      ki_ref: pumps-logfatal-on-config-decode
       owner: human:buger
     - obligation_class: malformed_recovers_or_errors_loudly
       reason: 'real untested obligation under known-issue mapstructure-decode-silently-drops-unknown-keys; surfaced as visible tracked debt, not an overclaimed fix'
       tracking: mapstructure-decode-silently-drops-unknown-keys
+      ki_ref: mapstructure-decode-silently-drops-unknown-keys
       owner: human:buger
     - obligation_class: process_exit_on_recoverable
       reason: 'real untested obligation under known-issue pumps-logfatal-on-config-decode; surfaced as visible tracked debt, not an overclaimed fix'
       tracking: pumps-logfatal-on-config-decode
+      ki_ref: pumps-logfatal-on-config-decode
       owner: human:buger
     - obligation_class: redirect_policy_explicit
-      reason: 'Deferred: required redirect_policy_explicit test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'
-      tracking: .proof/deferred-witness-backlog.md
+      reason: real product gap under known-issue http-sdk-redirect-policy-implicit; surfaced as visible tracked debt, not an overclaimed fix
+      tracking: http-sdk-redirect-policy-implicit
+      ki_ref: http-sdk-redirect-policy-implicit
       owner: human:buger
 lifecycle:
     change_history:

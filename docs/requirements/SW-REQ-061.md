@@ -33,11 +33,11 @@ the `getListOfCommonPrefix` helper.
   `ThresholdLenTagList` before each upsert.
 
 ## Evidence
-- The `denial_of_service_resistant` obligation's `fuzz` evidence is
-  suppressed with rationale (see the req's `obligation_suppressions`): a
-  fuzz harness exercising the printAlert / getListOfCommonPrefix path
-  with adversarial tag distributions does not exist today; the fact-based
-  ceiling enforced by `ThresholdLenTagList` is the current mitigation.
+- The `denial_of_service_resistant` obligation's `fuzz` evidence remains
+  tracked as open KI-backed debt: a fuzz harness exercising the printAlert /
+  getListOfCommonPrefix path with adversarial tag distributions does not
+  exist today; the fact-based ceiling enforced by `ThresholdLenTagList` is
+  the current mitigation.
 
 ## Open questions
 - The check fires *after* the aggregate document is built; pathological

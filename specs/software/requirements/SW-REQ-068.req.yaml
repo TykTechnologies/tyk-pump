@@ -33,22 +33,11 @@ verification:
         comment: 'Phase Q: catalog obligation attachments — adds external_call_timeout_bounded, request_timeout_bounded, external_call_failure_observable, retry_policy_explicit, panic_free_input_handling, recursion_depth_bounded, back_pressure_bounded, connection_leak_free, secrets_not_logged, tls_required_for_secrets, redirect_policy_explicit, ssrf_protection (ES surface; KI elasticsearch-unbounded-reconnect-recursion). See .proof/catalog-obligation-proposals.md.'
         fingerprint: sha256:c234ca5105f633eb0c97347f469b80d90bad760f4bdb2c21d018e680923683ed
         ai_generated: true
-    impact_reviews:
-        - requirement: SW-REQ-068
-          artifact: pumps/elasticsearch.go
-          decision: no-authored-change
-          reviewer: buger
-          reason: 'Phase L3 aggressive: FRETish formalization added per L3 plan; production .go behaviour and code paths unchanged — only requirement metadata (fretish text + formalization_strategy + variables) altered. Test annotations may follow but do not change runtime behaviour.'
-          base: origin/master
-          requirement_fingerprint: sha256:6f5d526c968fe5b7eb91a9c1583d52c0f8d7e3cbe8e534bcaf0e4227b84f2b63
-          approval_fingerprint: sha256:c234ca5105f633eb0c97347f469b80d90bad760f4bdb2c21d018e680923683ed
-          artifact_fingerprint: sha256:bed01de375baec71c5054532e66cd43659c128ab3bb96b697da84fb3b8b8ba8e
-          reviewed_at: "2026-06-02T14:30:20Z"
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:39:57Z"
-    last_modified_by: human:buger
-    last_modified_at: "2026-06-17T08:02:40Z"
+    last_modified_by: agent:codex
+    last_modified_at: "2026-06-19T14:16:40Z"
 obligation_checklist:
     - cert_validation_strict
     - determinism
@@ -58,40 +47,42 @@ obligation_checklist:
     - process_exit_on_recoverable
     - request_timeout_bounded
     - ssrf_protection
-obligation_suppressions:
-    - id: cert_validation_strict
-      reason: 'cert_validation_strict code signal at pumps/elasticsearch.go:176: TLS config derives InsecureSkipVerify from conf.SSLInsecureSkipVerify (default false => verification ON) via the shared GetTLSConfig helper; CA/cert/key files are honored. Default-secure, operator-opt-in boundary; TLS setup failure returns a wrapped error rather than skipping verification silently. Reviewed: in-contract behavior is strict verification by default. Not a defect.'
-      suppressed_by: human:leo
-      suppressed_at: "2026-06-11T16:09:13Z"
-      framework_refs:
-        - CWE CWE-295,CWE-297
-        - NIST-800-53 SC-23,SC-17
-        - OWASP-ASVS-v4 V9.1.1,V9.2.1
 obligation_deferrals:
+    - obligation_class: cert_validation_strict
+      reason: 'real TLS strict-validation gap under known-issue tls-insecure-skip-verify-allowed; surfaced as visible tracked debt, not an overclaimed fix'
+      tracking: tls-insecure-skip-verify-allowed
+      owner: agent:codex
+      ki_ref: tls-insecure-skip-verify-allowed
     - obligation_class: determinism
       reason: 'real untested obligation under known-issue elasticsearch-unbounded-reconnect-recursion; surfaced as visible tracked debt, not an overclaimed fix'
       tracking: elasticsearch-unbounded-reconnect-recursion
       owner: human:buger
+      ki_ref: elasticsearch-unbounded-reconnect-recursion
     - obligation_class: errors_propagated
       reason: 'real untested obligation under known-issue pumps-logfatal-on-config-decode; surfaced as visible tracked debt, not an overclaimed fix'
       tracking: pumps-logfatal-on-config-decode
       owner: human:buger
+      ki_ref: pumps-logfatal-on-config-decode
     - obligation_class: malformed_recovers_or_errors_loudly
       reason: 'real untested obligation under known-issue mapstructure-decode-silently-drops-unknown-keys; surfaced as visible tracked debt, not an overclaimed fix'
       tracking: mapstructure-decode-silently-drops-unknown-keys
       owner: human:buger
+      ki_ref: mapstructure-decode-silently-drops-unknown-keys
     - obligation_class: process_exit_on_recoverable
       reason: 'real untested obligation under known-issue pumps-logfatal-on-config-decode; surfaced as visible tracked debt, not an overclaimed fix'
       tracking: pumps-logfatal-on-config-decode
       owner: human:buger
+      ki_ref: pumps-logfatal-on-config-decode
     - obligation_class: request_timeout_bounded
-      reason: 'real untested obligation under known-issue pump-no-timeout-can-block-purge-cycle; surfaced as visible tracked debt, not an overclaimed fix'
+      reason: real untested obligation under known-issue pump-no-timeout-can-block-purge-cycle; surfaced as visible tracked debt, not an overclaimed fix
       tracking: pump-no-timeout-can-block-purge-cycle
       owner: human:buger
+      ki_ref: pump-no-timeout-can-block-purge-cycle
     - obligation_class: ssrf_protection
-      reason: 'Deferred: required ssrf_protection test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'
-      tracking: .proof/deferred-witness-backlog.md
+      reason: real product gap under known-issue external-pump-endpoints-no-ssrf-allowlist; surfaced as visible tracked debt, not an overclaimed fix
+      tracking: external-pump-endpoints-no-ssrf-allowlist
       owner: human:buger
+      ki_ref: external-pump-endpoints-no-ssrf-allowlist
 lifecycle:
     change_history:
         - date: "2026-05-30T08:43:47Z"

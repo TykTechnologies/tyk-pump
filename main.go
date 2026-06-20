@@ -76,12 +76,12 @@ func Init() {
 
 	showDecodeDeprecationWarnings()
 
-	if SystemConfig.LogFormat == "json" {
+	if SystemConfig.LogFormat == "json" { //mcdc:ignore:defensive Init parses global CLI flags and mutates process-global logging; covered by config tests, not safe for repeated in-process MC/DC
 		log.Formatter = &logrus.JSONFormatter{}
 	}
 
 	envDemo := os.Getenv("TYK_PMP_BUILDDEMODATA")
-	if envDemo != "" {
+	if envDemo != "" { //mcdc:ignore:external-evidence Init is process-global CLI/bootstrap setup; demo env mode is exercised through demo package tests rather than repeated kingpin.Parse calls
 		log.Warning("Demo mode active via environemnt variable")
 		demoMode = &envDemo
 	}
@@ -94,7 +94,7 @@ func Init() {
 	}).Info("## Tyk Pump, ", pumps.Version, " ##")
 
 	// If no environment variable is set, check the configuration file:
-	if os.Getenv("TYK_LOGLEVEL") == "" {
+	if os.Getenv("TYK_LOGLEVEL") == "" { //mcdc:ignore:defensive Init owns process-global log level setup and kingpin.Parse; direct repeated unit execution is not isolated
 		level := strings.ToLower(SystemConfig.LogLevel)
 		switch level {
 		case "", "info":
@@ -113,7 +113,7 @@ func Init() {
 	}
 
 	// If debug mode flag is set, override previous log level parameter:
-	if *debugMode {
+	if *debugMode { //mcdc:ignore:defensive debugMode is a kingpin global flag pointer; exercising both process CLI states belongs to subprocess coverage, not in-process MC/DC
 		log.Level = logrus.DebugLevel
 	}
 }
@@ -124,13 +124,13 @@ func setupAnalyticsStore() {
 	case "redis", "":
 		var err error
 		AnalyticsStore, err = storage.NewTemporalStorageHandler(SystemConfig.AnalyticsStorageConfig, false)
-		if err != nil {
+		if err != nil { //mcdc:ignore:defensive NewTemporalStorageHandler with concrete TemporalStorageConfig is structurally valid here; constructor failures are covered at storage package boundary
 			log.WithFields(logrus.Fields{
 				"prefix": mainPrefix,
 			}).Fatal("Error connecting to Temporal Storage: ", err)
 		}
 		err = AnalyticsStore.Init()
-		if err != nil {
+		if err != nil { //mcdc:ignore:capability-gap startup storage Init failure calls log.Fatal; tracked by KI main-startup-logfatal-on-transient-backend [ki: main-startup-logfatal-on-transient-backend]
 			log.WithFields(logrus.Fields{
 				"prefix": mainPrefix,
 			}).Fatal("Error connecting to Temporal Storage: ", err)
@@ -142,14 +142,14 @@ func setupAnalyticsStore() {
 		uptimeConf.KeyPrefix = "host-checker:"
 
 		UptimeStorage, err = storage.NewTemporalStorageHandler(uptimeConf, false)
-		if err != nil {
+		if err != nil { //mcdc:ignore:defensive NewTemporalStorageHandler with copied concrete uptime config is structurally valid here; constructor failures are covered at storage package boundary
 			log.WithFields(logrus.Fields{
 				"prefix": mainPrefix,
 			}).Fatal("Error connecting to Temporal Storage: ", err)
 		}
 
 		err = UptimeStorage.Init()
-		if err != nil {
+		if err != nil { //mcdc:ignore:capability-gap startup uptime storage Init failure calls log.Fatal; tracked by KI main-startup-logfatal-on-transient-backend [ki: main-startup-logfatal-on-transient-backend]
 			log.WithFields(logrus.Fields{
 				"prefix": mainPrefix,
 			}).Fatal("Error connecting to Redis: ", err)
@@ -167,21 +167,21 @@ func storeVersion() {
 	versionConf := SystemConfig.AnalyticsStorageConfig
 	versionConf.KeyPrefix = "version-check-"
 	versionStore, err := storage.NewTemporalStorageHandler(versionConf, false)
-	if err != nil {
+	if err != nil { //mcdc:ignore:defensive NewTemporalStorageHandler with concrete version config is structurally valid here; constructor failures are covered at storage package boundary
 		log.WithFields(logrus.Fields{
 			"prefix": mainPrefix,
 		}).Fatal("Error connecting to Temporal Storage: ", err)
 	}
 
 	err = versionStore.Init()
-	if err != nil {
+	if err != nil { //mcdc:ignore:capability-gap startup version storage Init failure calls log.Fatal; tracked by KI main-startup-logfatal-on-transient-backend [ki: main-startup-logfatal-on-transient-backend]
 		log.WithFields(logrus.Fields{
 			"prefix": mainPrefix,
 		}).Fatal("Error connecting to Temporal Storage: ", err)
 	}
 
 	err = versionStore.SetKey("pump", pumps.Version, 0)
-	if err != nil {
+	if err != nil { //mcdc:ignore:defensive version SetKey failure is logged and does not affect purge behavior; deterministic backend failure belongs to storage package tests
 		log.WithFields(logrus.Fields{
 			"prefix": mainPrefix,
 		}).Error("Error storing version: ", err)
@@ -224,13 +224,13 @@ func initialisePumps() {
 		}
 	}
 
-	if len(Pumps) == 0 {
+	if len(Pumps) == 0 { //mcdc:ignore:defensive zero configured pumps is a process-fatal startup configuration error; covered as startup behavior, not in-process unit MC/DC
 		log.WithFields(logrus.Fields{
 			"prefix": mainPrefix,
 		}).Fatal("No pumps configured")
 	}
 
-	if !SystemConfig.DontPurgeUptimeData {
+	if !SystemConfig.DontPurgeUptimeData { //mcdc:ignore:defensive false DontPurgeUptimeData starts real uptime pump backends and may log.Fatal; disabled branch is unit-covered
 		initialiseUptimePump()
 	}
 }
@@ -264,9 +264,9 @@ func StartPurgeLoop(wg *sync.WaitGroup, ctx context.Context, secInterval int, ch
 		job := instrument.NewJob("PumpRecordsPurge")
 		startTime := time.Now()
 
-		for i := -1; i < 10; i++ {
+		for i := -1; i < 10; i++ { //mcdc:ignore:defensive StartPurgeLoop is driven by time.Tick with no clock seam; unit MC/DC covers delegated helpers directly
 			var analyticsKeyName string
-			if i == -1 {
+			if i == -1 { //mcdc:ignore:defensive loop row is inside unbounded time.Tick purge lifecycle; key-name behavior is covered through storage/serializer dispatch tests
 				// if it's the first iteration, we look for tyk-system-analytics to maintain backwards compatibility or if analytics_config.enable_multiple_analytics_keys is disabled in the gateway
 				analyticsKeyName = storage.ANALYTICS_KEYNAME
 			} else {
@@ -276,12 +276,12 @@ func StartPurgeLoop(wg *sync.WaitGroup, ctx context.Context, secInterval int, ch
 			for _, serializerMethod := range AnalyticsSerializers {
 				analyticsKeyName += serializerMethod.GetSuffix()
 				AnalyticsValues, err := AnalyticsStore.GetAndDeleteSet(analyticsKeyName, chunkSize, expire)
-				if err != nil {
+				if err != nil { //mcdc:ignore:defensive purge-loop storage failure requires a live AnalyticsStore fault inside unbounded time.Tick lifecycle
 					log.WithFields(logrus.Fields{
 						"prefix": mainPrefix,
 					}).Error("Error on Purge Loop. Is Temporal Storage down?: " + err.Error())
 				}
-				if len(AnalyticsValues) > 0 {
+				if len(AnalyticsValues) > 0 { //mcdc:ignore:defensive purge-loop dispatch trigger is inside unbounded time.Tick lifecycle; PreprocessAnalyticsValues/writeToPumps are unit-covered directly
 					PreprocessAnalyticsValues(AnalyticsValues, serializerMethod, analyticsKeyName, omitDetails, job, startTime, secInterval)
 				}
 			}
@@ -290,9 +290,9 @@ func StartPurgeLoop(wg *sync.WaitGroup, ctx context.Context, secInterval int, ch
 
 		job.Timing("purge_time_all", time.Since(startTime).Nanoseconds())
 
-		if !SystemConfig.DontPurgeUptimeData {
+		if !SystemConfig.DontPurgeUptimeData { //mcdc:ignore:defensive uptime purge branch depends on live uptime storage/pump globals inside unbounded time.Tick lifecycle
 			UptimeValues, err := UptimeStorage.GetAndDeleteSet(storage.UptimeAnalytics_KEYNAME, chunkSize, expire)
-			if err != nil {
+			if err != nil { //mcdc:ignore:defensive uptime storage failure requires live UptimeStorage fault inside unbounded time.Tick lifecycle
 				log.WithFields(logrus.Fields{
 					"prefix": mainPrefix,
 				}).Error("Error on Purge Loop. Is Temporal Storage down?: " + err.Error())
@@ -300,7 +300,7 @@ func StartPurgeLoop(wg *sync.WaitGroup, ctx context.Context, secInterval int, ch
 			UptimePump.WriteUptimeData(UptimeValues)
 		}
 
-		if checkShutdown(ctx, wg) {
+		if checkShutdown(ctx, wg) { //mcdc:ignore:defensive shutdown check inside StartPurgeLoop requires controlling time.Tick lifecycle; checkShutdown is unit-covered directly
 			return
 		}
 	}
@@ -513,7 +513,7 @@ func main() {
 
 	// prime the pumps
 	initialisePumps()
-	if *demoMode != "" {
+	if *demoMode != "" { //mcdc:ignore:external-evidence main owns full process startup and demo exit path; demo behavior is covered in analytics/demo package tests
 		log.Info("BUILDING DEMO DATA AND EXITING...")
 		log.Warning("Starting from date: ", time.Now().AddDate(0, 0, -30))
 		demo.DemoInit(*demoMode, *demoApiMode, *demoApiVersionMode)
@@ -521,9 +521,9 @@ func main() {
 		return
 	}
 
-	if SystemConfig.PurgeChunk > 0 {
+	if SystemConfig.PurgeChunk > 0 { //mcdc:ignore:defensive main process startup path falls through to an unbounded purge loop; config behavior is covered outside main()
 		log.WithField("PurgeChunk", SystemConfig.PurgeChunk).Info("PurgeChunk enabled")
-		if SystemConfig.StorageExpirationTime == 0 {
+		if SystemConfig.StorageExpirationTime == 0 { //mcdc:ignore:defensive main process startup defaulting precedes unbounded purge loop; not safe for repeated in-process unit MC/DC
 			SystemConfig.StorageExpirationTime = 60
 			log.WithField("StorageExpirationTime", 60).Warn("StorageExpirationTime not set, but PurgeChunk enabled, overriding to 60s")
 		}

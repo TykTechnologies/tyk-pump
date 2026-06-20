@@ -33,7 +33,7 @@ import (
 // fail this assertion in CI before release, so it is structurally prevented
 // rather than produced by correct code and has no honest runtime witness here.
 //
-//mcdc:ignore SYS-REQ-026: fips_build_available=F => FALSE — the requirement is discharged by inspecting the named build artifact (the `build-fips` Makefile target wired to GOEXPERIMENT=boringcrypto). That target is committed in the repository, and this assertion plus CI fail before release if it is removed or de-wired, so a shipped tree with fips_build_available=F cannot exist. The violation is structurally prevented by the committed build system rather than produced by correct code. [reviewed: human:leo]
+//mcdc:ignore SYS-REQ-026: fips_build_available=F => FALSE — the requirement is discharged by inspecting the named build artifact (the `build-fips` Makefile target wired to GOEXPERIMENT=boringcrypto). That target is committed in the repository, and this assertion plus CI fail before release if it is removed or de-wired, so a shipped tree with fips_build_available=F cannot exist. The violation is structurally prevented by the committed build system rather than produced by correct code. [reviewed: human:leo] [category: defensive]
 func TestBuildInvariant_FIPSBuildAvailable_SYSREQ026(t *testing.T) {
 	data, err := os.ReadFile("Makefile")
 	if err != nil {

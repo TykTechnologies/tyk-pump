@@ -1,0 +1,20 @@
+id: moesif-raw-body-unbounded-json-mask
+title: Moesif raw body masking parses and recurses over unbounded JSON input
+introduced_in: inception
+description: 'Moesif raw-body masking accepts captured request/response bodies from analytics records and calls json.Unmarshal([]byte(rawBody), &maskedBody) without a size cap in pumps/moesif.go:223. If masking is configured, maskData then recursively walks nested map[string]interface{} values in pumps/moesif.go:204 without a recursion-depth bound. A large or deeply nested raw body can therefore consume unbounded memory or stack before the event is enqueued. The SW-REQ-052 untrusted_input_bounded obligation is a real product gap, not only missing test evidence.'
+affected_requirements:
+    - SW-REQ-052
+environment_note: |-
+  Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source and command output.
+reproducer_command: |-
+  rg -n "func maskData|func maskRawBody|json\\.Unmarshal\\(\\[\\]byte\\(rawBody\\)" pumps/moesif.go
+severity: medium
+mitigation: Disable raw body capture or constrain gateway-side captured body size for Moesif deployments that process untrusted large request/response bodies.
+remediation: Add a maximum raw-body size before json.Unmarshal, bound recursive masking depth, and add tests for oversized and deeply nested bodies.
+owner: tyk-team
+release_disposition: ship_with_known_issue
+status: open
+history:
+    - at: "2026-06-19T00:00:00Z"
+      by: agent:codex
+      action: created

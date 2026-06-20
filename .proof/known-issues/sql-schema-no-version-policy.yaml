@@ -1,13 +1,20 @@
 id: sql-schema-no-version-policy
 title: SQL pump has no schema_version table or expand-then-contract CI enforcement
+introduced_in: inception
 description: 'INT-REQ-007 asserts expand-then-contract migratability for SQL schemas, but pumps/sql.go relies entirely on GORM AutoMigrate (e.g. line 386 c.db.AutoMigrate(&analytics.UptimeReportAggregateSQL{})). There is no schema_version table, no migration manifest, no CI check that rejects breaking schema changes. AutoMigrate is additive by accident, not by contract: an operator (or a future commit) dropping a column manually would silently break older pumps without any guardrail.'
 affected_requirements:
     - INT-REQ-007
+    - SW-REQ-040
+    - SW-REQ-065
+environment_note: |-
+  Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source or documentation surface and following the described scenario.
+reproducer_command: |-
+  rg -n "AutoMigrate|Migrator\\(\\)\\.CreateTable|schema_version|migration manifest" pumps/sql.go pumps/sql_aggregate.go pumps/mcp_sql.go pumps/mcp_sql_aggregate.go
 severity: low
 mitigation: 'Operator-level discipline only: review SQL schema diffs before deploying; never drop columns out-of-band; coordinate pump rollouts.'
 remediation: Introduce a schema_version table with a known-good set of migration manifests, and add a CI check that rejects PRs which alter previously-shipped columns/types in a non-additive way.
 owner: tyk-team
-release_disposition: ship
+release_disposition: ship_with_known_issue
 status: open
 history:
     - at: "2026-05-30T08:32:11Z"

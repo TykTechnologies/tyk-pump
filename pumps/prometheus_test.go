@@ -1106,7 +1106,6 @@ func TestPrometheusMCPCustomMetric_MCPOnly(t *testing.T) {
 	assert.Contains(t, metric.counterMap, "api2--tools/call")
 }
 
-// Verifies: SW-REQ-024
 func newTestPrometheusPump(t *testing.T) *PrometheusPump {
 	t.Helper()
 	p := &PrometheusPump{}
@@ -1243,6 +1242,8 @@ func TestProcessMetric_HistogramType_LatencyMetric(t *testing.T) {
 // always satisfy api_key_label_masked. The three witness rows below match the
 // requirement's MC/DC table exactly:
 // Verifies: SW-REQ-074
+// SW-REQ-074:secrets_not_logged:nominal
+// SW-REQ-074:secrets_not_logged:negative
 // MCDC SW-REQ-074: api_key_label_masked=F, obfuscate_api_keys_enabled=F => TRUE
 // MCDC SW-REQ-074: api_key_label_masked=F, obfuscate_api_keys_enabled=T => FALSE
 // MCDC SW-REQ-074: api_key_label_masked=T, obfuscate_api_keys_enabled=T => TRUE

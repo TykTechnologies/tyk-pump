@@ -35,7 +35,7 @@ func SetupInstrumentation() {
 	statsdSink, err := NewStatsDSink(SystemConfig.StatsdConnectionString,
 		&StatsDSinkOptions{Prefix: SystemConfig.StatsdPrefix})
 
-	if err != nil {
+	if err != nil { //mcdc:ignore:capability-gap NewStatsDSink failure calls log.Fatal and exits the process; covered as KI logfatal-on-statsd-setup rather than in-process unit evidence [ki: logfatal-on-statsd-setup]
 		log.Fatal("Failed to start StatsD check: ", err)
 		return
 	}

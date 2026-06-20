@@ -13,11 +13,9 @@ import (
 // operator opt-in via a documented config flag — they shall never be
 // implicit/default-on.
 //
-// Verifies: SW-REQ-016 (NewTLSConfig helper), SW-REQ-021 (Kafka pump),
-//
-//	SW-REQ-029 (Hybrid pump)
-//
-// Obligation: SW-REQ-016:tls_verification_explicit:nominal
+// SW-REQ-016:tls_verification_explicit:nominal
+// SW-REQ-021:tls_verification_explicit:nominal
+// SW-REQ-029:tls_verification_explicit:nominal
 // Phase S Wave 3a reproducer test.
 //
 // Method: reflection-based. For each registered config struct, construct the
@@ -28,10 +26,10 @@ func TestTLSVerificationExplicit_DefaultsAreSecure(t *testing.T) {
 	// Each row exercises one config struct + one field name. Field names are
 	// taken from a literal grep of the source — keep them in sync.
 	cases := []struct {
-		name             string
-		getConfig        func() interface{}
-		insecureField    string
-		verifyingReq     string
+		name          string
+		getConfig     func() interface{}
+		insecureField string
+		verifyingReq  string
 	}{
 		{
 			name:          "Kafka.SSLInsecureSkipVerify",

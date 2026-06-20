@@ -1,0 +1,139 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+mkdir -p .proof/test-results
+: > .proof/test-results/go-test.json
+
+run_id="$$-$(date +%s)"
+work_dir=".proof/test-results/pumps-mcdc-${run_id}"
+mkdir -p "$work_dir"
+
+mongo_name="tyk-pump-proof-mongo-${run_id}"
+es_name="tyk-pump-proof-es-${run_id}"
+pg_name="tyk-pump-proof-pg-${run_id}"
+
+cleanup() {
+	local status=$?
+	docker rm -f "$mongo_name" "$es_name" "$pg_name" >/dev/null 2>&1 || true
+	rm -rf "$work_dir"
+	exit "$status"
+}
+trap cleanup EXIT INT TERM
+
+host_port() {
+	local name="$1"
+	local container_port="$2"
+	docker port "$name" "${container_port}/tcp" | sed -n 's/^.*:\([0-9][0-9]*\)$/\1/p' | head -1
+}
+
+wait_for_port() {
+	local host="$1"
+	local port="$2"
+	local label="$3"
+	local i
+	for i in $(seq 1 120); do
+		if (echo >/dev/tcp/"$host"/"$port") >/dev/null 2>&1; then
+			return 0
+		fi
+		sleep 1
+	done
+	echo "$label did not become reachable on $host:$port" >&2
+	return 1
+}
+
+run_phase() {
+	local name="$1"
+	shift
+	"$@" -coverprofile="${work_dir}/${name}.cover" -json ./pumps >> .proof/test-results/go-test.json
+}
+
+merge_coverprofiles() {
+	local output="$1"
+	shift
+	awk '
+		FNR == 1 {
+			if (NR == 1) {
+				mode = $0
+				print mode
+			}
+			next
+		}
+		{
+			split($0, parts, " ")
+			key = parts[1] " " parts[2]
+			counts[key] += parts[3]
+			if (!(key in order)) {
+				order[key] = ++n
+				keys[n] = key
+			}
+		}
+		END {
+			for (i = 1; i <= n; i++) {
+				key = keys[i]
+				print key, counts[key]
+			}
+		}
+	' "$@" > "$output"
+}
+
+run_phase default \
+	env TYK_TESTCONTAINERS_MIN_FREE_MIB=999999 \
+	go test -p=1 -count=1 -timeout=20m
+
+docker run -d --name "$es_name" \
+	-e discovery.type=single-node \
+	-e xpack.security.enabled=false \
+	-e ES_JAVA_OPTS="-Xms256m -Xmx256m" \
+	-p 127.0.0.1::9200 \
+	docker.elastic.co/elasticsearch/elasticsearch:7.17.27 >/dev/null
+es_port="$(host_port "$es_name" 9200)"
+wait_for_port 127.0.0.1 "$es_port" elasticsearch
+for i in $(seq 1 120); do
+	if curl -fsS "http://127.0.0.1:${es_port}/_cluster/health?wait_for_status=yellow&timeout=1s" >/dev/null 2>&1; then
+		break
+	fi
+	sleep 1
+	if [ "$i" -eq 120 ]; then
+		echo "elasticsearch did not become healthy" >&2
+		exit 1
+	fi
+done
+run_phase elasticsearch \
+	env TYK_TESTCONTAINERS_MIN_FREE_MIB=999999 \
+	TYK_TEST_ELASTICSEARCH_URL="http://127.0.0.1:${es_port}" \
+	go test -p=1 -count=1 -timeout=10m -run 'Elasticsearch'
+docker rm -f "$es_name" >/dev/null 2>&1 || true
+
+docker run -d --name "$mongo_name" -p 127.0.0.1::27017 mongo:7-jammy >/dev/null
+mongo_port="$(host_port "$mongo_name" 27017)"
+wait_for_port 127.0.0.1 "$mongo_port" mongo
+run_phase mongo \
+	env TYK_TESTCONTAINERS_MIN_FREE_MIB=999999 \
+	TYK_TEST_MONGO="mongodb://127.0.0.1:${mongo_port}" \
+	go test -p=1 -count=1 -timeout=10m -run 'Mongo|MCPMongo|GraphMongo|FuzzMongo'
+docker rm -f "$mongo_name" >/dev/null 2>&1 || true
+
+docker run -d --name "$pg_name" \
+	-e POSTGRES_USER=tyk \
+	-e POSTGRES_PASSWORD=tyk \
+	-e POSTGRES_DB=tyk_pump_test \
+	-p 127.0.0.1::5432 \
+	postgres:15-alpine >/dev/null
+pg_port="$(host_port "$pg_name" 5432)"
+for i in $(seq 1 120); do
+	if docker exec "$pg_name" pg_isready -U tyk -d tyk_pump_test >/dev/null 2>&1; then
+		break
+	fi
+	sleep 1
+	if [ "$i" -eq 120 ]; then
+		echo "postgres did not become ready" >&2
+		exit 1
+	fi
+done
+run_phase postgres \
+	env TYK_TESTCONTAINERS_MIN_FREE_MIB=999999 \
+	TYK_TEST_POSTGRES="postgres://tyk:tyk@127.0.0.1:${pg_port}/tyk_pump_test?sslmode=disable" \
+	go test -p=1 -count=1 -timeout=10m -run 'SQL|Postgres|GraphSQL|MCPSQL|MCDC_Dialect'
+docker rm -f "$pg_name" >/dev/null 2>&1 || true
+
+merge_coverprofiles ../cover.out "$work_dir"/*.cover

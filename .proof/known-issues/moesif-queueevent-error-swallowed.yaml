@@ -1,0 +1,19 @@
+id: moesif-queueevent-error-swallowed
+title: Moesif WriteData logs QueueEvent errors without surfacing write failure
+introduced_in: inception
+description: 'pumps/moesif.go calls p.moesifAPI.QueueEvent(&event), logs any returned error, and continues before returning nil from WriteData. If the Moesif SDK rejects an event after the sampling gate passes, the record is not submitted but the caller still observes a successful write. This violates SW-REQ-052''s sampled-record submission guarantee and the broader write-error propagation contract.'
+affected_requirements:
+    - SW-REQ-052
+environment_note: |-
+  Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source and command output.
+reproducer_command: rg -n "QueueEvent\\(&event\\)|Error while writing|return nil" pumps/moesif.go
+severity: medium
+mitigation: Monitor Moesif SDK queue health and process logs for "Error while writing" messages; replay source analytics from upstream storage when a Moesif outage is suspected.
+remediation: Make MoesifPump.WriteData propagate QueueEvent errors to the caller, or record per-event failures in a retryable/dead-letter path with explicit partial-success reporting.
+owner: tyk-team
+release_disposition: ship_with_known_issue
+status: open
+history:
+    - at: "2026-06-19T00:00:00Z"
+      by: agent:codex
+      action: created

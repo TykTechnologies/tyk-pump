@@ -1,6 +1,7 @@
 schema_version: 1
 id: DEFECT-3
 title: SQL table-sharding pump skipped schema migration of sharded tables
+introduced_in: 19fb73d
 description: |
   Before TT-13166 (#905, commit 19fb73d) every SQL pump (standard, aggregate,
   graph) gated AutoMigrate behind `if !TableSharding { ... }`. With sharding
@@ -76,6 +77,11 @@ disposition:
         # KI about AnalyticsRecord.TimeStamp lacking a UTC convention, which
         # affects which YYYYMMDD shard a record routes to. Linked for traceability.
         - analytics-timestamp-timezone-convention-unpinned
+        - mapstructure-decode-silently-drops-unknown-keys
+        - no-panic-recovery-in-exec-pump-writing
+        - sql-background-index-concurrency-unbounded
+        - sql-batch-size-zero-infinite-loop
+        - sql-schema-no-version-policy
     evidence:
         verified_by:
             - pumps/migration_test.go:TestHandleTableMigration

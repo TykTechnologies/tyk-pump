@@ -39,10 +39,9 @@ fix that produced the current implementation).
   - `TestMCPMongoAggregatePump_WriteData_Roundtrip` / `_MixedCollection` —
     end-to-end upsert verification.
   - `TestAddMCPDimensionUpdates_*` — exercise the dimension-update helper.
-- The `atomicity` obligation's `negative` evidence requirement is suppressed
-  with rationale (see the req's `obligation_suppressions`): MCP-mongo
-  upsert atomicity negative evidence requires a fault-injecting MongoDB
-  harness not available locally.
+- The `atomicity` obligation's `negative` evidence requirement is deferred:
+  MCP-mongo upsert atomicity negative evidence requires a fault-injecting
+  MongoDB harness not available locally.
 - Live-MongoDB tests are excluded from the local audit MC/DC scope (known
   issue).
 

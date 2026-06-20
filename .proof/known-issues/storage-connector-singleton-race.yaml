@@ -1,9 +1,13 @@
 id: storage-connector-singleton-race
 title: storage.connectorSingleton + logPrefix are package-level mutables with no synchronization
+introduced_in: inception
 description: 'storage/temporal_storage.go:23-29 declares ''connectorSingleton model.Connector'' and ''logPrefix'' as package-level variables. They are read at lines 108/121/143/194/223/233/329/341 and written at line 194 (connectorSingleton = conn) and line 98 (logPrefix = r.Config.Type) WITHOUT any sync.Mutex or atomic. If two TemporalStorageHandler instances are created concurrently (e.g. AnalyticsStore + UptimeStore both calling Init), or if forceReconnect=true is invoked while ensureConnection runs in another goroutine, this is a data race detectable by ''-race''. Worst case: kv/list members can be partially-published or the connector can be Disconnect()''d from one goroutine while another is using it via getKVFromConnector / getListFromConnector.'
 affected_requirements:
     - SW-REQ-007
     - SYS-REQ-006
+environment_note: |-
+  Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source or documentation surface and following the described scenario.
+reproducer_command: rg -n "connectorSingleton model\.Connector|connectorSingleton = conn" storage/temporal_storage.go
 severity: medium
 mitigation: Production currently constructs only AnalyticsStore + UptimeStore sequentially in main.setupAnalyticsStore; the race window is small. Avoid using forceReconnect=true outside controlled init paths.
 remediation: Either (a) protect connectorSingleton + logPrefix with a sync.RWMutex, or (b) move them onto the TemporalStorageHandler struct so each handler owns its own connector, or (c) make connectorSingleton a typed atomic.Pointer.

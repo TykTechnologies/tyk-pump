@@ -1,0 +1,20 @@
+id: sql-aggregate-no-deadlock-retry
+title: SQL aggregate upsert returns deadlock errors without retry or classification
+introduced_in: inception
+description: 'pumps/sql_aggregate.go builds the aggregate upsert and returns tx.Error from the GORM Create/OnConflict path. There is no deadlock-specific classification, retry loop, or transaction restart around the aggregate write. A database deadlock or serialization failure therefore surfaces as a plain write error rather than being recovered. The SW-REQ-041 deadlock_recovery obligation is a real product gap, not only missing test evidence.'
+affected_requirements:
+    - SW-REQ-041
+environment_note: |-
+  Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source and command output.
+reproducer_command: |-
+  rg -n "OnConflict|Create\\(|tx\\.Error|deadlock|retry" pumps/sql_aggregate.go
+severity: medium
+mitigation: Rely on upstream purge retry/replay behavior and database monitoring for transient deadlock errors; tune database isolation and lock contention externally.
+remediation: Classify retryable SQL deadlock/serialization errors per supported driver, retry the aggregate upsert with bounded backoff, and add a fake-driver or transaction test for retry and final failure cases.
+owner: tyk-team
+release_disposition: ship_with_known_issue
+status: open
+history:
+    - at: "2026-06-19T00:00:00Z"
+      by: agent:codex
+      action: created

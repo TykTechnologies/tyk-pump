@@ -33,57 +33,32 @@ verification:
         comment: 'Phase Q: catalog obligation attachments — adds hash_format_deterministic (aggregate dimension key projection). See .proof/catalog-obligation-proposals.md.'
         fingerprint: sha256:5b3de46c2b65bfda73aefd76ce0cff88deec7322000638260e0e60785ac760a0
         ai_generated: true
-    impact_reviews:
-        - requirement: SW-REQ-009
-          artifact: analytics/analytics.go
-          decision: no-authored-change
-          reviewer: agent:claude-opus-4-8
-          reason: 'Consolidation pass: the prior ReqProof-coverage agents'' changes to these production files are behavior-preserving only — added // reqproof:implements trace annotations and trailing //mcdc:ignore comments on existing branches; no executable code path, signature, or logic changed. Requirement intent and formalization are unchanged.'
-          base: origin/master
-          requirement_fingerprint: sha256:d89418eea94b7e70c045e67412bff2fa1c42868bd0c19339e0eec67451252f02
-          approval_fingerprint: sha256:5b3de46c2b65bfda73aefd76ce0cff88deec7322000638260e0e60785ac760a0
-          artifact_fingerprint: sha256:1af60beb1ea3d67ce5c4360dbda50461329e4e80b77cc3a0b45f944786216f44
-          reviewed_at: "2026-06-11T18:48:28Z"
-        - requirement: SW-REQ-009
-          artifact: analytics/demo/demo.go
-          decision: no-authored-change
-          reviewer: buger
-          reason: 'Phase J: req_type field flipped derived to guarantee per probelabs/reqproof#88 (category error fix). Production .go files were not modified for this change; only req YAML metadata. Re-recording no-authored-change impact.'
-          base: origin/master
-          requirement_fingerprint: sha256:d89418eea94b7e70c045e67412bff2fa1c42868bd0c19339e0eec67451252f02
-          approval_fingerprint: sha256:5b3de46c2b65bfda73aefd76ce0cff88deec7322000638260e0e60785ac760a0
-          artifact_fingerprint: sha256:7ae0f109763ca16e8f54c2532c92a11a165795a7dcf8ce6722e53a847255ef81
-          reviewed_at: "2026-06-02T05:13:05Z"
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:14Z"
-    last_modified_by: human:buger
-    last_modified_at: "2026-06-17T08:02:50Z"
+    last_modified_by: agent:codex
+    last_modified_at: "2026-06-19T14:15:55Z"
 obligation_checklist:
+    - binary_data_preserved
     - determinism
     - hash_format_deterministic
     - tz_explicit
-obligation_suppressions:
-    - id: binary_data_preserved
-      reason: 'Phase G: code_signal ''go.encoding.lossy-string-conversion'' at analytics/analytics.go:343 is the trimBuffer.Bytes() coerced to string after deliberate UTF-8 Truncate boundary handling. Analytics RawRequest/RawResponse are by-design UTF-8 strings on the wire (base64 transport for binary); the string conversion is part of the trimming contract and not a lossy boundary. Not a real obligation gap.'
-      suppressed_by: buger
-      suppressed_at: "2026-06-01T18:33:28Z"
-      framework_refs:
-        - CWE CWE-176,CWE-1007
-        - OWASP-ASVS-v4 V5.2.1,V5.2.3
-    - id: determinism
-      reason: 'Phase G: code_signal ''go.random.math-rand'' at analytics/demo/demo.go:34 is in demo/test-fixture data generator (randomInRange, randomMethod). Non-product code (demo-only); randomness is the intended behavior. Not an analytics output-determinism gap.'
-      suppressed_by: buger
-      suppressed_at: "2026-06-01T18:33:20Z"
 obligation_deferrals:
-    - obligation_class: hash_format_deterministic
-      reason: 'Deferred: required hash_format_deterministic test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'
-      tracking: .proof/deferred-witness-backlog.md
-      owner: human:buger
+    - obligation_class: binary_data_preserved
+      reason: real byte-truncation preservation gap under known-issue analytics-trimstring-byte-truncation-not-unicode-safe; surfaced as visible tracked debt, not an overclaimed fix
+      tracking: analytics-trimstring-byte-truncation-not-unicode-safe
+      owner: agent:codex
+      ki_ref: analytics-trimstring-byte-truncation-not-unicode-safe
+    - obligation_class: determinism
+      reason: proof attribution gap under known-issue sw-req-009-demo-randomness-obligation-misattributed; demo-data randomness is tracked debt until ownership is narrowed
+      tracking: sw-req-009-demo-randomness-obligation-misattributed
+      owner: agent:codex
+      ki_ref: sw-req-009-demo-randomness-obligation-misattributed
     - obligation_class: tz_explicit
       reason: real untested obligation under known-issue analytics-timestamp-timezone-convention-unpinned; surfaced as visible tracked debt, not an overclaimed fix
       tracking: analytics-timestamp-timezone-convention-unpinned
       owner: human:buger
+      ki_ref: analytics-timestamp-timezone-convention-unpinned
 lifecycle:
     change_history:
         - date: "2026-05-29T15:46:44Z"

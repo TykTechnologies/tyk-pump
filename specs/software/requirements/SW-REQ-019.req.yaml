@@ -32,84 +32,12 @@ verification:
         reviewed_at: "2026-05-30T08:44:54Z"
         comment: Re-approve superseded anchor reqs after Phase A decomposition; descriptions amended with SUPERSEDED prefix listing new SW reqs that replace them.
         fingerprint: sha256:b5ec8e9e77a63faab4230cf5fdad066a2a6152810eda8bb301e4fe78b844bb45
-        ai_generated: false
-    impact_reviews:
-        - requirement: SW-REQ-019
-          artifact: pumps/graph_sql.go
-          decision: no-authored-change
-          reviewer: buger
-          reason: 'Production files added reqproof requirement-traceability annotations only (// reqproof:implements / // Verifies: / triple-form evidence). No runtime behavior change.'
-          base: origin/master
-          requirement_fingerprint: sha256:a4995346c0a9f648fbed74739b2b170f910d1faf5665c1469f15c22a57a38e9a
-          approval_fingerprint: sha256:7afc3fd8f21de4034b432a6043a0f72c3b3d952a301f0f3eff1030415f51611c
-          artifact_fingerprint: sha256:5f5432641b4467cbc4127bc8807df61aeed746d65b43ae10660247b270500da7
-          reviewed_at: "2026-05-30T07:45:42Z"
-        - requirement: SW-REQ-019
-          artifact: pumps/graph_sql_aggregate.go
-          decision: no-authored-change
-          reviewer: buger
-          reason: 'Production files added reqproof requirement-traceability annotations only (// reqproof:implements / // Verifies: / triple-form evidence). No runtime behavior change.'
-          base: origin/master
-          requirement_fingerprint: sha256:a4995346c0a9f648fbed74739b2b170f910d1faf5665c1469f15c22a57a38e9a
-          approval_fingerprint: sha256:7afc3fd8f21de4034b432a6043a0f72c3b3d952a301f0f3eff1030415f51611c
-          artifact_fingerprint: sha256:7ab935b8369bdf6b209b545d29cc611a3facbdc9270494742fd36ff291a58b24
-          reviewed_at: "2026-05-30T07:45:42Z"
-        - requirement: SW-REQ-019
-          artifact: pumps/mcp_sql.go
-          decision: no-authored-change
-          reviewer: buger
-          reason: 'Production files added reqproof requirement-traceability annotations only (// reqproof:implements / // Verifies: / triple-form evidence). No runtime behavior change.'
-          base: origin/master
-          requirement_fingerprint: sha256:a4995346c0a9f648fbed74739b2b170f910d1faf5665c1469f15c22a57a38e9a
-          approval_fingerprint: sha256:7afc3fd8f21de4034b432a6043a0f72c3b3d952a301f0f3eff1030415f51611c
-          artifact_fingerprint: sha256:d288c38425cc46921a19b753f82ed6d5ed358a6f89889925acfb7671776bbf02
-          reviewed_at: "2026-05-30T07:45:42Z"
-        - requirement: SW-REQ-019
-          artifact: pumps/mcp_sql_aggregate.go
-          decision: no-authored-change
-          reviewer: buger
-          reason: 'Production files added reqproof requirement-traceability annotations only (// reqproof:implements / // Verifies: / triple-form evidence). No runtime behavior change.'
-          base: origin/master
-          requirement_fingerprint: sha256:a4995346c0a9f648fbed74739b2b170f910d1faf5665c1469f15c22a57a38e9a
-          approval_fingerprint: sha256:7afc3fd8f21de4034b432a6043a0f72c3b3d952a301f0f3eff1030415f51611c
-          artifact_fingerprint: sha256:efce07b7adb55e4c42d46a76f77c10216c0e4a84ba80119a870f95cbcc0822d6
-          reviewed_at: "2026-05-30T07:45:42Z"
-        - requirement: SW-REQ-019
-          artifact: pumps/sql.go
-          decision: no-authored-change
-          reviewer: buger
-          reason: 'Production files added reqproof requirement-traceability annotations only (// reqproof:implements / // Verifies: / triple-form evidence). No runtime behavior change.'
-          base: origin/master
-          requirement_fingerprint: sha256:a4995346c0a9f648fbed74739b2b170f910d1faf5665c1469f15c22a57a38e9a
-          approval_fingerprint: sha256:7afc3fd8f21de4034b432a6043a0f72c3b3d952a301f0f3eff1030415f51611c
-          artifact_fingerprint: sha256:8d83169cf61d152dfb7998c0cf8199b7165599298b0d487e9bf31fe56713918e
-          reviewed_at: "2026-05-30T07:45:42Z"
-        - requirement: SW-REQ-019
-          artifact: pumps/sql_aggregate.go
-          decision: no-authored-change
-          reviewer: buger
-          reason: 'Production files added reqproof requirement-traceability annotations only (// reqproof:implements / // Verifies: / triple-form evidence). No runtime behavior change.'
-          base: origin/master
-          requirement_fingerprint: sha256:a4995346c0a9f648fbed74739b2b170f910d1faf5665c1469f15c22a57a38e9a
-          approval_fingerprint: sha256:7afc3fd8f21de4034b432a6043a0f72c3b3d952a301f0f3eff1030415f51611c
-          artifact_fingerprint: sha256:1b61b84e10c434f679cf0deb81fe33d67f059a666276de77304860802ecebad4
-          reviewed_at: "2026-05-30T07:45:42Z"
+        ai_generated: true
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:15Z"
-    last_modified_by: human:cli
-    last_modified_at: "2026-06-02T08:58:03Z"
-obligation_checklist:
-    - parameterized_only_write
-obligation_suppressions:
-    - id: parameterized_only_write
-      reason: Phase A decomposition superseded this family req; obligations are now carried by per-implementation children with implemented_by traces.
-      suppressed_by: buger
-      suppressed_at: "2026-05-30T08:45:17Z"
-      framework_refs:
-        - CWE CWE-89
-        - NIST-800-53 SI-10
-        - OWASP-ASVS-v4 V5.3.4,V5.3.5
+    last_modified_by: agent:codex
+    last_modified_at: "2026-06-19T07:23:54Z"
 lifecycle:
     deprecated_by: SW-REQ-040
     deprecated_at: "2026-06-01T20:31:31Z"

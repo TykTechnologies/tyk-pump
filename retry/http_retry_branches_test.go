@@ -12,18 +12,14 @@ import (
 
 type tempErr struct{ msg string }
 
-// Verifies: SW-REQ-030
 func (e *tempErr) Error() string { return e.msg }
 
-// Verifies: SW-REQ-030
 func (e *tempErr) Temporary() bool { return true }
 
 type timeoutErr2 struct{ msg string }
 
-// Verifies: SW-REQ-030
 func (e *timeoutErr2) Error() string { return e.msg }
 
-// Verifies: SW-REQ-030
 func (e *timeoutErr2) Timeout() bool { return true }
 
 type connErr struct {
@@ -31,14 +27,11 @@ type connErr struct {
 	is  bool
 }
 
-// Verifies: SW-REQ-030
 func (e *connErr) Error() string { return e.msg }
 
-// Verifies: SW-REQ-030
 func (e *connErr) ConnectionError() bool { return e.is }
 
-// Verifies: SW-REQ-030
-// SW-REQ-030:error_handling:negative
+// SW-REQ-030:retry_policy_explicit:nominal
 func TestIsErrorRetryable_AllBranches(t *testing.T) {
 	cases := []struct {
 		name string
@@ -64,7 +57,8 @@ func TestIsErrorRetryable_AllBranches(t *testing.T) {
 	}
 }
 
-// Verifies: SW-REQ-030
+// Verifies: SYS-REQ-006
+// MCDC SYS-REQ-006: retry_attempted=T, transient_failure=T => TRUE
 func TestBackoffHTTPRetry_Send_WithBody_RetriesOn5xx(t *testing.T) {
 	calls := 0
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -90,7 +84,6 @@ func TestBackoffHTTPRetry_Send_WithBody_RetriesOn5xx(t *testing.T) {
 	}
 }
 
-// Verifies: SW-REQ-030
 // Verifies: SYS-REQ-023
 // Verifies: SYS-REQ-006
 // SYS-REQ-023:error_handling:negative

@@ -5,6 +5,10 @@ affected_requirements:
     - SYS-REQ-005
     - INT-REQ-004
     - SW-REQ-072
+    - SW-REQ-034
+    - SW-REQ-035
+    - SW-REQ-037
+    - SW-REQ-038
 evidence_manifests:
     - code_signal:opengrep:go.concurrency.unguarded-channel-send:pumps/mongo.go:438
     - code_signal:opengrep:go.concurrency.unguarded-channel-send:pumps/graph_mongo.go:135
@@ -12,6 +16,8 @@ evidence_manifests:
     - code_signal:opengrep:go.context.dropped-on-floor:pumps/mongo.go:402
     - code_signal:opengrep:go.context.dropped-on-floor:pumps/mongo_selective.go:203
 severity: medium
+environment_note: Evidence is tied to the listed evidence_manifests entries; reproduce by rerunning the named test or code-signal scan and inspecting code_signal:opengrep:go.concurrency.unguarded-channel-send:pumps/mongo.go:438.
+introduced_in: inception
 mitigation: Configure mongo client-side timeouts via the connection string (connectTimeoutMS, socketTimeoutMS) until the pump forwards the caller ctx to m.store.Insert.
 remediation: Replace context.Background() with the ctx parameter received by WriteData in all four files — pumps/mongo.go:435, pumps/mongo_selective.go:242 and :375, pumps/graph_mongo.go:148, pumps/mcp_mongo.go:138. Add a test that cancels ctx and asserts WriteData returns promptly with ctx.Err() for each variant.
 owner: tyk-team
@@ -47,5 +53,9 @@ history:
       detail: add-evidence-manifest
     - at: "2026-06-01T20:26:45Z"
       by: human:buger
+      action: edit
+      detail: add-requirement
+    - at: "2026-06-19T07:29:22Z"
+      by: agent:codex
       action: edit
       detail: add-requirement

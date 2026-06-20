@@ -33,37 +33,6 @@ verification:
         comment: 'Phase Q: catalog obligation attachments — adds malformed_recovers_or_errors_loudly, binary_data_preserved, encoding_aware, length_prefix_validated, recursion_depth_bounded, reference_cycle_safe, ordering_guarantees_documented, snapshot_wire_format_compatible (serializer surface; KI serializer-protobuf-loses-city-names). See .proof/catalog-obligation-proposals.md.'
         fingerprint: sha256:8e552855b69d941243ee283b13ef8e6945cfbf23773101e115e205a3f5f37dbf
         ai_generated: true
-    impact_reviews:
-        - requirement: SW-REQ-008
-          artifact: serializer/msgp.go
-          decision: no-authored-change
-          reviewer: buger
-          reason: 'Phase L2: formalization-only change (informal -> fretish + per-component boolean variables). Production .go files were not modified; only req YAML metadata, component vars YAMLs, and // MCDC test comment witnesses.'
-          base: origin/master
-          requirement_fingerprint: sha256:bb67e2acb061d54b4a421eca0021ac7dedf1dd515374e0b6a148ead511632a07
-          approval_fingerprint: sha256:8e552855b69d941243ee283b13ef8e6945cfbf23773101e115e205a3f5f37dbf
-          artifact_fingerprint: sha256:4b82c8573766d5112364c15a440f1abd9e7eee3ec7df90ab899e8a3d1a216bd2
-          reviewed_at: "2026-06-02T13:44:40Z"
-        - requirement: SW-REQ-008
-          artifact: serializer/protobuf.go
-          decision: no-authored-change
-          reviewer: buger
-          reason: 'Phase L2: formalization-only change (informal -> fretish + per-component boolean variables). Production .go files were not modified; only req YAML metadata, component vars YAMLs, and // MCDC test comment witnesses.'
-          base: origin/master
-          requirement_fingerprint: sha256:bb67e2acb061d54b4a421eca0021ac7dedf1dd515374e0b6a148ead511632a07
-          approval_fingerprint: sha256:8e552855b69d941243ee283b13ef8e6945cfbf23773101e115e205a3f5f37dbf
-          artifact_fingerprint: sha256:1232203f6eff952cba22722f8caca4575afb7fd6fc20ab35618d3db75d67d09b
-          reviewed_at: "2026-06-02T13:44:40Z"
-        - requirement: SW-REQ-008
-          artifact: serializer/serializer.go
-          decision: no-authored-change
-          reviewer: buger
-          reason: 'Phase L2: formalization-only change (informal -> fretish + per-component boolean variables). Production .go files were not modified; only req YAML metadata, component vars YAMLs, and // MCDC test comment witnesses.'
-          base: origin/master
-          requirement_fingerprint: sha256:bb67e2acb061d54b4a421eca0021ac7dedf1dd515374e0b6a148ead511632a07
-          approval_fingerprint: sha256:8e552855b69d941243ee283b13ef8e6945cfbf23773101e115e205a3f5f37dbf
-          artifact_fingerprint: sha256:0cb5c145c1a3945600018323cd882a1466cac41191dea424ea37599736cfadd2
-          reviewed_at: "2026-06-02T13:44:40Z"
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:14Z"
@@ -72,15 +41,6 @@ history:
 obligation_checklist:
     - encoding_safety
     - snapshot_wire_format_compatible
-obligation_deferrals:
-    - obligation_class: encoding_safety
-      reason: 'Deferred: required encoding_safety test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'
-      tracking: .proof/deferred-witness-backlog.md
-      owner: human:buger
-    - obligation_class: snapshot_wire_format_compatible
-      reason: 'Deferred: required snapshot_wire_format_compatible test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'
-      tracking: .proof/deferred-witness-backlog.md
-      owner: human:buger
 lifecycle:
     change_history:
         - date: "2026-05-29T15:46:44Z"

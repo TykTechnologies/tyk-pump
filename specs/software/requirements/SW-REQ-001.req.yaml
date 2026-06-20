@@ -15,7 +15,11 @@ parent: SYS-REQ-001
 component: pump-core
 rationale: ""
 tags: []
-variables: []
+variables:
+    - purge_tick
+    - records_dispatched
+    - records_consumed_from_store
+    - record_truncated
 traces:
     satisfies:
         - SYS-REQ-001
@@ -25,9 +29,9 @@ traces:
         - SYS-REQ-011
         - SYS-REQ-022
         - SYS-REQ-005
-    reviewed_at: "2026-06-02T14:31:00.941157Z"
-    reviewed_by: human:buger
-    reviewed_fingerprint: sha256:26958f89e571b07b5d6b9a3a0529dbcd089c92391b1da313382744385edec696
+    reviewed_at: "2026-06-19T14:05:37.873797Z"
+    reviewed_by: ai:codex
+    reviewed_fingerprint: sha256:ffc64bad77dbeb0c6d7d9508a5716dbe53b3e678a6bab295be216b603f7dc82f
 verification:
     assurance_level: B
     formalization_status: valid
@@ -35,30 +39,20 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-04T16:53:35Z"
-        comment: 'Phase S Wave 2 fix: failure_independence_proven decomposes from SYS-REQ-004 into SW-REQ-016 (CommonPumpConfig sets the per-pump bulkhead), not SW-REQ-001 (which doesn''t satisfy SYS-REQ-004)'
-        fingerprint: sha256:42f7b00e4909e8819929902eedb40da2775cd9c028d18713beccf89db9d69050
-        ai_generated: true
-    impact_reviews:
-        - requirement: SW-REQ-001
-          artifact: main.go
-          decision: no-authored-change
-          reviewer: agent:claude-opus-4-8
-          reason: 'Consolidation pass: the prior ReqProof-coverage agents'' changes to these production files are behavior-preserving only — added // reqproof:implements trace annotations and trailing //mcdc:ignore comments on existing branches; no executable code path, signature, or logic changed. Requirement intent and formalization are unchanged.'
-          base: origin/master
-          requirement_fingerprint: sha256:26958f89e571b07b5d6b9a3a0529dbcd089c92391b1da313382744385edec696
-          approval_fingerprint: sha256:42f7b00e4909e8819929902eedb40da2775cd9c028d18713beccf89db9d69050
-          artifact_fingerprint: sha256:454d0a615fe12f372232c9e594a331e7651473dc3d607f8350fac761abeaa882
-          reviewed_at: "2026-06-11T18:47:54Z"
+        reviewed_at: "2026-06-19T20:08:14Z"
+        comment: 'Spec evidence-debt refresh: reviewed KI-gated obligation_deferrals added for required-but-unwitnessed obligations. Each deferral links to an open traced KnownIssue and leaves the gap as auto-expiring accepted KI-debt rather than claiming product/test fixes.'
+        fingerprint: sha256:f088bbb11fa576678ed2f147e59a4350d6e554463be13db9277259feccaa2058
+        ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:13Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-17T08:04:30Z"
+    last_modified_at: "2026-06-19T20:08:14Z"
 obligation_checklist:
     - boundary
     - cascade_circuit_breaker
     - concurrent
+    - dst_transition_safe
     - failure_independence_proven
     - fanout_panic_isolated
     - nil_safety
@@ -67,52 +61,57 @@ obligation_checklist:
     - per_pump_circuit_breaker
     - rate_limit_respected
     - secrets_not_logged
-obligation_suppressions:
-    - id: dst_transition_safe
-      reason: 'dst_transition_safe code signal at main.go:291: reviewed — this site uses time.Now()/time.Since()/Sub() to measure an elapsed DURATION for timing/Debug logging, not to bucket or route a record by wall-clock date. Go durations are computed from the monotonic clock and are immune to DST/timezone transitions, so the dst-transition failure mode (a wall-clock instant shifting across a DST boundary) does not apply here. Intentionally out of contract for this obligation; the genuine wall-clock-bucketing surface is governed separately by KI analytics-timestamp-timezone-convention-unpinned.'
-      suppressed_by: human:leo
-      suppressed_at: "2026-06-11T16:11:34Z"
 obligation_deferrals:
-    - obligation_class: boundary
-      reason: 'Deferred: required boundary test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'
-      tracking: .proof/deferred-witness-backlog.md
-      owner: human:buger
     - obligation_class: cascade_circuit_breaker
-      reason: 'real untested obligation under known-issue pump-no-per-pump-circuit-breaker; surfaced as visible tracked debt, not an overclaimed fix'
-      tracking: pump-no-per-pump-circuit-breaker
+      reason: Required cascade circuit-breaker evidence is parked because the per-pump circuit breaker gap is tracked by this KI.
+      tracking: known-issue:pump-no-per-pump-circuit-breaker
       owner: human:buger
+      ki_ref: pump-no-per-pump-circuit-breaker
     - obligation_class: concurrent
-      reason: 'real untested obligation under known-issue pump-fanout-panic-not-recovered; surfaced as visible tracked debt, not an overclaimed fix'
-      tracking: pump-fanout-panic-not-recovered
+      reason: Required concurrency evidence is parked because the fanout goroutine isolation gap is tracked by this open KI tripwire.
+      tracking: known-issue:pump-fanout-panic-not-recovered
       owner: human:buger
+      ki_ref: pump-fanout-panic-not-recovered
+    - obligation_class: dst_transition_safe
+      reason: Required DST evidence is parked because elapsed-duration ownership is a tracked proof attribution gap.
+      tracking: known-issue:elapsed-timesince-dst-obligation-misattributed
+      owner: human:buger
+      ki_ref: elapsed-timesince-dst-obligation-misattributed
     - obligation_class: failure_independence_proven
-      reason: 'Per-pump fan-out failure independence has a known panic-isolation hole (missing defer recover) tracked by KI pump-fanout-panic-not-recovered disposition=fix; independence proof pends that remediation. Obligation required, postponed.'
-      tracking: .proof/known-issues/pump-fanout-panic-not-recovered.yaml
+      reason: Required failure-independence evidence is parked because a pump panic can still terminate the host process.
+      tracking: known-issue:pump-fanout-panic-not-recovered
       owner: human:buger
+      ki_ref: pump-fanout-panic-not-recovered
     - obligation_class: fanout_panic_isolated
-      reason: 'execPumpWriting per-pump inner goroutine has no defer recover() so a pump panic crashes the host; KI pump-fanout-panic-not-recovered disposition=fix (remediation committed, not yet landed). Obligation required, fix postponed.'
-      tracking: .proof/known-issues/pump-fanout-panic-not-recovered.yaml
+      reason: Required panic-isolation evidence is parked because the fanout panic recovery gap is tracked by this KI.
+      tracking: known-issue:pump-fanout-panic-not-recovered
       owner: human:buger
+      ki_ref: pump-fanout-panic-not-recovered
     - obligation_class: nil_safety
-      reason: 'real untested obligation under known-issue preprocess-decode-error-leaves-nil-hole-in-keys; surfaced as visible tracked debt, not an overclaimed fix'
-      tracking: preprocess-decode-error-leaves-nil-hole-in-keys
+      reason: Required nil-safety evidence is parked because decode errors can leave nil holes that panic filtering.
+      tracking: known-issue:preprocess-decode-error-leaves-nil-hole-in-keys
       owner: human:buger
+      ki_ref: preprocess-decode-error-leaves-nil-hole-in-keys
     - obligation_class: partial_progress_observable
-      reason: 'real untested obligation under known-issue pump-no-per-pump-circuit-breaker; surfaced as visible tracked debt, not an overclaimed fix'
-      tracking: pump-no-per-pump-circuit-breaker
+      reason: Required partial-progress evidence is parked because failing pumps continue to be invoked every purge cycle.
+      tracking: known-issue:pump-no-per-pump-circuit-breaker
       owner: human:buger
+      ki_ref: pump-no-per-pump-circuit-breaker
     - obligation_class: per_pump_circuit_breaker
-      reason: 'real untested obligation under known-issue pump-no-per-pump-circuit-breaker; surfaced as visible tracked debt, not an overclaimed fix'
-      tracking: pump-no-per-pump-circuit-breaker
+      reason: Required per-pump circuit-breaker evidence is parked because the configured cooldown behavior is not implemented yet.
+      tracking: known-issue:pump-no-per-pump-circuit-breaker
       owner: human:buger
+      ki_ref: pump-no-per-pump-circuit-breaker
     - obligation_class: rate_limit_respected
-      reason: 'Deferred: required rate_limit_respected test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'
-      tracking: .proof/deferred-witness-backlog.md
+      reason: Required rate-limit evidence is parked because failing pumps are retried every cycle without cooldown.
+      tracking: known-issue:pump-no-per-pump-circuit-breaker
       owner: human:buger
+      ki_ref: pump-no-per-pump-circuit-breaker
     - obligation_class: secrets_not_logged
-      reason: 'Deferred: required secrets_not_logged test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'
-      tracking: .proof/deferred-witness-backlog.md
+      reason: Required log-privacy evidence is parked because decoded records may be debug-logged before privacy filtering.
+      tracking: known-issue:main-prefilter-debug-logs-unfiltered-records
       owner: human:buger
+      ki_ref: main-prefilter-debug-logs-unfiltered-records
 lifecycle:
     change_history:
         - date: "2026-05-29T15:46:43Z"
@@ -165,3 +164,13 @@ lifecycle:
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-04T16:52:30Z comment="Phase S Wave 2: decompose SYS-REQ-004''s failure_independence_proven into SW-REQ-001 (purge fanout implements the independence claim)")'
           changed_by: human:cli
+        - date: "2026-06-19T19:54:58Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-04T16:53:35Z comment="Phase S Wave 2 fix: failure_independence_proven decomposes from SYS-REQ-004 into SW-REQ-016 (CommonPumpConfig sets the per-pump bulkhead), not SW-REQ-001 (which doesn''t satisfy SYS-REQ-004)")'
+          changed_by: human:cli
+        - date: "2026-06-19T20:08:14Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-19T19:54:58Z comment="Spec audit stale-approval refresh: reviewed current YAML diffs vs HEAD plus KI/proof metadata; changes are metadata, trace, and evidence-honesty updates that surface gaps via KnownIssues/deferrals without claiming product fixes.")'
+          changed_by: human:buger

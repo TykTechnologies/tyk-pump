@@ -1,0 +1,21 @@
+id: syslog-init-logfatal-on-invalid-transport
+title: Syslog initConfigs log.Fatal exits the process on invalid transport
+introduced_in: inception
+description: 'pumps/syslog.go initConfigs calls s.log.Fatal when the configured transport is not udp, tcp, or tls. A single invalid syslog transport value in pump configuration therefore exits the whole tyk-pump process instead of returning a configuration error for the syslog pump.'
+affected_requirements:
+    - SYS-REQ-004
+    - SW-REQ-050
+evidence_manifests:
+    - test:pumps/udp_file_pumps_mcdc_100_test.go:TestSyslogPump_initConfigs_InvalidTransport_InProcess
+reproducer_command: |-
+  go test -count=1 -run 'TestSyslogPump_initConfigs_InvalidTransport_InProcess' ./pumps
+severity: medium
+mitigation: Validate syslog transport settings before deployment and rely on a process supervisor to restart tyk-pump after fatal exits.
+remediation: Return an invalid-transport error from syslog initialisation instead of calling log.Fatal, so the pump host can skip or report the failing syslog pump without exiting.
+owner: tyk-team
+release_disposition: ship_with_known_issue
+status: open
+history:
+    - at: "2026-06-19T00:00:00Z"
+      by: agent:codex
+      action: created

@@ -1,8 +1,36 @@
 id: pumps-logfatal-on-config-decode
 title: Pump Init log.Fatals on mapstructure.Decode error, crashing tyk-pump
+introduced_in: inception
 description: 'pumps/statsd.go:62, pumps/syslog.go:82, pumps/graylog.go:76, pumps/prometheus.go:193, pumps/csv.go:57, pumps/stdout.go:65, pumps/kafka.go:103, pumps/elasticsearch.go:364 all use s.log.Fatal("Failed to decode configuration: ", err) inside Init when mapstructure.Decode returns an error. log.Fatal calls os.Exit(1), which kills the entire tyk-pump process instead of disabling the offending pump and letting siblings continue. SYS-REQ-004 (per-backend failure independence) is violated: a single misconfigured pump entry in pump_conf prevents the rest of the pump fleet from starting. Contrast with pumps/dogstatsd.go which returns a wrapped error from Init — that is the desired contract.'
 affected_requirements:
     - SYS-REQ-004
+    - SW-REQ-021
+    - SW-REQ-023
+    - SW-REQ-024
+    - SW-REQ-025
+    - SW-REQ-026
+    - SW-REQ-034
+    - SW-REQ-035
+    - SW-REQ-036
+    - SW-REQ-046
+    - SW-REQ-047
+    - SW-REQ-049
+    - SW-REQ-050
+    - SW-REQ-051
+    - SW-REQ-052
+    - SW-REQ-053
+    - SW-REQ-055
+    - SW-REQ-056
+    - SW-REQ-057
+    - SW-REQ-058
+    - SW-REQ-059
+    - SW-REQ-060
+    - SW-REQ-061
+    - SW-REQ-062
+    - SW-REQ-063
+    - SW-REQ-068
+    - SW-REQ-069
+    - SW-REQ-070
 evidence_manifests:
     - code_signal:opengrep:go.runtime.panic-call:pumps/mongo.go:219
     - code_signal:opengrep:go.log.fatal-in-init:pumps/csv.go:51
@@ -27,6 +55,8 @@ evidence_manifests:
     - code_signal:opengrep:go.log.fatal-in-init:pumps/stdout.go:57
     - code_signal:opengrep:go.log.fatal-in-init:pumps/syslog.go:75
     - code_signal:opengrep:go.log.fatal-in-init:pumps/timestream.go:95
+environment_note: |-
+  Evidence is tied to the listed evidence_manifests entries; reproduce by rerunning the named test or code-signal scan and inspecting code_signal:opengrep:go.runtime.panic-call:pumps/mongo.go:219.
 severity: medium
 mitigation: Validate pump configs (especially type-compatibility against mapstructure tags) before deploying tyk-pump; pin pump configs in source control with schema checks.
 remediation: Replace s.log.Fatal at pumps/statsd.go:62, pumps/syslog.go:82, pumps/graylog.go:76, pumps/prometheus.go:193, pumps/csv.go:57, pumps/stdout.go:65, pumps/kafka.go:103, pumps/elasticsearch.go:364 with s.log.WithError(err).Error(...) + return err. The pump runner (main.go execPumpWriting) already handles a non-nil Init error gracefully — it skips the failing pump and continues.

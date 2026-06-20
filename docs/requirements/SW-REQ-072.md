@@ -42,6 +42,6 @@ remediated.
   (mongo: pass `ctx` to `Database.Insert`/`Aggregate`; elasticsearch: bound
   reconnect via ctx; treat `Timeout == 0` as a hard policy error or apply a
   sane default).
-- Once the KIs are resolved, the suppressions on SW-REQ-072 should be removed
+- Once the KIs are resolved, the deferrals on SW-REQ-072 should be removed
   and tests annotated `// SW-REQ-072:cancellation_observed:negative` and
   `// SW-REQ-072:error_handling:negative` against the new behaviour.

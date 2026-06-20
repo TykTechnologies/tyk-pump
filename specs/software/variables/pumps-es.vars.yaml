@@ -28,3 +28,6 @@ variables:
       type: bool
       direction: output
       description: True iff WriteData indexes each record one-by-one (Index call per record) when DisableBulk is true, otherwise BulkProcessor is used with operator-supplied workers/flushInterval/bulkActions/bulkSize.
+independence:
+    declared: true
+    reason: 'Elasticsearch pump requirements model separate routing, bulk/per-record indexing, and failure-observability outcomes; each guarantee owns a distinct output variable.'

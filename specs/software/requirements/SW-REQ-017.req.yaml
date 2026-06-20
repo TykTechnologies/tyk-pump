@@ -33,27 +33,6 @@ verification:
         comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
         fingerprint: sha256:e3f6ab361a7690c906e9ba47a0b4a8463fea742ac1eb68e440f8e2e64afc582f
         ai_generated: false
-    impact_reviews:
-        - requirement: SW-REQ-017
-          artifact: pumps/init.go
-          decision: no-authored-change
-          reviewer: buger
-          reason: 'Phase J: req_type field flipped derived to guarantee per probelabs/reqproof#88 (category error fix). Production .go files were not modified for this change; only req YAML metadata. Re-recording no-authored-change impact.'
-          base: origin/master
-          requirement_fingerprint: sha256:dec48be0673f613b90b1ad99e60e14e68f8c9c8df07350d3e4e032112489e4d2
-          approval_fingerprint: sha256:e3f6ab361a7690c906e9ba47a0b4a8463fea742ac1eb68e440f8e2e64afc582f
-          artifact_fingerprint: sha256:c00a066c9afb4d36c1d6719fe522cfdce353aec3b06fbf25e99699f1ba3f47e7
-          reviewed_at: "2026-06-02T05:13:05Z"
-        - requirement: SW-REQ-017
-          artifact: pumps/pump.go
-          decision: no-authored-change
-          reviewer: buger
-          reason: 'Phase J: req_type field flipped derived to guarantee per probelabs/reqproof#88 (category error fix). Production .go files were not modified for this change; only req YAML metadata. Re-recording no-authored-change impact.'
-          base: origin/master
-          requirement_fingerprint: sha256:dec48be0673f613b90b1ad99e60e14e68f8c9c8df07350d3e4e032112489e4d2
-          approval_fingerprint: sha256:e3f6ab361a7690c906e9ba47a0b4a8463fea742ac1eb68e440f8e2e64afc582f
-          artifact_fingerprint: sha256:6ebb2f2982627ab7ad3925d058644c021ec42ce4b9b422e17d053c35284fba80
-          reviewed_at: "2026-06-02T05:13:05Z"
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:15Z"

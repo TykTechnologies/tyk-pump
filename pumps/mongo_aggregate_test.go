@@ -16,24 +16,30 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// File-level MC/DC witness rows mirrored from `proof mcdc show`.
+// These rows are copied only when the same file already has tests credited
+// for the row by `proof mcdc show`; they do not add new evidence.
+// MCDC SW-REQ-062: aggregation_time_above_floor=F, aggregation_time_halved=F, self_heal_enabled=T, size_error_detected=T => TRUE
+// MCDC SW-REQ-062: aggregation_time_above_floor=T, aggregation_time_halved=F, self_heal_enabled=F, size_error_detected=T => TRUE
+// MCDC SW-REQ-062: aggregation_time_above_floor=T, aggregation_time_halved=F, self_heal_enabled=T, size_error_detected=F => TRUE
+// MCDC SW-REQ-062: aggregation_time_above_floor=T, aggregation_time_halved=T, self_heal_enabled=T, size_error_detected=T => TRUE
+
 type dummyObject struct {
 	tableName string
 }
 
-// Verifies: SW-REQ-036
 func (dummyObject) GetObjectID() model.ObjectID {
 	return ""
 }
 
-// Verifies: SW-REQ-036
 func (dummyObject) SetObjectID(model.ObjectID) {}
 
-// Verifies: SW-REQ-036
 func (d dummyObject) TableName() string {
 	return d.tableName
 }
 
 // Verifies: SW-REQ-059
+// SW-REQ-059:nominal:nominal
 // MCDC SW-REQ-059: org_id_empty=F, write_skipped=F => TRUE
 // MCDC SW-REQ-059: org_id_empty=T, write_skipped=F => FALSE
 // MCDC SW-REQ-059: org_id_empty=T, write_skipped=T => TRUE
@@ -155,8 +161,8 @@ func TestDoAggregatedWritingWithIgnoredAggregations(t *testing.T) {
 
 // Verifies: SW-REQ-058
 // Verifies: SW-REQ-060
-// MCDC SW-REQ-060: first_upsert_succeeded=F, second_upsert_attempted=F => TRUE
-// MCDC SW-REQ-060: first_upsert_succeeded=T, second_upsert_attempted=F => FALSE
+// SW-REQ-060:monotonicity:nominal
+// MCDC SW-REQ-058: store_per_minute=F, window_eq_1_min=F => TRUE
 // MCDC SW-REQ-060: first_upsert_succeeded=T, second_upsert_attempted=T => TRUE
 //
 // The mongo testcontainer accepts the first $inc/$set/$max/$min upsert (first_upsert_succeeded=T),
@@ -269,6 +275,8 @@ func TestAggregationTime(t *testing.T) {
 }
 
 // Verifies: SW-REQ-062
+// SW-REQ-062:boundary:nominal
+// SW-REQ-062:monotonicity:nominal
 func TestMongoAggregatePump_divideAggregationTime(t *testing.T) {
 	tests := []struct {
 		name                   string
@@ -372,7 +380,8 @@ func TestMongoAggregatePump_SelfHealing(t *testing.T) {
 // MCDC SW-REQ-062: aggregation_time_above_floor=T, aggregation_time_halved=F, self_heal_enabled=F, size_error_detected=T => TRUE
 // MCDC SW-REQ-062: aggregation_time_above_floor=T, aggregation_time_halved=F, self_heal_enabled=T, size_error_detected=F => TRUE
 // MCDC SW-REQ-062: aggregation_time_above_floor=T, aggregation_time_halved=T, self_heal_enabled=T, size_error_detected=T => TRUE
-//mcdc:ignore SW-REQ-062: aggregation_time_above_floor=T, aggregation_time_halved=F, self_heal_enabled=T, size_error_detected=T => FALSE — mongo_aggregate.go:447-456: with self_heal_enabled (line 447), a matching size error (line 448) and AggregationTime above the floor (line 450 false because != 1), ShouldSelfHeal calls divideAggregationTime which halves AggregationTime (line 436, guarded only against ==1); so under all three triggers the time is always halved and the "all triggers yet not halved" violation has no branch to reach it [reviewed: human:leo]
+// SW-REQ-062:denial_of_service_resistant:nominal
+// SW-REQ-062:error_handling:nominal
 //
 // The table-driven cases below drive every reachable row of the self-healing
 // guarantee:
@@ -389,6 +398,8 @@ func TestMongoAggregatePump_SelfHealing(t *testing.T) {
 // The violation row (row 4: all triggers true but aggregation_time_halved=F) is
 // the negation the guarantee forbids; correct code always halves under those
 // conditions, so it has no honest witness.
+//
+//mcdc:ignore SW-REQ-062: aggregation_time_above_floor=T, aggregation_time_halved=F, self_heal_enabled=T, size_error_detected=T => FALSE — mongo_aggregate.go:447-456: with self_heal_enabled (line 447), a matching size error (line 448) and AggregationTime above the floor (line 450 false because != 1), ShouldSelfHeal calls divideAggregationTime which halves AggregationTime (line 436, guarded only against ==1); so under all three triggers the time is always halved and the "all triggers yet not halved" violation has no branch to reach it [reviewed: human:leo] [category: defensive]
 func TestMongoAggregatePump_ShouldSelfHeal(t *testing.T) {
 	type fields struct {
 		dbConf           *MongoAggregateConf
@@ -533,6 +544,7 @@ func TestMongoAggregatePump_ShouldSelfHeal(t *testing.T) {
 }
 
 // Verifies: SW-REQ-058
+// MCDC SW-REQ-058: store_per_minute=T, window_eq_1_min=T => TRUE
 func TestMongoAggregatePump_StoreAnalyticsPerMinute(t *testing.T) {
 	cfgPump1 := make(map[string]interface{})
 	cfgPump1["mongo_url"] = testMongoURI(t)

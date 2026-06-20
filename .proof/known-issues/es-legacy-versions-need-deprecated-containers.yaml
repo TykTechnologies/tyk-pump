@@ -1,9 +1,12 @@
 id: es-legacy-versions-need-deprecated-containers
 title: Elasticsearch v3/v5/v6 operator branches need deprecated containers for full MC/DC
+introduced_in: inception
 description: pumps/elasticsearch.go Elasticsearch3Operator/Elasticsearch5Operator/Elasticsearch6Operator.processData each carry the same five-decision shape (ctxErr, type assertion ok, DisableBulk pre/post-loop, err on non-bulk index call). Driving all five branches requires a working ES backend matching the on-wire protocol. The testcontainers-go elasticsearch module ships ES7 only. ES 3.x and 5.x images (docker.elastic.co/elasticsearch/elasticsearch:2.x/5.x) are no longer pulled cleanly from Docker Hub or elastic.co's registry without legacy credentials, and the v3 client rejects the v7 healthcheck response. v5/v6 clients accept the v7 endpoint at construction time but their bulk-write wire formats diverge from v7 and silently drop data — that's acceptable for branch coverage of the operator's own decision rows, but does not exercise true v3/v5/v6 wire behaviour. The non-bulk index().Do() call against a v7 endpoint with v5/v6 clients also fails with deserialisation errors which DOES drive the err != nil branch. v3 branches require manually constructing the operator with a healthcheck-disabled v3 client; the resulting calls fail-fast which still drives all branches in processData.
 affected_requirements:
     - SW-REQ-068
     - SW-REQ-070
+environment_note: |-
+  Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source or documentation surface and following the described scenario.
 severity: low
 mitigation: Coverage of v3/v5/v6 processData branches uses direct construction of Elasticsearch3Operator/5/6 against the v7 testcontainer with SetHealthcheck(false) for v3. The operator decision rows are widened on both true and false sides even though the wire writes ultimately fail (which itself drives err != nil).
 remediation: If v3/v5/v6 are still supported, pin amd64-only deprecated image tags from a private mirror and add a per-version testcontainer helper. If they are deprecated, remove the v3/v5/v6 switch cases entirely — they have been EoL since 2018-2021. Until then the operator-construction switch is covered by TestElasticsearchPump_getOperator_LegacyVersions and processData branches by TestElasticsearch{3,5,6}Operator_processData_* in elasticsearch_mcdc_100_test.go.

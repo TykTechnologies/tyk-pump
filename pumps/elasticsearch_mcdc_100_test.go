@@ -69,12 +69,13 @@ import (
 // MCDC SW-REQ-068: v3_operator_constructed=F, version_eq_3=F => TRUE
 // MCDC SW-REQ-068: v3_operator_constructed=F, version_eq_3=T => FALSE
 // MCDC SW-REQ-068: v3_operator_constructed=T, version_eq_3=T => TRUE
+// MCDC SW-REQ-070: disable_bulk=F, per_record_indexed_else_bulk_processor=F => TRUE
+// MCDC SW-REQ-070: disable_bulk=T, per_record_indexed_else_bulk_processor=F => FALSE
+// MCDC SW-REQ-070: disable_bulk=T, per_record_indexed_else_bulk_processor=T => TRUE
 
 // runESFatalChild forks the current test binary, runs only the named test,
 // and asserts the child process exited with code 1 (the log.Fatal contract).
 // The child branch is entered via the BE_ES_FATAL env var.
-//
-// Verifies: SW-REQ-068
 func runESFatalChild(t *testing.T, sentinel string) {
 	t.Helper()
 	cmd := exec.Command(os.Args[0], "-test.run", "^"+t.Name()+"$", "-test.timeout", "30s")
@@ -94,8 +95,6 @@ func runESFatalChild(t *testing.T, sentinel string) {
 
 // esFatalSentinel returns the BE_ES_FATAL value the child process should
 // match to enter the lethal-code-path branch. Returns "" if not in child mode.
-//
-// Verifies: SW-REQ-068
 func esFatalSentinel() string {
 	return os.Getenv("BE_ES_FATAL")
 }
@@ -170,7 +169,7 @@ func TestElasticsearchPump_Init_DecodeFatal_InProcess(t *testing.T) {
 //   - Effect: a v7 operator is returned without error against the testcontainer.
 //
 // Verifies: SW-REQ-068
-// SW-REQ-068:cert_validation_strict:negative
+// SW-REQ-068:cert_validation_strict:nominal
 func TestElasticsearchPump_getOperator_UseSSL_TLSSuccess(t *testing.T) {
 	url := elasticsearchURL(t)
 	pump := &ElasticsearchPump{}
@@ -180,9 +179,14 @@ func TestElasticsearchPump_getOperator_UseSSL_TLSSuccess(t *testing.T) {
 		IndexName:             esIndexName(t, "tyk_analytics_tls_ok"),
 		Version:               "7",
 		UseSSL:                true,
-		SSLInsecureSkipVerify: true,
+		SSLInsecureSkipVerify: false,
 		// No cert/key/CA → NewTLSConfig returns empty tls.Config with no error.
 	}
+	tlsConf, tlsErr := NewTLSConfig(TLSConfig{InsecureSkipVerify: pump.esConf.SSLInsecureSkipVerify}, pump.log)
+	require.NoError(t, tlsErr)
+	require.NotNil(t, tlsConf)
+	assert.False(t, tlsConf.InsecureSkipVerify)
+
 	op, err := pump.getOperator()
 	require.NoError(t, err, "TLS success path must not error")
 	require.NotNil(t, op)
@@ -261,8 +265,6 @@ func TestElasticsearchPump_getOperator_V6UnreachableErr(t *testing.T) {
 // client pointed at the v7 testcontainer URL and a real BulkProcessor. The
 // caller owns the returned operator; bulk processor cleanup is deferred via
 // t.Cleanup.
-//
-// Verifies: SW-REQ-070
 func es3Op(t *testing.T) *Elasticsearch3Operator {
 	t.Helper()
 	url := elasticsearchURL(t)
@@ -284,8 +286,6 @@ func es3Op(t *testing.T) *Elasticsearch3Operator {
 
 // es5Op constructs an Elasticsearch5Operator with a healthcheck-disabled v5
 // client. Mirrors es3Op for the v5 wire-protocol shape.
-//
-// Verifies: SW-REQ-070
 func es5Op(t *testing.T) *Elasticsearch5Operator {
 	t.Helper()
 	url := elasticsearchURL(t)
@@ -307,8 +307,6 @@ func es5Op(t *testing.T) *Elasticsearch5Operator {
 
 // es6Op constructs an Elasticsearch6Operator with a healthcheck-disabled v6
 // client. Mirrors es3Op for the v6 wire-protocol shape.
-//
-// Verifies: SW-REQ-070
 func es6Op(t *testing.T) *Elasticsearch6Operator {
 	t.Helper()
 	url := elasticsearchURL(t)
@@ -332,8 +330,6 @@ func es6Op(t *testing.T) *Elasticsearch6Operator {
 // operators pointed at an unreachable URL so that processData's
 // `if err != nil` row at the index().Do() call is driven on the T side. Both
 // healthcheck and sniff are disabled so NewClient itself does not fail.
-//
-// Verifies: SW-REQ-070
 func es3OpUnreachable(t *testing.T) *Elasticsearch3Operator {
 	t.Helper()
 	client, err := elasticv3.NewClient(
@@ -352,7 +348,6 @@ func es3OpUnreachable(t *testing.T) *Elasticsearch3Operator {
 	}
 }
 
-// Verifies: SW-REQ-070
 func es5OpUnreachable(t *testing.T) *Elasticsearch5Operator {
 	t.Helper()
 	client, err := elasticv5.NewClient(
@@ -371,7 +366,6 @@ func es5OpUnreachable(t *testing.T) *Elasticsearch5Operator {
 	}
 }
 
-// Verifies: SW-REQ-070
 func es6OpUnreachable(t *testing.T) *Elasticsearch6Operator {
 	t.Helper()
 	client, err := elasticv6.NewClient(
@@ -392,8 +386,6 @@ func es6OpUnreachable(t *testing.T) *Elasticsearch6Operator {
 
 // processDataConf is the standard test ElasticsearchConf shape used by the
 // legacy-operator processData tests below. Caller may override DisableBulk.
-//
-// Verifies: SW-REQ-070
 func processDataConf(t *testing.T, disableBulk bool, mcp string) *ElasticsearchConf {
 	t.Helper()
 	return &ElasticsearchConf{
@@ -516,7 +508,6 @@ func TestElasticsearch6Operator_processData_AllDecisions(t *testing.T) {
 // above are removed in future refactors.
 // -----------------------------------------------------------------------------
 
-// Verifies: SW-REQ-068
 var (
 	_ = http.DefaultClient
 	_ = elasticv7.NewClient

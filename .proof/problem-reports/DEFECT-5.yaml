@@ -1,6 +1,7 @@
 schema_version: 1
 id: DEFECT-5
 title: Prometheus pump exposed full API keys as metric label values
+introduced_in: 09aaa8d
 description: |
   PrometheusMetric.GetLabelsValues mapped decoded.APIKey verbatim into the
   "api_key"/"key" Prometheus label values. Any operator scraping /metrics — and

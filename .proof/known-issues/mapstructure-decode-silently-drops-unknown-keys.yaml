@@ -1,8 +1,54 @@
 id: mapstructure-decode-silently-drops-unknown-keys
 title: Pump configs use mapstructure.Decode which silently ignores unknown keys
+introduced_in: inception
 description: 'Every pump Init uses mapstructure.Decode (e.g. pumps/csv.go:55 ''mapstructure.Decode(conf, &c.csvConf)'') which is lenient by default. Unknown keys — including operator typos like ''csv_pathh'' instead of ''csv_path'' — are silently dropped. INT-REQ-008''s claim that the system rejects malformed pump configuration loudly is therefore false: no exit code, no health-check failure, no metric is emitted; the misconfigured pump simply uses defaults for the misspelled field. The same pattern appears across all pumps in pumps/*.go (kafka, sql, elasticsearch, mongo, statsd, prometheus, hybrid, etc.).'
 affected_requirements:
     - INT-REQ-008
+    - SW-REQ-006
+    - SW-REQ-007
+    - SW-REQ-021
+    - SW-REQ-023
+    - SW-REQ-024
+    - SW-REQ-025
+    - SW-REQ-026
+    - SW-REQ-029
+    - SW-REQ-034
+    - SW-REQ-035
+    - SW-REQ-036
+    - SW-REQ-037
+    - SW-REQ-038
+    - SW-REQ-039
+    - SW-REQ-040
+    - SW-REQ-041
+    - SW-REQ-042
+    - SW-REQ-043
+    - SW-REQ-044
+    - SW-REQ-045
+    - SW-REQ-046
+    - SW-REQ-047
+    - SW-REQ-048
+    - SW-REQ-049
+    - SW-REQ-050
+    - SW-REQ-051
+    - SW-REQ-052
+    - SW-REQ-053
+    - SW-REQ-054
+    - SW-REQ-055
+    - SW-REQ-056
+    - SW-REQ-057
+    - SW-REQ-058
+    - SW-REQ-059
+    - SW-REQ-060
+    - SW-REQ-061
+    - SW-REQ-062
+    - SW-REQ-063
+    - SW-REQ-064
+    - SW-REQ-065
+    - SW-REQ-066
+    - SW-REQ-067
+    - SW-REQ-068
+    - SW-REQ-069
+    - SW-REQ-070
 evidence_manifests:
     - code_signal:opengrep:go.mapstructure.lenient-decode:pumps/csv.go:55
     - code_signal:opengrep:go.mapstructure.lenient-decode:pumps/dogstatsd.go:125
@@ -43,6 +89,8 @@ evidence_manifests:
     - code_signal:opengrep:go.mapstructure.lenient-decode:pumps/syslog.go:80
     - code_signal:opengrep:go.mapstructure.lenient-decode:pumps/timestream.go:99
     - code_signal:opengrep:go.mapstructure.lenient-decode:storage/temporal_storage.go:47
+environment_note: |-
+  Evidence is tied to the listed evidence_manifests entries; reproduce by rerunning the named test or code-signal scan and inspecting code_signal:opengrep:go.mapstructure.lenient-decode:pumps/csv.go:55.
 severity: medium
 mitigation: Operators have no warning until they notice data is not flowing or is using unexpected defaults. Suggest code-reviewing pump YAML against documented field names before rollout.
 remediation: 'Replace mapstructure.Decode with mapstructure.NewDecoder using a DecoderConfig that sets ErrorUnused: true, so unknown keys cause Init to return an error and the pump is skipped (with a clear log line).'

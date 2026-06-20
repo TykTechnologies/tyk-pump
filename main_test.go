@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"errors"
 	"os"
 	"os/signal"
 	"sync"
@@ -12,6 +13,7 @@ import (
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/TykTechnologies/tyk-pump/pumps"
+	"github.com/TykTechnologies/tyk-pump/serializer"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -32,22 +34,18 @@ type MockedPump struct {
 	pumps.CommonPumpConfig
 }
 
-// Verifies: SW-REQ-001
 func (p *MockedPump) GetName() string {
 	return "Mocked Pump"
 }
 
-// Verifies: SW-REQ-001
 func (p *MockedPump) New() pumps.Pump {
 	return &MockedPump{}
 }
 
-// Verifies: SW-REQ-001
 func (p *MockedPump) Init(config interface{}) error {
 	return nil
 }
 
-// Verifies: SW-REQ-001
 func (p *MockedPump) WriteData(ctx context.Context, keys []interface{}) error {
 	for range keys {
 		p.CounterRequest++
@@ -55,10 +53,44 @@ func (p *MockedPump) WriteData(ctx context.Context, keys []interface{}) error {
 	return nil
 }
 
-// Verifies: SW-REQ-001
 func (p *MockedPump) Shutdown() error {
 	p.TurnedOff = true
 	return nil
+}
+
+type shutdownErrorPump struct {
+	MockedPump
+}
+
+func (p *shutdownErrorPump) Shutdown() error {
+	p.TurnedOff = true
+	return errors.New("shutdown failed")
+}
+
+type slowMockedPump struct {
+	MockedPump
+	delay time.Duration
+}
+
+func (p *slowMockedPump) WriteData(ctx context.Context, keys []interface{}) error {
+	select {
+	case <-time.After(p.delay):
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+}
+
+type initErrorPump struct {
+	MockedPump
+}
+
+func (p *initErrorPump) New() pumps.Pump {
+	return &initErrorPump{}
+}
+
+func (p *initErrorPump) Init(interface{}) error {
+	return errors.New("init failed")
 }
 
 // Verifies: SW-REQ-001
@@ -94,6 +126,8 @@ func TestFilterData(t *testing.T) {
 
 // TestTrimData check the correct functionality of max_record_size
 // Verifies: SW-REQ-001
+// SW-REQ-001:boundary:boundary
+// SW-REQ-001:boundary:nominal
 // Verifies: SYS-REQ-010
 // MCDC SYS-REQ-010: record_exceeds_max_size=F, record_truncated=F => TRUE
 // MCDC SYS-REQ-010: record_exceeds_max_size=T, record_truncated=F => FALSE
@@ -338,6 +372,7 @@ func TestWriteDataWithFilters(t *testing.T) {
 }
 
 // Verifies: SW-REQ-004
+// SW-REQ-004:error_handling:nominal
 // SW-REQ-004:error_handling:negative
 // MCDC SW-REQ-004: shutdown_signal=F, purge_stopped_and_pumps_shutdown=F => TRUE
 // MCDC SW-REQ-004: shutdown_signal=T, purge_stopped_and_pumps_shutdown=F => FALSE
@@ -386,6 +421,73 @@ func TestShutdown(t *testing.T) {
 	if mockedPump.TurnedOff != true {
 		t.Fatal("MockedPump should have turned off")
 	}
+}
+
+// Verifies: SW-REQ-004
+// MCDC SW-REQ-004: purge_stopped_and_pumps_shutdown=T, shutdown_signal=T => TRUE
+func TestCheckShutdownSurfacesPumpShutdownError(t *testing.T) {
+	originalPumps := Pumps
+	t.Cleanup(func() {
+		Pumps = originalPumps
+	})
+
+	failingPump := &shutdownErrorPump{}
+	Pumps = []pumps.Pump{failingPump}
+
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	assert.True(t, checkShutdown(ctx, &wg))
+	wg.Wait()
+	assert.True(t, failingPump.TurnedOff)
+}
+
+// Verifies: SW-REQ-004
+// MCDC SW-REQ-004: purge_stopped_and_pumps_shutdown=F, shutdown_signal=F => TRUE
+func TestCheckShutdownNoSignal(t *testing.T) {
+	wg := sync.WaitGroup{}
+	ctx, cancel := context.WithCancel(context.Background())
+	t.Cleanup(cancel)
+
+	assert.False(t, checkShutdown(ctx, &wg))
+}
+
+// Verifies: SW-REQ-001
+func TestWriteToPumpsNilPumps(t *testing.T) {
+	originalPumps := Pumps
+	t.Cleanup(func() {
+		Pumps = originalPumps
+	})
+
+	Pumps = nil
+	writeToPumps([]interface{}{analytics.AnalyticsRecord{APIID: "api"}}, nil, time.Now(), 1)
+}
+
+// Verifies: SW-REQ-001
+func TestExecPumpWritingTimeoutWarningBranches(t *testing.T) {
+	keys := []interface{}{analytics.AnalyticsRecord{APIID: "api"}}
+
+	t.Run("zero timeout", func(t *testing.T) {
+		pmp := &slowMockedPump{delay: 50 * time.Millisecond}
+		pmp.SetTimeout(0)
+
+		wg := sync.WaitGroup{}
+		wg.Add(1)
+		execPumpWriting(&wg, pmp, &keys, 0, time.Now(), nil)
+		wg.Wait()
+	})
+
+	t.Run("timeout greater than purge delay", func(t *testing.T) {
+		pmp := &slowMockedPump{delay: 50 * time.Millisecond}
+		pmp.SetTimeout(1)
+
+		wg := sync.WaitGroup{}
+		wg.Add(1)
+		execPumpWriting(&wg, pmp, &keys, 0, time.Now(), nil)
+		wg.Wait()
+	})
 }
 
 // Verifies: SW-REQ-001
@@ -458,12 +560,11 @@ func TestIgnoreFieldsFilterData(t *testing.T) {
 
 // Verifies: SW-REQ-001
 // Verifies: SYS-REQ-011
+// Verifies: SW-REQ-011
+// SW-REQ-011:encoding_aware:nominal
 // SYS-REQ-011:nominal:negative
 // MCDC SYS-REQ-011: decode_request_enabled=F, decode_response_enabled=F, enabled_payloads_decoded=F => TRUE
 // MCDC SYS-REQ-011: decode_request_enabled=T, decode_response_enabled=T, enabled_payloads_decoded=T => TRUE
-//mcdc:ignore SYS-REQ-011: decode_request_enabled=F, decode_response_enabled=T, enabled_payloads_decoded=F => FALSE — main.go:423-428 unconditionally enters the base64-decode block whenever getDecodingResponse is set, so an enabled response payload is always decoded; the "response enabled yet payload not decoded" violation has no branch to reach it [reviewed: human:leo]
-//mcdc:ignore SYS-REQ-011: decode_request_enabled=T, decode_response_enabled=F, enabled_payloads_decoded=F => FALSE — main.go:417-422 unconditionally enters the base64-decode block whenever getDecodingRequest is set, so an enabled request payload is always decoded; the "request enabled yet payload not decoded" violation has no branch to reach it [reviewed: human:leo]
-//mcdc:ignore SYS-REQ-011: decode_request_enabled=T, decode_response_enabled=T, enabled_payloads_decoded=F => FALSE — main.go:417-428 runs both decode blocks unconditionally when both toggles are set, so both enabled payloads are always decoded; the "both enabled yet neither decoded" violation has no branch to reach it [reviewed: human:leo]
 //
 // Two of the four sub-cases map onto reachable rows of the decode guarantee:
 //   - "Decode NONE" (decodeRequest=F, decodeResponse=F): neither toggle on, raw
@@ -478,6 +579,10 @@ func TestIgnoreFieldsFilterData(t *testing.T) {
 // rows (2,3,4: a toggle enabled but its payload NOT decoded) are the negation the
 // guarantee forbids and are unreachable in correct code, so they have no honest
 // witness.
+//
+//mcdc:ignore SYS-REQ-011: decode_request_enabled=F, decode_response_enabled=T, enabled_payloads_decoded=F => FALSE — main.go:423-428 unconditionally enters the base64-decode block whenever getDecodingResponse is set, so an enabled response payload is always decoded; the "response enabled yet payload not decoded" violation has no branch to reach it [reviewed: human:leo] [category: defensive]
+//mcdc:ignore SYS-REQ-011: decode_request_enabled=T, decode_response_enabled=F, enabled_payloads_decoded=F => FALSE — main.go:417-422 unconditionally enters the base64-decode block whenever getDecodingRequest is set, so an enabled request payload is always decoded; the "request enabled yet payload not decoded" violation has no branch to reach it [reviewed: human:leo] [category: defensive]
+//mcdc:ignore SYS-REQ-011: decode_request_enabled=T, decode_response_enabled=T, enabled_payloads_decoded=F => FALSE — main.go:417-428 runs both decode blocks unconditionally when both toggles are set, so both enabled payloads are always decoded; the "both enabled yet neither decoded" violation has no branch to reach it [reviewed: human:leo] [category: defensive]
 func TestDecodedKey(t *testing.T) {
 	keys := make([]interface{}, 1)
 	record := analytics.AnalyticsRecord{APIID: "api111", RawResponse: "RGVjb2RlZFJlc3BvbnNl", RawRequest: "RGVjb2RlZFJlcXVlc3Q="}
@@ -535,7 +640,51 @@ func TestDecodedKey(t *testing.T) {
 	}
 }
 
-// Verifies: SW-REQ-002
+// Verifies: SW-REQ-001
+// Verifies: SW-REQ-011
+func TestDecodedKeyInvalidBase64LeavesPayloadsUnchanged(t *testing.T) {
+	keys := []interface{}{
+		analytics.AnalyticsRecord{
+			APIID:       "api111",
+			RawRequest:  "not base64 request",
+			RawResponse: "not base64 response",
+		},
+	}
+	mockedPump := &MockedPump{}
+	mockedPump.SetDecodingRequest(true)
+	mockedPump.SetDecodingResponse(true)
+
+	filteredKeys := filterData(mockedPump, keys)
+	require.Len(t, filteredKeys, 1)
+
+	record, ok := filteredKeys[0].(analytics.AnalyticsRecord)
+	require.True(t, ok)
+	assert.Equal(t, "not base64 request", record.RawRequest)
+	assert.Equal(t, "not base64 response", record.RawResponse)
+}
+
+// Verifies: SW-REQ-001
+func TestPreprocessAnalyticsValuesSkipsDecodeErrors(t *testing.T) {
+	originalPumps := Pumps
+	t.Cleanup(func() {
+		Pumps = originalPumps
+	})
+
+	Pumps = nil
+	msgpackSerializer := serializer.NewAnalyticsSerializer(serializer.MSGP_SERIALIZER)
+
+	PreprocessAnalyticsValues(
+		[]interface{}{"not-msgpack"},
+		msgpackSerializer,
+		"analytics-key",
+		false,
+		instrument.NewJob("decode-error"),
+		time.Now(),
+		1,
+	)
+}
+
+// SW-REQ-002: deprecated raw-decode configuration warnings.
 func TestDeprecationWarnings(t *testing.T) {
 	originalOutput := log.Out
 	originalLevel := log.Level
@@ -759,4 +908,38 @@ func TestInitialisePumps_ConstructsAndInitialisesConfiguredPumps(t *testing.T) {
 		assert.Equal(t, "Dummy Pump", p.GetName(),
 			"each pump must be a live, initialised dummy pump")
 	}
+}
+
+// SW-REQ-003: unknown or init-failing configured pumps are skipped during startup.
+func TestInitialisePumps_SkipsUnknownAndInitErrorPumps(t *testing.T) {
+	savedConfig := SystemConfig
+	savedPumps := Pumps
+	savedUptime := UptimePump
+	savedAvailable := pumps.AvailablePumps["init-error"]
+	hadAvailable := savedAvailable != nil
+	t.Cleanup(func() {
+		SystemConfig = savedConfig
+		Pumps = savedPumps
+		UptimePump = savedUptime
+		if hadAvailable {
+			pumps.AvailablePumps["init-error"] = savedAvailable
+		} else {
+			delete(pumps.AvailablePumps, "init-error")
+		}
+	})
+
+	pumps.AvailablePumps["init-error"] = &initErrorPump{}
+	SystemConfig = TykPumpConfiguration{
+		DontPurgeUptimeData: true,
+		Pumps: map[string]PumpConfig{
+			"dummy":      {},
+			"missing":    {Type: "does-not-exist"},
+			"init-error": {Type: "init-error"},
+		},
+	}
+
+	initialisePumps()
+
+	require.Len(t, Pumps, 1)
+	assert.Equal(t, "Dummy Pump", Pumps[0].GetName())
 }

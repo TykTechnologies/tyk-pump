@@ -1,0 +1,26 @@
+id: sql-batch-size-zero-infinite-loop
+title: SQL-family batch loops can stall forever when BatchSize is zero or negative
+introduced_in: inception
+description: 'The SQL, Graph SQL, MCP SQL, SQL aggregate, Graph SQL aggregate, and MCP SQL aggregate write paths iterate batches with loops of the form for i := 0; i < len(recs); i += BatchSize. If configuration or test wiring leaves BatchSize at zero, the loop never advances; if it is negative, slicing boundaries become invalid. The code does not consistently validate BatchSize before these loops, so input_size_bounded and malformed_input obligations for these paths are real tracked debt.'
+affected_requirements:
+    - SW-REQ-040
+    - SW-REQ-041
+    - SW-REQ-042
+    - SW-REQ-043
+    - SW-REQ-044
+    - SW-REQ-045
+environment_note: |-
+  Static evidence is documented in this KnownIssue description; reproduce by inspecting the loop-stride code-signal hits in the listed pump files.
+reproducer_command: rg -n "for i := 0; i < len\\(recs\\); i \\+= .*BatchSize|for i := 0; i < len\\(typedData\\); i \\+= .*BatchSize" pumps/sql.go pumps/sql_aggregate.go pumps/graph_sql.go pumps/graph_sql_aggregate.go pumps/mcp_sql.go pumps/mcp_sql_aggregate.go
+severity: high
+risk: availability
+mitigation: Operators should configure positive SQL batch sizes and avoid zero or negative batch settings; use default initialization paths that set a positive batch size.
+remediation: Validate BatchSize during Init for every SQL-family pump and defensively clamp or reject non-positive values before entering the batching loops.
+owner: tyk-team
+review_date: "2026-11-30"
+release_disposition: ship_with_known_issue
+status: open
+history:
+    - at: "2026-06-19T00:00:00Z"
+      by: agent:codex
+      action: created

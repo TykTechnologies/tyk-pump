@@ -25,7 +25,6 @@ import (
 // MCDC SW-REQ-029: tls_dialer_used=F, use_ssl_configured=T => FALSE
 // MCDC SW-REQ-029: tls_dialer_used=T, use_ssl_configured=T => TRUE
 
-// Verifies: SW-REQ-029
 func setupKeepalive(conn net.Conn) error {
 	tcpConn, ok := conn.(*net.TCPConn)
 	if !ok {
@@ -45,13 +44,11 @@ type testListener struct {
 	L net.Listener
 }
 
-// Verifies: SW-REQ-029
 func (ln *testListener) Init(addr string) (err error) {
 	ln.L, err = net.Listen("tcp", addr)
 	return
 }
 
-// Verifies: SW-REQ-029
 func (ln *testListener) Accept() (conn net.Conn, err error) {
 	c, err := ln.L.Accept()
 	if err != nil {
@@ -82,12 +79,10 @@ func (ln *testListener) Accept() (conn net.Conn, err error) {
 	return c, nil
 }
 
-// Verifies: SW-REQ-029
 func (ln *testListener) Close() error {
 	return ln.L.Close()
 }
 
-// Verifies: SW-REQ-029
 func startRPCMock(t *testing.T, config *HybridPumpConf, dispatcher *gorpc.Dispatcher) (*gorpc.Server, error) {
 	server := gorpc.NewTCPServer(config.ConnectionString, dispatcher.NewHandlerFunc())
 	list := &testListener{}
@@ -102,7 +97,6 @@ func startRPCMock(t *testing.T, config *HybridPumpConf, dispatcher *gorpc.Dispat
 	return server, nil
 }
 
-// Verifies: SW-REQ-029
 func stopRPCMock(t *testing.T, server *gorpc.Server) {
 	t.Helper()
 	if server != nil {
@@ -193,6 +187,7 @@ func TestHybridPumpInit(t *testing.T) {
 }
 
 // Verifies: SW-REQ-029
+// SW-REQ-029:errors_propagated:nominal
 func TestHybridPumpWriteData(t *testing.T) {
 	//nolint:govet
 	tcs := []struct {

@@ -1,10 +1,13 @@
 id: docs-splunk-mutates-default-transport-undocumented
 title: 'Documentation gap: tyk-docs do not warn that the Splunk pump mutates http.DefaultTransport globally'
+introduced_in: inception
 description: KI splunk-newsplunkclient-mutates-default-transport documents that newSplunkClient writes http.DefaultClient.Transport globally as a side effect. tyk-docs Splunk section (api-management/tyk-pump.md:1084-1168) describes config but gives no warning that enabling Splunk has process-wide HTTP client side effects. Operators co-hosting with other components that read from http.DefaultTransport will get surprising behaviour.
 affected_requirements:
     - SW-REQ-048
 commands:
     - grep -n 'DefaultTransport\|DefaultClient' /Users/buger/go/src/tyk-pump/pumps/splunk.go
+reproducer_command: |-
+  grep -n 'DefaultTransport\|DefaultClient' /Users/buger/go/src/tyk-pump/pumps/splunk.go
 severity: medium
 mitigation: KI splunk-newsplunkclient-mutates-default-transport is the engineering record.
 remediation: 'Add an ''Operational note'' callout in the Splunk doc section linking to the KI and recommending: do not co-host tyk-pump in-process with components that share http.DefaultTransport.'

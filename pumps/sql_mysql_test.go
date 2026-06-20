@@ -15,10 +15,8 @@ import (
 // sharedMySQLDSN caches the per-process MySQL DSN once resolved by
 // skipTestIfNoMySQL. Mirrors sharedPostgresDSN in sql_test.go so the no-arg
 // getTestMySQLConnectionString keeps working without test-wide refactors.
-// Verifies: SW-REQ-040
 var sharedMySQLDSN string
 
-// Verifies: SW-REQ-040
 func getTestMySQLConnectionString() string {
 	if sharedMySQLDSN != "" {
 		return sharedMySQLDSN
@@ -32,8 +30,6 @@ func getTestMySQLConnectionString() string {
 //  2. Shared testcontainer (mysqlConnectionDSN) - boots a per-process
 //     MySQL container the first time it is requested.
 //  3. Skip the test if Docker is unavailable and no env var was supplied.
-//
-// Verifies: SW-REQ-040
 func skipTestIfNoMySQL(t *testing.T) {
 	t.Helper()
 	if dsn := os.Getenv("TYK_TEST_MYSQL"); dsn != "" {
@@ -47,7 +43,6 @@ func skipTestIfNoMySQL(t *testing.T) {
 	sharedMySQLDSN = dsn
 }
 
-// Verifies: SW-REQ-040
 func newMySQLConfig(sharded bool) map[string]interface{} {
 	cfg := make(map[string]interface{})
 	cfg["type"] = "mysql"
@@ -61,6 +56,7 @@ func newMySQLConfig(sharded bool) map[string]interface{} {
 // TestMySQLInit verifies that the pump initialises correctly against MySQL after the
 // driver upgrade (gorm.io/driver/mysql v1.0.3 → v1.3.2, go-sql-driver/mysql v1.5 → v1.6).
 // Verifies: SW-REQ-040
+// MCDC SW-REQ-040: day_sliced_routing=F, table_sharding=F => TRUE
 func TestMySQLInit(t *testing.T) {
 	skipTestIfNoMySQL(t)
 
@@ -68,7 +64,7 @@ func TestMySQLInit(t *testing.T) {
 	if err := pmp.Init(newMySQLConfig(false)); err != nil {
 		t.Fatalf("MySQL Init failed: %v", err)
 	}
-	t.Cleanup(func() { pmp.db.Migrator().DropTable(analytics.SQLTable) })
+	cleanupGormDB(t, pmp.db, analytics.SQLTable)
 
 	assert.NotNil(t, pmp.db)
 	assert.Equal(t, "mysql", pmp.db.Dialector.Name())
@@ -79,6 +75,7 @@ func TestMySQLInit(t *testing.T) {
 // TestMySQLWriteData writes 100 records and verifies count plus data integrity for three
 // spot-checked records.
 // Verifies: SW-REQ-040
+// MCDC SW-REQ-040: day_sliced_routing=F, table_sharding=F => TRUE
 func TestMySQLWriteData(t *testing.T) {
 	skipTestIfNoMySQL(t)
 
@@ -86,7 +83,7 @@ func TestMySQLWriteData(t *testing.T) {
 	if err := pmp.Init(newMySQLConfig(false)); err != nil {
 		t.Fatalf("MySQL Init failed: %v", err)
 	}
-	t.Cleanup(func() { pmp.db.Migrator().DropTable(analytics.SQLTable) })
+	cleanupGormDB(t, pmp.db, analytics.SQLTable)
 
 	const total = 100
 	now := time.Now()
@@ -128,7 +125,9 @@ func TestMySQLWriteData(t *testing.T) {
 // This is independent of the pgx/v5 upgrade — MySQL was bumped separately
 // (gorm.io/driver/mysql v1.0.3 → v1.3.2). MySQL's ColumnType implementation may report
 // these metadata fields differently, so the check must be validated for MySQL too.
-// Verifies: SW-REQ-040
+//
+// Verifies: INT-REQ-007
+// MCDC INT-REQ-007: expand_contract_migration=F, sql_schema_version_changed=F => TRUE
 func TestMigrationIdempotency_MySQL(t *testing.T) {
 	skipTestIfNoMySQL(t)
 
@@ -136,7 +135,7 @@ func TestMigrationIdempotency_MySQL(t *testing.T) {
 	if err := pmp.Init(newMySQLConfig(false)); err != nil {
 		t.Fatalf("MySQL Init failed: %v", err)
 	}
-	t.Cleanup(func() { pmp.db.Migrator().DropTable(analytics.SQLTable) })
+	cleanupGormDB(t, pmp.db, analytics.SQLTable)
 
 	captureDB, cl := captureSession(pmp.db)
 	if err := captureDB.Table(analytics.SQLTable).AutoMigrate(&analytics.AnalyticsRecord{}); err != nil {
@@ -152,7 +151,7 @@ func TestMigrationIdempotency_MySQL(t *testing.T) {
 // fork commit 95e095f, which was required because gorm.io/driver/mysql v1.3.2 calls
 // this method internally. If the method is missing or broken, the mysql driver fails
 // to initialise or panics on the first real query.
-// Verifies: SW-REQ-040
+// SW-REQ-040: MySQL-backed SQL pump connection handling.
 func TestMySQLConnectionMethod(t *testing.T) {
 	skipTestIfNoMySQL(t)
 
@@ -160,7 +159,7 @@ func TestMySQLConnectionMethod(t *testing.T) {
 	if err := pmp.Init(newMySQLConfig(false)); err != nil {
 		t.Fatalf("MySQL Init failed: %v", err)
 	}
-	t.Cleanup(func() { pmp.db.Migrator().DropTable(analytics.SQLTable) })
+	cleanupGormDB(t, pmp.db, analytics.SQLTable)
 
 	now := time.Now()
 	rec := analytics.AnalyticsRecord{
@@ -187,13 +186,12 @@ func TestMySQLConnectionMethod(t *testing.T) {
 // ── 4. Strict-mode zero-date guardrail ────────────────────────────────────────
 
 // TestMySQLStrictMode_ZeroExpireAt documents the pump's behaviour when an analytics
-// record arrives with a zero-value ExpireAt against a strict-mode MySQL (NO_ZERO_DATE,
-// on by default since MySQL 5.7). Today the gateway always calls SetExpiry() before
-// emitting, so ExpireAt is never zero in production — but this test acts as a
-// guardrail: if a future gateway refactor forgets to set it, this test shows the
-// failure mode early rather than at a customer site. go-sql-driver/mysql v1.6.0
-// tightened zero-date handling further, so this is worth pinning for the upgrade.
+// record arrives with a zero-value ExpireAt against strict-mode MySQL. The gateway
+// normally calls SetExpiry() before emitting records, so this is a dependency canary
+// for the failure mode if that upstream contract regresses.
+//
 // Verifies: SW-REQ-040
+// MCDC SW-REQ-040: day_sliced_routing=F, table_sharding=F => TRUE
 func TestMySQLStrictMode_ZeroExpireAt(t *testing.T) {
 	skipTestIfNoMySQL(t)
 
@@ -201,26 +199,28 @@ func TestMySQLStrictMode_ZeroExpireAt(t *testing.T) {
 	if err := pmp.Init(newMySQLConfig(false)); err != nil {
 		t.Fatalf("MySQL Init failed: %v", err)
 	}
-	t.Cleanup(func() { pmp.db.Migrator().DropTable(analytics.SQLTable) })
+	cleanupGormDB(t, pmp.db, analytics.SQLTable)
+
+	sqlDB, err := pmp.db.DB()
+	if err != nil {
+		t.Fatalf("pmp.db.DB() failed: %v", err)
+	}
+	sqlDB.SetMaxOpenConns(1)
+	sqlDB.SetMaxIdleConns(1)
+	if err := pmp.db.Exec("SET SESSION sql_mode = CONCAT(@@SESSION.sql_mode, ',STRICT_TRANS_TABLES,NO_ZERO_DATE,NO_ZERO_IN_DATE')").Error; err != nil {
+		t.Fatalf("enable strict date sql_mode: %v", err)
+	}
 
 	rec := analytics.AnalyticsRecord{
 		APIID:     "zero-expireat-test",
 		OrgID:     "mysql-zero-expireat",
 		TimeStamp: time.Now(),
-		// ExpireAt deliberately omitted — zero time.Time{}.
+		// ExpireAt deliberately omitted: zero time.Time{}.
 	}
-	err := pmp.WriteData(context.Background(), []interface{}{rec})
-
-	// We do not assert success. Under strict-mode MySQL this will fail with
-	// "Error 1292: Incorrect datetime value: '0000-00-00' for column 'expireAt'".
-	// Under a loose-mode MySQL it may succeed. The point is to surface the
-	// strict-mode behaviour explicitly so operators are aware.
+	err = pmp.WriteData(context.Background(), []interface{}{rec})
+	assert.Error(t, err, "strict MySQL should reject zero ExpireAt")
 	if err != nil {
-		t.Logf("zero ExpireAt rejected by strict-mode MySQL (expected): %v", err)
-		assert.Contains(t, err.Error(), "expireAt",
-			"error should reference the expireAt column so the cause is obvious")
-	} else {
-		t.Log("zero ExpireAt accepted — MySQL is not in strict mode or NO_ZERO_DATE is disabled")
+		assert.Contains(t, err.Error(), "expire", "error should identify the date column path")
 	}
 }
 
@@ -232,6 +232,7 @@ func TestMySQLStrictMode_ZeroExpireAt(t *testing.T) {
 // defaults and rejectReadOnly handling; regressions here would show as time drift or
 // scan errors on reads.
 // Verifies: SW-REQ-040
+// MCDC SW-REQ-040: day_sliced_routing=F, table_sharding=F => TRUE
 func TestMySQLDriverV16_DateHandling(t *testing.T) {
 	skipTestIfNoMySQL(t)
 
@@ -239,7 +240,7 @@ func TestMySQLDriverV16_DateHandling(t *testing.T) {
 	if err := pmp.Init(newMySQLConfig(false)); err != nil {
 		t.Fatalf("MySQL Init failed: %v", err)
 	}
-	t.Cleanup(func() { pmp.db.Migrator().DropTable(analytics.SQLTable) })
+	cleanupGormDB(t, pmp.db, analytics.SQLTable)
 
 	// MySQL DATETIME has second-level precision by default unless the column is
 	// declared with a fractional-second precision. Use a second-aligned value to

@@ -33,52 +33,39 @@ verification:
         comment: 'Phase L1: formalize via FRETish; introduced per-component boolean vars in *.vars.yaml; FRETish captures the headline routing/windowing decision per req (table-sharding for SW-040/041, graph-routing for SW-042, minute-window for SW-043/045, mcp-routing for SW-044/069, date-boundary slice-flush for SW-064).'
         fingerprint: sha256:646711cba47b04c15a6721bc7d4a2fb9356635b4f1f37792dfc83992ef29e484
         ai_generated: true
-    impact_reviews:
-        - requirement: SW-REQ-042
-          artifact: pumps/graph_sql.go
-          decision: no-authored-change
-          reviewer: buger
-          reason: 'Phase L1: formalization-only change (informal -> fretish + per-req boolean variables). Production .go files were not modified; only req YAML metadata and component vars YAMLs were added. Re-recording no-authored-change impact after fingerprint roll.'
-          base: origin/master
-          requirement_fingerprint: sha256:f51f46585402b9517d2f25172c7f0f914a90008e09071493c49a7855773650aa
-          approval_fingerprint: sha256:646711cba47b04c15a6721bc7d4a2fb9356635b4f1f37792dfc83992ef29e484
-          artifact_fingerprint: sha256:0c0b86faafd08711b4094b80074720dcbbb927b022aec5d221671edf51b1c1ad
-          reviewed_at: "2026-06-02T12:52:01Z"
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:35:31Z"
-    last_modified_by: human:buger
-    last_modified_at: "2026-06-17T08:04:00Z"
+    last_modified_by: agent:codex
+    last_modified_at: "2026-06-19T14:16:46Z"
 obligation_checklist:
     - connection_leak_free
+    - input_size_bounded
+    - malformed_input
     - malformed_recovers_or_errors_loudly
     - parameterized_only_write
     - temporal_window_inclusive
-obligation_suppressions:
-    - id: input_size_bounded
-      reason: 'Phase N opengrep rule go.loop.increment-from-mutable-config flags pumps/sql*.go for-loops with i += c.SQLConf.BatchSize stride. SQL family DOES guard at Init (sql.go:260 sets default if 0) but the rule prefers co-located guards. Same bug class as KIs sqs-batchlimit-zero-infinite-loop and kinesis-splitintobatches-zero-infinite-loop with mitigation (Init-level guard) tracked. Not a new obligation gap.'
-      suppressed_by: buger
-      suppressed_at: "2026-06-02T18:29:52Z"
-      framework_refs:
-        - CWE CWE-130
-        - OWASP-ASVS-v4 V13.1.4
-    - id: malformed_input
-      reason: 'Phase N opengrep rule go.loop.increment-from-mutable-config — paired malformed_input on pumps/sql*.go BatchSize loops. Init-level zero-guard at sql.go:260 already mitigates; rule flags for co-located guard preference. Same class as KIs sqs/kinesis batch-limit zero-loop.'
-      suppressed_by: buger
-      suppressed_at: "2026-06-02T18:29:52Z"
 obligation_deferrals:
+    - obligation_class: input_size_bounded
+      reason: 'real SQL-family batch-size validation gap under known-issue sql-batch-size-zero-infinite-loop; surfaced as visible tracked debt, not an overclaimed fix'
+      tracking: sql-batch-size-zero-infinite-loop
+      owner: agent:codex
+      ki_ref: sql-batch-size-zero-infinite-loop
+    - obligation_class: malformed_input
+      reason: real SQL-family malformed batch-size gap under known-issue sql-batch-size-zero-infinite-loop; surfaced as visible tracked debt, not an overclaimed fix
+      tracking: sql-batch-size-zero-infinite-loop
+      owner: agent:codex
+      ki_ref: sql-batch-size-zero-infinite-loop
     - obligation_class: malformed_recovers_or_errors_loudly
-      reason: 'real untested obligation under known-issue mapstructure-decode-silently-drops-unknown-keys; surfaced as visible tracked debt, not an overclaimed fix'
+      reason: real untested obligation under known-issue mapstructure-decode-silently-drops-unknown-keys; surfaced as visible tracked debt, not an overclaimed fix
       tracking: mapstructure-decode-silently-drops-unknown-keys
       owner: human:buger
-    - obligation_class: parameterized_only_write
-      reason: 'Deferred: required parameterized_only_write test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'
-      tracking: .proof/deferred-witness-backlog.md
-      owner: human:buger
+      ki_ref: mapstructure-decode-silently-drops-unknown-keys
     - obligation_class: temporal_window_inclusive
       reason: real untested obligation under known-issue analytics-timestamp-timezone-convention-unpinned; surfaced as visible tracked debt, not an overclaimed fix
       tracking: analytics-timestamp-timezone-convention-unpinned
       owner: human:buger
+      ki_ref: analytics-timestamp-timezone-convention-unpinned
 lifecycle:
     change_history:
         - date: "2026-05-30T08:43:46Z"

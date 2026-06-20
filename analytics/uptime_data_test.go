@@ -127,7 +127,6 @@ func TestUptimeReportAggregate_Dimensions(t *testing.T) {
 // Verifies: SYS-REQ-021
 // MCDC INT-REQ-002: gateway_emits_uptime=F, record_at_tyk_uptime_analytics=F, uptime_purging_enabled=T => TRUE
 // MCDC INT-REQ-002: gateway_emits_uptime=T, record_at_tyk_uptime_analytics=T, uptime_purging_enabled=T => TRUE
-//mcdc:ignore INT-REQ-002: gateway_emits_uptime=T, record_at_tyk_uptime_analytics=F, uptime_purging_enabled=T => FALSE — main.go:293-300 guards the uptime drain behind `if !DontPurgeUptimeData` (uptime_purging_enabled) and then unconditionally calls UptimeStorage.GetAndDeleteSet followed by UptimePump.WriteUptimeData with no branch in between, so when purging is enabled and the gateway emits uptime the record is always forwarded; the "emitted+purging-enabled yet not recorded" violation has no branch to reach it [reviewed: human:leo]
 // MCDC SYS-REQ-014: uptime_data_consumed=F, uptime_purging_enabled=F => TRUE
 // MCDC SYS-REQ-014: uptime_data_consumed=F, uptime_purging_enabled=T => FALSE
 // MCDC SYS-REQ-014: uptime_data_consumed=T, uptime_purging_enabled=T => TRUE
@@ -161,6 +160,8 @@ func TestUptimeReportAggregate_Dimensions(t *testing.T) {
 // populated sub-case consumes input and produces the forwarded aggregate map; the empty case
 // is the vacuous TRUE arm.
 // SW-REQ-015:nominal:nominal
+//
+//mcdc:ignore INT-REQ-002: gateway_emits_uptime=T, record_at_tyk_uptime_analytics=F, uptime_purging_enabled=T => FALSE — main.go:293-300 guards the uptime drain behind `if !DontPurgeUptimeData` (uptime_purging_enabled) and then unconditionally calls UptimeStorage.GetAndDeleteSet followed by UptimePump.WriteUptimeData with no branch in between, so when purging is enabled and the gateway emits uptime the record is always forwarded; the "emitted+purging-enabled yet not recorded" violation has no branch to reach it [reviewed: human:leo] [category: defensive]
 func TestAggregateUptimeData(t *testing.T) {
 	currentTime := time.Date(2023, 0o4, 0o4, 10, 0, 0, 0, time.UTC)
 

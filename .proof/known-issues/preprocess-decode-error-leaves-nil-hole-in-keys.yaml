@@ -1,10 +1,13 @@
 id: preprocess-decode-error-leaves-nil-hole-in-keys
 title: PreprocessAnalyticsValues leaves nil holes in the keys slice on decode error; filterData panics on the unchecked type assertion
+introduced_in: inception
 description: 'main.go:310 PreprocessAnalyticsValues preallocates keys := make([]interface{}, len(AnalyticsValues)) and, on a per-record serializer Decode error (main.go:320), logs and ''continue''s WITHOUT assigning keys[i], leaving a nil interface{} hole at that index. The full keys slice (holes included) is then passed to writeToPumps -> filterData (main.go:378). When any pump has filtering/trimming/decoding/omit options enabled, filterData executes ''decoded := key.(analytics.AnalyticsRecord)'' (main.go:396) — an unchecked type assertion that PANICS on a nil interface. Because the per-pump WriteData goroutine has no defer recover (see KI pump-fanout-panic-not-recovered), a single undecodable record in a batch crashes the host process whenever a filtering pump is configured. Root cause: the decode-error path should skip the index (compact the slice) or assign a sentinel, not leave a nil hole.'
 affected_requirements:
     - SW-REQ-001
 evidence_manifests:
     - code_signal:opengrep:go.slice.preallocated-index-hole:main.go:327
+environment_note: |-
+  Evidence is tied to the listed evidence_manifests entries; reproduce by rerunning the named test or code-signal scan and inspecting code_signal:opengrep:go.slice.preallocated-index-hole:main.go:327.
 severity: medium
 risk: availability
 mitigation: Ensure analytics producers emit records the configured serializer can decode (match msgpack/protobuf suffix); a filtering pump plus an undecodable record triggers the panic. Disable per-pump filtering/trim/decode options to take the early return-keys path in filterData that bypasses the type assertion.

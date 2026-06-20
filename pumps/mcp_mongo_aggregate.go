@@ -183,7 +183,7 @@ func (m *MCPMongoAggregatePump) upsertMCPAggregate(ctx context.Context, ag *anal
 	withTimeUpdate := analytics.MCPRecordAggregate{
 		AnalyticsRecordAggregate: analytics.AnalyticsRecordAggregate{OrgID: ag.OrgID, Mixed: ag.Mixed},
 	}
-	if err := m.MongoAggregatePump.store.Upsert(ctx, &withTimeUpdate, query, avgUpdateDoc); err != nil { //mcdc:ignore second-Upsert err arm requires the first Upsert (line 177) to succeed and the second to fail — driving that ordering needs a fake persistent.PersistentStorage; container-stop terminates BOTH calls — KI mcdc-pumps-below-95
+	if err := m.MongoAggregatePump.store.Upsert(ctx, &withTimeUpdate, query, avgUpdateDoc); err != nil { //mcdc:ignore:capability-gap second-Upsert err arm requires the first Upsert (line 177) to succeed and the second to fail — driving that ordering needs a fake persistent.PersistentStorage; container-stop terminates BOTH calls — KI mcdc-pumps-below-95 [ki: mcdc-pumps-below-95]
 		m.log.WithField("query", query).Error("AvgUpdate Failure: ", err)
 		return err
 	}

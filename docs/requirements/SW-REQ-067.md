@@ -38,10 +38,9 @@ for that; the `OnConflictAssignments` helper builds the per-column
   (re-annotated `Verifies: SW-REQ-067`) — exercises the
   on-conflict update with latency / request-time recomputation across
   two writes.
-- The `atomicity` obligation's `negative` evidence is suppressed with
-  rationale (see the req's `obligation_suppressions`): a
-  transaction-failure injection harness around the GORM session is
-  required for an honest negative test and is not present today.
+- The `atomicity` obligation's `negative` evidence is deferred: a
+  transaction-failure injection harness around the GORM session is required
+  for an honest negative test and is not present today.
 
 ## Open questions
 - Parameter binding is provided by GORM; the obligation

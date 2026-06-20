@@ -19,24 +19,29 @@ variables:
       data_constraint:
         domain: integer
         variable: aggregated_count
-        condition: "aggregated_count >= 1"
+        condition: aggregated_count >= 1
         parameters:
-          - name: aggregated_count
-            type: int
-            constraint: ">= 0"
+            - name: aggregated_count
+              type: int
+              constraint: '>= 0'
     - name: records_unaggregated
       type: bool
       direction: input
+      proof_auxiliary: true
+      proof_auxiliary_reason: Solver-only complement used for data-constraint completeness and exclusivity; no standalone behavioral requirement consumes it.
       description: No records have been aggregated within the configured window (complement of records_aggregated).
       data_constraint:
         domain: integer
         variable: aggregated_count
-        condition: "aggregated_count == 0"
+        condition: aggregated_count == 0
         parameters:
-          - name: aggregated_count
-            type: int
-            constraint: ">= 0"
+            - name: aggregated_count
+              type: int
+              constraint: '>= 0'
     - name: hits_errors_latency_counted
       type: bool
       direction: output
       description: Per-aggregated-unit counters (hits, successes, errors, latency) are maintained.
+independence:
+    declared: true
+    reason: System aggregation requirements cover independent aggregation gates and output dimensions; grouping by dimension and counter maintenance are reviewed as separate guarantees.

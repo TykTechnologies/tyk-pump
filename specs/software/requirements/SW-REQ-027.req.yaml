@@ -32,94 +32,12 @@ verification:
         reviewed_at: "2026-05-30T08:44:54Z"
         comment: Re-approve superseded anchor reqs after Phase A decomposition; descriptions amended with SUPERSEDED prefix listing new SW reqs that replace them.
         fingerprint: sha256:e0fa388ff7e8f10d0182f7ee963c9aeeaca7922b60b73ff83fbfb607e67a24bf
-        ai_generated: false
-    impact_reviews:
-        - requirement: SW-REQ-027
-          artifact: pumps/graylog.go
-          decision: no-authored-change
-          reviewer: buger
-          reason: 'Production files added reqproof requirement-traceability annotations only (// reqproof:implements / // Verifies: / triple-form evidence). No runtime behavior change.'
-          base: origin/master
-          requirement_fingerprint: sha256:d6c001422d2aad357fb880f84e126ce2949d20ae510dbd4935803b6b07b94094
-          approval_fingerprint: sha256:b0952be0c319edae0f43ea71ef07604ebcfd011fd2309d1a106e528be516f7e9
-          artifact_fingerprint: sha256:bcd223cc3786ab883c07b6c46513744ca7080ab788f96a19b41d1e8ace046e04
-          reviewed_at: "2026-05-30T07:45:44Z"
-        - requirement: SW-REQ-027
-          artifact: pumps/logzio.go
-          decision: no-authored-change
-          reviewer: buger
-          reason: 'Production files added reqproof requirement-traceability annotations only (// reqproof:implements / // Verifies: / triple-form evidence). No runtime behavior change.'
-          base: origin/master
-          requirement_fingerprint: sha256:d6c001422d2aad357fb880f84e126ce2949d20ae510dbd4935803b6b07b94094
-          approval_fingerprint: sha256:b0952be0c319edae0f43ea71ef07604ebcfd011fd2309d1a106e528be516f7e9
-          artifact_fingerprint: sha256:42d53b4370ba04fc7bed8eb9b173a16aa07ff1bbcf2dfafb1d4e2d9196cd8fa3
-          reviewed_at: "2026-05-30T07:45:44Z"
-        - requirement: SW-REQ-027
-          artifact: pumps/moesif.go
-          decision: no-authored-change
-          reviewer: buger
-          reason: 'Production files added reqproof requirement-traceability annotations only (// reqproof:implements / // Verifies: / triple-form evidence). No runtime behavior change.'
-          base: origin/master
-          requirement_fingerprint: sha256:d6c001422d2aad357fb880f84e126ce2949d20ae510dbd4935803b6b07b94094
-          approval_fingerprint: sha256:b0952be0c319edae0f43ea71ef07604ebcfd011fd2309d1a106e528be516f7e9
-          artifact_fingerprint: sha256:8dc908a75961d50a3386cb19bbdc536801cfec83d72320e8157af1c24a73459f
-          reviewed_at: "2026-05-30T07:45:44Z"
-        - requirement: SW-REQ-027
-          artifact: pumps/resurface.go
-          decision: no-authored-change
-          reviewer: buger
-          reason: 'Production files added reqproof requirement-traceability annotations only (// reqproof:implements / // Verifies: / triple-form evidence). No runtime behavior change.'
-          base: origin/master
-          requirement_fingerprint: sha256:d6c001422d2aad357fb880f84e126ce2949d20ae510dbd4935803b6b07b94094
-          approval_fingerprint: sha256:b0952be0c319edae0f43ea71ef07604ebcfd011fd2309d1a106e528be516f7e9
-          artifact_fingerprint: sha256:98ac864b45962a60a691dc077ac94fd808bbc0181699eb9168b912afce4f80c7
-          reviewed_at: "2026-05-30T07:45:44Z"
-        - requirement: SW-REQ-027
-          artifact: pumps/segment.go
-          decision: no-authored-change
-          reviewer: buger
-          reason: 'Production files added reqproof requirement-traceability annotations only (// reqproof:implements / // Verifies: / triple-form evidence). No runtime behavior change.'
-          base: origin/master
-          requirement_fingerprint: sha256:d6c001422d2aad357fb880f84e126ce2949d20ae510dbd4935803b6b07b94094
-          approval_fingerprint: sha256:b0952be0c319edae0f43ea71ef07604ebcfd011fd2309d1a106e528be516f7e9
-          artifact_fingerprint: sha256:b30bdad34a269a76a7b3e6d14070a876493790d5a29f30e967802a436638dee6
-          reviewed_at: "2026-05-30T07:45:44Z"
-        - requirement: SW-REQ-027
-          artifact: pumps/splunk.go
-          decision: no-authored-change
-          reviewer: buger
-          reason: 'Production files added reqproof requirement-traceability annotations only (// reqproof:implements / // Verifies: / triple-form evidence). No runtime behavior change.'
-          base: origin/master
-          requirement_fingerprint: sha256:d6c001422d2aad357fb880f84e126ce2949d20ae510dbd4935803b6b07b94094
-          approval_fingerprint: sha256:b0952be0c319edae0f43ea71ef07604ebcfd011fd2309d1a106e528be516f7e9
-          artifact_fingerprint: sha256:38665790e13d91d24da0259bf0a969a10e920f8009b62aacf9bd13e3f73a0ad7
-          reviewed_at: "2026-05-30T07:45:44Z"
-        - requirement: SW-REQ-027
-          artifact: pumps/syslog.go
-          decision: no-authored-change
-          reviewer: buger
-          reason: 'Production files added reqproof requirement-traceability annotations only (// reqproof:implements / // Verifies: / triple-form evidence). No runtime behavior change.'
-          base: origin/master
-          requirement_fingerprint: sha256:d6c001422d2aad357fb880f84e126ce2949d20ae510dbd4935803b6b07b94094
-          approval_fingerprint: sha256:b0952be0c319edae0f43ea71ef07604ebcfd011fd2309d1a106e528be516f7e9
-          artifact_fingerprint: sha256:8b5a0e85d1814294677d75886710534ef23bbce198b7b0d858d2aa8e3dc706cc
-          reviewed_at: "2026-05-30T07:45:44Z"
+        ai_generated: true
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:16Z"
-    last_modified_by: human:cli
-    last_modified_at: "2026-06-02T08:58:03Z"
-obligation_checklist:
-    - errors_propagated
-obligation_suppressions:
-    - id: errors_propagated
-      reason: Phase A decomposition superseded this family req; obligations are now carried by per-implementation children with implemented_by traces.
-      suppressed_by: buger
-      suppressed_at: "2026-05-30T08:45:17Z"
-      framework_refs:
-        - CWE CWE-703,CWE-252,CWE-754
-        - NIST-800-53 SI-11
-        - OWASP-ASVS-v4 V7.4.1,V7.4.2,V7.4.3
+    last_modified_by: agent:codex
+    last_modified_at: "2026-06-19T07:27:15Z"
 lifecycle:
     deprecated_by: SW-REQ-048
     deprecated_at: "2026-06-01T20:31:31Z"

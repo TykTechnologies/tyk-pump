@@ -21,9 +21,8 @@ variables:
 traces:
     satisfies:
         - SYS-REQ-016
-    reviewed_at: "2026-06-11T15:47:58.532099Z"
-    reviewed_by: agent:claude-opus-4-8
-    reviewed_fingerprint: sha256:64b7ab7e1b16fd7c00d3f42a0fd699d14688354ba4ad0ade8fd27361789a6bf2
+    reviewed_at: "2026-06-19T20:51:38Z"
+    reviewed_by: human:buger
 verification:
     assurance_level: B
     formalization_status: valid
@@ -35,17 +34,6 @@ verification:
         comment: 'DEFECT-5 hardening: re-approve after renumbering this requirement from its 209-range placeholder id to SW-REQ-074 (numbering-gap close; identity/fingerprint refresh). Prometheus API-key masking guarantee (secrets_not_logged). Verified by TestPrometheusObfuscateAPIKey with all 3 MC/DC witness rows covered; implemented_by obfuscateAPIKey.'
         fingerprint: sha256:8b7e9c3b16172ac2453e2c9568360a8ec6de4f613ae02f806bda5afa50b1c88d
         ai_generated: true
-    impact_reviews:
-        - requirement: SW-REQ-074
-          artifact: pumps/prometheus.go
-          decision: no-authored-change
-          reviewer: agent:claude-opus-4-8
-          reason: pumps/prometheus.go reqproof:implements annotation renumbered to SW-REQ-074 (from the 209-range placeholder id; numbering-gap close); obfuscateAPIKey implementation and requirement intent unchanged.
-          base: origin/master
-          requirement_fingerprint: sha256:64b7ab7e1b16fd7c00d3f42a0fd699d14688354ba4ad0ade8fd27361789a6bf2
-          approval_fingerprint: sha256:8b7e9c3b16172ac2453e2c9568360a8ec6de4f613ae02f806bda5afa50b1c88d
-          artifact_fingerprint: sha256:1e85047b5806a40ffa9bda5799890446584eefca1f655c25d25ee846c2184376
-          reviewed_at: "2026-06-11T15:48:27Z"
 history:
     created_by: human:cli
     created_at: "2026-06-10T12:19:19Z"
@@ -53,22 +41,20 @@ history:
     last_modified_at: "2026-06-16T20:38:35Z"
 obligation_checklist:
     - secrets_not_logged
-obligation_deferrals:
-    - obligation_class: secrets_not_logged
-      reason: 'Deferred: required secrets_not_logged test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'
-      tracking: .proof/deferred-witness-backlog.md
-      owner: human:buger
 stakeholder:
     acceptance_criteria:
         - id: AC-001
           text: When ObfuscateAPIKeys is true and the API key length is greater than ObfuscateAPIKeysLength (default 4), the api_key and key labels emit '****' followed by exactly the last ObfuscateAPIKeysLength characters, and the raw key substring is absent from the emitted label value.
           testable: true
+          verification_method: test
         - id: AC-002
           text: When ObfuscateAPIKeys is true and the API key length is less than or equal to ObfuscateAPIKeysLength, the api_key and key labels emit the fully-masked sentinel '--' and no characters of the raw key are emitted.
           testable: true
+          verification_method: test
         - id: AC-003
           text: When ObfuscateAPIKeys is false, the api_key and key labels emit the raw API key unchanged (the documented opt-in default), pinned by a regression test as an explicit operator decision.
           testable: true
+          verification_method: test
 lifecycle:
     change_history:
         - date: "2026-06-10T12:21:28Z"

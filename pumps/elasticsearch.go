@@ -24,6 +24,7 @@ import (
 type ElasticsearchPump struct {
 	operator ElasticsearchOperator
 	esConf   *ElasticsearchConf
+	closed   bool
 	CommonPumpConfig
 }
 
@@ -112,6 +113,7 @@ type ElasticsearchBulkConfig struct {
 type ElasticsearchOperator interface {
 	processData(ctx context.Context, data []interface{}, esConf *ElasticsearchConf) error
 	flushRecords() error
+	close() error
 }
 
 type Elasticsearch3Operator struct {
@@ -186,29 +188,29 @@ func (e *ElasticsearchPump) getOperator() (ElasticsearchOperator, error) {
 		op := new(Elasticsearch3Operator)
 		op.esClient, err = elasticv3.NewClient(elasticv3.SetURL(urls...), elasticv3.SetSniff(conf.EnableSniffing), elasticv3.SetBasicAuth(conf.Username, conf.Password), elasticv3.SetHttpClient(httpClient))
 
-		if err != nil { //mcdc:ignore F=>F unreachable: elasticv3.NewClient is invoked without SetHealthcheck(false) and v3 healthcheck rejects every modern ES server, so success is impossible against the in-scope v7 testcontainer — KI es-legacy-versions-need-deprecated-containers
+		if err != nil { //mcdc:ignore:defensive F=>F unreachable: elasticv3.NewClient is invoked without SetHealthcheck(false) and v3 healthcheck rejects every modern ES server, so success is impossible against the in-scope v7 testcontainer — KI es-legacy-versions-need-deprecated-containers
 			return op, err
 		}
 
 		// Setup a bulk processor
 		p := op.esClient.BulkProcessor().Name("TykPumpESv3BackgroundProcessor")
-		if conf.BulkConfig.Workers != 0 { //mcdc:ignore v3 block is unreachable from getOperator: elasticv3.NewClient is invoked without SetHealthcheck(false) and v3 healthcheck rejects every modern ES server — KI es-legacy-versions-need-deprecated-containers
+		if conf.BulkConfig.Workers != 0 { //mcdc:ignore:capability-gap v3 block is unreachable from getOperator: elasticv3.NewClient is invoked without SetHealthcheck(false) and v3 healthcheck rejects every modern ES server — KI es-legacy-versions-need-deprecated-containers [ki: es-legacy-versions-need-deprecated-containers]
 			p = p.Workers(conf.BulkConfig.Workers)
 		}
 
-		if conf.BulkConfig.FlushInterval != 0 { //mcdc:ignore v3 block is unreachable from getOperator — KI es-legacy-versions-need-deprecated-containers
+		if conf.BulkConfig.FlushInterval != 0 { //mcdc:ignore:capability-gap v3 block is unreachable from getOperator — KI es-legacy-versions-need-deprecated-containers [ki: es-legacy-versions-need-deprecated-containers]
 			p = p.FlushInterval(time.Duration(conf.BulkConfig.FlushInterval) * time.Second)
 		}
 
-		if conf.BulkConfig.BulkActions != 0 { //mcdc:ignore v3 block is unreachable from getOperator — KI es-legacy-versions-need-deprecated-containers
+		if conf.BulkConfig.BulkActions != 0 { //mcdc:ignore:capability-gap v3 block is unreachable from getOperator — KI es-legacy-versions-need-deprecated-containers [ki: es-legacy-versions-need-deprecated-containers]
 			p = p.BulkActions(conf.BulkConfig.BulkActions)
 		}
 
-		if conf.BulkConfig.BulkSize != 0 { //mcdc:ignore v3 block is unreachable from getOperator — KI es-legacy-versions-need-deprecated-containers
+		if conf.BulkConfig.BulkSize != 0 { //mcdc:ignore:capability-gap v3 block is unreachable from getOperator — KI es-legacy-versions-need-deprecated-containers [ki: es-legacy-versions-need-deprecated-containers]
 			p = p.BulkSize(conf.BulkConfig.BulkSize)
 		}
 
-		if !conf.DisableBulk { //mcdc:ignore v3 block is unreachable from getOperator — KI es-legacy-versions-need-deprecated-containers
+		if !conf.DisableBulk { //mcdc:ignore:capability-gap v3 block is unreachable from getOperator — KI es-legacy-versions-need-deprecated-containers [ki: es-legacy-versions-need-deprecated-containers]
 			// After execute a bulk commit call his function to print how many records were purged
 			purgerLogger := func(executionId int64, requests []elasticv3.BulkableRequest, response *elasticv3.BulkResponse, err error) {
 				printPurgedBulkRecords(len(requests), err, op.log)
@@ -356,6 +358,7 @@ func (e *ElasticsearchPump) GetEnvPrefix() string {
 
 // reqproof:implements SW-REQ-068
 func (e *ElasticsearchPump) Init(config interface{}) error {
+	e.closed = false
 	e.esConf = &ElasticsearchConf{}
 	e.log = log.WithField("prefix", elasticsearchPrefix)
 
@@ -551,6 +554,18 @@ func (e Elasticsearch3Operator) flushRecords() error {
 }
 
 // reqproof:implements SW-REQ-070
+func (e Elasticsearch3Operator) close() error {
+	var err error
+	if e.bulkProcessor != nil {
+		err = e.bulkProcessor.Close()
+	}
+	if e.esClient != nil {
+		e.esClient.Stop()
+	}
+	return err
+}
+
+// reqproof:implements SW-REQ-070
 func (e Elasticsearch5Operator) processData(ctx context.Context, data []interface{}, esConf *ElasticsearchConf) error {
 	index := e.esClient.Index().Index(getIndexName(esConf))
 
@@ -587,6 +602,18 @@ func (e Elasticsearch5Operator) processData(ctx context.Context, data []interfac
 // reqproof:implements SW-REQ-070
 func (e Elasticsearch5Operator) flushRecords() error {
 	return e.bulkProcessor.Flush()
+}
+
+// reqproof:implements SW-REQ-070
+func (e Elasticsearch5Operator) close() error {
+	var err error
+	if e.bulkProcessor != nil {
+		err = e.bulkProcessor.Close()
+	}
+	if e.esClient != nil {
+		e.esClient.Stop()
+	}
+	return err
 }
 
 // reqproof:implements SW-REQ-070
@@ -633,6 +660,18 @@ func (e Elasticsearch6Operator) flushRecords() error {
 }
 
 // reqproof:implements SW-REQ-070
+func (e Elasticsearch6Operator) close() error {
+	var err error
+	if e.bulkProcessor != nil {
+		err = e.bulkProcessor.Close()
+	}
+	if e.esClient != nil {
+		e.esClient.Stop()
+	}
+	return err
+}
+
+// reqproof:implements SW-REQ-070
 func (e Elasticsearch7Operator) processData(ctx context.Context, data []interface{}, esConf *ElasticsearchConf) error {
 	index := e.esClient.Index().Index(getIndexName(esConf))
 
@@ -672,6 +711,18 @@ func (e Elasticsearch7Operator) flushRecords() error {
 	return e.bulkProcessor.Flush()
 }
 
+// reqproof:implements SW-REQ-070
+func (e Elasticsearch7Operator) close() error {
+	var err error
+	if e.bulkProcessor != nil {
+		err = e.bulkProcessor.Close()
+	}
+	if e.esClient != nil {
+		e.esClient.Stop()
+	}
+	return err
+}
+
 // printPurgedBulkRecords print the purged records = bulk size when bulk is enabled
 // reqproof:implements SW-REQ-070
 func printPurgedBulkRecords(bulkSize int, err error, logger *logrus.Entry) {
@@ -684,9 +735,18 @@ func printPurgedBulkRecords(bulkSize int, err error, logger *logrus.Entry) {
 
 // reqproof:implements SW-REQ-070
 func (e *ElasticsearchPump) Shutdown() error {
-	if !e.esConf.DisableBulk {
-		e.log.Info("Flushing bulked records...")
-		return e.operator.flushRecords()
+	if e == nil || e.operator == nil || e.closed {
+		return nil
 	}
-	return nil
+	e.closed = true
+	var flushErr error
+	if e.esConf != nil && !e.esConf.DisableBulk {
+		e.log.Info("Flushing bulked records...")
+		flushErr = e.operator.flushRecords()
+	}
+	closeErr := e.operator.close()
+	if flushErr != nil {
+		return flushErr
+	}
+	return closeErr
 }

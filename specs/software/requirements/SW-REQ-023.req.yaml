@@ -33,27 +33,6 @@ verification:
         comment: 'Phase L2: aggressive formalization — encodes per-component primary decision (instrumentation gate, codec select, SSL/SASL, dataset_empty, default-path, file-append, retry-status, log-level, flush, batch, transport, dedup); variables in <component>.vars.yaml; user directive: force MCDC witnesses to drive verifying tests.'
         fingerprint: sha256:62a2b553ccb8f63553642db160d235944054450279f404bb08f06918198cae78
         ai_generated: false
-    impact_reviews:
-        - requirement: SW-REQ-023
-          artifact: pumps/dogstatsd.go
-          decision: no-authored-change
-          reviewer: buger
-          reason: 'Phase L2: formalization-only change (informal -> fretish + per-component boolean variables). Production .go files were not modified; only req YAML metadata, component vars YAMLs, and // MCDC test comment witnesses.'
-          base: origin/master
-          requirement_fingerprint: sha256:1df3e9d8400871562fefcf48faef7f6fb056534b45cec5249ae39b945a0a70b0
-          approval_fingerprint: sha256:62a2b553ccb8f63553642db160d235944054450279f404bb08f06918198cae78
-          artifact_fingerprint: sha256:184e18e555be90f6e47ced4f2a6354faac72c12a37682f099eec3868281e2da5
-          reviewed_at: "2026-06-02T13:44:40Z"
-        - requirement: SW-REQ-023
-          artifact: pumps/statsd.go
-          decision: no-authored-change
-          reviewer: buger
-          reason: 'Phase L2: formalization-only change (informal -> fretish + per-component boolean variables). Production .go files were not modified; only req YAML metadata, component vars YAMLs, and // MCDC test comment witnesses.'
-          base: origin/master
-          requirement_fingerprint: sha256:1df3e9d8400871562fefcf48faef7f6fb056534b45cec5249ae39b945a0a70b0
-          approval_fingerprint: sha256:62a2b553ccb8f63553642db160d235944054450279f404bb08f06918198cae78
-          artifact_fingerprint: sha256:fb345b7fe8f16b4992a5fc6c77283efb1f2a39d0a84c962d3c1e9ae6a1a32c30
-          reviewed_at: "2026-06-02T13:44:40Z"
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:16Z"
@@ -68,14 +47,17 @@ obligation_deferrals:
     - obligation_class: errors_propagated
       reason: real untested obligation under known-issue pumps-logfatal-on-config-decode; surfaced as visible tracked debt, not an overclaimed fix
       tracking: pumps-logfatal-on-config-decode
+      ki_ref: pumps-logfatal-on-config-decode
       owner: human:buger
     - obligation_class: malformed_recovers_or_errors_loudly
       reason: real untested obligation under known-issue mapstructure-decode-silently-drops-unknown-keys; surfaced as visible tracked debt, not an overclaimed fix
       tracking: mapstructure-decode-silently-drops-unknown-keys
+      ki_ref: mapstructure-decode-silently-drops-unknown-keys
       owner: human:buger
     - obligation_class: process_exit_on_recoverable
       reason: real untested obligation under known-issue pumps-logfatal-on-config-decode; surfaced as visible tracked debt, not an overclaimed fix
       tracking: pumps-logfatal-on-config-decode
+      ki_ref: pumps-logfatal-on-config-decode
       owner: human:buger
 lifecycle:
     change_history:

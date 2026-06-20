@@ -1,0 +1,20 @@
+id: temporal-storage-wire-format-unversioned
+title: Temporal storage has no versioned snapshot wire-format compatibility contract
+introduced_in: inception
+description: 'Temporal storage GetAndDeleteSet stores and returns raw string payloads from the Redis/list backend and delegates record decoding to the selected analytics serializer after retrieval. The storage layer has tests for pop/count/expiry behavior, but it does not pin a versioned on-wire snapshot format or compatibility matrix for records already persisted by older gateway/pump versions. Serializer round-trip tests cover serializer behavior separately; they do not establish SW-REQ-006 storage snapshot_wire_format_compatible evidence. The obligation is therefore a real compatibility-policy gap, not only a missing assertion in the existing storage tests.'
+affected_requirements:
+    - SW-REQ-006
+environment_note: |-
+  Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source and command output.
+reproducer_command: |-
+  rg -n "GetAndDeleteSet|Append|Decode|snapshot_wire_format_compatible|msgpack|protobuf" storage serializer main.go specs/software/requirements/SW-REQ-006.req.yaml
+severity: low
+mitigation: Keep gateway and pump serializer configuration aligned during upgrades and avoid changing persisted analytics payload encoding without draining temporal storage first.
+remediation: Define the temporal-storage payload compatibility contract, add versioned fixtures for records persisted by supported prior versions, and test GetAndDeleteSet plus serializer decode against those fixtures.
+owner: tyk-team
+release_disposition: ship_with_known_issue
+status: open
+history:
+    - at: "2026-06-19T00:00:00Z"
+      by: agent:codex
+      action: created

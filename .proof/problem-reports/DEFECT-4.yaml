@@ -1,6 +1,7 @@
 schema_version: 1
 id: DEFECT-4
 title: SQL pump panics (slice index out of range) when sharding enabled and all records skipped
+introduced_in: fbcb614
 description: |
   SQLPump.WriteData's sharding day-slice loop indexed typedData[startIndex]
   unconditionally inside `if c.SQLConf.TableSharding`. When TableSharding was
@@ -65,6 +66,11 @@ disposition:
         # about AnalyticsRecord.TimeStamp lacking a UTC convention affecting
         # which shard a record routes to. Linked for traceability.
         - analytics-timestamp-timezone-convention-unpinned
+        - mapstructure-decode-silently-drops-unknown-keys
+        - no-panic-recovery-in-exec-pump-writing
+        - sql-background-index-concurrency-unbounded
+        - sql-batch-size-zero-infinite-loop
+        - sql-schema-no-version-policy
     evidence:
         verified_by:
             - pumps/sql_test.go:TestSQLWriteDataSharded

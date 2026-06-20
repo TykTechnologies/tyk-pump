@@ -20,6 +20,7 @@ import (
 // MCDC SW-REQ-037: converted_to_graph_record=T, is_graph_record=T => TRUE
 
 // Verifies: SW-REQ-037
+// SW-REQ-037:errors_propagated:nominal
 // MCDC SW-REQ-037: is_graph_record=F, converted_to_graph_record=F => TRUE
 // MCDC SW-REQ-037: is_graph_record=T, converted_to_graph_record=F => FALSE
 // MCDC SW-REQ-037: is_graph_record=T, converted_to_graph_record=T => TRUE

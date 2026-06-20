@@ -1,11 +1,17 @@
 id: pump-no-timeout-can-block-purge-cycle
 title: Pump with timeout=0 can block purge cycle indefinitely
+introduced_in: inception
 description: main.go:437 ('if pmp.GetTimeout() == 0') only logs a warning when a pump's configured timeout is zero. The time.AfterFunc at main.go:436 is a warning timer, not an enforcement timer. main.go:463 explicitly uses context.WithCancel (no deadline) when timeout is 0, so a pump with the default timeout=0 can block its purge-cycle goroutine forever. SYS-REQ-005's per-pump-timeout claim is therefore operator-conditional rather than unconditionally enforced.
 affected_requirements:
     - SYS-REQ-005
     - SW-REQ-072
+    - SW-REQ-068
+    - SW-REQ-069
+    - SW-REQ-070
 evidence_manifests:
     - code_signal:opengrep:go.http.client-without-timeout:pumps/elasticsearch.go:168
+environment_note: |-
+  Evidence is tied to the listed evidence_manifests entries; reproduce by rerunning the named test or code-signal scan and inspecting code_signal:opengrep:go.http.client-without-timeout:pumps/elasticsearch.go:168.
 severity: medium
 mitigation: Operators must explicitly set a non-zero 'timeout' value per pump in production YAML. Audit pump configs for missing or zero timeout values.
 remediation: Enforce a non-zero default timeout (e.g. equal to purge_delay) when pump configuration omits the field, or fail Init when timeout=0 is set.

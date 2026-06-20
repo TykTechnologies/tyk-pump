@@ -96,6 +96,9 @@ jobs:
       - name: Run Pump Tests
         id: ci-tests
         env:
+          REDIS_HOST: localhost
+          REDIS_PORT: "6379"
+          TYK_TEST_MONGO: "mongodb://localhost:27017/tyk_analytics"
           TYK_TEST_POSTGRES: "host=localhost user=tyk password=tyk123 dbname=tyk_analytics port=5432 sslmode=disable"
           TYK_TEST_MYSQL: "tyk:tyk123@tcp(localhost:3306)/tyk_analytics?parseTime=true"
         run: |

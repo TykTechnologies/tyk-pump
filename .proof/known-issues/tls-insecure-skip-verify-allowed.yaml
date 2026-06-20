@@ -1,0 +1,24 @@
+id: tls-insecure-skip-verify-allowed
+title: TLS-enabled pumps allow operator configuration to skip certificate verification
+introduced_in: inception
+description: 'The shared TLS helper and several pump-specific TLS configurations pass operator-controlled InsecureSkipVerify values into tls.Config. pumps/common.go:267 assigns cfg.InsecureSkipVerify, pumps/hybrid.go:191 assigns SSLInsecureSkipVerify, and the Elasticsearch/Kafka/Splunk TLS paths inherit the same operator-controlled skip-verification posture. This is a deliberate compatibility knob, but it means cert_validation_strict cannot be claimed for production configurations unless insecure skip is forbidden or constrained by policy.'
+affected_requirements:
+    - SW-REQ-016
+    - SW-REQ-021
+    - SW-REQ-029
+    - SW-REQ-048
+    - SW-REQ-068
+environment_note: |-
+  Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source or rerunning the OpenGrep TLS skip-verification signal.
+reproducer_command: rg -n "InsecureSkipVerify|SSLInsecureSkipVerify" pumps/common.go pumps/hybrid.go pumps/kafka.go pumps/splunk.go pumps/elasticsearch.go
+severity: medium
+risk: transport_security
+mitigation: Operators should leave insecure skip-verification disabled in production and supply a valid CA/server name configuration for TLS-enabled pumps.
+remediation: Reject insecure skip-verification in production mode, or gate it behind an explicit unsafe/debug setting with documentation and tests proving strict verification remains the default.
+owner: tyk-team
+release_disposition: ship_with_known_issue
+status: open
+history:
+    - at: "2026-06-19T00:00:00Z"
+      by: agent:codex
+      action: created

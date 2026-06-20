@@ -33,17 +33,6 @@ verification:
         comment: 'Phase Q: catalog obligation attachments — adds external_call_timeout_bounded (Timestream client write deadlines). See .proof/catalog-obligation-proposals.md.'
         fingerprint: sha256:ddc247ac8086a387008b266062f3e04e21bb11a09972e5870ca8e5552ad810a5
         ai_generated: true
-    impact_reviews:
-        - requirement: SW-REQ-057
-          artifact: pumps/timestream.go
-          decision: no-authored-change
-          reviewer: buger
-          reason: 'Phase L3 aggressive: FRETish formalization added per L3 plan; production .go behaviour and code paths unchanged — only requirement metadata (fretish text + formalization_strategy + variables) altered. Test annotations may follow but do not change runtime behaviour.'
-          base: origin/master
-          requirement_fingerprint: sha256:c0d3ce73691e973e40542429368d3bb49be63c9fae2715265c70d85128a111a3
-          approval_fingerprint: sha256:ddc247ac8086a387008b266062f3e04e21bb11a09972e5870ca8e5552ad810a5
-          artifact_fingerprint: sha256:cc6d52ed2a972f2d53e46ee3db70d4ff2a77d305cc19db67c6059c35f80f59b2
-          reviewed_at: "2026-06-02T14:30:20Z"
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:37:10Z"
@@ -59,18 +48,17 @@ obligation_deferrals:
     - obligation_class: errors_propagated
       reason: 'real untested obligation under known-issue pumps-logfatal-on-config-decode; surfaced as visible tracked debt, not an overclaimed fix'
       tracking: pumps-logfatal-on-config-decode
-      owner: human:buger
-    - obligation_class: external_call_timeout_bounded
-      reason: 'Deferred: required external_call_timeout_bounded test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'
-      tracking: .proof/deferred-witness-backlog.md
+      ki_ref: pumps-logfatal-on-config-decode
       owner: human:buger
     - obligation_class: malformed_recovers_or_errors_loudly
       reason: real untested obligation under known-issue mapstructure-decode-silently-drops-unknown-keys; surfaced as visible tracked debt, not an overclaimed fix
       tracking: mapstructure-decode-silently-drops-unknown-keys
+      ki_ref: mapstructure-decode-silently-drops-unknown-keys
       owner: human:buger
     - obligation_class: process_exit_on_recoverable
       reason: real untested obligation under known-issue pumps-logfatal-on-config-decode; surfaced as visible tracked debt, not an overclaimed fix
       tracking: pumps-logfatal-on-config-decode
+      ki_ref: pumps-logfatal-on-config-decode
       owner: human:buger
 lifecycle:
     change_history:

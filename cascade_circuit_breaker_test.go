@@ -52,8 +52,8 @@ type stallingPump struct {
 	once    sync.Once
 }
 
-func (p *stallingPump) GetName() string { return p.name }
-func (p *stallingPump) New() pumps.Pump { return &stallingPump{name: p.name} }
+func (p *stallingPump) GetName() string          { return p.name }
+func (p *stallingPump) New() pumps.Pump          { return &stallingPump{name: p.name} }
 func (p *stallingPump) Init(_ interface{}) error { return nil }
 func (p *stallingPump) WriteData(ctx context.Context, _ []interface{}) error {
 	p.once.Do(func() { close(p.called) })
@@ -69,6 +69,11 @@ func (p *stallingPump) Shutdown() error { return nil }
 // Verifies: SW-REQ-001 (cascade_circuit_breaker), SYS-REQ-004 (failure_independence_proven), SW-REQ-016
 // SW-REQ-001:cascade_circuit_breaker:scenario
 // SYS-REQ-004:failure_independence_proven:scenario
+// SW-REQ-016:failure_independence_proven:scenario
+// SW-REQ-016:failure_independence_proven:nominal
+// MCDC SW-REQ-001: purge_tick=T, records_dispatched=T => TRUE
+// MCDC SYS-REQ-004: a_backend_failed=T, other_backends_written=T => TRUE
+// MCDC SW-REQ-016: field_persisted_on_struct=T, set_invoked=T => TRUE
 //
 // Contract: when one pump fails (or stalls), the purge dispatcher MUST
 // continue dispatching to healthy sibling pumps in the same cycle. The
@@ -161,12 +166,14 @@ func TestCascadeCircuitBreaker_FailingPumpDoesNotStallOthers(t *testing.T) {
 // This test documents the CURRENT behavior: 100 cycles == 100 invocations.
 // If a per-pump circuit breaker is introduced in the future, this test
 // will FAIL with invocations < 100, at which point the suite owner should:
-//   1. Update the expectation to assert breaker semantics.
-//   2. Close the KI `pump-no-per-pump-circuit-breaker` documenting the gap.
+//  1. Update the expectation to assert breaker semantics.
+//  2. Close the KI `pump-no-per-pump-circuit-breaker` documenting the gap.
 //
 // Either outcome is valuable — this test pins down the contract as
 // "always re-invoked" today, and any future regression toward (or
 // away from) a breaker is observable.
+// MCDC SW-REQ-001: purge_tick=T, records_dispatched=T => TRUE
+// MCDC SYS-REQ-004: a_backend_failed=T, other_backends_written=T => TRUE
 func TestPerPumpCircuitBreaker_NoBackoffOnRepeatedFailure(t *testing.T) {
 	originalPumps := Pumps
 	t.Cleanup(func() { Pumps = originalPumps })

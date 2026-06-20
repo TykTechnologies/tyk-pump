@@ -50,8 +50,8 @@ func (p *failingMockPump) Shutdown() error {
 	return nil
 }
 
-// Verifies: SW-REQ-001
-// SW-REQ-001:partial_progress_observable:scenario
+// Verifies: SYS-REQ-004
+// MCDC SYS-REQ-004: a_backend_failed=T, other_backends_written=T => TRUE
 //
 // Contract: when the purge cycle dispatches to N pumps and M of them fail,
 // the operator MUST be able to observe WHICH pump succeeded and WHICH
@@ -59,21 +59,22 @@ func (p *failingMockPump) Shutdown() error {
 //
 // What this test exercises:
 //
-//   1. Construct three pumps: two healthy (MockedPump returns nil) and one
-//      failing (failingMockPump returns a sentinel error).
-//   2. Capture logrus output during a single writeToPumps invocation.
-//   3. Assert:
-//        (a) the failing pump's name appears in a Warning log line
-//            referencing the specific error;
-//        (b) the healthy pumps were actually invoked (CounterRequest > 0)
-//            — proving "partial progress" (other pumps continued despite
-//            the one failure);
-//        (c) the failing pump WAS invoked once (the failure was real, not
-//            a stub no-op).
+//  1. Construct three pumps: two healthy (MockedPump returns nil) and one
+//     failing (failingMockPump returns a sentinel error).
+//  2. Capture logrus output during a single writeToPumps invocation.
+//  3. Assert:
+//     (a) the failing pump's name appears in a Warning log line
+//     referencing the specific error;
+//     (b) the healthy pumps were actually invoked (CounterRequest > 0)
+//     — proving "partial progress" (other pumps continued despite
+//     the one failure);
+//     (c) the failing pump WAS invoked once (the failure was real, not
+//     a stub no-op).
 //
 // If a future regression aggregates errors into a single "cycle had errors"
 // line without naming pumps, item (a) fails. If a future regression aborts
 // the whole cycle when one pump fails, item (b) fails.
+// STK-REQ-002:error_handling:negative
 func TestPartialProgressObservable_PerPumpFailureLogged(t *testing.T) {
 	originalOut := log.Out
 	originalLevel := log.Level
@@ -137,12 +138,10 @@ func TestPartialProgressObservable_PerPumpFailureLogged(t *testing.T) {
 	})
 }
 
-// Verifies: SW-REQ-001
-// SW-REQ-001:partial_progress_observable:nominal
-//
 // All-pumps-succeed sanity arm: when every pump succeeds, no per-pump
 // failure log lines are emitted (no false alarms). This is the
 // no-trigger pair of the failure-observability contract.
+// Verifies: STK-REQ-002
 func TestPartialProgressObservable_AllSuccessNoFailureLog(t *testing.T) {
 	originalOut := log.Out
 	originalLevel := log.Level

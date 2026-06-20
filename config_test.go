@@ -46,6 +46,8 @@ func TestToUpperPumps(t *testing.T) {
 }
 
 // Verifies: SW-REQ-002
+// SW-REQ-002:malformed_input:nominal
+// SW-REQ-002:malformed_recovers_or_errors_loudly:nominal
 // MCDC SW-REQ-002: config_file_enabled=F, json_loaded_before_env_override=F => TRUE
 // MCDC SW-REQ-002: config_file_enabled=T, json_loaded_before_env_override=F => FALSE
 // MCDC SW-REQ-002: config_file_enabled=T, json_loaded_before_env_override=T => TRUE
@@ -72,6 +74,8 @@ func TestLoadExampleConf(t *testing.T) {
 // Verifies: SW-REQ-002
 // Verifies: SYS-REQ-008
 // Verifies: SYS-REQ-020
+// SW-REQ-002:malformed_input:nominal
+// SYS-REQ-008:malformed_input:nominal
 // MCDC SYS-REQ-008: config_loaded_from_json=F, json_config_file_present=F => TRUE
 // MCDC SYS-REQ-008: config_loaded_from_json=F, json_config_file_present=T => FALSE
 // MCDC SYS-REQ-008: config_loaded_from_json=T, json_config_file_present=T => TRUE
@@ -148,8 +152,11 @@ func TestConfigEnv(t *testing.T) {
 // Verifies: SYS-REQ-035
 // SW-REQ-002:malformed_input:negative
 // SW-REQ-002:malformed_recovers_or_errors_loudly:negative
+// SW-REQ-002:malformed_recovers_or_errors_loudly:nominal
 // SYS-REQ-008:malformed_input:negative
+// SYS-REQ-008:malformed_input:nominal
 // SYS-REQ-035:malformed_recovers_or_errors_loudly:negative
+// SYS-REQ-035:malformed_recovers_or_errors_loudly:nominal
 // MCDC INT-REQ-008: config_decode_attempted=F, unknown_keys_reported_via_logfatal=F => TRUE
 // MCDC INT-REQ-008: config_decode_attempted=T, unknown_keys_reported_via_logfatal=F => FALSE
 // MCDC INT-REQ-008: config_decode_attempted=T, unknown_keys_reported_via_logfatal=T => TRUE
@@ -315,6 +322,26 @@ func TestTykPumpConfiguration_LoadPumpsByEnv(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "bad env override is logged but pump entry is retained",
+			cfg:  &TykPumpConfiguration{},
+			setup: func() {
+				os.Setenv(ENV_PREVIX+"_PUMPS_ENVTEST_TYPE", "csv")
+				os.Setenv(ENV_PREVIX+"_PUMPS_ENVTEST_TIMEOUT", "not-an-int")
+			},
+			teardown: func() {
+				os.Unsetenv(ENV_PREVIX + "_PUMPS_ENVTEST_TYPE")
+				os.Unsetenv(ENV_PREVIX + "_PUMPS_ENVTEST_TIMEOUT")
+			},
+			wanted: map[string]PumpConfig{
+				"ENVTEST": {
+					Type: "csv",
+					Meta: map[string]interface{}{
+						"meta_env_prefix": ENV_PREVIX + "_PUMPS_ENVTEST_META",
+					},
+				},
+			},
+		},
 	}
 
 	for _, tc := range tcs {
@@ -362,4 +389,16 @@ func TestLoadPumpsByEnv(t *testing.T) {
 		assert.Equal(t, PUMPS_ENV_PREFIX+"_ELASTICSEARCH"+PUMPS_ENV_META_PREFIX,
 			cfg.Pumps["ELASTICSEARCH"].Meta["meta_env_prefix"])
 	})
+}
+
+// Verifies: SW-REQ-002
+func TestLoadConfigLogsInvalidTopLevelEnvOverride(t *testing.T) {
+	t.Setenv(ENV_PREVIX+"_OMITCONFIGFILE", "true")
+	t.Setenv(ENV_PREVIX+"_PURGEDELAY", "not-an-int")
+
+	cfg := &TykPumpConfiguration{}
+	defaultPath := ""
+
+	LoadConfig(&defaultPath, cfg)
+	assert.Zero(t, cfg.PurgeDelay)
 }

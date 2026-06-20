@@ -83,7 +83,7 @@ func OnConflictUptimeAssignments(tableName, tempTable string) map[string]interfa
 		case "hits", "error", "success", "total_request_time":
 			assignments[colName] = gorm.Expr(tableName + "." + colName + " + " + tempTable + "." + colName)
 		case "request_time":
-			if !field.IsZero() { //mcdc:ignore OnConflictUptimeAssignments constructs an empty UptimeReportAggregateSQL{}, so Counter.RequestTime is always the zero float; IsZero() is always T and the !IsZero() T-side is unreachable — KI uptime-onconflict-request-time-is-zero-unreachable
+			if !field.IsZero() { //mcdc:ignore:defensive OnConflictUptimeAssignments constructs an empty UptimeReportAggregateSQL{}, so Counter.RequestTime is always the zero float; IsZero() is always T and the !IsZero() T-side is unreachable — KI uptime-onconflict-request-time-is-zero-unreachable
 				assignments[colName] = gorm.Expr("(" + tableName + ".counter_total_request_time  +" + tempTable + "." + "counter_total_request_time" + ")/( " + tableName + ".counter_hits + " + tempTable + ".counter_hits" + ")")
 			}
 		case "last_time":
@@ -254,7 +254,7 @@ func AggregateUptimeData(data []UptimeReportData) map[string]UptimeReportAggrega
 					break
 				case "ResponseCode":
 					errAsStr := strconv.Itoa(value.(int))
-					if errAsStr != "" { //mcdc:ignore strconv.Itoa is total and always returns a non-empty string for any int (including 0); the F-side of errAsStr != "" is unreachable — KI uptime-aggregate-erasstr-itoa-always-nonempty
+					if errAsStr != "" { //mcdc:ignore:defensive strconv.Itoa is total and always returns a non-empty string for any int (including 0); the F-side of errAsStr != "" is unreachable — KI uptime-aggregate-erasstr-itoa-always-nonempty
 						c := IncrementOrSetUnit(thisAggregate.Errors[errAsStr])
 						if c.ErrorTotal > 0 {
 							thisAggregate.Errors[errAsStr] = c

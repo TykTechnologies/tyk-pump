@@ -1,0 +1,103 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+min_free_percent="${PROOF_MONITOR_MIN_FREE_PERCENT:-10}"
+kill_free_percent="${PROOF_MONITOR_KILL_FREE_PERCENT:-5}"
+emergency_free_mib="${PROOF_MONITOR_EMERGENCY_FREE_MIB:-0}"
+interval_sec="${PROOF_MONITOR_INTERVAL_SEC:-2}"
+
+require_uint() {
+	local name="$1"
+	local value="$2"
+	if [[ ! "$value" =~ ^[0-9]+$ ]]; then
+		echo "${name} must be an unsigned integer, got: ${value}" >&2
+		exit 64
+	fi
+}
+
+memory_free_percent() {
+	memory_pressure | awk '
+		/System-wide memory free percentage:/ {
+			gsub(/%/, "", $5)
+			print $5
+			found = 1
+		}
+		END {
+			if (!found) exit 1
+		}'
+}
+
+raw_free_mib() {
+	vm_stat | awk '
+		/page size of/ { page=$8 }
+		/Pages free:/ { gsub(/\./, "", $3); free=$3 }
+		/Pages speculative:/ { gsub(/\./, "", $3); spec=$3 }
+		/Pages purgeable:/ { gsub(/\./, "", $3); purgeable=$3 }
+		END {
+			if (page == "") page = 4096
+			printf "%d\n", ((free + spec + purgeable) * page) / 1048576
+		}'
+}
+
+require_uint "PROOF_MONITOR_MIN_FREE_PERCENT" "$min_free_percent"
+require_uint "PROOF_MONITOR_KILL_FREE_PERCENT" "$kill_free_percent"
+require_uint "PROOF_MONITOR_EMERGENCY_FREE_MIB" "$emergency_free_mib"
+require_uint "PROOF_MONITOR_INTERVAL_SEC" "$interval_sec"
+
+kill_tree() {
+	local pid="$1"
+	local child
+	for child in $(pgrep -P "$pid" 2>/dev/null || true); do
+		kill_tree "$child"
+	done
+	kill -TERM "$pid" 2>/dev/null || true
+}
+
+if (( "$#" == 0 )); then
+	set -- proof audit --scope full
+fi
+
+current_free_percent="$(memory_free_percent)" || {
+	echo "refusing to start: unable to read macOS memory_pressure free percentage" >&2
+	exit 75
+}
+current_raw_free_mib="$(raw_free_mib)"
+if (( current_free_percent < min_free_percent )); then
+	echo "refusing to start: memory_pressure free ${current_free_percent}% is below ${min_free_percent}%" >&2
+	exit 75
+fi
+if (( emergency_free_mib > 0 && current_raw_free_mib < emergency_free_mib )); then
+	echo "refusing to start: raw free/speculative/purgeable memory ${current_raw_free_mib} MiB is below emergency floor ${emergency_free_mib} MiB" >&2
+	exit 75
+fi
+
+echo "starting: $*" >&2
+echo "memory guard: start >= ${min_free_percent}% memory_pressure free, kill < ${kill_free_percent}%, raw-page emergency floor ${emergency_free_mib} MiB, interval ${interval_sec}s" >&2
+
+"$@" &
+pid="$!"
+
+trap 'kill_tree "$pid"; wait "$pid" 2>/dev/null || true' INT TERM EXIT
+
+while kill -0 "$pid" 2>/dev/null; do
+	current_free_percent="$(memory_free_percent)" || current_free_percent=0
+	current_raw_free_mib="$(raw_free_mib)"
+	if (( current_free_percent < kill_free_percent )); then
+		echo "memory guard: memory_pressure free ${current_free_percent}% below ${kill_free_percent}%; terminating pid ${pid}" >&2
+		kill_tree "$pid"
+		wait "$pid" 2>/dev/null || true
+		exit 137
+	fi
+	if (( emergency_free_mib > 0 && current_raw_free_mib < emergency_free_mib )); then
+		echo "memory guard: raw free/speculative/purgeable memory ${current_raw_free_mib} MiB below emergency floor ${emergency_free_mib} MiB; terminating pid ${pid}" >&2
+		kill_tree "$pid"
+		wait "$pid" 2>/dev/null || true
+		exit 137
+	fi
+	sleep "$interval_sec"
+done
+
+wait "$pid"
+status="$?"
+trap - INT TERM EXIT
+exit "$status"

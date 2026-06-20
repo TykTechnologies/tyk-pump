@@ -22,7 +22,6 @@ import (
 // MCDC SW-REQ-050: tcp_writer_used=T, transport_tcp=T => TRUE
 
 // mockSyslogServer creates a simple UDP syslog server for testing
-// Verifies: SW-REQ-050
 func mockSyslogServer(t *testing.T) (string, chan string) {
 	addr, err := net.ResolveUDPAddr("udp", "127.0.0.1:0")
 	require.NoError(t, err)
@@ -48,7 +47,6 @@ func mockSyslogServer(t *testing.T) (string, chan string) {
 }
 
 // Helper function to create a SyslogPump with test configuration
-// Verifies: SW-REQ-050
 func createTestSyslogPump(addr string) *SyslogPump {
 	pump := &SyslogPump{
 		syslogConf: &SyslogConf{
@@ -176,6 +174,7 @@ func TestSyslogPump_WriteData(t *testing.T) {
 // Transport='tcp' but the syslog.Dial call fails — covered by the
 // Init-error subtests with an unreachable NetworkAddr.)
 //
+// SW-REQ-050:encoding_safety:nominal
 // SW-REQ-050:encoding_safety:example
 // DEFECT-2 regression (TT-15532): raw_request / raw_response payloads contain
 // embedded newlines from real HTTP traffic. The syslog daemon treats every \n

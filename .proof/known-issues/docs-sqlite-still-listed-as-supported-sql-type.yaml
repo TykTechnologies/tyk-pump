@@ -1,10 +1,13 @@
 id: docs-sqlite-still-listed-as-supported-sql-type
 title: 'Documentation gap: SQLite still listed as supported SQL pump type in tyk-docs after v1.12.0 removal'
+introduced_in: inception
 description: 'pumps/sql.go:65 rejects sqlite from v1.12.0 onward, but 8 sites across tyk-docs still list it: tyk-docs/content/api-management/tyk-pump.md:117, :154, :470, :518, :571, :766 (Graph SQL ''supports postgres, sqlite, mysql''), and tyk-docs/content/shared/pump-config.md:44, :179, :3760, :3987. New deployments following the docs will get an error.'
 affected_requirements:
     - SW-REQ-019
 commands:
     - grep -RIn -e 'sqlite' /Users/buger/go/src/tyk-docs/tyk-docs/content/api-management/tyk-pump.md /Users/buger/go/src/tyk-docs/tyk-docs/content/shared/pump-config.md
+reproducer_command: |-
+  grep -RIn -e 'sqlite' /Users/buger/go/src/tyk-docs/tyk-docs/content/api-management/tyk-pump.md /Users/buger/go/src/tyk-docs/tyk-docs/content/shared/pump-config.md
 severity: medium
 mitigation: tyk-pump code does correctly error on sqlite type; operators see a clear error message at startup.
 remediation: Update tyk-docs (api-management/tyk-pump.md + shared/pump-config.md) to drop sqlite from supported type values and add a 'removed in 1.12.0' callout in 8 places.

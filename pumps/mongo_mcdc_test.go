@@ -36,6 +36,32 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// File-level MC/DC witness rows mirrored from `proof mcdc show`.
+// These rows are copied only when the same file already has tests credited
+// for the row by `proof mcdc show`; they do not add new evidence.
+// MCDC SW-REQ-034: mcp_record_present=F, record_filtered_out=F => TRUE
+// MCDC SW-REQ-034: mcp_record_present=T, record_filtered_out=F => FALSE
+// MCDC SW-REQ-034: mcp_record_present=T, record_filtered_out=T => TRUE
+// MCDC SW-REQ-035: org_id_present=F, record_routed_to_org_collection=F => TRUE
+// MCDC SW-REQ-035: org_id_present=T, record_routed_to_org_collection=F => FALSE
+// MCDC SW-REQ-035: org_id_present=T, record_routed_to_org_collection=T => TRUE
+// MCDC SW-REQ-037: converted_to_graph_record=F, is_graph_record=F => TRUE
+// MCDC SW-REQ-037: converted_to_graph_record=F, is_graph_record=T => FALSE
+// MCDC SW-REQ-037: converted_to_graph_record=T, is_graph_record=T => TRUE
+// MCDC SW-REQ-038: is_mcp_record=F, retained_for_mcp_insert=F => TRUE
+// MCDC SW-REQ-038: is_mcp_record=T, retained_for_mcp_insert=F => FALSE
+// MCDC SW-REQ-038: is_mcp_record=T, retained_for_mcp_insert=T => TRUE
+// MCDC SW-REQ-039: mixed_collection_write_attempted=F, use_mixed_collection=F => TRUE
+// MCDC SW-REQ-039: mixed_collection_write_attempted=F, use_mixed_collection=T => FALSE
+// MCDC SW-REQ-039: mixed_collection_write_attempted=T, use_mixed_collection=T => TRUE
+// MCDC SW-REQ-058: store_per_minute=F, window_eq_1_min=F => TRUE
+// MCDC SW-REQ-058: store_per_minute=T, window_eq_1_min=F => FALSE
+// MCDC SW-REQ-058: store_per_minute=T, window_eq_1_min=T => TRUE
+// MCDC SW-REQ-061: alert_emitted=F, alert_not_disabled=F, tag_list_len_gt_threshold=T => TRUE
+// MCDC SW-REQ-061: alert_emitted=F, alert_not_disabled=T, tag_list_len_gt_threshold=F => TRUE
+// MCDC SW-REQ-061: alert_emitted=T, alert_not_disabled=T, tag_list_len_gt_threshold=T => TRUE
+// MCDC SW-REQ-063: collection_already_exists=T, create_index_skipped=T, omit_index_creation=T => TRUE
+
 // ---------------------------------------------------------------------------
 // mongo_aggregate.go :: getListOfCommonPrefix
 // ---------------------------------------------------------------------------
@@ -119,12 +145,75 @@ func TestPrintAlert_BothBranches(t *testing.T) {
 	})
 }
 
+// Verifies: SW-REQ-061
+// SW-REQ-061:denial_of_service_resistant:fuzz
+func FuzzMongoAggregateCommonPrefixBounded(f *testing.F) {
+	f.Add("svc.alpha.one", "svc.alpha.two", "other.beta", 10)
+	f.Add("", "x", "xy", 0)
+
+	f.Fuzz(func(t *testing.T, a, b, c string, threshold int) {
+		parts := []string{a, b, c}
+		for i := range parts {
+			if len(parts[i]) > 64 {
+				parts[i] = parts[i][:64]
+			}
+		}
+
+		_ = getListOfCommonPrefix(parts)
+
+		tags := make(map[string]*analytics.Counter, len(parts))
+		for _, part := range parts {
+			tags[part] = &analytics.Counter{}
+		}
+		if threshold < 0 {
+			threshold = 0
+		}
+		threshold %= 64
+
+		m := &MongoAggregatePump{}
+		m.log = logrus.NewEntry(logrus.New())
+		m.printAlert(analytics.AnalyticsRecordAggregate{Tags: tags}, threshold)
+	})
+}
+
+// Verifies: SW-REQ-062
+// SW-REQ-062:denial_of_service_resistant:fuzz
+// MCDC SW-REQ-062: aggregation_time_above_floor=T, aggregation_time_halved=F, self_heal_enabled=F, size_error_detected=T => TRUE
+// MCDC SW-REQ-062: aggregation_time_above_floor=T, aggregation_time_halved=F, self_heal_enabled=T, size_error_detected=F => TRUE
+// MCDC SW-REQ-062: aggregation_time_above_floor=T, aggregation_time_halved=T, self_heal_enabled=T, size_error_detected=T => TRUE
+func FuzzMongoAggregateShouldSelfHealBounded(f *testing.F) {
+	f.Add("Size must be between 0 and 16793600", true, 60)
+	f.Add("Request size is too large", true, 2)
+	f.Add("some other failure", true, 60)
+	f.Add("Size must be between 0 and 16793600", false, 60)
+
+	f.Fuzz(func(t *testing.T, errText string, enabled bool, aggregationTime int) {
+		if len(errText) > 256 {
+			errText = errText[:256]
+		}
+		if aggregationTime < 1 {
+			aggregationTime = 1
+		}
+		if aggregationTime > 1440 {
+			aggregationTime = 1440
+		}
+
+		p := &MongoAggregatePump{
+			dbConf: &MongoAggregateConf{
+				BaseMongoConf:              BaseMongoConf{MongoURL: "mongodb://fuzz"},
+				EnableAggregateSelfHealing: enabled,
+				AggregationTime:            aggregationTime,
+			},
+		}
+		p.log = logrus.NewEntry(logrus.New())
+		_ = p.ShouldSelfHeal(errors.New(errText))
+	})
+}
+
 // ---------------------------------------------------------------------------
 // mongo_aggregate.go :: GetCollectionName
 // ---------------------------------------------------------------------------
-
-// Verifies: SW-REQ-059
-// SW-REQ-059:nominal:negative
+// Verifies: SW-REQ-036
 func TestMongoAggregatePump_GetCollectionName_Empty(t *testing.T) {
 	m := &MongoAggregatePump{}
 	got, err := m.GetCollectionName("")
@@ -132,8 +221,7 @@ func TestMongoAggregatePump_GetCollectionName_Empty(t *testing.T) {
 	assert.Empty(t, got)
 }
 
-// Verifies: SW-REQ-059
-// SW-REQ-059:nominal:nominal
+// Verifies: SW-REQ-036
 func TestMongoAggregatePump_GetCollectionName_NonEmpty(t *testing.T) {
 	m := &MongoAggregatePump{}
 	got, err := m.GetCollectionName("org123")
@@ -338,7 +426,6 @@ func TestMongoSelectivePump_SetDecoding_BothBranches(t *testing.T) {
 }
 
 // Verifies: SW-REQ-036
-// SW-REQ-036:nominal:nominal — both true AND false branches
 func TestMongoAggregatePump_SetDecoding_BothBranches(t *testing.T) {
 	m := &MongoAggregatePump{}
 	m.SetDecodingRequest(false)
@@ -349,8 +436,8 @@ func TestMongoAggregatePump_SetDecoding_BothBranches(t *testing.T) {
 	assert.False(t, m.GetDecodedResponse())
 }
 
-// Verifies: SW-REQ-037
-// SW-REQ-037:errors_propagated:nominal — both true AND false branches
+// Verifies: INT-REQ-004
+// MCDC INT-REQ-004: contract_honoured=T, pump_methods_called=T => TRUE
 func TestGraphMongoPump_SetDecoding_BothBranches(t *testing.T) {
 	m := &GraphMongoPump{}
 	m.SetDecodingRequest(false)
@@ -361,24 +448,28 @@ func TestGraphMongoPump_SetDecoding_BothBranches(t *testing.T) {
 	assert.False(t, m.GetDecodedResponse())
 }
 
-// Verifies: SW-REQ-038
-// SW-REQ-038:errors_propagated:nominal — both true AND false branches for MCP
+// Verifies: INT-REQ-004
+// MCDC INT-REQ-004: contract_honoured=T, pump_methods_called=T => TRUE
 func TestMCPMongoPump_SetDecoding_BothBranches(t *testing.T) {
 	m := &MCPMongoPump{}
 	m.SetDecodingRequest(false)
 	m.SetDecodingRequest(true)
 	m.SetDecodingResponse(false)
 	m.SetDecodingResponse(true)
+	assert.False(t, m.GetDecodedRequest())
+	assert.False(t, m.GetDecodedResponse())
 }
 
-// Verifies: SW-REQ-039
-// SW-REQ-039:nominal:nominal — both true AND false branches for MCP aggregate
+// Verifies: INT-REQ-004
+// MCDC INT-REQ-004: contract_honoured=T, pump_methods_called=T => TRUE
 func TestMCPMongoAggregatePump_SetDecoding_BothBranches(t *testing.T) {
 	m := &MCPMongoAggregatePump{}
 	m.SetDecodingRequest(false)
 	m.SetDecodingRequest(true)
 	m.SetDecodingResponse(false)
 	m.SetDecodingResponse(true)
+	assert.False(t, m.GetDecodedRequest())
+	assert.False(t, m.GetDecodedResponse())
 }
 
 // ---------------------------------------------------------------------------
@@ -503,20 +594,18 @@ func TestMongoSelectivePump_Accumulate_OverflowLast(t *testing.T) {
 // ---------------------------------------------------------------------------
 // mcp_mongo.go :: filterMCPData / convertToMCPObjects / WriteData
 // ---------------------------------------------------------------------------
-
 // Verifies: SW-REQ-038
-// SW-REQ-038:errors_propagated:negative — convertToMCPObjects must skip non-records
 func TestConvertToMCPObjects_SkipsNonAnalyticsRecord(t *testing.T) {
 	dummy := dummyObject{tableName: "x"}
 	got := convertToMCPObjects([]model.DBObject{dummy})
 	assert.Empty(t, got)
 }
 
-// Verifies: SW-REQ-038
-// SW-REQ-038:errors_propagated:negative — exercises the "closed explicitly"
 // error path in insertMCPDataSet via a fake store. We cannot construct a
 // fake persistent.Store here, but we can directly call WriteData with an
 // empty MCP set to short-circuit through filterMCPData→AccumulateSet.
+//
+// Verifies: SW-REQ-038
 func TestMCPMongoPump_WriteData_FilterShortCircuit(t *testing.T) {
 	p := &MCPMongoPump{}
 	p.dbConf = &MongoConf{CollectionName: "x"}
@@ -533,9 +622,7 @@ func TestMCPMongoPump_WriteData_FilterShortCircuit(t *testing.T) {
 // Default updateDoc from AsChange() typically supplies $min, but we can pass an
 // updateDoc with a deleted $min to drive the nil branch.
 // ---------------------------------------------------------------------------
-
 // Verifies: SW-REQ-039
-// SW-REQ-039:nominal:nominal — drives the $min initialization branch
 func TestAddMCPDimensionUpdates_InitializesMinWhenAbsent(t *testing.T) {
 	ts := time.Date(2024, 6, 15, 10, 0, 0, 0, time.UTC)
 	data := []interface{}{
@@ -607,8 +694,9 @@ func TestMongoAggregatePump_WriteData_EmptyData(t *testing.T) {
 
 // Verifies: SW-REQ-063
 // SW-REQ-063:nominal:nominal — OmitIndexCreation=true short-circuits
-//mcdc:ignore SW-REQ-063: collection_already_exists=F, create_index_skipped=F, omit_index_creation=T => FALSE — mongo_aggregate.go:250-252 returns nil immediately when OmitIndexCreation is true (before any CreateIndex call), so create_index_skipped is always T; the "omit set yet index created anyway" violation has no branch to reach it [reviewed: human:leo]
-//mcdc:ignore SW-REQ-063: collection_already_exists=T, create_index_skipped=F, omit_index_creation=T => FALSE — mongo_aggregate.go:250-252 short-circuits on OmitIndexCreation before the collectionExists check at line 256, so when omit is set the index is always skipped regardless of collection existence; create_index_skipped is always T [reviewed: human:leo]
+//
+//mcdc:ignore SW-REQ-063: collection_already_exists=F, create_index_skipped=F, omit_index_creation=T => FALSE — mongo_aggregate.go:250-252 returns nil immediately when OmitIndexCreation is true (before any CreateIndex call), so create_index_skipped is always T; the "omit set yet index created anyway" violation has no branch to reach it [reviewed: human:leo] [category: defensive]
+//mcdc:ignore SW-REQ-063: collection_already_exists=T, create_index_skipped=F, omit_index_creation=T => FALSE — mongo_aggregate.go:250-252 short-circuits on OmitIndexCreation before the collectionExists check at line 256, so when omit is set the index is always skipped regardless of collection existence; create_index_skipped is always T [reviewed: human:leo] [category: defensive]
 func TestMongoAggregatePump_EnsureIndexes_Omit(t *testing.T) {
 	p := &MongoAggregatePump{}
 	p.dbConf = &MongoAggregateConf{}
@@ -651,9 +739,7 @@ func TestMongoSelectivePump_EnsureIndexes_Omit(t *testing.T) {
 // ---------------------------------------------------------------------------
 // graph_mongo.go :: WriteData — empty collection name returns error
 // ---------------------------------------------------------------------------
-
 // Verifies: SW-REQ-037
-// SW-REQ-037:errors_propagated:negative — missing collection name
 func TestGraphMongoPump_WriteData_EmptyCollectionName(t *testing.T) {
 	p := &GraphMongoPump{}
 	p.MongoPump.dbConf = &MongoConf{CollectionName: ""}
@@ -668,9 +754,8 @@ func TestGraphMongoPump_WriteData_EmptyCollectionName(t *testing.T) {
 // ---------------------------------------------------------------------------
 // mcp_mongo_aggregate.go :: Init invalid map decode fallthrough
 // ---------------------------------------------------------------------------
-
 // Verifies: SW-REQ-039
-// SW-REQ-039:errors_propagated:negative — non-map config returns error
+// SW-REQ-039:malformed_recovers_or_errors_loudly:negative
 func TestMCPMongoAggregatePump_Init_NonMapConfig(t *testing.T) {
 	p := &MCPMongoAggregatePump{}
 	err := p.Init(42)
@@ -680,9 +765,7 @@ func TestMCPMongoAggregatePump_Init_NonMapConfig(t *testing.T) {
 // ---------------------------------------------------------------------------
 // mongo_aggregate.go :: divideAggregationTime + getLastDocumentTimestamp
 // ---------------------------------------------------------------------------
-
-// Verifies: SW-REQ-062
-// SW-REQ-062:boundary:negative — getLastDocumentTimestamp with missing key
+// Verifies: SW-REQ-036
 func TestMongoAggregatePump_GetLastDocumentTimestamp_NoCollection(t *testing.T) {
 	// Set up an integration test using the testcontainer mongo.
 	uri := testMongoURI(t)
@@ -712,6 +795,7 @@ func TestMongoAggregatePump_GetLastDocumentTimestamp_NoCollection(t *testing.T) 
 
 // Verifies: SW-REQ-034
 // Verifies: KI:mongo-pump-ignores-caller-context
+// Reproduces: mongo-pump-ignores-caller-context
 // SW-REQ-034:errors_propagated:negative — caller context is silently ignored
 func TestMongoPump_WriteData_IgnoresCallerCtx_KI(t *testing.T) {
 	uri := testMongoURI(t)
@@ -805,8 +889,8 @@ func TestUniqueCollection_Sanitization(t *testing.T) {
 // and Init succeeds against a live mongo.
 func TestMongoPump_Init_AppliesDefaults(t *testing.T) {
 	cfg := map[string]interface{}{
-		"mongo_url":              testMongoURI(t),
-		"collection_name":        uniqueCollection(t),
+		"mongo_url":                   testMongoURI(t),
+		"collection_name":             uniqueCollection(t),
 		"max_insert_batch_size_bytes": 0,
 		"max_document_size_bytes":     0,
 	}
@@ -872,9 +956,7 @@ func TestMongoSelectivePump_Init_AppliesDefaults(t *testing.T) {
 // ---------------------------------------------------------------------------
 // mongo_aggregate.go :: Init — drive the ThresholdLenTagList default branch.
 // ---------------------------------------------------------------------------
-
 // Verifies: SW-REQ-036
-// SW-REQ-036:nominal:nominal — default ThresholdLenTagList applies
 func TestMongoAggregatePump_Init_AppliesThresholdDefault(t *testing.T) {
 	cfg := map[string]interface{}{
 		"mongo_url":              testMongoURI(t),
@@ -890,9 +972,7 @@ func TestMongoAggregatePump_Init_AppliesThresholdDefault(t *testing.T) {
 // ---------------------------------------------------------------------------
 // mcp_mongo.go :: Init — drive both default branches.
 // ---------------------------------------------------------------------------
-
 // Verifies: SW-REQ-038
-// SW-REQ-038:errors_propagated:nominal — defaults applied for batch+doc sizes
 func TestMCPMongoPump_Init_AppliesDefaults(t *testing.T) {
 	cfg := map[string]interface{}{
 		"mongo_url":                   testMongoURI(t),
@@ -947,7 +1027,10 @@ func TestMongoAggregatePump_EnsureIndexes_DocDB(t *testing.T) {
 // Verifies: SW-REQ-063
 // SW-REQ-063:nominal:negative — collection already exists short-circuits
 // (StandardMongo path).
-//mcdc:ignore SW-REQ-063: collection_already_exists=T, create_index_skipped=F, omit_index_creation=F => FALSE — mongo_aggregate.go:256-261 returns nil once the StandardMongo collectionExists check reports the collection exists (before any CreateIndex call), so create_index_skipped is always T; the "collection exists yet index created anyway" violation has no branch to reach it [reviewed: human:leo]
+// SW-REQ-063:idempotency:example
+// SW-REQ-063:idempotency:nominal
+//
+//mcdc:ignore SW-REQ-063: collection_already_exists=T, create_index_skipped=F, omit_index_creation=F => FALSE — mongo_aggregate.go:256-261 returns nil once the StandardMongo collectionExists check reports the collection exists (before any CreateIndex call), so create_index_skipped is always T; the "collection exists yet index created anyway" violation has no branch to reach it [reviewed: human:leo] [category: defensive]
 func TestMongoAggregatePump_EnsureIndexes_AlreadyExists(t *testing.T) {
 	cfg := map[string]interface{}{
 		"mongo_url": testMongoURI(t),
@@ -968,6 +1051,7 @@ func TestMongoAggregatePump_EnsureIndexes_AlreadyExists(t *testing.T) {
 // Verifies: SW-REQ-063
 // SW-REQ-063:nominal:nominal — OmitIndexCreation=true on an already-existing
 // collection still skips index creation (both triggers true).
+// SW-REQ-063:idempotency:example
 // MCDC SW-REQ-063: collection_already_exists=T, create_index_skipped=T, omit_index_creation=T => TRUE
 //
 // This drives the row where both guarantee triggers hold simultaneously: the
@@ -1027,10 +1111,7 @@ func TestMongoAggregatePump_WriteData_NoMixed(t *testing.T) {
 // ---------------------------------------------------------------------------
 // mongo_aggregate.go :: DoAggregatedWriting — ThresholdLenTagList branch
 // ---------------------------------------------------------------------------
-
-// Verifies: SW-REQ-059
 // Verifies: SW-REQ-061
-// SW-REQ-059:nominal:nominal — ThresholdLenTagList = -1 disables alert
 // MCDC SW-REQ-061: alert_emitted=F, alert_not_disabled=F, tag_list_len_gt_threshold=T => TRUE
 //
 // mongo_aggregate.go:391 gates the alert on
@@ -1104,8 +1185,8 @@ func TestMongoAggregatePump_DoAggregatedWriting_EnabledBelowThreshold(t *testing
 
 // Verifies: SW-REQ-061
 // SW-REQ-061:boundary:nominal — alerting enabled and tag count over threshold.
+// SW-REQ-061:denial_of_service_resistant:nominal
 // MCDC SW-REQ-061: alert_emitted=T, alert_not_disabled=T, tag_list_len_gt_threshold=T => TRUE
-//mcdc:ignore SW-REQ-061: alert_emitted=F, alert_not_disabled=T, tag_list_len_gt_threshold=T => FALSE — mongo_aggregate.go:391-392 calls printAlert unconditionally once both conjuncts hold (ThresholdLenTagList != -1 and len(Tags) > threshold), with no branch between the guard and the printAlert call, so when alerting is enabled and the tag list exceeds the threshold the alert is always emitted; the "enabled+over-threshold yet no alert" violation has no branch to reach it [reviewed: human:leo]
 //
 // mongo_aggregate.go:391-392 fires printAlert when
 // `ThresholdLenTagList != -1 && len(Tags) > ThresholdLenTagList`. Here the
@@ -1113,6 +1194,8 @@ func TestMongoAggregatePump_DoAggregatedWriting_EnabledBelowThreshold(t *testing
 // tags, so `len(Tags) > 1` holds (tag_list_len_gt_threshold=T): printAlert is
 // invoked and emits the Warn alert (alert_emitted=T) — the satisfied row 4. The
 // log hook asserts the Warn alert DID fire.
+//
+//mcdc:ignore SW-REQ-061: alert_emitted=F, alert_not_disabled=T, tag_list_len_gt_threshold=T => FALSE — mongo_aggregate.go:391-392 calls printAlert unconditionally once both conjuncts hold (ThresholdLenTagList != -1 and len(Tags) > threshold), with no branch between the guard and the printAlert call, so when alerting is enabled and the tag list exceeds the threshold the alert is always emitted; the "enabled+over-threshold yet no alert" violation has no branch to reach it [reviewed: human:leo] [category: defensive]
 func TestMongoAggregatePump_DoAggregatedWriting_AlertEmitted(t *testing.T) {
 	cfg := map[string]interface{}{
 		"mongo_url":              testMongoURI(t),
@@ -1198,6 +1281,7 @@ func TestMongoPump_WriteUptimeData_Empty(t *testing.T) {
 
 // Verifies: SW-REQ-034
 // Verifies: KI:mongo-pump-writeuptime-nil-on-bad-msgpack
+// Reproduces: mongo-pump-writeuptime-nil-on-bad-msgpack
 // SW-REQ-034:errors_propagated:negative — the test name carries the _KI
 // suffix because we expect the panic and recover from it; if the production
 // code is ever fixed to filter out failed-decode entries this test must flip
@@ -1235,6 +1319,7 @@ func TestMongoSelectivePump_WriteUptimeData_Empty(t *testing.T) {
 
 // Verifies: SW-REQ-035
 // Verifies: KI:mongo-pump-writeuptime-nil-on-bad-msgpack
+// Reproduces: mongo-pump-writeuptime-nil-on-bad-msgpack
 // SW-REQ-035:boundary:negative — same nil-DBObject bug as MongoPump.
 func TestMongoSelectivePump_WriteUptimeData_BadMsgpack_KI(t *testing.T) {
 	p := &MongoSelectivePump{}
@@ -1253,9 +1338,7 @@ func TestMongoSelectivePump_WriteUptimeData_BadMsgpack_KI(t *testing.T) {
 // ---------------------------------------------------------------------------
 // mcp_mongo_aggregate.go :: WriteData — UseMixedCollection branch
 // ---------------------------------------------------------------------------
-
 // Verifies: SW-REQ-039
-// SW-REQ-039:nominal:nominal — UseMixedCollection=false writes only org doc
 func TestMCPMongoAggregatePump_WriteData_NoMixed(t *testing.T) {
 	cfg := map[string]interface{}{
 		"mongo_url":            testMongoURI(t),
@@ -1276,9 +1359,8 @@ func TestMCPMongoAggregatePump_WriteData_NoMixed(t *testing.T) {
 // ---------------------------------------------------------------------------
 // graph_mongo.go :: Init invalid-conf branch
 // ---------------------------------------------------------------------------
-
 // Verifies: SW-REQ-037
-// SW-REQ-037:errors_propagated:negative — non-map config returns error
+// SW-REQ-037:malformed_recovers_or_errors_loudly:negative
 func TestGraphMongoPump_Init_BadConfig(t *testing.T) {
 	p := &GraphMongoPump{}
 	err := p.Init("not-a-map")
@@ -1288,9 +1370,7 @@ func TestGraphMongoPump_Init_BadConfig(t *testing.T) {
 // ---------------------------------------------------------------------------
 // mcp_mongo.go :: WriteData with empty collection name branch
 // ---------------------------------------------------------------------------
-
 // Verifies: SW-REQ-038
-// SW-REQ-038:errors_propagated:negative — no MCP records returns nil
 func TestMCPMongoPump_WriteData_NoCollectionWithEmptyData(t *testing.T) {
 	p := &MCPMongoPump{}
 	p.dbConf = &MongoConf{CollectionName: ""}
@@ -1302,8 +1382,7 @@ func TestMCPMongoPump_WriteData_NoCollectionWithEmptyData(t *testing.T) {
 	assert.Error(t, err)
 }
 
-// Verifies: SW-REQ-039
-// SW-REQ-039:nominal:nominal — ThresholdLenTagList==0 → default applies
+// Verifies: SW-REQ-036
 func TestMCPMongoAggregatePump_Init_ThresholdDefault(t *testing.T) {
 	cfg := map[string]interface{}{
 		"mongo_url":              testMongoURI(t),
@@ -1331,8 +1410,7 @@ func TestMongoAggregatePump_WriteData_AllMCPRecordsFiltered(t *testing.T) {
 }
 
 // Verifies: SW-REQ-037
-// SW-REQ-037:errors_propagated:nominal — drives "collection name set" success path
-// through GraphMongoPump.WriteData with real records (covers err != nil = F).
+// Through GraphMongoPump.WriteData with real records (covers err != nil = F).
 func TestGraphMongoPump_WriteData_AllRecordsWritten(t *testing.T) {
 	conf := defaultConf(t)
 	conf.CollectionName = uniqueCollection(t)
@@ -1356,9 +1434,9 @@ func TestGraphMongoPump_WriteData_AllRecordsWritten(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-// Verifies: SW-REQ-059
-// SW-REQ-059:nominal:nominal — drives the `>` side of the threshold check
-// in DoAggregatedWriting by injecting a record with many tags.
+// Verifies: SW-REQ-061
+// SW-REQ-061:boundary:nominal — in DoAggregatedWriting by injecting a record
+// with many tags.
 func TestMongoAggregatePump_DoAggregatedWriting_ThresholdExceeded(t *testing.T) {
 	cfg := map[string]interface{}{
 		"mongo_url":              testMongoURI(t),
@@ -1376,9 +1454,9 @@ func TestMongoAggregatePump_DoAggregatedWriting_ThresholdExceeded(t *testing.T) 
 	require.NoError(t, p.WriteData(context.Background(), []interface{}{rec}))
 }
 
-// Verifies: SW-REQ-038
-// SW-REQ-038:errors_propagated:negative — invalid configuration returns from
 // the first mapstructure.Decode error path.
+// Verifies: SW-REQ-038
+// SW-REQ-038:malformed_recovers_or_errors_loudly:negative
 func TestMCPMongoPump_Init_InvalidIntValue(t *testing.T) {
 	p := &MCPMongoPump{}
 	// mongo_db_type is `int`-typed in struct; supplying a malformed value
@@ -1390,7 +1468,7 @@ func TestMCPMongoPump_Init_InvalidIntValue(t *testing.T) {
 }
 
 // Verifies: SW-REQ-037
-// SW-REQ-037:errors_propagated:negative — second mapstructure.Decode error path
+// SW-REQ-037:malformed_recovers_or_errors_loudly:negative
 func TestGraphMongoPump_Init_BaseConfDecodeError(t *testing.T) {
 	// The second Decode targets BaseMongoConf which contains mongo_db_type
 	// (int). A bad map should still fail.

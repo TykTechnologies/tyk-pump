@@ -4,3 +4,4 @@ variables:
       type: bool
       direction: output
       description: tyk-pump runs as a single-process daemon (no clustering).
+      range: {min: 1, max: 1}

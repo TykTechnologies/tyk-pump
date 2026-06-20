@@ -32,12 +32,12 @@ verification:
         reviewed_at: "2026-06-02T09:01:20Z"
         comment: 'Phase K: enrich rationale with environment-term vocabulary so spec_lint_assumption_disposition recognizes these as genuine external preconditions (FRETish shape preserved).'
         fingerprint: sha256:bcdafc35b5e6a24e16525c7fed8ac7e134f6b80091fe853e4c544ff9e90e9f15
-        ai_generated: false
+        ai_generated: true
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:13:45Z"
-    last_modified_by: human:cli
-    last_modified_at: "2026-06-02T09:01:20Z"
+    last_modified_by: agent:codex
+    last_modified_at: "2026-06-19T08:07:24Z"
 obligation_class: nominal
 assumption:
     status: open

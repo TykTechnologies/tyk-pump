@@ -7,29 +7,31 @@ variables:
       data_constraint:
         domain: integer
         variable: record_size
-        condition: "record_size > max_record_size"
+        condition: record_size > max_record_size
         parameters:
-          - name: record_size
-            type: int
-            constraint: ">= 0"
-          - name: max_record_size
-            type: int
-            constraint: "> 0"
+            - name: record_size
+              type: int
+              constraint: '>= 0'
+            - name: max_record_size
+              type: int
+              constraint: '> 0'
     - name: record_within_max_size
       type: bool
       direction: input
+      proof_auxiliary: true
+      proof_auxiliary_reason: Solver-only complement used for data-constraint completeness and exclusivity; no standalone behavioral requirement consumes it.
       description: A record is within the configured maximum size (complement of record_exceeds_max_size).
       data_constraint:
         domain: integer
         variable: record_size
-        condition: "record_size <= max_record_size"
+        condition: record_size <= max_record_size
         parameters:
-          - name: record_size
-            type: int
-            constraint: ">= 0"
-          - name: max_record_size
-            type: int
-            constraint: "> 0"
+            - name: record_size
+              type: int
+              constraint: '>= 0'
+            - name: max_record_size
+              type: int
+              constraint: '> 0'
     - name: record_truncated
       type: bool
       direction: output
@@ -37,19 +39,18 @@ variables:
       data_constraint:
         domain: integer
         variable: truncated_size
-        condition: "truncated_size <= max_record_size && truncated_size <= original_size"
-        # Producer axiom: truncate to the lesser of max_record_size and original_size.
-        assignment: "(= truncated_size (ite (<= max_record_size original_size) max_record_size original_size))"
+        condition: truncated_size <= max_record_size && truncated_size <= original_size
         parameters:
-          - name: truncated_size
-            type: int
-            constraint: ">= 0"
-          - name: max_record_size
-            type: int
-            constraint: "> 0"
-          - name: original_size
-            type: int
-            constraint: ">= 0"
+            - name: truncated_size
+              type: int
+              constraint: '>= 0'
+            - name: max_record_size
+              type: int
+              constraint: '> 0'
+            - name: original_size
+              type: int
+              constraint: '>= 0'
+        assignment: (= truncated_size (ite (<= max_record_size original_size) max_record_size original_size))
     - name: decode_request_enabled
       type: bool
       direction: input
@@ -78,3 +79,6 @@ variables:
       type: bool
       direction: output
       description: The operator-listed fields have been removed from the forwarded record.
+independence:
+    declared: true
+    reason: 'Privacy requirements cover distinct data minimisation behaviors: size truncation, raw payload decoding, detailed-payload omission, and configured field removal.'

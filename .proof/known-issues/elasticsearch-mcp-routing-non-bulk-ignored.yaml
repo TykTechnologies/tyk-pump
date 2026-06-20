@@ -1,5 +1,6 @@
 id: elasticsearch-mcp-routing-non-bulk-ignored
 title: Elasticsearch pump's non-bulk write path ignores MCP per-record index routing
+introduced_in: inception
 description: |
   pumps/elasticsearch.go processData implementations for v3/v5/v6/v7 compute
   recordIndex via getIndexNameForRecord(esConf, d) on every iteration, but the
@@ -25,6 +26,8 @@ description: |
 affected_requirements:
     - SW-REQ-069
     - SW-REQ-070
+environment_note: |-
+  Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source or documentation surface and following the described scenario.
 severity: medium
 mitigation: |
   Keep DisableBulk=false (the default) whenever MCPIndexName is configured.

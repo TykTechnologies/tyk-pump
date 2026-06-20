@@ -1,0 +1,23 @@
+id: elapsed-timesince-dst-obligation-misattributed
+title: DST transition obligation is misattributed to elapsed time.Since measurements
+introduced_in: inception
+description: 'OpenGrep flags time.Since uses in main.go, pumps/kafka.go, pumps/sqs.go, and retry/http-retry.go as wall-clock arithmetic requiring dst_transition_safe. These sites measure elapsed duration for logging or metrics; Go time.Since uses the monotonic clock component when available and does not route date-sharded business records. The signal is useful review pressure, but the current dst_transition_safe ownership is a proof/spec attribution gap for these elapsed-duration sites.'
+affected_requirements:
+    - SW-REQ-001
+    - SW-REQ-021
+    - SW-REQ-030
+    - SW-REQ-055
+environment_note: |-
+  Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source or rerunning the wall-clock-arithmetic code-signal scan.
+reproducer_command: rg -n "time\\.Since\\(" main.go pumps/kafka.go pumps/sqs.go retry/http-retry.go
+severity: low
+risk: proof_modeling
+mitigation: Treat these sites as elapsed-duration metrics/logging unless a future requirement makes wall-clock date arithmetic part of their contract.
+remediation: Narrow the signal mapping to wall-clock date arithmetic that affects persisted/routed business data, or add dedicated duration-measurement obligations where needed.
+owner: tyk-team
+release_disposition: ship_with_known_issue
+status: open
+history:
+    - at: "2026-06-19T00:00:00Z"
+      by: agent:codex
+      action: created

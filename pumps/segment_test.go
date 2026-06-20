@@ -1,14 +1,12 @@
 package pumps
 
 import (
-	"context"
 	"testing"
 	"time"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
 )
 
-// Verifies: SW-REQ-053
 func CreateAnalyticsRecord() analytics.AnalyticsRecord {
 	a := analytics.AnalyticsRecord{}
 	a.Method = "POST"
@@ -37,29 +35,23 @@ func CreateAnalyticsRecord() analytics.AnalyticsRecord {
 	return a
 }
 
-// Verifies: SW-REQ-053
-func TestSegmentPump(t *testing.T) {
-	t.Skip("Set the tWriteKey and remove Skip to test.")
-
-	tWriteKey := "XXX"
-	tConf := make(map[string]string)
-	tConf["segment_write_key"] = tWriteKey
-
+// SW-REQ-053:nominal:nominal
+func TestSegmentPump_ToJSONMap_MarshalsAnalyticsRecord(t *testing.T) {
 	s := SegmentPump{}
+	record := CreateAnalyticsRecord()
 
-	err := s.Init(tConf)
+	got, err := s.ToJSONMap(record)
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 
-	tRecord := CreateAnalyticsRecord()
-	tData := make([]interface{}, 1)
-	tData[0] = tRecord
-	s.segmentClient.Verbose = true
-	s.segmentClient.Interval = 10 * time.Millisecond
-	s.segmentClient.Size = 1
-
-	go s.WriteData(context.TODO(), tData)
-
-	time.Sleep(time.Second)
+	if got["api_id"] != record.APIID {
+		t.Fatalf("api_id = %v, want %q", got["api_id"], record.APIID)
+	}
+	if got["api_key"] != record.APIKey {
+		t.Fatalf("api_key = %v, want %q", got["api_key"], record.APIKey)
+	}
+	if got["raw_request"] != record.RawRequest {
+		t.Fatalf("raw_request = %v, want %q", got["raw_request"], record.RawRequest)
+	}
 }

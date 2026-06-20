@@ -33,17 +33,6 @@ verification:
         comment: 'Phase L3 aggressive: flip remaining decision-bearing SW reqs to FRETish per L3 plan; vars added per-component; MC/DC witnesses to be annotated in tests.'
         fingerprint: sha256:1b4b7f8aa64f77435bdf52bda1055c72eff6b62b76283b963beeb7afecd9512a
         ai_generated: true
-    impact_reviews:
-        - requirement: SW-REQ-010
-          artifact: analytics/analytics_filters.go
-          decision: no-authored-change
-          reviewer: buger
-          reason: 'Phase L3 aggressive: FRETish formalization added per L3 plan; production .go behaviour and code paths unchanged — only requirement metadata (fretish text + formalization_strategy + variables) altered. Test annotations may follow but do not change runtime behaviour.'
-          base: origin/master
-          requirement_fingerprint: sha256:2b353e15a0060d584e643c9ea7cc38ba5c26f5660de3f8c38dab3fed6865ea05
-          approval_fingerprint: sha256:1b4b7f8aa64f77435bdf52bda1055c72eff6b62b76283b963beeb7afecd9512a
-          artifact_fingerprint: sha256:35eee15326a29211f9813e20526188d189896ff382c794170f36931c6375dfd4
-          reviewed_at: "2026-06-02T14:30:20Z"
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:14Z"
@@ -51,11 +40,6 @@ history:
     last_modified_at: "2026-06-16T20:39:23Z"
 obligation_checklist:
     - boundary
-obligation_deferrals:
-    - obligation_class: boundary
-      reason: 'Deferred: required boundary test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'
-      tracking: .proof/deferred-witness-backlog.md
-      owner: human:buger
 lifecycle:
     change_history:
         - date: "2026-05-29T15:46:44Z"

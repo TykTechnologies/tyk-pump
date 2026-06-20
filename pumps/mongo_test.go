@@ -19,12 +19,11 @@ import (
 	"github.com/TykTechnologies/tyk-pump/analytics"
 )
 
-// Verifies: SW-REQ-034
 func newPump() Pump {
 	return (&MongoPump{}).New()
 }
 
-// Verifies: SW-REQ-034
+// SW-REQ-034:boundary:negative
 func TestMongoPump_capCollection_Enabled(t *testing.T) {
 	pump := newPump()
 	conf := defaultConf(t)
@@ -42,7 +41,7 @@ func TestMongoPump_capCollection_Enabled(t *testing.T) {
 	}
 }
 
-// Verifies: SW-REQ-034
+// SW-REQ-034:boundary:nominal
 func TestMongoPumpOmitIndexCreation(t *testing.T) {
 	pump := newPump()
 	conf := defaultConf(t)
@@ -181,7 +180,6 @@ func TestMongoPumpOmitIndexCreation(t *testing.T) {
 	}
 }
 
-// Verifies: SW-REQ-034
 func CreateCollectionIfNeeded(t *testing.T, mPump *MongoPump, dbObject model.DBObject) {
 	t.Helper()
 	if !HasTable(t, mPump, dbObject) {
@@ -192,7 +190,6 @@ func CreateCollectionIfNeeded(t *testing.T, mPump *MongoPump, dbObject model.DBO
 	}
 }
 
-// Verifies: SW-REQ-034
 func HasTable(t *testing.T, mPump *MongoPump, dbObject model.DBObject) bool {
 	t.Helper()
 	hasTable, err := mPump.store.HasTable(context.Background(), dbObject.TableName())
@@ -203,7 +200,7 @@ func HasTable(t *testing.T, mPump *MongoPump, dbObject model.DBObject) bool {
 	return hasTable
 }
 
-// Verifies: SW-REQ-034
+// SW-REQ-034:boundary:nominal
 func TestMongoPump_capCollection_Exists(t *testing.T) {
 	c := Conn{}
 	c.ConnectDb(t)
@@ -227,7 +224,7 @@ func TestMongoPump_capCollection_Exists(t *testing.T) {
 	}
 }
 
-// Verifies: SW-REQ-034
+// SW-REQ-034:boundary:nominal
 func TestMongoPump_capCollection_Not64arch(t *testing.T) {
 	if strconv.IntSize >= 64 {
 		t.Skip("skipping as >= 64bit arch")
@@ -253,7 +250,7 @@ func TestMongoPump_capCollection_Not64arch(t *testing.T) {
 	}
 }
 
-// Verifies: SW-REQ-034
+// SW-REQ-034:boundary:nominal
 func TestMongoPump_capCollection_SensibleDefaultSize(t *testing.T) {
 	if strconv.IntSize < 64 {
 		t.Skip("skipping as < 64bit arch")
@@ -289,7 +286,6 @@ func TestMongoPump_capCollection_SensibleDefaultSize(t *testing.T) {
 
 // asInt64 normalizes a mongo collection stat value that may come back as
 // int, int32, int64, or float64 depending on the driver/server version.
-// Verifies: SW-REQ-034
 func asInt64(v interface{}) int64 {
 	switch n := v.(type) {
 	case int:
@@ -305,7 +301,7 @@ func asInt64(v interface{}) int64 {
 	}
 }
 
-// Verifies: SW-REQ-034
+// SW-REQ-034:boundary:nominal
 func TestMongoPump_capCollection_OverrideSize(t *testing.T) {
 	if strconv.IntSize < 64 {
 		t.Skip("skipping as < 64bit arch")
@@ -340,6 +336,7 @@ func TestMongoPump_capCollection_OverrideSize(t *testing.T) {
 }
 
 // Verifies: SW-REQ-034
+// MCDC SW-REQ-034: mcp_record_present=F, record_filtered_out=F => TRUE
 func TestMongoPump_AccumulateSet(t *testing.T) {
 	run := func(recordsGenerator func(numRecords int) []interface{}, expectedRecordsCount int) func(t *testing.T) {
 		return func(t *testing.T) {
@@ -401,7 +398,7 @@ func TestMongoPump_AccumulateSet(t *testing.T) {
 	))
 }
 
-// Verifies: SW-REQ-034
+// SW-REQ-034:boundary:nominal
 func TestMongoPump_AccumulateSetIgnoreDocSize(t *testing.T) {
 	bloat := base64.StdEncoding.EncodeToString(make([]byte, 2048))
 	pump := newPump()
@@ -437,7 +434,46 @@ func TestMongoPump_AccumulateSetIgnoreDocSize(t *testing.T) {
 	}
 }
 
-// Verifies: SW-REQ-034
+// SW-REQ-034:nominal:nominal — standard Mongo WriteData drops MCP records
+// before accumulation, so an MCP-only payload returns without touching storage.
+func TestMongoPump_WriteData_MCPOnlyReturnsBeforeStorage(t *testing.T) {
+	pump := &MongoPump{}
+	conf := defaultConf(nil)
+	pump.dbConf = &conf
+	pump.log = log.WithField("prefix", mongoPrefix)
+
+	err := pump.WriteData(context.Background(), []interface{}{
+		analytics.AnalyticsRecord{MCPStats: analytics.MCPStats{IsMCP: true}},
+		analytics.AnalyticsRecord{MCPStats: analytics.MCPStats{IsMCP: true}},
+	})
+
+	require.NoError(t, err)
+}
+
+// SW-REQ-034:boundary:nominal — a valid record followed by a skipped record
+// exercises AccumulateSet's final append of a non-empty in-progress batch.
+func TestMongoPump_AccumulateSet_AppendsBatchAfterTrailingSkip(t *testing.T) {
+	pump := newPump()
+	conf := defaultConf(nil)
+	conf.MaxInsertBatchSizeBytes = 1 << 20
+	mPump, ok := pump.(*MongoPump)
+	require.True(t, ok)
+	mPump.dbConf = &conf
+	mPump.log = log.WithField("prefix", mongoPrefix)
+
+	accumulated := mPump.AccumulateSet([]interface{}{
+		analytics.AnalyticsRecord{APIID: "api", OrgID: "org", ResponseCode: 200},
+		analytics.AnalyticsRecord{ResponseCode: -1},
+	}, false)
+
+	require.Len(t, accumulated, 1)
+	require.Len(t, accumulated[0], 1)
+	record, ok := accumulated[0][0].(*analytics.AnalyticsRecord)
+	require.True(t, ok)
+	assert.Equal(t, "api", record.APIID)
+}
+
+// SW-REQ-034: Mongo connection-string handling on the standard Mongo pump surface.
 func TestGetBlurredURL(t *testing.T) {
 	tcs := []struct {
 		testName           string
@@ -510,7 +546,8 @@ func TestGetBlurredURL(t *testing.T) {
 	}
 }
 
-// Verifies: SW-REQ-034
+// Verifies: SYS-REQ-021
+// MCDC SYS-REQ-021: uptime_data_consumed=T, uptime_forwarded=T => TRUE
 func TestWriteUptimeData(t *testing.T) {
 	now := time.Now()
 
@@ -574,7 +611,8 @@ func TestWriteUptimeData(t *testing.T) {
 	}
 }
 
-// Verifies: SW-REQ-034
+// Verifies: INT-REQ-004
+// MCDC INT-REQ-004: contract_honoured=T, pump_methods_called=T => TRUE
 func TestDecodeRequestAndDecodeResponseMongo(t *testing.T) {
 	newPump := &MongoPump{}
 	conf := defaultConf(t)
@@ -595,7 +633,7 @@ func TestDecodeRequestAndDecodeResponseMongo(t *testing.T) {
 	assert.False(t, newPump.GetDecodedResponse())
 }
 
-// Verifies: SW-REQ-034
+// SW-REQ-034:nominal:nominal
 func TestDefaultDriver(t *testing.T) {
 	newPump := &MongoPump{}
 	defaultConf := defaultConf(t)
@@ -607,6 +645,7 @@ func TestDefaultDriver(t *testing.T) {
 }
 
 // Verifies: SW-REQ-034
+// MCDC SW-REQ-034: mcp_record_present=F, record_filtered_out=F => TRUE
 func TestMongoPump_WriteData(t *testing.T) {
 	sampleRecord := analytics.AnalyticsRecord{
 		Method:       "GET",
@@ -698,7 +737,7 @@ func TestMongoPump_WriteData(t *testing.T) {
 	}))
 }
 
-// Verifies: SW-REQ-034
+// SW-REQ-034:nominal:boundary
 func TestGetMongoDriverType(t *testing.T) {
 	tests := []struct {
 		name       string

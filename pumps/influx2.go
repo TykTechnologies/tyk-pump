@@ -93,7 +93,7 @@ func (i *Influx2Pump) Init(config interface{}) error {
 	i.log = log.WithField("prefix", influx2Prefix)
 
 	err := mapstructure.Decode(config, &i.dbConf)
-	if err != nil { //mcdc:ignore log.Fatal exits the process; cannot be unit-tested without crashing — KI pumps-logfatal-on-config-decode
+	if err != nil { //mcdc:ignore:capability-gap log.Fatal exits the process; cannot be unit-tested without crashing — KI pumps-logfatal-on-config-decode [ki: pumps-logfatal-on-config-decode]
 		i.log.Fatal("Failed to decode configuration: ", err)
 	}
 
@@ -124,14 +124,14 @@ func (i *Influx2Pump) Init(config interface{}) error {
 	var bucket *domain.Bucket
 	if i.dbConf.CreateMissingBucket {
 		bucket, err = i.createBucket(ctx, org.Id)
-		if err != nil { //mcdc:ignore createBucket err arm requires a running InfluxDB2 server that rejects bucket creation — Influx2 tests are skipped when Docker is unavailable and otherwise succeed; driving createBucket err deterministically requires a fake influxdb2.Client seam — KI mcdc-pumps-below-95.
+		if err != nil { //mcdc:ignore:capability-gap createBucket err arm requires a running InfluxDB2 server that rejects bucket creation — Influx2 tests are skipped when Docker is unavailable and otherwise succeed; driving createBucket err deterministically requires a fake influxdb2.Client seam — KI mcdc-pumps-below-95. [ki: mcdc-pumps-below-95]
 			i.log.Debug("unable to create InfluxDB2 bucket (if missing): ", err)
 		} else {
 			i.log.Info("created missing InfluxDB2 bucket: ", i.dbConf.BucketName)
 		}
 	}
 
-	if bucket == nil { //mcdc:ignore bucket==nil=T arm requires CreateMissingBucket=F OR createBucket-err (above mcdc:ignore) — both reachable only behind a real InfluxDB2 backend. KI mcdc-pumps-below-95.
+	if bucket == nil { //mcdc:ignore:capability-gap bucket==nil=T arm requires CreateMissingBucket=F OR createBucket-err (above mcdc:ignore) — both reachable only behind a real InfluxDB2 backend. KI mcdc-pumps-below-95. [ki: mcdc-pumps-below-95]
 		_, err = i.client.BucketsAPI().FindBucketByName(ctx, i.dbConf.BucketName)
 		if err != nil {
 			return fmt.Errorf("error looking up InfluxDB2 bucket: %v", err)
@@ -184,7 +184,7 @@ func (i *Influx2Pump) createBucket(ctx context.Context, orgID *string) (*domain.
 	}
 	bucketsApi := i.client.BucketsAPI()
 	bucket, err := bucketsApi.CreateBucket(ctx, bucket)
-	if err != nil { //mcdc:ignore CreateBucket err arm requires a running InfluxDB2 server returning a 4xx — deterministically reachable only behind a real Influx instance; existing tests skip without Docker. KI mcdc-pumps-below-95.
+	if err != nil { //mcdc:ignore:capability-gap CreateBucket err arm requires a running InfluxDB2 server returning a 4xx — deterministically reachable only behind a real Influx instance; existing tests skip without Docker. KI mcdc-pumps-below-95. [ki: mcdc-pumps-below-95]
 		return nil, err
 	}
 	return bucket, nil
@@ -223,7 +223,7 @@ func (i *Influx2Pump) WriteData(ctx context.Context, data []interface{}) error {
 		// Select tags from config
 		for _, t := range i.dbConf.Tags {
 			b, err := json.Marshal(mapping[t])
-			if err != nil { //mcdc:ignore json.Marshal on the canonical AnalyticsRecord mapping values (string/int/int64/time.Time) cannot fail. KI mcdc-pumps-below-95.
+			if err != nil { //mcdc:ignore:defensive json.Marshal on the canonical AnalyticsRecord mapping values (string/int/int64/time.Time) cannot fail. KI mcdc-pumps-below-95.
 				tag = ""
 			} else {
 				// convert and remove surrounding quotes from tag value

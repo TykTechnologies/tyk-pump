@@ -1,0 +1,19 @@
+id: health-endpoint-auth-not-enforced
+title: Health endpoint is exposed without authentication
+introduced_in: inception
+description: 'server/server.go registers the configured health path directly with Healthcheck using r.HandleFunc("/"+endpoint, Healthcheck).Methods("GET"). Healthcheck writes a 200 JSON liveness response without checking credentials, API keys, headers, or middleware. The auth_required obligation for the software health endpoint is therefore a real product gap rather than merely a missing test.'
+affected_requirements:
+    - SW-REQ-032
+environment_note: |-
+  Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source and command output.
+reproducer_command: rg -n "HandleFunc\(\"/\"\+endpoint, Healthcheck\)|func Healthcheck|Authorization|Authenticate|auth" server/server.go
+severity: low
+mitigation: Bind the health listener only on trusted interfaces or protect it with deployment-level network policy.
+remediation: Add explicit authentication or documented auth bypass semantics for the health endpoint before satisfying auth_required.
+owner: tyk-team
+release_disposition: ship_with_known_issue
+status: open
+history:
+    - at: "2026-06-19T00:00:00Z"
+      by: agent:codex
+      action: created

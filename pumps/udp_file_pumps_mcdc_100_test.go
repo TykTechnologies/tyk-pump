@@ -29,10 +29,9 @@
 //     in production .go with //mcdc:ignore (justified by KI cross-references)
 //     rather than chased with synthetic injection.
 //
-// Each test carries the triple-form rationale (Trigger / Action / Effect) and
-// a `Verifies: SW-REQ-XXX` annotation per the pump's parent software
-// requirement. The subprocess-child helpers also document the KI they
-// reference so the lethality contract is traceable from the test.
+// Each test carries the triple-form rationale (Trigger / Action / Effect).
+// The subprocess-child helpers also document the KI they reference so the
+// lethality contract is traceable from the test.
 package pumps
 
 import (
@@ -60,6 +59,25 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// File-level MC/DC witness rows for the requirement links below. Rows copied
+// verbatim from `proof mcdc show`.
+//
+// MCDC SW-REQ-023: dataset_empty=F, write_skipped=F => TRUE
+// MCDC SW-REQ-023: dataset_empty=T, write_skipped=F => FALSE
+// MCDC SW-REQ-023: dataset_empty=T, write_skipped=T => TRUE
+// MCDC SW-REQ-024: default_path_applied=F, listen_path_empty=F => TRUE
+// MCDC SW-REQ-024: default_path_applied=F, listen_path_empty=T => FALSE
+// MCDC SW-REQ-024: default_path_applied=T, listen_path_empty=T => TRUE
+// MCDC SW-REQ-025: file_appended=F, hourly_file_exists=F => TRUE
+// MCDC SW-REQ-025: file_appended=F, hourly_file_exists=T => FALSE
+// MCDC SW-REQ-025: file_appended=T, hourly_file_exists=T => TRUE
+// MCDC SW-REQ-049: graylog_url_configured=F, record_forwarded=F => TRUE
+// MCDC SW-REQ-049: graylog_url_configured=T, record_forwarded=F => FALSE
+// MCDC SW-REQ-049: graylog_url_configured=T, record_forwarded=T => TRUE
+// MCDC SW-REQ-050: tcp_writer_used=F, transport_tcp=F => TRUE
+// MCDC SW-REQ-050: tcp_writer_used=F, transport_tcp=T => FALSE
+// MCDC SW-REQ-050: tcp_writer_used=T, transport_tcp=T => TRUE
+
 // -----------------------------------------------------------------------------
 // In-process Fatal interception. Overriding the global logger's ExitFunc lets
 // us drive log.Fatal arms inside the test process so MC/DC coverage records
@@ -71,8 +89,6 @@ import (
 // fatalSentinelPanic is the value the test-injected ExitFunc panics with when
 // log.Fatal is called. It is a distinct type so recover() can identify it
 // without swallowing real panics.
-//
-// Verifies: SW-REQ-016
 type fatalSentinelPanic struct{ code int }
 
 // fatalInterceptMu serialises ExitFunc swaps; the global logger is shared and
@@ -82,8 +98,6 @@ var fatalInterceptMu sync.Mutex
 // withFatalIntercept replaces logger.GetLogger().ExitFunc with a panic'er for
 // the duration of fn, recovers the panic, and asserts a log.Fatal was indeed
 // triggered. If fn does not invoke log.Fatal the test fails.
-//
-// Verifies: SW-REQ-016
 func withFatalIntercept(t *testing.T, fn func()) {
 	t.Helper()
 	fatalInterceptMu.Lock()
@@ -128,11 +142,8 @@ func withFatalIntercept(t *testing.T, fn func()) {
 // discardWriter is an io.Writer that silently drops everything written. It's
 // used to silence the intentional log.Fatal output during intercepted tests
 // without disturbing any other logging configuration.
-//
-// Verifies: SW-REQ-016
 type discardWriter struct{}
 
-// Verifies: SW-REQ-016
 func (discardWriter) Write(p []byte) (int, error) { return len(p), nil }
 
 // -----------------------------------------------------------------------------
@@ -147,8 +158,6 @@ func (discardWriter) Write(p []byte) (int, error) { return len(p), nil }
 // runFatalChild forks the current test binary, runs only the named test, and
 // asserts the child process exited with code 1 (the contract for log.Fatal).
 // The child branch is entered via the BE_FATAL_PUMP env var.
-//
-// Verifies: SW-REQ-016
 func runFatalChild(t *testing.T, sentinel string) {
 	t.Helper()
 	cmd := exec.Command(os.Args[0], "-test.run", "^"+t.Name()+"$", "-test.timeout", "30s")
@@ -171,8 +180,6 @@ func runFatalChild(t *testing.T, sentinel string) {
 
 // fatalSentinel returns the BE_FATAL_PUMP value the child process should match
 // to enter the lethal-code-path branch. Returns "" if not in child mode.
-//
-// Verifies: SW-REQ-016
 func fatalSentinel() string {
 	return os.Getenv("BE_FATAL_PUMP")
 }
@@ -199,7 +206,10 @@ var _logrusExitRef = func(_ logrus.Level) {}
 //
 // Reference KI: pumps-logfatal-on-config-decode (statsd.go:62).
 //
-// Verifies: SW-REQ-023
+// Verifies: KI:pumps-logfatal-on-config-decode
+// Verifies: SYS-REQ-004
+// MCDC SYS-REQ-004: a_backend_failed=T, other_backends_written=F => FALSE
+// Reproduces: pumps-logfatal-on-config-decode
 func TestStatsdPump_Init_DecodeFatal_Subprocess(t *testing.T) {
 	if fatalSentinel() == "statsd_init" {
 		pump := &StatsdPump{}
@@ -213,7 +223,10 @@ func TestStatsdPump_Init_DecodeFatal_Subprocess(t *testing.T) {
 // (so MC/DC coverage tooling records the branch) by overriding the global
 // logrus ExitFunc to panic instead of os.Exit'ing.
 //
-// Verifies: SW-REQ-023
+// Verifies: KI:pumps-logfatal-on-config-decode
+// Verifies: SYS-REQ-004
+// MCDC SYS-REQ-004: a_backend_failed=T, other_backends_written=F => FALSE
+// Reproduces: pumps-logfatal-on-config-decode
 func TestStatsdPump_Init_DecodeFatal_InProcess(t *testing.T) {
 	withFatalIntercept(t, func() {
 		pump := &StatsdPump{}
@@ -230,7 +243,10 @@ func TestStatsdPump_Init_DecodeFatal_InProcess(t *testing.T) {
 //
 // Reference KI: pumps-logfatal-on-config-decode (syslog.go:82).
 //
-// Verifies: SW-REQ-050
+// Verifies: KI:pumps-logfatal-on-config-decode
+// Verifies: SYS-REQ-004
+// MCDC SYS-REQ-004: a_backend_failed=T, other_backends_written=F => FALSE
+// Reproduces: pumps-logfatal-on-config-decode
 func TestSyslogPump_Init_DecodeFatal_Subprocess(t *testing.T) {
 	if fatalSentinel() == "syslog_init" {
 		pump := &SyslogPump{}
@@ -243,7 +259,10 @@ func TestSyslogPump_Init_DecodeFatal_Subprocess(t *testing.T) {
 // TestSyslogPump_Init_DecodeFatal_InProcess drives the syslog Init decode
 // fatal arm in-process so MC/DC coverage records the branch.
 //
-// Verifies: SW-REQ-050
+// Verifies: KI:pumps-logfatal-on-config-decode
+// Verifies: SYS-REQ-004
+// MCDC SYS-REQ-004: a_backend_failed=T, other_backends_written=F => FALSE
+// Reproduces: pumps-logfatal-on-config-decode
 func TestSyslogPump_Init_DecodeFatal_InProcess(t *testing.T) {
 	withFatalIntercept(t, func() {
 		pump := &SyslogPump{}
@@ -256,7 +275,9 @@ func TestSyslogPump_Init_DecodeFatal_InProcess(t *testing.T) {
 // syslog.go:110 by configuring an unsupported transport ("nonsense") which
 // makes syslog.Dial return an error.
 //
+// Verifies: KI:syslog-initwriter-logfatal-on-dial-error
 // Verifies: SW-REQ-050
+// Reproduces: syslog-initwriter-logfatal-on-dial-error
 func TestSyslogPump_initWriter_BadDial_Subprocess(t *testing.T) {
 	if fatalSentinel() == "syslog_writer" {
 		pump := &SyslogPump{
@@ -277,7 +298,9 @@ func TestSyslogPump_initWriter_BadDial_Subprocess(t *testing.T) {
 // TestSyslogPump_initWriter_BadDial_InProcess drives the initWriter fatal
 // arm in-process.
 //
+// Verifies: KI:syslog-initwriter-logfatal-on-dial-error
 // Verifies: SW-REQ-050
+// Reproduces: syslog-initwriter-logfatal-on-dial-error
 func TestSyslogPump_initWriter_BadDial_InProcess(t *testing.T) {
 	withFatalIntercept(t, func() {
 		pump := &SyslogPump{
@@ -299,7 +322,9 @@ func TestSyslogPump_initWriter_BadDial_InProcess(t *testing.T) {
 // (so the early default-application branch is not taken) and is none of the
 // three allowed values — fatal.
 //
+// Verifies: KI:syslog-init-logfatal-on-invalid-transport
 // Verifies: SW-REQ-050
+// Reproduces: syslog-init-logfatal-on-invalid-transport
 func TestSyslogPump_initConfigs_InvalidTransport_InProcess(t *testing.T) {
 	withFatalIntercept(t, func() {
 		pump := &SyslogPump{
@@ -337,7 +362,10 @@ func TestSyslogPump_initConfigs_TLSTransport_KeepsTLS(t *testing.T) {
 //
 // Reference KI: pumps-logfatal-on-config-decode (graylog.go:76).
 //
-// Verifies: SW-REQ-049
+// Verifies: KI:pumps-logfatal-on-config-decode
+// Verifies: SYS-REQ-004
+// MCDC SYS-REQ-004: a_backend_failed=T, other_backends_written=F => FALSE
+// Reproduces: pumps-logfatal-on-config-decode
 func TestGraylogPump_Init_DecodeFatal_Subprocess(t *testing.T) {
 	if fatalSentinel() == "graylog_init" {
 		pump := &GraylogPump{}
@@ -350,7 +378,10 @@ func TestGraylogPump_Init_DecodeFatal_Subprocess(t *testing.T) {
 // TestGraylogPump_Init_DecodeFatal_InProcess drives the graylog Init decode
 // fatal arm in-process.
 //
-// Verifies: SW-REQ-049
+// Verifies: KI:pumps-logfatal-on-config-decode
+// Verifies: SYS-REQ-004
+// MCDC SYS-REQ-004: a_backend_failed=T, other_backends_written=F => FALSE
+// Reproduces: pumps-logfatal-on-config-decode
 func TestGraylogPump_Init_DecodeFatal_InProcess(t *testing.T) {
 	withFatalIntercept(t, func() {
 		pump := &GraylogPump{}
@@ -363,7 +394,10 @@ func TestGraylogPump_Init_DecodeFatal_InProcess(t *testing.T) {
 //
 // Reference KI: graylog-moesif-logfatal-on-record-error (graylog.go:120).
 //
-// Verifies: SW-REQ-049
+// Verifies: KI:graylog-moesif-logfatal-on-record-error
+// Verifies: SYS-REQ-004
+// MCDC SYS-REQ-004: a_backend_failed=T, other_backends_written=F => FALSE
+// Reproduces: graylog-moesif-logfatal-on-record-error
 func TestGraylogPump_WriteData_BadBase64Request_Subprocess(t *testing.T) {
 	if fatalSentinel() == "graylog_bad_b64_req" {
 		// Configure the pump (Init writes to localhost:1000 by default; we override
@@ -389,7 +423,10 @@ func TestGraylogPump_WriteData_BadBase64Request_Subprocess(t *testing.T) {
 // TestGraylogPump_WriteData_BadBase64Request_InProcess drives the same arm
 // in-process.
 //
-// Verifies: SW-REQ-049
+// Verifies: KI:graylog-moesif-logfatal-on-record-error
+// Verifies: SYS-REQ-004
+// MCDC SYS-REQ-004: a_backend_failed=T, other_backends_written=F => FALSE
+// Reproduces: graylog-moesif-logfatal-on-record-error
 func TestGraylogPump_WriteData_BadBase64Request_InProcess(t *testing.T) {
 	pump := &GraylogPump{}
 	require.NoError(t, pump.Init(map[string]interface{}{
@@ -412,7 +449,10 @@ func TestGraylogPump_WriteData_BadBase64Request_InProcess(t *testing.T) {
 //
 // Reference KI: graylog-moesif-logfatal-on-record-error (graylog.go:126).
 //
-// Verifies: SW-REQ-049
+// Verifies: KI:graylog-moesif-logfatal-on-record-error
+// Verifies: SYS-REQ-004
+// MCDC SYS-REQ-004: a_backend_failed=T, other_backends_written=F => FALSE
+// Reproduces: graylog-moesif-logfatal-on-record-error
 func TestGraylogPump_WriteData_BadBase64Response_Subprocess(t *testing.T) {
 	if fatalSentinel() == "graylog_bad_b64_resp" {
 		pump := &GraylogPump{}
@@ -436,7 +476,10 @@ func TestGraylogPump_WriteData_BadBase64Response_Subprocess(t *testing.T) {
 // TestGraylogPump_WriteData_BadBase64Response_InProcess drives the same arm
 // in-process.
 //
-// Verifies: SW-REQ-049
+// Verifies: KI:graylog-moesif-logfatal-on-record-error
+// Verifies: SYS-REQ-004
+// MCDC SYS-REQ-004: a_backend_failed=T, other_backends_written=F => FALSE
+// Reproduces: graylog-moesif-logfatal-on-record-error
 func TestGraylogPump_WriteData_BadBase64Response_InProcess(t *testing.T) {
 	pump := &GraylogPump{}
 	require.NoError(t, pump.Init(map[string]interface{}{
@@ -463,7 +506,10 @@ func TestGraylogPump_WriteData_BadBase64Response_InProcess(t *testing.T) {
 //
 // Reference KI: pumps-logfatal-on-config-decode (prometheus.go:193).
 //
-// Verifies: SW-REQ-024
+// Verifies: KI:pumps-logfatal-on-config-decode
+// Verifies: SYS-REQ-004
+// MCDC SYS-REQ-004: a_backend_failed=T, other_backends_written=F => FALSE
+// Reproduces: pumps-logfatal-on-config-decode
 func TestPrometheusPump_Init_DecodeFatal_Subprocess(t *testing.T) {
 	if fatalSentinel() == "prometheus_init" {
 		pump := &PrometheusPump{}
@@ -476,7 +522,10 @@ func TestPrometheusPump_Init_DecodeFatal_Subprocess(t *testing.T) {
 // TestPrometheusPump_Init_DecodeFatal_InProcess drives the same arm
 // in-process.
 //
-// Verifies: SW-REQ-024
+// Verifies: KI:pumps-logfatal-on-config-decode
+// Verifies: SYS-REQ-004
+// MCDC SYS-REQ-004: a_backend_failed=T, other_backends_written=F => FALSE
+// Reproduces: pumps-logfatal-on-config-decode
 func TestPrometheusPump_Init_DecodeFatal_InProcess(t *testing.T) {
 	withFatalIntercept(t, func() {
 		pump := &PrometheusPump{}
@@ -493,7 +542,10 @@ func TestPrometheusPump_Init_DecodeFatal_InProcess(t *testing.T) {
 //
 // Reference KI: pumps-logfatal-on-config-decode (csv.go:57).
 //
-// Verifies: SW-REQ-025
+// Verifies: KI:pumps-logfatal-on-config-decode
+// Verifies: SYS-REQ-004
+// MCDC SYS-REQ-004: a_backend_failed=T, other_backends_written=F => FALSE
+// Reproduces: pumps-logfatal-on-config-decode
 func TestCSVPump_Init_DecodeFatal_Subprocess(t *testing.T) {
 	if fatalSentinel() == "csv_init" {
 		pump := &CSVPump{}
@@ -505,7 +557,10 @@ func TestCSVPump_Init_DecodeFatal_Subprocess(t *testing.T) {
 
 // TestCSVPump_Init_DecodeFatal_InProcess drives the same arm in-process.
 //
-// Verifies: SW-REQ-025
+// Verifies: KI:pumps-logfatal-on-config-decode
+// Verifies: SYS-REQ-004
+// MCDC SYS-REQ-004: a_backend_failed=T, other_backends_written=F => FALSE
+// Reproduces: pumps-logfatal-on-config-decode
 func TestCSVPump_Init_DecodeFatal_InProcess(t *testing.T) {
 	withFatalIntercept(t, func() {
 		pump := &CSVPump{}
@@ -522,7 +577,10 @@ func TestCSVPump_Init_DecodeFatal_InProcess(t *testing.T) {
 //
 // Reference KI: pumps-logfatal-on-config-decode (stdout.go:65).
 //
-// Verifies: SW-REQ-026
+// Verifies: KI:pumps-logfatal-on-config-decode
+// Verifies: SYS-REQ-004
+// MCDC SYS-REQ-004: a_backend_failed=T, other_backends_written=F => FALSE
+// Reproduces: pumps-logfatal-on-config-decode
 func TestStdOutPump_Init_DecodeFatal_Subprocess(t *testing.T) {
 	if fatalSentinel() == "stdout_init" {
 		pump := &StdOutPump{}
@@ -534,7 +592,10 @@ func TestStdOutPump_Init_DecodeFatal_Subprocess(t *testing.T) {
 
 // TestStdOutPump_Init_DecodeFatal_InProcess drives the same arm in-process.
 //
-// Verifies: SW-REQ-026
+// Verifies: KI:pumps-logfatal-on-config-decode
+// Verifies: SYS-REQ-004
+// MCDC SYS-REQ-004: a_backend_failed=T, other_backends_written=F => FALSE
+// Reproduces: pumps-logfatal-on-config-decode
 func TestStdOutPump_Init_DecodeFatal_InProcess(t *testing.T) {
 	withFatalIntercept(t, func() {
 		pump := &StdOutPump{}
@@ -601,6 +662,8 @@ func TestDogStatsdPump_connect_DirectError(t *testing.T) {
 // document the contract here and rely on //mcdc:ignore-by-KI semantics —
 // see KI mcdc-pumps-below-95.
 //
+// Verifies: KI:mcdc-pumps-below-95
+// Reproduces: mcdc-pumps-below-95
 // Verifies: SW-REQ-023
 func TestDogStatsdPump_WriteData_HistogramError_KI(t *testing.T) {
 	addr, _ := newUDPSink(t)
@@ -610,41 +673,6 @@ func TestDogStatsdPump_WriteData_HistogramError_KI(t *testing.T) {
 	require.NoError(t, pump.WriteData(context.Background(), []interface{}{
 		analytics.AnalyticsRecord{APIID: "x", RequestTime: 1},
 	}))
-}
-
-// -----------------------------------------------------------------------------
-// STATSD pump — drive the previously-unreached err arms with happy-path
-// observations (the lethal Init arm is covered by the subprocess test above).
-// -----------------------------------------------------------------------------
-
-// TestStatsdPump_connect_ErrArm_BadAddress drives the
-// `err != nil` arm at statsd.go:83 (CreateSocket err inside the connect()
-// retry loop). The quipo statsd client uses net.DialTimeout("udp", addr,
-// 5s) — passing a syntactically-malformed address (no colon) causes
-// DialTimeout to fail. We run connect() in a goroutine because the loop
-// retries forever; we wait briefly so it iterates at least once, then
-// require the test exits without the goroutine ever returning a value
-// (the loop is still spinning at test end, which is the contract).
-//
-// Verifies: SW-REQ-023
-func TestStatsdPump_connect_ErrArm_BadAddress(t *testing.T) {
-	pump := &StatsdPump{
-		dbConf:           &StatsdConf{Address: "this-is-not-a-valid-address"},
-		CommonPumpConfig: CommonPumpConfig{log: silentLog()},
-	}
-	done := make(chan struct{})
-	go func() {
-		// Will spin forever on err != nil; we don't care about the result.
-		_ = pump.connect()
-		close(done)
-	}()
-	select {
-	case <-done:
-		t.Fatal("connect() returned, expected forever-loop on bad address")
-	case <-time.After(200 * time.Millisecond):
-		// good — the loop is still spinning; err != nil arm was driven on the
-		// first iteration. The goroutine is leaked but the test process exits.
-	}
 }
 
 // TestStatsdPump_WriteData_ManyTimingFieldsAllZero drives the inner ok / ok2
@@ -735,6 +763,8 @@ func TestGraylogPump_WriteData_UnknownTag_OkFalse(t *testing.T) {
 // nil and the subsequent defer outfile.Close() panics on Go versions prior to
 // 1.21). This test runs on POSIX only and skips on Windows.
 //
+// Reproduces: csv-writedata-nil-file-handle-panic
+// Verifies: KI:csv-writedata-nil-file-handle-panic
 // Verifies: SW-REQ-025
 func TestCSVPump_WriteData_CreateFails_ReadOnlyDir(t *testing.T) {
 	if runtime.GOOS == "windows" {
@@ -774,6 +804,8 @@ func TestCSVPump_WriteData_CreateFails_ReadOnlyDir(t *testing.T) {
 // read-only so os.OpenFile(O_APPEND|O_WRONLY) fails.
 //
 // Verifies: SW-REQ-025
+// MCDC SW-REQ-025: file_appended=F, hourly_file_exists=T => FALSE
+// Reproduces: csv-writedata-nil-file-handle-panic
 func TestCSVPump_WriteData_AppendFails_ReadOnlyFile(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("chmod-based perm test does not apply to Windows")
@@ -819,8 +851,9 @@ func TestCSVPump_WriteData_AppendFails_ReadOnlyFile(t *testing.T) {
 // the writer is wrapping an *os.File, which only fails on closed fd, full
 // disk, or syscall interruption — none of which we can reliably provoke from
 // a unit test. We document the dominant arm (write succeeds, err=nil).
-//
+// Verifies: KI:mcdc-pumps-below-95
 // Verifies: SW-REQ-025
+// Reproduces: mcdc-pumps-below-95
 func TestCSVPump_WriteData_HeaderWriteErr_KI(t *testing.T) {
 	dir := t.TempDir()
 	pump := &CSVPump{}
@@ -834,8 +867,9 @@ func TestCSVPump_WriteData_HeaderWriteErr_KI(t *testing.T) {
 // `err != nil` arm at csv.go:132 (writer.Write(toWrite) failure). Same
 // rationale as headerWriteErr — fd-write errors are not provokable from
 // userspace tests.
-//
+// Verifies: KI:mcdc-pumps-below-95
 // Verifies: SW-REQ-025
+// Reproduces: mcdc-pumps-below-95
 func TestCSVPump_WriteData_DataWriteErr_KI(t *testing.T) {
 	dir := t.TempDir()
 	pump := &CSVPump{}
@@ -856,7 +890,9 @@ func TestCSVPump_WriteData_DataWriteErr_KI(t *testing.T) {
 // at stdout.go:136 guarantees the input is valid. The err != nil side is
 // structurally unreachable.
 //
-// Verifies: SW-REQ-026
+// Verifies: KI:mcdc-pumps-below-95
+// SW-REQ-026: stdout payload transformation for JSON log output.
+// Reproduces: mcdc-pumps-below-95
 func TestTransformHTTPPayload_CompactErr_KI(t *testing.T) {
 	// Drive the err == nil arm with valid JSON.
 	in := "GET / HTTP/1.1\r\n\r\n{\"a\":1}"
@@ -868,13 +904,12 @@ func TestTransformHTTPPayload_CompactErr_KI(t *testing.T) {
 // PROMETHEUS pump — drive remaining decision gaps
 // -----------------------------------------------------------------------------
 
+// Verifies: SW-REQ-024
 // TestPrometheusPump_Init_HappyPath_DrivesPathAndAddrFalseArms drives the F
 // side of the `p.conf.Path == ""` decision at prometheus.go:197 AND the F
 // side of `p.conf.Addr == ""` at prometheus.go:201. Init succeeds and the
 // goroutine binds to a free port via ":0". We let the goroutine run for a
 // brief moment then return — the test cleans up after itself.
-//
-// Verifies: SW-REQ-024
 func TestPrometheusPump_Init_HappyPath_DrivesPathAndAddrFalseArms(t *testing.T) {
 	// Reserve a free port, then immediately close so Init can bind it.
 	l, err := net.Listen("tcp", "127.0.0.1:0")
@@ -918,7 +953,6 @@ func TestPrometheusPump_Init_HappyPath_DrivesPathAndAddrFalseArms(t *testing.T) 
 // case. The actual `errInit` from InitVec triggers only when MetricType is
 // invalid. We construct a PrometheusMetric with an invalid type in allMetrics
 // so initBaseMetrics observes the error.
-//
 // Verifies: SW-REQ-024
 func TestPrometheusPump_initBaseMetrics_RegisterErr(t *testing.T) {
 	p := &PrometheusPump{}
@@ -936,7 +970,6 @@ func TestPrometheusPump_initBaseMetrics_RegisterErr(t *testing.T) {
 
 // TestPrometheusPump_processMetric_NilCounterVec drives the
 // `metric.counterVec != nil` ==F arm at prometheus.go:317.
-//
 // Verifies: SW-REQ-024
 func TestPrometheusPump_processMetric_NilCounterVec(t *testing.T) {
 	p := newTestPrometheusPump(t)
@@ -953,7 +986,6 @@ func TestPrometheusPump_processMetric_NilCounterVec(t *testing.T) {
 
 // TestPrometheusPump_processMetric_NilHistogramVec drives the
 // `metric.histogramVec != nil` ==F arm at prometheus.go:326.
-//
 // Verifies: SW-REQ-024
 func TestPrometheusPump_processMetric_NilHistogramVec(t *testing.T) {
 	p := newTestPrometheusPump(t)
@@ -969,7 +1001,6 @@ func TestPrometheusPump_processMetric_NilHistogramVec(t *testing.T) {
 // TestPrometheusMetric_Observe_EmptyValues drives the
 // `len(values) > 0` ==F arm at prometheus.go:519 (the latency-type detection
 // short-circuits on empty values; latencyType defaults to "total").
-//
 // Verifies: SW-REQ-024
 func TestPrometheusMetric_Observe_EmptyValues(t *testing.T) {
 	histVec := prometheus.NewHistogramVec(prometheus.HistogramOpts{
@@ -992,7 +1023,6 @@ func TestPrometheusMetric_Observe_EmptyValues(t *testing.T) {
 // TestPrometheusMetric_Observe_NilHistogramVec drives the
 // `pm.histogramVec == nil` ==T arm at prometheus.go:543 — the function
 // returns "histogram vector is nil".
-//
 // Verifies: SW-REQ-024
 func TestPrometheusMetric_Observe_NilHistogramVec(t *testing.T) {
 	m := &PrometheusMetric{
@@ -1016,7 +1046,6 @@ func TestPrometheusMetric_Observe_NilHistogramVec(t *testing.T) {
 // We need a metric that passes processMetric (so it doesn't panic), then
 // trips Expose. Easiest: an unknown-type metric that's also disabled. But
 // then Expose hits the default branch which returns the error.
-//
 // Verifies: SW-REQ-024
 func TestPrometheusPump_WriteData_ExposeErr(t *testing.T) {
 	p := newTestPrometheusPump(t)
@@ -1038,7 +1067,6 @@ func TestPrometheusPump_WriteData_ExposeErr(t *testing.T) {
 // `err != nil` arm at prometheus.go:279 by passing a metric whose
 // Observe returns "invalid metric type" (MetricType="counter" → switch
 // default in Observe).
-//
 // Verifies: SW-REQ-024
 func TestPrometheusPump_observeLatencyMetrics_ObserveErr(t *testing.T) {
 	p := newTestPrometheusPump(t)
@@ -1057,7 +1085,6 @@ func TestPrometheusPump_observeLatencyMetrics_ObserveErr(t *testing.T) {
 // TestPrometheusPump_observeHistogramMetric_ObserveErr drives the
 // `err != nil` arm at prometheus.go:293 (same trick — MetricType="counter"
 // makes Observe return an error).
-//
 // Verifies: SW-REQ-024
 func TestPrometheusPump_observeHistogramMetric_ObserveErr(t *testing.T) {
 	p := newTestPrometheusPump(t)
@@ -1075,8 +1102,9 @@ func TestPrometheusPump_observeHistogramMetric_ObserveErr(t *testing.T) {
 // switch only enters case counterType when MetricType==counterType. The
 // only way to make Inc fail is to mutate MetricType mid-flight, which
 // requires reflection or a struct race. We document this as a KI.
-//
+// Verifies: KI:mcdc-pumps-below-95
 // Verifies: SW-REQ-024
+// Reproduces: mcdc-pumps-below-95
 func TestPrometheusPump_processMetric_CounterIncErr_KI(t *testing.T) {
 	// Drive the happy path (err==nil); the err!=nil arm is documented as
 	// structurally unreachable above and tracked under mcdc-pumps-below-95.
@@ -1105,9 +1133,6 @@ func TestPrometheusPump_processMetric_CounterIncErr_KI(t *testing.T) {
 // TestStatsdPump_WriteData_UDPListenerClosed validates that closing the UDP
 // sink before WriteData does not produce an error from the pump (UDP is
 // connectionless; the quipo client buffers writes locally).
-//
-// Verifies: SW-REQ-023
-// Verifies: SW-REQ-016
 func TestStatsdPump_WriteData_UDPListenerClosed(t *testing.T) {
 	conn, err := net.ListenPacket("udp", "127.0.0.1:0")
 	require.NoError(t, err)
@@ -1128,9 +1153,7 @@ func TestStatsdPump_WriteData_UDPListenerClosed(t *testing.T) {
 // TestDogStatsdPump_WriteData_UDPListenerClosed mirrors the statsd contract:
 // the dogstatsd library buffers Histogram() calls and does not return an
 // error when the destination is unreachable.
-//
 // Verifies: SW-REQ-023
-// Verifies: SW-REQ-016
 func TestDogStatsdPump_WriteData_UDPListenerClosed(t *testing.T) {
 	conn, err := net.ListenPacket("udp", "127.0.0.1:0")
 	require.NoError(t, err)

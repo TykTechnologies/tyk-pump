@@ -260,7 +260,6 @@ func TestCSVPump_WriteData(t *testing.T) {
 	}
 }
 
-// Verifies: SW-REQ-025
 func GetFileAndRows(fname string) (*os.File, int, error) {
 	// checking if the file exists
 	openfile, err := os.Open("./testingDirectory/" + fname)

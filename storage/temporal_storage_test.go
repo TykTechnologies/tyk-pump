@@ -44,6 +44,11 @@ var testData = []struct {
 // Verifies: SW-REQ-006
 // Verifies: SYS-REQ-007
 // Verifies: INT-REQ-005
+// SYS-REQ-007:atomicity:nominal
+// SW-REQ-006:atomicity:nominal
+// MCDC SW-REQ-006: chunk_partial=F, records_popped_and_expire_attempted=F, records_present=T => TRUE
+// MCDC SW-REQ-006: chunk_partial=T, records_popped_and_expire_attempted=F, records_present=F => TRUE
+// MCDC SW-REQ-006: chunk_partial=T, records_popped_and_expire_attempted=T, records_present=T => TRUE
 // MCDC INT-REQ-005: GetAndDeleteSet_invoked=F, storage_records_popped_and_expire_attempted=F => TRUE
 // MCDC INT-REQ-005: GetAndDeleteSet_invoked=T, storage_records_popped_and_expire_attempted=F => FALSE
 // MCDC INT-REQ-005: GetAndDeleteSet_invoked=T, storage_records_popped_and_expire_attempted=T => TRUE
@@ -118,7 +123,9 @@ func TestRedisClusterStorageManager_GetAndDeleteSet(t *testing.T) {
 	}
 }
 
-// Verifies: SW-REQ-006
+// Verifies: SW-REQ-007
+// SW-REQ-007:nominal:nominal
+// MCDC SW-REQ-007: connect_err=F, connection_retried_with_bounded_backoff=F => TRUE
 func TestNewTemporalClusterStorageHandler(t *testing.T) {
 	host, port := redisHostPort(t)
 	testCases := []struct {
@@ -170,13 +177,9 @@ func TestNewTemporalClusterStorageHandler(t *testing.T) {
 	}
 }
 
-// Verifies: SW-REQ-006
 // Verifies: SW-REQ-007
-// Verifies: SYS-REQ-007
-// SYS-REQ-007:atomicity:negative
-// MCDC SYS-REQ-007: records_consumed=F, records_removed_once=F => TRUE
-// MCDC SYS-REQ-007: records_consumed=T, records_removed_once=F => FALSE
-// MCDC SYS-REQ-007: records_consumed=T, records_removed_once=T => TRUE
+// MCDC SW-REQ-007: connect_err=F, connection_retried_with_bounded_backoff=F => TRUE
+// MCDC SW-REQ-007: connect_err=T, connection_retried_with_bounded_backoff=T => TRUE
 //
 // ensureConnection guards the pop-and-expire pipeline. When the connection is already
 // established (TRUE sub-case) GetAndDeleteSet proceeds without re-init (records_consumed=T,
@@ -208,14 +211,16 @@ func TestTemporalStorageHandler_ensureConnection(t *testing.T) {
 	})
 
 	t.Run("Connection dropped, reconnecting", func(t *testing.T) {
-		connectorSingleton = nil
+		resetSingletonForTest(t)
 		err := r.ensureConnection()
 		assert.NoError(t, err, "Expected no error when reconnecting")
 		assert.NotNil(t, connectorSingleton, "Expected connectorSingleton not to be nil after reconnecting")
 	})
 }
 
-// Verifies: SW-REQ-006
+// Verifies: SW-REQ-007
+// SW-REQ-007:nominal:nominal
+// MCDC SW-REQ-007: connect_err=F, connection_retried_with_bounded_backoff=F => TRUE
 func TestTemporalStorageHandler_SetKey(t *testing.T) {
 	host, port := redisHostPort(t)
 	conf := make(map[string]interface{})
@@ -255,7 +260,7 @@ func TestTemporalStorageHandler_SetKey(t *testing.T) {
 	}
 }
 
-// Verifies: SW-REQ-006
+// SW-REQ-007:nominal:nominal
 func TestTemporalStorageHandler_GetName(t *testing.T) {
 	host, port := redisHostPort(t)
 	conf := make(map[string]interface{})
@@ -283,7 +288,10 @@ func TestTemporalStorageHandler_GetName(t *testing.T) {
 	}
 }
 
-// Verifies: SW-REQ-006
+// Verifies: SW-REQ-007
+// SW-REQ-007:nominal:nominal
+// SW-REQ-007:error_handling:negative
+// MCDC SW-REQ-007: connect_err=F, connection_retried_with_bounded_backoff=F => TRUE
 func TestTemporalStorageHandler_Init(t *testing.T) {
 	host, port := redisHostPort(t)
 	testCases := []struct {

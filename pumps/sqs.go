@@ -99,7 +99,7 @@ func (s *SQSPump) Init(config interface{}) error {
 	s.log = log.WithField("prefix", SQSPrefix)
 
 	err := mapstructure.Decode(config, &s.SQSConf)
-	if err != nil { //mcdc:ignore log.Fatal exits the process; cannot be unit-tested without crashing — KI pumps-logfatal-on-config-decode
+	if err != nil { //mcdc:ignore:capability-gap log.Fatal exits the process; cannot be unit-tested without crashing — KI pumps-logfatal-on-config-decode [ki: pumps-logfatal-on-config-decode]
 		s.log.Fatal("Failed to decode configuration: ", err)
 		return err
 	}
@@ -107,7 +107,7 @@ func (s *SQSPump) Init(config interface{}) error {
 	processPumpEnvVars(s, s.log, s.SQSConf, SQSDefaultENV)
 
 	s.SQSClient, err = s.NewSQSPublisher()
-	if err != nil { //mcdc:ignore log.Fatal exits the process; NewSQSPublisher's err arm is itself unreachable (see NewSQSPublisher mcdc:ignore) so this is dead-code-on-dead-code — KI pumps-logfatal-on-config-decode
+	if err != nil { //mcdc:ignore:capability-gap log.Fatal exits the process; NewSQSPublisher's err arm is itself unreachable (see NewSQSPublisher mcdc:ignore) so this is dead-code-on-dead-code — KI pumps-logfatal-on-config-decode [ki: pumps-logfatal-on-config-decode]
 		s.log.Fatal("Failed to create sqs client: ", err)
 		return err
 	}
@@ -117,7 +117,7 @@ func (s *SQSPump) Init(config interface{}) error {
 	}
 
 	result, err := s.SQSClient.GetQueueUrl(context.TODO(), gQInput)
-	if err != nil { //mcdc:ignore err=T arm requires a live AWS SQS endpoint returning an error after NewSQSPublisher (itself unreachable in unit tests — see annotated NewSQSPublisher); driving this from a unit test requires injecting a fake *sqs.Client which the current pump signature doesn't expose. KI mcdc-pumps-below-95.
+	if err != nil { //mcdc:ignore:capability-gap err=T arm requires a live AWS SQS endpoint returning an error after NewSQSPublisher (itself unreachable in unit tests — see annotated NewSQSPublisher); driving this from a unit test requires injecting a fake *sqs.Client which the current pump signature doesn't expose. KI mcdc-pumps-below-95. [ki: mcdc-pumps-below-95]
 		return err
 	}
 	s.SQSQueueURL = result.QueueUrl
@@ -140,7 +140,7 @@ func (s *SQSPump) WriteData(ctx context.Context, data []interface{}) error {
 			continue
 		}
 		decodedMessageByteArray, err := json.Marshal(decoded)
-		if err != nil { //mcdc:ignore json.Marshal on an analytics.AnalyticsRecord (all JSON-encodable fields) cannot fail in practice. KI mcdc-pumps-below-95.
+		if err != nil { //mcdc:ignore:defensive json.Marshal on an analytics.AnalyticsRecord (all JSON-encodable fields) cannot fail in practice. KI mcdc-pumps-below-95.
 			s.log.Errorf("Unable to marshal message: %v", err)
 			continue
 		}
@@ -201,7 +201,7 @@ func (s *SQSPump) NewSQSPublisher() (c *sqs.Client, err error) {
 	cfg, err := config.LoadDefaultConfig(context.TODO(),
 		config.WithRegion(s.SQSConf.AWSRegion),
 	)
-	if err != nil { //mcdc:ignore aws-sdk-go-v2 config.LoadDefaultConfig only fails on filesystem/credential-file errors in extremely degraded environments; the err arm cannot be deterministically driven from a Go unit test without mutating the global filesystem. KI mcdc-pumps-below-95.
+	if err != nil { //mcdc:ignore:capability-gap aws-sdk-go-v2 config.LoadDefaultConfig only fails on filesystem/credential-file errors in extremely degraded environments; the err arm cannot be deterministically driven from a Go unit test without mutating the global filesystem. KI mcdc-pumps-below-95. [ki: mcdc-pumps-below-95]
 		return nil, err
 	}
 

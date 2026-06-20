@@ -1,7 +1,7 @@
 # SW-REQ-074: Prometheus API-key label masking (DEFECT-5 hardening)
 
-> Numbering note: this requirement was first authored under a high
-> placeholder id (in the 209 range) during the DEFECT-5 hardening loop and
+> Numbering note: this requirement was first authored under a temporary
+> high-range id (in the 209 range) during the DEFECT-5 hardening loop and
 > renumbered to SW-REQ-074 to close the 074–208 numbering gap (the ids are
 > now contiguous 001–074). All trace links, code annotations, MC/DC
 > witnesses, and the DEFECT-5 problem report were updated to SW-REQ-074;

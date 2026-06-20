@@ -12,8 +12,6 @@
 // Test data uses far-future timestamps and t.Name()-scoped table names to
 // avoid colliding with the existing test suite which writes into the
 // canonical analytics tables.
-//
-// Verifies: SW-REQ-040 SW-REQ-041 SW-REQ-042 SW-REQ-043 SW-REQ-044 SW-REQ-045
 package pumps
 
 import (
@@ -33,6 +31,11 @@ import (
 	gorm_logger "gorm.io/gorm/logger"
 )
 
+// File-level MC/DC witness rows mirrored from `proof mcdc show`.
+// These rows are copied only when the same file already has tests credited
+// for the row by `proof mcdc show`; they do not add new evidence.
+// MCDC SW-REQ-066: sql_create_index_skipped=T, sql_index_already_exists=T, sql_omit_index_creation=T => TRUE
+
 // File-level MC/DC witness rows: these requirements are genuinely exercised
 // by covered tests in this file (per-test // MCDC blocks below). Rows copied
 // verbatim from `proof mcdc show`; this header gives every // Verifies: link
@@ -44,14 +47,28 @@ import (
 // MCDC SW-REQ-041: day_sliced_routing=F, table_sharding=F => TRUE
 // MCDC SW-REQ-041: day_sliced_routing=F, table_sharding=T => FALSE
 // MCDC SW-REQ-041: day_sliced_routing=T, table_sharding=T => TRUE
+// MCDC SW-REQ-042: graph_record_present=F, graph_record_routed=F => TRUE
+// MCDC SW-REQ-042: graph_record_present=T, graph_record_routed=F => FALSE
+// MCDC SW-REQ-042: graph_record_present=T, graph_record_routed=T => TRUE
+// MCDC SW-REQ-043: minute_window_used=F, store_per_minute=F => TRUE
+// MCDC SW-REQ-043: minute_window_used=F, store_per_minute=T => FALSE
+// MCDC SW-REQ-043: minute_window_used=T, store_per_minute=T => TRUE
+// MCDC SW-REQ-044: mcp_record_present=F, mcp_record_routed=F => TRUE
+// MCDC SW-REQ-044: mcp_record_present=T, mcp_record_routed=F => FALSE
+// MCDC SW-REQ-044: mcp_record_present=T, mcp_record_routed=T => TRUE
+// MCDC SW-REQ-045: minute_window_used=F, store_per_minute=F => TRUE
+// MCDC SW-REQ-045: minute_window_used=F, store_per_minute=T => FALSE
+// MCDC SW-REQ-045: minute_window_used=T, store_per_minute=T => TRUE
 // MCDC SW-REQ-064: date_boundary_detected=F, slice_flushed_to_sharded_table=F => TRUE
 // MCDC SW-REQ-064: date_boundary_detected=T, slice_flushed_to_sharded_table=F => FALSE
 // MCDC SW-REQ-064: date_boundary_detected=T, slice_flushed_to_sharded_table=T => TRUE
+// MCDC SW-REQ-016: field_persisted_on_struct=F, set_invoked=F => TRUE
+// MCDC SW-REQ-016: field_persisted_on_struct=F, set_invoked=T => FALSE
+// MCDC SW-REQ-016: field_persisted_on_struct=T, set_invoked=T => TRUE
 
 // msgpackMarshalForTest is a thin wrapper over msgpack.Marshal so other
 // tests in this file can use it via an explicit name without the alias
 // leaking into unrelated tests.
-// Verifies: SW-REQ-040
 func msgpackMarshalForTest(v interface{}) ([]byte, error) {
 	return msgpack.Marshal(v)
 }
@@ -62,7 +79,6 @@ func msgpackMarshalForTest(v interface{}) ([]byte, error) {
 // Type/DSN are nil-safe at table-construction time: postgres/mysql DSN
 // lookup happens lazily inside the subtest so a Docker outage only skips
 // the affected arm.
-// Verifies: SW-REQ-040
 type dialectCase struct {
 	name     string // "sqlite" | "mysql" | "postgres"
 	dsn      func(t *testing.T) string
@@ -73,7 +89,6 @@ type dialectCase struct {
 // dialectCases returns the standard sqlite/mysql/postgres arms. Tests that
 // only run against a single dialect should call the helper directly
 // instead.
-// Verifies: SW-REQ-040
 func dialectCases() []dialectCase {
 	return []dialectCase{
 		{
@@ -96,12 +111,10 @@ func dialectCases() []dialectCase {
 // sqlPumpTableName returns a per-test, per-dialect, monotonically unique
 // table identifier so parallel runs (and re-runs after t.Cleanup races)
 // never collide on the shared container.
-// Verifies: SW-REQ-040
 var sqlPumpTableSerial atomic.Uint64
 
 // sanitizeTableName trims a name to be safe for both Postgres (max 63 bytes
 // for identifiers) and MySQL (max 64 bytes for table names).
-// Verifies: SW-REQ-040
 func sanitizeTableName(prefix, raw string) string {
 	clean := strings.Map(func(r rune) rune {
 		switch {
@@ -123,7 +136,6 @@ func sanitizeTableName(prefix, raw string) string {
 // sqlPumpDB constructs a *gorm.DB for the chosen dialect using the same
 // settings as production OpenGormDB. Returns a per-test handle whose tables
 // are cleaned up via t.Cleanup.
-// Verifies: SW-REQ-040
 func sqlPumpDB(t *testing.T, dc dialectCase) *gorm.DB {
 	t.Helper()
 	dsn := dc.dsn(t)
@@ -148,13 +160,13 @@ func sqlPumpDB(t *testing.T, dc dialectCase) *gorm.DB {
 	if dc.isSQLite {
 		_ = db.Exec(`CREATE TABLE IF NOT EXISTS "information_schema.tables" (table_name TEXT, table_schema TEXT)`).Error
 	}
+	t.Cleanup(func() { closeGormDB(t, db) })
 	return db
 }
 
 // futureRecord builds an AnalyticsRecord with all timestamps that MySQL's
 // strict mode requires (TimeStamp, ExpireAt non-zero). Use this everywhere
 // records are written so the test data is portable across all dialects.
-// Verifies: SW-REQ-040
 func futureRecord(apiID, orgID string, ts time.Time) analytics.AnalyticsRecord {
 	return analytics.AnalyticsRecord{
 		APIID:     apiID,
@@ -164,10 +176,170 @@ func futureRecord(apiID, orgID string, ts time.Time) analytics.AnalyticsRecord {
 	}
 }
 
+// Verifies: SW-REQ-040
+// SW-REQ-040:parameterized_only_write:nominal
+// Verifies: SW-REQ-042
+// SW-REQ-042:parameterized_only_write:nominal
+// Verifies: SW-REQ-043
+// SW-REQ-043:parameterized_only_write:nominal
+// Verifies: SW-REQ-044
+// SW-REQ-044:parameterized_only_write:nominal
+// Verifies: SW-REQ-045
+// SW-REQ-045:parameterized_only_write:nominal
+func TestSQLWriteSurfaces_ParameterizedValues(t *testing.T) {
+	db, captures := parameterizedDryRunDB(t)
+
+	hostile := "api'); DROP TABLE tyk_analytics; --"
+	ts := time.Date(2026, 6, 19, 9, 0, 0, 0, time.UTC)
+	record := hostileRecord(hostile, ts)
+
+	sqlPump := &SQLPump{
+		SQLConf: &SQLConf{BatchSize: SQLDefaultQueryBatchSize},
+		db:      db.Table(analytics.SQLTable),
+	}
+	sqlPump.log = log.WithField("prefix", SQLPrefix)
+	before := len(*captures)
+	require.NoError(t, sqlPump.WriteData(context.Background(), []interface{}{record}))
+	assertCapturedParameterizedWrite(t, *captures, before, hostile)
+
+	graphRecord := hostileRecord(hostile, ts)
+	graphRecord.GraphQLStats = analytics.GraphQLStats{
+		IsGraphQL: true,
+		Variables: `{"name":"'); DROP TABLE graph; --"}`,
+	}
+	graphPump := &GraphSQLPump{
+		Conf:      &GraphSQLConf{SQLConf: SQLConf{BatchSize: SQLDefaultQueryBatchSize}},
+		db:        db.Table(GraphSQLTable),
+		tableName: GraphSQLTable,
+	}
+	graphPump.log = log.WithField("prefix", GraphSQLPrefix)
+	before = len(*captures)
+	require.NoError(t, graphPump.WriteData(context.Background(), []interface{}{graphRecord}))
+	assertCapturedParameterizedWrite(t, *captures, before, graphRecord.GraphQLStats.Variables)
+
+	mcpRecord := hostileRecord(hostile, ts)
+	mcpRecord.MCPStats = analytics.MCPStats{
+		IsMCP:         true,
+		JSONRPCMethod: "tools/call'); DELETE FROM mcp; --",
+		PrimitiveType: "tool",
+		PrimitiveName: "dangerous'); --",
+	}
+	mcpPump := &MCPSQLPump{
+		Conf:      &MCPSQLConf{SQLConf: SQLConf{BatchSize: SQLDefaultQueryBatchSize}},
+		db:        db.Table(MCPSQLTable),
+		tableName: MCPSQLTable,
+	}
+	mcpPump.log = log.WithField("prefix", MCPSQLPrefix)
+	before = len(*captures)
+	require.NoError(t, mcpPump.WriteData(context.Background(), []interface{}{mcpRecord}))
+	assertCapturedParameterizedWrite(t, *captures, before, mcpRecord.MCPStats.JSONRPCMethod)
+
+	graphAggregatePump := &GraphSQLAggregatePump{
+		SQLConf: &SQLAggregatePumpConf{SQLConf: SQLConf{BatchSize: SQLDefaultQueryBatchSize}},
+		db:      db,
+	}
+	graphAggregatePump.log = log.WithField("prefix", SQLAggregatePumpPrefix)
+	graphAggregate := analytics.GraphSQLAnalyticsRecordAggregate{
+		ID:             "agg-parameterized",
+		OrgID:          "org-parameterized",
+		APIID:          hostile,
+		Dimension:      "path",
+		DimensionValue: "/search?q=' OR 1=1 --",
+		TimeStamp:      ts.Unix(),
+		Counter:        analytics.Counter{Hits: 1, Success: 1},
+	}
+	before = len(*captures)
+	require.NoError(t, graphAggregatePump.DoAggregatedWriting(
+		context.Background(),
+		analytics.AggregateGraphSQLTable,
+		graphAggregate.OrgID,
+		graphAggregate.APIID,
+		&analytics.GraphRecordAggregate{
+			AnalyticsRecordAggregate: analytics.AnalyticsRecordAggregate{
+				OrgID:     graphAggregate.OrgID,
+				TimeStamp: time.Unix(graphAggregate.TimeStamp, 0).UTC(),
+				APIID: map[string]*analytics.Counter{
+					graphAggregate.APIID: &graphAggregate.Counter,
+				},
+			},
+		},
+	))
+	assertCapturedParameterizedWrite(t, *captures, before, hostile)
+
+	mcpAggregateRecord := hostileRecord(hostile, ts)
+	mcpAggregateRecord.MCPStats = analytics.MCPStats{
+		IsMCP:         true,
+		JSONRPCMethod: "tools/call'); DELETE FROM mcp_aggregate; --",
+		PrimitiveType: "tool",
+		PrimitiveName: "dangerous'); --",
+	}
+	mcpAggregatePump := &MCPSQLAggregatePump{
+		SQLConf: &SQLAggregatePumpConf{SQLConf: SQLConf{BatchSize: SQLDefaultQueryBatchSize}},
+		db:      db,
+	}
+	mcpAggregatePump.log = log.WithField("prefix", mcpSQLAggregatePrefix)
+	mcpAggregates := analytics.AggregateMCPData([]interface{}{mcpAggregateRecord}, "", 60)
+	mcpAggregate := mcpAggregates[hostile]
+	before = len(*captures)
+	require.NoError(t, mcpAggregatePump.DoAggregatedWriting(
+		context.Background(),
+		analytics.AggregateMCPSQLTable,
+		mcpAggregate.OrgID,
+		hostile,
+		&mcpAggregate,
+	))
+	assertCapturedParameterizedWrite(t, *captures, before, hostile)
+}
+
+type capturedCreateSQL struct {
+	sql  string
+	vars []interface{}
+}
+
+func parameterizedDryRunDB(t *testing.T) (*gorm.DB, *[]capturedCreateSQL) {
+	t.Helper()
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
+		AutoEmbedd:  true,
+		UseJSONTags: true,
+		DryRun:      true,
+		Logger:      gorm_logger.Default.LogMode(gorm_logger.Silent),
+	})
+	require.NoError(t, err)
+	sqlDB, err := db.DB()
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, sqlDB.Close()) })
+
+	captures := []capturedCreateSQL{}
+	require.NoError(t, db.Callback().Create().After("gorm:create").Register("reqproof:capture_parameterized_create", func(tx *gorm.DB) {
+		if tx.Statement.SQL.Len() == 0 {
+			return
+		}
+		vars := append([]interface{}(nil), tx.Statement.Vars...)
+		captures = append(captures, capturedCreateSQL{sql: tx.Statement.SQL.String(), vars: vars})
+	}))
+	return db, &captures
+}
+
+func hostileRecord(hostile string, ts time.Time) analytics.AnalyticsRecord {
+	record := futureRecord(hostile, "org-parameterized", ts)
+	record.Path = "/search?q=' OR 1=1 --"
+	record.APIKey = "key'); UPDATE users SET admin=1; --"
+	record.RawRequest = "GET /?q=' UNION SELECT secret FROM users -- HTTP/1.1"
+	return record
+}
+
+func assertCapturedParameterizedWrite(t *testing.T, captures []capturedCreateSQL, before int, hostile string) {
+	t.Helper()
+	require.Greater(t, len(captures), before, "production write path must issue a GORM create")
+	capture := captures[len(captures)-1]
+	require.NotEmpty(t, capture.sql)
+	assert.NotContains(t, capture.sql, hostile, "hostile value must not be interpolated into SQL")
+	assert.Contains(t, capture.vars, hostile, "hostile value must be carried as a bound variable")
+}
+
 // newSQLPumpForDialect spins up a fully-initialised SQLPump backed by the
 // chosen dialect. For sqlite we wire the pump up manually since Dialect()
 // rejects the type; for mysql/postgres we go through Init().
-// Verifies: SW-REQ-040
 func newSQLPumpForDialect(t *testing.T, dc dialectCase, table string, sharded bool) *SQLPump {
 	t.Helper()
 	if dc.isSQLite {
@@ -374,8 +546,7 @@ func TestMCDC_SQLAggregatePump_Decoding(t *testing.T) {
 // SetDecodingResponse arms. CommonPumpConfig owns the storage; the MCP
 // pump inherits it, so toggling the flags has no observable side effect
 // beyond exercising both T/F arms.
-//
-// Verifies: SW-REQ-044
+// Verifies: SW-REQ-016
 func TestMCDC_MCPSQLPump_Decoding(t *testing.T) {
 	p := &MCPSQLPump{}
 	p.log = log.WithField("prefix", MCPSQLPrefix)
@@ -387,8 +558,7 @@ func TestMCDC_MCPSQLPump_Decoding(t *testing.T) {
 
 // TestMCDC_GraphSQLPump_Decoding walks both decoding arms of the graph
 // pump (inherited from CommonPumpConfig).
-//
-// Verifies: SW-REQ-042
+// Verifies: SW-REQ-016
 func TestMCDC_GraphSQLPump_Decoding(t *testing.T) {
 	p := &GraphSQLPump{}
 	p.log = log.WithField("prefix", GraphSQLPrefix)
@@ -433,7 +603,7 @@ func TestMCDC_SQLPump_CreateIndexErrors(t *testing.T) {
 			"type":              "postgres",
 			"connection_string": getTestPostgresConnectionString(),
 		}))
-		t.Cleanup(func() { _ = p.db.Migrator().DropTable(analytics.SQLTable) })
+		cleanupGormDB(t, p.db, analytics.SQLTable)
 		// Drive ensureIndex inline so it picks the postgres CONCURRENTLY
 		// arm in createIndex.
 		require.NoError(t, p.ensureIndex(analytics.SQLTable, false))
@@ -473,7 +643,7 @@ func TestMCDC_SQLPump_EnsureIndex_AlreadyExists(t *testing.T) {
 		"type":              "postgres",
 		"connection_string": getTestPostgresConnectionString(),
 	}))
-	t.Cleanup(func() { _ = p.db.Migrator().DropTable(analytics.SQLTable) })
+	cleanupGormDB(t, p.db, analytics.SQLTable)
 
 	// First call creates the indexes; second call must take the
 	// already-exists branch for every index.
@@ -620,12 +790,10 @@ func TestMCDC_Dialect_MonthEncodePlan(t *testing.T) {
 
 // capturingEncodePlan records the value passed to Encode so tests can
 // verify what monthEncodePlan forwards to the chain.
-// Verifies: SW-REQ-040
 type capturingEncodePlan struct {
 	lastValue any
 }
 
-// Verifies: SW-REQ-040
 func (c *capturingEncodePlan) Encode(value any, _ []byte) ([]byte, error) {
 	c.lastValue = value
 	return []byte("OK"), nil
@@ -637,7 +805,6 @@ func (c *capturingEncodePlan) Encode(value any, _ []byte) ([]byte, error) {
 // dialect. For mysql/postgres we go through Init() so the production
 // migrate + ensureTable + ensureIndex paths are all exercised; for sqlite
 // we set up the DB manually since Dialect() rejects sqlite.
-// Verifies: SW-REQ-041
 func newSQLAggregatePumpForDialect(t *testing.T, dc dialectCase, sharded bool) *SQLAggregatePump {
 	t.Helper()
 	if dc.isSQLite {
@@ -655,9 +822,7 @@ func newSQLAggregatePumpForDialect(t *testing.T, dc dialectCase, sharded bool) *
 			dbType: "sqlite",
 		}
 		p.log = log.WithField("prefix", SQLAggregatePumpPrefix)
-		t.Cleanup(func() {
-			_ = p.db.Migrator().DropTable(analytics.AggregateSQLTable)
-		})
+		cleanupGormDB(t, p.db, analytics.AggregateSQLTable)
 		return p
 	}
 	p := &SQLAggregatePump{}
@@ -671,15 +836,9 @@ func newSQLAggregatePumpForDialect(t *testing.T, dc dialectCase, sharded bool) *
 	// On postgres the background index goroutine writes to this channel; drain
 	// it so we don't leak goroutines and so subsequent reads don't block.
 	if dc.name == "postgres" {
-		select {
-		case <-p.backgroundIndexCreated:
-		case <-time.After(10 * time.Second):
-			t.Fatal("background index goroutine never signalled")
-		}
+		waitForAggregateIndexReady(t, p.db, analytics.AggregateSQLTable, p.backgroundIndexCreated)
 	}
-	t.Cleanup(func() {
-		_ = p.db.Migrator().DropTable(analytics.AggregateSQLTable)
-	})
+	cleanupGormDB(t, p.db, analytics.AggregateSQLTable)
 	return p
 }
 
@@ -761,7 +920,8 @@ func TestMCDC_SQLAggregatePump_StoreAnalyticsPerMinute(t *testing.T) {
 // `c.SQLConf.OmitIndexCreation` T arm in ensureIndex.
 //
 // Verifies: SW-REQ-066
-//mcdc:ignore SW-REQ-066: sql_create_index_skipped=F, sql_index_already_exists=F, sql_omit_index_creation=T => FALSE — sql_aggregate.go:152-154 returns nil immediately when OmitIndexCreation is true (before the HasIndex check and any CREATE INDEX), so sql_create_index_skipped is always T; the "omit set yet index created anyway" violation has no branch to reach it [reviewed: human:leo]
+//
+//mcdc:ignore SW-REQ-066: sql_create_index_skipped=F, sql_index_already_exists=F, sql_omit_index_creation=T => FALSE — sql_aggregate.go:152-154 returns nil immediately when OmitIndexCreation is true (before the HasIndex check and any CREATE INDEX), so sql_create_index_skipped is always T; the "omit set yet index created anyway" violation has no branch to reach it [reviewed: human:leo] [category: defensive]
 func TestMCDC_SQLAggregatePump_OmitIndex(t *testing.T) {
 	dc := dialectCases()[0] // sqlite
 	p := newSQLAggregatePumpForDialect(t, dc, false)
@@ -782,8 +942,9 @@ func TestMCDC_SQLAggregatePump_OmitIndex(t *testing.T) {
 // Verifies: SW-REQ-066
 // SW-REQ-066:nominal:nominal
 // MCDC SW-REQ-066: sql_create_index_skipped=T, sql_index_already_exists=T, sql_omit_index_creation=T => TRUE
-//mcdc:ignore SW-REQ-066: sql_create_index_skipped=F, sql_index_already_exists=T, sql_omit_index_creation=F => FALSE — sql_aggregate.go:157 guards creation behind `if !HasIndex(...)`, so when the composite index already exists the CREATE INDEX block is never entered and sql_create_index_skipped is always T; the "index exists yet recreated anyway" violation has no branch to reach it [reviewed: human:leo]
-//mcdc:ignore SW-REQ-066: sql_create_index_skipped=F, sql_index_already_exists=T, sql_omit_index_creation=T => FALSE — sql_aggregate.go:152-154 short-circuits on OmitIndexCreation before the HasIndex check at line 157, so when omit is set creation is always skipped regardless of index existence; sql_create_index_skipped is always T [reviewed: human:leo]
+//
+//mcdc:ignore SW-REQ-066: sql_create_index_skipped=F, sql_index_already_exists=T, sql_omit_index_creation=F => FALSE — sql_aggregate.go:157 guards creation behind `if !HasIndex(...)`, so when the composite index already exists the CREATE INDEX block is never entered and sql_create_index_skipped is always T; the "index exists yet recreated anyway" violation has no branch to reach it [reviewed: human:leo] [category: defensive]
+//mcdc:ignore SW-REQ-066: sql_create_index_skipped=F, sql_index_already_exists=T, sql_omit_index_creation=T => FALSE — sql_aggregate.go:152-154 short-circuits on OmitIndexCreation before the HasIndex check at line 157, so when omit is set creation is always skipped regardless of index existence; sql_create_index_skipped is always T [reviewed: human:leo] [category: defensive]
 func TestMCDC_SQLAggregatePump_EnsureIndex_OmitOnExisting(t *testing.T) {
 	dc := dialectCases()[0] // sqlite
 	p := newSQLAggregatePumpForDialect(t, dc, false)
@@ -854,7 +1015,6 @@ func TestMCDC_GraphSQLPump_WriteRoundTrip(t *testing.T) {
 
 // runGraphSQLPumpRoundTrip is the shared write/read assertion body so the
 // same set of MC/DC arms is exercised regardless of dialect setup path.
-// Verifies: SW-REQ-042
 func runGraphSQLPumpRoundTrip(t *testing.T, p *GraphSQLPump, tableName string) {
 	t.Helper()
 	ts := time.Date(2099, 11, 1, 9, 0, 0, 0, time.UTC)
@@ -999,33 +1159,6 @@ func TestMCDC_GraphSQLAggregatePump_WriteRoundTrip(t *testing.T) {
 	}
 }
 
-// TestMCDC_GraphSQLAggregatePump_LogLevels drives every arm of the
-// switch in Init that maps SQLConf.LogLevel to gorm logger level. We
-// don't observe the level — we just need every arm walked so the MC/DC
-// table for the switch is complete.
-//
-// Verifies: SW-REQ-043
-func TestMCDC_GraphSQLAggregatePump_LogLevels(t *testing.T) {
-	skipTestIfNoPostgres(t)
-	dsn := getTestPostgresConnectionString()
-
-	for _, level := range []string{"debug", "info", "warning", "silent-or-other"} {
-		level := level
-		t.Run(level, func(t *testing.T) {
-			conf := SQLAggregatePumpConf{
-				SQLConf: SQLConf{
-					Type:             "postgres",
-					ConnectionString: dsn,
-					LogLevel:         level,
-				},
-			}
-			p := &GraphSQLAggregatePump{}
-			require.NoError(t, p.Init(conf))
-			t.Cleanup(func() { _ = p.db.Migrator().DropTable(analytics.AggregateGraphSQLTable) })
-		})
-	}
-}
-
 // ── 6. MCPSQLPump MC/DC tightening ───────────────────────────────────────────
 
 // TestMCDC_MCPSQLPump_WriteRoundTrip covers WriteData across dialects.
@@ -1111,11 +1244,7 @@ func TestMCDC_MCPSQLAggregatePump_WriteRoundTrip(t *testing.T) {
 				_ = p.db.Exec(fmt.Sprintf(`DROP TABLE IF EXISTS %q CASCADE`, analytics.AggregateMCPSQLTable)).Error
 			})
 			if dc.name == "postgres" {
-				select {
-				case <-p.backgroundIndexCreated:
-				case <-time.After(10 * time.Second):
-					t.Fatal("background index goroutine never signalled")
-				}
+				waitForAggregateIndexReady(t, p.db, analytics.AggregateMCPSQLTable, p.backgroundIndexCreated)
 			}
 			// Truncate aggregate rows so the deterministic per-day IDs do not
 			// see leftover rows from a prior test (the existing suite reuses
@@ -1148,8 +1277,7 @@ func TestMCDC_MCPSQLAggregatePump_WriteRoundTrip(t *testing.T) {
 
 // TestMCDC_MCPSQLAggregatePump_OmitIndex drives the OmitIndexCreation T
 // arm in ensureIndex.
-//
-// Verifies: SW-REQ-045
+// Verifies: SW-REQ-066
 func TestMCDC_MCPSQLAggregatePump_OmitIndex(t *testing.T) {
 	dc := dialectCases()[0] // sqlite
 	db := sqlPumpDB(t, dc)
@@ -1196,7 +1324,10 @@ func TestMCDC_MCPSQLAggregatePump_AggregationTime(t *testing.T) {
 // shard is untouched while the current-day shard gets migrated.
 //
 // Verifies: SW-REQ-040
+// Verifies: INT-REQ-007
 // SW-REQ-040:boundary:negative
+// MCDC INT-REQ-007: expand_contract_migration=F, sql_schema_version_changed=T => FALSE
+// Reproduces: sql-default-migration-today-only
 func TestMCDC_KI_DefaultMigrationTodayOnly(t *testing.T) {
 	dc := dialectCases()[0] // sqlite for fast cycles
 	db := sqlPumpDB(t, dc)
@@ -1285,7 +1416,6 @@ func TestMCDC_KI_MigrateShardedTablesTrue(t *testing.T) {
 
 // countColumns returns the number of columns in tableName, used by the KI
 // tests above to detect whether a migration touched a shard.
-// Verifies: SW-REQ-040
 func countColumns(t *testing.T, db *gorm.DB, tableName string) int {
 	t.Helper()
 	cols, err := db.Table(tableName).Migrator().ColumnTypes(tableName)

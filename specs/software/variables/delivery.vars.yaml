@@ -16,3 +16,6 @@ variables:
       type: bool
       direction: output
       description: The remaining configured backends still receive the records — main.writeToPumps spawns one execPumpWriting goroutine per pump and each goroutine contains its own error/timeout (logged, not propagated), so one backend's failure does not prevent writes to the others (mirror of the SYS-level delivery variable, scoped to the software component).
+independence:
+    declared: true
+    reason: 'Software delivery requirements split timeout/external-call behavior from typed fanout failure independence; the formalized outputs are intentionally separate implementation responsibilities.'

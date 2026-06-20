@@ -6,15 +6,19 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// File-level MC/DC witness rows mirrored from `proof mcdc show`.
+// These rows are copied only when the same file already has tests credited
+// for the row by `proof mcdc show`; they do not add new evidence.
+// MCDC SW-REQ-010: filter_true=F, in_should_filter=F, outside_allow_list=T, skip_match=F => TRUE
+// MCDC SW-REQ-010: filter_true=F, in_should_filter=T, outside_allow_list=F, skip_match=F => TRUE
+// MCDC SW-REQ-010: filter_true=T, in_should_filter=T, outside_allow_list=T, skip_match=T => TRUE
+
 // Verifies: SW-REQ-010
 // Verifies: SYS-REQ-009
 // Verifies: STK-REQ-003
 // MCDC SW-REQ-010: filter_true=F, in_should_filter=F, outside_allow_list=T, skip_match=F => TRUE
 // MCDC SW-REQ-010: filter_true=F, in_should_filter=T, outside_allow_list=F, skip_match=F => TRUE
 // MCDC SW-REQ-010: filter_true=T, in_should_filter=T, outside_allow_list=T, skip_match=T => TRUE
-//mcdc:ignore SW-REQ-010: filter_true=F, in_should_filter=T, outside_allow_list=F, skip_match=T => FALSE — analytics_filters.go:21-26 returns true from the first switch case whenever a skip/block list matches (skip_match=T), so ShouldFilter (filter_true) is always T under skip_match; the "block-list matched yet not filtered" violation has no branch to reach it [reviewed: human:leo]
-//mcdc:ignore SW-REQ-010: filter_true=F, in_should_filter=T, outside_allow_list=T, skip_match=F => FALSE — analytics_filters.go:27-32 returns true whenever an allow list is set and the record falls outside it (outside_allow_list=T), so ShouldFilter (filter_true) is always T under outside_allow_list; the "outside allow-list yet not filtered" violation has no branch to reach it [reviewed: human:leo]
-//mcdc:ignore SW-REQ-010: filter_true=F, in_should_filter=T, outside_allow_list=T, skip_match=T => FALSE — analytics_filters.go:21-32: either a skip-list match (skip_match) or an allow-list miss (outside_allow_list) makes one switch case return true, so with both triggers active ShouldFilter (filter_true) is always T; the violation has no branch to reach it [reviewed: human:leo]
 //
 // Reachable rows of the ShouldFilter guarantee (skip_match | outside_allow_list)
 // => filter_true:
@@ -47,6 +51,10 @@ import (
 // outside_allow_list=T (allow list set but record doesn't match) -> ShouldFilter returns true
 // (record_excluded=F arm with record_outside_allow_list=T) -> FALSE row for SYS-REQ-009.
 // "no filter" sub-case is the vacuous TRUE arm (no triggers).
+//
+//mcdc:ignore SW-REQ-010: filter_true=F, in_should_filter=T, outside_allow_list=F, skip_match=T => FALSE — analytics_filters.go:21-26 returns true from the first switch case whenever a skip/block list matches (skip_match=T), so ShouldFilter (filter_true) is always T under skip_match; the "block-list matched yet not filtered" violation has no branch to reach it [reviewed: human:leo] [category: defensive]
+//mcdc:ignore SW-REQ-010: filter_true=F, in_should_filter=T, outside_allow_list=T, skip_match=F => FALSE — analytics_filters.go:27-32 returns true whenever an allow list is set and the record falls outside it (outside_allow_list=T), so ShouldFilter (filter_true) is always T under outside_allow_list; the "outside allow-list yet not filtered" violation has no branch to reach it [reviewed: human:leo] [category: defensive]
+//mcdc:ignore SW-REQ-010: filter_true=F, in_should_filter=T, outside_allow_list=T, skip_match=T => FALSE — analytics_filters.go:21-32: either a skip-list match (skip_match) or an allow-list miss (outside_allow_list) makes one switch case return true, so with both triggers active ShouldFilter (filter_true) is always T; the violation has no branch to reach it [reviewed: human:leo] [category: defensive]
 func TestShouldFilter(t *testing.T) {
 	record := AnalyticsRecord{
 		APIID:        "apiid123",

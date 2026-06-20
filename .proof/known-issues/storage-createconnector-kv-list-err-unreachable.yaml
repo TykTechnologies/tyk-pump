@@ -1,10 +1,13 @@
 id: storage-createconnector-kv-list-err-unreachable
 title: createConnector kv/list constructor errors are structurally unreachable
+introduced_in: inception
 description: storage/temporal_storage.go:209 and :214 guard the err returned by keyvalue.NewKeyValue(conn) and list.NewList(conn). Both helpers internally call NewRedisV9WithConnection which only fails when conn.Type() != RedisV9Type OR conn.As(&client) returns false. createConnector always passes the freshly-constructed conn returned by connector.NewConnector(model.RedisV9Type, ...). That conn is a *redisv9.RedisV9 whose Type() is RedisV9Type and whose As() always succeeds for *redis.UniversalClient. Therefore the err != nil arms at lines 209 and 214 cannot fire without modifying production code. MC/DC for these two decisions cannot be raised above 50% from external tests, blocking the storage package from hitting 95/95.
 affected_requirements:
     - SW-REQ-007
 commands:
     - go test -count=1 -timeout 180s ./storage
+reproducer_command: |-
+  go test -count=1 -timeout 180s ./storage
 severity: low
 mitigation: These are defensive guards; the only way they can fire is a future code change that injects a non-RedisV9 connector into createConnector. No runtime impact today.
 remediation: Either (a) extract a connector-factory seam so tests can inject a stub whose Type()/As() can be inverted, or (b) drop the dead guards in favour of a single error from connector.NewConnector and document the invariant.

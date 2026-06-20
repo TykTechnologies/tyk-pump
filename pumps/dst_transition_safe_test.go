@@ -7,7 +7,6 @@ import (
 	"github.com/TykTechnologies/tyk-pump/analytics"
 )
 
-// Verifies: SW-REQ-058
 // SW-REQ-058:dst_transition_safe:boundary
 //
 // Contract: mongo aggregate window math (analytics.AggregateData /
@@ -23,16 +22,13 @@ import (
 // uses asTime.Location() preserved from the input record. The structural
 // contract this test pins down is:
 //
-//   Given input records timestamped via time.Date(..., time.UTC), the
-//   aggregation buckets are derived from UTC arithmetic and are therefore
-//   DST-immune by construction.
+//	Given input records timestamped via time.Date(..., time.UTC), the
+//	aggregation buckets are derived from UTC arithmetic and are therefore
+//	DST-immune by construction.
 //
 // If a future regression introduces .Local() conversion or wall-clock-based
 // bucketing, this test reveals it.
 //
-// MCDC SW-REQ-058: dst_active=F, utc_input=T => TRUE  (nominal — UTC always safe)
-// MCDC SW-REQ-058: dst_active=T, utc_input=T => TRUE  (boundary — UTC still safe)
-// MCDC SW-REQ-058: dst_active=T, utc_input=F => FALSE (hypothetical local-TZ regression)
 func TestDstTransitionSafe_SpringForwardBoundary(t *testing.T) {
 	// US Eastern spring-forward 2026: at 2026-03-08T02:00:00 EST local time
 	// clocks jump to 03:00 EDT. The instant 2026-03-08T07:00:00Z is 02:00 EST
@@ -100,7 +96,6 @@ func TestDstTransitionSafe_SpringForwardBoundary(t *testing.T) {
 	}
 }
 
-// Verifies: SW-REQ-058
 // SW-REQ-058:dst_transition_safe:boundary
 //
 // Fall-back ambiguous-hour arm: at the US Eastern fall-back transition
@@ -152,8 +147,8 @@ func TestDstTransitionSafe_FallBackAmbiguousHour(t *testing.T) {
 	}
 }
 
-// Verifies: SW-REQ-058
 // SW-REQ-058:dst_transition_safe:nominal
+// SW-REQ-058:determinism:nominal
 //
 // Determinism arm: running AggregateData twice on the same UTC inputs
 // produces identical bucket assignments. Catches any hidden dependency

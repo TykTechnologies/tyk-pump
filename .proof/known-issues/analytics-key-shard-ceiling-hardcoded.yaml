@@ -4,6 +4,8 @@ description: main.go:267 iterates 'for i := -1; i < 10; i++' to drain tyk-system
 affected_requirements:
     - SYS-REQ-030
 severity: low
+reproducer_command: rg -n 'for i := -1; i < 10; i\+\+' main.go
+introduced_in: inception
 mitigation: Operators must keep the gateway's analytics-shard count at or below 10 (the documented assumption). Verify gateway config does not customise modulus above 10 before enabling multiple analytics keys.
 remediation: Read the shard ceiling from configuration (e.g. SystemConfig.AnalyticsShardCount) or discover it dynamically via Redis KEYS scan.
 owner: tyk-team
@@ -13,3 +15,11 @@ history:
     - at: "2026-05-30T08:31:10Z"
       by: human:buger
       action: created
+    - at: "2026-06-18T19:36:10Z"
+      by: agent:codex
+      action: edit
+      detail: set-reproducer-command,introduced-in=unknown
+    - at: "2026-06-18T19:36:29Z"
+      by: agent:codex
+      action: edit
+      detail: introduced-in=inception

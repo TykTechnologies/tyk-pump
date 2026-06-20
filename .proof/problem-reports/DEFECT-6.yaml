@@ -1,0 +1,86 @@
+schema_version: 1
+id: DEFECT-6
+title: Elasticsearch pump shutdown did not close ES clients
+introduced_in: inception
+description: |
+  ElasticsearchPump.Shutdown only flushed the bulk processor when bulk mode was
+  enabled. It did not close the per-version BulkProcessor or stop the elastic
+  client, and it did not guard repeated Shutdown calls. That left backend client
+  resources owned by the Elasticsearch pump alive after the pump host invoked
+  shutdown, weakening the clean-shutdown/resource-lifetime contract for the ES
+  pump family.
+
+  The current branch changes pumps/elasticsearch.go so each per-version
+  operator implements close(), Shutdown is idempotent, bulk flush errors are
+  preserved, and the operator close path is invoked for both bulk and non-bulk
+  configurations.
+source:
+    type: manual_review
+    repo: TykTechnologies/tyk-pump
+    reference: reqproof-coverage-authored-delta-review
+classification:
+    surface: runtime_code
+    defect_class: resource_lifetime_not_released
+    severity: medium
+    security_relevant: false
+root_cause:
+    missing_requirement: false
+    missing_test_partition: false
+    missing_mcdc_variable: false
+    notes: |
+      SW-REQ-070 already stated that Elasticsearch shutdown flushes the bulk
+      processor, and SYS/SW shutdown requirements cover clean pump lifecycle.
+      The implementation did not fully release the resources owned by that
+      lifecycle surface. Existing shutdown-path tests exercise the bulk and
+      non-bulk Shutdown paths; this report records the defect trail for the
+      implementation delta rather than minting a new requirement.
+impact_analysis:
+    affected_requirements:
+        - SW-REQ-070
+        - SW-REQ-068
+        - SW-REQ-069
+    affected_code:
+        - pumps/elasticsearch.go
+hardening:
+    new_requirements: []
+    strengthened_requirements:
+        - SW-REQ-070
+    regression_tests:
+        - pumps/elasticsearch_mcdc_test.go:TestElasticsearchPump_Shutdown_BulkPath
+        - pumps/elasticsearch_mcdc_test.go:TestElasticsearchPump_Shutdown_BulkDisabled
+disposition:
+    status: covered_by_requirement
+    requirements:
+        - SW-REQ-070
+    known_issues:
+        - elasticsearch-mcp-routing-non-bulk-ignored
+        - elasticsearch-unbounded-reconnect-recursion
+        - external-pump-endpoints-no-ssrf-allowlist
+        - mapstructure-decode-silently-drops-unknown-keys
+        - pump-no-timeout-can-block-purge-cycle
+        - pumps-logfatal-on-config-decode
+        - tls-insecure-skip-verify-allowed
+    evidence:
+        verified_by:
+            - pumps/elasticsearch_mcdc_test.go:TestElasticsearchPump_Shutdown_BulkPath
+            - pumps/elasticsearch_mcdc_test.go:TestElasticsearchPump_Shutdown_BulkDisabled
+        implemented_by:
+            - pumps/elasticsearch.go:ElasticsearchPump.Shutdown
+            - pumps/elasticsearch.go:Elasticsearch3Operator.close
+            - pumps/elasticsearch.go:Elasticsearch5Operator.close
+            - pumps/elasticsearch.go:Elasticsearch6Operator.close
+            - pumps/elasticsearch.go:Elasticsearch7Operator.close
+    reviewer: human:buger
+    reviewed_at: "2026-06-19T21:00:00Z"
+history:
+    - at: "2026-06-19T21:00:00Z"
+      by: human:buger
+      action: created
+    - at: "2026-06-19T21:00:00Z"
+      by: human:buger
+      action: dispositioned
+      detail: |
+        Current branch updates ElasticsearchPump.Shutdown and per-version
+        operators to release ES client/BulkProcessor resources. The linked
+        impact review on SW-REQ-068/SW-REQ-069/SW-REQ-070 records this as a
+        fix-backed authored delta rather than a no-op refactor.

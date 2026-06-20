@@ -1,0 +1,21 @@
+id: main-prefilter-debug-logs-unfiltered-records
+title: Main purge path can debug-log records before ignore-field privacy filtering
+introduced_in: inception
+description: 'main.go logs decoded analytics records at debug level before the per-pump filterData path removes operator-listed ignore fields. The existing ignore-field test proves forwarding removes configured fields, but it does not prove those fields are absent from logs. When debug logging is enabled, a sensitive field that should be removed before forwarding can still be emitted in the pre-filter log line.'
+affected_requirements:
+    - SW-REQ-001
+    - SYS-REQ-016
+environment_note: |-
+  Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source and command output.
+reproducer_command: |-
+  rg -n "Debug.*record|filterData|RemoveIgnoredFields" main.go main_test.go
+severity: medium
+mitigation: Do not enable debug logging in environments where analytics records may carry sensitive fields, or ensure sensitive fields are scrubbed before they enter tyk-pump.
+remediation: Move record-level debug logging after ignore-field filtering or log only a redacted summary that cannot include ignored fields; add a log-capture test proving ignored fields are not emitted.
+owner: tyk-team
+release_disposition: ship_with_known_issue
+status: open
+history:
+    - at: "2026-06-19T00:00:00Z"
+      by: agent:codex
+      action: created

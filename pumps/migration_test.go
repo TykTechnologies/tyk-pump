@@ -14,7 +14,6 @@ import (
 )
 
 // setupTestDB creates an in-memory SQLite database for testing
-// Verifies: SW-REQ-040
 func setupTestDB(t *testing.T) *gorm.DB {
 	t.Helper()
 
@@ -42,14 +41,12 @@ func setupTestDB(t *testing.T) *gorm.DB {
 }
 
 // setupTestLogger creates a test logger
-// Verifies: SW-REQ-040
 func setupTestLogger(t *testing.T) *logrus.Entry {
 	t.Helper()
 	return logrus.NewEntry(logrus.New())
 }
 
 // createTestShardedTables creates test tables with sharded naming pattern
-// Verifies: SW-REQ-040
 func createTestShardedTables(t *testing.T, db *gorm.DB, tablePrefix string, model interface{}, dates []string) {
 	t.Helper()
 
@@ -69,7 +66,6 @@ func createTestShardedTables(t *testing.T, db *gorm.DB, tablePrefix string, mode
 }
 
 // createTestNonShardedTables creates test tables that don't match the sharded pattern
-// Verifies: SW-REQ-040
 func createTestNonShardedTables(t *testing.T, db *gorm.DB, tablePrefix string, model interface{}) {
 	t.Helper()
 
@@ -95,18 +91,11 @@ func createTestNonShardedTables(t *testing.T, db *gorm.DB, tablePrefix string, m
 	}
 }
 
-// Verifies: SW-REQ-040
+// "successful_migration" sub-test runs MigrateAllShardedTables against pre-seeded sharded
+// tables and asserts the tables survive migration. The other sub-tests cover
+// empty databases and invalid shard-name filters.
 // Verifies: INT-REQ-007
 // MCDC INT-REQ-007: expand_contract_migration=F, sql_schema_version_changed=F => TRUE
-// MCDC INT-REQ-007: expand_contract_migration=F, sql_schema_version_changed=T => FALSE
-// MCDC INT-REQ-007: expand_contract_migration=T, sql_schema_version_changed=T => TRUE
-//
-// "successful_migration" sub-test runs MigrateAllShardedTables against pre-seeded sharded
-// tables (sql_schema_version_changed=T via createTestShardedTables) and asserts the tables
-// survive migration (expand_contract_migration=T) -> TRUE row. "no_sharded_tables" is the
-// vacuous TRUE arm (no schema change). "invalid_date_format_ignored" + the assert that
-// invalid tables are ignored proves the FALSE-row regression detector: a buggy migration
-// that touched non-shard tables would be caught by the assertion.
 func TestMigrateAllShardedTables(t *testing.T) {
 	t.Run("successful_migration", func(t *testing.T) {
 		db := setupTestDB(t)
@@ -213,7 +202,8 @@ func TestMigrateAllShardedTables(t *testing.T) {
 	})
 }
 
-// Verifies: SW-REQ-040
+// Verifies: INT-REQ-007
+// MCDC INT-REQ-007: expand_contract_migration=F, sql_schema_version_changed=F => TRUE
 func TestMigrateAllShardedTablesWithDifferentModels(t *testing.T) {
 	t.Run("analytics_record", func(t *testing.T) {
 		db := setupTestDB(t)
@@ -258,7 +248,8 @@ func TestMigrateAllShardedTablesWithDifferentModels(t *testing.T) {
 	})
 }
 
-// Verifies: SW-REQ-040
+// Verifies: INT-REQ-007
+// MCDC INT-REQ-007: expand_contract_migration=F, sql_schema_version_changed=F => TRUE
 func TestMigrateAllShardedTablesEdgeCases(t *testing.T) {
 	t.Run("single_character_prefix", func(t *testing.T) {
 		db := setupTestDB(t)
@@ -303,7 +294,8 @@ func TestMigrateAllShardedTablesEdgeCases(t *testing.T) {
 	})
 }
 
-// Verifies: SW-REQ-040
+// Verifies: INT-REQ-007
+// MCDC INT-REQ-007: expand_contract_migration=T, sql_schema_version_changed=T => TRUE
 func TestMigrateAllShardedTablesLogging(t *testing.T) {
 	t.Run("log_messages_contain_prefix", func(t *testing.T) {
 		db := setupTestDB(t)
@@ -326,9 +318,6 @@ func TestMigrateAllShardedTablesLogging(t *testing.T) {
 	})
 }
 
-// Verifies: SW-REQ-040
-//
-// SW-REQ-040:forward_compatible:example
 // DEFECT-3 regression (TT-13166): before the fix, AutoMigrate was gated behind
 // `if !TableSharding`, so with sharding enabled the schema migration of shard
 // tables was skipped entirely — newly created per-day shards never received
@@ -339,6 +328,9 @@ func TestMigrateAllShardedTablesLogging(t *testing.T) {
 // actually invoked; "default sharding migrates current day table" asserts the
 // current day's shard is migrated even in the default mode. A regression that
 // re-skips shard migration fails these assertions.
+//
+// Verifies: INT-REQ-007
+// MCDC INT-REQ-007: expand_contract_migration=T, sql_schema_version_changed=T => TRUE
 func TestHandleTableMigration(t *testing.T) {
 	t.Run("non-sharded migrates main table", func(t *testing.T) {
 		db := setupTestDB(t)
@@ -395,7 +387,8 @@ func TestHandleTableMigration(t *testing.T) {
 	})
 }
 
-// Verifies: SW-REQ-040
+// Verifies: INT-REQ-007
+// MCDC INT-REQ-007: expand_contract_migration=T, sql_schema_version_changed=T => TRUE
 func TestMigrateAllShardedTables_MCPRecord(t *testing.T) {
 	db := setupTestDB(t)
 	logger := setupTestLogger(t)
@@ -415,7 +408,7 @@ func TestMigrateAllShardedTables_MCPRecord(t *testing.T) {
 	}
 }
 
-// Verifies: SW-REQ-040
+// SW-REQ-016:nominal:boundary
 func TestMigrateAllShardedTables_UnsupportedDialect(t *testing.T) {
 	logger := setupTestLogger(t)
 
@@ -426,7 +419,7 @@ func TestMigrateAllShardedTables_UnsupportedDialect(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-// Verifies: SW-REQ-040
+// SW-REQ-016:boundary:nominal
 func TestOpenGormDB(t *testing.T) {
 	t.Run("unsupported type returns error", func(t *testing.T) {
 		logger := setupTestLogger(t)
@@ -468,7 +461,8 @@ func TestOpenGormDB(t *testing.T) {
 	})
 }
 
-// Verifies: SW-REQ-040
+// Verifies: INT-REQ-007
+// MCDC INT-REQ-007: expand_contract_migration=T, sql_schema_version_changed=T => TRUE
 func TestMigrateAllShardedTablesPerformance(t *testing.T) {
 	t.Run("many_tables", func(t *testing.T) {
 		db := setupTestDB(t)

@@ -315,7 +315,7 @@ func (p *PrometheusPump) processMetric(metric *PrometheusMetric, record analytic
 	switch metric.MetricType {
 	case counterType:
 		if metric.counterVec != nil {
-			if err := metric.Inc(values...); err != nil { //mcdc:ignore err=T structurally unreachable: this arm is gated by the outer switch case counterType, which guarantees Inc takes the counter branch and returns nil — KI mcdc-pumps-below-95
+			if err := metric.Inc(values...); err != nil { //mcdc:ignore:defensive err=T structurally unreachable: this arm is gated by the outer switch case counterType, which guarantees Inc takes the counter branch and returns nil — KI mcdc-pumps-below-95
 				p.log.WithFields(logrus.Fields{
 					"metric_type": metric.MetricType,
 					"metric_name": metric.Name,

@@ -30,7 +30,7 @@ import (
 // through this handler at all. It therefore has no honest runtime witness here
 // and is structurally prevented rather than produced by correct code.
 //
-//mcdc:ignore SYS-REQ-025: redis_protocol_compatible=F => FALSE — the temporal-store ingestion path is hard-wired to the TykTechnologies/storage RESP/Redis-protocol connector (NewTemporalStorageHandler always selects the "redis" driver, asserted above by GetName()=="redis"). No code path constructs a non-Redis-protocol temporal store, so a redis_protocol_compatible=F backend cannot be built through this handler in any correct build. The violation is structurally absent rather than produced by correct code. [reviewed: human:leo]
+//mcdc:ignore SYS-REQ-025: redis_protocol_compatible=F => FALSE — the temporal-store ingestion path is hard-wired to the TykTechnologies/storage RESP/Redis-protocol connector (NewTemporalStorageHandler always selects the "redis" driver, asserted above by GetName()=="redis"). No code path constructs a non-Redis-protocol temporal store, so a redis_protocol_compatible=F backend cannot be built through this handler in any correct build. The violation is structurally absent rather than produced by correct code. [reviewed: human:leo] [category: defensive]
 func TestStorageInvariant_RedisProtocolCompatible_SYSREQ025(t *testing.T) {
 	host, port := redisHostPort(t) // skips when Docker is unavailable
 

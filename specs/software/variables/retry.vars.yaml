@@ -20,3 +20,6 @@ variables:
       type: bool
       direction: output
       description: True iff total retry duration is unbounded (no permanent stop until success). False when a finite MaxElapsedTime caps the total retry duration.
+independence:
+    declared: true
+    reason: 'Retry requirements split HTTP retry status/body handling from storage retry exhaustion; they intentionally model different callers and output variables.'

@@ -1,0 +1,25 @@
+id: external-pump-endpoints-no-ssrf-allowlist
+title: External pump endpoints have no SSRF allowlist policy
+introduced_in: inception
+description: 'Several outbound pumps accept operator-configured endpoint URLs or connection strings and pass them directly to network clients without an explicit allowlist, denylist, private-range block, or documented SSRF policy. Hybrid dials the configured RPC connection string, Influx v1/v2 pass configured addresses to their clients, Splunk parses and posts to the configured collector URL, Logz.io passes the configured URL to its SDK, and Elasticsearch passes configured URLs into the elastic client SetURL path. The ssrf_protection obligations for these external pumps are therefore real product gaps rather than merely missing tests.'
+affected_requirements:
+    - SW-REQ-029
+    - SW-REQ-046
+    - SW-REQ-047
+    - SW-REQ-048
+    - SW-REQ-051
+    - SW-REQ-068
+environment_note: |-
+  Static evidence is documented in this KnownIssue description; reproduce by inspecting the named pump sources and command output.
+reproducer_command: >-
+  rg -n "ConnectionString|Addr string|CollectorURL|ElasticsearchURL|SetUrl|NewHTTPClient|NewClientWithOptions|SetURL|NewTCPClient|NewTLSClient|url.Parse|Dial\(\"tcp\"" pumps/hybrid.go pumps/influx.go pumps/influx2.go pumps/splunk.go pumps/logzio.go pumps/elasticsearch.go
+severity: medium
+mitigation: Restrict pump endpoint configuration to trusted operators and constrain egress with network policy, firewall rules, or service-mesh policy.
+remediation: Add an explicit outbound endpoint policy for external pumps, such as scheme/host allowlists and private-address blocking where appropriate, and document the accepted SSRF posture before satisfying ssrf_protection.
+owner: tyk-team
+release_disposition: ship_with_known_issue
+status: open
+history:
+    - at: "2026-06-19T00:00:00Z"
+      by: agent:codex
+      action: created

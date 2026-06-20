@@ -1,0 +1,20 @@
+id: mcp-sql-aggregate-background-index-concurrency-unbounded
+title: MCP SQL aggregate background index creation lacks an explicit goroutine and channel lifecycle contract
+introduced_in: inception
+description: 'pumps/mcp_sql_aggregate.go:141-147 starts background index creation and pumps/mcp_sql_aggregate.go:133-135 signals on s.backgroundIndexCreated. The requirement does not specify cancellation, channel ownership, or concurrent WriteData/Init behavior for this background path. Until that lifecycle is specified and tested, the concurrent obligation for SW-REQ-045 is tracked debt.'
+affected_requirements:
+    - SW-REQ-045
+environment_note: |-
+  Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source or rerunning the concurrency code-signal scan.
+reproducer_command: rg -n "backgroundIndexCreated|go func|createIndexFn" pumps/mcp_sql_aggregate.go
+severity: medium
+risk: concurrency
+mitigation: Avoid concurrent initialization/index-creation paths against the same MCP SQL aggregate pump instance and monitor startup logs for background index failures.
+remediation: Specify the background index lifecycle, make cancellation and channel ownership explicit, and add a concurrency/race witness for the background path.
+owner: tyk-team
+release_disposition: ship_with_known_issue
+status: open
+history:
+    - at: "2026-06-19T00:00:00Z"
+      by: agent:codex
+      action: created

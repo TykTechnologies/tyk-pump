@@ -33,17 +33,6 @@ verification:
         comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
         fingerprint: sha256:e2d2f1068b52736417568f0912812e5955f03fa054b41c9d0003a03b6c8234ca
         ai_generated: false
-    impact_reviews:
-        - requirement: SW-REQ-013
-          artifact: analytics/graph_record.go
-          decision: no-authored-change
-          reviewer: buger
-          reason: 'Phase J: req_type field flipped derived to guarantee per probelabs/reqproof#88 (category error fix). Production .go files were not modified for this change; only req YAML metadata. Re-recording no-authored-change impact.'
-          base: origin/master
-          requirement_fingerprint: sha256:3d7ca17eaf4ac6211ca48457a65765211a0cef99cb082c86cd9f988fea4cc2c7
-          approval_fingerprint: sha256:e2d2f1068b52736417568f0912812e5955f03fa054b41c9d0003a03b6c8234ca
-          artifact_fingerprint: sha256:261ee109613887f8af1327330d36dea6a7eb6d4f42d51bc414310e3ab60583eb
-          reviewed_at: "2026-06-02T05:13:05Z"
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:14Z"

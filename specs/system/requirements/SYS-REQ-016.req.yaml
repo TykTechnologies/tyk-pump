@@ -43,8 +43,9 @@ obligation_checklist:
     - secrets_not_logged
 obligation_deferrals:
     - obligation_class: secrets_not_logged
-      reason: 'Deferred: required secrets_not_logged test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'
-      tracking: .proof/deferred-witness-backlog.md
+      reason: real product gap under known-issue main-prefilter-debug-logs-unfiltered-records; surfaced as visible tracked debt, not an overclaimed fix
+      tracking: main-prefilter-debug-logs-unfiltered-records
+      ki_ref: main-prefilter-debug-logs-unfiltered-records
       owner: human:buger
 lifecycle:
     change_history:

@@ -137,7 +137,7 @@ func (p *HybridPump) Init(config interface{}) error {
 	// Read configuration file
 	p.hybridConfig = &HybridPumpConf{}
 	err := mapstructure.Decode(config, &p.hybridConfig)
-	if err != nil { //mcdc:ignore mapstructure.Decode from a map[string]interface{} into a *HybridPumpConf struct cannot fail in practice — the production caller (gateway pump-loader) always passes a map. KI mcdc-pumps-below-95.
+	if err != nil { //mcdc:ignore:defensive mapstructure.Decode from a map[string]interface{} into a *HybridPumpConf struct cannot fail in practice — the production caller (gateway pump-loader) always passes a map. KI mcdc-pumps-below-95.
 		p.log.Error("Failed to decode configuration: ", err)
 		return err
 	}
@@ -175,13 +175,13 @@ func (p *HybridPump) connectRPC() error {
 	p.log.Debug("Setting new MDCB connection!")
 
 	connUUID, err := uuid.NewV4()
-	if err != nil { //mcdc:ignore uuid.NewV4 only fails on crypto/rand.Read failure — unreachable on supported platforms (Linux/macOS/Windows always satisfy /dev/urandom or BCryptGenRandom). KI mcdc-pumps-below-95.
+	if err != nil { //mcdc:ignore:defensive uuid.NewV4 only fails on crypto/rand.Read failure — unreachable on supported platforms (Linux/macOS/Windows always satisfy /dev/urandom or BCryptGenRandom). KI mcdc-pumps-below-95.
 		return err
 	}
 	connID := connUUID.String()
 
 	// Length should fit into 1 byte. Protection if we decide change uuid in future.
-	if len(connID) > 255 { //mcdc:ignore uuid.V4 string form is always 36 chars; this is a forward-looking guard against a future UUID-format change. Defensive plumbing, KI mcdc-pumps-below-95.
+	if len(connID) > 255 { //mcdc:ignore:defensive uuid.V4 string form is always 36 chars; this is a forward-looking guard against a future UUID-format change. Defensive plumbing, KI mcdc-pumps-below-95.
 		return errors.New("connID is too long")
 	}
 
@@ -196,7 +196,7 @@ func (p *HybridPump) connectRPC() error {
 		p.clientSingleton = gorpc.NewTCPClient(p.hybridConfig.ConnectionString)
 	}
 
-	if p.log.Level != logrus.DebugLevel { //mcdc:ignore the F arm (log.Level == DebugLevel — skip the LogError reassignment) is driven by TestHybridPump_ConnectRPC_DebugLevel; the T arm is driven by every other hybrid test (default log level is Info). Both arms are exercised in the test suite — the MC/DC report sometimes flags this when test ordering interleaves the shared `log` package's level state, which is a measurement artefact rather than a coverage gap. KI mcdc-pumps-below-95.
+	if p.log.Level != logrus.DebugLevel { //mcdc:ignore:external-evidence the F arm (log.Level == DebugLevel — skip the LogError reassignment) is driven by TestHybridPump_ConnectRPC_DebugLevel; the T arm is driven by every other hybrid test (default log level is Info). Both arms are exercised in the test suite — the MC/DC report sometimes flags this when test ordering interleaves the shared `log` package's level state, which is a measurement artefact rather than a coverage gap. KI mcdc-pumps-below-95.
 		p.clientSingleton.LogError = gorpc.NilErrorLogger
 	}
 
@@ -275,14 +275,14 @@ func (p *HybridPump) WriteData(ctx context.Context, data []interface{}) error {
 
 	err := p.RPCLogin()
 	if err != nil {
-		if errors.Is(err, ErrRPCLogin) { //mcdc:ignore errors.Is(err, ErrRPCLogin)=F arm requires RPCLogin returning a non-ErrRPCLogin error (a transport/wire failure surfaced inside callRPCFn). Production RPCLogin only returns either "not connected to RPC server" (only on a fresh, never-Init'd pump) or the ErrRPCLogin sentinel from !logged.(bool). Driving callRPCFn to return a transport error mid-WriteData requires the gorpc connection to die between Init and WriteData, which closes the dispatcher and prevents WriteData from being called at all — KI mcdc-pumps-below-95.
+		if errors.Is(err, ErrRPCLogin) { //mcdc:ignore:capability-gap errors.Is(err, ErrRPCLogin)=F arm requires RPCLogin returning a non-ErrRPCLogin error (a transport/wire failure surfaced inside callRPCFn). Production RPCLogin only returns either "not connected to RPC server" (only on a fresh, never-Init'd pump) or the ErrRPCLogin sentinel from !logged.(bool). Driving callRPCFn to return a transport error mid-WriteData requires the gorpc connection to die between Init and WriteData, which closes the dispatcher and prevents WriteData from being called at all — KI mcdc-pumps-below-95. [ki: mcdc-pumps-below-95]
 			p.log.Error("Failed to login to Tyk MDCB: ", err)
 			return err
 		}
 		p.log.Error("Failed to connect to Tyk MDCB, retrying")
 
 		// try to login again
-		if err = p.connectAndLogin(false); err != nil { //mcdc:ignore reachable only via the errors.Is(err, ErrRPCLogin)=F arm above (mcdc:ignore'd) so this is dead-code-on-dead-code from a unit-test perspective — KI mcdc-pumps-below-95.
+		if err = p.connectAndLogin(false); err != nil { //mcdc:ignore:capability-gap reachable only via the errors.Is(err, ErrRPCLogin)=F arm above (mcdc:ignore'd) so this is dead-code-on-dead-code from a unit-test perspective — KI mcdc-pumps-below-95. [ki: mcdc-pumps-below-95]
 			p.log.Error(err)
 			return err
 		}
@@ -293,14 +293,14 @@ func (p *HybridPump) WriteData(ctx context.Context, data []interface{}) error {
 		// send analytics records as is
 		// turn array with analytics records into JSON payload
 		jsonData, err := json.Marshal(data)
-		if err != nil { //mcdc:ignore json.Marshal on a []interface{} of AnalyticsRecord values cannot fail in practice — the struct only contains JSON-encodable fields. KI mcdc-pumps-below-95.
+		if err != nil { //mcdc:ignore:defensive json.Marshal on a []interface{} of AnalyticsRecord values cannot fail in practice — the struct only contains JSON-encodable fields. KI mcdc-pumps-below-95.
 			p.log.WithError(err).Error("Failed to marshal analytics data")
 			return err
 		}
 
 		p.log.Debug("Sending analytics data to Tyk MDCB")
 
-		if _, err := p.callRPCFn("PurgeAnalyticsData", string(jsonData)); err != nil { //mcdc:ignore callRPCFn err arm requires a live RPC mismatch — production WriteData runs against an already-authenticated MDCB connection. Driving this arm from a unit test requires a custom dispatcher that crashes mid-call which would also crash other tests. KI mcdc-pumps-below-95.
+		if _, err := p.callRPCFn("PurgeAnalyticsData", string(jsonData)); err != nil { //mcdc:ignore:capability-gap callRPCFn err arm requires a live RPC mismatch — production WriteData runs against an already-authenticated MDCB connection. Driving this arm from a unit test requires a custom dispatcher that crashes mid-call which would also crash other tests. KI mcdc-pumps-below-95. [ki: mcdc-pumps-below-95]
 			p.log.WithError(err).Error("Failed to call PurgeAnalyticsData")
 			return err
 		}
@@ -310,7 +310,7 @@ func (p *HybridPump) WriteData(ctx context.Context, data []interface{}) error {
 
 		// turn map with analytics aggregates into JSON payload
 		jsonData, err := json.Marshal(aggregates)
-		if err != nil { //mcdc:ignore json.Marshal on AggregateData output (map of analytics.AnalyticsRecordAggregate values containing primitive maps) cannot fail in practice. KI mcdc-pumps-below-95.
+		if err != nil { //mcdc:ignore:defensive json.Marshal on AggregateData output (map of analytics.AnalyticsRecordAggregate values containing primitive maps) cannot fail in practice. KI mcdc-pumps-below-95.
 			p.log.WithError(err).Error("Failed to marshal analytics aggregates data")
 			return err
 		}
@@ -318,14 +318,14 @@ func (p *HybridPump) WriteData(ctx context.Context, data []interface{}) error {
 		p.log.Debug("Sending aggregated analytics data to Tyk MDCB")
 
 		// send aggregated data
-		if _, err := p.callRPCFn("PurgeAnalyticsDataAggregated", string(jsonData)); err != nil { //mcdc:ignore callRPCFn err arm requires a live RPC mismatch — production WriteData runs against an already-authenticated MDCB connection. KI mcdc-pumps-below-95.
+		if _, err := p.callRPCFn("PurgeAnalyticsDataAggregated", string(jsonData)); err != nil { //mcdc:ignore:capability-gap callRPCFn err arm requires a live RPC mismatch — production WriteData runs against an already-authenticated MDCB connection. KI mcdc-pumps-below-95. [ki: mcdc-pumps-below-95]
 			p.log.WithError(err).Error("Failed to call PurgeAnalyticsDataAggregated")
 			return err
 		}
 
 		// send MCP aggregates (if any MCP records exist)
 		if p.hybridConfig.EnableMCPAggregation {
-			if err := p.sendMCPAggregates(data); err != nil { //mcdc:ignore sendMCPAggregates err arm requires the same live-RPC mismatch as the parent — covered by sendMCPAggregates's own mcdc:ignore. KI mcdc-pumps-below-95.
+			if err := p.sendMCPAggregates(data); err != nil { //mcdc:ignore:capability-gap sendMCPAggregates err arm requires the same live-RPC mismatch as the parent — covered by sendMCPAggregates's own mcdc:ignore. KI mcdc-pumps-below-95. [ki: mcdc-pumps-below-95]
 				return err
 			}
 		}
@@ -350,14 +350,14 @@ func (p *HybridPump) Shutdown() error {
 
 // reqproof:implements SW-REQ-029
 func (p *HybridPump) RPCLogin() error {
-	if val, ok := p.clientIsConnected.Load().(bool); !ok || !val { //mcdc:ignore the !ok || !val short-circuit has three input rows; !ok is driven by TestHybridPump_RPCLogin_NotConnected (Load returns zero-value interface, type-assert fails). Independently driving the !val=T arm with ok=T requires onConnectFunc to have stored bool(false), but onConnectFunc always stores bool(true) and there is no production path that stores false (Shutdown overwrites with false but also drops the gorpc client so RPCLogin's callRPCFn can't be reached). KI mcdc-pumps-below-95.
+	if val, ok := p.clientIsConnected.Load().(bool); !ok || !val { //mcdc:ignore:external-evidence the !ok || !val short-circuit has three input rows; !ok is driven by TestHybridPump_RPCLogin_NotConnected (Load returns zero-value interface, type-assert fails). Independently driving the !val=T arm with ok=T requires onConnectFunc to have stored bool(false), but onConnectFunc always stores bool(true) and there is no production path that stores false (Shutdown overwrites with false but also drops the gorpc client so RPCLogin's callRPCFn can't be reached). KI mcdc-pumps-below-95.
 		p.log.Debug("Client is not connected to RPC server")
 		return errors.New("client is not connected to RPC server")
 	}
 
 	// do RPC call to server
 	logged, err := p.callRPCFn("Login", p.hybridConfig.APIKey)
-	if err != nil { //mcdc:ignore err=T arm requires the gorpc Login call returning a transport error mid-test — production tests use the in-process gorpc mock which always succeeds on a connected client; driving err=T deterministically requires breaking the gorpc transport mid-call. KI mcdc-pumps-below-95.
+	if err != nil { //mcdc:ignore:defensive err=T arm requires the gorpc Login call returning a transport error mid-test — production tests use the in-process gorpc mock which always succeeds on a connected client; driving err=T deterministically requires breaking the gorpc transport mid-call. KI mcdc-pumps-below-95.
 		p.log.WithError(err).Error("Failed to call Login")
 		return err
 	}
@@ -379,12 +379,12 @@ func (p *HybridPump) sendMCPAggregates(data []interface{}) error {
 	}
 
 	mcpJsonData, err := json.Marshal(mcpAggregates)
-	if err != nil { //mcdc:ignore json.Marshal on AggregateMCPData output (map of analytics.MCPAggregate values) cannot fail in practice. KI mcdc-pumps-below-95.
+	if err != nil { //mcdc:ignore:defensive json.Marshal on AggregateMCPData output (map of analytics.MCPAggregate values) cannot fail in practice. KI mcdc-pumps-below-95.
 		p.log.WithError(err).Error("Failed to marshal MCP analytics aggregates data")
 		return err
 	}
 
-	if _, err := p.callRPCFn("PurgeAnalyticsDataMCPAggregated", string(mcpJsonData)); err != nil { //mcdc:ignore callRPCFn err arm requires a live RPC mismatch — production sendMCPAggregates runs against an already-authenticated MDCB connection. KI mcdc-pumps-below-95.
+	if _, err := p.callRPCFn("PurgeAnalyticsDataMCPAggregated", string(mcpJsonData)); err != nil { //mcdc:ignore:capability-gap callRPCFn err arm requires a live RPC mismatch — production sendMCPAggregates runs against an already-authenticated MDCB connection. KI mcdc-pumps-below-95. [ki: mcdc-pumps-below-95]
 		p.log.WithError(err).Error("Failed to call PurgeAnalyticsDataMCPAggregated")
 		return err
 	}

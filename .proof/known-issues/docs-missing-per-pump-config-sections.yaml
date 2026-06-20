@@ -1,10 +1,13 @@
 id: docs-missing-per-pump-config-sections
 title: 'Documentation gap: 11 registered pump types have no per-pump configuration section in tyk-docs'
+introduced_in: inception
 description: 'pumps/init.go:9-46 registers 30 pump types; tyk-docs/content/shared/pump-config.md is missing per-pump tables for: influx2, segment, sqs, resurfaceio, mongo-graph, sql-graph, sql-graph-aggregate, mongo-mcp, mongo-mcp-aggregate, sql-mcp, sql-mcp-aggregate. Operators have no canonical reference for these pumps'' meta blocks.'
 affected_requirements:
     - SW-REQ-017
 commands:
     - grep -E 'pmp\..*=' /Users/buger/go/src/tyk-pump/pumps/init.go | head -40
+reproducer_command: |-
+  grep -E 'pmp\..*=' /Users/buger/go/src/tyk-pump/pumps/init.go | head -40
 severity: high
 mitigation: Code comments in each pump source file enumerate the config keys; per-pump *_test.go files show example configs.
 remediation: Add per-pump configuration sections in tyk-docs/content/shared/pump-config.md for all 11 missing pump types. Highest priority for the four MCP variants (entire feature surface invisible).

@@ -15,14 +15,15 @@ import (
 //
 // Contract: time-bearing fields used in aggregation MUST be TZ-explicit.
 // Either:
-//   (a) the field is documented as UTC (and round-trips preserve the
-//       UTC instant), OR
-//   (b) the field carries TZ information that survives serialization.
+//
+//	(a) the field is documented as UTC (and round-trips preserve the
+//	    UTC instant), OR
+//	(b) the field carries TZ information that survives serialization.
 //
 // What this test exercises (analytics/aggregate.go AnalyticsRecordAggregate):
-//   * Build the aggregate struct with a NY-timezone TimeStamp.
-//   * Round-trip the timestamp through msgpack AND json.
-//   * Assert the deserialized timestamp represents the same instant
+//   - Build the aggregate struct with a NY-timezone TimeStamp.
+//   - Round-trip the timestamp through msgpack AND json.
+//   - Assert the deserialized timestamp represents the same instant
 //     (i.e. UTC equivalence is preserved, even if TZ name is dropped).
 //
 // If the implementation silently coerces to local time (a regression

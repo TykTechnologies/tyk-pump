@@ -1,0 +1,20 @@
+id: mcp-mongo-aggregate-atomicity-fault-injection-missing
+title: MCP Mongo aggregate atomicity obligation lacks a fault-injection witness
+introduced_in: inception
+description: 'SW-REQ-039 describes MCP aggregate persistence through MongoDB upserts. The implementation builds aggregate update documents and performs write steps in pumps/mcp_mongo_aggregate.go, but the current test suite only exercises successful partitioning and dimension update paths. There is no fake store or failpoint harness that injects an error between update phases or under concurrent writers, so the typed atomicity obligation cannot be honestly discharged by existing tests. This is a proof-harness gap, not a product fix.'
+affected_requirements:
+    - SW-REQ-039
+environment_note: |-
+  Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source and command output.
+reproducer_command: |-
+  rg -n "DoAggregatedWriting|AsChange|Update|atomicity|fail" pumps/mcp_mongo_aggregate.go pumps/mcp_mongo_aggregate_test.go docs/requirements/SW-REQ-039.md
+severity: low
+mitigation: Rely on MongoDB document-level update semantics and existing successful-path tests until a fault-injection harness is added.
+remediation: Add a fake Mongo store or failpoint-backed test that injects failures around the MCP aggregate upsert sequence and proves either atomic completion or explicit partial-failure reporting.
+owner: tyk-team
+release_disposition: ship_with_known_issue
+status: open
+history:
+    - at: "2026-06-19T00:00:00Z"
+      by: agent:codex
+      action: created

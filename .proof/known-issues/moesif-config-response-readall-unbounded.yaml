@@ -1,0 +1,20 @@
+id: moesif-config-response-readall-unbounded
+title: Moesif configuration fetch reads the full response body without a size bound
+introduced_in: inception
+description: 'pumps/moesif.go:117 calls ioutil.ReadAll(response.Body) while parsing the Moesif application configuration response. A malformed or unexpectedly large configuration response can be fully buffered in memory before parsing. This is separate from raw analytics body masking and leaves the input_size_bounded and malformed_input obligations for SW-REQ-052 as tracked debt.'
+affected_requirements:
+    - SW-REQ-052
+environment_note: |-
+  Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source or rerunning the request-body-readall code-signal scan.
+reproducer_command: rg -n "ReadAll\\(response\\.Body\\)|parseConfiguration" pumps/moesif.go
+severity: medium
+risk: availability
+mitigation: Configure Moesif endpoints only to trusted vendor/control-plane endpoints and constrain outbound responses through network policy where possible.
+remediation: Wrap the configuration response body in an io.LimitedReader or reject responses above a documented maximum size before JSON parsing.
+owner: tyk-team
+release_disposition: ship_with_known_issue
+status: open
+history:
+    - at: "2026-06-19T00:00:00Z"
+      by: agent:codex
+      action: created

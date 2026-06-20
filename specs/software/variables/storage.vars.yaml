@@ -8,6 +8,10 @@ variables:
       type: bool
       direction: output
       description: 'True iff the chunk-sized batch is popped via LRange+LTrim and the remainder receives an Expire call (KI tracks atomicity gap: see known-issues/mongo-mcdc-storage).'
+    - name: records_removed_once
+      type: bool
+      direction: output
+      description: True iff the records returned by TemporalStorageHandler.GetAndDeleteSet have been removed from the temporal store exactly once for the current call; this mirrors SYS-REQ-007's atomic-removal output at the software layer.
     - name: chunk_partial
       type: bool
       direction: input
@@ -20,3 +24,6 @@ variables:
       type: bool
       direction: output
       description: True iff retry.GetTemporalStorageExponentialBackoff drives the retried connect attempts to completion within bounded backoff (eventual ensureConnection success).
+independence:
+    declared: true
+    reason: 'Storage requirements cover independent temporal-store operations: atomic pop/delete behavior, relative TTL persistence, and connection retry behavior do not constrain the same output state.'

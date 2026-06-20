@@ -33,22 +33,11 @@ verification:
         comment: 'Phase Q: catalog obligation attachments — adds auth_required (Prometheus /metrics exposition posture). See .proof/catalog-obligation-proposals.md.'
         fingerprint: sha256:affd1ab772b26a5ee8f449141d9bad137190eb53e8514b9e504dd7d93a73ed2f
         ai_generated: true
-    impact_reviews:
-        - requirement: SW-REQ-024
-          artifact: pumps/prometheus.go
-          decision: no-authored-change
-          reviewer: agent:claude-opus-4-8
-          reason: 'pumps/prometheus.go reqproof:implements annotation renumbered to SW-REQ-074 (from the 209-range placeholder id; numbering-gap close); obfuscateAPIKey implementation and requirement intent unchanged.'
-          base: origin/master
-          requirement_fingerprint: sha256:0e66c0f45c6dc6f3f44b186c7a5e30788dce2002f3ed801db30f44b95ac9d64f
-          approval_fingerprint: sha256:affd1ab772b26a5ee8f449141d9bad137190eb53e8514b9e504dd7d93a73ed2f
-          artifact_fingerprint: sha256:1e85047b5806a40ffa9bda5799890446584eefca1f655c25d25ee846c2184376
-          reviewed_at: "2026-06-11T15:48:27Z"
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:16Z"
-    last_modified_by: human:buger
-    last_modified_at: "2026-06-17T08:05:06Z"
+    last_modified_by: agent:codex
+    last_modified_at: "2026-06-19T07:25:52Z"
 obligation_checklist:
     - auth_required
     - concurrent
@@ -57,36 +46,43 @@ obligation_checklist:
     - panic_free_input_handling
     - process_exit_on_recoverable
     - request_timeout_bounded
-obligation_suppressions:
-    - id: concurrent
-      reason: 'Phase G: code_signal ''go.concurrency.goroutine-spawn'' at pumps/prometheus.go:215 is a single fire-and-forget goroutine that runs the prometheus HTTP exporter (http.ListenAndServe) for the lifetime of the pump. No shared mutable state across goroutines: the goroutine only owns the listener socket, and prometheus metric updates are guarded by the prometheus client library''s internal locks. No race surface to test against pump code; race-detector evidence would only exercise the prometheus library. Documented as worker-style spawn; not a data-race obligation gap.'
-      suppressed_by: buger
-      suppressed_at: "2026-06-01T18:36:11Z"
 obligation_deferrals:
     - obligation_class: auth_required
-      reason: 'Deferred: required auth_required test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'
-      tracking: .proof/deferred-witness-backlog.md
+      reason: real product gap under known-issue prometheus-metrics-auth-not-enforced; surfaced as visible tracked debt, not an overclaimed fix
+      tracking: prometheus-metrics-auth-not-enforced
       owner: human:buger
+      ki_ref: prometheus-metrics-auth-not-enforced
+    - obligation_class: concurrent
+      reason: Prometheus metric aggregation has a confirmed unsynchronized map mutation race; race and nominal concurrency evidence must wait for the KI remediation.
+      tracking: prometheus-metric-maps-race
+      owner: agent:codex
+      ki_ref: prometheus-metric-maps-race
+      reproducer: prometheus-metric-maps-race static rg tripwire
     - obligation_class: errors_propagated
       reason: real untested obligation under known-issue pumps-logfatal-on-config-decode; surfaced as visible tracked debt, not an overclaimed fix
       tracking: pumps-logfatal-on-config-decode
       owner: human:buger
+      ki_ref: pumps-logfatal-on-config-decode
     - obligation_class: malformed_recovers_or_errors_loudly
       reason: real untested obligation under known-issue mapstructure-decode-silently-drops-unknown-keys; surfaced as visible tracked debt, not an overclaimed fix
       tracking: mapstructure-decode-silently-drops-unknown-keys
       owner: human:buger
+      ki_ref: mapstructure-decode-silently-drops-unknown-keys
     - obligation_class: panic_free_input_handling
       reason: real untested obligation under known-issue no-panic-recovery-in-exec-pump-writing; surfaced as visible tracked debt, not an overclaimed fix
       tracking: no-panic-recovery-in-exec-pump-writing
       owner: human:buger
+      ki_ref: no-panic-recovery-in-exec-pump-writing
     - obligation_class: process_exit_on_recoverable
       reason: real untested obligation under known-issue pumps-logfatal-on-config-decode; surfaced as visible tracked debt, not an overclaimed fix
       tracking: pumps-logfatal-on-config-decode
       owner: human:buger
+      ki_ref: pumps-logfatal-on-config-decode
     - obligation_class: request_timeout_bounded
       reason: real untested obligation under known-issue prometheus-init-mutates-default-mux; surfaced as visible tracked debt, not an overclaimed fix
       tracking: prometheus-init-mutates-default-mux
       owner: human:buger
+      ki_ref: prometheus-init-mutates-default-mux
 lifecycle:
     change_history:
         - date: "2026-05-29T15:46:44Z"

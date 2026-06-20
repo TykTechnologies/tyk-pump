@@ -1,0 +1,20 @@
+id: kinesis-random-partition-key-not-idempotent
+title: Kinesis pump uses a fresh random partition key instead of a stable idempotency or ordering key
+introduced_in: inception
+description: 'SW-REQ-056 documents that each Kinesis PutRecords entry uses a fresh crypto/rand integer as PartitionKey for shard distribution. The implementation matches that description: pumps/kinesis.go:185 generates rand.Int and pumps/kinesis.go:193 assigns fmt.Sprint(n) to PartitionKey. Because the key changes on each replay of the same analytics record, it cannot honor a stable idempotency key, support deterministic duplicate suppression, or preserve per-record ordering/monotonic replay semantics through Kinesis''s per-partition-key ordering contract. The SW-REQ-056 idempotency_key_honored and monotonicity obligations are therefore real product gaps, not only missing test evidence.'
+affected_requirements:
+    - SW-REQ-056
+environment_note: |-
+  Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source and command output.
+reproducer_command: |-
+  rg -n "rand\\.Int\\(|PartitionKey: aws\\.String\\(fmt\\.Sprint\\(n\\)\\)" pumps/kinesis.go specs/software/requirements/SW-REQ-056.req.yaml
+severity: low
+mitigation: Operators needing producer-side duplicate suppression or per-entity ordering must enforce it upstream before events reach the Kinesis pump, or handle ordering downstream.
+remediation: Derive a stable partition/idempotency key from immutable record fields when idempotency or per-entity ordering is required, document the chosen key, and add replay/order tests proving identical input records produce the same key.
+owner: tyk-team
+release_disposition: ship_with_known_issue
+status: open
+history:
+    - at: "2026-06-19T00:00:00Z"
+      by: agent:codex
+      action: created

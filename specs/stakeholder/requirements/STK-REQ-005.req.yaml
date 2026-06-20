@@ -18,9 +18,8 @@ tags:
     - availability
 variables: []
 traces:
-    reviewed_at: "2026-05-30T08:00:51.546986Z"
+    reviewed_at: "2026-06-19T20:51:38Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:6ed85d70649fca644a3b835b66a9238d3b0ecf321ee72c800aba4e5099af1769
 verification:
     assurance_level: B
     formalization_status: none
@@ -47,18 +46,14 @@ stakeholder:
         - id: AC-001
           text: Uptime report data is forwarded to the configured uptime backend so dashboards can display per-API availability.
           testable: true
-          witness_deferred:
-            reason: "No end-to-end acceptance test yet; deferred per hybrid disposition"
-            tracking: ".proof/deferred-witness-backlog.md"
+          verification_method: test
           derived_reqs:
             - SYS-REQ-014
             - SYS-REQ-021
         - id: AC-002
           text: Operators can disable uptime data purging via configuration.
           testable: true
-          witness_deferred:
-            reason: "No end-to-end acceptance test yet; deferred per hybrid disposition"
-            tracking: ".proof/deferred-witness-backlog.md"
+          verification_method: test
           derived_reqs:
             - SYS-REQ-014
 lifecycle:

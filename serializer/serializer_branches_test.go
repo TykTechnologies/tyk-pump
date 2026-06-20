@@ -7,9 +7,7 @@ import (
 	"github.com/TykTechnologies/tyk-pump/analytics"
 )
 
-// Verifies: SW-REQ-008
 // Verifies: SYS-REQ-002
-// SW-REQ-008:encoding_safety:negative
 // MCDC SYS-REQ-002: record_fields_preserved=F, record_forwarded=F => TRUE
 // MCDC SYS-REQ-002: record_fields_preserved=F, record_forwarded=T => FALSE
 // MCDC SYS-REQ-002: record_fields_preserved=T, record_forwarded=T => TRUE
@@ -53,7 +51,6 @@ func TestSerializer_RichRecordRoundtrip(t *testing.T) {
 	}
 }
 
-// Verifies: SW-REQ-008
 // SW-REQ-008:encoding_safety:negative
 func TestSerializer_Decode_Malformed(t *testing.T) {
 	for _, name := range []string{MSGP_SERIALIZER, PROTOBUF_SERIALIZER} {
@@ -68,6 +65,7 @@ func TestSerializer_Decode_Malformed(t *testing.T) {
 }
 
 // Verifies: SW-REQ-008
+// MCDC SW-REQ-008: key_suffix_protobuf=F, protobuf_codec_selected=F => TRUE
 func TestNewAnalyticsSerializer_DefaultsToMsgp(t *testing.T) {
 	if s := NewAnalyticsSerializer(""); s.GetSuffix() != NewAnalyticsSerializer(MSGP_SERIALIZER).GetSuffix() {
 		t.Fatalf("empty type should default to msgp; got suffix %q", s.GetSuffix())

@@ -1,0 +1,20 @@
+id: health-endpoint-rate-limit-not-enforced
+title: Health endpoint has no request rate limiting
+introduced_in: inception
+description: 'server/server.go registers the configured health path directly with Healthcheck using r.HandleFunc("/"+endpoint, Healthcheck).Methods("GET"). The handler writes the liveness response immediately, and the router construction does not wrap it with throttling, rate limiting, or concurrency limiting middleware. The rate_limit_respected obligations for the health endpoint are therefore real product gaps rather than merely missing tests.'
+affected_requirements:
+    - SW-REQ-032
+    - SYS-REQ-012
+environment_note: |-
+  Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source and command output.
+reproducer_command: rg -n "HandleFunc\(\"/\"\+endpoint, Healthcheck\)|func Healthcheck|rate|limit|throttle|concurr" server/server.go
+severity: low
+mitigation: Apply ingress, load-balancer, or service-mesh request limits to the health endpoint in deployment.
+remediation: Add an explicit health endpoint rate limit or document that the endpoint relies on external rate limiting before satisfying rate_limit_respected.
+owner: tyk-team
+release_disposition: ship_with_known_issue
+status: open
+history:
+    - at: "2026-06-19T00:00:00Z"
+      by: agent:codex
+      action: created

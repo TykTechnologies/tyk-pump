@@ -1,13 +1,33 @@
 package demo
 
 import (
+	"errors"
 	"testing"
 	"time"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/gocraft/health"
+	"github.com/gofrs/uuid"
 	"github.com/stretchr/testify/assert"
 )
+
+type failingUUIDGenerator struct{}
+
+func (failingUUIDGenerator) NewV1() (uuid.UUID, error) {
+	return uuid.Nil, nil
+}
+
+func (failingUUIDGenerator) NewV3(ns uuid.UUID, name string) uuid.UUID {
+	return uuid.NewV3(ns, name)
+}
+
+func (failingUUIDGenerator) NewV4() (uuid.UUID, error) {
+	return uuid.Nil, errors.New("uuid entropy unavailable")
+}
+
+func (failingUUIDGenerator) NewV5(ns uuid.UUID, name string) uuid.UUID {
+	return uuid.NewV5(ns, name)
+}
 
 // Verifies: SW-REQ-009
 func TestGenerateDemoData(t *testing.T) {
@@ -131,4 +151,48 @@ func TestGenerateDemoData(t *testing.T) {
 			assert.Equal(t, tt.args.days*24*tt.args.recordsPerHour, counter)
 		})
 	}
+}
+
+// Verifies: SW-REQ-009
+func TestDemoInitDefaultsVersion(t *testing.T) {
+	DemoInit("org", "api", "")
+
+	assert.Equal(t, "api", apiID)
+	assert.Equal(t, "Default", apiVersion)
+	assert.Len(t, apiKeys, 50)
+}
+
+// Verifies: SW-REQ-009
+func TestDemoInitPreservesVersion(t *testing.T) {
+	DemoInit("org", "api", "v1")
+
+	assert.Equal(t, "api", apiID)
+	assert.Equal(t, "v1", apiVersion)
+	assert.Len(t, apiKeys, 50)
+}
+
+// Verifies: SW-REQ-009
+func TestRandomAPIUsesConfiguredID(t *testing.T) {
+	previousAPIID := apiID
+	t.Cleanup(func() {
+		apiID = previousAPIID
+	})
+
+	apiID = "configured-api"
+
+	name, id := randomAPI()
+
+	assert.Equal(t, "Foo Bar", name)
+	assert.Equal(t, "configured-api", id)
+}
+
+// Verifies: SW-REQ-009
+func TestGenerateAPIKeyLogsUUIDErrorAndUsesNilUUID(t *testing.T) {
+	previousGenerator := uuid.DefaultGenerator
+	uuid.DefaultGenerator = failingUUIDGenerator{}
+	t.Cleanup(func() {
+		uuid.DefaultGenerator = previousGenerator
+	})
+
+	assert.Equal(t, "org00000000000000000000000000000000", generateAPIKey("org"))
 }

@@ -13,13 +13,16 @@ import (
 
 // File-level MC/DC witness rows: these requirements are genuinely exercised
 // by covered tests in this file (per-test // MCDC blocks below). Rows copied
-// verbatim from `proof mcdc show`; this header gives every // Verifies: link
-// in the file a matching witness row.
+// verbatim from `proof mcdc show`; this header mirrors matching witness rows
+// for the verification links in this file.
 //
 // MCDC SW-REQ-006: chunk_partial=F, records_popped_and_expire_attempted=F, records_present=T => TRUE
 // MCDC SW-REQ-006: chunk_partial=T, records_popped_and_expire_attempted=F, records_present=F => TRUE
 // MCDC SW-REQ-006: chunk_partial=T, records_popped_and_expire_attempted=F, records_present=T => FALSE
 // MCDC SW-REQ-006: chunk_partial=T, records_popped_and_expire_attempted=T, records_present=T => TRUE
+// MCDC SW-REQ-007: connect_err=F, connection_retried_with_bounded_backoff=F => TRUE
+// MCDC SW-REQ-007: connect_err=T, connection_retried_with_bounded_backoff=F => FALSE
+// MCDC SW-REQ-007: connect_err=T, connection_retried_with_bounded_backoff=T => TRUE
 
 // brokenConnector is a stub model.Connector that satisfies the interface
 // but rejects As() conversion. This forces NewRedisV9WithConnection to
@@ -27,44 +30,34 @@ import (
 // err != nil paths in getKVFromConnector / getListFromConnector and
 // the subsequent error branches in (*TemporalStorageHandler).connect when
 // the kv/list re-instantiation arms are hit.
-// Verifies: SW-REQ-007
 type brokenConnector struct {
 	disconnectErr error
 }
 
-// Verifies: SW-REQ-007
 func (b *brokenConnector) Disconnect(_ context.Context) error { return b.disconnectErr }
 
-// Verifies: SW-REQ-007
 func (b *brokenConnector) Ping(_ context.Context) error { return nil }
 
-// Verifies: SW-REQ-007
 func (b *brokenConnector) Type() string { return model.RedisV9Type }
 
-// Verifies: SW-REQ-007
 func (b *brokenConnector) As(_ interface{}) bool { return false }
 
 // flakyConnector wraps a real connector and selectively rejects the
 // Nth As() call (1-indexed). Used to drive the list-vs-kv asymmetry
 // inside (*TemporalStorageHandler).connect where the rebind branch
 // calls getKVFromConnector and then getListFromConnector.
-// Verifies: SW-REQ-007
 type flakyConnector struct {
 	inner    model.Connector
 	rejectAt int
 	calls    int
 }
 
-// Verifies: SW-REQ-007
 func (f *flakyConnector) Disconnect(ctx context.Context) error { return f.inner.Disconnect(ctx) }
 
-// Verifies: SW-REQ-007
 func (f *flakyConnector) Ping(ctx context.Context) error { return f.inner.Ping(ctx) }
 
-// Verifies: SW-REQ-007
 func (f *flakyConnector) Type() string { return f.inner.Type() }
 
-// Verifies: SW-REQ-007
 func (f *flakyConnector) As(i interface{}) bool {
 	f.calls++
 	if f.calls == f.rejectAt {
@@ -77,9 +70,11 @@ func (f *flakyConnector) As(i interface{}) bool {
 // each MC/DC test starts from a deterministic state. Several MC/DC branches
 // depend on whether the singleton is nil at call time, so we wrap this in
 // a helper used as t.Cleanup() and as setup.
-// Verifies: SW-REQ-007
 func resetSingletonForTest(t *testing.T) {
 	t.Helper()
+	if connectorSingleton != nil {
+		_ = connectorSingleton.Disconnect(context.Background())
+	}
 	connectorSingleton = nil
 }
 
@@ -194,6 +189,7 @@ func TestTemporalStorageHandler_GetName_CustomType(t *testing.T) {
 
 // Verifies: SW-REQ-007
 // SW-REQ-007:boundary:review
+// SW-REQ-007:boundary:nominal
 // Drives `config.MaxActive > 0` = T and `config.Timeout > 0` = T at
 // temporal_storage.go:154 and :160. The handler must honour the
 // caller-supplied values rather than fall back to defaults.
@@ -245,6 +241,7 @@ func TestNewTemporalStorageHandler_UnsupportedConfigType(t *testing.T) {
 // Drives the `case *TemporalStorageConfig` and `case TemporalStorageConfig`
 // arms of NewTemporalStorageHandler. Each must construct successfully
 // without invoking mapstructure.
+// SW-REQ-007:error_handling:nominal
 // SW-REQ-007:nominal:nominal
 func TestNewTemporalStorageHandler_StructConfigVariants(t *testing.T) {
 	t.Run("pointer", func(t *testing.T) {
@@ -325,6 +322,7 @@ func TestTemporalStorageHandler_Connect_ResetConnectionError(t *testing.T) {
 
 // Verifies: SW-REQ-007
 // SW-REQ-007:error_handling:negative
+// SW-REQ-007:resource_lifetime_released:negative
 // Drives the `err != nil` arm in resetConnection at temporal_storage.go:144
 // (the connectorSingleton.Disconnect failure path) by installing a stub
 // singleton whose Disconnect returns an error before triggering a
@@ -394,6 +392,7 @@ func TestGetListFromConnector_BrokenConnector(t *testing.T) {
 
 // Verifies: SW-REQ-007
 // SW-REQ-007:nominal:review
+// SW-REQ-007:resource_lifetime_released:nominal
 // Drives the `r.kv == nil || r.list == nil` = T branch in connect() at
 // temporal_storage.go:121, taking the success path: an existing,
 // healthy singleton is in place, and a freshly constructed handler with
@@ -548,6 +547,7 @@ func TestTemporalStorageHandler_SetKey_BackendUnreachable(t *testing.T) {
 }
 
 // Verifies: SW-REQ-006
+// SW-REQ-006:error_handling:nominal
 // SW-REQ-006:error_handling:negative
 // Drives the `err != nil` arm at temporal_storage.go:315 in SetKey
 // (ensureConnection failure). We use a fresh handler whose Config has
@@ -578,7 +578,10 @@ func TestTemporalStorageHandler_SetKey_EnsureConnectionSingletonAlive(t *testing
 }
 
 // Verifies: SW-REQ-006
+// Verifies: SYS-REQ-007
 // SW-REQ-006:error_handling:negative
+// SW-REQ-006:atomicity:negative
+// SYS-REQ-007:atomicity:negative
 // Drives the `err != nil` arm at temporal_storage.go:295 in
 // GetAndDeleteSet (Expire failure after a successful Pop). We use a
 // broken kv stub that returns an error from Expire but accept that
@@ -590,6 +593,7 @@ func TestTemporalStorageHandler_SetKey_EnsureConnectionSingletonAlive(t *testing
 // asserting the data-loss semantics (the KI tracks the semantic gap).
 //
 // MCDC SW-REQ-006: chunk_partial=T, records_popped_and_expire_attempted=F, records_present=T => FALSE
+// MCDC SYS-REQ-007: records_consumed=T, records_removed_once=F => FALSE
 //
 // This is the requirement-violation row (row 3): a record is present
 // (records_present=T) and the chunk is partial (chunk_partial=T, chunkSize=10),
@@ -629,6 +633,7 @@ func TestTemporalStorageHandler_GetAndDeleteSet_ExpireFailureDecision(t *testing
 // rewritten to -1 by GetAndDeleteSet, which skips the Expire step entirely.
 //
 // Verifies: SW-REQ-006
+// SW-REQ-006:error_handling:nominal
 // SW-REQ-006:nominal:nominal
 // MCDC SW-REQ-006: chunk_partial=F, records_popped_and_expire_attempted=F, records_present=T => TRUE
 // MCDC SW-REQ-006: chunk_partial=T, records_popped_and_expire_attempted=F, records_present=F => TRUE
@@ -686,12 +691,10 @@ func TestTemporalStorageHandler_GetAndDeleteSet_TrueRows(t *testing.T) {
 // expireFailingKV wraps a real KeyValue and forces Expire to fail; all
 // other methods delegate. This lets us drive the Expire-error decision
 // without modifying production code.
-// Verifies: SW-REQ-006
 type expireFailingKV struct {
 	model.KeyValue
 }
 
-// Verifies: SW-REQ-006
 func (e *expireFailingKV) Expire(_ context.Context, _ string, _ time.Duration) error {
 	return assertAnError()
 }
@@ -722,13 +725,10 @@ func TestEnvMapStringDecode_AllSkipped(t *testing.T) {
 // assertAnError returns a non-nil error suitable for stubs that want to
 // flag a synthetic failure. Defined as a helper so each call site reads
 // intent ("an error happened") rather than the literal string.
-// Verifies: SW-REQ-007
 func assertAnError() error {
 	return &syntheticError{msg: "synthetic test failure"}
 }
 
-// Verifies: SW-REQ-007
 type syntheticError struct{ msg string }
 
-// Verifies: SW-REQ-007
 func (s *syntheticError) Error() string { return s.msg }

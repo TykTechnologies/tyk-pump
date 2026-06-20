@@ -46,12 +46,9 @@ obligation_checklist:
     - failure_independence_proven
 obligation_deferrals:
     - obligation_class: external_call_concurrency_bounded
-      reason: 'Deferred: required external_call_concurrency_bounded test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'
-      tracking: .proof/deferred-witness-backlog.md
-      owner: human:buger
-    - obligation_class: failure_independence_proven
-      reason: 'Deferred: required failure_independence_proven test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'
-      tracking: .proof/deferred-witness-backlog.md
+      reason: real product gap under known-issue pump-fanout-no-global-concurrency-limit; surfaced as visible tracked debt, not an overclaimed fix
+      tracking: pump-fanout-no-global-concurrency-limit
+      ki_ref: pump-fanout-no-global-concurrency-limit
       owner: human:buger
 release_disposition: ship_with_known_issue
 lifecycle:

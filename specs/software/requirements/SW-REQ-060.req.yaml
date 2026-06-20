@@ -15,13 +15,16 @@ parent: SYS-REQ-019
 component: pumps-mongo-aggregate
 rationale: ""
 tags: []
-variables: []
+variables:
+    - first_upsert_succeeded
+    - second_upsert_attempted
+    - hits_errors_latency_counted
 traces:
     satisfies:
         - SYS-REQ-019
-    reviewed_at: "2026-06-02T14:31:02.355094Z"
-    reviewed_by: human:buger
-    reviewed_fingerprint: sha256:51009bd25f632b3f2913aa4bc4a41e872fc62bdcaa36eadf992fe1cbe68d6037
+    reviewed_at: "2026-06-19T14:05:38.137563Z"
+    reviewed_by: ai:codex
+    reviewed_fingerprint: sha256:83199e08321148e4045494ae5dcf7554ac8525e20385169b1d5cf4bf6528e984
 verification:
     assurance_level: B
     formalization_status: valid
@@ -29,26 +32,15 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-03T07:40:07Z"
-        comment: 'Phase Q: catalog obligation attachments — adds transaction_isolation_declared, hash_format_deterministic (Mongo aggregate two-step upsert isolation + dimension key projection). See .proof/catalog-obligation-proposals.md.'
-        fingerprint: sha256:cca0a2beea33e7ad8c01ac3d33741d17ba662e7c88f94130e472879f215c7c40
-        ai_generated: true
-    impact_reviews:
-        - requirement: SW-REQ-060
-          artifact: pumps/mongo_aggregate.go
-          decision: no-authored-change
-          reviewer: buger
-          reason: 'Phase L3 aggressive: FRETish formalization added per L3 plan; production .go behaviour and code paths unchanged — only requirement metadata (fretish text + formalization_strategy + variables) altered. Test annotations may follow but do not change runtime behaviour.'
-          base: origin/master
-          requirement_fingerprint: sha256:51009bd25f632b3f2913aa4bc4a41e872fc62bdcaa36eadf992fe1cbe68d6037
-          approval_fingerprint: sha256:cca0a2beea33e7ad8c01ac3d33741d17ba662e7c88f94130e472879f215c7c40
-          artifact_fingerprint: sha256:dbad5d36c1f182c7c46b96b648d01065563938e23243987ed06b1f8dc02d6171
-          reviewed_at: "2026-06-02T14:30:20Z"
+        reviewed_at: "2026-06-19T20:08:14Z"
+        comment: 'Spec evidence-debt refresh: reviewed KI-gated obligation_deferrals added for required-but-unwitnessed obligations. Each deferral links to an open traced KnownIssue and leaves the gap as auto-expiring accepted KI-debt rather than claiming product/test fixes.'
+        fingerprint: sha256:3fcffc8e68593e0253b142242b70cdce047e67e25fe5a5dac3250e28afd2fa2b
+        ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:37:31Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-17T08:04:49Z"
+    last_modified_at: "2026-06-19T20:08:14Z"
 obligation_checklist:
     - atomicity
     - errors_propagated
@@ -58,29 +50,30 @@ obligation_checklist:
     - monotonicity
 obligation_deferrals:
     - obligation_class: atomicity
-      reason: 'Mongo $inc upsert atomicity negative test needs fault-injecting MongoDB (kill mid-upsert, w=0 race) the local CI cannot provision; obligation required, fault-injection harness is future work.'
-      tracking: .proof/deferred-witness-backlog.md
+      reason: Required atomicity evidence is parked because the Mongo aggregate fault-injection harness is missing.
+      tracking: known-issue:mongo-aggregate-atomicity-fault-injection-missing
       owner: human:buger
+      ki_ref: mongo-aggregate-atomicity-fault-injection-missing
     - obligation_class: errors_propagated
-      reason: 'real untested obligation under known-issue pumps-logfatal-on-config-decode; surfaced as visible tracked debt, not an overclaimed fix'
-      tracking: pumps-logfatal-on-config-decode
+      reason: Required error-propagation evidence is parked because pump config decode errors can still terminate the process.
+      tracking: known-issue:pumps-logfatal-on-config-decode
       owner: human:buger
+      ki_ref: pumps-logfatal-on-config-decode
     - obligation_class: hash_format_deterministic
-      reason: 'Deferred: required hash_format_deterministic test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'
-      tracking: .proof/deferred-witness-backlog.md
+      reason: Required hash-format evidence is parked because this obligation is currently misattributed to SW-REQ-060.
+      tracking: known-issue:sw-req-060-hash-format-obligation-misattributed
       owner: human:buger
+      ki_ref: sw-req-060-hash-format-obligation-misattributed
     - obligation_class: idempotency
-      reason: 'Deferred: required idempotency test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'
-      tracking: .proof/deferred-witness-backlog.md
+      reason: Required idempotency evidence is parked because aggregate counter replay is still not idempotent.
+      tracking: known-issue:aggregate-counter-replay-not-idempotent
       owner: human:buger
+      ki_ref: aggregate-counter-replay-not-idempotent
     - obligation_class: malformed_recovers_or_errors_loudly
-      reason: 'real untested obligation under known-issue mapstructure-decode-silently-drops-unknown-keys; surfaced as visible tracked debt, not an overclaimed fix'
-      tracking: mapstructure-decode-silently-drops-unknown-keys
+      reason: Required malformed-input evidence is parked because lenient decode gaps are tracked for this requirement.
+      tracking: known-issue:mapstructure-decode-silently-drops-unknown-keys
       owner: human:buger
-    - obligation_class: monotonicity
-      reason: 'Deferred: required monotonicity test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'
-      tracking: .proof/deferred-witness-backlog.md
-      owner: human:buger
+      ki_ref: mapstructure-decode-silently-drops-unknown-keys
 lifecycle:
     change_history:
         - date: "2026-05-30T08:43:47Z"
@@ -103,3 +96,13 @@ lifecycle:
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T14:19:01Z comment="Phase L3 aggressive: flip remaining decision-bearing SW reqs to FRETish per L3 plan; vars added per-component; MC/DC witnesses to be annotated in tests.")'
           changed_by: human:cli
+        - date: "2026-06-19T19:54:58Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-03T07:40:07Z comment="Phase Q: catalog obligation attachments — adds transaction_isolation_declared, hash_format_deterministic (Mongo aggregate two-step upsert isolation + dimension key projection). See .proof/catalog-obligation-proposals.md.")'
+          changed_by: human:cli
+        - date: "2026-06-19T20:08:14Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-19T19:54:58Z comment="Spec audit stale-approval refresh: reviewed current YAML diffs vs HEAD plus KI/proof metadata; changes are metadata, trace, and evidence-honesty updates that surface gaps via KnownIssues/deferrals without claiming product fixes.")'
+          changed_by: human:buger

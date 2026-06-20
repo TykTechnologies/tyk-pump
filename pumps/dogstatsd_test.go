@@ -15,7 +15,8 @@ import (
 
 // TestDogStatsdPump_New_GetName covers the New() + GetName() identity helpers.
 //
-// Verifies: SW-REQ-023
+// Verifies: SW-REQ-017
+// SW-REQ-017:nominal:nominal
 func TestDogStatsdPump_New_GetName(t *testing.T) {
 	pump := (&DogStatsdPump{}).New().(*DogStatsdPump)
 	require.NotNil(t, pump)
@@ -24,7 +25,8 @@ func TestDogStatsdPump_New_GetName(t *testing.T) {
 
 // TestDogStatsdPump_GetEnvPrefix covers the GetEnvPrefix() reader after Init.
 //
-// Verifies: SW-REQ-023
+// Verifies: INT-REQ-004
+// MCDC INT-REQ-004: contract_honoured=T, pump_methods_called=T => TRUE
 func TestDogStatsdPump_GetEnvPrefix(t *testing.T) {
 	addr, _ := newUDPSink(t)
 	pump := &DogStatsdPump{}

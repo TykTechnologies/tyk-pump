@@ -129,6 +129,7 @@ func TestMCPSQLPump_Init(t *testing.T) {
 // (mcp_record_present=T/mcp_record_routed=T also driven by TestMCPSQLPump_Sharded
 // which sets TableSharding=true and asserts MCP records land in <TableName>_<YYYYMMDD>
 // shards.)
+// SW-REQ-044:connection_leak_free:nominal
 func TestMCPSQLPump_WriteData(t *testing.T) {
 	skipTestIfNoPostgres(t)
 	tableName := "test_mcp_write"
@@ -206,6 +207,11 @@ func TestMCPSQLPump_WriteData(t *testing.T) {
 			var count int64
 			pump.db.Table(tableName).Count(&count)
 			assert.Equal(t, int64(tc.expectedMCPRows), count)
+
+			sqlDB, err := pump.db.DB()
+			require.NoError(t, err)
+			assert.Equal(t, 0, sqlDB.Stats().InUse,
+				"MCP SQL write and count should return every connection to the pool")
 		})
 	}
 }
@@ -324,7 +330,6 @@ func TestMCPSQLPump_WriteData_EmptyData(t *testing.T) {
 
 // newMCPSQLPumpWithSQLite creates an MCPSQLPump backed by in-memory SQLite.
 // No Postgres needed — tests the actual write logic, batching, and sharding.
-// Verifies: SW-REQ-044
 func newMCPSQLPumpWithSQLite(t *testing.T, tableName string, batchSize int, sharding bool) *MCPSQLPump {
 	t.Helper()
 	db := setupTestDB(t)
@@ -350,7 +355,6 @@ func newMCPSQLPumpWithSQLite(t *testing.T, tableName string, batchSize int, shar
 	return pump
 }
 
-// Verifies: SW-REQ-044
 func mcpRecord(ts time.Time, method, primType, primName string, code int) analytics.AnalyticsRecord {
 	return analytics.AnalyticsRecord{
 		TimeStamp: ts, Method: "POST", Path: "/mcp",

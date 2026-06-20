@@ -41,11 +41,6 @@ history:
 obligation_class: malformed_input
 obligation_checklist:
     - malformed_recovers_or_errors_loudly
-obligation_deferrals:
-    - obligation_class: malformed_recovers_or_errors_loudly
-      reason: 'Deferred: required malformed_recovers_or_errors_loudly test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'
-      tracking: .proof/deferred-witness-backlog.md
-      owner: human:buger
 lifecycle:
     change_history:
         - date: "2026-05-30T10:47:21Z"

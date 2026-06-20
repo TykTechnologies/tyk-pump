@@ -12,3 +12,6 @@ variables:
       type: bool
       direction: internal
       description: Uptime data has been retrieved from the temporal store on this purge cycle.
+independence:
+    declared: true
+    reason: 'Uptime requirements separate uptime record forwarding from temporal-store consumption and aggregate-window calculation; the formalized outputs are intentionally independent.'

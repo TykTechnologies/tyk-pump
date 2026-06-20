@@ -67,7 +67,7 @@ func (i *InfluxPump) Init(config interface{}) error {
 	i.log = log.WithField("prefix", influxPrefix)
 
 	err := mapstructure.Decode(config, &i.dbConf)
-	if err != nil { //mcdc:ignore log.Fatal exits the process; cannot be unit-tested without crashing — KI pumps-logfatal-on-config-decode
+	if err != nil { //mcdc:ignore:capability-gap log.Fatal exits the process; cannot be unit-tested without crashing — KI pumps-logfatal-on-config-decode [ki: pumps-logfatal-on-config-decode]
 		i.log.Fatal("Failed to decode configuration: ", err)
 	}
 
@@ -89,7 +89,7 @@ func (i *InfluxPump) connect() client.Client {
 		Password: i.dbConf.Password,
 	})
 
-	if err != nil { //mcdc:ignore Driving err=T forces an infinite recursion (5s sleep + self-call with no termination condition); covered by KI influx-v1-unbounded-reconnect-recursion. Defensive plumbing — KI mcdc-pumps-below-95.
+	if err != nil { //mcdc:ignore:capability-gap Driving err=T forces an infinite recursion (5s sleep + self-call with no termination condition); covered by KI influx-v1-unbounded-reconnect-recursion. Defensive plumbing — KI mcdc-pumps-below-95. [ki: influx-v1-unbounded-reconnect-recursion]
 		i.log.Error("Influx connection failed:", err)
 		time.Sleep(5 * time.Second)
 		i.connect()
@@ -141,7 +141,7 @@ func (i *InfluxPump) WriteData(ctx context.Context, data []interface{}) error {
 			var tag string
 
 			b, err := json.Marshal(mapping[t])
-			if err != nil { //mcdc:ignore json.Marshal on the canonical AnalyticsRecord mapping values (string/int/int64/time.Time) cannot fail. KI mcdc-pumps-below-95.
+			if err != nil { //mcdc:ignore:defensive json.Marshal on the canonical AnalyticsRecord mapping values (string/int/int64/time.Time) cannot fail. KI mcdc-pumps-below-95.
 				tag = ""
 			} else {
 				// convert and remove surrounding quotes from tag value
@@ -156,7 +156,7 @@ func (i *InfluxPump) WriteData(ctx context.Context, data []interface{}) error {
 		}
 
 		// New record
-		if pt, err = client.NewPoint(table, tags, fields, time.Now()); err != nil { //mcdc:ignore client.NewPoint only errors on a nil/empty measurement name or zero-length tag value; with table="analytics" and pre-populated tag/field maps over canonical mapping[] values, the error path is unreachable in production. KI mcdc-pumps-below-95.
+		if pt, err = client.NewPoint(table, tags, fields, time.Now()); err != nil { //mcdc:ignore:capability-gap client.NewPoint only errors on a nil/empty measurement name or zero-length tag value; with table="analytics" and pre-populated tag/field maps over canonical mapping[] values, the error path is unreachable in production. KI mcdc-pumps-below-95. [ki: mcdc-pumps-below-95]
 			i.log.Error(err)
 			continue
 		}

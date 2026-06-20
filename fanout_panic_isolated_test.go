@@ -24,9 +24,9 @@ type panickingPump struct {
 	name string
 }
 
-func (p *panickingPump) GetName() string                                   { return p.name }
-func (p *panickingPump) New() pumps.Pump                                   { return &panickingPump{name: p.name} }
-func (p *panickingPump) Init(_ interface{}) error                          { return nil }
+func (p *panickingPump) GetName() string          { return p.name }
+func (p *panickingPump) New() pumps.Pump          { return &panickingPump{name: p.name} }
+func (p *panickingPump) Init(_ interface{}) error { return nil }
 func (p *panickingPump) WriteData(_ context.Context, _ []interface{}) error {
 	panic("simulated downstream library bug in " + p.name)
 }
@@ -68,9 +68,6 @@ func (p *completionTrackingPump) Snapshot() (called, completed bool) {
 	return p.called, p.completed
 }
 
-// Verifies: SW-REQ-001
-// SW-REQ-001:fanout_panic_isolated:negative
-//
 // Contract: a panic inside one pump's WriteData MUST NOT crash the
 // tyk-pump process or starve sibling pumps in the same purge cycle.
 // Per the goroutine-fanout in main.go:execPumpWriting (line 469), each
@@ -87,10 +84,14 @@ func (p *completionTrackingPump) Snapshot() (called, completed bool) {
 //     => panic isolated (CONTRACT HONORED, ideal future state)
 //   - Subprocess exit code != 0 with "panic:" on stderr
 //     => panic escaped goroutine; sibling pumps may or may not have
-//        completed (CONTRACT GAP, current state — KI surface)
+//     completed (CONTRACT GAP, current state — KI surface)
 //
 // Either outcome is OBSERVED, not crashed-on. Wave 4 should file the
 // KI `pump-fanout-panic-not-recovered` if the subprocess crashes.
+//
+// Verifies: SYS-REQ-004
+// MCDC SYS-REQ-004: a_backend_failed=T, other_backends_written=F => FALSE
+// Reproduces: pump-fanout-panic-not-recovered
 func TestFanoutPanicIsolated_PanicInOneDoesNotStallOthers(t *testing.T) {
 	if os.Getenv("TYK_PUMP_PANIC_ISOLATION_SUBPROCESS") == "1" {
 		// We are the subprocess. Run the actual panicking fanout and
@@ -136,10 +137,10 @@ func TestFanoutPanicIsolated_PanicInOneDoesNotStallOthers(t *testing.T) {
 		// Stack trace from subprocess output above shows the exact
 		// uncovered code path: main.go:469 spawns a goroutine that calls
 		// pmp.WriteData directly without defer/recover.
-		t.Logf("DOCUMENTED GAP CONFIRMED — panic escaped pump goroutine and " +
-			"crashed subprocess (hasSiblingCompleted=%v). " +
+		t.Logf("DOCUMENTED GAP CONFIRMED — panic escaped pump goroutine and "+
+			"crashed subprocess (hasSiblingCompleted=%v). "+
 			"Wave 4 KI: pump-fanout-panic-not-recovered. "+
-			"Production code: main.go:469 spawns goroutine calling " +
+			"Production code: main.go:469 spawns goroutine calling "+
 			"WriteData without defer/recover.", hasSiblingCompleted)
 	default:
 		t.Errorf("unexpected subprocess outcome: err=%v hasPanic=%v hasSibling=%v hasFanoutSurvived=%v "+

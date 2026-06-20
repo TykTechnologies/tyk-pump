@@ -34,17 +34,6 @@ verification:
         comment: 'Phase S Wave 2: attach blind-spot obligations from Wave 1 promote (cascade/fanout/clock_skew/dst/tz/temporal_window/process_exit/tls_verification/partial_progress)'
         fingerprint: sha256:ea9cda7d3a3f22a915798e115a8794f339f65ca2e895171e8755133427c5131a
         ai_generated: false
-    impact_reviews:
-        - requirement: SW-REQ-015
-          artifact: analytics/uptime_data.go
-          decision: no-authored-change
-          reviewer: buger
-          reason: 'Phase Q3: added reqproof:implements SW-REQ-073 annotation to AggregateUptimeData so SW-REQ-073 has an implemented_by trace; SW-REQ-015 still owns the same surface, no requirement intent change.'
-          base: origin/master
-          requirement_fingerprint: sha256:6409890eeea986a1cad2c8360d25c95292e98adfa718387df23e3d49bf02d595
-          approval_fingerprint: sha256:ea9cda7d3a3f22a915798e115a8794f339f65ca2e895171e8755133427c5131a
-          artifact_fingerprint: sha256:d6e83286abc9394d0a08d7652fed433049fa82bd214c396bea98c02ab60d2273
-          reviewed_at: "2026-06-03T07:55:55Z"
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:15Z"
@@ -57,6 +46,7 @@ obligation_deferrals:
     - obligation_class: tz_explicit
       reason: real untested obligation under known-issue analytics-timestamp-timezone-convention-unpinned; surfaced as visible tracked debt, not an overclaimed fix
       tracking: analytics-timestamp-timezone-convention-unpinned
+      ki_ref: analytics-timestamp-timezone-convention-unpinned
       owner: human:buger
 lifecycle:
     change_history:

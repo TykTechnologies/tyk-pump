@@ -8,6 +8,10 @@ variables:
       type: bool
       direction: output
       description: True iff a StatsD sink is added to the health stream and MonitorApplicationInstrumentation is invoked.
+    - name: metrics_emitted
+      type: bool
+      direction: output
+      description: True iff the pump-core instrumentation path emits purge timing and record-count metrics to the configured StatsD sink; this mirrors SYS-REQ-013's observability output at the software layer.
     - name: statsd_endpoint_configured
       type: bool
       direction: input
@@ -20,6 +24,10 @@ variables:
       type: bool
       direction: output
       description: True iff all configured pumps received the filterData-processed batch for the current cycle.
+    - name: records_consumed_from_store
+      type: bool
+      direction: output
+      description: True iff the purge loop retrieved analytics records from temporal storage for the current cycle before filtering and dispatch; this mirrors SYS-REQ-001's ingestion output at the software layer.
     - name: json_loaded_before_env_override
       type: bool
       direction: output
@@ -52,3 +60,10 @@ variables:
       type: bool
       direction: output
       description: True iff every operator-listed field that matches a known AnalyticsRecord json tag has been zeroed out of the forwarded record by AnalyticsRecord.RemoveIgnoredFields before dispatch; unrecognised field names are logged and leave the record unchanged (mirror of the SYS-level privacy variable, scoped to the software component).
+    - name: record_truncated
+      type: bool
+      direction: output
+      description: True iff main.filterData trims an analytics record before dispatch when the configured maximum record size is exceeded; this mirrors SYS-REQ-010's privacy output at the software layer.
+independence:
+    declared: true
+    reason: 'Pump-core requirements cover distinct lifecycle surfaces: instrumentation setup, purge dispatch, configuration loading, component initialisation, shutdown, and field filtering.'

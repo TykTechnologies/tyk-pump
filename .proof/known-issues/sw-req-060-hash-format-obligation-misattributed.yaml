@@ -1,0 +1,20 @@
+id: sw-req-060-hash-format-obligation-misattributed
+title: SW-REQ-060 hash-format obligation is misattributed to a Mongo query-key path
+introduced_in: inception
+description: 'The catalog attaches hash_format_deterministic to SW-REQ-060 as "aggregate upsert key = {orgid, timestamp}", but the MongoAggregate implementation uses a Mongo query object keyed by orgid and timestamp rather than a serialized hash format. The deterministic hex projection witness belongs to the analytics aggregate endpoint key path covered by SW-REQ-009. Until the spec/catalog is corrected to define a real hash projection for SW-REQ-060, the typed hash_format_deterministic obligation is a proof/spec attribution gap, not missing product behavior.'
+affected_requirements:
+    - SW-REQ-060
+environment_note: |-
+  Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source and command output.
+reproducer_command: |-
+  rg -n "hash_format_deterministic|hex\\.EncodeToString|orgid|timestamp|query" .proof/catalog-obligation-proposals.md analytics/aggregate.go pumps/mongo_aggregate.go specs/software/requirements/SW-REQ-060.req.yaml
+severity: low
+mitigation: Treat SW-REQ-009 as the requirement that owns deterministic aggregate endpoint key projection until SW-REQ-060 is clarified.
+remediation: Either move the hash_format_deterministic obligation from SW-REQ-060 to the actual hash/projection requirement, or amend SW-REQ-060 to specify a deterministic serialized key and add a witness for it.
+owner: tyk-team
+release_disposition: ship_with_known_issue
+status: open
+history:
+    - at: "2026-06-19T00:00:00Z"
+      by: agent:codex
+      action: created

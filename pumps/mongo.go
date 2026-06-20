@@ -209,17 +209,17 @@ func (m *MongoPump) Init(config interface{}) error {
 	m.log = log.WithField("prefix", mongoPrefix)
 
 	err := mapstructure.Decode(config, &m.dbConf)
-	if err == nil { //mcdc:ignore the err==nil=F arm leads directly to log.Fatal at line 222; that exits the process and cannot be unit-tested without crashing — KI pumps-logfatal-on-config-decode
+	if err == nil { //mcdc:ignore:capability-gap the err==nil=F arm leads directly to log.Fatal at line 222; that exits the process and cannot be unit-tested without crashing — KI pumps-logfatal-on-config-decode [ki: pumps-logfatal-on-config-decode]
 		err = mapstructure.Decode(config, &m.dbConf.BaseMongoConf)
 		m.log.WithFields(logrus.Fields{
 			"url":             m.dbConf.GetBlurredURL(),
 			"collection_name": m.dbConf.CollectionName,
 		}).Info("Init")
-		if err != nil { //mcdc:ignore second mapstructure.Decode error path is unreachable: BaseMongoConf is an embedded subset of MongoConf and the first Decode already validated the same source — KI pumps-logfatal-on-config-decode
+		if err != nil { //mcdc:ignore:capability-gap second mapstructure.Decode error path is unreachable: BaseMongoConf is an embedded subset of MongoConf and the first Decode already validated the same source — KI pumps-logfatal-on-config-decode [ki: pumps-logfatal-on-config-decode]
 			panic(m.dbConf.BaseMongoConf)
 		}
 	}
-	if err != nil { //mcdc:ignore log.Fatal exits the process; cannot be unit-tested without crashing — KI pumps-logfatal-on-config-decode
+	if err != nil { //mcdc:ignore:capability-gap log.Fatal exits the process; cannot be unit-tested without crashing — KI pumps-logfatal-on-config-decode [ki: pumps-logfatal-on-config-decode]
 		m.log.Fatal("Failed to decode configuration: ", err)
 	}
 
@@ -293,7 +293,7 @@ func (m *MongoPump) capCollection() (ok bool) {
 		return false
 	}
 
-	if strconv.IntSize < 64 { //mcdc:ignore 32-bit arch guard unreachable on supported 64-bit-only release matrix — KI mongo-cap-collection-non64-arch-unreachable
+	if strconv.IntSize < 64 { //mcdc:ignore:capability-gap 32-bit arch guard unreachable on supported 64-bit-only release matrix — KI mongo-cap-collection-non64-arch-unreachable [ki: mongo-cap-collection-non64-arch-unreachable]
 		m.log.Warn("Pump running < 64bit architecture. Not capping collection as max size would be 2gb")
 
 		return false
@@ -311,7 +311,7 @@ func (m *MongoPump) capCollection() (ok bool) {
 	}
 
 	err = m.store.Migrate(context.Background(), []model.DBObject{d}, model.DBM{"capped": true, "maxBytes": colCapMaxSizeBytes})
-	if err != nil { //mcdc:ignore Migrate-err arm requires HasTable (line 283) to succeed returning exists=false AND the subsequent capped-collection Migrate to fail — the natural failure modes (network down, disk full) take BOTH calls down together, and Mongo accepts any valid capped-collection spec when reachable; driving this needs a fake persistent.PersistentStorage — KI mcdc-pumps-below-95
+	if err != nil { //mcdc:ignore:capability-gap Migrate-err arm requires HasTable (line 283) to succeed returning exists=false AND the subsequent capped-collection Migrate to fail — the natural failure modes (network down, disk full) take BOTH calls down together, and Mongo accepts any valid capped-collection spec when reachable; driving this needs a fake persistent.PersistentStorage — KI mcdc-pumps-below-95 [ki: mcdc-pumps-below-95]
 		m.log.Errorf("Unable to create capped collection for (%s). %s", colName, err.Error())
 
 		return false
@@ -363,7 +363,7 @@ func (m *MongoPump) ensureIndexes(collectionName string) error {
 	}
 
 	err = m.store.CreateIndex(context.Background(), d, apiIndex)
-	if err != nil { //mcdc:ignore second-CreateIndex err arm requires the orgIndex (line 355) call to succeed AND the apiIndex call to fail — driving that ordering needs a fake persistent.PersistentStorage; container-stop terminates BOTH calls — KI mcdc-pumps-below-95
+	if err != nil { //mcdc:ignore:capability-gap second-CreateIndex err arm requires the orgIndex (line 355) call to succeed AND the apiIndex call to fail — driving that ordering needs a fake persistent.PersistentStorage; container-stop terminates BOTH calls — KI mcdc-pumps-below-95 [ki: mcdc-pumps-below-95]
 		return err
 	}
 
@@ -391,7 +391,7 @@ func (m *MongoPump) connect() {
 		Type:                     m.dbConf.MongoDriverType,
 		DirectConnection:         m.dbConf.MongoDirectConnection,
 	})
-	if err != nil { //mcdc:ignore log.Fatal exits the process; persistent.NewPersistentStorage defers connection failure to first use so this arm cannot be unit-tested without crashing — KI mongo-pump-init-connect-logfatal-unreachable
+	if err != nil { //mcdc:ignore:capability-gap log.Fatal exits the process; persistent.NewPersistentStorage defers connection failure to first use so this arm cannot be unit-tested without crashing — KI mongo-pump-init-connect-logfatal-unreachable [ki: mongo-pump-init-connect-logfatal-unreachable]
 		m.log.Fatal("Failed to connect: ", err)
 	}
 
@@ -401,7 +401,7 @@ func (m *MongoPump) connect() {
 // reqproof:implements SW-REQ-034
 func (m *MongoPump) WriteData(ctx context.Context, data []interface{}) error {
 	collectionName := m.dbConf.CollectionName
-	if collectionName == "" { //mcdc:ignore log.Fatal exits the process on misconfiguration; not unit-testable — KI mongo-pump-init-connect-logfatal-unreachable
+	if collectionName == "" { //mcdc:ignore:capability-gap log.Fatal exits the process on misconfiguration; not unit-testable — KI mongo-pump-init-connect-logfatal-unreachable [ki: mongo-pump-init-connect-logfatal-unreachable]
 		m.log.Fatal("No collection name!")
 	}
 

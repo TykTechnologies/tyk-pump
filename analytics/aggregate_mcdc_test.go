@@ -5,7 +5,6 @@ import (
 	"time"
 )
 
-// Verifies: SW-REQ-011
 func mcdcRecord(org, apiID, apiVer, apiKey, oauth, iso string, code int, total, up int64, track bool, tags []string) AnalyticsRecord {
 	r := AnalyticsRecord{
 		OrgID:        org,
@@ -23,9 +22,7 @@ func mcdcRecord(org, apiID, apiVer, apiKey, oauth, iso string, code int, total, 
 	return r
 }
 
-// Verifies: SW-REQ-011
 // Verifies: SYS-REQ-003
-// SW-REQ-011:monotonicity:negative
 // Verifies: SYS-REQ-019
 // MCDC SYS-REQ-003: aggregates_emitted=F, aggregation_enabled=F => TRUE
 // MCDC SYS-REQ-003: aggregates_emitted=F, aggregation_enabled=T => FALSE
@@ -75,10 +72,6 @@ func TestAggregateData_MCDCBranches(t *testing.T) {
 	}
 }
 
-// Verifies: SW-REQ-010
-// Verifies: SYS-REQ-009
-// SW-REQ-010:boundary:negative
-//
 // TestHasFilter_EachList exercises AnalyticsFilters.HasFilter across each list
 // type (part of the SW-REQ-010 surface). It does not invoke ShouldFilter, so it
 // does not drive the (skip_match | outside_allow_list) => filter_true decision
@@ -103,9 +96,7 @@ func TestHasFilter_EachList(t *testing.T) {
 	}
 }
 
-// Verifies: SW-REQ-015
 // Verifies: SYS-REQ-014
-// SW-REQ-015:nominal:negative
 // MCDC SYS-REQ-014: uptime_data_consumed=F, uptime_purging_enabled=F => TRUE
 // MCDC SYS-REQ-014: uptime_data_consumed=F, uptime_purging_enabled=T => FALSE
 // MCDC SYS-REQ-014: uptime_data_consumed=T, uptime_purging_enabled=T => TRUE

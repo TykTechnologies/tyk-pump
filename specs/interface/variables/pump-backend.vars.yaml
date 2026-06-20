@@ -8,3 +8,4 @@ variables:
       type: bool
       direction: output
       description: True iff each pump implementation maps the AnalyticsRecord onto its backend schema (per Phase A SW reqs 023..070) and tolerates unknown/future record fields (no write failure on unknown fields).
+      range: {min: 34, max: 70}

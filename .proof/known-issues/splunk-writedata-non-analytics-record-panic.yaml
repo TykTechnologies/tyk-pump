@@ -1,0 +1,22 @@
+id: splunk-writedata-non-analytics-record-panic
+title: Splunk WriteData panics on non-AnalyticsRecord input
+introduced_in: inception
+description: 'pumps/splunk.go:310 iterates records and performs a direct analytics.AnalyticsRecord type assertion on each element. A malformed caller input such as []interface{}{"not-a-record"} panics instead of returning an error. In the normal pump fanout path, an unrecovered pump panic can terminate the process and prevent other configured backends from completing the same purge cycle.'
+affected_requirements:
+    - INT-REQ-004
+    - SYS-REQ-004
+    - SW-REQ-048
+evidence_manifests:
+    - test:pumps/http_pumps_mcdc_100_test.go:TestSplunkPump_WriteData_NonAnalyticsRecord_KI
+reproducer_command: |-
+  go test -count=1 -run 'TestSplunkPump_WriteData_NonAnalyticsRecord_KI' ./pumps
+severity: medium
+mitigation: Ensure callers pass only analytics.AnalyticsRecord values to SplunkPump.WriteData and run tyk-pump under a process supervisor.
+remediation: Guard the type assertion in SplunkPump.WriteData and return an error, or skip the malformed entry with an observable log, instead of panicking.
+owner: tyk-team
+release_disposition: ship_with_known_issue
+status: open
+history:
+    - at: "2026-06-19T00:00:00Z"
+      by: agent:codex
+      action: created

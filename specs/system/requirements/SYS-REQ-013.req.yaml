@@ -35,14 +35,20 @@ verification:
         reviewed_at: "2026-06-03T06:55:28Z"
         comment: 'Phase P: FRETish enrichment per per-req review pass — adds statsd_endpoint_configured to when conjunct so MC/DC forces a witness for the missing-StatsdConnectionString path (TYK_INSTRUMENTATION=1 set but endpoint empty → no sink, no metrics emitted).'
         fingerprint: sha256:8ba959c57fa3e25e4875d5bc8c0ff285ad1040e34b91c73102b7f35e6959cff7
-        ai_generated: false
-    gaps_reviewed_at: "2026-06-03T07:19:03.281839Z"
-    gaps_reviewed_by: buger
+        ai_generated: true
+    gaps_reviewed_at: "2026-06-19T12:55:36.274909Z"
+    gaps_reviewed_by: agent:codex
+    gap_reviews:
+        - check: decomposition
+          issue_key: decomposition|SYS-REQ-013|metrics_emitted
+          reviewer: agent:codex
+          reason: 'Reviewed active decomposition: SW-REQ-005 is the instrumentation child; statsd_sink_added is the software setup mechanism for metrics_emitted, while SYS-REQ-013 keeps direct metric-emission witnesses.'
+          reviewed_at: "2026-06-19T12:55:36.274909Z"
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:11:41Z"
-    last_modified_by: human:cli
-    last_modified_at: "2026-06-03T06:55:28Z"
+    last_modified_by: agent:codex
+    last_modified_at: "2026-06-19T08:07:22Z"
 obligation_class: error_handling
 lifecycle:
     change_history:

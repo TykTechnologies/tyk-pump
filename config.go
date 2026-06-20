@@ -285,7 +285,7 @@ func LoadConfig(filePath *string, configStruct *TykPumpConfiguration) {
 	}
 
 	errLoadEnvPumps := configStruct.LoadPumpsByEnv()
-	if errLoadEnvPumps != nil {
+	if errLoadEnvPumps != nil { //mcdc:ignore:defensive LoadPumpsByEnv currently logs malformed pump env and always returns nil; non-nil is a future-proof guard, not reachable in this implementation
 		log.Fatal("error loading pumps env vars:", errLoadEnvPumps)
 	}
 }

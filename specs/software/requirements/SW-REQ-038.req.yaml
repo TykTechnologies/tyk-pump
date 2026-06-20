@@ -32,38 +32,29 @@ verification:
         reviewed_at: "2026-06-02T13:20:41Z"
         comment: 'Phase L2: aggressive formalization — encodes per-pump MCP/graph/mixed-collection/self-heal decisions; variables in pumps-mongo-*.vars.yaml; user directive: force MCDC witnesses on these decisions to drive verifying tests.'
         fingerprint: sha256:6e196cb1bac8e3c88caad613512fd82b424489e13c144563c44eff26cfcc8927
-        ai_generated: false
-    impact_reviews:
-        - requirement: SW-REQ-038
-          artifact: pumps/mcp_mongo.go
-          decision: no-authored-change
-          reviewer: buger
-          reason: 'Phase L2: formalization-only change (informal -> fretish + per-component boolean variables). Production .go files were not modified; only req YAML metadata, component vars YAMLs, and // MCDC test comment witnesses.'
-          base: origin/master
-          requirement_fingerprint: sha256:6f078af77358bb27a826acac4fa1c5c3bd83214761c8d0cbc34d69fed8bd0dd5
-          approval_fingerprint: sha256:6e196cb1bac8e3c88caad613512fd82b424489e13c144563c44eff26cfcc8927
-          artifact_fingerprint: sha256:2f2c4e6adae967675d60beb12d69831c675cebde2676742d717aa193d171a5e3
-          reviewed_at: "2026-06-02T13:35:48Z"
+        ai_generated: true
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:35:01Z"
-    last_modified_by: human:buger
-    last_modified_at: "2026-06-17T08:05:33Z"
+    last_modified_by: agent:codex
+    last_modified_at: "2026-06-19T07:29:22Z"
 obligation_checklist:
     - concurrent
     - errors_propagated
     - malformed_recovers_or_errors_loudly
     - nominal
-obligation_suppressions:
-    - id: concurrent
-      reason: 'Phase G: code_signal ''go.concurrency.goroutine-spawn'' + ''go.concurrency.channel-send'' at pumps/mcp_mongo.go:147/177 are the same purge fan-out as standard mongo pump (per-batch goroutine, buffered errCh sized to len(accumulateSet)). Disjoint per-batch state. Not a data-race obligation gap.'
-      suppressed_by: buger
-      suppressed_at: "2026-06-01T18:36:22Z"
 obligation_deferrals:
+    - obligation_class: concurrent
+      reason: MCP Mongo concurrent batch inserts use goroutines but call store.Insert with context.Background, so caller cancellation and timeout semantics are not bounded until the Mongo context KI is fixed.
+      tracking: mongo-pump-ignores-caller-context
+      owner: agent:codex
+      ki_ref: mongo-pump-ignores-caller-context
+      reproducer: mongo-pump-ignores-caller-context static rg tripwire
     - obligation_class: malformed_recovers_or_errors_loudly
       reason: real untested obligation under known-issue mapstructure-decode-silently-drops-unknown-keys; surfaced as visible tracked debt, not an overclaimed fix
       tracking: mapstructure-decode-silently-drops-unknown-keys
       owner: human:buger
+      ki_ref: mapstructure-decode-silently-drops-unknown-keys
 lifecycle:
     change_history:
         - date: "2026-05-30T08:43:46Z"

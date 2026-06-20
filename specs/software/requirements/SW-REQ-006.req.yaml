@@ -19,12 +19,13 @@ variables:
     - records_present
     - chunk_partial
     - records_popped_and_expire_attempted
+    - records_removed_once
 traces:
     satisfies:
         - SYS-REQ-007
-    reviewed_at: "2026-06-03T07:18:16.642707Z"
-    reviewed_by: human:buger
-    reviewed_fingerprint: sha256:ed558b2c3ee8e2b4f6b543e20c9a86b9b415303703e2859e8e8507cf9b93458a
+    reviewed_at: "2026-06-19T14:05:38.055619Z"
+    reviewed_by: ai:codex
+    reviewed_fingerprint: sha256:87c743ab4298c5b105aabe40c413f47b67828bee8830c81c302047831f99029b
 verification:
     assurance_level: B
     formalization_status: valid
@@ -32,45 +33,33 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-04T16:50:31Z"
-        comment: 'Phase S Wave 2: attach blind-spot obligations from Wave 1 promote (cascade/fanout/clock_skew/dst/tz/temporal_window/process_exit/tls_verification/partial_progress)'
-        fingerprint: sha256:7ebc2b9737af0462b8c39271e6f99397b739affd6ababf92f656487bb7e0912a
-        ai_generated: true
-    impact_reviews:
-        - requirement: SW-REQ-006
-          artifact: storage/temporal_storage.go
-          decision: no-authored-change
-          reviewer: buger
-          reason: 'Phase P: FRETish enrichment per per-req review pass — added decision variables expose existing code branches; production code paths unchanged, only requirement metadata altered. Test annotations updated to match new MC/DC truth tables.'
-          base: origin/master
-          requirement_fingerprint: sha256:ed558b2c3ee8e2b4f6b543e20c9a86b9b415303703e2859e8e8507cf9b93458a
-          approval_fingerprint: sha256:7ebc2b9737af0462b8c39271e6f99397b739affd6ababf92f656487bb7e0912a
-          artifact_fingerprint: sha256:6634a473c979dd089b4c3ebf75ec39f8b4e1e94c995e30bb6c41a5f18d301e13
-          reviewed_at: "2026-06-03T07:17:20Z"
+        reviewed_at: "2026-06-19T20:08:14Z"
+        comment: 'Spec evidence-debt refresh: reviewed KI-gated obligation_deferrals added for required-but-unwitnessed obligations. Each deferral links to an open traced KnownIssue and leaves the gap as auto-expiring accepted KI-debt rather than claiming product/test fixes.'
+        fingerprint: sha256:d8483a04bc40d2687f6e1ea1257c994fb103082669d1ffb277e296c6e180d75a
+        ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:14Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-17T08:05:23Z"
+    last_modified_at: "2026-06-19T20:08:14Z"
 obligation_checklist:
+    - atomicity
     - clock_skew_tolerated
     - error_handling
     - malformed_recovers_or_errors_loudly
     - nominal
     - snapshot_wire_format_compatible
 obligation_deferrals:
-    - obligation_class: error_handling
-      reason: 'Deferred: required error_handling test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'
-      tracking: .proof/deferred-witness-backlog.md
-      owner: human:buger
     - obligation_class: malformed_recovers_or_errors_loudly
-      reason: 'real untested obligation under known-issue mapstructure-decode-silently-drops-unknown-keys; surfaced as visible tracked debt, not an overclaimed fix'
-      tracking: mapstructure-decode-silently-drops-unknown-keys
+      reason: Required malformed-input evidence is parked because lenient decode gaps are tracked for this requirement.
+      tracking: known-issue:mapstructure-decode-silently-drops-unknown-keys
       owner: human:buger
+      ki_ref: mapstructure-decode-silently-drops-unknown-keys
     - obligation_class: snapshot_wire_format_compatible
-      reason: 'Deferred: required snapshot_wire_format_compatible test not written yet; tracked debt, not N/A. See .proof/deferred-witness-backlog.md'
-      tracking: .proof/deferred-witness-backlog.md
+      reason: Required wire-format evidence is parked because temporal storage lacks a versioned compatibility contract.
+      tracking: known-issue:temporal-storage-wire-format-unversioned
       owner: human:buger
+      ki_ref: temporal-storage-wire-format-unversioned
 lifecycle:
     change_history:
         - date: "2026-05-29T15:46:43Z"
@@ -113,3 +102,13 @@ lifecycle:
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-03T07:38:05Z comment="Phase Q: catalog obligation attachments — adds ordering_guarantees_documented, parameterized_only_read, query_timeout_bounded, snapshot_wire_format_compatible (LPOP FIFO contract, bound reads, on-wire format). See .proof/catalog-obligation-proposals.md.")'
           changed_by: human:cli
+        - date: "2026-06-19T19:54:58Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-04T16:50:31Z comment="Phase S Wave 2: attach blind-spot obligations from Wave 1 promote (cascade/fanout/clock_skew/dst/tz/temporal_window/process_exit/tls_verification/partial_progress)")'
+          changed_by: human:cli
+        - date: "2026-06-19T20:08:14Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-19T19:54:58Z comment="Spec audit stale-approval refresh: reviewed current YAML diffs vs HEAD plus KI/proof metadata; changes are metadata, trace, and evidence-honesty updates that surface gaps via KnownIssues/deferrals without claiming product fixes.")'
+          changed_by: human:buger

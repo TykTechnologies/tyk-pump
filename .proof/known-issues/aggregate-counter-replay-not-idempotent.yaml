@@ -1,0 +1,21 @@
+id: aggregate-counter-replay-not-idempotent
+title: Aggregate counter updates are additive and do not deduplicate replayed records
+introduced_in: inception
+description: 'The aggregate counter paths intentionally add incoming counts to existing counters. analytics/aggregate.go:1002 increments Hits/Success/ErrorTotal/ErrorMap entries when incrementOrSetUnit sees an existing counter, and MongoAggregatePump.DoAggregatedWriting persists aggregate counters with $inc-style updates built from AnalyticsRecordAggregate.AsChange. Replaying the same analytics record therefore increments counters again rather than being idempotent. The SW-REQ-011 and SW-REQ-060 idempotency obligations are real product gaps unless an upstream exactly-once/idempotency key layer prevents replay before aggregation.'
+affected_requirements:
+    - SW-REQ-011
+    - SW-REQ-060
+environment_note: |-
+  Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source and command output.
+reproducer_command: |-
+  rg -n "c\\.Hits \\+=|c\\.Success \\+=|c\\.ErrorTotal \\+=|AsChange\\(|\\$inc" analytics/aggregate.go pumps/mongo_aggregate.go
+severity: medium
+mitigation: Rely on the temporal-store at-most-once pop contract and avoid replaying the same analytics batch into aggregate pumps.
+remediation: Introduce a stable event id or replay ledger before aggregation if aggregate replay idempotency is required, then add a replay test proving duplicate input records do not overcount.
+owner: tyk-team
+release_disposition: ship_with_known_issue
+status: open
+history:
+    - at: "2026-06-19T00:00:00Z"
+      by: agent:codex
+      action: created

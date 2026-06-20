@@ -118,7 +118,7 @@ func HandleTableMigration(db *gorm.DB, conf *SQLConf, tableName string, model in
 	switch {
 	case !conf.TableSharding:
 		// Non-sharded case: migrate the main table
-		if err := db.Table(tableName).AutoMigrate(model); err != nil { //mcdc:ignore AutoMigrate err arm on a valid gorm DB + canonical analytics model never fires — gorm only fails AutoMigrate on syntactically invalid struct tags (compile-time impossible here) or on a closed connection (the test infra always passes an open in-memory SQLite DB). Driving err=T deterministically requires a fake gorm.Migrator seam — KI mcdc-pumps-below-95.
+		if err := db.Table(tableName).AutoMigrate(model); err != nil { //mcdc:ignore:defensive AutoMigrate err arm on a valid gorm DB + canonical analytics model never fires — gorm only fails AutoMigrate on syntactically invalid struct tags (compile-time impossible here) or on a closed connection (the test infra always passes an open in-memory SQLite DB). Driving err=T deterministically requires a fake gorm.Migrator seam — KI mcdc-pumps-below-95.
 			log.WithError(err).Error("error migrating table")
 			return err
 		}
@@ -131,7 +131,7 @@ func HandleTableMigration(db *gorm.DB, conf *SQLConf, tableName string, model in
 	default:
 		// Migrate current day's table to ensure it has latest schema
 		currentDayTable := tableName + "_" + time.Now().Format("20060102")
-		if err := db.Table(currentDayTable).AutoMigrate(model); err != nil { //mcdc:ignore AutoMigrate err arm on a valid gorm DB + canonical analytics model never fires — same rationale as the non-sharded arm above; KI mcdc-pumps-below-95.
+		if err := db.Table(currentDayTable).AutoMigrate(model); err != nil { //mcdc:ignore:capability-gap AutoMigrate err arm on a valid gorm DB + canonical analytics model never fires — same rationale as the non-sharded arm above; KI mcdc-pumps-below-95. [ki: mcdc-pumps-below-95]
 			log.WithField("table", currentDayTable).WithError(err).Warn("Failed to migrate current day table")
 			// Don't fail initialization, just log the warning
 		} else {
@@ -195,7 +195,7 @@ func MigrateAllShardedTables(db *gorm.DB, tablePrefix, logPrefix string, model i
 	for _, tableName := range shardedTables {
 		log.WithField("table", tableName).Debug("Migrating sharded " + logPrefix + " table")
 
-		if err := db.Table(tableName).AutoMigrate(model); err != nil { //mcdc:ignore AutoMigrate err arm on a valid gorm DB + canonical analytics model never fires from a unit test — gorm AutoMigrate on the same model that already created the sharded table cannot regress. KI mcdc-pumps-below-95.
+		if err := db.Table(tableName).AutoMigrate(model); err != nil { //mcdc:ignore:capability-gap AutoMigrate err arm on a valid gorm DB + canonical analytics model never fires from a unit test — gorm AutoMigrate on the same model that already created the sharded table cannot regress. KI mcdc-pumps-below-95. [ki: mcdc-pumps-below-95]
 			log.WithField("table", tableName).WithError(err).Warn("Failed to migrate sharded " + logPrefix + " table")
 			// Continue with other tables even if one fails
 		} else {

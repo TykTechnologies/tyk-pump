@@ -1,8 +1,10 @@
 id: common-setloglevel-nil-log-panic
 title: CommonPumpConfig.SetLogLevel panics if called before Init
+introduced_in: inception
 description: pumps/common.go:80-82 'func (p *CommonPumpConfig) SetLogLevel(level logrus.Level) { p.log.Level = level }'. p.log is set inside each pump's Init (typically 'p.log = log.WithField(...)'). If the pump-loader calls SetLogLevel BEFORE Init (e.g. propagating a global log level early during setup), p.log is nil and the assignment panics with nil-pointer-deref. SW-REQ-016's 'field_persisted_on_struct' FRETish only verifies the setter writes the value; it does not check the precondition. The verifying test (pumps/common_test.go) constructs the pump with Init pre-run, so the nil-pointer path is never exercised.
 affected_requirements:
     - SW-REQ-016
+environment_note: Source-level reproducer condition is documented in the description; call CommonPumpConfig.SetLogLevel on a zero-value/CommonPumpConfig before Init initializes p.log and the assignment dereferences nil.
 severity: low
 mitigation: Current pump-loader order always calls Init before SetLogLevel (initialise.go orchestrates this). The panic is dormant unless a future loader change re-orders these calls.
 remediation: Guard with 'if p.log != nil { p.log.Level = level }' OR lazy-init log to a package-level default at struct construction.

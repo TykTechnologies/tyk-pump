@@ -3,6 +3,7 @@ package pumps
 import (
 	"context"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -47,7 +48,6 @@ const (
 		"hwaXJlczogV2VkLCAyMSBPY3QgMjAxNSAwNzoyODowMCBHTVQNCg0K"
 )
 
-// Verifies: SW-REQ-054
 func SetUp(t *testing.T, url string, queue []string, rules string) (*ResurfacePump, map[string]interface{}) {
 	pmp := ResurfacePump{}
 	cfg := make(map[string]interface{})
@@ -61,7 +61,7 @@ func SetUp(t *testing.T, url string, queue []string, rules string) (*ResurfacePu
 	return &pmp, cfg
 }
 
-// Verifies: SW-REQ-054
+// SW-REQ-054:malformed_recovers_or_errors_loudly:negative
 func TestResurfaceInit(t *testing.T) {
 	pmp, cfg := SetUp(t, "http://localhost:7701/message", nil, "include debug")
 	assert.NotNil(t, pmp.logger)
@@ -76,6 +76,7 @@ func TestResurfaceInit(t *testing.T) {
 }
 
 // Verifies: SW-REQ-054
+// MCDC SW-REQ-054: queue_full_and_enabled=F, submit_skipped=F => TRUE
 func TestResurfaceWriteData(t *testing.T) {
 	const MockHost = "test0"
 
@@ -191,6 +192,44 @@ func TestResurfaceWriteData(t *testing.T) {
 }
 
 // Verifies: SW-REQ-054
+// SW-REQ-054:concurrent:nominal
+// SW-REQ-054:concurrent:race
+// MCDC SW-REQ-054: queue_full_and_enabled=F, submit_skipped=F => TRUE
+func TestResurfaceWriteData_Concurrent(t *testing.T) {
+	const workers = 8
+
+	pmp, _ := SetUp(t, "", make([]string, 0), "include debug")
+
+	var wg sync.WaitGroup
+	errs := make(chan error, workers)
+	for i := 0; i < workers; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			errs <- pmp.WriteData(context.Background(), []interface{}{
+				analytics.AnalyticsRecord{
+					Host:         "concurrent-resurface",
+					Method:       "GET",
+					ResponseCode: 200,
+					RawRequest:   rawReq,
+					RawResponse:  rawResp,
+					TimeStamp:    time.Now(),
+				},
+			})
+		}()
+	}
+	wg.Wait()
+	close(errs)
+	for err := range errs {
+		assert.NoError(t, err)
+	}
+
+	assert.NoError(t, pmp.Flush())
+	assert.Len(t, pmp.logger.Queue(), workers)
+}
+
+// Verifies: SW-REQ-054
+// MCDC SW-REQ-054: queue_full_and_enabled=F, submit_skipped=F => TRUE
 func TestResurfaceWriteCustomFields(t *testing.T) {
 	pmp, _ := SetUp(t, "", make([]string, 0), "include debug")
 
@@ -266,6 +305,7 @@ func TestResurfaceWriteCustomFields(t *testing.T) {
 }
 
 // Verifies: SW-REQ-054
+// MCDC SW-REQ-054: queue_full_and_enabled=F, submit_skipped=F => TRUE
 func TestResurfaceWriteChunkedResponse(t *testing.T) {
 	pmp, _ := SetUp(t, "", make([]string, 0), "include debug")
 
@@ -319,6 +359,7 @@ func TestResurfaceWriteChunkedResponse(t *testing.T) {
 }
 
 // Verifies: SW-REQ-054
+// MCDC SW-REQ-054: queue_full_and_enabled=F, submit_skipped=F => TRUE
 func TestResurfaceSkipWrite(t *testing.T) {
 	pmp, _ := SetUp(t, "", make([]string, 0), "include debug")
 

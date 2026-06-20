@@ -102,7 +102,7 @@ func (c *CSVPump) WriteData(ctx context.Context, data []interface{}) error {
 		var headers = startRecord.GetFieldNames()
 
 		err := writer.Write(headers)
-		if err != nil { //mcdc:ignore err=T unreachable from unit tests: the csv writer wraps an *os.File freshly created by os.Create in the same WriteData call; the underlying fd cannot fail synchronously on a string-slice write — KI mcdc-pumps-below-95
+		if err != nil { //mcdc:ignore:defensive err=T unreachable from unit tests: the csv writer wraps an *os.File freshly created by os.Create in the same WriteData call; the underlying fd cannot fail synchronously on a string-slice write — KI mcdc-pumps-below-95
 			c.log.Error("Failed to write file headers: ", err)
 			return err
 
@@ -129,7 +129,7 @@ func (c *CSVPump) WriteData(ctx context.Context, data []interface{}) error {
 		// 	decoded.APIName,
 		// 	decoded.APIVersion}
 		err := writer.Write(toWrite)
-		if err != nil { //mcdc:ignore err=T unreachable from unit tests: same as the header-write — the csv writer wraps a freshly-created *os.File whose synchronous string-slice writes don't surface fd errors — KI mcdc-pumps-below-95
+		if err != nil { //mcdc:ignore:capability-gap err=T unreachable from unit tests: same as the header-write — the csv writer wraps a freshly-created *os.File whose synchronous string-slice writes don't surface fd errors — KI mcdc-pumps-below-95 [ki: mcdc-pumps-below-95]
 			c.log.Error("File write failed:", err)
 			return err
 		}

@@ -252,7 +252,7 @@ func (s *DogStatsdPump) WriteData(ctx context.Context, data []interface{}) error
 			}
 		}
 
-		if err := s.client.Histogram("request_time", float64(decoded.RequestTime), tags, s.conf.SampleRate); err != nil { //mcdc:ignore err=T unreachable from unit tests: the dogstatsd Histogram() only errors when the internal async sender channel is full, which is a process-wide condition not provokable from per-test fixtures — KI mcdc-pumps-below-95
+		if err := s.client.Histogram("request_time", float64(decoded.RequestTime), tags, s.conf.SampleRate); err != nil { //mcdc:ignore:capability-gap err=T unreachable from unit tests: the dogstatsd Histogram() only errors when the internal async sender channel is full, which is a process-wide condition not provokable from per-test fixtures — KI mcdc-pumps-below-95 [ki: mcdc-pumps-below-95]
 			s.log.WithError(err).Error("unable to record Histogram, dropping analytics record")
 		}
 	}

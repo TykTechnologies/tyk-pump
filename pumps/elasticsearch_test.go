@@ -20,7 +20,6 @@ import (
 
 // TestGetMapping_MCPFieldsForMCPRecord verifies that MCP records produce
 // mcp_method, mcp_primitive_type, and mcp_primitive_name fields in the ES mapping.
-// Verifies: SW-REQ-068
 func TestGetMapping_MCPFieldsForMCPRecord(t *testing.T) {
 	record := analytics.AnalyticsRecord{
 		APIID:        "api1",
@@ -46,7 +45,8 @@ func TestGetMapping_MCPFieldsForMCPRecord(t *testing.T) {
 
 // TestGetMapping_NoMCPFieldsForNonMCPRecord verifies backward compatibility:
 // non-MCP records must not include any MCP fields in the ES mapping.
-// Verifies: SW-REQ-068
+// Verifies: INT-REQ-006
+// MCDC INT-REQ-006: mapping_per_implementation=T, record_dispatched_to_backend=T => TRUE
 func TestGetMapping_NoMCPFieldsForNonMCPRecord(t *testing.T) {
 	record := analytics.AnalyticsRecord{
 		APIID:        "api1",
@@ -118,6 +118,7 @@ func TestGetIndexNameForRecord_RollingIndex(t *testing.T) {
 }
 
 // Verifies: SW-REQ-068
+// MCDC SW-REQ-068: v3_operator_constructed=F, version_eq_3=F => TRUE
 func TestElasticsearchPump_TLSConfig_ErrorCases(t *testing.T) {
 	t.Run("should return wrapped error with invalid cert file", func(t *testing.T) {
 		pump := &ElasticsearchPump{}
@@ -157,7 +158,8 @@ func TestElasticsearchPump_TLSConfig_ErrorCases(t *testing.T) {
 	})
 }
 
-// Verifies: SW-REQ-068
+// Verifies: INT-REQ-006
+// MCDC INT-REQ-006: mapping_per_implementation=T, record_dispatched_to_backend=T => TRUE
 func TestGetMapping_BasicFields(t *testing.T) {
 	ts := time.Date(2025, 6, 15, 10, 0, 0, 0, time.UTC)
 	record := analytics.AnalyticsRecord{
@@ -205,7 +207,8 @@ func TestGetMapping_BasicFields(t *testing.T) {
 	assert.NotContains(t, mapping, "user_agent")
 }
 
-// Verifies: SW-REQ-068
+// Verifies: INT-REQ-006
+// MCDC INT-REQ-006: mapping_per_implementation=T, record_dispatched_to_backend=T => TRUE
 func TestGetMapping_GenerateID(t *testing.T) {
 	record := analytics.AnalyticsRecord{
 		TimeStamp:   time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
@@ -231,7 +234,8 @@ func TestGetMapping_GenerateID(t *testing.T) {
 	assert.NotEqual(t, id1, id3)
 }
 
-// Verifies: SW-REQ-068
+// Verifies: INT-REQ-006
+// MCDC INT-REQ-006: mapping_per_implementation=T, record_dispatched_to_backend=T => TRUE
 func TestGetMapping_MCPWithExtendedAndGenerateID(t *testing.T) {
 	record := analytics.AnalyticsRecord{
 		TimeStamp:    time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
@@ -283,7 +287,8 @@ func TestGetIndexName_Rolling(t *testing.T) {
 	assert.Equal(t, "tyk_analytics-"+today, getIndexName(conf))
 }
 
-// Verifies: SW-REQ-068
+// Verifies: INT-REQ-006
+// MCDC INT-REQ-006: mapping_per_implementation=T, record_dispatched_to_backend=T => TRUE
 func TestGetMapping_ExtendedStatistics(t *testing.T) {
 	record := analytics.AnalyticsRecord{
 		APIID:       "api1",

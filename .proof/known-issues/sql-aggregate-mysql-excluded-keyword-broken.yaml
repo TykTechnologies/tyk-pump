@@ -1,5 +1,6 @@
 id: sql-aggregate-mysql-excluded-keyword-broken
 title: SQL aggregate / graph-aggregate / MCP-aggregate pumps emit Postgres-specific "excluded" qualifier that MySQL rejects
+introduced_in: inception
 description: 'pumps/sql_aggregate.go (line 313-317), pumps/graph_sql_aggregate.go (line 190-193) and pumps/mcp_sql_aggregate.go (line 271-274) call gorm clause.OnConflict with assignments produced by analytics.OnConflictAssignments(table, "excluded"). The "excluded" pseudo-table name is a Postgres convention; MySQL''s ON DUPLICATE KEY UPDATE syntax uses VALUES(col) or the new alias-based form. As a result, writing aggregate / graph-aggregate / mcp-aggregate records against MySQL fails with "Error 1054 (42S22): Unknown column ''excluded.code_1x'' in ''field list''" on every upsert. The plain (non-aggregate) SQL pump and the MCP raw pump work because they use simple INSERT without ON CONFLICT. The pump README documents both Postgres and MySQL as supported types, so this is a stealth incompatibility.'
 affected_requirements:
     - SW-REQ-041
@@ -7,6 +8,8 @@ affected_requirements:
     - SW-REQ-045
 evidence_manifests:
     - code_signal:opengrep:go.sql.formatted-write-exec:pumps/sql_aggregate.go:164
+environment_note: |-
+  Evidence is tied to the listed evidence_manifests entries; reproduce by rerunning the named test or code-signal scan and inspecting code_signal:opengrep:go.sql.formatted-write-exec:pumps/sql_aggregate.go:164.
 severity: medium
 mitigation: Operators using MySQL must avoid sql_aggregate, graph_sql_aggregate, and mcp_sql_aggregate pumps; only the non-aggregating sql and graph_sql and mcp_sql pumps work end-to-end on MySQL.
 remediation: Detect the MySQL dialect in DoAggregatedWriting and rebuild the assignment map using gorm''s clause.Values("col") or VALUES(col) instead of excluded.col. Alternatively expose a dialect-aware on-conflict helper in analytics that returns the correct assignment form per dialect.
