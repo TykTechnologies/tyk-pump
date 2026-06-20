@@ -1,14 +1,16 @@
 id: logzio-segment-no-shutdown-flush
 title: Logzio + Segment pumps have no Shutdown override; async-buffered records are dropped on shutdown
-introduced_in: inception
 description: pumps/logzio.go and pumps/segment.go both embed CommonPumpConfig (pumps/common.go:65 'func (p *CommonPumpConfig) Shutdown() error { return nil }') and do NOT override Shutdown. The underlying logzio-go LogzioSender accumulates events in a disk-backed queue with a configurable DrainDuration (default 3s) before flushing; segment.Client buffers in memory. When main.checkShutdown (main.go:343) calls pmp.Shutdown(), both pumps return nil immediately without calling sender.Stop()/segmentClient.Close(), so any events queued but not yet flushed are lost on process exit. SYS-REQ-013's at-least-once delivery claim is therefore violated for logzio/segment during normal operator shutdown.
 affected_requirements:
     - SW-REQ-051
     - SW-REQ-053
     - SYS-REQ-013
-environment_note: |-
-  Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source or documentation surface and following the described scenario.
+evidence_manifests:
+    - test:pumps/known_issue_tripwire_test.go:TestLogzioPumpMissingShutdownFlush_KI
+    - test:pumps/known_issue_tripwire_test.go:TestSegmentPumpMissingShutdownFlush_KI
 severity: medium
+environment_note: Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source or documentation surface and following the described scenario.
+introduced_in: inception
 mitigation: Operators can configure short DrainDuration for logzio (e.g. '1s') and accept a deliberate sleep before SIGTERM to give the async sender time to flush. Segment has no equivalent runtime knob.
 remediation: Add LogzioPump.Shutdown() that calls p.sender.Stop() (logzio-go SDK) and SegmentPump.Shutdown() that calls s.segmentClient.Close().
 owner: tyk-team
@@ -18,3 +20,7 @@ history:
     - at: "2026-06-02T16:38:24Z"
       by: human:buger
       action: created
+    - at: "2026-06-20T18:31:32Z"
+      by: agent:codex
+      action: edit
+      detail: add-evidence-manifest

@@ -19,7 +19,7 @@ variables: []
 traces:
     satisfies:
         - SYS-REQ-004
-    reviewed_at: "2026-06-02T13:56:59.830668Z"
+    reviewed_at: "2026-06-20T18:28:25.596956Z"
     reviewed_by: human:buger
     reviewed_fingerprint: sha256:fc8b51997bb5345dab883ec64c80ff1d0c960a6f919b03e183e959926ac2fcf9
 verification:
@@ -29,42 +29,48 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-03T07:39:50Z"
-        comment: 'Phase Q: catalog obligation attachments — adds external_call_timeout_bounded, request_timeout_bounded, external_call_failure_observable, cancellation_observed, redirect_policy_explicit (Segment client surface). See .proof/catalog-obligation-proposals.md.'
+        reviewed_at: "2026-06-20T18:28:00Z"
+        comment: 'Propagate defect/history-backed pump obligations: write-error propagation, Mongo ctx timeout, Moesif fatal input handling, Logzio/Segment shutdown flush, and ES resource lifetime evidence.'
         fingerprint: sha256:3cf87ed515fc578450d4351703b044c7888a7ebf6f7befc619a6a99b25217120
-        ai_generated: true
+        ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:36:34Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-17T08:04:56Z"
+    last_modified_at: "2026-06-20T18:28:00Z"
 obligation_checklist:
     - errors_propagated
     - malformed_recovers_or_errors_loudly
     - nominal
     - process_exit_on_recoverable
     - redirect_policy_explicit
+    - resource_lifetime_released
 obligation_deferrals:
     - obligation_class: errors_propagated
       reason: 'real untested obligation under known-issue pumps-logfatal-on-config-decode; surfaced as visible tracked debt, not an overclaimed fix'
       tracking: pumps-logfatal-on-config-decode
-      ki_ref: pumps-logfatal-on-config-decode
       owner: human:buger
+      ki_ref: pumps-logfatal-on-config-decode
     - obligation_class: malformed_recovers_or_errors_loudly
       reason: 'real untested obligation under known-issue mapstructure-decode-silently-drops-unknown-keys; surfaced as visible tracked debt, not an overclaimed fix'
       tracking: mapstructure-decode-silently-drops-unknown-keys
-      ki_ref: mapstructure-decode-silently-drops-unknown-keys
       owner: human:buger
+      ki_ref: mapstructure-decode-silently-drops-unknown-keys
     - obligation_class: process_exit_on_recoverable
       reason: 'real untested obligation under known-issue pumps-logfatal-on-config-decode; surfaced as visible tracked debt, not an overclaimed fix'
       tracking: pumps-logfatal-on-config-decode
-      ki_ref: pumps-logfatal-on-config-decode
       owner: human:buger
+      ki_ref: pumps-logfatal-on-config-decode
     - obligation_class: redirect_policy_explicit
       reason: real product gap under known-issue http-sdk-redirect-policy-implicit; surfaced as visible tracked debt, not an overclaimed fix
       tracking: http-sdk-redirect-policy-implicit
-      ki_ref: http-sdk-redirect-policy-implicit
       owner: human:buger
+      ki_ref: http-sdk-redirect-policy-implicit
+    - obligation_class: resource_lifetime_released
+      reason: Segment uses an async SDK client but has no Shutdown override to close or drain it, so queued records can be dropped until logzio-segment-no-shutdown-flush is fixed.
+      tracking: logzio-segment-no-shutdown-flush
+      owner: agent:codex
+      ki_ref: logzio-segment-no-shutdown-flush
 lifecycle:
     change_history:
         - date: "2026-05-30T08:43:46Z"
@@ -87,3 +93,8 @@ lifecycle:
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T13:44:34Z comment="Phase L2: aggressive formalization — encodes per-component primary decision (instrumentation gate, codec select, SSL/SASL, dataset_empty, default-path, file-append, retry-status, log-level, flush, batch, transport, dedup); variables in <component>.vars.yaml; user directive: force MCDC witnesses to drive verifying tests.")'
           changed_by: human:cli
+        - date: "2026-06-20T18:28:00Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-03T07:39:50Z comment="Phase Q: catalog obligation attachments — adds external_call_timeout_bounded, request_timeout_bounded, external_call_failure_observable, cancellation_observed, redirect_policy_explicit (Segment client surface). See .proof/catalog-obligation-proposals.md.")'
+          changed_by: human:buger

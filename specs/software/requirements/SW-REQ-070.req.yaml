@@ -19,7 +19,7 @@ variables: []
 traces:
     satisfies:
         - SYS-REQ-004
-    reviewed_at: "2026-06-02T14:31:02.710076Z"
+    reviewed_at: "2026-06-20T18:28:25.930935Z"
     reviewed_by: human:buger
     reviewed_fingerprint: sha256:2f5ce45fbf5eba78913fb01cc7add51114685213e82adb7d6ee7fa63a950aab4
 verification:
@@ -29,15 +29,15 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-03T07:40:28Z"
-        comment: 'Phase Q: catalog obligation attachments — adds external_call_concurrency_bounded (ES BulkProcessor workers cap). See .proof/catalog-obligation-proposals.md.'
+        reviewed_at: "2026-06-20T18:28:00Z"
+        comment: 'Propagate defect/history-backed pump obligations: write-error propagation, Mongo ctx timeout, Moesif fatal input handling, Logzio/Segment shutdown flush, and ES resource lifetime evidence.'
         fingerprint: sha256:7cf04895b50732c59abab8868e4cd54d79ed68a7e54ecc24c49e049f44efb8b7
-        ai_generated: true
+        ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:40:07Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-17T08:05:32Z"
+    last_modified_at: "2026-06-20T18:28:00Z"
 obligation_checklist:
     - boundary
     - determinism
@@ -46,27 +46,28 @@ obligation_checklist:
     - malformed_recovers_or_errors_loudly
     - nominal
     - request_timeout_bounded
+    - resource_lifetime_released
 obligation_deferrals:
     - obligation_class: determinism
       reason: 'real untested obligation under known-issue elasticsearch-unbounded-reconnect-recursion; surfaced as visible tracked debt, not an overclaimed fix'
       tracking: elasticsearch-unbounded-reconnect-recursion
-      ki_ref: elasticsearch-unbounded-reconnect-recursion
       owner: human:buger
+      ki_ref: elasticsearch-unbounded-reconnect-recursion
     - obligation_class: errors_propagated
       reason: 'real untested obligation under known-issue pumps-logfatal-on-config-decode; surfaced as visible tracked debt, not an overclaimed fix'
       tracking: pumps-logfatal-on-config-decode
-      ki_ref: pumps-logfatal-on-config-decode
       owner: human:buger
+      ki_ref: pumps-logfatal-on-config-decode
     - obligation_class: malformed_recovers_or_errors_loudly
       reason: real untested obligation under known-issue mapstructure-decode-silently-drops-unknown-keys; surfaced as visible tracked debt, not an overclaimed fix
       tracking: mapstructure-decode-silently-drops-unknown-keys
-      ki_ref: mapstructure-decode-silently-drops-unknown-keys
       owner: human:buger
+      ki_ref: mapstructure-decode-silently-drops-unknown-keys
     - obligation_class: request_timeout_bounded
       reason: real untested obligation under known-issue pump-no-timeout-can-block-purge-cycle; surfaced as visible tracked debt, not an overclaimed fix
       tracking: pump-no-timeout-can-block-purge-cycle
-      ki_ref: pump-no-timeout-can-block-purge-cycle
       owner: human:buger
+      ki_ref: pump-no-timeout-can-block-purge-cycle
 release_disposition: ship_with_known_issue
 lifecycle:
     change_history:
@@ -100,3 +101,8 @@ lifecycle:
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T14:19:01Z comment="Phase L3 aggressive: flip remaining decision-bearing SW reqs to FRETish per L3 plan; vars added per-component; MC/DC witnesses to be annotated in tests.")'
           changed_by: human:cli
+        - date: "2026-06-20T18:28:00Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-03T07:40:28Z comment="Phase Q: catalog obligation attachments — adds external_call_concurrency_bounded (ES BulkProcessor workers cap). See .proof/catalog-obligation-proposals.md.")'
+          changed_by: human:buger

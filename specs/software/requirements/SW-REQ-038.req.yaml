@@ -19,7 +19,7 @@ variables: []
 traces:
     satisfies:
         - SYS-REQ-004
-    reviewed_at: "2026-06-02T13:41:35.853593Z"
+    reviewed_at: "2026-06-20T18:28:24.387814Z"
     reviewed_by: human:buger
     reviewed_fingerprint: sha256:6f078af77358bb27a826acac4fa1c5c3bd83214761c8d0cbc34d69fed8bd0dd5
 verification:
@@ -29,21 +29,29 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-02T13:20:41Z"
-        comment: 'Phase L2: aggressive formalization — encodes per-pump MCP/graph/mixed-collection/self-heal decisions; variables in pumps-mongo-*.vars.yaml; user directive: force MCDC witnesses on these decisions to drive verifying tests.'
+        reviewed_at: "2026-06-20T18:28:00Z"
+        comment: 'Propagate defect/history-backed pump obligations: write-error propagation, Mongo ctx timeout, Moesif fatal input handling, Logzio/Segment shutdown flush, and ES resource lifetime evidence.'
         fingerprint: sha256:6e196cb1bac8e3c88caad613512fd82b424489e13c144563c44eff26cfcc8927
-        ai_generated: true
+        ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:35:01Z"
-    last_modified_by: agent:codex
-    last_modified_at: "2026-06-19T07:29:22Z"
+    last_modified_by: human:buger
+    last_modified_at: "2026-06-20T18:28:00Z"
 obligation_checklist:
+    - cancellation_observed
     - concurrent
     - errors_propagated
     - malformed_recovers_or_errors_loudly
     - nominal
+    - query_timeout_bounded
 obligation_deferrals:
+    - obligation_class: cancellation_observed
+      reason: MCP Mongo writes pass context.Background to storage, so caller cancellation is not observed until mongo-pump-ignores-caller-context is fixed.
+      tracking: mongo-pump-ignores-caller-context
+      owner: agent:codex
+      ki_ref: mongo-pump-ignores-caller-context
+      reproducer: mongo-pump-ignores-caller-context static rg tripwire
     - obligation_class: concurrent
       reason: MCP Mongo concurrent batch inserts use goroutines but call store.Insert with context.Background, so caller cancellation and timeout semantics are not bounded until the Mongo context KI is fixed.
       tracking: mongo-pump-ignores-caller-context
@@ -55,6 +63,12 @@ obligation_deferrals:
       tracking: mapstructure-decode-silently-drops-unknown-keys
       owner: human:buger
       ki_ref: mapstructure-decode-silently-drops-unknown-keys
+    - obligation_class: query_timeout_bounded
+      reason: MCP Mongo writes ignore the caller timeout context and can outlive the per-pump deadline until mongo-pump-ignores-caller-context is fixed.
+      tracking: mongo-pump-ignores-caller-context
+      owner: agent:codex
+      ki_ref: mongo-pump-ignores-caller-context
+      reproducer: mongo-pump-ignores-caller-context static rg tripwire
 lifecycle:
     change_history:
         - date: "2026-05-30T08:43:46Z"
@@ -82,3 +96,8 @@ lifecycle:
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T05:02:45Z comment="Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.")'
           changed_by: human:cli
+        - date: "2026-06-20T18:28:00Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T13:20:41Z comment="Phase L2: aggressive formalization — encodes per-pump MCP/graph/mixed-collection/self-heal decisions; variables in pumps-mongo-*.vars.yaml; user directive: force MCDC witnesses on these decisions to drive verifying tests.")'
+          changed_by: human:buger

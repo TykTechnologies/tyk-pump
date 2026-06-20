@@ -643,6 +643,7 @@ func TestElasticsearchPump_getOperator_LegacyVersions_DisableBulk(t *testing.T) 
 //
 // Verifies: SW-REQ-070
 // SW-REQ-070:nominal:negative
+// SW-REQ-070:resource_lifetime_released:nominal
 func TestElasticsearchPump_Shutdown_BulkPath(t *testing.T) {
 	pump := esInit(t, map[string]interface{}{
 		"disable_bulk": false,
@@ -655,6 +656,7 @@ func TestElasticsearchPump_Shutdown_BulkPath(t *testing.T) {
 //
 // Verifies: SW-REQ-070
 // SW-REQ-070:nominal:negative
+// SW-REQ-070:resource_lifetime_released:nominal
 func TestElasticsearchPump_Shutdown_BulkDisabled(t *testing.T) {
 	pump := esInit(t, map[string]interface{}{
 		"disable_bulk": true,
@@ -667,6 +669,7 @@ func TestElasticsearchPump_Shutdown_BulkDisabled(t *testing.T) {
 //
 // Verifies: SW-REQ-070
 // SW-REQ-070:nominal:negative
+// SW-REQ-070:resource_lifetime_released:nominal
 func TestElasticsearchPump_Shutdown_ShortCircuitGuards(t *testing.T) {
 	var nilPump *ElasticsearchPump
 	assert.NoError(t, nilPump.Shutdown())
