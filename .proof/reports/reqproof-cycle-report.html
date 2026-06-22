@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Audit Cycle Report — tyk-pump</title>
+<style>
+  body { font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #1a1a1a; overflow-wrap: anywhere; }
+  /* On-screen layout: a centered, max-width reading column. Scoped to @media
+     screen so print/PDF can use the full @page box instead (see @media print). */
+  @media screen {
+    body { max-width: 980px; margin: 2rem auto; padding: 0 1.2rem; }
+  }
+  h1 { border-bottom: 3px solid #333; padding-bottom: .3rem; line-height: 1.25; }
+  h2 { margin-top: 2.2rem; border-bottom: 1px solid #ddd; padding-bottom: .2rem; }
+  h3 { margin-top: 1.6rem; }
+  p { margin: .8rem 0; }
+  a { color: #0b6bcb; }
+  table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: .95em; }
+  th, td { border: 1px solid #d0d0d0; padding: 6px 10px; text-align: left; vertical-align: top; }
+  th { background: #f4f4f4; }
+  tr:nth-child(even) td { background: #fafafa; }
+  code { background: #f0f0f0; padding: 1px 5px; border-radius: 3px; font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace; font-size: .9em; }
+  pre { background: #f6f8fa; padding: .8rem 1rem; border-radius: 6px; overflow-x: auto; white-space: pre-wrap; overflow-wrap: anywhere; }
+  pre code { background: none; padding: 0; }
+  blockquote { margin: 1rem 0; padding: .4rem 1rem; border-left: 4px solid #ddd; color: #555; }
+  blockquote em { color: #777; font-style: italic; }
+  ul, ol { padding-left: 1.6rem; }
+  li { margin: .2rem 0; }
+  hr { border: none; border-top: 1px solid #ddd; margin: 2rem 0; }
+
+  /* Executive Summary standout panel. The markdown template wraps this section
+     in <section class="exec-summary"> (raw HTML passed through by goldmark's
+     unsafe renderer); all rules below are scoped to that class so the rest of
+     the report keeps its default styling. */
+  .exec-summary {
+    background: linear-gradient(180deg, #f4f8ff 0%, #fbfcff 100%);
+    border: 1px solid #cfe0fb;
+    border-left: 6px solid #0b6bcb;
+    border-radius: 8px;
+    padding: .6rem 1.4rem 1.2rem;
+    margin: 1.6rem 0 2rem;
+    box-shadow: 0 1px 3px rgba(11, 107, 203, .08);
+  }
+  .exec-summary h2 { margin-top: .8rem; border-bottom: 2px solid #0b6bcb; color: #0b3a73; }
+  /* Verdict blockquote: a weighted accent banner, not the muted default quote. */
+  .exec-summary blockquote {
+    border-left: 4px solid #0b6bcb;
+    background: #eaf2ff;
+    color: #0b3a73;
+    font-size: 1.05em;
+    padding: .6rem 1rem;
+    border-radius: 0 6px 6px 0;
+    margin: 1rem 0;
+  }
+  .exec-summary blockquote strong { color: #0b3a73; }
+  /* Scorecard: stat-tile feel — comfortable spacing, bold counts, signal column. */
+  .exec-summary table { border: none; background: transparent; font-size: 1em; }
+  .exec-summary th { background: transparent; border: none; border-bottom: 2px solid #cfe0fb; color: #5a6b85; font-size: .8em; text-transform: uppercase; letter-spacing: .04em; }
+  .exec-summary td { border: none; border-bottom: 1px solid #e6eefb; padding: 9px 12px; }
+  .exec-summary tr:nth-child(even) td { background: transparent; }
+  .exec-summary td:nth-child(2) { font-size: 1.25em; font-weight: 700; color: #0b3a73; text-align: right; white-space: nowrap; }
+  .exec-summary td:nth-child(3) { color: #444; font-size: .92em; }
+  /* Headline findings: visually weighted badges + tight, scannable bullets. */
+  .exec-summary ul { list-style: none; padding-left: 0; }
+  .exec-summary ul li { margin: .45rem 0; padding-left: .2rem; line-height: 1.5; }
+  .exec-summary ul li strong { font-variant: small-caps; letter-spacing: .02em; }
+
+  /* Summary scorecard. The markdown template wraps the bucket table in
+     <section class="summary-card"> (raw HTML, unsafe renderer) so it reads as an
+     elevated card rather than a bare table. Rules are scoped to the class; the
+     inner markdown table still parses (blank-line separated). */
+  .summary-card {
+    background: linear-gradient(180deg, #f4f8ff 0%, #fbfcff 100%);
+    border: 1px solid #cfe0fb;
+    border-radius: 8px;
+    padding: .4rem 1.6rem 1.2rem;
+    margin: 1.6rem 0 2rem;
+    box-shadow: 0 1px 3px rgba(11, 107, 203, .08);
+  }
+  .summary-card h2 { margin-top: .8rem; border-bottom: 2px solid #0b6bcb; color: #0b3a73; }
+  /* Scorecard table: airy rows, subtle separators, no heavy grid. */
+  .summary-card table { border: none; background: transparent; font-size: 1em; }
+  .summary-card th { background: transparent; border: none; border-bottom: 2px solid #cfe0fb; color: #5a6b85; font-size: .8em; text-transform: uppercase; letter-spacing: .04em; }
+  .summary-card td { border: none; border-bottom: 1px solid #e6eefb; padding: 10px 12px; }
+  .summary-card tr:nth-child(even) td { background: transparent; }
+  .summary-card tr:last-child td { border-bottom: none; }
+  /* The bucket COUNT column: large, bold, right-aligned, accent. */
+  .summary-card td:nth-child(2) { font-size: 1.35em; font-weight: 700; color: #0b6bcb; text-align: right; white-space: nowrap; width: 1%; }
+  /* Suppression callout + corpus-totals line: muted, understated. */
+  .summary-card blockquote { border-left: 4px solid #0b6bcb; background: #eaf2ff; color: #0b3a73; border-radius: 0 6px 6px 0; }
+  .summary-card > p:last-child { color: #5a6b85; font-size: .9em; margin-bottom: .2rem; }
+
+  /* ---- Print / PDF ---------------------------------------------------------
+     Rules so the self-contained HTML converts cleanly to PDF (Chrome "Print to
+     PDF" / headless). Screen styling above is unaffected. */
+  @page { margin: 1.5cm; }
+  @media print {
+    /* Force background colors/shading to render — browsers strip them by default,
+       which would flatten the exec-summary panel, table header/zebra shading and
+       severity badges in the PDF. */
+    body, .exec-summary, .summary-card {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    /* Use the full @page box (margins set above) instead of the screen reading
+       column; print-appropriate base font size. */
+    body { max-width: none; margin: 0; padding: 0; font-size: 11pt; }
+    /* Don't split tables/rows/panels/list items/quotes across a page boundary
+       (appendix entity entries are #### headings + these list items, so they are
+       covered by li + the h4 break-after rule below). break-inside is modern;
+       page-break-inside is the legacy alias. */
+    table, tr, thead, blockquote, li, .exec-summary, .summary-card {
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+    /* Never leave a heading orphaned at the bottom of a page. */
+    h1, h2, h3, h4 { break-after: avoid; page-break-after: avoid; }
+    /* Wrap long vectors / code so nothing is clipped off the page edge. */
+    pre, code { white-space: pre-wrap; overflow-wrap: anywhere; }
+  }
+</style>
+</head>
+<body>
+<h1 id="audit-cycle-report--tyk-pump">Audit Cycle Report — tyk-pump</h1>
+<section class="exec-summary" markdown="1">
+<h2 id="executive-summary">Executive Summary</h2>
+<blockquote>
+<p><strong>Verdict:</strong> Net positive: 6 issue(s) resolved and none introduced this release.</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>Signal</th>
+<th align="right">Count</th>
+<th>Detail</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>✅ Resolved this cycle</td>
+<td align="right"><strong>6</strong></td>
+<td>—</td>
+</tr>
+<tr>
+<td>🔴 Introduced this release (still open)</td>
+<td align="right"><strong>0</strong></td>
+<td>0 regression + 0 net-new</td>
+</tr>
+<tr>
+<td>🟥 …of which HIGH-severity</td>
+<td align="right"><strong>0</strong></td>
+<td>—</td>
+</tr>
+<tr>
+<td>📋 Pre-existing backlog (gated, reproduced)</td>
+<td align="right"><strong>130</strong></td>
+<td>—</td>
+</tr>
+<tr>
+<td>🔍 Bugs you fixed that we&rsquo;d missed</td>
+<td align="right"><strong>0</strong></td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+</section>
+**Audited window:** 28 May 2026 → 22 Jun 2026 (25 days) · baseline `b18d8ea` → `48c57b5`
+<section class="summary-card" markdown="1">
+<h2 id="summary">Summary</h2>
+<p><em>Rows are non-overlapping: every open KnownIssue is counted exactly once — either as introduced this release (regression + net-new) or in the pre-existing still-open backlog.</em></p>
+<table>
+<thead>
+<tr>
+<th>Bucket</th>
+<th align="right">Count</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>KnownIssues resolved this cycle</td>
+<td align="right">6</td>
+</tr>
+<tr>
+<td>Defects introduced this release (0 regression + 0 net-new)</td>
+<td align="right">0</td>
+</tr>
+<tr>
+<td>Pre-existing still-open backlog</td>
+<td align="right">130</td>
+</tr>
+<tr>
+<td>Bugs upstream fixed that we&rsquo;d missed</td>
+<td align="right">0</td>
+</tr>
+<tr>
+<td>Historical coverage backfill (fixed before baseline; not in window)</td>
+<td align="right">0</td>
+</tr>
+<tr>
+<td>Coverage gaps (missing_*)</td>
+<td align="right">0</td>
+</tr>
+<tr>
+<td>Accepted risks (active)</td>
+<td align="right">13</td>
+</tr>
+</tbody>
+</table>
+<p><em>Corpus totals: 136 KnownIssues, 6 ProblemReports.</em></p>
+</section>
+<h2 id="1-knownissues-resolved-this-cycle">1. KnownIssues Resolved This Cycle</h2>
+<p><em>Issues we previously reported to you that this release fixes — verified by tripwire tests that now pass.</em></p>
+<table>
+<thead>
+<tr>
+<th>KI</th>
+<th>Severity</th>
+<th>Resolved</th>
+<th>Fixing ref</th>
+<th>Title</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="#mcdc-analytics-below-95"><code>mcdc-analytics-below-95</code></a></td>
+<td>🟩 LOW</td>
+<td>2026-05-31T20:50:05Z</td>
+<td>—</td>
+<td>Analytics package code MC/DC below 95% threshold</td>
+</tr>
+<tr>
+<td><a href="#mcdc-retry-below-95"><code>mcdc-retry-below-95</code></a></td>
+<td>🟩 LOW</td>
+<td>2026-05-30T20:30:49Z</td>
+<td>—</td>
+<td>Retry package code MC/DC below 95% threshold</td>
+</tr>
+<tr>
+<td><a href="#mcdc-serializer-below-95"><code>mcdc-serializer-below-95</code></a></td>
+<td>🟩 LOW</td>
+<td>2026-05-30T20:28:36Z</td>
+<td>—</td>
+<td>Serializer package code MC/DC below 95% threshold</td>
+</tr>
+<tr>
+<td><a href="#mcdc-storage-below-95"><code>mcdc-storage-below-95</code></a></td>
+<td>🟩 LOW</td>
+<td>2026-05-31T10:31:01Z</td>
+<td>—</td>
+<td>Storage code MC/DC at 85.3%/86.5% (below 95/95 policy)</td>
+</tr>
+<tr>
+<td><a href="#mongo-test-panic-under-mongo6"><code>mongo-test-panic-under-mongo6</code></a></td>
+<td>🟨 MEDIUM</td>
+<td>2026-05-31T08:43:41Z</td>
+<td>—</td>
+<td>TestMongoPump_capCollection_OverrideSize panics under mongo6 (int vs i…</td>
+</tr>
+<tr>
+<td><a href="#storage-cluster-tests-need-redis-cluster"><code>storage-cluster-tests-need-redis-cluster</code></a></td>
+<td>🟩 LOW</td>
+<td>2026-05-30T20:19:08Z</td>
+<td>—</td>
+<td>Storage cluster tests need Redis cluster on :6390; storage excluded fr…</td>
+</tr>
+</tbody>
+</table>
+<h2 id="2-defects-introduced-in-this-release">2. Defects Introduced In This Release</h2>
+<p><em>The audit&rsquo;s headline finding: bugs whose introducing change lands inside this window (<code>b18d8ea</code>..<code>48c57b5</code>) and that are STILL OPEN at HEAD. 0 qualify: 0 regression and 0 net-new. Each is also tracked as an open known issue and carries a committed reproducer; its introducing commit is linked below.</em></p>
+<h3 id="2a-regressions-introduced-this-release">2a. Regression(s) introduced this release</h3>
+<p><em>No regressions introduced this release.</em></p>
+<h3 id="2b-net-new-defects-introduced-this-release">2b. Net-new defects introduced this release</h3>
+<p><em>No net-new defects introduced this release.</em></p>
+<h2 id="3-pre-existing-still-open-backlog">3. Pre-Existing Still-Open Backlog</h2>
+<p><em>Issues still present in this release, each gated to a requirement and reproduced.</em></p>
+<p><em>130 active KnownIssues total. The HIGH-severity items (and any auditor-pinned items) are listed in full below; the MEDIUM/LOW tail is summarized by count and component so the backlog&rsquo;s shape is visible without a 90-row table.</em></p>
+<h3 id="2a-high-severity--pinned-active-issues-full-detail">2a. HIGH-severity &amp; pinned active issues (full detail)</h3>
+<table>
+<thead>
+<tr>
+<th>KI</th>
+<th>Status</th>
+<th>Severity</th>
+<th>Age</th>
+<th>Gated requirements</th>
+<th>Title</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="#docs-mcp-pump-family-entirely-undocumented"><code>docs-mcp-pump-family-entirely-undocumented</code></a></td>
+<td>open</td>
+<td>🟧 HIGH</td>
+<td>since inception</td>
+<td>SW-REQ-044</td>
+<td>Documentation gap: MCP pump family (4 backends) has zero men…</td>
+</tr>
+<tr>
+<td><a href="#docs-missing-per-pump-config-sections"><code>docs-missing-per-pump-config-sections</code></a></td>
+<td>open</td>
+<td>🟧 HIGH</td>
+<td>since inception</td>
+<td>SW-REQ-017</td>
+<td>Documentation gap: 11 registered pump types have no per-pump…</td>
+</tr>
+<tr>
+<td><a href="#pump-writedata-swallows-per-batch-errors"><code>pump-writedata-swallows-per-batch-errors</code></a></td>
+<td>open</td>
+<td>🟧 HIGH</td>
+<td>since inception</td>
+<td>INT-REQ-004, SW-REQ-034, SW-REQ-035, SW-REQ-036, SW-REQ-040, SW-REQ-046, SW-REQ-047, SW-REQ-049, SW-REQ-050, SW-REQ-051, SW-REQ-053, SW-REQ-056</td>
+<td>Multiple pumps log per-batch WriteData errors but return nil…</td>
+</tr>
+<tr>
+<td><a href="#resurface-maprawdata-empty-request-panic"><code>resurface-maprawdata-empty-request-panic</code></a></td>
+<td>open</td>
+<td>🟧 HIGH</td>
+<td>since inception</td>
+<td>SW-REQ-054</td>
+<td>Resurface mapRawData panics on AnalyticsRecord with empty Ra…</td>
+</tr>
+<tr>
+<td><a href="#sql-batch-size-zero-infinite-loop"><code>sql-batch-size-zero-infinite-loop</code></a></td>
+<td>open</td>
+<td>🟧 HIGH</td>
+<td>since inception</td>
+<td>SW-REQ-040, SW-REQ-041, SW-REQ-042, SW-REQ-043, SW-REQ-044, SW-REQ-045</td>
+<td>SQL-family batch loops can stall forever when BatchSize is z…</td>
+</tr>
+<tr>
+<td><a href="#sqs-batchlimit-zero-infinite-loop"><code>sqs-batchlimit-zero-infinite-loop</code></a></td>
+<td>open</td>
+<td>🟧 HIGH</td>
+<td>since inception</td>
+<td>SW-REQ-055</td>
+<td>SQS pump infinite-loops when AWSSQSBatchLimit is unset (defa…</td>
+</tr>
+</tbody>
+</table>
+<h3 id="2b-medium--low-backlog-summarized">2b. MEDIUM / LOW backlog (summarized)</h3>
+<p><strong>Plus 124 more active KnownIssue(s) not listed individually</strong> — 69 medium, 55 low.</p>
+<p>These are tracked, each gated to a requirement and reproduced. By component area:</p>
+<table>
+<thead>
+<tr>
+<th>Area</th>
+<th align="right">Count</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>sql</td>
+<td align="right">9</td>
+</tr>
+<tr>
+<td>docs</td>
+<td align="right">7</td>
+</tr>
+<tr>
+<td>mongo</td>
+<td align="right">6</td>
+</tr>
+<tr>
+<td>uptime</td>
+<td align="right">6</td>
+</tr>
+<tr>
+<td>kafka</td>
+<td align="right">5</td>
+</tr>
+<tr>
+<td>pump</td>
+<td align="right">5</td>
+</tr>
+<tr>
+<td>health</td>
+<td align="right">4</td>
+</tr>
+<tr>
+<td>moesif</td>
+<td align="right">4</td>
+</tr>
+<tr>
+<td>retry</td>
+<td align="right">4</td>
+</tr>
+<tr>
+<td>storage</td>
+<td align="right">4</td>
+</tr>
+<tr>
+<td>analytics</td>
+<td align="right">3</td>
+</tr>
+<tr>
+<td>elasticsearch</td>
+<td align="right">3</td>
+</tr>
+<tr>
+<td>main</td>
+<td align="right">3</td>
+</tr>
+<tr>
+<td>mcdc</td>
+<td align="right">3</td>
+</tr>
+<tr>
+<td>mcp</td>
+<td align="right">3</td>
+</tr>
+<tr>
+<td>prometheus</td>
+<td align="right">3</td>
+</tr>
+<tr>
+<td>resurface</td>
+<td align="right">3</td>
+</tr>
+<tr>
+<td>splunk</td>
+<td align="right">3</td>
+</tr>
+<tr>
+<td>sw</td>
+<td align="right">3</td>
+</tr>
+<tr>
+<td>aggregate</td>
+<td align="right">2</td>
+</tr>
+<tr>
+<td>getanddeleteset</td>
+<td align="right">2</td>
+</tr>
+<tr>
+<td>graylog</td>
+<td align="right">2</td>
+</tr>
+<tr>
+<td>http</td>
+<td align="right">2</td>
+</tr>
+<tr>
+<td>hybrid</td>
+<td align="right">2</td>
+</tr>
+<tr>
+<td>instrumentation</td>
+<td align="right">2</td>
+</tr>
+<tr>
+<td>kinesis</td>
+<td align="right">2</td>
+</tr>
+<tr>
+<td>syslog</td>
+<td align="right">2</td>
+</tr>
+<tr>
+<td>temporal</td>
+<td align="right">2</td>
+</tr>
+<tr>
+<td>common</td>
+<td align="right">1</td>
+</tr>
+<tr>
+<td>config</td>
+<td align="right">1</td>
+</tr>
+<tr>
+<td>csv</td>
+<td align="right">1</td>
+</tr>
+<tr>
+<td>elapsed</td>
+<td align="right">1</td>
+</tr>
+<tr>
+<td>env</td>
+<td align="right">1</td>
+</tr>
+<tr>
+<td>es</td>
+<td align="right">1</td>
+</tr>
+<tr>
+<td>external</td>
+<td align="right">1</td>
+</tr>
+<tr>
+<td>filterdata</td>
+<td align="right">1</td>
+</tr>
+<tr>
+<td>geoip</td>
+<td align="right">1</td>
+</tr>
+<tr>
+<td>influx</td>
+<td align="right">1</td>
+</tr>
+<tr>
+<td>logfatal</td>
+<td align="right">1</td>
+</tr>
+<tr>
+<td>logzio</td>
+<td align="right">1</td>
+</tr>
+<tr>
+<td>mapstructure</td>
+<td align="right">1</td>
+</tr>
+<tr>
+<td>metrics</td>
+<td align="right">1</td>
+</tr>
+<tr>
+<td>no</td>
+<td align="right">1</td>
+</tr>
+<tr>
+<td>preprocess</td>
+<td align="right">1</td>
+</tr>
+<tr>
+<td>protobuf</td>
+<td align="right">1</td>
+</tr>
+<tr>
+<td>pumps</td>
+<td align="right">1</td>
+</tr>
+<tr>
+<td>serializer</td>
+<td align="right">1</td>
+</tr>
+<tr>
+<td>setaggregatetimestamp</td>
+<td align="right">1</td>
+</tr>
+<tr>
+<td>sqs</td>
+<td align="right">1</td>
+</tr>
+<tr>
+<td>stdout</td>
+<td align="right">1</td>
+</tr>
+<tr>
+<td>systemconfig</td>
+<td align="right">1</td>
+</tr>
+<tr>
+<td>tls</td>
+<td align="right">1</td>
+</tr>
+<tr>
+<td>write</td>
+<td align="right">1</td>
+</tr>
+</tbody>
+</table>
+<h2 id="6-historical-coverage-backfill--bugs-fixed-in-prior-releases-coverage-added-this-cycle">6. Historical Coverage Backfill — bugs fixed in prior releases, coverage added this cycle</h2>
+<p><em>(internal) Bugs both introduced AND fixed before the baseline — not in the audited window. Listed only to record the coverage (requirement + tripwire) this audit added so they cannot silently regress.</em></p>
+<blockquote>
+<p><strong>These bugs were both introduced and fixed before the <code>b18d8ea</code> 1.12.0 baseline — this release did not introduce them and they are not in the audited window; listed here only to record the coverage (requirement + tripwire) this audit added so they cannot silently regress.</strong></p>
+</blockquote>
+<p><em>No historical-backfill defects in scope.</em></p>
+<h2 id="7-bugs-upstream-fixed-that-wed-missed">7. Bugs Upstream Fixed That We&rsquo;d Missed</h2>
+<p><em>Bugs YOUR release fixed that no prior audit had on record — i.e. latent across the whole window. For each, we extended our corpus (a reproducer test, an opengrep signal, and an obligation class) so this defect class is now caught automatically next cycle.</em></p>
+<p><em>No missed-coverage defects in this window.</em></p>
+<h2 id="8-gaps--missed-coverage-root-cause-flags">8. Gaps / Missed Coverage (root-cause flags)</h2>
+<p><em>(internal) Spec/test coverage we had not yet written — our own corpus maturity, not your code quality.</em></p>
+<p><em>(The 0 missed-coverage defect(s) in the internal meta-audit section are also coverage gaps by construction; they are cross-referenced there and intentionally excluded from this table to avoid double-counting.)</em></p>
+<p><em>No coverage-gap defects in this window.</em></p>
+<h2 id="9-accepted-risks-active">9. Accepted Risks (Active)</h2>
+<p><em>Risks the owner has formally accepted, with a review-by date — open and tracked, not silently ignored.</em></p>
+<table>
+<thead>
+<tr>
+<th>RISK</th>
+<th>Severity/Status</th>
+<th>Accepted by</th>
+<th>Review due</th>
+<th>Title</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>elasticsearch-unbounded-reconnect-stack-overflow</code></td>
+<td>active</td>
+<td>human:leo</td>
+<td>2026-08-30</td>
+<td>Elasticsearch pump&rsquo;s unbounded reconnect recursion can stack…</td>
+</tr>
+<tr>
+<td><code>graylog-moesif-record-fatal</code></td>
+<td>active</td>
+<td>human:leo</td>
+<td>2026-08-30</td>
+<td>Graylog and Moesif pumps log.Fatal on per-record errors, cra…</td>
+</tr>
+<tr>
+<td><code>mongo-pump-context-timeout-bypass</code></td>
+<td>active</td>
+<td>human:leo</td>
+<td>2026-08-30</td>
+<td>Ship mongo pump without per-pump write-timeout enforcement</td>
+</tr>
+<tr>
+<td><code>no-dlq-on-pump-write-failure</code></td>
+<td>active</td>
+<td>human:leo</td>
+<td>2026-08-30</td>
+<td>No dead-letter queue: pump write failures after successful R…</td>
+</tr>
+<tr>
+<td><code>per-pump-timeout-not-enforced-when-zero</code></td>
+<td>active</td>
+<td>human:leo</td>
+<td>2026-08-30</td>
+<td>Per-pump timeout=0 disables timeout enforcement entirely</td>
+</tr>
+<tr>
+<td><code>pump-config-typos-silently-ignored</code></td>
+<td>active</td>
+<td>human:leo</td>
+<td>2026-08-30</td>
+<td>mapstructure.Decode in every pump Init silently drops unknow…</td>
+</tr>
+<tr>
+<td><code>pump-panic-crashes-process</code></td>
+<td>active</td>
+<td>human:leo</td>
+<td>2026-08-30</td>
+<td>Pump goroutine panic crashes entire tyk-pump process (no rec…</td>
+</tr>
+<tr>
+<td><code>pump-writedata-swallows-per-batch-errors</code></td>
+<td>active</td>
+<td>human:leo</td>
+<td>2026-11-30</td>
+<td>Pump.WriteData per-batch error swallowing across 11 pumps</td>
+</tr>
+<tr>
+<td><code>serializer-protobuf-city-names-data-loss</code></td>
+<td>active</td>
+<td>human:leo</td>
+<td>2026-08-30</td>
+<td>Protobuf serializer round-trip drops City.Names map</td>
+</tr>
+<tr>
+<td><code>sql-default-migration-today-only-data-loss</code></td>
+<td>active</td>
+<td>human:leo</td>
+<td>2026-08-30</td>
+<td>SQL default migration covers only current day; late-arriving…</td>
+</tr>
+<tr>
+<td><code>statsd-setup-fatal-aborts-pump</code></td>
+<td>active</td>
+<td>human:leo</td>
+<td>2026-08-30</td>
+<td>StatsD setup failure log.Fatals the pump at startup</td>
+</tr>
+<tr>
+<td><code>storage-pop-expire-non-atomic-data-loss</code></td>
+<td>active</td>
+<td>human:leo</td>
+<td>2026-08-30</td>
+<td>Redis Pop+Expire non-atomic: Expire failure silently loses p…</td>
+</tr>
+<tr>
+<td><code>uptime-pump-silent-failure</code></td>
+<td>active</td>
+<td>human:leo</td>
+<td>2026-08-30</td>
+<td>UptimePump.WriteUptimeData has no error return; backend fail…</td>
+</tr>
+</tbody>
+</table>
+<h2 id="appendix-entity-detail">Appendix: Entity Detail</h2>
+<p><em>One record per entity shown in this profile. Headings are the verbatim entity id, so the in-table links above resolve here.</em></p>
+<h4 id="mcdc-analytics-below-95">mcdc-analytics-below-95</h4>
+<ul>
+<li><strong>Title:</strong> Analytics package code MC/DC below 95% threshold</li>
+<li><strong>Severity:</strong> low</li>
+<li><strong>Status:</strong> fixed <em>(resolved 2026-05-31T20:50:05Z)</em></li>
+<li><strong>Description:</strong> Analytics package code MC/DC is 69% decisions / 75% conditions against the strict 95/95 bar configured in proof.yaml. Major gaps are in analytics/aggregate.go:incrementAggregate (deep field-switch independence pairs across APIID/ResponseCode/APIVersion/APIKey/OauthID/Geo/Tags/TrackPath branches) and analytics/uptime_data.go:AggregateUptimeData (URL/-1/ServerError/TCPError combinations). GeoIP-DB-bound branches are already excluded via //mcdc:ignore.</li>
+<li><strong>Root cause / remediation:</strong> Done.</li>
+<li><strong>Linked requirement(s):</strong> SW-REQ-011, SW-REQ-009</li>
+<li><strong>Reproducer / evidence tests:</strong>
+<ul>
+<li><code>go test -count=1 -timeout 60s -coverprofile=cover.out ./analytics</code></li>
+</ul>
+</li>
+</ul>
+<h4 id="mcdc-retry-below-95">mcdc-retry-below-95</h4>
+<ul>
+<li><strong>Title:</strong> Retry package code MC/DC below 95% threshold</li>
+<li><strong>Severity:</strong> low</li>
+<li><strong>Status:</strong> fixed <em>(resolved 2026-05-30T20:30:49Z)</em></li>
+<li><strong>Description:</strong> Retry package code MC/DC is 58% decisions / 69% conditions against the strict 95/95 bar. Gaps are in retry/http-retry.go isErrorRetryable (compound-condition independence pairs across errors.As-based type switches) and BackoffHTTPRetry.Send (req.Body nil/non-nil branches, response body close path, retry decision paths).</li>
+<li><strong>Root cause / remediation:</strong> Done.</li>
+<li><strong>Linked requirement(s):</strong> SW-REQ-030, SW-REQ-031</li>
+<li><strong>Reproducer / evidence tests:</strong>
+<ul>
+<li><code>go test -count=1 -timeout 60s -coverprofile=cover.out ./retry</code></li>
+</ul>
+</li>
+</ul>
+<h4 id="mcdc-serializer-below-95">mcdc-serializer-below-95</h4>
+<ul>
+<li><strong>Title:</strong> Serializer package code MC/DC below 95% threshold</li>
+<li><strong>Severity:</strong> low</li>
+<li><strong>Status:</strong> fixed <em>(resolved 2026-05-30T20:28:36Z)</em></li>
+<li><strong>Description:</strong> Serializer package code MC/DC is 60% decisions / 60% conditions against the strict 95/95 bar. The bulk of uncovered decisions is in serializer/protobuf.go TransformSingleRecordToProto / TransformSingleProtoToAnalyticsRecord — long field-by-field copy paths where each non-nil-check is its own decision.</li>
+<li><strong>Root cause / remediation:</strong> Done. MC/DC serializer exception removed in same PR.</li>
+<li><strong>Linked requirement(s):</strong> SW-REQ-008</li>
+<li><strong>Reproducer / evidence tests:</strong>
+<ul>
+<li><code>go test -count=1 -timeout 60s -coverprofile=cover.out ./serializer</code></li>
+</ul>
+</li>
+</ul>
+<h4 id="mcdc-storage-below-95">mcdc-storage-below-95</h4>
+<ul>
+<li><strong>Title:</strong> Storage code MC/DC at 85.3%/86.5% (below 95/95 policy)</li>
+<li><strong>Severity:</strong> low</li>
+<li><strong>Status:</strong> fixed <em>(resolved 2026-05-31T10:31:01Z)</em></li>
+<li><strong>Description:</strong> After Phase C MC/DC test additions in storage/temporal_storage_mcdc_test.go, measured MC/DC is 85.3% decisions / 86.5% conditions vs the 95/95 policy. The remaining 5 uncovered err != nil decisions (temporal_storage.go:209, :214, :268, :315, :347) are structurally unreachable from external tests and are catalogued by two sibling KIs - storage-createconnector-kv-list-err-unreachable (lines 209/214 - createConnector kv/list constructor errors that cannot fire because connector.NewConnector always returns a RedisV9 conn whose Type() and As() satisfy both NewKeyValue and NewList) and storage-ensureconnection-error-path-unreachable (lines 268/315/347 - blocked by the unbounded backoff documented in storage-retry-maxelapsed-zero-is-unbounded). Closing the gap to 95/95 requires either dropping the dead defensive guards or introducing a connector-factory seam and capping MaxElapsedTime; both are production-code refactors deferred to a future cycle.</li>
+<li><strong>Root cause / remediation:</strong> Done. Storage decisions 100% / conditions 100% via 5 //mcdc:ignore annotations on the documented-unreachable defensive guards plus existing Phase C MC/DC tests in storage/temporal_storage_mcdc_test.go.</li>
+<li><strong>Linked requirement(s):</strong> SW-REQ-006, SW-REQ-007</li>
+<li><strong>Reproducer / evidence tests:</strong>
+<ul>
+<li><code>go test -count=1 -timeout 180s -coverprofile=cover.out ./storage</code></li>
+</ul>
+</li>
+</ul>
+<h4 id="mongo-test-panic-under-mongo6">mongo-test-panic-under-mongo6</h4>
+<ul>
+<li><strong>Title:</strong> TestMongoPump_capCollection_OverrideSize panics under mongo6 (int vs int64)</li>
+<li><strong>Severity:</strong> medium</li>
+<li><strong>Status:</strong> fixed <em>(resolved 2026-05-31T08:43:41Z)</em></li>
+<li><strong>Description:</strong> pumps/mongo_test.go:316 TestMongoPump_capCollection_OverrideSize panics with &lsquo;interface conversion: interface {} is int, not int64&rsquo; when run against a mongo:6 server. Mongo client v6 returns capped-collection size as int; the test asserts int64 via colStats[&ldquo;maxSize&rdquo;].(int64). The panic crashes the whole pumps package test run, taking down the evidence set for SW-REQ-018. Workaround: run mongo tests against the older mongo:4 / mongo:5 server image, or fix the assertion to accept both int and int64.</li>
+<li><strong>Root cause / remediation:</strong> Coerce the type assertion to accept both int and int64 (switch on colStats[&ldquo;maxSize&rdquo;].(type)) so the test passes against mongo 4/5/6 driver/server pairings.</li>
+<li><strong>Linked requirement(s):</strong> SW-REQ-018</li>
+<li><strong>Reproducer / evidence tests:</strong>
+<ul>
+<li><code>MONGO_DRIVER=mongo-go go test -run TestMongoPump_capCollection_OverrideSize -count=1 ./pumps</code></li>
+<li><code>go test -count=1 -timeout 60s -run TestMongoPump_capCollection_OverrideSize ./pumps</code></li>
+</ul>
+</li>
+</ul>
+<h4 id="storage-cluster-tests-need-redis-cluster">storage-cluster-tests-need-redis-cluster</h4>
+<ul>
+<li><strong>Title:</strong> Storage cluster tests need Redis cluster on :6390; storage excluded from code MC/DC scope</li>
+<li><strong>Severity:</strong> low</li>
+<li><strong>Status:</strong> fixed <em>(resolved 2026-05-30T20:19:08Z)</em></li>
+<li><strong>Description:</strong> storage/temporal_storage_test.go:47 TestRedisClusterStorageManager_GetAndDeleteSet and storage/temporal_storage_test.go:108 TestNewTemporalClusterStorageHandler are named for cluster-mode validation; the unreachable-backend negative case at storage/temporal_storage_negative_test.go:18 expects a port-6390 listener (per task scope: a Redis CLUSTER on :6390). The standalone tykpump-redis container on port 6379 does not satisfy a cluster-mode peer on :6390. As a consequence, ./storage is excluded from the code-MC/DC targets in proof.yaml (the code_mcdc targets list only analytics, serializer, retry, logger, server, root) so the SW-REQ-007 backoff/reconnect evidence is not MC/DC-measured locally. This is a test-environment limitation, not a code defect. Workaround: spin up Redis cluster on port 6390 for the test environment, or refactor the tests to t.Skip when cluster mode is unavailable.</li>
+<li><strong>Root cause / remediation:</strong> Done. testcontainers-go added; storage suite green locally. Storage to be added to proof.yaml code_mcdc targets in Phase C.</li>
+<li><strong>Linked requirement(s):</strong> SW-REQ-007</li>
+<li><strong>Reproducer / evidence tests:</strong>
+<ul>
+<li><code>go test -count=1 -timeout 180s ./storage</code></li>
+</ul>
+</li>
+</ul>
+<h4 id="docs-mcp-pump-family-entirely-undocumented">docs-mcp-pump-family-entirely-undocumented</h4>
+<ul>
+<li><strong>Title:</strong> Documentation gap: MCP pump family (4 backends) has zero mentions in tyk-docs</li>
+<li><strong>Severity:</strong> high <em>(basis: risk · correctness)</em></li>
+<li><strong>Status:</strong> open</li>
+<li><strong>Description:</strong> pumps/init.go:39-42 registers mongo-mcp, mongo-mcp-aggregate, sql-mcp, sql-mcp-aggregate. SW-REQ-038/039/044/045 cover them. KIs mcp-sql-aggregate-mysql-create-index-syntax-broken and elasticsearch-mcp-routing-non-bulk-ignored describe MCP-specific bugs. None of this is reachable from tyk-docs: zero matches for &lsquo;MCP&rsquo; across api-management/tyk-pump.md, shared/pump-config.md, or developer-support/release-notes/pump.md. Operators discovering MCP must read the source.</li>
+<li><strong>Root cause / remediation:</strong> Add (a) an MCP analytics overview section to tyk-docs/content/api-management/tyk-pump.md, (b) per-pump config sections for the 4 MCP backends in tyk-docs/content/shared/pump-config.md (overlaps with KI docs-missing-per-pump-config-sections), (c) release-note entry in tyk-docs/content/developer-support/release-notes/pump.md for the version that introduced MCP.</li>
+<li><strong>Linked requirement(s):</strong> SW-REQ-044</li>
+<li><strong>Reproducer / evidence tests:</strong>
+<ul>
+<li><code>grep -RIn -e 'MCP' -e 'mcp' /Users/buger/go/src/tyk-docs/tyk-docs/content/api-management/tyk-pump.md /Users/buger/go/src/tyk-docs/tyk-docs/content/shared/pump-config.md /Users/buger/go/src/tyk-docs/tyk-docs/content/developer-support/release-notes/pump.md || echo 'no matches'</code></li>
+<li><code>grep -RIn -e 'MCP' -e 'mcp' /Users/buger/go/src/tyk-docs/tyk-docs/content/api-management/tyk-pump.md /Users/buger/go/src/tyk-docs/tyk-docs/content/shared/pump-config.md /Users/buger/go/src/tyk-docs/tyk-docs/content/developer-support/release-notes/pump.md || echo 'no matches'</code></li>
+</ul>
+</li>
+</ul>
+<h4 id="docs-missing-per-pump-config-sections">docs-missing-per-pump-config-sections</h4>
+<ul>
+<li><strong>Title:</strong> Documentation gap: 11 registered pump types have no per-pump configuration section in tyk-docs</li>
+<li><strong>Severity:</strong> high <em>(basis: risk · correctness)</em></li>
+<li><strong>Status:</strong> open</li>
+<li><strong>Description:</strong> pumps/init.go:9-46 registers 30 pump types; tyk-docs/content/shared/pump-config.md is missing per-pump tables for: influx2, segment, sqs, resurfaceio, mongo-graph, sql-graph, sql-graph-aggregate, mongo-mcp, mongo-mcp-aggregate, sql-mcp, sql-mcp-aggregate. Operators have no canonical reference for these pumps&rsquo; meta blocks.</li>
+<li><strong>Root cause / remediation:</strong> Add per-pump configuration sections in tyk-docs/content/shared/pump-config.md for all 11 missing pump types. Highest priority for the four MCP variants (entire feature surface invisible).</li>
+<li><strong>Linked requirement(s):</strong> SW-REQ-017</li>
+<li><strong>Reproducer / evidence tests:</strong>
+<ul>
+<li><code>grep -E 'pmp\..*=' /Users/buger/go/src/tyk-pump/pumps/init.go | head -40</code></li>
+<li><code>grep -E 'pmp\..*=' /Users/buger/go/src/tyk-pump/pumps/init.go | head -40</code></li>
+</ul>
+</li>
+</ul>
+<h4 id="pump-writedata-swallows-per-batch-errors">pump-writedata-swallows-per-batch-errors</h4>
+<ul>
+<li><strong>Title:</strong> Multiple pumps log per-batch WriteData errors but return nil, breaking Pump-interface error-return contract</li>
+<li><strong>Severity:</strong> high <em>(basis: risk · data_integrity)</em></li>
+<li><strong>Status:</strong> open</li>
+<li><strong>Description:</strong> INT-REQ-004 contracts that Pump.WriteData returns an error on backend failure. In practice, several pumps log per-batch errors via their logger and return nil. Audit of pumps/init.go-registered implementations: pumps/mongo.go:464 (logs MongoErr, returns nil); pumps/mongo_selective.go:266 (logs InsertError, returns nil); pumps/mongo_aggregate.go:307 (logs MongoUpsertErr, returns nil); pumps/kinesis.go:185 (logs PutRecordErr, returns nil); pumps/sql.go:333 (logs Create-batch error, returns nil); pumps/graylog.go:174 (logs and returns nil); pumps/syslog.go:138 (logs and returns nil); pumps/logzio.go:185 (logs and returns nil); pumps/segment.go:121 (logs and returns nil); pumps/influx.go:158 (logs WritePoint error, returns nil); pumps/influx2.go:178 (logs FlushErr, returns nil). Affects the caller (main.execPumpWriting) which interprets nil as success and increments success counters.</li>
+<li><strong>Root cause / remediation:</strong> Refactor each named pump&rsquo;s WriteData to wrap per-batch errors into a multierr or surface the last error; update tests + KI status to fixed.</li>
+<li><strong>Linked requirement(s):</strong> INT-REQ-004, SW-REQ-034, SW-REQ-035, SW-REQ-036, SW-REQ-040, SW-REQ-046, SW-REQ-047, SW-REQ-049, SW-REQ-050, SW-REQ-051, SW-REQ-053, SW-REQ-056</li>
+</ul>
+<h4 id="resurface-maprawdata-empty-request-panic">resurface-maprawdata-empty-request-panic</h4>
+<ul>
+<li><strong>Title:</strong> Resurface mapRawData panics on AnalyticsRecord with empty RawRequest but non-empty RawResponse</li>
+<li><strong>Severity:</strong> high <em>(basis: risk · availability)</em></li>
+<li><strong>Status:</strong> open</li>
+<li><strong>Description:</strong> pumps/resurface.go:166 (mapRawData) splits the decoded raw request on whitespace via strings.Fields(req[0]) and indexes [1] to extract the path. When AnalyticsRecord.RawRequest is empty but RawResponse is not, the partial-raw guard at resurface.go:253 (len==0 &amp;&amp; len==0) does NOT skip the record, and mapRawData proceeds to panic with &lsquo;index out of range [1] with length 0&rsquo;. The whole pump goroutine crashes and the buffered channel is left in a broken state. Reachable from any deployment that produces records with one side of the raw HTTP transaction missing.</li>
+<li><strong>Root cause / remediation:</strong> Either tighten the early-return guard in writeData to skip records with EITHER side empty (change &amp;&amp; to ||), or harden mapRawData against empty rawReq/rawRes inputs by returning an error instead of indexing.</li>
+<li><strong>Linked requirement(s):</strong> SW-REQ-054</li>
+<li><strong>Reproducer / evidence tests:</strong>
+<ul>
+<li><code>go test -count=1 -run 'TestResurfacePump_MapRawData_EmptyRequest_PanicKI' ./pumps</code></li>
+<li><code>go test -count=1 -run 'TestResurfacePump_MapRawData_EmptyRequest_PanicKI' ./pumps</code></li>
+</ul>
+</li>
+</ul>
+<h4 id="sql-batch-size-zero-infinite-loop">sql-batch-size-zero-infinite-loop</h4>
+<ul>
+<li><strong>Title:</strong> SQL-family batch loops can stall forever when BatchSize is zero or negative</li>
+<li><strong>Severity:</strong> high <em>(basis: risk · availability)</em></li>
+<li><strong>Status:</strong> open</li>
+<li><strong>Description:</strong> The SQL, Graph SQL, MCP SQL, SQL aggregate, Graph SQL aggregate, and MCP SQL aggregate write paths iterate batches with loops of the form for i := 0; i &lt; len(recs); i += BatchSize. If configuration or test wiring leaves BatchSize at zero, the loop never advances; if it is negative, slicing boundaries become invalid. The code does not consistently validate BatchSize before these loops, so input_size_bounded and malformed_input obligations for these paths are real tracked debt.</li>
+<li><strong>Root cause / remediation:</strong> Validate BatchSize during Init for every SQL-family pump and defensively clamp or reject non-positive values before entering the batching loops.</li>
+<li><strong>Linked requirement(s):</strong> SW-REQ-040, SW-REQ-041, SW-REQ-042, SW-REQ-043, SW-REQ-044, SW-REQ-045</li>
+<li><strong>Reproducer / evidence tests:</strong>
+<ul>
+<li><code>rg -n &quot;for i := 0; i &lt; len\\(recs\\); i \\+= .*BatchSize|for i := 0; i &lt; len\\(typedData\\); i \\+= .*BatchSize&quot; pumps/sql.go pumps/sql_aggregate.go pumps/graph_sql.go pumps/graph_sql_aggregate.go pumps/mcp_sql.go pumps/mcp_sql_aggregate.go</code></li>
+</ul>
+</li>
+</ul>
+<h4 id="sqs-batchlimit-zero-infinite-loop">sqs-batchlimit-zero-infinite-loop</h4>
+<ul>
+<li><strong>Title:</strong> SQS pump infinite-loops when AWSSQSBatchLimit is unset (default 0)</li>
+<li><strong>Severity:</strong> high <em>(basis: risk · availability)</em></li>
+<li><strong>Status:</strong> open</li>
+<li><strong>Description:</strong> pumps/sqs.go:178-197 (write method): the batching loop is &lsquo;for i := 0; i &lt; len(messages); i += s.SQSConf.AWSSQSBatchLimit&rsquo;. When AWSSQSBatchLimit is the int zero-value (not set in YAML or env), i never advances and the loop runs forever — sending the same batch every iteration. There is NO default applied in Init (pumps/sqs.go:97-128 has no defaulting); only AWSSQSBatchLimit is read from config and passed through. Furthermore the AWS SQS API caps SendMessageBatch entries at 10; any value &gt; 10 will be rejected per-call. No validation enforces the 1..10 range.</li>
+<li><strong>Root cause / remediation:</strong> In SQSPump.Init: &lsquo;if s.SQSConf.AWSSQSBatchLimit &lt;= 0 || s.SQSConf.AWSSQSBatchLimit &gt; 10 { s.SQSConf.AWSSQSBatchLimit = 10 }&rsquo;. Document the AWS 10-entry cap in the docs config snippet.</li>
+<li><strong>Linked requirement(s):</strong> SW-REQ-055</li>
+<li><strong>Reproducer / evidence tests:</strong>
+<ul>
+<li><code>rg -n &quot;i \+= s\.SQSConf\.AWSSQSBatchLimit|AWSSQSBatchLimit&quot; pumps/sqs.go</code></li>
+</ul>
+</li>
+</ul>
+<h4 id="defect-6">DEFECT-6</h4>
+<ul>
+<li><strong>Title:</strong> Elasticsearch pump shutdown did not close ES clients</li>
+<li><strong>Severity:</strong> medium</li>
+<li><strong>Status:</strong> covered_by_requirement</li>
+<li><strong>Introduced:</strong> inception</li>
+<li><strong>Fixing / upstream ref:</strong> reqproof-coverage-authored-delta-review</li>
+<li><strong>Description:</strong> ElasticsearchPump.Shutdown only flushed the bulk processor when bulk mode was
+enabled. It did not close the per-version BulkProcessor or stop the elastic
+client, and it did not guard repeated Shutdown calls. That left backend client
+resources owned by the Elasticsearch pump alive after the pump host invoked
+shutdown, weakening the clean-shutdown/resource-lifetime contract for the ES
+pump family.</li>
+</ul>
+<p>The current branch changes pumps/elasticsearch.go so each per-version
+operator implements close(), Shutdown is idempotent, bulk flush errors are
+preserved, and the operator close path is invoked for both bulk and non-bulk
+configurations.</p>
+<ul>
+<li><strong>Root cause / remediation:</strong> SW-REQ-070 already stated that Elasticsearch shutdown flushes the bulk
+processor, and SYS/SW shutdown requirements cover clean pump lifecycle.
+The implementation did not fully release the resources owned by that
+lifecycle surface. Existing shutdown-path tests exercise the bulk and
+non-bulk Shutdown paths; this report records the defect trail for the
+implementation delta rather than minting a new requirement.</li>
+<li><strong>Affected files:</strong>
+<ul>
+<li><a href="https://github.com/TykTechnologies/tyk-pump-proof/blob/feat/reqproof-coverage/pumps/elasticsearch.go"><code>pumps/elasticsearch.go</code></a></li>
+</ul>
+</li>
+<li><strong>Linked requirement(s):</strong> SW-REQ-070, SW-REQ-068, SW-REQ-069</li>
+<li><strong>Reproducer / evidence tests:</strong>
+<ul>
+<li><a href="https://github.com/TykTechnologies/tyk-pump-proof/blob/feat/reqproof-coverage/pumps/elasticsearch_mcdc_test.go"><code>pumps/elasticsearch_mcdc_test.go:TestElasticsearchPump_Shutdown_BulkPath</code></a></li>
+<li><a href="https://github.com/TykTechnologies/tyk-pump-proof/blob/feat/reqproof-coverage/pumps/elasticsearch_mcdc_test.go"><code>pumps/elasticsearch_mcdc_test.go:TestElasticsearchPump_Shutdown_BulkDisabled</code></a></li>
+</ul>
+</li>
+</ul>
+<hr />
+<h2 id="appendix-data-gap-analysis">Appendix: Data-Gap Analysis</h2>
+<p><em>Fields this report had to infer or reconstruct because the model does not carry
+them as first-class data. Occurrences = records hitting the gap in this run.</em></p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Severity</th>
+<th align="right">Occurrences</th>
+<th>Came from</th>
+<th>Proposed model addition</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>KnownIssue.resolved_at</code></td>
+<td>lossy</td>
+<td align="right">6</td>
+<td>inferred from history[].at of the entry whose detail matches a status-&gt;fixed transition</td>
+<td>add <code>resolved_at string</code> (RFC3339), set by <code>proof known-issue resolve</code></td>
+</tr>
+<tr>
+<td><code>KnownIssue.resolved_in</code></td>
+<td>blocking</td>
+<td align="right">6</td>
+<td>reconstructed from non-model <code>fixing_reference:</code> key, else scavenged #PR/SHA from history detail or remediation prose</td>
+<td>add <code>resolved_in string</code> (fixing commit-ish); promote the de-facto <code>fixing_reference</code> YAML key into the model so it stops being dropped on load</td>
+</tr>
+<tr>
+<td><code>KnownIssue.created_at</code></td>
+<td>lossy</td>
+<td align="right">0</td>
+<td>inferred from the first history[] entry (action=created)</td>
+<td>add <code>created_at string</code>; age/SLA math currently depends on a history convention</td>
+</tr>
+<tr>
+<td><code>ProblemReport.detected_at</code></td>
+<td>lossy</td>
+<td align="right">0</td>
+<td>source.date, else regression.detected_at (when a date), else first history entry</td>
+<td>add a report-level <code>detected_at</code>; regression.detected_at is overloaded (sometimes a SHA, not a date)</td>
+</tr>
+<tr>
+<td><code>ProblemReport.regression.dwell</code></td>
+<td>cosmetic</td>
+<td align="right">0</td>
+<td>read directly when present; frequently empty — not derivable without bisect</td>
+<td>auto-derive dwell from introduced_in..fixed_in via git, or require it on regression closure</td>
+</tr>
+</tbody>
+</table>
+</body>
+</html>
