@@ -15,7 +15,9 @@
 | 🔍 Bugs you fixed that we'd missed | **0** | — |
 
 </section>
-**Audited window:** 28 May 2026 → 22 Jun 2026 (25 days) · baseline `b18d8ea` → `5574b3b`
+**Range:** _snapshot (no commit window)_
+
+> ⚠️ no --from given: report is a point-in-time snapshot; every artifact is treated as in-range
 
 <section class="summary-card" markdown="1">
 
@@ -30,7 +32,7 @@ _Rows are non-overlapping: every open KnownIssue is counted exactly once — eit
 | Pre-existing still-open backlog | 126 |
 | Bugs upstream fixed that we'd missed | 0 |
 | Historical coverage backfill (fixed before baseline; not in window) | 0 |
-| Coverage gaps (missing_*) | 0 |
+| Coverage gaps (missing_*) | 5 |
 | Accepted risks (active) | 13 |
 
 _Corpus totals: 126 KnownIssues, 6 ProblemReports._
@@ -44,7 +46,7 @@ _Issues we previously reported to you that this release fixes — verified by tr
 _None resolved in this window._
 ## 2. Defects Introduced In This Release
 
-_The audit's headline finding: bugs whose introducing change lands inside this window (`b18d8ea`..`5574b3b`) and that are STILL OPEN at HEAD. 0 qualify: 0 regression and 0 net-new. Each is also tracked as an open known issue and carries a committed reproducer; its introducing commit is linked below._
+_The audit's headline finding: bugs whose introducing change lands inside this window (`snapshot`) and that are STILL OPEN at HEAD. 0 qualify: 0 regression and 0 net-new. Each is also tracked as an open known issue and carries a committed reproducer; its introducing commit is linked below._
 
 ### 2a. Regression(s) introduced this release
 
@@ -138,7 +140,7 @@ These are tracked, each gated to a requirement and reproduced. By component area
 
 _(internal) Bugs both introduced AND fixed before the baseline — not in the audited window. Listed only to record the coverage (requirement + tripwire) this audit added so they cannot silently regress._
 
-> **These bugs were both introduced and fixed before the `b18d8ea` 1.12.0 baseline — this release did not introduce them and they are not in the audited window; listed here only to record the coverage (requirement + tripwire) this audit added so they cannot silently regress.**
+> **These bugs were both introduced and fixed before the 1.12.0 baseline — this release did not introduce them and they are not in the audited window; listed here only to record the coverage (requirement + tripwire) this audit added so they cannot silently regress.**
 
 _No historical-backfill defects in scope._
 ## 7. Bugs Upstream Fixed That We'd Missed
@@ -152,7 +154,15 @@ _(internal) Spec/test coverage we had not yet written — our own corpus maturit
 
 _(The 0 missed-coverage defect(s) in the internal meta-audit section are also coverage gaps by construction; they are cross-referenced there and intentionally excluded from this table to avoid double-counting.)_
 
-_No coverage-gap defects in this window._
+
+| DEFECT | missing_req | missing_test | missing_mcdc | disposition | Title |
+|--------|:-----------:|:------------:|:------------:|-------------|-------|
+| [`DEFECT-1`](#defect-1) | no | yes | no | covered_by_requirement | MCP Mongo aggregate cross-API document merge |
+| [`DEFECT-2`](#defect-2) | no | yes | no | covered_by_requirement | Syslog pump log fragmentation on multiline raw_request/raw_r… |
+| [`DEFECT-3`](#defect-3) | no | yes | no | covered_by_requirement | SQL table-sharding pump skipped schema migration of sharded … |
+| [`DEFECT-4`](#defect-4) | no | yes | no | covered_by_requirement | SQL pump panics (slice index out of range) when sharding ena… |
+| [`DEFECT-5`](#defect-5) | yes | no | no | covered_by_requirement | Prometheus pump exposed full API keys as metric label values |
+
 ## 9. Accepted Risks (Active)
 
 _Risks the owner has formally accepted, with a review-by date — open and tracked, not silently ignored._
@@ -237,6 +247,192 @@ _One record per entity shown in this profile. Headings are the verbatim entity i
 - **Linked requirement(s):** SW-REQ-055
 - **Reproducer / evidence tests:**
     - `rg -n "i \+= s\.SQSConf\.AWSSQSBatchLimit|AWSSQSBatchLimit" pumps/sqs.go`
+
+#### DEFECT-1
+- **Title:** MCP Mongo aggregate cross-API document merge
+- **Severity:** high
+- **Status:** covered_by_requirement
+- **Introduced:** [`be39ad3`](https://github.com/TykTechnologies/tyk-pump-proof/commit/be39ad3) _(committed 2026-04-28)_
+- **Fixing / upstream ref:** TT-17004
+- **Description:** MCPMongoAggregatePump.DoMCPAggregatedWriting built its upsert match query
+on only (orgid, timestamp), so concurrent aggregate writes from two MCP
+proxies that landed in the same time bucket merged into a single MongoDB
+document. The dashboard's per-api_id filter (apiid.<X>: $exists) still
+matched that merged document; unwinding lists.names then returned counters
+from BOTH proxies, and a query scoped to one proxy reported the sum
+(e.g. 5+2=7) instead of just that proxy's traffic — silent cross-tenant
+metric corruption.
+Fixed by adding OwnerAPIID (bson "owner_apiid") to MCPRecordAggregate,
+populating it from record.APIID in initMCPAggregateForRecord, and adding
+it to the upsert match query so each (org, timestamp, api) gets its own
+document. Original ticket TT-17004 (#989), tag v1.15.0-rc1.
+
+- **Root cause / remediation:** A requirement for the MCP-mongo-aggregate upsert existed conceptually but
+the per-(org,timestamp,api) document-partitioning key was never asserted
+by a test partition: no test wrote two records from different APIs sharing
+one (org,timestamp) and checked they produced two distinct documents.
+The regression test added in the fix (PerAPIPartitioning) closes that gap.
+- **Affected files:**
+    - [`pumps/mcp_mongo_aggregate.go`](https://github.com/TykTechnologies/tyk-pump-proof/blob/feat/reqproof-coverage/pumps/mcp_mongo_aggregate.go)
+    - [`analytics/aggregate_mcp.go`](https://github.com/TykTechnologies/tyk-pump-proof/blob/feat/reqproof-coverage/analytics/aggregate_mcp.go)
+- **Linked requirement(s):** SW-REQ-039
+- **Reproducer / evidence tests:**
+    - [`pumps/mcp_mongo_aggregate_test.go:TestMCPMongoAggregatePump_WriteData_PerAPIPartitioning`](https://github.com/TykTechnologies/tyk-pump-proof/blob/feat/reqproof-coverage/pumps/mcp_mongo_aggregate_test.go)
+
+#### DEFECT-2
+- **Title:** Syslog pump log fragmentation on multiline raw_request/raw_response
+- **Severity:** medium
+- **Status:** covered_by_requirement
+- **Introduced:** [`0596e82`](https://github.com/TykTechnologies/tyk-pump-proof/commit/0596e82) _(committed 2025-08-16)_
+- **Fixing / upstream ref:** TT-15532
+- **Description:** SyslogPump.WriteData emitted each analytics record to the syslog writer with
+fmt.Fprintf("%s", message) where message was a Go map whose raw_request /
+raw_response fields contained embedded newlines from real HTTP payloads. The
+syslog daemon interpreted every newline as a record boundary, so a single
+analytics record fragmented into many syslog entries — corrupting downstream
+log ingestion and making records unparseable.
+First fix (#884, commit df62011) JSON-marshalled the whole message; the
+shipped backward-compatible fix (TT-15532, #886, commit 0596e82) kept the
+original map[...] output format and instead escaped \n -> \\n only in
+raw_request and raw_response, guaranteeing one single-line syslog entry per
+record. Sibling commits: df62011 (superseded approach) + 0596e82 (final).
+
+- **Root cause / remediation:** No test partition fed a record whose raw_request/raw_response contained
+newlines and asserted single-line syslog output. The requirement's
+single-line / \n-escaping guarantee was implicit until SW-REQ-050 was
+written to state it explicitly; the regression test added with the fix
+(WithMultilineHTTP) now exercises that partition.
+- **Affected files:**
+    - [`pumps/syslog.go`](https://github.com/TykTechnologies/tyk-pump-proof/blob/feat/reqproof-coverage/pumps/syslog.go)
+- **Linked requirement(s):** SW-REQ-050
+- **Reproducer / evidence tests:**
+    - [`pumps/syslog_test.go:TestSyslogPump_WriteData_WithMultilineHTTP`](https://github.com/TykTechnologies/tyk-pump-proof/blob/feat/reqproof-coverage/pumps/syslog_test.go)
+
+#### DEFECT-3
+- **Title:** SQL table-sharding pump skipped schema migration of sharded tables
+- **Severity:** high
+- **Status:** covered_by_requirement
+- **Introduced:** [`19fb73d`](https://github.com/TykTechnologies/tyk-pump-proof/commit/19fb73d) _(committed 2025-10-23)_
+- **Fixing / upstream ref:** TT-13166
+- **Description:** Before TT-13166 (#905, commit 19fb73d) every SQL pump (standard, aggregate,
+graph) gated AutoMigrate behind `if !TableSharding { ... }`. With sharding
+enabled the migration step was therefore skipped entirely, so newly created
+per-day shard tables (tyk_analytics_<YYYYMMDD>, tyk_aggregated_<YYYYMMDD>,
+graph shards) never received schema columns added by later releases —
+inserts referencing the new columns failed against the stale shard. The fix
+extracts a shared HandleTableMigration / MigrateAllShardedTables helper
+(pumps/common.go) used by sql.go, sql_aggregate.go and graph_sql.go, adds the
+MigrateShardedTables config flag, and also fixed a sub-bug where the config
+flag did not overwrite correctly ("fixed bug that didn't allow for config
+overwrite").
+Residual default-mode gap: when MigrateShardedTables defaults to false, only
+the current day's shard is migrated — tracked as KI
+sql-default-migration-today-only (open, ship_with_known_issue) and the doc
+gap as KI docs-sql-migrate-sharded-tables-undocumented.
+
+- **Root cause / remediation:** The sharding-enabled branch had no test asserting that existing shard
+tables get migrated to the latest schema; the AutoMigrate skip went
+unnoticed. The fix adds migration_test.go covering HandleTableMigration's
+three branches (non-sharded / migrate-all / current-day-only) and
+MigrateAllShardedTables across dialects.
+- **Affected files:**
+    - [`pumps/common.go`](https://github.com/TykTechnologies/tyk-pump-proof/blob/feat/reqproof-coverage/pumps/common.go)
+    - [`pumps/sql.go`](https://github.com/TykTechnologies/tyk-pump-proof/blob/feat/reqproof-coverage/pumps/sql.go)
+    - [`pumps/sql_aggregate.go`](https://github.com/TykTechnologies/tyk-pump-proof/blob/feat/reqproof-coverage/pumps/sql_aggregate.go)
+    - [`pumps/graph_sql.go`](https://github.com/TykTechnologies/tyk-pump-proof/blob/feat/reqproof-coverage/pumps/graph_sql.go)
+- **Linked requirement(s):** SW-REQ-040
+- **Reproducer / evidence tests:**
+    - [`pumps/migration_test.go:TestHandleTableMigration`](https://github.com/TykTechnologies/tyk-pump-proof/blob/feat/reqproof-coverage/pumps/migration_test.go)
+    - [`pumps/migration_test.go:TestMigrateAllShardedTables`](https://github.com/TykTechnologies/tyk-pump-proof/blob/feat/reqproof-coverage/pumps/migration_test.go)
+
+#### DEFECT-4
+- **Title:** SQL pump panics (slice index out of range) when sharding enabled and all records skipped
+- **Severity:** high
+- **Status:** covered_by_requirement
+- **Introduced:** [`fbcb614`](https://github.com/TykTechnologies/tyk-pump-proof/commit/fbcb614) _(committed 2024-11-27)_
+- **Fixing / upstream ref:** TT-12780
+- **Description:** SQLPump.WriteData's sharding day-slice loop indexed typedData[startIndex]
+unconditionally inside `if c.SQLConf.TableSharding`. When TableSharding was
+enabled and the incoming batch was empty after the skip-api-id / MCP filter
+drained every record (or an empty purge), startIndex (0) was >= len(typedData)
+(0) and the access panicked with index-out-of-range, crashing the pump's
+purge cycle. TT-12780 (#860) guards the access with
+`c.SQLConf.TableSharding && startIndex < len(typedData)`.
+
+- **Root cause / remediation:** The empty-input partition under TableSharding=true was never tested, so
+the unguarded slice access shipped. The fix adds the empty_keys subtest
+to TestSQLWriteDataSharded asserting WriteData returns no error and
+creates no shard tables for an empty batch. Related but distinct from the
+fan-out panic-recovery gap tracked by KI
+no-panic-recovery-in-exec-pump-writing (that concerns missing recover()
+in goroutines; this is a deterministic bounds bug now positively tested).
+- **Affected files:**
+    - [`pumps/sql.go`](https://github.com/TykTechnologies/tyk-pump-proof/blob/feat/reqproof-coverage/pumps/sql.go)
+- **Linked requirement(s):** SW-REQ-040
+- **Reproducer / evidence tests:**
+    - [`pumps/sql_test.go:TestSQLWriteDataSharded`](https://github.com/TykTechnologies/tyk-pump-proof/blob/feat/reqproof-coverage/pumps/sql_test.go)
+
+#### DEFECT-5
+- **Title:** Prometheus pump exposed full API keys as metric label values
+- **Severity:** high
+- **Status:** covered_by_requirement
+- **Introduced:** [`09aaa8d`](https://github.com/TykTechnologies/tyk-pump-proof/commit/09aaa8d) _(committed 2025-02-12)_
+- **Fixing / upstream ref:** TT-13937
+- **Description:** PrometheusMetric.GetLabelsValues mapped decoded.APIKey verbatim into the
+"api_key"/"key" Prometheus label values. Any operator scraping /metrics — and
+any downstream metrics store / dashboard — therefore received cleartext API
+keys as high-cardinality label values, a credential-exposure / secrets-in-
+telemetry problem. TT-13937 (#866, commit 09aaa8d) added the ObfuscateAPIKeys
+(default false) and ObfuscateAPIKeysLength (default 4) config and an
+obfuscateAPIKey() helper that, when enabled, masks the key to "****" + last 4
+chars (or "--" for keys <= 4 chars).
+Security note: the masking is OPT-IN; the default (ObfuscateAPIKeys=false)
+still emits full keys, so the secrets-in-telemetry exposure persists unless an
+operator turns it on.
+
+- **Root cause / remediation:** No requirement in the corpus covers API-key obfuscation for the Prometheus
+pump. SW-REQ-024 only states the pump "shall expose analytics as
+Prometheus metrics for scraping" and carries an auth_required obligation
+for the exposition endpoint — it says nothing about masking secret label
+values. SW-REQ-048 (Splunk) is the only requirement mentioning
+ObfuscateAPIKeys, and it is scoped to the Splunk pump, not Prometheus.
+The behavior is exercised by tests (TestPrometheusGetLabelsValues has
+obfuscation cases) but there is no requirement to anchor those tests to a
+security guarantee, and the insecure default is unspecified.
+
+HARDENING (2026-06-10, agent:claude-opus-4-8): the assurance gap was
+closed end-to-end, not just recorded:
+  * NEW requirement SW-REQ-074 (first authored under a placeholder id
+    in the 209 range, then renumbered to close the 074-208 numbering
+    gap so ids are contiguous 001-074) (component pumps-prometheus,
+    assurance_level B, parent SYS-REQ-016 / privacy) models the masking
+    guarantee in FRETish: "when obfuscate_api_keys_enabled
+    pumps_prometheus shall always satisfy api_key_label_masked", with
+    acceptance criteria pinning the ****+last-N contract, the "--"
+    fully-masked branch, and the documented opt-in (off) default.
+  * OBLIGATION class secrets_not_logged (CWE-532, OWASP-ASVS-v4 V7.1.1)
+    attached to SW-REQ-074's obligation_checklist — the catalog's
+    "secrets/PII never appear in logs/telemetry" class, the exact failure
+    mode of this defect.
+  * CODE annotated: pumps/prometheus.go obfuscateAPIKey carries
+    // reqproof:implements SW-REQ-074 (implemented_by trace).
+  * REGRESSION TEST + MC/DC: pumps/prometheus_test.go
+    TestPrometheusObfuscateAPIKey asserts (a) enabled+long key masks to
+    ****+last4 with the raw key NotContains the label, (b) enabled+short
+    key fully masks to "--", (c) disabled returns the raw key (the
+    documented opt-in default). All three SW-REQ-074 MC/DC witness rows
+    are covered (// MCDC SW-REQ-074: ...). The F/T=FALSE violation row
+    (obfuscation on yet label unmasked) is guarded by the NotContains
+    assertions, so a regression that re-leaked the key fails the test and
+    the mcdc_coverage obligation.
+SW-REQ-074 is audit-clean (approvals_current, suspect_clean,
+coverage_met, mcdc_coverage, obligation_evidence_complete,
+variables_declared, cross_level_complete all pass for it).
+- **Affected files:**
+    - [`pumps/prometheus.go`](https://github.com/TykTechnologies/tyk-pump-proof/blob/feat/reqproof-coverage/pumps/prometheus.go)
+- **Linked requirement(s):** SW-REQ-074
+- **Reproducer / evidence tests:**
+    - [`pumps/prometheus_test.go:TestPrometheusObfuscateAPIKey`](https://github.com/TykTechnologies/tyk-pump-proof/blob/feat/reqproof-coverage/pumps/prometheus_test.go)
 
 #### DEFECT-6
 - **Title:** Elasticsearch pump shutdown did not close ES clients
