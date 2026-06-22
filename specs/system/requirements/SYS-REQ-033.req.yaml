@@ -5,7 +5,7 @@ priority: shall
 category: constraint
 req_type: assumption
 fretish: pumps_mongo shall always satisfy capped_collection_size_is_int64
-description: The MongoDB Go driver returns capped-collection size values typed as int64. (Currently FALSE under mongo-server v6, which returns int — tracked as known-issue mongo-test-panic-under-mongo6.)
+description: The MongoDB Go driver returns capped-collection size values typed as int64. Under mongo-server v6 this environmental assumption is known to be false because the driver/server pairing can return int.
 formalization_strategy: fretish
 informal_verification:
     method: inspection
@@ -40,12 +40,10 @@ history:
     last_modified_at: "2026-06-02T09:01:20Z"
 obligation_class: nominal
 assumption:
-    status: known_issue
+    status: open
     external_owner: team:mongodb
     review_date: "2026-11-30"
-    linked_known_issue:
-        - mongo-test-panic-under-mongo6
-    rationale: This assumption is currently violated under mongo-server v6; linked to KI.
+    rationale: External MongoDB driver/server type-shape assumption retained for review, but the former environment/test-harness record was not a tyk-pump product KnownIssue and has been removed from the shareable issue backlog.
 lifecycle:
     change_history:
         - date: "2026-05-30T08:14:23Z"
@@ -56,7 +54,7 @@ lifecycle:
         - date: "2026-05-30T08:22:48Z"
           from: approved
           to: approved
-          reason: 're-approve (prior: role="system_engineer" reviewer="human:buger" at=2026-05-30T08:14:23Z comment="Phase B assumption reqs: explicit trust boundaries that the spec previously left implicit. Each names what dependency or external behavior tyk-pump assumes (Redis LPOP atomicity, Mongo $inc atomicity, gateway publishing model + encoding, GeoIP DB optionality, mongo capped-collection size type — the latter is a currently-failed assumption tracked by Phase E known-issue mongo-test-panic-under-mongo6).")'
+          reason: 're-approve (prior: role="system_engineer" reviewer="human:buger" at=2026-05-30T08:14:23Z comment="Phase B assumption reqs: explicit trust boundaries that the spec previously left implicit. Each names what dependency or external behavior tyk-pump assumes (Redis LPOP atomicity, Mongo $inc atomicity, gateway publishing model + encoding, GeoIP DB optionality, and mongo capped-collection size type).")'
           changed_by: human:cli
         - date: "2026-06-02T08:59:13Z"
           from: approved

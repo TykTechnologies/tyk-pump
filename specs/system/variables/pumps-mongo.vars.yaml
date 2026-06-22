@@ -3,4 +3,4 @@ variables:
     - name: capped_collection_size_is_int64
       type: bool
       direction: input
-      description: MongoDB driver returns capped-collection size values as int64 (currently violated under mongo:6 — tracked by KI mongo-test-panic-under-mongo6).
+      description: MongoDB driver returns capped-collection size values as int64 (currently violated under mongo:6; retained as an external assumption, not a product KnownIssue).

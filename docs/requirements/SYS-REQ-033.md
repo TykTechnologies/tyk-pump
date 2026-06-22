@@ -1,10 +1,10 @@
-# SYS-REQ-033: Mongo capped-collection size is int64 (currently FAILED — KI mongo-test-panic-under-mongo6)
+# SYS-REQ-033: Mongo capped-collection size is int64
 
 ## Intent
-The MongoDB Go driver shall return capped-collection size values typed as `int64`. This is an environmental assumption that satisfies parent **STK-REQ-002** by surfacing the type-shape contract the mongo pump's capped-collection test relies on. **This assumption is currently FAILED under mongo-server v6** (which returns `int`); the failure is tracked by known-issue `mongo-test-panic-under-mongo6`.
+The MongoDB Go driver shall return capped-collection size values typed as `int64`. This is an environmental assumption that satisfies parent **STK-REQ-002** by surfacing the type-shape contract the mongo pump's capped-collection test relies on. This assumption is currently false under mongo-server v6, which can return `int`; it is retained as an external assumption rather than a tyk-pump product KnownIssue.
 
 ## Motivation
-The mongo pump's capped-collection setup (`SW-REQ-018`) creates a capped collection when configured, and `TestMongoPump_capCollection_OverrideSize` asserts the resulting `maxSize` value via `colStats["maxSize"].(int64)`. Under mongo-server v6 the driver returns `int` instead of `int64`, and the unchecked type assertion panics — taking down the entire `pumps` package test run and erasing the evidence base for `SW-REQ-018`. Capturing the type-shape expectation as an explicit assumption (rather than burying it inside the test) makes the regression first-class: it becomes a tracked spec-level FAIL that the proof tooling can surface, not a hidden CI flake. It also justifies the current CI mitigation (pin the mongo server image to mongo:4 or mongo:5) as a deliberate spec-level workaround rather than as test-pinning by superstition.
+The mongo pump's capped-collection setup (`SW-REQ-018`) creates a capped collection when configured, and `TestMongoPump_capCollection_OverrideSize` historically asserted the resulting `maxSize` value via `colStats["maxSize"].(int64)`. Under mongo-server v6 the driver can return `int` instead of `int64`. Capturing the type-shape expectation as an explicit assumption keeps the external dependency contract visible without counting it as a product KnownIssue.
 
 ## Formalization
 ```
@@ -20,17 +20,10 @@ This is an environmental input invariant: the Mongo Go driver, when reporting ca
 - `pumps/mongo.go:313 m.store.Migrate(context.Background(), ..., model.DBM{"capped": true, "maxBytes": colCapMaxSizeBytes})` — the call that creates the capped collection.
 
 ## Evidence
-- External-owner review: `assumption.external_owner: team:mongodb`, status `known_issue`, reviewed via `proof req assumptions review` in Phase B (`verification.review.comment`: "external-owner reviewed (Redis protocol / MongoDB / Tyk gateway / MaxMind), linked to KI for failed assumption A6"). Next review date: `2026-11-30`.
-- Linked known-issue: `.proof/known-issues/mongo-test-panic-under-mongo6.yaml`:
-  - id: `mongo-test-panic-under-mongo6`
-  - status: `open`, severity `medium`, release_disposition `ship`
-  - reproducer: `MONGO_DRIVER=mongo-go go test -run TestMongoPump_capCollection_OverrideSize -count=1 ./pumps`
-  - mitigation: pin CI mongo image to mongo:4 or mongo:5
-  - remediation: coerce the type assertion to accept both `int` and `int64`
-- Phase B comment: "the latter is a currently-failed assumption tracked by Phase E known-issue mongo-test-panic-under-mongo6."
+- External-owner review: `assumption.external_owner: team:mongodb`, status `open`. Next review date: `2026-11-30`.
+- The former environment/test-harness KnownIssue was removed from the product KnownIssue backlog; this remains tracked as an external assumption.
 
 ## Open questions
-- This is the FAILED assumption (Assumption A6 in the spec). The remediation in the linked KI (`switch on colStats["maxSize"].(type)`) would resolve the failure by making the test tolerant of both int and int64 — but the *assumption itself* would still be technically false against mongo:6. A cleaner long-term resolution is to either weaken this req to "capped-collection size is numeric and fits in int64" or to bump the mongo-driver dependency to a version that normalises the type.
-- The KI mitigation (pin mongo:4/5 in CI) preserves test-suite stability but kicks the can down the road for operators running mongo:6 in production who try to reproduce the test locally.
+- This is an open external assumption. A cleaner long-term resolution is to either weaken this req to "capped-collection size is numeric and fits in int64" or to bump the mongo-driver dependency to a version that normalises the type.
 - External-vendor confirmation status: open with `team:mongodb`; the next review on `2026-11-30` should incorporate any clarification from the driver maintainers about the intended `collStats` return type across server versions.
 - Cascading impact: because the panic crashes the whole `pumps` package test run, it suppresses evidence for `SW-REQ-018` (mongo pump capped collection) — so this assumption's failure has knock-on effects on SW-layer coverage reporting, not just on this one test.

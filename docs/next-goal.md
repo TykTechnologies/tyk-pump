@@ -256,7 +256,6 @@ Three `proof known-issue` records under `.proof/known-issues/`:
 | # | Title | Violated req | Owner | Notes |
 |---|---|---|---|---|
 | E1 | `mongo-pump-ignores-caller-context` | **SYS-REQ-005** (per-pump write timeout) and **INT-REQ-004** (Pump interface contract surfaces write errors via ctx) | tyk-team | `pumps/mongo.go MongoPump.WriteData` calls `m.store.Insert(context.Background(), dataSet...)`, silently dropping the per-pump timeout context set by `main.go:execPumpWriting`. Per-pump timeout is *not* enforced for mongo writes. Workaround: operators relying on per-pump timeout for mongo today have no recourse. |
-| E2 | `mongo-test-panic-under-mongo6` | **SW-REQ-018 / mongo-standard evidence** | tyk-team | `pumps/mongo_test.go:316 TestMongoPump_capCollection_OverrideSize` panics with `interface conversion: interface {} is int, not int64` when run against mongo:6. Mongo client v6 returns capped-collection size as `int`; the test asserts `int64`. Crashes the whole pumps package run. |
 | E3 | `env-prefix-const-typo` | **SW-REQ-002** (config loader) | tyk-team | Const `ENV_PREVIX` in `config.go:282` is a typo for `ENV_PREFIX`. Cosmetic — the value is correct so behavior is fine — but the misspelled identifier propagates to any generated docs/help. |
 
 Each known-issue carries:

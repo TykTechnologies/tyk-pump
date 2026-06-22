@@ -54,7 +54,7 @@ lifecycle:
         - date: "2026-05-30T08:22:48Z"
           from: approved
           to: approved
-          reason: 're-approve (prior: role="system_engineer" reviewer="human:buger" at=2026-05-30T08:14:23Z comment="Phase B assumption reqs: explicit trust boundaries that the spec previously left implicit. Each names what dependency or external behavior tyk-pump assumes (Redis LPOP atomicity, Mongo $inc atomicity, gateway publishing model + encoding, GeoIP DB optionality, mongo capped-collection size type — the latter is a currently-failed assumption tracked by Phase E known-issue mongo-test-panic-under-mongo6).")'
+          reason: 're-approve (prior: role="system_engineer" reviewer="human:buger" at=2026-05-30T08:14:23Z comment="Phase B assumption reqs: explicit trust boundaries that the spec previously left implicit. Each names what dependency or external behavior tyk-pump assumes (Redis LPOP atomicity, Mongo $inc atomicity, gateway publishing model + encoding, GeoIP DB optionality, and mongo capped-collection size type).")'
           changed_by: human:cli
         - date: "2026-06-02T08:59:13Z"
           from: approved

@@ -4,18 +4,18 @@
 
 ## Executive Summary
 
-> **Verdict:** Net positive: 6 issue(s) resolved and none introduced this release.
+> **Verdict:** No new bugs introduced and none resolved in this window — posture unchanged.
 
 | Signal | Count | Detail |
 |--------|------:|--------|
-| ✅ Resolved this cycle | **6** | — |
+| ✅ Resolved this cycle | **0** | — |
 | 🔴 Introduced this release (still open) | **0** | 0 regression + 0 net-new |
 | 🟥 …of which HIGH-severity | **0** | — |
-| 📋 Pre-existing backlog (gated, reproduced) | **130** | — |
+| 📋 Pre-existing backlog (gated, reproduced) | **126** | — |
 | 🔍 Bugs you fixed that we'd missed | **0** | — |
 
 </section>
-**Audited window:** 28 May 2026 → 22 Jun 2026 (25 days) · baseline `b18d8ea` → `48c57b5`
+**Audited window:** 28 May 2026 → 22 Jun 2026 (25 days) · baseline `b18d8ea` → `ac103ef`
 
 <section class="summary-card" markdown="1">
 
@@ -25,15 +25,15 @@ _Rows are non-overlapping: every open KnownIssue is counted exactly once — eit
 
 | Bucket | Count |
 |--------|------:|
-| KnownIssues resolved this cycle | 6 |
+| KnownIssues resolved this cycle | 0 |
 | Defects introduced this release (0 regression + 0 net-new) | 0 |
-| Pre-existing still-open backlog | 130 |
+| Pre-existing still-open backlog | 126 |
 | Bugs upstream fixed that we'd missed | 0 |
 | Historical coverage backfill (fixed before baseline; not in window) | 0 |
 | Coverage gaps (missing_*) | 0 |
 | Accepted risks (active) | 13 |
 
-_Corpus totals: 136 KnownIssues, 6 ProblemReports._
+_Corpus totals: 126 KnownIssues, 6 ProblemReports._
 
 </section>
 
@@ -41,19 +41,10 @@ _Corpus totals: 136 KnownIssues, 6 ProblemReports._
 
 _Issues we previously reported to you that this release fixes — verified by tripwire tests that now pass._
 
-
-| KI | Severity | Resolved | Fixing ref | Title |
-|----|----------|----------|-----------|-------|
-| [`mcdc-analytics-below-95`](#mcdc-analytics-below-95) | 🟩 LOW | 2026-05-31T20:50:05Z | — | Analytics package code MC/DC below 95% threshold |
-| [`mcdc-retry-below-95`](#mcdc-retry-below-95) | 🟩 LOW | 2026-05-30T20:30:49Z | — | Retry package code MC/DC below 95% threshold |
-| [`mcdc-serializer-below-95`](#mcdc-serializer-below-95) | 🟩 LOW | 2026-05-30T20:28:36Z | — | Serializer package code MC/DC below 95% threshold |
-| [`mcdc-storage-below-95`](#mcdc-storage-below-95) | 🟩 LOW | 2026-05-31T10:31:01Z | — | Storage code MC/DC at 85.3%/86.5% (below 95/95 policy) |
-| [`mongo-test-panic-under-mongo6`](#mongo-test-panic-under-mongo6) | 🟨 MEDIUM | 2026-05-31T08:43:41Z | — | TestMongoPump_capCollection_OverrideSize panics under mongo6 (int vs i… |
-| [`storage-cluster-tests-need-redis-cluster`](#storage-cluster-tests-need-redis-cluster) | 🟩 LOW | 2026-05-30T20:19:08Z | — | Storage cluster tests need Redis cluster on :6390; storage excluded fr… |
-
+_None resolved in this window._
 ## 2. Defects Introduced In This Release
 
-_The audit's headline finding: bugs whose introducing change lands inside this window (`b18d8ea`..`48c57b5`) and that are STILL OPEN at HEAD. 0 qualify: 0 regression and 0 net-new. Each is also tracked as an open known issue and carries a committed reproducer; its introducing commit is linked below._
+_The audit's headline finding: bugs whose introducing change lands inside this window (`b18d8ea`..`ac103ef`) and that are STILL OPEN at HEAD. 0 qualify: 0 regression and 0 net-new. Each is also tracked as an open known issue and carries a committed reproducer; its introducing commit is linked below._
 
 ### 2a. Regression(s) introduced this release
 
@@ -67,7 +58,7 @@ _No net-new defects introduced this release._
 
 _Issues still present in this release, each gated to a requirement and reproduced._
 
-_130 active KnownIssues total. The HIGH-severity items (and any auditor-pinned items) are listed in full below; the MEDIUM/LOW tail is summarized by count and component so the backlog's shape is visible without a 90-row table._
+_126 active KnownIssues total. The HIGH-severity items (and any auditor-pinned items) are listed in full below; the MEDIUM/LOW tail is summarized by count and component so the backlog's shape is visible without a 90-row table._
 
 ### 2a. HIGH-severity & pinned active issues (full detail)
 
@@ -84,7 +75,7 @@ _130 active KnownIssues total. The HIGH-severity items (and any auditor-pinned i
 
 ### 2b. MEDIUM / LOW backlog (summarized)
 
-**Plus 124 more active KnownIssue(s) not listed individually** — 69 medium, 55 low.
+**Plus 120 more active KnownIssue(s) not listed individually** — 69 medium, 51 low.
 
 These are tracked, each gated to a requirement and reproduced. By component area:
 
@@ -95,15 +86,14 @@ These are tracked, each gated to a requirement and reproduced. By component area
 | mongo | 6 |
 | uptime | 6 |
 | kafka | 5 |
-| pump | 5 |
 | health | 4 |
 | moesif | 4 |
+| pump | 4 |
 | retry | 4 |
 | storage | 4 |
 | analytics | 3 |
 | elasticsearch | 3 |
 | main | 3 |
-| mcdc | 3 |
 | mcp | 3 |
 | prometheus | 3 |
 | resurface | 3 |
@@ -126,11 +116,11 @@ These are tracked, each gated to a requirement and reproduced. By component area
 | es | 1 |
 | external | 1 |
 | filterdata | 1 |
-| geoip | 1 |
 | influx | 1 |
 | logfatal | 1 |
 | logzio | 1 |
 | mapstructure | 1 |
+| mcdc | 1 |
 | metrics | 1 |
 | no | 1 |
 | preprocess | 1 |
@@ -186,67 +176,6 @@ _Risks the owner has formally accepted, with a review-by date — open and track
 ## Appendix: Entity Detail
 
 _One record per entity shown in this profile. Headings are the verbatim entity id, so the in-table links above resolve here._
-
-#### mcdc-analytics-below-95
-- **Title:** Analytics package code MC/DC below 95% threshold
-- **Severity:** low
-- **Status:** fixed _(resolved 2026-05-31T20:50:05Z)_
-- **Description:** Analytics package code MC/DC is 69% decisions / 75% conditions against the strict 95/95 bar configured in proof.yaml. Major gaps are in analytics/aggregate.go:incrementAggregate (deep field-switch independence pairs across APIID/ResponseCode/APIVersion/APIKey/OauthID/Geo/Tags/TrackPath branches) and analytics/uptime_data.go:AggregateUptimeData (URL/-1/ServerError/TCPError combinations). GeoIP-DB-bound branches are already excluded via //mcdc:ignore.
-- **Root cause / remediation:** Done.
-- **Linked requirement(s):** SW-REQ-011, SW-REQ-009
-- **Reproducer / evidence tests:**
-    - `go test -count=1 -timeout 60s -coverprofile=cover.out ./analytics`
-
-#### mcdc-retry-below-95
-- **Title:** Retry package code MC/DC below 95% threshold
-- **Severity:** low
-- **Status:** fixed _(resolved 2026-05-30T20:30:49Z)_
-- **Description:** Retry package code MC/DC is 58% decisions / 69% conditions against the strict 95/95 bar. Gaps are in retry/http-retry.go isErrorRetryable (compound-condition independence pairs across errors.As-based type switches) and BackoffHTTPRetry.Send (req.Body nil/non-nil branches, response body close path, retry decision paths).
-- **Root cause / remediation:** Done.
-- **Linked requirement(s):** SW-REQ-030, SW-REQ-031
-- **Reproducer / evidence tests:**
-    - `go test -count=1 -timeout 60s -coverprofile=cover.out ./retry`
-
-#### mcdc-serializer-below-95
-- **Title:** Serializer package code MC/DC below 95% threshold
-- **Severity:** low
-- **Status:** fixed _(resolved 2026-05-30T20:28:36Z)_
-- **Description:** Serializer package code MC/DC is 60% decisions / 60% conditions against the strict 95/95 bar. The bulk of uncovered decisions is in serializer/protobuf.go TransformSingleRecordToProto / TransformSingleProtoToAnalyticsRecord — long field-by-field copy paths where each non-nil-check is its own decision.
-- **Root cause / remediation:** Done. MC/DC serializer exception removed in same PR.
-- **Linked requirement(s):** SW-REQ-008
-- **Reproducer / evidence tests:**
-    - `go test -count=1 -timeout 60s -coverprofile=cover.out ./serializer`
-
-#### mcdc-storage-below-95
-- **Title:** Storage code MC/DC at 85.3%/86.5% (below 95/95 policy)
-- **Severity:** low
-- **Status:** fixed _(resolved 2026-05-31T10:31:01Z)_
-- **Description:** After Phase C MC/DC test additions in storage/temporal_storage_mcdc_test.go, measured MC/DC is 85.3% decisions / 86.5% conditions vs the 95/95 policy. The remaining 5 uncovered err != nil decisions (temporal_storage.go:209, :214, :268, :315, :347) are structurally unreachable from external tests and are catalogued by two sibling KIs - storage-createconnector-kv-list-err-unreachable (lines 209/214 - createConnector kv/list constructor errors that cannot fire because connector.NewConnector always returns a RedisV9 conn whose Type() and As() satisfy both NewKeyValue and NewList) and storage-ensureconnection-error-path-unreachable (lines 268/315/347 - blocked by the unbounded backoff documented in storage-retry-maxelapsed-zero-is-unbounded). Closing the gap to 95/95 requires either dropping the dead defensive guards or introducing a connector-factory seam and capping MaxElapsedTime; both are production-code refactors deferred to a future cycle.
-- **Root cause / remediation:** Done. Storage decisions 100% / conditions 100% via 5 //mcdc:ignore annotations on the documented-unreachable defensive guards plus existing Phase C MC/DC tests in storage/temporal_storage_mcdc_test.go.
-- **Linked requirement(s):** SW-REQ-006, SW-REQ-007
-- **Reproducer / evidence tests:**
-    - `go test -count=1 -timeout 180s -coverprofile=cover.out ./storage`
-
-#### mongo-test-panic-under-mongo6
-- **Title:** TestMongoPump_capCollection_OverrideSize panics under mongo6 (int vs int64)
-- **Severity:** medium
-- **Status:** fixed _(resolved 2026-05-31T08:43:41Z)_
-- **Description:** pumps/mongo_test.go:316 TestMongoPump_capCollection_OverrideSize panics with 'interface conversion: interface {} is int, not int64' when run against a mongo:6 server. Mongo client v6 returns capped-collection size as int; the test asserts int64 via colStats["maxSize"].(int64). The panic crashes the whole pumps package test run, taking down the evidence set for SW-REQ-018. Workaround: run mongo tests against the older mongo:4 / mongo:5 server image, or fix the assertion to accept both int and int64.
-- **Root cause / remediation:** Coerce the type assertion to accept both int and int64 (switch on colStats["maxSize"].(type)) so the test passes against mongo 4/5/6 driver/server pairings.
-- **Linked requirement(s):** SW-REQ-018
-- **Reproducer / evidence tests:**
-    - `MONGO_DRIVER=mongo-go go test -run TestMongoPump_capCollection_OverrideSize -count=1 ./pumps`
-    - `go test -count=1 -timeout 60s -run TestMongoPump_capCollection_OverrideSize ./pumps`
-
-#### storage-cluster-tests-need-redis-cluster
-- **Title:** Storage cluster tests need Redis cluster on :6390; storage excluded from code MC/DC scope
-- **Severity:** low
-- **Status:** fixed _(resolved 2026-05-30T20:19:08Z)_
-- **Description:** storage/temporal_storage_test.go:47 TestRedisClusterStorageManager_GetAndDeleteSet and storage/temporal_storage_test.go:108 TestNewTemporalClusterStorageHandler are named for cluster-mode validation; the unreachable-backend negative case at storage/temporal_storage_negative_test.go:18 expects a port-6390 listener (per task scope: a Redis CLUSTER on :6390). The standalone tykpump-redis container on port 6379 does not satisfy a cluster-mode peer on :6390. As a consequence, ./storage is excluded from the code-MC/DC targets in proof.yaml (the code_mcdc targets list only analytics, serializer, retry, logger, server, root) so the SW-REQ-007 backoff/reconnect evidence is not MC/DC-measured locally. This is a test-environment limitation, not a code defect. Workaround: spin up Redis cluster on port 6390 for the test environment, or refactor the tests to t.Skip when cluster mode is unavailable.
-- **Root cause / remediation:** Done. testcontainers-go added; storage suite green locally. Storage to be added to proof.yaml code_mcdc targets in Phase C.
-- **Linked requirement(s):** SW-REQ-007
-- **Reproducer / evidence tests:**
-    - `go test -count=1 -timeout 180s ./storage`
 
 #### docs-mcp-pump-family-entirely-undocumented
 - **Title:** Documentation gap: MCP pump family (4 backends) has zero mentions in tyk-docs
@@ -349,8 +278,8 @@ them as first-class data. Occurrences = records hitting the gap in this run._
 
 | Field | Severity | Occurrences | Came from | Proposed model addition |
 |-------|----------|------------:|-----------|-------------------------|
-| `KnownIssue.resolved_at` | lossy | 6 | inferred from history[].at of the entry whose detail matches a status->fixed transition | add `resolved_at string` (RFC3339), set by `proof known-issue resolve` |
-| `KnownIssue.resolved_in` | blocking | 6 | reconstructed from non-model `fixing_reference:` key, else scavenged #PR/SHA from history detail or remediation prose | add `resolved_in string` (fixing commit-ish); promote the de-facto `fixing_reference` YAML key into the model so it stops being dropped on load |
+| `KnownIssue.resolved_at` | lossy | 0 | inferred from history[].at of the entry whose detail matches a status->fixed transition | add `resolved_at string` (RFC3339), set by `proof known-issue resolve` |
+| `KnownIssue.resolved_in` | blocking | 0 | reconstructed from non-model `fixing_reference:` key, else scavenged #PR/SHA from history detail or remediation prose | add `resolved_in string` (fixing commit-ish); promote the de-facto `fixing_reference` YAML key into the model so it stops being dropped on load |
 | `KnownIssue.created_at` | lossy | 0 | inferred from the first history[] entry (action=created) | add `created_at string`; age/SLA math currently depends on a history convention |
 | `ProblemReport.detected_at` | lossy | 0 | source.date, else regression.detected_at (when a date), else first history entry | add a report-level `detected_at`; regression.detected_at is overloaded (sometimes a SHA, not a date) |
 | `ProblemReport.regression.dwell` | cosmetic | 0 | read directly when present; frequently empty — not derivable without bisect | auto-derive dwell from introduced_in..fixed_in via git, or require it on regression closure |
