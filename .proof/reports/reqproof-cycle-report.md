@@ -15,7 +15,7 @@
 | 🔍 Bugs you fixed that we'd missed | **0** | — |
 
 </section>
-**Audited window:** 28 May 2026 → 22 Jun 2026 (25 days) · baseline `b18d8ea` → `ac103ef`
+**Audited window:** 28 May 2026 → 22 Jun 2026 (25 days) · baseline `b18d8ea` → `63eaa01`
 
 <section class="summary-card" markdown="1">
 
@@ -44,7 +44,7 @@ _Issues we previously reported to you that this release fixes — verified by tr
 _None resolved in this window._
 ## 2. Defects Introduced In This Release
 
-_The audit's headline finding: bugs whose introducing change lands inside this window (`b18d8ea`..`ac103ef`) and that are STILL OPEN at HEAD. 0 qualify: 0 regression and 0 net-new. Each is also tracked as an open known issue and carries a committed reproducer; its introducing commit is linked below._
+_The audit's headline finding: bugs whose introducing change lands inside this window (`b18d8ea`..`63eaa01`) and that are STILL OPEN at HEAD. 0 qualify: 0 regression and 0 net-new. Each is also tracked as an open known issue and carries a committed reproducer; its introducing commit is linked below._
 
 ### 2a. Regression(s) introduced this release
 

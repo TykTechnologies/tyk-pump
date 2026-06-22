@@ -19,9 +19,9 @@ variables: []
 traces:
     satisfies:
         - STK-REQ-002
-    reviewed_at: "2026-05-30T08:22:49.003705Z"
+    reviewed_at: "2026-06-22T13:41:09.187662Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:57ac1c12d5d0d155e910f004359980fe98d1dcd9d4739a60c9fb641f55a42e07
+    reviewed_fingerprint: sha256:3576a513af75c3fba3befa640123446d5424e60263209757479c394d0f4d66fb
 verification:
     assurance_level: B
     formalization_status: valid
@@ -29,15 +29,15 @@ verification:
         status: approved
         reviewer: human:buger
         role: system_engineer
-        reviewed_at: "2026-06-02T09:01:20Z"
-        comment: 'Phase K: enrich rationale with environment-term vocabulary so spec_lint_assumption_disposition recognizes these as genuine external preconditions (FRETish shape preserved).'
-        fingerprint: sha256:fadef68bc7ffc15f1703072daf98d85e3a968433a74d29215b751353e2ba36b7
+        reviewed_at: "2026-06-22T13:40:24Z"
+        comment: 'Re-approval after report cleanup: removed environment/test-harness KnownIssue linkage from Mongo capped-collection type-shape assumption while retaining it as an open external MongoDB assumption; product behavior and dependency boundary unchanged.'
+        fingerprint: sha256:25a06131db3496301311b1317494b754fa20990d4f38452a33fc4a936825629a
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:13:46Z"
-    last_modified_by: human:cli
-    last_modified_at: "2026-06-02T09:01:20Z"
+    last_modified_by: human:buger
+    last_modified_at: "2026-06-22T13:40:24Z"
 obligation_class: nominal
 assumption:
     status: open
@@ -66,3 +66,8 @@ lifecycle:
           to: approved
           reason: 're-approve (prior: role="system_engineer" reviewer="human:buger" at=2026-06-02T08:59:13Z comment="Phase K: reshape FRETish to environment-precondition form (when X then Y) to satisfy assumption-disposition lint.")'
           changed_by: human:cli
+        - date: "2026-06-22T13:40:24Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="system_engineer" reviewer="human:buger" at=2026-06-02T09:01:20Z comment="Phase K: enrich rationale with environment-term vocabulary so spec_lint_assumption_disposition recognizes these as genuine external preconditions (FRETish shape preserved).")'
+          changed_by: human:buger
