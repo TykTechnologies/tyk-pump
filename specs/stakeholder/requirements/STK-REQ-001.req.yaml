@@ -19,8 +19,9 @@ tags:
     - operator
 variables: []
 traces:
-    reviewed_at: "2026-06-19T20:51:38Z"
+    reviewed_at: "2026-06-22T09:44:25.935333Z"
     reviewed_by: human:buger
+    reviewed_fingerprint: sha256:50069ca37815550e2e1f0ff30eb7142c4b59751742a865c5b4f95a516e31cf9c
 verification:
     assurance_level: B
     formalization_status: none
@@ -28,15 +29,15 @@ verification:
         status: approved
         reviewer: human:buger
         role: system_owner
-        reviewed_at: "2026-05-30T08:00:50Z"
-        comment: 'Re-approval after Phase 0.6: acceptance-criteria derived_reqs extended to include the new SYS reqs from the splits (SYS-018, 019, 020, 021, 022, 023). Stakeholder intent unchanged.'
+        reviewed_at: "2026-06-22T09:44:12Z"
+        comment: 'Remove deprecated acceptance-criteria testable fields; verification_method=test is the canonical schema field.'
         fingerprint: sha256:c245729fcee44f4e148cd524dcb9a6c1ba6fd3b5400bcf34fdde526b3514eda8
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:09:33Z"
-    last_modified_by: human:cli
-    last_modified_at: "2026-05-30T08:00:50Z"
+    last_modified_by: human:buger
+    last_modified_at: "2026-06-22T09:44:12Z"
 obligation_checklist:
     - nominal
     - determinism
@@ -46,7 +47,6 @@ stakeholder:
     acceptance_criteria:
         - id: AC-001
           text: Analytics records produced by the gateway are forwarded to operator-chosen backends without loss of the fields operators rely on for monitoring and reporting.
-          testable: true
           verification_method: test
           derived_reqs:
             - SYS-REQ-001
@@ -57,7 +57,6 @@ stakeholder:
             - SYS-REQ-031
         - id: AC-002
           text: Operators can report on traffic broken down by organisation, API, and response outcome.
-          testable: true
           verification_method: test
           derived_reqs:
             - SYS-REQ-003
@@ -78,3 +77,8 @@ lifecycle:
           to: approved
           reason: 're-approve (prior: role="system_owner" reviewer="human:buger" at=2026-05-30T07:42:39Z comment="Stakeholder intent reviewed for tyk-pump analytics-visibility theme as part of feat/reqproof-coverage PR; matches operator/business reality.")'
           changed_by: human:cli
+        - date: "2026-06-22T09:44:12Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="system_owner" reviewer="human:buger" at=2026-05-30T08:00:50Z comment="Re-approval after Phase 0.6: acceptance-criteria derived_reqs extended to include the new SYS reqs from the splits (SYS-018, 019, 020, 021, 022, 023). Stakeholder intent unchanged.")'
+          changed_by: human:buger

@@ -1,7 +1,7 @@
 # SYS-REQ-022: Consumed records dispatched to every backend pump
 
 ## Intent
-When the pump has consumed an analytics record from the temporal store, it dispatches the record to every configured backend pump on that same purge cycle. This satisfies parent **STK-REQ-001** at the fan-out side: the value of running multiple pumps is that each backend sees every record, not a stochastic subset.
+When the pump has consumed an analytics record from the temporal store, it dispatches the record to every configured backend pump on that same purge cycle. This satisfies parent **STK-REQ-001** at the fan-out side and also carries the post-consume retention obligation for **STK-REQ-002**: the value of running multiple pumps is that each backend sees every record, not a stochastic subset, and records popped from the temporal store must not disappear silently if all writes fail.
 
 ## Motivation
 Operators configure multiple pumps explicitly to fan-out the same data (raw to SQL, aggregated to Mongo, alerting to Splunk). A bug that silently dropped records from one branch of the fan-out would be invisible to the gateway and only surface as missing rows in downstream reports days later. Capturing fan-out as its own SYS req (split from SYS-REQ-001 in Phase 0.6) makes the "every pump sees every record" promise atomic and code-verifiable.
@@ -24,5 +24,5 @@ The input `record_available_for_dispatch` becomes true when a record has been de
 
 ## Open questions
 - Phase 0.6 origin: spun out of SYS-REQ-001 so consumption and fan-out are atomic.
-- "Dispatched" is true even when a backend's `WriteData` fails or times out — `execPumpWriting` still gets *called* per pump. The req says "dispatched", not "successfully written"; SYS-REQ-004 covers the isolation guarantee on top.
+- "Dispatched" is true even when a backend's `WriteData` fails or times out — `execPumpWriting` still gets *called* per pump. The req says "dispatched", not "successfully written"; SYS-REQ-004 covers the isolation guarantee on top. If every backend write fails after the temporal-store pop, there is currently no DLQ or re-enqueue path; known issue `write-failure-after-pop-loses-records` tracks that debt.
 - The `keys` slice is shared by pointer; each pump's `filterData` makes a *new* slice via `filteredKeys := make([]interface{}, len(keys)); copy(filteredKeys, keys)` (`main.go:389-390`) so per-pump mutations do not leak — this is correct but unstated at SYS level.

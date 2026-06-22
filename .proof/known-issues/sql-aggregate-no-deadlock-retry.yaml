@@ -3,6 +3,7 @@ title: SQL aggregate upsert returns deadlock errors without retry or classificat
 description: pumps/sql_aggregate.go builds the aggregate upsert and returns tx.Error from the GORM Create/OnConflict path. There is no deadlock-specific classification, retry loop, or transaction restart around the aggregate write. A database deadlock or serialization failure therefore surfaces as a plain write error rather than being recovered. The SW-REQ-041 deadlock_recovery obligation is a real product gap, not only missing test evidence.
 affected_requirements:
     - SW-REQ-041
+    - SW-REQ-067
 severity: medium
 severity_basis: risk
 risk: availability
@@ -26,3 +27,7 @@ history:
       by: human:buger
       action: edit
       detail: set-severity-basis=risk,set-risk
+    - at: "2026-06-22T09:24:38Z"
+      by: human:buger
+      action: edit
+      detail: add-requirement

@@ -29,16 +29,24 @@ verification:
         status: approved
         reviewer: human:buger
         role: system_engineer
-        reviewed_at: "2026-06-02T05:02:36Z"
-        comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
+        reviewed_at: "2026-06-22T09:25:10Z"
+        comment: 'Attach catalog obligations for fanout panic isolation, payload decode error handling, and observability startup failure; each uncovered behavior remains KI-deferred.'
         fingerprint: sha256:41ce0e7d647c6ce4f9c58318d10318f74138f315d0a5574805c5577fecbee937
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-29T21:25:35Z"
-    last_modified_by: human:cli
-    last_modified_at: "2026-06-02T05:02:36Z"
+    last_modified_by: human:buger
+    last_modified_at: "2026-06-22T09:25:10Z"
 obligation_class: error_handling
+obligation_checklist:
+    - process_exit_on_recoverable
+obligation_deferrals:
+    - obligation_class: process_exit_on_recoverable
+      reason: StatsD setup failure can call log.Fatal during startup, so observability failure independence from the data plane remains KI-tracked debt.
+      tracking: logfatal-on-statsd-setup
+      owner: human:buger
+      ki_ref: logfatal-on-statsd-setup
 release_disposition: ship_with_known_issue
 lifecycle:
     change_history:
@@ -57,3 +65,8 @@ lifecycle:
           to: approved
           reason: 're-approve (prior: role="system_engineer" reviewer="human:buger" at=2026-05-30T07:43:08Z comment="System-level behavior reviewed as part of feat/reqproof-coverage PR; FRETish + obligation + satisfies linkage verified against tyk-pump architecture and code in Phase 0 code-verification pass.")'
           changed_by: human:cli
+        - date: "2026-06-22T09:25:10Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="system_engineer" reviewer="human:buger" at=2026-06-02T05:02:36Z comment="Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.")'
+          changed_by: human:buger

@@ -4,9 +4,11 @@ description: pumps/pump.go:44 declares 'WriteUptimeData(data []interface{})' wit
 affected_requirements:
     - STK-REQ-005
     - INT-REQ-002
+    - SYS-REQ-021
 severity: low
 severity_basis: risk
 risk: data_integrity
+reproducer_command: rg -n "WriteUptimeData\(data \[\]interface\{\}\)|UptimePump\.WriteUptimeData\(|type UptimePump" pumps/pump.go main.go
 environment_note: Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source or documentation surface and following the described scenario.
 introduced_in: inception
 mitigation: Operators must rely on backend-side monitoring (e.g. mongo write rate, error logs in mongo) to detect uptime-pump failures rather than tyk-pump's logs/metrics.
@@ -26,3 +28,11 @@ history:
       by: human:buger
       action: edit
       detail: set-severity-basis=risk,set-risk
+    - at: "2026-06-22T09:30:52Z"
+      by: human:buger
+      action: edit
+      detail: set-reproducer-command
+    - at: "2026-06-22T09:37:53Z"
+      by: human:buger
+      action: edit
+      detail: add-requirement

@@ -29,27 +29,39 @@ verification:
         status: approved
         reviewer: human:buger
         role: system_engineer
-        reviewed_at: "2026-06-04T16:50:33Z"
-        comment: 'Phase S Wave 2: attach failure_independence_proven from blind-spot detection loop'
+        reviewed_at: "2026-06-22T09:43:34Z"
+        comment: 'Remove temporary DLQ obligation from per-backend isolation carrier; SYS-REQ-022 carries total-write-failure retention.'
         fingerprint: sha256:eaedb01506a298607084eb9bd6efcfd527dffab1581174bffbfbd36601442847
-        ai_generated: true
+        ai_generated: false
     gaps_reviewed_at: "2026-06-03T10:24:45.221097Z"
     gaps_reviewed_by: human:buger
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:11:41Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-16T20:39:42Z"
+    last_modified_at: "2026-06-22T09:43:34Z"
 obligation_class: error_handling
 obligation_checklist:
     - external_call_concurrency_bounded
     - failure_independence_proven
+    - fanout_panic_isolated
+    - process_exit_on_recoverable
 obligation_deferrals:
     - obligation_class: external_call_concurrency_bounded
       reason: real product gap under known-issue pump-fanout-no-global-concurrency-limit; surfaced as visible tracked debt, not an overclaimed fix
       tracking: pump-fanout-no-global-concurrency-limit
-      ki_ref: pump-fanout-no-global-concurrency-limit
       owner: human:buger
+      ki_ref: pump-fanout-no-global-concurrency-limit
+    - obligation_class: fanout_panic_isolated
+      reason: A panic in one pump fanout goroutine can terminate the whole process, so backend failure isolation requires a recover barrier but remains KI-tracked debt.
+      tracking: pump-fanout-panic-not-recovered
+      owner: human:buger
+      ki_ref: pump-fanout-panic-not-recovered
+    - obligation_class: process_exit_on_recoverable
+      reason: A single pump Init configuration decode error can call log.Fatal and exit the whole process, violating backend independence until recoverable component failures stop exiting.
+      tracking: pumps-logfatal-on-config-decode
+      owner: human:buger
+      ki_ref: pumps-logfatal-on-config-decode
 release_disposition: ship_with_known_issue
 lifecycle:
     change_history:
@@ -78,3 +90,13 @@ lifecycle:
           to: approved
           reason: 're-approve (prior: role="system_engineer" reviewer="human:buger" at=2026-06-03T07:40:38Z comment="Phase Q: catalog obligation attachments — adds external_call_concurrency_bounded (per-backend independence + bulkhead). See .proof/catalog-obligation-proposals.md.")'
           changed_by: human:cli
+        - date: "2026-06-22T09:25:10Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="system_engineer" reviewer="human:buger" at=2026-06-04T16:50:33Z comment="Phase S Wave 2: attach failure_independence_proven from blind-spot detection loop")'
+          changed_by: human:buger
+        - date: "2026-06-22T09:43:34Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="system_engineer" reviewer="human:buger" at=2026-06-22T09:25:10Z comment="Attach catalog obligations for fanout panic isolation, payload decode error handling, and observability startup failure; each uncovered behavior remains KI-deferred.")'
+          changed_by: human:buger

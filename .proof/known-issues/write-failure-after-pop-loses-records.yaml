@@ -3,9 +3,11 @@ title: Pump write failure after successful Redis Pop loses records (no DLQ)
 description: STK-REQ-002 promises records are neither lost nor duplicated in normal operation. main.go:278 successfully pops a batch via GetAndDeleteSet; main.go:285 calls PreprocessAnalyticsValues which fans out to writeToPumps. If every pump fails its WriteData call (e.g. all backends are down), the records are not re-enqueued, written to a dead-letter queue, or otherwise retained — they are simply lost. The implementation provides at-most-once delivery, while STK-REQ-002 reads as at-least-once.
 affected_requirements:
     - STK-REQ-002
+    - SYS-REQ-022
 severity: medium
 severity_basis: risk
 risk: data_integrity
+reproducer_command: rg -n "GetAndDeleteSet\(|PreprocessAnalyticsValues|writeToPumps|dead.?letter|re-?enqueue|requeue" main.go docs/requirements/STK-REQ-002.md
 environment_note: Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source or documentation surface and following the described scenario.
 introduced_in: inception
 mitigation: Operators see WriteData error logs but the underlying batch is gone. Maintain redundant pumps (e.g. an always-available local file pump such as CSV) so at least one sink succeeds.
@@ -25,3 +27,19 @@ history:
       by: human:buger
       action: edit
       detail: set-severity-basis=risk,set-risk
+    - at: "2026-06-22T09:30:52Z"
+      by: human:buger
+      action: edit
+      detail: set-reproducer-command
+    - at: "2026-06-22T09:37:53Z"
+      by: human:buger
+      action: edit
+      detail: add-requirement
+    - at: "2026-06-22T09:40:20Z"
+      by: human:buger
+      action: edit
+      detail: add-requirement
+    - at: "2026-06-22T09:40:51Z"
+      by: human:buger
+      action: edit
+      detail: remove-requirement

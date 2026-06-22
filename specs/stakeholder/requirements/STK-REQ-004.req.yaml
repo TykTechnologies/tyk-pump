@@ -19,24 +19,25 @@ tags:
     - observability
 variables: []
 traces:
-    reviewed_at: "2026-06-19T20:51:38Z"
+    reviewed_at: "2026-06-22T09:44:26.896752Z"
     reviewed_by: human:buger
+    reviewed_fingerprint: sha256:b4a4520ddf7e01c20eb8f3023a61423d00731ca1871fb79dbbfec4cc313cf4f9
 verification:
     assurance_level: B
     formalization_status: none
     review:
         status: approved
         reviewer: human:buger
-        role: customer
-        reviewed_at: "2026-06-01T20:51:37Z"
-        comment: 'Phase I: acknowledged liveness-only nature of /health via KI health-endpoint-is-liveness-only.'
+        role: system_owner
+        reviewed_at: "2026-06-22T09:44:12Z"
+        comment: 'Remove deprecated acceptance-criteria testable fields; verification_method=test is the canonical schema field.'
         fingerprint: sha256:0422c03e7309129fcd6d6372c52f4d8dbfa9bc76e567cc5c7fb8b63726a60419
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:10:49Z"
-    last_modified_by: human:cli
-    last_modified_at: "2026-06-01T20:51:37Z"
+    last_modified_by: human:buger
+    last_modified_at: "2026-06-22T09:44:12Z"
 obligation_checklist:
     - nominal
     - error_handling
@@ -46,14 +47,12 @@ stakeholder:
     acceptance_criteria:
         - id: AC-001
           text: An HTTP health-check endpoint reports process liveness for orchestration and load balancers.
-          testable: true
           verification_method: test
           derived_reqs:
             - SYS-REQ-012
             - SYS-REQ-027
         - id: AC-002
           text: When instrumentation is enabled, the pump emits purge timing and record-count metrics.
-          testable: true
           verification_method: test
           derived_reqs:
             - SYS-REQ-013
@@ -70,3 +69,8 @@ lifecycle:
           to: approved
           reason: 're-approve (prior: role="system_owner" reviewer="human:buger" at=2026-05-30T07:43:08Z comment="Stakeholder intent reviewed as part of feat/reqproof-coverage PR; each persona/story/acceptance-criteria matches operator/business reality for tyk-pump.")'
           changed_by: human:cli
+        - date: "2026-06-22T09:44:12Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="customer" reviewer="human:buger" at=2026-06-01T20:51:37Z comment="Phase I: acknowledged liveness-only nature of /health via KI health-endpoint-is-liveness-only.")'
+          changed_by: human:buger

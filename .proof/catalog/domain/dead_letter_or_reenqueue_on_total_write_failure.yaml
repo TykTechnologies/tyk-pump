@@ -1,0 +1,44 @@
+id: dead_letter_or_reenqueue_on_total_write_failure
+name: Dead-letter or re-enqueue on total write failure
+category: domain
+status: active
+summary: A delivery pipeline shall retain records through a dead-letter queue, re-enqueue path, or equivalent durable retry mechanism when every configured sink fails after the source batch has been removed.
+description: Batch delivery systems that remove records from a source queue before fanout shall define the fate of the batch when all downstream writes fail. The system shall either re-enqueue the batch, persist it to a dead-letter queue, or explicitly document an at-most-once loss policy.
+applies_when:
+  description: a pipeline pops, deletes, or acknowledges source records before attempting writes to one or more downstream backends
+  trigger_phrases:
+    - dead-letter
+    - re-enqueue
+    - requeue
+    - delivery reliability
+    - records are neither lost nor duplicated
+    - all backend writes fail
+example_req: |-
+  When a purge cycle removes a batch from Redis and every configured backend
+  write fails, the pump shall persist the batch to a dead-letter queue or
+  re-enqueue it before returning from the purge cycle.
+if_missing: |-
+  A transient full-backend outage turns a successful source pop into permanent
+  data loss. The source queue no longer contains the records, but no backend has
+  accepted them and no operator-visible recovery queue exists.
+recommended_evidence:
+  - kind: negative
+    note: Negative test makes all configured backend writes fail after a source pop and asserts the records remain recoverable through re-enqueue or dead-letter storage.
+  - kind: scenario
+    note: Failure-injection scenario covers partial success, total failure, and retry exhaustion with operator-visible diagnostics.
+  - kind: review
+    note: "Architecture review documents the intended delivery semantics: at-least-once with DLQ/re-enqueue, or explicitly accepted at-most-once loss."
+frameworks:
+  - id: CWE
+    refs:
+      - CWE-755
+      - CWE-703
+  - id: NIST-800-53
+    refs:
+      - CP-10
+      - SI-13
+related_classes:
+  - id: errors_propagated
+    relationship: complements
+  - id: atomicity
+    relationship: complements

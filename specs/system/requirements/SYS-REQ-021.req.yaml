@@ -29,16 +29,24 @@ verification:
         status: approved
         reviewer: human:buger
         role: system_engineer
-        reviewed_at: "2026-06-02T05:02:36Z"
-        comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
+        reviewed_at: "2026-06-22T09:38:55Z"
+        comment: 'Move KI-backed delivery and uptime obligations from stakeholder deferrals onto system-level carrier requirements.'
         fingerprint: sha256:87dbc0c93b60858e434b46e0e1215b42844820f50d1a26a4d2f4cb7deacfc099
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-30T07:52:52Z"
-    last_modified_by: human:cli
-    last_modified_at: "2026-06-02T05:02:36Z"
+    last_modified_by: human:buger
+    last_modified_at: "2026-06-22T09:38:55Z"
 obligation_class: nominal
+obligation_checklist:
+    - errors_propagated
+obligation_deferrals:
+    - obligation_class: errors_propagated
+      reason: The uptime forwarding contract needs backend write errors to propagate or be surfaced, but UptimePump.WriteUptimeData has no error return, so this remains known issue debt.
+      tracking: uptime-write-has-no-error-return
+      owner: human:buger
+      ki_ref: uptime-write-has-no-error-return
 lifecycle:
     change_history:
         - date: "2026-05-30T07:55:47Z"
@@ -56,3 +64,8 @@ lifecycle:
           to: approved
           reason: 're-approve (prior: role="system_engineer" reviewer="human:buger" at=2026-05-30T10:36:06Z comment="Phase 0.7 review: applied SYS review findings — obligation class re-aligned (SYS-011→nominal, SYS-013→error_handling, SYS-019→atomicity), req_type guarantee→derived for SYS-018..023, SYS-024 rationale honest about go.mod toolchain, SYS-032 narrowed to pure assumption, SYS-034 added for GeoIP short-circuit guarantee. SW children re-linked.")'
           changed_by: human:cli
+        - date: "2026-06-22T09:38:55Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="system_engineer" reviewer="human:buger" at=2026-06-02T05:02:36Z comment="Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.")'
+          changed_by: human:buger

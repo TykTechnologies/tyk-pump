@@ -19,9 +19,9 @@ tags:
     - resilience
 variables: []
 traces:
-    reviewed_at: "2026-06-22T06:12:40.569328Z"
+    reviewed_at: "2026-06-22T09:44:26.3341Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:6232806e2cd1df38dbb1154d7d2e1b9b24515e98228d7107cbbd2ffd749e95e3
+    reviewed_fingerprint: sha256:520e173f134fc720c6d5ea1fc0192541edc814a6f4b99098490885a6d48cbf8a
 verification:
     assurance_level: B
     formalization_status: none
@@ -29,19 +29,20 @@ verification:
         status: approved
         reviewer: human:buger
         role: system_owner
-        reviewed_at: "2026-05-30T08:00:50Z"
-        comment: 'Re-approval after Phase 0.6: acceptance-criteria derived_reqs extended to include the new SYS reqs from the splits (SYS-018, 019, 020, 021, 022, 023). Stakeholder intent unchanged.'
+        reviewed_at: "2026-06-22T09:51:16Z"
+        comment: 'Stage AC-003 acceptance witness against the existing no-DLQ known issue; no truthful passing acceptance test exists until the product behavior changes.'
         fingerprint: sha256:7761e82cd68cd294fada0becf1c499d8122b443b0a72edf21449a63f43e5bc9e
-        ai_generated: true
+        ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:10:49Z"
-    last_modified_by: agent:codex
-    last_modified_at: "2026-06-19T12:45:03Z"
+    last_modified_by: human:buger
+    last_modified_at: "2026-06-22T09:51:16Z"
 obligation_checklist:
     - error_handling
     - boundary
     - atomicity
+    - dead_letter_or_reenqueue_on_total_write_failure
 release_disposition: ship_with_known_issue
 stakeholder:
     persona: Platform operator
@@ -64,6 +65,14 @@ stakeholder:
             - SYS-REQ-023
             - SYS-REQ-025
             - SYS-REQ-028
+        - id: AC-003
+          text: If all backend writes fail after analytics records have been consumed, the records are retained for retry or dead-letter handling rather than silently lost.
+          verification_method: test
+          derived_reqs:
+            - SYS-REQ-022
+          witness_deferred:
+            reason: No truthful end-to-end acceptance test can pass until known issue write-failure-after-pop-loses-records adds a DLQ, re-enqueue path, or equivalent retention after total write failure.
+            tracking: write-failure-after-pop-loses-records
 lifecycle:
     change_history:
         - date: "2026-05-29T15:46:44Z"
@@ -81,3 +90,23 @@ lifecycle:
           to: release_disposition=ship_with_known_issue
           reason: 'KI write-failure-after-pop-loses-records: no DLQ; failed pump writes lose the batch'
           changed_by: human:cli
+        - date: "2026-06-22T09:25:11Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="system_owner" reviewer="human:buger" at=2026-05-30T08:00:50Z comment="Re-approval after Phase 0.6: acceptance-criteria derived_reqs extended to include the new SYS reqs from the splits (SYS-018, 019, 020, 021, 022, 023). Stakeholder intent unchanged.")'
+          changed_by: human:buger
+        - date: "2026-06-22T09:38:55Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="system_owner" reviewer="human:buger" at=2026-06-22T09:25:11Z comment="Attach stakeholder-level delivery retention and uptime error propagation obligations with KI-backed deferrals.")'
+          changed_by: human:buger
+        - date: "2026-06-22T09:41:58Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="system_owner" reviewer="human:buger" at=2026-06-22T09:38:55Z comment="Stakeholder obligations stay required and are now covered through system-level KI-backed carriers instead of direct STK deferrals.")'
+          changed_by: human:buger
+        - date: "2026-06-22T09:51:16Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="system_owner" reviewer="human:buger" at=2026-06-22T09:41:58Z comment="Add AC-003 for post-consume retention and cover it through SYS-REQ-022 with KI-backed debt.")'
+          changed_by: human:buger

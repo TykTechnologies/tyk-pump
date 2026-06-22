@@ -1,0 +1,46 @@
+id: config_schema_strict
+name: Configuration schema strict
+category: domain
+status: active
+summary: Configuration loaders shall reject or explicitly report unknown fields; operator typos shall not silently fall back to defaults.
+description: Pump and connector configuration decoders shall apply a declared schema to operator-supplied maps, files, or environment overlays. Unknown keys, type mismatches, and deprecated aliases shall be rejected or surfaced as typed diagnostics before defaults are applied.
+applies_when:
+  description: operator-controlled configuration maps, JSON/YAML files, environment overlays, or per-plugin meta objects are decoded into typed structs that drive runtime behavior
+  trigger_phrases:
+    - configuration
+    - config
+    - unknown keys
+    - malformed pump configuration
+    - schema
+    - mapstructure
+example_req: |-
+  When a pump configuration is decoded, any unknown field name shall cause
+  initialization to fail with a clear diagnostic before defaults or side effects
+  are applied.
+if_missing: |-
+  Operator typos silently fall back to defaults. The pump may initialize
+  successfully but write to the wrong destination, skip intended options, or
+  fail later without a clear configuration error.
+recommended_evidence:
+  - kind: negative
+    note: Negative test supplies an unknown configuration key and asserts the loader returns a clear error before defaults or side effects are applied.
+  - kind: boundary
+    note: Boundary test covers a deprecated or renamed key and proves it is either accepted through an explicit compatibility alias or rejected loudly.
+  - kind: review
+    note: Schema review lists every accepted field name, tag or alias, and defaulting rule for the decoded configuration object.
+frameworks:
+  - id: CWE
+    refs:
+      - CWE-20
+      - CWE-754
+  - id: OWASP-ASVS-v4
+    refs:
+      - V5.1.4
+  - id: NIST-800-53
+    refs:
+      - SI-10
+related_classes:
+  - id: malformed_input
+    relationship: specializes
+  - id: malformed_recovers_or_errors_loudly
+    relationship: complements

@@ -29,26 +29,32 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-03T07:38:42Z"
-        comment: 'Phase Q: catalog obligation attachments — adds retry_policy_explicit (storage retry policy, KI storage-retry-maxelapsed-zero-is-unbounded). See .proof/catalog-obligation-proposals.md.'
+        reviewed_at: "2026-06-22T09:25:11Z"
+        comment: 'Expand backend, database, retry, queue, panic-safety, and shared-state catalog obligations; uncovered behavior is linked to existing KnownIssues rather than claimed as evidence.'
         fingerprint: sha256:a86f27e3072b2ed3d72cbda678640a86274fcef3b7472146ea2e8e779694e408
-        ai_generated: true
+        ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:17Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-17T08:03:23Z"
+    last_modified_at: "2026-06-22T09:25:11Z"
 obligation_checklist:
     - boundary
     - error_handling
     - external_call_timeout_bounded
+    - retry_budget_bounded
     - retry_policy_explicit
 obligation_deferrals:
     - obligation_class: external_call_timeout_bounded
       reason: 'real untested obligation under known-issue storage-retry-maxelapsed-zero-is-unbounded; surfaced as visible tracked debt, not an overclaimed fix'
       tracking: storage-retry-maxelapsed-zero-is-unbounded
-      ki_ref: storage-retry-maxelapsed-zero-is-unbounded
       owner: human:buger
+      ki_ref: storage-retry-maxelapsed-zero-is-unbounded
+    - obligation_class: retry_budget_bounded
+      reason: Storage retry backoff has bounded per-attempt intervals but MaxElapsedTime is zero, so total retry duration is unbounded until an elapsed retry budget is specified and tested.
+      tracking: storage-retry-maxelapsed-zero-is-unbounded
+      owner: human:buger
+      ki_ref: storage-retry-maxelapsed-zero-is-unbounded
 release_disposition: ship_with_known_issue
 lifecycle:
     change_history:
@@ -92,3 +98,8 @@ lifecycle:
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T13:44:34Z comment="Phase L2: aggressive formalization — encodes per-component primary decision (instrumentation gate, codec select, SSL/SASL, dataset_empty, default-path, file-append, retry-status, log-level, flush, batch, transport, dedup); variables in <component>.vars.yaml; user directive: force MCDC witnesses to drive verifying tests.")'
           changed_by: human:cli
+        - date: "2026-06-22T09:25:11Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-03T07:38:42Z comment="Phase Q: catalog obligation attachments — adds retry_policy_explicit (storage retry policy, KI storage-retry-maxelapsed-zero-is-unbounded). See .proof/catalog-obligation-proposals.md.")'
+          changed_by: human:buger

@@ -6,6 +6,7 @@ affected_requirements:
 severity: low
 severity_basis: risk
 risk: availability
+reproducer_command: rg -n "func \(p \*CommonPumpConfig\) SetLogLevel|p\.log\.Level|p\.log =" pumps/common.go pumps/*.go
 environment_note: Source-level reproducer condition is documented in the description; call CommonPumpConfig.SetLogLevel on a zero-value/CommonPumpConfig before Init initializes p.log and the assignment dereferences nil.
 introduced_in: inception
 mitigation: Current pump-loader order always calls Init before SetLogLevel (initialise.go orchestrates this). The panic is dormant unless a future loader change re-orders these calls.
@@ -25,3 +26,7 @@ history:
       by: human:buger
       action: edit
       detail: set-severity-basis=risk,set-risk
+    - at: "2026-06-22T09:30:52Z"
+      by: human:buger
+      action: edit
+      detail: set-reproducer-command

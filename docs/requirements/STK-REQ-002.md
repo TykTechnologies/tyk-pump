@@ -30,6 +30,8 @@ Decomposes into the following SYS reqs via its acceptance criteria:
 - AC-002 (retry bounded backoff): `SYS-REQ-006` (exponential backoff retry),
   `SYS-REQ-007` (atomic at-most-once consume from temporal store),
   `SYS-REQ-023` (surface error after max retries).
+- AC-003 (post-consume retention on total write failure): `SYS-REQ-022`
+  (dispatch after temporal-store pop, carrying the DLQ/re-enqueue obligation).
 
 Implementation entry points:
 - Per-backend isolation: `main.go:435` `execPumpWriting` runs each pump in
@@ -50,13 +52,10 @@ Implementation entry points:
   per-pump timeout setter is `pumps/common.go` (see `SetTimeout`).
 
 ## Open questions
-- "Neither lost nor duplicated in normal operation" is asserted by the
-  stakeholder text but the system does not have an end-to-end test that
-  proves dedup across a successful purge — `GetAndDeleteSet` is atomic on
-  the Redis side (`LPOP n` + `EXPIRE`) but downstream write failure does not
-  re-enqueue. So records can be lost (not duplicated) once a write fails and
-  retries exhaust. This conflict between stakeholder text and implementation
-  semantics is not flagged in any SYS req.
+- "Neither lost nor duplicated in normal operation" is carried by AC-003 and
+  `SYS-REQ-022`, but downstream write failure does not currently re-enqueue or
+  dead-letter records after `GetAndDeleteSet` has popped them. The gap is
+  tracked by known issue `write-failure-after-pop-loses-records`.
 - "Slow backend never blocks delivery to the others" — true only if the
   operator configures a timeout. If `pmp.GetTimeout() == 0`, the per-pump
   goroutine can run indefinitely; only a warning is logged at `main.go:438`.

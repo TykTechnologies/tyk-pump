@@ -1,0 +1,44 @@
+id: shared_state_synchronized
+name: Shared state synchronized
+category: property
+status: active
+summary: Shared mutable process state shall be protected by synchronization, immutable per-call handles, or documented single-threaded ownership.
+description: Components that reuse mutable fields across calls shall prove concurrent callers cannot observe or corrupt each other's state. Valid designs include mutex protection, per-call copies or sessions, immutable handles, worker ownership, or an explicit single-threaded execution contract.
+applies_when:
+  description: a requirement is implemented by code that mutates receiver fields, package variables, maps, pools, handles, or other shared state while the component can be called concurrently
+  trigger_phrases:
+    - shared state
+    - shared mutable
+    - concurrent
+    - data race
+    - race
+    - goroutine
+    - synchronization
+example_req: |-
+  When concurrent WriteData calls route sharded batches, each call shall use an
+  isolated database session or synchronization so table selection in one call
+  cannot affect another call.
+if_missing: |-
+  Interleaved calls can read or write through another call's selected table,
+  corrupt counters, create indexes on the wrong table, or pass under go test
+  until a production interleaving exposes the race.
+recommended_evidence:
+  - kind: race
+    note: Go race-detector test exercises concurrent callers through the shared-state mutation path and passes without races.
+  - kind: scenario
+    note: Concurrent scenario asserts each call writes to its intended shard/table or state partition under interleaving.
+  - kind: review
+    note: Code review documents the synchronization primitive, immutable per-call handle, or single-owner worker contract that protects the shared state.
+frameworks:
+  - id: CWE
+    refs:
+      - CWE-362
+      - CWE-662
+  - id: NIST-800-53
+    refs:
+      - SI-7
+related_classes:
+  - id: concurrent
+    relationship: specializes
+  - id: transaction_isolation_declared
+    relationship: complements

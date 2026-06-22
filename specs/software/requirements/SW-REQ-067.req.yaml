@@ -32,29 +32,36 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-19T20:08:14Z"
-        comment: 'Spec evidence-debt refresh: reviewed KI-gated obligation_deferrals added for required-but-unwitnessed obligations. Each deferral links to an open traced KnownIssue and leaves the gap as auto-expiring accepted KI-debt rather than claiming product/test fixes.'
+        reviewed_at: "2026-06-22T09:25:11Z"
+        comment: 'Expand backend, database, retry, queue, panic-safety, and shared-state catalog obligations; uncovered behavior is linked to existing KnownIssues rather than claimed as evidence.'
         fingerprint: sha256:2a4c1102e8a2d5298872650cc1f2a7e72aa1f64b7c9e415c769fc2c801143856
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:39:51Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-19T20:08:14Z"
+    last_modified_at: "2026-06-22T09:25:11Z"
 obligation_checklist:
     - atomicity
     - concurrent
+    - deadlock_recovery
     - malformed_recovers_or_errors_loudly
     - monotonicity
     - ordering_guarantees_documented
     - panic_free_input_handling
     - parameterized_only_write
+    - transaction_isolation_declared
 obligation_deferrals:
     - obligation_class: atomicity
       reason: Required atomicity evidence is parked because the SQL aggregate fault-injection harness is missing.
       tracking: known-issue:sql-aggregate-atomicity-fault-injection-missing
       owner: human:buger
       ki_ref: sql-aggregate-atomicity-fault-injection-missing
+    - obligation_class: deadlock_recovery
+      reason: SQL aggregate upsert errors are returned without deadlock classification or bounded retry, so database deadlock recovery remains KI-tracked debt.
+      tracking: sql-aggregate-no-deadlock-retry
+      owner: human:buger
+      ki_ref: sql-aggregate-no-deadlock-retry
     - obligation_class: malformed_recovers_or_errors_loudly
       reason: Required malformed-input evidence is parked because lenient decode gaps are tracked for this requirement.
       tracking: known-issue:mapstructure-decode-silently-drops-unknown-keys
@@ -70,6 +77,11 @@ obligation_deferrals:
       tracking: known-issue:no-panic-recovery-in-exec-pump-writing
       owner: human:buger
       ki_ref: no-panic-recovery-in-exec-pump-writing
+    - obligation_class: transaction_isolation_declared
+      reason: SQL aggregate upsert correctness depends on concurrent database write semantics, but serialization and concurrent-writer evidence remains missing from the fault-injection harness.
+      tracking: sql-aggregate-atomicity-fault-injection-missing
+      owner: human:buger
+      ki_ref: sql-aggregate-atomicity-fault-injection-missing
 lifecycle:
     change_history:
         - date: "2026-05-30T08:43:47Z"
@@ -101,4 +113,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-19T19:54:58Z comment="Spec audit stale-approval refresh: reviewed current YAML diffs vs HEAD plus KI/proof metadata; changes are metadata, trace, and evidence-honesty updates that surface gaps via KnownIssues/deferrals without claiming product fixes.")'
+          changed_by: human:buger
+        - date: "2026-06-22T09:25:11Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-19T20:08:14Z comment="Spec evidence-debt refresh: reviewed KI-gated obligation_deferrals added for required-but-unwitnessed obligations. Each deferral links to an open traced KnownIssue and leaves the gap as auto-expiring accepted KI-debt rather than claiming product/test fixes.")'
           changed_by: human:buger

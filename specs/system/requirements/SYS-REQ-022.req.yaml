@@ -19,9 +19,10 @@ variables: []
 traces:
     satisfies:
         - STK-REQ-001
-    reviewed_at: "2026-06-02T05:03:38.451482Z"
+        - STK-REQ-002
+    reviewed_at: "2026-06-22T09:42:05.57401Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:1d573464c2096d165f9efb1e7035cfa9d0f7e51d72cdcf79196996fdd552860e
+    reviewed_fingerprint: sha256:0a28e97cb41f5dcfe74282b0be163d1afc87da92938d0f5d03f0fbabe0e70d02
 verification:
     assurance_level: B
     formalization_status: valid
@@ -29,16 +30,24 @@ verification:
         status: approved
         reviewer: human:buger
         role: system_engineer
-        reviewed_at: "2026-06-02T05:02:36Z"
-        comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
-        fingerprint: sha256:e0ecab255af969d0e3fb362c8987b38cba65dc148cfa57fb09a42fa285353610
+        reviewed_at: "2026-06-22T09:41:58Z"
+        comment: 'Cross-link consumed-record dispatch to STK-REQ-002 retention coverage and carry DLQ/re-enqueue KI debt on the semantic carrier.'
+        fingerprint: sha256:716211e5b97bf79a648f8c145f5c627a374c5df6d2e5b970b7a7fb31345ece32
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-30T07:52:52Z"
-    last_modified_by: human:cli
-    last_modified_at: "2026-06-02T05:02:36Z"
+    last_modified_by: human:buger
+    last_modified_at: "2026-06-22T09:41:58Z"
 obligation_class: nominal
+obligation_checklist:
+    - dead_letter_or_reenqueue_on_total_write_failure
+obligation_deferrals:
+    - obligation_class: dead_letter_or_reenqueue_on_total_write_failure
+      reason: Consumed analytics records are dispatched after temporal-store pop; when all downstream writes fail there is no DLQ or re-enqueue path, so end-to-end record retention remains tracked debt.
+      tracking: write-failure-after-pop-loses-records
+      owner: human:buger
+      ki_ref: write-failure-after-pop-loses-records
 lifecycle:
     change_history:
         - date: "2026-05-30T07:55:47Z"
@@ -56,3 +65,13 @@ lifecycle:
           to: approved
           reason: 're-approve (prior: role="system_engineer" reviewer="human:buger" at=2026-05-30T10:36:06Z comment="Phase 0.7 review: applied SYS review findings — obligation class re-aligned (SYS-011→nominal, SYS-013→error_handling, SYS-019→atomicity), req_type guarantee→derived for SYS-018..023, SYS-024 rationale honest about go.mod toolchain, SYS-032 narrowed to pure assumption, SYS-034 added for GeoIP short-circuit guarantee. SW children re-linked.")'
           changed_by: human:cli
+        - date: "2026-06-22T09:38:55Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="system_engineer" reviewer="human:buger" at=2026-06-02T05:02:36Z comment="Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.")'
+          changed_by: human:buger
+        - date: "2026-06-22T09:41:58Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="system_engineer" reviewer="human:buger" at=2026-06-22T09:38:55Z comment="Move KI-backed delivery and uptime obligations from stakeholder deferrals onto system-level carrier requirements.")'
+          changed_by: human:buger

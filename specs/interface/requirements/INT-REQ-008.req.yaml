@@ -30,17 +30,24 @@ verification:
         status: approved
         reviewer: human:buger
         role: interface_engineer
-        reviewed_at: "2026-06-02T14:19:05Z"
-        comment: 'Phase L3 aggressive: flip 8 INT interface contracts to FRETish (positive when-shall-always-satisfy form); per-contract var pairs added in specs/interface/variables/.'
+        reviewed_at: "2026-06-22T09:25:11Z"
+        comment: 'Attach config_schema_strict catalog obligation to the pump meta decode contract; current unknown-key behavior remains KI-deferred.'
         fingerprint: sha256:2d7d470621951f204abb6321c13e181a8c244c474c9518351a70e093f219621a
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:47Z"
-    last_modified_by: human:cli
-    last_modified_at: "2026-06-02T14:19:05Z"
+    last_modified_by: human:buger
+    last_modified_at: "2026-06-22T09:25:11Z"
 obligation_checklist:
+    - config_schema_strict
     - malformed_input
+obligation_deferrals:
+    - obligation_class: config_schema_strict
+      reason: Pump config schemas currently decode with lenient mapstructure defaults, so unknown operator keys can be silently ignored until DecoderConfig ErrorUnused or equivalent strict schema validation lands.
+      tracking: mapstructure-decode-silently-drops-unknown-keys
+      owner: human:buger
+      ki_ref: mapstructure-decode-silently-drops-unknown-keys
 release_disposition: ship_with_known_issue
 interface:
     caller: tyk-pump-main-config
@@ -99,3 +106,8 @@ lifecycle:
           to: approved
           reason: 're-approve (prior: role="interface_engineer" reviewer="human:buger" at=2026-06-02T05:02:48Z comment="Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.")'
           changed_by: human:cli
+        - date: "2026-06-22T09:25:11Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="interface_engineer" reviewer="human:buger" at=2026-06-02T14:19:05Z comment="Phase L3 aggressive: flip 8 INT interface contracts to FRETish (positive when-shall-always-satisfy form); per-contract var pairs added in specs/interface/variables/.")'
+          changed_by: human:buger

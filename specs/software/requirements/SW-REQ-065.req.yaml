@@ -29,22 +29,24 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-03T07:40:11Z"
-        comment: 'Phase Q: catalog obligation attachments — adds deadlock_recovery, forward_compatible, reversible_or_documented (SQL aggregate CreateTable + migration policy, KI sql-schema-no-version-policy). See .proof/catalog-obligation-proposals.md.'
+        reviewed_at: "2026-06-22T09:25:11Z"
+        comment: 'Expand backend, database, retry, queue, panic-safety, and shared-state catalog obligations; uncovered behavior is linked to existing KnownIssues rather than claimed as evidence.'
         fingerprint: sha256:9abf19a746bbbb4a31ac82f29d1600ec4e7b309a1881450e9cbf55f2fba63659
-        ai_generated: true
+        ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:39:32Z"
-    last_modified_by: agent:codex
-    last_modified_at: "2026-06-19T07:42:55Z"
+    last_modified_by: human:buger
+    last_modified_at: "2026-06-22T09:25:11Z"
 obligation_checklist:
     - concurrent
+    - forward_compatible
     - idempotency
     - malformed_recovers_or_errors_loudly
     - nominal
     - panic_free_input_handling
     - reversible_or_documented
+    - shared_state_synchronized
 obligation_deferrals:
     - obligation_class: concurrent
       reason: 'SQL aggregate table creation shares mutable pump DB state with sharded WriteData, so concurrent table-create evidence is tracked as a known issue until the DB/table handle is isolated or synchronized.'
@@ -52,8 +54,13 @@ obligation_deferrals:
       owner: agent:codex
       ki_ref: sql-aggregate-sharded-shared-db-race
       reproducer: rg -n "c\.db = c\.db\.Table|func \(c \*SQLAggregatePump\) ensure(Index|Table)|CREATE INDEX|backgroundIndexCreated" pumps/sql_aggregate.go
+    - obligation_class: forward_compatible
+      reason: 'SQL aggregate table creation has no explicit schema version or forward-compatibility policy, so migration compatibility remains tracked under the SQL schema known issue.'
+      tracking: sql-schema-no-version-policy
+      owner: human:buger
+      ki_ref: sql-schema-no-version-policy
     - obligation_class: malformed_recovers_or_errors_loudly
-      reason: 'real untested obligation under known-issue mapstructure-decode-silently-drops-unknown-keys; surfaced as visible tracked debt, not an overclaimed fix'
+      reason: real untested obligation under known-issue mapstructure-decode-silently-drops-unknown-keys; surfaced as visible tracked debt, not an overclaimed fix
       tracking: mapstructure-decode-silently-drops-unknown-keys
       owner: human:buger
       ki_ref: mapstructure-decode-silently-drops-unknown-keys
@@ -67,6 +74,11 @@ obligation_deferrals:
       tracking: sql-schema-no-version-policy
       owner: human:buger
       ki_ref: sql-schema-no-version-policy
+    - obligation_class: shared_state_synchronized
+      reason: SQL aggregate sharded routing and DDL paths mutate shared pump DB state, so synchronization or per-call handle isolation remains KI-tracked debt.
+      tracking: sql-aggregate-sharded-shared-db-race
+      owner: human:buger
+      ki_ref: sql-aggregate-sharded-shared-db-race
 lifecycle:
     change_history:
         - date: "2026-05-30T08:43:47Z"
@@ -89,3 +101,8 @@ lifecycle:
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T14:19:01Z comment="Phase L3 aggressive: flip remaining decision-bearing SW reqs to FRETish per L3 plan; vars added per-component; MC/DC witnesses to be annotated in tests.")'
           changed_by: human:cli
+        - date: "2026-06-22T09:25:11Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-03T07:40:11Z comment="Phase Q: catalog obligation attachments — adds deadlock_recovery, forward_compatible, reversible_or_documented (SQL aggregate CreateTable + migration policy, KI sql-schema-no-version-policy). See .proof/catalog-obligation-proposals.md.")'
+          changed_by: human:buger

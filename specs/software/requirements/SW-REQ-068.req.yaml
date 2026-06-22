@@ -29,23 +29,27 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-03T07:40:27Z"
-        comment: 'Phase Q: catalog obligation attachments — adds external_call_timeout_bounded, request_timeout_bounded, external_call_failure_observable, retry_policy_explicit, panic_free_input_handling, recursion_depth_bounded, back_pressure_bounded, connection_leak_free, secrets_not_logged, tls_required_for_secrets, redirect_policy_explicit, ssrf_protection (ES surface; KI elasticsearch-unbounded-reconnect-recursion). See .proof/catalog-obligation-proposals.md.'
+        reviewed_at: "2026-06-22T09:25:11Z"
+        comment: 'Expand backend, database, retry, queue, panic-safety, and shared-state catalog obligations; uncovered behavior is linked to existing KnownIssues rather than claimed as evidence.'
         fingerprint: sha256:c234ca5105f633eb0c97347f469b80d90bad760f4bdb2c21d018e680923683ed
-        ai_generated: true
+        ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:39:57Z"
-    last_modified_by: agent:codex
-    last_modified_at: "2026-06-19T14:16:40Z"
+    last_modified_by: human:buger
+    last_modified_at: "2026-06-22T09:25:11Z"
 obligation_checklist:
     - cert_validation_strict
     - determinism
     - errors_propagated
+    - external_call_failure_observable
+    - external_call_timeout_bounded
     - malformed_recovers_or_errors_loudly
     - nominal
     - process_exit_on_recoverable
+    - recursion_depth_bounded
     - request_timeout_bounded
+    - retry_policy_explicit
     - ssrf_protection
 obligation_deferrals:
     - obligation_class: cert_validation_strict
@@ -63,21 +67,41 @@ obligation_deferrals:
       tracking: pumps-logfatal-on-config-decode
       owner: human:buger
       ki_ref: pumps-logfatal-on-config-decode
+    - obligation_class: external_call_failure_observable
+      reason: 'Persistent Elasticsearch connection failure can recurse instead of returning a typed failure to the caller, so external failure observability remains KI-tracked debt.'
+      tracking: elasticsearch-unbounded-reconnect-recursion
+      owner: human:buger
+      ki_ref: elasticsearch-unbounded-reconnect-recursion
+    - obligation_class: external_call_timeout_bounded
+      reason: 'Elasticsearch external writes can run without an enforced per-pump deadline when timeout is zero, so external call timeout bounding remains KI-tracked debt.'
+      tracking: pump-no-timeout-can-block-purge-cycle
+      owner: human:buger
+      ki_ref: pump-no-timeout-can-block-purge-cycle
     - obligation_class: malformed_recovers_or_errors_loudly
-      reason: 'real untested obligation under known-issue mapstructure-decode-silently-drops-unknown-keys; surfaced as visible tracked debt, not an overclaimed fix'
+      reason: real untested obligation under known-issue mapstructure-decode-silently-drops-unknown-keys; surfaced as visible tracked debt, not an overclaimed fix
       tracking: mapstructure-decode-silently-drops-unknown-keys
       owner: human:buger
       ki_ref: mapstructure-decode-silently-drops-unknown-keys
     - obligation_class: process_exit_on_recoverable
-      reason: 'real untested obligation under known-issue pumps-logfatal-on-config-decode; surfaced as visible tracked debt, not an overclaimed fix'
+      reason: real untested obligation under known-issue pumps-logfatal-on-config-decode; surfaced as visible tracked debt, not an overclaimed fix
       tracking: pumps-logfatal-on-config-decode
       owner: human:buger
       ki_ref: pumps-logfatal-on-config-decode
+    - obligation_class: recursion_depth_bounded
+      reason: Elasticsearch reconnect and WriteData retry paths can recurse without a depth bound on persistent outage, so stack-depth bounding remains KI-tracked debt.
+      tracking: elasticsearch-unbounded-reconnect-recursion
+      owner: human:buger
+      ki_ref: elasticsearch-unbounded-reconnect-recursion
     - obligation_class: request_timeout_bounded
       reason: real untested obligation under known-issue pump-no-timeout-can-block-purge-cycle; surfaced as visible tracked debt, not an overclaimed fix
       tracking: pump-no-timeout-can-block-purge-cycle
       owner: human:buger
       ki_ref: pump-no-timeout-can-block-purge-cycle
+    - obligation_class: retry_policy_explicit
+      reason: Elasticsearch reconnect behavior is recursive and not expressed as an explicit bounded retry policy, so retry policy evidence remains KI-tracked debt.
+      tracking: elasticsearch-unbounded-reconnect-recursion
+      owner: human:buger
+      ki_ref: elasticsearch-unbounded-reconnect-recursion
     - obligation_class: ssrf_protection
       reason: real product gap under known-issue external-pump-endpoints-no-ssrf-allowlist; surfaced as visible tracked debt, not an overclaimed fix
       tracking: external-pump-endpoints-no-ssrf-allowlist
@@ -110,3 +134,8 @@ lifecycle:
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T14:19:01Z comment="Phase L3 aggressive: flip remaining decision-bearing SW reqs to FRETish per L3 plan; vars added per-component; MC/DC witnesses to be annotated in tests.")'
           changed_by: human:cli
+        - date: "2026-06-22T09:25:11Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-03T07:40:27Z comment="Phase Q: catalog obligation attachments — adds external_call_timeout_bounded, request_timeout_bounded, external_call_failure_observable, retry_policy_explicit, panic_free_input_handling, recursion_depth_bounded, back_pressure_bounded, connection_leak_free, secrets_not_logged, tls_required_for_secrets, redirect_policy_explicit, ssrf_protection (ES surface; KI elasticsearch-unbounded-reconnect-recursion). See .proof/catalog-obligation-proposals.md.")'
+          changed_by: human:buger

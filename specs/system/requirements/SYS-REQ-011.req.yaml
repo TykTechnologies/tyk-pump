@@ -32,16 +32,30 @@ verification:
         status: approved
         reviewer: human:buger
         role: system_engineer
-        reviewed_at: "2026-06-03T06:55:10Z"
-        comment: 'Phase P: FRETish enrichment per per-req review pass — adds decode_request_enabled | decode_response_enabled disjunct so MC/DC exposes the two-flag independence (DecodeRawRequest + DecodeRawResponse are independent operator toggles gating disjoint payload fields).'
+        reviewed_at: "2026-06-22T09:25:10Z"
+        comment: 'Attach catalog obligations for fanout panic isolation, payload decode error handling, and observability startup failure; each uncovered behavior remains KI-deferred.'
         fingerprint: sha256:29de91fa86561b3ecc4b25b6a60bc361ffb05a6981ae06920d1ad202cfad4c5e
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:11:41Z"
-    last_modified_by: human:cli
-    last_modified_at: "2026-06-03T06:55:10Z"
+    last_modified_by: human:buger
+    last_modified_at: "2026-06-22T09:25:10Z"
 obligation_class: nominal
+obligation_checklist:
+    - encoding_aware
+    - malformed_recovers_or_errors_loudly
+obligation_deferrals:
+    - obligation_class: encoding_aware
+      reason: Payload decode mode depends on base64 encoding, but malformed base64 is silently forwarded unchanged instead of surfacing an encoding diagnostic.
+      tracking: filterdata-base64-decode-silent-noop
+      owner: human:buger
+      ki_ref: filterdata-base64-decode-silent-noop
+    - obligation_class: malformed_recovers_or_errors_loudly
+      reason: Malformed payload decode errors are silently ignored and forwarded as original data, so the malformed-input policy remains KI-tracked debt.
+      tracking: filterdata-base64-decode-silent-noop
+      owner: human:buger
+      ki_ref: filterdata-base64-decode-silent-noop
 lifecycle:
     change_history:
         - date: "2026-05-29T15:46:45Z"
@@ -64,3 +78,8 @@ lifecycle:
           to: approved
           reason: 're-approve (prior: role="system_engineer" reviewer="human:buger" at=2026-06-02T05:02:36Z comment="Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.")'
           changed_by: human:cli
+        - date: "2026-06-22T09:25:10Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="system_engineer" reviewer="human:buger" at=2026-06-03T06:55:10Z comment="Phase P: FRETish enrichment per per-req review pass — adds decode_request_enabled | decode_response_enabled disjunct so MC/DC exposes the two-flag independence (DecodeRawRequest + DecodeRawResponse are independent operator toggles gating disjoint payload fields).")'
+          changed_by: human:buger

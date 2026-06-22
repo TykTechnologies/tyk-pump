@@ -32,15 +32,15 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-03T07:40:18Z"
-        comment: 'Phase Q: catalog obligation attachments — adds parameterized_only_write (Index DDL fmt.Sprintf allowlist contract). See .proof/catalog-obligation-proposals.md.'
+        reviewed_at: "2026-06-22T09:25:11Z"
+        comment: 'Expand backend, database, retry, queue, panic-safety, and shared-state catalog obligations; uncovered behavior is linked to existing KnownIssues rather than claimed as evidence.'
         fingerprint: sha256:5a4265525c1df1b4403519ddcb293cada24508e04db9b3a82fa1b5da49bb9495
-        ai_generated: true
+        ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:39:46Z"
-    last_modified_by: agent:codex
-    last_modified_at: "2026-06-19T07:42:55Z"
+    last_modified_by: human:buger
+    last_modified_at: "2026-06-22T09:25:11Z"
 obligation_checklist:
     - concurrent
     - idempotency
@@ -48,6 +48,7 @@ obligation_checklist:
     - nominal
     - panic_free_input_handling
     - parameterized_only_write
+    - shared_state_synchronized
 obligation_deferrals:
     - obligation_class: concurrent
       reason: SQL aggregate index creation is reached from the same mutable sharded WriteData path, so concurrent index evidence is tracked as a known issue until per-call sessions or synchronization land.
@@ -65,6 +66,11 @@ obligation_deferrals:
       tracking: no-panic-recovery-in-exec-pump-writing
       owner: human:buger
       ki_ref: no-panic-recovery-in-exec-pump-writing
+    - obligation_class: shared_state_synchronized
+      reason: SQL aggregate sharded routing and DDL paths mutate shared pump DB state, so synchronization or per-call handle isolation remains KI-tracked debt.
+      tracking: sql-aggregate-sharded-shared-db-race
+      owner: human:buger
+      ki_ref: sql-aggregate-sharded-shared-db-race
 release_disposition: ship_with_known_issue
 lifecycle:
     change_history:
@@ -103,3 +109,8 @@ lifecycle:
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-03T06:56:31Z comment="Phase P: FRETish enrichment per per-req review pass — adds sql_index_already_exists to when disjunct so MC/DC mirrors SW-063 for SQL aggregate — exposes the HasIndex idempotency-skip arm beside the operator toggle.")'
           changed_by: human:cli
+        - date: "2026-06-22T09:25:11Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-03T07:40:18Z comment="Phase Q: catalog obligation attachments — adds parameterized_only_write (Index DDL fmt.Sprintf allowlist contract). See .proof/catalog-obligation-proposals.md.")'
+          changed_by: human:buger

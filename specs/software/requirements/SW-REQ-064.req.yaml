@@ -29,15 +29,15 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-22T07:32:48Z"
-        comment: 'Close SQL aggregate temporal-window signal with existing day-shard boundary evidence.'
+        reviewed_at: "2026-06-22T09:25:11Z"
+        comment: 'Expand backend, database, retry, queue, panic-safety, and shared-state catalog obligations; uncovered behavior is linked to existing KnownIssues rather than claimed as evidence.'
         fingerprint: sha256:5727cebc6bb37a20f2a0d36f8ab0fa6da2596b3bb452658cb62e41d75eae9a61
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:38:24Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-22T07:32:48Z"
+    last_modified_at: "2026-06-22T09:25:11Z"
 obligation_class: temporal_window_inclusive
 obligation_checklist:
     - boundary
@@ -46,6 +46,7 @@ obligation_checklist:
     - nominal
     - ordering_guarantees_documented
     - panic_free_input_handling
+    - shared_state_synchronized
     - temporal_window_inclusive
 obligation_deferrals:
     - obligation_class: concurrent
@@ -64,6 +65,11 @@ obligation_deferrals:
       tracking: no-panic-recovery-in-exec-pump-writing
       owner: human:buger
       ki_ref: no-panic-recovery-in-exec-pump-writing
+    - obligation_class: shared_state_synchronized
+      reason: SQL aggregate sharded routing and DDL paths mutate shared pump DB state, so synchronization or per-call handle isolation remains KI-tracked debt.
+      tracking: sql-aggregate-sharded-shared-db-race
+      owner: human:buger
+      ki_ref: sql-aggregate-sharded-shared-db-race
 lifecycle:
     change_history:
         - date: "2026-05-30T08:43:47Z"
@@ -95,4 +101,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-04T16:50:31Z comment="Phase S Wave 2: attach blind-spot obligations from Wave 1 promote (cascade/fanout/clock_skew/dst/tz/temporal_window/process_exit/tls_verification/partial_progress)")'
+          changed_by: human:buger
+        - date: "2026-06-22T09:25:11Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-22T07:32:48Z comment="Close SQL aggregate temporal-window signal with existing day-shard boundary evidence.")'
           changed_by: human:buger
