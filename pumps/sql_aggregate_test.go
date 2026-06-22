@@ -63,6 +63,7 @@ func TestSQLAggregateInit(t *testing.T) {
 
 // Verifies: SW-REQ-064
 // SW-REQ-064:ordering_guarantees_documented:nominal
+// SW-REQ-064:temporal_window_inclusive:boundary
 // MCDC SW-REQ-064: date_boundary_detected=T, slice_flushed_to_sharded_table=T => TRUE
 func TestSQLAggregateWriteData_Sharded(t *testing.T) {
 	skipTestIfNoPostgres(t)

@@ -29,15 +29,16 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-04T16:50:31Z"
-        comment: 'Phase S Wave 2: attach blind-spot obligations from Wave 1 promote (cascade/fanout/clock_skew/dst/tz/temporal_window/process_exit/tls_verification/partial_progress)'
-        fingerprint: sha256:c32aded3b9e62b471ef8072fd71f603aa9f0ff017eabef13687688899127a770
-        ai_generated: true
+        reviewed_at: "2026-06-22T07:32:48Z"
+        comment: 'Close SQL aggregate temporal-window signal with existing day-shard boundary evidence.'
+        fingerprint: sha256:5727cebc6bb37a20f2a0d36f8ab0fa6da2596b3bb452658cb62e41d75eae9a61
+        ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:38:24Z"
-    last_modified_by: agent:codex
-    last_modified_at: "2026-06-19T07:42:55Z"
+    last_modified_by: human:buger
+    last_modified_at: "2026-06-22T07:32:48Z"
+obligation_class: temporal_window_inclusive
 obligation_checklist:
     - boundary
     - concurrent
@@ -90,3 +91,8 @@ lifecycle:
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-03T07:40:09Z comment="Phase Q: catalog obligation attachments — adds parameterized_only_write, ordering_guarantees_documented (SQL aggregate sharded scan + DDL allowlist). See .proof/catalog-obligation-proposals.md.")'
           changed_by: human:cli
+        - date: "2026-06-22T07:32:48Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-04T16:50:31Z comment="Phase S Wave 2: attach blind-spot obligations from Wave 1 promote (cascade/fanout/clock_skew/dst/tz/temporal_window/process_exit/tls_verification/partial_progress)")'
+          changed_by: human:buger
