@@ -40,9 +40,10 @@ history:
     created_by: human:cli
     created_at: "2026-05-30T08:37:31Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-22T09:25:11Z"
+    last_modified_at: "2026-06-22T10:55:50Z"
 obligation_checklist:
     - atomicity
+    - config_schema_strict
     - errors_propagated
     - hash_format_deterministic
     - idempotency
@@ -55,6 +56,12 @@ obligation_deferrals:
       tracking: known-issue:mongo-aggregate-atomicity-fault-injection-missing
       owner: human:buger
       ki_ref: mongo-aggregate-atomicity-fault-injection-missing
+    - obligation_class: config_schema_strict
+      reason: 'Pump configuration unknown-field rejection is required but currently not implemented: mapstructure.Decode silently ignores unknown keys and operator typos until known issue mapstructure-decode-silently-drops-unknown-keys is fixed.'
+      tracking: mapstructure-decode-silently-drops-unknown-keys
+      owner: human:buger
+      ki_ref: mapstructure-decode-silently-drops-unknown-keys
+      reproducer: mapstructure-decode-silently-drops-unknown-keys
     - obligation_class: errors_propagated
       reason: Required error-propagation evidence is parked because pump config decode errors can still terminate the process.
       tracking: known-issue:pumps-logfatal-on-config-decode

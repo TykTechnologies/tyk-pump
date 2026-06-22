@@ -44,11 +44,18 @@ verification:
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:11:41Z"
-    last_modified_by: agent:codex
-    last_modified_at: "2026-06-19T12:45:03Z"
+    last_modified_by: human:buger
+    last_modified_at: "2026-06-22T10:57:37Z"
 obligation_class: atomicity
 obligation_checklist:
     - atomicity
+obligation_deferrals:
+    - obligation_class: atomicity
+      reason: System-level at-most-once atomic removal is weakened by the Pop plus Expire partial failure tracked in getanddeleteset-expire-fail-loses-records; records can be removed from Redis and then hidden from the caller when Expire fails.
+      tracking: getanddeleteset-expire-fail-loses-records
+      owner: human:buger
+      ki_ref: getanddeleteset-expire-fail-loses-records
+      reproducer: getanddeleteset-expire-fail-loses-records
 lifecycle:
     change_history:
         - date: "2026-05-29T15:46:45Z"

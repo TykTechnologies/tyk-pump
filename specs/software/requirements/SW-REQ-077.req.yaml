@@ -1,0 +1,60 @@
+id: SW-REQ-077
+version: 1
+status: approved
+priority: shall
+category: functional
+req_type: guarantee
+fretish: when elasticsearch_write_failed pumps_es shall always satisfy write_error_returned
+description: Elasticsearch WriteData shall surface Elasticsearch operator write failures, invalid record failures, and per-record indexing failures to the Pump interface caller instead of only logging them and returning nil.
+formalization_strategy: fretish
+informal_verification:
+    method: ""
+    evidence: ""
+    verified: false
+parent: INT-REQ-004
+component: pumps-es
+rationale: This isolates active Elasticsearch write-error propagation debt from SW-REQ-070's fixed shutdown/resource-lifetime defect trail while preserving a per-pump behavioral contract for backend failure observability.
+tags: []
+variables:
+    - elasticsearch_write_failed
+    - write_error_returned
+traces: {}
+verification:
+    assurance_level: B
+    formalization_status: valid
+    review:
+        status: approved
+        reviewer: human:buger
+        role: software_engineer
+        reviewed_at: "2026-06-22T11:28:56Z"
+        comment: 'Reviewed new Elasticsearch write-error propagation requirement: this is metadata-only KI-backed debt modeling for an unfixed behavior, intentionally separate from DEFECT-6''s fixed shutdown/resource-lifetime closure.'
+        fingerprint: sha256:5abfc2f6bdd287df76abc899b3bdc9184482b54af0ff8621e1c36461988c3e07
+        ai_generated: false
+history:
+    created_by: human:buger
+    created_at: "2026-06-22T11:27:23Z"
+    last_modified_by: human:buger
+    last_modified_at: "2026-06-22T11:28:56Z"
+obligation_checklist:
+    - errors_propagated
+    - partial_progress_observable
+obligation_deferrals:
+    - obligation_class: errors_propagated
+      reason: Elasticsearch WriteData and per-version processData paths log invalid-record and indexing failures but return nil to the Pump caller until elasticsearch-writedata-errors-swallowed is fixed.
+      tracking: elasticsearch-writedata-errors-swallowed
+      owner: human:buger
+      ki_ref: elasticsearch-writedata-errors-swallowed
+      reproducer: elasticsearch-writedata-errors-swallowed
+    - obligation_class: partial_progress_observable
+      reason: Elasticsearch per-record or processData failures are only logged and not surfaced as per-record partial progress until elasticsearch-writedata-errors-swallowed is fixed.
+      tracking: elasticsearch-writedata-errors-swallowed
+      owner: human:buger
+      ki_ref: elasticsearch-writedata-errors-swallowed
+      reproducer: elasticsearch-writedata-errors-swallowed
+lifecycle:
+    change_history:
+        - date: "2026-06-22T11:28:12Z"
+          from: draft
+          to: review
+          reason: New software child requirement isolates active Elasticsearch write-error propagation debt from fixed DEFECT-6 shutdown closure.
+          changed_by: human:buger

@@ -579,6 +579,7 @@ func TestTemporalStorageHandler_SetKey_EnsureConnectionSingletonAlive(t *testing
 
 // Verifies: SW-REQ-006
 // Verifies: SYS-REQ-007
+// Verifies: KI:getanddeleteset-expire-fail-loses-records
 // SW-REQ-006:error_handling:negative
 // SW-REQ-006:atomicity:negative
 // SYS-REQ-007:atomicity:negative

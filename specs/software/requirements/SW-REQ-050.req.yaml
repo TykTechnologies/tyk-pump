@@ -37,21 +37,35 @@ history:
     created_by: human:cli
     created_at: "2026-05-30T08:36:19Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-22T10:10:57Z"
+    last_modified_at: "2026-06-22T11:07:12Z"
 obligation_checklist:
+    - config_schema_strict
     - encoding_safety
     - errors_propagated
+    - external_call_failure_observable
     - external_call_timeout_bounded
     - malformed_recovers_or_errors_loudly
     - nominal
     - output_cardinality_bounded
     - process_exit_on_recoverable
 obligation_deferrals:
+    - obligation_class: config_schema_strict
+      reason: 'Pump configuration unknown-field rejection is required but currently not implemented: mapstructure.Decode silently ignores unknown keys and operator typos until known issue mapstructure-decode-silently-drops-unknown-keys is fixed.'
+      tracking: mapstructure-decode-silently-drops-unknown-keys
+      owner: human:buger
+      ki_ref: mapstructure-decode-silently-drops-unknown-keys
+      reproducer: mapstructure-decode-silently-drops-unknown-keys
     - obligation_class: errors_propagated
       reason: real untested obligation under known-issue pumps-logfatal-on-config-decode; surfaced as visible tracked debt, not an overclaimed fix
       tracking: pumps-logfatal-on-config-decode
       owner: human:buger
       ki_ref: pumps-logfatal-on-config-decode
+    - obligation_class: external_call_failure_observable
+      reason: Syslog WriteData discards fmt.Fprintf errors and returns nil, so backend write failure observability remains tracked under pump-writedata-swallows-per-batch-errors.
+      tracking: pump-writedata-swallows-per-batch-errors
+      owner: human:buger
+      ki_ref: pump-writedata-swallows-per-batch-errors
+      reproducer: pump-writedata-swallows-per-batch-errors
     - obligation_class: external_call_timeout_bounded
       reason: External backend calls remain operator-timeout dependent because timeout=0 is still accepted; this is KI-tracked until a nonzero deadline is enforced by default or Init rejects zero timeout.
       tracking: pump-no-timeout-can-block-purge-cycle

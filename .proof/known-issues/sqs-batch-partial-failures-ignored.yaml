@@ -1,0 +1,19 @@
+id: sqs-batch-partial-failures-ignored
+title: SQS SendMessageBatch partial failures are not inspected
+description: pumps/sqs.go calls SendMessageBatch and only checks the API-level error return. AWS SQS can return a successful SendMessageBatchOutput with entries in Failed; the pump does not inspect output.Failed, so partial batch delivery failure is treated as success by WriteData.
+affected_requirements:
+    - SW-REQ-055
+severity: medium
+severity_basis: risk
+risk: data_integrity
+reproducer_command: rg -n "SendMessageBatch\(|SendMessageBatchOutput|\.Failed|return nil" pumps/sqs.go
+introduced_in: inception
+mitigation: Monitor SQS dead-letter/CloudWatch failure metrics independently; keep batch sizes conservative until per-entry failures are surfaced.
+remediation: Inspect SendMessageBatchOutput.Failed and return or record a partial-progress error that identifies failed entries for retry/DLQ handling.
+owner: tyk-team
+release_disposition: ship_with_known_issue
+status: open
+history:
+    - at: "2026-06-22T11:06:36Z"
+      by: human:buger
+      action: created

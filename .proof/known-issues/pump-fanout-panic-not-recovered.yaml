@@ -4,6 +4,7 @@ description: main.go:469 spawns an inner goroutine per pump per purge cycle to i
 affected_requirements:
     - SW-REQ-001
     - SYS-REQ-004
+    - SW-REQ-075
 evidence_manifests:
     - test:pumps/fanout_panic_isolated_test.go:TestFanoutPanicIsolated_PanicInOneDoesNotStallOthers
 severity: medium
@@ -41,6 +42,10 @@ history:
       by: human:buger
       action: edit
       detail: set-release-disposition=ship_with_known_issue
+    - at: "2026-06-22T11:09:09Z"
+      by: human:buger
+      action: edit
+      detail: add-requirement
 references:
     - related-ki:no-panic-recovery-in-exec-pump-writing
 verifying_test: pumps/fanout_panic_isolated_test.go::TestFanoutPanicIsolated_PanicInOneDoesNotStallOthers

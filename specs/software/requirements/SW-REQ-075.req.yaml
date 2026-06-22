@@ -38,8 +38,32 @@ verification:
 history:
     created_by: human:cli
     created_at: "2026-06-11T16:41:40Z"
-    last_modified_by: human:cli
-    last_modified_at: "2026-06-11T16:42:59Z"
+    last_modified_by: human:buger
+    last_modified_at: "2026-06-22T11:08:09Z"
+obligation_checklist:
+    - failure_independence_proven
+    - fanout_panic_isolated
+    - partial_progress_observable
+    - per_pump_circuit_breaker
+obligation_deferrals:
+    - obligation_class: failure_independence_proven
+      reason: SW-REQ-075 claims per-backend fanout independence, but a panic inside one pump WriteData goroutine can still crash the whole process until pump-fanout-panic-not-recovered is fixed.
+      tracking: pump-fanout-panic-not-recovered
+      owner: human:buger
+      ki_ref: pump-fanout-panic-not-recovered
+      reproducer: pump-fanout-panic-not-recovered
+    - obligation_class: fanout_panic_isolated
+      reason: execPumpWriting lacks a recover barrier around the inner pump WriteData goroutine, so panic isolation remains tracked by pump-fanout-panic-not-recovered.
+      tracking: pump-fanout-panic-not-recovered
+      owner: human:buger
+      ki_ref: pump-fanout-panic-not-recovered
+      reproducer: pump-fanout-panic-not-recovered
+    - obligation_class: per_pump_circuit_breaker
+      reason: Repeated failure of one backend is still dispatched every purge cycle without a per-pump cooldown, so SW-REQ-075 fanout independence lacks circuit-breaker behavior until pump-no-per-pump-circuit-breaker is fixed.
+      tracking: pump-no-per-pump-circuit-breaker
+      owner: human:buger
+      ki_ref: pump-no-per-pump-circuit-breaker
+      reproducer: pump-no-per-pump-circuit-breaker
 lifecycle:
     change_history:
         - date: "2026-06-11T16:42:53Z"

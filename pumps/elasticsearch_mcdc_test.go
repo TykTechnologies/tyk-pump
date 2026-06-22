@@ -703,7 +703,9 @@ func TestElasticsearchPump_GetName_GetEnvPrefix(t *testing.T) {
 // in WriteData — an empty slice must not call processData.
 //
 // Verifies: INT-REQ-004
+// Verifies: SW-REQ-077
 // MCDC INT-REQ-004: contract_honoured=T, pump_methods_called=T => TRUE
+// MCDC SW-REQ-077: elasticsearch_write_failed=F, write_error_returned=F => TRUE
 func TestElasticsearchPump_WriteData_EmptySlice(t *testing.T) {
 	pump := esInit(t, map[string]interface{}{"disable_bulk": true})
 	ctx, cancel := context.WithTimeout(t.Context(), 5*time.Second)
@@ -769,7 +771,12 @@ func TestPrintPurgedBulkRecords(t *testing.T) {
 // an error.
 //
 // Verifies: SW-REQ-070
+// Verifies: SW-REQ-077
+// Verifies: KI:elasticsearch-writedata-errors-swallowed
+// Reproduces: elasticsearch-writedata-errors-swallowed
 // SW-REQ-070:boundary:negative
+// MCDC SW-REQ-077: elasticsearch_write_failed=T, write_error_returned=F => FALSE
+//mcdc:ignore:known-issue SW-REQ-077: elasticsearch_write_failed=T, write_error_returned=T => TRUE -- the ES write-failure success row cannot be witnessed until WriteData propagates processData/indexing errors instead of returning nil; this test is the tripwire for the shipped KI [ki: elasticsearch-writedata-errors-swallowed] [reviewed: human:buger]
 func TestElasticsearchPump_WriteData_V7ProcessDataIndexError(t *testing.T) {
 	idx := esIndexName(t, "tyk_analytics_strict")
 	pump := esInit(t, map[string]interface{}{

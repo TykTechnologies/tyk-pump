@@ -1,0 +1,20 @@
+id: http-retry-post-idempotency-unenforced
+title: HTTP retry helper retries POSTs without an idempotency contract
+description: retry/http-retry.go retries retryable transport errors, HTTP 5xx, and 429 responses by replaying the original request body. Splunk uses this helper for POST delivery, but the helper and Splunk requirement do not require an idempotency key, server-side dedupe contract, or duplicate-output bound. If the upstream accepts a POST and the response fails before the client observes success, a retry can duplicate the event.
+affected_requirements:
+    - SW-REQ-030
+    - SW-REQ-048
+severity: medium
+severity_basis: risk
+risk: data_integrity
+reproducer_command: rg -n "func \(s \*BackoffHTTPRetry\) Send|RetryNotify|StatusTooManyRequests|StatusInternalServerError|http.MethodPost|NewRequest" retry/http-retry.go pumps/splunk.go
+introduced_in: inception
+mitigation: Configure downstream receivers with deduplication where available and tune retry counts conservatively for non-idempotent POST sinks.
+remediation: 'Declare the retry idempotency policy explicitly: either require idempotency keys/deduplication for replayed POST requests or restrict retries to failure modes that cannot have reached the receiver.'
+owner: tyk-team
+release_disposition: ship_with_known_issue
+status: open
+history:
+    - at: "2026-06-22T11:03:38Z"
+      by: human:buger
+      action: created

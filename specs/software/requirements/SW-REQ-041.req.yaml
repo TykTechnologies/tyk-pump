@@ -37,9 +37,10 @@ history:
     created_by: human:cli
     created_at: "2026-05-30T08:35:25Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-22T10:10:55Z"
+    last_modified_at: "2026-06-22T10:55:39Z"
 obligation_checklist:
     - concurrent
+    - config_schema_strict
     - deadlock_recovery
     - external_call_timeout_bounded
     - input_size_bounded
@@ -51,6 +52,12 @@ obligation_checklist:
     - parameterized_only_write
     - temporal_window_inclusive
 obligation_deferrals:
+    - obligation_class: config_schema_strict
+      reason: 'Pump configuration unknown-field rejection is required but currently not implemented: mapstructure.Decode silently ignores unknown keys and operator typos until known issue mapstructure-decode-silently-drops-unknown-keys is fixed.'
+      tracking: mapstructure-decode-silently-drops-unknown-keys
+      owner: human:buger
+      ki_ref: mapstructure-decode-silently-drops-unknown-keys
+      reproducer: mapstructure-decode-silently-drops-unknown-keys
     - obligation_class: deadlock_recovery
       reason: real product gap under known-issue sql-aggregate-no-deadlock-retry; surfaced as visible tracked debt, not an overclaimed fix
       tracking: sql-aggregate-no-deadlock-retry

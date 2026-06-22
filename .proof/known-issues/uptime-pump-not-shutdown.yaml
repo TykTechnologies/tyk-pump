@@ -1,0 +1,20 @@
+id: uptime-pump-not-shutdown
+title: Uptime pump is not included in graceful shutdown
+description: main.go:335 checkShutdown iterates only the global Pumps slice and calls Shutdown on configured analytics pumps. initialiseUptimePump stores the separate uptime backend in UptimePump, but checkShutdown never calls UptimePump.Shutdown, so uptime backend resources can remain open through process shutdown.
+affected_requirements:
+    - SW-REQ-004
+    - SYS-REQ-021
+severity: medium
+severity_basis: risk
+risk: availability
+reproducer_command: rg -n "func checkShutdown|for _, pmp := range Pumps|UptimePump\.Shutdown|initialiseUptimePump" main.go
+introduced_in: inception
+mitigation: Rely on process termination to close uptime backend sockets and avoid long-lived embedded shutdown scenarios where process exit is delayed.
+remediation: Include the configured UptimePump in graceful shutdown with bounded timeout/error reporting, or make uptime pump lifecycle part of the same pump registry as analytics pumps.
+owner: tyk-team
+release_disposition: ship_with_known_issue
+status: open
+history:
+    - at: "2026-06-22T11:05:05Z"
+      by: human:buger
+      action: created

@@ -40,13 +40,20 @@ history:
     created_by: human:cli
     created_at: "2026-05-30T08:37:50Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-19T20:08:14Z"
+    last_modified_at: "2026-06-22T10:55:49Z"
 obligation_checklist:
     - boundary
+    - config_schema_strict
     - denial_of_service_resistant
     - errors_propagated
     - malformed_recovers_or_errors_loudly
 obligation_deferrals:
+    - obligation_class: config_schema_strict
+      reason: 'Pump configuration unknown-field rejection is required but currently not implemented: mapstructure.Decode silently ignores unknown keys and operator typos until known issue mapstructure-decode-silently-drops-unknown-keys is fixed.'
+      tracking: mapstructure-decode-silently-drops-unknown-keys
+      owner: human:buger
+      ki_ref: mapstructure-decode-silently-drops-unknown-keys
+      reproducer: mapstructure-decode-silently-drops-unknown-keys
     - obligation_class: errors_propagated
       reason: Required error-propagation evidence is parked because pump config decode errors can still terminate the process.
       tracking: known-issue:pumps-logfatal-on-config-decode

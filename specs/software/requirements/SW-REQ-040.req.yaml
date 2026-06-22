@@ -37,10 +37,11 @@ history:
     created_by: human:cli
     created_at: "2026-05-30T08:35:20Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-22T10:10:55Z"
+    last_modified_at: "2026-06-22T10:55:40Z"
 obligation_checklist:
     - boundary
     - concurrent
+    - config_schema_strict
     - connection_leak_free
     - errors_propagated
     - external_call_timeout_bounded
@@ -60,13 +61,19 @@ obligation_deferrals:
       tracking: sql-background-index-concurrency-unbounded
       owner: agent:codex
       ki_ref: sql-background-index-concurrency-unbounded
+    - obligation_class: config_schema_strict
+      reason: 'Pump configuration unknown-field rejection is required but currently not implemented: mapstructure.Decode silently ignores unknown keys and operator typos until known issue mapstructure-decode-silently-drops-unknown-keys is fixed.'
+      tracking: mapstructure-decode-silently-drops-unknown-keys
+      owner: human:buger
+      ki_ref: mapstructure-decode-silently-drops-unknown-keys
+      reproducer: mapstructure-decode-silently-drops-unknown-keys
     - obligation_class: errors_propagated
       reason: 'SQL standard WriteData logs per-batch insert errors but returns nil, so the caller observes success until pump-writedata-swallows-per-batch-errors is fixed.'
       tracking: pump-writedata-swallows-per-batch-errors
       owner: agent:codex
       ki_ref: pump-writedata-swallows-per-batch-errors
     - obligation_class: external_call_timeout_bounded
-      reason: 'External backend calls remain operator-timeout dependent because timeout=0 is still accepted; this is KI-tracked until a nonzero deadline is enforced by default or Init rejects zero timeout.'
+      reason: External backend calls remain operator-timeout dependent because timeout=0 is still accepted; this is KI-tracked until a nonzero deadline is enforced by default or Init rejects zero timeout.
       tracking: pump-no-timeout-can-block-purge-cycle
       owner: human:buger
       ki_ref: pump-no-timeout-can-block-purge-cycle

@@ -3,6 +3,7 @@ title: Purge dispatcher has no per-pump circuit breaker; failing pumps invoked e
 description: main.go execPumpWriting dispatches to every configured pump every purge cycle with no consecutive-failure tracking and no cooldown. A persistently failing pump receives N writes across N purge cycles (Wave 3c TestPerPumpCircuitBreaker_NoBackoffOnRepeatedFailure confirmed 100/100 invocations across 100 cycles). Healthy pumps still make progress — the cascade is contained by the per-pump goroutine fan-out — so the cost is observability noise (one error log per cycle per failing pump) and wasted CPU/network on the doomed dispatch, not data loss or correctness regression. Severity is therefore low. The reproducer test acts as a regression guard if a circuit breaker is added in the future.
 affected_requirements:
     - SW-REQ-001
+    - SW-REQ-075
 evidence_manifests:
     - test:pumps/cascade_circuit_breaker_test.go:TestPerPumpCircuitBreaker_NoBackoffOnRepeatedFailure
 severity: low
@@ -28,4 +29,8 @@ history:
       by: human:buger
       action: edit
       detail: set-severity-basis=risk,set-risk
+    - at: "2026-06-22T11:09:09Z"
+      by: human:buger
+      action: edit
+      detail: add-requirement
 verifying_test: pumps/cascade_circuit_breaker_test.go::TestPerPumpCircuitBreaker_NoBackoffOnRepeatedFailure

@@ -76,6 +76,8 @@ func (p *failingMockPump) Shutdown() error {
 // the whole cycle when one pump fails, item (b) fails.
 // SW-REQ-001:partial_progress_observable:nominal
 // SW-REQ-001:partial_progress_observable:scenario
+// SW-REQ-075:partial_progress_observable:nominal
+// SW-REQ-075:partial_progress_observable:scenario
 // STK-REQ-002:error_handling:negative
 func TestPartialProgressObservable_PerPumpFailureLogged(t *testing.T) {
 	originalOut := log.Out

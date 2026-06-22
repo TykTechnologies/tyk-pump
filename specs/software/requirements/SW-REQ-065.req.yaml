@@ -37,9 +37,10 @@ history:
     created_by: human:cli
     created_at: "2026-05-30T08:39:32Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-22T09:25:11Z"
+    last_modified_at: "2026-06-22T10:55:43Z"
 obligation_checklist:
     - concurrent
+    - config_schema_strict
     - forward_compatible
     - idempotency
     - malformed_recovers_or_errors_loudly
@@ -54,8 +55,14 @@ obligation_deferrals:
       owner: agent:codex
       ki_ref: sql-aggregate-sharded-shared-db-race
       reproducer: rg -n "c\.db = c\.db\.Table|func \(c \*SQLAggregatePump\) ensure(Index|Table)|CREATE INDEX|backgroundIndexCreated" pumps/sql_aggregate.go
+    - obligation_class: config_schema_strict
+      reason: 'Pump configuration unknown-field rejection is required but currently not implemented: mapstructure.Decode silently ignores unknown keys and operator typos until known issue mapstructure-decode-silently-drops-unknown-keys is fixed.'
+      tracking: mapstructure-decode-silently-drops-unknown-keys
+      owner: human:buger
+      ki_ref: mapstructure-decode-silently-drops-unknown-keys
+      reproducer: mapstructure-decode-silently-drops-unknown-keys
     - obligation_class: forward_compatible
-      reason: 'SQL aggregate table creation has no explicit schema version or forward-compatibility policy, so migration compatibility remains tracked under the SQL schema known issue.'
+      reason: SQL aggregate table creation has no explicit schema version or forward-compatibility policy, so migration compatibility remains tracked under the SQL schema known issue.
       tracking: sql-schema-no-version-policy
       owner: human:buger
       ki_ref: sql-schema-no-version-policy

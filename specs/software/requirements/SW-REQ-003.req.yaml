@@ -36,10 +36,18 @@ verification:
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:13Z"
-    last_modified_by: human:cli
-    last_modified_at: "2026-06-02T14:19:01Z"
+    last_modified_by: human:buger
+    last_modified_at: "2026-06-22T11:04:54Z"
 obligation_checklist:
+    - errors_propagated
     - nominal
+obligation_deferrals:
+    - obligation_class: errors_propagated
+      reason: initialiseUptimePump ignores the UptimePump.Init return error, so startup can continue after a failed uptime backend initialization until uptime-pump-init-error-ignored is fixed.
+      tracking: uptime-pump-init-error-ignored
+      owner: human:buger
+      ki_ref: uptime-pump-init-error-ignored
+      reproducer: uptime-pump-init-error-ignored
 lifecycle:
     change_history:
         - date: "2026-05-29T15:46:43Z"

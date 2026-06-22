@@ -1,0 +1,20 @@
+id: uptime-pump-init-error-ignored
+title: Uptime pump Init return errors are ignored
+description: main.go:239 initialiseUptimePump calls UptimePump.Init for the SQL or Mongo uptime pump but does not check the returned error before logging that the uptime pump was initialized. A backend initialization failure can therefore leave uptime forwarding misconfigured while startup continues without propagating the failure.
+affected_requirements:
+    - SW-REQ-003
+    - SYS-REQ-021
+severity: medium
+severity_basis: risk
+risk: correctness
+reproducer_command: rg -n "func initialiseUptimePump|UptimePump\.Init\(|Init Uptime Pump" main.go
+introduced_in: inception
+mitigation: Disable uptime purging when backend configuration is not validated externally, or verify uptime backend connectivity independently before starting the pump.
+remediation: Check the UptimePump.Init return value and either fail startup with a typed error or mark uptime forwarding unavailable in an observable way.
+owner: tyk-team
+release_disposition: ship_with_known_issue
+status: open
+history:
+    - at: "2026-06-22T11:04:45Z"
+      by: human:buger
+      action: created

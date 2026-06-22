@@ -40,11 +40,12 @@ history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:16Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-22T06:47:49Z"
+    last_modified_at: "2026-06-22T11:03:45Z"
 obligation_class: malformed_input
 obligation_checklist:
     - dst_transition_safe
     - error_handling
+    - idempotency
     - input_size_bounded
     - malformed_input
     - retry_budget_bounded
@@ -55,6 +56,12 @@ obligation_deferrals:
       tracking: elapsed-timesince-dst-obligation-misattributed
       owner: agent:codex
       ki_ref: elapsed-timesince-dst-obligation-misattributed
+    - obligation_class: idempotency
+      reason: 'HTTP retry can replay POST bodies after retryable failures without a required idempotency key or downstream deduplication contract; duplicate delivery remains tracked by http-retry-post-idempotency-unenforced.'
+      tracking: http-retry-post-idempotency-unenforced
+      owner: human:buger
+      ki_ref: http-retry-post-idempotency-unenforced
+      reproducer: http-retry-post-idempotency-unenforced
     - obligation_class: input_size_bounded
       reason: 'real untested obligation under known-issue retry-buffers-full-request-body-in-memory; surfaced as visible tracked debt, not an overclaimed fix'
       tracking: retry-buffers-full-request-body-in-memory

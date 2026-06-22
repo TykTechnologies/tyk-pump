@@ -3,6 +3,7 @@ title: Kafka pump Init log.Fatals on SCRAM mechanism init and timeout parse erro
 description: 'pumps/kafka.go:142 (k.log.Fatal on scram.Mechanism error) and pumps/kafka.go:156 (k.log.Fatal on strconv.ParseFloat error for timeout) both call os.Exit(1) when their inputs are malformed. This violates SYS-REQ-004 per-backend failure independence: a single typo in sasl_password or a bad timeout string kills the entire tyk-pump process, taking down every sibling pump. The decode-fatal arm at line 103 is tracked under the broader KI pumps-logfatal-on-config-decode; this KI captures the kafka-specific value-validation fatals.'
 affected_requirements:
     - SYS-REQ-004
+    - SW-REQ-021
 severity: medium
 severity_basis: risk
 risk: availability
@@ -26,3 +27,7 @@ history:
       by: human:buger
       action: edit
       detail: set-severity-basis=risk,set-risk
+    - at: "2026-06-22T10:57:37Z"
+      by: human:buger
+      action: edit
+      detail: add-requirement

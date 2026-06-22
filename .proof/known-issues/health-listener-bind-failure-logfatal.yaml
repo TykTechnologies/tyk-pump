@@ -1,0 +1,20 @@
+id: health-listener-bind-failure-logfatal
+title: Health listener bind failure exits the whole process
+description: server/server.go:56 calls log.Fatal when http.ListenAndServe returns an error. A recoverable health listener bind failure such as an occupied port or invalid listener configuration exits the entire pump process rather than surfacing the health endpoint failure while preserving already configured pump behavior.
+affected_requirements:
+    - SW-REQ-032
+    - SYS-REQ-012
+severity: medium
+severity_basis: risk
+risk: availability
+reproducer_command: rg -n "ListenAndServe|Fatal\(\"Error serving health check endpoint" server/server.go
+introduced_in: inception
+mitigation: Reserve the configured health port and rely on process supervision to restart if the listener cannot bind.
+remediation: Return the listener error to startup orchestration or run the health server behind an isolated error path that reports health-listener failure without os.Exit for otherwise recoverable bind errors.
+owner: tyk-team
+release_disposition: ship_with_known_issue
+status: open
+history:
+    - at: "2026-06-22T11:03:16Z"
+      by: human:buger
+      action: created

@@ -3,6 +3,11 @@ title: GetAndDeleteSet loses records when Expire fails after successful Pop
 description: storage/temporal_storage.go:288 calls r.list.Pop which removes records from Redis, then storage/temporal_storage.go:294 calls r.kv.Expire on the remainder. If Expire fails, the function returns (nil, err) at line 296. The records LPOPped at line 288 have already been removed from Redis, but the caller at main.go:278 only logs the error and skips the batch (main.go:280-283). Those popped records are silently lost. This violates INT-REQ-005's at-most-once atomic-pop contract on the 'or zero times' boundary because the records were committed-out without any downstream commit.
 affected_requirements:
     - INT-REQ-005
+    - SW-REQ-006
+    - SYS-REQ-007
+    - STK-REQ-002
+evidence_manifests:
+    - test:storage/temporal_storage_mcdc_test.go:TestTemporalStorageHandler_GetAndDeleteSet_ExpireFailureDecision
 severity: medium
 severity_basis: risk
 risk: data_integrity
@@ -25,3 +30,15 @@ history:
       by: human:buger
       action: edit
       detail: set-severity-basis=risk,set-risk
+    - at: "2026-06-22T10:57:37Z"
+      by: human:buger
+      action: edit
+      detail: add-requirement
+    - at: "2026-06-22T11:01:40Z"
+      by: human:buger
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-22T11:02:25Z"
+      by: human:buger
+      action: edit
+      detail: add-requirement

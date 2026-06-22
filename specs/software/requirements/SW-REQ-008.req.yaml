@@ -37,10 +37,32 @@ history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:14Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-16T20:38:36Z"
+    last_modified_at: "2026-06-22T11:04:11Z"
 obligation_checklist:
     - encoding_safety
+    - malformed_recovers_or_errors_loudly
+    - nil_safety
+    - panic_free_input_handling
     - snapshot_wire_format_compatible
+obligation_deferrals:
+    - obligation_class: malformed_recovers_or_errors_loudly
+      reason: Protobuf Decode and record transform do not validate malformed input type or required nested message presence before dereference; protobuf-decode-nil-submessage-panic tracks the required-but-unfixed behavior.
+      tracking: protobuf-decode-nil-submessage-panic
+      owner: human:buger
+      ki_ref: protobuf-decode-nil-submessage-panic
+      reproducer: protobuf-decode-nil-submessage-panic
+    - obligation_class: nil_safety
+      reason: Protobuf Decode and record transform do not validate malformed input type or required nested message presence before dereference; protobuf-decode-nil-submessage-panic tracks the required-but-unfixed behavior.
+      tracking: protobuf-decode-nil-submessage-panic
+      owner: human:buger
+      ki_ref: protobuf-decode-nil-submessage-panic
+      reproducer: protobuf-decode-nil-submessage-panic
+    - obligation_class: panic_free_input_handling
+      reason: Protobuf Decode and record transform do not validate malformed input type or required nested message presence before dereference; protobuf-decode-nil-submessage-panic tracks the required-but-unfixed behavior.
+      tracking: protobuf-decode-nil-submessage-panic
+      owner: human:buger
+      ki_ref: protobuf-decode-nil-submessage-panic
+      reproducer: protobuf-decode-nil-submessage-panic
 lifecycle:
     change_history:
         - date: "2026-05-29T15:46:44Z"

@@ -1,0 +1,29 @@
+id: elasticsearch-writedata-errors-swallowed
+title: Elasticsearch WriteData logs process errors but returns success
+description: pumps/elasticsearch.go:431 calls operator.processData without checking its returned error, while each Elasticsearch operator logs bad record or index errors and returns nil. Non-bulk indexing failures and invalid records are therefore visible only in logs; the purge caller sees WriteData return nil and records the pump write as successful.
+affected_requirements:
+    - SW-REQ-077
+evidence_manifests:
+    - test:pumps/elasticsearch_mcdc_test.go:TestElasticsearchPump_WriteData_V7ProcessDataIndexError
+severity: medium
+severity_basis: risk
+risk: data_integrity
+reproducer_command: rg -n "operator\.processData\(|func \(e Elasticsearch[0-9]Operator\) processData|Error while writing|return nil" pumps/elasticsearch.go
+introduced_in: inception
+mitigation: Monitor Elasticsearch pump logs and backend rejected/indexing metrics independently; avoid relying on WriteData nil as proof of per-record success.
+remediation: Propagate processData errors from WriteData and aggregate per-record indexing failures into a typed partial-progress result or retry/DLQ path.
+owner: tyk-team
+release_disposition: ship_with_known_issue
+status: open
+history:
+    - at: "2026-06-22T11:06:37Z"
+      by: human:buger
+      action: created
+    - at: "2026-06-22T11:28:10Z"
+      by: human:buger
+      action: edit
+      detail: add-requirement,remove-requirement
+    - at: "2026-06-22T11:35:30Z"
+      by: human:buger
+      action: edit
+      detail: add-evidence-manifest

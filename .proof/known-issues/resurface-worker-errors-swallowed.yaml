@@ -1,0 +1,19 @@
+id: resurface-worker-errors-swallowed
+title: Resurface worker logs send and parse errors without surfacing WriteData failure
+description: pumps/resurface.go sends batches into an internal worker channel and returns from WriteData after enqueue. The worker logs decode/map/send errors but has no error channel back to WriteData, so per-record Resurface submission failures are not propagated or accounted as partial progress.
+affected_requirements:
+    - SW-REQ-054
+severity: medium
+severity_basis: risk
+risk: data_integrity
+reproducer_command: rg -n "func \(rp \*ResurfacePump\) worker|rp\.data <- data|Error decoding analytic record|rp\.log\.Error\(err\)|func \(rp \*ResurfacePump\) WriteData" pumps/resurface.go
+introduced_in: inception
+mitigation: Monitor Resurface pump logs and downstream ingestion metrics; keep queue pressure low so failures are operator-visible before data loss accumulates.
+remediation: Return a typed enqueue/submission error from WriteData or add a worker error accounting channel with partial-progress metrics and retry/DLQ handling.
+owner: tyk-team
+release_disposition: ship_with_known_issue
+status: open
+history:
+    - at: "2026-06-22T11:06:37Z"
+      by: human:buger
+      action: created
