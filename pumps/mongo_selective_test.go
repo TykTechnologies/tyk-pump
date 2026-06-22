@@ -226,6 +226,7 @@ func TestEnsureIndexes(t *testing.T) {
 }
 
 // Verifies: SW-REQ-035
+// SW-REQ-035:output_cardinality_bounded:nominal
 // MCDC SW-REQ-035: org_id_present=F, record_routed_to_org_collection=F => TRUE
 // MCDC SW-REQ-035: org_id_present=T, record_routed_to_org_collection=T => TRUE
 func TestWriteData(t *testing.T) {

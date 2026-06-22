@@ -1201,6 +1201,7 @@ func (m *timestreamWriteRecordsMock) WriteRecords(ctx context.Context, params *t
 //
 // Verifies: SW-REQ-057
 // SW-REQ-057:errors_propagated:nominal
+// SW-REQ-057:output_cardinality_bounded:nominal
 // MCDC SW-REQ-057: batch_size_exceeded=F, new_batch_started=F => TRUE
 // MCDC SW-REQ-057: batch_size_exceeded=T, new_batch_started=F => FALSE
 // MCDC SW-REQ-057: batch_size_exceeded=T, new_batch_started=T => TRUE

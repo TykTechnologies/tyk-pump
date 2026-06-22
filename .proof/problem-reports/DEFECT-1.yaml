@@ -65,6 +65,10 @@ disposition:
     known_issues:
         - mapstructure-decode-silently-drops-unknown-keys
         - mcp-mongo-aggregate-atomicity-fault-injection-missing
+        # Overlap-only link required by problem_reports_reviewed because this
+        # covered_by_requirement report and the active KI share SW-REQ-039.
+        # It is not the root cause of this historical cross-API merge defect.
+        - pump-no-timeout-can-block-purge-cycle
     evidence:
         verified_by:
             - pumps/mcp_mongo_aggregate_test.go:TestMCPMongoAggregatePump_WriteData_PerAPIPartitioning
@@ -92,3 +96,7 @@ history:
         // SW-REQ-039:edge_case:example. Test PASSES against current code (the
         owner_apiid upsert key holds): two APIs sharing one (org,timestamp)
         produce two docs with per-api hit counts {2,5}, not one merged {7}.
+    - at: "2026-06-22T00:00:00Z"
+      by: agent:codex
+      action: linked_known_issue
+      detail: Linked pump-no-timeout-can-block-purge-cycle as overlapping active backend-timeout debt on SW-REQ-039.

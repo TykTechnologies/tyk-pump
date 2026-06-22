@@ -1,0 +1,51 @@
+id: output_cardinality_bounded
+name: Output cardinality bounded
+category: domain
+status: active
+summary: A pump shall declare and enforce how many downstream writes, requests, or messages each accepted input record may produce; duplicate or undeclared extra outputs are forbidden.
+description: Backend pumps may write one downstream record per accepted analytics record, aggregate many inputs into fewer writes, split one batch into bounded chunks, or intentionally fan a record to multiple configured destinations. The contract shall make that cardinality explicit and tests shall prove the implementation cannot silently emit more downstream records or requests than the declared shape permits. Where duplicates are an accepted at-least-once behavior, the requirement shall say so and tie the behavior to idempotency or operator-visible retry semantics.
+applies_when:
+  description: a requirement sends analytics records to a downstream backend, queue, file, metric sink, or HTTP API where duplicate, missing, or extra writes affect billing, dashboards, alerts, or downstream load
+  trigger_phrases:
+    - output count
+    - downstream records
+    - duplicate writes
+    - batch split
+    - one request per record
+    - aggregation cardinality
+    - record count
+example_req: |-
+  When a pump accepts N non-filtered analytics records, it shall emit exactly
+  the documented downstream shape: N single-record writes, ceil(N/batch_size)
+  batch requests carrying N total records, or one aggregate write per declared
+  grouping key. It shall not emit undeclared duplicate records.
+if_missing: |-
+  A reconnect, retry, recursive fallback, or batching bug can multiply records
+  silently. Operators see inflated traffic counts, billing mismatches, alert
+  storms, or unnecessary downstream load while the pump reports success.
+recommended_evidence:
+  - kind: scenario
+    note: Scenario test feeds a known number of accepted records and asserts the downstream fake observed exactly the declared request/message/write count and total record count.
+  - kind: negative
+    note: Regression test covers retry, reconnect, nil-client, partial-failure, or malformed-input paths that previously could duplicate records.
+  - kind: review
+    note: Review documents the declared cardinality for filtered, batched, aggregate, and retry paths, including any intentional at-least-once duplicate policy.
+frameworks:
+  - id: CWE
+    refs:
+      - CWE-703
+      - CWE-755
+      - CWE-770
+  - id: NIST-800-53
+    refs:
+      - SI-13
+      - AU-12
+related_classes:
+  - id: idempotency
+    relationship: complements
+  - id: input_size_bounded
+    relationship: complements
+  - id: back_pressure_bounded
+    relationship: complements
+  - id: errors_propagated
+    relationship: complements

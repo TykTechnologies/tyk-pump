@@ -188,6 +188,7 @@ func TestHybridPumpInit(t *testing.T) {
 
 // Verifies: SW-REQ-029
 // SW-REQ-029:errors_propagated:nominal
+// SW-REQ-029:output_cardinality_bounded:nominal
 func TestHybridPumpWriteData(t *testing.T) {
 	//nolint:govet
 	tcs := []struct {

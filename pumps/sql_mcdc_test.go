@@ -385,6 +385,7 @@ func newSQLPumpForDialect(t *testing.T, dc dialectCase, table string, sharded bo
 //   - The MCP-record skip branch in WriteData (rec.IsMCPRecord() == true)
 //
 // Verifies: SW-REQ-040
+// SW-REQ-040:output_cardinality_bounded:nominal
 // MCDC SW-REQ-040: day_sliced_routing=F, table_sharding=F => TRUE
 // MCDC SW-REQ-040: day_sliced_routing=F, table_sharding=T => FALSE
 // MCDC SW-REQ-040: day_sliced_routing=T, table_sharding=T => TRUE
@@ -856,6 +857,7 @@ func newSQLAggregatePumpForDialect(t *testing.T, dc dialectCase, sharded bool) *
 //
 // Verifies: SW-REQ-041
 // Verifies: SW-REQ-064
+// SW-REQ-041:output_cardinality_bounded:nominal
 // MCDC SW-REQ-041: day_sliced_routing=F, table_sharding=F => TRUE
 // MCDC SW-REQ-041: day_sliced_routing=F, table_sharding=T => FALSE
 // MCDC SW-REQ-041: day_sliced_routing=T, table_sharding=T => TRUE
@@ -974,6 +976,7 @@ func TestMCDC_SQLAggregatePump_EnsureIndex_OmitOnExisting(t *testing.T) {
 //   - non-sharded `i = dataLen` write
 //
 // Verifies: SW-REQ-042
+// SW-REQ-042:output_cardinality_bounded:nominal
 func TestMCDC_GraphSQLPump_WriteRoundTrip(t *testing.T) {
 	for _, dc := range dialectCases() {
 		dc := dc
@@ -1110,6 +1113,7 @@ func TestMCDC_GraphSQLPump_Sharded(t *testing.T) {
 // MySQL is skipped due to KI sql-aggregate-mysql-excluded-keyword-broken.
 //
 // Verifies: SW-REQ-043
+// SW-REQ-043:output_cardinality_bounded:nominal
 func TestMCDC_GraphSQLAggregatePump_WriteRoundTrip(t *testing.T) {
 	for _, dc := range dialectCases() {
 		dc := dc
@@ -1166,6 +1170,7 @@ func TestMCDC_GraphSQLAggregatePump_WriteRoundTrip(t *testing.T) {
 // mysql/postgres arms so the round-trip is exercised under real schemas.
 //
 // Verifies: SW-REQ-044
+// SW-REQ-044:output_cardinality_bounded:nominal
 func TestMCDC_MCPSQLPump_WriteRoundTrip(t *testing.T) {
 	for _, dc := range dialectCases() {
 		dc := dc
@@ -1221,6 +1226,7 @@ func TestMCDC_MCPSQLPump_WriteRoundTrip(t *testing.T) {
 //     IF NOT EXISTS not accepted by older MySQL releases)
 //
 // Verifies: SW-REQ-045
+// SW-REQ-045:output_cardinality_bounded:nominal
 func TestMCDC_MCPSQLAggregatePump_WriteRoundTrip(t *testing.T) {
 	for _, dc := range dialectCases() {
 		dc := dc

@@ -37,13 +37,15 @@ history:
     created_by: human:cli
     created_at: "2026-05-30T08:35:01Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-20T18:28:00Z"
+    last_modified_at: "2026-06-22T10:10:54Z"
 obligation_checklist:
     - cancellation_observed
     - concurrent
     - errors_propagated
+    - external_call_timeout_bounded
     - malformed_recovers_or_errors_loudly
     - nominal
+    - output_cardinality_bounded
     - query_timeout_bounded
 obligation_deferrals:
     - obligation_class: cancellation_observed
@@ -58,6 +60,12 @@ obligation_deferrals:
       owner: agent:codex
       ki_ref: mongo-pump-ignores-caller-context
       reproducer: mongo-pump-ignores-caller-context static rg tripwire
+    - obligation_class: external_call_timeout_bounded
+      reason: External backend calls remain operator-timeout dependent because timeout=0 is still accepted; this is KI-tracked until a nonzero deadline is enforced by default or Init rejects zero timeout.
+      tracking: pump-no-timeout-can-block-purge-cycle
+      owner: human:buger
+      ki_ref: pump-no-timeout-can-block-purge-cycle
+      reproducer: pump-no-timeout-can-block-purge-cycle
     - obligation_class: malformed_recovers_or_errors_loudly
       reason: real untested obligation under known-issue mapstructure-decode-silently-drops-unknown-keys; surfaced as visible tracked debt, not an overclaimed fix
       tracking: mapstructure-decode-silently-drops-unknown-keys

@@ -36,14 +36,16 @@ verification:
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:35:48Z"
-    last_modified_by: agent:codex
-    last_modified_at: "2026-06-19T14:17:21Z"
+    last_modified_by: human:buger
+    last_modified_at: "2026-06-22T10:10:56Z"
 obligation_checklist:
     - concurrent
     - connection_leak_free
+    - external_call_timeout_bounded
     - input_size_bounded
     - malformed_input
     - malformed_recovers_or_errors_loudly
+    - output_cardinality_bounded
     - panic_free_input_handling
     - parameterized_only_write
     - temporal_window_inclusive
@@ -53,6 +55,12 @@ obligation_deferrals:
       tracking: mcp-sql-aggregate-background-index-concurrency-unbounded
       owner: agent:codex
       ki_ref: mcp-sql-aggregate-background-index-concurrency-unbounded
+    - obligation_class: external_call_timeout_bounded
+      reason: External backend calls remain operator-timeout dependent because timeout=0 is still accepted; this is KI-tracked until a nonzero deadline is enforced by default or Init rejects zero timeout.
+      tracking: pump-no-timeout-can-block-purge-cycle
+      owner: human:buger
+      ki_ref: pump-no-timeout-can-block-purge-cycle
+      reproducer: pump-no-timeout-can-block-purge-cycle
     - obligation_class: input_size_bounded
       reason: real SQL-family batch-size validation gap under known-issue sql-batch-size-zero-infinite-loop; surfaced as visible tracked debt, not an overclaimed fix
       tracking: sql-batch-size-zero-infinite-loop

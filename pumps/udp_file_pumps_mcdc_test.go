@@ -133,6 +133,7 @@ func drainBytes(ch <-chan []byte, timeout time.Duration) [][]byte {
 //   - Effect: a statsd packet arrives on the listener within the timeout.
 //
 // Verifies: SW-REQ-023
+// SW-REQ-023:output_cardinality_bounded:nominal
 func TestStatsdPump_RoundTrip(t *testing.T) {
 	addr, sink := newUDPSink(t)
 
@@ -601,6 +602,7 @@ func TestDogStatsdPump_Shutdown_Unbuffered(t *testing.T) {
 // registry to isolate from the global registry.
 //
 // Verifies: SW-REQ-024
+// SW-REQ-024:output_cardinality_bounded:nominal
 func TestPrometheusPump_RoundTrip_Scrape(t *testing.T) {
 	// Build a fresh pump with a custom registry to avoid global state.
 	p := &PrometheusPump{}
@@ -828,6 +830,7 @@ func TestSyslogPump_initConfigs_KeepsConfigured(t *testing.T) {
 // single-record happy-path test.
 //
 // Verifies: SW-REQ-050
+// SW-REQ-050:output_cardinality_bounded:nominal
 func TestSyslogPump_WriteData_ManyRecords(t *testing.T) {
 	addr, sink := newUDPSink(t)
 	pump := &SyslogPump{
@@ -876,6 +879,7 @@ func graylogAddrParts(t *testing.T, addr string) (string, int) {
 // WriteData (only configured tags are forwarded into the GELF message).
 //
 // Verifies: SW-REQ-049
+// SW-REQ-049:output_cardinality_bounded:nominal
 func TestGraylogPump_RoundTrip_TagFiltering(t *testing.T) {
 	addr, sink := newUDPSink(t)
 	host, port := graylogAddrParts(t, addr)
@@ -983,6 +987,7 @@ func TestGraylogPump_WriteData_FatalContract_KI(t *testing.T) {
 // row.
 //
 // Verifies: SW-REQ-025
+// SW-REQ-025:output_cardinality_bounded:nominal
 func TestCSVPump_RoundTrip_TempDir(t *testing.T) {
 	dir := t.TempDir()
 	pump := &CSVPump{}
@@ -1123,6 +1128,7 @@ func captureStdout(t *testing.T, fn func()) string {
 // the configured log_field_name.
 //
 // Verifies: SW-REQ-026
+// SW-REQ-026:output_cardinality_bounded:nominal
 func TestStdOutPump_RoundTrip_JSON(t *testing.T) {
 	pump := &StdOutPump{}
 	require.NoError(t, pump.Init(map[string]interface{}{

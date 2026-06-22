@@ -190,6 +190,7 @@ func newMCPMongoPump(t *testing.T) *MCPMongoPump {
 
 // Verifies: SW-REQ-038
 // SW-REQ-038:errors_propagated:nominal
+// SW-REQ-038:output_cardinality_bounded:nominal
 func TestMCPMongoPump_WriteData_Roundtrip(t *testing.T) {
 	pump := newMCPMongoPump(t)
 

@@ -331,6 +331,7 @@ func TestSplunkPump_SendError(t *testing.T) {
 // baseline where Endpoint is set but Track returns an error — KI-tracked via
 // the mcdc:ignore on segment.go:86 (json.Marshal-cannot-fail arm).)
 // SW-REQ-053:nominal:nominal
+// SW-REQ-053:output_cardinality_bounded:nominal
 func TestSegmentPump_WriteData_RoundTrip(t *testing.T) {
 	cs := newCaptureServer(t)
 
@@ -399,6 +400,7 @@ func TestSegmentPump_ToJSONMap(t *testing.T) {
 // where token is set but drain_duration is invalid, so NewLogzioClient
 // returns the parse error — covered by TestLogzioClient_DrainDurationParseErr.)
 // SW-REQ-051:nominal:nominal
+// SW-REQ-051:output_cardinality_bounded:nominal
 func TestLogzioPump_WriteData_RoundTrip(t *testing.T) {
 	cs := newCaptureServer(t)
 
@@ -1042,6 +1044,7 @@ func TestKinesisPump_Init_StreamNameWarnOnly(t *testing.T) {
 // than a live runtime test. The T/F=FALSE pair would require a bounded-retry
 // surface that does not yet exist in production; tracked in the same KI.)
 // SW-REQ-046:nominal:nominal
+// SW-REQ-046:output_cardinality_bounded:nominal
 func TestInfluxPump_WriteData_RoundTrip(t *testing.T) {
 	cs := newCaptureServer(t)
 	cs.statusSeq = []int{http.StatusNoContent}
@@ -1124,6 +1127,7 @@ func influx2FakeServer(t *testing.T, overrides map[string]http.HandlerFunc) (*ht
 //
 // Verifies: SW-REQ-047
 // SW-REQ-047:nominal:nominal
+// SW-REQ-047:output_cardinality_bounded:nominal
 func TestInflux2Pump_WriteData_RoundTrip(t *testing.T) {
 	srv, writes := influx2FakeServer(t, nil)
 
@@ -1222,6 +1226,7 @@ var _ = (*timestreamMockClient)(nil)
 
 // TestSplitIntoBatches_EdgeCases covers boundary conditions.
 // SW-REQ-056:input_size_bounded:boundary
+// SW-REQ-056:output_cardinality_bounded:nominal
 func TestSplitIntoBatches_EdgeCases(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -1262,6 +1267,7 @@ func TestMin_BranchCoverage(t *testing.T) {
 //
 // Verifies: SW-REQ-052
 // SW-REQ-052:nominal:nominal
+// SW-REQ-052:output_cardinality_bounded:nominal
 // MCDC SW-REQ-052: record_submitted=T, sampling_percentage_pct_gt_random=T => TRUE
 func TestMoesifPump_WriteData_HappyPath(t *testing.T) {
 	api := &moesifQueueEventErrAPI{}

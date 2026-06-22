@@ -92,6 +92,7 @@ func TestSQSPump_WriteData(t *testing.T) {
 }
 
 // Verifies: SW-REQ-055
+// SW-REQ-055:output_cardinality_bounded:nominal
 func TestSQSPump_Chunks(t *testing.T) {
 	var Calls int
 	// Mock SQS client

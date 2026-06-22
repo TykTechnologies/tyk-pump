@@ -1410,6 +1410,7 @@ func TestMongoAggregatePump_WriteData_AllMCPRecordsFiltered(t *testing.T) {
 }
 
 // Verifies: SW-REQ-037
+// SW-REQ-037:output_cardinality_bounded:nominal
 // Through GraphMongoPump.WriteData with real records (covers err != nil = F).
 func TestGraphMongoPump_WriteData_AllRecordsWritten(t *testing.T) {
 	conf := defaultConf(t)
@@ -1479,7 +1480,9 @@ func TestGraphMongoPump_Init_BaseConfDecodeError(t *testing.T) {
 	assert.Error(t, err)
 }
 
+// Verifies: SW-REQ-036
 // Verifies: SW-REQ-058
+// SW-REQ-036:output_cardinality_bounded:nominal
 // SW-REQ-058:nominal:nominal — exercises the analyticsPerOrg loop and
 // successful err==nil paths in DoAggregatedWriting (covers err != nil = F).
 func TestMongoAggregatePump_WriteData_HappyPath(t *testing.T) {

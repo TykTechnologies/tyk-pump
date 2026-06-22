@@ -126,6 +126,7 @@ func readKafkaMessages(t *testing.T, brokers []string, topic string, n int, dead
 // with the expected JSON payload fields.
 //
 // Verifies: SW-REQ-021
+// SW-REQ-021:output_cardinality_bounded:nominal
 func TestKafkaPump_WriteData_RoundTrip(t *testing.T) {
 	pump, topic := kafkaInitWithBroker(t, nil)
 	brokers := pump.writerConfig.Brokers

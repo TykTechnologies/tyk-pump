@@ -419,6 +419,7 @@ func Test_SplunkBackoffRetry(t *testing.T) {
 }
 
 // Verifies: SW-REQ-048
+// SW-REQ-048:output_cardinality_bounded:nominal
 func Test_SplunkWriteData(t *testing.T) {
 	handler := &testHandler{test: t, batched: false}
 	server := httptest.NewServer(handler)

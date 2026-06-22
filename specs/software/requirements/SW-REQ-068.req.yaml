@@ -37,7 +37,7 @@ history:
     created_by: human:cli
     created_at: "2026-05-30T08:39:57Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-22T09:25:11Z"
+    last_modified_at: "2026-06-22T10:07:42Z"
 obligation_checklist:
     - cert_validation_strict
     - determinism
@@ -46,6 +46,7 @@ obligation_checklist:
     - external_call_timeout_bounded
     - malformed_recovers_or_errors_loudly
     - nominal
+    - output_cardinality_bounded
     - process_exit_on_recoverable
     - recursion_depth_bounded
     - request_timeout_bounded

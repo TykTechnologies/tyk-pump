@@ -76,6 +76,7 @@ func TestResurfaceInit(t *testing.T) {
 }
 
 // Verifies: SW-REQ-054
+// SW-REQ-054:output_cardinality_bounded:nominal
 // MCDC SW-REQ-054: queue_full_and_enabled=F, submit_skipped=F => TRUE
 func TestResurfaceWriteData(t *testing.T) {
 	const MockHost = "test0"

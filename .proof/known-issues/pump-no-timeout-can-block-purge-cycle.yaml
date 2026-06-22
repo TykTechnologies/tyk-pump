@@ -7,6 +7,32 @@ affected_requirements:
     - SW-REQ-068
     - SW-REQ-069
     - SW-REQ-070
+    - SW-REQ-021
+    - SW-REQ-029
+    - SW-REQ-034
+    - SW-REQ-035
+    - SW-REQ-036
+    - SW-REQ-037
+    - SW-REQ-038
+    - SW-REQ-039
+    - SW-REQ-040
+    - SW-REQ-041
+    - SW-REQ-042
+    - SW-REQ-043
+    - SW-REQ-044
+    - SW-REQ-045
+    - SW-REQ-046
+    - SW-REQ-047
+    - SW-REQ-048
+    - SW-REQ-049
+    - SW-REQ-050
+    - SW-REQ-051
+    - SW-REQ-052
+    - SW-REQ-053
+    - SW-REQ-054
+    - SW-REQ-055
+    - SW-REQ-056
+    - SW-REQ-057
 evidence_manifests:
     - code_signal:opengrep:go.http.client-without-timeout:pumps/elasticsearch.go:168
 severity: medium
@@ -39,3 +65,107 @@ history:
       by: human:buger
       action: edit
       detail: set-severity-basis=risk,set-risk
+    - at: "2026-06-22T10:07:43Z"
+      by: human:buger
+      action: edit
+      detail: add-requirement
+    - at: "2026-06-22T10:07:44Z"
+      by: human:buger
+      action: edit
+      detail: add-requirement
+    - at: "2026-06-22T10:07:44Z"
+      by: human:buger
+      action: edit
+      detail: add-requirement
+    - at: "2026-06-22T10:07:44Z"
+      by: human:buger
+      action: edit
+      detail: add-requirement
+    - at: "2026-06-22T10:07:44Z"
+      by: human:buger
+      action: edit
+      detail: add-requirement
+    - at: "2026-06-22T10:07:45Z"
+      by: human:buger
+      action: edit
+      detail: add-requirement
+    - at: "2026-06-22T10:07:45Z"
+      by: human:buger
+      action: edit
+      detail: add-requirement
+    - at: "2026-06-22T10:07:45Z"
+      by: human:buger
+      action: edit
+      detail: add-requirement
+    - at: "2026-06-22T10:07:45Z"
+      by: human:buger
+      action: edit
+      detail: add-requirement
+    - at: "2026-06-22T10:07:46Z"
+      by: human:buger
+      action: edit
+      detail: add-requirement
+    - at: "2026-06-22T10:07:46Z"
+      by: human:buger
+      action: edit
+      detail: add-requirement
+    - at: "2026-06-22T10:07:46Z"
+      by: human:buger
+      action: edit
+      detail: add-requirement
+    - at: "2026-06-22T10:07:46Z"
+      by: human:buger
+      action: edit
+      detail: add-requirement
+    - at: "2026-06-22T10:07:47Z"
+      by: human:buger
+      action: edit
+      detail: add-requirement
+    - at: "2026-06-22T10:07:47Z"
+      by: human:buger
+      action: edit
+      detail: add-requirement
+    - at: "2026-06-22T10:07:47Z"
+      by: human:buger
+      action: edit
+      detail: add-requirement
+    - at: "2026-06-22T10:07:47Z"
+      by: human:buger
+      action: edit
+      detail: add-requirement
+    - at: "2026-06-22T10:07:48Z"
+      by: human:buger
+      action: edit
+      detail: add-requirement
+    - at: "2026-06-22T10:07:48Z"
+      by: human:buger
+      action: edit
+      detail: add-requirement
+    - at: "2026-06-22T10:07:48Z"
+      by: human:buger
+      action: edit
+      detail: add-requirement
+    - at: "2026-06-22T10:07:48Z"
+      by: human:buger
+      action: edit
+      detail: add-requirement
+    - at: "2026-06-22T10:07:49Z"
+      by: human:buger
+      action: edit
+      detail: add-requirement
+    - at: "2026-06-22T10:07:49Z"
+      by: human:buger
+      action: edit
+      detail: add-requirement
+    - at: "2026-06-22T10:07:49Z"
+      by: human:buger
+      action: edit
+      detail: add-requirement
+    - at: "2026-06-22T10:07:49Z"
+      by: human:buger
+      action: edit
+      detail: add-requirement
+    - at: "2026-06-22T10:13:27Z"
+      by: human:buger
+      action: edit
+      detail: add-requirement

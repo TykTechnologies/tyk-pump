@@ -37,15 +37,17 @@ history:
     created_by: human:cli
     created_at: "2026-05-30T08:33:59Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-17T08:04:16Z"
+    last_modified_at: "2026-06-22T10:10:53Z"
 obligation_checklist:
     - boundary
     - cancellation_observed
     - concurrent
     - errors_propagated
+    - external_call_timeout_bounded
     - malformed_recovers_or_errors_loudly
     - nil_safety
     - nominal
+    - output_cardinality_bounded
     - panic_free_input_handling
     - process_exit_on_recoverable
     - query_timeout_bounded
@@ -53,43 +55,49 @@ obligation_deferrals:
     - obligation_class: cancellation_observed
       reason: 'real untested obligation under known-issue mongo-pump-ignores-caller-context; surfaced as visible tracked debt, not an overclaimed fix'
       tracking: mongo-pump-ignores-caller-context
-      ki_ref: mongo-pump-ignores-caller-context
       owner: human:buger
+      ki_ref: mongo-pump-ignores-caller-context
     - obligation_class: concurrent
       reason: 'real untested obligation under known-issue mongo-pump-ignores-caller-context; surfaced as visible tracked debt, not an overclaimed fix'
       tracking: mongo-pump-ignores-caller-context
-      ki_ref: mongo-pump-ignores-caller-context
       owner: human:buger
+      ki_ref: mongo-pump-ignores-caller-context
     - obligation_class: errors_propagated
       reason: 'real untested obligation under known-issue pumps-logfatal-on-config-decode; surfaced as visible tracked debt, not an overclaimed fix'
       tracking: pumps-logfatal-on-config-decode
-      ki_ref: pumps-logfatal-on-config-decode
       owner: human:buger
+      ki_ref: pumps-logfatal-on-config-decode
+    - obligation_class: external_call_timeout_bounded
+      reason: 'External backend calls remain operator-timeout dependent because timeout=0 is still accepted; this is KI-tracked until a nonzero deadline is enforced by default or Init rejects zero timeout.'
+      tracking: pump-no-timeout-can-block-purge-cycle
+      owner: human:buger
+      ki_ref: pump-no-timeout-can-block-purge-cycle
+      reproducer: pump-no-timeout-can-block-purge-cycle
     - obligation_class: malformed_recovers_or_errors_loudly
       reason: 'real untested obligation under known-issue mapstructure-decode-silently-drops-unknown-keys; surfaced as visible tracked debt, not an overclaimed fix'
       tracking: mapstructure-decode-silently-drops-unknown-keys
-      ki_ref: mapstructure-decode-silently-drops-unknown-keys
       owner: human:buger
+      ki_ref: mapstructure-decode-silently-drops-unknown-keys
     - obligation_class: nil_safety
       reason: 'real untested obligation under known-issue mongo-pump-writeuptime-nil-on-bad-msgpack; surfaced as visible tracked debt, not an overclaimed fix'
       tracking: mongo-pump-writeuptime-nil-on-bad-msgpack
-      ki_ref: mongo-pump-writeuptime-nil-on-bad-msgpack
       owner: human:buger
+      ki_ref: mongo-pump-writeuptime-nil-on-bad-msgpack
     - obligation_class: panic_free_input_handling
       reason: 'real untested obligation under known-issue pumps-logfatal-on-config-decode; surfaced as visible tracked debt, not an overclaimed fix'
       tracking: pumps-logfatal-on-config-decode
-      ki_ref: pumps-logfatal-on-config-decode
       owner: human:buger
+      ki_ref: pumps-logfatal-on-config-decode
     - obligation_class: process_exit_on_recoverable
       reason: 'real untested obligation under known-issue pumps-logfatal-on-config-decode; surfaced as visible tracked debt, not an overclaimed fix'
       tracking: pumps-logfatal-on-config-decode
-      ki_ref: pumps-logfatal-on-config-decode
       owner: human:buger
+      ki_ref: pumps-logfatal-on-config-decode
     - obligation_class: query_timeout_bounded
       reason: 'real query-timeout gap under known-issue mongo-pump-ignores-caller-context: Mongo writes pass context.Background() to storage, so caller cancellation/timeout cannot bound the insert; surfaced as visible tracked debt, not an overclaimed fix'
       tracking: mongo-pump-ignores-caller-context
-      ki_ref: mongo-pump-ignores-caller-context
       owner: human:buger
+      ki_ref: mongo-pump-ignores-caller-context
 lifecycle:
     change_history:
         - date: "2026-05-30T08:43:46Z"

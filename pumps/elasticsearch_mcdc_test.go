@@ -94,6 +94,7 @@ func esCountDocs(t *testing.T, pump *ElasticsearchPump, index string) int64 {
 //
 // Verifies: SW-REQ-068
 // SW-REQ-068:nominal:nominal
+// SW-REQ-068:output_cardinality_bounded:nominal
 func TestElasticsearchPump_WriteData_RoundTrip(t *testing.T) {
 	idx := esIndexName(t, "tyk_analytics")
 	pump := esInit(t, map[string]interface{}{
@@ -121,6 +122,7 @@ func TestElasticsearchPump_WriteData_RoundTrip(t *testing.T) {
 // Verifies: SW-REQ-070
 // SW-REQ-070:nominal:nominal
 // SW-REQ-070:boundary:nominal
+// SW-REQ-070:output_cardinality_bounded:nominal
 func TestElasticsearchPump_WriteData_RoundTripBulk(t *testing.T) {
 	idx := esIndexName(t, "tyk_analytics_bulk")
 	pump := esInit(t, map[string]interface{}{
@@ -170,6 +172,7 @@ func TestElasticsearchPump_WriteData_RoundTripBulk(t *testing.T) {
 //
 // Verifies: SW-REQ-069
 // SW-REQ-069:nominal:negative
+// SW-REQ-069:output_cardinality_bounded:nominal
 // MCDC SW-REQ-069: index_eq_mcp=F, is_mcp_record=F, mcp_index_configured=T => TRUE
 // MCDC SW-REQ-069: index_eq_mcp=T, is_mcp_record=T, mcp_index_configured=T => TRUE
 // (This test drives both with mcp_index_configured=T: a standard record

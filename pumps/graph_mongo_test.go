@@ -21,6 +21,7 @@ import (
 
 // Verifies: SW-REQ-037
 // SW-REQ-037:errors_propagated:nominal
+// SW-REQ-037:output_cardinality_bounded:nominal
 // MCDC SW-REQ-037: is_graph_record=F, converted_to_graph_record=F => TRUE
 // MCDC SW-REQ-037: is_graph_record=T, converted_to_graph_record=F => FALSE
 // MCDC SW-REQ-037: is_graph_record=T, converted_to_graph_record=T => TRUE

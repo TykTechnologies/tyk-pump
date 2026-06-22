@@ -37,7 +37,7 @@ history:
     created_by: human:cli
     created_at: "2026-05-30T08:40:07Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-20T18:28:00Z"
+    last_modified_at: "2026-06-22T10:07:43Z"
 obligation_checklist:
     - boundary
     - determinism
@@ -45,6 +45,7 @@ obligation_checklist:
     - external_call_concurrency_bounded
     - malformed_recovers_or_errors_loudly
     - nominal
+    - output_cardinality_bounded
     - request_timeout_bounded
     - resource_lifetime_released
 obligation_deferrals:

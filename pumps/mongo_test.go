@@ -645,6 +645,7 @@ func TestDefaultDriver(t *testing.T) {
 }
 
 // Verifies: SW-REQ-034
+// SW-REQ-034:output_cardinality_bounded:nominal
 // MCDC SW-REQ-034: mcp_record_present=F, record_filtered_out=F => TRUE
 func TestMongoPump_WriteData(t *testing.T) {
 	sampleRecord := analytics.AnalyticsRecord{

@@ -37,10 +37,11 @@ history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:16Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-17T08:05:01Z"
+    last_modified_at: "2026-06-22T10:07:37Z"
 obligation_checklist:
     - errors_propagated
     - malformed_recovers_or_errors_loudly
+    - output_cardinality_bounded
     - panic_free_input_handling
     - process_exit_on_recoverable
     - resource_lifetime_released
@@ -48,28 +49,28 @@ obligation_deferrals:
     - obligation_class: errors_propagated
       reason: 'real untested obligation under known-issue pumps-logfatal-on-config-decode; surfaced as visible tracked debt, not an overclaimed fix'
       tracking: pumps-logfatal-on-config-decode
-      ki_ref: pumps-logfatal-on-config-decode
       owner: human:buger
+      ki_ref: pumps-logfatal-on-config-decode
     - obligation_class: malformed_recovers_or_errors_loudly
       reason: 'real untested obligation under known-issue mapstructure-decode-silently-drops-unknown-keys; surfaced as visible tracked debt, not an overclaimed fix'
       tracking: mapstructure-decode-silently-drops-unknown-keys
-      ki_ref: mapstructure-decode-silently-drops-unknown-keys
       owner: human:buger
+      ki_ref: mapstructure-decode-silently-drops-unknown-keys
     - obligation_class: panic_free_input_handling
       reason: 'real untested obligation under known-issue csv-writedata-nil-file-handle-panic; surfaced as visible tracked debt, not an overclaimed fix'
       tracking: csv-writedata-nil-file-handle-panic
-      ki_ref: csv-writedata-nil-file-handle-panic
       owner: human:buger
+      ki_ref: csv-writedata-nil-file-handle-panic
     - obligation_class: process_exit_on_recoverable
       reason: 'real untested obligation under known-issue pumps-logfatal-on-config-decode; surfaced as visible tracked debt, not an overclaimed fix'
       tracking: pumps-logfatal-on-config-decode
-      ki_ref: pumps-logfatal-on-config-decode
       owner: human:buger
+      ki_ref: pumps-logfatal-on-config-decode
     - obligation_class: resource_lifetime_released
       reason: real resource lifetime gap under known-issue csv-writedata-nil-file-handle-panic; surfaced as visible tracked debt, not an overclaimed fix
       tracking: csv-writedata-nil-file-handle-panic
-      ki_ref: csv-writedata-nil-file-handle-panic
       owner: human:buger
+      ki_ref: csv-writedata-nil-file-handle-panic
 lifecycle:
     change_history:
         - date: "2026-05-29T15:46:44Z"
