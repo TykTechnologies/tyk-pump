@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-min_free_percent="${PROOF_MONITOR_MIN_FREE_PERCENT:-5}"
-kill_free_percent="${PROOF_MONITOR_KILL_FREE_PERCENT:-3}"
+min_free_percent="${PROOF_MONITOR_MIN_FREE_PERCENT:-3}"
+kill_free_percent="${PROOF_MONITOR_KILL_FREE_PERCENT:-2}"
 emergency_free_mib="${PROOF_MONITOR_EMERGENCY_FREE_MIB:-0}"
 interval_sec="${PROOF_MONITOR_INTERVAL_SEC:-2}"
-kill_samples="${PROOF_MONITOR_KILL_SAMPLES:-3}"
+kill_samples="${PROOF_MONITOR_KILL_SAMPLES:-5}"
 
 require_uint() {
 	local name="$1"
