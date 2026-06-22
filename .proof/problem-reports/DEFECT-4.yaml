@@ -15,7 +15,7 @@ source:
     repo: TykTechnologies/tyk-pump
     commit: fbcb614
     reference: TT-12780
-    date: "2026-11-27"
+    date: "2024-11-27"
 classification:
     surface: runtime_code
     defect_class: slice_index_out_of_range
@@ -58,24 +58,6 @@ disposition:
     status: covered_by_requirement
     requirements:
         - SW-REQ-040
-    known_issues:
-        # Acknowledged overlap on the shared owner SW-REQ-040 (the SQL pump's
-        # sharded day-slice routing), NOT the same failure mode. This defect is
-        # the empty-batch slice-index-out-of-range panic (now guarded + tested);
-        # analytics-timestamp-timezone-convention-unpinned is a distinct open KI
-        # about AnalyticsRecord.TimeStamp lacking a UTC convention affecting
-        # which shard a record routes to. Linked for traceability.
-        - analytics-timestamp-timezone-convention-unpinned
-        - mapstructure-decode-silently-drops-unknown-keys
-        - no-panic-recovery-in-exec-pump-writing
-        # Overlap-only link required by problem_reports_reviewed because this
-        # covered_by_requirement report and the active KI share SW-REQ-040.
-        # It is not the root cause of this historical empty-batch panic defect.
-        - pump-no-timeout-can-block-purge-cycle
-        - pump-writedata-swallows-per-batch-errors
-        - sql-background-index-concurrency-unbounded
-        - sql-batch-size-zero-infinite-loop
-        - sql-schema-no-version-policy
     evidence:
         verified_by:
             - pumps/sql_test.go:TestSQLWriteDataSharded
@@ -103,7 +85,3 @@ history:
         against current code: the empty_keys subtest drives WriteData with a
         zero-length batch under TableSharding=true and asserts no error and no
         shard tables — the guarded `startIndex < len(typedData)` boundary holds.
-    - at: "2026-06-22T00:00:00Z"
-      by: agent:codex
-      action: linked_known_issue
-      detail: Linked pump-no-timeout-can-block-purge-cycle as overlapping active SQL-backend-timeout debt on SW-REQ-040.

@@ -29,18 +29,19 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-03T07:38:53Z"
-        comment: 'Phase Q: catalog obligation attachments — adds cert_validation_strict, cancellation_observed, connection_leak_free, query_timeout_bounded (Mongo aggregate pump surface). See .proof/catalog-obligation-proposals.md.'
+        reviewed_at: "2026-06-22T12:04:23Z"
+        comment: 'Review obligation expansion from catalogue gap pass; active unfixed behavior remains KnownIssue-gated.'
         fingerprint: sha256:cd9054202bb57521328cc38649a003a66d97a4b40078e4a2e38da409a4d9e944
-        ai_generated: true
+        ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:34:49Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-22T10:55:41Z"
+    last_modified_at: "2026-06-22T12:04:23Z"
 obligation_checklist:
     - config_schema_strict
     - errors_propagated
+    - external_call_failure_observable
     - external_call_timeout_bounded
     - malformed_recovers_or_errors_loudly
     - nominal
@@ -59,8 +60,13 @@ obligation_deferrals:
       tracking: pumps-logfatal-on-config-decode
       owner: human:buger
       ki_ref: pumps-logfatal-on-config-decode
+    - obligation_class: external_call_failure_observable
+      reason: 'This pump family has a confirmed WriteData path that logs backend or per-batch write failures and returns nil, so backend failure observability remains KI-gated until errors are propagated to the caller.'
+      tracking: pump-writedata-swallows-per-batch-errors
+      owner: human:buger
+      ki_ref: pump-writedata-swallows-per-batch-errors
     - obligation_class: external_call_timeout_bounded
-      reason: 'External backend calls remain operator-timeout dependent because timeout=0 is still accepted; this is KI-tracked until a nonzero deadline is enforced by default or Init rejects zero timeout.'
+      reason: External backend calls remain operator-timeout dependent because timeout=0 is still accepted; this is KI-tracked until a nonzero deadline is enforced by default or Init rejects zero timeout.
       tracking: pump-no-timeout-can-block-purge-cycle
       owner: human:buger
       ki_ref: pump-no-timeout-can-block-purge-cycle
@@ -112,3 +118,8 @@ lifecycle:
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T05:02:45Z comment="Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.")'
           changed_by: human:cli
+        - date: "2026-06-22T12:04:23Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-03T07:38:53Z comment="Phase Q: catalog obligation attachments — adds cert_validation_strict, cancellation_observed, connection_leak_free, query_timeout_bounded (Mongo aggregate pump surface). See .proof/catalog-obligation-proposals.md.")'
+          changed_by: human:buger

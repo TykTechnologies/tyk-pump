@@ -29,15 +29,15 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-20T18:28:00Z"
-        comment: 'Propagate defect/history-backed pump obligations: write-error propagation, Mongo ctx timeout, Moesif fatal input handling, Logzio/Segment shutdown flush, and ES resource lifetime evidence.'
+        reviewed_at: "2026-06-22T12:04:23Z"
+        comment: 'Review obligation expansion from catalogue gap pass; active unfixed behavior remains KnownIssue-gated.'
         fingerprint: sha256:7cf04895b50732c59abab8868e4cd54d79ed68a7e54ecc24c49e049f44efb8b7
-        ai_generated: true
+        ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:40:07Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-22T11:27:22Z"
+    last_modified_at: "2026-06-22T12:04:23Z"
 obligation_checklist:
     - boundary
     - config_schema_strict
@@ -71,6 +71,11 @@ obligation_deferrals:
       tracking: mapstructure-decode-silently-drops-unknown-keys
       owner: human:buger
       ki_ref: mapstructure-decode-silently-drops-unknown-keys
+    - obligation_class: output_cardinality_bounded
+      reason: The Elasticsearch write path can emit MCP records to the wrong target in non-bulk mode, so output routing cardinality remains KI-gated until non-bulk routing uses the per-record index.
+      tracking: elasticsearch-mcp-routing-non-bulk-ignored
+      owner: human:buger
+      ki_ref: elasticsearch-mcp-routing-non-bulk-ignored
     - obligation_class: request_timeout_bounded
       reason: real untested obligation under known-issue pump-no-timeout-can-block-purge-cycle; surfaced as visible tracked debt, not an overclaimed fix
       tracking: pump-no-timeout-can-block-purge-cycle
@@ -113,4 +118,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-03T07:40:28Z comment="Phase Q: catalog obligation attachments — adds external_call_concurrency_bounded (ES BulkProcessor workers cap). See .proof/catalog-obligation-proposals.md.")'
+          changed_by: human:buger
+        - date: "2026-06-22T12:04:23Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-20T18:28:00Z comment="Propagate defect/history-backed pump obligations: write-error propagation, Mongo ctx timeout, Moesif fatal input handling, Logzio/Segment shutdown flush, and ES resource lifetime evidence.")'
           changed_by: human:buger

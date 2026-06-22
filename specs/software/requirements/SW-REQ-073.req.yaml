@@ -29,41 +29,47 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-03T07:45:14Z"
-        comment: 'Phase Q3: add implemented_by trace to analytics/uptime_data.go to close obligation_decomposition_complete on parameterized_only_read.'
+        reviewed_at: "2026-06-22T12:04:23Z"
+        comment: 'Review obligation expansion from catalogue gap pass; active unfixed behavior remains KnownIssue-gated.'
         fingerprint: sha256:68da2243d7ba8b5779fe25e2b270569bedacd797693bb868dcff8b73289ac943
-        ai_generated: true
+        ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-06-01T20:46:34Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-17T08:03:14Z"
+    last_modified_at: "2026-06-22T12:04:23Z"
 obligation_checklist:
     - atomicity
     - monotonicity
     - nominal
     - parameterized_only_read
+    - tz_explicit
 obligation_deferrals:
     - obligation_class: atomicity
       reason: 'real untested obligation under known-issue uptime-aggregate-erasstr-itoa-always-nonempty; surfaced as visible tracked debt, not an overclaimed fix'
       tracking: uptime-aggregate-erasstr-itoa-always-nonempty
-      ki_ref: uptime-aggregate-erasstr-itoa-always-nonempty
       owner: human:buger
+      ki_ref: uptime-aggregate-erasstr-itoa-always-nonempty
     - obligation_class: monotonicity
       reason: 'real untested obligation under known-issue uptime-aggregate-erasstr-itoa-always-nonempty; surfaced as visible tracked debt, not an overclaimed fix'
       tracking: uptime-aggregate-erasstr-itoa-always-nonempty
-      ki_ref: uptime-aggregate-erasstr-itoa-always-nonempty
       owner: human:buger
+      ki_ref: uptime-aggregate-erasstr-itoa-always-nonempty
     - obligation_class: nominal
       reason: 'real untested obligation under known-issue uptime-aggregate-erasstr-itoa-always-nonempty; surfaced as visible tracked debt, not an overclaimed fix'
       tracking: uptime-aggregate-erasstr-itoa-always-nonempty
-      ki_ref: uptime-aggregate-erasstr-itoa-always-nonempty
       owner: human:buger
+      ki_ref: uptime-aggregate-erasstr-itoa-always-nonempty
     - obligation_class: parameterized_only_read
       reason: proof/spec gap under known-issue sw-req-073-parameterized-read-obligation-misattributed; surfaced as visible tracked debt, not an overclaimed fix
       tracking: sw-req-073-parameterized-read-obligation-misattributed
-      ki_ref: sw-req-073-parameterized-read-obligation-misattributed
       owner: human:buger
+      ki_ref: sw-req-073-parameterized-read-obligation-misattributed
+    - obligation_class: tz_explicit
+      reason: Uptime aggregate windows inherit timestamps with no explicit UTC/location convention, so timezone semantics remain KI-gated until the convention is pinned.
+      tracking: analytics-timestamp-timezone-convention-unpinned
+      owner: human:buger
+      ki_ref: analytics-timestamp-timezone-convention-unpinned
 release_disposition: ship_with_known_issue
 lifecycle:
     change_history:
@@ -107,3 +113,8 @@ lifecycle:
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-03T07:40:32Z comment="Phase Q: catalog obligation attachments — adds errors_propagated, parameterized_only_read (uptime aggregate writes + reads, KI uptime-write-has-no-error-return). See .proof/catalog-obligation-proposals.md.")'
           changed_by: human:cli
+        - date: "2026-06-22T12:04:23Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-03T07:45:14Z comment="Phase Q3: add implemented_by trace to analytics/uptime_data.go to close obligation_decomposition_complete on parameterized_only_read.")'
+          changed_by: human:buger

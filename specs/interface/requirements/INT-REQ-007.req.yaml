@@ -29,17 +29,29 @@ verification:
         status: approved
         reviewer: human:buger
         role: interface_engineer
-        reviewed_at: "2026-06-02T14:19:05Z"
-        comment: 'Phase L3 aggressive: flip 8 INT interface contracts to FRETish (positive when-shall-always-satisfy form); per-contract var pairs added in specs/interface/variables/.'
+        reviewed_at: "2026-06-22T12:04:23Z"
+        comment: 'Review obligation expansion from catalogue gap pass; active unfixed behavior remains KnownIssue-gated.'
         fingerprint: sha256:aeac8d48f7f36c1557acf50e695c4a0c2a38651101c2ab1e194b9f15c6e3fbec
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:46Z"
-    last_modified_by: human:cli
-    last_modified_at: "2026-06-02T14:19:05Z"
+    last_modified_by: human:buger
+    last_modified_at: "2026-06-22T12:04:23Z"
 obligation_checklist:
     - forward_compatible
+    - schema_version_policy_enforced
+obligation_deferrals:
+    - obligation_class: forward_compatible
+      reason: With MigrateShardedTables=false by default, older date shards may miss new columns and reject late-arriving records, so forward-compatible migration remains KI-gated.
+      tracking: sql-default-migration-today-only
+      owner: human:buger
+      ki_ref: sql-default-migration-today-only
+    - obligation_class: schema_version_policy_enforced
+      reason: The SQL schema contract lacks a schema_version table, migration manifest, or CI guard for destructive changes until the linked schema-policy KnownIssue is fixed.
+      tracking: sql-schema-no-version-policy
+      owner: human:buger
+      ki_ref: sql-schema-no-version-policy
 release_disposition: ship_with_known_issue
 interface:
     caller: tyk-pump-sql-pumps
@@ -93,3 +105,8 @@ lifecycle:
           to: approved
           reason: 're-approve (prior: role="interface_engineer" reviewer="human:buger" at=2026-06-02T05:02:48Z comment="Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.")'
           changed_by: human:cli
+        - date: "2026-06-22T12:04:23Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="interface_engineer" reviewer="human:buger" at=2026-06-02T14:19:05Z comment="Phase L3 aggressive: flip 8 INT interface contracts to FRETish (positive when-shall-always-satisfy form); per-contract var pairs added in specs/interface/variables/.")'
+          changed_by: human:buger

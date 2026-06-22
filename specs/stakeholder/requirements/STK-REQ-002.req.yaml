@@ -29,20 +29,22 @@ verification:
         status: approved
         reviewer: human:buger
         role: system_owner
-        reviewed_at: "2026-06-22T09:51:16Z"
-        comment: 'Stage AC-003 acceptance witness against the existing no-DLQ known issue; no truthful passing acceptance test exists until the product behavior changes.'
+        reviewed_at: "2026-06-22T12:04:23Z"
+        comment: 'Review obligation expansion from catalogue gap pass; active unfixed behavior remains KnownIssue-gated.'
         fingerprint: sha256:7761e82cd68cd294fada0becf1c499d8122b443b0a72edf21449a63f43e5bc9e
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:10:49Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-22T09:51:16Z"
+    last_modified_at: "2026-06-22T12:04:23Z"
 obligation_checklist:
-    - error_handling
-    - boundary
     - atomicity
+    - boundary
     - dead_letter_or_reenqueue_on_total_write_failure
+    - error_handling
+    - external_call_timeout_bounded
+    - output_cardinality_bounded
 release_disposition: ship_with_known_issue
 stakeholder:
     persona: Platform operator
@@ -109,4 +111,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="system_owner" reviewer="human:buger" at=2026-06-22T09:41:58Z comment="Add AC-003 for post-consume retention and cover it through SYS-REQ-022 with KI-backed debt.")'
+          changed_by: human:buger
+        - date: "2026-06-22T12:04:23Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="system_owner" reviewer="human:buger" at=2026-06-22T09:51:16Z comment="Stage AC-003 acceptance witness against the existing no-DLQ known issue; no truthful passing acceptance test exists until the product behavior changes.")'
           changed_by: human:buger

@@ -30,19 +30,25 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-22T06:47:49Z"
-        comment: 'Reviewed evidence-backed code-signal obligation closures: partial-progress observable evidence for pump fanout, timezone round-trip evidence for analytics aggregate/record/uptime, Redis relative-TTL clock-skew evidence, and HTTP retry malformed-input nominal/negative evidence. Real product gaps remain tracked as KnownIssue-backed debt; no product behavior fixes claimed.'
+        reviewed_at: "2026-06-22T12:04:23Z"
+        comment: 'Review obligation expansion from catalogue gap pass; active unfixed behavior remains KnownIssue-gated.'
         fingerprint: sha256:60798dd3369cba5d4559254d2a55f82bfe7bd5b2ff3d5e65d40941ec711ffb9b
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:15Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-22T06:47:49Z"
+    last_modified_at: "2026-06-22T12:04:23Z"
 obligation_class: tz_explicit
 obligation_checklist:
     - nominal
     - tz_explicit
+obligation_deferrals:
+    - obligation_class: tz_explicit
+      reason: Uptime report timestamps carry bare time.Time values without an explicit UTC/location convention, so timezone semantics remain KI-gated until the convention is pinned.
+      tracking: analytics-timestamp-timezone-convention-unpinned
+      owner: human:buger
+      ki_ref: analytics-timestamp-timezone-convention-unpinned
 lifecycle:
     change_history:
         - date: "2026-05-29T15:46:44Z"
@@ -74,4 +80,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-22T06:36:52Z comment="Reviewed evidence-backed code-signal obligation closures: timezone round-trip evidence for analytics aggregate/record/uptime, Redis relative-TTL clock-skew evidence, and HTTP retry malformed-input nominal/negative evidence. No product behavior fixes claimed.")'
+          changed_by: human:buger
+        - date: "2026-06-22T12:04:23Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-22T06:47:49Z comment="Reviewed evidence-backed code-signal obligation closures: partial-progress observable evidence for pump fanout, timezone round-trip evidence for analytics aggregate/record/uptime, Redis relative-TTL clock-skew evidence, and HTTP retry malformed-input nominal/negative evidence. Real product gaps remain tracked as KnownIssue-backed debt; no product behavior fixes claimed.")'
           changed_by: human:buger

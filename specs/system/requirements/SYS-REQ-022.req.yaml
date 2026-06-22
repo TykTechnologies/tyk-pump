@@ -30,21 +30,27 @@ verification:
         status: approved
         reviewer: human:buger
         role: system_engineer
-        reviewed_at: "2026-06-22T09:41:58Z"
-        comment: 'Cross-link consumed-record dispatch to STK-REQ-002 retention coverage and carry DLQ/re-enqueue KI debt on the semantic carrier.'
+        reviewed_at: "2026-06-22T12:04:23Z"
+        comment: 'Review obligation expansion from catalogue gap pass; active unfixed behavior remains KnownIssue-gated.'
         fingerprint: sha256:716211e5b97bf79a648f8c145f5c627a374c5df6d2e5b970b7a7fb31345ece32
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-30T07:52:52Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-22T09:41:58Z"
+    last_modified_at: "2026-06-22T12:04:23Z"
 obligation_class: nominal
 obligation_checklist:
     - dead_letter_or_reenqueue_on_total_write_failure
+    - output_cardinality_bounded
 obligation_deferrals:
     - obligation_class: dead_letter_or_reenqueue_on_total_write_failure
       reason: Consumed analytics records are dispatched after temporal-store pop; when all downstream writes fail there is no DLQ or re-enqueue path, so end-to-end record retention remains tracked debt.
+      tracking: write-failure-after-pop-loses-records
+      owner: human:buger
+      ki_ref: write-failure-after-pop-loses-records
+    - obligation_class: output_cardinality_bounded
+      reason: Consumed records can be popped and then lost when all backend writes fail, so the one-consumed-record-to-every-configured-backend cardinality guarantee remains KI-gated.
       tracking: write-failure-after-pop-loses-records
       owner: human:buger
       ki_ref: write-failure-after-pop-loses-records
@@ -74,4 +80,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="system_engineer" reviewer="human:buger" at=2026-06-22T09:38:55Z comment="Move KI-backed delivery and uptime obligations from stakeholder deferrals onto system-level carrier requirements.")'
+          changed_by: human:buger
+        - date: "2026-06-22T12:04:23Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="system_engineer" reviewer="human:buger" at=2026-06-22T09:41:58Z comment="Cross-link consumed-record dispatch to STK-REQ-002 retention coverage and carry DLQ/re-enqueue KI debt on the semantic carrier.")'
           changed_by: human:buger

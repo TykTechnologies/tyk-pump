@@ -1,10 +1,9 @@
 id: logzio-segment-no-shutdown-flush
 title: Logzio + Segment pumps have no Shutdown override; async-buffered records are dropped on shutdown
-description: pumps/logzio.go and pumps/segment.go both embed CommonPumpConfig (pumps/common.go:65 'func (p *CommonPumpConfig) Shutdown() error { return nil }') and do NOT override Shutdown. The underlying logzio-go LogzioSender accumulates events in a disk-backed queue with a configurable DrainDuration (default 3s) before flushing; segment.Client buffers in memory. When main.checkShutdown (main.go:343) calls pmp.Shutdown(), both pumps return nil immediately without calling sender.Stop()/segmentClient.Close(), so any events queued but not yet flushed are lost on process exit. SYS-REQ-013's at-least-once delivery claim is therefore violated for logzio/segment during normal operator shutdown.
+description: pumps/logzio.go and pumps/segment.go both embed CommonPumpConfig (pumps/common.go:65 'func (p *CommonPumpConfig) Shutdown() error { return nil }') and do NOT override Shutdown. The underlying logzio-go LogzioSender accumulates events in a disk-backed queue with a configurable DrainDuration (default 3s) before flushing; segment.Client buffers in memory. When main.checkShutdown (main.go:343) calls pmp.Shutdown(), both pumps return nil immediately without calling sender.Stop()/segmentClient.Close(), so any events queued but not yet flushed are lost on process exit. The violated shutdown-flush contract belongs to the Logz.io and Segment pump requirements.
 affected_requirements:
     - SW-REQ-051
     - SW-REQ-053
-    - SYS-REQ-013
 evidence_manifests:
     - test:pumps/known_issue_tripwire_test.go:TestLogzioPumpMissingShutdownFlush_KI
     - test:pumps/known_issue_tripwire_test.go:TestSegmentPumpMissingShutdownFlush_KI
@@ -34,3 +33,7 @@ history:
       by: human:buger
       action: edit
       detail: set-severity-basis=risk,set-risk
+    - at: "2026-06-22T00:00:00Z"
+      by: human:buger
+      action: edit
+      detail: Removed SYS-REQ-013 from affected_requirements; the shutdown-flush debt is owned by the Logz.io and Segment pump requirements, not instrumentation metrics emission.

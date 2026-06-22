@@ -34,21 +34,27 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-19T20:08:14Z"
-        comment: 'Spec evidence-debt refresh: reviewed KI-gated obligation_deferrals added for required-but-unwitnessed obligations. Each deferral links to an open traced KnownIssue and leaves the gap as auto-expiring accepted KI-debt rather than claiming product/test fixes.'
+        reviewed_at: "2026-06-22T12:04:23Z"
+        comment: 'Review obligation expansion from catalogue gap pass; active unfixed behavior remains KnownIssue-gated.'
         fingerprint: sha256:72627351c1ffeac0d7aa81448917c283fee62de9fa185d8c5b1ee9c864241dc0
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:14Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-19T20:08:14Z"
+    last_modified_at: "2026-06-22T12:04:23Z"
 obligation_checklist:
+    - back_pressure_bounded
     - concurrent
     - error_handling
     - errors_propagated
     - panic_free_input_handling
 obligation_deferrals:
+    - obligation_class: back_pressure_bounded
+      reason: StatsD instrumentation sends synchronously into a bounded command channel, so emitters can block under sink pressure until the KI adds a drop or bounded-wait policy.
+      tracking: instrumentation-statsd-channel-backpressure-blocks-emitters
+      owner: human:buger
+      ki_ref: instrumentation-statsd-channel-backpressure-blocks-emitters
     - obligation_class: concurrent
       reason: Required concurrency evidence is parked because instrumentation goroutine lifecycle gaps are tracked by this KI.
       tracking: known-issue:instrumentation-goroutines-no-recover-or-shutdown
@@ -100,4 +106,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-19T19:54:58Z comment="Spec audit stale-approval refresh: reviewed current YAML diffs vs HEAD plus KI/proof metadata; changes are metadata, trace, and evidence-honesty updates that surface gaps via KnownIssues/deferrals without claiming product fixes.")'
+          changed_by: human:buger
+        - date: "2026-06-22T12:04:23Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-19T20:08:14Z comment="Spec evidence-debt refresh: reviewed KI-gated obligation_deferrals added for required-but-unwitnessed obligations. Each deferral links to an open traced KnownIssue and leaves the gap as auto-expiring accepted KI-debt rather than claiming product/test fixes.")'
           changed_by: human:buger

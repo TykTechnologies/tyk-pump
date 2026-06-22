@@ -1,0 +1,27 @@
+id: schema_version_policy_enforced
+name: schema_version_policy_enforced
+category: domain
+status: active
+summary: Persistent schemas shall carry an explicit version or migration-manifest policy that rejects untracked destructive changes before release.
+description: |
+  Database-backed pumps that rely on implicit ORM migration need a separate
+  obligation from generic forward compatibility: the project must be able to
+  tell which schema version is deployed and whether a proposed schema change is
+  additive, destructive, reversible, or intentionally staged as a contract
+  migration.
+applies_when:
+  description: code owns SQL or other persistent backend schemas that are evolved across releases and may be written by mixed application versions during rollout or rollback
+frameworks:
+  - id: CWE
+    refs:
+      - CWE-1059
+  - id: NIST-800-53
+    refs:
+      - CM-3
+recommended_evidence:
+  - kind: inspection
+    note: Schema version table or migration manifest is present and referenced by release documentation.
+  - kind: model_check
+    note: CI rejects DROP, RENAME, or ALTER TYPE outside an explicitly reviewed contract migration.
+  - kind: scenario
+    note: Upgrade and rollback scenario names the schema version before and after migration.

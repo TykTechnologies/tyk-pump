@@ -29,15 +29,15 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-02T13:44:34Z"
-        comment: 'Phase L2: aggressive formalization — encodes per-component primary decision (instrumentation gate, codec select, SSL/SASL, dataset_empty, default-path, file-append, retry-status, log-level, flush, batch, transport, dedup); variables in <component>.vars.yaml; user directive: force MCDC witnesses to drive verifying tests.'
+        reviewed_at: "2026-06-22T12:04:23Z"
+        comment: 'Review obligation expansion from catalogue gap pass; active unfixed behavior remains KnownIssue-gated.'
         fingerprint: sha256:62a2b553ccb8f63553642db160d235944054450279f404bb08f06918198cae78
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:16Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-22T10:55:48Z"
+    last_modified_at: "2026-06-22T12:04:23Z"
 obligation_checklist:
     - config_schema_strict
     - errors_propagated
@@ -62,6 +62,11 @@ obligation_deferrals:
       tracking: mapstructure-decode-silently-drops-unknown-keys
       owner: human:buger
       ki_ref: mapstructure-decode-silently-drops-unknown-keys
+    - obligation_class: output_cardinality_bounded
+      reason: StatsD and DogStatsD can derive tags from high-cardinality request fields without a configured value budget, so metric output cardinality remains KI-gated until labels are bounded.
+      tracking: metrics-label-cardinality-unbounded
+      owner: human:buger
+      ki_ref: metrics-label-cardinality-unbounded
     - obligation_class: process_exit_on_recoverable
       reason: real untested obligation under known-issue pumps-logfatal-on-config-decode; surfaced as visible tracked debt, not an overclaimed fix
       tracking: pumps-logfatal-on-config-decode
@@ -84,3 +89,8 @@ lifecycle:
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T05:02:45Z comment="Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.")'
           changed_by: human:cli
+        - date: "2026-06-22T12:04:23Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T13:44:34Z comment="Phase L2: aggressive formalization — encodes per-component primary decision (instrumentation gate, codec select, SSL/SASL, dataset_empty, default-path, file-append, retry-status, log-level, flush, batch, transport, dedup); variables in <component>.vars.yaml; user directive: force MCDC witnesses to drive verifying tests.")'
+          changed_by: human:buger

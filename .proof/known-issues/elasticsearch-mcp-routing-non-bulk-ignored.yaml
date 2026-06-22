@@ -25,6 +25,8 @@ description: |
 affected_requirements:
     - SW-REQ-069
     - SW-REQ-070
+evidence_manifests:
+    - test:pumps/elasticsearch_mcdc_test.go:TestElasticsearchPump_WriteData_MCPIndexRouting_NonBulkBug
 severity: medium
 severity_basis: risk
 risk: correctness
@@ -52,3 +54,7 @@ history:
       by: human:buger
       action: edit
       detail: set-severity-basis=risk,set-risk
+    - at: "2026-06-22T12:07:33Z"
+      by: human:buger
+      action: edit
+      detail: add-evidence-manifest

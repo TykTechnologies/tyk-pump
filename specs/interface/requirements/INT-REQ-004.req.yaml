@@ -29,17 +29,38 @@ verification:
         status: approved
         reviewer: human:buger
         role: interface_engineer
-        reviewed_at: "2026-06-02T14:19:05Z"
-        comment: 'Phase L3 aggressive: flip 8 INT interface contracts to FRETish (positive when-shall-always-satisfy form); per-contract var pairs added in specs/interface/variables/.'
+        reviewed_at: "2026-06-22T12:04:23Z"
+        comment: 'Review obligation expansion from catalogue gap pass; active unfixed behavior remains KnownIssue-gated.'
         fingerprint: sha256:f4b0ad1310f177bee3595e7113f5631f0c95cf11e0d49734ddda398887dffa06
         ai_generated: false
+    gaps_reviewed_at: "2026-06-22T12:10:49.12804Z"
+    gaps_reviewed_by: human:buger
+    gap_reviews:
+        - check: decomposition
+          issue_key: decomposition|INT-REQ-004|contract_honoured
+          reviewer: human:buger
+          reason: Reviewed current parent/child decomposition warnings after obligation expansion; remaining gaps are acknowledged parent-scope differences already represented by KI-backed obligations or existing child requirements.
+          reviewed_at: "2026-06-22T12:10:49.12804Z"
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:46Z"
-    last_modified_by: human:cli
-    last_modified_at: "2026-06-02T14:19:05Z"
+    last_modified_by: human:buger
+    last_modified_at: "2026-06-22T12:04:23Z"
 obligation_checklist:
+    - cancellation_observed
     - errors_propagated
+    - external_call_failure_observable
+obligation_deferrals:
+    - obligation_class: cancellation_observed
+      reason: The Pump interface assumes WriteData honors the caller context, but MongoPump currently replaces it with context.Background; this remains KI-gated until implementations propagate cancellation.
+      tracking: mongo-pump-ignores-caller-context
+      owner: human:buger
+      ki_ref: mongo-pump-ignores-caller-context
+    - obligation_class: external_call_failure_observable
+      reason: The Pump interface promises backend write failures are observable, but multiple WriteData implementations log per-batch failures and return nil until this KnownIssue is fixed.
+      tracking: pump-writedata-swallows-per-batch-errors
+      owner: human:buger
+      ki_ref: pump-writedata-swallows-per-batch-errors
 release_disposition: ship_with_known_issue
 interface:
     caller: tyk-pump-core
@@ -93,3 +114,8 @@ lifecycle:
           to: approved
           reason: 're-approve (prior: role="interface_engineer" reviewer="human:buger" at=2026-06-02T05:02:48Z comment="Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.")'
           changed_by: human:cli
+        - date: "2026-06-22T12:04:23Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="interface_engineer" reviewer="human:buger" at=2026-06-02T14:19:05Z comment="Phase L3 aggressive: flip 8 INT interface contracts to FRETish (positive when-shall-always-satisfy form); per-contract var pairs added in specs/interface/variables/.")'
+          changed_by: human:buger

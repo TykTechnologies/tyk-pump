@@ -18,7 +18,10 @@ tags: []
 variables:
     - elasticsearch_write_failed
     - write_error_returned
-traces: {}
+traces:
+    reviewed_at: "2026-06-22T12:04:24.899675Z"
+    reviewed_by: human:buger
+    reviewed_fingerprint: sha256:b8818e3128643664e1c19c1191a5210132d51f131520b0ccc09b95510d474138
 verification:
     assurance_level: B
     formalization_status: valid

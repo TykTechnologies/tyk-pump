@@ -29,20 +29,21 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-03T07:38:51Z"
-        comment: 'Phase Q: catalog obligation attachments — adds cert_validation_strict, malformed_recovers_or_errors_loudly, cancellation_observed, connection_leak_free, query_timeout_bounded (Mongo selective surface, nested msgpack decode). See .proof/catalog-obligation-proposals.md.'
+        reviewed_at: "2026-06-22T12:04:23Z"
+        comment: 'Review obligation expansion from catalogue gap pass; active unfixed behavior remains KnownIssue-gated.'
         fingerprint: sha256:2bb0e060facf82980ac9e5eeaf241c3c483a64b444747bfc04981061f601aa7d
-        ai_generated: true
+        ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:34:43Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-22T10:55:46Z"
+    last_modified_at: "2026-06-22T12:04:23Z"
 obligation_checklist:
     - boundary
     - cancellation_observed
     - config_schema_strict
     - errors_propagated
+    - external_call_failure_observable
     - external_call_timeout_bounded
     - malformed_recovers_or_errors_loudly
     - nil_safety
@@ -67,6 +68,11 @@ obligation_deferrals:
       tracking: pumps-logfatal-on-config-decode
       owner: human:buger
       ki_ref: pumps-logfatal-on-config-decode
+    - obligation_class: external_call_failure_observable
+      reason: 'This pump family has a confirmed WriteData path that logs backend or per-batch write failures and returns nil, so backend failure observability remains KI-gated until errors are propagated to the caller.'
+      tracking: pump-writedata-swallows-per-batch-errors
+      owner: human:buger
+      ki_ref: pump-writedata-swallows-per-batch-errors
     - obligation_class: external_call_timeout_bounded
       reason: 'External backend calls remain operator-timeout dependent because timeout=0 is still accepted; this is KI-tracked until a nonzero deadline is enforced by default or Init rejects zero timeout.'
       tracking: pump-no-timeout-can-block-purge-cycle
@@ -130,3 +136,8 @@ lifecycle:
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T13:35:02Z comment="Phase L2: aggressive formalization — encodes empty-OrgID drop decision (mongo_selective.go:218 ''No OrgID for AnalyticsRecord, skipping''); variables in pumps-mongo-selective.vars.yaml; user directive: force MCDC witnesses.")'
           changed_by: human:cli
+        - date: "2026-06-22T12:04:23Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-03T07:38:51Z comment="Phase Q: catalog obligation attachments — adds cert_validation_strict, malformed_recovers_or_errors_loudly, cancellation_observed, connection_leak_free, query_timeout_bounded (Mongo selective surface, nested msgpack decode). See .proof/catalog-obligation-proposals.md.")'
+          changed_by: human:buger

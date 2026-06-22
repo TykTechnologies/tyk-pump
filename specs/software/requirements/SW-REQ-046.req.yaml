@@ -29,15 +29,15 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-22T09:25:11Z"
-        comment: 'Expand backend, database, retry, queue, panic-safety, and shared-state catalog obligations; uncovered behavior is linked to existing KnownIssues rather than claimed as evidence.'
+        reviewed_at: "2026-06-22T12:04:23Z"
+        comment: 'Review obligation expansion from catalogue gap pass; active unfixed behavior remains KnownIssue-gated.'
         fingerprint: sha256:38e0e66d6666d6203d50ec3978e22839aad72ad8018d178d1f3699bc78d90904
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:35:56Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-22T10:55:42Z"
+    last_modified_at: "2026-06-22T12:04:23Z"
 obligation_checklist:
     - config_schema_strict
     - errors_propagated
@@ -58,10 +58,10 @@ obligation_deferrals:
       ki_ref: mapstructure-decode-silently-drops-unknown-keys
       reproducer: mapstructure-decode-silently-drops-unknown-keys
     - obligation_class: errors_propagated
-      reason: 'real untested obligation under known-issue pumps-logfatal-on-config-decode; surfaced as visible tracked debt, not an overclaimed fix'
-      tracking: pumps-logfatal-on-config-decode
+      reason: 'This pump has a confirmed WriteData path that logs backend or per-batch write failures and returns nil, so the error-propagation contract remains KI-gated until WriteData returns the backend failure.'
+      tracking: pump-writedata-swallows-per-batch-errors
       owner: human:buger
-      ki_ref: pumps-logfatal-on-config-decode
+      ki_ref: pump-writedata-swallows-per-batch-errors
     - obligation_class: external_call_failure_observable
       reason: 'Influx v1 persistent connection failure recurses instead of returning a typed failure to the caller, so external failure observability remains KI-tracked debt.'
       tracking: influx-v1-unbounded-reconnect-recursion
@@ -135,4 +135,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-03T07:39:10Z comment="Phase Q: catalog obligation attachments — adds external_call_timeout_bounded, external_call_failure_observable, panic_free_input_handling, cancellation_observed, connection_leak_free, resource_lifetime_released, ssrf_protection (Influx v1 surface; KIs influx-v1-unbounded-reconnect-recursion, pumps-logfatal-on-config-decode). See .proof/catalog-obligation-proposals.md.")'
+          changed_by: human:buger
+        - date: "2026-06-22T12:04:23Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-22T09:25:11Z comment="Expand backend, database, retry, queue, panic-safety, and shared-state catalog obligations; uncovered behavior is linked to existing KnownIssues rather than claimed as evidence.")'
           changed_by: human:buger

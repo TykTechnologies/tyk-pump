@@ -29,19 +29,25 @@ verification:
         status: approved
         reviewer: human:buger
         role: system_engineer
-        reviewed_at: "2026-06-03T07:40:40Z"
-        comment: 'Phase Q: catalog obligation attachments — adds external_call_timeout_bounded (per-pump timeout system contract). See .proof/catalog-obligation-proposals.md.'
+        reviewed_at: "2026-06-22T12:04:23Z"
+        comment: 'Review obligation expansion from catalogue gap pass; active unfixed behavior remains KnownIssue-gated.'
         fingerprint: sha256:7cfdd21f2acd5d71309fda637c4de79f2587e7a31ee0be458459381bc9463734
-        ai_generated: true
+        ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:11:41Z"
-    last_modified_by: agent:codex
-    last_modified_at: "2026-06-19T08:07:21Z"
+    last_modified_by: human:buger
+    last_modified_at: "2026-06-22T12:04:23Z"
 obligation_class: boundary
 obligation_checklist:
+    - cancellation_observed
     - external_call_timeout_bounded
 obligation_deferrals:
+    - obligation_class: cancellation_observed
+      reason: 'Mongo WriteData drops the caller context and uses context.Background, so cancellation and per-pump timeout enforcement remain KI-gated until Mongo write calls propagate the caller context.'
+      tracking: mongo-pump-ignores-caller-context
+      owner: human:buger
+      ki_ref: mongo-pump-ignores-caller-context
     - obligation_class: external_call_timeout_bounded
       reason: 'real system timeout gap under known-issue pump-no-timeout-can-block-purge-cycle: a backend with Timeout=0 can block a purge-cycle write indefinitely, so timeout enforcement is operator-conditional; surfaced as visible tracked debt, not an overclaimed fix'
       tracking: pump-no-timeout-can-block-purge-cycle
@@ -75,3 +81,8 @@ lifecycle:
           to: approved
           reason: 're-approve (prior: role="system_engineer" reviewer="human:buger" at=2026-06-02T05:02:36Z comment="Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.")'
           changed_by: human:cli
+        - date: "2026-06-22T12:04:23Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="system_engineer" reviewer="human:buger" at=2026-06-03T07:40:40Z comment="Phase Q: catalog obligation attachments — adds external_call_timeout_bounded (per-pump timeout system contract). See .proof/catalog-obligation-proposals.md.")'
+          changed_by: human:buger

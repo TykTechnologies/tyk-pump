@@ -19,7 +19,7 @@ source:
     repo: TykTechnologies/tyk-pump
     commit: 0596e82
     reference: TT-15532
-    date: "2026-08-16"
+    date: "2025-08-16"
 classification:
     surface: data_integrity
     defect_class: unescaped_newline_fragmentation
@@ -59,16 +59,6 @@ disposition:
     status: covered_by_requirement
     requirements:
         - SW-REQ-050
-    known_issues:
-        - mapstructure-decode-silently-drops-unknown-keys
-        - pump-writedata-swallows-per-batch-errors
-        # Overlap-only link required by problem_reports_reviewed because this
-        # covered_by_requirement report and the active KI share SW-REQ-050.
-        # It is not the root cause of this historical syslog fragmentation defect.
-        - pump-no-timeout-can-block-purge-cycle
-        - pumps-logfatal-on-config-decode
-        - syslog-init-logfatal-on-invalid-transport
-        - syslog-initwriter-logfatal-on-dial-error
     evidence:
         verified_by:
             - pumps/syslog_test.go:TestSyslogPump_WriteData_WithMultilineHTTP
@@ -96,7 +86,3 @@ history:
         // SW-REQ-050:encoding_safety:example. Test PASSES against current code:
         a multiline raw_request/raw_response emits exactly one syslog line with
         \n escaped to \\n (asserts nonEmptyLines==1 and Contains "\\n").
-    - at: "2026-06-22T00:00:00Z"
-      by: agent:codex
-      action: linked_known_issue
-      detail: Linked pump-no-timeout-can-block-purge-cycle as overlapping active external-writer-timeout debt on SW-REQ-050.

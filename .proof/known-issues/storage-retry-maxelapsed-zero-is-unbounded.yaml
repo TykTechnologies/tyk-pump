@@ -3,6 +3,8 @@ title: Storage reconnect retry has MaxElapsedTime=0 (unbounded total duration)
 description: 'retry/storage-retry.go:14 sets exponentialBackoff.MaxElapsedTime = 0. The cenkalti/backoff/v4 library treats 0 as ''no maximum elapsed time'', i.e. retry forever. SW-REQ-031''s wording ''bounded exponential backoff'' is therefore inaccurate: only the per-attempt interval (MaxInterval=10s at line 13) is bounded; total retry duration is unbounded.'
 affected_requirements:
     - SW-REQ-031
+    - SYS-REQ-006
+    - SW-REQ-007
 evidence_manifests:
     - code_signal:opengrep:go.backoff.maxelapsed-zero-is-unbounded:retry/storage-retry.go:14
 severity: low
@@ -13,7 +15,7 @@ introduced_in: inception
 mitigation: Storage reconnection retries forever. Operators must monitor connection-error logs and pod lifecycle externally to detect persistent Redis outages.
 remediation: Either set MaxElapsedTime to a finite value (e.g. a few minutes) so the process exits and supervisor restarts, or amend SW-REQ-031 wording to clarify 'bounded per-attempt interval'.
 owner: tyk-team
-release_disposition: ship
+release_disposition: ship_with_known_issue
 status: open
 history:
     - at: "2026-05-30T08:33:02Z"
@@ -31,3 +33,7 @@ history:
       by: human:buger
       action: edit
       detail: set-severity-basis=risk,set-risk
+    - at: "2026-06-22T12:02:45Z"
+      by: human:buger
+      action: edit
+      detail: set-release-disposition=ship_with_known_issue,add-requirement
