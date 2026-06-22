@@ -61,6 +61,7 @@ disposition:
         - SW-REQ-050
     known_issues:
         - mapstructure-decode-silently-drops-unknown-keys
+        - pump-writedata-swallows-per-batch-errors
         - pumps-logfatal-on-config-decode
         - syslog-init-logfatal-on-invalid-transport
         - syslog-initwriter-logfatal-on-dial-error

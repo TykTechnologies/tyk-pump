@@ -19,8 +19,9 @@ tags:
     - resilience
 variables: []
 traces:
-    reviewed_at: "2026-06-19T20:51:38Z"
+    reviewed_at: "2026-06-22T06:12:40.569328Z"
     reviewed_by: human:buger
+    reviewed_fingerprint: sha256:6232806e2cd1df38dbb1154d7d2e1b9b24515e98228d7107cbbd2ffd749e95e3
 verification:
     assurance_level: B
     formalization_status: none
@@ -48,7 +49,6 @@ stakeholder:
     acceptance_criteria:
         - id: AC-001
           text: A failure or timeout writing to one backend does not prevent records being written to the other configured backends.
-          testable: true
           verification_method: test
           derived_reqs:
             - SYS-REQ-004
@@ -57,7 +57,6 @@ stakeholder:
             - SYS-REQ-033
         - id: AC-002
           text: Transient storage or backend errors are retried with bounded backoff rather than dropped on first failure.
-          testable: true
           verification_method: test
           derived_reqs:
             - SYS-REQ-006

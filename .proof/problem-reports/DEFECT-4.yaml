@@ -68,6 +68,7 @@ disposition:
         - analytics-timestamp-timezone-convention-unpinned
         - mapstructure-decode-silently-drops-unknown-keys
         - no-panic-recovery-in-exec-pump-writing
+        - pump-writedata-swallows-per-batch-errors
         - sql-background-index-concurrency-unbounded
         - sql-batch-size-zero-infinite-loop
         - sql-schema-no-version-policy

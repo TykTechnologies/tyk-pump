@@ -18,6 +18,7 @@ func readPumpSource(t *testing.T, path string) string {
 
 // TestSQLPumpWriteDataSwallowsBatchError_KI is a static tripwire for the
 // standard SQL member of pump-writedata-swallows-per-batch-errors.
+// Verifies: STK-REQ-002
 // Verifies: KI:pump-writedata-swallows-per-batch-errors
 // Reproduces: pump-writedata-swallows-per-batch-errors
 func TestSQLPumpWriteDataSwallowsBatchError_KI(t *testing.T) {
@@ -31,6 +32,7 @@ func TestSQLPumpWriteDataSwallowsBatchError_KI(t *testing.T) {
 
 // TestLogzioPumpMissingShutdownFlush_KI is a static tripwire for the Logz.io
 // half of logzio-segment-no-shutdown-flush.
+// Verifies: STK-REQ-002
 // Verifies: KI:logzio-segment-no-shutdown-flush
 // Reproduces: logzio-segment-no-shutdown-flush
 func TestLogzioPumpMissingShutdownFlush_KI(t *testing.T) {
@@ -45,6 +47,7 @@ func TestLogzioPumpMissingShutdownFlush_KI(t *testing.T) {
 
 // TestSegmentPumpMissingShutdownFlush_KI is a static tripwire for the Segment
 // half of logzio-segment-no-shutdown-flush.
+// Verifies: STK-REQ-002
 // Verifies: KI:logzio-segment-no-shutdown-flush
 // Reproduces: logzio-segment-no-shutdown-flush
 func TestSegmentPumpMissingShutdownFlush_KI(t *testing.T) {
