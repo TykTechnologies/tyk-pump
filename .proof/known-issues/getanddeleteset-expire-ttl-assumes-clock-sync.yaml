@@ -1,15 +1,15 @@
 id: getanddeleteset-expire-ttl-assumes-clock-sync
 title: GetAndDeleteSet TTL refresh assumes pump/Redis clock agreement; clock skew or backward jumps can mis-expire the key
-introduced_in: inception
 description: 'storage/temporal_storage.go:294 calls r.kv.Expire(ctx, fixedKey, expire) to refresh a relative TTL on the analytics key after a chunked Pop (chunkSize != -1). The ''expire'' is a duration applied by Redis against Redis''s own clock, while the pump reasons about key liveness on its local clock. Two failure modes: (a) if the pump and Redis clocks disagree by epsilon, the pump''s ''key still alive'' assumption races Redis''s actual eviction window; (b) if the pump''s (or Redis''s) clock steps backwards (NTP correction, VM pause/resume), an EXPIRE can land an expiry that is effectively immediate, evicting the key earlier than intended. The clock-skew tolerance (|pump.now - redis.now| < delta) is neither documented nor asserted. This is the runtime counterpart to the existing open assumption on SYS-REQ-028 (owner team:redis-protocol). Distinct from KI getanddeleteset-expire-fail-loses-records, which covers the Expire-returns-error path.'
 affected_requirements:
     - SW-REQ-007
 evidence_manifests:
     - code_signal:opengrep:go.time.absolute-expire-on-local-clock:storage/temporal_storage.go:294
-environment_note: |-
-  Evidence is tied to the listed evidence_manifests entries; reproduce by rerunning the named test or code-signal scan and inspecting code_signal:opengrep:go.time.absolute-expire-on-local-clock:storage/temporal_storage.go:294.
 severity: low
+severity_basis: risk
 risk: data_integrity
+environment_note: Evidence is tied to the listed evidence_manifests entries; reproduce by rerunning the named test or code-signal scan and inspecting code_signal:opengrep:go.time.absolute-expire-on-local-clock:storage/temporal_storage.go:294.
+introduced_in: inception
 mitigation: Run tyk-pump and Redis with synchronized clocks (NTP/chrony) so |pump.now - redis.now| stays small; the relative-TTL EXPIRE then behaves as intended. The chunked-TTL path is only taken when chunkSize != -1.
 remediation: Document the clock-skew tolerance assumption (or switch to a relative-TTL semantics validated by an init probe of pump-vs-Redis time), discharging the SYS-REQ-028 assumption.
 owner: team:redis-protocol
@@ -20,3 +20,7 @@ history:
     - at: "2026-06-11T16:16:53Z"
       by: human:leo
       action: created
+    - at: "2026-06-22T07:15:09Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=risk

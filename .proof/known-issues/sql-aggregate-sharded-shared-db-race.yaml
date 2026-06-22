@@ -6,6 +6,8 @@ affected_requirements:
     - SW-REQ-065
     - SW-REQ-066
 severity: medium
+severity_basis: risk
+risk: data_integrity
 reproducer_command: rg -n "c\.db = c\.db\.Table|func \(c \*SQLAggregatePump\) ensure(Index|Table)|CREATE INDEX|backgroundIndexCreated" pumps/sql_aggregate.go
 introduced_in: inception
 mitigation: Avoid invoking WriteData concurrently on the same SQLAggregatePump instance when table sharding can create or switch aggregate tables; serialize purge writes per pump until the shared DB state is isolated.
@@ -17,3 +19,11 @@ history:
     - at: "2026-06-19T07:42:40Z"
       by: agent:codex
       action: created
+    - at: "2026-06-22T07:15:58Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=holistic
+    - at: "2026-06-22T07:18:04Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=risk,set-risk

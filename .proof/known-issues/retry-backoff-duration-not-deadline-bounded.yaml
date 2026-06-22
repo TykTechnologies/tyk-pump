@@ -1,14 +1,14 @@
 id: retry-backoff-duration-not-deadline-bounded
 title: HTTP retry strategy has bounded attempts but no explicit elapsed-time deadline
-introduced_in: inception
-description: 'retry/http-retry.go:96-98 uses backoff.WithMaxRetries(backoff.NewExponentialBackOff(), s.maxRetries). The retry count is bounded, but the requirement does not specify or test the maximum elapsed retry duration from the exponential schedule. The retry_budget_bounded obligation is tracked debt until elapsed retry budget semantics are explicit.'
+description: retry/http-retry.go:96-98 uses backoff.WithMaxRetries(backoff.NewExponentialBackOff(), s.maxRetries). The retry count is bounded, but the requirement does not specify or test the maximum elapsed retry duration from the exponential schedule. The retry_budget_bounded obligation is tracked debt until elapsed retry budget semantics are explicit.
 affected_requirements:
     - SW-REQ-030
-environment_note: |-
-  Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source or rerunning the exponential-backoff code-signal scan.
-reproducer_command: rg -n "WithMaxRetries|NewExponentialBackOff|maxRetries" retry/http-retry.go
 severity: low
+severity_basis: risk
 risk: availability
+reproducer_command: rg -n "WithMaxRetries|NewExponentialBackOff|maxRetries" retry/http-retry.go
+environment_note: Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source or rerunning the exponential-backoff code-signal scan.
+introduced_in: inception
 mitigation: Configure retry counts conservatively and rely on the max retry count to avoid unbounded repeated attempts.
 remediation: Specify a maximum elapsed retry duration, wire it into the retry strategy, and add tests for both attempt and elapsed-time exhaustion.
 owner: tyk-team
@@ -18,3 +18,7 @@ history:
     - at: "2026-06-19T00:00:00Z"
       by: agent:codex
       action: created
+    - at: "2026-06-22T07:15:09Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=risk

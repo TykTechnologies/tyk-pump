@@ -1,15 +1,15 @@
 id: config-pump-type-whitelist-not-enforced-at-load
 title: Config loading accepts pump map entries before enforcing the pump type whitelist
-introduced_in: inception
-description: 'config.go LoadConfig unmarshals the JSON Pumps map and normalizes keys before any pump-type whitelist check. Environment pump loading also materializes PumpConfig entries and only later infers a type; the actual AvailablePumps whitelist is enforced during main.initialisePumps, after config loading and common per-pump settings have already accepted the entry. Unknown pump types are skipped at init time rather than rejected at the loader/common-config boundary. The SW-REQ-002 and SW-REQ-016 polymorphic_type_whitelist obligations are therefore real boundary-policy gaps, not only missing test evidence.'
+description: config.go LoadConfig unmarshals the JSON Pumps map and normalizes keys before any pump-type whitelist check. Environment pump loading also materializes PumpConfig entries and only later infers a type; the actual AvailablePumps whitelist is enforced during main.initialisePumps, after config loading and common per-pump settings have already accepted the entry. Unknown pump types are skipped at init time rather than rejected at the loader/common-config boundary. The SW-REQ-002 and SW-REQ-016 polymorphic_type_whitelist obligations are therefore real boundary-policy gaps, not only missing test evidence.
 affected_requirements:
     - SW-REQ-002
     - SW-REQ-016
-environment_note: |-
-  Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source and command output.
-reproducer_command: |-
-  rg -n "json.Unmarshal|Pumps|AvailablePumps|GetPumpByName|initialisePumps" config.go main.go pumps/pump.go
 severity: low
+severity_basis: risk
+risk: correctness
+reproducer_command: rg -n "json.Unmarshal|Pumps|AvailablePumps|GetPumpByName|initialisePumps" config.go main.go pumps/pump.go
+environment_note: Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source and command output.
+introduced_in: inception
 mitigation: Unknown pump names are skipped during initialization and produce log errors; operators should review startup logs for skipped pumps after configuration changes.
 remediation: Validate pump names and explicit PumpConfig.Type values against pumps.AvailablePumps inside LoadConfig/LoadPumpsByEnv, return a structured error for unknown types, and add loader-boundary tests for JSON and env-configured unknown pump types.
 owner: tyk-team
@@ -19,3 +19,11 @@ history:
     - at: "2026-06-19T00:00:00Z"
       by: agent:codex
       action: created
+    - at: "2026-06-22T07:15:10Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=holistic
+    - at: "2026-06-22T07:18:03Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=risk,set-risk

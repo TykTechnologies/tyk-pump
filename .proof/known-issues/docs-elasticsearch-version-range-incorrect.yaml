@@ -1,14 +1,15 @@
 id: docs-elasticsearch-version-range-incorrect
 title: 'Documentation gap: tyk-docs claims Elasticsearch 2.0-7.x support; code only handles 3.x-7.x'
-introduced_in: inception
 description: tyk-docs/content/api-management/tyk-pump.md:790 advertises 'Elasticsearch (2.0 - 7.x)' but pumps/elasticsearch.go:185-296 only switches on '3', '5', '6', '7' with default '3'. No ES 2.x client is imported. The per-pump doc (pump-config.md:882) correctly says 3.x+.
 affected_requirements:
     - SW-REQ-022
 commands:
     - grep -n 'Elasticsearch' /Users/buger/go/src/tyk-docs/tyk-docs/content/api-management/tyk-pump.md
-reproducer_command: |-
-  grep -n 'Elasticsearch' /Users/buger/go/src/tyk-docs/tyk-docs/content/api-management/tyk-pump.md
 severity: low
+severity_basis: risk
+risk: correctness
+reproducer_command: grep -n 'Elasticsearch' /Users/buger/go/src/tyk-docs/tyk-docs/content/api-management/tyk-pump.md
+introduced_in: inception
 mitigation: ES 2.x clients defaulting to '3' still work at the wire level for most operations.
 remediation: Replace '(2.0 - 7.x)' with '(3.x - 7.x)' in tyk-docs/content/api-management/tyk-pump.md:790.
 owner: tyk-team
@@ -19,3 +20,11 @@ history:
     - at: "2026-06-01T17:21:33Z"
       by: human:buger
       action: created
+    - at: "2026-06-22T07:15:10Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=holistic
+    - at: "2026-06-22T07:18:03Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=risk,set-risk

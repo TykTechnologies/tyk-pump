@@ -167,6 +167,7 @@ func TestBackoffHTTPRetry_handleErr_NonRetryableWrappedPermanent(t *testing.T) {
 // abort before the retry loop begins, surfacing the read error directly.
 //
 // Verifies: SW-REQ-030
+// SW-REQ-030:malformed_input:negative
 func TestBackoffHTTPRetry_Send_BodyReadError_ReturnedImmediately(t *testing.T) {
 	wantErr := errors.New("boom-reading-body")
 	r := NewBackoffRetry("test", 3, http.DefaultClient, testLogger())

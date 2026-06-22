@@ -44,6 +44,7 @@ func (errorReadCloser) Close() error {
 // Verifies: SW-REQ-030
 // SW-REQ-030:error_handling:example
 // SW-REQ-030:error_handling:nominal
+// SW-REQ-030:malformed_input:nominal
 // Verifies: SYS-REQ-006
 // Verifies: STK-REQ-002
 // MCDC SYS-REQ-006: retry_attempted=F, transient_failure=F => TRUE

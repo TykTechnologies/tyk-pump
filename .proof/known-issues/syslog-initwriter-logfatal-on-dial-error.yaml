@@ -1,16 +1,17 @@
 id: syslog-initwriter-logfatal-on-dial-error
 title: Syslog initWriter log.Fatal exits the process on dial failure
-introduced_in: inception
-description: 'pumps/syslog.go initWriter calls s.log.Fatal when syslog.Dial returns an error. A bad syslog transport/address combination therefore exits the whole tyk-pump process instead of returning an Init/WriteData error for the syslog pump. This violates the per-backend failure isolation expectation for syslog delivery.'
+description: pumps/syslog.go initWriter calls s.log.Fatal when syslog.Dial returns an error. A bad syslog transport/address combination therefore exits the whole tyk-pump process instead of returning an Init/WriteData error for the syslog pump. This violates the per-backend failure isolation expectation for syslog delivery.
 affected_requirements:
     - SYS-REQ-004
     - SW-REQ-050
 evidence_manifests:
     - test:pumps/udp_file_pumps_mcdc_100_test.go:TestSyslogPump_initWriter_BadDial_Subprocess
     - test:pumps/udp_file_pumps_mcdc_100_test.go:TestSyslogPump_initWriter_BadDial_InProcess
-reproducer_command: |-
-  go test -count=1 -run 'TestSyslogPump_initWriter_BadDial_(Subprocess|InProcess)' ./pumps
 severity: medium
+severity_basis: risk
+risk: availability
+reproducer_command: go test -count=1 -run 'TestSyslogPump_initWriter_BadDial_(Subprocess|InProcess)' ./pumps
+introduced_in: inception
 mitigation: Validate syslog transport/address settings before deployment and rely on a process supervisor to restart tyk-pump after fatal exits.
 remediation: Return the syslog.Dial error to the caller and let the pump host skip or report the failing syslog pump without exiting the process.
 owner: tyk-team
@@ -20,3 +21,11 @@ history:
     - at: "2026-06-19T00:00:00Z"
       by: agent:codex
       action: created
+    - at: "2026-06-22T07:15:58Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=holistic
+    - at: "2026-06-22T07:18:02Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=risk,set-risk

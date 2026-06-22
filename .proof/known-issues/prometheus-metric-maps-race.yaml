@@ -4,6 +4,8 @@ description: PrometheusMetric.Inc, Observe, and Expose mutate counterMap and his
 affected_requirements:
     - SW-REQ-024
 severity: medium
+severity_basis: risk
+risk: data_integrity
 reproducer_command: rg -n "counterMap map\[string\]counterStruct|histogramMap[[:space:]]+map\[string\]histogramCounter|pm\.counterMap\[|pm\.histogramMap\[|pm\.counterMap = make|pm\.histogramMap = make" pumps/prometheus.go
 introduced_in: inception
 mitigation: Avoid concurrent WriteData calls against the same PrometheusPump instance; production purge dispatch should serialize writes per pump until the metric maps are protected.
@@ -15,3 +17,11 @@ history:
     - at: "2026-06-19T07:25:48Z"
       by: agent:codex
       action: created
+    - at: "2026-06-22T07:15:11Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=holistic
+    - at: "2026-06-22T07:18:03Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=risk,set-risk

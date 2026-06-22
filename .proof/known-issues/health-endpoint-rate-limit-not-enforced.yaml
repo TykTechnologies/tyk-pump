@@ -1,14 +1,15 @@
 id: health-endpoint-rate-limit-not-enforced
 title: Health endpoint has no request rate limiting
-introduced_in: inception
-description: 'server/server.go registers the configured health path directly with Healthcheck using r.HandleFunc("/"+endpoint, Healthcheck).Methods("GET"). The handler writes the liveness response immediately, and the router construction does not wrap it with throttling, rate limiting, or concurrency limiting middleware. The rate_limit_respected obligations for the health endpoint are therefore real product gaps rather than merely missing tests.'
+description: server/server.go registers the configured health path directly with Healthcheck using r.HandleFunc("/"+endpoint, Healthcheck).Methods("GET"). The handler writes the liveness response immediately, and the router construction does not wrap it with throttling, rate limiting, or concurrency limiting middleware. The rate_limit_respected obligations for the health endpoint are therefore real product gaps rather than merely missing tests.
 affected_requirements:
     - SW-REQ-032
     - SYS-REQ-012
-environment_note: |-
-  Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source and command output.
-reproducer_command: rg -n "HandleFunc\(\"/\"\+endpoint, Healthcheck\)|func Healthcheck|rate|limit|throttle|concurr" server/server.go
 severity: low
+severity_basis: risk
+risk: availability
+reproducer_command: rg -n "HandleFunc\(\"/\"\+endpoint, Healthcheck\)|func Healthcheck|rate|limit|throttle|concurr" server/server.go
+environment_note: Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source and command output.
+introduced_in: inception
 mitigation: Apply ingress, load-balancer, or service-mesh request limits to the health endpoint in deployment.
 remediation: Add an explicit health endpoint rate limit or document that the endpoint relies on external rate limiting before satisfying rate_limit_respected.
 owner: tyk-team
@@ -18,3 +19,11 @@ history:
     - at: "2026-06-19T00:00:00Z"
       by: agent:codex
       action: created
+    - at: "2026-06-22T07:15:10Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=holistic
+    - at: "2026-06-22T07:18:01Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=risk,set-risk

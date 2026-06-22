@@ -1,6 +1,5 @@
 id: elasticsearch-unbounded-reconnect-recursion
 title: Elasticsearch pump uses unbounded recursion on connection failure
-introduced_in: inception
 description: 'pumps/elasticsearch.go:407-415 connect() recurses to itself on failure with only a 5-second sleep and no retry bound: ''e.log.Error(...); time.Sleep(5 * time.Second); e.connect()''. pumps/elasticsearch.go:419-432 WriteData also re-enters connect+WriteData recursively when e.operator==nil. A persistent ES outage causes unbounded recursion, eventually stack-overflowing the goroutine. Violates SYS-REQ-005 (no timeout bound) and SYS-REQ-004 (a stack overflow takes down the whole process, not just this pump).'
 affected_requirements:
     - SYS-REQ-004
@@ -11,9 +10,11 @@ affected_requirements:
     - SW-REQ-070
 evidence_manifests:
     - code_signal:opengrep:go.recursion.unbounded-on-error:pumps/elasticsearch.go:407
-environment_note: |-
-  Evidence is tied to the listed evidence_manifests entries; reproduce by rerunning the named test or code-signal scan and inspecting code_signal:opengrep:go.recursion.unbounded-on-error:pumps/elasticsearch.go:407.
 severity: medium
+severity_basis: risk
+risk: availability
+environment_note: Evidence is tied to the listed evidence_manifests entries; reproduce by rerunning the named test or code-signal scan and inspecting code_signal:opengrep:go.recursion.unbounded-on-error:pumps/elasticsearch.go:407.
+introduced_in: inception
 mitigation: Avoid persistent ES outages; monitor ES uptime out-of-band. Stop and restart tyk-pump if recurring ES errors appear in logs.
 remediation: Replace recursion with the retry package's bounded ExponentialBackoff and a retry-count limit; on exhaustion, return an error from WriteData so the batch is logged-and-skipped rather than recursing.
 owner: tyk-team
@@ -38,3 +39,11 @@ history:
       by: human:buger
       action: edit
       detail: add-requirement
+    - at: "2026-06-22T07:15:10Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=holistic
+    - at: "2026-06-22T07:18:01Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=risk,set-risk

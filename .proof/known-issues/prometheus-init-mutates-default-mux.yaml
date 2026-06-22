@@ -1,13 +1,14 @@
 id: prometheus-init-mutates-default-mux
 title: Prometheus pump Init registers handler on http.DefaultServeMux; re-init panics
-introduced_in: inception
 description: 'pumps/prometheus.go:213 ''http.Handle(p.conf.Path, promhttp.Handler())'' registers on the package-global http.DefaultServeMux. If Init is called twice (during tests or after a transient reconfigure), the second http.Handle PANICS with ''http: multiple registrations for /metrics''. Additionally, the listener at line 215 ''go func() { log.Fatal(http.ListenAndServe(p.conf.Addr, nil)) }'' uses ''nil'' as the handler — that means the DefaultServeMux is used. Two PrometheusPump instances with different listen_addr but the same Path collide at the global mux even if listen_addr differs.'
 affected_requirements:
     - SW-REQ-024
-environment_note: |-
-  Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source or documentation surface and following the described scenario.
-reproducer_command: rg -n "http\.Handle\(p\.conf\.Path|ListenAndServe\(p\.conf\.Addr, nil\)" pumps/prometheus.go
 severity: low
+severity_basis: risk
+risk: availability
+reproducer_command: rg -n "http\.Handle\(p\.conf\.Path|ListenAndServe\(p\.conf\.Addr, nil\)" pumps/prometheus.go
+environment_note: Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source or documentation surface and following the described scenario.
+introduced_in: inception
 mitigation: Operators only configure one prometheus pump per tyk-pump process. Re-init is rare; the docs do not advertise hot reconfigure.
 remediation: 'Create a local mux: ''mux := http.NewServeMux(); mux.Handle(p.conf.Path, promhttp.Handler()); go func() { log.Fatal(http.ListenAndServe(p.conf.Addr, mux)) }()''. The same change isolates Prometheus from any other component that touches the default mux.'
 owner: tyk-team
@@ -17,3 +18,11 @@ history:
     - at: "2026-06-02T16:39:47Z"
       by: human:buger
       action: created
+    - at: "2026-06-22T07:15:11Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=holistic
+    - at: "2026-06-22T07:18:02Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=risk,set-risk

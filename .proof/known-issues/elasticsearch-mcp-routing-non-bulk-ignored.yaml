@@ -1,44 +1,54 @@
 id: elasticsearch-mcp-routing-non-bulk-ignored
 title: Elasticsearch pump's non-bulk write path ignores MCP per-record index routing
-introduced_in: inception
 description: |
-  pumps/elasticsearch.go processData implementations for v3/v5/v6/v7 compute
-  recordIndex via getIndexNameForRecord(esConf, d) on every iteration, but the
-  non-bulk path uses an `index` builder that was instantiated once at the top
-  of the function with `e.esClient.Index().Index(getIndexName(esConf))`. The
-  builder's per-call BodyJson(...).Do(ctx) therefore always writes to the
-  default IndexName, ignoring the per-record routing decision. As a result,
-  when DisableBulk=true and MCPIndexName is configured, MCP records are
-  silently routed to the main IndexName instead of MCPIndexName.
+    pumps/elasticsearch.go processData implementations for v3/v5/v6/v7 compute
+    recordIndex via getIndexNameForRecord(esConf, d) on every iteration, but the
+    non-bulk path uses an `index` builder that was instantiated once at the top
+    of the function with `e.esClient.Index().Index(getIndexName(esConf))`. The
+    builder's per-call BodyJson(...).Do(ctx) therefore always writes to the
+    default IndexName, ignoring the per-record routing decision. As a result,
+    when DisableBulk=true and MCPIndexName is configured, MCP records are
+    silently routed to the main IndexName instead of MCPIndexName.
 
-  Reference (v7): pumps/elasticsearch.go:637-661.
-    637: index := e.esClient.Index().Index(getIndexName(esConf))
-    ...
-    651: recordIndex := getIndexNameForRecord(esConf, d)
-    ...
-    657: _, err := index.BodyJson(mapping).Id(id).Do(ctx)   // uses `index`, not recordIndex
+    Reference (v7): pumps/elasticsearch.go:637-661.
+      637: index := e.esClient.Index().Index(getIndexName(esConf))
+      ...
+      651: recordIndex := getIndexNameForRecord(esConf, d)
+      ...
+      657: _, err := index.BodyJson(mapping).Id(id).Do(ctx)   // uses `index`, not recordIndex
 
-  The bulk path correctly uses recordIndex via NewBulkIndexRequest().Index(recordIndex),
-  so MCP routing works only when DisableBulk=false.
+    The bulk path correctly uses recordIndex via NewBulkIndexRequest().Index(recordIndex),
+    so MCP routing works only when DisableBulk=false.
 
-  Documented by regression test:
-    pumps/elasticsearch_mcdc_test.go:TestElasticsearchPump_WriteData_MCPIndexRouting_NonBulkBug
+    Documented by regression test:
+      pumps/elasticsearch_mcdc_test.go:TestElasticsearchPump_WriteData_MCPIndexRouting_NonBulkBug
 affected_requirements:
     - SW-REQ-069
     - SW-REQ-070
-environment_note: |-
-  Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source or documentation surface and following the described scenario.
 severity: medium
+severity_basis: risk
+risk: correctness
+environment_note: Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source or documentation surface and following the described scenario.
+introduced_in: inception
 mitigation: |
-  Keep DisableBulk=false (the default) whenever MCPIndexName is configured.
-  Operators with disable_bulk: true and a configured mcp_index_name will
-  silently route MCP traffic to the main index — verify whether that matches
-  intent and either flip disable_bulk back to false or remove mcp_index_name.
-remediation: |
-  In each version-specific processData, replace the cached `index` builder
-  with a per-record call:
-    _, err := e.esClient.Index().Index(recordIndex).BodyJson(mapping).Id(id).Do(ctx)
-  (and the v3/v5/v6 equivalents with Type(esConf.DocumentType)).
+    Keep DisableBulk=false (the default) whenever MCPIndexName is configured.
+    Operators with disable_bulk: true and a configured mcp_index_name will
+    silently route MCP traffic to the main index — verify whether that matches
+    intent and either flip disable_bulk back to false or remove mcp_index_name.
+remediation: |-
+    In each version-specific processData, replace the cached `index` builder
+    with a per-record call:
+      _, err := e.esClient.Index().Index(recordIndex).BodyJson(mapping).Id(id).Do(ctx)
+    (and the v3/v5/v6 equivalents with Type(esConf.DocumentType)).
 owner: tyk-team
 release_disposition: ship_with_known_issue
 status: open
+history:
+    - at: "2026-06-22T07:15:10Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=holistic
+    - at: "2026-06-22T07:18:03Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=risk,set-risk

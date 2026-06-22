@@ -1,12 +1,13 @@
 id: kafka-writedata-marshal-err-structurally-unreachable
 title: Kafka WriteData json.Marshal err branch is structurally unreachable
-introduced_in: inception
 description: pumps/kafka.go:231 guards jsonError from json.Marshal(message) where message is map[string]interface{} composed exclusively of safely-marshalable values (strings, ints, time.Time, []string, map[string]string from MetaData merge). json.Marshal of these basic Go types cannot fail — Encoder errors fire only on unsupported types (chan/func/complex) or cyclic references, none of which are reachable from AnalyticsRecord fields or KafkaConf.MetaData. The branch is dead code from an MC/DC perspective; tests cannot drive the err side without a structural rewrite of the message map.
 affected_requirements:
     - SW-REQ-021
-environment_note: |-
-  Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source or documentation surface and following the described scenario.
 severity: low
+severity_basis: risk
+risk: correctness
+environment_note: Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source or documentation surface and following the described scenario.
+introduced_in: inception
 mitigation: None required — the guard is harmless plumbing.
 remediation: Either remove the unreachable err handling (json.Marshal of map[string]interface{} with basic types never fails) or refactor to a helper that can return a typed error and is unit-testable. Until then the line carries //mcdc:ignore.
 owner: tyk-team
@@ -17,3 +18,11 @@ history:
     - at: "2026-05-31T10:27:39Z"
       by: human:buger
       action: created
+    - at: "2026-06-22T07:15:10Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=holistic
+    - at: "2026-06-22T07:18:03Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=risk,set-risk

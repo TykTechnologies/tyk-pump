@@ -1,14 +1,14 @@
 id: sw-req-073-parameterized-read-obligation-misattributed
 title: SW-REQ-073 parameterized-read obligation has no SQL read surface
-introduced_in: inception
-description: 'SW-REQ-073 is implemented by analytics.AggregateUptimeData, an in-memory aggregation function over UptimeReportData. The production uptime path reads records from temporal storage in main.StartPurgeLoop and writes SQL uptime aggregates through SQLPump.WriteUptimeData; SW-REQ-073 itself does not issue a SQL SELECT or other parameterized read. The parameterized_only_read obligation is therefore misattributed unless the requirement is revised to name a real database read surface.'
+description: SW-REQ-073 is implemented by analytics.AggregateUptimeData, an in-memory aggregation function over UptimeReportData. The production uptime path reads records from temporal storage in main.StartPurgeLoop and writes SQL uptime aggregates through SQLPump.WriteUptimeData; SW-REQ-073 itself does not issue a SQL SELECT or other parameterized read. The parameterized_only_read obligation is therefore misattributed unless the requirement is revised to name a real database read surface.
 affected_requirements:
     - SW-REQ-073
-environment_note: |-
-  Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source and command output.
-reproducer_command: |-
-  rg -n "reqproof:implements SW-REQ-073|AggregateUptimeData|WriteUptimeData|GetAndDeleteSet|parameterized_only_read" analytics/uptime_data.go pumps/sql.go main.go specs/software/requirements/SW-REQ-073.req.yaml
 severity: low
+severity_basis: risk
+risk: correctness
+reproducer_command: rg -n "reqproof:implements SW-REQ-073|AggregateUptimeData|WriteUptimeData|GetAndDeleteSet|parameterized_only_read" analytics/uptime_data.go pumps/sql.go main.go specs/software/requirements/SW-REQ-073.req.yaml
+environment_note: Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source and command output.
+introduced_in: inception
 mitigation: Treat SQL write parameterization as covered by SQL pump write obligations; do not infer a SQL read contract from SW-REQ-073 until the spec is corrected.
 remediation: Move parameterized_only_read to a requirement with an actual query/read implementation, or amend SW-REQ-073 to remove the read obligation and document the in-memory aggregation boundary.
 owner: tyk-team
@@ -18,3 +18,11 @@ history:
     - at: "2026-06-19T00:00:00Z"
       by: agent:codex
       action: created
+    - at: "2026-06-22T07:15:58Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=holistic
+    - at: "2026-06-22T07:18:03Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=risk,set-risk

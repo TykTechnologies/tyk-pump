@@ -1,13 +1,14 @@
 id: prometheus-metrics-auth-not-enforced
 title: Prometheus metrics endpoint is exposed without authentication
-introduced_in: inception
-description: 'pumps/prometheus.go registers p.conf.Path directly with promhttp.Handler() via http.Handle, then starts http.ListenAndServe(p.conf.Addr, nil). No authentication wrapper or middleware is applied to the metrics handler. The auth_required obligation for the Prometheus pump is therefore a real product gap rather than merely a missing test.'
+description: pumps/prometheus.go registers p.conf.Path directly with promhttp.Handler() via http.Handle, then starts http.ListenAndServe(p.conf.Addr, nil). No authentication wrapper or middleware is applied to the metrics handler. The auth_required obligation for the Prometheus pump is therefore a real product gap rather than merely a missing test.
 affected_requirements:
     - SW-REQ-024
-environment_note: |-
-  Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source and command output.
-reproducer_command: rg -n "http\.Handle\(p\.conf\.Path, promhttp\.Handler\(\)\)|ListenAndServe\(p\.conf\.Addr, nil\)" pumps/prometheus.go
 severity: low
+severity_basis: risk
+risk: compliance
+reproducer_command: rg -n "http\.Handle\(p\.conf\.Path, promhttp\.Handler\(\)\)|ListenAndServe\(p\.conf\.Addr, nil\)" pumps/prometheus.go
+environment_note: Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source and command output.
+introduced_in: inception
 mitigation: Bind the metrics listener to a trusted interface or protect it with a sidecar, ingress rule, firewall, or scrape-network ACL.
 remediation: Add explicit authentication or documented auth bypass semantics for the Prometheus metrics endpoint before satisfying auth_required.
 owner: tyk-team
@@ -17,3 +18,11 @@ history:
     - at: "2026-06-19T00:00:00Z"
       by: agent:codex
       action: created
+    - at: "2026-06-22T07:15:11Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=holistic
+    - at: "2026-06-22T07:18:02Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=risk,set-risk

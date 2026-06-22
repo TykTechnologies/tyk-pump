@@ -1,14 +1,15 @@
 id: csv-writedata-nil-file-handle-panic
 title: CSV WriteData panics on nil file when Create/OpenFile fails
-introduced_in: inception
 description: 'pumps/csv.go:82-95: when os.Create (line 84) or os.OpenFile (line 91) fails, the error is logged but execution continues with ''outfile'' still nil. The defer ''outfile.Close()'' at line 97 will panic with nil pointer dereference. csv.NewWriter accepts nil at line 98 but writer.Write at lines 104, 131 panics on nil underlying writer. Additionally, writer.Flush() at line 138 silently swallows errors — csv.Writer buffers data, so a failed Flush loses records but WriteData still returns nil. The pump-writedata-swallows-per-batch-errors KI doesn''t cover this exact case because it surveys mongo/sql/kinesis/influx pumps but not csv.'
 affected_requirements:
     - SW-REQ-025
     - INT-REQ-004
-environment_note: |-
-  Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source or documentation surface and following the described scenario.
-reproducer_command: rg -n "defer outfile\.Close\(\)|csv\.NewWriter\(outfile\)" pumps/csv.go
 severity: medium
+severity_basis: risk
+risk: availability
+reproducer_command: rg -n "defer outfile\.Close\(\)|csv\.NewWriter\(outfile\)" pumps/csv.go
+environment_note: Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source or documentation surface and following the described scenario.
+introduced_in: inception
 mitigation: Operators must ensure the configured CSVDir is writable before starting tyk-pump. The Init step calls os.MkdirAll at line 62 but only logs failure; permission changes after Init can still trigger the WriteData panic.
 remediation: 'In WriteData: (a) check outfile != nil after Create/OpenFile and return an error if nil; (b) call writer.Error() after Flush and propagate it as the return value.'
 owner: tyk-team
@@ -18,3 +19,11 @@ history:
     - at: "2026-06-02T16:38:13Z"
       by: human:buger
       action: created
+    - at: "2026-06-22T07:15:10Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=holistic
+    - at: "2026-06-22T07:18:01Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=risk,set-risk

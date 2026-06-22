@@ -1,14 +1,15 @@
 id: docs-health-endpoint-liveness-vs-readiness-unclear
 title: 'Documentation gap: tyk-docs /health description implies readiness; endpoint is actually liveness-only'
-introduced_in: inception
 description: KI health-endpoint-is-liveness-only documents that server/server.go:49 returns 200 unconditionally — even during startup before any pump initialized. tyk-docs/content/shared/pump-config.md:5035-5050 introduces /health as 'to confirm the Pump is running' — operators reading this naturally configure it as a Kubernetes readiness probe and get false positives. The doc is technically correct but misleading.
 affected_requirements:
     - SW-REQ-032
 commands:
     - sed -n '5035,5055p' /Users/buger/go/src/tyk-docs/tyk-docs/content/shared/pump-config.md
-reproducer_command: |-
-  sed -n '5035,5055p' /Users/buger/go/src/tyk-docs/tyk-docs/content/shared/pump-config.md
 severity: medium
+severity_basis: risk
+risk: availability
+reproducer_command: sed -n '5035,5055p' /Users/buger/go/src/tyk-docs/tyk-docs/content/shared/pump-config.md
+introduced_in: inception
 mitigation: KI health-endpoint-is-liveness-only is the engineering record.
 remediation: Update the /health doc to make liveness-vs-readiness semantics explicit, suggest combining with an external Redis-lag check for true readiness probes.
 owner: tyk-team
@@ -19,3 +20,11 @@ history:
     - at: "2026-06-01T17:22:18Z"
       by: human:buger
       action: created
+    - at: "2026-06-22T07:15:10Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=holistic
+    - at: "2026-06-22T07:18:01Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=risk,set-risk

@@ -1,14 +1,14 @@
 id: analytics-trimstring-byte-truncation-not-unicode-safe
 title: Analytics trimString truncates by bytes and may split multibyte text
-introduced_in: inception
-description: 'analytics/analytics.go:337-343 converts the input string to bytes, truncates the byte buffer, and converts the result back to string. If the input contains multibyte UTF-8 near the boundary, the resulting string can contain invalid UTF-8. The code-signal therefore raises binary_data_preserved against the analytics owner family; until truncation semantics are specified and tested, this is tracked debt rather than a satisfied binary-preservation claim.'
+description: analytics/analytics.go:337-343 converts the input string to bytes, truncates the byte buffer, and converts the result back to string. If the input contains multibyte UTF-8 near the boundary, the resulting string can contain invalid UTF-8. The code-signal therefore raises binary_data_preserved against the analytics owner family; until truncation semantics are specified and tested, this is tracked debt rather than a satisfied binary-preservation claim.
 affected_requirements:
     - SW-REQ-009
-environment_note: |-
-  Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source or rerunning the lossy-string-conversion code-signal scan.
-reproducer_command: rg -n "func trimString|Write\\(\\[\\]byte\\(value\\)\\)|string\\(trimBuffer\\.Bytes\\(\\)\\)" analytics/analytics.go
 severity: low
+severity_basis: risk
 risk: data_integrity
+reproducer_command: rg -n "func trimString|Write\\(\\[\\]byte\\(value\\)\\)|string\\(trimBuffer\\.Bytes\\(\\)\\)" analytics/analytics.go
+environment_note: Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source or rerunning the lossy-string-conversion code-signal scan.
+introduced_in: inception
 mitigation: Avoid configuring byte-size limits that split user-visible multibyte text fields where exact Unicode preservation matters.
 remediation: Define whether truncation is byte-based or rune/grapheme-based; if text preservation is required, truncate on valid UTF-8 boundaries and add boundary tests.
 owner: tyk-team
@@ -18,3 +18,7 @@ history:
     - at: "2026-06-19T00:00:00Z"
       by: agent:codex
       action: created
+    - at: "2026-06-22T07:15:09Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=risk

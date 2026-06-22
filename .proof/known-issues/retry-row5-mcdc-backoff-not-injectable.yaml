@@ -1,14 +1,14 @@
 id: retry-row5-mcdc-backoff-not-injectable
 title: Retry row-5 MC/DC witness is slow because HTTP retry backoff is not injectable
-introduced_in: inception
-description: 'retry/http-retry.go constructs backoff.NewExponentialBackOff() inline in BackoffHTTPRetry.Send and passes it directly to backoff.WithMaxRetries. The row-5 MC/DC witness for SW-REQ-030 honestly drives a 5xx response followed by a transient transport error and then success, but it must pay the real exponential backoff delays because tests cannot inject a zero-duration backoff without modifying production code.'
+description: retry/http-retry.go constructs backoff.NewExponentialBackOff() inline in BackoffHTTPRetry.Send and passes it directly to backoff.WithMaxRetries. The row-5 MC/DC witness for SW-REQ-030 honestly drives a 5xx response followed by a transient transport error and then success, but it must pay the real exponential backoff delays because tests cannot inject a zero-duration backoff without modifying production code.
 affected_requirements:
     - SW-REQ-030
-environment_note: |-
-  Static evidence is documented in this KnownIssue description; reproduce by inspecting retry/http-retry.go and retry/http_retry_row5_mcdc_test.go.
-reproducer_command: rg -n "NewExponentialBackOff|TestBackoffHTTPRetry_Send_Retries_On5xxThenTransientTransport_Row5" retry/http-retry.go retry/http_retry_row5_mcdc_test.go
 severity: low
-risk: verification_latency
+severity_basis: risk
+risk: availability
+reproducer_command: rg -n "NewExponentialBackOff|TestBackoffHTTPRetry_Send_Retries_On5xxThenTransientTransport_Row5" retry/http-retry.go retry/http_retry_row5_mcdc_test.go
+environment_note: Static evidence is documented in this KnownIssue description; reproduce by inspecting retry/http-retry.go and retry/http_retry_row5_mcdc_test.go.
+introduced_in: inception
 mitigation: Keep the row-5 witness scoped to the retry package and run it under the memory/process monitor; accept the small real backoff delay when proving the combined 5xx plus transient-transport retry row.
 remediation: Add an explicitly approved retry-policy/backoff configuration surface, or another product-supported way to bound retry elapsed time, then update the witness to use that supported surface without test-only production hooks.
 owner: tyk-team
@@ -18,3 +18,11 @@ history:
     - at: "2026-06-19T00:00:00Z"
       by: agent:codex
       action: created
+    - at: "2026-06-22T07:15:58Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=holistic
+    - at: "2026-06-22T07:18:02Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=risk,set-risk

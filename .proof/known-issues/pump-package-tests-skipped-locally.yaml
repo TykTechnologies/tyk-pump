@@ -1,6 +1,5 @@
 id: pump-package-tests-skipped-locally
 title: pumps package local proof runs need external backends and strict memory guarding
-introduced_in: inception
 description: 'The pumps package is included in proof.yaml tests_pass and code_mcdc targets via ./..., but local proof runs are high-risk without external backend discipline: many pump implementations require Kafka, Elasticsearch, Influx, Moesif, Segment, Logz.io, Splunk, AWS SQS/Kinesis/Timestream, and several tests use testcontainers. Running those packages concurrently can exhaust a developer laptop. The current proof configuration keeps the tests in scope and constrains Go package concurrency with -p=1; local operators must still run proof under bin/run-monitored so the process tree is terminated before OOM. CI remains the authoritative environment for backend-provisioned pump test coverage (see bin/ci-test.sh, which iterates go list github.com/TykTechnologies/tyk-pump/... against provisioned backends).'
 affected_requirements:
     - SW-REQ-018
@@ -15,9 +14,11 @@ affected_requirements:
     - SW-REQ-027
     - SW-REQ-028
     - SW-REQ-029
-environment_note: |-
-  Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source or documentation surface and following the described scenario.
 severity: low
+severity_basis: risk
+risk: availability
+environment_note: Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source or documentation surface and following the described scenario.
+introduced_in: inception
 mitigation: Local proof runs keep pump packages in scope but must run with serialized Go package execution and the memory monitor; CI (bin/ci-test.sh) runs all packages against provisioned backends.
 remediation: Stand up the full backend matrix in docker-compose with shared/reused testcontainers for local proof runs, or split pump tests into hermetic unit subsets that can be MC/DC-measured without external services while keeping the full backend suite in CI.
 owner: tyk-team
@@ -27,3 +28,11 @@ history:
     - at: "2026-05-30T08:12:34Z"
       by: human:buger
       action: created
+    - at: "2026-06-22T07:15:57Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=holistic
+    - at: "2026-06-22T07:18:02Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=risk,set-risk

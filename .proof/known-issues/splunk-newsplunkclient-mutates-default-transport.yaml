@@ -1,6 +1,5 @@
 id: splunk-newsplunkclient-mutates-default-transport
 title: newSplunkClient mutates http.DefaultClient.Transport, poisoning ProxyFromEnvironment cache
-introduced_in: inception
 description: 'pumps/splunk.go:325 sets http.DefaultClient.Transport = &http.Transport{Proxy: http.ProxyFromEnvironment, ...} on every call to newSplunkClient. The Go runtime''s ProxyFromEnvironment caches the env-derived proxy function via a process-wide sync.Once on first dispatch. As soon as any HTTP request fires through this transport (e.g. from a WriteData test) without HTTP_PROXY set, the cache is sealed with the empty proxy. Later tests that set HTTP_PROXY and expect the proxy to be honored will fail because the cached proxy func is fixed. Tests Test_SplunkProxyFromEnvironment and Test_SplunkInvalidProxyURL were therefore inherently order-dependent. Worked around in pumps/splunk_test.go by installing a per-test transport that bypasses the cached lookup.'
 affected_requirements:
     - SW-REQ-048
@@ -8,9 +7,11 @@ commands:
     - go test -count=1 -run 'TestSplunkPump_|Test_SplunkProxyFromEnvironment' ./pumps
 evidence_manifests:
     - code_signal:opengrep:go.http.default-transport-mutation:pumps/splunk.go:325
-reproducer_command: |-
-  go test -count=1 -run 'TestSplunkPump_|Test_SplunkProxyFromEnvironment' ./pumps
 severity: low
+severity_basis: risk
+risk: correctness
+reproducer_command: go test -count=1 -run 'TestSplunkPump_|Test_SplunkProxyFromEnvironment' ./pumps
+introduced_in: inception
 mitigation: Tests use per-test http.Transport with explicit Proxy func to bypass the cached ProxyFromEnvironment lookup.
 remediation: Stop mutating http.DefaultClient.Transport in newSplunkClient. Build a private *http.Client on the SplunkClient with its own *http.Transport so the global default is never touched. Remove the runtime mutation and store the client on c.httpClient directly.
 owner: tyk-team
@@ -29,3 +30,11 @@ history:
       by: human:leo
       action: edit
       detail: add-evidence-manifest
+    - at: "2026-06-22T07:15:58Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=holistic
+    - at: "2026-06-22T07:18:03Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=risk,set-risk

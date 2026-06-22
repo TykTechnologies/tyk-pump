@@ -1,14 +1,15 @@
 id: mongo-pump-init-connect-logfatal-unreachable
 title: MongoPump connect() log.Fatal arm is structurally unreachable in unit tests
-introduced_in: inception
 description: 'MongoPump/MongoAggregatePump/MongoSelectivePump connect() functions call log.Fatal on persistent.NewPersistentStorage error. The error path can only be driven by passing an URL that the client rejects at construction time; the official mongo-go driver accepts any valid string and defers connection failure to first use, so log.Fatal cannot be provoked without an explicitly-malformed URL that mapstructure already rejects upstream. Coverage of the F-branch (err != nil = T) would require crashing the test process. Same applies to MongoPump.WriteData line 405 (collectionName == "" -> log.Fatal): the empty-collection-name path triggers os.Exit(1) and cannot be unit-tested. Underlying contract bug tracked under pumps-logfatal-on-config-decode; this KI is the mongo-specific cross-ref for the //mcdc:ignore annotations on those branches.'
 affected_requirements:
     - SW-REQ-034
 commands:
     - go test -count=1 -timeout 600s ./pumps
-reproducer_command: |-
-  go test -count=1 -timeout 600s ./pumps
 severity: low
+severity_basis: risk
+risk: availability
+reproducer_command: go test -count=1 -timeout 600s ./pumps
+introduced_in: inception
 mitigation: Validate MongoURL and CollectionName at deploy time; underlying log.Fatal -> return err remediation tracked in pumps-logfatal-on-config-decode.
 remediation: Replace log.Fatal in pumps/mongo.go:223, 395, 405 and pumps/mongo_aggregate.go:191, 244 and pumps/mongo_selective.go:91, 139 with wrapped-error returns; once shipped, these MC/DC ignores can be removed.
 owner: tyk-team
@@ -19,3 +20,11 @@ history:
     - at: "2026-05-31T10:25:54Z"
       by: human:buger
       action: created
+    - at: "2026-06-22T07:15:11Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=holistic
+    - at: "2026-06-22T07:18:02Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=risk,set-risk

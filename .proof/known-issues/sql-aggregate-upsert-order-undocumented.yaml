@@ -1,14 +1,14 @@
 id: sql-aggregate-upsert-order-undocumented
 title: SQL aggregate upsert row order is unspecified and not documented as unordered
-introduced_in: inception
-description: 'SW-REQ-067 carries ordering_guarantees_documented for the SQL aggregate upsert path, but DoAggregatedWriting iterates dimensions derived from Go maps and then batches whatever slice order results. Correctness is keyed by deterministic row id plus INSERT ... ON CONFLICT semantics, not by write order. The docs describe the upsert behavior but do not explicitly state that row order is unspecified and irrelevant. This is a proof/spec documentation gap, not a product data-integrity defect.'
+description: SW-REQ-067 carries ordering_guarantees_documented for the SQL aggregate upsert path, but DoAggregatedWriting iterates dimensions derived from Go maps and then batches whatever slice order results. Correctness is keyed by deterministic row id plus INSERT ... ON CONFLICT semantics, not by write order. The docs describe the upsert behavior but do not explicitly state that row order is unspecified and irrelevant. This is a proof/spec documentation gap, not a product data-integrity defect.
 affected_requirements:
     - SW-REQ-067
-environment_note: |-
-  Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source and command output.
-reproducer_command: |-
-  rg -n "func \\(.*\\) Dimensions|DoAggregatedWriting|OnConflict|ordering_guarantees_documented" analytics/aggregate.go pumps/sql_aggregate.go docs/requirements/SW-REQ-067.md specs/software/requirements/SW-REQ-067.req.yaml
 severity: low
+severity_basis: risk
+risk: correctness
+reproducer_command: rg -n "func \\(.*\\) Dimensions|DoAggregatedWriting|OnConflict|ordering_guarantees_documented" analytics/aggregate.go pumps/sql_aggregate.go docs/requirements/SW-REQ-067.md specs/software/requirements/SW-REQ-067.req.yaml
+environment_note: Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source and command output.
+introduced_in: inception
 mitigation: Consumers should rely on the aggregate row key and ON CONFLICT merge semantics, not insertion order.
 remediation: Document that SW-REQ-067 writes are unordered/idempotent by key, or change the implementation to sort dimensions before batching and add an ordering witness.
 owner: tyk-team
@@ -18,3 +18,11 @@ history:
     - at: "2026-06-19T00:00:00Z"
       by: agent:codex
       action: created
+    - at: "2026-06-22T07:15:58Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=holistic
+    - at: "2026-06-22T07:18:03Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=risk,set-risk

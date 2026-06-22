@@ -1,14 +1,14 @@
 id: mongo-aggregate-atomicity-fault-injection-missing
 title: Mongo aggregate atomicity obligation lacks contention/fault-injection evidence
-introduced_in: inception
-description: 'SW-REQ-060 relies on MongoDB update semantics for the first aggregate upsert and then runs a second derived-average update. Existing tests prove successful sequencing and counter accumulation, but they do not inject a first/second update failure, rollback boundary, or concurrent writer scenario. The typed atomicity obligation therefore remains a proof-harness gap rather than an honestly witnessed property.'
+description: SW-REQ-060 relies on MongoDB update semantics for the first aggregate upsert and then runs a second derived-average update. Existing tests prove successful sequencing and counter accumulation, but they do not inject a first/second update failure, rollback boundary, or concurrent writer scenario. The typed atomicity obligation therefore remains a proof-harness gap rather than an honestly witnessed property.
 affected_requirements:
     - SW-REQ-060
-environment_note: |-
-  Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source and command output.
-reproducer_command: |-
-  rg -n "DoAggregatedWriting|AsChange|AsTimeUpdate|atomicity|fail" pumps/mongo_aggregate.go pumps/mongo_aggregate_test.go docs/requirements/SW-REQ-060.md
 severity: low
+severity_basis: risk
+risk: data_integrity
+reproducer_command: rg -n "DoAggregatedWriting|AsChange|AsTimeUpdate|atomicity|fail" pumps/mongo_aggregate.go pumps/mongo_aggregate_test.go docs/requirements/SW-REQ-060.md
+environment_note: Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source and command output.
+introduced_in: inception
 mitigation: Rely on MongoDB document-level update semantics and operational replay safeguards until a targeted atomicity harness is added.
 remediation: Add a fake store or Mongo failpoint test that injects failures between the counter update and derived-average update, and add a concurrent writer test for the same org/timestamp bucket.
 owner: tyk-team
@@ -18,3 +18,11 @@ history:
     - at: "2026-06-19T00:00:00Z"
       by: agent:codex
       action: created
+    - at: "2026-06-22T07:15:11Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=holistic
+    - at: "2026-06-22T07:18:03Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=risk,set-risk

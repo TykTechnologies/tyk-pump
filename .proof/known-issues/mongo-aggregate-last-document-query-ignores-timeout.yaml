@@ -1,13 +1,14 @@
 id: mongo-aggregate-last-document-query-ignores-timeout
 title: Mongo aggregate last-document query ignores caller timeout context
-introduced_in: inception
 description: 'MongoAggregatePump.getLastDocumentTimestamp queries the mixed aggregate collection with context.Background() instead of a caller-provided or bounded context: pumps/mongo_aggregate.go:418 calls m.store.Query(context.Background(), ...). The query is used during MongoAggregatePump.Init to seed the aggregate timestamp, so a hung Mongo query is not bounded by the pump timeout contract. The SW-REQ-036 query_timeout_bounded obligation is therefore a real product gap, not only missing test evidence.'
 affected_requirements:
     - SW-REQ-036
-environment_note: |-
-  Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source and command output.
-reproducer_command: rg -n "func \(m \*MongoAggregatePump\) getLastDocumentTimestamp|store\.Query\(context\.Background\(" pumps/mongo_aggregate.go
 severity: medium
+severity_basis: risk
+risk: availability
+reproducer_command: rg -n "func \(m \*MongoAggregatePump\) getLastDocumentTimestamp|store\.Query\(context\.Background\(" pumps/mongo_aggregate.go
+environment_note: Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source and command output.
+introduced_in: inception
 mitigation: Configure MongoDB client-side timeouts in the connection string until the aggregate timestamp query accepts and uses a bounded context.
 remediation: Thread a caller-provided context into getLastDocumentTimestamp, use that context for m.store.Query, and add a cancellation/timeout test proving the query returns promptly when the context is canceled.
 owner: tyk-team
@@ -17,3 +18,11 @@ history:
     - at: "2026-06-19T00:00:00Z"
       by: agent:codex
       action: created
+    - at: "2026-06-22T07:15:11Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=holistic
+    - at: "2026-06-22T07:18:02Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=risk,set-risk

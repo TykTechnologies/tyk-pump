@@ -1,14 +1,15 @@
 id: docs-hybrid-enable-mcp-aggregation-undocumented
 title: 'Documentation gap: Hybrid pump enable_mcp_aggregation meta field undocumented in tyk-docs'
-introduced_in: inception
 description: pumps/hybrid.go:98 declares EnableMCPAggregation bool with mapstructure tag enable_mcp_aggregation; pumps/hybrid.go:376 invokes analytics.AggregateMCPData when set. tyk-docs/content/shared/pump-config.md hybrid meta section (lines 1293-1372) omits this field.
 affected_requirements:
     - SW-REQ-029
 commands:
     - grep -n 'enable_mcp_aggregation\|EnableMCPAggregation' /Users/buger/go/src/tyk-pump/pumps/hybrid.go
-reproducer_command: |-
-  grep -n 'enable_mcp_aggregation\|EnableMCPAggregation' /Users/buger/go/src/tyk-pump/pumps/hybrid.go
 severity: medium
+severity_basis: risk
+risk: correctness
+reproducer_command: grep -n 'enable_mcp_aggregation\|EnableMCPAggregation' /Users/buger/go/src/tyk-pump/pumps/hybrid.go
+introduced_in: inception
 mitigation: Default false; existing deployments retain prior behavior.
 remediation: Add pumps.hybrid.meta.enable_mcp_aggregation entry to pump-config.md.
 owner: tyk-team
@@ -19,3 +20,11 @@ history:
     - at: "2026-06-01T17:21:56Z"
       by: human:buger
       action: created
+    - at: "2026-06-22T07:15:10Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=holistic
+    - at: "2026-06-22T07:18:03Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=risk,set-risk

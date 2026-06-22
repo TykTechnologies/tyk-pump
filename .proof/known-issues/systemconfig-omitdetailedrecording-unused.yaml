@@ -1,12 +1,13 @@
 id: systemconfig-omitdetailedrecording-unused
 title: Global omit_detailed_recording config field is dead; only per-pump value is honored
-introduced_in: inception
 description: 'config.go:84 declares ''SystemConfig.OmitDetailedRecording bool'', but the actual filterData logic in main.go:385/396 only checks pump.GetOmitDetailedRecording() — i.e., the per-pump value set at main.go:210 from PumpConfig.OmitDetailedRecording (config.go:247). The global value passed to StartPurgeLoop at main.go:536 is never propagated to per-pump defaults. Operators reading the docs and setting ''omit_detailed_recording: true'' at the top level expect global enforcement; the field is silently ignored.'
 affected_requirements:
     - SYS-REQ-015
-environment_note: |-
-  Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source or documentation surface and following the described scenario.
 severity: low
+severity_basis: risk
+risk: correctness
+environment_note: Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source or documentation surface and following the described scenario.
+introduced_in: inception
 mitigation: 'Set omit_detailed_recording: true on each pump''s meta block explicitly; do not rely on the top-level config.'
 remediation: Either (a) propagate SystemConfig.OmitDetailedRecording to every pump as the default when the per-pump value is unset, or (b) remove the dead config field and document per-pump only.
 owner: tyk-team
@@ -16,3 +17,11 @@ history:
     - at: "2026-05-30T08:32:47Z"
       by: human:buger
       action: created
+    - at: "2026-06-22T07:15:58Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=holistic
+    - at: "2026-06-22T07:18:03Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=risk,set-risk

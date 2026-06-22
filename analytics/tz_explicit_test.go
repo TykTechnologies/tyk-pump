@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	analyticsproto "github.com/TykTechnologies/tyk-pump/analytics/proto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	msgpack "gopkg.in/vmihailenco/msgpack.v2"
@@ -21,9 +22,9 @@ import (
 //	(b) the field carries TZ information that survives serialization.
 //
 // What this test exercises (analytics/aggregate.go AnalyticsRecordAggregate):
-//   - Build the aggregate struct with a NY-timezone TimeStamp.
-//   - Round-trip the timestamp through msgpack AND json.
-//   - Assert the deserialized timestamp represents the same instant
+//   - Build the aggregate struct and nested Counter with NY-timezone timestamps.
+//   - Round-trip the timestamps through msgpack AND json.
+//   - Assert each deserialized timestamp represents the same instant
 //     (i.e. UTC equivalence is preserved, even if TZ name is dropped).
 //
 // If the implementation silently coerces to local time (a regression
@@ -48,7 +49,11 @@ func TestTzExplicit_AggregateTimestamps(t *testing.T) {
 		TimeStamp: original,
 		LastTime:  original,
 		ExpireAt:  original.Add(24 * time.Hour),
+		Total: Counter{
+			LastTime: original,
+		},
 	}
+	counter := Counter{LastTime: original}
 
 	t.Run("json roundtrip preserves UTC instant", func(t *testing.T) {
 		b, err := json.Marshal(agg)
@@ -64,6 +69,12 @@ func TestTzExplicit_AggregateTimestamps(t *testing.T) {
 		assert.True(t, original.Equal(decoded.TimeStamp),
 			"TimeStamp instant changed across json roundtrip: original=%s decoded=%s",
 			original.Format(time.RFC3339Nano), decoded.TimeStamp.Format(time.RFC3339Nano))
+		assert.True(t, original.Equal(decoded.LastTime),
+			"aggregate LastTime instant changed across json roundtrip: original=%s decoded=%s",
+			original.Format(time.RFC3339Nano), decoded.LastTime.Format(time.RFC3339Nano))
+		assert.True(t, original.Equal(decoded.Total.LastTime),
+			"nested Counter.LastTime instant changed across json roundtrip: original=%s decoded=%s",
+			original.Format(time.RFC3339Nano), decoded.Total.LastTime.Format(time.RFC3339Nano))
 
 		// The marshalled JSON MUST carry timezone information (RFC3339 with
 		// offset) — this is the "TZ-explicit" half of the obligation.
@@ -71,6 +82,14 @@ func TestTzExplicit_AggregateTimestamps(t *testing.T) {
 		assert.True(t,
 			containsTZMarker(s),
 			"serialized JSON lacks TZ offset marker — TZ semantics not explicit on the wire: %s", s)
+
+		counterBytes, err := json.Marshal(counter)
+		require.NoError(t, err, "json.Marshal Counter must succeed")
+		var decodedCounter Counter
+		require.NoError(t, json.Unmarshal(counterBytes, &decodedCounter), "json.Unmarshal Counter must succeed")
+		assert.True(t, original.Equal(decodedCounter.LastTime),
+			"standalone Counter.LastTime instant changed across json roundtrip: original=%s decoded=%s",
+			original.Format(time.RFC3339Nano), decodedCounter.LastTime.Format(time.RFC3339Nano))
 	})
 
 	t.Run("msgpack roundtrip preserves UTC instant", func(t *testing.T) {
@@ -86,6 +105,20 @@ func TestTzExplicit_AggregateTimestamps(t *testing.T) {
 		assert.True(t, original.Equal(decoded.TimeStamp),
 			"TimeStamp instant changed across msgpack roundtrip: original=%s decoded=%s",
 			original.Format(time.RFC3339Nano), decoded.TimeStamp.Format(time.RFC3339Nano))
+		assert.True(t, original.Equal(decoded.LastTime),
+			"aggregate LastTime instant changed across msgpack roundtrip: original=%s decoded=%s",
+			original.Format(time.RFC3339Nano), decoded.LastTime.Format(time.RFC3339Nano))
+		assert.True(t, original.Equal(decoded.Total.LastTime),
+			"nested Counter.LastTime instant changed across msgpack roundtrip: original=%s decoded=%s",
+			original.Format(time.RFC3339Nano), decoded.Total.LastTime.Format(time.RFC3339Nano))
+
+		counterBytes, err := msgpack.Marshal(counter)
+		require.NoError(t, err, "msgpack.Marshal Counter must succeed")
+		var decodedCounter Counter
+		require.NoError(t, msgpack.Unmarshal(counterBytes, &decodedCounter), "msgpack.Unmarshal Counter must succeed")
+		assert.True(t, original.Equal(decodedCounter.LastTime),
+			"standalone Counter.LastTime instant changed across msgpack roundtrip: original=%s decoded=%s",
+			original.Format(time.RFC3339Nano), decodedCounter.LastTime.Format(time.RFC3339Nano))
 	})
 }
 
@@ -146,6 +179,64 @@ func TestTzExplicit_UptimeTimestamps(t *testing.T) {
 		assert.True(t, original.Equal(decoded.TimeStamp),
 			"TimeStamp instant changed across msgpack roundtrip: original=%s decoded=%s",
 			original.Format(time.RFC3339Nano), decoded.TimeStamp.Format(time.RFC3339Nano))
+	})
+}
+
+// Verifies: SW-REQ-009
+// SW-REQ-009:tz_explicit:nominal
+//
+// AnalyticsRecord carries persisted TimeStamp/ExpireAt fields. JSON encodes
+// them with RFC3339 offsets, and the protobuf path stores the source location
+// in the sibling TimeZone field before protobuf normalizes instants to UTC.
+func TestTzExplicit_AnalyticsRecordTimestamps(t *testing.T) {
+	loc, err := time.LoadLocation("America/New_York")
+	require.NoError(t, err)
+
+	original := time.Date(2026, 6, 4, 9, 30, 0, 0, loc)
+	expireAt := original.Add(24 * time.Hour)
+	rec := AnalyticsRecord{
+		OrgID:     "tz-analytics-org",
+		TimeStamp: original,
+		ExpireAt:  expireAt,
+	}
+
+	t.Run("json roundtrip preserves UTC instant and offset marker", func(t *testing.T) {
+		b, err := json.Marshal(rec)
+		require.NoError(t, err)
+
+		var decoded AnalyticsRecord
+		require.NoError(t, json.Unmarshal(b, &decoded))
+
+		assert.True(t, original.Equal(decoded.TimeStamp),
+			"TimeStamp instant changed across json roundtrip: original=%s decoded=%s",
+			original.Format(time.RFC3339Nano), decoded.TimeStamp.Format(time.RFC3339Nano))
+		assert.True(t, expireAt.Equal(decoded.ExpireAt),
+			"ExpireAt instant changed across json roundtrip: original=%s decoded=%s",
+			expireAt.Format(time.RFC3339Nano), decoded.ExpireAt.Format(time.RFC3339Nano))
+		assert.True(t, containsTZMarker(string(b)),
+			"serialized AnalyticsRecord JSON lacks TZ offset marker: %s", string(b))
+	})
+
+	t.Run("protobuf roundtrip preserves source location", func(t *testing.T) {
+		protoRec := &analyticsproto.AnalyticsRecord{}
+		rec.TimestampToProto(protoRec)
+
+		require.Equal(t, loc.String(), protoRec.TimeZone,
+			"protobuf carrier must record the source timestamp location")
+
+		var decoded AnalyticsRecord
+		decoded.TimeStampFromProto(protoRec)
+
+		assert.True(t, original.Equal(decoded.TimeStamp),
+			"TimeStamp instant changed across protobuf roundtrip: original=%s decoded=%s",
+			original.Format(time.RFC3339Nano), decoded.TimeStamp.Format(time.RFC3339Nano))
+		assert.Equal(t, loc.String(), decoded.TimeStamp.Location().String(),
+			"protobuf roundtrip must restore source timestamp location")
+		assert.True(t, expireAt.Equal(decoded.ExpireAt),
+			"ExpireAt instant changed across protobuf roundtrip: original=%s decoded=%s",
+			expireAt.Format(time.RFC3339Nano), decoded.ExpireAt.Format(time.RFC3339Nano))
+		assert.Equal(t, loc.String(), decoded.ExpireAt.Location().String(),
+			"protobuf roundtrip must restore source expiry location")
 	})
 }
 

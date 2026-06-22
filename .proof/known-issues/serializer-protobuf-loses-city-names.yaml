@@ -1,12 +1,13 @@
 id: serializer-protobuf-loses-city-names
 title: Protobuf serializer drops Geo.City.Names map on decode
-introduced_in: inception
 description: 'serializer/protobuf.go:169 TransformSingleProtoToAnalyticsRecord explicitly sets City.Names: nil on decode despite the encode side preserving the map. Serializer round-trip is therefore lossy for Geo.City.Names: encode preserves it, decode silently drops it. This violates INT-REQ-003''s claim that serializers round-trip every analytics record field without loss. Gateway-side records retain the data; any pump consuming the decoded protobuf record will see City.Names=nil.'
 affected_requirements:
     - INT-REQ-003
-environment_note: |-
-  Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source or documentation surface and following the described scenario.
 severity: medium
+severity_basis: risk
+risk: data_integrity
+environment_note: Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source or documentation surface and following the described scenario.
+introduced_in: inception
 mitigation: Operators reading City.Names from pump-side records will see nil. Gateway-side records still have the data; downstream consumers can re-derive city names from city ID via the GeoIP DB if needed.
 remediation: In serializer/protobuf.go:169, copy the rec.Geo.City.Names map into the analytics.City.Names field (or rebuild it from the protobuf map) so round-trip parity holds.
 owner: tyk-team
@@ -16,3 +17,11 @@ history:
     - at: "2026-05-30T08:30:08Z"
       by: human:buger
       action: created
+    - at: "2026-06-22T07:15:58Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=holistic
+    - at: "2026-06-22T07:18:04Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=risk,set-risk

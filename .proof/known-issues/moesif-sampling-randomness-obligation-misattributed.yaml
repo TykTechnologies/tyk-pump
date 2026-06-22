@@ -1,14 +1,14 @@
 id: moesif-sampling-randomness-obligation-misattributed
 title: Moesif sampling randomness is not a deterministic-output guarantee
-introduced_in: inception
-description: 'pumps/moesif.go imports math/rand and uses rand.Intn for percentage sampling. That behavior is intentionally probabilistic sampling, not a deterministic transformation guarantee. The current code-signal maps randomness to a determinism obligation on SW-REQ-052, but the requirement describes Moesif event submission behavior and does not currently specify deterministic sampling output. This is a proof/spec attribution gap until sampling semantics are separately specified.'
+description: pumps/moesif.go imports math/rand and uses rand.Intn for percentage sampling. That behavior is intentionally probabilistic sampling, not a deterministic transformation guarantee. The current code-signal maps randomness to a determinism obligation on SW-REQ-052, but the requirement describes Moesif event submission behavior and does not currently specify deterministic sampling output. This is a proof/spec attribution gap until sampling semantics are separately specified.
 affected_requirements:
     - SW-REQ-052
-environment_note: |-
-  Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source or rerunning the random-dependency code-signal scan.
-reproducer_command: rg -n "math/rand|rand\\.Seed|rand\\.Intn" pumps/moesif.go specs/software/requirements/SW-REQ-052.req.yaml
 severity: low
-risk: proof_modeling
+severity_basis: risk
+risk: correctness
+reproducer_command: rg -n "math/rand|rand\\.Seed|rand\\.Intn" pumps/moesif.go specs/software/requirements/SW-REQ-052.req.yaml
+environment_note: Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source or rerunning the random-dependency code-signal scan.
+introduced_in: inception
 mitigation: Treat Moesif sampling as probabilistic behavior until a separate sampling requirement specifies seed/control semantics.
 remediation: Add a dedicated sampling requirement if deterministic sampling is needed, or adjust the signal mapping so intentional sampling does not attach to SW-REQ-052 determinism.
 owner: tyk-team
@@ -18,3 +18,11 @@ history:
     - at: "2026-06-19T00:00:00Z"
       by: agent:codex
       action: created
+    - at: "2026-06-22T07:15:11Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=holistic
+    - at: "2026-06-22T07:18:03Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=risk,set-risk

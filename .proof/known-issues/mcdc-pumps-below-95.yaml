@@ -1,6 +1,5 @@
 id: mcdc-pumps-below-95
 title: Pumps code MC/DC at 58%/60% (below 95/95 policy) — structural error-path gaps
-introduced_in: inception
 description: After adding ./pumps to proof.yaml's code_mcdc targets and driving real backend tests via testcontainers (mongo, mysql, postgres, kafka, ES) + httptest fakes (HTTP pumps) + UDP listeners (statsd, syslog, graylog) + tempdir (csv/stdout), measured MC/DC is 57.9%/59.7% across 38 pump implementations. Most remaining decisions are 'err != nil = F' arms behind a real backend — driving F-side requires injecting fake persistent.PersistentStorage / fake GORM / fake HTTP transports, which require a connector-factory seam (production refactor). Driving T-side via real backend errors is sometimes infeasible (e.g. legacy ES v3/v5/v6 paths require running those legacy ES versions; SQL aggregate MySQL paths blocked by existing KIs sql-aggregate-mysql-excluded-keyword-broken and mcp-sql-aggregate-mysql-create-index-syntax-broken).
 affected_requirements:
     - SW-REQ-034
@@ -9,9 +8,11 @@ affected_requirements:
     - SW-REQ-022
 commands:
     - go test -count=1 -timeout 600s -coverprofile=cover.out ./pumps
-reproducer_command: |-
-  go test -count=1 -timeout 600s -coverprofile=cover.out ./pumps
 severity: low
+severity_basis: risk
+risk: performance
+reproducer_command: go test -count=1 -timeout 600s -coverprofile=cover.out ./pumps
+introduced_in: inception
 mitigation: Standalone 'proof mcdc code measure ./pumps' reports 99.6% decisions / 99.5% conditions (561/563 fully-covered decisions). The 2 remaining incomplete decisions are switch-case decisions in pumps/kinesis.go that the current Go MC/DC instrumenter cannot annotate with //mcdc:ignore (the instrumenter's ignore directive is recognised only on if/for/return conditions, not on the case-list of a switch statement). Audit-driven measurement still reports ~60% due to a separate testcontainer-race artifact in audit's instrumented workspace — tracked separately by KI mcdc-pumps-audit-vs-standalone-discrepancy.
 remediation: Either (a) extend the Go MC/DC instrumenter to honour //mcdc:ignore on switch-case decisions so the 2 kinesis.go switch-cases can be excluded (production code annotation only, no behaviour change); or (b) refactor pumps/kinesis.go to lift the switch to an if/else chain so the existing //mcdc:ignore directive applies. With either fix, standalone pumps MC/DC moves from 99.6% to 100%.
 owner: tyk-team
@@ -26,3 +27,11 @@ history:
       by: human:buger
       action: edit
       detail: set-mitigation,set-remediation
+    - at: "2026-06-22T07:15:11Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=holistic
+    - at: "2026-06-22T07:18:04Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=risk,set-risk

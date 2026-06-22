@@ -1,14 +1,15 @@
 id: retry-4xx-bodyread-fail-causes-retry
 title: 'HTTP retry: body-read error on non-retryable status escapes as retryable error'
-introduced_in: inception
 description: 'retry/http-retry.go:78-82 (Send opFn): on a non-5xx response, if io.ReadAll(resp.Body) fails (transient network error mid-read), the function returns the raw read error WITHOUT wrapping it in backoff.Permanent. As a result, an authoritative 4xx response (e.g. 400 Bad Request, 401 Unauthorized) whose body happens to fail to read is treated as retryable. The retry loop will keep retrying the same request that the server has explicitly rejected, until maxRetries are exhausted. This burns rate-limit budget and contradicts the spec line 92 (''any other error treat as permanent (i.e. auth error, invalid request) and don''t retry''). The MC/DC witnesses for SW-REQ-030 do not drive this row: T(5xx)/F(retry skipped) is covered by 4xx-no-retry, F/F by 200-OK, T/T by 5xx-retried, but the body-read-failure-on-4xx path is not exercised.'
 affected_requirements:
     - SW-REQ-030
     - INT-REQ-006
-environment_note: |-
-  Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source or documentation surface and following the described scenario.
-reproducer_command: rg -n "io\.ReadAll\(resp\.Body\)|backoff\.Permanent\(err\)|StatusTooManyRequests|StatusInternalServerError" retry/http-retry.go
 severity: medium
+severity_basis: risk
+risk: correctness
+reproducer_command: rg -n "io\.ReadAll\(resp\.Body\)|backoff\.Permanent\(err\)|StatusTooManyRequests|StatusInternalServerError" retry/http-retry.go
+environment_note: Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source or documentation surface and following the described scenario.
+introduced_in: inception
 mitigation: Operators should monitor retry warning logs; if a 4xx endpoint shows repeated retry warnings for the same request id, the issue is in play.
 remediation: In retry/http-retry.go:82, distinguish between resp.StatusCode >= 500/==429 (retryable) and other codes (permanent) BEFORE the read; or wrap the read-error with backoff.Permanent when the status code is non-retryable.
 owner: tyk-team
@@ -18,3 +19,11 @@ history:
     - at: "2026-06-02T16:37:05Z"
       by: human:buger
       action: created
+    - at: "2026-06-22T07:15:58Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=holistic
+    - at: "2026-06-22T07:18:03Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=risk,set-risk

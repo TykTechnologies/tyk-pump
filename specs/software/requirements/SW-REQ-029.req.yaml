@@ -29,15 +29,16 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-04T16:50:31Z"
-        comment: 'Phase S Wave 2: attach blind-spot obligations from Wave 1 promote (cascade/fanout/clock_skew/dst/tz/temporal_window/process_exit/tls_verification/partial_progress)'
-        fingerprint: sha256:920eca0d050151780b64ebef59904059a8fb9b265c0659d3e92240d4d8f8efeb
-        ai_generated: true
+        reviewed_at: "2026-06-22T07:09:20Z"
+        comment: 'Reviewed Hybrid external-call failure observability closure: existing connect/login test covers successful RPC connection and server-down failure surfacing; connection leak and retry-budget gaps remain tracked as KnownIssue-backed debt; no product behavior changes claimed.'
+        fingerprint: sha256:31d5361ff012a2962b520950476e3ab8c0a507f3f902a4efc8c1969345ae4642
+        ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:16Z"
-    last_modified_by: agent:codex
-    last_modified_at: "2026-06-19T14:16:38Z"
+    last_modified_by: human:buger
+    last_modified_at: "2026-06-22T07:09:20Z"
+obligation_class: external_call_failure_observable
 obligation_checklist:
     - cert_validation_strict
     - errors_propagated
@@ -52,11 +53,6 @@ obligation_deferrals:
       tracking: tls-insecure-skip-verify-allowed
       owner: agent:codex
       ki_ref: tls-insecure-skip-verify-allowed
-    - obligation_class: external_call_failure_observable
-      reason: 'real untested obligation under known-issue hybrid-getdialfn-leaks-conn-on-handshake-fail; surfaced as visible tracked debt, not an overclaimed fix'
-      tracking: hybrid-getdialfn-leaks-conn-on-handshake-fail
-      owner: human:buger
-      ki_ref: hybrid-getdialfn-leaks-conn-on-handshake-fail
     - obligation_class: malformed_recovers_or_errors_loudly
       reason: real untested obligation under known-issue mapstructure-decode-silently-drops-unknown-keys; surfaced as visible tracked debt, not an overclaimed fix
       tracking: mapstructure-decode-silently-drops-unknown-keys
@@ -99,3 +95,8 @@ lifecycle:
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-03T07:38:38Z comment="Phase Q: catalog obligation attachments — adds external_call_timeout_bounded, external_call_failure_observable, cert_validation_strict, cancellation_observed, connection_leak_free, resource_lifetime_released, secrets_not_logged, tls_required_for_secrets, ssrf_protection (Hybrid RPC surface; KIs hybrid-getdialfn-leaks-conn-on-handshake-fail). See .proof/catalog-obligation-proposals.md.")'
           changed_by: human:cli
+        - date: "2026-06-22T07:09:20Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-04T16:50:31Z comment="Phase S Wave 2: attach blind-spot obligations from Wave 1 promote (cascade/fanout/clock_skew/dst/tz/temporal_window/process_exit/tls_verification/partial_progress)")'
+          changed_by: human:buger

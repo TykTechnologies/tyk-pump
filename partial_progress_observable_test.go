@@ -74,6 +74,8 @@ func (p *failingMockPump) Shutdown() error {
 // If a future regression aggregates errors into a single "cycle had errors"
 // line without naming pumps, item (a) fails. If a future regression aborts
 // the whole cycle when one pump fails, item (b) fails.
+// SW-REQ-001:partial_progress_observable:nominal
+// SW-REQ-001:partial_progress_observable:scenario
 // STK-REQ-002:error_handling:negative
 func TestPartialProgressObservable_PerPumpFailureLogged(t *testing.T) {
 	originalOut := log.Out

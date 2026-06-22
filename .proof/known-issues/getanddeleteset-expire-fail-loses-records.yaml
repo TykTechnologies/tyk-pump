@@ -1,12 +1,13 @@
 id: getanddeleteset-expire-fail-loses-records
 title: GetAndDeleteSet loses records when Expire fails after successful Pop
-introduced_in: inception
 description: storage/temporal_storage.go:288 calls r.list.Pop which removes records from Redis, then storage/temporal_storage.go:294 calls r.kv.Expire on the remainder. If Expire fails, the function returns (nil, err) at line 296. The records LPOPped at line 288 have already been removed from Redis, but the caller at main.go:278 only logs the error and skips the batch (main.go:280-283). Those popped records are silently lost. This violates INT-REQ-005's at-most-once atomic-pop contract on the 'or zero times' boundary because the records were committed-out without any downstream commit.
 affected_requirements:
     - INT-REQ-005
-environment_note: |-
-  Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source or documentation surface and following the described scenario.
 severity: medium
+severity_basis: risk
+risk: data_integrity
+environment_note: Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source or documentation surface and following the described scenario.
+introduced_in: inception
 mitigation: Operators see 'Error on Purge Loop. Is Temporal Storage down?' messages but the underlying records are gone and cannot be replayed without an external buffer.
 remediation: Either (a) make Pop+Expire a single Lua/MULTI atomic op so failure rolls back the pop, or (b) on Expire failure return the popped records anyway with a partial-success indicator so the caller can still write them downstream.
 owner: tyk-team
@@ -16,3 +17,11 @@ history:
     - at: "2026-05-30T08:30:35Z"
       by: human:buger
       action: created
+    - at: "2026-06-22T07:15:10Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=holistic
+    - at: "2026-06-22T07:18:03Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=risk,set-risk

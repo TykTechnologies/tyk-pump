@@ -16,6 +16,8 @@ evidence_manifests:
     - code_signal:opengrep:go.context.dropped-on-floor:pumps/mongo.go:402
     - code_signal:opengrep:go.context.dropped-on-floor:pumps/mongo_selective.go:203
 severity: medium
+severity_basis: risk
+risk: availability
 environment_note: Evidence is tied to the listed evidence_manifests entries; reproduce by rerunning the named test or code-signal scan and inspecting code_signal:opengrep:go.concurrency.unguarded-channel-send:pumps/mongo.go:438.
 introduced_in: inception
 mitigation: Configure mongo client-side timeouts via the connection string (connectTimeoutMS, socketTimeoutMS) until the pump forwards the caller ctx to m.store.Insert.
@@ -59,3 +61,11 @@ history:
       by: agent:codex
       action: edit
       detail: add-requirement
+    - at: "2026-06-22T07:15:11Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=holistic
+    - at: "2026-06-22T07:18:02Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=risk,set-risk

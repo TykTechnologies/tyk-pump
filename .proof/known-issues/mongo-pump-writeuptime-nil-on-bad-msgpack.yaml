@@ -1,6 +1,5 @@
 id: mongo-pump-writeuptime-nil-on-bad-msgpack
 title: Mongo & MongoSelective WriteUptimeData panic on bad-msgpack records
-introduced_in: inception
 description: WriteUptimeData (in both pumps/mongo.go and pumps/mongo_selective.go) allocates a keys slice with len(data) and `continue`s on msgpack decode errors without resizing. The resulting nil DBObject entries cause m.store.Insert to dereference a nil pointer in the persistent storage layer, panicking the pump goroutine instead of just logging the per-record error.
 affected_requirements:
     - SW-REQ-034
@@ -15,9 +14,11 @@ evidence_manifests:
     - code_signal:opengrep:go.slice.preallocated-with-continue-on-error:pumps/mongo_selective.go:357
     - code_signal:opengrep:go.slice.preallocated-with-continue-on-error:pumps/sql.go:345
     - code_signal:opengrep:go.slice.preallocated-with-continue-on-error:pumps/sqs.go:135
-reproducer_command: |-
-  go test -count=1 -timeout 60s -run TestMongoPump_WriteUptimeData_BadMsgpack_KI ./pumps
 severity: medium
+severity_basis: risk
+risk: availability
+reproducer_command: go test -count=1 -timeout 60s -run TestMongoPump_WriteUptimeData_BadMsgpack_KI ./pumps
+introduced_in: inception
 mitigation: Operators avoid relying on uptime-pump WriteUptimeData with mixed-validity payloads. Upstream callers only feed msgpack data produced by tyk-pump itself, so triggering this path requires a corrupted store.
 remediation: Append to keys only on successful decode (or skip the Insert entirely when no valid records were decoded). See pumps/mongo.go WriteUptimeData lines 571-589 and pumps/mongo_selective.go WriteUptimeData lines 363-377.
 owner: tyk-team
@@ -48,3 +49,11 @@ history:
       by: human:leo
       action: edit
       detail: add-evidence-manifest
+    - at: "2026-06-22T07:15:11Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=holistic
+    - at: "2026-06-22T07:18:02Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=risk,set-risk

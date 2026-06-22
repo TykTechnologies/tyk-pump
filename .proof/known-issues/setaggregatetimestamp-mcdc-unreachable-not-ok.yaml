@@ -1,14 +1,15 @@
 id: setaggregatetimestamp-mcdc-unreachable-not-ok
 title: MC/DC T-side of '!ok' in setAggregateTimestamp short-circuits behind first clause
-introduced_in: inception
 description: analytics/aggregate.go:1072 has 'if lastDocumentTS == emptyTime || !ok'. When ok=F (the dbIdentifier key was not in the map) Go returns the zero value of time.Time, which IS emptyTime, so the first clause is always T and short-circuits before !ok is evaluated. Conversely when the map returns a non-zero timestamp, ok must be T (because we only ever store non-empty times via SetlastTimestampAgggregateRecord), so !ok=F. There is no input sequence in which the MC/DC tooling can observe !ok evaluating to T while the first clause is F.
 affected_requirements:
     - SW-REQ-011
 commands:
     - go test -count=1 -run TestSetAggregateTimestamp_NonEmptyLastDocOK ./analytics
-reproducer_command: |-
-  go test -count=1 -run TestSetAggregateTimestamp_NonEmptyLastDocOK ./analytics
 severity: low
+severity_basis: risk
+risk: data_integrity
+reproducer_command: go test -count=1 -run TestSetAggregateTimestamp_NonEmptyLastDocOK ./analytics
+introduced_in: inception
 mitigation: The condition is correct and defensive — the OR with !ok is redundant given Go map semantics, but provides clarity to future readers.
 remediation: Replace the OR with a single 'if lastDocumentTS == emptyTime' and drop the !ok branch, OR add //mcdc:ignore on aggregate.go:1072 documenting that map zero-value semantics make !ok=T unreachable when the first clause is F.
 owner: tyk-team
@@ -19,3 +20,11 @@ history:
     - at: "2026-05-30T20:37:30Z"
       by: human:buger
       action: created
+    - at: "2026-06-22T07:15:58Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=holistic
+    - at: "2026-06-22T07:18:04Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=risk,set-risk

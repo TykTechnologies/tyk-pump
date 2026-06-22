@@ -1,14 +1,15 @@
 id: resurface-maprawdata-empty-request-panic
 title: Resurface mapRawData panics on AnalyticsRecord with empty RawRequest but non-empty RawResponse
-introduced_in: inception
 description: pumps/resurface.go:166 (mapRawData) splits the decoded raw request on whitespace via strings.Fields(req[0]) and indexes [1] to extract the path. When AnalyticsRecord.RawRequest is empty but RawResponse is not, the partial-raw guard at resurface.go:253 (len==0 && len==0) does NOT skip the record, and mapRawData proceeds to panic with 'index out of range [1] with length 0'. The whole pump goroutine crashes and the buffered channel is left in a broken state. Reachable from any deployment that produces records with one side of the raw HTTP transaction missing.
 affected_requirements:
     - SW-REQ-054
 commands:
     - go test -count=1 -run 'TestResurfacePump_MapRawData_EmptyRequest_PanicKI' ./pumps
-reproducer_command: |-
-  go test -count=1 -run 'TestResurfacePump_MapRawData_EmptyRequest_PanicKI' ./pumps
 severity: high
+severity_basis: risk
+risk: availability
+reproducer_command: go test -count=1 -run 'TestResurfacePump_MapRawData_EmptyRequest_PanicKI' ./pumps
+introduced_in: inception
 mitigation: Operators must ensure every analytics record has both RawRequest and RawResponse populated before reaching the resurface pump.
 remediation: Either tighten the early-return guard in writeData to skip records with EITHER side empty (change && to ||), or harden mapRawData against empty rawReq/rawRes inputs by returning an error instead of indexing.
 owner: tyk-team
@@ -19,3 +20,11 @@ history:
     - at: "2026-05-31T07:50:58Z"
       by: human:buger
       action: created
+    - at: "2026-06-22T07:15:58Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=holistic
+    - at: "2026-06-22T07:18:02Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=risk,set-risk

@@ -33,15 +33,16 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-19T20:08:14Z"
-        comment: 'Spec evidence-debt refresh: reviewed KI-gated obligation_deferrals added for required-but-unwitnessed obligations. Each deferral links to an open traced KnownIssue and leaves the gap as auto-expiring accepted KI-debt rather than claiming product/test fixes.'
-        fingerprint: sha256:d8483a04bc40d2687f6e1ea1257c994fb103082669d1ffb277e296c6e180d75a
+        reviewed_at: "2026-06-22T06:47:49Z"
+        comment: 'Reviewed evidence-backed code-signal obligation closures: partial-progress observable evidence for pump fanout, timezone round-trip evidence for analytics aggregate/record/uptime, Redis relative-TTL clock-skew evidence, and HTTP retry malformed-input nominal/negative evidence. Real product gaps remain tracked as KnownIssue-backed debt; no product behavior fixes claimed.'
+        fingerprint: sha256:1ab6b380b3687932a3c402fb6aa05d37508b5bd13ca568920b8c5d0b56708f02
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:14Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-19T20:08:14Z"
+    last_modified_at: "2026-06-22T06:47:49Z"
+obligation_class: clock_skew_tolerated
 obligation_checklist:
     - atomicity
     - clock_skew_tolerated
@@ -111,4 +112,14 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-19T19:54:58Z comment="Spec audit stale-approval refresh: reviewed current YAML diffs vs HEAD plus KI/proof metadata; changes are metadata, trace, and evidence-honesty updates that surface gaps via KnownIssues/deferrals without claiming product fixes.")'
+          changed_by: human:buger
+        - date: "2026-06-22T06:36:52Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-19T20:08:14Z comment="Spec evidence-debt refresh: reviewed KI-gated obligation_deferrals added for required-but-unwitnessed obligations. Each deferral links to an open traced KnownIssue and leaves the gap as auto-expiring accepted KI-debt rather than claiming product/test fixes.")'
+          changed_by: human:buger
+        - date: "2026-06-22T06:47:49Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-22T06:36:52Z comment="Reviewed evidence-backed code-signal obligation closures: timezone round-trip evidence for analytics aggregate/record/uptime, Redis relative-TTL clock-skew evidence, and HTTP retry malformed-input nominal/negative evidence. No product behavior fixes claimed.")'
           changed_by: human:buger

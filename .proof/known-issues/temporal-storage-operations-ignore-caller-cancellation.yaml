@@ -1,14 +1,14 @@
 id: temporal-storage-operations-ignore-caller-cancellation
 title: Temporal storage operations use background contexts and cannot observe caller cancellation
-introduced_in: inception
-description: 'storage/temporal_storage.go stores a package-level context.Background() value and uses it for Redis/list operations instead of accepting a caller-provided context. As a result, SetKey/GetName/list pop/expire paths cannot be canceled by callers, and retry/storage-retry.go can keep retrying independently of the caller lifecycle. The SW-REQ-007 cancellation_observed obligation is therefore a real product gap, not only missing test evidence.'
+description: storage/temporal_storage.go stores a package-level context.Background() value and uses it for Redis/list operations instead of accepting a caller-provided context. As a result, SetKey/GetName/list pop/expire paths cannot be canceled by callers, and retry/storage-retry.go can keep retrying independently of the caller lifecycle. The SW-REQ-007 cancellation_observed obligation is therefore a real product gap, not only missing test evidence.
 affected_requirements:
     - SW-REQ-007
-environment_note: |-
-  Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source and command output.
-reproducer_command: |-
-  rg -n "context\\.Background\\(\\)|ctx" storage/temporal_storage.go retry/storage-retry.go
 severity: medium
+severity_basis: risk
+risk: availability
+reproducer_command: rg -n "context\\.Background\\(\\)|ctx" storage/temporal_storage.go retry/storage-retry.go
+environment_note: Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source and command output.
+introduced_in: inception
 mitigation: Operators must rely on backend client timeouts and process-level shutdown rather than caller cancellation for temporal-storage operations.
 remediation: Thread context.Context through temporal-storage public methods and retry loops, use that context for connector operations, and add cancellation tests for pop/expire/set paths.
 owner: tyk-team
@@ -18,3 +18,11 @@ history:
     - at: "2026-06-19T00:00:00Z"
       by: agent:codex
       action: created
+    - at: "2026-06-22T07:15:58Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=holistic
+    - at: "2026-06-22T07:18:02Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=risk,set-risk

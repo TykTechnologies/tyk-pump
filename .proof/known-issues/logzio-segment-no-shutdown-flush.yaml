@@ -9,6 +9,8 @@ evidence_manifests:
     - test:pumps/known_issue_tripwire_test.go:TestLogzioPumpMissingShutdownFlush_KI
     - test:pumps/known_issue_tripwire_test.go:TestSegmentPumpMissingShutdownFlush_KI
 severity: medium
+severity_basis: risk
+risk: availability
 environment_note: Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source or documentation surface and following the described scenario.
 introduced_in: inception
 mitigation: Operators can configure short DrainDuration for logzio (e.g. '1s') and accept a deliberate sleep before SIGTERM to give the async sender time to flush. Segment has no equivalent runtime knob.
@@ -24,3 +26,11 @@ history:
       by: agent:codex
       action: edit
       detail: add-evidence-manifest
+    - at: "2026-06-22T07:15:10Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=holistic
+    - at: "2026-06-22T07:18:02Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=risk,set-risk

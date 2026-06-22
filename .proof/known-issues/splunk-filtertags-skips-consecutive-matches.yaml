@@ -1,13 +1,14 @@
 id: splunk-filtertags-skips-consecutive-matches
 title: Splunk FilterTags iterates while mutating slice, skipping every other matching tag
-introduced_in: inception
 description: 'pumps/splunk.go:162-177 (FilterTags): the inner loop is ''for key, currentTag := range filteredTags { if HasPrefix(...) { copy(filteredTags[key:], filteredTags[key+1:]); ... filteredTags = filteredTags[:len(filteredTags)-1] } }''. This is the textbook Go anti-pattern of mutating a slice during a range-loop: ''range filteredTags'' evaluates len(filteredTags) once at entry, and indices advance even after the removal shifts subsequent elements left. Example: filteredTags=[''ignored-a'',''ignored-b'',''keep''] with excludeTag=''ignored-'': iter key=0 removes ''ignored-a'' → slice becomes [''ignored-b'',''keep'']; iter key=1 inspects ''keep'' (not the bumped-up ''ignored-b'' which is now at index 0) and stops. ''ignored-b'' is incorrectly retained and shipped to Splunk.'
 affected_requirements:
     - SW-REQ-048
-environment_note: |-
-  Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source or documentation surface and following the described scenario.
-reproducer_command: rg -n "range filteredTags|copy\(filteredTags\[key:\]" pumps/splunk.go
 severity: medium
+severity_basis: risk
+risk: data_integrity
+reproducer_command: rg -n "range filteredTags|copy\(filteredTags\[key:\]" pumps/splunk.go
+environment_note: Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source or documentation surface and following the described scenario.
+introduced_in: inception
 mitigation: 'Operators using ignore_tag_prefix_list should audit Splunk index for un-filtered tags after deploys. Workaround: list each prefix that could appear consecutively as a separate distinct prefix to avoid the slip pattern.'
 remediation: 'Replace the in-place shift with a filter-and-rebuild: ''out := filteredTags[:0]; for _, t := range filteredTags { skip := false; for _, p := range p.config.IgnoreTagPrefixList { if strings.HasPrefix(t,p) { skip = true; break } }; if !skip { out = append(out, t) } }; return out''.'
 owner: tyk-team
@@ -17,3 +18,11 @@ history:
     - at: "2026-06-02T16:38:59Z"
       by: human:buger
       action: created
+    - at: "2026-06-22T07:15:58Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=holistic
+    - at: "2026-06-22T07:18:04Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=risk,set-risk

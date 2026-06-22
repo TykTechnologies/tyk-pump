@@ -788,6 +788,8 @@ func TestRetryAndLog(t *testing.T) {
 }
 
 // Verifies: SW-REQ-029
+// SW-REQ-029:external_call_failure_observable:nominal
+// SW-REQ-029:external_call_failure_observable:negative
 func TestConnectAndLogin(t *testing.T) {
 	//nolint:govet
 	tcs := []struct {

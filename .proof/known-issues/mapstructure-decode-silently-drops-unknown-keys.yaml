@@ -1,6 +1,5 @@
 id: mapstructure-decode-silently-drops-unknown-keys
 title: Pump configs use mapstructure.Decode which silently ignores unknown keys
-introduced_in: inception
 description: 'Every pump Init uses mapstructure.Decode (e.g. pumps/csv.go:55 ''mapstructure.Decode(conf, &c.csvConf)'') which is lenient by default. Unknown keys — including operator typos like ''csv_pathh'' instead of ''csv_path'' — are silently dropped. INT-REQ-008''s claim that the system rejects malformed pump configuration loudly is therefore false: no exit code, no health-check failure, no metric is emitted; the misconfigured pump simply uses defaults for the misspelled field. The same pattern appears across all pumps in pumps/*.go (kafka, sql, elasticsearch, mongo, statsd, prometheus, hybrid, etc.).'
 affected_requirements:
     - INT-REQ-008
@@ -89,9 +88,11 @@ evidence_manifests:
     - code_signal:opengrep:go.mapstructure.lenient-decode:pumps/syslog.go:80
     - code_signal:opengrep:go.mapstructure.lenient-decode:pumps/timestream.go:99
     - code_signal:opengrep:go.mapstructure.lenient-decode:storage/temporal_storage.go:47
-environment_note: |-
-  Evidence is tied to the listed evidence_manifests entries; reproduce by rerunning the named test or code-signal scan and inspecting code_signal:opengrep:go.mapstructure.lenient-decode:pumps/csv.go:55.
 severity: medium
+severity_basis: risk
+risk: data_integrity
+environment_note: Evidence is tied to the listed evidence_manifests entries; reproduce by rerunning the named test or code-signal scan and inspecting code_signal:opengrep:go.mapstructure.lenient-decode:pumps/csv.go:55.
+introduced_in: inception
 mitigation: Operators have no warning until they notice data is not flowing or is using unexpected defaults. Suggest code-reviewing pump YAML against documented field names before rollout.
 remediation: 'Replace mapstructure.Decode with mapstructure.NewDecoder using a DecoderConfig that sets ErrorUnused: true, so unknown keys cause Init to return an error and the pump is skipped (with a clear log line).'
 owner: tyk-team
@@ -261,3 +262,11 @@ history:
       by: human:leo
       action: edit
       detail: add-evidence-manifest
+    - at: "2026-06-22T07:15:10Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=holistic
+    - at: "2026-06-22T07:18:03Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=risk,set-risk

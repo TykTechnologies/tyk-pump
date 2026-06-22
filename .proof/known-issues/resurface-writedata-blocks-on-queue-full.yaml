@@ -1,14 +1,14 @@
 id: resurface-writedata-blocks-on-queue-full
 title: Resurface WriteData blocks indefinitely when worker queue is full and ctx is alive — contradicts SW-REQ-054 FRETish
-introduced_in: inception
 description: 'pumps/resurface.go:273-280: when rp.enabled is true, WriteData uses ''select { case rp.data <- data: ...; case <-ctx.Done(): return ctx.Err() }''. If the buffered channel (cap 5) is full AND ctx has not been cancelled, the select BLOCKS until either the worker drains a slot or ctx fires. SW-REQ-054''s FRETish is ''when queue_full_and_enabled pumps_http_resurface shall always satisfy submit_skipped'' and the description says ''shall not block when the worker queue is full while the pump is enabled''. Code does the opposite of the spec: it blocks rather than skipping. The witness annotations on the file describe this select but no test actually fills the queue to 5 entries then attempts a 6th submit with a non-expiring ctx to prove the FRETish — the existing pumps/final_cleanup_mcdc_test.go test drives the disabled-path branch and the ctx-cancel branch, but not the ''queue full while enabled with no cancel'' row.'
 affected_requirements:
     - SW-REQ-054
-environment_note: |-
-  Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source and command output.
-reproducer_command: |-
-  rg -n "case rp\\.data <- data|case <-ctx\\.Done\\(\\):|return ctx\\.Err\\(\\)" pumps/resurface.go
 severity: medium
+severity_basis: risk
+risk: availability
+reproducer_command: rg -n "case rp\\.data <- data|case <-ctx\\.Done\\(\\):|return ctx\\.Err\\(\\)" pumps/resurface.go
+environment_note: Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source and command output.
+introduced_in: inception
 mitigation: Operators must size the resurface worker queue (currently hard-coded cap 5) for the expected purge_delay throughput; if the upstream gateway emits faster than resurfaceio SDK can flush, purge cycles will hang on this select. Set a non-zero pump timeout in pumps.yaml so the parent execPumpWriting context cancellation unblocks the select via the ctx.Done() arm.
 remediation: Either (a) add a 'default:' arm to the enabled-path select so a full queue results in dropped data + log.Warn (matching the FRETish), or (b) revise the FRETish to 'shall block until ctx_cancelled' and document the blocking behaviour.
 owner: tyk-team
@@ -18,3 +18,11 @@ history:
     - at: "2026-06-02T16:37:48Z"
       by: human:buger
       action: created
+    - at: "2026-06-22T07:15:58Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=holistic
+    - at: "2026-06-22T07:18:02Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=risk,set-risk

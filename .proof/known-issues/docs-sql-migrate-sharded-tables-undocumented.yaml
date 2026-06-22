@@ -1,14 +1,15 @@
 id: docs-sql-migrate-sharded-tables-undocumented
 title: 'Documentation gap: SQL pump migrate_sharded_tables meta field undocumented in tyk-docs'
-introduced_in: inception
 description: pumps/sql.go:89 declares MigrateShardedTables bool with mapstructure tag migrate_sharded_tables and an in-source comment about migration semantics ('performance impact from the migration … test carefully'). tyk-docs/content/shared/pump-config.md SQL section does not surface this knob. Operationally important — defaults to false, which causes prior-day shards to retain stale schema (KI sql-default-migration-today-only).
 affected_requirements:
     - SW-REQ-040
 commands:
     - grep -n 'migrate_sharded_tables\|MigrateShardedTables' /Users/buger/go/src/tyk-pump/pumps/sql.go
-reproducer_command: |-
-  grep -n 'migrate_sharded_tables\|MigrateShardedTables' /Users/buger/go/src/tyk-pump/pumps/sql.go
 severity: medium
+severity_basis: risk
+risk: correctness
+reproducer_command: grep -n 'migrate_sharded_tables\|MigrateShardedTables' /Users/buger/go/src/tyk-pump/pumps/sql.go
+introduced_in: inception
 mitigation: KI sql-default-migration-today-only documents the data-loss scenario when default false interacts with late-arriving records.
 remediation: Add pumps.sql.meta.migrate_sharded_tables to pump-config.md and cross-reference the existing KI.
 owner: tyk-team
@@ -19,3 +20,11 @@ history:
     - at: "2026-06-01T17:22:00Z"
       by: human:buger
       action: created
+    - at: "2026-06-22T07:15:10Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=holistic
+    - at: "2026-06-22T07:18:03Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=risk,set-risk
