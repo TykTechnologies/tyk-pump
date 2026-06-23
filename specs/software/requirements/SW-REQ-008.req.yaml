@@ -5,7 +5,7 @@ priority: shall
 category: functional
 req_type: guarantee
 fretish: when key_suffix_protobuf serializer shall always satisfy protobuf_codec_selected
-description: The analytics serializer shall encode and decode records via msgpack or protobuf and select the format by analytics-key suffix; msgpack round-trips losslessly, while protobuf has per-field exceptions tracked by KI serializer-protobuf-loses-city-names.
+description: The analytics serializer shall encode and decode records via msgpack or protobuf and select the format by analytics-key suffix; msgpack round-trips losslessly, while protobuf has per-field exceptions tracked by KI serializer-protobuf-loses-city-names. Additive AnalyticsRecord fields shall not be accepted as serializer behavior unless the encode/decode transformer and snapshot or round-trip evidence are updated with the field.
 formalization_strategy: fretish
 informal_verification:
     method: ""
@@ -29,15 +29,15 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-03T07:38:11Z"
-        comment: 'Phase Q: catalog obligation attachments — adds malformed_recovers_or_errors_loudly, binary_data_preserved, encoding_aware, length_prefix_validated, recursion_depth_bounded, reference_cycle_safe, ordering_guarantees_documented, snapshot_wire_format_compatible (serializer surface; KI serializer-protobuf-loses-city-names). See .proof/catalog-obligation-proposals.md.'
-        fingerprint: sha256:8e552855b69d941243ee283b13ef8e6945cfbf23773101e115e205a3f5f37dbf
-        ai_generated: true
+        reviewed_at: "2026-06-23T07:17:48Z"
+        comment: 'Product-fix-history hardening: proof-only requirement/evidence updates for logger format, additive record fields, and SQL aggregate shard-target debt; no product behavior fixes claimed.'
+        fingerprint: sha256:1eec7aa62dfe9610d472eb7759cd6ae3f3dd5dc4ea638337dccfb84109046c6e
+        ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:14Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-22T11:04:11Z"
+    last_modified_at: "2026-06-23T07:17:48Z"
 obligation_checklist:
     - encoding_safety
     - malformed_recovers_or_errors_loudly
@@ -90,3 +90,13 @@ lifecycle:
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T13:44:34Z comment="Phase L2: aggressive formalization — encodes per-component primary decision (instrumentation gate, codec select, SSL/SASL, dataset_empty, default-path, file-append, retry-status, log-level, flush, batch, transport, dedup); variables in <component>.vars.yaml; user directive: force MCDC witnesses to drive verifying tests.")'
           changed_by: human:cli
+        - date: "2026-06-23T00:00:00Z"
+          from: approved
+          to: approved
+          reason: 'Product-fix-history hardening for TT-7519: make additive AnalyticsRecord field mapping/evidence an explicit serializer contract.'
+          changed_by: agent:codex
+        - date: "2026-06-23T07:17:48Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-03T07:38:11Z comment="Phase Q: catalog obligation attachments — adds malformed_recovers_or_errors_loudly, binary_data_preserved, encoding_aware, length_prefix_validated, recursion_depth_bounded, reference_cycle_safe, ordering_guarantees_documented, snapshot_wire_format_compatible (serializer surface; KI serializer-protobuf-loses-city-names). See .proof/catalog-obligation-proposals.md.")'
+          changed_by: human:buger

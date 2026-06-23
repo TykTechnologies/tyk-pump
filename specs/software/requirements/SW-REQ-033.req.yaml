@@ -4,8 +4,8 @@ status: approved
 priority: shall
 category: functional
 req_type: guarantee
-fretish: when env_level_recognised logger shall always satisfy level_set_from_env
-description: Logger initialisation in package logger shall set the default log level from the TYK_LOGLEVEL environment variable at package init (defaulting to info) and install a fixed text formatter; JSON-configured log_level and log_format overrides are applied at startup by package main.
+fretish: logger shall always satisfy ((!env_level_recognised) | level_set_from_env) & legacy_formatter_installed
+description: Logger initialisation in package logger shall set the default log level from the TYK_LOGLEVEL environment variable at package init (defaulting to info) and install the legacy fixed text formatter with full timestamps, disabled colors, and timestamp layout "Jan 02 15:04:05"; JSON-configured log_level and log_format overrides are applied at startup by package main. This branch does not implement the upstream TT-17281 formatter contract that adds RFC3339 text/json modes and a legacy compatibility selector.
 formalization_strategy: fretish
 informal_verification:
     method: ""
@@ -29,16 +29,17 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-02T13:44:34Z"
-        comment: 'Phase L2: aggressive formalization — encodes per-component primary decision (instrumentation gate, codec select, SSL/SASL, dataset_empty, default-path, file-append, retry-status, log-level, flush, batch, transport, dedup); variables in <component>.vars.yaml; user directive: force MCDC witnesses to drive verifying tests.'
-        fingerprint: sha256:740e3b25782ad4c2954e17bc38a39762c447e8d70dc41d70e063f658d9cde2cd
+        reviewed_at: "2026-06-23T07:17:48Z"
+        comment: 'Product-fix-history hardening: proof-only requirement/evidence updates for logger format, additive record fields, and SQL aggregate shard-target debt; no product behavior fixes claimed.'
+        fingerprint: sha256:88e2d8f6d0894cb5415f0987c2b89fbd4467dfe6560f203ef428b9261c424881
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:17Z"
-    last_modified_by: human:cli
-    last_modified_at: "2026-06-02T13:44:35Z"
+    last_modified_by: human:buger
+    last_modified_at: "2026-06-23T07:17:48Z"
 obligation_checklist:
+    - log_timestamp_format_declared
     - nominal
 lifecycle:
     change_history:
@@ -57,3 +58,13 @@ lifecycle:
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T05:02:45Z comment="Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.")'
           changed_by: human:cli
+        - date: "2026-06-23T00:00:00Z"
+          from: approved
+          to: approved
+          reason: 'Product-fix-history hardening for TT-17281: pin current logger timestamp format and record that upstream RFC3339/legacy formatter support is not present on this branch.'
+          changed_by: agent:codex
+        - date: "2026-06-23T07:17:48Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T13:44:34Z comment="Phase L2: aggressive formalization — encodes per-component primary decision (instrumentation gate, codec select, SSL/SASL, dataset_empty, default-path, file-append, retry-status, log-level, flush, batch, transport, dedup); variables in <component>.vars.yaml; user directive: force MCDC witnesses to drive verifying tests.")'
+          changed_by: human:buger

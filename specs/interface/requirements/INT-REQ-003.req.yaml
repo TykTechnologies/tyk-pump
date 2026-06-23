@@ -5,7 +5,7 @@ priority: shall
 category: functional
 req_type: guarantee
 fretish: when serialize_then_deserialize serializer_contract shall always satisfy roundtrip_equal_except_protobuf_city_names
-description: The serialization format between gateway and pump (msgpack on the bare key, protobuf on the _protobuf-suffixed key) shall round-trip every analytics record field without loss; per-field exceptions shall be tracked as named known-issues.
+description: The serialization format between gateway and pump (msgpack on the bare key, protobuf on the _protobuf-suffixed key) shall round-trip every analytics record field without loss; per-field exceptions shall be tracked as named known-issues. Any new analytics record field intended to cross this interface shall update the protobuf/msgpack schema mapping, transformer mapping, and snapshot or round-trip evidence in the same change.
 formalization_strategy: fretish
 informal_verification:
     method: ""
@@ -29,15 +29,15 @@ verification:
         status: approved
         reviewer: human:buger
         role: interface_engineer
-        reviewed_at: "2026-06-22T12:04:23Z"
-        comment: 'Review obligation expansion from catalogue gap pass; active unfixed behavior remains KnownIssue-gated.'
-        fingerprint: sha256:bbdc56bf14ba564ae203e643478855d068deb713dca5184042b75c533a91d561
+        reviewed_at: "2026-06-23T07:17:48Z"
+        comment: 'Product-fix-history hardening: additive AnalyticsRecord fields must update schema, transformer, and evidence together; no product behavior change claimed.'
+        fingerprint: sha256:ce0394ee35cf10b5f364ffe06e0454ad6e75756ebba3138b566617abdc3a77db
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:46Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-22T12:04:23Z"
+    last_modified_at: "2026-06-23T07:17:48Z"
 obligation_checklist:
     - encoding_safety
     - malformed_recovers_or_errors_loudly
@@ -68,7 +68,7 @@ interface:
     signature: 'Wire formats keyed by analytics-key suffix: "" -> msgpack (serializer/msgp.go:30 MsgpSerializer.GetSuffix returns ""); "_protobuf" -> protobuf (serializer/protobuf.go:15 ProtobufSerializer.GetSuffix returns "_protobuf"). Schema source for protobuf: analytics/proto/analytics.proto.'
     protocol: 'Two parallel serializers selected per-key by GetSuffix; no in-band version handshake — the producer''s choice of suffix is the entire negotiation. AnalyticsSerializers loop at main.go:276 attempts each format per key.'
     assumptions: 'Both ends agree on the on-the-wire struct layout. Msgpack relies on field tags (untagged Go-struct positional order); protobuf relies on field numbers in analytics/proto/analytics.proto. Both decoders silently ignore unknown fields, so additive evolution is safe on either side independently.'
-    guarantees: 'Round-trip preservation of every analytics record field via the chosen format. Schema version is implicit (protobuf: numbered fields in analytics.proto; msgpack: structural). PER-FIELD EXCEPTION: protobuf round-trip is LOSSY for analytics.AnalyticsRecord.Geo.City.Names — serializer/protobuf.go:169 in TransformSingleProtoToAnalyticsRecord sets `Names: nil` unconditionally on decode, so any City.Names map populated on the producer side is dropped. This violates the requirement''s round-trip claim for that one field and is flagged as a defect for follow-up KI creation. RISK: no formal version handshake between gateway and pump (FMEA-006); a format-incompatible upgrade on one side would surface as decode errors at runtime only. Retirement of a format requires both sides upgraded; back-compat is additive on protobuf (new field numbers) and additive on the msgpack-encoded Go struct.'
+    guarantees: 'Round-trip preservation of every analytics record field via the chosen format. Schema version is implicit (protobuf: numbered fields in analytics.proto; msgpack: structural). Additive fields are accepted only when the field is represented in the Go AnalyticsRecord shape, protobuf numbered schema where applicable, encode/decode transformers, and snapshot or round-trip evidence. PER-FIELD EXCEPTION: protobuf round-trip is LOSSY for analytics.AnalyticsRecord.Geo.City.Names — serializer/protobuf.go:169 in TransformSingleProtoToAnalyticsRecord sets `Names: nil` unconditionally on decode, so any City.Names map populated on the producer side is dropped. This violates the requirement''s round-trip claim for that one field and is flagged as a defect for follow-up KI creation. RISK: no formal version handshake between gateway and pump (FMEA-006); a format-incompatible upgrade on one side would surface as decode errors at runtime only. Retirement of a format requires both sides upgraded; back-compat is additive on protobuf (new field numbers) and additive on the msgpack-encoded Go struct. This branch does not include upstream TT-7519 fields OriginalPath/listen_path or ListenPath/listen_path; if merged, they must be added to the schema map and evidence under this contract.'
     producer: tyk-gateway
     consumer:
         - tyk-pump
@@ -112,4 +112,14 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="interface_engineer" reviewer="human:buger" at=2026-06-02T14:19:05Z comment="Phase L3 aggressive: flip 8 INT interface contracts to FRETish (positive when-shall-always-satisfy form); per-contract var pairs added in specs/interface/variables/.")'
+          changed_by: human:buger
+        - date: "2026-06-23T00:00:00Z"
+          from: approved
+          to: approved
+          reason: 'Product-fix-history hardening for TT-7519: clarify additive AnalyticsRecord fields must update schema, transformers, and evidence; current branch does not include OriginalPath/ListenPath.'
+          changed_by: agent:codex
+        - date: "2026-06-23T07:17:48Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="interface_engineer" reviewer="human:buger" at=2026-06-22T12:04:23Z comment="Review obligation expansion from catalogue gap pass; active unfixed behavior remains KnownIssue-gated.")'
           changed_by: human:buger

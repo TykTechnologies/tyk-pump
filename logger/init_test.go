@@ -54,8 +54,8 @@ func TestFormatterWithForcedPrefixFileOutput(t *testing.T) {
 
 // Verifies: SW-REQ-033
 // SW-REQ-033:nominal:nominal
-// MCDC SW-REQ-033: env_level_recognised=F, level_set_from_env=F => TRUE
-// MCDC SW-REQ-033: env_level_recognised=T, level_set_from_env=T => TRUE
+// MCDC SW-REQ-033: env_level_recognised=F, legacy_formatter_installed=T, level_set_from_env=F => TRUE
+// MCDC SW-REQ-033: env_level_recognised=T, legacy_formatter_installed=T, level_set_from_env=T => TRUE
 func Test_GetLogger(t *testing.T) {
 	tests := []struct {
 		name          string

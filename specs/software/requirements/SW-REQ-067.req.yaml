@@ -32,15 +32,15 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-22T09:25:11Z"
-        comment: 'Expand backend, database, retry, queue, panic-safety, and shared-state catalog obligations; uncovered behavior is linked to existing KnownIssues rather than claimed as evidence.'
-        fingerprint: sha256:2a4c1102e8a2d5298872650cc1f2a7e72aa1f64b7c9e415c769fc2c801143856
+        reviewed_at: "2026-06-23T07:17:48Z"
+        comment: 'Product-fix-history hardening: proof-only requirement/evidence updates for logger format, additive record fields, and SQL aggregate shard-target debt; no product behavior fixes claimed.'
+        fingerprint: sha256:e312cea1428bdfa30395397d0660c924af23e3e7cfe1554b615a19ecd2e82ada
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:39:51Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-22T10:55:53Z"
+    last_modified_at: "2026-06-23T07:17:48Z"
 obligation_checklist:
     - atomicity
     - concurrent
@@ -138,3 +138,8 @@ lifecycle:
           to: approved
           reason: 'Product-fix-history hardening for TT-16778: require routing_target_consistent and defer it to the active branch KI until upstream commit 140ef71 is merged.'
           changed_by: agent:codex
+        - date: "2026-06-23T07:17:48Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-22T09:25:11Z comment="Expand backend, database, retry, queue, panic-safety, and shared-state catalog obligations; uncovered behavior is linked to existing KnownIssues rather than claimed as evidence.")'
+          changed_by: human:buger

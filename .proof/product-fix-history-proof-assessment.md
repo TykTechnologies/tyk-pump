@@ -71,8 +71,8 @@ backend-mode partitions, or missing operator contracts.
 | fbcb614 | 2024-11-27 | SQL pump panicked when table sharding was enabled and all records were skipped. | Covered now by DEFECT-4, SW-REQ-040, and boundary evidence. |
 | 544ccb3 | 2024-12-05 | Sharded SQL pumps did not create needed indexes on shard tables. | Mostly covered by SQL sharding/index requirements and obligations. Some backend-specific DDL behavior remains KI/debt where applicable. |
 | 866bdc2 | 2026-02-09 | CA certificate configuration for Elasticsearch/Kafka/Splunk TLS clients. | Partially covered by TLS/cert-validation obligations. Exact per-pump CA-file behavior depends on requirement specificity and tests. |
-| 1c20a08 | 2026-06-10 | RFC3339-compliant log format option. | Would require explicit logger/config requirement to catch. Not a bug proof can infer unless the contract is specified. |
-| 8a614d6 | 2026-06-09 | Add original_path and listen_path observability fields. | Field-preservation requirements help, but newly added fields need explicit trace/evidence. Proof would not infer the new fields before specification. |
+| 1c20a08 | 2026-06-10 | RFC3339-compliant log format option. | `missed_before_hardening`: current branch lacks upstream TT-17281. Not treated as an active product bug because this branch only documents `text`/`json`; proof now pins current legacy timestamp behavior via SW-REQ-033, obligation `log_timestamp_format_declared`, and logger formatter evidence. |
+| 8a614d6 | 2026-06-09 | Add original_path and listen_path observability fields. | `missed_before_hardening`: current branch lacks upstream TT-7519 fields, so no active KI. Hardened INT-REQ-003, SW-REQ-008, and SW-REQ-009 to require additive AnalyticsRecord fields to update schema/transformer/helper evidence explicitly. |
 
 ## Older Runtime/Product Fixes
 
@@ -114,8 +114,8 @@ so a later reviewer can see what was included and what was filtered out.
 | Commit | Date | Subject | Review disposition |
 | --- | --- | --- | --- |
 | 140ef71 | 2026-06-17 | [TT-16778] Fix sharded aggregate SQL writes | `surfaced_as_debt`: upstream fixed, current branch not fixed. Added KI `sql-aggregate-sharded-upsert-targets-base-table`, local obligation `routing_target_consistent`, and code signal `go.sql-aggregate-upsert-without-table-target`. |
-| 1c20a08 | 2026-06-10 | [TT-17281] Add RFC3339 compliant option for consistent Tyk Pump logs and field mapping | Product behavior/config feature. Needs explicit logger-format contract if proof should enforce it. |
-| 8a614d6 | 2026-06-09 | [TT-7519] add original_path and listen_path to observability | Product field-preservation change. Needs explicit trace/evidence for new fields. |
+| 1c20a08 | 2026-06-10 | [TT-17281] Add RFC3339 compliant option for consistent Tyk Pump logs and field mapping | `missed_before_hardening`: upstream feature not present here. Hardened SW-REQ-033 with `log_timestamp_format_declared` and exact legacy timestamp-format witness so any later RFC3339/legacy contract change must update the spec/evidence explicitly. |
+| 8a614d6 | 2026-06-09 | [TT-7519] add original_path and listen_path to observability | `missed_before_hardening`: upstream additive fields are absent here. Hardened serializer/interface/helper requirements so future additive record fields need explicit schema, transformer, and evidence updates. |
 | be39ad3 | 2026-04-28 | [TT-17004] Fix MCP Mongo aggregate cross-API merge | Product defect. Covered by DEFECT-1. |
 | bad4cd3 | 2026-04-24 | [TT-16809] Pump generate MCP analytics | Product feature surface. Covered through MCP requirements, but not treated as historical defect. |
 | 866bdc2 | 2026-02-09 | [TT-15674] Extend pumps config with ca cert option | Product TLS/config behavior. Partially covered by cert/TLS obligations. |

@@ -8,3 +8,7 @@ variables:
       type: bool
       direction: output
       description: True iff log.Level is set from the env value (false means the InfoLevel default branch is taken).
+    - name: legacy_formatter_installed
+      type: bool
+      direction: output
+      description: True iff the logger installs the legacy text formatter with full timestamps, disabled colors, and timestamp layout "Jan 02 15:04:05".

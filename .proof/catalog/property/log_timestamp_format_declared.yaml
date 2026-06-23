@@ -1,0 +1,44 @@
+id: log_timestamp_format_declared
+name: Log timestamp format declared
+category: property
+status: active
+summary: Logger output shall declare and witness the timestamp format used by each supported log formatter mode.
+description: |
+  Operational log pipelines often parse timestamps and message fields by a
+  stable schema. A logger requirement that only says "text" or "json" is too
+  weak when a product change alters the timestamp grammar, field mapping, or
+  legacy compatibility mode. The supported formatter modes must declare their
+  timestamp format, and tests or review evidence must pin the configured shape.
+applies_when:
+  description: a component configures process or application log formatter modes
+  trigger_phrases:
+    - log format
+    - logger formatter
+    - timestamp format
+    - RFC3339
+    - legacy format
+    - structured logging
+example_req: |-
+  The logger shall use the legacy "Jan 02 15:04:05" timestamp layout for the
+  default text formatter, and any JSON/RFC3339 formatter mode shall be declared
+  explicitly before it is accepted as product behavior.
+if_missing: |-
+  A release can change log timestamp grammar or message field names without any
+  requirement or witness noticing. Downstream log ingestion, alerting, and field
+  mapping can then break even though the logger still emits syntactically valid
+  text or JSON.
+recommended_evidence:
+  - kind: scenario
+    note: Unit test constructs each supported formatter mode and asserts the concrete formatter type plus timestamp format or field map.
+  - kind: review
+    note: Code review traces config/env format selection into the logger formatter installed on the application logger and, when applicable, the standard logger.
+frameworks:
+  - id: NIST-800-53
+    refs:
+      - AU-3
+      - AU-8
+related_classes:
+  - id: tz_explicit
+    relationship: complements
+  - id: schema_version_policy_enforced
+    relationship: complements
