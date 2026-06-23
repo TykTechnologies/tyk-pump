@@ -14,10 +14,12 @@ description: |
   MigrateShardedTables config flag, and also fixed a sub-bug where the config
   flag did not overwrite correctly ("fixed bug that didn't allow for config
   overwrite").
-  Residual default-mode gap: when MigrateShardedTables defaults to false, only
-  the current day's shard is migrated — tracked as KI
-  sql-default-migration-today-only (open, ship_with_known_issue) and the doc
-  gap as KI docs-sql-migrate-sharded-tables-undocumented.
+  Residual gaps: when MigrateShardedTables defaults to false, only the current
+  day's shard is migrated — tracked as KI sql-default-migration-today-only
+  (open, ship_with_known_issue); GraphSQLAggregatePump still does not honor
+  MigrateShardedTables at startup — tracked as KI
+  graph-sql-aggregate-migrate-sharded-tables-ignored; and the documentation gap
+  is tracked as KI docs-sql-migrate-sharded-tables-undocumented.
 source:
     type: upstream_commit
     repo: TykTechnologies/tyk-pump
@@ -54,9 +56,9 @@ hardening:
     # test asserted that sharding-enabled migration work was still reached when
     # table_sharding=true. Current witnesses cover HandleTableMigration's
     # migrate-all/current-day branches and MigrateAllShardedTables' valid shard
-    # discovery. Residual default-mode-only and no-schema-version behavior
-    # remain KI-tracked rather than overclaimed as complete forward-compatible
-    # schema policy.
+    # discovery. Residual default-mode-only, Graph SQL aggregate startup
+    # migration, and no-schema-version behavior remain KI-tracked rather than
+    # overclaimed as complete forward-compatible schema policy.
     new_requirements: []
     strengthened_requirements:
         - SW-REQ-040
@@ -86,6 +88,10 @@ disposition:
               obligation_class: forward_compatible
               evidence_type: accepted_ki_debt
               tracking: sql-default-migration-today-only
+            - requirement: SW-REQ-043
+              obligation_class: forward_compatible
+              evidence_type: accepted_ki_debt
+              tracking: graph-sql-aggregate-migrate-sharded-tables-ignored
             - requirement: INT-REQ-007
               evidence_type: mcdc
               witnesses:
@@ -121,3 +127,11 @@ history:
         concrete TT-13166 regression closure is the migration branch evidence
         plus INT-REQ-007 MC/DC witnesses; residual schema-policy obligations
         stay KI-gated.
+    - at: "2026-06-23T09:10:00Z"
+      by: agent:codex
+      action: residual_gap_recorded
+      detail: |
+        Added KI graph-sql-aggregate-migrate-sharded-tables-ignored after
+        commit-level review found GraphSQLAggregatePump.Init still uses the
+        old table-sharding migration shape and ignores migrate_sharded_tables
+        for existing shards.

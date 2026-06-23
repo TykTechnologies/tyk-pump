@@ -1,0 +1,30 @@
+id: graph-sql-aggregate-migrate-sharded-tables-ignored
+title: Graph SQL aggregate ignores migrate_sharded_tables during startup migration
+description: 'GraphSQLAggregatePump.Init still uses the pre-TT-13166 pattern: when TableSharding is true it skips startup AutoMigrate entirely, and it does not call HandleTableMigration or MigrateAllShardedTables. Operators can set migrate_sharded_tables=true, but graph SQL aggregate existing shards are not scanned or migrated at Init. Late/backfilled graph aggregate writes into prior-day shards can therefore hit stale schemas after additive model changes. This is distinct from the standard GraphSQLPump, which is wired through HandleTableMigration.'
+affected_requirements:
+    - SW-REQ-043
+    - INT-REQ-007
+commands:
+    - rg -n "HandleTableMigration|MigrateAllShardedTables|if !s.SQLConf.TableSharding" pumps/graph_sql_aggregate.go pumps/graph_sql.go
+evidence_manifests:
+    - source:pumps/graph_sql_aggregate.go:78
+severity: medium
+severity_basis: risk
+risk: data_integrity
+reproducer_command: rg -n "HandleTableMigration|MigrateAllShardedTables|if !s.SQLConf.TableSharding" pumps/graph_sql_aggregate.go pumps/graph_sql.go
+introduced_in: inception
+mitigation: Avoid Graph SQL aggregate table sharding across schema-changing upgrades, or manually migrate existing tyk_graph_aggregates_<YYYYMMDD> shards before sending late/backfilled records.
+remediation: Wire GraphSQLAggregatePump.Init through HandleTableMigration with an aggregate-graph-specific MigrateAllShardedTables callback, then add a regression witness that migrate_sharded_tables=true migrates a stale prior-day graph aggregate shard.
+customer_impact: Graph SQL aggregate shards can remain on an old schema even when migrate_sharded_tables is enabled, causing late or backfilled graph aggregate records to fail writes after schema expansion.
+owner: tyk-team
+review_date: "2026-11-30"
+release_disposition: ship_with_known_issue
+status: reviewed
+history:
+    - at: "2026-06-23T09:08:29Z"
+      by: agent:codex
+      action: created
+    - at: "2026-06-23T09:10:38Z"
+      by: agent:codex
+      action: review
+      detail: reviewer=human:buger,new_review_date=2026-11-30

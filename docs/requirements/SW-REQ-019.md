@@ -20,10 +20,13 @@ date-boundary changes, and migrates a new table on the fly via `ensureTable`.
 
 Common GORM concerns (log level translation, dialect selection, connection
 open) are centralised in `pumps/common.go`'s `OpenGormDB`, and table-migration
-helpers (`HandleTableMigration`, `MigrateAllShardedTables`) are shared by all
-six variants. Parameter-bound `Create` is what GORM produces by default and
-protects against SQL injection from analytics fields containing user-supplied
-content.
+helpers (`HandleTableMigration`, `MigrateAllShardedTables`) are shared by the
+standard, aggregate, graph-standard, and MCP SQL variants. Graph SQL aggregate
+still uses the older `if !TableSharding { AutoMigrate(...) }` startup shape and
+does not honor `migrate_sharded_tables` for existing shards; this is tracked as
+KI `graph-sql-aggregate-migrate-sharded-tables-ignored`. Parameter-bound
+`Create` is what GORM produces by default and protects against SQL injection
+from analytics fields containing user-supplied content.
 
 ## Code references
 - `pumps/sql.go:78` — `TableSharding bool` field on `SQLConf`.
