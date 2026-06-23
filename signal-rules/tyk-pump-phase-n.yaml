@@ -164,6 +164,43 @@ rules:
   # checkout. obligations: fail-validates at load time, so deleting any overlay
   # without a shipped replacement would re-block this pack.
   # ──────────────────────────────────────────────────────────────────────
+  - id: go.sql-aggregate-upsert-without-table-target
+    severity: WARNING
+    languages: [go]
+    message: |
+      SQL aggregate upsert builds conflict-update assignments for a caller
+      supplied table but the GORM insert chain does not bind the insert target
+      with `.Table(table)`. In sharded mode this writes to the model default
+      table instead of the selected shard, or fails when that base table is
+      absent. Bind the selected routing target into the insert call.
+    metadata:
+      proof:
+        signal_id: go.sql_aggregate_upsert_without_table_target
+        provider: opengrep
+        confidence: high
+        framework_hints:
+          - CWE-669
+          - CWE-697
+        notes: |
+          TT-16778 / upstream commit 140ef71 fixed this exact shape by changing
+          c.db.WithContext(ctx).Clauses(...).Create(...) to
+          c.db.WithContext(ctx).Table(table).Clauses(...).Create(...). The rule
+          intentionally matches the unsafe GORM chain where OnConflictAssignments
+          receives the selected table but the insert target is not bound to it.
+        obligations: [routing_target_consistent]
+    paths:
+      include:
+        - "pumps/sql_aggregate.go"
+      exclude:
+        - "*_test.go"
+        - "vendor/**"
+    patterns:
+      - pattern: |
+          $DB.WithContext($CTX).Clauses(clause.OnConflict{
+            Columns: $COLS,
+            DoUpdates: clause.Assignments(analytics.OnConflictAssignments($TABLE, $EXCLUDED)),
+          }).Create($RECS)
+  # ──────────────────────────────────────────────────────────────────────
   - id: go.wall-clock-arithmetic
     severity: INFO
     languages: [go]

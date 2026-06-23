@@ -1,8 +1,8 @@
 {
   "schema_version": "proof.code_signals.report.v1",
   "provider": "opengrep",
-  "generated_at": "2026-06-20T09:46:58Z",
-  "input_hash": "sha256:56d09cf4d9623698c81f5328d8393d5595e21b7bb420a07512105a4c67114fee",
+  "generated_at": "2026-06-23T07:01:33Z",
+  "input_hash": "sha256:62774f301ff191341e48fb7e7a3b07e7c685ac8dcff0bf4d6ad0416223697e4e",
   "mode": "run",
   "source": "stdout",
   "format": "sarif",
@@ -5665,6 +5665,28 @@
       ],
       "message": "A for loop uses a struct field as its stride: `for i := 0; i \u003c N; i +=\ncfg.BatchSize`, OR a shrink-loop uses a parameter as its slice step:\n`for batchSize \u003c len(s) { s = s[batchSize:] ... }`. When the field /\nparameter is zero (default-constructed config, missing YAML key,\nmisconfigured caller) the loop hangs the goroutine forever and produces\nno observable failure. Validate the field at init time and substitute a\nnon-zero default, OR guard the loop with `if cfg.BatchSize == 0 {\ncfg.BatchSize = N }` immediately before the loop.\n",
       "fingerprint": "sha256:42caf07884eedad4d6264937d12e4ef3d3d4bad02256e43641ba328cd85dd296",
+      "source_hash": "sha256:85f542163368da6dc4bd0eaa0aa74bc0b04e3ec69bf64df49ab67a8742b7c92a"
+    },
+    {
+      "schema_version": "proof.code_signals.v1",
+      "provider": "opengrep",
+      "provider_rule_id": "go.sql-aggregate-upsert-without-table-target",
+      "signal_id": "go.sql_aggregate_upsert_without_table_target",
+      "artifact": "pumps/sql_aggregate.go",
+      "span": {
+        "start_line": 314,
+        "end_line": 317
+      },
+      "confidence": "high",
+      "obligations": [
+        "routing_target_consistent"
+      ],
+      "framework_hints": [
+        "CWE-669",
+        "CWE-697"
+      ],
+      "message": "SQL aggregate upsert builds conflict-update assignments for a caller\nsupplied table but the GORM insert chain does not bind the insert target\nwith `.Table(table)`. In sharded mode this writes to the model default\ntable instead of the selected shard, or fails when that base table is\nabsent. Bind the selected routing target into the insert call.\n",
+      "fingerprint": "sha256:46c845c1233bdb25f847a88e066431d0b661d464c16f0161a80ae43ff32fbcea",
       "source_hash": "sha256:85f542163368da6dc4bd0eaa0aa74bc0b04e3ec69bf64df49ab67a8742b7c92a"
     },
     {

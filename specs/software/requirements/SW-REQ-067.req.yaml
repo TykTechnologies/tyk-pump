@@ -5,7 +5,7 @@ priority: shall
 category: functional
 req_type: guarantee
 fretish: when row_conflict_detected pumps_sql_aggregate shall always satisfy on_conflict_assignments_applied
-description: The SQL Aggregate pump shall, per (orgID, dimension) row in each aggregated batch, issue a parameter-bound INSERT ... ON CONFLICT (id) DO UPDATE SET ... using clause.OnConflict with analytics.OnConflictAssignments(table, "excluded") so that monotonic counter columns are incremented rather than overwritten; insert failures shall be returned to the caller. Records are batched in slices of BatchSize.
+description: The SQL Aggregate pump shall, per (orgID, dimension) row in each aggregated batch, issue a parameter-bound INSERT ... ON CONFLICT (id) DO UPDATE SET ... against the caller-selected aggregate table using clause.OnConflict with analytics.OnConflictAssignments(table, "excluded") so that monotonic counter columns are incremented rather than overwritten; insert failures shall be returned to the caller. Records are batched in slices of BatchSize.
 formalization_strategy: fretish
 informal_verification:
     method: ""
@@ -51,8 +51,15 @@ obligation_checklist:
     - ordering_guarantees_documented
     - panic_free_input_handling
     - parameterized_only_write
+    - routing_target_consistent
     - transaction_isolation_declared
 obligation_deferrals:
+    - obligation_class: routing_target_consistent
+      reason: SQL aggregate upsert receives the caller-selected table but the current GORM insert chain does not bind that table with Table(table), so routed-shard writes remain KI-backed debt until TT-16778 is applied.
+      tracking: sql-aggregate-sharded-upsert-targets-base-table
+      owner: agent:codex
+      ki_ref: sql-aggregate-sharded-upsert-targets-base-table
+      reproducer: code_signal:opengrep:go.sql-aggregate-upsert-without-table-target:pumps/sql_aggregate.go
     - obligation_class: atomicity
       reason: Required atomicity evidence is parked because the SQL aggregate fault-injection harness is missing.
       tracking: known-issue:sql-aggregate-atomicity-fault-injection-missing
@@ -126,3 +133,8 @@ lifecycle:
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-19T20:08:14Z comment="Spec evidence-debt refresh: reviewed KI-gated obligation_deferrals added for required-but-unwitnessed obligations. Each deferral links to an open traced KnownIssue and leaves the gap as auto-expiring accepted KI-debt rather than claiming product/test fixes.")'
           changed_by: human:buger
+        - date: "2026-06-23T00:00:00Z"
+          from: approved
+          to: approved
+          reason: 'Product-fix-history hardening for TT-16778: require routing_target_consistent and defer it to the active branch KI until upstream commit 140ef71 is merged.'
+          changed_by: agent:codex

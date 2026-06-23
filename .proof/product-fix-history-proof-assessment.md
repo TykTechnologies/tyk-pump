@@ -64,7 +64,7 @@ backend-mode partitions, or missing operator contracts.
 
 | Commit | Date | Product issue | Current proof posture |
 | --- | --- | --- | --- |
-| 140ef71 | 2026-06-17 | SQL aggregate sharded writes inserted into the model default table instead of the caller-provided shard table. | Adjacent coverage exists through SW-REQ-064 and SW-REQ-067, but this exact defect should be recorded as a DEFECT/problem report and tied to the regression test. I would not claim guaranteed immediate discovery yet. |
+| 140ef71 | 2026-06-17 | SQL aggregate sharded writes inserted into the model default table instead of the caller-provided shard table. | `surfaced_as_debt`: this branch lacks the upstream fix, so the active gap is tracked by KI `sql-aggregate-sharded-upsert-targets-base-table`, obligation `routing_target_consistent`, and signal `go.sql-aggregate-upsert-without-table-target`. |
 | be39ad3 | 2026-04-28 | MCP Mongo aggregate cross-API document merge: upsert key lacked owner API id. | Covered now by DEFECT-1, SW-REQ-039, and edge-case evidence. A regression should be caught. |
 | 19fb73d | 2025-10-23 | SQL table-sharding migration skipped sharded tables. | Covered now by DEFECT-3, SW-REQ-040, forward-compatible obligation evidence, and residual KIs for default current-day-only behavior. |
 | 0596e82 / df62011 | 2025-08-15/16 | Syslog multiline raw request/response fragmented one analytics record into multiple syslog lines. | Covered now by DEFECT-2, SW-REQ-050, and encoding_safety evidence. |
@@ -113,7 +113,7 @@ so a later reviewer can see what was included and what was filtered out.
 
 | Commit | Date | Subject | Review disposition |
 | --- | --- | --- | --- |
-| 140ef71 | 2026-06-17 | [TT-16778] Fix sharded aggregate SQL writes | Product defect. Needs explicit DEFECT/problem-report binding. |
+| 140ef71 | 2026-06-17 | [TT-16778] Fix sharded aggregate SQL writes | `surfaced_as_debt`: upstream fixed, current branch not fixed. Added KI `sql-aggregate-sharded-upsert-targets-base-table`, local obligation `routing_target_consistent`, and code signal `go.sql-aggregate-upsert-without-table-target`. |
 | 1c20a08 | 2026-06-10 | [TT-17281] Add RFC3339 compliant option for consistent Tyk Pump logs and field mapping | Product behavior/config feature. Needs explicit logger-format contract if proof should enforce it. |
 | 8a614d6 | 2026-06-09 | [TT-7519] add original_path and listen_path to observability | Product field-preservation change. Needs explicit trace/evidence for new fields. |
 | be39ad3 | 2026-04-28 | [TT-17004] Fix MCP Mongo aggregate cross-API merge | Product defect. Covered by DEFECT-1. |
@@ -222,10 +222,17 @@ KnownIssues/risks relevant to historical fix classes:
 These are not product-code fixes. They are candidates for future proof-modeling
 or KnownIssue/problem-report work.
 
-1. Add a DEFECT record for TT-16778 / 140ef71.
-   - Suggested affected requirements: SW-REQ-064, SW-REQ-067.
+1. Close or convert the active KI for TT-16778 / 140ef71 after merging the
+   upstream product-code fix.
+   - Current branch disposition: KnownIssue
+     `sql-aggregate-sharded-upsert-targets-base-table`.
+   - Affected requirements: SW-REQ-064, SW-REQ-067.
    - Defect class: wrong insert target for sharded aggregate upsert.
-   - Evidence: SQLAggregateDoAggregatedWriting_UsesProvidedTable_SQLite and
+   - Proof hardening added: local obligation `routing_target_consistent` and
+     code signal `go.sql-aggregate-upsert-without-table-target`.
+   - Once the branch contains commit 140ef71, convert the history to a DEFECT
+     record and bind the upstream regression witnesses
+     SQLAggregateDoAggregatedWriting_UsesProvidedTable_SQLite and
      SQLAggregateDoAggregatedWriting_Sharded.
 
 2. Strengthen Influx v1 duplicate/cumulative write contract.

@@ -1,0 +1,53 @@
+id: routing_target_consistent
+name: Routing target consistent
+category: property
+status: active
+summary: A write helper that receives a routing-selected destination shall perform the backend write against that same destination, not an implicit model default or stale shared handle.
+description: |
+  Sharded and partitioned pumps often compute a destination table, collection,
+  index, topic, or queue before delegating the actual backend write to a helper.
+  The helper must bind the backend client's write target to the caller-selected
+  destination. It is not enough for conflict/update expressions, logs, or error
+  messages to mention the selected target if the insert/send call still uses a
+  default model table or a previously selected shared handle.
+applies_when:
+  description: code computes or receives a per-record, per-batch, or per-window backend destination and then writes through a backend client or ORM call
+  trigger_phrases:
+    - route
+    - routing target
+    - sharded table
+    - selected table
+    - selected index
+    - destination
+    - backend target
+example_req: |-
+  When a SQL aggregate day-slice is routed to tyk_aggregated_<YYYYMMDD>, the
+  INSERT ... ON CONFLICT statement shall target that same table for both the
+  INSERT target and the conflict-update expression.
+if_missing: |-
+  The code may compute the correct shard name and even build conflict updates
+  for that shard, while the actual insert still targets the ORM model's default
+  base table. The result is failed writes when the base table is absent, or
+  silent writes to the wrong table when it exists.
+recommended_evidence:
+  - kind: scenario
+    note: Scenario test creates only the routed destination, performs the write, and asserts rows appear in the routed destination while the default destination remains absent or empty.
+  - kind: negative
+    note: Regression test covers the previous wrong-target path by making the implicit/default destination unavailable and proving the routed destination still accepts the write.
+  - kind: review
+    note: Code review traces the routing-selected destination variable into the backend client's insert/send/index call, not only into logs or update expressions.
+frameworks:
+  - id: CWE
+    refs:
+      - CWE-669
+      - CWE-697
+  - id: NIST-800-53
+    refs:
+      - SI-10
+related_classes:
+  - id: temporal_window_inclusive
+    relationship: complements
+  - id: output_cardinality_bounded
+    relationship: complements
+  - id: parameterized_only_write
+    relationship: complements

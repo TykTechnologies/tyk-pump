@@ -1,0 +1,35 @@
+id: sql-aggregate-sharded-upsert-targets-base-table
+title: SQL aggregate sharded upsert writes to the base table instead of the selected shard
+description: SQLAggregatePump.DoAggregatedWriting receives a caller-selected table name from the sharded routing path, and analytics.OnConflictAssignments(table, "excluded") builds update expressions for that selected shard. However the actual GORM insert call is c.db.WithContext(ctx).Clauses(...).Create(...) without Table(table), so GORM targets the model default tyk_aggregated table. In sharded mode this fails when the base table is absent, or writes/upserts the wrong table when the base table exists. Upstream fixed this in TykTechnologies/tyk-pump commit 140ef71 (TT-16778) by inserting .Table(table) before Clauses; this proof branch does not contain that product-code fix.
+affected_requirements:
+    - SW-REQ-064
+    - SW-REQ-067
+evidence_manifests:
+    - code_signal:opengrep:go.sql-aggregate-upsert-without-table-target:pumps/sql_aggregate.go
+severity: high
+severity_basis: risk
+risk: data_integrity
+environment_note: |
+    Evidence is tied to the code signal and the upstream regression tests added in commit 140ef71.
+    Reproduce statically with `proof signals collect --provider opengrep` or inspect pumps/sql_aggregate.go:
+    DoAggregatedWriting lacks `.Table(table)` before `Clauses(...).Create(...)`.
+introduced_in: inception
+mitigation: Disable SQL aggregate table sharding for already-aggregated writes, or cherry-pick/merge upstream commit 140ef71 before relying on sharded SQL aggregate output.
+remediation: Apply the upstream TT-16778 fix so DoAggregatedWriting calls c.db.WithContext(ctx).Table(table).Clauses(...).Create(...), then add/retain the upstream regression witnesses for the base-table-absent and base-table-present cases.
+owner: tyk-team
+review_date: "2026-11-30"
+release_disposition: ship_with_known_issue
+status: reviewed
+history:
+    - at: "2026-06-23T00:00:00Z"
+      by: agent:codex
+      action: created
+      detail: Captured active branch gap found during product-fix-history proof assessment; no product-code fix made.
+    - at: "2026-06-23T07:04:55Z"
+      by: agent:codex
+      action: edit
+      detail: set-severity-basis=risk,set-risk
+    - at: "2026-06-23T07:04:55Z"
+      by: agent:codex
+      action: review
+      detail: reviewer=human:buger,new_review_date=2026-11-30

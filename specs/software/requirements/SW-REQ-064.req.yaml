@@ -47,9 +47,16 @@ obligation_checklist:
     - nominal
     - ordering_guarantees_documented
     - panic_free_input_handling
+    - routing_target_consistent
     - shared_state_synchronized
     - temporal_window_inclusive
 obligation_deferrals:
+    - obligation_class: routing_target_consistent
+      reason: SQL aggregate sharded routing computes the correct tyk_aggregated_<YYYYMMDD> table, but DoAggregatedWriting currently inserts through the model default table unless upstream TT-16778 is applied.
+      tracking: sql-aggregate-sharded-upsert-targets-base-table
+      owner: agent:codex
+      ki_ref: sql-aggregate-sharded-upsert-targets-base-table
+      reproducer: code_signal:opengrep:go.sql-aggregate-upsert-without-table-target:pumps/sql_aggregate.go
     - obligation_class: concurrent
       reason: 'SQL aggregate sharded WriteData mutates shared DB/table state during routing and DDL setup, so concurrent evidence is tracked as a real known issue until per-call sessions or synchronization land.'
       tracking: sql-aggregate-sharded-shared-db-race
@@ -114,3 +121,8 @@ lifecycle:
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-22T07:32:48Z comment="Close SQL aggregate temporal-window signal with existing day-shard boundary evidence.")'
           changed_by: human:buger
+        - date: "2026-06-23T00:00:00Z"
+          from: approved
+          to: approved
+          reason: 'Product-fix-history hardening for TT-16778: attach routing_target_consistent with KI-backed deferral because this branch lacks upstream commit 140ef71.'
+          changed_by: agent:codex
