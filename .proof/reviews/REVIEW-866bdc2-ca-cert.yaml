@@ -1,0 +1,7 @@
+id: REVIEW-866bdc2-ca-cert
+kind: design_review
+reviewer: agent:codex
+reviewed_at: "2026-06-23T07:33:57Z"
+subject: upstream:866bdc2
+decision: approved
+comment: 'Commit-level proof assurance review for TT-15674 CA certificate config: added cert_chain_validated obligation coverage for SW-REQ-016, SW-REQ-021, SW-REQ-048, and SW-REQ-068; existing tests now positively assert valid CA files populate RootCAs through shared TLS helper and Kafka/Splunk/Elasticsearch paths; tls-insecure-skip-verify-allowed remains tracked KI debt for operator-disabled verification.'

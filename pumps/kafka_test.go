@@ -251,6 +251,7 @@ func TestKafkaPump_Init_NegativeBatchBytes(t *testing.T) {
 }
 
 // Verifies: SW-REQ-021
+// SW-REQ-021:cert_chain_validated:nominal
 // MCDC SW-REQ-021: tls_attached=F, use_ssl_configured=F => TRUE
 // MCDC SW-REQ-021: tls_attached=F, use_ssl_configured=T => FALSE
 // MCDC SW-REQ-021: tls_attached=T, use_ssl_configured=T => TRUE
@@ -290,6 +291,24 @@ func TestKafkaPump_InitTLSConfig(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotNil(t, pump.writerConfig.Dialer.TLS, "TLS config should be set")
 		assert.True(t, pump.writerConfig.Dialer.TLS.InsecureSkipVerify)
+	})
+
+	t.Run("should initialize TLS config with CA trust root", func(t *testing.T) {
+		caFile, _, _, _ := generateTestCerts(t, t.TempDir())
+		config := map[string]any{
+			"broker":      []string{"localhost:9092"},
+			"topic":       "test-topic",
+			"batch_bytes": 1024,
+			"use_ssl":     true,
+			"ssl_ca_file": caFile,
+		}
+
+		pump := KafkaPump{}
+		err := pump.Init(config)
+
+		assert.NoError(t, err)
+		assert.NotNil(t, pump.writerConfig.Dialer.TLS, "TLS config should be set")
+		assert.NotNil(t, pump.writerConfig.Dialer.TLS.RootCAs, "CA file should populate RootCAs")
 	})
 
 	t.Run("should apply TLS config to Dialer with SASL and other settings", func(t *testing.T) {

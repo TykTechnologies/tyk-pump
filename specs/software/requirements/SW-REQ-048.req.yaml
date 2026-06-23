@@ -29,16 +29,17 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-22T09:25:11Z"
-        comment: 'Expand backend, database, retry, queue, panic-safety, and shared-state catalog obligations; uncovered behavior is linked to existing KnownIssues rather than claimed as evidence.'
+        reviewed_at: "2026-06-23T07:34:50Z"
+        comment: 'Reviewed TT-15674 Splunk TLS CA hardening: cert_chain_validated added and Splunk HTTPS client valid-CA RootCAs evidence is annotated.'
         fingerprint: sha256:0ff4b42642b3e57e2f1297cbdde5064ff75f6da45a875b601748635401d3f7ff
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:36:07Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-22T11:03:46Z"
+    last_modified_at: "2026-06-23T07:34:50Z"
 obligation_checklist:
+    - cert_chain_validated
     - cert_validation_strict
     - config_schema_strict
     - determinism
@@ -136,4 +137,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-03T07:39:38Z comment="Phase Q: catalog obligation attachments — adds request_timeout_bounded, secrets_not_logged, tls_required_for_secrets, redirect_policy_explicit, ssrf_protection (Splunk HEC: timeout, token, redirects, URL). See .proof/catalog-obligation-proposals.md.")'
+          changed_by: human:buger
+        - date: "2026-06-23T07:34:50Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-22T09:25:11Z comment="Expand backend, database, retry, queue, panic-safety, and shared-state catalog obligations; uncovered behavior is linked to existing KnownIssues rather than claimed as evidence.")'
           changed_by: human:buger

@@ -170,8 +170,10 @@ func TestElasticsearchPump_Init_DecodeFatal_InProcess(t *testing.T) {
 //
 // Verifies: SW-REQ-068
 // SW-REQ-068:cert_validation_strict:nominal
+// SW-REQ-068:cert_chain_validated:nominal
 func TestElasticsearchPump_getOperator_UseSSL_TLSSuccess(t *testing.T) {
 	url := elasticsearchURL(t)
+	caFile, _, _, _ := generateTestCerts(t, t.TempDir())
 	pump := &ElasticsearchPump{}
 	pump.log = log.WithField("prefix", "test")
 	pump.esConf = &ElasticsearchConf{
@@ -180,11 +182,15 @@ func TestElasticsearchPump_getOperator_UseSSL_TLSSuccess(t *testing.T) {
 		Version:               "7",
 		UseSSL:                true,
 		SSLInsecureSkipVerify: false,
-		// No cert/key/CA → NewTLSConfig returns empty tls.Config with no error.
+		SSLCAFile:             caFile,
 	}
-	tlsConf, tlsErr := NewTLSConfig(TLSConfig{InsecureSkipVerify: pump.esConf.SSLInsecureSkipVerify}, pump.log)
+	tlsConf, tlsErr := NewTLSConfig(TLSConfig{
+		CAFile:             pump.esConf.SSLCAFile,
+		InsecureSkipVerify: pump.esConf.SSLInsecureSkipVerify,
+	}, pump.log)
 	require.NoError(t, tlsErr)
 	require.NotNil(t, tlsConf)
+	require.NotNil(t, tlsConf.RootCAs)
 	assert.False(t, tlsConf.InsecureSkipVerify)
 
 	op, err := pump.getOperator()

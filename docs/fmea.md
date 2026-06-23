@@ -111,10 +111,10 @@ Failure Modes and Effects Analysis for tyk-pump, authored as Phase D of the ReqP
 - **Failure mode:** Operator sets `ssl_insecure_skip_verify: true` (e.g. `pumps/elasticsearch.go:88`, `pumps/kafka.go:58`, `pumps/hybrid.go:102`). Records — potentially including raw request/response payloads — are forwarded over TLS without certificate validation.
 - **Cause:** Misconfig, copy-paste from dev sample, expired-cert workaround.
 - **Effect:** Analytics interceptable on the wire; PII exposure risk.
-- **Severity:** **M** (operator-enabled, but silent — no warn at startup).
-- **Detection:** None. `pumps/common.go:271,297` reference InsecureSkipVerify without logging a security warning.
-- **Mitigation:** SW-REQ-027 marks TLS policy as "operator-configurable." Recommend emitting a WARN at init when the flag is true, plus a startup-time aggregate WARN listing all insecure pumps.
-- **Owning requirements:** **SW-REQ-027**. Add `security_logged` + `tls_default_secure` obligations.
+- **Severity:** **M** (operator-enabled compatibility knob; warning exists, but verification is still disabled when configured).
+- **Detection:** `NewTLSConfig` emits WARN messages when `ssl_insecure_skip_verify` is true and when a CA file is supplied but skip-verify prevents validation against that CA.
+- **Mitigation:** `tls-insecure-skip-verify-allowed` tracks the accepted risk; `tls_verification_explicit`, `cert_validation_strict`, and `cert_chain_validated` obligations require default-secure TLS, explicit opt-in for insecure mode, and CA-root application evidence.
+- **Owning requirements:** **SW-REQ-016**, **SW-REQ-021**, **SW-REQ-029**, **SW-REQ-048**, **SW-REQ-068**.
 
 ### FMEA-012 — Pump config meta map mis-typed for declared pump type
 - **Subsystem:** config

@@ -203,6 +203,7 @@ func TestPumpEnvVarOverride(t *testing.T) {
 // These tests are marked with "(backward compatible)" in their names to clearly indicate
 // this is expected behavior, not a bug.
 // Verifies: SW-REQ-016
+// SW-REQ-016:cert_chain_validated:nominal
 func TestNewTLSConfig(t *testing.T) {
 	tempDir, err := os.MkdirTemp("", "tls_test")
 	require.NoError(t, err)

@@ -96,6 +96,7 @@ func (h *testHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 // Verifies: SW-REQ-048
 // SW-REQ-048:cert_validation_strict:nominal
+// SW-REQ-048:cert_chain_validated:nominal
 func TestSplunkInit(t *testing.T) {
 	t.Run("missing token", func(t *testing.T) {
 		_, err := newSplunkClient(
@@ -181,10 +182,14 @@ func TestSplunkInit(t *testing.T) {
 
 	t.Run("HTTPS URL scheme", func(t *testing.T) {
 		httpsURL := "https://splunk.example.com:8088"
+		caFile, _, _, _ := generateTestCerts(t, t.TempDir())
 		client, err := newSplunkClient(
 			&splunkClientConfig{
 				token:        testToken,
 				collectorURL: httpsURL,
+				tlsConfig: TLSConfig{
+					CAFile: caFile,
+				},
 			},
 			splunkTestLog,
 		)
@@ -194,6 +199,7 @@ func TestSplunkInit(t *testing.T) {
 		transport, ok := client.httpClient.Transport.(*http.Transport)
 		assert.True(t, ok)
 		assert.NotNil(t, transport.TLSClientConfig)
+		assert.NotNil(t, transport.TLSClientConfig.RootCAs)
 		assert.False(t, transport.TLSClientConfig.InsecureSkipVerify)
 	})
 

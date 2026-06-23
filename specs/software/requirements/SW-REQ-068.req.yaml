@@ -5,7 +5,7 @@ priority: shall
 category: functional
 req_type: guarantee
 fretish: when version_eq_3 pumps_es shall always satisfy v3_operator_constructed
-description: 'The Elasticsearch pump shall, at Init, select an ElasticsearchOperator implementation per configured Version ("3", "5", "6", or "7", defaulting to "3" when unset) — instantiating the corresponding elastic.v3 / elastic.v5 / elastic.v6 / elastic/v7 client (with sniffing toggle, basic auth, optional ApiKey-auth via ApiKeyTransport, and optional custom TLS) and corresponding BulkProcessor. Versions other than 3/5/6/7 shall be rejected at Init via log.Fatal. Known issue: the log.Fatal-on-bad-config behaviour is shared with other pumps and tracked as pumps-logfatal-on-config-decode.'
+description: 'The Elasticsearch pump shall, at Init, select an ElasticsearchOperator implementation per configured Version ("3", "5", "6", or "7", defaulting to "3" when unset) — instantiating the corresponding elastic.v3 / elastic.v5 / elastic.v6 / elastic/v7 client (with sniffing toggle, basic auth, optional ApiKey-auth via ApiKeyTransport, and optional custom TLS from ssl_cert_file/ssl_key_file, ssl_ca_file, and ssl_insecure_skip_verify) and corresponding BulkProcessor. Versions other than 3/5/6/7 shall be rejected at Init via log.Fatal. Known issue: the log.Fatal-on-bad-config behaviour is shared with other pumps and tracked as pumps-logfatal-on-config-decode.'
 formalization_strategy: fretish
 informal_verification:
     method: ""
@@ -29,16 +29,17 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-22T09:25:11Z"
-        comment: 'Expand backend, database, retry, queue, panic-safety, and shared-state catalog obligations; uncovered behavior is linked to existing KnownIssues rather than claimed as evidence.'
-        fingerprint: sha256:c234ca5105f633eb0c97347f469b80d90bad760f4bdb2c21d018e680923683ed
+        reviewed_at: "2026-06-23T07:34:50Z"
+        comment: 'Reviewed TT-15674 Elasticsearch TLS CA hardening: custom TLS fields named explicitly, cert_chain_validated added, and ES TLS valid-CA evidence is annotated.'
+        fingerprint: sha256:2767c6719768e648587bec7ebcd649778df923465206ef11792d2b203eb0fe1c
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:39:57Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-22T10:55:38Z"
+    last_modified_at: "2026-06-23T07:34:50Z"
 obligation_checklist:
+    - cert_chain_validated
     - cert_validation_strict
     - config_schema_strict
     - determinism
@@ -146,4 +147,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-03T07:40:27Z comment="Phase Q: catalog obligation attachments — adds external_call_timeout_bounded, request_timeout_bounded, external_call_failure_observable, retry_policy_explicit, panic_free_input_handling, recursion_depth_bounded, back_pressure_bounded, connection_leak_free, secrets_not_logged, tls_required_for_secrets, redirect_policy_explicit, ssrf_protection (ES surface; KI elasticsearch-unbounded-reconnect-recursion). See .proof/catalog-obligation-proposals.md.")'
+          changed_by: human:buger
+        - date: "2026-06-23T07:34:50Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-22T09:25:11Z comment="Expand backend, database, retry, queue, panic-safety, and shared-state catalog obligations; uncovered behavior is linked to existing KnownIssues rather than claimed as evidence.")'
           changed_by: human:buger
