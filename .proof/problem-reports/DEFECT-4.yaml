@@ -58,6 +58,17 @@ disposition:
     status: covered_by_requirement
     requirements:
         - SW-REQ-040
+    # These active SW-REQ-040 KIs are adjacent SQL-family debts, not the
+    # TT-12780 empty-batch shard-loop bounds defect closed by this report.
+    known_issues:
+        - analytics-timestamp-timezone-convention-unpinned
+        - mapstructure-decode-silently-drops-unknown-keys
+        - no-panic-recovery-in-exec-pump-writing
+        - pump-no-timeout-can-block-purge-cycle
+        - pump-writedata-swallows-per-batch-errors
+        - sql-background-index-concurrency-unbounded
+        - sql-batch-size-zero-infinite-loop
+        - sql-schema-no-version-policy
     evidence:
         verified_by:
             - pumps/sql_test.go:TestSQLWriteDataSharded
@@ -85,3 +96,10 @@ history:
         against current code: the empty_keys subtest drives WriteData with a
         zero-length batch under TableSharding=true and asserts no error and no
         shard tables — the guarded `startIndex < len(typedData)` boundary holds.
+    - at: "2026-06-23T09:22:00Z"
+      by: agent:codex
+      action: aligned-active-known-issues
+      detail: |
+        Linked active SW-REQ-040 KIs in disposition.known_issues to make clear
+        they are adjacent SQL-family debts outside the TT-12780 empty-batch
+        shard-loop panic closure, not missing evidence for DEFECT-4.

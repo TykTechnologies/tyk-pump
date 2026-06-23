@@ -1,0 +1,7 @@
+id: REVIEW-fbcb614-sql-empty-shard-batch
+kind: design_review
+reviewer: agent:codex
+reviewed_at: "2026-06-23T09:22:00Z"
+subject: upstream:fbcb614/SW-REQ-040
+decision: approved
+comment: 'Commit-level assurance review for TT-12780: the original defect was a sharded SQL WriteData empty-post-filter batch panic from typedData[startIndex] when startIndex >= len(typedData). Current proof catches recurrence through DEFECT-4, SW-REQ-040 boundary obligation, and TestSQLWriteDataSharded empty_keys evidence; adjacent SQL-family KIs are linked separately in the defect disposition.'
