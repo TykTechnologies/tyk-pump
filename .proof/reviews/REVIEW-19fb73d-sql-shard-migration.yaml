@@ -1,0 +1,7 @@
+id: REVIEW-19fb73d-sql-shard-migration
+kind: design_review
+reviewer: agent:codex
+reviewed_at: "2026-06-23T09:05:44Z"
+subject: upstream:19fb73d
+decision: approved
+comment: 'Commit-level proof assurance review for TT-13166 SQL table-sharding migration: DEFECT-3 links the historical skipped-migration bug to SW-REQ-040 and INT-REQ-007; migration tests cover HandleTableMigration migrate-all/current-day branches and MigrateAllShardedTables shard discovery; residual default-mode prior-day shard and schema-version policy gaps remain tracked by sql-default-migration-today-only and sql-schema-no-version-policy.'

@@ -48,19 +48,23 @@ impact_analysis:
         - pumps/sql_aggregate.go
         - pumps/graph_sql.go
 hardening:
-    # SW-REQ-040 already models the SQL standard pump's sharded routing, so no
-    # NEW requirement was authored. The gap was missing_test_partition: no test
-    # asserted that existing shard tables get migrated to the latest schema when
-    # sharding is on. Strengthened by attaching the forward_compatible
-    # obligation (shard tables must receive later-release schema columns —
-    # expand-then-contract) and annotating the regression test as its example.
-    # Residual default-mode-only behavior remains tracked by the open KIs
-    # sql-default-migration-today-only and docs-sql-migrate-sharded-tables-undocumented.
+    # SW-REQ-040 models the SQL standard pump's sharded routing and shard
+    # creation path; INT-REQ-007 carries the SQL schema expand-then-contract
+    # interface contract. The historical gap was missing_test_partition: no
+    # test asserted that sharding-enabled migration work was still reached when
+    # table_sharding=true. Current witnesses cover HandleTableMigration's
+    # migrate-all/current-day branches and MigrateAllShardedTables' valid shard
+    # discovery. Residual default-mode-only and no-schema-version behavior
+    # remain KI-tracked rather than overclaimed as complete forward-compatible
+    # schema policy.
     new_requirements: []
     strengthened_requirements:
         - SW-REQ-040
+        - INT-REQ-007
     added_obligations:
         - requirement: SW-REQ-040
+          obligation_class: forward_compatible
+        - requirement: INT-REQ-007
           obligation_class: forward_compatible
     regression_tests:
         - pumps/migration_test.go:TestHandleTableMigration
@@ -76,7 +80,18 @@ disposition:
         obligation_evidence:
             - requirement: SW-REQ-040
               obligation_class: forward_compatible
-              evidence_type: example
+              evidence_type: accepted_ki_debt
+              tracking: sql-schema-no-version-policy
+            - requirement: INT-REQ-007
+              obligation_class: forward_compatible
+              evidence_type: accepted_ki_debt
+              tracking: sql-default-migration-today-only
+            - requirement: INT-REQ-007
+              evidence_type: mcdc
+              witnesses:
+                - expand_contract_migration=T, sql_schema_version_changed=T
+                - expand_contract_migration=F, sql_schema_version_changed=T
+                - expand_contract_migration=F, sql_schema_version_changed=F
     reviewer: agent:claude-opus-4-8
     reviewed_at: "2026-06-10T17:00:00Z"
 history:
@@ -91,10 +106,18 @@ history:
       by: agent:claude-opus-4-8
       action: hardened
       detail: |
-        Recorded hardening: closed the missing_test_partition gap. Attached the
-        forward_compatible obligation to SW-REQ-040 and annotated
-        TestHandleTableMigration with // SW-REQ-040:forward_compatible:example.
-        Tests PASS against current code: under TableSharding=true +
-        MigrateShardedTables=true the migrate-all path is invoked (no longer
-        skipped behind `if !TableSharding`), and the current-day shard is
-        migrated in the default mode.
+        Recorded hardening: closed the missing_test_partition gap. The
+        migration behavior is witnessed by TestHandleTableMigration /
+        TestMigrateAllShardedTables and the INT-REQ-007 MC/DC rows, while
+        SW-REQ-040 carries the SQL day-sharded routing path. Broader
+        forward-compatible schema policy remains accepted KI debt under
+        sql-schema-no-version-policy / sql-default-migration-today-only.
+    - at: "2026-06-23T07:55:00Z"
+      by: agent:codex
+      action: corrected_evidence_record
+      detail: |
+        Corrected the proof record to match current artifacts: there is no
+        SW-REQ-040:forward_compatible:example triple-form witness. The
+        concrete TT-13166 regression closure is the migration branch evidence
+        plus INT-REQ-007 MC/DC witnesses; residual schema-policy obligations
+        stay KI-gated.
