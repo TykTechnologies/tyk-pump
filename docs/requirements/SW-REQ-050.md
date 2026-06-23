@@ -1,9 +1,11 @@
-# SW-REQ-050: HTTP Syslog pump — JSON-over-syslog record forwarding
+# SW-REQ-050: HTTP Syslog pump — single-line syslog record forwarding
 
 ## Intent
-The `SyslogPump` shall, on each purge, write one JSON message per analytics
-record (with `\n` escaping in `raw_request` and `raw_response`) to a syslog
-destination using the operator-configured `Transport` (udp/tcp/tls),
+The `SyslogPump` shall, on each purge, write one legacy `map[...]` syslog
+message per analytics record. LF characters in `raw_request` and
+`raw_response` are escaped as backslash-n sequences so one analytics record
+remains one syslog entry, while preserving the backward-compatible output
+shape. Delivery uses the operator-configured `Transport` (udp/tcp/tls),
 `NetworkAddr`, `LogLevel` (syslog severity 0-7), and `Tag`. Derived from
 SYS-REQ-004 via Phase A decomposition of SW-REQ-027.
 
@@ -17,7 +19,8 @@ ctx-cancellation check (unique among HTTP-logging pumps) be explicit.
 ## Code references
 - `pumps/syslog.go:SyslogPump.Init`, `:initWriter`, `:initConfigs` — config
   parsing and writer setup.
-- `pumps/syslog.go:SyslogPump.WriteData` — per-record JSON encode + write.
+- `pumps/syslog.go:SyslogPump.WriteData` — per-record legacy `map[...]`
+  write with LF escaping in `raw_request` and `raw_response`.
 - `pumps/syslog.go:185` — `fmt.Fprintf(s.writer, ...)`'s return is
   intentionally discarded (`_, _ = ...`); per-record write errors are not
   surfaced.
@@ -26,12 +29,23 @@ ctx-cancellation check (unique among HTTP-logging pumps) be explicit.
 
 ## Evidence
 - `pumps/syslog_test.go` (re-annotated `Verifies: SW-REQ-050`).
+- `TestSyslogPump_WriteData_WithMultilineHTTP` covers DEFECT-2 / TT-15532 by
+  asserting a multiline raw request/response emits exactly one syslog line,
+  contains escaped `\n`, and still uses the legacy `map[...]` format.
+- `TestSyslogPump_WriteData_ManyRecords` covers the one-output-per-record
+  cardinality contract.
 - Live-syslog tests need a running syslog server and are excluded from the
   local audit MC/DC scope (known issue).
 
+## Formalization note
+The FRETish slice for this requirement is intentionally transport-focused
+(`transport_tcp -> tcp_writer_used`). The multiline fragmentation guarantee is
+covered through `encoding_safety` and `output_cardinality_bounded` obligations
+and their annotated tests rather than by expanding the transport predicate.
+
 ## Open questions
 - `WriteData` always returns `nil` (per-record write errors silently
-  discarded). Honest obligation_class is `nominal`.
+  discarded). This remains tracked by the write-error KnownIssue family.
 - `initWriter` calls `log.Fatal` on dial failure — same `log.Fatal`
   anti-pattern as graylog/moesif/influx.
 - Uses Go stdlib `log/syslog` which emits RFC 3164 (BSD) framing, not

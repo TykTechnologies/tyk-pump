@@ -41,12 +41,13 @@ impact_analysis:
     affected_code:
         - pumps/syslog.go
 hardening:
-    # SW-REQ-050 already states the single-line / \n-escaping guarantee, so no
-    # NEW requirement was authored. The gap was missing_test_partition: no test
-    # fed a record with embedded newlines in raw_request/raw_response and
-    # asserted single-line syslog output. Strengthened by attaching the
-    # encoding_safety obligation (newline escaping is a serialization round-trip
-    # safety property) and annotating the regression test as its example.
+    # SW-REQ-050 states the legacy map[...] output plus single-line /
+    # raw-field LF-escaping guarantee, so no NEW requirement was authored. The
+    # gap was missing_test_partition: no test fed a record with embedded
+    # newlines in raw_request/raw_response and asserted single-line syslog
+    # output. Strengthened by attaching the encoding_safety obligation (newline
+    # escaping is a serialization-boundary safety property) and annotating the
+    # regression test as its example.
     new_requirements: []
     strengthened_requirements:
         - SW-REQ-050
@@ -59,6 +60,15 @@ disposition:
     status: covered_by_requirement
     requirements:
         - SW-REQ-050
+    # These active SW-REQ-050 KIs are adjacent syslog/pump debts, not the
+    # TT-15532 fragmentation defect fixed by escaped raw HTTP newlines.
+    known_issues:
+        - mapstructure-decode-silently-drops-unknown-keys
+        - pump-no-timeout-can-block-purge-cycle
+        - pump-writedata-swallows-per-batch-errors
+        - pumps-logfatal-on-config-decode
+        - syslog-init-logfatal-on-invalid-transport
+        - syslog-initwriter-logfatal-on-dial-error
     evidence:
         verified_by:
             - pumps/syslog_test.go:TestSyslogPump_WriteData_WithMultilineHTTP
@@ -86,3 +96,20 @@ history:
         // SW-REQ-050:encoding_safety:example. Test PASSES against current code:
         a multiline raw_request/raw_response emits exactly one syslog line with
         \n escaped to \\n (asserts nonEmptyLines==1 and Contains "\\n").
+    - at: "2026-06-23T09:16:00Z"
+      by: agent:codex
+      action: corrected-proof-wording
+      detail: |
+        Corrected stale SW-REQ-050/docs wording that still described the
+        superseded df62011 JSON-marshalling approach. The final shipped
+        0596e82 behavior remains legacy map[...] output with LF escaping only
+        in raw_request/raw_response; FRETish stays transport-focused while
+        encoding_safety and output_cardinality_bounded carry the fragmentation
+        contract.
+    - at: "2026-06-23T09:18:00Z"
+      by: agent:codex
+      action: aligned-active-known-issues
+      detail: |
+        Linked active SW-REQ-050 KIs in disposition.known_issues to make clear
+        they are adjacent syslog/pump debt outside the TT-15532 fragmentation
+        closure, not evidence gaps for the newline-escaping regression.

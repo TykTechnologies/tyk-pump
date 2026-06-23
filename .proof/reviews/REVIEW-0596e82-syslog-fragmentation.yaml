@@ -1,0 +1,7 @@
+id: REVIEW-0596e82-syslog-fragmentation
+kind: design_review
+reviewer: agent:codex
+reviewed_at: "2026-06-23T09:16:00Z"
+subject: upstream:0596e82+df62011/SW-REQ-050
+decision: approved
+comment: 'Commit-level assurance review for TT-15532: df62011 used whole-message JSON marshalling but final 0596e82 preserved legacy map[...] syslog output and escaped LF only in raw_request/raw_response. Current proof catches recurrence via DEFECT-2, SW-REQ-050, encoding_safety evidence, and output_cardinality_bounded evidence; FRETish remains scoped to transport selection.'
