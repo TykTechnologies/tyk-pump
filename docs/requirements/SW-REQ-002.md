@@ -16,7 +16,7 @@ The file-then-env order is a deliberate twelve-factor lean: operators ship a bas
 ## Evidence
 - `config_test.go:40 TestLoadExampleConf` — `// Verifies: SW-REQ-002`; loads `pump.example.conf` and asserts the struct.
 - `config_test.go:56 TestConfigEnv` — exercises the env-override pass with a synthetic `TYK_PMP_*` set.
-- `config_test.go:109 TestIgnoreConfig` — `TYK_PMP_OMITCONFIGFILE=true` path.
+- `config_test.go:149 TestIgnoreConfig` — `TYK_PMP_OMITCONFIGFILE=true` skips config-file read/unmarshal, preserves caller defaults, and suppresses misleading missing-file/unmarshal error logs for env-only startup.
 - `config_test.go:12 TestToUpperPumps` — pump-name case folding.
 - `config_test.go:143 TestTykPumpConfiguration_LoadPumpsByEnv`, `config_test.go:257 TestLoadPumpsByEnv` — the pump-by-env merge.
 - `main_test.go:408 TestDeprecationWarnings` — `// Verifies: SW-REQ-002`; deprecated-field warnings.

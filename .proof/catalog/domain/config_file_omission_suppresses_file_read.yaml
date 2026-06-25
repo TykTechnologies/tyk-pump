@@ -1,0 +1,43 @@
+id: config_file_omission_suppresses_file_read
+name: Config file omission suppresses file read
+category: domain
+status: active
+summary: An explicit omit-config-file setting shall skip config-file read and unmarshal attempts entirely.
+description: |-
+  Env-only startup is a supported configuration mode. When an operator
+  explicitly omits the config file, the loader shall not try to read or unmarshal
+  the file path as a best-effort fallback. It shall preserve the caller's
+  existing/default configuration, continue to process environment overrides, and
+  avoid misleading file-read or JSON-unmarshal error logs for an intentionally
+  omitted file.
+applies_when:
+  description: a configuration loader supports an explicit file-omission or env-only mode
+  trigger_phrases:
+    - omit config file
+    - omit_config_file
+    - OMITCONFIGFILE
+    - env-only config
+    - config file optional
+example_req: |-
+  When TYK_PMP_OMITCONFIGFILE=true, LoadConfig shall skip ReadFile and
+  json.Unmarshal for the configured path, preserve existing defaults, and still
+  apply TYK_PMP_* environment overrides.
+if_missing: |-
+  Env-only deployments can emit false configuration-file errors, obscure the
+  true startup state, or accidentally clear default configuration before
+  environment overrides are applied.
+recommended_evidence:
+  - kind: negative
+    note: Test sets omit-config-file true with a nonexistent file path, captures loader logs, and asserts no file-read or unmarshal error is emitted.
+  - kind: nominal
+    note: Test or review confirms the non-omit path still reads a present file before environment overrides.
+frameworks:
+  - id: CWE
+    refs:
+      - CWE-778
+      - CWE-703
+related_classes:
+  - id: malformed_recovers_or_errors_loudly
+    relationship: complements
+  - id: config_schema_strict
+    relationship: complements

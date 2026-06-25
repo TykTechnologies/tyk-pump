@@ -1,0 +1,101 @@
+schema_version: 1
+id: DEFECT-12
+title: Omit-config-file mode did not prove missing-file log suppression
+introduced_in: 6820131
+description: |
+  TT-9126 (commit 6820131) fixed env-only startup with
+  `TYK_PMP_OMITCONFIGFILE=true` by skipping config-file read and unmarshal
+  entirely. The original bug emitted misleading "Couldn't load configuration
+  file" and "Couldn't unmarshal configuration" errors even though the operator
+  explicitly chose to omit the file.
+
+  Before this hardening pass, current proof already modeled the omit-config
+  branch through SW-REQ-002 and caught the destructive old behavior that cleared
+  caller defaults. It did not directly assert the ticket-title observability
+  behavior: omit=true with a nonexistent config path must not emit file-read or
+  JSON-unmarshal error logs.
+source:
+  type: upstream_commit
+  repo: TykTechnologies/tyk-pump
+  commit: 6820131
+  reference: TT-9126
+  date: "2023-06-12"
+classification:
+  surface: runtime_code
+  defect_class: config_omit_file_false_error_log
+  severity: low
+  security_relevant: false
+root_cause:
+  missing_requirement: false
+  missing_test_partition: true
+  missing_mcdc_variable: false
+  notes: |
+    SW-REQ-002 already modeled the omit-config-file gate and had strong MC/DC
+    alignment for LoadConfig. The missing piece was an observability assertion
+    that no missing-file/unmarshal error is emitted when file omission is
+    intentional.
+impact_analysis:
+  affected_requirements:
+    - SW-REQ-002
+    - SYS-REQ-008
+    - SYS-REQ-035
+  affected_code:
+    - config.go
+    - config_test.go
+hardening:
+  new_requirements: []
+  strengthened_requirements:
+    - SW-REQ-002
+  added_obligations:
+    - requirement: SW-REQ-002
+      obligation_class: config_file_omission_suppresses_file_read
+  regression_tests:
+    - config_test.go:TestIgnoreConfig
+  mcdc_witnesses:
+    - requirement: SW-REQ-002
+      witness: "config_file_enabled=F, json_loaded_before_env_override=F => TRUE"
+  proposed_classes:
+    - config_file_omission_suppresses_file_read
+disposition:
+  status: covered_by_requirement
+  requirements:
+    - SW-REQ-002
+    - SYS-REQ-008
+    - SYS-REQ-035
+  known_issues:
+    - config-pump-type-whitelist-not-enforced-at-load
+    - env-prefix-const-typo
+    - main-startup-logfatal-on-transient-backend
+    - mapstructure-decode-silently-drops-unknown-keys
+  evidence:
+    verified_by:
+      - config_test.go:TestIgnoreConfig
+    requirement_mcdc_witnesses:
+      - requirement: SW-REQ-002
+        witness: "config_file_enabled=F, json_loaded_before_env_override=F => TRUE (omit-config-file mode intentionally skips file read/unmarshal)"
+      - requirement: SW-REQ-002
+        witness: "config_file_enabled=T, json_loaded_before_env_override=F => FALSE (violation row for enabled config file that fails to load)"
+      - requirement: SW-REQ-002
+        witness: "config_file_enabled=T, json_loaded_before_env_override=T => TRUE (normal JSON file loads before env override)"
+    obligation_evidence:
+      - requirement: SW-REQ-002
+        obligation_class: config_file_omission_suppresses_file_read
+        evidence_type: negative
+      - requirement: SW-REQ-002
+        obligation_class: config_file_omission_suppresses_file_read
+        evidence_type: nominal
+  reviewer: agent:codex
+  reviewed_at: "2026-06-25T14:24:00Z"
+history:
+  - at: "2026-06-25T14:24:00Z"
+    by: agent:codex
+    action: created
+  - at: "2026-06-25T14:24:00Z"
+    by: agent:codex
+    action: hardened
+    detail: |
+      Added config_file_omission_suppresses_file_read and a focused
+      TestIgnoreConfig subtest that captures loader logs while
+      TYK_PMP_OMITCONFIGFILE=true and the config path is nonexistent. The test
+      proves existing defaults are preserved and misleading file-read/unmarshal
+      errors are not emitted.

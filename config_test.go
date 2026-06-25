@@ -5,8 +5,22 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
+
+type configLogHook struct {
+	entries []string
+}
+
+func (h *configLogHook) Levels() []logrus.Level {
+	return logrus.AllLevels
+}
+
+func (h *configLogHook) Fire(entry *logrus.Entry) error {
+	h.entries = append(h.entries, entry.Message)
+	return nil
+}
 
 // File-level MC/DC witness rows: these requirements are genuinely exercised by
 // covered tests in this file (see the per-test // MCDC blocks below). This
@@ -150,6 +164,8 @@ func TestConfigEnv(t *testing.T) {
 // Verifies: INT-REQ-008
 // Verifies: SYS-REQ-008
 // Verifies: SYS-REQ-035
+// SW-REQ-002:config_file_omission_suppresses_file_read:negative
+// SW-REQ-002:config_file_omission_suppresses_file_read:nominal
 // SW-REQ-002:malformed_input:negative
 // SW-REQ-002:malformed_recovers_or_errors_loudly:negative
 // SW-REQ-002:malformed_recovers_or_errors_loudly:nominal
@@ -183,12 +199,12 @@ func TestConfigEnv(t *testing.T) {
 // reported) is covered by the linked KI on log.Fatal coverage (.proof/known-issues/
 // pumps-logfatal-on-config-decode.yaml); the test itself proves the success/no-decode arms.
 //
-// SYS-REQ-008 (config_loaded_from_json / json_config_file_present): the "Ignoring the
-// config file" sub-test sets OMITCONFIGFILE=true with a valid path
-// (json_config_file_present=T, config_loaded_from_json=F) -> FALSE row witness. The
-// "Not ignoring" sub-test loads JSON successfully (both T) -> TRUE row. "Config file does
-// not exist" sub-test is json_config_file_present=F, config_loaded_from_json=F -> vacuous
-// TRUE row.
+// SYS-REQ-008 (config_loaded_from_json / json_config_file_present): the omit=true subtests
+// are config_file_enabled=F for SW-REQ-002 and do not witness SYS-REQ-008's present-file
+// trigger. The "Not ignoring" sub-test loads JSON successfully (both T) -> TRUE row.
+// "Config file does not exist" sub-test is json_config_file_present=F,
+// config_loaded_from_json=F -> vacuous TRUE row. The FALSE row is documented as the
+// requirement-violation case caught by the present-file load assertions.
 func TestIgnoreConfig(t *testing.T) {
 	defaultPath := "pump.example.conf"
 
@@ -219,6 +235,33 @@ func TestIgnoreConfig(t *testing.T) {
 		nonexistentPath := "nonexistent_config.json"
 		LoadConfig(&nonexistentPath, &initialConfig)
 		assert.Equal(t, 5, initialConfig.PurgeDelay, "Nonexistent config file should not affect the configuration")
+	})
+
+	t.Run("Ignoring nonexistent config file suppresses file errors", func(t *testing.T) {
+		initialConfig := TykPumpConfiguration{PurgeDelay: 5}
+		nonexistentPath := "nonexistent_config.json"
+		hook := &configLogHook{}
+		log.AddHook(hook)
+		t.Cleanup(func() {
+			for level, hooks := range log.Hooks {
+				filtered := hooks[:0]
+				for _, existing := range hooks {
+					if existing != hook {
+						filtered = append(filtered, existing)
+					}
+				}
+				log.Hooks[level] = filtered
+			}
+		})
+
+		t.Setenv(ENV_PREVIX+"_OMITCONFIGFILE", "true")
+		LoadConfig(&nonexistentPath, &initialConfig)
+
+		assert.Equal(t, 5, initialConfig.PurgeDelay, "TYK_OMITCONFIGFILE=true should preserve existing configuration")
+		for _, message := range hook.entries {
+			assert.NotContains(t, message, "Couldn't load configuration file")
+			assert.NotContains(t, message, "Couldn't unmarshal configuration")
+		}
 	})
 }
 
