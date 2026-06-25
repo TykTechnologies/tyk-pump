@@ -2,10 +2,11 @@
 
 ## Intent
 The `GraphSQLPump` shall, on each purge, retain only records for which
-`AnalyticsRecord.IsGraphRecord()` is true, convert each to a `GraphRecord`,
-then if `TableSharding` is true split on each `YYYYMMDD` boundary and route
-each day-slice to a `<TableName>_<YYYYMMDD>` table (auto-migrated when
-missing); otherwise route all records to the configured `TableName` (default
+`AnalyticsRecord.IsGraphRecord()` is true, convert each to a `GraphRecord`
+while preserving GraphQLStats-derived `RootFields` in the persisted graph row,
+then if `TableSharding` is true split on each `YYYYMMDD` boundary and route each
+day-slice to a `<TableName>_<YYYYMMDD>` table (auto-migrated when missing);
+otherwise route all records to the configured `TableName` (default
 `tyk_analytics_graph`). Within each table the pump shall issue
 parameter-bound batched inserts of `BatchSize` records using `gorm.Create`.
 Per-batch errors are logged but not propagated. Derived from SYS-REQ-004
@@ -29,6 +30,8 @@ silently inserting non-graph records) and uses a separate default table.
 
 ## Evidence
 - `pumps/graph_sql_test.go` (re-annotated `Verifies: SW-REQ-042`).
+- `pumps/graph_sql_test.go:TestGraphSQLPump_WriteData` proves graph SQL
+  persistence/readback includes `RootFields` from the projected `GraphRecord`.
 - Live-Postgres tests are excluded from the local audit MC/DC scope (known
   issue).
 

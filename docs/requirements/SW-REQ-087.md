@@ -13,6 +13,9 @@ is false.
 
 This is a child of SW-REQ-013. SW-REQ-013 owns the broader GraphQLStats-to-
 GraphRecord projection contract; SW-REQ-087 pins the TT-7977 RootFields field.
+After projection, Graph Mongo and Graph SQL persistence must keep the names
+observable as `GraphRecord.RootFields`/`root_fields`, and Graph SQL aggregate
+output must keep them observable as `rootfields` dimensions.
 
 ## Evidence
 
@@ -22,8 +25,13 @@ GraphRecord projection contract; SW-REQ-087 pins the TT-7977 RootFields field.
   asserts legacy graph payloads do not create a GraphRecord when the structured
   GraphQLStats flag is false.
 - `analytics/aggregate_test.go:TestAggregateGraphData_PartitionsSameOrgByAPIID`
-  and Graph SQL pump tests provide downstream regression evidence that
-  RootFields remain available to aggregate and SQL persistence paths.
+  proves aggregate grouping keeps RootFields available.
+- `pumps/graph_mongo_test.go:TestGraphMongoPump_WriteData` proves Graph Mongo
+  readback includes projected `RootFields`.
+- `pumps/graph_sql_test.go:TestGraphSQLPump_WriteData` proves Graph SQL
+  readback includes projected `RootFields`.
+- `pumps/graph_sql_aggregate_test.go:TestSqlGraphAggregatePump_WriteData`
+  proves aggregate SQL persistence includes `rootfields` dimension rows.
 
 ## Known Issues
 

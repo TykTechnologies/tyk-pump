@@ -5,7 +5,7 @@ priority: shall
 category: functional
 req_type: guarantee
 fretish: when is_graph_record pumps_mongo_graph shall always satisfy converted_to_graph_record
-description: The Graph MongoDB pump shall, during Init, apply TYK_PMP_PUMPS_MONGOGRAPH_META_* environment overrides through processPumpEnvVars after decoding file/config values. On each purge, it shall accumulate incoming records into size-bounded batches via the embedded MongoPump.AccumulateSet (in graph-only mode skipping records whose GraphQLStats.IsGraphQL is false from conversion), preserve graph record RawRequest and RawResponse payloads even when their size exceeds MaxDocumentSizeBytes, convert each surviving AnalyticsRecord to a GraphRecord (assigning a fresh ObjectID), and concurrently insert each batch into the single configured graph collection; the first per-batch insert error shall be returned to the caller, and connection-closed conditions shall be logged with a 'Detected connection failure!' warning.
+description: The Graph MongoDB pump shall, during Init, apply TYK_PMP_PUMPS_MONGOGRAPH_META_* environment overrides through processPumpEnvVars after decoding file/config values. On each purge, it shall accumulate incoming records into size-bounded batches via the embedded MongoPump.AccumulateSet (in graph-only mode skipping records whose GraphQLStats.IsGraphQL is false from conversion), preserve graph record RawRequest and RawResponse payloads even when their size exceeds MaxDocumentSizeBytes, convert each surviving AnalyticsRecord to a GraphRecord (assigning a fresh ObjectID and preserving GraphQLStats-derived RootFields), and concurrently insert each batch into the single configured graph collection; the first per-batch insert error shall be returned to the caller, and connection-closed conditions shall be logged with a 'Detected connection failure!' warning.
 formalization_strategy: fretish
 informal_verification:
     method: ""
@@ -29,15 +29,15 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-25T20:47:46Z"
-        comment: 'Reviewed d9d64dc hardening: Graph Mongo now explicitly requires and witnesses TYK_PMP_PUMPS_MONGOGRAPH_META env override application; runtime behavior unchanged.'
-        fingerprint: sha256:3807732536891dfb028f9dcebe266beae865987bfed4a128dbd04c5208618023
+        reviewed_at: "2026-06-25T22:32:26Z"
+        comment: 'TT-7977 RootFields downstream persistence wording clarified; reviewed Graph Mongo, Graph SQL, aggregate, and Graph SQL aggregate closure evidence; no runtime product behavior change.'
+        fingerprint: sha256:b883c43645b5e5c9d8772d632067482bcdf8961a5eca68e9b44b30827ba6ccf3
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:34:55Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-25T20:47:46Z"
+    last_modified_at: "2026-06-25T22:32:26Z"
 obligation_checklist:
     - cancellation_observed
     - boundary
@@ -113,4 +113,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-25T17:07:48Z comment="TT-6012 hardening: Graph Mongo now explicitly owns the max_document_size_bytes boundary for graph-mode payload preservation, with repaired GraphQLStats-backed evidence; no runtime product behavior change.")'
+          changed_by: human:buger
+        - date: "2026-06-25T22:32:26Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-25T20:47:46Z comment="Reviewed d9d64dc hardening: Graph Mongo now explicitly requires and witnesses TYK_PMP_PUMPS_MONGOGRAPH_META env override application; runtime behavior unchanged.")'
           changed_by: human:buger

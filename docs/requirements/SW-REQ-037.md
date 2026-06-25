@@ -6,8 +6,9 @@ size-bounded batches via the embedded `MongoPump.AccumulateSet` (in
 graph-only mode, records whose `GraphQLStats.IsGraphQL` is false are skipped),
 preserve graph record `RawRequest` and `RawResponse` payloads even when their
 size exceeds `MaxDocumentSizeBytes`, convert each surviving `AnalyticsRecord`
-to a `GraphRecord` (assigning a fresh `bson.NewObjectID`), and concurrently
-insert each batch into the single configured graph collection. The first
+to a `GraphRecord` (assigning a fresh `bson.NewObjectID` and preserving
+GraphQLStats-derived `RootFields`), and concurrently insert each batch into the
+single configured graph collection. The first
 per-batch insert error shall be returned to the caller, and connection-closed
 conditions shall be logged as a 'Detected connection failure!' warning. Derived
 from SYS-REQ-004 via Phase A decomposition of SW-REQ-018.
@@ -51,6 +52,8 @@ record.
 - `pumps/mongo_test.go:TestMongoPump_AccumulateSetIgnoreDocSize` proves
   GraphQLStats-backed graph records retain `RawRequest` and `RawResponse`
   through graph-mode accumulation even when they exceed `MaxDocumentSizeBytes`.
+- `pumps/graph_mongo_test.go:TestGraphMongoPump_WriteData` proves graph Mongo
+  persistence/readback includes `RootFields` from the projected `GraphRecord`.
 - Live-MongoDB tests are excluded from the local audit MC/DC scope (known
   issue).
 

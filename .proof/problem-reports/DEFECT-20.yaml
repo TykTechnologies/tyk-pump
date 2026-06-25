@@ -83,6 +83,10 @@ disposition:
         verified_by:
             - analytics/graph_record_test.go:TestAnalyticsRecord_ToGraphRecordNew
             - analytics/graph_record_test.go:TestAnalyticsRecord_ToGraphRecord_IgnoresLegacyGraphSourcesWithoutGraphQLStatsFlag
+            - analytics/aggregate_test.go:TestAggregateGraphData_PartitionsSameOrgByAPIID
+            - pumps/graph_mongo_test.go:TestGraphMongoPump_WriteData
+            - pumps/graph_sql_test.go:TestGraphSQLPump_WriteData
+            - pumps/graph_sql_aggregate_test.go:TestSqlGraphAggregatePump_WriteData
         obligation_evidence:
             - requirement: SW-REQ-087
               obligation_class: structured_projection_preserved
@@ -96,3 +100,10 @@ history:
       detail: |
         Recorded TT-7977's RootFields projection fix as covered by SW-REQ-087
         and existing GraphQLStats projection evidence.
+    - at: "2026-06-25T22:32:26Z"
+      by: agent:codex
+      action: clarified_downstream_evidence
+      detail: |
+        Re-reviewed TT-7977 and expanded the closure evidence to name the
+        downstream aggregate, Graph Mongo, Graph SQL, and Graph SQL aggregate
+        tests that keep projected RootFields observable after persistence.
