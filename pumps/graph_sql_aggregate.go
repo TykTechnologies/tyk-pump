@@ -89,7 +89,7 @@ func (s *GraphSQLAggregatePump) Init(conf interface{}) error {
 	return nil
 }
 
-// reqproof:implements SW-REQ-043
+// reqproof:implements SW-REQ-043,SW-REQ-086
 func (s *GraphSQLAggregatePump) WriteData(ctx context.Context, data []interface{}) error {
 	dataLen := len(data)
 	s.log.Debug("Attempting to write ", dataLen, " records...")
@@ -159,7 +159,7 @@ func (s *GraphSQLAggregatePump) WriteData(ctx context.Context, data []interface{
 	return nil
 }
 
-// reqproof:implements SW-REQ-043
+// reqproof:implements SW-REQ-043,SW-REQ-086
 func (s *GraphSQLAggregatePump) DoAggregatedWriting(ctx context.Context, table, orgID, apiID string, ag *analytics.GraphRecordAggregate) error {
 	var recs []analytics.GraphSQLAnalyticsRecordAggregate
 

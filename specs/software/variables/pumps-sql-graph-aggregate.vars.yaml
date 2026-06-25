@@ -1,5 +1,17 @@
 component: pumps-sql-graph-aggregate
 variables:
+    - name: table_sharding
+      type: bool
+      direction: input
+      description: True when Graph SQL Aggregate pump configuration enables TableSharding (per-day routing to tyk_aggregated_graph_<YYYYMMDD> tables).
+    - name: day_sliced_routing
+      type: bool
+      direction: output
+      description: True iff per-day-slice GraphQL aggregate rows are routed to a tyk_aggregated_graph_<YYYYMMDD> table when TableSharding is enabled, otherwise all rows to the single tyk_aggregated_graph table.
+    - name: routing_target_consistent
+      type: bool
+      direction: output
+      description: True iff DoAggregatedWriting binds its GORM insert target to the same table selected by WriteData's sharding loop.
     - name: store_per_minute
       type: bool
       direction: input

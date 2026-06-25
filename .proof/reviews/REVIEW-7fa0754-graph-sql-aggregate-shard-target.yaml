@@ -1,0 +1,7 @@
+id: REVIEW-7fa0754-graph-sql-aggregate-shard-target
+kind: design_review
+reviewer: agent:codex
+reviewed_at: "2026-06-25T15:45:00Z"
+subject: upstream:7fa0754/SW-REQ-043+SW-REQ-086
+decision: approved
+comment: 'Commit-level assurance review for TT-7820: Graph SQL Aggregate sharded writes previously selected shard names but aggregated/wrote outside the shard loop and DoAggregatedWriting targeted the base aggregate table. SW-REQ-086 now decomposes the shard-target invariant from SW-REQ-043, adds routing_target_consistent/output_cardinality_bounded evidence, and TestGraphSQLAggregatePump_WriteData_Sharded asserts representative rows exist exactly once in each generated day shard while the base table remains absent. Residual Graph SQL aggregate atomicity, migration, shard-index, timeout, config-schema, and timezone risks remain KnownIssue-backed debt.'

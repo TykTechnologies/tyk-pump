@@ -1,0 +1,101 @@
+schema_version: 1
+id: DEFECT-19
+title: Graph SQL aggregate sharded writes targeted the wrong table
+introduced_in: unknown
+description: |
+  TT-7820 (commit 7fa0754) fixed Graph SQL Aggregate sharded writes. Before
+  the fix, the sharding loop selected day-specific table names, but aggregation
+  and writes happened outside the shard slice loop, and DoAggregatedWriting
+  used analytics.AggregateGraphSQLTable rather than the caller-selected shard
+  table. In sharded mode, records could therefore be aggregated across day
+  slices and written/upserted to the base aggregate table or the wrong shard.
+
+  Current proof closes this through SW-REQ-086, a child of SW-REQ-043, and
+  TestGraphSQLAggregatePump_WriteData_Sharded, which enables table sharding,
+  writes records from two dates, verifies both shard tables exist, verifies
+  representative aggregate rows exist exactly once in each selected shard, and
+  verifies the base aggregate table remains absent.
+
+  The same upstream commit also refactored legacy raw GraphQL parsing so
+  malformed parse inputs no longer dropped the entire graph record. The current
+  product implementation later moved GraphRecord projection to GraphQLStats;
+  that current projection path is owned by SW-REQ-013 rather than this sharded
+  aggregate table-target defect.
+source:
+    type: upstream_commit
+    repo: TykTechnologies/tyk-pump
+    commit: 7fa0754
+    reference: TT-7820
+    date: "2023-03-06"
+classification:
+    surface: data_integrity
+    defect_class: graph_sql_aggregate_sharded_table_target_drift
+    severity: medium
+    security_relevant: false
+root_cause:
+    missing_requirement: false
+    missing_test_partition: false
+    missing_mcdc_variable: false
+    notes: |
+      SW-REQ-043 already states the day-bucket shard routing and selected-table
+      upsert contract, but the FRETish model was focused on minute-window/API
+      partitioning. SW-REQ-086 now decomposes the shard-target invariant.
+impact_analysis:
+    affected_requirements:
+        - SW-REQ-043
+        - SW-REQ-086
+    affected_code:
+        - pumps/graph_sql_aggregate.go
+        - pumps/graph_sql_aggregate_test.go
+        - analytics/aggregate.go
+        - analytics/graph_record.go
+hardening:
+    new_requirements:
+        - SW-REQ-086
+    strengthened_requirements:
+        - SW-REQ-043
+    added_obligations:
+        - requirement: SW-REQ-086
+          obligation_class: routing_target_consistent
+        - requirement: SW-REQ-086
+          obligation_class: output_cardinality_bounded
+    regression_tests:
+        - pumps/graph_sql_aggregate_test.go:TestGraphSQLAggregatePump_WriteData_Sharded
+    mcdc_witnesses: []
+    proposed_classes: []
+disposition:
+    status: covered_by_requirement
+    requirements:
+        - SW-REQ-086
+    known_issues:
+        - analytics-timestamp-timezone-convention-unpinned
+        - graph-mcp-sql-sharded-indexes-untracked
+        - graph-sql-aggregate-atomicity-fault-injection-missing
+        - graph-sql-aggregate-migrate-sharded-tables-ignored
+        - mapstructure-decode-silently-drops-unknown-keys
+        - pump-no-timeout-can-block-purge-cycle
+        - sql-aggregate-mysql-excluded-keyword-broken
+        - sql-batch-size-zero-infinite-loop
+    evidence:
+        verified_by:
+            - pumps/graph_sql_aggregate_test.go:TestGraphSQLAggregatePump_WriteData_Sharded
+        requirement_mcdc_witnesses: []
+        obligation_evidence:
+            - requirement: SW-REQ-043
+              obligation_class: output_cardinality_bounded
+              evidence_type: nominal
+            - requirement: SW-REQ-086
+              obligation_class: output_cardinality_bounded
+              evidence_type: nominal
+            - requirement: SW-REQ-086
+              obligation_class: routing_target_consistent
+              evidence_type: nominal
+    reviewer: agent:codex
+    reviewed_at: "2026-06-25T15:45:00Z"
+history:
+    - at: "2026-06-25T15:45:00Z"
+      by: agent:codex
+      action: created
+      detail: |
+        Recorded TT-7820's Graph SQL Aggregate shard-target fix as covered by
+        SW-REQ-086 and live sharded table evidence.

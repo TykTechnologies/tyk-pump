@@ -23,6 +23,11 @@ import (
 // MCDC SW-REQ-043: api_partition_used=F, minute_window_used=T, store_per_minute=T => FALSE
 // MCDC SW-REQ-043: api_partition_used=T, minute_window_used=F, store_per_minute=T => FALSE
 // MCDC SW-REQ-043: api_partition_used=T, minute_window_used=T, store_per_minute=T => TRUE
+// MCDC SW-REQ-086: day_sliced_routing=F, routing_target_consistent=F, table_sharding=F => TRUE
+// MCDC SW-REQ-086: day_sliced_routing=F, routing_target_consistent=F, table_sharding=T => FALSE
+// MCDC SW-REQ-086: day_sliced_routing=F, routing_target_consistent=T, table_sharding=T => FALSE
+// MCDC SW-REQ-086: day_sliced_routing=T, routing_target_consistent=F, table_sharding=T => FALSE
+// MCDC SW-REQ-086: day_sliced_routing=T, routing_target_consistent=T, table_sharding=T => TRUE
 
 const (
 	requestTemplate  = "POST / HTTP/1.1\r\nHost: localhost:8281\r\nUser-Agent: test-agent\r\nContent-Length: %d\r\n\r\n%s"
@@ -613,6 +618,14 @@ func TestSqlGraphAggregatePump_WriteData(t *testing.T) {
 }
 
 // Verifies: SW-REQ-043
+// Verifies: SW-REQ-086
+// SW-REQ-086:output_cardinality_bounded:nominal
+// SW-REQ-086:routing_target_consistent:nominal
+// MCDC SW-REQ-086: day_sliced_routing=F, routing_target_consistent=F, table_sharding=F => TRUE
+// MCDC SW-REQ-086: day_sliced_routing=F, routing_target_consistent=F, table_sharding=T => FALSE
+// MCDC SW-REQ-086: day_sliced_routing=F, routing_target_consistent=T, table_sharding=T => FALSE
+// MCDC SW-REQ-086: day_sliced_routing=T, routing_target_consistent=F, table_sharding=T => FALSE
+// MCDC SW-REQ-086: day_sliced_routing=T, routing_target_consistent=T, table_sharding=T => TRUE
 func TestGraphSQLAggregatePump_WriteData_Sharded(t *testing.T) {
 	skipTestIfNoPostgres(t)
 	pump := GraphSQLAggregatePump{}
@@ -659,6 +672,7 @@ func TestGraphSQLAggregatePump_WriteData_Sharded(t *testing.T) {
 		assert.False(t, pump.db.Migrator().HasTable(analytics.AggregateGraphSQLTable))
 		r.NoError(pump.WriteData(context.Background(), []interface{}{sampleRecord}))
 		assert.True(t, pump.db.Migrator().HasTable(analytics.AggregateGraphSQLTable+"_20220101"))
+		assert.False(t, pump.db.Migrator().HasTable(analytics.AggregateGraphSQLTable), "base table should remain absent in sharded mode")
 	})
 
 	t.Run("shard multiple tables", func(t *testing.T) {
@@ -680,15 +694,23 @@ func TestGraphSQLAggregatePump_WriteData_Sharded(t *testing.T) {
 		assert.True(t, pump.db.Migrator().HasTable(firstShardedTable), "table %s does not exist", firstShardedTable)
 		assert.True(t, pump.db.Migrator().HasTable(secondShardedTable), "table %s does not exist", secondShardedTable)
 
-		// check records
-		aggr := make([]analytics.SQLAnalyticsRecordAggregate, 0)
-		res := pump.db.Table(firstShardedTable).Find(&aggr)
-		assert.NoError(t, res.Error)
-		assert.NotEmpty(t, aggr, "table %s does not contain records", firstShardedTable)
+		assert.False(t, pump.db.Migrator().HasTable(analytics.AggregateGraphSQLTable), "base table should remain absent in sharded mode")
 
-		aggr = make([]analytics.SQLAnalyticsRecordAggregate, 0)
-		res = pump.db.Table(secondShardedTable).Find(&aggr)
-		assert.NoError(t, res.Error)
-		assert.NotEmpty(t, aggr, "table %s does not contain records", secondShardedTable)
+		assertGraphAggregateShardRow(t, pump, firstShardedTable, "operation", analytics.OperationQuery, "test-api")
+		assertGraphAggregateShardRow(t, pump, firstShardedTable, "rootfields", "characters", "test-api")
+		assertGraphAggregateShardRow(t, pump, secondShardedTable, "operation", analytics.OperationQuery, "test-api")
+		assertGraphAggregateShardRow(t, pump, secondShardedTable, "rootfields", "characters", "test-api")
 	})
+}
+
+func assertGraphAggregateShardRow(t *testing.T, pump GraphSQLAggregatePump, table, dimension, value, apiID string) {
+	t.Helper()
+
+	var count int64
+	res := pump.db.Table(table).Model(&analytics.GraphSQLAnalyticsRecordAggregate{}).Where(
+		"dimension = ? AND dimension_value = ? AND api_id = ? AND counter_hits = ?",
+		dimension, value, apiID, 1,
+	).Count(&count)
+	require.NoError(t, res.Error)
+	require.Equal(t, int64(1), count, "expected exactly one %s/%s aggregate row in %s", dimension, value, table)
 }

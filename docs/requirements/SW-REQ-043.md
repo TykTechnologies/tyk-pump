@@ -31,6 +31,8 @@ latencies) in SQL form, suitable for Grafana / Metabase dashboards.
 - `analytics/aggregate_test.go:TestAggregateGraphData_PartitionsSameOrgByAPIID`
   proves that same-org, same-dimension GraphQL records remain isolated by
   `APIID` before SQL upsert.
+- SW-REQ-086 decomposes the sharded table-target invariant and is witnessed by
+  `pumps/graph_sql_aggregate_test.go:TestGraphSQLAggregatePump_WriteData_Sharded`.
 - Live-Postgres tests are excluded from the local audit MC/DC scope (known
   issue).
 
@@ -38,8 +40,10 @@ latencies) in SQL form, suitable for Grafana / Metabase dashboards.
 - `aggregate_partition_isolated` — aggregate keys include the declared API
   partition dimension so same-org GraphQL counters for different APIs cannot
   collapse into one row.
+- `routing_target_consistent` — decomposed to SW-REQ-086 for the selected day
+  shard table used by `WriteData` and `DoAggregatedWriting`.
 - `atomicity`, `transaction_isolation_declared`, and `errors_propagated` —
-  required for backend write correctness, but currently deferred to
+  required for backend write correctness and tracked under KnownIssue
   `graph-sql-aggregate-atomicity-fault-injection-missing` until a database
   transaction/failure-injection harness proves serialization/deadlock and
   forced `tx.Error` behavior.

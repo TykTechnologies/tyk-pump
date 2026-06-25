@@ -149,7 +149,7 @@ so a later reviewer can see what was included and what was filtered out.
 | 8173c7e | 2023-05-15 | TT-876 Fix/prometheus cardinality | `missed_before_hardening`: current Prometheus tests covered separator-bearing label values, but no requirement modeled aggregate label tuple-boundary preservation. Hardened with DEFECT-15 and SW-REQ-083; broad unbounded metric cardinality remains KI-backed under `metrics-label-cardinality-unbounded`. |
 | 1fd5ba9 | 2023-04-27 | [TT-8793] Fixing Pump 1.8 bugs | `partially_missed_before_hardening`: current SW-REQ-035 already pinned selective per-org collection routing, while SW-REQ-059 broadly pinned mixed aggregate writes but did not prove the second average-update upsert kept the mixed target. Hardened with DEFECT-16 for MongoSelective, DEFECT-17 plus SW-REQ-084 for MongoAggregate mixed average-update routing, SW-REQ-059 output-cardinality evidence, and nonzero request-time assertions in the live Mongo aggregate mixed-collection test. |
 | ca22ae4 | 2023-03-16 | TT-8313 Hybrid pump refactor | `partially_missed_before_hardening`: this was not only a refactor; it fixed Hybrid init/connect paths that previously called log.Fatal for recoverable missing-connection-string or MDCB connection failures. Hardened with DEFECT-18 and SW-REQ-085 (`process_exit_on_recoverable` + `errors_propagated`) using existing Hybrid init/connect tests. Residual Hybrid connection leak, retry elapsed-deadline, TLS-skip, SSRF, and process-wide timeout risks remain KI-backed debt. |
-| 7fa0754 | 2023-03-06 | [TT-7820] fix aggregate graph pump sharding and errors | Product graph/sharding defect. Mostly covered by graph requirements today. |
+| 7fa0754 | 2023-03-06 | [TT-7820] fix aggregate graph pump sharding and errors | `missed_before_hardening`: SW-REQ-043 prose required day-slice routing and selected-table upserts, but its FRETish model did not carry the shard-target invariant and the sharded test only asserted non-empty shards. Hardened with DEFECT-19 and SW-REQ-086 (`routing_target_consistent` + `output_cardinality_bounded`), plus stricter sharded evidence proving representative rows land exactly once in both selected shards while the base table remains absent. The same commit's legacy raw GraphRecord parse-error refactor is now superseded by the current GraphQLStats projection model under SW-REQ-013. |
 | 17072c0 | 2023-02-21 | [TT-7977] fix: include RootFields in graph mongo and sql pumps | Product field-preservation defect. Requires RootFields evidence. |
 | e2f277a | 2023-01-12 | TT-7216 Decode Option For Raw Request/Response | Product privacy/decode feature. Current decode KIs cover malformed paths. |
 | ca44921 | 2022-11-23 | [TT-5426] Updating timestamp of every record in Demo Mode | Product demo timestamp behavior. Lower runtime assurance relevance. |
@@ -198,6 +198,7 @@ Problem reports:
 - DEFECT-16: Mongo selective writes targeted the default collection.
 - DEFECT-17: Mongo aggregate mixed average update targeted the per-org collection.
 - DEFECT-18: Hybrid init used log.Fatal for recoverable MDCB startup failures.
+- DEFECT-19: Graph SQL aggregate sharded writes targeted the wrong table.
 
 KnownIssues/risks relevant to historical fix classes:
 

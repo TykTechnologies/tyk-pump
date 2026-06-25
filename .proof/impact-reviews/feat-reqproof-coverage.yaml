@@ -1,6 +1,6 @@
 schema_version: 1
 branch: feat-reqproof-coverage
-generated_at: "2026-06-25T15:27:59Z"
+generated_at: "2026-06-25T15:45:34Z"
 reviews:
     - requirement: SW-REQ-001
       artifact: main.go
@@ -722,12 +722,12 @@ reviews:
       artifact: pumps/graph_sql_aggregate.go
       decision: no-authored-change
       reviewer: buger
-      reason: Reviewed pending requirement-owned production diffs after Proof binary/layout update; changes are comment-only Proof trace/MC/DC/KI classification metadata and do not alter runtime behavior, requirement intent, or documented design
+      reason: 'Reviewed pumps/graph_sql_aggregate.go after TT-7820 proof hardening: source delta is reqproof trace metadata linking WriteData and DoAggregatedWriting to SW-REQ-086; runtime behavior and authored requirement intent are unchanged by this comment-only trace update.'
       base: origin/master
-      requirement_fingerprint: sha256:5002d56e4ddc33fdd510a54d591ec53714ddfa7e9c4b9c168cc1bb307b2e4b5a
-      approval_fingerprint: sha256:8882ad2192fd299d5e17c270c275982a7ce19afccb4de4fb5fdc7c859e3a30c3
-      artifact_fingerprint: sha256:9bc8e3b20a271aaf9545b01b0dcd32833c0f57b448f5c6483781256905856cd6
-      reviewed_at: "2026-06-20T13:05:01Z"
+      requirement_fingerprint: sha256:a4eec004ace5804cc29946cfa5d5953ad4aac3cdef3e85823c9903291171d551
+      approval_fingerprint: sha256:8f9569769f1837772f490b3eefe0555df46e47c87ef66ee514ca8d44fcf96ba6
+      artifact_fingerprint: sha256:159234ba6047acf0256adafb63958c1d9200929a8c4e8b9544e252ff2ecd88c8
+      reviewed_at: "2026-06-25T15:45:34Z"
     - requirement: SW-REQ-044
       artifact: pumps/mcp_sql.go
       decision: no-authored-change
@@ -1113,3 +1113,13 @@ reviews:
       approval_fingerprint: sha256:c56062e93f80ecb438b37a097d615903274349353ac50434ac05cb4ac89203d8
       artifact_fingerprint: sha256:a72ff419688735e44d3af62d34baed2027efc7ffaed65dfa5eaaebe75e2db7a2
       reviewed_at: "2026-06-25T15:27:59Z"
+    - requirement: SW-REQ-086
+      artifact: pumps/graph_sql_aggregate.go
+      decision: no-authored-change
+      reviewer: buger
+      reason: 'Reviewed pumps/graph_sql_aggregate.go after TT-7820 proof hardening: source delta is reqproof trace metadata linking WriteData and DoAggregatedWriting to SW-REQ-086; runtime behavior and authored requirement intent are unchanged by this comment-only trace update.'
+      base: origin/master
+      requirement_fingerprint: sha256:a86e6325c1e224685cff021e65e39789556294472cd0fd8499799e3d90bd3c45
+      approval_fingerprint: sha256:40666168b0302cc748cb1a590294763651f3b6f2cc7b24591f2cdfd525492331
+      artifact_fingerprint: sha256:159234ba6047acf0256adafb63958c1d9200929a8c4e8b9544e252ff2ecd88c8
+      reviewed_at: "2026-06-25T15:45:34Z"

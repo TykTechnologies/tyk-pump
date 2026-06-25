@@ -1,0 +1,60 @@
+id: SW-REQ-086
+version: 1
+status: approved
+priority: shall
+category: functional
+req_type: guarantee
+fretish: when table_sharding pumps_sql_graph_aggregate shall always satisfy day_sliced_routing & routing_target_consistent
+description: When GraphSQLAggregatePump runs with TableSharding enabled, each contiguous day slice shall be aggregated and written through the selected <AggregateGraphSQLTable>_<YYYYMMDD> table, and DoAggregatedWriting shall bind the GORM insert target to that same selected table rather than the model default base table.
+formalization_strategy: fretish
+informal_verification:
+    method: ""
+    evidence: ""
+    verified: false
+parent: SW-REQ-043
+component: pumps-sql-graph-aggregate
+rationale: 'Product-fix-history hardening for TT-7820: before commit 7fa0754, GraphSQLAggregatePump selected day shard names but wrote after the shard loop and DoAggregatedWriting targeted the base aggregate table. This child pins the shard-table routing invariant separately from SW-REQ-043''s broader Graph SQL aggregate contract.'
+tags: []
+variables:
+    - table_sharding
+    - day_sliced_routing
+    - routing_target_consistent
+traces:
+    satisfies:
+        - SW-REQ-043
+verification:
+    assurance_level: B
+    formalization_status: valid
+    review:
+        status: approved
+        reviewer: human:buger
+        role: software_engineer
+        reviewed_at: "2026-06-25T15:45:15Z"
+        comment: 'TT-7820 hardening: reviewed Graph SQL Aggregate shard-target routing FRETish, routing_target_consistent/output_cardinality_bounded evidence, MC/DC witnesses, and DEFECT-19 closure; no runtime product behavior change claimed.'
+        fingerprint: sha256:40666168b0302cc748cb1a590294763651f3b6f2cc7b24591f2cdfd525492331
+        ai_generated: false
+history:
+    created_by: agent:codex
+    created_at: "2026-06-25T15:38:35Z"
+    last_modified_by: human:buger
+    last_modified_at: "2026-06-25T15:45:15Z"
+obligation_checklist:
+    - output_cardinality_bounded
+    - routing_target_consistent
+stakeholder:
+    acceptance_criteria:
+        - id: AC-001
+          text: With TableSharding=true and Graph SQL aggregate records spanning two UTC dates, WriteData writes aggregate rows to both selected day-shard tables and does not create or write the base aggregate table.
+          verification_method: test
+lifecycle:
+    change_history:
+        - date: "2026-06-25T15:50:00Z"
+          from: draft
+          to: review
+          reason: TT-7820 Graph SQL aggregate shard-target routing requirement ready for review
+          changed_by: human:buger
+        - date: "2026-06-25T15:44:59Z"
+          from: draft
+          to: review
+          reason: TT-7820 Graph SQL aggregate shard-target routing requirement ready for review
+          changed_by: human:buger
