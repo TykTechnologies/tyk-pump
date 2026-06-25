@@ -1,0 +1,70 @@
+id: SW-REQ-105
+version: 1
+status: approved
+priority: shall
+category: functional
+req_type: guarantee
+fretish: when kms_key_configured pumps_aws_kinesis shall always satisfy stream_kms_key_state_reconciled
+description: 'When KMSKeyID is configured, the Kinesis pump shall reconcile the stream encryption state returned by DescribeStream against that configured key: an already encrypted stream with the same non-empty KeyId is accepted, a different non-empty KeyId fails Init, a KMS-encrypted stream with missing KeyId is treated as not verified and StartStreamEncryption is called with the configured key, an unencrypted stream starts encryption with the configured key, DescribeStream errors fail Init, ResourceInUse during StartStreamEncryption is accepted, and other StartStreamEncryption errors fail Init.'
+formalization_strategy: fretish
+informal_verification:
+    method: ""
+    evidence: ""
+    verified: false
+parent: SW-REQ-056
+component: pumps-aws-kinesis
+rationale: Product-fix-history hardening for TT-14473 / commits 5965206 and 50e5f51. The initial KMS support is additive security/config behavior; 50e5f51 fixed the nil-KeyId state-classification edge. SW-REQ-056 owns broad Kinesis behavior; this child pins the KMS stream-state reconciliation contract explicitly.
+tags: []
+variables:
+    - kms_key_configured
+    - stream_kms_key_state_reconciled
+traces:
+    satisfies:
+        - SW-REQ-056
+verification:
+    assurance_level: B
+    formalization_status: valid
+    review:
+        status: approved
+        reviewer: human:buger
+        role: software_engineer
+        reviewed_at: "2026-06-25T21:26:02Z"
+        comment: 'Reviewed TT-14473 hardening: SW-REQ-105 pins Kinesis KMS stream-state reconciliation, including the nil-KeyId boundary fixed by 50e5f51; no runtime product behavior change.'
+        fingerprint: sha256:d7e7a399705806ab6cbedf10f8d8b93a8527297615f9f4309f35b203c7211e92
+        ai_generated: false
+history:
+    created_by: agent:codex
+    created_at: "2026-06-25T21:23:06Z"
+    last_modified_by: human:buger
+    last_modified_at: "2026-06-25T21:26:02Z"
+obligation_checklist:
+    - kms_stream_state_reconciled
+stakeholder:
+    acceptance_criteria:
+        - id: AC-001
+          text: If the stream is already KMS encrypted with the configured non-empty KeyId, Init succeeds and does not call StartStreamEncryption.
+          verification_method: test
+        - id: AC-002
+          text: If the stream is already KMS encrypted with a different non-empty KeyId, Init fails.
+          verification_method: test
+        - id: AC-003
+          text: If the stream reports KMS encryption with a missing KeyId, Init treats the state as unverified and calls StartStreamEncryption with the configured key.
+          verification_method: test
+        - id: AC-004
+          text: If the stream is not encrypted, Init calls StartStreamEncryption with the configured key, accepts ResourceInUse as idempotent progress, and fails on other start-encryption errors.
+          verification_method: test
+        - id: AC-005
+          text: If DescribeStream fails while KMSKeyID is configured, Init fails.
+          verification_method: test
+lifecycle:
+    change_history:
+        - date: "2026-06-25T21:35:00Z"
+          from: draft
+          to: review
+          reason: TT-14473 Kinesis KMS stream-state reconciliation requirement ready for branch review
+          changed_by: agent:codex
+        - date: "2026-06-25T21:26:01Z"
+          from: draft
+          to: review
+          reason: ""
+          changed_by: agent:codex

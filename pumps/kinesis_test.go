@@ -314,7 +314,7 @@ func (p *TestableKinesisPump) InitWithMock(config interface{}, mockClient Kinesi
 		switch {
 		case err != nil:
 			return err
-		case describeOutput.StreamDescription.EncryptionType == types.EncryptionTypeKms:
+		case describeOutput.StreamDescription.EncryptionType == types.EncryptionTypeKms && describeOutput.StreamDescription.KeyId != nil:
 			currentKeyID := aws.ToString(describeOutput.StreamDescription.KeyId)
 			if currentKeyID == p.kinesisConf.KMSKeyID {
 				p.log.Info("Server-side encryption is already enabled with the specified KMS Key ID")
@@ -348,7 +348,10 @@ func (p *TestableKinesisPump) InitWithMock(config interface{}, mockClient Kinesi
 // Tests for the new describe stream encryption logic
 
 // Verifies: SW-REQ-056
+// Verifies: SW-REQ-105
 // SW-REQ-056:nominal:nominal
+// SW-REQ-105:kms_stream_state_reconciled:nominal
+// MCDC SW-REQ-105: kms_key_configured=T, stream_kms_key_state_reconciled=T => TRUE
 // MCDC SW-REQ-056: kms_key_configured=T, stream_encryption_verified=T => TRUE
 func TestKinesisPump_DescribeStream_AlreadyEncryptedSameKey(t *testing.T) {
 	kmsKeyID := "arn:aws:kms:us-east-1:123456789012:key/test-key-id"
@@ -383,6 +386,9 @@ func TestKinesisPump_DescribeStream_AlreadyEncryptedSameKey(t *testing.T) {
 }
 
 // Verifies: SW-REQ-056
+// Verifies: SW-REQ-105
+// SW-REQ-105:kms_stream_state_reconciled:negative
+// MCDC SW-REQ-105: kms_key_configured=T, stream_kms_key_state_reconciled=F => FALSE
 // MCDC SW-REQ-056: kms_key_configured=T, stream_encryption_verified=F => FALSE
 func TestKinesisPump_DescribeStream_AlreadyEncryptedDifferentKey(t *testing.T) {
 	currentKeyID := "arn:aws:kms:us-east-1:123456789012:key/current-key"
@@ -416,6 +422,47 @@ func TestKinesisPump_DescribeStream_AlreadyEncryptedDifferentKey(t *testing.T) {
 }
 
 // Verifies: SW-REQ-056
+// Verifies: SW-REQ-105
+// SW-REQ-105:kms_stream_state_reconciled:boundary
+// MCDC SW-REQ-105: kms_key_configured=T, stream_kms_key_state_reconciled=T => TRUE
+func TestKinesisPump_DescribeStream_KMSEncryptedMissingKeyID_StartsEncryption(t *testing.T) {
+	kmsKeyID := "arn:aws:kms:us-east-1:123456789012:key/test-key-id"
+
+	config := map[string]interface{}{
+		"stream_name": "test-stream",
+		"region":      "us-east-1",
+		"kms_key_id":  kmsKeyID,
+	}
+
+	mockClient := &MockKinesisClient{}
+
+	describeOutput := &kinesis.DescribeStreamOutput{
+		StreamDescription: &types.StreamDescription{
+			EncryptionType: types.EncryptionTypeKms,
+			KeyId:          nil,
+		},
+	}
+	mockClient.On("DescribeStream", mock.Anything, mock.MatchedBy(func(input *kinesis.DescribeStreamInput) bool {
+		return aws.ToString(input.StreamName) == "test-stream"
+	})).Return(describeOutput, nil)
+
+	startEncryptionOutput := &kinesis.StartStreamEncryptionOutput{}
+	mockClient.On("StartStreamEncryption", mock.Anything, mock.MatchedBy(func(input *kinesis.StartStreamEncryptionInput) bool {
+		return aws.ToString(input.StreamName) == "test-stream" &&
+			input.EncryptionType == types.EncryptionTypeKms &&
+			aws.ToString(input.KeyId) == kmsKeyID
+	})).Return(startEncryptionOutput, nil)
+
+	pump := &TestableKinesisPump{}
+	err := pump.InitWithMock(config, mockClient)
+
+	assert.NoError(t, err)
+	mockClient.AssertExpectations(t)
+}
+
+// Verifies: SW-REQ-056
+// Verifies: SW-REQ-105
+// SW-REQ-105:kms_stream_state_reconciled:nominal
 // MCDC SW-REQ-056: kms_key_configured=T, stream_encryption_verified=T => TRUE
 func TestKinesisPump_DescribeStream_NotEncrypted_StartEncryptionSuccess(t *testing.T) {
 	kmsKeyID := "arn:aws:kms:us-east-1:123456789012:key/test-key-id"
@@ -454,6 +501,8 @@ func TestKinesisPump_DescribeStream_NotEncrypted_StartEncryptionSuccess(t *testi
 }
 
 // Verifies: SW-REQ-056
+// Verifies: SW-REQ-105
+// SW-REQ-105:kms_stream_state_reconciled:nominal
 // MCDC SW-REQ-056: kms_key_configured=T, stream_encryption_verified=T => TRUE
 func TestKinesisPump_DescribeStream_NotEncrypted_StartEncryptionResourceInUse(t *testing.T) {
 	kmsKeyID := "arn:aws:kms:us-east-1:123456789012:key/test-key-id"
@@ -495,6 +544,8 @@ func TestKinesisPump_DescribeStream_NotEncrypted_StartEncryptionResourceInUse(t 
 }
 
 // Verifies: SW-REQ-056
+// Verifies: SW-REQ-105
+// SW-REQ-105:kms_stream_state_reconciled:error
 // MCDC SW-REQ-056: kms_key_configured=T, stream_encryption_verified=F => FALSE
 func TestKinesisPump_DescribeStream_NotEncrypted_StartEncryptionGenericError(t *testing.T) {
 	kmsKeyID := "arn:aws:kms:us-east-1:123456789012:key/test-key-id"
@@ -535,6 +586,8 @@ func TestKinesisPump_DescribeStream_NotEncrypted_StartEncryptionGenericError(t *
 }
 
 // Verifies: SW-REQ-056
+// Verifies: SW-REQ-105
+// SW-REQ-105:kms_stream_state_reconciled:error
 // MCDC SW-REQ-056: kms_key_configured=T, stream_encryption_verified=F => FALSE
 func TestKinesisPump_DescribeStream_APIFailure(t *testing.T) {
 	kmsKeyID := "arn:aws:kms:us-east-1:123456789012:key/test-key-id"
@@ -562,6 +615,9 @@ func TestKinesisPump_DescribeStream_APIFailure(t *testing.T) {
 }
 
 // Verifies: SW-REQ-056
+// Verifies: SW-REQ-105
+// SW-REQ-105:kms_stream_state_reconciled:boundary
+// MCDC SW-REQ-105: kms_key_configured=F, stream_kms_key_state_reconciled=F => TRUE
 // MCDC SW-REQ-056: kms_key_configured=F, stream_encryption_verified=F => TRUE
 func TestKinesisPump_NoKMSKeyID_SkipsEncryption(t *testing.T) {
 	config := map[string]interface{}{

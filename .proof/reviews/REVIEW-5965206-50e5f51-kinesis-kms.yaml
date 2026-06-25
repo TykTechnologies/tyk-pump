@@ -1,0 +1,7 @@
+id: REVIEW-5965206-50e5f51-kinesis-kms
+kind: design_review
+reviewer: agent:codex
+reviewed_at: "2026-06-25T21:40:00Z"
+subject: upstream:5965206+50e5f51/SW-REQ-056+SW-REQ-105+DEFECT-47
+decision: approved
+comment: 'Commit-level assurance review for TT-14473: 5965206 is additive Kinesis KMS support, while 50e5f51 is a fixed historical defect for KMS-encrypted DescribeStream responses that omit KeyId. Current production code requires a non-nil KeyId before accepting the already-encrypted branch. SW-REQ-105 and DEFECT-47 now pin the stream-state reconciliation behavior, including the nil-KeyId boundary; no product runtime behavior was changed.'

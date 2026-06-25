@@ -1,0 +1,86 @@
+schema_version: 1
+id: DEFECT-47
+title: Kinesis KMS encrypted stream with missing KeyId was misclassified as a different configured key
+introduced_in: 5965206
+description: |
+  Commit 5965206 added Kinesis server-side KMS encryption support. In its first
+  implementation, Init treated any DescribeStream response with
+  EncryptionType=KMS as an already-encrypted stream and compared
+  aws.ToString(KeyId) to the configured KMSKeyID. When AWS reported KMS
+  encryption without a KeyId, aws.ToString(nil) produced an empty string, so
+  Init returned "server-side encryption is already enabled with a different KMS
+  Key ID" instead of reconciling the state by calling StartStreamEncryption
+  with the configured key.
+
+  Commit 50e5f51 fixed the classification by requiring KeyId != nil before the
+  already-encrypted branch is accepted. Current production code follows that
+  behavior, and SW-REQ-105 now pins the KMS stream-state reconciliation contract.
+source:
+    type: upstream_commit
+    repo: TykTechnologies/tyk-pump
+    commit: 50e5f51
+    reference: tyk-pump#908
+    date: "2025-10-16"
+classification:
+    surface: security_behavior
+    defect_class: kinesis_kms_missing_key_id_state_misclassified
+    severity: medium
+    security_relevant: true
+root_cause:
+    missing_requirement: true
+    missing_test_partition: true
+    missing_mcdc_variable: false
+    notes: |
+      The initial feature covered configured/unconfigured KMS and same/different
+      key states, but the stream-state model did not distinguish KMS encryption
+      with a missing KeyId from KMS encryption with a different non-empty key.
+impact_analysis:
+    affected_requirements:
+        - SW-REQ-056
+        - SW-REQ-105
+    affected_code:
+        - pumps/kinesis.go
+        - pumps/kinesis_test.go
+hardening:
+    new_requirements:
+        - SW-REQ-105
+    strengthened_requirements:
+        - SW-REQ-056
+    added_obligations:
+        - requirement: SW-REQ-105
+          obligation_class: kms_stream_state_reconciled
+    regression_tests:
+        - pumps/kinesis_test.go:TestKinesisPump_DescribeStream_KMSEncryptedMissingKeyID_StartsEncryption
+    proposed_classes:
+        - kms_stream_state_reconciled
+    code_signals: []
+disposition:
+    status: covered_by_requirement
+    requirements:
+        - SW-REQ-105
+    known_issues:
+        - docs-kinesis-env-streamname-typo
+        - kinesis-random-partition-key-not-idempotent
+        - kinesis-splitintobatches-zero-infinite-loop
+        - mapstructure-decode-silently-drops-unknown-keys
+        - pump-no-timeout-can-block-purge-cycle
+        - pump-writedata-swallows-per-batch-errors
+        - pumps-logfatal-on-config-decode
+    evidence:
+        verified_by:
+            - pumps/kinesis_test.go:TestKinesisPump_DescribeStream_KMSEncryptedMissingKeyID_StartsEncryption
+        obligation_evidence:
+            - requirement: SW-REQ-105
+              obligation_class: kms_stream_state_reconciled
+              evidence_type: boundary
+    reviewer: agent:codex
+    reviewed_at: "2026-06-25T21:40:00Z"
+history:
+    - at: "2026-06-25T21:40:00Z"
+      by: agent:codex
+      action: created
+      detail: |
+        Recorded 50e5f51 as a fixed historical Kinesis KMS stream-state defect.
+        The hardening keeps runtime code unchanged, adds SW-REQ-105 and the
+        local kms_stream_state_reconciled obligation, and ties the nil-KeyId
+        boundary to a mocked Init regression test.

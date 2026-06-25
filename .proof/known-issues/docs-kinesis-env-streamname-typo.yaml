@@ -1,0 +1,22 @@
+id: docs-kinesis-env-streamname-typo
+title: README Kinesis stream-name env example misspells KINESIS
+description: README.md documents the Kinesis stream-name environment variable as TYK_PMP_PUMPS_KINESIs_META_STREAMNAME with a lowercase trailing s in KINESIs. Operators copying that example will not set the Kinesis stream_name override expected by the pump env-prefix contract.
+affected_requirements:
+    - SW-REQ-056
+commands:
+    - grep -n 'KINESIs_META_STREAMNAME' README.md
+severity: low
+severity_basis: risk
+risk: correctness
+reproducer_command: grep -n 'KINESIs_META_STREAMNAME' README.md
+introduced_in: 25683f2
+mitigation: Operators can use the surrounding KINESIS examples and the code/env prefix convention to correct the variable to TYK_PMP_PUMPS_KINESIS_META_STREAMNAME before deployment.
+remediation: Update README.md to spell TYK_PMP_PUMPS_KINESIS_META_STREAMNAME correctly and re-run the grep reproducer to confirm the typo is gone.
+owner: tyk-team
+review_date: "2026-11-30"
+release_disposition: ship_with_known_issue
+status: open
+history:
+    - at: "2026-06-25T21:25:48Z"
+      by: agent:codex
+      action: created

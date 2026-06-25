@@ -22,6 +22,11 @@ SW-REQ-028 makes the random-partition-key choice and the KMS-key Init
 verification explicit, and surfaces the per-batch error swallowing as an
 honest `nominal` rather than the family-level `errors_propagated`.
 
+KMS stream-state reconciliation is split into **SW-REQ-105**. In particular,
+KMS encryption is considered verified only when the stream reports the same
+non-empty key id; a KMS state with a missing key id must be reconciled by
+calling `StartStreamEncryption` with the configured key.
+
 ## Code references
 - `pumps/kinesis.go:23-49` — `KinesisPump`, `KinesisConf`.
 - `pumps/kinesis.go:96-135` — `Init` KMS encryption verification path.
@@ -31,6 +36,9 @@ honest `nominal` rather than the family-level `errors_propagated`.
 
 ## Evidence
 - `pumps/kinesis_test.go` (re-annotated `Verifies: SW-REQ-056`).
+- `pumps/kinesis_test.go:TestKinesisPump_DescribeStream_KMSEncryptedMissingKeyID_StartsEncryption`
+  covers the SW-REQ-105 missing-key-id boundary from TT-14473 follow-up
+  `50e5f51`.
 - Live-Kinesis tests need real AWS credentials and are excluded from the
   local audit MC/DC scope (known issue).
 

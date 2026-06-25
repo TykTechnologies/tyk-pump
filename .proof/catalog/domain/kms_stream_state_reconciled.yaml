@@ -1,0 +1,50 @@
+id: kms_stream_state_reconciled
+name: Kms Stream State Reconciled
+category: domain
+status: active
+summary: KMS-backed stream encryption state shall be reconciled against the configured key before accepting or enabling encryption.
+description: |-
+  A backend stream that supports server-side KMS encryption has a state machine,
+  not just a boolean "encrypted" flag. Requirements that promise to enforce a
+  configured KMS key shall prove that initialization inspects the backend's
+  reported encryption state, compares any reported key id with the configured
+  key, accepts only the same non-empty key, starts/enables encryption when the
+  stream is unencrypted or the backend reports no usable key id, and surfaces
+  unrecoverable backend errors instead of silently proceeding.
+applies_when:
+  description: a pump initializes or verifies a backend stream/topic/queue with operator-configured KMS server-side encryption
+  trigger_phrases:
+    - KMSKeyID
+    - kms_key_id
+    - DescribeStream
+    - StartStreamEncryption
+    - server-side encryption
+example_req: |-
+  When a Kinesis pump is initialized with kms_key_id, Init shall compare the
+  stream's current non-empty KMS key id to the configured key, fail on a
+  different key, and call StartStreamEncryption when the stream is unencrypted
+  or no key id is reported.
+if_missing: |-
+  A pump can falsely accept an encryption state that is not bound to the
+  operator's configured key, or fail initialization for a recoverable
+  partially-reported encryption state that should be reconciled by enabling
+  encryption with the configured key.
+recommended_evidence:
+  - kind: nominal
+    note: Mocked backend Init witness where the stream is already encrypted with the same non-empty key and no enable call is made.
+  - kind: boundary
+    note: Mocked backend Init witness where the stream reports KMS encryption with no key id and the pump calls the enable/encrypt API with the configured key.
+  - kind: negative
+    note: Mocked backend Init witness where the stream reports a different non-empty key and Init fails.
+  - kind: error
+    note: Mocked backend Init witnesses where describe/enable errors are surfaced, except documented idempotent in-progress responses.
+frameworks:
+  - id: CWE
+    refs:
+      - CWE-311
+      - CWE-326
+related_classes:
+  - id: tls_verification_explicit
+    relationship: adjacent
+  - id: errors_propagated
+    relationship: supports
