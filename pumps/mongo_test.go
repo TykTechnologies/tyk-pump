@@ -398,7 +398,11 @@ func TestMongoPump_AccumulateSet(t *testing.T) {
 	))
 }
 
+// Verifies: SW-REQ-034
+// Verifies: SW-REQ-037
 // SW-REQ-034:boundary:nominal
+// SW-REQ-037:boundary:nominal
+// SW-REQ-037:boundary:negative
 func TestMongoPump_AccumulateSetIgnoreDocSize(t *testing.T) {
 	bloat := base64.StdEncoding.EncodeToString(make([]byte, 2048))
 	pump := newPump()
@@ -413,7 +417,7 @@ func TestMongoPump_AccumulateSetIgnoreDocSize(t *testing.T) {
 	for i := 0; i < 100; i++ {
 		record := analytics.AnalyticsRecord{}
 		if i%2 == 0 {
-			record.Tags = []string{analytics.PredefinedTagGraphAnalytics}
+			record.GraphQLStats = analytics.GraphQLStats{IsGraphQL: true}
 			record.RawRequest = bloat
 			record.RawResponse = bloat
 			record.ApiSchema = bloat
@@ -422,16 +426,21 @@ func TestMongoPump_AccumulateSetIgnoreDocSize(t *testing.T) {
 	}
 
 	accumulated := mPump.AccumulateSet(dataSet, true)
+	require.NotEmpty(t, accumulated)
+
+	graphRecords := 0
 	for _, x := range accumulated {
 		for _, y := range x {
 			rec, ok := y.(*analytics.AnalyticsRecord)
 			assert.True(t, ok)
 			if rec.IsGraphRecord() {
+				graphRecords++
 				assert.NotEmpty(t, rec.RawRequest)
 				assert.NotEmpty(t, rec.RawResponse)
 			}
 		}
 	}
+	assert.Equal(t, 50, graphRecords)
 }
 
 // SW-REQ-034:nominal:nominal — standard Mongo WriteData drops MCP records

@@ -5,7 +5,7 @@ priority: shall
 category: functional
 req_type: guarantee
 fretish: when is_graph_record pumps_mongo_graph shall always satisfy converted_to_graph_record
-description: The Graph MongoDB pump shall, on each purge, accumulate incoming records into size-bounded batches via the embedded MongoPump.AccumulateSet (in graph-only mode skipping records whose GraphQLStats.IsGraphQL is false from conversion), convert each surviving AnalyticsRecord to a GraphRecord (assigning a fresh ObjectID), and concurrently insert each batch into the single configured graph collection; the first per-batch insert error shall be returned to the caller, and connection-closed conditions shall be logged with a 'Detected connection failure!' warning.
+description: The Graph MongoDB pump shall, on each purge, accumulate incoming records into size-bounded batches via the embedded MongoPump.AccumulateSet (in graph-only mode skipping records whose GraphQLStats.IsGraphQL is false from conversion), preserve graph record RawRequest and RawResponse payloads even when their size exceeds MaxDocumentSizeBytes, convert each surviving AnalyticsRecord to a GraphRecord (assigning a fresh ObjectID), and concurrently insert each batch into the single configured graph collection; the first per-batch insert error shall be returned to the caller, and connection-closed conditions shall be logged with a 'Detected connection failure!' warning.
 formalization_strategy: fretish
 informal_verification:
     method: ""
@@ -29,17 +29,18 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-02T13:20:41Z"
-        comment: 'Phase L2: aggressive formalization — encodes per-pump MCP/graph/mixed-collection/self-heal decisions; variables in pumps-mongo-*.vars.yaml; user directive: force MCDC witnesses on these decisions to drive verifying tests.'
-        fingerprint: sha256:b226d9a5ef6941c26f5574e335f270832815b151c1899016f80c1d060f275226
+        reviewed_at: "2026-06-25T17:07:48Z"
+        comment: 'TT-6012 hardening: Graph Mongo now explicitly owns the max_document_size_bytes boundary for graph-mode payload preservation, with repaired GraphQLStats-backed evidence; no runtime product behavior change.'
+        fingerprint: sha256:18c690f70e8fc1eec91418a219d68b9f3e18284ff14a4f2769f13277d9d3629e
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:34:55Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-22T10:55:41Z"
+    last_modified_at: "2026-06-25T17:07:48Z"
 obligation_checklist:
     - cancellation_observed
+    - boundary
     - concurrent
     - config_schema_strict
     - errors_propagated
@@ -102,3 +103,8 @@ lifecycle:
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T05:02:45Z comment="Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.")'
           changed_by: human:cli
+        - date: "2026-06-25T17:07:48Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T13:20:41Z comment="Phase L2: aggressive formalization — encodes per-pump MCP/graph/mixed-collection/self-heal decisions; variables in pumps-mongo-*.vars.yaml; user directive: force MCDC witnesses on these decisions to drive verifying tests.")'
+          changed_by: human:buger

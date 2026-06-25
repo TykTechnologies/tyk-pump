@@ -1,0 +1,93 @@
+schema_version: 1
+id: DEFECT-26
+title: Graph Mongo records lost raw payloads when max_document_size_bytes was exceeded
+introduced_in: unknown
+description: |
+  TT-6012 (commit ff7574e) fixed a historical Graph Mongo failure mode where
+  MongoPump.AccumulateSet applied the standard Mongo max_document_size_bytes
+  raw-body rewrite to graph records. Oversized graph analytics records had
+  RawRequest cleared and RawResponse replaced with a diagnostic string before
+  the graph pump consumed the accumulated records, causing graph payload loss
+  and, in the legacy raw-parser architecture, graph conversion failures.
+
+  Current code uses AnalyticsRecord.GraphQLStats as the authoritative graph
+  projection source, but GraphRecord still embeds the AnalyticsRecord. Graph
+  Mongo therefore keeps the graph-mode boundary explicit: GraphQLStats-backed
+  records are filtered through AccumulateSet(data, true), non-graph records are
+  skipped, and RawRequest/RawResponse remain unchanged even when their size
+  exceeds MaxDocumentSizeBytes.
+source:
+    type: upstream_commit
+    repo: TykTechnologies/tyk-pump
+    commit: ff7574e
+    reference: TT-6012
+    date: "2022-10-25"
+classification:
+    surface: data_integrity
+    defect_class: graph_mongo_payload_size_policy
+    severity: medium
+    security_relevant: false
+root_cause:
+    missing_requirement: true
+    missing_test_partition: true
+    missing_mcdc_variable: false
+    notes: |
+      SW-REQ-034 modeled the standard Mongo raw-body rewrite, and SW-REQ-037
+      modeled Graph Mongo forwarding, but SW-REQ-037 did not explicitly own
+      the graph-mode exception to MaxDocumentSizeBytes as a boundary
+      obligation. The existing AccumulateSetIgnoreDocSize regression test used
+      a legacy graph tag, which is no longer the current graph predicate, so it
+      could pass without retaining any graph record.
+impact_analysis:
+    affected_requirements:
+        - SW-REQ-037
+        - SW-REQ-034
+    affected_code:
+        - pumps/graph_mongo.go
+        - pumps/mongo.go
+        - pumps/mongo_test.go
+hardening:
+    new_requirements: []
+    strengthened_requirements:
+        - SW-REQ-037
+    added_obligations:
+        - requirement: SW-REQ-037
+          obligation_class: boundary
+    regression_tests:
+        - pumps/mongo_test.go:TestMongoPump_AccumulateSetIgnoreDocSize
+        - pumps/mongo_mcdc_test.go:TestMongoPump_HandleLargeDocuments_GraphPreserved
+    mcdc_witnesses: []
+    proposed_classes: []
+disposition:
+    status: covered_by_requirement
+    requirements:
+        - SW-REQ-037
+        - SW-REQ-034
+    known_issues:
+        - mapstructure-decode-silently-drops-unknown-keys
+        - mongo-pump-ignores-caller-context
+        - no-panic-recovery-in-exec-pump-writing
+        - pump-writedata-swallows-per-batch-errors
+        - pump-no-timeout-can-block-purge-cycle
+        - pumps-logfatal-on-config-decode
+    evidence:
+        verified_by:
+            - pumps/mongo_test.go:TestMongoPump_AccumulateSetIgnoreDocSize
+            - pumps/mongo_mcdc_test.go:TestMongoPump_HandleLargeDocuments_GraphPreserved
+        obligation_evidence:
+            - requirement: SW-REQ-037
+              obligation_class: boundary
+              evidence_type: negative
+            - requirement: SW-REQ-034
+              obligation_class: boundary
+              evidence_type: negative
+    reviewer: agent:codex
+    reviewed_at: "2026-06-25T17:04:10Z"
+history:
+    - at: "2026-06-25T17:04:10Z"
+      by: agent:codex
+      action: created
+      detail: |
+        Recorded TT-6012 graph Mongo max-document-size behavior as covered by
+        SW-REQ-037 after making the graph payload preservation boundary
+        explicit and repairing the regression evidence to use GraphQLStats.

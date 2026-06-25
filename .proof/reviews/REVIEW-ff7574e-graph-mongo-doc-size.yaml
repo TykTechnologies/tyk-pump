@@ -1,0 +1,7 @@
+id: REVIEW-ff7574e-graph-mongo-doc-size
+kind: design_review
+reviewer: agent:codex
+reviewed_at: "2026-06-25T17:04:10Z"
+subject: upstream:ff7574e/SW-REQ-037/SW-REQ-034
+decision: approved
+comment: 'Commit-level assurance review for TT-6012: upstream exempted Graph Mongo records from the standard Mongo max_document_size_bytes raw-body rewrite. Current proof now makes the graph-mode boundary explicit in SW-REQ-037 and repairs the AccumulateSet regression evidence to use GraphQLStats.IsGraphQL instead of the legacy graph tag. No runtime product behavior change was made.'
