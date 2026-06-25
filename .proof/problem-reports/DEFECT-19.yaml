@@ -20,7 +20,9 @@ description: |
   malformed parse inputs no longer dropped the entire graph record. The current
   product implementation later moved GraphRecord projection to GraphQLStats;
   that current projection path is owned by SW-REQ-013 rather than this sharded
-  aggregate table-target defect.
+  aggregate table-target defect. See DEFECT-23 for the current proof closure of
+  the legacy parser/error half through the GraphQLStats-authoritative projection
+  contract.
 source:
     type: upstream_commit
     repo: TykTechnologies/tyk-pump
@@ -97,3 +99,11 @@ history:
       detail: |
         Recorded TT-7820's Graph SQL Aggregate shard-target fix as covered by
         SW-REQ-086 and live sharded table evidence.
+    - at: "2026-06-25T22:30:00Z"
+      by: agent:codex
+      action: clarified_related_defect
+      detail: |
+        Cross-referenced DEFECT-23 for the same commit's legacy GraphQL
+        parser/error behavior. DEFECT-19 remains scoped to the sharded
+        table-target drift; SW-REQ-013 and DEFECT-23 own the parser/error
+        behavior under the current GraphQLStats projection design.
