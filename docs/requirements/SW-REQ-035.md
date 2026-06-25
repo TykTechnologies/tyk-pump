@@ -8,8 +8,11 @@ empty `OrgID` shall be dropped. For each org collection the pump shall ensure
 baseline indexes (`apiid`, a TTL index on `expireAt` which is skipped for
 CosmosDB, and a composite `logBrowserIndex`) and then insert records in
 size-bounded batches up to `MaxInsertBatchSizeBytes` (default 10 MiB),
-skipping individual documents larger than `MaxDocumentSizeBytes`. Derived from
-SYS-REQ-004 via Phase A decomposition of SW-REQ-018.
+skipping individual documents larger than `MaxDocumentSizeBytes`. If an
+equivalent `logBrowserIndex` already exists under a different name, the
+selective pump treats that backend conflict as idempotent success while still
+returning unrelated index creation errors. Derived from SYS-REQ-004 via Phase
+A decomposition of SW-REQ-018.
 
 The exact `MaxDocumentSizeBytes` arithmetic is split into **SW-REQ-092**:
 `len(RawRequest)+len(RawResponse)+1024`, with each raw payload counted once.
@@ -46,6 +49,10 @@ The honest req description above reflects this gap.
   covers SW-REQ-092 exact document-size arithmetic.
 - `pumps/mongo_timeout_config_test.go` proves timeout setup order and
   `ConnectionTimeout: m.timeout` propagation without starting MongoDB.
+- `pumps/mongo_mcdc_100_test.go:TestMongoSelectivePump_EnsureIndexes_LogBrowserDifferentName_FakeStore`
+  proves same-key/different-name `logBrowserIndex` conflicts are idempotent.
+- `pumps/mongo_mcdc_100_test.go:TestMongoSelectivePump_EnsureIndexes_LogBrowserDifferentName_NonSentinelErr`
+  proves unrelated `logBrowserIndex` creation errors still propagate.
 - Live-MongoDB tests are excluded from the local audit MC/DC scope (recorded
   as a known issue).
 

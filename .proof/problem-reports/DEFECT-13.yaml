@@ -68,6 +68,7 @@ disposition:
         - SW-REQ-082
     known_issues:
         - mapstructure-decode-silently-drops-unknown-keys
+        - mongo-standard-logbrowser-compatible-index-conflict
         - mongo-pump-ignores-caller-context
         - pump-no-timeout-can-block-purge-cycle
         - pump-writedata-swallows-per-batch-errors

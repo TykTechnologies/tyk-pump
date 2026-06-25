@@ -1,0 +1,44 @@
+id: idempotent_schema_setup
+name: Idempotent schema setup
+category: domain
+status: active
+summary: Schema/index setup shall tolerate already-compatible existing objects and remain safe to run repeatedly.
+description: |-
+  Startup code often creates tables, collections, or indexes before writing
+  records. Re-running startup against an existing deployment must not fail
+  merely because an equivalent schema object already exists under a different
+  generated name. Requirements that own schema setup shall prove compatible
+  existing objects are accepted, while real incompatible definitions still
+  surface as errors or tracked KnownIssues.
+applies_when:
+  description: a component creates or ensures backend tables, collections, indexes, or migrations during Init or before writes
+  trigger_phrases:
+    - ensureIndexes
+    - CreateIndex
+    - EnsureIndex
+    - already exists
+    - migration
+    - schema setup
+example_req: |-
+  When MongoSelective ensures the logBrowserIndex and an equivalent index
+  already exists with a different name, ensureIndexes shall treat that as an
+  idempotent success rather than failing the write path.
+if_missing: |-
+  Routine upgrades or renamed indexes can make startup/write paths log schema
+  errors even though the backend already has a compatible index definition.
+recommended_evidence:
+  - kind: nominal
+    note: Re-running schema setup against an already-compatible object returns nil.
+  - kind: negative
+    note: Test distinguishes compatible already-exists errors from unrelated create-index errors.
+  - kind: review
+    note: Review identifies any backend variants where idempotence is still KI-backed debt.
+frameworks:
+  - id: CWE
+    refs:
+      - CWE-665
+related_classes:
+  - id: backend_ddl_valid
+    relationship: complements
+  - id: index_definition_matches_query
+    relationship: complements

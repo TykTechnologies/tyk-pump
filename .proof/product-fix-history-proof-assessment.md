@@ -96,7 +96,7 @@ backend-mode partitions, or missing operator contracts.
 | 34e1a2c | 2020-08-19 | omit_detailed_recording missing on syslog pump. | `missed_before_hardening`: SYS-REQ-015 and SW-REQ-016 covered the generic privacy transform/common setter surface, but no witness proved syslog backend output actually reflected per-pump omit_detailed_recording. Hardened SW-REQ-050 so syslog output must satisfy SYS-REQ-015 at the backend boundary, added local obligation `per_backend_privacy_transform_applied`, DEFECT-35, and a real UDP syslog witness that runs `filterData` with `SetOmitDetailedRecording(true)` and asserts emitted syslog does not contain the original raw request/response bytes. Top-level/global omit behavior remains KI-backed under `systemconfig-omitdetailedrecording-unused`. |
 | 416d1c7 / 0adb849 | 2020-05/08 | Elasticsearch base64 decode handling. | `missed_before_hardening`: generic mapping and core base64-decode requirements were adjacent, and `TestGetMapping_ExtendedStatistics` already asserted decoded values, but SW-REQ-068 did not explicitly own Elasticsearch `decode_base64` textual mapping or the historical `[]byte` JSON re-encode failure. Hardened with DEFECT-36, local obligation `backend_decoded_payload_textual`, SW-REQ-068/docs text, typed decoded-payload evidence in `TestGetMapping_ExtendedStatistics`, and a static signal for direct `DecodeString` assignment into backend maps. Current malformed ES decode behavior remains KI-backed under `elasticsearch-decode-base64-errors-silent-empty`. |
 | 402dab8 | 2020-06-23 | Health endpoint only available from localhost. | `missed_before_hardening`: SW-REQ-032 covered liveness response, pprof gating, and several health endpoint KIs, but did not explicitly require the production listener to bind outside loopback. Hardened with DEFECT-37, local obligation `listener_bind_scope_external`, SW-REQ-032/docs text, source-level `ServeHealthCheck` listener-address evidence, and a signal for loopback-only health listeners. Existing liveness-only/auth/rate-limit/bind-fatal behavior remains KI-backed debt. |
-| 6a8ab73 | 2020-03-12 | Mongo index already-exists error should be ignored. | Current index/idempotency obligations are relevant; exact already-exists behavior needs a Mongo index regression test. |
+| 6a8ab73 | 2020-03-12 | Mongo index already-exists error should be ignored. | `missed_before_hardening`: current proof had Mongo index requirements and DocumentDB hardening, but not the exact same-key/different-name `logBrowserIndex` idempotency contract from #234/#237. Hardened with DEFECT-38, local obligation `idempotent_schema_setup`, SW-REQ-034/SW-REQ-035 text, fake-store selective idempotency/non-sentinel evidence, and a standard-Mongo KI tripwire for the remaining non-StandardMongo conflict. StandardMongo already-existing collection short-circuit is covered; current standard non-StandardMongo conflict remains KI-backed under `mongo-standard-logbrowser-compatible-index-conflict`. |
 | 58da62f | 2019-11-19 | Mongo aggregate field names with unsupported '.' characters corrupted data. | Current encoding/data-integrity obligations are relevant, but this exact field-name sanitization contract should be explicit to guarantee catch. |
 | 8bfdb36 | 2019-11-05 | Mongo document size calculated incorrectly and useful data skipped. | Current document-size/input-bound obligations help. Exact skip behavior requires targeted evidence. |
 | aa7a88e | 2019-10-03 | Mongo selective pump wrote TCP records incorrectly. | Current record-classification/filtering requirements likely catch if TCP/non-HTTP partition is witnessed. |
@@ -172,7 +172,7 @@ so a later reviewer can see what was included and what was filtered out.
 | 0adb849 | 2020-08-07 | [TN-6] Fix base64 ES decoding | `missed_before_hardening`: TN-6's successful `decode_base64` contract is now owned by SW-REQ-068 and DEFECT-36. The regression witness proves `raw_request`/`raw_response` are decoded plaintext strings, not `[]byte` fields that JSON can re-encode; malformed decode input remains an open KnownIssue, not claimed fixed. |
 | 402dab8 | 2020-06-23 | Fix health endpoint to be published outside server | `missed_before_hardening`: now covered by DEFECT-37 and SW-REQ-032 `listener_bind_scope_external`; the regression witness fails if `ServeHealthCheck` returns to `localhost:<port>` or another loopback-only bind. |
 | 416d1c7 | 2020-05-26 | fixing b64 decoding | Same defect class as 0adb849 and covered by DEFECT-36: successful Elasticsearch `decode_base64` mapping is specified and witnessed as decoded text, with the malformed-input gap tracked separately as KI `elasticsearch-decode-base64-errors-silent-empty`. |
-| 6a8ab73 | 2020-03-12 | Ignore index exists error | Product DB/index idempotency defect. Candidate for index-idempotency evidence. |
+| 6a8ab73 | 2020-03-12 | Ignore index exists error | `missed_before_hardening`: now covered by DEFECT-38 and `idempotent_schema_setup`; MongoSelective same-key/different-name `logBrowserIndex` conflicts are witnessed as nil, unrelated index errors still propagate, and standard Mongo non-StandardMongo recurrence remains a KnownIssue. |
 | 58da62f | 2019-11-19 | Handle unsupported MongoDB characters | Product encoding/data-integrity defect. Candidate for backend-key encoding contract. |
 | 8bfdb36 | 2019-11-05 | Calculate document size correctly and do not skip useful data | Product size-bound defect. Candidate for explicit size arithmetic evidence. |
 | aa7a88e | 2019-10-03 | Fix selective pump to not add TCP records | Product classification/filtering defect. Relevant to Mongo selective requirements. |
@@ -217,6 +217,7 @@ Problem reports:
 - DEFECT-35: Syslog pump did not inherit omit-detailed-recording configuration.
 - DEFECT-36: Elasticsearch decode_base64 stored decoded payload bytes as binary.
 - DEFECT-37: Health endpoint was bound to localhost only.
+- DEFECT-38: Mongo logBrowserIndex rename conflict was treated as schema setup failure.
 
 KnownIssues/risks relevant to historical fix classes:
 
@@ -292,11 +293,14 @@ or KnownIssue/problem-report work.
      production listener address binds `:<port>` and rejects loopback-only
      host literals.
 
-7. Strengthen Mongo/DocumentDB index idempotency.
+7. Mongo/DocumentDB index idempotency — partially completed in DEFECT-33 and DEFECT-38.
    - Historical sources: 6a8ab73, 224f919.
-   - Candidate obligation: idempotent_schema_setup.
-   - Desired evidence: existing compatible index does not fail startup/write,
-     and DocumentDB omit-index behavior is documented.
+   - Added obligations: `backend_ddl_valid`, `index_definition_matches_query`,
+     and `idempotent_schema_setup`.
+   - Evidence: DocumentDB index attempts are covered by SW-REQ-097/098/099;
+     MongoSelective compatible logBrowserIndex rename conflicts are idempotent;
+     standard Mongo non-StandardMongo compatible conflicts remain tracked under
+     KI `mongo-standard-logbrowser-compatible-index-conflict`.
 
 ## Conclusion
 

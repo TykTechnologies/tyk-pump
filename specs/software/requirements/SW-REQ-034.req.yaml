@@ -5,7 +5,7 @@ priority: shall
 category: functional
 req_type: guarantee
 fretish: when mcp_record_present pumps_mongo_standard shall always satisfy record_filtered_out
-description: 'The standard MongoDB pump shall, on each purge, filter out MCP-classified analytics records, accumulate the remaining records into batches bounded by MaxInsertBatchSizeBytes (default 10 MiB) while rewriting raw bodies of documents whose serialized size exceeds MaxDocumentSizeBytes, then concurrently insert each batch into the single configured collection, returning the first per-batch insert error to the caller; when CollectionCapEnable is true on a 64-bit host with a non-existing collection, it shall create the collection as a capped collection of CollectionCapMaxSizeBytes (default 5 GiB). During initialization, the configured pump timeout shall be applied before Init builds the Mongo client and propagated to persistent.ClientOpts.ConnectionTimeout. Known issues affecting this requirement: mongo-pump-ignores-caller-context (ctx propagation gap; see SW-REQ-072) and pumps-logfatal-on-config-decode (log.Fatalf on config decode error).'
+description: 'The standard MongoDB pump shall, on each purge, filter out MCP-classified analytics records, accumulate the remaining records into batches bounded by MaxInsertBatchSizeBytes (default 10 MiB) while rewriting raw bodies of documents whose serialized size exceeds MaxDocumentSizeBytes, then concurrently insert each batch into the single configured collection, returning the first per-batch insert error to the caller; when CollectionCapEnable is true on a 64-bit host with a non-existing collection, it shall create the collection as a capped collection of CollectionCapMaxSizeBytes (default 5 GiB). During initialization, the configured pump timeout shall be applied before Init builds the Mongo client and propagated to persistent.ClientOpts.ConnectionTimeout. StandardMongo index setup shall be idempotent for already-existing collections by skipping index creation when the collection exists; non-StandardMongo compatible logBrowserIndex conflict behavior remains KI-backed. Known issues affecting this requirement: mongo-pump-ignores-caller-context (ctx propagation gap; see SW-REQ-072), pumps-logfatal-on-config-decode (log.Fatalf on config decode error), and mongo-standard-logbrowser-compatible-index-conflict.'
 formalization_strategy: fretish
 informal_verification:
     method: ""
@@ -29,15 +29,15 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-25T18:57:11Z"
-        comment: 'TT-695 hardening: standard Mongo connection timeout propagation is now specified and witnessed; residual write/query timeout debt remains KI-linked.'
-        fingerprint: sha256:fe07db573858d97803c7c326c1ebc45a6b6e51dc995f2aaad7e8c043e65e0c49
+        reviewed_at: "2026-06-25T19:33:09Z"
+        comment: '6a8ab73 hardening: standard Mongo index setup now records idempotent schema setup for existing collections; non-StandardMongo logBrowserIndex rename conflict remains KI-linked.'
+        fingerprint: sha256:5e1a8a87f4845c9fc0430e8717419c7fed855623bc905ad1c81a61832e67bbbb
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:33:59Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-25T18:57:11Z"
+    last_modified_at: "2026-06-25T19:33:09Z"
 obligation_checklist:
     - backend_connection_timeout_propagated
     - boundary
@@ -47,6 +47,7 @@ obligation_checklist:
     - errors_propagated
     - external_call_failure_observable
     - external_call_timeout_bounded
+    - idempotent_schema_setup
     - malformed_recovers_or_errors_loudly
     - nil_safety
     - nominal
@@ -82,6 +83,12 @@ obligation_deferrals:
       owner: human:buger
       ki_ref: pump-no-timeout-can-block-purge-cycle
       reproducer: pump-no-timeout-can-block-purge-cycle
+    - obligation_class: idempotent_schema_setup
+      reason: StandardMongo existing-collection index setup is idempotent, but non-StandardMongo compatible logBrowserIndex conflicts are returned and logged until mongo-standard-logbrowser-compatible-index-conflict is fixed.
+      tracking: mongo-standard-logbrowser-compatible-index-conflict
+      owner: human:buger
+      ki_ref: mongo-standard-logbrowser-compatible-index-conflict
+      reproducer: mongo-standard-logbrowser-compatible-index-conflict
     - obligation_class: malformed_recovers_or_errors_loudly
       reason: 'real untested obligation under known-issue mapstructure-decode-silently-drops-unknown-keys; surfaced as visible tracked debt, not an overclaimed fix'
       tracking: mapstructure-decode-silently-drops-unknown-keys
@@ -158,4 +165,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-22T12:04:23Z comment="Review obligation expansion from catalogue gap pass; active unfixed behavior remains KnownIssue-gated.")'
+          changed_by: human:buger
+        - date: "2026-06-25T19:33:09Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-25T18:57:11Z comment="TT-695 hardening: standard Mongo connection timeout propagation is now specified and witnessed; residual write/query timeout debt remains KI-linked.")'
           changed_by: human:buger

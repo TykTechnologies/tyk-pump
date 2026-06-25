@@ -1286,6 +1286,8 @@ func TestMongoAggregatePump_GetLastDocumentTimestamp_NonTimeType(t *testing.T) {
 // SW-REQ-034:nominal:nominal — drives the exists=T arm at mongo.go:340 by
 // pre-creating the collection THEN calling ensureIndexes on it. StandardMongo
 // path must short-circuit returning nil.
+// SW-REQ-034:idempotent_schema_setup:nominal
+// SW-REQ-034:idempotent_schema_setup:review
 func TestMongoPump_EnsureIndexes_CollectionExistsShortCircuit(t *testing.T) {
 	cfg := map[string]interface{}{
 		"mongo_url":       testMongoURI(t),
@@ -1318,6 +1320,30 @@ func TestMongoPump_EnsureIndexes_FirstCreateIndexErr(t *testing.T) {
 
 	err := p.ensureIndexes(uniqueCollection(t) + "_first_ci")
 	assert.Error(t, err)
+}
+
+// Verifies: KI:mongo-standard-logbrowser-compatible-index-conflict
+// Reproduces: mongo-standard-logbrowser-compatible-index-conflict
+func TestMongoPump_EnsureIndexes_LogBrowserDifferentName_KI(t *testing.T) {
+	store := &sequencedUpsertStore{
+		createIndexErrs: []error{
+			nil,
+			nil,
+			errors.New("index already exists with a different name"),
+		},
+	}
+	p := &MongoPump{}
+	p.store = store
+	p.dbConf = &MongoConf{
+		BaseMongoConf: BaseMongoConf{
+			MongoDBType: AWSDocumentDB,
+		},
+	}
+	p.log = logrus.NewEntry(logrus.New())
+
+	err := p.ensureIndexes(uniqueCollection(t) + "_std_logbrowser_conflict")
+	assert.ErrorContains(t, err, "already exists with a different name")
+	assert.Len(t, store.createdIndexes, 2, "orgid and apiid indexes should be attempted before the logBrowser conflict")
 }
 
 // SW-REQ-034:errors_propagated:negative — drives the err != nil = T arm at
@@ -1389,6 +1415,8 @@ func TestMongoSelectivePump_EnsureIndexes_TTLCreateErr(t *testing.T) {
 // try to create one under the canonical name "logBrowserIndex" and the
 // underlying driver returns an "already exists with a different name" err
 // which the production code converts to nil.
+// SW-REQ-035:idempotent_schema_setup:nominal
+// SW-REQ-035:idempotent_schema_setup:review
 func TestMongoSelectivePump_EnsureIndexes_LogBrowserDifferentName(t *testing.T) {
 	cfg := map[string]interface{}{
 		"mongo_url":     testMongoURI(t),
@@ -1424,6 +1452,55 @@ func TestMongoSelectivePump_EnsureIndexes_LogBrowserDifferentName(t *testing.T) 
 	// Either the err is fully swallowed (nil) or the apiIndex itself raises a
 	// different conflict; both are valid traversals through line 195 condition.
 	_ = err
+}
+
+// Verifies: SW-REQ-035
+// SW-REQ-035:idempotent_schema_setup:nominal
+// SW-REQ-035:idempotent_schema_setup:negative
+// SW-REQ-035:idempotent_schema_setup:review
+func TestMongoSelectivePump_EnsureIndexes_LogBrowserDifferentName_FakeStore(t *testing.T) {
+	store := &sequencedUpsertStore{
+		createIndexErrs: []error{
+			nil,
+			nil,
+			errors.New("index already exists with a different name"),
+		},
+	}
+	p := &MongoSelectivePump{}
+	p.store = store
+	p.dbConf = &MongoSelectiveConf{
+		BaseMongoConf: BaseMongoConf{
+			MongoDBType: AWSDocumentDB,
+		},
+	}
+	p.log = logrus.NewEntry(logrus.New())
+
+	err := p.ensureIndexes(uniqueCollection(t) + "_sel_logbrowser_conflict")
+	assert.NoError(t, err, "compatible logBrowserIndex rename conflict must be idempotent")
+	assert.Len(t, store.createdIndexes, 2, "apiid and ttl indexes should be attempted before the swallowed logBrowser conflict")
+}
+
+// Verifies: SW-REQ-035
+// SW-REQ-035:idempotent_schema_setup:negative
+func TestMongoSelectivePump_EnsureIndexes_LogBrowserDifferentName_NonSentinelErr(t *testing.T) {
+	store := &sequencedUpsertStore{
+		createIndexErrs: []error{
+			nil,
+			nil,
+			errors.New("create index failed"),
+		},
+	}
+	p := &MongoSelectivePump{}
+	p.store = store
+	p.dbConf = &MongoSelectiveConf{
+		BaseMongoConf: BaseMongoConf{
+			MongoDBType: AWSDocumentDB,
+		},
+	}
+	p.log = logrus.NewEntry(logrus.New())
+
+	err := p.ensureIndexes(uniqueCollection(t) + "_sel_logbrowser_non_sentinel")
+	assert.ErrorContains(t, err, "create index failed")
 }
 
 // SW-REQ-037:errors_propagated:negative — drives the err != nil = T arm at

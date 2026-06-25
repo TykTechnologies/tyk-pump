@@ -9,7 +9,10 @@ insert each batch into the single configured collection, returning the first
 per-batch insert error to the caller. When `CollectionCapEnable` is true on a
 64-bit host and the target collection does not yet exist, the pump shall
 create it as a capped collection of `CollectionCapMaxSizeBytes` (default
-5 GiB). Derived from SYS-REQ-004 (independent per-backend delivery) via the
+5 GiB). StandardMongo index setup is idempotent for an already-existing
+collection by skipping baseline index creation; the non-StandardMongo
+same-key/different-name `logBrowserIndex` conflict remains tracked under
+`mongo-standard-logbrowser-compatible-index-conflict`. Derived from SYS-REQ-004 (independent per-backend delivery) via the
 Phase A decomposition of the previous family req SW-REQ-018.
 
 ## Motivation
@@ -45,6 +48,10 @@ classes).
   `capCollection`, MCP-skip, large-document handling, and batching.
 - `pumps/mongo_timeout_config_test.go` proves timeout setup order and
   `ConnectionTimeout: m.timeout` propagation without starting MongoDB.
+- `pumps/mongo_mcdc_100_test.go:TestMongoPump_EnsureIndexes_CollectionExistsShortCircuit`
+  covers StandardMongo idempotent existing-collection index setup.
+- `pumps/mongo_mcdc_100_test.go:TestMongoPump_EnsureIndexes_LogBrowserDifferentName_KI`
+  is the current non-StandardMongo same-key/different-name conflict tripwire.
 - `pumps/mgo_helper_test.go` provides the shared MongoDB test helper used by
   the family.
 - Live-MongoDB tests are excluded from the local audit MC/DC scope (recorded
@@ -65,3 +72,6 @@ collection-exists shortcut and must attempt foreground baseline indexes unless
   is currently lossy.
 - `capCollection` requires a 64-bit host; behaviour on a 32-bit build is
   silent no-op.
+- Non-StandardMongo `logBrowserIndex` same-key/different-name conflicts are
+  returned from `ensureIndexes` and logged by `Init`; tracked by
+  `mongo-standard-logbrowser-compatible-index-conflict`.
