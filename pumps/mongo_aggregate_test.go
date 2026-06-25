@@ -359,8 +359,9 @@ func TestMongoAggregatePump_divideAggregationTime(t *testing.T) {
 	}
 }
 
-// Verifies: SW-REQ-062
-// SW-REQ-062:error_handling:negative
+// Historical stress scenario kept as non-credit documentation only. Bounded
+// proof evidence lives in TestMongoAggregatePump_WriteDataSelfHealRetriesAfterSizeError
+// and TestMongoAggregatePump_WriteDataSelfHealStopsAtFloor.
 func TestMongoAggregatePump_SelfHealing(t *testing.T) {
 	t.Skip("Self-healing requires generating a 16MB+ aggregate; covered by ShouldSelfHeal unit tests")
 	cfgPump1 := make(map[string]interface{})
@@ -686,25 +687,168 @@ func TestMongoAggregatePump_WriteDataSelfHealRetryWiring(t *testing.T) {
 	assert.True(t, sawSameBatchRetry, "self-heal branch must retry the same ctx/data batch")
 }
 
-// Verifies: SW-REQ-058
-// MCDC SW-REQ-058: store_per_minute=T, window_eq_1_min=T => TRUE
-func TestMongoAggregatePump_StoreAnalyticsPerMinute(t *testing.T) {
-	cfgPump1 := make(map[string]interface{})
-	cfgPump1["mongo_url"] = testMongoURI(t)
-	cfgPump1["ignore_aggregations"] = []string{"apikeys"}
-	cfgPump1["use_mixed_collection"] = true
-	cfgPump1["store_analytics_per_minute"] = true
-	cfgPump1["aggregation_time"] = 45
-	pmp1 := MongoAggregatePump{}
+// Verifies: SW-REQ-109
+// SW-REQ-109:dataflow_contract_preserved:nominal
+// MCDC SW-REQ-109: active_window_passed_to_aggregate_data=T, aggregate_input_present=T => TRUE
+//
+//mcdc:ignore:defensive SW-REQ-109: active_window_passed_to_aggregate_data=F, aggregate_input_present=T => FALSE -- mongo_aggregate.go:WriteData has a single AggregateData call for non-empty filtered input, and that call passes m.dbConf.AggregationTime as the active window; this AST witness fails if the handoff is removed or changed [reviewed: human:buger]
+func TestMongoAggregatePump_WriteDataPassesResolvedAggregationTime(t *testing.T) {
+	file, err := parser.ParseFile(token.NewFileSet(), "mongo_aggregate.go", nil, 0)
+	require.NoError(t, err)
 
-	errInit1 := pmp1.Init(cfgPump1)
-	if errInit1 != nil {
-		t.Error(errInit1)
-		return
+	var foundWriteData bool
+	var sawAggregateDataWindow bool
+
+	for _, decl := range file.Decls {
+		fn, ok := decl.(*ast.FuncDecl)
+		if !ok || fn.Name.Name != "WriteData" || fn.Recv == nil || len(fn.Recv.List) != 1 {
+			continue
+		}
+		foundWriteData = true
+
+		ast.Inspect(fn.Body, func(n ast.Node) bool {
+			call, ok := n.(*ast.CallExpr)
+			if !ok || len(call.Args) != 5 {
+				return true
+			}
+			sel, ok := call.Fun.(*ast.SelectorExpr)
+			if !ok || sel.Sel.Name != "AggregateData" {
+				return true
+			}
+			pkg, ok := sel.X.(*ast.Ident)
+			if !ok || pkg.Name != "analytics" {
+				return true
+			}
+			dbConfSel, ok := call.Args[4].(*ast.SelectorExpr)
+			if !ok || dbConfSel.Sel.Name != "AggregationTime" {
+				return true
+			}
+			dbConf, ok := dbConfSel.X.(*ast.SelectorExpr)
+			if !ok || dbConf.Sel.Name != "dbConf" {
+				return true
+			}
+			recv, ok := dbConf.X.(*ast.Ident)
+			if ok && recv.Name == "m" {
+				sawAggregateDataWindow = true
+			}
+			return true
+		})
 	}
-	t.Cleanup(func() { _ = pmp1.store.DropDatabase(context.Background()) })
-	// Checking if the aggregation time is set to 1. Doesn't matter if aggregation_time is equal to 45 or 1, the result should be always 1.
-	assert.True(t, pmp1.dbConf.AggregationTime == 1)
+
+	require.True(t, foundWriteData, "MongoAggregatePump.WriteData must be present")
+	assert.True(t, sawAggregateDataWindow, "WriteData must pass m.dbConf.AggregationTime to analytics.AggregateData")
+}
+
+// Verifies: SW-REQ-062
+// SW-REQ-062:denial_of_service_resistant:nominal
+// SW-REQ-062:error_handling:nominal
+func TestMongoAggregatePump_WriteDataSelfHealRetriesAfterSizeError(t *testing.T) {
+	sizeErr := errors.New("Size must be between 0 and 16793600")
+	store := &sequencedUpsertStore{upsertErrs: []error{sizeErr}}
+	dbID := "mongodb://self-heal-write/" + t.Name()
+	base := time.Date(2026, 6, 25, 10, 0, 0, 0, time.UTC)
+	recordTime := base.Add(5 * time.Minute)
+	analytics.SetlastTimestampAgggregateRecord(dbID, base)
+
+	p := &MongoAggregatePump{
+		store: store,
+		dbConf: &MongoAggregateConf{
+			BaseMongoConf:              BaseMongoConf{MongoURL: dbID, OmitIndexCreation: true},
+			UseMixedCollection:         false,
+			AggregationTime:            30,
+			EnableAggregateSelfHealing: true,
+			ThresholdLenTagList:        -1,
+		},
+		CommonPumpConfig: CommonPumpConfig{log: logrus.NewEntry(logrus.New())},
+	}
+
+	err := p.WriteData(context.Background(), []interface{}{
+		analytics.AnalyticsRecord{
+			APIID: "api", OrgID: "org", TimeStamp: recordTime, ResponseCode: 200,
+		},
+	})
+
+	require.NoError(t, err)
+	require.Len(t, store.upsertQueries, 3, "first upsert fails, retry performs both aggregate upserts")
+	assert.Equal(t, 15, p.dbConf.AggregationTime)
+	assert.Equal(t, base, store.upsertQueries[0]["timestamp"], "first attempt stays in the pre-existing bucket")
+	assert.Equal(t, recordTime, store.upsertQueries[1]["timestamp"], "retry starts a new bucket after timestamp reset")
+	assert.Equal(t, recordTime, store.upsertQueries[2]["timestamp"], "average update must target the retried bucket")
+}
+
+// Verifies: SW-REQ-062
+// SW-REQ-062:boundary:negative
+// SW-REQ-062:error_handling:negative
+func TestMongoAggregatePump_WriteDataSelfHealStopsAtFloor(t *testing.T) {
+	sizeErr := errors.New("Size must be between 0 and 16793600")
+	store := &sequencedUpsertStore{upsertErrs: []error{sizeErr, sizeErr}}
+	dbID := "mongodb://self-heal-floor/" + t.Name()
+	base := time.Date(2026, 6, 25, 11, 0, 0, 0, time.UTC)
+	recordTime := base.Add(time.Minute)
+	analytics.SetlastTimestampAgggregateRecord(dbID, base)
+
+	p := &MongoAggregatePump{
+		store: store,
+		dbConf: &MongoAggregateConf{
+			BaseMongoConf:              BaseMongoConf{MongoURL: dbID, OmitIndexCreation: true},
+			UseMixedCollection:         false,
+			AggregationTime:            2,
+			EnableAggregateSelfHealing: true,
+			ThresholdLenTagList:        -1,
+		},
+		CommonPumpConfig: CommonPumpConfig{log: logrus.NewEntry(logrus.New())},
+	}
+
+	err := p.WriteData(context.Background(), []interface{}{
+		analytics.AnalyticsRecord{
+			APIID: "api", OrgID: "org", TimeStamp: recordTime, ResponseCode: 200,
+		},
+	})
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "Size must be between 0 and")
+	require.Len(t, store.upsertQueries, 2, "retry stops once AggregationTime reaches the floor")
+	assert.Equal(t, 1, p.dbConf.AggregationTime)
+	assert.Equal(t, base, store.upsertQueries[0]["timestamp"])
+	assert.Equal(t, recordTime, store.upsertQueries[1]["timestamp"])
+}
+
+// Verifies: SW-REQ-058
+// Verifies: SW-REQ-107
+// Verifies: SW-REQ-108
+// MCDC SW-REQ-058: store_per_minute=T, window_eq_1_min=T => TRUE
+// MCDC SW-REQ-107: aggregation_time_config_valid=T, configured_window_used=F, store_per_minute=T => TRUE
+// MCDC SW-REQ-108: aggregation_time_config_valid=F, store_per_minute=T, window_defaulted_to_60=F => TRUE
+func TestMongoAggregatePump_StoreAnalyticsPerMinute(t *testing.T) {
+	tests := []struct {
+		name            string
+		aggregationTime int
+	}{
+		{name: "valid configured window overridden", aggregationTime: 45},
+		{name: "invalid configured window overridden", aggregationTime: 120},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cfgPump1 := make(map[string]interface{})
+			cfgPump1["mongo_url"] = testMongoURI(t)
+			cfgPump1["ignore_aggregations"] = []string{"apikeys"}
+			cfgPump1["use_mixed_collection"] = true
+			cfgPump1["store_analytics_per_minute"] = true
+			cfgPump1["aggregation_time"] = tt.aggregationTime
+			pmp1 := MongoAggregatePump{}
+
+			errInit1 := pmp1.Init(cfgPump1)
+			if errInit1 != nil {
+				t.Error(errInit1)
+				return
+			}
+			t.Cleanup(func() { _ = pmp1.store.DropDatabase(context.Background()) })
+			// Checking if the aggregation time is set to 1. The per-minute
+			// override takes precedence over the configured aggregation_time.
+			assert.Equal(t, 1, pmp1.dbConf.AggregationTime)
+		})
+	}
 }
 
 // Verifies: SW-REQ-036

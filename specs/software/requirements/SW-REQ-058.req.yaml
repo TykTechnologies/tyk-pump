@@ -5,7 +5,7 @@ priority: shall
 category: functional
 req_type: guarantee
 fretish: when store_per_minute pumps_mongo_aggregate shall always satisfy window_eq_1_min
-description: 'The MongoAggregate pump''s aggregation window shall be set at Init by SetAggregationTime: when StoreAnalyticsPerMinute is true the window shall be 1 minute, otherwise AggregationTime (configurable 1-60 minutes, defaulting to 60 when unset or out-of-range). The active window shall be passed to analytics.AggregateData(...) on each WriteData call.'
+description: 'The MongoAggregate pump''s aggregation window shall be set at Init by SetAggregationTime: when StoreAnalyticsPerMinute is true the window shall be 1 minute; otherwise a valid configured AggregationTime in the 1-60 minute range shall be preserved, and an unset or out-of-range AggregationTime shall default to 60. On each non-empty WriteData call, the active window shall be passed to analytics.AggregateData(...).'
 formalization_strategy: fretish
 informal_verification:
     method: ""
@@ -29,15 +29,15 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-04T16:50:31Z"
-        comment: 'Phase S Wave 2: attach blind-spot obligations from Wave 1 promote (cascade/fanout/clock_skew/dst/tz/temporal_window/process_exit/tls_verification/partial_progress)'
-        fingerprint: sha256:d02f9b5d451c9c6a46e10cebb70e2ebec523bb18a8f4d6471d74c8161bd153ed
-        ai_generated: true
+        reviewed_at: "2026-06-25T22:58:07Z"
+        comment: 'Reviewed TT-506 hardening: SW-REQ-058 parent window policy clarified; SW-REQ-107/108/109 split valid-window, default-to-60, and active-window handoff behavior with code-annotated MC/DC evidence; SW-REQ-062 clarifies repeatable self-heal retry until success or floor and is backed by bounded fake-store retry tests. No runtime product behavior change.'
+        fingerprint: sha256:9fb88bb919471020fb181b595aea1c993e43644dd3bc7161d2f2762fbce8b029
+        ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:37:18Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-22T10:55:52Z"
+    last_modified_at: "2026-06-25T22:58:07Z"
 obligation_checklist:
     - config_schema_strict
     - determinism
@@ -89,3 +89,8 @@ lifecycle:
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T14:19:01Z comment="Phase L3 aggressive: flip remaining decision-bearing SW reqs to FRETish per L3 plan; vars added per-component; MC/DC witnesses to be annotated in tests.")'
           changed_by: human:cli
+        - date: "2026-06-25T22:58:07Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-04T16:50:31Z comment="Phase S Wave 2: attach blind-spot obligations from Wave 1 promote (cascade/fanout/clock_skew/dst/tz/temporal_window/process_exit/tls_verification/partial_progress)")'
+          changed_by: human:buger

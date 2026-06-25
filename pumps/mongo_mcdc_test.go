@@ -256,15 +256,22 @@ func TestMongoSelectivePump_GetCollectionName_NonEmpty(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 // Verifies: SW-REQ-058
+// Verifies: SW-REQ-107
+// Verifies: SW-REQ-108
 // SW-REQ-058:nominal:nominal — drives AggregationTime > 60 branch
+// SW-REQ-108:boundary:nominal
 // MCDC SW-REQ-058: store_per_minute=F, window_eq_1_min=F => TRUE
 // MCDC SW-REQ-058: store_per_minute=T, window_eq_1_min=F => FALSE
 // MCDC SW-REQ-058: store_per_minute=T, window_eq_1_min=T => TRUE
+// MCDC SW-REQ-107: aggregation_time_config_valid=F, configured_window_used=F, store_per_minute=F => TRUE
+// MCDC SW-REQ-108: aggregation_time_config_valid=F, store_per_minute=F, window_defaulted_to_60=T => TRUE
 //
 // store_per_minute=F arm (AggregationTime=120, StoreAnalyticsPerMinute false): the window is
 // clamped to 60, not 1 — window_eq_1_min=F (vacuous true). The store_per_minute=T arm
 // (AggregationTime forced to 1) is exercised by TestSetAggregationTime_LessThan1 and the
 // StoreAnalyticsPerMinute=true configuration in TestSetAggregationTime_ValidValuePreserved.
+//
+//mcdc:ignore:defensive SW-REQ-108: aggregation_time_config_valid=F, store_per_minute=F, window_defaulted_to_60=F => FALSE -- mongo_aggregate.go:SetAggregationTime has no branch where StoreAnalyticsPerMinute is false and an out-of-range AggregationTime remains non-defaulted; TestSetAggregationTime_GreaterThan60 witnesses the positive default-to-60 path [reviewed: human:buger]
 func TestSetAggregationTime_GreaterThan60(t *testing.T) {
 	m := &MongoAggregatePump{
 		dbConf: &MongoAggregateConf{AggregationTime: 120},
@@ -275,7 +282,9 @@ func TestSetAggregationTime_GreaterThan60(t *testing.T) {
 }
 
 // Verifies: SW-REQ-058
+// Verifies: SW-REQ-108
 // SW-REQ-058:nominal:nominal — drives AggregationTime < 1 branch
+// MCDC SW-REQ-108: aggregation_time_config_valid=F, store_per_minute=F, window_defaulted_to_60=T => TRUE
 func TestSetAggregationTime_LessThan1(t *testing.T) {
 	m := &MongoAggregatePump{
 		dbConf: &MongoAggregateConf{AggregationTime: -5},
@@ -286,7 +295,14 @@ func TestSetAggregationTime_LessThan1(t *testing.T) {
 }
 
 // Verifies: SW-REQ-058
+// Verifies: SW-REQ-107
+// Verifies: SW-REQ-108
 // SW-REQ-058:nominal:nominal — valid AggregationTime is preserved
+// SW-REQ-107:nominal:nominal
+// MCDC SW-REQ-107: aggregation_time_config_valid=T, configured_window_used=T, store_per_minute=F => TRUE
+// MCDC SW-REQ-108: aggregation_time_config_valid=T, store_per_minute=F, window_defaulted_to_60=F => TRUE
+//
+//mcdc:ignore:defensive SW-REQ-107: aggregation_time_config_valid=T, configured_window_used=F, store_per_minute=F => FALSE -- mongo_aggregate.go:SetAggregationTime preserves a valid AggregationTime whenever StoreAnalyticsPerMinute is false; TestSetAggregationTime_ValidValuePreserved witnesses the positive configured-window path [reviewed: human:buger]
 func TestSetAggregationTime_ValidValuePreserved(t *testing.T) {
 	m := &MongoAggregatePump{
 		dbConf: &MongoAggregateConf{AggregationTime: 30},
@@ -679,6 +695,8 @@ func TestMongoPump_WriteData_EmptyData(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 // Verifies: SW-REQ-058
+// Verifies: SW-REQ-109
+// MCDC SW-REQ-109: active_window_passed_to_aggregate_data=F, aggregate_input_present=F => TRUE
 // SW-REQ-058:nominal:negative — empty input returns nil
 func TestMongoAggregatePump_WriteData_EmptyData(t *testing.T) {
 	p := &MongoAggregatePump{}

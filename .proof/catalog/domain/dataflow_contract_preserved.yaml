@@ -1,0 +1,39 @@
+id: dataflow_contract_preserved
+name: Dataflow Contract Preserved
+category: domain
+status: active
+summary: A resolved configuration or policy value shall be handed to the downstream function that actually performs the owned behavior.
+description: |-
+  Some product contracts are split between a configuration-resolution step and
+  a downstream execution step. A requirement that depends on the resolved value
+  shall prove both that the value is resolved correctly and that the concrete
+  call site forwards that resolved value to the function that performs the
+  behavior. This prevents a configuration knob from being correctly parsed or
+  normalized but then detached from the data path that persists, emits, or
+  transforms user-visible output.
+applies_when:
+  description: a component resolves a policy/configuration value and passes it to another function or backend client that performs the behavior
+  trigger_phrases:
+    - active window
+    - resolved config
+    - passed to
+    - handoff
+    - downstream call
+    - writer config
+example_req: |-
+  When MongoAggregate WriteData has aggregate input, it shall pass the
+  resolved AggregationTime to analytics.AggregateData for that batch.
+if_missing: |-
+  Tests can prove that Init normalizes a setting while missing that the runtime
+  data path uses a stale default, a literal, or a different field. Operators
+  then see documented configuration accepted without the documented effect.
+recommended_evidence:
+  - kind: nominal
+    note: Unit or structural witness proves the resolved value is passed into the downstream function/client call that performs the behavior.
+  - kind: negative
+    note: A regression witness fails if the downstream call is made with a literal default, stale field, or omitted argument.
+related_classes:
+  - id: config_schema_strict
+    relationship: complements
+  - id: structured_projection_preserved
+    relationship: adjacent

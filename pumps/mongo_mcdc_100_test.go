@@ -53,6 +53,8 @@ type sequencedUpsertStore struct {
 	insertErrs      []error
 	migrateErrs     []error
 	upsertErrs      []error
+	upsertQueries   []model.DBM
+	upsertUpdates   []model.DBM
 	upserts         int
 }
 
@@ -138,8 +140,10 @@ func (s *sequencedUpsertStore) Aggregate(context.Context, model.DBObject, []mode
 func (s *sequencedUpsertStore) CleanIndexes(context.Context, model.DBObject) error {
 	return nil
 }
-func (s *sequencedUpsertStore) Upsert(context.Context, model.DBObject, model.DBM, model.DBM) error {
+func (s *sequencedUpsertStore) Upsert(_ context.Context, _ model.DBObject, query model.DBM, update model.DBM) error {
 	s.upserts++
+	s.upsertQueries = append(s.upsertQueries, query)
+	s.upsertUpdates = append(s.upsertUpdates, update)
 	if s.upserts <= len(s.upsertErrs) {
 		return s.upsertErrs[s.upserts-1]
 	}

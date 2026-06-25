@@ -1,0 +1,47 @@
+id: SW-REQ-108
+version: 1
+status: approved
+priority: shall
+category: functional
+req_type: guarantee
+fretish: when !store_per_minute & !aggregation_time_config_valid pumps_mongo_aggregate shall always satisfy window_defaulted_to_60
+description: When StoreAnalyticsPerMinute is false and MongoAggregate AggregationTime is unset or outside the inclusive 1-60 minute range, SetAggregationTime shall default the aggregation window to 60 minutes.
+formalization_strategy: fretish
+informal_verification:
+    method: ""
+    evidence: ""
+    verified: false
+parent: SW-REQ-058
+component: pumps-mongo-aggregate
+rationale: 'Product-fix-history hardening for TT-506 / commit d13b62e: the out-of-range and unset aggregation_time branch should be explicit so invalid operator values cannot silently change window policy.'
+tags: []
+variables:
+    - store_per_minute
+    - aggregation_time_config_valid
+    - window_defaulted_to_60
+traces: {}
+verification:
+    assurance_level: B
+    formalization_status: valid
+    review:
+        status: approved
+        reviewer: human:buger
+        role: software_engineer
+        reviewed_at: "2026-06-25T22:58:07Z"
+        comment: 'Reviewed TT-506 hardening: SW-REQ-058 parent window policy clarified; SW-REQ-107/108/109 split valid-window, default-to-60, and active-window handoff behavior with code-annotated MC/DC evidence; SW-REQ-062 clarifies repeatable self-heal retry until success or floor and is backed by bounded fake-store retry tests. No runtime product behavior change.'
+        fingerprint: sha256:f2defd25b225fd9fe44352cdbb765485e97d5f45e16c35f5ad50b5650720c9be
+        ai_generated: false
+history:
+    created_by: human:buger
+    created_at: "2026-06-25T22:51:57Z"
+    last_modified_by: human:buger
+    last_modified_at: "2026-06-25T22:58:07Z"
+obligation_checklist:
+    - boundary
+lifecycle:
+    change_history:
+        - date: "2026-06-25T22:57:57Z"
+          from: draft
+          to: review
+          reason: ""
+          changed_by: human:buger

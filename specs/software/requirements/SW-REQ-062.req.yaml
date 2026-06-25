@@ -5,7 +5,7 @@ priority: shall
 category: functional
 req_type: guarantee
 fretish: when self_heal_enabled & size_error_detected & aggregation_time_above_floor pumps_mongo_aggregate shall always satisfy aggregation_time_halved
-description: When EnableAggregateSelfHealing is true and an upsert fails with a max-document-size error from MongoDB ('Size must be between 0 and'), CosmosDB ('Request size is too large'), or DocumentDB ('Resulting document after update is larger than'), the MongoAggregate pump shall (a) halve AggregationTime (unless already 1, in which case it skips self-healing and returns the error), (b) reset the last-document-timestamp tracker so subsequent writes form a new document, and (c) recursively re-invoke WriteData once with the same input data. Self-healing only triggers on the listed size errors, not on arbitrary write failures.
+description: When EnableAggregateSelfHealing is true and an upsert fails with a max-document-size error from MongoDB ('Size must be between 0 and'), CosmosDB ('Request size is too large'), or DocumentDB ('Resulting document after update is larger than'), the MongoAggregate pump shall (a) halve AggregationTime (unless already 1, in which case it skips self-healing and returns the error), (b) reset the last-document-timestamp tracker so subsequent writes form a new document, and (c) recursively re-invoke WriteData with the same input data once per classified size failure until a retry succeeds or the one-minute floor is reached. Self-healing only triggers on the listed size errors, not on arbitrary write failures.
 formalization_strategy: fretish
 informal_verification:
     method: ""
@@ -33,15 +33,15 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-03T06:56:13Z"
-        comment: 'Phase P: FRETish enrichment per per-req review pass — adds size_error_detected & aggregation_time_above_floor to when conjunct so MC/DC exposes the three independent self-heal preconditions (operator-enabled, size-error classification, floor-reached) — description explicitly names all three.'
-        fingerprint: sha256:1b7ec1faf41ca669fb52776bc97f56115b8771e4a1935edae9e06846589bec8e
-        ai_generated: true
+        reviewed_at: "2026-06-25T22:58:07Z"
+        comment: 'Reviewed TT-506 hardening: SW-REQ-058 parent window policy clarified; SW-REQ-107/108/109 split valid-window, default-to-60, and active-window handoff behavior with code-annotated MC/DC evidence; SW-REQ-062 clarifies repeatable self-heal retry until success or floor and is backed by bounded fake-store retry tests. No runtime product behavior change.'
+        fingerprint: sha256:05857831cd271a34389bd05adf7e04390a8e055c68ff2925d2f792eae209933d
+        ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:37:57Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-22T10:55:36Z"
+    last_modified_at: "2026-06-25T22:58:07Z"
 obligation_checklist:
     - boundary
     - config_schema_strict
@@ -95,3 +95,8 @@ lifecycle:
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T13:20:41Z comment="Phase L2: aggressive formalization — encodes per-pump MCP/graph/mixed-collection/self-heal decisions; variables in pumps-mongo-*.vars.yaml; user directive: force MCDC witnesses on these decisions to drive verifying tests.")'
           changed_by: human:cli
+        - date: "2026-06-25T22:58:07Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-03T06:56:13Z comment="Phase P: FRETish enrichment per per-req review pass — adds size_error_detected & aggregation_time_above_floor to when conjunct so MC/DC exposes the three independent self-heal preconditions (operator-enabled, size-error classification, floor-reached) — description explicitly names all three.")'
+          changed_by: human:buger

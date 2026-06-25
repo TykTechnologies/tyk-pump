@@ -296,7 +296,7 @@ func (m *MongoAggregatePump) ensureIndexes(collectionName string) error {
 	return m.store.CreateIndex(context.Background(), d, orgIndex)
 }
 
-// reqproof:implements SW-REQ-058
+// reqproof:implements SW-REQ-058,SW-REQ-109
 func (m *MongoAggregatePump) WriteData(ctx context.Context, data []interface{}) error {
 	filtered := make([]interface{}, 0, len(data))
 	for _, d := range data {
@@ -464,7 +464,7 @@ func (m *MongoAggregatePump) ShouldSelfHeal(err error) bool {
 }
 
 // SetAggregationTime sets the aggregation time for the pump
-// reqproof:implements SW-REQ-058
+// reqproof:implements SW-REQ-058,SW-REQ-107,SW-REQ-108
 func (m *MongoAggregatePump) SetAggregationTime() {
 	// if StoreAnalyticsPerMinute is set to true, the aggregation time will be set to 1.
 	// if not, the aggregation time will be set to the value of the field AggregationTime.

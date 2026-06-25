@@ -13,9 +13,11 @@ document after update is larger than'`), the MongoAggregate pump shall:
 (a) halve `AggregationTime` (unless already 1, in which case it skips
 self-healing and returns the error to the caller), (b) reset the
 last-document-timestamp tracker so subsequent writes form a new document,
-and (c) recursively re-invoke `WriteData` once with the same input data.
-Self-healing only triggers on the listed size errors, not on arbitrary
-write failures. Derived from SYS-REQ-004 (recoverable error handling).
+and (c) recursively re-invoke `WriteData` with the same input data once per
+classified size failure until a retry succeeds or the one-minute floor is
+reached. Self-healing only triggers on the listed size errors, not on
+arbitrary write failures. Derived from SYS-REQ-004 (recoverable error
+handling).
 
 ## Motivation
 The aggregate pump's per-window documents grow with the number of unique
@@ -47,6 +49,13 @@ windows, which produce smaller documents. The recursion is bounded by the
   — verifies the `WriteData` self-heal branch is wired to call
   `ShouldSelfHeal(err)` and retry the same `ctx`/`data` batch without running
   the historical 16 MiB stress path.
+- `pumps/mongo_aggregate_test.go:TestMongoAggregatePump_WriteDataSelfHealRetriesAfterSizeError`
+  — uses a fake persistent store to verify the real `WriteData` path: the
+  first size-limit upsert error halves the window, resets the timestamp bucket,
+  and retries the same batch successfully.
+- `pumps/mongo_aggregate_test.go:TestMongoAggregatePump_WriteDataSelfHealStopsAtFloor`
+  — verifies recursive self-healing stops and returns the size error when the
+  retry reaches the one-minute floor.
 - `pumps/mongo_aggregate_test.go:TestMongoAggregatePump_divideAggregationTime`
   (re-annotated `Verifies: SW-REQ-062`) — exercises the halve / floor-at-1
   helper.

@@ -20,11 +20,11 @@ variables:
     - name: store_per_minute
       type: bool
       direction: input
-      description: True when StoreAnalyticsPerMinute is true (drives 1-min aggregation window vs hourly default).
+      description: True when StoreAnalyticsPerMinute is true; this operator override takes precedence over aggregation_time and forces a one-minute Mongo aggregate window.
     - name: window_eq_1_min
       type: bool
       direction: output
-      description: True iff SetAggregationTime sets AggregationTime to 1 minute when StoreAnalyticsPerMinute is true (otherwise 60-min default).
+      description: True iff SetAggregationTime sets AggregationTime to exactly 1 minute when StoreAnalyticsPerMinute is true.
       data_constraint:
         domain: integer
         variable: aggregation_window_min
@@ -33,6 +33,35 @@ variables:
           - name: aggregation_window_min
             type: int
             constraint: "== 1"
+    - name: aggregation_time_config_valid
+      type: bool
+      direction: input
+      description: True when StoreAnalyticsPerMinute is false and the configured AggregationTime is within the inclusive 1-60 minute range accepted by MongoAggregatePump.SetAggregationTime.
+      range: {min: 1, max: 60}
+    - name: configured_window_used
+      type: bool
+      direction: output
+      description: True iff SetAggregationTime preserves a valid configured AggregationTime value when StoreAnalyticsPerMinute is false.
+    - name: window_defaulted_to_60
+      type: bool
+      direction: output
+      description: True iff SetAggregationTime sets AggregationTime to 60 when StoreAnalyticsPerMinute is false and the configured value is unset, less than 1, or greater than 60.
+      data_constraint:
+        domain: integer
+        variable: aggregation_window_min
+        condition: "aggregation_window_min == 60"
+        parameters:
+          - name: aggregation_window_min
+            type: int
+            constraint: "== 60"
+    - name: aggregate_input_present
+      type: bool
+      direction: input
+      description: True when MongoAggregatePump.WriteData receives at least one non-MCP analytics record after filtering, so aggregation is attempted rather than returning without a write.
+    - name: active_window_passed_to_aggregate_data
+      type: bool
+      direction: output
+      description: True iff MongoAggregatePump.WriteData passes the currently resolved m.dbConf.AggregationTime value into analytics.AggregateData for the batch being written.
     - name: org_id_empty
       type: bool
       direction: input

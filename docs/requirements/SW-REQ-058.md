@@ -34,6 +34,12 @@ without involving the upsert / sharding behaviours.
   `AggregateData`: ordinary REST records are aggregated here, while
   GraphQL- and MCP-classified records are excluded for graph/MCP aggregate
   paths.
+- **SW-REQ-107** owns the valid configured `aggregation_time` preservation
+  branch.
+- **SW-REQ-108** owns the unset/out-of-range `aggregation_time` default-to-60
+  branch.
+- **SW-REQ-109** owns the runtime handoff that passes the resolved window into
+  `analytics.AggregateData`.
 
 ## Evidence
 - `pumps/mongo_aggregate_test.go:TestAggregationTime` (re-annotated
@@ -41,6 +47,13 @@ without involving the upsert / sharding behaviours.
   minute settings.
 - `pumps/mongo_aggregate_test.go:TestMongoAggregatePump_StoreAnalyticsPerMinute`
   (re-annotated `Verifies: SW-REQ-058`) — verifies the per-minute override.
+- `pumps/mongo_mcdc_test.go:TestSetAggregationTime_ValidValuePreserved` —
+  verifies the SW-REQ-107 valid configured-value branch.
+- `pumps/mongo_mcdc_test.go:TestSetAggregationTime_GreaterThan60` and
+  `TestSetAggregationTime_LessThan1` — verify the SW-REQ-108 default-to-60
+  branch.
+- `pumps/mongo_aggregate_test.go:TestMongoAggregatePump_WriteDataPassesResolvedAggregationTime`
+  — verifies the SW-REQ-109 handoff from resolved window to `AggregateData`.
 
 ## Open questions
 - The clamping behaviour (1-60) is implicit; a value of 0 or >60 is

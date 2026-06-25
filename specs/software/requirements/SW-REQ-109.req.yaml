@@ -1,0 +1,46 @@
+id: SW-REQ-109
+version: 1
+status: approved
+priority: shall
+category: functional
+req_type: guarantee
+fretish: when aggregate_input_present pumps_mongo_aggregate shall always satisfy active_window_passed_to_aggregate_data
+description: When MongoAggregate WriteData has at least one non-MCP analytics record after filtering, it shall pass the currently resolved AggregationTime window to analytics.AggregateData for that batch.
+formalization_strategy: fretish
+informal_verification:
+    method: ""
+    evidence: ""
+    verified: false
+parent: SW-REQ-058
+component: pumps-mongo-aggregate
+rationale: 'Product-fix-history hardening for TT-506 / commit d13b62e: configured windows only affect persisted buckets if WriteData passes the resolved window into AggregateData.'
+tags: []
+variables:
+    - aggregate_input_present
+    - active_window_passed_to_aggregate_data
+traces: {}
+verification:
+    assurance_level: B
+    formalization_status: valid
+    review:
+        status: approved
+        reviewer: human:buger
+        role: software_engineer
+        reviewed_at: "2026-06-25T22:58:07Z"
+        comment: 'Reviewed TT-506 hardening: SW-REQ-058 parent window policy clarified; SW-REQ-107/108/109 split valid-window, default-to-60, and active-window handoff behavior with code-annotated MC/DC evidence; SW-REQ-062 clarifies repeatable self-heal retry until success or floor and is backed by bounded fake-store retry tests. No runtime product behavior change.'
+        fingerprint: sha256:6c1a0788ca157553d36fc0e0dfc341c79a7e473974392a15eeda369c59d130dc
+        ai_generated: false
+history:
+    created_by: human:buger
+    created_at: "2026-06-25T22:52:06Z"
+    last_modified_by: human:buger
+    last_modified_at: "2026-06-25T22:58:07Z"
+obligation_checklist:
+    - dataflow_contract_preserved
+lifecycle:
+    change_history:
+        - date: "2026-06-25T22:57:57Z"
+          from: draft
+          to: review
+          reason: ""
+          changed_by: human:buger
