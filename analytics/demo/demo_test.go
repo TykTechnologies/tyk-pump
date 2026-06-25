@@ -29,7 +29,8 @@ func (failingUUIDGenerator) NewV5(ns uuid.UUID, name string) uuid.UUID {
 	return uuid.NewV5(ns, name)
 }
 
-// Verifies: SW-REQ-009
+// Verifies: SW-REQ-089
+// MCDC SW-REQ-089: demo_records_generated=F, demo_timestamps_cover_generated_hour=F => TRUE
 func TestGenerateDemoData(t *testing.T) {
 	type args struct {
 		writer         func([]interface{}, *health.Job, time.Time, int)
@@ -150,6 +151,39 @@ func TestGenerateDemoData(t *testing.T) {
 			}
 			assert.Equal(t, tt.args.days*24*tt.args.recordsPerHour, counter)
 		})
+	}
+}
+
+// Verifies: SW-REQ-089
+// SW-REQ-089:temporal_window_inclusive:nominal
+// SW-REQ-089:temporal_window_inclusive:boundary
+// MCDC SW-REQ-089: demo_records_generated=T, demo_timestamps_cover_generated_hour=T => TRUE
+//
+//mcdc:ignore SW-REQ-089: demo_records_generated=T, demo_timestamps_cover_generated_hour=F => FALSE -- WriteDemoData derives every record timestamp from nextTimestamp and advances by the per-hour spacing; the historical violation is documented by DEFECT-22 and has no remaining production branch [reviewed: human:buger] [category: defensive]
+func TestWriteDemoDataAssignsSyntheticTimestampsAcrossHour(t *testing.T) {
+	start := time.Date(2024, time.January, 1, 0, 0, 0, 0, time.UTC)
+	var captured []interface{}
+
+	WriteDemoData(start, 2, 5, 4, "org", true, func(data []interface{}, job *health.Job, ts time.Time, n int) {
+		captured = append(captured, data...)
+	})
+
+	expectedStart := time.Date(2024, time.January, 3, 5, 0, 0, 0, time.UTC)
+	assert.Len(t, captured, 4)
+
+	for i, item := range captured {
+		record, ok := item.(analytics.AnalyticsRecord)
+		if !ok {
+			t.Fatalf("unexpected type: %T", item)
+		}
+
+		expectedTimestamp := expectedStart.Add(time.Duration(i) * 15 * time.Minute)
+		assert.True(t, record.TimeStamp.Equal(expectedTimestamp), "record %d timestamp", i)
+		assert.Equal(t, expectedTimestamp.Day(), record.Day)
+		assert.Equal(t, expectedTimestamp.Month(), record.Month)
+		assert.Equal(t, expectedTimestamp.Year(), record.Year)
+		assert.Equal(t, expectedTimestamp.Hour(), record.Hour)
+		assert.True(t, record.TrackPath)
 	}
 }
 

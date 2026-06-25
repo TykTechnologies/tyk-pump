@@ -1,0 +1,90 @@
+schema_version: 1
+id: DEFECT-22
+title: Demo mode records used wall-clock timestamps instead of synthetic generated-hour timestamps
+introduced_in: unknown
+description: |
+  TT-5426 (commit ca44921) fixed demo data generation so every generated
+  AnalyticsRecord receives a TimeStamp inside the requested synthetic demo hour.
+  Before the fix, WriteDemoData rewrote Day, Month, Year, and Hour from the
+  synthetic hour, but TimeStamp remained the wall-clock value assigned by
+  GenerateRandomAnalyticRecord. Backends that aggregate, shard, or query by
+  TimeStamp could therefore see demo records clumped at generation time while
+  the denormalized date fields claimed a different hour.
+
+  Current proof now decomposes the demo timestamp behavior under SW-REQ-089 and
+  pins the historical regression with
+  TestWriteDemoDataAssignsSyntheticTimestampsAcrossHour.
+source:
+    type: upstream_commit
+    repo: TykTechnologies/tyk-pump
+    commit: ca44921
+    reference: TT-5426
+    date: "2022-11-23"
+classification:
+    surface: data_integrity
+    defect_class: demo_timestamp_generation_mismatch
+    severity: low
+    security_relevant: false
+root_cause:
+    missing_requirement: true
+    missing_test_partition: true
+    missing_mcdc_variable: true
+    notes: |
+      Demo generation had been traced to SW-REQ-009, which is about deterministic
+      AnalyticsRecord field-name/value accessors. That owner would not catch a
+      mismatch between synthetic demo date fields and TimeStamp. SW-REQ-089 now
+      owns the demo generated-hour timestamp contract directly.
+impact_analysis:
+    affected_requirements:
+        - SW-REQ-089
+    affected_code:
+        - analytics/demo/demo.go
+        - analytics/demo/demo_test.go
+hardening:
+    new_requirements:
+        - SW-REQ-089
+    strengthened_requirements: []
+    added_obligations:
+        - requirement: SW-REQ-089
+          obligation_class: temporal_window_inclusive
+    regression_tests:
+        - analytics/demo/demo_test.go:TestWriteDemoDataAssignsSyntheticTimestampsAcrossHour
+        - analytics/demo/demo_test.go:TestGenerateDemoData
+    mcdc_witnesses:
+        - requirement: SW-REQ-089
+          witness: "demo_records_generated=F, demo_timestamps_cover_generated_hour=F => TRUE"
+        - requirement: SW-REQ-089
+          witness: "demo_records_generated=T, demo_timestamps_cover_generated_hour=T => TRUE"
+    proposed_classes: []
+disposition:
+    status: covered_by_requirement
+    requirements:
+        - SW-REQ-089
+    known_issues:
+        - analytics-timestamp-timezone-convention-unpinned
+        - sw-req-009-demo-randomness-obligation-misattributed
+    evidence:
+        verified_by:
+            - analytics/demo/demo_test.go:TestWriteDemoDataAssignsSyntheticTimestampsAcrossHour
+            - analytics/demo/demo_test.go:TestGenerateDemoData
+        requirement_mcdc_witnesses:
+            - requirement: SW-REQ-089
+              witness: "demo_records_generated=F, demo_timestamps_cover_generated_hour=F => TRUE"
+            - requirement: SW-REQ-089
+              witness: "demo_records_generated=T, demo_timestamps_cover_generated_hour=T => TRUE"
+        obligation_evidence:
+            - requirement: SW-REQ-089
+              obligation_class: temporal_window_inclusive
+              evidence_type: nominal
+            - requirement: SW-REQ-089
+              obligation_class: temporal_window_inclusive
+              evidence_type: boundary
+    reviewer: agent:codex
+    reviewed_at: "2026-06-25T16:20:00Z"
+history:
+    - at: "2026-06-25T16:20:00Z"
+      by: agent:codex
+      action: created
+      detail: |
+        Recorded TT-5426's demo timestamp generation fix as SW-REQ-089, with
+        synthetic-hour boundary evidence and MC/DC witnesses.

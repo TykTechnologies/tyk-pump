@@ -1,0 +1,10 @@
+component: analytics-demo
+variables:
+    - name: demo_records_generated
+      type: bool
+      direction: input
+      description: True when demo mode generates at least one AnalyticsRecord for a requested synthetic hour.
+    - name: demo_timestamps_cover_generated_hour
+      type: bool
+      direction: output
+      description: True iff each generated demo AnalyticsRecord has a TimeStamp inside the requested synthetic hour, the records advance by the per-hour spacing, and Day/Month/Year/Hour mirror that TimeStamp.

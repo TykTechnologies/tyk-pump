@@ -1,6 +1,6 @@
 schema_version: 1
 branch: feat-reqproof-coverage
-generated_at: "2026-06-25T16:08:19Z"
+generated_at: "2026-06-25T16:19:04Z"
 reviews:
     - requirement: SW-REQ-001
       artifact: main.go
@@ -156,12 +156,12 @@ reviews:
       artifact: analytics/demo/demo.go
       decision: no-authored-change
       reviewer: buger
-      reason: 'Phase J: req_type field flipped derived to guarantee per probelabs/reqproof#88 (category error fix). Production .go files were not modified for this change; only req YAML metadata. Re-recording no-authored-change impact.'
+      reason: 'Reviewed analytics/demo/demo.go after TT-5426 proof hardening: source delta changes reqproof trace ownership for GenerateDemoData and WriteDemoData from SW-REQ-009 to SW-REQ-089; runtime behavior and authored product behavior are unchanged by this comment-only trace update.'
       base: origin/master
       requirement_fingerprint: sha256:d89418eea94b7e70c045e67412bff2fa1c42868bd0c19339e0eec67451252f02
-      approval_fingerprint: sha256:5b3de46c2b65bfda73aefd76ce0cff88deec7322000638260e0e60785ac760a0
-      artifact_fingerprint: sha256:7ae0f109763ca16e8f54c2532c92a11a165795a7dcf8ce6722e53a847255ef81
-      reviewed_at: "2026-06-02T05:13:05Z"
+      approval_fingerprint: sha256:09f68f70799d37aed0703d2e6172a5f449adb30f0e33920156ebd673bd71ca4d
+      artifact_fingerprint: sha256:2f917eac45a76326a0cefbac4060f2cb8dbf52ed6c40a6a10e51c59bf334cef5
+      reviewed_at: "2026-06-25T16:19:04Z"
     - requirement: SW-REQ-010
       artifact: analytics/analytics_filters.go
       decision: no-authored-change
@@ -1143,3 +1143,13 @@ reviews:
       approval_fingerprint: sha256:5d49ab396174874b7419680c55aec7b2406b5bab83986e013a4fe425505bd6bd
       artifact_fingerprint: sha256:e7ea411fa9dbf7de400a8365d82be787b850a695efe35ecf1f53832f81e48bab
       reviewed_at: "2026-06-25T16:05:48Z"
+    - requirement: SW-REQ-089
+      artifact: analytics/demo/demo.go
+      decision: no-authored-change
+      reviewer: buger
+      reason: 'Reviewed analytics/demo/demo.go after TT-5426 proof hardening: source delta changes reqproof trace ownership for GenerateDemoData and WriteDemoData from SW-REQ-009 to SW-REQ-089; runtime behavior and authored product behavior are unchanged by this comment-only trace update.'
+      base: origin/master
+      requirement_fingerprint: sha256:b16167cdb04c3705b158e1e8c94804b852216aa05aad8411d0af367225570952
+      approval_fingerprint: sha256:2e99265c2ff76b82b7bf5f0931b02fbbc8cfc4525a7eef7365360540db44b438
+      artifact_fingerprint: sha256:2f917eac45a76326a0cefbac4060f2cb8dbf52ed6c40a6a10e51c59bf334cef5
+      reviewed_at: "2026-06-25T16:19:04Z"

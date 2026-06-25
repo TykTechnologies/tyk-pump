@@ -1,0 +1,7 @@
+id: REVIEW-ca44921-demo-timestamp-generation
+kind: design_review
+reviewer: agent:codex
+reviewed_at: "2026-06-25T16:20:00Z"
+subject: upstream:ca44921/SW-REQ-089
+decision: approved
+comment: 'Commit-level assurance review for TT-5426: upstream fixed demo mode so records generated for a synthetic hour receive TimeStamp values inside that hour rather than wall-clock generation time. SW-REQ-089 now owns the demo timestamp contract, WriteDemoData/GenerateDemoData trace to it, and TestWriteDemoDataAssignsSyntheticTimestampsAcrossHour pins the historical regression without changing product behavior.'

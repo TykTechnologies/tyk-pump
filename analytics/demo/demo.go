@@ -164,7 +164,7 @@ func country() string {
 	return codes[rand.Intn(len(codes))]
 }
 
-// reqproof:implements SW-REQ-009
+// reqproof:implements SW-REQ-089
 func GenerateDemoData(days, recordsPerHour int, orgID string, demoFutureData, trackPath bool, writer func([]interface{}, *health.Job, time.Time, int)) {
 	t := time.Now()
 	start := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC)
@@ -191,7 +191,7 @@ func GenerateDemoData(days, recordsPerHour int, orgID string, demoFutureData, tr
 	}
 }
 
-// reqproof:implements SW-REQ-009
+// reqproof:implements SW-REQ-089
 func WriteDemoData(start time.Time, d, h, recordsPerHour int, orgID string, trackPath bool, writer func([]interface{}, *health.Job, time.Time, int)) {
 	set := []interface{}{}
 	ts := start.AddDate(0, 0, d)
