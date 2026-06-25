@@ -1,0 +1,7 @@
+id: REVIEW-956b66a-mongo-driver-default
+kind: design_review
+reviewer: agent:codex
+reviewed_at: "2026-06-25T20:55:30Z"
+subject: upstream:956b66a/SW-REQ-034+SW-REQ-035+SW-REQ-036
+decision: approved
+comment: 'Commit-level assurance review for TT-10409: 956b66a is a Mongo driver support/default-policy migration rather than DEFECT/DFX material. Before hardening, current tests could catch a helper-level regression, but SW-REQ-034, SW-REQ-035, and SW-REQ-036 did not explicitly state that an omitted Mongo driver selects the v1.9+ mongo-go default while explicit mongo-go and mgo values remain preserved. The three Mongo writer requirements now carry support_matrix_enforced and code-annotated default-driver evidence; no product runtime behavior was changed.'

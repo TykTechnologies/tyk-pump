@@ -729,6 +729,7 @@ func TestDecodeRequestAndDecodeResponseMongoAggregate(t *testing.T) {
 }
 
 // Verifies: SW-REQ-036
+// SW-REQ-036:support_matrix_enforced:nominal
 func TestDefaultDriverAggregate(t *testing.T) {
 	newPump := &MongoAggregatePump{}
 	defaultConf := defaultConf(t)

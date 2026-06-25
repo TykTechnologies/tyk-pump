@@ -3,7 +3,10 @@
 ## Intent
 The `MongoAggregatePump` shall aggregate non-MCP analytics records into
 per-organisation aggregate documents (keyed by `{orgid, timestamp}`) and
-upsert them into MongoDB. This parent requirement anchors the six
+upsert them into MongoDB. During initialization, an omitted Mongo `driver`
+value resolves to the v1.9+ default `mongo-go` driver, while explicit
+`mongo-go` and `mgo` values are preserved for the storage client. This parent
+requirement anchors the six
 per-significant-behavior sub-requirements that carry the substantive
 obligations: SW-REQ-058 (aggregation window), SW-REQ-059 (per-org collection
 sharding + mixed-collection), SW-REQ-060 (`$inc` upsert semantics),
@@ -23,6 +26,8 @@ carry the real obligations.
 ## Code references
 - `pumps/mongo_aggregate.go:MongoAggregatePump.WriteData` — orchestrator.
 - `pumps/mongo_aggregate.go:DoAggregatedWriting` — per-org upsert pipeline.
+- `pumps/mongo_aggregate.go:229` — blank Mongo driver selection resolves to
+  the shared `mongo-go` default before building the storage client.
 - `main.go:209` and `pumps/mongo_aggregate.go:231` — configured pump timeout
   is applied before `Init` and passed to
   `persistent.ClientOpts.ConnectionTimeout`.
@@ -39,7 +44,8 @@ carry the real obligations.
     `TestMongoAggregatePump_ShouldSelfHeal` /
     `TestMongoAggregatePump_divideAggregationTime` → SW-REQ-062.
   - `TestDecodeRequestAndDecodeResponseMongoAggregate`,
-    `TestDefaultDriverAggregate`, `TestMongoAggregatePump_SkipsMCPRecords`,
+    `TestDefaultDriverAggregate` (blank driver resolves to `mongo-go`),
+    `TestMongoAggregatePump_SkipsMCPRecords`,
     and the `dummyObject` helpers remain annotated against this parent.
 - Live-MongoDB tests are excluded from the local audit MC/DC scope (known
   issue).

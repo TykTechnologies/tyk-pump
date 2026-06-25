@@ -751,6 +751,8 @@ func TestDecodeRequestAndDecodeResponseMongo(t *testing.T) {
 	assert.False(t, newPump.GetDecodedResponse())
 }
 
+// Verifies: SW-REQ-034
+// SW-REQ-034:support_matrix_enforced:nominal
 // SW-REQ-034:nominal:nominal
 func TestDefaultDriver(t *testing.T) {
 	newPump := &MongoPump{}
@@ -861,6 +863,8 @@ func TestMongoPump_WriteData(t *testing.T) {
 	}))
 }
 
+// Verifies: SW-REQ-034
+// SW-REQ-034:support_matrix_enforced:boundary
 // SW-REQ-034:nominal:boundary
 func TestGetMongoDriverType(t *testing.T) {
 	tests := []struct {

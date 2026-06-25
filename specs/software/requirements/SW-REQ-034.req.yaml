@@ -5,7 +5,7 @@ priority: shall
 category: functional
 req_type: guarantee
 fretish: when mcp_record_present pumps_mongo_standard shall always satisfy record_filtered_out
-description: 'The standard MongoDB pump shall, on each purge, filter out MCP-classified analytics records, accumulate the remaining records into batches bounded by MaxInsertBatchSizeBytes (default 10 MiB) while computing each analytics document size as len(RawRequest)+len(RawResponse)+1024 metadata bytes and rewriting raw bodies, rather than skipping the whole record, when that estimate exceeds MaxDocumentSizeBytes; it shall then concurrently insert each batch into the single configured collection, returning the first per-batch insert error to the caller. When CollectionCapEnable is true on a 64-bit host with a non-existing collection, it shall create the collection as a capped collection of CollectionCapMaxSizeBytes (default 5 GiB). During initialization, the configured pump timeout shall be applied before Init builds the Mongo client and propagated to persistent.ClientOpts.ConnectionTimeout. StandardMongo index setup shall be idempotent for already-existing collections by skipping index creation when the collection exists; non-StandardMongo compatible logBrowserIndex conflict behavior remains KI-backed. Known issues affecting this requirement: mongo-pump-ignores-caller-context (ctx propagation gap; see SW-REQ-072), pumps-logfatal-on-config-decode (log.Fatalf on config decode error), mongo-standard-final-skipped-record-drops-pending-batch, and mongo-standard-logbrowser-compatible-index-conflict.'
+description: 'The standard MongoDB pump shall, on each purge, filter out MCP-classified analytics records, accumulate the remaining records into batches bounded by MaxInsertBatchSizeBytes (default 10 MiB) while computing each analytics document size as len(RawRequest)+len(RawResponse)+1024 metadata bytes and rewriting raw bodies, rather than skipping the whole record, when that estimate exceeds MaxDocumentSizeBytes; it shall then concurrently insert each batch into the single configured collection, returning the first per-batch insert error to the caller. When CollectionCapEnable is true on a 64-bit host with a non-existing collection, it shall create the collection as a capped collection of CollectionCapMaxSizeBytes (default 5 GiB). During initialization, an omitted Mongo driver value shall resolve to the supported v1.9+ default driver mongo-go while explicit mongo-go and mgo values remain preserved for the storage client; the configured pump timeout shall be applied before Init builds the Mongo client and propagated to persistent.ClientOpts.ConnectionTimeout. StandardMongo index setup shall be idempotent for already-existing collections by skipping index creation when the collection exists; non-StandardMongo compatible logBrowserIndex conflict behavior remains KI-backed. Known issues affecting this requirement: mongo-pump-ignores-caller-context (ctx propagation gap; see SW-REQ-072), pumps-logfatal-on-config-decode (log.Fatalf on config decode error), mongo-standard-final-skipped-record-drops-pending-batch, and mongo-standard-logbrowser-compatible-index-conflict.'
 formalization_strategy: fretish
 informal_verification:
     method: ""
@@ -29,15 +29,15 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-25T20:02:53Z"
-        comment: 'Reviewed 8bfdb36 hardening: SW-REQ-034 now explicitly owns standard Mongo document-size accounting and raw-payload elision behavior, with document_size_accounting_exact evidence and current final-skipped-item debt KI-linked.'
-        fingerprint: sha256:c311737480721fe514dd8df56883d845df010d25d74afb5ca5f29cc20cb76729
+        reviewed_at: "2026-06-25T20:58:09Z"
+        comment: 'Reviewed 956b66a hardening: standard Mongo now explicitly specifies blank driver selection as the v1.9+ mongo-go default with explicit mongo-go/mgo values preserved; evidence remains code-annotated only.'
+        fingerprint: sha256:219b58fd156a168faad491829860f4a197800c8fba5d866f28767cb4cc9e65af
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:33:59Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-25T20:02:53Z"
+    last_modified_at: "2026-06-25T20:58:09Z"
 obligation_checklist:
     - backend_connection_timeout_propagated
     - boundary
@@ -56,6 +56,7 @@ obligation_checklist:
     - panic_free_input_handling
     - process_exit_on_recoverable
     - query_timeout_bounded
+    - support_matrix_enforced
 obligation_deferrals:
     - obligation_class: cancellation_observed
       reason: 'real untested obligation under known-issue mongo-pump-ignores-caller-context; surfaced as visible tracked debt, not an overclaimed fix'
@@ -176,4 +177,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-25T19:33:09Z comment="6a8ab73 hardening: standard Mongo index setup now records idempotent schema setup for existing collections; non-StandardMongo logBrowserIndex rename conflict remains KI-linked.")'
+          changed_by: human:buger
+        - date: "2026-06-25T20:58:09Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-25T20:02:53Z comment="Reviewed 8bfdb36 hardening: SW-REQ-034 now explicitly owns standard Mongo document-size accounting and raw-payload elision behavior, with document_size_accounting_exact evidence and current final-skipped-item debt KI-linked.")'
           changed_by: human:buger

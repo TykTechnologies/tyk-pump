@@ -13,7 +13,10 @@ size-bounded batches up to `MaxInsertBatchSizeBytes` (default 10 MiB),
 skipping individual documents larger than `MaxDocumentSizeBytes`. If an
 equivalent `logBrowserIndex` already exists under a different name, the
 selective pump treats that backend conflict as idempotent success while still
-returning unrelated index creation errors. Derived from SYS-REQ-004 via Phase
+returning unrelated index creation errors. During initialization, an omitted
+Mongo `driver` value resolves to the v1.9+ default `mongo-go` driver, while
+explicit `mongo-go` and `mgo` values are preserved for the storage client.
+Derived from SYS-REQ-004 via Phase
 A decomposition of SW-REQ-018.
 
 The exact `MaxDocumentSizeBytes` arithmetic is split into **SW-REQ-092**:
@@ -37,6 +40,8 @@ The honest req description above reflects this gap.
   `z_tyk_analyticz_<orgid>` or an error for empty `OrgID`.
 - `pumps/mongo_selective.go:ensureIndexes` — per-org index ensure on
   `apiid`, the TTL `expireAt`, and the composite `logBrowserIndex`.
+- `pumps/mongo_selective.go:124` — blank Mongo driver selection resolves to
+  the shared `mongo-go` default before building the storage client.
 - `pumps/mongo_selective.go:processItem`, `:accumulate`,
   `:AccumulateSet` — selective HTTP-record filtering and size-bounded batching.
 - `pumps/mongo_selective.go:getItemSizeBytes` — exact document-size estimate
@@ -49,6 +54,8 @@ The honest req description above reflects this gap.
 - `pumps/mongo_selective_test.go` (re-annotated `Verifies: SW-REQ-035`).
 - `pumps/mongo_selective_test.go:TestMongoSelectivePump_AccumulateSet_DropsTCPErrorRecords`
   proves the historical TCP/error exclusion through the batching path.
+- `pumps/mongo_selective_test.go:TestDefaultDriverSelective` proves the
+  blank-driver default for the selective pump path.
 - `pumps/mongo_selective_test.go:TestMongoSelectivePump_GetItemSizeBytes_CountsRawRequestAndResponseOnce`
   covers SW-REQ-092 exact document-size arithmetic.
 - `pumps/mongo_timeout_config_test.go` proves timeout setup order and

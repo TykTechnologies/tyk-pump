@@ -490,6 +490,8 @@ func TestDecodeRequestAndDecodeResponseMongoSelective(t *testing.T) {
 	assert.False(t, newPump.GetDecodedResponse())
 }
 
+// Verifies: SW-REQ-035
+// SW-REQ-035:support_matrix_enforced:nominal
 // SW-REQ-035:nominal:nominal
 func TestDefaultDriverSelective(t *testing.T) {
 	newPump := &MongoSelectivePump{}

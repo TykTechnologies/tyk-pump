@@ -11,7 +11,10 @@ insert each batch into the single configured collection, returning the first
 per-batch insert error to the caller. When `CollectionCapEnable` is true on a
 64-bit host and the target collection does not yet exist, the pump shall
 create it as a capped collection of `CollectionCapMaxSizeBytes` (default
-5 GiB). StandardMongo index setup is idempotent for an already-existing
+5 GiB). During initialization, an omitted Mongo `driver` value resolves to
+the v1.9+ default `mongo-go` driver, while explicit `mongo-go` and `mgo`
+values are preserved for the storage client. StandardMongo index setup is
+idempotent for an already-existing
 collection by skipping baseline index creation; the non-StandardMongo
 same-key/different-name `logBrowserIndex` conflict remains tracked under
 `mongo-standard-logbrowser-compatible-index-conflict`. A separate current
@@ -38,6 +41,9 @@ classes).
 - `pumps/mongo.go:274` — `capCollection` (gated on a 64-bit host check; the
   upstream Mongo driver requires int64 sizes).
 - `pumps/mongo.go:332` — `ensureIndexes`.
+- `pumps/mongo.go:381` and `pumps/mongo.go:getMongoDriverType` — blank Mongo
+  driver selection resolves to `mongo-go`; explicit supported values are
+  preserved.
 - `pumps/mongo.go:402` — `WriteData`; per-batch goroutines fan-out through an
   `errCh`, returning the first non-nil error.
 - `main.go:209` and `pumps/mongo.go:391` — configured pump timeout is applied
@@ -56,6 +62,10 @@ classes).
 - `pumps/mongo_test.go:TestMongoPump_GetItemSizeBytes_CountsRawRequestAndResponseOnce`
   proves RawRequest and RawResponse are each counted once with the 1024-byte
   metadata allowance.
+- `pumps/mongo_test.go:TestDefaultDriver` and
+  `pumps/mongo_test.go:TestGetMongoDriverType` prove the blank-driver default
+  and explicit driver-value preservation that closed the TT-10409 default
+  driver regression.
 - `pumps/mongo_test.go:TestMongoPump_AccumulateSet_RewritesOversizePayloadWithoutSkipping`
   proves a document whose estimate is exactly at the threshold is preserved,
   while a document over the threshold is still retained with raw bodies
