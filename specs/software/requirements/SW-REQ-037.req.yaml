@@ -5,7 +5,7 @@ priority: shall
 category: functional
 req_type: guarantee
 fretish: when is_graph_record pumps_mongo_graph shall always satisfy converted_to_graph_record
-description: The Graph MongoDB pump shall, during Init, apply TYK_PMP_PUMPS_MONGOGRAPH_META_* environment overrides through processPumpEnvVars after decoding file/config values. On each purge, it shall accumulate incoming records into size-bounded batches via the embedded MongoPump.AccumulateSet (in graph-only mode skipping records whose GraphQLStats.IsGraphQL is false from conversion), preserve graph record RawRequest and RawResponse payloads even when their size exceeds MaxDocumentSizeBytes, convert each surviving AnalyticsRecord to a GraphRecord from structured GraphQLStats without requiring legacy RawRequest/RawResponse/ApiSchema payloads (assigning a fresh ObjectID and preserving GraphQLStats-derived RootFields), and concurrently insert each batch into the single configured graph collection; the first per-batch insert error shall be returned to the caller, and connection-closed conditions shall be logged with a 'Detected connection failure!' warning.
+description: The Graph MongoDB pump shall, during Init, apply TYK_PMP_PUMPS_MONGOGRAPH_META_* environment overrides through processPumpEnvVars after decoding file/config values. On each purge, it shall accumulate incoming records into size-bounded batches via the embedded MongoPump.AccumulateSet (in graph-only mode skipping records whose GraphQLStats.IsGraphQL is false from conversion), preserve graph record RawRequest and RawResponse payloads unchanged even when their size exceeds MaxDocumentSizeBytes, convert each surviving AnalyticsRecord to a GraphRecord from structured GraphQLStats without requiring legacy RawRequest/RawResponse/ApiSchema payloads (assigning a fresh ObjectID and preserving GraphQLStats-derived RootFields), and concurrently insert each batch into the single configured graph collection; the first per-batch insert error shall be returned to the caller, and connection-closed conditions shall be logged with a 'Detected connection failure!' warning.
 formalization_strategy: fretish
 informal_verification:
     method: ""
@@ -29,15 +29,15 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-25T22:35:40Z"
-        comment: 'TT-6012 Graph Mongo empty legacy payload behavior clarified; structured GraphQLStats records do not require legacy raw request/response/schema payloads; no runtime product behavior change.'
-        fingerprint: sha256:43526cf19cdffe03af78d494c79743adb0509752e69f562fc5835ea0b0e96240
+        reviewed_at: "2026-06-25T23:28:51Z"
+        comment: 'Reviewed TT-6012 follow-up: SW-REQ-037 now states oversized Graph Mongo RawRequest/RawResponse payloads are preserved unchanged; strengthened evidence asserts exact distinct payload retention and non-GraphQLStats exclusion. No runtime product behavior change.'
+        fingerprint: sha256:77a207f5b2e026d67738b0197c91d7b0fa0a0c088daf099883c710e24771962d
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:34:55Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-25T22:35:40Z"
+    last_modified_at: "2026-06-25T23:28:51Z"
 obligation_checklist:
     - cancellation_observed
     - boundary
@@ -123,4 +123,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-25T22:32:26Z comment="TT-7977 RootFields downstream persistence wording clarified; reviewed Graph Mongo, Graph SQL, aggregate, and Graph SQL aggregate closure evidence; no runtime product behavior change.")'
+          changed_by: human:buger
+        - date: "2026-06-25T23:28:51Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-25T22:35:40Z comment="TT-6012 Graph Mongo empty legacy payload behavior clarified; structured GraphQLStats records do not require legacy raw request/response/schema payloads; no runtime product behavior change.")'
           changed_by: human:buger

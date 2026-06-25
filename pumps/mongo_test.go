@@ -404,7 +404,9 @@ func TestMongoPump_AccumulateSet(t *testing.T) {
 // SW-REQ-037:boundary:nominal
 // SW-REQ-037:boundary:negative
 func TestMongoPump_AccumulateSetIgnoreDocSize(t *testing.T) {
-	bloat := base64.StdEncoding.EncodeToString(make([]byte, 2048))
+	rawRequestBloat := base64.StdEncoding.EncodeToString(bytesWithValue(2048, 'r'))
+	rawResponseBloat := base64.StdEncoding.EncodeToString(bytesWithValue(2048, 's'))
+	rawSchemaBloat := base64.StdEncoding.EncodeToString(bytesWithValue(2048, 'q'))
 	pump := newPump()
 	conf := defaultConf(nil)
 	conf.MaxDocumentSizeBytes = 2048
@@ -418,9 +420,9 @@ func TestMongoPump_AccumulateSetIgnoreDocSize(t *testing.T) {
 		record := analytics.AnalyticsRecord{}
 		if i%2 == 0 {
 			record.GraphQLStats = analytics.GraphQLStats{IsGraphQL: true}
-			record.RawRequest = bloat
-			record.RawResponse = bloat
-			record.ApiSchema = bloat
+			record.RawRequest = rawRequestBloat
+			record.RawResponse = rawResponseBloat
+			record.ApiSchema = rawSchemaBloat
 		}
 		dataSet[i] = record
 	}
@@ -433,14 +435,21 @@ func TestMongoPump_AccumulateSetIgnoreDocSize(t *testing.T) {
 		for _, y := range x {
 			rec, ok := y.(*analytics.AnalyticsRecord)
 			assert.True(t, ok)
-			if rec.IsGraphRecord() {
-				graphRecords++
-				assert.NotEmpty(t, rec.RawRequest)
-				assert.NotEmpty(t, rec.RawResponse)
-			}
+			require.True(t, rec.IsGraphRecord(), "graph-mode accumulation must not admit non-GraphQLStats records")
+			graphRecords++
+			assert.Equal(t, rawRequestBloat, rec.RawRequest)
+			assert.Equal(t, rawResponseBloat, rec.RawResponse)
 		}
 	}
 	assert.Equal(t, 50, graphRecords)
+}
+
+func bytesWithValue(length int, value byte) []byte {
+	data := make([]byte, length)
+	for i := range data {
+		data[i] = value
+	}
+	return data
 }
 
 // Verifies: SW-REQ-034

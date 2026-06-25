@@ -14,8 +14,8 @@ description: |
   projection source, but GraphRecord still embeds the AnalyticsRecord. Graph
   Mongo therefore keeps the graph-mode boundary explicit: GraphQLStats-backed
   records are filtered through AccumulateSet(data, true), non-graph records are
-  skipped, and RawRequest/RawResponse remain unchanged even when their size
-  exceeds MaxDocumentSizeBytes.
+  skipped, and RawRequest/RawResponse remain byte-for-byte unchanged even when
+  their size exceeds MaxDocumentSizeBytes.
 source:
     type: upstream_commit
     repo: TykTechnologies/tyk-pump
@@ -92,3 +92,10 @@ history:
         Recorded TT-6012 graph Mongo max-document-size behavior as covered by
         SW-REQ-037 after making the graph payload preservation boundary
         explicit and repairing the regression evidence to use GraphQLStats.
+    - at: "2026-06-26T00:00:00Z"
+      by: agent:codex
+      action: hardened
+      detail: |
+        Tightened the regression evidence so oversized GraphQLStats-backed
+        records must retain distinct RawRequest and RawResponse values exactly,
+        and graph-mode accumulation must not admit non-GraphQLStats records.
