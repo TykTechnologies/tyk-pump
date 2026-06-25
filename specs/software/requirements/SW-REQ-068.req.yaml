@@ -5,7 +5,7 @@ priority: shall
 category: functional
 req_type: guarantee
 fretish: when version_eq_3 pumps_es shall always satisfy v3_operator_constructed
-description: 'The Elasticsearch pump shall, at Init, select an ElasticsearchOperator implementation per configured Version ("3", "5", "6", or "7", defaulting to "3" when unset) — instantiating the corresponding elastic.v3 / elastic.v5 / elastic.v6 / elastic/v7 client (with sniffing toggle, basic auth, optional ApiKey-auth via ApiKeyTransport, and optional custom TLS from ssl_cert_file/ssl_key_file, ssl_ca_file, and ssl_insecure_skip_verify) and corresponding BulkProcessor. Versions other than 3/5/6/7 shall be rejected at Init via log.Fatal. When ExtendedStatistics and decode_base64 are enabled, getMapping shall store raw_request and raw_response as decoded plaintext string values, not []byte values that JSON would re-encode as base64. Elasticsearch document field projection is decomposed further by SW-REQ-100 for AnalyticsRecord.Alias to "alias" mapping. Known issues: the logFatal-on-bad-config behavior is shared with other pumps and tracked as pumps-logfatal-on-config-decode; malformed Elasticsearch decode_base64 input is tracked by elasticsearch-decode-base64-errors-silent-empty.'
+description: 'The Elasticsearch pump shall, at Init, select an ElasticsearchOperator implementation per configured Version ("3", "5", "6", or "7", defaulting to "3" when unset) — instantiating the corresponding elastic.v3 / elastic.v5 / elastic.v6 / elastic/v7 client (with sniffing toggle, basic auth, optional ApiKey-auth via ApiKeyTransport, and optional custom TLS construction from ssl_cert_file/ssl_key_file, ssl_ca_file, and ssl_insecure_skip_verify) and corresponding BulkProcessor. Versions other than 3/5/6/7 shall be rejected at Init via log.Fatal. When ExtendedStatistics and decode_base64 are enabled, getMapping shall store raw_request and raw_response as decoded plaintext string values, not []byte values that JSON would re-encode as base64. Elasticsearch document field projection is decomposed further by SW-REQ-100 for AnalyticsRecord.Alias to "alias" mapping. Known issues: the logFatal-on-bad-config behavior is shared with other pumps and tracked as pumps-logfatal-on-config-decode; malformed Elasticsearch decode_base64 input is tracked by elasticsearch-decode-base64-errors-silent-empty; combining ApiKey auth with UseSSL is tracked by elasticsearch-api-key-auth-dropped-when-use-ssl because the TLS transport currently replaces ApiKeyTransport.'
 formalization_strategy: fretish
 informal_verification:
     method: ""
@@ -29,15 +29,15 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-25T20:18:34Z"
-        comment: 'Reviewed 3bb755d hardening: SW-REQ-068 now references the SW-REQ-100 child for Elasticsearch alias field projection; existing ES decode/TLS/KI scope unchanged.'
-        fingerprint: sha256:2ef41852dfa4624c1c741adf88c0b22c00c703c178c1d0e8279dcda133cf0540
+        reviewed_at: "2026-06-25T23:20:02Z"
+        comment: 'Reviewed TT-3067 follow-up: SW-REQ-068 now names the API-key+UseSSL KnownIssue in YAML and frames Elasticsearch TLS coverage as config construction/handoff evidence; added AST witness for getOperator -> NewTLSConfig field handoff and warning assertion for skip-verify opt-in. No runtime product behavior change.'
+        fingerprint: sha256:a6d684bf0245781a6d3f7380dd67d22f1a6ae4247eb2547b718e82a38eab5391
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:39:57Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-25T20:18:34Z"
+    last_modified_at: "2026-06-25T23:20:02Z"
 obligation_checklist:
     - backend_decoded_payload_textual
     - cert_chain_validated
@@ -169,4 +169,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-25T19:16:10Z comment="TN-6 hardening: Elasticsearch decode_base64 mapping now requires decoded raw_request/raw_response payloads as plaintext strings; malformed decode behavior remains KI-linked.")'
+          changed_by: human:buger
+        - date: "2026-06-25T23:20:02Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-25T20:18:34Z comment="Reviewed 3bb755d hardening: SW-REQ-068 now references the SW-REQ-100 child for Elasticsearch alias field projection; existing ES decode/TLS/KI scope unchanged.")'
           changed_by: human:buger

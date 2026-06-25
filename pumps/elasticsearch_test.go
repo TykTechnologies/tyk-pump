@@ -1,6 +1,10 @@
 package pumps
 
 import (
+	"bytes"
+	"go/ast"
+	"go/parser"
+	"go/token"
 	"os"
 	"strings"
 	"testing"
@@ -8,6 +12,7 @@ import (
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/kelseyhightower/envconfig"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -170,12 +175,80 @@ func TestElasticsearchPump_TLSConfig_EnvSkipVerify(t *testing.T) {
 	require.NoError(t, envconfig.Process("TEST_ES", conf))
 	require.True(t, conf.SSLInsecureSkipVerify)
 
+	var logBuffer bytes.Buffer
+	logger := logrus.New()
+	logger.SetOutput(&logBuffer)
+
 	tlsConf, err := NewTLSConfig(TLSConfig{
 		InsecureSkipVerify: conf.SSLInsecureSkipVerify,
-	}, log.WithField("prefix", "test"))
+	}, logrus.NewEntry(logger).WithField("prefix", "test"))
 	require.NoError(t, err)
 	require.NotNil(t, tlsConf)
 	assert.True(t, tlsConf.InsecureSkipVerify)
+	assert.Contains(t, logBuffer.String(), "ssl_insecure_skip_verify is set to true")
+}
+
+// SW-REQ-068:cert_chain_validated:nominal
+func TestElasticsearchPump_GetOperatorPassesTLSConfigFields(t *testing.T) {
+	file, err := parser.ParseFile(token.NewFileSet(), "elasticsearch.go", nil, 0)
+	require.NoError(t, err)
+
+	var foundGetOperator bool
+	var foundTLSConfigCall bool
+	var sawLogger bool
+	fields := map[string]string{}
+
+	for _, decl := range file.Decls {
+		fn, ok := decl.(*ast.FuncDecl)
+		if !ok || fn.Name.Name != "getOperator" {
+			continue
+		}
+		foundGetOperator = true
+		ast.Inspect(fn.Body, func(n ast.Node) bool {
+			call, ok := n.(*ast.CallExpr)
+			if !ok || len(call.Args) != 2 {
+				return true
+			}
+			fun, ok := call.Fun.(*ast.Ident)
+			if !ok || fun.Name != "NewTLSConfig" {
+				return true
+			}
+			foundTLSConfigCall = true
+
+			if logger, ok := call.Args[1].(*ast.SelectorExpr); ok && logger.Sel.Name == "log" {
+				if recv, ok := logger.X.(*ast.Ident); ok && recv.Name == "e" {
+					sawLogger = true
+				}
+			}
+
+			lit, ok := call.Args[0].(*ast.CompositeLit)
+			require.True(t, ok, "NewTLSConfig first argument must be a TLSConfig literal")
+			typeIdent, ok := lit.Type.(*ast.Ident)
+			require.True(t, ok, "NewTLSConfig first argument must name TLSConfig")
+			require.Equal(t, "TLSConfig", typeIdent.Name)
+
+			for _, elt := range lit.Elts {
+				kv, ok := elt.(*ast.KeyValueExpr)
+				require.True(t, ok, "TLSConfig literal must use keyed fields")
+				key, ok := kv.Key.(*ast.Ident)
+				require.True(t, ok, "TLSConfig key must be an identifier")
+				value, ok := kv.Value.(*ast.SelectorExpr)
+				require.True(t, ok, "TLSConfig value for %s must be a selector", key.Name)
+				base, ok := value.X.(*ast.Ident)
+				require.True(t, ok, "TLSConfig value for %s must read from conf", key.Name)
+				fields[key.Name] = base.Name + "." + value.Sel.Name
+			}
+			return true
+		})
+	}
+
+	require.True(t, foundGetOperator, "ElasticsearchPump.getOperator must exist")
+	require.True(t, foundTLSConfigCall, "getOperator must call NewTLSConfig")
+	require.True(t, sawLogger, "getOperator must pass e.log to NewTLSConfig")
+	assert.Equal(t, "conf.SSLCertFile", fields["CertFile"])
+	assert.Equal(t, "conf.SSLKeyFile", fields["KeyFile"])
+	assert.Equal(t, "conf.SSLCAFile", fields["CAFile"])
+	assert.Equal(t, "conf.SSLInsecureSkipVerify", fields["InsecureSkipVerify"])
 }
 
 // Verifies: KI:elasticsearch-api-key-auth-dropped-when-use-ssl
@@ -203,6 +276,7 @@ func TestElasticsearchPump_ApiKeyAuthDroppedWhenUseSSL_KI(t *testing.T) {
 // MCDC INT-REQ-006: mapping_per_implementation=T, record_dispatched_to_backend=T => TRUE
 // SW-REQ-100:structured_projection_preserved:nominal
 // MCDC SW-REQ-100: es_alias_present=T, es_alias_projected=T => TRUE
+//
 //mcdc:ignore SW-REQ-100: es_alias_present=T, es_alias_projected=F => FALSE -- getMapping assigns mapping["alias"] directly from record.Alias in the same map literal; with a populated alias and unmodified code, the projection-false violation has no runtime branch to exercise, while the positive and empty-alias rows are witnessed [reviewed: human:buger] [category: defensive]
 func TestGetMapping_BasicFields(t *testing.T) {
 	ts := time.Date(2025, 6, 15, 10, 0, 0, 0, time.UTC)

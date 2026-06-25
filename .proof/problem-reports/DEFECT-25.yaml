@@ -12,10 +12,12 @@ description: |
 
   Current code routes Elasticsearch TLS setup through the shared NewTLSConfig
   helper, including client cert/key, CA trust roots, server-name handling, and
-  explicit insecure-skip-verify. Current proof closes the ES-specific path under
-  SW-REQ-068, which references the shared helper without making this ES defect
-  report a closure claim over every SW-REQ-016 common-base behavior. Strict
-  production certificate validation remains tracked debt under KI
+  explicit insecure-skip-verify. Current proof closes the ES-specific
+  configuration construction and handoff path under SW-REQ-068, which
+  references the shared helper without making this ES defect report a closure
+  claim over every SW-REQ-016 common-base behavior or over live HTTPS
+  Elasticsearch certificate validation. Strict production certificate
+  validation remains tracked debt under KI
   tls-insecure-skip-verify-allowed.
 source:
     type: upstream_commit
@@ -36,7 +38,9 @@ root_cause:
       Current SW-REQ-068 already names Elasticsearch custom TLS configuration
       through the shared TLS helper. The proof gap for this historical row was
       traceability: SW-REQ-068 did not carry the tls_verification_explicit
-      obligation even though Elasticsearch exposes SSLInsecureSkipVerify.
+      obligation even though Elasticsearch exposes SSLInsecureSkipVerify, and
+      the ES-specific handoff from getOperator to NewTLSConfig needed a direct
+      witness.
 impact_analysis:
     affected_requirements:
         - SW-REQ-068
@@ -56,6 +60,7 @@ hardening:
     regression_tests:
         - pumps/tls_verification_explicit_test.go:TestTLSVerificationExplicit_DefaultsAreSecure
         - pumps/elasticsearch_test.go:TestElasticsearchPump_TLSConfig_EnvSkipVerify
+        - pumps/elasticsearch_test.go:TestElasticsearchPump_GetOperatorPassesTLSConfigFields
         - pumps/elasticsearch_test.go:TestElasticsearchPump_TLSConfig_ErrorCases
         - pumps/elasticsearch_mcdc_100_test.go:TestElasticsearchPump_getOperator_UseSSL_TLSSuccess
     proposed_classes: []
@@ -76,6 +81,7 @@ disposition:
         verified_by:
             - pumps/tls_verification_explicit_test.go:TestTLSVerificationExplicit_DefaultsAreSecure
             - pumps/elasticsearch_test.go:TestElasticsearchPump_TLSConfig_EnvSkipVerify
+            - pumps/elasticsearch_test.go:TestElasticsearchPump_GetOperatorPassesTLSConfigFields
             - pumps/elasticsearch_test.go:TestElasticsearchPump_TLSConfig_ErrorCases
             - pumps/elasticsearch_mcdc_100_test.go:TestElasticsearchPump_getOperator_UseSSL_TLSSuccess
         obligation_evidence:
@@ -95,3 +101,12 @@ history:
         Recorded TT-3067 Elasticsearch TLS configuration hardening as covered
         by SW-REQ-068, including explicit skip-verify default evidence and
         existing shared NewTLSConfig evidence.
+    - at: "2026-06-26T00:00:00Z"
+      by: agent:codex
+      action: hardened
+      detail: |
+        Added structural evidence that ElasticsearchPump.getOperator passes all
+        Elasticsearch TLS fields (ssl_cert_file, ssl_key_file, ssl_ca_file,
+        ssl_insecure_skip_verify) into the shared NewTLSConfig helper, so the
+        TT-3067 closure no longer depends only on separate helper tests and an
+        HTTP testcontainer success path.

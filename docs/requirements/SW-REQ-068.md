@@ -11,7 +11,7 @@ implementation per configured `Version` (`"3"`, `"5"`, `"6"`, or `"7"`,
 defaulting to `"3"` when unset) — instantiating the corresponding
 `elastic.v3` / `elastic.v5` / `elastic.v6` / `elastic/v7` client (with
 sniffing toggle, basic auth, optional `ApiKey-auth` via
-`ApiKeyTransport`, and optional custom TLS) and corresponding
+`ApiKeyTransport`, and optional custom TLS construction) and corresponding
 `BulkProcessor`. Versions other than 3/5/6/7 shall be rejected at Init
 via `log.Fatal`. When `ExtendedStatistics` and `decode_base64` are enabled,
 `getMapping` stores `raw_request` and `raw_response` as decoded plaintext
@@ -58,7 +58,16 @@ expectation that Init failure aborts startup.
 - `pumps/elasticsearch_test.go:TestElasticsearchPump_TLSConfig_EnvSkipVerify`
   — verifies the Elasticsearch environment spelling
   `SSLINSECURESKIPVERIFY` reaches `SSLInsecureSkipVerify` and is passed into
-  the TLS helper as an explicit operator opt-in.
+  the TLS helper as an explicit operator opt-in that emits the shared warning
+  for skipped certificate verification.
+- `pumps/elasticsearch_test.go:TestElasticsearchPump_GetOperatorPassesTLSConfigFields`
+  — verifies `getOperator` hands `ssl_cert_file`, `ssl_key_file`,
+  `ssl_ca_file`, and `ssl_insecure_skip_verify` through to the shared
+  `NewTLSConfig` helper.
+- `pumps/elasticsearch_mcdc_100_test.go:TestElasticsearchPump_getOperator_UseSSL_TLSSuccess`
+  — verifies the TLS construction path succeeds with a configured CA root and
+  strict `InsecureSkipVerify=false`. This is configuration-construction
+  evidence; the in-scope Elasticsearch testcontainer URL is still HTTP.
 - `pumps/tls_verification_explicit_test.go:TestTLSVerificationExplicit_DefaultsAreSecure`
   — verifies Elasticsearch `SSLInsecureSkipVerify` defaults to false so
   insecure TLS requires explicit operator opt-in; strict production
