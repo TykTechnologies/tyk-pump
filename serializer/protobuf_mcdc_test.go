@@ -178,6 +178,63 @@ func TestProtobuf_GraphQLStats_Roundtrip(t *testing.T) {
 	exerciseGeneratedProtoReflectBranches(t)
 }
 
+// Verifies: KI:serializer-protobuf-loses-graphql-error-path
+// Reproduces: serializer-protobuf-loses-graphql-error-path
+func TestProtobuf_GraphQLStats_ErrorPathLoss_KI(t *testing.T) {
+	pb := &ProtobufSerializer{}
+	rec := analytics.AnalyticsRecord{
+		APIID: "api_1",
+		OrgID: "org_1",
+		GraphQLStats: analytics.GraphQLStats{
+			IsGraphQL: true,
+			HasErrors: true,
+			Errors: []analytics.GraphError{
+				{
+					Message: "field validation failed",
+					Path:    []interface{}{"mutation", "createUser", "email"},
+				},
+			},
+		},
+	}
+
+	buf, err := pb.Encode(&rec)
+	assert.NoError(t, err)
+
+	var decoded analytics.AnalyticsRecord
+	err = pb.Decode(buf, &decoded)
+	assert.NoError(t, err)
+
+	assert.Equal(t, rec.GraphQLStats.Errors[0].Message, decoded.GraphQLStats.Errors[0].Message)
+	assert.Empty(t, decoded.GraphQLStats.Errors[0].Path)
+}
+
+// Verifies: SW-REQ-008
+// SW-REQ-008:snapshot_wire_format_compatible:nominal
+func TestProtobuf_GraphQLStats_WireFieldNumbers(t *testing.T) {
+	recordFields := (&analyticsproto.AnalyticsRecord{}).ProtoReflect().Descriptor().Fields()
+	graphField := recordFields.ByName("GraphQLStats")
+	if graphField == nil {
+		t.Fatal("AnalyticsRecord.GraphQLStats field missing from protobuf descriptor")
+	}
+	assert.Equal(t, protoreflect.FieldNumber(32), graphField.Number())
+
+	graphFields := (&analyticsproto.GraphQLStats{}).ProtoReflect().Descriptor().Fields()
+	assert.Equal(t, protoreflect.FieldNumber(1), graphFields.ByName("IsGraphQL").Number())
+	assert.Equal(t, protoreflect.FieldNumber(2), graphFields.ByName("Types").Number())
+	assert.Equal(t, protoreflect.FieldNumber(3), graphFields.ByName("OperationType").Number())
+	assert.Equal(t, protoreflect.FieldNumber(4), graphFields.ByName("Variables").Number())
+	assert.Equal(t, protoreflect.FieldNumber(5), graphFields.ByName("RootFields").Number())
+	assert.Equal(t, protoreflect.FieldNumber(6), graphFields.ByName("HasError").Number())
+	assert.Equal(t, protoreflect.FieldNumber(7), graphFields.ByName("GraphErrors").Number())
+
+	enumValues := (&analyticsproto.GraphQLStats{}).ProtoReflect().Descriptor().
+		Fields().ByName("OperationType").Enum().Values()
+	assert.Equal(t, protoreflect.EnumNumber(0), enumValues.ByName("OPERATION_UNKNOWN").Number())
+	assert.Equal(t, protoreflect.EnumNumber(1), enumValues.ByName("OPERATION_QUERY").Number())
+	assert.Equal(t, protoreflect.EnumNumber(2), enumValues.ByName("OPERATION_MUTATION").Number())
+	assert.Equal(t, protoreflect.EnumNumber(3), enumValues.ByName("OPERATION_SUBSCRIPTION").Number())
+}
+
 func exerciseGeneratedProtoReflectBranches(t *testing.T) {
 	t.Helper()
 

@@ -5,7 +5,7 @@ priority: shall
 category: functional
 req_type: guarantee
 fretish: when serialize_then_deserialize serializer_contract shall always satisfy roundtrip_equal_except_protobuf_city_names
-description: The serialization format between gateway and pump (msgpack on the bare key, protobuf on the _protobuf-suffixed key) shall round-trip every analytics record field without loss; per-field exceptions shall be tracked as named known-issues. Any new analytics record field intended to cross this interface shall update the protobuf/msgpack schema mapping, transformer mapping, and snapshot or round-trip evidence in the same change.
+description: The serialization format between gateway and pump (msgpack on the bare key, protobuf on the _protobuf-suffixed key) shall round-trip every analytics record field without loss; per-field exceptions such as protobuf Geo.City.Names and GraphQL GraphError.Path loss shall be tracked as named known-issues. Any new analytics record field intended to cross this interface shall update the protobuf/msgpack schema mapping, transformer mapping, and snapshot or round-trip evidence in the same change.
 formalization_strategy: fretish
 informal_verification:
     method: ""
@@ -13,15 +13,15 @@ informal_verification:
     verified: false
 parent: SYS-REQ-002
 component: serializer-contract
-rationale: "The serializer format dictates which fields can round-trip between the gateway and pump; making it a first-class ICD surfaces the per-field exceptions (currently the protobuf decode drops Geo.City.Names, tracked by KI serializer-protobuf-loses-city-names) instead of letting them hide in prose."
+rationale: "The serializer format dictates which fields can round-trip between the gateway and pump; making it a first-class ICD surfaces the per-field exceptions (currently protobuf decode drops Geo.City.Names and GraphError.Path, tracked by KIs serializer-protobuf-loses-city-names and serializer-protobuf-loses-graphql-error-path) instead of letting them hide in prose."
 tags: []
 variables: []
 traces:
     satisfies:
         - SYS-REQ-002
-    reviewed_at: "2026-06-02T14:31:00.628006Z"
+    reviewed_at: "2026-06-25T13:02:33.146658Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:4a880107d439438ef7578057147a0ed4d0b0638a4353865b601fe2aec04e4a29
+    reviewed_fingerprint: sha256:b9c422c6e0b9d7aa23557ee93d78faa58ce6bacd8e9322c068dd31f559d5b10b
 verification:
     assurance_level: B
     formalization_status: valid
@@ -29,19 +29,20 @@ verification:
         status: approved
         reviewer: human:buger
         role: interface_engineer
-        reviewed_at: "2026-06-23T07:17:48Z"
-        comment: 'Product-fix-history hardening: additive AnalyticsRecord fields must update schema, transformer, and evidence together; no product behavior change claimed.'
-        fingerprint: sha256:ce0394ee35cf10b5f364ffe06e0454ad6e75756ebba3138b566617abdc3a77db
+        reviewed_at: "2026-06-25T13:02:11Z"
+        comment: 'Product-fix-history hardening for TT-9476 GraphQLStats protobuf: gateway-pump serializer contract now names GraphQL error-path projection debt via KI serializer-protobuf-loses-graphql-error-path while preserving schema/transformer/evidence obligations for additive fields.'
+        fingerprint: sha256:95645a6d0cd57a73434aee33b1ee14f2a5431b65c8552d93ab8bcc083a601302
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:46Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-23T07:17:48Z"
+    last_modified_at: "2026-06-25T13:02:11Z"
 obligation_checklist:
     - encoding_safety
     - malformed_recovers_or_errors_loudly
     - nil_safety
+    - structured_projection_preserved
 obligation_deferrals:
     - obligation_class: encoding_safety
       reason: The serializer contract promises field-preserving round trips, but protobuf decode drops Geo.City.Names until the linked KnownIssue is fixed.
@@ -60,6 +61,12 @@ obligation_deferrals:
       owner: human:buger
       ki_ref: protobuf-decode-nil-submessage-panic
       reproducer: protobuf-decode-nil-submessage-panic
+    - obligation_class: structured_projection_preserved
+      reason: The serializer interface promises field-preserving structured projections, but protobuf GraphQLStats currently drops GraphError.Path while preserving only messages; serializer-protobuf-loses-graphql-error-path tracks the unfixed wire-format gap.
+      tracking: serializer-protobuf-loses-graphql-error-path
+      owner: human:buger
+      ki_ref: serializer-protobuf-loses-graphql-error-path
+      reproducer: serializer-protobuf-loses-graphql-error-path
 release_disposition: ship_with_known_issue
 interface:
     caller: tyk-gateway
@@ -68,7 +75,7 @@ interface:
     signature: 'Wire formats keyed by analytics-key suffix: "" -> msgpack (serializer/msgp.go:30 MsgpSerializer.GetSuffix returns ""); "_protobuf" -> protobuf (serializer/protobuf.go:15 ProtobufSerializer.GetSuffix returns "_protobuf"). Schema source for protobuf: analytics/proto/analytics.proto.'
     protocol: 'Two parallel serializers selected per-key by GetSuffix; no in-band version handshake — the producer''s choice of suffix is the entire negotiation. AnalyticsSerializers loop at main.go:276 attempts each format per key.'
     assumptions: 'Both ends agree on the on-the-wire struct layout. Msgpack relies on field tags (untagged Go-struct positional order); protobuf relies on field numbers in analytics/proto/analytics.proto. Both decoders silently ignore unknown fields, so additive evolution is safe on either side independently.'
-    guarantees: 'Round-trip preservation of every analytics record field via the chosen format. Schema version is implicit (protobuf: numbered fields in analytics.proto; msgpack: structural). Additive fields are accepted only when the field is represented in the Go AnalyticsRecord shape, protobuf numbered schema where applicable, encode/decode transformers, and snapshot or round-trip evidence. PER-FIELD EXCEPTION: protobuf round-trip is LOSSY for analytics.AnalyticsRecord.Geo.City.Names — serializer/protobuf.go:169 in TransformSingleProtoToAnalyticsRecord sets `Names: nil` unconditionally on decode, so any City.Names map populated on the producer side is dropped. This violates the requirement''s round-trip claim for that one field and is flagged as a defect for follow-up KI creation. RISK: no formal version handshake between gateway and pump (FMEA-006); a format-incompatible upgrade on one side would surface as decode errors at runtime only. Retirement of a format requires both sides upgraded; back-compat is additive on protobuf (new field numbers) and additive on the msgpack-encoded Go struct. This branch does not include upstream TT-7519 fields OriginalPath/listen_path or ListenPath/listen_path; if merged, they must be added to the schema map and evidence under this contract.'
+    guarantees: 'Round-trip preservation of every analytics record field via the chosen format. Schema version is implicit (protobuf: numbered fields in analytics.proto; msgpack: structural). Additive fields are accepted only when the field is represented in the Go AnalyticsRecord shape, protobuf numbered schema where applicable, encode/decode transformers, and snapshot or round-trip evidence. PER-FIELD EXCEPTIONS: protobuf round-trip is LOSSY for analytics.AnalyticsRecord.Geo.City.Names — serializer/protobuf.go sets `Names: nil` unconditionally on decode, so any City.Names map populated on the producer side is dropped; protobuf GraphQLStats also flattens analytics.GraphError to message strings, so GraphError.Path is dropped. These violate the requirement''s round-trip claim for the named fields and are tracked by KIs serializer-protobuf-loses-city-names and serializer-protobuf-loses-graphql-error-path. RISK: no formal version handshake between gateway and pump (FMEA-006); a format-incompatible upgrade on one side would surface as decode errors at runtime only. Retirement of a format requires both sides upgraded; back-compat is additive on protobuf (new field numbers) and additive on the msgpack-encoded Go struct. This branch does not include upstream TT-7519 fields OriginalPath/listen_path or ListenPath/listen_path; if merged, they must be added to the schema map and evidence under this contract.'
     producer: tyk-gateway
     consumer:
         - tyk-pump
@@ -122,4 +129,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="interface_engineer" reviewer="human:buger" at=2026-06-22T12:04:23Z comment="Review obligation expansion from catalogue gap pass; active unfixed behavior remains KnownIssue-gated.")'
+          changed_by: human:buger
+        - date: "2026-06-25T13:02:11Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="interface_engineer" reviewer="human:buger" at=2026-06-23T07:17:48Z comment="Product-fix-history hardening: additive AnalyticsRecord fields must update schema, transformer, and evidence together; no product behavior change claimed.")'
           changed_by: human:buger

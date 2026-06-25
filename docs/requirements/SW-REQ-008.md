@@ -17,10 +17,13 @@ Two on-wire formats are needed because the gateway can be configured to emit eit
 
 ## Evidence
 - `serializer/serializer_test.go:18 TestSerializer_Encode`, `:50 TestSerializer_Decode`, `:90 TestSerializer_MCPStats_Roundtrip`, `:133 TestSerializer_NonMCP_NoMCPStats`, `:153 TestSerializer_GetSuffix` — all tagged `// Verifies: SW-REQ-008`; round-trip and suffix dispatch coverage.
+- `serializer/protobuf_mcdc_test.go:56 TestProtobuf_GraphQLStats_Roundtrip` — verifies GraphQLStats protobuf field mapping for operation type, variables, root fields, types, error messages, and HasErrors.
+- `serializer/protobuf_mcdc_test.go:212 TestProtobuf_GraphQLStats_WireFieldNumbers` — pins GraphQLStats protobuf field number 32, nested field numbers, and operation enum values.
 - `serializer/serializer_branches_test.go:13 TestSerializer_RichRecordRoundtrip` — tagged `// SW-REQ-008:encoding_safety:negative`; exercises GraphQL-stats + Geo fields through msgpack and protobuf.
 - `serializer/serializer_branches_test.go:50 TestSerializer_Decode_Malformed` — tagged `// SW-REQ-008:encoding_safety:negative`; both decoders return an error on garbage input rather than panicking.
 - `serializer/serializer_branches_test.go:63 TestNewAnalyticsSerializer_DefaultsToMsgp` — verifies the factory default branch.
 
 ## Open questions
 - The protobuf path goes through a hand-written translator (`TransformSingleRecordToProto` / `TransformSingleProtoToAnalyticsRecord`) — any new field added to `AnalyticsRecord` requires three coordinated edits (the struct, the proto, both translators). There is no compile-time guard; missing-field bugs only surface in roundtrip tests.
+- Protobuf GraphQL errors preserve `Message` only. `GraphError.Path` is dropped by the `GraphErrors []string` schema; tracked by KI `serializer-protobuf-loses-graphql-error-path`.
 - `MsgpSerializer.Decode` accepts both `string` and `[]byte` via a type switch, but `ProtobufSerializer.Decode` asserts `analyticsData.([]byte)` unconditionally — a `string` input panics. The two serializers are not interface-compatible on the input type, which is undocumented.

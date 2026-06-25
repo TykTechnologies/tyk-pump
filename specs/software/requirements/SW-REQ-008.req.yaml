@@ -5,7 +5,7 @@ priority: shall
 category: functional
 req_type: guarantee
 fretish: when key_suffix_protobuf serializer shall always satisfy protobuf_codec_selected
-description: The analytics serializer shall encode and decode records via msgpack or protobuf and select the format by analytics-key suffix; msgpack round-trips losslessly, while protobuf has per-field exceptions tracked by KI serializer-protobuf-loses-city-names. Additive AnalyticsRecord fields shall not be accepted as serializer behavior unless the encode/decode transformer and snapshot or round-trip evidence are updated with the field.
+description: The analytics serializer shall encode and decode records via msgpack or protobuf and select the format by analytics-key suffix; msgpack round-trips losslessly, while protobuf has per-field exceptions tracked by KIs serializer-protobuf-loses-city-names and serializer-protobuf-loses-graphql-error-path. Additive AnalyticsRecord fields shall not be accepted as serializer behavior unless the encode/decode transformer and snapshot or round-trip evidence are updated with the field.
 formalization_strategy: fretish
 informal_verification:
     method: ""
@@ -29,21 +29,22 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-23T07:17:48Z"
-        comment: 'Product-fix-history hardening: proof-only requirement/evidence updates for logger format, additive record fields, and SQL aggregate shard-target debt; no product behavior fixes claimed.'
-        fingerprint: sha256:1eec7aa62dfe9610d472eb7759cd6ae3f3dd5dc4ea638337dccfb84109046c6e
+        reviewed_at: "2026-06-25T13:02:11Z"
+        comment: 'Product-fix-history hardening for TT-9476 GraphQLStats protobuf: serializer contract now names GraphQL error-path projection debt via KI serializer-protobuf-loses-graphql-error-path, adds structured_projection_preserved, and keeps additive field evidence tied to schema/transformer/snapshot updates.'
+        fingerprint: sha256:0ee395d85569f6717d82c4c958753a2d2b1f6925e4065659133cb87fc98bb5bf
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:14Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-23T07:17:48Z"
+    last_modified_at: "2026-06-25T13:02:11Z"
 obligation_checklist:
     - encoding_safety
     - malformed_recovers_or_errors_loudly
     - nil_safety
     - panic_free_input_handling
     - snapshot_wire_format_compatible
+    - structured_projection_preserved
 obligation_deferrals:
     - obligation_class: malformed_recovers_or_errors_loudly
       reason: Protobuf Decode and record transform do not validate malformed input type or required nested message presence before dereference; protobuf-decode-nil-submessage-panic tracks the required-but-unfixed behavior.
@@ -63,6 +64,12 @@ obligation_deferrals:
       owner: human:buger
       ki_ref: protobuf-decode-nil-submessage-panic
       reproducer: protobuf-decode-nil-submessage-panic
+    - obligation_class: structured_projection_preserved
+      reason: The protobuf GraphQLStats transformer preserves the declared scalar/map fields but drops GraphError.Path while round-tripping messages; serializer-protobuf-loses-graphql-error-path tracks the unfixed field-projection gap.
+      tracking: serializer-protobuf-loses-graphql-error-path
+      owner: human:buger
+      ki_ref: serializer-protobuf-loses-graphql-error-path
+      reproducer: serializer-protobuf-loses-graphql-error-path
 lifecycle:
     change_history:
         - date: "2026-05-29T15:46:44Z"
@@ -99,4 +106,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-03T07:38:11Z comment="Phase Q: catalog obligation attachments — adds malformed_recovers_or_errors_loudly, binary_data_preserved, encoding_aware, length_prefix_validated, recursion_depth_bounded, reference_cycle_safe, ordering_guarantees_documented, snapshot_wire_format_compatible (serializer surface; KI serializer-protobuf-loses-city-names). See .proof/catalog-obligation-proposals.md.")'
+          changed_by: human:buger
+        - date: "2026-06-25T13:02:11Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-23T07:17:48Z comment="Product-fix-history hardening: proof-only requirement/evidence updates for logger format, additive record fields, and SQL aggregate shard-target debt; no product behavior fixes claimed.")'
           changed_by: human:buger

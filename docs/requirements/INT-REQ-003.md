@@ -56,6 +56,9 @@ Wire-format suffix constants and call sites:
   `rec.Geo.City.Names`. This is a genuine round-trip loss for the protobuf
   path that contradicts the literal "round-trip every field without loss"
   text of this requirement.
+- The protobuf GraphQLStats path flattens `GraphError` to message strings.
+  `GraphError.Path` is not represented in `analytics.proto` and is tracked by
+  KI `serializer-protobuf-loses-graphql-error-path`.
 - The protobuf path also does not round-trip `APIKey` on the decode side
   — only the encode side (`protobuf.go:76`) writes it; the decode tmpRecord
   at `protobuf.go:153` re-reads `rec.APIKey` so this one is OK, but it is

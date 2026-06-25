@@ -1,0 +1,22 @@
+id: serializer-protobuf-loses-graphql-error-path
+title: Protobuf serializer drops GraphQL error path on decode
+description: serializer/protobuf.go flattens each analytics.GraphError to only its Message when encoding GraphQLStats into protobuf GraphErrors, and decode rebuilds GraphError values with Message populated but Path empty. A GraphQL analytics record that includes resolver error path details therefore loses field-level error location after a protobuf round-trip even though the message survives.
+affected_requirements:
+    - SW-REQ-008
+    - INT-REQ-003
+evidence_manifests:
+    - test:serializer/protobuf_mcdc_test.go:TestProtobuf_GraphQLStats_ErrorPathLoss_KI
+severity: medium
+severity_basis: risk
+risk: data_integrity
+reproducer_command: go test -count=1 -run '^TestProtobuf_GraphQLStats_ErrorPathLoss_KI$' ./serializer
+introduced_in: 9984a1e
+mitigation: Operators relying on GraphQL error location should prefer sinks that receive the original analytics record or message-only GraphQL error summaries until the protobuf schema carries structured error paths.
+remediation: Extend the protobuf GraphQLStats schema to carry each GraphError path as structured repeated path elements or a documented JSON representation, update encode/decode transformers, and add round-trip evidence that Message and Path both survive.
+owner: tyk-team
+release_disposition: ship_with_known_issue
+status: open
+history:
+    - at: "2026-06-25T15:35:00Z"
+      by: agent:codex
+      action: created

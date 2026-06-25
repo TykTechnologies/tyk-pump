@@ -1,0 +1,7 @@
+id: REVIEW-9984a1e-graphqlstats-protobuf
+kind: design_review
+reviewer: agent:codex
+reviewed_at: "2026-06-25T15:45:00Z"
+subject: upstream:9984a1e/SW-REQ-008+INT-REQ-003+SW-REQ-013
+decision: approved
+comment: 'Commit-level assurance review for TT-9476 protobuf GraphQLStats: current proof covers additive AnalyticsRecord serializer changes through SW-REQ-008 and INT-REQ-003, and GraphQLStats round-trip evidence covers IsGraphQL, operation enum mapping, variables, root fields, types, HasErrors, and GraphError.Message. This slice adds a protobuf descriptor field-number witness for GraphQLStats field 32 and nested fields, and records KI serializer-protobuf-loses-graphql-error-path because the current schema flattens GraphError to message strings and drops Path. Existing protobuf city-name loss and malformed sparse-message panic debt remain KI-backed.'
