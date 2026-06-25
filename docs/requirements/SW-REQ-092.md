@@ -27,7 +27,8 @@ Variables are declared in
 
 ## Code References
 - `pumps/mongo_selective.go:getItemSizeBytes` computes
-  `len(RawRequest)+len(RawResponse)+1024`.
+  `len(RawRequest)+len(RawResponse)+1024` and directly implements this
+  requirement.
 - `pumps/mongo_selective.go:accumulate` skips records when the computed size is
   negative, which `getItemSizeBytes` uses for oversized documents.
 - `pumps/mongo_selective.go:AccumulateSet` applies the size calculation before

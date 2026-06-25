@@ -39,6 +39,7 @@ impact_analysis:
     affected_code:
         - pumps/mongo_selective.go
         - pumps/mongo_selective_test.go
+        - signal-rules/tyk-pump-phase-n.yaml
 hardening:
     new_requirements:
         - SW-REQ-092
@@ -52,6 +53,8 @@ hardening:
         - pumps/mongo_selective_test.go:TestMongoSelectivePump_AccumulateSet
     proposed_classes:
         - document_size_accounting_exact
+    code_signals:
+        - go.mongo-document-size-counts-raw-request-twice
 disposition:
     status: covered_by_requirement
     requirements:
@@ -86,3 +89,10 @@ history:
         Recorded TT-6550 MongoSelective document-size arithmetic as covered by
         SW-REQ-092, with direct field-accounting tests for RawRequest,
         RawResponse, and exact-threshold behavior.
+    - at: "2026-06-26T00:00:00Z"
+      by: agent:codex
+      action: hardened
+      detail: |
+        Added a direct SW-REQ-092 implementation trace to getItemSizeBytes and
+        tied the existing Mongo RawRequest-counted-twice signal to this
+        MongoSelective defect class.

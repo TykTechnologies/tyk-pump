@@ -28,15 +28,15 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-25T17:22:13Z"
-        comment: 'TT-6550 hardening: MongoSelective document-size arithmetic now has a dedicated requirement, document_size_accounting_exact evidence, and raw request/response boundary assertions; no runtime product behavior change.'
+        reviewed_at: "2026-06-25T23:57:15Z"
+        comment: 'Reviewed TT-6550 follow-up: SW-REQ-092 now has a direct getItemSizeBytes implementation trace and the existing Mongo RawRequest-counted-twice signal is tied to the MongoSelective defect class. No runtime product behavior change.'
         fingerprint: sha256:c0d0fa2c225ef332b8b8e779d810473762ff3fdb2bea3412da39b1df173121e3
         ai_generated: false
 history:
     created_by: human:buger
     created_at: "2026-06-25T17:19:57Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-25T17:22:13Z"
+    last_modified_at: "2026-06-25T23:57:15Z"
 obligation_checklist:
     - document_size_accounting_exact
 stakeholder:
@@ -61,4 +61,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-25T17:19:57Z comment="TT-6550 hardening: reviewed MongoSelective document-size arithmetic, document_size_accounting_exact evidence, MC/DC witnesses, and DEFECT-29 closure; no runtime product behavior change claimed.")'
+          changed_by: human:buger
+        - date: "2026-06-25T23:57:15Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-25T17:22:13Z comment="TT-6550 hardening: MongoSelective document-size arithmetic now has a dedicated requirement, document_size_accounting_exact evidence, and raw request/response boundary assertions; no runtime product behavior change.")'
           changed_by: human:buger

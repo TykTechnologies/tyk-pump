@@ -294,6 +294,7 @@ func (m *MongoSelectivePump) processItem(item interface{}) (*analytics.Analytics
 
 // getItemSizeBytes calculates the size of the analytics item in bytes and checks if it's within the allowed limit.
 // reqproof:implements SW-REQ-035
+// reqproof:implements SW-REQ-092
 func (m *MongoSelectivePump) getItemSizeBytes(thisItem *analytics.AnalyticsRecord) int {
 	// Add 1 KB for metadata as average.
 	sizeBytes := len([]byte(thisItem.RawRequest)) + len([]byte(thisItem.RawResponse)) + 1024

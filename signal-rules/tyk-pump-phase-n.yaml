@@ -888,9 +888,10 @@ rules:
           - CWE-190
           - CWE-770
         notes: |
-          Commit 8bfdb36 fixed this exact standard Mongo size-accounting bug by
-          replacing RawRequest+RawRequest with RawRequest+RawResponse+1024 and
-          rewriting oversized raw bodies instead of skipping the whole record.
+          Commits 8bfdb36 and 4c490cb fixed this size-accounting bug in
+          standard Mongo and MongoSelective paths by replacing
+          RawRequest+RawRequest with RawRequest+RawResponse+1024 before the
+          MaxDocumentSizeBytes decision.
         obligations: [document_size_accounting_exact]
     paths:
       include:
