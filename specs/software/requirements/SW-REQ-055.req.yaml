@@ -29,15 +29,15 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-03T07:40:00Z"
-        comment: 'Phase Q: catalog obligation attachments — adds external_call_timeout_bounded, idempotency_key_honored (SQS MessageDeduplicationId dedup contract). See .proof/catalog-obligation-proposals.md.'
+        reviewed_at: "2026-06-25T12:43:49Z"
+        comment: 'Product-fix-history hardening for TT-10675: SQS registry support is pinned via SW-REQ-017 and additional malformed mixed-input behavior is tracked as KI sqs-malformed-record-sends-empty-entry; batch-limit, malformed-entry, partial-failure, timeout, and config-strictness risks remain KI-backed debt.'
         fingerprint: sha256:c206a4219a05477e21970159d9c7143b5711bc771adbb7326b036779a2dfe01c
-        ai_generated: true
+        ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:36:55Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-22T11:07:13Z"
+    last_modified_at: "2026-06-25T12:43:49Z"
 obligation_checklist:
     - config_schema_strict
     - dst_transition_safe
@@ -90,6 +90,12 @@ obligation_deferrals:
       tracking: mapstructure-decode-silently-drops-unknown-keys
       owner: human:buger
       ki_ref: mapstructure-decode-silently-drops-unknown-keys
+    - obligation_class: output_cardinality_bounded
+      reason: SQS output cardinality is bounded for valid records, but malformed skipped entries can still occupy outbound batch slots as zero-value messages until sqs-malformed-record-sends-empty-entry is fixed.
+      tracking: sqs-malformed-record-sends-empty-entry
+      owner: human:buger
+      ki_ref: sqs-malformed-record-sends-empty-entry
+      reproducer: sqs-malformed-record-sends-empty-entry
     - obligation_class: nil_safety
       reason: real untested obligation under known-issue mongo-pump-writeuptime-nil-on-bad-msgpack; surfaced as visible tracked debt, not an overclaimed fix
       tracking: mongo-pump-writeuptime-nil-on-bad-msgpack
@@ -128,3 +134,8 @@ lifecycle:
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T13:44:34Z comment="Phase L2: aggressive formalization — encodes per-component primary decision (instrumentation gate, codec select, SSL/SASL, dataset_empty, default-path, file-append, retry-status, log-level, flush, batch, transport, dedup); variables in <component>.vars.yaml; user directive: force MCDC witnesses to drive verifying tests.")'
           changed_by: human:cli
+        - date: "2026-06-25T12:43:49Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-03T07:40:00Z comment="Phase Q: catalog obligation attachments — adds external_call_timeout_bounded, idempotency_key_honored (SQS MessageDeduplicationId dedup contract). See .proof/catalog-obligation-proposals.md.")'
+          changed_by: human:buger

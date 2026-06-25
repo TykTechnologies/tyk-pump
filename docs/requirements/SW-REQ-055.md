@@ -39,3 +39,6 @@ concern.
 - `AWSSQSBatchLimit` is operator-configurable; AWS hard-caps
   `SendMessageBatch` at 10 entries and will reject larger batches. Worth a
   separate `boundary` follow-up to clamp operator input.
+- Mixed malformed input currently leaves zero-value entries in the preallocated
+  SQS batch; this is tracked by KI
+  `sqs-malformed-record-sends-empty-entry`.

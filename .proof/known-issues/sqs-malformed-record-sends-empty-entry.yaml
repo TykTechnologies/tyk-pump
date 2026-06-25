@@ -1,0 +1,21 @@
+id: sqs-malformed-record-sends-empty-entry
+title: SQS WriteData sends zero-value batch entries for malformed records
+description: pumps/sqs.go preallocates messages to len(data), logs and continues when an input item is not analytics.AnalyticsRecord, but does not compact the slice before SendMessageBatch. In a mixed batch with malformed and valid inputs, the skipped slot remains a zero-value SendMessageBatchRequestEntry with nil Id and nil MessageBody, and the pump still sends it to SQS. The backend can reject the whole batch or report a per-entry failure, while WriteData's local malformed-input path appears to have recovered.
+affected_requirements:
+    - SW-REQ-055
+evidence_manifests:
+    - test:pumps/http_pumps_mcdc_test.go:TestSQSPump_WriteData_MalformedRecordLeavesEmptyEntry_KI
+severity: medium
+severity_basis: risk
+risk: data_integrity
+reproducer_command: go test -count=1 -run '^TestSQSPump_WriteData_MalformedRecordLeavesEmptyEntry_KI$' ./pumps
+introduced_in: bf9e7e7
+mitigation: Operators should ensure only decoded analytics.AnalyticsRecord values reach the SQS pump and monitor SQS batch failure metrics; malformed upstream decode paths should be treated as delivery-risk events.
+remediation: Build the SQS message slice by appending only successfully marshaled analytics records, or return an explicit malformed-input error before calling SendMessageBatch when any entry cannot be converted.
+owner: tyk-team
+release_disposition: ship_with_known_issue
+status: open
+history:
+    - at: "2026-06-25T14:15:00Z"
+      by: agent:codex
+      action: created

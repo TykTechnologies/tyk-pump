@@ -38,6 +38,8 @@ The failure modes this catches:
 
 ## Evidence
 - `pumps/pump_test.go` exercises `GetPumpByName` for known and unknown names.
+- `pumps/pump_test.go:37 TestGetPumpByName_SQSSupported` pins `sqs`/`SQS`
+  as a supported registry key and verifies `.New()` returns a fresh `SQSPump`.
 - Indirectly: every pump-specific `*_test.go` that calls `pump.New()` confirms
   the factory returns a usable, independent instance.
 

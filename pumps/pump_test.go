@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // Verifies: SW-REQ-017
@@ -35,4 +36,13 @@ func TestGetPumpByName(t *testing.T) {
 	sqlPump, err := GetPumpByName("SqL")
 	assert.NoError(t, err)
 	assert.Equal(t, sqlPump, &SQLPump{})
+}
+
+// Verifies: SW-REQ-017
+// SW-REQ-017:support_matrix_enforced:nominal
+func TestGetPumpByName_SQSSupported(t *testing.T) {
+	p, err := GetPumpByName("SQS")
+	require.NoError(t, err)
+	require.IsType(t, &SQSPump{}, p)
+	require.IsType(t, &SQSPump{}, p.New())
 }

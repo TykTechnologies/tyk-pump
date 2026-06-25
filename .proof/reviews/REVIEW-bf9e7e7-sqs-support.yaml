@@ -1,0 +1,7 @@
+id: REVIEW-bf9e7e7-sqs-support
+kind: design_review
+reviewer: agent:codex
+reviewed_at: "2026-06-25T14:05:00Z"
+subject: upstream:bf9e7e7/SW-REQ-017+SW-REQ-055
+decision: approved
+comment: 'Commit-level assurance review for TT-10675: current proof already models SQS batch send, FIFO deduplication, API-level error propagation, and KI-backed gaps for zero batch limit and per-entry SendMessageBatch failures. The historical backend-addition aspect is now pinned on SW-REQ-017 with support_matrix_enforced evidence that the sqs registry key resolves case-insensitively to SQSPump and New returns a fresh SQSPump instance. Additional review found malformed mixed input still sends a zero-value SQS entry; this is tracked by KI sqs-malformed-record-sends-empty-entry rather than fixed in product code.'

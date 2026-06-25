@@ -796,6 +796,46 @@ func TestSQSPump_WriteData_BadRecordSkipped(t *testing.T) {
 	assert.Equal(t, int32(1), atomic.LoadInt32(&calls))
 }
 
+// TestSQSPump_WriteData_MalformedRecordLeavesEmptyEntry_KI reproduces the
+// current malformed-input gap: WriteData logs and continues on a non-record,
+// but the preallocated SQS entry remains in the batch as a zero-value entry.
+//
+// Verifies: KI:sqs-malformed-record-sends-empty-entry
+// Reproduces: sqs-malformed-record-sends-empty-entry
+func TestSQSPump_WriteData_MalformedRecordLeavesEmptyEntry_KI(t *testing.T) {
+	var captured []sqstypes.SendMessageBatchRequestEntry
+	mockSQS := &MockSQSSendMessageBatchAPI{
+		GetQueueUrlFunc: func(ctx context.Context, params *sqs.GetQueueUrlInput, optFns ...func(*sqs.Options)) (*sqs.GetQueueUrlOutput, error) {
+			return &sqs.GetQueueUrlOutput{QueueUrl: aws.String("mockQueue")}, nil
+		},
+		SendMessageBatchFunc: func(ctx context.Context, params *sqs.SendMessageBatchInput, optFns ...func(*sqs.Options)) (*sqs.SendMessageBatchOutput, error) {
+			captured = append(captured, params.Entries...)
+			return &sqs.SendMessageBatchOutput{}, nil
+		},
+	}
+	pmp := &SQSPump{
+		SQSClient:   mockSQS,
+		SQSQueueURL: aws.String("mockQueue"),
+		SQSConf: &SQSConf{
+			QueueName:        "q",
+			AWSSQSBatchLimit: 10,
+		},
+		log:              log.WithField("prefix", SQSPrefix),
+		CommonPumpConfig: CommonPumpConfig{},
+	}
+
+	recs := []interface{}{
+		"not-a-record",
+		analytics.AnalyticsRecord{APIID: "a", TimeStamp: time.Now()},
+	}
+	require.NoError(t, pmp.WriteData(context.Background(), recs))
+	require.Len(t, captured, 2)
+	assert.Nil(t, captured[0].Id)
+	assert.Nil(t, captured[0].MessageBody)
+	assert.NotNil(t, captured[1].Id)
+	assert.NotNil(t, captured[1].MessageBody)
+}
+
 // TestSQSPump_WriteData_PublishErrorPropagates covers errors_propagated.
 //
 // Verifies: SW-REQ-055
