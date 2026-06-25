@@ -32,6 +32,14 @@ variables:
       type: bool
       direction: output
       description: True when the Prometheus path label emitted for an opted-in tracked analytics record preserves the record's raw path value.
+    - name: metric_label_value_contains_internal_separator
+      type: bool
+      direction: input
+      description: True when at least one Prometheus metric label value contains the internal aggregation-key separator string "--".
+    - name: metric_label_tuple_preserved
+      type: bool
+      direction: output
+      description: True when the Prometheus aggregate stores and exposes the original label tuple values without reconstructing them by splitting the joined aggregation key.
 independence:
     declared: true
     reason: 'Prometheus requirements cover independent metric exposition, optional API-key label masking, and path-label tracking gates; each guarantee has a separate FRETish trigger/output pair.'

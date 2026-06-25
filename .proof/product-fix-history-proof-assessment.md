@@ -146,7 +146,7 @@ so a later reviewer can see what was included and what was filtered out.
 | 6820131 | 2023-06-12 | [TT-9126] Fix error log when omit_configfile option is enabled | `partially_missed_before_hardening`: SW-REQ-002 already modeled the omit-config-file gate and caught the destructive old behavior that cleared caller defaults, but it did not explicitly assert the ticket-title behavior: omit=true with a nonexistent config path must not emit file-read or JSON-unmarshal error logs. Hardened with DEFECT-12, local obligation `config_file_omission_suppresses_file_read`, and a `TestIgnoreConfig` log-capture subtest proving env-only startup preserves config and suppresses misleading file errors. |
 | 2d3c296 | 2023-05-25 | [TT-8884] added write data test for mongo pump and remove constraint | `missed_before_hardening`: the live Mongo test already caught the graph-only accumulation regression, but SW-REQ-034 only modeled MCP filtering. Hardened with DEFECT-13 and SW-REQ-082 so standard Mongo must insert ordinary and GraphQL-classified non-MCP records into the standard collection. |
 | 0ed84b9 | 2023-05-17 | fix: include graph records in mongo pump | `missed_before_hardening`: this fixed the c54eed3-era standard Mongo exclusion of GraphQL-classified records, but did so by switching standard WriteData into graph-only accumulation, later fixed by TT-8884. Hardened with DEFECT-14 and SW-REQ-082; DEFECT-13 now records 0ed84b9 as the origin of the ordinary-record drop. |
-| 8173c7e | 2023-05-15 | TT-876 Fix/prometheus cardinality | Product observability/cardinality defect. Covered as KI/debt class. |
+| 8173c7e | 2023-05-15 | TT-876 Fix/prometheus cardinality | `missed_before_hardening`: current Prometheus tests covered separator-bearing label values, but no requirement modeled aggregate label tuple-boundary preservation. Hardened with DEFECT-15 and SW-REQ-083; broad unbounded metric cardinality remains KI-backed under `metrics-label-cardinality-unbounded`. |
 | 1fd5ba9 | 2023-04-27 | [TT-8793] Fixing Pump 1.8 bugs | Product Mongo collection-routing fixes. Relevant to Mongo collection/partition evidence. |
 | ca22ae4 | 2023-03-16 | TT-8313 Hybrid pump refactor | Product backend behavior. Relevant to hybrid timeout/leak/KI obligations. |
 | 7fa0754 | 2023-03-06 | [TT-7820] fix aggregate graph pump sharding and errors | Product graph/sharding defect. Mostly covered by graph requirements today. |
@@ -194,6 +194,7 @@ Problem reports:
 - DEFECT-6: Elasticsearch pump shutdown did not close ES clients.
 - DEFECT-13: Standard Mongo WriteData used graph-only accumulation and dropped ordinary records.
 - DEFECT-14: Standard Mongo excluded GraphQL-classified records.
+- DEFECT-15: Prometheus aggregation split label values containing the internal separator.
 
 KnownIssues/risks relevant to historical fix classes:
 

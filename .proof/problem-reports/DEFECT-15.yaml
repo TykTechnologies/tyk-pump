@@ -1,0 +1,104 @@
+schema_version: 1
+id: DEFECT-15
+title: Prometheus aggregation split label values containing the internal separator
+introduced_in: 2622d9b
+description: |
+  TT-876 (commit 8173c7e) fixed Prometheus in-memory metric aggregation that
+  used `strings.Join(labelValues, "--")` as the map key and later reconstructed
+  labels with `strings.Split(key, "--")`. If an API ID, path, alias, key, or
+  other label value contained `--`, expose-time code could split one logical
+  label value into multiple labels, corrupting the label tuple and failing to
+  represent the original metric series.
+
+  The current implementation still uses a joined key for aggregation identity,
+  but stores the original `labelValues` alongside the counter/histogram state
+  and replays those stored values on expose. SW-REQ-083 makes that
+  tuple-boundary preservation explicit for both counter and aggregated
+  histogram paths; the broader risk that operators may configure unbounded
+  high-cardinality labels remains KI-backed debt.
+source:
+    type: upstream_commit
+    repo: TykTechnologies/tyk-pump
+    commit: 8173c7e
+    reference: TT-876
+    date: "2023-05-15"
+classification:
+    surface: data_integrity
+    defect_class: prometheus_metric_label_tuple_boundary_loss
+    severity: medium
+    security_relevant: false
+root_cause:
+    missing_requirement: true
+    missing_test_partition: true
+    missing_mcdc_variable: true
+    notes: |
+      SW-REQ-024 modeled the Prometheus pump at a broad metric-exposition
+      level, and later SW-REQ-078/SW-REQ-079 modeled path tracking. None of
+      those requirements pinned the internal aggregation key/label tuple
+      boundary rule for label values containing the separator string.
+impact_analysis:
+    affected_requirements:
+        - SW-REQ-024
+        - SW-REQ-083
+    affected_code:
+        - pumps/prometheus.go
+        - pumps/prometheus_test.go
+hardening:
+    new_requirements:
+        - SW-REQ-083
+    strengthened_requirements:
+        - SW-REQ-024
+    added_obligations:
+        - requirement: SW-REQ-083
+          obligation_class: encoding_safety
+    regression_tests:
+        - pumps/prometheus_test.go:TestPrometheusCounterMetric
+        - pumps/prometheus_test.go:TestPrometheusHistogramMetric
+    mcdc_witnesses:
+        - requirement: SW-REQ-083
+          witness: "metric_label_value_contains_internal_separator=T, metric_label_tuple_preserved=T => TRUE"
+    proposed_classes: []
+disposition:
+    status: covered_by_requirement
+    requirements:
+        - SW-REQ-024
+        - SW-REQ-083
+    known_issues:
+        - mapstructure-decode-silently-drops-unknown-keys
+        - metrics-label-cardinality-unbounded
+        - no-panic-recovery-in-exec-pump-writing
+        - prometheus-init-mutates-default-mux
+        - prometheus-metric-maps-race
+        - prometheus-metrics-auth-not-enforced
+        - pumps-logfatal-on-config-decode
+    evidence:
+        verified_by:
+            - pumps/prometheus_test.go:TestPrometheusCounterMetric
+            - pumps/prometheus_test.go:TestPrometheusHistogramMetric
+        requirement_mcdc_witnesses:
+            - requirement: SW-REQ-083
+              witness: "metric_label_value_contains_internal_separator=F, metric_label_tuple_preserved=F => TRUE (no separator-bearing label value exercises the boundary rule)"
+            - requirement: SW-REQ-083
+              witness: "metric_label_value_contains_internal_separator=T, metric_label_tuple_preserved=F => FALSE (violation row: separator-bearing label value is split or corrupted)"
+            - requirement: SW-REQ-083
+              witness: "metric_label_value_contains_internal_separator=T, metric_label_tuple_preserved=T => TRUE (api--3 is retained as one label element)"
+        obligation_evidence:
+            - requirement: SW-REQ-083
+              obligation_class: encoding_safety
+              evidence_type: nominal
+            - requirement: SW-REQ-083
+              obligation_class: encoding_safety
+              evidence_type: boundary
+    reviewer: agent:codex
+    reviewed_at: "2026-06-25T15:04:00Z"
+history:
+    - at: "2026-06-25T14:52:10Z"
+      by: human:buger
+      action: created
+    - at: "2026-06-25T15:04:00Z"
+      by: agent:codex
+      action: hardened
+      detail: |
+        Added SW-REQ-083 to pin Prometheus aggregate label tuple-boundary
+        preservation and annotated counter plus aggregated-histogram
+        separator-boundary tests as MC/DC and encoding-safety evidence.

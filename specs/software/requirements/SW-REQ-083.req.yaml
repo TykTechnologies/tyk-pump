@@ -1,0 +1,56 @@
+id: SW-REQ-083
+version: 1
+status: approved
+priority: shall
+category: functional
+req_type: guarantee
+fretish: when metric_label_value_contains_internal_separator pumps_prometheus shall always satisfy metric_label_tuple_preserved
+description: Prometheus metric aggregation shall preserve the original label tuple boundaries when any label value contains the internal aggregation-key separator string, so expose-time label values are replayed exactly as originally observed rather than reconstructed by splitting the joined map key.
+formalization_strategy: fretish
+informal_verification:
+    method: ""
+    evidence: ""
+    verified: false
+parent: SW-REQ-024
+component: pumps-prometheus
+rationale: 'Product-fix-history hardening for TT-876: Prometheus counters and aggregated histograms historically joined label values with "--" and later split the key, corrupting labels that themselves contained the separator. This requirement pins tuple-boundary preservation separately from the broader unbounded label-cardinality KI.'
+tags: []
+variables:
+    - metric_label_value_contains_internal_separator
+    - metric_label_tuple_preserved
+traces:
+    satisfies:
+        - SW-REQ-024
+verification:
+    assurance_level: B
+    formalization_status: valid
+    review:
+        status: approved
+        reviewer: human:buger
+        role: software_engineer
+        reviewed_at: "2026-06-25T14:54:33Z"
+        comment: 'TT-876 hardening: reviewed Prometheus label tuple-boundary preservation requirement, encoding_safety evidence, MC/DC witnesses, and DEFECT-15 closure.'
+        fingerprint: sha256:853ec999f203e50d56e2e9cebab424f7d32506ca8c0be8d7e009f5ee6bd1c820
+        ai_generated: false
+history:
+    created_by: human:buger
+    created_at: "2026-06-25T14:51:45Z"
+    last_modified_by: human:buger
+    last_modified_at: "2026-06-25T14:54:33Z"
+obligation_checklist:
+    - encoding_safety
+stakeholder:
+    acceptance_criteria:
+        - id: AC-001
+          text: For an aggregated Prometheus histogram label tuple containing an API ID with the internal separator string, the in-memory aggregate stores and exposes the original label value as one label element rather than splitting it into multiple label elements.
+          verification_method: test
+        - id: AC-002
+          text: For a Prometheus counter label tuple containing an API ID with the internal separator string, the in-memory aggregate stores and exposes the original label value as one label element rather than splitting it into multiple label elements.
+          verification_method: test
+lifecycle:
+    change_history:
+        - date: "2026-06-25T14:54:22Z"
+          from: draft
+          to: review
+          reason: TT-876 Prometheus label tuple-boundary requirement ready for review
+          changed_by: human:buger

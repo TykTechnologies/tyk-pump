@@ -1,0 +1,7 @@
+id: REVIEW-8173c7e-prometheus-label-boundary
+kind: design_review
+reviewer: agent:codex
+reviewed_at: "2026-06-25T15:04:00Z"
+subject: upstream:8173c7e/SW-REQ-024+SW-REQ-083
+decision: approved
+comment: 'Commit-level assurance review for TT-876: Prometheus aggregation previously joined label values with "--" and reconstructed labels by splitting the key, corrupting tuples when a label value itself contained the separator. Current code stores the original labelValues with counter/histogram aggregate state. This review approves SW-REQ-083, DEFECT-15, encoding_safety evidence, and MC/DC witnesses in TestPrometheusCounterMetric and TestPrometheusHistogramMetric. The broader operator-controlled high-cardinality label budget remains separate KI-backed debt under metrics-label-cardinality-unbounded.'

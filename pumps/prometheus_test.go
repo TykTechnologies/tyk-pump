@@ -459,6 +459,9 @@ func TestPrometheusGetLabelsValues(t *testing.T) {
 }
 
 // Verifies: SW-REQ-024
+// Verifies: SW-REQ-083
+// SW-REQ-083:encoding_safety:boundary
+// MCDC SW-REQ-083: metric_label_value_contains_internal_separator=T, metric_label_tuple_preserved=T => TRUE
 func TestPrometheusCounterMetric(t *testing.T) {
 	tcs := []struct {
 		testName string
@@ -634,6 +637,26 @@ func TestPrometheusCounterMetric(t *testing.T) {
 				"500--api_2--alias1": {labelValues: []string{"500", "api_2", "alias1"}, count: 1},
 			},
 		},
+		{
+			testName: "HTTP status codes per API with separator in API ID",
+			metric: &PrometheusMetric{
+				Name:       "tyk_http_status_per_api_separator",
+				Help:       "HTTP status codes per API with separator in API ID",
+				MetricType: counterType,
+				Labels:     []string{"code", "api"},
+			},
+			analyticsRecords: []analytics.AnalyticsRecord{
+				{APIID: "api--3", ResponseCode: 500},
+				{APIID: "api--3", ResponseCode: 200},
+				{APIID: "api_3", ResponseCode: 500},
+			},
+			expectedMetricsAmount: 3,
+			expectedMetrics: map[string]counterStruct{
+				"500--api--3": {labelValues: []string{"500", "api--3"}, count: 1},
+				"200--api--3": {labelValues: []string{"200", "api--3"}, count: 1},
+				"500--api_3":  {labelValues: []string{"500", "api_3"}, count: 1},
+			},
+		},
 	}
 
 	for _, tc := range tcs {
@@ -665,6 +688,12 @@ func TestPrometheusCounterMetric(t *testing.T) {
 }
 
 // Verifies: SW-REQ-024
+// Verifies: SW-REQ-083
+// SW-REQ-083:encoding_safety:nominal
+// SW-REQ-083:encoding_safety:boundary
+// MCDC SW-REQ-083: metric_label_value_contains_internal_separator=F, metric_label_tuple_preserved=F => TRUE
+// MCDC SW-REQ-083: metric_label_value_contains_internal_separator=T, metric_label_tuple_preserved=F => FALSE
+// MCDC SW-REQ-083: metric_label_value_contains_internal_separator=T, metric_label_tuple_preserved=T => TRUE
 func TestPrometheusHistogramMetric(t *testing.T) {
 	tcs := []struct {
 		testName string
