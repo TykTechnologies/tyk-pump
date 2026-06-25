@@ -58,7 +58,6 @@ hardening:
         - pumps/elasticsearch_test.go:TestElasticsearchPump_TLSConfig_EnvSkipVerify
         - pumps/elasticsearch_test.go:TestElasticsearchPump_TLSConfig_ErrorCases
         - pumps/elasticsearch_mcdc_100_test.go:TestElasticsearchPump_getOperator_UseSSL_TLSSuccess
-    mcdc_witnesses: []
     proposed_classes: []
 disposition:
     status: covered_by_requirement

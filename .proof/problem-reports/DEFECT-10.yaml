@@ -27,7 +27,7 @@ classification:
 root_cause:
   missing_requirement: true
   missing_test_partition: true
-  missing_mcdc_variable: true
+  missing_mcdc_variable: false
   notes: |
     The Graph SQL proof model asserted that configured tables were created and
     graph records were routed, but it did not bind GraphRecord.TableName to the
@@ -55,9 +55,6 @@ hardening:
       obligation_class: migration_model_table_identity_bound
   regression_tests:
     - pumps/graph_sql_test.go:TestGraphSQLPump_Init_BindsGraphRecordTableNameToConfiguredTable
-  mcdc_witnesses:
-    - requirement: SW-REQ-080
-      witness: "graph_model_table_bound=T, graph_sql_table_configured=T => TRUE"
   proposed_classes:
     - migration_model_table_identity_bound
   code_signals:
@@ -83,13 +80,6 @@ disposition:
   evidence:
     verified_by:
       - pumps/graph_sql_test.go:TestGraphSQLPump_Init_BindsGraphRecordTableNameToConfiguredTable
-    requirement_mcdc_witnesses:
-      - requirement: SW-REQ-080
-        witness: "graph_model_table_bound=F, graph_sql_table_configured=F => TRUE (no configured Graph SQL table, so the configured-table binding obligation is not active)"
-      - requirement: SW-REQ-080
-        witness: "graph_model_table_bound=F, graph_sql_table_configured=T => FALSE (violation row: configured table present but model hook not bound)"
-      - requirement: SW-REQ-080
-        witness: "graph_model_table_bound=T, graph_sql_table_configured=T => TRUE (configured table present and GraphRecord.TableName resolves to it before migration)"
     obligation_evidence:
       - requirement: SW-REQ-080
         obligation_class: migration_model_table_identity_bound

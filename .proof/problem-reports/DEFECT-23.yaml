@@ -54,7 +54,6 @@ hardening:
     regression_tests:
         - analytics/graph_record_test.go:TestAnalyticsRecord_ToGraphRecord_IgnoresUnresolvedLegacySubgraphSchema
         - analytics/graph_record_test.go:TestAnalyticsRecord_ToGraphRecord_IgnoresLegacyGraphSourcesWithoutGraphQLStatsFlag
-    mcdc_witnesses: []
     proposed_classes: []
 disposition:
     status: covered_by_requirement

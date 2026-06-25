@@ -27,7 +27,7 @@ classification:
 root_cause:
   missing_requirement: true
   missing_test_partition: false
-  missing_mcdc_variable: true
+  missing_mcdc_variable: false
   notes: |
     SW-REQ-021 covered Kafka TLS attachment and had broad Init evidence, but
     the timeout parser and env override were not modeled as variables or as a
@@ -53,9 +53,6 @@ hardening:
   regression_tests:
     - pumps/kafka_mcdc_test.go:TestKafkaPump_Init_TimeoutVariants
     - pumps/kafka_mcdc_test.go:TestKafkaPump_Init_TimeoutEnvOverride
-  mcdc_witnesses:
-    - requirement: SW-REQ-081
-      witness: "kafka_timeout_duration_applied=T, kafka_timeout_configured=T => TRUE"
   proposed_classes:
     - timeout_config_units_preserved
   code_signals:
@@ -83,13 +80,6 @@ disposition:
     verified_by:
       - pumps/kafka_mcdc_test.go:TestKafkaPump_Init_TimeoutVariants
       - pumps/kafka_mcdc_test.go:TestKafkaPump_Init_TimeoutEnvOverride
-    requirement_mcdc_witnesses:
-      - requirement: SW-REQ-081
-        witness: "kafka_timeout_duration_applied=F, kafka_timeout_configured=F => TRUE (no Kafka timeout is configured, so configured-timeout application is not active)"
-      - requirement: SW-REQ-081
-        witness: "kafka_timeout_duration_applied=F, kafka_timeout_configured=T => FALSE (violation row: timeout configured but not applied consistently to Kafka deadlines)"
-      - requirement: SW-REQ-081
-        witness: "kafka_timeout_duration_applied=T, kafka_timeout_configured=T => TRUE (configured timeout is parsed and applied to dial/read/write deadlines)"
     obligation_evidence:
       - requirement: SW-REQ-081
         obligation_class: timeout_config_units_preserved

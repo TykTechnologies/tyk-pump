@@ -62,11 +62,6 @@ hardening:
         - main_test.go:TestFilterDataBase64DecodeFailurePreservesField
         - pumps/common_test.go:TestDecodingRequest
         - pumps/common_test.go:TestSetDecodingResponse
-    mcdc_witnesses:
-        - requirement: SW-REQ-088
-          witness: "decode_request_enabled=F, decode_response_enabled=F, enabled_payloads_decoded=F => TRUE"
-        - requirement: SW-REQ-088
-          witness: "decode_request_enabled=T, decode_response_enabled=T, enabled_payloads_decoded=T => TRUE"
     proposed_classes: []
 disposition:
     status: covered_by_requirement
@@ -87,11 +82,6 @@ disposition:
         verified_by:
             - main_test.go:TestDecodedKey
             - main_test.go:TestFilterDataBase64DecodeFailurePreservesField
-        requirement_mcdc_witnesses:
-            - requirement: SW-REQ-088
-              witness: "decode_request_enabled=F, decode_response_enabled=F, enabled_payloads_decoded=F => TRUE"
-            - requirement: SW-REQ-088
-              witness: "decode_request_enabled=T, decode_response_enabled=T, enabled_payloads_decoded=T => TRUE"
         obligation_evidence:
             - requirement: SW-REQ-088
               obligation_class: encoding_aware

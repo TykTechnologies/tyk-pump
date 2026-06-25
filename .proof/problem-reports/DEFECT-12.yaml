@@ -51,9 +51,6 @@ hardening:
       obligation_class: config_file_omission_suppresses_file_read
   regression_tests:
     - config_test.go:TestIgnoreConfig
-  mcdc_witnesses:
-    - requirement: SW-REQ-002
-      witness: "config_file_enabled=F, json_loaded_before_env_override=F => TRUE"
   proposed_classes:
     - config_file_omission_suppresses_file_read
 disposition:
@@ -70,13 +67,6 @@ disposition:
   evidence:
     verified_by:
       - config_test.go:TestIgnoreConfig
-    requirement_mcdc_witnesses:
-      - requirement: SW-REQ-002
-        witness: "config_file_enabled=F, json_loaded_before_env_override=F => TRUE (omit-config-file mode intentionally skips file read/unmarshal)"
-      - requirement: SW-REQ-002
-        witness: "config_file_enabled=T, json_loaded_before_env_override=F => FALSE (violation row for enabled config file that fails to load)"
-      - requirement: SW-REQ-002
-        witness: "config_file_enabled=T, json_loaded_before_env_override=T => TRUE (normal JSON file loads before env override)"
     obligation_evidence:
       - requirement: SW-REQ-002
         obligation_class: config_file_omission_suppresses_file_read

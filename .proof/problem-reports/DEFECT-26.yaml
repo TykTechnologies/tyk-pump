@@ -56,7 +56,6 @@ hardening:
     regression_tests:
         - pumps/mongo_test.go:TestMongoPump_AccumulateSetIgnoreDocSize
         - pumps/mongo_mcdc_test.go:TestMongoPump_HandleLargeDocuments_GraphPreserved
-    mcdc_witnesses: []
     proposed_classes: []
 disposition:
     status: covered_by_requirement

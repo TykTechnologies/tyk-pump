@@ -26,7 +26,7 @@ classification:
 root_cause:
     missing_requirement: true
     missing_test_partition: true
-    missing_mcdc_variable: true
+    missing_mcdc_variable: false
     notes: |
       SW-REQ-024 modeled broad Prometheus metric exposition, but did not make
       custom metric instance identity a first-class contract. The existing
@@ -50,13 +50,6 @@ hardening:
           obligation_class: custom_metric_identity_preserved
     regression_tests:
         - pumps/prometheus_test.go:TestPrometheusInitCustomMetrics
-    mcdc_witnesses:
-        - requirement: SW-REQ-094
-          witness: "custom_metric_instances_preserved=F, valid_custom_metrics_configured=F => TRUE"
-        - requirement: SW-REQ-094
-          witness: "custom_metric_instances_preserved=F, valid_custom_metrics_configured=T => FALSE"
-        - requirement: SW-REQ-094
-          witness: "custom_metric_instances_preserved=T, valid_custom_metrics_configured=T => TRUE"
     proposed_classes:
         - custom_metric_identity_preserved
 disposition:
@@ -75,13 +68,6 @@ disposition:
     evidence:
         verified_by:
             - pumps/prometheus_test.go:TestPrometheusInitCustomMetrics
-        requirement_mcdc_witnesses:
-            - requirement: SW-REQ-094
-              witness: "custom_metric_instances_preserved=F, valid_custom_metrics_configured=F => TRUE (no valid custom metric exists, so there is no instance identity to preserve)"
-            - requirement: SW-REQ-094
-              witness: "custom_metric_instances_preserved=F, valid_custom_metrics_configured=T => FALSE (violation row: valid configured custom metrics collapse into one runtime identity or are skipped by an invalid sibling)"
-            - requirement: SW-REQ-094
-              witness: "custom_metric_instances_preserved=T, valid_custom_metrics_configured=T => TRUE (valid custom metrics retain distinct runtime identities)"
         obligation_evidence:
             - requirement: SW-REQ-094
               obligation_class: custom_metric_identity_preserved

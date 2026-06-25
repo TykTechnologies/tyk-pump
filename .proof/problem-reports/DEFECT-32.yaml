@@ -25,7 +25,7 @@ classification:
 root_cause:
     missing_requirement: true
     missing_test_partition: true
-    missing_mcdc_variable: true
+    missing_mcdc_variable: false
     notes: |
       SW-REQ-060 modeled Mongo aggregate counter upsert mechanics, and
       SW-REQ-059 modeled mixed-collection routing, but proof did not state the
@@ -49,13 +49,6 @@ hardening:
           obligation_class: aggregate_dimension_retention
     regression_tests:
         - pumps/mongo_aggregate_test.go:TestDoAggregatedWritingWithIgnoredAggregations
-    mcdc_witnesses:
-        - requirement: SW-REQ-096
-          witness: "ignore_aggregation_configured=F, mixed_collection_dimension_present=T, ignored_dimension_retained=F => TRUE"
-        - requirement: SW-REQ-096
-          witness: "ignore_aggregation_configured=T, mixed_collection_dimension_present=T, ignored_dimension_retained=F => FALSE"
-        - requirement: SW-REQ-096
-          witness: "ignore_aggregation_configured=T, mixed_collection_dimension_present=T, ignored_dimension_retained=T => TRUE"
     proposed_classes:
         - aggregate_dimension_retention
 disposition:
@@ -72,13 +65,6 @@ disposition:
     evidence:
         verified_by:
             - pumps/mongo_aggregate_test.go:TestDoAggregatedWritingWithIgnoredAggregations
-        requirement_mcdc_witnesses:
-            - requirement: SW-REQ-096
-              witness: "ignore_aggregation_configured=F, mixed_collection_dimension_present=T, ignored_dimension_retained=F => TRUE (no ignore setting is configured, so this specific retention rule is not triggered)"
-            - requirement: SW-REQ-096
-              witness: "ignore_aggregation_configured=T, mixed_collection_dimension_present=T, ignored_dimension_retained=F => FALSE (violation row: a later ignored-dimension write deletes an existing mixed dimension)"
-            - requirement: SW-REQ-096
-              witness: "ignore_aggregation_configured=T, mixed_collection_dimension_present=T, ignored_dimension_retained=T => TRUE (existing API-key dimension remains after the ignoring writer runs again)"
         obligation_evidence:
             - requirement: SW-REQ-096
               obligation_class: aggregate_dimension_retention

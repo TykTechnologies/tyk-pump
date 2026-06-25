@@ -53,11 +53,6 @@ hardening:
         - pumps/mongo_aggregate_test.go:TestMongoAggregatePump_WriteDataSelfHealRetryWiring
         - pumps/mongo_aggregate_test.go:TestMongoAggregatePump_divideAggregationTime
         - pumps/mongo_aggregate_test.go:TestAggregationTime
-    mcdc_witnesses:
-        - requirement: SW-REQ-062
-          witness: "aggregation_time_above_floor=T, aggregation_time_halved=T, self_heal_enabled=T, size_error_detected=T => TRUE"
-        - requirement: SW-REQ-058
-          witness: "store_per_minute=F, window_eq_1_min=F => TRUE"
     proposed_classes: []
 disposition:
     status: covered_by_requirement

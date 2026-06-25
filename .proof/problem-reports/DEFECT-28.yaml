@@ -28,7 +28,7 @@ classification:
 root_cause:
     missing_requirement: true
     missing_test_partition: true
-    missing_mcdc_variable: true
+    missing_mcdc_variable: false
     notes: |
       SW-REQ-024 modeled broad Prometheus metric exposition, and SW-REQ-083
       later modeled aggregate label tuple-boundary preservation, but neither
@@ -53,13 +53,6 @@ hardening:
     regression_tests:
         - pumps/prometheus_test.go:TestPrometheusEnsureLabels
         - pumps/prometheus_test.go:TestPrometheusHistogramMetric
-    mcdc_witnesses:
-        - requirement: SW-REQ-091
-          witness: "histogram_metric_configured=F, histogram_type_label_schema_normalized=F => TRUE"
-        - requirement: SW-REQ-091
-          witness: "histogram_metric_configured=T, histogram_type_label_schema_normalized=F => FALSE"
-        - requirement: SW-REQ-091
-          witness: "histogram_metric_configured=T, histogram_type_label_schema_normalized=T => TRUE"
     proposed_classes:
         - metric_label_schema_stable
 disposition:
@@ -79,13 +72,6 @@ disposition:
         verified_by:
             - pumps/prometheus_test.go:TestPrometheusEnsureLabels
             - pumps/prometheus_test.go:TestPrometheusHistogramMetric
-        requirement_mcdc_witnesses:
-            - requirement: SW-REQ-091
-              witness: "histogram_metric_configured=F, histogram_type_label_schema_normalized=F => TRUE (counter metric is outside the histogram normalization trigger)"
-            - requirement: SW-REQ-091
-              witness: "histogram_metric_configured=T, histogram_type_label_schema_normalized=F => FALSE (violation row: histogram schema is missing, duplicate, or misordered type label)"
-            - requirement: SW-REQ-091
-              witness: "histogram_metric_configured=T, histogram_type_label_schema_normalized=T => TRUE (histogram schema has exactly one type label at position 0)"
         obligation_evidence:
             - requirement: SW-REQ-091
               obligation_class: metric_label_schema_stable

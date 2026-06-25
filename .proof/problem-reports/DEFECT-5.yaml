@@ -89,9 +89,6 @@ hardening:
           obligation_class: secrets_not_logged
     regression_tests:
         - pumps/prometheus_test.go:TestPrometheusObfuscateAPIKey
-    mcdc_witnesses:
-        - requirement: SW-REQ-074
-          witness: "api_key_label_masked=T, obfuscate_api_keys_enabled=T => TRUE"
 disposition:
     status: covered_by_requirement
     requirements:
@@ -99,13 +96,6 @@ disposition:
     evidence:
         verified_by:
             - pumps/prometheus_test.go:TestPrometheusObfuscateAPIKey
-        requirement_mcdc_witnesses:
-            - requirement: SW-REQ-074
-              witness: "api_key_label_masked=F, obfuscate_api_keys_enabled=F => TRUE (gate off: documented opt-in default, masking vacuously satisfied)"
-            - requirement: SW-REQ-074
-              witness: "api_key_label_masked=F, obfuscate_api_keys_enabled=T => FALSE (violation row: gate on yet label unmasked; guarded by NotContains assertions)"
-            - requirement: SW-REQ-074
-              witness: "api_key_label_masked=T, obfuscate_api_keys_enabled=T => TRUE (gate on: ****+last-N or '--', raw key absent)"
         obligation_evidence:
             - requirement: SW-REQ-074
               obligation_class: secrets_not_logged

@@ -26,7 +26,7 @@ classification:
 root_cause:
     missing_requirement: true
     missing_test_partition: true
-    missing_mcdc_variable: true
+    missing_mcdc_variable: false
     notes: |
       SW-REQ-075 modeled per-backend error/timeout independence and
       SW-REQ-010/SW-REQ-076 modeled filter/privacy semantics, but proof did not
@@ -52,13 +52,6 @@ hardening:
           obligation_class: shared_state_synchronized
     regression_tests:
         - main_test.go:TestFilterData_DoesNotMutateInputBatch
-    mcdc_witnesses:
-        - requirement: SW-REQ-095
-          witness: "per_backend_transform_configured=F, shared_dispatch_batch_preserved=F => TRUE"
-        - requirement: SW-REQ-095
-          witness: "per_backend_transform_configured=T, shared_dispatch_batch_preserved=F => FALSE"
-        - requirement: SW-REQ-095
-          witness: "per_backend_transform_configured=T, shared_dispatch_batch_preserved=T => TRUE"
     proposed_classes:
         - per_backend_input_isolation
         - shared_state_synchronized
@@ -76,13 +69,6 @@ disposition:
     evidence:
         verified_by:
             - main_test.go:TestFilterData_DoesNotMutateInputBatch
-        requirement_mcdc_witnesses:
-            - requirement: SW-REQ-095
-              witness: "per_backend_transform_configured=F, shared_dispatch_batch_preserved=F => TRUE (no per-backend transform is configured, so no isolated transform is required)"
-            - requirement: SW-REQ-095
-              witness: "per_backend_transform_configured=T, shared_dispatch_batch_preserved=F => FALSE (violation row: a per-backend filter mutates the shared dispatch batch)"
-            - requirement: SW-REQ-095
-              witness: "per_backend_transform_configured=T, shared_dispatch_batch_preserved=T => TRUE (filtered view is correct and the original batch is preserved)"
         obligation_evidence:
             - requirement: SW-REQ-095
               obligation_class: per_backend_input_isolation

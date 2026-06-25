@@ -27,7 +27,7 @@ classification:
 root_cause:
     missing_requirement: true
     missing_test_partition: true
-    missing_mcdc_variable: true
+    missing_mcdc_variable: false
     notes: |
       SW-REQ-024 modeled the broad Prometheus scrape endpoint and default path
       behavior but did not give disabled_metrics a first-class requirement or
@@ -52,13 +52,6 @@ hardening:
     regression_tests:
         - pumps/prometheus_test.go:TestPrometheusDisablingMetrics
         - pumps/prometheus_test.go:TestPrometheusDisabledMetricsDoNotDisableCustomMetrics
-    mcdc_witnesses:
-        - requirement: SW-REQ-090
-          witness: "base_metric_disabled=F, base_metric_family_absent=F => TRUE"
-        - requirement: SW-REQ-090
-          witness: "base_metric_disabled=T, base_metric_family_absent=F => FALSE"
-        - requirement: SW-REQ-090
-          witness: "base_metric_disabled=T, base_metric_family_absent=T => TRUE"
     proposed_classes:
         - metric_family_disable_gate
 disposition:
@@ -78,13 +71,6 @@ disposition:
         verified_by:
             - pumps/prometheus_test.go:TestPrometheusDisablingMetrics
             - pumps/prometheus_test.go:TestPrometheusDisabledMetricsDoNotDisableCustomMetrics
-        requirement_mcdc_witnesses:
-            - requirement: SW-REQ-090
-              witness: "base_metric_disabled=F, base_metric_family_absent=F => TRUE (non-disabled built-in metric remains present)"
-            - requirement: SW-REQ-090
-              witness: "base_metric_disabled=T, base_metric_family_absent=F => FALSE (violation row: a disabled built-in metric remains registered/present)"
-            - requirement: SW-REQ-090
-              witness: "base_metric_disabled=T, base_metric_family_absent=T => TRUE (disabled built-in metrics are absent)"
         obligation_evidence:
             - requirement: SW-REQ-090
               obligation_class: metric_family_disable_gate

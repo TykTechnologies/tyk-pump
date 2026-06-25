@@ -27,7 +27,7 @@ classification:
 root_cause:
   missing_requirement: true
   missing_test_partition: true
-  missing_mcdc_variable: true
+  missing_mcdc_variable: false
   notes: |
     SW-REQ-024 described Prometheus metric exposition but did not specify the
     path-label tracking gate. The historical table test also repeated the path
@@ -59,11 +59,6 @@ hardening:
     - pumps/udp_file_pumps_mcdc_test.go:TestPrometheusPump_WriteData_TrackedRecord
     - pumps/udp_file_pumps_mcdc_test.go:TestPrometheusPump_WriteData_TrackAllPaths
     - pumps/udp_file_pumps_mcdc_test.go:TestPrometheusPump_WriteData_AllPathTrackingGates
-  mcdc_witnesses:
-    - requirement: SW-REQ-078
-      witness: "path_label_unknown=T, record_track_path_enabled=F, track_all_paths_enabled=F => TRUE"
-    - requirement: SW-REQ-079
-      witness: "path_label_preserved=T, record_track_path_enabled=T, track_all_paths_enabled=T => TRUE"
   proposed_classes:
     - metric_path_label_tracking_policy
 disposition:
@@ -86,25 +81,6 @@ disposition:
       - pumps/udp_file_pumps_mcdc_test.go:TestPrometheusPump_WriteData_TrackedRecord
       - pumps/udp_file_pumps_mcdc_test.go:TestPrometheusPump_WriteData_TrackAllPaths
       - pumps/udp_file_pumps_mcdc_test.go:TestPrometheusPump_WriteData_AllPathTrackingGates
-    requirement_mcdc_witnesses:
-      - requirement: SW-REQ-078
-        witness: "path_label_unknown=F, record_track_path_enabled=F, track_all_paths_enabled=F => FALSE (violation row: tracking gates closed but path is not collapsed; guarded by unknown/NotContains assertions)"
-      - requirement: SW-REQ-078
-        witness: "path_label_unknown=F, record_track_path_enabled=F, track_all_paths_enabled=T => TRUE (global tracking open, so unknown collapse is not required)"
-      - requirement: SW-REQ-078
-        witness: "path_label_unknown=F, record_track_path_enabled=T, track_all_paths_enabled=F => TRUE (record tracking open, so unknown collapse is not required)"
-      - requirement: SW-REQ-078
-        witness: "path_label_unknown=T, record_track_path_enabled=F, track_all_paths_enabled=F => TRUE (tracking gates closed, so the path label is unknown)"
-      - requirement: SW-REQ-079
-        witness: "path_label_preserved=F, record_track_path_enabled=F, track_all_paths_enabled=F => TRUE (tracking gates closed, so preservation is not required)"
-      - requirement: SW-REQ-079
-        witness: "path_label_preserved=F, record_track_path_enabled=F, track_all_paths_enabled=T => FALSE (violation row: global tracking open but path not preserved)"
-      - requirement: SW-REQ-079
-        witness: "path_label_preserved=F, record_track_path_enabled=T, track_all_paths_enabled=F => FALSE (violation row: record tracking open but path not preserved)"
-      - requirement: SW-REQ-079
-        witness: "path_label_preserved=F, record_track_path_enabled=T, track_all_paths_enabled=T => FALSE (violation row: both tracking gates open but path not preserved)"
-      - requirement: SW-REQ-079
-        witness: "path_label_preserved=T, record_track_path_enabled=T, track_all_paths_enabled=T => TRUE (both tracking gates open and the path label is preserved)"
     obligation_evidence:
       - requirement: SW-REQ-078
         obligation_class: metric_path_label_tracking_policy

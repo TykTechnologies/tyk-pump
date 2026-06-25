@@ -26,7 +26,7 @@ classification:
 root_cause:
     missing_requirement: true
     missing_test_partition: true
-    missing_mcdc_variable: true
+    missing_mcdc_variable: false
     notes: |
       SW-REQ-035 stated that oversized documents are skipped, but it did not
       specify exact document-size arithmetic or prove RawRequest/RawResponse
@@ -50,13 +50,6 @@ hardening:
     regression_tests:
         - pumps/mongo_selective_test.go:TestMongoSelectivePump_GetItemSizeBytes_CountsRawRequestAndResponseOnce
         - pumps/mongo_selective_test.go:TestMongoSelectivePump_AccumulateSet
-    mcdc_witnesses:
-        - requirement: SW-REQ-092
-          witness: "raw_request_and_response_counted_once=F, selective_document_size_estimated=F => TRUE"
-        - requirement: SW-REQ-092
-          witness: "raw_request_and_response_counted_once=F, selective_document_size_estimated=T => FALSE"
-        - requirement: SW-REQ-092
-          witness: "raw_request_and_response_counted_once=T, selective_document_size_estimated=T => TRUE"
     proposed_classes:
         - document_size_accounting_exact
 disposition:
@@ -76,13 +69,6 @@ disposition:
         verified_by:
             - pumps/mongo_selective_test.go:TestMongoSelectivePump_GetItemSizeBytes_CountsRawRequestAndResponseOnce
             - pumps/mongo_selective_test.go:TestMongoSelectivePump_AccumulateSet
-        requirement_mcdc_witnesses:
-            - requirement: SW-REQ-092
-              witness: "raw_request_and_response_counted_once=F, selective_document_size_estimated=F => TRUE (no estimate means the exact arithmetic obligation is not triggered)"
-            - requirement: SW-REQ-092
-              witness: "raw_request_and_response_counted_once=F, selective_document_size_estimated=T => FALSE (violation row: RawResponse omitted or RawRequest counted twice)"
-            - requirement: SW-REQ-092
-              witness: "raw_request_and_response_counted_once=T, selective_document_size_estimated=T => TRUE (RawRequest and RawResponse each count once with metadata allowance)"
         obligation_evidence:
             - requirement: SW-REQ-092
               obligation_class: document_size_accounting_exact

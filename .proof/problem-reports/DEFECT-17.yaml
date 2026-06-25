@@ -29,7 +29,7 @@ classification:
 root_cause:
     missing_requirement: true
     missing_test_partition: true
-    missing_mcdc_variable: true
+    missing_mcdc_variable: false
     notes: |
       SW-REQ-059 described mixed collection writes, but the formal variables
       did not pin that the second average-update upsert preserves the selected
@@ -54,9 +54,6 @@ hardening:
           obligation_class: routing_target_consistent
     regression_tests:
         - pumps/mongo_aggregate_test.go:TestDoAggregatedWritingWithIgnoredAggregations
-    mcdc_witnesses:
-        - requirement: SW-REQ-084
-          witness: "mixed_collection_average_update_present=T, aggregate_update_collection_identity_preserved=T => TRUE"
     proposed_classes: []
 disposition:
     status: covered_by_requirement
@@ -71,13 +68,6 @@ disposition:
     evidence:
         verified_by:
             - pumps/mongo_aggregate_test.go:TestDoAggregatedWritingWithIgnoredAggregations
-        requirement_mcdc_witnesses:
-            - requirement: SW-REQ-084
-              witness: "mixed_collection_average_update_present=F, aggregate_update_collection_identity_preserved=F => TRUE (no mixed average-update target to preserve)"
-            - requirement: SW-REQ-084
-              witness: "mixed_collection_average_update_present=T, aggregate_update_collection_identity_preserved=F => FALSE (violation row: second upsert falls back to per-org collection)"
-            - requirement: SW-REQ-084
-              witness: "mixed_collection_average_update_present=T, aggregate_update_collection_identity_preserved=T => TRUE (mixed collection contains recalculated request-time average)"
         obligation_evidence:
             - requirement: SW-REQ-059
               obligation_class: output_cardinality_bounded

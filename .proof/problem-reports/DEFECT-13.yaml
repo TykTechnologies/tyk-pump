@@ -35,7 +35,7 @@ classification:
 root_cause:
     missing_requirement: true
     missing_test_partition: false
-    missing_mcdc_variable: true
+    missing_mcdc_variable: false
     notes: |
       The regression witness already existed as a live Mongo test, but the
       formal proof model attached it to SW-REQ-034's MCP filter contract. The
@@ -60,9 +60,6 @@ hardening:
     regression_tests:
         - pumps/mongo_test.go:TestMongoPump_WriteData
         - pumps/mongo_test.go:TestMongoPump_WriteData_MCPOnlyReturnsBeforeStorage
-    mcdc_witnesses:
-        - requirement: SW-REQ-082
-          witness: "standard_mongo_insertable_record_present=T, standard_mongo_record_inserted=T => TRUE"
     proposed_classes: []
 disposition:
     status: covered_by_requirement
@@ -79,13 +76,6 @@ disposition:
         verified_by:
             - pumps/mongo_test.go:TestMongoPump_WriteData
             - pumps/mongo_test.go:TestMongoPump_WriteData_MCPOnlyReturnsBeforeStorage
-        requirement_mcdc_witnesses:
-            - requirement: SW-REQ-082
-              witness: "standard_mongo_insertable_record_present=F, standard_mongo_record_inserted=F => TRUE (all-MCP payload has no standard Mongo insertable records)"
-            - requirement: SW-REQ-082
-              witness: "standard_mongo_insertable_record_present=T, standard_mongo_record_inserted=F => FALSE (violation row: insertable records are dropped from the standard collection)"
-            - requirement: SW-REQ-082
-              witness: "standard_mongo_insertable_record_present=T, standard_mongo_record_inserted=T => TRUE (ordinary and GraphQL-classified non-MCP records are inserted)"
         obligation_evidence:
             - requirement: SW-REQ-082
               obligation_class: output_cardinality_bounded

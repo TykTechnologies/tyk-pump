@@ -61,7 +61,6 @@ hardening:
           obligation_class: output_cardinality_bounded
     regression_tests:
         - pumps/graph_sql_aggregate_test.go:TestGraphSQLAggregatePump_WriteData_Sharded
-    mcdc_witnesses: []
     proposed_classes: []
 disposition:
     status: covered_by_requirement
@@ -79,7 +78,6 @@ disposition:
     evidence:
         verified_by:
             - pumps/graph_sql_aggregate_test.go:TestGraphSQLAggregatePump_WriteData_Sharded
-        requirement_mcdc_witnesses: []
         obligation_evidence:
             - requirement: SW-REQ-043
               obligation_class: output_cardinality_bounded

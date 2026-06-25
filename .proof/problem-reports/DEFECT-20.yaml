@@ -29,7 +29,7 @@ classification:
 root_cause:
     missing_requirement: false
     missing_test_partition: true
-    missing_mcdc_variable: true
+    missing_mcdc_variable: false
     notes: |
       SW-REQ-013 prose already required RootFields preservation after earlier
       hardening, but it is informal and could not generate MC/DC witness rows.
@@ -63,13 +63,6 @@ hardening:
         - analytics/aggregate_test.go:TestAggregateGraphData_PartitionsSameOrgByAPIID
         - pumps/graph_sql_test.go:TestGraphSQLPump_WriteData
         - pumps/graph_sql_aggregate_test.go:TestSqlGraphAggregatePump_WriteData
-    mcdc_witnesses:
-        - requirement: SW-REQ-087
-          witness: "graphql_root_fields_present=T, root_fields_projected=T => TRUE"
-        - requirement: SW-REQ-087
-          witness: "graphql_root_fields_present=T, root_fields_projected=F => FALSE"
-        - requirement: SW-REQ-087
-          witness: "graphql_root_fields_present=F, root_fields_projected=F => TRUE"
     proposed_classes: []
 disposition:
     status: covered_by_requirement
@@ -90,13 +83,6 @@ disposition:
         verified_by:
             - analytics/graph_record_test.go:TestAnalyticsRecord_ToGraphRecordNew
             - analytics/graph_record_test.go:TestAnalyticsRecord_ToGraphRecord_IgnoresLegacyGraphSourcesWithoutGraphQLStatsFlag
-        requirement_mcdc_witnesses:
-            - requirement: SW-REQ-087
-              witness: "graphql_root_fields_present=T, root_fields_projected=T => TRUE"
-            - requirement: SW-REQ-087
-              witness: "graphql_root_fields_present=T, root_fields_projected=F => FALSE"
-            - requirement: SW-REQ-087
-              witness: "graphql_root_fields_present=F, root_fields_projected=F => TRUE"
         obligation_evidence:
             - requirement: SW-REQ-087
               obligation_class: structured_projection_preserved

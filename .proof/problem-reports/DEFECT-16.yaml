@@ -43,9 +43,6 @@ hardening:
     added_obligations: []
     regression_tests:
         - pumps/mongo_selective_test.go:TestWriteData
-    mcdc_witnesses:
-        - requirement: SW-REQ-035
-          witness: "org_id_present=T, record_routed_to_org_collection=T => TRUE"
     proposed_classes: []
 disposition:
     status: covered_by_requirement
@@ -62,9 +59,6 @@ disposition:
     evidence:
         verified_by:
             - pumps/mongo_selective_test.go:TestWriteData
-        requirement_mcdc_witnesses:
-            - requirement: SW-REQ-035
-              witness: "org_id_present=T, record_routed_to_org_collection=T => TRUE (records are read back from z_tyk_analyticz_<orgid>)"
         obligation_evidence:
             - requirement: SW-REQ-035
               obligation_class: output_cardinality_bounded

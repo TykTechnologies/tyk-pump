@@ -27,7 +27,7 @@ classification:
 root_cause:
     missing_requirement: true
     missing_test_partition: true
-    missing_mcdc_variable: true
+    missing_mcdc_variable: false
     notes: |
       SW-REQ-029 described Hybrid forwarding to MDCB, but until this hardening
       it did not directly model the process-exit policy for recoverable Hybrid
@@ -53,9 +53,6 @@ hardening:
     regression_tests:
         - pumps/hybrid_test.go:TestHybridPumpInit
         - pumps/hybrid_test.go:TestConnectAndLogin
-    mcdc_witnesses:
-        - requirement: SW-REQ-085
-          witness: "hybrid_init_failure_detected=T, init_error_returned_without_process_exit=T => TRUE"
     proposed_classes: []
 disposition:
     status: covered_by_requirement
@@ -73,13 +70,6 @@ disposition:
         verified_by:
             - pumps/hybrid_test.go:TestHybridPumpInit
             - pumps/hybrid_test.go:TestConnectAndLogin
-        requirement_mcdc_witnesses:
-            - requirement: SW-REQ-085
-              witness: "hybrid_init_failure_detected=F, init_error_returned_without_process_exit=F => TRUE (valid credentials produce no recoverable init failure)"
-            - requirement: SW-REQ-085
-              witness: "hybrid_init_failure_detected=T, init_error_returned_without_process_exit=F => FALSE (violation row: recoverable init failure exits or is swallowed instead of returned)"
-            - requirement: SW-REQ-085
-              witness: "hybrid_init_failure_detected=T, init_error_returned_without_process_exit=T => TRUE (empty connection string, invalid credentials, and server-down cases return errors)"
         obligation_evidence:
             - requirement: SW-REQ-085
               obligation_class: process_exit_on_recoverable
