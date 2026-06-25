@@ -5,7 +5,7 @@ priority: shall
 category: functional
 req_type: guarantee
 fretish: when records_present & chunk_partial storage shall always satisfy records_popped_and_expire_attempted
-description: Temporal storage GetAndDeleteSet shall pop up to a chunk of records from the configured analytics list and re-apply the expiry to any remainder; the Pop side is atomic at the Redis protocol level, while the subsequent Expire of the remainder is a best-effort follow-up. The Pop+Expire pair is not a single atomic transaction — that gap is tracked by KI getanddeleteset-expire-fail-loses-records.
+description: Temporal storage GetAndDeleteSet shall pop up to a chunk of records from the configured analytics list and re-apply the expiry to any remainder; when the caller requests full-drain mode with chunkSize=0, the adapter shall normalize to the storage-library full-drain sentinel and skip remainder expiry. The Pop side is atomic at the Redis protocol level, while the subsequent Expire of a partial-drain remainder is a best-effort follow-up. The Pop+Expire pair is not a single atomic transaction — that gap is tracked by KI getanddeleteset-expire-fail-loses-records.
 formalization_strategy: fretish
 informal_verification:
     method: ""
@@ -33,21 +33,22 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-22T06:47:49Z"
-        comment: 'Reviewed evidence-backed code-signal obligation closures: partial-progress observable evidence for pump fanout, timezone round-trip evidence for analytics aggregate/record/uptime, Redis relative-TTL clock-skew evidence, and HTTP retry malformed-input nominal/negative evidence. Real product gaps remain tracked as KnownIssue-backed debt; no product behavior fixes claimed.'
-        fingerprint: sha256:1ab6b380b3687932a3c402fb6aa05d37508b5bd13ca568920b8c5d0b56708f02
+        reviewed_at: "2026-06-25T12:37:02Z"
+        comment: 'Product-fix-history hardening for TT-10520: full_drain_semantics now pins storage-library migration parity for chunkSize=0 -> backend -1 full-drain behavior, with adapter and live Redis evidence; residual storage retry/cancellation/atomicity/wire-format gaps remain KI-backed debt.'
+        fingerprint: sha256:f04b6dcf529d6b47c951e42e8f3d9175068e69bfedabe19be756d5d301fbecd6
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:14Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-22T10:57:37Z"
+    last_modified_at: "2026-06-25T12:37:02Z"
 obligation_class: clock_skew_tolerated
 obligation_checklist:
     - atomicity
     - clock_skew_tolerated
     - config_schema_strict
     - error_handling
+    - full_drain_semantics
     - malformed_recovers_or_errors_loudly
     - nominal
     - snapshot_wire_format_compatible
@@ -135,4 +136,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-22T06:36:52Z comment="Reviewed evidence-backed code-signal obligation closures: timezone round-trip evidence for analytics aggregate/record/uptime, Redis relative-TTL clock-skew evidence, and HTTP retry malformed-input nominal/negative evidence. No product behavior fixes claimed.")'
+          changed_by: human:buger
+        - date: "2026-06-25T12:37:02Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-22T06:47:49Z comment="Reviewed evidence-backed code-signal obligation closures: partial-progress observable evidence for pump fanout, timezone round-trip evidence for analytics aggregate/record/uptime, Redis relative-TTL clock-skew evidence, and HTTP retry malformed-input nominal/negative evidence. Real product gaps remain tracked as KnownIssue-backed debt; no product behavior fixes claimed.")'
           changed_by: human:buger

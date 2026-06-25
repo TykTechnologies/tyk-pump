@@ -663,6 +663,10 @@ func TestTemporalStorageHandler_GetAndDeleteSet_TrueRows(t *testing.T) {
 		res, err := r.GetAndDeleteSet(key, 0, time.Second)
 		assert.NoError(t, err)
 		assert.Len(t, res, 1, "record must be popped even on the chunk_partial=F path")
+
+		remaining, err := r.list.Range(ctx, r.fixKey(key), 0, -1)
+		assert.NoError(t, err)
+		assert.Empty(t, remaining, "full-drain mode must leave no list remainder")
 	})
 
 	t.Run("chunk_partial=T with empty list (row 2)", func(t *testing.T) {
@@ -700,6 +704,32 @@ func (e *expireFailingKV) Expire(_ context.Context, _ string, _ time.Duration) e
 	return assertAnError()
 }
 
+// Verifies: SW-REQ-006
+// SW-REQ-006:full_drain_semantics:nominal
+// Drives the storage-library migration adapter contract directly:
+// public chunkSize=0 must be normalized to the backend full-drain
+// sentinel (-1), return every popped record, and skip Expire because
+// a full-drain call has no remainder to refresh.
+func TestTemporalStorageHandler_GetAndDeleteSet_FullDrainNormalizesZeroAndSkipsExpire(t *testing.T) {
+	t.Cleanup(func() { resetSingletonForTest(t) })
+	connectorSingleton = &brokenConnector{}
+
+	l := &recordingList{popResult: []string{"one", "two"}}
+	kv := &recordingKV{}
+	r := &TemporalStorageHandler{
+		Config: &TemporalStorageConfig{KeyPrefix: "test-prefix-"},
+		kv:     kv,
+		list:   l,
+	}
+
+	res, err := r.GetAndDeleteSet("analytics", 0, time.Minute)
+	assert.NoError(t, err)
+	assert.Equal(t, []interface{}{"one", "two"}, res)
+	assert.Equal(t, "test-prefix-analytics", l.popKey)
+	assert.Equal(t, int64(-1), l.popStop, "chunkSize=0 must map to the storage-library full-drain sentinel")
+	assert.False(t, kv.expireCalled, "full-drain mode must not expire a nonexistent remainder")
+}
+
 // Verifies: SW-REQ-007
 // SW-REQ-007:nominal:review
 // Drives the `len(kvArr) > 1` T arm of EnvMapString.Decode at store.go:92.
@@ -733,3 +763,104 @@ func assertAnError() error {
 type syntheticError struct{ msg string }
 
 func (s *syntheticError) Error() string { return s.msg }
+
+type recordingList struct {
+	popKey    string
+	popStop   int64
+	popResult []string
+}
+
+func (r *recordingList) Remove(_ context.Context, _ string, _ int64, _ interface{}) (int64, error) {
+	return 0, nil
+}
+
+func (r *recordingList) Range(_ context.Context, _ string, _, _ int64) ([]string, error) {
+	return nil, nil
+}
+
+func (r *recordingList) Length(_ context.Context, _ string) (int64, error) {
+	return 0, nil
+}
+
+func (r *recordingList) Prepend(_ context.Context, _ bool, _ string, _ ...[]byte) error {
+	return nil
+}
+
+func (r *recordingList) Append(_ context.Context, _ bool, _ string, _ ...[]byte) error {
+	return nil
+}
+
+func (r *recordingList) Pop(_ context.Context, key string, stop int64) ([]string, error) {
+	r.popKey = key
+	r.popStop = stop
+	return r.popResult, nil
+}
+
+type recordingKV struct {
+	expireCalled bool
+}
+
+func (r *recordingKV) Get(_ context.Context, _ string) (string, error) {
+	return "", nil
+}
+
+func (r *recordingKV) Set(_ context.Context, _, _ string, _ time.Duration) error {
+	return nil
+}
+
+func (r *recordingKV) SetIfNotExist(_ context.Context, _, _ string, _ time.Duration) (bool, error) {
+	return false, nil
+}
+
+func (r *recordingKV) SetIfExist(_ context.Context, _, _ string, _ time.Duration) (bool, error) {
+	return false, nil
+}
+
+func (r *recordingKV) Delete(_ context.Context, _ string) error {
+	return nil
+}
+
+func (r *recordingKV) Increment(_ context.Context, _ string) (int64, error) {
+	return 0, nil
+}
+
+func (r *recordingKV) Decrement(_ context.Context, _ string) (int64, error) {
+	return 0, nil
+}
+
+func (r *recordingKV) Exists(_ context.Context, _ string) (bool, error) {
+	return false, nil
+}
+
+func (r *recordingKV) Expire(_ context.Context, _ string, _ time.Duration) error {
+	r.expireCalled = true
+	return nil
+}
+
+func (r *recordingKV) TTL(_ context.Context, _ string) (int64, error) {
+	return 0, nil
+}
+
+func (r *recordingKV) DeleteKeys(_ context.Context, _ []string) (int64, error) {
+	return 0, nil
+}
+
+func (r *recordingKV) DeleteScanMatch(_ context.Context, _ string) (int64, error) {
+	return 0, nil
+}
+
+func (r *recordingKV) Keys(_ context.Context, _ string) ([]string, error) {
+	return nil, nil
+}
+
+func (r *recordingKV) GetMulti(_ context.Context, _ []string) ([]interface{}, error) {
+	return nil, nil
+}
+
+func (r *recordingKV) GetKeysAndValuesWithFilter(_ context.Context, _ string) (map[string]interface{}, error) {
+	return nil, nil
+}
+
+func (r *recordingKV) GetKeysWithOpts(_ context.Context, _ string, _ map[string]uint64, _ int64) ([]string, map[string]uint64, bool, error) {
+	return nil, nil, false, nil
+}

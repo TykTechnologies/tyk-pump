@@ -1,0 +1,47 @@
+id: full_drain_semantics
+name: Full-drain semantics
+category: domain
+status: active
+summary: A drain-all control value shall remove and return every currently queued record exactly once without applying partial-drain remainder handling.
+description: |-
+  Queue consumers often reserve a sentinel or zero value to mean "drain all
+  records". Requirements that expose this mode shall pin the adapter contract:
+  the public control value is normalized to the backend's full-drain
+  representation, every current record is returned exactly once, and
+  remainder-only side effects such as TTL refresh are skipped because no
+  remainder should exist.
+applies_when:
+  description: a queue, list, or temporal store API accepts a chunk/batch size where zero or a sentinel means drain all pending records
+  trigger_phrases:
+    - drain all
+    - full drain
+    - chunkSize == 0
+    - purge_chunk
+    - pop everything
+example_req: |-
+  When GetAndDeleteSet is called with chunkSize=0, temporal storage shall
+  normalize the request to the backend full-drain value, return all current
+  records exactly once, remove them from the source list, and skip Expire on
+  the nonexistent remainder.
+if_missing: |-
+  A storage-library migration can silently reinterpret zero as "pop zero" or
+  as a partial chunk. The pump then leaves analytics records stuck in Redis,
+  refreshes TTL on the wrong key state, or drains only part of a list that
+  operators expected to be fully consumed.
+recommended_evidence:
+  - kind: nominal
+    note: Unit test asserts the public zero value is normalized to the backend full-drain sentinel and that the returned records match the current list contents.
+  - kind: integration
+    note: Live backend test seeds multiple records, calls the public full-drain value, and asserts the source list is empty afterwards.
+  - kind: review
+    note: Review maps the legacy implementation's drain-all behavior to the storage-library adapter contract.
+frameworks:
+  - id: CWE
+    refs:
+      - CWE-682
+      - CWE-840
+related_classes:
+  - id: atomicity
+    relationship: complements
+  - id: output_cardinality_bounded
+    relationship: complements

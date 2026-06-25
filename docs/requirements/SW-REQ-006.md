@@ -15,6 +15,7 @@ The atomicity guarantee is what lets the gateway and the pump cohabit on the sam
 
 ## Evidence
 - `storage/temporal_storage_test.go:47 TestRedisClusterStorageManager_GetAndDeleteSet` — tagged `// Verifies: SW-REQ-006`; real-Redis integration test asserting pop + remaining-TTL behaviour.
+- `storage/temporal_storage_mcdc_test.go:708 TestTemporalStorageHandler_GetAndDeleteSet_FullDrainNormalizesZeroAndSkipsExpire` — tagged `// SW-REQ-006:full_drain_semantics:nominal`; proves the storage-library adapter maps public `chunkSize=0` to backend sentinel `-1` and skips `Expire`.
 - `storage/temporal_storage_test.go:108 TestNewTemporalClusterStorageHandler`, `:193 TestTemporalStorageHandler_SetKey`, `:232 TestTemporalStorageHandler_GetName`, `:259 TestTemporalStorageHandler_Init` — adjacent coverage for the surrounding handler API.
 - `storage/temporal_storage_negative_test.go:13 TestTemporalStorageHandler_GetAndDeleteSet_BackendUnreachable` — tagged `// SW-REQ-006:atomicity:negative` (also covers SW-REQ-007 and SW-REQ-031); asserts that an unreachable backend produces an error instead of partial side-effects.
 
