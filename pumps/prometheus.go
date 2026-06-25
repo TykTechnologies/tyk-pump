@@ -221,6 +221,7 @@ func (p *PrometheusPump) Init(conf interface{}) error {
 }
 
 // reqproof:implements SW-REQ-024
+// reqproof:implements SW-REQ-090
 func (p *PrometheusPump) initBaseMetrics() {
 	toDisableSet := map[string]struct{}{}
 	for _, metric := range p.conf.DisabledMetrics {

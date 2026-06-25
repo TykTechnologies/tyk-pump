@@ -38,7 +38,10 @@ Variables are declared in `specs/software/variables/pumps-prometheus.vars.yaml`.
   metrics.
 
 ## Evidence
-- `pumps/prometheus_test.go:TestPrometheusDisablingMetrics` proves disabled
-  built-in families are absent while a non-disabled built-in remains.
+- `pumps/prometheus_test.go:TestPrometheusDisablingMetrics` proves every
+  named built-in family in the controlled set is absent from `allMetrics` and
+  leaves its family name available for registration in an isolated Prometheus
+  registry when disabled by exact name, and that an unknown disabled name does
+  not suppress built-in families.
 - `pumps/prometheus_test.go:TestPrometheusDisabledMetricsDoNotDisableCustomMetrics`
   proves a custom metric named in `disabled_metrics` is still initialized.

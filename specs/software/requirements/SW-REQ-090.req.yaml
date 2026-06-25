@@ -28,15 +28,15 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-25T17:14:02Z"
-        comment: 'TT-6799 hardening: Prometheus disabled base metric families now have a dedicated requirement, metric_family_disable_gate evidence, and custom-metric non-suppression boundary; no runtime product behavior change.'
+        reviewed_at: "2026-06-25T23:35:13Z"
+        comment: 'Reviewed TT-6799 follow-up: SW-REQ-090 now includes unknown disabled_metrics boundary acceptance criteria; strengthened evidence disables every listed built-in family by exact name and proves unknown disabled names do not suppress built-ins. No runtime product behavior change.'
         fingerprint: sha256:4d1aff28f5518ca4b39c92a4eeca29bc8c24529bc82a411d1717489d33750243
         ai_generated: false
 history:
     created_by: human:buger
     created_at: "2026-06-25T17:11:42Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-25T17:14:02Z"
+    last_modified_at: "2026-06-25T23:35:13Z"
 obligation_checklist:
     - metric_family_disable_gate
 stakeholder:
@@ -46,6 +46,9 @@ stakeholder:
           verification_method: test
         - id: AC-002
           text: With disabled_metrics containing a custom metric name, the operator-defined custom metric is still initialized and present because disabled_metrics controls only built-in base metric families.
+          verification_method: test
+        - id: AC-003
+          text: With disabled_metrics containing a name outside the built-in base family set, all built-in base metric families remain initialized and present.
           verification_method: test
 lifecycle:
     change_history:
@@ -58,4 +61,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-25T17:11:42Z comment="TT-6799 hardening: reviewed Prometheus disabled base metric family gate, custom-metric non-suppression boundary, MC/DC witnesses, and DEFECT-27 closure; no runtime product behavior change claimed.")'
+          changed_by: human:buger
+        - date: "2026-06-25T23:35:13Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-25T17:14:02Z comment="TT-6799 hardening: Prometheus disabled base metric families now have a dedicated requirement, metric_family_disable_gate evidence, and custom-metric non-suppression boundary; no runtime product behavior change.")'
           changed_by: human:buger

@@ -988,35 +988,39 @@ func TestPrometheusEnsureLabels(t *testing.T) {
 // MCDC SW-REQ-090: base_metric_disabled=T, base_metric_family_absent=F => FALSE
 // MCDC SW-REQ-090: base_metric_disabled=T, base_metric_family_absent=T => TRUE
 func TestPrometheusDisablingMetrics(t *testing.T) {
-	p := &PrometheusPump{}
-	newPump := p.New().(*PrometheusPump)
-
-	log := logrus.New()
-	log.Out = io.Discard
-	newPump.log = logrus.NewEntry(log)
-
-	newPump.conf = &PrometheusConf{DisabledMetrics: []string{"tyk_http_status_per_path", "tyk_latency"}}
-
-	newPump.initBaseMetrics()
-
-	defer func() {
-		for i := range newPump.allMetrics {
-			if newPump.allMetrics[i].MetricType == counterType {
-				prometheus.Unregister(newPump.allMetrics[i].counterVec)
-			} else if newPump.allMetrics[i].MetricType == histogramType {
-				prometheus.Unregister(newPump.allMetrics[i].histogramVec)
-			}
-		}
-	}()
-
-	metricMap := map[string]*PrometheusMetric{}
-	for _, metric := range newPump.allMetrics {
-		metricMap[metric.Name] = metric
+	baseFamilies := []string{
+		"tyk_http_status",
+		"tyk_http_status_per_path",
+		"tyk_http_status_per_key",
+		"tyk_http_status_per_oauth_client",
+		"tyk_latency",
 	}
 
-	assert.Contains(t, metricMap, "tyk_http_status")
-	assert.NotContains(t, metricMap, "tyk_http_status_per_path")
-	assert.NotContains(t, metricMap, "tyk_latency")
+	t.Run("all exact built-in family names are disabled", func(t *testing.T) {
+		registry := withIsolatedPrometheusRegistry(t)
+		newPump := newPrometheusPumpWithDisabledMetrics(baseFamilies)
+		defer unregisterPrometheusMetrics(newPump.allMetrics)
+
+		metricMap := prometheusMetricMap(newPump.allMetrics)
+		for _, family := range baseFamilies {
+			assert.NotContains(t, metricMap, family)
+			assertPrometheusMetricFamilyNameAvailable(t, registry, family)
+		}
+		assert.Empty(t, newPump.allMetrics)
+	})
+
+	t.Run("unknown disabled name does not suppress built-in families", func(t *testing.T) {
+		registry := withIsolatedPrometheusRegistry(t)
+		newPump := newPrometheusPumpWithDisabledMetrics([]string{"tyk_not_a_base_family"})
+		defer unregisterPrometheusMetrics(newPump.allMetrics)
+
+		metricMap := prometheusMetricMap(newPump.allMetrics)
+		for _, family := range baseFamilies {
+			assert.Contains(t, metricMap, family)
+			assertPrometheusMetricFamilyNameRegistered(t, registry, family)
+		}
+		assert.Len(t, newPump.allMetrics, len(baseFamilies))
+	})
 }
 
 // Verifies: SW-REQ-090
@@ -1061,6 +1065,74 @@ func TestPrometheusDisabledMetricsDoNotDisableCustomMetrics(t *testing.T) {
 
 	assert.Contains(t, metricMap, "tyk_custom_disabled_metric")
 	assert.Contains(t, metricMap, "tyk_http_status")
+}
+
+func newPrometheusPumpWithDisabledMetrics(disabledMetrics []string) *PrometheusPump {
+	p := &PrometheusPump{}
+	newPump := p.New().(*PrometheusPump)
+
+	loggerInstance := logrus.New()
+	loggerInstance.Out = io.Discard
+	newPump.log = logrus.NewEntry(loggerInstance)
+	newPump.conf = &PrometheusConf{DisabledMetrics: disabledMetrics}
+	newPump.initBaseMetrics()
+	return newPump
+}
+
+func prometheusMetricMap(metrics []*PrometheusMetric) map[string]*PrometheusMetric {
+	metricMap := map[string]*PrometheusMetric{}
+	for _, metric := range metrics {
+		metricMap[metric.Name] = metric
+	}
+	return metricMap
+}
+
+func unregisterPrometheusMetrics(metrics []*PrometheusMetric) {
+	for _, metric := range metrics {
+		if metric.MetricType == counterType && metric.counterVec != nil {
+			prometheus.Unregister(metric.counterVec)
+		} else if metric.MetricType == histogramType && metric.histogramVec != nil {
+			prometheus.Unregister(metric.histogramVec)
+		}
+	}
+}
+
+func withIsolatedPrometheusRegistry(t *testing.T) *prometheus.Registry {
+	t.Helper()
+
+	originalRegisterer := prometheus.DefaultRegisterer
+	originalGatherer := prometheus.DefaultGatherer
+	registry := prometheus.NewRegistry()
+	prometheus.DefaultRegisterer = registry
+	prometheus.DefaultGatherer = registry
+
+	t.Cleanup(func() {
+		prometheus.DefaultRegisterer = originalRegisterer
+		prometheus.DefaultGatherer = originalGatherer
+	})
+
+	return registry
+}
+
+func assertPrometheusMetricFamilyNameAvailable(t *testing.T, registry *prometheus.Registry, name string) {
+	t.Helper()
+
+	probe := prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: name,
+		Help: "registration probe for disabled metric family",
+	})
+	require.NoError(t, registry.Register(probe))
+	assert.True(t, registry.Unregister(probe))
+}
+
+func assertPrometheusMetricFamilyNameRegistered(t *testing.T, registry *prometheus.Registry, name string) {
+	t.Helper()
+
+	probe := prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: name,
+		Help: "registration probe for enabled metric family",
+	})
+	require.Error(t, registry.Register(probe))
 }
 
 // TestPrometheusGetLabelsValues_MCPLabels verifies that mcp_method, mcp_primitive_type,

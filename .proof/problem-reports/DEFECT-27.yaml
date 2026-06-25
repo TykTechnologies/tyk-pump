@@ -88,3 +88,11 @@ history:
         Recorded TT-6799 Prometheus disabled base metric family behavior as
         covered by SW-REQ-090, including exact built-in family suppression and
         custom-metric non-suppression evidence.
+    - at: "2026-06-26T00:00:00Z"
+      by: agent:codex
+      action: hardened
+      detail: |
+        Tightened disabled-metric evidence to cover every built-in base family
+        name listed by SW-REQ-090, isolated-registry registration probes for
+        disabled built-ins, and the unknown-name boundary where
+        disabled_metrics must not suppress built-in families.
