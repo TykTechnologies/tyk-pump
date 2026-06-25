@@ -3,6 +3,9 @@ package pumps
 import (
 	"context"
 	"errors"
+	"go/ast"
+	"go/parser"
+	"go/token"
 	"strings"
 	"testing"
 	"time"
@@ -551,6 +554,110 @@ func TestMongoAggregatePump_ShouldSelfHeal(t *testing.T) {
 			}
 		})
 	}
+}
+
+// Verifies: SW-REQ-062
+// SW-REQ-062:boundary:negative
+// SW-REQ-062:error_handling:negative
+// SW-REQ-062:denial_of_service_resistant:nominal
+func TestMongoAggregatePump_ShouldSelfHealResetsTimestampTracker(t *testing.T) {
+	base := time.Date(2026, time.June, 25, 12, 0, 0, 0, time.UTC)
+	next := base.Add(10 * time.Minute)
+	record := analytics.AnalyticsRecord{
+		APIID:        "api1",
+		OrgID:        "org1",
+		TimeStamp:    next,
+		ResponseCode: 200,
+	}
+
+	tests := []struct {
+		name          string
+		err           error
+		selfHeal      bool
+		wantTimestamp time.Time
+	}{
+		{
+			name:          "size error resets tracker so next write opens new bucket",
+			err:           errors.New("Size must be between 0 and 16793600"),
+			selfHeal:      true,
+			wantTimestamp: next,
+		},
+		{
+			name:          "non-size error keeps tracker on current bucket",
+			err:           errors.New("temporary write failure"),
+			selfHeal:      false,
+			wantTimestamp: base,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			dbID := "mongodb://self-heal-reset/" + t.Name()
+			analytics.SetlastTimestampAgggregateRecord(dbID, base)
+
+			p := &MongoAggregatePump{
+				dbConf: &MongoAggregateConf{
+					BaseMongoConf:              BaseMongoConf{MongoURL: dbID},
+					EnableAggregateSelfHealing: true,
+					AggregationTime:            30,
+				},
+				CommonPumpConfig: CommonPumpConfig{
+					log: logrus.NewEntry(logrus.New()),
+				},
+			}
+
+			assert.Equal(t, tt.selfHeal, p.ShouldSelfHeal(tt.err))
+			got := analytics.AggregateData([]interface{}{record}, false, nil, dbID, p.dbConf.AggregationTime)
+			require.Contains(t, got, "org1")
+			assert.Equal(t, tt.wantTimestamp, got["org1"].TimeStamp)
+		})
+	}
+}
+
+// Verifies: SW-REQ-062
+// SW-REQ-062:error_handling:nominal
+// SW-REQ-062:denial_of_service_resistant:nominal
+func TestMongoAggregatePump_WriteDataSelfHealRetryWiring(t *testing.T) {
+	file, err := parser.ParseFile(token.NewFileSet(), "mongo_aggregate.go", nil, 0)
+	require.NoError(t, err)
+
+	var foundWriteData bool
+	var sawShouldSelfHeal bool
+	var sawSameBatchRetry bool
+
+	for _, decl := range file.Decls {
+		fn, ok := decl.(*ast.FuncDecl)
+		if !ok || fn.Name.Name != "WriteData" || fn.Recv == nil || len(fn.Recv.List) != 1 {
+			continue
+		}
+		foundWriteData = true
+
+		ast.Inspect(fn.Body, func(n ast.Node) bool {
+			call, ok := n.(*ast.CallExpr)
+			if !ok {
+				return true
+			}
+			sel, ok := call.Fun.(*ast.SelectorExpr)
+			if !ok {
+				return true
+			}
+			if sel.Sel.Name == "ShouldSelfHeal" {
+				sawShouldSelfHeal = true
+			}
+			if sel.Sel.Name == "WriteData" && len(call.Args) == 2 {
+				ctx, ctxOK := call.Args[0].(*ast.Ident)
+				data, dataOK := call.Args[1].(*ast.Ident)
+				if ctxOK && dataOK && ctx.Name == "ctx" && data.Name == "data" {
+					sawSameBatchRetry = true
+				}
+			}
+			return true
+		})
+	}
+
+	require.True(t, foundWriteData, "MongoAggregatePump.WriteData must be present")
+	assert.True(t, sawShouldSelfHeal, "WriteData must classify aggregate write errors through ShouldSelfHeal")
+	assert.True(t, sawSameBatchRetry, "self-heal branch must retry the same ctx/data batch")
 }
 
 // Verifies: SW-REQ-058

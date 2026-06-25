@@ -1,0 +1,102 @@
+schema_version: 1
+id: DEFECT-24
+title: Mongo aggregate documents exceeded backend max size without self-healing
+introduced_in: unknown
+description: |
+  TT-506 (commit d13b62e) fixed a historical MongoAggregate failure mode where
+  high-cardinality aggregate documents could grow past the MongoDB 16 MiB
+  document limit (or equivalent CosmosDB/DocumentDB max-update limits) and keep
+  failing in the same aggregation window.
+
+  The fix added configurable aggregation windows and self-healing: when a
+  backend size-limit error is classified and self-healing is enabled, the pump
+  halves AggregationTime, resets the last-document timestamp tracker, and
+  retries the same input so future writes form smaller aggregate documents.
+  Current proof coverage models this behavior in SW-REQ-058 and SW-REQ-062.
+source:
+    type: upstream_commit
+    repo: TykTechnologies/tyk-pump
+    commit: d13b62e
+    reference: TT-506
+    date: "2022-11-02"
+classification:
+    surface: error_handling
+    defect_class: mongo_aggregate_document_size_self_heal_missing
+    severity: medium
+    security_relevant: false
+root_cause:
+    missing_requirement: true
+    missing_test_partition: true
+    missing_mcdc_variable: false
+    notes: |
+      The historical model had no explicit requirement for backend max-document
+      size recovery and no bounded evidence that size-limit classification
+      changed the future aggregation bucket. Current SW-REQ-062 covers the
+      self-heal predicate and side effects without requiring a 16 MiB stress
+      test.
+impact_analysis:
+    affected_requirements:
+        - SW-REQ-058
+        - SW-REQ-062
+    affected_code:
+        - pumps/mongo_aggregate.go
+        - pumps/mongo_aggregate_test.go
+        - analytics/aggregate.go
+hardening:
+    new_requirements: []
+    strengthened_requirements:
+        - SW-REQ-062
+    added_obligations: []
+    regression_tests:
+        - pumps/mongo_aggregate_test.go:TestMongoAggregatePump_ShouldSelfHeal
+        - pumps/mongo_aggregate_test.go:TestMongoAggregatePump_ShouldSelfHealResetsTimestampTracker
+        - pumps/mongo_aggregate_test.go:TestMongoAggregatePump_WriteDataSelfHealRetryWiring
+        - pumps/mongo_aggregate_test.go:TestMongoAggregatePump_divideAggregationTime
+        - pumps/mongo_aggregate_test.go:TestAggregationTime
+    mcdc_witnesses:
+        - requirement: SW-REQ-062
+          witness: "aggregation_time_above_floor=T, aggregation_time_halved=T, self_heal_enabled=T, size_error_detected=T => TRUE"
+        - requirement: SW-REQ-058
+          witness: "store_per_minute=F, window_eq_1_min=F => TRUE"
+    proposed_classes: []
+disposition:
+    status: covered_by_requirement
+    requirements:
+        - SW-REQ-058
+        - SW-REQ-062
+    known_issues:
+        - mapstructure-decode-silently-drops-unknown-keys
+        - pumps-logfatal-on-config-decode
+    evidence:
+        verified_by:
+            - pumps/mongo_aggregate_test.go:TestMongoAggregatePump_ShouldSelfHeal
+            - pumps/mongo_aggregate_test.go:TestMongoAggregatePump_ShouldSelfHealResetsTimestampTracker
+            - pumps/mongo_aggregate_test.go:TestMongoAggregatePump_WriteDataSelfHealRetryWiring
+            - pumps/mongo_aggregate_test.go:TestMongoAggregatePump_divideAggregationTime
+            - pumps/mongo_aggregate_test.go:TestAggregationTime
+        obligation_evidence:
+            - requirement: SW-REQ-062
+              obligation_class: denial_of_service_resistant
+              evidence_type: nominal
+            - requirement: SW-REQ-062
+              obligation_class: error_handling
+              evidence_type: negative
+            - requirement: SW-REQ-062
+              obligation_class: boundary
+              evidence_type: negative
+            - requirement: SW-REQ-062
+              obligation_class: monotonicity
+              evidence_type: nominal
+            - requirement: SW-REQ-058
+              obligation_class: nominal
+              evidence_type: nominal
+    reviewer: agent:codex
+    reviewed_at: "2026-06-25T17:20:00Z"
+history:
+    - at: "2026-06-25T17:20:00Z"
+      by: agent:codex
+      action: created
+      detail: |
+        Recorded TT-506 max-document-size/self-healing behavior as covered by
+        SW-REQ-058 aggregation-window policy and SW-REQ-062 self-healing
+        predicate/side-effect evidence.

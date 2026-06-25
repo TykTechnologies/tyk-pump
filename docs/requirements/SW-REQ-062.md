@@ -35,14 +35,18 @@ windows, which produce smaller documents. The recursion is bounded by the
   call after `divideAggregationTime`.
 
 ## Evidence
-- `pumps/mongo_aggregate_test.go:TestMongoAggregatePump_SelfHealing`
-  (re-annotated `Verifies: SW-REQ-062` plus the
-  `// SW-REQ-062:error_handling:negative` obligation triple) — exercises
-  the size-error-detection path end-to-end.
 - `pumps/mongo_aggregate_test.go:TestMongoAggregatePump_ShouldSelfHeal`
   (re-annotated `Verifies: SW-REQ-062`) — exercises the predicate matrix
   (random error, cosmos error, standard mongo error, doc-db error,
   disabled flag, aggregation-time-already-1).
+- `pumps/mongo_aggregate_test.go:TestMongoAggregatePump_ShouldSelfHealResetsTimestampTracker`
+  — verifies the non-container timestamp-reset side effect: a size error
+  clears the last-document tracker so the next aggregate opens a new bucket,
+  while a non-size write error keeps the current bucket.
+- `pumps/mongo_aggregate_test.go:TestMongoAggregatePump_WriteDataSelfHealRetryWiring`
+  — verifies the `WriteData` self-heal branch is wired to call
+  `ShouldSelfHeal(err)` and retry the same `ctx`/`data` batch without running
+  the historical 16 MiB stress path.
 - `pumps/mongo_aggregate_test.go:TestMongoAggregatePump_divideAggregationTime`
   (re-annotated `Verifies: SW-REQ-062`) — exercises the halve / floor-at-1
   helper.

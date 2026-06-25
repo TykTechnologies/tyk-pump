@@ -7,7 +7,7 @@ variables:
     - name: size_error_detected
       type: bool
       direction: input
-      description: True when the upsert error string matches one of the listed size-error markers (StandardMongoSizeError "is over max BSON object size" / CosmosSizeError / DocDBSizeError) — the error-class gate independent from self_heal_enabled.
+      description: True when the upsert error string matches one of the listed size-error markers (StandardMongoSizeError "Size must be between 0 and" / CosmosSizeError "Request size is too large" / DocDBSizeError "Resulting document after update is larger than") — the error-class gate independent from self_heal_enabled.
     - name: aggregation_time_above_floor
       type: bool
       direction: input
@@ -16,7 +16,7 @@ variables:
     - name: aggregation_time_halved
       type: bool
       direction: output
-      description: True iff ShouldSelfHeal halves AggregationTime and re-invokes WriteData (false when AggregationTime is already at the floor or when self-healing is not triggered).
+      description: True iff ShouldSelfHeal halves AggregationTime after a classified size error above the one-minute floor (false when AggregationTime is already at the floor or when self-healing is not triggered). The caller-level retry with the same ctx/data batch is separately evidenced on MongoAggregatePump.WriteData.
     - name: store_per_minute
       type: bool
       direction: input

@@ -1,0 +1,7 @@
+id: REVIEW-d13b62e-mongo-aggregate-self-heal
+kind: design_review
+reviewer: agent:codex
+reviewed_at: "2026-06-25T17:30:00Z"
+subject: upstream:d13b62e/SW-REQ-058/SW-REQ-062
+decision: approved
+comment: 'Commit-level assurance review for TT-506: upstream added configurable Mongo aggregate windows and max-document-size self-healing. Current proof covers the window policy in SW-REQ-058 and the self-heal predicate/side effects in SW-REQ-062. This slice corrected stale size-error variable metadata, removed the skipped 16 MiB integration test as claimed evidence, added bounded timestamp-reset evidence, and added AST retry-wiring evidence for the same ctx/data batch. No runtime product behavior change was made.'
