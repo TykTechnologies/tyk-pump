@@ -185,6 +185,7 @@ func TestAnalyticsRecord_GetLineValues(t *testing.T) {
 }
 
 // Verifies: SW-REQ-009
+// SW-REQ-009:structured_projection_preserved:nominal
 func TestLatency_GetFieldNames(t *testing.T) {
 	latency := &Latency{}
 	fieldNames := latency.GetFieldNames()
@@ -200,6 +201,7 @@ func TestLatency_GetFieldNames(t *testing.T) {
 }
 
 // Verifies: SW-REQ-009
+// SW-REQ-009:structured_projection_preserved:nominal
 func TestLatency_GetLineValues(t *testing.T) {
 	tcs := []struct { //nolint:govet // field alignment here is not performance-critical
 		latency      Latency

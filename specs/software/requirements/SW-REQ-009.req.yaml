@@ -5,7 +5,7 @@ priority: shall
 category: functional
 req_type: guarantee
 fretish: ""
-description: The analytics record model shall expose its field names and helper accessors deterministically regardless of map ordering. Any additive AnalyticsRecord field intended for helper output shall update GetFieldNames/GetLineValues evidence in the same change; this branch does not include upstream TT-7519 OriginalPath/listen_path or ListenPath/listen_path fields.
+description: The analytics record model shall expose its field names and helper accessors deterministically regardless of map ordering. The Latency helper output shall include total, upstream, and gateway latency in that order. Any additive AnalyticsRecord field intended for helper output shall update GetFieldNames/GetLineValues evidence in the same change; this branch does not include upstream TT-7519 OriginalPath/listen_path or ListenPath/listen_path fields.
 formalization_strategy: informal
 informal_verification:
     method: ""
@@ -29,20 +29,21 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-23T07:17:48Z"
-        comment: 'Product-fix-history hardening: proof-only requirement/evidence updates for logger format, additive record fields, and SQL aggregate shard-target debt; no product behavior fixes claimed.'
-        fingerprint: sha256:09f68f70799d37aed0703d2e6172a5f449adb30f0e33920156ebd673bd71ca4d
+        reviewed_at: "2026-06-25T21:13:14Z"
+        comment: 'Reviewed ebd5a6c hardening: AnalyticsRecord helper projection now explicitly includes Latency.Gateway in deterministic field-name/value evidence; no runtime behavior change.'
+        fingerprint: sha256:25aa08f9ea9d67e2345d360b90261766ed2437a3081dda4ee985121958117683
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:14Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-23T07:17:48Z"
+    last_modified_at: "2026-06-25T21:13:14Z"
 obligation_class: tz_explicit
 obligation_checklist:
     - binary_data_preserved
     - determinism
     - hash_format_deterministic
+    - structured_projection_preserved
     - tz_explicit
 obligation_deferrals:
     - obligation_class: binary_data_preserved
@@ -101,4 +102,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-22T12:04:23Z comment="Review obligation expansion from catalogue gap pass; active unfixed behavior remains KnownIssue-gated.")'
+          changed_by: human:buger
+        - date: "2026-06-25T21:13:14Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-23T07:17:48Z comment="Product-fix-history hardening: proof-only requirement/evidence updates for logger format, additive record fields, and SQL aggregate shard-target debt; no product behavior fixes claimed.")'
           changed_by: human:buger

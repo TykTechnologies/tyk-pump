@@ -5,7 +5,7 @@ priority: shall
 category: functional
 req_type: guarantee
 fretish: when listen_path_empty pumps_prometheus shall always satisfy default_path_applied
-description: The Prometheus pump shall expose analytics as Prometheus metrics for scraping.
+description: The Prometheus pump shall expose analytics as Prometheus metrics for scraping. Its built-in tyk_latency histogram shall emit total, upstream, and gateway observations per API, where gateway is projected from AnalyticsRecord.Latency.Gateway.
 formalization_strategy: fretish
 informal_verification:
     method: ""
@@ -29,15 +29,15 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-22T12:04:23Z"
-        comment: 'Review obligation expansion from catalogue gap pass; active unfixed behavior remains KnownIssue-gated.'
-        fingerprint: sha256:affd1ab772b26a5ee8f449141d9bad137190eb53e8514b9e504dd7d93a73ed2f
+        reviewed_at: "2026-06-25T21:13:14Z"
+        comment: 'Reviewed ebd5a6c hardening: Prometheus tyk_latency contract now explicitly includes gateway observations from AnalyticsRecord.Latency.Gateway with code-annotated evidence; no runtime behavior change.'
+        fingerprint: sha256:5696d9c48917c9fe83b119eeaaef610aaf972945a3416bf14f411a8beab610f1
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:16Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-22T12:04:23Z"
+    last_modified_at: "2026-06-25T21:13:14Z"
 obligation_checklist:
     - auth_required
     - concurrent
@@ -48,6 +48,7 @@ obligation_checklist:
     - panic_free_input_handling
     - process_exit_on_recoverable
     - request_timeout_bounded
+    - structured_projection_preserved
 obligation_deferrals:
     - obligation_class: auth_required
       reason: real product gap under known-issue prometheus-metrics-auth-not-enforced; surfaced as visible tracked debt, not an overclaimed fix
@@ -122,4 +123,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-03T07:38:25Z comment="Phase Q: catalog obligation attachments — adds auth_required (Prometheus /metrics exposition posture). See .proof/catalog-obligation-proposals.md.")'
+          changed_by: human:buger
+        - date: "2026-06-25T21:13:14Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-22T12:04:23Z comment="Review obligation expansion from catalogue gap pass; active unfixed behavior remains KnownIssue-gated.")'
           changed_by: human:buger

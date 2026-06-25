@@ -9,6 +9,7 @@ import (
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/prometheus/client_golang/prometheus"
+	io_prometheus_client "github.com/prometheus/client_model/go"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -1325,6 +1326,12 @@ func TestProcessMetric_HistogramType_NonLatency(t *testing.T) {
 }
 
 // Verifies: SW-REQ-024
+// Verifies: SW-REQ-104
+// SW-REQ-024:structured_projection_preserved:nominal
+// SW-REQ-104:structured_projection_preserved:nominal
+// MCDC SW-REQ-104: latency_metric_record_present=F, latency_metric_values_projected=F => TRUE
+// MCDC SW-REQ-104: latency_metric_record_present=T, latency_metric_values_projected=F => FALSE
+// MCDC SW-REQ-104: latency_metric_record_present=T, latency_metric_values_projected=T => TRUE
 func TestProcessMetric_HistogramType_LatencyMetric(t *testing.T) {
 	// Create histogram vec with a unique name to avoid global registry conflicts.
 	// Set the metric Name to metricTykLatency to trigger observeLatencyMetrics path.
@@ -1351,6 +1358,38 @@ func TestProcessMetric_HistogramType_LatencyMetric(t *testing.T) {
 		RequestTime: 100,
 		Latency:     analytics.Latency{Upstream: 50, Gateway: 10},
 	})
+
+	ch := make(chan prometheus.Metric, 4)
+	histVec.Collect(ch)
+	close(ch)
+
+	wantSums := map[string]float64{
+		"total":    100,
+		"upstream": 50,
+		"gateway":  10,
+	}
+	seen := map[string]bool{}
+	for collected := range ch {
+		var metricPB io_prometheus_client.Metric
+		require.NoError(t, collected.Write(&metricPB))
+
+		labels := map[string]string{}
+		for _, label := range metricPB.GetLabel() {
+			labels[label.GetName()] = label.GetValue()
+		}
+		if labels["api"] != "api1" {
+			continue
+		}
+		want, ok := wantSums[labels["type"]]
+		if !ok {
+			continue
+		}
+		seen[labels["type"]] = true
+		require.NotNil(t, metricPB.GetHistogram())
+		assert.Equal(t, uint64(1), metricPB.GetHistogram().GetSampleCount())
+		assert.Equal(t, want, metricPB.GetHistogram().GetSampleSum())
+	}
+	assert.Equal(t, map[string]bool{"total": true, "upstream": true, "gateway": true}, seen, "tyk_latency must expose total, upstream, and gateway latency observations")
 }
 
 // TestPrometheusObfuscateAPIKey pins the secrets-not-logged guarantee that

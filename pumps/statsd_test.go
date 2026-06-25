@@ -200,6 +200,7 @@ func TestStatsdPump_sendTimingMetric(_ *testing.T) {
 }
 
 // Verifies: SW-REQ-023
+// SW-REQ-023:structured_projection_preserved:nominal
 func TestGetMappings_LatencyFields(t *testing.T) {
 	ts := time.Now()
 

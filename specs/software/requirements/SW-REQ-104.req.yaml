@@ -1,0 +1,64 @@
+id: SW-REQ-104
+version: 1
+status: approved
+priority: shall
+category: functional
+req_type: guarantee
+fretish: when latency_metric_record_present pumps_prometheus shall always satisfy latency_metric_values_projected
+description: 'The Prometheus built-in tyk_latency histogram shall emit three observations per analytics record and API: type="total" from AnalyticsRecord.RequestTime, type="upstream" from AnalyticsRecord.Latency.Upstream, and type="gateway" from AnalyticsRecord.Latency.Gateway.'
+formalization_strategy: fretish
+informal_verification:
+    method: ""
+    evidence: ""
+    verified: false
+parent: SW-REQ-024
+component: pumps-prometheus
+rationale: 'Product-fix-history hardening for TT-14871 / commit ebd5a6c: gateway-only latency is an additive metric-field behavior. SW-REQ-024 owns Prometheus exposition broadly; this child pins the exact tyk_latency type/value projection so gateway latency cannot be exposed only partially or from the wrong source.'
+tags: []
+variables:
+    - latency_metric_record_present
+    - latency_metric_values_projected
+traces:
+    satisfies:
+        - SW-REQ-024
+verification:
+    assurance_level: B
+    formalization_status: valid
+    review:
+        status: approved
+        reviewer: human:buger
+        role: software_engineer
+        reviewed_at: "2026-06-25T21:18:37Z"
+        comment: 'Reviewed TT-14871 hardening: SW-REQ-104 pins Prometheus tyk_latency total/upstream/gateway value projection with code-annotated evidence; no runtime product behavior change.'
+        fingerprint: sha256:a861d64e4323801004e77528dbb591c4a2a00d6a7fb3d2d7735593625d6b0974
+        ai_generated: false
+history:
+    created_by: agent:codex
+    created_at: "2026-06-25T21:17:29Z"
+    last_modified_by: human:buger
+    last_modified_at: "2026-06-25T21:18:37Z"
+obligation_checklist:
+    - structured_projection_preserved
+stakeholder:
+    acceptance_criteria:
+        - id: AC-001
+          text: A processed analytics record emits a `tyk_latency` observation with `type="total"` whose value is `AnalyticsRecord.RequestTime`.
+          verification_method: test
+        - id: AC-002
+          text: A processed analytics record emits a `tyk_latency` observation with `type="upstream"` whose value is `AnalyticsRecord.Latency.Upstream`.
+          verification_method: test
+        - id: AC-003
+          text: A processed analytics record emits a `tyk_latency` observation with `type="gateway"` whose value is `AnalyticsRecord.Latency.Gateway`.
+          verification_method: test
+lifecycle:
+    change_history:
+        - date: "2026-06-25T21:17:29Z"
+          from: draft
+          to: review
+          reason: TT-14871 Prometheus latency metric value-projection requirement ready for branch review
+          changed_by: agent:codex
+        - date: "2026-06-25T21:18:37Z"
+          from: draft
+          to: review
+          reason: ""
+          changed_by: agent:codex

@@ -1364,6 +1364,7 @@ func TestDogStatsdPump_WriteData_DefaultTags_NoOauthID(t *testing.T) {
 // `ok` branch on the mapping[f] lookup (true side).
 //
 // Verifies: SW-REQ-023
+// SW-REQ-023:structured_projection_preserved:nominal
 func TestStatsdPump_WriteData_ManyTimingFields(t *testing.T) {
 	addr, sink := newUDPSink(t)
 	pump := &StatsdPump{}

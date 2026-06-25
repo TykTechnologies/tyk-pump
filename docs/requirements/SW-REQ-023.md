@@ -3,7 +3,8 @@
 ## Intent
 The StatsD pump shall emit one timing metric per analytics record per
 configured timing-field (`request_time`, `latency_total`, `latency_upstream`,
-`latency_gateway`) to a StatsD server using `quipo/statsd`. The DogStatsD
+`latency_gateway`) to a StatsD server using `quipo/statsd`; `latency_gateway`
+is projected from `AnalyticsRecord.Latency.Gateway`. The DogStatsD
 pump shall emit one `request_time` histogram metric per record to a DogStatsD
 agent using the official `DataDog/datadog-go` client, with operator-
 configurable tags (or a sensible default tag set). Derived from SYS-REQ-004
@@ -51,7 +52,12 @@ unknown tag names return an error from `WriteData`.
 - `pumps/dogstatsd.go:265-270` — `Shutdown` flushes if buffered.
 
 ## Evidence
-- `pumps/statsd_test.go` — covers `isTimingField`, mapping construction.
+- `pumps/statsd_test.go` — covers `isTimingField`, mapping construction, and
+  `latency_gateway` projection.
+- `pumps/udp_file_pumps_mcdc_test.go:TestStatsdPump_WriteData_ManyTimingFields`
+  proves configured StatsD timing fields emit `request_time`,
+  `latency_total`, `latency_upstream`, and `latency_gateway` lines with the
+  source record values.
 - No `dogstatsd_test.go` (gap).
 - End-to-end tests need a running StatsD/DogStatsD endpoint and are excluded
   from the local audit MC/DC scope (recorded as a known issue).

@@ -64,6 +64,14 @@ variables:
       type: bool
       direction: output
       description: True when the Prometheus aggregate stores and exposes the original label tuple values without reconstructing them by splitting the joined aggregation key.
+    - name: latency_metric_record_present
+      type: bool
+      direction: input
+      description: True when a Prometheus tyk_latency metric processes an analytics record.
+    - name: latency_metric_values_projected
+      type: bool
+      direction: output
+      description: True iff tyk_latency emits total from RequestTime, upstream from Latency.Upstream, and gateway from Latency.Gateway with matching type label values.
 independence:
     declared: true
-    reason: 'Prometheus requirements cover independent metric exposition, base metric family disable gates, histogram label-schema normalization, custom metric instance identity, optional API-key label masking, and path-label tracking gates; each guarantee has a separate FRETish trigger/output pair.'
+    reason: Prometheus requirements cover independent metric exposition, base metric family disable gates, histogram label-schema normalization, custom metric instance identity, optional API-key label masking, path-label tracking gates, and built-in latency histogram value projection; each guarantee has a separate FRETish trigger/output pair.

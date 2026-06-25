@@ -6,7 +6,9 @@ scrape endpoint (default `/metrics` on the configured listen address). The
 pump shall register a baseline set of counter and histogram metrics
 (`tyk_http_status`, `tyk_http_status_per_path`, `tyk_http_status_per_key`,
 `tyk_http_status_per_oauth_client`, `tyk_latency`) and accept operator-defined
-custom metrics with configurable labels and bucket sets. Derived from
+custom metrics with configurable labels and bucket sets. The built-in
+`tyk_latency` histogram emits `total`, `upstream`, and `gateway` observations;
+`gateway` is projected from `AnalyticsRecord.Latency.Gateway`. Derived from
 SYS-REQ-004 (independent per-backend delivery).
 
 ## Motivation
@@ -47,6 +49,9 @@ Failure modes addressed:
 - Histogram label schema: split into **SW-REQ-091**, where histogram metrics
   normalize the synthetic `type` label before Prometheus registration and
   observation.
+- Built-in latency metric value projection: split into **SW-REQ-104**, where
+  `tyk_latency` emits `total`, `upstream`, and `gateway` observations from
+  `RequestTime`, `Latency.Upstream`, and `Latency.Gateway` respectively.
 - Custom metric identity: split into **SW-REQ-094**, where valid
   operator-defined metrics initialize as distinct runtime metric instances and
   invalid siblings are skipped without blocking valid metrics.
@@ -87,6 +92,9 @@ Failure modes addressed:
   SW-REQ-090 disabled-base-family gate.
 - `pumps/prometheus_test.go:TestPrometheusEnsureLabels` covers the SW-REQ-091
   histogram `type` label schema normalization.
+- `pumps/prometheus_test.go:TestProcessMetric_HistogramType_LatencyMetric`
+  covers the SW-REQ-104 built-in latency histogram value projection for
+  `total`, `upstream`, and `gateway`.
 - `pumps/prometheus_test.go:TestPrometheusInitCustomMetrics` covers the
   SW-REQ-094 custom metric identity and invalid-sibling behavior.
 - `pumps/udp_file_pumps_mcdc_test.go`

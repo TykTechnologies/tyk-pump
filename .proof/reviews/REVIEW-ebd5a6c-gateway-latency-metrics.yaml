@@ -1,0 +1,7 @@
+id: REVIEW-ebd5a6c-gateway-latency-metrics
+kind: design_review
+reviewer: agent:codex
+reviewed_at: "2026-06-25T21:20:00Z"
+subject: upstream:ebd5a6c/SW-REQ-009+SW-REQ-023+SW-REQ-024+SW-REQ-104
+decision: approved
+comment: 'Commit-level assurance review for TT-14871: gateway-only latency is a product metric-field addition, not DEFECT/DFX material. Current code carries AnalyticsRecord.Latency.Gateway, projects it through deterministic field helpers, emits StatsD latency_gateway timing metrics, and emits Prometheus tyk_latency observations with type="gateway". SW-REQ-009, SW-REQ-023, SW-REQ-024, and child SW-REQ-104 now state the projection explicitly with structured_projection_preserved evidence; no product runtime behavior was changed.'
