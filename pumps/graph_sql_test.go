@@ -22,6 +22,9 @@ import (
 // MCDC SW-REQ-042: graph_record_present=F, graph_record_routed=F => TRUE
 // MCDC SW-REQ-042: graph_record_present=T, graph_record_routed=F => FALSE
 // MCDC SW-REQ-042: graph_record_present=T, graph_record_routed=T => TRUE
+// MCDC SW-REQ-080: graph_model_table_bound=F, graph_sql_table_configured=F => TRUE
+// MCDC SW-REQ-080: graph_model_table_bound=F, graph_sql_table_configured=T => FALSE
+// MCDC SW-REQ-080: graph_model_table_bound=T, graph_sql_table_configured=T => TRUE
 
 // Verifies: SW-REQ-042
 // Verifies: SW-REQ-042
@@ -124,6 +127,44 @@ func TestGraphSQLPump_Init(t *testing.T) {
 		assert.Equal(t, "test-table", pump.Conf.TableName)
 		assert.Equal(t, true, pump.Conf.TableSharding)
 	})
+}
+
+// TestGraphSQLPump_Init_BindsGraphRecordTableNameToConfiguredTable guards the
+// TT-9855 migration path: GraphRecord.TableName must resolve to the configured
+// Graph SQL table before GORM generates table/index DDL.
+//
+// Verifies: SW-REQ-080
+// SW-REQ-080:migration_model_table_identity_bound:nominal
+// SW-REQ-080:migration_model_table_identity_bound:negative
+// MCDC SW-REQ-080: graph_model_table_bound=F, graph_sql_table_configured=F => TRUE
+// MCDC SW-REQ-080: graph_model_table_bound=F, graph_sql_table_configured=T => FALSE
+// MCDC SW-REQ-080: graph_model_table_bound=T, graph_sql_table_configured=T => TRUE
+func TestGraphSQLPump_Init_BindsGraphRecordTableNameToConfiguredTable(t *testing.T) {
+	skipTestIfNoPostgres(t)
+
+	oldGraphSQLTableName := analytics.GraphSQLTableName
+	analytics.GraphSQLTableName = ""
+	t.Cleanup(func() { analytics.GraphSQLTableName = oldGraphSQLTableName })
+
+	tableName := "graph_sql_tt9855_table_binding"
+	pump := &GraphSQLPump{}
+	require.NoError(t, pump.Init(GraphSQLConf{
+		SQLConf: SQLConf{
+			Type:             "postgres",
+			ConnectionString: getTestPostgresConnectionString(),
+		},
+		TableName: tableName,
+	}))
+	t.Cleanup(func() {
+		if err := pump.db.Migrator().DropTable(tableName); err != nil {
+			t.Errorf("error dropping %s: %v", tableName, err)
+		}
+	})
+
+	assert.Equal(t, tableName, analytics.GraphSQLTableName)
+	assert.Equal(t, tableName, (&analytics.GraphRecord{}).TableName())
+	assert.NotEqual(t, analytics.SQLTable, (&analytics.GraphRecord{}).TableName())
+	assert.True(t, pump.db.Migrator().HasTable(tableName))
 }
 
 // Verifies: SW-REQ-042

@@ -25,7 +25,7 @@ type GraphRecord struct {
 
 // TableName is used by both the sql orm and mongo driver the table name and collection name used for operations on this model
 // the conditional return is to ensure the right value is used for both the sql and mongo operations
-// reqproof:implements SW-REQ-013
+// reqproof:implements SW-REQ-013,SW-REQ-080
 func (g *GraphRecord) TableName() string {
 	if GraphSQLTableName == "" {
 		return g.AnalyticsRecord.TableName()

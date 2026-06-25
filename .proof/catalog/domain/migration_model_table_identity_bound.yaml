@@ -1,0 +1,49 @@
+id: migration_model_table_identity_bound
+name: Migration model table identity bound
+category: domain
+status: active
+summary: ORM model table-name hooks shall resolve to the selected migration table before schema DDL is generated.
+description: |-
+  ORMs can consult a model's TableName hook while generating table, index, and
+  relationship DDL. When code also selects a table through an explicit
+  db.Table(...) handle, the requirement shall prove those two table identities
+  agree before migration runs. A mismatch can create DDL for the wrong table,
+  give indexes the wrong prefix, or fail startup even though data writes later
+  target the configured table.
+applies_when:
+  description: a pump or migration path combines an ORM model TableName hook with a configured or routed SQL table name
+  trigger_phrases:
+    - TableName
+    - AutoMigrate
+    - configured table
+    - db.Table
+    - model table name
+    - index creation
+example_req: |-
+  When Graph SQL is configured with table_name=graph_events, GraphRecord.TableName
+  shall resolve to graph_events before AutoMigrate runs so generated DDL is
+  bound to the Graph SQL table rather than AnalyticsRecord's default table.
+if_missing: |-
+  Startup can create or inspect the configured table while ORM-generated index
+  or relationship DDL still uses the embedded model's default table name. This
+  produces migration errors or silently leaves the configured table without the
+  intended schema objects.
+recommended_evidence:
+  - kind: nominal
+    note: Initialization test sets a non-default table name, runs the real migration, and asserts the model TableName hook and created table both match the configured table.
+  - kind: negative
+    note: Regression record documents the historical wrong-default-table behavior or a test asserts the model does not resolve to the embedded default when a configured table is present.
+  - kind: review
+    note: Review traces the configured table assignment to the point before AutoMigrate or equivalent schema generation.
+frameworks:
+  - id: CWE
+    refs:
+      - CWE-669
+      - CWE-697
+related_classes:
+  - id: backend_ddl_valid
+    relationship: complements
+  - id: routing_target_consistent
+    relationship: complements
+  - id: index_definition_matches_query
+    relationship: complements

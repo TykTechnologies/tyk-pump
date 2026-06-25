@@ -42,7 +42,7 @@ func (g *GraphSQLPump) New() Pump {
 	return &GraphSQLPump{}
 }
 
-// reqproof:implements SW-REQ-042
+// reqproof:implements SW-REQ-042,SW-REQ-080
 func (g *GraphSQLPump) Init(conf interface{}) error {
 	g.log = log.WithField("prefix", GraphSQLPrefix)
 

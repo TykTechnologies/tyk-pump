@@ -8,3 +8,11 @@ variables:
       type: bool
       direction: output
       description: True iff each retained graph-record is converted to a GraphRecord and routed to the configured TableName (sharded per day when TableSharding is enabled).
+    - name: graph_sql_table_configured
+      type: bool
+      direction: input
+      description: True when GraphSQLConf.TableName names a non-default Graph SQL table for migration and writes.
+    - name: graph_model_table_bound
+      type: bool
+      direction: output
+      description: True iff analytics.GraphRecord.TableName resolves to the configured Graph SQL table before GORM migration runs.

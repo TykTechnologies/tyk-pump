@@ -1,0 +1,7 @@
+id: REVIEW-3bf1f85-graph-sql-table-identity
+kind: design_review
+reviewer: agent:codex
+reviewed_at: "2026-06-25T14:08:00Z"
+subject: upstream:3bf1f85/SW-REQ-042+SW-REQ-080
+decision: approved
+comment: 'Commit-level assurance review for TT-9855: the historical change bound analytics.GraphSQLTableName before Graph SQL migration so GORM DDL generation sees the configured Graph SQL table rather than AnalyticsRecord default tyk_analytics. Existing SW-REQ-042 covered graph-record routing and table existence but did not model this migration model-table identity. This review approves SW-REQ-080, local obligation migration_model_table_identity_bound, DEFECT-10, and the Postgres Init witness. Graph/MCP sharded-index expectations and broader SQL schema-version policy remain separate KI-backed debt.'

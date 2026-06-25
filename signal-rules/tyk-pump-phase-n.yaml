@@ -200,6 +200,56 @@ rules:
             Columns: $COLS,
             DoUpdates: clause.Assignments(analytics.OnConflictAssignments($TABLE, $EXCLUDED)),
           }).Create($RECS)
+  - id: go.graph-sql-migration-without-table-binding
+    severity: WARNING
+    languages: [go]
+    message: |
+      Graph SQL migration runs AutoMigrate/HandleTableMigration for
+      analytics.GraphRecord without first binding analytics.GraphSQLTableName
+      to the configured Graph SQL table. GORM may consult GraphRecord.TableName
+      while generating table, index, or relationship DDL; if the model hook
+      falls through to AnalyticsRecord's default table, startup can generate
+      DDL against tyk_analytics instead of the configured graph table.
+    metadata:
+      proof:
+        signal_id: go.graph_sql_migration_without_table_binding
+        provider: opengrep
+        confidence: high
+        framework_hints:
+          - CWE-669
+          - CWE-697
+        notes: |
+          TT-9855 / upstream commit 3bf1f85 fixed this exact Graph SQL shape
+          by assigning analytics.GraphSQLTableName = g.tableName before
+          HandleTableMigration(..., &analytics.GraphRecord{}, ...). The rule
+          matches GraphSQLPump.Init migration paths that still call the GraphRecord
+          migration without the preceding model-table binding.
+        obligations: [migration_model_table_identity_bound]
+    paths:
+      include:
+        - "pumps/graph_sql.go"
+      exclude:
+        - "*_test.go"
+        - "vendor/**"
+    patterns:
+      - pattern: |
+          func ($G *GraphSQLPump) Init($CONF interface{}) error {
+            ...
+            if err := HandleTableMigration($DB, $SQLCONF, $TABLE, &analytics.GraphRecord{}, $LOG, $MIGRATE); err != nil {
+              ...
+            }
+            ...
+          }
+      - pattern-not: |
+          func ($G *GraphSQLPump) Init($CONF interface{}) error {
+            ...
+            analytics.GraphSQLTableName = $G.tableName
+            ...
+            if err := HandleTableMigration($DB, $SQLCONF, $TABLE, &analytics.GraphRecord{}, $LOG, $MIGRATE); err != nil {
+              ...
+            }
+            ...
+          }
   # ──────────────────────────────────────────────────────────────────────
   - id: go.wall-clock-arithmetic
     severity: INFO

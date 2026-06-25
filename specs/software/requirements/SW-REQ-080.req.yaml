@@ -1,0 +1,56 @@
+id: SW-REQ-080
+version: 1
+status: approved
+priority: shall
+category: functional
+req_type: guarantee
+fretish: when graph_sql_table_configured pumps_sql_graph shall always satisfy graph_model_table_bound
+description: When the Graph SQL pump is initialized with a configured table name, it shall bind the GraphRecord model table name to that configured table before running GORM migration so table, index, and relationship DDL are generated for the Graph SQL table rather than the embedded AnalyticsRecord default table.
+formalization_strategy: fretish
+informal_verification:
+    method: ""
+    evidence: ""
+    verified: false
+parent: SYS-REQ-003
+component: pumps-sql-graph
+rationale: 'Software decomposition of SYS-REQ-003/INT-REQ-007 for Graph SQL migration identity: the GraphRecord model hook must agree with the configured Graph SQL table before schema DDL is generated.'
+tags: []
+variables:
+    - graph_sql_table_configured
+    - graph_model_table_bound
+traces:
+    satisfies:
+        - SYS-REQ-003
+    reviewed_at: "2026-06-25T13:59:48.676553Z"
+    reviewed_by: human:buger
+    reviewed_fingerprint: sha256:66a79cd2d38d270e13f578e2141566e1b2792575f29989a575a95d57894b0483
+verification:
+    assurance_level: B
+    formalization_status: valid
+    review:
+        status: approved
+        reviewer: human:buger
+        role: software_engineer
+        reviewed_at: "2026-06-25T13:59:37Z"
+        comment: 'TT-9855 hardening: reviewed Graph SQL migration model-table identity requirement, MC/DC witnesses, Postgres Init evidence, and DEFECT-10 closure.'
+        fingerprint: sha256:b8feaaff1addc104f5cccd2a2933eba4f6cfe2693b92b2dd75201bc914a02679
+        ai_generated: false
+history:
+    created_by: human:buger
+    created_at: "2026-06-25T13:54:25Z"
+    last_modified_by: human:buger
+    last_modified_at: "2026-06-25T13:59:37Z"
+obligation_checklist:
+    - migration_model_table_identity_bound
+stakeholder:
+    acceptance_criteria:
+        - id: AC-001
+          text: With a non-default GraphSQLConf.TableName, GraphSQLPump.Init binds analytics.GraphSQLTableName and GraphRecord.TableName to that configured table before migration creates the table.
+          verification_method: test
+lifecycle:
+    change_history:
+        - date: "2026-06-25T13:59:37Z"
+          from: draft
+          to: review
+          reason: TT-9855 Graph SQL migration table identity requirement ready for review
+          changed_by: human:buger
