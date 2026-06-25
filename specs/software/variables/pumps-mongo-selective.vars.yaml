@@ -16,3 +16,15 @@ variables:
       type: bool
       direction: output
       description: True iff MongoSelective document-size accounting counts RawRequest and RawResponse exactly once each plus the 1024-byte metadata allowance.
+    - name: docdb_backend_configured
+      type: bool
+      direction: input
+      description: True when MongoDBType is AWSDocumentDB for the MongoSelective pump, requiring DocumentDB-compatible foreground index creation without the StandardMongo collection-exists probe.
+    - name: omit_index_creation_disabled
+      type: bool
+      direction: input
+      description: True when OmitIndexCreation is false, so the pump is responsible for attempting its baseline per-org indexes.
+    - name: docdb_indexes_attempted
+      type: bool
+      direction: output
+      description: True iff the MongoSelective pump attempts its baseline DocumentDB-compatible indexes without calling the StandardMongo collection-exists shortcut; false when omit_index_creation intentionally disables index creation.

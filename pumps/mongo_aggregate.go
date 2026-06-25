@@ -246,6 +246,7 @@ func (m *MongoAggregatePump) connect() {
 }
 
 // reqproof:implements SW-REQ-063
+// reqproof:implements SW-REQ-099
 func (m *MongoAggregatePump) ensureIndexes(collectionName string) error {
 	if m.dbConf.OmitIndexCreation {
 		m.log.Debug("omit_index_creation set to true, omitting index creation..")

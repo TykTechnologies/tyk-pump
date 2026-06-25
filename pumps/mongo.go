@@ -329,6 +329,7 @@ func (m *MongoPump) collectionExists(name string) (bool, error) {
 }
 
 // reqproof:implements SW-REQ-034
+// reqproof:implements SW-REQ-097
 func (m *MongoPump) ensureIndexes(collectionName string) error {
 	if m.dbConf.OmitIndexCreation {
 		m.log.Debug("omit_index_creation set to true, omitting index creation..")

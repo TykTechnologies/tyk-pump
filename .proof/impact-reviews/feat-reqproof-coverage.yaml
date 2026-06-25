@@ -1,17 +1,17 @@
 schema_version: 1
 branch: feat-reqproof-coverage
-generated_at: "2026-06-25T16:19:04Z"
+generated_at: "2026-06-25T18:32:35Z"
 reviews:
     - requirement: SW-REQ-001
       artifact: main.go
       decision: no-authored-change
       reviewer: buger
-      reason: 'Reviewed main.go after TT-7216 proof hardening: source delta is reqproof trace metadata linking filterData to SW-REQ-088; runtime behavior and authored requirement intent are unchanged by this comment-only trace update.'
+      reason: 'Reviewed main.go branch delta: reqproof trace annotations and MC/DC/KI comments only; startup/filter dispatch behavior and SW-REQ-001/SW-REQ-003 authored contracts are unchanged.'
       base: origin/master
       requirement_fingerprint: sha256:ffc64bad77dbeb0c6d7d9508a5716dbe53b3e678a6bab295be216b603f7dc82f
       approval_fingerprint: sha256:ba8c9836d64c2bc5d1133a0af863bf1a247fe7af9ec6095b1e837e024e4adb99
-      artifact_fingerprint: sha256:e7ea411fa9dbf7de400a8365d82be787b850a695efe35ecf1f53832f81e48bab
-      reviewed_at: "2026-06-25T16:05:48Z"
+      artifact_fingerprint: sha256:7a4ae4a95012e40d7182ef458154ce8a83e224b53b1d390ceff72f943642dbf1
+      reviewed_at: "2026-06-25T18:28:00Z"
     - requirement: SW-REQ-002
       artifact: config.go
       decision: no-authored-change
@@ -26,32 +26,32 @@ reviews:
       artifact: main.go
       decision: no-authored-change
       reviewer: buger
-      reason: 'Reviewed main.go after TT-7216 proof hardening: source delta is reqproof trace metadata linking filterData to SW-REQ-088; runtime behavior, existing main.go traced contracts, and authored requirement intent are unchanged by this comment-only trace update.'
+      reason: 'Reviewed main.go branch delta for remaining owners: reqproof trace annotations and MC/DC/KI comments only; startup, filtering, dispatch, and related authored contracts are unchanged.'
       base: origin/master
       requirement_fingerprint: sha256:5a27db91949d9dc6d3e4a628347969a4b40a0c593be25ed636d55ae67d4b4f1b
       approval_fingerprint: sha256:67c2cb8692888e3b4045f39ad18c87dbe9c3771d2bd8f390b4ba6c93339e6b69
-      artifact_fingerprint: sha256:e7ea411fa9dbf7de400a8365d82be787b850a695efe35ecf1f53832f81e48bab
-      reviewed_at: "2026-06-25T16:08:19Z"
+      artifact_fingerprint: sha256:7a4ae4a95012e40d7182ef458154ce8a83e224b53b1d390ceff72f943642dbf1
+      reviewed_at: "2026-06-25T18:32:12Z"
     - requirement: SW-REQ-003
       artifact: main.go
       decision: no-authored-change
       reviewer: buger
-      reason: 'Reviewed main.go after TT-7216 proof hardening: source delta is reqproof trace metadata linking filterData to SW-REQ-088; runtime behavior and authored requirement intent are unchanged by this comment-only trace update.'
+      reason: 'Reviewed main.go branch delta: reqproof trace annotations and MC/DC/KI comments only; startup/filter dispatch behavior and SW-REQ-001/SW-REQ-003 authored contracts are unchanged.'
       base: origin/master
       requirement_fingerprint: sha256:2d45d96d614fa74cfee3a4e0e3895d40ccedb67cab5d223a0b0cc1ac78464f66
       approval_fingerprint: sha256:6d3531a2cb5ce3f33986a3370681c4c0631ed4c10f436c601d5e808388029938
-      artifact_fingerprint: sha256:e7ea411fa9dbf7de400a8365d82be787b850a695efe35ecf1f53832f81e48bab
-      reviewed_at: "2026-06-25T16:05:48Z"
+      artifact_fingerprint: sha256:7a4ae4a95012e40d7182ef458154ce8a83e224b53b1d390ceff72f943642dbf1
+      reviewed_at: "2026-06-25T18:28:00Z"
     - requirement: SW-REQ-004
       artifact: main.go
       decision: no-authored-change
       reviewer: buger
-      reason: 'Reviewed main.go after TT-7216 proof hardening: source delta is reqproof trace metadata linking filterData to SW-REQ-088; runtime behavior, existing main.go traced contracts, and authored requirement intent are unchanged by this comment-only trace update.'
+      reason: 'Reviewed main.go branch delta for remaining owners: reqproof trace annotations and MC/DC/KI comments only; startup, filtering, dispatch, and related authored contracts are unchanged.'
       base: origin/master
       requirement_fingerprint: sha256:cd339de505466c52193f062f0a5e4caa4a9953a36846c8fc5719551fe14b574a
       approval_fingerprint: sha256:4bfbe9cb1f5a4509997c0e93850d16fbc612d92c97f76d933f0ed90967164c3b
-      artifact_fingerprint: sha256:e7ea411fa9dbf7de400a8365d82be787b850a695efe35ecf1f53832f81e48bab
-      reviewed_at: "2026-06-25T16:08:19Z"
+      artifact_fingerprint: sha256:7a4ae4a95012e40d7182ef458154ce8a83e224b53b1d390ceff72f943642dbf1
+      reviewed_at: "2026-06-25T18:32:12Z"
     - requirement: SW-REQ-005
       artifact: instrumentation_helpers.go
       decision: no-authored-change
@@ -86,12 +86,12 @@ reviews:
       artifact: docs/fmea.md
       decision: no-authored-change
       reviewer: buger
-      reason: 'Phase L3 aggressive: FRETish formalization added per L3 plan; production .go behaviour and code paths unchanged — only requirement metadata (fretish text + formalization_strategy + variables) altered. Test annotations may follow but do not change runtime behaviour.'
+      reason: 'Reviewed docs/fmea.md branch delta: proof documentation/trace review metadata only; runtime storage behavior and SW-REQ-007 authored contract are unchanged.'
       base: origin/master
       requirement_fingerprint: sha256:39d127ea0b6ed5dbca621f814282992de1156b91be1ad88819f8cfe11223074e
       approval_fingerprint: sha256:dafee3e0b05570650179985d446a8c97cd97e3dd0d07a199b277ffcc359285ea
-      artifact_fingerprint: sha256:10ed755ac172d68a5082fa28ddf21676d210bcbfaca858747213607c75a51920
-      reviewed_at: "2026-06-02T14:30:20Z"
+      artifact_fingerprint: sha256:ef5b3bdcc1a5212190cd6bfe9b57b4d1ae24309653c58a3f4030b02a93573784
+      reviewed_at: "2026-06-25T18:26:48Z"
     - requirement: SW-REQ-007
       artifact: storage/store.go
       decision: no-authored-change
@@ -176,12 +176,12 @@ reviews:
       artifact: analytics/aggregate.go
       decision: no-authored-change
       reviewer: buger
-      reason: 'Audit sweep: traced implementation changes reviewed; requirement intent and documented design remain unchanged'
+      reason: 'Reviewed analytics/aggregate.go branch delta: reqproof trace annotations and MC/DC/KI comments only; runtime aggregation behavior and SW-REQ-011 authored contract are unchanged.'
       base: origin/master
       requirement_fingerprint: sha256:63b0e06dbdc500500237234a50a50b63fb22c70f603405bfd941756c1a8e7b0c
-      approval_fingerprint: sha256:11fcad0e4cb1feb51f652f986e044f6881fa74420e618b5093f6aa443fb54841
-      artifact_fingerprint: sha256:92c199ec8ff976bb75ba934a5716d6971b6314180945ee830455093b826617f3
-      reviewed_at: "2026-06-19T07:58:15Z"
+      approval_fingerprint: sha256:d3e1efaced83f9d603af0f46088194638ffa12d1792c8397b8e82af32d3edb68
+      artifact_fingerprint: sha256:765a9adf5c304609adff585f498f70c010a2c63897d00d01dde669aba8121a24
+      reviewed_at: "2026-06-25T18:26:26Z"
     - requirement: SW-REQ-012
       artifact: analytics/aggregate_mcp.go
       decision: no-authored-change
@@ -436,12 +436,12 @@ reviews:
       artifact: pumps/prometheus.go
       decision: no-authored-change
       reviewer: buger
-      reason: 'Audit sweep: traced implementation changes reviewed; requirement intent and documented design remain unchanged'
+      reason: 'Reviewed pumps/prometheus.go branch delta: reqproof trace annotations and MC/DC/KI comments only; Prometheus metric behavior and SW-REQ-024 authored contract are unchanged.'
       base: origin/master
       requirement_fingerprint: sha256:0e66c0f45c6dc6f3f44b186c7a5e30788dce2002f3ed801db30f44b95ac9d64f
       approval_fingerprint: sha256:affd1ab772b26a5ee8f449141d9bad137190eb53e8514b9e504dd7d93a73ed2f
-      artifact_fingerprint: sha256:9ddf2f7d56bd32feb15d202fabdde7ca2425a0ff00763ff5f07e2c7bd1e3c592
-      reviewed_at: "2026-06-19T07:58:15Z"
+      artifact_fingerprint: sha256:1a868229e1d91b44ac472f54a0edd2933a6a6709dc6cbade445e7f41b3401863
+      reviewed_at: "2026-06-25T18:30:47Z"
     - requirement: SW-REQ-025
       artifact: pumps/csv.go
       decision: no-authored-change
@@ -620,44 +620,42 @@ reviews:
       artifact: logger/init.go
       decision: no-authored-change
       reviewer: buger
-      reason: 'Phase L2: formalization-only change (informal -> fretish + per-component boolean variables). Production .go files were not modified; only req YAML metadata, component vars YAMLs, and // MCDC test comment witnesses.'
+      reason: 'Reviewed logger/init.go branch delta: reqproof trace annotations and MC/DC/KI comments only; logging format behavior and SW-REQ-033 authored contract are unchanged.'
       base: origin/master
-      requirement_fingerprint: sha256:5160387c40f995b2c9f01e5fb76fb0846396497041be34b29ab5331e3f3271c0
-      approval_fingerprint: sha256:740e3b25782ad4c2954e17bc38a39762c447e8d70dc41d70e063f658d9cde2cd
+      requirement_fingerprint: sha256:be5c57118442ab6a630a1ca52cc08ad2719bb0c9a74773ac08072214a3c362f6
+      approval_fingerprint: sha256:88e2d8f6d0894cb5415f0987c2b89fbd4467dfe6560f203ef428b9261c424881
       artifact_fingerprint: sha256:9d3dd83e337390d18f6763deb950af20441c5d7afdbf09fe5dff89cd363f23d4
-      reviewed_at: "2026-06-02T13:44:40Z"
+      reviewed_at: "2026-06-25T18:27:21Z"
     - requirement: SW-REQ-034
       artifact: pumps/mongo.go
       decision: no-authored-change
       reviewer: buger
-      reason: 'Audit sweep: traced implementation changes reviewed; requirement intent and documented design remain unchanged'
+      reason: 'Reviewed pumps/mongo.go branch delta: reqproof trace annotations and MC/DC/KI comments only, plus TT-5302 is captured by SW-REQ-097/DEFECT-33; runtime behavior of existing owner contracts is unchanged.'
       base: origin/master
       requirement_fingerprint: sha256:d59f3e9682fac72b5f352d2b23ad62ff9a01a818361afe5a1b2d3cc634c9f2e2
       approval_fingerprint: sha256:af7ae7e454c68d7ca22cfaa08aa96ef18223dadef8228a95c47c791e81658246
-      artifact_fingerprint: sha256:084ebd4bdd4c3fd1b7e2fe0ab634ab15cf97a4d6f51f02492637c348262ad425
-      reviewed_at: "2026-06-19T07:58:15Z"
+      artifact_fingerprint: sha256:2c21a921f9ee1252f8b19d0a87c972d50b0cb1c360b425c21de8150c52ffe769
+      reviewed_at: "2026-06-25T18:29:12Z"
     - requirement: SW-REQ-035
       artifact: pumps/mongo_selective.go
       decision: no-authored-change
       reviewer: buger
-      reason: Reviewed pending requirement-owned production diffs after Proof binary/layout update; changes are comment-only Proof trace/MC/DC/KI classification metadata and do not alter runtime behavior, requirement intent, or documented design
+      reason: 'Reviewed pumps/mongo_selective.go branch delta: reqproof trace annotations and MC/DC/KI comments only, plus TT-5302 is captured by SW-REQ-098/DEFECT-33; runtime behavior of existing owner contracts is unchanged.'
       base: origin/master
       requirement_fingerprint: sha256:ac85949453cf0c5bffc23ac9e1359b4aeeab24d1fb14bd59162eb79d7ec80804
       approval_fingerprint: sha256:2bb0e060facf82980ac9e5eeaf241c3c483a64b444747bfc04981061f601aa7d
-      artifact_fingerprint: sha256:dbabb9648d9735025283b8a3768660cafd7219e1befaa3fd2701324b39dce981
-      reviewed_at: "2026-06-20T13:05:01Z"
+      artifact_fingerprint: sha256:6ce75cfc51caf5c713e290f9feb6866c70382fdba91bd406f73a4b4f25bc42af
+      reviewed_at: "2026-06-25T18:30:14Z"
     - requirement: SW-REQ-036
       artifact: pumps/mongo_aggregate.go
       decision: no-authored-change
-      change_type: fix
-      defect_ref: DEFECT-17
       reviewer: buger
-      reason: TT-8793 DEFECT-17 closure changed only the source-native reqproof:implements annotation on MongoAggregatePump.DoAggregatedWriting; runtime implementation behavior is unchanged, and SW-REQ-036/SW-REQ-058/SW-REQ-063 contracts are unaffected by this trace-only edit.
+      reason: 'Reviewed pumps/mongo_aggregate.go branch delta: reqproof trace annotations and MC/DC/KI comments only, plus TT-5302 is captured by SW-REQ-099/DEFECT-33; runtime behavior of existing owner contracts is unchanged.'
       base: origin/master
       requirement_fingerprint: sha256:2d2ca912493cf57dbb943df5f9a9f01efd2dbdffb80a37be7fbd1676bc885b86
       approval_fingerprint: sha256:cd9054202bb57521328cc38649a003a66d97a4b40078e4a2e38da409a4d9e944
-      artifact_fingerprint: sha256:8677925bb80c9cb6293ede5e33bf99bf8b15b730643d491348ab4a2351f611f5
-      reviewed_at: "2026-06-25T15:16:36Z"
+      artifact_fingerprint: sha256:2f7fcf2d1ce9b7be444bd4d6ff43a48c285772a4ab3d0572d1a78e56149afec8
+      reviewed_at: "2026-06-25T18:29:44Z"
     - requirement: SW-REQ-037
       artifact: pumps/graph_mongo.go
       decision: no-authored-change
@@ -712,12 +710,12 @@ reviews:
       artifact: pumps/graph_sql.go
       decision: no-authored-change
       reviewer: buger
-      reason: 'Audit sweep: traced implementation changes reviewed; requirement intent and documented design remain unchanged'
+      reason: 'Reviewed pumps/graph_sql.go branch delta: reqproof trace annotations and MC/DC/KI comments only; Graph SQL behavior and SW-REQ-042/SW-REQ-080 authored contracts are unchanged.'
       base: origin/master
       requirement_fingerprint: sha256:f51f46585402b9517d2f25172c7f0f914a90008e09071493c49a7855773650aa
       approval_fingerprint: sha256:646711cba47b04c15a6721bc7d4a2fb9356635b4f1f37792dfc83992ef29e484
-      artifact_fingerprint: sha256:16d92c2248d22bdde4e691c7cf605ff5a68b9d76bf9b0bb3f470fa7fa539d38d
-      reviewed_at: "2026-06-19T07:58:15Z"
+      artifact_fingerprint: sha256:46a44c66f626c12184f47ae4820abc8b66e65c35a6abb5b571a4c1e246947b6d
+      reviewed_at: "2026-06-25T18:28:38Z"
     - requirement: SW-REQ-043
       artifact: pumps/graph_sql_aggregate.go
       decision: no-authored-change
@@ -871,79 +869,63 @@ reviews:
     - requirement: SW-REQ-058
       artifact: pumps/mongo_aggregate.go
       decision: no-authored-change
-      change_type: fix
-      defect_ref: DEFECT-17
       reviewer: buger
-      reason: TT-8793 DEFECT-17 closure changed only the source-native reqproof:implements annotation on MongoAggregatePump.DoAggregatedWriting; runtime implementation behavior is unchanged, and SW-REQ-036/SW-REQ-058/SW-REQ-063 contracts are unaffected by this trace-only edit.
+      reason: 'Reviewed pumps/mongo_aggregate.go branch delta: reqproof trace annotations and MC/DC/KI comments only, plus TT-5302 is captured by SW-REQ-099/DEFECT-33; runtime behavior of existing owner contracts is unchanged.'
       base: origin/master
       requirement_fingerprint: sha256:5952f0910cf0df22c064078a0384221ebdc26ee2750e495b7898aebe4293fec7
       approval_fingerprint: sha256:d02f9b5d451c9c6a46e10cebb70e2ebec523bb18a8f4d6471d74c8161bd153ed
-      artifact_fingerprint: sha256:8677925bb80c9cb6293ede5e33bf99bf8b15b730643d491348ab4a2351f611f5
-      reviewed_at: "2026-06-25T15:16:36Z"
+      artifact_fingerprint: sha256:2f7fcf2d1ce9b7be444bd4d6ff43a48c285772a4ab3d0572d1a78e56149afec8
+      reviewed_at: "2026-06-25T18:29:44Z"
     - requirement: SW-REQ-059
       artifact: pumps/mongo_aggregate.go
-      symbols:
-        - MongoAggregatePump.DoAggregatedWriting
       decision: no-authored-change
-      change_type: fix
-      defect_ref: DEFECT-17
       reviewer: buger
-      reason: TT-8793 DEFECT-17 closure changed only the source-native reqproof:implements annotation on MongoAggregatePump.DoAggregatedWriting; runtime implementation behavior is unchanged, while the authored contract is captured by SW-REQ-084 and test evidence.
+      reason: 'Reviewed pumps/mongo_aggregate.go branch delta: reqproof trace annotations and MC/DC/KI comments only, plus TT-5302 is captured by SW-REQ-099/DEFECT-33; runtime behavior of existing owner contracts is unchanged.'
       base: origin/master
       requirement_fingerprint: sha256:02bd62d15606e1e31207e5ab3873df03865c1799078e02602087f0c4e8f39cf4
       approval_fingerprint: sha256:6461528b1e667548823133c33aac9ef047b164b9f76838d876a6fe54d8daa83a
-      artifact_fingerprint: sha256:8677925bb80c9cb6293ede5e33bf99bf8b15b730643d491348ab4a2351f611f5
-      reviewed_at: "2026-06-25T15:14:57Z"
+      artifact_fingerprint: sha256:2f7fcf2d1ce9b7be444bd4d6ff43a48c285772a4ab3d0572d1a78e56149afec8
+      reviewed_at: "2026-06-25T18:29:44Z"
     - requirement: SW-REQ-060
       artifact: pumps/mongo_aggregate.go
-      symbols:
-        - MongoAggregatePump.DoAggregatedWriting
       decision: no-authored-change
-      change_type: fix
-      defect_ref: DEFECT-17
       reviewer: buger
-      reason: TT-8793 DEFECT-17 closure changed only the source-native reqproof:implements annotation on MongoAggregatePump.DoAggregatedWriting; runtime implementation behavior is unchanged, while the authored contract is captured by SW-REQ-084 and test evidence.
+      reason: 'Reviewed pumps/mongo_aggregate.go branch delta: reqproof trace annotations and MC/DC/KI comments only, plus TT-5302 is captured by SW-REQ-099/DEFECT-33; runtime behavior of existing owner contracts is unchanged.'
       base: origin/master
       requirement_fingerprint: sha256:83199e08321148e4045494ae5dcf7554ac8525e20385169b1d5cf4bf6528e984
       approval_fingerprint: sha256:3fcffc8e68593e0253b142242b70cdce047e67e25fe5a5dac3250e28afd2fa2b
-      artifact_fingerprint: sha256:8677925bb80c9cb6293ede5e33bf99bf8b15b730643d491348ab4a2351f611f5
-      reviewed_at: "2026-06-25T15:14:57Z"
+      artifact_fingerprint: sha256:2f7fcf2d1ce9b7be444bd4d6ff43a48c285772a4ab3d0572d1a78e56149afec8
+      reviewed_at: "2026-06-25T18:29:44Z"
     - requirement: SW-REQ-061
       artifact: pumps/mongo_aggregate.go
       decision: no-authored-change
-      change_type: fix
-      defect_ref: DEFECT-17
       reviewer: buger
-      reason: TT-8793 DEFECT-17 closure changed only the source-native reqproof:implements annotation on MongoAggregatePump.DoAggregatedWriting; runtime implementation behavior is unchanged, and SW-REQ-061/SW-REQ-062 contracts are unaffected by this trace-only edit.
+      reason: 'Reviewed pumps/mongo_aggregate.go branch delta for remaining owners: reqproof trace annotations and MC/DC/KI comments only; self-healing and aggregate timestamp contracts are unchanged.'
       base: origin/master
       requirement_fingerprint: sha256:f37a2ee6d317018312d1cdb85d0e1b441bb111f67f7ae70e93efe71528c68e81
       approval_fingerprint: sha256:ca47507db96a2543bfd64bc6ae89eb87126053c612786178448b689039a0efa2
-      artifact_fingerprint: sha256:8677925bb80c9cb6293ede5e33bf99bf8b15b730643d491348ab4a2351f611f5
-      reviewed_at: "2026-06-25T15:17:44Z"
+      artifact_fingerprint: sha256:2f7fcf2d1ce9b7be444bd4d6ff43a48c285772a4ab3d0572d1a78e56149afec8
+      reviewed_at: "2026-06-25T18:32:23Z"
     - requirement: SW-REQ-062
       artifact: pumps/mongo_aggregate.go
       decision: no-authored-change
-      change_type: fix
-      defect_ref: DEFECT-17
       reviewer: buger
-      reason: TT-8793 DEFECT-17 closure changed only the source-native reqproof:implements annotation on MongoAggregatePump.DoAggregatedWriting; runtime implementation behavior is unchanged, and SW-REQ-061/SW-REQ-062 contracts are unaffected by this trace-only edit.
+      reason: 'Reviewed pumps/mongo_aggregate.go branch delta for remaining owners: reqproof trace annotations and MC/DC/KI comments only; self-healing and aggregate timestamp contracts are unchanged.'
       base: origin/master
       requirement_fingerprint: sha256:ec800e39e607a660b29a0be5325cc3561af825f69195dc6de61f937953ee11c3
       approval_fingerprint: sha256:1b7ec1faf41ca669fb52776bc97f56115b8771e4a1935edae9e06846589bec8e
-      artifact_fingerprint: sha256:8677925bb80c9cb6293ede5e33bf99bf8b15b730643d491348ab4a2351f611f5
-      reviewed_at: "2026-06-25T15:17:44Z"
+      artifact_fingerprint: sha256:2f7fcf2d1ce9b7be444bd4d6ff43a48c285772a4ab3d0572d1a78e56149afec8
+      reviewed_at: "2026-06-25T18:32:23Z"
     - requirement: SW-REQ-063
       artifact: pumps/mongo_aggregate.go
       decision: no-authored-change
-      change_type: fix
-      defect_ref: DEFECT-17
       reviewer: buger
-      reason: TT-8793 DEFECT-17 closure changed only the source-native reqproof:implements annotation on MongoAggregatePump.DoAggregatedWriting; runtime implementation behavior is unchanged, and SW-REQ-036/SW-REQ-058/SW-REQ-063 contracts are unaffected by this trace-only edit.
+      reason: 'Reviewed pumps/mongo_aggregate.go branch delta: reqproof trace annotations and MC/DC/KI comments only, plus TT-5302 is captured by SW-REQ-099/DEFECT-33; runtime behavior of existing owner contracts is unchanged.'
       base: origin/master
       requirement_fingerprint: sha256:f48d7d072508be9e57ba3f5093423ba7466d7467e18888086b7c06a59d93e042
       approval_fingerprint: sha256:8c279ec24749e7738522bfe4f0a7bdaddf726ca8262764c97ca775fceb9127b9
-      artifact_fingerprint: sha256:8677925bb80c9cb6293ede5e33bf99bf8b15b730643d491348ab4a2351f611f5
-      reviewed_at: "2026-06-25T15:16:36Z"
+      artifact_fingerprint: sha256:2f7fcf2d1ce9b7be444bd4d6ff43a48c285772a4ab3d0572d1a78e56149afec8
+      reviewed_at: "2026-06-25T18:29:44Z"
     - requirement: SW-REQ-064
       artifact: pumps/sql_aggregate.go
       decision: no-authored-change
@@ -1029,12 +1011,12 @@ reviews:
       artifact: main.go
       decision: no-authored-change
       reviewer: buger
-      reason: 'Reviewed main.go after TT-7216 proof hardening: source delta is reqproof trace metadata linking filterData to SW-REQ-088; runtime behavior, existing main.go traced contracts, and authored requirement intent are unchanged by this comment-only trace update.'
+      reason: 'Reviewed main.go branch delta for remaining owners: reqproof trace annotations and MC/DC/KI comments only; startup, filtering, dispatch, and related authored contracts are unchanged.'
       base: origin/master
       requirement_fingerprint: sha256:1f56b24a2471782c7f6b979a54f7243343ce0181ee86c4278ff873c9aec89c03
       approval_fingerprint: sha256:7c76a5936c17456c26602bc266b4b18bca491f28a00f95a80c2f54cbfc7db006
-      artifact_fingerprint: sha256:e7ea411fa9dbf7de400a8365d82be787b850a695efe35ecf1f53832f81e48bab
-      reviewed_at: "2026-06-25T16:08:19Z"
+      artifact_fingerprint: sha256:7a4ae4a95012e40d7182ef458154ce8a83e224b53b1d390ceff72f943642dbf1
+      reviewed_at: "2026-06-25T18:32:12Z"
     - requirement: SW-REQ-073
       artifact: analytics/uptime_data.go
       decision: no-authored-change
@@ -1049,22 +1031,22 @@ reviews:
       artifact: pumps/prometheus.go
       decision: no-authored-change
       reviewer: buger
-      reason: Reviewed pending requirement-owned production diffs after Proof binary/layout update; changes are comment-only Proof trace/MC/DC/KI classification metadata and do not alter runtime behavior, requirement intent, or documented design
+      reason: 'Reviewed pumps/prometheus.go branch delta for remaining owners: reqproof trace annotations and MC/DC/KI comments only; API-key masking, path tracking, and custom-metric contracts are unchanged.'
       base: origin/master
       requirement_fingerprint: sha256:2298554a89867bae8a83a4930a0bbafb4a837fbfb5acd8f63a95a3a9e1d6b0ea
       approval_fingerprint: sha256:8b7e9c3b16172ac2453e2c9568360a8ec6de4f613ae02f806bda5afa50b1c88d
-      artifact_fingerprint: sha256:9ddf2f7d56bd32feb15d202fabdde7ca2425a0ff00763ff5f07e2c7bd1e3c592
-      reviewed_at: "2026-06-20T13:05:01Z"
+      artifact_fingerprint: sha256:1a868229e1d91b44ac472f54a0edd2933a6a6709dc6cbade445e7f41b3401863
+      reviewed_at: "2026-06-25T18:32:35Z"
     - requirement: SW-REQ-075
       artifact: main.go
       decision: no-authored-change
       reviewer: buger
-      reason: 'Reviewed main.go after TT-7216 proof hardening: source delta is reqproof trace metadata linking filterData to SW-REQ-088; runtime behavior, existing main.go traced contracts, and authored requirement intent are unchanged by this comment-only trace update.'
+      reason: 'Reviewed main.go branch delta for remaining owners: reqproof trace annotations and MC/DC/KI comments only; startup, filtering, dispatch, and related authored contracts are unchanged.'
       base: origin/master
       requirement_fingerprint: sha256:39a980102d8ae707b24632c32c05951c3a9564eb2599886460937b4591b866be
       approval_fingerprint: sha256:d0f8a8202e3014b27d9335def90918cef5827667147b38bf2c6f5f4cf750eed1
-      artifact_fingerprint: sha256:e7ea411fa9dbf7de400a8365d82be787b850a695efe35ecf1f53832f81e48bab
-      reviewed_at: "2026-06-25T16:08:19Z"
+      artifact_fingerprint: sha256:7a4ae4a95012e40d7182ef458154ce8a83e224b53b1d390ceff72f943642dbf1
+      reviewed_at: "2026-06-25T18:32:12Z"
     - requirement: SW-REQ-076
       artifact: analytics/analytics.go
       decision: no-authored-change
@@ -1079,26 +1061,52 @@ reviews:
       artifact: main.go
       decision: no-authored-change
       reviewer: buger
-      reason: 'Reviewed main.go after TT-7216 proof hardening: source delta is reqproof trace metadata linking filterData to SW-REQ-088; runtime behavior, existing main.go traced contracts, and authored requirement intent are unchanged by this comment-only trace update.'
+      reason: 'Reviewed main.go branch delta for remaining owners: reqproof trace annotations and MC/DC/KI comments only; startup, filtering, dispatch, and related authored contracts are unchanged.'
       base: origin/master
       requirement_fingerprint: sha256:7e986e6a7d56f645328509337bea51eb008182f441c392d8d79d5bd0cb1a6ea4
       approval_fingerprint: sha256:bd30cffb26cf798fde87458a796f869d586e34b767b90d9174b922bcf76a8a98
-      artifact_fingerprint: sha256:e7ea411fa9dbf7de400a8365d82be787b850a695efe35ecf1f53832f81e48bab
-      reviewed_at: "2026-06-25T16:08:19Z"
+      artifact_fingerprint: sha256:7a4ae4a95012e40d7182ef458154ce8a83e224b53b1d390ceff72f943642dbf1
+      reviewed_at: "2026-06-25T18:32:12Z"
+    - requirement: SW-REQ-078
+      artifact: pumps/prometheus.go
+      decision: no-authored-change
+      reviewer: buger
+      reason: 'Reviewed pumps/prometheus.go branch delta for remaining owners: reqproof trace annotations and MC/DC/KI comments only; API-key masking, path tracking, and custom-metric contracts are unchanged.'
+      base: origin/master
+      requirement_fingerprint: sha256:dd5f5c5c504ef0305613e39bd35f3c06e6b61a39afdea0047999d492fcfe3e6d
+      approval_fingerprint: sha256:8caac61425c424b55cf94ddc32289917162ae90a3cecf5b8b2c6723588540918
+      artifact_fingerprint: sha256:1a868229e1d91b44ac472f54a0edd2933a6a6709dc6cbade445e7f41b3401863
+      reviewed_at: "2026-06-25T18:32:35Z"
+    - requirement: SW-REQ-079
+      artifact: pumps/prometheus.go
+      decision: no-authored-change
+      reviewer: buger
+      reason: 'Reviewed pumps/prometheus.go branch delta for remaining owners: reqproof trace annotations and MC/DC/KI comments only; API-key masking, path tracking, and custom-metric contracts are unchanged.'
+      base: origin/master
+      requirement_fingerprint: sha256:689d0c4f9d608552282911756be3002439028f1a0c2cf4b20a36fc37d1c8482c
+      approval_fingerprint: sha256:d9359b275b2cf0302438a4cee8a2994087692e8d00ad038a3d13ed51458dcbe8
+      artifact_fingerprint: sha256:1a868229e1d91b44ac472f54a0edd2933a6a6709dc6cbade445e7f41b3401863
+      reviewed_at: "2026-06-25T18:32:35Z"
+    - requirement: SW-REQ-080
+      artifact: pumps/graph_sql.go
+      decision: no-authored-change
+      reviewer: buger
+      reason: 'Reviewed pumps/graph_sql.go branch delta: reqproof trace annotations and MC/DC/KI comments only; Graph SQL behavior and SW-REQ-042/SW-REQ-080 authored contracts are unchanged.'
+      base: origin/master
+      requirement_fingerprint: sha256:66a79cd2d38d270e13f578e2141566e1b2792575f29989a575a95d57894b0483
+      approval_fingerprint: sha256:b8feaaff1addc104f5cccd2a2933eba4f6cfe2693b92b2dd75201bc914a02679
+      artifact_fingerprint: sha256:46a44c66f626c12184f47ae4820abc8b66e65c35a6abb5b571a4c1e246947b6d
+      reviewed_at: "2026-06-25T18:28:38Z"
     - requirement: SW-REQ-084
       artifact: pumps/mongo_aggregate.go
-      symbols:
-        - MongoAggregatePump.DoAggregatedWriting
       decision: no-authored-change
-      change_type: fix
-      defect_ref: DEFECT-17
       reviewer: buger
-      reason: TT-8793 DEFECT-17 closure changed only the source-native reqproof:implements annotation on MongoAggregatePump.DoAggregatedWriting; runtime implementation behavior is unchanged, while the authored contract is captured by SW-REQ-084 and test evidence.
+      reason: 'Reviewed pumps/mongo_aggregate.go branch delta: reqproof trace annotations and MC/DC/KI comments only, plus TT-5302 is captured by SW-REQ-099/DEFECT-33; runtime behavior of existing owner contracts is unchanged.'
       base: origin/master
       requirement_fingerprint: sha256:004665e58b03c5227ac39d074ab28b09c74a5332cf3eafc83e6b556e5945198e
       approval_fingerprint: sha256:6481f28bd786702f451a5c3fb5a60c1ae9b3842d25481ea9f98ec79b1c9f7c9a
-      artifact_fingerprint: sha256:8677925bb80c9cb6293ede5e33bf99bf8b15b730643d491348ab4a2351f611f5
-      reviewed_at: "2026-06-25T15:14:57Z"
+      artifact_fingerprint: sha256:2f7fcf2d1ce9b7be444bd4d6ff43a48c285772a4ab3d0572d1a78e56149afec8
+      reviewed_at: "2026-06-25T18:29:44Z"
     - requirement: SW-REQ-085
       artifact: pumps/hybrid.go
       symbols:
@@ -1137,12 +1145,12 @@ reviews:
       artifact: main.go
       decision: no-authored-change
       reviewer: buger
-      reason: 'Reviewed main.go after TT-7216 proof hardening: source delta is reqproof trace metadata linking filterData to SW-REQ-088; runtime behavior and authored requirement intent are unchanged by this comment-only trace update.'
+      reason: 'Reviewed main.go branch delta for remaining owners: reqproof trace annotations and MC/DC/KI comments only; startup, filtering, dispatch, and related authored contracts are unchanged.'
       base: origin/master
       requirement_fingerprint: sha256:c108d09a9737bbc7d72a497e4d0b10ea34ee1701fc4844c722a0d7fb93f4ac0e
       approval_fingerprint: sha256:5d49ab396174874b7419680c55aec7b2406b5bab83986e013a4fe425505bd6bd
-      artifact_fingerprint: sha256:e7ea411fa9dbf7de400a8365d82be787b850a695efe35ecf1f53832f81e48bab
-      reviewed_at: "2026-06-25T16:05:48Z"
+      artifact_fingerprint: sha256:7a4ae4a95012e40d7182ef458154ce8a83e224b53b1d390ceff72f943642dbf1
+      reviewed_at: "2026-06-25T18:32:12Z"
     - requirement: SW-REQ-089
       artifact: analytics/demo/demo.go
       decision: no-authored-change
@@ -1153,3 +1161,73 @@ reviews:
       approval_fingerprint: sha256:2e99265c2ff76b82b7bf5f0931b02fbbc8cfc4525a7eef7365360540db44b438
       artifact_fingerprint: sha256:2f917eac45a76326a0cefbac4060f2cb8dbf52ed6c40a6a10e51c59bf334cef5
       reviewed_at: "2026-06-25T16:19:04Z"
+    - requirement: SW-REQ-093
+      artifact: analytics/aggregate.go
+      decision: no-authored-change
+      reviewer: buger
+      reason: 'Reviewed analytics/aggregate.go branch delta for remaining owners: reqproof trace annotations and MC/DC/KI comments only; SW-REQ-093 REST aggregation exclusion contract is unchanged.'
+      base: origin/master
+      requirement_fingerprint: sha256:2a07df106045b5b05c97ec849104bade05ec99d343ea4f82dc14a3339b79fe70
+      approval_fingerprint: sha256:980afe8f4a33b72eef0d4487b73e59e6d9862734ef011d3fab301fdc298e92d9
+      artifact_fingerprint: sha256:765a9adf5c304609adff585f498f70c010a2c63897d00d01dde669aba8121a24
+      reviewed_at: "2026-06-25T18:32:02Z"
+    - requirement: SW-REQ-094
+      artifact: pumps/prometheus.go
+      decision: no-authored-change
+      reviewer: buger
+      reason: 'Reviewed pumps/prometheus.go branch delta for remaining owners: reqproof trace annotations and MC/DC/KI comments only; API-key masking, path tracking, and custom-metric contracts are unchanged.'
+      base: origin/master
+      requirement_fingerprint: sha256:90b524420bbd3d5e6220c614c886c1e71867fd5483d90df417420b8e80cc13bb
+      approval_fingerprint: sha256:cbf222c4f4ab985aa2038de1bbda7d2b486fb5ffa27979589c433533d6a6423f
+      artifact_fingerprint: sha256:1a868229e1d91b44ac472f54a0edd2933a6a6709dc6cbade445e7f41b3401863
+      reviewed_at: "2026-06-25T18:32:35Z"
+    - requirement: SW-REQ-095
+      artifact: main.go
+      decision: no-authored-change
+      reviewer: buger
+      reason: 'Reviewed main.go branch delta for remaining owners: reqproof trace annotations and MC/DC/KI comments only; startup, filtering, dispatch, and related authored contracts are unchanged.'
+      base: origin/master
+      requirement_fingerprint: sha256:998ff40c751e06d935a8c120a52f00d1ff841c78d70d89315b8e7b5c318e4433
+      approval_fingerprint: sha256:99ef6312ef0a0d1a0508bf4e46f6a87324a344e0be7830bbbe01e9b1fba4f4c1
+      artifact_fingerprint: sha256:7a4ae4a95012e40d7182ef458154ce8a83e224b53b1d390ceff72f943642dbf1
+      reviewed_at: "2026-06-25T18:32:12Z"
+    - requirement: SW-REQ-096
+      artifact: pumps/mongo_aggregate.go
+      decision: no-authored-change
+      reviewer: buger
+      reason: 'Reviewed pumps/mongo_aggregate.go branch delta: reqproof trace annotations and MC/DC/KI comments only, plus TT-5302 is captured by SW-REQ-099/DEFECT-33; runtime behavior of existing owner contracts is unchanged.'
+      base: origin/master
+      requirement_fingerprint: sha256:55a77b3c1d7fde8ba7d0c504ff8a1c91babbf582b0b12324555385426d5b3e97
+      approval_fingerprint: sha256:5459185f56ee19b6863453391628fa256ee1a69e597829cbc34347c7bcf75b61
+      artifact_fingerprint: sha256:2f7fcf2d1ce9b7be444bd4d6ff43a48c285772a4ab3d0572d1a78e56149afec8
+      reviewed_at: "2026-06-25T18:29:44Z"
+    - requirement: SW-REQ-097
+      artifact: pumps/mongo.go
+      decision: no-authored-change
+      reviewer: buger
+      reason: 'Reviewed pumps/mongo.go branch delta: reqproof trace annotations and MC/DC/KI comments only, plus TT-5302 is captured by SW-REQ-097/DEFECT-33; runtime behavior of existing owner contracts is unchanged.'
+      base: origin/master
+      requirement_fingerprint: sha256:6d2d4868e9a5b667699b3f93e8b18b23723694b44b1f9498e09f0b8c35969a74
+      approval_fingerprint: sha256:fa936b49caabd19434a8b94c9909d9e478edd892a5ead6f47ebd87e6bc8ba440
+      artifact_fingerprint: sha256:2c21a921f9ee1252f8b19d0a87c972d50b0cb1c360b425c21de8150c52ffe769
+      reviewed_at: "2026-06-25T18:29:12Z"
+    - requirement: SW-REQ-098
+      artifact: pumps/mongo_selective.go
+      decision: no-authored-change
+      reviewer: buger
+      reason: 'Reviewed pumps/mongo_selective.go branch delta: reqproof trace annotations and MC/DC/KI comments only, plus TT-5302 is captured by SW-REQ-098/DEFECT-33; runtime behavior of existing owner contracts is unchanged.'
+      base: origin/master
+      requirement_fingerprint: sha256:2dfd8db8fde7ab454b869069d68ac41dc6fe1c2ffb2af2e5c5c035b29f120708
+      approval_fingerprint: sha256:4d13055ad775de0410cc00a1154571b115e48bff6529ac7bb94d81ab60462a44
+      artifact_fingerprint: sha256:6ce75cfc51caf5c713e290f9feb6866c70382fdba91bd406f73a4b4f25bc42af
+      reviewed_at: "2026-06-25T18:30:14Z"
+    - requirement: SW-REQ-099
+      artifact: pumps/mongo_aggregate.go
+      decision: no-authored-change
+      reviewer: buger
+      reason: 'Reviewed pumps/mongo_aggregate.go branch delta: reqproof trace annotations and MC/DC/KI comments only, plus TT-5302 is captured by SW-REQ-099/DEFECT-33; runtime behavior of existing owner contracts is unchanged.'
+      base: origin/master
+      requirement_fingerprint: sha256:05c876ae1fa946fd975674a5e7cd3dfbaccdbae3b1524c750b59ed290b7a57a1
+      approval_fingerprint: sha256:6637f913d5c8c65ddcde01f96ecf9430526a27cd7ddba7c39f8280c4502ad1f7
+      artifact_fingerprint: sha256:2f7fcf2d1ce9b7be444bd4d6ff43a48c285772a4ab3d0572d1a78e56149afec8
+      reviewed_at: "2026-06-25T18:29:44Z"

@@ -1,0 +1,151 @@
+id: DEFECT-33
+title: Mongo DocumentDB index ensure used collection-listing shortcut
+introduced_in: unknown
+description: |
+  TT-5302 (commit 224f919) fixed a DocumentDB compatibility defect in the
+  Mongo, MongoSelective, and MongoAggregate index ensure paths. Before the fix,
+  ensureIndexes used the collection-exists probe for every Mongo-compatible
+  backend. The historical probe used CollectionNames(), which leaked cursors on
+  DocumentDB, and an existing DocumentDB collection could incorrectly skip Tyk's
+  baseline index creation.
+
+  Current code runs the collection-exists shortcut only for StandardMongo,
+  honors OmitIndexCreation explicitly, and creates foreground indexes for
+  DocumentDB.
+source:
+    type: upstream_commit
+    repo: TykTechnologies/tyk-pump
+    commit: 224f919
+    reference: TT-5302
+    date: "2022-05-17"
+classification:
+    surface: config_behavior
+    defect_class: documentdb_index_skip
+    severity: medium
+    security_relevant: false
+root_cause:
+    missing_requirement: true
+    missing_test_partition: true
+    missing_mcdc_variable: false
+    notes: |
+      Standard and selective Mongo requirements described broad write behavior,
+      while aggregate index behavior was modeled separately. Proof did not make
+      the backend-specific DocumentDB index compatibility rule explicit across
+      all three affected ensureIndexes implementations.
+impact_analysis:
+    affected_requirements:
+        - SW-REQ-097
+        - SW-REQ-098
+        - SW-REQ-099
+    affected_code:
+        - pumps/mongo.go
+        - pumps/mongo_selective.go
+        - pumps/mongo_aggregate.go
+        - pumps/mongo_mcdc_100_test.go
+hardening:
+    new_requirements:
+        - SW-REQ-097
+        - SW-REQ-098
+        - SW-REQ-099
+    strengthened_requirements:
+        - SW-REQ-034
+        - SW-REQ-035
+        - SW-REQ-063
+    added_obligations:
+        - requirement: SW-REQ-097
+          obligation_class: backend_ddl_valid
+        - requirement: SW-REQ-097
+          obligation_class: index_definition_matches_query
+        - requirement: SW-REQ-098
+          obligation_class: backend_ddl_valid
+        - requirement: SW-REQ-098
+          obligation_class: index_definition_matches_query
+        - requirement: SW-REQ-099
+          obligation_class: backend_ddl_valid
+        - requirement: SW-REQ-099
+          obligation_class: index_definition_matches_query
+    regression_tests:
+        - pumps/mongo_mcdc_100_test.go:TestMongoPump_EnsureIndexes_DocumentDBDoesNotUseExistsShortcut
+        - pumps/mongo_mcdc_100_test.go:TestMongoSelectivePump_EnsureIndexes_DocumentDBDoesNotUseExistsShortcut
+        - pumps/mongo_mcdc_100_test.go:TestMongoAggregatePump_EnsureIndexes_DocumentDBDoesNotUseExistsShortcut
+    proposed_classes:
+        - backend_ddl_valid
+        - index_definition_matches_query
+disposition:
+    status: covered_by_requirement
+    requirements:
+        - SW-REQ-097
+        - SW-REQ-098
+        - SW-REQ-099
+    known_issues: []
+    evidence:
+        verified_by:
+            - pumps/mongo_mcdc_100_test.go:TestMongoPump_EnsureIndexes_DocumentDBDoesNotUseExistsShortcut
+            - pumps/mongo_mcdc_100_test.go:TestMongoSelectivePump_EnsureIndexes_DocumentDBDoesNotUseExistsShortcut
+            - pumps/mongo_mcdc_100_test.go:TestMongoAggregatePump_EnsureIndexes_DocumentDBDoesNotUseExistsShortcut
+        obligation_evidence:
+            - requirement: SW-REQ-097
+              obligation_class: backend_ddl_valid
+              evidence_type: nominal
+            - requirement: SW-REQ-097
+              obligation_class: backend_ddl_valid
+              evidence_type: negative
+            - requirement: SW-REQ-097
+              obligation_class: backend_ddl_valid
+              evidence_type: review
+            - requirement: SW-REQ-097
+              obligation_class: index_definition_matches_query
+              evidence_type: nominal
+            - requirement: SW-REQ-097
+              obligation_class: index_definition_matches_query
+              evidence_type: negative
+            - requirement: SW-REQ-097
+              obligation_class: index_definition_matches_query
+              evidence_type: review
+            - requirement: SW-REQ-098
+              obligation_class: backend_ddl_valid
+              evidence_type: nominal
+            - requirement: SW-REQ-098
+              obligation_class: backend_ddl_valid
+              evidence_type: negative
+            - requirement: SW-REQ-098
+              obligation_class: backend_ddl_valid
+              evidence_type: review
+            - requirement: SW-REQ-098
+              obligation_class: index_definition_matches_query
+              evidence_type: nominal
+            - requirement: SW-REQ-098
+              obligation_class: index_definition_matches_query
+              evidence_type: negative
+            - requirement: SW-REQ-098
+              obligation_class: index_definition_matches_query
+              evidence_type: review
+            - requirement: SW-REQ-099
+              obligation_class: backend_ddl_valid
+              evidence_type: nominal
+            - requirement: SW-REQ-099
+              obligation_class: backend_ddl_valid
+              evidence_type: negative
+            - requirement: SW-REQ-099
+              obligation_class: backend_ddl_valid
+              evidence_type: review
+            - requirement: SW-REQ-099
+              obligation_class: index_definition_matches_query
+              evidence_type: nominal
+            - requirement: SW-REQ-099
+              obligation_class: index_definition_matches_query
+              evidence_type: negative
+            - requirement: SW-REQ-099
+              obligation_class: index_definition_matches_query
+              evidence_type: review
+    reviewer: agent:codex
+    reviewed_at: "2026-06-25T18:12:31Z"
+history:
+    - at: "2026-06-25T18:12:31Z"
+      by: agent:codex
+      action: created
+      detail: |
+        Recorded TT-5302 DocumentDB index compatibility as covered by
+        SW-REQ-097, SW-REQ-098, and SW-REQ-099, with fake-store evidence that
+        DocumentDB does not call the StandardMongo collection-exists shortcut
+        and attempts the expected foreground indexes.

@@ -46,6 +46,12 @@ classes).
 - Live-MongoDB tests are excluded from the local audit MC/DC scope (recorded
   as a known issue).
 
+## Related requirements
+`SW-REQ-097` decomposes the TT-5302 DocumentDB index compatibility rule for
+this standard Mongo index path: DocumentDB must not use the StandardMongo
+collection-exists shortcut and must attempt foreground baseline indexes unless
+`omit_index_creation` is set.
+
 ## Open questions
 - `WriteData` and `WriteUptimeData` ignore the caller `ctx` and pass
   `context.Background()` to `m.store.Insert` (see lines 435 and 589). This is

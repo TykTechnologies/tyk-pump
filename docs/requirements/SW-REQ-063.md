@@ -37,6 +37,12 @@ support background creation so the pump runs foreground there.
 - Live-Mongo tests are excluded from the local audit MC/DC scope (known
   issue).
 
+## Related requirements
+`SW-REQ-099` decomposes the TT-5302 DocumentDB index compatibility rule for
+this aggregate index path: DocumentDB must not use the StandardMongo
+collection-exists shortcut and must attempt foreground baseline indexes unless
+`omit_index_creation` is set.
+
 ## Open questions
 - `MCPMongoAggregatePump` (SW-REQ-039) re-uses this same ensure helper
   via embedding; the obligation transitively applies there.

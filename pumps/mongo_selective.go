@@ -141,6 +141,7 @@ func (m *MongoSelectivePump) connect() {
 }
 
 // reqproof:implements SW-REQ-035
+// reqproof:implements SW-REQ-098
 func (m *MongoSelectivePump) ensureIndexes(collectionName string) error {
 	if m.dbConf.OmitIndexCreation {
 		m.log.Debug("omit_index_creation set to true, omitting index creation..")

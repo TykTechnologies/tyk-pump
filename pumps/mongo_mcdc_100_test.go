@@ -46,7 +46,10 @@ import (
 
 type sequencedUpsertStore struct {
 	createIndexErrs []error
+	createdIndexes  []model.Index
 	hasTableErrs    []error
+	hasTableResults []bool
+	hasTableCalls   int
 	insertErrs      []error
 	migrateErrs     []error
 	upsertErrs      []error
@@ -83,8 +86,9 @@ func (s *sequencedUpsertStore) UpdateAll(context.Context, model.DBObject, model.
 	return nil
 }
 func (s *sequencedUpsertStore) Drop(context.Context, model.DBObject) error { return nil }
-func (s *sequencedUpsertStore) CreateIndex(context.Context, model.DBObject, model.Index) error {
+func (s *sequencedUpsertStore) CreateIndex(_ context.Context, _ model.DBObject, idx model.Index) error {
 	if len(s.createIndexErrs) == 0 {
+		s.createdIndexes = append(s.createdIndexes, idx)
 		return nil
 	}
 	err := s.createIndexErrs[0]
@@ -92,6 +96,7 @@ func (s *sequencedUpsertStore) CreateIndex(context.Context, model.DBObject, mode
 	if err != nil {
 		return err
 	}
+	s.createdIndexes = append(s.createdIndexes, idx)
 	return nil
 }
 func (s *sequencedUpsertStore) GetIndexes(context.Context, model.DBObject) ([]model.Index, error) {
@@ -99,7 +104,13 @@ func (s *sequencedUpsertStore) GetIndexes(context.Context, model.DBObject) ([]mo
 }
 func (s *sequencedUpsertStore) Ping(context.Context) error { return nil }
 func (s *sequencedUpsertStore) HasTable(context.Context, string) (bool, error) {
+	s.hasTableCalls++
 	if len(s.hasTableErrs) == 0 {
+		if len(s.hasTableResults) > 0 {
+			result := s.hasTableResults[0]
+			s.hasTableResults = s.hasTableResults[1:]
+			return result, nil
+		}
 		return false, nil
 	}
 	err := s.hasTableErrs[0]
@@ -371,6 +382,166 @@ func TestMongoAggregatePump_EnsureIndexes_CreateIndexErr(t *testing.T) {
 
 	err := p.ensureIndexes(uniqueCollection(t) + "_agg_after_stop")
 	assert.Error(t, err)
+}
+
+// Verifies: SW-REQ-097
+// SW-REQ-097:backend_ddl_valid:nominal
+// SW-REQ-097:backend_ddl_valid:negative
+// SW-REQ-097:backend_ddl_valid:review
+// SW-REQ-097:index_definition_matches_query:nominal
+// SW-REQ-097:index_definition_matches_query:negative
+// SW-REQ-097:index_definition_matches_query:review
+// MCDC SW-REQ-097: docdb_backend_configured=F, docdb_indexes_attempted=F, omit_index_creation_disabled=T => TRUE
+// MCDC SW-REQ-097: docdb_backend_configured=T, docdb_indexes_attempted=F, omit_index_creation_disabled=F => TRUE
+// MCDC SW-REQ-097: docdb_backend_configured=T, docdb_indexes_attempted=F, omit_index_creation_disabled=T => FALSE
+// MCDC SW-REQ-097: docdb_backend_configured=T, docdb_indexes_attempted=T, omit_index_creation_disabled=T => TRUE
+func TestMongoPump_EnsureIndexes_DocumentDBDoesNotUseExistsShortcut(t *testing.T) {
+	t.Run("standard mongo existing collection skips index creation", func(t *testing.T) {
+		store := &sequencedUpsertStore{hasTableResults: []bool{true}}
+		p := &MongoPump{store: store}
+		p.dbConf = &MongoConf{BaseMongoConf: BaseMongoConf{MongoDBType: StandardMongo}}
+		p.log = logrus.NewEntry(logrus.New())
+
+		require.NoError(t, p.ensureIndexes(uniqueCollection(t)+"_std_exists"))
+		assert.Equal(t, 1, store.hasTableCalls)
+		assert.Empty(t, store.createdIndexes)
+	})
+
+	t.Run("documentdb omit index creation skips index creation", func(t *testing.T) {
+		store := &sequencedUpsertStore{hasTableResults: []bool{true}}
+		p := &MongoPump{store: store}
+		p.dbConf = &MongoConf{BaseMongoConf: BaseMongoConf{MongoDBType: AWSDocumentDB, OmitIndexCreation: true}}
+		p.log = logrus.NewEntry(logrus.New())
+
+		require.NoError(t, p.ensureIndexes(uniqueCollection(t)+"_docdb_omit"))
+		assert.Zero(t, store.hasTableCalls)
+		assert.Empty(t, store.createdIndexes)
+	})
+
+	t.Run("documentdb creates foreground standard indexes even if collection exists", func(t *testing.T) {
+		store := &sequencedUpsertStore{hasTableResults: []bool{true}}
+		p := &MongoPump{store: store}
+		p.dbConf = &MongoConf{BaseMongoConf: BaseMongoConf{MongoDBType: AWSDocumentDB}}
+		p.log = logrus.NewEntry(logrus.New())
+
+		require.NoError(t, p.ensureIndexes(uniqueCollection(t)+"_docdb_indexes"))
+		assert.Zero(t, store.hasTableCalls, "DocumentDB must not use the StandardMongo collection-exists shortcut")
+		require.Len(t, store.createdIndexes, 3)
+		assert.Equal(t, []model.DBM{{"orgid": 1}}, store.createdIndexes[0].Keys)
+		assert.Equal(t, []model.DBM{{"apiid": 1}}, store.createdIndexes[1].Keys)
+		assert.Equal(t, "logBrowserIndex", store.createdIndexes[2].Name)
+		assert.Equal(t, []model.DBM{{"timestamp": -1}, {"orgid": 1}, {"apiid": 1}, {"apikey": 1}, {"responsecode": 1}}, store.createdIndexes[2].Keys)
+		for _, idx := range store.createdIndexes {
+			assert.False(t, idx.Background)
+		}
+	})
+}
+
+// Verifies: SW-REQ-098
+// SW-REQ-098:backend_ddl_valid:nominal
+// SW-REQ-098:backend_ddl_valid:negative
+// SW-REQ-098:backend_ddl_valid:review
+// SW-REQ-098:index_definition_matches_query:nominal
+// SW-REQ-098:index_definition_matches_query:negative
+// SW-REQ-098:index_definition_matches_query:review
+// MCDC SW-REQ-098: docdb_backend_configured=F, docdb_indexes_attempted=F, omit_index_creation_disabled=T => TRUE
+// MCDC SW-REQ-098: docdb_backend_configured=T, docdb_indexes_attempted=F, omit_index_creation_disabled=F => TRUE
+// MCDC SW-REQ-098: docdb_backend_configured=T, docdb_indexes_attempted=F, omit_index_creation_disabled=T => FALSE
+// MCDC SW-REQ-098: docdb_backend_configured=T, docdb_indexes_attempted=T, omit_index_creation_disabled=T => TRUE
+func TestMongoSelectivePump_EnsureIndexes_DocumentDBDoesNotUseExistsShortcut(t *testing.T) {
+	t.Run("standard mongo existing collection skips index creation", func(t *testing.T) {
+		store := &sequencedUpsertStore{hasTableResults: []bool{true}}
+		p := &MongoSelectivePump{store: store}
+		p.dbConf = &MongoSelectiveConf{BaseMongoConf: BaseMongoConf{MongoDBType: StandardMongo}}
+		p.log = logrus.NewEntry(logrus.New())
+
+		require.NoError(t, p.ensureIndexes(uniqueCollection(t)+"_sel_std_exists"))
+		assert.Equal(t, 1, store.hasTableCalls)
+		assert.Empty(t, store.createdIndexes)
+	})
+
+	t.Run("documentdb omit index creation skips index creation", func(t *testing.T) {
+		store := &sequencedUpsertStore{hasTableResults: []bool{true}}
+		p := &MongoSelectivePump{store: store}
+		p.dbConf = &MongoSelectiveConf{BaseMongoConf: BaseMongoConf{MongoDBType: AWSDocumentDB, OmitIndexCreation: true}}
+		p.log = logrus.NewEntry(logrus.New())
+
+		require.NoError(t, p.ensureIndexes(uniqueCollection(t)+"_sel_docdb_omit"))
+		assert.Zero(t, store.hasTableCalls)
+		assert.Empty(t, store.createdIndexes)
+	})
+
+	t.Run("documentdb creates foreground selective indexes even if collection exists", func(t *testing.T) {
+		store := &sequencedUpsertStore{hasTableResults: []bool{true}}
+		p := &MongoSelectivePump{store: store}
+		p.dbConf = &MongoSelectiveConf{BaseMongoConf: BaseMongoConf{MongoDBType: AWSDocumentDB}}
+		p.log = logrus.NewEntry(logrus.New())
+
+		require.NoError(t, p.ensureIndexes(uniqueCollection(t)+"_sel_docdb_indexes"))
+		assert.Zero(t, store.hasTableCalls, "DocumentDB must not use the StandardMongo collection-exists shortcut")
+		require.Len(t, store.createdIndexes, 3)
+		assert.Equal(t, []model.DBM{{"apiid": 1}}, store.createdIndexes[0].Keys)
+		assert.True(t, store.createdIndexes[1].IsTTLIndex)
+		assert.Equal(t, []model.DBM{{"expireAt": 1}}, store.createdIndexes[1].Keys)
+		assert.Equal(t, "logBrowserIndex", store.createdIndexes[2].Name)
+		assert.Equal(t, []model.DBM{{"timestamp": -1}, {"apiid": 1}, {"apikey": 1}, {"responsecode": 1}}, store.createdIndexes[2].Keys)
+		for _, idx := range store.createdIndexes {
+			assert.False(t, idx.Background)
+		}
+	})
+}
+
+// Verifies: SW-REQ-099
+// SW-REQ-099:backend_ddl_valid:nominal
+// SW-REQ-099:backend_ddl_valid:negative
+// SW-REQ-099:backend_ddl_valid:review
+// SW-REQ-099:index_definition_matches_query:nominal
+// SW-REQ-099:index_definition_matches_query:negative
+// SW-REQ-099:index_definition_matches_query:review
+// MCDC SW-REQ-099: docdb_backend_configured=F, docdb_indexes_attempted=F, omit_index_creation_disabled=T => TRUE
+// MCDC SW-REQ-099: docdb_backend_configured=T, docdb_indexes_attempted=F, omit_index_creation_disabled=F => TRUE
+// MCDC SW-REQ-099: docdb_backend_configured=T, docdb_indexes_attempted=F, omit_index_creation_disabled=T => FALSE
+// MCDC SW-REQ-099: docdb_backend_configured=T, docdb_indexes_attempted=T, omit_index_creation_disabled=T => TRUE
+func TestMongoAggregatePump_EnsureIndexes_DocumentDBDoesNotUseExistsShortcut(t *testing.T) {
+	t.Run("standard mongo existing collection skips index creation", func(t *testing.T) {
+		store := &sequencedUpsertStore{hasTableResults: []bool{true}}
+		p := &MongoAggregatePump{store: store}
+		p.dbConf = &MongoAggregateConf{BaseMongoConf: BaseMongoConf{MongoDBType: StandardMongo}}
+		p.log = logrus.NewEntry(logrus.New())
+
+		require.NoError(t, p.ensureIndexes(uniqueCollection(t)+"_agg_std_exists"))
+		assert.Equal(t, 1, store.hasTableCalls)
+		assert.Empty(t, store.createdIndexes)
+	})
+
+	t.Run("documentdb omit index creation skips index creation", func(t *testing.T) {
+		store := &sequencedUpsertStore{hasTableResults: []bool{true}}
+		p := &MongoAggregatePump{store: store}
+		p.dbConf = &MongoAggregateConf{BaseMongoConf: BaseMongoConf{MongoDBType: AWSDocumentDB, OmitIndexCreation: true}}
+		p.log = logrus.NewEntry(logrus.New())
+
+		require.NoError(t, p.ensureIndexes(uniqueCollection(t)+"_agg_docdb_omit"))
+		assert.Zero(t, store.hasTableCalls)
+		assert.Empty(t, store.createdIndexes)
+	})
+
+	t.Run("documentdb creates foreground aggregate indexes even if collection exists", func(t *testing.T) {
+		store := &sequencedUpsertStore{hasTableResults: []bool{true}}
+		p := &MongoAggregatePump{store: store}
+		p.dbConf = &MongoAggregateConf{BaseMongoConf: BaseMongoConf{MongoDBType: AWSDocumentDB}}
+		p.log = logrus.NewEntry(logrus.New())
+
+		require.NoError(t, p.ensureIndexes(uniqueCollection(t)+"_agg_docdb_indexes"))
+		assert.Zero(t, store.hasTableCalls, "DocumentDB must not use the StandardMongo collection-exists shortcut")
+		require.Len(t, store.createdIndexes, 3)
+		assert.True(t, store.createdIndexes[0].IsTTLIndex)
+		assert.Equal(t, []model.DBM{{"expireAt": 1}}, store.createdIndexes[0].Keys)
+		assert.Equal(t, []model.DBM{{"timestamp": 1}}, store.createdIndexes[1].Keys)
+		assert.Equal(t, []model.DBM{{"orgid": 1}}, store.createdIndexes[2].Keys)
+		for _, idx := range store.createdIndexes {
+			assert.False(t, idx.Background)
+		}
+	})
 }
 
 // ---------------------------------------------------------------------------

@@ -44,6 +44,12 @@ The honest req description above reflects this gap.
 - Live-MongoDB tests are excluded from the local audit MC/DC scope (recorded
   as a known issue).
 
+## Related requirements
+`SW-REQ-098` decomposes the TT-5302 DocumentDB index compatibility rule for
+this selective per-org index path: DocumentDB must not use the StandardMongo
+collection-exists shortcut and must attempt foreground baseline indexes unless
+`omit_index_creation` is set.
+
 ## Open questions
 - Per-batch insert errors are swallowed (`mongo_selective.go:242-244`); the
   function always returns `nil`. This means upstream retry / backpressure

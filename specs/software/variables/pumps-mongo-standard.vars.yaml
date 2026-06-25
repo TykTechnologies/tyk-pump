@@ -16,3 +16,15 @@ variables:
       type: bool
       direction: output
       description: True iff every valid non-MCP record accepted by standard Mongo WriteData is present in the configured standard Mongo collection after the write.
+    - name: docdb_backend_configured
+      type: bool
+      direction: input
+      description: True when MongoDBType is AWSDocumentDB for the standard Mongo pump, requiring DocumentDB-compatible foreground index creation without the StandardMongo collection-exists probe.
+    - name: omit_index_creation_disabled
+      type: bool
+      direction: input
+      description: True when OmitIndexCreation is false, so the pump is responsible for attempting its baseline indexes.
+    - name: docdb_indexes_attempted
+      type: bool
+      direction: output
+      description: True iff the standard Mongo pump attempts its baseline DocumentDB-compatible indexes without calling the StandardMongo collection-exists shortcut; false when omit_index_creation intentionally disables index creation.
