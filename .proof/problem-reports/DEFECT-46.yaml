@@ -1,0 +1,104 @@
+schema_version: 1
+id: DEFECT-46
+title: Graph pumps skipped pump-specific environment overrides
+introduced_in: unknown
+description: |
+  Commit d9d64dc fixed graph pump environment override handling. Graph Mongo
+  decoded file/config values but did not call processPumpEnvVars, so documented
+  TYK_PMP_PUMPS_MONGOGRAPH_META_* overrides were ignored. Graph SQL Aggregate
+  called processPumpEnvVars but lacked GetEnvPrefix, so it did not fully
+  satisfy the shared Pump env-prefix contract.
+
+  Current GraphMongoPump.Init calls processPumpEnvVars with
+  mongoGraphDefaultEnv after decoding BaseMongoConf, and
+  GraphSQLAggregatePump implements GetEnvPrefix over SQLConf.EnvPrefix.
+  SW-REQ-037 and SW-REQ-043 now make those env-overlay contracts explicit.
+source:
+    type: upstream_commit
+    repo: TykTechnologies/tyk-pump
+    commit: d9d64dc
+    reference: tyk-pump#780
+    date: "2024-01-29"
+classification:
+    surface: config_behavior
+    defect_class: graph_pump_env_override_not_applied
+    severity: medium
+    security_relevant: false
+root_cause:
+    missing_requirement: true
+    missing_test_partition: true
+    missing_mcdc_variable: false
+    notes: |
+      Generic config-loading requirements covered top-level TYK_PMP and
+      pump-family environment overrides, but Graph Mongo and Graph SQL
+      Aggregate did not explicitly own their default meta env prefixes.
+impact_analysis:
+    affected_requirements:
+        - SW-REQ-037
+        - SW-REQ-043
+    affected_code:
+        - pumps/graph_mongo.go
+        - pumps/graph_sql_aggregate.go
+        - pumps/graph_mongo_test.go
+        - pumps/graph_sql_aggregate_test.go
+hardening:
+    new_requirements: []
+    strengthened_requirements:
+        - SW-REQ-037
+        - SW-REQ-043
+    added_obligations:
+        - requirement: SW-REQ-037
+          obligation_class: env_override_applied
+        - requirement: SW-REQ-043
+          obligation_class: env_override_applied
+    regression_tests:
+        - pumps/graph_mongo_test.go:TestGraphMongoPump_Init
+        - pumps/graph_sql_aggregate_test.go:TestSqlGraphAggregatePump_Init
+    proposed_classes:
+        - env_override_applied
+    code_signals: []
+disposition:
+    status: covered_by_requirement
+    requirements:
+        - SW-REQ-037
+        - SW-REQ-043
+    known_issues:
+        - graph-sql-aggregate-atomicity-fault-injection-missing
+        - graph-sql-aggregate-migrate-sharded-tables-ignored
+        - graph-mcp-sql-sharded-indexes-untracked
+        - analytics-timestamp-timezone-convention-unpinned
+        - mapstructure-decode-silently-drops-unknown-keys
+        - mongo-pump-ignores-caller-context
+        - no-panic-recovery-in-exec-pump-writing
+        - pump-no-timeout-can-block-purge-cycle
+        - pumps-logfatal-on-config-decode
+        - sql-aggregate-mysql-excluded-keyword-broken
+        - sql-batch-size-zero-infinite-loop
+    evidence:
+        verified_by:
+            - pumps/graph_mongo_test.go:TestGraphMongoPump_Init
+            - pumps/graph_sql_aggregate_test.go:TestSqlGraphAggregatePump_Init
+        obligation_evidence:
+            - requirement: SW-REQ-037
+              obligation_class: env_override_applied
+              evidence_type: nominal
+            - requirement: SW-REQ-037
+              obligation_class: env_override_applied
+              evidence_type: boundary
+            - requirement: SW-REQ-043
+              obligation_class: env_override_applied
+              evidence_type: nominal
+            - requirement: SW-REQ-043
+              obligation_class: env_override_applied
+              evidence_type: boundary
+    reviewer: agent:codex
+    reviewed_at: "2026-06-25T20:50:00Z"
+history:
+    - at: "2026-06-25T20:50:00Z"
+      by: agent:codex
+      action: created
+      detail: |
+        Recorded d9d64dc as a fixed historical graph-pump environment override
+        defect. The hardening keeps runtime code unchanged, adds the local
+        env_override_applied obligation, and ties Graph Mongo / Graph SQL
+        Aggregate Init tests to the documented default and custom env prefixes.

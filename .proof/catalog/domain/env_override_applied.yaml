@@ -1,0 +1,42 @@
+id: env_override_applied
+name: Environment override applied
+category: domain
+status: active
+summary: A pump-specific Init path shall apply its documented default or custom environment prefix so operator environment variables override file/config values for the same fields.
+description: |-
+  Pump configuration often flows through a typed config struct plus a
+  per-pump environment overlay. Requirements that own a pump Init path shall
+  prove the pump exposes the expected GetEnvPrefix value and calls the shared
+  environment-override helper with the documented default prefix. Otherwise a
+  pump can appear configurable from JSON while silently ignoring operator
+  environment variables in container or Helm deployments.
+applies_when:
+  description: code decodes operator pump configuration and supports TYK_PMP_PUMPS_<PUMP>_META_* environment overlays
+  trigger_phrases:
+    - environment override
+    - meta_env_prefix
+    - GetEnvPrefix
+    - processPumpEnvVars
+    - default env prefix
+example_req: |-
+  The graph Mongo pump shall apply TYK_PMP_PUMPS_MONGOGRAPH_META_* overrides
+  during Init, unless meta_env_prefix supplies a custom override prefix.
+if_missing: |-
+  Operators setting documented pump environment variables can deploy a config
+  that looks correct but is ignored at runtime, causing the pump to use stale
+  file/default values for connection, table, or routing behavior.
+recommended_evidence:
+  - kind: nominal
+    note: Init test sets the documented default env prefix for a field and asserts it overrides the file/config value.
+  - kind: boundary
+    note: Test or review proves a custom meta_env_prefix is returned by GetEnvPrefix and is used instead of the default prefix.
+  - kind: review
+    note: Review maps the pump's default prefix constant and GetEnvPrefix implementation to processPumpEnvVars in Init.
+frameworks:
+  - id: CWE
+    refs:
+      - CWE-16
+      - CWE-665
+related_classes:
+  - id: config_schema_strict
+    relationship: complements

@@ -12,6 +12,11 @@ per-batch insert error shall be returned to the caller, and connection-closed
 conditions shall be logged as a 'Detected connection failure!' warning. Derived
 from SYS-REQ-004 via Phase A decomposition of SW-REQ-018.
 
+During `Init`, the pump also applies operator environment overrides using the
+default prefix `TYK_PMP_PUMPS_MONGOGRAPH_META` unless `meta_env_prefix` supplies
+a custom prefix. This pins the historical d9d64dc fix where Graph Mongo decoded
+JSON/config values but skipped the pump-specific env overlay.
+
 ## Motivation
 GraphQL analytics carry a distinct shape (operation name, root field counts,
 errors) that does not fit cleanly inside the standard analytics record. This
@@ -24,6 +29,8 @@ record.
 
 ## Code references
 - `pumps/graph_mongo.go:GraphMongoPump.Init` — wires the embedded `MongoPump`.
+- `pumps/graph_mongo.go:GraphMongoPump.Init` — calls `processPumpEnvVars`
+  with `mongoGraphDefaultEnv` after decoding `BaseMongoConf`.
 - `pumps/graph_mongo.go:WriteData` — calls `m.AccumulateSet(data, true)`
   (the `true` flag enables graph-record mode in the shared helper).
 - `pumps/mongo.go:464` — graph-mode `AccumulateSet` filters non-GraphQLStats
@@ -35,6 +42,12 @@ record.
 
 ## Evidence
 - `pumps/graph_mongo_test.go` (re-annotated `Verifies: SW-REQ-037`).
+- `pumps/graph_mongo_test.go:TestGraphMongoPump_Init/init from default env`
+  proves `TYK_PMP_PUMPS_MONGOGRAPH_META_COLLECTIONNAME` overrides the configured
+  collection name during `Init`.
+- `pumps/graph_mongo_test.go:TestGraphMongoPump_Init/init from custom env prefix`
+  proves a configured `meta_env_prefix` is returned by `GetEnvPrefix` and used
+  for the same override.
 - `pumps/mongo_test.go:TestMongoPump_AccumulateSetIgnoreDocSize` proves
   GraphQLStats-backed graph records retain `RawRequest` and `RawResponse`
   through graph-mode accumulation even when they exceed `MaxDocumentSizeBytes`.

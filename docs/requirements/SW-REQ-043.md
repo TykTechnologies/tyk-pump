@@ -12,6 +12,12 @@ per-(API, graph dimension) row, including `types`, `fields`, `operation`, and
 `analytics.OnConflictAssignments`. Per-batch errors *shall be returned* to the
 caller. Derived from SYS-REQ-003 via Phase A decomposition of SW-REQ-019.
 
+During `Init`, the pump applies operator environment overrides using
+`TYK_PMP_PUMPS_SQLGRAPHAGGREGATE_META` by default, or the custom prefix returned
+by `GetEnvPrefix` when `meta_env_prefix` is set. This pins the historical
+d9d64dc fix that made the graph SQL aggregate pump implement the shared pump
+env-prefix contract.
+
 ## Motivation
 This is the only graph-flavoured SQL writer that propagates errors — unlike
 the standard sql / graph-sql / mcp-sql pumps which swallow them. Splitting
@@ -25,9 +31,18 @@ latencies) in SQL form, suitable for Grafana / Metabase dashboards.
   loop and table ensure.
 - `pumps/graph_sql_aggregate.go:DoAggregatedWriting` — `clause.OnConflict`
   upsert via GORM; returns errors to the caller.
+- `pumps/graph_sql_aggregate.go:GraphSQLAggregatePump.Init` — calls
+  `processPumpEnvVars` with `SQLGraphAggregateDefaultENV`; `GetEnvPrefix`
+  exposes any configured `meta_env_prefix`.
 
 ## Evidence
 - `pumps/graph_sql_aggregate_test.go` (re-annotated `Verifies: SW-REQ-043`).
+- `pumps/graph_sql_aggregate_test.go:TestSqlGraphAggregatePump_Init/init from env`
+  proves the default graph-SQL-aggregate env prefix overrides file/config
+  values for SQL type, connection string, and table sharding.
+- `pumps/graph_sql_aggregate_test.go:TestSqlGraphAggregatePump_Init/init from custom env prefix`
+  proves a configured `meta_env_prefix` is returned by `GetEnvPrefix` and used
+  for Graph SQL Aggregate overrides.
 - `analytics/aggregate_test.go:TestAggregateGraphData_PartitionsSameOrgByAPIID`
   proves that same-org, same-dimension GraphQL records remain isolated by
   `APIID` before SQL upsert, including the `rootfields` dimension.

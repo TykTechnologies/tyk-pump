@@ -2,6 +2,7 @@ package pumps
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
@@ -220,6 +221,30 @@ func TestGraphMongoPump_Init(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, 10*MiB, pump.dbConf.MaxDocumentSizeBytes)
 		assert.Equal(t, 10*MiB, pump.dbConf.MaxInsertBatchSizeBytes)
+	})
+	t.Run("init from default env", func(t *testing.T) {
+		// SW-REQ-037:env_override_applied:nominal
+		conf := defaultConf(t)
+		conf.CollectionName = uniqueCollection(t)
+		envCollection := uniqueCollection(t)
+		t.Setenv(fmt.Sprintf("%s_MONGOGRAPH%s_COLLECTIONNAME", PUMPS_ENV_PREFIX, PUMPS_ENV_META_PREFIX), envCollection)
+
+		err := pump.Init(conf)
+		assert.NoError(t, err)
+		assert.Equal(t, envCollection, pump.dbConf.CollectionName)
+	})
+	t.Run("init from custom env prefix", func(t *testing.T) {
+		// SW-REQ-037:env_override_applied:boundary
+		conf := defaultConf(t)
+		conf.CollectionName = uniqueCollection(t)
+		conf.EnvPrefix = "GRAPH_MONGO_CUSTOM"
+		envCollection := uniqueCollection(t)
+		t.Setenv(conf.EnvPrefix+"_COLLECTIONNAME", envCollection)
+
+		err := pump.Init(conf)
+		assert.NoError(t, err)
+		assert.Equal(t, conf.EnvPrefix, pump.GetEnvPrefix())
+		assert.Equal(t, envCollection, pump.dbConf.CollectionName)
 	})
 }
 

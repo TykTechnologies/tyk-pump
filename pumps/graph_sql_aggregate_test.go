@@ -156,6 +156,7 @@ func TestSqlGraphAggregatePump_Init(t *testing.T) {
 	})
 
 	t.Run("init from env", func(t *testing.T) {
+		// SW-REQ-043:env_override_applied:nominal
 		envPrefix := fmt.Sprintf("%s_SQLGRAPHAGGREGATE%s", PUMPS_ENV_PREFIX, PUMPS_ENV_META_PREFIX) + "_%s"
 		r := require.New(t)
 		envKeyVal := map[string]string{
@@ -183,6 +184,25 @@ func TestSqlGraphAggregatePump_Init(t *testing.T) {
 		r.NoError(pump.Init(conf))
 		assert.Equal(t, "postgres", pump.SQLConf.Type)
 		assert.Equal(t, getTestPostgresConnectionString(), pump.SQLConf.ConnectionString)
+		assert.Equal(t, true, pump.SQLConf.TableSharding)
+	})
+
+	t.Run("init from custom env prefix", func(t *testing.T) {
+		// SW-REQ-043:env_override_applied:boundary
+		customPrefix := "GRAPH_SQL_AGG_CUSTOM"
+		t.Setenv(customPrefix+"_TABLESHARDING", "true")
+
+		conf := SQLAggregatePumpConf{
+			EnvPrefix: customPrefix,
+			SQLConf: SQLConf{
+				Type:             "postgres",
+				ConnectionString: getTestPostgresConnectionString(),
+				TableSharding:    false,
+			},
+		}
+
+		r.NoError(pump.Init(conf))
+		assert.Equal(t, customPrefix, pump.GetEnvPrefix())
 		assert.Equal(t, true, pump.SQLConf.TableSharding)
 	})
 }
