@@ -388,6 +388,22 @@ func TestNewTLSConfig(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-016
+// SW-REQ-016:cert_chain_validated:negative
+func TestNewTLSConfig_MismatchedClientCertKeyFails(t *testing.T) {
+	_, certFile, _, _ := generateTestCerts(t, t.TempDir())
+	_, _, otherKeyFile, _ := generateTestCerts(t, t.TempDir())
+
+	tlsConfig, err := NewTLSConfig(TLSConfig{
+		CertFile: certFile,
+		KeyFile:  otherKeyFile,
+	}, logrus.NewEntry(logrus.New()))
+
+	require.Error(t, err)
+	assert.Nil(t, tlsConfig)
+	assert.Contains(t, err.Error(), "failed to load cert/key pair")
+}
+
 func generateTestCerts(t *testing.T, tempDir string) (string, string, string, string) {
 	caPrivateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	require.NoError(t, err)

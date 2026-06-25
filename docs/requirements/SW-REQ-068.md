@@ -41,6 +41,14 @@ expectation that Init failure aborts startup.
 - `pumps/elasticsearch_test.go:TestElasticsearchPump_TLSConfig_ErrorCases`
   (re-annotated `Verifies: SW-REQ-068`) — exercises TLS-config error
   propagation from `getOperator`.
+- `pumps/elasticsearch_test.go:TestElasticsearchPump_TLSConfig_EnvSkipVerify`
+  — verifies the Elasticsearch environment spelling
+  `SSLINSECURESKIPVERIFY` reaches `SSLInsecureSkipVerify` and is passed into
+  the TLS helper as an explicit operator opt-in.
+- `pumps/tls_verification_explicit_test.go:TestTLSVerificationExplicit_DefaultsAreSecure`
+  — verifies Elasticsearch `SSLInsecureSkipVerify` defaults to false so
+  insecure TLS requires explicit operator opt-in; strict production
+  certificate validation remains tracked by KI `tls-insecure-skip-verify-allowed`.
 
 ## Open questions
 - ES versions 8+ are not supported; the `log.Fatal` will fire if an
@@ -48,3 +56,6 @@ expectation that Init failure aborts startup.
   support.
 - `connect()` recurses without bound on connection failure (`elasticsearch.go:412-415`)
   — tracked as a separate known issue.
+- API-key auth is currently overwritten by the `UseSSL` transport assignment
+  when both are configured — tracked as KI
+  `elasticsearch-api-key-auth-dropped-when-use-ssl`.

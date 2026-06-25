@@ -1,10 +1,13 @@
 package pumps
 
 import (
+	"os"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
+	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -156,6 +159,42 @@ func TestElasticsearchPump_TLSConfig_ErrorCases(t *testing.T) {
 		assert.Nil(t, operator)
 		assert.Contains(t, err.Error(), "failed to configure TLS for Elasticsearch connection")
 	})
+}
+
+// Verifies: SW-REQ-068
+// SW-REQ-068:tls_verification_explicit:nominal
+func TestElasticsearchPump_TLSConfig_EnvSkipVerify(t *testing.T) {
+	t.Setenv("TEST_ES_SSLINSECURESKIPVERIFY", "true")
+
+	conf := &ElasticsearchConf{}
+	require.NoError(t, envconfig.Process("TEST_ES", conf))
+	require.True(t, conf.SSLInsecureSkipVerify)
+
+	tlsConf, err := NewTLSConfig(TLSConfig{
+		InsecureSkipVerify: conf.SSLInsecureSkipVerify,
+	}, log.WithField("prefix", "test"))
+	require.NoError(t, err)
+	require.NotNil(t, tlsConf)
+	assert.True(t, tlsConf.InsecureSkipVerify)
+}
+
+// Verifies: KI:elasticsearch-api-key-auth-dropped-when-use-ssl
+// Reproduces: elasticsearch-api-key-auth-dropped-when-use-ssl
+func TestElasticsearchPump_ApiKeyAuthDroppedWhenUseSSL_KI(t *testing.T) {
+	src, err := os.ReadFile("elasticsearch.go")
+	require.NoError(t, err)
+	text := string(src)
+
+	apiKeyAssignment := `httpClient = &http.Client{Transport: &ApiKeyTransport`
+	tlsAssignment := `httpClient = &http.Client{Transport: &http.Transport{TLSClientConfig: tlsConf}}`
+
+	apiKeyIdx := strings.Index(text, apiKeyAssignment)
+	tlsIdx := strings.Index(text, tlsAssignment)
+	require.NotEqual(t, -1, apiKeyIdx, "expected API key transport assignment in getOperator")
+	require.NotEqual(t, -1, tlsIdx, "expected TLS transport assignment in getOperator")
+	assert.Less(t, apiKeyIdx, tlsIdx, "API key transport is configured before TLS transport")
+	assert.NotContains(t, text[tlsIdx:tlsIdx+len(tlsAssignment)], "ApiKeyTransport",
+		"KI active: UseSSL replaces the API-key transport instead of wrapping/preserving it")
 }
 
 // Verifies: INT-REQ-006

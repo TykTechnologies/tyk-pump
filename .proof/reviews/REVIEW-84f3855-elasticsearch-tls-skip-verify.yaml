@@ -1,0 +1,7 @@
+id: REVIEW-84f3855-elasticsearch-tls-skip-verify
+kind: design_review
+reviewer: agent:codex
+reviewed_at: "2026-06-25T17:55:00Z"
+subject: upstream:84f3855/SW-REQ-016/SW-REQ-068
+decision: approved
+comment: 'Commit-level assurance review for TT-3067: upstream added Elasticsearch TLS operator controls including ssl_insecure_skip_verify and client cert/key fields. Current code routes Elasticsearch TLS through shared NewTLSConfig; SW-REQ-068 now carries tls_verification_explicit evidence for Elasticsearch SSLInsecureSkipVerify defaulting secure and env-based explicit opt-in. Strict production certificate validation remains tracked under KI tls-insecure-skip-verify-allowed, and the API-key+TLS transport overwrite found during review is tracked as KI elasticsearch-api-key-auth-dropped-when-use-ssl. No runtime product behavior change was made.'
