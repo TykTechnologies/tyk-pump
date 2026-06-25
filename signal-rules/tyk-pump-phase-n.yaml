@@ -799,3 +799,37 @@ rules:
               http.ListenAndServe("localhost:"+$PORT, $HANDLER)
           - pattern: |
               http.ListenAndServe("127.0.0.1:"+$PORT, $HANDLER)
+  - id: go.mongo-aggregate-raw-endpoint-path-key
+    severity: WARNING
+    languages: [go]
+    message: |
+      Mongo aggregate endpoint dimensions are later concatenated into update
+      field paths. A raw AnalyticsRecord.Path containing "." can split the
+      Mongo field path and corrupt the endpoint counter dimension. Encode the
+      path with replaceUnsupportedChars before using it as an Endpoints map key.
+    metadata:
+      proof:
+        signal_id: go.mongo_aggregate_raw_endpoint_path_key
+        provider: opengrep
+        confidence: high
+        framework_hints:
+          - CWE-20
+          - CWE-116
+          - CWE-138
+        notes: |
+          Commit 58da62f fixed this exact aggregate-data corruption by changing
+          Endpoints[record.Path] to Endpoints[replaceUnsupportedChars(record.Path)]
+          for tracked REST paths while preserving the raw path in identifiers.
+        obligations: [backend_field_key_safe]
+    paths:
+      include:
+        - "analytics/aggregate.go"
+      exclude:
+        - "*_test.go"
+        - "vendor/**"
+    patterns:
+      - pattern-either:
+          - pattern: |
+              $AGG.Endpoints[$REC.Path] = $VALUE
+          - pattern: |
+              $VALUE = $AGG.Endpoints[$REC.Path]

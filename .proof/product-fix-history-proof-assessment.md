@@ -97,7 +97,7 @@ backend-mode partitions, or missing operator contracts.
 | 416d1c7 / 0adb849 | 2020-05/08 | Elasticsearch base64 decode handling. | `missed_before_hardening`: generic mapping and core base64-decode requirements were adjacent, and `TestGetMapping_ExtendedStatistics` already asserted decoded values, but SW-REQ-068 did not explicitly own Elasticsearch `decode_base64` textual mapping or the historical `[]byte` JSON re-encode failure. Hardened with DEFECT-36, local obligation `backend_decoded_payload_textual`, SW-REQ-068/docs text, typed decoded-payload evidence in `TestGetMapping_ExtendedStatistics`, and a static signal for direct `DecodeString` assignment into backend maps. Current malformed ES decode behavior remains KI-backed under `elasticsearch-decode-base64-errors-silent-empty`. |
 | 402dab8 | 2020-06-23 | Health endpoint only available from localhost. | `missed_before_hardening`: SW-REQ-032 covered liveness response, pprof gating, and several health endpoint KIs, but did not explicitly require the production listener to bind outside loopback. Hardened with DEFECT-37, local obligation `listener_bind_scope_external`, SW-REQ-032/docs text, source-level `ServeHealthCheck` listener-address evidence, and a signal for loopback-only health listeners. Existing liveness-only/auth/rate-limit/bind-fatal behavior remains KI-backed debt. |
 | 6a8ab73 | 2020-03-12 | Mongo index already-exists error should be ignored. | `missed_before_hardening`: current proof had Mongo index requirements and DocumentDB hardening, but not the exact same-key/different-name `logBrowserIndex` idempotency contract from #234/#237. Hardened with DEFECT-38, local obligation `idempotent_schema_setup`, SW-REQ-034/SW-REQ-035 text, fake-store selective idempotency/non-sentinel evidence, and a standard-Mongo KI tripwire for the remaining non-StandardMongo conflict. StandardMongo already-existing collection short-circuit is covered; current standard non-StandardMongo conflict remains KI-backed under `mongo-standard-logbrowser-compatible-index-conflict`. |
-| 58da62f | 2019-11-19 | Mongo aggregate field names with unsupported '.' characters corrupted data. | Current encoding/data-integrity obligations are relevant, but this exact field-name sanitization contract should be explicit to guarantee catch. |
+| 58da62f | 2019-11-19 | Mongo aggregate field names with unsupported '.' characters corrupted data. | `missed_before_hardening`: aggregate tests covered counter accumulation and the helper branch, but not the product contract that tracked REST paths containing "." must be encoded before becoming Mongo update field paths. Hardened with DEFECT-39, local obligation `backend_field_key_safe`, SW-REQ-011/docs text, an aggregate-to-update-document witness, and a signal for raw endpoint path keys. |
 | 8bfdb36 | 2019-11-05 | Mongo document size calculated incorrectly and useful data skipped. | Current document-size/input-bound obligations help. Exact skip behavior requires targeted evidence. |
 | aa7a88e | 2019-10-03 | Mongo selective pump wrote TCP records incorrectly. | Current record-classification/filtering requirements likely catch if TCP/non-HTTP partition is witnessed. |
 | 3bb755d | 2019-08-23 | Elasticsearch analytics missing alias field. | General field-preservation requirements help, but alias must be explicitly listed/traced to be guaranteed. |
@@ -173,7 +173,7 @@ so a later reviewer can see what was included and what was filtered out.
 | 402dab8 | 2020-06-23 | Fix health endpoint to be published outside server | `missed_before_hardening`: now covered by DEFECT-37 and SW-REQ-032 `listener_bind_scope_external`; the regression witness fails if `ServeHealthCheck` returns to `localhost:<port>` or another loopback-only bind. |
 | 416d1c7 | 2020-05-26 | fixing b64 decoding | Same defect class as 0adb849 and covered by DEFECT-36: successful Elasticsearch `decode_base64` mapping is specified and witnessed as decoded text, with the malformed-input gap tracked separately as KI `elasticsearch-decode-base64-errors-silent-empty`. |
 | 6a8ab73 | 2020-03-12 | Ignore index exists error | `missed_before_hardening`: now covered by DEFECT-38 and `idempotent_schema_setup`; MongoSelective same-key/different-name `logBrowserIndex` conflicts are witnessed as nil, unrelated index errors still propagate, and standard Mongo non-StandardMongo recurrence remains a KnownIssue. |
-| 58da62f | 2019-11-19 | Handle unsupported MongoDB characters | Product encoding/data-integrity defect. Candidate for backend-key encoding contract. |
+| 58da62f | 2019-11-19 | Handle unsupported MongoDB characters | `missed_before_hardening`: now covered by DEFECT-39 and `backend_field_key_safe`; dotted tracked REST endpoint paths are witnessed as encoded in `Endpoints` map keys and Mongo update keys, while raw path identifiers remain preserved. |
 | 8bfdb36 | 2019-11-05 | Calculate document size correctly and do not skip useful data | Product size-bound defect. Candidate for explicit size arithmetic evidence. |
 | aa7a88e | 2019-10-03 | Fix selective pump to not add TCP records | Product classification/filtering defect. Relevant to Mongo selective requirements. |
 | 3bb755d | 2019-08-23 | Elasticsearch analytics publishes alias | Product field-preservation defect. Needs alias field evidence. |
@@ -218,6 +218,7 @@ Problem reports:
 - DEFECT-36: Elasticsearch decode_base64 stored decoded payload bytes as binary.
 - DEFECT-37: Health endpoint was bound to localhost only.
 - DEFECT-38: Mongo logBrowserIndex rename conflict was treated as schema setup failure.
+- DEFECT-39: Dotted endpoint paths corrupted Mongo aggregate endpoint dimensions.
 
 KnownIssues/risks relevant to historical fix classes:
 
@@ -270,9 +271,9 @@ or KnownIssue/problem-report work.
 
 3. Strengthen Mongo field-name sanitization for aggregate dimensions.
    - Historical source: 58da62f.
-   - Candidate obligation: encoding_safety / backend_key_encoding_safe.
-   - Desired evidence: endpoint paths containing "." are preserved through a
-     reversible or documented replacement policy.
+   - Status: completed in DEFECT-39 via `backend_field_key_safe` on
+     SW-REQ-011 plus aggregate update-key evidence for dotted tracked REST
+     endpoint paths.
 
 4. Strengthen Graph unresolved-schema behavior.
    - Historical source: 8e42170.

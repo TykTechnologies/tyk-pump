@@ -1,0 +1,48 @@
+id: backend_field_key_safe
+name: Backend field key safe
+category: domain
+status: active
+summary: Dynamic values used as backend field-path segments shall be encoded before they can change document structure.
+description: |-
+  Document backends such as MongoDB interpret dots in update keys as nested
+  field separators. Requirements that build backend update paths from runtime
+  product values shall prove those values are encoded or otherwise projected
+  before being concatenated into field paths, while preserving the original
+  value in user-facing identifier/list fields when that value is part of the
+  product contract.
+applies_when:
+  description: a backend update path, document key, or aggregate dimension key is derived from request data, operator data, or another dynamic product value
+  trigger_phrases:
+    - MongoDB field path
+    - update key
+    - dynamic field
+    - aggregate dimension
+    - endpoint path
+    - unsupported characters
+example_req: |-
+  When REST endpoint tracking is enabled and an endpoint path contains a dot,
+  the aggregate endpoint dimension key shall encode the dot before that value
+  is used in Mongo update paths, while endpoint identifiers preserve the
+  original request path.
+if_missing: |-
+  A request path, tag, API key, or other runtime value containing backend field
+  separators can split one aggregate dimension into nested fields, corrupting
+  counters or making updates fail against the backend.
+recommended_evidence:
+  - kind: nominal
+    note: Test builds a backend update from a dynamic value that contains a backend field separator and asserts the generated update key uses the encoded value.
+  - kind: negative
+    note: Test asserts the raw dynamic value is not present in backend update key positions that would be interpreted structurally.
+  - kind: review
+    note: Review documents which dynamic dimensions are covered and separates broader unsupported-character gaps into KnownIssues if they are not fixed.
+frameworks:
+  - id: CWE
+    refs:
+      - CWE-20
+      - CWE-116
+      - CWE-138
+related_classes:
+  - id: encoding_aware
+    relationship: specializes
+  - id: structured_projection_preserved
+    relationship: complements

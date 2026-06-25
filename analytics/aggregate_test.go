@@ -124,6 +124,76 @@ func TestAggregateData_ApiEndpointKeyFormatDeterministic(t *testing.T) {
 }
 
 // Verifies: SW-REQ-011
+// SW-REQ-011:backend_field_key_safe:nominal
+// SW-REQ-011:backend_field_key_safe:negative
+// SW-REQ-011:backend_field_key_safe:review
+func TestAggregateData_TrackPathEncodesMongoUnsafeEndpointKeys(t *testing.T) {
+	record := AnalyticsRecord{
+		OrgID:        "org-1",
+		APIID:        "api-1",
+		APIVersion:   "v1",
+		Path:         "/v1/users.example.com/details",
+		ResponseCode: 200,
+		TimeStamp:    time.Date(2026, 6, 25, 10, 0, 0, 0, time.UTC),
+		TrackPath:    true,
+		Latency:      Latency{Total: 12, Upstream: 7},
+		RequestTime:  4,
+		RawRequest:   "request",
+		RawResponse:  "response",
+		UserAgent:    "test",
+		ExpireAt:     time.Date(2026, 6, 26, 10, 0, 0, 0, time.UTC),
+		Tags:         []string{"track-path"},
+		APIName:      "api-name",
+		Alias:        "alias",
+		Host:         "example.com",
+		Method:       "GET",
+		Day:          25,
+		Month:        6,
+		Year:         2026,
+		Hour:         10,
+	}
+
+	aggregations := AggregateData([]interface{}{record}, false, nil, "", 60)
+	aggregate := aggregations[record.OrgID]
+	escapedPath := replaceUnsupportedChars(record.Path)
+	require.Equal(t, "/v1/users\\u2eexample\\u2ecom/details", escapedPath)
+
+	counter, ok := aggregate.Endpoints[escapedPath]
+	require.True(t, ok, "tracked endpoint path must use the encoded key for Mongo field-path safety")
+	require.NotContains(t, aggregate.Endpoints, record.Path, "raw dotted path must not be used as the endpoint map key")
+	require.Equal(t, record.Path, counter.Identifier)
+	require.Equal(t, record.Path, counter.HumanIdentifier)
+
+	assertMongoUpdateKeysUseEscapedEndpointPath := func(t *testing.T, update model.DBM) {
+		t.Helper()
+
+		var keySets []model.DBM
+		for _, operator := range []string{"$inc", "$set", "$max", "$min"} {
+			if keys, ok := update[operator].(model.DBM); ok {
+				keySets = append(keySets, keys)
+			}
+		}
+		require.NotEmpty(t, keySets)
+
+		var foundEscapedEndpointKey bool
+		for _, keys := range keySets {
+			for key := range keys {
+				require.NotContains(t, key, "endpoints."+record.Path+".")
+				if key == "endpoints."+escapedPath+".hits" ||
+					key == "endpoints."+escapedPath+".humanidentifier" ||
+					key == "endpoints."+escapedPath+".requesttime" {
+					foundEscapedEndpointKey = true
+				}
+			}
+		}
+		require.True(t, foundEscapedEndpointKey, "expected Mongo update keys to contain the encoded endpoint path")
+	}
+
+	assertMongoUpdateKeysUseEscapedEndpointPath(t, aggregate.AsChange())
+	assertMongoUpdateKeysUseEscapedEndpointPath(t, aggregate.AsTimeUpdate())
+}
+
+// Verifies: SW-REQ-011
 func TestTrimTag(t *testing.T) {
 	assert.Equal(t, "", TrimTag("..."))
 	assert.Equal(t, "helloworld", TrimTag("hello.world"))

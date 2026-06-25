@@ -5,7 +5,7 @@ priority: shall
 category: functional
 req_type: guarantee
 fretish: ""
-description: Aggregate counters shall accumulate hits, successes, errors and latency such that running totals never decrease as more records are added.
+description: Aggregate counters shall accumulate hits, successes, errors and latency such that running totals never decrease as more records are added. When REST endpoint tracking is enabled, endpoint paths used as Mongo aggregate field-key segments shall encode Mongo field separators such as "." before building update paths, while preserving the original path in endpoint identifiers/list values.
 formalization_strategy: informal
 informal_verification:
     method: ""
@@ -30,18 +30,19 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-25T16:06:57Z"
-        comment: 'Reviewed SW-REQ-011 obligation cleanup: encoding_aware is suppressed as not applicable to aggregate counter accumulation because raw payload base64 decoding is owned by SYS-REQ-011 and SW-REQ-088; no product behavior change claimed.'
-        fingerprint: sha256:d3e1efaced83f9d603af0f46088194638ffa12d1792c8397b8e82af32d3edb68
+        reviewed_at: "2026-06-25T19:46:48Z"
+        comment: 'Reviewed 58da62f hardening: SW-REQ-011 now explicitly owns tracked REST endpoint path encoding before Mongo aggregate update-key construction, with backend_field_key_safe evidence and no runtime product change.'
+        fingerprint: sha256:bb14d7c751a58a66ad9d28e26c5eeefbe40b75dd4c585f6a07f16553085d61ed
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:14Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-25T16:06:57Z"
+    last_modified_at: "2026-06-25T19:46:48Z"
 obligation_class: tz_explicit
 obligation_checklist:
     - encoding_aware
+    - backend_field_key_safe
     - idempotency
     - monotonicity
     - tz_explicit
@@ -112,4 +113,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-22T12:04:23Z comment="Review obligation expansion from catalogue gap pass; active unfixed behavior remains KnownIssue-gated.")'
+          changed_by: human:buger
+        - date: "2026-06-25T19:46:48Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-25T16:06:57Z comment="Reviewed SW-REQ-011 obligation cleanup: encoding_aware is suppressed as not applicable to aggregate counter accumulation because raw payload base64 decoding is owned by SYS-REQ-011 and SW-REQ-088; no product behavior change claimed.")'
           changed_by: human:buger
