@@ -1,0 +1,7 @@
+id: REVIEW-2d3c296-mongo-standard-inclusion
+kind: design_review
+reviewer: agent:codex
+reviewed_at: "2026-06-25T14:44:00Z"
+subject: upstream:2d3c296/SW-REQ-034+SW-REQ-082
+decision: approved
+comment: 'Commit-level assurance review for TT-8884: the historical standard Mongo bug called AccumulateSet in graph-only mode and skipped ordinary non-MCP analytics records. Current live Mongo evidence catches recurrence, but the formal proof model only had SW-REQ-034 for MCP filtering. This review approves SW-REQ-082, DEFECT-13, output_cardinality_bounded evidence, and MC/DC witnesses proving standard Mongo inserts ordinary and GraphQL-classified non-MCP records while all-MCP input remains a no-op. Backend error, timeout, caller-context, and config strictness concerns remain separate KI-backed debt.'

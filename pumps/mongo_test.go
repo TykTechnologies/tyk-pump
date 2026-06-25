@@ -436,6 +436,9 @@ func TestMongoPump_AccumulateSetIgnoreDocSize(t *testing.T) {
 
 // SW-REQ-034:nominal:nominal — standard Mongo WriteData drops MCP records
 // before accumulation, so an MCP-only payload returns without touching storage.
+// Verifies: SW-REQ-082
+// SW-REQ-082:output_cardinality_bounded:negative
+// MCDC SW-REQ-082: standard_mongo_insertable_record_present=F, standard_mongo_record_inserted=F => TRUE
 func TestMongoPump_WriteData_MCPOnlyReturnsBeforeStorage(t *testing.T) {
 	pump := &MongoPump{}
 	conf := defaultConf(nil)
@@ -647,6 +650,10 @@ func TestDefaultDriver(t *testing.T) {
 // Verifies: SW-REQ-034
 // SW-REQ-034:output_cardinality_bounded:nominal
 // MCDC SW-REQ-034: mcp_record_present=F, record_filtered_out=F => TRUE
+// Verifies: SW-REQ-082
+// SW-REQ-082:output_cardinality_bounded:nominal
+// MCDC SW-REQ-082: standard_mongo_insertable_record_present=T, standard_mongo_record_inserted=F => FALSE
+// MCDC SW-REQ-082: standard_mongo_insertable_record_present=T, standard_mongo_record_inserted=T => TRUE
 func TestMongoPump_WriteData(t *testing.T) {
 	sampleRecord := analytics.AnalyticsRecord{
 		Method:       "GET",

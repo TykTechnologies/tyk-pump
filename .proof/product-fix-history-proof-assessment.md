@@ -144,7 +144,7 @@ so a later reviewer can see what was included and what was filtered out.
 | 3bf1f85 | 2023-08-23 | [TT-9855] fix index creation error on graph sql pump creation | `missed_before_hardening`: current SW-REQ-042 covered Graph SQL table creation and graph-record routing, but proof did not pin the GORM model-table identity used during migration. Hardened with DEFECT-10, SW-REQ-080, local obligation `migration_model_table_identity_bound`, and Postgres Init evidence that `GraphRecord.TableName()` resolves to the configured Graph SQL table before migration. Broader Graph/MCP sharded-index and SQL schema-version gaps remain KI-backed debt. |
 | 91dd8a0 | 2023-08-01 | [TT-9360] Changing Timeout from time.Duration to int | `missed_before_hardening`: current Kafka tests exercised duration strings, numeric seconds, and env override behavior, but those witnesses were attached to the TLS-focused SW-REQ-021 contract, so proof did not make timeout unit parsing a first-class requirement. Hardened with DEFECT-11, SW-REQ-081, local obligation `timeout_config_units_preserved`, MC/DC rows for configured timeout application, and a static signal for Kafka timeout fields or writer deadlines that reintroduce `time.Duration * time.Second` unit confusion. Malformed Kafka timeout still log.Fatals and remains KI-backed under `kafka-logfatal-on-init-mech-and-timeout`. |
 | 6820131 | 2023-06-12 | [TT-9126] Fix error log when omit_configfile option is enabled | `partially_missed_before_hardening`: SW-REQ-002 already modeled the omit-config-file gate and caught the destructive old behavior that cleared caller defaults, but it did not explicitly assert the ticket-title behavior: omit=true with a nonexistent config path must not emit file-read or JSON-unmarshal error logs. Hardened with DEFECT-12, local obligation `config_file_omission_suppresses_file_read`, and a `TestIgnoreConfig` log-capture subtest proving env-only startup preserves config and suppresses misleading file errors. |
-| 2d3c296 | 2023-05-25 | [TT-8884] added write data test for mongo pump and remove constraint | Product Mongo write behavior. Relevant to Mongo write evidence. |
+| 2d3c296 | 2023-05-25 | [TT-8884] added write data test for mongo pump and remove constraint | `missed_before_hardening`: the live Mongo test already caught the graph-only accumulation regression, but SW-REQ-034 only modeled MCP filtering. Hardened with DEFECT-13 and SW-REQ-082 so standard Mongo must insert ordinary and GraphQL-classified non-MCP records into the standard collection. |
 | 0ed84b9 | 2023-05-17 | fix: include graph records in mongo pump | Product routing/classification defect. Relevant to graph/Mongo requirements. |
 | 8173c7e | 2023-05-15 | TT-876 Fix/prometheus cardinality | Product observability/cardinality defect. Covered as KI/debt class. |
 | 1fd5ba9 | 2023-04-27 | [TT-8793] Fixing Pump 1.8 bugs | Product Mongo collection-routing fixes. Relevant to Mongo collection/partition evidence. |
@@ -192,6 +192,7 @@ Problem reports:
 - DEFECT-7: Sharded SQL tables were created without the expected indexes.
 - DEFECT-5: Prometheus pump exposed full API keys as metric label values.
 - DEFECT-6: Elasticsearch pump shutdown did not close ES clients.
+- DEFECT-13: Standard Mongo WriteData used graph-only accumulation and dropped ordinary records.
 
 KnownIssues/risks relevant to historical fix classes:
 

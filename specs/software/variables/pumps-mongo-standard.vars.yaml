@@ -8,3 +8,11 @@ variables:
       type: bool
       direction: output
       description: True iff the record is dropped from the insert set during shouldProcessItem (MCP filter or graph-only mode skip).
+    - name: standard_mongo_insertable_record_present
+      type: bool
+      direction: input
+      description: True when MongoPump.WriteData receives at least one valid non-MCP AnalyticsRecord for the standard collection, including records whose GraphQLStats.IsGraphQL is true.
+    - name: standard_mongo_record_inserted
+      type: bool
+      direction: output
+      description: True iff every valid non-MCP record accepted by standard Mongo WriteData is present in the configured standard Mongo collection after the write.

@@ -1,0 +1,53 @@
+id: SW-REQ-082
+version: 1
+status: approved
+priority: shall
+category: functional
+req_type: guarantee
+fretish: when standard_mongo_insertable_record_present pumps_mongo_standard shall always satisfy standard_mongo_record_inserted
+description: The standard Mongo pump shall insert every valid non-MCP AnalyticsRecord into the configured standard collection, including records whose GraphQLStats mark them as GraphQL. Graph-only filtering is reserved for graph-specific pumps and must not cause standard Mongo WriteData to drop normal or graph-classified analytics records.
+formalization_strategy: fretish
+informal_verification:
+    method: ""
+    evidence: ""
+    verified: false
+parent: SW-REQ-034
+component: pumps-mongo-standard
+rationale: 'Product-fix-history hardening for TT-8884: standard Mongo WriteData historically passed graph-only mode to AccumulateSet and skipped ordinary analytics records. This requirement pins the standard collection inclusion policy separately from SW-REQ-034''s MCP filtering contract.'
+tags: []
+variables:
+    - standard_mongo_insertable_record_present
+    - standard_mongo_record_inserted
+traces:
+    satisfies:
+        - SW-REQ-034
+verification:
+    assurance_level: B
+    formalization_status: valid
+    review:
+        status: approved
+        reviewer: human:buger
+        role: software_engineer
+        reviewed_at: "2026-06-25T14:44:33Z"
+        comment: 'TT-8884 hardening: reviewed standard Mongo non-MCP insertion policy, output_cardinality_bounded evidence, MC/DC witnesses, and DEFECT-13 closure.'
+        fingerprint: sha256:6c07131607c219d5a9710e63c445d602b9225765a1eb15f51b133cb389167eaa
+        ai_generated: false
+history:
+    created_by: human:buger
+    created_at: "2026-06-25T14:35:35Z"
+    last_modified_by: human:buger
+    last_modified_at: "2026-06-25T14:44:33Z"
+obligation_checklist:
+    - output_cardinality_bounded
+stakeholder:
+    acceptance_criteria:
+        - id: AC-001
+          text: MongoPump.WriteData writes ordinary AnalyticsRecord values and GraphQL-classified non-MCP AnalyticsRecord values into the configured standard Mongo collection, while all-MCP input remains a no-op for the standard collection.
+          verification_method: test
+lifecycle:
+    change_history:
+        - date: "2026-06-25T14:44:26Z"
+          from: draft
+          to: review
+          reason: TT-8884 standard Mongo insertion policy requirement ready for review
+          changed_by: human:buger
