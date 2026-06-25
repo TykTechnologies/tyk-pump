@@ -54,6 +54,28 @@ type Character {
 type EmptyType{
 }`
 
+const unresolvedSubgraphSchema = `
+directive @key(fields: _FieldSet!) on OBJECT | INTERFACE
+
+type Query {
+  _entities(representations: [_Any!]!): [_Entity]!
+}
+
+type Review {
+  body: String!
+  author: User!
+}
+
+type User @key(fields: "id") {
+  id: ID!
+  reviews: [Review]
+}
+
+scalar _Any
+scalar _FieldSet
+union _Entity = User
+`
+
 // TODO fix test coverage
 // Verifies: SW-REQ-013
 // Verifies: SW-REQ-087
@@ -214,6 +236,39 @@ func TestAnalyticsRecord_ToGraphRecord_IgnoresLegacyGraphSourcesWithoutGraphQLSt
 	}
 
 	if diff := cmp.Diff(GraphRecord{}, record.ToGraphRecord(), cmpopts.IgnoreFields(GraphRecord{}, "AnalyticsRecord")); diff != "" {
+		t.Fatal(diff)
+	}
+}
+
+// Verifies: SW-REQ-013
+// SW-REQ-013:structured_projection_preserved:negative
+// SW-REQ-013:malformed_input:negative
+// SW-REQ-013:malformed_recovers_or_errors_loudly:negative
+func TestAnalyticsRecord_ToGraphRecord_IgnoresUnresolvedLegacySubgraphSchema(t *testing.T) {
+	body := []byte(`{"query":"query($representations: [_Any!]!){_entities(representations: $representations){... on User {reviews {body}}}}","variables":{"representations":[{"id":"1234","__typename":"User"}]}}`)
+	response := []byte(`{"data":{"_entities":[{"reviews":[{"body":"ok"}]}]}}`)
+	record := AnalyticsRecord{
+		Tags:        []string{PredefinedTagGraphAnalytics},
+		RawRequest:  base64.StdEncoding.EncodeToString([]byte("POST / HTTP/1.1\r\n\r\n" + string(body))),
+		RawResponse: base64.StdEncoding.EncodeToString(response),
+		ApiSchema:   base64.StdEncoding.EncodeToString([]byte(unresolvedSubgraphSchema)),
+		GraphQLStats: GraphQLStats{
+			IsGraphQL:     true,
+			Types:         map[string][]string{"User": {"reviews"}, "Review": {"body"}},
+			RootFields:    []string{"_entities"},
+			Variables:     `{"representations":[{"id":"1234","__typename":"User"}]}`,
+			OperationType: OperationQuery,
+		},
+	}
+
+	expected := GraphRecord{
+		Types:         map[string][]string{"User": {"reviews"}, "Review": {"body"}},
+		RootFields:    []string{"_entities"},
+		Variables:     `{"representations":[{"id":"1234","__typename":"User"}]}`,
+		OperationType: "Query",
+	}
+
+	if diff := cmp.Diff(expected, record.ToGraphRecord(), cmpopts.IgnoreFields(GraphRecord{}, "AnalyticsRecord")); diff != "" {
 		t.Fatal(diff)
 	}
 }

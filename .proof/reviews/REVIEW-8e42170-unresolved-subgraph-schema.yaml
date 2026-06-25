@@ -1,0 +1,7 @@
+id: REVIEW-8e42170-unresolved-subgraph-schema
+kind: design_review
+reviewer: agent:codex
+reviewed_at: "2026-06-25T16:45:00Z"
+subject: upstream:8e42170/SW-REQ-013
+decision: approved
+comment: 'Commit-level assurance review for TT-6012: upstream fixed a legacy raw GraphQL parser edge case for unresolved federation/subgraph entity selections. Current code no longer reparses legacy raw request/response/schema payloads for GraphRecord projection; SW-REQ-013 now makes GraphQLStats authoritative, and TestAnalyticsRecord_ToGraphRecord_IgnoresUnresolvedLegacySubgraphSchema pins that the historical payload shape cannot break structured projection.'

@@ -1,0 +1,85 @@
+schema_version: 1
+id: DEFECT-23
+title: Legacy GraphQL schema parsing failed unresolved subgraph entity selections
+introduced_in: unknown
+description: |
+  TT-6012 (commit 8e42170) fixed a legacy GraphQL parsing edge case where a
+  federation/subgraph `_entities` query could produce an unresolved selection
+  field type. The historical parser returned a graph-conversion error rather
+  than tolerating the subgraph-specific schema shape.
+
+  Current pump no longer derives GraphRecord fields by reparsing legacy raw
+  request/response/schema payloads. SW-REQ-013 now states that GraphQLStats is
+  the authoritative source for GraphRecord projection, and the regression test
+  pins that unresolved legacy subgraph schema payloads do not override or break
+  structured GraphQLStats projection.
+
+  The same upstream commit also changed legacy Graph Mongo writes with empty
+  raw request/response/schema payloads from "conversion error" to "write an
+  empty/bare graph record." Current Graph Mongo uses structured GraphQLStats and
+  is already covered under SW-REQ-037 by tests that write GraphQLStats records
+  without legacy raw payload fields.
+source:
+    type: upstream_commit
+    repo: TykTechnologies/tyk-pump
+    commit: 8e42170
+    reference: TT-6012
+    date: "2022-11-03"
+classification:
+    surface: data_integrity
+    defect_class: graph_legacy_subgraph_schema_parse_failure
+    severity: medium
+    security_relevant: false
+root_cause:
+    missing_requirement: false
+    missing_test_partition: true
+    missing_mcdc_variable: false
+    notes: |
+      The historical failure was a parser edge case. Current code has since
+      changed the design: GraphRecord projection consumes GraphQLStats instead
+      of reparsing raw legacy payloads. The proof gap was that SW-REQ-013 did
+      not explicitly say legacy raw/schema payloads are ignored even when they
+      contain malformed or federation-specific graph shapes.
+impact_analysis:
+    affected_requirements:
+        - SW-REQ-013
+    affected_code:
+        - analytics/graph_record.go
+        - analytics/graph_record_test.go
+hardening:
+    new_requirements: []
+    strengthened_requirements:
+        - SW-REQ-013
+    added_obligations: []
+    regression_tests:
+        - analytics/graph_record_test.go:TestAnalyticsRecord_ToGraphRecord_IgnoresUnresolvedLegacySubgraphSchema
+        - analytics/graph_record_test.go:TestAnalyticsRecord_ToGraphRecord_IgnoresLegacyGraphSourcesWithoutGraphQLStatsFlag
+    mcdc_witnesses: []
+    proposed_classes: []
+disposition:
+    status: covered_by_requirement
+    requirements:
+        - SW-REQ-013
+    evidence:
+        verified_by:
+            - analytics/graph_record_test.go:TestAnalyticsRecord_ToGraphRecord_IgnoresUnresolvedLegacySubgraphSchema
+            - analytics/graph_record_test.go:TestAnalyticsRecord_ToGraphRecord_IgnoresLegacyGraphSourcesWithoutGraphQLStatsFlag
+        obligation_evidence:
+            - requirement: SW-REQ-013
+              obligation_class: structured_projection_preserved
+              evidence_type: negative
+            - requirement: SW-REQ-013
+              obligation_class: malformed_input
+              evidence_type: negative
+            - requirement: SW-REQ-013
+              obligation_class: malformed_recovers_or_errors_loudly
+              evidence_type: negative
+    reviewer: agent:codex
+    reviewed_at: "2026-06-25T16:45:00Z"
+history:
+    - at: "2026-06-25T16:45:00Z"
+      by: agent:codex
+      action: created
+      detail: |
+        Recorded TT-6012 unresolved-subgraph legacy parser failure as covered
+        by SW-REQ-013's GraphQLStats-authoritative projection contract.
