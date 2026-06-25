@@ -1,0 +1,112 @@
+schema_version: 1
+id: DEFECT-20
+title: Graph pumps dropped GraphQL root field dimensions
+introduced_in: unknown
+description: |
+  TT-7977 (commit 17072c0) fixed GraphQL RootFields propagation through graph
+  Mongo, graph SQL, and graph aggregate paths. Before the fix, graph records
+  and graph aggregate dimensions preserved GraphQL types, fields, and operation
+  names, but top-level root field names such as "characters" were not carried
+  into GraphRecord.RootFields or rootfields aggregate dimensions.
+
+  Current proof closes the projection part through SW-REQ-087, a child of
+  SW-REQ-013, and existing analytics projection tests that assert RootFields
+  are copied from GraphQLStats and ignored when the structured GraphQL flag is
+  false. Downstream aggregate and SQL tests already assert rootfields remain
+  present after aggregation/persistence. Live graph Mongo readback evidence is
+  weaker and remains bounded by the broader Mongo backend KnownIssues.
+source:
+    type: upstream_commit
+    repo: TykTechnologies/tyk-pump
+    commit: 17072c0
+    reference: TT-7977
+    date: "2023-02-21"
+classification:
+    surface: data_integrity
+    defect_class: graphql_rootfields_projection_dropped
+    severity: medium
+    security_relevant: false
+root_cause:
+    missing_requirement: false
+    missing_test_partition: true
+    missing_mcdc_variable: true
+    notes: |
+      SW-REQ-013 prose already required RootFields preservation after earlier
+      hardening, but it is informal and could not generate MC/DC witness rows.
+      SW-REQ-087 now gives the RootFields projection claim a formal boolean
+      model and structured_projection_preserved evidence.
+impact_analysis:
+    affected_requirements:
+        - SW-REQ-013
+        - SW-REQ-087
+        - SW-REQ-037
+        - SW-REQ-042
+        - SW-REQ-043
+    affected_code:
+        - analytics/graph_record.go
+        - analytics/aggregate.go
+        - pumps/graph_mongo.go
+        - pumps/graph_sql.go
+        - pumps/graph_sql_aggregate.go
+hardening:
+    new_requirements:
+        - SW-REQ-087
+    strengthened_requirements:
+        - SW-REQ-013
+        - SW-REQ-043
+    added_obligations:
+        - requirement: SW-REQ-087
+          obligation_class: structured_projection_preserved
+    regression_tests:
+        - analytics/graph_record_test.go:TestAnalyticsRecord_ToGraphRecordNew
+        - analytics/graph_record_test.go:TestAnalyticsRecord_ToGraphRecord_IgnoresLegacyGraphSourcesWithoutGraphQLStatsFlag
+        - analytics/aggregate_test.go:TestAggregateGraphData_PartitionsSameOrgByAPIID
+        - pumps/graph_sql_test.go:TestGraphSQLPump_WriteData
+        - pumps/graph_sql_aggregate_test.go:TestSqlGraphAggregatePump_WriteData
+    mcdc_witnesses:
+        - requirement: SW-REQ-087
+          witness: "graphql_root_fields_present=T, root_fields_projected=T => TRUE"
+        - requirement: SW-REQ-087
+          witness: "graphql_root_fields_present=T, root_fields_projected=F => FALSE"
+        - requirement: SW-REQ-087
+          witness: "graphql_root_fields_present=F, root_fields_projected=F => TRUE"
+    proposed_classes: []
+disposition:
+    status: covered_by_requirement
+    requirements:
+        - SW-REQ-087
+    known_issues:
+        - analytics-timestamp-timezone-convention-unpinned
+        - graph-mcp-sql-sharded-indexes-untracked
+        - graph-sql-aggregate-atomicity-fault-injection-missing
+        - graph-sql-aggregate-migrate-sharded-tables-ignored
+        - mapstructure-decode-silently-drops-unknown-keys
+        - mongo-pump-ignores-caller-context
+        - no-panic-recovery-in-exec-pump-writing
+        - pump-no-timeout-can-block-purge-cycle
+        - sql-aggregate-mysql-excluded-keyword-broken
+        - sql-batch-size-zero-infinite-loop
+    evidence:
+        verified_by:
+            - analytics/graph_record_test.go:TestAnalyticsRecord_ToGraphRecordNew
+            - analytics/graph_record_test.go:TestAnalyticsRecord_ToGraphRecord_IgnoresLegacyGraphSourcesWithoutGraphQLStatsFlag
+        requirement_mcdc_witnesses:
+            - requirement: SW-REQ-087
+              witness: "graphql_root_fields_present=T, root_fields_projected=T => TRUE"
+            - requirement: SW-REQ-087
+              witness: "graphql_root_fields_present=T, root_fields_projected=F => FALSE"
+            - requirement: SW-REQ-087
+              witness: "graphql_root_fields_present=F, root_fields_projected=F => TRUE"
+        obligation_evidence:
+            - requirement: SW-REQ-087
+              obligation_class: structured_projection_preserved
+              evidence_type: nominal
+    reviewer: agent:codex
+    reviewed_at: "2026-06-25T16:05:00Z"
+history:
+    - at: "2026-06-25T16:05:00Z"
+      by: agent:codex
+      action: created
+      detail: |
+        Recorded TT-7977's RootFields projection fix as covered by SW-REQ-087
+        and existing GraphQLStats projection evidence.

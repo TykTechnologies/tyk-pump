@@ -1,5 +1,13 @@
 component: analytics
 variables:
+    - name: graphql_root_fields_present
+      type: bool
+      direction: input
+      description: True when AnalyticsRecord.GraphQLStats marks the record as GraphQL and carries one or more RootFields values.
+    - name: root_fields_projected
+      type: bool
+      direction: output
+      description: True iff AnalyticsRecord.ToGraphRecord copies GraphQLStats.RootFields into GraphRecord.RootFields without using legacy raw payload parsing.
     - name: in_should_filter
       type: bool
       direction: input

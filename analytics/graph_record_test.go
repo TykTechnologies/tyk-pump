@@ -56,10 +56,15 @@ type EmptyType{
 
 // TODO fix test coverage
 // Verifies: SW-REQ-013
+// Verifies: SW-REQ-087
 // SW-REQ-013:nominal:nominal
 // SW-REQ-013:structured_projection_preserved:nominal
 // SW-REQ-013:malformed_input:nominal
 // SW-REQ-013:malformed_recovers_or_errors_loudly:nominal
+// SW-REQ-087:structured_projection_preserved:nominal
+// MCDC SW-REQ-087: graphql_root_fields_present=F, root_fields_projected=F => TRUE
+// MCDC SW-REQ-087: graphql_root_fields_present=T, root_fields_projected=F => FALSE
+// MCDC SW-REQ-087: graphql_root_fields_present=T, root_fields_projected=T => TRUE
 func TestAnalyticsRecord_ToGraphRecordNew(t *testing.T) {
 	recordSample := AnalyticsRecord{
 		TimeStamp:    time.Date(2022, 1, 1, 0, 0, 0, 0, time.UTC),
@@ -186,9 +191,11 @@ func TestAnalyticsRecord_ToGraphRecordNew(t *testing.T) {
 }
 
 // Verifies: SW-REQ-013
+// Verifies: SW-REQ-087
 // SW-REQ-013:structured_projection_preserved:negative
 // SW-REQ-013:malformed_input:negative
 // SW-REQ-013:malformed_recovers_or_errors_loudly:negative
+// MCDC SW-REQ-087: graphql_root_fields_present=F, root_fields_projected=F => TRUE
 func TestAnalyticsRecord_ToGraphRecord_IgnoresLegacyGraphSourcesWithoutGraphQLStatsFlag(t *testing.T) {
 	body := []byte(`{"query":"query { characters { info { count } } }"}`)
 	response := []byte(`{"data":{"characters":{"info":{"count":1}}}}`)

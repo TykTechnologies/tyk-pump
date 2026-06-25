@@ -7,10 +7,10 @@ The `GraphSQLAggregatePump` shall, on each purge, day-bucket records when
 Within each table the pump shall aggregate graph analytics via
 `analytics.AggregateGraphData` (windowed per minute when
 `StoreAnalyticsPerMinute` is true, otherwise per hour) and upsert each
-per-(API, dimension) row with `clause.OnConflict` on `id` using
-`analytics.OnConflictAssignments`. Per-batch errors *shall be returned* to
-the caller. Derived from SYS-REQ-003 via Phase A decomposition of
-SW-REQ-019.
+per-(API, graph dimension) row, including `types`, `fields`, `operation`, and
+`rootfields`, with `clause.OnConflict` on `id` using
+`analytics.OnConflictAssignments`. Per-batch errors *shall be returned* to the
+caller. Derived from SYS-REQ-003 via Phase A decomposition of SW-REQ-019.
 
 ## Motivation
 This is the only graph-flavoured SQL writer that propagates errors — unlike
@@ -30,7 +30,7 @@ latencies) in SQL form, suitable for Grafana / Metabase dashboards.
 - `pumps/graph_sql_aggregate_test.go` (re-annotated `Verifies: SW-REQ-043`).
 - `analytics/aggregate_test.go:TestAggregateGraphData_PartitionsSameOrgByAPIID`
   proves that same-org, same-dimension GraphQL records remain isolated by
-  `APIID` before SQL upsert.
+  `APIID` before SQL upsert, including the `rootfields` dimension.
 - SW-REQ-086 decomposes the sharded table-target invariant and is witnessed by
   `pumps/graph_sql_aggregate_test.go:TestGraphSQLAggregatePump_WriteData_Sharded`.
 - Live-Postgres tests are excluded from the local audit MC/DC scope (known

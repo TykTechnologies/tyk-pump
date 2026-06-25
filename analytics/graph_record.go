@@ -45,7 +45,7 @@ func (*GraphRecord) SetObjectID(model.ObjectID) {
 	// empty
 }
 
-// reqproof:implements SW-REQ-013
+// reqproof:implements SW-REQ-013,SW-REQ-087
 func (a *AnalyticsRecord) ToGraphRecord() GraphRecord {
 	if !a.IsGraphRecord() {
 		return GraphRecord{}

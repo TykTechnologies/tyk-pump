@@ -1,0 +1,7 @@
+id: REVIEW-17072c0-graphql-rootfields-projection
+kind: design_review
+reviewer: agent:codex
+reviewed_at: "2026-06-25T16:05:00Z"
+subject: upstream:17072c0/SW-REQ-013+SW-REQ-087
+decision: approved
+comment: 'Commit-level assurance review for TT-7977: graph Mongo/SQL/aggregate paths historically dropped top-level GraphQL RootFields while preserving other graph dimensions. SW-REQ-087 now decomposes RootFields projection from SW-REQ-013, adds structured_projection_preserved evidence and MC/DC witness rows, and reuses existing analytics projection tests that prove RootFields are copied from GraphQLStats and ignored when the structured GraphQL flag is false. Downstream aggregate and SQL tests already assert rootfields remain available; broader Mongo backend timeout/context/config debts remain KnownIssue-backed.'

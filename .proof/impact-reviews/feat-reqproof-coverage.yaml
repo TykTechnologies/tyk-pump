@@ -1,6 +1,6 @@
 schema_version: 1
 branch: feat-reqproof-coverage
-generated_at: "2026-06-25T15:45:34Z"
+generated_at: "2026-06-25T15:52:44Z"
 reviews:
     - requirement: SW-REQ-001
       artifact: main.go
@@ -196,12 +196,12 @@ reviews:
       artifact: analytics/graph_record.go
       decision: no-authored-change
       reviewer: buger
-      reason: 'Phase J: req_type field flipped derived to guarantee per probelabs/reqproof#88 (category error fix). Production .go files were not modified for this change; only req YAML metadata. Re-recording no-authored-change impact.'
+      reason: 'Reviewed analytics/graph_record.go after TT-7977 proof hardening: source delta is reqproof trace metadata linking ToGraphRecord to SW-REQ-087; runtime behavior and authored requirement intent are unchanged by this comment-only trace update.'
       base: origin/master
       requirement_fingerprint: sha256:3d7ca17eaf4ac6211ca48457a65765211a0cef99cb082c86cd9f988fea4cc2c7
-      approval_fingerprint: sha256:e2d2f1068b52736417568f0912812e5955f03fa054b41c9d0003a03b6c8234ca
-      artifact_fingerprint: sha256:261ee109613887f8af1327330d36dea6a7eb6d4f42d51bc414310e3ab60583eb
-      reviewed_at: "2026-06-02T05:13:05Z"
+      approval_fingerprint: sha256:c0525ae955fdbeffcbdb2b8c8e832bec69c1f8e41419e4e5c19bb81c15dad7f1
+      artifact_fingerprint: sha256:fd480d1d4a1a0eddc17979e13aadd7b0942f502d52137a53b444e9e475b1a1d4
+      reviewed_at: "2026-06-25T15:52:44Z"
     - requirement: SW-REQ-014
       artifact: analytics/mcp_record.go
       decision: no-authored-change
@@ -1123,3 +1123,13 @@ reviews:
       approval_fingerprint: sha256:40666168b0302cc748cb1a590294763651f3b6f2cc7b24591f2cdfd525492331
       artifact_fingerprint: sha256:159234ba6047acf0256adafb63958c1d9200929a8c4e8b9544e252ff2ecd88c8
       reviewed_at: "2026-06-25T15:45:34Z"
+    - requirement: SW-REQ-087
+      artifact: analytics/graph_record.go
+      decision: no-authored-change
+      reviewer: buger
+      reason: 'Reviewed analytics/graph_record.go after TT-7977 proof hardening: source delta is reqproof trace metadata linking ToGraphRecord to SW-REQ-087; runtime behavior and authored requirement intent are unchanged by this comment-only trace update.'
+      base: origin/master
+      requirement_fingerprint: sha256:76f532404f53e7b7557127747a808bb07003fe239c6fdad5a2de4ee054dd0cd0
+      approval_fingerprint: sha256:f1ee51e38c4a280a24327be6aeb4c24f1db567d377e19a48a89f2f308422a3ef
+      artifact_fingerprint: sha256:fd480d1d4a1a0eddc17979e13aadd7b0942f502d52137a53b444e9e475b1a1d4
+      reviewed_at: "2026-06-25T15:52:44Z"

@@ -1,0 +1,53 @@
+id: SW-REQ-087
+version: 1
+status: approved
+priority: shall
+category: functional
+req_type: guarantee
+fretish: when graphql_root_fields_present analytics shall always satisfy root_fields_projected
+description: When AnalyticsRecord.GraphQLStats marks a record as GraphQL and carries RootFields, AnalyticsRecord.ToGraphRecord shall copy those root field names into GraphRecord.RootFields without reparsing legacy raw request/response/schema payloads or dropping the field from the structured projection.
+formalization_strategy: fretish
+informal_verification:
+    method: ""
+    evidence: ""
+    verified: false
+parent: SW-REQ-013
+component: analytics
+rationale: 'Product-fix-history hardening for TT-7977: before commit 17072c0, graph record extraction and graph aggregate dimensions did not carry top-level GraphQL root field names through the graph Mongo/SQL paths. SW-REQ-013 now describes the broader GraphQLStats projection contract; this child gives RootFields preservation a formal MC/DC-bearing guarantee.'
+tags: []
+variables:
+    - graphql_root_fields_present
+    - root_fields_projected
+traces:
+    satisfies:
+        - SW-REQ-013
+verification:
+    assurance_level: B
+    formalization_status: valid
+    review:
+        status: approved
+        reviewer: human:buger
+        role: software_engineer
+        reviewed_at: "2026-06-25T15:52:39Z"
+        comment: 'TT-7977 hardening: reviewed GraphQL RootFields projection and Graph SQL aggregate rootfields dimension claim, structured_projection_preserved evidence, MC/DC witnesses, and DEFECT-20 closure; no runtime product behavior change claimed.'
+        fingerprint: sha256:f1ee51e38c4a280a24327be6aeb4c24f1db567d377e19a48a89f2f308422a3ef
+        ai_generated: false
+history:
+    created_by: agent:codex
+    created_at: "2026-06-25T15:49:49Z"
+    last_modified_by: human:buger
+    last_modified_at: "2026-06-25T15:52:39Z"
+obligation_checklist:
+    - structured_projection_preserved
+stakeholder:
+    acceptance_criteria:
+        - id: AC-001
+          text: A GraphQL AnalyticsRecord with GraphQLStats.RootFields populated projects the same root field names into GraphRecord.RootFields, while a non-GraphQL record with legacy graph payloads does not create a GraphRecord.
+          verification_method: test
+lifecycle:
+    change_history:
+        - date: "2026-06-25T15:52:39Z"
+          from: draft
+          to: review
+          reason: TT-7977 GraphQL RootFields projection requirement ready for review
+          changed_by: human:buger
