@@ -83,6 +83,7 @@ const (
 )
 
 // Verifies: SW-REQ-043
+// SW-REQ-043:support_matrix_enforced:nominal
 func TestSqlGraphAggregatePump_Init(t *testing.T) {
 	skipTestIfNoPostgres(t)
 	tableName := analytics.AggregateGraphSQLTable

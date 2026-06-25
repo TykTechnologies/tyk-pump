@@ -29,15 +29,15 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-25T12:01:17Z"
-        comment: 'Product-fix-history hardening for TT-13421: added per_shard_index_created and backend_ddl_valid obligations. Standard SQL and SQL Aggregate shard-index behavior is backed by tests; Graph/MCP SQL shard-index contracts and MySQL DDL compatibility remain KI-backed debt. FRETish remains scoped to each requirement primary routing/windowing/index-skip decision.'
+        reviewed_at: "2026-06-25T12:16:00Z"
+        comment: 'Product-fix-history hardening for TT-13341: support_matrix_enforced now pins the SQL-family runtime support matrix to documented mysql/postgres and rejects removed sqlite via production Init/Dialect evidence; no product behavior change claimed.'
         fingerprint: sha256:8882ad2192fd299d5e17c270c275982a7ce19afccb4de4fb5fdc7c859e3a30c3
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:35:37Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-25T12:01:17Z"
+    last_modified_at: "2026-06-25T12:16:00Z"
 obligation_checklist:
     - config_schema_strict
     - connection_leak_free
@@ -49,6 +49,7 @@ obligation_checklist:
     - output_cardinality_bounded
     - parameterized_only_write
     - per_shard_index_created
+    - support_matrix_enforced
     - temporal_window_inclusive
 obligation_deferrals:
     - obligation_class: config_schema_strict
@@ -132,4 +133,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-23T09:10:23Z comment="Reviewed 19fb73d follow-up: added forward_compatible obligation for Graph SQL aggregate startup migration and linked it to KI graph-sql-aggregate-migrate-sharded-tables-ignored; current product gap is tracked debt, not claimed as evidence.")'
+          changed_by: human:buger
+        - date: "2026-06-25T12:16:00Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-25T12:14:15Z comment="Product-fix-history hardening for TT-13421: added per_shard_index_created and backend_ddl_valid obligations. Standard SQL and SQL Aggregate shard-index behavior is backed by tests; Graph/MCP SQL shard-index contracts and MySQL DDL compatibility remain KI-backed debt. FRETish remains scoped to each requirement primary routing/windowing/index-skip decision.")'
           changed_by: human:buger

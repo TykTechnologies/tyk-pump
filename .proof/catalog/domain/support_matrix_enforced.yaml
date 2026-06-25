@@ -1,0 +1,42 @@
+id: support_matrix_enforced
+name: Support matrix enforced
+category: domain
+status: active
+summary: Runtime configuration shall accept exactly the backend or mode values that the product support matrix promises, and reject removed or unsupported values loudly.
+description: Product support changes, such as removing a database backend, must be reflected in executable configuration behavior. A pump or connector shall not silently keep accepting a removed backend because legacy code, examples, or test harness shortcuts still know how to construct it. Supported values must be enumerated in the requirement and unsupported values must fail during initialization before side effects.
+applies_when:
+  description: operator-controlled configuration selects a backend, dialect, protocol, formatter, feature mode, or compatibility mode from a finite support matrix
+  trigger_phrases:
+    - supported
+    - support matrix
+    - backend type
+    - dialect
+    - removed support
+    - unsupported
+    - sqlite
+example_req: |-
+  When a SQL pump is initialized, the configured database type shall be accepted
+  only if it is one of postgres or mysql; sqlite and any other unsupported type
+  shall return a clear initialization error before opening a database.
+if_missing: |-
+  Operators can configure a backend that documentation or release notes say is
+  unsupported. The pump may appear to work in tests or low-volume deployments
+  while missing compatibility, migration, security, or operational guarantees
+  expected from supported backends.
+recommended_evidence:
+  - kind: nominal
+    note: Positive initialization tests cover every supported value in the matrix.
+  - kind: negative
+    note: Negative initialization tests cover a removed historical value and an arbitrary unsupported value, asserting a loud error before side effects.
+  - kind: review
+    note: Review maps release notes, README/config docs, and the runtime dispatch switch to the same accepted-value set.
+frameworks:
+  - id: CWE
+    refs:
+      - CWE-20
+      - CWE-840
+related_classes:
+  - id: config_schema_strict
+    relationship: complements
+  - id: backend_ddl_valid
+    relationship: complements

@@ -22,6 +22,8 @@ import (
 // MCDC SW-REQ-044: mcp_record_present=T, mcp_record_routed=T => TRUE
 
 // Verifies: SW-REQ-044
+// Verifies: SW-REQ-044
+// SW-REQ-044:support_matrix_enforced:nominal
 func TestMCPSQLPump_Init(t *testing.T) {
 	skipTestIfNoPostgres(t)
 	pump := &MCPSQLPump{}

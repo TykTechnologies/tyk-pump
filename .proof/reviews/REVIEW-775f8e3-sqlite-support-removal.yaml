@@ -1,0 +1,7 @@
+id: REVIEW-775f8e3-sqlite-support-removal
+kind: design_review
+reviewer: agent:codex
+reviewed_at: "2026-06-25T12:45:00Z"
+subject: upstream:775f8e3/SW-REQ-040+SW-REQ-041+SW-REQ-042+SW-REQ-043+SW-REQ-044+SW-REQ-045
+decision: approved
+comment: 'Commit-level assurance review for TT-13341: current proof previously covered arbitrary unsupported SQL types but not the removed sqlite backend specifically. The SQL-family support matrix is now modeled by support_matrix_enforced with direct production Init/Dialect SQLite-rejection evidence; sqlite-backed tests are harness-only and do not count as runtime support evidence. External tyk-docs references to sqlite remain KI-backed debt.'

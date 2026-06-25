@@ -24,6 +24,8 @@ import (
 // MCDC SW-REQ-042: graph_record_present=T, graph_record_routed=T => TRUE
 
 // Verifies: SW-REQ-042
+// Verifies: SW-REQ-042
+// SW-REQ-042:support_matrix_enforced:nominal
 func TestGraphSQLPump_Init(t *testing.T) {
 	skipTestIfNoPostgres(t)
 	r := require.New(t)

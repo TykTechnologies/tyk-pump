@@ -53,6 +53,7 @@ func newSQLConfig(sharded bool) map[string]interface{} {
 }
 
 // Verifies: SW-REQ-040
+// SW-REQ-040:support_matrix_enforced:nominal
 // MCDC SW-REQ-040: day_sliced_routing=F, table_sharding=F => TRUE
 func TestSQLInit(t *testing.T) {
 	skipTestIfNoPostgres(t)

@@ -29,15 +29,15 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-25T12:03:34Z"
-        comment: 'TT-13421 obligation hardening follow-up: normalized backend_ddl_valid reproducer text after YAML lint without changing the approved obligation/debt disposition.'
+        reviewed_at: "2026-06-25T12:16:00Z"
+        comment: 'Product-fix-history hardening for TT-13341: support_matrix_enforced now pins the SQL-family runtime support matrix to documented mysql/postgres and rejects removed sqlite via production Init/Dialect evidence; no product behavior change claimed.'
         fingerprint: sha256:97856408e14843e1a4889da5e54c7b39bd2c8bac339304a48ea78e38651d6ada
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:35:20Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-25T12:03:34Z"
+    last_modified_at: "2026-06-25T12:16:00Z"
 obligation_checklist:
     - backend_ddl_valid
     - boundary
@@ -56,6 +56,7 @@ obligation_checklist:
     - parameterized_only_write
     - per_shard_index_created
     - reversible_or_documented
+    - support_matrix_enforced
     - temporal_window_inclusive
 obligation_deferrals:
     - obligation_class: backend_ddl_valid
@@ -167,4 +168,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-25T12:01:17Z comment="Product-fix-history hardening for TT-13421: added per_shard_index_created and backend_ddl_valid obligations. Standard SQL and SQL Aggregate shard-index behavior is backed by tests; Graph/MCP SQL shard-index contracts and MySQL DDL compatibility remain KI-backed debt. FRETish remains scoped to each requirement primary routing/windowing/index-skip decision.")'
+          changed_by: human:buger
+        - date: "2026-06-25T12:16:00Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-25T12:14:15Z comment="TT-13421 obligation hardening follow-up: normalized backend_ddl_valid reproducer text after YAML lint without changing the approved obligation/debt disposition.")'
           changed_by: human:buger

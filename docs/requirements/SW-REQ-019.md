@@ -9,7 +9,8 @@ standard, aggregate, two graph variants, and two MCP variants. Derived from
 SYS-REQ-004 (independent per-backend delivery).
 
 ## Motivation
-SQL backends (Postgres, MySQL, SQLite) are widely used for self-hosted
+SQL backends (Postgres and MySQL; SQLite was removed from the runtime support
+matrix in v1.12.0 and is now used only by harness-only tests) are widely used for self-hosted
 analytics warehousing and downstream BI tooling. The day-sharding strategy
 addresses two concrete problems: (a) unbounded analytics tables become
 expensive to drop or rotate, and (b) per-day tables let operators delete or
@@ -49,7 +50,8 @@ from analytics fields containing user-supplied content.
   `pumps/mcp_sql_aggregate_test.go`, `pumps/migration_test.go`.
 - MySQL/Postgres-backed tests require external services and are excluded from
   the local audit MC/DC scope (recorded as a known issue); SQLite-backed tests
-  exercise the sharding logic locally.
+  exercise the sharding logic locally as harness-only tests and do not imply
+  runtime SQLite support.
 
 ## Open questions
 - Same shape as SW-REQ-018: six implementations with materially different

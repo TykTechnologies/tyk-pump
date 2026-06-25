@@ -25,6 +25,8 @@ import (
 // MCDC SW-REQ-045: minute_window_used=T, store_per_minute=T => TRUE
 
 // Verifies: SW-REQ-045
+// Verifies: SW-REQ-045
+// SW-REQ-045:support_matrix_enforced:nominal
 func TestMCPSQLAggregatePump_Init(t *testing.T) {
 	skipTestIfNoPostgres(t)
 	tableName := analytics.AggregateMCPSQLTable
