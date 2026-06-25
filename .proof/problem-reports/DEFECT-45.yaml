@@ -1,0 +1,89 @@
+schema_version: 1
+id: DEFECT-45
+title: REST aggregate omitted HTTP 400 from error counters
+introduced_in: unknown
+description: |
+  Commit c02a2cb changed the REST aggregate error predicate from ResponseCode
+  > 400 to ResponseCode >= 400. Before the fix, HTTP 400 records contributed
+  to aggregate hits but did not increment Total.ErrorTotal, Total.ErrorMap, or
+  the per-status Errors["400"] dimension. Dashboard error rates and per-status
+  aggregate reports could therefore undercount client-error traffic at the
+  exact 400 boundary.
+
+  Current AggregateData/incrementAggregate classifies ResponseCode >= 400 as
+  an error. SW-REQ-103 now makes that boundary an explicit child of
+  SW-REQ-011, with regression evidence for 399, 400, and 500.
+source:
+    type: upstream_commit
+    repo: TykTechnologies/tyk-pump
+    commit: c02a2cb
+    reference: tyk-pump#118
+    date: "2019-07-16"
+classification:
+    surface: data_integrity
+    defect_class: rest_aggregate_http_400_error_boundary
+    severity: medium
+    security_relevant: false
+root_cause:
+    missing_requirement: true
+    missing_test_partition: true
+    missing_mcdc_variable: false
+    notes: |
+      SW-REQ-011 covered aggregate counter accumulation generally, but did not
+      state the lower bound for HTTP error classification. Existing evidence
+      included 404/500 error paths but not the exact 400 boundary.
+impact_analysis:
+    affected_requirements:
+        - SW-REQ-011
+        - SW-REQ-103
+        - SYS-REQ-019
+    affected_code:
+        - analytics/aggregate.go
+        - analytics/aggregate_test.go
+hardening:
+    new_requirements:
+        - SW-REQ-103
+    strengthened_requirements:
+        - SW-REQ-011
+    added_obligations:
+        - requirement: SW-REQ-103
+          obligation_class: boundary
+    regression_tests:
+        - analytics/aggregate_test.go:TestAggregateData_ResponseCode400CountsAsErrorBoundary
+    proposed_classes: []
+    code_signals:
+        - go.aggregate-http-error-threshold-strict-greater-than
+disposition:
+    status: covered_by_requirement
+    requirements:
+        - SW-REQ-103
+    known_issues:
+        - aggregate-counter-replay-not-idempotent
+        - analytics-timestamp-timezone-convention-unpinned
+    evidence:
+        verified_by:
+            - analytics/aggregate_test.go:TestAggregateData_ResponseCode400CountsAsErrorBoundary
+        obligation_evidence:
+            - requirement: SW-REQ-103
+              obligation_class: boundary
+              evidence_type: nominal
+            - requirement: SW-REQ-103
+              obligation_class: boundary
+              evidence_type: boundary
+    reviewer: agent:codex
+    reviewed_at: "2026-06-25T20:38:53Z"
+history:
+    - at: "2026-06-25T20:38:53Z"
+      by: agent:codex
+      action: created
+      detail: |
+        Recorded the historical HTTP 400 aggregate error-boundary defect as
+        covered by SW-REQ-103 and a focused boundary regression test. The
+        deterministic 399/400/500 test is the primary obligation witness.
+    - at: "2026-06-25T20:38:53Z"
+      by: agent:codex
+      action: signal_added
+      detail: |
+        Added opengrep rule go.aggregate-http-error-threshold-strict-greater-than
+        so a future reintroduction of the historical ResponseCode > 400
+        aggregate predicate is surfaced statically.

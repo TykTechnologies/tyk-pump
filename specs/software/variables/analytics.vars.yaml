@@ -32,3 +32,11 @@ variables:
       type: bool
       direction: output
       description: True iff AnalyticsFilters.ShouldFilter returns true (record is dropped before reaching pumps).
+    - name: response_code_at_least_400
+      type: bool
+      direction: input
+      description: True when AggregateData processes an ordinary REST AnalyticsRecord whose ResponseCode is >= 400 and is not a connection-event sentinel.
+    - name: aggregate_error_counted
+      type: bool
+      direction: output
+      description: True iff the REST aggregate increments Total.ErrorTotal, Total.ErrorMap, and the per-status Errors dimension for the current HTTP error record.

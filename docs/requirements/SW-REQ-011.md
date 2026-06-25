@@ -9,6 +9,10 @@ contain Mongo field separators such as `.` are encoded before they become
 `endpoints.<path>.*` update keys, while the original path remains visible in
 `Identifier`, `HumanIdentifier`, and endpoint list values.
 
+SW-REQ-103 decomposes the HTTP status boundary for REST aggregate errors:
+ordinary records with `ResponseCode >= 400` increment error totals and
+per-status error dimensions, while records below 400 do not.
+
 ## Motivation
 Aggregate counters drive dashboard charts and downstream billing; a non-monotonic counter is a usability bug ("the count went down after a refresh?") and a billing bug. Centralising accumulation in a single helper means every caller — APIID, APIKey, Geo, Tags, Endpoints, OauthIDs, Versions, Errors, MCP Methods/Primitives/Names — gets identical semantics for free, and an audit can be confined to one function. Trade-off: `RequestTime` is recomputed as `TotalRequestTime / Hits` after each accumulation (not just at flush) so reads see a running average; `Min*Latency` is *not* monotonic by design (latency mins shrink as smaller values arrive), and the helper guards `MinLatency` updates with a `base.ErrorTotal == 0` check so error-paths can't poison min latency.
 
@@ -33,6 +37,9 @@ Aggregate counters drive dashboard charts and downstream billing; a non-monotoni
 - `analytics/aggregate_test.go:126 TestAggregateData_TrackPathEncodesMongoUnsafeEndpointKeys` — tagged `// SW-REQ-011:backend_field_key_safe:*`; proves dotted tracked endpoint paths are encoded in both aggregate map keys and Mongo update keys, while raw path identifiers remain available to consumers.
 - `analytics/aggregate_test.go:415 TestSetAggregateTimestamp`, `:456 TestAggregatedRecord_TableName`, `:488 TestAggregatedRecord_GetObjectID` — surrounding aggregate-API coverage.
 - `analytics/aggregate_mcdc_test.go:30 TestAggregateData_MCDCBranches` — tagged `// SW-REQ-011:monotonicity:negative`; MC/DC coverage of the branches inside `incrementOrSetUnit` and `incrementAggregate`.
+- `analytics/aggregate_test.go:TestAggregateData_ResponseCode400CountsAsErrorBoundary`
+  — tagged `// Verifies: SW-REQ-103`; boundary regression for HTTP 399, 400,
+  and 500 aggregate error classification.
 
 ## Open questions
 - `MinLatency` / `MinUpstreamLatency` are *not* monotonic — they shrink as the aggregate observes faster requests. The req description says "never decrease" but the only fields where that strictly holds are `Hits`, `Success`, `ErrorTotal`, `TotalRequestTime`, `TotalLatency`, `TotalUpstreamLatency`, and the per-status `ErrorMap` entries. The min-latency fields are intentionally non-monotonic but the wording does not say so.

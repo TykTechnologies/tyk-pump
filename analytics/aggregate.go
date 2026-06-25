@@ -766,6 +766,7 @@ func AggregateData(data []interface{}, trackAllPaths bool, ignoreTagPrefixList [
 
 // incrementAggregate increments the analytic record aggregate fields using the analytics record
 // reqproof:implements SW-REQ-011
+// reqproof:implements SW-REQ-103
 func incrementAggregate(aggregate *AnalyticsRecordAggregate, record *AnalyticsRecord, trackAllPaths bool, ignoreTagPrefixList []string) (AnalyticsRecordAggregate, Counter) {
 	// Always update the last timestamp
 	aggregate.LastTime = record.TimeStamp

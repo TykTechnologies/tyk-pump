@@ -55,6 +55,39 @@ func TestAnalyticsRecordAggregate_SetErrorList_SortsStatusCodes(t *testing.T) {
 	require.Equal(t, counter.ErrorList, update["$set"].(model.DBM)["total.errorlist"])
 }
 
+// Verifies: SW-REQ-103
+// SW-REQ-103:boundary:nominal
+// SW-REQ-103:boundary:boundary
+// MCDC SW-REQ-103: aggregate_error_counted=F, response_code_at_least_400=F => TRUE
+// MCDC SW-REQ-103: aggregate_error_counted=T, response_code_at_least_400=T => TRUE
+//
+// The 399 record witnesses the response_code_at_least_400=F vacuous row and is
+// asserted absent from error dimensions. The 400 and 500 records witness the
+// aggregate_error_counted=T row at the boundary and above it.
+//
+//mcdc:ignore SW-REQ-103: aggregate_error_counted=F, response_code_at_least_400=T => FALSE -- aggregate.go increments Total.ErrorTotal, Total.ErrorMap, and the per-status Errors dimension whenever ResponseCode >= 400 before the dimension fold; with the current code shape, the violation would require restoring the historical >400 predicate or removing the increment path, while this test witnesses the 400 boundary and 500 non-boundary error path [reviewed: human:buger] [category: defensive]
+func TestAggregateData_ResponseCode400CountsAsErrorBoundary(t *testing.T) {
+	records := []interface{}{
+		AnalyticsRecord{OrgID: "org-1", APIID: "api-1", ResponseCode: 399, TimeStamp: time.Date(2026, 6, 25, 10, 0, 0, 0, time.UTC)},
+		AnalyticsRecord{OrgID: "org-1", APIID: "api-1", ResponseCode: 400, TimeStamp: time.Date(2026, 6, 25, 10, 1, 0, 0, time.UTC)},
+		AnalyticsRecord{OrgID: "org-1", APIID: "api-1", ResponseCode: 500, TimeStamp: time.Date(2026, 6, 25, 10, 2, 0, 0, time.UTC)},
+		AnalyticsRecord{OrgID: "org-1", APIID: "api-1", ResponseCode: 200, TimeStamp: time.Date(2026, 6, 25, 10, 3, 0, 0, time.UTC)},
+	}
+
+	aggregate := AggregateData(records, false, nil, "", 60)["org-1"]
+
+	require.Equal(t, 4, aggregate.Total.Hits)
+	require.Equal(t, 1, aggregate.Total.Success)
+	require.Equal(t, 2, aggregate.Total.ErrorTotal)
+	require.Equal(t, map[string]int{"400": 1, "500": 1}, aggregate.Total.ErrorMap)
+
+	require.NotContains(t, aggregate.Errors, "399")
+	require.Equal(t, 1, aggregate.Errors["400"].ErrorTotal)
+	require.Equal(t, "400", aggregate.Errors["400"].Identifier)
+	require.Equal(t, 1, aggregate.Errors["500"].ErrorTotal)
+	require.Equal(t, "500", aggregate.Errors["500"].Identifier)
+}
+
 // Verifies: SW-REQ-011
 func TestAggregate_Tags(t *testing.T) {
 	recordsEmptyTag := []interface{}{

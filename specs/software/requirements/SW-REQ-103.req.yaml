@@ -1,0 +1,57 @@
+id: SW-REQ-103
+version: 1
+status: approved
+priority: shall
+category: functional
+req_type: guarantee
+fretish: when response_code_at_least_400 analytics shall always satisfy aggregate_error_counted
+description: REST aggregate calculation shall classify every ordinary AnalyticsRecord with HTTP ResponseCode >= 400 as an error for aggregate totals and per-status error dimensions; HTTP ResponseCode values below 400 shall not increment aggregate error totals.
+formalization_strategy: fretish
+informal_verification:
+    method: ""
+    evidence: ""
+    verified: false
+parent: SW-REQ-011
+component: analytics
+rationale: 'Product-fix-history hardening for commit c02a2cb / issue #118: before the fix, ResponseCode 400 failed the aggregate error predicate because the code used >400 instead of >=400. SW-REQ-011 owns aggregate counter accumulation; this child pins the HTTP error boundary explicitly.'
+tags: []
+variables:
+    - response_code_at_least_400
+    - aggregate_error_counted
+traces:
+    satisfies:
+        - SW-REQ-011
+        - SYS-REQ-019
+verification:
+    assurance_level: B
+    formalization_status: valid
+    review:
+        status: approved
+        reviewer: human:buger
+        role: software_engineer
+        reviewed_at: "2026-06-25T20:40:22Z"
+        comment: "Reviewed c02a2cb hardening: SW-REQ-103 pins the REST aggregate HTTP >=400 error boundary with 399/400/500 regression evidence; no runtime product change claimed."
+        fingerprint: sha256:dbbbce4514e6417a421e323f0708926cf31f1973dc7f96b27f78b333fe7690ca
+        ai_generated: false
+history:
+    created_by: agent:codex
+    created_at: "2026-06-25T20:38:53Z"
+    last_modified_by: human:buger
+    last_modified_at: "2026-06-25T20:40:22Z"
+obligation_checklist:
+    - boundary
+stakeholder:
+    acceptance_criteria:
+        - id: AC-001
+          text: ResponseCode 400 increments the REST aggregate Total.ErrorTotal, Total.ErrorMap["400"], and Errors["400"] counters.
+          verification_method: test
+        - id: AC-002
+          text: ResponseCode 399 remains outside the REST aggregate error counters, while a 5xx response still increments them.
+          verification_method: test
+lifecycle:
+    change_history:
+        - date: "2026-06-25T20:38:53Z"
+          from: draft
+          to: review
+          reason: c02a2cb HTTP 400 aggregate error-boundary requirement ready for review
+          changed_by: agent:codex

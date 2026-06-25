@@ -833,6 +833,44 @@ rules:
               $AGG.Endpoints[$REC.Path] = $VALUE
           - pattern: |
               $VALUE = $AGG.Endpoints[$REC.Path]
+  - id: go.aggregate-http-error-threshold-strict-greater-than
+    severity: WARNING
+    languages: [go]
+    message: |
+      REST aggregate error classification must include HTTP 400. A strict
+      `ResponseCode > 400` predicate counts 401+ but drops the exact 400
+      boundary from Total.ErrorTotal, Total.ErrorMap, and per-status Errors.
+      Use `ResponseCode >= 400` for aggregate error counters.
+    metadata:
+      proof:
+        signal_id: go.aggregate_http_error_threshold_strict_greater_than
+        provider: opengrep
+        confidence: high
+        framework_hints:
+          - CWE-697
+          - CWE-193
+        notes: |
+          Commit c02a2cb fixed this exact REST aggregate boundary bug by
+          changing the aggregate error predicate from ResponseCode > 400 to
+          ResponseCode >= 400. The rule catches a future reintroduction of
+          the historical strict-greater-than threshold in aggregate code.
+        obligations: [boundary]
+    paths:
+      include:
+        - "analytics/aggregate.go"
+      exclude:
+        - "*_test.go"
+        - "vendor/**"
+    patterns:
+      - pattern-either:
+          - pattern: |
+              if $REC.ResponseCode > 400 {
+                ...
+              }
+          - pattern: |
+              if ($REC.ResponseCode > 400) {
+                ...
+              }
   - id: go.mongo-document-size-counts-raw-request-twice
     severity: WARNING
     languages: [go]
