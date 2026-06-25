@@ -42,10 +42,11 @@ import (
 // effect — exercised by the Init-error subtest.)
 func TestPrometheusInitVec(t *testing.T) {
 	tcs := []struct {
-		testName     string
-		customMetric PrometheusMetric
-		expectedErr  error
-		isEnabled    bool
+		testName       string
+		customMetric   PrometheusMetric
+		expectedErr    error
+		isEnabled      bool
+		expectedLabels []string
 	}{
 		{
 			testName: "Counter metric",
@@ -54,8 +55,9 @@ func TestPrometheusInitVec(t *testing.T) {
 				MetricType: counterType,
 				Labels:     []string{"response_code", "api_id"},
 			},
-			expectedErr: nil,
-			isEnabled:   true,
+			expectedErr:    nil,
+			isEnabled:      true,
+			expectedLabels: []string{"response_code", "api_id"},
 		},
 		{
 			testName: "Histogram metric",
@@ -64,8 +66,9 @@ func TestPrometheusInitVec(t *testing.T) {
 				MetricType: histogramType,
 				Labels:     []string{"type", "api_id"},
 			},
-			expectedErr: nil,
-			isEnabled:   true,
+			expectedErr:    nil,
+			isEnabled:      true,
+			expectedLabels: []string{"type", "api_id"},
 		},
 		{
 			testName: "Histogram metric without type label set",
@@ -74,8 +77,20 @@ func TestPrometheusInitVec(t *testing.T) {
 				MetricType: histogramType,
 				Labels:     []string{"api_id"},
 			},
-			expectedErr: nil,
-			isEnabled:   true,
+			expectedErr:    nil,
+			isEnabled:      true,
+			expectedLabels: []string{"type", "api_id"},
+		},
+		{
+			testName: "Histogram metric with duplicated type labels",
+			customMetric: PrometheusMetric{
+				Name:       "testHistogramMetricDuplicatedType",
+				MetricType: histogramType,
+				Labels:     []string{"api_id", "type", "method", "type"},
+			},
+			expectedErr:    nil,
+			isEnabled:      true,
+			expectedLabels: []string{"type", "api_id", "method"},
 		},
 		{
 			testName: "RandomType metric",
@@ -102,11 +117,12 @@ func TestPrometheusInitVec(t *testing.T) {
 			if tc.customMetric.MetricType == counterType {
 				assert.NotNil(t, tc.customMetric.counterVec)
 				assert.Equal(t, tc.isEnabled, prometheus.Unregister(tc.customMetric.counterVec))
+				assert.Equal(t, tc.expectedLabels, tc.customMetric.Labels)
 
 			} else if tc.customMetric.MetricType == histogramType {
 				assert.NotNil(t, tc.customMetric.histogramVec)
 				assert.Equal(t, tc.isEnabled, prometheus.Unregister(tc.customMetric.histogramVec))
-				assert.Equal(t, tc.customMetric.Labels[0], "type")
+				assert.Equal(t, tc.expectedLabels, tc.customMetric.Labels)
 			}
 		})
 	}

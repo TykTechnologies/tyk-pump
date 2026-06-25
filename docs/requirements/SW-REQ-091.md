@@ -30,6 +30,10 @@ Variables are declared in `specs/software/variables/pumps-prometheus.vars.yaml`.
   histogram type value in the first label-value position.
 
 ## Evidence
+- `pumps/prometheus_test.go:TestPrometheusInitVec` proves histogram
+  initialization applies the exact label normalization before registration,
+  including missing and duplicate configured `type` labels, while counter
+  labels remain unchanged.
 - `pumps/prometheus_test.go:TestPrometheusEnsureLabels` asserts exact
   normalized label slices for missing, existing, middle-position, duplicate,
   empty, and counter schemas.

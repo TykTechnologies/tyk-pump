@@ -28,15 +28,15 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-25T17:17:37Z"
-        comment: 'TT-6482 hardening: Prometheus histogram type-label schema normalization now has a dedicated requirement, metric_label_schema_stable evidence, and exact boundary assertions; no runtime product behavior change.'
+        reviewed_at: "2026-06-25T23:49:16Z"
+        comment: 'Reviewed TT-6482 follow-up: SW-REQ-091 now has direct InitVec/ensureLabels/Observe implementation traces and an InitVec acceptance criterion; strengthened evidence asserts exact normalization through initialization before registration. No runtime product behavior change.'
         fingerprint: sha256:ea1d6c0f838046a97e051d43dff21e70c6a3c605c568a40b4b9d8d05548e9cf9
         ai_generated: false
 history:
     created_by: human:buger
     created_at: "2026-06-25T17:15:31Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-25T17:17:37Z"
+    last_modified_at: "2026-06-25T23:49:16Z"
 obligation_checklist:
     - metric_label_schema_stable
 stakeholder:
@@ -46,6 +46,9 @@ stakeholder:
           verification_method: test
         - id: AC-002
           text: A Prometheus counter metric does not receive the histogram synthetic type label during label normalization.
+          verification_method: test
+        - id: AC-003
+          text: A Prometheus histogram metric initialized through InitVec applies the same exact label normalization before registration.
           verification_method: test
 lifecycle:
     change_history:
@@ -58,4 +61,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-25T17:15:31Z comment="TT-6482 hardening: reviewed Prometheus histogram type-label schema normalization, metric_label_schema_stable evidence, MC/DC witnesses, and DEFECT-28 closure; no runtime product behavior change claimed.")'
+          changed_by: human:buger
+        - date: "2026-06-25T23:49:16Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-25T17:17:37Z comment="TT-6482 hardening: Prometheus histogram type-label schema normalization now has a dedicated requirement, metric_label_schema_stable evidence, and exact boundary assertions; no runtime product behavior change.")'
           changed_by: human:buger

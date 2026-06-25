@@ -377,6 +377,7 @@ func (p *PrometheusPump) WriteData(ctx context.Context, data []interface{}) erro
 // InitVec inits the prometheus metric based on the metric_type. It only can create counter and histogram,
 // if the metric_type is anything else it returns an error
 // reqproof:implements SW-REQ-024
+// reqproof:implements SW-REQ-091
 func (pm *PrometheusMetric) InitVec() error {
 	switch pm.MetricType {
 	case counterType:
@@ -416,6 +417,7 @@ func (pm *PrometheusMetric) InitVec() error {
 
 // EnsureLabels ensure the data validity and consistency of the metric labels
 // reqproof:implements SW-REQ-024
+// reqproof:implements SW-REQ-091
 func (pm *PrometheusMetric) ensureLabels() {
 	// for histograms we need to be sure that type was added
 	if pm.MetricType == histogramType {
@@ -519,6 +521,7 @@ func (pm *PrometheusMetric) Inc(values ...string) error {
 
 // Observe will fill hitogramMap with the sum of totalRequest and hits per label value if aggregate_observations is true. If aggregate_observations is set to false (default) it will execute prometheus Observe directly.
 // reqproof:implements SW-REQ-024
+// reqproof:implements SW-REQ-091
 func (pm *PrometheusMetric) Observe(requestTime int64, values ...string) error {
 	switch pm.MetricType {
 	case histogramType:

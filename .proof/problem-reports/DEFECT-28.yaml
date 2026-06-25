@@ -89,3 +89,11 @@ history:
         Recorded TT-6482 Prometheus histogram label-schema normalization as
         covered by SW-REQ-091, including exact type-label order/deduplication
         evidence and counter non-applicability evidence.
+    - at: "2026-06-26T00:00:00Z"
+      by: agent:codex
+      action: hardened
+      detail: |
+        Added direct implementation traces from SW-REQ-091 to InitVec,
+        ensureLabels, and Observe, and tightened InitVec evidence so histogram
+        initialization itself proves exact label normalization before
+        registration.
