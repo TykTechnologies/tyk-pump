@@ -24,6 +24,10 @@ request size — important because Kafka brokers reject oversized requests
 with cryptic errors. The pump uses `LeastBytes` partition balancing by
 default, distributing load evenly without operator intervention.
 
+Batch byte writer-budget behavior is split into **SW-REQ-106** so positive,
+zero, omitted, invalid, negative, and env-overridden `batch_bytes` values have
+direct evidence against the concrete `kafka.WriterConfig.BatchBytes` field.
+
 Failure mode addressed: per-write connection churn. The pump constructs a
 fresh `kafka.Writer` per `WriteData` call (`kafka.go:252-255`) and closes it
 immediately — this is wasteful but matches the per-purge-cycle batching
@@ -37,13 +41,20 @@ model and avoids cross-batch connection state.
 - `pumps/kafka.go:127-146` — SASL mechanism switch (PLAIN, SCRAM SHA-256,
   SCRAM SHA-512); warns on unknown mechanism.
 - `pumps/kafka.go:148-187` — timeout parsing (string or float), dialer setup,
-  `LeastBytes` balancer, optional Snappy compression.
+  `LeastBytes` balancer, optional Snappy compression, and `BatchBytes`
+  application.
 - `pumps/kafka.go:195-249` — `WriteData` builds JSON messages with static
   metadata merged in.
 - `pumps/kafka.go:252-256` — `write` creates a writer per call and closes it.
 
 ## Evidence
 - `pumps/kafka_test.go` covers config decode and message construction.
+- `pumps/kafka_test.go:TestKafkaPump_Init_BatchBytesConfiguration`,
+  `TestKafkaPump_BatchBytesEnvironmentVariableOverride`,
+  `TestKafkaPump_BatchBytesEnvironmentVariableInvalid`,
+  `TestKafkaPump_BatchBytesConfigAndEnvironmentVariableBothInvalid`,
+  `TestKafkaPump_Init_NegativeBatchBytes`, and
+  `TestKafkaPump_WriterConfigIntegrity` cover SW-REQ-106.
 - A live broker is required for end-to-end coverage; those tests are excluded
   from the local audit MC/DC scope (recorded as a known issue).
 

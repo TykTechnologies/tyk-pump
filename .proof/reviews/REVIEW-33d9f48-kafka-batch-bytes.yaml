@@ -1,0 +1,7 @@
+id: REVIEW-33d9f48-kafka-batch-bytes
+kind: design_review
+reviewer: agent:codex
+reviewed_at: "2026-06-25T21:55:00Z"
+subject: upstream:33d9f48/SW-REQ-021+SW-REQ-106
+decision: approved
+comment: 'Commit-level assurance review for TT-15560: batch_bytes is additive Kafka writer configuration behavior, not DEFECT/DFX material. Current code decodes KafkaConf.BatchBytes, applies non-negative values to kafka.WriterConfig.BatchBytes, leaves zero/unset as the kafka-go default sentinel, ignores negative values for writer config, and preserves sibling writer settings. SW-REQ-106 now pins this behavior with backend_batch_byte_limit_applied evidence; no product runtime behavior was changed.'

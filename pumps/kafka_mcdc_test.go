@@ -388,6 +388,8 @@ func TestKafkaPump_Init_SASLMechanismMatrix(t *testing.T) {
 // TestKafkaPump_Init_NegativeBatchBytes).
 //
 // Verifies: SW-REQ-021
+// Verifies: SW-REQ-106
+// SW-REQ-106:backend_batch_byte_limit_applied:nominal
 func TestKafkaPump_Init_BatchBytesPositiveBranch(t *testing.T) {
 	pump := &KafkaPump{}
 	require.NoError(t, pump.Init(map[string]interface{}{

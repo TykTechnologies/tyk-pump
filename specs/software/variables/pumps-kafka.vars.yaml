@@ -16,3 +16,11 @@ variables:
       type: bool
       direction: output
       description: True when the parsed Kafka timeout duration is applied identically to Dialer.Timeout, WriteTimeout, and ReadTimeout.
+    - name: kafka_batch_bytes_configured
+      type: bool
+      direction: input
+      description: True when KafkaConf.BatchBytes is supplied through config or TYK_PMP_PUMPS_KAFKA_META_BATCHBYTES.
+    - name: kafka_batch_bytes_applied
+      type: bool
+      direction: output
+      description: True iff Kafka Init applies a non-negative BatchBytes value to kafka.WriterConfig.BatchBytes, leaves zero/unset at the kafka-go default sentinel 0, and does not apply negative values.

@@ -1,0 +1,81 @@
+id: SW-REQ-106
+version: 1
+status: approved
+priority: shall
+category: functional
+req_type: guarantee
+fretish: when kafka_batch_bytes_configured pumps_kafka shall always satisfy kafka_batch_bytes_applied
+description: When Kafka batch_bytes is configured, Kafka Init shall apply non-negative values to kafka.WriterConfig.BatchBytes, preserve zero or unset as the kafka-go default sentinel 0, allow TYK_PMP_PUMPS_KAFKA_META_BATCHBYTES to override file config through the standard env overlay, reject non-integer config during decode, and leave WriterConfig.BatchBytes unset for negative values while preserving sibling writer settings.
+formalization_strategy: fretish
+informal_verification:
+    method: ""
+    evidence: ""
+    verified: false
+parent: SW-REQ-021
+component: pumps-kafka
+rationale: 'Product-fix-history hardening for TT-15560 / commit 33d9f48: batch_bytes is additive Kafka writer configuration behavior. SW-REQ-021 owns broad Kafka production/TLS behavior; this child pins the batch-byte writer budget so the config knob cannot silently detach from kafka.WriterConfig.BatchBytes.'
+tags: []
+variables:
+    - kafka_batch_bytes_configured
+    - kafka_batch_bytes_applied
+traces:
+    satisfies:
+        - SW-REQ-021
+verification:
+    assurance_level: B
+    formalization_status: valid
+    review:
+        status: approved
+        reviewer: human:buger
+        role: software_engineer
+        reviewed_at: "2026-06-25T21:37:21Z"
+        comment: 'Re-reviewed TT-15560 hardening after invalid-env fallback and logFatal KnownIssue linkage; SW-REQ-106 remains proof/spec-only with code-annotated evidence.'
+        fingerprint: sha256:f8bed68977ad769dddafc5faf45ade8e2e00e1dac9c1c3e4781902fd6bb970c1
+        ai_generated: false
+history:
+    created_by: agent:codex
+    created_at: "2026-06-25T21:31:15Z"
+    last_modified_by: human:buger
+    last_modified_at: "2026-06-25T21:37:21Z"
+obligation_checklist:
+    - backend_batch_byte_limit_applied
+stakeholder:
+    acceptance_criteria:
+        - id: AC-001
+          text: A positive `batch_bytes` config value is applied exactly to `kafka.WriterConfig.BatchBytes`.
+          verification_method: test
+        - id: AC-002
+          text: Zero or omitted `batch_bytes` leaves `kafka.WriterConfig.BatchBytes` at `0`, preserving the kafka-go default sentinel.
+          verification_method: test
+        - id: AC-003
+          text: "`TYK_PMP_PUMPS_KAFKA_META_BATCHBYTES` overrides the file/config value through the standard env overlay."
+          verification_method: test
+        - id: AC-004
+          text: A non-integer `batch_bytes` config is rejected during mapstructure decode before writer-config application; Kafka Init process-exit behavior remains tracked by known issue pumps-logfatal-on-config-decode.
+          verification_method: test
+        - id: AC-005
+          text: A negative `batch_bytes` value does not populate `WriterConfig.BatchBytes`.
+          verification_method: test
+        - id: AC-006
+          text: Applying `batch_bytes` preserves sibling writer settings including broker list, topic, balancer, compression, and dialer.
+          verification_method: test
+        - id: AC-007
+          text: An invalid `TYK_PMP_PUMPS_KAFKA_META_BATCHBYTES` value does not overwrite a valid file/config `batch_bytes` value.
+          verification_method: test
+lifecycle:
+    change_history:
+        - date: "2026-06-25T21:55:00Z"
+          from: draft
+          to: review
+          reason: TT-15560 Kafka batch-bytes writer-budget requirement ready for branch review
+          changed_by: agent:codex
+        - date: "2026-06-25T21:32:40Z"
+          from: draft
+          to: review
+          reason: ""
+          changed_by: agent:codex
+        - date: "2026-06-25T21:37:21Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-25T21:32:40Z comment="Reviewed TT-15560 hardening: SW-REQ-106 pins Kafka batch_bytes writer-budget application with code-annotated evidence; no runtime product behavior change.")'
+          changed_by: human:buger

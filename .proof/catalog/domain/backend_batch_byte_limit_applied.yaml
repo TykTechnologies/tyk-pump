@@ -1,0 +1,42 @@
+id: backend_batch_byte_limit_applied
+name: Backend Batch Byte Limit Applied
+category: domain
+status: active
+summary: Backend writer byte-limit configuration shall be applied to the concrete client request/batch byte budget without disturbing sibling writer settings.
+description: |-
+  Pumps often expose backend-specific request or batch byte budgets to keep a
+  client library below broker, stream, or API request-size limits. A requirement
+  that documents such a knob shall prove that initialization applies the
+  operator value to the concrete backend writer/client option, preserves the
+  backend library's default sentinel when the knob is zero or unset, rejects or
+  ignores invalid values according to the documented policy, and does not reset
+  unrelated writer settings such as brokers, topic, balancer, compression, or
+  timeouts.
+applies_when:
+  description: a pump exposes an operator-configured byte budget for backend request, writer, or batch size
+  trigger_phrases:
+    - batch_bytes
+    - BatchBytes
+    - max request bytes
+    - batch byte
+    - request size
+example_req: |-
+  When Kafka batch_bytes is configured with a non-negative integer, Init shall
+  set kafka.WriterConfig.BatchBytes to that value while preserving brokers,
+  topic, balancer, compression, and timeout settings.
+if_missing: |-
+  Operators can believe a backend request-size budget is enforced while the
+  actual client continues using a default or unrelated limit, leading to
+  broker-side oversized request errors or unexpected throughput behavior.
+recommended_evidence:
+  - kind: nominal
+    note: Unit witness proves a positive configured byte budget reaches the concrete backend writer/client option.
+  - kind: boundary
+    note: Unit witnesses cover zero/unset default-sentinel behavior and negative/invalid values according to the documented policy.
+  - kind: integration
+    note: Config-shape witness proves the byte budget does not disturb sibling writer/client settings.
+related_classes:
+  - id: input_size_bounded
+    relationship: supports
+  - id: output_cardinality_bounded
+    relationship: adjacent

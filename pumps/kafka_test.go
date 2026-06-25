@@ -32,6 +32,11 @@ func TestKafkaPump_GetName(t *testing.T) {
 }
 
 // Verifies: SW-REQ-021
+// Verifies: SW-REQ-106
+// SW-REQ-106:backend_batch_byte_limit_applied:nominal
+// SW-REQ-106:backend_batch_byte_limit_applied:boundary
+// MCDC SW-REQ-106: kafka_batch_bytes_configured=F, kafka_batch_bytes_applied=F => TRUE
+// MCDC SW-REQ-106: kafka_batch_bytes_configured=T, kafka_batch_bytes_applied=T => TRUE
 func TestKafkaPump_Init_BatchBytesConfiguration(t *testing.T) {
 	//nolint:govet
 	tests := []struct {
@@ -93,6 +98,8 @@ func TestKafkaPump_Init_BatchBytesConfiguration(t *testing.T) {
 }
 
 // Verifies: SW-REQ-021
+// Verifies: SW-REQ-106
+// SW-REQ-106:backend_batch_byte_limit_applied:integration
 func TestKafkaPump_Init_BatchBytesWithOtherConfigs(t *testing.T) {
 	brokers := kafkaBrokerAddrs(t)
 	config := map[string]interface{}{
@@ -121,6 +128,8 @@ func TestKafkaPump_Init_BatchBytesWithOtherConfigs(t *testing.T) {
 }
 
 // Verifies: SW-REQ-021
+// Verifies: SW-REQ-106
+// SW-REQ-106:backend_batch_byte_limit_applied:nominal
 func TestKafkaPump_BatchBytesEnvironmentVariable(t *testing.T) {
 	// Test that BatchBytes can be overridden via environment variables
 	// This follows the same pattern as other configuration fields
@@ -138,6 +147,8 @@ func TestKafkaPump_BatchBytesEnvironmentVariable(t *testing.T) {
 }
 
 // Verifies: SW-REQ-021
+// Verifies: SW-REQ-106
+// SW-REQ-106:backend_batch_byte_limit_applied:integration
 func TestKafkaPump_WriterConfigIntegrity(t *testing.T) {
 	// Test that BatchBytes configuration doesn't interfere with other writer config fields.
 	// Uses the live testcontainer broker addresses so the configured brokers are
@@ -169,6 +180,8 @@ func TestKafkaPump_WriterConfigIntegrity(t *testing.T) {
 }
 
 // Verifies: SW-REQ-021
+// Verifies: SW-REQ-106
+// SW-REQ-106:backend_batch_byte_limit_applied:nominal
 func TestKafkaPump_BatchBytesEnvironmentVariableOverride(t *testing.T) {
 	// Test that BatchBytes can be overridden via environment variables
 	// This follows the same pattern as other configuration fields
@@ -189,6 +202,8 @@ func TestKafkaPump_BatchBytesEnvironmentVariableOverride(t *testing.T) {
 }
 
 // Verifies: SW-REQ-021
+// Verifies: SW-REQ-106
+// SW-REQ-106:backend_batch_byte_limit_applied:boundary
 func TestKafkaPump_BatchBytesEnvironmentVariableInvalid(t *testing.T) {
 	// Test that BatchBytes environment variable is ignored if it's not a valid integer
 	// This follows the same pattern as other configuration fields
@@ -209,6 +224,8 @@ func TestKafkaPump_BatchBytesEnvironmentVariableInvalid(t *testing.T) {
 }
 
 // Verifies: SW-REQ-021
+// Verifies: SW-REQ-106
+// SW-REQ-106:backend_batch_byte_limit_applied:boundary
 func TestKafkaPump_BatchBytesConfigAndEnvironmentVariableBothInvalid(t *testing.T) {
 	// Test that mapstructure.Decode fails when batch_bytes is a non-integer string
 	config := map[string]interface{}{
@@ -232,6 +249,9 @@ func TestKafkaPump_BatchBytesConfigAndEnvironmentVariableBothInvalid(t *testing.
 }
 
 // Verifies: SW-REQ-021
+// Verifies: SW-REQ-106
+// SW-REQ-106:backend_batch_byte_limit_applied:boundary
+// MCDC SW-REQ-106: kafka_batch_bytes_configured=T, kafka_batch_bytes_applied=F => FALSE
 func TestKafkaPump_Init_NegativeBatchBytes(t *testing.T) {
 	// Test that negative batch_bytes values are handled properly
 	// The pump should log an error and use the default value (0) instead of the negative value

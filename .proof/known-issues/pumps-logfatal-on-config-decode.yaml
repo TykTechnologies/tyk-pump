@@ -4,6 +4,7 @@ description: 'pumps/statsd.go:62, pumps/syslog.go:82, pumps/graylog.go:76, pumps
 affected_requirements:
     - SYS-REQ-004
     - SW-REQ-021
+    - SW-REQ-106
     - SW-REQ-023
     - SW-REQ-024
     - SW-REQ-025
@@ -81,6 +82,10 @@ history:
       by: human:leo
       action: edit
       detail: add-evidence-manifest
+    - at: "2026-06-25T21:58:00Z"
+      by: agent:codex
+      action: edit
+      detail: add-affected-requirement SW-REQ-106 for Kafka batch_bytes decode-failure path
     - at: "2026-06-01T19:12:43Z"
       by: human:leo
       action: edit
