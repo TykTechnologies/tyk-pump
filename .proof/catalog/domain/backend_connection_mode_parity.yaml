@@ -1,0 +1,52 @@
+id: backend_connection_mode_parity
+name: Backend Connection Mode Parity
+category: domain
+status: active
+summary: A backend client migration shall preserve every documented connection mode and option alias when translating product config into the new client library.
+description: |-
+  Storage and network client migrations often replace an in-tree adapter with
+  a shared library. A requirement that owns such an adapter shall prove that the
+  operator-visible connection contract remains stable across single-node,
+  address-list, cluster, sentinel, authentication, database-selection, TLS, and
+  deprecated-alias modes. The proof must bind the product config fields to the
+  concrete library option fields, not just demonstrate one happy-path backend
+  connection.
+applies_when:
+  description: code translates operator storage or backend connection config into a concrete client-library options struct
+  trigger_phrases:
+    - storage library
+    - RedisOptions
+    - cluster
+    - sentinel
+    - TLS
+    - deprecated alias
+    - connection mode
+example_req: |-
+  Temporal storage Init shall preserve the operator-visible Redis connection
+  modes when constructing the storage-library connector: host/port, addrs,
+  hosts, cluster, sentinel master/password, database/auth, pool limits, timeout,
+  TLS files/versions, and legacy redis_* aliases all map to their corresponding
+  library options.
+if_missing: |-
+  A storage-library migration can pass a single-node smoke test while silently
+  dropping cluster, sentinel, TLS, auth, database, or deprecated alias support.
+  Operators then discover the regression only in deployment-specific topologies.
+recommended_evidence:
+  - kind: nominal
+    note: Unit or static-structure witness proves each documented connection option is forwarded into the client-library option struct.
+  - kind: boundary
+    note: Witness covers deprecated aliases and default/sentinel behavior at the config boundary.
+  - kind: review
+    note: Review maps every documented connection mode to either direct evidence or an explicit known issue.
+frameworks:
+  - id: CWE
+    refs:
+      - CWE-16
+      - CWE-665
+related_classes:
+  - id: backend_connection_timeout_propagated
+    relationship: includes
+  - id: tls_verification_explicit
+    relationship: includes
+  - id: env_override_applied
+    relationship: complements

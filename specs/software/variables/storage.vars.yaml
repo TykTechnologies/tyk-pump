@@ -7,7 +7,7 @@ variables:
     - name: records_popped_and_expire_attempted
       type: bool
       direction: output
-      description: 'True iff the chunk-sized batch is popped via LRange+LTrim and the remainder receives an Expire call (KI tracks atomicity gap: see known-issues/mongo-mcdc-storage).'
+      description: 'True iff the chunk-sized batch is popped via the storage-library list.Pop primitive and the partial-drain remainder receives a kv.Expire call (KI tracks the Pop+Expire atomicity gap: getanddeleteset-expire-fail-loses-records).'
     - name: records_removed_once
       type: bool
       direction: output

@@ -5,7 +5,7 @@ priority: shall
 category: functional
 req_type: guarantee
 fretish: when connect_err storage shall eventually satisfy connection_retried_with_bounded_backoff
-description: Temporal storage shall construct, lazily establish, and re-establish its backend connection (NewTemporalStorageHandler, Init, connect, ensureConnection, resetConnection, createConnector, getKVFromConnector, getListFromConnector, fixKey, SetKey, GetName), using bounded exponential backoff for retried connect attempts via retry.GetTemporalStorageExponentialBackoff.
+description: Temporal storage shall construct, lazily establish, and re-establish its backend connection (NewTemporalStorageHandler, Init, connect, ensureConnection, resetConnection, createConnector, getKVFromConnector, getListFromConnector, fixKey, SetKey, GetName), preserving the operator's temporal-storage configuration when it builds the storage-library Redis connector. This includes host/port and address lists, database/auth, sentinel master/password, cluster mode, pool and timeout values, key-prefix compatibility, TLS options including legacy redis_* aliases, and both TYK_PMP_REDIS and TYK_PMP_TEMPORAL_STORAGE environment overlays. Retried connect attempts shall use exponential backoff via retry.GetTemporalStorageExponentialBackoff; the current total retry budget remains unbounded and is tracked by KI storage-retry-maxelapsed-zero-is-unbounded.
 formalization_strategy: fretish
 informal_verification:
     method: ""
@@ -30,26 +30,30 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-22T12:04:23Z"
-        comment: 'Review obligation expansion from catalogue gap pass; active unfixed behavior remains KnownIssue-gated.'
-        fingerprint: sha256:dafee3e0b05570650179985d446a8c97cd97e3dd0d07a199b277ffcc359285ea
+        reviewed_at: "2026-06-25T22:18:37Z"
+        comment: 'TT-10520 storage-library hardening: SW-REQ-007 preserves temporal-storage connection-mode config, env-prefix compatibility, TLS aliases, and storage-library option parity with test-backed ACs; no product behavior changed.'
+        fingerprint: sha256:180f322b6ba2b0de25e2b0dcdb67e19a79d6d2e2efb877581a862d1728e3305d
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:14Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-22T12:04:23Z"
+    last_modified_at: "2026-06-25T22:18:37Z"
 obligation_checklist:
     - boundary
+    - backend_connection_mode_parity
+    - backend_connection_timeout_propagated
     - cancellation_observed
     - clock_skew_tolerated
     - concurrent
     - config_schema_strict
+    - env_override_applied
     - error_handling
     - malformed_recovers_or_errors_loudly
     - nominal
     - resource_lifetime_released
     - retry_budget_bounded
+    - tls_verification_explicit
 obligation_deferrals:
     - obligation_class: cancellation_observed
       reason: 'real product gap under known-issue temporal-storage-operations-ignore-caller-cancellation; surfaced as visible tracked debt, not an overclaimed fix'
@@ -82,6 +86,23 @@ obligation_deferrals:
       tracking: storage-retry-maxelapsed-zero-is-unbounded
       owner: human:buger
       ki_ref: storage-retry-maxelapsed-zero-is-unbounded
+stakeholder:
+    acceptance_criteria:
+        - id: AC-001
+          text: Init preserves an explicit key_prefix, promotes the deprecated redis_key_prefix alias when key_prefix is absent, and otherwise applies the analytics- default.
+          verification_method: test
+        - id: AC-002
+          text: The deprecated TYK_PMP_REDIS_* prefix and the replacement TYK_PMP_TEMPORAL_STORAGE_* prefix both participate in the temporal-storage env overlay before connector setup.
+          verification_method: test
+        - id: AC-003
+          text: Non-default pool and timeout settings remain present on the temporal-storage config that is used for connector setup.
+          verification_method: test
+        - id: AC-004
+          text: TLS configuration errors from storage-library connector construction surface from Init instead of being ignored.
+          verification_method: test
+        - id: AC-005
+          text: Sentinel, cluster, address-list, database, username, password, and TLS option fields are part of the temporal-storage connector contract and require review whenever the storage-library adapter changes.
+          verification_method: test
 lifecycle:
     change_history:
         - date: "2026-05-29T15:46:44Z"
@@ -123,4 +144,14 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-03T07:38:07Z comment="Phase Q: catalog obligation attachments — adds connection_leak_free, resource_lifetime_released (storage connect/disconnect via singleton). See .proof/catalog-obligation-proposals.md.")'
+          changed_by: human:buger
+        - date: "2026-06-25T22:17:38Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-22T12:04:23Z comment="Review obligation expansion from catalogue gap pass; active unfixed behavior remains KnownIssue-gated.")'
+          changed_by: human:buger
+        - date: "2026-06-25T22:18:37Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-25T22:17:38Z comment="TT-10520 storage-library hardening: SW-REQ-007 now explicitly preserves temporal-storage connection-mode config, env-prefix compatibility, TLS aliases, and storage-library option parity; evidence is code-annotated and no product behavior was changed.")'
           changed_by: human:buger

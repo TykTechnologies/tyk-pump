@@ -1,7 +1,7 @@
 id: REVIEW-407c373-storage-library
 kind: design_review
 reviewer: agent:codex
-reviewed_at: "2026-06-25T13:45:00Z"
+reviewed_at: "2026-06-25T22:17:38Z"
 subject: upstream:407c373/SW-REQ-006+SW-REQ-007+INT-REQ-005
 decision: approved
-comment: 'Commit-level assurance review for TT-10520: current proof already models storage pop/expire behavior and KI-backed retry/cancellation/wire-format gaps, but the historical storage-library migration depended on preserving legacy full-drain chunkSize=0 semantics. SW-REQ-006 now carries full_drain_semantics with direct adapter evidence that chunkSize=0 normalizes to the backend -1 sentinel and skips remainder Expire, plus live Redis evidence that full-drain leaves no list remainder. Redis Cluster/Sentinel/TLS parity remains future hardening work rather than claimed coverage.'
+comment: 'Commit-level assurance review for TT-10520: current proof models storage pop/expire behavior and KI-backed retry/cancellation/wire-format gaps, but the historical storage-library migration also depended on preserving legacy full-drain chunkSize=0 semantics and operator-visible connector option parity. SW-REQ-006 carries full_drain_semantics with adapter and live-Redis evidence. SW-REQ-007 now carries backend_connection_mode_parity, backend_connection_timeout_propagated, env_override_applied, and tls_verification_explicit evidence covering key-prefix aliases, env prefixes, timeout/pool options, TLS aliases, and storage-library RedisOptions/TLS field mapping. Residual atomicity, retry-budget, cancellation, singleton-race, and wire-format gaps remain KnownIssue-backed debt rather than claimed fixes.'

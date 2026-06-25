@@ -2,6 +2,9 @@ package storage
 
 import (
 	"context"
+	"go/ast"
+	"go/parser"
+	"go/token"
 	"os"
 	"testing"
 	"time"
@@ -66,6 +69,127 @@ func (f *flakyConnector) As(i interface{}) bool {
 	return f.inner.As(i)
 }
 
+func collectConfigBackedCompositeFields(file *ast.File, pkg, typ string, required map[string][]string) map[string]map[string]bool {
+	found := map[string]map[string]bool{}
+	ast.Inspect(file, func(n ast.Node) bool {
+		lit, ok := n.(*ast.CompositeLit)
+		if !ok || !isSelectorType(lit.Type, pkg, typ) {
+			return true
+		}
+		for _, elt := range lit.Elts {
+			kv, ok := elt.(*ast.KeyValueExpr)
+			if !ok {
+				continue
+			}
+			key, ok := kv.Key.(*ast.Ident)
+			if !ok {
+				continue
+			}
+			fields, ok := required[key.Name]
+			if !ok {
+				continue
+			}
+			for _, field := range fields {
+				if exprReferencesConfigField(file, kv.Value, field) {
+					if found[key.Name] == nil {
+						found[key.Name] = map[string]bool{}
+					}
+					found[key.Name][field] = true
+				}
+			}
+		}
+		return true
+	})
+	return found
+}
+
+func missingConfigBackedFields(required map[string][]string, found map[string]map[string]bool) []string {
+	var missing []string
+	for key, fields := range required {
+		for _, field := range fields {
+			if !found[key][field] {
+				missing = append(missing, key+"<-config."+field)
+			}
+		}
+	}
+	return missing
+}
+
+func isSelectorType(expr ast.Expr, pkg, typ string) bool {
+	sel, ok := expr.(*ast.SelectorExpr)
+	if !ok || sel.Sel.Name != typ {
+		return false
+	}
+	ident, ok := sel.X.(*ast.Ident)
+	return ok && ident.Name == pkg
+}
+
+func exprReferencesConfigField(file *ast.File, expr ast.Expr, field string) bool {
+	found := false
+	ast.Inspect(expr, func(n ast.Node) bool {
+		sel, ok := n.(*ast.SelectorExpr)
+		if !ok || sel.Sel.Name != field {
+			return true
+		}
+		ident, ok := sel.X.(*ast.Ident)
+		if ok && ident.Name == "config" {
+			found = true
+			return false
+		}
+		return true
+	})
+	if found {
+		return true
+	}
+	ident, ok := expr.(*ast.Ident)
+	if !ok {
+		return false
+	}
+	return localAssignedFromConfigField(file, ident.Name, field)
+}
+
+func localAssignedFromConfigField(file *ast.File, local, field string) bool {
+	found := false
+	ast.Inspect(file, func(n ast.Node) bool {
+		assign, ok := n.(*ast.AssignStmt)
+		if !ok {
+			return true
+		}
+		for i, lhs := range assign.Lhs {
+			if i >= len(assign.Rhs) {
+				continue
+			}
+			ident, ok := lhs.(*ast.Ident)
+			if !ok || ident.Name != local {
+				continue
+			}
+			if exprDirectlyReferencesConfigField(assign.Rhs[i], field) {
+				found = true
+				return false
+			}
+		}
+		return true
+	})
+	return found
+}
+
+func exprDirectlyReferencesConfigField(expr ast.Expr, field string) bool {
+	found := false
+	ast.Inspect(expr, func(n ast.Node) bool {
+		sel, ok := n.(*ast.SelectorExpr)
+		if !ok || sel.Sel.Name != field {
+			return true
+		}
+		ident, ok := sel.X.(*ast.Ident)
+		if ok && ident.Name == "config" {
+			found = true
+			return false
+		}
+		return true
+	})
+	return found
+}
+
 // resetSingletonForTest nils out the module-level connector singleton so
 // each MC/DC test starts from a deterministic state. Several MC/DC branches
 // depend on whether the singleton is nil at call time, so we wrap this in
@@ -101,6 +225,7 @@ func TestTemporalStorageHandler_Init_KeyPrefixSetPreserved(t *testing.T) {
 
 // Verifies: SW-REQ-007
 // SW-REQ-007:nominal:review
+// SW-REQ-007:env_override_applied:review
 // Drives the F-then-T arm of the switch at temporal_storage.go:89-91:
 // `KeyPrefix != ""` = F, `RedisKeyPrefix != ""` = T. RedisKeyPrefix is
 // the deprecated alias and must be promoted into KeyPrefix.
@@ -118,6 +243,53 @@ func TestTemporalStorageHandler_Init_RedisKeyPrefixPromoted(t *testing.T) {
 	assert.NoError(t, r.Init())
 	assert.Equal(t, "legacy-prefix-", r.Config.KeyPrefix,
 		"deprecated RedisKeyPrefix must be promoted into KeyPrefix when KeyPrefix is empty")
+}
+
+// Verifies: SW-REQ-007
+// SW-REQ-007:env_override_applied:nominal
+// SW-REQ-007:env_override_applied:boundary
+// SW-REQ-007:env_override_applied:review
+// TT-10520 storage-library migration preserved both temporal-storage env
+// prefixes. The deprecated Redis prefix and replacement temporal-storage prefix
+// must both overlay the config before connector setup.
+func TestTemporalStorageHandler_Init_EnvPrefixOverridesKeyPrefix(t *testing.T) {
+	host, port := redisHostPort(t)
+
+	tests := []struct {
+		name   string
+		envKey string
+		want   string
+	}{
+		{
+			name:   "deprecated redis prefix",
+			envKey: "TYK_PMP_REDIS_KEYPREFIX",
+			want:   "env-redis-",
+		},
+		{
+			name:   "temporal storage prefix",
+			envKey: "TYK_PMP_TEMPORAL_STORAGE_KEYPREFIX",
+			want:   "env-temporal-",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Cleanup(func() { resetSingletonForTest(t) })
+			_ = os.Unsetenv("TYK_PMP_REDIS_KEYPREFIX")
+			_ = os.Unsetenv("TYK_PMP_TEMPORAL_STORAGE_KEYPREFIX")
+			t.Setenv(tt.envKey, tt.want)
+
+			cfg := &TemporalStorageConfig{
+				Host:      host,
+				Port:      port,
+				KeyPrefix: "file-prefix-",
+			}
+			r, err := NewTemporalStorageHandler(cfg, true)
+			assert.NoError(t, err)
+			assert.NoError(t, r.Init())
+			assert.Equal(t, tt.want, r.Config.KeyPrefix)
+		})
+	}
 }
 
 // Verifies: SW-REQ-007
@@ -190,6 +362,8 @@ func TestTemporalStorageHandler_GetName_CustomType(t *testing.T) {
 // Verifies: SW-REQ-007
 // SW-REQ-007:boundary:review
 // SW-REQ-007:boundary:nominal
+// SW-REQ-007:backend_connection_timeout_propagated:nominal
+// SW-REQ-007:backend_connection_timeout_propagated:review
 // Drives `config.MaxActive > 0` = T and `config.Timeout > 0` = T at
 // temporal_storage.go:154 and :160. The handler must honour the
 // caller-supplied values rather than fall back to defaults.
@@ -209,6 +383,53 @@ func TestTemporalStorageHandler_Init_PoolTuning(t *testing.T) {
 		"non-default MaxActive/Timeout must not break connection setup")
 	assert.Equal(t, 17, r.Config.MaxActive)
 	assert.Equal(t, 3, r.Config.Timeout)
+}
+
+// Verifies: SW-REQ-007
+// SW-REQ-007:backend_connection_mode_parity:nominal
+// SW-REQ-007:backend_connection_mode_parity:boundary
+// SW-REQ-007:backend_connection_mode_parity:review
+// SW-REQ-007:tls_verification_explicit:nominal
+// TT-10520 migrated Redis access to the shared storage library. This static
+// contract test pins the adapter boundary: resetConnection must forward every
+// operator-visible connection mode and legacy alias into model.RedisOptions and
+// model.TLS, not just the single-node host/port path used by live Redis tests.
+func TestTemporalStorageHandler_ResetConnection_StorageLibraryOptionParity(t *testing.T) {
+	fset := token.NewFileSet()
+	file, err := parser.ParseFile(fset, "temporal_storage.go", nil, 0)
+	require.NoError(t, err)
+
+	redisOptions := map[string][]string{
+		"MasterName":       {"MasterName"},
+		"SentinelPassword": {"SentinelPassword"},
+		"Addrs":            {"Addrs"},
+		"Database":         {"Database"},
+		"Username":         {"Username"},
+		"Password":         {"Password"},
+		"MaxActive":        {"MaxActive"},
+		"Timeout":          {"Timeout"},
+		"EnableCluster":    {"EnableCluster"},
+		"Host":             {"Host"},
+		"Port":             {"Port"},
+		"Hosts":            {"Hosts"},
+	}
+	tlsOptions := map[string][]string{
+		"Enable":             {"UseSSL", "RedisUseSSL"},
+		"InsecureSkipVerify": {"SSLInsecureSkipVerify", "RedisSSLInsecureSkipVerify"},
+		"CAFile":             {"SSLCAFile"},
+		"CertFile":           {"SSLCertFile"},
+		"KeyFile":            {"SSLKeyFile"},
+		"MaxVersion":         {"SSLMaxVersion"},
+		"MinVersion":         {"SSLMinVersion"},
+	}
+
+	foundRedis := collectConfigBackedCompositeFields(file, "model", "RedisOptions", redisOptions)
+	foundTLS := collectConfigBackedCompositeFields(file, "model", "TLS", tlsOptions)
+
+	assert.Empty(t, missingConfigBackedFields(redisOptions, foundRedis),
+		"RedisOptions must preserve every documented storage connection mode")
+	assert.Empty(t, missingConfigBackedFields(tlsOptions, foundTLS),
+		"TLS options must preserve both current fields and legacy redis_* aliases")
 }
 
 // Verifies: SW-REQ-007
@@ -296,6 +517,9 @@ func TestTemporalStorageHandler_Init_EnvConfigError_NewPrefix(t *testing.T) {
 
 // Verifies: SW-REQ-007
 // SW-REQ-007:error_handling:negative
+// SW-REQ-007:tls_verification_explicit:boundary
+// SW-REQ-007:tls_verification_explicit:scenario
+// SW-REQ-007:tls_verification_explicit:review
 // Drives the `err != nil` T arm in connect() at temporal_storage.go:116
 // (resetConnection error propagation). We do this via an invalid TLS
 // config: createConnector calls connector.NewConnector which calls
@@ -343,6 +567,8 @@ func TestTemporalStorageHandler_ResetConnection_DisconnectError(t *testing.T) {
 
 // Verifies: SW-REQ-007
 // SW-REQ-007:error_handling:negative
+// SW-REQ-007:tls_verification_explicit:boundary
+// SW-REQ-007:tls_verification_explicit:scenario
 // Drives createConnector line 204 (`err != nil` from
 // connector.NewConnector) via the invalid TLS path. While the test above
 // also reaches this branch, this test pins the contract independently and
