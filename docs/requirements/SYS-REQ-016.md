@@ -13,14 +13,16 @@ when ignore_fields_configured privacy shall always satisfy listed_fields_removed
 The input `ignore_fields_configured` is true when `len(pump.GetIgnoreFields()) > 0`; the output `listed_fields_removed` becomes true once `RemoveIgnoredFields(ignoreFields)` has zero'd each matching field. Variables: `specs/system/variables/privacy.vars.yaml`.
 
 ## Code references
-- `main.go:411-413` — `if len(ignoreFields) > 0 { decoded.RemoveIgnoredFields(ignoreFields) }` inside `filterData`.
+- `main.go:414-416` — `if len(ignoreFields) > 0 { decoded.RemoveIgnoredFields(ignoreFields) }` inside `filterData`.
 - `analytics/analytics.go:420 RemoveIgnoredFields` — iterates `structs.Fields(a)`, matches `field.Tag("json")` against the ignore list, calls `field.Zero()` on hit; logs an error when an ignored tag is not found.
 - `pumps/common.go:85 SetIgnoreFields` / `:90 GetIgnoreFields`.
 - `main.go:212 thisPmp.SetIgnoreFields(pmp.IgnoreFields)` — wired from JSON config per pump.
 
 ## Evidence
-- `main_test.go:298 TestIgnoreFieldsFilterData` — exercises per-pump ignore lists.
-- Satisfying SW child: **SW-REQ-016** (common-pump setters/getters).
+- `main_test.go:TestIgnoreFieldsFilterData` — exercises per-pump ignore lists.
+- `analytics/analytics_test.go:TestAnalyticsRecord_RemoveIgnoredFields` — verifies direct JSON-tag field zeroing.
+- Satisfying SW child: **SW-REQ-076** (filterData + RemoveIgnoredFields behavior).
+- Supporting wiring: **SW-REQ-016** covers the common-pump `SetIgnoreFields` / `GetIgnoreFields` storage surface.
 
 ## Open questions
 - Match is by JSON tag, so a field with no `json:` tag cannot be ignored. The SYS req doesn't constrain matching semantics.

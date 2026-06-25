@@ -35,7 +35,7 @@ func TestAnalyticsRecord_IsGraphRecord(t *testing.T) {
 	})
 }
 
-// Verifies: SW-REQ-009
+// Verifies: SW-REQ-076
 func TestAnalyticsRecord_RemoveIgnoredFields(t *testing.T) {
 	defaultRecord := AnalyticsRecord{
 		APIID:      "api123",

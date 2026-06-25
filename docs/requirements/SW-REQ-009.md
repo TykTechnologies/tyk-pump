@@ -11,12 +11,12 @@ The CSV pump and several others need a stable column order across processes; Go'
 - `analytics/analytics.go:160 NetworkStats.GetFieldNames`, `:170 Latency.GetFieldNames`, `:179 GeoData.GetFieldNames` — sub-struct field lists.
 - `analytics/analytics.go:268 (*AnalyticsRecord).GetLineValues` — value projector in matching order.
 - `analytics/analytics.go:104 IsMCPRecord`, `:415 IsGraphRecord` — boolean discriminators on the embedded stats sub-structs.
-- `analytics/analytics.go:420 RemoveIgnoredFields` — iterates `structs.Fields(a)` looking for matching `json:` tag and calling `field.Zero()`; non-determinism in `structs.Fields` order does not affect the output because the operation is idempotent set-removal.
 
 ## Evidence
 - `analytics/analytics_test.go:111 TestAnalyticsRecord_GetFieldNames` — tagged `// Verifies: SW-REQ-009`; asserts the exact slice content + ordering.
 - `analytics/analytics_test.go:163 TestAnalyticsRecord_GetLineValues`, `:188 TestLatency_GetFieldNames`, `:203 TestLatency_GetLineValues` — companion ordering tests.
-- `analytics/analytics_test.go:15 TestAnalyticsRecord_IsGraphRecord`, `:39 TestAnalyticsRecord_RemoveIgnoredFields`, `:100 TestAnalyticsRecord_Base` — accessor coverage.
+- `analytics/analytics_test.go:15 TestAnalyticsRecord_IsGraphRecord`, `:100 TestAnalyticsRecord_Base` — accessor coverage.
+- Field-removal behavior is owned by **SW-REQ-076**, including `analytics/analytics_test.go:TestAnalyticsRecord_RemoveIgnoredFields`.
 
 ## Open questions
 - `Latency.GetFieldNames` returns three entries including `Latency.Gateway` but `NetworkStats.GetLineValues` only emits four values (OpenConnections, ClosedConnection, BytesIn, BytesOut). The asymmetry is intentional (`Latency` has a gateway field, others do not) but any future addition to `NetworkStats` requires touching both lists in tandem.
