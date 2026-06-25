@@ -1,0 +1,46 @@
+id: per_backend_privacy_transform_applied
+name: Per-backend privacy transform applied
+category: domain
+status: active
+summary: Backend output shall reflect the per-pump privacy transforms applied by the core dispatch path.
+description: |-
+  Pumps that emit raw request or response payloads rely on the core dispatch
+  path to apply per-backend privacy transforms before WriteData is called. A
+  backend requirement that writes sensitive payload fields shall prove that the
+  configured per-pump omit/detail transform reaches the concrete backend
+  output, not only an intermediate in-memory record.
+applies_when:
+  description: a backend output includes raw_request, raw_response, or equivalent sensitive payload fields
+  trigger_phrases:
+    - raw_request
+    - raw_response
+    - omit_detailed_recording
+    - SetOmitDetailedRecording
+    - sensitive payload
+example_req: |-
+  When Syslog has omit_detailed_recording enabled, filterData shall clear
+  RawRequest and RawResponse before Syslog WriteData formats the record, and
+  the emitted syslog message shall not contain the original payload bytes.
+if_missing: |-
+  A pump can satisfy a generic filtering test while still leaking raw payloads
+  at its backend boundary because it does not expose the shared common
+  configuration surface or bypasses the filtered record.
+recommended_evidence:
+  - kind: nominal
+    note: End-to-end backend-output test enables the privacy setting and asserts emitted records contain redacted/empty payload fields.
+  - kind: negative
+    note: The same witness uses distinct secret payload bytes and fails if either original payload reaches backend output.
+  - kind: review
+    note: Review maps the backend output contract to the shared per-pump configuration and any remaining global/per-pump KnownIssue.
+frameworks:
+  - id: CWE
+    refs:
+      - CWE-200
+      - CWE-532
+related_classes:
+  - id: secrets_not_logged
+    relationship: specializes
+  - id: output_cardinality_bounded
+    relationship: complements
+  - id: config_schema_strict
+    relationship: complements

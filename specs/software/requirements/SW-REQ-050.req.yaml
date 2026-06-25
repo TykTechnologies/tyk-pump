@@ -5,7 +5,7 @@ priority: shall
 category: functional
 req_type: guarantee
 fretish: when transport_tcp pumps_http_syslog shall always satisfy tcp_writer_used
-description: The Syslog pump shall, on each purge, write one legacy map[...] syslog message per analytics record, escaping LF characters in raw_request and raw_response as backslash-n sequences so each analytics record remains a single syslog entry, using the operator-configured Transport (udp/tcp/tls), NetworkAddr, LogLevel (syslog severity 0-7), and Tag.
+description: The Syslog pump shall, on each purge, write one legacy map[...] syslog message per analytics record, escaping LF characters in raw_request and raw_response as backslash-n sequences so each analytics record remains a single syslog entry, using the operator-configured Transport (udp/tcp/tls), NetworkAddr, LogLevel (syslog severity 0-7), and Tag. When per-pump omit_detailed_recording is enabled, the Syslog output shall reflect the core privacy transform and must not contain the original raw_request or raw_response payload bytes.
 formalization_strategy: fretish
 informal_verification:
     method: ""
@@ -19,6 +19,7 @@ variables: []
 traces:
     satisfies:
         - SYS-REQ-004
+        - SYS-REQ-015
     reviewed_at: "2026-06-02T13:56:59.732089Z"
     reviewed_by: human:buger
     reviewed_fingerprint: sha256:88885107c8ee0a24d609c5c2e346f5e89d16917cc7e368c42f8da2187ea20b91
@@ -29,15 +30,15 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-23T09:15:56Z"
-        comment: 'Product-fix-history hardening for TT-15532: corrected stale JSON-over-syslog wording to the shipped legacy map[...] syslog format with raw_request/raw_response LF escaping; FRETish remains transport-focused while encoding/cardinality obligations carry the fragmentation contract.'
-        fingerprint: sha256:0ad0ad4f559593b05fdd28753e8a6b3855f3a39d6486b51920cc0dbbc5a3f617
+        reviewed_at: "2026-06-25T19:04:15Z"
+        comment: '34e1a2c hardening: Syslog backend output now explicitly honors per-pump omit_detailed_recording via filterData; residual syslog operational debt remains KI-linked.'
+        fingerprint: sha256:f3e87a364dc3eacaad1c3a44bbce4b7d7e3be5b35ca3daa6586b1fd8ba0cf3f8
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:36:19Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-23T09:15:56Z"
+    last_modified_at: "2026-06-25T19:04:15Z"
 obligation_checklist:
     - config_schema_strict
     - encoding_safety
@@ -47,6 +48,7 @@ obligation_checklist:
     - malformed_recovers_or_errors_loudly
     - nominal
     - output_cardinality_bounded
+    - per_backend_privacy_transform_applied
     - process_exit_on_recoverable
 obligation_deferrals:
     - obligation_class: config_schema_strict
@@ -103,4 +105,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-23T09:15:00Z comment="Phase L2: aggressive formalization — encodes per-component primary decision (instrumentation gate, codec select, SSL/SASL, dataset_empty, default-path, file-append, retry-status, log-level, flush, batch, transport, dedup); variables in <component>.vars.yaml; user directive: force MCDC witnesses to drive verifying tests.")'
+          changed_by: human:buger
+        - date: "2026-06-25T19:04:15Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-23T09:15:56Z comment="Product-fix-history hardening for TT-15532: corrected stale JSON-over-syslog wording to the shipped legacy map[...] syslog format with raw_request/raw_response LF escaping; FRETish remains transport-focused while encoding/cardinality obligations carry the fragmentation contract.")'
           changed_by: human:buger

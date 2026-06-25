@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"net"
 	"os"
 	"os/signal"
 	"sync"
@@ -261,6 +262,80 @@ func TestOmitDetailsFilterData(t *testing.T) {
 	if record.RawRequest != "" || record.RawResponse != "" {
 		t.Fatal("raw_request  and raw_response should be empty")
 	}
+}
+
+// Verifies: SYS-REQ-015
+// Verifies: SW-REQ-050
+// SYS-REQ-015:nominal:negative
+// SW-REQ-050:per_backend_privacy_transform_applied:nominal
+// SW-REQ-050:per_backend_privacy_transform_applied:negative
+// SW-REQ-050:per_backend_privacy_transform_applied:review
+func TestSyslogPump_OmitDetailedRecordingRedactsForwardedPayloads(t *testing.T) {
+	addr, messages := mockMainSyslogServer(t)
+	syslogPump := &pumps.SyslogPump{}
+	require.NoError(t, syslogPump.Init(map[string]interface{}{
+		"transport":    "udp",
+		"network_addr": addr,
+		"log_level":    6,
+		"tag":          "omit-detail-test",
+	}))
+	syslogPump.SetOmitDetailedRecording(true)
+
+	const rawRequestSecret = "Authorization: Bearer syslog-raw-request-secret"
+	const rawResponseSecret = "Set-Cookie: session=syslog-raw-response-secret"
+	keys := []interface{}{
+		analytics.AnalyticsRecord{
+			APIID:        "api-syslog",
+			Method:       "POST",
+			Path:         "/private",
+			ResponseCode: 200,
+			TimeStamp:    time.Now(),
+			RawRequest:   rawRequestSecret,
+			RawResponse:  rawResponseSecret,
+		},
+	}
+
+	filteredKeys := filterData(syslogPump, keys)
+	require.Len(t, filteredKeys, 1)
+	filteredRecord := filteredKeys[0].(analytics.AnalyticsRecord)
+	require.Empty(t, filteredRecord.RawRequest)
+	require.Empty(t, filteredRecord.RawResponse)
+
+	require.NoError(t, syslogPump.WriteData(context.Background(), filteredKeys))
+
+	select {
+	case msg := <-messages:
+		assert.Contains(t, msg, "raw_request:")
+		assert.Contains(t, msg, "raw_response:")
+		assert.NotContains(t, msg, rawRequestSecret)
+		assert.NotContains(t, msg, rawResponseSecret)
+	case <-time.After(2 * time.Second):
+		t.Fatal("timeout waiting for syslog message")
+	}
+}
+
+func mockMainSyslogServer(t *testing.T) (string, chan string) {
+	t.Helper()
+	addr, err := net.ResolveUDPAddr("udp", "127.0.0.1:0")
+	require.NoError(t, err)
+
+	conn, err := net.ListenUDP("udp", addr)
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = conn.Close() })
+
+	messages := make(chan string, 10)
+	go func() {
+		buffer := make([]byte, 4096)
+		for {
+			n, _, err := conn.ReadFromUDP(buffer)
+			if err != nil {
+				return
+			}
+			messages <- string(buffer[:n])
+		}
+	}()
+
+	return conn.LocalAddr().String(), messages
 }
 
 // Verifies: SW-REQ-001

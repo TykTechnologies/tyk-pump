@@ -1,0 +1,98 @@
+schema_version: 1
+id: DEFECT-35
+title: Syslog pump did not inherit omit-detailed-recording configuration
+introduced_in: unknown
+description: |
+  Commit 34e1a2c fixed the Syslog pump's omit_detailed_recording behavior by
+  embedding CommonPumpConfig in SyslogPump. Before the fix, syslog did not
+  expose the shared SetOmitDetailedRecording/GetOmitDetailedRecording surface
+  used by main.filterData, so a syslog backend could receive raw_request and
+  raw_response payload bytes even when the operator enabled per-pump
+  omit_detailed_recording.
+
+  Current code embeds CommonPumpConfig, main.filterData clears RawRequest and
+  RawResponse for the syslog pump when the per-pump flag is set, and the syslog
+  backend output contains only the redacted empty fields rather than the
+  original payload bytes.
+source:
+    type: upstream_commit
+    repo: TykTechnologies/tyk-pump
+    commit: 34e1a2c
+    reference: omit_detailed_recording_syslog
+    date: "2020-08-19"
+classification:
+    surface: security_behavior
+    defect_class: backend_privacy_transform_not_applied
+    severity: high
+    security_relevant: true
+root_cause:
+    missing_requirement: true
+    missing_test_partition: true
+    missing_mcdc_variable: false
+    notes: |
+      SYS-REQ-015 covered the generic privacy transform and SW-REQ-016 covered
+      common pump setters/getters, but SW-REQ-050 did not state that the syslog
+      backend output must reflect per-pump omit-detailed-recording. Existing
+      syslog tests covered output shape and newline escaping, not privacy
+      redaction at the backend boundary.
+impact_analysis:
+    affected_requirements:
+        - SYS-REQ-015
+        - SW-REQ-050
+    affected_code:
+        - main.go
+        - main_test.go
+        - pumps/syslog.go
+        - pumps/common.go
+hardening:
+    new_requirements: []
+    strengthened_requirements:
+        - SW-REQ-050
+        - SYS-REQ-015
+    added_obligations:
+        - requirement: SW-REQ-050
+          obligation_class: per_backend_privacy_transform_applied
+    regression_tests:
+        - main_test.go:TestSyslogPump_OmitDetailedRecordingRedactsForwardedPayloads
+    proposed_classes:
+        - per_backend_privacy_transform_applied
+disposition:
+    status: covered_by_requirement
+    requirements:
+        - SYS-REQ-015
+        - SW-REQ-050
+    known_issues:
+        - systemconfig-omitdetailedrecording-unused
+        - mapstructure-decode-silently-drops-unknown-keys
+        - pump-writedata-swallows-per-batch-errors
+        - pump-no-timeout-can-block-purge-cycle
+        - pumps-logfatal-on-config-decode
+        - syslog-init-logfatal-on-invalid-transport
+        - syslog-initwriter-logfatal-on-dial-error
+    evidence:
+        verified_by:
+            - main_test.go:TestSyslogPump_OmitDetailedRecordingRedactsForwardedPayloads
+            - main_test.go:TestOmitDetailsFilterData
+        obligation_evidence:
+            - requirement: SW-REQ-050
+              obligation_class: per_backend_privacy_transform_applied
+              evidence_type: nominal
+            - requirement: SW-REQ-050
+              obligation_class: per_backend_privacy_transform_applied
+              evidence_type: negative
+            - requirement: SW-REQ-050
+              obligation_class: per_backend_privacy_transform_applied
+              evidence_type: review
+            - requirement: SYS-REQ-015
+              obligation_class: nominal
+              evidence_type: negative
+    reviewer: agent:codex
+    reviewed_at: "2026-06-25T19:10:00Z"
+history:
+    - at: "2026-06-25T19:10:00Z"
+      by: agent:codex
+      action: created
+      detail: |
+        Recorded the 2020 syslog omit_detailed_recording inheritance fix as
+        covered by SW-REQ-050 backend-output privacy evidence. The top-level
+        global omit_detailed_recording field remains a separate KnownIssue.
