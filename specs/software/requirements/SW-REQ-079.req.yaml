@@ -1,0 +1,60 @@
+id: SW-REQ-079
+version: 1
+status: approved
+priority: shall
+category: functional
+req_type: guarantee
+fretish: when track_all_paths_enabled | record_track_path_enabled pumps_prometheus shall always satisfy path_label_preserved
+description: When Prometheus path tracking is globally enabled, or an individual analytics record opts into path tracking, the Prometheus pump shall preserve that record's raw request path in the emitted path label.
+formalization_strategy: fretish
+informal_verification:
+    method: ""
+    evidence: ""
+    verified: false
+parent: SYS-REQ-004
+component: pumps-prometheus
+rationale: 'Software decomposition of SYS-REQ-004/SW-REQ-024 metric exposition: the open tracking-path gate preserves route-level path labels when the operator or record explicitly opts into path tracking.'
+tags: []
+variables:
+    - track_all_paths_enabled
+    - record_track_path_enabled
+    - path_label_preserved
+traces:
+    satisfies:
+        - SYS-REQ-004
+    reviewed_at: "2026-06-25T13:45:29.778003Z"
+    reviewed_by: human:buger
+    reviewed_fingerprint: sha256:689d0c4f9d608552282911756be3002439028f1a0c2cf4b20a36fc37d1c8482c
+verification:
+    assurance_level: B
+    formalization_status: valid
+    review:
+        status: approved
+        reviewer: human:buger
+        role: software_engineer
+        reviewed_at: "2026-06-25T13:45:15Z"
+        comment: 'TT-9873 hardening: reviewed Prometheus path-label tracking requirements, MC/DC witnesses, WriteData evidence, and DEFECT-9 closure.'
+        fingerprint: sha256:d9359b275b2cf0302438a4cee8a2994087692e8d00ad038a3d13ed51458dcbe8
+        ai_generated: false
+history:
+    created_by: human:buger
+    created_at: "2026-06-25T13:39:00Z"
+    last_modified_by: human:buger
+    last_modified_at: "2026-06-25T13:45:15Z"
+obligation_checklist:
+    - metric_path_label_tracking_policy
+stakeholder:
+    acceptance_criteria:
+        - id: AC-001
+          text: With TrackAllPaths=true and record TrackPath=false, WriteData preserves the raw request path in the emitted Prometheus path label.
+          verification_method: test
+        - id: AC-002
+          text: With TrackAllPaths=false and record TrackPath=true, WriteData preserves the raw request path in the emitted Prometheus path label.
+          verification_method: test
+lifecycle:
+    change_history:
+        - date: "2026-06-25T13:45:08Z"
+          from: draft
+          to: review
+          reason: TT-9873 Prometheus path-label tracking policy requirements ready for branch review
+          changed_by: human:buger

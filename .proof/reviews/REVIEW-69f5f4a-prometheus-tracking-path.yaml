@@ -1,0 +1,7 @@
+id: REVIEW-69f5f4a-prometheus-tracking-path
+kind: design_review
+reviewer: agent:codex
+reviewed_at: "2026-06-25T13:39:00Z"
+subject: upstream:69f5f4a/SW-REQ-024+SW-REQ-078+SW-REQ-079
+decision: approved
+comment: 'Commit-level assurance review for TT-9873: the historical change added Prometheus path-label tracking gates so untracked records emit path="unknown" while TrackAllPaths or per-record TrackPath preserves raw paths. Before this slice, proof had broad Prometheus metric evidence and two WriteData path tests but no first-class requirement/obligation for the tracking policy and no WriteData-level TrackAllPaths preservation witness. This review approves the proof hardening: SW-REQ-078 models the closed gate, SW-REQ-079 models the open gate, metric_path_label_tracking_policy records the domain obligation, and DEFECT-9 captures the historical fix. Broad high-cardinality metric debt remains accepted under metrics-label-cardinality-unbounded.'

@@ -25,6 +25,11 @@ label-combination before pushing a single observation. This is documented
 inline as experimental but is a useful escape hatch for high-cardinality
 deployments.
 
+Path labels are governed by the tracking-path policy split into
+**SW-REQ-078** and **SW-REQ-079**: by default raw paths collapse to
+`unknown`, while either global `track_all_paths` or per-record `TrackPath`
+preserves the raw path for route-level metrics.
+
 Custom metrics let operators define their own counters/histograms with
 arbitrary labels from a known whitelist (mapping at
 `prometheus.go:442-467`). API-key obfuscation (`ObfuscateAPIKeys` +
@@ -56,7 +61,8 @@ Failure modes addressed:
 - `pumps/prometheus.go:304-336` — `processMetric` handles enabled, MCP-only,
   counter, and histogram (with special-case `tyk_latency` 3-type expansion).
 - `pumps/prometheus.go:339-373` — `WriteData` iterates records and calls
-  `Expose()` per metric.
+  `Expose()` per metric; also applies the tracking-path gate before metric
+  processing.
 - `pumps/prometheus.go:378-413` — `InitVec` registers vecs with the
   prometheus registry.
 - `pumps/prometheus.go:438-487` — `GetLabelsValues` projects records to
@@ -67,6 +73,11 @@ Failure modes addressed:
 ## Evidence
 - `pumps/prometheus_test.go` covers metric initialisation, label projection,
   obfuscation, MCP handling, and aggregate observations.
+- `pumps/udp_file_pumps_mcdc_test.go`
+  `TestPrometheusPump_WriteData_NoTracking`,
+  `TestPrometheusPump_WriteData_TrackedRecord`, and
+  `TestPrometheusPump_WriteData_TrackAllPaths` drive the path-label policy at
+  the `WriteData` boundary.
 
 ## Open questions
 - `Init` calls `http.Handle(...)` on the default mux and `http.ListenAndServe`

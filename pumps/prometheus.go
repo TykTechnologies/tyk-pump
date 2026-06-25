@@ -335,7 +335,7 @@ func (p *PrometheusPump) processMetric(metric *PrometheusMetric, record analytic
 	}
 }
 
-// reqproof:implements SW-REQ-024
+// reqproof:implements SW-REQ-024,SW-REQ-078,SW-REQ-079
 func (p *PrometheusPump) WriteData(ctx context.Context, data []interface{}) error {
 	p.log.Debug("Attempting to write ", len(data), " records...")
 

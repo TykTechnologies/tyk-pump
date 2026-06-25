@@ -6,9 +6,11 @@ description: |
     time_stamp, or raw request fields. DogStatsD default/request tags include
     path and may include oauth_id. Prometheus exposes labels including path,
     api_key, and key, and stores aggregate metrics keyed by joined label values.
-    A large stream of unique paths, keys, or configured tag values can therefore
-    grow downstream metric cardinality and the Prometheus in-process aggregate
-    map without an explicit bound.
+    TT-9873's default Prometheus path collapse is covered by SW-REQ-078, and
+    its explicit opt-in preservation branches are covered by SW-REQ-079, but a
+    large stream of intentionally tracked paths, keys, or configured tag values
+    can still grow downstream metric cardinality and the Prometheus in-process
+    aggregate map without an explicit budget.
 affected_requirements:
     - SW-REQ-023
     - SW-REQ-024

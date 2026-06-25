@@ -1,0 +1,135 @@
+schema_version: 1
+id: DEFECT-9
+title: Prometheus path labels did not have a first-class tracking-gate contract
+introduced_in: 69f5f4a
+description: |
+  TT-9873 (commit 69f5f4a) fixed Prometheus path-label tracking by adding the
+  `track_all_paths` global option and collapsing untracked analytics record
+  paths to the sentinel "unknown" unless either the global option or the
+  per-record TrackPath flag is enabled.
+
+  Before proof hardening, the repository had broad Prometheus metric tests and
+  two current WriteData boundary tests, but the requirement model still treated
+  this as part of generic metric exposition. It did not carry a dedicated
+  path-label tracking obligation, and the global TrackAllPaths preservation
+  branch was not asserted through WriteData/registry output.
+source:
+  type: upstream_commit
+  repo: TykTechnologies/tyk-pump
+  commit: 69f5f4a
+  reference: TT-9873
+  date: "2023-08-23"
+classification:
+  surface: runtime_code
+  defect_class: prometheus_metric_label_policy_gap
+  severity: medium
+  security_relevant: false
+root_cause:
+  missing_requirement: true
+  missing_test_partition: true
+  missing_mcdc_variable: true
+  notes: |
+    SW-REQ-024 described Prometheus metric exposition but did not specify the
+    path-label tracking gate. The historical table test also repeated the path
+    rewrite locally instead of proving WriteData performed it. Current proof
+    now models both closed and open gate behavior with dedicated variables and
+    WriteData boundary evidence.
+impact_analysis:
+  affected_requirements:
+    - SW-REQ-024
+    - SW-REQ-078
+    - SW-REQ-079
+  affected_code:
+    - pumps/prometheus.go
+    - pumps/prometheus_test.go
+    - pumps/udp_file_pumps_mcdc_test.go
+hardening:
+  new_requirements:
+    - SW-REQ-078
+    - SW-REQ-079
+  strengthened_requirements:
+    - SW-REQ-024
+  added_obligations:
+    - requirement: SW-REQ-078
+      obligation_class: metric_path_label_tracking_policy
+    - requirement: SW-REQ-079
+      obligation_class: metric_path_label_tracking_policy
+  regression_tests:
+    - pumps/udp_file_pumps_mcdc_test.go:TestPrometheusPump_WriteData_NoTracking
+    - pumps/udp_file_pumps_mcdc_test.go:TestPrometheusPump_WriteData_TrackedRecord
+    - pumps/udp_file_pumps_mcdc_test.go:TestPrometheusPump_WriteData_TrackAllPaths
+    - pumps/udp_file_pumps_mcdc_test.go:TestPrometheusPump_WriteData_AllPathTrackingGates
+  mcdc_witnesses:
+    - requirement: SW-REQ-078
+      witness: "path_label_unknown=T, record_track_path_enabled=F, track_all_paths_enabled=F => TRUE"
+    - requirement: SW-REQ-079
+      witness: "path_label_preserved=T, record_track_path_enabled=T, track_all_paths_enabled=T => TRUE"
+  proposed_classes:
+    - metric_path_label_tracking_policy
+disposition:
+  status: covered_by_requirement
+  requirements:
+    - SW-REQ-024
+    - SW-REQ-078
+    - SW-REQ-079
+  known_issues:
+    - mapstructure-decode-silently-drops-unknown-keys
+    - metrics-label-cardinality-unbounded
+    - no-panic-recovery-in-exec-pump-writing
+    - prometheus-init-mutates-default-mux
+    - prometheus-metric-maps-race
+    - prometheus-metrics-auth-not-enforced
+    - pumps-logfatal-on-config-decode
+  evidence:
+    verified_by:
+      - pumps/udp_file_pumps_mcdc_test.go:TestPrometheusPump_WriteData_NoTracking
+      - pumps/udp_file_pumps_mcdc_test.go:TestPrometheusPump_WriteData_TrackedRecord
+      - pumps/udp_file_pumps_mcdc_test.go:TestPrometheusPump_WriteData_TrackAllPaths
+      - pumps/udp_file_pumps_mcdc_test.go:TestPrometheusPump_WriteData_AllPathTrackingGates
+    requirement_mcdc_witnesses:
+      - requirement: SW-REQ-078
+        witness: "path_label_unknown=F, record_track_path_enabled=F, track_all_paths_enabled=F => FALSE (violation row: tracking gates closed but path is not collapsed; guarded by unknown/NotContains assertions)"
+      - requirement: SW-REQ-078
+        witness: "path_label_unknown=F, record_track_path_enabled=F, track_all_paths_enabled=T => TRUE (global tracking open, so unknown collapse is not required)"
+      - requirement: SW-REQ-078
+        witness: "path_label_unknown=F, record_track_path_enabled=T, track_all_paths_enabled=F => TRUE (record tracking open, so unknown collapse is not required)"
+      - requirement: SW-REQ-078
+        witness: "path_label_unknown=T, record_track_path_enabled=F, track_all_paths_enabled=F => TRUE (tracking gates closed, so the path label is unknown)"
+      - requirement: SW-REQ-079
+        witness: "path_label_preserved=F, record_track_path_enabled=F, track_all_paths_enabled=F => TRUE (tracking gates closed, so preservation is not required)"
+      - requirement: SW-REQ-079
+        witness: "path_label_preserved=F, record_track_path_enabled=F, track_all_paths_enabled=T => FALSE (violation row: global tracking open but path not preserved)"
+      - requirement: SW-REQ-079
+        witness: "path_label_preserved=F, record_track_path_enabled=T, track_all_paths_enabled=F => FALSE (violation row: record tracking open but path not preserved)"
+      - requirement: SW-REQ-079
+        witness: "path_label_preserved=F, record_track_path_enabled=T, track_all_paths_enabled=T => FALSE (violation row: both tracking gates open but path not preserved)"
+      - requirement: SW-REQ-079
+        witness: "path_label_preserved=T, record_track_path_enabled=T, track_all_paths_enabled=T => TRUE (both tracking gates open and the path label is preserved)"
+    obligation_evidence:
+      - requirement: SW-REQ-078
+        obligation_class: metric_path_label_tracking_policy
+        evidence_type: nominal
+      - requirement: SW-REQ-078
+        obligation_class: metric_path_label_tracking_policy
+        evidence_type: negative
+      - requirement: SW-REQ-079
+        obligation_class: metric_path_label_tracking_policy
+        evidence_type: nominal
+      - requirement: SW-REQ-024
+        obligation_class: output_cardinality_bounded
+        evidence_type: accepted_ki_debt
+        tracking: metrics-label-cardinality-unbounded
+  reviewer: agent:codex
+  reviewed_at: "2026-06-25T13:39:00Z"
+history:
+  - at: "2026-06-25T13:39:00Z"
+    by: agent:codex
+    action: created
+  - at: "2026-06-25T13:39:00Z"
+    by: agent:codex
+    action: hardened
+    detail: |
+      Added SW-REQ-078 and SW-REQ-079 for the closed and open Prometheus path
+      label gates, a local domain obligation, and missing WriteData registry
+      evidence for TrackAllPaths=true. Residual broad label-cardinality risk
+      remains KI-backed debt rather than claimed fixed.

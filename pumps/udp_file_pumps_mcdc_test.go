@@ -1479,6 +1479,13 @@ func TestPrometheusPump_WriteData_ManyMetrics(t *testing.T) {
 // counterVec is the source of truth.
 //
 // Verifies: SW-REQ-024
+// Verifies: SW-REQ-078
+// Verifies: SW-REQ-079
+// SW-REQ-078:metric_path_label_tracking_policy:nominal
+// SW-REQ-078:metric_path_label_tracking_policy:negative
+// MCDC SW-REQ-078: path_label_unknown=F, record_track_path_enabled=F, track_all_paths_enabled=F => FALSE
+// MCDC SW-REQ-078: path_label_unknown=T, record_track_path_enabled=F, track_all_paths_enabled=F => TRUE
+// MCDC SW-REQ-079: path_label_preserved=F, record_track_path_enabled=F, track_all_paths_enabled=F => TRUE
 func TestPrometheusPump_WriteData_NoTracking(t *testing.T) {
 	metric := &PrometheusMetric{
 		Name:       "test_no_tracking_counter",
@@ -1508,6 +1515,11 @@ func TestPrometheusPump_WriteData_NoTracking(t *testing.T) {
 // `record.TrackPath` true branch — Path is preserved (not replaced).
 //
 // Verifies: SW-REQ-024
+// Verifies: SW-REQ-078
+// Verifies: SW-REQ-079
+// SW-REQ-079:metric_path_label_tracking_policy:nominal
+// MCDC SW-REQ-078: path_label_unknown=F, record_track_path_enabled=T, track_all_paths_enabled=F => TRUE
+// MCDC SW-REQ-079: path_label_preserved=F, record_track_path_enabled=T, track_all_paths_enabled=F => FALSE
 func TestPrometheusPump_WriteData_TrackedRecord(t *testing.T) {
 	metric := &PrometheusMetric{
 		Name:       "test_tracked_record_counter",
@@ -1526,6 +1538,68 @@ func TestPrometheusPump_WriteData_TrackedRecord(t *testing.T) {
 
 	gathered := dumpCounter(t, metric.counterVec)
 	assert.Contains(t, gathered, `path="/keep-me"`)
+}
+
+// TestPrometheusPump_WriteData_TrackAllPaths covers the global
+// `TrackAllPaths` true branch — Path is preserved even when the record does
+// not set TrackPath.
+//
+// Verifies: SW-REQ-024
+// Verifies: SW-REQ-078
+// Verifies: SW-REQ-079
+// SW-REQ-079:metric_path_label_tracking_policy:nominal
+// MCDC SW-REQ-078: path_label_unknown=F, record_track_path_enabled=F, track_all_paths_enabled=T => TRUE
+// MCDC SW-REQ-079: path_label_preserved=F, record_track_path_enabled=F, track_all_paths_enabled=T => FALSE
+func TestPrometheusPump_WriteData_TrackAllPaths(t *testing.T) {
+	metric := &PrometheusMetric{
+		Name:       "test_track_all_paths_counter",
+		Help:       "test",
+		MetricType: counterType,
+		Labels:     []string{"path"},
+	}
+	require.NoError(t, metric.InitVec())
+	defer prometheus.Unregister(metric.counterVec)
+
+	p := newTestPrometheusPump(t)
+	p.conf.TrackAllPaths = true
+	p.allMetrics = []*PrometheusMetric{metric}
+	require.NoError(t, p.WriteData(context.Background(), []interface{}{
+		analytics.AnalyticsRecord{APIID: "x", Path: "/global-keep"},
+	}))
+
+	gathered := dumpCounter(t, metric.counterVec)
+	assert.Contains(t, gathered, `path="/global-keep"`)
+	assert.NotContains(t, gathered, `path="unknown"`)
+}
+
+// TestPrometheusPump_WriteData_AllPathTrackingGates covers the MC/DC row where
+// both the global and per-record path tracking gates are open.
+//
+// Verifies: SW-REQ-024
+// Verifies: SW-REQ-079
+// SW-REQ-079:metric_path_label_tracking_policy:nominal
+// MCDC SW-REQ-079: path_label_preserved=F, record_track_path_enabled=T, track_all_paths_enabled=T => FALSE
+// MCDC SW-REQ-079: path_label_preserved=T, record_track_path_enabled=T, track_all_paths_enabled=T => TRUE
+func TestPrometheusPump_WriteData_AllPathTrackingGates(t *testing.T) {
+	metric := &PrometheusMetric{
+		Name:       "test_all_tracking_gates_counter",
+		Help:       "test",
+		MetricType: counterType,
+		Labels:     []string{"path"},
+	}
+	require.NoError(t, metric.InitVec())
+	defer prometheus.Unregister(metric.counterVec)
+
+	p := newTestPrometheusPump(t)
+	p.conf.TrackAllPaths = true
+	p.allMetrics = []*PrometheusMetric{metric}
+	require.NoError(t, p.WriteData(context.Background(), []interface{}{
+		analytics.AnalyticsRecord{APIID: "x", Path: "/both-keep", TrackPath: true},
+	}))
+
+	gathered := dumpCounter(t, metric.counterVec)
+	assert.Contains(t, gathered, `path="/both-keep"`)
+	assert.NotContains(t, gathered, `path="unknown"`)
 }
 
 // dumpCounter renders a CounterVec's children as a single string of label

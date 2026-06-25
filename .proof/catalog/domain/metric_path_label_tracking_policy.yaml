@@ -1,0 +1,49 @@
+id: metric_path_label_tracking_policy
+name: Metric path label tracking policy
+category: domain
+status: active
+summary: Prometheus path labels shall be emitted only according to the documented global or per-record tracking gate.
+description: |-
+  Metrics backends treat label values as cardinality dimensions. A raw request
+  path label is therefore a data-shaping decision, not a cosmetic field. When a
+  pump exposes path labels it shall prove both halves of the policy: untracked
+  records collapse to a bounded sentinel, and explicitly tracked records keep
+  their path. Tests shall drive the pump boundary that mutates or preserves the
+  emitted label, not only a helper that projects labels after the decision has
+  already been made.
+applies_when:
+  description: a metrics pump emits request path, route, endpoint, or URI values as labels/tags
+  trigger_phrases:
+    - path label
+    - TrackPath
+    - TrackAllPaths
+    - route tag
+    - endpoint label
+    - metrics cardinality
+example_req: |-
+  When global path tracking is disabled and a record does not opt in, the
+  Prometheus path label shall be "unknown"; when global path tracking or the
+  record-level TrackPath flag is enabled, the path label shall preserve the
+  record path.
+if_missing: |-
+  A regression can leak raw per-request paths into metrics despite the operator
+  leaving path tracking disabled, causing high-cardinality metric series and
+  misleading dashboards. The opposite regression can also collapse explicitly
+  tracked paths and make route-level dashboards unusable.
+recommended_evidence:
+  - kind: negative
+    note: Boundary test drives WriteData with TrackAllPaths=false and TrackPath=false, then asserts the exported metric contains path="unknown" and not the raw path.
+  - kind: nominal
+    note: Boundary test drives WriteData with either TrackAllPaths=true or TrackPath=true, then asserts the exported metric preserves the raw path label.
+  - kind: review
+    note: Review maps the global config field and per-record flag to the exact label rewrite point before metrics are incremented.
+frameworks:
+  - id: CWE
+    refs:
+      - CWE-770
+      - CWE-400
+related_classes:
+  - id: output_cardinality_bounded
+    relationship: specializes
+  - id: structured_projection_preserved
+    relationship: complements

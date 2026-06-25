@@ -16,6 +16,22 @@ variables:
       type: bool
       direction: output
       description: True iff the value emitted into the api_key/key Prometheus metric labels masks the raw API key (at most the last ObfuscateAPIKeysLength characters survive; the full raw key is never present) when obfuscation is enabled.
+    - name: track_all_paths_enabled
+      type: bool
+      direction: input
+      description: True when PrometheusConf.TrackAllPaths is enabled, allowing raw analytics paths to be emitted into Prometheus path labels.
+    - name: record_track_path_enabled
+      type: bool
+      direction: input
+      description: True when the analytics record has TrackPath set, allowing that individual record path to be emitted into Prometheus path labels.
+    - name: path_label_unknown
+      type: bool
+      direction: output
+      description: True when the Prometheus path label emitted for an untracked analytics record is the bounded sentinel 'unknown' instead of the raw request path.
+    - name: path_label_preserved
+      type: bool
+      direction: output
+      description: True when the Prometheus path label emitted for an opted-in tracked analytics record preserves the record's raw path value.
 independence:
     declared: true
-    reason: 'Prometheus requirements cover independent metric exposition and optional API-key label masking; the masking guarantee does not alter the exposition liveness variable.'
+    reason: 'Prometheus requirements cover independent metric exposition, optional API-key label masking, and path-label tracking gates; each guarantee has a separate FRETish trigger/output pair.'
