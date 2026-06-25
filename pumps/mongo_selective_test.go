@@ -10,6 +10,7 @@ import (
 	"github.com/TykTechnologies/storage/persistent/model"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"gopkg.in/vmihailenco/msgpack.v2"
 )
 
@@ -105,6 +106,39 @@ func TestMongoSelectivePump_AccumulateSet(t *testing.T) {
 		99,
 		1024,
 	))
+}
+
+// Verifies: SW-REQ-035
+// SW-REQ-035:output_cardinality_bounded:negative
+// SW-REQ-035:boundary:negative
+func TestMongoSelectivePump_AccumulateSet_DropsTCPErrorRecords(t *testing.T) {
+	mPump := MongoSelectivePump{
+		dbConf: &MongoSelectiveConf{
+			MaxInsertBatchSizeBytes: 10 * MiB,
+			MaxDocumentSizeBytes:    10 * MiB,
+		},
+	}
+	mPump.log = log.WithField("prefix", mongoPrefix)
+
+	httpRecord := analytics.AnalyticsRecord{
+		OrgID:        "org-1",
+		APIID:        "api-1",
+		ResponseCode: 200,
+	}
+	tcpErrorRecord := analytics.AnalyticsRecord{
+		OrgID:        "org-1",
+		APIID:        "api-1",
+		ResponseCode: -1,
+	}
+
+	set := mPump.AccumulateSet([]interface{}{tcpErrorRecord, httpRecord}, "z_tyk_analyticz_org-1")
+	require.Len(t, set, 1)
+	require.Len(t, set[0], 1)
+
+	got, ok := set[0][0].(*analytics.AnalyticsRecord)
+	require.True(t, ok)
+	assert.Equal(t, 200, got.ResponseCode)
+	assert.Equal(t, "z_tyk_analyticz_org-1", got.CollectionName)
 }
 
 // Verifies: SW-REQ-092

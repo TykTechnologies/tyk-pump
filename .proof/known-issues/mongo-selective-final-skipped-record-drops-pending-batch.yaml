@@ -4,9 +4,10 @@ description: |
   MongoSelectivePump.AccumulateSet appends the in-progress batch only from the
   per-item accumulate call when that item is marked as the last input item. If
   the final input item is skipped before a normal append path, for example
-  because getItemSizeBytes returns -1 for an oversized RawResponse, accumulate
-  returns early and the pending valid records accumulated from earlier inputs
-  are never flushed into the returned batches.
+  because getItemSizeBytes returns -1 for an oversized RawResponse or
+  processItem excludes a ResponseCode==-1 TCP/error record, accumulate returns
+  early and the pending valid records accumulated from earlier inputs are never
+  flushed into the returned batches.
 
   Example: with MaxDocumentSizeBytes=1024, an empty valid record followed by a
   record with RawResponse="x" returns zero accumulated records. The first record
@@ -36,3 +37,7 @@ history:
       by: agent:codex
       action: edit
       detail: Set origin to 83a16f3, where MongoSelective size-based batching/skipping introduced the last-skipped-item flush gap.
+    - at: "2026-06-25T20:50:00Z"
+      by: agent:codex
+      action: edit
+      detail: Broadened description from final oversize skip to any final processItem/getItemSizeBytes skip, including ResponseCode==-1 TCP/error records found during aa7a88e review.

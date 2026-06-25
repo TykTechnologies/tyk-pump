@@ -1,10 +1,12 @@
 # SW-REQ-035: MongoDB selective pump — per-organisation collection routing
 
 ## Intent
-The `MongoSelectivePump` shall, on each purge, partition incoming non-MCP
+The `MongoSelectivePump` shall, on each purge, partition incoming non-MCP HTTP
 analytics records by `OrgID` and route each org's records into a
 per-organisation collection named `z_tyk_analyticz_<orgid>`. Records with an
-empty `OrgID` shall be dropped. For each org collection the pump shall ensure
+empty `OrgID` shall be dropped, and TCP/error records represented by
+`ResponseCode == -1` shall be excluded from selective Mongo writes. For each
+org collection the pump shall ensure
 baseline indexes (`apiid`, a TTL index on `expireAt` which is skipped for
 CosmosDB, and a composite `logBrowserIndex`) and then insert records in
 size-bounded batches up to `MaxInsertBatchSizeBytes` (default 10 MiB),
@@ -36,7 +38,7 @@ The honest req description above reflects this gap.
 - `pumps/mongo_selective.go:ensureIndexes` — per-org index ensure on
   `apiid`, the TTL `expireAt`, and the composite `logBrowserIndex`.
 - `pumps/mongo_selective.go:processItem`, `:accumulate`,
-  `:AccumulateSet` — size-bounded batching.
+  `:AccumulateSet` — selective HTTP-record filtering and size-bounded batching.
 - `pumps/mongo_selective.go:getItemSizeBytes` — exact document-size estimate
   for SW-REQ-092.
 - `main.go:209` and `pumps/mongo_selective.go:134` — configured pump timeout
@@ -45,6 +47,8 @@ The honest req description above reflects this gap.
 
 ## Evidence
 - `pumps/mongo_selective_test.go` (re-annotated `Verifies: SW-REQ-035`).
+- `pumps/mongo_selective_test.go:TestMongoSelectivePump_AccumulateSet_DropsTCPErrorRecords`
+  proves the historical TCP/error exclusion through the batching path.
 - `pumps/mongo_selective_test.go:TestMongoSelectivePump_GetItemSizeBytes_CountsRawRequestAndResponseOnce`
   covers SW-REQ-092 exact document-size arithmetic.
 - `pumps/mongo_timeout_config_test.go` proves timeout setup order and
@@ -72,5 +76,5 @@ collection-exists shortcut and must attempt foreground baseline indexes unless
 - Per-org collection growth is unbounded; no capped-collection support like
   the standard pump.
 - `AccumulateSet` loses a pending valid batch when the final input item is
-  skipped for size; tracked under
+  skipped for size or TCP/error classification; tracked under
   `mongo-selective-final-skipped-record-drops-pending-batch`.
