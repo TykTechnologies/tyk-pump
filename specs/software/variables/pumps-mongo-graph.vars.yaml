@@ -7,4 +7,4 @@ variables:
     - name: converted_to_graph_record
       type: bool
       direction: output
-      description: True iff the AnalyticsRecord is converted via ToGraphRecord to a populated GraphRecord (false means the record is wrapped without parsing).
+      description: True iff the AnalyticsRecord survives graph-only filtering and is projected via ToGraphRecord into an observable GraphRecord; false means no populated GraphRecord is observed for that input record.

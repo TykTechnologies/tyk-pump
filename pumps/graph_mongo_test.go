@@ -28,9 +28,9 @@ import (
 // MCDC SW-REQ-037: is_graph_record=T, converted_to_graph_record=T => TRUE
 // (The "all records written" case below uses GraphQLStats.IsGraphQL=true so
 // records are converted via ToGraphRecord — drives T/T=TRUE. Sibling cases
-// with IsGraphQL=false drive the wrap-without-parse skip arm — F/F=TRUE.
-// The KI graph-mongo-detected-connection-failure case below exercises the
-// is_graph_record=T but conversion-failed pair — T/F=FALSE.)
+// with IsGraphQL=false are filtered by graph-only accumulation — F/F=TRUE.
+// The T/F row is the requirement-violation row for the implication: a
+// GraphQLStats graph input must not disappear without an observable GraphRecord.)
 func TestGraphMongoPump_WriteData(t *testing.T) {
 	conf := defaultConf(t)
 	conf.CollectionName = uniqueCollection(t)
