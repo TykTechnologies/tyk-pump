@@ -1,0 +1,44 @@
+id: wire_format_suffix_dispatch
+name: Wire-format suffix dispatch
+category: domain
+status: active
+summary: Every supported wire-format suffix shall be applied to every declared analytics queue key before records are consumed.
+description: |-
+  Queue-backed serializer migrations often keep the legacy wire format on the
+  existing key and add a new format by suffixing that key. Consumers must drain
+  the Cartesian product of declared queue keys and supported serializer suffixes.
+  Draining only the base key, only one shard, or only one suffix silently leaves
+  valid records behind in temporal storage.
+applies_when:
+  description: a consumer selects a deserializer by queue-key suffix or another out-of-band wire-format marker
+  trigger_phrases:
+    - serializer suffix
+    - wire format suffix
+    - protobuf key
+    - msgpack key
+    - analytics key
+    - shard key
+example_req: |-
+  On each purge cycle, the pump reads the legacy analytics key and every
+  supported shard key with every registered serializer suffix before dispatching
+  decoded records.
+if_missing: |-
+  A gateway can successfully publish records to a supported key/format
+  combination that the pump never polls, causing unbounded temporal-storage
+  growth and dropped analytics after expiry.
+recommended_evidence:
+  - kind: nominal
+    note: Test or source-level witness proves the purge loop combines every declared key with every registered serializer suffix before reading.
+  - kind: negative
+    note: Regression witness would fail if a serializer suffix is omitted, the shard loop is removed, or consumption reverts to a single hard-coded codec.
+  - kind: review
+    note: Review names the key family, suffix family, and dispatch call that receives the matching serializer.
+frameworks:
+  - id: CWE
+    refs:
+      - CWE-703
+related_classes:
+  - id: snapshot_wire_format_compatible
+    relationship: complements
+  - id: support_matrix_enforced
+    relationship: complements

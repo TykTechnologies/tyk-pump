@@ -62,6 +62,7 @@ obligation_checklist:
     - per_pump_circuit_breaker
     - rate_limit_respected
     - secrets_not_logged
+    - wire_format_suffix_dispatch
 obligation_deferrals:
     - obligation_class: cascade_circuit_breaker
       reason: Required cascade circuit-breaker evidence is parked because the per-pump circuit breaker gap is tracked by this KI.
