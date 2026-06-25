@@ -43,23 +43,36 @@ func (d dummyObject) TableName() string {
 
 // Verifies: SW-REQ-059
 // Verifies: SW-REQ-084
+// Verifies: SW-REQ-096
 // SW-REQ-059:output_cardinality_bounded:nominal
 // SW-REQ-059:output_cardinality_bounded:boundary
 // SW-REQ-059:nominal:nominal
 // SW-REQ-084:routing_target_consistent:nominal
 // SW-REQ-084:routing_target_consistent:boundary
+// SW-REQ-096:aggregate_dimension_retention:nominal
+// SW-REQ-096:aggregate_dimension_retention:negative
 // MCDC SW-REQ-059: org_id_empty=F, write_skipped=F => TRUE
 // MCDC SW-REQ-059: org_id_empty=T, write_skipped=F => FALSE
 // MCDC SW-REQ-059: org_id_empty=T, write_skipped=T => TRUE
 // MCDC SW-REQ-084: mixed_collection_average_update_present=F, aggregate_update_collection_identity_preserved=F => TRUE
 // MCDC SW-REQ-084: mixed_collection_average_update_present=T, aggregate_update_collection_identity_preserved=F => FALSE
 // MCDC SW-REQ-084: mixed_collection_average_update_present=T, aggregate_update_collection_identity_preserved=T => TRUE
+// MCDC SW-REQ-096: ignore_aggregation_configured=F, mixed_collection_dimension_present=T, ignored_dimension_retained=F => TRUE
+// MCDC SW-REQ-096: ignore_aggregation_configured=T, mixed_collection_dimension_present=F, ignored_dimension_retained=F => TRUE
+// MCDC SW-REQ-096: ignore_aggregation_configured=T, mixed_collection_dimension_present=T, ignored_dimension_retained=F => FALSE
+// MCDC SW-REQ-096: ignore_aggregation_configured=T, mixed_collection_dimension_present=T, ignored_dimension_retained=T => TRUE
 //
 // org_id_empty=F (records carry non-empty OrgID), write_skipped=F (the upsert proceeds —
 // non-trigger arm, vacuous true). The org_id_empty=T/write_skipped=T arm is exercised by
 // TestDoAggregatedWriting_OrgIDEmpty (where empty-OrgID records trigger DoAggregatedWriting
 // to return early without write). The T/F regression scenario is guarded by the early-return
 // in DoAggregatedWriting.
+//
+// For SW-REQ-096, pmp1 has ignore_aggregations=["apikeys"], pmp2 contributes
+// apikey2 to the mixed collection, then pmp1 writes again. The final assertion
+// that apikey2 remains present witnesses the TRUE row and catches the historical
+// double-discard FALSE row. The initial pmp1 write also witnesses the vacuous
+// TRUE row where no mixed-collection API-key dimension exists yet.
 func TestDoAggregatedWritingWithIgnoredAggregations(t *testing.T) {
 	uri := testMongoURI(t)
 	cfgPump1 := make(map[string]interface{})
@@ -168,6 +181,9 @@ func TestDoAggregatedWritingWithIgnoredAggregations(t *testing.T) {
 				assert.NotNil(t, val)
 				assert.Equal(t, 2, val.Hits)
 			}
+			require.Len(t, res.Lists.APIKeys, 1)
+			assert.Equal(t, "apikey2", res.Lists.APIKeys[0].Identifier)
+			assert.Equal(t, 2, res.Lists.APIKeys[0].Hits)
 		})
 	}
 }

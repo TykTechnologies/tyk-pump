@@ -341,7 +341,7 @@ func (m *MongoAggregatePump) WriteData(ctx context.Context, data []interface{}) 
 	return nil
 }
 
-// reqproof:implements SW-REQ-059,SW-REQ-060,SW-REQ-084
+// reqproof:implements SW-REQ-059,SW-REQ-060,SW-REQ-084,SW-REQ-096
 func (m *MongoAggregatePump) DoAggregatedWriting(ctx context.Context, filteredData *analytics.AnalyticsRecordAggregate, mixed bool) error {
 	filteredData.Mixed = mixed
 	indexCreateErr := m.ensureIndexes(filteredData.TableName())

@@ -85,6 +85,18 @@ variables:
       type: bool
       direction: output
       description: True iff the second derived-average upsert uses the same mixed/per-org collection identity selected for the first aggregate upsert.
+    - name: ignore_aggregation_configured
+      type: bool
+      direction: input
+      description: True when IgnoreAggregationsList is non-empty for a MongoAggregate writer, causing selected aggregate dimensions to be omitted from that writer's incoming update document.
+    - name: mixed_collection_dimension_present
+      type: bool
+      direction: input
+      description: True when the shared mixed collection already contains a dimension counter map, such as lists.apikeys, contributed by a non-ignoring writer or earlier batch.
+    - name: ignored_dimension_retained
+      type: bool
+      direction: output
+      description: True iff a later MongoAggregate write with ignore_aggregations configured preserves the existing mixed-collection dimension counter map instead of deleting or overwriting it.
 independence:
     declared: true
-    reason: 'Mongo aggregate requirements cover independent behaviors: aggregation window selection, self-heal halving, empty-org skip, two-step upsert, tag-list alerting, and index-skip policy.'
+    reason: 'Mongo aggregate requirements cover independent behaviors: aggregation window selection, self-heal halving, empty-org skip, two-step upsert, ignored-dimension retention, tag-list alerting, and index-skip policy.'

@@ -33,6 +33,11 @@ contract auditable.
   (re-annotated `Verifies: SW-REQ-059`) — exercises both the per-org and
   the mixed-collection writes with `use_mixed_collection: true`.
 
+## Related requirements
+`SW-REQ-096` covers the data-retention side of the same mixed-collection path:
+a writer with `ignore_aggregations` configured must not delete dimension maps
+that a previous non-ignoring mixed write already persisted.
+
 ## Open questions
 - `AgggregateMixedCollectionName` is a typo (three `g`s) that has shipped
   for years; renaming would break operator-deployed indexes / backups.

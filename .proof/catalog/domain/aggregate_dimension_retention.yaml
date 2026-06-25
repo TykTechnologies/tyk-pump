@@ -1,0 +1,43 @@
+id: aggregate_dimension_retention
+name: Aggregate dimension retention
+category: domain
+status: active
+summary: Aggregate writes that intentionally omit one dimension shall not delete or overwrite existing counters for that dimension in a shared aggregate document.
+description: |-
+  Aggregate backends often support configuration that omits selected dimensions
+  from the next write while retaining other dimensions in an existing aggregate
+  document. Applying the omit/delete operation more than once, or applying it
+  after the database has merged prior data, can erase dimensions contributed by
+  other writers or earlier batches.
+applies_when:
+  description: a shared aggregate document receives updates from writers with different ignored-dimension configuration
+  trigger_phrases:
+    - ignore aggregations
+    - ignored dimensions
+    - mixed collection
+    - aggregate dimensions
+    - DiscardAggregations
+example_req: |-
+  When a Mongo aggregate writer is configured to ignore API-key dimensions and
+  writes to the mixed collection, previously stored API-key counters from a
+  non-ignoring writer remain present and unchanged.
+if_missing: |-
+  A later writer with ignore_aggregations enabled can erase aggregate dimension
+  maps that were already persisted by a different writer, causing dashboards to
+  lose per-dimension breakdowns even while total counters keep increasing.
+recommended_evidence:
+  - kind: nominal
+    note: Integration or unit test writes aggregates with and without an ignored dimension and proves retained dimensions still exist.
+  - kind: negative
+    note: Regression test covers the historical double-discard shape where a second discard after readback would erase an existing dimension map.
+  - kind: review
+    note: Review maps every discard/omit call to the pre-upsert update document, never to a post-merge document used for average recalculation.
+frameworks:
+  - id: CWE
+    refs:
+      - CWE-664
+related_classes:
+  - id: monotonicity
+    relationship: supports
+  - id: output_cardinality_bounded
+    relationship: complements

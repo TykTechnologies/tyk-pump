@@ -1,0 +1,98 @@
+id: DEFECT-32
+title: MongoAggregate mixed write discarded retained dimensions twice
+introduced_in: unknown
+description: |
+  TT5516 (commit 2e26ba7) fixed a MongoAggregate mixed-collection data loss
+  bug. When ignore_aggregations was configured, DoAggregatedWriting already
+  removed ignored dimensions from the incoming update document. The historical
+  mixed-collection path then discarded the same dimensions again after Mongo had
+  merged and returned the aggregate document, which could erase dimension
+  counters that were previously written by a non-ignoring writer.
+
+  Current code applies DiscardAggregations once before building AsChange and
+  uses the merged document only to recalculate averages.
+source:
+    type: upstream_commit
+    repo: TykTechnologies/tyk-pump
+    commit: 2e26ba7
+    reference: TT5516
+    date: "2022-06-10"
+classification:
+    surface: data_integrity
+    defect_class: mongo_aggregate_double_discard
+    severity: medium
+    security_relevant: false
+root_cause:
+    missing_requirement: true
+    missing_test_partition: true
+    missing_mcdc_variable: true
+    notes: |
+      SW-REQ-060 modeled Mongo aggregate counter upsert mechanics, and
+      SW-REQ-059 modeled mixed-collection routing, but proof did not state the
+      retained-dimension invariant for shared mixed aggregates when writers use
+      different ignore_aggregations settings.
+impact_analysis:
+    affected_requirements:
+        - SW-REQ-060
+        - SW-REQ-096
+    affected_code:
+        - pumps/mongo_aggregate.go
+        - pumps/mongo_aggregate_test.go
+hardening:
+    new_requirements:
+        - SW-REQ-096
+    strengthened_requirements:
+        - SW-REQ-060
+        - SW-REQ-059
+    added_obligations:
+        - requirement: SW-REQ-096
+          obligation_class: aggregate_dimension_retention
+    regression_tests:
+        - pumps/mongo_aggregate_test.go:TestDoAggregatedWritingWithIgnoredAggregations
+    mcdc_witnesses:
+        - requirement: SW-REQ-096
+          witness: "ignore_aggregation_configured=F, mixed_collection_dimension_present=T, ignored_dimension_retained=F => TRUE"
+        - requirement: SW-REQ-096
+          witness: "ignore_aggregation_configured=T, mixed_collection_dimension_present=T, ignored_dimension_retained=F => FALSE"
+        - requirement: SW-REQ-096
+          witness: "ignore_aggregation_configured=T, mixed_collection_dimension_present=T, ignored_dimension_retained=T => TRUE"
+    proposed_classes:
+        - aggregate_dimension_retention
+disposition:
+    status: covered_by_requirement
+    requirements:
+        - SW-REQ-060
+        - SW-REQ-096
+    known_issues:
+        - aggregate-counter-replay-not-idempotent
+        - mapstructure-decode-silently-drops-unknown-keys
+        - mongo-aggregate-atomicity-fault-injection-missing
+        - pumps-logfatal-on-config-decode
+        - sw-req-060-hash-format-obligation-misattributed
+    evidence:
+        verified_by:
+            - pumps/mongo_aggregate_test.go:TestDoAggregatedWritingWithIgnoredAggregations
+        requirement_mcdc_witnesses:
+            - requirement: SW-REQ-096
+              witness: "ignore_aggregation_configured=F, mixed_collection_dimension_present=T, ignored_dimension_retained=F => TRUE (no ignore setting is configured, so this specific retention rule is not triggered)"
+            - requirement: SW-REQ-096
+              witness: "ignore_aggregation_configured=T, mixed_collection_dimension_present=T, ignored_dimension_retained=F => FALSE (violation row: a later ignored-dimension write deletes an existing mixed dimension)"
+            - requirement: SW-REQ-096
+              witness: "ignore_aggregation_configured=T, mixed_collection_dimension_present=T, ignored_dimension_retained=T => TRUE (existing API-key dimension remains after the ignoring writer runs again)"
+        obligation_evidence:
+            - requirement: SW-REQ-096
+              obligation_class: aggregate_dimension_retention
+              evidence_type: nominal
+            - requirement: SW-REQ-096
+              obligation_class: aggregate_dimension_retention
+              evidence_type: negative
+    reviewer: agent:codex
+    reviewed_at: "2026-06-25T18:05:11Z"
+history:
+    - at: "2026-06-25T18:05:11Z"
+      by: agent:codex
+      action: created
+      detail: |
+        Recorded TT5516 double-discard as covered by SW-REQ-096, with live
+        Mongo evidence that an ignoring writer does not remove a previously
+        retained API-key aggregate dimension from the mixed collection.

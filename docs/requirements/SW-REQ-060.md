@@ -43,6 +43,12 @@ canonical pre-aggregation idiom.
   (annotated against SW-REQ-059) and the counters by
   `TestAggregationTime` (annotated against SW-REQ-058).
 
+## Related requirements
+`SW-REQ-096` decomposes the TT5516 mixed-collection ignored-dimension retention
+case from this two-step upsert requirement. It proves that applying
+`ignore_aggregations` to an incoming update does not delete existing dimension
+counters already stored in the shared mixed aggregate document.
+
 ## Open questions
 - The atomicity guarantee is inherited from SYS-REQ-029; if operators run
   Mongo with `writeConcern: 0` they break that assumption.

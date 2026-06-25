@@ -1,0 +1,62 @@
+id: SW-REQ-096
+version: 1
+status: approved
+priority: shall
+category: functional
+req_type: guarantee
+fretish: when ignore_aggregation_configured & mixed_collection_dimension_present pumps_mongo_aggregate shall always satisfy ignored_dimension_retained
+description: When MongoAggregate writes a shared mixed-collection aggregate while ignore_aggregations is configured for selected dimensions, the write shall omit those dimensions only from the incoming update document and shall not delete or overwrite dimension counters already present in the mixed aggregate document from another writer or earlier batch.
+formalization_strategy: fretish
+informal_verification:
+    method: ""
+    evidence: ""
+    verified: false
+parent: SW-REQ-060
+component: pumps-mongo-aggregate
+rationale: 'Product-fix-history hardening for TT5516: before commit 2e26ba7, MongoAggregate discarded ignored aggregation dimensions once before the counter upsert and again in the mixed-collection average path after Mongo had merged existing data, so a writer configured with ignore_aggregations could erase dimension counters written by a non-ignoring writer.'
+tags: []
+variables:
+    - ignore_aggregation_configured
+    - mixed_collection_dimension_present
+    - ignored_dimension_retained
+traces:
+    satisfies:
+        - SW-REQ-060
+verification:
+    assurance_level: B
+    formalization_status: valid
+    review:
+        status: approved
+        reviewer: human:buger
+        role: software_engineer
+        reviewed_at: "2026-06-25T18:08:19Z"
+        comment: 'TT5516 hardening: reviewed mixed aggregate ignored-dimension retention requirement, aggregate_dimension_retention evidence, DEFECT-32 closure, and live Mongo regression coverage; no runtime product behavior change.'
+        fingerprint: sha256:5459185f56ee19b6863453391628fa256ee1a69e597829cbc34347c7bcf75b61
+        ai_generated: false
+history:
+    created_by: human:buger
+    created_at: "2026-06-25T18:05:11Z"
+    last_modified_by: human:buger
+    last_modified_at: "2026-06-25T18:08:19Z"
+obligation_checklist:
+    - aggregate_dimension_retention
+stakeholder:
+    acceptance_criteria:
+        - id: AC-001
+          text: If one MongoAggregate writer ignores the apikeys aggregation and another writer records apikeys into the mixed collection, a later write by the ignoring writer preserves the existing apikey counter map.
+          verification_method: test
+        - id: AC-002
+          text: The total hit and average counters continue to accumulate while ignored dimension maps remain bounded to the dimensions actually written by non-ignoring writers.
+          verification_method: test
+lifecycle:
+    change_history:
+        - date: "2026-06-25T18:05:11Z"
+          from: draft
+          to: review
+          reason: TT5516 mixed aggregate ignored-dimension retention requirement ready for review
+          changed_by: human:buger
+        - date: "2026-06-25T18:08:12Z"
+          from: draft
+          to: review
+          reason: '[2e26ba7] TT5516 mixed aggregate ignored-dimension retention requirement ready for branch review'
+          changed_by: human:buger
