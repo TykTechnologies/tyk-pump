@@ -7,6 +7,9 @@ to the configured Influx v1 address, build an InfluxDB 1.x line-protocol
 analytics record (timestamps recorded at `time.Now()`, microsecond
 precision), and write the batch via the v1 client. Derived from SYS-REQ-004
 via Phase A decomposition of SW-REQ-022.
+SW-REQ-101 decomposes the output-cardinality part of this write path: a
+non-empty purge is accumulated first and emitted through one Influx v1 write
+request, not cumulative write requests inside the record loop.
 
 ## Motivation
 InfluxDB v1 remains in operator inventories despite v2 being the recommended
@@ -22,10 +25,13 @@ the family-level claim of error propagation.
   a 5-second sleep — a stack-overflow risk under sustained outage).
 - `pumps/influx.go:101-173` — `WriteData` builds a `BatchPoints`; the return
   value of `c.Write(bp)` is *discarded* at line 169 — write errors are
-  silently swallowed.
+  silently swallowed. SW-REQ-101 covers the separate invariant that this write
+  happens once after all points have been added.
 
 ## Evidence
-- No dedicated `influx_test.go` exists for v1 (coverage gap).
+- `pumps/http_pumps_mcdc_test.go:TestInfluxPump_WriteData_RoundTrip` verifies
+  the v1 HTTP write path and, for SW-REQ-101, proves a three-record purge emits
+  exactly one `/write` request with three line-protocol rows.
 - The previous family req SW-REQ-022 is retained as a `[SUPERSEDED by
   Phase A decomposition: ...]` anchor.
 

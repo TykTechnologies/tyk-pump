@@ -5,7 +5,7 @@ priority: shall
 category: functional
 req_type: guarantee
 fretish: when connect_err pumps_influx_v1 shall always satisfy reconnect_attempted
-description: The InfluxDB v1 pump shall, on each purge, open a fresh HTTP client to the configured Influx v1 address, build an InfluxDB 1.x line-protocol BatchPoints with operator-configured Tags and Fields selected from each analytics record (timestamps recorded at time.Now(), microsecond precision), and write the batch via the v1 client.
+description: The InfluxDB v1 pump shall, on each purge, open a fresh HTTP client to the configured Influx v1 address, build an InfluxDB 1.x line-protocol BatchPoints with operator-configured Tags and Fields selected from each analytics record (timestamps recorded at time.Now(), microsecond precision), and write the batch via the v1 client. SW-REQ-101 decomposes the historical output-cardinality invariant that all points in a non-empty purge are accumulated first and emitted through one client Write call, not cumulative writes inside the record loop.
 formalization_strategy: fretish
 informal_verification:
     method: ""
@@ -29,15 +29,15 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-22T12:04:23Z"
-        comment: 'Review obligation expansion from catalogue gap pass; active unfixed behavior remains KnownIssue-gated.'
-        fingerprint: sha256:38e0e66d6666d6203d50ec3978e22839aad72ad8018d178d1f3699bc78d90904
+        reviewed_at: "2026-06-25T20:25:46Z"
+        comment: 'Reviewed 51af27d hardening: SW-REQ-046 now references SW-REQ-101 for the Influx v1 batch-write cardinality invariant; existing Influx KIs remain scoped separately.'
+        fingerprint: sha256:89a7b0c4e28c20d2c90ef29fabf9a7691f688133f6e51e66ac4821a23c421010
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:35:56Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-22T12:04:23Z"
+    last_modified_at: "2026-06-25T20:25:46Z"
 obligation_checklist:
     - config_schema_strict
     - errors_propagated
@@ -140,4 +140,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-22T09:25:11Z comment="Expand backend, database, retry, queue, panic-safety, and shared-state catalog obligations; uncovered behavior is linked to existing KnownIssues rather than claimed as evidence.")'
+          changed_by: human:buger
+        - date: "2026-06-25T20:25:46Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-22T12:04:23Z comment="Review obligation expansion from catalogue gap pass; active unfixed behavior remains KnownIssue-gated.")'
           changed_by: human:buger

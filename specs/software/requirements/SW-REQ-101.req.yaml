@@ -1,0 +1,52 @@
+id: SW-REQ-101
+version: 1
+status: approved
+priority: shall
+category: functional
+req_type: guarantee
+fretish: pumps_influx_v1 shall always satisfy influx_v1_single_write_per_purge_batch
+description: InfluxPump.WriteData shall accumulate every accepted analytics record from the current purge into a single InfluxDB v1 BatchPoints value and issue exactly one client Write call for that purge batch after the record loop completes; it shall not call Write for cumulative prefixes while records are still being added.
+formalization_strategy: fretish
+informal_verification:
+    method: ""
+    evidence: ""
+    verified: false
+parent: SW-REQ-046
+component: pumps-influx-v1
+rationale: 'Product-fix-history hardening for commit 51af27d / issue #138: before the fix, InfluxPump.WriteData called c.Write(bp) inside the record loop, sending cumulative batches of 1, 2, ..., N records for an N-record purge. SW-REQ-046 already owns the Influx v1 write path; this child pins the output-cardinality invariant that prevents duplicate backend load.'
+tags: []
+variables:
+    - influx_v1_single_write_per_purge_batch
+traces:
+    satisfies:
+        - SW-REQ-046
+verification:
+    assurance_level: B
+    formalization_status: valid
+    review:
+        status: approved
+        reviewer: human:buger
+        role: software_engineer
+        reviewed_at: "2026-06-25T20:25:46Z"
+        comment: "Reviewed 51af27d hardening: SW-REQ-101 pins Influx v1 one Write call per purge batch after accumulation, with multi-record httptest evidence; no runtime product change claimed."
+        fingerprint: sha256:224f978f2bb8ceb7c125c62a9ec0173d564acb1b70c1c356c222c39645d576af
+        ai_generated: false
+history:
+    created_by: agent:codex
+    created_at: "2026-06-25T20:16:20Z"
+    last_modified_by: human:buger
+    last_modified_at: "2026-06-25T20:25:46Z"
+obligation_checklist:
+    - output_cardinality_bounded
+stakeholder:
+    acceptance_criteria:
+        - id: AC-001
+          text: A multi-record Influx v1 purge produces exactly one /write request carrying one line-protocol point per accepted analytics record.
+          verification_method: test
+lifecycle:
+    change_history:
+        - date: "2026-06-25T20:16:20Z"
+          from: draft
+          to: review
+          reason: Influx v1 batch write cardinality requirement ready for review
+          changed_by: agent:codex

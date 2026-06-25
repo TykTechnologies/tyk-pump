@@ -98,7 +98,7 @@ func (i *InfluxPump) connect() client.Client {
 	return c
 }
 
-// reqproof:implements SW-REQ-046
+// reqproof:implements SW-REQ-046,SW-REQ-101
 func (i *InfluxPump) WriteData(ctx context.Context, data []interface{}) error {
 	c := i.connect()
 	defer c.Close()

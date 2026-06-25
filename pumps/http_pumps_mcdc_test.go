@@ -1070,12 +1070,15 @@ func TestKinesisPump_Init_StreamNameWarnOnly(t *testing.T) {
 // === Influx v1 round-trip ===
 
 // TestInfluxPump_WriteData_RoundTrip points the influx v1 client at httptest
-// and verifies a /write POST is recorded with the configured fields.
+// and verifies one /write POST is recorded with all configured fields.
 //
 // Verifies: SW-REQ-046
+// Verifies: SW-REQ-101
 // MCDC SW-REQ-046: connect_err=F, reconnect_attempted=F => TRUE
 // MCDC SW-REQ-046: connect_err=T, reconnect_attempted=F => FALSE
 // MCDC SW-REQ-046: connect_err=T, reconnect_attempted=T => TRUE
+// MCDC SW-REQ-101: influx_v1_single_write_per_purge_batch=T => TRUE
+//mcdc:ignore SW-REQ-101: influx_v1_single_write_per_purge_batch=F => FALSE -- influx.go adds every point inside the loop and calls c.Write(bp) once after the loop; with the current code shape, the invariant-false row would require moving Write back into the loop or adding another Write call, while the positive multi-record batch path is witnessed here [reviewed: human:buger] [category: defensive]
 // (This round-trip test points the v1 client at httptest and drives
 // connect_err=F → no recursion — F/F=TRUE. The T/T=TRUE pair is the
 // KI-tracked infinite-recursion path documented in
@@ -1085,6 +1088,7 @@ func TestKinesisPump_Init_StreamNameWarnOnly(t *testing.T) {
 // surface that does not yet exist in production; tracked in the same KI.)
 // SW-REQ-046:nominal:nominal
 // SW-REQ-046:output_cardinality_bounded:nominal
+// SW-REQ-101:output_cardinality_bounded:nominal
 func TestInfluxPump_WriteData_RoundTrip(t *testing.T) {
 	cs := newCaptureServer(t)
 	cs.statusSeq = []int{http.StatusNoContent}
@@ -1098,27 +1102,48 @@ func TestInfluxPump_WriteData_RoundTrip(t *testing.T) {
 	}
 	require.NoError(t, p.Init(cfg))
 
-	rec := analytics.AnalyticsRecord{
-		APIID:        "api-1",
-		Method:       "GET",
-		Path:         "/p",
-		ResponseCode: 200,
-		TimeStamp:    time.Now(),
+	records := []interface{}{
+		analytics.AnalyticsRecord{
+			APIID:        "api-1",
+			Method:       "GET",
+			Path:         "/p/1",
+			ResponseCode: 200,
+			TimeStamp:    time.Now(),
+		},
+		analytics.AnalyticsRecord{
+			APIID:        "api-2",
+			Method:       "POST",
+			Path:         "/p/2",
+			ResponseCode: 201,
+			TimeStamp:    time.Now(),
+		},
+		analytics.AnalyticsRecord{
+			APIID:        "api-3",
+			Method:       "DELETE",
+			Path:         "/p/3",
+			ResponseCode: 204,
+			TimeStamp:    time.Now(),
+		},
 	}
-	require.NoError(t, p.WriteData(context.Background(), []interface{}{rec}))
+	require.NoError(t, p.WriteData(context.Background(), records))
 
 	require.NotEmpty(t, cs.requests)
-	// Last request is the write (a ping precedes it in the v1 client newer paths).
-	var writeReq *capturedRequest
+	// Ping/query requests can precede writes; the cardinality claim is scoped to /write.
+	var writeReqs []*capturedRequest
 	for _, r := range cs.requests {
 		if strings.Contains(r.URL, "/write") {
-			writeReq = r
-			break
+			writeReqs = append(writeReqs, r)
 		}
 	}
+	require.Len(t, writeReqs, 1, "Influx v1 must write one backend request per purge batch")
+	writeReq := writeReqs[0]
 	require.NotNil(t, writeReq, "influx v1 client did not POST to /write")
-	// line-protocol body contains the tag and a field reference.
+	lines := strings.Split(strings.TrimSpace(string(writeReq.Body)), "\n")
+	require.Len(t, lines, len(records), "one batch write must carry one line-protocol row per record")
+	// line-protocol body contains the tags and field references.
 	assert.Contains(t, string(writeReq.Body), "api_id=api-1")
+	assert.Contains(t, string(writeReq.Body), "api_id=api-2")
+	assert.Contains(t, string(writeReq.Body), "api_id=api-3")
 	assert.Contains(t, string(writeReq.Body), "method=")
 }
 

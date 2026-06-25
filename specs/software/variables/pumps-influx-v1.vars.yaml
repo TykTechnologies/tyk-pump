@@ -8,3 +8,7 @@ variables:
       type: bool
       direction: output
       description: True iff WriteData sleeps and recursively re-invokes itself after a connect error (KI influx-v1-unbounded-reconnect-recursion).
+    - name: influx_v1_single_write_per_purge_batch
+      type: bool
+      direction: output
+      description: True iff InfluxPump.WriteData accumulates all accepted analytics records for the current purge into one InfluxDB v1 BatchPoints value and performs exactly one client Write call for that purge batch, instead of writing cumulative prefixes inside the record loop.

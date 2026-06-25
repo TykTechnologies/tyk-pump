@@ -101,7 +101,7 @@ backend-mode partitions, or missing operator contracts.
 | 8bfdb36 | 2019-11-05 | Mongo document size calculated incorrectly and useful data skipped. | `missed_before_hardening`: standard Mongo was adjacent to selective/graph size hardening, but SW-REQ-034 did not explicitly own the exact RawRequest+RawResponse+1024 formula or prove oversized records are rewritten rather than skipped. Hardened with DEFECT-40, `document_size_accounting_exact`, standard Mongo size/rewrite witnesses, and a signal for RawRequest-counted-twice estimates. A separate current final-skipped-item flush gap is KI-backed under `mongo-standard-final-skipped-record-drops-pending-batch`. |
 | aa7a88e | 2019-10-03 | Mongo selective pump wrote TCP records incorrectly. | `missed_before_hardening`: SW-REQ-035 covered per-org routing and helper-level skip branches, but did not explicitly state that selective Mongo writes only non-MCP HTTP analytics and excludes TCP/error records (`ResponseCode == -1`) through batching. Hardened with DEFECT-41, SW-REQ-035/docs text, and an AccumulateSet witness that retains HTTP records while dropping TCP/error records. |
 | 3bb755d | 2019-08-23 | Elasticsearch analytics missing alias field. | `missed_before_hardening`: generic mapping and field-preservation proof was adjacent, and `TestGetMapping_BasicFields` already asserted alias after later test work, but no Elasticsearch software requirement explicitly owned the Alias-to-"alias" projection. Hardened with DEFECT-42, SW-REQ-100, `structured_projection_preserved`, and direct populated/empty alias getMapping witnesses. |
-| 51af27d | 2019-08-13 | Influx write was inside loop, causing duplicate/cumulative writes and severe slowness. | Current output-cardinality and error/backpressure obligations are adjacent, but this exact "one backend write per completed batch, not cumulative per record" contract is not guaranteed unless added. |
+| 51af27d | 2019-08-13 | Influx write was inside loop, causing duplicate/cumulative writes and severe slowness. | `missed_before_hardening`: SW-REQ-046 had the Influx v1 write path and an output-cardinality obligation, but only a single-record witness and no explicit "one backend write per purge batch, after accumulation" invariant. Hardened with DEFECT-43, SW-REQ-101, and a multi-record httptest witness proving exactly one /write request with one line-protocol row per input record. |
 | d4d1cf7 | 2019-08-08 | Mongo aggregate mixed collection lost Lists data. | Current aggregate field-preservation should catch if Lists is represented in evidence. |
 | c02a2cb | 2019-07-16 | HTTP 400 was not counted as an error in aggregates. | Current analytics aggregate requirements likely catch if response-code boundary evidence includes 400. |
 
@@ -177,7 +177,7 @@ so a later reviewer can see what was included and what was filtered out.
 | 8bfdb36 | 2019-11-05 | Calculate document size correctly and do not skip useful data | `missed_before_hardening`: now covered by DEFECT-40 and `document_size_accounting_exact`; standard Mongo size accounting counts RawRequest and RawResponse exactly once with a 1024-byte metadata allowance, and over-threshold records are retained with raw bodies rewritten. |
 | aa7a88e | 2019-10-03 | Fix selective pump to not add TCP records | `missed_before_hardening`: now covered by DEFECT-41 under SW-REQ-035; the regression witness proves ResponseCode -1 TCP/error records are excluded from selective Mongo batches while ordinary HTTP records for the same org remain routed to the per-org collection. |
 | 3bb755d | 2019-08-23 | Elasticsearch analytics publishes alias | `missed_before_hardening`: now covered by DEFECT-42 and SW-REQ-100; the regression witnesses prove `getMapping` emits the Elasticsearch `"alias"` field from `AnalyticsRecord.Alias` and does not synthesize an alias when the source field is empty. |
-| 51af27d | 2019-08-13 | Fix influx pump write loop duplication | Product output cardinality/performance defect. Candidate for batch_write_once evidence. |
+| 51af27d | 2019-08-13 | Fix influx pump write loop duplication | `missed_before_hardening`: now covered by DEFECT-43 and SW-REQ-101; the Influx v1 round-trip witness proves a three-record purge produces one backend /write request carrying three line-protocol rows, closing the historical cumulative-prefix write-loop failure mode. |
 | d4d1cf7 | 2019-08-08 | Restore lists data to mongo aggregate mixed collection | Product field-preservation defect. Needs Lists evidence. |
 | c02a2cb | 2019-07-16 | Include HTTP 400 in aggregate error count | Product boundary/counting defect. Needs response-code boundary evidence. |
 
@@ -222,6 +222,7 @@ Problem reports:
 - DEFECT-40: Standard Mongo document-size guard counted RawRequest twice and skipped useful records.
 - DEFECT-41: MongoSelective wrote TCP error records to per-organisation collections.
 - DEFECT-42: Elasticsearch analytics mapping omitted alias.
+- DEFECT-43: Influx v1 wrote cumulative batches inside the record loop.
 
 KnownIssues/risks relevant to historical fix classes:
 

@@ -1,0 +1,83 @@
+schema_version: 1
+id: DEFECT-43
+title: Influx v1 wrote cumulative batches inside the record loop
+introduced_in: unknown
+description: |
+  Commit 51af27d fixed InfluxPump.WriteData so it writes the accumulated
+  BatchPoints once after all records have been processed. Before the fix,
+  c.Write(bp) was inside the per-record loop. A purge with N records therefore
+  sent N backend write requests containing cumulative prefixes: the first
+  request had 1 point, the second had 2 points, and so on. For large purges this
+  multiplied backend load and duplicated earlier records.
+
+  Current code adds each point to the BatchPoints inside the loop and calls
+  c.Write(bp) once after the loop. SW-REQ-101 now records this as an explicit
+  output-cardinality invariant under the Influx v1 parent requirement.
+source:
+    type: upstream_commit
+    repo: TykTechnologies/tyk-pump
+    commit: 51af27d
+    reference: tyk-pump#138
+    date: "2019-08-13"
+classification:
+    surface: data_integrity
+    defect_class: influx_v1_cumulative_batch_writes
+    severity: medium
+    security_relevant: false
+root_cause:
+    missing_requirement: true
+    missing_test_partition: true
+    missing_mcdc_variable: false
+    notes: |
+      SW-REQ-046 already carried output_cardinality_bounded as an obligation
+      and the current round-trip test covered a single-record write, but the
+      product contract did not explicitly state that a multi-record purge must
+      produce exactly one Influx v1 write request after accumulation.
+impact_analysis:
+    affected_requirements:
+        - SW-REQ-046
+        - SW-REQ-101
+    affected_code:
+        - pumps/influx.go
+        - pumps/http_pumps_mcdc_test.go
+hardening:
+    new_requirements:
+        - SW-REQ-101
+    strengthened_requirements:
+        - SW-REQ-046
+    added_obligations:
+        - requirement: SW-REQ-101
+          obligation_class: output_cardinality_bounded
+    regression_tests:
+        - pumps/http_pumps_mcdc_test.go:TestInfluxPump_WriteData_RoundTrip
+    proposed_classes: []
+    code_signals: []
+disposition:
+    status: covered_by_requirement
+    requirements:
+        - SW-REQ-101
+    known_issues:
+        - external-pump-endpoints-no-ssrf-allowlist
+        - influx-v1-unbounded-reconnect-recursion
+        - mapstructure-decode-silently-drops-unknown-keys
+        - pump-no-timeout-can-block-purge-cycle
+        - pump-writedata-swallows-per-batch-errors
+        - pumps-logfatal-on-config-decode
+    evidence:
+        verified_by:
+            - pumps/http_pumps_mcdc_test.go:TestInfluxPump_WriteData_RoundTrip
+        obligation_evidence:
+            - requirement: SW-REQ-101
+              obligation_class: output_cardinality_bounded
+              evidence_type: nominal
+    reviewer: agent:codex
+    reviewed_at: "2026-06-25T20:16:20Z"
+history:
+    - at: "2026-06-25T20:16:20Z"
+      by: agent:codex
+      action: created
+      detail: |
+        Recorded the historical Influx v1 cumulative-write loop defect as
+        covered by SW-REQ-101 and a multi-record httptest witness. No static
+        signal was added because the deterministic backend-request-count
+        witness is higher signal than a broad "Write inside loop" detector.
