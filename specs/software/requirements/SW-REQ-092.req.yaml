@@ -1,0 +1,64 @@
+id: SW-REQ-092
+version: 1
+status: approved
+priority: shall
+category: functional
+req_type: guarantee
+fretish: when selective_document_size_estimated pumps_mongo_selective shall always satisfy raw_request_and_response_counted_once
+description: When MongoSelective estimates an analytics document size for MaxDocumentSizeBytes enforcement, it shall compute len(RawRequest)+len(RawResponse)+1024 metadata bytes, count RawRequest and RawResponse exactly once each, and skip the record only when that estimate is greater than MaxDocumentSizeBytes.
+formalization_strategy: fretish
+informal_verification:
+    method: ""
+    evidence: ""
+    verified: false
+parent: SW-REQ-035
+component: pumps-mongo-selective
+rationale: 'Product-fix-history hardening for TT-6550: before commit 4c490cb, MongoSelective counted RawRequest twice and omitted RawResponse from the document-size guard. This child pins exact size arithmetic separately from SW-REQ-035 routing/index/batching behavior.'
+tags: []
+variables:
+    - selective_document_size_estimated
+    - raw_request_and_response_counted_once
+traces:
+    satisfies:
+        - SW-REQ-035
+verification:
+    assurance_level: B
+    formalization_status: valid
+    review:
+        status: approved
+        reviewer: human:buger
+        role: software_engineer
+        reviewed_at: "2026-06-25T17:22:13Z"
+        comment: 'TT-6550 hardening: MongoSelective document-size arithmetic now has a dedicated requirement, document_size_accounting_exact evidence, and raw request/response boundary assertions; no runtime product behavior change.'
+        fingerprint: sha256:c0d0fa2c225ef332b8b8e779d810473762ff3fdb2bea3412da39b1df173121e3
+        ai_generated: false
+history:
+    created_by: human:buger
+    created_at: "2026-06-25T17:19:57Z"
+    last_modified_by: human:buger
+    last_modified_at: "2026-06-25T17:22:13Z"
+obligation_checklist:
+    - document_size_accounting_exact
+stakeholder:
+    acceptance_criteria:
+        - id: AC-001
+          text: A MongoSelective record with RawRequest and RawResponse whose exact estimate equals MaxDocumentSizeBytes is retained, proving the guard uses greater-than rather than greater-than-or-equal.
+          verification_method: test
+        - id: AC-002
+          text: A MongoSelective record whose RawResponse alone pushes the estimate above MaxDocumentSizeBytes is skipped, proving RawResponse is included.
+          verification_method: test
+        - id: AC-003
+          text: A MongoSelective record whose RawRequest is near the limit but RawResponse is empty is not skipped as if RawRequest were counted twice.
+          verification_method: test
+lifecycle:
+    change_history:
+        - date: "2026-06-25T17:19:57Z"
+          from: draft
+          to: review
+          reason: TT-6550 MongoSelective document-size arithmetic requirement ready for branch review
+          changed_by: human:buger
+        - date: "2026-06-25T17:22:13Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-25T17:19:57Z comment="TT-6550 hardening: reviewed MongoSelective document-size arithmetic, document_size_accounting_exact evidence, MC/DC witnesses, and DEFECT-29 closure; no runtime product behavior change claimed.")'
+          changed_by: human:buger

@@ -11,6 +11,9 @@ size-bounded batches up to `MaxInsertBatchSizeBytes` (default 10 MiB),
 skipping individual documents larger than `MaxDocumentSizeBytes`. Derived from
 SYS-REQ-004 via Phase A decomposition of SW-REQ-018.
 
+The exact `MaxDocumentSizeBytes` arithmetic is split into **SW-REQ-092**:
+`len(RawRequest)+len(RawResponse)+1024`, with each raw payload counted once.
+
 ## Motivation
 This pump exists to give multi-tenant Tyk Dashboard deployments per-tenant
 data isolation at the storage layer: each customer organisation gets its own
@@ -31,9 +34,13 @@ The honest req description above reflects this gap.
   `apiid`, the TTL `expireAt`, and the composite `logBrowserIndex`.
 - `pumps/mongo_selective.go:processItem`, `:accumulate`,
   `:AccumulateSet` — size-bounded batching.
+- `pumps/mongo_selective.go:getItemSizeBytes` — exact document-size estimate
+  for SW-REQ-092.
 
 ## Evidence
 - `pumps/mongo_selective_test.go` (re-annotated `Verifies: SW-REQ-035`).
+- `pumps/mongo_selective_test.go:TestMongoSelectivePump_GetItemSizeBytes_CountsRawRequestAndResponseOnce`
+  covers SW-REQ-092 exact document-size arithmetic.
 - Live-MongoDB tests are excluded from the local audit MC/DC scope (recorded
   as a known issue).
 
@@ -46,3 +53,6 @@ The honest req description above reflects this gap.
   `mongo-pump-ignores-caller-context`).
 - Per-org collection growth is unbounded; no capped-collection support like
   the standard pump.
+- `AccumulateSet` loses a pending valid batch when the final input item is
+  skipped for size; tracked under
+  `mongo-selective-final-skipped-record-drops-pending-batch`.

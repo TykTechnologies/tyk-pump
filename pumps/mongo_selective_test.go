@@ -13,7 +13,10 @@ import (
 	"gopkg.in/vmihailenco/msgpack.v2"
 )
 
+// Verifies: SW-REQ-035
+// Verifies: SW-REQ-092
 // SW-REQ-035:boundary:nominal
+// SW-REQ-092:document_size_accounting_exact:boundary
 func TestMongoSelectivePump_AccumulateSet(t *testing.T) {
 	run := func(recordsGenerator func(numRecords int) []interface{}, expectedRecordsCount, maxDocumentSizeBytes int) func(t *testing.T) {
 		return func(t *testing.T) {
@@ -102,6 +105,82 @@ func TestMongoSelectivePump_AccumulateSet(t *testing.T) {
 		99,
 		1024,
 	))
+}
+
+// Verifies: SW-REQ-092
+// SW-REQ-092:document_size_accounting_exact:nominal
+// SW-REQ-092:document_size_accounting_exact:boundary
+// MCDC SW-REQ-092: raw_request_and_response_counted_once=F, selective_document_size_estimated=F => TRUE
+// MCDC SW-REQ-092: raw_request_and_response_counted_once=F, selective_document_size_estimated=T => FALSE
+// MCDC SW-REQ-092: raw_request_and_response_counted_once=T, selective_document_size_estimated=T => TRUE
+func TestMongoSelectivePump_GetItemSizeBytes_CountsRawRequestAndResponseOnce(t *testing.T) {
+	tcs := []struct {
+		name        string
+		rawRequest  string
+		rawResponse string
+		maxBytes    int
+		wantSize    int
+	}{
+		{
+			name:        "request and response count once at exact threshold",
+			rawRequest:  "rr",
+			rawResponse: "ss",
+			maxBytes:    1028,
+			wantSize:    1028,
+		},
+		{
+			name:        "response bytes are included in overflow",
+			rawResponse: "ss",
+			maxBytes:    1025,
+			wantSize:    -1,
+		},
+		{
+			name:       "request is not counted twice",
+			rawRequest: "rr",
+			maxBytes:   1026,
+			wantSize:   1026,
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			mPump := MongoSelectivePump{
+				dbConf: &MongoSelectiveConf{MaxDocumentSizeBytes: tc.maxBytes},
+			}
+			mPump.log = log.WithField("prefix", mongoPrefix)
+			record := &analytics.AnalyticsRecord{
+				RawRequest:  tc.rawRequest,
+				RawResponse: tc.rawResponse,
+			}
+
+			assert.Equal(t, tc.wantSize, mPump.getItemSizeBytes(record))
+		})
+	}
+}
+
+// TestMongoSelectivePump_AccumulateSet_FinalOversizeDropsPendingBatch_KI
+// reproduces mongo-selective-final-skipped-record-drops-pending-batch.
+// Verifies: KI:mongo-selective-final-skipped-record-drops-pending-batch
+// Reproduces: mongo-selective-final-skipped-record-drops-pending-batch
+func TestMongoSelectivePump_AccumulateSet_FinalOversizeDropsPendingBatch_KI(t *testing.T) {
+	mPump := MongoSelectivePump{
+		dbConf: &MongoSelectiveConf{
+			MaxInsertBatchSizeBytes: 10 * MiB,
+			MaxDocumentSizeBytes:    1024,
+		},
+	}
+	mPump.log = log.WithField("prefix", mongoPrefix)
+
+	valid := analytics.AnalyticsRecord{}
+	oversize := analytics.AnalyticsRecord{RawResponse: "x"}
+
+	set := mPump.AccumulateSet([]interface{}{valid, oversize}, analytics.SQLTable)
+
+	recordsCount := 0
+	for _, setEntry := range set {
+		recordsCount += len(setEntry)
+	}
+	assert.Equal(t, 0, recordsCount, "current KI: final skipped item prevents flushing the pending valid record")
 }
 
 // SW-REQ-035:nominal:nominal

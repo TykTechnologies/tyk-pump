@@ -1,0 +1,7 @@
+id: REVIEW-4c490cb-mongo-selective-document-size
+kind: design_review
+reviewer: agent:codex
+reviewed_at: "2026-06-25T17:19:57Z"
+subject: upstream:4c490cb/SW-REQ-035/SW-REQ-092
+decision: approved
+comment: 'Commit-level assurance review for TT-6550: upstream fixed MongoSelective document-size accounting from RawRequest+RawRequest to RawRequest+RawResponse+1024. Current proof now splits SW-REQ-092 from broad SW-REQ-035 routing/batching behavior, adds document_size_accounting_exact evidence, and records DEFECT-29. No runtime product behavior change was made.'

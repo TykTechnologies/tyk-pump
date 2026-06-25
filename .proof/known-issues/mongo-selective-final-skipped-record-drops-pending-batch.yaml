@@ -1,0 +1,38 @@
+id: mongo-selective-final-skipped-record-drops-pending-batch
+title: MongoSelective AccumulateSet drops pending valid records when the final input item is skipped
+description: |
+  MongoSelectivePump.AccumulateSet appends the in-progress batch only from the
+  per-item accumulate call when that item is marked as the last input item. If
+  the final input item is skipped before a normal append path, for example
+  because getItemSizeBytes returns -1 for an oversized RawResponse, accumulate
+  returns early and the pending valid records accumulated from earlier inputs
+  are never flushed into the returned batches.
+
+  Example: with MaxDocumentSizeBytes=1024, an empty valid record followed by a
+  record with RawResponse="x" returns zero accumulated records. The first record
+  should still be returned because it was valid and below the size threshold.
+affected_requirements:
+    - SW-REQ-035
+    - SW-REQ-092
+evidence_manifests:
+    - test:pumps/mongo_selective_test.go:TestMongoSelectivePump_AccumulateSet_FinalOversizeDropsPendingBatch_KI
+severity: medium
+severity_basis: risk
+risk: data_integrity
+reproducer_command: go test -count=1 -timeout 60s -run TestMongoSelectivePump_AccumulateSet_FinalOversizeDropsPendingBatch_KI ./pumps
+introduced_in: 83a16f3
+mitigation: Operators should avoid relying on MongoSelective to partially retain valid records when the final record in a batch can exceed MaxDocumentSizeBytes; malformed or very large records should be filtered before the pump where practical.
+remediation: Ensure AccumulateSet flushes any pending thisResultSet after the loop, even when the final input item is skipped by processItem or getItemSizeBytes.
+owner: tyk-team
+review_date: "2026-11-30"
+release_disposition: ship_with_known_issue
+status: open
+history:
+    - at: "2026-06-25T17:25:00Z"
+      by: agent:codex
+      action: created
+      detail: Found during TT-6550 commit-level proof review; recorded as current product debt rather than changing product behavior.
+    - at: "2026-06-25T17:27:00Z"
+      by: agent:codex
+      action: edit
+      detail: Set origin to 83a16f3, where MongoSelective size-based batching/skipping introduced the last-skipped-item flush gap.

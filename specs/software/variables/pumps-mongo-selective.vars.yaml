@@ -8,3 +8,11 @@ variables:
       type: bool
       direction: output
       description: True iff the record is appended to the per-org analytics collection (false means the record is dropped with 'No OrgID for AnalyticsRecord, skipping').
+    - name: selective_document_size_estimated
+      type: bool
+      direction: input
+      description: True when MongoSelective computes the local document-size estimate before MaxDocumentSizeBytes enforcement.
+    - name: raw_request_and_response_counted_once
+      type: bool
+      direction: output
+      description: True iff MongoSelective document-size accounting counts RawRequest and RawResponse exactly once each plus the 1024-byte metadata allowance.

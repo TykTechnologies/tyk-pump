@@ -1,0 +1,46 @@
+id: document_size_accounting_exact
+name: Document size accounting exact
+category: domain
+status: active
+summary: Backend document-size guards shall account for every payload field named by the requirement exactly once before skip, rewrite, or batch decisions.
+description: |-
+  Storage backends often enforce per-document limits before sending records to
+  the backend. If the local size estimate omits a payload field or counts a
+  field twice, the pump can either send documents the backend rejects or skip
+  valid documents. Requirements shall name the fields included in the estimate,
+  the fixed metadata allowance, and the threshold comparison used for the
+  skip/rewrite decision.
+applies_when:
+  description: code compares an analytics record, request, response, payload, or document size estimate to a backend or configured document-size limit
+  trigger_phrases:
+    - MaxDocumentSizeBytes
+    - document size
+    - raw request
+    - raw response
+    - skip oversized
+    - payload size
+example_req: |-
+  When MongoSelective estimates document size, it shall compute
+  len(RawRequest)+len(RawResponse)+1024 and skip the document only when that
+  estimate is greater than MaxDocumentSizeBytes.
+if_missing: |-
+  A large response with a small request can bypass the local guard and fail at
+  MongoDB write time, while a large request with an empty response can be
+  incorrectly skipped if the request is counted twice.
+recommended_evidence:
+  - kind: nominal
+    note: Unit test covers a record whose exact estimate is equal to the threshold and proves it is retained.
+  - kind: boundary
+    note: Unit tests independently vary RawRequest and RawResponse around the threshold, proving each field is counted once.
+  - kind: review
+    note: Review maps the implemented formula and comparison operator to the backend limit contract.
+frameworks:
+  - id: CWE
+    refs:
+      - CWE-190
+      - CWE-770
+related_classes:
+  - id: input_size_bounded
+    relationship: specializes
+  - id: boundary
+    relationship: complements
