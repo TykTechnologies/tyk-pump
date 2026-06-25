@@ -1,0 +1,60 @@
+id: SW-REQ-085
+version: 1
+status: approved
+priority: shall
+category: functional
+req_type: guarantee
+fretish: when hybrid_init_failure_detected pumps_hybrid shall always satisfy init_error_returned_without_process_exit
+description: When HybridPump.Init detects a recoverable initialization failure such as a missing connection_string, an unreachable MDCB endpoint, or invalid RPC credentials, it shall return an error to the caller instead of calling log.Fatal/os.Exit and terminating the pump process.
+formalization_strategy: fretish
+informal_verification:
+    method: ""
+    evidence: ""
+    verified: false
+parent: SW-REQ-029
+component: pumps-hybrid
+rationale: 'Product-fix-history hardening for TT-8313: before commit ca22ae4, HybridPump.Init called log.Fatal for missing connection_string or RPC connection failure, so one bad Hybrid pump configuration could exit the whole tyk-pump process. The refactor changed those paths to returned errors and added tests; this child pins that behavior separately from SW-REQ-029''s broad Hybrid forwarding/TLS contract.'
+tags: []
+variables:
+    - hybrid_init_failure_detected
+    - init_error_returned_without_process_exit
+traces:
+    satisfies:
+        - SW-REQ-029
+    reviewed_at: "2026-06-25T15:27:16.01151Z"
+    reviewed_by: human:buger
+    reviewed_fingerprint: sha256:8575803ae1bfd8e21bfb5dad6abc54ba6bec0b5f6f1c67f06374c0c6ed1aec21
+verification:
+    assurance_level: B
+    formalization_status: valid
+    review:
+        status: approved
+        reviewer: human:buger
+        role: software_engineer
+        reviewed_at: "2026-06-25T15:26:24Z"
+        comment: 'TT-8313 hardening: reviewed Hybrid recoverable init failure process-exit policy, error propagation evidence, MC/DC witnesses, and DEFECT-18 closure.'
+        fingerprint: sha256:c56062e93f80ecb438b37a097d615903274349353ac50434ac05cb4ac89203d8
+        ai_generated: false
+history:
+    created_by: human:buger
+    created_at: "2026-06-25T15:23:28Z"
+    last_modified_by: human:buger
+    last_modified_at: "2026-06-25T15:26:24Z"
+obligation_checklist:
+    - errors_propagated
+    - process_exit_on_recoverable
+stakeholder:
+    acceptance_criteria:
+        - id: AC-001
+          text: HybridPump.Init with an empty connection_string returns the empty-connection error to the caller and does not terminate the process.
+          verification_method: test
+        - id: AC-002
+          text: HybridPump.Init with invalid RPC credentials returns ErrRPCLogin to the caller and does not terminate the process.
+          verification_method: test
+lifecycle:
+    change_history:
+        - date: "2026-06-25T15:26:24Z"
+          from: draft
+          to: review
+          reason: TT-8313 Hybrid recoverable init failure requirement ready for review
+          changed_by: human:buger

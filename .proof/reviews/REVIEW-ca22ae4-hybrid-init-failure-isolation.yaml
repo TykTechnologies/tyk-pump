@@ -1,0 +1,7 @@
+id: REVIEW-ca22ae4-hybrid-init-failure-isolation
+kind: design_review
+reviewer: agent:codex
+reviewed_at: "2026-06-25T15:35:00Z"
+subject: upstream:ca22ae4/SW-REQ-029+SW-REQ-085
+decision: approved
+comment: 'Commit-level assurance review for TT-8313: the Hybrid refactor replaced process-fatal init/connect handling with returned errors and per-pump gorpc lifecycle handling. Current SW-REQ-085 covers the fixed recoverable-init-failure behavior, DEFECT-18 records the historical process-exit bug, and existing Hybrid tests witness missing connection_string, invalid credentials, server-down connection, retry, and shutdown behavior. Residual Hybrid connection leak, retry elapsed-deadline, TLS-skip, SSRF, and process-wide timeout risks remain KnownIssue-backed debt and are not claimed as fixed.'

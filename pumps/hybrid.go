@@ -130,7 +130,7 @@ func (p *HybridPump) New() Pump {
 	return &HybridPump{}
 }
 
-// reqproof:implements SW-REQ-029
+// reqproof:implements SW-REQ-029,SW-REQ-085
 func (p *HybridPump) Init(config interface{}) error {
 	p.log = log.WithField("prefix", hybridPrefix)
 

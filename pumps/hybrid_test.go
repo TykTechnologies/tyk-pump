@@ -106,14 +106,24 @@ func stopRPCMock(t *testing.T, server *gorpc.Server) {
 }
 
 // Verifies: SW-REQ-029
+// Verifies: SW-REQ-085
+// SW-REQ-085:errors_propagated:nominal
+// SW-REQ-085:errors_propagated:negative
+// SW-REQ-085:process_exit_on_recoverable:negative
+// SW-REQ-085:process_exit_on_recoverable:nominal
 // MCDC SW-REQ-029: tls_dialer_used=F, use_ssl_configured=F => TRUE
 // MCDC SW-REQ-029: tls_dialer_used=F, use_ssl_configured=T => FALSE
 // MCDC SW-REQ-029: tls_dialer_used=T, use_ssl_configured=T => TRUE
+// MCDC SW-REQ-085: hybrid_init_failure_detected=F, init_error_returned_without_process_exit=F => TRUE
+// MCDC SW-REQ-085: hybrid_init_failure_detected=T, init_error_returned_without_process_exit=F => FALSE
+// MCDC SW-REQ-085: hybrid_init_failure_detected=T, init_error_returned_without_process_exit=T => TRUE
 // (Plain-RPC subtests (UseSSL=false) construct gorpc.NewClient directly —
 // F/F=TRUE. TLS subtests (UseSSL=true with cert files) construct gorpc.NewTLSClient
 // — T/T=TRUE. The F/T=FALSE pair is the cert-failure baseline where UseSSL=true
 // but cert/key are missing so NewTLSClient is not invoked — covered by the
-// Login-failure subtest below.)
+// Login-failure subtest below. For SW-REQ-085, the valid-credentials subtest
+// covers no init failure, while the empty-connection-string and invalid-credentials
+// subtests prove recoverable failures are returned as errors without process exit.)
 func TestHybridPumpInit(t *testing.T) {
 	//nolint:govet
 	tcs := []struct {
@@ -789,8 +799,11 @@ func TestRetryAndLog(t *testing.T) {
 }
 
 // Verifies: SW-REQ-029
+// Verifies: SW-REQ-085
 // SW-REQ-029:external_call_failure_observable:nominal
 // SW-REQ-029:external_call_failure_observable:negative
+// SW-REQ-085:errors_propagated:negative
+// SW-REQ-085:process_exit_on_recoverable:negative
 func TestConnectAndLogin(t *testing.T) {
 	//nolint:govet
 	tcs := []struct {

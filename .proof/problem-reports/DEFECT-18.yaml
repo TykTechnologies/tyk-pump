@@ -1,0 +1,101 @@
+schema_version: 1
+id: DEFECT-18
+title: Hybrid init used log.Fatal for recoverable MDCB startup failures
+introduced_in: unknown
+description: |
+  TT-8313 (commit ca22ae4) fixed Hybrid pump startup failure handling while
+  refactoring the RPC client. Before the commit, HybridPump.Init called
+  log.Fatal when `connection_string` was missing or when the RPC connection
+  could not be established. A single recoverable Hybrid configuration or MDCB
+  availability failure could therefore terminate the whole tyk-pump process
+  instead of returning an error for the pump runner to handle.
+
+  Current proof closes the fixed behavior through SW-REQ-085, a child of
+  SW-REQ-029, and existing Hybrid tests that assert missing connection strings,
+  invalid credentials, and server-down connection attempts return errors.
+source:
+    type: upstream_commit
+    repo: TykTechnologies/tyk-pump
+    commit: ca22ae4
+    reference: TT-8313
+    date: "2023-03-16"
+classification:
+    surface: error_handling
+    defect_class: recoverable_init_failure_exits_process
+    severity: medium
+    security_relevant: false
+root_cause:
+    missing_requirement: true
+    missing_test_partition: true
+    missing_mcdc_variable: true
+    notes: |
+      SW-REQ-029 described Hybrid forwarding to MDCB, but until this hardening
+      it did not directly model the process-exit policy for recoverable Hybrid
+      init failures. Existing tests covered the returned-error behavior, but
+      proof did not bind that behavior to a requirement-level obligation.
+impact_analysis:
+    affected_requirements:
+        - SW-REQ-029
+        - SW-REQ-085
+    affected_code:
+        - pumps/hybrid.go
+        - pumps/hybrid_test.go
+hardening:
+    new_requirements:
+        - SW-REQ-085
+    strengthened_requirements:
+        - SW-REQ-029
+    added_obligations:
+        - requirement: SW-REQ-085
+          obligation_class: process_exit_on_recoverable
+        - requirement: SW-REQ-085
+          obligation_class: errors_propagated
+    regression_tests:
+        - pumps/hybrid_test.go:TestHybridPumpInit
+        - pumps/hybrid_test.go:TestConnectAndLogin
+    mcdc_witnesses:
+        - requirement: SW-REQ-085
+          witness: "hybrid_init_failure_detected=T, init_error_returned_without_process_exit=T => TRUE"
+    proposed_classes: []
+disposition:
+    status: covered_by_requirement
+    requirements:
+        - SW-REQ-029
+        - SW-REQ-085
+    known_issues:
+        - external-pump-endpoints-no-ssrf-allowlist
+        - hybrid-getdialfn-leaks-conn-on-handshake-fail
+        - hybrid-rpc-retry-duration-not-deadline-bounded
+        - mapstructure-decode-silently-drops-unknown-keys
+        - pump-no-timeout-can-block-purge-cycle
+        - tls-insecure-skip-verify-allowed
+    evidence:
+        verified_by:
+            - pumps/hybrid_test.go:TestHybridPumpInit
+            - pumps/hybrid_test.go:TestConnectAndLogin
+        requirement_mcdc_witnesses:
+            - requirement: SW-REQ-085
+              witness: "hybrid_init_failure_detected=F, init_error_returned_without_process_exit=F => TRUE (valid credentials produce no recoverable init failure)"
+            - requirement: SW-REQ-085
+              witness: "hybrid_init_failure_detected=T, init_error_returned_without_process_exit=F => FALSE (violation row: recoverable init failure exits or is swallowed instead of returned)"
+            - requirement: SW-REQ-085
+              witness: "hybrid_init_failure_detected=T, init_error_returned_without_process_exit=T => TRUE (empty connection string, invalid credentials, and server-down cases return errors)"
+        obligation_evidence:
+            - requirement: SW-REQ-085
+              obligation_class: process_exit_on_recoverable
+              evidence_type: negative
+            - requirement: SW-REQ-085
+              obligation_class: process_exit_on_recoverable
+              evidence_type: nominal
+            - requirement: SW-REQ-085
+              obligation_class: errors_propagated
+              evidence_type: negative
+    reviewer: agent:codex
+    reviewed_at: "2026-06-25T15:35:00Z"
+history:
+    - at: "2026-06-25T15:35:00Z"
+      by: agent:codex
+      action: created
+      detail: |
+        Recorded TT-8313's process-exit/failure-isolation fix separately from
+        residual Hybrid timeout, retry-budget, and connection-leak debt.

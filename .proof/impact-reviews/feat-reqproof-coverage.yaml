@@ -1,6 +1,6 @@
 schema_version: 1
 branch: feat-reqproof-coverage
-generated_at: "2026-06-25T15:17:44Z"
+generated_at: "2026-06-25T15:27:59Z"
 reviews:
     - requirement: SW-REQ-001
       artifact: main.go
@@ -574,14 +574,18 @@ reviews:
       reviewed_at: "2026-05-30T07:45:44Z"
     - requirement: SW-REQ-029
       artifact: pumps/hybrid.go
+      symbols:
+        - HybridPump.Init
       decision: no-authored-change
+      change_type: fix
+      defect_ref: DEFECT-18
       reviewer: buger
-      reason: 'Audit sweep: traced implementation changes reviewed; requirement intent and documented design remain unchanged'
+      reason: TT-8313 DEFECT-18 closure changed only the source-native reqproof:implements annotation on HybridPump.Init; runtime implementation behavior is unchanged, while the authored process-exit contract is captured by SW-REQ-085 and existing Hybrid init/connect tests.
       base: origin/master
       requirement_fingerprint: sha256:74bc015863e33aefc35b9a608f43b2e31207174422c021a9de3792db597a870a
-      approval_fingerprint: sha256:920eca0d050151780b64ebef59904059a8fb9b265c0659d3e92240d4d8f8efeb
-      artifact_fingerprint: sha256:101b7105d0f1f9d8fbb949587451294d6ae455d1b5d4e4af1823a3bada6b8af3
-      reviewed_at: "2026-06-19T07:58:15Z"
+      approval_fingerprint: sha256:31d5361ff012a2962b520950476e3ab8c0a507f3f902a4efc8c1969345ae4642
+      artifact_fingerprint: sha256:a72ff419688735e44d3af62d34baed2027efc7ffaed65dfa5eaaebe75e2db7a2
+      reviewed_at: "2026-06-25T15:27:59Z"
     - requirement: SW-REQ-030
       artifact: retry/http-retry.go
       decision: no-authored-change
@@ -1095,3 +1099,17 @@ reviews:
       approval_fingerprint: sha256:6481f28bd786702f451a5c3fb5a60c1ae9b3842d25481ea9f98ec79b1c9f7c9a
       artifact_fingerprint: sha256:8677925bb80c9cb6293ede5e33bf99bf8b15b730643d491348ab4a2351f611f5
       reviewed_at: "2026-06-25T15:14:57Z"
+    - requirement: SW-REQ-085
+      artifact: pumps/hybrid.go
+      symbols:
+        - HybridPump.Init
+      decision: no-authored-change
+      change_type: fix
+      defect_ref: DEFECT-18
+      reviewer: buger
+      reason: TT-8313 DEFECT-18 closure changed only the source-native reqproof:implements annotation on HybridPump.Init; runtime implementation behavior is unchanged, while the authored process-exit contract is captured by SW-REQ-085 and existing Hybrid init/connect tests.
+      base: origin/master
+      requirement_fingerprint: sha256:8575803ae1bfd8e21bfb5dad6abc54ba6bec0b5f6f1c67f06374c0c6ed1aec21
+      approval_fingerprint: sha256:c56062e93f80ecb438b37a097d615903274349353ac50434ac05cb4ac89203d8
+      artifact_fingerprint: sha256:a72ff419688735e44d3af62d34baed2027efc7ffaed65dfa5eaaebe75e2db7a2
+      reviewed_at: "2026-06-25T15:27:59Z"

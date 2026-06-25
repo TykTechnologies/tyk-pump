@@ -8,3 +8,11 @@ variables:
       type: bool
       direction: output
       description: True iff gorpc.NewTLSClient is used (vs. plain gorpc.NewClient).
+    - name: hybrid_init_failure_detected
+      type: bool
+      direction: input
+      description: True when HybridPump.Init detects a recoverable startup failure such as a missing connection_string, unreachable MDCB endpoint, or invalid RPC credentials.
+    - name: init_error_returned_without_process_exit
+      type: bool
+      direction: output
+      description: True iff HybridPump.Init returns the initialization error to its caller without calling log.Fatal, os.Exit, or otherwise terminating the process.
