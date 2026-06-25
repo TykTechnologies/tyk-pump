@@ -1,0 +1,50 @@
+id: timeout_config_units_preserved
+name: Timeout configuration units preserved
+category: domain
+status: active
+summary: Timeout configuration values shall be parsed with documented units and propagated unchanged to every deadline field they control.
+description: |-
+  Timeout knobs often cross YAML, environment variables, generic
+  map[string]interface{} decoding, and backend client constructors. A
+  requirement that promises a timeout shall prove the accepted representations
+  and units at that boundary: duration strings keep their duration semantics,
+  numeric values are interpreted in the documented unit, environment overrides
+  follow the same parser, and the parsed duration is applied consistently to
+  connect, read, and write deadlines.
+applies_when:
+  description: a pump or backend client accepts operator timeout configuration and converts it to a time.Duration or equivalent deadline
+  trigger_phrases:
+    - timeout
+    - time.Duration
+    - ParseDuration
+    - env override
+    - WriteTimeout
+    - ReadTimeout
+example_req: |-
+  When the Kafka pump receives timeout as "10s", "5", 7.0, or the
+  TYK_PMP_PUMPS_KAFKA_META_TIMEOUT override, Init shall apply the parsed
+  duration to the Kafka dialer, write timeout, and read timeout.
+if_missing: |-
+  Operators can configure a timeout that is silently interpreted in the wrong
+  unit or ignored on one client deadline field. That can turn a 10-second
+  bounded backend call into a nanosecond timeout, a zero timeout, or an
+  unbounded/hung write path.
+recommended_evidence:
+  - kind: nominal
+    note: Init test supplies a documented duration string and asserts every backend deadline field receives the same parsed duration.
+  - kind: boundary
+    note: Init test supplies numeric-string and numeric config representations and asserts they are interpreted as documented seconds.
+  - kind: override
+    note: Init test supplies the environment timeout override and asserts it wins over the file/config value using the same parser.
+frameworks:
+  - id: CWE
+    refs:
+      - CWE-20
+      - CWE-754
+related_classes:
+  - id: external_call_timeout_bounded
+    relationship: supports
+  - id: malformed_recovers_or_errors_loudly
+    relationship: complements
+  - id: config_schema_strict
+    relationship: complements

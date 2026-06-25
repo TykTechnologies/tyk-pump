@@ -276,23 +276,33 @@ func TestKafkaPump_WriteData_Empty(t *testing.T) {
 // strconv.ParseFloat succeeds ("5"); a numeric float value.
 //
 // Verifies: SW-REQ-021
+// Verifies: SW-REQ-081
+// SW-REQ-081:timeout_config_units_preserved:nominal
+// SW-REQ-081:timeout_config_units_preserved:boundary
+// MCDC SW-REQ-081: kafka_timeout_configured=F, kafka_timeout_duration_applied=F => TRUE
+// MCDC SW-REQ-081: kafka_timeout_configured=T, kafka_timeout_duration_applied=F => FALSE
+// MCDC SW-REQ-081: kafka_timeout_configured=T, kafka_timeout_duration_applied=T => TRUE
 func TestKafkaPump_Init_TimeoutVariants(t *testing.T) {
 	tests := []struct {
-		name    string
-		timeout interface{}
-		want    time.Duration
+		name       string
+		timeout    interface{}
+		configured bool
+		want       time.Duration
 	}{
-		{"duration_string", "10s", 10 * time.Second},
-		{"numeric_string", "5", 5 * time.Second},
-		{"float_value", 7.0, 7 * time.Second},
-		{"int_via_float", float64(3), 3 * time.Second},
+		{"omitted", nil, false, 0},
+		{"duration_string", "10s", true, 10 * time.Second},
+		{"numeric_string", "5", true, 5 * time.Second},
+		{"float_value", 7.0, true, 7 * time.Second},
+		{"int_via_float", float64(3), true, 3 * time.Second},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			cfg := map[string]interface{}{
-				"broker":  []string{"localhost:9092"},
-				"topic":   "t",
-				"timeout": tc.timeout,
+				"broker": []string{"localhost:9092"},
+				"topic":  "t",
+			}
+			if tc.configured {
+				cfg["timeout"] = tc.timeout
 			}
 			pump := &KafkaPump{}
 			require.NoError(t, pump.Init(cfg))
@@ -308,6 +318,9 @@ func TestKafkaPump_Init_TimeoutVariants(t *testing.T) {
 // field is not handled by envconfig).
 //
 // Verifies: SW-REQ-021
+// Verifies: SW-REQ-081
+// SW-REQ-081:timeout_config_units_preserved:override
+// MCDC SW-REQ-081: kafka_timeout_configured=T, kafka_timeout_duration_applied=T => TRUE
 func TestKafkaPump_Init_TimeoutEnvOverride(t *testing.T) {
 	t.Setenv("TYK_PMP_PUMPS_KAFKA_META_TIMEOUT", "12s")
 	pump := &KafkaPump{}
@@ -317,6 +330,8 @@ func TestKafkaPump_Init_TimeoutEnvOverride(t *testing.T) {
 		"timeout": "1s", // should be overridden by env
 	}))
 	assert.Equal(t, 12*time.Second, pump.writerConfig.WriteTimeout)
+	assert.Equal(t, 12*time.Second, pump.writerConfig.ReadTimeout)
+	assert.Equal(t, 12*time.Second, pump.writerConfig.Dialer.Timeout)
 }
 
 // TestKafkaPump_Init_SASLMechanismMatrix drives every SASL-mechanism switch

@@ -1,0 +1,7 @@
+id: REVIEW-91dd8a0-kafka-timeout-units
+kind: design_review
+reviewer: agent:codex
+reviewed_at: "2026-06-25T14:12:00Z"
+subject: upstream:91dd8a0/SW-REQ-021+SW-REQ-081
+decision: approved
+comment: 'Commit-level assurance review for TT-9360: the historical change made Kafka timeout parsing accept duration strings, numeric seconds, and TYK_PMP_PUMPS_KAFKA_META_TIMEOUT, then apply the parsed duration consistently to Kafka dial, read, and write timeouts. Existing tests covered those branches, but the proof model attached them to TLS-focused SW-REQ-021. This review approves SW-REQ-081, local obligation timeout_config_units_preserved, DEFECT-11, MC/DC timeout witness rows, and the existing Init timeout evidence. Malformed timeout strings still log.Fatal and remain covered by KI kafka-logfatal-on-init-mech-and-timeout.'

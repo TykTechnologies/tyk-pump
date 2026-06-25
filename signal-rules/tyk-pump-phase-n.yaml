@@ -639,6 +639,53 @@ rules:
                 $LOG.Fatalf(...)
                 ...
               }
+  - id: go.kafka-timeout-duration-unit-confusion
+    severity: WARNING
+    languages: [go]
+    message: |
+      Kafka timeout configuration is modeled as `time.Duration` or is
+      multiplied by `time.Second` at the writer deadline boundary. This can
+      double-apply units after mapstructure/env decoding: a configured timeout
+      that already represents a duration can become seconds-squared, while
+      generic config values can be misread as nanoseconds or zero. Parse Kafka
+      timeout values at Init with documented units and assign the resulting
+      duration directly to Dialer.Timeout, WriteTimeout, and ReadTimeout.
+    metadata:
+      proof:
+        signal_id: go.kafka_timeout_duration_unit_confusion
+        provider: opengrep
+        confidence: high
+        framework_hints:
+          - CWE-20
+          - CWE-682
+          - CWE-754
+        notes: |
+          Regression detector for TT-9360. The historical shape was a KafkaConf
+          Timeout typed as time.Duration and writer deadlines computed with
+          k.kafkaConf.Timeout * time.Second. The fixed code parses duration
+          strings and numeric seconds into a local time.Duration, then assigns
+          that value directly to all Kafka deadline fields.
+        obligations: [timeout_config_units_preserved, external_call_timeout_bounded]
+    paths:
+      include:
+        - "pumps/kafka.go"
+      exclude:
+        - "*_test.go"
+        - "vendor/**"
+    patterns:
+      - pattern-either:
+          - pattern: |
+              type KafkaConf struct {
+                ...
+                Timeout time.Duration `...`
+                ...
+              }
+          - pattern: |
+              $W.WriteTimeout = $K.kafkaConf.Timeout * time.Second
+          - pattern: |
+              $W.ReadTimeout = $K.kafkaConf.Timeout * time.Second
+          - pattern: |
+              Timeout: $K.kafkaConf.Timeout * time.Second
   - id: go.fanout-goroutine-no-recover
     severity: INFO
     languages: [go]

@@ -1,0 +1,116 @@
+schema_version: 1
+id: DEFECT-11
+title: Kafka timeout configuration units were not a first-class proof contract
+introduced_in: 91dd8a0
+description: |
+  TT-9360 (commit 91dd8a0) fixed Kafka timeout parsing by accepting timeout
+  values as duration strings, numeric seconds, and a Kafka-specific environment
+  override, then applying the parsed duration to the Kafka dialer and writer
+  read/write timeouts.
+
+  Before proof hardening, current tests already exercised these branches, but
+  they were attached to SW-REQ-021, whose formal contract is TLS attachment.
+  The timeout unit and propagation behavior was therefore test-covered but not
+  requirement-modeled: a future change could satisfy the TLS MC/DC rows while
+  regressing Kafka timeout parsing.
+source:
+  type: upstream_commit
+  repo: TykTechnologies/tyk-pump
+  commit: 91dd8a0
+  reference: TT-9360
+  date: "2023-08-01"
+classification:
+  surface: runtime_code
+  defect_class: kafka_timeout_unit_parsing_gap
+  severity: medium
+  security_relevant: false
+root_cause:
+  missing_requirement: true
+  missing_test_partition: false
+  missing_mcdc_variable: true
+  notes: |
+    SW-REQ-021 covered Kafka TLS attachment and had broad Init evidence, but
+    the timeout parser and env override were not modeled as variables or as a
+    dedicated timeout-unit obligation. SW-REQ-081 now pins the configured
+    timeout application behavior directly.
+impact_analysis:
+  affected_requirements:
+    - SYS-REQ-005
+    - SW-REQ-021
+    - SW-REQ-081
+  affected_code:
+    - pumps/kafka.go
+    - pumps/kafka_mcdc_test.go
+hardening:
+  new_requirements:
+    - SW-REQ-081
+  strengthened_requirements:
+    - SW-REQ-021
+    - SYS-REQ-005
+  added_obligations:
+    - requirement: SW-REQ-081
+      obligation_class: timeout_config_units_preserved
+  regression_tests:
+    - pumps/kafka_mcdc_test.go:TestKafkaPump_Init_TimeoutVariants
+    - pumps/kafka_mcdc_test.go:TestKafkaPump_Init_TimeoutEnvOverride
+  mcdc_witnesses:
+    - requirement: SW-REQ-081
+      witness: "kafka_timeout_duration_applied=T, kafka_timeout_configured=T => TRUE"
+  proposed_classes:
+    - timeout_config_units_preserved
+  code_signals:
+    - go.kafka-timeout-duration-unit-confusion
+disposition:
+  status: covered_by_requirement
+  requirements:
+    - SYS-REQ-005
+    - SW-REQ-021
+    - SW-REQ-081
+  known_issues:
+    - elasticsearch-unbounded-reconnect-recursion
+    - elapsed-timesince-dst-obligation-misattributed
+    - kafka-logfatal-on-init-mech-and-timeout
+    - kafka-writedata-full-batch-allocation-unbounded
+    - kafka-writedata-non-analytics-record-panic
+    - kafka-writedata-swallows-write-errors
+    - mapstructure-decode-silently-drops-unknown-keys
+    - mongo-pump-ignores-caller-context
+    - no-panic-recovery-in-exec-pump-writing
+    - pump-no-timeout-can-block-purge-cycle
+    - pumps-logfatal-on-config-decode
+    - tls-insecure-skip-verify-allowed
+  evidence:
+    verified_by:
+      - pumps/kafka_mcdc_test.go:TestKafkaPump_Init_TimeoutVariants
+      - pumps/kafka_mcdc_test.go:TestKafkaPump_Init_TimeoutEnvOverride
+    requirement_mcdc_witnesses:
+      - requirement: SW-REQ-081
+        witness: "kafka_timeout_duration_applied=F, kafka_timeout_configured=F => TRUE (no Kafka timeout is configured, so configured-timeout application is not active)"
+      - requirement: SW-REQ-081
+        witness: "kafka_timeout_duration_applied=F, kafka_timeout_configured=T => FALSE (violation row: timeout configured but not applied consistently to Kafka deadlines)"
+      - requirement: SW-REQ-081
+        witness: "kafka_timeout_duration_applied=T, kafka_timeout_configured=T => TRUE (configured timeout is parsed and applied to dial/read/write deadlines)"
+    obligation_evidence:
+      - requirement: SW-REQ-081
+        obligation_class: timeout_config_units_preserved
+        evidence_type: nominal
+      - requirement: SW-REQ-081
+        obligation_class: timeout_config_units_preserved
+        evidence_type: boundary
+      - requirement: SW-REQ-081
+        obligation_class: timeout_config_units_preserved
+        evidence_type: override
+  reviewer: agent:codex
+  reviewed_at: "2026-06-25T14:12:00Z"
+history:
+  - at: "2026-06-25T14:12:00Z"
+    by: agent:codex
+    action: created
+  - at: "2026-06-25T14:12:00Z"
+    by: agent:codex
+    action: hardened
+    detail: |
+      Added SW-REQ-081 and timeout_config_units_preserved to make Kafka timeout
+      parser units and deadline propagation explicit. Existing timeout tests
+      now witness the timeout requirement directly; malformed timeout log.Fatal
+      remains known issue debt rather than claimed fixed.

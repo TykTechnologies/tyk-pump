@@ -8,3 +8,11 @@ variables:
       type: bool
       direction: output
       description: True iff a non-nil tlsConfig is built via NewTLSConfig and attached to the kafka Dialer.
+    - name: kafka_timeout_configured
+      type: bool
+      direction: input
+      description: True when KafkaConf.Timeout is supplied through config or TYK_PMP_PUMPS_KAFKA_META_TIMEOUT.
+    - name: kafka_timeout_duration_applied
+      type: bool
+      direction: output
+      description: True when the parsed Kafka timeout duration is applied identically to Dialer.Timeout, WriteTimeout, and ReadTimeout.

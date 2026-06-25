@@ -1,0 +1,51 @@
+id: SW-REQ-081
+version: 1
+status: approved
+priority: shall
+category: functional
+req_type: guarantee
+fretish: when kafka_timeout_configured pumps_kafka shall always satisfy kafka_timeout_duration_applied
+description: The Kafka pump shall parse timeout configuration from supported operator representations (duration strings, numeric seconds, and the Kafka timeout environment override) and apply the resulting duration consistently to the Kafka dialer, writer read timeout, and writer write timeout.
+formalization_strategy: fretish
+informal_verification:
+    method: ""
+    evidence: ""
+    verified: false
+parent: SYS-REQ-005
+component: pumps-kafka
+rationale: 'Product-fix-history hardening for TT-9360: Kafka timeout parsing was a historical runtime bug that existing tests covered only under the broader TLS Kafka requirement, so this creates a first-class timeout parser contract.'
+tags: []
+variables:
+    - kafka_timeout_configured
+    - kafka_timeout_duration_applied
+traces: {}
+verification:
+    assurance_level: B
+    formalization_status: valid
+    review:
+        status: approved
+        reviewer: human:buger
+        role: software_engineer
+        reviewed_at: "2026-06-25T14:19:04Z"
+        comment: 'TT-9360 hardening: reviewed Kafka timeout unit parsing requirement, timeout_config_units_preserved obligation, MC/DC witnesses, existing Init timeout evidence, and DEFECT-11 closure.'
+        fingerprint: sha256:9e0d1e5e3b3aa3593e452d5a35d495fb38c31de1d474d6e271066871515e5d61
+        ai_generated: false
+history:
+    created_by: human:buger
+    created_at: "2026-06-25T14:11:43Z"
+    last_modified_by: human:buger
+    last_modified_at: "2026-06-25T14:19:04Z"
+obligation_checklist:
+    - timeout_config_units_preserved
+stakeholder:
+    acceptance_criteria:
+        - id: AC-001
+          text: Kafka Init accepts timeout as a duration string, numeric string, numeric seconds value, and TYK_PMP_PUMPS_KAFKA_META_TIMEOUT override, and assigns the parsed duration to Dialer.Timeout, WriteTimeout, and ReadTimeout.
+          verification_method: test
+lifecycle:
+    change_history:
+        - date: "2026-06-25T14:19:04Z"
+          from: draft
+          to: review
+          reason: TT-9360 Kafka timeout unit parsing requirement ready for review
+          changed_by: human:buger
