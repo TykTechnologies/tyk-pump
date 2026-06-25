@@ -1,0 +1,7 @@
+id: REVIEW-97bbecc-prometheus-histogram-type-label
+kind: design_review
+reviewer: agent:codex
+reviewed_at: "2026-06-25T17:15:31Z"
+subject: upstream:97bbecc/SW-REQ-024/SW-REQ-091
+decision: approved
+comment: 'Commit-level assurance review for TT-6482: upstream normalized Prometheus histogram metric labels so the synthetic type label is registered exactly once at position 0 before observation. Current proof now splits SW-REQ-091 from broad SW-REQ-024 metric exposition, adds metric_label_schema_stable evidence, strengthens exact-label assertions, and records DEFECT-28. No runtime product behavior change was made.'

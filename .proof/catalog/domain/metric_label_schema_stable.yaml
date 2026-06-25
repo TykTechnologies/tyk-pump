@@ -1,0 +1,44 @@
+id: metric_label_schema_stable
+name: Metric label schema stable
+category: domain
+status: active
+summary: Metric label names shall be normalized into the exact schema expected by the metric update path before registration or observation.
+description: |-
+  Metrics clients bind label values positionally. If a metric helper prepends,
+  removes, or synthesizes label values, the registered label-name schema must
+  be normalized first so every emitted value maps to the intended label name.
+  Requirements shall name the synthetic labels, their positions, duplicate
+  handling, and preservation of the remaining configured label order.
+applies_when:
+  description: a metrics pump registers counters, histograms, summaries, or gauges whose label values are generated or reordered by code
+  trigger_phrases:
+    - label schema
+    - histogram type label
+    - synthetic label
+    - label order
+    - duplicate label
+example_req: |-
+  When a Prometheus histogram metric is initialized, its registered label
+  schema shall contain exactly one `type` label in position 0, followed by the
+  configured non-type labels in their original relative order.
+if_missing: |-
+  A metric can register with one label schema but observe values in another
+  order. Prometheus then rejects the update, panics on inconsistent label
+  cardinality, or attributes values to the wrong labels.
+recommended_evidence:
+  - kind: nominal
+    note: Unit test initializes a histogram whose labels already satisfy the schema and asserts the schema remains exact.
+  - kind: boundary
+    note: Unit tests cover missing, middle-position, duplicate, and empty configured labels, asserting exact normalized label slices.
+  - kind: review
+    note: Review maps every generated label value to the registered label name and position.
+frameworks:
+  - id: CWE
+    refs:
+      - CWE-20
+      - CWE-1284
+related_classes:
+  - id: metric_family_disable_gate
+    relationship: complements
+  - id: output_cardinality_bounded
+    relationship: complements

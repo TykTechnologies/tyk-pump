@@ -1,0 +1,61 @@
+id: SW-REQ-091
+version: 1
+status: approved
+priority: shall
+category: functional
+req_type: guarantee
+fretish: when histogram_metric_configured pumps_prometheus shall always satisfy histogram_type_label_schema_normalized
+description: When a Prometheus histogram metric is initialized, its label schema shall contain exactly one synthetic type label in position 0, followed by the configured non-type labels in their original relative order; missing, middle-position, or duplicate configured type labels shall normalize to this same schema before registration and observation.
+formalization_strategy: fretish
+informal_verification:
+    method: ""
+    evidence: ""
+    verified: false
+parent: SW-REQ-024
+component: pumps-prometheus
+rationale: 'Product-fix-history hardening for TT-6482: before commit 97bbecc, histogram metrics could register without the synthetic type label in the correct position even though Observe prepends type values such as total/upstream/gateway. This child pins the histogram label-schema normalization separately from SW-REQ-024 scrape exposition and SW-REQ-083 label tuple-boundary preservation.'
+tags: []
+variables:
+    - histogram_metric_configured
+    - histogram_type_label_schema_normalized
+traces:
+    satisfies:
+        - SW-REQ-024
+verification:
+    assurance_level: B
+    formalization_status: valid
+    review:
+        status: approved
+        reviewer: human:buger
+        role: software_engineer
+        reviewed_at: "2026-06-25T17:17:37Z"
+        comment: 'TT-6482 hardening: Prometheus histogram type-label schema normalization now has a dedicated requirement, metric_label_schema_stable evidence, and exact boundary assertions; no runtime product behavior change.'
+        fingerprint: sha256:ea1d6c0f838046a97e051d43dff21e70c6a3c605c568a40b4b9d8d05548e9cf9
+        ai_generated: false
+history:
+    created_by: human:buger
+    created_at: "2026-06-25T17:15:31Z"
+    last_modified_by: human:buger
+    last_modified_at: "2026-06-25T17:17:37Z"
+obligation_checklist:
+    - metric_label_schema_stable
+stakeholder:
+    acceptance_criteria:
+        - id: AC-001
+          text: A Prometheus histogram metric initialized with no type label, a middle-position type label, or duplicate type labels registers exactly one type label in position 0 and preserves the remaining configured label order.
+          verification_method: test
+        - id: AC-002
+          text: A Prometheus counter metric does not receive the histogram synthetic type label during label normalization.
+          verification_method: test
+lifecycle:
+    change_history:
+        - date: "2026-06-25T17:15:31Z"
+          from: draft
+          to: review
+          reason: TT-6482 Prometheus histogram type-label schema requirement ready for branch review
+          changed_by: human:buger
+        - date: "2026-06-25T17:17:37Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-25T17:15:31Z comment="TT-6482 hardening: reviewed Prometheus histogram type-label schema normalization, metric_label_schema_stable evidence, MC/DC witnesses, and DEFECT-28 closure; no runtime product behavior change claimed.")'
+          changed_by: human:buger

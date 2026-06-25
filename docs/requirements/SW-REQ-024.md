@@ -44,6 +44,9 @@ Failure modes addressed:
 - Disabled base metrics: split into **SW-REQ-090**, where `DisabledMetrics`
   skips built-in base metric registration/update/exposition without suppressing
   custom metrics.
+- Histogram label schema: split into **SW-REQ-091**, where histogram metrics
+  normalize the synthetic `type` label before Prometheus registration and
+  observation.
 - Context cancellation mid-batch: `WriteData` checks `ctx.Done()` between
   records.
 
@@ -77,6 +80,8 @@ Failure modes addressed:
 - `pumps/prometheus_test.go:TestPrometheusDisablingMetrics` and
   `TestPrometheusDisabledMetricsDoNotDisableCustomMetrics` cover the
   SW-REQ-090 disabled-base-family gate.
+- `pumps/prometheus_test.go:TestPrometheusEnsureLabels` covers the SW-REQ-091
+  histogram `type` label schema normalization.
 - `pumps/udp_file_pumps_mcdc_test.go`
   `TestPrometheusPump_WriteData_NoTracking`,
   `TestPrometheusPump_WriteData_TrackedRecord`, and

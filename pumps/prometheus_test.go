@@ -25,6 +25,9 @@ import (
 // MCDC SW-REQ-090: base_metric_disabled=F, base_metric_family_absent=F => TRUE
 // MCDC SW-REQ-090: base_metric_disabled=T, base_metric_family_absent=F => FALSE
 // MCDC SW-REQ-090: base_metric_disabled=T, base_metric_family_absent=T => TRUE
+// MCDC SW-REQ-091: histogram_metric_configured=F, histogram_type_label_schema_normalized=F => TRUE
+// MCDC SW-REQ-091: histogram_metric_configured=T, histogram_type_label_schema_normalized=F => FALSE
+// MCDC SW-REQ-091: histogram_metric_configured=T, histogram_type_label_schema_normalized=T => TRUE
 
 // Verifies: SW-REQ-024
 // MCDC SW-REQ-024: default_path_applied=F, listen_path_empty=F => TRUE
@@ -878,36 +881,48 @@ func TestPrometheusCreateBasicMetrics(t *testing.T) {
 }
 
 // Verifies: SW-REQ-024
+// Verifies: SW-REQ-091
+// SW-REQ-091:metric_label_schema_stable:nominal
+// SW-REQ-091:metric_label_schema_stable:boundary
+// MCDC SW-REQ-091: histogram_metric_configured=F, histogram_type_label_schema_normalized=F => TRUE
+// MCDC SW-REQ-091: histogram_metric_configured=T, histogram_type_label_schema_normalized=F => FALSE
+// MCDC SW-REQ-091: histogram_metric_configured=T, histogram_type_label_schema_normalized=T => TRUE
 func TestPrometheusEnsureLabels(t *testing.T) {
 	testCases := []struct {
-		name                 string
-		metricType           string
-		labels               []string
-		typeLabelShouldExist bool
+		name           string
+		metricType     string
+		labels         []string
+		expectedLabels []string
 	}{
 		{
-			name:                 "histogram type, type label should be added if not exist",
-			labels:               []string{"response_code", "api_name", "method", "api_key", "alias", "path"},
-			metricType:           histogramType,
-			typeLabelShouldExist: true,
+			name:           "histogram type, type label should be added if not exist",
+			labels:         []string{"response_code", "api_name", "method", "api_key", "alias", "path"},
+			metricType:     histogramType,
+			expectedLabels: []string{"type", "response_code", "api_name", "method", "api_key", "alias", "path"},
 		},
 		{
-			name:                 "counter type, type label should not be added",
-			labels:               []string{"response_code", "api_name", "method", "api_key", "alias", "path"},
-			metricType:           counterType,
-			typeLabelShouldExist: false,
+			name:           "counter type, type label should not be added",
+			labels:         []string{"response_code", "api_name", "method", "api_key", "alias", "path"},
+			metricType:     counterType,
+			expectedLabels: []string{"response_code", "api_name", "method", "api_key", "alias", "path"},
 		},
 		{
-			name:                 "histogram type, type label should not be repeated and in the 1st position",
-			labels:               []string{"type", "response_code", "api_name", "method", "api_key", "alias", "path"},
-			metricType:           histogramType,
-			typeLabelShouldExist: true,
+			name:           "histogram type, type label should not be repeated and in the 1st position",
+			labels:         []string{"type", "response_code", "api_name", "method", "api_key", "alias", "path"},
+			metricType:     histogramType,
+			expectedLabels: []string{"type", "response_code", "api_name", "method", "api_key", "alias", "path"},
 		},
 		{
-			name:                 "histogram type, type label should not be repeated (even if user repeated it), and always in the 1st position",
-			labels:               []string{"response_code", "api_name", "type", "method", "api_key", "alias", "path", "type"},
-			metricType:           histogramType,
-			typeLabelShouldExist: true,
+			name:           "histogram type, type label should not be repeated (even if user repeated it), and always in the 1st position",
+			labels:         []string{"response_code", "api_name", "type", "method", "api_key", "alias", "path", "type"},
+			metricType:     histogramType,
+			expectedLabels: []string{"type", "response_code", "api_name", "method", "api_key", "alias", "path"},
+		},
+		{
+			name:           "histogram type, empty labels still receive type label",
+			labels:         nil,
+			metricType:     histogramType,
+			expectedLabels: []string{"type"},
 		},
 	}
 
@@ -919,24 +934,7 @@ func TestPrometheusEnsureLabels(t *testing.T) {
 			}
 
 			pm.ensureLabels()
-			typeLabelFound := false
-			numberOfTimesOfTypeLabel := 0
-
-			for _, label := range pm.Labels {
-				if label == "type" {
-					typeLabelFound = true
-					numberOfTimesOfTypeLabel++
-				}
-			}
-
-			assert.Equal(t, tc.typeLabelShouldExist, typeLabelFound)
-
-			// if should exist then it should be only one time
-			if tc.typeLabelShouldExist {
-				assert.Equal(t, 1, numberOfTimesOfTypeLabel)
-				// label `type` should be in the 1st position always
-				assert.Equal(t, pm.Labels[0], "type")
-			}
+			assert.Equal(t, tc.expectedLabels, pm.Labels)
 		})
 	}
 }

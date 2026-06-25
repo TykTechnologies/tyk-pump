@@ -1,0 +1,105 @@
+schema_version: 1
+id: DEFECT-28
+title: Prometheus histogram type label schema was not normalized before observation
+introduced_in: unknown
+description: |
+  TT-6482 (commit 97bbecc) fixed Prometheus histogram label handling. Histogram
+  observation prepends a synthetic latency type value such as total, upstream,
+  or gateway, so the registered label schema must contain exactly one "type"
+  label at position 0. Before the fix, custom histogram labels could omit
+  type, put type in another position, or repeat type, causing observe-time
+  label cardinality errors or values bound to the wrong label names.
+
+  Current code calls ensureLabels before histogram registration. The helper
+  removes all configured type labels and prepends exactly one type label,
+  preserving the relative order of all configured non-type labels. Counter
+  metrics are not modified by this histogram-specific normalization.
+source:
+    type: upstream_commit
+    repo: TykTechnologies/tyk-pump
+    commit: 97bbecc
+    reference: TT-6482
+    date: "2022-10-18"
+classification:
+    surface: data_integrity
+    defect_class: prometheus_histogram_label_schema_mismatch
+    severity: medium
+    security_relevant: false
+root_cause:
+    missing_requirement: true
+    missing_test_partition: true
+    missing_mcdc_variable: true
+    notes: |
+      SW-REQ-024 modeled broad Prometheus metric exposition, and SW-REQ-083
+      later modeled aggregate label tuple-boundary preservation, but neither
+      captured the histogram-only synthetic type label schema. Runtime tests
+      checked presence of type, but proof did not carry a requirement, MC/DC
+      variables, or obligation evidence for exact label schema normalization.
+impact_analysis:
+    affected_requirements:
+        - SW-REQ-024
+        - SW-REQ-091
+    affected_code:
+        - pumps/prometheus.go
+        - pumps/prometheus_test.go
+hardening:
+    new_requirements:
+        - SW-REQ-091
+    strengthened_requirements:
+        - SW-REQ-024
+    added_obligations:
+        - requirement: SW-REQ-091
+          obligation_class: metric_label_schema_stable
+    regression_tests:
+        - pumps/prometheus_test.go:TestPrometheusEnsureLabels
+        - pumps/prometheus_test.go:TestPrometheusHistogramMetric
+    mcdc_witnesses:
+        - requirement: SW-REQ-091
+          witness: "histogram_metric_configured=F, histogram_type_label_schema_normalized=F => TRUE"
+        - requirement: SW-REQ-091
+          witness: "histogram_metric_configured=T, histogram_type_label_schema_normalized=F => FALSE"
+        - requirement: SW-REQ-091
+          witness: "histogram_metric_configured=T, histogram_type_label_schema_normalized=T => TRUE"
+    proposed_classes:
+        - metric_label_schema_stable
+disposition:
+    status: covered_by_requirement
+    requirements:
+        - SW-REQ-024
+        - SW-REQ-091
+    known_issues:
+        - mapstructure-decode-silently-drops-unknown-keys
+        - metrics-label-cardinality-unbounded
+        - no-panic-recovery-in-exec-pump-writing
+        - prometheus-init-mutates-default-mux
+        - prometheus-metric-maps-race
+        - prometheus-metrics-auth-not-enforced
+        - pumps-logfatal-on-config-decode
+    evidence:
+        verified_by:
+            - pumps/prometheus_test.go:TestPrometheusEnsureLabels
+            - pumps/prometheus_test.go:TestPrometheusHistogramMetric
+        requirement_mcdc_witnesses:
+            - requirement: SW-REQ-091
+              witness: "histogram_metric_configured=F, histogram_type_label_schema_normalized=F => TRUE (counter metric is outside the histogram normalization trigger)"
+            - requirement: SW-REQ-091
+              witness: "histogram_metric_configured=T, histogram_type_label_schema_normalized=F => FALSE (violation row: histogram schema is missing, duplicate, or misordered type label)"
+            - requirement: SW-REQ-091
+              witness: "histogram_metric_configured=T, histogram_type_label_schema_normalized=T => TRUE (histogram schema has exactly one type label at position 0)"
+        obligation_evidence:
+            - requirement: SW-REQ-091
+              obligation_class: metric_label_schema_stable
+              evidence_type: nominal
+            - requirement: SW-REQ-091
+              obligation_class: metric_label_schema_stable
+              evidence_type: boundary
+    reviewer: agent:codex
+    reviewed_at: "2026-06-25T17:15:31Z"
+history:
+    - at: "2026-06-25T17:15:31Z"
+      by: agent:codex
+      action: created
+      detail: |
+        Recorded TT-6482 Prometheus histogram label-schema normalization as
+        covered by SW-REQ-091, including exact type-label order/deduplication
+        evidence and counter non-applicability evidence.
