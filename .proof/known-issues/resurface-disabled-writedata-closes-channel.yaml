@@ -7,7 +7,7 @@ severity: medium
 severity_basis: risk
 risk: availability
 environment_note: Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source or documentation surface and following the described scenario.
-introduced_in: inception
+introduced_in: 8ca8646
 mitigation: main.execPumpWriting calls pump.WriteData inside per-pump goroutines but only one purge cycle is active at a time, so production rarely triggers the race. The risk surfaces during testing or if a future code change calls Flush() while a purge cycle is in flight.
 remediation: Guard rp.data/rp.enabled with sync.RWMutex; or replace the close-then-recreate pattern with a sentinel 'shutdown signal' channel; or use sync/atomic for rp.enabled and protect rp.data swap under a lock.
 owner: tyk-team
@@ -25,3 +25,7 @@ history:
       by: human:buger
       action: edit
       detail: set-severity-basis=risk,set-risk
+    - at: "2026-06-26T00:00:00Z"
+      by: agent:codex
+      action: edit
+      detail: "Product-fix-history review for 8ca8646: async worker/channel lifecycle introduced the disabled-path close/recreate race; provenance tightened from inception to 8ca8646."

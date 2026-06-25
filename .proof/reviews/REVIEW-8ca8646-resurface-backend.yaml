@@ -1,0 +1,7 @@
+id: REVIEW-8ca8646-resurface-backend
+kind: design_review
+reviewer: agent:codex
+reviewed_at: "2026-06-26T00:00:00Z"
+subject: upstream:8ca8646/SW-REQ-054
+decision: approved
+comment: 'Commit-level assurance review for TT-10676: Resurface backend upgrade is a product behavior change, not DEFECT/DFX material by itself. Current proof models the async worker/channel, context cancellation, raw HTTP reconstruction, and lifecycle behavior through SW-REQ-054 with code annotations and tests. Live async-worker debts remain KnownIssues rather than DEFECTs because they are not fixed historical issues: queue-full blocking, worker errors swallowed, and disabled-path channel close/recreate race. The pre-existing raw reconstruction panic remains KI-tracked separately.'

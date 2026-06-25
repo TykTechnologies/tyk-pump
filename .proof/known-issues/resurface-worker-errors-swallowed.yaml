@@ -7,7 +7,7 @@ severity: medium
 severity_basis: risk
 risk: data_integrity
 reproducer_command: rg -n "func \(rp \*ResurfacePump\) worker|rp\.data <- data|Error decoding analytic record|rp\.log\.Error\(err\)|func \(rp \*ResurfacePump\) WriteData" pumps/resurface.go
-introduced_in: inception
+introduced_in: 8ca8646
 mitigation: Monitor Resurface pump logs and downstream ingestion metrics; keep queue pressure low so failures are operator-visible before data loss accumulates.
 remediation: Return a typed enqueue/submission error from WriteData or add a worker error accounting channel with partial-progress metrics and retry/DLQ handling.
 owner: tyk-team
@@ -17,3 +17,7 @@ history:
     - at: "2026-06-22T11:06:37Z"
       by: human:buger
       action: created
+    - at: "2026-06-26T00:00:00Z"
+      by: agent:codex
+      action: edit
+      detail: "Product-fix-history review for 8ca8646: async worker introduced the no-error-channel path where worker parse/send failures cannot propagate through WriteData."
