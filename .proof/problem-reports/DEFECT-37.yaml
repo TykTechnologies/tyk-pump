@@ -1,0 +1,87 @@
+schema_version: 1
+id: DEFECT-37
+title: Health endpoint was bound to localhost only
+introduced_in: unknown
+description: |
+  Commit 402dab8 fixed the health-check listener bind scope. Before the fix,
+  ServeHealthCheck called http.ListenAndServe with "localhost:<port>", so the
+  liveness endpoint was reachable from the pump host only. Local curl checks
+  passed, but external orchestrators, load balancers, and monitoring agents
+  could not probe the endpoint from outside the host/container namespace.
+
+  Current code calls http.ListenAndServe with ":<port>", preserving the
+  configured endpoint and port while binding without a loopback-only host. This
+  report closes only the external bind-scope defect. Liveness-only semantics,
+  missing auth, missing rate limits, and bind-failure log.Fatal behavior remain
+  tracked as KnownIssues.
+source:
+    type: upstream_commit
+    repo: TykTechnologies/tyk-pump
+    commit: 402dab8
+    reference: "#266/#267"
+    date: "2020-06-23"
+classification:
+    surface: runtime_code
+    defect_class: listener_loopback_only
+    severity: medium
+    security_relevant: false
+root_cause:
+    missing_requirement: true
+    missing_test_partition: true
+    missing_mcdc_variable: false
+    notes: |
+      Existing health tests exercised handler response and router registration,
+      but the requirement did not state that the production listener must be
+      externally reachable and no witness inspected the ListenAndServe address.
+impact_analysis:
+    affected_requirements:
+        - SW-REQ-032
+    affected_code:
+        - server/server.go
+        - server/serve_params_test.go
+        - signal-rules/tyk-pump-phase-n.yaml
+hardening:
+    new_requirements: []
+    strengthened_requirements:
+        - SW-REQ-032
+    added_obligations:
+        - requirement: SW-REQ-032
+          obligation_class: listener_bind_scope_external
+    regression_tests:
+        - server/serve_params_test.go:TestServeHealthCheck_BindsExternalInterface
+    proposed_classes:
+        - listener_bind_scope_external
+    code_signals:
+        - go.health-listener-loopback-only
+disposition:
+    status: covered_by_requirement
+    requirements:
+        - SW-REQ-032
+    known_issues:
+        - docs-health-endpoint-liveness-vs-readiness-unclear
+        - health-endpoint-auth-not-enforced
+        - health-endpoint-is-liveness-only
+        - health-endpoint-rate-limit-not-enforced
+        - health-listener-bind-failure-logfatal
+    evidence:
+        verified_by:
+            - server/serve_params_test.go:TestServeHealthCheck_BindsExternalInterface
+        obligation_evidence:
+            - requirement: SW-REQ-032
+              obligation_class: listener_bind_scope_external
+              evidence_type: nominal
+            - requirement: SW-REQ-032
+              obligation_class: listener_bind_scope_external
+              evidence_type: negative
+            - requirement: SW-REQ-032
+              obligation_class: listener_bind_scope_external
+              evidence_type: review
+    reviewer: agent:codex
+    reviewed_at: "2026-06-25T20:05:00Z"
+history:
+    - at: "2026-06-25T20:05:00Z"
+      by: agent:codex
+      action: created
+      detail: |
+        Recorded the 402dab8 external health-listener bind fix and hardened
+        SW-REQ-032 with explicit bind-scope evidence and a future signal.

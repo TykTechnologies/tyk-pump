@@ -1,0 +1,46 @@
+id: listener_bind_scope_external
+name: Listener bind scope external
+category: domain
+status: active
+summary: Operator-facing HTTP listeners shall bind without a loopback-only host when the endpoint is intended for external probes.
+description: |-
+  Health, metrics, and other operator-facing HTTP endpoints are often consumed
+  by orchestrators or monitoring agents outside the pump process host. If the
+  listener address is hard-coded to localhost or 127.0.0.1, in-process and
+  local curl tests still pass while Kubernetes probes, load balancers, and
+  remote monitoring tools cannot reach the endpoint. Requirements for
+  externally consumed listeners shall prove the bound address is not
+  loopback-only unless loopback-only reachability is the explicit contract.
+applies_when:
+  description: a component starts an HTTP listener used by orchestration, load-balancer, or monitoring probes
+  trigger_phrases:
+    - ListenAndServe
+    - health endpoint
+    - liveness
+    - monitoring
+    - external probe
+example_req: |-
+  The health-check server shall bind the configured port on all interfaces so
+  external orchestrators and load balancers can reach the configured liveness
+  endpoint.
+if_missing: |-
+  The endpoint appears healthy in localhost-only tests, but external probes
+  fail because the process listens only on loopback.
+recommended_evidence:
+  - kind: nominal
+    note: Source-level or socket-level test proves the production listener address binds with an empty host or wildcard host.
+  - kind: negative
+    note: Regression witness fails if the listener address is localhost, 127.0.0.1, or another loopback-only host.
+  - kind: review
+    note: Review distinguishes endpoint reachability from separate auth/rate-limit/readiness KnownIssues.
+frameworks:
+  - id: CWE
+    refs:
+      - CWE-665
+related_classes:
+  - id: nominal
+    relationship: specializes
+  - id: auth_required
+    relationship: adjacent
+  - id: rate_limit_respected
+    relationship: adjacent

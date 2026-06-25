@@ -763,3 +763,39 @@ rules:
               $MAP[$KEY], $_ = base64.StdEncoding.DecodeString($VALUE)
           - pattern: |
               $MAP[$KEY], $_ = b64.StdEncoding.DecodeString($VALUE)
+  - id: go.health-listener-loopback-only
+    severity: WARNING
+    languages: [go]
+    message: |
+      Operator-facing health listeners must not bind only to localhost when
+      orchestration or monitoring probes are expected to reach them from
+      outside the process host. Bind the configured port with an empty or
+      wildcard host unless loopback-only reachability is the explicit contract.
+    metadata:
+      proof:
+        signal_id: go.health_listener_loopback_only
+        provider: opengrep
+        confidence: high
+        framework_hints:
+          - CWE-665
+        notes: |
+          Commit 402dab8 fixed this exact health endpoint defect by changing
+          http.ListenAndServe("localhost:"+port, router) to bind the configured
+          port without a loopback-only host.
+        obligations: [listener_bind_scope_external]
+    paths:
+      include:
+        - "server/**/*.go"
+      exclude:
+        - "*_test.go"
+        - "vendor/**"
+    patterns:
+      - pattern-either:
+          - pattern: |
+              http.ListenAndServe("localhost:" + $PORT, $HANDLER)
+          - pattern: |
+              http.ListenAndServe("127.0.0.1:" + $PORT, $HANDLER)
+          - pattern: |
+              http.ListenAndServe("localhost:"+$PORT, $HANDLER)
+          - pattern: |
+              http.ListenAndServe("127.0.0.1:"+$PORT, $HANDLER)
