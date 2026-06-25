@@ -658,6 +658,7 @@ func TestDefaultDriver(t *testing.T) {
 
 // Verifies: SW-REQ-034
 // SW-REQ-034:output_cardinality_bounded:nominal
+// SW-REQ-034:external_call_failure_observable:nominal
 // MCDC SW-REQ-034: mcp_record_present=F, record_filtered_out=F => TRUE
 // Verifies: SW-REQ-082
 // SW-REQ-082:output_cardinality_bounded:nominal

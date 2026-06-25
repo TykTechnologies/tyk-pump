@@ -634,6 +634,7 @@ func TestMongoPump_WriteData_NonAnalyticsRecordItem(t *testing.T) {
 // ---------------------------------------------------------------------------
 // SW-REQ-034:errors_propagated:negative — Insert returns err; WriteData
 // propagates the first error from errCh.
+// SW-REQ-034:external_call_failure_observable:negative
 func TestMongoPump_WriteData_InsertErr(t *testing.T) {
 	store := &sequencedUpsertStore{insertErrs: []error{errors.New("insert failed")}}
 	p := &MongoPump{}

@@ -1,6 +1,6 @@
 id: pump-writedata-swallows-per-batch-errors
-title: Pump.WriteData per-batch error swallowing across 11 pumps
-description: 'Mirror of KI pump-writedata-swallows-per-batch-errors: 11 pumps (mongo family, kinesis, sql, graylog, syslog, logzio, segment, influx, influx2) log per-batch errors but return nil from WriteData, breaking the INT-REQ-004 error-return contract. Accepting this risk because the workaround (operators tail pump logs) is in place; the refactor is tracked.'
+title: Pump.WriteData per-batch error swallowing across remaining pump surfaces
+description: 'Mirror of KI pump-writedata-swallows-per-batch-errors: Mongo selective, Mongo aggregate, kinesis, sql, graylog, syslog, logzio, segment, influx, and influx2 log per-batch errors but return nil from WriteData, breaking the INT-REQ-004 error-return contract. Standard Mongo WriteData is excluded because SW-REQ-034 proves the first insert error is returned. Accepting this risk because the workaround (operators tail pump logs) is in place; the refactor is tracked.'
 affected_requirements:
     - INT-REQ-004
 mitigation: Operators must inspect pump logs for per-batch errors; the WriteData return value is currently a weak signal.
@@ -16,3 +16,7 @@ history:
       by: human:buger
       action: accepted
       detail: accepted_by=human:leo
+    - at: "2026-06-25T18:40:00Z"
+      by: agent:codex
+      action: narrowed
+      detail: standard Mongo WriteData removed from accepted-risk scope after SW-REQ-034 evidence review

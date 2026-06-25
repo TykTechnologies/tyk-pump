@@ -36,11 +36,16 @@ The honest req description above reflects this gap.
   `:AccumulateSet` — size-bounded batching.
 - `pumps/mongo_selective.go:getItemSizeBytes` — exact document-size estimate
   for SW-REQ-092.
+- `main.go:209` and `pumps/mongo_selective.go:134` — configured pump timeout
+  is applied before `Init` and passed to
+  `persistent.ClientOpts.ConnectionTimeout`.
 
 ## Evidence
 - `pumps/mongo_selective_test.go` (re-annotated `Verifies: SW-REQ-035`).
 - `pumps/mongo_selective_test.go:TestMongoSelectivePump_GetItemSizeBytes_CountsRawRequestAndResponseOnce`
   covers SW-REQ-092 exact document-size arithmetic.
+- `pumps/mongo_timeout_config_test.go` proves timeout setup order and
+  `ConnectionTimeout: m.timeout` propagation without starting MongoDB.
 - Live-MongoDB tests are excluded from the local audit MC/DC scope (recorded
   as a known issue).
 

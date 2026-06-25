@@ -1,9 +1,8 @@
 id: pump-writedata-swallows-per-batch-errors
 title: Multiple pumps log per-batch WriteData errors but return nil, breaking Pump-interface error-return contract
-description: 'INT-REQ-004 contracts that Pump.WriteData returns an error on backend failure. In practice, several pumps log per-batch errors via their logger and return nil. Audit of pumps/init.go-registered implementations: pumps/mongo.go:464 (logs MongoErr, returns nil); pumps/mongo_selective.go:266 (logs InsertError, returns nil); pumps/mongo_aggregate.go:307 (logs MongoUpsertErr, returns nil); pumps/kinesis.go:185 (logs PutRecordErr, returns nil); pumps/sql.go:333 (logs Create-batch error, returns nil); pumps/graylog.go:174 (logs and returns nil); pumps/syslog.go:138 (logs and returns nil); pumps/logzio.go:185 (logs and returns nil); pumps/segment.go:121 (logs and returns nil); pumps/influx.go:158 (logs WritePoint error, returns nil); pumps/influx2.go:178 (logs FlushErr, returns nil). Affects the caller (main.execPumpWriting) which interprets nil as success and increments success counters.'
+description: 'INT-REQ-004 contracts that Pump.WriteData returns an error on backend failure. In practice, several pumps log per-batch errors via their logger and return nil. Audit of pumps/init.go-registered implementations: pumps/mongo_selective.go:266 (logs InsertError, returns nil); pumps/mongo_aggregate.go:307 (logs MongoUpsertErr, returns nil); pumps/kinesis.go:185 (logs PutRecordErr, returns nil); pumps/sql.go:333 (logs Create-batch error, returns nil); pumps/graylog.go:174 (logs and returns nil); pumps/syslog.go:138 (logs and returns nil); pumps/logzio.go:185 (logs and returns nil); pumps/segment.go:121 (logs and returns nil); pumps/influx.go:158 (logs WritePoint error, returns nil); pumps/influx2.go:178 (logs FlushErr, returns nil). Standard Mongo WriteData is excluded from this KI because SW-REQ-034 and TestMongoPump_WriteData_InsertErr prove the first per-batch insert error is returned. Affects the caller (main.execPumpWriting) which interprets nil as success and increments success counters.'
 affected_requirements:
     - INT-REQ-004
-    - SW-REQ-034
     - SW-REQ-035
     - SW-REQ-036
     - SW-REQ-040
@@ -47,3 +46,7 @@ history:
       by: human:buger
       action: edit
       detail: set-severity-basis=risk,set-risk
+    - at: "2026-06-25T18:40:00Z"
+      by: agent:codex
+      action: edit
+      detail: narrow-scope-standard-mongo-writedata-now-covered-by-SW-REQ-034

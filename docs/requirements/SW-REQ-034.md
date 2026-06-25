@@ -32,6 +32,8 @@ classes).
 - `pumps/mongo.go:332` — `ensureIndexes`.
 - `pumps/mongo.go:402` — `WriteData`; per-batch goroutines fan-out through an
   `errCh`, returning the first non-nil error.
+- `main.go:209` and `pumps/mongo.go:391` — configured pump timeout is applied
+  before `Init` and passed to `persistent.ClientOpts.ConnectionTimeout`.
 - `pumps/mongo.go:464` — `AccumulateSet`; the per-batch size bookkeeping.
 - `pumps/mongo.go:499` — `shouldProcessItem` (skips MCP records via
   `IsMCPRecord()`).
@@ -41,6 +43,8 @@ classes).
 ## Evidence
 - `pumps/mongo_test.go` (re-annotated `Verifies: SW-REQ-034`) covers
   `capCollection`, MCP-skip, large-document handling, and batching.
+- `pumps/mongo_timeout_config_test.go` proves timeout setup order and
+  `ConnectionTimeout: m.timeout` propagation without starting MongoDB.
 - `pumps/mgo_helper_test.go` provides the shared MongoDB test helper used by
   the family.
 - Live-MongoDB tests are excluded from the local audit MC/DC scope (recorded

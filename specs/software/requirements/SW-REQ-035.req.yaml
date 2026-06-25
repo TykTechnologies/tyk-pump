@@ -5,7 +5,7 @@ priority: shall
 category: functional
 req_type: guarantee
 fretish: when org_id_present pumps_mongo_selective shall always satisfy record_routed_to_org_collection
-description: The MongoSelective pump shall partition incoming non-MCP analytics records by OrgID and route each org's records into a per-organisation collection named z_tyk_analyticz_<orgid>, dropping records with empty OrgID; for each org collection it shall ensure baseline indexes (apiid, TTL on expireAt (skipped for CosmosDB), and a composite logBrowserIndex) and then insert records in size-bounded batches up to MaxInsertBatchSizeBytes (default 10 MiB), skipping individual documents larger than MaxDocumentSizeBytes.
+description: The MongoSelective pump shall partition incoming non-MCP analytics records by OrgID and route each org's records into a per-organisation collection named z_tyk_analyticz_<orgid>, dropping records with empty OrgID; for each org collection it shall ensure baseline indexes (apiid, TTL on expireAt (skipped for CosmosDB), and a composite logBrowserIndex) and then insert records in size-bounded batches up to MaxInsertBatchSizeBytes (default 10 MiB), skipping individual documents larger than MaxDocumentSizeBytes. During initialization, the configured pump timeout shall be applied before Init builds the Mongo client and propagated to persistent.ClientOpts.ConnectionTimeout.
 formalization_strategy: fretish
 informal_verification:
     method: ""
@@ -29,16 +29,17 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-25T17:25:17Z"
-        comment: 'TT-6550 follow-up: MongoSelective final-skipped-record output-cardinality gap is now KI-deferred under mongo-selective-final-skipped-record-drops-pending-batch; no runtime product behavior change.'
-        fingerprint: sha256:2bb0e060facf82980ac9e5eeaf241c3c483a64b444747bfc04981061f601aa7d
+        reviewed_at: "2026-06-25T18:57:11Z"
+        comment: 'TT-695 hardening: MongoSelective connection timeout propagation is now specified and witnessed; residual write/query timeout debt remains KI-linked.'
+        fingerprint: sha256:44712ada39570a08f647f9b562571be22b07fc24517b06c15d0a96a6df45d3d2
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:34:43Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-25T17:25:17Z"
+    last_modified_at: "2026-06-25T18:57:11Z"
 obligation_checklist:
+    - backend_connection_timeout_propagated
     - boundary
     - cancellation_observed
     - config_schema_strict
@@ -151,4 +152,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-22T12:04:23Z comment="Review obligation expansion from catalogue gap pass; active unfixed behavior remains KnownIssue-gated.")'
+          changed_by: human:buger
+        - date: "2026-06-25T18:57:11Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-25T17:25:17Z comment="TT-6550 follow-up: MongoSelective final-skipped-record output-cardinality gap is now KI-deferred under mongo-selective-final-skipped-record-drops-pending-batch; no runtime product behavior change.")'
           changed_by: human:buger

@@ -1,0 +1,45 @@
+id: backend_connection_timeout_propagated
+name: Backend connection timeout propagated
+category: domain
+status: active
+summary: Operator timeout configuration shall reach every backend client connection-timeout field that the pump initializes.
+description: |-
+  Backend pumps commonly decode a pump-level timeout before constructing a
+  storage or network client. A requirement that promises connection-timeout
+  configurability shall prove that initialization applies the operator value
+  before the client is built, and that the backend client options receive that
+  configured value rather than a hard-coded default.
+applies_when:
+  description: a pump owns a backend client constructor with a connection timeout option
+  trigger_phrases:
+    - ConnectionTimeout
+    - SetTimeout
+    - Init
+    - timeout
+    - client options
+example_req: |-
+  When a Mongo pump is initialized with timeout N, the loader shall call
+  SetTimeout(N) before Init, and the Mongo client options shall set
+  ConnectionTimeout to the pump's stored timeout value.
+if_missing: |-
+  Operators can configure a timeout that is ignored during backend connection
+  setup, leaving startup or reconnect behavior bounded by a hard-coded value or
+  by the backend driver's default instead of the documented pump setting.
+recommended_evidence:
+  - kind: nominal
+    note: Static or unit witness proves the configured timeout is stored before backend Init and reaches the backend client's connection-timeout option.
+  - kind: negative
+    note: Witness fails if the backend constructor uses a hard-coded timeout, omits the timeout field, or initializes the client before applying SetTimeout.
+  - kind: review
+    note: Review separates covered connection-timeout configurability from any remaining write/query timeout KnownIssues.
+frameworks:
+  - id: CWE
+    refs:
+      - CWE-754
+related_classes:
+  - id: timeout_config_units_preserved
+    relationship: complements
+  - id: external_call_timeout_bounded
+    relationship: supports
+  - id: query_timeout_bounded
+    relationship: adjacent

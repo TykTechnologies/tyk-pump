@@ -1,0 +1,132 @@
+schema_version: 1
+id: DEFECT-34
+title: Mongo pump timeout configuration was not applied to connection setup
+introduced_in: unknown
+description: |
+  TT-695 (commit 14ccaba) fixed Mongo pump timeout behavior. Before the fix,
+  the pump loader called SetTimeout after Init, while Mongo clients were built
+  during Init, so the configured pump timeout could not affect Mongo connection
+  setup. The Mongo, MongoSelective, and MongoAggregate connect paths also used
+  a hard-coded dial timeout instead of the operator-provided timeout value.
+
+  The same commit added completion/error observation for standard Mongo batch
+  insert goroutines. Current standard Mongo WriteData waits for every insert
+  goroutine and returns the first per-batch insert error to the caller.
+
+  Current code still has separate timeout debt: Mongo write/query paths use
+  context.Background() internally and timeout=0 remains accepted. Those live
+  behaviors are intentionally left as KnownIssues, not closed by this defect.
+source:
+    type: upstream_commit
+    repo: TykTechnologies/tyk-pump
+    commit: 14ccaba
+    reference: TT-695
+    date: "2020-12-22"
+classification:
+    surface: config_behavior
+    defect_class: mongo_connection_timeout_not_configurable
+    severity: medium
+    security_relevant: false
+root_cause:
+    missing_requirement: true
+    missing_test_partition: true
+    missing_mcdc_variable: false
+    notes: |
+      Mongo requirements modeled batching, routing, and index behavior, and
+      timeout KIs modeled remaining caller-context/write timeout gaps, but no
+      requirement made connection-timeout propagation from PumpConfig.Timeout
+      to backend client construction explicit.
+impact_analysis:
+    affected_requirements:
+        - SW-REQ-034
+        - SW-REQ-035
+        - SW-REQ-036
+    affected_code:
+        - main.go
+        - pumps/mongo.go
+        - pumps/mongo_selective.go
+        - pumps/mongo_aggregate.go
+        - pumps/mongo_mcdc_100_test.go
+        - pumps/mongo_timeout_config_test.go
+hardening:
+    new_requirements: []
+    strengthened_requirements:
+        - SW-REQ-034
+        - SW-REQ-035
+        - SW-REQ-036
+    added_obligations:
+        - requirement: SW-REQ-034
+          obligation_class: backend_connection_timeout_propagated
+        - requirement: SW-REQ-035
+          obligation_class: backend_connection_timeout_propagated
+        - requirement: SW-REQ-036
+          obligation_class: backend_connection_timeout_propagated
+    regression_tests:
+        - pumps/mongo_timeout_config_test.go:TestMongoPumpsPropagateConfiguredConnectionTimeout
+        - pumps/mongo_timeout_config_test.go:TestInitialisePumpsAppliesTimeoutBeforeInit
+        - pumps/mongo_mcdc_100_test.go:TestMongoPump_WriteData_InsertErr
+    proposed_classes:
+        - backend_connection_timeout_propagated
+disposition:
+    status: covered_by_requirement
+    requirements:
+        - SW-REQ-034
+        - SW-REQ-035
+        - SW-REQ-036
+    known_issues:
+        - mongo-pump-ignores-caller-context
+        - mongo-aggregate-last-document-query-ignores-timeout
+        - pump-no-timeout-can-block-purge-cycle
+        - pumps-logfatal-on-config-decode
+        - mapstructure-decode-silently-drops-unknown-keys
+        - mongo-selective-final-skipped-record-drops-pending-batch
+        - pump-writedata-swallows-per-batch-errors
+    evidence:
+        verified_by:
+            - pumps/mongo_timeout_config_test.go:TestMongoPumpsPropagateConfiguredConnectionTimeout
+            - pumps/mongo_timeout_config_test.go:TestInitialisePumpsAppliesTimeoutBeforeInit
+            - pumps/mongo_mcdc_100_test.go:TestMongoPump_WriteData_InsertErr
+        obligation_evidence:
+            - requirement: SW-REQ-034
+              obligation_class: backend_connection_timeout_propagated
+              evidence_type: nominal
+            - requirement: SW-REQ-034
+              obligation_class: backend_connection_timeout_propagated
+              evidence_type: negative
+            - requirement: SW-REQ-034
+              obligation_class: backend_connection_timeout_propagated
+              evidence_type: review
+            - requirement: SW-REQ-035
+              obligation_class: backend_connection_timeout_propagated
+              evidence_type: nominal
+            - requirement: SW-REQ-035
+              obligation_class: backend_connection_timeout_propagated
+              evidence_type: negative
+            - requirement: SW-REQ-035
+              obligation_class: backend_connection_timeout_propagated
+              evidence_type: review
+            - requirement: SW-REQ-036
+              obligation_class: backend_connection_timeout_propagated
+              evidence_type: nominal
+            - requirement: SW-REQ-036
+              obligation_class: backend_connection_timeout_propagated
+              evidence_type: negative
+            - requirement: SW-REQ-036
+              obligation_class: backend_connection_timeout_propagated
+              evidence_type: review
+            - requirement: SW-REQ-034
+              obligation_class: external_call_failure_observable
+              evidence_type: negative
+            - requirement: SW-REQ-034
+              obligation_class: errors_propagated
+              evidence_type: negative
+    reviewer: agent:codex
+    reviewed_at: "2026-06-25T18:40:00Z"
+history:
+    - at: "2026-06-25T18:40:00Z"
+      by: agent:codex
+      action: created
+      detail: |
+        Recorded TT-695 as fixed historical Mongo timeout configurability and
+        standard Mongo insert-goroutine error-observation behavior. Residual
+        caller-context and zero-timeout behavior remains KnownIssue debt.
