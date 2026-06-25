@@ -833,3 +833,36 @@ rules:
               $AGG.Endpoints[$REC.Path] = $VALUE
           - pattern: |
               $VALUE = $AGG.Endpoints[$REC.Path]
+  - id: go.mongo-document-size-counts-raw-request-twice
+    severity: WARNING
+    languages: [go]
+    message: |
+      Mongo document-size estimates must count RawRequest and RawResponse once
+      each before MaxDocumentSizeBytes decisions. Counting RawRequest twice and
+      omitting RawResponse can skip valid request-heavy records or send
+      response-heavy records that exceed the backend limit.
+    metadata:
+      proof:
+        signal_id: go.mongo_document_size_counts_raw_request_twice
+        provider: opengrep
+        confidence: high
+        framework_hints:
+          - CWE-190
+          - CWE-770
+        notes: |
+          Commit 8bfdb36 fixed this exact standard Mongo size-accounting bug by
+          replacing RawRequest+RawRequest with RawRequest+RawResponse+1024 and
+          rewriting oversized raw bodies instead of skipping the whole record.
+        obligations: [document_size_accounting_exact]
+    paths:
+      include:
+        - "pumps/mongo*.go"
+      exclude:
+        - "*_test.go"
+        - "vendor/**"
+    patterns:
+      - pattern-either:
+          - pattern: |
+              $SIZE := len($REC.RawRequest) + len($REC.RawRequest)
+          - pattern: |
+              $SIZE := len([]byte($REC.RawRequest)) + len([]byte($REC.RawRequest))

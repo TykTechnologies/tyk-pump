@@ -443,6 +443,112 @@ func TestMongoPump_AccumulateSetIgnoreDocSize(t *testing.T) {
 	assert.Equal(t, 50, graphRecords)
 }
 
+// Verifies: SW-REQ-034
+// SW-REQ-034:document_size_accounting_exact:nominal
+// SW-REQ-034:document_size_accounting_exact:boundary
+// SW-REQ-034:document_size_accounting_exact:review
+func TestMongoPump_GetItemSizeBytes_CountsRawRequestAndResponseOnce(t *testing.T) {
+	tcs := []struct {
+		name        string
+		rawRequest  string
+		rawResponse string
+		wantSize    int
+	}{
+		{
+			name:        "both payload fields",
+			rawRequest:  "req",
+			rawResponse: "resp",
+			wantSize:    1031,
+		},
+		{
+			name:        "response only still counts",
+			rawRequest:  "",
+			rawResponse: "response",
+			wantSize:    1032,
+		},
+		{
+			name:        "request only counted once",
+			rawRequest:  "request",
+			rawResponse: "",
+			wantSize:    1031,
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			mPump := &MongoPump{
+				dbConf: &MongoConf{MaxDocumentSizeBytes: tc.wantSize},
+			}
+			record := &analytics.AnalyticsRecord{
+				RawRequest:  tc.rawRequest,
+				RawResponse: tc.rawResponse,
+			}
+
+			assert.Equal(t, tc.wantSize, mPump.getItemSizeBytes(record))
+		})
+	}
+}
+
+// Verifies: SW-REQ-034
+// SW-REQ-034:document_size_accounting_exact:boundary
+// SW-REQ-034:boundary:nominal
+func TestMongoPump_AccumulateSet_RewritesOversizePayloadWithoutSkipping(t *testing.T) {
+	mPump := &MongoPump{
+		dbConf: &MongoConf{
+			CollectionName:          "tyk_analytics",
+			MaxInsertBatchSizeBytes: 10 * MiB,
+			MaxDocumentSizeBytes:    1026,
+		},
+	}
+	mPump.log = log.WithField("prefix", mongoPrefix)
+
+	atThreshold := analytics.AnalyticsRecord{RawRequest: "a", RawResponse: "b"}
+	overThreshold := analytics.AnalyticsRecord{RawRequest: "a", RawResponse: "bc"}
+
+	set := mPump.AccumulateSet([]interface{}{atThreshold, overThreshold}, false)
+	require.Len(t, set, 1)
+	require.Len(t, set[0], 2)
+
+	keptAtThreshold, ok := set[0][0].(*analytics.AnalyticsRecord)
+	require.True(t, ok)
+	assert.Equal(t, "a", keptAtThreshold.RawRequest)
+	assert.Equal(t, "b", keptAtThreshold.RawResponse)
+
+	rewritten, ok := set[0][1].(*analytics.AnalyticsRecord)
+	require.True(t, ok)
+	assert.Empty(t, rewritten.RawRequest)
+	assert.NotEqual(t, "bc", rewritten.RawResponse)
+	decoded, err := base64.StdEncoding.DecodeString(rewritten.RawResponse)
+	require.NoError(t, err)
+	assert.Contains(t, string(decoded), "Document too large")
+}
+
+// TestMongoPump_AccumulateSet_FinalSkippedRecordDropsPendingBatch_KI
+// reproduces mongo-standard-final-skipped-record-drops-pending-batch.
+// Verifies: KI:mongo-standard-final-skipped-record-drops-pending-batch
+// Reproduces: mongo-standard-final-skipped-record-drops-pending-batch
+func TestMongoPump_AccumulateSet_FinalSkippedRecordDropsPendingBatch_KI(t *testing.T) {
+	mPump := &MongoPump{
+		dbConf: &MongoConf{
+			MaxInsertBatchSizeBytes: 1024,
+			MaxDocumentSizeBytes:    10 * MiB,
+		},
+	}
+	mPump.log = log.WithField("prefix", mongoPrefix)
+
+	validA := analytics.AnalyticsRecord{}
+	validB := analytics.AnalyticsRecord{}
+	skippedFinal := analytics.AnalyticsRecord{ResponseCode: -1}
+
+	set := mPump.AccumulateSet([]interface{}{validA, validB, skippedFinal}, false)
+
+	recordsCount := 0
+	for _, setEntry := range set {
+		recordsCount += len(setEntry)
+	}
+	assert.Equal(t, 1, recordsCount, "current KI: final skipped item prevents flushing the pending valid record after a prior chunk")
+}
+
 // SW-REQ-034:nominal:nominal — standard Mongo WriteData drops MCP records
 // before accumulation, so an MCP-only payload returns without touching storage.
 // Verifies: SW-REQ-082

@@ -1,0 +1,97 @@
+schema_version: 1
+id: DEFECT-40
+title: Standard Mongo document-size guard counted RawRequest twice and skipped useful records
+introduced_in: unknown
+description: |
+  Commit 8bfdb36 fixed standard Mongo document-size handling. Before the fix,
+  MongoPump.AccumulateSet estimated each document as RawRequest plus RawRequest,
+  omitting RawResponse and the fixed metadata allowance. If the estimate
+  exceeded MaxDocumentSizeBytes, the whole analytics record was skipped.
+  Response-heavy records could therefore bypass the local guard and fail at
+  MongoDB insert time, while request-heavy records could be discarded even
+  though clearing raw bodies would have preserved useful analytics fields.
+
+  Current standard Mongo estimates len(RawRequest)+len(RawResponse)+1024 and,
+  for non-graph records over MaxDocumentSizeBytes, retains the analytics record
+  while clearing RawRequest and replacing RawResponse with a diagnostic
+  message. The current final-skipped-item flush gap is separate live debt and
+  is tracked as a KnownIssue rather than claimed fixed here.
+source:
+    type: upstream_commit
+    repo: TykTechnologies/tyk-pump
+    commit: 8bfdb36
+    reference: "#154/#165"
+    date: "2019-11-05"
+classification:
+    surface: data_integrity
+    defect_class: mongo_standard_document_size_miscalculated
+    severity: medium
+    security_relevant: false
+root_cause:
+    missing_requirement: true
+    missing_test_partition: true
+    missing_mcdc_variable: false
+    notes: |
+      SW-REQ-034 stated that standard Mongo performs size-bounded batching and
+      raw-body rewriting, but it did not name the exact size formula or prove
+      independently that RawRequest and RawResponse are each counted once. The
+      existing large-document tests covered rewrite branches but not the
+      historical arithmetic or "rewrite, do not skip" path through AccumulateSet.
+impact_analysis:
+    affected_requirements:
+        - SW-REQ-034
+    affected_code:
+        - pumps/mongo.go
+        - pumps/mongo_test.go
+        - signal-rules/tyk-pump-phase-n.yaml
+hardening:
+    new_requirements: []
+    strengthened_requirements:
+        - SW-REQ-034
+    added_obligations:
+        - requirement: SW-REQ-034
+          obligation_class: document_size_accounting_exact
+    regression_tests:
+        - pumps/mongo_test.go:TestMongoPump_GetItemSizeBytes_CountsRawRequestAndResponseOnce
+        - pumps/mongo_test.go:TestMongoPump_AccumulateSet_RewritesOversizePayloadWithoutSkipping
+    proposed_classes: []
+    code_signals:
+        - go.mongo-document-size-counts-raw-request-twice
+disposition:
+    status: covered_by_requirement
+    requirements:
+        - SW-REQ-034
+    known_issues:
+        - mapstructure-decode-silently-drops-unknown-keys
+        - mongo-pump-ignores-caller-context
+        - mongo-pump-writeuptime-nil-on-bad-msgpack
+        - mongo-standard-final-skipped-record-drops-pending-batch
+        - mongo-standard-logbrowser-compatible-index-conflict
+        - pump-no-timeout-can-block-purge-cycle
+        - pump-writedata-swallows-per-batch-errors
+        - pumps-logfatal-on-config-decode
+    evidence:
+        verified_by:
+            - pumps/mongo_test.go:TestMongoPump_GetItemSizeBytes_CountsRawRequestAndResponseOnce
+            - pumps/mongo_test.go:TestMongoPump_AccumulateSet_RewritesOversizePayloadWithoutSkipping
+        obligation_evidence:
+            - requirement: SW-REQ-034
+              obligation_class: document_size_accounting_exact
+              evidence_type: nominal
+            - requirement: SW-REQ-034
+              obligation_class: document_size_accounting_exact
+              evidence_type: boundary
+            - requirement: SW-REQ-034
+              obligation_class: document_size_accounting_exact
+              evidence_type: review
+    reviewer: agent:codex
+    reviewed_at: "2026-06-25T20:15:00Z"
+history:
+    - at: "2026-06-25T20:15:00Z"
+      by: agent:codex
+      action: created
+      detail: |
+        Recorded 8bfdb36 as fixed historical standard-Mongo document-size
+        arithmetic and useful-record retention behavior. Added direct
+        RawRequest/RawResponse accounting evidence and separated the current
+        final-skipped-item flush gap into a KnownIssue.

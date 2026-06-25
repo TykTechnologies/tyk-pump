@@ -71,6 +71,7 @@ disposition:
         - mongo-pump-ignores-caller-context
         - mongo-pump-writeuptime-nil-on-bad-msgpack
         - mongo-selective-final-skipped-record-drops-pending-batch
+        - mongo-standard-final-skipped-record-drops-pending-batch
         - mongo-standard-logbrowser-compatible-index-conflict
         - pump-no-timeout-can-block-purge-cycle
         - pump-writedata-swallows-per-batch-errors
