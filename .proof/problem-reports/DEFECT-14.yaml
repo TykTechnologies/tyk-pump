@@ -1,0 +1,94 @@
+schema_version: 1
+id: DEFECT-14
+title: Standard Mongo excluded GraphQL-classified records
+introduced_in: c54eed3
+description: |
+  PR #638 (commit 0ed84b9) fixed standard Mongo writes so
+  GraphQL-classified non-MCP analytics records were no longer excluded from the
+  standard collection. The earlier c54eed3 graph-separation change skipped
+  records whose `GraphQLStats.IsGraphQL` made `IsGraphRecord()` true, so
+  operators could lose GraphQL traffic from the standard Mongo analytics
+  collection unless they also depended on the graph-specific pump.
+
+  Current proof now closes this defect through SW-REQ-082: standard Mongo must
+  insert every valid non-MCP analytics record into the standard collection,
+  including ordinary records and records whose GraphQLStats mark them as
+  GraphQL. The same requirement also catches the later 0ed84b9 regression
+  recorded as DEFECT-13.
+source:
+    type: upstream_commit
+    repo: TykTechnologies/tyk-pump
+    commit: 0ed84b9
+    reference: PR-638
+    date: "2023-05-17"
+classification:
+    surface: data_integrity
+    defect_class: mongo_standard_graph_records_excluded
+    severity: medium
+    security_relevant: false
+root_cause:
+    missing_requirement: true
+    missing_test_partition: true
+    missing_mcdc_variable: true
+    notes: |
+      The original skip policy treated GraphQL-classified records as outside
+      the standard Mongo contract. SW-REQ-082 now makes the inclusion policy
+      explicit and requires evidence for both ordinary and GraphQL-classified
+      non-MCP records.
+impact_analysis:
+    affected_requirements:
+        - SW-REQ-034
+        - SW-REQ-082
+    affected_code:
+        - pumps/mongo.go
+        - pumps/mongo_test.go
+hardening:
+    new_requirements:
+        - SW-REQ-082
+    strengthened_requirements:
+        - SW-REQ-034
+    added_obligations:
+        - requirement: SW-REQ-082
+          obligation_class: output_cardinality_bounded
+    regression_tests:
+        - pumps/mongo_test.go:TestMongoPump_WriteData
+    mcdc_witnesses:
+        - requirement: SW-REQ-082
+          witness: "standard_mongo_insertable_record_present=T, standard_mongo_record_inserted=T => TRUE"
+    proposed_classes: []
+disposition:
+    status: covered_by_requirement
+    requirements:
+        - SW-REQ-034
+        - SW-REQ-082
+    known_issues:
+        - mapstructure-decode-silently-drops-unknown-keys
+        - mongo-pump-ignores-caller-context
+        - pump-no-timeout-can-block-purge-cycle
+        - pump-writedata-swallows-per-batch-errors
+        - pumps-logfatal-on-config-decode
+    evidence:
+        verified_by:
+            - pumps/mongo_test.go:TestMongoPump_WriteData
+        requirement_mcdc_witnesses:
+            - requirement: SW-REQ-082
+              witness: "standard_mongo_insertable_record_present=T, standard_mongo_record_inserted=T => TRUE (GraphQL-classified non-MCP records are inserted into the standard collection)"
+            - requirement: SW-REQ-082
+              witness: "standard_mongo_insertable_record_present=T, standard_mongo_record_inserted=F => FALSE (violation row for dropped insertable records)"
+        obligation_evidence:
+            - requirement: SW-REQ-082
+              obligation_class: output_cardinality_bounded
+              evidence_type: nominal
+    reviewer: agent:codex
+    reviewed_at: "2026-06-25T14:56:00Z"
+history:
+    - at: "2026-06-25T14:48:31Z"
+      by: human:buger
+      action: created
+    - at: "2026-06-25T14:56:00Z"
+      by: agent:codex
+      action: hardened
+      detail: |
+        Bound the historical graph-record exclusion defect to SW-REQ-082 and
+        the existing live Mongo WriteData witness that inserts GraphQL-classified
+        non-MCP records into the standard collection.

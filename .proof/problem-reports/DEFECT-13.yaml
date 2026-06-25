@@ -1,13 +1,18 @@
 schema_version: 1
 id: DEFECT-13
 title: Standard Mongo WriteData used graph-only accumulation
-introduced_in: unknown
+introduced_in: 0ed84b9
 description: |
   TT-8884 (commit 2d3c296) fixed standard Mongo writes by removing the
   graph-only accumulation constraint from `MongoPump.WriteData`. Before that
   fix, the standard Mongo pump called `AccumulateSet(data, true)`, which is the
   graph-only mode, so ordinary non-MCP analytics records were skipped before
   insertion into the standard collection.
+
+  The graph-only call was introduced by commit 0ed84b9 while fixing the older
+  defect where standard Mongo excluded GraphQL-classified records. The later
+  TT-8884 fix kept GraphQL-classified records included while restoring ordinary
+  record insertion.
 
   Current live Mongo evidence would catch the recurrence, because
   `TestMongoPump_WriteData` writes ordinary records and GraphQL-classified
@@ -101,3 +106,9 @@ history:
         Added SW-REQ-082 to pin standard Mongo inclusion behavior separately
         from SW-REQ-034's MCP filtering rule. Existing live Mongo tests now
         witness the formal inclusion contract and the all-MCP vacuous row.
+    - at: "2026-06-25T14:56:00Z"
+      by: agent:codex
+      action: corrected_origin
+      detail: |
+        During the adjacent 0ed84b9 review, identified 0ed84b9 as the commit
+        that introduced graph-only accumulation in standard Mongo WriteData.

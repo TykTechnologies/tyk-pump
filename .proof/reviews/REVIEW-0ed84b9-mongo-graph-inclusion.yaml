@@ -1,0 +1,7 @@
+id: REVIEW-0ed84b9-mongo-graph-inclusion
+kind: design_review
+reviewer: agent:codex
+reviewed_at: "2026-06-25T14:56:00Z"
+subject: upstream:0ed84b9/SW-REQ-034+SW-REQ-082
+decision: approved
+comment: 'Commit-level assurance review for PR #638: c54eed3 made standard Mongo skip GraphQL-classified records; 0ed84b9 fixed that by routing standard WriteData through graph-only accumulation, which later caused the ordinary-record regression fixed by TT-8884. Current SW-REQ-082 is the correct product contract: standard Mongo inserts every valid non-MCP record, both ordinary and GraphQL-classified, while SW-REQ-034 keeps MCP filtering explicit. This review approves DEFECT-14 and the reuse of TestMongoPump_WriteData as the live Mongo witness for GraphQL-classified standard collection insertion.'
