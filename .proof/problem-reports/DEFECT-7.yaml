@@ -101,6 +101,8 @@ disposition:
     - no-panic-recovery-in-exec-pump-writing
     - pump-no-timeout-can-block-purge-cycle
     - pump-writedata-swallows-per-batch-errors
+    - sql-aggregate-background-index-concurrency-unbounded
+    - sql-aggregate-mysql-create-index-if-not-exists-unsupported
     - sql-aggregate-sharded-shared-db-race
     - sql-aggregate-sharded-upsert-targets-base-table
     - sql-aggregate-mysql-excluded-keyword-broken
@@ -144,3 +146,11 @@ history:
       reopen the fixed TT-13421 sharded-index defect; it prevents the defect
       closure record from implying the whole overlapping Graph SQL aggregate
       requirement surface is free of active KIs.
+  - at: "2026-06-25T16:55:00Z"
+    by: agent:codex
+    action: residual_gap_recorded
+    detail: |
+      Linked SQL Aggregate-specific MySQL index-DDL and background-index
+      lifecycle KIs after TT-9468 review split those debts out from broader
+      MCP/general records. This does not change the TT-13421 shard-index
+      closure; it keeps the overlapping SW-REQ-066 surface honest.

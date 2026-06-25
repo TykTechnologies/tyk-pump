@@ -32,20 +32,21 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-25T12:01:17Z"
-        comment: 'Product-fix-history hardening for TT-13421: added per_shard_index_created and backend_ddl_valid obligations. Standard SQL and SQL Aggregate shard-index behavior is backed by tests; Graph/MCP SQL shard-index contracts and MySQL DDL compatibility remain KI-backed debt. FRETish remains scoped to each requirement primary routing/windowing/index-skip decision.'
+        reviewed_at: "2026-06-25T13:30:28Z"
+        comment: 'Product-fix-history hardening for TT-9468: added index_definition_matches_query and Postgres catalog evidence proving SQL Aggregate creates the documented (dimension, timestamp, org_id, dimension_value) composite index, not merely an index with the expected name. Split backend_ddl_valid and background lifecycle debt into SQL Aggregate-specific KIs; no product behavior change claimed.'
         fingerprint: sha256:5a4265525c1df1b4403519ddcb293cada24508e04db9b3a82fa1b5da49bb9495
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:39:46Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-25T12:01:18Z"
+    last_modified_at: "2026-06-25T13:30:28Z"
 obligation_checklist:
     - backend_ddl_valid
     - concurrent
     - config_schema_strict
     - idempotency
+    - index_definition_matches_query
     - malformed_recovers_or_errors_loudly
     - nominal
     - panic_free_input_handling
@@ -53,17 +54,17 @@ obligation_checklist:
     - shared_state_synchronized
 obligation_deferrals:
     - obligation_class: backend_ddl_valid
-      reason: SQL Aggregate index creation has Postgres evidence, but MySQL-compatible CREATE INDEX IF NOT EXISTS syntax remains tracked as current backend-DDL debt.
-      tracking: mcp-sql-aggregate-mysql-create-index-syntax-broken
+      reason: SQL Aggregate index DDL is required to be valid for claimed SQL backends, but current CREATE INDEX IF NOT EXISTS syntax remains incompatible with common MySQL deployments; tracked as SQL Aggregate-specific KI debt.
+      tracking: sql-aggregate-mysql-create-index-if-not-exists-unsupported
       owner: human:buger
-      ki_ref: mcp-sql-aggregate-mysql-create-index-syntax-broken
-      reproducer: code_signal:opengrep:go.sql.formatted-write-exec:pumps/sql_aggregate.go:164
+      ki_ref: sql-aggregate-mysql-create-index-if-not-exists-unsupported
+      reproducer: sql-aggregate-mysql-create-index-if-not-exists-unsupported
     - obligation_class: concurrent
-      reason: 'SQL aggregate index creation is reached from the same mutable sharded WriteData path, so concurrent index evidence is tracked as a known issue until per-call sessions or synchronization land.'
-      tracking: sql-aggregate-sharded-shared-db-race
-      owner: agent:codex
-      ki_ref: sql-aggregate-sharded-shared-db-race
-      reproducer: rg -n "c\.db = c\.db\.Table|func \(c \*SQLAggregatePump\) ensure(Index|Table)|CREATE INDEX|backgroundIndexCreated" pumps/sql_aggregate.go
+      reason: 'SQL Aggregate Postgres background index creation requires bounded lifecycle and concurrency evidence, but current tests do not inject background failure, timeout, cancellation, or concurrent write interactions; tracked as SQL Aggregate-specific KI debt.'
+      tracking: sql-aggregate-background-index-concurrency-unbounded
+      owner: human:buger
+      ki_ref: sql-aggregate-background-index-concurrency-unbounded
+      reproducer: sql-aggregate-background-index-concurrency-unbounded
     - obligation_class: config_schema_strict
       reason: 'Pump configuration unknown-field rejection is required but currently not implemented: mapstructure.Decode silently ignores unknown keys and operator typos until known issue mapstructure-decode-silently-drops-unknown-keys is fixed.'
       tracking: mapstructure-decode-silently-drops-unknown-keys
@@ -132,4 +133,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-22T09:25:11Z comment="Expand backend, database, retry, queue, panic-safety, and shared-state catalog obligations; uncovered behavior is linked to existing KnownIssues rather than claimed as evidence.")'
+          changed_by: human:buger
+        - date: "2026-06-25T13:30:28Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-25T12:01:17Z comment="Product-fix-history hardening for TT-13421: added per_shard_index_created and backend_ddl_valid obligations. Standard SQL and SQL Aggregate shard-index behavior is backed by tests; Graph/MCP SQL shard-index contracts and MySQL DDL compatibility remain KI-backed debt. FRETish remains scoped to each requirement primary routing/windowing/index-skip decision.")'
           changed_by: human:buger

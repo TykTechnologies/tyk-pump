@@ -10,6 +10,7 @@ import (
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
@@ -54,6 +55,7 @@ func TestSQLAggregateInit(t *testing.T) {
 
 	indexName := fmt.Sprintf("%s_%s", analytics.AggregateSQLTable, newAggregatedIndexName)
 	assert.Equal(t, true, pmp.db.Migrator().HasIndex(analytics.AggregateSQLTable, indexName))
+	assertSQLAggregateIndexDefinition(t, pmp.db, analytics.AggregateSQLTable, indexName)
 
 	// Checking with invalid type
 	cfg["type"] = "invalid"
@@ -128,6 +130,7 @@ func TestSQLAggregateWriteData_Sharded(t *testing.T) {
 			indexName := fmt.Sprintf("%s_%s", table, newAggregatedIndexName)
 			assert.True(t, pmp.db.Migrator().HasIndex(table, indexName),
 				"sharded aggregate table %s should have index %s", table, indexName)
+			assertSQLAggregateIndexDefinition(t, pmp.db, table, indexName)
 			err := pmp.db.Table(table).Find(&dbRecords).Error
 			assert.Nil(t, err)
 			assert.Equal(t, data.RowsLen, len(dbRecords))
@@ -410,6 +413,7 @@ func TestDecodeRequestAndDecodeResponseSQLAggregate(t *testing.T) {
 }
 
 // Verifies: SW-REQ-066
+// SW-REQ-066:index_definition_matches_query:nominal
 func TestEnsureIndexSQLAggregate(t *testing.T) {
 	skipTestIfNoPostgres(t)
 	//nolint:govet
@@ -609,10 +613,17 @@ func TestEnsureIndexSQLAggregate(t *testing.T) {
 			if actualErr == nil {
 				if tc.givenRunInBackground {
 					waitForAggregateIndexReady(t, pmp.db, tc.givenTableName, pmp.backgroundIndexCreated)
+					if tc.shouldHaveIndex {
+						indexName := fmt.Sprintf("%s_%s", tc.givenTableName, newAggregatedIndexName)
+						assertSQLAggregateIndexDefinition(t, pmp.db, tc.givenTableName, indexName)
+					}
 				} else {
 					indexName := fmt.Sprintf("%s_%s", tc.givenTableName, newAggregatedIndexName)
 					hasIndex := pmp.db.Table(tc.givenTableName).Migrator().HasIndex(tc.givenTableName, indexName)
 					assert.Equal(t, tc.shouldHaveIndex, hasIndex)
+					if tc.shouldHaveIndex {
+						assertSQLAggregateIndexDefinition(t, pmp.db, tc.givenTableName, indexName)
+					}
 				}
 			} else {
 				assert.Equal(t, tc.expectedErr.Error(), actualErr.Error())
@@ -625,4 +636,22 @@ func TestEnsureIndexSQLAggregate(t *testing.T) {
 			}
 		})
 	}
+}
+
+func assertSQLAggregateIndexDefinition(t *testing.T, db *gorm.DB, tableName, indexName string) {
+	t.Helper()
+
+	var columns string
+	err := db.Raw(`
+		SELECT COALESCE(string_agg(a.attname, ',' ORDER BY keys.ordinality), '') AS columns
+		FROM pg_class idx
+		JOIN pg_index ix ON ix.indexrelid = idx.oid
+		JOIN pg_class tbl ON tbl.oid = ix.indrelid
+		JOIN LATERAL unnest(ix.indkey) WITH ORDINALITY AS keys(attnum, ordinality) ON true
+		JOIN pg_attribute a ON a.attrelid = ix.indrelid AND a.attnum = keys.attnum
+		WHERE tbl.relname = ? AND idx.relname = ?
+	`, tableName, indexName).Scan(&columns).Error
+	require.NoError(t, err)
+	require.Equal(t, "dimension,timestamp,org_id,dimension_value", columns,
+		"SQL aggregate dimension index should match the documented query path")
 }

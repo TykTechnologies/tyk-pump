@@ -1,0 +1,7 @@
+id: REVIEW-657436f-sql-aggregate-indexes
+kind: design_review
+reviewer: agent:codex
+reviewed_at: "2026-06-25T16:55:00Z"
+subject: upstream:657436f/SW-REQ-064+SW-REQ-065+SW-REQ-066
+decision: approved
+comment: 'Commit-level assurance review for TT-9468: the historical change moved SQL Aggregate dimension indexing out of struct tags and into explicit ensureTable/ensureIndex behavior, with omit_index_creation, Postgres CONCURRENTLY, background non-sharded creation, and per-shard index creation. Current proof covers the Postgres index lifecycle through SW-REQ-066 and shard evidence through SW-REQ-064. This slice hardens SW-REQ-066 with index_definition_matches_query and Postgres catalog evidence for the exact (dimension, timestamp, org_id, dimension_value) key order. MySQL index DDL and background lifecycle/concurrency remain KI-backed under SQL Aggregate-specific KIs; no product behavior change is claimed.'

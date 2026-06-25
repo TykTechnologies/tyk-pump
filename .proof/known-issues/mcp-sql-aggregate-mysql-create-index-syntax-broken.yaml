@@ -1,10 +1,9 @@
 id: mcp-sql-aggregate-mysql-create-index-syntax-broken
 title: MCP-SQL aggregate pump emits "CREATE INDEX IF NOT EXISTS" which MySQL <8.0.29 rejects
-description: 'pumps/mcp_sql_aggregate.go (line 127) and pumps/sql_aggregate.go (line 164) issue CREATE INDEX IF NOT EXISTS unconditionally for non-Postgres dialects (the CONCURRENTLY keyword is gated on dbType == "postgres" but IF NOT EXISTS is not). MySQL does not accept the IF NOT EXISTS clause on CREATE INDEX in versions before 8.0.29, and even later versions emit a syntax error from older client paths. Init therefore fails with "Error 1064 (42000): You have an error in your SQL syntax" on every fresh MCP/SQL aggregate pump connected to a typical MySQL deployment. The mcp-aggregate pump documents MySQL as a supported type via SQLConf.Type, so this is a stealth incompatibility.'
+description: pumps/mcp_sql_aggregate.go issues CREATE INDEX IF NOT EXISTS unconditionally for non-Postgres dialects; only the CONCURRENTLY keyword is gated on dbType == postgres. MySQL deployments before 8.0.29, and common compatible client/server paths, reject IF NOT EXISTS on CREATE INDEX, so fresh MCP SQL Aggregate startup can fail even though SQLConf.Type documents MySQL as supported. The sibling SQL Aggregate path is tracked separately by KI sql-aggregate-mysql-create-index-if-not-exists-unsupported.
 affected_requirements:
     - SW-REQ-045
     - SW-REQ-041
-    - SW-REQ-066
 evidence_manifests:
     - code_signal:opengrep:go.sql.formatted-write-exec:pumps/mcp_sql_aggregate.go:127
 severity: medium
@@ -13,7 +12,7 @@ risk: correctness
 environment_note: Evidence is tied to the listed evidence_manifests entries; reproduce by rerunning the named test or code-signal scan and inspecting code_signal:opengrep:go.sql.formatted-write-exec:pumps/mcp_sql_aggregate.go:127.
 introduced_in: inception
 mitigation: Operators on MySQL should either pre-create the dimension index out-of-band and set omit_index_creation=true on the aggregate pumps, or stick to Postgres for aggregate workloads.
-remediation: Gate IF NOT EXISTS behind a dialect check (postgres OR mysql >= 8.0.29) or use HasIndex pre-check + plain CREATE INDEX for MySQL. The same pattern needs to be applied to pumps/sql_aggregate.go ensureIndex.
+remediation: Gate IF NOT EXISTS behind a dialect check for MCP SQL Aggregate, or use a backend-specific HasIndex pre-check plus plain CREATE INDEX for MySQL-compatible backends, then add a MySQL integration witness for SW-REQ-045 backend_ddl_valid.
 owner: tyk-team
 release_disposition: ship_with_known_issue
 status: open
@@ -33,3 +32,7 @@ history:
       by: human:buger
       action: edit
       detail: set-severity-basis=risk,set-risk
+    - at: "2026-06-25T13:26:33Z"
+      by: human:buger
+      action: edit
+      detail: set-description,set-remediation,remove-requirement

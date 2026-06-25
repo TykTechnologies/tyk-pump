@@ -1,0 +1,19 @@
+id: sql-aggregate-background-index-concurrency-unbounded
+title: SQL aggregate background index creation has no bounded lifecycle or failure witness
+description: pumps/sql_aggregate.go starts Postgres SQL Aggregate index creation on a background goroutine during non-sharded Init. Init returns before the index is ready, the goroutine only logs createIndexFn errors, there is no cancellation or timeout policy beyond tests waiting on backgroundIndexCreated, and concurrent startup/write interactions are not covered by a race or failure-injection witness. SW-REQ-066 therefore cannot honestly claim the concurrent/background lifecycle is fully bounded until the behavior is specified and tested.
+affected_requirements:
+    - SW-REQ-066
+severity: low
+severity_basis: risk
+risk: performance
+reproducer_command: rg -n "backgroundIndexCreated|go func|CREATE INDEX|ensureIndex" pumps/sql_aggregate.go pumps/sql_aggregate_test.go docs/requirements/SW-REQ-066.md
+introduced_in: 657436f
+mitigation: Postgres operators can allow startup to continue while the index builds, but should expect aggregate queries to table-scan until the background index exists and should avoid concurrent startup/write scenarios that depend on the index being immediately ready.
+remediation: Specify the background index lifecycle, cancellation/error reporting, and readiness semantics; add a bounded background-failure/concurrency witness for SW-REQ-066.
+owner: tyk-team
+release_disposition: ship_with_known_issue
+status: open
+history:
+    - at: "2026-06-25T13:26:14Z"
+      by: human:buger
+      action: created

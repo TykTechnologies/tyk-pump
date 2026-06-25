@@ -1,0 +1,43 @@
+id: index_definition_matches_query
+name: Index definition matches query
+category: domain
+status: active
+summary: Database indexes shall include the documented key columns, in the order required by the query path they are intended to accelerate.
+description: |-
+  An index existence check can pass even when the index is built on the wrong
+  column set or in an order that does not support the intended query pattern.
+  Requirements that introduce an operational index shall prove the concrete
+  backend index definition matches the documented access path, not only that an
+  index with the expected name exists.
+applies_when:
+  description: a requirement creates or migrates a database index for a documented lookup, aggregation, or dashboard query path
+  trigger_phrases:
+    - composite index
+    - CREATE INDEX
+    - query path
+    - dashboard
+    - index definition
+example_req: |-
+  When SQL aggregate creates the dimension index, the physical database index
+  shall use columns (dimension, timestamp, org_id, dimension_value) in that
+  order so per-dimension time-range queries use the intended access path.
+if_missing: |-
+  A test may verify only that some index exists while a refactor silently drops
+  a key column or reorders the prefix away from the production query shape.
+recommended_evidence:
+  - kind: nominal
+    note: Integration test reads backend catalog metadata and asserts the exact index column list in order.
+  - kind: review
+    note: Review ties the index column order to the documented query predicate and sort/range pattern.
+  - kind: negative
+    note: Regression record names the historical missing or wrong-index behavior the obligation prevents.
+frameworks:
+  - id: CWE
+    refs:
+      - CWE-1059
+      - CWE-770
+related_classes:
+  - id: backend_ddl_valid
+    relationship: complements
+  - id: per_shard_index_created
+    relationship: complements

@@ -39,8 +39,22 @@ channel to avoid hangs.
   `Verifies: SW-REQ-066`) — exercises the five index-creation scenarios
   including the negative "index created on non-existing table" case and
   the `OmitIndexCreation: true` short-circuit.
+- `pumps/sql_aggregate_test.go:assertSQLAggregateIndexDefinition` reads the
+  Postgres catalog and asserts the created index key order is exactly
+  `(dimension, timestamp, org_id, dimension_value)`.
 - Live-Postgres tests are excluded from the local audit MC/DC scope
   (known issue).
+
+## Obligations
+- `index_definition_matches_query` — the physical index definition must match
+  the documented dashboard query path, not merely exist under the expected
+  name.
+- `backend_ddl_valid` is deferred to
+  `sql-aggregate-mysql-create-index-if-not-exists-unsupported` for current
+  MySQL DDL incompatibility.
+- `concurrent` is deferred to
+  `sql-aggregate-background-index-concurrency-unbounded` until the background
+  index lifecycle has bounded failure/concurrency evidence.
 
 ## Open questions
 - The background-goroutine pattern means Init can return before the

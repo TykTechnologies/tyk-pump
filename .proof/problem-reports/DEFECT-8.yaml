@@ -1,0 +1,116 @@
+schema_version: 1
+id: DEFECT-8
+title: SQL Aggregate dimension index lifecycle was implicit and weakly verified
+introduced_in: 657436f
+description: |
+  TT-9468 (#694, commit 657436f) fixed the SQL Aggregate index strategy by
+  removing GORM struct-tag ownership of the aggregate dimension index and
+  adding explicit ensureTable/ensureIndex behavior. The fixed path creates a
+  per-table composite index named <table>_idx_dimension on
+  (dimension, timestamp, org_id, dimension_value), supports
+  omit_index_creation, uses PostgreSQL CONCURRENTLY, and creates the index for
+  sharded SQL Aggregate tables as they are created.
+
+  Before proof hardening, the assurance model could see that an index existed,
+  but it did not make the exact composite index definition a first-class
+  obligation. A regression that kept the name but changed or dropped key
+  columns could therefore remain weakly modeled.
+source:
+  type: upstream_commit
+  repo: TykTechnologies/tyk-pump
+  commit: 657436f
+  reference: TT-9468
+  date: "2023-08-29"
+classification:
+  surface: runtime_code
+  defect_class: sql_aggregate_index_contract_gap
+  severity: medium
+  security_relevant: false
+root_cause:
+  missing_requirement: false
+  missing_test_partition: true
+  missing_mcdc_variable: false
+  notes: |
+    SW-REQ-066 already described the SQL Aggregate index lifecycle and tests
+    asserted the index name existed. The missing partition was exact physical
+    index definition evidence: the Postgres catalog was not checked for the
+    documented key order that supports the dashboard query path.
+impact_analysis:
+  affected_requirements:
+    - SW-REQ-064
+    - SW-REQ-065
+    - SW-REQ-066
+  affected_code:
+    - analytics/aggregate.go
+    - pumps/sql_aggregate.go
+    - pumps/sql_aggregate_test.go
+hardening:
+  new_requirements: []
+  strengthened_requirements:
+    - SW-REQ-066
+  added_obligations:
+    - requirement: SW-REQ-066
+      obligation_class: index_definition_matches_query
+  regression_tests:
+    - pumps/sql_aggregate_test.go:TestEnsureIndexSQLAggregate
+    - pumps/sql_aggregate_test.go:TestSQLAggregateWriteData_Sharded
+  proposed_classes:
+    - index_definition_matches_query
+disposition:
+  status: covered_by_requirement
+  requirements:
+    - SW-REQ-066
+    - SW-REQ-064
+    - SW-REQ-065
+  known_issues:
+    - mapstructure-decode-silently-drops-unknown-keys
+    - no-panic-recovery-in-exec-pump-writing
+    - sql-aggregate-background-index-concurrency-unbounded
+    - sql-aggregate-mysql-create-index-if-not-exists-unsupported
+    - sql-aggregate-sharded-shared-db-race
+    - sql-aggregate-sharded-upsert-targets-base-table
+    - sql-aggregate-mysql-excluded-keyword-broken
+    - sql-aggregate-no-deadlock-retry
+    - sql-aggregate-upsert-order-undocumented
+    - sql-batch-size-zero-infinite-loop
+    - sql-schema-no-version-policy
+  evidence:
+    verified_by:
+      - pumps/sql_aggregate_test.go:TestEnsureIndexSQLAggregate
+      - pumps/sql_aggregate_test.go:TestSQLAggregateWriteData_Sharded
+    obligation_evidence:
+      - requirement: SW-REQ-066
+        obligation_class: index_definition_matches_query
+        evidence_type: nominal
+      - requirement: SW-REQ-064
+        obligation_class: per_shard_index_created
+        evidence_type: nominal
+      - requirement: SW-REQ-066
+        obligation_class: backend_ddl_valid
+        evidence_type: accepted_ki_debt
+        tracking: sql-aggregate-mysql-create-index-if-not-exists-unsupported
+      - requirement: SW-REQ-066
+        obligation_class: concurrent
+        evidence_type: accepted_ki_debt
+        tracking: sql-aggregate-background-index-concurrency-unbounded
+  reviewer: agent:codex
+  reviewed_at: "2026-06-25T16:55:00Z"
+history:
+  - at: "2026-06-25T16:55:00Z"
+    by: agent:codex
+    action: created
+  - at: "2026-06-25T16:55:00Z"
+    by: agent:codex
+    action: hardened
+    detail: |
+      Added local obligation index_definition_matches_query and Postgres
+      catalog evidence for the SQL Aggregate composite index column order.
+      Residual MySQL DDL and background-index lifecycle behavior is recorded
+      as KI-backed debt, not claimed as fixed.
+  - at: "2026-06-25T16:55:00Z"
+    by: agent:codex
+    action: residual_gap_recorded
+    detail: |
+      Listed sql-schema-no-version-policy as residual SW-REQ-065 schema debt
+      because DEFECT-8 covers the SQL Aggregate table/index lifecycle surface
+      without claiming a complete schema-version policy.
