@@ -44,6 +44,7 @@ func (d dummyObject) TableName() string {
 // Verifies: SW-REQ-059
 // Verifies: SW-REQ-084
 // Verifies: SW-REQ-096
+// Verifies: SW-REQ-102
 // SW-REQ-059:output_cardinality_bounded:nominal
 // SW-REQ-059:output_cardinality_bounded:boundary
 // SW-REQ-059:nominal:nominal
@@ -51,6 +52,8 @@ func (d dummyObject) TableName() string {
 // SW-REQ-084:routing_target_consistent:boundary
 // SW-REQ-096:aggregate_dimension_retention:nominal
 // SW-REQ-096:aggregate_dimension_retention:negative
+// SW-REQ-102:structured_projection_preserved:nominal
+// SW-REQ-102:structured_projection_preserved:boundary
 // MCDC SW-REQ-059: org_id_empty=F, write_skipped=F => TRUE
 // MCDC SW-REQ-059: org_id_empty=T, write_skipped=F => FALSE
 // MCDC SW-REQ-059: org_id_empty=T, write_skipped=T => TRUE
@@ -61,6 +64,7 @@ func (d dummyObject) TableName() string {
 // MCDC SW-REQ-096: ignore_aggregation_configured=T, mixed_collection_dimension_present=F, ignored_dimension_retained=F => TRUE
 // MCDC SW-REQ-096: ignore_aggregation_configured=T, mixed_collection_dimension_present=T, ignored_dimension_retained=F => FALSE
 // MCDC SW-REQ-096: ignore_aggregation_configured=T, mixed_collection_dimension_present=T, ignored_dimension_retained=T => TRUE
+// MCDC SW-REQ-102: aggregate_lists_projection_persisted=T => TRUE
 //
 // org_id_empty=F (records carry non-empty OrgID), write_skipped=F (the upsert proceeds —
 // non-trigger arm, vacuous true). The org_id_empty=T/write_skipped=T arm is exercised by
@@ -73,6 +77,12 @@ func (d dummyObject) TableName() string {
 // that apikey2 remains present witnesses the TRUE row and catches the historical
 // double-discard FALSE row. The initial pmp1 write also witnesses the vacuous
 // TRUE row where no mixed-collection API-key dimension exists yet.
+//
+// For SW-REQ-102, both subtests read persisted Mongo aggregate documents back
+// into AnalyticsRecordAggregate and assert Lists.APIKeys survives with the
+// expected identifier and hit count.
+//
+//mcdc:ignore SW-REQ-102: aggregate_lists_projection_persisted=F => FALSE -- AnalyticsRecordAggregate carries Lists as a persisted field and AsTimeUpdate writes lists.* into Mongo before readback; with the current code shape, the invariant-false row would require removing the Lists field/projection, while this test witnesses the positive per-org and mixed readback path [reviewed: human:buger] [category: defensive]
 func TestDoAggregatedWritingWithIgnoredAggregations(t *testing.T) {
 	uri := testMongoURI(t)
 	cfgPump1 := make(map[string]interface{})

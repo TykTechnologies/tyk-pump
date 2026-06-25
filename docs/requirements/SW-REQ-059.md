@@ -12,6 +12,8 @@ document into a collection named `z_tyk_analyticz_aggregate_<orgid>` via
 aggregate shall additionally be written to the shared mixed collection
 `AgggregateMixedCollectionName` (`Mixed=true` variant). Empty `orgid` shall
 return an error from `GetCollectionName`. Derived from SYS-REQ-003.
+SW-REQ-102 decomposes the persisted `Lists` projection needed by aggregate
+listing queries.
 
 ## Motivation
 Per-organisation collection sharding gives multi-tenant Tyk Dashboard
@@ -27,11 +29,14 @@ contract auditable.
 - `pumps/mongo_aggregate.go:MongoAggregatePump.WriteData` —
   `writingAttempts` loop that iterates per-org aggregates.
 - `pumps/mongo_aggregate.go:DoAggregatedWriting` — per-doc upsert.
+- `docs/requirements/SW-REQ-102.md` — child requirement for `Lists` projection
+  persistence in per-org and mixed aggregate readback.
 
 ## Evidence
 - `pumps/mongo_aggregate_test.go:TestDoAggregatedWritingWithIgnoredAggregations`
   (re-annotated `Verifies: SW-REQ-059`) — exercises both the per-org and
-  the mixed-collection writes with `use_mixed_collection: true`.
+  the mixed-collection writes with `use_mixed_collection: true`, and provides
+  SW-REQ-102 evidence that `Lists.APIKeys` is preserved on readback.
 
 ## Related requirements
 `SW-REQ-096` covers the data-retention side of the same mixed-collection path:

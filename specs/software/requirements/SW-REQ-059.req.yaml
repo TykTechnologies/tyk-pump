@@ -5,7 +5,7 @@ priority: shall
 category: functional
 req_type: guarantee
 fretish: when org_id_empty pumps_mongo_aggregate shall always satisfy write_skipped
-description: The MongoAggregate pump shall route each per-organisation aggregate document into a collection named z_tyk_analyticz_aggregate_<orgid> via GetCollectionName; when UseMixedCollection is true, each per-org aggregate shall additionally be written to the shared mixed collection AgggregateMixedCollectionName (Mixed=true variant). Empty orgid shall return an error from GetCollectionName.
+description: The MongoAggregate pump shall route each per-organisation aggregate document into a collection named z_tyk_analyticz_aggregate_<orgid> via GetCollectionName; when UseMixedCollection is true, each per-org aggregate shall additionally be written to the shared mixed collection AgggregateMixedCollectionName (Mixed=true variant). Empty orgid shall return an error from GetCollectionName. SW-REQ-102 decomposes the persisted Lists projection needed by mixed aggregate listing queries.
 formalization_strategy: fretish
 informal_verification:
     method: ""
@@ -29,15 +29,15 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-25T15:00:22Z"
-        comment: 'TT-8793 hardening: reviewed Mongo aggregate mixed-collection routing, added output_cardinality_bounded, and strengthened live Mongo evidence for the second average-update upsert target.'
-        fingerprint: sha256:6461528b1e667548823133c33aac9ef047b164b9f76838d876a6fe54d8daa83a
+        reviewed_at: "2026-06-25T20:30:29Z"
+        comment: 'Reviewed d4d1cf7 hardening: SW-REQ-059 now references SW-REQ-102 for Mongo aggregate Lists projection persistence; existing mixed routing and KI scope unchanged.'
+        fingerprint: sha256:d21c99ee1a20bfd3bddbb5089040dada73d08c537d4b0ad9376e41e330a4cc70
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:37:24Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-25T15:05:25Z"
+    last_modified_at: "2026-06-25T20:30:29Z"
 obligation_checklist:
     - config_schema_strict
     - errors_propagated
@@ -87,4 +87,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T14:19:01Z comment="Phase L3 aggressive: flip remaining decision-bearing SW reqs to FRETish per L3 plan; vars added per-component; MC/DC witnesses to be annotated in tests.")'
+          changed_by: human:buger
+        - date: "2026-06-25T20:30:29Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-25T15:00:22Z comment="TT-8793 hardening: reviewed Mongo aggregate mixed-collection routing, added output_cardinality_bounded, and strengthened live Mongo evidence for the second average-update upsert target.")'
           changed_by: human:buger

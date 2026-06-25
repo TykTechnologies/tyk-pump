@@ -97,6 +97,10 @@ variables:
       type: bool
       direction: output
       description: True iff a later MongoAggregate write with ignore_aggregations configured preserves the existing mixed-collection dimension counter map instead of deleting or overwriting it.
+    - name: aggregate_lists_projection_persisted
+      type: bool
+      direction: output
+      description: True iff Mongo aggregate readback from the per-org and shared mixed collections preserves the persisted Lists projection (for example lists.apikeys) derived by AsTimeUpdate from aggregate dimension counters.
     - name: docdb_backend_configured
       type: bool
       direction: input
@@ -111,4 +115,4 @@ variables:
       description: True iff the MongoAggregate pump attempts its baseline DocumentDB-compatible indexes without calling the StandardMongo collection-exists shortcut; false when omit_index_creation intentionally disables index creation.
 independence:
     declared: true
-    reason: 'Mongo aggregate requirements cover independent behaviors: aggregation window selection, self-heal halving, empty-org skip, two-step upsert, ignored-dimension retention, DocumentDB index compatibility, tag-list alerting, and index-skip policy.'
+    reason: 'Mongo aggregate requirements cover independent behaviors: aggregation window selection, self-heal halving, empty-org skip, two-step upsert, ignored-dimension retention, Lists projection persistence, DocumentDB index compatibility, tag-list alerting, and index-skip policy.'

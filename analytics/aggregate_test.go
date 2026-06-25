@@ -8,6 +8,7 @@ import (
 	"github.com/TykTechnologies/storage/persistent/model"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
+	"go.mongodb.org/mongo-driver/bson"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -1427,4 +1428,45 @@ func TestAnalyticsRecordAggregate_AsTimeUpdate(t *testing.T) {
 			}
 		})
 	}
+}
+
+// Verifies: SW-REQ-102
+// SW-REQ-102:structured_projection_preserved:review
+func TestAnalyticsRecordAggregate_ListsBSONRoundTripPreservesRestoredFields(t *testing.T) {
+	source := AnalyticsRecordAggregate{
+		OrgID: "org-1",
+		Lists: AggregateFieldList{
+			APIKeys:   []Counter{{Identifier: "key-1", Hits: 3}},
+			APIID:     []Counter{{Identifier: "api-1", Hits: 4}},
+			OauthIDs:  []Counter{{Identifier: "oauth-1", Hits: 5}},
+			Geo:       []Counter{{Identifier: "GB", Hits: 6}},
+			Tags:      []Counter{{Identifier: "tag-1", Hits: 7}},
+			Errors:    []Counter{{Identifier: "500", Hits: 8}},
+			Endpoints: []Counter{{Identifier: "/v1", Hits: 9}},
+			KeyEndpoint: map[string][]Counter{
+				"key-1": {{Identifier: "/v1", Hits: 10}},
+			},
+			OauthEndpoint: map[string][]Counter{
+				"oauth-1": {{Identifier: "/v1", Hits: 11}},
+			},
+			APIEndpoint: []Counter{{Identifier: "api-endpoint-1", Hits: 12}},
+		},
+	}
+
+	raw, err := bson.Marshal(source)
+	require.NoError(t, err)
+
+	var decoded AnalyticsRecordAggregate
+	require.NoError(t, bson.Unmarshal(raw, &decoded))
+
+	require.Equal(t, source.Lists.APIKeys, decoded.Lists.APIKeys)
+	require.Equal(t, source.Lists.APIID, decoded.Lists.APIID)
+	require.Equal(t, source.Lists.OauthIDs, decoded.Lists.OauthIDs)
+	require.Equal(t, source.Lists.Geo, decoded.Lists.Geo)
+	require.Equal(t, source.Lists.Tags, decoded.Lists.Tags)
+	require.Equal(t, source.Lists.Errors, decoded.Lists.Errors)
+	require.Equal(t, source.Lists.Endpoints, decoded.Lists.Endpoints)
+	require.Equal(t, source.Lists.KeyEndpoint, decoded.Lists.KeyEndpoint)
+	require.Equal(t, source.Lists.OauthEndpoint, decoded.Lists.OauthEndpoint)
+	require.Equal(t, source.Lists.APIEndpoint, decoded.Lists.APIEndpoint)
 }

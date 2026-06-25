@@ -106,7 +106,7 @@ type AnalyticsRecordAggregate struct {
 
 	Endpoints map[string]*Counter
 
-	Lists AggregateFieldList
+	Lists AggregateFieldList // reqproof:implements SW-REQ-102
 
 	KeyEndpoint   map[string]map[string]*Counter `bson:"keyendpoints"`
 	OauthEndpoint map[string]map[string]*Counter `bson:"oauthendpoints"`

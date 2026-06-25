@@ -1,0 +1,93 @@
+schema_version: 1
+id: DEFECT-44
+title: Mongo aggregate mixed collection lost Lists projection data
+introduced_in: unknown
+description: |
+  Commit d4d1cf7 restored the Lists field on AnalyticsRecordAggregate after an
+  earlier change removed it. Without that field, aggregate documents written to
+  the shared mixed Mongo aggregate collection did not preserve the list
+  projection used by dashboard listing queries, even though the aggregate
+  dimension counters existed.
+
+  Current AnalyticsRecordAggregate carries Lists as AggregateFieldList, and
+  AsTimeUpdate writes lists.* fields derived from aggregate counters. SW-REQ-102
+  now makes the full restored Lists persistence shape explicit, with live
+  readback evidence for per-org and mixed aggregate documents.
+source:
+    type: upstream_commit
+    repo: TykTechnologies/tyk-pump
+    commit: d4d1cf7
+    reference: tyk-pump#135
+    date: "2019-08-08"
+classification:
+    surface: data_integrity
+    defect_class: mongo_aggregate_lists_projection_dropped
+    severity: medium
+    security_relevant: false
+root_cause:
+    missing_requirement: true
+    missing_test_partition: true
+    missing_mcdc_variable: false
+    notes: |
+      SW-REQ-059 modeled mixed collection routing and later tests asserted
+      aggregate counters, but the Lists projection was not an explicit
+      software requirement. Existing mixed-collection evidence now asserts
+      Lists.APIKeys readback and is bound to SW-REQ-102.
+impact_analysis:
+    affected_requirements:
+        - SW-REQ-059
+        - SW-REQ-102
+    affected_code:
+        - analytics/aggregate.go
+        - pumps/mongo_aggregate.go
+        - pumps/mongo_aggregate_test.go
+hardening:
+    new_requirements:
+        - SW-REQ-102
+    strengthened_requirements:
+        - SW-REQ-059
+    added_obligations:
+        - requirement: SW-REQ-102
+          obligation_class: structured_projection_preserved
+    regression_tests:
+        - analytics/aggregate_test.go:TestAnalyticsRecordAggregate_ListsBSONRoundTripPreservesRestoredFields
+        - pumps/mongo_aggregate_test.go:TestDoAggregatedWritingWithIgnoredAggregations
+    proposed_classes: []
+    code_signals: []
+disposition:
+    status: covered_by_requirement
+    requirements:
+        - SW-REQ-102
+    known_issues:
+        - aggregate-counter-replay-not-idempotent
+        - analytics-timestamp-timezone-convention-unpinned
+        - mapstructure-decode-silently-drops-unknown-keys
+        - mongo-aggregate-atomicity-fault-injection-missing
+        - pump-no-timeout-can-block-purge-cycle
+        - pumps-logfatal-on-config-decode
+    evidence:
+        verified_by:
+            - analytics/aggregate_test.go:TestAnalyticsRecordAggregate_ListsBSONRoundTripPreservesRestoredFields
+            - pumps/mongo_aggregate_test.go:TestDoAggregatedWritingWithIgnoredAggregations
+        obligation_evidence:
+            - requirement: SW-REQ-102
+              obligation_class: structured_projection_preserved
+              evidence_type: review
+            - requirement: SW-REQ-102
+              obligation_class: structured_projection_preserved
+              evidence_type: nominal
+            - requirement: SW-REQ-102
+              obligation_class: structured_projection_preserved
+              evidence_type: boundary
+    reviewer: agent:codex
+    reviewed_at: "2026-06-25T20:29:04Z"
+history:
+    - at: "2026-06-25T20:29:04Z"
+      by: agent:codex
+      action: created
+      detail: |
+        Recorded d4d1cf7 as a fixed historical Mongo aggregate Lists projection
+        defect. BSON round-trip evidence covers every restored Lists family,
+        and live Mongo readback covers the dashboard-facing Lists.APIKeys path.
+        No static signal was added because those deterministic witnesses are
+        higher signal than a broad struct-field presence detector.
