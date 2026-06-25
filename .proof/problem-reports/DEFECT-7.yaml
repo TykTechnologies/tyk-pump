@@ -92,6 +92,7 @@ disposition:
     - SW-REQ-066
   known_issues:
     - analytics-timestamp-timezone-convention-unpinned
+    - graph-sql-aggregate-atomicity-fault-injection-missing
     - graph-sql-aggregate-migrate-sharded-tables-ignored
     - graph-mcp-sql-sharded-indexes-untracked
     - mapstructure-decode-silently-drops-unknown-keys
@@ -134,3 +135,12 @@ history:
       and SQL Aggregate shard-index creation to the sharded aggregate test.
       Current Graph/MCP SQL shard-index gaps and MySQL DDL compatibility gaps
       remain linked KIs, not claimed fixes.
+  - at: "2026-06-25T13:20:00Z"
+    by: agent:codex
+    action: residual_gap_recorded
+    detail: |
+      Linked KI graph-sql-aggregate-atomicity-fault-injection-missing as
+      residual SW-REQ-043 backend-write proof-harness debt. This does not
+      reopen the fixed TT-13421 sharded-index defect; it prevents the defect
+      closure record from implying the whole overlapping Graph SQL aggregate
+      requirement surface is free of active KIs.

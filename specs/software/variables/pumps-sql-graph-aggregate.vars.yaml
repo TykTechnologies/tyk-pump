@@ -8,3 +8,7 @@ variables:
       type: bool
       direction: output
       description: True iff analytics.AggregateGraphData is invoked with a per-minute window (matching StoreAnalyticsPerMinute=true); per-hour otherwise.
+    - name: api_partition_used
+      type: bool
+      direction: output
+      description: True iff graph aggregate grouping and persisted upsert identity include APIID so same-org GraphQL counters for different APIs remain separate.

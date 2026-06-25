@@ -1,0 +1,45 @@
+id: aggregate_partition_isolated
+name: Aggregate partition isolated
+category: domain
+status: active
+summary: Aggregation keys shall include every declared partition dimension so records from different tenants, APIs, or buckets cannot collapse into one counter.
+description: |-
+  Aggregate pipelines often reduce many records into one counter row or document.
+  Requirements that own a partition key shall prove every partition field
+  participates in the in-memory grouping key and the persisted upsert key. A
+  missing field silently merges unrelated traffic into the same aggregate,
+  producing plausible but wrong dashboards and billing inputs.
+applies_when:
+  description: code aggregates records by tenant, API, time window, shard, route, operation, or another declared partition key
+  trigger_phrases:
+    - aggregate by api
+    - partition
+    - grouping key
+    - per API
+    - per tenant
+    - upsert id
+example_req: |-
+  When graph analytics are aggregated into SQL rows, records with the same
+  organization, time window, and graph dimension but different API IDs shall
+  produce separate aggregate groups and separate persisted row IDs.
+if_missing: |-
+  Two APIs in one organization can share a time window and GraphQL dimension,
+  causing one API's traffic, errors, or latency counters to be reported under
+  another API or as a collapsed total.
+recommended_evidence:
+  - kind: nominal
+    note: Unit test feeds records that differ only in the declared partition key and asserts distinct aggregate groups with independent counters.
+  - kind: negative
+    note: Regression test covers the historical missing-partition field and fails if groups collapse back to the broader key.
+  - kind: review
+    note: Review maps the in-memory aggregate key and the persisted upsert ID/key to the same declared partition fields.
+frameworks:
+  - id: CWE
+    refs:
+      - CWE-840
+      - CWE-345
+related_classes:
+  - id: output_cardinality_bounded
+    relationship: complements
+  - id: hash_format_deterministic
+    relationship: complements

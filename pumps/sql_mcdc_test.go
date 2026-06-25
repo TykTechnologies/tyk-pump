@@ -50,9 +50,11 @@ import (
 // MCDC SW-REQ-042: graph_record_present=F, graph_record_routed=F => TRUE
 // MCDC SW-REQ-042: graph_record_present=T, graph_record_routed=F => FALSE
 // MCDC SW-REQ-042: graph_record_present=T, graph_record_routed=T => TRUE
-// MCDC SW-REQ-043: minute_window_used=F, store_per_minute=F => TRUE
-// MCDC SW-REQ-043: minute_window_used=F, store_per_minute=T => FALSE
-// MCDC SW-REQ-043: minute_window_used=T, store_per_minute=T => TRUE
+// MCDC SW-REQ-043: api_partition_used=F, minute_window_used=F, store_per_minute=F => TRUE
+// MCDC SW-REQ-043: api_partition_used=F, minute_window_used=F, store_per_minute=T => FALSE
+// MCDC SW-REQ-043: api_partition_used=F, minute_window_used=T, store_per_minute=T => FALSE
+// MCDC SW-REQ-043: api_partition_used=T, minute_window_used=F, store_per_minute=T => FALSE
+// MCDC SW-REQ-043: api_partition_used=T, minute_window_used=T, store_per_minute=T => TRUE
 // MCDC SW-REQ-044: mcp_record_present=F, mcp_record_routed=F => TRUE
 // MCDC SW-REQ-044: mcp_record_present=T, mcp_record_routed=F => FALSE
 // MCDC SW-REQ-044: mcp_record_present=T, mcp_record_routed=T => TRUE

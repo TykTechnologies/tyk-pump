@@ -28,8 +28,21 @@ latencies) in SQL form, suitable for Grafana / Metabase dashboards.
 
 ## Evidence
 - `pumps/graph_sql_aggregate_test.go` (re-annotated `Verifies: SW-REQ-043`).
+- `analytics/aggregate_test.go:TestAggregateGraphData_PartitionsSameOrgByAPIID`
+  proves that same-org, same-dimension GraphQL records remain isolated by
+  `APIID` before SQL upsert.
 - Live-Postgres tests are excluded from the local audit MC/DC scope (known
   issue).
+
+## Obligations
+- `aggregate_partition_isolated` — aggregate keys include the declared API
+  partition dimension so same-org GraphQL counters for different APIs cannot
+  collapse into one row.
+- `atomicity`, `transaction_isolation_declared`, and `errors_propagated` —
+  required for backend write correctness, but currently deferred to
+  `graph-sql-aggregate-atomicity-fault-injection-missing` until a database
+  transaction/failure-injection harness proves serialization/deadlock and
+  forced `tx.Error` behavior.
 
 ## Open questions
 - The day-bucket algorithm is duplicated from sql.go / sql_aggregate.go /

@@ -1,0 +1,7 @@
+id: REVIEW-7af2a45-graph-aggregate-api-partition
+kind: design_review
+reviewer: agent:codex
+reviewed_at: "2026-06-25T16:25:00Z"
+subject: upstream:7af2a45/SW-REQ-043
+decision: approved
+comment: 'Commit-level assurance review for TT-100053: the historical fix changed Graph SQL aggregate ownership from org-level grouping to API-level grouping so same-org GraphQL aggregate rows do not merge across APIs. This slice hardens SW-REQ-043 with local obligation aggregate_partition_isolated and adds fast analytics evidence proving same-org/same-dimension records with different APIIDs remain separate before SQL upsert. It also adds atomicity, transaction_isolation_declared, and errors_propagated as required backend-write obligations, deferred to KI graph-sql-aggregate-atomicity-fault-injection-missing until a transaction/failure-injection harness proves serialization/deadlock/tx.Error behavior. Existing Graph SQL aggregate shard migration, shard-index, timestamp, config, timeout, and SQL batch-size debts remain KI-backed; no product behavior change is claimed.'

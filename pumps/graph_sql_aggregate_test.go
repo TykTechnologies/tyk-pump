@@ -18,9 +18,11 @@ import (
 // verbatim from `proof mcdc show`; this header gives every // Verifies: link
 // in the file a matching witness row.
 //
-// MCDC SW-REQ-043: minute_window_used=F, store_per_minute=F => TRUE
-// MCDC SW-REQ-043: minute_window_used=F, store_per_minute=T => FALSE
-// MCDC SW-REQ-043: minute_window_used=T, store_per_minute=T => TRUE
+// MCDC SW-REQ-043: api_partition_used=F, minute_window_used=F, store_per_minute=F => TRUE
+// MCDC SW-REQ-043: api_partition_used=F, minute_window_used=F, store_per_minute=T => FALSE
+// MCDC SW-REQ-043: api_partition_used=F, minute_window_used=T, store_per_minute=T => FALSE
+// MCDC SW-REQ-043: api_partition_used=T, minute_window_used=F, store_per_minute=T => FALSE
+// MCDC SW-REQ-043: api_partition_used=T, minute_window_used=T, store_per_minute=T => TRUE
 
 const (
 	requestTemplate  = "POST / HTTP/1.1\r\nHost: localhost:8281\r\nUser-Agent: test-agent\r\nContent-Length: %d\r\n\r\n%s"
@@ -181,9 +183,11 @@ func TestSqlGraphAggregatePump_Init(t *testing.T) {
 }
 
 // Verifies: SW-REQ-043
-// MCDC SW-REQ-043: minute_window_used=F, store_per_minute=F => TRUE
-// MCDC SW-REQ-043: minute_window_used=F, store_per_minute=T => FALSE
-// MCDC SW-REQ-043: minute_window_used=T, store_per_minute=T => TRUE
+// MCDC SW-REQ-043: api_partition_used=F, minute_window_used=F, store_per_minute=F => TRUE
+// MCDC SW-REQ-043: api_partition_used=F, minute_window_used=F, store_per_minute=T => FALSE
+// MCDC SW-REQ-043: api_partition_used=F, minute_window_used=T, store_per_minute=T => FALSE
+// MCDC SW-REQ-043: api_partition_used=T, minute_window_used=F, store_per_minute=T => FALSE
+// MCDC SW-REQ-043: api_partition_used=T, minute_window_used=T, store_per_minute=T => TRUE
 // (StoreAnalyticsPerMinute=false (hour window) covered here; the per-minute
 // branch is driven by sub-test scenarios that toggle StoreAnalyticsPerMinute=true
 // and assert minute-windowed AggregateGraphData output.)

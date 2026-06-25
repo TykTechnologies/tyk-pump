@@ -4,7 +4,7 @@ status: approved
 priority: shall
 category: functional
 req_type: guarantee
-fretish: when store_per_minute pumps_sql_graph_aggregate shall always satisfy minute_window_used
+fretish: when store_per_minute pumps_sql_graph_aggregate shall always satisfy minute_window_used & api_partition_used
 description: The Graph SQL Aggregate pump shall, on each purge, day-bucket records when TableSharding is enabled and route each day-slice to a <AggregateGraphSQLTable>_<YYYYMMDD> table (auto-migrated when missing); within each table it shall aggregate graph analytics via analytics.AggregateGraphData (windowed per minute when StoreAnalyticsPerMinute is true, otherwise per hour) and upsert each per-(API, dimension) row with clause.OnConflict on id using analytics.OnConflictAssignments; per-batch errors shall be returned to the caller.
 formalization_strategy: fretish
 informal_verification:
@@ -19,9 +19,9 @@ variables: []
 traces:
     satisfies:
         - SYS-REQ-003
-    reviewed_at: "2026-06-02T12:53:40.166061Z"
+    reviewed_at: "2026-06-25T13:16:40.279606Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:5002d56e4ddc33fdd510a54d591ec53714ddfa7e9c4b9c168cc1bb307b2e4b5a
+    reviewed_fingerprint: sha256:a4eec004ace5804cc29946cfa5d5953ad4aac3cdef3e85823c9903291171d551
 verification:
     assurance_level: B
     formalization_status: valid
@@ -29,18 +29,21 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-25T12:16:00Z"
-        comment: 'Product-fix-history hardening for TT-13341: support_matrix_enforced now pins the SQL-family runtime support matrix to documented mysql/postgres and rejects removed sqlite via production Init/Dialect evidence; no product behavior change claimed.'
-        fingerprint: sha256:8882ad2192fd299d5e17c270c275982a7ce19afccb4de4fb5fdc7c859e3a30c3
+        reviewed_at: "2026-06-25T13:16:48Z"
+        comment: 'Product-fix-history hardening for TT-100053: formalized API partitioning in FRETish with api_partition_used, added aggregate_partition_isolated and fast analytics evidence proving same-org/same-dimension GraphQL aggregates remain separated by APIID before Graph SQL upsert. Also added atomicity, transaction_isolation_declared, and errors_propagated as required backend-write obligations, KI-deferred to graph-sql-aggregate-atomicity-fault-injection-missing until transaction/failure-injection evidence exists. No product behavior change claimed.'
+        fingerprint: sha256:8f9569769f1837772f490b3eefe0555df46e47c87ef66ee514ca8d44fcf96ba6
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:35:37Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-25T12:16:00Z"
+    last_modified_at: "2026-06-25T13:16:48Z"
 obligation_checklist:
+    - aggregate_partition_isolated
+    - atomicity
     - config_schema_strict
     - connection_leak_free
+    - errors_propagated
     - external_call_timeout_bounded
     - forward_compatible
     - input_size_bounded
@@ -51,13 +54,26 @@ obligation_checklist:
     - per_shard_index_created
     - support_matrix_enforced
     - temporal_window_inclusive
+    - transaction_isolation_declared
 obligation_deferrals:
+    - obligation_class: atomicity
+      reason: 'Graph SQL aggregate upsert atomicity is required for counter correctness, but current evidence lacks transaction/failure injection for serialization, deadlock, or forced tx.Error paths; tracked as KI-backed proof-harness debt.'
+      tracking: graph-sql-aggregate-atomicity-fault-injection-missing
+      owner: human:buger
+      ki_ref: graph-sql-aggregate-atomicity-fault-injection-missing
+      reproducer: graph-sql-aggregate-atomicity-fault-injection-missing
     - obligation_class: config_schema_strict
       reason: 'Pump configuration unknown-field rejection is required but currently not implemented: mapstructure.Decode silently ignores unknown keys and operator typos until known issue mapstructure-decode-silently-drops-unknown-keys is fixed.'
       tracking: mapstructure-decode-silently-drops-unknown-keys
       owner: human:buger
       ki_ref: mapstructure-decode-silently-drops-unknown-keys
       reproducer: mapstructure-decode-silently-drops-unknown-keys
+    - obligation_class: errors_propagated
+      reason: SW-REQ-043 promises Graph SQL aggregate per-batch backend errors are returned, but current evidence does not force database Create/tx.Error failure paths; tracked as KI-backed proof-harness debt until an injected backend-failure witness exists.
+      tracking: graph-sql-aggregate-atomicity-fault-injection-missing
+      owner: human:buger
+      ki_ref: graph-sql-aggregate-atomicity-fault-injection-missing
+      reproducer: graph-sql-aggregate-atomicity-fault-injection-missing
     - obligation_class: external_call_timeout_bounded
       reason: External backend calls remain operator-timeout dependent because timeout=0 is still accepted; this is KI-tracked until a nonzero deadline is enforced by default or Init rejects zero timeout.
       tracking: pump-no-timeout-can-block-purge-cycle
@@ -96,6 +112,12 @@ obligation_deferrals:
       tracking: analytics-timestamp-timezone-convention-unpinned
       owner: human:buger
       ki_ref: analytics-timestamp-timezone-convention-unpinned
+    - obligation_class: transaction_isolation_declared
+      reason: Graph SQL aggregate counter correctness depends on concurrent database upserts behaving consistently, but no test or documented transaction-isolation harness injects concurrent writer or serialization-failure cases; tracked as KI-backed proof-harness debt.
+      tracking: graph-sql-aggregate-atomicity-fault-injection-missing
+      owner: human:buger
+      ki_ref: graph-sql-aggregate-atomicity-fault-injection-missing
+      reproducer: graph-sql-aggregate-atomicity-fault-injection-missing
 release_disposition: ship_with_known_issue
 lifecycle:
     change_history:
@@ -138,4 +160,14 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-25T12:14:15Z comment="Product-fix-history hardening for TT-13421: added per_shard_index_created and backend_ddl_valid obligations. Standard SQL and SQL Aggregate shard-index behavior is backed by tests; Graph/MCP SQL shard-index contracts and MySQL DDL compatibility remain KI-backed debt. FRETish remains scoped to each requirement primary routing/windowing/index-skip decision.")'
+          changed_by: human:buger
+        - date: "2026-06-25T13:14:59Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-25T12:16:00Z comment="Product-fix-history hardening for TT-13341: support_matrix_enforced now pins the SQL-family runtime support matrix to documented mysql/postgres and rejects removed sqlite via production Init/Dialect evidence; no product behavior change claimed.")'
+          changed_by: human:buger
+        - date: "2026-06-25T13:16:48Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-25T13:14:59Z comment="Product-fix-history hardening for TT-100053: added aggregate_partition_isolated and fast analytics evidence proving same-org/same-dimension GraphQL aggregates remain separated by APIID before Graph SQL upsert. Also added atomicity, transaction_isolation_declared, and errors_propagated as required backend-write obligations, KI-deferred to graph-sql-aggregate-atomicity-fault-injection-missing until transaction/failure-injection evidence exists. No product behavior change claimed.")'
           changed_by: human:buger

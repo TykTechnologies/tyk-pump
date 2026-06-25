@@ -400,6 +400,50 @@ func TestAggregateGraphData_Dimension(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-043
+// SW-REQ-043:aggregate_partition_isolated:nominal
+// SW-REQ-043:aggregate_partition_isolated:negative
+// SW-REQ-043:output_cardinality_bounded:nominal
+func TestAggregateGraphData_PartitionsSameOrgByAPIID(t *testing.T) {
+	base := AnalyticsRecord{
+		TimeStamp:    time.Date(2022, 1, 1, 0, 0, 0, 0, time.UTC),
+		Method:       "POST",
+		Host:         "localhost:8281",
+		Path:         "/graphql",
+		RawPath:      "/graphql",
+		APIName:      "first-api-name",
+		APIID:        "first-api",
+		ResponseCode: 200,
+		OrgID:        "shared-org",
+		GraphQLStats: GraphQLStats{
+			IsGraphQL: true,
+			Types: map[string][]string{
+				"Characters": {"info"},
+			},
+			RootFields:    []string{"characters"},
+			OperationType: OperationQuery,
+		},
+	}
+	second := base
+	second.APIID = "second-api"
+	second.APIName = "second-api-name"
+
+	aggregated := AggregateGraphData([]interface{}{base, second, base}, "", 60)
+	require.Len(t, aggregated, 2)
+
+	first, ok := aggregated["first-api"]
+	require.True(t, ok, "first API aggregate missing")
+	secondAgg, ok := aggregated["second-api"]
+	require.True(t, ok, "second API aggregate missing")
+
+	require.Equal(t, "shared-org", first.OrgID)
+	require.Equal(t, "shared-org", secondAgg.OrgID)
+	require.Equal(t, 2, first.Total.Hits)
+	require.Equal(t, 1, secondAgg.Total.Hits)
+	require.Equal(t, 2, first.RootFields["characters"].Hits)
+	require.Equal(t, 1, secondAgg.RootFields["characters"].Hits)
+}
+
 // Verifies: SW-REQ-011
 func TestAggregateData_SkipGraphRecords(t *testing.T) {
 	run := func(records []AnalyticsRecord, expectedAggregatedRecordCount int, expectedExistingOrgKeys, expectedNonExistingOrgKeys []string) func(t *testing.T) {

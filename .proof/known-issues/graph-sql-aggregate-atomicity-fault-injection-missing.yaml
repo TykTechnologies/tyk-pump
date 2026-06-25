@@ -1,0 +1,19 @@
+id: graph-sql-aggregate-atomicity-fault-injection-missing
+title: Graph SQL aggregate upsert atomicity obligation lacks a transaction/failure harness
+description: SW-REQ-043 uses a single GORM Create call with clause.OnConflict to express an INSERT ... ON CONFLICT DO UPDATE upsert for Graph SQL aggregate rows, and the requirement promises per-batch errors are returned. Existing tests prove successful sequential writes, sharding, and API partitioning, but they do not inject database transaction failures, serialization/deadlock failures, concurrent writers, or forced tx.Error paths to prove the atomicity, transaction isolation, and error-propagation obligations. The missing evidence is a proof-harness gap; it should not be replaced by a broad comment that merely says ON CONFLICT exists.
+affected_requirements:
+    - SW-REQ-043
+severity: low
+severity_basis: risk
+risk: data_integrity
+reproducer_command: rg -n "DoAggregatedWriting|OnConflict|Create\(|tx\.Error|atomicity|transaction|failure" pumps/graph_sql_aggregate.go pumps/graph_sql_aggregate_test.go docs/requirements/SW-REQ-043.md
+introduced_in: inception
+mitigation: Rely on database single-statement upsert semantics and existing successful Graph SQL aggregate write/API-partition tests until a transaction/failure harness exists.
+remediation: Add a fake driver or database-backed test that injects serialization/deadlock/transaction errors around the Graph SQL aggregate upsert and proves retry/reporting semantics, including caller-visible errors from WriteData.
+owner: tyk-team
+release_disposition: ship_with_known_issue
+status: open
+history:
+    - at: "2026-06-25T13:12:05Z"
+      by: human:buger
+      action: created
