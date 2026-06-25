@@ -1,5 +1,13 @@
 component: analytics
 variables:
+    - name: rest_aggregate_input_present
+      type: bool
+      direction: input
+      description: True when AggregateData receives at least one ordinary AnalyticsRecord eligible for REST aggregation, possibly mixed with graph- or MCP-classified records.
+    - name: rest_aggregate_partitioned
+      type: bool
+      direction: output
+      description: True iff AggregateData emits REST aggregate buckets for ordinary records and excludes records whose GraphQLStats.IsGraphQL or MCPStats.IsMCP classifiers route them to graph or MCP aggregate families.
     - name: graphql_root_fields_present
       type: bool
       direction: input

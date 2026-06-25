@@ -719,6 +719,7 @@ func AggregateGraphData(data []interface{}, dbIdentifier string, aggregationTime
 
 // AggregateData calculates aggregated data, returns map orgID => aggregated analytics data
 // reqproof:implements SW-REQ-011
+// reqproof:implements SW-REQ-093
 func AggregateData(data []interface{}, trackAllPaths bool, ignoreTagPrefixList []string, dbIdentifier string, aggregationTime int) map[string]AnalyticsRecordAggregate {
 	analyticsPerOrg := make(map[string]AnalyticsRecordAggregate)
 	for _, v := range data {

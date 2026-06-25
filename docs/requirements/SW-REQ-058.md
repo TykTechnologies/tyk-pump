@@ -29,6 +29,12 @@ without involving the upsert / sharding behaviours.
 - `pumps/mongo_aggregate.go:MongoAggregatePump.WriteData` — passes the
   resolved window into `analytics.AggregateData(...)`.
 
+## Related requirements
+- **SW-REQ-093** owns the aggregate family partition applied by
+  `AggregateData`: ordinary REST records are aggregated here, while
+  GraphQL- and MCP-classified records are excluded for graph/MCP aggregate
+  paths.
+
 ## Evidence
 - `pumps/mongo_aggregate_test.go:TestAggregationTime` (re-annotated
   `Verifies: SW-REQ-058`) — exercises the windowing across 1/3/7/15/30/60

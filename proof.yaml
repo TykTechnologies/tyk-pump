@@ -22,6 +22,8 @@ project:
     evidence_types:
         nominal:
             description: Happy-path or representative valid-input evidence for the requirement obligation.
+        override:
+            description: Evidence that an operator override source takes precedence over a default or file/config value using the documented parser.
     signals:
         defaults: auto
         refresh_on_audit: true

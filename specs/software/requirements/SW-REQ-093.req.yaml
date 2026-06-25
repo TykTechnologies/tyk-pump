@@ -1,0 +1,62 @@
+id: SW-REQ-093
+version: 1
+status: approved
+priority: shall
+category: functional
+req_type: guarantee
+fretish: when rest_aggregate_input_present analytics shall always satisfy rest_aggregate_partitioned
+description: REST aggregate calculation shall aggregate ordinary non-GraphQL, non-MCP AnalyticsRecord values by organisation and shall exclude records whose GraphQLStats.IsGraphQL or MCPStats.IsMCP classifiers route them to the graph or MCP aggregate families.
+formalization_strategy: fretish
+informal_verification:
+    method: ""
+    evidence: ""
+    verified: false
+parent: SYS-REQ-003
+component: analytics
+rationale: 'Product-fix-history hardening for c54eed3: graph analytics were separated from standard Mongo aggregation, but the proof model only described monotonic counter accumulation and MongoAggregate window selection. This requirement pins the REST/graph/MCP aggregate partition so graph-classified records do not silently re-enter REST aggregates and ordinary REST records are still aggregated.'
+tags: []
+variables:
+    - rest_aggregate_input_present
+    - rest_aggregate_partitioned
+traces:
+    satisfies:
+        - SYS-REQ-003
+verification:
+    assurance_level: B
+    formalization_status: valid
+    review:
+        status: approved
+        reviewer: human:buger
+        role: software_engineer
+        reviewed_at: "2026-06-25T17:35:13Z"
+        comment: 'c54eed3 hardening: reviewed REST aggregate graph/MCP partition requirement, existing graph/MCP exclusion evidence, and DEFECT-14 classifier clarification; no runtime product behavior change.'
+        fingerprint: sha256:980afe8f4a33b72eef0d4487b73e59e6d9862734ef011d3fab301fdc298e92d9
+        ai_generated: false
+history:
+    created_by: human:buger
+    created_at: "2026-06-25T17:32:19Z"
+    last_modified_by: human:buger
+    last_modified_at: "2026-06-25T17:35:13Z"
+obligation_checklist:
+    - nominal
+    - output_cardinality_bounded
+stakeholder:
+    acceptance_criteria:
+        - id: AC-001
+          text: AggregateData excludes GraphQL-classified records from REST aggregates while preserving ordinary REST records in their organisation buckets.
+          verification_method: test
+        - id: AC-002
+          text: AggregateData excludes MCP-classified records from REST aggregates while preserving ordinary REST records in their organisation buckets.
+          verification_method: test
+lifecycle:
+    change_history:
+        - date: "2026-06-25T17:32:19Z"
+          from: draft
+          to: review
+          reason: c54eed3 REST aggregate partition requirement ready for branch review
+          changed_by: human:buger
+        - date: "2026-06-25T17:35:07Z"
+          from: draft
+          to: review
+          reason: '[c54eed3] REST aggregate graph/MCP partition requirement ready for review'
+          changed_by: human:buger

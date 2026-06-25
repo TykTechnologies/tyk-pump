@@ -6,9 +6,11 @@ description: |
   PR #638 (commit 0ed84b9) fixed standard Mongo writes so
   GraphQL-classified non-MCP analytics records were no longer excluded from the
   standard collection. The earlier c54eed3 graph-separation change skipped
-  records whose `GraphQLStats.IsGraphQL` made `IsGraphRecord()` true, so
-  operators could lose GraphQL traffic from the standard Mongo analytics
-  collection unless they also depended on the graph-specific pump.
+  records carrying the legacy `tyk-graph-analytics` tag, because
+  `IsGraphRecord()` was tag-based at that point. In current code the equivalent
+  graph predicate is `GraphQLStats.IsGraphQL`; a recurrence would again make
+  operators lose GraphQL traffic from the standard Mongo analytics collection
+  unless they also depended on the graph-specific pump.
 
   Current proof now closes this defect through SW-REQ-082: standard Mongo must
   insert every valid non-MCP analytics record into the standard collection,
@@ -31,10 +33,11 @@ root_cause:
     missing_test_partition: true
     missing_mcdc_variable: true
     notes: |
-      The original skip policy treated GraphQL-classified records as outside
-      the standard Mongo contract. SW-REQ-082 now makes the inclusion policy
-      explicit and requires evidence for both ordinary and GraphQL-classified
-      non-MCP records.
+      The original skip policy treated graph-classified records as outside the
+      standard Mongo contract. At c54eed3 that classification came from the
+      legacy graph tag; in current code it comes from GraphQLStats.IsGraphQL.
+      SW-REQ-082 now makes the inclusion policy explicit and requires evidence
+      for both ordinary and GraphQL-classified non-MCP records.
 impact_analysis:
     affected_requirements:
         - SW-REQ-034
@@ -92,3 +95,10 @@ history:
         Bound the historical graph-record exclusion defect to SW-REQ-082 and
         the existing live Mongo WriteData witness that inserts GraphQL-classified
         non-MCP records into the standard collection.
+    - at: "2026-06-25T17:32:19Z"
+      by: agent:codex
+      action: clarified_classifier
+      detail: |
+        Clarified that c54eed3 used the legacy graph tag as the classifier,
+        while current recurrence protection is expressed in terms of the
+        GraphQLStats.IsGraphQL predicate.

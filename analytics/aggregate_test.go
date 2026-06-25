@@ -445,6 +445,13 @@ func TestAggregateGraphData_PartitionsSameOrgByAPIID(t *testing.T) {
 }
 
 // Verifies: SW-REQ-011
+// Verifies: SW-REQ-093
+// SW-REQ-093:nominal:nominal
+// SW-REQ-093:output_cardinality_bounded:nominal
+// SW-REQ-093:output_cardinality_bounded:negative
+// MCDC SW-REQ-093: rest_aggregate_input_present=F, rest_aggregate_partitioned=F => TRUE
+// MCDC SW-REQ-093: rest_aggregate_input_present=T, rest_aggregate_partitioned=F => FALSE
+// MCDC SW-REQ-093: rest_aggregate_input_present=T, rest_aggregate_partitioned=T => TRUE
 func TestAggregateData_SkipGraphRecords(t *testing.T) {
 	run := func(records []AnalyticsRecord, expectedAggregatedRecordCount int, expectedExistingOrgKeys, expectedNonExistingOrgKeys []string) func(t *testing.T) {
 		return func(t *testing.T) {

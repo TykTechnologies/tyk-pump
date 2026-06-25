@@ -424,6 +424,9 @@ func TestMCPBSONRoundTrip_APIIDMapSurvivesReadback(t *testing.T) {
 }
 
 // Verifies: SW-REQ-012
+// Verifies: SW-REQ-093
+// SW-REQ-093:nominal:nominal
+// SW-REQ-093:output_cardinality_bounded:negative
 func TestAggregateData_SkipsMCPRecords(t *testing.T) {
 	data := []interface{}{
 		AnalyticsRecord{
@@ -438,7 +441,7 @@ func TestAggregateData_SkipsMCPRecords(t *testing.T) {
 	result := AggregateData(data, false, []string{}, "", 60)
 	require.Len(t, result, 1)
 
-	// Only the REST record should be aggregated — MCP record must be excluded
+	// Only the REST record should be aggregated — MCP record must be excluded.
 	assert.Equal(t, 1, result["org1"].Total.Hits)
 }
 

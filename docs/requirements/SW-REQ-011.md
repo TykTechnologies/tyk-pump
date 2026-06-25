@@ -13,6 +13,11 @@ Aggregate counters drive dashboard charts and downstream billing; a non-monotoni
 - `analytics/aggregate.go:191 Code.ProcessStatusCodes` — folds the per-status `ErrorMap` into the `Code` struct totals.
 - `analytics/uptime_data.go:225 IncrementOrSetUnit` (closure inside `AggregateUptimeData`) — the parallel implementation for uptime data, structurally identical.
 
+## Related requirements
+- **SW-REQ-093** owns REST aggregate partitioning: `AggregateData` excludes
+  GraphQL- and MCP-classified records from REST aggregates before the
+  monotonic counter logic covered here is applied.
+
 ## Evidence
 - `analytics/aggregate_test.go:25 TestCode_ProcessStatusCodes` — tagged `// Verifies: SW-REQ-011`; the per-status-code summation.
 - `analytics/aggregate_test.go:41 TestAggregate_Tags`, `:96 TestAggregateGraphData`, `:282 TestAggregateGraphData_Dimension`, `:352 TestAggregateData_SkipGraphRecords` — multi-record accumulation checks.

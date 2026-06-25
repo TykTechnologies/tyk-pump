@@ -184,16 +184,17 @@ func TestElasticsearchPump_ApiKeyAuthDroppedWhenUseSSL_KI(t *testing.T) {
 	src, err := os.ReadFile("elasticsearch.go")
 	require.NoError(t, err)
 	text := string(src)
+	compactText := strings.Join(strings.Fields(text), " ")
 
 	apiKeyAssignment := `httpClient = &http.Client{Transport: &ApiKeyTransport`
 	tlsAssignment := `httpClient = &http.Client{Transport: &http.Transport{TLSClientConfig: tlsConf}}`
 
-	apiKeyIdx := strings.Index(text, apiKeyAssignment)
-	tlsIdx := strings.Index(text, tlsAssignment)
+	apiKeyIdx := strings.Index(compactText, apiKeyAssignment)
+	tlsIdx := strings.Index(compactText, tlsAssignment)
 	require.NotEqual(t, -1, apiKeyIdx, "expected API key transport assignment in getOperator")
 	require.NotEqual(t, -1, tlsIdx, "expected TLS transport assignment in getOperator")
 	assert.Less(t, apiKeyIdx, tlsIdx, "API key transport is configured before TLS transport")
-	assert.NotContains(t, text[tlsIdx:tlsIdx+len(tlsAssignment)], "ApiKeyTransport",
+	assert.NotContains(t, compactText[tlsIdx:tlsIdx+len(tlsAssignment)], "ApiKeyTransport",
 		"KI active: UseSSL replaces the API-key transport instead of wrapping/preserving it")
 }
 
