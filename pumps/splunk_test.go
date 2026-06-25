@@ -314,8 +314,29 @@ func Test_SplunkInvalidProxyURL(t *testing.T) {
 }
 
 // Verifies: SW-REQ-048
+// SW-REQ-048:retry_policy_explicit:nominal
 func Test_SplunkBackoffRetry(t *testing.T) {
-	go t.Run("max_retries=1", func(t *testing.T) {
+	newRetryPump := func(t *testing.T, serverURL string, maxRetries uint64) SplunkPump {
+		t.Helper()
+		pmp := SplunkPump{}
+		cfg := make(map[string]interface{})
+		cfg["collector_token"] = testToken
+		cfg["max_retries"] = maxRetries
+		cfg["collector_url"] = serverURL
+		cfg["ssl_insecure_skip_verify"] = true
+		if err := pmp.Init(cfg); err != nil {
+			t.Fatalf("Error initializing pump %v", err)
+		}
+		return pmp
+	}
+
+	oneRecord := func() []interface{} {
+		return []interface{}{
+			analytics.AnalyticsRecord{OrgID: "1", APIID: "123", Path: "/test-path", Method: "POST", TimeStamp: time.Now()},
+		}
+	}
+
+	t.Run("max_retries=1", func(t *testing.T) {
 		handler := &testHandler{test: t, batched: false, returnErrors: 1}
 		server := httptest.NewUnstartedServer(handler)
 		server.Config.SetKeepAlivesEnabled(false)
@@ -323,23 +344,9 @@ func Test_SplunkBackoffRetry(t *testing.T) {
 
 		defer server.Close()
 
-		pmp := SplunkPump{}
-		cfg := make(map[string]interface{})
-		cfg["collector_token"] = testToken
-		cfg["max_retries"] = 1
-		cfg["collector_url"] = server.URL
-		cfg["ssl_insecure_skip_verify"] = true
+		pmp := newRetryPump(t, server.URL, 1)
 
-		if err := pmp.Init(cfg); err != nil {
-			t.Errorf("Error initializing pump %v", err)
-			return
-		}
-
-		keys := make([]interface{}, 1)
-
-		keys[0] = analytics.AnalyticsRecord{OrgID: "1", APIID: "123", Path: "/test-path", Method: "POST", TimeStamp: time.Now()}
-
-		if errWrite := pmp.WriteData(context.TODO(), keys); errWrite != nil {
+		if errWrite := pmp.WriteData(context.TODO(), oneRecord()); errWrite != nil {
 			t.Error("Error writing to splunk pump:", errWrite.Error())
 			return
 		}
@@ -361,23 +368,9 @@ func Test_SplunkBackoffRetry(t *testing.T) {
 
 		defer server.Close()
 
-		pmp := SplunkPump{}
-		cfg := make(map[string]interface{})
-		cfg["collector_token"] = testToken
-		cfg["max_retries"] = 0
-		cfg["collector_url"] = server.URL
-		cfg["ssl_insecure_skip_verify"] = true
+		pmp := newRetryPump(t, server.URL, 0)
 
-		if err := pmp.Init(cfg); err != nil {
-			t.Errorf("Error initializing pump %v", err)
-			return
-		}
-
-		keys := make([]interface{}, 1)
-
-		keys[0] = analytics.AnalyticsRecord{OrgID: "1", APIID: "123", Path: "/test-path", Method: "POST", TimeStamp: time.Now()}
-
-		if errWrite := pmp.WriteData(context.TODO(), keys); errWrite == nil {
+		if errWrite := pmp.WriteData(context.TODO(), oneRecord()); errWrite == nil {
 			t.Error("Error expected writing to splunk pump, got nil")
 			return
 		}
@@ -393,23 +386,9 @@ func Test_SplunkBackoffRetry(t *testing.T) {
 
 		defer server.Close()
 
-		pmp := SplunkPump{}
-		cfg := make(map[string]interface{})
-		cfg["collector_token"] = testToken
-		cfg["max_retries"] = 3
-		cfg["collector_url"] = server.URL
-		cfg["ssl_insecure_skip_verify"] = true
+		pmp := newRetryPump(t, server.URL, 3)
 
-		if err := pmp.Init(cfg); err != nil {
-			t.Errorf("Error initializing pump %v", err)
-			return
-		}
-
-		keys := make([]interface{}, 1)
-
-		keys[0] = analytics.AnalyticsRecord{OrgID: "1", APIID: "123", Path: "/test-path", Method: "POST", TimeStamp: time.Now()}
-
-		if errWrite := pmp.WriteData(context.TODO(), keys); errWrite != nil {
+		if errWrite := pmp.WriteData(context.TODO(), oneRecord()); errWrite != nil {
 			t.Error("Error writing to splunk pump:", errWrite.Error())
 			return
 		}
@@ -421,6 +400,53 @@ func Test_SplunkBackoffRetry(t *testing.T) {
 
 		assert.Equal(t, "Success", response.Text)
 		assert.Equal(t, int32(0), response.Code)
+	})
+
+	t.Run("retries_429_then_succeeds", func(t *testing.T) {
+		reqCount := 0
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			reqCount++
+			if reqCount == 1 {
+				w.WriteHeader(http.StatusTooManyRequests)
+				return
+			}
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte(`{"text":"Success","code":0}`))
+		}))
+		defer server.Close()
+
+		pmp := newRetryPump(t, server.URL, 1)
+		assert.NoError(t, pmp.WriteData(context.TODO(), oneRecord()))
+		assert.Equal(t, 2, reqCount)
+	})
+
+	t.Run("does_not_retry_permanent_400", func(t *testing.T) {
+		reqCount := 0
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			reqCount++
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte(`{"text":"bad request"}`))
+		}))
+		defer server.Close()
+
+		pmp := newRetryPump(t, server.URL, 3)
+		assert.Error(t, pmp.WriteData(context.TODO(), oneRecord()))
+		assert.Equal(t, 1, reqCount)
+	})
+
+	t.Run("surfaces_error_after_retry_exhaustion", func(t *testing.T) {
+		reqCount := 0
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			reqCount++
+			w.WriteHeader(http.StatusInternalServerError)
+			_, _ = w.Write([]byte("splunk internal error"))
+		}))
+		defer server.Close()
+
+		const maxRetries = uint64(2)
+		pmp := newRetryPump(t, server.URL, maxRetries)
+		assert.Error(t, pmp.WriteData(context.TODO(), oneRecord()))
+		assert.Equal(t, int(maxRetries)+1, reqCount)
 	})
 }
 

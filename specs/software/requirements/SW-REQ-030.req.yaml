@@ -32,15 +32,15 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-22T06:47:49Z"
-        comment: 'Reviewed evidence-backed code-signal obligation closures: partial-progress observable evidence for pump fanout, timezone round-trip evidence for analytics aggregate/record/uptime, Redis relative-TTL clock-skew evidence, and HTTP retry malformed-input nominal/negative evidence. Real product gaps remain tracked as KnownIssue-backed debt; no product behavior fixes claimed.'
+        reviewed_at: "2026-06-25T12:25:58Z"
+        comment: 'Product-fix-history hardening for TT-10564: shared HTTP retry now has explicit request_body_replay_preserved evidence and Splunk MaxRetries is covered by retry_policy_explicit; residual idempotency/body-size/deadline risks remain KI-backed debt.'
         fingerprint: sha256:26c12106b48d35ac552e303ba2549978a130f6aeaa9af47e36a21e1604161749
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:16Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-22T11:03:45Z"
+    last_modified_at: "2026-06-25T12:25:58Z"
 obligation_class: malformed_input
 obligation_checklist:
     - dst_transition_safe
@@ -48,6 +48,7 @@ obligation_checklist:
     - idempotency
     - input_size_bounded
     - malformed_input
+    - request_body_replay_preserved
     - retry_budget_bounded
     - retry_policy_explicit
 obligation_deferrals:
@@ -124,4 +125,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-22T06:36:52Z comment="Reviewed evidence-backed code-signal obligation closures: timezone round-trip evidence for analytics aggregate/record/uptime, Redis relative-TTL clock-skew evidence, and HTTP retry malformed-input nominal/negative evidence. No product behavior fixes claimed.")'
+          changed_by: human:buger
+        - date: "2026-06-25T12:25:58Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-22T06:47:49Z comment="Reviewed evidence-backed code-signal obligation closures: partial-progress observable evidence for pump fanout, timezone round-trip evidence for analytics aggregate/record/uptime, Redis relative-TTL clock-skew evidence, and HTTP retry malformed-input nominal/negative evidence. Real product gaps remain tracked as KnownIssue-backed debt; no product behavior fixes claimed.")'
           changed_by: human:buger

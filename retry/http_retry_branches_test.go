@@ -2,6 +2,7 @@ package retry
 
 import (
 	"errors"
+	"io"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -81,6 +82,41 @@ func TestBackoffHTTPRetry_Send_WithBody_RetriesOn5xx(t *testing.T) {
 	}
 	if calls < 2 {
 		t.Fatalf("expected at least one retry on 5xx, saw %d call(s)", calls)
+	}
+}
+
+// Verifies: SW-REQ-030
+// SW-REQ-030:request_body_replay_preserved:nominal
+func TestBackoffHTTPRetry_Send_ReplaysRequestBodyOnRetry(t *testing.T) {
+	const payload = `{"event":"splunk-retry"}`
+	calls := 0
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls++
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			t.Fatalf("attempt %d: read body: %v", calls, err)
+		}
+		if got := string(body); got != payload {
+			t.Fatalf("attempt %d body = %q, want %q", calls, got, payload)
+		}
+		if calls == 1 {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer srv.Close()
+
+	r := NewBackoffRetry("test", 1, srv.Client(), testLogger())
+	req, err := http.NewRequest(http.MethodPost, srv.URL, strings.NewReader(payload))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := r.Send(req); err != nil {
+		t.Fatalf("expected retry to succeed, got %v", err)
+	}
+	if calls != 2 {
+		t.Fatalf("expected initial attempt plus one retry, got %d attempts", calls)
 	}
 }
 

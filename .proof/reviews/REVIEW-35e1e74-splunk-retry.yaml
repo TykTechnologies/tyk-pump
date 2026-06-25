@@ -1,0 +1,7 @@
+id: REVIEW-35e1e74-splunk-retry
+kind: design_review
+reviewer: agent:codex
+reviewed_at: "2026-06-25T13:05:00Z"
+subject: upstream:35e1e74/SW-REQ-030+SW-REQ-048
+decision: approved
+comment: 'Commit-level assurance review for TT-10564: current proof already models retry on 5xx/429 and transient transport errors through SW-REQ-030 and Splunk MaxRetries through SW-REQ-048, but the historical body-reset fix needed an explicit request_body_replay_preserved obligation. Residual retry replay/idempotency, elapsed-deadline, and body-size risks remain KI-backed debt, not claimed as fixed.'

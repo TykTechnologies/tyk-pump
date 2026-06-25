@@ -1,0 +1,39 @@
+id: request_body_replay_preserved
+name: Request body replay preserved
+category: property
+status: active
+summary: Retried HTTP requests with bodies shall replay the original bytes on every attempt.
+description: HTTP retry helpers that accept a request body must not consume the body on the first failed attempt and then retry with an empty, truncated, or mutated body. The helper shall preserve the exact request-body bytes across all retry attempts, or require callers to provide an explicit replay mechanism such as Request.GetBody.
+applies_when:
+  description: code retries HTTP requests whose Body may be non-nil
+  trigger_phrases:
+    - retry
+    - request body
+    - replay
+    - req.Body
+    - GetBody
+    - ContentLength
+example_req: |-
+  When a POST request is retried after a transient response, every retry attempt
+  shall carry the same request-body bytes as the initial attempt.
+if_missing: |-
+  The retry attempt happens but sends an empty or partially consumed body. The
+  caller sees retry behavior while the downstream receives malformed events or
+  rejects the request with body-length errors.
+recommended_evidence:
+  - kind: nominal
+    note: Test drives a retryable failure followed by success and asserts every server-observed body equals the original payload.
+  - kind: negative
+    note: Regression test simulates a single-shot body reader and proves retry does not reuse the consumed reader directly.
+  - kind: review
+    note: Review names where the body is buffered, cloned, or reopened per attempt.
+frameworks:
+  - id: CWE
+    refs:
+      - CWE-703
+      - CWE-755
+related_classes:
+  - id: retry_policy_explicit
+    relationship: complements
+  - id: binary_data_preserved
+    relationship: specializes
