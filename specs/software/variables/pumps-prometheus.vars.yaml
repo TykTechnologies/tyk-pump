@@ -8,6 +8,14 @@ variables:
       type: bool
       direction: output
       description: True iff Path is defaulted to '/metrics' before promhttp.Handler() registration.
+    - name: base_metric_disabled
+      type: bool
+      direction: input
+      description: True when PrometheusConf.DisabledMetrics contains the exact name of one of the built-in base metric families.
+    - name: base_metric_family_absent
+      type: bool
+      direction: output
+      description: True iff a disabled built-in base metric family is omitted from allMetrics, so it is not registered, updated, or exposed by the Prometheus pump.
     - name: obfuscate_api_keys_enabled
       type: bool
       direction: input
@@ -42,4 +50,4 @@ variables:
       description: True when the Prometheus aggregate stores and exposes the original label tuple values without reconstructing them by splitting the joined aggregation key.
 independence:
     declared: true
-    reason: 'Prometheus requirements cover independent metric exposition, optional API-key label masking, and path-label tracking gates; each guarantee has a separate FRETish trigger/output pair.'
+    reason: 'Prometheus requirements cover independent metric exposition, base metric family disable gates, optional API-key label masking, and path-label tracking gates; each guarantee has a separate FRETish trigger/output pair.'

@@ -22,6 +22,9 @@ import (
 // MCDC SW-REQ-024: default_path_applied=F, listen_path_empty=F => TRUE
 // MCDC SW-REQ-024: default_path_applied=F, listen_path_empty=T => FALSE
 // MCDC SW-REQ-024: default_path_applied=T, listen_path_empty=T => TRUE
+// MCDC SW-REQ-090: base_metric_disabled=F, base_metric_family_absent=F => TRUE
+// MCDC SW-REQ-090: base_metric_disabled=T, base_metric_family_absent=F => FALSE
+// MCDC SW-REQ-090: base_metric_disabled=T, base_metric_family_absent=T => TRUE
 
 // Verifies: SW-REQ-024
 // MCDC SW-REQ-024: default_path_applied=F, listen_path_empty=F => TRUE
@@ -939,6 +942,12 @@ func TestPrometheusEnsureLabels(t *testing.T) {
 }
 
 // Verifies: SW-REQ-024
+// Verifies: SW-REQ-090
+// SW-REQ-090:metric_family_disable_gate:nominal
+// SW-REQ-090:metric_family_disable_gate:boundary
+// MCDC SW-REQ-090: base_metric_disabled=F, base_metric_family_absent=F => TRUE
+// MCDC SW-REQ-090: base_metric_disabled=T, base_metric_family_absent=F => FALSE
+// MCDC SW-REQ-090: base_metric_disabled=T, base_metric_family_absent=T => TRUE
 func TestPrometheusDisablingMetrics(t *testing.T) {
 	p := &PrometheusPump{}
 	newPump := p.New().(*PrometheusPump)
@@ -947,7 +956,7 @@ func TestPrometheusDisablingMetrics(t *testing.T) {
 	log.Out = io.Discard
 	newPump.log = logrus.NewEntry(log)
 
-	newPump.conf = &PrometheusConf{DisabledMetrics: []string{"tyk_http_status_per_path"}}
+	newPump.conf = &PrometheusConf{DisabledMetrics: []string{"tyk_http_status_per_path", "tyk_latency"}}
 
 	newPump.initBaseMetrics()
 
@@ -968,6 +977,51 @@ func TestPrometheusDisablingMetrics(t *testing.T) {
 
 	assert.Contains(t, metricMap, "tyk_http_status")
 	assert.NotContains(t, metricMap, "tyk_http_status_per_path")
+	assert.NotContains(t, metricMap, "tyk_latency")
+}
+
+// Verifies: SW-REQ-090
+// SW-REQ-090:metric_family_disable_gate:boundary
+func TestPrometheusDisabledMetricsDoNotDisableCustomMetrics(t *testing.T) {
+	p := &PrometheusPump{}
+	newPump := p.New().(*PrometheusPump)
+
+	log := logrus.New()
+	log.Out = io.Discard
+	newPump.log = logrus.NewEntry(log)
+
+	newPump.conf = &PrometheusConf{
+		DisabledMetrics: []string{"tyk_custom_disabled_metric"},
+		CustomMetrics: CustomMetrics{
+			{
+				Name:       "tyk_custom_disabled_metric",
+				Help:       "custom metric remains enabled",
+				MetricType: counterType,
+				Labels:     []string{"response_code"},
+			},
+		},
+	}
+
+	newPump.initBaseMetrics()
+	newPump.InitCustomMetrics()
+
+	defer func() {
+		for i := range newPump.allMetrics {
+			if newPump.allMetrics[i].MetricType == counterType {
+				prometheus.Unregister(newPump.allMetrics[i].counterVec)
+			} else if newPump.allMetrics[i].MetricType == histogramType {
+				prometheus.Unregister(newPump.allMetrics[i].histogramVec)
+			}
+		}
+	}()
+
+	metricMap := map[string]*PrometheusMetric{}
+	for _, metric := range newPump.allMetrics {
+		metricMap[metric.Name] = metric
+	}
+
+	assert.Contains(t, metricMap, "tyk_custom_disabled_metric")
+	assert.Contains(t, metricMap, "tyk_http_status")
 }
 
 // TestPrometheusGetLabelsValues_MCPLabels verifies that mcp_method, mcp_primitive_type,

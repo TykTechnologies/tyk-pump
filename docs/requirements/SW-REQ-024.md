@@ -41,8 +41,9 @@ metrics.
 Failure modes addressed:
 - Misconfigured `listen_address`: `Init` returns an error rather than
   silently failing.
-- Disabled base metrics: `DisabledMetrics` skips registration entirely so
-  scrapes don't expose them.
+- Disabled base metrics: split into **SW-REQ-090**, where `DisabledMetrics`
+  skips built-in base metric registration/update/exposition without suppressing
+  custom metrics.
 - Context cancellation mid-batch: `WriteData` checks `ctx.Done()` between
   records.
 
@@ -73,6 +74,9 @@ Failure modes addressed:
 ## Evidence
 - `pumps/prometheus_test.go` covers metric initialisation, label projection,
   obfuscation, MCP handling, and aggregate observations.
+- `pumps/prometheus_test.go:TestPrometheusDisablingMetrics` and
+  `TestPrometheusDisabledMetricsDoNotDisableCustomMetrics` cover the
+  SW-REQ-090 disabled-base-family gate.
 - `pumps/udp_file_pumps_mcdc_test.go`
   `TestPrometheusPump_WriteData_NoTracking`,
   `TestPrometheusPump_WriteData_TrackedRecord`, and

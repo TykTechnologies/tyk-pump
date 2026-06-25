@@ -1,0 +1,104 @@
+schema_version: 1
+id: DEFECT-27
+title: Prometheus base metric families could not be disabled
+introduced_in: unknown
+description: |
+  TT-6799 (commit 155b05a) added Prometheus disabled_metrics support for the
+  fixed built-in base metric family set. Before that change, Prometheus pump
+  startup always registered all base families, and WriteData always iterated
+  them through allMetrics. Operators could not remove unwanted or high-cost
+  built-in families from the scrape surface.
+
+  Current code filters built-in base metric families by exact name before
+  registration. Disabled families are removed from allMetrics and therefore
+  are not updated or exposed later. Custom metrics are initialized after the
+  base-family filter and are not suppressed by disabled_metrics.
+source:
+    type: upstream_commit
+    repo: TykTechnologies/tyk-pump
+    commit: 155b05a
+    reference: TT-6799
+    date: "2022-10-18"
+classification:
+    surface: config_behavior
+    defect_class: prometheus_base_metric_disable_missing
+    severity: low
+    security_relevant: false
+root_cause:
+    missing_requirement: true
+    missing_test_partition: true
+    missing_mcdc_variable: true
+    notes: |
+      SW-REQ-024 modeled the broad Prometheus scrape endpoint and default path
+      behavior but did not give disabled_metrics a first-class requirement or
+      MC/DC-bearing variables. Existing tests asserted internal slice trimming,
+      but the proof model did not define the exact controlled family set or the
+      custom-metric non-suppression boundary.
+impact_analysis:
+    affected_requirements:
+        - SW-REQ-024
+        - SW-REQ-090
+    affected_code:
+        - pumps/prometheus.go
+        - pumps/prometheus_test.go
+hardening:
+    new_requirements:
+        - SW-REQ-090
+    strengthened_requirements:
+        - SW-REQ-024
+    added_obligations:
+        - requirement: SW-REQ-090
+          obligation_class: metric_family_disable_gate
+    regression_tests:
+        - pumps/prometheus_test.go:TestPrometheusDisablingMetrics
+        - pumps/prometheus_test.go:TestPrometheusDisabledMetricsDoNotDisableCustomMetrics
+    mcdc_witnesses:
+        - requirement: SW-REQ-090
+          witness: "base_metric_disabled=F, base_metric_family_absent=F => TRUE"
+        - requirement: SW-REQ-090
+          witness: "base_metric_disabled=T, base_metric_family_absent=F => FALSE"
+        - requirement: SW-REQ-090
+          witness: "base_metric_disabled=T, base_metric_family_absent=T => TRUE"
+    proposed_classes:
+        - metric_family_disable_gate
+disposition:
+    status: covered_by_requirement
+    requirements:
+        - SW-REQ-024
+        - SW-REQ-090
+    known_issues:
+        - mapstructure-decode-silently-drops-unknown-keys
+        - metrics-label-cardinality-unbounded
+        - no-panic-recovery-in-exec-pump-writing
+        - prometheus-init-mutates-default-mux
+        - prometheus-metric-maps-race
+        - prometheus-metrics-auth-not-enforced
+        - pumps-logfatal-on-config-decode
+    evidence:
+        verified_by:
+            - pumps/prometheus_test.go:TestPrometheusDisablingMetrics
+            - pumps/prometheus_test.go:TestPrometheusDisabledMetricsDoNotDisableCustomMetrics
+        requirement_mcdc_witnesses:
+            - requirement: SW-REQ-090
+              witness: "base_metric_disabled=F, base_metric_family_absent=F => TRUE (non-disabled built-in metric remains present)"
+            - requirement: SW-REQ-090
+              witness: "base_metric_disabled=T, base_metric_family_absent=F => FALSE (violation row: a disabled built-in metric remains registered/present)"
+            - requirement: SW-REQ-090
+              witness: "base_metric_disabled=T, base_metric_family_absent=T => TRUE (disabled built-in metrics are absent)"
+        obligation_evidence:
+            - requirement: SW-REQ-090
+              obligation_class: metric_family_disable_gate
+              evidence_type: nominal
+            - requirement: SW-REQ-090
+              obligation_class: metric_family_disable_gate
+              evidence_type: boundary
+    reviewer: agent:codex
+    reviewed_at: "2026-06-25T17:11:42Z"
+history:
+    - at: "2026-06-25T17:11:42Z"
+      by: agent:codex
+      action: created
+      detail: |
+        Recorded TT-6799 Prometheus disabled base metric family behavior as
+        covered by SW-REQ-090, including exact built-in family suppression and
+        custom-metric non-suppression evidence.

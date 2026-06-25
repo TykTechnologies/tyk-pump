@@ -1,0 +1,7 @@
+id: REVIEW-155b05a-prometheus-disabled-metrics
+kind: design_review
+reviewer: agent:codex
+reviewed_at: "2026-06-25T17:11:42Z"
+subject: upstream:155b05a/SW-REQ-024/SW-REQ-090
+decision: approved
+comment: 'Commit-level assurance review for TT-6799: upstream added disabled_metrics for the Prometheus built-in base metric family set. Current proof now splits SW-REQ-090 from broad SW-REQ-024 default endpoint behavior, adds a metric_family_disable_gate obligation, covers exact built-in suppression and custom-metric non-suppression, and records DEFECT-27. No runtime product behavior change was made.'

@@ -1,0 +1,46 @@
+id: metric_family_disable_gate
+name: Metric family disable gate
+category: domain
+status: active
+summary: Operator-disabled metric families shall be omitted from registration, update, and exposition for the documented metric family set.
+description: |-
+  Metrics backends often expose a fixed baseline family set plus operator
+  custom metrics. When configuration allows operators to disable named metric
+  families, the requirement shall define the controlled family set and prove
+  that disabled families are not registered, updated, or exposed. The contract
+  shall also state whether the disable list applies to custom metrics, unknown
+  names, or only built-in families.
+applies_when:
+  description: a metrics pump or observability backend accepts a configuration list of metric names, metric families, or collectors to suppress
+  trigger_phrases:
+    - disabled metrics
+    - metric family
+    - suppress metric
+    - collector disabled
+    - not exposed
+example_req: |-
+  When a built-in Prometheus metric family name appears in disabled_metrics,
+  the pump shall omit that family from registration and update/exposition
+  loops; custom metrics are not suppressed by this built-in-family gate.
+if_missing: |-
+  Operators can believe high-cost or unwanted metric families are disabled
+  while the process still registers, updates, or exposes them. Conversely, a
+  broad disable implementation can accidentally suppress custom metrics whose
+  names are intentionally outside the built-in family set.
+recommended_evidence:
+  - kind: nominal
+    note: Unit test configures one disabled built-in metric family and asserts it is absent while a non-disabled built-in family remains active.
+  - kind: boundary
+    note: Test covers exact-name matching across more than one built-in family and verifies unknown or custom names do not suppress custom metric registration.
+  - kind: review
+    note: Review lists the controlled built-in family names and the code path that removes them before registration/update/exposition.
+frameworks:
+  - id: CWE
+    refs:
+      - CWE-20
+      - CWE-840
+related_classes:
+  - id: output_cardinality_bounded
+    relationship: complements
+  - id: config_schema_strict
+    relationship: complements
