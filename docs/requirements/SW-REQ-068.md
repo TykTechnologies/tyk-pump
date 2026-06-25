@@ -38,6 +38,9 @@ expectation that Init failure aborts startup.
   injection.
 - `pumps/elasticsearch.go:getMapping` — per-record document mapping, including
   extended raw payload mapping and `decode_base64` conversion.
+- `docs/requirements/SW-REQ-100.md` — child requirement that pins the
+  historical `AnalyticsRecord.Alias` to Elasticsearch `"alias"` field
+  projection.
 
 ## Evidence
 - `pumps/elasticsearch_test.go:TestGetMapping_*` (re-annotated `Verifies:
@@ -46,6 +49,9 @@ expectation that Init failure aborts startup.
 - `pumps/elasticsearch_test.go:TestGetMapping_ExtendedStatistics` covers the
   TN-6 decoded-payload text contract: decoded `raw_request` / `raw_response`
   fields are plaintext strings, not byte slices that JSON would re-encode.
+- `pumps/elasticsearch_test.go:TestGetMapping_BasicFields` and
+  `TestGetMapping_AliasProjection_EmptyAlias` cover SW-REQ-100 alias
+  projection.
 - `pumps/elasticsearch_test.go:TestElasticsearchPump_TLSConfig_ErrorCases`
   (re-annotated `Verifies: SW-REQ-068`) — exercises TLS-config error
   propagation from `getOperator`.

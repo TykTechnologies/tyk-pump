@@ -36,6 +36,14 @@ variables:
       type: bool
       direction: output
       description: True iff ElasticsearchPump.WriteData returns a non-nil error or typed partial-progress result to the caller for the observed Elasticsearch write failure instead of only logging and returning nil.
+    - name: es_alias_present
+      type: bool
+      direction: input
+      description: True when the source AnalyticsRecord.Alias field is non-empty before Elasticsearch getMapping builds the backend document.
+    - name: es_alias_projected
+      type: bool
+      direction: output
+      description: True iff getMapping emits the Elasticsearch document field "alias" with the same value as AnalyticsRecord.Alias for records whose alias is present.
 independence:
     declared: true
     reason: 'Elasticsearch pump requirements model separate routing, bulk/per-record indexing, and failure-observability outcomes; each guarantee owns a distinct output variable.'

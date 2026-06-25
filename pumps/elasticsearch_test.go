@@ -199,7 +199,11 @@ func TestElasticsearchPump_ApiKeyAuthDroppedWhenUseSSL_KI(t *testing.T) {
 }
 
 // Verifies: INT-REQ-006
+// Verifies: SW-REQ-100
 // MCDC INT-REQ-006: mapping_per_implementation=T, record_dispatched_to_backend=T => TRUE
+// SW-REQ-100:structured_projection_preserved:nominal
+// MCDC SW-REQ-100: es_alias_present=T, es_alias_projected=T => TRUE
+//mcdc:ignore SW-REQ-100: es_alias_present=T, es_alias_projected=F => FALSE -- getMapping assigns mapping["alias"] directly from record.Alias in the same map literal; with a populated alias and unmodified code, the projection-false violation has no runtime branch to exercise, while the positive and empty-alias rows are witnessed [reviewed: human:buger] [category: defensive]
 func TestGetMapping_BasicFields(t *testing.T) {
 	ts := time.Date(2025, 6, 15, 10, 0, 0, 0, time.UTC)
 	record := analytics.AnalyticsRecord{
@@ -245,6 +249,21 @@ func TestGetMapping_BasicFields(t *testing.T) {
 	assert.NotContains(t, mapping, "raw_request")
 	assert.NotContains(t, mapping, "raw_response")
 	assert.NotContains(t, mapping, "user_agent")
+}
+
+// Verifies: SW-REQ-100
+// SW-REQ-100:structured_projection_preserved:boundary
+// MCDC SW-REQ-100: es_alias_present=F, es_alias_projected=F => TRUE
+func TestGetMapping_AliasProjection_EmptyAlias(t *testing.T) {
+	record := analytics.AnalyticsRecord{
+		APIID: "api1",
+		OrgID: "org1",
+	}
+
+	mapping, _ := getMapping(record, false, false, false)
+
+	assert.Contains(t, mapping, "alias")
+	assert.Empty(t, mapping["alias"])
 }
 
 // Verifies: INT-REQ-006

@@ -1,0 +1,94 @@
+schema_version: 1
+id: DEFECT-42
+title: Elasticsearch analytics mapping omitted alias
+introduced_in: unknown
+description: |
+  Commit 3bb755d fixed Elasticsearch analytics document mapping so the user
+  alias from AnalyticsRecord.Alias is written to the "alias" field. Before the
+  fix, getMapping emitted the other base analytics identity and request fields
+  but omitted alias, which prevented downstream Elasticsearch consumers from
+  querying or identifying users by alias.
+
+  Current getMapping includes mapping["alias"] = record.Alias. SW-REQ-100 now
+  makes that field projection explicit as a child of SW-REQ-068, with direct
+  positive and empty-alias witnesses.
+source:
+    type: upstream_commit
+    repo: TykTechnologies/tyk-pump
+    commit: 3bb755d
+    reference: tyk-pump#38
+    date: "2019-08-23"
+classification:
+    surface: data_integrity
+    defect_class: elasticsearch_alias_projection_dropped
+    severity: medium
+    security_relevant: false
+root_cause:
+    missing_requirement: true
+    missing_test_partition: true
+    missing_mcdc_variable: false
+    notes: |
+      Current TestGetMapping_BasicFields already asserted alias after earlier
+      mapping tests were added, but it was linked only to INT-REQ-006's broad
+      mapping-per-implementation contract. No Elasticsearch software
+      requirement explicitly owned the Alias-to-"alias" projection or carried
+      MC/DC variables for the historical field-loss condition.
+impact_analysis:
+    affected_requirements:
+        - SW-REQ-068
+        - SW-REQ-100
+    affected_code:
+        - pumps/elasticsearch.go
+        - pumps/elasticsearch_test.go
+hardening:
+    new_requirements:
+        - SW-REQ-100
+    strengthened_requirements:
+        - SW-REQ-068
+    added_obligations:
+        - requirement: SW-REQ-100
+          obligation_class: structured_projection_preserved
+    regression_tests:
+        - pumps/elasticsearch_test.go:TestGetMapping_BasicFields
+        - pumps/elasticsearch_test.go:TestGetMapping_AliasProjection_EmptyAlias
+    proposed_classes: []
+    code_signals: []
+disposition:
+    status: covered_by_requirement
+    requirements:
+        - SW-REQ-100
+    known_issues:
+        - elasticsearch-api-key-auth-dropped-when-use-ssl
+        - elasticsearch-decode-base64-errors-silent-empty
+        - elasticsearch-mcp-routing-non-bulk-ignored
+        - elasticsearch-unbounded-reconnect-recursion
+        - elasticsearch-writedata-errors-swallowed
+        - es-legacy-versions-need-deprecated-containers
+        - external-pump-endpoints-no-ssrf-allowlist
+        - mapstructure-decode-silently-drops-unknown-keys
+        - pump-no-timeout-can-block-purge-cycle
+        - pumps-logfatal-on-config-decode
+        - tls-insecure-skip-verify-allowed
+    evidence:
+        verified_by:
+            - pumps/elasticsearch_test.go:TestGetMapping_BasicFields
+            - pumps/elasticsearch_test.go:TestGetMapping_AliasProjection_EmptyAlias
+        obligation_evidence:
+            - requirement: SW-REQ-100
+              obligation_class: structured_projection_preserved
+              evidence_type: nominal
+            - requirement: SW-REQ-100
+              obligation_class: structured_projection_preserved
+              evidence_type: boundary
+    reviewer: agent:codex
+    reviewed_at: "2026-06-25T20:16:20Z"
+history:
+    - at: "2026-06-25T20:16:20Z"
+      by: agent:codex
+      action: created
+      detail: |
+        Recorded the historical Elasticsearch alias field omission as covered
+        by SW-REQ-100 and direct getMapping projection evidence. No static
+        code signal was added because an absence-of-one-map-key detector for
+        this helper would be brittle relative to the focused projection
+        witness.

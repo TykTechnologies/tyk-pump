@@ -462,7 +462,7 @@ func getIndexNameForRecord(esConf *ElasticsearchConf, record analytics.Analytics
 	return getIndexName(esConf)
 }
 
-// reqproof:implements SW-REQ-068
+// reqproof:implements SW-REQ-068,SW-REQ-100
 func getMapping(datum analytics.AnalyticsRecord, extendedStatistics bool, generateID bool, decodeBase64 bool) (map[string]interface{}, string) {
 	record := datum
 
