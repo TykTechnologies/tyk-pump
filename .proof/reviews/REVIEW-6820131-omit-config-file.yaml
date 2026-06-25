@@ -1,0 +1,7 @@
+id: REVIEW-6820131-omit-config-file
+kind: design_review
+reviewer: agent:codex
+reviewed_at: "2026-06-25T14:18:00Z"
+subject: upstream:6820131/SW-REQ-002
+decision: approved
+comment: 'Commit-level assurance review for TT-9126: LoadConfig now skips file read/unmarshal when TYK_PMP_OMITCONFIGFILE=true and still applies environment overrides afterward. Current proof already covers this via SW-REQ-002 (config_file_enabled -> json_loaded_before_env_override), config_test.go:TestIgnoreConfig, and SYS-REQ-035 malformed/missing-config evidence. proof mcdc show SW-REQ-002 reports all witness rows covered and 100% code-level MC/DC across matched config functions, so no new requirement, KnownIssue, or product-code change is needed.'
