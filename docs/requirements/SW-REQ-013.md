@@ -14,8 +14,10 @@ GraphQL pumps need columns/document fields that don't exist on the base analytic
 
 ## Evidence
 - `analytics/graph_record_test.go:59 TestAnalyticsRecord_ToGraphRecordNew` — tagged `// Verifies: SW-REQ-013`; round-trips a populated `GraphQLStats` record and asserts each extracted field, including the `>= 400` override branch.
+- `analytics/graph_record_test.go:189 TestAnalyticsRecord_ToGraphRecord_IgnoresLegacyGraphSourcesWithoutGraphQLStatsFlag` — proves legacy graph tags and raw request/response/schema payloads do not create a graph record when `GraphQLStats.IsGraphQL` is false.
 
 ## Open questions
 - `GraphSQLTableName` is a package-level variable mutated by the SQL pump before migration; if two SQL pumps with different table names are configured, the second `Init` overwrites the first. Not new (same pattern as `MCPSQLTableName`) but worth noting that the `TableName` resolution is global, not per-instance.
 - `OperationType` is mapped to a string in `ToGraphRecord` but `GraphQLOperations` is also serialised as the raw int enum through the protobuf path (`serializer/protobuf.go:97`). Downstream consumers reading from one vs. the other see different value spaces.
 - The `default:` arm of the op-type switch leaves `opType` as the empty string — a record with `OperationUnknown` ends up with `operation_type=""` in the DB rather than a marker value. Silent rather than wrong, but inconsistent with the protobuf path which uses `OPERATION_UNKNOWN`.
+- Gateway-to-pump correctness is still an upstream interface assumption: pump tests prove `GraphQLStats` is consumed and projected, not that a gateway produced those stats correctly for every query/mutation/subscription shape.

@@ -1,0 +1,48 @@
+id: structured_projection_preserved
+name: Structured projection preserved
+category: domain
+status: active
+summary: A model-to-model projection shall preserve each declared source field into its documented destination field without silently falling back to stale parsing or lossy defaults.
+description: |-
+  Analytics and telemetry code often projects a rich source model into a
+  backend-specific record shape. Requirements that own such a projection shall
+  name the authoritative source fields and the destination fields they populate,
+  then prove the projection is direct and lossless for those declared fields.
+  Historical fallback parsers, legacy tags, or default values shall not override
+  the structured source of truth unless the requirement explicitly says so.
+applies_when:
+  description: code converts one structured record type into another persisted, serialized, or downstream-facing record shape
+  trigger_phrases:
+    - projection
+    - map fields
+    - GraphQLStats
+    - to record
+    - persisted fields
+    - model conversion
+example_req: |-
+  When an analytics record is converted into a graph record, the graph record
+  shall copy GraphQLStats.Types, RootFields, Errors, HasErrors, Variables, and
+  OperationType into the documented graph fields without reparsing raw request
+  or response payloads.
+if_missing: |-
+  A refactor can appear to preserve the destination shape while changing which
+  source owns the data. Legacy parser paths, stale tags, or zero defaults then
+  silently drop dimensions, variables, errors, or operation classifications.
+recommended_evidence:
+  - kind: nominal
+    note: Unit test builds a source record with every declared field populated and asserts the destination record has the same values in the documented fields.
+  - kind: negative
+    note: Regression test supplies legacy or malformed alternate sources and asserts they do not override the authoritative structured fields.
+  - kind: review
+    note: Review maps each source field to its destination field and names any intentionally ignored legacy source.
+frameworks:
+  - id: CWE
+    refs:
+      - CWE-20
+      - CWE-704
+      - CWE-840
+related_classes:
+  - id: forward_compatible
+    relationship: complements
+  - id: malformed_recovers_or_errors_loudly
+    relationship: complements

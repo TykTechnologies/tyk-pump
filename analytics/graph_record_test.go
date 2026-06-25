@@ -57,6 +57,9 @@ type EmptyType{
 // TODO fix test coverage
 // Verifies: SW-REQ-013
 // SW-REQ-013:nominal:nominal
+// SW-REQ-013:structured_projection_preserved:nominal
+// SW-REQ-013:malformed_input:nominal
+// SW-REQ-013:malformed_recovers_or_errors_loudly:nominal
 func TestAnalyticsRecord_ToGraphRecordNew(t *testing.T) {
 	recordSample := AnalyticsRecord{
 		TimeStamp:    time.Date(2022, 1, 1, 0, 0, 0, 0, time.UTC),
@@ -179,5 +182,31 @@ func TestAnalyticsRecord_ToGraphRecordNew(t *testing.T) {
 				t.Fatal(diff)
 			}
 		})
+	}
+}
+
+// Verifies: SW-REQ-013
+// SW-REQ-013:structured_projection_preserved:negative
+// SW-REQ-013:malformed_input:negative
+// SW-REQ-013:malformed_recovers_or_errors_loudly:negative
+func TestAnalyticsRecord_ToGraphRecord_IgnoresLegacyGraphSourcesWithoutGraphQLStatsFlag(t *testing.T) {
+	body := []byte(`{"query":"query { characters { info { count } } }"}`)
+	response := []byte(`{"data":{"characters":{"info":{"count":1}}}}`)
+	record := AnalyticsRecord{
+		Tags:        []string{PredefinedTagGraphAnalytics},
+		RawRequest:  base64.StdEncoding.EncodeToString([]byte("not an HTTP request")),
+		RawResponse: base64.StdEncoding.EncodeToString(response),
+		ApiSchema:   base64.StdEncoding.EncodeToString([]byte(sampleSchema)),
+		GraphQLStats: GraphQLStats{
+			IsGraphQL:     false,
+			Types:         map[string][]string{"Characters": {"info"}},
+			RootFields:    []string{"characters"},
+			Variables:     string(body),
+			OperationType: OperationQuery,
+		},
+	}
+
+	if diff := cmp.Diff(GraphRecord{}, record.ToGraphRecord(), cmpopts.IgnoreFields(GraphRecord{}, "AnalyticsRecord")); diff != "" {
+		t.Fatal(diff)
 	}
 }

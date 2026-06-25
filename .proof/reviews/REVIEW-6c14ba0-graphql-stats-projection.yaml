@@ -1,0 +1,7 @@
+id: REVIEW-6c14ba0-graphql-stats-projection
+kind: design_review
+reviewer: agent:codex
+reviewed_at: "2026-06-25T15:10:00Z"
+subject: upstream:6c14ba0/SW-REQ-013+SW-REQ-037+SW-REQ-042+SW-REQ-043
+decision: approved
+comment: 'Commit-level assurance review for TT-9476: the graph refactor moved graph extraction from raw request/response/schema parsing and legacy graph tags to AnalyticsRecord.GraphQLStats. Current proof already covers Graph SQL, Graph Mongo, Graph SQL aggregate, and serializer GraphQLStats consumption. This slice hardens SW-REQ-013 with structured_projection_preserved plus malformed-input obligations, and adds a negative witness that legacy graph tags/raw payloads do not create a GraphRecord unless GraphQLStats.IsGraphQL is true. Remaining graph SQL shard-index, graph aggregate shard-migration, timestamp, and SQL batch-size gaps are existing KI-backed debt, not product fixes.'

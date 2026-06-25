@@ -5,7 +5,7 @@ priority: shall
 category: functional
 req_type: guarantee
 fretish: ""
-description: GraphQL record extraction shall capture operation type, root fields, types and errors from GraphQL analytics records.
+description: GraphQL record extraction shall project only AnalyticsRecord.GraphQLStats records marked IsGraphQL into GraphRecord, preserving operation type, root fields, types, errors, variables, and HasErrors from GraphQLStats while ignoring legacy tag/raw request/raw response/schema parsing sources when the GraphQLStats flag is false.
 formalization_strategy: informal
 informal_verification:
     method: ""
@@ -29,17 +29,20 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-02T05:02:45Z"
-        comment: 'Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.'
-        fingerprint: sha256:e2d2f1068b52736417568f0912812e5955f03fa054b41c9d0003a03b6c8234ca
+        reviewed_at: "2026-06-25T12:53:10Z"
+        comment: 'Product-fix-history hardening for TT-9476: SW-REQ-013 now pins GraphQLStats as the authoritative projection source, adds structured_projection_preserved and malformed-input obligations, and has witnesses for GraphQLStats field preservation plus legacy tag/raw payload rejection when IsGraphQL is false.'
+        fingerprint: sha256:c0525ae955fdbeffcbdb2b8c8e832bec69c1f8e41419e4e5c19bb81c15dad7f1
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:14Z"
-    last_modified_by: human:cli
-    last_modified_at: "2026-06-02T05:02:46Z"
+    last_modified_by: human:buger
+    last_modified_at: "2026-06-25T12:53:10Z"
 obligation_checklist:
+    - malformed_input
+    - malformed_recovers_or_errors_loudly
     - nominal
+    - structured_projection_preserved
 lifecycle:
     change_history:
         - date: "2026-05-29T15:46:44Z"
@@ -52,3 +55,8 @@ lifecycle:
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-05-30T07:43:08Z comment="Software-component design reviewed as part of feat/reqproof-coverage PR; each maps to verified code paths per the Phase 0 file-by-file verification (see PR description for code-verified corrections SW-016/017/023/027/028/033).")'
           changed_by: human:cli
+        - date: "2026-06-25T12:53:10Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T05:02:45Z comment="Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.")'
+          changed_by: human:buger
