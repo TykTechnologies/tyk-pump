@@ -39,10 +39,18 @@ func (d dummyObject) TableName() string {
 }
 
 // Verifies: SW-REQ-059
+// Verifies: SW-REQ-084
+// SW-REQ-059:output_cardinality_bounded:nominal
+// SW-REQ-059:output_cardinality_bounded:boundary
 // SW-REQ-059:nominal:nominal
+// SW-REQ-084:routing_target_consistent:nominal
+// SW-REQ-084:routing_target_consistent:boundary
 // MCDC SW-REQ-059: org_id_empty=F, write_skipped=F => TRUE
 // MCDC SW-REQ-059: org_id_empty=T, write_skipped=F => FALSE
 // MCDC SW-REQ-059: org_id_empty=T, write_skipped=T => TRUE
+// MCDC SW-REQ-084: mixed_collection_average_update_present=F, aggregate_update_collection_identity_preserved=F => TRUE
+// MCDC SW-REQ-084: mixed_collection_average_update_present=T, aggregate_update_collection_identity_preserved=F => FALSE
+// MCDC SW-REQ-084: mixed_collection_average_update_present=T, aggregate_update_collection_identity_preserved=T => TRUE
 //
 // org_id_empty=F (records carry non-empty OrgID), write_skipped=F (the upsert proceeds —
 // non-trigger arm, vacuous true). The org_id_empty=T/write_skipped=T arm is exercised by
@@ -78,12 +86,12 @@ func TestDoAggregatedWritingWithIgnoredAggregations(t *testing.T) {
 
 	timeNow := time.Now()
 	keys := make([]interface{}, 2)
-	keys[0] = analytics.AnalyticsRecord{APIID: "api1", OrgID: "123", TimeStamp: timeNow, APIKey: "apikey1"}
-	keys[1] = analytics.AnalyticsRecord{APIID: "api1", OrgID: "123", TimeStamp: timeNow, APIKey: "apikey1"}
+	keys[0] = analytics.AnalyticsRecord{APIID: "api1", OrgID: "123", TimeStamp: timeNow, APIKey: "apikey1", RequestTime: 100}
+	keys[1] = analytics.AnalyticsRecord{APIID: "api1", OrgID: "123", TimeStamp: timeNow, APIKey: "apikey1", RequestTime: 100}
 
 	keys2 := make([]interface{}, 2)
-	keys2[0] = analytics.AnalyticsRecord{APIID: "api2", OrgID: "123", TimeStamp: timeNow, APIKey: "apikey2"}
-	keys2[1] = analytics.AnalyticsRecord{APIID: "api2", OrgID: "123", TimeStamp: timeNow, APIKey: "apikey2"}
+	keys2[0] = analytics.AnalyticsRecord{APIID: "api2", OrgID: "123", TimeStamp: timeNow, APIKey: "apikey2", RequestTime: 200}
+	keys2[1] = analytics.AnalyticsRecord{APIID: "api2", OrgID: "123", TimeStamp: timeNow, APIKey: "apikey2", RequestTime: 200}
 
 	ctx := context.TODO()
 	errWrite := pmp1.WriteData(ctx, keys)
@@ -148,6 +156,8 @@ func TestDoAggregatedWritingWithIgnoredAggregations(t *testing.T) {
 			// validate totals
 			assert.NotNil(t, res.Total)
 			assert.Equal(t, 6, res.Total.Hits)
+			assert.Equal(t, 800.0, res.Total.TotalRequestTime)
+			assert.InDelta(t, 800.0/6.0, res.Total.RequestTime, 0.0001)
 
 			// validate that APIKeys (ignored in pmp1) wasn't overriden
 			assert.Len(t, res.APIKeys, 1)

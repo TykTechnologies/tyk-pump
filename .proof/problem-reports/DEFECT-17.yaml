@@ -1,0 +1,102 @@
+schema_version: 1
+id: DEFECT-17
+title: Mongo aggregate mixed average update targeted the per-org collection
+introduced_in: unknown
+description: |
+  TT-8793 (commit 1fd5ba9) fixed the MongoAggregate mixed-collection average
+  update path. The first aggregate upsert used `Mixed: mixed`, so
+  `mixed=true` selected `AgggregateMixedCollectionName`. The second
+  `AsTimeUpdate()` upsert historically constructed an
+  `AnalyticsRecordAggregate` without `Mixed: mixed`, so derived averages for
+  the mixed variant could be written to the per-org aggregate collection
+  instead of the shared mixed collection.
+
+  Current proof closes this through SW-REQ-084, a child of SW-REQ-059, and the
+  strengthened `TestDoAggregatedWritingWithIgnoredAggregations` witness. The
+  test now uses nonzero request times and asserts both per-org and mixed
+  collections contain the recalculated average.
+source:
+    type: upstream_commit
+    repo: TykTechnologies/tyk-pump
+    commit: 1fd5ba9
+    reference: TT-8793
+    date: "2023-04-27"
+classification:
+    surface: data_integrity
+    defect_class: mongo_aggregate_mixed_average_update_target_drift
+    severity: medium
+    security_relevant: false
+root_cause:
+    missing_requirement: true
+    missing_test_partition: true
+    missing_mcdc_variable: true
+    notes: |
+      SW-REQ-059 described mixed collection writes, but the formal variables
+      did not pin that the second average-update upsert preserves the selected
+      collection identity. The live test also used zero request times, so it did
+      not prove the second upsert had reached the mixed collection.
+impact_analysis:
+    affected_requirements:
+        - SW-REQ-059
+        - SW-REQ-084
+    affected_code:
+        - pumps/mongo_aggregate.go
+        - pumps/mongo_aggregate_test.go
+hardening:
+    new_requirements:
+        - SW-REQ-084
+    strengthened_requirements:
+        - SW-REQ-059
+    added_obligations:
+        - requirement: SW-REQ-059
+          obligation_class: output_cardinality_bounded
+        - requirement: SW-REQ-084
+          obligation_class: routing_target_consistent
+    regression_tests:
+        - pumps/mongo_aggregate_test.go:TestDoAggregatedWritingWithIgnoredAggregations
+    mcdc_witnesses:
+        - requirement: SW-REQ-084
+          witness: "mixed_collection_average_update_present=T, aggregate_update_collection_identity_preserved=T => TRUE"
+    proposed_classes: []
+disposition:
+    status: covered_by_requirement
+    requirements:
+        - SW-REQ-059
+        - SW-REQ-084
+    known_issues:
+        - mapstructure-decode-silently-drops-unknown-keys
+        - mongo-aggregate-atomicity-fault-injection-missing
+        - pump-no-timeout-can-block-purge-cycle
+        - pumps-logfatal-on-config-decode
+    evidence:
+        verified_by:
+            - pumps/mongo_aggregate_test.go:TestDoAggregatedWritingWithIgnoredAggregations
+        requirement_mcdc_witnesses:
+            - requirement: SW-REQ-084
+              witness: "mixed_collection_average_update_present=F, aggregate_update_collection_identity_preserved=F => TRUE (no mixed average-update target to preserve)"
+            - requirement: SW-REQ-084
+              witness: "mixed_collection_average_update_present=T, aggregate_update_collection_identity_preserved=F => FALSE (violation row: second upsert falls back to per-org collection)"
+            - requirement: SW-REQ-084
+              witness: "mixed_collection_average_update_present=T, aggregate_update_collection_identity_preserved=T => TRUE (mixed collection contains recalculated request-time average)"
+        obligation_evidence:
+            - requirement: SW-REQ-059
+              obligation_class: output_cardinality_bounded
+              evidence_type: nominal
+            - requirement: SW-REQ-059
+              obligation_class: output_cardinality_bounded
+              evidence_type: boundary
+            - requirement: SW-REQ-084
+              obligation_class: routing_target_consistent
+              evidence_type: nominal
+            - requirement: SW-REQ-084
+              obligation_class: routing_target_consistent
+              evidence_type: boundary
+    reviewer: agent:codex
+    reviewed_at: "2026-06-25T15:22:00Z"
+history:
+    - at: "2026-06-25T15:22:00Z"
+      by: agent:codex
+      action: created
+      detail: |
+        Split the aggregate mixed-average target drift from the selective
+        collection-target defect and added SW-REQ-084 as the precise closure.

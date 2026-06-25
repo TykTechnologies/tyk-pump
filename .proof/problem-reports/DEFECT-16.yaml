@@ -1,0 +1,82 @@
+schema_version: 1
+id: DEFECT-16
+title: Mongo selective writes targeted the default collection
+introduced_in: unknown
+description: |
+  TT-8793 (commit 1fd5ba9) fixed MongoSelective collection targeting. The pump
+  grouped records by the per-organisation collection name from
+  `GetCollectionName(orgid)`, but `AccumulateSet` did not stamp each DBObject's
+  `CollectionName`. Storage therefore fell back to the AnalyticsRecord default
+  table name (`tyk_analytics`) instead of writing to `z_tyk_analyticz_<orgid>`.
+
+  Current proof closes this through SW-REQ-035 and `TestWriteData`, which
+  writes records for OrgID `abc` and queries the derived per-org collection.
+source:
+    type: upstream_commit
+    repo: TykTechnologies/tyk-pump
+    commit: 1fd5ba9
+    reference: TT-8793
+    date: "2023-04-27"
+classification:
+    surface: data_integrity
+    defect_class: mongo_selective_collection_target_drift
+    severity: medium
+    security_relevant: false
+root_cause:
+    missing_requirement: false
+    missing_test_partition: false
+    missing_mcdc_variable: false
+    notes: |
+      SW-REQ-035 already states the per-org collection routing contract, and
+      the current test queries the derived collection rather than the default
+      AnalyticsRecord collection.
+impact_analysis:
+    affected_requirements:
+        - SW-REQ-035
+    affected_code:
+        - pumps/mongo_selective.go
+        - pumps/mongo_selective_test.go
+hardening:
+    new_requirements: []
+    strengthened_requirements:
+        - SW-REQ-035
+    added_obligations: []
+    regression_tests:
+        - pumps/mongo_selective_test.go:TestWriteData
+    mcdc_witnesses:
+        - requirement: SW-REQ-035
+          witness: "org_id_present=T, record_routed_to_org_collection=T => TRUE"
+    proposed_classes: []
+disposition:
+    status: covered_by_requirement
+    requirements:
+        - SW-REQ-035
+    known_issues:
+        - mapstructure-decode-silently-drops-unknown-keys
+        - mongo-pump-ignores-caller-context
+        - no-panic-recovery-in-exec-pump-writing
+        - pump-no-timeout-can-block-purge-cycle
+        - pump-writedata-swallows-per-batch-errors
+        - pumps-logfatal-on-config-decode
+    evidence:
+        verified_by:
+            - pumps/mongo_selective_test.go:TestWriteData
+        requirement_mcdc_witnesses:
+            - requirement: SW-REQ-035
+              witness: "org_id_present=T, record_routed_to_org_collection=T => TRUE (records are read back from z_tyk_analyticz_<orgid>)"
+        obligation_evidence:
+            - requirement: SW-REQ-035
+              obligation_class: output_cardinality_bounded
+              evidence_type: nominal
+    reviewer: agent:codex
+    reviewed_at: "2026-06-25T15:22:00Z"
+history:
+    - at: "2026-06-25T14:59:12Z"
+      by: human:buger
+      action: created
+    - at: "2026-06-25T15:22:00Z"
+      by: agent:codex
+      action: dispositioned
+      detail: |
+        Split from the broader TT-8793 collection-target review after the
+        subagent identified separate selective and aggregate defects.

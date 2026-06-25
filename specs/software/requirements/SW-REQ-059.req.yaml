@@ -29,20 +29,21 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-02T14:19:01Z"
-        comment: 'Phase L3 aggressive: flip remaining decision-bearing SW reqs to FRETish per L3 plan; vars added per-component; MC/DC witnesses to be annotated in tests.'
+        reviewed_at: "2026-06-25T15:00:22Z"
+        comment: 'TT-8793 hardening: reviewed Mongo aggregate mixed-collection routing, added output_cardinality_bounded, and strengthened live Mongo evidence for the second average-update upsert target.'
         fingerprint: sha256:6461528b1e667548823133c33aac9ef047b164b9f76838d876a6fe54d8daa83a
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:37:24Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-22T10:55:52Z"
+    last_modified_at: "2026-06-25T15:05:25Z"
 obligation_checklist:
     - config_schema_strict
     - errors_propagated
     - malformed_recovers_or_errors_loudly
     - nominal
+    - output_cardinality_bounded
 obligation_deferrals:
     - obligation_class: config_schema_strict
       reason: 'Pump configuration unknown-field rejection is required but currently not implemented: mapstructure.Decode silently ignores unknown keys and operator typos until known issue mapstructure-decode-silently-drops-unknown-keys is fixed.'
@@ -82,3 +83,8 @@ lifecycle:
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T05:02:45Z comment="Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.")'
           changed_by: human:cli
+        - date: "2026-06-25T15:00:22Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T14:19:01Z comment="Phase L3 aggressive: flip remaining decision-bearing SW reqs to FRETish per L3 plan; vars added per-component; MC/DC witnesses to be annotated in tests.")'
+          changed_by: human:buger

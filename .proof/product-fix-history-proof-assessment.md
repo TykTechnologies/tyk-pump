@@ -147,7 +147,7 @@ so a later reviewer can see what was included and what was filtered out.
 | 2d3c296 | 2023-05-25 | [TT-8884] added write data test for mongo pump and remove constraint | `missed_before_hardening`: the live Mongo test already caught the graph-only accumulation regression, but SW-REQ-034 only modeled MCP filtering. Hardened with DEFECT-13 and SW-REQ-082 so standard Mongo must insert ordinary and GraphQL-classified non-MCP records into the standard collection. |
 | 0ed84b9 | 2023-05-17 | fix: include graph records in mongo pump | `missed_before_hardening`: this fixed the c54eed3-era standard Mongo exclusion of GraphQL-classified records, but did so by switching standard WriteData into graph-only accumulation, later fixed by TT-8884. Hardened with DEFECT-14 and SW-REQ-082; DEFECT-13 now records 0ed84b9 as the origin of the ordinary-record drop. |
 | 8173c7e | 2023-05-15 | TT-876 Fix/prometheus cardinality | `missed_before_hardening`: current Prometheus tests covered separator-bearing label values, but no requirement modeled aggregate label tuple-boundary preservation. Hardened with DEFECT-15 and SW-REQ-083; broad unbounded metric cardinality remains KI-backed under `metrics-label-cardinality-unbounded`. |
-| 1fd5ba9 | 2023-04-27 | [TT-8793] Fixing Pump 1.8 bugs | Product Mongo collection-routing fixes. Relevant to Mongo collection/partition evidence. |
+| 1fd5ba9 | 2023-04-27 | [TT-8793] Fixing Pump 1.8 bugs | `partially_missed_before_hardening`: current SW-REQ-035 already pinned selective per-org collection routing, while SW-REQ-059 broadly pinned mixed aggregate writes but did not prove the second average-update upsert kept the mixed target. Hardened with DEFECT-16 for MongoSelective, DEFECT-17 plus SW-REQ-084 for MongoAggregate mixed average-update routing, SW-REQ-059 output-cardinality evidence, and nonzero request-time assertions in the live Mongo aggregate mixed-collection test. |
 | ca22ae4 | 2023-03-16 | TT-8313 Hybrid pump refactor | Product backend behavior. Relevant to hybrid timeout/leak/KI obligations. |
 | 7fa0754 | 2023-03-06 | [TT-7820] fix aggregate graph pump sharding and errors | Product graph/sharding defect. Mostly covered by graph requirements today. |
 | 17072c0 | 2023-02-21 | [TT-7977] fix: include RootFields in graph mongo and sql pumps | Product field-preservation defect. Requires RootFields evidence. |
@@ -195,6 +195,8 @@ Problem reports:
 - DEFECT-13: Standard Mongo WriteData used graph-only accumulation and dropped ordinary records.
 - DEFECT-14: Standard Mongo excluded GraphQL-classified records.
 - DEFECT-15: Prometheus aggregation split label values containing the internal separator.
+- DEFECT-16: Mongo selective writes targeted the default collection.
+- DEFECT-17: Mongo aggregate mixed average update targeted the per-org collection.
 
 KnownIssues/risks relevant to historical fix classes:
 

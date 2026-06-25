@@ -1,0 +1,7 @@
+id: REVIEW-1fd5ba9-mongo-collection-targets
+kind: design_review
+reviewer: agent:codex
+reviewed_at: "2026-06-25T15:18:00Z"
+subject: upstream:1fd5ba9/SW-REQ-035+SW-REQ-059+SW-REQ-084
+decision: approved
+comment: 'Commit-level assurance review for TT-8793: MongoSelective accumulated DBObjects without the derived per-org CollectionName, and MongoAggregate built the second mixed-collection average-update object without Mixed=true. Current SW-REQ-035 and TestWriteData cover selective per-org readback. This review approves DEFECT-16 for selective routing, DEFECT-17 plus SW-REQ-084 for aggregate mixed average-update collection identity, and the strengthened TestDoAggregatedWritingWithIgnoredAggregations witness with nonzero request-time averages. Storage dependency bump is recorded as part of the upstream fix but not treated as a separate proof requirement.'

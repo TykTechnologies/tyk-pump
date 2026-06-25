@@ -1,0 +1,56 @@
+id: SW-REQ-084
+version: 1
+status: approved
+priority: shall
+category: functional
+req_type: guarantee
+fretish: when mixed_collection_average_update_present pumps_mongo_aggregate shall always satisfy aggregate_update_collection_identity_preserved
+description: When MongoAggregate writes the mixed collection variant and then recalculates derived averages with the second AsTimeUpdate upsert, that second upsert shall target the same mixed collection identity as the first upsert rather than falling back to the per-org aggregate collection.
+formalization_strategy: fretish
+informal_verification:
+    method: ""
+    evidence: ""
+    verified: false
+parent: SW-REQ-059
+component: pumps-mongo-aggregate
+rationale: 'Product-fix-history hardening for TT-8793: the first mixed aggregate upsert used Mixed=true, but the follow-up average-update object historically omitted Mixed and could route to the per-org collection. This child pins collection identity preservation for the second upsert separately from SW-REQ-059''s broad mixed-collection guarantee.'
+tags: []
+variables:
+    - mixed_collection_average_update_present
+    - aggregate_update_collection_identity_preserved
+traces:
+    satisfies:
+        - SW-REQ-059
+    reviewed_at: "2026-06-25T15:16:51.117793Z"
+    reviewed_by: human:buger
+    reviewed_fingerprint: sha256:004665e58b03c5227ac39d074ab28b09c74a5332cf3eafc83e6b556e5945198e
+verification:
+    assurance_level: B
+    formalization_status: valid
+    review:
+        status: approved
+        reviewer: human:buger
+        role: software_engineer
+        reviewed_at: "2026-06-25T15:05:39Z"
+        comment: 'TT-8793 hardening: reviewed Mongo aggregate mixed average-update collection identity, routing_target_consistent evidence, MC/DC witnesses, and DEFECT-17 closure.'
+        fingerprint: sha256:6481f28bd786702f451a5c3fb5a60c1ae9b3842d25481ea9f98ec79b1c9f7c9a
+        ai_generated: false
+history:
+    created_by: human:buger
+    created_at: "2026-06-25T15:01:55Z"
+    last_modified_by: human:buger
+    last_modified_at: "2026-06-25T15:05:39Z"
+obligation_checklist:
+    - routing_target_consistent
+stakeholder:
+    acceptance_criteria:
+        - id: AC-001
+          text: With UseMixedCollection=true and nonzero request times, MongoAggregate writes both the counter update and the average-update upsert to the shared mixed collection, so the mixed collection contains the recalculated request-time average.
+          verification_method: test
+lifecycle:
+    change_history:
+        - date: "2026-06-25T15:05:31Z"
+          from: draft
+          to: review
+          reason: TT-8793 Mongo aggregate mixed average-update collection identity requirement ready for review
+          changed_by: human:buger
