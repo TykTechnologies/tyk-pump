@@ -1,0 +1,26 @@
+id: sql-standard-mysql-create-index-if-not-exists-unsupported
+title: Standard SQL shard index DDL uses CREATE INDEX IF NOT EXISTS on MySQL path
+description: pumps/sql.go createIndex builds CREATE INDEX IF NOT EXISTS for every non-Postgres backend. The standard SQL pump supports MySQL through SQLConf.Type, but MySQL deployments that reject IF NOT EXISTS on CREATE INDEX fail shard index creation when a fresh sharded analytics table is created. This is the standard SQL equivalent of the aggregate-pump MySQL index syntax debt already tracked for SW-REQ-041/SW-REQ-045/SW-REQ-066.
+affected_requirements:
+    - SW-REQ-040
+    - INT-REQ-007
+severity: medium
+severity_basis: risk
+risk: correctness
+reproducer_command: rg -n createIndex pumps/sql.go
+introduced_in: inception
+mitigation: Operators using MySQL should pre-create the expected shard indexes out-of-band, verify startup/shard-creation logs, or use a backend/version known to accept the emitted index DDL.
+remediation: Gate IF NOT EXISTS by dialect/version, or use a backend-specific HasIndex pre-check plus plain CREATE INDEX for MySQL-compatible backends.
+owner: tyk-team
+review_date: "2026-11-30"
+release_disposition: ship_with_known_issue
+status: open
+history:
+    - at: "2026-06-25T00:00:00Z"
+      by: agent:codex
+      action: created
+      detail: Product-fix-history review of 544ccb3 found standard SQL has Postgres shard-index evidence but lacks backend-valid MySQL DDL evidence for the same index creation path.
+    - at: "2026-06-25T12:04:44Z"
+      by: agent:codex
+      action: edit
+      detail: set-risk

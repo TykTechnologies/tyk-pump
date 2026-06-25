@@ -29,15 +29,15 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-22T09:25:11Z"
-        comment: 'Expand backend, database, retry, queue, panic-safety, and shared-state catalog obligations; uncovered behavior is linked to existing KnownIssues rather than claimed as evidence.'
+        reviewed_at: "2026-06-25T12:01:17Z"
+        comment: 'Product-fix-history hardening for TT-13421: added per_shard_index_created and backend_ddl_valid obligations. Standard SQL and SQL Aggregate shard-index behavior is backed by tests; Graph/MCP SQL shard-index contracts and MySQL DDL compatibility remain KI-backed debt. FRETish remains scoped to each requirement primary routing/windowing/index-skip decision.'
         fingerprint: sha256:5727cebc6bb37a20f2a0d36f8ab0fa6da2596b3bb452658cb62e41d75eae9a61
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:38:24Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-22T10:55:43Z"
+    last_modified_at: "2026-06-25T12:01:18Z"
 obligation_class: temporal_window_inclusive
 obligation_checklist:
     - boundary
@@ -47,6 +47,7 @@ obligation_checklist:
     - nominal
     - ordering_guarantees_documented
     - panic_free_input_handling
+    - per_shard_index_created
     - routing_target_consistent
     - shared_state_synchronized
     - temporal_window_inclusive
@@ -126,3 +127,8 @@ lifecycle:
           to: approved
           reason: 'Product-fix-history hardening for TT-16778: attach routing_target_consistent with KI-backed deferral because this branch lacks upstream commit 140ef71.'
           changed_by: agent:codex
+        - date: "2026-06-25T12:01:17Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-22T09:25:11Z comment="Expand backend, database, retry, queue, panic-safety, and shared-state catalog obligations; uncovered behavior is linked to existing KnownIssues rather than claimed as evidence.")'
+          changed_by: human:buger

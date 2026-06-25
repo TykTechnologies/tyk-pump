@@ -1,0 +1,7 @@
+id: REVIEW-544ccb3-sql-sharded-indexes
+kind: design_review
+reviewer: agent:codex
+reviewed_at: "2026-06-25T12:01:51Z"
+subject: upstream:544ccb3/SW-REQ-040+SW-REQ-064+SW-REQ-066
+decision: approved
+comment: 'Commit-level assurance review for TT-13421: standard SQL and SQL Aggregate shard-index behavior is now modeled by per_shard_index_created with direct Postgres witnesses; backend DDL validity is explicit and MySQL incompatibilities remain KI-backed debt; Graph/MCP SQL shard-index contracts remain KI-backed debt rather than silently covered.'

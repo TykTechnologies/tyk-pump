@@ -32,16 +32,17 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-22T09:25:11Z"
-        comment: 'Expand backend, database, retry, queue, panic-safety, and shared-state catalog obligations; uncovered behavior is linked to existing KnownIssues rather than claimed as evidence.'
+        reviewed_at: "2026-06-25T12:01:17Z"
+        comment: 'Product-fix-history hardening for TT-13421: added per_shard_index_created and backend_ddl_valid obligations. Standard SQL and SQL Aggregate shard-index behavior is backed by tests; Graph/MCP SQL shard-index contracts and MySQL DDL compatibility remain KI-backed debt. FRETish remains scoped to each requirement primary routing/windowing/index-skip decision.'
         fingerprint: sha256:5a4265525c1df1b4403519ddcb293cada24508e04db9b3a82fa1b5da49bb9495
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:39:46Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-22T10:55:53Z"
+    last_modified_at: "2026-06-25T12:01:18Z"
 obligation_checklist:
+    - backend_ddl_valid
     - concurrent
     - config_schema_strict
     - idempotency
@@ -51,8 +52,14 @@ obligation_checklist:
     - parameterized_only_write
     - shared_state_synchronized
 obligation_deferrals:
+    - obligation_class: backend_ddl_valid
+      reason: SQL Aggregate index creation has Postgres evidence, but MySQL-compatible CREATE INDEX IF NOT EXISTS syntax remains tracked as current backend-DDL debt.
+      tracking: mcp-sql-aggregate-mysql-create-index-syntax-broken
+      owner: human:buger
+      ki_ref: mcp-sql-aggregate-mysql-create-index-syntax-broken
+      reproducer: code_signal:opengrep:go.sql.formatted-write-exec:pumps/sql_aggregate.go:164
     - obligation_class: concurrent
-      reason: SQL aggregate index creation is reached from the same mutable sharded WriteData path, so concurrent index evidence is tracked as a known issue until per-call sessions or synchronization land.
+      reason: 'SQL aggregate index creation is reached from the same mutable sharded WriteData path, so concurrent index evidence is tracked as a known issue until per-call sessions or synchronization land.'
       tracking: sql-aggregate-sharded-shared-db-race
       owner: agent:codex
       ki_ref: sql-aggregate-sharded-shared-db-race
@@ -120,4 +127,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-03T07:40:18Z comment="Phase Q: catalog obligation attachments — adds parameterized_only_write (Index DDL fmt.Sprintf allowlist contract). See .proof/catalog-obligation-proposals.md.")'
+          changed_by: human:buger
+        - date: "2026-06-25T12:01:17Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-22T09:25:11Z comment="Expand backend, database, retry, queue, panic-safety, and shared-state catalog obligations; uncovered behavior is linked to existing KnownIssues rather than claimed as evidence.")'
           changed_by: human:buger

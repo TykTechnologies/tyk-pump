@@ -1,0 +1,41 @@
+id: backend_ddl_valid
+name: Backend DDL valid
+category: domain
+status: active
+summary: Generated database DDL shall be syntactically valid for every backend dialect the requirement claims to support.
+description: Pump startup and shard creation often issue CREATE TABLE, CREATE INDEX, or ALTER statements outside an ORM's parameterized data-write path. The requirement shall state which SQL dialects are supported and tests or KIs shall prove the emitted DDL is accepted, or explicitly track backend-specific incompatibilities.
+applies_when:
+  description: a requirement builds or executes SQL DDL for PostgreSQL, MySQL, SQLite, or another supported backend
+  trigger_phrases:
+    - CREATE INDEX
+    - CREATE TABLE
+    - ALTER TABLE
+    - migration
+    - dialect
+    - postgres
+    - mysql
+example_req: |-
+  When the pump creates an index for a configured SQL backend, the emitted DDL
+  shall use syntax accepted by that backend: PostgreSQL-specific clauses shall
+  not be sent to MySQL, and MySQL-only clauses shall not be sent to PostgreSQL.
+if_missing: |-
+  A code path passes tests against one database but fails at startup or first
+  shard creation on another supported backend. Operators see runtime migration
+  errors even though the feature is documented as backend-neutral.
+recommended_evidence:
+  - kind: nominal
+    note: Integration tests execute the DDL against each supported backend dialect.
+  - kind: negative
+    note: Regression test or KI captures a dialect that rejects the current DDL.
+  - kind: review
+    note: Review names the dialect-specific clauses and the code branch that gates each one.
+frameworks:
+  - id: CWE
+    refs:
+      - CWE-20
+      - CWE-1059
+related_classes:
+  - id: parameterized_only_write
+    relationship: complements
+  - id: forward_compatible
+    relationship: complements

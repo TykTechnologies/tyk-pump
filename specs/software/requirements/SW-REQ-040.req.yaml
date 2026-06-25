@@ -29,16 +29,17 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-20T18:28:00Z"
-        comment: 'Propagate defect/history-backed pump obligations: write-error propagation, Mongo ctx timeout, Moesif fatal input handling, Logzio/Segment shutdown flush, and ES resource lifetime evidence.'
+        reviewed_at: "2026-06-25T12:03:34Z"
+        comment: 'TT-13421 obligation hardening follow-up: normalized backend_ddl_valid reproducer text after YAML lint without changing the approved obligation/debt disposition.'
         fingerprint: sha256:97856408e14843e1a4889da5e54c7b39bd2c8bac339304a48ea78e38651d6ada
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:35:20Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-22T10:55:40Z"
+    last_modified_at: "2026-06-25T12:03:34Z"
 obligation_checklist:
+    - backend_ddl_valid
     - boundary
     - concurrent
     - config_schema_strict
@@ -53,9 +54,16 @@ obligation_checklist:
     - output_cardinality_bounded
     - panic_free_input_handling
     - parameterized_only_write
+    - per_shard_index_created
     - reversible_or_documented
     - temporal_window_inclusive
 obligation_deferrals:
+    - obligation_class: backend_ddl_valid
+      reason: 'Standard SQL shard index creation has Postgres evidence, but MySQL-compatible CREATE INDEX IF NOT EXISTS syntax remains tracked as current backend-DDL debt.'
+      tracking: sql-standard-mysql-create-index-if-not-exists-unsupported
+      owner: human:buger
+      ki_ref: sql-standard-mysql-create-index-if-not-exists-unsupported
+      reproducer: rg -n createIndex pumps/sql.go
     - obligation_class: concurrent
       reason: 'real SQL background-index lifecycle gap under known-issue sql-background-index-concurrency-unbounded; surfaced as visible tracked debt, not an overclaimed fix'
       tracking: sql-background-index-concurrency-unbounded
@@ -68,7 +76,7 @@ obligation_deferrals:
       ki_ref: mapstructure-decode-silently-drops-unknown-keys
       reproducer: mapstructure-decode-silently-drops-unknown-keys
     - obligation_class: errors_propagated
-      reason: 'SQL standard WriteData logs per-batch insert errors but returns nil, so the caller observes success until pump-writedata-swallows-per-batch-errors is fixed.'
+      reason: SQL standard WriteData logs per-batch insert errors but returns nil, so the caller observes success until pump-writedata-swallows-per-batch-errors is fixed.
       tracking: pump-writedata-swallows-per-batch-errors
       owner: agent:codex
       ki_ref: pump-writedata-swallows-per-batch-errors
@@ -149,4 +157,14 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-03T07:39:00Z comment="Phase Q: catalog obligation attachments — adds external_call_timeout_bounded, external_call_concurrency_bounded, errors_propagated, query_timeout_bounded, deadlock_recovery, forward_compatible, reversible_or_documented (SQL standard; KIs pump-writedata-swallows-per-batch-errors, sql-schema-no-version-policy). See .proof/catalog-obligation-proposals.md.")'
+          changed_by: human:buger
+        - date: "2026-06-25T12:01:17Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-20T18:28:00Z comment="Propagate defect/history-backed pump obligations: write-error propagation, Mongo ctx timeout, Moesif fatal input handling, Logzio/Segment shutdown flush, and ES resource lifetime evidence.")'
+          changed_by: human:buger
+        - date: "2026-06-25T12:03:34Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-25T12:01:17Z comment="Product-fix-history hardening for TT-13421: added per_shard_index_created and backend_ddl_valid obligations. Standard SQL and SQL Aggregate shard-index behavior is backed by tests; Graph/MCP SQL shard-index contracts and MySQL DDL compatibility remain KI-backed debt. FRETish remains scoped to each requirement primary routing/windowing/index-skip decision.")'
           changed_by: human:buger

@@ -1,0 +1,39 @@
+id: per_shard_index_created
+name: Per-shard index created
+category: domain
+status: active
+summary: Every date-sharded SQL table created by a pump shall receive the same documented indexes as the corresponding base table.
+description: Sharded SQL pumps create physical tables dynamically from record timestamps. Any index that the base table relies on for filtering, aggregation, or operational query performance must be created for each shard at creation time, with a shard-unique index name where the backend requires globally unique index identifiers.
+applies_when:
+  description: a requirement creates date-suffixed SQL shard tables or migrates existing SQL shards
+  trigger_phrases:
+    - table sharding
+    - sharded table
+    - shard table
+    - ensureIndex
+    - CREATE INDEX
+example_req: |-
+  When TableSharding creates table tyk_analytics_YYYYMMDD, the pump shall
+  create every expected analytics index on that shard using a shard-unique
+  index name before treating the shard as ready for writes.
+if_missing: |-
+  Fresh shards silently lack the indexes that operators depend on. Queries and
+  aggregations that are fast on the base table degrade on shards, and the bug is
+  usually discovered only after the first high-volume date boundary.
+recommended_evidence:
+  - kind: nominal
+    note: Integration test writes records across multiple dates, then asserts every expected index exists on every created shard.
+  - kind: example
+    note: Regression test for a historical shard-index bug, naming the fixed commit or defect record.
+  - kind: review
+    note: Review maps each base-table index to its shard-table counterpart and names any intentionally unindexed shard family.
+frameworks:
+  - id: CWE
+    refs:
+      - CWE-1059
+      - CWE-770
+related_classes:
+  - id: idempotency
+    relationship: complements
+  - id: backend_ddl_valid
+    relationship: complements

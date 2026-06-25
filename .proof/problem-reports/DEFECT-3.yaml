@@ -75,6 +75,19 @@ disposition:
     status: covered_by_requirement
     requirements:
         - SW-REQ-040
+    # Adjacent SQL-family KIs remain active debt outside the TT-13166 shard
+    # migration closure. Listing them prevents this fixed historical defect
+    # from implying the whole SW-REQ-040 surface is clean.
+    known_issues:
+        - analytics-timestamp-timezone-convention-unpinned
+        - mapstructure-decode-silently-drops-unknown-keys
+        - no-panic-recovery-in-exec-pump-writing
+        - pump-no-timeout-can-block-purge-cycle
+        - pump-writedata-swallows-per-batch-errors
+        - sql-background-index-concurrency-unbounded
+        - sql-batch-size-zero-infinite-loop
+        - sql-schema-no-version-policy
+        - sql-standard-mysql-create-index-if-not-exists-unsupported
     evidence:
         verified_by:
             - pumps/migration_test.go:TestHandleTableMigration

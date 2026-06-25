@@ -63,6 +63,7 @@ func TestSQLAggregateInit(t *testing.T) {
 
 // Verifies: SW-REQ-064
 // SW-REQ-064:ordering_guarantees_documented:nominal
+// SW-REQ-064:per_shard_index_created:nominal
 // SW-REQ-064:temporal_window_inclusive:boundary
 // MCDC SW-REQ-064: date_boundary_detected=T, slice_flushed_to_sharded_table=T => TRUE
 func TestSQLAggregateWriteData_Sharded(t *testing.T) {
@@ -122,6 +123,9 @@ func TestSQLAggregateWriteData_Sharded(t *testing.T) {
 				pmp.db.Migrator().DropTable(table)
 			}(table)
 			assert.Equal(t, true, pmp.db.Migrator().HasTable(table))
+			indexName := fmt.Sprintf("%s_%s", table, newAggregatedIndexName)
+			assert.True(t, pmp.db.Migrator().HasIndex(table, indexName),
+				"sharded aggregate table %s should have index %s", table, indexName)
 			err := pmp.db.Table(table).Find(&dbRecords).Error
 			assert.Nil(t, err)
 			assert.Equal(t, data.RowsLen, len(dbRecords))

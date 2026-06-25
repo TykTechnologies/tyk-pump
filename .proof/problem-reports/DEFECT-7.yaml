@@ -1,0 +1,136 @@
+schema_version: 1
+id: DEFECT-7
+title: Sharded SQL tables were created without the expected indexes
+introduced_in: 544ccb3
+description: |
+  TT-13421 (#861, commit 544ccb3) fixed a sharded SQL schema setup gap:
+  date-suffixed SQL pump tables could be created without the indexes operators
+  relied on for analytics lookup and aggregate queries. The standard SQL path
+  now routes shard creation through ensureTable/ensureIndex and uses
+  shard-unique index names for responsecode, apikey, timestamp, apiid, orgid,
+  and oauthid. SQL Aggregate uses <table>_idx_dimension for the composite
+  aggregate dimension index so every shard can have its own index name.
+  The current proof model now treats per-shard index creation and backend-DDL
+  validity as first-class obligations instead of relying on generic
+  table-sharding coverage.
+source:
+  type: upstream_commit
+  repo: TykTechnologies/tyk-pump
+  commit: 544ccb3
+  reference: TT-13421
+  date: "2024-12-05"
+classification:
+  surface: runtime_code
+  defect_class: sharded_schema_index_gap
+  severity: medium
+  security_relevant: false
+root_cause:
+  missing_requirement: false
+  missing_test_partition: true
+  missing_mcdc_variable: false
+  notes: |
+    Existing sharded-table tests asserted rows/tables but did not force the
+    proof model to ask whether every created shard carried the expected index
+    set. The standard SQL Postgres lifecycle test already asserted every
+    expected index on every shard; SQL Aggregate's sharded test now also asserts
+    the per-shard composite dimension index. Graph/MCP variants and MySQL DDL
+    compatibility remain tracked debt instead of being claimed as covered.
+impact_analysis:
+  affected_requirements:
+    - SW-REQ-040
+    - SW-REQ-064
+    - SW-REQ-066
+    - SW-REQ-042
+    - SW-REQ-043
+    - SW-REQ-044
+    - SW-REQ-045
+  affected_code:
+    - pumps/sql.go
+    - pumps/sql_aggregate.go
+    - pumps/graph_sql.go
+    - pumps/graph_sql_aggregate.go
+    - pumps/mcp_sql.go
+    - pumps/mcp_sql_aggregate.go
+hardening:
+  new_requirements: []
+  strengthened_requirements:
+    - SW-REQ-040
+    - SW-REQ-042
+    - SW-REQ-043
+    - SW-REQ-044
+    - SW-REQ-045
+    - SW-REQ-064
+    - SW-REQ-066
+  added_obligations:
+    - requirement: SW-REQ-040
+      obligation_class: per_shard_index_created
+    - requirement: SW-REQ-040
+      obligation_class: backend_ddl_valid
+    - requirement: SW-REQ-042
+      obligation_class: per_shard_index_created
+    - requirement: SW-REQ-043
+      obligation_class: per_shard_index_created
+    - requirement: SW-REQ-044
+      obligation_class: per_shard_index_created
+    - requirement: SW-REQ-045
+      obligation_class: per_shard_index_created
+    - requirement: SW-REQ-045
+      obligation_class: backend_ddl_valid
+    - requirement: SW-REQ-064
+      obligation_class: per_shard_index_created
+    - requirement: SW-REQ-066
+      obligation_class: backend_ddl_valid
+  regression_tests:
+    - pumps/sql_pgxv5_test.go:TestShardedTableLifecycle_Postgres
+    - pumps/sql_aggregate_test.go:TestSQLAggregateWriteData_Sharded
+  proposed_classes: []
+disposition:
+  status: covered_by_requirement
+  requirements:
+    - SW-REQ-040
+    - SW-REQ-064
+    - SW-REQ-066
+  known_issues:
+    - analytics-timestamp-timezone-convention-unpinned
+    - graph-sql-aggregate-migrate-sharded-tables-ignored
+    - graph-mcp-sql-sharded-indexes-untracked
+    - mapstructure-decode-silently-drops-unknown-keys
+    - mcp-sql-aggregate-background-index-concurrency-unbounded
+    - mcp-sql-aggregate-mysql-create-index-syntax-broken
+    - no-panic-recovery-in-exec-pump-writing
+    - pump-no-timeout-can-block-purge-cycle
+    - pump-writedata-swallows-per-batch-errors
+    - sql-aggregate-sharded-shared-db-race
+    - sql-aggregate-sharded-upsert-targets-base-table
+    - sql-aggregate-mysql-excluded-keyword-broken
+    - sql-background-index-concurrency-unbounded
+    - sql-batch-size-zero-infinite-loop
+    - sql-ensureindex-name-mismatch-prevents-skip
+    - sql-schema-no-version-policy
+    - sql-standard-mysql-create-index-if-not-exists-unsupported
+  evidence:
+    verified_by:
+      - pumps/sql_pgxv5_test.go:TestShardedTableLifecycle_Postgres
+      - pumps/sql_aggregate_test.go:TestSQLAggregateWriteData_Sharded
+    obligation_evidence:
+      - requirement: SW-REQ-040
+        obligation_class: per_shard_index_created
+        evidence_type: nominal
+      - requirement: SW-REQ-064
+        obligation_class: per_shard_index_created
+        evidence_type: nominal
+  reviewer: agent:codex
+  reviewed_at: "2026-06-25T00:00:00Z"
+history:
+  - at: "2026-06-25T00:00:00Z"
+    by: agent:codex
+    action: created
+  - at: "2026-06-25T00:00:00Z"
+    by: agent:codex
+    action: hardened
+    detail: |
+      Added per_shard_index_created and backend_ddl_valid catalog obligations.
+      Bound standard SQL shard-index creation to the Postgres lifecycle test
+      and SQL Aggregate shard-index creation to the sharded aggregate test.
+      Current Graph/MCP SQL shard-index gaps and MySQL DDL compatibility gaps
+      remain linked KIs, not claimed fixes.

@@ -543,6 +543,7 @@ func TestConcurrentMCPSQLAggregateWrites_Postgres(t *testing.T) {
 // that 5 sharded tables are created with all 6 expected indexes, then runs
 // MigrateAllShardedTables and confirms no ALTER TABLE is emitted.
 // Verifies: SW-REQ-040
+// SW-REQ-040:per_shard_index_created:nominal
 // MCDC SW-REQ-040: day_sliced_routing=T, table_sharding=T => TRUE
 func TestShardedTableLifecycle_Postgres(t *testing.T) {
 	skipTestIfNoPostgres(t)

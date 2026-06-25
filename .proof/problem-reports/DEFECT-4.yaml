@@ -69,6 +69,7 @@ disposition:
         - sql-background-index-concurrency-unbounded
         - sql-batch-size-zero-infinite-loop
         - sql-schema-no-version-policy
+        - sql-standard-mysql-create-index-if-not-exists-unsupported
     evidence:
         verified_by:
             - pumps/sql_test.go:TestSQLWriteDataSharded

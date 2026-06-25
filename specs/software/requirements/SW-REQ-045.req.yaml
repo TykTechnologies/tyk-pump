@@ -29,16 +29,17 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-03T07:39:06Z"
-        comment: 'Phase Q: catalog obligation attachments — adds parameterized_only_write (MCP SQL aggregate; fmt.Sprintf DDL with fixed allowlist). See .proof/catalog-obligation-proposals.md.'
+        reviewed_at: "2026-06-25T12:04:55Z"
+        comment: 'TT-13421 obligation hardening follow-up: per_shard_index_created is explicitly KI-deferred for MCP SQL aggregate shard-index debt; no product behavior change claimed.'
         fingerprint: sha256:ff3d19bca5868163e5f94ad9363381421d9138e3a55955ae8c58fa52a9b6040d
-        ai_generated: true
+        ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:35:48Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-22T10:55:53Z"
+    last_modified_at: "2026-06-25T12:04:55Z"
 obligation_checklist:
+    - backend_ddl_valid
     - concurrent
     - config_schema_strict
     - connection_leak_free
@@ -49,10 +50,17 @@ obligation_checklist:
     - output_cardinality_bounded
     - panic_free_input_handling
     - parameterized_only_write
+    - per_shard_index_created
     - temporal_window_inclusive
 obligation_deferrals:
+    - obligation_class: backend_ddl_valid
+      reason: MCP SQL Aggregate index creation has Postgres evidence, but MySQL-compatible CREATE INDEX IF NOT EXISTS syntax remains tracked as current backend-DDL debt.
+      tracking: mcp-sql-aggregate-mysql-create-index-syntax-broken
+      owner: human:buger
+      ki_ref: mcp-sql-aggregate-mysql-create-index-syntax-broken
+      reproducer: code_signal:opengrep:go.sql.formatted-write-exec:pumps/mcp_sql_aggregate.go:127
     - obligation_class: concurrent
-      reason: real MCP SQL aggregate background-index lifecycle gap under known-issue mcp-sql-aggregate-background-index-concurrency-unbounded; surfaced as visible tracked debt, not an overclaimed fix
+      reason: 'real MCP SQL aggregate background-index lifecycle gap under known-issue mcp-sql-aggregate-background-index-concurrency-unbounded; surfaced as visible tracked debt, not an overclaimed fix'
       tracking: mcp-sql-aggregate-background-index-concurrency-unbounded
       owner: agent:codex
       ki_ref: mcp-sql-aggregate-background-index-concurrency-unbounded
@@ -93,6 +101,12 @@ obligation_deferrals:
       tracking: mcp-sql-aggregate-mysql-create-index-syntax-broken
       owner: agent:codex
       ki_ref: mcp-sql-aggregate-mysql-create-index-syntax-broken
+    - obligation_class: per_shard_index_created
+      reason: MCP SQL aggregate shard tables are created without a declared or witnessed per-shard index set; tracked as Graph/MCP SQL shard-index debt.
+      tracking: graph-mcp-sql-sharded-indexes-untracked
+      owner: human:buger
+      ki_ref: graph-mcp-sql-sharded-indexes-untracked
+      reproducer: rg -n ensureMCPAggregateShardedTable pumps/mcp_sql_aggregate.go
     - obligation_class: temporal_window_inclusive
       reason: real untested obligation under known-issue analytics-timestamp-timezone-convention-unpinned; surfaced as visible tracked debt, not an overclaimed fix
       tracking: analytics-timestamp-timezone-convention-unpinned
@@ -131,3 +145,13 @@ lifecycle:
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T12:50:34Z comment="Phase L1: formalize via FRETish; introduced per-component boolean vars in *.vars.yaml; FRETish captures the headline routing/windowing decision per req (table-sharding for SW-040/041, graph-routing for SW-042, minute-window for SW-043/045, mcp-routing for SW-044/069, date-boundary slice-flush for SW-064).")'
           changed_by: human:cli
+        - date: "2026-06-25T12:01:17Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-03T07:39:06Z comment="Phase Q: catalog obligation attachments — adds parameterized_only_write (MCP SQL aggregate; fmt.Sprintf DDL with fixed allowlist). See .proof/catalog-obligation-proposals.md.")'
+          changed_by: human:buger
+        - date: "2026-06-25T12:04:55Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-25T12:01:17Z comment="Product-fix-history hardening for TT-13421: added per_shard_index_created and backend_ddl_valid obligations. Standard SQL and SQL Aggregate shard-index behavior is backed by tests; Graph/MCP SQL shard-index contracts and MySQL DDL compatibility remain KI-backed debt. FRETish remains scoped to each requirement primary routing/windowing/index-skip decision.")'
+          changed_by: human:buger
