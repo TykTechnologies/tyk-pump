@@ -112,11 +112,20 @@ func TestPrometheusInitVec(t *testing.T) {
 }
 
 // Verifies: SW-REQ-024
+// Verifies: SW-REQ-094
+// SW-REQ-094:custom_metric_identity_preserved:nominal
+// SW-REQ-094:custom_metric_identity_preserved:negative
+// MCDC SW-REQ-094: custom_metric_instances_preserved=F, valid_custom_metrics_configured=F => TRUE
+// MCDC SW-REQ-094: custom_metric_instances_preserved=F, valid_custom_metrics_configured=T => FALSE
+// MCDC SW-REQ-094: custom_metric_instances_preserved=T, valid_custom_metrics_configured=T => TRUE
 func TestPrometheusInitCustomMetrics(t *testing.T) {
 	tcs := []struct {
 		testName              string
 		metrics               []PrometheusMetric
 		expectedAllMetricsLen int
+		expectedMetricNames   []string
+		expectedMetricLabels  [][]string
+		expectedMetricTypes   []string
 	}{
 		{
 			testName:              "no custom metrics",
@@ -133,6 +142,9 @@ func TestPrometheusInitCustomMetrics(t *testing.T) {
 				},
 			},
 			expectedAllMetricsLen: 1,
+			expectedMetricNames:   []string{"test"},
+			expectedMetricLabels:  [][]string{{"api_name"}},
+			expectedMetricTypes:   []string{counterType},
 		},
 		{
 			testName: "multiple custom metrics",
@@ -149,6 +161,9 @@ func TestPrometheusInitCustomMetrics(t *testing.T) {
 				},
 			},
 			expectedAllMetricsLen: 2,
+			expectedMetricNames:   []string{"test", "other_test"},
+			expectedMetricLabels:  [][]string{{"api_name"}, {"api_name", "api_key"}},
+			expectedMetricTypes:   []string{counterType, counterType},
 		},
 		{
 			testName: "multiple custom metrics with histogram",
@@ -170,6 +185,9 @@ func TestPrometheusInitCustomMetrics(t *testing.T) {
 				},
 			},
 			expectedAllMetricsLen: 3,
+			expectedMetricNames:   []string{"test", "other_test", "histogram_test"},
+			expectedMetricLabels:  [][]string{{"api_name"}, {"api_name", "api_key"}, {"type", "api_name", "api_key"}},
+			expectedMetricTypes:   []string{counterType, counterType, histogramType},
 		},
 		{
 			testName: "one with error",
@@ -186,6 +204,9 @@ func TestPrometheusInitCustomMetrics(t *testing.T) {
 				},
 			},
 			expectedAllMetricsLen: 1,
+			expectedMetricNames:   []string{"other_test"},
+			expectedMetricLabels:  [][]string{{"api_name", "api_key"}},
+			expectedMetricTypes:   []string{counterType},
 		},
 	}
 
@@ -207,7 +228,26 @@ func TestPrometheusInitCustomMetrics(t *testing.T) {
 					}
 				}
 			}()
-			assert.Equal(t, tc.expectedAllMetricsLen, len(p.allMetrics))
+			require.Len(t, p.allMetrics, tc.expectedAllMetricsLen)
+			seenMetrics := map[*PrometheusMetric]struct{}{}
+			for i, expectedName := range tc.expectedMetricNames {
+				metric := p.allMetrics[i]
+				if _, exists := seenMetrics[metric]; exists {
+					t.Fatalf("custom metric %q reused a runtime metric pointer", metric.Name)
+				}
+				seenMetrics[metric] = struct{}{}
+
+				assert.Equal(t, expectedName, metric.Name)
+				assert.Equal(t, tc.expectedMetricTypes[i], metric.MetricType)
+				assert.Equal(t, tc.expectedMetricLabels[i], metric.Labels)
+				assert.Equal(t, p.conf.AggregateObservations, metric.aggregatedObservations)
+				switch metric.MetricType {
+				case counterType:
+					assert.NotNil(t, metric.counterVec)
+				case histogramType:
+					assert.NotNil(t, metric.histogramVec)
+				}
+			}
 		})
 	}
 }

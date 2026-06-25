@@ -47,6 +47,9 @@ Failure modes addressed:
 - Histogram label schema: split into **SW-REQ-091**, where histogram metrics
   normalize the synthetic `type` label before Prometheus registration and
   observation.
+- Custom metric identity: split into **SW-REQ-094**, where valid
+  operator-defined metrics initialize as distinct runtime metric instances and
+  invalid siblings are skipped without blocking valid metrics.
 - Context cancellation mid-batch: `WriteData` checks `ctx.Done()` between
   records.
 
@@ -62,6 +65,8 @@ Failure modes addressed:
   metrics.
 - `pumps/prometheus.go:187-221` — `Init` starts the listener
   (`http.Handle(p.conf.Path, promhttp.Handler())`).
+- `pumps/prometheus.go:246-263` — `InitCustomMetrics` initializes
+  operator-defined custom metrics and appends valid metrics to `allMetrics`.
 - `pumps/prometheus.go:304-336` — `processMetric` handles enabled, MCP-only,
   counter, and histogram (with special-case `tyk_latency` 3-type expansion).
 - `pumps/prometheus.go:339-373` — `WriteData` iterates records and calls
@@ -82,6 +87,8 @@ Failure modes addressed:
   SW-REQ-090 disabled-base-family gate.
 - `pumps/prometheus_test.go:TestPrometheusEnsureLabels` covers the SW-REQ-091
   histogram `type` label schema normalization.
+- `pumps/prometheus_test.go:TestPrometheusInitCustomMetrics` covers the
+  SW-REQ-094 custom metric identity and invalid-sibling behavior.
 - `pumps/udp_file_pumps_mcdc_test.go`
   `TestPrometheusPump_WriteData_NoTracking`,
   `TestPrometheusPump_WriteData_TrackedRecord`, and

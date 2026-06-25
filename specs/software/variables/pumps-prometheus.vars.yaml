@@ -24,6 +24,14 @@ variables:
       type: bool
       direction: output
       description: True iff histogram label initialization produces exactly one "type" label at position 0 followed by the configured non-type labels in their original relative order.
+    - name: valid_custom_metrics_configured
+      type: bool
+      direction: input
+      description: True when PrometheusConf.CustomMetrics contains one or more valid custom metric definitions that should be initialized and appended to allMetrics.
+    - name: custom_metric_instances_preserved
+      type: bool
+      direction: output
+      description: True iff InitCustomMetrics appends one distinct runtime metric instance per valid configured custom metric, preserving name, type, labels, aggregate-observation setting, and initialized collector while skipping invalid siblings.
     - name: obfuscate_api_keys_enabled
       type: bool
       direction: input
@@ -58,4 +66,4 @@ variables:
       description: True when the Prometheus aggregate stores and exposes the original label tuple values without reconstructing them by splitting the joined aggregation key.
 independence:
     declared: true
-    reason: 'Prometheus requirements cover independent metric exposition, base metric family disable gates, histogram label-schema normalization, optional API-key label masking, and path-label tracking gates; each guarantee has a separate FRETish trigger/output pair.'
+    reason: 'Prometheus requirements cover independent metric exposition, base metric family disable gates, histogram label-schema normalization, custom metric instance identity, optional API-key label masking, and path-label tracking gates; each guarantee has a separate FRETish trigger/output pair.'

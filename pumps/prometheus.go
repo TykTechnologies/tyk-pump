@@ -243,6 +243,7 @@ func (p *PrometheusPump) initBaseMetrics() {
 
 // InitCustomMetrics initialise custom prometheus metrics based on p.conf.CustomMetrics and add them into p.allMetrics
 // reqproof:implements SW-REQ-024
+// reqproof:implements SW-REQ-094
 func (p *PrometheusPump) InitCustomMetrics() {
 	if len(p.conf.CustomMetrics) > 0 {
 		customMetrics := []*PrometheusMetric{}
