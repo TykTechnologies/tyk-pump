@@ -1,0 +1,7 @@
+id: REVIEW-e2f277a-raw-payload-decode
+kind: design_review
+reviewer: agent:codex
+reviewed_at: "2026-06-25T16:25:00Z"
+subject: upstream:e2f277a/SYS-REQ-011+SW-REQ-088
+decision: approved
+comment: 'Commit-level assurance review for TT-7216: upstream added per-pump raw_request_decoded/raw_response_decoded options and filterData decode behavior. SYS-REQ-011 already models the system privacy contract; SW-REQ-088 now decomposes the pump-core implementation point with encoding_aware evidence and MC/DC witnesses. The malformed-base64 test now uses the real per-pump flags, while silent malformed decode remains KnownIssue-backed debt under filterdata-base64-decode-silent-noop.'

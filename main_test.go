@@ -560,11 +560,13 @@ func TestIgnoreFieldsFilterData(t *testing.T) {
 
 // Verifies: SW-REQ-001
 // Verifies: SYS-REQ-011
-// Verifies: SW-REQ-011
-// SW-REQ-011:encoding_aware:nominal
+// Verifies: SW-REQ-088
+// SW-REQ-088:encoding_aware:nominal
 // SYS-REQ-011:nominal:negative
 // MCDC SYS-REQ-011: decode_request_enabled=F, decode_response_enabled=F, enabled_payloads_decoded=F => TRUE
 // MCDC SYS-REQ-011: decode_request_enabled=T, decode_response_enabled=T, enabled_payloads_decoded=T => TRUE
+// MCDC SW-REQ-088: decode_request_enabled=F, decode_response_enabled=F, enabled_payloads_decoded=F => TRUE
+// MCDC SW-REQ-088: decode_request_enabled=T, decode_response_enabled=T, enabled_payloads_decoded=T => TRUE
 //
 // Two of the four sub-cases map onto reachable rows of the decode guarantee:
 //   - "Decode NONE" (decodeRequest=F, decodeResponse=F): neither toggle on, raw
@@ -583,6 +585,9 @@ func TestIgnoreFieldsFilterData(t *testing.T) {
 //mcdc:ignore SYS-REQ-011: decode_request_enabled=F, decode_response_enabled=T, enabled_payloads_decoded=F => FALSE — main.go:423-428 unconditionally enters the base64-decode block whenever getDecodingResponse is set, so an enabled response payload is always decoded; the "response enabled yet payload not decoded" violation has no branch to reach it [reviewed: human:leo] [category: defensive]
 //mcdc:ignore SYS-REQ-011: decode_request_enabled=T, decode_response_enabled=F, enabled_payloads_decoded=F => FALSE — main.go:417-422 unconditionally enters the base64-decode block whenever getDecodingRequest is set, so an enabled request payload is always decoded; the "request enabled yet payload not decoded" violation has no branch to reach it [reviewed: human:leo] [category: defensive]
 //mcdc:ignore SYS-REQ-011: decode_request_enabled=T, decode_response_enabled=T, enabled_payloads_decoded=F => FALSE — main.go:417-428 runs both decode blocks unconditionally when both toggles are set, so both enabled payloads are always decoded; the "both enabled yet neither decoded" violation has no branch to reach it [reviewed: human:leo] [category: defensive]
+//mcdc:ignore SW-REQ-088: decode_request_enabled=F, decode_response_enabled=T, enabled_payloads_decoded=F => FALSE — main.go:423-428 unconditionally enters the base64-decode block whenever getDecodingResponse is set, so an enabled response payload is always decoded; the "response enabled yet payload not decoded" violation has no branch to reach it [reviewed: human:buger] [category: defensive]
+//mcdc:ignore SW-REQ-088: decode_request_enabled=T, decode_response_enabled=F, enabled_payloads_decoded=F => FALSE — main.go:417-422 unconditionally enters the base64-decode block whenever getDecodingRequest is set, so an enabled request payload is always decoded; the "request enabled yet payload not decoded" violation has no branch to reach it [reviewed: human:buger] [category: defensive]
+//mcdc:ignore SW-REQ-088: decode_request_enabled=T, decode_response_enabled=T, enabled_payloads_decoded=F => FALSE — main.go:417-428 runs both decode blocks unconditionally when both toggles are set, so both enabled payloads are always decoded; the "both enabled yet neither decoded" violation has no branch to reach it [reviewed: human:buger] [category: defensive]
 func TestDecodedKey(t *testing.T) {
 	keys := make([]interface{}, 1)
 	record := analytics.AnalyticsRecord{APIID: "api111", RawResponse: "RGVjb2RlZFJlc3BvbnNl", RawRequest: "RGVjb2RlZFJlcXVlc3Q="}
@@ -641,7 +646,7 @@ func TestDecodedKey(t *testing.T) {
 }
 
 // Verifies: SW-REQ-001
-// Verifies: SW-REQ-011
+// Verifies: SW-REQ-088
 func TestDecodedKeyInvalidBase64LeavesPayloadsUnchanged(t *testing.T) {
 	keys := []interface{}{
 		analytics.AnalyticsRecord{
@@ -782,12 +787,12 @@ func TestDeprecationWarnings(t *testing.T) {
 	}
 }
 
-// Verifies: SW-REQ-011
-// SW-REQ-011:encoding_aware:negative
+// Verifies: SW-REQ-088
+// SW-REQ-088:encoding_aware:negative
 //
 // Negative-path evidence for the base64-decode arm of filterData (main.go:415-419
-// and 421-425). When SystemConfig.DecodeRawRequest=true (or DecodeRawResponse=true)
-// and the record's RawRequest/RawResponse field carries non-base64 input, the
+// and 421-425). When the pump-level DecodeRawRequest/DecodeRawResponse flags
+// are true and the record's RawRequest/RawResponse field carries non-base64 input, the
 // production code calls base64.StdEncoding.DecodeString which returns an err;
 // the documented (and current, KI-tracked) behavior is the silent no-op: the
 // original field is preserved unchanged because the `if err == nil` guard skips
@@ -800,19 +805,11 @@ func TestDeprecationWarnings(t *testing.T) {
 // to the operator). This test is the negative-evidence carrier the audit needs;
 // the remediation lives with the KI.
 func TestFilterDataBase64DecodeFailurePreservesField(t *testing.T) {
-	originalSystemConfig := SystemConfig
-	t.Cleanup(func() {
-		SystemConfig = originalSystemConfig
-	})
-
 	const invalidBase64 = "!!!notbase64!!!"
 
-	SystemConfig = TykPumpConfiguration{
-		DecodeRawRequest:  true,
-		DecodeRawResponse: true,
-	}
-
 	mockedPump := &MockedPump{}
+	mockedPump.SetDecodingRequest(true)
+	mockedPump.SetDecodingResponse(true)
 
 	keys := make([]interface{}, 1)
 	keys[0] = analytics.AnalyticsRecord{

@@ -696,9 +696,9 @@ func TestGraphSQLAggregatePump_WriteData_Sharded(t *testing.T) {
 
 		assert.False(t, pump.db.Migrator().HasTable(analytics.AggregateGraphSQLTable), "base table should remain absent in sharded mode")
 
-		assertGraphAggregateShardRow(t, pump, firstShardedTable, "operation", analytics.OperationQuery, "test-api")
+		assertGraphAggregateShardRow(t, pump, firstShardedTable, "operation", "Query", "test-api")
 		assertGraphAggregateShardRow(t, pump, firstShardedTable, "rootfields", "characters", "test-api")
-		assertGraphAggregateShardRow(t, pump, secondShardedTable, "operation", analytics.OperationQuery, "test-api")
+		assertGraphAggregateShardRow(t, pump, secondShardedTable, "operation", "Query", "test-api")
 		assertGraphAggregateShardRow(t, pump, secondShardedTable, "rootfields", "characters", "test-api")
 	})
 }

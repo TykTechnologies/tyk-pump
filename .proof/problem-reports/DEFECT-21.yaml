@@ -1,0 +1,111 @@
+schema_version: 1
+id: DEFECT-21
+title: Raw request and response payload decode was not configurable per pump
+introduced_in: unknown
+description: |
+  TT-7216 (commit e2f277a) introduced per-pump raw_request_decoded and
+  raw_response_decoded options so operators can choose whether each backend
+  receives plaintext raw request/response payloads or the gateway-emitted
+  base64 strings. Before that behavior, downstream sinks that expected
+  readable payloads had no per-backend decode switch in the pump core.
+
+  Current proof covers the system privacy contract under SYS-REQ-011 and now
+  decomposes the software implementation point under SW-REQ-088. The existing
+  TestDecodedKey covers request-only, response-only, both, and neither
+  toggles, and the malformed-base64 test now exercises the actual per-pump
+  flags rather than the deprecated global fields.
+source:
+    type: upstream_commit
+    repo: TykTechnologies/tyk-pump
+    commit: e2f277a
+    reference: TT-7216
+    date: "2023-01-12"
+classification:
+    surface: config_behavior
+    defect_class: raw_payload_decode_configuration_missing
+    severity: medium
+    security_relevant: false
+root_cause:
+    missing_requirement: false
+    missing_test_partition: true
+    missing_mcdc_variable: false
+    notes: |
+      SYS-REQ-011 already modeled decode_request_enabled and
+      decode_response_enabled independently, but the proof model lacked a
+      dedicated SW requirement for main.filterData's per-pump decode behavior.
+      SW-REQ-088 now carries that implementation-level contract and evidence.
+impact_analysis:
+    affected_requirements:
+        - SYS-REQ-011
+        - SW-REQ-001
+        - SW-REQ-016
+        - SW-REQ-088
+    affected_code:
+        - main.go
+        - main_test.go
+        - pumps/common.go
+        - pumps/pump.go
+        - pumps/common_test.go
+hardening:
+    new_requirements:
+        - SW-REQ-088
+    strengthened_requirements:
+        - SYS-REQ-011
+        - SW-REQ-001
+    added_obligations:
+        - requirement: SW-REQ-088
+          obligation_class: encoding_aware
+        - requirement: SW-REQ-088
+          obligation_class: malformed_recovers_or_errors_loudly
+    regression_tests:
+        - main_test.go:TestDecodedKey
+        - main_test.go:TestFilterDataBase64DecodeFailurePreservesField
+        - pumps/common_test.go:TestDecodingRequest
+        - pumps/common_test.go:TestSetDecodingResponse
+    mcdc_witnesses:
+        - requirement: SW-REQ-088
+          witness: "decode_request_enabled=F, decode_response_enabled=F, enabled_payloads_decoded=F => TRUE"
+        - requirement: SW-REQ-088
+          witness: "decode_request_enabled=T, decode_response_enabled=T, enabled_payloads_decoded=T => TRUE"
+    proposed_classes: []
+disposition:
+    status: covered_by_requirement
+    requirements:
+        - SW-REQ-088
+    known_issues:
+        - common-setloglevel-nil-log-panic
+        - config-pump-type-whitelist-not-enforced-at-load
+        - elapsed-timesince-dst-obligation-misattributed
+        - filterdata-base64-decode-silent-noop
+        - main-prefilter-debug-logs-unfiltered-records
+        - main-startup-logfatal-on-transient-backend
+        - preprocess-decode-error-leaves-nil-hole-in-keys
+        - pump-fanout-panic-not-recovered
+        - pump-no-per-pump-circuit-breaker
+        - tls-insecure-skip-verify-allowed
+    evidence:
+        verified_by:
+            - main_test.go:TestDecodedKey
+            - main_test.go:TestFilterDataBase64DecodeFailurePreservesField
+        requirement_mcdc_witnesses:
+            - requirement: SW-REQ-088
+              witness: "decode_request_enabled=F, decode_response_enabled=F, enabled_payloads_decoded=F => TRUE"
+            - requirement: SW-REQ-088
+              witness: "decode_request_enabled=T, decode_response_enabled=T, enabled_payloads_decoded=T => TRUE"
+        obligation_evidence:
+            - requirement: SW-REQ-088
+              obligation_class: encoding_aware
+              evidence_type: nominal
+            - requirement: SW-REQ-088
+              obligation_class: encoding_aware
+              evidence_type: negative
+    reviewer: agent:codex
+    reviewed_at: "2026-06-25T16:25:00Z"
+history:
+    - at: "2026-06-25T16:25:00Z"
+      by: agent:codex
+      action: created
+      detail: |
+        Recorded TT-7216's per-pump raw payload decode behavior as covered by
+        SYS-REQ-011 and SW-REQ-088, with malformed-base64 residual behavior
+        tracked by filterdata-base64-decode-silent-noop.

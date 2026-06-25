@@ -1,17 +1,17 @@
 schema_version: 1
 branch: feat-reqproof-coverage
-generated_at: "2026-06-25T15:52:44Z"
+generated_at: "2026-06-25T16:08:19Z"
 reviews:
     - requirement: SW-REQ-001
       artifact: main.go
       decision: no-authored-change
       reviewer: buger
-      reason: Reviewed pending requirement-owned production diffs after Proof binary/layout update; changes are comment-only Proof trace/MC/DC/KI classification metadata and do not alter runtime behavior, requirement intent, or documented design
+      reason: 'Reviewed main.go after TT-7216 proof hardening: source delta is reqproof trace metadata linking filterData to SW-REQ-088; runtime behavior and authored requirement intent are unchanged by this comment-only trace update.'
       base: origin/master
       requirement_fingerprint: sha256:ffc64bad77dbeb0c6d7d9508a5716dbe53b3e678a6bab295be216b603f7dc82f
-      approval_fingerprint: sha256:f088bbb11fa576678ed2f147e59a4350d6e554463be13db9277259feccaa2058
-      artifact_fingerprint: sha256:3bbaa0e7d9237530b1976744ab2def6f1dd99cdcb053865dd76d62800920bac9
-      reviewed_at: "2026-06-20T13:05:01Z"
+      approval_fingerprint: sha256:ba8c9836d64c2bc5d1133a0af863bf1a247fe7af9ec6095b1e837e024e4adb99
+      artifact_fingerprint: sha256:e7ea411fa9dbf7de400a8365d82be787b850a695efe35ecf1f53832f81e48bab
+      reviewed_at: "2026-06-25T16:05:48Z"
     - requirement: SW-REQ-002
       artifact: config.go
       decision: no-authored-change
@@ -26,32 +26,32 @@ reviews:
       artifact: main.go
       decision: no-authored-change
       reviewer: buger
-      reason: Reviewed shared main.go Proof metadata updates after binary/layout refresh; changes are comment-only trace/MC/DC/KI classification metadata and do not alter runtime behavior, requirement intent, or documented design
+      reason: 'Reviewed main.go after TT-7216 proof hardening: source delta is reqproof trace metadata linking filterData to SW-REQ-088; runtime behavior, existing main.go traced contracts, and authored requirement intent are unchanged by this comment-only trace update.'
       base: origin/master
       requirement_fingerprint: sha256:5a27db91949d9dc6d3e4a628347969a4b40a0c593be25ed636d55ae67d4b4f1b
       approval_fingerprint: sha256:67c2cb8692888e3b4045f39ad18c87dbe9c3771d2bd8f390b4ba6c93339e6b69
-      artifact_fingerprint: sha256:3bbaa0e7d9237530b1976744ab2def6f1dd99cdcb053865dd76d62800920bac9
-      reviewed_at: "2026-06-20T13:05:43Z"
+      artifact_fingerprint: sha256:e7ea411fa9dbf7de400a8365d82be787b850a695efe35ecf1f53832f81e48bab
+      reviewed_at: "2026-06-25T16:08:19Z"
     - requirement: SW-REQ-003
       artifact: main.go
       decision: no-authored-change
       reviewer: buger
-      reason: Reviewed pending requirement-owned production diffs after Proof binary/layout update; changes are comment-only Proof trace/MC/DC/KI classification metadata and do not alter runtime behavior, requirement intent, or documented design
+      reason: 'Reviewed main.go after TT-7216 proof hardening: source delta is reqproof trace metadata linking filterData to SW-REQ-088; runtime behavior and authored requirement intent are unchanged by this comment-only trace update.'
       base: origin/master
       requirement_fingerprint: sha256:2d45d96d614fa74cfee3a4e0e3895d40ccedb67cab5d223a0b0cc1ac78464f66
       approval_fingerprint: sha256:6d3531a2cb5ce3f33986a3370681c4c0631ed4c10f436c601d5e808388029938
-      artifact_fingerprint: sha256:3bbaa0e7d9237530b1976744ab2def6f1dd99cdcb053865dd76d62800920bac9
-      reviewed_at: "2026-06-20T13:05:01Z"
+      artifact_fingerprint: sha256:e7ea411fa9dbf7de400a8365d82be787b850a695efe35ecf1f53832f81e48bab
+      reviewed_at: "2026-06-25T16:05:48Z"
     - requirement: SW-REQ-004
       artifact: main.go
       decision: no-authored-change
       reviewer: buger
-      reason: Reviewed shared main.go Proof metadata updates after binary/layout refresh; changes are comment-only trace/MC/DC/KI classification metadata and do not alter runtime behavior, requirement intent, or documented design
+      reason: 'Reviewed main.go after TT-7216 proof hardening: source delta is reqproof trace metadata linking filterData to SW-REQ-088; runtime behavior, existing main.go traced contracts, and authored requirement intent are unchanged by this comment-only trace update.'
       base: origin/master
       requirement_fingerprint: sha256:cd339de505466c52193f062f0a5e4caa4a9953a36846c8fc5719551fe14b574a
       approval_fingerprint: sha256:4bfbe9cb1f5a4509997c0e93850d16fbc612d92c97f76d933f0ed90967164c3b
-      artifact_fingerprint: sha256:3bbaa0e7d9237530b1976744ab2def6f1dd99cdcb053865dd76d62800920bac9
-      reviewed_at: "2026-06-20T13:05:43Z"
+      artifact_fingerprint: sha256:e7ea411fa9dbf7de400a8365d82be787b850a695efe35ecf1f53832f81e48bab
+      reviewed_at: "2026-06-25T16:08:19Z"
     - requirement: SW-REQ-005
       artifact: instrumentation_helpers.go
       decision: no-authored-change
@@ -1029,12 +1029,12 @@ reviews:
       artifact: main.go
       decision: no-authored-change
       reviewer: buger
-      reason: Reviewed shared main.go Proof metadata updates after binary/layout refresh; changes are comment-only trace/MC/DC/KI classification metadata and do not alter runtime behavior, requirement intent, or documented design
+      reason: 'Reviewed main.go after TT-7216 proof hardening: source delta is reqproof trace metadata linking filterData to SW-REQ-088; runtime behavior, existing main.go traced contracts, and authored requirement intent are unchanged by this comment-only trace update.'
       base: origin/master
       requirement_fingerprint: sha256:1f56b24a2471782c7f6b979a54f7243343ce0181ee86c4278ff873c9aec89c03
       approval_fingerprint: sha256:7c76a5936c17456c26602bc266b4b18bca491f28a00f95a80c2f54cbfc7db006
-      artifact_fingerprint: sha256:3bbaa0e7d9237530b1976744ab2def6f1dd99cdcb053865dd76d62800920bac9
-      reviewed_at: "2026-06-20T13:05:43Z"
+      artifact_fingerprint: sha256:e7ea411fa9dbf7de400a8365d82be787b850a695efe35ecf1f53832f81e48bab
+      reviewed_at: "2026-06-25T16:08:19Z"
     - requirement: SW-REQ-073
       artifact: analytics/uptime_data.go
       decision: no-authored-change
@@ -1059,12 +1059,12 @@ reviews:
       artifact: main.go
       decision: no-authored-change
       reviewer: buger
-      reason: Reviewed shared main.go Proof metadata updates after binary/layout refresh; changes are comment-only trace/MC/DC/KI classification metadata and do not alter runtime behavior, requirement intent, or documented design
+      reason: 'Reviewed main.go after TT-7216 proof hardening: source delta is reqproof trace metadata linking filterData to SW-REQ-088; runtime behavior, existing main.go traced contracts, and authored requirement intent are unchanged by this comment-only trace update.'
       base: origin/master
       requirement_fingerprint: sha256:39a980102d8ae707b24632c32c05951c3a9564eb2599886460937b4591b866be
       approval_fingerprint: sha256:d0f8a8202e3014b27d9335def90918cef5827667147b38bf2c6f5f4cf750eed1
-      artifact_fingerprint: sha256:3bbaa0e7d9237530b1976744ab2def6f1dd99cdcb053865dd76d62800920bac9
-      reviewed_at: "2026-06-20T13:05:43Z"
+      artifact_fingerprint: sha256:e7ea411fa9dbf7de400a8365d82be787b850a695efe35ecf1f53832f81e48bab
+      reviewed_at: "2026-06-25T16:08:19Z"
     - requirement: SW-REQ-076
       artifact: analytics/analytics.go
       decision: no-authored-change
@@ -1079,12 +1079,12 @@ reviews:
       artifact: main.go
       decision: no-authored-change
       reviewer: buger
-      reason: Reviewed shared main.go Proof metadata updates after binary/layout refresh; changes are comment-only trace/MC/DC/KI classification metadata and do not alter runtime behavior, requirement intent, or documented design
+      reason: 'Reviewed main.go after TT-7216 proof hardening: source delta is reqproof trace metadata linking filterData to SW-REQ-088; runtime behavior, existing main.go traced contracts, and authored requirement intent are unchanged by this comment-only trace update.'
       base: origin/master
       requirement_fingerprint: sha256:7e986e6a7d56f645328509337bea51eb008182f441c392d8d79d5bd0cb1a6ea4
       approval_fingerprint: sha256:bd30cffb26cf798fde87458a796f869d586e34b767b90d9174b922bcf76a8a98
-      artifact_fingerprint: sha256:3bbaa0e7d9237530b1976744ab2def6f1dd99cdcb053865dd76d62800920bac9
-      reviewed_at: "2026-06-20T13:05:43Z"
+      artifact_fingerprint: sha256:e7ea411fa9dbf7de400a8365d82be787b850a695efe35ecf1f53832f81e48bab
+      reviewed_at: "2026-06-25T16:08:19Z"
     - requirement: SW-REQ-084
       artifact: pumps/mongo_aggregate.go
       symbols:
@@ -1133,3 +1133,13 @@ reviews:
       approval_fingerprint: sha256:f1ee51e38c4a280a24327be6aeb4c24f1db567d377e19a48a89f2f308422a3ef
       artifact_fingerprint: sha256:fd480d1d4a1a0eddc17979e13aadd7b0942f502d52137a53b444e9e475b1a1d4
       reviewed_at: "2026-06-25T15:52:44Z"
+    - requirement: SW-REQ-088
+      artifact: main.go
+      decision: no-authored-change
+      reviewer: buger
+      reason: 'Reviewed main.go after TT-7216 proof hardening: source delta is reqproof trace metadata linking filterData to SW-REQ-088; runtime behavior and authored requirement intent are unchanged by this comment-only trace update.'
+      base: origin/master
+      requirement_fingerprint: sha256:c108d09a9737bbc7d72a497e4d0b10ea34ee1701fc4844c722a0d7fb93f4ac0e
+      approval_fingerprint: sha256:5d49ab396174874b7419680c55aec7b2406b5bab83986e013a4fe425505bd6bd
+      artifact_fingerprint: sha256:e7ea411fa9dbf7de400a8365d82be787b850a695efe35ecf1f53832f81e48bab
+      reviewed_at: "2026-06-25T16:05:48Z"

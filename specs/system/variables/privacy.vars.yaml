@@ -54,11 +54,11 @@ variables:
     - name: decode_request_enabled
       type: bool
       direction: input
-      description: True when SystemConfig.DecodeRawRequest is true — gates whether filterData base64-decodes the RawRequest field before forwarding.
+      description: True when the receiving pump's per-backend raw_request_decoded flag is enabled; gates whether filterData base64-decodes the RawRequest field before forwarding.
     - name: decode_response_enabled
       type: bool
       direction: input
-      description: True when SystemConfig.DecodeRawResponse is true — gates whether filterData base64-decodes the RawResponse field before forwarding (independent operator toggle from decode_request_enabled).
+      description: True when the receiving pump's per-backend raw_response_decoded flag is enabled; gates whether filterData base64-decodes the RawResponse field before forwarding (independent operator toggle from decode_request_enabled).
     - name: enabled_payloads_decoded
       type: bool
       direction: output

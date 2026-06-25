@@ -30,21 +30,31 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-22T12:04:23Z"
-        comment: 'Review obligation expansion from catalogue gap pass; active unfixed behavior remains KnownIssue-gated.'
+        reviewed_at: "2026-06-25T16:06:57Z"
+        comment: 'Reviewed SW-REQ-011 obligation cleanup: encoding_aware is suppressed as not applicable to aggregate counter accumulation because raw payload base64 decoding is owned by SYS-REQ-011 and SW-REQ-088; no product behavior change claimed.'
         fingerprint: sha256:d3e1efaced83f9d603af0f46088194638ffa12d1792c8397b8e82af32d3edb68
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:14Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-22T12:04:23Z"
+    last_modified_at: "2026-06-25T16:06:57Z"
 obligation_class: tz_explicit
 obligation_checklist:
     - encoding_aware
     - idempotency
     - monotonicity
     - tz_explicit
+obligation_suppressions:
+    - id: encoding_aware
+      reason: 'Not applicable to SW-REQ-011: aggregate counter accumulation sums hits/success/errors/latency in analytics aggregates and does not parse, decode, or validate raw payload character encodings. The raw request/response base64 decode obligation is owned by SYS-REQ-011 and SW-REQ-088.'
+      suppressed_by: agent:codex
+      suppressed_at: "2026-06-25T16:06:28Z"
+      framework_refs:
+        - CWE CWE-176,CWE-180,CWE-838
+        - MISRA-C Dir 4.14
+        - NIST-800-53 SI-10
+        - OWASP-ASVS-v4 V5.1.4
 obligation_deferrals:
     - obligation_class: idempotency
       reason: real product gap under known-issue aggregate-counter-replay-not-idempotent; surfaced as visible tracked debt, not an overclaimed fix
@@ -97,4 +107,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-22T06:47:49Z comment="Reviewed evidence-backed code-signal obligation closures: partial-progress observable evidence for pump fanout, timezone round-trip evidence for analytics aggregate/record/uptime, Redis relative-TTL clock-skew evidence, and HTTP retry malformed-input nominal/negative evidence. Real product gaps remain tracked as KnownIssue-backed debt; no product behavior fixes claimed.")'
+          changed_by: human:buger
+        - date: "2026-06-25T16:06:57Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-22T12:04:23Z comment="Review obligation expansion from catalogue gap pass; active unfixed behavior remains KnownIssue-gated.")'
           changed_by: human:buger

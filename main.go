@@ -377,6 +377,7 @@ func writeToPumps(keys []interface{}, job *health.Job, startTime time.Time, purg
 
 // reqproof:implements SW-REQ-001
 // reqproof:implements SW-REQ-076
+// reqproof:implements SW-REQ-088
 func filterData(pump pumps.Pump, keys []interface{}) []interface{} {
 	shouldTrim := SystemConfig.MaxRecordSize != 0 || pump.GetMaxRecordSize() != 0
 	filters := pump.GetFilters()

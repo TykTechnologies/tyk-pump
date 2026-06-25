@@ -1,0 +1,62 @@
+id: SW-REQ-088
+version: 1
+status: approved
+priority: shall
+category: functional
+req_type: guarantee
+fretish: when decode_request_enabled | decode_response_enabled pump_core shall always satisfy enabled_payloads_decoded
+description: When a pump's per-backend raw_request_decoded or raw_response_decoded flag is enabled, main.filterData shall base64-decode the corresponding RawRequest or RawResponse field before dispatching that record to the pump; malformed base64 currently preserves the original field unchanged under the tracked silent-noop KnownIssue.
+formalization_strategy: fretish
+informal_verification:
+    method: ""
+    evidence: ""
+    verified: false
+parent: SYS-REQ-011
+component: pump-core
+rationale: 'Product-fix-history hardening for TT-7216: the upstream fix introduced per-pump raw request/response base64 decode toggles in filterData. SYS-REQ-011 already models the system-level privacy contract; this child pins the software implementation point and the per-pump request/response toggle independence.'
+tags: []
+variables:
+    - decode_request_enabled
+    - decode_response_enabled
+    - enabled_payloads_decoded
+traces:
+    satisfies:
+        - SYS-REQ-011
+verification:
+    assurance_level: B
+    formalization_status: valid
+    review:
+        status: approved
+        reviewer: human:buger
+        role: software_engineer
+        reviewed_at: "2026-06-25T16:05:01Z"
+        comment: 'TT-7216 hardening: reviewed pump-core filterData raw request/response decode toggles, encoding_aware evidence, malformed-base64 KnownIssue debt, MC/DC witnesses, and DEFECT-21 closure; no runtime product behavior change claimed.'
+        fingerprint: sha256:5d49ab396174874b7419680c55aec7b2406b5bab83986e013a4fe425505bd6bd
+        ai_generated: false
+history:
+    created_by: agent:codex
+    created_at: "2026-06-25T15:56:18Z"
+    last_modified_by: human:buger
+    last_modified_at: "2026-06-25T16:05:01Z"
+obligation_checklist:
+    - encoding_aware
+    - malformed_recovers_or_errors_loudly
+obligation_deferrals:
+    - obligation_class: malformed_recovers_or_errors_loudly
+      reason: Malformed base64 input is preserved unchanged without a diagnostic; nominal decode and malformed-preserve behavior are tested, while the operator-visible error/reporting gap remains KI-tracked.
+      tracking: filterdata-base64-decode-silent-noop
+      owner: human:buger
+      ki_ref: filterdata-base64-decode-silent-noop
+      reproducer: filterdata-base64-decode-silent-noop
+stakeholder:
+    acceptance_criteria:
+        - id: AC-001
+          text: With per-pump raw_request_decoded and raw_response_decoded enabled, filterData decodes both base64 raw payload fields before dispatch; with either toggle disabled, the disabled field remains encoded.
+          verification_method: test
+lifecycle:
+    change_history:
+        - date: "2026-06-25T16:04:55Z"
+          from: draft
+          to: review
+          reason: TT-7216 pump-core raw payload decode requirement ready for review
+          changed_by: human:buger

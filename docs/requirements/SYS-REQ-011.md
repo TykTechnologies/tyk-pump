@@ -8,9 +8,13 @@ The gateway always emits raw payloads base64-encoded, but downstream readability
 
 ## Formalization
 ```
-when decode_enabled privacy shall always satisfy payload_decoded
+when decode_request_enabled | decode_response_enabled privacy shall always satisfy enabled_payloads_decoded
 ```
-The input `decode_enabled` is true when either `pmp.GetDecodedRequest()` or `pmp.GetDecodedResponse()` returns true for the receiving pump; the output `payload_decoded` becomes true once `base64.StdEncoding.DecodeString` has rewritten the raw field for that record-pump pair. Variables: `specs/system/variables/privacy.vars.yaml`.
+The inputs `decode_request_enabled` and `decode_response_enabled` are true when
+the receiving pump's per-backend request or response decode toggle is enabled;
+the output `enabled_payloads_decoded` becomes true once each enabled raw field
+has been rewritten by `base64.StdEncoding.DecodeString` for that record-pump
+pair. Variables: `specs/system/variables/privacy.vars.yaml`.
 
 ## Code references
 - `main.go:415-426` — the decode branches inside `filterData`, with `if err == nil` guard so undecodable strings pass through unchanged.
@@ -19,9 +23,14 @@ The input `decode_enabled` is true when either `pmp.GetDecodedRequest()` or `pmp
 - `main.go:56 showDecodeDeprecationWarnings` — warns when the deprecated global flags are set.
 
 ## Evidence
-- `main_test.go:350 TestDecodedKey` — verifies the decode-enabled flow on the `raw_request` / `raw_response` fields.
-- Satisfying SW children: none with a dedicated decoding SW req; the SW realization is **SW-REQ-016** (common-pump base setters/getters) plus **SW-REQ-001** (purge loop including `filterData`).
+- `main_test.go:TestDecodedKey` verifies the decode-enabled flow on the
+  `raw_request` / `raw_response` fields.
+- SW-REQ-088 decomposes the `main.filterData` software behavior and carries
+  the per-pump request/response toggle evidence.
+- SW-REQ-016 covers the common-pump setters/getters used to store those
+  per-pump flags.
 
 ## Open questions
-- Decoding failure is silently ignored (`if err == nil { ... }`): undecodable payloads are forwarded raw. The SYS req does not state whether this is intended fallback or a violation. In practice this is intentional (decode is best-effort) but the SYS layer doesn't say so.
-- The req is keyed on "decode_enabled" as a single variable but the implementation has two independent toggles (request, response). FRETish coarsens them into one; conformance therefore holds when either toggle drives a decode, but the req does not constrain the *other* toggle.
+- Decoding failure is silently ignored (`if err == nil { ... }`): undecodable
+  payloads are forwarded raw. This is tracked by KnownIssue
+  `filterdata-base64-decode-silent-noop`.

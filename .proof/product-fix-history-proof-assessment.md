@@ -151,7 +151,7 @@ so a later reviewer can see what was included and what was filtered out.
 | ca22ae4 | 2023-03-16 | TT-8313 Hybrid pump refactor | `partially_missed_before_hardening`: this was not only a refactor; it fixed Hybrid init/connect paths that previously called log.Fatal for recoverable missing-connection-string or MDCB connection failures. Hardened with DEFECT-18 and SW-REQ-085 (`process_exit_on_recoverable` + `errors_propagated`) using existing Hybrid init/connect tests. Residual Hybrid connection leak, retry elapsed-deadline, TLS-skip, SSRF, and process-wide timeout risks remain KI-backed debt. |
 | 7fa0754 | 2023-03-06 | [TT-7820] fix aggregate graph pump sharding and errors | `missed_before_hardening`: SW-REQ-043 prose required day-slice routing and selected-table upserts, but its FRETish model did not carry the shard-target invariant and the sharded test only asserted non-empty shards. Hardened with DEFECT-19 and SW-REQ-086 (`routing_target_consistent` + `output_cardinality_bounded`), plus stricter sharded evidence proving representative rows land exactly once in both selected shards while the base table remains absent. The same commit's legacy raw GraphRecord parse-error refactor is now superseded by the current GraphQLStats projection model under SW-REQ-013. |
 | 17072c0 | 2023-02-21 | [TT-7977] fix: include RootFields in graph mongo and sql pumps | `partially_missed_before_hardening`: SW-REQ-013 prose and current tests already preserve `GraphQLStats.RootFields`, but the requirement was informal and had no MC/DC-bearing RootFields variable. Hardened with DEFECT-20 and SW-REQ-087 (`structured_projection_preserved`) so RootFields projection now has explicit FRETish variables and witness rows; downstream aggregate/SQL evidence already asserts `rootfields` remains present. |
-| e2f277a | 2023-01-12 | TT-7216 Decode Option For Raw Request/Response | Product privacy/decode feature. Current decode KIs cover malformed paths. |
+| e2f277a | 2023-01-12 | TT-7216 Decode Option For Raw Request/Response | `partially_missed_before_hardening`: SYS-REQ-011 already modeled request/response decode toggles and current tests covered nominal decode, but there was no SW-level filterData child and the malformed-base64 test was using deprecated global flags instead of the per-pump toggles. Hardened with DEFECT-21 and SW-REQ-088 (`encoding_aware`), fixed the negative test setup, and kept malformed-base64 silent no-op as KI-backed debt. |
 | ca44921 | 2022-11-23 | [TT-5426] Updating timestamp of every record in Demo Mode | Product demo timestamp behavior. Lower runtime assurance relevance. |
 | 5a25a2e | 2022-11-18 | [TT-5429] Tyk Pump Ignore Fields | Product privacy/filtering behavior. Covered by field-removal requirements. |
 | 8e42170 | 2022-11-03 | [TT-6012] fix edge case where query is to unresolved subgraph schema | Product graph edge-case defect. Candidate for stronger explicit evidence. |
@@ -200,6 +200,7 @@ Problem reports:
 - DEFECT-18: Hybrid init used log.Fatal for recoverable MDCB startup failures.
 - DEFECT-19: Graph SQL aggregate sharded writes targeted the wrong table.
 - DEFECT-20: Graph pumps dropped GraphQL root field dimensions.
+- DEFECT-21: Raw request and response payload decode was not configurable per pump.
 
 KnownIssues/risks relevant to historical fix classes:
 

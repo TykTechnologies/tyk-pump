@@ -1,15 +1,16 @@
 id: filterdata-base64-decode-silent-noop
 title: filterData silently skips payload decode on base64.DecodeString error, forwarding still-encoded payload
-description: main.go:415-426 (filterData) attempts base64.StdEncoding.DecodeString on AnalyticsRecord.RawRequest (and RawResponse) only when the operator has DecodeRawRequest (resp. DecodeRawResponse) set. On decode error, the `if err == nil` guard short-circuits the assignment, leaving the original base64-encoded string in decoded.RawRequest/RawResponse — there is NO log entry, NO metric increment, and NO error returned. The record is still forwarded to all configured backends, which now ingest a base64-blob believing it is the decoded plaintext payload the operator opted into via DecodeRawRequest/Response. Downstream analytics (e.g. Splunk indexers, ES tokenisers, Mongo log views, SQL queries on raw_request) will silently store and surface the still-encoded blob. Reachable from any deployment that has DecodeRawRequest or DecodeRawResponse enabled AND receives a record whose RawRequest/RawResponse field contains non-base64 content (gateway pipeline bugs, mixed-mode upstreams, partial decoders).
+description: main.go:415-426 (filterData) attempts base64.StdEncoding.DecodeString on AnalyticsRecord.RawRequest (and RawResponse) only when the receiving pump has its per-backend DecodeRawRequest (resp. DecodeRawResponse) flag set. On decode error, the `if err == nil` guard short-circuits the assignment, leaving the original base64-encoded string in decoded.RawRequest/RawResponse. There is no log entry, metric increment, or returned error. The record is still forwarded to the configured backend, which now ingests a base64 blob believing it is the decoded plaintext payload the operator opted into via DecodeRawRequest/Response. Downstream analytics (e.g. Splunk indexers, ES tokenisers, Mongo log views, SQL queries on raw_request) will silently store and surface the still-encoded blob. Reachable from any deployment that has per-pump DecodeRawRequest or DecodeRawResponse enabled and receives a record whose RawRequest/RawResponse field contains non-base64 content (gateway pipeline bugs, mixed-mode upstreams, partial decoders).
 affected_requirements:
     - SYS-REQ-011
+    - SW-REQ-088
 commands:
     - grep -n 'base64.StdEncoding.DecodeString' main.go
 severity: medium
 severity_basis: risk
 risk: data_integrity
 reproducer_command: grep -n 'base64.StdEncoding.DecodeString' main.go
-introduced_in: inception
+introduced_in: e2f277a
 mitigation: Operators must verify upstream gateway always produces well-formed base64 in RawRequest/RawResponse before enabling DecodeRawRequest/DecodeRawResponse. Disabling the decode toggle is the safe default — backends then receive the original base64 with their schemas reflecting that.
 remediation: Replace the `if err == nil` happy-path guard with an else branch that increments an instrumentation counter, logs at Warn level (with record correlation), and either (a) forwards the still-encoded payload with a structural marker so downstream tooling can detect the failure, or (b) drops just the offending payload field while preserving the rest of the record. The Warn log should fire at most once per N records to avoid log flooding when an upstream pipeline persistently emits non-base64.
 owner: tyk-team
