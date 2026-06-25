@@ -1,0 +1,45 @@
+id: per_backend_input_isolation
+name: Per-backend input isolation
+category: domain
+status: active
+summary: Per-backend filtering and privacy transforms shall not mutate the shared dispatch batch or sibling backend views.
+description: |-
+  Fan-out pipelines often decode one batch and then apply backend-specific
+  filters, privacy transforms, truncation, or decode options before invoking
+  each sink. Those per-backend transforms must operate on an isolated view of
+  the batch. Reusing the shared input slice as scratch space lets one backend's
+  filtering or privacy policy corrupt the batch observed by later or sibling
+  backends.
+applies_when:
+  description: one decoded input batch is fanned out to multiple sinks that each apply backend-specific filtering or privacy transforms
+  trigger_phrases:
+    - per backend filters
+    - fan-out
+    - shared batch
+    - filterData
+    - omit detailed recording
+example_req: |-
+  When one backend applies filters, omit-detailed-recording, field removal, raw
+  payload decoding, or truncation, the original decoded batch remains unchanged
+  and sibling backends receive their own filtered view.
+if_missing: |-
+  A backend with a restrictive filter can reorder, truncate, or remove records
+  from the shared batch, causing other configured backends to miss records or
+  receive the wrong privacy-transformed data.
+recommended_evidence:
+  - kind: nominal
+    note: Unit test applies a per-backend filter and asserts the returned filtered view is correct while the original batch remains byte-for-byte unchanged.
+  - kind: negative
+    note: Regression test covers the historical shared-slice alias bug by proving a filtered output write cannot mutate keys[0] or shorten/reorder the input batch.
+  - kind: review
+    note: Review maps every per-backend transform to an isolated copy or immutable value before dispatch.
+frameworks:
+  - id: CWE
+    refs:
+      - CWE-362
+      - CWE-664
+related_classes:
+  - id: failure_independence_proven
+    relationship: complements
+  - id: secrets_not_logged
+    relationship: supports

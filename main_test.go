@@ -124,6 +124,37 @@ func TestFilterData(t *testing.T) {
 	}
 }
 
+// Verifies: SW-REQ-095
+// SW-REQ-095:per_backend_input_isolation:nominal
+// SW-REQ-095:per_backend_input_isolation:negative
+// SW-REQ-095:shared_state_synchronized:nominal
+// SW-REQ-095:shared_state_synchronized:race
+// SW-REQ-095:shared_state_synchronized:review
+// MCDC SW-REQ-095: per_backend_transform_configured=F, shared_dispatch_batch_preserved=F => TRUE
+// MCDC SW-REQ-095: per_backend_transform_configured=T, shared_dispatch_batch_preserved=F => FALSE
+// MCDC SW-REQ-095: per_backend_transform_configured=T, shared_dispatch_batch_preserved=T => TRUE
+func TestFilterData_DoesNotMutateInputBatch(t *testing.T) {
+	mockedPump := &MockedPump{}
+	mockedPump.SetFilters(
+		analytics.AnalyticsFilters{
+			APIIDs: []string{"api123"},
+		},
+	)
+
+	keys := []interface{}{
+		analytics.AnalyticsRecord{APIID: "api111", OrgID: "org-a", ResponseCode: 400, RawRequest: "first"},
+		analytics.AnalyticsRecord{APIID: "api123", OrgID: "org-b", ResponseCode: 200, RawRequest: "second"},
+		analytics.AnalyticsRecord{APIID: "api321", OrgID: "org-c", ResponseCode: 500, RawRequest: "third"},
+	}
+	original := append([]interface{}(nil), keys...)
+
+	filteredKeys := filterData(mockedPump, keys)
+
+	require.Len(t, filteredKeys, 1)
+	assert.Equal(t, "api123", filteredKeys[0].(analytics.AnalyticsRecord).APIID)
+	assert.Equal(t, original, keys, "filterData must not mutate the shared dispatch batch")
+}
+
 // TestTrimData check the correct functionality of max_record_size
 // Verifies: SW-REQ-001
 // SW-REQ-001:boundary:boundary

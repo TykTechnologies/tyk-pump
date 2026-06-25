@@ -38,6 +38,11 @@ legitimately reject a record while the others still write, witnessing
 assurance level B, approved, and trace-clean (`approvals_current`,
 `suspect_clean`).
 
+## Related requirements
+`SW-REQ-095` covers the narrower TT-5776 data-isolation invariant inside this
+fan-out path: per-backend `filterData` transforms must not mutate the shared
+decoded dispatch batch seen by sibling pumps.
+
 ## Open questions
 - If `writeToPumps` ever changes from a per-pump goroutine fan-out (e.g. a
   shared error channel that aborts the whole write on the first failure), this

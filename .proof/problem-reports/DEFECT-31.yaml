@@ -1,0 +1,111 @@
+schema_version: 1
+id: DEFECT-31
+title: filterData mutated the shared fan-out batch
+introduced_in: unknown
+description: |
+  TT-5776 (commit df6d589) fixed a fan-out data-isolation bug in main.filterData.
+  Before the fix, filterData used `filteredKeys := keys[:]` and then wrote each
+  backend's filtered/transformed records into that slice. Because this reused
+  the caller's backing array, one pump's filter, omit-detailed-recording, trim,
+  ignore-fields, or decode path could mutate the shared decoded batch observed
+  by sibling pump goroutines.
+
+  Current code allocates a new slice and copies the input before writing the
+  backend-specific view, so the caller's dispatch batch remains unchanged.
+source:
+    type: upstream_commit
+    repo: TykTechnologies/tyk-pump
+    commit: df6d589
+    reference: TT-5776
+    date: "2022-06-22"
+classification:
+    surface: data_integrity
+    defect_class: filterdata_shared_slice_alias
+    severity: medium
+    security_relevant: false
+root_cause:
+    missing_requirement: true
+    missing_test_partition: true
+    missing_mcdc_variable: true
+    notes: |
+      SW-REQ-075 modeled per-backend error/timeout independence and
+      SW-REQ-010/SW-REQ-076 modeled filter/privacy semantics, but proof did not
+      make per-backend input isolation first-class. The existing multi-pump
+      filter test asserted counts, not that a filtering pump left the shared
+      input batch intact for sibling pumps.
+impact_analysis:
+    affected_requirements:
+        - SW-REQ-075
+        - SW-REQ-095
+    affected_code:
+        - main.go
+        - main_test.go
+hardening:
+    new_requirements:
+        - SW-REQ-095
+    strengthened_requirements:
+        - SW-REQ-075
+    added_obligations:
+        - requirement: SW-REQ-095
+          obligation_class: per_backend_input_isolation
+        - requirement: SW-REQ-095
+          obligation_class: shared_state_synchronized
+    regression_tests:
+        - main_test.go:TestFilterData_DoesNotMutateInputBatch
+    mcdc_witnesses:
+        - requirement: SW-REQ-095
+          witness: "per_backend_transform_configured=F, shared_dispatch_batch_preserved=F => TRUE"
+        - requirement: SW-REQ-095
+          witness: "per_backend_transform_configured=T, shared_dispatch_batch_preserved=F => FALSE"
+        - requirement: SW-REQ-095
+          witness: "per_backend_transform_configured=T, shared_dispatch_batch_preserved=T => TRUE"
+    proposed_classes:
+        - per_backend_input_isolation
+        - shared_state_synchronized
+disposition:
+    status: covered_by_requirement
+    requirements:
+        - SW-REQ-075
+        - SW-REQ-095
+    known_issues:
+        - main-prefilter-debug-logs-unfiltered-records
+        - no-panic-recovery-in-exec-pump-writing
+        - pump-fanout-panic-not-recovered
+        - pump-no-per-pump-circuit-breaker
+        - preprocess-decode-error-leaves-nil-hole-in-keys
+    evidence:
+        verified_by:
+            - main_test.go:TestFilterData_DoesNotMutateInputBatch
+        requirement_mcdc_witnesses:
+            - requirement: SW-REQ-095
+              witness: "per_backend_transform_configured=F, shared_dispatch_batch_preserved=F => TRUE (no per-backend transform is configured, so no isolated transform is required)"
+            - requirement: SW-REQ-095
+              witness: "per_backend_transform_configured=T, shared_dispatch_batch_preserved=F => FALSE (violation row: a per-backend filter mutates the shared dispatch batch)"
+            - requirement: SW-REQ-095
+              witness: "per_backend_transform_configured=T, shared_dispatch_batch_preserved=T => TRUE (filtered view is correct and the original batch is preserved)"
+        obligation_evidence:
+            - requirement: SW-REQ-095
+              obligation_class: per_backend_input_isolation
+              evidence_type: nominal
+            - requirement: SW-REQ-095
+              obligation_class: per_backend_input_isolation
+              evidence_type: negative
+            - requirement: SW-REQ-095
+              obligation_class: shared_state_synchronized
+              evidence_type: nominal
+            - requirement: SW-REQ-095
+              obligation_class: shared_state_synchronized
+              evidence_type: race
+            - requirement: SW-REQ-095
+              obligation_class: shared_state_synchronized
+              evidence_type: review
+    reviewer: agent:codex
+    reviewed_at: "2026-06-25T17:55:44Z"
+history:
+    - at: "2026-06-25T17:55:44Z"
+      by: agent:codex
+      action: created
+      detail: |
+        Recorded TT-5776 shared-slice aliasing as covered by SW-REQ-095, with
+        direct evidence that per-backend filterData output does not mutate the
+        caller's shared dispatch batch.

@@ -1,0 +1,62 @@
+id: SW-REQ-095
+version: 1
+status: approved
+priority: shall
+category: functional
+req_type: guarantee
+fretish: when per_backend_transform_configured delivery shall always satisfy shared_dispatch_batch_preserved
+description: When a configured backend applies per-backend filters or privacy transforms during dispatch, main.filterData shall produce that backend's filtered view without mutating the shared decoded dispatch batch, so sibling backends can independently receive their own uncorrupted view of the same original records.
+formalization_strategy: fretish
+informal_verification:
+    method: ""
+    evidence: ""
+    verified: false
+parent: SW-REQ-075
+component: delivery
+rationale: 'Product-fix-history hardening for TT-5776: before commit df6d589, filterData used a slice alias as scratch storage, so one pump''s filters could mutate the backing array shared with sibling pump goroutines. This child pins the per-backend input-isolation aspect of fan-out independently from SW-REQ-075 error/timeout independence.'
+tags: []
+variables:
+    - per_backend_transform_configured
+    - shared_dispatch_batch_preserved
+traces:
+    satisfies:
+        - SW-REQ-075
+verification:
+    assurance_level: B
+    formalization_status: valid
+    review:
+        status: approved
+        reviewer: human:buger
+        role: software_engineer
+        reviewed_at: "2026-06-25T18:00:37Z"
+        comment: 'TT-5776 hardening: reviewed per-backend filter input isolation requirement, per_backend_input_isolation/shared_state_synchronized evidence, DEFECT-31 closure, and decision not to add a broad slice-alias signal due low precision; no runtime product behavior change.'
+        fingerprint: sha256:99ef6312ef0a0d1a0508bf4e46f6a87324a344e0be7830bbbe01e9b1fba4f4c1
+        ai_generated: false
+history:
+    created_by: human:buger
+    created_at: "2026-06-25T17:55:44Z"
+    last_modified_by: human:buger
+    last_modified_at: "2026-06-25T18:00:37Z"
+obligation_checklist:
+    - per_backend_input_isolation
+    - shared_state_synchronized
+stakeholder:
+    acceptance_criteria:
+        - id: AC-001
+          text: Applying a per-backend allow-list filter returns only the matching backend view while the original decoded dispatch batch retains its length, order, and record values.
+          verification_method: test
+        - id: AC-002
+          text: Applying per-backend privacy transforms returns transformed records for that backend without changing records in the shared dispatch batch used by sibling backends.
+          verification_method: test
+lifecycle:
+    change_history:
+        - date: "2026-06-25T17:55:44Z"
+          from: draft
+          to: review
+          reason: TT-5776 per-backend input isolation requirement ready for branch review
+          changed_by: human:buger
+        - date: "2026-06-25T18:00:30Z"
+          from: draft
+          to: review
+          reason: '[df6d589] TT-5776 per-backend input isolation requirement ready for branch review'
+          changed_by: human:buger

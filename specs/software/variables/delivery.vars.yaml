@@ -16,6 +16,14 @@ variables:
       type: bool
       direction: output
       description: The remaining configured backends still receive the records — main.writeToPumps spawns one execPumpWriting goroutine per pump and each goroutine contains its own error/timeout (logged, not propagated), so one backend's failure does not prevent writes to the others (mirror of the SYS-level delivery variable, scoped to the software component).
+    - name: per_backend_transform_configured
+      type: bool
+      direction: input
+      description: True when a backend has filters or privacy transforms configured, causing filterData to build a backend-specific view of the decoded dispatch batch.
+    - name: shared_dispatch_batch_preserved
+      type: bool
+      direction: output
+      description: True iff per-backend filterData output is produced without mutating the caller's shared decoded dispatch batch, preserving sibling backend views.
 independence:
     declared: true
-    reason: 'Software delivery requirements split timeout/external-call behavior from typed fanout failure independence; the formalized outputs are intentionally separate implementation responsibilities.'
+    reason: 'Software delivery requirements split timeout/external-call behavior, typed fanout failure independence, and per-backend input isolation; the formalized outputs are intentionally separate implementation responsibilities.'

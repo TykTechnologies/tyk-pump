@@ -20,6 +20,12 @@ This is the orchestration layer of the pump. Capturing it at the SW level locks 
 - `main_test.go:55 TestFilterData`, `main_test.go:78 TestTrimData`, `main_test.go:145 TestOmitDetailsFilterData`, `main_test.go:298 TestIgnoreFieldsFilterData`, `main_test.go:350 TestDecodedKey` — each tagged `// Verifies: SW-REQ-001` and exercise individual privacy/filter branches of `filterData`.
 - `main_test.go:168 TestWriteDataWithFilters` — tagged `// Verifies: SW-REQ-001` and `SW-REQ-003`; drives `writeToPumps` end-to-end across multiple pumps.
 
+## Related requirements
+`SW-REQ-095` decomposes the TT-5776 fan-out isolation invariant from this
+startup/purge-loop requirement: per-backend `filterData` filtering and privacy
+transforms must operate on an isolated view rather than mutating the shared
+decoded batch.
+
 ## Open questions
 - Privacy ops are applied in `main.filterData` not in `pumps/common.go`; the SYS-layer "per-pump privacy" obligation has no symmetric pump-side enforcement, so a pump implementation that bypasses `filterData` (e.g., by being called from a code path other than `execPumpWriting`) would silently leak raw fields. Demo mode (`main.go:516`) calls `writeToPumps` directly with hand-crafted keys.
 - The shard ceiling `i < 10` at `main.go:267` is hard-coded and shared with SYS-REQ-001; if a gateway shards beyond 10 keys the trailing data is dropped silently.
