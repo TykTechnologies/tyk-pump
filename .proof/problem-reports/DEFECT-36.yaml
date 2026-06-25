@@ -1,0 +1,96 @@
+schema_version: 1
+id: DEFECT-36
+title: Elasticsearch decode_base64 stored decoded payload bytes as binary
+introduced_in: unknown
+description: |
+  TN-6 (commit 0adb849, merging the 416d1c7 fix) fixed Elasticsearch
+  decode_base64 mapping. Before the fix, getMapping called
+  base64.StdEncoding.DecodeString for raw_request and raw_response but assigned
+  the returned []byte directly into the generic mapping document. Go's JSON
+  encoder serializes []byte as base64, so Elasticsearch received re-encoded
+  data instead of the plaintext payload the operator requested.
+
+  Current code converts decoded bytes with string(rawRequest) and
+  string(rawResponse) before assigning the mapping fields. The successful
+  decode path is covered by SW-REQ-068 and direct getMapping evidence. A
+  separate live malformed-input gap remains: getMapping still ignores
+  DecodeString errors and emits empty/partial decoded strings; that is tracked
+  as a KnownIssue, not fixed here.
+source:
+    type: upstream_commit
+    repo: TykTechnologies/tyk-pump
+    commit: 0adb849
+    reference: TN-6
+    date: "2020-08-07"
+classification:
+    surface: data_integrity
+    defect_class: decoded_payload_reencoded_as_base64
+    severity: medium
+    security_relevant: false
+root_cause:
+    missing_requirement: true
+    missing_test_partition: false
+    missing_mcdc_variable: false
+    notes: |
+      Existing TestGetMapping_ExtendedStatistics would catch the concrete
+      regression, but it was bound only to INT-REQ-006's broad mapping
+      tolerance contract. SW-REQ-068 did not explicitly own Elasticsearch's
+      decode_base64 text-mapping behavior or the historical []byte re-encode
+      failure mode.
+impact_analysis:
+    affected_requirements:
+        - SW-REQ-068
+    affected_code:
+        - pumps/elasticsearch.go
+        - pumps/elasticsearch_test.go
+        - signal-rules/tyk-pump-phase-n.yaml
+hardening:
+    new_requirements: []
+    strengthened_requirements:
+        - SW-REQ-068
+    added_obligations:
+        - requirement: SW-REQ-068
+          obligation_class: backend_decoded_payload_textual
+    regression_tests:
+        - pumps/elasticsearch_test.go:TestGetMapping_ExtendedStatistics
+    proposed_classes:
+        - backend_decoded_payload_textual
+    code_signals:
+        - go.base64-decode-bytes-assigned-to-interface-map
+disposition:
+    status: covered_by_requirement
+    requirements:
+        - SW-REQ-068
+    known_issues:
+        - elasticsearch-decode-base64-errors-silent-empty
+        - elasticsearch-api-key-auth-dropped-when-use-ssl
+        - elasticsearch-unbounded-reconnect-recursion
+        - es-legacy-versions-need-deprecated-containers
+        - external-pump-endpoints-no-ssrf-allowlist
+        - mapstructure-decode-silently-drops-unknown-keys
+        - pump-no-timeout-can-block-purge-cycle
+        - pumps-logfatal-on-config-decode
+        - tls-insecure-skip-verify-allowed
+    evidence:
+        verified_by:
+            - pumps/elasticsearch_test.go:TestGetMapping_ExtendedStatistics
+        obligation_evidence:
+            - requirement: SW-REQ-068
+              obligation_class: backend_decoded_payload_textual
+              evidence_type: nominal
+            - requirement: SW-REQ-068
+              obligation_class: backend_decoded_payload_textual
+              evidence_type: negative
+            - requirement: SW-REQ-068
+              obligation_class: backend_decoded_payload_textual
+              evidence_type: review
+    reviewer: agent:codex
+    reviewed_at: "2026-06-25T19:25:00Z"
+history:
+    - at: "2026-06-25T19:25:00Z"
+      by: agent:codex
+      action: created
+      detail: |
+        Recorded TN-6 Elasticsearch decode_base64 text-mapping regression as
+        covered by SW-REQ-068. Added a separate KI for current malformed
+        decode behavior rather than claiming it fixed.

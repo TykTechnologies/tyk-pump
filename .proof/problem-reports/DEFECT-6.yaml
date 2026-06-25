@@ -54,6 +54,7 @@ disposition:
         - SW-REQ-070
     known_issues:
         - elasticsearch-api-key-auth-dropped-when-use-ssl
+        - elasticsearch-decode-base64-errors-silent-empty
         - elasticsearch-mcp-routing-non-bulk-ignored
         - elasticsearch-unbounded-reconnect-recursion
         - external-pump-endpoints-no-ssrf-allowlist

@@ -1,0 +1,34 @@
+id: elasticsearch-decode-base64-errors-silent-empty
+title: Elasticsearch decode_base64 silently emits empty decoded payloads on malformed base64
+description: |
+  pumps/elasticsearch.go:getMapping ignores errors from
+  base64.StdEncoding.DecodeString when ExtendedStatistics and DecodeBase64 are
+  enabled. On malformed RawRequest or RawResponse input, the decoded byte slice
+  is still converted to string and written into the Elasticsearch mapping,
+  producing an empty or partial raw_request/raw_response field with no warning,
+  metric, or returned error. This is distinct from the core filterData decode
+  KnownIssue, which preserves the original field on decode failure.
+affected_requirements:
+    - SW-REQ-068
+evidence_manifests:
+    - test:pumps/elasticsearch_test.go:TestGetMapping_DecodeBase64MalformedInput_KI
+severity: medium
+severity_basis: risk
+risk: data_integrity
+reproducer_command: go test ./pumps -run '^TestGetMapping_DecodeBase64MalformedInput_KI$' -count=1
+environment_note: The reproducer is a unit tripwire for current getMapping behavior; it does not require an Elasticsearch container.
+introduced_in: 416d1c7
+mitigation: Operators should only enable Elasticsearch decode_base64 when upstream raw_request/raw_response fields are guaranteed to be valid base64; otherwise leave decode_base64 disabled or use the core per-pump decode path with its separate KI tradeoff.
+remediation: Check DecodeString errors in getMapping; on malformed input either preserve the original encoded field with a marker, drop only the offending field with a warning, or return an error surfaced by WriteData.
+owner: tyk-team
+review_date: "2026-11-30"
+release_disposition: ship_with_known_issue
+status: open
+history:
+    - at: "2026-06-25T19:25:00Z"
+      by: agent:codex
+      action: created
+      detail: |
+        Found while reviewing TN-6 / 0adb849: successful decode is now covered
+        as text mapping, but malformed ES decode_base64 input remains silent
+        data-integrity debt and is tracked separately from filterData decode.

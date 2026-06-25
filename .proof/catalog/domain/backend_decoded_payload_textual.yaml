@@ -1,0 +1,47 @@
+id: backend_decoded_payload_textual
+name: Backend decoded payload textual
+category: domain
+status: active
+summary: Backend document mappings shall store decoded textual payloads as strings, not binary byte slices that JSON can re-encode.
+description: |-
+  Some backend schemas expose raw request and response bodies as searchable
+  text fields. If code decodes base64 payload bytes but stores the decoded
+  []byte directly in a generic map, Go's JSON encoder serializes those bytes
+  as base64 again. Requirements for backend decode knobs shall prove that
+  successfully decoded payloads enter the backend mapping as strings containing
+  the decoded plaintext.
+applies_when:
+  description: a backend mapping accepts base64-encoded raw request or response fields and writes them into a generic map/document
+  trigger_phrases:
+    - decode_base64
+    - DecodeString
+    - raw_request
+    - raw_response
+    - map[string]interface{}
+example_req: |-
+  When Elasticsearch extended statistics and decode_base64 are enabled,
+  raw_request and raw_response mapping fields shall be decoded plaintext string
+  values, not []byte values that would be JSON-encoded as base64.
+if_missing: |-
+  Operators enabling decode_base64 still see base64-looking strings in
+  Elasticsearch because decoded []byte values are marshaled back into base64 by
+  JSON encoding, defeating search, tokenization, and incident review workflows.
+recommended_evidence:
+  - kind: nominal
+    note: Mapping test enables decode_base64 and asserts raw_request/raw_response equal decoded plaintext strings.
+  - kind: negative
+    note: Mapping test asserts decoded fields are string-typed, so direct []byte assignment or JSON re-encoding cannot satisfy the contract.
+  - kind: review
+    note: Review separates fixed successful-decode text mapping from malformed-base64 error-handling KnownIssues.
+frameworks:
+  - id: CWE
+    refs:
+      - CWE-704
+      - CWE-116
+related_classes:
+  - id: encoding_aware
+    relationship: specializes
+  - id: binary_data_preserved
+    relationship: complements
+  - id: malformed_recovers_or_errors_loudly
+    relationship: adjacent

@@ -328,7 +328,11 @@ func TestGetIndexName_Rolling(t *testing.T) {
 }
 
 // Verifies: INT-REQ-006
+// Verifies: SW-REQ-068
 // MCDC INT-REQ-006: mapping_per_implementation=T, record_dispatched_to_backend=T => TRUE
+// SW-REQ-068:backend_decoded_payload_textual:nominal
+// SW-REQ-068:backend_decoded_payload_textual:negative
+// SW-REQ-068:backend_decoded_payload_textual:review
 func TestGetMapping_ExtendedStatistics(t *testing.T) {
 	record := analytics.AnalyticsRecord{
 		APIID:       "api1",
@@ -339,6 +343,8 @@ func TestGetMapping_ExtendedStatistics(t *testing.T) {
 
 	t.Run("extended stats with base64 decode", func(t *testing.T) {
 		mapping, _ := getMapping(record, true, false, true)
+		assert.IsType(t, "", mapping["raw_request"])
+		assert.IsType(t, "", mapping["raw_response"])
 		assert.Equal(t, "raw-request", mapping["raw_request"])
 		assert.Equal(t, "raw-response", mapping["raw_response"])
 		assert.Equal(t, "test-agent", mapping["user_agent"])
@@ -354,4 +360,19 @@ func TestGetMapping_ExtendedStatistics(t *testing.T) {
 		_, id := getMapping(record, false, true, false)
 		assert.NotEmpty(t, id)
 	})
+}
+
+// Verifies: KI:elasticsearch-decode-base64-errors-silent-empty
+// Reproduces: elasticsearch-decode-base64-errors-silent-empty
+func TestGetMapping_DecodeBase64MalformedInput_KI(t *testing.T) {
+	record := analytics.AnalyticsRecord{
+		RawRequest:  "not-base64-request!",
+		RawResponse: "not-base64-response!",
+		UserAgent:   "test-agent",
+	}
+
+	mapping, _ := getMapping(record, true, false, true)
+	assert.Empty(t, mapping["raw_request"])
+	assert.Empty(t, mapping["raw_response"])
+	assert.Equal(t, "test-agent", mapping["user_agent"])
 }

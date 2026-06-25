@@ -64,6 +64,7 @@ disposition:
     requirements:
         - SW-REQ-068
     known_issues:
+        - elasticsearch-decode-base64-errors-silent-empty
         - elasticsearch-api-key-auth-dropped-when-use-ssl
         - elasticsearch-unbounded-reconnect-recursion
         - external-pump-endpoints-no-ssrf-allowlist

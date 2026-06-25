@@ -729,3 +729,37 @@ rules:
                 ...
                 $CH <- $P.WriteData(...)
               }(...)
+  - id: go.base64-decode-bytes-assigned-to-interface-map
+    severity: WARNING
+    languages: [go]
+    message: |
+      base64.StdEncoding.DecodeString returns []byte, and assigning that value
+      directly into a map/document field lets JSON encode it back to base64.
+      Convert successful decoded payloads to string before storing them in
+      backend text fields.
+    metadata:
+      proof:
+        signal_id: go.base64_decode_bytes_assigned_to_interface_map
+        provider: opengrep
+        confidence: high
+        framework_hints:
+          - CWE-704
+          - CWE-116
+        notes: |
+          TN-6 / commits 416d1c7 and 0adb849 fixed this exact Elasticsearch
+          mapping bug by changing direct DecodeString assignment into
+          string(decodedBytes). The rule catches the unsafe direct assignment
+          shape and should not fire on current safe code.
+        obligations: [backend_decoded_payload_textual]
+    paths:
+      include:
+        - "pumps/**/*.go"
+      exclude:
+        - "*_test.go"
+        - "vendor/**"
+    patterns:
+      - pattern-either:
+          - pattern: |
+              $MAP[$KEY], $_ = base64.StdEncoding.DecodeString($VALUE)
+          - pattern: |
+              $MAP[$KEY], $_ = b64.StdEncoding.DecodeString($VALUE)

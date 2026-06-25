@@ -13,7 +13,10 @@ defaulting to `"3"` when unset) — instantiating the corresponding
 sniffing toggle, basic auth, optional `ApiKey-auth` via
 `ApiKeyTransport`, and optional custom TLS) and corresponding
 `BulkProcessor`. Versions other than 3/5/6/7 shall be rejected at Init
-via `log.Fatal`. Derived from SYS-REQ-004.
+via `log.Fatal`. When `ExtendedStatistics` and `decode_base64` are enabled,
+`getMapping` stores `raw_request` and `raw_response` as decoded plaintext
+strings, not `[]byte` values that JSON would encode as base64 again. Derived
+from SYS-REQ-004.
 
 ## Motivation
 Elasticsearch has had multiple breaking client-library splits across the
@@ -33,11 +36,16 @@ expectation that Init failure aborts startup.
   client wrappers.
 - `pumps/elasticsearch.go:ApiKeyTransport` — optional API-key header
   injection.
+- `pumps/elasticsearch.go:getMapping` — per-record document mapping, including
+  extended raw payload mapping and `decode_base64` conversion.
 
 ## Evidence
 - `pumps/elasticsearch_test.go:TestGetMapping_*` (re-annotated `Verifies:
   SW-REQ-068`) — exercise the per-record mapping path used by every
   version operator.
+- `pumps/elasticsearch_test.go:TestGetMapping_ExtendedStatistics` covers the
+  TN-6 decoded-payload text contract: decoded `raw_request` / `raw_response`
+  fields are plaintext strings, not byte slices that JSON would re-encode.
 - `pumps/elasticsearch_test.go:TestElasticsearchPump_TLSConfig_ErrorCases`
   (re-annotated `Verifies: SW-REQ-068`) — exercises TLS-config error
   propagation from `getOperator`.

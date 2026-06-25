@@ -5,7 +5,7 @@ priority: shall
 category: functional
 req_type: guarantee
 fretish: when version_eq_3 pumps_es shall always satisfy v3_operator_constructed
-description: 'The Elasticsearch pump shall, at Init, select an ElasticsearchOperator implementation per configured Version ("3", "5", "6", or "7", defaulting to "3" when unset) — instantiating the corresponding elastic.v3 / elastic.v5 / elastic.v6 / elastic/v7 client (with sniffing toggle, basic auth, optional ApiKey-auth via ApiKeyTransport, and optional custom TLS from ssl_cert_file/ssl_key_file, ssl_ca_file, and ssl_insecure_skip_verify) and corresponding BulkProcessor. Versions other than 3/5/6/7 shall be rejected at Init via log.Fatal. Known issue: the log.Fatal-on-bad-config behaviour is shared with other pumps and tracked as pumps-logfatal-on-config-decode.'
+description: 'The Elasticsearch pump shall, at Init, select an ElasticsearchOperator implementation per configured Version ("3", "5", "6", or "7", defaulting to "3" when unset) — instantiating the corresponding elastic.v3 / elastic.v5 / elastic.v6 / elastic/v7 client (with sniffing toggle, basic auth, optional ApiKey-auth via ApiKeyTransport, and optional custom TLS from ssl_cert_file/ssl_key_file, ssl_ca_file, and ssl_insecure_skip_verify) and corresponding BulkProcessor. Versions other than 3/5/6/7 shall be rejected at Init via log.Fatal. When ExtendedStatistics and decode_base64 are enabled, getMapping shall store raw_request and raw_response as decoded plaintext string values, not []byte values that JSON would re-encode as base64. Known issues: the logFatal-on-bad-config behavior is shared with other pumps and tracked as pumps-logfatal-on-config-decode; malformed Elasticsearch decode_base64 input is tracked by elasticsearch-decode-base64-errors-silent-empty.'
 formalization_strategy: fretish
 informal_verification:
     method: ""
@@ -29,16 +29,17 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-25T16:50:33Z"
-        comment: 'TT-3067 hardening: Elasticsearch TLS skip-verify is now covered by tls_verification_explicit evidence, with strict validation risk still tracked by tls-insecure-skip-verify-allowed; no runtime product behavior change.'
-        fingerprint: sha256:2767c6719768e648587bec7ebcd649778df923465206ef11792d2b203eb0fe1c
+        reviewed_at: "2026-06-25T19:16:10Z"
+        comment: 'TN-6 hardening: Elasticsearch decode_base64 mapping now requires decoded raw_request/raw_response payloads as plaintext strings; malformed decode behavior remains KI-linked.'
+        fingerprint: sha256:77bf12ddaf353b7da3deb5018c1d4adb96a68e5c419397977af4eccf39999f74
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:39:57Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-25T16:50:33Z"
+    last_modified_at: "2026-06-25T19:16:10Z"
 obligation_checklist:
+    - backend_decoded_payload_textual
     - cert_chain_validated
     - cert_validation_strict
     - config_schema_strict
@@ -88,10 +89,10 @@ obligation_deferrals:
       owner: human:buger
       ki_ref: pump-no-timeout-can-block-purge-cycle
     - obligation_class: malformed_recovers_or_errors_loudly
-      reason: real untested obligation under known-issue mapstructure-decode-silently-drops-unknown-keys; surfaced as visible tracked debt, not an overclaimed fix
-      tracking: mapstructure-decode-silently-drops-unknown-keys
+      reason: real malformed-input gaps remain under known issues mapstructure-decode-silently-drops-unknown-keys and elasticsearch-decode-base64-errors-silent-empty; surfaced as visible tracked debt, not an overclaimed fix
+      tracking: elasticsearch-decode-base64-errors-silent-empty
       owner: human:buger
-      ki_ref: mapstructure-decode-silently-drops-unknown-keys
+      ki_ref: elasticsearch-decode-base64-errors-silent-empty
     - obligation_class: process_exit_on_recoverable
       reason: real untested obligation under known-issue pumps-logfatal-on-config-decode; surfaced as visible tracked debt, not an overclaimed fix
       tracking: pumps-logfatal-on-config-decode
@@ -158,4 +159,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-23T07:34:50Z comment="Reviewed TT-15674 Elasticsearch TLS CA hardening: custom TLS fields named explicitly, cert_chain_validated added, and ES TLS valid-CA evidence is annotated.")'
+          changed_by: human:buger
+        - date: "2026-06-25T19:16:10Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-25T16:50:33Z comment="TT-3067 hardening: Elasticsearch TLS skip-verify is now covered by tls_verification_explicit evidence, with strict validation risk still tracked by tls-insecure-skip-verify-allowed; no runtime product behavior change.")'
           changed_by: human:buger
