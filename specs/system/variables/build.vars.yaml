@@ -18,6 +18,10 @@ variables:
       type: bool
       direction: output
       description: A FIPS-compliant binary is producible via 'make build-fips'.
+    - name: fips_release_artifact_variant_preserved
+      type: bool
+      direction: output
+      description: FIPS-labelled release packages and images are built from FIPS build/package variants, not standard variants.
 independence:
     declared: true
-    reason: 'Build requirements cover different build artifacts and constraints; regular build availability and FIPS build availability do not share mutable runtime state.'
+    reason: 'Build requirements cover different build artifacts and constraints; regular build availability, FIPS build availability, and FIPS release-artifact variant preservation do not share mutable runtime state.'

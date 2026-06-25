@@ -1,0 +1,7 @@
+id: REVIEW-206c1d0-fips-release-artifacts
+kind: design_review
+reviewer: agent:codex
+reviewed_at: "2026-06-26T00:00:00Z"
+subject: upstream:206c1d0/SYS-REQ-026+SYS-REQ-036+DEFECT-48
+decision: approved
+comment: 'Commit-level assurance review for TT-12103: FIPS support is build/security-mode and release-artifact behavior, not pump runtime data-path behavior. Existing proof covered local make build-fips availability via SYS-REQ-026, but missed the historical 206c1d0 release mismatch where FIPS-labelled Docker images referenced the standard build ID. DEFECT-48 records the fixed historical issue, and SYS-REQ-036 plus security_mode_artifact_consistent now pin that FIPS packages/images preserve FIPS build/package/base-image variants. No product runtime behavior was changed.'

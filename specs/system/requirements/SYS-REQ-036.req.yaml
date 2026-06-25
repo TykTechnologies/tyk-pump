@@ -1,0 +1,59 @@
+id: SYS-REQ-036
+version: 1
+status: approved
+priority: shall
+category: constraint
+req_type: constraint
+fretish: release shall always satisfy fips_release_artifact_variant_preserved
+description: |
+    FIPS-labelled release artifacts shall preserve the FIPS build variant:
+    tyk-pump-fips packages shall be assembled only from FIPS build IDs, FIPS
+    Docker images shall install the tyk-pump-fips package, and FIPS Docker
+    image steps shall use a FIPS base image.
+formalization_strategy: fretish
+informal_verification:
+    method: ""
+    evidence: ""
+    verified: false
+parent: STK-REQ-002
+component: build
+rationale: "Regulated operators rely on artifact names and image labels to select FIPS-compliant deployments. A FIPS tag or package name backed by a standard binary is a compliance and trust failure, even if a local FIPS build target exists."
+tags:
+    - fips
+    - release
+    - packaging
+variables: []
+traces:
+    satisfies:
+        - STK-REQ-002
+verification:
+    assurance_level: B
+    formalization_status: valid
+    review:
+        status: approved
+        reviewer: human:buger
+        role: system_engineer
+        reviewed_at: "2026-06-25T21:59:49Z"
+        comment: "Product-fix-history hardening for TT-12103: SYS-REQ-036 models FIPS-labelled release artifact variant preservation separately from local FIPS build availability, with static release-config evidence and DEFECT-48 for the historical std-build mismatch."
+        fingerprint: sha256:a99881cd94d70a8357df883bd1bc052548f74268ecae2a2a95e1db92c822170f
+        ai_generated: false
+history:
+    created_by: agent:codex
+    created_at: "2026-06-26T00:00:00Z"
+    last_modified_by: human:buger
+    last_modified_at: "2026-06-25T21:59:49Z"
+obligation_class: security_mode_artifact_consistent
+obligation_checklist:
+    - security_mode_artifact_consistent
+lifecycle:
+    change_history:
+        - date: "2026-06-26T00:00:00Z"
+          from: draft
+          to: approved
+          reason: "Product-fix-history hardening for TT-12103 FIPS release artifacts; runtime code unchanged."
+          changed_by: agent:codex
+        - date: "2026-06-25T21:59:49Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="system_engineer" reviewer="human:buger" at=2026-06-26T00:00:00Z comment="Product-fix-history hardening for TT-12103: model FIPS release-artifact variant preservation separately from local FIPS build availability, with static release-config witnesses and DEFECT-48 for the historical fips-labelled/std-built Docker mismatch.")'
+          changed_by: human:buger

@@ -1,0 +1,42 @@
+id: security_mode_artifact_consistent
+name: Security Mode Artifact Consistent
+category: domain
+status: active
+summary: Release artifacts labelled for a security mode shall be built from the matching security-mode build variant, package name, and base image.
+description: |-
+  Build and release pipelines often produce standard and security-mode variants
+  of the same service. A requirement that promises a FIPS or similar security
+  mode artifact shall prove that labels, package names, Docker image names,
+  base images, and release-build IDs stay aligned. Otherwise an artifact can be
+  published with a FIPS name while containing the standard binary or standard
+  package, which is worse than no artifact because it misleads regulated
+  operators.
+applies_when:
+  description: release configuration publishes standard and security-mode variants from distinct build IDs or package names
+  trigger_phrases:
+    - fips
+    - FIPS
+    - boringcrypto
+    - GOFIPS
+    - security mode
+    - release artifact
+example_req: |-
+  FIPS-labelled packages and Docker images shall be built only from FIPS build
+  IDs/packages and shall use FIPS base images where the Docker image is labelled
+  as FIPS.
+if_missing: |-
+  A release can advertise a security-mode artifact while embedding the standard
+  binary or package, leaving operators with a non-compliant deployment under a
+  compliant-looking tag.
+recommended_evidence:
+  - kind: nominal
+    note: Static release-config test parses the package/image configuration and proves FIPS package IDs reference only FIPS build IDs.
+  - kind: nominal
+    note: Static workflow test proves FIPS Docker image steps install the FIPS package name and use a FIPS base image.
+  - kind: regression
+    note: Historical release-config reproducer proves a FIPS-labelled image built from a standard build ID would fail the invariant.
+related_classes:
+  - id: support_matrix_enforced
+    relationship: adjacent
+  - id: config_schema_strict
+    relationship: adjacent

@@ -5,14 +5,14 @@ priority: shall
 category: functional
 req_type: guarantee
 fretish: ""
-description: Operators need analytics delivered reliably to every configured backend, such that a slow or failing backend never blocks delivery to the others and records are neither lost nor duplicated in normal operation.
+description: Operators need analytics delivered reliably to every configured backend, such that a slow or failing backend never blocks delivery to the others and records are neither lost nor duplicated in normal operation. Regulated operators also need FIPS-labelled release artifacts to preserve the FIPS build variant they select for deployment.
 formalization_strategy: informal
 informal_verification:
     method: ""
     evidence: ""
     verified: false
 component: delivery
-rationale: "Operators run multiple heterogeneous backends; isolating per-backend failures and retrying transient errors prevents one sink from causing pipeline-wide data loss."
+rationale: "Operators run multiple heterogeneous backends; isolating per-backend failures and retrying transient errors prevents one sink from causing pipeline-wide data loss. Regulated deployments additionally rely on artifact labels selecting the matching FIPS build/package variant."
 tags:
     - delivery
     - reliability
@@ -29,15 +29,15 @@ verification:
         status: approved
         reviewer: human:buger
         role: system_owner
-        reviewed_at: "2026-06-22T12:04:23Z"
-        comment: 'Review obligation expansion from catalogue gap pass; active unfixed behavior remains KnownIssue-gated.'
-        fingerprint: sha256:7761e82cd68cd294fada0becf1c499d8122b443b0a72edf21449a63f43e5bc9e
+        reviewed_at: "2026-06-25T21:59:49Z"
+        comment: 'Product-fix-history hardening for TT-12103: added explicit AC-004 for FIPS-labelled release packages/images preserving the FIPS build/package variant via SYS-REQ-036; existing delivery intent unchanged.'
+        fingerprint: sha256:9b1dbe3a1e6b3cc662da2ac27a4b5bb68d66d8372f3b71a19d00d50704f8c946
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:10:49Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-22T12:04:23Z"
+    last_modified_at: "2026-06-25T21:59:49Z"
 obligation_checklist:
     - atomicity
     - boundary
@@ -48,7 +48,7 @@ obligation_checklist:
 release_disposition: ship_with_known_issue
 stakeholder:
     persona: Platform operator
-    story: As an operator I want resilient multi-backend delivery so that one unhealthy sink does not take down my whole analytics pipeline.
+    story: As an operator I want resilient multi-backend delivery, including deployable artifacts that match their advertised security mode, so that one unhealthy sink does not take down my analytics pipeline and regulated deployments select the intended build variant.
     acceptance_criteria:
         - id: AC-001
           text: A failure or timeout writing to one backend does not prevent records being written to the other configured backends.
@@ -75,6 +75,11 @@ stakeholder:
           witness_deferred:
             reason: No truthful end-to-end acceptance test can pass until known issue write-failure-after-pop-loses-records adds a DLQ, re-enqueue path, or equivalent retention after total write failure.
             tracking: write-failure-after-pop-loses-records
+        - id: AC-004
+          text: FIPS-labelled release packages and Docker images contain the FIPS build/package variant rather than the standard variant.
+          verification_method: test
+          derived_reqs:
+            - SYS-REQ-036
 lifecycle:
     change_history:
         - date: "2026-05-29T15:46:44Z"
@@ -116,4 +121,14 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="system_owner" reviewer="human:buger" at=2026-06-22T09:51:16Z comment="Stage AC-003 acceptance witness against the existing no-DLQ known issue; no truthful passing acceptance test exists until the product behavior changes.")'
+          changed_by: human:buger
+        - date: "2026-06-26T00:00:00Z"
+          from: approved
+          to: approved
+          reason: "Product-fix-history hardening for TT-12103: add AC-004 for FIPS release-artifact variant preservation via SYS-REQ-036."
+          changed_by: agent:codex
+        - date: "2026-06-25T21:59:49Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="system_owner" reviewer="human:buger" at=2026-06-22T12:04:23Z comment="Review obligation expansion from catalogue gap pass; active unfixed behavior remains KnownIssue-gated.")'
           changed_by: human:buger

@@ -22,8 +22,12 @@ This is a project-level invariant: at every commit on `master` (and every tagged
 - `make build-fips && make validate-fips` is the build-artifact-level evidence; success means boringcrypto symbols are linked.
 - CI workflows under `.github/workflows/` should invoke the FIPS target periodically; the constraint review (`verification.review.comment`) confirmed the target is wired and verified.
 - Phase B review (`verification.review.comment`): "FIPS in Makefile."
+- Release distribution of FIPS-labelled packages/images is covered separately
+  by **SYS-REQ-036**.
 
 ## Open questions
-- The constraint asserts the build is *available*, not that every release ships a FIPS artifact. Operator-facing follow-up: which Tyk distribution channels (Docker Hub, RPM, Helm) actually publish the FIPS binary, and under what tag suffix.
+- The constraint asserts the build is *available*, not that every release ships
+  a FIPS artifact. The release-artifact variant mapping is pinned by
+  **SYS-REQ-036**.
 - `GOEXPERIMENT=boringcrypto` is itself an experimental Go feature; if upstream Go promotes or removes the experiment, the Makefile target needs updating. The req does not bind itself to the *current* Go FIPS plumbing — only to "a FIPS build is available."
 - No automated test asserts FIPS-mode behaviour against the network-using pumps (HTTPS backends); the constraint only covers buildability.

@@ -1,0 +1,81 @@
+schema_version: 1
+id: DEFECT-48
+title: FIPS-labelled Docker images were wired to standard build IDs
+introduced_in: 206c1d0
+description: |
+  Commit 206c1d0 added FIPS release support, including a `fips-linux` build
+  that used GOEXPERIMENT=boringcrypto. However, the GoReleaser Docker entries
+  whose image tags included `-fips-amd64` and `-fips-arm64` referenced
+  `ids: [std]` instead of the FIPS build ID. A release could therefore publish
+  an image labelled as FIPS while embedding the standard binary.
+
+  Commit 74f2740 removed that broken FIPS Docker/NFPM release wiring from the
+  1.10 release path. Commit 9ebef28 later reintroduced FIPS distribution with
+  Docker/package wiring based on FIPS build/package IDs. SYS-REQ-036 now pins
+  the invariant that FIPS-labelled artifacts preserve the FIPS build/package
+  variant.
+source:
+    type: upstream_commit
+    repo: TykTechnologies/tyk-pump
+    commit: 9ebef28
+    reference: tyk-pump#894
+    date: "2025-09-23"
+classification:
+    surface: build_or_packaging
+    defect_class: fips_labelled_artifact_uses_standard_build
+    severity: medium
+    security_relevant: true
+root_cause:
+    missing_requirement: true
+    missing_test_partition: true
+    missing_mcdc_variable: false
+    notes: |
+      Proof modeled local FIPS build availability (SYS-REQ-026) but not the
+      release-artifact mapping between FIPS labels, build IDs, package names,
+      and Docker base images. The missing partition is "FIPS-labelled artifact
+      backed by standard build/package".
+impact_analysis:
+    affected_requirements:
+        - SYS-REQ-026
+        - SYS-REQ-036
+    affected_code:
+        - ci/goreleaser/goreleaser.yml
+        - .github/workflows/release.yml
+        - ci/Dockerfile.distroless
+hardening:
+    new_requirements:
+        - SYS-REQ-036
+    strengthened_requirements:
+        - SYS-REQ-026
+    added_obligations:
+        - requirement: SYS-REQ-036
+          obligation_class: security_mode_artifact_consistent
+    regression_tests:
+        - build_fips_invariant_test.go:TestReleaseInvariant_FIPSArtifactsUseFIPSBuilds_SYSREQ036
+    proposed_classes:
+        - security_mode_artifact_consistent
+    code_signals: []
+disposition:
+    status: covered_by_requirement
+    requirements:
+        - SYS-REQ-036
+    known_issues: []
+    evidence:
+        verified_by:
+            - build_fips_invariant_test.go:TestReleaseInvariant_FIPSArtifactsUseFIPSBuilds_SYSREQ036
+        obligation_evidence:
+            - requirement: SYS-REQ-036
+              obligation_class: security_mode_artifact_consistent
+              evidence_type: nominal
+    reviewer: agent:codex
+    reviewed_at: "2026-06-26T00:00:00Z"
+history:
+    - at: "2026-06-26T00:00:00Z"
+      by: agent:codex
+      action: created
+      detail: |
+        Recorded 206c1d0 as a fixed historical FIPS release-artifact defect.
+        The hardening keeps runtime code unchanged, adds SYS-REQ-036 and the
+        local security_mode_artifact_consistent obligation, and ties current
+        release YAML/static workflow evidence to the FIPS artifact variant
+        invariant.

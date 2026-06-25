@@ -6,7 +6,9 @@ analytics backends (e.g. SQL for billing, Elasticsearch for search, Splunk
 for SIEM) behind a single pump. This stakeholder requirement asserts the
 operator-visible property that one unhealthy or slow sink must not take down
 delivery to the others, and that transient storage / backend faults must be
-retried rather than silently dropped on first failure.
+retried rather than silently dropped on first failure. For regulated
+deployments, it also asserts that a FIPS-labelled release artifact selects the
+FIPS build/package variant rather than the standard variant.
 
 ## Motivation
 Without backend isolation, a single misbehaving sink (an Elastic cluster in
@@ -23,15 +25,22 @@ from HTTP-based sinks should be absorbed by bounded backoff, not surfaced as
 record loss. The "bounded" part matters — unbounded retries would themselves
 become a back-pressure failure mode, so SYS-REQ-023 caps the retry attempts.
 
+The FIPS release-artifact leg is packaging-specific: regulated operators choose
+the FIPS package/image by name, so the release pipeline must preserve the FIPS
+build/package variant behind that label.
+
 ## Code references
 Decomposes into the following SYS reqs via its acceptance criteria:
 - AC-001 (per-backend isolation): `SYS-REQ-004` (independent writes per
-  backend), `SYS-REQ-005` (per-backend timeout).
+  backend), `SYS-REQ-005` (per-backend timeout), and `SYS-REQ-026` (FIPS build
+  availability).
 - AC-002 (retry bounded backoff): `SYS-REQ-006` (exponential backoff retry),
   `SYS-REQ-007` (atomic at-most-once consume from temporal store),
   `SYS-REQ-023` (surface error after max retries).
 - AC-003 (post-consume retention on total write failure): `SYS-REQ-022`
   (dispatch after temporal-store pop, carrying the DLQ/re-enqueue obligation).
+- AC-004 (FIPS release artifact consistency): `SYS-REQ-036` (FIPS release
+  artifacts preserve the FIPS build/package variant).
 
 Implementation entry points:
 - Per-backend isolation: `main.go:435` `execPumpWriting` runs each pump in
