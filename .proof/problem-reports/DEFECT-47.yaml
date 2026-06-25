@@ -60,6 +60,8 @@ disposition:
         - SW-REQ-105
     known_issues:
         - docs-kinesis-env-streamname-typo
+        - kinesis-batch-size-over-aws-putrecords-limit
+        - kinesis-putrecords-per-record-failures-return-nil
         - kinesis-random-partition-key-not-idempotent
         - kinesis-splitintobatches-zero-infinite-loop
         - mapstructure-decode-silently-drops-unknown-keys

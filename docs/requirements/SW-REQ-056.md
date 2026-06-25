@@ -1,9 +1,12 @@
 # SW-REQ-056: AWS Kinesis pump — batched PutRecords with random partition keys
 
 ## Intent
-The `KinesisPump` shall, on each purge, split records into batches of
-`BatchSize` (default 100, bounded by AWS's 500-record per-`PutRecords`
-limit), JSON-marshal each record into a Kinesis `PutRecordsRequestEntry`
+The `KinesisPump` shall apply Kinesis environment overrides during
+configuration through `TYK_PMP_PUMPS_KINESIS_META_*` by default, or through
+the custom `meta_env_prefix` when one is configured. On each purge, it shall
+split records into batches of `BatchSize` (default 100), JSON-marshal each
+record into a Kinesis
+`PutRecordsRequestEntry`
 with `PartitionKey` set to a fresh `crypto/rand` integer (for even
 MD5-based shard distribution), and submit each batch via `PutRecords` to
 the configured `StreamName`. When `KMSKeyID` is configured at Init, the
@@ -27,15 +30,30 @@ KMS encryption is considered verified only when the stream reports the same
 non-empty key id; a KMS state with a missing key id must be reconciled by
 calling `StartStreamEncryption` with the configured key.
 
+The AWS 500-record maximum for one `PutRecords` request is required but not
+currently enforced for operator values above 500. That live product gap is
+tracked by KnownIssue `kinesis-batch-size-over-aws-putrecords-limit`; the
+default `BatchSize` remains 100.
+
 ## Code references
 - `pumps/kinesis.go:23-49` — `KinesisPump`, `KinesisConf`.
+- `pumps/kinesis.go:64-74` — config decode followed by default/custom env
+  override application.
 - `pumps/kinesis.go:96-135` — `Init` KMS encryption verification path.
 - `pumps/kinesis.go:144-221` — `WriteData`; partition-key generation at
   lines 185-194 uses `rand.Int(rand.Reader, big.NewInt(1000000000))`.
-- `pumps/kinesis.go:splitIntoBatches` — `BatchSize` clamping.
+- `pumps/kinesis.go:splitIntoBatches` — configured `BatchSize` slicing.
 
 ## Evidence
 - `pumps/kinesis_test.go` (re-annotated `Verifies: SW-REQ-056`).
+- `pumps/kinesis_test.go:TestKinesisPump_DefaultEnvOverridesConfig` proves
+  `TYK_PMP_PUMPS_KINESIS_META_STREAMNAME`, `REGION`, `BATCHSIZE`, and
+  `KMSKEYID` override file/config values.
+- `pumps/kinesis_test.go:TestKinesisPump_CustomEnvPrefixOverridesConfig`
+  proves a configured `meta_env_prefix` is used instead of the default prefix.
+- `pumps/kinesis_test.go:TestKinesisSplitIntoBatches_AllowsOverAWSLimit`
+  reproduces the open KnownIssue where `batch_size > 500` can produce an
+  oversized `PutRecords` request.
 - `pumps/kinesis_test.go:TestKinesisPump_DescribeStream_KMSEncryptedMissingKeyID_StartsEncryption`
   covers the SW-REQ-105 missing-key-id boundary from TT-14473 follow-up
   `50e5f51`.
@@ -45,8 +63,8 @@ calling `StartStreamEncryption` with the configured key.
 ## Open questions
 - `WriteData` always returns `nil` even when `PutRecords` errors (line
   205-207 only logs) — cannot honestly claim `errors_propagated` at the
-  WriteData level. Per-record `ErrorCode` responses are debug-logged only.
-  Honest obligation_class is `nominal`.
+  WriteData level. Per-record `ErrorCode` responses are debug-logged only and
+  tracked by KnownIssue `kinesis-putrecords-per-record-failures-return-nil`.
 - Init does propagate errors (KMS verification, stream lookup).
 - `crypto/rand` partition key is good for distribution but expensive at
   high throughput (one syscall per record).

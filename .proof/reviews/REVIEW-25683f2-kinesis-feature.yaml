@@ -1,0 +1,7 @@
+id: REVIEW-25683f2-kinesis-feature
+kind: design_review
+reviewer: agent:codex
+reviewed_at: "2026-06-26T00:00:00Z"
+subject: upstream:25683f2/SW-REQ-017+SW-REQ-056+SW-REQ-105
+decision: approved
+comment: 'Commit-level assurance review for TT-6671: AWS Kinesis was an additive product backend feature, not DEFECT/DFX material. Current proof covers registry support via SW-REQ-017, default/custom Kinesis environment override behavior and batching/payload/partition semantics via SW-REQ-056, and later KMS behavior via SW-REQ-105. Live Kinesis gaps remain explicit KnownIssues, including random partition-key idempotency, zero-batch helper safety, API-level PutRecords error surfacing, per-record PutRecords failure surfacing, README env typo, and the newly recorded batch_size >500 AWS limit gap. No product runtime behavior was changed.'

@@ -12,6 +12,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
 // Verifies: SW-REQ-017
@@ -78,6 +79,54 @@ func TestKinesisPump_KMSKeyID_DefaultValue(t *testing.T) {
 	assert.Equal(t, "", conf.KMSKeyID)
 }
 
+// Verifies: SW-REQ-056
+// SW-REQ-056:env_override_applied:nominal
+func TestKinesisPump_DefaultEnvOverridesConfig(t *testing.T) {
+	pump := &KinesisPump{
+		kinesisConf: &KinesisConf{
+			StreamName: "config-stream",
+			Region:     "us-east-1",
+			BatchSize:  100,
+			KMSKeyID:   "config-key",
+		},
+		log: logrus.NewEntry(logrus.New()),
+	}
+
+	t.Setenv("TYK_PMP_PUMPS_KINESIS_META_STREAMNAME", "env-stream")
+	t.Setenv("TYK_PMP_PUMPS_KINESIS_META_REGION", "eu-west-1")
+	t.Setenv("TYK_PMP_PUMPS_KINESIS_META_BATCHSIZE", "250")
+	t.Setenv("TYK_PMP_PUMPS_KINESIS_META_KMSKEYID", "env-key")
+
+	processPumpEnvVars(pump, pump.log, pump.kinesisConf, kinesisDefaultENV)
+
+	assert.Equal(t, "env-stream", pump.kinesisConf.StreamName)
+	assert.Equal(t, "eu-west-1", pump.kinesisConf.Region)
+	assert.Equal(t, 250, pump.kinesisConf.BatchSize)
+	assert.Equal(t, "env-key", pump.kinesisConf.KMSKeyID)
+}
+
+// Verifies: SW-REQ-056
+// SW-REQ-056:env_override_applied:boundary
+func TestKinesisPump_CustomEnvPrefixOverridesConfig(t *testing.T) {
+	pump := &KinesisPump{
+		kinesisConf: &KinesisConf{
+			EnvPrefix:  "KINESIS_CUSTOM",
+			StreamName: "config-stream",
+			BatchSize:  100,
+		},
+		log: logrus.NewEntry(logrus.New()),
+	}
+
+	t.Setenv("KINESIS_CUSTOM_STREAMNAME", "custom-env-stream")
+	t.Setenv("KINESIS_CUSTOM_BATCHSIZE", "333")
+
+	processPumpEnvVars(pump, pump.log, pump.kinesisConf, kinesisDefaultENV)
+
+	assert.Equal(t, "KINESIS_CUSTOM", pump.GetEnvPrefix())
+	assert.Equal(t, "custom-env-stream", pump.kinesisConf.StreamName)
+	assert.Equal(t, 333, pump.kinesisConf.BatchSize)
+}
+
 // SW-REQ-056:input_size_bounded:boundary
 func TestSplitIntoBatches(t *testing.T) {
 	records := make([]interface{}, 25)
@@ -86,6 +135,16 @@ func TestSplitIntoBatches(t *testing.T) {
 	assert.Len(t, batches[0], 10)
 	assert.Len(t, batches[1], 10)
 	assert.Len(t, batches[2], 5)
+}
+
+// Verifies: KI:kinesis-batch-size-over-aws-putrecords-limit
+// Reproduces: kinesis-batch-size-over-aws-putrecords-limit
+func TestKinesisSplitIntoBatches_AllowsOverAWSLimit(t *testing.T) {
+	records := make([]interface{}, 501)
+	batches := splitIntoBatches(records, 501)
+
+	require.Len(t, batches, 1)
+	assert.Greater(t, len(batches[0]), 500, "current helper allows a batch larger than AWS PutRecords permits")
 }
 
 // Tests for the new describe stream encryption logic

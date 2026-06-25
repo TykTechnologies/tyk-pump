@@ -5,7 +5,7 @@ priority: shall
 category: functional
 req_type: guarantee
 fretish: ""
-description: The pump registry shall expose available pump prototypes by name, including the supported SQS backend name, from which the core obtains fresh instances via the Pump.New() interface method for each configured pump.
+description: The pump registry shall expose available pump prototypes by name, including the supported SQS and Kinesis backend names, from which the core obtains fresh instances via the Pump.New() interface method for each configured pump.
 formalization_strategy: informal
 informal_verification:
     method: ""
@@ -29,15 +29,15 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-25T12:40:20Z"
-        comment: 'Product-fix-history hardening for TT-10675: support_matrix_enforced now pins the SQS backend registry entry so sqs/SQS resolves to SQSPump and New returns a fresh SQSPump; SQS batch-limit and partial-failure risks remain KI-backed debt under SW-REQ-055.'
-        fingerprint: sha256:27cf71f9d3c9ace5d308633315d289913c886f90dce6f7b12145cf6c9ffbe0b7
+        reviewed_at: "2026-06-25T21:43:01Z"
+        comment: 'Reviewed 25683f2 hardening: SW-REQ-017 now pins Kinesis registry support alongside SQS support with code-annotated evidence; no runtime behavior change.'
+        fingerprint: sha256:27b7d971d6dae72ca7d4db200e393769a83ce8538eee116f8a9430fe4d590955
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:15Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-25T12:40:20Z"
+    last_modified_at: "2026-06-25T21:43:01Z"
 obligation_checklist:
     - nominal
     - support_matrix_enforced
@@ -57,4 +57,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T05:02:45Z comment="Phase J: req_type derived to guarantee. Per probelabs/reqproof#88, the ''derived'' value was a category error — the req is a behavioural commitment regardless of decomposition origin. Parent/satisfies links preserve provenance metadata.")'
+          changed_by: human:buger
+        - date: "2026-06-25T21:43:01Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-25T12:40:20Z comment="Product-fix-history hardening for TT-10675: support_matrix_enforced now pins the SQS backend registry entry so sqs/SQS resolves to SQSPump and New returns a fresh SQSPump; SQS batch-limit and partial-failure risks remain KI-backed debt under SW-REQ-055.")'
           changed_by: human:buger

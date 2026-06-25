@@ -1,0 +1,22 @@
+id: kinesis-putrecords-per-record-failures-return-nil
+title: Kinesis PutRecords per-record failures return nil
+description: Kinesis WriteData checks PutRecordsOutput.Records[].ErrorCode and logs failed records at debug level, but still returns nil to the purge caller. A successful PutRecords API response with per-record failures can therefore be treated as a successful purge even though one or more records were not accepted by Kinesis. The generic pump-writedata-swallows-per-batch-errors KI covers API-level PutRecords errors; this Kinesis-specific KI tracks the successful-response/per-record failure path.
+affected_requirements:
+    - SW-REQ-056
+commands:
+    - rg -n 'record\.ErrorCode|return nil|PutRecords' pumps/kinesis.go
+severity: medium
+severity_basis: risk
+risk: data_integrity
+reproducer_command: rg -n 'record\.ErrorCode|return nil|PutRecords' pumps/kinesis.go
+introduced_in: 25683f2
+mitigation: Monitor Kinesis failed-record metrics/logs and keep batches small enough for operational retry handling until WriteData surfaces per-record failures to the purge caller.
+remediation: Inspect PutRecordsOutput.FailedRecordCount and Records[].ErrorCode, return a non-nil error or retry/report failed records, and add mocked evidence that per-record failures are observable to the caller.
+owner: tyk-team
+review_date: "2026-11-30"
+release_disposition: ship_with_known_issue
+status: open
+history:
+    - at: "2026-06-25T21:48:06Z"
+      by: agent:codex
+      action: created

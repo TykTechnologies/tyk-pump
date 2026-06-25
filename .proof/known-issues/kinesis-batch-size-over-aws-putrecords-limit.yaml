@@ -1,0 +1,22 @@
+id: kinesis-batch-size-over-aws-putrecords-limit
+title: Kinesis batch_size can exceed AWS PutRecords 500-record limit
+description: SW-REQ-056 previously described Kinesis BatchSize as bounded by AWS's 500-record PutRecords limit, but the implementation applies only the configured value/default 100 and splitIntoBatches does not clamp values above 500. A configuration such as batch_size=501 can produce one PutRecords request with 501 records, which AWS rejects before any per-record delivery semantics apply.
+affected_requirements:
+    - SW-REQ-056
+commands:
+    - go test ./pumps -run '^TestKinesisSplitIntoBatches_AllowsOverAWSLimit$' -count=1
+severity: medium
+severity_basis: risk
+risk: data_integrity
+reproducer_command: go test ./pumps -run '^TestKinesisSplitIntoBatches_AllowsOverAWSLimit$' -count=1
+introduced_in: 25683f2
+mitigation: Configure Kinesis batch_size at 500 or lower; the default path uses 100. Avoid operator values above the AWS PutRecords maximum until validation/clamping is implemented.
+remediation: Reject or clamp batch_size values above 500 during Kinesis Init, update SW-REQ-056 evidence, and add a regression proving no PutRecords request can exceed 500 entries.
+owner: tyk-team
+review_date: "2026-11-30"
+release_disposition: ship_with_known_issue
+status: open
+history:
+    - at: "2026-06-25T21:41:37Z"
+      by: agent:codex
+      action: created

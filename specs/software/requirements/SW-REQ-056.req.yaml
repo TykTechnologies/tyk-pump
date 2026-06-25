@@ -5,7 +5,7 @@ priority: shall
 category: functional
 req_type: guarantee
 fretish: when kms_key_configured pumps_aws_kinesis shall always satisfy stream_encryption_verified
-description: The Kinesis pump shall, on each purge, split records into batches of BatchSize (default 100, bounded by AWS's 500-record per-PutRecords limit), JSON-marshal each record into a Kinesis PutRecordsRequestEntry with PartitionKey set to a fresh crypto/rand integer (for even MD5-based shard distribution), and submit each batch via PutRecords to the configured StreamName. When KMSKeyID is configured at Init, the pump shall verify the stream's current encryption mode/key, enable KMS server-side encryption if not already enabled with that key, and fail Init if the stream is already encrypted with a different key.
+description: The Kinesis pump shall, during configuration, apply TYK_PMP_PUMPS_KINESIS_META_* environment overrides by default and the custom meta_env_prefix when configured. On each purge, it shall split records into batches of BatchSize (default 100), JSON-marshal each record into a Kinesis PutRecordsRequestEntry with PartitionKey set to a fresh crypto/rand integer (for even MD5-based shard distribution), and submit each batch via PutRecords to the configured StreamName. The AWS 500-record PutRecords maximum is a required operational bound but is currently tracked as KnownIssue kinesis-batch-size-over-aws-putrecords-limit until Init rejects or clamps oversized batch_size values. When KMSKeyID is configured at Init, the pump shall verify the stream's current encryption mode/key, enable KMS server-side encryption if not already enabled with that key, and fail Init if the stream is already encrypted with a different key.
 formalization_strategy: fretish
 informal_verification:
     method: ""
@@ -29,17 +29,18 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-03T07:40:02Z"
-        comment: 'Phase Q: catalog obligation attachments — adds external_call_timeout_bounded, idempotency_key_honored (Kinesis partition-key dedup contract). See .proof/catalog-obligation-proposals.md.'
-        fingerprint: sha256:b45ea2553796d2371ae3785a514306ee469e82bd3853acbd5864d5af34196826
-        ai_generated: true
+        reviewed_at: "2026-06-25T21:50:24Z"
+        comment: 'Reviewed 25683f2 hardening: SW-REQ-056 now pins Kinesis default/custom env overrides, keeps AWS 500-record and zero-batch limits as KI debt, and tracks PutRecords per-record failure surfacing as KnownIssue debt; no runtime behavior change.'
+        fingerprint: sha256:20c56e0d8ddf6eed0fe3fe0b944c890cdc63d5a7e38399949ecf34aabdddf578
+        ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:37:04Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-22T11:07:13Z"
+    last_modified_at: "2026-06-25T21:50:24Z"
 obligation_checklist:
     - config_schema_strict
+    - env_override_applied
     - errors_propagated
     - external_call_timeout_bounded
     - idempotency_key_honored
@@ -75,7 +76,12 @@ obligation_deferrals:
       owner: human:buger
       ki_ref: kinesis-random-partition-key-not-idempotent
     - obligation_class: input_size_bounded
-      reason: real untested obligation under known-issue kinesis-splitintobatches-zero-infinite-loop; surfaced as visible tracked debt, not an overclaimed fix
+      reason: Kinesis Init does not reject or clamp batch_size values above AWS's 500-record PutRecords limit.
+      tracking: kinesis-batch-size-over-aws-putrecords-limit
+      owner: human:buger
+      ki_ref: kinesis-batch-size-over-aws-putrecords-limit
+    - obligation_class: input_size_bounded
+      reason: Kinesis splitIntoBatches is not self-defending for batchSize=0 when called outside the production Init defaulting path.
       tracking: kinesis-splitintobatches-zero-infinite-loop
       owner: human:buger
       ki_ref: kinesis-splitintobatches-zero-infinite-loop
@@ -95,11 +101,11 @@ obligation_deferrals:
       owner: human:buger
       ki_ref: kinesis-random-partition-key-not-idempotent
     - obligation_class: partial_progress_observable
-      reason: Kinesis PutRecords per-record failures are logged but WriteData returns nil, so partial batch progress is not surfaced until pump-writedata-swallows-per-batch-errors is fixed.
-      tracking: pump-writedata-swallows-per-batch-errors
+      reason: Kinesis PutRecords per-record failures are logged but WriteData returns nil, so partial batch progress is not surfaced to the purge caller.
+      tracking: kinesis-putrecords-per-record-failures-return-nil
       owner: human:buger
-      ki_ref: pump-writedata-swallows-per-batch-errors
-      reproducer: pump-writedata-swallows-per-batch-errors
+      ki_ref: kinesis-putrecords-per-record-failures-return-nil
+      reproducer: kinesis-putrecords-per-record-failures-return-nil
     - obligation_class: process_exit_on_recoverable
       reason: real untested obligation under known-issue pumps-logfatal-on-config-decode; surfaced as visible tracked debt, not an overclaimed fix
       tracking: pumps-logfatal-on-config-decode
@@ -132,3 +138,13 @@ lifecycle:
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-02T13:51:46Z comment="Phase L2: aggressive formalization — encodes logzio Token-required and kinesis KMS-key gate decisions; variables in component vars files.")'
           changed_by: human:cli
+        - date: "2026-06-25T21:43:01Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-03T07:40:02Z comment="Phase Q: catalog obligation attachments — adds external_call_timeout_bounded, idempotency_key_honored (Kinesis partition-key dedup contract). See .proof/catalog-obligation-proposals.md.")'
+          changed_by: human:buger
+        - date: "2026-06-25T21:50:24Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-25T21:43:01Z comment="Reviewed 25683f2 hardening: SW-REQ-056 no longer overclaims AWS 500-record enforcement; oversized Kinesis batch_size is tracked as KnownIssue debt and registry/feature evidence remains proof-only.")'
+          changed_by: human:buger
