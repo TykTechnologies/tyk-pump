@@ -5,11 +5,13 @@ affected_requirements:
     - SW-REQ-040
     - INT-REQ-007
 evidence_manifests:
+    - test:pumps/known_issue_tripwire_test.go:TestSQLMySQLCreateIndexIfNotExists_KI
     - .proof/evidence/ki-sql-standard-mysql-create-index-if-not-exists-unsupported.yaml
 severity: medium
 severity_basis: risk
 risk: correctness
-reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored rg -n 'createIndex|CREATE INDEX|IF NOT EXISTS|dbType == "postgres"' pumps/sql.go specs/software/requirements/SW-REQ-040.req.yaml specs/interface/requirements/INT-REQ-007.req.yaml
+reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored go test -p=1 -count=1 -timeout=180s -run '^TestSQLMySQLCreateIndexIfNotExists_KI$' ./pumps
+environment_note: Run the focused static tripwire; it pins the current source shape where only CONCURRENTLY is Postgres-gated and IF NOT EXISTS remains in the standard SQL index DDL template used by non-Postgres paths.
 introduced_in: inception
 mitigation: Operators using MySQL should pre-create the expected shard indexes out-of-band, verify startup/shard-creation logs, or use a backend/version known to accept the emitted index DDL.
 remediation: Gate IF NOT EXISTS by dialect/version, or use a backend-specific HasIndex pre-check plus plain CREATE INDEX for MySQL-compatible backends.
@@ -30,3 +32,7 @@ history:
       by: agent:codex
       action: edit
       detail: set-reproducer-command,add-evidence-manifest
+    - at: "2026-06-26T17:17:35Z"
+      by: agent:codex
+      action: edit
+      detail: add-static-mysql-index-ddl-tripwire

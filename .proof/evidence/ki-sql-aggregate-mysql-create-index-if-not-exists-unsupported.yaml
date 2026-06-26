@@ -3,14 +3,15 @@ profile: known_issue_reproducer
 requirements:
     - SW-REQ-066
     - SW-REQ-041
-command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored rg -n 'CREATE INDEX .*IF NOT EXISTS|dbType == "postgres"|OmitIndexCreation|ensureIndex' pumps/sql_aggregate.go specs/software/requirements/SW-REQ-066.req.yaml
+command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored go test -p=1 -count=1 -timeout=180s -run '^TestSQLMySQLCreateIndexIfNotExists_KI$' ./pumps
 status: pass
 observed_result: known_issue_reproduced
-executed_at: "2026-06-26T15:14:18Z"
+executed_at: "2026-06-26T17:19:08Z"
 input_set:
-    - KI sql-aggregate-mysql-create-index-if-not-exists-unsupported static DDL scan
+    - KI sql-aggregate-mysql-create-index-if-not-exists-unsupported SQL aggregate MySQL index DDL tripwire
 freshness_hashes:
     proof.yaml: sha256:18dd484cb75c5c729bc063c96426b101df78e0c89ec729e39724c18f50367e0e
+    pumps/known_issue_tripwire_test.go: sha256:7486d5679e38877b584d2711ccd151590b0cef40cdfe3cc3d7624a2344d0057e
     pumps/sql_aggregate.go: sha256:85f542163368da6dc4bd0eaa0aa74bc0b04e3ec69bf64df49ab67a8742b7c92a
     specs/software/requirements/SW-REQ-066.req.yaml: sha256:7035e28530091f257696d6684ce96d2c6f63cabe609a143984bf25b1fdc74c67
 known_issues:

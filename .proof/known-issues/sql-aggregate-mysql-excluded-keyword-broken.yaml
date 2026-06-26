@@ -7,12 +7,13 @@ affected_requirements:
     - SW-REQ-045
 evidence_manifests:
     - code_signal:opengrep:go.sql.formatted-write-exec:pumps/sql_aggregate.go:164
+    - test:pumps/known_issue_tripwire_test.go:TestSQLAggregateMySQLExcludedKeyword_KI
     - .proof/evidence/ki-sql-aggregate-mysql-excluded-keyword-broken.yaml
 severity: medium
 severity_basis: risk
 risk: correctness
-reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored rg -n 'OnConflictAssignments\(.*"excluded"|clause\.OnConflict|Create\(' pumps/sql_aggregate.go pumps/graph_sql_aggregate.go pumps/mcp_sql_aggregate.go
-environment_note: Evidence is tied to the listed evidence_manifests entries; reproduce by rerunning the named test or code-signal scan and inspecting code_signal:opengrep:go.sql.formatted-write-exec:pumps/sql_aggregate.go:164.
+reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored go test -p=1 -count=1 -timeout=180s -run '^TestSQLAggregateMySQLExcludedKeyword_KI$' ./pumps
+environment_note: Run the focused static tripwire; it pins the shared OnConflictAssignments helper's temp-table qualification and the SQL Aggregate, Graph SQL Aggregate, and MCP SQL Aggregate callers still passing the Postgres-specific "excluded" qualifier.
 introduced_in: inception
 mitigation: Operators using MySQL must avoid sql_aggregate, graph_sql_aggregate, and mcp_sql_aggregate pumps; only the non-aggregating sql and graph_sql and mcp_sql pumps work end-to-end on MySQL.
 remediation: Detect the MySQL dialect in DoAggregatedWriting and rebuild the assignment map using gorm''s clause.Values("col") or VALUES(col) instead of excluded.col. Alternatively expose a dialect-aware on-conflict helper in analytics that returns the correct assignment form per dialect.
@@ -44,3 +45,7 @@ history:
       by: agent:codex
       action: edit
       detail: set-reproducer-command,add-evidence-manifest
+    - at: "2026-06-26T17:17:35Z"
+      by: agent:codex
+      action: edit
+      detail: add-static-excluded-keyword-tripwire

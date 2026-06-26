@@ -81,6 +81,77 @@ func TestSQLFamilyBatchSizeNonPositive_KI(t *testing.T) {
 	}
 }
 
+// TestSQLMySQLCreateIndexIfNotExists_KI is a static tripwire for the SQL-family
+// MySQL index DDL KnownIssues. It pins the current source shape where only
+// CONCURRENTLY is Postgres-gated and IF NOT EXISTS remains in the DDL template
+// used for non-Postgres paths.
+// Verifies: SW-REQ-040
+// Verifies: SW-REQ-041
+// Verifies: SW-REQ-066
+// Verifies: INT-REQ-007
+// Verifies: KI:sql-standard-mysql-create-index-if-not-exists-unsupported
+// Verifies: KI:sql-aggregate-mysql-create-index-if-not-exists-unsupported
+// Reproduces: sql-standard-mysql-create-index-if-not-exists-unsupported
+// Reproduces: sql-aggregate-mysql-create-index-if-not-exists-unsupported
+func TestSQLMySQLCreateIndexIfNotExists_KI(t *testing.T) {
+	cases := []struct {
+		path      string
+		receiver  string
+		ddlRegexp string
+	}{
+		{
+			path:      "sql.go",
+			receiver:  `c\.dbType == "postgres"`,
+			ddlRegexp: `CREATE INDEX %s IF NOT EXISTS %s ON %s \(%s\)`,
+		},
+		{
+			path:      "sql_aggregate.go",
+			receiver:  `c\.dbType == "postgres"`,
+			ddlRegexp: `CREATE INDEX %s IF NOT EXISTS %s ON %s \(dimension, timestamp, org_id, dimension_value\)`,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.path, func(t *testing.T) {
+			source := readPumpSource(t, tc.path)
+
+			require.Regexp(t, regexp.MustCompile(tc.receiver), source)
+			require.Regexp(t, regexp.MustCompile(tc.ddlRegexp), source)
+			require.NotRegexp(t,
+				regexp.MustCompile(`dbType\s*==\s*"mysql"|Dialector\(\)\.Name\(\)\s*==\s*"mysql"`),
+				source,
+			)
+		})
+	}
+}
+
+// TestSQLAggregateMySQLExcludedKeyword_KI is a static tripwire for the
+// aggregate-family MySQL upsert KnownIssue. It pins the shared helper's
+// temp-table qualification and the three aggregate callers still passing the
+// Postgres-specific "excluded" qualifier.
+// Verifies: SW-REQ-041
+// Verifies: SW-REQ-043
+// Verifies: SW-REQ-045
+// Verifies: KI:sql-aggregate-mysql-excluded-keyword-broken
+// Reproduces: sql-aggregate-mysql-excluded-keyword-broken
+func TestSQLAggregateMySQLExcludedKeyword_KI(t *testing.T) {
+	helper := readPumpSource(t, "../analytics/aggregate.go")
+	require.Regexp(t,
+		regexp.MustCompile(`(?s)func OnConflictAssignments\(tableName, tempTable string\).*tempTable \+ "\." \+ colName`),
+		helper,
+	)
+
+	for _, path := range []string{"sql_aggregate.go", "graph_sql_aggregate.go", "mcp_sql_aggregate.go"} {
+		t.Run(path, func(t *testing.T) {
+			source := readPumpSource(t, path)
+
+			require.Contains(t, source, "clause.OnConflict")
+			require.Contains(t, source, `analytics.OnConflictAssignments(table, "excluded")`)
+			require.NotRegexp(t, regexp.MustCompile(`dbType\s*==\s*"mysql"|VALUES\(|clause\.Expr`), source)
+		})
+	}
+}
+
 // TestLogzioPumpMissingShutdownFlush_KI is a static tripwire for the Logz.io
 // half of logzio-segment-no-shutdown-flush.
 // Verifies: STK-REQ-002
