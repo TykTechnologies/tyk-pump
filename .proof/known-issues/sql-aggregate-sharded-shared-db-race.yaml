@@ -10,7 +10,8 @@ evidence_manifests:
 severity: medium
 severity_basis: risk
 risk: data_integrity
-reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored rg -n 'c\.db = c\.db\.Table|func \(c \*SQLAggregatePump\) ensure(Index|Table)|CREATE INDEX|backgroundIndexCreated' pumps/sql_aggregate.go
+reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored go test -race -p=1 -count=1 -timeout=180s -run '^TestSQLAggregatePump_WriteDataShardedSharedDBRace_KI$' ./pumps
+environment_note: Reproducer is a race-build subprocess witness. The parent test passes only when the race-instrumented child reports DATA RACE from concurrent sharded SQLAggregatePump.WriteData calls sharing one pump instance; it uses a SQLite temp-file database, precreated shard tables, and no containers.
 introduced_in: inception
 mitigation: Avoid invoking WriteData concurrently on the same SQLAggregatePump instance when table sharding can create or switch aggregate tables; serialize purge writes per pump until the shared DB state is isolated.
 remediation: Use per-call GORM sessions/table handles for sharded SQL aggregate writes and table/index creation, or protect the mutable pump DB state with synchronization, then add a go test -race witness for concurrent sharded writes.
@@ -38,3 +39,7 @@ history:
       by: agent:codex
       action: edit
       detail: set-reproducer-command,add-evidence-manifest
+    - at: "2026-06-26T19:41:57Z"
+      by: agent:codex
+      action: evidence_hardened
+      detail: replaced static shared DB mutation scan with TestSQLAggregatePump_WriteDataShardedSharedDBRace_KI race witness

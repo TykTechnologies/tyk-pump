@@ -4,14 +4,15 @@ requirements:
     - SW-REQ-064
     - SW-REQ-065
     - SW-REQ-066
-command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored rg -n 'c\.db = c\.db\.Table|func \(c \*SQLAggregatePump\) ensure(Index|Table)|CREATE INDEX|backgroundIndexCreated' pumps/sql_aggregate.go
+command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored go test -race -p=1 -count=1 -timeout=180s -run '^TestSQLAggregatePump_WriteDataShardedSharedDBRace_KI$' ./pumps
 status: pass
 observed_result: known_issue_reproduced
-executed_at: "2026-06-26T15:39:38Z"
+executed_at: "2026-06-26T19:42:32Z"
 input_set:
-    - KI sql-aggregate-sharded-shared-db-race static shared DB mutation scan
+    - KI sql-aggregate-sharded-shared-db-race race detector subprocess witness
 freshness_hashes:
     proof.yaml: sha256:18dd484cb75c5c729bc063c96426b101df78e0c89ec729e39724c18f50367e0e
     pumps/sql_aggregate.go: sha256:85f542163368da6dc4bd0eaa0aa74bc0b04e3ec69bf64df49ab67a8742b7c92a
+    pumps/sql_aggregate_sharded_shared_db_race_ki_test.go: sha256:42a5bfb7b95b41cfd506f301d26689937cf589fd6cda58e8ddbabc648e82ffce
 known_issues:
     - sql-aggregate-sharded-shared-db-race

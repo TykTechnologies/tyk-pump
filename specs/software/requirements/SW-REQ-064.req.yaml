@@ -63,7 +63,7 @@ obligation_deferrals:
       tracking: sql-aggregate-sharded-shared-db-race
       owner: agent:codex
       ki_ref: sql-aggregate-sharded-shared-db-race
-      reproducer: rg -n "c\.db = c\.db\.Table|func \(c \*SQLAggregatePump\) ensure(Index|Table)|CREATE INDEX|backgroundIndexCreated" pumps/sql_aggregate.go
+      reproducer: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored go test -race -p=1 -count=1 -timeout=180s -run '^TestSQLAggregatePump_WriteDataShardedSharedDBRace_KI$' ./pumps
     - obligation_class: config_schema_strict
       reason: 'Pump configuration unknown-field rejection is required but currently not implemented: mapstructure.Decode silently ignores unknown keys and operator typos until known issue mapstructure-decode-silently-drops-unknown-keys is fixed.'
       tracking: mapstructure-decode-silently-drops-unknown-keys

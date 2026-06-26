@@ -6,14 +6,15 @@ affected_requirements:
     - SW-REQ-002
     - SW-REQ-016
 evidence_manifests:
+    - test:main_startup_known_issue_test.go:TestMainStartupTransientStorageErrorsCallFatal_KI
     - test:pumps/cascade_circuit_breaker_test.go
     - test:pumps/fanout_panic_isolated_test.go
     - .proof/evidence/ki-main-startup-logfatal-on-transient-backend.yaml
 severity: medium
 severity_basis: risk
 risk: availability
-reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored rg -n 'Fatalf?\(|NewTemporalStorageHandler|\.Init\(\)' main.go
-environment_note: Evidence is tied to the listed evidence_manifests entries; reproduce by rerunning the named test or code-signal scan and inspecting test:pumps/cascade_circuit_breaker_test.go.
+reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored go test -p=1 -count=1 -timeout=180s -run '^TestMainStartupTransientStorageErrorsCallFatal_KI$' .
+environment_note: Static source tripwire only; no Redis, storage backend, subprocess, external service, or container is required. The test pins the setupAnalyticsStore and storeVersion transient storage constructor/Init error branches that still call Fatal.
 introduced_in: inception
 mitigation: Operators must ensure Redis (analytics_storage), pump backends, and version-check storage are all reachable before starting tyk-pump. Container/orchestrator restart loops mitigate transient unavailability but increase startup latency and produce noisy crash-loop alerts. Pin configs and validate analytics_storage_type + log_level config strings in CI.
 remediation: Refactor startup helpers to return errors rather than log.Fatal. Specifically replace log.Fatal at main.go:130, 136, 148, 155, 173, 180 (the transient-backend sites) with wrapped error returns; have main() retry with backoff (same pattern as the purge loop). Sites at main.go:111 (invalid log level), main.go:161 (invalid analytics_storage_type), and main.go:230 (zero pumps configured) are genuine fail-fast cases and may keep log.Fatal, though replacing with a structured exit code + log.Error message is preferred so supervisors can distinguish config errors from transient errors. Pairs with pumps-logfatal-on-config-decode (pump Init) and logfatal-on-statsd-setup (instrumentation).
@@ -42,4 +43,8 @@ history:
       by: agent:codex
       action: edit
       detail: set-reproducer-command,add-evidence-manifest
+    - at: "2026-06-26T19:50:00Z"
+      by: agent:codex
+      action: harden-evidence
+      detail: add-focused-main-startup-storage-fatal-tripwire
 verifying_test: ast-scanner in Wave 3a reproducer (process_exit_on_recoverable obligation)
