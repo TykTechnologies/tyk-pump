@@ -5,12 +5,12 @@ requirements:
 command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored go test -p=1 -count=1 -timeout=180s -run '^TestExecPumpWritingZeroTimeoutCanBlock_KI$' .
 status: pass
 observed_result: known_issue_reproduced
-executed_at: "2026-06-26T18:03:49Z"
+executed_at: "2026-06-26T18:08:59Z"
 input_set:
     - KI pump-no-timeout-can-block-purge-cycle zero-timeout blocking tripwire
 freshness_hashes:
     main.go: sha256:7a4ae4a95012e40d7182ef458154ce8a83e224b53b1d390ceff72f943642dbf1
-    main_test.go: sha256:46a5772b0e54531d3e0cf8a397c73028ec9ab9faecd140b5cdcfde00825d7bef
+    main_test.go: sha256:da89404cd1a4a3b808f4aece34f4aab3b1e41cf1e3818e07b01c845e5cf9613a
     proof.yaml: sha256:18dd484cb75c5c729bc063c96426b101df78e0c89ec729e39724c18f50367e0e
 known_issues:
     - pump-no-timeout-can-block-purge-cycle

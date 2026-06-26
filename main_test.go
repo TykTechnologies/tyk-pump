@@ -7,8 +7,10 @@ import (
 	"errors"
 	"net"
 	"os"
+	"os/exec"
 	"os/signal"
 	"regexp"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"syscall"
@@ -1048,6 +1050,47 @@ func TestPreprocessAnalyticsValuesSkipsDecodeErrors(t *testing.T) {
 		instrument.NewJob("decode-error"),
 		time.Now(),
 		1,
+	)
+}
+
+// Verifies: SW-REQ-001
+// Verifies: KI:preprocess-decode-error-leaves-nil-hole-in-keys
+// Reproduces: preprocess-decode-error-leaves-nil-hole-in-keys
+// SW-REQ-001:nil_safety:negative
+func TestPreprocessDecodeErrorNilHolePanicsWithFilteringPump_KI(t *testing.T) {
+	if os.Getenv("TYK_PUMP_PREPROCESS_NIL_HOLE_CHILD") == "1" {
+		pump := &MockedPump{}
+		pump.SetIgnoreFields([]string{"api_id"})
+		Pumps = []pumps.Pump{pump}
+		PreprocessAnalyticsValues(
+			[]interface{}{"not-msgpack"},
+			serializer.NewAnalyticsSerializer(serializer.MSGP_SERIALIZER),
+			"analytics-key",
+			false,
+			instrument.NewJob("nil-hole"),
+			time.Now(),
+			1,
+		)
+		t.Fatal("PreprocessAnalyticsValues returned; expected nil-hole panic in filtering pump")
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, os.Args[0], "-test.run", "^TestPreprocessDecodeErrorNilHolePanicsWithFilteringPump_KI$")
+	cmd.Env = append(os.Environ(), "TYK_PUMP_PREPROCESS_NIL_HOLE_CHILD=1")
+	output, err := cmd.CombinedOutput()
+	if ctx.Err() == context.DeadlineExceeded {
+		t.Fatalf("child process hung waiting for nil-hole panic; output:\n%s", output)
+	}
+	if err == nil {
+		t.Fatalf("child process exited successfully; expected nil-hole panic; output:\n%s", output)
+	}
+	out := string(output)
+	require.Contains(t, out, "panic:")
+	require.True(t,
+		strings.Contains(out, "interface {} is nil") && strings.Contains(out, "analytics.AnalyticsRecord"),
+		"child output should show nil interface assertion to AnalyticsRecord; output:\n%s", output,
 	)
 }
 
