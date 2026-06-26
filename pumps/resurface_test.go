@@ -267,6 +267,46 @@ func TestResurfacePump_WriteDataBlocksWhenEnabledQueueFull_KI(t *testing.T) {
 }
 
 // Verifies: SW-REQ-054
+// Verifies: KI:resurface-worker-errors-swallowed
+// Reproduces: resurface-worker-errors-swallowed
+func TestResurfacePump_WorkerErrorsSwallowed_KI(t *testing.T) {
+	pmp, _ := SetUp(t, "", make([]string, 0), "include debug")
+
+	err := pmp.WriteData(context.Background(), []interface{}{
+		"not-an-analytics-record",
+		analytics.AnalyticsRecord{
+			Host:        "bad-resurface",
+			Method:      "GET",
+			RawRequest:  "not base64",
+			RawResponse: rawResp,
+			TimeStamp:   time.Now(),
+		},
+	})
+	assert.NoError(t, err)
+	assert.NoError(t, pmp.Flush())
+	assert.Empty(t, pmp.logger.Queue())
+}
+
+// Verifies: SW-REQ-054
+// Verifies: KI:resurface-disabled-writedata-closes-channel
+// Reproduces: resurface-disabled-writedata-closes-channel
+func TestResurfacePump_DisabledCloseLeavesClosedChannelPanicState_KI(t *testing.T) {
+	pmp := &ResurfacePump{
+		data:    make(chan []interface{}, 1),
+		enabled: false,
+		CommonPumpConfig: CommonPumpConfig{
+			log: logrus.NewEntry(logrus.New()),
+		},
+	}
+	assert.NoError(t, pmp.WriteData(context.Background(), nil))
+
+	pmp.enabled = true
+	assert.Panics(t, func() {
+		_ = pmp.WriteData(context.Background(), []interface{}{analytics.AnalyticsRecord{APIID: "after-close"}})
+	})
+}
+
+// Verifies: SW-REQ-054
 // MCDC SW-REQ-054: queue_full_and_enabled=F, submit_skipped=F => TRUE
 func TestResurfaceWriteCustomFields(t *testing.T) {
 	pmp, _ := SetUp(t, "", make([]string, 0), "include debug")

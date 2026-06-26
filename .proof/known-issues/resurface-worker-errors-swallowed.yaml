@@ -4,11 +4,13 @@ description: pumps/resurface.go sends batches into an internal worker channel an
 affected_requirements:
     - SW-REQ-054
 evidence_manifests:
+    - test:pumps/resurface_test.go:TestResurfacePump_WorkerErrorsSwallowed_KI
     - .proof/evidence/ki-resurface-worker-errors-swallowed.yaml
 severity: medium
 severity_basis: risk
 risk: data_integrity
-reproducer_command: rg -n "func \(rp \*ResurfacePump\) worker|rp\.data <- data|Error decoding analytic record|rp\.log\.Error\(err\)|func \(rp \*ResurfacePump\) WriteData" pumps/resurface.go
+reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored go test -p=1 -count=1 -timeout=180s -run '^TestResurfacePump_WorkerErrorsSwallowed_KI$' ./pumps
+environment_note: Run the focused Resurface tripwire; it enqueues malformed worker inputs, observes nil WriteData and Flush returns, and confirms no Resurface message is queued.
 introduced_in: 8ca8646
 mitigation: Monitor Resurface pump logs and downstream ingestion metrics; keep queue pressure low so failures are operator-visible before data loss accumulates.
 remediation: Return a typed enqueue/submission error from WriteData or add a worker error accounting channel with partial-progress metrics and retry/DLQ handling.
@@ -32,3 +34,11 @@ history:
       by: agent:codex
       action: edit
       detail: add-evidence-manifest
+    - at: "2026-06-26T17:01:00Z"
+      by: agent:codex
+      action: edit
+      detail: set-reproducer-command,add-test-evidence-link
+    - at: "2026-06-26T16:52:57Z"
+      by: agent:codex
+      action: edit
+      detail: set-reproducer-command
