@@ -5,7 +5,7 @@ priority: shall
 category: functional
 req_type: guarantee
 fretish: when valid_custom_metrics_configured pumps_prometheus shall always satisfy custom_metric_instances_preserved
-description: When the Prometheus pump initializes custom metrics, every valid configured custom metric shall append exactly one distinct runtime metric instance that preserves that metric's configured name, type, labels, aggregate-observation setting, and initialized collector; invalid custom metric definitions shall be skipped without preventing valid sibling metrics from being initialized.
+description: When the Prometheus pump initializes custom metrics, every valid configured custom metric shall append exactly one distinct runtime metric instance backed by its own configuration entry and preserve that metric's configured name, type, labels, aggregate-observation setting, enabled state, and initialized collector; invalid custom metric definitions shall be skipped without preventing valid sibling metrics from being initialized.
 formalization_strategy: fretish
 informal_verification:
     method: ""
@@ -28,24 +28,27 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-25T17:51:26Z"
-        comment: 'TT-6343 hardening: reviewed Prometheus custom metric identity requirement, custom_metric_identity_preserved evidence, DEFECT-30 closure, and no broad range-variable static signal due current Go semantics; no runtime product behavior change.'
-        fingerprint: sha256:cbf222c4f4ab985aa2038de1bbda7d2b486fb5ffa27979589c433533d6a6423f
+        reviewed_at: "2026-06-26T00:10:31Z"
+        comment: 'Reviewed TT-6343 follow-up: SW-REQ-094 now requires custom metrics to remain distinct backing configuration entries with enabled, aggregate-observation, collector, name, type, and label state preserved, and invalid siblings covered on both sides. No runtime product behavior change.'
+        fingerprint: sha256:0f9a6b9b42ed86d3d7eda8cfa216c97649e706bfa283a3dd0422409d6099eb2e
         ai_generated: false
 history:
     created_by: human:buger
     created_at: "2026-06-25T17:46:19Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-25T17:51:26Z"
+    last_modified_at: "2026-06-26T00:10:31Z"
 obligation_checklist:
     - custom_metric_identity_preserved
 stakeholder:
     acceptance_criteria:
         - id: AC-001
-          text: Multiple valid Prometheus custom metrics initialize as distinct runtime metric instances whose names, labels, metric types, and collectors remain separate.
+          text: Multiple valid Prometheus custom metrics initialize as distinct runtime metric instances backed by their own configuration entries, whose names, labels, metric types, enabled states, aggregate-observation settings, and collectors remain separate.
           verification_method: test
         - id: AC-002
           text: An invalid Prometheus custom metric definition is skipped without preventing a valid sibling custom metric from being initialized and retained.
+          verification_method: test
+        - id: AC-003
+          text: Invalid Prometheus custom metric definitions are non-blocking whether they appear before or after a valid sibling metric.
           verification_method: test
 lifecycle:
     change_history:
@@ -58,4 +61,9 @@ lifecycle:
           from: draft
           to: review
           reason: '[1cdc76c] TT-6343 Prometheus custom metric identity requirement ready for review'
+          changed_by: human:buger
+        - date: "2026-06-26T00:10:31Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-25T17:51:26Z comment="TT-6343 hardening: reviewed Prometheus custom metric identity requirement, custom_metric_identity_preserved evidence, DEFECT-30 closure, and no broad range-variable static signal due current Go semantics; no runtime product behavior change.")'
           changed_by: human:buger

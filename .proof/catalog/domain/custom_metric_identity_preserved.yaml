@@ -2,13 +2,13 @@ id: custom_metric_identity_preserved
 name: Custom metric identity preserved
 category: domain
 status: active
-summary: Each configured custom metric shall initialize and retain its own runtime metric identity.
+summary: Each configured custom metric shall initialize and retain its own backed runtime metric identity.
 description: |-
   Custom metrics are operator-defined backend schema. When a pump converts
   configured metric definitions into runtime metric instances, it must preserve
-  one distinct instance per valid configuration element. A collapsed metric
-  identity can produce the right count while exposing or updating the wrong
-  metric names, labels, or collectors.
+  one distinct instance backed by each valid configuration element. A collapsed
+  or copied metric identity can produce the right count while exposing or
+  updating the wrong metric names, labels, aggregate behavior, or collectors.
 applies_when:
   description: a pump initializes operator-defined metrics, collectors, or schema objects for later updates
   trigger_phrases:
@@ -19,20 +19,21 @@ applies_when:
     - runtime metric identity
 example_req: |-
   When the Prometheus pump initializes custom metrics, every valid configured
-  metric shall append exactly one distinct runtime metric preserving that
-  metric's configured name, type, labels, and initialized collector.
+  metric shall append exactly one distinct runtime metric backed by that
+  metric's configuration entry, preserving its configured name, type, labels,
+  aggregate behavior, enabled state, and initialized collector.
 if_missing: |-
-  Multiple configured metrics can collapse into aliases of one runtime metric.
-  Dashboards then lose series, expose labels under the wrong name, or update
-  only the final configured metric while appearing to have registered several
-  metrics.
+  Multiple configured metrics can collapse into aliases or detached copies of
+  runtime metrics. Dashboards then lose series, expose labels under the wrong
+  name, miss aggregate-observation behavior, or update only the final configured
+  metric while appearing to have registered several metrics.
 recommended_evidence:
   - kind: nominal
-    note: Unit test supplies multiple valid custom metrics and asserts the initialized runtime metrics have distinct pointers, expected names, labels, and collectors.
+    note: Unit test supplies multiple valid custom metrics and asserts the initialized runtime metrics have distinct pointers, backing configuration entry identity, expected names, labels, aggregate behavior, enabled state, and collectors.
   - kind: negative
-    note: Regression test covers the historical collapsed-identity symptom or an invalid-sibling case and fails if valid metrics alias each other or are skipped.
+    note: Regression test covers the historical collapsed-identity symptom or invalid-sibling ordering and fails if valid metrics alias each other, detach from their backing config entries, or are skipped.
   - kind: review
-    note: Review maps configured custom metrics to appended runtime metric instances and proves invalid definitions do not block valid siblings.
+    note: Review maps configured custom metrics to appended runtime metric instances and proves invalid definitions do not block valid siblings before or after the invalid entry.
 frameworks:
   - id: CWE
     refs:

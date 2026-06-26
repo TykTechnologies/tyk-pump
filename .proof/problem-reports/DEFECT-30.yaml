@@ -85,3 +85,11 @@ history:
         Recorded TT-6343 Prometheus custom metric identity collapse as covered
         by SW-REQ-094, with direct evidence for distinct runtime metric
         instances and invalid-sibling nonblocking initialization.
+    - at: "2026-06-26T00:00:00Z"
+      by: agent:codex
+      action: hardened
+      detail: |
+        Strengthened the custom-metric identity witness so valid metrics must
+        be the initialized backing configuration entries, preserve enabled and
+        aggregate-observation state, and survive invalid siblings on either
+        side.

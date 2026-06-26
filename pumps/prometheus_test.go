@@ -108,11 +108,10 @@ func TestPrometheusInitVec(t *testing.T) {
 		t.Run(tc.testName, func(t *testing.T) {
 			err := tc.customMetric.InitVec()
 			assert.Equal(t, tc.expectedErr, err)
+			assert.Equal(t, tc.isEnabled, tc.customMetric.enabled)
 			if err != nil {
 				return
 			}
-
-			assert.Equal(t, tc.isEnabled, tc.isEnabled)
 
 			if tc.customMetric.MetricType == counterType {
 				assert.NotNil(t, tc.customMetric.counterVec)
@@ -139,10 +138,12 @@ func TestPrometheusInitCustomMetrics(t *testing.T) {
 	tcs := []struct {
 		testName              string
 		metrics               []PrometheusMetric
+		aggregateObservations bool
 		expectedAllMetricsLen int
 		expectedMetricNames   []string
 		expectedMetricLabels  [][]string
 		expectedMetricTypes   []string
+		expectedSourceIndexes []int
 	}{
 		{
 			testName:              "no custom metrics",
@@ -162,6 +163,7 @@ func TestPrometheusInitCustomMetrics(t *testing.T) {
 			expectedMetricNames:   []string{"test"},
 			expectedMetricLabels:  [][]string{{"api_name"}},
 			expectedMetricTypes:   []string{counterType},
+			expectedSourceIndexes: []int{0},
 		},
 		{
 			testName: "multiple custom metrics",
@@ -181,9 +183,11 @@ func TestPrometheusInitCustomMetrics(t *testing.T) {
 			expectedMetricNames:   []string{"test", "other_test"},
 			expectedMetricLabels:  [][]string{{"api_name"}, {"api_name", "api_key"}},
 			expectedMetricTypes:   []string{counterType, counterType},
+			expectedSourceIndexes: []int{0, 1},
 		},
 		{
-			testName: "multiple custom metrics with histogram",
+			testName:              "multiple custom metrics with histogram and aggregate observations",
+			aggregateObservations: true,
 			metrics: []PrometheusMetric{
 				{
 					Name:       "test",
@@ -205,9 +209,10 @@ func TestPrometheusInitCustomMetrics(t *testing.T) {
 			expectedMetricNames:   []string{"test", "other_test", "histogram_test"},
 			expectedMetricLabels:  [][]string{{"api_name"}, {"api_name", "api_key"}, {"type", "api_name", "api_key"}},
 			expectedMetricTypes:   []string{counterType, counterType, histogramType},
+			expectedSourceIndexes: []int{0, 1, 2},
 		},
 		{
-			testName: "one with error",
+			testName: "invalid metric before valid sibling",
 			metrics: []PrometheusMetric{
 				{
 					Name:       "test",
@@ -224,6 +229,27 @@ func TestPrometheusInitCustomMetrics(t *testing.T) {
 			expectedMetricNames:   []string{"other_test"},
 			expectedMetricLabels:  [][]string{{"api_name", "api_key"}},
 			expectedMetricTypes:   []string{counterType},
+			expectedSourceIndexes: []int{1},
+		},
+		{
+			testName: "invalid metric after valid sibling",
+			metrics: []PrometheusMetric{
+				{
+					Name:       "first_valid",
+					MetricType: counterType,
+					Labels:     []string{"api_name"},
+				},
+				{
+					Name:       "invalid_second",
+					MetricType: "test_type",
+					Labels:     []string{"api_name", "api_key"},
+				},
+			},
+			expectedAllMetricsLen: 1,
+			expectedMetricNames:   []string{"first_valid"},
+			expectedMetricLabels:  [][]string{{"api_name"}},
+			expectedMetricTypes:   []string{counterType},
+			expectedSourceIndexes: []int{0},
 		},
 	}
 
@@ -233,6 +259,7 @@ func TestPrometheusInitCustomMetrics(t *testing.T) {
 			p.conf = &PrometheusConf{}
 			p.log = log.WithField("prefix", prometheusPrefix)
 			p.conf.CustomMetrics = tc.metrics
+			p.conf.AggregateObservations = tc.aggregateObservations
 
 			p.InitCustomMetrics()
 			// this function do the unregistering for the metrics in the prometheus lib.
@@ -249,6 +276,7 @@ func TestPrometheusInitCustomMetrics(t *testing.T) {
 			seenMetrics := map[*PrometheusMetric]struct{}{}
 			for i, expectedName := range tc.expectedMetricNames {
 				metric := p.allMetrics[i]
+				require.Same(t, &p.conf.CustomMetrics[tc.expectedSourceIndexes[i]], metric)
 				if _, exists := seenMetrics[metric]; exists {
 					t.Fatalf("custom metric %q reused a runtime metric pointer", metric.Name)
 				}
@@ -258,6 +286,7 @@ func TestPrometheusInitCustomMetrics(t *testing.T) {
 				assert.Equal(t, tc.expectedMetricTypes[i], metric.MetricType)
 				assert.Equal(t, tc.expectedMetricLabels[i], metric.Labels)
 				assert.Equal(t, p.conf.AggregateObservations, metric.aggregatedObservations)
+				assert.True(t, metric.enabled)
 				switch metric.MetricType {
 				case counterType:
 					assert.NotNil(t, metric.counterVec)
