@@ -1,0 +1,18 @@
+schema_version: proof.evidence_profile.v1
+profile: known_issue_reproducer
+requirements:
+    - SW-REQ-069
+command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored bash -lc "rg -n 'MCPIndexName|mcp_index_name|getIndexNameForRecord|IsMCPRecord' pumps/elasticsearch.go pumps/elasticsearch_test.go docs/requirements/SW-REQ-069.md specs/software/requirements/SW-REQ-069.req.yaml && ! rg -n 'mcp_index_name|MCPIndexName|MCP index|mcp index' /Users/buger/go/src/tyk-docs/tyk-docs/content/shared/pump-config.md /Users/buger/go/src/tyk-docs/tyk-docs/content/api-management/tyk-pump.md"
+status: pass
+observed_result: known_issue_reproduced
+executed_at: "2026-06-26T15:46:16Z"
+input_set:
+    - KI docs-elasticsearch-mcp-index-name-undocumented source-positive docs-negative scan
+freshness_hashes:
+    docs/requirements/SW-REQ-069.md: sha256:a5c268b95eb86ac3ed8ea457d8fac57815868d0f7003e15c870369dc682635fd
+    proof.yaml: sha256:18dd484cb75c5c729bc063c96426b101df78e0c89ec729e39724c18f50367e0e
+    pumps/elasticsearch.go: sha256:fab94fff687bde542a18b3237d8dbed48b3313178e6d57c4b14a5faae3d70cf4
+    pumps/elasticsearch_test.go: sha256:77fd64bc433f918589e397bae2ea45d3f98953807ea1324d7926892f2bdc0ca4
+    specs/software/requirements/SW-REQ-069.req.yaml: sha256:fe3e31f97a0abd4e34419a7d7519e5b31e85c5591064b0dac0118b92f05e2e91
+known_issues:
+    - docs-elasticsearch-mcp-index-name-undocumented

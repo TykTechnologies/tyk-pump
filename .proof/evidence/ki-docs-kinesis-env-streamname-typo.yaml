@@ -1,0 +1,18 @@
+schema_version: proof.evidence_profile.v1
+profile: known_issue_reproducer
+requirements:
+    - SW-REQ-056
+command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored bash -lc "rg -n 'KINESIs_META_STREAMNAME|KINESIS_META_STREAMNAME|StreamName string|stream_name' README.md pumps/kinesis.go pumps/kinesis_test.go docs/requirements/SW-REQ-056.md"
+status: pass
+observed_result: known_issue_reproduced
+executed_at: "2026-06-26T15:46:32Z"
+input_set:
+    - KI docs-kinesis-env-streamname-typo README typo scan
+freshness_hashes:
+    README.md: sha256:abc3c35cdef4908db7191efc929e9276977783d43a1d6953c007b58ac2104a6c
+    docs/requirements/SW-REQ-056.md: sha256:7266acf2674af356de86648f7d84f76fcb7195717bdffd9bf0019e928667aea3
+    proof.yaml: sha256:18dd484cb75c5c729bc063c96426b101df78e0c89ec729e39724c18f50367e0e
+    pumps/kinesis.go: sha256:11412d88b2d93e5898a102196e3d159c6cd15ed75f1ccfa991b9a35def0e01be
+    pumps/kinesis_test.go: sha256:307aa3dffba9b536379b050e3ebbcce176c65803fdf056a578324e4b236bc463
+known_issues:
+    - docs-kinesis-env-streamname-typo

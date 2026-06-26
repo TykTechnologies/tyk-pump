@@ -1,0 +1,15 @@
+schema_version: proof.evidence_profile.v1
+profile: known_issue_reproducer
+requirements:
+    - SW-REQ-017
+command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored bash -lc "rg -n 'AvailablePumps\\[\"(influx2|segment|sqs|resurfaceio|mongo-graph|sql-graph|sql-graph-aggregate|mongo-mcp|mongo-mcp-aggregate|sql-mcp|sql-mcp-aggregate)\"\\]' pumps/init.go && ! rg -n '^### pumps\\.(influx2|segment|sqs|resurfaceio|mongo-graph|sql-graph|sql-graph-aggregate|mongo-mcp|mongo-mcp-aggregate|sql-mcp|sql-mcp-aggregate)(\\.|$)' /Users/buger/go/src/tyk-docs/tyk-docs/content/shared/pump-config.md"
+status: pass
+observed_result: known_issue_reproduced
+executed_at: "2026-06-26T15:46:40Z"
+input_set:
+    - KI docs-missing-per-pump-config-sections registered-pump docs-heading gap scan
+freshness_hashes:
+    proof.yaml: sha256:18dd484cb75c5c729bc063c96426b101df78e0c89ec729e39724c18f50367e0e
+    pumps/init.go: sha256:c00a066c9afb4d36c1d6719fe522cfdce353aec3b06fbf25e99699f1ba3f47e7
+known_issues:
+    - docs-missing-per-pump-config-sections

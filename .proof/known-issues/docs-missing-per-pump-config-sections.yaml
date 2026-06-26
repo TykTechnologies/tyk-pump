@@ -5,6 +5,8 @@ affected_requirements:
     - SW-REQ-017
 commands:
     - grep -E 'pmp\..*=' /Users/buger/go/src/tyk-pump/pumps/init.go | head -40
+evidence_manifests:
+    - .proof/evidence/ki-docs-missing-per-pump-config-sections.yaml
 severity: high
 severity_basis: risk
 risk: correctness
@@ -12,7 +14,7 @@ cve_surface: possible
 affected_api: tyk-docs per-pump configuration reference
 attacker_input: operator configuration for pump types missing documented meta fields; non_attacker_trigger unless paired with unsafe deployment assumptions
 sanitizer: manual:documentation-gap
-reproducer_command: grep -E 'pmp\..*=' /Users/buger/go/src/tyk-pump/pumps/init.go | head -40
+reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored bash -lc "rg -n 'AvailablePumps\\[\"(influx2|segment|sqs|resurfaceio|mongo-graph|sql-graph|sql-graph-aggregate|mongo-mcp|mongo-mcp-aggregate|sql-mcp|sql-mcp-aggregate)\"\\]' pumps/init.go && ! rg -n '^### pumps\\.(influx2|segment|sqs|resurfaceio|mongo-graph|sql-graph|sql-graph-aggregate|mongo-mcp|mongo-mcp-aggregate|sql-mcp|sql-mcp-aggregate)(\\.|$)' /Users/buger/go/src/tyk-docs/tyk-docs/content/shared/pump-config.md"
 introduced_in: inception
 minimization_status: candidate
 mitigation: Code comments in each pump source file enumerate the config keys; per-pump *_test.go files show example configs.
@@ -37,3 +39,7 @@ history:
       by: agent:codex
       action: edit
       detail: set-cve-surface=possible,set-affected-api,set-attacker-input,set-sanitizer,set-minimization-status=candidate
+    - at: "2026-06-26T15:49:33Z"
+      by: agent:codex
+      action: edit
+      detail: set-reproducer-command,add-evidence-manifest

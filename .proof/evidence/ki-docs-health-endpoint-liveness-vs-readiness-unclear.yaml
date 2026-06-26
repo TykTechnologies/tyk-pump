@@ -1,0 +1,20 @@
+schema_version: proof.evidence_profile.v1
+profile: known_issue_reproducer
+requirements:
+    - SW-REQ-032
+command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored bash -lc "rg -n 'Healthcheck|status.*ok|liveness|readiness|health' server/server.go main.go docs/requirements/SW-REQ-032.md docs/requirements/SYS-REQ-012.md README.md config.go && rg -n 'confirm the Pump is running|/health|health_check_endpoint' /Users/buger/go/src/tyk-docs/tyk-docs/content/shared/pump-config.md && ! rg -n 'readiness|liveness' /Users/buger/go/src/tyk-docs/tyk-docs/content/shared/pump-config.md /Users/buger/go/src/tyk-docs/tyk-docs/content/api-management/tyk-pump.md"
+status: pass
+observed_result: known_issue_reproduced
+executed_at: "2026-06-26T15:46:24Z"
+input_set:
+    - KI docs-health-endpoint-liveness-vs-readiness-unclear liveness-source and ambiguous-doc scan
+freshness_hashes:
+    README.md: sha256:abc3c35cdef4908db7191efc929e9276977783d43a1d6953c007b58ac2104a6c
+    config.go: sha256:242b58ee9a0c3d8bca15d6f94f6e8a1e2f8a7ecbed9209ea0a0aa95724c8c683
+    docs/requirements/SW-REQ-032.md: sha256:34cfaca19c5d3ad29309e36857a910a4d785570ba8d24e671932f2dfbd933219
+    docs/requirements/SYS-REQ-012.md: sha256:57d418c596fe9a50308944ae481d7f40590c4c22617e2e3016714a5f1c5ba9ed
+    main.go: sha256:7a4ae4a95012e40d7182ef458154ce8a83e224b53b1d390ceff72f943642dbf1
+    proof.yaml: sha256:18dd484cb75c5c729bc063c96426b101df78e0c89ec729e39724c18f50367e0e
+    server/server.go: sha256:a78d6c279acc080410279facdf87502c8d4940f32a40a2435bf12eafefed2dee
+known_issues:
+    - docs-health-endpoint-liveness-vs-readiness-unclear

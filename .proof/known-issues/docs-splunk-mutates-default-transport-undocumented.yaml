@@ -5,10 +5,12 @@ affected_requirements:
     - SW-REQ-048
 commands:
     - grep -n 'DefaultTransport\|DefaultClient' /Users/buger/go/src/tyk-pump/pumps/splunk.go
+evidence_manifests:
+    - .proof/evidence/ki-docs-splunk-mutates-default-transport-undocumented.yaml
 severity: medium
 severity_basis: risk
 risk: correctness
-reproducer_command: grep -n 'DefaultTransport\|DefaultClient' /Users/buger/go/src/tyk-pump/pumps/splunk.go
+reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored bash -lc "rg -n 'DefaultTransport|DefaultClient|newSplunkClient|Transport|proxy|SplunkConf|SkipSSLVerification' pumps/splunk.go pumps/splunk_test.go docs/requirements/SW-REQ-048.md specs/software/requirements/SW-REQ-048.req.yaml && ! rg -n 'DefaultTransport|DefaultClient|co-host|process-wide HTTP|global transport' /Users/buger/go/src/tyk-docs/tyk-docs/content/api-management/tyk-pump.md /Users/buger/go/src/tyk-docs/tyk-docs/content/shared/pump-config.md /Users/buger/go/src/tyk-docs/tyk-docs/content/developer-support/release-notes/pump.md"
 introduced_in: inception
 mitigation: KI splunk-newsplunkclient-mutates-default-transport is the engineering record.
 remediation: 'Add an ''Operational note'' callout in the Splunk doc section linking to the KI and recommending: do not co-host tyk-pump in-process with components that share http.DefaultTransport.'
@@ -28,3 +30,7 @@ history:
       by: human:buger
       action: edit
       detail: set-severity-basis=risk,set-risk
+    - at: "2026-06-26T15:49:33Z"
+      by: agent:codex
+      action: edit
+      detail: set-reproducer-command,add-evidence-manifest

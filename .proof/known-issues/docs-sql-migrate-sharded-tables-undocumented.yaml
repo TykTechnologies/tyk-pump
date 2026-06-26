@@ -5,10 +5,12 @@ affected_requirements:
     - SW-REQ-040
 commands:
     - grep -n 'migrate_sharded_tables\|MigrateShardedTables' /Users/buger/go/src/tyk-pump/pumps/sql.go
+evidence_manifests:
+    - .proof/evidence/ki-docs-sql-migrate-sharded-tables-undocumented.yaml
 severity: medium
 severity_basis: risk
 risk: correctness
-reproducer_command: grep -n 'migrate_sharded_tables\|MigrateShardedTables' /Users/buger/go/src/tyk-pump/pumps/sql.go
+reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored bash -lc "rg -n 'MigrateShardedTables|migrate_sharded_tables|MigrateAllShardedTables|HandleTableMigration' pumps/sql.go pumps/common.go pumps/migration_test.go docs/requirements/INT-REQ-007.md docs/requirements/SW-REQ-040.md && ! rg -n 'migrate_sharded_tables|MigrateShardedTables' /Users/buger/go/src/tyk-docs/tyk-docs/content/shared/pump-config.md /Users/buger/go/src/tyk-docs/tyk-docs/content/api-management/tyk-pump.md"
 introduced_in: inception
 mitigation: KI sql-default-migration-today-only documents the data-loss scenario when default false interacts with late-arriving records.
 remediation: Add pumps.sql.meta.migrate_sharded_tables to pump-config.md and cross-reference the existing KI.
@@ -28,3 +30,7 @@ history:
       by: human:buger
       action: edit
       detail: set-severity-basis=risk,set-risk
+    - at: "2026-06-26T15:49:33Z"
+      by: agent:codex
+      action: edit
+      detail: set-reproducer-command,add-evidence-manifest

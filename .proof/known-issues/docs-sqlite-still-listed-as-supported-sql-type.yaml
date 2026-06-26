@@ -5,10 +5,12 @@ affected_requirements:
     - SW-REQ-019
 commands:
     - grep -RIn -e 'sqlite' /Users/buger/go/src/tyk-docs/tyk-docs/content/api-management/tyk-pump.md /Users/buger/go/src/tyk-docs/tyk-docs/content/shared/pump-config.md
+evidence_manifests:
+    - .proof/evidence/ki-docs-sqlite-still-listed-as-supported-sql-type.yaml
 severity: medium
 severity_basis: risk
 risk: correctness
-reproducer_command: grep -RIn -e 'sqlite' /Users/buger/go/src/tyk-docs/tyk-docs/content/api-management/tyk-pump.md /Users/buger/go/src/tyk-docs/tyk-docs/content/shared/pump-config.md
+reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored bash -lc "rg -n 'sqlite|Unsupported `config_storage.type` value|Dialect\\(|case \"sqlite\"|From v1.12.0|postgres|mysql' pumps/sql.go pumps/common.go pumps/sql_support_matrix_test.go docs/requirements/INT-REQ-007.md specs/interface/requirements/INT-REQ-007.req.yaml specs/software/requirements/SW-REQ-040.req.yaml && rg -n 'sqlite|supported types|supports `postgres`, `sqlite`|`sqlite` and `postgres`' /Users/buger/go/src/tyk-docs/tyk-docs/content/api-management/tyk-pump.md /Users/buger/go/src/tyk-docs/tyk-docs/content/shared/pump-config.md"
 introduced_in: 775f8e3
 mitigation: tyk-pump code does correctly error on sqlite type; operators see a clear error message at startup.
 remediation: Update tyk-docs (api-management/tyk-pump.md + shared/pump-config.md) to drop sqlite from supported type values and add a 'removed in 1.12.0' callout in 8 places.
@@ -32,3 +34,7 @@ history:
       by: agent:codex
       action: edit
       detail: introduced-in=775f8e3
+    - at: "2026-06-26T15:49:33Z"
+      by: agent:codex
+      action: edit
+      detail: set-reproducer-command,add-evidence-manifest

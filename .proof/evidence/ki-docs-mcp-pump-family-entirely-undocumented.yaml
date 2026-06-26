@@ -1,0 +1,26 @@
+schema_version: proof.evidence_profile.v1
+profile: known_issue_reproducer
+requirements:
+    - SW-REQ-038
+    - SW-REQ-039
+    - SW-REQ-044
+    - SW-REQ-045
+command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored bash -lc "rg -n 'mongo-mcp|mongo-mcp-aggregate|sql-mcp|sql-mcp-aggregate|MCP|mcp' pumps/init.go pumps/mcp_mongo.go pumps/mcp_mongo_aggregate.go pumps/mcp_sql.go pumps/mcp_sql_aggregate.go docs/requirements/SW-REQ-038.md docs/requirements/SW-REQ-039.md docs/requirements/SW-REQ-044.md docs/requirements/SW-REQ-045.md && ! rg -n 'mongo-mcp|mongo-mcp-aggregate|sql-mcp|sql-mcp-aggregate|MCP|mcp' /Users/buger/go/src/tyk-docs/tyk-docs/content/api-management/tyk-pump.md /Users/buger/go/src/tyk-docs/tyk-docs/content/shared/pump-config.md /Users/buger/go/src/tyk-docs/tyk-docs/content/developer-support/release-notes/pump.md"
+status: pass
+observed_result: known_issue_reproduced
+executed_at: "2026-06-26T15:46:36Z"
+input_set:
+    - KI docs-mcp-pump-family-entirely-undocumented MCP source-positive docs-negative scan
+freshness_hashes:
+    docs/requirements/SW-REQ-038.md: sha256:a34baaf14c5232d75f15b83dab135bc426456757bd845e7fe488affedefa75b0
+    docs/requirements/SW-REQ-039.md: sha256:cecfbd99944a916b21b21ca632a56a4593f6614aeb90f0d1506c61c82d921a94
+    docs/requirements/SW-REQ-044.md: sha256:bb8d70dbb3177bf57559bb297743720cbc3b1746179abec60e2f6cda46641c73
+    docs/requirements/SW-REQ-045.md: sha256:ebd40fe1e0bf3975b0eef2f24cd8ddeada3b3c7ebfc64cc8073ebe4355bff8cd
+    proof.yaml: sha256:18dd484cb75c5c729bc063c96426b101df78e0c89ec729e39724c18f50367e0e
+    pumps/init.go: sha256:c00a066c9afb4d36c1d6719fe522cfdce353aec3b06fbf25e99699f1ba3f47e7
+    pumps/mcp_mongo.go: sha256:448aa80208d2efecbff99caa3fa92adeac166f2831fbcb63d3e9263d85e37cc7
+    pumps/mcp_mongo_aggregate.go: sha256:ef2a34b9d5be5767ad59b17031fb6026a1d5013da4ae215124e679f4fb1aaa6c
+    pumps/mcp_sql.go: sha256:b4431893b8ca83abe52baf537dbb12d1a62418003d0e8d5863b8a9c2fff4000f
+    pumps/mcp_sql_aggregate.go: sha256:09d7a3aed4565bf640779c594eca5b4453ee80b358956db16cd5ca563e4802d9
+known_issues:
+    - docs-mcp-pump-family-entirely-undocumented

@@ -1,0 +1,17 @@
+schema_version: proof.evidence_profile.v1
+profile: known_issue_reproducer
+requirements:
+    - SW-REQ-022
+command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored bash -lc "rg -n 'elastic\.v7|olivere/elastic|case \"[23567]\"|ElasticSearchVersion|defaultEsVersion|SetURL' pumps/elasticsearch.go go.mod go.sum && rg -n 'Elasticsearch \(2\.0 - 7\.x\)' /Users/buger/go/src/tyk-docs/tyk-docs/content/api-management/tyk-pump.md"
+status: pass
+observed_result: known_issue_reproduced
+executed_at: "2026-06-26T15:46:20Z"
+input_set:
+    - KI docs-elasticsearch-version-range-incorrect source-supported-version and stale-doc scan
+freshness_hashes:
+    go.mod: sha256:07acdeed4d0904f852fc6d094e92a7e568c31bc63f3fd97fae898128a7614b83
+    go.sum: sha256:82235710d8e5afff93b4ac29b3097e4e166f54bd456a46251fc310fd715d33b2
+    proof.yaml: sha256:18dd484cb75c5c729bc063c96426b101df78e0c89ec729e39724c18f50367e0e
+    pumps/elasticsearch.go: sha256:fab94fff687bde542a18b3237d8dbed48b3313178e6d57c4b14a5faae3d70cf4
+known_issues:
+    - docs-elasticsearch-version-range-incorrect
