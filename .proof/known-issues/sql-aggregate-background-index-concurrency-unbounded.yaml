@@ -4,11 +4,13 @@ description: pumps/sql_aggregate.go starts Postgres SQL Aggregate index creation
 affected_requirements:
     - SW-REQ-066
 evidence_manifests:
+    - test:pumps/sql_aggregate_test.go:TestSQLAggregateEnsureIndexBackgroundFailureIsNotSurfaced_KI
     - .proof/evidence/ki-sql-aggregate-background-index-concurrency-unbounded.yaml
 severity: low
 severity_basis: risk
 risk: performance
-reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored rg -n 'backgroundIndexCreated|go func|CREATE INDEX|ensureIndex' pumps/sql_aggregate.go pumps/sql_aggregate_test.go docs/requirements/SW-REQ-066.md
+reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored go test -p=1 -count=1 -timeout=180s -run '^TestSQLAggregateEnsureIndexBackgroundFailureIsNotSurfaced_KI$' ./pumps
+environment_note: Run the focused SQLite tripwire; it forces the Postgres CONCURRENTLY index branch against SQLite, observes that background ensureIndex returns nil immediately, and verifies readiness is not signaled after the background failure.
 introduced_in: 657436f
 mitigation: Postgres operators can allow startup to continue while the index builds, but should expect aggregate queries to table-scan until the background index exists and should avoid concurrent startup/write scenarios that depend on the index being immediately ready.
 remediation: Specify the background index lifecycle, cancellation/error reporting, and readiness semantics; add a bounded background-failure/concurrency witness for SW-REQ-066.
@@ -28,3 +30,7 @@ history:
       by: agent:codex
       action: edit
       detail: set-reproducer-command,add-evidence-manifest
+    - at: "2026-06-26T17:05:43Z"
+      by: agent:codex
+      action: edit
+      detail: add-background-index-failure-tripwire

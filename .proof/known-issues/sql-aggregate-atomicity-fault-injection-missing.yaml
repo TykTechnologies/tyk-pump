@@ -4,12 +4,13 @@ description: SW-REQ-067 uses a single GORM Create call with clause.OnConflict to
 affected_requirements:
     - SW-REQ-067
 evidence_manifests:
+    - test:pumps/sql_aggregate_test.go:TestSQLAggregateDoAggregatedWritingReturnsCreateErrorWithoutRows_KI
     - .proof/evidence/ki-sql-aggregate-atomicity-fault-injection-missing.yaml
 severity: low
 severity_basis: risk
 risk: data_integrity
-reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored rg -n 'DoAggregatedWriting|OnConflict|Create\(|atomicity|transaction|failure' pumps/sql_aggregate.go pumps/sql_aggregate_test.go docs/requirements/SW-REQ-067.md
-environment_note: Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source and command output.
+reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored go test -p=1 -count=1 -timeout=180s -run '^TestSQLAggregateDoAggregatedWritingReturnsCreateErrorWithoutRows_KI$' ./pumps
+environment_note: Run the focused SQLite tripwire; it injects a GORM Create callback error into DoAggregatedWriting, observes the current returned error, and verifies no aggregate rows are committed.
 introduced_in: inception
 mitigation: Rely on database single-statement upsert semantics and existing sequential accumulation tests until a transaction/failure harness exists.
 remediation: Add a fake driver or database-backed test that injects serialization/deadlock/transaction errors around the upsert and proves retry/reporting semantics.
@@ -37,3 +38,7 @@ history:
       by: agent:codex
       action: edit
       detail: set-reproducer-command,add-evidence-manifest
+    - at: "2026-06-26T17:05:43Z"
+      by: agent:codex
+      action: edit
+      detail: add-sqlite-create-error-tripwire
