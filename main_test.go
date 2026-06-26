@@ -368,6 +368,31 @@ func TestOmitDetailsFilterData(t *testing.T) {
 }
 
 // Verifies: SYS-REQ-015
+// Verifies: KI:systemconfig-omitdetailedrecording-unused
+// Reproduces: systemconfig-omitdetailedrecording-unused
+func TestGlobalOmitDetailedRecordingIsNotAppliedToPump_KI(t *testing.T) {
+	savedConfig := SystemConfig
+	t.Cleanup(func() {
+		SystemConfig = savedConfig
+	})
+
+	SystemConfig = TykPumpConfiguration{OmitDetailedRecording: true}
+	mockedPump := &MockedPump{}
+	keys := []interface{}{
+		analytics.AnalyticsRecord{
+			RawRequest:  "raw request should survive global-only omit",
+			RawResponse: "raw response should survive global-only omit",
+		},
+	}
+
+	filteredKeys := filterData(mockedPump, keys)
+	require.Len(t, filteredKeys, 1)
+	record := filteredKeys[0].(analytics.AnalyticsRecord)
+	assert.Equal(t, "raw request should survive global-only omit", record.RawRequest)
+	assert.Equal(t, "raw response should survive global-only omit", record.RawResponse)
+}
+
+// Verifies: SYS-REQ-015
 // Verifies: SW-REQ-050
 // SYS-REQ-015:nominal:negative
 // SW-REQ-050:per_backend_privacy_transform_applied:nominal

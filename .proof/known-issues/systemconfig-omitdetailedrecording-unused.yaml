@@ -1,18 +1,22 @@
 id: systemconfig-omitdetailedrecording-unused
 title: Global omit_detailed_recording config field is dead; only per-pump value is honored
-description: 'config.go:84 declares ''SystemConfig.OmitDetailedRecording bool'', but the actual filterData logic in main.go:385/396 only checks pump.GetOmitDetailedRecording() — i.e., the per-pump value set at main.go:210 from PumpConfig.OmitDetailedRecording (config.go:247). The global value passed to StartPurgeLoop at main.go:536 is never propagated to per-pump defaults. Operators reading the docs and setting ''omit_detailed_recording: true'' at the top level expect global enforcement; the field is silently ignored.'
+description: 'config.go:84 declares ''SystemConfig.OmitDetailedRecording bool'', but the actual filterData logic in main.go:389/400 only checks pump.GetOmitDetailedRecording() — i.e., the per-pump value set at main.go:210 from PumpConfig.OmitDetailedRecording (config.go:247). The global value passed to StartPurgeLoop at main.go:542 is never propagated to per-pump defaults. This is a configuration-surface/product-behavior mismatch: SYS-REQ-015 is intentionally per-backend, but the top-level field makes operators expect a global privacy default that is silently ignored.'
 affected_requirements:
     - SYS-REQ-015
+evidence_manifests:
+    - test:main_test.go:TestGlobalOmitDetailedRecordingIsNotAppliedToPump_KI
+    - .proof/evidence/ki-systemconfig-omitdetailedrecording-unused.yaml
 severity: low
 severity_basis: risk
 risk: correctness
-environment_note: Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source or documentation surface and following the described scenario.
+reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored go test -p=1 -count=1 -timeout=180s -run '^TestGlobalOmitDetailedRecordingIsNotAppliedToPump_KI$' .
+environment_note: Run the focused global-only omit tripwire; it sets SystemConfig.OmitDetailedRecording=true, leaves the per-pump flag false, and observes raw_request/raw_response still survive filterData.
 introduced_in: inception
 mitigation: 'Set omit_detailed_recording: true on each pump''s meta block explicitly; do not rely on the top-level config.'
 remediation: Either (a) propagate SystemConfig.OmitDetailedRecording to every pump as the default when the per-pump value is unset, or (b) remove the dead config field and document per-pump only.
 owner: tyk-team
 review_date: "2026-11-30"
-release_disposition: ship
+release_disposition: ship_with_known_issue
 status: reviewed
 history:
     - at: "2026-05-30T08:32:47Z"
@@ -30,3 +34,7 @@ history:
       by: agent:codex
       action: review
       detail: reviewer=human:buger,new_review_date=2026-11-30
+    - at: "2026-06-26T17:26:53Z"
+      by: agent:codex
+      action: edit
+      detail: add-global-only-omit-tripwire,set-release-disposition=ship_with_known_issue
