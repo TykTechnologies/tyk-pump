@@ -118,12 +118,15 @@ func TestSQLFamilyBatchSizeNonPositive_KI(t *testing.T) {
 // used for non-Postgres paths.
 // Verifies: SW-REQ-040
 // Verifies: SW-REQ-041
+// Verifies: SW-REQ-045
 // Verifies: SW-REQ-066
 // Verifies: INT-REQ-007
 // Verifies: KI:sql-standard-mysql-create-index-if-not-exists-unsupported
 // Verifies: KI:sql-aggregate-mysql-create-index-if-not-exists-unsupported
+// Verifies: KI:mcp-sql-aggregate-mysql-create-index-syntax-broken
 // Reproduces: sql-standard-mysql-create-index-if-not-exists-unsupported
 // Reproduces: sql-aggregate-mysql-create-index-if-not-exists-unsupported
+// Reproduces: mcp-sql-aggregate-mysql-create-index-syntax-broken
 func TestSQLMySQLCreateIndexIfNotExists_KI(t *testing.T) {
 	cases := []struct {
 		path      string
@@ -138,6 +141,11 @@ func TestSQLMySQLCreateIndexIfNotExists_KI(t *testing.T) {
 		{
 			path:      "sql_aggregate.go",
 			receiver:  `c\.dbType == "postgres"`,
+			ddlRegexp: `CREATE INDEX %s IF NOT EXISTS %s ON %s \(dimension, timestamp, org_id, dimension_value\)`,
+		},
+		{
+			path:      "mcp_sql_aggregate.go",
+			receiver:  `s\.dbType == "postgres"`,
 			ddlRegexp: `CREATE INDEX %s IF NOT EXISTS %s ON %s \(dimension, timestamp, org_id, dimension_value\)`,
 		},
 	}

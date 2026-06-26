@@ -6,12 +6,13 @@ affected_requirements:
     - SW-REQ-041
 evidence_manifests:
     - code_signal:opengrep:go.sql.formatted-write-exec:pumps/mcp_sql_aggregate.go:127
+    - test:pumps/known_issue_tripwire_test.go:TestSQLMySQLCreateIndexIfNotExists_KI
     - .proof/evidence/ki-mcp-sql-aggregate-mysql-create-index-syntax-broken.yaml
 severity: medium
 severity_basis: risk
 risk: correctness
-reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored rg -n 'CREATE INDEX IF NOT EXISTS|dbType == postgres|createIndex' pumps/mcp_sql_aggregate.go
-environment_note: Evidence is tied to the listed evidence_manifests entries; reproduce by rerunning the named test or code-signal scan and inspecting code_signal:opengrep:go.sql.formatted-write-exec:pumps/mcp_sql_aggregate.go:127.
+reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored go test -p=1 -count=1 -timeout=180s -run '^TestSQLMySQLCreateIndexIfNotExists_KI$' ./pumps
+environment_note: Reproducer is a static source tripwire that pins the MCP SQL Aggregate DDL template and dialect gating; no MySQL container is required.
 introduced_in: inception
 mitigation: Operators on MySQL should either pre-create the dimension index out-of-band and set omit_index_creation=true on the aggregate pumps, or stick to Postgres for aggregate workloads.
 remediation: Gate IF NOT EXISTS behind a dialect check for MCP SQL Aggregate, or use a backend-specific HasIndex pre-check plus plain CREATE INDEX for MySQL-compatible backends, then add a MySQL integration witness for SW-REQ-045 backend_ddl_valid.
@@ -47,3 +48,7 @@ history:
       by: agent:codex
       action: edit
       detail: set-reproducer-command,add-evidence-manifest
+    - at: "2026-06-26T18:39:06Z"
+      by: agent:codex
+      action: evidence_hardened
+      detail: linked TestSQLMySQLCreateIndexIfNotExists_KI static DDL tripwire
