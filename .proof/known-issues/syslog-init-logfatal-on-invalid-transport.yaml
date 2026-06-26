@@ -10,7 +10,8 @@ evidence_manifests:
 severity: medium
 severity_basis: risk
 risk: availability
-reproducer_command: go test -count=1 -timeout=180s -run '^TestSyslogPump_initConfigs_InvalidTransport_InProcess$' ./pumps
+reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored go test -p=1 -count=1 -timeout=180s -run '^TestSyslogPump_initConfigs_InvalidTransport_InProcess$' ./pumps
+environment_note: Run the focused Syslog invalid-transport tripwire under the monitor. The accepted ship disposition is a process-exit risk for malformed syslog configuration, mitigated operationally by pre-deployment config validation and a supervisor restart.
 introduced_in: inception
 mitigation: Validate syslog transport settings before deployment and rely on a process supervisor to restart tyk-pump after fatal exits.
 remediation: Return an invalid-transport error from syslog initialisation instead of calling log.Fatal, so the pump host can skip or report the failing syslog pump without exiting.
@@ -42,3 +43,7 @@ history:
       by: agent:codex
       action: edit
       detail: set-reproducer-command
+    - at: "2026-06-26T17:09:48Z"
+      by: agent:codex
+      action: edit
+      detail: clarify-process-exit-risk,set-monitored-reproducer
