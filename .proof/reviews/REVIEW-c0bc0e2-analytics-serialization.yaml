@@ -1,0 +1,7 @@
+id: REVIEW-c0bc0e2-analytics-serialization
+kind: design_review
+reviewer: agent:codex
+reviewed_at: "2026-06-26T13:20:00Z"
+subject: upstream:c0bc0e2/SW-REQ-001+SW-REQ-008+INT-REQ-001+INT-REQ-003
+decision: approved
+comment: 'Commit-level assurance review for TT-4699: analytics serialization was an additive feature surface, not a fixed historical defect. Current proof covers msgpack/protobuf selection and round-trip behavior through SW-REQ-008, INT-REQ-001, and INT-REQ-003, with live protobuf field-loss and malformed-input gaps tracked as KnownIssues. The weaker purge-keyspace side was hardened by wire_format_suffix_dispatch on SW-REQ-001 and TestStartPurgeLoopDrainsEverySerializerSuffixForEveryAnalyticsKey, proving every analytics key is crossed with every registered serializer suffix before dispatch.'

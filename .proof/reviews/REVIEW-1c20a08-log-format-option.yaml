@@ -1,0 +1,7 @@
+id: REVIEW-1c20a08-log-format-option
+kind: design_review
+reviewer: agent:codex
+reviewed_at: "2026-06-26T13:20:00Z"
+subject: upstream:1c20a08/SW-REQ-033
+decision: approved
+comment: 'Commit-level assurance review for TT-17281: upstream 1c20a08 adds RFC3339 text/json log formatting controls that are absent from this branch, so no active product bug is claimed here. Before hardening, proof would not force a future logger-format change to update the requirement and evidence. SW-REQ-033 now pins the current branch legacy formatter contract with log_timestamp_format_declared evidence and explicitly states that the upstream RFC3339/legacy selector is not implemented on this branch.'

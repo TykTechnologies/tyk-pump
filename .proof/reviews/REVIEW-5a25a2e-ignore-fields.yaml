@@ -1,0 +1,7 @@
+id: REVIEW-5a25a2e-ignore-fields
+kind: design_review
+reviewer: agent:codex
+reviewed_at: "2026-06-26T13:20:00Z"
+subject: upstream:5a25a2e/SYS-REQ-016+SW-REQ-076
+decision: approved
+comment: 'Commit-level assurance review for TT-5429: ignore_fields is current product behavior rather than a fixed historical defect. Proof now catches the contract directly through SYS-REQ-016 and SW-REQ-076: filterData invokes AnalyticsRecord.RemoveIgnoredFields for non-empty per-pump ignore lists, field matching is by json tag, unrecognised names leave the record otherwise unchanged, and TestIgnoreFieldsFilterData plus analytics RemoveIgnoredFields evidence cover the code-only MC/DC rows.'

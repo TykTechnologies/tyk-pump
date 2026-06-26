@@ -1,0 +1,7 @@
+id: REVIEW-140ef71-sql-aggregate-sharded-upsert
+kind: design_review
+reviewer: agent:codex
+reviewed_at: "2026-06-26T13:20:00Z"
+subject: upstream:140ef71/SW-REQ-064+SW-REQ-067+KI:sql-aggregate-sharded-upsert-targets-base-table
+decision: approved
+comment: 'Commit-level assurance review for TT-16778: upstream commit 140ef71 fixes SQL Aggregate sharded writes by applying the caller-selected table to the GORM insert. This proof branch intentionally does not change product code, so the live branch gap remains KnownIssue sql-aggregate-sharded-upsert-targets-base-table. SW-REQ-064/SW-REQ-067 now carry routing_target_consistent as KI-backed debt, and signal go.sql-aggregate-upsert-without-table-target catches the historical shape until the upstream fix is merged and converted to a DEFECT record.'

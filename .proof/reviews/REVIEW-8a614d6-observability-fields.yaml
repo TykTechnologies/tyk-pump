@@ -1,0 +1,7 @@
+id: REVIEW-8a614d6-observability-fields
+kind: design_review
+reviewer: agent:codex
+reviewed_at: "2026-06-26T13:20:00Z"
+subject: upstream:8a614d6/INT-REQ-003+SW-REQ-008+SW-REQ-009
+decision: approved
+comment: 'Commit-level assurance review for TT-7519: upstream 8a614d6 adds OriginalPath/listen_path and ListenPath/listen_path observability fields, which are absent from this branch. The branch is not marked buggy for missing a feature it does not claim, but proof previously only weakly modeled additive AnalyticsRecord field governance. INT-REQ-003, SW-REQ-008, and SW-REQ-009 now require additive record fields to update schema/transformer/helper evidence together, so a later merge must carry matching serializer and helper proof.'
