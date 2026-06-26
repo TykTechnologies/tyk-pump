@@ -1,0 +1,94 @@
+schema_version: 1
+id: DEFECT-50
+title: Graph SQL aggregate merged same-organisation API partitions
+introduced_in: 5ccf526
+description: |
+  TT-100053 (commit 7af2a45) fixed Graph SQL aggregate ownership so aggregate
+  rows are partitioned by API ID, not only organisation. Before the fix,
+  analytics.AggregateGraphData keyed the aggregate map by OrgID and
+  Graph SQL aggregate row IDs did not include APIID, so same-organisation
+  GraphQL records with the same dimension/window could merge across APIs.
+
+  Current AggregateGraphData keys graph aggregates by APIID, and
+  GraphSQLAnalyticsRecordAggregate stores APIID in the persisted row. SW-REQ-043
+  now states the per-(API, graph dimension) upsert contract and carries the
+  aggregate_partition_isolated obligation.
+source:
+    type: upstream_commit
+    repo: TykTechnologies/tyk-pump
+    commit: 7af2a45
+    reference: TT-100053
+    date: "2023-09-18"
+classification:
+    surface: data_integrity
+    defect_class: graph_sql_aggregate_api_partition_merge
+    severity: medium
+    security_relevant: false
+root_cause:
+    missing_requirement: true
+    missing_test_partition: true
+    missing_mcdc_variable: false
+    notes: |
+      SW-REQ-043 described Graph SQL aggregate writes, but the proof model did
+      not explicitly name API ownership as an aggregate partition invariant.
+      Existing tests covered graph aggregate dimensions without proving
+      same-org/different-API separation.
+impact_analysis:
+    affected_requirements:
+        - SW-REQ-043
+    affected_code:
+        - analytics/aggregate.go
+        - analytics/aggregate_test.go
+        - pumps/graph_sql_aggregate.go
+        - pumps/graph_sql_aggregate_test.go
+hardening:
+    new_requirements: []
+    strengthened_requirements:
+        - SW-REQ-043
+    added_obligations:
+        - requirement: SW-REQ-043
+          obligation_class: aggregate_partition_isolated
+        - requirement: SW-REQ-043
+          obligation_class: output_cardinality_bounded
+    regression_tests:
+        - analytics/aggregate_test.go:TestAggregateGraphData_PartitionsSameOrgByAPIID
+    proposed_classes:
+        - aggregate_partition_isolated
+disposition:
+    status: covered_by_requirement
+    requirements:
+        - SW-REQ-043
+    known_issues:
+        - analytics-timestamp-timezone-convention-unpinned
+        - graph-mcp-sql-sharded-indexes-untracked
+        - graph-sql-aggregate-atomicity-fault-injection-missing
+        - graph-sql-aggregate-migrate-sharded-tables-ignored
+        - mapstructure-decode-silently-drops-unknown-keys
+        - pump-no-timeout-can-block-purge-cycle
+        - sql-aggregate-mysql-excluded-keyword-broken
+        - sql-batch-size-zero-infinite-loop
+    evidence:
+        verified_by:
+            - analytics/aggregate_test.go:TestAggregateGraphData_PartitionsSameOrgByAPIID
+        obligation_evidence:
+            - requirement: SW-REQ-043
+              obligation_class: aggregate_partition_isolated
+              evidence_type: nominal
+            - requirement: SW-REQ-043
+              obligation_class: aggregate_partition_isolated
+              evidence_type: negative
+            - requirement: SW-REQ-043
+              obligation_class: output_cardinality_bounded
+              evidence_type: nominal
+    reviewer: agent:codex
+    reviewed_at: "2026-06-26T12:46:14Z"
+history:
+    - at: "2026-06-26T12:46:14Z"
+      by: agent:codex
+      action: created
+      detail: |
+        Recorded TT-100053's Graph SQL aggregate API-partitioning fix as a
+        historical product defect. The runtime code was already fixed and the
+        current proof hardening already added the SW-REQ-043 obligation and
+        code-annotated aggregate witness; this record closes the missing
+        problem-report linkage.

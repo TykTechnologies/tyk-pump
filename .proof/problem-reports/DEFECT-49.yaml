@@ -1,0 +1,106 @@
+schema_version: 1
+id: DEFECT-49
+title: HTTP retry consumed request bodies before replaying failed Splunk sends
+introduced_in: unknown
+description: |
+  TT-10564 (commit 35e1e74) added Splunk backoff retry behavior and fixed the
+  request-body replay path inside the shared HTTP retry helper. Before the fix,
+  a failed POST retry could reuse a request whose Body had already been read by
+  the prior attempt, producing an empty-body or ContentLength mismatch on the
+  retry instead of replaying the same payload to Splunk HEC.
+
+  Current retry/http-retry.go reads the original body once, closes it, and
+  installs a fresh io.NopCloser over the buffered bytes for every attempt.
+  SW-REQ-030 now makes request_body_replay_preserved an explicit obligation,
+  and SW-REQ-048 owns the Splunk MaxRetries integration contract.
+source:
+    type: upstream_commit
+    repo: TykTechnologies/tyk-pump
+    commit: 35e1e74
+    reference: TT-10564
+    date: "2024-01-04"
+classification:
+    surface: error_handling
+    defect_class: http_retry_request_body_not_replayed
+    severity: medium
+    security_relevant: false
+root_cause:
+    missing_requirement: true
+    missing_test_partition: true
+    missing_mcdc_variable: false
+    notes: |
+      Retry status/error classification was modeled, but proof did not require
+      byte-identical request-body replay across retry attempts. Splunk retry
+      evidence also checked retry counts before the shared replay invariant was
+      made first-class.
+impact_analysis:
+    affected_requirements:
+        - SW-REQ-030
+        - SW-REQ-048
+        - SYS-REQ-006
+    affected_code:
+        - retry/http-retry.go
+        - retry/http_retry_branches_test.go
+        - pumps/splunk.go
+        - pumps/splunk_test.go
+hardening:
+    new_requirements: []
+    strengthened_requirements:
+        - SW-REQ-030
+        - SW-REQ-048
+    added_obligations:
+        - requirement: SW-REQ-030
+          obligation_class: request_body_replay_preserved
+        - requirement: SW-REQ-048
+          obligation_class: retry_policy_explicit
+    regression_tests:
+        - retry/http_retry_branches_test.go:TestBackoffHTTPRetry_Send_ReplaysRequestBodyOnRetry
+        - pumps/splunk_test.go:Test_SplunkBackoffRetry
+    proposed_classes:
+        - request_body_replay_preserved
+    code_signals: []
+disposition:
+    status: covered_by_requirement
+    requirements:
+        - SW-REQ-030
+        - SW-REQ-048
+    known_issues:
+        - docs-splunk-mutates-default-transport-undocumented
+        - elapsed-timesince-dst-obligation-misattributed
+        - external-pump-endpoints-no-ssrf-allowlist
+        - http-retry-post-idempotency-unenforced
+        - mapstructure-decode-silently-drops-unknown-keys
+        - pump-no-timeout-can-block-purge-cycle
+        - retry-4xx-bodyread-fail-causes-retry
+        - retry-backoff-duration-not-deadline-bounded
+        - retry-buffers-full-request-body-in-memory
+        - retry-row5-mcdc-backoff-not-injectable
+        - splunk-filtertags-skips-consecutive-matches
+        - splunk-newsplunkclient-mutates-default-transport
+        - splunk-writedata-non-analytics-record-panic
+        - storage-connector-singleton-race
+        - storage-retry-maxelapsed-zero-is-unbounded
+        - tls-insecure-skip-verify-allowed
+    evidence:
+        verified_by:
+            - retry/http_retry_branches_test.go:TestBackoffHTTPRetry_Send_ReplaysRequestBodyOnRetry
+            - pumps/splunk_test.go:Test_SplunkBackoffRetry
+        obligation_evidence:
+            - requirement: SW-REQ-030
+              obligation_class: request_body_replay_preserved
+              evidence_type: nominal
+            - requirement: SW-REQ-048
+              obligation_class: retry_policy_explicit
+              evidence_type: nominal
+    reviewer: agent:codex
+    reviewed_at: "2026-06-26T12:46:14Z"
+history:
+    - at: "2026-06-26T12:46:14Z"
+      by: agent:codex
+      action: created
+      detail: |
+        Recorded TT-10564's request-body replay fix as a historical product
+        defect. Existing specs already carry the hardened SW-REQ-030 and
+        SW-REQ-048 obligations; this record links the commit to those
+        code-annotated witnesses without claiming the remaining retry KIs are
+        fixed.
