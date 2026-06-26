@@ -160,7 +160,7 @@ so a later reviewer can see what was included and what was filtered out.
 | ff7574e | 2022-10-25 | [TT-6012] mongo graph records ignore max_document_size_bytes | `covered_after_hardening`: current code already preserves oversized graph raw payloads in graph-mode `MongoPump.AccumulateSet`, but SW-REQ-037 did not explicitly own the exception to the standard Mongo `MaxDocumentSizeBytes` rewrite, and the historical regression test used a legacy graph tag that no longer marks records as GraphQL. Hardened with DEFECT-26, a Graph Mongo `boundary` obligation, and repaired GraphQLStats-backed evidence that oversized graph records retain exact RawRequest/RawResponse values while non-GraphQLStats records are excluded from graph-mode accumulation. |
 | 155b05a | 2022-10-18 | TT-6799 Prometheus pump disable metric families | `covered_after_hardening`: existing tests exercised `DisabledMetrics`, but SW-REQ-024 only formalized default scrape path behavior and did not define the exact built-in family suppression contract. Hardened with DEFECT-27, SW-REQ-090, a direct `initBaseMetrics` implementation trace, local obligation `metric_family_disable_gate`, MC/DC witnesses for disabled-family absence, exact evidence for all five built-in family names plus isolated-registry registration probes and the unknown-name boundary, and a custom-metric boundary test proving `disabled_metrics` does not suppress operator-defined custom metrics. |
 | 97bbecc | 2022-10-18 | TT-6482 Histogram type label validation | `covered_after_hardening`: current tests covered Prometheus histogram type-label insertion/deduplication, but SW-REQ-024 did not model histogram label schema stability and tests did not assert the exact final label order for every boundary. Hardened with DEFECT-28, SW-REQ-091, direct implementation traces for `InitVec`/`ensureLabels`/`Observe`, local obligation `metric_label_schema_stable`, MC/DC witnesses for histogram schema normalization, exact-label evidence for missing, existing, middle-position, duplicate, empty, and counter cases, and `InitVec` integration evidence that normalization happens before registration. |
-| 4c490cb | 2022-10-13 | TT-6550 Document size is mis-calculated in Mongo Selective Pump | `covered_after_hardening`: SW-REQ-035 mentioned skipping documents over `MaxDocumentSizeBytes`, but did not make the exact MongoSelective size formula first-class. Hardened with DEFECT-29, SW-REQ-092, a direct `getItemSizeBytes` implementation trace, local obligation `document_size_accounting_exact`, the existing `go.mongo-document-size-counts-raw-request-twice` signal, and direct evidence that `RawRequest` and `RawResponse` are each counted once with the 1024-byte metadata allowance and a strict greater-than threshold. The same review found current KI `mongo-selective-final-skipped-record-drops-pending-batch`, because a final skipped oversize item prevents flushing a pending valid batch; no product fix was made. |
+| 4c490cb | 2022-10-13 | TT-6550 Document size is mis-calculated in Mongo Selective Pump | `covered_after_hardening`: SW-REQ-035 mentioned skipping documents over `MaxDocumentSizeBytes`, but did not make the exact MongoSelective size formula first-class. Hardened with DEFECT-29, SW-REQ-092, a direct `getItemSizeBytes` implementation trace, local obligation `document_size_accounting_exact`, the proposed signal shape `go.mongo-document-size-counts-raw-request-twice` recorded in DEFECT-29/DEFECT-40, and direct evidence that `RawRequest` and `RawResponse` are each counted once with the 1024-byte metadata allowance and a strict greater-than threshold. The same review found current KI `mongo-selective-final-skipped-record-drops-pending-batch`, because a final skipped oversize item prevents flushing a pending valid batch; no product fix was made. |
 | c54eed3 | 2022-08-23 | ignore graph analytics for mongo pump(s) | `covered_after_hardening`: the standard-Mongo GraphQL exclusion side is captured as fixed historical defect `DEFECT-14` under SW-REQ-082, while the current `AggregateData` graph/MCP partition was only incidentally tested under SW-REQ-011 monotonic-counter evidence. Hardened with SW-REQ-093 (`output_cardinality_bounded`) so REST aggregates explicitly exclude GraphQL/MCP records while preserving ordinary REST records, including the same-organisation case where a graph record would otherwise inflate REST hit counts. Follow-up hardening also made SW-REQ-082 cover standard-mode retention for current GraphQLStats records and legacy tag-only records. No additional DEFECT was created for the aggregate proof-model hardening; unfixed live issues remain KnownIssue records. |
 | 1cdc76c | 2022-08-19 | TT-6343 Fixing mem address pointer in prom custom metrics | `missed_before_hardening`: current tests exercised `InitCustomMetrics`, but only asserted the count of appended custom metrics, so the historical custom metric identity-collapse bug could recur while preserving length and losing metric names, labels, or collectors. Hardened with DEFECT-30, SW-REQ-094, local obligation `custom_metric_identity_preserved`, exact backing-entry identity/name/label/type/enabled/aggregate-observation/vector evidence for multiple valid custom metrics, and invalid-sibling nonblocking evidence in both invalid-before-valid and valid-before-invalid order. No broad `&range variable` signal was added because current Go 1.25 range semantics make that syntax-level detector weaker than the product-level evidence. |
 | df6d589 | 2022-06-22 | TT-5776 Racy filterData func bugfix | `missed_before_hardening`: current proof modeled filter correctness and per-backend error/timeout independence, but not the TT-5776 invariant that per-pump `filterData` transforms must not mutate the shared decoded batch seen by sibling pumps. Hardened with DEFECT-31, SW-REQ-095, local obligation `per_backend_input_isolation`, catalogue obligation `shared_state_synchronized`, and direct evidence that per-backend filtering, omit-detailed-recording, trimming, ignore-fields removal, and raw payload decoding return the backend-specific view while preserving the original dispatch slice length, order, and values. No static signal was added in this slice because the risky shape is a broad slice-alias-and-write pattern; deterministic product-level regression tests plus focused race runs are higher signal. |
@@ -179,7 +179,7 @@ so a later reviewer can see what was included and what was filtered out.
 | 3bb755d | 2019-08-23 | Elasticsearch analytics publishes alias | `missed_before_hardening`: now covered by DEFECT-42 and SW-REQ-100; the regression witnesses prove `getMapping` emits the Elasticsearch `"alias"` field from `AnalyticsRecord.Alias` and does not synthesize an alias when the source field is empty. |
 | 51af27d | 2019-08-13 | Fix influx pump write loop duplication | `missed_before_hardening`: now covered by DEFECT-43 and SW-REQ-101; the Influx v1 round-trip witness proves a three-record purge produces one backend /write request carrying three line-protocol rows, closing the historical cumulative-prefix write-loop failure mode. |
 | d4d1cf7 | 2019-08-08 | Restore lists data to mongo aggregate mixed collection | `missed_before_hardening`: now covered by DEFECT-44 and SW-REQ-102; BSON evidence proves the restored Lists families survive persistence encoding, and the mixed aggregate regression witness reads aggregate documents back from Mongo and proves the `Lists.APIKeys` projection survives with identifier and hit-count data. |
-| c02a2cb | 2019-07-16 | Include HTTP 400 in aggregate error count | `covered_after_hardening`: DEFECT-45 + SW-REQ-103 make the HTTP error boundary explicit; `TestAggregateData_ResponseCode400CountsAsErrorBoundary` proves 400 and 500 increment error counters while 399 does not, and `go.aggregate-http-error-threshold-strict-greater-than` flags the historical strict-threshold shape. |
+| c02a2cb | 2019-07-16 | Include HTTP 400 in aggregate error count | `covered_after_hardening`: DEFECT-45 + SW-REQ-103 make the HTTP error boundary explicit; `TestAggregateData_ResponseCode400CountsAsErrorBoundary` proves 400 and 500 increment error counters while 399 does not. DEFECT-45 records proposed signal shape `go.aggregate-http-error-threshold-strict-greater-than` for the historical strict-threshold pattern; no committed signal artifact exists yet. |
 
 ## Existing Proof Records That Already Encode Lessons Learned
 
@@ -224,6 +224,26 @@ Problem reports:
 - DEFECT-42: Elasticsearch analytics mapping omitted alias.
 - DEFECT-43: Influx v1 wrote cumulative batches inside the record loop.
 - DEFECT-44: Mongo aggregate mixed collection lost Lists projection data.
+- DEFECT-45: REST aggregate omitted HTTP 400 from error counters.
+- DEFECT-46: Graph pumps skipped pump-specific environment overrides.
+- DEFECT-47: Kinesis KMS encrypted stream with missing KeyId was misclassified as a different configured key.
+- DEFECT-48: FIPS-labelled Docker images were wired to standard build IDs.
+
+Newer requirements introduced or strengthened by the later history pass:
+
+- SYS-REQ-036: FIPS-labelled release artifacts use FIPS build/package/base-image variants.
+- SW-REQ-103: REST aggregate HTTP error boundary includes HTTP 400 and above.
+- SW-REQ-104: Gateway-only latency is projected into StatsD and Prometheus metrics.
+- SW-REQ-105: Kinesis KMS stream state is reconciled against the configured key.
+- SW-REQ-106: Kafka `batch_bytes` is applied to `kafka.WriterConfig.BatchBytes`.
+- SW-REQ-107/SW-REQ-108/SW-REQ-109: Mongo aggregate configured-window valid/default/handoff behavior.
+
+Design/review records for additive, policy, superseded, or split-history rows:
+
+- `REVIEW-bad4cd3-mcp-analytics`, `REVIEW-25683f2-kinesis-feature`, `REVIEW-bf9e7e7-sqs-support`, `REVIEW-8ca8646-resurface-backend`, `REVIEW-33d9f48-kafka-batch-bytes`, and `REVIEW-ebd5a6c-gateway-latency-metrics` cover additive backend/metric feature rows where the hardening is requirements/evidence/KI debt rather than a fixed historical DEFECT.
+- `REVIEW-956b66a-mongo-driver-default`, `REVIEW-775f8e3-sqlite-support-removal`, and `REVIEW-206c1d0-fips-release-artifacts` cover support-matrix or release-artifact policy rows.
+- `REVIEW-0596e82-syslog-fragmentation`, `REVIEW-5965206-50e5f51-kinesis-kms`, `REVIEW-0ed84b9-mongo-graph-inclusion`, `REVIEW-1fd5ba9-mongo-collection-targets`, `REVIEW-7fa0754-graph-sql-aggregate-shard-target`, and `REVIEW-fbcb614-sql-empty-shard-batch` preserve split/superseded fix history or caught-regression reasoning where one commit introduced, superseded, or validated behavior later pinned by a DEFECT or requirement.
+- The remaining `REVIEW-*` records under `.proof/reviews/` attach the detailed commit-level reasoning for strengthened obligations and witnesses across SQL, GraphQL, Prometheus, Kafka, Splunk, Mongo, Elasticsearch, storage, demo data, omit-config, and raw-payload decode slices.
 
 KnownIssues/risks relevant to historical fix classes:
 
@@ -249,11 +269,44 @@ KnownIssues/risks relevant to historical fix classes:
 - external-pump-endpoints-no-ssrf-allowlist.
 - influx-v1-unbounded-reconnect-recursion.
 - logzio-segment-no-shutdown-flush.
+- sql-aggregate-sharded-upsert-targets-base-table.
+- docs-sqlite-still-listed-as-supported-sql-type.
+- graph-mcp-sql-sharded-indexes-untracked.
+- mcp-sql-aggregate-mysql-create-index-syntax-broken.
+- mongo-standard-insert-error-double-send-goroutine-leak.
+- mongo-standard-logbrowser-compatible-index-conflict.
+- kinesis-batch-size-over-aws-putrecords-limit.
+- kinesis-putrecords-per-record-failures-return-nil.
+- kinesis-random-partition-key-not-idempotent.
+- kinesis-splitintobatches-zero-infinite-loop.
+- sqs-malformed-record-sends-empty-entry.
+- resurface-writedata-blocks-on-queue-full.
+- resurface-worker-errors-swallowed.
+- resurface-disabled-writedata-closes-channel.
+- docs-kinesis-env-streamname-typo.
+- elasticsearch-api-key-auth-dropped-when-use-ssl.
+- elasticsearch-decode-base64-errors-silent-empty.
+- graph-sql-aggregate-atomicity-fault-injection-missing.
+- graph-sql-aggregate-migrate-sharded-tables-ignored.
+- kafka-logfatal-on-init-mech-and-timeout.
+- mongo-aggregate-last-document-query-ignores-timeout.
+- mongo-selective-final-skipped-record-drops-pending-batch.
+- preprocess-decode-error-leaves-nil-hole-in-keys.
+- protobuf-decode-nil-submessage-panic.
+- resurface-maprawdata-empty-request-panic.
+- serializer-protobuf-loses-city-names.
+- serializer-protobuf-loses-graphql-error-path.
+- sql-aggregate-background-index-concurrency-unbounded.
+- sql-aggregate-mysql-create-index-if-not-exists-unsupported.
+- sql-schema-no-version-policy.
+- temporal-storage-wire-format-unversioned.
+- tls-insecure-skip-verify-allowed.
 
-## Gaps To Consider Adding
+## Remaining Follow-Ups
 
-These are not product-code fixes. They are candidates for future proof-modeling
-or KnownIssue/problem-report work.
+These are not product-code fixes. Items marked completed are retained as a
+review trail; open items are follow-ups for future proof-modeling,
+KnownIssue/problem-report work, or conversion after an upstream fix lands here.
 
 1. Close or convert the active KI for TT-16778 / 140ef71 after merging the
    upstream product-code fix.
