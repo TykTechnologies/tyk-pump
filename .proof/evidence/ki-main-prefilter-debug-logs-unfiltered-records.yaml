@@ -3,15 +3,15 @@ profile: known_issue_reproducer
 requirements:
     - SW-REQ-001
     - SYS-REQ-016
-command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored rg -n 'Decoded Record:|filterData|RemoveIgnoredFields|writeToPumps' main.go main_test.go
+command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored go test -p=1 -count=1 -timeout=180s -run '^TestPreprocessAnalyticsValues_DebugLogsBeforeIgnoreFields_KI$' .
 status: pass
 observed_result: known_issue_reproduced
-executed_at: "2026-06-26T17:28:38Z"
+executed_at: "2026-06-26T17:51:14Z"
 input_set:
-    - KI main-prefilter-debug-logs-unfiltered-records static log-before-filter scan
+    - KI main-prefilter-debug-logs-unfiltered-records log-capture ignored-field tripwire
 freshness_hashes:
     main.go: sha256:7a4ae4a95012e40d7182ef458154ce8a83e224b53b1d390ceff72f943642dbf1
-    main_test.go: sha256:245a16ab453bd72877c9e415eaa99ea780ba127a82b6209fff1212d74eaeb638
+    main_test.go: sha256:08a871ce0bb7c0601943aecf99fb209ce1f01b586c7e70a8458f2ca6f1d46f9e
     proof.yaml: sha256:18dd484cb75c5c729bc063c96426b101df78e0c89ec729e39724c18f50367e0e
 known_issues:
     - main-prefilter-debug-logs-unfiltered-records

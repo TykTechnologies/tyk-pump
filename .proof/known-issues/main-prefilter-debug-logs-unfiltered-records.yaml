@@ -5,12 +5,13 @@ affected_requirements:
     - SW-REQ-001
     - SYS-REQ-016
 evidence_manifests:
+    - test:main_test.go:TestPreprocessAnalyticsValues_DebugLogsBeforeIgnoreFields_KI
     - .proof/evidence/ki-main-prefilter-debug-logs-unfiltered-records.yaml
 severity: medium
 severity_basis: risk
 risk: compliance
-reproducer_command: '>-'
-environment_note: Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source and command output.
+reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored go test -p=1 -count=1 -timeout=180s -run '^TestPreprocessAnalyticsValues_DebugLogsBeforeIgnoreFields_KI$' .
+environment_note: Run the focused log-capture tripwire under the memory monitor. The test serializes one record with an ignored api_key, verifies the forwarded record has api_key removed by filterData, and verifies the pre-filter debug log still contains the same secret; no external service or container is required.
 introduced_in: inception
 mitigation: Do not enable debug logging in environments where analytics records may carry sensitive fields, or ensure sensitive fields are scrubbed before they enter tyk-pump.
 remediation: Move record-level debug logging after ignore-field filtering or log only a redacted summary that cannot include ignored fields; add a log-capture test proving ignored fields are not emitted.
@@ -38,3 +39,7 @@ history:
       by: agent:codex
       action: edit
       detail: set-reproducer-command,add-evidence-manifest
+    - at: "2026-06-26T17:50:30Z"
+      by: agent:codex
+      action: edit
+      detail: add-log-capture-ignored-field-tripwire

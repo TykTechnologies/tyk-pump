@@ -56,6 +56,16 @@ func (p *MockedPump) WriteData(ctx context.Context, keys []interface{}) error {
 	return nil
 }
 
+type capturingPump struct {
+	MockedPump
+	received []interface{}
+}
+
+func (p *capturingPump) WriteData(ctx context.Context, keys []interface{}) error {
+	p.received = append([]interface{}(nil), keys...)
+	return p.MockedPump.WriteData(ctx, keys)
+}
+
 func (p *MockedPump) Shutdown() error {
 	p.TurnedOff = true
 	return nil
@@ -963,6 +973,62 @@ func TestPreprocessAnalyticsValuesSkipsDecodeErrors(t *testing.T) {
 		time.Now(),
 		1,
 	)
+}
+
+// Verifies: SW-REQ-001
+// Verifies: SYS-REQ-016
+// Verifies: KI:main-prefilter-debug-logs-unfiltered-records
+// Reproduces: main-prefilter-debug-logs-unfiltered-records
+// SW-REQ-001:secrets_not_logged:negative
+// SYS-REQ-016:secrets_not_logged:negative
+func TestPreprocessAnalyticsValues_DebugLogsBeforeIgnoreFields_KI(t *testing.T) {
+	originalPumps := Pumps
+	originalSystemConfig := SystemConfig
+	originalOutput := log.Out
+	originalLevel := log.Level
+	originalFormatter := log.Formatter
+	t.Cleanup(func() {
+		Pumps = originalPumps
+		SystemConfig = originalSystemConfig
+		log.Out = originalOutput
+		log.Level = originalLevel
+		log.Formatter = originalFormatter
+	})
+
+	var logs bytes.Buffer
+	log.Out = &logs
+	log.Level = logrus.DebugLevel
+	log.Formatter = &logrus.TextFormatter{DisableTimestamp: true, DisableColors: true}
+
+	const secret = "prefilter-debug-secret-api-key"
+	record := analytics.AnalyticsRecord{
+		APIID:  "api-prefilter-log",
+		APIKey: secret,
+		Path:   "/prefilter-log",
+	}
+	msgpackSerializer := serializer.NewAnalyticsSerializer(serializer.MSGP_SERIALIZER)
+	encoded, err := msgpackSerializer.Encode(&record)
+	require.NoError(t, err)
+
+	pump := &capturingPump{}
+	pump.SetIgnoreFields([]string{"api_key"})
+	Pumps = []pumps.Pump{pump}
+
+	PreprocessAnalyticsValues(
+		[]interface{}{string(encoded)},
+		msgpackSerializer,
+		"analytics-key",
+		false,
+		instrument.NewJob("prefilter-debug-log"),
+		time.Now(),
+		1,
+	)
+
+	require.Len(t, pump.received, 1)
+	forwarded, ok := pump.received[0].(analytics.AnalyticsRecord)
+	require.True(t, ok)
+	assert.Empty(t, forwarded.APIKey, "ignore_fields should remove api_key before forwarding")
+	assert.Contains(t, logs.String(), secret, "debug log currently contains the pre-filter API key")
 }
 
 // SW-REQ-002: deprecated raw-decode configuration warnings.
