@@ -16,11 +16,14 @@ import (
 )
 
 // File-level MC/DC witness rows for Kafka producer/configuration tests below.
-// Rows copied verbatim from `proof mcdc show SW-REQ-021`.
+// Rows copied verbatim from `proof mcdc show`.
 //
 // MCDC SW-REQ-021: tls_attached=F, use_ssl_configured=F => TRUE
 // MCDC SW-REQ-021: tls_attached=F, use_ssl_configured=T => FALSE
 // MCDC SW-REQ-021: tls_attached=T, use_ssl_configured=T => TRUE
+// MCDC SW-REQ-106: kafka_batch_bytes_configured=F, kafka_batch_bytes_applied=F => TRUE
+// MCDC SW-REQ-106: kafka_batch_bytes_configured=T, kafka_batch_bytes_applied=F => FALSE
+// MCDC SW-REQ-106: kafka_batch_bytes_configured=T, kafka_batch_bytes_applied=T => TRUE
 
 // kafkaInitWithBroker is a small helper that builds a unique-topic config
 // against the shared testcontainer Kafka broker. Returns the initialised pump

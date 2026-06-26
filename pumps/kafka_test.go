@@ -18,6 +18,9 @@ import (
 // MCDC SW-REQ-021: tls_attached=F, use_ssl_configured=F => TRUE
 // MCDC SW-REQ-021: tls_attached=F, use_ssl_configured=T => FALSE
 // MCDC SW-REQ-021: tls_attached=T, use_ssl_configured=T => TRUE
+// MCDC SW-REQ-106: kafka_batch_bytes_configured=F, kafka_batch_bytes_applied=F => TRUE
+// MCDC SW-REQ-106: kafka_batch_bytes_configured=T, kafka_batch_bytes_applied=F => FALSE
+// MCDC SW-REQ-106: kafka_batch_bytes_configured=T, kafka_batch_bytes_applied=T => TRUE
 
 // Verifies: SW-REQ-021
 func TestKafkaPump_New(t *testing.T) {
