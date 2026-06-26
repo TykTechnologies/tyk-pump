@@ -6,11 +6,13 @@ affected_requirements:
     - SYS-REQ-004
     - SW-REQ-075
 evidence_manifests:
-    - test:pumps/fanout_panic_isolated_test.go:TestFanoutPanicIsolated_PanicInOneDoesNotStallOthers
+    - test:fanout_panic_isolated_test.go:TestFanoutPanicIsolated_PanicInOneDoesNotStallOthers
+    - .proof/evidence/ki-pump-fanout-panic-not-recovered.yaml
 severity: medium
 severity_basis: risk
 risk: availability
-environment_note: Evidence is tied to the listed evidence_manifests entries; reproduce by rerunning the named test or code-signal scan and inspecting test:pumps/fanout_panic_isolated_test.go:TestFanoutPanicIsolated_PanicInOneDoesNotStallOthers.
+reproducer_command: go test -count=1 -timeout=180s -run '^TestFanoutPanicIsolated_PanicInOneDoesNotStallOthers$' .
+environment_note: Evidence is tied to the listed evidence_manifests entries; reproduce by rerunning the named test or code-signal scan and inspecting test:fanout_panic_isolated_test.go:TestFanoutPanicIsolated_PanicInOneDoesNotStallOthers.
 introduced_in: inception
 mitigation: Pumps are expected to be well-behaved; panics typically originate in third-party SDK code paths (mongo driver, kafka client, prometheus client) rather than the pump glue. Operators rely on container/orchestrator restart to recover from host-process crash. Run with restart=always under systemd/docker/k8s.
 remediation: |-
@@ -51,6 +53,18 @@ history:
       by: agent:codex
       action: review
       detail: reviewer=human:buger,new_review_date=2026-11-30
+    - at: "2026-06-26T14:27:38Z"
+      by: agent:codex
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-26T14:28:00Z"
+      by: agent:codex
+      action: edit
+      detail: set-reproducer-command
+    - at: "2026-06-26T14:31:00Z"
+      by: agent:codex
+      action: edit
+      detail: correct-root-level-verifying-test-path
 references:
     - related-ki:no-panic-recovery-in-exec-pump-writing
-verifying_test: pumps/fanout_panic_isolated_test.go::TestFanoutPanicIsolated_PanicInOneDoesNotStallOthers
+verifying_test: fanout_panic_isolated_test.go::TestFanoutPanicIsolated_PanicInOneDoesNotStallOthers

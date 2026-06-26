@@ -1,0 +1,15 @@
+schema_version: proof.evidence_profile.v1
+profile: known_issue_reproducer
+requirement: SW-REQ-034
+command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored go test -p=1 -count=1 -timeout=180s -run '^TestMongoPump_AccumulateSet_FinalSkippedRecordDropsPendingBatch_KI$' ./pumps
+status: pass
+observed_result: known_issue_reproduced
+executed_at: "2026-06-26T14:31:49Z"
+input_set:
+    - KI mongo-standard-final-skipped-record-drops-pending-batch focused tripwire
+freshness_hashes:
+    proof.yaml: sha256:18dd484cb75c5c729bc063c96426b101df78e0c89ec729e39724c18f50367e0e
+    pumps/mongo.go: sha256:46c26200acfb5910015a33076a6d691dc0d04afde4fcf17f42734d06cad7e7c6
+    pumps/mongo_test.go: sha256:dad8bc98a4259c2dac154f1de022a26fd86d61dcbe59953287818eabf3a9423d
+known_issues:
+    - mongo-standard-final-skipped-record-drops-pending-batch

@@ -1,25 +1,26 @@
 id: mongo-standard-logbrowser-compatible-index-conflict
 title: Standard Mongo logBrowserIndex compatible existing-index conflict is returned on non-StandardMongo paths
 description: |
-  MongoPump.ensureIndexes returns the logBrowserIndex CreateIndex error
-  directly. On non-StandardMongo modes, where the collection-exists shortcut is
-  intentionally bypassed for DocumentDB/Cosmos compatibility, a backend error
-  such as "already exists with a different name" for an equivalent
-  logBrowserIndex key set is propagated to Init, logged, and the standard
-  collection can continue without a clean idempotent schema setup result. This
-  is the same compatibility class as historical commit 6a8ab73, but current
-  standard Mongo only avoids it on the StandardMongo path by skipping index
-  creation when the collection already exists.
+    MongoPump.ensureIndexes returns the logBrowserIndex CreateIndex error
+    directly. On non-StandardMongo modes, where the collection-exists shortcut is
+    intentionally bypassed for DocumentDB/Cosmos compatibility, a backend error
+    such as "already exists with a different name" for an equivalent
+    logBrowserIndex key set is propagated to Init, logged, and the standard
+    collection can continue without a clean idempotent schema setup result. This
+    is the same compatibility class as historical commit 6a8ab73, but current
+    standard Mongo only avoids it on the StandardMongo path by skipping index
+    creation when the collection already exists.
 affected_requirements:
     - SW-REQ-034
 evidence_manifests:
     - test:pumps/mongo_mcdc_100_test.go:TestMongoPump_EnsureIndexes_LogBrowserDifferentName_KI
+    - .proof/evidence/ki-mongo-standard-logbrowser-compatible-index-conflict.yaml
 severity: medium
 severity_basis: risk
 risk: data_integrity
-reproducer_command: go test ./pumps -run '^TestMongoPump_EnsureIndexes_LogBrowserDifferentName_KI$' -count=1
+reproducer_command: go test -count=1 -timeout=180s -run '^TestMongoPump_EnsureIndexes_LogBrowserDifferentName_KI$' ./pumps
 environment_note: The reproducer uses the fake persistent store already present in mongo_mcdc_100_test.go, so it does not require a MongoDB container.
-introduced_in: 8458e11
+introduced_in: "8458e11"
 mitigation: Keep standard Mongo deployments on the StandardMongo collection-exists shortcut where possible; for DocumentDB/Cosmos-style modes, pre-create the canonical logBrowserIndex name or monitor Init logs for compatible-index conflicts.
 remediation: Treat the storage-layer compatible-index error as idempotent success in MongoPump.ensureIndexes for the logBrowserIndex path while preserving propagation for unrelated CreateIndex failures.
 owner: tyk-team
@@ -35,3 +36,11 @@ history:
         suppresses the compatible-index conflict, but standard Mongo returns
         the logBrowserIndex CreateIndex error directly on non-StandardMongo
         paths.
+    - at: "2026-06-26T14:27:38Z"
+      by: agent:codex
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-26T14:28:00Z"
+      by: agent:codex
+      action: edit
+      detail: set-reproducer-command

@@ -1,25 +1,26 @@
 id: mongo-standard-final-skipped-record-drops-pending-batch
 title: Standard Mongo AccumulateSet drops pending valid records when the final input item is skipped after a prior chunk
 description: |
-  MongoPump.AccumulateSet appends an in-progress batch from the per-item
-  accumulate call only when that processed item is the final input item. After
-  the loop, it flushes the remaining result set only when no earlier batch has
-  already been appended. If a final input item is skipped, for example because
-  ResponseCode is -1, and an earlier chunk has already been emitted, the
-  pending valid records accumulated after that chunk are never returned.
+    MongoPump.AccumulateSet appends an in-progress batch from the per-item
+    accumulate call only when that processed item is the final input item. After
+    the loop, it flushes the remaining result set only when no earlier batch has
+    already been appended. If a final input item is skipped, for example because
+    ResponseCode is -1, and an earlier chunk has already been emitted, the
+    pending valid records accumulated after that chunk are never returned.
 
-  Example: with MaxInsertBatchSizeBytes=1024, two empty valid records followed
-  by a final ResponseCode=-1 record return one accumulated valid record instead
-  of two. The second valid record should still be returned because it was below
-  both the document and batch limits.
+    Example: with MaxInsertBatchSizeBytes=1024, two empty valid records followed
+    by a final ResponseCode=-1 record return one accumulated valid record instead
+    of two. The second valid record should still be returned because it was below
+    both the document and batch limits.
 affected_requirements:
     - SW-REQ-034
 evidence_manifests:
     - test:pumps/mongo_test.go:TestMongoPump_AccumulateSet_FinalSkippedRecordDropsPendingBatch_KI
+    - .proof/evidence/ki-mongo-standard-final-skipped-record-drops-pending-batch.yaml
 severity: medium
 severity_basis: risk
 risk: data_integrity
-reproducer_command: go test -count=1 -timeout 60s -run '^TestMongoPump_AccumulateSet_FinalSkippedRecordDropsPendingBatch_KI$' ./pumps
+reproducer_command: go test -count=1 -timeout=180s -run '^TestMongoPump_AccumulateSet_FinalSkippedRecordDropsPendingBatch_KI$' ./pumps
 introduced_in: 83a16f3
 mitigation: Avoid sending final skipped records in the same purge batch where earlier records may have already forced a chunk boundary; filter invalid ResponseCode=-1 records before they reach the standard Mongo pump where practical.
 remediation: Ensure MongoPump.AccumulateSet always flushes a non-empty pending result set after the loop, regardless of whether earlier chunks were already appended or the final input item was skipped.
@@ -36,3 +37,11 @@ history:
       by: agent:codex
       action: edit
       detail: Set origin to 83a16f3, where standard Mongo batching and final-item skip behavior were introduced.
+    - at: "2026-06-26T14:27:38Z"
+      by: agent:codex
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-26T14:28:01Z"
+      by: agent:codex
+      action: edit
+      detail: set-reproducer-command

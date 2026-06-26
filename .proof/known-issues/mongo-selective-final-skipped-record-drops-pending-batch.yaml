@@ -1,26 +1,27 @@
 id: mongo-selective-final-skipped-record-drops-pending-batch
 title: MongoSelective AccumulateSet drops pending valid records when the final input item is skipped
 description: |
-  MongoSelectivePump.AccumulateSet appends the in-progress batch only from the
-  per-item accumulate call when that item is marked as the last input item. If
-  the final input item is skipped before a normal append path, for example
-  because getItemSizeBytes returns -1 for an oversized RawResponse or
-  processItem excludes a ResponseCode==-1 TCP/error record, accumulate returns
-  early and the pending valid records accumulated from earlier inputs are never
-  flushed into the returned batches.
+    MongoSelectivePump.AccumulateSet appends the in-progress batch only from the
+    per-item accumulate call when that item is marked as the last input item. If
+    the final input item is skipped before a normal append path, for example
+    because getItemSizeBytes returns -1 for an oversized RawResponse or
+    processItem excludes a ResponseCode==-1 TCP/error record, accumulate returns
+    early and the pending valid records accumulated from earlier inputs are never
+    flushed into the returned batches.
 
-  Example: with MaxDocumentSizeBytes=1024, an empty valid record followed by a
-  record with RawResponse="x" returns zero accumulated records. The first record
-  should still be returned because it was valid and below the size threshold.
+    Example: with MaxDocumentSizeBytes=1024, an empty valid record followed by a
+    record with RawResponse="x" returns zero accumulated records. The first record
+    should still be returned because it was valid and below the size threshold.
 affected_requirements:
     - SW-REQ-035
     - SW-REQ-092
 evidence_manifests:
     - test:pumps/mongo_selective_test.go:TestMongoSelectivePump_AccumulateSet_FinalOversizeDropsPendingBatch_KI
+    - .proof/evidence/ki-mongo-selective-final-skipped-record-drops-pending-batch.yaml
 severity: medium
 severity_basis: risk
 risk: data_integrity
-reproducer_command: go test -count=1 -timeout 60s -run TestMongoSelectivePump_AccumulateSet_FinalOversizeDropsPendingBatch_KI ./pumps
+reproducer_command: go test -count=1 -timeout=180s -run '^TestMongoSelectivePump_AccumulateSet_FinalOversizeDropsPendingBatch_KI$' ./pumps
 introduced_in: 83a16f3
 mitigation: Operators should avoid relying on MongoSelective to partially retain valid records when the final record in a batch can exceed MaxDocumentSizeBytes; malformed or very large records should be filtered before the pump where practical.
 remediation: Ensure AccumulateSet flushes any pending thisResultSet after the loop, even when the final input item is skipped by processItem or getItemSizeBytes.
@@ -41,3 +42,11 @@ history:
       by: agent:codex
       action: edit
       detail: Broadened description from final oversize skip to any final processItem/getItemSizeBytes skip, including ResponseCode==-1 TCP/error records found during aa7a88e review.
+    - at: "2026-06-26T14:27:38Z"
+      by: agent:codex
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-26T14:28:00Z"
+      by: agent:codex
+      action: edit
+      detail: set-reproducer-command

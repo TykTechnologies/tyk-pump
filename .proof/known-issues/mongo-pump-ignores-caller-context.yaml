@@ -11,18 +11,21 @@ affected_requirements:
     - SW-REQ-038
 evidence_manifests:
     - test:pumps/mongo_mcdc_test.go:TestMongoPump_WriteData_IgnoresCallerCtx_KI
-    - code_signal:opengrep:go.concurrency.unguarded-channel-send:pumps/mongo.go:438
+    - code_signal:opengrep:go.concurrency.unguarded-channel-send:pumps/mongo.go:440
     - code_signal:opengrep:go.concurrency.unguarded-channel-send:pumps/graph_mongo.go:135
-    - code_signal:opengrep:go.context.dropped-on-floor:pumps/graph_mongo.go:101
-    - code_signal:opengrep:go.context.dropped-on-floor:pumps/mongo.go:402
-    - code_signal:opengrep:go.context.dropped-on-floor:pumps/mongo_selective.go:203
+    - code_signal:opengrep:go.context.dropped-on-floor:pumps/graph_mongo.go:148
+    - code_signal:opengrep:go.context.dropped-on-floor:pumps/mcp_mongo.go:138
+    - code_signal:opengrep:go.context.dropped-on-floor:pumps/mongo.go:437
+    - code_signal:opengrep:go.context.dropped-on-floor:pumps/mongo_selective.go:243
+    - .proof/evidence/ki-mongo-pump-ignores-caller-context.yaml
 severity: medium
 severity_basis: risk
 risk: availability
-environment_note: Evidence is tied to the listed evidence_manifests entries; reproduce by rerunning the named test or code-signal scan and inspecting code_signal:opengrep:go.concurrency.unguarded-channel-send:pumps/mongo.go:438.
+reproducer_command: go test -count=1 -timeout=180s -run '^TestMongoPump_WriteData_IgnoresCallerCtx_KI$' ./pumps
+environment_note: The focused reproducer is Mongo-container-backed and must run under the memory monitor. Code-signal evidence is tied to the listed evidence_manifests entries; reproduce by rerunning the named test or inspecting code_signal:opengrep:go.context.dropped-on-floor:pumps/mongo.go:437.
 introduced_in: inception
 mitigation: Configure mongo client-side timeouts via the connection string (connectTimeoutMS, socketTimeoutMS) until the pump forwards the caller ctx to m.store.Insert.
-remediation: Replace context.Background() with the ctx parameter received by WriteData in all four files — pumps/mongo.go:435, pumps/mongo_selective.go:242 and :375, pumps/graph_mongo.go:148, pumps/mcp_mongo.go:138. Add a test that cancels ctx and asserts WriteData returns promptly with ctx.Err() for each variant.
+remediation: Replace context.Background() with the ctx parameter received by WriteData in all four files — pumps/mongo.go:437, pumps/mongo_selective.go:243 and :377, pumps/graph_mongo.go:148, pumps/mcp_mongo.go:138. Add a test that cancels ctx and asserts WriteData returns promptly with ctx.Err() for each variant.
 owner: tyk-team
 review_date: "2026-11-30"
 release_disposition: ship_with_known_issue
@@ -75,3 +78,15 @@ history:
       by: agent:codex
       action: review
       detail: reviewer=human:buger,new_review_date=2026-11-30
+    - at: "2026-06-26T14:27:38Z"
+      by: agent:codex
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-26T14:28:00Z"
+      by: agent:codex
+      action: edit
+      detail: set-reproducer-command
+    - at: "2026-06-26T14:31:00Z"
+      by: agent:codex
+      action: edit
+      detail: refresh-current-source-reference
