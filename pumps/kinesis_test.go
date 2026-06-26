@@ -604,7 +604,7 @@ func TestKinesisPump_DescribeStream_NotEncrypted_StartEncryptionResourceInUse(t 
 
 // Verifies: SW-REQ-056
 // Verifies: SW-REQ-105
-// SW-REQ-105:kms_stream_state_reconciled:error
+// SW-REQ-105:kms_stream_state_reconciled:negative
 // MCDC SW-REQ-056: kms_key_configured=T, stream_encryption_verified=F => FALSE
 func TestKinesisPump_DescribeStream_NotEncrypted_StartEncryptionGenericError(t *testing.T) {
 	kmsKeyID := "arn:aws:kms:us-east-1:123456789012:key/test-key-id"
@@ -646,7 +646,7 @@ func TestKinesisPump_DescribeStream_NotEncrypted_StartEncryptionGenericError(t *
 
 // Verifies: SW-REQ-056
 // Verifies: SW-REQ-105
-// SW-REQ-105:kms_stream_state_reconciled:error
+// SW-REQ-105:kms_stream_state_reconciled:negative
 // MCDC SW-REQ-056: kms_key_configured=T, stream_encryption_verified=F => FALSE
 func TestKinesisPump_DescribeStream_APIFailure(t *testing.T) {
 	kmsKeyID := "arn:aws:kms:us-east-1:123456789012:key/test-key-id"

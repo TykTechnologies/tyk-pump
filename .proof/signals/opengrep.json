@@ -1,8 +1,8 @@
 {
   "schema_version": "proof.code_signals.report.v1",
   "provider": "opengrep",
-  "generated_at": "2026-06-25T20:43:12Z",
-  "input_hash": "sha256:41c9154643a4407a8368a38f246253a0448478114371318117f1401dda513131",
+  "generated_at": "2026-06-26T00:47:50Z",
+  "input_hash": "sha256:2ae8eb7b6d81c47e89c3a313275864a2501317fa1070ffeb2aa2f88a5e3ed9dd",
   "mode": "run",
   "source": "stdout",
   "format": "sarif",
@@ -4544,7 +4544,7 @@
       ],
       "message": "log.Fatal / os.Exit called from a non-main constructor or processing function.\nThis aborts the entire process and bypasses caller error handling; return\nan error instead so the caller can recover.\n",
       "fingerprint": "sha256:6aa3b948a3651f2905becc173ef0d931146d9456de4fe62cd1b5ec34f0de5436",
-      "source_hash": "sha256:2f7fcf2d1ce9b7be444bd4d6ff43a48c285772a4ab3d0572d1a78e56149afec8"
+      "source_hash": "sha256:9e6d675bf3db1aa3da93b6a46fb4bcd3699d2b8f5e10c1cf447fd65867443a5d"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -4567,7 +4567,7 @@
       ],
       "message": "A pump's `Init(config)` method calls `log.Fatal(...)` on a config\ndecode or connection failure. log.Fatal calls os.Exit(1), bypassing\nevery deferred cleanup AND every sibling pump's chance to keep\nworking. A single misconfigured pump in a multi-pump deployment\ntakes down the whole process. Either return the error to the caller\n(the pump-init driver should decide whether the failure is fatal\nfor the WHOLE process, or just for THIS pump), or recover into a\ndegraded \"this pump is inert\" mode while others continue.\n",
       "fingerprint": "sha256:04cb0f9a5f2402978a4c5f91e3be8118352e38f875a6e583705b7a16745c49c3",
-      "source_hash": "sha256:2f7fcf2d1ce9b7be444bd4d6ff43a48c285772a4ab3d0572d1a78e56149afec8"
+      "source_hash": "sha256:9e6d675bf3db1aa3da93b6a46fb4bcd3699d2b8f5e10c1cf447fd65867443a5d"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -4589,7 +4589,7 @@
       ],
       "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
       "fingerprint": "sha256:e339fe24266e5ed6302178253c7fbe9482c38061e673045a528f070eed60303f",
-      "source_hash": "sha256:2f7fcf2d1ce9b7be444bd4d6ff43a48c285772a4ab3d0572d1a78e56149afec8"
+      "source_hash": "sha256:9e6d675bf3db1aa3da93b6a46fb4bcd3699d2b8f5e10c1cf447fd65867443a5d"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -4611,7 +4611,7 @@
       ],
       "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
       "fingerprint": "sha256:e0d97e20e52c7a6bda34f8ced00654f62a848cbfff7caa11cfd8b327d270e2f6",
-      "source_hash": "sha256:2f7fcf2d1ce9b7be444bd4d6ff43a48c285772a4ab3d0572d1a78e56149afec8"
+      "source_hash": "sha256:9e6d675bf3db1aa3da93b6a46fb4bcd3699d2b8f5e10c1cf447fd65867443a5d"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -4629,7 +4629,7 @@
       ],
       "message": "Database read API use requires parameterization, timeout, consistency, and error-propagation evidence.",
       "fingerprint": "sha256:effb6d8f0975637031236d58b728a40f4804253cee6a10a3cfe190219454a41b",
-      "source_hash": "sha256:2f7fcf2d1ce9b7be444bd4d6ff43a48c285772a4ab3d0572d1a78e56149afec8"
+      "source_hash": "sha256:9e6d675bf3db1aa3da93b6a46fb4bcd3699d2b8f5e10c1cf447fd65867443a5d"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -4651,7 +4651,7 @@
       ],
       "message": "log.Fatal / os.Exit called from a non-main constructor or processing function.\nThis aborts the entire process and bypasses caller error handling; return\nan error instead so the caller can recover.\n",
       "fingerprint": "sha256:95eb6b96a25d60525c14d6652651a7332526dbfc1d8e1c2ffea902a997826b1d",
-      "source_hash": "sha256:6ce75cfc51caf5c713e290f9feb6866c70382fdba91bd406f73a4b4f25bc42af"
+      "source_hash": "sha256:879166e2224ee274262b827becef45f9eb225cdd05876cd9b9d5db10b8ee8b62"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -4674,7 +4674,7 @@
       ],
       "message": "A pump's `Init(config)` method calls `log.Fatal(...)` on a config\ndecode or connection failure. log.Fatal calls os.Exit(1), bypassing\nevery deferred cleanup AND every sibling pump's chance to keep\nworking. A single misconfigured pump in a multi-pump deployment\ntakes down the whole process. Either return the error to the caller\n(the pump-init driver should decide whether the failure is fatal\nfor the WHOLE process, or just for THIS pump), or recover into a\ndegraded \"this pump is inert\" mode while others continue.\n",
       "fingerprint": "sha256:f819c3c8d8d3f17fec3b6eb12e769d89b1fc60262aad726d22d2d5deb8cfef06",
-      "source_hash": "sha256:6ce75cfc51caf5c713e290f9feb6866c70382fdba91bd406f73a4b4f25bc42af"
+      "source_hash": "sha256:879166e2224ee274262b827becef45f9eb225cdd05876cd9b9d5db10b8ee8b62"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -4696,7 +4696,7 @@
       ],
       "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
       "fingerprint": "sha256:0e6c97eaed7ed5b0aa8d6d8ca31788e35016446f421f8eabdb3aff114e1338b1",
-      "source_hash": "sha256:6ce75cfc51caf5c713e290f9feb6866c70382fdba91bd406f73a4b4f25bc42af"
+      "source_hash": "sha256:879166e2224ee274262b827becef45f9eb225cdd05876cd9b9d5db10b8ee8b62"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -4718,7 +4718,7 @@
       ],
       "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
       "fingerprint": "sha256:ae55b4aa02f63ab219780b0ff5a1971dc7f3575d9e506ea2a7875905e29e230a",
-      "source_hash": "sha256:6ce75cfc51caf5c713e290f9feb6866c70382fdba91bd406f73a4b4f25bc42af"
+      "source_hash": "sha256:879166e2224ee274262b827becef45f9eb225cdd05876cd9b9d5db10b8ee8b62"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -4740,7 +4740,7 @@
       ],
       "message": "Function receives a context.Context parameter but creates a fresh\ncontext.Background() / context.TODO() inside the body and uses that\ninstead. Caller deadlines and cancellation can be silently dropped.\n",
       "fingerprint": "sha256:5de0775b59f5eae03199aaf5d26bbd3376a8ff0ed5b306c587ad447e82c7a2ce",
-      "source_hash": "sha256:6ce75cfc51caf5c713e290f9feb6866c70382fdba91bd406f73a4b4f25bc42af"
+      "source_hash": "sha256:879166e2224ee274262b827becef45f9eb225cdd05876cd9b9d5db10b8ee8b62"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -4749,8 +4749,8 @@
       "signal_id": "slice.preallocated_continue_on_error",
       "artifact": "pumps/mongo_selective.go",
       "span": {
-        "start_line": 369,
-        "end_line": 369
+        "start_line": 370,
+        "end_line": 370
       },
       "confidence": "medium",
       "tags": [
@@ -4761,8 +4761,8 @@
         "nil_safety"
       ],
       "message": "Slice is preallocated with len(), filled by indexed assignment, and the\nloop body can continue on error. That can leave zero-value holes in the\nresult; append to a zero-length slice when sparse output is not intended.\n",
-      "fingerprint": "sha256:2c4478dce15e3bd2efa0dbd7e5a005c2e249697c8e88f595fa53833db09f9681",
-      "source_hash": "sha256:6ce75cfc51caf5c713e290f9feb6866c70382fdba91bd406f73a4b4f25bc42af"
+      "fingerprint": "sha256:ca2f8fd33d7e827f35c98eca2310ad1d4973c2881a4d40ba1773ca358705815f",
+      "source_hash": "sha256:879166e2224ee274262b827becef45f9eb225cdd05876cd9b9d5db10b8ee8b62"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -4784,7 +4784,7 @@
       ],
       "message": "log.Fatal / os.Exit called from a non-main constructor or processing function.\nThis aborts the entire process and bypasses caller error handling; return\nan error instead so the caller can recover.\n",
       "fingerprint": "sha256:2d0b59ac79404a1d69ab876f847e3060277f902bbb94c07fd2b8ef94682629f9",
-      "source_hash": "sha256:1a868229e1d91b44ac472f54a0edd2933a6a6709dc6cbade445e7f41b3401863"
+      "source_hash": "sha256:774432d941ef9e10b0073a13697e06c3582a67b51690fccf30c662407bb7d9a8"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -4807,7 +4807,7 @@
       ],
       "message": "A pump's `Init(config)` method calls `log.Fatal(...)` on a config\ndecode or connection failure. log.Fatal calls os.Exit(1), bypassing\nevery deferred cleanup AND every sibling pump's chance to keep\nworking. A single misconfigured pump in a multi-pump deployment\ntakes down the whole process. Either return the error to the caller\n(the pump-init driver should decide whether the failure is fatal\nfor the WHOLE process, or just for THIS pump), or recover into a\ndegraded \"this pump is inert\" mode while others continue.\n",
       "fingerprint": "sha256:951c3923c53a19ff7e0c322fbf14f54274a8c510e231211a15476adaab6e5239",
-      "source_hash": "sha256:1a868229e1d91b44ac472f54a0edd2933a6a6709dc6cbade445e7f41b3401863"
+      "source_hash": "sha256:774432d941ef9e10b0073a13697e06c3582a67b51690fccf30c662407bb7d9a8"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -4829,7 +4829,7 @@
       ],
       "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
       "fingerprint": "sha256:edab113255d823fcaf03d95457ee642df3a7b0e527c107b96f2096a41a1350b0",
-      "source_hash": "sha256:1a868229e1d91b44ac472f54a0edd2933a6a6709dc6cbade445e7f41b3401863"
+      "source_hash": "sha256:774432d941ef9e10b0073a13697e06c3582a67b51690fccf30c662407bb7d9a8"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -4847,7 +4847,7 @@
       ],
       "message": "HTTP server API use requires listener, request-boundary, timeout, and static-file review evidence.",
       "fingerprint": "sha256:c145a9a569d0d759e66a8ad1ce1d199e760e1331700dc38eb2d8c1c04cbc3d47",
-      "source_hash": "sha256:1a868229e1d91b44ac472f54a0edd2933a6a6709dc6cbade445e7f41b3401863"
+      "source_hash": "sha256:774432d941ef9e10b0073a13697e06c3582a67b51690fccf30c662407bb7d9a8"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -4869,7 +4869,7 @@
       ],
       "message": "Library code registers handlers on or serves http.DefaultServeMux\n(http.Handle / http.HandleFunc / http.ListenAndServe(..., nil)). The\nDefaultServeMux is process-global; a second init in the same process\n(re-init after config reload, parallel tests, two pumps configured for\ndifferent ports) panics with \"http: multiple registrations for /metrics\".\nConstruct an explicit *http.ServeMux and wire it through a private\n*http.Server.\n",
       "fingerprint": "sha256:aded8fa152ca6aecdd033da2972d9130b1a711ec10b8580c01c6352377a52f8e",
-      "source_hash": "sha256:1a868229e1d91b44ac472f54a0edd2933a6a6709dc6cbade445e7f41b3401863"
+      "source_hash": "sha256:774432d941ef9e10b0073a13697e06c3582a67b51690fccf30c662407bb7d9a8"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -4890,7 +4890,7 @@
       ],
       "message": "Goroutine spawn requires lifecycle, cancellation, and shutdown ownership evidence.",
       "fingerprint": "sha256:d46294425e575f79a194945ef66d696682a3fee00d770bd919efdfe2a669f5dc",
-      "source_hash": "sha256:1a868229e1d91b44ac472f54a0edd2933a6a6709dc6cbade445e7f41b3401863"
+      "source_hash": "sha256:774432d941ef9e10b0073a13697e06c3582a67b51690fccf30c662407bb7d9a8"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -4908,7 +4908,7 @@
       ],
       "message": "Goroutine spawn lacks an obvious local lifecycle or cancellation cue.",
       "fingerprint": "sha256:801f07b23c7b18b4b0f9603356d6c082590fc443b063dc30152109f90809aa69",
-      "source_hash": "sha256:1a868229e1d91b44ac472f54a0edd2933a6a6709dc6cbade445e7f41b3401863"
+      "source_hash": "sha256:774432d941ef9e10b0073a13697e06c3582a67b51690fccf30c662407bb7d9a8"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -4926,7 +4926,7 @@
       ],
       "message": "HTTP server API use requires listener, request-boundary, timeout, and static-file review evidence.",
       "fingerprint": "sha256:dcbe06d8e2774ace247722f3dd31c49a16e5862f19b826926a0f145010abfaa2",
-      "source_hash": "sha256:1a868229e1d91b44ac472f54a0edd2933a6a6709dc6cbade445e7f41b3401863"
+      "source_hash": "sha256:774432d941ef9e10b0073a13697e06c3582a67b51690fccf30c662407bb7d9a8"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -4948,7 +4948,7 @@
       ],
       "message": "Library code registers handlers on or serves http.DefaultServeMux\n(http.Handle / http.HandleFunc / http.ListenAndServe(..., nil)). The\nDefaultServeMux is process-global; a second init in the same process\n(re-init after config reload, parallel tests, two pumps configured for\ndifferent ports) panics with \"http: multiple registrations for /metrics\".\nConstruct an explicit *http.ServeMux and wire it through a private\n*http.Server.\n",
       "fingerprint": "sha256:6c5e23e7d7197ed9c1ac8cc1bec3cb87033c45c994ecb53e6c62ebd0e7a70c92",
-      "source_hash": "sha256:1a868229e1d91b44ac472f54a0edd2933a6a6709dc6cbade445e7f41b3401863"
+      "source_hash": "sha256:774432d941ef9e10b0073a13697e06c3582a67b51690fccf30c662407bb7d9a8"
     },
     {
       "schema_version": "proof.code_signals.v1",

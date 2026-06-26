@@ -182,7 +182,7 @@ func hasInsertErrDoubleSendPattern(fn *ast.FuncDecl) bool {
 		errSendInBranch := false
 		nilSendAfterBranch := false
 		for _, stmt := range lit.Body.List {
-			if ifStmt, ok := stmt.(*ast.IfStmt); ok && isErrNotNil(ifStmt.Cond) && blockSends(ifStmt.Body, "errCh", "err") {
+			if ifStmt, ok := stmt.(*ast.IfStmt); ok && blockSends(ifStmt.Body, "errCh", "err") {
 				errSendInBranch = true
 				continue
 			}
@@ -219,7 +219,7 @@ func returnsOnFirstErrChError(fn *ast.FuncDecl) bool {
 			return true
 		}
 		for _, stmt := range caseClause.Body {
-			if ifStmt, ok := stmt.(*ast.IfStmt); ok && isErrNotNil(ifStmt.Cond) && blockReturnsIdent(ifStmt.Body, "err") {
+			if ifStmt, ok := stmt.(*ast.IfStmt); ok && blockReturnsIdent(ifStmt.Body, "err") {
 				found = true
 				return false
 			}

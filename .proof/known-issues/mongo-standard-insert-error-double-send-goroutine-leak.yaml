@@ -31,3 +31,7 @@ history:
       by: agent:codex
       action: created
       detail: Found during TT-695 commit-level proof review; recorded as current product debt rather than changing product behavior.
+    - at: "2026-06-26T00:52:00Z"
+      by: agent:codex
+      action: reproducer_hardened
+      detail: Made the AST-based KI tripwire match the errCh send/return structure rather than the exact if-condition text so it remains valid under proof MC/DC instrumentation.

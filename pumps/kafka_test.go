@@ -99,7 +99,7 @@ func TestKafkaPump_Init_BatchBytesConfiguration(t *testing.T) {
 
 // Verifies: SW-REQ-021
 // Verifies: SW-REQ-106
-// SW-REQ-106:backend_batch_byte_limit_applied:integration
+// SW-REQ-106:backend_batch_byte_limit_applied:nominal
 func TestKafkaPump_Init_BatchBytesWithOtherConfigs(t *testing.T) {
 	brokers := kafkaBrokerAddrs(t)
 	config := map[string]interface{}{
@@ -148,7 +148,7 @@ func TestKafkaPump_BatchBytesEnvironmentVariable(t *testing.T) {
 
 // Verifies: SW-REQ-021
 // Verifies: SW-REQ-106
-// SW-REQ-106:backend_batch_byte_limit_applied:integration
+// SW-REQ-106:backend_batch_byte_limit_applied:nominal
 func TestKafkaPump_WriterConfigIntegrity(t *testing.T) {
 	// Test that BatchBytes configuration doesn't interfere with other writer config fields.
 	// Uses the live testcontainer broker addresses so the configured brokers are

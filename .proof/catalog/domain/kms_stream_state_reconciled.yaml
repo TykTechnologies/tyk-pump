@@ -36,7 +36,7 @@ recommended_evidence:
     note: Mocked backend Init witness where the stream reports KMS encryption with no key id and the pump calls the enable/encrypt API with the configured key.
   - kind: negative
     note: Mocked backend Init witness where the stream reports a different non-empty key and Init fails.
-  - kind: error
+  - kind: negative
     note: Mocked backend Init witnesses where describe/enable errors are surfaced, except documented idempotent in-progress responses.
 frameworks:
   - id: CWE
