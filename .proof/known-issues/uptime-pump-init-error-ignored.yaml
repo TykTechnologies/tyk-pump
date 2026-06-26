@@ -9,7 +9,7 @@ evidence_manifests:
 severity: medium
 severity_basis: risk
 risk: correctness
-reproducer_command: rg -n "func initialiseUptimePump|UptimePump\.Init\(|Init Uptime Pump" main.go
+reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored go test -p=1 -count=1 -timeout=180s -run '^TestInitialiseUptimePumpIgnoresInitError_KI$' .
 introduced_in: inception
 mitigation: Disable uptime purging when backend configuration is not validated externally, or verify uptime backend connectivity independently before starting the pump.
 remediation: Check the UptimePump.Init return value and either fail startup with a typed error or mark uptime forwarding unavailable in an observable way.
@@ -29,3 +29,7 @@ history:
       by: agent:codex
       action: edit
       detail: add-evidence-manifest
+    - at: "2026-06-26T18:17:48Z"
+      by: agent:codex
+      action: evidence_hardened
+      detail: replaced static rg scan with AST witness TestInitialiseUptimePumpIgnoresInitError_KI

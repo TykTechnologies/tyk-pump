@@ -5,6 +5,9 @@ import (
 	"context"
 	"encoding/base64"
 	"errors"
+	"go/ast"
+	"go/parser"
+	"go/token"
 	"net"
 	"os"
 	"os/exec"
@@ -149,6 +152,30 @@ func (p *initErrorPump) New() pumps.Pump {
 
 func (p *initErrorPump) Init(interface{}) error {
 	return errors.New("init failed")
+}
+
+type shutdownCapableUptimePump struct {
+	initCalled     bool
+	writeRequests  int
+	shutdownCalled bool
+}
+
+func (p *shutdownCapableUptimePump) GetName() string {
+	return "Mocked Uptime Pump"
+}
+
+func (p *shutdownCapableUptimePump) Init(interface{}) error {
+	p.initCalled = true
+	return nil
+}
+
+func (p *shutdownCapableUptimePump) WriteUptimeData(data []interface{}) {
+	p.writeRequests += len(data)
+}
+
+func (p *shutdownCapableUptimePump) Shutdown() error {
+	p.shutdownCalled = true
+	return nil
 }
 
 // Verifies: SW-REQ-001
@@ -780,6 +807,35 @@ func TestCheckShutdownNoSignal(t *testing.T) {
 	assert.False(t, checkShutdown(ctx, &wg))
 }
 
+// Verifies: SW-REQ-004
+// Verifies: SYS-REQ-021
+// Verifies: KI:uptime-pump-not-shutdown
+// Reproduces: uptime-pump-not-shutdown
+func TestCheckShutdownSkipsUptimePump_KI(t *testing.T) {
+	originalPumps := Pumps
+	originalUptimePump := UptimePump
+	t.Cleanup(func() {
+		Pumps = originalPumps
+		UptimePump = originalUptimePump
+	})
+
+	analyticsPump := &MockedPump{}
+	uptimePump := &shutdownCapableUptimePump{}
+	Pumps = []pumps.Pump{analyticsPump}
+	UptimePump = uptimePump
+
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	require.True(t, checkShutdown(ctx, &wg))
+	wg.Wait()
+
+	assert.True(t, analyticsPump.TurnedOff, "analytics pumps are included in graceful shutdown")
+	assert.False(t, uptimePump.shutdownCalled, "KI active: uptime pump is not part of graceful shutdown")
+}
+
 // Verifies: SW-REQ-001
 func TestWriteToPumpsNilPumps(t *testing.T) {
 	originalPumps := Pumps
@@ -1400,4 +1456,56 @@ func TestInitialisePumps_SkipsUnknownAndInitErrorPumps(t *testing.T) {
 
 	require.Len(t, Pumps, 1)
 	assert.Equal(t, "Dummy Pump", Pumps[0].GetName())
+}
+
+// Verifies: SW-REQ-003
+// Verifies: SYS-REQ-021
+// Verifies: KI:uptime-pump-init-error-ignored
+// Reproduces: uptime-pump-init-error-ignored
+func TestInitialiseUptimePumpIgnoresInitError_KI(t *testing.T) {
+	fset := token.NewFileSet()
+	file, err := parser.ParseFile(fset, "main.go", nil, 0)
+	require.NoError(t, err)
+
+	var initialiseFn *ast.FuncDecl
+	for _, decl := range file.Decls {
+		fn, ok := decl.(*ast.FuncDecl)
+		if ok && fn.Name.Name == "initialiseUptimePump" {
+			initialiseFn = fn
+			break
+		}
+	}
+	require.NotNil(t, initialiseFn, "initialiseUptimePump must remain present while this KI is open")
+
+	initCalls := 0
+	uncheckedInitCalls := 0
+	initialisedLog := false
+	ast.Inspect(initialiseFn.Body, func(n ast.Node) bool {
+		if call, ok := n.(*ast.CallExpr); ok && isUptimePumpInitCall(call) {
+			initCalls++
+		}
+		if expr, ok := n.(*ast.ExprStmt); ok {
+			if call, ok := expr.X.(*ast.CallExpr); ok && isUptimePumpInitCall(call) {
+				uncheckedInitCalls++
+			}
+		}
+		if lit, ok := n.(*ast.BasicLit); ok && strings.Contains(lit.Value, "Init Uptime Pump") {
+			initialisedLog = true
+		}
+		return true
+	})
+
+	require.Equal(t, 2, initCalls, "sql and default uptime branches should both still initialize a backend")
+	assert.Equal(t, initCalls, uncheckedInitCalls,
+		"KI active: UptimePump.Init return values are expression statements, so initialization errors are ignored")
+	assert.True(t, initialisedLog, "KI active: startup still logs uptime initialization after unchecked Init calls")
+}
+
+func isUptimePumpInitCall(call *ast.CallExpr) bool {
+	selector, ok := call.Fun.(*ast.SelectorExpr)
+	if !ok || selector.Sel.Name != "Init" {
+		return false
+	}
+	receiver, ok := selector.X.(*ast.Ident)
+	return ok && receiver.Name == "UptimePump"
 }
