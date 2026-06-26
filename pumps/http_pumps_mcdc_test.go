@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -573,6 +574,38 @@ func TestMoesifPump_MaskRawBody(t *testing.T) {
 	dec, err = base64.StdEncoding.DecodeString(out)
 	require.NoError(t, err)
 	assert.Equal(t, rawText, string(dec))
+}
+
+// Verifies: SW-REQ-052
+// Verifies: KI:moesif-raw-body-unbounded-json-mask
+// Reproduces: moesif-raw-body-unbounded-json-mask
+func TestMoesifPump_MaskRawBodyUnboundedJSONMask_KI(t *testing.T) {
+	largeBody := `{"payload":"` + strings.Repeat("a", 512*1024) + `","secret":"value"}`
+	out := maskRawBody(largeBody, []string{"secret"})
+	dec, err := base64.StdEncoding.DecodeString(out)
+	require.NoError(t, err)
+	assert.Contains(t, string(dec), `"secret":"*****"`)
+	assert.Contains(t, string(dec), strings.Repeat("a", 128))
+
+	deepBody := strings.Repeat(`{"nested":`, 96) + `{"secret":"value"}` + strings.Repeat("}", 96)
+	out = maskRawBody(deepBody, []string{"secret"})
+	dec, err = base64.StdEncoding.DecodeString(out)
+	require.NoError(t, err)
+	assert.Contains(t, string(dec), `"secret":"*****"`)
+
+	sourceBytes, err := os.ReadFile("moesif.go")
+	require.NoError(t, err)
+	source := string(sourceBytes)
+	start := strings.Index(source, "func maskRawBody(rawBody string, maskBody []string) string")
+	require.NotEqual(t, -1, start, "maskRawBody must remain present while this KI is open")
+	end := strings.Index(source[start:], "\n// reqproof:implements SW-REQ-052\nfunc buildURI")
+	require.NotEqual(t, -1, end, "maskRawBody end marker not found")
+	maskRawBodySource := source[start : start+end]
+
+	require.Contains(t, maskRawBodySource, "json.Unmarshal([]byte(rawBody), &maskedBody)")
+	require.NotContains(t, maskRawBodySource, "len(rawBody)")
+	require.NotContains(t, maskRawBodySource, "Max")
+	require.NotContains(t, maskRawBodySource, "Depth")
 }
 
 // TestMoesifPump_BuildURI covers the multi-part request-line parser.
