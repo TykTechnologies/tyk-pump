@@ -7,16 +7,17 @@ commands:
     - go test -count=1 -run 'TestSplunkPump_|Test_SplunkProxyFromEnvironment' ./pumps
 evidence_manifests:
     - code_signal:opengrep:go.http.default-transport-mutation:pumps/splunk.go:325
+    - .proof/evidence/ki-splunk-newsplunkclient-mutates-default-transport.yaml
 severity: low
 severity_basis: risk
 risk: correctness
-reproducer_command: go test -count=1 -run 'TestSplunkPump_|Test_SplunkProxyFromEnvironment' ./pumps
+reproducer_command: rg -n 'http\.DefaultClient\.Transport' pumps/splunk.go
 introduced_in: inception
 mitigation: Tests use per-test http.Transport with explicit Proxy func to bypass the cached ProxyFromEnvironment lookup.
 remediation: Stop mutating http.DefaultClient.Transport in newSplunkClient. Build a private *http.Client on the SplunkClient with its own *http.Transport so the global default is never touched. Remove the runtime mutation and store the client on c.httpClient directly.
 owner: tyk-team
 review_date: "2026-11-30"
-release_disposition: ship
+release_disposition: ship_with_known_issue
 status: open
 history:
     - at: "2026-05-31T07:21:56Z"
@@ -38,3 +39,11 @@ history:
       by: human:buger
       action: edit
       detail: set-severity-basis=risk,set-risk
+    - at: "2026-06-26T14:49:24Z"
+      by: agent:codex
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-26T14:49:25Z"
+      by: agent:codex
+      action: edit
+      detail: set-reproducer-command,set-release-disposition=ship_with_known_issue

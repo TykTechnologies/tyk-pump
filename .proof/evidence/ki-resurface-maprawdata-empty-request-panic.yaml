@@ -1,0 +1,16 @@
+schema_version: proof.evidence_profile.v1
+profile: known_issue_reproducer
+requirements:
+    - SW-REQ-054
+command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored go test -p=1 -count=1 -timeout=180s -run '^TestResurfacePump_MapRawData_EmptyRequest_PanicKI$' ./pumps
+status: pass
+observed_result: known_issue_reproduced
+executed_at: "2026-06-26T14:49:47Z"
+input_set:
+    - KI resurface-maprawdata-empty-request-panic focused panic tripwire
+freshness_hashes:
+    proof.yaml: sha256:18dd484cb75c5c729bc063c96426b101df78e0c89ec729e39724c18f50367e0e
+    pumps/http_pumps_mcdc_test.go: sha256:c7866f050bb98f4e2d2b9614587d94396ad438e60c3bdc4e1beeee7e4f6cb534
+    pumps/resurface.go: sha256:9b0145546fc42643886b0cbfe52169f342c16555a668e0b856d994c313b9d28d
+known_issues:
+    - resurface-maprawdata-empty-request-panic

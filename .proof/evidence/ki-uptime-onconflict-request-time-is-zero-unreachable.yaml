@@ -1,0 +1,16 @@
+schema_version: proof.evidence_profile.v1
+profile: known_issue_reproducer
+requirements:
+    - SW-REQ-073
+command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored go test -p=1 -count=1 -timeout=180s -run '^TestOnConflictUptimeAssignments_RequestTimeZeroSkipped$' ./analytics
+status: pass
+observed_result: known_issue_reproduced
+executed_at: "2026-06-26T14:50:07Z"
+input_set:
+    - KI uptime-onconflict-request-time-is-zero-unreachable structural MC/DC tripwire
+freshness_hashes:
+    analytics/mcdc_coverage_test.go: sha256:5c6ccc396564f99983081fb2eba058927ab89f1d6a5d54795f61c4496d4ef5cd
+    analytics/uptime_data.go: sha256:9643b4b0d1217d1644255eefd8da842fcbb2f192c79053d2a546ae02d090ed28
+    proof.yaml: sha256:18dd484cb75c5c729bc063c96426b101df78e0c89ec729e39724c18f50367e0e
+known_issues:
+    - uptime-onconflict-request-time-is-zero-unreachable

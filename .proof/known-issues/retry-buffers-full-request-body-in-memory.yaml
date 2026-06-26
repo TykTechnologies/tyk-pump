@@ -7,10 +7,11 @@ commands:
     - grep -n 'io.ReadAll(req.Body)' retry/http-retry.go
 evidence_manifests:
     - code_signal:opengrep:go.deserializer.request-body-readall:retry/http-retry.go:43
+    - .proof/evidence/ki-retry-buffers-full-request-body-in-memory.yaml
 severity: medium
 severity_basis: risk
 risk: availability
-reproducer_command: grep -n 'io.ReadAll(req.Body)' retry/http-retry.go
+reproducer_command: rg -n 'io.ReadAll\(req.Body\)' retry/http-retry.go
 introduced_in: inception
 mitigation: Operators size pump batches via existing pump-level MaxRecordSize / batch-bytes settings so the aggregated body fits comfortably in process memory. The pump-level caps bound the retry buffer in practice.
 remediation: Add a configurable MaxRequestBodyBytes (or wire to existing pump-level cap) and reject buffering above the cap; alternatively switch to GetBody (Go 1.8+ httputil pattern) so the body stream can be re-opened without an in-memory copy.
@@ -30,3 +31,11 @@ history:
       by: human:buger
       action: edit
       detail: set-severity-basis=risk,set-risk
+    - at: "2026-06-26T14:49:24Z"
+      by: agent:codex
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-26T14:49:25Z"
+      by: agent:codex
+      action: edit
+      detail: set-reproducer-command

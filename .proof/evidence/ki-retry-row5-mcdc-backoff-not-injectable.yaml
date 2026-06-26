@@ -1,0 +1,16 @@
+schema_version: proof.evidence_profile.v1
+profile: known_issue_reproducer
+requirements:
+    - SW-REQ-030
+command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored go test -p=1 -count=1 -timeout=240s -run '^TestBackoffHTTPRetry_Send_Retries_On5xxThenTransientTransport_Row5$' ./retry
+status: pass
+observed_result: known_issue_reproduced
+executed_at: "2026-06-26T14:49:53Z"
+input_set:
+    - KI retry-row5-mcdc-backoff-not-injectable slow row-5 witness
+freshness_hashes:
+    proof.yaml: sha256:18dd484cb75c5c729bc063c96426b101df78e0c89ec729e39724c18f50367e0e
+    retry/http-retry.go: sha256:c760d2c36c5a8a08cd52bd0cfc33a6b21c67b458206ecbca0569e82b4f821ef1
+    retry/http_retry_row5_mcdc_test.go: sha256:00ae7a62712207f5f426e5ef58d50d56cf2ff905201edb278d3616ba79230a08
+known_issues:
+    - retry-row5-mcdc-backoff-not-injectable

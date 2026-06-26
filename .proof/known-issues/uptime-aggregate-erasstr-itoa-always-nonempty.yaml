@@ -5,10 +5,12 @@ affected_requirements:
     - SW-REQ-073
 commands:
     - go test -count=1 -run TestAggregateUptimeData_TCPErrorWithURL ./analytics
+evidence_manifests:
+    - .proof/evidence/ki-uptime-aggregate-erasstr-itoa-always-nonempty.yaml
 severity: low
 severity_basis: risk
 risk: correctness
-reproducer_command: go test -count=1 -run TestAggregateUptimeData_TCPErrorWithURL ./analytics
+reproducer_command: go test -p=1 -count=1 -timeout=180s -run '^TestAggregateUptimeData_TCPErrorWithURL$' ./analytics
 introduced_in: inception
 mitigation: Defensive non-empty guard whose F branch is impossible to reach; the corresponding guard in incrementAggregate (analytics/aggregate.go:882) already carries //mcdc:ignore for the same reason.
 remediation: Drop the if-guard around strconv.Itoa or add //mcdc:ignore on uptime_data.go:256 mirroring the comment already on aggregate.go:882.
@@ -32,3 +34,11 @@ history:
       by: human:buger
       action: edit
       detail: set-severity-basis=risk,set-risk
+    - at: "2026-06-26T14:49:24Z"
+      by: agent:codex
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-26T14:49:25Z"
+      by: agent:codex
+      action: edit
+      detail: set-reproducer-command

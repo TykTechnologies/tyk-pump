@@ -5,10 +5,12 @@ affected_requirements:
     - SW-REQ-073
 commands:
     - go test -count=1 -run TestOnConflictUptimeAssignments_RequestTimeZeroSkipped ./analytics
+evidence_manifests:
+    - .proof/evidence/ki-uptime-onconflict-request-time-is-zero-unreachable.yaml
 severity: low
 severity_basis: risk
 risk: data_integrity
-reproducer_command: go test -count=1 -run TestOnConflictUptimeAssignments_RequestTimeZeroSkipped ./analytics
+reproducer_command: go test -p=1 -count=1 -timeout=180s -run '^TestOnConflictUptimeAssignments_RequestTimeZeroSkipped$' ./analytics
 introduced_in: inception
 mitigation: The dead branch is benign — it gates a GORM expression that the test suite confirms is omitted, matching production behaviour where on-conflict updates only ever assign request_time as a derived ratio of the always-present total_request_time and hits columns.
 remediation: Either drop the IsZero check entirely (since it is always true for the locally-constructed empty struct) and unconditionally emit the assignment, or add //mcdc:ignore on uptime_data.go:86.
@@ -32,3 +34,11 @@ history:
       by: human:buger
       action: edit
       detail: set-severity-basis=risk,set-risk
+    - at: "2026-06-26T14:49:24Z"
+      by: agent:codex
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-26T14:49:25Z"
+      by: agent:codex
+      action: edit
+      detail: set-reproducer-command

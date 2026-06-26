@@ -5,10 +5,12 @@ affected_requirements:
     - SW-REQ-056
 commands:
     - go test ./pumps -run '^TestKinesisSplitIntoBatches_AllowsOverAWSLimit$' -count=1
+evidence_manifests:
+    - .proof/evidence/ki-kinesis-batch-size-over-aws-putrecords-limit.yaml
 severity: medium
 severity_basis: risk
 risk: data_integrity
-reproducer_command: go test ./pumps -run '^TestKinesisSplitIntoBatches_AllowsOverAWSLimit$' -count=1
+reproducer_command: go test -p=1 -count=1 -timeout=180s -run '^TestKinesisSplitIntoBatches_AllowsOverAWSLimit$' ./pumps
 introduced_in: 25683f2
 mitigation: Configure Kinesis batch_size at 500 or lower; the default path uses 100. Avoid operator values above the AWS PutRecords maximum until validation/clamping is implemented.
 remediation: Reject or clamp batch_size values above 500 during Kinesis Init, update SW-REQ-056 evidence, and add a regression proving no PutRecords request can exceed 500 entries.
@@ -20,3 +22,11 @@ history:
     - at: "2026-06-25T21:41:37Z"
       by: agent:codex
       action: created
+    - at: "2026-06-26T14:49:24Z"
+      by: agent:codex
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-26T14:49:24Z"
+      by: agent:codex
+      action: edit
+      detail: set-reproducer-command

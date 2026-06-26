@@ -4,6 +4,8 @@ description: 'retry/http-retry.go:78-82 (Send opFn): on a non-5xx response, if i
 affected_requirements:
     - SW-REQ-030
     - INT-REQ-006
+evidence_manifests:
+    - .proof/evidence/ki-retry-4xx-bodyread-fail-causes-retry.yaml
 severity: medium
 severity_basis: risk
 risk: correctness
@@ -32,3 +34,7 @@ history:
       by: agent:codex
       action: review
       detail: reviewer=human:buger,new_review_date=2026-11-30
+    - at: "2026-06-26T14:49:24Z"
+      by: agent:codex
+      action: edit
+      detail: add-evidence-manifest
