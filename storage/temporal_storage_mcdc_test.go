@@ -6,6 +6,7 @@ import (
 	"go/parser"
 	"go/token"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -955,6 +956,64 @@ func TestTemporalStorageHandler_GetAndDeleteSet_FullDrainNormalizesZeroAndSkipsE
 	assert.Equal(t, "test-prefix-analytics", l.popKey)
 	assert.Equal(t, int64(-1), l.popStop, "chunkSize=0 must map to the storage-library full-drain sentinel")
 	assert.False(t, kv.expireCalled, "full-drain mode must not expire a nonexistent remainder")
+}
+
+// KI tripwire for SW-REQ-006; this is not requirement-success evidence.
+// Verifies: KI:temporal-storage-wire-format-unversioned
+// Reproduces: temporal-storage-wire-format-unversioned
+func TestTemporalStorageWireFormatUnversioned_KI(t *testing.T) {
+	t.Cleanup(func() { resetSingletonForTest(t) })
+	connectorSingleton = &brokenConnector{}
+
+	const opaquePayload = "opaque-analytics-payload-without-storage-version"
+	l := &recordingList{popResult: []string{opaquePayload}}
+	r := &TemporalStorageHandler{
+		Config: &TemporalStorageConfig{KeyPrefix: "test-prefix-"},
+		kv:     &recordingKV{},
+		list:   l,
+	}
+
+	res, err := r.GetAndDeleteSet("analytics", 0, time.Minute)
+	require.NoError(t, err)
+	require.Equal(t, []interface{}{opaquePayload}, res)
+	require.Equal(t, "test-prefix-analytics", l.popKey)
+
+	sourceBytes, err := os.ReadFile("temporal_storage.go")
+	require.NoError(t, err)
+	source := string(sourceBytes)
+	require.Contains(t, source, "func (r *TemporalStorageHandler) GetAndDeleteSet")
+	require.NotContains(t, source, "schema_version")
+	require.NotContains(t, strings.ToLower(source), "wire format")
+
+	file, err := parser.ParseFile(token.NewFileSet(), "temporal_storage.go", sourceBytes, 0)
+	require.NoError(t, err)
+	var getAndDeleteSetHasDecode bool
+	ast.Inspect(file, func(n ast.Node) bool {
+		fn, ok := n.(*ast.FuncDecl)
+		if !ok || fn.Name.Name != "GetAndDeleteSet" {
+			return true
+		}
+		ast.Inspect(fn.Body, func(n ast.Node) bool {
+			call, ok := n.(*ast.CallExpr)
+			if !ok {
+				return true
+			}
+			switch fun := call.Fun.(type) {
+			case *ast.Ident:
+				if strings.Contains(strings.ToLower(fun.Name), "decode") || strings.Contains(strings.ToLower(fun.Name), "unmarshal") {
+					getAndDeleteSetHasDecode = true
+				}
+			case *ast.SelectorExpr:
+				name := strings.ToLower(fun.Sel.Name)
+				if strings.Contains(name, "decode") || strings.Contains(name, "unmarshal") {
+					getAndDeleteSetHasDecode = true
+				}
+			}
+			return true
+		})
+		return false
+	})
+	require.False(t, getAndDeleteSetHasDecode, "GetAndDeleteSet should still return opaque payloads without storage-level version/decode handling")
 }
 
 // Verifies: SW-REQ-007

@@ -4,12 +4,13 @@ description: Temporal storage GetAndDeleteSet stores and returns raw string payl
 affected_requirements:
     - SW-REQ-006
 evidence_manifests:
+    - test:storage/temporal_storage_mcdc_test.go:TestTemporalStorageWireFormatUnversioned_KI
     - .proof/evidence/ki-temporal-storage-wire-format-unversioned.yaml
 severity: low
 severity_basis: risk
 risk: correctness
-reproducer_command: rg -n "GetAndDeleteSet|Append|Decode|snapshot_wire_format_compatible|msgpack|protobuf" storage serializer main.go specs/software/requirements/SW-REQ-006.req.yaml
-environment_note: Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source and command output.
+reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored go test -p=1 -count=1 -timeout=180s -run '^TestTemporalStorageWireFormatUnversioned_KI$' ./storage
+environment_note: Run the focused storage tripwire under the memory monitor. It uses fake temporal-storage list/KV implementations, proves GetAndDeleteSet still returns opaque payload strings unchanged, and confirms the storage method has no decode/unmarshal/version handling; no Redis service or container is required.
 introduced_in: inception
 mitigation: Keep gateway and pump serializer configuration aligned during upgrades and avoid changing persisted analytics payload encoding without draining temporal storage first.
 remediation: Define the temporal-storage payload compatibility contract, add versioned fixtures for records persisted by supported prior versions, and test GetAndDeleteSet plus serializer decode against those fixtures.
@@ -37,3 +38,7 @@ history:
       by: agent:codex
       action: edit
       detail: add-evidence-manifest
+    - at: "2026-06-26T17:58:13Z"
+      by: agent:codex
+      action: edit
+      detail: add-opaque-payload-storage-wire-format-tripwire
