@@ -58,7 +58,9 @@ hardening:
     # migrate-all/current-day branches and MigrateAllShardedTables' valid shard
     # discovery. Residual default-mode-only, Graph SQL aggregate startup
     # migration, and no-schema-version behavior remain KI-tracked rather than
-    # overclaimed as complete forward-compatible schema policy.
+    # overclaimed as complete forward-compatible schema policy. MC/DC closure is
+    # carried only by code annotations in the migration tests, not by witness
+    # rows stored in this defect record.
     new_requirements: []
     strengthened_requirements:
         - SW-REQ-040
@@ -105,12 +107,6 @@ disposition:
               obligation_class: forward_compatible
               evidence_type: accepted_ki_debt
               tracking: graph-sql-aggregate-migrate-sharded-tables-ignored
-            - requirement: INT-REQ-007
-              evidence_type: mcdc
-              witnesses:
-                - expand_contract_migration=T, sql_schema_version_changed=T
-                - expand_contract_migration=F, sql_schema_version_changed=T
-                - expand_contract_migration=F, sql_schema_version_changed=F
     reviewer: agent:claude-opus-4-8
     reviewed_at: "2026-06-10T17:00:00Z"
 history:
@@ -127,8 +123,8 @@ history:
       detail: |
         Recorded hardening: closed the missing_test_partition gap. The
         migration behavior is witnessed by TestHandleTableMigration /
-        TestMigrateAllShardedTables and the INT-REQ-007 MC/DC rows, while
-        SW-REQ-040 carries the SQL day-sharded routing path. Broader
+        TestMigrateAllShardedTables code annotations, while SW-REQ-040 carries
+        the SQL day-sharded routing path. Broader
         forward-compatible schema policy remains accepted KI debt under
         sql-schema-no-version-policy / sql-default-migration-today-only.
     - at: "2026-06-23T07:55:00Z"
@@ -138,8 +134,8 @@ history:
         Corrected the proof record to match current artifacts: there is no
         SW-REQ-040:forward_compatible:example triple-form witness. The
         concrete TT-13166 regression closure is the migration branch evidence
-        plus INT-REQ-007 MC/DC witnesses; residual schema-policy obligations
-        stay KI-gated.
+        plus INT-REQ-007 MC/DC code annotations; residual schema-policy
+        obligations stay KI-gated.
     - at: "2026-06-23T09:10:00Z"
       by: agent:codex
       action: residual_gap_recorded
@@ -148,3 +144,11 @@ history:
         commit-level review found GraphSQLAggregatePump.Init still uses the
         old table-sharding migration shape and ignores migrate_sharded_tables
         for existing shards.
+    - at: "2026-06-26T04:30:00Z"
+      by: agent:codex
+      action: corrected_mcdc_evidence_record
+      detail: |
+        Removed non-code MC/DC witness rows from this defect record. INT-REQ-007
+        MC/DC evidence is carried by the `// Verifies:` and `// MCDC` code
+        annotations in pumps/migration_test.go; this record only links to those
+        tests and the residual KI debt.
