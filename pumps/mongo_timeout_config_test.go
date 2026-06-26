@@ -179,18 +179,17 @@ func hasInsertErrDoubleSendPattern(fn *ast.FuncDecl) bool {
 			return true
 		}
 
+		errChannelNames := channelParamNames(lit)
+		errChannelNames["errCh"] = true
 		errSendInBranch := false
 		nilSendAfterBranch := false
 		for _, stmt := range lit.Body.List {
-			if ifStmt, ok := stmt.(*ast.IfStmt); ok && blockSends(ifStmt.Body, "errCh", "err") {
+			if stmtContainsIfWithSend(stmt, errChannelNames, "err") {
 				errSendInBranch = true
 				continue
 			}
-			if errSendInBranch {
-				send, ok := stmt.(*ast.SendStmt)
-				if ok && isIdent(send.Chan, "errCh") && isIdent(send.Value, "nil") {
-					nilSendAfterBranch = true
-				}
+			if errSendInBranch && stmtContainsSend(stmt, errChannelNames, "nil") {
+				nilSendAfterBranch = true
 			}
 		}
 
@@ -219,7 +218,7 @@ func returnsOnFirstErrChError(fn *ast.FuncDecl) bool {
 			return true
 		}
 		for _, stmt := range caseClause.Body {
-			if ifStmt, ok := stmt.(*ast.IfStmt); ok && blockReturnsIdent(ifStmt.Body, "err") {
+			if stmtContainsIfWithReturn(stmt, "err") {
 				found = true
 				return false
 			}
@@ -234,24 +233,95 @@ func isErrNotNil(expr ast.Expr) bool {
 	return ok && bin.Op == token.NEQ && isIdent(bin.X, "err") && isIdent(bin.Y, "nil")
 }
 
-func blockSends(block *ast.BlockStmt, chanName, valueName string) bool {
+func channelParamNames(lit *ast.FuncLit) map[string]bool {
+	names := map[string]bool{}
+	if lit.Type.Params == nil {
+		return names
+	}
+	for _, field := range lit.Type.Params.List {
+		if !isChanOfError(field.Type) {
+			continue
+		}
+		for _, name := range field.Names {
+			names[name.Name] = true
+		}
+	}
+	return names
+}
+
+func isChanOfError(expr ast.Expr) bool {
+	ch, ok := expr.(*ast.ChanType)
+	return ok && isIdent(ch.Value, "error")
+}
+
+func stmtContainsIfWithSend(stmt ast.Stmt, channelNames map[string]bool, valueName string) bool {
+	found := false
+	ast.Inspect(stmt, func(n ast.Node) bool {
+		if found {
+			return false
+		}
+		ifStmt, ok := n.(*ast.IfStmt)
+		if !ok {
+			return true
+		}
+		found = blockContainsSend(ifStmt.Body, channelNames, valueName)
+		return !found
+	})
+	return found
+}
+
+func stmtContainsSend(stmt ast.Stmt, channelNames map[string]bool, valueName string) bool {
+	found := false
+	ast.Inspect(stmt, func(n ast.Node) bool {
+		send, ok := n.(*ast.SendStmt)
+		if ok && isChannelName(send.Chan, channelNames) && isIdent(send.Value, valueName) {
+			found = true
+			return false
+		}
+		return true
+	})
+	return found
+}
+
+func blockContainsSend(block *ast.BlockStmt, channelNames map[string]bool, valueName string) bool {
 	for _, stmt := range block.List {
-		if send, ok := stmt.(*ast.SendStmt); ok && isIdent(send.Chan, chanName) && isIdent(send.Value, valueName) {
+		if stmtContainsSend(stmt, channelNames, valueName) {
 			return true
 		}
 	}
 	return false
 }
 
-func blockReturnsIdent(block *ast.BlockStmt, name string) bool {
-	for _, stmt := range block.List {
-		ret, ok := stmt.(*ast.ReturnStmt)
-		if !ok || len(ret.Results) != 1 {
-			continue
+func isChannelName(expr ast.Expr, channelNames map[string]bool) bool {
+	ident, ok := expr.(*ast.Ident)
+	return ok && channelNames[ident.Name]
+}
+
+func stmtContainsIfWithReturn(stmt ast.Stmt, name string) bool {
+	found := false
+	ast.Inspect(stmt, func(n ast.Node) bool {
+		if found {
+			return false
 		}
-		if isIdent(ret.Results[0], name) {
+		ifStmt, ok := n.(*ast.IfStmt)
+		if !ok {
 			return true
 		}
-	}
-	return false
+		found = blockContainsReturn(ifStmt.Body, name)
+		return !found
+	})
+	return found
+}
+
+func blockContainsReturn(block *ast.BlockStmt, name string) bool {
+	found := false
+	ast.Inspect(block, func(n ast.Node) bool {
+		ret, ok := n.(*ast.ReturnStmt)
+		if ok && len(ret.Results) == 1 && isIdent(ret.Results[0], name) {
+			found = true
+			return false
+		}
+		return true
+	})
+	return found
 }

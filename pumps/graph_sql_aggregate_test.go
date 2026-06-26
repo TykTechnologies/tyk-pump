@@ -11,6 +11,7 @@ import (
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"gorm.io/gorm"
 )
 
 // File-level MC/DC witness rows: these requirements are genuinely exercised
@@ -689,6 +690,7 @@ func TestGraphSQLAggregatePump_WriteData_Sharded(t *testing.T) {
 				ConnectionString: getTestPostgresConnectionString(),
 			},
 		}))
+		dropGraphAggregateTables(t, pump, analytics.AggregateGraphSQLTable, analytics.AggregateGraphSQLTable+"_20220101")
 		assert.False(t, pump.db.Migrator().HasTable(analytics.AggregateGraphSQLTable))
 		r.NoError(pump.WriteData(context.Background(), []interface{}{sampleRecord}))
 		assert.True(t, pump.db.Migrator().HasTable(analytics.AggregateGraphSQLTable+"_20220101"))
@@ -704,13 +706,14 @@ func TestGraphSQLAggregatePump_WriteData_Sharded(t *testing.T) {
 				ConnectionString: getTestPostgresConnectionString(),
 			},
 		}))
+		firstShardedTable, secondShardedTable := analytics.AggregateGraphSQLTable+"_20220101", analytics.AggregateGraphSQLTable+"_20230102"
+		dropGraphAggregateTables(t, pump, analytics.AggregateGraphSQLTable, firstShardedTable, secondShardedTable)
 		record := sampleRecord
 		secondRecord := sampleRecord
 		secondRecord.TimeStamp = time.Date(2023, 1, 2, 0, 0, 0, 0, time.UTC)
 		secondRecord.Year = 2023
 		assert.False(t, pump.db.Migrator().HasTable(analytics.AggregateGraphSQLTable))
 		r.NoError(pump.WriteData(context.Background(), []interface{}{record, secondRecord}))
-		firstShardedTable, secondShardedTable := analytics.AggregateGraphSQLTable+"_20220101", analytics.AggregateGraphSQLTable+"_20230102"
 		assert.True(t, pump.db.Migrator().HasTable(firstShardedTable), "table %s does not exist", firstShardedTable)
 		assert.True(t, pump.db.Migrator().HasTable(secondShardedTable), "table %s does not exist", secondShardedTable)
 
@@ -723,11 +726,20 @@ func TestGraphSQLAggregatePump_WriteData_Sharded(t *testing.T) {
 	})
 }
 
+func dropGraphAggregateTables(t *testing.T, pump GraphSQLAggregatePump, tables ...string) {
+	t.Helper()
+
+	db := pump.db.Session(&gorm.Session{NewDB: true})
+	for _, table := range tables {
+		require.NoError(t, db.Exec(fmt.Sprintf(`DROP TABLE IF EXISTS "%s"`, table)).Error)
+	}
+}
+
 func assertGraphAggregateShardRow(t *testing.T, pump GraphSQLAggregatePump, table, dimension, value, apiID string) {
 	t.Helper()
 
 	var count int64
-	res := pump.db.Table(table).Model(&analytics.GraphSQLAnalyticsRecordAggregate{}).Where(
+	res := pump.db.Session(&gorm.Session{NewDB: true}).Table(table).Where(
 		"dimension = ? AND dimension_value = ? AND api_id = ? AND counter_hits = ?",
 		dimension, value, apiID, 1,
 	).Count(&count)

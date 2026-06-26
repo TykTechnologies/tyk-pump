@@ -87,6 +87,7 @@ func buildFipsRecipe(makefile string) string {
 }
 
 // Verifies: SYS-REQ-036
+// STK-REQ-002:AC-004:acceptance
 // SYS-REQ-036:security_mode_artifact_consistent:nominal
 //
 // MCDC SYS-REQ-036: fips_release_artifact_variant_preserved=T => TRUE

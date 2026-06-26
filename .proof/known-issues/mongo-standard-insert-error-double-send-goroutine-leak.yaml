@@ -17,7 +17,7 @@ evidence_manifests:
     - test:pumps/mongo_timeout_config_test.go:TestMongoPump_WriteData_InsertErrDoubleSend_KI
 severity: medium
 severity_basis: risk
-risk: resource_exhaustion
+risk: availability
 reproducer_command: go test -count=1 -timeout 60s -run '^TestMongoPump_WriteData_InsertErrDoubleSend_KI$' ./pumps
 introduced_in: 14ccaba
 mitigation: Keep Mongo batch counts small where practical and investigate repeated standard Mongo insert failures promptly; the first failure is returned, but blocked insert goroutines can still accumulate under multi-batch failure storms.
