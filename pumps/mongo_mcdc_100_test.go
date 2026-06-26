@@ -432,9 +432,12 @@ func TestMongoPump_EnsureIndexes_DocumentDBDoesNotUseExistsShortcut(t *testing.T
 		assert.Zero(t, store.hasTableCalls, "DocumentDB must not use the StandardMongo collection-exists shortcut")
 		require.Len(t, store.createdIndexes, 3)
 		assert.Equal(t, []model.DBM{{"orgid": 1}}, store.createdIndexes[0].Keys)
+		assert.False(t, store.createdIndexes[0].IsTTLIndex)
 		assert.Equal(t, []model.DBM{{"apiid": 1}}, store.createdIndexes[1].Keys)
+		assert.False(t, store.createdIndexes[1].IsTTLIndex)
 		assert.Equal(t, "logBrowserIndex", store.createdIndexes[2].Name)
 		assert.Equal(t, []model.DBM{{"timestamp": -1}, {"orgid": 1}, {"apiid": 1}, {"apikey": 1}, {"responsecode": 1}}, store.createdIndexes[2].Keys)
+		assert.False(t, store.createdIndexes[2].IsTTLIndex)
 		for _, idx := range store.createdIndexes {
 			assert.False(t, idx.Background)
 		}
@@ -485,10 +488,13 @@ func TestMongoSelectivePump_EnsureIndexes_DocumentDBDoesNotUseExistsShortcut(t *
 		assert.Zero(t, store.hasTableCalls, "DocumentDB must not use the StandardMongo collection-exists shortcut")
 		require.Len(t, store.createdIndexes, 3)
 		assert.Equal(t, []model.DBM{{"apiid": 1}}, store.createdIndexes[0].Keys)
+		assert.False(t, store.createdIndexes[0].IsTTLIndex)
 		assert.True(t, store.createdIndexes[1].IsTTLIndex)
+		assert.Equal(t, 0, store.createdIndexes[1].TTL)
 		assert.Equal(t, []model.DBM{{"expireAt": 1}}, store.createdIndexes[1].Keys)
 		assert.Equal(t, "logBrowserIndex", store.createdIndexes[2].Name)
 		assert.Equal(t, []model.DBM{{"timestamp": -1}, {"apiid": 1}, {"apikey": 1}, {"responsecode": 1}}, store.createdIndexes[2].Keys)
+		assert.False(t, store.createdIndexes[2].IsTTLIndex)
 		for _, idx := range store.createdIndexes {
 			assert.False(t, idx.Background)
 		}
@@ -539,9 +545,12 @@ func TestMongoAggregatePump_EnsureIndexes_DocumentDBDoesNotUseExistsShortcut(t *
 		assert.Zero(t, store.hasTableCalls, "DocumentDB must not use the StandardMongo collection-exists shortcut")
 		require.Len(t, store.createdIndexes, 3)
 		assert.True(t, store.createdIndexes[0].IsTTLIndex)
+		assert.Equal(t, 0, store.createdIndexes[0].TTL)
 		assert.Equal(t, []model.DBM{{"expireAt": 1}}, store.createdIndexes[0].Keys)
 		assert.Equal(t, []model.DBM{{"timestamp": 1}}, store.createdIndexes[1].Keys)
+		assert.False(t, store.createdIndexes[1].IsTTLIndex)
 		assert.Equal(t, []model.DBM{{"orgid": 1}}, store.createdIndexes[2].Keys)
+		assert.False(t, store.createdIndexes[2].IsTTLIndex)
 		for _, idx := range store.createdIndexes {
 			assert.False(t, idx.Background)
 		}

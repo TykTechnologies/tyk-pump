@@ -83,6 +83,14 @@ disposition:
             - pumps/mongo_mcdc_100_test.go:TestMongoPump_EnsureIndexes_DocumentDBDoesNotUseExistsShortcut
             - pumps/mongo_mcdc_100_test.go:TestMongoSelectivePump_EnsureIndexes_DocumentDBDoesNotUseExistsShortcut
             - pumps/mongo_mcdc_100_test.go:TestMongoAggregatePump_EnsureIndexes_DocumentDBDoesNotUseExistsShortcut
+        notes: |
+            The fake-store evidence now verifies more than call count: for all
+            three Mongo pump families it asserts DocumentDB avoids the
+            collection-exists shortcut, honors explicit omit_index_creation, and
+            records exact foreground index definitions, including TTL=0 on
+            expiry indexes and non-TTL metadata on ordinary indexes. This
+            evidence proves the index model passed to the persistence layer; it
+            does not claim live AWS DocumentDB catalog acceptance.
         obligation_evidence:
             - requirement: SW-REQ-097
               obligation_class: backend_ddl_valid
@@ -149,3 +157,13 @@ history:
         SW-REQ-097, SW-REQ-098, and SW-REQ-099, with fake-store evidence that
         DocumentDB does not call the StandardMongo collection-exists shortcut
         and attempts the expected foreground indexes.
+    - at: "2026-06-26T00:27:54Z"
+      by: agent:codex
+      action: strengthened_evidence
+      detail: |
+        Tightened DocumentDB index evidence to assert exact key order,
+        foreground Background=false settings, TTL=0 for expiry indexes, and
+        non-TTL metadata for ordinary indexes across standard, selective, and
+        aggregate Mongo ensureIndexes paths. Documented that this evidence is
+        fake-store/index-model proof, not a live AWS DocumentDB catalog
+        acceptance test.

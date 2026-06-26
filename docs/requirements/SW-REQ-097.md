@@ -24,8 +24,17 @@ Variables are declared in `specs/software/variables/pumps-mongo-standard.vars.ya
   uses `collectionExists` only when `MongoDBType == StandardMongo`.
 - The DocumentDB branch attempts `orgid`, `apiid`, and `logBrowserIndex` with
   `Background` false.
+- `orgid` and `apiid` support common standard-analytics filters. The
+  `logBrowserIndex` key order starts with descending `timestamp`, then `orgid`,
+  `apiid`, `apikey`, and `responsecode`, matching log-browser time-window and
+  dimension filter access paths.
 
 ## Evidence
 - `pumps/mongo_mcdc_100_test.go:TestMongoPump_EnsureIndexes_DocumentDBDoesNotUseExistsShortcut`
   uses a recording fake store to prove DocumentDB does not call `HasTable`, does
-  attempt the expected indexes, and still honors `OmitIndexCreation`.
+  attempt the exact `orgid`, `apiid`, and `logBrowserIndex` definitions in the
+  expected key order with `Background=false`, non-TTL metadata, and still honors
+  `OmitIndexCreation`.
+- This is fake-store/index-model evidence. It proves Pump sends the intended
+  index definitions into the persistence layer; it is not a live AWS DocumentDB
+  catalog acceptance test.

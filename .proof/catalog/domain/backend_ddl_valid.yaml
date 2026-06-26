@@ -2,18 +2,21 @@ id: backend_ddl_valid
 name: Backend DDL valid
 category: domain
 status: active
-summary: Generated database DDL shall be syntactically valid for every backend dialect the requirement claims to support.
-description: Pump startup and shard creation often issue CREATE TABLE, CREATE INDEX, or ALTER statements outside an ORM's parameterized data-write path. The requirement shall state which SQL dialects are supported and tests or KIs shall prove the emitted DDL is accepted, or explicitly track backend-specific incompatibilities.
+summary: Generated database schema operations shall be valid for every backend dialect or API the requirement claims to support.
+description: Pump startup and shard creation often issue CREATE TABLE, CREATE INDEX, ALTER statements, Mongo index creation calls, or other schema operations outside an ORM's parameterized data-write path. The requirement shall state which SQL dialects or backend APIs are supported and tests or KIs shall prove the emitted schema operation is accepted, or explicitly track backend-specific incompatibilities.
 applies_when:
-  description: a requirement builds or executes SQL DDL for PostgreSQL, MySQL, SQLite, or another supported backend
+  description: a requirement builds or executes SQL DDL, Mongo index creation, or another backend schema operation for a supported backend
   trigger_phrases:
     - CREATE INDEX
     - CREATE TABLE
     - ALTER TABLE
+    - EnsureIndex
+    - Mongo index
     - migration
     - dialect
     - postgres
     - mysql
+    - documentdb
 example_req: |-
   When the pump creates an index for a configured SQL backend, the emitted DDL
   shall use syntax accepted by that backend: PostgreSQL-specific clauses shall
@@ -21,14 +24,15 @@ example_req: |-
 if_missing: |-
   A code path passes tests against one database but fails at startup or first
   shard creation on another supported backend. Operators see runtime migration
-  errors even though the feature is documented as backend-neutral.
+  or index creation errors even though the feature is documented as
+  backend-neutral.
 recommended_evidence:
   - kind: nominal
-    note: Integration tests execute the DDL against each supported backend dialect.
+    note: Integration tests execute the schema operation against each supported backend dialect/API, or fake-store tests prove the exact backend-specific schema model and a KI records missing live-backend acceptance.
   - kind: negative
-    note: Regression test or KI captures a dialect that rejects the current DDL.
+    note: Regression test or KI captures a dialect/backend that rejects the current schema operation.
   - kind: review
-    note: Review names the dialect-specific clauses and the code branch that gates each one.
+    note: Review names the dialect/API-specific clauses or options and the code branch that gates each one.
 frameworks:
   - id: CWE
     refs:

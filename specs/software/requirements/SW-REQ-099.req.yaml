@@ -29,15 +29,15 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-25T18:23:12Z"
-        comment: 'TT-5302 hardening: reviewed MongoAggregate DocumentDB index compatibility requirement, backend_ddl_valid/index_definition_matches_query evidence, DEFECT-33 closure, and fake-store proof that DocumentDB does not use the StandardMongo collection-exists shortcut; no runtime product behavior change.'
+        reviewed_at: "2026-06-26T00:28:12Z"
+        comment: 'Reviewed TT-5302 follow-up: MongoAggregate DocumentDB evidence now asserts exact foreground index key order, TTL=0 expiry metadata, and non-TTL ordinary-index metadata while preserving omit_index_creation and no collection-exists shortcut behavior. No runtime product behavior change.'
         fingerprint: sha256:6637f913d5c8c65ddcde01f96ecf9430526a27cd7ddba7c39f8280c4502ad1f7
         ai_generated: false
 history:
     created_by: human:buger
     created_at: "2026-06-25T18:12:31Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-25T18:23:12Z"
+    last_modified_at: "2026-06-26T00:28:12Z"
 obligation_checklist:
     - backend_ddl_valid
     - index_definition_matches_query
@@ -48,6 +48,9 @@ stakeholder:
           verification_method: test
         - id: AC-002
           text: With OmitIndexCreation true, MongoAggregate index ensure skips DocumentDB index creation intentionally.
+          verification_method: test
+        - id: AC-003
+          text: The DocumentDB evidence asserts the exact aggregate index definitions, including expireAt TTL with TTL 0, timestamp, orgid, foreground Background false settings, and non-TTL metadata for non-expiry indexes.
           verification_method: test
 lifecycle:
     change_history:
@@ -60,4 +63,9 @@ lifecycle:
           from: draft
           to: review
           reason: '[224f919] TT-5302 MongoAggregate DocumentDB index compatibility requirement ready for review'
+          changed_by: human:buger
+        - date: "2026-06-26T00:28:12Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-25T18:23:12Z comment="TT-5302 hardening: reviewed MongoAggregate DocumentDB index compatibility requirement, backend_ddl_valid/index_definition_matches_query evidence, DEFECT-33 closure, and fake-store proof that DocumentDB does not use the StandardMongo collection-exists shortcut; no runtime product behavior change.")'
           changed_by: human:buger

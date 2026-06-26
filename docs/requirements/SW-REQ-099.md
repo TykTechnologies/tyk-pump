@@ -25,8 +25,16 @@ Variables are declared in `specs/software/variables/pumps-mongo-aggregate.vars.y
   `MongoDBType == StandardMongo`.
 - The DocumentDB branch attempts `expireAt` TTL, `timestamp`, and `orgid` with
   `Background` false.
+- `expireAt` supports aggregate expiry cleanup. `timestamp` supports aggregate
+  time-window lookups and average recalculation queries. `orgid` supports
+  per-organisation aggregate collection access paths.
 
 ## Evidence
 - `pumps/mongo_mcdc_100_test.go:TestMongoAggregatePump_EnsureIndexes_DocumentDBDoesNotUseExistsShortcut`
   uses a recording fake store to prove DocumentDB does not call `HasTable`, does
-  attempt the expected indexes, and still honors `OmitIndexCreation`.
+  attempt the exact `expireAt` TTL (`TTL=0`), `timestamp`, and `orgid`
+  definitions with `Background=false`, non-TTL metadata for non-expiry indexes,
+  and still honors `OmitIndexCreation`.
+- This is fake-store/index-model evidence. It proves Pump sends the intended
+  index definitions into the persistence layer; it is not a live AWS DocumentDB
+  catalog acceptance test.
