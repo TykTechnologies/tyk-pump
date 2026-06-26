@@ -1,0 +1,91 @@
+schema_version: 1
+id: DEFECT-51
+title: REST aggregate included GraphQL and MCP analytics records
+introduced_in: unknown
+description: |
+  Commit c54eed3 fixed REST aggregate partitioning by separating graph
+  analytics from ordinary REST aggregation. Before the fix, AggregateData
+  aggregated every AnalyticsRecord with an OrgID into the REST aggregate path,
+  so GraphQL-classified traffic could inflate REST hit counts and dimensions.
+  Current proof also extends the partition to MCP-classified records, which use
+  their own aggregate family.
+
+  Current AggregateData skips GraphQLStats.IsGraphQL and MCPStats.IsMCP records
+  before REST aggregation. SW-REQ-093 now makes the REST/graph/MCP partition an
+  explicit requirement with output_cardinality_bounded evidence.
+source:
+    type: upstream_commit
+    repo: TykTechnologies/tyk-pump
+    commit: c54eed3
+    reference: tyk-pump#463
+    date: "2022-08-23"
+classification:
+    surface: data_integrity
+    defect_class: rest_aggregate_graph_mcp_partition_missing
+    severity: medium
+    security_relevant: false
+root_cause:
+    missing_requirement: true
+    missing_test_partition: true
+    missing_mcdc_variable: false
+    notes: |
+      REST aggregate proof originally focused on monotonic counter accumulation
+      and status-code boundaries. It did not explicitly state that records
+      owned by GraphQL or MCP aggregate families must be excluded from REST
+      aggregate totals while ordinary REST records remain counted.
+impact_analysis:
+    affected_requirements:
+        - SW-REQ-011
+        - SW-REQ-093
+        - SYS-REQ-003
+    affected_code:
+        - analytics/aggregate.go
+        - analytics/aggregate_test.go
+        - analytics/aggregate_mcp_test.go
+hardening:
+    new_requirements:
+        - SW-REQ-093
+    strengthened_requirements:
+        - SW-REQ-011
+    added_obligations:
+        - requirement: SW-REQ-093
+          obligation_class: output_cardinality_bounded
+        - requirement: SW-REQ-093
+          obligation_class: nominal
+    regression_tests:
+        - analytics/aggregate_test.go:TestAggregateData_SkipGraphRecords
+        - analytics/aggregate_mcp_test.go:TestAggregateData_SkipsMCPRecords
+    proposed_classes: []
+    code_signals: []
+disposition:
+    status: covered_by_requirement
+    requirements:
+        - SW-REQ-093
+    known_issues:
+        - aggregate-counter-replay-not-idempotent
+        - analytics-timestamp-timezone-convention-unpinned
+    evidence:
+        verified_by:
+            - analytics/aggregate_test.go:TestAggregateData_SkipGraphRecords
+            - analytics/aggregate_mcp_test.go:TestAggregateData_SkipsMCPRecords
+        obligation_evidence:
+            - requirement: SW-REQ-093
+              obligation_class: output_cardinality_bounded
+              evidence_type: nominal
+            - requirement: SW-REQ-093
+              obligation_class: output_cardinality_bounded
+              evidence_type: negative
+            - requirement: SW-REQ-093
+              obligation_class: nominal
+              evidence_type: nominal
+    reviewer: agent:codex
+    reviewed_at: "2026-06-26T12:58:26Z"
+history:
+    - at: "2026-06-26T12:58:26Z"
+      by: agent:codex
+      action: created
+      detail: |
+        Recorded c54eed3's REST aggregate graph/MCP partition as a fixed
+        historical product defect separate from the standard-Mongo graph-record
+        exclusion lineage covered by DEFECT-14. Existing SW-REQ-093 evidence
+        closes the aggregate partition contract without changing product code.
