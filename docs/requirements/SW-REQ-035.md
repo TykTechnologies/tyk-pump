@@ -51,7 +51,12 @@ The honest req description above reflects this gap.
   `persistent.ClientOpts.ConnectionTimeout`.
 
 ## Evidence
-- `pumps/mongo_selective_test.go` (re-annotated `Verifies: SW-REQ-035`).
+- `pumps/mongo_selective_test.go` carries code annotations for per-org
+  routing, TCP/error exclusion, document-size boundaries, and driver policy.
+- Formal MC/DC rows for `org_id_present -> record_routed_to_org_collection`
+  stay on tests that exercise selective collection routing. TCP/error
+  exclusion, driver defaulting, timeout propagation, and index idempotency are
+  triple-form obligation evidence rather than SW-REQ-035 MC/DC witnesses.
 - `pumps/mongo_selective_test.go:TestMongoSelectivePump_AccumulateSet_DropsTCPErrorRecords`
   proves the historical TCP/error exclusion through the batching path.
 - `pumps/mongo_selective_test.go:TestDefaultDriverSelective` proves the

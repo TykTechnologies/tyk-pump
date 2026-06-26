@@ -61,8 +61,12 @@ classes).
   `MaxDocumentSizeBytes`).
 
 ## Evidence
-- `pumps/mongo_test.go` (re-annotated `Verifies: SW-REQ-034`) covers
-  `capCollection`, MCP-skip, large-document handling, and batching.
+- `pumps/mongo_test.go` carries code annotations for `capCollection`,
+  MCP-skip, large-document handling, driver policy, and batching.
+- Formal MC/DC rows for `mcp_record_present -> record_filtered_out` are kept
+  on tests that exercise MCP filtering. Driver policy, timeout propagation,
+  document-size accounting, and large-document retention are triple-form
+  obligation evidence rather than SW-REQ-034 MC/DC witnesses.
 - `pumps/mongo_test.go:TestMongoPump_GetItemSizeBytes_CountsRawRequestAndResponseOnce`
   proves RawRequest and RawResponse are each counted once with the 1024-byte
   metadata allowance.

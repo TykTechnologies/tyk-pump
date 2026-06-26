@@ -1467,7 +1467,6 @@ func TestMongoSelectivePump_EnsureIndexes_LogBrowserDifferentName(t *testing.T) 
 	_ = err
 }
 
-// Verifies: SW-REQ-035
 // SW-REQ-035:idempotent_schema_setup:nominal
 // SW-REQ-035:idempotent_schema_setup:negative
 // SW-REQ-035:idempotent_schema_setup:review
@@ -1493,7 +1492,6 @@ func TestMongoSelectivePump_EnsureIndexes_LogBrowserDifferentName_FakeStore(t *t
 	assert.Len(t, store.createdIndexes, 2, "apiid and ttl indexes should be attempted before the swallowed logBrowser conflict")
 }
 
-// Verifies: SW-REQ-035
 // SW-REQ-035:idempotent_schema_setup:negative
 func TestMongoSelectivePump_EnsureIndexes_LogBrowserDifferentName_NonSentinelErr(t *testing.T) {
 	store := &sequencedUpsertStore{

@@ -9,9 +9,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// Verifies: SW-REQ-034
-// Verifies: SW-REQ-035
-// Verifies: SW-REQ-036
 // SW-REQ-034:backend_connection_timeout_propagated:nominal
 // SW-REQ-034:backend_connection_timeout_propagated:negative
 // SW-REQ-034:backend_connection_timeout_propagated:review
@@ -39,9 +36,6 @@ func TestMongoPumpsPropagateConfiguredConnectionTimeout(t *testing.T) {
 	}
 }
 
-// Verifies: SW-REQ-034
-// Verifies: SW-REQ-035
-// Verifies: SW-REQ-036
 // SW-REQ-034:backend_connection_timeout_propagated:nominal
 // SW-REQ-035:backend_connection_timeout_propagated:nominal
 // SW-REQ-036:backend_connection_timeout_propagated:nominal

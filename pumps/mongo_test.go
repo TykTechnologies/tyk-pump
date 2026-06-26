@@ -336,7 +336,6 @@ func TestMongoPump_capCollection_OverrideSize(t *testing.T) {
 }
 
 // Verifies: SW-REQ-034
-// Verifies: SW-REQ-082
 // MCDC SW-REQ-034: mcp_record_present=F, record_filtered_out=F => TRUE
 // SW-REQ-082:output_cardinality_bounded:nominal
 func TestMongoPump_AccumulateSet(t *testing.T) {
@@ -415,8 +414,6 @@ func TestMongoPump_AccumulateSet(t *testing.T) {
 	))
 }
 
-// Verifies: SW-REQ-034
-// Verifies: SW-REQ-037
 // SW-REQ-034:boundary:nominal
 // SW-REQ-037:boundary:nominal
 // SW-REQ-037:boundary:negative
@@ -469,7 +466,6 @@ func bytesWithValue(length int, value byte) []byte {
 	return data
 }
 
-// Verifies: SW-REQ-034
 // SW-REQ-034:document_size_accounting_exact:nominal
 // SW-REQ-034:document_size_accounting_exact:boundary
 // SW-REQ-034:document_size_accounting_exact:review
@@ -515,7 +511,6 @@ func TestMongoPump_GetItemSizeBytes_CountsRawRequestAndResponseOnce(t *testing.T
 	}
 }
 
-// Verifies: SW-REQ-034
 // SW-REQ-034:document_size_accounting_exact:boundary
 // SW-REQ-034:boundary:nominal
 func TestMongoPump_AccumulateSet_RewritesOversizePayloadWithoutSkipping(t *testing.T) {
@@ -777,7 +772,6 @@ func TestDecodeRequestAndDecodeResponseMongo(t *testing.T) {
 	assert.False(t, newPump.GetDecodedResponse())
 }
 
-// Verifies: SW-REQ-034
 // SW-REQ-034:support_matrix_enforced:nominal
 // SW-REQ-034:nominal:nominal
 func TestDefaultDriver(t *testing.T) {
@@ -889,7 +883,6 @@ func TestMongoPump_WriteData(t *testing.T) {
 	}))
 }
 
-// Verifies: SW-REQ-034
 // SW-REQ-034:support_matrix_enforced:boundary
 // SW-REQ-034:nominal:boundary
 func TestGetMongoDriverType(t *testing.T) {

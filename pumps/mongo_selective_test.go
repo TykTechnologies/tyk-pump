@@ -14,8 +14,6 @@ import (
 	"gopkg.in/vmihailenco/msgpack.v2"
 )
 
-// Verifies: SW-REQ-035
-// Verifies: SW-REQ-092
 // SW-REQ-035:boundary:nominal
 // SW-REQ-092:document_size_accounting_exact:boundary
 func TestMongoSelectivePump_AccumulateSet(t *testing.T) {
@@ -108,7 +106,6 @@ func TestMongoSelectivePump_AccumulateSet(t *testing.T) {
 	))
 }
 
-// Verifies: SW-REQ-035
 // SW-REQ-035:output_cardinality_bounded:negative
 // SW-REQ-035:boundary:negative
 func TestMongoSelectivePump_AccumulateSet_DropsTCPErrorRecords(t *testing.T) {
@@ -490,7 +487,6 @@ func TestDecodeRequestAndDecodeResponseMongoSelective(t *testing.T) {
 	assert.False(t, newPump.GetDecodedResponse())
 }
 
-// Verifies: SW-REQ-035
 // SW-REQ-035:support_matrix_enforced:nominal
 // SW-REQ-035:nominal:nominal
 func TestDefaultDriverSelective(t *testing.T) {
