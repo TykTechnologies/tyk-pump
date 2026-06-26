@@ -15,8 +15,9 @@ introduced_in: inception
 mitigation: Ensure callers pass only analytics.AnalyticsRecord values to KafkaPump.WriteData and run tyk-pump under a process supervisor.
 remediation: Guard the type assertion in KafkaPump.WriteData and return an error, or skip the malformed entry with an observable log, instead of panicking.
 owner: tyk-team
+review_date: "2026-11-30"
 release_disposition: ship_with_known_issue
-status: open
+status: reviewed
 history:
     - at: "2026-06-19T00:00:00Z"
       by: agent:codex
@@ -29,3 +30,7 @@ history:
       by: human:buger
       action: edit
       detail: set-severity-basis=risk,set-risk
+    - at: "2026-06-26T13:45:48Z"
+      by: agent:codex
+      action: review
+      detail: reviewer=human:buger,new_review_date=2026-11-30

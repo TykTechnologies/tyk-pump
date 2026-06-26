@@ -13,8 +13,9 @@ introduced_in: inception
 mitigation: Restrict outbound network paths for these pumps and configure only trusted vendor endpoints.
 remediation: Expose and document an explicit redirect policy for SDK-backed HTTP pumps, or wrap the SDK transport/client with a CheckRedirect policy before satisfying redirect_policy_explicit.
 owner: tyk-team
+review_date: "2026-11-30"
 release_disposition: ship_with_known_issue
-status: open
+status: reviewed
 history:
     - at: "2026-06-19T00:00:00Z"
       by: agent:codex
@@ -27,3 +28,7 @@ history:
       by: human:buger
       action: edit
       detail: set-severity-basis=risk,set-risk
+    - at: "2026-06-26T13:45:48Z"
+      by: agent:codex
+      action: review
+      detail: reviewer=human:buger,new_review_date=2026-11-30

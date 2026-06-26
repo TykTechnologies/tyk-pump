@@ -4,6 +4,8 @@ description: main.go:415-426 (filterData) attempts base64.StdEncoding.DecodeStri
 affected_requirements:
     - SYS-REQ-011
     - SW-REQ-088
+evidence_manifests:
+    - test:main_test.go:TestFilterDataBase64DecodeFailurePreservesField
 commands:
     - grep -n 'base64.StdEncoding.DecodeString' main.go
 severity: medium

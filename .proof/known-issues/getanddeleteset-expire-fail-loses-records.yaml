@@ -16,8 +16,9 @@ introduced_in: inception
 mitigation: Operators see 'Error on Purge Loop. Is Temporal Storage down?' messages but the underlying records are gone and cannot be replayed without an external buffer.
 remediation: Either (a) make Pop+Expire a single Lua/MULTI atomic op so failure rolls back the pop, or (b) on Expire failure return the popped records anyway with a partial-success indicator so the caller can still write them downstream.
 owner: tyk-team
+review_date: "2026-11-30"
 release_disposition: ship_with_known_issue
-status: open
+status: reviewed
 history:
     - at: "2026-05-30T08:30:35Z"
       by: human:buger
@@ -42,3 +43,7 @@ history:
       by: human:buger
       action: edit
       detail: add-requirement
+    - at: "2026-06-26T13:45:48Z"
+      by: agent:codex
+      action: review
+      detail: reviewer=human:buger,new_review_date=2026-11-30

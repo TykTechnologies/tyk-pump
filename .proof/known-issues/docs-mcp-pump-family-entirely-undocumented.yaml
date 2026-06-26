@@ -3,6 +3,9 @@ title: 'Documentation gap: MCP pump family (4 backends) has zero mentions in tyk
 description: 'pumps/init.go:39-42 registers mongo-mcp, mongo-mcp-aggregate, sql-mcp, sql-mcp-aggregate. SW-REQ-038/039/044/045 cover them. KIs mcp-sql-aggregate-mysql-create-index-syntax-broken and elasticsearch-mcp-routing-non-bulk-ignored describe MCP-specific bugs. None of this is reachable from tyk-docs: zero matches for ''MCP'' across api-management/tyk-pump.md, shared/pump-config.md, or developer-support/release-notes/pump.md. Operators discovering MCP must read the source.'
 affected_requirements:
     - SW-REQ-044
+    - SW-REQ-038
+    - SW-REQ-039
+    - SW-REQ-045
 commands:
     - grep -RIn -e 'MCP' -e 'mcp' /Users/buger/go/src/tyk-docs/tyk-docs/content/api-management/tyk-pump.md /Users/buger/go/src/tyk-docs/tyk-docs/content/shared/pump-config.md /Users/buger/go/src/tyk-docs/tyk-docs/content/developer-support/release-notes/pump.md || echo 'no matches'
 severity: high
@@ -28,3 +31,7 @@ history:
       by: human:buger
       action: edit
       detail: set-severity-basis=risk,set-risk
+    - at: "2026-06-26T13:37:52Z"
+      by: agent:codex
+      action: edit
+      detail: add-requirement

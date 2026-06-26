@@ -86,6 +86,7 @@ func TestBackoffHTTPRetry_Send_WithBody_RetriesOn5xx(t *testing.T) {
 }
 
 // SW-REQ-030:request_body_replay_preserved:nominal
+// Reproduces: http-retry-post-idempotency-unenforced
 func TestBackoffHTTPRetry_Send_ReplaysRequestBodyOnRetry(t *testing.T) {
 	const payload = `{"event":"splunk-retry"}`
 	calls := 0

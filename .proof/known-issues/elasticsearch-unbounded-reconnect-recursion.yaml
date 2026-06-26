@@ -18,8 +18,9 @@ introduced_in: inception
 mitigation: Avoid persistent ES outages; monitor ES uptime out-of-band. Stop and restart tyk-pump if recurring ES errors appear in logs.
 remediation: Replace recursion with the retry package's bounded ExponentialBackoff and a retry-count limit; on exhaustion, return an error from WriteData so the batch is logged-and-skipped rather than recursing.
 owner: tyk-team
+review_date: "2026-11-30"
 release_disposition: ship_with_known_issue
-status: open
+status: reviewed
 history:
     - at: "2026-05-30T08:34:32Z"
       by: human:buger
@@ -47,3 +48,7 @@ history:
       by: human:buger
       action: edit
       detail: set-severity-basis=risk,set-risk
+    - at: "2026-06-26T13:33:18Z"
+      by: agent:codex
+      action: review
+      detail: reviewer=human:buger,new_review_date=2026-11-30

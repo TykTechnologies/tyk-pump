@@ -12,8 +12,9 @@ introduced_in: inception
 mitigation: Production code always sets BatchSize=100 default before calling splitIntoBatches. The bug is dormant unless a future code change bypasses the default.
 remediation: Add 'if batchSize <= 0 { batchSize = 100 }' at the top of splitIntoBatches, making the helper self-defending against caller misuse.
 owner: tyk-team
+review_date: "2026-11-30"
 release_disposition: ship_with_known_issue
-status: open
+status: reviewed
 history:
     - at: "2026-06-02T16:38:48Z"
       by: human:buger
@@ -26,3 +27,7 @@ history:
       by: human:buger
       action: edit
       detail: set-severity-basis=risk,set-risk
+    - at: "2026-06-26T13:45:48Z"
+      by: agent:codex
+      action: review
+      detail: reviewer=human:buger,new_review_date=2026-11-30

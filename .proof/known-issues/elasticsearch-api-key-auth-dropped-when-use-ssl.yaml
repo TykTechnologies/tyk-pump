@@ -1,11 +1,11 @@
 id: elasticsearch-api-key-auth-dropped-when-use-ssl
 title: Elasticsearch API-key auth transport is replaced when use_ssl is enabled
 description: |
-  pumps/elasticsearch.go configures an ApiKeyTransport when auth_api_key and
-  auth_api_key_id are set, but the later UseSSL branch replaces httpClient with
-  a new http.Client whose transport is only &http.Transport{TLSClientConfig:
-  tlsConf}. When both API-key auth and use_ssl are configured, the outbound
-  Elasticsearch client loses the Authorization: ApiKey header wiring.
+    pumps/elasticsearch.go configures an ApiKeyTransport when auth_api_key and
+    auth_api_key_id are set, but the later UseSSL branch replaces httpClient with
+    a new http.Client whose transport is only &http.Transport{TLSClientConfig:
+    tlsConf}. When both API-key auth and use_ssl are configured, the outbound
+    Elasticsearch client loses the Authorization: ApiKey header wiring.
 affected_requirements:
     - SW-REQ-068
 evidence_manifests:
@@ -13,14 +13,15 @@ evidence_manifests:
 severity: medium
 severity_basis: risk
 risk: data_integrity
-reproducer_command: 'rg -n "ApiKeyTransport|TLSClientConfig|httpClient =" pumps/elasticsearch.go'
+reproducer_command: rg -n "ApiKeyTransport|TLSClientConfig|httpClient =" pumps/elasticsearch.go
 environment_note: 'Static reproducer test asserts the current bad ordering/wiring: API-key transport assignment is followed by a TLS client assignment that does not preserve or wrap ApiKeyTransport.'
 introduced_in: 84f3855
-mitigation: 'Avoid combining auth_api_key/auth_api_key_id with use_ssl until the transport composition is fixed; use basic auth over TLS or network-level controls where acceptable.'
-remediation: 'Compose the TLS transport with API-key header injection instead of replacing it, for example by making ApiKeyTransport wrap a base RoundTripper configured with TLSClientConfig.'
+mitigation: Avoid combining auth_api_key/auth_api_key_id with use_ssl until the transport composition is fixed; use basic auth over TLS or network-level controls where acceptable.
+remediation: Compose the TLS transport with API-key header injection instead of replacing it, for example by making ApiKeyTransport wrap a base RoundTripper configured with TLSClientConfig.
 owner: tyk-team
+review_date: "2026-11-30"
 release_disposition: ship_with_known_issue
-status: open
+status: reviewed
 history:
     - at: "2026-06-25T18:05:00Z"
       by: agent:codex
@@ -28,3 +29,7 @@ history:
       detail: |
         Found during TT-3067 proof review: getOperator's UseSSL branch replaces
         the API-key httpClient transport instead of preserving auth behavior.
+    - at: "2026-06-26T13:33:18Z"
+      by: agent:codex
+      action: review
+      detail: reviewer=human:buger,new_review_date=2026-11-30

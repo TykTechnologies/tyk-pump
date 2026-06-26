@@ -12,8 +12,9 @@ introduced_in: inception
 mitigation: Operators needing producer-side duplicate suppression or per-entity ordering must enforce it upstream before events reach the Kinesis pump, or handle ordering downstream.
 remediation: Derive a stable partition/idempotency key from immutable record fields when idempotency or per-entity ordering is required, document the chosen key, and add replay/order tests proving identical input records produce the same key.
 owner: tyk-team
+review_date: "2026-11-30"
 release_disposition: ship_with_known_issue
-status: open
+status: reviewed
 history:
     - at: "2026-06-19T00:00:00Z"
       by: agent:codex
@@ -26,3 +27,7 @@ history:
       by: human:buger
       action: edit
       detail: set-severity-basis=risk,set-risk
+    - at: "2026-06-26T13:45:48Z"
+      by: agent:codex
+      action: review
+      detail: reviewer=human:buger,new_review_date=2026-11-30

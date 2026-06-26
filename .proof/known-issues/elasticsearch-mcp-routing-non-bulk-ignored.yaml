@@ -43,8 +43,9 @@ remediation: |-
       _, err := e.esClient.Index().Index(recordIndex).BodyJson(mapping).Id(id).Do(ctx)
     (and the v3/v5/v6 equivalents with Type(esConf.DocumentType)).
 owner: tyk-team
+review_date: "2026-11-30"
 release_disposition: ship_with_known_issue
-status: open
+status: reviewed
 history:
     - at: "2026-06-22T07:15:10Z"
       by: human:buger
@@ -58,3 +59,7 @@ history:
       by: human:buger
       action: edit
       detail: add-evidence-manifest
+    - at: "2026-06-26T13:33:18Z"
+      by: agent:codex
+      action: review
+      detail: reviewer=human:buger,new_review_date=2026-11-30

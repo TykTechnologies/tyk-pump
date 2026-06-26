@@ -4,6 +4,8 @@ description: retry/http-retry.go retries retryable transport errors, HTTP 5xx, a
 affected_requirements:
     - SW-REQ-030
     - SW-REQ-048
+evidence_manifests:
+    - test:retry/http_retry_branches_test.go:TestBackoffHTTPRetry_Send_ReplaysRequestBodyOnRetry
 severity: medium
 severity_basis: risk
 risk: data_integrity

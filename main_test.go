@@ -999,6 +999,7 @@ func TestDeprecationWarnings(t *testing.T) {
 // the field on malformed input, but it also does not surface the decode failure
 // to the operator). This test is the negative-evidence carrier the audit needs;
 // the remediation lives with the KI.
+// Reproduces: filterdata-base64-decode-silent-noop
 func TestFilterDataBase64DecodeFailurePreservesField(t *testing.T) {
 	const invalidBase64 = "!!!notbase64!!!"
 

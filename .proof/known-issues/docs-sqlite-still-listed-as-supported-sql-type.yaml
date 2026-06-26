@@ -9,7 +9,7 @@ severity: medium
 severity_basis: risk
 risk: correctness
 reproducer_command: grep -RIn -e 'sqlite' /Users/buger/go/src/tyk-docs/tyk-docs/content/api-management/tyk-pump.md /Users/buger/go/src/tyk-docs/tyk-docs/content/shared/pump-config.md
-introduced_in: inception
+introduced_in: 775f8e3
 mitigation: tyk-pump code does correctly error on sqlite type; operators see a clear error message at startup.
 remediation: Update tyk-docs (api-management/tyk-pump.md + shared/pump-config.md) to drop sqlite from supported type values and add a 'removed in 1.12.0' callout in 8 places.
 owner: tyk-team
@@ -28,3 +28,7 @@ history:
       by: human:buger
       action: edit
       detail: set-severity-basis=risk,set-risk
+    - at: "2026-06-26T13:37:52Z"
+      by: agent:codex
+      action: edit
+      detail: introduced-in=775f8e3

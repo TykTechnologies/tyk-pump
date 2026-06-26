@@ -829,6 +829,7 @@ func TestTemporalStorageHandler_SetKey_EnsureConnectionSingletonAlive(t *testing
 // lost. KI getanddeleteset-expire-fail-loses-records documents this atomicity
 // gap; the assertions below prove the failure surfaces. The reachable TRUE rows
 // 1, 2 and 4 are driven by TestTemporalStorageHandler_GetAndDeleteSet_TrueRows.
+// Reproduces: getanddeleteset-expire-fail-loses-records
 func TestTemporalStorageHandler_GetAndDeleteSet_ExpireFailureDecision(t *testing.T) {
 	host, port := redisHostPort(t)
 	t.Cleanup(func() { resetSingletonForTest(t) })
