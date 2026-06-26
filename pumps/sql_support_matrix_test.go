@@ -6,17 +6,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// Verifies: SW-REQ-040
 // SW-REQ-040:support_matrix_enforced:negative
-// Verifies: SW-REQ-041
 // SW-REQ-041:support_matrix_enforced:negative
-// Verifies: SW-REQ-042
 // SW-REQ-042:support_matrix_enforced:negative
-// Verifies: SW-REQ-043
 // SW-REQ-043:support_matrix_enforced:negative
-// Verifies: SW-REQ-044
 // SW-REQ-044:support_matrix_enforced:negative
-// Verifies: SW-REQ-045
 // SW-REQ-045:support_matrix_enforced:negative
 func TestSQLFamilyRejectsSQLiteSupportType(t *testing.T) {
 	tests := []struct {
