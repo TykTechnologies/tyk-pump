@@ -5,6 +5,8 @@ affected_requirements:
     - INT-REQ-007
     - SW-REQ-040
     - SW-REQ-065
+evidence_manifests:
+    - .proof/evidence/ki-sql-schema-no-version-policy.yaml
 severity: low
 severity_basis: risk
 risk: correctness
@@ -33,3 +35,7 @@ history:
       by: agent:codex
       action: review
       detail: reviewer=human:buger,new_review_date=2026-11-30
+    - at: "2026-06-26T15:32:35Z"
+      by: agent:codex
+      action: edit
+      detail: add-evidence-manifest

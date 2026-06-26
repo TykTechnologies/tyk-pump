@@ -4,6 +4,8 @@ description: The Moesif and Segment pumps construct third-party SDK clients with
 affected_requirements:
     - SW-REQ-052
     - SW-REQ-053
+evidence_manifests:
+    - .proof/evidence/ki-http-sdk-redirect-policy-implicit.yaml
 severity: low
 severity_basis: risk
 risk: compliance
@@ -32,3 +34,7 @@ history:
       by: agent:codex
       action: review
       detail: reviewer=human:buger,new_review_date=2026-11-30
+    - at: "2026-06-26T15:32:35Z"
+      by: agent:codex
+      action: edit
+      detail: add-evidence-manifest

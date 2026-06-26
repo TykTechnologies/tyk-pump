@@ -4,6 +4,8 @@ description: STK-REQ-002 promises records are neither lost nor duplicated in nor
 affected_requirements:
     - STK-REQ-002
     - SYS-REQ-022
+evidence_manifests:
+    - .proof/evidence/ki-write-failure-after-pop-loses-records.yaml
 severity: medium
 severity_basis: risk
 risk: data_integrity
@@ -48,3 +50,7 @@ history:
       by: agent:codex
       action: review
       detail: reviewer=human:buger,new_review_date=2026-11-30
+    - at: "2026-06-26T15:32:35Z"
+      by: agent:codex
+      action: edit
+      detail: add-evidence-manifest

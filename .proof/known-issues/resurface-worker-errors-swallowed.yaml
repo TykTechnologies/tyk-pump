@@ -3,6 +3,8 @@ title: Resurface worker logs send and parse errors without surfacing WriteData f
 description: pumps/resurface.go sends batches into an internal worker channel and returns from WriteData after enqueue. The worker logs decode/map/send errors but has no error channel back to WriteData, so per-record Resurface submission failures are not propagated or accounted as partial progress.
 affected_requirements:
     - SW-REQ-054
+evidence_manifests:
+    - .proof/evidence/ki-resurface-worker-errors-swallowed.yaml
 severity: medium
 severity_basis: risk
 risk: data_integrity
@@ -26,3 +28,7 @@ history:
       by: agent:codex
       action: review
       detail: reviewer=human:buger,new_review_date=2026-11-30
+    - at: "2026-06-26T15:32:35Z"
+      by: agent:codex
+      action: edit
+      detail: add-evidence-manifest
