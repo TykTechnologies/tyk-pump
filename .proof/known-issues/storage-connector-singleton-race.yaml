@@ -13,8 +13,9 @@ introduced_in: inception
 mitigation: Production currently constructs only AnalyticsStore + UptimeStore sequentially in main.setupAnalyticsStore; the race window is small. Avoid using forceReconnect=true outside controlled init paths.
 remediation: Either (a) protect connectorSingleton + logPrefix with a sync.RWMutex, or (b) move them onto the TemporalStorageHandler struct so each handler owns its own connector, or (c) make connectorSingleton a typed atomic.Pointer.
 owner: tyk-team
+review_date: "2026-11-30"
 release_disposition: ship_with_known_issue
-status: open
+status: reviewed
 history:
     - at: "2026-06-02T16:37:31Z"
       by: human:buger
@@ -27,3 +28,7 @@ history:
       by: human:buger
       action: edit
       detail: set-severity-basis=risk,set-risk
+    - at: "2026-06-26T14:02:17Z"
+      by: agent:codex
+      action: review
+      detail: reviewer=human:buger,new_review_date=2026-11-30

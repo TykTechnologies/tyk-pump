@@ -4,17 +4,20 @@ description: 'pumps/stdout.go:90-92 (WriteData inner select): ''case <-ctx.Done(
 affected_requirements:
     - SW-REQ-026
     - INT-REQ-004
+evidence_manifests:
+    - test:pumps/stdout_test.go:TestStdOutPump_WriteData_ContextCancelled_KI
 severity: low
 severity_basis: risk
 risk: data_integrity
-reproducer_command: rg -n "case <-ctx\.Done\(\)|return nil" pumps/stdout.go
+reproducer_command: go test -count=1 -run '^TestStdOutPump_WriteData_ContextCancelled_KI$' ./pumps
 environment_note: Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source or documentation surface and following the described scenario.
 introduced_in: inception
 mitigation: stdout pump is typically used for development; ctx-cancellation on stdout is rare. Operators using stdout for production audit log should not rely on per-record success counts.
 remediation: Replace 'return nil' on line 92 with 'return ctx.Err()' so cancellation propagates through the Pump.WriteData error return as INT-REQ-004 contracts.
 owner: tyk-team
+review_date: "2026-11-30"
 release_disposition: ship_with_known_issue
-status: open
+status: reviewed
 history:
     - at: "2026-06-02T16:39:22Z"
       by: human:buger
@@ -27,3 +30,7 @@ history:
       by: human:buger
       action: edit
       detail: set-severity-basis=risk,set-risk
+    - at: "2026-06-26T13:57:29Z"
+      by: agent:codex
+      action: review
+      detail: reviewer=human:buger,new_review_date=2026-11-30

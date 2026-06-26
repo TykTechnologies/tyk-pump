@@ -13,8 +13,9 @@ introduced_in: inception
 mitigation: Set MigrateShardedTables=true in operator config to migrate every existing shard. Document this as the recommended default in deployment guides.
 remediation: Flip the default for MigrateShardedTables to true, or detect missing columns on per-shard insert failure and migrate that shard on demand.
 owner: tyk-team
+review_date: "2026-11-30"
 release_disposition: ship_with_known_issue
-status: open
+status: reviewed
 history:
     - at: "2026-05-30T08:32:23Z"
       by: human:buger
@@ -31,3 +32,7 @@ history:
       by: human:buger
       action: edit
       detail: add-evidence-manifest
+    - at: "2026-06-26T13:57:29Z"
+      by: agent:codex
+      action: review
+      detail: reviewer=human:buger,new_review_date=2026-11-30

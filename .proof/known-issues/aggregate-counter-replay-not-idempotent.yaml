@@ -13,8 +13,9 @@ introduced_in: inception
 mitigation: Rely on the temporal-store at-most-once pop contract and avoid replaying the same analytics batch into aggregate pumps.
 remediation: Introduce a stable event id or replay ledger before aggregation if aggregate replay idempotency is required, then add a replay test proving duplicate input records do not overcount.
 owner: tyk-team
+review_date: "2026-11-30"
 release_disposition: ship_with_known_issue
-status: open
+status: reviewed
 history:
     - at: "2026-06-19T00:00:00Z"
       by: agent:codex
@@ -27,3 +28,7 @@ history:
       by: human:buger
       action: edit
       detail: set-severity-basis=risk,set-risk
+    - at: "2026-06-26T14:04:15Z"
+      by: agent:codex
+      action: review
+      detail: reviewer=human:buger,new_review_date=2026-11-30

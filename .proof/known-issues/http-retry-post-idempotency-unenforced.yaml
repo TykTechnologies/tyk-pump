@@ -14,9 +14,14 @@ introduced_in: inception
 mitigation: Configure downstream receivers with deduplication where available and tune retry counts conservatively for non-idempotent POST sinks.
 remediation: 'Declare the retry idempotency policy explicitly: either require idempotency keys/deduplication for replayed POST requests or restrict retries to failure modes that cannot have reached the receiver.'
 owner: tyk-team
+review_date: "2026-11-30"
 release_disposition: ship_with_known_issue
-status: open
+status: reviewed
 history:
     - at: "2026-06-22T11:03:38Z"
       by: human:buger
       action: created
+    - at: "2026-06-26T14:04:16Z"
+      by: agent:codex
+      action: review
+      detail: reviewer=human:buger,new_review_date=2026-11-30

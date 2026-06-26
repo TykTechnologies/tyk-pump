@@ -12,9 +12,14 @@ introduced_in: 657436f
 mitigation: MySQL operators should pre-create the SQL Aggregate dimension index out-of-band and set omit_index_creation=true, or run SQL Aggregate on Postgres until dialect-specific index DDL is implemented.
 remediation: Gate IF NOT EXISTS by dialect/version, or use a backend-specific HasIndex pre-check plus plain CREATE INDEX for MySQL-compatible backends, then add a MySQL integration witness for SW-REQ-066 backend_ddl_valid.
 owner: tyk-team
+review_date: "2026-11-30"
 release_disposition: ship_with_known_issue
-status: open
+status: reviewed
 history:
     - at: "2026-06-25T13:26:02Z"
       by: human:buger
       action: created
+    - at: "2026-06-26T14:04:16Z"
+      by: agent:codex
+      action: review
+      detail: reviewer=human:buger,new_review_date=2026-11-30

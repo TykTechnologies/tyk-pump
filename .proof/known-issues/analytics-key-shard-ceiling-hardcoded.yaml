@@ -11,8 +11,9 @@ introduced_in: inception
 mitigation: Operators must keep the gateway's analytics-shard count at or below 10 (the documented assumption). Verify gateway config does not customise modulus above 10 before enabling multiple analytics keys.
 remediation: Read the shard ceiling from configuration (e.g. SystemConfig.AnalyticsShardCount) or discover it dynamically via Redis KEYS scan.
 owner: tyk-team
+review_date: "2026-11-30"
 release_disposition: ship
-status: open
+status: reviewed
 history:
     - at: "2026-05-30T08:31:10Z"
       by: human:buger
@@ -33,3 +34,7 @@ history:
       by: human:buger
       action: edit
       detail: set-severity-basis=risk,set-risk
+    - at: "2026-06-26T14:04:15Z"
+      by: agent:codex
+      action: review
+      detail: reviewer=human:buger,new_review_date=2026-11-30

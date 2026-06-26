@@ -13,8 +13,9 @@ introduced_in: inception
 mitigation: Operators must ensure the configured CSVDir is writable before starting tyk-pump. The Init step calls os.MkdirAll at line 62 but only logs failure; permission changes after Init can still trigger the WriteData panic.
 remediation: 'In WriteData: (a) check outfile != nil after Create/OpenFile and return an error if nil; (b) call writer.Error() after Flush and propagate it as the return value.'
 owner: tyk-team
+review_date: "2026-11-30"
 release_disposition: ship_with_known_issue
-status: open
+status: reviewed
 history:
     - at: "2026-06-02T16:38:13Z"
       by: human:buger
@@ -27,3 +28,7 @@ history:
       by: human:buger
       action: edit
       detail: set-severity-basis=risk,set-risk
+    - at: "2026-06-26T14:04:15Z"
+      by: agent:codex
+      action: review
+      detail: reviewer=human:buger,new_review_date=2026-11-30

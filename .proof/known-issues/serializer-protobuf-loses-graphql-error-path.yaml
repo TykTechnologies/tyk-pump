@@ -14,9 +14,14 @@ introduced_in: 9984a1e
 mitigation: Operators relying on GraphQL error location should prefer sinks that receive the original analytics record or message-only GraphQL error summaries until the protobuf schema carries structured error paths.
 remediation: Extend the protobuf GraphQLStats schema to carry each GraphError path as structured repeated path elements or a documented JSON representation, update encode/decode transformers, and add round-trip evidence that Message and Path both survive.
 owner: tyk-team
+review_date: "2026-11-30"
 release_disposition: ship_with_known_issue
-status: open
+status: reviewed
 history:
     - at: "2026-06-25T15:35:00Z"
       by: agent:codex
       action: created
+    - at: "2026-06-26T14:04:16Z"
+      by: agent:codex
+      action: review
+      detail: reviewer=human:buger,new_review_date=2026-11-30

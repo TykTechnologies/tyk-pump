@@ -18,9 +18,15 @@ Current inventory at audit start:
 - Active waivers: 0
 - KI-backed code-signal debt rows: 167
 - KI-backed MC/DC debt rows: 1
-- KI-backed obligation-decomposition debt rows: 405
-- KI-backed obligation-evidence debt rows: 407
+- Raw requirement `ki_ref` deferral rows: 416 across 78 requirement files,
+  covering 111 unique KnownIssue IDs
+- Go `mcdc:ignore` rows: 291 across 66 Go files; 216 rows carry an explicit
+  KnownIssue marker or name, covering 20 unique KnownIssue IDs
 - Deferred acceptance-criteria debt rows: 1
+
+Subagent inventory cross-check: all 13 accepted risks, all 111 unique
+requirement `ki_ref` KnownIssue IDs, and all 20 unique MC/DC KnownIssue IDs are
+represented in the per-item audit rows below.
 
 ## Verdicts
 
@@ -80,14 +86,14 @@ Read-only subagent audit completed for 18 KnownIssues from
 
 | Item | Type | Verdict | Evidence Checked | Action |
 | --- | --- | --- | --- | --- |
-| `aggregate-counter-replay-not-idempotent` | KnownIssue | `needs_reproducer_hardening` | Static source shows additive counters and Mongo `$inc`, but does not exercise duplicate replay. | Backlog: add duplicate-record tripwire for aggregate and/or Mongo aggregate path; add review date after reproducer is real. |
+| `aggregate-counter-replay-not-idempotent` | KnownIssue | `needs_reproducer_hardening` | Static source shows additive counters and Mongo `$inc`, but does not exercise duplicate replay. | Stamped review date `2026-11-30`; backlog: add duplicate-record tripwire for aggregate and/or Mongo aggregate path. |
 | `aggregate-mcdc-unreachable-string-assertion-ok` | KnownIssue | `stale_or_resolved` | Current `analytics/aggregate.go` contains the expected `//mcdc:ignore` comments. | Backlog: close/convert according to proof semantics and remove stale active-KI refs from `DEFECT-39` if required. |
-| `analytics-key-shard-ceiling-hardcoded` | KnownIssue | `needs_metadata_hardening` | Active code fact at `main.go:267`; release disposition needs clearer assumption boundary under `SYS-REQ-030`. | Backlog: add review date and clarify disposition. |
+| `analytics-key-shard-ceiling-hardcoded` | KnownIssue | `needs_metadata_hardening` | Active code fact at `main.go:267`; release disposition needs clearer assumption boundary under `SYS-REQ-030`. | Stamped review date `2026-11-30`; backlog: clarify disposition. |
 | `analytics-timestamp-timezone-convention-unpinned` | KnownIssue | `needs_split` | Record combines timestamp convention, shard routing, aggregate/uptime serialization, and DST formatting paths. | Backlog: split or structure into narrower KIs with at least one SQL shard-boundary and one proto/location reproducer. |
-| `analytics-trimstring-byte-truncation-not-unicode-safe` | KnownIssue | `needs_reproducer_hardening` | Active gap at `analytics/analytics.go:333`; static grep does not prove invalid UTF-8 output. | Backlog: add unit tripwire that cuts a multibyte rune and asserts current invalid output; add review date. |
-| `common-setloglevel-nil-log-panic` | KnownIssue | `needs_reproducer_hardening` | Latent panic at `pumps/common.go:80`; static grep does not execute it. | Backlog: add `require.Panics` reproducer on zero-value `CommonPumpConfig.SetLogLevel`; add review date. |
-| `config-pump-type-whitelist-not-enforced-at-load` | KnownIssue | `needs_reproducer_hardening` | Loader/init boundary gap across `config.go:262` and `main.go:201`. | Backlog: add test proving `LoadConfig` accepts an unknown pump type and only init skips it; add review date. |
-| `csv-writedata-nil-file-handle-panic` | KnownIssue | `needs_reproducer_hardening` | Existing recover-based witnesses do not fail if the panic disappears. | Backlog: tighten witness to assert the panic explicitly; add review date. |
+| `analytics-trimstring-byte-truncation-not-unicode-safe` | KnownIssue | `needs_reproducer_hardening` | Active gap at `analytics/analytics.go:333`; static grep does not prove invalid UTF-8 output. | Stamped review date `2026-11-30`; backlog: add unit tripwire that cuts a multibyte rune and asserts current invalid output. |
+| `common-setloglevel-nil-log-panic` | KnownIssue | `needs_reproducer_hardening` | Latent panic at `pumps/common.go:80`; static grep does not execute it. | Stamped review date `2026-11-30`; backlog: add `require.Panics` reproducer on zero-value `CommonPumpConfig.SetLogLevel`. |
+| `config-pump-type-whitelist-not-enforced-at-load` | KnownIssue | `needs_reproducer_hardening` | Loader/init boundary gap across `config.go:262` and `main.go:201`. | Stamped review date `2026-11-30`; backlog: add test proving `LoadConfig` accepts an unknown pump type and only init skips it. |
+| `csv-writedata-nil-file-handle-panic` | KnownIssue | `needs_reproducer_hardening` | Existing recover-based witnesses do not fail if the panic disappears. | Stamped review date `2026-11-30`; backlog: tighten witness to assert the panic explicitly. |
 | `docs-elasticsearch-mcp-index-name-undocumented` | KnownIssue | `needs_reproducer_hardening` | Code-side field evidence exists, but docs-side absence is not directly asserted. | Backlog: add docs negative grep for `mcp_index_name`. |
 | `docs-elasticsearch-version-range-incorrect` | KnownIssue | `valid` | Local docs still say `Elasticsearch (2.0 - 7.x)` while code supports 3/5/6/7 branches. | No change needed. |
 | `docs-health-endpoint-liveness-vs-readiness-unclear` | KnownIssue | `needs_reproducer_hardening` | Reproducer prints misleading docs but does not pair with source evidence that `/health` is liveness-only. | Backlog: add source/test evidence from server health handler. |
@@ -112,17 +118,17 @@ Read-only subagent audit completed for 29 KnownIssues from
 | `getanddeleteset-expire-fail-loses-records` | KnownIssue | `needs_reproducer_hardening` -> partially hardened | Existing test `TestTemporalStorageHandler_GetAndDeleteSet_ExpireFailureDecision` exercises successful pop followed by `Expire` failure. | Added canonical `// Reproduces: getanddeleteset-expire-fail-loses-records`; stamped review date `2026-11-30`. |
 | `getanddeleteset-expire-ttl-assumes-clock-sync` | KnownIssue | `stale_or_resolved` | Current code uses relative Redis `EXPIRE`; `storage/clock_skew_tolerated_test.go` proves clock-skew tolerance for `SW-REQ-006`. | Backlog: close as stale or rewrite narrowly as `SW-REQ-007` evidence-gap record. |
 | `graph-mcp-sql-sharded-indexes-untracked` | KnownIssue | `valid` | Source still shows Graph/MCP sharded paths lack explicit per-shard index contract/tests. | No change needed. |
-| `graph-sql-aggregate-atomicity-fault-injection-missing` | KnownIssue | `needs_reproducer_hardening` | Atomicity gap lacks transaction/failure harness. | Backlog: add fake-driver or DB-backed failure-injection tests for `tx.Error`, deadlock/serialization failure, and caller-visible error propagation; add review date. |
+| `graph-sql-aggregate-atomicity-fault-injection-missing` | KnownIssue | `needs_reproducer_hardening` | Atomicity gap lacks transaction/failure harness. | Stamped review date `2026-11-30`; backlog: add fake-driver or DB-backed failure-injection tests for `tx.Error`, deadlock/serialization failure, and caller-visible error propagation. |
 | `graph-sql-aggregate-migrate-sharded-tables-ignored` | KnownIssue | `valid` | `GraphSQLAggregatePump.Init` still skips `HandleTableMigration` when sharded. | No change needed. |
 | `graylog-moesif-logfatal-on-record-error` | KnownIssue | `needs_split` | Record mixes Graylog per-record fatal, Moesif per-record fatal, Moesif config-refresh fatal, and structurally unreachable marshal branches. | Backlog: split runtime crash surfaces and track unreachable marshal branches separately as MC/DC debt if needed. |
-| `graylog-nil-client-recursive-writedata-duplicates-data` | KnownIssue | `needs_reproducer_hardening` | Static recursive fall-through claim is plausible but not directly exercised. | Backlog: add fake-client or hook-based test proving double-send after recursive recovery; add review date. |
+| `graylog-nil-client-recursive-writedata-duplicates-data` | KnownIssue | `needs_reproducer_hardening` | Static recursive fall-through claim is plausible but not directly exercised. | Stamped review date `2026-11-30`; backlog: add fake-client or hook-based test proving double-send after recursive recovery. |
 | `health-endpoint-auth-not-enforced` | KnownIssue | `needs_metadata_hardening` -> reviewed | Static source shows health route registers without auth middleware. | Stamped review date `2026-11-30`; backlog: clarify whether unauthenticated liveness is accepted posture or must be auth-gated. |
 | `health-endpoint-is-liveness-only` | KnownIssue | `valid` | `/health` still always returns 200 and is separate from auth/rate-limit concerns. | No change needed. |
 | `health-endpoint-rate-limit-not-enforced` | KnownIssue | `needs_metadata_hardening` -> reviewed | Static source shows health route has no throttling/rate-limit wrapper. | Stamped review date `2026-11-30`. |
 | `health-listener-bind-failure-logfatal` | KnownIssue | `needs_reproducer_hardening` | Current process-exit ratchet does not visibly bind to this KI. | Backlog: add subprocess or AST ratchet evidence for `server/server.go` listener `Fatal`. |
 | `http-retry-post-idempotency-unenforced` | KnownIssue | `needs_reproducer_hardening` -> partially hardened | Existing test proves POST request body replay on retry. | Added canonical `// Reproduces: http-retry-post-idempotency-unenforced` and test evidence pointer; backlog: add duplicate-acceptance scenario where receiver commits but response fails. |
 | `http-sdk-redirect-policy-implicit` | KnownIssue | `needs_metadata_hardening` -> reviewed | Pinned SDK source still confirms default HTTP redirect behavior. | Stamped review date `2026-11-30`. |
-| `hybrid-getdialfn-leaks-conn-on-handshake-fail` | KnownIssue | `needs_reproducer_hardening` | Leak claim needs a fake `net.Conn`/dial reproducer. | Backlog: add connection-closing assertion via fake conn or hook; add review date. |
+| `hybrid-getdialfn-leaks-conn-on-handshake-fail` | KnownIssue | `needs_reproducer_hardening` | Leak claim needs a fake `net.Conn`/dial reproducer. | Stamped review date `2026-11-30`; backlog: add connection-closing assertion via fake conn or hook. |
 | `hybrid-rpc-retry-duration-not-deadline-bounded` | KnownIssue | `valid` | Retry count is bounded; elapsed deadline is not specified/tested. | No change needed. |
 | `influx-v1-unbounded-reconnect-recursion` | KnownIssue | `valid` | `connect()` still recursively calls itself after sleep on client creation error. | No change needed. |
 | `instrumentation-goroutines-no-recover-or-shutdown` | KnownIssue | `needs_split` | Record mixes panic-recovery debt and GC-monitor lifecycle debt; StatsD has Stop/Drain lifecycle. | Backlog: split panic recovery from shutdown/lifetime debt and narrow wording. |
@@ -204,11 +210,11 @@ Read-only subagent audit completed for 20 KnownIssues from
 | Item | Type | Verdict | Evidence Checked | Action |
 | --- | --- | --- | --- | --- |
 | `retry-4xx-bodyread-fail-causes-retry` | KnownIssue | `needs_reproducer_hardening` | Real path exists in `retry/http-retry.go`, but evidence is only static; `INT-REQ-006` ownership is weak. | Backlog: add 4xx failing-body-reader test, assert no second attempt/permanent error, and re-check `INT-REQ-006`. |
-| `retry-backoff-duration-not-deadline-bounded` | KnownIssue | `needs_metadata_hardening` | Valid spec/proof debt, but wording should separate library default elapsed behavior from declared product SLA. | Backlog: add review date and clarify no declared elapsed-time product bound exists. |
+| `retry-backoff-duration-not-deadline-bounded` | KnownIssue | `needs_metadata_hardening` | Valid spec/proof debt, but wording should separate library default elapsed behavior from declared product SLA. | Stamped review date `2026-11-30`; backlog: clarify no declared elapsed-time product bound exists. |
 | `retry-buffers-full-request-body-in-memory` | KnownIssue | `valid` | Code and obligation mapping match `io.ReadAll(req.Body)` in retry middleware. | No change needed. |
-| `retry-row5-mcdc-backoff-not-injectable` | KnownIssue | `needs_metadata_hardening` | Row-5 test exists, but metadata lacks review date and should classify this as proof-harness/testability debt. | Backlog: add review date and timing-bound evidence for row-5 witness. |
+| `retry-row5-mcdc-backoff-not-injectable` | KnownIssue | `needs_metadata_hardening` | Row-5 test exists, but metadata should classify this as proof-harness/testability debt. | Stamped review date `2026-11-30`; backlog: add timing-bound evidence for row-5 witness. |
 | `serializer-protobuf-loses-city-names` | KnownIssue | `needs_reproducer_hardening` | Real bug exists in protobuf geo city handling, but current evidence is static only. | Backlog: add `TestProtobuf_GeoCityNamesLoss_KI` with `// Reproduces`. |
-| `serializer-protobuf-loses-graphql-error-path` | KnownIssue | `needs_metadata_hardening` | Focused KI test exists and passed; affected requirements and obligations align. | Backlog: add review date. |
+| `serializer-protobuf-loses-graphql-error-path` | KnownIssue | `needs_metadata_hardening` | Focused KI test exists and passed; affected requirements and obligations align. | Stamped review date `2026-11-30`; no further immediate action. |
 | `setaggregatetimestamp-mcdc-unreachable-not-ok` | KnownIssue | `needs_metadata_hardening` | Structural MC/DC debt is real, but code now has the `//mcdc:ignore` and remediation still says to add it. | Backlog: update remediation/status to reflect current ignore and keep/close per KI-ignore policy. |
 | `splunk-filtertags-skips-consecutive-matches` | KnownIssue | `needs_reproducer_hardening` | Existing FilterTags test uses non-consecutive matching tags and misses the slice-mutation bug. | Backlog: add KI test with consecutive dropped tags and assert current retained middle tag. |
 | `splunk-newsplunkclient-mutates-default-transport` | KnownIssue | `needs_reproducer_hardening` | Code mutates `http.DefaultClient.Transport`, but current proxy test bypasses global cache behavior. | Backlog: add deterministic snapshot/restore test proving global transport mutation and revisit disposition. |
@@ -220,10 +226,67 @@ Read-only subagent audit completed for 20 KnownIssues from
 | `sql-aggregate-no-deadlock-retry` | KnownIssue | `needs_reproducer_hardening` | Static search proves no retry, but not deadlock/serialization behavior. | Backlog: add fake-driver deadlock/serialization error test proving no retry/current returned error. |
 | `sql-aggregate-sharded-shared-db-race` | KnownIssue | `needs_reproducer_hardening` | Shared `c.db` mutation is real, but no race/concurrency witness exists. | Backlog: add focused `go test -race` sharded concurrent `WriteData` test. |
 | `sql-aggregate-sharded-upsert-targets-base-table` | KnownIssue | `valid` | High-severity reviewed KI still matches current code and upstream fix note. | No product fix here; keep as KnownIssue. |
-| `sql-aggregate-upsert-order-undocumented` | KnownIssue | `needs_metadata_hardening` | Valid documentation/proof gap, but missing review date and product-ish disposition. | Backlog: add review date and document unordered/id-keyed semantics in `SW-REQ-067`. |
+| `sql-aggregate-upsert-order-undocumented` | KnownIssue | `needs_metadata_hardening` | Valid documentation/proof gap, but product disposition still needs tightening. | Stamped review date `2026-11-30`; backlog: document unordered/id-keyed semantics in `SW-REQ-067`. |
 | `sql-background-index-concurrency-unbounded` | KnownIssue | `needs_reproducer_hardening` | Standard SQL background-index issue is real, but current test skips the panic path. | Backlog: add minimized non-container race/panic/lifecycle witness. |
 | `sql-batch-size-zero-infinite-loop` | KnownIssue | `needs_split` | Init now defaults zero batch size, while negative/non-positive malformed input remains real; title conflates zero, negative, and six pump families. | Backlog: split or retire stale zero-config portion and keep a precise non-positive validation KI. |
+
+## KnownIssue Slice: SQL Defaults Through Stdout
+
+Local audit completed for 8 KnownIssues from `sql-default-migration-today-only`
+through `stdout-writedata-swallows-ctx-error`.
+
+| Item | Type | Verdict | Evidence Checked | Action |
+| --- | --- | --- | --- | --- |
+| `sql-default-migration-today-only` | KnownIssue | `valid` | `TestMCDC_KI_DefaultMigrationTodayOnly` directly proves default `MigrateShardedTables=false` leaves prior-day shard schema untouched. | Stamped review date `2026-11-30`. |
+| `sql-ensureindex-name-mismatch-prevents-skip` | KnownIssue | `valid` | Static code path remains: `HasIndex` name lacks the underscore used by `createIndex`; duplicate create is guarded by DDL. | No change needed; already reviewed through `2026-11-30`. |
+| `sql-schema-no-version-policy` | KnownIssue | `valid` | Static source check correctly shows AutoMigrate-only schema management and no schema-version manifest/table policy. | Stamped review date `2026-11-30`. |
+| `sql-standard-mysql-create-index-if-not-exists-unsupported` | KnownIssue | `needs_reproducer_hardening` | Static DDL construction is real, but there is no focused MySQL syntax/rejection witness. | No metadata change; already reviewed through `2026-11-30`; backlog remains a dialect witness. |
+| `sqs-batch-partial-failures-ignored` | KnownIssue | `valid` | Added focused mock SQS test proving `SendMessageBatchOutput.Failed` is ignored when API-level error is nil. | Added evidence pointer and stamped review date `2026-11-30`. |
+| `sqs-batchlimit-zero-infinite-loop` | KnownIssue | `valid` | Executing the zero-limit path would hang; added bounded static tripwire for the loop shape. | Added evidence pointer; already reviewed through `2026-11-30`. |
+| `sqs-malformed-record-sends-empty-entry` | KnownIssue | `valid` | Existing KI test proves a malformed input leaves a zero-value SQS entry in the sent batch. | Stamped review date `2026-11-30`. |
+| `stdout-writedata-swallows-ctx-error` | KnownIssue | `valid` | Added focused KI test proving canceled context returns nil instead of `ctx.Err()`. | Added evidence pointer and stamped review date `2026-11-30`. |
+
+## KnownIssue Slice: Storage Through Write Failure
+
+Subagent audit completed for 20 KnownIssues from
+`storage-connector-singleton-race` through
+`write-failure-after-pop-loses-records`.
+
+| Item | Type | Verdict | Evidence Checked | Action |
+| --- | --- | --- | --- | --- |
+| `storage-connector-singleton-race` | KnownIssue | `needs_reproducer_hardening` | Static singleton race evidence remains plausible, but no focused race witness proves concurrent connector initialization. | Stamped review date `2026-11-30`; backlog: add a `go test -race` or deterministic concurrent initialization witness. |
+| `storage-createconnector-kv-list-err-unreachable` | KnownIssue | `valid` | `go test -count=1 -timeout 180s ./storage` passed; the listed KV-list error branch remains structural/unreachable proof debt. | No metadata change; already reviewed through `2026-11-30`. |
+| `storage-ensureconnection-error-path-unreachable` | KnownIssue | `valid` | `go test -count=1 -timeout 180s ./storage` passed; the ensure-connection error path remains structural/unreachable proof debt. | No metadata change; already reviewed through `2026-11-30`. |
+| `storage-retry-maxelapsed-zero-is-unbounded` | KnownIssue | `valid` | `TestGetTemporalStorageExponentialBackoff` passed and still covers the unbounded retry elapsed-time posture. | Stamped review date `2026-11-30`. |
+| `sw-req-009-demo-randomness-obligation-misattributed` | KnownIssue | `valid` | Static source and requirement inspection show demo randomness is proof attribution debt, not the analytics requirement owner. | Stamped review date `2026-11-30`. |
+| `sw-req-060-hash-format-obligation-misattributed` | KnownIssue | `valid` | Hash-format obligation ownership remains misattributed to the broad aggregate requirement rather than the true hash contract. | Stamped review date `2026-11-30`. |
+| `sw-req-073-parameterized-read-obligation-misattributed` | KnownIssue | `valid` | Parameterized-read ownership remains a proof/spec attribution issue across uptime reads rather than direct `SW-REQ-073` behavior. | Stamped review date `2026-11-30`. |
+| `syslog-init-logfatal-on-invalid-transport` | KnownIssue | `needs_metadata_hardening` | `TestSyslogPump_initConfigs_InvalidTransport_InProcess` passed and proves the fatal path is represented; metadata still needs clearer process-exit disposition wording. | Stamped review date `2026-11-30`; backlog: tighten release rationale. |
+| `syslog-initwriter-logfatal-on-dial-error` | KnownIssue | `needs_metadata_hardening` | `TestSyslogPump_initWriter_BadDial_(Subprocess|InProcess)` passed and covers dial-error fatal behavior; metadata still needs clearer process-exit disposition wording. | Stamped review date `2026-11-30`; backlog: tighten release rationale. |
+| `systemconfig-omitdetailedrecording-unused` | KnownIssue | `needs_metadata_hardening` | Static config evidence remains valid, but the record needs a sharper distinction between unused configuration and user-visible product behavior. | Stamped review date `2026-11-30`. |
+| `temporal-storage-operations-ignore-caller-cancellation` | KnownIssue | `valid` | Static evidence still shows storage/retry paths use background contexts rather than propagating caller cancellation. | Stamped review date `2026-11-30`. |
+| `temporal-storage-wire-format-unversioned` | KnownIssue | `needs_reproducer_hardening` | Wire-format compatibility risk is real, but there is no versioned fixture/backward-compatibility tripwire. | Stamped review date `2026-11-30`; backlog: add golden fixture evidence. |
+| `tls-insecure-skip-verify-allowed` | KnownIssue | `valid` | Static evidence still shows configuration surfaces that allow `InsecureSkipVerify`; this is an accepted operator-risk posture. | Stamped review date `2026-11-30`. |
+| `uptime-aggregate-erasstr-itoa-always-nonempty` | KnownIssue | `needs_metadata_hardening` | `TestAggregateUptimeData_TCPErrorWithURL` passed; record should explain that `strconv.Itoa` always produces a non-empty string and makes the branch unreachable. | No metadata change; already reviewed through `2026-11-30`. |
+| `uptime-aggregate-nil-errormap-on-tcp-then-http` | KnownIssue | `needs_reproducer_hardening` | The configured reproducer name does not currently exist; available uptime tests pass but do not prove the TCP-then-HTTP nil-map case. | No metadata change; already reviewed through `2026-11-30`; backlog: add the missing focused test or correct the record. |
+| `uptime-onconflict-request-time-is-zero-unreachable` | KnownIssue | `needs_metadata_hardening` | `TestOnConflictUptimeAssignments_RequestTimeZeroSkipped` passed; record remains structural proof debt for an unreachable branch. | No metadata change; already reviewed through `2026-11-30`. |
+| `uptime-pump-init-error-ignored` | KnownIssue | `needs_reproducer_hardening` | Static source evidence is accurate, but no focused test proves init errors are ignored by the uptime startup path. | Stamped review date `2026-11-30`; backlog: add startup-path witness. |
+| `uptime-pump-not-shutdown` | KnownIssue | `needs_reproducer_hardening` | Static source evidence is accurate, but no lifecycle test proves uptime pump shutdown is omitted. | Stamped review date `2026-11-30`; backlog: add shutdown-path witness. |
+| `uptime-write-has-no-error-return` | KnownIssue | `valid` | Static interface/source evidence still shows uptime writes have no caller-visible error return. | Stamped review date `2026-11-30`. |
+| `write-failure-after-pop-loses-records` | KnownIssue | `needs_reproducer_hardening` | Static proof shows pop-before-write without DLQ/requeue, but no end-to-end failing pump tripwire demonstrates post-pop loss. | Stamped review date `2026-11-30`; backlog: add a storage-pop plus write-failure witness. |
 
 ## Verification Commands
 
 - `go test -p=1 -count=1 -timeout=20m ./pumps -run '^(TestElasticsearchPump_ApiKeyAuthDroppedWhenUseSSL_KI|TestGetMapping_DecodeBase64MalformedInput_KI|TestElasticsearchPump_WriteData_MCPIndexRouting_NonBulkBug|TestElasticsearchPump_WriteData_V7ProcessDataIndexError)$'`
+- `PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored go test -p=1 -count=1 -timeout=180s -run '^(TestSQSPump_WriteData_PartialBatchFailureIgnored_KI|TestSQSPump_WriteData_MalformedRecordLeavesEmptyEntry_KI|TestSQSPumpBatchLimitZeroInfiniteLoop_KI|TestStdOutPump_WriteData_ContextCancelled_KI)$' ./pumps`
+- `PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored go test -p=1 -count=1 -timeout=180s -run '^TestMCDC_KI_DefaultMigrationTodayOnly$' ./pumps`
+- `PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored /Users/buger/go/bin/proof audit --check annotation_validity --check known_issue_complete --check known_issues_reviewed --max-findings 0`
+- `PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored /Users/buger/go/bin/proof known-issue check`
+
+Latest focused Proof result: `Errors: 0`, `Warnings: 0` for
+`annotation_validity`, `known_issue_complete`, and `known_issues_reviewed`.
+Latest `proof known-issue check` result: exit code `0`; summary
+`status=open:50,reviewed:94 severity=high:7,low:55,medium:82`; remaining
+closure debt is primarily missing current reproducer-evidence manifests, plus a
+small number of security-detail fields. These are reflected in the per-item
+`needs_reproducer_hardening` and `needs_metadata_hardening` verdicts.

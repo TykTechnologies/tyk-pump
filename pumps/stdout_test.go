@@ -247,3 +247,17 @@ func TestStdOutPump_WriteData_ContextCancelled(t *testing.T) {
 	err := pump.WriteData(ctx, records)
 	assert.NoError(t, err)
 }
+
+// TestStdOutPump_WriteData_ContextCancelled_KI documents the current
+// cancellation-reporting gap: the pump returns nil instead of ctx.Err().
+// Verifies: KI:stdout-writedata-swallows-ctx-error
+// Reproduces: stdout-writedata-swallows-ctx-error
+func TestStdOutPump_WriteData_ContextCancelled_KI(t *testing.T) {
+	pump := newStdOutPump(t, "json", false)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	err := pump.WriteData(ctx, []interface{}{analytics.AnalyticsRecord{APIID: "api1", ResponseCode: 200}})
+	assert.NoError(t, err, "KI active: stdout returns nil instead of ctx.Err() on cancellation")
+}

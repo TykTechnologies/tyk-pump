@@ -12,8 +12,9 @@ introduced_in: inception
 mitigation: Keep gateway and pump serializer configuration aligned during upgrades and avoid changing persisted analytics payload encoding without draining temporal storage first.
 remediation: Define the temporal-storage payload compatibility contract, add versioned fixtures for records persisted by supported prior versions, and test GetAndDeleteSet plus serializer decode against those fixtures.
 owner: tyk-team
+review_date: "2026-11-30"
 release_disposition: ship_with_known_issue
-status: open
+status: reviewed
 history:
     - at: "2026-06-19T00:00:00Z"
       by: agent:codex
@@ -26,3 +27,7 @@ history:
       by: human:buger
       action: edit
       detail: set-severity-basis=risk,set-risk
+    - at: "2026-06-26T14:02:17Z"
+      by: agent:codex
+      action: review
+      detail: reviewer=human:buger,new_review_date=2026-11-30

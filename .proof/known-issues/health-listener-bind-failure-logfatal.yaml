@@ -12,9 +12,14 @@ introduced_in: inception
 mitigation: Reserve the configured health port and rely on process supervision to restart if the listener cannot bind.
 remediation: Return the listener error to startup orchestration or run the health server behind an isolated error path that reports health-listener failure without os.Exit for otherwise recoverable bind errors.
 owner: tyk-team
+review_date: "2026-11-30"
 release_disposition: ship_with_known_issue
-status: open
+status: reviewed
 history:
     - at: "2026-06-22T11:03:16Z"
       by: human:buger
       action: created
+    - at: "2026-06-26T14:04:16Z"
+      by: agent:codex
+      action: review
+      detail: reviewer=human:buger,new_review_date=2026-11-30

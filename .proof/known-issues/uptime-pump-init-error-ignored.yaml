@@ -12,9 +12,14 @@ introduced_in: inception
 mitigation: Disable uptime purging when backend configuration is not validated externally, or verify uptime backend connectivity independently before starting the pump.
 remediation: Check the UptimePump.Init return value and either fail startup with a typed error or mark uptime forwarding unavailable in an observable way.
 owner: tyk-team
+review_date: "2026-11-30"
 release_disposition: ship_with_known_issue
-status: open
+status: reviewed
 history:
     - at: "2026-06-22T11:04:45Z"
       by: human:buger
       action: created
+    - at: "2026-06-26T14:02:17Z"
+      by: agent:codex
+      action: review
+      detail: reviewer=human:buger,new_review_date=2026-11-30

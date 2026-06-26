@@ -13,8 +13,9 @@ introduced_in: inception
 mitigation: Rely on upstream purge retry/replay behavior and database monitoring for transient deadlock errors; tune database isolation and lock contention externally.
 remediation: Classify retryable SQL deadlock/serialization errors per supported driver, retry the aggregate upsert with bounded backoff, and add a fake-driver or transaction test for retry and final failure cases.
 owner: tyk-team
+review_date: "2026-11-30"
 release_disposition: ship_with_known_issue
-status: open
+status: reviewed
 history:
     - at: "2026-06-19T00:00:00Z"
       by: agent:codex
@@ -31,3 +32,7 @@ history:
       by: human:buger
       action: edit
       detail: add-requirement
+    - at: "2026-06-26T14:04:16Z"
+      by: agent:codex
+      action: review
+      detail: reviewer=human:buger,new_review_date=2026-11-30

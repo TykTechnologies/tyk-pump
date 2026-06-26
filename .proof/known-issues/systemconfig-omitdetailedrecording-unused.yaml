@@ -11,8 +11,9 @@ introduced_in: inception
 mitigation: 'Set omit_detailed_recording: true on each pump''s meta block explicitly; do not rely on the top-level config.'
 remediation: Either (a) propagate SystemConfig.OmitDetailedRecording to every pump as the default when the per-pump value is unset, or (b) remove the dead config field and document per-pump only.
 owner: tyk-team
+review_date: "2026-11-30"
 release_disposition: ship
-status: open
+status: reviewed
 history:
     - at: "2026-05-30T08:32:47Z"
       by: human:buger
@@ -25,3 +26,7 @@ history:
       by: human:buger
       action: edit
       detail: set-severity-basis=risk,set-risk
+    - at: "2026-06-26T14:02:17Z"
+      by: agent:codex
+      action: review
+      detail: reviewer=human:buger,new_review_date=2026-11-30

@@ -12,8 +12,9 @@ introduced_in: inception
 mitigation: Bind the metrics listener to a trusted interface or protect it with a sidecar, ingress rule, firewall, or scrape-network ACL.
 remediation: Add explicit authentication or documented auth bypass semantics for the Prometheus metrics endpoint before satisfying auth_required.
 owner: tyk-team
+review_date: "2026-11-30"
 release_disposition: ship_with_known_issue
-status: open
+status: reviewed
 history:
     - at: "2026-06-19T00:00:00Z"
       by: agent:codex
@@ -26,3 +27,7 @@ history:
       by: human:buger
       action: edit
       detail: set-severity-basis=risk,set-risk
+    - at: "2026-06-26T14:04:16Z"
+      by: agent:codex
+      action: review
+      detail: reviewer=human:buger,new_review_date=2026-11-30

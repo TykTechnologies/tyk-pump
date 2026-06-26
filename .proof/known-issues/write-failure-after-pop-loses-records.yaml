@@ -13,8 +13,9 @@ introduced_in: inception
 mitigation: Operators see WriteData error logs but the underlying batch is gone. Maintain redundant pumps (e.g. an always-available local file pump such as CSV) so at least one sink succeeds.
 remediation: Implement a dead-letter queue or local on-disk spool for records whose pump writes all fail; surface a metric for DLQ depth.
 owner: tyk-team
+review_date: "2026-11-30"
 release_disposition: ship_with_known_issue
-status: open
+status: reviewed
 history:
     - at: "2026-05-30T08:31:16Z"
       by: human:buger
@@ -43,3 +44,7 @@ history:
       by: human:buger
       action: edit
       detail: remove-requirement
+    - at: "2026-06-26T14:02:17Z"
+      by: agent:codex
+      action: review
+      detail: reviewer=human:buger,new_review_date=2026-11-30

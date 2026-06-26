@@ -11,9 +11,14 @@ introduced_in: 657436f
 mitigation: Postgres operators can allow startup to continue while the index builds, but should expect aggregate queries to table-scan until the background index exists and should avoid concurrent startup/write scenarios that depend on the index being immediately ready.
 remediation: Specify the background index lifecycle, cancellation/error reporting, and readiness semantics; add a bounded background-failure/concurrency witness for SW-REQ-066.
 owner: tyk-team
+review_date: "2026-11-30"
 release_disposition: ship_with_known_issue
-status: open
+status: reviewed
 history:
     - at: "2026-06-25T13:26:14Z"
       by: human:buger
       action: created
+    - at: "2026-06-26T14:04:16Z"
+      by: agent:codex
+      action: review
+      detail: reviewer=human:buger,new_review_date=2026-11-30

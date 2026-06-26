@@ -837,6 +837,43 @@ func TestSQSPump_WriteData_MalformedRecordLeavesEmptyEntry_KI(t *testing.T) {
 	assert.NotNil(t, captured[1].MessageBody)
 }
 
+// TestSQSPump_WriteData_PartialBatchFailureIgnored_KI reproduces the current
+// partial-delivery gap: AWS can return a successful SendMessageBatchOutput with
+// per-entry failures, but WriteData ignores output.Failed and returns nil.
+//
+// KI tripwire for SW-REQ-055; not requirement-success evidence.
+// Verifies: KI:sqs-batch-partial-failures-ignored
+// Reproduces: sqs-batch-partial-failures-ignored
+func TestSQSPump_WriteData_PartialBatchFailureIgnored_KI(t *testing.T) {
+	mockSQS := &MockSQSSendMessageBatchAPI{
+		GetQueueUrlFunc: func(ctx context.Context, params *sqs.GetQueueUrlInput, optFns ...func(*sqs.Options)) (*sqs.GetQueueUrlOutput, error) {
+			return &sqs.GetQueueUrlOutput{QueueUrl: aws.String("mockQueue")}, nil
+		},
+		SendMessageBatchFunc: func(ctx context.Context, params *sqs.SendMessageBatchInput, optFns ...func(*sqs.Options)) (*sqs.SendMessageBatchOutput, error) {
+			return &sqs.SendMessageBatchOutput{
+				Failed: []sqstypes.BatchResultErrorEntry{{
+					Id:      aws.String("failed-entry"),
+					Code:    aws.String("InternalError"),
+					Message: aws.String("simulated partial failure"),
+				}},
+			}, nil
+		},
+	}
+	pmp := &SQSPump{
+		SQSClient:   mockSQS,
+		SQSQueueURL: aws.String("mockQueue"),
+		SQSConf: &SQSConf{
+			QueueName:        "q",
+			AWSSQSBatchLimit: 10,
+		},
+		log:              log.WithField("prefix", SQSPrefix),
+		CommonPumpConfig: CommonPumpConfig{},
+	}
+
+	err := pmp.WriteData(context.Background(), []interface{}{analytics.AnalyticsRecord{APIID: "a", TimeStamp: time.Now()}})
+	require.NoError(t, err, "KI active: SQS partial batch failures are ignored when API-level error is nil")
+}
+
 // TestSQSPump_WriteData_PublishErrorPropagates covers errors_propagated.
 //
 // Verifies: SW-REQ-055

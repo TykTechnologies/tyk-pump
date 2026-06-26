@@ -12,8 +12,9 @@ introduced_in: inception
 mitigation: The nil-client branch is defensive plumbing; production Init always calls connect() so the branch is dormant. Operators do not need to take action unless they observe duplicated graylog events.
 remediation: 'Add ''return p.WriteData(ctx, data)'' (with explicit return) so the recursive call''s result is returned and control does not fall through. Better: drop the defensive nil-check entirely and require Init to have run.'
 owner: tyk-team
+review_date: "2026-11-30"
 release_disposition: ship_with_known_issue
-status: open
+status: reviewed
 history:
     - at: "2026-06-02T16:39:10Z"
       by: human:buger
@@ -26,3 +27,7 @@ history:
       by: human:buger
       action: edit
       detail: set-severity-basis=risk,set-risk
+    - at: "2026-06-26T14:04:16Z"
+      by: agent:codex
+      action: review
+      detail: reviewer=human:buger,new_review_date=2026-11-30

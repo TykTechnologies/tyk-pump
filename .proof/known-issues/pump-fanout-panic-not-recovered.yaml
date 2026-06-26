@@ -23,8 +23,9 @@ remediation: |-
       }()
     This converts a host-process crash into a per-pump WriteData error, which execPumpWriting already handles (logs + continues). Same surface as KI no-panic-recovery-in-exec-pump-writing; remediation should land in one PR.
 owner: tyk-team
+review_date: "2026-11-30"
 release_disposition: ship_with_known_issue
-status: open
+status: reviewed
 history:
     - at: "2026-06-04T00:00:00Z"
       by: human:buger
@@ -46,6 +47,10 @@ history:
       by: human:buger
       action: edit
       detail: add-requirement
+    - at: "2026-06-26T14:04:16Z"
+      by: agent:codex
+      action: review
+      detail: reviewer=human:buger,new_review_date=2026-11-30
 references:
     - related-ki:no-panic-recovery-in-exec-pump-writing
 verifying_test: pumps/fanout_panic_isolated_test.go::TestFanoutPanicIsolated_PanicInOneDoesNotStallOthers

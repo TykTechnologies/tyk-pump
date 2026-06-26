@@ -13,8 +13,9 @@ introduced_in: inception
 mitigation: Avoid invoking WriteData concurrently on the same SQLAggregatePump instance when table sharding can create or switch aggregate tables; serialize purge writes per pump until the shared DB state is isolated.
 remediation: Use per-call GORM sessions/table handles for sharded SQL aggregate writes and table/index creation, or protect the mutable pump DB state with synchronization, then add a go test -race witness for concurrent sharded writes.
 owner: tyk-team
+review_date: "2026-11-30"
 release_disposition: ship_with_known_issue
-status: open
+status: reviewed
 history:
     - at: "2026-06-19T07:42:40Z"
       by: agent:codex
@@ -27,3 +28,7 @@ history:
       by: human:buger
       action: edit
       detail: set-severity-basis=risk,set-risk
+    - at: "2026-06-26T14:04:17Z"
+      by: agent:codex
+      action: review
+      detail: reviewer=human:buger,new_review_date=2026-11-30

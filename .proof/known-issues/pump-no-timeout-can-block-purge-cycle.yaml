@@ -43,8 +43,9 @@ introduced_in: inception
 mitigation: Operators must explicitly set a non-zero 'timeout' value per pump in production YAML. Audit pump configs for missing or zero timeout values.
 remediation: Enforce a non-zero default timeout (e.g. equal to purge_delay) when pump configuration omits the field, or fail Init when timeout=0 is set.
 owner: tyk-team
+review_date: "2026-11-30"
 release_disposition: ship_with_known_issue
-status: open
+status: reviewed
 history:
     - at: "2026-05-30T08:31:33Z"
       by: human:buger
@@ -169,3 +170,7 @@ history:
       by: human:buger
       action: edit
       detail: add-requirement
+    - at: "2026-06-26T14:04:16Z"
+      by: agent:codex
+      action: review
+      detail: reviewer=human:buger,new_review_date=2026-11-30

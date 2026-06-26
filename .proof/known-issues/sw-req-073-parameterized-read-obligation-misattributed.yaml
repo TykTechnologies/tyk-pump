@@ -12,8 +12,9 @@ introduced_in: inception
 mitigation: Treat SQL write parameterization as covered by SQL pump write obligations; do not infer a SQL read contract from SW-REQ-073 until the spec is corrected.
 remediation: Move parameterized_only_read to a requirement with an actual query/read implementation, or amend SW-REQ-073 to remove the read obligation and document the in-memory aggregation boundary.
 owner: tyk-team
+review_date: "2026-11-30"
 release_disposition: ship_with_known_issue
-status: open
+status: reviewed
 history:
     - at: "2026-06-19T00:00:00Z"
       by: agent:codex
@@ -26,3 +27,7 @@ history:
       by: human:buger
       action: edit
       detail: set-severity-basis=risk,set-risk
+    - at: "2026-06-26T14:02:17Z"
+      by: agent:codex
+      action: review
+      detail: reviewer=human:buger,new_review_date=2026-11-30

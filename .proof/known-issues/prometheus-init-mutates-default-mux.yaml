@@ -12,8 +12,9 @@ introduced_in: inception
 mitigation: Operators only configure one prometheus pump per tyk-pump process. Re-init is rare; the docs do not advertise hot reconfigure.
 remediation: 'Create a local mux: ''mux := http.NewServeMux(); mux.Handle(p.conf.Path, promhttp.Handler()); go func() { log.Fatal(http.ListenAndServe(p.conf.Addr, mux)) }()''. The same change isolates Prometheus from any other component that touches the default mux.'
 owner: tyk-team
+review_date: "2026-11-30"
 release_disposition: ship_with_known_issue
-status: open
+status: reviewed
 history:
     - at: "2026-06-02T16:39:47Z"
       by: human:buger
@@ -26,3 +27,7 @@ history:
       by: human:buger
       action: edit
       detail: set-severity-basis=risk,set-risk
+    - at: "2026-06-26T14:04:16Z"
+      by: agent:codex
+      action: review
+      detail: reviewer=human:buger,new_review_date=2026-11-30

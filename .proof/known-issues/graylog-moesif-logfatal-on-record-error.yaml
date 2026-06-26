@@ -17,8 +17,9 @@ introduced_in: inception
 mitigation: Pre-validate analytics records or filter out suspect orgs before they reach graylog/moesif. Ensure the Moesif sampling-config API endpoint returns parseable bodies (the response.Body in parseConfiguration is read via ioutil.ReadAll — in production this is over the network and can fail, even though in unit-test httptest fixtures the in-memory buffer never fails). Use a process supervisor to auto-restart after a crash.
 remediation: Replace per-record log.Fatal calls in pumps/graylog.go and pumps/moesif.go with log.Error + 'continue' so the bad record is skipped, not fatal. For pumps/moesif.go:121 (parseConfiguration), replace log.Fatal with log.Error + return the previous sampling values so the next purge cycle re-attempts — the function already has a fallback return statement after the log.Fatal call.
 owner: tyk-team
+review_date: "2026-11-30"
 release_disposition: ship_with_known_issue
-status: open
+status: reviewed
 history:
     - at: "2026-05-30T08:34:38Z"
       by: human:buger
@@ -39,3 +40,7 @@ history:
       by: human:buger
       action: edit
       detail: set-severity-basis=risk,set-risk
+    - at: "2026-06-26T14:04:16Z"
+      by: agent:codex
+      action: review
+      detail: reviewer=human:buger,new_review_date=2026-11-30

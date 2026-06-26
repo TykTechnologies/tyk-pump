@@ -13,8 +13,9 @@ introduced_in: inception
 mitigation: Operators reading City.Names from pump-side records will see nil. Gateway-side records still have the data; downstream consumers can re-derive city names from city ID via the GeoIP DB if needed.
 remediation: In serializer/protobuf.go:169, copy the rec.Geo.City.Names map into the analytics.City.Names field (or rebuild it from the protobuf map) so round-trip parity holds.
 owner: tyk-team
+review_date: "2026-11-30"
 release_disposition: ship_with_known_issue
-status: open
+status: reviewed
 history:
     - at: "2026-05-30T08:30:08Z"
       by: human:buger
@@ -31,3 +32,7 @@ history:
       by: human:buger
       action: edit
       detail: add-evidence-manifest
+    - at: "2026-06-26T14:04:16Z"
+      by: agent:codex
+      action: review
+      detail: reviewer=human:buger,new_review_date=2026-11-30

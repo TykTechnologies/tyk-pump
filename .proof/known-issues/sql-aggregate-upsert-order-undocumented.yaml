@@ -12,8 +12,9 @@ introduced_in: inception
 mitigation: Consumers should rely on the aggregate row key and ON CONFLICT merge semantics, not insertion order.
 remediation: Document that SW-REQ-067 writes are unordered/idempotent by key, or change the implementation to sort dimensions before batching and add an ordering witness.
 owner: tyk-team
+review_date: "2026-11-30"
 release_disposition: ship_with_known_issue
-status: open
+status: reviewed
 history:
     - at: "2026-06-19T00:00:00Z"
       by: agent:codex
@@ -26,3 +27,7 @@ history:
       by: human:buger
       action: edit
       detail: set-severity-basis=risk,set-risk
+    - at: "2026-06-26T14:04:17Z"
+      by: agent:codex
+      action: review
+      detail: reviewer=human:buger,new_review_date=2026-11-30

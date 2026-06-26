@@ -14,8 +14,9 @@ introduced_in: inception
 mitigation: Operators monitor pump-specific error rates (logs or telemetry) and disable persistently failing pumps via pump_conf when sustained failure is observed. Severity is bounded because healthy pumps continue to make progress — the cost is log spam and wasted dispatch, not lost data.
 remediation: Add a per-pump consecutive-failure counter in execPumpWriting; after N consecutive failures (e.g. N=5) mark the pump as in cooldown for M purge cycles (e.g. M=10, with exponential backoff up to a ceiling). Reset the counter on the first success after cooldown. Emit a structured log event on entering/exiting cooldown so operators can alert. Wave 3c reproducer test (TestPerPumpCircuitBreaker_NoBackoffOnRepeatedFailure) flips from regression-guard to acceptance-test once the breaker is shipped.
 owner: tyk-team
+review_date: "2026-11-30"
 release_disposition: ship_with_known_issue
-status: open
+status: reviewed
 history:
     - at: "2026-06-04T00:00:00Z"
       by: human:buger
@@ -33,4 +34,8 @@ history:
       by: human:buger
       action: edit
       detail: add-requirement
+    - at: "2026-06-26T14:04:16Z"
+      by: agent:codex
+      action: review
+      detail: reviewer=human:buger,new_review_date=2026-11-30
 verifying_test: pumps/cascade_circuit_breaker_test.go::TestPerPumpCircuitBreaker_NoBackoffOnRepeatedFailure
