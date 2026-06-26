@@ -4,20 +4,22 @@ description: Kinesis WriteData checks PutRecordsOutput.Records[].ErrorCode and l
 affected_requirements:
     - SW-REQ-056
 commands:
-    - rg -n 'record\.ErrorCode|return nil|PutRecords' pumps/kinesis.go
+    - PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored go test -p=1 -count=1 -timeout=180s -run '^TestKinesisPutRecordsPerRecordFailuresReturnNil_KI$' ./pumps
 evidence_manifests:
+    - test:pumps/known_issue_tripwire_test.go:TestKinesisPutRecordsPerRecordFailuresReturnNil_KI
     - .proof/evidence/ki-kinesis-putrecords-per-record-failures-return-nil.yaml
 severity: medium
 severity_basis: risk
 risk: data_integrity
-reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored rg -n 'FailedRecordCount|ErrorCode|PutRecords|return nil' pumps/kinesis.go
+reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored go test -p=1 -count=1 -timeout=180s -run '^TestKinesisPutRecordsPerRecordFailuresReturnNil_KI$' ./pumps
 introduced_in: 25683f2
+environment_note: Run the focused static tripwire under the memory monitor. It parses the current Kinesis WriteData source shape, confirms per-record ErrorCode values are logged after a successful PutRecords response, and confirms that path still reaches the final nil return; no AWS service, network call, or container is required.
 mitigation: Monitor Kinesis failed-record metrics/logs and keep batches small enough for operational retry handling until WriteData surfaces per-record failures to the purge caller.
 remediation: Inspect PutRecordsOutput.FailedRecordCount and Records[].ErrorCode, return a non-nil error or retry/report failed records, and add mocked evidence that per-record failures are observable to the caller.
 owner: tyk-team
 review_date: "2026-11-30"
 release_disposition: ship_with_known_issue
-status: open
+status: reviewed
 history:
     - at: "2026-06-25T21:48:06Z"
       by: agent:codex
@@ -26,3 +28,7 @@ history:
       by: agent:codex
       action: edit
       detail: set-reproducer-command,add-evidence-manifest
+    - at: "2026-06-26T17:40:00Z"
+      by: agent:codex
+      action: edit
+      detail: add-static-tripwire-and-mark-reviewed

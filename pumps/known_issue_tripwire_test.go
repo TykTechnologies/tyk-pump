@@ -3,6 +3,7 @@ package pumps
 import (
 	"os"
 	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -27,6 +28,36 @@ func TestSQLPumpWriteDataSwallowsBatchError_KI(t *testing.T) {
 	require.Regexp(t,
 		regexp.MustCompile(`(?s)func \(c \*SQLPump\) WriteData\(.*?c\.log\.Error\(tx\.Error\).*?return nil`),
 		source,
+	)
+}
+
+// TestKinesisPutRecordsPerRecordFailuresReturnNil_KI is a static tripwire for
+// the Kinesis successful-response/per-record-failure path. The production pump
+// stores the concrete AWS client, so this pins the current branch without
+// adding a product-only mock seam.
+// Verifies: SW-REQ-056
+// Verifies: KI:kinesis-putrecords-per-record-failures-return-nil
+// Reproduces: kinesis-putrecords-per-record-failures-return-nil
+func TestKinesisPutRecordsPerRecordFailuresReturnNil_KI(t *testing.T) {
+	source := readPumpSource(t, "kinesis.go")
+	start := strings.Index(source, "func (p *KinesisPump) WriteData(ctx context.Context, records []interface{}) error")
+	require.NotEqual(t, -1, start, "Kinesis WriteData function not found")
+	end := strings.Index(source[start:], "// splitIntoBatches splits")
+	require.NotEqual(t, -1, end, "Kinesis WriteData end marker not found")
+	writeData := source[start : start+end]
+
+	require.Contains(t, writeData, "output, err := p.client.PutRecords(ctx, input)")
+	require.Contains(t, writeData, "if record.ErrorCode != nil")
+	require.Contains(t, writeData, `p.log.Debugf("Failed to put record: %s - %s"`)
+	require.Contains(t, writeData, "return nil")
+	require.NotContains(t, writeData, "FailedRecordCount")
+	require.NotContains(t, writeData, "return err")
+	require.NotContains(t, writeData, "return fmt.Errorf")
+	require.NotContains(t, writeData, "return errors.New")
+	require.Less(t,
+		strings.Index(writeData, "if record.ErrorCode != nil"),
+		strings.LastIndex(writeData, "return nil"),
+		"per-record failure branch should precede final nil return",
 	)
 }
 
