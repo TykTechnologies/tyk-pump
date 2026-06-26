@@ -5,7 +5,7 @@ priority: shall
 category: functional
 req_type: guarantee
 fretish: when standard_mongo_insertable_record_present pumps_mongo_standard shall always satisfy standard_mongo_record_inserted
-description: The standard Mongo pump shall insert every valid non-MCP AnalyticsRecord into the configured standard collection, including records whose GraphQLStats mark them as GraphQL. Graph-only filtering is reserved for graph-specific pumps and must not cause standard Mongo WriteData to drop normal or graph-classified analytics records.
+description: The standard Mongo pump shall insert every valid non-MCP AnalyticsRecord into the configured standard collection, including records whose GraphQLStats mark them as GraphQL and records that carry the legacy graph analytics tag without the GraphQLStats classifier. Graph-only filtering is reserved for graph-specific pumps and must not cause standard Mongo WriteData or standard-mode AccumulateSet to drop ordinary or graph-classified analytics records.
 formalization_strategy: fretish
 informal_verification:
     method: ""
@@ -28,15 +28,15 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-25T14:44:33Z"
-        comment: 'TT-8884 hardening: reviewed standard Mongo non-MCP insertion policy, output_cardinality_bounded evidence, MC/DC witnesses, and DEFECT-13 closure.'
-        fingerprint: sha256:6c07131607c219d5a9710e63c445d602b9225765a1eb15f51b133cb389167eaa
+        reviewed_at: "2026-06-26T00:04:42Z"
+        comment: 'Reviewed c54eed3 follow-up: SW-REQ-082 now explicitly covers standard-mode retention for current GraphQLStats graph records and legacy tag-only graph records, with AccumulateSet evidence. No runtime product behavior change.'
+        fingerprint: sha256:46b2bcdd912524ae29d66d98c70a18a6e2ad0d490129d507160618d6509da706
         ai_generated: false
 history:
     created_by: human:buger
     created_at: "2026-06-25T14:35:35Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-25T14:44:33Z"
+    last_modified_at: "2026-06-26T00:04:42Z"
 obligation_checklist:
     - output_cardinality_bounded
 stakeholder:
@@ -44,10 +44,18 @@ stakeholder:
         - id: AC-001
           text: MongoPump.WriteData writes ordinary AnalyticsRecord values and GraphQL-classified non-MCP AnalyticsRecord values into the configured standard Mongo collection, while all-MCP input remains a no-op for the standard collection.
           verification_method: test
+        - id: AC-002
+          text: MongoPump.AccumulateSet in standard mode retains records that carry the legacy graph analytics tag without GraphQLStats.IsGraphQL, proving tag-only graph markers do not reintroduce the c54eed3 standard Mongo exclusion.
+          verification_method: test
 lifecycle:
     change_history:
         - date: "2026-06-25T14:44:26Z"
           from: draft
           to: review
           reason: TT-8884 standard Mongo insertion policy requirement ready for review
+          changed_by: human:buger
+        - date: "2026-06-26T00:04:42Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-25T14:44:33Z comment="TT-8884 hardening: reviewed standard Mongo non-MCP insertion policy, output_cardinality_bounded evidence, MC/DC witnesses, and DEFECT-13 closure.")'
           changed_by: human:buger

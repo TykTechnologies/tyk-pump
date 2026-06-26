@@ -336,7 +336,9 @@ func TestMongoPump_capCollection_OverrideSize(t *testing.T) {
 }
 
 // Verifies: SW-REQ-034
+// Verifies: SW-REQ-082
 // MCDC SW-REQ-034: mcp_record_present=F, record_filtered_out=F => TRUE
+// SW-REQ-082:output_cardinality_bounded:nominal
 func TestMongoPump_AccumulateSet(t *testing.T) {
 	run := func(recordsGenerator func(numRecords int) []interface{}, expectedRecordsCount int) func(t *testing.T) {
 		return func(t *testing.T) {
@@ -382,7 +384,22 @@ func TestMongoPump_AccumulateSet(t *testing.T) {
 		100,
 	))
 
-	t.Run("should include all graph analytics records", run(
+	t.Run("should include all GraphQLStats graph records in standard mode", run(
+		func(numRecords int) []interface{} {
+			data := make([]interface{}, 0)
+			for i := 0; i < numRecords; i++ {
+				record := analytics.AnalyticsRecord{}
+				if i%2 == 0 {
+					record.GraphQLStats.IsGraphQL = true
+				}
+				data = append(data, record)
+			}
+			return data
+		},
+		100,
+	))
+
+	t.Run("should include legacy graph tag records in standard mode", run(
 		func(numRecords int) []interface{} {
 			data := make([]interface{}, 0)
 			for i := 0; i < numRecords; i++ {

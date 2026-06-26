@@ -557,7 +557,7 @@ func TestAggregateGraphData_PartitionsSameOrgByAPIID(t *testing.T) {
 // MCDC SW-REQ-093: rest_aggregate_input_present=T, rest_aggregate_partitioned=F => FALSE
 // MCDC SW-REQ-093: rest_aggregate_input_present=T, rest_aggregate_partitioned=T => TRUE
 func TestAggregateData_SkipGraphRecords(t *testing.T) {
-	run := func(records []AnalyticsRecord, expectedAggregatedRecordCount int, expectedExistingOrgKeys, expectedNonExistingOrgKeys []string) func(t *testing.T) {
+	run := func(records []AnalyticsRecord, expectedAggregatedRecordCount int, expectedOrgHits map[string]int, expectedNonExistingOrgKeys []string) func(t *testing.T) {
 		return func(t *testing.T) {
 			data := make([]interface{}, len(records))
 			for i := range records {
@@ -565,9 +565,10 @@ func TestAggregateData_SkipGraphRecords(t *testing.T) {
 			}
 			aggregatedData := AggregateData(data, true, nil, "", 1)
 			assert.Equal(t, expectedAggregatedRecordCount, len(aggregatedData))
-			for _, expectedExistingOrgKey := range expectedExistingOrgKeys {
-				_, exists := aggregatedData[expectedExistingOrgKey]
+			for expectedExistingOrgKey, expectedHits := range expectedOrgHits {
+				aggregate, exists := aggregatedData[expectedExistingOrgKey]
 				assert.True(t, exists)
+				assert.Equal(t, expectedHits, aggregate.Total.Hits)
 			}
 			for _, expectedNonExistingOrgKey := range expectedNonExistingOrgKeys {
 				_, exists := aggregatedData[expectedNonExistingOrgKey]
@@ -587,7 +588,7 @@ func TestAggregateData_SkipGraphRecords(t *testing.T) {
 			},
 		},
 		2,
-		[]string{"123", "987"},
+		map[string]int{"123": 1, "987": 1},
 		nil,
 	))
 
@@ -603,6 +604,12 @@ func TestAggregateData_SkipGraphRecords(t *testing.T) {
 			},
 		},
 		{
+			OrgID: "123",
+			GraphQLStats: GraphQLStats{
+				IsGraphQL: true,
+			},
+		},
+		{
 			OrgID: "987",
 		},
 		{
@@ -613,7 +620,7 @@ func TestAggregateData_SkipGraphRecords(t *testing.T) {
 		},
 	},
 		2,
-		[]string{"123", "987"},
+		map[string]int{"123": 1, "987": 1},
 		[]string{"777-graph", "555-graph"},
 	))
 }

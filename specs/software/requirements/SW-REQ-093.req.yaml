@@ -28,22 +28,22 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-25T17:35:13Z"
-        comment: 'c54eed3 hardening: reviewed REST aggregate graph/MCP partition requirement, existing graph/MCP exclusion evidence, and DEFECT-14 classifier clarification; no runtime product behavior change.'
+        reviewed_at: "2026-06-26T00:04:42Z"
+        comment: 'Reviewed c54eed3 follow-up: SW-REQ-093 evidence now proves GraphQL-classified records sharing an organisation with REST records do not inflate REST aggregate hit counts. No runtime product behavior change.'
         fingerprint: sha256:980afe8f4a33b72eef0d4487b73e59e6d9862734ef011d3fab301fdc298e92d9
         ai_generated: false
 history:
     created_by: human:buger
     created_at: "2026-06-25T17:32:19Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-25T17:35:13Z"
+    last_modified_at: "2026-06-26T00:04:42Z"
 obligation_checklist:
     - nominal
     - output_cardinality_bounded
 stakeholder:
     acceptance_criteria:
         - id: AC-001
-          text: AggregateData excludes GraphQL-classified records from REST aggregates while preserving ordinary REST records in their organisation buckets.
+          text: AggregateData excludes GraphQL-classified records from REST aggregates while preserving ordinary REST records in their organisation buckets, including when a GraphQL-classified record shares an organisation with an ordinary REST record.
           verification_method: test
         - id: AC-002
           text: AggregateData excludes MCP-classified records from REST aggregates while preserving ordinary REST records in their organisation buckets.
@@ -59,4 +59,9 @@ lifecycle:
           from: draft
           to: review
           reason: '[c54eed3] REST aggregate graph/MCP partition requirement ready for review'
+          changed_by: human:buger
+        - date: "2026-06-26T00:04:42Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-25T17:35:13Z comment="c54eed3 hardening: reviewed REST aggregate graph/MCP partition requirement, existing graph/MCP exclusion evidence, and DEFECT-14 classifier clarification; no runtime product behavior change.")'
           changed_by: human:buger

@@ -35,7 +35,8 @@ Variables are declared in `specs/software/variables/analytics.vars.yaml`.
 ## Evidence
 - `analytics/aggregate_test.go:TestAggregateData_SkipGraphRecords` proves
   GraphQL-classified records are excluded from REST aggregates while ordinary
-  records remain present.
+  records remain present, including the same-organisation case where a graph
+  record would otherwise inflate REST hit counts.
 - `analytics/aggregate_mcp_test.go:TestAggregateData_SkipsMCPRecords` proves
   MCP-classified records are excluded from REST aggregates while ordinary
   records remain present.

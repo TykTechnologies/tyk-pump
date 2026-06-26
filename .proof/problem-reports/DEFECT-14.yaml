@@ -96,3 +96,10 @@ history:
         Clarified that c54eed3 used the legacy graph tag as the classifier,
         while current recurrence protection is expressed in terms of the
         GraphQLStats.IsGraphQL predicate.
+    - at: "2026-06-26T00:00:00Z"
+      by: agent:codex
+      action: hardened
+      detail: |
+        Strengthened standard-mode Mongo evidence so AccumulateSet retains
+        both current GraphQLStats-classified records and legacy tag-only graph
+        records, preventing the c54eed3 exclusion shape from returning.
