@@ -1,10 +1,12 @@
 id: graylog-moesif-record-fatal
-title: Graylog and Moesif pumps log.Fatal on per-record errors, crashing the whole process
-description: Accept that per-record decode failures in pumps/graylog.go (lines 120, 126, 155, 168) and pumps/moesif.go (lines 349, 356, 379, 386) call log.Fatal, terminating the pump process for one bad record.
+title: Graylog and Moesif fatal paths can crash the whole process
+description: Accept that per-record decode failures in pumps/graylog.go and pumps/moesif.go, plus Moesif configuration/parse fatal paths covered by backing KI graylog-moesif-logfatal-on-record-error, call log.Fatal and terminate the pump process for one malformed record or recoverable Moesif setup/configuration error.
 affected_requirements:
     - SYS-REQ-004
-mitigation: Filter risky orgs before they reach these pumps; rely on process supervisor for restart.
-customer_impact: A single malformed record can cause a brief outage of the entire analytics pipeline until pod restart.
+    - SW-REQ-049
+    - SW-REQ-052
+mitigation: Filter risky orgs before they reach these pumps; validate Moesif configuration out of band; rely on process supervisor for restart.
+customer_impact: A single malformed record or recoverable Moesif setup/configuration failure can cause a brief outage of the entire analytics pipeline until pod restart.
 owner: tyk-team
 review_date: "2026-08-30"
 release_disposition: ship_with_known_issue
@@ -16,3 +18,11 @@ history:
       by: human:buger
       action: accepted
       detail: accepted_by=human:leo
+    - at: "2026-06-26T14:36:23Z"
+      by: agent:codex
+      action: edit
+      detail: add-requirement
+    - at: "2026-06-26T14:36:24Z"
+      by: agent:codex
+      action: edit
+      detail: broaden-risk-scope-to-backing-ki

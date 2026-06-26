@@ -142,25 +142,19 @@ SW-REQ-001 `dst_transition_safe` example in Section C is part of the 61 above.)
 
 ---
 
-## Section B — End-to-end stakeholder acceptance criteria deferred (10 items)
+## Section B — End-to-end stakeholder acceptance criteria deferred (1 item)
 
-Deferred via `witness_deferred` on each criterion (mechanism mirrors reqproof
-#200). Reason: "No end-to-end acceptance test yet; deferred per hybrid disposition".
-To close: write a real ACCEPTANCE test on the integrated system and annotate
-`// <STK-REQ>:<AC-id>:acceptance`, then remove the `witness_deferred` block.
+Deferred via `witness_deferred` on the criterion (mechanism mirrors reqproof
+#200). Reason: the current product has accepted KnownIssue
+`write-failure-after-pop-loses-records`; no truthful end-to-end acceptance test
+can pass until a DLQ, re-enqueue path, or equivalent retention behavior exists.
+To close: ship the retention behavior, write a real ACCEPTANCE test on the
+integrated system, annotate `// STK-REQ-002:AC-003:acceptance`, then remove the
+`witness_deferred` block.
 
 | Stakeholder req | Acceptance criterion | Deferred test kind | Reason |
 |-----------------|----------------------|--------------------|--------|
-| STK-REQ-001 | AC-001 | e2e acceptance test | No end-to-end acceptance test yet |
-| STK-REQ-001 | AC-002 | e2e acceptance test | No end-to-end acceptance test yet |
-| STK-REQ-002 | AC-001 | e2e acceptance test | No end-to-end acceptance test yet |
-| STK-REQ-002 | AC-002 | e2e acceptance test | No end-to-end acceptance test yet |
-| STK-REQ-003 | AC-001 | e2e acceptance test | No end-to-end acceptance test yet |
-| STK-REQ-003 | AC-002 | e2e acceptance test | No end-to-end acceptance test yet |
-| STK-REQ-004 | AC-001 | e2e acceptance test | No end-to-end acceptance test yet |
-| STK-REQ-004 | AC-002 | e2e acceptance test | No end-to-end acceptance test yet |
-| STK-REQ-005 | AC-001 | e2e acceptance test | No end-to-end acceptance test yet |
-| STK-REQ-005 | AC-002 | e2e acceptance test | No end-to-end acceptance test yet |
+| STK-REQ-002 | AC-003 | e2e acceptance test | Blocked by active KI `write-failure-after-pop-loses-records`; tracked through `2026-11-30` with `release_disposition: ship_with_known_issue`. |
 
 ---
 

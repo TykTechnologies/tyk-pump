@@ -75,6 +75,9 @@ stakeholder:
           witness_deferred:
             reason: No truthful end-to-end acceptance test can pass until known issue write-failure-after-pop-loses-records adds a DLQ, re-enqueue path, or equivalent retention after total write failure.
             tracking: write-failure-after-pop-loses-records
+            owner: tyk-team
+            review_date: "2026-11-30"
+            release_disposition: ship_with_known_issue
         - id: AC-004
           text: FIPS-labelled release packages and Docker images contain the FIPS build/package variant rather than the standard variant.
           verification_method: test

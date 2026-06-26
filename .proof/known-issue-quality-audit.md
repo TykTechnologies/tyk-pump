@@ -61,14 +61,18 @@ represented in the per-item audit rows below.
 ## Accepted Risk Slice
 
 Read-only subagent audit completed for all 13 accepted risks.
+Follow-up sidecar audit found that the current AcceptedRisk schema does not
+define structured `kind`, `linked_known_issues`, or `evidence_manifests`
+fields. Those links remain prose/backing-KI mediated until proof supports them
+as first-class risk fields.
 
 | Item | Type | Verdict | Evidence Checked | Action |
 | --- | --- | --- | --- | --- |
 | `elasticsearch-unbounded-reconnect-stack-overflow` | AcceptedRisk | `valid` | Matches KI `elasticsearch-unbounded-reconnect-recursion`, reviewed through `2026-11-30`. | No change needed. |
-| `graylog-moesif-record-fatal` | AcceptedRisk | `needs_split` | Risk accepts per-record fatal paths, but backing KI `graylog-moesif-logfatal-on-record-error` also covers Moesif parse/config fatal behavior. | Backlog: split the risk or broaden affected requirements, impact, and mitigation. |
+| `graylog-moesif-record-fatal` | AcceptedRisk | `needs_metadata_hardening` -> broadened | Risk originally accepted per-record fatal paths, while backing KI `graylog-moesif-logfatal-on-record-error` also covers Moesif parse/config fatal behavior. | Broadened title, description, mitigation, customer impact, and affected requirements to include `SW-REQ-049` and `SW-REQ-052`. |
 | `mongo-pump-context-timeout-bypass` | AcceptedRisk | `needs_metadata_hardening` -> partially hardened | Backing KI `mongo-pump-ignores-caller-context` affects both `SYS-REQ-005` and `INT-REQ-004`; risk only listed `SYS-REQ-005`. | Added `INT-REQ-004` to accepted risk. |
 | `no-dlq-on-pump-write-failure` | AcceptedRisk | `valid` | Matches KI `write-failure-after-pop-loses-records` and catalog class `dead_letter_or_reenqueue_on_total_write_failure`. | No change needed. |
-| `per-pump-timeout-not-enforced-when-zero` | AcceptedRisk | `needs_reproducer_hardening` | Backing KI `pump-no-timeout-can-block-purge-cycle` currently points at an Elasticsearch HTTP timeout signal, not the `main.go` zero-timeout branch. | Backlog: add focused evidence for `GetTimeout()==0` using `context.WithCancel`. |
+| `per-pump-timeout-not-enforced-when-zero` | AcceptedRisk | `needs_reproducer_hardening` -> hardened | Backing KI `pump-no-timeout-can-block-purge-cycle` pointed at an Elasticsearch HTTP timeout signal rather than the `main.go` zero-timeout branch. | Added and refreshed `.proof/evidence/ki-pump-no-timeout-can-block-purge-cycle.yaml`, linked it to the backing KI, and refreshed current `main.go` line anchors. |
 | `pump-config-typos-silently-ignored` | AcceptedRisk | `valid` | Matches KI `mapstructure-decode-silently-drops-unknown-keys` and catalog class `config_schema_strict`. | No change needed. |
 | `pump-panic-crashes-process` | AcceptedRisk | `needs_merge` | KIs `no-panic-recovery-in-exec-pump-writing` and `pump-fanout-panic-not-recovered` describe the same accepted panic surface. | Backlog: canonicalize duplicate KIs and keep the stronger verification reference. |
 | `pump-writedata-swallows-per-batch-errors` | AcceptedRisk | `valid` | Matches KI `pump-writedata-swallows-per-batch-errors`, reviewed through `2026-11-30`. | No change needed. |
@@ -283,13 +287,20 @@ Subagent audit completed for 20 KnownIssues from
 - `PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored /Users/buger/go/bin/proof audit --check annotation_validity --check known_issue_complete --check known_issues_reviewed --max-findings 0`
 - `PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored /Users/buger/go/bin/proof known-issue check`
 - `/Users/buger/go/bin/proof evidence validate --strict $(find .proof/evidence -name 'ki-*.yaml' | sort)` -> `valid: 29 evidence profile result(s)`
+- `/Users/buger/go/bin/proof evidence validate --strict $(find .proof/evidence -name 'ki-*.yaml' | sort)` -> `valid: 30 evidence profile result(s)` after adding timeout-zero evidence.
 
 Latest focused Proof result: `Errors: 0`, `Warnings: 0` for
 `annotation_validity`, `known_issue_complete`, and `known_issues_reviewed`.
 Latest `proof known-issue check` result after the evidence/security-detail
 slice: exit code `0`; summary
 `status=open:50,reviewed:94 severity=high:7,low:55,medium:82 cve_surface=possible:7 security_relevant=7`.
-Remaining closure debt is `109` missing current reproducer-evidence manifests;
+Remaining closure debt is `108` missing current reproducer-evidence manifests;
 security-detail metadata findings are closed. The remaining evidence debt is
 reflected in the per-item `needs_reproducer_hardening` and
 `needs_metadata_hardening` verdicts.
+
+Tracked-debt follow-up: the only live stakeholder `witness_deferred`
+(`STK-REQ-002:AC-003`) now carries `owner: tyk-team`,
+`review_date: 2026-11-30`, and
+`release_disposition: ship_with_known_issue`. The stale deferred-witness
+backlog Section B was reduced from 10 historical rows to the one current row.
