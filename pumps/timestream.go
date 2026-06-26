@@ -109,7 +109,7 @@ func (t *TimestreamPump) Init(config interface{}) error {
 	}
 
 	t.client, err = t.NewTimestreamWriter()
-	if err != nil { //mcdc:ignore:capability-gap log.Fatal exits the process; NewTimestreamWriter's err arm wraps aws-sdk-go-v2 config.LoadDefaultConfig which is itself only reachable in degraded environments (see NewTimestreamWriter mcdc:ignore). KI pumps-logfatal-on-config-decode [ki: pumps-logfatal-on-config-decode]
+	if err != nil { //mcdc:ignore:capability-gap log.Fatal exits the process; NewTimestreamWriter's err arm wraps aws-sdk-go-v2 config.LoadDefaultConfig which is itself only reachable in degraded environments (see NewTimestreamWriter mcdc:ignore). KI aws-pump-init-client-logfatal [ki: aws-pump-init-client-logfatal]
 		t.log.Fatal("Failed to create timestream client: ", err)
 		return err
 	}

@@ -32,14 +32,14 @@ import (
 // (e.g. main.execPumpWriting) can skip the failing pump and let siblings
 // continue (SYS-REQ-004 per-backend failure independence).
 //
-// Why "ratchet" rather than "must be zero"?  We cannot fix all violations in
-// this wave — there are 40+ pre-existing sites tracked under existing KIs
-// (pumps-logfatal-on-config-decode, kafka-logfatal-on-init-mech-and-timeout,
+// Why "ratchet" rather than "must be zero"?  Existing violations are tracked
+// under scoped KIs such as pumps-logfatal-on-config-decode,
+// aws-pump-init-client-logfatal, kafka-logfatal-on-init-mech-and-timeout,
 // graylog-record-decode-logfatal, moesif-record-decode-logfatal,
 // moesif-config-read-error-logfatal, mongo-pump-init-connect-logfatal-unreachable,
-// logfatal-on-statsd-setup, and config.go's env-decode Fatal). Wave 4 will
-// triage NEW vs KNOWN findings and either add KIs or remediation.
-// In the meantime this test prevents *regression* — new violations fail loudly.
+// logfatal-on-statsd-setup, and config.go's env-decode Fatal. This test
+// prevents regression: new violations fail loudly until they are fixed or
+// explicitly recorded as known debt.
 // Reproduces: logfatal-on-statsd-setup
 func TestProcessExitOnRecoverable_NoNewLogFatalSites(t *testing.T) {
 	// Allowlist: known-bad sites tied to filed Known Issues.
@@ -73,10 +73,10 @@ func TestProcessExitOnRecoverable_NoNewLogFatalSites(t *testing.T) {
 		"pumps/segment.go:50":          "pumps-logfatal-on-config-decode",
 		"pumps/sqs.go:103":             "pumps-logfatal-on-config-decode",
 		"pumps/timestream.go:101":      "pumps-logfatal-on-config-decode",
-		// Secondary "create client" fatals tracked under same KI
-		"pumps/sqs.go:111":        "pumps-logfatal-on-config-decode",
-		"pumps/timestream.go:113": "pumps-logfatal-on-config-decode",
-		"pumps/kinesis.go:81":     "pumps-logfatal-on-config-decode",
+		// KI: aws-pump-init-client-logfatal
+		"pumps/sqs.go:111":        "aws-pump-init-client-logfatal",
+		"pumps/timestream.go:113": "aws-pump-init-client-logfatal",
+		"pumps/kinesis.go:81":     "aws-pump-init-client-logfatal",
 
 		// KI: kafka-logfatal-on-init-mech-and-timeout
 		"pumps/kafka.go:142": "kafka-logfatal-on-init-mech-and-timeout",
@@ -101,17 +101,16 @@ func TestProcessExitOnRecoverable_NoNewLogFatalSites(t *testing.T) {
 		"pumps/moesif.go:356": "mcdc-pumps-below-95",
 		"pumps/moesif.go:386": "mcdc-pumps-below-95",
 
-		// Elasticsearch version / mid-run fatals — Wave 4 candidate (need new KI
-		// or fold into pumps-logfatal-on-config-decode)
-		"pumps/elasticsearch.go:337": "wave4:elasticsearch-version-fatal",
-		"pumps/elasticsearch.go:391": "wave4:elasticsearch-version-fatal",
+		// KI: elasticsearch-invalid-version-logfatal
+		"pumps/elasticsearch.go:337": "elasticsearch-invalid-version-logfatal",
+		"pumps/elasticsearch.go:391": "elasticsearch-invalid-version-logfatal",
 
-		// Syslog non-config fatals — Wave 4 candidate
-		"pumps/syslog.go:110": "wave4:syslog-runtime-fatal",
-		"pumps/syslog.go:128": "wave4:syslog-runtime-fatal",
+		// KI: syslog runtime/initwriter fatals
+		"pumps/syslog.go:110": "syslog-initwriter-logfatal-on-dial-error",
+		"pumps/syslog.go:128": "syslog-init-logfatal-on-invalid-transport",
 
-		// Prometheus ListenAndServe fatal — Wave 4 candidate
-		"pumps/prometheus.go:216": "wave4:prometheus-listen-fatal",
+		// KI: prometheus-listener-logfatal
+		"pumps/prometheus.go:216": "prometheus-listener-logfatal",
 
 		// main.go log-level / storage-connect fatals via log.WithFields(...).Fatal(...)
 		// chains — invisible to the prior regex grep, surfaced by the AST scanner.

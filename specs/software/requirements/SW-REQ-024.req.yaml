@@ -55,6 +55,7 @@ obligation_checklist:
     - output_cardinality_bounded
     - panic_free_input_handling
     - process_exit_on_recoverable
+    - request_timeout_bounded
     - shared_state_synchronized
     - structured_projection_preserved
 obligation_deferrals:
@@ -100,6 +101,11 @@ obligation_deferrals:
       tracking: pumps-logfatal-on-config-decode
       owner: human:buger
       ki_ref: pumps-logfatal-on-config-decode
+    - obligation_class: request_timeout_bounded
+      reason: Prometheus Init starts http.ListenAndServe with a nil handler on the process-global DefaultServeMux and no private server lifecycle, so listener timeout/lifecycle isolation remains KI-gated with the DefaultServeMux issue.
+      tracking: prometheus-init-mutates-default-mux
+      owner: human:buger
+      ki_ref: prometheus-init-mutates-default-mux
     - obligation_class: shared_state_synchronized
       reason: Prometheus Init registers handlers on http.DefaultServeMux and serves with a nil handler, so the pump mutates process-global HTTP routing state instead of using an isolated mux; surfaced as visible tracked debt, not an overclaimed fix.
       tracking: prometheus-init-mutates-default-mux

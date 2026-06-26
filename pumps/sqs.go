@@ -107,7 +107,7 @@ func (s *SQSPump) Init(config interface{}) error {
 	processPumpEnvVars(s, s.log, s.SQSConf, SQSDefaultENV)
 
 	s.SQSClient, err = s.NewSQSPublisher()
-	if err != nil { //mcdc:ignore:capability-gap log.Fatal exits the process; NewSQSPublisher's err arm is itself unreachable (see NewSQSPublisher mcdc:ignore) so this is dead-code-on-dead-code — KI pumps-logfatal-on-config-decode [ki: pumps-logfatal-on-config-decode]
+	if err != nil { //mcdc:ignore:capability-gap log.Fatal exits the process; NewSQSPublisher's err arm is itself unreachable (see NewSQSPublisher mcdc:ignore) so this is dead-code-on-dead-code — KI aws-pump-init-client-logfatal [ki: aws-pump-init-client-logfatal]
 		s.log.Fatal("Failed to create sqs client: ", err)
 		return err
 	}

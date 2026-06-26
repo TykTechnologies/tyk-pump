@@ -5,12 +5,12 @@ requirements:
 command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored go test -p=1 -count=1 -timeout=180s -run '^TestKinesisSplitIntoBatches_AllowsOverAWSLimit$' ./pumps
 status: pass
 observed_result: known_issue_reproduced
-executed_at: "2026-06-26T15:06:17Z"
+executed_at: "2026-06-26T20:49:47Z"
 input_set:
     - KI kinesis-batch-size-over-aws-putrecords-limit focused helper tripwire
 freshness_hashes:
     proof.yaml: sha256:18dd484cb75c5c729bc063c96426b101df78e0c89ec729e39724c18f50367e0e
-    pumps/kinesis.go: sha256:11412d88b2d93e5898a102196e3d159c6cd15ed75f1ccfa991b9a35def0e01be
+    pumps/kinesis.go: sha256:7fc54f5bbcab42ecfec001a4da84851bdc05d18eef09cd3efedcb5d029752e20
     pumps/kinesis_test.go: sha256:307aa3dffba9b536379b050e3ebbcce176c65803fdf056a578324e4b236bc463
 known_issues:
     - kinesis-batch-size-over-aws-putrecords-limit

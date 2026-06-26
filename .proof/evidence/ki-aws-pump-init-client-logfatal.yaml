@@ -1,0 +1,24 @@
+schema_version: proof.evidence_profile.v1
+profile: known_issue_reproducer
+requirements:
+    - SYS-REQ-004
+    - SW-REQ-055
+    - SW-REQ-056
+    - SW-REQ-057
+command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored rg -n 'Failed to create sqs client|Failed to create timestream client|unable to load Kinesis SDK config' pumps/sqs.go pumps/timestream.go pumps/kinesis.go
+status: pass
+observed_result: known_issue_reproduced
+executed_at: "2026-06-26T20:48:48Z"
+input_set:
+    - KI aws-pump-init-client-logfatal static source tripwire
+freshness_hashes:
+    proof.yaml: sha256:18dd484cb75c5c729bc063c96426b101df78e0c89ec729e39724c18f50367e0e
+    pumps/kinesis.go: sha256:7fc54f5bbcab42ecfec001a4da84851bdc05d18eef09cd3efedcb5d029752e20
+    pumps/sqs.go: sha256:c028d0b05ce6ecbfac485d36362fcd9490c26a803d6d3f0f7a3290340961e320
+    pumps/timestream.go: sha256:a7647659ff9a47dc0cc13e4fd090026016f420777cec27b668b1ccbc65054269
+    specs/software/requirements/SW-REQ-055.req.yaml: sha256:a38990dc0ad6e2308078ba565d183b7e1ee5c29d476bcc54fa9b3342ae1011cd
+    specs/software/requirements/SW-REQ-056.req.yaml: sha256:f8f1f5bdbc815cd2b9c9fb126adb049619b5480b73c4b911340657be259f2050
+    specs/software/requirements/SW-REQ-057.req.yaml: sha256:581d8e8dc0b9a3e3d48a82622b6be0c7c88bcba8fda0dec6143da430f053007f
+    specs/system/requirements/SYS-REQ-004.req.yaml: sha256:149e22ab96b33d3f2659f48fe98028a37f538e45f06138ca9048b5ef94e78c51
+known_issues:
+    - aws-pump-init-client-logfatal

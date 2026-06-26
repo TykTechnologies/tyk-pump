@@ -50,7 +50,7 @@ requirements:
 command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored sh -c 'rg --glob "!**/*_test.go" -n "mapstructure\\.Decode\\(" pumps storage config.go && ! rg --glob "!**/*_test.go" -n "ErrorUnused|DecoderConfig" pumps storage config.go'
 status: pass
 observed_result: known_issue_reproduced
-executed_at: "2026-06-26T15:02:55Z"
+executed_at: "2026-06-26T20:49:59Z"
 input_set:
     - KI mapstructure-decode-silently-drops-unknown-keys production lenient decode scan
 freshness_hashes:
@@ -67,7 +67,7 @@ freshness_hashes:
     pumps/influx.go: sha256:5f47f56b241e5d875a041d458dc705ddb636ba22ec8cc287b196cc0344cdda47
     pumps/influx2.go: sha256:6ae1cf74fc76fdf8c55eaf8d15a5eeaa2f0fac54a448e4894cb2b320e5786af5
     pumps/kafka.go: sha256:534bf9beeb656d6fc3d3e007026ac97dd99722526bd4586c145c222a2cd0e7f6
-    pumps/kinesis.go: sha256:11412d88b2d93e5898a102196e3d159c6cd15ed75f1ccfa991b9a35def0e01be
+    pumps/kinesis.go: sha256:7fc54f5bbcab42ecfec001a4da84851bdc05d18eef09cd3efedcb5d029752e20
     pumps/logzio.go: sha256:b912c5b3b49ac3b0ab31ffc01b97d7bb6598324c599cf776e48541fe75b2a949
     pumps/mcp_mongo.go: sha256:448aa80208d2efecbff99caa3fa92adeac166f2831fbcb63d3e9263d85e37cc7
     pumps/mcp_mongo_aggregate.go: sha256:ef2a34b9d5be5767ad59b17031fb6026a1d5013da4ae215124e679f4fb1aaa6c
@@ -83,11 +83,11 @@ freshness_hashes:
     pumps/splunk.go: sha256:e95f1a88f9c739245280836c3dce55ae95d1266f59dc67d7126620639a753288
     pumps/sql.go: sha256:f91170d0a2aa1c527df86cb02872797cf730304e9e765decd11561626dfac33a
     pumps/sql_aggregate.go: sha256:85f542163368da6dc4bd0eaa0aa74bc0b04e3ec69bf64df49ab67a8742b7c92a
-    pumps/sqs.go: sha256:d4dc9d89d872093e8fef4d2d160ec27a0462beb9fdd42bd1cbefcfd75fcec7d4
+    pumps/sqs.go: sha256:c028d0b05ce6ecbfac485d36362fcd9490c26a803d6d3f0f7a3290340961e320
     pumps/statsd.go: sha256:f7ee570c92540d5e807f0f59fc7d48bdca8299eca5d6f970f257b2c555023136
     pumps/stdout.go: sha256:419ee11a2804212bf4bcd5af3ba5593b9a3f27be208c923a92d8e8ea878e21e8
     pumps/syslog.go: sha256:92163313b13d356bde7bda39ded915878fee3afc9ffc68151525bcb75390913f
-    pumps/timestream.go: sha256:2a948ed622934fbc90be63dcf373b063188cb0e38828074cf06b01b27c8b37cd
+    pumps/timestream.go: sha256:a7647659ff9a47dc0cc13e4fd090026016f420777cec27b668b1ccbc65054269
     storage/temporal_storage.go: sha256:28a37f20cabcfd7f832654ea6d74e858691c31eeaf77e130382978486e01de6c
 known_issues:
     - mapstructure-decode-silently-drops-unknown-keys

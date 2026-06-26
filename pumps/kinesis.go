@@ -78,7 +78,7 @@ func (p *KinesisPump) Init(config interface{}) error {
 	// Credentials are loaded as specified in
 	// https://aws.github.io/aws-sdk-go-v2/docs/configuring-sdk/#specifying-credentials
 	cfg, err := awsconfig.LoadDefaultConfig(context.TODO(), awsconfig.WithRegion(p.kinesisConf.Region))
-	if err != nil { //mcdc:ignore:capability-gap log.Fatal exits the process; aws-sdk-go-v2 config.LoadDefaultConfig only fails in degraded environments — KI mcdc-pumps-below-95. [ki: mcdc-pumps-below-95]
+	if err != nil { //mcdc:ignore:capability-gap log.Fatal exits the process; aws-sdk-go-v2 config.LoadDefaultConfig only fails in degraded environments — KI aws-pump-init-client-logfatal. [ki: aws-pump-init-client-logfatal]
 		p.log.Fatalf("unable to load Kinesis SDK config, %v", err)
 	}
 

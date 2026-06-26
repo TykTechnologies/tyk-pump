@@ -3,14 +3,37 @@ profile: known_issue_reproducer
 requirements:
     - SYS-REQ-004
     - SW-REQ-021
+    - SW-REQ-106
     - SW-REQ-023
     - SW-REQ-024
     - SW-REQ-025
     - SW-REQ-026
-command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored rg -n 'mapstructure\.Decode\(|Failed to decode configuration|\.log\.Fatal\(' pumps
+    - SW-REQ-034
+    - SW-REQ-035
+    - SW-REQ-036
+    - SW-REQ-046
+    - SW-REQ-047
+    - SW-REQ-049
+    - SW-REQ-050
+    - SW-REQ-051
+    - SW-REQ-052
+    - SW-REQ-053
+    - SW-REQ-055
+    - SW-REQ-056
+    - SW-REQ-057
+    - SW-REQ-058
+    - SW-REQ-059
+    - SW-REQ-060
+    - SW-REQ-061
+    - SW-REQ-062
+    - SW-REQ-063
+    - SW-REQ-068
+    - SW-REQ-069
+    - SW-REQ-070
+command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored rg -n 'mapstructure\.Decode\(|Failed to decode configuration' pumps
 status: pass
 observed_result: known_issue_reproduced
-executed_at: "2026-06-26T15:39:21Z"
+executed_at: "2026-06-26T20:48:58Z"
 input_set:
     - KI pumps-logfatal-on-config-decode static config-decode fatal scan
 freshness_hashes:
@@ -18,10 +41,50 @@ freshness_hashes:
     pumps/csv.go: sha256:49385ee92b136d5ece9822db83b84fe5080e7ced64783a62f7a82b6e2fab03d6
     pumps/elasticsearch.go: sha256:fab94fff687bde542a18b3237d8dbed48b3313178e6d57c4b14a5faae3d70cf4
     pumps/graylog.go: sha256:3267a8647738fa57f0916b61339bd61edc4cf6e311bc96fdf21cbab6b9dfe421
+    pumps/influx.go: sha256:5f47f56b241e5d875a041d458dc705ddb636ba22ec8cc287b196cc0344cdda47
+    pumps/influx2.go: sha256:6ae1cf74fc76fdf8c55eaf8d15a5eeaa2f0fac54a448e4894cb2b320e5786af5
     pumps/kafka.go: sha256:534bf9beeb656d6fc3d3e007026ac97dd99722526bd4586c145c222a2cd0e7f6
+    pumps/kinesis.go: sha256:7fc54f5bbcab42ecfec001a4da84851bdc05d18eef09cd3efedcb5d029752e20
+    pumps/logzio.go: sha256:b912c5b3b49ac3b0ab31ffc01b97d7bb6598324c599cf776e48541fe75b2a949
+    pumps/moesif.go: sha256:8c931352943067f1c554e5e2bc32521e05fd33fdde6885d4dd9949091518ad32
+    pumps/mongo.go: sha256:46c26200acfb5910015a33076a6d691dc0d04afde4fcf17f42734d06cad7e7c6
+    pumps/mongo_aggregate.go: sha256:9e6d675bf3db1aa3da93b6a46fb4bcd3699d2b8f5e10c1cf447fd65867443a5d
+    pumps/mongo_selective.go: sha256:879166e2224ee274262b827becef45f9eb225cdd05876cd9b9d5db10b8ee8b62
     pumps/prometheus.go: sha256:40ffde54b93cb18faed9e300a8432132bb92cd61d22e97c6d80df8fddb0f351d
+    pumps/segment.go: sha256:2842d988645d7f37d956b16eae980d5ccb851ac0cd0c0be715073482bd51cc71
+    pumps/sqs.go: sha256:c028d0b05ce6ecbfac485d36362fcd9490c26a803d6d3f0f7a3290340961e320
     pumps/statsd.go: sha256:f7ee570c92540d5e807f0f59fc7d48bdca8299eca5d6f970f257b2c555023136
     pumps/stdout.go: sha256:419ee11a2804212bf4bcd5af3ba5593b9a3f27be208c923a92d8e8ea878e21e8
     pumps/syslog.go: sha256:92163313b13d356bde7bda39ded915878fee3afc9ffc68151525bcb75390913f
+    pumps/timestream.go: sha256:a7647659ff9a47dc0cc13e4fd090026016f420777cec27b668b1ccbc65054269
+    specs/software/requirements/SW-REQ-021.req.yaml: sha256:05d272ce9f9fa33993591435f2ab560a22e7c6d33c3cf766311f4b6a40a2744b
+    specs/software/requirements/SW-REQ-023.req.yaml: sha256:2d6e57b26dff01a50fe993aa2b748e0f27b3acf50cd47e4254728d8f47277590
+    specs/software/requirements/SW-REQ-024.req.yaml: sha256:afc96fd525379ceebb502fdc44e8fad01dc940ba3432ce70171ba3f799cf51e3
+    specs/software/requirements/SW-REQ-025.req.yaml: sha256:c39d87b183049e6be369fa20021a38962e055d68f625bc0baa6b1f4ae06fb4f6
+    specs/software/requirements/SW-REQ-026.req.yaml: sha256:8eb14bcfa3d5811f0d4bca2d6654894d4a07f630255419983899530d14dfe6e9
+    specs/software/requirements/SW-REQ-034.req.yaml: sha256:0b87408fdfa90d4e12515b44d440ab43641048d2ee8ef876fce552ffbd761238
+    specs/software/requirements/SW-REQ-035.req.yaml: sha256:45283ed29916ecb10dfb61651d3023d98431654b31cd34cb2952b0de6aeebd0d
+    specs/software/requirements/SW-REQ-036.req.yaml: sha256:377685fbf229e9bafab1acd81210e09955ad0616652dc5fee393712f18cddb74
+    specs/software/requirements/SW-REQ-046.req.yaml: sha256:0a4a6f59ebc470d68b9968815757b27076d8cb672f9f6463463cfc8b50ea89b4
+    specs/software/requirements/SW-REQ-047.req.yaml: sha256:56ee6663481db550fb81aa5cfb3528567955dd7d370d6188d3203b3370685a68
+    specs/software/requirements/SW-REQ-049.req.yaml: sha256:bca1b22a186f11670afbc6cf4b3d718d70ca8aa054fad425079c67eb0f5e2413
+    specs/software/requirements/SW-REQ-050.req.yaml: sha256:8ee014d7b33f7a9ecd64ae888bfe4c5d547cefa2dc12afb4037a94edbea0f8ac
+    specs/software/requirements/SW-REQ-051.req.yaml: sha256:f88fba26aea7f3eba586e4b266d504867b7137efdd965c5f70f127dbd2a495be
+    specs/software/requirements/SW-REQ-052.req.yaml: sha256:1c94b006813214d13b92ad5f7b5edb0aaf207ffbaa8d7607996250e51ff44527
+    specs/software/requirements/SW-REQ-053.req.yaml: sha256:09be4df1c026ea6a4139da1aa2eea19381e2cd3773a1c28e27a065dc2a3e0f32
+    specs/software/requirements/SW-REQ-055.req.yaml: sha256:a38990dc0ad6e2308078ba565d183b7e1ee5c29d476bcc54fa9b3342ae1011cd
+    specs/software/requirements/SW-REQ-056.req.yaml: sha256:f8f1f5bdbc815cd2b9c9fb126adb049619b5480b73c4b911340657be259f2050
+    specs/software/requirements/SW-REQ-057.req.yaml: sha256:581d8e8dc0b9a3e3d48a82622b6be0c7c88bcba8fda0dec6143da430f053007f
+    specs/software/requirements/SW-REQ-058.req.yaml: sha256:774ee96e43d43a3b5317d7cebe22d1d601de3a759d128099e36fe17048002b92
+    specs/software/requirements/SW-REQ-059.req.yaml: sha256:993b58057ff7fe714f44ea2855823e4d395e7dea0fc3f79c94f8d56065c9da63
+    specs/software/requirements/SW-REQ-060.req.yaml: sha256:4fd198f0bdc3eafb858d3bed8f594730819fef89fd2570153158653feca808ac
+    specs/software/requirements/SW-REQ-061.req.yaml: sha256:09b0043dc527b71d873091413ebc47ffaea10dc782deeeec13878904798384dc
+    specs/software/requirements/SW-REQ-062.req.yaml: sha256:8f9ad4a0eeec57b9450983fdb182b4ddb2b8447f9fe4247015477c4bf66dd30d
+    specs/software/requirements/SW-REQ-063.req.yaml: sha256:1c4de18cfdcb0177c6c826c612734c0495bbf5dd404d924fa5c3b722d795c5cc
+    specs/software/requirements/SW-REQ-068.req.yaml: sha256:e33a5a5abf91c87026e9ae7a4386ea13fd1fe2108e4bd25c59dbd2897cf07ff1
+    specs/software/requirements/SW-REQ-069.req.yaml: sha256:fe3e31f97a0abd4e34419a7d7519e5b31e85c5591064b0dac0118b92f05e2e91
+    specs/software/requirements/SW-REQ-070.req.yaml: sha256:f6fa9ad018cc89fada3668fcdb8dd7b23c2a2896625ef24a84616b8303f9b746
+    specs/software/requirements/SW-REQ-106.req.yaml: sha256:0d8b252676860c02f5ea5dd14eed750de6a16104769dbe7ec87c09a741611e43
+    specs/system/requirements/SYS-REQ-004.req.yaml: sha256:149e22ab96b33d3f2659f48fe98028a37f538e45f06138ca9048b5ef94e78c51
 known_issues:
     - pumps-logfatal-on-config-decode

@@ -5,12 +5,12 @@ requirements:
 command: 'PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored rg -n ''rand\.Int\(|PartitionKey: aws\.String\(fmt\.Sprint\(n\)\)'' pumps/kinesis.go specs/software/requirements/SW-REQ-056.req.yaml'
 status: pass
 observed_result: known_issue_reproduced
-executed_at: "2026-06-26T15:07:39Z"
+executed_at: "2026-06-26T20:49:55Z"
 input_set:
     - KI kinesis-random-partition-key-not-idempotent static randomness scan
 freshness_hashes:
     proof.yaml: sha256:18dd484cb75c5c729bc063c96426b101df78e0c89ec729e39724c18f50367e0e
-    pumps/kinesis.go: sha256:11412d88b2d93e5898a102196e3d159c6cd15ed75f1ccfa991b9a35def0e01be
+    pumps/kinesis.go: sha256:7fc54f5bbcab42ecfec001a4da84851bdc05d18eef09cd3efedcb5d029752e20
     specs/software/requirements/SW-REQ-056.req.yaml: sha256:f8f1f5bdbc815cd2b9c9fb126adb049619b5480b73c4b911340657be259f2050
 known_issues:
     - kinesis-random-partition-key-not-idempotent
