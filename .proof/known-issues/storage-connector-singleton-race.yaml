@@ -9,8 +9,8 @@ evidence_manifests:
 severity: medium
 severity_basis: risk
 risk: data_integrity
-reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored rg -n 'connectorSingleton model\.Connector|connectorSingleton = conn|logPrefix =|var \(' storage/temporal_storage.go
-environment_note: Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source or documentation surface and following the described scenario.
+reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored go test -race -p=1 -count=1 -timeout=180s -run '^TestTemporalStorageHandler_Init_ConnectorSingletonRace_KI$' ./storage
+environment_note: Reproducer is a race-build subprocess witness. The parent test passes only when the race-instrumented child reports DATA RACE from temporal_storage.go package-global connector/logPrefix access; no Redis container is required.
 introduced_in: inception
 mitigation: Production currently constructs only AnalyticsStore + UptimeStore sequentially in main.setupAnalyticsStore; the race window is small. Avoid using forceReconnect=true outside controlled init paths.
 remediation: Either (a) protect connectorSingleton + logPrefix with a sync.RWMutex, or (b) move them onto the TemporalStorageHandler struct so each handler owns its own connector, or (c) make connectorSingleton a typed atomic.Pointer.
@@ -38,3 +38,7 @@ history:
       by: agent:codex
       action: edit
       detail: set-reproducer-command,add-evidence-manifest
+    - at: "2026-06-26T18:58:24Z"
+      by: agent:codex
+      action: evidence_hardened
+      detail: replaced static package-global scan with TestTemporalStorageHandler_Init_ConnectorSingletonRace_KI race witness
