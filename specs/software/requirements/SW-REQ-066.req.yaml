@@ -84,10 +84,10 @@ obligation_deferrals:
       owner: human:buger
       ki_ref: mapstructure-decode-silently-drops-unknown-keys
     - obligation_class: panic_free_input_handling
-      reason: real untested obligation under known-issue no-panic-recovery-in-exec-pump-writing; surfaced as visible tracked debt, not an overclaimed fix
-      tracking: no-panic-recovery-in-exec-pump-writing
+      reason: real untested obligation under canonical known-issue pump-fanout-panic-not-recovered; surfaced as visible tracked debt, not an overclaimed fix
+      tracking: pump-fanout-panic-not-recovered
       owner: human:buger
-      ki_ref: no-panic-recovery-in-exec-pump-writing
+      ki_ref: pump-fanout-panic-not-recovered
     - obligation_class: shared_state_synchronized
       reason: SQL aggregate sharded routing and DDL paths mutate shared pump DB state, so synchronization or per-call handle isolation remains KI-tracked debt.
       tracking: sql-aggregate-sharded-shared-db-race

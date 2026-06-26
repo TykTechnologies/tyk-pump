@@ -98,9 +98,9 @@ obligation_deferrals:
       ki_ref: sql-aggregate-upsert-order-undocumented
     - obligation_class: panic_free_input_handling
       reason: Required panic-free evidence is parked because pump write goroutines still lack panic recovery.
-      tracking: known-issue:no-panic-recovery-in-exec-pump-writing
+      tracking: known-issue:pump-fanout-panic-not-recovered
       owner: human:buger
-      ki_ref: no-panic-recovery-in-exec-pump-writing
+      ki_ref: pump-fanout-panic-not-recovered
     - obligation_class: transaction_isolation_declared
       reason: SQL aggregate upsert correctness depends on concurrent database write semantics, but serialization and concurrent-writer evidence remains missing from the fault-injection harness.
       tracking: sql-aggregate-atomicity-fault-injection-missing

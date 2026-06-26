@@ -1,0 +1,36 @@
+id: sql-family-day-shard-timezone-convention-unpinned
+title: SQL-family day-shard routing uses source-location timestamps without an explicit timezone policy
+description: The SQL, SQL Aggregate, Graph SQL, Graph SQL Aggregate, MCP SQL, and MCP SQL Aggregate pumps route table-sharded records by calling TimeStamp.Format("20060102") on the analytics record timestamp. Go formats the value in that time.Time's own Location, so the same instant can route to different YYYYMMDD tables depending on whether the input is UTC or a producer/source-local timezone. Existing boundary tests pin that source-location behavior, but the SQL-family requirements do not yet state whether day shards are intentionally source-location based or UTC based.
+affected_requirements:
+    - SW-REQ-040
+    - SW-REQ-041
+    - SW-REQ-042
+    - SW-REQ-043
+    - SW-REQ-044
+    - SW-REQ-045
+evidence_manifests:
+    - test:pumps/temporal_window_inclusive_test.go:TestSQLFamilyDayShardTimezoneConventionUnpinned_KI
+    - code_signal:opengrep:go.sql_table_sharding_by_date:pumps/sql.go:366
+    - code_signal:opengrep:go.sql_table_sharding_by_date:pumps/sql_aggregate.go:230
+    - code_signal:opengrep:go.sql_table_sharding_by_date:pumps/graph_sql.go:131
+    - code_signal:opengrep:go.sql_table_sharding_by_date:pumps/graph_sql_aggregate.go:106
+    - code_signal:opengrep:go.sql_table_sharding_by_date:pumps/mcp_sql.go:158
+    - code_signal:opengrep:go.sql_table_sharding_by_date:pumps/mcp_sql_aggregate.go:215
+    - .proof/evidence/ki-sql-family-day-shard-timezone-convention-unpinned.yaml
+severity: medium
+severity_basis: risk
+risk: data_integrity
+reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored go test -p=1 -count=1 -timeout=180s -run '^TestSQLFamilyDayShardTimezoneConventionUnpinned_KI$' ./pumps
+environment_note: The reproducer is a static source tripwire. It does not open database connections, start containers, or depend on external SQL services.
+introduced_in: inception
+mitigation: Run analytics producers and tyk-pump with a shared TZ=UTC convention when table sharding must be globally day-stable across regions. Avoid mixing source-local producer timestamps in the same sharded SQL dataset until the contract is documented.
+remediation: Decide and document the SQL-family day-shard timezone policy. If UTC is required, normalize TimeStamp.UTC() before deriving YYYYMMDD; if source-location sharding is intended, make that contract explicit in the SQL-family requirements and operator documentation.
+owner: tyk-team
+review_date: "2026-11-30"
+release_disposition: ship_with_known_issue
+status: open
+history:
+    - at: "2026-06-26T21:45:00Z"
+      by: agent:codex
+      action: created
+      detail: split from analytics-timestamp-timezone-convention-unpinned so temporal_window_inclusive SQL-family debt has a precise owner

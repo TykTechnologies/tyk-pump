@@ -1,6 +1,8 @@
 package pumps
 
 import (
+	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -112,6 +114,84 @@ func TestTemporalWindowInclusive_ZoneAware(t *testing.T) {
 		"same instant in UTC (03:30 on the 5th UTC) must route to 20260605")
 	assert.NotEqual(t, nyTable, utcTable,
 		"same instant in different zones must route to different day-shard tables — proves the routing is zone-aware")
+}
+
+// Verifies: SW-REQ-040
+// Verifies: SW-REQ-041
+// Verifies: SW-REQ-042
+// Verifies: SW-REQ-043
+// Verifies: SW-REQ-044
+// Verifies: SW-REQ-045
+// Verifies: KI:sql-family-day-shard-timezone-convention-unpinned
+// Reproduces: sql-family-day-shard-timezone-convention-unpinned
+func TestSQLFamilyDayShardTimezoneConventionUnpinned_KI(t *testing.T) {
+	cases := []struct {
+		name     string
+		file     string
+		snippets []string
+	}{
+		{
+			name: "sql standard",
+			file: "sql.go",
+			snippets: []string{
+				`recDate := typedData[startIndex].TimeStamp.Format("20060102")`,
+				`nextRecDate = typedData[i].TimeStamp.Format("20060102")`,
+			},
+		},
+		{
+			name: "sql aggregate",
+			file: "sql_aggregate.go",
+			snippets: []string{
+				`recDate := data[startIndex].(analytics.AnalyticsRecord).TimeStamp.Format("20060102")`,
+				`nextRecDate = data[i].(analytics.AnalyticsRecord).TimeStamp.Format("20060102")`,
+			},
+		},
+		{
+			name: "graph sql",
+			file: "graph_sql.go",
+			snippets: []string{
+				`recDate := graphRecords[startIndex].AnalyticsRecord.TimeStamp.Format("20060102")`,
+				`nextRecDate = graphRecords[i].AnalyticsRecord.TimeStamp.Format("20060102")`,
+			},
+		},
+		{
+			name: "graph sql aggregate",
+			file: "graph_sql_aggregate.go",
+			snippets: []string{
+				`recDate := data[startIndex].(analytics.AnalyticsRecord).TimeStamp.Format("20060102")`,
+				`nextRecDate = data[i].(analytics.AnalyticsRecord).TimeStamp.Format("20060102")`,
+			},
+		},
+		{
+			name: "mcp sql",
+			file: "mcp_sql.go",
+			snippets: []string{
+				`recDate := mcpRecords[startIndex].AnalyticsRecord.TimeStamp.Format("20060102")`,
+				`nextRecDate = mcpRecords[i].AnalyticsRecord.TimeStamp.Format("20060102")`,
+			},
+		},
+		{
+			name: "mcp sql aggregate",
+			file: "mcp_sql_aggregate.go",
+			snippets: []string{
+				`recDate := data[startIndex].(analytics.AnalyticsRecord).TimeStamp.Format("20060102")`,
+				`nextRecDate = data[i].(analytics.AnalyticsRecord).TimeStamp.Format("20060102")`,
+			},
+		},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			sourceBytes, err := os.ReadFile(tc.file)
+			require.NoError(t, err)
+			source := string(sourceBytes)
+			for _, snippet := range tc.snippets {
+				assert.Truef(t, strings.Contains(source, snippet),
+					"%s must keep source-location day sharding snippet %q", tc.file, snippet)
+			}
+		})
+	}
 }
 
 // dayShardTable mirrors the EXACT production routing expression from

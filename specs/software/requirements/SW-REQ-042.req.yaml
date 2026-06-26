@@ -85,10 +85,10 @@ obligation_deferrals:
       ki_ref: graph-mcp-sql-sharded-indexes-untracked
       reproducer: rg -n "AutoMigrate|ensureIndex|HasTable" pumps/graph_sql.go
     - obligation_class: temporal_window_inclusive
-      reason: real untested obligation under known-issue analytics-timestamp-timezone-convention-unpinned; surfaced as visible tracked debt, not an overclaimed fix
-      tracking: analytics-timestamp-timezone-convention-unpinned
+      reason: SQL-family day-shard routing uses TimeStamp.Format("20060102") in the source timestamp location, while the requirement does not yet state whether day shards are UTC-based or source-location based.
+      tracking: sql-family-day-shard-timezone-convention-unpinned
       owner: human:buger
-      ki_ref: analytics-timestamp-timezone-convention-unpinned
+      ki_ref: sql-family-day-shard-timezone-convention-unpinned
 lifecycle:
     change_history:
         - date: "2026-05-30T08:43:46Z"

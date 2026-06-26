@@ -113,20 +113,20 @@ obligation_deferrals:
       owner: human:buger
       ki_ref: mongo-pump-writeuptime-nil-on-bad-msgpack
     - obligation_class: panic_free_input_handling
-      reason: real untested obligation under known-issue no-panic-recovery-in-exec-pump-writing; surfaced as visible tracked debt, not an overclaimed fix
-      tracking: no-panic-recovery-in-exec-pump-writing
+      reason: real untested obligation under canonical known-issue pump-fanout-panic-not-recovered; surfaced as visible tracked debt, not an overclaimed fix
+      tracking: pump-fanout-panic-not-recovered
       owner: human:buger
-      ki_ref: no-panic-recovery-in-exec-pump-writing
+      ki_ref: pump-fanout-panic-not-recovered
     - obligation_class: reversible_or_documented
       reason: real product gap under known-issue sql-schema-no-version-policy; surfaced as visible tracked debt, not an overclaimed fix
       tracking: sql-schema-no-version-policy
       owner: human:buger
       ki_ref: sql-schema-no-version-policy
     - obligation_class: temporal_window_inclusive
-      reason: real untested obligation under known-issue analytics-timestamp-timezone-convention-unpinned; surfaced as visible tracked debt, not an overclaimed fix
-      tracking: analytics-timestamp-timezone-convention-unpinned
+      reason: SQL-family day-shard routing uses TimeStamp.Format("20060102") in the source timestamp location, while the requirement does not yet state whether day shards are UTC-based or source-location based.
+      tracking: sql-family-day-shard-timezone-convention-unpinned
       owner: human:buger
-      ki_ref: analytics-timestamp-timezone-convention-unpinned
+      ki_ref: sql-family-day-shard-timezone-convention-unpinned
 lifecycle:
     change_history:
         - date: "2026-05-30T08:43:46Z"

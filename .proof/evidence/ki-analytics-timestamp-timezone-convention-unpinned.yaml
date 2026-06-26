@@ -5,18 +5,12 @@ requirements:
     - SW-REQ-009
     - SW-REQ-015
     - SW-REQ-073
-    - SW-REQ-040
-    - SW-REQ-041
-    - SW-REQ-042
-    - SW-REQ-043
-    - SW-REQ-044
-    - SW-REQ-045
-command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored rg -n 'TimeStamp.*time\.Time|\.In\(loc\)|json:"timestamp"' analytics/analytics.go analytics/aggregate.go analytics/uptime_data.go
+command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored rg -n 'TimeStamp.*time\.Time|LastTime.*time\.Time|json:"timestamp"' analytics/analytics.go analytics/aggregate.go analytics/uptime_data.go
 status: pass
 observed_result: known_issue_reproduced
-executed_at: "2026-06-26T15:20:04Z"
+executed_at: "2026-06-26T20:10:13Z"
 input_set:
-    - KI analytics-timestamp-timezone-convention-unpinned static timestamp convention scan
+    - KI analytics-timestamp-timezone-convention-unpinned static analytics timestamp convention scan
 freshness_hashes:
     analytics/aggregate.go: sha256:3278ce6864b742a4db2c8d9a2957972eb763b88bc978421a6bde4ba36f1c3317
     analytics/analytics.go: sha256:c8364178228f27741d17e5e7e620abdfb0ef68a63532c45a56f1ee5a795655f4

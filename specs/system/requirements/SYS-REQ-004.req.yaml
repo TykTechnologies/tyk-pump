@@ -73,7 +73,7 @@ lifecycle:
         - date: "2026-05-30T08:32:34Z"
           from: release_disposition=
           to: release_disposition=ship_with_known_issue
-          reason: 'KI no-panic-recovery-in-exec-pump-writing: panicking pump crashes whole process'
+          reason: 'KI pump-fanout-panic-not-recovered: panicking pump crashes whole process'
           changed_by: human:cli
         - date: "2026-06-02T05:02:36Z"
           from: approved

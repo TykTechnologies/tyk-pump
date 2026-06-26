@@ -1,12 +1,27 @@
 id: pump-fanout-panic-not-recovered
-title: execPumpWriting inner goroutine lacks defer recover; a pump panic crashes the host process
-description: main.go:469 spawns an inner goroutine per pump per purge cycle to invoke pmp.WriteData. The goroutine body has no defer recover(). Per Go semantics ("an unrecovered panic in a goroutine terminates the program"), a panic inside any pump implementation (commonly third-party SDK bugs in mongo driver, kafka client, prometheus client, etc.) crashes the entire tyk-pump host process — taking down every other pump and the purge loop with it. Wave 3c TestFanoutPanicIsolated_PanicInOneDoesNotStallOthers (subprocess re-exec harness) confirmed the missing recover empirically. This is a re-confirmation + test-anchored verification of the existing KI no-panic-recovery-in-exec-pump-writing (which describes the same surface but does not yet have a verifying test reference). Filed as a sibling so the Wave 3c test has a 1:1 KI mapping; both should be remediated together.
+title: Pump fanout goroutines lack recover barriers; a pump panic crashes the host process
+description: main.go:469 spawns an inner goroutine per pump per purge cycle to invoke pmp.WriteData. The goroutine body has no defer recover(). Per Go semantics ("an unrecovered panic in a goroutine terminates the program"), a panic inside any pump implementation (commonly third-party SDK bugs in mongo driver, kafka client, prometheus client, etc.) crashes the entire tyk-pump host process — taking down every other pump and the purge loop with it. Several pump-internal goroutines also lack local recover barriers. TestFanoutPanicIsolated_PanicInOneDoesNotStallOthers (subprocess re-exec harness) confirms the main fanout missing-recover path empirically. This is the canonical KI for the older duplicate no-panic-recovery-in-exec-pump-writing and the accepted risk pump-panic-crashes-process.
 affected_requirements:
     - SW-REQ-001
     - SYS-REQ-004
+    - SW-REQ-024
+    - SW-REQ-037
+    - SW-REQ-040
+    - SW-REQ-041
+    - SW-REQ-045
+    - SW-REQ-064
+    - SW-REQ-065
+    - SW-REQ-066
+    - SW-REQ-067
     - SW-REQ-075
 evidence_manifests:
     - test:fanout_panic_isolated_test.go:TestFanoutPanicIsolated_PanicInOneDoesNotStallOthers
+    - code_signal:opengrep:go.goroutine.no-recover:pumps/graph_mongo.go:114
+    - code_signal:opengrep:go.goroutine.no-recover:pumps/mcp_sql_aggregate.go:143
+    - code_signal:opengrep:go.goroutine.no-recover:pumps/mongo.go:429
+    - code_signal:opengrep:go.goroutine.no-recover:pumps/prometheus.go:215
+    - code_signal:opengrep:go.goroutine.no-recover:pumps/sql.go:498
+    - code_signal:opengrep:go.goroutine.no-recover:pumps/sql_aggregate.go:182
     - .proof/evidence/ki-pump-fanout-panic-not-recovered.yaml
 severity: medium
 severity_basis: risk
@@ -23,7 +38,7 @@ remediation: |-
               ch <- fmt.Errorf("pump panic: %v", r)
           }
       }()
-    This converts a host-process crash into a per-pump WriteData error, which execPumpWriting already handles (logs + continues). Same surface as KI no-panic-recovery-in-exec-pump-writing; remediation should land in one PR.
+    This converts a host-process crash into a per-pump WriteData error, which execPumpWriting already handles (logs + continues). The older no-panic-recovery-in-exec-pump-writing record is retained only as a legacy alias for this same remediation.
 owner: tyk-team
 review_date: "2026-11-30"
 release_disposition: ship_with_known_issue
@@ -65,6 +80,11 @@ history:
       by: agent:codex
       action: edit
       detail: correct-root-level-verifying-test-path
+    - at: "2026-06-26T21:30:00Z"
+      by: agent:codex
+      action: merge
+      detail: canonicalized duplicate no-panic-recovery-in-exec-pump-writing and accepted-risk pump-panic-crashes-process under this KI
 references:
     - related-ki:no-panic-recovery-in-exec-pump-writing
+    - accepted-risk:pump-panic-crashes-process
 verifying_test: fanout_panic_isolated_test.go::TestFanoutPanicIsolated_PanicInOneDoesNotStallOthers

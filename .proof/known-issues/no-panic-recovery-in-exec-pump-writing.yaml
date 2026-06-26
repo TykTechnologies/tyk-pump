@@ -1,6 +1,6 @@
 id: no-panic-recovery-in-exec-pump-writing
-title: execPumpWriting has no defer recover; a panicking pump crashes the whole process
-description: 'main.go:435 execPumpWriting (and the inner goroutine at main.go:468) have no ''defer recover()''. Any panic in a backend pump''s WriteData call propagates up the goroutine and crashes the whole tyk-pump process. SYS-REQ-004''s per-backend independence claim is therefore violated: a single panicking pump implementation takes down every other pump and stops the purge loop entirely.'
+title: Legacy alias for pump-fanout-panic-not-recovered
+description: 'Legacy record for the same missing recover-barrier behavior now tracked canonically by pump-fanout-panic-not-recovered. main.go:435 execPumpWriting (and the inner goroutine at main.go:468) have no ''defer recover()''. Any panic in a backend pump''s WriteData call propagates up the goroutine and crashes the whole tyk-pump process. The code-signal sites that were first attached to this record have been copied to the canonical KI so future deferrals can use a single issue ID.'
 affected_requirements:
     - SYS-REQ-004
     - SW-REQ-024
@@ -80,3 +80,9 @@ history:
       by: agent:codex
       action: edit
       detail: set-reproducer-command,add-evidence-manifest
+    - at: "2026-06-26T21:30:00Z"
+      by: agent:codex
+      action: merge
+      detail: retained as legacy alias; future deferrals use pump-fanout-panic-not-recovered
+references:
+    - canonical-ki:pump-fanout-panic-not-recovered

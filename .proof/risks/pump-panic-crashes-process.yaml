@@ -3,6 +3,8 @@ title: Pump goroutine panic crashes entire tyk-pump process (no recover)
 description: Accept that main.go:435 execPumpWriting lacks defer recover(). A panicking pump goroutine takes down all sibling pumps and the purge loop.
 affected_requirements:
     - SYS-REQ-004
+    - SW-REQ-001
+    - SW-REQ-075
 mitigation: Run tyk-pump under a process supervisor (k8s, systemd) so a crash is auto-restarted; avoid panic-prone pump configurations.
 customer_impact: A panic in any pump implementation causes a brief outage of all analytics persistence until process supervisor restarts the pod.
 owner: tyk-team
@@ -16,3 +18,7 @@ history:
       by: human:buger
       action: accepted
       detail: accepted_by=human:leo
+    - at: "2026-06-26T21:30:00Z"
+      by: agent:codex
+      action: merge
+      detail: linked accepted risk to canonical KI pump-fanout-panic-not-recovered; duplicate KI retained as legacy alias
