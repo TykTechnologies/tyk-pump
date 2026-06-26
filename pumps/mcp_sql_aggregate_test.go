@@ -382,6 +382,42 @@ func TestMCPSQLAggregatePump_ensureMCPAggregateShardedTable_SQLite(t *testing.T)
 }
 
 // Verifies: SW-REQ-045
+// Verifies: KI:mcp-sql-aggregate-background-index-concurrency-unbounded
+// Reproduces: mcp-sql-aggregate-background-index-concurrency-unbounded
+func TestMCPSQLAggregateEnsureIndexBackgroundFailureIsNotSurfaced_KI(t *testing.T) {
+	tableName := sanitizeTableName("ki_mcp_agg_bg_index", t.Name())
+	db := setupTestDBWithJSONTags(t)
+	sqlDB, err := db.DB()
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, sqlDB.Close()) })
+	require.NoError(t, db.Table(tableName).AutoMigrate(&analytics.MCPSQLAnalyticsRecordAggregate{}))
+
+	pump := &MCPSQLAggregatePump{
+		db:                     db.Table(tableName),
+		dbType:                 "postgres",
+		backgroundIndexCreated: make(chan bool, 1),
+		SQLConf: &SQLAggregatePumpConf{
+			SQLConf: SQLConf{
+				Type:      "sqlite",
+				BatchSize: SQLDefaultQueryBatchSize,
+			},
+		},
+	}
+	pump.log = log.WithField("prefix", mcpSQLAggregatePrefix)
+
+	err = pump.ensureIndex(tableName, true)
+	require.NoError(t, err)
+
+	select {
+	case <-pump.backgroundIndexCreated:
+		t.Fatal("background index failure should not report readiness")
+	case <-time.After(200 * time.Millisecond):
+	}
+	indexName := fmt.Sprintf("%s_%s", tableName, newAggregatedIndexName)
+	assert.False(t, db.Migrator().HasIndex(tableName, indexName))
+}
+
+// Verifies: SW-REQ-045
 func TestMCPSQLAggregatePump_WriteData_SkipsNonMCP_SQLite(t *testing.T) {
 	pump := newMCPSQLAggregatePumpWithSQLite(t, 100, false)
 	ts := time.Date(2025, 6, 15, 10, 0, 0, 0, time.UTC)
