@@ -3,10 +3,12 @@ title: Prometheus metric aggregation maps are mutated without synchronization
 description: PrometheusMetric.Inc, Observe, and Expose mutate counterMap and histogramMap without a mutex or other synchronization. If WriteData/processMetric/Expose are invoked concurrently for the same metric, Go map writes can race or panic, so SW-REQ-024's concurrent race evidence cannot be honestly claimed until the metric aggregation state is protected or made single-threaded by design.
 affected_requirements:
     - SW-REQ-024
+evidence_manifests:
+    - .proof/evidence/ki-prometheus-metric-maps-race.yaml
 severity: medium
 severity_basis: risk
 risk: data_integrity
-reproducer_command: rg -n "counterMap map\[string\]counterStruct|histogramMap[[:space:]]+map\[string\]histogramCounter|pm\.counterMap\[|pm\.histogramMap\[|pm\.counterMap = make|pm\.histogramMap = make" pumps/prometheus.go
+reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored rg -n 'metricData|map\[string\]|counterMap|histogramMap' pumps/prometheus.go
 introduced_in: inception
 mitigation: Avoid concurrent WriteData calls against the same PrometheusPump instance; production purge dispatch should serialize writes per pump until the metric maps are protected.
 remediation: Add synchronization around PrometheusMetric counterMap/histogramMap mutations or replace the aggregation state with concurrency-safe structures, then add a go test -race witness for concurrent WriteData/processMetric.
@@ -30,3 +32,7 @@ history:
       by: agent:codex
       action: review
       detail: reviewer=human:buger,new_review_date=2026-11-30
+    - at: "2026-06-26T15:20:20Z"
+      by: agent:codex
+      action: edit
+      detail: set-reproducer-command,add-evidence-manifest

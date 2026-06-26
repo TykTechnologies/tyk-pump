@@ -3,10 +3,12 @@ title: Analytics trimString truncates by bytes and may split multibyte text
 description: analytics/analytics.go:337-343 converts the input string to bytes, truncates the byte buffer, and converts the result back to string. If the input contains multibyte UTF-8 near the boundary, the resulting string can contain invalid UTF-8. The code-signal therefore raises binary_data_preserved against the analytics owner family; until truncation semantics are specified and tested, this is tracked debt rather than a satisfied binary-preservation claim.
 affected_requirements:
     - SW-REQ-009
+evidence_manifests:
+    - .proof/evidence/ki-analytics-trimstring-byte-truncation-not-unicode-safe.yaml
 severity: low
 severity_basis: risk
 risk: data_integrity
-reproducer_command: rg -n "func trimString|Write\\(\\[\\]byte\\(value\\)\\)|string\\(trimBuffer\\.Bytes\\(\\)\\)" analytics/analytics.go
+reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored rg -n 'func trimString|Write\(\[\]byte\(value\)\)|string\(trimBuffer\.Bytes\(\)\)' analytics/analytics.go
 environment_note: Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source or rerunning the lossy-string-conversion code-signal scan.
 introduced_in: inception
 mitigation: Avoid configuring byte-size limits that split user-visible multibyte text fields where exact Unicode preservation matters.
@@ -27,3 +29,7 @@ history:
       by: agent:codex
       action: review
       detail: reviewer=human:buger,new_review_date=2026-11-30
+    - at: "2026-06-26T15:20:05Z"
+      by: agent:codex
+      action: edit
+      detail: set-reproducer-command,add-evidence-manifest

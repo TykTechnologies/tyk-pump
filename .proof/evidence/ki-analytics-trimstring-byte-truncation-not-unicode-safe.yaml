@@ -1,0 +1,15 @@
+schema_version: proof.evidence_profile.v1
+profile: known_issue_reproducer
+requirements:
+    - SW-REQ-009
+command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored rg -n 'func trimString|Write\(\[\]byte\(value\)\)|string\(trimBuffer\.Bytes\(\)\)' analytics/analytics.go
+status: pass
+observed_result: known_issue_reproduced
+executed_at: "2026-06-26T15:20:06Z"
+input_set:
+    - KI analytics-trimstring-byte-truncation-not-unicode-safe static byte truncation scan
+freshness_hashes:
+    analytics/analytics.go: sha256:c8364178228f27741d17e5e7e620abdfb0ef68a63532c45a56f1ee5a795655f4
+    proof.yaml: sha256:18dd484cb75c5c729bc063c96426b101df78e0c89ec729e39724c18f50367e0e
+known_issues:
+    - analytics-trimstring-byte-truncation-not-unicode-safe

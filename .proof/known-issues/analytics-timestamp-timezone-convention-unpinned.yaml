@@ -22,9 +22,11 @@ evidence_manifests:
     - code_signal:opengrep:go.sql_table_sharding_by_date:pumps/graph_sql_aggregate.go:106
     - code_signal:opengrep:go.sql_table_sharding_by_date:pumps/mcp_sql.go:158
     - code_signal:opengrep:go.sql_table_sharding_by_date:pumps/mcp_sql_aggregate.go:215
+    - .proof/evidence/ki-analytics-timestamp-timezone-convention-unpinned.yaml
 severity: medium
 severity_basis: risk
 risk: data_integrity
+reproducer_command: '>-'
 environment_note: Evidence is tied to the listed evidence_manifests entries; reproduce by rerunning the named test or code-signal scan and inspecting code_signal:opengrep:go.time_field_untagged_tz:analytics/aggregate.go:46.
 introduced_in: inception
 mitigation: Operators should run tyk-gateway and tyk-pump with TZ=UTC so emitted AnalyticsRecord.TimeStamp values are already UTC; this makes date-shard routing and aggregation windows deterministic. Avoid table_sharding across DST boundaries in non-UTC deployments.
@@ -41,3 +43,7 @@ history:
       by: human:buger
       action: edit
       detail: set-severity-basis=risk
+    - at: "2026-06-26T15:20:03Z"
+      by: agent:codex
+      action: edit
+      detail: set-reproducer-command,add-evidence-manifest

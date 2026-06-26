@@ -5,10 +5,12 @@ affected_requirements:
     - SW-REQ-056
 commands:
     - rg -n 'record\.ErrorCode|return nil|PutRecords' pumps/kinesis.go
+evidence_manifests:
+    - .proof/evidence/ki-kinesis-putrecords-per-record-failures-return-nil.yaml
 severity: medium
 severity_basis: risk
 risk: data_integrity
-reproducer_command: rg -n 'record\.ErrorCode|return nil|PutRecords' pumps/kinesis.go
+reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored rg -n 'FailedRecordCount|ErrorCode|PutRecords|return nil' pumps/kinesis.go
 introduced_in: 25683f2
 mitigation: Monitor Kinesis failed-record metrics/logs and keep batches small enough for operational retry handling until WriteData surfaces per-record failures to the purge caller.
 remediation: Inspect PutRecordsOutput.FailedRecordCount and Records[].ErrorCode, return a non-nil error or retry/report failed records, and add mocked evidence that per-record failures are observable to the caller.
@@ -20,3 +22,7 @@ history:
     - at: "2026-06-25T21:48:06Z"
       by: agent:codex
       action: created
+    - at: "2026-06-26T15:20:09Z"
+      by: agent:codex
+      action: edit
+      detail: set-reproducer-command,add-evidence-manifest

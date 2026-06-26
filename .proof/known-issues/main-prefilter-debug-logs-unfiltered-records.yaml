@@ -4,10 +4,12 @@ description: main.go logs decoded analytics records at debug level before the pe
 affected_requirements:
     - SW-REQ-001
     - SYS-REQ-016
+evidence_manifests:
+    - .proof/evidence/ki-main-prefilter-debug-logs-unfiltered-records.yaml
 severity: medium
 severity_basis: risk
 risk: compliance
-reproducer_command: rg -n "Debug.*record|filterData|RemoveIgnoredFields" main.go main_test.go
+reproducer_command: '>-'
 environment_note: Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source and command output.
 introduced_in: inception
 mitigation: Do not enable debug logging in environments where analytics records may carry sensitive fields, or ensure sensitive fields are scrubbed before they enter tyk-pump.
@@ -32,3 +34,7 @@ history:
       by: agent:codex
       action: review
       detail: reviewer=human:buger,new_review_date=2026-11-30
+    - at: "2026-06-26T15:20:12Z"
+      by: agent:codex
+      action: edit
+      detail: set-reproducer-command,add-evidence-manifest
