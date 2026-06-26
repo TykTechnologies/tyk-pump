@@ -89,6 +89,30 @@ func TestAggregateData_ResponseCode400CountsAsErrorBoundary(t *testing.T) {
 }
 
 // Verifies: SW-REQ-011
+// Verifies: SW-REQ-060
+// Verifies: KI:aggregate-counter-replay-not-idempotent
+// Reproduces: aggregate-counter-replay-not-idempotent
+func TestAggregateData_ReplayedRecordOvercounts_KI(t *testing.T) {
+	record := AnalyticsRecord{
+		OrgID:        "org-1",
+		APIID:        "api-1",
+		APIName:      "api-name",
+		ResponseCode: 200,
+		TimeStamp:    time.Date(2026, 6, 25, 10, 0, 0, 0, time.UTC),
+		Latency:      Latency{Total: 10, Upstream: 4},
+		RequestTime:  3,
+	}
+
+	once := AggregateData([]interface{}{record}, false, nil, "", 60)["org-1"]
+	replayed := AggregateData([]interface{}{record, record}, false, nil, "", 60)["org-1"]
+
+	require.Equal(t, once.Total.Hits*2, replayed.Total.Hits)
+	require.Equal(t, once.Total.Success*2, replayed.Total.Success)
+	require.Equal(t, once.Total.TotalRequestTime*2, replayed.Total.TotalRequestTime)
+	require.Equal(t, once.APIID[record.APIID].Hits*2, replayed.APIID[record.APIID].Hits)
+}
+
+// Verifies: SW-REQ-011
 func TestAggregate_Tags(t *testing.T) {
 	recordsEmptyTag := []interface{}{
 		AnalyticsRecord{

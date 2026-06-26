@@ -56,6 +56,17 @@ func TestSetDecodingResponse(t *testing.T) {
 	assert.True(t, actualValue)
 }
 
+// Verifies: SW-REQ-016
+// Verifies: KI:common-setloglevel-nil-log-panic
+// Reproduces: common-setloglevel-nil-log-panic
+func TestCommonPumpConfig_SetLogLevelBeforeInitPanics_KI(t *testing.T) {
+	pump := &CommonPumpConfig{}
+
+	require.Panics(t, func() {
+		pump.SetLogLevel(logrus.DebugLevel)
+	})
+}
+
 // TestPumpEnvVarOverride tests the generic behavior of environment variable overrides
 // for pump configurations. This test validates that the processPumpEnvVars mechanism
 // (which uses mapstructure.Decode + envconfig.Process) correctly overrides configuration

@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/TykTechnologies/tyk-pump/pumps"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
@@ -83,6 +84,29 @@ func TestLoadExampleConf(t *testing.T) {
 		// Checking if the key of the map is equal to the pump type but upper case
 		assert.Equal(t, k, strings.ToUpper(pump.Type))
 	}
+}
+
+// Verifies: SW-REQ-002
+// Verifies: SW-REQ-016
+// Verifies: KI:config-pump-type-whitelist-not-enforced-at-load
+// Reproduces: config-pump-type-whitelist-not-enforced-at-load
+func TestLoadConfig_AcceptsUnknownPumpTypeUntilInitialise_KI(t *testing.T) {
+	defaultPath := ""
+	t.Setenv(ENV_PREVIX+"_OMITCONFIGFILE", "true")
+	t.Setenv(PUMPS_ENV_PREFIX+"_BAD_TYPE", "not-a-real-pump")
+
+	cfg := &TykPumpConfiguration{
+		Pumps: map[string]PumpConfig{
+			"preloaded": {Type: "not-a-real-pump"},
+		},
+	}
+	LoadConfig(&defaultPath, cfg)
+
+	assert.Equal(t, "not-a-real-pump", cfg.Pumps["PRELOADED"].Type)
+	assert.Equal(t, "not-a-real-pump", cfg.Pumps["BAD"].Type)
+
+	_, err := pumps.GetPumpByName(cfg.Pumps["BAD"].Type)
+	assert.Error(t, err)
 }
 
 // Verifies: SW-REQ-002

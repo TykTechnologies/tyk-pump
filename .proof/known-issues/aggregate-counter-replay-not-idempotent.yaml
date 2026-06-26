@@ -9,8 +9,8 @@ evidence_manifests:
 severity: medium
 severity_basis: risk
 risk: data_integrity
-reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored rg -n 'c\.Hits \+=|c\.Success \+=|c\.ErrorTotal \+=|AsChange\(|\$inc' analytics/aggregate.go pumps/mongo_aggregate.go
-environment_note: Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source and command output.
+reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored go test -p=1 -count=1 -timeout=180s -run TestAggregateData_ReplayedRecordOvercounts_KI ./analytics
+environment_note: Run the focused analytics tripwire; it compares one aggregate record with the same record replayed twice and expects counters to overcount under current behavior.
 introduced_in: inception
 mitigation: Rely on the temporal-store at-most-once pop contract and avoid replaying the same analytics batch into aggregate pumps.
 remediation: Introduce a stable event id or replay ledger before aggregation if aggregate replay idempotency is required, then add a replay test proving duplicate input records do not overcount.
@@ -38,3 +38,7 @@ history:
       by: agent:codex
       action: edit
       detail: set-reproducer-command,add-evidence-manifest
+    - at: "2026-06-26T16:28:29Z"
+      by: agent:codex
+      action: edit
+      detail: set-reproducer-command

@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"unicode/utf8"
 )
 
 // File-level MC/DC witness rows for SW-REQ-016 (set-on-struct persistence).
@@ -168,5 +169,15 @@ func TestTrimRawData_RespectsZ3RecordSizeBoundary(t *testing.T) {
 				t.Fatalf("record_exceeds_max_size=%v but TrimRawData(size=%d, max=%d) -> len=%d (didTruncate=%v)", predicate, size, max, got, didTruncate)
 			}
 		})
+	}
+}
+
+// Verifies: SW-REQ-009
+// Verifies: KI:analytics-trimstring-byte-truncation-not-unicode-safe
+// Reproduces: analytics-trimstring-byte-truncation-not-unicode-safe
+func TestTrimStringSplitsMultibyteRune_KI(t *testing.T) {
+	got := trimString(1, "\u00e9")
+	if utf8.ValidString(got) {
+		t.Fatalf("trimString must currently reproduce the known byte-truncation issue; got valid UTF-8 %q", got)
 	}
 }

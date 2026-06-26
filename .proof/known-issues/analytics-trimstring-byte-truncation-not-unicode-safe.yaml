@@ -8,8 +8,8 @@ evidence_manifests:
 severity: low
 severity_basis: risk
 risk: data_integrity
-reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored rg -n 'func trimString|Write\(\[\]byte\(value\)\)|string\(trimBuffer\.Bytes\(\)\)' analytics/analytics.go
-environment_note: Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source or rerunning the lossy-string-conversion code-signal scan.
+reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored go test -p=1 -count=1 -timeout=180s -run TestTrimStringSplitsMultibyteRune_KI ./analytics
+environment_note: Run the focused analytics tripwire; it truncates a two-byte UTF-8 sequence to one byte and expects the current invalid UTF-8 output.
 introduced_in: inception
 mitigation: Avoid configuring byte-size limits that split user-visible multibyte text fields where exact Unicode preservation matters.
 remediation: Define whether truncation is byte-based or rune/grapheme-based; if text preservation is required, truncate on valid UTF-8 boundaries and add boundary tests.
@@ -33,3 +33,7 @@ history:
       by: agent:codex
       action: edit
       detail: set-reproducer-command,add-evidence-manifest
+    - at: "2026-06-26T16:28:29Z"
+      by: agent:codex
+      action: edit
+      detail: set-reproducer-command
