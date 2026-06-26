@@ -252,6 +252,42 @@ func TestSplunkInit(t *testing.T) {
 }
 
 // Verifies: SW-REQ-048
+// Verifies: KI:splunk-newsplunkclient-mutates-default-transport
+// Reproduces: splunk-newsplunkclient-mutates-default-transport
+func TestNewSplunkClientMutatesDefaultTransport_KI(t *testing.T) {
+	previousTransport := http.DefaultClient.Transport
+	sentinelTransport := &http.Transport{}
+	http.DefaultClient.Transport = sentinelTransport
+	t.Cleanup(func() {
+		if transport, ok := http.DefaultClient.Transport.(*http.Transport); ok && transport != sentinelTransport {
+			transport.CloseIdleConnections()
+		}
+		sentinelTransport.CloseIdleConnections()
+		http.DefaultClient.Transport = previousTransport
+	})
+
+	client, err := newSplunkClient(
+		&splunkClientConfig{
+			token:        testToken,
+			collectorURL: testEndpointURL,
+		},
+		splunkTestLog,
+	)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, client)
+	if client.httpClient != http.DefaultClient {
+		t.Fatalf("newSplunkClient should currently return the process-global default HTTP client")
+	}
+	if http.DefaultClient.Transport == sentinelTransport {
+		t.Fatalf("newSplunkClient should currently replace http.DefaultClient.Transport")
+	}
+	transport, ok := http.DefaultClient.Transport.(*http.Transport)
+	assert.True(t, ok)
+	assert.NotNil(t, transport.Proxy)
+}
+
+// Verifies: SW-REQ-048
 // Notes: net/http caches ProxyFromEnvironment via sync.Once at first request
 // dispatch. Any earlier test that fires an HTTP request through
 // http.DefaultClient.Transport (which newSplunkClient mutates) will lock the

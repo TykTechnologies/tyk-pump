@@ -4,14 +4,16 @@ description: 'pumps/splunk.go:325 sets http.DefaultClient.Transport = &http.Tran
 affected_requirements:
     - SW-REQ-048
 commands:
-    - go test -count=1 -run 'TestSplunkPump_|Test_SplunkProxyFromEnvironment' ./pumps
+    - PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored go test -p=1 -count=1 -timeout=180s -run '^TestNewSplunkClientMutatesDefaultTransport_KI$' ./pumps
 evidence_manifests:
     - code_signal:opengrep:go.http.default-transport-mutation:pumps/splunk.go:325
+    - test:pumps/splunk_test.go:TestNewSplunkClientMutatesDefaultTransport_KI
     - .proof/evidence/ki-splunk-newsplunkclient-mutates-default-transport.yaml
 severity: low
 severity_basis: risk
 risk: correctness
-reproducer_command: rg -n 'http\.DefaultClient\.Transport' pumps/splunk.go
+reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored go test -p=1 -count=1 -timeout=180s -run '^TestNewSplunkClientMutatesDefaultTransport_KI$' ./pumps
+environment_note: Run the focused Splunk tripwire; it installs a sentinel http.DefaultClient.Transport, calls newSplunkClient, proves the global transport was replaced and that the client points at the process-global default HTTP client, then restores the original transport.
 introduced_in: inception
 mitigation: Tests use per-test http.Transport with explicit Proxy func to bypass the cached ProxyFromEnvironment lookup.
 remediation: Stop mutating http.DefaultClient.Transport in newSplunkClient. Build a private *http.Client on the SplunkClient with its own *http.Transport so the global default is never touched. Remove the runtime mutation and store the client on c.httpClient directly.
@@ -47,3 +49,7 @@ history:
       by: agent:codex
       action: edit
       detail: set-reproducer-command,set-release-disposition=ship_with_known_issue
+    - at: "2026-06-26T17:00:59Z"
+      by: agent:codex
+      action: edit
+      detail: add-executable-transport-mutation-tripwire
