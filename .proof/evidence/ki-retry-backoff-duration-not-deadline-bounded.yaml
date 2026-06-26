@@ -5,7 +5,7 @@ requirements:
 command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored rg -n 'WithMaxRetries|NewExponentialBackOff|maxRetries' retry/http-retry.go
 status: pass
 observed_result: known_issue_reproduced
-executed_at: "2026-06-26T15:28:22Z"
+executed_at: "2026-06-26T16:58:28Z"
 input_set:
     - KI retry-backoff-duration-not-deadline-bounded static retry budget scan
 freshness_hashes:
