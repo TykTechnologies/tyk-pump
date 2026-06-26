@@ -10,6 +10,7 @@ package pumps
 import (
 	"context"
 	"encoding/base64"
+	"strings"
 	"testing"
 	"time"
 
@@ -87,4 +88,44 @@ func TestGraylogPump_WriteData_ValidBase64(t *testing.T) {
 
 	got := drainBytes(sink, 2*time.Second)
 	require.NotEmpty(t, got)
+}
+
+// TestGraylogPump_NilClientRecursiveWriteDataDuplicatesData_KI reproduces the
+// defensive nil-client path: WriteData connects, recursively writes once, then
+// falls through and writes the same record again.
+// Verifies: SW-REQ-049
+// Verifies: KI:graylog-nil-client-recursive-writedata-duplicates-data
+// Reproduces: graylog-nil-client-recursive-writedata-duplicates-data
+// SW-REQ-049:output_cardinality_bounded:negative
+func TestGraylogPump_NilClientRecursiveWriteDataDuplicatesData_KI(t *testing.T) {
+	addr, sink := newUDPSink(t)
+	host, port := graylogAddrParts(t, addr)
+
+	pump := &GraylogPump{
+		conf: &GraylogConf{
+			GraylogHost: host,
+			GraylogPort: port,
+			Tags:        []string{"path"},
+		},
+		CommonPumpConfig: CommonPumpConfig{log: silentLog()},
+	}
+
+	require.NoError(t, pump.WriteData(context.Background(), []interface{}{
+		analytics.AnalyticsRecord{
+			Path:        "/graylog-dup-ki",
+			RawRequest:  base64.StdEncoding.EncodeToString(nil),
+			RawResponse: base64.StdEncoding.EncodeToString(nil),
+			TimeStamp:   time.Now(),
+		},
+	}))
+
+	got := drainBytes(sink, 2*time.Second)
+	require.GreaterOrEqual(t, len(got), 2, "nil-client recursion should duplicate one input record")
+
+	all := strings.Builder{}
+	for _, dgram := range got {
+		all.WriteString(decompressGELF(dgram))
+		all.WriteByte('\n')
+	}
+	assert.GreaterOrEqual(t, strings.Count(all.String(), "/graylog-dup-ki"), 2)
 }

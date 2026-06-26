@@ -4,12 +4,13 @@ description: 'pumps/graylog.go:107-114 (WriteData): if p.client == nil, the code
 affected_requirements:
     - SW-REQ-049
 evidence_manifests:
+    - test:pumps/graylog_test.go:TestGraylogPump_NilClientRecursiveWriteDataDuplicatesData_KI
     - .proof/evidence/ki-graylog-nil-client-recursive-writedata-duplicates-data.yaml
 severity: low
 severity_basis: risk
 risk: data_integrity
-reproducer_command: rg -n "p\.WriteData\(ctx, data\)" pumps/graylog.go
-environment_note: Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source or documentation surface and following the described scenario.
+reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored go test -p=1 -count=1 -timeout=180s -run '^TestGraylogPump_NilClientRecursiveWriteDataDuplicatesData_KI$' ./pumps
+environment_note: Run the focused local-UDP tripwire under the memory monitor. The test constructs a Graylog pump with configuration but a nil client, writes one record, and observes two GELF datagrams after the defensive recursive WriteData path falls through; no external Graylog service or container is required.
 introduced_in: inception
 mitigation: The nil-client branch is defensive plumbing; production Init always calls connect() so the branch is dormant. Operators do not need to take action unless they observe duplicated graylog events.
 remediation: 'Add ''return p.WriteData(ctx, data)'' (with explicit return) so the recursive call''s result is returned and control does not fall through. Better: drop the defensive nil-check entirely and require Init to have run.'
@@ -37,3 +38,7 @@ history:
       by: agent:codex
       action: edit
       detail: add-evidence-manifest
+    - at: "2026-06-26T17:44:43Z"
+      by: agent:codex
+      action: edit
+      detail: add-local-udp-duplicate-send-tripwire
