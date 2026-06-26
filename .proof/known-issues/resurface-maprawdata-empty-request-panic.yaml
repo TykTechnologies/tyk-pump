@@ -8,8 +8,13 @@ commands:
 severity: high
 severity_basis: risk
 risk: availability
+cve_surface: possible
+affected_api: Resurface pump WriteData/mapRawData raw HTTP analytics-record handling
+attacker_input: analytics record with empty RawRequest and non-empty RawResponse derived from gateway traffic or upstream record production
+sanitizer: go-test:panic-tripwire
 reproducer_command: go test -count=1 -run 'TestResurfacePump_MapRawData_EmptyRequest_PanicKI' ./pumps
 introduced_in: inception
+minimization_status: minimized
 mitigation: Operators must ensure every analytics record has both RawRequest and RawResponse populated before reaching the resurface pump.
 remediation: Either tighten the early-return guard in writeData to skip records with EITHER side empty (change && to ||), or harden mapRawData against empty rawReq/rawRes inputs by returning an error instead of indexing.
 owner: tyk-team
@@ -28,3 +33,7 @@ history:
       by: human:buger
       action: edit
       detail: set-severity-basis=risk,set-risk
+    - at: "2026-06-26T14:12:22Z"
+      by: agent:codex
+      action: edit
+      detail: set-cve-surface=possible,set-affected-api,set-attacker-input,set-sanitizer,set-minimization-status=minimized

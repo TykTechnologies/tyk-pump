@@ -18,8 +18,14 @@ evidence_manifests:
 severity: high
 severity_basis: risk
 risk: data_integrity
+cve_surface: possible
+affected_api: Pump.WriteData implementations and main.execPumpWriting success/error accounting
+attacker_input: backend write failure, malformed batch member, or downstream service partial failure crossing the pump backend trust boundary
+sanitizer: manual:contract-audit+go-test-tripwire
+reproducer_command: go test -count=1 -run '^TestSQLPumpWriteDataSwallowsBatchError_KI$' ./pumps
 environment_note: Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source or documentation surface and following the described scenario.
 introduced_in: inception
+minimization_status: candidate
 mitigation: Operators must inspect pump logs for per-batch errors; the WriteData return value is currently a weak signal.
 remediation: Refactor each named pump's WriteData to wrap per-batch errors into a multierr or surface the last error; update tests + KI status to fixed.
 owner: tyk-team
@@ -50,3 +56,11 @@ history:
       by: agent:codex
       action: edit
       detail: narrow-scope-standard-mongo-writedata-now-covered-by-SW-REQ-034
+    - at: "2026-06-26T14:12:22Z"
+      by: agent:codex
+      action: edit
+      detail: set-cve-surface=possible,set-affected-api,set-attacker-input,set-sanitizer,set-minimization-status=candidate
+    - at: "2026-06-26T14:12:56Z"
+      by: agent:codex
+      action: edit
+      detail: set-reproducer-command

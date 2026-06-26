@@ -237,14 +237,14 @@ through `stdout-writedata-swallows-ctx-error`.
 
 | Item | Type | Verdict | Evidence Checked | Action |
 | --- | --- | --- | --- | --- |
-| `sql-default-migration-today-only` | KnownIssue | `valid` | `TestMCDC_KI_DefaultMigrationTodayOnly` directly proves default `MigrateShardedTables=false` leaves prior-day shard schema untouched. | Stamped review date `2026-11-30`. |
+| `sql-default-migration-today-only` | KnownIssue | `valid` | `TestMCDC_KI_DefaultMigrationTodayOnly` directly proves default `MigrateShardedTables=false` leaves prior-day shard schema untouched. | Stamped review date `2026-11-30`; attached and refreshed `.proof/evidence/ki-sql-default-migration-today-only.yaml`. |
 | `sql-ensureindex-name-mismatch-prevents-skip` | KnownIssue | `valid` | Static code path remains: `HasIndex` name lacks the underscore used by `createIndex`; duplicate create is guarded by DDL. | No change needed; already reviewed through `2026-11-30`. |
 | `sql-schema-no-version-policy` | KnownIssue | `valid` | Static source check correctly shows AutoMigrate-only schema management and no schema-version manifest/table policy. | Stamped review date `2026-11-30`. |
 | `sql-standard-mysql-create-index-if-not-exists-unsupported` | KnownIssue | `needs_reproducer_hardening` | Static DDL construction is real, but there is no focused MySQL syntax/rejection witness. | No metadata change; already reviewed through `2026-11-30`; backlog remains a dialect witness. |
-| `sqs-batch-partial-failures-ignored` | KnownIssue | `valid` | Added focused mock SQS test proving `SendMessageBatchOutput.Failed` is ignored when API-level error is nil. | Added evidence pointer and stamped review date `2026-11-30`. |
-| `sqs-batchlimit-zero-infinite-loop` | KnownIssue | `valid` | Executing the zero-limit path would hang; added bounded static tripwire for the loop shape. | Added evidence pointer; already reviewed through `2026-11-30`. |
-| `sqs-malformed-record-sends-empty-entry` | KnownIssue | `valid` | Existing KI test proves a malformed input leaves a zero-value SQS entry in the sent batch. | Stamped review date `2026-11-30`. |
-| `stdout-writedata-swallows-ctx-error` | KnownIssue | `valid` | Added focused KI test proving canceled context returns nil instead of `ctx.Err()`. | Added evidence pointer and stamped review date `2026-11-30`. |
+| `sqs-batch-partial-failures-ignored` | KnownIssue | `valid` | Added focused mock SQS test proving `SendMessageBatchOutput.Failed` is ignored when API-level error is nil. | Added evidence pointer, stamped review date `2026-11-30`, and refreshed `.proof/evidence/ki-sqs-batch-partial-failures-ignored.yaml`. |
+| `sqs-batchlimit-zero-infinite-loop` | KnownIssue | `valid` | Executing the zero-limit path would hang; added bounded static tripwire for the loop shape. | Added evidence pointer, security-detail metadata, and refreshed `.proof/evidence/ki-sqs-batchlimit-zero-infinite-loop.yaml`; already reviewed through `2026-11-30`. |
+| `sqs-malformed-record-sends-empty-entry` | KnownIssue | `valid` | Existing KI test proves a malformed input leaves a zero-value SQS entry in the sent batch. | Stamped review date `2026-11-30`; refreshed `.proof/evidence/ki-sqs-malformed-record-sends-empty-entry.yaml`. |
+| `stdout-writedata-swallows-ctx-error` | KnownIssue | `valid` | Added focused KI test proving canceled context returns nil instead of `ctx.Err()`. | Added evidence pointer, stamped review date `2026-11-30`, and refreshed `.proof/evidence/ki-stdout-writedata-swallows-ctx-error.yaml`. |
 
 ## KnownIssue Slice: Storage Through Write Failure
 
@@ -282,11 +282,14 @@ Subagent audit completed for 20 KnownIssues from
 - `PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored go test -p=1 -count=1 -timeout=180s -run '^TestMCDC_KI_DefaultMigrationTodayOnly$' ./pumps`
 - `PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored /Users/buger/go/bin/proof audit --check annotation_validity --check known_issue_complete --check known_issues_reviewed --max-findings 0`
 - `PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored /Users/buger/go/bin/proof known-issue check`
+- `/Users/buger/go/bin/proof evidence validate --strict .proof/evidence/ki-sql-default-migration-today-only.yaml .proof/evidence/ki-sqs-batch-partial-failures-ignored.yaml .proof/evidence/ki-sqs-batchlimit-zero-infinite-loop.yaml .proof/evidence/ki-sqs-malformed-record-sends-empty-entry.yaml .proof/evidence/ki-stdout-writedata-swallows-ctx-error.yaml`
 
 Latest focused Proof result: `Errors: 0`, `Warnings: 0` for
 `annotation_validity`, `known_issue_complete`, and `known_issues_reviewed`.
-Latest `proof known-issue check` result: exit code `0`; summary
-`status=open:50,reviewed:94 severity=high:7,low:55,medium:82`; remaining
-closure debt is primarily missing current reproducer-evidence manifests, plus a
-small number of security-detail fields. These are reflected in the per-item
-`needs_reproducer_hardening` and `needs_metadata_hardening` verdicts.
+Latest `proof known-issue check` result after the evidence/security-detail
+slice: exit code `0`; summary
+`status=open:50,reviewed:94 severity=high:7,low:55,medium:82 cve_surface=possible:7 security_relevant=7`.
+Remaining closure debt is `133` missing current reproducer-evidence manifests;
+security-detail metadata findings are closed. The remaining evidence debt is
+reflected in the per-item `needs_reproducer_hardening` and
+`needs_metadata_hardening` verdicts.

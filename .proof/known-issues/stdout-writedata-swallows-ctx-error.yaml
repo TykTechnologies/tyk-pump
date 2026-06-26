@@ -6,6 +6,7 @@ affected_requirements:
     - INT-REQ-004
 evidence_manifests:
     - test:pumps/stdout_test.go:TestStdOutPump_WriteData_ContextCancelled_KI
+    - .proof/evidence/ki-stdout-writedata-swallows-ctx-error.yaml
 severity: low
 severity_basis: risk
 risk: data_integrity
@@ -34,3 +35,7 @@ history:
       by: agent:codex
       action: review
       detail: reviewer=human:buger,new_review_date=2026-11-30
+    - at: "2026-06-26T14:10:04Z"
+      by: agent:codex
+      action: edit
+      detail: add-evidence-manifest

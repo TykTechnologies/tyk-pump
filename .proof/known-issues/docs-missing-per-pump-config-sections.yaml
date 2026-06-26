@@ -8,8 +8,13 @@ commands:
 severity: high
 severity_basis: risk
 risk: correctness
+cve_surface: possible
+affected_api: tyk-docs per-pump configuration reference
+attacker_input: operator configuration for pump types missing documented meta fields; non_attacker_trigger unless paired with unsafe deployment assumptions
+sanitizer: manual:documentation-gap
 reproducer_command: grep -E 'pmp\..*=' /Users/buger/go/src/tyk-pump/pumps/init.go | head -40
 introduced_in: inception
+minimization_status: candidate
 mitigation: Code comments in each pump source file enumerate the config keys; per-pump *_test.go files show example configs.
 remediation: Add per-pump configuration sections in tyk-docs/content/shared/pump-config.md for all 11 missing pump types. Highest priority for the four MCP variants (entire feature surface invisible).
 owner: tyk-team
@@ -28,3 +33,7 @@ history:
       by: human:buger
       action: edit
       detail: set-severity-basis=risk,set-risk
+    - at: "2026-06-26T14:12:22Z"
+      by: agent:codex
+      action: edit
+      detail: set-cve-surface=possible,set-affected-api,set-attacker-input,set-sanitizer,set-minimization-status=candidate

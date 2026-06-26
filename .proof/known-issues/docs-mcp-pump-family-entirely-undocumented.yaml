@@ -11,8 +11,13 @@ commands:
 severity: high
 severity_basis: risk
 risk: correctness
+cve_surface: possible
+affected_api: tyk-docs pump configuration and MCP pump operator documentation
+attacker_input: operator configuration for undocumented MCP pump backends; non_attacker_trigger unless paired with unsafe deployment assumptions
+sanitizer: manual:documentation-gap
 reproducer_command: grep -RIn -e 'MCP' -e 'mcp' /Users/buger/go/src/tyk-docs/tyk-docs/content/api-management/tyk-pump.md /Users/buger/go/src/tyk-docs/tyk-docs/content/shared/pump-config.md /Users/buger/go/src/tyk-docs/tyk-docs/content/developer-support/release-notes/pump.md || echo 'no matches'
 introduced_in: inception
+minimization_status: candidate
 mitigation: SW-REQ-038/039/044/045 + per-req docs under docs/requirements/SW-REQ-0{38,39,44,45}.md (in tyk-pump repo) are the de-facto reference.
 remediation: Add (a) an MCP analytics overview section to tyk-docs/content/api-management/tyk-pump.md, (b) per-pump config sections for the 4 MCP backends in tyk-docs/content/shared/pump-config.md (overlaps with KI docs-missing-per-pump-config-sections), (c) release-note entry in tyk-docs/content/developer-support/release-notes/pump.md for the version that introduced MCP.
 owner: tyk-team
@@ -35,3 +40,7 @@ history:
       by: agent:codex
       action: edit
       detail: add-requirement
+    - at: "2026-06-26T14:12:22Z"
+      by: agent:codex
+      action: edit
+      detail: set-cve-surface=possible,set-affected-api,set-attacker-input,set-sanitizer,set-minimization-status=candidate
