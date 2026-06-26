@@ -9,8 +9,8 @@ evidence_manifests:
 severity: medium
 severity_basis: risk
 risk: availability
-reproducer_command: rg -n "OnConflict|Create\\(|tx\\.Error|deadlock|retry" pumps/sql_aggregate.go
-environment_note: Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source and command output.
+reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored go test -p=1 -count=1 -timeout=180s -run '^TestSQLAggregateDoAggregatedWritingDoesNotRetryDeadlock_KI$' ./pumps
+environment_note: Reproducer uses in-memory SQLite and a GORM create callback to inject a retryable-looking deadlock error; no external database or container is required.
 introduced_in: inception
 mitigation: Rely on upstream purge retry/replay behavior and database monitoring for transient deadlock errors; tune database isolation and lock contention externally.
 remediation: Classify retryable SQL deadlock/serialization errors per supported driver, retry the aggregate upsert with bounded backoff, and add a fake-driver or transaction test for retry and final failure cases.
@@ -42,3 +42,7 @@ history:
       by: agent:codex
       action: edit
       detail: add-evidence-manifest
+    - at: "2026-06-26T18:29:29Z"
+      by: agent:codex
+      action: evidence_hardened
+      detail: replaced static retry scan with TestSQLAggregateDoAggregatedWritingDoesNotRetryDeadlock_KI

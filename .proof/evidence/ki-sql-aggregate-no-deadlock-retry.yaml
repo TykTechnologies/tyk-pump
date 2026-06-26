@@ -3,14 +3,15 @@ profile: known_issue_reproducer
 requirements:
     - SW-REQ-041
     - SW-REQ-067
-command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored rg -n 'OnConflict|Create\(|tx\.Error|deadlock|retry' pumps/sql_aggregate.go
+command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored go test -p=1 -count=1 -timeout=180s -run '^TestSQLAggregateDoAggregatedWritingDoesNotRetryDeadlock_KI$' ./pumps
 status: pass
 observed_result: known_issue_reproduced
-executed_at: "2026-06-26T15:31:57Z"
+executed_at: "2026-06-26T18:30:14Z"
 input_set:
-    - KI sql-aggregate-no-deadlock-retry static aggregate retry scan
+    - KI sql-aggregate-no-deadlock-retry SQLite/GORM deadlock callback witness
 freshness_hashes:
     proof.yaml: sha256:18dd484cb75c5c729bc063c96426b101df78e0c89ec729e39724c18f50367e0e
     pumps/sql_aggregate.go: sha256:85f542163368da6dc4bd0eaa0aa74bc0b04e3ec69bf64df49ab67a8742b7c92a
+    pumps/sql_aggregate_test.go: sha256:cc548fe82d624acd8b951500fecbd9606906b83507b01e12f75b40c6bb4c077b
 known_issues:
     - sql-aggregate-no-deadlock-retry

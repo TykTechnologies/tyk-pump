@@ -443,6 +443,59 @@ func TestSQLAggregateDoAggregatedWritingReturnsCreateErrorWithoutRows_KI(t *test
 	assert.Zero(t, rowCount)
 }
 
+// Verifies: SW-REQ-041
+// Verifies: SW-REQ-067
+// Verifies: KI:sql-aggregate-no-deadlock-retry
+// Reproduces: sql-aggregate-no-deadlock-retry
+func TestSQLAggregateDoAggregatedWritingDoesNotRetryDeadlock_KI(t *testing.T) {
+	tableName := sanitizeTableName("ki_agg_deadlock", t.Name())
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
+		AutoEmbedd:  true,
+		UseJSONTags: true,
+		Logger:      logger.Default.LogMode(logger.Silent),
+	})
+	require.NoError(t, err)
+	sqlDB, err := db.DB()
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, sqlDB.Close()) })
+	require.NoError(t, db.Table(tableName).AutoMigrate(&analytics.SQLAnalyticsRecordAggregate{}))
+
+	pmp := &SQLAggregatePump{
+		SQLConf: &SQLAggregatePumpConf{
+			SQLConf: SQLConf{
+				Type:      "sqlite",
+				BatchSize: SQLDefaultQueryBatchSize,
+			},
+		},
+		db:     db.Table(tableName),
+		dbType: "sqlite",
+	}
+	pmp.log = log.WithField("prefix", SQLAggregatePumpPrefix)
+
+	deadlockErr := errors.New("deadlock detected")
+	attempts := 0
+	require.NoError(t, db.Callback().Create().Before("gorm:create").Register("reqproof:inject_aggregate_deadlock", func(tx *gorm.DB) {
+		if tx.Statement.Table == tableName {
+			attempts++
+			tx.AddError(deadlockErr)
+		}
+	}))
+
+	record := analytics.AnalyticsRecord{
+		OrgID:        "ki-org",
+		APIID:        "ki-api",
+		Path:         "/deadlock",
+		Method:       http.MethodGet,
+		ResponseCode: http.StatusOK,
+		TimeStamp:    time.Unix(1893456000, 0).UTC(),
+	}
+	ag := analytics.AggregateData([]interface{}{record}, false, nil, "", 60)["ki-org"]
+
+	err = pmp.DoAggregatedWriting(context.Background(), tableName, "ki-org", ag)
+	require.ErrorIs(t, err, deadlockErr)
+	assert.Equal(t, 1, attempts, "KI active: aggregate deadlock/serialization errors are returned without retry")
+}
+
 // Verifies: SW-REQ-066
 // Verifies: KI:sql-aggregate-background-index-concurrency-unbounded
 // Reproduces: sql-aggregate-background-index-concurrency-unbounded
