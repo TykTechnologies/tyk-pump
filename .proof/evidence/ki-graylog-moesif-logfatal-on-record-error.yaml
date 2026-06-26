@@ -7,13 +7,13 @@ requirements:
 command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored go test -p=1 -count=1 -timeout=180s ./pumps -run '^(TestGraylogPump_WriteData_BadBase64Request_Subprocess|TestGraylogPump_WriteData_BadBase64Response_Subprocess|TestMoesifPump_FatalOnBadBase64_KI)$'
 status: pass
 observed_result: known_issue_reproduced
-executed_at: "2026-06-26T15:21:58Z"
+executed_at: "2026-06-26T16:38:35Z"
 input_set:
     - KI graylog-moesif-logfatal-on-record-error subprocess fatal tests
 freshness_hashes:
     proof.yaml: sha256:18dd484cb75c5c729bc063c96426b101df78e0c89ec729e39724c18f50367e0e
     pumps/graylog.go: sha256:3267a8647738fa57f0916b61339bd61edc4cf6e311bc96fdf21cbab6b9dfe421
-    pumps/http_pumps_mcdc_test.go: sha256:c7866f050bb98f4e2d2b9614587d94396ad438e60c3bdc4e1beeee7e4f6cb534
+    pumps/http_pumps_mcdc_test.go: sha256:a3a6cc0079fcdd98d8e683d856036c8afdf232f9cd2b0e61215bd0a88bc4097c
     pumps/moesif.go: sha256:8c931352943067f1c554e5e2bc32521e05fd33fdde6885d4dd9949091518ad32
     pumps/udp_file_pumps_mcdc_100_test.go: sha256:ad8aa594faa6588cabc89e6ef8c0748649b9bf59d40b63747d1355fb93414427
 known_issues:

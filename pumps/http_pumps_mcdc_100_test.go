@@ -455,12 +455,9 @@ func TestSplunkPump_WriteData_NonAnalyticsRecord_KI(t *testing.T) {
 		"collector_url":            cs.srv.URL,
 		"ssl_insecure_skip_verify": true,
 	}))
-	defer func() {
-		if r := recover(); r == nil {
-			t.Log("no panic — splunk WriteData currently does a direct v.(analytics.AnalyticsRecord) assertion that would panic on a string; if the type was guarded, this test would be no-op")
-		}
-	}()
-	_ = pmp.WriteData(context.Background(), []interface{}{"not-a-record"})
+	require.Panics(t, func() {
+		_ = pmp.WriteData(context.Background(), []interface{}{"not-a-record"})
+	})
 }
 
 // TestSplunkPump_WriteData_DefaultEventFields drives the empty-Fields branch

@@ -4,12 +4,13 @@ description: 'pumps/splunk.go:162-177 (FilterTags): the inner loop is ''for key,
 affected_requirements:
     - SW-REQ-048
 evidence_manifests:
+    - test:pumps/http_pumps_mcdc_test.go:TestSplunkPump_FilterTagsSkipsConsecutiveMatches_KI
     - .proof/evidence/ki-splunk-filtertags-skips-consecutive-matches.yaml
 severity: medium
 severity_basis: risk
 risk: data_integrity
-reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored rg -n 'range filteredTags|copy\(filteredTags\[key:\]' pumps/splunk.go
-environment_note: Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source or documentation surface and following the described scenario.
+reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored go test -p=1 -count=1 -timeout=180s -run TestSplunkPump_FilterTagsSkipsConsecutiveMatches_KI ./pumps
+environment_note: Run the focused Splunk tripwire; it filters two consecutive tags with the same ignored prefix and expects the second ignored tag to remain under current behavior.
 introduced_in: inception
 mitigation: 'Operators using ignore_tag_prefix_list should audit Splunk index for un-filtered tags after deploys. Workaround: list each prefix that could appear consecutively as a separate distinct prefix to avoid the slip pattern.'
 remediation: 'Replace the in-place shift with a filter-and-rebuild: ''out := filteredTags[:0]; for _, t := range filteredTags { skip := false; for _, p := range p.config.IgnoreTagPrefixList { if strings.HasPrefix(t,p) { skip = true; break } }; if !skip { out = append(out, t) } }; return out''.'
@@ -37,3 +38,11 @@ history:
       by: agent:codex
       action: edit
       detail: set-reproducer-command,add-evidence-manifest
+    - at: "2026-06-26T16:36:07Z"
+      by: agent:codex
+      action: edit
+      detail: set-reproducer-command
+    - at: "2026-06-26T16:39:10Z"
+      by: agent:codex
+      action: edit
+      detail: add-test-evidence-link

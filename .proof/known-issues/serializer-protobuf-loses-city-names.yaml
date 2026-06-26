@@ -5,12 +5,13 @@ affected_requirements:
     - INT-REQ-003
 evidence_manifests:
     - code_signal:manual:serializer.protobuf-city-names-dropped:serializer/protobuf.go:169
+    - test:serializer/protobuf_mcdc_test.go:TestProtobuf_GeoCityNamesLoss_KI
     - .proof/evidence/ki-serializer-protobuf-loses-city-names.yaml
 severity: medium
 severity_basis: risk
 risk: data_integrity
-reproducer_command: 'PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored rg -n ''City: &analyticsproto\.City|City: analytics\.City|Names: nil|Names:'' serializer/protobuf.go'
-environment_note: Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source or documentation surface and following the described scenario.
+reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored go test -p=1 -count=1 -timeout=180s -run TestProtobuf_GeoCityNamesLoss_KI ./serializer
+environment_note: Run the focused serializer tripwire; it encodes a record with Geo.City.Names, decodes it, and expects the current nil names map.
 introduced_in: inception
 mitigation: Operators reading City.Names from pump-side records will see nil. Gateway-side records still have the data; downstream consumers can re-derive city names from city ID via the GeoIP DB if needed.
 remediation: In serializer/protobuf.go:169, copy the rec.Geo.City.Names map into the analytics.City.Names field (or rebuild it from the protobuf map) so round-trip parity holds.
@@ -42,3 +43,11 @@ history:
       by: agent:codex
       action: edit
       detail: set-reproducer-command,add-evidence-manifest
+    - at: "2026-06-26T16:36:07Z"
+      by: agent:codex
+      action: edit
+      detail: set-reproducer-command
+    - at: "2026-06-26T16:39:10Z"
+      by: agent:codex
+      action: edit
+      detail: add-test-evidence-link

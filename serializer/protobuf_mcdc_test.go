@@ -209,6 +209,36 @@ func TestProtobuf_GraphQLStats_ErrorPathLoss_KI(t *testing.T) {
 	assert.Empty(t, decoded.GraphQLStats.Errors[0].Path)
 }
 
+// KI tripwire for INT-REQ-003; not requirement-success evidence.
+// Verifies: KI:serializer-protobuf-loses-city-names
+// Reproduces: serializer-protobuf-loses-city-names
+func TestProtobuf_GeoCityNamesLoss_KI(t *testing.T) {
+	pb := &ProtobufSerializer{}
+	rec := analytics.AnalyticsRecord{
+		APIID: "api_1",
+		OrgID: "org_1",
+		Geo: analytics.GeoData{
+			City: analytics.City{
+				GeoNameID: 123,
+				Names: map[string]string{
+					"en": "London",
+					"fr": "Londres",
+				},
+			},
+		},
+	}
+
+	buf, err := pb.Encode(&rec)
+	assert.NoError(t, err)
+
+	var decoded analytics.AnalyticsRecord
+	err = pb.Decode(buf, &decoded)
+	assert.NoError(t, err)
+
+	assert.Equal(t, rec.Geo.City.GeoNameID, decoded.Geo.City.GeoNameID)
+	assert.Nil(t, decoded.Geo.City.Names)
+}
+
 // Verifies: SW-REQ-008
 // SW-REQ-008:snapshot_wire_format_compatible:nominal
 func TestProtobuf_GraphQLStats_WireFieldNumbers(t *testing.T) {

@@ -5,12 +5,13 @@ affected_requirements:
     - SW-REQ-030
     - INT-REQ-006
 evidence_manifests:
+    - test:retry/http_retry_test.go:TestBackoffHTTPRetry_Send_4xxBodyReadErrorRetries_KI
     - .proof/evidence/ki-retry-4xx-bodyread-fail-causes-retry.yaml
 severity: medium
 severity_basis: risk
 risk: correctness
-reproducer_command: rg -n "io\.ReadAll\(resp\.Body\)|backoff\.Permanent\(err\)|StatusTooManyRequests|StatusInternalServerError" retry/http-retry.go
-environment_note: Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source or documentation surface and following the described scenario.
+reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored go test -p=1 -count=1 -timeout=180s -run TestBackoffHTTPRetry_Send_4xxBodyReadErrorRetries_KI ./retry
+environment_note: Run the focused retry tripwire; it returns a 400 response whose body read fails and expects the current retry attempt count to reach two attempts.
 introduced_in: inception
 mitigation: Operators should monitor retry warning logs; if a 4xx endpoint shows repeated retry warnings for the same request id, the issue is in play.
 remediation: In retry/http-retry.go:82, distinguish between resp.StatusCode >= 500/==429 (retryable) and other codes (permanent) BEFORE the read; or wrap the read-error with backoff.Permanent when the status code is non-retryable.
@@ -38,3 +39,11 @@ history:
       by: agent:codex
       action: edit
       detail: add-evidence-manifest
+    - at: "2026-06-26T16:36:07Z"
+      by: agent:codex
+      action: edit
+      detail: set-reproducer-command
+    - at: "2026-06-26T16:39:10Z"
+      by: agent:codex
+      action: edit
+      detail: add-test-evidence-link

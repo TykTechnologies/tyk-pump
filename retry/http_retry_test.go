@@ -151,6 +151,31 @@ func TestBackoffHTTPRetry_Send_ResponseBodyReadErrorReturned(t *testing.T) {
 }
 
 // Verifies: SW-REQ-030
+// Verifies: INT-REQ-006
+// Verifies: KI:retry-4xx-bodyread-fail-causes-retry
+// Reproduces: retry-4xx-bodyread-fail-causes-retry
+func TestBackoffHTTPRetry_Send_4xxBodyReadErrorRetries_KI(t *testing.T) {
+	calls := 0
+	client := &http.Client{Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+		calls++
+		return &http.Response{
+			StatusCode: http.StatusBadRequest,
+			Body:       errorReadCloser{},
+			Request:    req,
+		}, nil
+	})}
+
+	r := NewBackoffRetry("test", 1, client, testLogger())
+	req, _ := http.NewRequest(http.MethodGet, "http://example.test", nil)
+	if err := r.Send(req); err == nil {
+		t.Fatal("expected response body read error")
+	}
+	if calls != 2 {
+		t.Fatalf("4xx body-read failure currently retries once; got %d attempt(s)", calls)
+	}
+}
+
+// Verifies: SW-REQ-030
 // SW-REQ-030:error_handling:negative
 func TestBackoffHTTPRetry_Send_DiscardBodyErrorIsLogged(t *testing.T) {
 	client := &http.Client{Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {

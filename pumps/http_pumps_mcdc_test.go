@@ -2337,3 +2337,13 @@ func TestSplunkPump_FilterTags_NoOpWhenNoIgnoreList(t *testing.T) {
 	got := pmp.FilterTags([]string{"a", "b", "c"})
 	assert.Equal(t, []string{"a", "b", "c"}, got)
 }
+
+// Verifies: SW-REQ-048
+// Verifies: KI:splunk-filtertags-skips-consecutive-matches
+// Reproduces: splunk-filtertags-skips-consecutive-matches
+func TestSplunkPump_FilterTagsSkipsConsecutiveMatches_KI(t *testing.T) {
+	pmp := SplunkPump{config: &SplunkPumpConfig{IgnoreTagPrefixList: []string{"ignored-"}}}
+	got := pmp.FilterTags([]string{"ignored-a", "ignored-b", "keep"})
+
+	assert.Equal(t, []string{"ignored-b", "keep"}, got)
+}
