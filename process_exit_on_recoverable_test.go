@@ -35,7 +35,8 @@ import (
 // Why "ratchet" rather than "must be zero"?  We cannot fix all violations in
 // this wave — there are 40+ pre-existing sites tracked under existing KIs
 // (pumps-logfatal-on-config-decode, kafka-logfatal-on-init-mech-and-timeout,
-// graylog-moesif-logfatal-on-record-error, mongo-pump-init-connect-logfatal-unreachable,
+// graylog-record-decode-logfatal, moesif-record-decode-logfatal,
+// moesif-config-read-error-logfatal, mongo-pump-init-connect-logfatal-unreachable,
 // logfatal-on-statsd-setup, and config.go's env-decode Fatal). Wave 4 will
 // triage NEW vs KNOWN findings and either add KIs or remediation.
 // In the meantime this test prevents *regression* — new violations fail loudly.
@@ -87,15 +88,18 @@ func TestProcessExitOnRecoverable_NoNewLogFatalSites(t *testing.T) {
 		"pumps/mongo_aggregate.go:244": "mongo-pump-init-connect-logfatal-unreachable",
 		"pumps/mongo_selective.go:139": "mongo-pump-init-connect-logfatal-unreachable",
 
-		// KI: graylog-moesif-logfatal-on-record-error
-		"pumps/graylog.go:120": "graylog-moesif-logfatal-on-record-error",
-		"pumps/graylog.go:126": "graylog-moesif-logfatal-on-record-error",
-		"pumps/graylog.go:155": "graylog-moesif-logfatal-on-record-error",
-		"pumps/graylog.go:168": "graylog-moesif-logfatal-on-record-error",
-		"pumps/moesif.go:349":  "graylog-moesif-logfatal-on-record-error",
-		"pumps/moesif.go:356":  "graylog-moesif-logfatal-on-record-error",
-		"pumps/moesif.go:379":  "graylog-moesif-logfatal-on-record-error",
-		"pumps/moesif.go:386":  "graylog-moesif-logfatal-on-record-error",
+		// KI: graylog-record-decode-logfatal
+		"pumps/graylog.go:120": "graylog-record-decode-logfatal",
+		"pumps/graylog.go:126": "graylog-record-decode-logfatal",
+		// Defensive marshal arms are structurally unreachable with current value types.
+		"pumps/graylog.go:155": "mcdc-pumps-below-95",
+		"pumps/graylog.go:168": "mcdc-pumps-below-95",
+		// KI: moesif-record-decode-logfatal
+		"pumps/moesif.go:349": "moesif-record-decode-logfatal",
+		"pumps/moesif.go:379": "moesif-record-decode-logfatal",
+		// Defensive decodeRawData arms are structurally unreachable.
+		"pumps/moesif.go:356": "mcdc-pumps-below-95",
+		"pumps/moesif.go:386": "mcdc-pumps-below-95",
 
 		// Elasticsearch version / mid-run fatals — Wave 4 candidate (need new KI
 		// or fold into pumps-logfatal-on-config-decode)
@@ -124,11 +128,8 @@ func TestProcessExitOnRecoverable_NoNewLogFatalSites(t *testing.T) {
 		"main.go:180": "wave4:main-startup-logfatal", // version storage init
 		"main.go:230": "wave4:main-startup-logfatal", // no pumps configured
 
-		// Moesif getConfig parse-failure Fatal — folds into
-		// graylog-moesif-logfatal-on-record-error since it's a per-poll
-		// config refresh path, but the existing KI only enumerates lines
-		// 349/356/379/386. Wave 4 should extend that KI to cover line 121.
-		"pumps/moesif.go:121": "wave4:moesif-getconfig-fatal",
+		// KI: moesif-config-read-error-logfatal
+		"pumps/moesif.go:121": "moesif-config-read-error-logfatal",
 	}
 
 	repoRoot, err := os.Getwd()

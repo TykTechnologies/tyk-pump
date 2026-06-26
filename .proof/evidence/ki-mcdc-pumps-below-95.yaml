@@ -8,12 +8,12 @@ requirements:
 command: 'PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored bash -lc "rg -n ''mcdc-pumps-below-95|Reproduces: mcdc-pumps-below-95|Verifies: KI:mcdc-pumps-below-95'' pumps"'
 status: pass
 observed_result: known_issue_reproduced
-executed_at: "2026-06-26T16:00:50Z"
+executed_at: "2026-06-26T20:30:10Z"
 input_set:
     - KI mcdc-pumps-below-95 structural pump MC/DC annotation scan
 freshness_hashes:
     proof.yaml: sha256:18dd484cb75c5c729bc063c96426b101df78e0c89ec729e39724c18f50367e0e
     pumps/final_cleanup_mcdc_test.go: sha256:1b8c0b8fc4d243fc0c4667581e61d3ba96793cd1541960980f2c307c029a1253
-    pumps/udp_file_pumps_mcdc_100_test.go: sha256:ad8aa594faa6588cabc89e6ef8c0748649b9bf59d40b63747d1355fb93414427
+    pumps/udp_file_pumps_mcdc_100_test.go: sha256:837a55dcd631a5234721c6ae5ccc67f57cbc82c7cffd966d8f09cd21e599d13c
 known_issues:
     - mcdc-pumps-below-95

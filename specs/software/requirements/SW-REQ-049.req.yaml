@@ -83,10 +83,10 @@ obligation_deferrals:
       owner: human:buger
       ki_ref: mapstructure-decode-silently-drops-unknown-keys
     - obligation_class: panic_free_input_handling
-      reason: 'real panic/process-exit input-handling gap under known-issue graylog-moesif-logfatal-on-record-error: Graylog per-record decode errors call log.Fatal, so malformed input can terminate the process; surfaced as visible tracked debt, not an overclaimed fix'
-      tracking: graylog-moesif-logfatal-on-record-error
+      reason: 'real panic/process-exit input-handling gap under known-issue graylog-record-decode-logfatal: Graylog per-record decode errors call log.Fatal, so malformed input can terminate the process; surfaced as visible tracked debt, not an overclaimed fix'
+      tracking: graylog-record-decode-logfatal
       owner: human:buger
-      ki_ref: graylog-moesif-logfatal-on-record-error
+      ki_ref: graylog-record-decode-logfatal
     - obligation_class: process_exit_on_recoverable
       reason: real untested obligation under known-issue pumps-logfatal-on-config-decode; surfaced as visible tracked debt, not an overclaimed fix
       tracking: pumps-logfatal-on-config-decode

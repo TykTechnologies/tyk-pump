@@ -1,0 +1,19 @@
+schema_version: proof.evidence_profile.v1
+profile: known_issue_reproducer
+requirements:
+    - SYS-REQ-004
+    - SW-REQ-049
+command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored go test -p=1 -count=1 -timeout=180s ./pumps -run '^(TestGraylogPump_WriteData_BadBase64Request_Subprocess|TestGraylogPump_WriteData_BadBase64Response_Subprocess)$'
+status: pass
+observed_result: known_issue_reproduced
+executed_at: "2026-06-26T20:28:48Z"
+input_set:
+    - KI graylog-record-decode-logfatal subprocess fatal tests
+freshness_hashes:
+    proof.yaml: sha256:18dd484cb75c5c729bc063c96426b101df78e0c89ec729e39724c18f50367e0e
+    pumps/graylog.go: sha256:3267a8647738fa57f0916b61339bd61edc4cf6e311bc96fdf21cbab6b9dfe421
+    pumps/udp_file_pumps_mcdc_100_test.go: sha256:837a55dcd631a5234721c6ae5ccc67f57cbc82c7cffd966d8f09cd21e599d13c
+    specs/software/requirements/SW-REQ-049.req.yaml: sha256:bca1b22a186f11670afbc6cf4b3d718d70ca8aa054fad425079c67eb0f5e2413
+    specs/system/requirements/SYS-REQ-004.req.yaml: sha256:149e22ab96b33d3f2659f48fe98028a37f538e45f06138ca9048b5ef94e78c51
+known_issues:
+    - graylog-record-decode-logfatal

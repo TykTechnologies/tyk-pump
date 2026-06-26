@@ -5,12 +5,12 @@ requirements:
 command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored go test -p=1 -count=1 -timeout=180s -run '^TestMoesifPump_MaskRawBodyUnboundedJSONMask_KI$' ./pumps
 status: pass
 observed_result: known_issue_reproduced
-executed_at: "2026-06-26T19:48:49Z"
+executed_at: "2026-06-26T20:30:12Z"
 input_set:
     - KI moesif-raw-body-unbounded-json-mask bounded large/deep raw-body masking tripwire
 freshness_hashes:
     proof.yaml: sha256:18dd484cb75c5c729bc063c96426b101df78e0c89ec729e39724c18f50367e0e
-    pumps/http_pumps_mcdc_test.go: sha256:135ca685d2dc7177a2527360f49ae3c6b41d135ae7e495444d9b04495327aabc
+    pumps/http_pumps_mcdc_test.go: sha256:6fbbfb1bb6a40026adba28f01ca441809e7d1579af1734e39678f833019ed549
     pumps/moesif.go: sha256:8c931352943067f1c554e5e2bc32521e05fd33fdde6885d4dd9949091518ad32
 known_issues:
     - moesif-raw-body-unbounded-json-mask

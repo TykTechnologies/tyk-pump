@@ -392,12 +392,12 @@ func TestGraylogPump_Init_DecodeFatal_InProcess(t *testing.T) {
 // TestGraylogPump_WriteData_BadBase64Request_Subprocess drives the
 // `p.log.Fatal(err)` arm at graylog.go:120 (invalid base64 in RawRequest).
 //
-// Reference KI: graylog-moesif-logfatal-on-record-error (graylog.go:120).
+// Reference KI: graylog-record-decode-logfatal (graylog.go:120).
 //
-// Verifies: KI:graylog-moesif-logfatal-on-record-error
+// Verifies: KI:graylog-record-decode-logfatal
 // Verifies: SYS-REQ-004
 // MCDC SYS-REQ-004: a_backend_failed=T, other_backends_written=F => FALSE
-// Reproduces: graylog-moesif-logfatal-on-record-error
+// Reproduces: graylog-record-decode-logfatal
 func TestGraylogPump_WriteData_BadBase64Request_Subprocess(t *testing.T) {
 	if fatalSentinel() == "graylog_bad_b64_req" {
 		// Configure the pump (Init writes to localhost:1000 by default; we override
@@ -423,10 +423,10 @@ func TestGraylogPump_WriteData_BadBase64Request_Subprocess(t *testing.T) {
 // TestGraylogPump_WriteData_BadBase64Request_InProcess drives the same arm
 // in-process.
 //
-// Verifies: KI:graylog-moesif-logfatal-on-record-error
+// Verifies: KI:graylog-record-decode-logfatal
 // Verifies: SYS-REQ-004
 // MCDC SYS-REQ-004: a_backend_failed=T, other_backends_written=F => FALSE
-// Reproduces: graylog-moesif-logfatal-on-record-error
+// Reproduces: graylog-record-decode-logfatal
 func TestGraylogPump_WriteData_BadBase64Request_InProcess(t *testing.T) {
 	pump := &GraylogPump{}
 	require.NoError(t, pump.Init(map[string]interface{}{
@@ -447,12 +447,12 @@ func TestGraylogPump_WriteData_BadBase64Request_InProcess(t *testing.T) {
 // TestGraylogPump_WriteData_BadBase64Response_Subprocess drives the
 // `p.log.Fatal(err)` arm at graylog.go:126 (invalid base64 in RawResponse).
 //
-// Reference KI: graylog-moesif-logfatal-on-record-error (graylog.go:126).
+// Reference KI: graylog-record-decode-logfatal (graylog.go:126).
 //
-// Verifies: KI:graylog-moesif-logfatal-on-record-error
+// Verifies: KI:graylog-record-decode-logfatal
 // Verifies: SYS-REQ-004
 // MCDC SYS-REQ-004: a_backend_failed=T, other_backends_written=F => FALSE
-// Reproduces: graylog-moesif-logfatal-on-record-error
+// Reproduces: graylog-record-decode-logfatal
 func TestGraylogPump_WriteData_BadBase64Response_Subprocess(t *testing.T) {
 	if fatalSentinel() == "graylog_bad_b64_resp" {
 		pump := &GraylogPump{}
@@ -476,10 +476,10 @@ func TestGraylogPump_WriteData_BadBase64Response_Subprocess(t *testing.T) {
 // TestGraylogPump_WriteData_BadBase64Response_InProcess drives the same arm
 // in-process.
 //
-// Verifies: KI:graylog-moesif-logfatal-on-record-error
+// Verifies: KI:graylog-record-decode-logfatal
 // Verifies: SYS-REQ-004
 // MCDC SYS-REQ-004: a_backend_failed=T, other_backends_written=F => FALSE
-// Reproduces: graylog-moesif-logfatal-on-record-error
+// Reproduces: graylog-record-decode-logfatal
 func TestGraylogPump_WriteData_BadBase64Response_InProcess(t *testing.T) {
 	pump := &GraylogPump{}
 	require.NoError(t, pump.Init(map[string]interface{}{

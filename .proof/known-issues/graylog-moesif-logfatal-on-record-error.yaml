@@ -1,6 +1,7 @@
 id: graylog-moesif-logfatal-on-record-error
-title: Graylog and Moesif pumps log.Fatal on per-record (and Moesif getConfig) decode errors
-description: pumps/graylog.go uses log.Fatal on per-record errors at lines 120, 126, 155, and 168. pumps/moesif.go uses log.Fatal at lines 349, 356, 379, and 386 for similar per-record decode/parse failures, plus line 121 in parseConfiguration (the getConfig sampling-rate fetch surface — Wave 3a AST scanner finding) where a malformed Moesif API response body crashes the host process. A single malformed record (or one bad sampling-config response) crashes the entire tyk-pump process via log.Fatal, taking down every other pump and the purge loop. Violates SYS-REQ-004's independent-failures requirement because one record's (or one transient API response's) parsing issue is fatal to all pumps.
+title: Superseded umbrella for Graylog and Moesif log.Fatal record/config errors
+description: |-
+    Superseded umbrella record. The active unfixed behaviors are now tracked by graylog-record-decode-logfatal, moesif-record-decode-logfatal, and moesif-config-read-error-logfatal. Defensive unreachable marshal/decode helper fatal arms are not carried as customer-impacting scope in the split records.
 affected_requirements:
     - SYS-REQ-004
     - SW-REQ-049
@@ -19,8 +20,8 @@ mitigation: Pre-validate analytics records or filter out suspect orgs before the
 remediation: Replace per-record log.Fatal calls in pumps/graylog.go and pumps/moesif.go with log.Error + 'continue' so the bad record is skipped, not fatal. For pumps/moesif.go:121 (parseConfiguration), replace log.Fatal with log.Error + return the previous sampling values so the next purge cycle re-attempts — the function already has a fallback return statement after the log.Fatal call.
 owner: tyk-team
 review_date: "2026-11-30"
-release_disposition: ship_with_known_issue
-status: reviewed
+release_disposition: not_in_scope
+status: withdrawn
 history:
     - at: "2026-05-30T08:34:38Z"
       by: human:buger
@@ -53,3 +54,11 @@ history:
       by: agent:codex
       action: edit
       detail: set-reproducer-command
+    - at: "2026-06-26T22:30:00Z"
+      by: agent:codex
+      action: split
+      detail: superseded by graylog-record-decode-logfatal, moesif-record-decode-logfatal, and moesif-config-read-error-logfatal
+references:
+    - superseded-by:graylog-record-decode-logfatal
+    - superseded-by:moesif-record-decode-logfatal
+    - superseded-by:moesif-config-read-error-logfatal

@@ -99,16 +99,17 @@ obligation_deferrals:
       owner: human:buger
       ki_ref: mapstructure-decode-silently-drops-unknown-keys
     - obligation_class: panic_free_input_handling
-      reason: Moesif per-record decode and sampling-config parse failures can call log.Fatal, so malformed input is not panic/process-exit safe until graylog-moesif-logfatal-on-record-error is fixed.
-      tracking: graylog-moesif-logfatal-on-record-error
+      reason: Moesif per-record decode failures can call log.Fatal, so malformed input is not panic/process-exit safe until moesif-record-decode-logfatal is fixed.
+      tracking: moesif-record-decode-logfatal
       owner: agent:codex
-      ki_ref: graylog-moesif-logfatal-on-record-error
-      reproducer: rg -n 'p\.log\.Fatal\(err\)|Fatal\("Couldn' pumps/graylog.go pumps/moesif.go
+      ki_ref: moesif-record-decode-logfatal
+      reproducer: moesif-record-decode-logfatal
     - obligation_class: process_exit_on_recoverable
-      reason: real untested obligation under known-issue pumps-logfatal-on-config-decode; surfaced as visible tracked debt, not an overclaimed fix
-      tracking: pumps-logfatal-on-config-decode
-      owner: human:buger
-      ki_ref: pumps-logfatal-on-config-decode
+      reason: Moesif configuration response read failures call log.Fatal in parseConfiguration, so recoverable config-refresh failures can terminate the process until moesif-config-read-error-logfatal is fixed.
+      tracking: moesif-config-read-error-logfatal
+      owner: agent:codex
+      ki_ref: moesif-config-read-error-logfatal
+      reproducer: moesif-config-read-error-logfatal
     - obligation_class: redirect_policy_explicit
       reason: real product gap under known-issue http-sdk-redirect-policy-implicit; surfaced as visible tracked debt, not an overclaimed fix
       tracking: http-sdk-redirect-policy-implicit

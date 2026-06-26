@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -645,13 +646,13 @@ func TestMoesifPump_DecodeRawData(t *testing.T) {
 }
 
 // TestMoesifPump_FatalOnBadBase64_KI reproduces KI
-// graylog-moesif-logfatal-on-record-error for Moesif by driving WriteData into
+// moesif-record-decode-logfatal by driving WriteData into
 // the production p.log.Fatal path for malformed RawRequest base64.
 //
-// Verifies: KI:graylog-moesif-logfatal-on-record-error
+// Verifies: KI:moesif-record-decode-logfatal
 // Verifies: SW-REQ-052
 // MCDC SW-REQ-052: record_submitted=F, sampling_percentage_pct_gt_random=T => FALSE
-// Reproduces: graylog-moesif-logfatal-on-record-error
+// Reproduces: moesif-record-decode-logfatal
 func TestMoesifPump_FatalOnBadBase64_KI(t *testing.T) {
 	p := MoesifPump{
 		moesifConf:         &MoesifConf{},
@@ -669,6 +670,29 @@ func TestMoesifPump_FatalOnBadBase64_KI(t *testing.T) {
 				TimeStamp:   time.Now(),
 			},
 		})
+	})
+}
+
+type moesifFailingReadCloser struct{}
+
+func (moesifFailingReadCloser) Read(p []byte) (int, error) {
+	return 0, errors.New("read failed")
+}
+
+func (moesifFailingReadCloser) Close() error { return nil }
+
+// Verifies: SW-REQ-052
+// Verifies: KI:moesif-config-read-error-logfatal
+// Reproduces: moesif-config-read-error-logfatal
+func TestMoesifPump_ParseConfigurationReadErrorFatal_KI(t *testing.T) {
+	p := &MoesifPump{samplingPercentage: 100}
+	resp := &http.Response{
+		Header: http.Header{},
+		Body:   moesifFailingReadCloser{},
+	}
+
+	withFatalIntercept(t, func() {
+		p.parseConfiguration(resp)
 	})
 }
 

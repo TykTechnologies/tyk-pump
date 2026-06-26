@@ -1,6 +1,6 @@
 id: graylog-moesif-record-fatal
 title: Graylog and Moesif fatal paths can crash the whole process
-description: Accept that per-record decode failures in pumps/graylog.go and pumps/moesif.go, plus Moesif configuration/parse fatal paths covered by backing KI graylog-moesif-logfatal-on-record-error, call log.Fatal and terminate the pump process for one malformed record or recoverable Moesif setup/configuration error.
+description: Accept that per-record decode failures in pumps/graylog.go and pumps/moesif.go, plus Moesif configuration read failures, call log.Fatal and terminate the pump process. Backing KIs are graylog-record-decode-logfatal, moesif-record-decode-logfatal, and moesif-config-read-error-logfatal.
 affected_requirements:
     - SYS-REQ-004
     - SW-REQ-049
@@ -26,3 +26,7 @@ history:
       by: agent:codex
       action: edit
       detail: broaden-risk-scope-to-backing-ki
+    - at: "2026-06-26T22:30:00Z"
+      by: agent:codex
+      action: split
+      detail: backing KI graylog-moesif-logfatal-on-record-error superseded by graylog-record-decode-logfatal, moesif-record-decode-logfatal, and moesif-config-read-error-logfatal
