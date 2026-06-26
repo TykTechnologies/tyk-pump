@@ -268,11 +268,12 @@ or KnownIssue/problem-report work.
      SQLAggregateDoAggregatedWriting_UsesProvidedTable_SQLite and
      SQLAggregateDoAggregatedWriting_Sharded.
 
-2. Strengthen Influx v1 duplicate/cumulative write contract.
+2. Influx v1 duplicate/cumulative write contract — completed in DEFECT-43.
    - Historical source: 51af27d.
-   - Candidate obligation: output_cardinality_bounded or batch_write_once.
-   - Desired evidence: N input records produce one completed backend write for
-     the batch, not cumulative writes inside the record loop.
+   - Added requirement: SW-REQ-101.
+   - Evidence: the multi-record Influx v1 httptest witness proves one
+     completed backend write per purge batch with one line-protocol row per
+     input record, not cumulative writes inside the record loop.
 
 3. Strengthen Mongo field-name sanitization for aggregate dimensions.
    - Historical source: 58da62f.
@@ -287,11 +288,16 @@ or KnownIssue/problem-report work.
      and SW-REQ-037 Graph Mongo write evidence for structured GraphQLStats
      records without legacy raw request/response/schema payloads.
 
-5. Strengthen Prometheus tracking path and label semantics.
+5. Prometheus tracking path and label semantics — completed with residual KI debt.
    - Historical sources: 69f5f4a, 8173c7e, 1cdc76c.
-   - Candidate obligations: output_cardinality_bounded, label_schema_stable.
-   - Desired evidence: path normalization and custom metric label mapping do
-     not expose pointer-like values, unbounded labels, or wrong path values.
+   - Added/strengthened requirements: SW-REQ-078, SW-REQ-079, SW-REQ-083,
+     SW-REQ-094.
+   - Evidence: tracking-path witnesses cover unknown-vs-preserved path policy,
+     separator-bearing aggregate label values preserve tuple boundaries, and
+     custom metric backing entries preserve distinct names, labels, types,
+     enabled flags, and collectors.
+   - Residual broad label-cardinality risk remains KI-backed under
+     `metrics-label-cardinality-unbounded`.
 
 6. Health endpoint bind-address contract — completed in DEFECT-37.
    - Historical source: 402dab8.
