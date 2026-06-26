@@ -86,6 +86,19 @@ func (p *shutdownErrorPump) Shutdown() error {
 	return errors.New("shutdown failed")
 }
 
+type blockingShutdownPump struct {
+	MockedPump
+	entered chan struct{}
+	release chan struct{}
+}
+
+func (p *blockingShutdownPump) Shutdown() error {
+	close(p.entered)
+	<-p.release
+	p.TurnedOff = true
+	return nil
+}
+
 type slowMockedPump struct {
 	MockedPump
 	delay time.Duration
@@ -114,6 +127,20 @@ func (p *blockingMockedPump) WriteData(ctx context.Context, keys []interface{}) 
 	case <-ctx.Done():
 		return ctx.Err()
 	}
+}
+
+type timeoutIgnoringBlockingPump struct {
+	MockedPump
+	entered  chan struct{}
+	release  chan struct{}
+	returned chan struct{}
+}
+
+func (p *timeoutIgnoringBlockingPump) WriteData(ctx context.Context, keys []interface{}) error {
+	close(p.entered)
+	<-p.release
+	close(p.returned)
+	return nil
 }
 
 type fanoutCountingPump struct {
@@ -798,6 +825,58 @@ func TestCheckShutdownSurfacesPumpShutdownError(t *testing.T) {
 }
 
 // Verifies: SW-REQ-004
+// Verifies: KI:main-shutdown-pumps-serial-no-timeout
+// Reproduces: main-shutdown-pumps-serial-no-timeout
+func TestCheckShutdownSerialBlockedPumpPreventsLaterShutdown_KI(t *testing.T) {
+	originalPumps := Pumps
+	t.Cleanup(func() {
+		Pumps = originalPumps
+	})
+
+	blockingPump := &blockingShutdownPump{
+		entered: make(chan struct{}),
+		release: make(chan struct{}),
+	}
+	laterPump := &MockedPump{}
+	Pumps = []pumps.Pump{blockingPump, laterPump}
+
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	done := make(chan struct{})
+	go func() {
+		assert.True(t, checkShutdown(ctx, &wg))
+		wg.Wait()
+		close(done)
+	}()
+
+	select {
+	case <-blockingPump.entered:
+	case <-time.After(time.Second):
+		t.Fatal("first pump Shutdown was not invoked")
+	}
+
+	select {
+	case <-done:
+		t.Fatal("checkShutdown completed while the first pump Shutdown was blocked")
+	case <-time.After(50 * time.Millisecond):
+	}
+	assert.False(t, laterPump.TurnedOff,
+		"KI active: serial shutdown prevents later pumps from shutting down while an earlier pump blocks")
+
+	close(blockingPump.release)
+	select {
+	case <-done:
+	case <-time.After(time.Second):
+		t.Fatal("checkShutdown did not complete after blocked pump was released")
+	}
+	assert.True(t, blockingPump.TurnedOff)
+	assert.True(t, laterPump.TurnedOff)
+}
+
+// Verifies: SW-REQ-004
 // MCDC SW-REQ-004: purge_stopped_and_pumps_shutdown=F, shutdown_signal=F => TRUE
 func TestCheckShutdownNoSignal(t *testing.T) {
 	wg := sync.WaitGroup{}
@@ -908,6 +987,54 @@ func TestExecPumpWritingZeroTimeoutCanBlock_KI(t *testing.T) {
 	case <-done:
 	case <-time.After(time.Second):
 		t.Fatal("execPumpWriting did not complete after blocked pump was released")
+	}
+}
+
+// Verifies: SYS-REQ-005
+// Verifies: SW-REQ-072
+// Verifies: KI:execpumpwriting-timeout-leaves-write-goroutine
+// Reproduces: execpumpwriting-timeout-leaves-write-goroutine
+func TestExecPumpWritingTimeoutLeavesInnerGoroutine_KI(t *testing.T) {
+	keys := []interface{}{analytics.AnalyticsRecord{APIID: "timeout-leak"}}
+	pmp := &timeoutIgnoringBlockingPump{
+		entered:  make(chan struct{}),
+		release:  make(chan struct{}),
+		returned: make(chan struct{}),
+	}
+	pmp.SetTimeout(1)
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+	done := make(chan struct{})
+	go func() {
+		wg.Wait()
+		close(done)
+	}()
+	go execPumpWriting(&wg, pmp, &keys, 5, time.Now(), nil)
+
+	select {
+	case <-pmp.entered:
+	case <-time.After(time.Second):
+		t.Fatal("blocking pump was not invoked")
+	}
+
+	select {
+	case <-done:
+	case <-time.After(2 * time.Second):
+		t.Fatal("execPumpWriting did not return after the configured timeout")
+	}
+
+	select {
+	case <-pmp.returned:
+		t.Fatal("inner WriteData goroutine returned before release; test no longer reproduces the lifetime gap")
+	default:
+	}
+
+	close(pmp.release)
+	select {
+	case <-pmp.returned:
+	case <-time.After(time.Second):
+		t.Fatal("inner WriteData goroutine did not release cleanly")
 	}
 }
 

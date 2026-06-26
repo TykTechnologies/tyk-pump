@@ -1,0 +1,19 @@
+schema_version: proof.evidence_profile.v1
+profile: known_issue_reproducer
+requirements:
+    - SYS-REQ-005
+    - SW-REQ-072
+command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored go test -p=1 -count=1 -timeout=180s -run '^TestExecPumpWritingTimeoutLeavesInnerGoroutine_KI$' .
+status: pass
+observed_result: known_issue_reproduced
+executed_at: "2026-06-26T20:18:50Z"
+input_set:
+    - KI execpumpwriting-timeout-leaves-write-goroutine in-memory timeout lifecycle tripwire
+freshness_hashes:
+    main.go: sha256:7a4ae4a95012e40d7182ef458154ce8a83e224b53b1d390ceff72f943642dbf1
+    main_test.go: sha256:b9c9699a462956980055ebb19845cdb8931a9111df7473c5531a993e90cf9e16
+    proof.yaml: sha256:18dd484cb75c5c729bc063c96426b101df78e0c89ec729e39724c18f50367e0e
+    specs/software/requirements/SW-REQ-072.req.yaml: sha256:d77c0b8307359ef08882ba286cd1a09e1801772676fecad4a3674977689fef8c
+    specs/system/requirements/SYS-REQ-005.req.yaml: sha256:4d08911de319c380ea5c7f5fe4793cdb0748c318763f3b71702d6de90cec9ed5
+known_issues:
+    - execpumpwriting-timeout-leaves-write-goroutine

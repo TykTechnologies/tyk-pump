@@ -42,6 +42,7 @@ obligation_checklist:
     - cancellation_observed
     - error_handling
     - external_call_timeout_bounded
+    - resource_lifetime_released
 obligation_deferrals:
     - obligation_class: cancellation_observed
       reason: 'real untested obligation under known-issue mongo-pump-ignores-caller-context; surfaced as visible tracked debt, not an overclaimed fix'
@@ -58,6 +59,11 @@ obligation_deferrals:
       tracking: pump-no-timeout-can-block-purge-cycle
       owner: human:buger
       ki_ref: pump-no-timeout-can-block-purge-cycle
+    - obligation_class: resource_lifetime_released
+      reason: execPumpWriting stops waiting when a positive per-pump timeout fires, but the inner WriteData goroutine can continue running if the pump ignores ctx cancellation.
+      tracking: execpumpwriting-timeout-leaves-write-goroutine
+      owner: agent:codex
+      ki_ref: execpumpwriting-timeout-leaves-write-goroutine
 release_disposition: ship_with_known_issue
 lifecycle:
     change_history:
