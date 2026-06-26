@@ -9,8 +9,8 @@ evidence_manifests:
 severity: medium
 severity_basis: risk
 risk: data_integrity
-reproducer_command: rg -n "GetAndDeleteSet\(|PreprocessAnalyticsValues|writeToPumps|dead.?letter|re-?enqueue|requeue" main.go docs/requirements/STK-REQ-002.md
-environment_note: Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source or documentation surface and following the described scenario.
+reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored go test -p=1 -count=1 -timeout=180s -run '^TestWriteFailureAfterPopLosesRecords_KI$' .
+environment_note: Reproducer uses in-memory fake storage and a failing pump; no Redis, SQL, Mongo, or other container backend is required.
 introduced_in: inception
 mitigation: Operators see WriteData error logs but the underlying batch is gone. Maintain redundant pumps (e.g. an always-available local file pump such as CSV) so at least one sink succeeds.
 remediation: Implement a dead-letter queue or local on-disk spool for records whose pump writes all fail; surface a metric for DLQ depth.
@@ -54,3 +54,7 @@ history:
       by: agent:codex
       action: edit
       detail: add-evidence-manifest
+    - at: "2026-06-26T18:24:03Z"
+      by: agent:codex
+      action: evidence_hardened
+      detail: replaced static no-DLQ scan with TestWriteFailureAfterPopLosesRecords_KI in-memory reproducer
