@@ -3,10 +3,12 @@ title: SQL aggregate upsert atomicity obligation lacks a transaction/failure har
 description: SW-REQ-067 uses a single GORM Create call with clause.OnConflict to express an INSERT ... ON CONFLICT DO UPDATE upsert. Existing tests prove sequential accumulation, but they do not inject database transaction failures, serialization failures, or concurrent writers to prove the typed atomicity obligation. The missing evidence is a proof-harness gap; it should not be replaced by a broad comment that merely says ON CONFLICT exists.
 affected_requirements:
     - SW-REQ-067
+evidence_manifests:
+    - .proof/evidence/ki-sql-aggregate-atomicity-fault-injection-missing.yaml
 severity: low
 severity_basis: risk
 risk: data_integrity
-reproducer_command: rg -n "DoAggregatedWriting|OnConflict|Create\\(|atomicity|transaction|failure" pumps/sql_aggregate.go pumps/sql_aggregate_test.go docs/requirements/SW-REQ-067.md
+reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored rg -n 'DoAggregatedWriting|OnConflict|Create\(|atomicity|transaction|failure' pumps/sql_aggregate.go pumps/sql_aggregate_test.go docs/requirements/SW-REQ-067.md
 environment_note: Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source and command output.
 introduced_in: inception
 mitigation: Rely on database single-statement upsert semantics and existing sequential accumulation tests until a transaction/failure harness exists.
@@ -31,3 +33,7 @@ history:
       by: agent:codex
       action: review
       detail: reviewer=human:buger,new_review_date=2026-11-30
+    - at: "2026-06-26T15:40:30Z"
+      by: agent:codex
+      action: edit
+      detail: set-reproducer-command,add-evidence-manifest

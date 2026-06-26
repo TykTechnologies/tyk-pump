@@ -6,9 +6,11 @@ affected_requirements:
     - SW-REQ-041
 evidence_manifests:
     - code_signal:opengrep:go.sql.formatted-write-exec:pumps/mcp_sql_aggregate.go:127
+    - .proof/evidence/ki-mcp-sql-aggregate-mysql-create-index-syntax-broken.yaml
 severity: medium
 severity_basis: risk
 risk: correctness
+reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored rg -n 'CREATE INDEX IF NOT EXISTS|dbType == postgres|createIndex' pumps/mcp_sql_aggregate.go
 environment_note: Evidence is tied to the listed evidence_manifests entries; reproduce by rerunning the named test or code-signal scan and inspecting code_signal:opengrep:go.sql.formatted-write-exec:pumps/mcp_sql_aggregate.go:127.
 introduced_in: inception
 mitigation: Operators on MySQL should either pre-create the dimension index out-of-band and set omit_index_creation=true on the aggregate pumps, or stick to Postgres for aggregate workloads.
@@ -41,3 +43,7 @@ history:
       by: agent:codex
       action: review
       detail: reviewer=human:buger,new_review_date=2026-11-30
+    - at: "2026-06-26T15:40:29Z"
+      by: agent:codex
+      action: edit
+      detail: set-reproducer-command,add-evidence-manifest

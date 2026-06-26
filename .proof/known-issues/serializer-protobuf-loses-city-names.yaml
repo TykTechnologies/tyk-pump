@@ -5,9 +5,11 @@ affected_requirements:
     - INT-REQ-003
 evidence_manifests:
     - code_signal:manual:serializer.protobuf-city-names-dropped:serializer/protobuf.go:169
+    - .proof/evidence/ki-serializer-protobuf-loses-city-names.yaml
 severity: medium
 severity_basis: risk
 risk: data_integrity
+reproducer_command: 'PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored rg -n ''City: &analyticsproto\.City|City: analytics\.City|Names: nil|Names:'' serializer/protobuf.go'
 environment_note: Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source or documentation surface and following the described scenario.
 introduced_in: inception
 mitigation: Operators reading City.Names from pump-side records will see nil. Gateway-side records still have the data; downstream consumers can re-derive city names from city ID via the GeoIP DB if needed.
@@ -36,3 +38,7 @@ history:
       by: agent:codex
       action: review
       detail: reviewer=human:buger,new_review_date=2026-11-30
+    - at: "2026-06-26T15:40:30Z"
+      by: agent:codex
+      action: edit
+      detail: set-reproducer-command,add-evidence-manifest

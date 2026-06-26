@@ -1,0 +1,18 @@
+schema_version: proof.evidence_profile.v1
+profile: known_issue_reproducer
+requirements:
+    - SW-REQ-067
+command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored rg -n 'func \(.*\) Dimensions|DoAggregatedWriting|OnConflict|ordering_guarantees_documented' analytics/aggregate.go pumps/sql_aggregate.go docs/requirements/SW-REQ-067.md specs/software/requirements/SW-REQ-067.req.yaml
+status: pass
+observed_result: known_issue_reproduced
+executed_at: "2026-06-26T15:39:42Z"
+input_set:
+    - KI sql-aggregate-upsert-order-undocumented static ordering contract scan
+freshness_hashes:
+    analytics/aggregate.go: sha256:3278ce6864b742a4db2c8d9a2957972eb763b88bc978421a6bde4ba36f1c3317
+    docs/requirements/SW-REQ-067.md: sha256:24eb6a88c36e6112b78696fba141112247c1b3ed5c74f0708999fca183cd1184
+    proof.yaml: sha256:18dd484cb75c5c729bc063c96426b101df78e0c89ec729e39724c18f50367e0e
+    pumps/sql_aggregate.go: sha256:85f542163368da6dc4bd0eaa0aa74bc0b04e3ec69bf64df49ab67a8742b7c92a
+    specs/software/requirements/SW-REQ-067.req.yaml: sha256:39c7736feaf7bb231936e00640574485301c980a80fbbfc5e71e68762919ca63
+known_issues:
+    - sql-aggregate-upsert-order-undocumented

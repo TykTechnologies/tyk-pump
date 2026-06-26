@@ -3,10 +3,12 @@ title: MCP Mongo aggregate atomicity obligation lacks a fault-injection witness
 description: SW-REQ-039 describes MCP aggregate persistence through MongoDB upserts. The implementation builds aggregate update documents and performs write steps in pumps/mcp_mongo_aggregate.go, but the current test suite only exercises successful partitioning and dimension update paths. There is no fake store or failpoint harness that injects an error between update phases or under concurrent writers, so the typed atomicity obligation cannot be honestly discharged by existing tests. This is a proof-harness gap, not a product fix.
 affected_requirements:
     - SW-REQ-039
+evidence_manifests:
+    - .proof/evidence/ki-mcp-mongo-aggregate-atomicity-fault-injection-missing.yaml
 severity: low
 severity_basis: risk
 risk: data_integrity
-reproducer_command: rg -n "DoAggregatedWriting|AsChange|Update|atomicity|fail" pumps/mcp_mongo_aggregate.go pumps/mcp_mongo_aggregate_test.go docs/requirements/SW-REQ-039.md
+reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored rg -n 'DoAggregatedWriting|AsChange|Update|atomicity|fail' pumps/mcp_mongo_aggregate.go pumps/mcp_mongo_aggregate_test.go docs/requirements/SW-REQ-039.md
 environment_note: Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source and command output.
 introduced_in: inception
 mitigation: Rely on MongoDB document-level update semantics and existing successful-path tests until a fault-injection harness is added.
@@ -31,3 +33,7 @@ history:
       by: agent:codex
       action: review
       detail: reviewer=human:buger,new_review_date=2026-11-30
+    - at: "2026-06-26T15:40:29Z"
+      by: agent:codex
+      action: edit
+      detail: set-reproducer-command,add-evidence-manifest

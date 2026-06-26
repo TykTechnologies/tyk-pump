@@ -55,15 +55,17 @@ evidence_manifests:
     - code_signal:opengrep:go.log.fatal-in-init:pumps/stdout.go:57
     - code_signal:opengrep:go.log.fatal-in-init:pumps/syslog.go:75
     - code_signal:opengrep:go.log.fatal-in-init:pumps/timestream.go:95
+    - .proof/evidence/ki-pumps-logfatal-on-config-decode.yaml
 severity: medium
 severity_basis: risk
 risk: availability
+reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored rg -n 'mapstructure\.Decode\(|Failed to decode configuration|\.log\.Fatal\(' pumps
 environment_note: Evidence is tied to the listed evidence_manifests entries; reproduce by rerunning the named test or code-signal scan and inspecting code_signal:opengrep:go.runtime.panic-call:pumps/mongo.go:219.
 introduced_in: inception
 mitigation: Validate pump configs (especially type-compatibility against mapstructure tags) before deploying tyk-pump; pin pump configs in source control with schema checks.
 remediation: Replace s.log.Fatal at pumps/statsd.go:62, pumps/syslog.go:82, pumps/graylog.go:76, pumps/prometheus.go:193, pumps/csv.go:57, pumps/stdout.go:65, pumps/kafka.go:103, pumps/elasticsearch.go:364 with s.log.WithError(err).Error(...) + return err. The pump runner (main.go execPumpWriting) already handles a non-nil Init error gracefully — it skips the failing pump and continues.
 owner: tyk-team
-review_date: "2026-08-30"
+review_date: "2026-11-30"
 release_disposition: ship_with_known_issue
 status: open
 history:
@@ -178,3 +180,7 @@ history:
       by: human:buger
       action: edit
       detail: set-severity-basis=risk,set-risk
+    - at: "2026-06-26T15:40:30Z"
+      by: agent:codex
+      action: edit
+      detail: set-reproducer-command,set-review-date,add-evidence-manifest
