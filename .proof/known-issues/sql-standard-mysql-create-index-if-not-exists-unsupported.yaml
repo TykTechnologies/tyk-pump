@@ -4,10 +4,12 @@ description: pumps/sql.go createIndex builds CREATE INDEX IF NOT EXISTS for ever
 affected_requirements:
     - SW-REQ-040
     - INT-REQ-007
+evidence_manifests:
+    - .proof/evidence/ki-sql-standard-mysql-create-index-if-not-exists-unsupported.yaml
 severity: medium
 severity_basis: risk
 risk: correctness
-reproducer_command: rg -n createIndex pumps/sql.go
+reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored rg -n 'createIndex|CREATE INDEX|IF NOT EXISTS|dbType == "postgres"' pumps/sql.go specs/software/requirements/SW-REQ-040.req.yaml specs/interface/requirements/INT-REQ-007.req.yaml
 introduced_in: inception
 mitigation: Operators using MySQL should pre-create the expected shard indexes out-of-band, verify startup/shard-creation logs, or use a backend/version known to accept the emitted index DDL.
 remediation: Gate IF NOT EXISTS by dialect/version, or use a backend-specific HasIndex pre-check plus plain CREATE INDEX for MySQL-compatible backends.
@@ -24,3 +26,7 @@ history:
       by: agent:codex
       action: edit
       detail: set-risk
+    - at: "2026-06-26T15:14:15Z"
+      by: agent:codex
+      action: edit
+      detail: set-reproducer-command,add-evidence-manifest

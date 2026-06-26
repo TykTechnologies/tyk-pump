@@ -6,6 +6,7 @@ affected_requirements:
     - SW-REQ-067
 evidence_manifests:
     - code_signal:opengrep:go.sql-aggregate-upsert-without-table-target:pumps/sql_aggregate.go
+    - .proof/evidence/ki-sql-aggregate-sharded-upsert-targets-base-table.yaml
 severity: high
 severity_basis: risk
 risk: data_integrity
@@ -13,7 +14,7 @@ cve_surface: possible
 affected_api: SQL aggregate pump sharded DoAggregatedWriting table target selection
 attacker_input: operator-enabled table sharding plus analytics aggregate records routed to date shards
 sanitizer: opengrep:go.sql-aggregate-upsert-without-table-target+upstream-regression-reference
-reproducer_command: rg -n 'func \(c \*SQLAggregatePump\) DoAggregatedWriting|\.Table\(table\)|Clauses\(.*OnConflict|Create\(' pumps/sql_aggregate.go
+reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored rg -n 'func \(c \*SQLAggregatePump\) DoAggregatedWriting|\.Table\(table\)|Clauses\(.*OnConflict|Create\(' pumps/sql_aggregate.go
 environment_note: |
     Evidence is tied to the code signal and the upstream regression tests added in commit 140ef71.
     Reproduce statically with `proof signals collect --provider opengrep` or inspect pumps/sql_aggregate.go:
@@ -47,3 +48,7 @@ history:
       by: agent:codex
       action: edit
       detail: set-reproducer-command
+    - at: "2026-06-26T15:14:10Z"
+      by: agent:codex
+      action: edit
+      detail: set-reproducer-command,add-evidence-manifest

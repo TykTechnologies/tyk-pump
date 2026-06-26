@@ -4,10 +4,12 @@ description: The aggregate counter paths intentionally add incoming counts to ex
 affected_requirements:
     - SW-REQ-011
     - SW-REQ-060
+evidence_manifests:
+    - .proof/evidence/ki-aggregate-counter-replay-not-idempotent.yaml
 severity: medium
 severity_basis: risk
 risk: data_integrity
-reproducer_command: rg -n "c\\.Hits \\+=|c\\.Success \\+=|c\\.ErrorTotal \\+=|AsChange\\(|\\$inc" analytics/aggregate.go pumps/mongo_aggregate.go
+reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored rg -n 'c\.Hits \+=|c\.Success \+=|c\.ErrorTotal \+=|AsChange\(|\$inc' analytics/aggregate.go pumps/mongo_aggregate.go
 environment_note: Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source and command output.
 introduced_in: inception
 mitigation: Rely on the temporal-store at-most-once pop contract and avoid replaying the same analytics batch into aggregate pumps.
@@ -32,3 +34,7 @@ history:
       by: agent:codex
       action: review
       detail: reviewer=human:buger,new_review_date=2026-11-30
+    - at: "2026-06-26T15:11:51Z"
+      by: agent:codex
+      action: edit
+      detail: set-reproducer-command,add-evidence-manifest

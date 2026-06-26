@@ -1,0 +1,19 @@
+schema_version: proof.evidence_profile.v1
+profile: known_issue_reproducer
+requirements:
+    - SW-REQ-041
+    - SW-REQ-043
+    - SW-REQ-045
+command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored rg -n 'OnConflictAssignments\(.*"excluded"|clause\.OnConflict|Create\(' pumps/sql_aggregate.go pumps/graph_sql_aggregate.go pumps/mcp_sql_aggregate.go
+status: pass
+observed_result: known_issue_reproduced
+executed_at: "2026-06-26T15:14:20Z"
+input_set:
+    - KI sql-aggregate-mysql-excluded-keyword-broken static upsert syntax scan
+freshness_hashes:
+    proof.yaml: sha256:18dd484cb75c5c729bc063c96426b101df78e0c89ec729e39724c18f50367e0e
+    pumps/graph_sql_aggregate.go: sha256:159234ba6047acf0256adafb63958c1d9200929a8c4e8b9544e252ff2ecd88c8
+    pumps/mcp_sql_aggregate.go: sha256:09d7a3aed4565bf640779c594eca5b4453ee80b358956db16cd5ca563e4802d9
+    pumps/sql_aggregate.go: sha256:85f542163368da6dc4bd0eaa0aa74bc0b04e3ec69bf64df49ab67a8742b7c92a
+known_issues:
+    - sql-aggregate-mysql-excluded-keyword-broken

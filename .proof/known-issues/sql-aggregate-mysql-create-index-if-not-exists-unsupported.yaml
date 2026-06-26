@@ -4,10 +4,12 @@ description: 'pumps/sql_aggregate.go ensureIndex issues CREATE INDEX IF NOT EXIS
 affected_requirements:
     - SW-REQ-066
     - SW-REQ-041
+evidence_manifests:
+    - .proof/evidence/ki-sql-aggregate-mysql-create-index-if-not-exists-unsupported.yaml
 severity: medium
 severity_basis: risk
 risk: correctness
-reproducer_command: rg -n "CREATE INDEX .*IF NOT EXISTS|dbType == \"postgres\"|OmitIndexCreation|ensureIndex" pumps/sql_aggregate.go docs/requirements/SW-REQ-066.md specs/software/requirements/SW-REQ-066.req.yaml
+reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored rg -n 'CREATE INDEX .*IF NOT EXISTS|dbType == "postgres"|OmitIndexCreation|ensureIndex' pumps/sql_aggregate.go specs/software/requirements/SW-REQ-066.req.yaml
 introduced_in: 657436f
 mitigation: MySQL operators should pre-create the SQL Aggregate dimension index out-of-band and set omit_index_creation=true, or run SQL Aggregate on Postgres until dialect-specific index DDL is implemented.
 remediation: Gate IF NOT EXISTS by dialect/version, or use a backend-specific HasIndex pre-check plus plain CREATE INDEX for MySQL-compatible backends, then add a MySQL integration witness for SW-REQ-066 backend_ddl_valid.
@@ -23,3 +25,7 @@ history:
       by: agent:codex
       action: review
       detail: reviewer=human:buger,new_review_date=2026-11-30
+    - at: "2026-06-26T15:14:17Z"
+      by: agent:codex
+      action: edit
+      detail: set-reproducer-command,add-evidence-manifest

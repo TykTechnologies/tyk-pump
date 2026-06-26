@@ -4,10 +4,12 @@ description: config.go LoadConfig unmarshals the JSON Pumps map and normalizes k
 affected_requirements:
     - SW-REQ-002
     - SW-REQ-016
+evidence_manifests:
+    - .proof/evidence/ki-config-pump-type-whitelist-not-enforced-at-load.yaml
 severity: low
 severity_basis: risk
 risk: correctness
-reproducer_command: rg -n "json.Unmarshal|Pumps|AvailablePumps|GetPumpByName|initialisePumps" config.go main.go pumps/pump.go
+reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored rg -n 'AvailablePumps|GetPumpByName|initialisePumps|Pumps|LoadConfig|json.Unmarshal' config.go main.go pumps/pump.go
 environment_note: Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source and command output.
 introduced_in: inception
 mitigation: Unknown pump names are skipped during initialization and produce log errors; operators should review startup logs for skipped pumps after configuration changes.
@@ -32,3 +34,7 @@ history:
       by: agent:codex
       action: review
       detail: reviewer=human:buger,new_review_date=2026-11-30
+    - at: "2026-06-26T15:11:57Z"
+      by: agent:codex
+      action: edit
+      detail: set-reproducer-command,add-evidence-manifest

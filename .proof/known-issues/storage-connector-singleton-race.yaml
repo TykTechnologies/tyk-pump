@@ -4,10 +4,12 @@ description: 'storage/temporal_storage.go:23-29 declares ''connectorSingleton mo
 affected_requirements:
     - SW-REQ-007
     - SYS-REQ-006
+evidence_manifests:
+    - .proof/evidence/ki-storage-connector-singleton-race.yaml
 severity: medium
 severity_basis: risk
 risk: data_integrity
-reproducer_command: rg -n "connectorSingleton model\.Connector|connectorSingleton = conn" storage/temporal_storage.go
+reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored rg -n 'connectorSingleton model\.Connector|connectorSingleton = conn|logPrefix =|var \(' storage/temporal_storage.go
 environment_note: Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source or documentation surface and following the described scenario.
 introduced_in: inception
 mitigation: Production currently constructs only AnalyticsStore + UptimeStore sequentially in main.setupAnalyticsStore; the race window is small. Avoid using forceReconnect=true outside controlled init paths.
@@ -32,3 +34,7 @@ history:
       by: agent:codex
       action: review
       detail: reviewer=human:buger,new_review_date=2026-11-30
+    - at: "2026-06-26T15:12:09Z"
+      by: agent:codex
+      action: edit
+      detail: set-reproducer-command,add-evidence-manifest

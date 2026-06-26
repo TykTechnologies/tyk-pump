@@ -3,10 +3,12 @@ title: SW-REQ-009 determinism obligation is misattributed to demo data generatio
 description: analytics/demo/demo.go imports math/rand for synthetic demo analytics data. SW-REQ-009 covers deterministic analytics record field names and helper accessors, not deterministic demo-data generation. The current reqproof annotations make the demo package part of the SW-REQ-009 owner family, so the random-dependency signal creates a determinism row that is a proof/spec attribution gap rather than missing product behavior.
 affected_requirements:
     - SW-REQ-009
+evidence_manifests:
+    - .proof/evidence/ki-sw-req-009-demo-randomness-obligation-misattributed.yaml
 severity: low
 severity_basis: risk
 risk: correctness
-reproducer_command: rg -n "math/rand|reqproof:implements SW-REQ-009" analytics/demo specs/software/requirements/SW-REQ-009.req.yaml
+reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored rg -n 'math/rand|reqproof:implements SW-REQ-009' analytics/demo specs/software/requirements/SW-REQ-009.req.yaml
 environment_note: Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source or rerunning the random-dependency code-signal scan.
 introduced_in: inception
 mitigation: Treat analytics/demo as synthetic sample data, not part of the deterministic field-accessor contract.
@@ -31,3 +33,7 @@ history:
       by: agent:codex
       action: review
       detail: reviewer=human:buger,new_review_date=2026-11-30
+    - at: "2026-06-26T15:12:11Z"
+      by: agent:codex
+      action: edit
+      detail: set-reproducer-command,add-evidence-manifest

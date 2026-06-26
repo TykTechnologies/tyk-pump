@@ -3,10 +3,12 @@ title: SW-REQ-060 hash-format obligation is misattributed to a Mongo query-key p
 description: The catalog attaches hash_format_deterministic to SW-REQ-060 as "aggregate upsert key = {orgid, timestamp}", but the MongoAggregate implementation uses a Mongo query object keyed by orgid and timestamp rather than a serialized hash format. The deterministic hex projection witness belongs to the analytics aggregate endpoint key path covered by SW-REQ-009. Until the spec/catalog is corrected to define a real hash projection for SW-REQ-060, the typed hash_format_deterministic obligation is a proof/spec attribution gap, not missing product behavior.
 affected_requirements:
     - SW-REQ-060
+evidence_manifests:
+    - .proof/evidence/ki-sw-req-060-hash-format-obligation-misattributed.yaml
 severity: low
 severity_basis: risk
 risk: correctness
-reproducer_command: rg -n "hash_format_deterministic|hex\\.EncodeToString|orgid|timestamp|query" .proof/catalog-obligation-proposals.md analytics/aggregate.go pumps/mongo_aggregate.go specs/software/requirements/SW-REQ-060.req.yaml
+reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored rg -n 'hash_format_deterministic|hex\.EncodeToString|orgid|timestamp|query' .proof/catalog-obligation-proposals.md analytics/aggregate.go pumps/mongo_aggregate.go specs/software/requirements/SW-REQ-060.req.yaml
 environment_note: Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source and command output.
 introduced_in: inception
 mitigation: Treat SW-REQ-009 as the requirement that owns deterministic aggregate endpoint key projection until SW-REQ-060 is clarified.
@@ -31,3 +33,7 @@ history:
       by: agent:codex
       action: review
       detail: reviewer=human:buger,new_review_date=2026-11-30
+    - at: "2026-06-26T15:14:21Z"
+      by: agent:codex
+      action: edit
+      detail: set-reproducer-command,add-evidence-manifest
