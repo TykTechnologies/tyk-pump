@@ -6,12 +6,12 @@ requirements:
 command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored rg -n 'Decoded Record:|filterData|RemoveIgnoredFields|writeToPumps' main.go main_test.go
 status: pass
 observed_result: known_issue_reproduced
-executed_at: "2026-06-26T15:20:13Z"
+executed_at: "2026-06-26T16:50:13Z"
 input_set:
     - KI main-prefilter-debug-logs-unfiltered-records static log-before-filter scan
 freshness_hashes:
     main.go: sha256:7a4ae4a95012e40d7182ef458154ce8a83e224b53b1d390ceff72f943642dbf1
-    main_test.go: sha256:be811db1f4852476ac85280c68acccca689e3ddd2541401f6979d741359f8272
+    main_test.go: sha256:e7b4e740d29854a2c8ab876cf328f2b500484112b1adee2411855e096c8554ff
     proof.yaml: sha256:18dd484cb75c5c729bc063c96426b101df78e0c89ec729e39724c18f50367e0e
 known_issues:
     - main-prefilter-debug-logs-unfiltered-records

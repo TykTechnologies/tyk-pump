@@ -4,12 +4,13 @@ description: 'pumps/resurface.go:273-280: when rp.enabled is true, WriteData use
 affected_requirements:
     - SW-REQ-054
 evidence_manifests:
+    - test:pumps/resurface_test.go:TestResurfacePump_WriteDataBlocksWhenEnabledQueueFull_KI
     - .proof/evidence/ki-resurface-writedata-blocks-on-queue-full.yaml
 severity: medium
 severity_basis: risk
 risk: availability
-reproducer_command: rg -n "case rp\\.data <- data|case <-ctx\\.Done\\(\\):|return ctx\\.Err\\(\\)" pumps/resurface.go
-environment_note: Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source and command output.
+reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored go test -p=1 -count=1 -timeout=180s -run '^TestResurfacePump_WriteDataBlocksWhenEnabledQueueFull_KI$' ./pumps
+environment_note: Run the focused Resurface tripwire; it fills the enabled worker queue, proves WriteData remains blocked while ctx is alive, then cancels the context to release the test.
 introduced_in: 8ca8646
 mitigation: Operators must size the resurface worker queue (currently hard-coded cap 5) for the expected purge_delay throughput; if the upstream gateway emits faster than resurfaceio SDK can flush, purge cycles will hang on this select. Set a non-zero pump timeout in pumps.yaml so the parent execPumpWriting context cancellation unblocks the select via the ctx.Done() arm.
 remediation: Either (a) add a 'default:' arm to the enabled-path select so a full queue results in dropped data + log.Warn (matching the FRETish), or (b) revise the FRETish to 'shall block until ctx_cancelled' and document the blocking behaviour.
@@ -41,3 +42,11 @@ history:
       by: agent:codex
       action: edit
       detail: add-evidence-manifest
+    - at: "2026-06-26T16:55:00Z"
+      by: agent:codex
+      action: edit
+      detail: set-reproducer-command,add-test-evidence-link
+    - at: "2026-06-26T16:49:02Z"
+      by: agent:codex
+      action: edit
+      detail: set-reproducer-command

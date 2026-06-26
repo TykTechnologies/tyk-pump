@@ -84,6 +84,22 @@ func (p *slowMockedPump) WriteData(ctx context.Context, keys []interface{}) erro
 	}
 }
 
+type blockingMockedPump struct {
+	MockedPump
+	entered chan struct{}
+	release chan struct{}
+}
+
+func (p *blockingMockedPump) WriteData(ctx context.Context, keys []interface{}) error {
+	close(p.entered)
+	select {
+	case <-p.release:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+}
+
 type initErrorPump struct {
 	MockedPump
 }
@@ -685,6 +701,45 @@ func TestExecPumpWritingTimeoutWarningBranches(t *testing.T) {
 		execPumpWriting(&wg, pmp, &keys, 0, time.Now(), nil)
 		wg.Wait()
 	})
+}
+
+// Verifies: SYS-REQ-005
+// Verifies: KI:pump-no-timeout-can-block-purge-cycle
+// Reproduces: pump-no-timeout-can-block-purge-cycle
+func TestExecPumpWritingZeroTimeoutCanBlock_KI(t *testing.T) {
+	keys := []interface{}{analytics.AnalyticsRecord{APIID: "zero-timeout"}}
+	pmp := &blockingMockedPump{
+		entered: make(chan struct{}),
+		release: make(chan struct{}),
+	}
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+	done := make(chan struct{})
+	go func() {
+		wg.Wait()
+		close(done)
+	}()
+	go execPumpWriting(&wg, pmp, &keys, 1, time.Now(), nil)
+
+	select {
+	case <-pmp.entered:
+	case <-time.After(time.Second):
+		t.Fatal("blocking pump was not invoked")
+	}
+
+	select {
+	case <-done:
+		t.Fatal("execPumpWriting completed while timeout=0 pump was still blocked")
+	case <-time.After(50 * time.Millisecond):
+	}
+
+	close(pmp.release)
+	select {
+	case <-done:
+	case <-time.After(time.Second):
+		t.Fatal("execPumpWriting did not complete after blocked pump was released")
+	}
 }
 
 // Verifies: SW-REQ-001

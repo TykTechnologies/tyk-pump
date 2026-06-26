@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
+	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -227,6 +228,42 @@ func TestResurfaceWriteData_Concurrent(t *testing.T) {
 
 	assert.NoError(t, pmp.Flush())
 	assert.Len(t, pmp.logger.Queue(), workers)
+}
+
+// Verifies: SW-REQ-054
+// Verifies: KI:resurface-writedata-blocks-on-queue-full
+// Reproduces: resurface-writedata-blocks-on-queue-full
+func TestResurfacePump_WriteDataBlocksWhenEnabledQueueFull_KI(t *testing.T) {
+	pmp := &ResurfacePump{
+		data:    make(chan []interface{}, 5),
+		enabled: true,
+		CommonPumpConfig: CommonPumpConfig{
+			log: logrus.NewEntry(logrus.New()),
+		},
+	}
+	for i := 0; i < cap(pmp.data); i++ {
+		pmp.data <- []interface{}{analytics.AnalyticsRecord{APIID: "queued"}}
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- pmp.WriteData(ctx, []interface{}{analytics.AnalyticsRecord{APIID: "blocked"}})
+	}()
+
+	select {
+	case err := <-errCh:
+		t.Fatalf("WriteData returned before ctx cancellation with a full enabled queue: %v", err)
+	case <-time.After(50 * time.Millisecond):
+	}
+
+	cancel()
+	select {
+	case err := <-errCh:
+		assert.ErrorIs(t, err, context.Canceled)
+	case <-time.After(time.Second):
+		t.Fatal("WriteData did not unblock after context cancellation")
+	}
 }
 
 // Verifies: SW-REQ-054
