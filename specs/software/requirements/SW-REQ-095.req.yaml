@@ -28,15 +28,15 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-25T18:00:37Z"
-        comment: 'TT-5776 hardening: reviewed per-backend filter input isolation requirement, per_backend_input_isolation/shared_state_synchronized evidence, DEFECT-31 closure, and decision not to add a broad slice-alias signal due low precision; no runtime product behavior change.'
+        reviewed_at: "2026-06-26T00:14:02Z"
+        comment: 'Reviewed TT-5776 follow-up: SW-REQ-095 now has direct transform-isolation evidence for omit-detailed-recording, max-record-size trimming, ignore-fields removal, and raw payload decoding in addition to allow-list filtering. No runtime product behavior change.'
         fingerprint: sha256:99ef6312ef0a0d1a0508bf4e46f6a87324a344e0be7830bbbe01e9b1fba4f4c1
         ai_generated: false
 history:
     created_by: human:buger
     created_at: "2026-06-25T17:55:44Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-25T18:00:37Z"
+    last_modified_at: "2026-06-26T00:14:02Z"
 obligation_checklist:
     - per_backend_input_isolation
     - shared_state_synchronized
@@ -47,6 +47,9 @@ stakeholder:
           verification_method: test
         - id: AC-002
           text: Applying per-backend privacy transforms returns transformed records for that backend without changing records in the shared dispatch batch used by sibling backends.
+          verification_method: test
+        - id: AC-003
+          text: Applying per-backend trimming, ignore-fields removal, or raw payload decoding returns the transformed backend view without changing the original records in the shared dispatch batch.
           verification_method: test
 lifecycle:
     change_history:
@@ -59,4 +62,9 @@ lifecycle:
           from: draft
           to: review
           reason: '[df6d589] TT-5776 per-backend input isolation requirement ready for branch review'
+          changed_by: human:buger
+        - date: "2026-06-26T00:14:02Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-25T18:00:37Z comment="TT-5776 hardening: reviewed per-backend filter input isolation requirement, per_backend_input_isolation/shared_state_synchronized evidence, DEFECT-31 closure, and decision not to add a broad slice-alias signal due low precision; no runtime product behavior change.")'
           changed_by: human:buger

@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"errors"
 	"net"
 	"os"
@@ -154,6 +155,90 @@ func TestFilterData_DoesNotMutateInputBatch(t *testing.T) {
 	require.Len(t, filteredKeys, 1)
 	assert.Equal(t, "api123", filteredKeys[0].(analytics.AnalyticsRecord).APIID)
 	assert.Equal(t, original, keys, "filterData must not mutate the shared dispatch batch")
+}
+
+// Verifies: SW-REQ-095
+// SW-REQ-095:per_backend_input_isolation:negative
+// SW-REQ-095:shared_state_synchronized:review
+func TestFilterData_TransformsDoNotMutateInputBatch(t *testing.T) {
+	encodedRequest := base64.StdEncoding.EncodeToString([]byte("decoded-request"))
+	encodedResponse := base64.StdEncoding.EncodeToString([]byte("decoded-response"))
+
+	tcs := []struct {
+		name       string
+		record     analytics.AnalyticsRecord
+		configure  func(*MockedPump)
+		assertView func(*testing.T, analytics.AnalyticsRecord)
+	}{
+		{
+			name: "omit detailed recording",
+			record: analytics.AnalyticsRecord{
+				APIID:       "api-omit",
+				APIKey:      "key-omit",
+				RawRequest:  "request-secret",
+				RawResponse: "response-secret",
+			},
+			configure: func(p *MockedPump) {
+				p.SetOmitDetailedRecording(true)
+			},
+			assertView: func(t *testing.T, record analytics.AnalyticsRecord) {
+				assert.Empty(t, record.RawRequest)
+				assert.Empty(t, record.RawResponse)
+				assert.Equal(t, "key-omit", record.APIKey)
+			},
+		},
+		{
+			name: "max record size trim",
+			record: analytics.AnalyticsRecord{
+				APIID:       "api-trim",
+				RawRequest:  "request-secret",
+				RawResponse: "response-secret",
+			},
+			configure: func(p *MockedPump) {
+				p.SetMaxRecordSize(7)
+			},
+			assertView: func(t *testing.T, record analytics.AnalyticsRecord) {
+				assert.Equal(t, "request", record.RawRequest)
+				assert.Equal(t, "respons", record.RawResponse)
+			},
+		},
+		{
+			name: "ignore fields and decode raw payloads",
+			record: analytics.AnalyticsRecord{
+				APIID:       "api-decode",
+				APIKey:      "key-decode",
+				RawRequest:  encodedRequest,
+				RawResponse: encodedResponse,
+			},
+			configure: func(p *MockedPump) {
+				p.SetIgnoreFields([]string{"api_key"})
+				p.SetDecodingRequest(true)
+				p.SetDecodingResponse(true)
+			},
+			assertView: func(t *testing.T, record analytics.AnalyticsRecord) {
+				assert.Empty(t, record.APIKey)
+				assert.Equal(t, "decoded-request", record.RawRequest)
+				assert.Equal(t, "decoded-response", record.RawResponse)
+			},
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			mockedPump := &MockedPump{}
+			tc.configure(mockedPump)
+
+			keys := []interface{}{tc.record}
+			original := tc.record
+
+			filteredKeys := filterData(mockedPump, keys)
+			require.Len(t, filteredKeys, 1)
+			tc.assertView(t, filteredKeys[0].(analytics.AnalyticsRecord))
+
+			require.Len(t, keys, 1)
+			assert.Equal(t, original, keys[0].(analytics.AnalyticsRecord), "filterData transform must not mutate the shared dispatch record")
+		})
+	}
 }
 
 // TestTrimData check the correct functionality of max_record_size

@@ -1,6 +1,6 @@
 schema_version: 1
 branch: feat-reqproof-coverage
-generated_at: "2026-06-25T18:32:35Z"
+generated_at: "2026-06-26T00:16:37Z"
 reviews:
     - requirement: SW-REQ-001
       artifact: main.go
@@ -1184,13 +1184,13 @@ reviews:
     - requirement: SW-REQ-095
       artifact: main.go
       decision: no-authored-change
-      reviewer: buger
-      reason: 'Reviewed main.go branch delta for remaining owners: reqproof trace annotations and MC/DC/KI comments only; startup, filtering, dispatch, and related authored contracts are unchanged.'
+      reviewer: human:buger
+      reason: 'Reviewed TT-5776 follow-up: SW-REQ-095 evidence/spec/docs changed, but main.go filterData implementation already allocates an isolated per-backend copy and no production behavior changed.'
       base: origin/master
-      requirement_fingerprint: sha256:998ff40c751e06d935a8c120a52f00d1ff841c78d70d89315b8e7b5c318e4433
+      requirement_fingerprint: sha256:262cc941c83c230223b97b043ce23c11a5706a16d47e682ebf2b1a956e14adc4
       approval_fingerprint: sha256:99ef6312ef0a0d1a0508bf4e46f6a87324a344e0be7830bbbe01e9b1fba4f4c1
       artifact_fingerprint: sha256:7a4ae4a95012e40d7182ef458154ce8a83e224b53b1d390ceff72f943642dbf1
-      reviewed_at: "2026-06-25T18:32:12Z"
+      reviewed_at: "2026-06-26T00:16:37Z"
     - requirement: SW-REQ-096
       artifact: pumps/mongo_aggregate.go
       decision: no-authored-change

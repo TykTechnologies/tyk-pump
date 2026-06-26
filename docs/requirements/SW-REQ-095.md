@@ -32,3 +32,9 @@ Variables are declared in `specs/software/variables/delivery.vars.yaml`.
 - `main_test.go:TestFilterData_DoesNotMutateInputBatch` applies a per-backend
   allow-list filter and asserts the filtered output is correct while the
   caller's input slice keeps its original length, order, and record values.
+- `main_test.go:TestFilterData_TransformsDoNotMutateInputBatch` applies
+  omit-detailed-recording, max-record-size trimming, ignore-fields removal, and
+  raw payload decoding, then asserts the backend-specific transformed record is
+  returned while the original shared dispatch record is unchanged.
+- Focused race evidence:
+  `go test -race -count=1 -run 'TestFilterData_DoesNotMutateInputBatch|TestFilterData_TransformsDoNotMutateInputBatch|TestWriteDataWithFilters' .`

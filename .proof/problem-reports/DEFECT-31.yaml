@@ -7,8 +7,8 @@ description: |
   Before the fix, filterData used `filteredKeys := keys[:]` and then wrote each
   backend's filtered/transformed records into that slice. Because this reused
   the caller's backing array, one pump's filter, omit-detailed-recording, trim,
-  ignore-fields, or decode path could mutate the shared decoded batch observed
-  by sibling pump goroutines.
+  and later equivalent ignore-fields or decode paths could mutate the shared
+  decoded batch observed by sibling pump goroutines.
 
   Current code allocates a new slice and copies the input before writing the
   backend-specific view, so the caller's dispatch batch remains unchanged.
@@ -52,6 +52,7 @@ hardening:
           obligation_class: shared_state_synchronized
     regression_tests:
         - main_test.go:TestFilterData_DoesNotMutateInputBatch
+        - main_test.go:TestFilterData_TransformsDoNotMutateInputBatch
     proposed_classes:
         - per_backend_input_isolation
         - shared_state_synchronized
@@ -69,6 +70,7 @@ disposition:
     evidence:
         verified_by:
             - main_test.go:TestFilterData_DoesNotMutateInputBatch
+            - main_test.go:TestFilterData_TransformsDoNotMutateInputBatch
         obligation_evidence:
             - requirement: SW-REQ-095
               obligation_class: per_backend_input_isolation
@@ -85,6 +87,8 @@ disposition:
             - requirement: SW-REQ-095
               obligation_class: shared_state_synchronized
               evidence_type: review
+        commands:
+            - go test -race -count=1 -run 'TestFilterData_DoesNotMutateInputBatch|TestFilterData_TransformsDoNotMutateInputBatch|TestWriteDataWithFilters' .
     reviewer: agent:codex
     reviewed_at: "2026-06-25T17:55:44Z"
 history:
@@ -95,3 +99,16 @@ history:
         Recorded TT-5776 shared-slice aliasing as covered by SW-REQ-095, with
         direct evidence that per-backend filterData output does not mutate the
         caller's shared dispatch batch.
+    - at: "2026-06-26T00:00:00Z"
+      by: agent:codex
+      action: hardened
+      detail: |
+        Added direct transform-isolation evidence for omit-detailed-recording,
+        max-record-size trimming, ignore-fields removal, and raw payload
+        decoding so SW-REQ-095 covers more than allow-list filtering.
+    - at: "2026-06-26T00:00:00Z"
+      by: agent:codex
+      action: verified
+      detail: |
+        Recorded the focused race-detector witness for SW-REQ-095:
+        go test -race -count=1 -run 'TestFilterData_DoesNotMutateInputBatch|TestFilterData_TransformsDoNotMutateInputBatch|TestWriteDataWithFilters' .
