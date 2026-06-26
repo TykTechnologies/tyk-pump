@@ -829,6 +829,7 @@ func TestMongoAggregatePump_DivideAggregationTime_NoOp(t *testing.T) {
 // SW-REQ-058:errors_propagated:negative — drives WriteData's self-heal
 // recursion against the fake store. ShouldSelfHeal returns false (errors don't
 // match), so WriteData returns the err directly.
+// SW-REQ-036:external_call_failure_observable:nominal
 func TestMongoAggregatePump_WriteData_Err(t *testing.T) {
 	store := &sequencedUpsertStore{upsertErrs: []error{errors.New("upsert failed")}}
 	p := &MongoAggregatePump{}

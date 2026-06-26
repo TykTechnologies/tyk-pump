@@ -62,11 +62,6 @@ obligation_deferrals:
       tracking: pumps-logfatal-on-config-decode
       owner: human:buger
       ki_ref: pumps-logfatal-on-config-decode
-    - obligation_class: external_call_failure_observable
-      reason: 'This pump family has a confirmed WriteData path that logs backend or per-batch write failures and returns nil, so backend failure observability remains KI-gated until errors are propagated to the caller.'
-      tracking: pump-writedata-swallows-per-batch-errors
-      owner: human:buger
-      ki_ref: pump-writedata-swallows-per-batch-errors
     - obligation_class: external_call_timeout_bounded
       reason: External backend calls remain operator-timeout dependent because timeout=0 is still accepted; this is KI-tracked until a nonzero deadline is enforced by default or Init rejects zero timeout.
       tracking: pump-no-timeout-can-block-purge-cycle

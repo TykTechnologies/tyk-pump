@@ -17,18 +17,143 @@ func readPumpSource(t *testing.T, path string) string {
 	return string(data)
 }
 
+func sourceBetween(t *testing.T, source, startMarker, endMarker string) string {
+	t.Helper()
+
+	start := strings.Index(source, startMarker)
+	require.NotEqual(t, -1, start, "start marker %q not found", startMarker)
+	end := strings.Index(source[start:], endMarker)
+	require.NotEqual(t, -1, end, "end marker %q not found", endMarker)
+	return source[start : start+end]
+}
+
+func sourceFrom(t *testing.T, source, startMarker string) string {
+	t.Helper()
+
+	start := strings.Index(source, startMarker)
+	require.NotEqual(t, -1, start, "start marker %q not found", startMarker)
+	return source[start:]
+}
+
 // TestSQLPumpWriteDataSwallowsBatchError_KI is a static tripwire for the
-// standard SQL member of pump-writedata-swallows-per-batch-errors.
-// Verifies: STK-REQ-002
+// remaining true members of pump-writedata-swallows-per-batch-errors.
+// Verifies: INT-REQ-004
+// Verifies: SW-REQ-035
+// Verifies: SW-REQ-040
+// Verifies: SW-REQ-046
+// Verifies: SW-REQ-047
+// Verifies: SW-REQ-049
+// Verifies: SW-REQ-050
+// Verifies: SW-REQ-051
+// Verifies: SW-REQ-053
+// Verifies: SW-REQ-056
 // Verifies: KI:pump-writedata-swallows-per-batch-errors
 // Reproduces: pump-writedata-swallows-per-batch-errors
 func TestSQLPumpWriteDataSwallowsBatchError_KI(t *testing.T) {
-	source := readPumpSource(t, "sql.go")
+	t.Run("mongo selective insert and index errors log then return nil", func(t *testing.T) {
+		source := readPumpSource(t, "mongo_selective.go")
+		require.Regexp(t,
+			regexp.MustCompile(`(?s)func \(m \*MongoSelectivePump\) WriteData\(.*?m\.ensureIndexes\(colName\).*?m\.log\.WithField\("collection", colName\)\.Error\(indexCreateErr\).*?m\.store\.Insert\(context\.Background\(\), dataSet\.\.\.\).*?m\.log\.WithField\("collection", colName\)\.Error\("Problem inserting to mongo collection: ", err\).*?return nil`),
+			source,
+		)
+	})
 
-	require.Regexp(t,
-		regexp.MustCompile(`(?s)func \(c \*SQLPump\) WriteData\(.*?c\.log\.Error\(tx\.Error\).*?return nil`),
-		source,
-	)
+	t.Run("mongo aggregate is excluded because WriteData returns backend errors", func(t *testing.T) {
+		source := readPumpSource(t, "mongo_aggregate.go")
+		writeData := sourceBetween(t, source,
+			"func (m *MongoAggregatePump) WriteData(ctx context.Context, data []interface{}) error",
+			"\n// reqproof:implements SW-REQ-059,SW-REQ-060,SW-REQ-084,SW-REQ-096\nfunc (m *MongoAggregatePump) DoAggregatedWriting",
+		)
+		require.Contains(t, writeData, "err := m.DoAggregatedWriting(ctx, &filteredData, isMixedCollection)")
+		require.Contains(t, writeData, "return err")
+	})
+
+	t.Run("kinesis PutRecords API errors log then return nil", func(t *testing.T) {
+		source := readPumpSource(t, "kinesis.go")
+		writeData := sourceBetween(t, source,
+			"func (p *KinesisPump) WriteData(ctx context.Context, records []interface{}) error",
+			"\n// splitIntoBatches splits",
+		)
+		require.Contains(t, writeData, "output, err := p.client.PutRecords(ctx, input)")
+		require.Contains(t, writeData, `p.log.Error("failed to put records to Kinesis: ", err)`)
+		require.Contains(t, writeData, "return nil")
+		require.NotContains(t, writeData, "return err")
+	})
+
+	t.Run("sql create errors log then return nil", func(t *testing.T) {
+		source := readPumpSource(t, "sql.go")
+		require.Regexp(t,
+			regexp.MustCompile(`(?s)func \(c \*SQLPump\) WriteData\(.*?c\.log\.Error\(tx\.Error\).*?return nil`),
+			source,
+		)
+	})
+
+	t.Run("graylog client log has no error channel and WriteData returns nil", func(t *testing.T) {
+		source := readPumpSource(t, "graylog.go")
+		writeData := sourceFrom(t, source,
+			"func (p *GraylogPump) WriteData(ctx context.Context, data []interface{}) error",
+		)
+		require.Contains(t, writeData, "p.client.Log(string(gelfString))")
+		require.Contains(t, writeData, "return nil")
+	})
+
+	t.Run("syslog writer error is explicitly discarded", func(t *testing.T) {
+		source := readPumpSource(t, "syslog.go")
+		writeData := sourceBetween(t, source,
+			"func (s *SyslogPump) WriteData(ctx context.Context, data []interface{}) error",
+			"\nfunc (s *SyslogPump) SetTimeout",
+		)
+		require.Contains(t, writeData, `_, _ = fmt.Fprintf(s.writer, "%s", message)`)
+		require.Contains(t, writeData, "return nil")
+	})
+
+	t.Run("logzio sender error is ignored", func(t *testing.T) {
+		source := readPumpSource(t, "logzio.go")
+		writeData := sourceFrom(t, source,
+			"func (p *LogzioPump) WriteData(ctx context.Context, data []interface{}) error",
+		)
+		require.Contains(t, writeData, "p.sender.Send(event)")
+		require.NotContains(t, writeData, "return p.sender.Send")
+		require.Contains(t, writeData, "return nil")
+	})
+
+	t.Run("segment WriteData ignores WriteDataRecord errors", func(t *testing.T) {
+		source := readPumpSource(t, "segment.go")
+		writeData := sourceBetween(t, source,
+			"func (s *SegmentPump) WriteData(ctx context.Context, data []interface{}) error",
+			"\n// reqproof:implements SW-REQ-053\nfunc (s *SegmentPump) WriteDataRecord",
+		)
+		writeDataRecord := sourceBetween(t, source,
+			"func (s *SegmentPump) WriteDataRecord(record analytics.AnalyticsRecord) error",
+			"\nfunc (s *SegmentPump) ToJSONMap",
+		)
+		require.Contains(t, writeData, "s.WriteDataRecord(v.(analytics.AnalyticsRecord))")
+		require.Contains(t, writeData, "return nil")
+		require.Contains(t, writeDataRecord, `s.log.Error("Couldn't track record:", err)`)
+		require.Contains(t, writeDataRecord, "return nil")
+	})
+
+	t.Run("influx v1 batch write error is ignored", func(t *testing.T) {
+		source := readPumpSource(t, "influx.go")
+		writeData := sourceFrom(t, source,
+			"func (i *InfluxPump) WriteData(ctx context.Context, data []interface{}) error",
+		)
+		require.Contains(t, writeData, "c.Write(bp)")
+		require.NotContains(t, writeData, "err = c.Write")
+		require.NotContains(t, writeData, "return c.Write")
+		require.Contains(t, writeData, "return nil")
+	})
+
+	t.Run("influx v2 async write errors are never drained", func(t *testing.T) {
+		source := readPumpSource(t, "influx2.go")
+		writeData := sourceFrom(t, source,
+			"func (i *Influx2Pump) WriteData(ctx context.Context, data []interface{}) error",
+		)
+		require.Contains(t, writeData, "writeApi.WritePoint(")
+		require.Contains(t, writeData, "writeApi.Flush()")
+		require.NotContains(t, writeData, ".Errors()")
+		require.Contains(t, writeData, "return nil")
+	})
 }
 
 // TestKinesisPutRecordsPerRecordFailuresReturnNil_KI is a static tripwire for

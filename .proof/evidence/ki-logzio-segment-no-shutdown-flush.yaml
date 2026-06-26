@@ -6,12 +6,12 @@ requirements:
 command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored go test -p=1 -count=1 -timeout=180s -run '^(TestLogzioPumpMissingShutdownFlush_KI|TestSegmentPumpMissingShutdownFlush_KI)$' ./pumps
 status: pass
 observed_result: known_issue_reproduced
-executed_at: "2026-06-26T18:40:00Z"
+executed_at: "2026-06-26T19:54:59Z"
 input_set:
     - KI logzio-segment-no-shutdown-flush static shutdown tripwires
 freshness_hashes:
     proof.yaml: sha256:18dd484cb75c5c729bc063c96426b101df78e0c89ec729e39724c18f50367e0e
-    pumps/known_issue_tripwire_test.go: sha256:41a2d53c519de8767cc0a3d3789ef99be44b83e7dadd92f3d376b4adafb0f696
+    pumps/known_issue_tripwire_test.go: sha256:7ec0074c0adc22e3df8b14211cd6c1c4b64adfd0eaa0077a6c7585687ffa5404
     pumps/logzio.go: sha256:b912c5b3b49ac3b0ab31ffc01b97d7bb6598324c599cf776e48541fe75b2a949
     pumps/segment.go: sha256:2842d988645d7f37d956b16eae980d5ccb851ac0cd0c0be715073482bd51cc71
 known_issues:

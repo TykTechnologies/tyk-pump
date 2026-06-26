@@ -1,6 +1,6 @@
 id: pump-writedata-swallows-per-batch-errors
-title: Pump.WriteData per-batch error swallowing across remaining pump surfaces
-description: 'Mirror of KI pump-writedata-swallows-per-batch-errors: Mongo selective, Mongo aggregate, kinesis, sql, graylog, syslog, logzio, segment, influx, and influx2 log per-batch errors but return nil from WriteData, breaking the INT-REQ-004 error-return contract. Standard Mongo WriteData is excluded because SW-REQ-034 proves the first insert error is returned. Accepting this risk because the workaround (operators tail pump logs) is in place; the refactor is tracked.'
+title: Pump.WriteData backend error swallowing across remaining pump surfaces
+description: 'Mirror of KI pump-writedata-swallows-per-batch-errors: Mongo selective, Kinesis API-level writes, SQL standard, Graylog, Syslog, Logzio, Segment, Influx v1, and Influx v2 do not surface backend/write failures through the WriteData return value, breaking the INT-REQ-004 error-return contract. Standard Mongo WriteData is excluded because SW-REQ-034 proves the first insert error is returned. MongoAggregate is excluded because current WriteData returns DoAggregatedWriting errors. Accepting this risk because the workaround (operators tail pump logs) is in place; the refactor is tracked.'
 affected_requirements:
     - INT-REQ-004
 mitigation: Operators must inspect pump logs for per-batch errors; the WriteData return value is currently a weak signal.
@@ -20,3 +20,7 @@ history:
       by: agent:codex
       action: narrowed
       detail: standard Mongo WriteData removed from accepted-risk scope after SW-REQ-034 evidence review
+    - at: "2026-06-26T20:20:00Z"
+      by: agent:codex
+      action: narrowed
+      detail: MongoAggregate removed from accepted-risk scope because current WriteData returns DoAggregatedWriting errors

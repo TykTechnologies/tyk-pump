@@ -1,10 +1,9 @@
 id: pump-writedata-swallows-per-batch-errors
-title: Multiple pumps log per-batch WriteData errors but return nil, breaking Pump-interface error-return contract
-description: 'INT-REQ-004 contracts that Pump.WriteData returns an error on backend failure. In practice, several pumps log per-batch errors via their logger and return nil. Audit of pumps/init.go-registered implementations: pumps/mongo_selective.go:266 (logs InsertError, returns nil); pumps/mongo_aggregate.go:307 (logs MongoUpsertErr, returns nil); pumps/kinesis.go:185 (logs PutRecordErr, returns nil); pumps/sql.go:333 (logs Create-batch error, returns nil); pumps/graylog.go:174 (logs and returns nil); pumps/syslog.go:138 (logs and returns nil); pumps/logzio.go:185 (logs and returns nil); pumps/segment.go:121 (logs and returns nil); pumps/influx.go:158 (logs WritePoint error, returns nil); pumps/influx2.go:178 (logs FlushErr, returns nil). Standard Mongo WriteData is excluded from this KI because SW-REQ-034 and TestMongoPump_WriteData_InsertErr prove the first per-batch insert error is returned. Affects the caller (main.execPumpWriting) which interprets nil as success and increments success counters.'
+title: Multiple pumps do not surface WriteData backend errors to the caller
+description: 'INT-REQ-004 contracts that Pump.WriteData returns an error on backend failure. Several registered pumps still fail to surface backend/write failures: MongoSelective logs ensureIndexes/Insert errors then returns nil; Kinesis logs API-level PutRecords errors then returns nil (per-record failures are tracked separately by kinesis-putrecords-per-record-failures-return-nil); SQL logs Create-batch errors then returns nil; Graylog uses a client Log call with no error channel and returns nil; Syslog explicitly discards fmt.Fprintf errors; Logzio ignores sender.Send errors; Segment ignores WriteDataRecord errors and WriteDataRecord logs Track errors then returns nil; Influx v1 ignores c.Write errors; Influx v2 writes asynchronously and never drains WriteAPI.Errors before returning nil. Standard Mongo is excluded because SW-REQ-034 proves the first insert error is returned. MongoAggregate is excluded because current WriteData returns DoAggregatedWriting errors. Affects the caller (main.execPumpWriting) which interprets nil as success and increments success counters.'
 affected_requirements:
     - INT-REQ-004
     - SW-REQ-035
-    - SW-REQ-036
     - SW-REQ-040
     - SW-REQ-046
     - SW-REQ-047
@@ -22,9 +21,9 @@ risk: data_integrity
 cve_surface: possible
 affected_api: Pump.WriteData implementations and main.execPumpWriting success/error accounting
 attacker_input: backend write failure, malformed batch member, or downstream service partial failure crossing the pump backend trust boundary
-sanitizer: manual:contract-audit+go-test-tripwire
-reproducer_command: go test -count=1 -timeout=180s -run '^TestSQLPumpWriteDataSwallowsBatchError_KI$' ./pumps
-environment_note: Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source or documentation surface and following the described scenario.
+sanitizer: manual:contract-audit+table-driven-static-tripwire
+reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored go test -p=1 -count=1 -timeout=180s -run '^TestSQLPumpWriteDataSwallowsBatchError_KI$' ./pumps
+environment_note: Table-driven static source tripwire only; no Mongo, AWS, Graylog, Syslog, Logzio, Segment, Influx, external service, or container is required. MongoAggregate is intentionally excluded because current WriteData returns DoAggregatedWriting errors.
 introduced_in: inception
 minimization_status: candidate
 mitigation: Operators must inspect pump logs for per-batch errors; the WriteData return value is currently a weak signal.
@@ -73,3 +72,7 @@ history:
       by: agent:codex
       action: edit
       detail: set-reproducer-command
+    - at: "2026-06-26T20:20:00Z"
+      by: agent:codex
+      action: harden-evidence
+      detail: remove-stale-mongo-aggregate-scope-and-add-table-driven-source-tripwire
