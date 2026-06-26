@@ -5,10 +5,12 @@ affected_requirements:
     - SW-REQ-011
 commands:
     - go test -count=1 -run TestIncrementAggregate_ResponseCodeMinusOne_NetworkBranch ./analytics
+evidence_manifests:
+    - .proof/evidence/ki-aggregate-mcdc-unreachable-string-assertion-ok.yaml
 severity: low
 severity_basis: risk
 risk: correctness
-reproducer_command: go test -count=1 -run TestIncrementAggregate_ResponseCodeMinusOne_NetworkBranch ./analytics
+reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored bash -lc "rg -n 'value\\.\\(string\\)|aggregate-mcdc-unreachable-string-assertion-ok' analytics/aggregate.go && rg -n 'APIID|string.*APIVersion|APIKey|OauthID' analytics/analytics.go"
 introduced_in: inception
 mitigation: These are defensive type assertions whose F branch is reflexively safe (the if-body is skipped, but the c counter is still consistent because the surrounding switch arms only consume val when ok is true).
 remediation: 'Add //mcdc:ignore comments on the same pattern as analytics/aggregate.go:878 and :967 (defensive: APIID/APIVersion/APIKey/OauthID are string fields in AnalyticsRecord; structs.Map preserves the string type so the assertion cannot fail) on lines 871, 894, 901, and 925.'
@@ -28,3 +30,7 @@ history:
       by: human:buger
       action: edit
       detail: set-severity-basis=risk,set-risk
+    - at: "2026-06-26T16:01:47Z"
+      by: agent:codex
+      action: edit
+      detail: set-reproducer-command,add-evidence-manifest

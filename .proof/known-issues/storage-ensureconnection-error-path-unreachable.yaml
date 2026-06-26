@@ -5,10 +5,12 @@ affected_requirements:
     - SW-REQ-031
 commands:
     - go test -count=1 -timeout 180s ./storage
+evidence_manifests:
+    - .proof/evidence/ki-storage-ensureconnection-error-path-unreachable.yaml
 severity: low
 severity_basis: risk
 risk: availability
-reproducer_command: go test -count=1 -timeout 180s ./storage
+reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored bash -lc "rg -n 'backoff\\.Retry|MaxElapsedTime=0|storage-ensureconnection-error-path-unreachable|ensureConnection\\(\\)' storage/temporal_storage.go retry/storage-retry.go"
 introduced_in: inception
 mitigation: These guards exist for the case where reconnect retries exhaust. With the current unbounded policy that case never materialises in normal operation; operators rely on log monitoring (see KI storage-retry-maxelapsed-zero-is-unbounded for context).
 remediation: Either set MaxElapsedTime to a finite value in GetTemporalStorageExponentialBackoff (which would also let the failure paths be tested), or wrap the unsupported-database-type error inside ensureConnection's operation with backoff.Permanent() so the loop terminates promptly on permanent errors.
@@ -28,3 +30,7 @@ history:
       by: human:buger
       action: edit
       detail: set-severity-basis=risk,set-risk
+    - at: "2026-06-26T16:01:48Z"
+      by: agent:codex
+      action: edit
+      detail: set-reproducer-command,add-evidence-manifest

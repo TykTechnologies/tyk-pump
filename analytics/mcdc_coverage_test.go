@@ -301,6 +301,20 @@ func TestAggregateUptimeData_TCPErrorWithURL(t *testing.T) {
 	assert.Equal(t, "http://target", agg.URL["http://target"].Identifier)
 }
 
+// Reproduces: uptime-aggregate-nil-errormap-on-tcp-then-http
+// Verifies: SW-REQ-073
+// Verifies: KI:uptime-aggregate-nil-errormap-on-tcp-then-http
+func TestAggregateUptimeData_TCPErrorBeforeHTTP_KI(t *testing.T) {
+	data := []UptimeReportData{
+		{OrgID: "orgU", APIID: "apiU", URL: "http://target", ResponseCode: -1, TCPError: true},
+		{OrgID: "orgU", APIID: "apiU", URL: "http://target", ResponseCode: 204, RequestTime: 12},
+	}
+
+	require.Panics(t, func() {
+		AggregateUptimeData(data)
+	}, "known issue: TCP-error record seeds the URL counter without ErrorMap, then HTTP record writes into nil map")
+}
+
 // ------- analytics/uptime_data.go: OnConflictUptimeAssignments field.IsZero T -------
 // OnConflictUptimeAssignments iterates Counter struct fields and only emits a
 // "request_time" GORM expression when the field's value is non-zero. The

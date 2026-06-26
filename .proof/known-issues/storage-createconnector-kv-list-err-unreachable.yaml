@@ -5,10 +5,12 @@ affected_requirements:
     - SW-REQ-007
 commands:
     - go test -count=1 -timeout 180s ./storage
+evidence_manifests:
+    - .proof/evidence/ki-storage-createconnector-kv-list-err-unreachable.yaml
 severity: low
 severity_basis: risk
 risk: correctness
-reproducer_command: go test -count=1 -timeout 180s ./storage
+reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored bash -lc "rg -n 'keyvalue\\.NewKeyValue|list\\.NewList|storage-createconnector-kv-list-err-unreachable|connector\\.NewConnector\\(model\\.RedisV9Type' storage/temporal_storage.go"
 introduced_in: inception
 mitigation: These are defensive guards; the only way they can fire is a future code change that injects a non-RedisV9 connector into createConnector. No runtime impact today.
 remediation: Either (a) extract a connector-factory seam so tests can inject a stub whose Type()/As() can be inverted, or (b) drop the dead guards in favour of a single error from connector.NewConnector and document the invariant.
@@ -28,3 +30,7 @@ history:
       by: human:buger
       action: edit
       detail: set-severity-basis=risk,set-risk
+    - at: "2026-06-26T16:01:48Z"
+      by: agent:codex
+      action: edit
+      detail: set-reproducer-command,add-evidence-manifest

@@ -5,10 +5,12 @@ affected_requirements:
     - SW-REQ-040
 commands:
     - go test -count=1 -timeout 60s -run TestMCDC_SQLPump_EnsureIndex_HasIndexFalse ./pumps
+evidence_manifests:
+    - .proof/evidence/ki-sql-ensureindex-name-mismatch-prevents-skip.yaml
 severity: low
 severity_basis: risk
 risk: correctness
-reproducer_command: go test -count=1 -timeout 60s -run TestMCDC_SQLPump_EnsureIndex_HasIndexFalse ./pumps
+reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored bash -lc "rg -n 'indexName := tableName \\+ idx\\.baseName|fmt\\.Sprintf\\(\"%s_%s\"|sql-ensureindex-name-mismatch-prevents-skip|HasIndex' pumps/sql.go"
 introduced_in: inception
 mitigation: Code uses CREATE INDEX IF NOT EXISTS as the actual guard, so duplicate-attempt is harmless.
 remediation: 'Either: (a) align indexName formatting in line 487 with buildIndexName (add underscore), or (b) remove the redundant HasIndex check and rely on CREATE INDEX IF NOT EXISTS alone.'
@@ -28,3 +30,7 @@ history:
       by: human:buger
       action: edit
       detail: set-severity-basis=risk,set-risk
+    - at: "2026-06-26T16:01:48Z"
+      by: agent:codex
+      action: edit
+      detail: set-reproducer-command,add-evidence-manifest

@@ -44,7 +44,6 @@ obligation_checklist:
     - backend_connection_mode_parity
     - backend_connection_timeout_propagated
     - cancellation_observed
-    - clock_skew_tolerated
     - concurrent
     - config_schema_strict
     - env_override_applied
@@ -60,11 +59,6 @@ obligation_deferrals:
       tracking: temporal-storage-operations-ignore-caller-cancellation
       owner: human:buger
       ki_ref: temporal-storage-operations-ignore-caller-cancellation
-    - obligation_class: clock_skew_tolerated
-      reason: 'real untested obligation under known-issue getanddeleteset-expire-ttl-assumes-clock-sync; surfaced as visible tracked debt, not an overclaimed fix'
-      tracking: getanddeleteset-expire-ttl-assumes-clock-sync
-      owner: human:buger
-      ki_ref: getanddeleteset-expire-ttl-assumes-clock-sync
     - obligation_class: concurrent
       reason: 'real untested obligation under known-issue storage-connector-singleton-race; surfaced as visible tracked debt, not an overclaimed fix'
       tracking: storage-connector-singleton-race

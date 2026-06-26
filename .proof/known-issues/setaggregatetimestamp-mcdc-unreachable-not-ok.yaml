@@ -5,10 +5,12 @@ affected_requirements:
     - SW-REQ-011
 commands:
     - go test -count=1 -run TestSetAggregateTimestamp_NonEmptyLastDocOK ./analytics
+evidence_manifests:
+    - .proof/evidence/ki-setaggregatetimestamp-mcdc-unreachable-not-ok.yaml
 severity: low
 severity_basis: risk
 risk: data_integrity
-reproducer_command: go test -count=1 -run TestSetAggregateTimestamp_NonEmptyLastDocOK ./analytics
+reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored bash -lc "rg -n 'lastDocumentTS == emptyTime \\|\\| !ok|setaggregatetimestamp-mcdc-unreachable-not-ok' analytics/aggregate.go"
 introduced_in: inception
 mitigation: The condition is correct and defensive — the OR with !ok is redundant given Go map semantics, but provides clarity to future readers.
 remediation: Replace the OR with a single 'if lastDocumentTS == emptyTime' and drop the !ok branch, OR add //mcdc:ignore on aggregate.go:1072 documenting that map zero-value semantics make !ok=T unreachable when the first clause is F.
@@ -28,3 +30,7 @@ history:
       by: human:buger
       action: edit
       detail: set-severity-basis=risk,set-risk
+    - at: "2026-06-26T16:01:48Z"
+      by: agent:codex
+      action: edit
+      detail: set-reproducer-command,add-evidence-manifest

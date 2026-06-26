@@ -250,6 +250,7 @@ func TestStdOutPump_WriteData_ContextCancelled(t *testing.T) {
 
 // TestStdOutPump_WriteData_ContextCancelled_KI documents the current
 // cancellation-reporting gap: the pump returns nil instead of ctx.Err().
+// Verifies: SW-REQ-026
 // Verifies: KI:stdout-writedata-swallows-ctx-error
 // Reproduces: stdout-writedata-swallows-ctx-error
 func TestStdOutPump_WriteData_ContextCancelled_KI(t *testing.T) {

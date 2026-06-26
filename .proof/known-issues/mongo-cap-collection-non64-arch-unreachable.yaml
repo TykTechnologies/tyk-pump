@@ -5,10 +5,12 @@ affected_requirements:
     - SW-REQ-034
 commands:
     - go test -count=1 -timeout 600s -run TestMongoPump_capCollection_Not64arch ./pumps
+evidence_manifests:
+    - .proof/evidence/ki-mongo-cap-collection-non64-arch-unreachable.yaml
 severity: low
 severity_basis: risk
 risk: correctness
-reproducer_command: go test -count=1 -timeout 600s -run TestMongoPump_capCollection_Not64arch ./pumps
+reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored bash -lc "rg -n 'strconv\\.IntSize < 64|mongo-cap-collection-non64-arch-unreachable|capCollection' pumps/mongo.go"
 introduced_in: inception
 mitigation: Tyk Pump release matrix only ships 64-bit binaries; release notes explicitly call out the unsupported 32-bit configuration.
 remediation: When a 32-bit CI runner is added to the matrix (low priority), retire this KI; otherwise remove the guard as dead code in a future cleanup pass.
@@ -28,3 +30,7 @@ history:
       by: human:buger
       action: edit
       detail: set-severity-basis=risk,set-risk
+    - at: "2026-06-26T16:01:47Z"
+      by: agent:codex
+      action: edit
+      detail: set-reproducer-command,add-evidence-manifest

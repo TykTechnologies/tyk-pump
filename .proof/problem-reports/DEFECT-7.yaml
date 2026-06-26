@@ -98,6 +98,7 @@ disposition:
     - mapstructure-decode-silently-drops-unknown-keys
     - mcp-sql-aggregate-background-index-concurrency-unbounded
     - mcp-sql-aggregate-mysql-create-index-syntax-broken
+    - mongo-pump-writeuptime-nil-on-bad-msgpack
     - no-panic-recovery-in-exec-pump-writing
     - pump-no-timeout-can-block-purge-cycle
     - pump-writedata-swallows-per-batch-errors

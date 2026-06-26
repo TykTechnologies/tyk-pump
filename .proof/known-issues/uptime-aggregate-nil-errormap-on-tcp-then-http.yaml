@@ -5,10 +5,12 @@ affected_requirements:
     - SW-REQ-073
 commands:
     - go test -count=1 -run TestAggregateUptimeData_TCPErrorBeforeHTTP ./analytics
+evidence_manifests:
+    - .proof/evidence/ki-uptime-aggregate-nil-errormap-on-tcp-then-http.yaml
 severity: medium
 severity_basis: risk
 risk: availability
-reproducer_command: go test -count=1 -run TestAggregateUptimeData_TCPErrorBeforeHTTP ./analytics
+reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored go test -p=1 -count=1 -timeout=180s -run '^TestAggregateUptimeData_TCPErrorBeforeHTTP_KI$' ./analytics
 introduced_in: inception
 mitigation: In practice, gateways emit TCP-error and HTTP records for the same URL in mixed order; if HTTP records always arrive first per URL the bug stays latent. Operators should monitor pump logs for panics.
 remediation: In analytics/uptime_data.go around line 175-187, when seeding the URL counter on the ResponseCode==-1 path, initialise the per-URL Counter.ErrorMap to make(map[string]int) so subsequent HTTP records can safely increment it.
@@ -32,3 +34,7 @@ history:
       by: human:buger
       action: edit
       detail: set-severity-basis=risk,set-risk
+    - at: "2026-06-26T16:01:48Z"
+      by: agent:codex
+      action: edit
+      detail: set-reproducer-command,add-evidence-manifest

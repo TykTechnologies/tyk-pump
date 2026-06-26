@@ -83,6 +83,7 @@ disposition:
     known_issues:
         - analytics-timestamp-timezone-convention-unpinned
         - mapstructure-decode-silently-drops-unknown-keys
+        - mongo-pump-writeuptime-nil-on-bad-msgpack
         - no-panic-recovery-in-exec-pump-writing
         - pump-no-timeout-can-block-purge-cycle
         - pump-writedata-swallows-per-batch-errors

@@ -19,9 +19,11 @@ evidence_manifests:
     - code_signal:opengrep:go.goroutine.no-recover:pumps/prometheus.go:215
     - code_signal:opengrep:go.goroutine.no-recover:pumps/sql.go:498
     - code_signal:opengrep:go.goroutine.no-recover:pumps/sql_aggregate.go:182
+    - .proof/evidence/ki-no-panic-recovery-in-exec-pump-writing.yaml
 severity: medium
 severity_basis: risk
 risk: availability
+reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored go test -p=1 -count=1 -timeout=180s -run '^TestFanoutPanicIsolated_PanicInOneDoesNotStallOthers$' .
 environment_note: Evidence is tied to the listed evidence_manifests entries; reproduce by rerunning the named test or code-signal scan and inspecting code_signal:opengrep:go.goroutine.no-recover:pumps/graph_mongo.go:114.
 introduced_in: inception
 mitigation: Avoid pumps with known panic paths; pin pump implementations to versions that have been runtime-tested under hostile inputs.
@@ -74,3 +76,7 @@ history:
       by: agent:codex
       action: review
       detail: reviewer=human:buger,new_review_date=2026-11-30
+    - at: "2026-06-26T16:01:48Z"
+      by: agent:codex
+      action: edit
+      detail: set-reproducer-command,add-evidence-manifest

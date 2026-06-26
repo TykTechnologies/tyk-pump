@@ -2,15 +2,15 @@ schema_version: proof.evidence_profile.v1
 profile: known_issue_reproducer
 requirements:
     - SW-REQ-073
-command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored go test -p=1 -count=1 -timeout=180s -run '^TestAggregateUptimeData_TCPErrorWithURL$' ./analytics
+command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored go test -p=1 -count=1 -timeout=180s -run '^TestAggregateUptimeData_TCPErrorBeforeHTTP_KI$' ./analytics
 status: pass
 observed_result: known_issue_reproduced
-executed_at: "2026-06-26T16:12:59Z"
+executed_at: "2026-06-26T16:13:03Z"
 input_set:
-    - KI uptime-aggregate-erasstr-itoa-always-nonempty structural MC/DC tripwire
+    - KI uptime-aggregate-nil-errormap-on-tcp-then-http focused panic tripwire
 freshness_hashes:
     analytics/mcdc_coverage_test.go: sha256:cbfa4fcd646c6a527ff54bea508a70b991597239a9a55b416f3b57699a7da741
     analytics/uptime_data.go: sha256:9643b4b0d1217d1644255eefd8da842fcbb2f192c79053d2a546ae02d090ed28
     proof.yaml: sha256:18dd484cb75c5c729bc063c96426b101df78e0c89ec729e39724c18f50367e0e
 known_issues:
-    - uptime-aggregate-erasstr-itoa-always-nonempty
+    - uptime-aggregate-nil-errormap-on-tcp-then-http

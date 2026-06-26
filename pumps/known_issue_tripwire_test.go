@@ -33,15 +33,15 @@ func TestSQLPumpWriteDataSwallowsBatchError_KI(t *testing.T) {
 // TestSQSPumpBatchLimitZeroInfiniteLoop_KI is a static tripwire for the SQS
 // zero-batch-limit loop. Executing the path with AWSSQSBatchLimit=0 would hang,
 // so the test pins the loop shape instead.
+// Verifies: SW-REQ-055
 // Verifies: KI:sqs-batchlimit-zero-infinite-loop
 // Reproduces: sqs-batchlimit-zero-infinite-loop
 func TestSQSPumpBatchLimitZeroInfiniteLoop_KI(t *testing.T) {
 	source := readPumpSource(t, "sqs.go")
 
-	require.Regexp(t,
-		regexp.MustCompile(`for i := 0; i < len\(messages\); i \+= s\.SQSConf\.AWSSQSBatchLimit`),
-		source,
-	)
+	require.Contains(t, source, "AWSSQSBatchLimit")
+	require.Contains(t, source, "i + s.SQSConf.AWSSQSBatchLimit")
+	require.NotRegexp(t, regexp.MustCompile(`AWSSQSBatchLimit\s*(<=\s*0|<\s*1|==\s*0)`), source)
 }
 
 // TestLogzioPumpMissingShutdownFlush_KI is a static tripwire for the Logz.io

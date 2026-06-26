@@ -75,6 +75,7 @@ disposition:
         - SW-REQ-036
     known_issues:
         - mongo-pump-ignores-caller-context
+        - mongo-pump-writeuptime-nil-on-bad-msgpack
         - mongo-aggregate-last-document-query-ignores-timeout
         - mongo-standard-final-skipped-record-drops-pending-batch
         - mongo-standard-insert-error-double-send-goroutine-leak

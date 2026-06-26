@@ -15,12 +15,12 @@ requirements:
 command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored go test -p=1 -count=1 -timeout=180s -run '^TestSQLPumpWriteDataSwallowsBatchError_KI$' ./pumps
 status: pass
 observed_result: known_issue_reproduced
-executed_at: "2026-06-26T14:32:09Z"
+executed_at: "2026-06-26T16:12:41Z"
 input_set:
     - KI pump-writedata-swallows-per-batch-errors focused static tripwire
 freshness_hashes:
     proof.yaml: sha256:18dd484cb75c5c729bc063c96426b101df78e0c89ec729e39724c18f50367e0e
-    pumps/known_issue_tripwire_test.go: sha256:5e4e41263a05fadc1b4e40c19bc615c28c6c28e7a10efd9e41c0bab6855b27e5
+    pumps/known_issue_tripwire_test.go: sha256:7d8f9438e2201fb21217a894bed594c3a13fb4b6d65d8a69186696bebf59aaa7
     pumps/sql.go: sha256:f91170d0a2aa1c527df86cb02872797cf730304e9e765decd11561626dfac33a
 known_issues:
     - pump-writedata-swallows-per-batch-errors
