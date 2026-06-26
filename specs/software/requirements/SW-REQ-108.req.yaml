@@ -19,7 +19,10 @@ variables:
     - store_per_minute
     - aggregation_time_config_valid
     - window_defaulted_to_60
-traces: {}
+traces:
+    reviewed_at: "2026-06-26T12:20:55.333726Z"
+    reviewed_by: human:buger
+    reviewed_fingerprint: sha256:5ce62005f484076da544eb20526c2da7a652a72171a9c723913fa176f630d68e
 verification:
     assurance_level: B
     formalization_status: valid

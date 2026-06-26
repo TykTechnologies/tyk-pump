@@ -33,6 +33,14 @@ verification:
         comment: 'Reviewed d4d1cf7 hardening: SW-REQ-059 now references SW-REQ-102 for Mongo aggregate Lists projection persistence; existing mixed routing and KI scope unchanged.'
         fingerprint: sha256:d21c99ee1a20bfd3bddbb5089040dada73d08c537d4b0ad9376e41e330a4cc70
         ai_generated: false
+    gaps_reviewed_at: "2026-06-26T12:19:41.140866Z"
+    gaps_reviewed_by: human:buger
+    gap_reviews:
+        - check: decomposition
+          issue_key: decomposition|SW-REQ-059|write_skipped
+          reviewer: human:buger
+          reason: 'Reviewed active parent decomposition gaps on 2026-06-26: these parents intentionally retain baseline pump behavior variables while their current children cover narrower hardening or defect-history slices. Residual parent variables remain owned by the parent requirement/evidence; no child coverage is claimed for behavior the child does not specify.'
+          reviewed_at: "2026-06-26T12:19:41.140866Z"
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:37:24Z"

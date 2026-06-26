@@ -21,6 +21,9 @@ variables:
 traces:
     satisfies:
         - SW-REQ-075
+    reviewed_at: "2026-06-26T12:20:54.377237Z"
+    reviewed_by: human:buger
+    reviewed_fingerprint: sha256:262cc941c83c230223b97b043ce23c11a5706a16d47e682ebf2b1a956e14adc4
 verification:
     assurance_level: B
     formalization_status: valid

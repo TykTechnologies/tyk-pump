@@ -33,6 +33,14 @@ verification:
         comment: 'Reviewed 51af27d hardening: SW-REQ-046 now references SW-REQ-101 for the Influx v1 batch-write cardinality invariant; existing Influx KIs remain scoped separately.'
         fingerprint: sha256:89a7b0c4e28c20d2c90ef29fabf9a7691f688133f6e51e66ac4821a23c421010
         ai_generated: false
+    gaps_reviewed_at: "2026-06-26T12:19:41.140866Z"
+    gaps_reviewed_by: human:buger
+    gap_reviews:
+        - check: decomposition
+          issue_key: decomposition|SW-REQ-046|reconnect_attempted
+          reviewer: human:buger
+          reason: 'Reviewed active parent decomposition gaps on 2026-06-26: these parents intentionally retain baseline pump behavior variables while their current children cover narrower hardening or defect-history slices. Residual parent variables remain owned by the parent requirement/evidence; no child coverage is claimed for behavior the child does not specify.'
+          reviewed_at: "2026-06-26T12:19:41.140866Z"
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:35:56Z"

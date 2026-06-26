@@ -40,3 +40,6 @@ variables:
       type: bool
       direction: output
       description: True iff the REST aggregate increments Total.ErrorTotal, Total.ErrorMap, and the per-status Errors dimension for the current HTTP error record.
+independence:
+    declared: true
+    reason: Analytics requirements cover separate classifier partitioning, GraphQL root-field projection, filter predicate evaluation, and HTTP error counter increments; each guarantee owns a distinct output state.

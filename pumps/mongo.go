@@ -400,6 +400,7 @@ func (m *MongoPump) connect() {
 }
 
 // reqproof:implements SW-REQ-034
+// reqproof:implements SW-REQ-082
 func (m *MongoPump) WriteData(ctx context.Context, data []interface{}) error {
 	collectionName := m.dbConf.CollectionName
 	if collectionName == "" { //mcdc:ignore:capability-gap log.Fatal exits the process on misconfiguration; not unit-testable — KI mongo-pump-init-connect-logfatal-unreachable [ki: mongo-pump-init-connect-logfatal-unreachable]
@@ -462,6 +463,7 @@ func (m *MongoPump) WriteData(ctx context.Context, data []interface{}) error {
 // AccumulateSet groups data items into chunks based on the max batch size limit while handling graph analytics records separately.
 // It returns a 2D array of DBObjects.
 // reqproof:implements SW-REQ-034
+// reqproof:implements SW-REQ-082
 func (m *MongoPump) AccumulateSet(data []interface{}, isForGraphRecords bool) [][]model.DBObject {
 	accumulatorTotal := 0
 	returnArray := make([][]model.DBObject, 0)
@@ -497,6 +499,7 @@ func (m *MongoPump) AccumulateSet(data []interface{}, isForGraphRecords bool) []
 // shouldProcessItem checks if the item should be processed based on its ResponseCode and if it's a graph record.
 // It returns the processed item and a boolean indicating if the item should be skipped.
 // reqproof:implements SW-REQ-034
+// reqproof:implements SW-REQ-082
 func (m *MongoPump) shouldProcessItem(item interface{}, isForGraphRecords bool) (records *analytics.AnalyticsRecord, shouldSKip bool) {
 	thisItem, ok := item.(analytics.AnalyticsRecord)
 	if !ok {

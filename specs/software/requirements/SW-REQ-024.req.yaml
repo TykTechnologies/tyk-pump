@@ -33,6 +33,14 @@ verification:
         comment: 'Reviewed ebd5a6c hardening: Prometheus tyk_latency contract now explicitly includes gateway observations from AnalyticsRecord.Latency.Gateway with code-annotated evidence; no runtime behavior change.'
         fingerprint: sha256:5696d9c48917c9fe83b119eeaaef610aaf972945a3416bf14f411a8beab610f1
         ai_generated: false
+    gaps_reviewed_at: "2026-06-26T12:19:41.140866Z"
+    gaps_reviewed_by: human:buger
+    gap_reviews:
+        - check: decomposition
+          issue_key: decomposition|SW-REQ-024|default_path_applied
+          reviewer: human:buger
+          reason: 'Reviewed active parent decomposition gaps on 2026-06-26: these parents intentionally retain baseline pump behavior variables while their current children cover narrower hardening or defect-history slices. Residual parent variables remain owned by the parent requirement/evidence; no child coverage is claimed for behavior the child does not specify.'
+          reviewed_at: "2026-06-26T12:19:41.140866Z"
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:16Z"

@@ -33,6 +33,14 @@ verification:
         comment: 'Reviewed TT-3067 follow-up: SW-REQ-068 now names the API-key+UseSSL KnownIssue in YAML and frames Elasticsearch TLS coverage as config construction/handoff evidence; added AST witness for getOperator -> NewTLSConfig field handoff and warning assertion for skip-verify opt-in. No runtime product behavior change.'
         fingerprint: sha256:a6d684bf0245781a6d3f7380dd67d22f1a6ae4247eb2547b718e82a38eab5391
         ai_generated: false
+    gaps_reviewed_at: "2026-06-26T12:19:41.140866Z"
+    gaps_reviewed_by: human:buger
+    gap_reviews:
+        - check: decomposition
+          issue_key: decomposition|SW-REQ-068|v3_operator_constructed
+          reviewer: human:buger
+          reason: 'Reviewed active parent decomposition gaps on 2026-06-26: these parents intentionally retain baseline pump behavior variables while their current children cover narrower hardening or defect-history slices. Residual parent variables remain owned by the parent requirement/evidence; no child coverage is claimed for behavior the child does not specify.'
+          reviewed_at: "2026-06-26T12:19:41.140866Z"
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:39:57Z"

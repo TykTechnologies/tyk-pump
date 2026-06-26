@@ -93,6 +93,8 @@ func (k *KafkaPump) GetEnvPrefix() string {
 }
 
 // reqproof:implements SW-REQ-021
+// reqproof:implements SW-REQ-081
+// reqproof:implements SW-REQ-106
 func (k *KafkaPump) Init(config interface{}) error {
 	k.log = log.WithField("prefix", kafkaPrefix)
 

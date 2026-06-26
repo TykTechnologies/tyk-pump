@@ -18,7 +18,10 @@ tags: []
 variables:
     - aggregate_input_present
     - active_window_passed_to_aggregate_data
-traces: {}
+traces:
+    reviewed_at: "2026-06-26T12:20:55.376613Z"
+    reviewed_by: human:buger
+    reviewed_fingerprint: sha256:8a360e1966d57c82d4e7ca7718c73478c4b59141720e6e4df01bec6fea99ebc2
 verification:
     assurance_level: B
     formalization_status: valid

@@ -28,3 +28,6 @@ variables:
       type: bool
       direction: output
       description: True iff the MongoSelective pump attempts its baseline DocumentDB-compatible indexes without calling the StandardMongo collection-exists shortcut; false when omit_index_creation intentionally disables index creation.
+independence:
+    declared: true
+    reason: MongoSelective requirements cover org collection routing, document-size accounting, and DocumentDB-compatible index attempts; these outputs are separate write-path responsibilities.

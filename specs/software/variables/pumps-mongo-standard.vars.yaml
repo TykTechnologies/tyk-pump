@@ -28,3 +28,6 @@ variables:
       type: bool
       direction: output
       description: True iff the standard Mongo pump attempts its baseline DocumentDB-compatible indexes without calling the StandardMongo collection-exists shortcut; false when omit_index_creation intentionally disables index creation.
+independence:
+    declared: true
+    reason: Standard Mongo requirements cover MCP filtering, accepted-record insertion, and DocumentDB-compatible index attempts; each guarantee owns a distinct output of the write/init path.

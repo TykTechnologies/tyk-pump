@@ -266,6 +266,7 @@ func (p *PrometheusPump) InitCustomMetrics() {
 
 // observeLatencyMetrics handles the special case of tyk_latency metric with multiple latency types
 // reqproof:implements SW-REQ-024
+// reqproof:implements SW-REQ-104
 func (p *PrometheusPump) observeLatencyMetrics(metric *PrometheusMetric, record *analytics.AnalyticsRecord, values []string) {
 	latencyTypes := []struct {
 		name  string
@@ -303,6 +304,7 @@ func (p *PrometheusPump) observeHistogramMetric(metric *PrometheusMetric, reques
 // processMetric updates a single metric for a single analytics record.
 // It is a no-op when the metric is MCP-only and the record is not an MCP record.
 // reqproof:implements SW-REQ-024
+// reqproof:implements SW-REQ-104
 func (p *PrometheusPump) processMetric(metric *PrometheusMetric, record analytics.AnalyticsRecord) {
 	if !metric.enabled {
 		return
@@ -498,6 +500,7 @@ func (pm *PrometheusMetric) obfuscateAPIKey(apiKey string) string {
 
 // Inc is going to fill counterMap and histogramMap with the data from record.
 // reqproof:implements SW-REQ-024
+// reqproof:implements SW-REQ-083
 func (pm *PrometheusMetric) Inc(values ...string) error {
 	switch pm.MetricType {
 	case counterType:
@@ -522,6 +525,7 @@ func (pm *PrometheusMetric) Inc(values ...string) error {
 // Observe will fill hitogramMap with the sum of totalRequest and hits per label value if aggregate_observations is true. If aggregate_observations is set to false (default) it will execute prometheus Observe directly.
 // reqproof:implements SW-REQ-024
 // reqproof:implements SW-REQ-091
+// reqproof:implements SW-REQ-083
 func (pm *PrometheusMetric) Observe(requestTime int64, values ...string) error {
 	switch pm.MetricType {
 	case histogramType:
@@ -568,6 +572,7 @@ func (pm *PrometheusMetric) Observe(requestTime int64, values ...string) error {
 // If the PrometheusMetric is histogramType and aggregate_observations config is true, it will calculate the average value of the metrics in the histogramMap and execute prometheus Observe.
 // If aggregate_observations is false, it won't do anything since it means that we already exposed the metric.
 // reqproof:implements SW-REQ-024
+// reqproof:implements SW-REQ-083
 func (pm *PrometheusMetric) Expose() error {
 	switch pm.MetricType {
 	case counterType:

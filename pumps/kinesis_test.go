@@ -135,6 +135,7 @@ func TestSplitIntoBatches(t *testing.T) {
 	assert.Len(t, batches[2], 5)
 }
 
+// KI tripwire for SW-REQ-056; not requirement-success evidence.
 // Verifies: KI:kinesis-batch-size-over-aws-putrecords-limit
 // Reproduces: kinesis-batch-size-over-aws-putrecords-limit
 func TestKinesisSplitIntoBatches_AllowsOverAWSLimit(t *testing.T) {

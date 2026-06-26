@@ -191,6 +191,7 @@ func TestMongoSelectivePump_GetItemSizeBytes_CountsRawRequestAndResponseOnce(t *
 
 // TestMongoSelectivePump_AccumulateSet_FinalOversizeDropsPendingBatch_KI
 // reproduces mongo-selective-final-skipped-record-drops-pending-batch.
+// KI tripwire for SW-REQ-035; not requirement-success evidence.
 // Verifies: KI:mongo-selective-final-skipped-record-drops-pending-batch
 // Reproduces: mongo-selective-final-skipped-record-drops-pending-batch
 func TestMongoSelectivePump_AccumulateSet_FinalOversizeDropsPendingBatch_KI(t *testing.T) {

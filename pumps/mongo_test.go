@@ -546,6 +546,7 @@ func TestMongoPump_AccumulateSet_RewritesOversizePayloadWithoutSkipping(t *testi
 
 // TestMongoPump_AccumulateSet_FinalSkippedRecordDropsPendingBatch_KI
 // reproduces mongo-standard-final-skipped-record-drops-pending-batch.
+// KI tripwire for SW-REQ-034; not requirement-success evidence.
 // Verifies: KI:mongo-standard-final-skipped-record-drops-pending-batch
 // Reproduces: mongo-standard-final-skipped-record-drops-pending-batch
 func TestMongoPump_AccumulateSet_FinalSkippedRecordDropsPendingBatch_KI(t *testing.T) {

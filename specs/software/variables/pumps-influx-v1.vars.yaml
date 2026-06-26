@@ -12,3 +12,6 @@ variables:
       type: bool
       direction: output
       description: True iff InfluxPump.WriteData accumulates all accepted analytics records for the current purge into one InfluxDB v1 BatchPoints value and performs exactly one client Write call for that purge batch, instead of writing cumulative prefixes inside the record loop.
+independence:
+    declared: true
+    reason: Influx v1 requirements distinguish reconnect-on-client-error behavior from single-write batch cardinality; the outputs are intentionally independent.

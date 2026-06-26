@@ -362,6 +362,7 @@ func TestMongoAggregatePump_divideAggregationTime(t *testing.T) {
 // Historical stress scenario kept as non-credit documentation only. Bounded
 // proof evidence lives in TestMongoAggregatePump_WriteDataSelfHealRetriesAfterSizeError
 // and TestMongoAggregatePump_WriteDataSelfHealStopsAtFloor.
+// Historical coverage reference for SW-REQ-062; not requirement-success evidence.
 func TestMongoAggregatePump_SelfHealing(t *testing.T) {
 	t.Skip("Self-healing requires generating a 16MB+ aggregate; covered by ShouldSelfHeal unit tests")
 	cfgPump1 := make(map[string]interface{})

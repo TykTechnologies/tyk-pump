@@ -250,6 +250,7 @@ func TestElasticsearchPump_GetOperatorPassesTLSConfigFields(t *testing.T) {
 	assert.Equal(t, "conf.SSLInsecureSkipVerify", fields["InsecureSkipVerify"])
 }
 
+// KI tripwire for SW-REQ-068; not requirement-success evidence.
 // Verifies: KI:elasticsearch-api-key-auth-dropped-when-use-ssl
 // Reproduces: elasticsearch-api-key-auth-dropped-when-use-ssl
 func TestElasticsearchPump_ApiKeyAuthDroppedWhenUseSSL_KI(t *testing.T) {
@@ -453,6 +454,7 @@ func TestGetMapping_ExtendedStatistics(t *testing.T) {
 	})
 }
 
+// KI tripwire for SW-REQ-068; not requirement-success evidence.
 // Verifies: KI:elasticsearch-decode-base64-errors-silent-empty
 // Reproduces: elasticsearch-decode-base64-errors-silent-empty
 func TestGetMapping_DecodeBase64MalformedInput_KI(t *testing.T) {

@@ -35,6 +35,14 @@ verification:
         comment: 'Software decomposition of SYS-REQ-004 other_backends_written: per-backend fan-out independence in main.writeToPumps (one execPumpWriting goroutine per pump; per-goroutine error/timeout containment, logged not propagated). Verified by TestWriteDataWithFilters with all 3 MC/DC rows covered; implemented_by writeToPumps/execPumpWriting.'
         fingerprint: sha256:d0f8a8202e3014b27d9335def90918cef5827667147b38bf2c6f5f4cf750eed1
         ai_generated: false
+    gaps_reviewed_at: "2026-06-26T12:19:41.140866Z"
+    gaps_reviewed_by: human:buger
+    gap_reviews:
+        - check: decomposition
+          issue_key: decomposition|SW-REQ-075|other_backends_written
+          reviewer: human:buger
+          reason: 'Reviewed active parent decomposition gaps on 2026-06-26: these parents intentionally retain baseline pump behavior variables while their current children cover narrower hardening or defect-history slices. Residual parent variables remain owned by the parent requirement/evidence; no child coverage is claimed for behavior the child does not specify.'
+          reviewed_at: "2026-06-26T12:19:41.140866Z"
 history:
     created_by: human:cli
     created_at: "2026-06-11T16:41:40Z"

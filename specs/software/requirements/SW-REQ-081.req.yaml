@@ -18,7 +18,10 @@ tags: []
 variables:
     - kafka_timeout_configured
     - kafka_timeout_duration_applied
-traces: {}
+traces:
+    reviewed_at: "2026-06-26T12:20:53.185286Z"
+    reviewed_by: human:buger
+    reviewed_fingerprint: sha256:98b3014e0cf22405af50fd2485a7e50c76d881607fe1b3323df9712fdbd50924
 verification:
     assurance_level: B
     formalization_status: valid

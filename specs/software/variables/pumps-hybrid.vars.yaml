@@ -16,3 +16,6 @@ variables:
       type: bool
       direction: output
       description: True iff HybridPump.Init returns the initialization error to its caller without calling log.Fatal, os.Exit, or otherwise terminating the process.
+independence:
+    declared: true
+    reason: Hybrid requirements cover TLS dialer selection and recoverable Init error surfacing; those guarantees constrain different outputs of the initialization path.

@@ -1335,6 +1335,7 @@ func TestMongoPump_EnsureIndexes_FirstCreateIndexErr(t *testing.T) {
 	assert.Error(t, err)
 }
 
+// KI tripwire for SW-REQ-034; not requirement-success evidence.
 // Verifies: KI:mongo-standard-logbrowser-compatible-index-conflict
 // Reproduces: mongo-standard-logbrowser-compatible-index-conflict
 func TestMongoPump_EnsureIndexes_LogBrowserDifferentName_KI(t *testing.T) {

@@ -33,6 +33,14 @@ verification:
         comment: 'Reviewed TT-695 follow-up: MongoSelective timeout evidence now proves pmp.Timeout is passed to SetTimeout before Init(pmp.Meta), and connect propagates m.timeout to persistent.ClientOpts.ConnectionTimeout. Residual write/query timeout debt remains KI-linked.'
         fingerprint: sha256:9c9867f6b5e3198e1e57c96e1328906ed272dfafdc0831b01e758f00d0a7a445
         ai_generated: false
+    gaps_reviewed_at: "2026-06-26T12:19:41.140866Z"
+    gaps_reviewed_by: human:buger
+    gap_reviews:
+        - check: decomposition
+          issue_key: decomposition|SW-REQ-035|record_routed_to_org_collection
+          reviewer: human:buger
+          reason: 'Reviewed active parent decomposition gaps on 2026-06-26: these parents intentionally retain baseline pump behavior variables while their current children cover narrower hardening or defect-history slices. Residual parent variables remain owned by the parent requirement/evidence; no child coverage is claimed for behavior the child does not specify.'
+          reviewed_at: "2026-06-26T12:19:41.140866Z"
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:34:43Z"

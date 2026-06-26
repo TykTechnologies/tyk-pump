@@ -800,6 +800,7 @@ func TestSQSPump_WriteData_BadRecordSkipped(t *testing.T) {
 // current malformed-input gap: WriteData logs and continues on a non-record,
 // but the preallocated SQS entry remains in the batch as a zero-value entry.
 //
+// KI tripwire for SW-REQ-055; not requirement-success evidence.
 // Verifies: KI:sqs-malformed-record-sends-empty-entry
 // Reproduces: sqs-malformed-record-sends-empty-entry
 func TestSQSPump_WriteData_MalformedRecordLeavesEmptyEntry_KI(t *testing.T) {
@@ -1078,7 +1079,6 @@ func TestKinesisPump_Init_StreamNameWarnOnly(t *testing.T) {
 // MCDC SW-REQ-046: connect_err=T, reconnect_attempted=F => FALSE
 // MCDC SW-REQ-046: connect_err=T, reconnect_attempted=T => TRUE
 // MCDC SW-REQ-101: influx_v1_single_write_per_purge_batch=T => TRUE
-//mcdc:ignore SW-REQ-101: influx_v1_single_write_per_purge_batch=F => FALSE -- influx.go adds every point inside the loop and calls c.Write(bp) once after the loop; with the current code shape, the invariant-false row would require moving Write back into the loop or adding another Write call, while the positive multi-record batch path is witnessed here [reviewed: human:buger] [category: defensive]
 // (This round-trip test points the v1 client at httptest and drives
 // connect_err=F → no recursion — F/F=TRUE. The T/T=TRUE pair is the
 // KI-tracked infinite-recursion path documented in
@@ -1089,6 +1089,8 @@ func TestKinesisPump_Init_StreamNameWarnOnly(t *testing.T) {
 // SW-REQ-046:nominal:nominal
 // SW-REQ-046:output_cardinality_bounded:nominal
 // SW-REQ-101:output_cardinality_bounded:nominal
+//
+//mcdc:ignore SW-REQ-101: influx_v1_single_write_per_purge_batch=F => FALSE -- influx.go adds every point inside the loop and calls c.Write(bp) once after the loop; with the current code shape, the invariant-false row would require moving Write back into the loop or adding another Write call, while the positive multi-record batch path is witnessed here [reviewed: human:buger] [category: defensive]
 func TestInfluxPump_WriteData_RoundTrip(t *testing.T) {
 	cs := newCaptureServer(t)
 	cs.statusSeq = []int{http.StatusNoContent}

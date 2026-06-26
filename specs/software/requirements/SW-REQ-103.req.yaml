@@ -22,6 +22,9 @@ traces:
     satisfies:
         - SW-REQ-011
         - SYS-REQ-019
+    reviewed_at: "2026-06-26T12:20:54.961619Z"
+    reviewed_by: human:buger
+    reviewed_fingerprint: sha256:a9d4895388df427faf396a1ad464de7db4f1bd62365817882aff08aafbcda36f
 verification:
     assurance_level: B
     formalization_status: valid

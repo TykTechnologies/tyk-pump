@@ -178,6 +178,7 @@ func TestProtobuf_GraphQLStats_Roundtrip(t *testing.T) {
 	exerciseGeneratedProtoReflectBranches(t)
 }
 
+// KI tripwire for INT-REQ-003; not requirement-success evidence.
 // Verifies: KI:serializer-protobuf-loses-graphql-error-path
 // Reproduces: serializer-protobuf-loses-graphql-error-path
 func TestProtobuf_GraphQLStats_ErrorPathLoss_KI(t *testing.T) {

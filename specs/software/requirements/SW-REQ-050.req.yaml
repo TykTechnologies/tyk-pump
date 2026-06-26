@@ -20,9 +20,9 @@ traces:
     satisfies:
         - SYS-REQ-004
         - SYS-REQ-015
-    reviewed_at: "2026-06-02T13:56:59.732089Z"
+    reviewed_at: "2026-06-26T12:20:52.966716Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:88885107c8ee0a24d609c5c2e346f5e89d16917cc7e368c42f8da2187ea20b91
+    reviewed_fingerprint: sha256:fe96de96f571a4e59a9edc365aa7f9957db6ad05cfbb8ffe873b1ed8c9647a25
 verification:
     assurance_level: B
     formalization_status: valid

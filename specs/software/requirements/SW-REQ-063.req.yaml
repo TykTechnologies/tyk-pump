@@ -36,6 +36,14 @@ verification:
         comment: 'Phase P: FRETish enrichment per per-req review pass — adds collection_already_exists to when disjunct so MC/DC exposes the idempotency-skip arm (StandardMongo + collectionExists short-circuit) — description names both skip conditions but FRETish modeled only the operator toggle.'
         fingerprint: sha256:8c279ec24749e7738522bfe4f0a7bdaddf726ca8262764c97ca775fceb9127b9
         ai_generated: true
+    gaps_reviewed_at: "2026-06-26T12:19:41.140866Z"
+    gaps_reviewed_by: human:buger
+    gap_reviews:
+        - check: decomposition
+          issue_key: decomposition|SW-REQ-063|create_index_skipped
+          reviewer: human:buger
+          reason: 'Reviewed active parent decomposition gaps on 2026-06-26: these parents intentionally retain baseline pump behavior variables while their current children cover narrower hardening or defect-history slices. Residual parent variables remain owned by the parent requirement/evidence; no child coverage is claimed for behavior the child does not specify.'
+          reviewed_at: "2026-06-26T12:19:41.140866Z"
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:38:05Z"

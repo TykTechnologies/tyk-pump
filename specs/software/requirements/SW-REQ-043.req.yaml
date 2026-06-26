@@ -33,6 +33,19 @@ verification:
         comment: 'Reviewed d9d64dc hardening: Graph SQL Aggregate now explicitly requires and witnesses graph aggregate env override application via GetEnvPrefix/processPumpEnvVars; runtime behavior unchanged.'
         fingerprint: sha256:711ca0792a244d53c507efbdeaaaa17768c00386125e2b4815454749f684ef35
         ai_generated: false
+    gaps_reviewed_at: "2026-06-26T12:19:41.140866Z"
+    gaps_reviewed_by: human:buger
+    gap_reviews:
+        - check: decomposition
+          issue_key: decomposition|SW-REQ-043|api_partition_used
+          reviewer: human:buger
+          reason: 'Reviewed active parent decomposition gaps on 2026-06-26: these parents intentionally retain baseline pump behavior variables while their current children cover narrower hardening or defect-history slices. Residual parent variables remain owned by the parent requirement/evidence; no child coverage is claimed for behavior the child does not specify.'
+          reviewed_at: "2026-06-26T12:19:41.140866Z"
+        - check: decomposition
+          issue_key: decomposition|SW-REQ-043|minute_window_used
+          reviewer: human:buger
+          reason: 'Reviewed active parent decomposition gaps on 2026-06-26: these parents intentionally retain baseline pump behavior variables while their current children cover narrower hardening or defect-history slices. Residual parent variables remain owned by the parent requirement/evidence; no child coverage is claimed for behavior the child does not specify.'
+          reviewed_at: "2026-06-26T12:19:41.140866Z"
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:35:37Z"

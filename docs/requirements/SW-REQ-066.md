@@ -49,14 +49,14 @@ channel to avoid hangs.
 - `index_definition_matches_query` — the physical index definition must match
   the documented dashboard query path, not merely exist under the expected
   name.
-- `backend_ddl_valid` is deferred to
+- `backend_ddl_valid` is tracked under
   `sql-aggregate-mysql-create-index-if-not-exists-unsupported` for current
   MySQL DDL incompatibility.
-- `concurrent` is deferred to
+- `concurrent` is tracked under
   `sql-aggregate-background-index-concurrency-unbounded` until the background
   index lifecycle has bounded failure/concurrency evidence.
 - `invariant_preservation` from the create-table-without-sync signal is
-  deferred to the same KnownIssue rather than claimed covered.
+  tracked under the same KnownIssue rather than claimed covered.
 
 ## Open questions
 - The background-goroutine pattern means Init can return before the

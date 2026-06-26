@@ -16,3 +16,6 @@ variables:
       type: bool
       direction: output
       description: True iff analytics.GraphRecord.TableName resolves to the configured Graph SQL table before GORM migration runs.
+independence:
+    declared: true
+    reason: Graph SQL requirements cover graph-record routing and configured model table binding; the outputs are related but not contradictory formal states.

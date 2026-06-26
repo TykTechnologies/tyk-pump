@@ -33,6 +33,14 @@ verification:
         comment: 'Reviewed TT-15674 Kafka TLS CA hardening: ssl_ca_file pass-through to NewTLSConfig is described, cert_chain_validated added, and Kafka Init valid-CA RootCAs evidence is annotated.'
         fingerprint: sha256:853d7d54a4c6b82a0ac598eeb61213bf6f783e163e004835b7f0c7fb7031a965
         ai_generated: false
+    gaps_reviewed_at: "2026-06-26T12:19:41.140866Z"
+    gaps_reviewed_by: human:buger
+    gap_reviews:
+        - check: decomposition
+          issue_key: decomposition|SW-REQ-021|tls_attached
+          reviewer: human:buger
+          reason: 'Reviewed active parent decomposition gaps on 2026-06-26: these parents intentionally retain baseline pump behavior variables while their current children cover narrower hardening or defect-history slices. Residual parent variables remain owned by the parent requirement/evidence; no child coverage is claimed for behavior the child does not specify.'
+          reviewed_at: "2026-06-26T12:19:41.140866Z"
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:15Z"

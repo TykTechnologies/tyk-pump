@@ -24,3 +24,6 @@ variables:
       type: bool
       direction: output
       description: True iff graph aggregate grouping and persisted upsert identity include APIID so same-org GraphQL counters for different APIs remain separate.
+independence:
+    declared: true
+    reason: Graph SQL aggregate requirements separate day-shard target consistency from minute-window aggregation and API partition identity; the outputs are distinct routing and aggregation states.

@@ -33,6 +33,14 @@ verification:
         comment: 'Reviewed 25683f2 hardening: SW-REQ-056 now pins Kinesis default/custom env overrides, keeps AWS 500-record and zero-batch limits as KI debt, and tracks PutRecords per-record failure surfacing as KnownIssue debt; no runtime behavior change.'
         fingerprint: sha256:20c56e0d8ddf6eed0fe3fe0b944c890cdc63d5a7e38399949ecf34aabdddf578
         ai_generated: false
+    gaps_reviewed_at: "2026-06-26T12:19:41.140866Z"
+    gaps_reviewed_by: human:buger
+    gap_reviews:
+        - check: decomposition
+          issue_key: decomposition|SW-REQ-056|stream_encryption_verified
+          reviewer: human:buger
+          reason: 'Reviewed active parent decomposition gaps on 2026-06-26: these parents intentionally retain baseline pump behavior variables while their current children cover narrower hardening or defect-history slices. Residual parent variables remain owned by the parent requirement/evidence; no child coverage is claimed for behavior the child does not specify.'
+          reviewed_at: "2026-06-26T12:19:41.140866Z"
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:37:04Z"

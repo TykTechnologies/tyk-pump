@@ -33,6 +33,14 @@ verification:
         comment: 'Expand backend, database, retry, queue, panic-safety, and shared-state catalog obligations; uncovered behavior is linked to existing KnownIssues rather than claimed as evidence.'
         fingerprint: sha256:31d5361ff012a2962b520950476e3ab8c0a507f3f902a4efc8c1969345ae4642
         ai_generated: false
+    gaps_reviewed_at: "2026-06-26T12:19:41.140866Z"
+    gaps_reviewed_by: human:buger
+    gap_reviews:
+        - check: decomposition
+          issue_key: decomposition|SW-REQ-029|tls_dialer_used
+          reviewer: human:buger
+          reason: 'Reviewed active parent decomposition gaps on 2026-06-26: these parents intentionally retain baseline pump behavior variables while their current children cover narrower hardening or defect-history slices. Residual parent variables remain owned by the parent requirement/evidence; no child coverage is claimed for behavior the child does not specify.'
+          reviewed_at: "2026-06-26T12:19:41.140866Z"
 history:
     created_by: human:cli
     created_at: "2026-05-29T15:20:16Z"

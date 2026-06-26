@@ -19,9 +19,9 @@ tags:
     - resilience
 variables: []
 traces:
-    reviewed_at: "2026-06-22T09:44:26.3341Z"
+    reviewed_at: "2026-06-26T12:20:51.494531Z"
     reviewed_by: human:buger
-    reviewed_fingerprint: sha256:520e173f134fc720c6d5ea1fc0192541edc814a6f4b99098490885a6d48cbf8a
+    reviewed_fingerprint: sha256:4855d2af72e80322e2861b81ff025f5de9f0e850eaa83e9da13afb22d9b31652
 verification:
     assurance_level: B
     formalization_status: none

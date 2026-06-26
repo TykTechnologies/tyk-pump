@@ -74,6 +74,7 @@ func TestInitialisePumpsAppliesTimeoutBeforeInit(t *testing.T) {
 	require.Less(t, int(setTimeoutPos), int(initPos), "initialisePumps must apply timeout before Init builds backend clients")
 }
 
+// KI tripwire for SW-REQ-034; not requirement-success evidence.
 // Verifies: KI:mongo-standard-insert-error-double-send-goroutine-leak
 // Reproduces: mongo-standard-insert-error-double-send-goroutine-leak
 func TestMongoPump_WriteData_InsertErrDoubleSend_KI(t *testing.T) {

@@ -40,7 +40,7 @@ non-MCP aggregate variant.
 - Background index creation channel must be pre-allocated by tests that
   call `ensureIndex` directly (same caveat as SW-REQ-066).
 - The `invariant_preservation` obligation from the create-table-without-sync
-  signal is deferred to KnownIssue
+  signal is tracked under KnownIssue
   `mcp-sql-aggregate-background-index-concurrency-unbounded`; this is accepted
   KI debt, not covered behavior.
 - Aggregation window helper is duplicated from SW-REQ-041 / SW-REQ-043.

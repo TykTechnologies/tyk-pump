@@ -12,3 +12,6 @@ variables:
       type: bool
       direction: output
       description: 'True iff Kinesis Init reconciles DescribeStream encryption state against the configured KMS key: same non-nil key is accepted, different non-nil key fails, missing key id or unencrypted state starts encryption, and AWS errors are surfaced.'
+independence:
+    declared: true
+    reason: Kinesis requirements split batch/write behavior from KMS stream encryption reconciliation; the outputs are separate configuration and backend-state responsibilities.

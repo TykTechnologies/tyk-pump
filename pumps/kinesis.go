@@ -61,6 +61,7 @@ func (p *KinesisPump) New() Pump {
 
 // Init initializes the pump with configuration settings.
 // reqproof:implements SW-REQ-056
+// reqproof:implements SW-REQ-105
 func (p *KinesisPump) Init(config interface{}) error {
 	p.log = log.WithField("prefix", kinesisPrefix)
 
