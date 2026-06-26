@@ -10,6 +10,8 @@ commands:
     - go test -count=1 -timeout 60s -run TestMongoPump_WriteUptimeData_BadMsgpack_KI ./pumps
     - go test -count=1 -timeout 60s -run TestMongoSelectivePump_WriteUptimeData_BadMsgpack_KI ./pumps
 evidence_manifests:
+    - test:pumps/mongo_mcdc_test.go:TestMongoPump_WriteUptimeData_BadMsgpack_KI
+    - test:pumps/mongo_mcdc_test.go:TestMongoSelectivePump_WriteUptimeData_BadMsgpack_KI
     - code_signal:opengrep:go.slice.preallocated-with-continue-on-error:pumps/mongo.go:571
     - code_signal:opengrep:go.slice.preallocated-with-continue-on-error:pumps/mongo_selective.go:357
     - code_signal:opengrep:go.slice.preallocated-with-continue-on-error:pumps/sql.go:345

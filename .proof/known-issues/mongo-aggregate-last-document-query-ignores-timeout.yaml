@@ -12,8 +12,9 @@ introduced_in: inception
 mitigation: Configure MongoDB client-side timeouts in the connection string until the aggregate timestamp query accepts and uses a bounded context.
 remediation: Thread a caller-provided context into getLastDocumentTimestamp, use that context for m.store.Query, and add a cancellation/timeout test proving the query returns promptly when the context is canceled.
 owner: tyk-team
+review_date: "2026-11-30"
 release_disposition: ship_with_known_issue
-status: open
+status: reviewed
 history:
     - at: "2026-06-19T00:00:00Z"
       by: agent:codex
@@ -26,3 +27,7 @@ history:
       by: human:buger
       action: edit
       detail: set-severity-basis=risk,set-risk
+    - at: "2026-06-26T13:51:21Z"
+      by: agent:codex
+      action: review
+      detail: reviewer=human:buger,new_review_date=2026-11-30

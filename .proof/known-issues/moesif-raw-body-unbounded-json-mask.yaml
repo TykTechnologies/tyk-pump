@@ -12,8 +12,9 @@ introduced_in: inception
 mitigation: Disable raw body capture or constrain gateway-side captured body size for Moesif deployments that process untrusted large request/response bodies.
 remediation: Add a maximum raw-body size before json.Unmarshal, bound recursive masking depth, and add tests for oversized and deeply nested bodies.
 owner: tyk-team
+review_date: "2026-11-30"
 release_disposition: ship_with_known_issue
-status: open
+status: reviewed
 history:
     - at: "2026-06-19T00:00:00Z"
       by: agent:codex
@@ -26,3 +27,7 @@ history:
       by: human:buger
       action: edit
       detail: set-severity-basis=risk,set-risk
+    - at: "2026-06-26T13:51:21Z"
+      by: agent:codex
+      action: review
+      detail: reviewer=human:buger,new_review_date=2026-11-30

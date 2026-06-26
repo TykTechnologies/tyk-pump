@@ -13,8 +13,9 @@ introduced_in: inception
 mitigation: Do not enable debug logging in environments where analytics records may carry sensitive fields, or ensure sensitive fields are scrubbed before they enter tyk-pump.
 remediation: Move record-level debug logging after ignore-field filtering or log only a redacted summary that cannot include ignored fields; add a log-capture test proving ignored fields are not emitted.
 owner: tyk-team
+review_date: "2026-11-30"
 release_disposition: ship_with_known_issue
-status: open
+status: reviewed
 history:
     - at: "2026-06-19T00:00:00Z"
       by: agent:codex
@@ -27,3 +28,7 @@ history:
       by: human:buger
       action: edit
       detail: set-severity-basis=risk,set-risk
+    - at: "2026-06-26T13:51:21Z"
+      by: agent:codex
+      action: review
+      detail: reviewer=human:buger,new_review_date=2026-11-30

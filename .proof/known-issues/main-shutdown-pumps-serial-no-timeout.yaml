@@ -13,8 +13,9 @@ introduced_in: inception
 mitigation: Operators using mongo + logzio + resurface together should set short per-pump connection/drain timeouts so each Shutdown returns within seconds.
 remediation: Parallelise shutdown via 'for _, pmp := range Pumps { wg.Add(1); go func(p Pump) { defer wg.Done(); pmp.ShutdownWithTimeout(ctx) }(pmp) }; wg.Wait()'. For the goroutine leak, signal cancellation downward (the inner goroutine already has ctx) and join with a defensive deadline.
 owner: tyk-team
+review_date: "2026-11-30"
 release_disposition: ship_with_known_issue
-status: open
+status: reviewed
 history:
     - at: "2026-06-02T16:39:36Z"
       by: human:buger
@@ -27,3 +28,7 @@ history:
       by: human:buger
       action: edit
       detail: set-severity-basis=risk,set-risk
+    - at: "2026-06-26T13:51:21Z"
+      by: agent:codex
+      action: review
+      detail: reviewer=human:buger,new_review_date=2026-11-30

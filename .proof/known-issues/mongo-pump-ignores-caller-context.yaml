@@ -10,6 +10,7 @@ affected_requirements:
     - SW-REQ-037
     - SW-REQ-038
 evidence_manifests:
+    - test:pumps/mongo_mcdc_test.go:TestMongoPump_WriteData_IgnoresCallerCtx_KI
     - code_signal:opengrep:go.concurrency.unguarded-channel-send:pumps/mongo.go:438
     - code_signal:opengrep:go.concurrency.unguarded-channel-send:pumps/graph_mongo.go:135
     - code_signal:opengrep:go.context.dropped-on-floor:pumps/graph_mongo.go:101
@@ -23,8 +24,9 @@ introduced_in: inception
 mitigation: Configure mongo client-side timeouts via the connection string (connectTimeoutMS, socketTimeoutMS) until the pump forwards the caller ctx to m.store.Insert.
 remediation: Replace context.Background() with the ctx parameter received by WriteData in all four files — pumps/mongo.go:435, pumps/mongo_selective.go:242 and :375, pumps/graph_mongo.go:148, pumps/mcp_mongo.go:138. Add a test that cancels ctx and asserts WriteData returns promptly with ctx.Err() for each variant.
 owner: tyk-team
+review_date: "2026-11-30"
 release_disposition: ship_with_known_issue
-status: open
+status: reviewed
 history:
     - at: "2026-05-30T08:11:50Z"
       by: human:buger
@@ -69,3 +71,7 @@ history:
       by: human:buger
       action: edit
       detail: set-severity-basis=risk,set-risk
+    - at: "2026-06-26T13:51:21Z"
+      by: agent:codex
+      action: review
+      detail: reviewer=human:buger,new_review_date=2026-11-30

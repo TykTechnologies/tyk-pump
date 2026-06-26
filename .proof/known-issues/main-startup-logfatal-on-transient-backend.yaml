@@ -16,8 +16,9 @@ introduced_in: inception
 mitigation: Operators must ensure Redis (analytics_storage), pump backends, and version-check storage are all reachable before starting tyk-pump. Container/orchestrator restart loops mitigate transient unavailability but increase startup latency and produce noisy crash-loop alerts. Pin configs and validate analytics_storage_type + log_level config strings in CI.
 remediation: Refactor startup helpers to return errors rather than log.Fatal. Specifically replace log.Fatal at main.go:130, 136, 148, 155, 173, 180 (the transient-backend sites) with wrapped error returns; have main() retry with backoff (same pattern as the purge loop). Sites at main.go:111 (invalid log level), main.go:161 (invalid analytics_storage_type), and main.go:230 (zero pumps configured) are genuine fail-fast cases and may keep log.Fatal, though replacing with a structured exit code + log.Error message is preferred so supervisors can distinguish config errors from transient errors. Pairs with pumps-logfatal-on-config-decode (pump Init) and logfatal-on-statsd-setup (instrumentation).
 owner: tyk-team
+review_date: "2026-11-30"
 release_disposition: ship_with_known_issue
-status: open
+status: reviewed
 history:
     - at: "2026-06-04T00:00:00Z"
       by: human:buger
@@ -31,4 +32,8 @@ history:
       by: human:buger
       action: edit
       detail: set-severity-basis=risk,set-risk
+    - at: "2026-06-26T13:51:21Z"
+      by: agent:codex
+      action: review
+      detail: reviewer=human:buger,new_review_date=2026-11-30
 verifying_test: ast-scanner in Wave 3a reproducer (process_exit_on_recoverable obligation)

@@ -96,8 +96,9 @@ introduced_in: inception
 mitigation: Operators have no warning until they notice data is not flowing or is using unexpected defaults. Suggest code-reviewing pump YAML against documented field names before rollout.
 remediation: 'Replace mapstructure.Decode with mapstructure.NewDecoder using a DecoderConfig that sets ErrorUnused: true, so unknown keys cause Init to return an error and the pump is skipped (with a clear log line).'
 owner: tyk-team
+review_date: "2026-11-30"
 release_disposition: ship_with_known_issue
-status: open
+status: reviewed
 history:
     - at: "2026-05-30T08:30:52Z"
       by: human:buger
@@ -270,3 +271,7 @@ history:
       by: human:buger
       action: edit
       detail: set-severity-basis=risk,set-risk
+    - at: "2026-06-26T13:51:21Z"
+      by: agent:codex
+      action: review
+      detail: reviewer=human:buger,new_review_date=2026-11-30

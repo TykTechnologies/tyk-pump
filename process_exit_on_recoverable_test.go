@@ -39,6 +39,7 @@ import (
 // logfatal-on-statsd-setup, and config.go's env-decode Fatal). Wave 4 will
 // triage NEW vs KNOWN findings and either add KIs or remediation.
 // In the meantime this test prevents *regression* — new violations fail loudly.
+// Reproduces: logfatal-on-statsd-setup
 func TestProcessExitOnRecoverable_NoNewLogFatalSites(t *testing.T) {
 	// Allowlist: known-bad sites tied to filed Known Issues.
 	// Format: "<relative_path>:<line>" — line is the Fatal/Exit call site.

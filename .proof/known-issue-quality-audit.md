@@ -137,6 +137,93 @@ Read-only subagent audit completed for 29 KnownIssues from
 | `kinesis-random-partition-key-not-idempotent` | KnownIssue | `needs_metadata_hardening` -> reviewed | Static source evidence is accurate: random partition key is generated per record. | Stamped review date `2026-11-30`; backlog: consider deterministic test when randomness is injectable. |
 | `kinesis-splitintobatches-zero-infinite-loop` | KnownIssue | `needs_metadata_hardening` -> reviewed | Static evidence is accurate; live infinite-loop test is unsafe without a subprocess/timeout harness. | Stamped review date `2026-11-30`. |
 
+## KnownIssue Slice: StatsD Through Mongo
+
+Local audit completed for 25 KnownIssues from `logfatal-on-statsd-setup`
+through `mongo-standard-logbrowser-compatible-index-conflict`.
+
+| Item | Type | Verdict | Evidence Checked | Action |
+| --- | --- | --- | --- | --- |
+| `logfatal-on-statsd-setup` | KnownIssue | `valid` | `instrumentation_helpers.go` still calls `log.Fatal` after `NewStatsDSink` failure; in-process execution is not practical because it exits the runner, so the AST ratchet is the correct tripwire. | Added `// Reproduces: logfatal-on-statsd-setup` to `TestProcessExitOnRecoverable_NoNewLogFatalSites`, linked the test evidence, and stamped review date `2026-11-30`. |
+| `logzio-segment-no-shutdown-flush` | KnownIssue | `valid` | Static tripwires prove Logz.io and Segment embed `CommonPumpConfig` and do not override `Shutdown`. | Stamped review date `2026-11-30`. |
+| `main-prefilter-debug-logs-unfiltered-records` | KnownIssue | `needs_reproducer_hardening` | Static source indicates debug logging can happen before `filterData`, but no log-capture tripwire proves sensitive ignored fields reach logs. | Stamped review date `2026-11-30`; backlog: add a debug-log capture test. |
+| `main-shutdown-pumps-serial-no-timeout` | KnownIssue | `needs_split` | Record combines serial shutdown/no per-pump timeout with an `execPumpWriting` goroutine leak after context timeout. | Stamped review date `2026-11-30`; backlog: split shutdown sequencing and write goroutine lifetime debt. |
+| `main-startup-logfatal-on-transient-backend` | KnownIssue | `needs_reproducer_hardening` | Description correctly identifies transient storage startup `log.Fatal` sites, but current evidence manifests are adjacent process-exit tests rather than a focused startup-storage subprocess/AST tripwire. | Stamped review date `2026-11-30`; backlog: add direct startup fatal-site evidence. |
+| `mapstructure-decode-silently-drops-unknown-keys` | KnownIssue | `valid` | Cross-pump OpenGrep evidence identifies lenient `mapstructure.Decode` calls; accepted risk already covers the config typo posture. | Stamped review date `2026-11-30`. |
+| `mcdc-pumps-below-95` | KnownIssue | `valid` | Current full audit reports code-level MC/DC meets configured thresholds, with one accepted KI-debt row; this record remains proof-coverage context rather than product debt. | No change needed; already reviewed through `2026-11-30`. |
+| `mcp-mongo-aggregate-atomicity-fault-injection-missing` | KnownIssue | `valid` | This is explicitly a missing fault-injection harness record; static source/requirement check supports the proof-harness gap. | Stamped review date `2026-11-30`. |
+| `mcp-sql-aggregate-background-index-concurrency-unbounded` | KnownIssue | `valid` | Source still has background index signaling without an explicit lifecycle/cancellation contract. | Stamped review date `2026-11-30`. |
+| `mcp-sql-aggregate-mysql-create-index-syntax-broken` | KnownIssue | `needs_reproducer_hardening` | Static SQL construction shows `CREATE INDEX IF NOT EXISTS`; a MySQL dialect witness would better prove the actual backend rejection. | Stamped review date `2026-11-30`; backlog: add MySQL syntax/rejection tripwire. |
+| `metrics-label-cardinality-unbounded` | KnownIssue | `valid` | Manual code-signal evidence covers StatsD, DogStatsD, and Prometheus high-cardinality label/tag surfaces. | No change needed; already reviewed through `2026-11-30`. |
+| `moesif-config-response-readall-unbounded` | KnownIssue | `valid` | `pumps/moesif.go` still reads the full configuration response with `ioutil.ReadAll` before parsing. | Stamped review date `2026-11-30`. |
+| `moesif-queueevent-error-swallowed` | KnownIssue | `valid` | `TestMoesifPump_WriteData_QueueEventError_KI` proves SDK enqueue failure is logged while `WriteData` returns nil. | Added test evidence pointer and stamped review date `2026-11-30`. |
+| `moesif-raw-body-unbounded-json-mask` | KnownIssue | `needs_reproducer_hardening` | Source shows unbounded `json.Unmarshal` and recursive masking, but there is no oversized/deeply nested body tripwire. | Stamped review date `2026-11-30`; backlog: add bounded-size/depth failure test. |
+| `moesif-sampling-randomness-obligation-misattributed` | KnownIssue | `valid` | Static source shows intentional probabilistic sampling; the issue is proof/spec attribution, not a product determinism bug. | Stamped review date `2026-11-30`. |
+| `mongo-aggregate-atomicity-fault-injection-missing` | KnownIssue | `valid` | This is explicitly a missing fault-injection harness record for Mongo aggregate update sequencing. | Stamped review date `2026-11-30`. |
+| `mongo-aggregate-last-document-query-ignores-timeout` | KnownIssue | `valid` | Source still calls `m.store.Query(context.Background(), ...)` in `getLastDocumentTimestamp`. | Stamped review date `2026-11-30`. |
+| `mongo-cap-collection-non64-arch-unreachable` | KnownIssue | `valid` | 32-bit guard remains structurally unreachable on the supported 64-bit release matrix. | No change needed; already reviewed through `2026-11-30`. |
+| `mongo-pump-ignores-caller-context` | KnownIssue | `valid` | `TestMongoPump_WriteData_IgnoresCallerCtx_KI` and code-signal evidence show canceled caller context is ignored in the standard Mongo write path; sibling Mongo-family paths remain covered by signals. | Added test evidence pointer and stamped review date `2026-11-30`. |
+| `mongo-pump-init-connect-logfatal-unreachable` | KnownIssue | `valid` | Mongo connection/config `log.Fatal` branches remain structural process-exit gaps tied to MC/DC ignores. | No change needed; already reviewed through `2026-11-30`. |
+| `mongo-pump-writeuptime-nil-on-bad-msgpack` | KnownIssue | `valid` | Existing Mongo and MongoSelective bad-msgpack KI tests assert the current panic behavior. | Added explicit test evidence pointers; record already reviewed through `2026-11-30`. |
+| `mongo-selective-final-skipped-record-drops-pending-batch` | KnownIssue | `valid` | Existing tripwire proves a final skipped MongoSelective record can drop a pending valid batch; provenance points to `83a16f3`. | No change needed. |
+| `mongo-standard-final-skipped-record-drops-pending-batch` | KnownIssue | `valid` | Existing tripwire proves standard Mongo can drop a pending valid batch when the final record is skipped; provenance points to `83a16f3`. | No change needed. |
+| `mongo-standard-insert-error-double-send-goroutine-leak` | KnownIssue | `valid` | Existing AST tripwire checks the errCh double-send/early-return structure; provenance points to `14ccaba`. | No change needed. |
+| `mongo-standard-logbrowser-compatible-index-conflict` | KnownIssue | `valid` | Existing fake-store tripwire proves compatible log-browser index conflicts are returned on non-StandardMongo paths; provenance points to `8458e11`. | No change needed. |
+
+## KnownIssue Slice: Panic Through Resurface
+
+Read-only subagent audit completed for 16 KnownIssues from
+`no-panic-recovery-in-exec-pump-writing` through
+`resurface-writedata-blocks-on-queue-full`.
+
+| Item | Type | Verdict | Evidence Checked | Action |
+| --- | --- | --- | --- | --- |
+| `no-panic-recovery-in-exec-pump-writing` | KnownIssue | `needs_merge` | Duplicate of the `main.go` fanout panic surface; stronger subprocess evidence is on `pump-fanout-panic-not-recovered`. | Backlog: merge into the canonical fanout panic KI or move the subprocess evidence here. |
+| `preprocess-decode-error-leaves-nil-hole-in-keys` | KnownIssue | `needs_reproducer_hardening` | Existing focused test only uses `Pumps=nil`, so it proves decode logging, not the nil slot reaching `filterData`. | Backlog: add a bad serialized record plus filtering/decoding pump test that reaches the nil-hole panic. |
+| `prometheus-init-mutates-default-mux` | KnownIssue | `needs_metadata_hardening` | Source shows global default mux mutation, but linked obligation class should be lifecycle/global isolation, not request-timeout boundedness. | Backlog: correct obligation mapping and add subprocess or mux-swap evidence for second init/same path panic. |
+| `prometheus-metric-maps-race` | KnownIssue | `needs_reproducer_hardening` | Static grep is accurate for unsynchronized metric maps, but no race witness exists. | Backlog: add focused `go test -race` witness for concurrent `Inc`/`Observe`/`Expose`. |
+| `prometheus-metrics-auth-not-enforced` | KnownIssue | `valid` | Static source and `SW-REQ-024 auth_required` deferral match the unauthenticated metrics endpoint. | No change needed. |
+| `protobuf-decode-nil-submessage-panic` | KnownIssue | `needs_reproducer_hardening` | Requirement links are present, but there is no unit test asserting current panic on malformed payloads or missing submessages. | Backlog: add tests for non-byte input and payloads missing `Geo`, `Network`, or `Latency`. |
+| `pump-fanout-no-global-concurrency-limit` | KnownIssue | `needs_reproducer_hardening` | Static `go execPumpWriting` evidence is accurate but does not quantify observed concurrency. | Backlog: add counter-based many-pump test that records peak concurrent `WriteData` calls. |
+| `pump-fanout-panic-not-recovered` | KnownIssue | `valid` | Subprocess reproducer exists and passed; this should be the canonical fanout panic KI. | No change needed; merge duplicate `no-panic-recovery-in-exec-pump-writing` into this record later. |
+| `pump-no-per-pump-circuit-breaker` | KnownIssue | `valid` | Focused reproducer passed and proves a failing pump is invoked repeatedly without backoff. | No change needed. |
+| `pump-no-timeout-can-block-purge-cycle` | KnownIssue | `needs_reproducer_hardening` | Current evidence points at an Elasticsearch HTTP timeout signal, not the `GetTimeout()==0` branch in `main.go`. | Backlog: add blocking-pump test proving timeout zero uses `context.WithCancel` and blocks until released. |
+| `pump-writedata-swallows-per-batch-errors` | KnownIssue | `needs_reproducer_hardening` | The record claims many pump implementations, but current executable evidence only covers the SQL member. | Backlog: add per-pump witnesses or a table of static tripwires for every named implementation. |
+| `pumps-logfatal-on-config-decode` | KnownIssue | `needs_split` | Record now mixes pure `mapstructure.Decode` fatals with non-decode setup fatals and a Mongo panic-call signal. | Backlog: split decode `log.Fatal` debt from non-decode init/setup fatal debt. |
+| `resurface-disabled-writedata-closes-channel` | KnownIssue | `needs_metadata_hardening` | Source claim is plausible, but the KI lacks an explicit `SW-REQ-054` deferral and a concurrency/subprocess reproducer. | Backlog: add deferral and concurrent `Flush` plus `WriteData` send-on-closed-channel tripwire. |
+| `resurface-maprawdata-empty-request-panic` | KnownIssue | `valid` | Direct panic reproducer exists and passed. | No change needed. |
+| `resurface-worker-errors-swallowed` | KnownIssue | `needs_reproducer_hardening` | Source evidence is accurate, but no worker-path test proves async log/drop with nil `WriteData` return. | Backlog: add worker-path malformed/non-analytics test. |
+| `resurface-writedata-blocks-on-queue-full` | KnownIssue | `needs_reproducer_hardening` | Static select shape proves possibility, but not observed blocking behavior. | Backlog: add bounded queue-full test that observes blocking, then cancels to release. |
+
+## KnownIssue Slice: Retry Through SQL Batch
+
+Read-only subagent audit completed for 20 KnownIssues from
+`retry-4xx-bodyread-fail-causes-retry` through
+`sql-batch-size-zero-infinite-loop`.
+
+| Item | Type | Verdict | Evidence Checked | Action |
+| --- | --- | --- | --- | --- |
+| `retry-4xx-bodyread-fail-causes-retry` | KnownIssue | `needs_reproducer_hardening` | Real path exists in `retry/http-retry.go`, but evidence is only static; `INT-REQ-006` ownership is weak. | Backlog: add 4xx failing-body-reader test, assert no second attempt/permanent error, and re-check `INT-REQ-006`. |
+| `retry-backoff-duration-not-deadline-bounded` | KnownIssue | `needs_metadata_hardening` | Valid spec/proof debt, but wording should separate library default elapsed behavior from declared product SLA. | Backlog: add review date and clarify no declared elapsed-time product bound exists. |
+| `retry-buffers-full-request-body-in-memory` | KnownIssue | `valid` | Code and obligation mapping match `io.ReadAll(req.Body)` in retry middleware. | No change needed. |
+| `retry-row5-mcdc-backoff-not-injectable` | KnownIssue | `needs_metadata_hardening` | Row-5 test exists, but metadata lacks review date and should classify this as proof-harness/testability debt. | Backlog: add review date and timing-bound evidence for row-5 witness. |
+| `serializer-protobuf-loses-city-names` | KnownIssue | `needs_reproducer_hardening` | Real bug exists in protobuf geo city handling, but current evidence is static only. | Backlog: add `TestProtobuf_GeoCityNamesLoss_KI` with `// Reproduces`. |
+| `serializer-protobuf-loses-graphql-error-path` | KnownIssue | `needs_metadata_hardening` | Focused KI test exists and passed; affected requirements and obligations align. | Backlog: add review date. |
+| `setaggregatetimestamp-mcdc-unreachable-not-ok` | KnownIssue | `needs_metadata_hardening` | Structural MC/DC debt is real, but code now has the `//mcdc:ignore` and remediation still says to add it. | Backlog: update remediation/status to reflect current ignore and keep/close per KI-ignore policy. |
+| `splunk-filtertags-skips-consecutive-matches` | KnownIssue | `needs_reproducer_hardening` | Existing FilterTags test uses non-consecutive matching tags and misses the slice-mutation bug. | Backlog: add KI test with consecutive dropped tags and assert current retained middle tag. |
+| `splunk-newsplunkclient-mutates-default-transport` | KnownIssue | `needs_reproducer_hardening` | Code mutates `http.DefaultClient.Transport`, but current proxy test bypasses global cache behavior. | Backlog: add deterministic snapshot/restore test proving global transport mutation and revisit disposition. |
+| `splunk-writedata-non-analytics-record-panic` | KnownIssue | `needs_reproducer_hardening` | Unchecked assertion is real, but current KI test can pass even if the panic disappears. | Backlog: change tripwire to `require.Panics` while KI is open. |
+| `sql-aggregate-atomicity-fault-injection-missing` | KnownIssue | `needs_reproducer_hardening` | Correct proof gap, but current reproducer is a grep for missing evidence. | Backlog: add fake-driver or DB-backed failure injection for create/transaction/deadlock paths. |
+| `sql-aggregate-background-index-concurrency-unbounded` | KnownIssue | `needs_reproducer_hardening` | Lifecycle gap exists, but there is no bounded failure/cancellation witness. | Backlog: add non-container dry-run/fake-DB or race witness. |
+| `sql-aggregate-mysql-create-index-if-not-exists-unsupported` | KnownIssue | `needs_reproducer_hardening` | Static DDL evidence is real, but no MySQL syntax/rejection witness exists. | Backlog: add SQL-generation/dry-run or focused MySQL witness. |
+| `sql-aggregate-mysql-excluded-keyword-broken` | KnownIssue | `needs_reproducer_hardening` | Record spans SQL, Graph, and MCP aggregate paths while evidence only covers the SQL aggregate member. | Backlog: add evidence for all three paths or split if fixes diverge. |
+| `sql-aggregate-no-deadlock-retry` | KnownIssue | `needs_reproducer_hardening` | Static search proves no retry, but not deadlock/serialization behavior. | Backlog: add fake-driver deadlock/serialization error test proving no retry/current returned error. |
+| `sql-aggregate-sharded-shared-db-race` | KnownIssue | `needs_reproducer_hardening` | Shared `c.db` mutation is real, but no race/concurrency witness exists. | Backlog: add focused `go test -race` sharded concurrent `WriteData` test. |
+| `sql-aggregate-sharded-upsert-targets-base-table` | KnownIssue | `valid` | High-severity reviewed KI still matches current code and upstream fix note. | No product fix here; keep as KnownIssue. |
+| `sql-aggregate-upsert-order-undocumented` | KnownIssue | `needs_metadata_hardening` | Valid documentation/proof gap, but missing review date and product-ish disposition. | Backlog: add review date and document unordered/id-keyed semantics in `SW-REQ-067`. |
+| `sql-background-index-concurrency-unbounded` | KnownIssue | `needs_reproducer_hardening` | Standard SQL background-index issue is real, but current test skips the panic path. | Backlog: add minimized non-container race/panic/lifecycle witness. |
+| `sql-batch-size-zero-infinite-loop` | KnownIssue | `needs_split` | Init now defaults zero batch size, while negative/non-positive malformed input remains real; title conflates zero, negative, and six pump families. | Backlog: split or retire stale zero-config portion and keep a precise non-positive validation KI. |
+
 ## Verification Commands
 
 - `go test -p=1 -count=1 -timeout=20m ./pumps -run '^(TestElasticsearchPump_ApiKeyAuthDroppedWhenUseSSL_KI|TestGetMapping_DecodeBase64MalformedInput_KI|TestElasticsearchPump_WriteData_MCPIndexRouting_NonBulkBug|TestElasticsearchPump_WriteData_V7ProcessDataIndexError)$'`

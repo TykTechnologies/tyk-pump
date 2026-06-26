@@ -15,8 +15,9 @@ introduced_in: inception
 mitigation: Operators can configure short DrainDuration for logzio (e.g. '1s') and accept a deliberate sleep before SIGTERM to give the async sender time to flush. Segment has no equivalent runtime knob.
 remediation: Add LogzioPump.Shutdown() that calls p.sender.Stop() (logzio-go SDK) and SegmentPump.Shutdown() that calls s.segmentClient.Close().
 owner: tyk-team
+review_date: "2026-11-30"
 release_disposition: ship_with_known_issue
-status: open
+status: reviewed
 history:
     - at: "2026-06-02T16:38:24Z"
       by: human:buger
@@ -37,3 +38,7 @@ history:
       by: human:buger
       action: edit
       detail: Removed SYS-REQ-013 from affected_requirements; the shutdown-flush debt is owned by the Logz.io and Segment pump requirements, not instrumentation metrics emission.
+    - at: "2026-06-26T13:51:21Z"
+      by: agent:codex
+      action: review
+      detail: reviewer=human:buger,new_review_date=2026-11-30
