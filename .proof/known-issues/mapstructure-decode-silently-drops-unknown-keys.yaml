@@ -88,9 +88,11 @@ evidence_manifests:
     - code_signal:opengrep:go.mapstructure.lenient-decode:pumps/syslog.go:80
     - code_signal:opengrep:go.mapstructure.lenient-decode:pumps/timestream.go:99
     - code_signal:opengrep:go.mapstructure.lenient-decode:storage/temporal_storage.go:47
+    - .proof/evidence/ki-mapstructure-decode-silently-drops-unknown-keys.yaml
 severity: medium
 severity_basis: risk
 risk: data_integrity
+reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored sh -c 'rg --glob "!**/*_test.go" -n "mapstructure\\.Decode\\(" pumps storage config.go && ! rg --glob "!**/*_test.go" -n "ErrorUnused|DecoderConfig" pumps storage config.go'
 environment_note: Evidence is tied to the listed evidence_manifests entries; reproduce by rerunning the named test or code-signal scan and inspecting code_signal:opengrep:go.mapstructure.lenient-decode:pumps/csv.go:55.
 introduced_in: inception
 mitigation: Operators have no warning until they notice data is not flowing or is using unexpected defaults. Suggest code-reviewing pump YAML against documented field names before rollout.
@@ -275,3 +277,7 @@ history:
       by: agent:codex
       action: review
       detail: reviewer=human:buger,new_review_date=2026-11-30
+    - at: "2026-06-26T15:02:54Z"
+      by: agent:codex
+      action: edit
+      detail: set-reproducer-command,add-evidence-manifest

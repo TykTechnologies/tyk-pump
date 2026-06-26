@@ -44,8 +44,8 @@ verification:
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:37:04Z"
-    last_modified_by: human:buger
-    last_modified_at: "2026-06-25T21:50:24Z"
+    last_modified_by: agent:codex
+    last_modified_at: "2026-06-26T15:05:59Z"
 obligation_checklist:
     - config_schema_strict
     - env_override_applied
@@ -84,15 +84,11 @@ obligation_deferrals:
       owner: human:buger
       ki_ref: kinesis-random-partition-key-not-idempotent
     - obligation_class: input_size_bounded
-      reason: Kinesis Init does not reject or clamp batch_size values above AWS's 500-record PutRecords limit.
+      reason: Kinesis Init does not reject or clamp batch_size values above AWS's 500-record PutRecords limit; the separate zero-batch splitIntoBatches issue remains tracked under malformed_input.
       tracking: kinesis-batch-size-over-aws-putrecords-limit
       owner: human:buger
       ki_ref: kinesis-batch-size-over-aws-putrecords-limit
-    - obligation_class: input_size_bounded
-      reason: Kinesis splitIntoBatches is not self-defending for batchSize=0 when called outside the production Init defaulting path.
-      tracking: kinesis-splitintobatches-zero-infinite-loop
-      owner: human:buger
-      ki_ref: kinesis-splitintobatches-zero-infinite-loop
+      reproducer: kinesis-batch-size-over-aws-putrecords-limit
     - obligation_class: malformed_input
       reason: real untested obligation under known-issue kinesis-splitintobatches-zero-infinite-loop; surfaced as visible tracked debt, not an overclaimed fix
       tracking: kinesis-splitintobatches-zero-infinite-loop

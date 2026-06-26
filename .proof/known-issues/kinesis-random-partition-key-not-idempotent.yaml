@@ -3,10 +3,12 @@ title: Kinesis pump uses a fresh random partition key instead of a stable idempo
 description: 'SW-REQ-056 documents that each Kinesis PutRecords entry uses a fresh crypto/rand integer as PartitionKey for shard distribution. The implementation matches that description: pumps/kinesis.go:185 generates rand.Int and pumps/kinesis.go:193 assigns fmt.Sprint(n) to PartitionKey. Because the key changes on each replay of the same analytics record, it cannot honor a stable idempotency key, support deterministic duplicate suppression, or preserve per-record ordering/monotonic replay semantics through Kinesis''s per-partition-key ordering contract. The SW-REQ-056 idempotency_key_honored and monotonicity obligations are therefore real product gaps, not only missing test evidence.'
 affected_requirements:
     - SW-REQ-056
+evidence_manifests:
+    - .proof/evidence/ki-kinesis-random-partition-key-not-idempotent.yaml
 severity: low
 severity_basis: risk
 risk: data_integrity
-reproducer_command: 'rg -n "rand\\.Int\\(|PartitionKey: aws\\.String\\(fmt\\.Sprint\\(n\\)\\)" pumps/kinesis.go specs/software/requirements/SW-REQ-056.req.yaml'
+reproducer_command: '"PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored rg -n ''rand\\.Int\\(|PartitionKey: aws\\.String\\(fmt\\.Sprint\\(n\\)\\)'' pumps/kinesis.go specs/software/requirements/SW-REQ-056.req.yaml"'
 environment_note: Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source and command output.
 introduced_in: inception
 mitigation: Operators needing producer-side duplicate suppression or per-entity ordering must enforce it upstream before events reach the Kinesis pump, or handle ordering downstream.
@@ -31,3 +33,7 @@ history:
       by: agent:codex
       action: review
       detail: reviewer=human:buger,new_review_date=2026-11-30
+    - at: "2026-06-26T15:01:23Z"
+      by: agent:codex
+      action: edit
+      detail: set-reproducer-command,add-evidence-manifest

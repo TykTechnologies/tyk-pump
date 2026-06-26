@@ -1,16 +1,18 @@
 id: moesif-sampling-randomness-obligation-misattributed
 title: Moesif sampling randomness is not a deterministic-output guarantee
-description: pumps/moesif.go imports math/rand and uses rand.Intn for percentage sampling. That behavior is intentionally probabilistic sampling, not a deterministic transformation guarantee. The current code-signal maps randomness to a determinism obligation on SW-REQ-052, but the requirement describes Moesif event submission behavior and does not currently specify deterministic sampling output. This is a proof/spec attribution gap until sampling semantics are separately specified.
+description: 'pumps/moesif.go imports math/rand and uses rand.Intn for percentage sampling. SW-REQ-052 now explicitly specifies probabilistic Moesif sampling and weighted event submission, so the remaining debt is not a missing sampling product contract. The remaining gap is proof/spec attribution: the generic randomness signal is mapped to the determinism obligation even though intentional probabilistic sampling is not a deterministic-output guarantee unless a separate seed/control contract is required.'
 affected_requirements:
     - SW-REQ-052
+evidence_manifests:
+    - .proof/evidence/ki-moesif-sampling-randomness-obligation-misattributed.yaml
 severity: low
 severity_basis: risk
 risk: correctness
-reproducer_command: rg -n "math/rand|rand\\.Seed|rand\\.Intn" pumps/moesif.go specs/software/requirements/SW-REQ-052.req.yaml
+reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored rg -n 'math/rand|rand\.Seed|rand\.Intn' pumps/moesif.go specs/software/requirements/SW-REQ-052.req.yaml
 environment_note: Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source or rerunning the random-dependency code-signal scan.
 introduced_in: inception
-mitigation: Treat Moesif sampling as probabilistic behavior until a separate sampling requirement specifies seed/control semantics.
-remediation: Add a dedicated sampling requirement if deterministic sampling is needed, or adjust the signal mapping so intentional sampling does not attach to SW-REQ-052 determinism.
+mitigation: Treat Moesif sampling as intentionally probabilistic behavior under SW-REQ-052. Do not claim deterministic output for sampled event selection unless a separate seed/control requirement is introduced.
+remediation: Adjust the signal/obligation mapping so intentional Moesif sampling does not attach to SW-REQ-052 determinism, or add a separate seeded/control sampling requirement if deterministic selection is actually required.
 owner: tyk-team
 review_date: "2026-11-30"
 release_disposition: ship_with_known_issue
@@ -31,3 +33,11 @@ history:
       by: agent:codex
       action: review
       detail: reviewer=human:buger,new_review_date=2026-11-30
+    - at: "2026-06-26T15:01:29Z"
+      by: agent:codex
+      action: edit
+      detail: set-reproducer-command,add-evidence-manifest
+    - at: "2026-06-26T15:04:01Z"
+      by: agent:codex
+      action: edit
+      detail: set-description,set-mitigation,set-remediation

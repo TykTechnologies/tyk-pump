@@ -1,0 +1,20 @@
+schema_version: proof.evidence_profile.v1
+profile: known_issue_reproducer
+requirements:
+    - SYS-REQ-004
+    - SYS-REQ-005
+    - SW-REQ-072
+    - SW-REQ-068
+    - SW-REQ-069
+    - SW-REQ-070
+command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored rg -n 'func \(.*\) connect\(|connect\(\)|return .*connect\(|go .*connect|time\.Sleep' pumps/elasticsearch.go
+status: pass
+observed_result: known_issue_reproduced
+executed_at: "2026-06-26T15:00:52Z"
+input_set:
+    - KI elasticsearch-unbounded-reconnect-recursion static recursion scan
+freshness_hashes:
+    proof.yaml: sha256:18dd484cb75c5c729bc063c96426b101df78e0c89ec729e39724c18f50367e0e
+    pumps/elasticsearch.go: sha256:fab94fff687bde542a18b3237d8dbed48b3313178e6d57c4b14a5faae3d70cf4
+known_issues:
+    - elasticsearch-unbounded-reconnect-recursion

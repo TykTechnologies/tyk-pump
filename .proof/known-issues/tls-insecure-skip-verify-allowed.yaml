@@ -7,10 +7,12 @@ affected_requirements:
     - SW-REQ-029
     - SW-REQ-048
     - SW-REQ-068
+evidence_manifests:
+    - .proof/evidence/ki-tls-insecure-skip-verify-allowed.yaml
 severity: medium
 severity_basis: risk
 risk: compliance
-reproducer_command: rg -n "InsecureSkipVerify|SSLInsecureSkipVerify" pumps/common.go pumps/hybrid.go pumps/kafka.go pumps/splunk.go pumps/elasticsearch.go
+reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored rg -n 'InsecureSkipVerify|SSLInsecureSkipVerify' pumps/common.go pumps/hybrid.go pumps/kafka.go pumps/splunk.go pumps/elasticsearch.go
 environment_note: Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source or rerunning the OpenGrep TLS skip-verification signal.
 introduced_in: inception
 mitigation: Operators should leave insecure skip-verification disabled in production and supply a valid CA/server name configuration for TLS-enabled pumps.
@@ -35,3 +37,7 @@ history:
       by: agent:codex
       action: review
       detail: reviewer=human:buger,new_review_date=2026-11-30
+    - at: "2026-06-26T15:01:35Z"
+      by: agent:codex
+      action: edit
+      detail: set-reproducer-command,add-evidence-manifest

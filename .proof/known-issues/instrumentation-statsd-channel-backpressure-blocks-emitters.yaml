@@ -14,9 +14,11 @@ commands:
 evidence_manifests:
     - code_signal:manual:metrics.channel-backpressure:instrumentation_statsd_sink.go:107
     - code_signal:manual:metrics.channel-backpressure:instrumentation_statsd_sink.go:151
+    - .proof/evidence/ki-instrumentation-statsd-channel-backpressure-blocks-emitters.yaml
 severity: medium
 severity_basis: risk
 risk: availability
+reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored rg -n 'cmdChan|EmitTiming|Incr|Gauge|make\(chan' instrumentation_statsd_sink.go
 environment_note: Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source and command output.
 introduced_in: inception
 mitigation: Operators can disable instrumentation or ensure the configured StatsD endpoint is local and healthy to keep the sink worker draining.
@@ -30,3 +32,7 @@ history:
       by: human:buger
       action: created
       detail: Captured active instrumentation backpressure debt found during shared-subsystem obligation review; no product-code fix made.
+    - at: "2026-06-26T15:00:55Z"
+      by: agent:codex
+      action: edit
+      detail: set-reproducer-command,add-evidence-manifest

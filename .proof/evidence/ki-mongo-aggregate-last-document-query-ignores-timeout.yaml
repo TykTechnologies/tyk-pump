@@ -1,0 +1,15 @@
+schema_version: proof.evidence_profile.v1
+profile: known_issue_reproducer
+requirements:
+    - SW-REQ-036
+command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored rg -n 'func \(m \*MongoAggregatePump\) getLastDocumentTimestamp|store\.Query\(context\.Background\(' pumps/mongo_aggregate.go
+status: pass
+observed_result: known_issue_reproduced
+executed_at: "2026-06-26T15:01:32Z"
+input_set:
+    - KI mongo-aggregate-last-document-query-ignores-timeout static context scan
+freshness_hashes:
+    proof.yaml: sha256:18dd484cb75c5c729bc063c96426b101df78e0c89ec729e39724c18f50367e0e
+    pumps/mongo_aggregate.go: sha256:9e6d675bf3db1aa3da93b6a46fb4bcd3699d2b8f5e10c1cf447fd65867443a5d
+known_issues:
+    - mongo-aggregate-last-document-query-ignores-timeout

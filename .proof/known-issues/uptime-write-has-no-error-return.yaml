@@ -5,10 +5,12 @@ affected_requirements:
     - STK-REQ-005
     - INT-REQ-002
     - SYS-REQ-021
+evidence_manifests:
+    - .proof/evidence/ki-uptime-write-has-no-error-return.yaml
 severity: low
 severity_basis: risk
 risk: data_integrity
-reproducer_command: rg -n "WriteUptimeData\(data \[\]interface\{\}\)|UptimePump\.WriteUptimeData\(|type UptimePump" pumps/pump.go main.go
+reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored rg -n 'WriteUptimeData\(data \[\]interface\{\}\)|UptimePump\.WriteUptimeData\(|type UptimePump' pumps/pump.go main.go
 environment_note: Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source or documentation surface and following the described scenario.
 introduced_in: inception
 mitigation: Operators must rely on backend-side monitoring (e.g. mongo write rate, error logs in mongo) to detect uptime-pump failures rather than tyk-pump's logs/metrics.
@@ -41,3 +43,7 @@ history:
       by: agent:codex
       action: review
       detail: reviewer=human:buger,new_review_date=2026-11-30
+    - at: "2026-06-26T15:01:37Z"
+      by: agent:codex
+      action: edit
+      detail: set-reproducer-command,add-evidence-manifest
