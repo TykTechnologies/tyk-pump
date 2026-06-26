@@ -22,6 +22,6 @@ recommended_evidence:
   - kind: boundary
     note: Test injects failure, panic, or delay into one unit and asserts sibling input, client state, and completion are unaffected.
   - kind: review
-    note: Review lists shared resources and explains the isolation mechanism for each: copy-on-write inputs, per-unit clients, bounded contexts, recover barriers, or process isolation.
+    note: "Review lists shared resources and explains the isolation mechanism for each: copy-on-write inputs, per-unit clients, bounded contexts, recover barriers, or process isolation."
   - kind: scenario
     note: Scenario covers partial backend outage while healthy backends continue and produce observable outcomes.
