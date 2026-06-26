@@ -800,6 +800,8 @@ func TestRetryAndLog(t *testing.T) {
 
 // Verifies: SW-REQ-029
 // Verifies: SW-REQ-085
+// MCDC SW-REQ-085: hybrid_init_failure_detected=F, init_error_returned_without_process_exit=F => TRUE
+// MCDC SW-REQ-085: hybrid_init_failure_detected=T, init_error_returned_without_process_exit=T => TRUE
 // SW-REQ-029:external_call_failure_observable:nominal
 // SW-REQ-029:external_call_failure_observable:negative
 // SW-REQ-085:errors_propagated:negative

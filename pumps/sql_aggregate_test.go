@@ -29,7 +29,6 @@ import (
 // MCDC SW-REQ-067: on_conflict_assignments_applied=F, row_conflict_detected=T => FALSE
 // MCDC SW-REQ-067: on_conflict_assignments_applied=T, row_conflict_detected=T => TRUE
 
-// Verifies: SW-REQ-041
 // SW-REQ-041:support_matrix_enforced:nominal
 func TestSQLAggregateInit(t *testing.T) {
 	skipTestIfNoPostgres(t)

@@ -19,6 +19,9 @@ Idempotent backend write retries are the standard way to ride out brief network 
 - `retry/http_retry_test.go:64 TestIsErrorRetryable` — tagged `// SW-REQ-030:error_handling:boundary`; table-driven classification.
 - `retry/http_retry_branches_test.go:42 TestIsErrorRetryable_AllBranches` — tagged `// SW-REQ-030:error_handling:negative`; MC/DC-style coverage of each branch in `isErrorRetryable`.
 - `retry/http_retry_branches_test.go:68 TestBackoffHTTPRetry_Send_WithBody_RetriesOn5xx` — body replay on retry.
+- `retry/http_retry_branches_test.go:TestBackoffHTTPRetry_Send_ReplaysRequestBodyOnRetry`
+  carries the local `request_body_replay_preserved` obligation evidence. It is
+  not a formal MC/DC witness for the retry-trigger formula.
 - `retry/http_retry_branches_test.go:96 TestBackoffHTTPRetry_Send_ErrorSurfacedAfterRetriesExhausted` — `maxRetries` exhaustion.
 
 ## Open questions

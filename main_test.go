@@ -159,6 +159,7 @@ func TestFilterData_DoesNotMutateInputBatch(t *testing.T) {
 }
 
 // Verifies: SW-REQ-095
+// MCDC SW-REQ-095: per_backend_transform_configured=T, shared_dispatch_batch_preserved=T => TRUE
 // SW-REQ-095:per_backend_input_isolation:negative
 // SW-REQ-095:shared_state_synchronized:review
 func TestFilterData_TransformsDoNotMutateInputBatch(t *testing.T) {
@@ -842,7 +843,6 @@ func TestDecodedKey(t *testing.T) {
 }
 
 // Verifies: SW-REQ-001
-// Verifies: SW-REQ-088
 func TestDecodedKeyInvalidBase64LeavesPayloadsUnchanged(t *testing.T) {
 	keys := []interface{}{
 		analytics.AnalyticsRecord{
@@ -983,7 +983,6 @@ func TestDeprecationWarnings(t *testing.T) {
 	}
 }
 
-// Verifies: SW-REQ-088
 // SW-REQ-088:encoding_aware:negative
 //
 // Negative-path evidence for the base64-decode arm of filterData (main.go:415-419

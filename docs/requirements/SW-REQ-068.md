@@ -43,23 +43,27 @@ expectation that Init failure aborts startup.
   projection.
 
 ## Evidence
-- `pumps/elasticsearch_test.go:TestGetMapping_*` (re-annotated `Verifies:
-  SW-REQ-068`) — exercise the per-record mapping path used by every
-  version operator.
+- The formal MC/DC rows for `version_eq_3 -> v3_operator_constructed` are
+  carried by the per-version `getOperator` / Init witnesses in
+  `pumps/elasticsearch_mcdc_100_test.go`,
+  `pumps/elasticsearch_mcdc_test.go`, and the targeted TLS error witness in
+  `pumps/elasticsearch_test.go`.
 - `pumps/elasticsearch_test.go:TestGetMapping_ExtendedStatistics` covers the
-  TN-6 decoded-payload text contract: decoded `raw_request` / `raw_response`
-  fields are plaintext strings, not byte slices that JSON would re-encode.
+  TN-6 decoded-payload text contract through the local
+  `backend_decoded_payload_textual` obligation: decoded `raw_request` /
+  `raw_response` fields are plaintext strings, not byte slices that JSON would
+  re-encode. It is not a witness for the per-version operator MC/DC formula.
 - `pumps/elasticsearch_test.go:TestGetMapping_BasicFields` and
   `TestGetMapping_AliasProjection_EmptyAlias` cover SW-REQ-100 alias
   projection.
 - `pumps/elasticsearch_test.go:TestElasticsearchPump_TLSConfig_ErrorCases`
-  (re-annotated `Verifies: SW-REQ-068`) — exercises TLS-config error
-  propagation from `getOperator`.
+  — exercises TLS-config error propagation from `getOperator`.
 - `pumps/elasticsearch_test.go:TestElasticsearchPump_TLSConfig_EnvSkipVerify`
   — verifies the Elasticsearch environment spelling
   `SSLINSECURESKIPVERIFY` reaches `SSLInsecureSkipVerify` and is passed into
   the TLS helper as an explicit operator opt-in that emits the shared warning
-  for skipped certificate verification.
+  for skipped certificate verification. This is `tls_verification_explicit`
+  obligation evidence, not a per-version operator MC/DC witness.
 - `pumps/elasticsearch_test.go:TestElasticsearchPump_GetOperatorPassesTLSConfigFields`
   — verifies `getOperator` hands `ssl_cert_file`, `ssl_key_file`,
   `ssl_ca_file`, and `ssl_insecure_skip_verify` through to the shared
@@ -72,6 +76,8 @@ expectation that Init failure aborts startup.
   — verifies Elasticsearch `SSLInsecureSkipVerify` defaults to false so
   insecure TLS requires explicit operator opt-in; strict production
   certificate validation remains tracked by KI `tls-insecure-skip-verify-allowed`.
+  This is `tls_verification_explicit` obligation evidence, not a per-version
+  operator MC/DC witness.
 
 ## Open questions
 - ES versions 8+ are not supported; the `log.Fatal` will fire if an

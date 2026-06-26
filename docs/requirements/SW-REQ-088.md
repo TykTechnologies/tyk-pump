@@ -15,10 +15,13 @@ independence of the request and response toggles.
 
 ## Evidence
 
-- `main_test.go:TestDecodedKey` covers request-only, response-only, both, and
-  neither decode settings.
-- `main_test.go:TestFilterDataBase64DecodeFailurePreservesField` covers the
-  malformed base64 path and proves the current preserved-original behavior.
+- `main_test.go:TestDecodedKey` carries the positive MC/DC witness rows for
+  enabled and disabled decode settings.
+- `main_test.go:TestDecodedKeyInvalidBase64LeavesPayloadsUnchanged` and
+  `main_test.go:TestFilterDataBase64DecodeFailurePreservesField` cover
+  malformed-base64 reachability as `encoding_aware` / KI evidence. They prove
+  the current preserved-original behavior, but they are not satisfied MC/DC
+  witnesses for the successful decode formula.
 
 ## Known Issues
 

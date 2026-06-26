@@ -504,7 +504,6 @@ func TestAggregateGraphData_Dimension(t *testing.T) {
 	}
 }
 
-// Verifies: SW-REQ-043
 // SW-REQ-043:aggregate_partition_isolated:nominal
 // SW-REQ-043:aggregate_partition_isolated:negative
 // SW-REQ-043:output_cardinality_bounded:nominal
@@ -1471,6 +1470,7 @@ func TestAnalyticsRecordAggregate_AsTimeUpdate(t *testing.T) {
 }
 
 // Verifies: SW-REQ-102
+// MCDC SW-REQ-102: aggregate_lists_projection_persisted=T => TRUE
 // SW-REQ-102:structured_projection_preserved:review
 func TestAnalyticsRecordAggregate_ListsBSONRoundTripPreservesRestoredFields(t *testing.T) {
 	source := AnalyticsRecordAggregate{

@@ -7,7 +7,6 @@ import (
 	"testing"
 )
 
-// Verifies: SW-REQ-001
 // SW-REQ-001:wire_format_suffix_dispatch:nominal
 // SW-REQ-001:wire_format_suffix_dispatch:negative
 // SW-REQ-001:wire_format_suffix_dispatch:review

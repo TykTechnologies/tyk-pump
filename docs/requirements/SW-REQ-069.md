@@ -1,4 +1,4 @@
-# SW-REQ-069: Elasticsearch — rolling index naming policy
+# SW-REQ-069: Elasticsearch — rolling and MCP bulk index naming policy
 
 ## Parent
 This requirement is a per-significant-behaviour decomposition of the
@@ -7,11 +7,11 @@ index naming obligation in isolation.
 
 ## Intent
 When `RollingIndex` is true, the Elasticsearch pump shall append
-`-YYYY.MM.DD` (UTC system time) to the target index name. Per-record
-routing shall use `getIndexNameForRecord`: when `MCPIndexName` is
-non-empty and the record is an MCP record, the MCP-specific index name
-is used (with the same rolling suffix when enabled); otherwise the
-standard `IndexName` is used. Derived from SYS-REQ-004.
+`-YYYY.MM.DD` (UTC system time) to the target index name. The bulk write
+routing path shall use `getIndexNameForRecord`: when `MCPIndexName` is
+non-empty and the record is an MCP record, the MCP-specific index name is
+used (with the same rolling suffix when enabled); otherwise the standard
+`IndexName` is used. Derived from SYS-REQ-004.
 
 ## Motivation
 Rolling daily indexes are the standard ES idiom for time-series data:
@@ -40,3 +40,6 @@ queried independently of the main analytics stream.
 - The MCP index is *additional* — non-MCP records still go to the
   standard index; the routing is a per-record decision rather than a
   pump-wide one.
+- The non-bulk MCP routing path is currently tracked by KnownIssue
+  `elasticsearch-mcp-routing-non-bulk-ignored`; the positive SW-REQ-069
+  evidence is the `getIndexNameForRecord` / bulk-routing contract.

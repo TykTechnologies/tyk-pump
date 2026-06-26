@@ -44,8 +44,10 @@ latencies) in SQL form, suitable for Grafana / Metabase dashboards.
   proves a configured `meta_env_prefix` is returned by `GetEnvPrefix` and used
   for Graph SQL Aggregate overrides.
 - `analytics/aggregate_test.go:TestAggregateGraphData_PartitionsSameOrgByAPIID`
-  proves that same-org, same-dimension GraphQL records remain isolated by
-  `APIID` before SQL upsert, including the `rootfields` dimension.
+  proves the local `aggregate_partition_isolated` obligation: same-org,
+  same-dimension GraphQL records remain isolated by `APIID` before SQL upsert,
+  including the `rootfields` dimension. It is not a formal MC/DC witness for
+  the `store_per_minute -> minute_window_used & api_partition_used` formula.
 - SW-REQ-086 decomposes the sharded table-target invariant and is witnessed by
   `pumps/graph_sql_aggregate_test.go:TestGraphSQLAggregatePump_WriteData_Sharded`.
 - Live-Postgres tests are excluded from the local audit MC/DC scope (known

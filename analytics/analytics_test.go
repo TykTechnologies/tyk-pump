@@ -36,6 +36,7 @@ func TestAnalyticsRecord_IsGraphRecord(t *testing.T) {
 }
 
 // Verifies: SW-REQ-076
+// MCDC SW-REQ-076: ignore_fields_configured=T, listed_fields_removed=T => TRUE
 func TestAnalyticsRecord_RemoveIgnoredFields(t *testing.T) {
 	defaultRecord := AnalyticsRecord{
 		APIID:      "api123",

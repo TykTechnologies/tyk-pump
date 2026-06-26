@@ -70,7 +70,6 @@ func TestBuildHealthCheckRouter_RegistersPprofWhenEnabled(t *testing.T) {
 	}
 }
 
-// Verifies: SW-REQ-032
 // SW-REQ-032:listener_bind_scope_external:nominal
 // SW-REQ-032:listener_bind_scope_external:negative
 // SW-REQ-032:listener_bind_scope_external:review

@@ -85,7 +85,6 @@ func TestBackoffHTTPRetry_Send_WithBody_RetriesOn5xx(t *testing.T) {
 	}
 }
 
-// Verifies: SW-REQ-030
 // SW-REQ-030:request_body_replay_preserved:nominal
 func TestBackoffHTTPRetry_Send_ReplaysRequestBodyOnRetry(t *testing.T) {
 	const payload = `{"event":"splunk-retry"}`

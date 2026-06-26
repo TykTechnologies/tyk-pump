@@ -17,7 +17,7 @@ A trivial liveness endpoint is the conventional minimum for container orchestrat
 - `server/server_test.go:14 TestHealthcheck_ReportsLiveness` — tagged `// Verifies: SW-REQ-032` and `// SW-REQ-032:nominal:example`; spins up the router and asserts `200 OK` plus the JSON body.
 - `server/serve_params_test.go:TestResolveHealthCheckParams_AllBranches` — covers default and configured endpoint/port resolution.
 - `server/serve_params_test.go:TestBuildHealthCheckRouter_RegistersExpectedRoutes` and `TestBuildHealthCheckRouter_RegistersPprofWhenEnabled` — cover health route and pprof gating.
-- `server/serve_params_test.go:TestServeHealthCheck_BindsExternalInterface` — source-level regression witness for commit 402dab8; it fails if production `ListenAndServe` is restricted to `localhost` or `127.0.0.1`.
+- `server/serve_params_test.go:TestServeHealthCheck_BindsExternalInterface` — source-level regression witness for commit 402dab8; it fails if production `ListenAndServe` is restricted to `localhost` or `127.0.0.1`. It carries the local `listener_bind_scope_external` obligation, not the pprof MC/DC formula.
 
 ## Open questions
 - The req text says "respond with a liveness payload" — the payload is `{"status": "ok"}` and is not configurable. A consumer expecting a richer payload (e.g. version, uptime, pump counts) would need a code change. Worth pinning at the SW layer that the body is intentionally minimal.

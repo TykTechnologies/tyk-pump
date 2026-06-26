@@ -47,6 +47,7 @@ obligation_checklist:
     - config_schema_strict
     - idempotency
     - index_definition_matches_query
+    - invariant_preservation
     - malformed_recovers_or_errors_loudly
     - nominal
     - panic_free_input_handling
@@ -65,6 +66,12 @@ obligation_deferrals:
       owner: human:buger
       ki_ref: sql-aggregate-background-index-concurrency-unbounded
       reproducer: sql-aggregate-background-index-concurrency-unbounded
+    - obligation_class: invariant_preservation
+      reason: SQL Aggregate background index creation mutates schema without a specified once/synchronization invariant for concurrent Init/WriteData interactions; the opengrep create-table-without-sync-once signal is tracked as KI debt rather than claimed covered.
+      tracking: sql-aggregate-background-index-concurrency-unbounded
+      owner: agent:codex
+      ki_ref: sql-aggregate-background-index-concurrency-unbounded
+      reproducer: code_signal:opengrep:go.db.create-table-without-sync-once:pumps/sql_aggregate.go:164
     - obligation_class: config_schema_strict
       reason: 'Pump configuration unknown-field rejection is required but currently not implemented: mapstructure.Decode silently ignores unknown keys and operator typos until known issue mapstructure-decode-silently-drops-unknown-keys is fixed.'
       tracking: mapstructure-decode-silently-drops-unknown-keys

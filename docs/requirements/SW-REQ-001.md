@@ -19,7 +19,7 @@ This is the orchestration layer of the pump. Capturing it at the SW level locks 
 ## Evidence
 - `main_test.go:55 TestFilterData`, `main_test.go:78 TestTrimData`, `main_test.go:145 TestOmitDetailsFilterData`, `main_test.go:298 TestIgnoreFieldsFilterData`, `main_test.go:350 TestDecodedKey` — each tagged `// Verifies: SW-REQ-001` and exercise individual privacy/filter branches of `filterData`.
 - `main_test.go:168 TestWriteDataWithFilters` — tagged `// Verifies: SW-REQ-001` and `SW-REQ-003`; drives `writeToPumps` end-to-end across multiple pumps.
-- `purge_keyspace_test.go:14 TestStartPurgeLoopDrainsEverySerializerSuffixForEveryAnalyticsKey` — tagged `SW-REQ-001:wire_format_suffix_dispatch:*`; source-level regression witness for the TT-4699 keyspace expansion, proving the purge loop still combines the legacy key and `_0.._9` shard keys with every registered serializer suffix before dispatch.
+- `purge_keyspace_test.go:TestStartPurgeLoopDrainsEverySerializerSuffixForEveryAnalyticsKey` — tagged `SW-REQ-001:wire_format_suffix_dispatch:*`; source-level regression witness for the TT-4699 keyspace expansion, proving the purge loop still combines the legacy key and `_0.._9` shard keys with every registered serializer suffix before dispatch. It is obligation evidence, not a `purge_tick -> records_dispatched` MC/DC witness.
 
 ## Related requirements
 `SW-REQ-095` decomposes the TT-5776 fan-out isolation invariant from this

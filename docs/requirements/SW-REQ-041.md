@@ -31,10 +31,12 @@ decomposition lets each carry its own obligation. This parent carries
   used by the WriteData loop and by Init.
 
 ## Evidence
-- `pumps/sql_aggregate_test.go` (re-annotated to point at the relevant
-  sub-req per test function):
-  - `TestSQLAggregateInit` /
-    `TestDecodeRequestAndDecodeResponseSQLAggregate` → SW-REQ-041 parent.
+- `pumps/sql_aggregate_test.go` (annotated to point at the relevant
+  requirement or obligation per test function):
+  - `TestSQLAggregateInit` carries the local `support_matrix_enforced`
+    obligation for the SQL aggregate init path; it is not a formal MC/DC
+    witness for the parent day-sharding formula.
+  - `TestDecodeRequestAndDecodeResponseSQLAggregate` → SW-REQ-041 parent.
   - `TestSQLAggregateWriteData_Sharded` → SW-REQ-064.
   - `TestEnsureIndexSQLAggregate` → SW-REQ-066.
   - `TestSQLAggregateWriteData` /

@@ -166,7 +166,6 @@ func TestElasticsearchPump_TLSConfig_ErrorCases(t *testing.T) {
 	})
 }
 
-// Verifies: SW-REQ-068
 // SW-REQ-068:tls_verification_explicit:nominal
 func TestElasticsearchPump_TLSConfig_EnvSkipVerify(t *testing.T) {
 	t.Setenv("TEST_ES_SSLINSECURESKIPVERIFY", "true")
@@ -421,7 +420,6 @@ func TestGetIndexName_Rolling(t *testing.T) {
 }
 
 // Verifies: INT-REQ-006
-// Verifies: SW-REQ-068
 // MCDC INT-REQ-006: mapping_per_implementation=T, record_dispatched_to_backend=T => TRUE
 // SW-REQ-068:backend_decoded_payload_textual:nominal
 // SW-REQ-068:backend_decoded_payload_textual:negative

@@ -17,7 +17,6 @@ import (
 // SW-REQ-021:tls_verification_explicit:nominal
 // SW-REQ-029:tls_verification_explicit:nominal
 // SW-REQ-068:tls_verification_explicit:nominal
-// Verifies: SW-REQ-068
 // Phase S Wave 3a reproducer test.
 //
 // Method: reflection-based. For each registered config struct, construct the

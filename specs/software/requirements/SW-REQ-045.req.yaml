@@ -45,6 +45,7 @@ obligation_checklist:
     - connection_leak_free
     - external_call_timeout_bounded
     - input_size_bounded
+    - invariant_preservation
     - malformed_input
     - malformed_recovers_or_errors_loudly
     - output_cardinality_bounded
@@ -82,6 +83,12 @@ obligation_deferrals:
       tracking: sql-batch-size-zero-infinite-loop
       owner: agent:codex
       ki_ref: sql-batch-size-zero-infinite-loop
+    - obligation_class: invariant_preservation
+      reason: MCP SQL aggregate background index creation runs without a specified goroutine/channel lifecycle or concurrent Init/WriteData invariant witness; the opengrep create-table-without-sync-once signal is tracked as KI debt rather than claimed covered.
+      tracking: mcp-sql-aggregate-background-index-concurrency-unbounded
+      owner: agent:codex
+      ki_ref: mcp-sql-aggregate-background-index-concurrency-unbounded
+      reproducer: code_signal:opengrep:go.db.create-table-without-sync-once:pumps/mcp_sql_aggregate.go:127
     - obligation_class: malformed_input
       reason: real SQL-family malformed batch-size gap under known-issue sql-batch-size-zero-infinite-loop; surfaced as visible tracked debt, not an overclaimed fix
       tracking: sql-batch-size-zero-infinite-loop

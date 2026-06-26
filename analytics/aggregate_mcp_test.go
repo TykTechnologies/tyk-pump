@@ -425,6 +425,7 @@ func TestMCPBSONRoundTrip_APIIDMapSurvivesReadback(t *testing.T) {
 
 // Verifies: SW-REQ-012
 // Verifies: SW-REQ-093
+// MCDC SW-REQ-093: rest_aggregate_input_present=T, rest_aggregate_partitioned=T => TRUE
 // SW-REQ-093:nominal:nominal
 // SW-REQ-093:output_cardinality_bounded:negative
 func TestAggregateData_SkipsMCPRecords(t *testing.T) {
