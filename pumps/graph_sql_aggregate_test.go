@@ -3,15 +3,19 @@ package pumps
 import (
 	"context"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 // File-level MC/DC witness rows: these requirements are genuinely exercised
@@ -209,6 +213,8 @@ func TestSqlGraphAggregatePump_Init(t *testing.T) {
 }
 
 // Verifies: SW-REQ-043
+// SW-REQ-043:atomicity:nominal
+// SW-REQ-043:errors_propagated:nominal
 // MCDC SW-REQ-043: api_partition_used=F, minute_window_used=F, store_per_minute=F => TRUE
 // MCDC SW-REQ-043: api_partition_used=F, minute_window_used=F, store_per_minute=T => FALSE
 // MCDC SW-REQ-043: api_partition_used=F, minute_window_used=T, store_per_minute=T => FALSE
@@ -724,6 +730,82 @@ func TestGraphSQLAggregatePump_WriteData_Sharded(t *testing.T) {
 		assertGraphAggregateShardRow(t, pump, secondShardedTable, "operation", "Query", "test-api")
 		assertGraphAggregateShardRow(t, pump, secondShardedTable, "rootfields", "characters", "test-api")
 	})
+}
+
+// Verifies: SW-REQ-043
+// SW-REQ-043:atomicity:negative
+// SW-REQ-043:errors_propagated:negative
+// Verifies: KI:graph-sql-aggregate-atomicity-fault-injection-missing
+// Reproduces: graph-sql-aggregate-atomicity-fault-injection-missing
+func TestGraphSQLAggregateDoAggregatedWritingReturnsCreateErrorWithoutRows_KI(t *testing.T) {
+	tableName := sanitizeTableName("ki_graph_agg_atomicity", t.Name())
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
+		AutoEmbedd:  true,
+		UseJSONTags: true,
+		Logger:      logger.Default.LogMode(logger.Silent),
+	})
+	require.NoError(t, err)
+	sqlDB, err := db.DB()
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, sqlDB.Close()) })
+	require.NoError(t, db.Table(tableName).AutoMigrate(&analytics.GraphSQLAnalyticsRecordAggregate{}))
+
+	pmp := &GraphSQLAggregatePump{
+		SQLConf: &SQLAggregatePumpConf{
+			SQLConf: SQLConf{
+				Type:      "sqlite",
+				BatchSize: SQLDefaultQueryBatchSize,
+			},
+		},
+		db: db.Table(tableName),
+	}
+	pmp.log = log.WithField("prefix", SQLAggregatePumpPrefix)
+
+	injectedErr := errors.New("injected graph aggregate create failure")
+	require.NoError(t, db.Callback().Create().Before("gorm:create").Register("reqproof:inject_graph_aggregate_create_error", func(tx *gorm.DB) {
+		if tx.Statement.Table == tableName {
+			tx.AddError(injectedErr)
+		}
+	}))
+
+	ag := analytics.NewGraphRecordAggregate()
+	ag.TimeStamp = time.Unix(1893456000, 0).UTC()
+	ag.Operation["Query"] = &analytics.Counter{
+		Hits:     1,
+		Success:  1,
+		ErrorMap: map[string]int{},
+	}
+
+	err = pmp.DoAggregatedWriting(context.Background(), tableName, "ki-org", "ki-api", &ag)
+	require.ErrorIs(t, err, injectedErr)
+
+	var rowCount int64
+	require.NoError(t, db.Table(tableName).Count(&rowCount).Error)
+	assert.Zero(t, rowCount)
+}
+
+// Verifies: SW-REQ-043
+// Verifies: KI:graph-sql-aggregate-atomicity-fault-injection-missing
+// Reproduces: graph-sql-aggregate-atomicity-fault-injection-missing
+func TestGraphSQLAggregateTransactionIsolationHarnessMissing_KI(t *testing.T) {
+	sourceBytes, err := os.ReadFile("graph_sql_aggregate.go")
+	require.NoError(t, err)
+	source := string(sourceBytes)
+
+	start := strings.Index(source, "func (s *GraphSQLAggregatePump) DoAggregatedWriting")
+	require.NotEqual(t, -1, start, "DoAggregatedWriting must remain present while this KI is open")
+	end := strings.Index(source[start:], "\n\treturn nil\n}")
+	require.NotEqual(t, -1, end, "DoAggregatedWriting end marker not found")
+	doAggregatedWritingSource := source[start : start+end]
+
+	require.Contains(t, doAggregatedWritingSource, "clause.OnConflict",
+		"KI active: Graph SQL aggregate still relies on a single upsert path")
+	require.NotContains(t, doAggregatedWritingSource, ".Transaction(",
+		"KI active: Graph SQL aggregate still lacks an explicit transaction isolation harness")
+	require.NotContains(t, doAggregatedWritingSource, ".Begin(",
+		"KI active: Graph SQL aggregate still lacks an explicit transaction isolation harness")
+	require.NotContains(t, doAggregatedWritingSource, "Isolation",
+		"KI active: Graph SQL aggregate still lacks an explicit transaction isolation declaration")
 }
 
 func dropGraphAggregateTables(t *testing.T, pump GraphSQLAggregatePump, tables ...string) {

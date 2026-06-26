@@ -4,11 +4,13 @@ description: PrometheusMetric.Inc, Observe, and Expose mutate counterMap and his
 affected_requirements:
     - SW-REQ-024
 evidence_manifests:
+    - test:pumps/prometheus_metric_maps_race_ki_test.go:TestPrometheusMetric_MapsRace_KI
     - .proof/evidence/ki-prometheus-metric-maps-race.yaml
 severity: medium
 severity_basis: risk
 risk: data_integrity
-reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored rg -n 'metricData|map\[string\]|counterMap|histogramMap' pumps/prometheus.go
+reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored go test -race -p=1 -count=1 -timeout=180s -run '^TestPrometheusMetric_MapsRace_KI$' ./pumps
+environment_note: Race-build subprocess witness. The parent test passes only when the race-instrumented child reports DATA RACE from PrometheusMetric counterMap/histogramMap mutation in prometheus.go; the test constructs PrometheusMetric directly and uses no PrometheusPump.Init, HTTP mux, registry state, external service, or container.
 introduced_in: inception
 mitigation: Avoid concurrent WriteData calls against the same PrometheusPump instance; production purge dispatch should serialize writes per pump until the metric maps are protected.
 remediation: Add synchronization around PrometheusMetric counterMap/histogramMap mutations or replace the aggregation state with concurrency-safe structures, then add a go test -race witness for concurrent WriteData/processMetric.
@@ -36,3 +38,7 @@ history:
       by: agent:codex
       action: edit
       detail: set-reproducer-command,add-evidence-manifest
+    - at: "2026-06-26T19:11:54Z"
+      by: agent:codex
+      action: evidence_hardened
+      detail: replaced static metric-map scan with TestPrometheusMetric_MapsRace_KI race witness

@@ -2,16 +2,16 @@ schema_version: proof.evidence_profile.v1
 profile: known_issue_reproducer
 requirements:
     - SW-REQ-043
-command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored rg -n "DoAggregatedWriting|OnConflict|Create\\(|tx\\.Error|atomicity|transaction|failure" pumps/graph_sql_aggregate.go pumps/graph_sql_aggregate_test.go docs/requirements/SW-REQ-043.md
+command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored go test -p=1 -count=1 -timeout=180s -run '^(TestGraphSQLAggregateDoAggregatedWritingReturnsCreateErrorWithoutRows_KI|TestGraphSQLAggregateTransactionIsolationHarnessMissing_KI)$' ./pumps
 status: pass
 observed_result: known_issue_reproduced
-executed_at: "2026-06-26T14:43:41Z"
+executed_at: "2026-06-26T19:38:36Z"
 input_set:
-    - KI graph-sql-aggregate-atomicity-fault-injection-missing static fault-injection gap scan
+    - KI graph-sql-aggregate-atomicity-fault-injection-missing sqlite create-error callback and transaction-isolation source tripwires
 freshness_hashes:
-    docs/requirements/SW-REQ-043.md: sha256:4df83449dc55013c0d918e25d2709bd247fe49f255f20e2ecc9533b17f48d9e5
+    docs/requirements/SW-REQ-043.md: sha256:c92df18e830f8a44e63f2e19aab5df87ad3e03b8144ed5a0f6ea982c18f4e3c8
     proof.yaml: sha256:18dd484cb75c5c729bc063c96426b101df78e0c89ec729e39724c18f50367e0e
     pumps/graph_sql_aggregate.go: sha256:159234ba6047acf0256adafb63958c1d9200929a8c4e8b9544e252ff2ecd88c8
-    pumps/graph_sql_aggregate_test.go: sha256:44b3266bab1c4a43f30b17849c9b881c8c2c2d9917275c22d7a3c5df59fba6a4
+    pumps/graph_sql_aggregate_test.go: sha256:2ef1988bffea29ee4e1ed3b5b3028f7c7c22524a3fcfb31bf2fac481bbdb18ef
 known_issues:
     - graph-sql-aggregate-atomicity-fault-injection-missing

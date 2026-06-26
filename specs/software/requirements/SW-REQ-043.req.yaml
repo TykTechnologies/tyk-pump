@@ -70,24 +70,12 @@ obligation_checklist:
     - temporal_window_inclusive
     - transaction_isolation_declared
 obligation_deferrals:
-    - obligation_class: atomicity
-      reason: 'Graph SQL aggregate upsert atomicity is required for counter correctness, but current evidence lacks transaction/failure injection for serialization, deadlock, or forced tx.Error paths; tracked as KI-backed proof-harness debt.'
-      tracking: graph-sql-aggregate-atomicity-fault-injection-missing
-      owner: human:buger
-      ki_ref: graph-sql-aggregate-atomicity-fault-injection-missing
-      reproducer: graph-sql-aggregate-atomicity-fault-injection-missing
     - obligation_class: config_schema_strict
       reason: 'Pump configuration unknown-field rejection is required but currently not implemented: mapstructure.Decode silently ignores unknown keys and operator typos until known issue mapstructure-decode-silently-drops-unknown-keys is fixed.'
       tracking: mapstructure-decode-silently-drops-unknown-keys
       owner: human:buger
       ki_ref: mapstructure-decode-silently-drops-unknown-keys
       reproducer: mapstructure-decode-silently-drops-unknown-keys
-    - obligation_class: errors_propagated
-      reason: SW-REQ-043 promises Graph SQL aggregate per-batch backend errors are returned, but current evidence does not force database Create/tx.Error failure paths; tracked as KI-backed proof-harness debt until an injected backend-failure witness exists.
-      tracking: graph-sql-aggregate-atomicity-fault-injection-missing
-      owner: human:buger
-      ki_ref: graph-sql-aggregate-atomicity-fault-injection-missing
-      reproducer: graph-sql-aggregate-atomicity-fault-injection-missing
     - obligation_class: external_call_timeout_bounded
       reason: External backend calls remain operator-timeout dependent because timeout=0 is still accepted; this is KI-tracked until a nonzero deadline is enforced by default or Init rejects zero timeout.
       tracking: pump-no-timeout-can-block-purge-cycle
@@ -127,7 +115,7 @@ obligation_deferrals:
       owner: human:buger
       ki_ref: analytics-timestamp-timezone-convention-unpinned
     - obligation_class: transaction_isolation_declared
-      reason: Graph SQL aggregate counter correctness depends on concurrent database upserts behaving consistently, but no test or documented transaction-isolation harness injects concurrent writer or serialization-failure cases; tracked as KI-backed proof-harness debt.
+      reason: Graph SQL aggregate counter correctness depends on concurrent database upserts behaving consistently; forced Create/tx.Error behavior is now witnessed, but no test or documented transaction-isolation harness injects concurrent writer or serialization-failure cases.
       tracking: graph-sql-aggregate-atomicity-fault-injection-missing
       owner: human:buger
       ki_ref: graph-sql-aggregate-atomicity-fault-injection-missing

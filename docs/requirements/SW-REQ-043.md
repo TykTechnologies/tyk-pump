@@ -59,11 +59,12 @@ latencies) in SQL form, suitable for Grafana / Metabase dashboards.
   collapse into one row.
 - `routing_target_consistent` — decomposed to SW-REQ-086 for the selected day
   shard table used by `WriteData` and `DoAggregatedWriting`.
-- `atomicity`, `transaction_isolation_declared`, and `errors_propagated` —
-  required for backend write correctness and tracked under KnownIssue
-  `graph-sql-aggregate-atomicity-fault-injection-missing` until a database
-  transaction/failure-injection harness proves serialization/deadlock and
-  forced `tx.Error` behavior.
+- `atomicity` and `errors_propagated` — forced `Create`/`tx.Error` behavior is
+  witnessed by
+  `TestGraphSQLAggregateDoAggregatedWritingReturnsCreateErrorWithoutRows_KI`.
+- `transaction_isolation_declared` — concurrent writer and serialization-failure
+  behavior remains tracked under KnownIssue
+  `graph-sql-aggregate-atomicity-fault-injection-missing`.
 
 ## Open questions
 - The day-bucket algorithm is duplicated from sql.go / sql_aggregate.go /
