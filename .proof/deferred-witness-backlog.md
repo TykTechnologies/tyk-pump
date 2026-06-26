@@ -107,9 +107,9 @@ Converted families (class | #reqs | backing KI | requirements):
 | partial_progress_observable | 1 | pump-no-per-pump-circuit-breaker | SW-REQ-001 |
 | per_pump_circuit_breaker | 1 | pump-no-per-pump-circuit-breaker | SW-REQ-001 |
 | process_exit_on_recoverable | 19 | pumps-logfatal-on-config-decode | SW-REQ-021, SW-REQ-023, SW-REQ-024, SW-REQ-025, SW-REQ-026, SW-REQ-034, SW-REQ-035, SW-REQ-036, SW-REQ-046, SW-REQ-047, SW-REQ-049, SW-REQ-050, SW-REQ-051, SW-REQ-052, SW-REQ-053, SW-REQ-055, SW-REQ-056, SW-REQ-057, SW-REQ-068 |
-| request_timeout_bounded | 1 | prometheus-init-mutates-default-mux | SW-REQ-024 |
 | request_timeout_bounded | 3 | pump-no-timeout-can-block-purge-cycle | SW-REQ-068, SW-REQ-069, SW-REQ-070 |
 | request_timeout_bounded | 1 | splunk-newsplunkclient-mutates-default-transport | SW-REQ-048 |
+| shared_state_synchronized | 1 | prometheus-init-mutates-default-mux | SW-REQ-024 |
 | temporal_window_inclusive | 6 | analytics-timestamp-timezone-convention-unpinned | SW-REQ-040, SW-REQ-041, SW-REQ-042, SW-REQ-043, SW-REQ-044, SW-REQ-045 |
 | tz_explicit | 3 | analytics-timestamp-timezone-convention-unpinned | SW-REQ-009, SW-REQ-011, SW-REQ-015 |
 

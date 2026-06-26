@@ -3,6 +3,9 @@ package pumps
 import (
 	"context"
 	"errors"
+	"go/ast"
+	"go/parser"
+	"go/token"
 	"io"
 	"os"
 	"testing"
@@ -1157,6 +1160,65 @@ func withIsolatedPrometheusRegistry(t *testing.T) *prometheus.Registry {
 	})
 
 	return registry
+}
+
+// KI tripwire for SW-REQ-024; this is not requirement-success evidence.
+// Verifies: KI:prometheus-init-mutates-default-mux
+// Reproduces: prometheus-init-mutates-default-mux
+func TestPrometheusInitDefaultMux_KI(t *testing.T) {
+	file, err := parser.ParseFile(token.NewFileSet(), "prometheus.go", nil, 0)
+	require.NoError(t, err)
+
+	var foundHTTPHandle bool
+	var foundDefaultMuxServe bool
+	ast.Inspect(file, func(n ast.Node) bool {
+		fn, ok := n.(*ast.FuncDecl)
+		if !ok || fn.Name.Name != "Init" {
+			return true
+		}
+		recv := fn.Recv
+		if recv == nil || len(recv.List) != 1 {
+			return false
+		}
+		star, ok := recv.List[0].Type.(*ast.StarExpr)
+		if !ok {
+			return false
+		}
+		ident, ok := star.X.(*ast.Ident)
+		if !ok || ident.Name != "PrometheusPump" {
+			return false
+		}
+
+		ast.Inspect(fn.Body, func(n ast.Node) bool {
+			call, ok := n.(*ast.CallExpr)
+			if !ok {
+				return true
+			}
+			sel, ok := call.Fun.(*ast.SelectorExpr)
+			if !ok {
+				return true
+			}
+			pkg, ok := sel.X.(*ast.Ident)
+			if !ok || pkg.Name != "http" {
+				return true
+			}
+			switch sel.Sel.Name {
+			case "Handle":
+				foundHTTPHandle = true
+			case "ListenAndServe":
+				if len(call.Args) == 2 {
+					if arg, ok := call.Args[1].(*ast.Ident); ok && arg.Name == "nil" {
+						foundDefaultMuxServe = true
+					}
+				}
+			}
+			return true
+		})
+		return false
+	})
+
+	require.True(t, foundHTTPHandle, "PrometheusPump.Init should still register on http.DefaultServeMux through http.Handle")
+	require.True(t, foundDefaultMuxServe, "PrometheusPump.Init should still serve with nil handler, which uses http.DefaultServeMux")
 }
 
 func assertPrometheusMetricFamilyNameAvailable(t *testing.T, registry *prometheus.Registry, name string) {
