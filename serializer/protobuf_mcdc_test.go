@@ -5,6 +5,7 @@ import (
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	analyticsproto "github.com/TykTechnologies/tyk-pump/analytics/proto"
+	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
@@ -237,6 +238,74 @@ func TestProtobuf_GeoCityNamesLoss_KI(t *testing.T) {
 
 	assert.Equal(t, rec.Geo.City.GeoNameID, decoded.Geo.City.GeoNameID)
 	assert.Nil(t, decoded.Geo.City.Names)
+}
+
+// KI tripwire for malformed protobuf decode behavior; not requirement-success evidence.
+// Verifies: SW-REQ-008
+// Verifies: INT-REQ-003
+// Verifies: KI:protobuf-decode-nil-submessage-panic
+// Reproduces: protobuf-decode-nil-submessage-panic
+func TestProtobuf_DecodeNilSubmessagesPanic_KI(t *testing.T) {
+	pb := &ProtobufSerializer{}
+
+	mustMarshal := func(t *testing.T, rec *analyticsproto.AnalyticsRecord) []byte {
+		t.Helper()
+		buf, err := proto.Marshal(rec)
+		assert.NoError(t, err)
+		return buf
+	}
+
+	fullGeo := &analyticsproto.GeoData{
+		Country:  &analyticsproto.Country{},
+		City:     &analyticsproto.City{},
+		Location: &analyticsproto.Location{},
+	}
+
+	cases := []struct {
+		name  string
+		input interface{}
+	}{
+		{
+			name:  "non byte input",
+			input: "not-protobuf-bytes",
+		},
+		{
+			name: "missing geo",
+			input: mustMarshal(t, &analyticsproto.AnalyticsRecord{
+				APIID:   "api_1",
+				OrgID:   "org_1",
+				Latency: &analyticsproto.Latency{},
+				Network: &analyticsproto.NetworkStats{},
+			}),
+		},
+		{
+			name: "missing network",
+			input: mustMarshal(t, &analyticsproto.AnalyticsRecord{
+				APIID:   "api_1",
+				OrgID:   "org_1",
+				Geo:     fullGeo,
+				Latency: &analyticsproto.Latency{},
+			}),
+		},
+		{
+			name: "missing latency",
+			input: mustMarshal(t, &analyticsproto.AnalyticsRecord{
+				APIID:   "api_1",
+				OrgID:   "org_1",
+				Geo:     fullGeo,
+				Network: &analyticsproto.NetworkStats{},
+			}),
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			var decoded analytics.AnalyticsRecord
+			assert.Panics(t, func() {
+				_ = pb.Decode(tc.input, &decoded)
+			})
+		})
+	}
 }
 
 // Verifies: SW-REQ-008
